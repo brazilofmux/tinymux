@@ -1,5 +1,12 @@
 # TinyMUX Parser Architecture
 
+## Status: Reference Document (Study Complete)
+
+This document records the study of `mux_exec`'s stream-transformer
+architecture. The findings informed the AST evaluator design in
+[PARSER_REPLACE.md](PARSER_REPLACE.md). All stages through Phase 2
+are now implemented on the `brazil` branch.
+
 ## Overview
 
 TinyMUX has three parsers (as noted in the source):

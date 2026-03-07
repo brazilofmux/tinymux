@@ -1,8 +1,10 @@
 # Replacing mux_exec with an AST Evaluator
 
-## Status: Study / 2.14 Experiment Branch
+## Status: Phase 2 Complete — Shadow Validation Active
 
-## Prerequisites
+Branch: `brazil`
+
+## Design Constraints
 
 Two language restrictions that make static compilation feasible:
 
@@ -20,13 +22,20 @@ With these two constraints, every function call is statically known at
 parse time, and every substitution is a typed AST node. No text-level
 replacement-and-reparse is needed.
 
+**Practical compromise:** The current implementation still supports
+`##`/`#@`/`#$` via `replace_tokens()` for backward compatibility.
+Native NOEVAL handlers use `ast_has_hash_tokens()` to detect these
+and fall back to the serialize-replace-reparse path only when needed.
+When no hash tokens are present (the common case with `%i0`), the
+subtree is evaluated directly without serialization.
+
 ## Architecture
 
 ### Current: Stream Transformer
 
 ```
-source text → mux_exec() → output buffer
-               ↑ recursive calls for [...], function args, FN_NOEVAL bodies
+source text --> mux_exec() --> output buffer
+                 ^ recursive calls for [...], function args, FN_NOEVAL bodies
 ```
 
 `mux_exec` interleaves scanning, evaluation, and output in a single pass.
@@ -40,182 +49,256 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
               const UTF8 *cargs[], int ncargs);
 ```
 
-### New: Parse → AST → Evaluate
+### New: Parse --> AST --> Evaluate
 
 ```
-source text → parse() → ASTNode tree → eval() → output string
+source text --> parse() --> ASTNode tree --> eval() --> output string
+                                 |
+                            LRU cache (1024 entries)
 ```
 
 Two phases, cleanly separated:
 
 1. **Parse** — Tokenize and build AST. No evaluation, no database access,
-   no side effects. Can be cached (attribute text → AST).
+   no side effects. Cached by expression text in an LRU cache.
 
 2. **Evaluate** — Walk the AST with an evaluation context. Function
    dispatch, substitution resolution, database access all happen here.
 
-### New function signature
+### Function signatures (implemented)
 
 ```cpp
-// Parse: text → AST (cacheable, no side effects)
-ASTNode *mux_parse(const UTF8 *pStr, size_t nStr);
+// Tokenize: text --> token stream
+std::vector<ASTToken> ast_tokenize(const UTF8 *input, size_t nLen);
 
-// Evaluate: AST → output string
-void mux_eval(const ASTNode *ast,
-              UTF8 *buff, UTF8 **bufc,
-              dbref executor, dbref caller, dbref enactor,
-              int eval,
-              const UTF8 *cargs[], int ncargs);
+// Parse: token stream --> AST
+std::unique_ptr<ASTNode> ast_parse(const std::vector<ASTToken> &tokens);
 
-// Combined (drop-in replacement during transition)
+// Combined parse: text --> AST (convenience)
+std::unique_ptr<ASTNode> ast_parse_string(const UTF8 *input, size_t nLen);
+
+// Reconstruct raw text from AST (for NOEVAL serialization)
+std::string ast_raw_text(const ASTNode *node);
+
+// Drop-in replacement for mux_exec (parse + cache + evaluate)
 void mux_exec2(const UTF8 *pStr, size_t nStr,
                UTF8 *buff, UTF8 **bufc,
                dbref executor, dbref caller, dbref enactor,
-               int eval,
-               const UTF8 *cargs[], int ncargs);
+               int eval, const UTF8 *cargs[], int ncargs);
 ```
 
-`mux_exec2` is a drop-in replacement: parse then evaluate. During
-transition, both `mux_exec` and `mux_exec2` coexist. Call sites can
-be migrated one at a time.
-
-## AST Node Types
+## AST Node Types (implemented)
 
 ```cpp
-enum NodeType {
-    NODE_SEQUENCE,      // Ordered list of children
-    NODE_LITERAL,       // Plain text
-    NODE_SPACE,         // Whitespace (for space compression)
-    NODE_SUBST,         // %-substitution (%0, %q<name>, %i0, %r, etc.)
-    NODE_ESCAPE,        // \-escape
-    NODE_FUNCCALL,      // function(args...) — name is static string
-    NODE_EVALBRACKET,   // [expression]
-    NODE_BRACEGROUP,    // {deferred expression}
-    NODE_SEMICOLON,     // ; command separator
+enum ASTNodeType {
+    AST_SEQUENCE,       // Ordered list of children
+    AST_LITERAL,        // Plain text
+    AST_SPACE,          // Whitespace run
+    AST_SUBST,          // %-substitution (%0, %q<name>, %i0, %r, etc.)
+    AST_ESCAPE,         // \-escape
+    AST_FUNCCALL,       // function(args...) -- name is static string
+    AST_EVALBRACKET,    // [expression]
+    AST_BRACEGROUP,     // {deferred expression}
+    AST_SEMICOLON,      // ; command separator
 };
 ```
 
 No NODE_DYNCALL — eliminated by design constraint.
 
-## FN_NOEVAL Handling
+```cpp
+struct ASTNode {
+    ASTNodeType type;
+    std::string text;
+    std::vector<std::unique_ptr<ASTNode>> children;
+};
+```
 
-23 functions use FN_NOEVAL. They fall into three categories:
-
-### 1. Conditional evaluation (evaluate selected branches)
-
-- `if(cond, true_branch, false_branch)`
-- `ifelse(cond, true_branch, false_branch)`
-- `switch(val, pat1, result1, ..., default)`
-- `case(val, pat1, result1, ..., default)`
-- `cand(expr1, expr2, ...)`  — short-circuit AND
-- `cor(expr1, expr2, ...)`   — short-circuit OR
-
-**AST approach:** The evaluator checks function flags before evaluating
-children. For NOEVAL functions, children are passed as ASTNode* and the
-handler calls `mux_eval()` selectively:
+## Token Types (implemented)
 
 ```cpp
-// Pseudo-code for if()
-std::string result = mux_eval(children[0]);  // evaluate condition
-if (xlate(result)) {
-    return mux_eval(children[1]);            // evaluate true branch
-} else if (children.size() > 2) {
-    return mux_eval(children[2]);            // evaluate false branch
+enum ASTTokenType {
+    ASTTOK_LIT,       // Literal text run
+    ASTTOK_FUNC,      // Identifier preceding '(' -- promoted from ASTTOK_LIT
+    ASTTOK_LPAREN,    // (
+    ASTTOK_RPAREN,    // )
+    ASTTOK_LBRACK,    // [
+    ASTTOK_RBRACK,    // ]
+    ASTTOK_LBRACE,    // {
+    ASTTOK_RBRACE,    // }
+    ASTTOK_COMMA,     // ,
+    ASTTOK_SEMI,      // ;
+    ASTTOK_PCT,       // %-substitution sequence (gathered by gather_pct)
+    ASTTOK_ESC,       // \-escape
+    ASTTOK_SPACE,     // Whitespace run
+    ASTTOK_EOF        // End of input
+};
+```
+
+## FN_NOEVAL Handling (implemented)
+
+23 functions use FN_NOEVAL. The AST evaluator handles them in three tiers:
+
+### 1. Native handlers (pure AST, no serialization)
+
+These evaluate AST subtrees directly without converting back to text:
+
+- `cand(expr1, expr2, ...)` / `candbool(...)` — short-circuit AND
+- `cor(expr1, expr2, ...)` / `corbool(...)` — short-circuit OR
+- `if(cond, true, false)` / `ifelse(cond, true, false)` — conditional
+- `switch(val, pat1, res1, ..., default)` — wildcard first-match
+- `case(val, pat1, res1, ..., default)` — exact first-match
+- `switchall(val, pat1, res1, ..., default)` — wildcard all-match
+- `caseall(val, pat1, res1, ..., default)` — exact all-match
+- `iter(list, body, isep, osep)` — list iteration
+
+The `ast_eval_branch()` helper checks `ast_has_hash_tokens()` to
+decide between direct subtree evaluation (fast path) and the
+serialize-replace-reparse fallback (slow path for `##`/`#@`/`#$`).
+
+### 2. Generic NOEVAL (serialize to raw text)
+
+Functions not in the native handler list receive raw text via
+`ast_raw_text()`. The existing FUN handler calls `mux_exec`
+internally on the args it chooses to evaluate:
+
+- `@@(comment)`, `lit(text)`, `parenmatch(text)`, `fcount()`
+- `objeval()`, `filter()`, `step()`, `list()`, `parse()`
+- `while()`, `until()`, `fold()`, `munge()`, `sortby()`
+
+### 3. User-defined functions (UFUN)
+
+Evaluated arguments are passed to the fetched attribute text,
+which is evaluated via `mux_exec`. The `FN_PRES` flag triggers
+register save/restore around the call.
+
+## Eval Flags (implemented)
+
+The `eval` parameter changes evaluation behavior. A single cached AST
+works for all eval flag combinations — the evaluator respects flags
+at walk time:
+
+| Flag | Evaluator Behavior |
+|------|-------------------|
+| EV_EVAL | Resolve AST_SUBST nodes (else pass through literally) |
+| EV_FCHECK | Dispatch AST_FUNCCALL nodes (else output as literal) |
+| EV_FMAND | Error on unknown function name |
+| EV_STRIP_CURLY | Unwrap AST_BRACEGROUP (else preserve braces) |
+| EV_NOFCHECK | Don't recurse into AST_EVALBRACKET (pass through) |
+| EV_NO_LOCATION | Suppress %l resolution |
+
+## AST Parse Cache (implemented)
+
+```cpp
+struct ASTCacheEntry {
+    std::shared_ptr<ASTNode> ast;
+    std::list<std::string>::iterator lru_it;
+};
+
+static std::unordered_map<std::string, ASTCacheEntry> s_astCache;
+static std::list<std::string> s_astLru;
+static const size_t AST_CACHE_MAX = 1024;
+static const size_t AST_CACHE_MIN_LEN = 16;
+```
+
+- LRU eviction: oldest entries dropped when cache reaches 1024
+- Minimum length: expressions shorter than 16 bytes parsed without caching
+- Key: raw expression text (no hashing — std::string handles it)
+- `shared_ptr<ASTNode>` enables safe sharing from cache
+
+## Shadow Comparison Mode (implemented)
+
+Config option `shadow_eval yes` (GOD-only, default off) runs both
+evaluators in parallel and logs mismatches:
+
+```cpp
+// In mux_exec, after producing output:
+if (mudconf.shadow_eval && !mudstate.bShadowActive && !alarm_clock.alarmed)
+{
+    mudstate.bShadowActive = true;
+    // Save registers + counters
+    // Run mux_exec2 into separate buffer
+    // Restore registers + counters
+    // Compare outputs, log mismatches via LOG_BUGS "EVAL" "SHADOW"
+    mudstate.bShadowActive = false;
 }
 ```
 
-### 2. Iterative evaluation (evaluate body per item)
+- `bShadowActive` flag prevents recursion (mux_exec2's handlers call mux_exec)
+- State save/restore: global registers, func_invk_ctr, func_nest_lev
+- Smoke tests run with `shadow_eval yes` — 358/360 pass, zero mismatches
 
-- `iter(list, body, osep, isep)`
-- `list(list, body, osep, isep)`
-- `filter(obj/attr, list, isep, osep)`
-- `step(obj/attr, list, step, isep, osep)`
+## Native %-Substitution Handler (implemented)
 
-**AST approach:** Push iterator state, evaluate body subtree per item:
+All L2 dispatch table entries handled natively in `ast_eval_subst()`:
 
-```cpp
-// Pseudo-code for iter()
-std::string list_val = mux_eval(children[0]);
-auto items = split(list_val, sep);
-for (int i = 0; i < items.size(); i++) {
-    push_itext(items[i], i);
-    result += mux_eval(children[1]);  // body references %i0
-    pop_itext();
-}
-```
+| Code | Chars | Substitution |
+|------|-------|-------------|
+| %0-%9 | digits | Command arguments |
+| %q | Q/q | Registers (%q0-%qz, %q\<name\>) |
+| %# | # | Enactor dbref |
+| %! | ! | Executor dbref |
+| %@ | @ | Caller dbref |
+| %% | % | Literal percent |
+| %r | R/r | Carriage return |
+| %b | B/b | Space |
+| %t | T/t | Tab |
+| %n | N/n | Enactor name |
+| %l | L/l | Enactor location |
+| %s | S/s | Subjective pronoun |
+| %p | P/p | Possessive pronoun |
+| %o | O/o | Objective pronoun |
+| %a | A/a | Absolute possessive |
+| %m | M/m | Last command |
+| %k | K/k | Moniker |
+| %\| | \| | Pipe output |
+| %+ | + | Argument count |
+| %: | : | Enactor objid |
+| %v | V/v | Variable attribute (%va-%vz) |
+| %i | I/i | Iterator text (%i0-%i9) |
+| %= | = | Attr shorthand / extended args |
+| %c/%x | C/X | Color codes (simple + RGB/24-bit) |
 
-No `replace_tokens` needed — `##` is gone, `%i0` resolves through
-the iterator stack during normal evaluation.
-
-### 3. Literal pass-through
-
-- `@@(comment)` — discard
-- `lit(text)` — return unevaluated
-- `parenmatch(text)` — return unevaluated
-- `fcount()` — no eval needed
-
-**AST approach:** Return raw text reconstruction of the subtree, or
-simply don't evaluate.
-
-## Eval Flags
-
-The `eval` parameter changes parsing/evaluation behavior. Key flags:
-
-| Flag | Effect on Parser | Effect on Evaluator |
-|------|-----------------|---------------------|
-| EV_EVAL | Enable %-substitutions | Resolve %nodes |
-| EV_FCHECK | Enable function calls on ( | Parse FUNC nodes |
-| EV_FMAND | Require valid function name | Error on unknown func |
-| EV_STRIP_CURLY | Strip outer {} | Unwrap BraceGroup |
-| EV_NOFCHECK | Suppress [ evaluation | Don't recurse into EvalBracket |
-| EV_NO_COMPRESS | Don't compress spaces | Pass through Space nodes |
-
-**Design decision:** Parse with all features enabled (superset AST),
-then let the evaluator respect flags. This means a single cached AST
-works for all eval flag combinations. The evaluator checks:
-
-- `EV_EVAL` → whether to resolve SUBST nodes
-- `EV_FCHECK` → whether to dispatch FUNCCALL nodes
-- `EV_STRIP_CURLY` → whether to unwrap BRACEGROUP nodes
-- `EV_NOFCHECK` → whether to recurse into EVALBRACKET nodes
-
-## AST Caching
-
-Since parsing is pure (no side effects), ASTs can be cached:
-
-```
-attribute text → SHA1 hash → cached ASTNode tree
-```
-
-When an attribute is modified (`atr_add_raw_LEN`), invalidate its
-cache entry. This means repeated evaluations of the same attribute
-(common in loops, $-commands, etc.) skip parsing entirely.
-
-The cache can be:
-- Per-attribute (keyed by dbref + attrnum)
-- Global LRU (keyed by text hash)
-- Hybrid (per-attr with fallback to text hash for dynamic text)
+Uppercase variants (A, M, N, O, P, Q, S, V) trigger `mux_toupper_first()`
+on the result, matching the L2 table's 0x80 flag.
 
 ## Integration Path
 
-### Phase 1: Infrastructure (parser/ directory)
+### Phase 1: Infrastructure (COMPLETE)
 
-Build the production-quality tokenizer, parser, and evaluator as
-standalone library code. Test against the existing smoke test corpus
-by comparing `mux_exec` output vs `mux_eval` output for every test
-expression.
+Standalone tokenizer, parser, and evaluator prototyped in `parser/`
+directory. CLI tools for testing. Merged into production as
+`mux/src/ast.h` and `mux/src/ast.cpp`.
 
-### Phase 2: mux_exec2 (mux/src/)
+Commits:
+- `666759ca` Add parser architecture study and tokenizer prototype
+- `a5aa9efa` Add recursive-descent parser and enhanced tokenizer
+- `60f668bf` Add AST evaluator with 50+ builtin functions
+- `fe8321dd` Implement proper FN_NOEVAL deferred evaluation
+- `f124a8cd` Factor shared tokenizer/parser/AST into mux_parse.h
+- `a92cf12f` Add AST parser to production build (Phase 1 stub)
 
-Add `mux_exec2()` as a drop-in replacement. Initially, it's just
-`mux_parse()` + `mux_eval()`. Add a config option to switch between
-`mux_exec` and `mux_exec2` at runtime for A/B testing.
+### Phase 2: mux_exec2 (COMPLETE)
 
-### Phase 3: Migration
+`mux_exec2()` is a drop-in replacement. `eval2()` softcode function
+exposes the AST evaluator for A/B testing. `shadow_eval` config runs
+both evaluators in parallel and logs mismatches.
+
+Commits:
+- `990b7da6` Implement Phase 2 AST evaluator with eval2() test function
+- `3d9ae901` Inline %-substitutions natively in AST evaluator
+- `a29bf743` Inline color substitutions natively in AST evaluator
+- `5bb4c8f7` Add native NOEVAL handlers for AST evaluator
+- `8541e080` Add AST parse cache and direct subtree evaluation
+- `e4351d79` Add shadow eval mode to compare mux_exec and mux_exec2
+
+### Phase 3: Migration (NEXT)
 
 Replace `mux_exec` call sites one at a time. Start with the simplest
 callers (those that pass fixed eval flags). Leave complex callers
 (function handlers that modify eval flags mid-call) for last.
+
+With `shadow_eval` active, mismatches will be caught during migration
+and can be diagnosed from the server log.
 
 ### Phase 4: Deprecation
 
@@ -225,7 +308,7 @@ Remove `replace_tokens`, `isSpecial` tables, `parse_to`/`parse_to_lite`.
 ### Phase 5: Compilation (future)
 
 With a stable AST, the evaluator can be replaced with a compiler:
-- AST → RISC-V IR → sandboxed DBT execution
+- AST --> RISC-V IR --> sandboxed DBT execution
 - Pure functions compile to straight-line code
 - Database functions compile to call-outs
 - Iterator functions compile to loops with %i0 in registers
@@ -234,26 +317,40 @@ With a stable AST, the evaluator can be replaced with a compiler:
 
 | File | Purpose |
 |------|---------|
-| `parser/tokenize.cpp` | Stage 1: standalone tokenizer |
-| `parser/parse.cpp` | Stage 2: standalone AST parser |
-| `parser/eval.cpp` | Stage 3: standalone AST evaluator |
-| `mux/src/ast.h` | AST node definitions (production) |
-| `mux/src/ast.cpp` | Parser + evaluator (production) |
-| `mux/src/eval.cpp` | Modified: add mux_exec2, keep mux_exec |
+| `parser/` | Stage 1 prototypes (tokenizer, parser, eval CLI tools) |
+| `mux/src/ast.h` | AST node types, token types, public API (117 lines) |
+| `mux/src/ast.cpp` | Tokenizer, parser, evaluator, cache, native handlers (2057 lines) |
+| `mux/src/eval.cpp` | Shadow eval comparison block in mux_exec |
+| `mux/src/externs.h` | mux_exec2 declaration |
+| `mux/src/mudconf.h` | shadow_eval config, bShadowActive state |
+| `mux/src/conf.cpp` | shadow_eval defaults and config registration |
+| `testcases/eval2_fn.mux` | 12 eval2() smoke tests (338 lines) |
+| `testcases/tools/Smoke` | shadow_eval yes in smoke config |
 
-## Risks
+## Test Results
 
-1. **Behavioral differences.** The new evaluator must produce byte-identical
-   output to `mux_exec` for all inputs. The smoke test corpus (348 tests)
-   is a good starting point but not exhaustive. Need additional fuzz testing.
+- 360 total smoke tests (176 suites)
+- 358 pass, 2 pre-existing failures (locate_poss, lock_fn — unrelated)
+- 12 eval2-specific tests covering: literals, function calls, nested
+  functions, %-substitutions, eval brackets, brace groups, registers,
+  iteration, switch, cand/cor, color codes, backslash escapes
+- Shadow mode: zero mismatches across all 358 passing tests
 
-2. **Performance.** Parse + eval is two passes vs one. AST allocation adds
-   memory pressure. Caching mitigates the parse cost. The eval pass should
-   be faster than mux_exec's character-at-a-time scanning.
+## Risks and Mitigations
 
-3. **FN_NOEVAL edge cases.** Some functions do surprising things with their
-   unevaluated arguments (e.g., `objeval` changes executor mid-evaluation).
-   These need careful per-function analysis.
+1. **Behavioral differences.** Mitigated by shadow_eval mode running
+   in production. Zero mismatches observed across the smoke test suite.
+   Additional fuzz testing recommended before Phase 3 migration.
 
-4. **Compatibility period.** Both code paths must coexist during transition.
-   Config-switchable A/B testing is essential.
+2. **Performance.** Parse + eval is two passes vs one. AST allocation
+   adds memory pressure. LRU cache (1024 entries) mitigates the parse
+   cost for repeated evaluations. The eval pass avoids character-at-a-time
+   scanning and L1/L2 table lookups.
+
+3. **FN_NOEVAL edge cases.** 8 of 23 NOEVAL functions have native
+   handlers. The remaining 15 use generic serialization via
+   `ast_raw_text()`, which is functionally identical to the old path.
+
+4. **Compatibility period.** Both code paths coexist. `shadow_eval`
+   provides continuous validation. Call sites can be migrated
+   incrementally with immediate regression detection.
