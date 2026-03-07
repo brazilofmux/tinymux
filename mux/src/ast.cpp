@@ -908,14 +908,81 @@ static void ast_eval_subst(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 
     case 'C':
     case 'X':
-        // %c/%x — color codes. Delegate to mux_exec for these
-        // due to complex RGB parsing and 24-bit color support.
+        // %c/%x — color codes.
+        // Uppercase C/X → background (0x40 flag in L2 table).
+        // Lowercase c/x → foreground.
         //
-        mux_exec(reinterpret_cast<const UTF8 *>(txt.c_str()),
-            txt.size(), buff, bufc,
-            executor, caller, enactor,
-            eval, cargs, ncargs);
-        return;  // Skip the uppercase-first logic below.
+        if (txt.size() >= 3)
+        {
+            bool bBackground = ('A' <= ch && ch <= 'Z');
+
+            if (txt[2] == '<')
+            {
+                // Extended color: %c<rgb>, %x<name>, etc.
+                //
+                size_t close = txt.find('>', 3);
+                if (close != std::string::npos)
+                {
+                    size_t nColor = close - 3;
+                    const UTF8 *pColor = reinterpret_cast<const UTF8 *>(txt.c_str() + 3);
+
+                    RGB rgb;
+                    if (parse_rgb(nColor, pColor, rgb))
+                    {
+                        unsigned int iColor = FindNearestPaletteEntry(rgb, true);
+                        if (bBackground)
+                        {
+                            safe_str(aColors[iColor + COLOR_INDEX_BG].pUTF, buff, bufc);
+                            if (palette[iColor].rgb.r != rgb.r)
+                            {
+                                safe_str(ConvertToUTF8(static_cast<UTF32>(rgb.r + 0xF0300)), buff, bufc);
+                            }
+                            if (palette[iColor].rgb.g != rgb.g)
+                            {
+                                safe_str(ConvertToUTF8(static_cast<UTF32>(rgb.g + 0xF0400)), buff, bufc);
+                            }
+                            if (palette[iColor].rgb.b != rgb.b)
+                            {
+                                safe_str(ConvertToUTF8(static_cast<UTF32>(rgb.b + 0xF0500)), buff, bufc);
+                            }
+                        }
+                        else
+                        {
+                            safe_str(aColors[iColor + COLOR_INDEX_FG].pUTF, buff, bufc);
+                            if (palette[iColor].rgb.r != rgb.r)
+                            {
+                                safe_str(ConvertToUTF8(static_cast<UTF32>(rgb.r + 0xF0000)), buff, bufc);
+                            }
+                            if (palette[iColor].rgb.g != rgb.g)
+                            {
+                                safe_str(ConvertToUTF8(static_cast<UTF32>(rgb.g + 0xF0100)), buff, bufc);
+                            }
+                            if (palette[iColor].rgb.b != rgb.b)
+                            {
+                                safe_str(ConvertToUTF8(static_cast<UTF32>(rgb.b + 0xF0200)), buff, bufc);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Simple color code: %xn, %ch, etc.
+                //
+                unsigned int iColor = ColorTable[static_cast<unsigned char>(txt[2])];
+                if (iColor)
+                {
+                    safe_str(aColors[iColor].pUTF, buff, bufc);
+                }
+                else
+                {
+                    // Unknown color letter — output it literally.
+                    //
+                    safe_chr(txt[2], buff, bufc);
+                }
+            }
+        }
+        break;
 
     default:
         // Unknown substitution — output the character literally
