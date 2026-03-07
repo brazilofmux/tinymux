@@ -2438,7 +2438,7 @@ UTF8 *process_command
     // to work.
     //
     bp = LowerCaseCommand;
-    mux_exec(pCommand, LBUF_SIZE-1, LowerCaseCommand, &bp, executor, caller, enactor,
+    mux_exec2(pCommand, LBUF_SIZE-1, LowerCaseCommand, &bp, executor, caller, enactor,
         eval|EV_EVAL|EV_FCHECK|EV_STRIP_CURLY|EV_TOP, args, nargs);
     *bp = '\0';
     bool succ = false;
