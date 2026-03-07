@@ -1318,7 +1318,7 @@ static void ast_noeval_iter(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     *dp = '\0';
 
     size_t ncp;
-    UTF8 *cp = trim_space_sep_LEN(curr, dp - curr, &sep, &ncp);
+    UTF8 *cp = trim_space_sep_LEN(curr, dp - curr, sep, &ncp);
     if (!*cp)
     {
         free_lbuf(curr);
