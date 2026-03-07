@@ -189,10 +189,10 @@ std::vector<ASTToken> ast_tokenize(const UTF8 *input, size_t nLen)
             }
             tokens.push_back({ASTTOK_ESC, esc});
         }
-        else if (*p == ' ' || *p == '\t')
+        else if (*p == ' ')
         {
             std::string sp;
-            while (p < pEnd && (*p == ' ' || *p == '\t'))
+            while (p < pEnd && *p == ' ')
             {
                 sp += static_cast<char>(*p++);
             }
@@ -213,8 +213,7 @@ std::vector<ASTToken> ast_tokenize(const UTF8 *input, size_t nLen)
                   && *p != ';'
                   && *p != '%'
                   && *p != '\\'
-                  && *p != ' '
-                  && *p != '\t')
+                  && *p != ' ')
             {
                 lit += static_cast<char>(*p++);
             }
@@ -1844,7 +1843,7 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
                     {
                         ast_eval_node(node->children[i].get(), fargs[i], &bp,
                             executor, caller, enactor,
-                            eval | EV_FCHECK | EV_EVAL, cargs, ncargs);
+                            feval | EV_FCHECK | EV_EVAL, cargs, ncargs);
                     }
                     else
                     {
@@ -1855,7 +1854,7 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
                             if (j > i) safe_chr(',', fargs[i], &bp);
                             ast_eval_node(node->children[j].get(), fargs[i], &bp,
                                 executor, caller, enactor,
-                                eval | EV_FCHECK | EV_EVAL, cargs, ncargs);
+                                feval | EV_FCHECK | EV_EVAL, cargs, ncargs);
                         }
                     }
                     *bp = '\0';

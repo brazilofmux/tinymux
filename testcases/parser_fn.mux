@@ -1,0 +1,512 @@
+#
+# parser_fn.mux - Test Cases for parser behavior.
+#
+# Tests fundamental expression parser mechanics rather than any
+# particular softcode function.  Each test verifies that eval2()
+# (AST evaluator) produces the same result as direct evaluation.
+#
+@create test_parser_fn
+-
+@set test_parser_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_parser_fn=
+  @log smoke=Beginning parser test cases.
+-
+#
+# Test Case #1 - Literal text passes through unchanged.
+#
+&tr.tc001 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(hello world)]
+            [eval2(ABCDEFG)]
+            [eval2(1234567890)]
+          )
+        ),
+        setr(1,sha1(
+            hello world
+            ABCDEFG
+            1234567890
+          )
+        )
+      )=
+  {
+    @log smoke=TC001: parser literal text. Succeeded.
+  },
+  {
+    @log smoke=TC001: parser literal text. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #2 - Space compression: runs of spaces compress to one.
+#
+&tr.tc002 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(a  b)]
+            [eval2(a    b)]
+            [eval2(a          b)]
+          )
+        ),
+        setr(1,sha1(
+            a  b
+            a    b
+            a          b
+          )
+        )
+      )=
+  {
+    @log smoke=TC002: parser space compression. Succeeded.
+  },
+  {
+    @log smoke=TC002: parser space compression. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #3 - %-substitutions: %b (space), %r (return), %t (tab).
+#
+&tr.tc003 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(a%bb)]
+            [eval2(a%rb)]
+            [eval2(a%tb)]
+          )
+        ),
+        setr(1,sha1(
+            a%bb
+            a%rb
+            a%tb
+          )
+        )
+      )=
+  {
+    @log smoke=TC003: parser pct-subst b/r/t. Succeeded.
+  },
+  {
+    @log smoke=TC003: parser pct-subst b/r/t. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #4 - %-substitutions: %# (enactor), %! (executor).
+#
+# Dbrefs vary per run so we compare eval2 vs direct evaluation.
+#
+&tr.tc004 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(enactor=%#)]
+            [eval2(executor=%!)]
+          )
+        ),
+        setr(1,sha1(
+            enactor=%#
+            executor=%!
+          )
+        )
+      )=
+  {
+    @log smoke=TC004: parser pct-subst enactor/executor. Succeeded.
+  },
+  {
+    @log smoke=TC004: parser pct-subst enactor/executor. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #5 - %-substitutions: registers %q0-%q9.
+#
+&tr.tc005 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [setr(1,apple)]
+            [setr(2,banana)]
+            [eval2(%q1-%q2)]
+          )
+        ),
+        setr(3,sha1(
+            [setr(1,apple)]
+            [setr(2,banana)]
+            %q1-%q2
+          )
+        )
+      )=
+  {
+    @log smoke=TC005: parser pct-subst registers. Succeeded.
+  },
+  {
+    @log smoke=TC005: parser pct-subst registers. Failed (%q0 vs %q3).
+  }
+-
+#
+# Test Case #6 - Eval brackets: [function()] evaluates inline.
+#
+# Use \[ and \] to pass literal brackets into eval2's argument.
+# The outer eval turns \[ into [, then eval2 re-evaluates.
+#
+&tr.tc006 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(\[add(1,2)\])]
+            [eval2(\[mul(3,4)\])]
+            [eval2(x\[add(5,6)\]y)]
+          )
+        ),
+        setr(1,sha1(
+            [add(1,2)]
+            [mul(3,4)]
+            x[add(5,6)]y
+          )
+        )
+      )=
+  {
+    @log smoke=TC006: parser eval brackets. Succeeded.
+  },
+  {
+    @log smoke=TC006: parser eval brackets. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #7 - Adjacent eval brackets in sequence.
+#
+&tr.tc007 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(\[add(1,1)\]\[add(2,2)\]\[add(3,3)\])]
+          )
+        ),
+        setr(1,sha1(
+            [add(1,1)][add(2,2)][add(3,3)]
+          )
+        )
+      )=
+  {
+    @log smoke=TC007: parser adjacent eval brackets. Succeeded.
+  },
+  {
+    @log smoke=TC007: parser adjacent eval brackets. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #8 - Brace groups: {text} strips braces, defers eval.
+#
+&tr.tc008 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(if(1,{hello},{goodbye}))]
+            [eval2(if(0,{hello},{goodbye}))]
+            [eval2(switch(b,a,{alpha},b,{beta},*,{other}))]
+          )
+        ),
+        setr(1,sha1(
+            [if(1,{hello},{goodbye})]
+            [if(0,{hello},{goodbye})]
+            [switch(b,a,{alpha},b,{beta},*,{other})]
+          )
+        )
+      )=
+  {
+    @log smoke=TC008: parser brace groups. Succeeded.
+  },
+  {
+    @log smoke=TC008: parser brace groups. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #9 - Braces protect commas from argument splitting.
+#
+&tr.tc009 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(switch(a,a,{result,with,commas},*,other))]
+            [eval2(if(1,{x,y,z}))]
+          )
+        ),
+        setr(1,sha1(
+            [switch(a,a,{result,with,commas},*,other)]
+            [if(1,{x,y,z})]
+          )
+        )
+      )=
+  {
+    @log smoke=TC009: parser braces protect commas. Succeeded.
+  },
+  {
+    @log smoke=TC009: parser braces protect commas. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #10 - Nested braces.
+#
+&tr.tc010 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(if(1,{outer {inner} text}))]
+          )
+        ),
+        setr(1,sha1(
+            [if(1,{outer {inner} text})]
+          )
+        )
+      )=
+  {
+    @log smoke=TC010: parser nested braces. Succeeded.
+  },
+  {
+    @log smoke=TC010: parser nested braces. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #11 - Function calls: basic, nested, zero-arg.
+#
+&tr.tc011 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(add(1,2))]
+            [eval2(add(1,mul(2,3)))]
+            [eval2(pi())]
+            [eval2(e())]
+          )
+        ),
+        setr(1,sha1(
+            [add(1,2)]
+            [add(1,mul(2,3))]
+            [pi()]
+            [e()]
+          )
+        )
+      )=
+  {
+    @log smoke=TC011: parser function calls. Succeeded.
+  },
+  {
+    @log smoke=TC011: parser function calls. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #12 - Deeply nested function calls.
+#
+&tr.tc012 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(add(1,add(2,add(3,add(4,5)))))]
+            [eval2(strlen(ucstr(lcstr(mid(hello world,0,5)))))]
+          )
+        ),
+        setr(1,sha1(
+            [add(1,add(2,add(3,add(4,5))))]
+            [strlen(ucstr(lcstr(mid(hello world,0,5))))]
+          )
+        )
+      )=
+  {
+    @log smoke=TC012: parser deep nesting. Succeeded.
+  },
+  {
+    @log smoke=TC012: parser deep nesting. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #13 - Commas are literal text outside function calls.
+#
+# eval2 has maxArgsParsed=1 so commas are literal in its argument.
+#
+&tr.tc013 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(a,b,c)]
+          )
+        ),
+        setr(1,sha1(
+            a,b,c
+          )
+        )
+      )=
+  {
+    @log smoke=TC013: parser literal commas. Succeeded.
+  },
+  {
+    @log smoke=TC013: parser literal commas. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #14 - Empty function arguments.
+#
+# Test that the parser correctly handles empty arguments in function
+# calls.  We use functions whose output is non-empty and contains
+# no leading/trailing spaces, so the result survives double evaluation.
+#
+&tr.tc014 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(if(,yes,no))]
+            [eval2(add(,1))]
+            [eval2(strlen(cat(a,,b)))]
+          )
+        ),
+        setr(1,sha1(
+            [if(,yes,no)]
+            [add(,1)]
+            [strlen(cat(a,,b))]
+          )
+        )
+      )=
+  {
+    @log smoke=TC014: parser empty args. Succeeded.
+  },
+  {
+    @log smoke=TC014: parser empty args. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #15 - maxArgsParsed: sha1() has maxArgsParsed=1,
+# so commas within its argument are literal.
+#
+&tr.tc015 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(sha1(hello,world))]
+            [eval2(sha1(a,b,c))]
+          )
+        ),
+        setr(1,sha1(
+            [sha1(hello,world)]
+            [sha1(a,b,c)]
+          )
+        )
+      )=
+  {
+    @log smoke=TC015: parser maxArgsParsed. Succeeded.
+  },
+  {
+    @log smoke=TC015: parser maxArgsParsed. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #16 - Unknown function name: paren is literal.
+#
+&tr.tc016 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(notafunc(x))]
+            [eval2(xyzzy(1,2,3))]
+          )
+        ),
+        setr(1,sha1(
+            notafunc(x)
+            xyzzy(1,2,3)
+          )
+        )
+      )=
+  {
+    @log smoke=TC016: parser unknown function. Succeeded.
+  },
+  {
+    @log smoke=TC016: parser unknown function. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #17 - Mixed nesting: [func({text})] combinations.
+#
+&tr.tc017 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(if(1,{[add(1,2)]},{[mul(3,4)]}))]
+            [eval2(switch(a,a,{[ucstr(hello)]},*,{none}))]
+          )
+        ),
+        setr(1,sha1(
+            [if(1,{[add(1,2)]},{[mul(3,4)]})]
+            [switch(a,a,{[ucstr(hello)]},*,{none})]
+          )
+        )
+      )=
+  {
+    @log smoke=TC017: parser mixed nesting. Succeeded.
+  },
+  {
+    @log smoke=TC017: parser mixed nesting. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #18 - @@() comment function produces empty output.
+#
+&tr.tc018 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(@@(this is a comment))]
+            [eval2(hello[@@(invisible)]world)]
+          )
+        ),
+        setr(1,sha1(
+            [@@(this is a comment)]
+            hello[@@(invisible)]world
+          )
+        )
+      )=
+  {
+    @log smoke=TC018: parser @@ comment. Succeeded.
+  },
+  {
+    @log smoke=TC018: parser @@ comment. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #19 - NOEVAL functions: switchall, caseall.
+#
+&tr.tc019 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(switchall(a,a,first,a,second,*,star))]
+            [eval2(caseall(a,a,first,a,second,*,star))]
+          )
+        ),
+        setr(1,sha1(
+            [switchall(a,a,first,a,second,*,star)]
+            [caseall(a,a,first,a,second,*,star)]
+          )
+        )
+      )=
+  {
+    @log smoke=TC019: parser switchall/caseall. Succeeded.
+  },
+  {
+    @log smoke=TC019: parser switchall/caseall. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #20 - iter with %i0 substitution.
+#
+&tr.tc020 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2(iter(X Y Z,%i0))]
+            [eval2(iter(10 20 30,[add(%i0,1)]))]
+          )
+        ),
+        setr(1,sha1(
+            [iter(X Y Z,%i0)]
+            [iter(10 20 30,[add(%i0,1)])]
+          )
+        )
+      )=
+  {
+    @log smoke=TC020: parser iter with pct-subst. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC020: parser iter with pct-subst. Failed (%q0 vs %q1).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_parser_fn=
+  @log smoke=End parser test cases.;
+  @notify smoke
+-
+drop test_parser_fn
+-
+#
+# End of Test Cases
+#

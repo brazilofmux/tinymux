@@ -11768,7 +11768,7 @@ static FUN builtin_function_list[] =
     {T("ESCAPE"),      fun_escape,           1, 1,       1,         0, CA_PUBLIC},
     {T("ETIMEFMT"),    fun_etimefmt,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("EVAL"),        fun_eval,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {T("EVAL2"),       fun_eval2,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("EVAL2"),       fun_eval2,            1, 1,       1,         0, CA_PUBLIC},
     {T("EXIT"),        fun_exit,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("EXP"),         fun_exp,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("EXPTIME"),     fun_exptime,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
