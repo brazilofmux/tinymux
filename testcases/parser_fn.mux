@@ -494,10 +494,112 @@
       )=
   {
     @log smoke=TC020: parser iter with pct-subst. Succeeded.;
-    @trig me/tr.done
   },
   {
     @log smoke=TC020: parser iter with pct-subst. Failed (%q0 vs %q1).;
+  }
+-
+#
+# Test Case #21 - Edge probe: unterminated function call text.
+#
+# Compatibility probe for malformed input.  If eval2 diverges from
+# direct eval here, that is a known parser-compatibility choice.
+#
+&tr.tc021 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [setr(9,EDGE)]
+            [eval2({notafunc(%q9})]
+          )
+        ),
+        setr(1,sha1(
+            [setr(9,EDGE)]
+            notafunc(%q9
+          )
+        )
+      )=
+  {
+    @log smoke=TC021: edge unterminated func-call parity. Succeeded (possibly fixed).;
+  },
+  {
+    @log smoke=TC021: edge unterminated func-call divergence observed (%q0 vs %q1).;
+  }
+-
+#
+# Test Case #22 - Edge probe: unterminated angled %-substitutions.
+#
+# Probes %q<... / %x<... / %=<... with missing '>'.
+# Keep this case even if intentionally unsupported.
+#
+&tr.tc022 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({%q<missing})]
+            [eval2({%x<blue})]
+            [eval2({%=<attr})]
+          )
+        ),
+        setr(1,sha1(
+            %q<missing
+            %x<blue
+            %=<attr
+          )
+        )
+      )=
+  {
+    @log smoke=TC022: edge unterminated angled %-subst parity. Succeeded (possibly fixed).;
+  },
+  {
+    @log smoke=TC022: edge unterminated angled %-subst divergence observed (%q0 vs %q1).;
+  }
+-
+#
+# Test Case #23 - Edge probe: unknown simple color escape.
+#
+# Probe %x? fallback behavior.  Keep this to document chosen behavior.
+#
+&tr.tc023 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({A%x?B})]
+            [eval2({A%c?B})]
+          )
+        ),
+        setr(1,sha1(
+            A%x?B
+            A%c?B
+          )
+        )
+      )=
+  {
+    @log smoke=TC023: edge unknown color fallback parity. Succeeded (possibly fixed).;
+  },
+  {
+    @log smoke=TC023: edge unknown color fallback divergence observed (%q0 vs %q1).;
+  }
+-
+#
+# Test Case #24 - Edge probe: malformed mix with nested context.
+#
+# Cross-check malformed pieces inside nested eval context.
+#
+&tr.tc024 test_parser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eval2({prefix [add(1,2)] %q<oops suffix})]
+          )
+        ),
+        setr(1,sha1(
+            prefix [add(1,2)] %q<oops suffix
+          )
+        )
+      )=
+  {
+    @log smoke=TC024: edge malformed mixed context parity. Succeeded (possibly fixed).;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC024: edge malformed mixed context divergence observed (%q0 vs %q1).;
     @trig me/tr.done
   }
 -
