@@ -25,10 +25,10 @@
         1D1A20E2CB932B590BF3718DD9FFA455C38A8910
       )=
   {
-    @log smoke=TC001: chr basic ASCII. Succeeded.;
+    @log smoke=TC001: chr basic ASCII. Succeeded.
   },
   {
-    @log smoke=TC001: chr basic ASCII. Failed (%q0).;
+    @log smoke=TC001: chr basic ASCII. Failed (%q0).
   }
 -
 #
@@ -43,10 +43,10 @@
         BF15BE717AC1B080B4F1C456692825891FF5073D
       )=
   {
-    @log smoke=TC002: chr combining character. Succeeded.;
+    @log smoke=TC002: chr combining character. Succeeded.
   },
   {
-    @log smoke=TC002: chr combining character. Failed (%q0).;
+    @log smoke=TC002: chr combining character. Failed (%q0).
   }
 -
 #
@@ -61,10 +61,10 @@
         BF15BE717AC1B080B4F1C456692825891FF5073D
       )=
   {
-    @log smoke=TC003: chr precomposed character. Succeeded.;
+    @log smoke=TC003: chr precomposed character. Succeeded.
   },
   {
-    @log smoke=TC003: chr precomposed character. Failed (%q0).;
+    @log smoke=TC003: chr precomposed character. Failed (%q0).
   }
 -
 #
@@ -79,10 +79,10 @@
         909DA794FC8C095573D0CB8FD9FFDBDFB99C3EF4
       )=
   {
-    @log smoke=TC004: chr error cases. Succeeded.;
+    @log smoke=TC004: chr error cases. Succeeded.
   },
   {
-    @log smoke=TC004: chr error cases. Failed (%q0).;
+    @log smoke=TC004: chr error cases. Failed (%q0).
   }
 -
 #
@@ -97,10 +97,10 @@
         F7FF9E8B7BB2E09B70935A5D785E0CC5D9D0ABF0
       )=
   {
-    @log smoke=TC005: chr multi-codepoint string. Succeeded.;
+    @log smoke=TC005: chr multi-codepoint string. Succeeded.
   },
   {
-    @log smoke=TC005: chr multi-codepoint string. Failed (%q0).;
+    @log smoke=TC005: chr multi-codepoint string. Failed (%q0).
   }
 -
 #
@@ -115,10 +115,10 @@
         52FDB9F68C503E11D168FE52035901864C0A4861
       )=
   {
-    @log smoke=TC006: chr/ord round-trip combining. Succeeded.;
+    @log smoke=TC006: chr/ord round-trip combining. Succeeded.
   },
   {
-    @log smoke=TC006: chr/ord round-trip combining. Failed (%q0).;
+    @log smoke=TC006: chr/ord round-trip combining. Failed (%q0).
   }
 -
 #
@@ -133,10 +133,10 @@
         F0D27E1C908E4B0BF0662FA76DAD22B96840F526
       )=
   {
-    @log smoke=TC007: chr fullwidth characters. Succeeded.;
+    @log smoke=TC007: chr fullwidth characters. Succeeded.
   },
   {
-    @log smoke=TC007: chr fullwidth characters. Failed (%q0).;
+    @log smoke=TC007: chr fullwidth characters. Failed (%q0).
   }
 -
 #

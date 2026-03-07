@@ -24,10 +24,10 @@
         D88F262663DF5362C32EA420B09EB4B0DF3D165D
       )=
   {
-    @log smoke=TC001: sort basic operations. Succeeded.;
+    @log smoke=TC001: sort basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: sort basic operations. Failed (%q0).;
+    @log smoke=TC001: sort basic operations. Failed (%q0).
   }
 -
 #
@@ -45,10 +45,10 @@
         B619597A2BA548F50575C8B19865961A1741D8E1
       )=
   {
-    @log smoke=TC002: sort accented variants. Succeeded.;
+    @log smoke=TC002: sort accented variants. Succeeded.
   },
   {
-    @log smoke=TC002: sort accented variants. Failed (%q0).;
+    @log smoke=TC002: sort accented variants. Failed (%q0).
   }
 -
 #
@@ -65,10 +65,10 @@
         9F207825A8D1AC79FE86F43772C4B70952CC53D0
       )=
   {
-    @log smoke=TC003: sort ASCII and accented mix. Succeeded.;
+    @log smoke=TC003: sort ASCII and accented mix. Succeeded.
   },
   {
-    @log smoke=TC003: sort ASCII and accented mix. Failed (%q0).;
+    @log smoke=TC003: sort ASCII and accented mix. Failed (%q0).
   }
 -
 #

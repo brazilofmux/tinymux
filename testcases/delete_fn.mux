@@ -26,10 +26,10 @@
         F9C18D40DC9E5C216EF39B23E6283B70D52DB7A6
       )=
   {
-    @log smoke=TC001: delete basic operations. Succeeded.;
+    @log smoke=TC001: delete basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: delete basic operations. Failed (%q0).;
+    @log smoke=TC001: delete basic operations. Failed (%q0).
   }
 -
 #

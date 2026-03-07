@@ -25,10 +25,10 @@
         E7E82E298B9C50EB2B368584370BE0FCFEA1CC03
       )=
   {
-    @log smoke=TC001: lcstr basic operations. Succeeded.;
+    @log smoke=TC001: lcstr basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: lcstr basic operations. Failed (%q0).;
+    @log smoke=TC001: lcstr basic operations. Failed (%q0).
   }
 -
 #

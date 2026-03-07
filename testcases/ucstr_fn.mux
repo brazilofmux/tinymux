@@ -24,10 +24,10 @@
         FF7AAB7D326C086155B2FC188713A5E1DAECF28C
       )=
   {
-    @log smoke=TC001: ucstr basic operations. Succeeded.;
+    @log smoke=TC001: ucstr basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: ucstr basic operations. Failed (%q0).;
+    @log smoke=TC001: ucstr basic operations. Failed (%q0).
   }
 -
 #

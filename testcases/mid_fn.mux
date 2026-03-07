@@ -27,10 +27,10 @@
         973A0ABA88E038ED295728D49D24759890274404
       )=
   {
-    @log smoke=TC001: mid examples. Succeeded.;
+    @log smoke=TC001: mid examples. Succeeded.
   },
   {
-    @log smoke=TC001: mid examples. Failed (%q0).;
+    @log smoke=TC001: mid examples. Failed (%q0).
   }
 -
 #
@@ -49,10 +49,10 @@
         2908CBCA501FE7FBEE76719E4BF7E52D26458E97
       )=
   {
-    @log smoke=TC002: mid Unicode graphemes. Succeeded.;
+    @log smoke=TC002: mid Unicode graphemes. Succeeded.
   },
   {
-    @log smoke=TC002: mid Unicode graphemes. Failed (%q0).;
+    @log smoke=TC002: mid Unicode graphemes. Failed (%q0).
   }
 -
 #

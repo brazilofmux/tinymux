@@ -24,10 +24,10 @@
         C24F6B8389BC8FB2D6943DED3EE5497E7AE09DD0
       )=
   {
-    @log smoke=TC001: pos basic operations. Succeeded.;
+    @log smoke=TC001: pos basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: pos basic operations. Failed (%q0).;
+    @log smoke=TC001: pos basic operations. Failed (%q0).
   }
 -
 #

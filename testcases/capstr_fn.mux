@@ -24,10 +24,10 @@
         DF3AF98FE50A1D6B1AE69F48B7B3C6FDAC2D2B28
       )=
   {
-    @log smoke=TC001: capstr basic operations. Succeeded.;
+    @log smoke=TC001: capstr basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: capstr basic operations. Failed (%q0).;
+    @log smoke=TC001: capstr basic operations. Failed (%q0).
   }
 -
 #

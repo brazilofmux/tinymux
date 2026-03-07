@@ -25,10 +25,10 @@
         C69C11D49DED684EF34A88AF439794CEDB5EA87C
       )=
   {
-    @log smoke=TC001: ord basic ASCII. Succeeded.;
+    @log smoke=TC001: ord basic ASCII. Succeeded.
   },
   {
-    @log smoke=TC001: ord basic ASCII. Failed (%q0).;
+    @log smoke=TC001: ord basic ASCII. Failed (%q0).
   }
 -
 #
@@ -43,10 +43,10 @@
         52FDB9F68C503E11D168FE52035901864C0A4861
       )=
   {
-    @log smoke=TC002: ord precomposed character. Succeeded.;
+    @log smoke=TC002: ord precomposed character. Succeeded.
   },
   {
-    @log smoke=TC002: ord precomposed character. Failed (%q0).;
+    @log smoke=TC002: ord precomposed character. Failed (%q0).
   }
 -
 #
@@ -62,10 +62,10 @@
         52FDB9F68C503E11D168FE52035901864C0A4861
       )=
   {
-    @log smoke=TC003: ord combining character cluster. Succeeded.;
+    @log smoke=TC003: ord combining character cluster. Succeeded.
   },
   {
-    @log smoke=TC003: ord combining character cluster. Failed (%q0).;
+    @log smoke=TC003: ord combining character cluster. Failed (%q0).
   }
 -
 #
@@ -80,10 +80,10 @@
         56EC694DF4FCFD4F734086B070ED290DBD5302D2
       )=
   {
-    @log smoke=TC004: ord error cases. Succeeded.;
+    @log smoke=TC004: ord error cases. Succeeded.
   },
   {
-    @log smoke=TC004: ord error cases. Failed (%q0).;
+    @log smoke=TC004: ord error cases. Failed (%q0).
   }
 -
 #
@@ -98,10 +98,10 @@
         BF15BE717AC1B080B4F1C456692825891FF5073D
       )=
   {
-    @log smoke=TC005: ord/chr round-trip precomposed. Succeeded.;
+    @log smoke=TC005: ord/chr round-trip precomposed. Succeeded.
   },
   {
-    @log smoke=TC005: ord/chr round-trip precomposed. Failed (%q0).;
+    @log smoke=TC005: ord/chr round-trip precomposed. Failed (%q0).
   }
 -
 #

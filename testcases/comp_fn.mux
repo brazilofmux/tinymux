@@ -25,10 +25,10 @@
         671CC6A3DFA9EB58EA4236AFC97998D9CDDD6C08
       )=
   {
-    @log smoke=TC001: comp basic operations. Succeeded.;
+    @log smoke=TC001: comp basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: comp basic operations. Failed (%q0).;
+    @log smoke=TC001: comp basic operations. Failed (%q0).
   }
 -
 #

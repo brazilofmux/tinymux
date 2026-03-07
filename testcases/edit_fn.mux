@@ -110,7 +110,7 @@
 &tr.tc005 test_edit_fn=
   @if strmatch(translate(edit(%xra,b,b),p),a)=
   {
-      @log smoke=TC005: Multiple Changes. edit() strips color. Okay.;
+      @log smoke=TC005: Multiple Changes. edit() strips color. Okay.
   },
   {
     @if strmatch(
@@ -124,10 +124,10 @@
           FE10E9EEDA8A5A742255BE48EC27E19E2881E007
         )=
     {
-      @log smoke=TC005: Multiple Changes. Succeeded.;
+      @log smoke=TC005: Multiple Changes. Succeeded.
     },
     {
-      @log smoke=TC005: Multiple Changes. Failed (%q0).;
+      @log smoke=TC005: Multiple Changes. Failed (%q0).
     }
   }
 -

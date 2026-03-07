@@ -25,10 +25,10 @@
         C98A908EA9E37A0CD40837648883D2E30FC963C0
       )=
   {
-    @log smoke=TC001: strtrunc basic operations. Succeeded.;
+    @log smoke=TC001: strtrunc basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: strtrunc basic operations. Failed (%q0).;
+    @log smoke=TC001: strtrunc basic operations. Failed (%q0).
   }
 -
 #
