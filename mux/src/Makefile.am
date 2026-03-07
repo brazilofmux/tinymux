@@ -7,7 +7,7 @@ AM_CPPFLAGS = -I$(srcdir)/ganl/include $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAV
     $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(OPENSSL_CFLAGS)
 
 # Base source files for building netmux
-NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
+NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp ast.cpp attrcache.cpp boolexp.cpp \
     bsd.cpp command.cpp comsys.cpp conf.cpp cque.cpp create.cpp db.cpp \
     db_rw.cpp eval.cpp file_c.cpp flags.cpp funceval.cpp funceval2.cpp \
     functions.cpp funmath.cpp game.cpp ganl_adapter.cpp help.cpp htab.cpp \

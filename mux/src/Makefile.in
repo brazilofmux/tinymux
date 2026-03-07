@@ -125,8 +125,8 @@ libmux_a_AR = $(AR) $(ARFLAGS)
 libmux_a_LIBADD =
 am_libmux_a_OBJECTS = libmux.$(OBJEXT)
 libmux_a_OBJECTS = $(am_libmux_a_OBJECTS)
-am__netmux_SOURCES_DIST = _build.cpp alarm.cpp alloc.cpp attrcache.cpp \
-	boolexp.cpp bsd.cpp command.cpp comsys.cpp conf.cpp cque.cpp \
+am__netmux_SOURCES_DIST = _build.cpp alarm.cpp alloc.cpp ast.cpp \
+	attrcache.cpp boolexp.cpp bsd.cpp command.cpp comsys.cpp conf.cpp cque.cpp \
 	create.cpp db.cpp db_rw.cpp eval.cpp file_c.cpp flags.cpp \
 	funceval.cpp funceval2.cpp functions.cpp funmath.cpp game.cpp \
 	ganl_adapter.cpp help.cpp htab.cpp local.cpp log.cpp look.cpp \
@@ -144,7 +144,7 @@ am__netmux_SOURCES_DIST = _build.cpp alarm.cpp alloc.cpp attrcache.cpp \
 @REALITY_ENABLED_TRUE@am__objects_1 = levels.$(OBJEXT)
 am__dirstamp = $(am__leading_dot)dirstamp
 am__objects_2 = _build.$(OBJEXT) alarm.$(OBJEXT) alloc.$(OBJEXT) \
-	attrcache.$(OBJEXT) boolexp.$(OBJEXT) bsd.$(OBJEXT) \
+	ast.$(OBJEXT) attrcache.$(OBJEXT) boolexp.$(OBJEXT) bsd.$(OBJEXT) \
 	command.$(OBJEXT) comsys.$(OBJEXT) conf.$(OBJEXT) \
 	cque.$(OBJEXT) create.$(OBJEXT) db.$(OBJEXT) db_rw.$(OBJEXT) \
 	eval.$(OBJEXT) file_c.$(OBJEXT) flags.$(OBJEXT) \
@@ -486,7 +486,7 @@ AM_CPPFLAGS = -I$(srcdir)/ganl/include $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAV
 # Base source files for building netmux
 
 # SQLite storage backend (always enabled)
-NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp attrcache.cpp boolexp.cpp \
+NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp ast.cpp attrcache.cpp boolexp.cpp \
 	bsd.cpp command.cpp comsys.cpp conf.cpp cque.cpp create.cpp \
 	db.cpp db_rw.cpp eval.cpp file_c.cpp flags.cpp funceval.cpp \
 	funceval2.cpp functions.cpp funmath.cpp game.cpp \
