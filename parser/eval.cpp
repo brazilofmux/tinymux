@@ -435,8 +435,16 @@ public:
 private:
     EvalContext &m_ctx;
 
+    // Two dispatch tables:
+    // - m_funcs: normal functions, receive pre-evaluated string args
+    // - m_noeval_funcs: FN_NOEVAL functions, receive unevaluated AST children
+    //   and call eval() selectively (deferred evaluation)
+    //
     using FuncHandler = std::function<std::string(const std::vector<std::string>&)>;
     std::map<std::string, FuncHandler> m_funcs;
+
+    using NoevalHandler = std::function<std::string(const std::vector<std::unique_ptr<ASTNode>>&)>;
+    std::map<std::string, NoevalHandler> m_noeval_funcs;
 
     // Helper: uppercase a string
     static std::string toUpper(const std::string &s) {
@@ -597,12 +605,21 @@ private:
     std::string evalFuncCall(const ASTNode *node) {
         std::string fname = toUpper(node->text);
 
+        // Check FN_NOEVAL functions first — they receive unevaluated
+        // AST children and call eval() selectively.
+        //
+        auto nit = m_noeval_funcs.find(fname);
+        if (nit != m_noeval_funcs.end()) {
+            return nit->second(node->children);
+        }
+
+        // Normal functions — evaluate all arguments first.
+        //
         auto it = m_funcs.find(fname);
         if (it == m_funcs.end()) {
             return "#-1 FUNCTION (" + fname + ") NOT FOUND";
         }
 
-        // Evaluate arguments
         std::vector<std::string> args;
         for (const auto &child : node->children) {
             args.push_back(eval(child.get()));
@@ -1027,44 +1044,143 @@ private:
             return "";
         };
 
-        // Control flow — these are FN_NOEVAL in real MUX, meaning their
-        // arguments are NOT pre-evaluated. Our AST evaluator pre-evaluates
-        // all arguments before calling the handler, so switch/if/iter
-        // can't do lazy evaluation from this simple dispatch table.
+        // ---------------------------------------------------------
+        // FN_NOEVAL functions: receive unevaluated AST children,
+        // call eval() selectively (deferred evaluation).
         //
-        // For a proper implementation, these would need special handling
-        // in evalFuncCall() to selectively evaluate arguments. For now,
-        // we implement the eager-evaluation versions which work for
-        // simple cases.
-        //
-        m_funcs["IF"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "";
-            if (toBool(args[0])) {
-                return args[1];
-            }
-            return args.size() > 2 ? args[2] : "";
-        };
-        m_funcs["IFELSE"] = m_funcs["IF"];
+        // This is the key architectural difference from the old
+        // evaluator. These handlers get the AST subtrees and
+        // choose which ones to evaluate and when.
+        // ---------------------------------------------------------
 
-        m_funcs["SWITCH"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "";
-            const std::string &val = args[0];
-            for (size_t i = 1; i + 1 < args.size(); i += 2) {
-                if (args[i] == val || args[i] == "*") {
-                    return args[i + 1];
+        // if(condition, true_branch [, false_branch])
+        //
+        m_noeval_funcs["IF"] = [this](const std::vector<std::unique_ptr<ASTNode>> &children) -> std::string {
+            if (children.size() < 2) return "";
+            std::string cond = eval(children[0].get());
+            if (toBool(cond)) {
+                return eval(children[1].get());
+            }
+            return children.size() > 2 ? eval(children[2].get()) : "";
+        };
+        m_noeval_funcs["IFELSE"] = [this](const std::vector<std::unique_ptr<ASTNode>> &children) -> std::string {
+            if (children.size() < 3) return "";
+            std::string cond = eval(children[0].get());
+            if (toBool(cond)) {
+                return eval(children[1].get());
+            }
+            return eval(children[2].get());
+        };
+
+        // switch(val, pat1, result1, pat2, result2, ..., default)
+        // Evaluates val and each pattern; only evaluates the matching result.
+        //
+        m_noeval_funcs["SWITCH"] = [this](const std::vector<std::unique_ptr<ASTNode>> &children) -> std::string {
+            if (children.size() < 2) return "";
+            std::string val = eval(children[0].get());
+            for (size_t i = 1; i + 1 < children.size(); i += 2) {
+                std::string pat = eval(children[i].get());
+                if (pat == val || pat == "*") {
+                    return eval(children[i + 1].get());
                 }
             }
-            // Default (odd number of remaining args)
-            if (args.size() % 2 == 0) {
-                return args.back();
+            // Default: odd remaining arg
+            if (children.size() % 2 == 0) {
+                return eval(children.back().get());
             }
             return "";
         };
 
-        // Null/comment
-        m_funcs["@@"] = [](const std::vector<std::string> &) -> std::string {
+        // case(val, pat1, result1, ..., default)
+        // Like switch but exact match (no wildcard).
+        //
+        m_noeval_funcs["CASE"] = [this](const std::vector<std::unique_ptr<ASTNode>> &children) -> std::string {
+            if (children.size() < 2) return "";
+            std::string val = eval(children[0].get());
+            for (size_t i = 1; i + 1 < children.size(); i += 2) {
+                std::string pat = eval(children[i].get());
+                if (pat == val) {
+                    return eval(children[i + 1].get());
+                }
+            }
+            if (children.size() % 2 == 0) {
+                return eval(children.back().get());
+            }
             return "";
         };
+
+        // cand(expr1, expr2, ...) — short-circuit AND
+        //
+        m_noeval_funcs["CAND"] = [this](const std::vector<std::unique_ptr<ASTNode>> &children) -> std::string {
+            for (const auto &child : children) {
+                if (!toBool(eval(child.get()))) return "0";
+            }
+            return "1";
+        };
+
+        // cor(expr1, expr2, ...) — short-circuit OR
+        //
+        m_noeval_funcs["COR"] = [this](const std::vector<std::unique_ptr<ASTNode>> &children) -> std::string {
+            for (const auto &child : children) {
+                if (toBool(eval(child.get()))) return "1";
+            }
+            return "0";
+        };
+
+        // @@(comment) — discard without evaluating
+        //
+        m_noeval_funcs["@@"] = [](const std::vector<std::unique_ptr<ASTNode>> &) -> std::string {
+            return "";
+        };
+
+        // lit(text) — return unevaluated text
+        //
+        m_noeval_funcs["LIT"] = [](const std::vector<std::unique_ptr<ASTNode>> &children) -> std::string {
+            // Reconstruct the raw source text without evaluating.
+            if (children.empty()) return "";
+            std::function<std::string(const ASTNode*)> rawText =
+                [&rawText](const ASTNode *n) -> std::string {
+                if (!n) return "";
+                switch (n->type) {
+                case NODE_LITERAL:
+                case NODE_SPACE:
+                case NODE_SUBST:
+                case NODE_ESCAPE:
+                    return n->text;
+                case NODE_SEMICOLON:
+                    return ";";
+                case NODE_FUNCCALL: {
+                    std::string r = n->text + "(";
+                    for (size_t i = 0; i < n->children.size(); i++) {
+                        if (i > 0) r += ",";
+                        r += rawText(n->children[i].get());
+                    }
+                    return r + ")";
+                }
+                case NODE_EVALBRACKET: {
+                    std::string r = "[";
+                    for (const auto &c : n->children) r += rawText(c.get());
+                    return r + "]";
+                }
+                case NODE_BRACEGROUP: {
+                    std::string r = "{";
+                    for (const auto &c : n->children) r += rawText(c.get());
+                    return r + "}";
+                }
+                case NODE_SEQUENCE: {
+                    std::string r;
+                    for (const auto &c : n->children) r += rawText(c.get());
+                    return r;
+                }
+                case NODE_DYNCALL:
+                    return "#-1 DYNAMIC";
+                }
+                return "";
+            };
+            return rawText(children[0].get());
+        };
+
+        // Null (not FN_NOEVAL — args are already evaluated, just discard)
         m_funcs["NULL"] = [](const std::vector<std::string> &) -> std::string {
             return "";
         };
@@ -1103,35 +1219,35 @@ private:
             return "";
         };
 
-        // ITER - simplified eager version (real MUX is FN_NOEVAL)
-        // iter(list, pattern, osep, isep)
-        // In pattern, ## is replaced with current item, #@ with index
-        m_funcs["ITER"] = [this](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "";
-            std::string sep = args.size() > 3 ? args[3] : " ";
-            std::string osep = args.size() > 2 ? args[2] : " ";
-            auto items = splitList(args[0], sep);
+        // iter(list, body, osep, isep) — FN_NOEVAL
+        // Evaluate list, then for each item, push iterator state
+        // and evaluate body. Body uses %i0 for current item.
+        //
+        m_noeval_funcs["ITER"] = [this](const std::vector<std::unique_ptr<ASTNode>> &children) -> std::string {
+            if (children.size() < 2) return "";
+
+            // Evaluate the list argument
+            std::string listVal = eval(children[0].get());
+
+            // Evaluate separator arguments if present
+            std::string sep = " ";
+            std::string osep = " ";
+            if (children.size() > 3) sep = eval(children[3].get());
+            if (children.size() > 2) osep = eval(children[2].get());
+
+            auto items = splitList(listVal, sep);
             std::string result;
+
             for (size_t i = 0; i < items.size(); i++) {
                 if (i > 0) result += osep;
-                // In real MUX, ## and #@ are handled by re-evaluating
-                // the pattern with itext/inum set. Since we pre-evaluate,
-                // we do simple string replacement.
-                std::string pat = args[1];
-                // Replace ## with item and #@ with index
-                std::string expanded;
-                for (size_t j = 0; j < pat.size(); j++) {
-                    if (j + 1 < pat.size() && pat[j] == '#' && pat[j+1] == '#') {
-                        expanded += items[i];
-                        j++;
-                    } else if (j + 1 < pat.size() && pat[j] == '#' && pat[j+1] == '@') {
-                        expanded += std::to_string(i);
-                        j++;
-                    } else {
-                        expanded += pat[j];
-                    }
-                }
-                result += expanded;
+
+                // Push iterator frame — body can read via %i0 or itext(0)
+                m_ctx.iterStack.push_back({items[i], static_cast<int>(i + 1)});
+
+                // Evaluate the body subtree with iterator state active
+                result += eval(children[1].get());
+
+                m_ctx.iterStack.pop_back();
             }
             return result;
         };

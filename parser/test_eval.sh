@@ -104,9 +104,35 @@ check '\[not a bracket\]' '[not a bracket]'
 check '[add(1,add(2,add(3,4)))]' '10'
 check '[if(eq(add(1,2),3),match,no match)]' 'match'
 
-# Iter (simple cases)
-check '[iter(a b c,##)]' 'a b c'
-check '[iter(a b c,##-#@)]' 'a-0 b-1 c-2'
+# Iter with %i0 (proper FN_NOEVAL — body is evaluated per item)
+check '[iter(a b c,%i0)]' 'a b c'
+check '[iter(a b c,[strcat(%i0,-,[itext(0)])])]' 'a-a b-b c-c'
+
+# Iter with nested function calls in body (the FN_NOEVAL proof)
+check '[iter(10 20 30,[add(%i0,1)])]' '11 21 31'
+check '[iter(hello world,[strlen(%i0)])]' '5 5'
+check '[iter(3 1 4,[mul(%i0,2)])]' '6 2 8'
+
+# Nested iter
+check '[iter(a b,[iter(1 2,[strcat(%i1,%i0)])])]' 'a1 a2 b1 b2'
+
+# Short-circuit boolean (FN_NOEVAL)
+check '[cand(1,1,1)]' '1'
+check '[cand(1,0,1)]' '0'
+check '[cor(0,0,1)]' '1'
+check '[cor(0,0,0)]' '0'
+
+# if/switch with deferred evaluation (only evaluates chosen branch)
+check '[if(1,[add(1,2)],[add(3,4)])]' '3'
+check '[if(0,[add(1,2)],[add(3,4)])]' '7'
+check '[switch(b,a,[add(1,1)],b,[add(2,2)],*,[add(3,3)])]' '4'
+check '[case(hello,world,no,hello,yes)]' 'yes'
+
+# lit() — returns unevaluated text
+check '[lit([add(1,2)])]' '[add(1,2)]'
+
+# @@() — discards without evaluating
+check '[@@(this is a comment)]' ''
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
