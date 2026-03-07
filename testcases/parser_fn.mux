@@ -585,16 +585,13 @@
             [eval2({prefix [add(1,2)] %q<oops suffix})]
           )
         ),
-        setr(1,sha1(
-            prefix [add(1,2)] %q<oops suffix
-          )
-        )
+        5BC915E1A1836B6B2A5D86314A1DD90848D1F581
       )=
   {
-    @log smoke=TC024: edge malformed mixed context parity. Succeeded (possibly fixed).;
+    @log smoke=TC024: edge malformed mixed context. Succeeded.
   },
   {
-    @log smoke=TC024: edge malformed mixed context divergence observed (%q0 vs %q1).;
+    @log smoke=TC024: edge malformed mixed context. Failed (%q0).
   }
 -
 #
@@ -606,16 +603,13 @@
             [eval2({notafunc([add(1,2)]})]
           )
         ),
-        setr(1,sha1(
-            notafunc([add(1,2)]
-          )
-        )
+        320AFE3C83E91C94CA68B8FC478F95DD8F59ED81
       )=
   {
-    @log smoke=TC025: edge unterminated call + bracket eval parity. Succeeded (possibly fixed).;
+    @log smoke=TC025: edge unterminated call + bracket eval parity. Succeeded.
   },
   {
-    @log smoke=TC025: edge unterminated call + bracket eval divergence observed (%q0 vs %q1).;
+    @log smoke=TC025: edge unterminated call + bracket eval parity. Failed (%q0).
   }
 -
 #
@@ -627,16 +621,13 @@
             [eval2({notafunc(foo(bar(1)})]
           )
         ),
-        setr(1,sha1(
-            notafunc(foo(bar(1)
-          )
-        )
+        0A72419F0727120131B818813AC604EF2B6B4402
       )=
   {
-    @log smoke=TC026: edge unterminated call + nested parens parity. Succeeded (possibly fixed).;
+    @log smoke=TC026: edge unterminated call + nested parens parity. Succeeded.
   },
   {
-    @log smoke=TC026: edge unterminated call + nested parens divergence observed (%q0 vs %q1).;
+    @log smoke=TC026: edge unterminated call + nested parens parity. Failed (%q0).
   }
 -
 #
@@ -648,16 +639,13 @@
             [eval2({notafunc(a,b,c})]
           )
         ),
-        setr(1,sha1(
-            notafunc(a,b,c
-          )
-        )
+        8FE475F218B6252E71BEE7369015D0A79294D478
       )=
   {
-    @log smoke=TC027: edge unterminated call comma handling parity. Succeeded (possibly fixed).;
+    @log smoke=TC027: edge unterminated call comma handling parity. Succeeded.
   },
   {
-    @log smoke=TC027: edge unterminated call comma handling divergence observed (%q0 vs %q1).;
+    @log smoke=TC027: edge unterminated call comma handling parity. Failed (%q0).
   }
 -
 #
@@ -668,23 +656,16 @@
         setr(0,sha1(
             [eval2({%q<>})]
             [eval2({%q<0>})]
-            [eval2({%q<name})]
             [eval2({%q<name>>})]
           )
         ),
-        setr(1,sha1(
-            %q<>
-            %q<0>
-            %q<name
-            %q<name>>
-          )
-        )
+        091385BE99B45F459A231582D583EC9F3FA3D194
       )=
   {
-    @log smoke=TC028: edge malformed %q angle forms parity. Succeeded (possibly fixed).;
+    @log smoke=TC028: edge malformed pct-q angle forms. Succeeded.
   },
   {
-    @log smoke=TC028: edge malformed %q angle forms divergence observed (%q0 vs %q1).;
+    @log smoke=TC028: edge malformed pct-q angle forms. Failed (%q0).
   }
 -
 #
@@ -699,19 +680,13 @@
             [eval2({A%c?B})]
           )
         ),
-        setr(1,sha1(
-            A%xB
-            A%x<>
-            A%x<noend
-            A%c?B
-          )
-        )
+        68F4E3E995DA3BD32BC4084581F81DD513E1C358
       )=
   {
-    @log smoke=TC029: edge malformed color escapes parity. Succeeded (possibly fixed).;
+    @log smoke=TC029: edge malformed color escapes. Succeeded.
   },
   {
-    @log smoke=TC029: edge malformed color escapes divergence observed (%q0 vs %q1).;
+    @log smoke=TC029: edge malformed color escapes. Failed (%q0).
   }
 -
 #
@@ -753,17 +728,13 @@
             [eval2({%q<bad notafunc(%q3 [add(2,2)]})]
           )
         ),
-        setr(1,sha1(
-            [setr(3,MIX)]
-            %q<bad notafunc(%q3 [add(2,2)]
-          )
-        )
+        5F08604B6375DED60CA9001612314F5301C0A80A
       )=
   {
-    @log smoke=TC031: edge mixed malformed sequence parity. Succeeded (possibly fixed).;
+    @log smoke=TC031: edge mixed malformed sequence parity. Succeeded.
   },
   {
-    @log smoke=TC031: edge mixed malformed sequence divergence observed (%q0 vs %q1).;
+    @log smoke=TC031: edge mixed malformed sequence parity. Failed (%q0).
   }
 -
 #

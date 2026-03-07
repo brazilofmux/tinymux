@@ -47,7 +47,14 @@ static std::string gather_pct(const UTF8 *&p, const UTF8 *pEnd)
         if (p < pEnd && *p == '<')
         {
             sub += static_cast<char>(*p++);
-            while (p < pEnd && *p != '>')
+            while (  p < pEnd
+                  && *p != '>'
+                  && *p != '}'
+                  && *p != ')'
+                  && *p != ']'
+                  && *p != '['
+                  && *p != '{'
+                  && *p != ',')
             {
                 sub += static_cast<char>(*p++);
             }
@@ -75,7 +82,14 @@ static std::string gather_pct(const UTF8 *&p, const UTF8 *pEnd)
         if (p < pEnd && *p == '<')
         {
             sub += static_cast<char>(*p++);
-            while (p < pEnd && *p != '>')
+            while (  p < pEnd
+                  && *p != '>'
+                  && *p != '}'
+                  && *p != ')'
+                  && *p != ']'
+                  && *p != '['
+                  && *p != '{'
+                  && *p != ',')
             {
                 sub += static_cast<char>(*p++);
             }
@@ -95,7 +109,14 @@ static std::string gather_pct(const UTF8 *&p, const UTF8 *pEnd)
         if (p < pEnd && *p == '<')
         {
             sub += static_cast<char>(*p++);
-            while (p < pEnd && *p != '>')
+            while (  p < pEnd
+                  && *p != '>'
+                  && *p != '}'
+                  && *p != ')'
+                  && *p != ']'
+                  && *p != '['
+                  && *p != '{'
+                  && *p != ',')
             {
                 sub += static_cast<char>(*p++);
             }
