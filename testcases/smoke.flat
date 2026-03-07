@@ -1,6 +1,6 @@
 +X996100
 +S183
-+N304
++N314
 -R1
 +A256
 "1:TR.TC000"
@@ -93,10 +93,30 @@
 +A300
 "1:TR.TC042"
 +A301
-"1:SUITE.LIST.1"
+"1:TR.TC043"
 +A302
-"1:SUITE.LIST.2"
+"1:TR.TC044"
 +A303
+"1:TR.TC045"
++A304
+"1:TR.TC046"
++A305
+"1:TR.TC047"
++A306
+"1:TR.TC048"
++A307
+"1:TR.TC049"
++A308
+"1:TR.TC050"
++A309
+"1:TR.TC051"
++A310
+"1:TR.TC052"
++A311
+"1:SUITE.LIST.1"
++A312
+"1:SUITE.LIST.2"
++A313
 "1:SUITE.TR"
 !0
 "Limbo"
@@ -3663,7 +3683,27 @@
 >299
 "@if strmatch(setr(0,sha1([eval2({A%=<bad;name>})][eval2({A%=<bad(name>})])),setr(1,sha1([eval({A%=<bad;name>})][eval({A%=<bad(name>})])))={@log smoke=TC041: edge malformed pct-equals semicolon/paren parity. Succeeded.},{@log smoke=TC041: edge malformed pct-equals semicolon/paren parity. Failed (%q0 vs %q1).}"
 >300
-"@if strmatch(setr(0,sha1([eval2({%q<bad;[add(1,2)]})][eval2({%x<bad;[mul(2,3)]})])),setr(1,sha1([eval({%q<bad;[add(1,2)]})][eval({%x<bad;[mul(2,3)]})])))={@log smoke=TC042: edge malformed angle + valid function tail parity. Succeeded.;@trig me/tr.done},{@log smoke=TC042: edge malformed angle + valid function tail parity. Failed (%q0 vs %q1).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([eval2({%q<bad;[add(1,2)]})][eval2({%x<bad;[mul(2,3)]})])),setr(1,sha1([eval({%q<bad;[add(1,2)]})][eval({%x<bad;[mul(2,3)]})])))={@log smoke=TC042: edge malformed angle + valid function tail parity. Succeeded.;},{@log smoke=TC042: edge malformed angle + valid function tail parity. Failed (%q0 vs %q1).;}"
+>301
+"@if strmatch(setr(0,sha1([eval2({A%q<bad;[add(1,2)]})])),setr(1,sha1([eval({A%q<bad;[add(1,2)]})])))={@log smoke=TC043: edge pct-q semicolon + bracket tail parity. Succeeded.},{@log smoke=TC043: edge pct-q semicolon + bracket tail parity. Failed (%q0 vs %q1).}"
+>302
+"@if strmatch(setr(0,sha1([eval2({A%q<bad(foo[add(1,2)]})])),setr(1,sha1([eval({A%q<bad(foo[add(1,2)]})])))={@log smoke=TC044: edge pct-q open paren + function tail parity. Succeeded.},{@log smoke=TC044: edge pct-q open paren + function tail parity. Failed (%q0 vs %q1).}"
+>303
+"@if strmatch(setr(0,sha1([eval2({A%x<bad;[mul(2,3)]})])),setr(1,sha1([eval({A%x<bad;[mul(2,3)]})])))={@log smoke=TC045: edge pct-x semicolon + function tail parity. Succeeded.},{@log smoke=TC045: edge pct-x semicolon + function tail parity. Failed (%q0 vs %q1).}"
+>304
+"@if strmatch(setr(0,sha1([eval2({A%=<bad;[strcat(x,y)]})])),setr(1,sha1([eval({A%=<bad;[strcat(x,y)]})])))={@log smoke=TC046: edge pct-equals semicolon + function tail parity. Succeeded.},{@log smoke=TC046: edge pct-equals semicolon + function tail parity. Failed (%q0 vs %q1).}"
+>305
+"@if strmatch(setr(0,sha1([setr(0,QQ)][eval2({A%q<bad(%q0)tail})])),setr(1,sha1([setr(0,QQ)][eval({A%q<bad(%q0)tail})])))={@log smoke=TC047: edge pct-q nested percent + parens parity. Succeeded.},{@log smoke=TC047: edge pct-q nested percent + parens parity. Failed (%q0 vs %q1).}"
+>306
+"@if strmatch(setr(0,sha1([eval2({A%q<bad;next;more})])),setr(1,sha1([eval({A%q<bad;next;more})])))={@log smoke=TC048: edge pct-q multiple semicolons parity. Succeeded.},{@log smoke=TC048: edge pct-q multiple semicolons parity. Failed (%q0 vs %q1).}"
+>307
+"@if strmatch(setr(0,sha1([eval2({A%x<bad(]tail})])),setr(1,sha1([eval({A%x<bad(]tail})])))={@log smoke=TC049: edge pct-x mixed closer tail parity. Succeeded.},{@log smoke=TC049: edge pct-x mixed closer tail parity. Failed (%q0 vs %q1).}"
+>308
+"@if strmatch(setr(0,sha1([eval2({A%=<bad(name>;tail})])),setr(1,sha1([eval({A%=<bad(name>;tail})])))={@log smoke=TC050: edge pct-equals malformed name + semicolon parity. Succeeded.},{@log smoke=TC050: edge pct-equals malformed name + semicolon parity. Failed (%q0 vs %q1).}"
+>309
+"@if strmatch(setr(0,sha1([setr(1,TAIL)][eval2({%q<bad;[add(1,2)]%q1})])),setr(1,sha1([setr(1,TAIL)][eval({%q<bad;[add(1,2)]%q1})])))={@log smoke=TC051: edge malformed pct-q then valid tail parity. Succeeded.},{@log smoke=TC051: edge malformed pct-q then valid tail parity. Failed (%q0 vs %q1).}"
+>310
+"@if strmatch(setr(0,sha1([setr(2,POST)][eval2({pre%q<bad;mid%q2post})])),setr(1,sha1([setr(2,POST)][eval({pre%q<bad;mid%q2post})])))={@log smoke=TC052: edge malformed pct-q then later substitution parity. Succeeded.;@trig me/tr.done},{@log smoke=TC052: edge malformed pct-q then later substitution parity. Failed (%q0 vs %q1).;@trig me/tr.done}"
 <
 !119
 "test_pi_fn"
@@ -4525,11 +4565,11 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->301
+>311
 "abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn and_fn andbool_fn asin_fn atan_fn atan2_fn attrib_set_fn band_fn baseconv_fn before_fn bnand_fn bor_fn bxor_fn cand_fn candbool_fn capstr_fn case_fn cat_fn ceil_fn center_fn choose_fn chr_fn citer_fn clone_fn cmd_say columns_fn comp_fn convtime_fn cor_fn corbool_fn cos_fn cpad_fn crc32_fn ctu_fn dec_fn delete_fn digest_fn digittime_fn dist2d_fn dist3d_fn e_fn edit_fn elements_fn eq_fn eval2_fn escape_fn exp_fn exptime_fn extract_fn fdiv_fn first_fn floor_fn floordiv_fn fmod_fn grab_fn graball_fn gt_fn gte_fn iadd_fn iabs_fn idiv_fn imul_fn inc_fn index_fn insert_fn isdbref_fn isign_fn isint_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn"
->302
+>312
 "ladd_fn land_fn last_fn lcstr_fn ldelete_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn match_fn matchall_fn max_fn member_fn merge_fn mid_fn min_fn mod_fn mul_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn rpad_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn sign_fn sin_fn singletime_fn sort_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn strcat_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strtrunc_fn sub_fn switch_fn t_fn table_fn tan_fn tr_fn translate_fn trim_fn trunc_fn ucstr_fn vadd_fn vcross_fn vdot_fn vmag_fn vmul_fn vsub_fn vunit_fn visual_width_fn wordpos_fn words_fn wrap_fn xor_fn shutdown"
->303
+>313
 "@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
 <
 !148
