@@ -1,6 +1,6 @@
 +X996100
 +S183
-+N294
++N304
 -R1
 +A256
 "1:TR.TC000"
@@ -73,10 +73,30 @@
 +A290
 "1:TR.TC032"
 +A291
-"1:SUITE.LIST.1"
+"1:TR.TC033"
 +A292
-"1:SUITE.LIST.2"
+"1:TR.TC034"
 +A293
+"1:TR.TC035"
++A294
+"1:TR.TC036"
++A295
+"1:TR.TC037"
++A296
+"1:TR.TC038"
++A297
+"1:TR.TC039"
++A298
+"1:TR.TC040"
++A299
+"1:TR.TC041"
++A300
+"1:TR.TC042"
++A301
+"1:SUITE.LIST.1"
++A302
+"1:SUITE.LIST.2"
++A303
 "1:SUITE.TR"
 !0
 "Limbo"
@@ -3534,7 +3554,7 @@
 >260
 "@if strmatch(setr(0,sha1([parenmatch([get(obj/attr)])])),11EC92F3724ADE71BC32634C1271CC961FA9EE69)={@log smoke=TC003: parenmatch mixed brackets. Succeeded.},{@log smoke=TC003: parenmatch mixed brackets. Failed (%q0).}"
 >261
-"@if strmatch(setr(0,sha1([parenmatch(add(1,2)])),28A36855A4DC1EAE2C937D1572A6074E8A5586ED)={@log smoke=TC004: parenmatch mismatched. Succeeded.;@trig me/tr.done},{@log smoke=TC004: parenmatch mismatched. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([parenmatch(add(1,2)])),C795267148531335AB79BC62A7B57D2369A4A385)={@log smoke=TC004: parenmatch mismatched. Succeeded.;@trig me/tr.done},{@log smoke=TC004: parenmatch mismatched. Failed (%q0).;@trig me/tr.done}"
 <
 !118
 "test_parser_fn"
@@ -3623,7 +3643,27 @@
 >289
 "@if strmatch(setr(0,sha1([setr(3,MIX)][eval2({%q<bad notafunc(%q3 [add(2,2)]})])),5F08604B6375DED60CA9001612314F5301C0A80A)={@log smoke=TC031: edge mixed malformed sequence parity. Succeeded.},{@log smoke=TC031: edge mixed malformed sequence parity. Failed (%q0).}"
 >290
-"@if strmatch(setr(0,sha1([eval2({{foo(bar},baz)})])),setr(1,sha1({foo(bar},baz))))={@log smoke=TC032: edge deep brace/paren mismatch parity. Succeeded (possibly fixed).;@trig me/tr.done},{@log smoke=TC032: edge deep brace/paren mismatch divergence observed (%q0 vs %q1).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([eval2({{foo(bar},baz)})])),setr(1,sha1({foo(bar},baz))))={@log smoke=TC032: edge deep brace/paren mismatch parity. Succeeded (possibly fixed).;},{@log smoke=TC032: edge deep brace/paren mismatch divergence observed (%q0 vs %q1).;}"
+>291
+"@if strmatch(setr(0,sha1([eval2({A%q<bad;next})])),setr(1,sha1([eval({A%q<bad;next})])))={@log smoke=TC033: edge malformed pct-q + semicolon parity. Succeeded.},{@log smoke=TC033: edge malformed pct-q + semicolon parity. Failed (%q0 vs %q1).}"
+>292
+"@if strmatch(setr(0,sha1([eval2({A%x<bad;next})])),setr(1,sha1([eval({A%x<bad;next})])))={@log smoke=TC034: edge malformed pct-x + semicolon parity. Succeeded.},{@log smoke=TC034: edge malformed pct-x + semicolon parity. Failed (%q0 vs %q1).}"
+>293
+"@if strmatch(setr(0,sha1([eval2({A%=<bad;next})])),setr(1,sha1([eval({A%=<bad;next})])))={@log smoke=TC035: edge malformed pct-equals + semicolon parity. Succeeded.},{@log smoke=TC035: edge malformed pct-equals + semicolon parity. Failed (%q0 vs %q1).}"
+>294
+"@if strmatch(setr(0,sha1([eval2({A%q<bad(foo})])),setr(1,sha1([eval({A%q<bad(foo})])))={@log smoke=TC036: edge malformed pct-q + open paren parity. Succeeded.},{@log smoke=TC036: edge malformed pct-q + open paren parity. Failed (%q0 vs %q1).}"
+>295
+"@if strmatch(setr(0,sha1([eval2({A%q<bad\\escape})])),setr(1,sha1([eval({A%q<bad\\escape})])))={@log smoke=TC037: edge malformed pct-q + backslash parity. Succeeded.},{@log smoke=TC037: edge malformed pct-q + backslash parity. Failed (%q0 vs %q1).}"
+>296
+"@if strmatch(setr(0,sha1([setr(4,NEST)][eval2({A%q<bad%q4})])),setr(1,sha1([setr(4,NEST)][eval({A%q<bad%q4})])))={@log smoke=TC038: edge malformed pct-q + nested percent parity. Succeeded.},{@log smoke=TC038: edge malformed pct-q + nested percent parity. Failed (%q0 vs %q1).}"
+>297
+"@if strmatch(setr(0,sha1([eval2({A%q<bad]tail})][eval2({A%q<bad}tail})])),setr(1,sha1([eval({A%q<bad]tail})][eval({A%q<bad}tail})])))={@log smoke=TC039: edge malformed pct-q + close delimiters parity. Succeeded.},{@log smoke=TC039: edge malformed pct-q + close delimiters parity. Failed (%q0 vs %q1).}"
+>298
+"@if strmatch(setr(0,sha1([eval2({A%q<bad;B[add(1,2)]C})])),setr(1,sha1([eval({A%q<bad;B[add(1,2)]C})])))={@log smoke=TC040: edge malformed angle + bracket expression parity. Succeeded.},{@log smoke=TC040: edge malformed angle + bracket expression parity. Failed (%q0 vs %q1).}"
+>299
+"@if strmatch(setr(0,sha1([eval2({A%=<bad;name>})][eval2({A%=<bad(name>})])),setr(1,sha1([eval({A%=<bad;name>})][eval({A%=<bad(name>})])))={@log smoke=TC041: edge malformed pct-equals semicolon/paren parity. Succeeded.},{@log smoke=TC041: edge malformed pct-equals semicolon/paren parity. Failed (%q0 vs %q1).}"
+>300
+"@if strmatch(setr(0,sha1([eval2({%q<bad;[add(1,2)]})][eval2({%x<bad;[mul(2,3)]})])),setr(1,sha1([eval({%q<bad;[add(1,2)]})][eval({%x<bad;[mul(2,3)]})])))={@log smoke=TC042: edge malformed angle + valid function tail parity. Succeeded.;@trig me/tr.done},{@log smoke=TC042: edge malformed angle + valid function tail parity. Failed (%q0 vs %q1).;@trig me/tr.done}"
 <
 !119
 "test_pi_fn"
@@ -4485,11 +4525,11 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->291
+>301
 "abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn and_fn andbool_fn asin_fn atan_fn atan2_fn attrib_set_fn band_fn baseconv_fn before_fn bnand_fn bor_fn bxor_fn cand_fn candbool_fn capstr_fn case_fn cat_fn ceil_fn center_fn choose_fn chr_fn citer_fn clone_fn cmd_say columns_fn comp_fn convtime_fn cor_fn corbool_fn cos_fn cpad_fn crc32_fn ctu_fn dec_fn delete_fn digest_fn digittime_fn dist2d_fn dist3d_fn e_fn edit_fn elements_fn eq_fn eval2_fn escape_fn exp_fn exptime_fn extract_fn fdiv_fn first_fn floor_fn floordiv_fn fmod_fn grab_fn graball_fn gt_fn gte_fn iadd_fn iabs_fn idiv_fn imul_fn inc_fn index_fn insert_fn isdbref_fn isign_fn isint_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn"
->292
+>302
 "ladd_fn land_fn last_fn lcstr_fn ldelete_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn match_fn matchall_fn max_fn member_fn merge_fn mid_fn min_fn mod_fn mul_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn rpad_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn sign_fn sin_fn singletime_fn sort_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn strcat_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strtrunc_fn sub_fn switch_fn t_fn table_fn tan_fn tr_fn translate_fn trim_fn trunc_fn ucstr_fn vadd_fn vcross_fn vdot_fn vmag_fn vmul_fn vsub_fn vunit_fn visual_width_fn wordpos_fn words_fn wrap_fn xor_fn shutdown"
->293
+>303
 "@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
 <
 !148

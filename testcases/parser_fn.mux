@@ -970,11 +970,11 @@
         )
       )=
   {
-    @log smoke=TC042: edge malformed angle + valid function tail parity. Succeeded.
+    @log smoke=TC042: edge malformed angle + valid function tail parity. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC042: edge malformed angle + valid function tail parity. Failed (%q0 vs %q1).
+    @log smoke=TC042: edge malformed angle + valid function tail parity. Failed (%q0 vs %q1).;
     @trig me/tr.done
   }
 -
