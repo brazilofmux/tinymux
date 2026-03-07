@@ -245,7 +245,12 @@ std::vector<ASTToken> ast_tokenize(const UTF8 *input, size_t nLen)
                   && *p != ';'
                   && *p != '%'
                   && *p != '\\'
-                  && *p != ' ')
+                  && *p != ' '
+                  && !(  *p == '#'
+                      && p + 1 < pEnd
+                      && (  p[1] == '#'
+                         || p[1] == '@'
+                         || p[1] == '$')))
             {
                 lit += static_cast<char>(*p++);
             }

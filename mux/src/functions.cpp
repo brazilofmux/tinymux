@@ -6742,13 +6742,8 @@ static FUNCTION(fun_iter)
             mudstate.itext[mudstate.in_loop-1] = objstring;
             mudstate.inum[mudstate.in_loop-1]  = number;
         }
-        UTF8 *buff2 = replace_tokens(fargs[1],
-            mudconf.safer_iter ? nullptr : objstring,
-            mudconf.safer_iter ? nullptr : mux_ltoa_t(number),
-            nullptr);
-        mux_exec2(buff2, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+        mux_exec2(fargs[1], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
-        free_lbuf(buff2);
     }
     mudstate.in_loop--;
     if (bLoopInBounds)
@@ -6840,13 +6835,8 @@ static FUNCTION(fun_citer)
             mudstate.inum[mudstate.in_loop-1]  = number;
         }
 
-        UTF8 *buff2 = replace_tokens(fargs[1],
-            mudconf.safer_iter ? nullptr : chbuf,
-            mudconf.safer_iter ? nullptr : mux_ltoa_t(number),
-            nullptr);
-        mux_exec2(buff2, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+        mux_exec2(fargs[1], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
-        free_lbuf(buff2);
         cp = pNext;
     }
 
@@ -6954,15 +6944,10 @@ static FUNCTION(fun_list)
             mudstate.itext[mudstate.in_loop-1] = objstring;
             mudstate.inum[mudstate.in_loop-1]  = number;
         }
-        UTF8 *buff2 = replace_tokens(fargs[1],
-            mudconf.safer_iter ? nullptr : objstring,
-            mudconf.safer_iter ? nullptr : mux_ltoa_t(number),
-            nullptr);
         dp = result = alloc_lbuf("fun_list.2");
-        mux_exec2(buff2, LBUF_SIZE-1, result, &dp, executor, caller, enactor,
+        mux_exec2(fargs[1], LBUF_SIZE-1, result, &dp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *dp = '\0';
-        free_lbuf(buff2);
         notify(enactor, result);
         free_lbuf(result);
     }
@@ -7852,11 +7837,12 @@ static void switch_handler
         if (bSwitch ? wild_match(tbuff, mbuff) : strcmp(reinterpret_cast<char *>(tbuff), reinterpret_cast<char *>(mbuff)) == 0)
         {
             free_lbuf(tbuff);
-            tbuff = replace_tokens(fargs[i+1], nullptr, nullptr, mbuff);
-            free_lbuf(mbuff);
-            mux_exec2(tbuff, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+            const UTF8 *save_switch = mudstate.switch_token;
+            mudstate.switch_token = mbuff;
+            mux_exec2(fargs[i+1], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
                 eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
-            free_lbuf(tbuff);
+            mudstate.switch_token = save_switch;
+            free_lbuf(mbuff);
             return;
         }
     }
@@ -7867,10 +7853,11 @@ static void switch_handler
     if (  i < nfargs
        && fargs[i])
     {
-        tbuff = replace_tokens(fargs[i], nullptr, nullptr, mbuff);
-        mux_exec2(tbuff, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+        const UTF8 *save_switch = mudstate.switch_token;
+        mudstate.switch_token = mbuff;
+        mux_exec2(fargs[i], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
-        free_lbuf(tbuff);
+        mudstate.switch_token = save_switch;
     }
     free_lbuf(mbuff);
 }
@@ -7943,10 +7930,11 @@ static void switchall_handler
         if (bSwitch ? wild_match(tbuff, mbuff) : strcmp(reinterpret_cast<char *>(tbuff), reinterpret_cast<char *>(mbuff)) == 0)
         {
             bMatched = true;
-            UTF8 *rbuff = replace_tokens(fargs[i+1], nullptr, nullptr, mbuff);
-            mux_exec2(rbuff, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+            const UTF8 *save_switch = mudstate.switch_token;
+            mudstate.switch_token = mbuff;
+            mux_exec2(fargs[i+1], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
                 eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
-            free_lbuf(rbuff);
+            mudstate.switch_token = save_switch;
         }
     }
     free_lbuf(tbuff);
@@ -7957,10 +7945,11 @@ static void switchall_handler
        && i < nfargs
        && fargs[i])
     {
-        tbuff = replace_tokens(fargs[i], nullptr, nullptr, mbuff);
-        mux_exec2(tbuff, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+        const UTF8 *save_switch = mudstate.switch_token;
+        mudstate.switch_token = mbuff;
+        mux_exec2(fargs[i], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
-        free_lbuf(tbuff);
+        mudstate.switch_token = save_switch;
     }
     free_lbuf(mbuff);
 }

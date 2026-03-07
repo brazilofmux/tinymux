@@ -2213,23 +2213,22 @@ FUNCTION(fun_ifelse)
         eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     *bp = '\0';
 
+    const UTF8 *save_switch = mudstate.switch_token;
+    mudstate.switch_token = lbuff;
     if (!xlate(lbuff))
     {
         if (nfargs == 3)
         {
-            UTF8 *tbuff = replace_tokens(fargs[2], nullptr, nullptr, lbuff);
-            mux_exec2(tbuff, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+            mux_exec2(fargs[2], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
                 eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
-            free_lbuf(tbuff);
         }
     }
     else
     {
-        UTF8 *tbuff = replace_tokens(fargs[1], nullptr, nullptr, lbuff);
-        mux_exec2(tbuff, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+        mux_exec2(fargs[1], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
-        free_lbuf(tbuff);
     }
+    mudstate.switch_token = save_switch;
     free_lbuf(lbuff);
 }
 
