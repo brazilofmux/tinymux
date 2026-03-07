@@ -5519,22 +5519,44 @@ CHOWN_OK
 & CHR()
 CHR()
 
-  FUNCTION: chr(<ord>)
+  FUNCTION: chr(<code point>[<code point> ...])
 
-  Returns a single character that corresponds to the <ord>'th position in the
-  character set.
+  Returns the character corresponding to one or more Unicode code point
+  values. Multiple code points may be given as a space-separated list,
+  producing a single grapheme cluster (such as a base letter with combining
+  accents). The result is NFC-normalized, so decomposed sequences are
+  composed into precomposed forms where possible.
 
-  Related Topics: ord().
+  Examples:
+    > say chr(65)
+    You say, "A"
+    > say chr(126)
+    You say, "~"
+    > say chr(233)
+    You say, "é"
+    > say chr(101 769)
+    You say, "é"
+
+  In the last two examples, chr(233) produces a precomposed é (U+00E9)
+  directly, while chr(101 769) specifies an e (U+0065) followed by a
+  combining acute accent (U+0301) which NFC normalization composes into
+  the same precomposed é (U+00E9).
+
+  Related Topics: ord(), ASCII, UNICODE.
 
 & CITER()
 CITER()
 
   FUNCTION: citer(<string>, <eval>[, <osep>])
 
-  Iterates over each character (UTF-8 code point) in <string>, evaluating
-  <eval> for each one.  Within <eval>, ## (or itext()) is replaced by the
-  current character, and #@ (or inum()) is replaced by the position (starting
-  at 1).  Results are joined by <osep> (default: space).
+  Iterates over each Unicode code point in <string>, evaluating <eval> for
+  each one.  Within <eval>, ## (or itext()) is replaced by the current code
+  point, and #@ (or inum()) is replaced by the position (starting at 1).
+  Results are joined by <osep> (default: space).
+
+  Note: citer() iterates over code points, not grapheme clusters. A
+  precomposed character like é (U+00E9) is one code point, but a
+  decomposed sequence like e + combining acute would be two.
 
   This is the character-level counterpart to iter(), which iterates over
   words.
@@ -10374,16 +10396,17 @@ MID()
 
   FUNCTION: mid(<string>, <first>, <length>)
 
-  If <length> is positive, mid() returns a segment of the string starting with
-  <first> and continuing to the right until the end of the string or <length>
-  character whichever is satisfied first.
+  Positions and lengths are measured in visual characters (grapheme clusters).
 
-  If <length> is negative, mid() returns a segment of the string defined in
-  a reverse fashion.  That is, mid() returns a segment of the string ending
-  with <first> and continuing to the left until the beginning of the string or
-  until <length> characters whichever is satisfied first.
+  If <length> is positive, mid() returns a segment of the string starting at
+  position <first> and continuing to the right until the end of the string or
+  <length> characters, whichever is satisfied first.
 
-  Note that the first character in a string is numbered zero, and not one.
+  If <length> is negative, mid() returns a segment of the string ending at
+  position <first> and continuing to the left until the beginning of the
+  string or <length> characters, whichever is satisfied first.
+
+  The first character in a string is at position zero.
 
   Left() is supported as an alias for strtrunc().
 
@@ -11056,12 +11079,32 @@ ORBOOL()
 & ORD()
 ORD()
 
-  FUNCTION: ord(<letter>)
+  FUNCTION: ord(<character>)
 
-  Returns an integer that represents the relative position of <letter> in the
-  character set.
+  Returns the Unicode code point value of <character>. If <character> is a
+  grapheme cluster composed of multiple code points (such as a base letter
+  with combining accents), the code points are returned as a space-separated
+  list.
 
-  Related Topics: chr().
+  The argument must contain exactly one grapheme cluster (what a user
+  perceives as a single character). ANSI color codes are stripped before
+  evaluation.
+
+  Examples:
+    > say ord(A)
+    You say, "65"
+    > say ord(~)
+    You say, "126"
+    > say ord([chr(233)])
+    You say, "233"
+    > say ord([chr(101 769)])
+    You say, "233"
+
+  The last two examples both return 233 because chr() NFC-normalizes its
+  output, composing e (U+0065) + combining acute (U+0301) into the
+  precomposed é (U+00E9 = 233).
+
+  Related Topics: chr(), ASCII, UNICODE.
 
 & ORFLAGS()
 ORFLAGS()
@@ -13549,10 +13592,17 @@ STRIPACCENTS()
 
   FUNCTION: stripaccents(<string>)
 
-  Returns the string with accented characters converted to non-accented.
-  This function assumes the ISO 8859-1 character set.
+  Returns the string with accented Unicode characters converted to their
+  closest non-accented ASCII equivalents. Characters which cannot be
+  approximated are shown with a single '?'.
 
-  Related Topics: chr(), ord().
+  Examples:
+    > say stripaccents([chr(233)])
+    You say, "e"
+    > say stripaccents(caf[chr(233)])
+    You say, "cafe"
+
+  Related Topics: accent(), chr(), ord(), ASCII, UNICODE.
 
 & STRIPANSI()
 STRIPANSI()
@@ -13568,15 +13618,22 @@ STRLEN()
 
   FUNCTION: strlen(<string>)
 
-  Returns the number of visual characters in <string>.
+  Returns the number of visual characters (grapheme clusters) in <string>.
+  A grapheme cluster is what a user perceives as a single character, which
+  may consist of one or more Unicode code points (such as a base letter
+  with combining accents). ANSI color codes do not count.
+
+  Use strmem() to get the number of bytes instead.
 
   Example:
     > say strlen(This is a test)
     You say, "14"
     > say strlen(Would you like coffee, or perhaps tea)
     You say, "37"
+    > say strlen([chr(233)])
+    You say, "1"
 
-  Related Topics: strmem().
+  Related Topics: strmem(), UNICODE.
 
 & STRMATCH()
 STRMATCH()
@@ -13608,14 +13665,19 @@ STRMEM()
   FUNCTION: strmem(<string>)
 
   Returns the number of bytes required to store <string> in memory.
+  For ASCII text, this equals strlen(). For UTF-8 text, characters
+  outside the ASCII range use 2 to 4 bytes each.
 
   Example:
     > say strmem(This is a test)
     You say, "14"
-    > say strmem(Would you like coffee, or perhaps tea)
-    You say, "37"
+    > say strmem([chr(233)])
+    You say, "2"
 
-  Related Topics: strlen().
+  In the second example, é (U+00E9) takes 2 bytes in UTF-8 encoding,
+  but strlen() would return 1.
+
+  Related Topics: strlen(), UNICODE.
 
 & STRTRUNC()
 & LEFT()
