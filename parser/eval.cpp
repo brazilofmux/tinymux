@@ -5,371 +5,22 @@
  * output equivalent to mux_exec for the subset of expressions that
  * don't require database access.
  *
- * Supported features:
- *   - Literal text concatenation
- *   - Eval brackets [...] (recursive evaluation)
- *   - Brace groups {...} (deferred — strip outer braces, don't evaluate)
- *   - %-substitutions (simulated with a register bank)
- *   - \-escapes (emit the escaped character)
- *   - Space handling (passthrough for now, no compression)
- *   - Pure functions: add, sub, mul, div, mod, abs, inc, dec,
- *     eq, neq, gt, gte, lt, lte, and, or, not, xor,
- *     if/ifelse, switch, case,
- *     cat, strcat, strlen, mid, left, right, first, rest, last,
- *     words, trim, ljust, rjust, center,
- *     iter, list, filter, map, fold, sort, setunion, setdiff, setinter,
- *     setq, setr, r,
- *     lnum, repeat, space, null, @@,
- *     t, comp, match, strmatch
+ * Two-tier function dispatch:
+ *   - Normal functions: arguments pre-evaluated, handler gets strings
+ *   - FN_NOEVAL functions: arguments NOT pre-evaluated, handler gets
+ *     AST subtrees and calls eval() selectively
  *
- * Not supported (require database/runtime):
- *   - u(), get(), v(), xget() — attribute access
- *   - name(), loc(), num() — database queries
- *   - pemit(), emit(), remit() — side effects
- *   - Dynamic function calls (DynCall nodes)
- *
- * This evaluator demonstrates that pure-expression MUX softcode CAN
- * be evaluated from an AST without the stream-transformer approach.
+ * This demonstrates that MUX softcode CAN be evaluated from an AST
+ * with proper deferred evaluation for control flow and iteration.
  */
 
-#include <cstdio>
-#include <cstring>
-#include <cctype>
+#include "mux_parse.h"
+
 #include <cstdlib>
 #include <cmath>
-#include <string>
-#include <vector>
 #include <map>
-#include <memory>
 #include <functional>
 #include <algorithm>
-#include <sstream>
-
-// ---------------------------------------------------------------
-// Token types and tokenizer (same as parse.cpp)
-// ---------------------------------------------------------------
-
-enum TokenType {
-    TOK_LIT,
-    TOK_FUNC,
-    TOK_LPAREN,
-    TOK_RPAREN,
-    TOK_LBRACK,
-    TOK_RBRACK,
-    TOK_LBRACE,
-    TOK_RBRACE,
-    TOK_COMMA,
-    TOK_SEMI,
-    TOK_PCT,
-    TOK_ESC,
-    TOK_SPACE,
-    TOK_EOF
-};
-
-struct Token {
-    TokenType type;
-    std::string text;
-};
-
-static std::string gather_pct(const char *&p)
-{
-    std::string sub("%");
-    char ch = *p;
-
-    if (!ch) {
-        return sub;
-    }
-
-    char upper = static_cast<char>(toupper(static_cast<unsigned char>(ch)));
-
-    if (ch >= '0' && ch <= '9') {
-        sub += *p++;
-    } else if (upper == 'Q') {
-        sub += *p++;
-        if (*p == '<') {
-            sub += *p++;
-            while (*p && *p != '>') {
-                sub += *p++;
-            }
-            if (*p == '>') {
-                sub += *p++;
-            }
-        } else if (*p) {
-            sub += *p++;
-        }
-    } else if (upper == 'V') {
-        sub += *p++;
-        if (*p && isalpha(static_cast<unsigned char>(*p))) {
-            sub += *p++;
-        }
-    } else if (upper == 'C' || upper == 'X') {
-        sub += *p++;
-        if (*p == '<') {
-            sub += *p++;
-            while (*p && *p != '>') {
-                sub += *p++;
-            }
-            if (*p == '>') {
-                sub += *p++;
-            }
-        } else if (*p) {
-            sub += *p++;
-        }
-    } else if (ch == '=') {
-        sub += *p++;
-        if (*p == '<') {
-            sub += *p++;
-            while (*p && *p != '>') {
-                sub += *p++;
-            }
-            if (*p == '>') {
-                sub += *p++;
-            }
-        }
-    } else if (upper == 'I') {
-        sub += *p++;
-        if (*p && *p >= '0' && *p <= '9') {
-            sub += *p++;
-        }
-    } else {
-        sub += *p++;
-    }
-
-    return sub;
-}
-
-static std::vector<Token> tokenize(const char *input)
-{
-    std::vector<Token> tokens;
-    const char *p = input;
-
-    while (*p) {
-        if (*p == '[') {
-            tokens.push_back({TOK_LBRACK, "["});
-            p++;
-        } else if (*p == ']') {
-            tokens.push_back({TOK_RBRACK, "]"});
-            p++;
-        } else if (*p == '{') {
-            tokens.push_back({TOK_LBRACE, "{"});
-            p++;
-        } else if (*p == '}') {
-            tokens.push_back({TOK_RBRACE, "}"});
-            p++;
-        } else if (*p == '(') {
-            if (!tokens.empty() && tokens.back().type == TOK_LIT) {
-                tokens.back().type = TOK_FUNC;
-            }
-            tokens.push_back({TOK_LPAREN, "("});
-            p++;
-        } else if (*p == ')') {
-            tokens.push_back({TOK_RPAREN, ")"});
-            p++;
-        } else if (*p == ',') {
-            tokens.push_back({TOK_COMMA, ","});
-            p++;
-        } else if (*p == ';') {
-            tokens.push_back({TOK_SEMI, ";"});
-            p++;
-        } else if (*p == '%') {
-            p++;
-            tokens.push_back({TOK_PCT, gather_pct(p)});
-        } else if (*p == '\\') {
-            std::string esc;
-            esc += *p++;
-            if (*p) {
-                esc += *p++;
-            }
-            tokens.push_back({TOK_ESC, esc});
-        } else if (*p == ' ' || *p == '\t') {
-            std::string sp;
-            while (*p == ' ' || *p == '\t') {
-                sp += *p++;
-            }
-            tokens.push_back({TOK_SPACE, sp});
-        } else {
-            std::string lit;
-            while (*p && *p != '[' && *p != ']' && *p != '{' && *p != '}'
-                   && *p != '(' && *p != ')' && *p != ',' && *p != ';'
-                   && *p != '%' && *p != '\\' && *p != ' ' && *p != '\t') {
-                lit += *p++;
-            }
-            tokens.push_back({TOK_LIT, lit});
-        }
-    }
-
-    tokens.push_back({TOK_EOF, ""});
-    return tokens;
-}
-
-// ---------------------------------------------------------------
-// AST node types (same as parse.cpp)
-// ---------------------------------------------------------------
-
-enum NodeType {
-    NODE_SEQUENCE,
-    NODE_LITERAL,
-    NODE_SPACE,
-    NODE_SUBST,
-    NODE_ESCAPE,
-    NODE_FUNCCALL,
-    NODE_DYNCALL,
-    NODE_EVALBRACKET,
-    NODE_BRACEGROUP,
-    NODE_SEMICOLON,
-};
-
-struct ASTNode {
-    NodeType type;
-    std::string text;
-    std::vector<std::unique_ptr<ASTNode>> children;
-
-    ASTNode(NodeType t, const std::string &s = "")
-        : type(t), text(s) {}
-
-    void addChild(std::unique_ptr<ASTNode> child) {
-        children.push_back(std::move(child));
-    }
-};
-
-// ---------------------------------------------------------------
-// Parser (same as parse.cpp)
-// ---------------------------------------------------------------
-
-class Parser {
-public:
-    Parser(const std::vector<Token> &tokens)
-        : m_tokens(tokens), m_pos(0) {}
-
-    std::unique_ptr<ASTNode> parse() {
-        return parseSequence(false, false, false, false);
-    }
-
-private:
-    const std::vector<Token> &m_tokens;
-    size_t m_pos;
-
-    const Token &peek() const { return m_tokens[m_pos]; }
-    Token advance() { return m_tokens[m_pos++]; }
-    bool atEnd() const {
-        return m_pos >= m_tokens.size() || m_tokens[m_pos].type == TOK_EOF;
-    }
-
-    std::unique_ptr<ASTNode> parseSequence(bool stopRP, bool stopRB,
-                                            bool stopRC, bool stopCM)
-    {
-        auto seq = std::make_unique<ASTNode>(NODE_SEQUENCE);
-        while (!atEnd()) {
-            TokenType t = peek().type;
-            if (stopRP && t == TOK_RPAREN) break;
-            if (stopRB && t == TOK_RBRACK) break;
-            if (stopRC && t == TOK_RBRACE) break;
-            if (stopCM && t == TOK_COMMA)  break;
-
-            auto node = parseOne();
-            if (node) seq->addChild(std::move(node));
-        }
-        if (seq->children.size() == 1)
-            return std::move(seq->children[0]);
-        return seq;
-    }
-
-    std::unique_ptr<ASTNode> parseOne() {
-        const Token &tok = peek();
-        switch (tok.type) {
-        case TOK_LIT: {
-            auto n = std::make_unique<ASTNode>(NODE_LITERAL, tok.text);
-            advance();
-            return n;
-        }
-        case TOK_SPACE: {
-            auto n = std::make_unique<ASTNode>(NODE_SPACE, tok.text);
-            advance();
-            return n;
-        }
-        case TOK_PCT: {
-            auto n = std::make_unique<ASTNode>(NODE_SUBST, tok.text);
-            advance();
-            if (!atEnd() && peek().type == TOK_LPAREN)
-                return parseDynCall(std::move(n));
-            return n;
-        }
-        case TOK_ESC: {
-            auto n = std::make_unique<ASTNode>(NODE_ESCAPE, tok.text);
-            advance();
-            return n;
-        }
-        case TOK_SEMI: {
-            auto n = std::make_unique<ASTNode>(NODE_SEMICOLON, tok.text);
-            advance();
-            return n;
-        }
-        case TOK_FUNC:   return parseFuncCall();
-        case TOK_LBRACK: return parseEvalBracket();
-        case TOK_LBRACE: return parseBraceGroup();
-        case TOK_RPAREN: case TOK_RBRACK: case TOK_RBRACE:
-        case TOK_COMMA: case TOK_LPAREN: {
-            auto n = std::make_unique<ASTNode>(NODE_LITERAL, tok.text);
-            advance();
-            return n;
-        }
-        case TOK_EOF: return nullptr;
-        }
-        return nullptr;
-    }
-
-    std::unique_ptr<ASTNode> parseFuncCall() {
-        Token funcTok = advance();
-        auto call = std::make_unique<ASTNode>(NODE_FUNCCALL, funcTok.text);
-        if (atEnd() || peek().type != TOK_LPAREN) {
-            call->type = NODE_LITERAL;
-            return call;
-        }
-        advance();
-        parseArgList(call.get());
-        return call;
-    }
-
-    std::unique_ptr<ASTNode> parseDynCall(std::unique_ptr<ASTNode> nameExpr) {
-        auto call = std::make_unique<ASTNode>(NODE_DYNCALL);
-        call->addChild(std::move(nameExpr));
-        advance();
-        parseArgList(call.get());
-        return call;
-    }
-
-    void parseArgList(ASTNode *call) {
-        auto arg = parseSequence(true, false, false, true);
-        call->addChild(std::move(arg));
-        while (!atEnd() && peek().type == TOK_COMMA) {
-            advance();
-            arg = parseSequence(true, false, false, true);
-            call->addChild(std::move(arg));
-        }
-        if (!atEnd() && peek().type == TOK_RPAREN)
-            advance();
-    }
-
-    std::unique_ptr<ASTNode> parseEvalBracket() {
-        advance();
-        auto bracket = std::make_unique<ASTNode>(NODE_EVALBRACKET);
-        auto contents = parseSequence(false, true, false, false);
-        bracket->addChild(std::move(contents));
-        if (!atEnd() && peek().type == TOK_RBRACK)
-            advance();
-        return bracket;
-    }
-
-    std::unique_ptr<ASTNode> parseBraceGroup() {
-        advance();
-        auto group = std::make_unique<ASTNode>(NODE_BRACEGROUP);
-        auto contents = parseSequence(false, false, true, false);
-        group->addChild(std::move(contents));
-        if (!atEnd() && peek().type == TOK_RBRACE)
-            advance();
-        return group;
-    }
-};
 
 // ---------------------------------------------------------------
 // Evaluation context
@@ -384,8 +35,8 @@ struct EvalContext {
 
     // Iterator state for iter/list
     struct IterFrame {
-        std::string itext;   // ## current item
-        int inum;            // #@ current index
+        std::string itext;   // current item (itext(n))
+        int inum;            // current index (inum(n), 1-based)
     };
     std::vector<IterFrame> iterStack;
 
@@ -437,8 +88,8 @@ private:
 
     // Two dispatch tables:
     // - m_funcs: normal functions, receive pre-evaluated string args
-    // - m_noeval_funcs: FN_NOEVAL functions, receive unevaluated AST children
-    //   and call eval() selectively (deferred evaluation)
+    // - m_noeval_funcs: FN_NOEVAL functions, receive unevaluated AST
+    //   children and call eval() selectively (deferred evaluation)
     //
     using FuncHandler = std::function<std::string(const std::vector<std::string>&)>;
     std::map<std::string, FuncHandler> m_funcs;
@@ -446,43 +97,31 @@ private:
     using NoevalHandler = std::function<std::string(const std::vector<std::unique_ptr<ASTNode>>&)>;
     std::map<std::string, NoevalHandler> m_noeval_funcs;
 
-    // Helper: uppercase a string
     static std::string toUpper(const std::string &s) {
         std::string r = s;
         for (auto &c : r) c = static_cast<char>(toupper(static_cast<unsigned char>(c)));
         return r;
     }
 
-    // Helper: convert to integer
     static long toLong(const std::string &s) {
         if (s.empty()) return 0;
-        char *end;
-        long v = strtol(s.c_str(), &end, 10);
-        return v;
+        return strtol(s.c_str(), nullptr, 10);
     }
 
-    // Helper: convert to double
     static double toDouble(const std::string &s) {
         if (s.empty()) return 0.0;
-        char *end;
-        double v = strtod(s.c_str(), &end);
-        return v;
+        return strtod(s.c_str(), nullptr);
     }
 
-    // Helper: boolean test (MUX truth: non-zero number or non-empty string)
     static bool toBool(const std::string &s) {
         if (s.empty()) return false;
-        // Try as number first
         char *end;
         double v = strtod(s.c_str(), &end);
         if (end != s.c_str()) return v != 0.0;
-        // Non-empty string is true
         return true;
     }
 
-    // Helper: format number (strip trailing zeros)
     static std::string fmtNum(double v) {
-        // If it's an integer, print without decimal
         if (v == floor(v) && fabs(v) < 1e15) {
             return std::to_string(static_cast<long long>(v));
         }
@@ -491,7 +130,6 @@ private:
         return buf;
     }
 
-    // Helper: split string by separator
     static std::vector<std::string> splitList(const std::string &s,
                                                const std::string &sep = " ")
     {
@@ -499,7 +137,6 @@ private:
         if (s.empty()) return result;
 
         if (sep == " ") {
-            // Space-separated: skip leading/trailing spaces, compress
             size_t i = 0;
             while (i < s.size() && s[i] == ' ') i++;
             while (i < s.size()) {
@@ -534,44 +171,27 @@ private:
         if (sub.size() < 2) return "%";
 
         char ch = sub[1];
+        char upper = static_cast<char>(toupper(static_cast<unsigned char>(ch)));
 
-        // %0-%9: command arguments
         if (ch >= '0' && ch <= '9') {
             return m_ctx.args[ch - '0'];
         }
-
-        char upper = static_cast<char>(toupper(static_cast<unsigned char>(ch)));
-
-        // %q register
         if (upper == 'Q') {
             std::string regname;
             if (sub.size() >= 4 && sub[2] == '<') {
-                // %q<name>
                 regname = sub.substr(3, sub.size() - 4);
             } else if (sub.size() >= 3) {
-                // %q0-%qz
                 regname = std::string(1, sub[2]);
             }
             auto it = m_ctx.registers.find(regname);
-            if (it != m_ctx.registers.end()) return it->second;
-            return "";
+            return (it != m_ctx.registers.end()) ? it->second : "";
         }
-
-        // %r → newline, %b → space, %t → tab
         if (upper == 'R') return "\r\n";
         if (upper == 'B') return " ";
         if (upper == 'T') return "\t";
-
-        // %% → literal %
         if (ch == '%') return "%";
-
-        // %# → enactor dbref
         if (ch == '#') return m_ctx.enactorDbref;
-
-        // %! → executor dbref
         if (ch == '!') return m_ctx.executorDbref;
-
-        // %n/%N → enactor name
         if (upper == 'N') {
             std::string name = m_ctx.enactorName;
             if (ch == 'N' && !name.empty()) {
@@ -579,8 +199,6 @@ private:
             }
             return name;
         }
-
-        // %i0-%i9: iterator text
         if (upper == 'I' && sub.size() >= 3) {
             int depth = sub[2] - '0';
             int idx = static_cast<int>(m_ctx.iterStack.size()) - 1 - depth;
@@ -589,13 +207,10 @@ private:
             }
             return "";
         }
-
-        // Unsupported substitutions — return the raw text
         return sub;
     }
 
     std::string evalEscape(const ASTNode *node) {
-        // \x → just x
         if (node->text.size() >= 2) {
             return node->text.substr(1);
         }
@@ -605,16 +220,13 @@ private:
     std::string evalFuncCall(const ASTNode *node) {
         std::string fname = toUpper(node->text);
 
-        // Check FN_NOEVAL functions first — they receive unevaluated
-        // AST children and call eval() selectively.
-        //
+        // Check FN_NOEVAL first — deferred evaluation.
         auto nit = m_noeval_funcs.find(fname);
         if (nit != m_noeval_funcs.end()) {
             return nit->second(node->children);
         }
 
-        // Normal functions — evaluate all arguments first.
-        //
+        // Normal — evaluate all arguments first.
         auto it = m_funcs.find(fname);
         if (it == m_funcs.end()) {
             return "#-1 FUNCTION (" + fname + ") NOT FOUND";
@@ -624,7 +236,6 @@ private:
         for (const auto &child : node->children) {
             args.push_back(eval(child.get()));
         }
-
         return it->second(args);
     }
 
@@ -634,12 +245,7 @@ private:
     }
 
     std::string evalBraceGroup(const ASTNode *node) {
-        // In MUX, {braced text} with EV_STRIP_CURLY strips the braces
-        // and returns the interior unevaluated. We approximate this by
-        // returning the children's text without evaluating substitutions.
-        //
-        // For this study tool, we just evaluate the contents — a real
-        // interpreter would need the eval flags to decide.
+        // TODO: Respect EV_STRIP_CURLY flag. For now, evaluate contents.
         if (node->children.empty()) return "";
         return eval(node->children[0].get());
     }
@@ -649,7 +255,7 @@ private:
     // ---------------------------------------------------------------
 
     void registerBuiltins() {
-        // Arithmetic
+        // -- Arithmetic --
         m_funcs["ADD"] = [](const std::vector<std::string> &args) -> std::string {
             double sum = 0;
             for (const auto &a : args) sum += toDouble(a);
@@ -681,12 +287,10 @@ private:
             return fmtNum(fabs(toDouble(args[0])));
         };
         m_funcs["INC"] = [](const std::vector<std::string> &args) -> std::string {
-            long v = args.empty() ? 0 : toLong(args[0]);
-            return std::to_string(v + 1);
+            return std::to_string((args.empty() ? 0 : toLong(args[0])) + 1);
         };
         m_funcs["DEC"] = [](const std::vector<std::string> &args) -> std::string {
-            long v = args.empty() ? 0 : toLong(args[0]);
-            return std::to_string(v - 1);
+            return std::to_string((args.empty() ? 0 : toLong(args[0])) - 1);
         };
         m_funcs["FLOOR"] = [](const std::vector<std::string> &args) -> std::string {
             if (args.empty()) return "0";
@@ -736,517 +340,326 @@ private:
             return fmtNum(sqrt(v));
         };
 
-        // Comparison
-        m_funcs["EQ"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "0";
-            return toLong(args[0]) == toLong(args[1]) ? "1" : "0";
-        };
-        m_funcs["NEQ"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "0";
-            return toLong(args[0]) != toLong(args[1]) ? "1" : "0";
-        };
-        m_funcs["GT"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "0";
-            return toLong(args[0]) > toLong(args[1]) ? "1" : "0";
-        };
-        m_funcs["GTE"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "0";
-            return toLong(args[0]) >= toLong(args[1]) ? "1" : "0";
-        };
-        m_funcs["LT"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "0";
-            return toLong(args[0]) < toLong(args[1]) ? "1" : "0";
-        };
-        m_funcs["LTE"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "0";
-            return toLong(args[0]) <= toLong(args[1]) ? "1" : "0";
-        };
-        m_funcs["COMP"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "0";
-            int r = args[0].compare(args[1]);
+        // -- Comparison --
+        m_funcs["EQ"] = [](const std::vector<std::string> &a) { return a.size() < 2 ? "0" : (toLong(a[0]) == toLong(a[1]) ? "1" : "0"); };
+        m_funcs["NEQ"] = [](const std::vector<std::string> &a) { return a.size() < 2 ? "0" : (toLong(a[0]) != toLong(a[1]) ? "1" : "0"); };
+        m_funcs["GT"] = [](const std::vector<std::string> &a) { return a.size() < 2 ? "0" : (toLong(a[0]) > toLong(a[1]) ? "1" : "0"); };
+        m_funcs["GTE"] = [](const std::vector<std::string> &a) { return a.size() < 2 ? "0" : (toLong(a[0]) >= toLong(a[1]) ? "1" : "0"); };
+        m_funcs["LT"] = [](const std::vector<std::string> &a) { return a.size() < 2 ? "0" : (toLong(a[0]) < toLong(a[1]) ? "1" : "0"); };
+        m_funcs["LTE"] = [](const std::vector<std::string> &a) { return a.size() < 2 ? "0" : (toLong(a[0]) <= toLong(a[1]) ? "1" : "0"); };
+        m_funcs["COMP"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.size() < 2) return "0";
+            int r = a[0].compare(a[1]);
             return std::to_string(r < 0 ? -1 : (r > 0 ? 1 : 0));
         };
 
-        // Boolean
-        m_funcs["AND"] = [](const std::vector<std::string> &args) -> std::string {
-            for (const auto &a : args) {
-                if (!toBool(a)) return "0";
-            }
+        // -- Boolean --
+        m_funcs["AND"] = [](const std::vector<std::string> &a) -> std::string {
+            for (const auto &x : a) if (!toBool(x)) return "0";
             return "1";
         };
-        m_funcs["OR"] = [](const std::vector<std::string> &args) -> std::string {
-            for (const auto &a : args) {
-                if (toBool(a)) return "1";
-            }
+        m_funcs["OR"] = [](const std::vector<std::string> &a) -> std::string {
+            for (const auto &x : a) if (toBool(x)) return "1";
             return "0";
         };
-        m_funcs["NOT"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.empty()) return "1";
-            return toBool(args[0]) ? "0" : "1";
-        };
-        m_funcs["XOR"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "0";
-            return (toBool(args[0]) != toBool(args[1])) ? "1" : "0";
-        };
-        m_funcs["T"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.empty()) return "0";
-            return toBool(args[0]) ? "1" : "0";
-        };
+        m_funcs["NOT"] = [](const std::vector<std::string> &a) { return (a.empty() || !toBool(a[0])) ? "1" : "0"; };
+        m_funcs["XOR"] = [](const std::vector<std::string> &a) { return a.size() < 2 ? "0" : ((toBool(a[0]) != toBool(a[1])) ? "1" : "0"); };
+        m_funcs["T"] = [](const std::vector<std::string> &a) { return (a.empty() || !toBool(a[0])) ? "0" : "1"; };
 
-        // String functions
-        m_funcs["STRLEN"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.empty()) return "0";
-            return std::to_string(args[0].size());
+        // -- String --
+        m_funcs["STRLEN"] = [](const std::vector<std::string> &a) { return a.empty() ? "0" : std::to_string(a[0].size()); };
+        m_funcs["MID"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.size() < 3) return "";
+            long pos = toLong(a[1]), len = toLong(a[2]);
+            if (pos < 0 || len < 0 || pos >= static_cast<long>(a[0].size())) return "";
+            return a[0].substr(pos, len);
         };
-        m_funcs["MID"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 3) return "";
-            std::string s = args[0];
-            long pos = toLong(args[1]);
-            long len = toLong(args[2]);
-            if (pos < 0 || len < 0 || pos >= static_cast<long>(s.size())) return "";
-            return s.substr(pos, len);
+        m_funcs["LEFT"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.size() < 2) return "";
+            long len = toLong(a[1]);
+            return len <= 0 ? "" : a[0].substr(0, len);
         };
-        m_funcs["LEFT"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "";
-            long len = toLong(args[1]);
+        m_funcs["RIGHT"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.size() < 2) return "";
+            long len = toLong(a[1]);
             if (len <= 0) return "";
-            return args[0].substr(0, len);
+            if (len >= static_cast<long>(a[0].size())) return a[0];
+            return a[0].substr(a[0].size() - len);
         };
-        m_funcs["RIGHT"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "";
-            long len = toLong(args[1]);
-            if (len <= 0) return "";
-            std::string s = args[0];
-            if (len >= static_cast<long>(s.size())) return s;
-            return s.substr(s.size() - len);
-        };
-        m_funcs["CAPSTR"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.empty() || args[0].empty()) return "";
-            std::string s = args[0];
+        m_funcs["CAPSTR"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.empty() || a[0].empty()) return "";
+            std::string s = a[0];
             s[0] = static_cast<char>(toupper(static_cast<unsigned char>(s[0])));
             return s;
         };
-        m_funcs["LCSTR"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.empty()) return "";
-            std::string s = args[0];
+        m_funcs["LCSTR"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.empty()) return "";
+            std::string s = a[0];
             for (auto &c : s) c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
             return s;
         };
-        m_funcs["UCSTR"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.empty()) return "";
-            std::string s = args[0];
+        m_funcs["UCSTR"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.empty()) return "";
+            std::string s = a[0];
             for (auto &c : s) c = static_cast<char>(toupper(static_cast<unsigned char>(c)));
             return s;
         };
-        m_funcs["CAT"] = [](const std::vector<std::string> &args) -> std::string {
-            std::string result;
-            for (size_t i = 0; i < args.size(); i++) {
-                if (i > 0) result += " ";
-                result += args[i];
-            }
-            return result;
+        m_funcs["CAT"] = [](const std::vector<std::string> &a) -> std::string {
+            std::string r;
+            for (size_t i = 0; i < a.size(); i++) { if (i > 0) r += " "; r += a[i]; }
+            return r;
         };
-        m_funcs["STRCAT"] = [](const std::vector<std::string> &args) -> std::string {
-            std::string result;
-            for (const auto &a : args) result += a;
-            return result;
+        m_funcs["STRCAT"] = [](const std::vector<std::string> &a) -> std::string {
+            std::string r;
+            for (const auto &x : a) r += x;
+            return r;
         };
-        m_funcs["REPEAT"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "";
-            long n = toLong(args[1]);
+        m_funcs["REPEAT"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.size() < 2) return "";
+            long n = toLong(a[1]);
             if (n <= 0) return "";
-            std::string result;
-            for (long i = 0; i < n; i++) result += args[0];
-            return result;
+            std::string r;
+            for (long i = 0; i < n; i++) r += a[0];
+            return r;
         };
-        m_funcs["SPACE"] = [](const std::vector<std::string> &args) -> std::string {
-            long n = args.empty() ? 1 : toLong(args[0]);
-            if (n <= 0) return "";
-            return std::string(n, ' ');
+        m_funcs["SPACE"] = [](const std::vector<std::string> &a) -> std::string {
+            long n = a.empty() ? 1 : toLong(a[0]);
+            return n <= 0 ? "" : std::string(n, ' ');
         };
-        m_funcs["TRIM"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.empty()) return "";
-            std::string s = args[0];
-            size_t start = s.find_first_not_of(' ');
+        m_funcs["TRIM"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.empty()) return "";
+            size_t start = a[0].find_first_not_of(' ');
             if (start == std::string::npos) return "";
-            size_t end = s.find_last_not_of(' ');
-            return s.substr(start, end - start + 1);
+            size_t end = a[0].find_last_not_of(' ');
+            return a[0].substr(start, end - start + 1);
         };
 
-        // List functions
-        m_funcs["WORDS"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.empty()) return "0";
-            auto words = splitList(args[0]);
-            return std::to_string(words.size());
+        // -- List --
+        m_funcs["WORDS"] = [](const std::vector<std::string> &a) {
+            return a.empty() ? "0" : std::to_string(splitList(a[0]).size());
         };
-        m_funcs["FIRST"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.empty()) return "";
-            auto words = splitList(args[0]);
-            return words.empty() ? "" : words[0];
+        m_funcs["FIRST"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.empty()) return "";
+            auto w = splitList(a[0]);
+            return w.empty() ? "" : w[0];
         };
-        m_funcs["REST"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.empty()) return "";
-            auto words = splitList(args[0]);
-            if (words.size() <= 1) return "";
-            std::string result;
-            for (size_t i = 1; i < words.size(); i++) {
-                if (i > 1) result += " ";
-                result += words[i];
-            }
-            return result;
+        m_funcs["REST"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.empty()) return "";
+            auto w = splitList(a[0]);
+            if (w.size() <= 1) return "";
+            std::string r;
+            for (size_t i = 1; i < w.size(); i++) { if (i > 1) r += " "; r += w[i]; }
+            return r;
         };
-        m_funcs["LAST"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.empty()) return "";
-            auto words = splitList(args[0]);
-            return words.empty() ? "" : words.back();
+        m_funcs["LAST"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.empty()) return "";
+            auto w = splitList(a[0]);
+            return w.empty() ? "" : w.back();
         };
-        m_funcs["EXTRACT"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 3) return "";
-            auto words = splitList(args[0]);
-            long first = toLong(args[1]) - 1; // 1-based
-            long count = toLong(args[2]);
+        m_funcs["EXTRACT"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.size() < 3) return "";
+            auto w = splitList(a[0]);
+            long first = toLong(a[1]) - 1, count = toLong(a[2]);
             if (first < 0) first = 0;
-            std::string result;
-            for (long i = first; i < first + count && i < static_cast<long>(words.size()); i++) {
-                if (i > first) result += " ";
-                result += words[i];
+            std::string r;
+            for (long i = first; i < first + count && i < static_cast<long>(w.size()); i++) {
+                if (i > first) r += " ";
+                r += w[i];
             }
-            return result;
+            return r;
         };
-        m_funcs["LNUM"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.empty()) return "";
-            long n = toLong(args[0]);
-            std::string sep = args.size() > 1 ? args[1] : " ";
-            std::string result;
-            for (long i = 0; i < n; i++) {
-                if (i > 0) result += sep;
-                result += std::to_string(i);
-            }
-            return result;
+        m_funcs["LNUM"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.empty()) return "";
+            long n = toLong(a[0]);
+            std::string sep = a.size() > 1 ? a[1] : " ";
+            std::string r;
+            for (long i = 0; i < n; i++) { if (i > 0) r += sep; r += std::to_string(i); }
+            return r;
         };
-        m_funcs["SORT"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.empty()) return "";
-            auto words = splitList(args[0]);
-            // Try numeric sort first
-            bool allNumeric = true;
-            for (const auto &w : words) {
+        m_funcs["SORT"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.empty()) return "";
+            auto w = splitList(a[0]);
+            bool allNum = true;
+            for (const auto &x : w) {
                 char *end;
-                strtod(w.c_str(), &end);
-                if (end == w.c_str() || *end != '\0') {
-                    allNumeric = false;
-                    break;
-                }
+                strtod(x.c_str(), &end);
+                if (end == x.c_str() || *end != '\0') { allNum = false; break; }
             }
-            if (allNumeric) {
-                std::sort(words.begin(), words.end(),
-                    [](const std::string &a, const std::string &b) {
-                        return strtod(a.c_str(), nullptr) < strtod(b.c_str(), nullptr);
-                    });
+            if (allNum) {
+                std::sort(w.begin(), w.end(), [](const std::string &x, const std::string &y) {
+                    return strtod(x.c_str(), nullptr) < strtod(y.c_str(), nullptr);
+                });
             } else {
-                std::sort(words.begin(), words.end());
+                std::sort(w.begin(), w.end());
             }
-            std::string result;
-            for (size_t i = 0; i < words.size(); i++) {
-                if (i > 0) result += " ";
-                result += words[i];
-            }
-            return result;
+            std::string r;
+            for (size_t i = 0; i < w.size(); i++) { if (i > 0) r += " "; r += w[i]; }
+            return r;
         };
-        m_funcs["MEMBER"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "0";
-            auto words = splitList(args[0]);
-            for (size_t i = 0; i < words.size(); i++) {
-                if (words[i] == args[1]) return std::to_string(i + 1);
-            }
+        m_funcs["MEMBER"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.size() < 2) return "0";
+            auto w = splitList(a[0]);
+            for (size_t i = 0; i < w.size(); i++) if (w[i] == a[1]) return std::to_string(i + 1);
             return "0";
         };
-        m_funcs["INDEX"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 4) return "";
-            std::string sep = args[1];
-            long first = toLong(args[2]) - 1;
-            long count = toLong(args[3]);
-            auto items = splitList(args[0], sep);
+        m_funcs["INDEX"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.size() < 4) return "";
+            auto items = splitList(a[0], a[1]);
+            long first = toLong(a[2]) - 1, count = toLong(a[3]);
             if (first < 0) first = 0;
-            std::string result;
+            std::string r;
             for (long i = first; i < first + count && i < static_cast<long>(items.size()); i++) {
-                if (i > first) result += sep;
-                result += items[i];
+                if (i > first) r += a[1];
+                r += items[i];
             }
-            return result;
+            return r;
         };
 
-        // Set operations
-        m_funcs["SETUNION"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "";
-            auto a = splitList(args[0]);
-            auto b = splitList(args[1]);
+        // -- Set operations --
+        m_funcs["SETUNION"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.size() < 2) return "";
+            auto x = splitList(a[0]), y = splitList(a[1]);
             std::vector<std::string> result;
-            std::sort(a.begin(), a.end());
-            std::sort(b.begin(), b.end());
-            std::set_union(a.begin(), a.end(), b.begin(), b.end(),
-                           std::back_inserter(result));
-            std::string out;
-            for (size_t i = 0; i < result.size(); i++) {
-                if (i > 0) out += " ";
-                out += result[i];
-            }
-            return out;
+            std::sort(x.begin(), x.end()); std::sort(y.begin(), y.end());
+            std::set_union(x.begin(), x.end(), y.begin(), y.end(), std::back_inserter(result));
+            std::string r;
+            for (size_t i = 0; i < result.size(); i++) { if (i > 0) r += " "; r += result[i]; }
+            return r;
         };
-        m_funcs["SETDIFF"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "";
-            auto a = splitList(args[0]);
-            auto b = splitList(args[1]);
+        m_funcs["SETDIFF"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.size() < 2) return "";
+            auto x = splitList(a[0]), y = splitList(a[1]);
             std::vector<std::string> result;
-            std::sort(a.begin(), a.end());
-            std::sort(b.begin(), b.end());
-            std::set_difference(a.begin(), a.end(), b.begin(), b.end(),
-                                std::back_inserter(result));
-            std::string out;
-            for (size_t i = 0; i < result.size(); i++) {
-                if (i > 0) out += " ";
-                out += result[i];
-            }
-            return out;
+            std::sort(x.begin(), x.end()); std::sort(y.begin(), y.end());
+            std::set_difference(x.begin(), x.end(), y.begin(), y.end(), std::back_inserter(result));
+            std::string r;
+            for (size_t i = 0; i < result.size(); i++) { if (i > 0) r += " "; r += result[i]; }
+            return r;
         };
-        m_funcs["SETINTER"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "";
-            auto a = splitList(args[0]);
-            auto b = splitList(args[1]);
+        m_funcs["SETINTER"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.size() < 2) return "";
+            auto x = splitList(a[0]), y = splitList(a[1]);
             std::vector<std::string> result;
-            std::sort(a.begin(), a.end());
-            std::sort(b.begin(), b.end());
-            std::set_intersection(a.begin(), a.end(), b.begin(), b.end(),
-                                  std::back_inserter(result));
-            std::string out;
-            for (size_t i = 0; i < result.size(); i++) {
-                if (i > 0) out += " ";
-                out += result[i];
-            }
-            return out;
+            std::sort(x.begin(), x.end()); std::sort(y.begin(), y.end());
+            std::set_intersection(x.begin(), x.end(), y.begin(), y.end(), std::back_inserter(result));
+            std::string r;
+            for (size_t i = 0; i < result.size(); i++) { if (i > 0) r += " "; r += result[i]; }
+            return r;
         };
 
-        // Register functions
-        // Note: setq/setr need access to m_ctx, so we capture 'this'.
-        m_funcs["SETQ"] = [this](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "";
-            m_ctx.registers[args[0]] = args[1];
+        // -- Registers --
+        m_funcs["SETQ"] = [this](const std::vector<std::string> &a) -> std::string {
+            if (a.size() < 2) return "";
+            m_ctx.registers[a[0]] = a[1];
             return "";
         };
-        m_funcs["SETR"] = [this](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "";
-            m_ctx.registers[args[0]] = args[1];
-            return args[1];
+        m_funcs["SETR"] = [this](const std::vector<std::string> &a) -> std::string {
+            if (a.size() < 2) return "";
+            m_ctx.registers[a[0]] = a[1];
+            return a[1];
         };
-        m_funcs["R"] = [this](const std::vector<std::string> &args) -> std::string {
-            if (args.empty()) return "";
-            auto it = m_ctx.registers.find(args[0]);
-            if (it != m_ctx.registers.end()) return it->second;
+        m_funcs["R"] = [this](const std::vector<std::string> &a) -> std::string {
+            if (a.empty()) return "";
+            auto it = m_ctx.registers.find(a[0]);
+            return (it != m_ctx.registers.end()) ? it->second : "";
+        };
+
+        // -- Misc (normal eval) --
+        m_funcs["NULL"] = [](const std::vector<std::string> &) -> std::string { return ""; };
+        m_funcs["MATCH"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.size() < 2) return "0";
+            auto w = splitList(a[0]);
+            for (size_t i = 0; i < w.size(); i++) if (w[i] == a[1]) return std::to_string(i + 1);
+            return "0";
+        };
+        m_funcs["STRMATCH"] = [](const std::vector<std::string> &a) -> std::string {
+            if (a.size() < 2) return "0";
+            if (a[1] == "*") return "1";
+            return (a[0] == a[1]) ? "1" : "0";
+        };
+        m_funcs["ITEXT"] = [this](const std::vector<std::string> &a) -> std::string {
+            int depth = a.empty() ? 0 : static_cast<int>(toLong(a[0]));
+            int idx = static_cast<int>(m_ctx.iterStack.size()) - 1 - depth;
+            if (idx >= 0 && idx < static_cast<int>(m_ctx.iterStack.size()))
+                return m_ctx.iterStack[idx].itext;
+            return "";
+        };
+        m_funcs["INUM"] = [this](const std::vector<std::string> &a) -> std::string {
+            int depth = a.empty() ? 0 : static_cast<int>(toLong(a[0]));
+            int idx = static_cast<int>(m_ctx.iterStack.size()) - 1 - depth;
+            if (idx >= 0 && idx < static_cast<int>(m_ctx.iterStack.size()))
+                return std::to_string(m_ctx.iterStack[idx].inum);
             return "";
         };
 
-        // ---------------------------------------------------------
-        // FN_NOEVAL functions: receive unevaluated AST children,
-        // call eval() selectively (deferred evaluation).
-        //
-        // This is the key architectural difference from the old
-        // evaluator. These handlers get the AST subtrees and
-        // choose which ones to evaluate and when.
-        // ---------------------------------------------------------
+        // ---------------------------------------------------------------
+        // FN_NOEVAL functions — deferred evaluation
+        // ---------------------------------------------------------------
 
         // if(condition, true_branch [, false_branch])
-        //
-        m_noeval_funcs["IF"] = [this](const std::vector<std::unique_ptr<ASTNode>> &children) -> std::string {
-            if (children.size() < 2) return "";
-            std::string cond = eval(children[0].get());
-            if (toBool(cond)) {
-                return eval(children[1].get());
-            }
-            return children.size() > 2 ? eval(children[2].get()) : "";
+        m_noeval_funcs["IF"] = [this](const std::vector<std::unique_ptr<ASTNode>> &c) -> std::string {
+            if (c.size() < 2) return "";
+            return toBool(eval(c[0].get())) ? eval(c[1].get())
+                : (c.size() > 2 ? eval(c[2].get()) : "");
         };
-        m_noeval_funcs["IFELSE"] = [this](const std::vector<std::unique_ptr<ASTNode>> &children) -> std::string {
-            if (children.size() < 3) return "";
-            std::string cond = eval(children[0].get());
-            if (toBool(cond)) {
-                return eval(children[1].get());
-            }
-            return eval(children[2].get());
+        m_noeval_funcs["IFELSE"] = [this](const std::vector<std::unique_ptr<ASTNode>> &c) -> std::string {
+            if (c.size() < 3) return "";
+            return toBool(eval(c[0].get())) ? eval(c[1].get()) : eval(c[2].get());
         };
 
-        // switch(val, pat1, result1, pat2, result2, ..., default)
-        // Evaluates val and each pattern; only evaluates the matching result.
-        //
-        m_noeval_funcs["SWITCH"] = [this](const std::vector<std::unique_ptr<ASTNode>> &children) -> std::string {
-            if (children.size() < 2) return "";
-            std::string val = eval(children[0].get());
-            for (size_t i = 1; i + 1 < children.size(); i += 2) {
-                std::string pat = eval(children[i].get());
-                if (pat == val || pat == "*") {
-                    return eval(children[i + 1].get());
-                }
+        // switch(val, pat1, result1, ..., default)
+        m_noeval_funcs["SWITCH"] = [this](const std::vector<std::unique_ptr<ASTNode>> &c) -> std::string {
+            if (c.size() < 2) return "";
+            std::string val = eval(c[0].get());
+            for (size_t i = 1; i + 1 < c.size(); i += 2) {
+                std::string pat = eval(c[i].get());
+                if (pat == val || pat == "*") return eval(c[i + 1].get());
             }
-            // Default: odd remaining arg
-            if (children.size() % 2 == 0) {
-                return eval(children.back().get());
+            if (c.size() % 2 == 0) return eval(c.back().get());
+            return "";
+        };
+        m_noeval_funcs["CASE"] = [this](const std::vector<std::unique_ptr<ASTNode>> &c) -> std::string {
+            if (c.size() < 2) return "";
+            std::string val = eval(c[0].get());
+            for (size_t i = 1; i + 1 < c.size(); i += 2) {
+                if (eval(c[i].get()) == val) return eval(c[i + 1].get());
             }
+            if (c.size() % 2 == 0) return eval(c.back().get());
             return "";
         };
 
-        // case(val, pat1, result1, ..., default)
-        // Like switch but exact match (no wildcard).
-        //
-        m_noeval_funcs["CASE"] = [this](const std::vector<std::unique_ptr<ASTNode>> &children) -> std::string {
-            if (children.size() < 2) return "";
-            std::string val = eval(children[0].get());
-            for (size_t i = 1; i + 1 < children.size(); i += 2) {
-                std::string pat = eval(children[i].get());
-                if (pat == val) {
-                    return eval(children[i + 1].get());
-                }
-            }
-            if (children.size() % 2 == 0) {
-                return eval(children.back().get());
-            }
-            return "";
-        };
-
-        // cand(expr1, expr2, ...) — short-circuit AND
-        //
-        m_noeval_funcs["CAND"] = [this](const std::vector<std::unique_ptr<ASTNode>> &children) -> std::string {
-            for (const auto &child : children) {
-                if (!toBool(eval(child.get()))) return "0";
-            }
+        // Short-circuit boolean
+        m_noeval_funcs["CAND"] = [this](const std::vector<std::unique_ptr<ASTNode>> &c) -> std::string {
+            for (const auto &x : c) if (!toBool(eval(x.get()))) return "0";
             return "1";
         };
-
-        // cor(expr1, expr2, ...) — short-circuit OR
-        //
-        m_noeval_funcs["COR"] = [this](const std::vector<std::unique_ptr<ASTNode>> &children) -> std::string {
-            for (const auto &child : children) {
-                if (toBool(eval(child.get()))) return "1";
-            }
+        m_noeval_funcs["COR"] = [this](const std::vector<std::unique_ptr<ASTNode>> &c) -> std::string {
+            for (const auto &x : c) if (toBool(eval(x.get()))) return "1";
             return "0";
         };
 
         // @@(comment) — discard without evaluating
-        //
         m_noeval_funcs["@@"] = [](const std::vector<std::unique_ptr<ASTNode>> &) -> std::string {
             return "";
         };
 
-        // lit(text) — return unevaluated text
-        //
-        m_noeval_funcs["LIT"] = [](const std::vector<std::unique_ptr<ASTNode>> &children) -> std::string {
-            // Reconstruct the raw source text without evaluating.
-            if (children.empty()) return "";
-            std::function<std::string(const ASTNode*)> rawText =
-                [&rawText](const ASTNode *n) -> std::string {
-                if (!n) return "";
-                switch (n->type) {
-                case NODE_LITERAL:
-                case NODE_SPACE:
-                case NODE_SUBST:
-                case NODE_ESCAPE:
-                    return n->text;
-                case NODE_SEMICOLON:
-                    return ";";
-                case NODE_FUNCCALL: {
-                    std::string r = n->text + "(";
-                    for (size_t i = 0; i < n->children.size(); i++) {
-                        if (i > 0) r += ",";
-                        r += rawText(n->children[i].get());
-                    }
-                    return r + ")";
-                }
-                case NODE_EVALBRACKET: {
-                    std::string r = "[";
-                    for (const auto &c : n->children) r += rawText(c.get());
-                    return r + "]";
-                }
-                case NODE_BRACEGROUP: {
-                    std::string r = "{";
-                    for (const auto &c : n->children) r += rawText(c.get());
-                    return r + "}";
-                }
-                case NODE_SEQUENCE: {
-                    std::string r;
-                    for (const auto &c : n->children) r += rawText(c.get());
-                    return r;
-                }
-                case NODE_DYNCALL:
-                    return "#-1 DYNAMIC";
-                }
-                return "";
-            };
-            return rawText(children[0].get());
+        // lit(text) — return unevaluated source text
+        m_noeval_funcs["LIT"] = [](const std::vector<std::unique_ptr<ASTNode>> &c) -> std::string {
+            return c.empty() ? "" : ast_raw_text(c[0].get());
         };
 
-        // Null (not FN_NOEVAL — args are already evaluated, just discard)
-        m_funcs["NULL"] = [](const std::vector<std::string> &) -> std::string {
-            return "";
-        };
-
-        // Match
-        m_funcs["MATCH"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "0";
-            auto words = splitList(args[0]);
-            for (size_t i = 0; i < words.size(); i++) {
-                if (words[i] == args[1]) return std::to_string(i + 1);
-            }
-            return "0";
-        };
-        m_funcs["STRMATCH"] = [](const std::vector<std::string> &args) -> std::string {
-            if (args.size() < 2) return "0";
-            // Simple wildcard match: * matches anything
-            if (args[1] == "*") return "1";
-            return (args[0] == args[1]) ? "1" : "0";
-        };
-
-        // Misc
-        m_funcs["ITEXT"] = [this](const std::vector<std::string> &args) -> std::string {
-            int depth = args.empty() ? 0 : static_cast<int>(toLong(args[0]));
-            int idx = static_cast<int>(m_ctx.iterStack.size()) - 1 - depth;
-            if (idx >= 0 && idx < static_cast<int>(m_ctx.iterStack.size())) {
-                return m_ctx.iterStack[idx].itext;
-            }
-            return "";
-        };
-        m_funcs["INUM"] = [this](const std::vector<std::string> &args) -> std::string {
-            int depth = args.empty() ? 0 : static_cast<int>(toLong(args[0]));
-            int idx = static_cast<int>(m_ctx.iterStack.size()) - 1 - depth;
-            if (idx >= 0 && idx < static_cast<int>(m_ctx.iterStack.size())) {
-                return std::to_string(m_ctx.iterStack[idx].inum);
-            }
-            return "";
-        };
-
-        // iter(list, body, osep, isep) — FN_NOEVAL
-        // Evaluate list, then for each item, push iterator state
-        // and evaluate body. Body uses %i0 for current item.
-        //
-        m_noeval_funcs["ITER"] = [this](const std::vector<std::unique_ptr<ASTNode>> &children) -> std::string {
-            if (children.size() < 2) return "";
-
-            // Evaluate the list argument
-            std::string listVal = eval(children[0].get());
-
-            // Evaluate separator arguments if present
-            std::string sep = " ";
-            std::string osep = " ";
-            if (children.size() > 3) sep = eval(children[3].get());
-            if (children.size() > 2) osep = eval(children[2].get());
-
+        // iter(list, body, osep, isep) — evaluate body per item
+        m_noeval_funcs["ITER"] = [this](const std::vector<std::unique_ptr<ASTNode>> &c) -> std::string {
+            if (c.size() < 2) return "";
+            std::string listVal = eval(c[0].get());
+            std::string sep = c.size() > 3 ? eval(c[3].get()) : " ";
+            std::string osep = c.size() > 2 ? eval(c[2].get()) : " ";
             auto items = splitList(listVal, sep);
             std::string result;
-
             for (size_t i = 0; i < items.size(); i++) {
                 if (i > 0) result += osep;
-
-                // Push iterator frame — body can read via %i0 or itext(0)
                 m_ctx.iterStack.push_back({items[i], static_cast<int>(i + 1)});
-
-                // Evaluate the body subtree with iterator state active
-                result += eval(children[1].get());
-
+                result += eval(c[1].get());
                 m_ctx.iterStack.pop_back();
             }
             return result;
@@ -1268,7 +681,6 @@ int main(int argc, char *argv[])
     }
 
     EvalContext ctx;
-    // Set up some test values for substitutions
     ctx.enactorName = "testplayer";
     ctx.enactorDbref = "#1234";
     ctx.executorDbref = "#1234";
@@ -1291,20 +703,7 @@ int main(int argc, char *argv[])
         if (showAST) {
             printf("INPUT: %s\n", line);
             printf("AST:\n");
-            // Quick inline printer
-            std::function<void(const ASTNode*, int)> printNode =
-                [&](const ASTNode *n, int indent) {
-                if (!n) return;
-                static const char *names[] = {
-                    "Seq", "Lit", "Sp", "Sub", "Esc",
-                    "Call", "DynCall", "Eval", "Brace", "Semi"
-                };
-                printf("%*s%s", indent, "", names[n->type]);
-                if (!n->text.empty()) printf(" \"%s\"", n->text.c_str());
-                printf("\n");
-                for (const auto &c : n->children) printNode(c.get(), indent+2);
-            };
-            printNode(ast.get(), 2);
+            ast_print(ast.get(), 2);
         }
 
         std::string result = evaluator.eval(ast.get());
