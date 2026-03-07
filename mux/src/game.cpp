@@ -2779,7 +2779,7 @@ int DCL_CDECL main(int argc, char *argv[])
         }
         if (  !standalone_basename
            || (!standalone_infile && !standalone_unload)
-           || !standalone_outfile
+           || (!standalone_outfile && standalone_unload)
            || n != 1
            || bServerOption)
         {
@@ -2805,13 +2805,15 @@ int DCL_CDECL main(int argc, char *argv[])
         mux_fprintf(stderr, T("Version: %s" ENDLINE), mudstate.version);
         if (mudstate.bStandAlone)
         {
-            mux_fprintf(stderr, T("Usage: %s -d <dbname> -i <infile> [-o <outfile>] [-l|-u|-k]" ENDLINE), pProg);
+            mux_fprintf(stderr, T("Usage: %s -d <dbname> [-i <infile>] [-o <outfile>] [-l|-u|-k] [-C <comsys>] [-m <mail>]" ENDLINE), pProg);
             mux_fprintf(stderr, T("  -d  Basename." ENDLINE));
             mux_fprintf(stderr, T("  -i  Input file." ENDLINE));
             mux_fprintf(stderr, T("  -k  Check." ENDLINE));
-            mux_fprintf(stderr, T("  -l  Load." ENDLINE));
+            mux_fprintf(stderr, T("  -l  Load (import flatfile into SQLite)." ENDLINE));
             mux_fprintf(stderr, T("  -o  Output file." ENDLINE));
-            mux_fprintf(stderr, T("  -u  Unload." ENDLINE));
+            mux_fprintf(stderr, T("  -u  Unload (export SQLite to flatfile)." ENDLINE));
+            mux_fprintf(stderr, T("  -C  Comsys flatfile (import/export)." ENDLINE));
+            mux_fprintf(stderr, T("  -m  Mail flatfile (import/export)." ENDLINE));
         }
         else
         {

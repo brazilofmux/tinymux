@@ -14,9 +14,9 @@ LD_LIBRARY_PATH=$BIN; export LD_LIBRARY_PATH
 DYLD_LIBRARY_PATH=$BIN; export DYLD_LIBRARY_PATH
 
 case $# in
-    2)  $BIN/netmux -d$1 -l -i$2 ;;
-    4)  $BIN/netmux -d$1 -l -i$2 $3 $4 ;;
-    6)  $BIN/netmux -d$1 -l -i$2 $3 $4 $5 $6 ;;
+    2)  $BIN/dbconvert -d$1 -l -i$2 ;;
+    4)  $BIN/dbconvert -d$1 -l -i$2 $3 $4 ;;
+    6)  $BIN/dbconvert -d$1 -l -i$2 $3 $4 $5 $6 ;;
     *)  echo "Usage: $0 <basename> <flatfile> [-C <comsys.db>] [-m <mail.db>]"
         echo "  e.g. $0 netmux netmux.flat"
         echo "       $0 netmux netmux.flat -C comsys.db -m mail.db"
