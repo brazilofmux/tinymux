@@ -26,6 +26,24 @@
 // Evaluation context
 // ---------------------------------------------------------------
 
+// Eval flags — mirror the defines in mux/src/externs.h.
+// These control what the evaluator does with each node type.
+//
+enum {
+    EV_EVAL         = 0x0004,   // Evaluate %-substitutions
+    EV_STRIP_CURLY  = 0x0008,   // Strip outer {} from args
+    EV_FCHECK       = 0x0010,   // Check for function calls on (
+    EV_FMAND        = 0x0020,   // Require valid function name
+    EV_NOFCHECK     = 0x0040,   // Suppress [ evaluation
+    EV_NO_COMPRESS  = 0x0080,   // Don't compress spaces
+    EV_STRIP_LS     = 0x1000,   // Strip leading spaces
+    EV_STRIP_TS     = 0x2000,   // Strip trailing spaces
+    EV_TOP          = 0x0800,   // Top-level evaluation
+};
+
+// Default eval flags for top-level evaluation.
+static constexpr int EV_DEFAULT = EV_EVAL | EV_FCHECK | EV_TOP;
+
 struct EvalContext {
     // Registers %q0-%q9, %qa-%qz, and named %q<name>
     std::map<std::string, std::string> registers;
@@ -44,6 +62,9 @@ struct EvalContext {
     std::string enactorName;   // %n
     std::string enactorDbref;  // %#
     std::string executorDbref; // %!
+
+    // Current eval flags
+    int evalFlags = EV_DEFAULT;
 };
 
 // ---------------------------------------------------------------
@@ -57,30 +78,74 @@ public:
     }
 
     std::string eval(const ASTNode *node) {
+        return evalWithFlags(node, m_ctx.evalFlags);
+    }
+
+    // Evaluate with specific flags (used for recursive contexts).
+    //
+    std::string evalWithFlags(const ASTNode *node, int flags) {
         if (!node) return "";
+
+        // Save and restore flags for this scope.
+        int savedFlags = m_ctx.evalFlags;
+        m_ctx.evalFlags = flags;
+
+        std::string result;
 
         switch (node->type) {
         case NODE_SEQUENCE:
-            return evalSequence(node);
+            result = evalSequence(node);
+            break;
         case NODE_LITERAL:
         case NODE_SPACE:
-            return node->text;
+            result = node->text;
+            break;
         case NODE_SUBST:
-            return evalSubst(node);
+            // Only resolve substitutions if EV_EVAL is set.
+            result = (flags & EV_EVAL) ? evalSubst(node) : node->text;
+            break;
         case NODE_ESCAPE:
-            return evalEscape(node);
+            result = (flags & EV_EVAL) ? evalEscape(node) : node->text;
+            break;
         case NODE_FUNCCALL:
-            return evalFuncCall(node);
+            // Only dispatch functions if EV_FCHECK is set.
+            if (flags & EV_FCHECK) {
+                result = evalFuncCall(node);
+            } else {
+                // No function checking — treat as literal text + parens.
+                result = node->text + "(";
+                for (size_t i = 0; i < node->children.size(); i++) {
+                    if (i > 0) result += ",";
+                    result += evalWithFlags(node->children[i].get(), flags);
+                }
+                result += ")";
+            }
+            break;
         case NODE_DYNCALL:
-            return "#-1 DYNAMIC CALL NOT SUPPORTED";
+            result = "#-1 DYNAMIC CALL NOT SUPPORTED";
+            break;
         case NODE_EVALBRACKET:
-            return evalEvalBracket(node);
+            // Only recurse into [...] if EV_NOFCHECK is NOT set.
+            if (!(flags & EV_NOFCHECK)) {
+                result = evalEvalBracket(node);
+            } else {
+                // Pass through as literal brackets.
+                result = "[";
+                if (!node->children.empty())
+                    result += evalWithFlags(node->children[0].get(), flags);
+                result += "]";
+            }
+            break;
         case NODE_BRACEGROUP:
-            return evalBraceGroup(node);
+            result = evalBraceGroup(node);
+            break;
         case NODE_SEMICOLON:
-            return "";
+            result = "";
+            break;
         }
-        return "";
+
+        m_ctx.evalFlags = savedFlags;
+        return result;
     }
 
 private:
@@ -241,13 +306,26 @@ private:
 
     std::string evalEvalBracket(const ASTNode *node) {
         if (node->children.empty()) return "";
-        return eval(node->children[0].get());
+        // Inside [...], functions are checked and mandatory.
+        // This matches mux_exec: eval | EV_FCHECK | EV_FMAND
+        int flags = m_ctx.evalFlags | EV_EVAL | EV_FCHECK | EV_FMAND;
+        return evalWithFlags(node->children[0].get(), flags);
     }
 
     std::string evalBraceGroup(const ASTNode *node) {
-        // TODO: Respect EV_STRIP_CURLY flag. For now, evaluate contents.
         if (node->children.empty()) return "";
-        return eval(node->children[0].get());
+        int flags = m_ctx.evalFlags;
+
+        if (flags & EV_STRIP_CURLY) {
+            // Strip braces, evaluate contents without function checking.
+            // This matches mux_exec behavior: inside {} with EV_EVAL,
+            // the flags become eval & ~(EV_STRIP_CURLY|EV_FCHECK|EV_FMAND).
+            int innerFlags = (flags & ~(EV_STRIP_CURLY | EV_FCHECK | EV_FMAND));
+            return evalWithFlags(node->children[0].get(), innerFlags);
+        } else {
+            // No strip — return the raw text including braces.
+            return "{" + ast_raw_text(node->children[0].get()) + "}";
+        }
     }
 
     // ---------------------------------------------------------------

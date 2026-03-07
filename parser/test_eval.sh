@@ -134,6 +134,19 @@ check '[lit([add(1,2)])]' '[add(1,2)]'
 # @@() — discards without evaluating
 check '[@@(this is a comment)]' ''
 
+# Eval brackets force function checking
+check '[add(1,2)]' '3'
+
+# Brace groups with default flags (EV_EVAL set but not EV_STRIP_CURLY)
+# should pass through as raw braces
+check '{hello world}' '{hello world}'
+
+# Nested iter with function calls in body
+check '[iter(1 2 3,[mul(%i0,%i0)])]' '1 4 9'
+
+# Complex expression: register + iter + function
+check '[setq(0,prefix-)][iter(a b c,[strcat(%q0,%i0)])]' 'prefix-a prefix-b prefix-c'
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 exit $FAIL
