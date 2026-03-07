@@ -9,7 +9,6 @@
 #include <cstdio>
 #include <limits>
 #include <cerrno>
-#include <cstdarg>
 
 #ifdef UNIX_SSL
 #include <openssl/ssl.h>
@@ -51,23 +50,6 @@ UTF8* ConvertCRLFtoSpace(const UTF8* pString);
 
 namespace
 {
-    void GanlLog(const UTF8* fmt, ...)
-    {
-        if (!fmt)
-        {
-            return;
-        }
-
-        UTF8 buffer[LBUF_SIZE];
-        va_list ap;
-        va_start(ap, fmt);
-        mux_vsnprintf(buffer, LBUF_SIZE, fmt, ap);
-        va_end(ap);
-
-        Log.tinyprintf(T("GANL %s" ENDLINE), buffer);
-        Log.Flush();
-    }
-
     struct RemoteEndpoint
     {
         std::string host;
@@ -275,10 +257,7 @@ namespace
         d->ss = SocketState::Accepted;
         welcome_user(d);
 
-        GanlLog(T("READY socket=%d player=%d tls=%s"),
-            d->socket,
-            d->player,
-            connectionIsTls ? T("yes") : T("no"));
+        // GANL READY — suppressed (redundant with NET/CONN log).
     }
 
     void HandleConnectedDescriptorPreAnnounce(DESC* d, int mux_reason, const CLinearTimeAbsolute& ltaNow)
@@ -653,11 +632,7 @@ public:
             static_cast<unsigned int>(resolvedPort));
         ENDLOG;
 
-        GanlLog(T("ACPT handle=%u socket=%d remote='%s' tls=%s"),
-            static_cast<unsigned int>(handle),
-            d->socket,
-            addrText[0] != '\0' ? addrText : T("UNKNOWN"),
-            useTls ? T("yes") : T("no"));
+        // GANL ACPT — suppressed (redundant with NET/CONN log).
 
         if (useTls) {
             // For TLS connections, defer finalization until the TLS handshake
@@ -681,7 +656,7 @@ public:
             return;
         }
 
-        GanlLog(T("RECV socket=%d len=%d"), d->socket, static_cast<int>(data.size()));
+        // GANL RECV — suppressed (per-packet noise).
 
         // Undo autodark
         //
@@ -713,10 +688,7 @@ public:
             return;
         }
 
-        GanlLog(T("CLOSE socket=%d player=%d reason=%d"),
-            d->socket,
-            d->player,
-            static_cast<int>(reason));
+        // GANL CLOSE — suppressed (redundant with NET/DISC or NET/LOGO).
 
         const CLinearTimeAbsolute ltaNow = [&]() {
             CLinearTimeAbsolute tmp; tmp.GetUTC(); return tmp;
@@ -931,15 +903,10 @@ public:
 
         const int hostInfo = mudstate.access_list.check(&d->address);
 
-        GanlLog(T("AUTH attempt socket=%d user='%s' addr='%s'"),
-            d->socket,
-            user,
-            d->addr);
         bool isGuestConnect = false;
 
         if (string_prefix(user, mudconf.guest_prefix)) {
             if (hostInfo & HI_NOGUEST) {
-                GanlLog(T("AUTH reject guest-forbid socket=%d addr='%s'"), d->socket, d->addr);
                 return rejectWithMessage(T("CONN"), T("Connect"), T("Guest Site Forbidden"), NOTHING,
                     FC_CONN_REG, mudconf.downmotd_msg, ganl::DisconnectReason::ServerShutdown);
             }
@@ -947,14 +914,12 @@ public:
             if (mudconf.control_flags & CF_LOGIN) {
                 if (mudconf.number_guests <= 0 || !Good_obj(mudconf.guest_char) || !(mudconf.control_flags & CF_GUEST)) {
                     queue_write(d, T("Guest logins are disabled.\r\n"));
-                    GanlLog(T("AUTH reject guest-disabled socket=%d addr='%s'"), d->socket, d->addr);
                     cleanupBuffers();
                     return false;
                 }
 
                 const UTF8* guestUser = Guest.Create(d);
                 if (!guestUser) {
-                    GanlLog(T("AUTH reject guest-create socket=%d addr='%s'"), d->socket, d->addr);
                     cleanupBuffers();
                     return false;
                 }
@@ -1000,13 +965,7 @@ public:
             free_lbuf(buff);
             ENDLOG;
 
-            GanlLog(T("AUTH reject bad-password socket=%d user='%s' retries_left=%d"),
-                d->socket,
-                user,
-                d->retries_left - 1);
-
             if (--(d->retries_left) <= 0) {
-                GanlLog(T("AUTH reject retries-exhausted socket=%d user='%s'"), d->socket, user);
                 cleanupBuffers();
                 adapter_.close_connection(d, ganl::DisconnectReason::LoginFailed);
             } else {
@@ -1021,17 +980,14 @@ public:
 
         if (!( (loginsEnabled && belowCap) || privileged )) {
             if (!loginsEnabled) {
-            GanlLog(T("AUTH reject logins-disabled socket=%d user='%s'"), d->socket, user);
-            return rejectWithMessage(T("CON"), T("Connect"), T("Logins Disabled"), player,
-                FC_CONN_DOWN, mudconf.downmotd_msg, ganl::DisconnectReason::ServerShutdown);
-        }
-        GanlLog(T("AUTH reject game-full socket=%d user='%s'"), d->socket, user);
-        return rejectWithMessage(T("CON"), T("Connect"), T("Game Full"), player,
-            FC_CONN_FULL, mudconf.fullmotd_msg, ganl::DisconnectReason::GameFull);
+                return rejectWithMessage(T("CON"), T("Connect"), T("Logins Disabled"), player,
+                    FC_CONN_DOWN, mudconf.downmotd_msg, ganl::DisconnectReason::ServerShutdown);
+            }
+            return rejectWithMessage(T("CON"), T("Connect"), T("Game Full"), player,
+                FC_CONN_FULL, mudconf.fullmotd_msg, ganl::DisconnectReason::GameFull);
         }
 
         if (Guest(player) && (hostInfo & HI_NOGUEST)) {
-            GanlLog(T("AUTH reject host-guest-forbid socket=%d player=#%d"), d->socket, player);
             return rejectWithMessage(T("CON"), T("Connect"), T("Guest Site Forbidden"), player,
                 FC_CONN_SITE, mudconf.downmotd_msg, ganl::DisconnectReason::ServerShutdown);
         }
@@ -1079,11 +1035,6 @@ public:
         if (nullptr != d->program_data) {
             queue_write_LEN(d, T(">\377\371"), 3);
         }
-
-        GanlLog(T("AUTH success socket=%d player=#%d sessions=%d"),
-            d->socket,
-            player,
-            numConnections);
 
         cleanupBuffers();
         return true;
