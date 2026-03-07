@@ -359,6 +359,7 @@ void cf_init(void)
 #endif // STUB_SLAVE
     mudstate.nObjEvalNest = 0;
     mudstate.in_loop = 0;
+    mudstate.switch_token = nullptr;
     mudstate.bStackLimitReached = false;
     mudstate.nStackNest = 0;
     mudstate.nHearNest  = 0;

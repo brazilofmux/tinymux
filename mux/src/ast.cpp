@@ -210,6 +210,17 @@ std::vector<ASTToken> ast_tokenize(const UTF8 *input, size_t nLen)
             }
             tokens.push_back({ASTTOK_ESC, esc});
         }
+        else if (  *p == '#'
+                && p + 1 < pEnd
+                && (  p[1] == '#'
+                   || p[1] == '@'
+                   || p[1] == '$'))
+        {
+            std::string hash("#");
+            hash += static_cast<char>(p[1]);
+            p += 2;
+            tokens.push_back({ASTTOK_PCT, hash});
+        }
         else if (*p == ' ')
         {
             std::string sp;
@@ -619,6 +630,49 @@ static void ast_eval_subst(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         // Bare '%' at end of string — output literally.
         //
         safe_chr('%', buff, bufc);
+        return;
+    }
+
+    // ## / #@ / #$ — iterator/switch substitutions.
+    //
+    if (txt[0] == '#')
+    {
+        switch (txt[1])
+        {
+        case '#':
+            // ## — bound variable (same as %i0).
+            //
+            {
+                int i = mudstate.in_loop - 1;
+                if (0 <= i && i < MAX_ITEXT && mudstate.itext[i])
+                {
+                    safe_str(mudstate.itext[i], buff, bufc);
+                }
+            }
+            break;
+
+        case '@':
+            // #@ — list place number (same as inum()).
+            //
+            {
+                int i = mudstate.in_loop - 1;
+                if (0 <= i && i < MAX_ITEXT)
+                {
+                    safe_ltoa(mudstate.inum[i], buff, bufc);
+                }
+            }
+            break;
+
+        case '$':
+            // #$ — switch value (same as switch() matched value).
+            // Resolved from mudstate.switch_token if available.
+            //
+            if (mudstate.switch_token)
+            {
+                safe_str(mudstate.switch_token, buff, bufc);
+            }
+            break;
+        }
         return;
     }
 
@@ -1057,75 +1111,19 @@ static void ast_eval_subst(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 // to text and re-parsing through mux_exec.
 //
 
-// Check whether an AST subtree contains ##, #@, or #$ tokens
-// in its literal text. These require replace_tokens before
-// evaluation.
+// Helper: evaluate an AST subtree for a NOEVAL branch (if/switch/iter).
 //
-static bool ast_has_hash_tokens(const ASTNode *node)
-{
-    if (!node)
-    {
-        return false;
-    }
-
-    if (  node->type == AST_LITERAL
-       || node->type == AST_SPACE)
-    {
-        const std::string &t = node->text;
-        for (size_t i = 0; i + 1 < t.size(); i++)
-        {
-            if (  t[i] == '#'
-               && (  t[i + 1] == '#'
-                  || t[i + 1] == '@'
-                  || t[i + 1] == '$'))
-            {
-                return true;
-            }
-        }
-    }
-
-    for (const auto &c : node->children)
-    {
-        if (ast_has_hash_tokens(c.get()))
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-// Helper: evaluate an AST subtree, applying replace_tokens for
-// ##/#@/#$ substitution only when needed.
-//
-// When the subtree contains no hash tokens (the common case for
-// if/switch/iter with %i0), evaluates the subtree directly without
-// serialization or re-parsing.
+// ##/#@/#$ are resolved natively as AST_SUBST nodes at eval time
+// (from mudstate.itext/inum/switch_token), so no serialization or
+// replace_tokens pass is needed.
 //
 static void ast_eval_branch(const ASTNode *child, UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
-    int eval, const UTF8 *cargs[], int ncargs,
-    const UTF8 *pBound, const UTF8 *pListPlace, const UTF8 *pSwitch)
+    int eval, const UTF8 *cargs[], int ncargs)
 {
-    // Fast path: no hash tokens → evaluate the subtree directly.
-    //
-    if (!ast_has_hash_tokens(child))
-    {
-        ast_eval_node(child, buff, bufc,
-            executor, caller, enactor,
-            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
-        return;
-    }
-
-    // Slow path: serialize, replace ##/#@/#$, re-parse and evaluate.
-    //
-    std::string raw = ast_raw_text(child);
-    UTF8 *tbuff = replace_tokens(
-        reinterpret_cast<const UTF8 *>(raw.c_str()),
-        pBound, pListPlace, pSwitch);
-    mux_exec2(tbuff, LBUF_SIZE-1, buff, bufc,
+    ast_eval_node(child, buff, bufc,
         executor, caller, enactor,
         eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
-    free_lbuf(tbuff);
 }
 
 // Native cand/candbool: short-circuit AND.
@@ -1191,22 +1189,21 @@ static void ast_noeval_ifelse(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     *bp = '\0';
 
+    const UTF8 *saved_switch = mudstate.switch_token;
+    mudstate.switch_token = lbuff;
+
     if (xlate(lbuff))
     {
-        // True branch — serialize, replace #$ with condition, evaluate.
-        //
         ast_eval_branch(node->children[1].get(), buff, bufc,
-            executor, caller, enactor, eval, cargs, ncargs,
-            nullptr, nullptr, lbuff);
+            executor, caller, enactor, eval, cargs, ncargs);
     }
     else if (nfargs >= 3)
     {
-        // False branch.
-        //
         ast_eval_branch(node->children[2].get(), buff, bufc,
-            executor, caller, enactor, eval, cargs, ncargs,
-            nullptr, nullptr, lbuff);
+            executor, caller, enactor, eval, cargs, ncargs);
     }
+
+    mudstate.switch_token = saved_switch;
     free_lbuf(lbuff);
 }
 
@@ -1230,6 +1227,9 @@ static void ast_noeval_switch(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 
     UTF8 *tbuff = alloc_lbuf("ast_noeval_switch.2");
 
+    const UTF8 *saved_switch = mudstate.switch_token;
+    mudstate.switch_token = mbuff;
+
     // Loop through patterns looking for a match.
     //
     int i;
@@ -1248,8 +1248,8 @@ static void ast_noeval_switch(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         {
             free_lbuf(tbuff);
             ast_eval_branch(node->children[i + 1].get(), buff, bufc,
-                executor, caller, enactor, eval, cargs, ncargs,
-                nullptr, nullptr, mbuff);
+                executor, caller, enactor, eval, cargs, ncargs);
+            mudstate.switch_token = saved_switch;
             free_lbuf(mbuff);
             return;
         }
@@ -1261,9 +1261,10 @@ static void ast_noeval_switch(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     if (i < nfargs)
     {
         ast_eval_branch(node->children[i].get(), buff, bufc,
-            executor, caller, enactor, eval, cargs, ncargs,
-            nullptr, nullptr, mbuff);
+            executor, caller, enactor, eval, cargs, ncargs);
     }
+
+    mudstate.switch_token = saved_switch;
     free_lbuf(mbuff);
 }
 
@@ -1287,6 +1288,9 @@ static void ast_noeval_switchall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 
     UTF8 *tbuff = alloc_lbuf("ast_noeval_switchall.2");
 
+    const UTF8 *saved_switch = mudstate.switch_token;
+    mudstate.switch_token = mbuff;
+
     // Loop through all patterns, evaluating every match.
     //
     bool bMatched = false;
@@ -1306,8 +1310,7 @@ static void ast_noeval_switchall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         {
             bMatched = true;
             ast_eval_branch(node->children[i + 1].get(), buff, bufc,
-                executor, caller, enactor, eval, cargs, ncargs,
-                nullptr, nullptr, mbuff);
+                executor, caller, enactor, eval, cargs, ncargs);
         }
     }
     free_lbuf(tbuff);
@@ -1317,9 +1320,10 @@ static void ast_noeval_switchall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     if (!bMatched && i < nfargs)
     {
         ast_eval_branch(node->children[i].get(), buff, bufc,
-            executor, caller, enactor, eval, cargs, ncargs,
-            nullptr, nullptr, mbuff);
+            executor, caller, enactor, eval, cargs, ncargs);
     }
+
+    mudstate.switch_token = saved_switch;
     free_lbuf(mbuff);
 }
 
@@ -1425,10 +1429,6 @@ static void ast_noeval_iter(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         return;
     }
 
-    // Serialize the body subtree once (will be re-used each iteration).
-    //
-    std::string rawBody = ast_raw_text(node->children[1].get());
-
     bool first = true;
     int number = 0;
     bool bLoopInBounds = (  0 <= mudstate.in_loop
@@ -1457,15 +1457,12 @@ static void ast_noeval_iter(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             mudstate.inum[mudstate.in_loop - 1] = number;
         }
 
-        UTF8 *tbuff = replace_tokens(
-            reinterpret_cast<const UTF8 *>(rawBody.c_str()),
-            mudconf.safer_iter ? nullptr : objstring,
-            mudconf.safer_iter ? nullptr : mux_ltoa_t(number),
-            nullptr);
-        mux_exec2(tbuff, LBUF_SIZE-1, buff, bufc,
-            executor, caller, enactor,
-            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
-        free_lbuf(tbuff);
+        // Evaluate the body subtree directly. ## and #@ resolve
+        // natively from mudstate.itext/inum, making this safe
+        // without replace_tokens.
+        //
+        ast_eval_branch(node->children[1].get(), buff, bufc,
+            executor, caller, enactor, eval, cargs, ncargs);
     }
 
     mudstate.in_loop--;

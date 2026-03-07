@@ -529,6 +529,7 @@ struct statedata
     UTF8    *poutbufc;          /* Buffer position for poutnew */
     UTF8    *poutnew;           /* The output being build by the current command */
     UTF8    *itext[MAX_ITEXT];  // Text of iter(). Equivalent to ##.
+    const UTF8 *switch_token;   // switch() matched value. Equivalent to #$.
 
     reg_ref *global_regs[MAX_GLOBAL_REGS];  /* Global registers */
     NamedRegsMap *named_regs;               // Named global registers.
