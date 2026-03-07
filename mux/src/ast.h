@@ -42,9 +42,10 @@ struct ASTNode {
     ASTNodeType type;
     std::string text;
     std::vector<std::unique_ptr<ASTNode>> children;
+    bool has_close_paren;   // FUNCCALL: true if ')' was found
 
     ASTNode(ASTNodeType t, const std::string &s = "")
-        : type(t), text(s) {}
+        : type(t), text(s), has_close_paren(true) {}
 
     void addChild(std::unique_ptr<ASTNode> child) {
         children.push_back(std::move(child));

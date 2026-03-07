@@ -370,8 +370,11 @@ private:
         if (!atEnd() && peek().type == ASTTOK_RPAREN)
         {
             advance();
+            call->has_close_paren = true;
             return;
         }
+
+        call->has_close_paren = false;
 
         // When inside an eval bracket, ] terminates the argument
         // list (matching mux_exec behavior where ] closes the bracket
@@ -392,6 +395,7 @@ private:
         if (!atEnd() && peek().type == ASTTOK_RPAREN)
         {
             advance();
+            call->has_close_paren = true;
         }
     }
 
@@ -1551,28 +1555,66 @@ static bool ast_try_native_noeval(const ASTNode *node,
     return false;
 }
 
+// Output a function call node as literal text: name(arg,arg,...).
+//
+static void ast_emit_literal_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
+    dbref executor, dbref caller, dbref enactor,
+    int eval, const UTF8 *cargs[], int ncargs)
+{
+    safe_str(reinterpret_cast<const UTF8 *>(node->text.c_str()), buff, bufc);
+    safe_chr('(', buff, bufc);
+    for (size_t i = 0; i < node->children.size(); i++)
+    {
+        if (i > 0) safe_chr(',', buff, bufc);
+        ast_eval_node(node->children[i].get(), buff, bufc,
+            executor, caller, enactor, eval, cargs, ncargs);
+    }
+    safe_chr(')', buff, bufc);
+}
+
 // Evaluate a function call node (AST_FUNCCALL).
 //
 static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
     int eval, const UTF8 *cargs[], int ncargs)
 {
-    // Uppercase the function name for lookup.
+    // EV_FCHECK without EV_FMAND means "check if the first ( is a
+    // function call."  If EV_FCHECK has been stripped (by the SEQUENCE
+    // handler after the first child), this function call is not at
+    // the start of the expression — output as literal text.
     //
-    size_t nName = node->text.size();
-    if (nName == 0 || nName > MAX_UFUN_NAME_LEN)
+    if (!(eval & EV_FCHECK) && !(eval & EV_FMAND))
     {
-        // Too long or empty — not a valid function name.
-        //
+        ast_emit_literal_funccall(node, buff, bufc,
+            executor, caller, enactor, eval, cargs, ncargs);
+        return;
+    }
+
+    // Missing closing ')' — mux_exec's parse_arglist_lite returns
+    // nullptr in this case and the function is NOT dispatched.  Output
+    // the function name and '(' literally, then emit the raw argument
+    // text (without closing ')').
+    //
+    if (!node->has_close_paren)
+    {
         safe_str(reinterpret_cast<const UTF8 *>(node->text.c_str()), buff, bufc);
         safe_chr('(', buff, bufc);
         for (size_t i = 0; i < node->children.size(); i++)
         {
             if (i > 0) safe_chr(',', buff, bufc);
-            ast_eval_node(node->children[i].get(), buff, bufc,
-                executor, caller, enactor, eval, cargs, ncargs);
+            std::string raw = ast_raw_text(node->children[i].get());
+            safe_str(reinterpret_cast<const UTF8 *>(raw.c_str()), buff, bufc);
         }
-        safe_chr(')', buff, bufc);
+        return;
+    }
+
+    // Uppercase the function name for lookup.
+    //
+    size_t nName = node->text.size();
+    if (nName == 0 || nName > MAX_UFUN_NAME_LEN)
+    {
+        ast_emit_literal_funccall(node, buff, bufc,
+            executor, caller, enactor, eval, cargs, ncargs);
         return;
     }
 
@@ -1615,17 +1657,8 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         }
         else
         {
-            // Not a mandatory function context — output as literal text.
-            //
-            safe_str(reinterpret_cast<const UTF8 *>(node->text.c_str()), buff, bufc);
-            safe_chr('(', buff, bufc);
-            for (size_t i = 0; i < node->children.size(); i++)
-            {
-                if (i > 0) safe_chr(',', buff, bufc);
-                ast_eval_node(node->children[i].get(), buff, bufc,
-                    executor, caller, enactor, eval, cargs, ncargs);
-            }
-            safe_chr(')', buff, bufc);
+            ast_emit_literal_funccall(node, buff, bufc,
+                executor, caller, enactor, eval, cargs, ncargs);
         }
         return;
     }
@@ -1728,7 +1761,16 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     {
         // Built-in function.
         //
-        int nfargs = static_cast<int>(node->children.size());
+        // The AST parser always splits on commas, but mux_exec uses
+        // maxArgsParsed to limit splitting — excess args are catenated
+        // (with commas) into the last slot.  Apply the same logic here.
+        //
+        int nParsed = static_cast<int>(node->children.size());
+        int nfargs = nParsed;
+        if (nfargs > fp->maxArgsParsed && fp->maxArgsParsed > 0)
+        {
+            nfargs = fp->maxArgsParsed;
+        }
         if (nfargs > MAX_ARG)
         {
             nfargs = MAX_ARG;
@@ -1762,15 +1804,30 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
                 feval = eval & ~(EV_EVAL | EV_TOP | EV_FMAND | EV_STRIP_CURLY);
                 for (int i = 0; i < nfargs; i++)
                 {
-                    std::string raw = ast_raw_text(node->children[i].get());
                     fargs[i] = alloc_lbuf("ast_eval.noeval");
-                    size_t len = raw.size();
-                    if (len >= LBUF_SIZE)
+
+                    if (i < nfargs - 1 || nParsed <= nfargs)
                     {
-                        len = LBUF_SIZE - 1;
+                        std::string raw = ast_raw_text(node->children[i].get());
+                        size_t len = raw.size();
+                        if (len >= LBUF_SIZE) len = LBUF_SIZE - 1;
+                        memcpy(fargs[i], raw.c_str(), len);
+                        fargs[i][len] = '\0';
                     }
-                    memcpy(fargs[i], raw.c_str(), len);
-                    fargs[i][len] = '\0';
+                    else
+                    {
+                        // Catenate remaining children with commas.
+                        //
+                        UTF8 *bp = fargs[i];
+                        for (int j = i; j < nParsed; j++)
+                        {
+                            if (j > i) safe_chr(',', fargs[i], &bp);
+                            std::string raw = ast_raw_text(node->children[j].get());
+                            safe_str(reinterpret_cast<const UTF8 *>(raw.c_str()),
+                                fargs[i], &bp);
+                        }
+                        *bp = '\0';
+                    }
                 }
             }
             else
@@ -1782,9 +1839,25 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
                 {
                     fargs[i] = alloc_lbuf("ast_eval.arg");
                     UTF8 *bp = fargs[i];
-                    ast_eval_node(node->children[i].get(), fargs[i], &bp,
-                        executor, caller, enactor,
-                        eval | EV_FCHECK | EV_EVAL, cargs, ncargs);
+
+                    if (i < nfargs - 1 || nParsed <= nfargs)
+                    {
+                        ast_eval_node(node->children[i].get(), fargs[i], &bp,
+                            executor, caller, enactor,
+                            eval | EV_FCHECK | EV_EVAL, cargs, ncargs);
+                    }
+                    else
+                    {
+                        // Catenate remaining children with commas.
+                        //
+                        for (int j = i; j < nParsed; j++)
+                        {
+                            if (j > i) safe_chr(',', fargs[i], &bp);
+                            ast_eval_node(node->children[j].get(), fargs[i], &bp,
+                                executor, caller, enactor,
+                                eval | EV_FCHECK | EV_EVAL, cargs, ncargs);
+                        }
+                    }
                     *bp = '\0';
                 }
             }
@@ -1976,6 +2049,11 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         break;
 
     case AST_SEQUENCE:
+    {
+        size_t first = 0;
+        size_t count = node->children.size();
+        size_t last = count;
+
         if (  mudconf.space_compress
            && !(eval & EV_NO_COMPRESS))
         {
@@ -1984,34 +2062,48 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             // and trailing-space strip behavior, without touching
             // spaces generated by function output.
             //
-            size_t first = 0;
-            size_t count = node->children.size();
             while (first < count && node->children[first]->type == AST_SPACE)
             {
                 first++;
             }
-
-            size_t last = count;
             while (last > first && node->children[last - 1]->type == AST_SPACE)
             {
                 last--;
             }
-
-            for (size_t i = first; i < last; i++)
-            {
-                ast_eval_node(node->children[i].get(), buff, bufc,
-                    executor, caller, enactor, eval, cargs, ncargs);
-            }
         }
-        else
+
+        // EV_FCHECK without EV_FMAND: mux_exec only checks the first
+        // '(' as a potential function call, then clears EV_FCHECK.
+        // Replicate by only letting the first effective child keep
+        // EV_FCHECK; subsequent children get it stripped so their
+        // FUNCALL nodes output as literal text.
+        //
+        bool bStripFCheck = (eval & EV_FCHECK) != 0
+                         && (eval & EV_FMAND) == 0;
+
+        for (size_t i = first; i < last; i++)
         {
-            for (const auto &child : node->children)
+            int childEval = eval;
+            if (bStripFCheck)
             {
-                ast_eval_node(child.get(), buff, bufc,
-                    executor, caller, enactor, eval, cargs, ncargs);
+                if (i > first)
+                {
+                    childEval = eval & ~EV_FCHECK;
+                }
+                else if (node->children[i]->type != AST_FUNCCALL)
+                {
+                    // First child is not a function call — strip
+                    // EV_FCHECK immediately (matches mux_exec where
+                    // the text before '(' includes non-function text).
+                    //
+                    childEval = eval & ~EV_FCHECK;
+                }
             }
+            ast_eval_node(node->children[i].get(), buff, bufc,
+                executor, caller, enactor, childEval, cargs, ncargs);
         }
         break;
+    }
     }
 }
 

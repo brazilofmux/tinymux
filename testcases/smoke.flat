@@ -3496,7 +3496,7 @@
 >260
 "@if strmatch(setr(0,sha1([parenmatch([get(obj/attr)])])),11EC92F3724ADE71BC32634C1271CC961FA9EE69)={@log smoke=TC003: parenmatch mixed brackets. Succeeded.},{@log smoke=TC003: parenmatch mixed brackets. Failed (%q0).}"
 >261
-"@if strmatch(setr(0,sha1([parenmatch(add(1,2)])),2636BDF1F05E40F3715ED671C9BBCB1577C16ABC)={@log smoke=TC004: parenmatch mismatched. Succeeded.;@trig me/tr.done},{@log smoke=TC004: parenmatch mismatched. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([parenmatch(add(1,2)])),28A36855A4DC1EAE2C937D1572A6074E8A5586ED)={@log smoke=TC004: parenmatch mismatched. Succeeded.;@trig me/tr.done},{@log smoke=TC004: parenmatch mismatched. Failed (%q0).;@trig me/tr.done}"
 <
 !118
 "test_pi_fn"

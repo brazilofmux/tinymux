@@ -1505,7 +1505,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
                     *bp++ = *str++;
                 }
             }
-            mux_exec(str, LBUF_SIZE-1, buf1, &bp, executor, caller, enactor,
+            mux_exec2(str, LBUF_SIZE-1, buf1, &bp, executor, caller, enactor,
                 eval|interp|EV_FCHECK|EV_TOP, cargs, ncargs);
             *bp = '\0';
         }
@@ -1669,7 +1669,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
             *arg = '\0';
         }
         buf1 = bp = alloc_lbuf("process_cmdent.2");
-        mux_exec(buf2, LBUF_SIZE-1, buf1, &bp, executor, caller, enactor,
+        mux_exec2(buf2, LBUF_SIZE-1, buf1, &bp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL|EV_TOP, cargs, ncargs);
         *bp = '\0';
 
@@ -1702,7 +1702,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
             if (interp & EV_EVAL)
             {
                 buf2 = bp = alloc_lbuf("process_cmdent.3");
-                mux_exec(arg, LBUF_SIZE-1, buf2, &bp, executor, caller, enactor,
+                mux_exec2(arg, LBUF_SIZE-1, buf2, &bp, executor, caller, enactor,
                     eval|interp|EV_FCHECK|EV_TOP, cargs, ncargs);
                 *bp = '\0';
             }
