@@ -465,10 +465,18 @@ TryAgain:
 // It's useful with mux_exec which will be copying the characters to another
 // buffer anyway and is more than able to perform the escapes and trimming.
 //
-static const UTF8 *parse_to_lite(const UTF8 *dstr, UTF8 delim1, UTF8 delim2, size_t *nLen, int *iWhichDelim)
+static const UTF8 *parse_to_lite(const UTF8 *dstr, UTF8 delim1, UTF8 delim2, size_t *nLen, int *iWhichDelim, const UTF8 *end = nullptr)
 {
     if (  nullptr == dstr
        || '\0' == dstr[0])
+    {
+        *nLen = 0;
+        return nullptr;
+    }
+
+    // If an end boundary is given, treat reaching it the same as '\0'.
+    //
+    if (end && dstr >= end)
     {
         *nLen = 0;
         return nullptr;
@@ -498,6 +506,17 @@ static const UTF8 *parse_to_lite(const UTF8 *dstr, UTF8 delim1, UTF8 delim2, siz
 
     for (;;)
     {
+        // If we have reached the end boundary, treat as unterminated.
+        //
+        if (end && cstr >= end)
+        {
+            isSpecial(L3, delim1) = iOriginalCode1;
+            isSpecial(L3, delim2) = iOriginalCode2;
+            *iWhichDelim = 0;
+            *nLen = (cstr - dstr);
+            return nullptr;
+        }
+
         int iCode = isSpecial(L3, *cstr);
 
 TryAgain:
@@ -508,8 +527,17 @@ TryAgain:
             do
             {
                 cstr++;
+                if (end && cstr >= end)
+                {
+                    break;
+                }
                 iCode = isSpecial(L3, *cstr);
             } while (iCode == 0);
+
+            if (end && cstr >= end)
+            {
+                continue;  // Will hit the boundary check at top of loop.
+            }
         }
 
         if (iCode <= 4)
@@ -757,7 +785,7 @@ void parse_arglist( dbref executor, dbref caller, dbref enactor, UTF8 *dstr,
 static const UTF8 *parse_arglist_lite( dbref executor, dbref caller, dbref enactor,
                           const UTF8 *dstr, int eval, UTF8 *fargs[],
                           int nfargs, const UTF8 *cargs[], int ncargs,
-                          int *nArgsParsed)
+                          int *nArgsParsed, const UTF8 *end = nullptr)
 {
     if (nullptr == dstr)
     {
@@ -789,11 +817,11 @@ static const UTF8 *parse_arglist_lite( dbref executor, dbref caller, dbref enact
         pCurr = pNext;
         if (arg < nfargs - 1)
         {
-            pNext = parse_to_lite(pCurr, ',', ')', &nLen, &iWhichDelim);
+            pNext = parse_to_lite(pCurr, ',', ')', &nLen, &iWhichDelim, end);
         }
         else
         {
-            pNext = parse_to_lite(pCurr, '\0', ')', &nLen, &iWhichDelim);
+            pNext = parse_to_lite(pCurr, '\0', ')', &nLen, &iWhichDelim, end);
         }
 
         // The following recognizes and returns zero arguments. We avoid
@@ -1509,7 +1537,7 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                 UTF8 **fargs = PushPointers(MAX_ARG);
                 tstr = parse_arglist_lite(executor, caller, enactor,
                       pStr + iStr + 1, feval, fargs, nfargs, cargs, ncargs,
-                      &nfargs);
+                      &nfargs, pStr + nStr);
 
 
                 // If no closing delim, just insert the '(' and continue normally.
