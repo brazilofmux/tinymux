@@ -1,0 +1,17 @@
+hello world
+add(1,2)
+[add(1,mul(2,3))]
+%0 %1 %q0 %q<foo>
+{literal [not evaluated]}
+[setq(0,add)]%q0(1,2)
+@if eq(1,1)={think yes},{think no}
+@dolist a b c={think ##-#@}
+[iter(a b c,[strlen(##)])]
+[switch(%0,a,alpha,b,beta,*,other)]
+%va %vZ %c<1,2,3> %xn %=<foo> %i0 %#
+%%literal\\%percent
+%Q<longname> %I5 %V
+think [add(1,[mul(2,3)])]
+[if(eq(%0,1),yes,no)]
+[u(#1234/attr,%0,%1)]
+think [setq(0,hello)]%q0 world

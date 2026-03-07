@@ -16,9 +16,14 @@
  *   RBRACE  - }
  *   COMMA   - , (argument separator)
  *   SEMI    - ; (command separator)
- *   PCT     - %-substitution (%0, %q0, %r, etc.)
+ *   PCT     - %-substitution (%0, %q0, %r, %c<rgb>, %=<attr>, etc.)
  *   ESC     - \-escape
  *   SPACE   - whitespace run
+ *
+ * This mirrors the character classifications in eval.cpp's isSpecial
+ * tables L1-L4.  The %-substitution handling follows the L2 dispatch
+ * table exactly: multi-character sequences like %q<name>, %=<attr>,
+ * %c<rgb>, %vA, and %i0 are gathered into a single PCT token.
  */
 
 #include <cstdio>
@@ -70,12 +75,90 @@ static const char *token_name(TokenType t)
     return "???";
 }
 
-// Known MUX built-in function names (subset for study purposes).
-// A real implementation would load these from the server's function table.
+// Gather a %-substitution sequence.  This follows the L2 dispatch
+// table in eval.cpp.  On entry, p points to the character AFTER '%'.
+// On return, p points past the last consumed character.
 //
-static bool is_func_char(char c)
+static std::string gather_pct(const char *&p)
 {
-    return isalnum(static_cast<unsigned char>(c)) || c == '_';
+    std::string sub("%");
+    char ch = *p;
+
+    if (!ch) {
+        // Bare % at end of string.
+        return sub;
+    }
+
+    char upper = static_cast<char>(toupper(static_cast<unsigned char>(ch)));
+
+    if (ch >= '0' && ch <= '9') {
+        // %0-%9: command argument
+        sub += *p++;
+
+    } else if (upper == 'Q') {
+        // %q0-%qz or %q<name>
+        sub += *p++;
+        if (*p == '<') {
+            sub += *p++;
+            while (*p && *p != '>') {
+                sub += *p++;
+            }
+            if (*p == '>') {
+                sub += *p++;
+            }
+        } else if (*p) {
+            sub += *p++;
+        }
+
+    } else if (upper == 'V') {
+        // %va-%vz: variable attributes
+        sub += *p++;
+        if (*p && isalpha(static_cast<unsigned char>(*p))) {
+            sub += *p++;
+        }
+
+    } else if (upper == 'C' || upper == 'X') {
+        // %cn, %ch, %c<r,g,b>: color codes
+        sub += *p++;
+        if (*p == '<') {
+            sub += *p++;
+            while (*p && *p != '>') {
+                sub += *p++;
+            }
+            if (*p == '>') {
+                sub += *p++;
+            }
+        } else if (*p) {
+            sub += *p++;
+        }
+
+    } else if (ch == '=') {
+        // %=<attr> or %=<nnn>: attribute/arg shorthand
+        sub += *p++;
+        if (*p == '<') {
+            sub += *p++;
+            while (*p && *p != '>') {
+                sub += *p++;
+            }
+            if (*p == '>') {
+                sub += *p++;
+            }
+        }
+
+    } else if (upper == 'I') {
+        // %i0, %i1, etc.: iterator text
+        sub += *p++;
+        if (*p && *p >= '0' && *p <= '9') {
+            sub += *p++;
+        }
+
+    } else {
+        // Single-character substitutions:
+        // %# %! %@ %r %b %t %l %n %s %o %p %a %m %k %% %| %: %+
+        sub += *p++;
+    }
+
+    return sub;
 }
 
 static std::vector<Token> tokenize(const char *input)
@@ -98,11 +181,10 @@ static std::vector<Token> tokenize(const char *input)
             p++;
         } else if (*p == '(') {
             // Look backwards: is the preceding token a LIT that could be
-            // a function name?
+            // a function name?  This mirrors mux_exec's backwards scan of
+            // the output buffer.
             //
             if (!tokens.empty() && tokens.back().type == TOK_LIT) {
-                // Reclassify the preceding literal as a function name.
-                //
                 tokens.back().type = TOK_FUNC;
             }
             tokens.push_back({TOK_LPAREN, "("});
@@ -117,30 +199,10 @@ static std::vector<Token> tokenize(const char *input)
             tokens.push_back({TOK_SEMI, ";"});
             p++;
         } else if (*p == '%') {
-            // %-substitution.  Grab the % and what follows.
-            //
-            std::string sub;
-            sub += *p++;
-            if (*p == 'q' || *p == 'Q') {
-                sub += *p++;
-                if (*p == '<') {
-                    // %q<name>
-                    sub += *p++;
-                    while (*p && *p != '>') {
-                        sub += *p++;
-                    }
-                    if (*p == '>') {
-                        sub += *p++;
-                    }
-                } else if (*p) {
-                    sub += *p++;
-                }
-            } else if (*p) {
-                sub += *p++;
-            }
-            tokens.push_back({TOK_PCT, sub});
+            p++;
+            tokens.push_back({TOK_PCT, gather_pct(p)});
         } else if (*p == '\\') {
-            // Escape sequence.
+            // Escape: \ followed by the next character.
             //
             std::string esc;
             esc += *p++;
@@ -158,6 +220,8 @@ static std::vector<Token> tokenize(const char *input)
             tokens.push_back({TOK_SPACE, sp});
         } else {
             // Literal text — accumulate until we hit a special character.
+            // These are the L1 specials: NUL SP % ( [ \ {
+            // plus the structural characters: ) ] } , ;
             //
             std::string lit;
             while (*p && *p != '[' && *p != ']' && *p != '{' && *p != '}'

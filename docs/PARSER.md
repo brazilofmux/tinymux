@@ -139,6 +139,106 @@ mux_exec(pStr, nStr, buff, bufc, executor, caller, enactor, eval, cargs, ncargs)
    The output buffer *is* the accumulator. Function args are allocated,
    evaluated into separate buffers, passed to handlers, and freed.
 
+### Action List Processing (cque.cpp)
+
+Before `mux_exec` or `process_command` sees anything, the command queue
+processor in `cque.cpp` splits action lists on `;` using `parse_to()`:
+
+```
+"@pemit %#=Hello;think Done"
+    |
+    parse_to(&command, ';', EV_STRIP_AROUND)
+    |
+    +-- "@pemit %#=Hello"  --> process_command()
+    +-- "think Done"       --> process_command()
+```
+
+The pipe operator `|` is also handled here — if the next command after `;`
+starts with `|`, the output of the current command is piped via `%|`.
+
+### process_command Flow (command.cpp)
+
+```
+process_command(executor, caller, enactor, eval, interactive, command, args, nargs)
+    |
+    +-- strip leading whitespace
+    +-- space compress (if configured)
+    +-- check single-char prefix commands (", :, ;, etc.)
+    +-- check HOME, GOTO
+    +-- lowercase the command, look up in command hash table
+    +-- split on first unescaped '=' for command arg / right-side arg
+    +-- decode /switches
+    +-- process_cmdent() to execute the command handler
+    +-- if no match: try exits, $-commands, global $-commands
+```
+
+### Complete %-Substitution Reference (L2 Table)
+
+The L2 table encodes both the substitution type (low 6 bits) and
+a capitalization flag (bit 7, 0x80). When bit 7 is set, the first
+character of the result is uppercased.
+
+```
+Code  Char  Meaning
+----  ----  --------------------------------------------------
+ 0    (other) Literal copy of the escaped character
+ 1    0-9   Command argument %0 through %9
+ 2    Q/q   Register: %q0-%qz or %q<name>
+ 3    #     Enactor dbref (%#)
+ 4    !     Executor dbref (%!)
+ 5    R/r   Carriage return (%r → \r\n)
+ 6    C/c   Color code (%cn, %ch, %c<rgb>)
+      X/x   Color code (alias for %c)
+ 7    B/b   Blank/space (%b)
+ 8    T/t   Tab (%t)
+ 9    L/l   Enactor location (%l)
+10    V/v   Variable attribute (%va-%vz)
+11    %     Literal percent (%%)
+12    N/n   Enactor name (%n/%N)
+13    |     Pipe output (%|)
+14    S/s   Subjective pronoun (%s/%S → he/she/it/they)
+15    P/p   Possessive pronoun (%p/%P → his/her/its/their)
+16    O/o   Objective pronoun (%o/%O → him/her/it/them)
+17    A/a   Absolute possessive (%a/%A → his/hers/its/theirs)
+18    \0    End of string (stop parsing)
+19    M/m   Last command (%m)
+20    @     Caller dbref (%@)
+21    =     Attribute shorthand (%=<attr>, like v(attr))
+              Also extended args: %=<0> through %=<nnn>
+22    +     Argument count (%+)
+23    K/k   Moniker (%k — colored name)
+24    I/i   Iterator text (%i0, %i1, etc.)
+25    :     Enactor objid (%: → #dbref:ctime)
+```
+
+Uppercase variants (A vs a, N vs n, S vs s, etc.) have bit 7 set
+(0x80) in L2, which triggers `mux_toupper_first()` on the result.
+This means `%N` gives "Stephen" while `%n` gives "stephen".
+
+### Eval Flags Reference
+
+```
+EV_EVAL         0x0004   Evaluate %-substitutions
+EV_STRIP_CURLY  0x0008   Strip outer {} from args
+EV_FCHECK       0x0010   Check for function calls on (
+EV_FMAND        0x0020   Require valid function name (else #-1 error)
+EV_NOFCHECK     0x0040   Suppress [ evaluation
+EV_NO_COMPRESS  0x0080   Don't compress spaces
+EV_NO_LOCATION  0x0100   Don't allow %l
+EV_NOTRACE      0x0200   Don't trace
+EV_TRACE        0x0400   Force tracing
+EV_TOP          0x0800   Top-level evaluation
+EV_STRIP_LS     0x1000   Strip leading spaces
+EV_STRIP_TS     0x2000   Strip trailing spaces
+EV_STRIP_AROUND 0x4000   Strip surrounding {} if present
+```
+
+Key combinations:
+- Inside `[]`: `eval | EV_FCHECK | EV_FMAND` — functions mandatory
+- Inside `{}` with EV_EVAL: `eval & ~(EV_STRIP_CURLY|EV_FCHECK|EV_FMAND)` — no function check
+- Inside `{}` without EV_EVAL: `eval & ~EV_FMAND` — just copy
+- Function arguments: `eval & ~(EV_TOP|EV_FMAND)` or without EV_EVAL for FN_NOEVAL
+
 ## Challenges for AST Generation
 
 ### The Backwards Function Name Problem
