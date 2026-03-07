@@ -1,6 +1,6 @@
 # Replacing mux_exec with an AST Evaluator
 
-## Status: Phase 2 Complete — Shadow Validation Active
+## Status: Phase 3 Complete — AST Migration Done
 
 Branch: `brazil`
 
@@ -354,3 +354,48 @@ With a stable AST, the evaluator can be replaced with a compiler:
 4. **Compatibility period.** Both code paths coexist. `shadow_eval`
    provides continuous validation. Call sites can be migrated
    incrementally with immediate regression detection.
+
+## Malformed Softcode Compatibility
+
+The classic parser is a single-pass character scanner. Malformed input
+(unmatched parens, unterminated braces, stray delimiters) produces
+results that are artifacts of scanning order, not intentional semantics.
+The AST parser, being a structured tree, handles malformed input
+differently by nature.
+
+### Triage Categories
+
+1. **Must support** — Well-formed softcode that follows documented
+   syntax. This is the contract. No divergence is acceptable.
+
+2. **Best-effort** — Common edge cases where the classic parser "happens
+   to work." Examples: unterminated function calls (`notafunc(%q9` with
+   no closing paren), unmatched braces, stray %-substitutions with
+   malformed angle brackets (`%q<missing`). We match classic behavior
+   when the fix is clean and doesn't compromise the AST's structure.
+   These cases are covered by edge-probe tests (`parser_fn` TC021–TC024).
+
+3. **Intentionally unsupported** — Input that relies on scanning-order
+   side effects the AST fundamentally cannot reproduce:
+   - `##`, `#@`, `#$` token replacement (replaced by `%i0`–`%i9`,
+     `inum()`, `itext()`). Handled via fallback path when detected.
+   - Dynamic function calls (`%q0(args)`) where the function name is
+     computed at runtime.
+   - Constructs where parse-time and eval-time information must be
+     interleaved in a way that requires character-at-a-time scanning.
+
+### Edge-Probe Tests
+
+The `parser_fn.mux` test suite includes edge-probe tests (TC021–TC024)
+that exercise malformed input. These tests verify parity with the classic
+parser. When parity is achieved, they report "Succeeded." When the AST
+intentionally diverges, the test documents the divergence.
+
+Bugs found by edge probes so far:
+- **Brace-depth tracking** — `{notafunc(%q9}`: the `}` was consumed by
+  function argument parsing instead of closing the brace group. Fixed by
+  adding `m_braceDepth` counter to `parseArgList`.
+- **Unterminated funccall eval** — Unterminated function calls emitted
+  raw text for their children instead of evaluating %-substitutions.
+  Fixed by calling `ast_eval_node` instead of `ast_raw_text` in the
+  `!has_close_paren` path.
