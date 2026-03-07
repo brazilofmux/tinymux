@@ -203,6 +203,7 @@ void cf_init(void)
     mudconf.safer_passwords = false;
     mudconf.safer_iter      = false;
     mudconf.see_own_dark    = true;
+    mudconf.shadow_eval     = false;
     mudconf.sweep_dark      = false;
     mudconf.switch_df_all   = true;
     mudconf.talk_mode_default = false;
@@ -298,6 +299,7 @@ void cf_init(void)
     mudstate.events_flag = 0;
     mudstate.bReadingConfiguration = false;
     mudstate.bCanRestart = false;
+    mudstate.bShadowActive = false;
     mudstate.panicking = false;
     mudstate.asserting = 0;
     mudstate.logging = 0;
@@ -1988,6 +1990,7 @@ static CONFPARM conftable[] =
     {T("safer_passwords"),           cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.safer_passwords), nullptr,            0},
     {T("search_cost"),               cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.searchcost,             nullptr,            0},
     {T("see_owned_dark"),            cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.see_own_dark),    nullptr,            0},
+    {T("shadow_eval"),               cf_bool,        CA_GOD,    CA_GOD,      reinterpret_cast<int *>(&mudconf.shadow_eval),     nullptr,            0},
     {T("signal_action"),             cf_option,      CA_STATIC, CA_GOD,      &mudconf.sig_action,             sigactions_nametab, 0},
     {T("site_chars"),                cf_int,         CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.site_chars),      nullptr,            0},
     {T("sitemon_site"),              cf_site,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.access_list),    nullptr,   HC_SITEMON},

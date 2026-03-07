@@ -87,6 +87,7 @@ struct confdata
     bool    safer_passwords;    /* enforce reasonably good password choices? */
     bool    safer_iter;         /* disable ## substitution in iter/list/parse? */
     bool    see_own_dark;       /* Do you see your own dark stuff? */
+    bool    shadow_eval;        /* Run AST evaluator in parallel and compare? */
     bool    space_compress;     /* Convert multiple spaces into one space */
     bool    sweep_dark;         /* Can you sweep dark places? */
     bool    switch_df_all;      /* Should @switch match all by default? */
@@ -465,6 +466,7 @@ struct statedata
     bool bReadingConfiguration; // are we reading the config file at startup?
     bool bStackLimitReached;    // Was stack slammed?
     bool bStandAlone;           // Are we running in dbconvert mode.
+    bool bShadowActive;         // Shadow eval in progress (prevent recursion).
     bool bSQLiteLoading;        // Suppress write-through during bulk load.
     bool panicking;             // are we in the middle of dying horribly?
     bool shutdown_flag;         // Should interface be shut down?

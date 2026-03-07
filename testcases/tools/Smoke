@@ -78,6 +78,7 @@ player_queue_limit 100000
 #
 include alias.conf
 include compat.conf
+shadow_eval yes
 _EOF
 #
 #	Kick off MUX
