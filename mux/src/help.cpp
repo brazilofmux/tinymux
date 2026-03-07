@@ -371,7 +371,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
             {
                 executor_for_help = mudconf.help_executor;
             }
-            mux_exec(line, len, result, &bp, executor_for_help, executor, executor,
+            mux_exec2(line, len, result, &bp, executor_for_help, executor, executor,
                     EV_NO_COMPRESS | EV_FIGNORE | EV_EVAL, nullptr, 0);
         }
         else

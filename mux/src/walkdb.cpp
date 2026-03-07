@@ -991,7 +991,7 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
             UTF8 *buff2 = replace_tokens(parm->s_rst_eval,
                 mudconf.safer_iter ? nullptr : buff, nullptr, nullptr);
             result = bp = alloc_lbuf("search_perform");
-            mux_exec(buff2, LBUF_SIZE-1, result, &bp, executor, caller, enactor,
+            mux_exec2(buff2, LBUF_SIZE-1, result, &bp, executor, caller, enactor,
                 EV_FCHECK | EV_EVAL | EV_NOTRACE, nullptr, 0);
             *bp = '\0';
             free_lbuf(buff2);

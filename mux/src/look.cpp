@@ -135,7 +135,7 @@ static int GetRealmLevel(dbref executor, dbref thing, const UTF8 *attrname)
         //
         UTF8 *ebuf = alloc_lbuf("GetRealmLevel.eval");
         UTF8 *ep = ebuf;
-        mux_exec(buff, LBUF_SIZE-1, ebuf, &ep, executor, thing, executor,
+        mux_exec2(buff, LBUF_SIZE-1, ebuf, &ep, executor, thing, executor,
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
             nullptr, 0);
         *ep = '\0';
@@ -504,7 +504,7 @@ static void look_exits(dbref player, dbref loc, const UTF8 *exit_name)
         }
         else
         {
-            mux_exec(ExitFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
+            mux_exec2(ExitFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
                 AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
                 (const UTF8 **)&VisibleObjectList, 1);
         }
@@ -689,7 +689,7 @@ static void look_contents(dbref player, dbref loc, const UTF8 *contents_name, in
         }
         else
         {
-            mux_exec(ContentsFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
+            mux_exec2(ContentsFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
                 AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
                 ParameterList, 2);
         }
@@ -1104,7 +1104,7 @@ static bool show_a_desc(dbref player, dbref loc)
         }
         else
         {
-            mux_exec(tbuf1, LBUF_SIZE-1, temp, &bp, loc, player, player,
+            mux_exec2(tbuf1, LBUF_SIZE-1, temp, &bp, loc, player, player,
                 AttrTrace(aflags2, EV_FCHECK|EV_EVAL|EV_TOP),
                 nullptr, 0);
         }
@@ -1126,7 +1126,7 @@ static bool show_a_desc(dbref player, dbref loc)
         }
         else
         {
-            mux_exec(DescFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
+            mux_exec2(DescFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
                 AttrTrace(aflags1, EV_FCHECK|EV_EVAL|EV_TOP),
                 ParameterList, 2);
         }
@@ -1271,7 +1271,7 @@ static void look_simple(dbref player, dbref thing, bool obey_terse)
             }
             else
             {
-                mux_exec(NameFormat, LBUF_SIZE-1, FormatOutput, &tPtr, thing,
+                mux_exec2(NameFormat, LBUF_SIZE-1, FormatOutput, &tPtr, thing,
                     player, player,
                     AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
                     0, 0);
@@ -1401,7 +1401,7 @@ void look_in(dbref player, dbref loc, int key)
         }
         else
         {
-            mux_exec(NameFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
+            mux_exec2(NameFormat, LBUF_SIZE-1, FormatOutput, &tPtr, loc, player, player,
                 AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
                 0, 0);
         }

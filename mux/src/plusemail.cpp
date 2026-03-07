@@ -368,7 +368,7 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
 
     UTF8 *body = alloc_lbuf("mod_email_do_email.body");
     UTF8 *bodyptr = body;
-    mux_exec(arg2, LBUF_SIZE-1, body, &bodyptr, executor, executor, executor,
+    mux_exec2(arg2, LBUF_SIZE-1, body, &bodyptr, executor, executor, executor,
         EV_TOP | EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, nullptr, 0);
     *bodyptr = '\0';
 
