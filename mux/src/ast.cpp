@@ -1690,7 +1690,7 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             }
 
             int feval = eval & ~(EV_TOP | EV_FMAND);
-            mux_exec(tbuf, LBUF_SIZE-1, buff, bufc, obj, executor, enactor,
+            mux_exec2(tbuf, LBUF_SIZE-1, buff, bufc, obj, executor, enactor,
                 AttrTrace(aflags, feval),
                 const_cast<const UTF8 **>(fargs), nfargs);
 
