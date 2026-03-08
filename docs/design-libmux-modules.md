@@ -329,7 +329,7 @@ Based on the codebase survey, these subsystems have relatively clean boundaries:
 |---|---|---|---|---|
 | Comsys | comsys.cpp | 4,500 | db, notify, player | **COMPLETE** |
 | Mail | mail.cpp | 6,000 | db, notify, player | **COMPLETE** |
-| Help | help.cpp | 800 | file I/O, notify | Future |
+| Help | help.cpp | 800 | file I/O, notify | **COMPLETE** (server-provided) |
 | Guests | mguests.cpp | 350 | db, player, config | Future |
 
 These subsystems are deeply entangled and harder to extract:
@@ -446,6 +446,38 @@ The @mail system is fully extracted into `mail_mod.so`.
   on player attributes via IAttributeAccess works without server-internal
   attribute functions
 
+### Help System — COMPLETE (brazil branch, 2026-03-08)
+
+The help system is exposed as a server-provided interface.  Unlike comsys and
+mail (which were extracted into modules), help stays in netmux but is
+accessible to any module via `mux_IHelpSystem`.
+
+**Interface:** `mux_IHelpSystem` (4 methods, implemented by netmux):
+
+| Method | Server function wrapped |
+|---|---|
+| LookupTopic | help_helper() — topic lookup with alloc_lbuf buffer |
+| FindHelpFile | mudstate.aHelpDesc[] iteration by CommandName |
+| GetHelpFileCount | mudstate.nHelpDesc |
+| ReloadIndexes | helpindex_load() |
+
+**Implementation:** `CHelpSystem` class in modules.cpp + `CHelpSystemFactory`.
+Registered as `CID_HelpSystem` in `netmux_classes[]`.
+
+**Proof of concept:** The exp3 module's `mhelp()` softcode function demonstrates
+cross-module help access.  `mhelp(topic)` looks up a topic in the default help
+file; `mhelp(helpfile, topic)` looks up in a named help file.  Two smoke tests
+verify topic lookup and nonexistent-topic error handling.
+
+**What the help system proved:**
+- The "server-provided interface" pattern (code stays in netmux, accessible
+  via COM) is a viable alternative to full extraction for tightly coupled
+  subsystems
+- Help is deeply coupled to config (help file registration), command dispatch
+  (help command names), and the evaluator (topic matching) — extraction would
+  be high cost for little benefit
+- A 4-method interface wrapping existing functions is minimal overhead
+
 ### Feasibility Assessment
 
 **Honest risks:**
@@ -460,7 +492,7 @@ The @mail system is fully extracted into `mail_mod.so`.
    extraction showed that a 19-method interface + ~3,200 lines of module code
    is manageable.  The scaffolding overhead is modest relative to the logic.
 
-3. **Testing:** 409 smoke tests pass with comsys and mail modules loaded.
+3. **Testing:** 411 smoke tests pass with comsys and mail modules loaded.
    The delegation pattern (null-check + fallback) means unloading a module
    restores built-in behavior.
 
@@ -472,7 +504,7 @@ The @mail system is fully extracted into `mail_mod.so`.
 **Tier 1 — Low risk, clear value:**
 - ~~Comsys behind mux_IComsysControl interface~~ — **COMPLETE**
 - ~~Mail system behind mux_IMailControl interface~~ — **COMPLETE**
-- Help system behind mux_IHelp interface — **NEXT**
+- Help system behind mux_IHelpSystem interface — **COMPLETE** (server-provided)
 
 **Tier 2 — Medium risk, already done as infrastructure:**
 - ~~Attribute access behind mux_IAttributeAccess~~ — **COMPLETE** (in-process)
@@ -538,10 +570,10 @@ to modules, informing the Phase 3 migration scope.
 
 **Results (brazil branch, 2026-03-08):**
 
-The exp3 module provides 8 softcode functions (mget, mset, mname, mowner,
-mloc, mtype, meval, mtell).  Each deliberately omits the interface it needs,
-so it hits the boundary wall and returns an error.  9 smoke tests verify the
-walls are correct.
+The exp3 module provides 9 softcode functions (mget, mset, mname, mowner,
+mloc, mtype, meval, mtell, mhelp).  Each deliberately omits the interface it needs,
+so it hits the boundary wall and returns an error.  12 smoke tests verify the
+walls and interfaces are correct.
 
 The boundary walls define the interface surface a real module requires:
 
@@ -755,6 +787,7 @@ targeted includes once those types are accessible.
 | IID_IEvaluator | mux_IEvaluator | Eval | comsys_mod, mail_mod |
 | IID_IPermissions | mux_IPermissions | IsWizard, IsGod, HasControl, HasCommAll | comsys_mod, mail_mod |
 | IID_IMailDelivery | mux_IMailDelivery | MailCheck, NotifyDelivery, IsComposing, SetComposing, ThrottleCheck | mail_mod |
+| IID_IHelpSystem | mux_IHelpSystem | LookupTopic, FindHelpFile, GetHelpFileCount, ReloadIndexes | exp3 |
 | IID_IFunction | mux_IFunction | Call (per softcode invocation) | exp3 |
 | IID_IFunctionsControl | mux_IFunctionsControl | Add, Remove | exp3 |
 
