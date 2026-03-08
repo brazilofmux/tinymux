@@ -12,22 +12,22 @@
  *                      WALL: No mux_IDatabase or attribute-access interface.
  *
  *   mname(obj)       — Return the name of an object.
- *                      WALL: No object-property interface.
+ *                      RESOLVED: Uses mux_IObjectInfo::GetName().
  *
  *   mtell(obj, msg)  — Send a message to an object/player.
- *                      WALL: No notification interface.
+ *                      RESOLVED: Uses mux_INotify::Notify().
  *
  *   mowner(obj)      — Return the dbref of the object's owner.
- *                      WALL: No object-property interface.
+ *                      RESOLVED: Uses mux_IObjectInfo::GetOwner().
  *
  *   mloc(obj)        — Return the dbref of the object's location.
- *                      WALL: No object-property interface.
+ *                      RESOLVED: Uses mux_IObjectInfo::GetLocation().
  *
  *   meval(obj, expr) — Evaluate a softcode expression as obj.
  *                      WALL: No evaluator interface.
  *
  *   mtype(obj)       — Return the type of an object (ROOM, PLAYER, etc.).
- *                      WALL: No object-property interface.
+ *                      RESOLVED: Uses mux_IObjectInfo::GetType().
  *
  *   mset(obj/attr, value) — Set an attribute on an object.
  *                      WALL: No attribute-write interface.
@@ -39,14 +39,13 @@
  *    netmux, not exported.  Needs: mux_IAttributeAccess with methods
  *    like GetAttribute(dbref obj, const UTF8 *attrname, ...).
  *
- * 2. OBJECT PROPERTIES — Name(), Location(), Owner(), Typeof() are all
- *    netmux-internal functions.  Even the db[] array is inaccessible.
- *    Needs: mux_IObjectInfo with methods like GetName(dbref),
- *    GetLocation(dbref), GetOwner(dbref), GetType(dbref).
+ * 2. OBJECT PROPERTIES — RESOLVED.  mux_IObjectInfo (CID_ObjectInfo)
+ *    provides IsValid, GetName, GetOwner, GetLocation, GetType.
+ *    Implemented in modules.cpp as CObjectInfo.
  *
- * 3. PLAYER NOTIFICATION — notify() and raw_notify() are netmux
- *    functions.  No interface exists to send messages to players/objects.
- *    Needs: mux_INotify with Notify(dbref target, const UTF8 *msg).
+ * 3. PLAYER NOTIFICATION — RESOLVED.  mux_INotify (CID_Notify)
+ *    provides Notify and RawNotify.
+ *    Implemented in modules.cpp as CNotify.
  *
  * 4. EVALUATOR — mux_exec() is deeply embedded in netmux (accesses
  *    mudstate, db[], the parse cache, etc.).  A module cannot evaluate
@@ -248,7 +247,8 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 // CExp3 component.
 // ---------------------------------------------------------------------------
 
-CExp3::CExp3(void) : m_cRef(1), m_pILog(nullptr), m_pIFunctionsControl(nullptr)
+CExp3::CExp3(void) : m_cRef(1), m_pILog(nullptr), m_pIFunctionsControl(nullptr),
+    m_pINotify(nullptr), m_pIObjectInfo(nullptr)
 {
     g_cComponents++;
 }
@@ -297,6 +297,18 @@ MUX_RESULT CExp3::FinalConstruct(void)
         }
     }
 
+    // Acquire notification interface.
+    //
+    mux_CreateInstance(CID_Notify, nullptr, UseSameProcess,
+                       IID_INotify,
+                       reinterpret_cast<void **>(&m_pINotify));
+
+    // Acquire object info interface.
+    //
+    mux_CreateInstance(CID_ObjectInfo, nullptr, UseSameProcess,
+                       IID_IObjectInfo,
+                       reinterpret_cast<void **>(&m_pIObjectInfo));
+
     return mr;
 }
 
@@ -319,6 +331,18 @@ CExp3::~CExp3()
     {
         m_pIFunctionsControl->Release();
         m_pIFunctionsControl = nullptr;
+    }
+
+    if (nullptr != m_pINotify)
+    {
+        m_pINotify->Release();
+        m_pINotify = nullptr;
+    }
+
+    if (nullptr != m_pIObjectInfo)
+    {
+        m_pIObjectInfo->Release();
+        m_pIObjectInfo = nullptr;
     }
 
     g_cComponents--;
@@ -424,71 +448,114 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
 
     case 1: // MNAME(obj)
         {
-            // WALL 2: Cannot call Name() — it's in netmux.
-            // WALL 7: Cannot validate the dbref.
-            // WALL 9: Cannot call match_thing() to resolve names.
-            //
             int obj = parse_dbref(fargs[0]);
             if (obj < 0)
             {
                 safe_copy_str(T("#-1 INVALID DBREF"), buff, bufc);
             }
-            else
+            else if (nullptr == m_pIObjectInfo)
             {
                 safe_copy_str(T("#-1 NO OBJECT INFO INTERFACE"), buff, bufc);
+            }
+            else
+            {
+                bool bValid;
+                m_pIObjectInfo->IsValid(obj, &bValid);
+                if (!bValid)
+                {
+                    safe_copy_str(T("#-1 NO SUCH OBJECT"), buff, bufc);
+                }
+                else
+                {
+                    const UTF8 *pName = nullptr;
+                    m_pIObjectInfo->GetName(obj, &pName);
+                    if (nullptr != pName)
+                    {
+                        safe_copy_str(pName, buff, bufc);
+                    }
+                }
             }
         }
         break;
 
     case 2: // MTELL(obj, msg)
         {
-            // WALL 3: Cannot call notify() or raw_notify() — in netmux.
-            // WALL 7: Cannot validate the target dbref.
-            // WALL 6: Cannot check if executor has permission to notify.
-            //
             int obj = parse_dbref(fargs[0]);
             if (obj < 0)
             {
                 safe_copy_str(T("#-1 INVALID DBREF"), buff, bufc);
             }
+            else if (nullptr == m_pINotify)
+            {
+                safe_copy_str(T("#-1 NO NOTIFY INTERFACE"), buff, bufc);
+            }
             else
             {
-                // We have the target dbref and the message text in fargs[1],
-                // but we have no way to deliver the message.
-                //
-                safe_copy_str(T("#-1 NO NOTIFY INTERFACE"), buff, bufc);
+                MUX_RESULT mr = m_pINotify->Notify(obj, fargs[1]);
+                if (MUX_FAILED(mr))
+                {
+                    safe_copy_str(T("#-1 NO SUCH OBJECT"), buff, bufc);
+                }
             }
         }
         break;
 
     case 3: // MOWNER(obj)
         {
-            // WALL 2: Cannot call Owner() — it's in netmux.
-            //
             int obj = parse_dbref(fargs[0]);
             if (obj < 0)
             {
                 safe_copy_str(T("#-1 INVALID DBREF"), buff, bufc);
             }
-            else
+            else if (nullptr == m_pIObjectInfo)
             {
                 safe_copy_str(T("#-1 NO OBJECT INFO INTERFACE"), buff, bufc);
+            }
+            else
+            {
+                bool bValid;
+                m_pIObjectInfo->IsValid(obj, &bValid);
+                if (!bValid)
+                {
+                    safe_copy_str(T("#-1 NO SUCH OBJECT"), buff, bufc);
+                }
+                else
+                {
+                    dbref owner;
+                    m_pIObjectInfo->GetOwner(obj, &owner);
+                    safe_copy_str(T("#"), buff, bufc);
+                    safe_ltoa(owner, buff, bufc);
+                }
             }
         }
         break;
 
     case 4: // MLOC(obj)
         {
-            // WALL 2: Cannot call Location() — it's in netmux (db[obj].location).
-            //
             int obj = parse_dbref(fargs[0]);
             if (obj < 0)
             {
                 safe_copy_str(T("#-1 INVALID DBREF"), buff, bufc);
             }
-            else
+            else if (nullptr == m_pIObjectInfo)
             {
                 safe_copy_str(T("#-1 NO OBJECT INFO INTERFACE"), buff, bufc);
+            }
+            else
+            {
+                bool bValid;
+                m_pIObjectInfo->IsValid(obj, &bValid);
+                if (!bValid)
+                {
+                    safe_copy_str(T("#-1 NO SUCH OBJECT"), buff, bufc);
+                }
+                else
+                {
+                    dbref loc;
+                    m_pIObjectInfo->GetLocation(obj, &loc);
+                    safe_copy_str(T("#"), buff, bufc);
+                    safe_ltoa(loc, buff, bufc);
+                }
             }
         }
         break;
@@ -505,16 +572,36 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
 
     case 6: // MTYPE(obj)
         {
-            // WALL 2: Cannot call Typeof() — needs db[obj].flags access.
-            //
             int obj = parse_dbref(fargs[0]);
             if (obj < 0)
             {
                 safe_copy_str(T("#-1 INVALID DBREF"), buff, bufc);
             }
-            else
+            else if (nullptr == m_pIObjectInfo)
             {
                 safe_copy_str(T("#-1 NO OBJECT INFO INTERFACE"), buff, bufc);
+            }
+            else
+            {
+                bool bValid;
+                m_pIObjectInfo->IsValid(obj, &bValid);
+                if (!bValid)
+                {
+                    safe_copy_str(T("#-1 NO SUCH OBJECT"), buff, bufc);
+                }
+                else
+                {
+                    int nType;
+                    m_pIObjectInfo->GetType(obj, &nType);
+                    switch (nType)
+                    {
+                    case 0: safe_copy_str(T("ROOM"), buff, bufc);   break;
+                    case 1: safe_copy_str(T("THING"), buff, bufc);  break;
+                    case 2: safe_copy_str(T("EXIT"), buff, bufc);   break;
+                    case 3: safe_copy_str(T("PLAYER"), buff, bufc); break;
+                    default: safe_copy_str(T("GARBAGE"), buff, bufc); break;
+                    }
+                }
             }
         }
         break;

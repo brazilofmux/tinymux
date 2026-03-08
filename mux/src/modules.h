@@ -55,6 +55,10 @@ const MUX_IID CID_QueryClient            = UINT64_C(0x00000002F571AB88);
 const MUX_CID CID_LogPSFactory           = UINT64_C(0x00000002BC269C88);
 const MUX_CID CID_SlaveControlPSFactory  = UINT64_C(0x00000002FD75363F);
 const MUX_CID CID_Functions              = UINT64_C(0x00000002FE32BEA1);
+const MUX_CID CID_Notify                 = UINT64_C(0x00000002B880897B);
+const MUX_IID IID_INotify                = UINT64_C(0x00000002621F4385);
+const MUX_CID CID_ObjectInfo             = UINT64_C(0x00000002251565F1);
+const MUX_IID IID_IObjectInfo            = UINT64_C(0x00000002722A6C49);
 
 interface mux_ILog : public mux_IUnknown
 {
@@ -212,6 +216,27 @@ interface mux_IFunctionsControl : public mux_IUnknown
 {
 public:
     virtual MUX_RESULT Add(unsigned int nKey, const UTF8 *name, mux_IFunction *pIFun, int maxArgsParsed, int minArgs, int maxArgs, int flags, int perms) = 0;
+};
+
+// Player/object notification.
+//
+interface mux_INotify : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT Notify(dbref target, const UTF8 *msg) = 0;
+    virtual MUX_RESULT RawNotify(dbref target, const UTF8 *msg) = 0;
+};
+
+// Object property queries.
+//
+interface mux_IObjectInfo : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT IsValid(dbref obj, bool *pValid) = 0;
+    virtual MUX_RESULT GetName(dbref obj, const UTF8 **ppName) = 0;
+    virtual MUX_RESULT GetOwner(dbref obj, dbref *pOwner) = 0;
+    virtual MUX_RESULT GetLocation(dbref obj, dbref *pLocation) = 0;
+    virtual MUX_RESULT GetType(dbref obj, int *pType) = 0;
 };
 
 #endif // MODULES_H

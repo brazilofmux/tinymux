@@ -1399,6 +1399,8 @@ extern ServerEventsSinkNode *g_pServerEventsSinkListHead;
 DEFINE_FACTORY(CServerEventsSourceFactory)
 DEFINE_FACTORY(CQueryClientFactory)
 DEFINE_FACTORY(CFunctionsFactory)
+DEFINE_FACTORY(CNotifyFactory)
+DEFINE_FACTORY(CObjectInfoFactory)
 
 class CLogPSFactory : public mux_IPSFactoryBuffer, public mux_IClassFactory
 {

@@ -22,6 +22,8 @@ class CExp3 : public mux_IExp3SinkControl, mux_IFunction
 private:
     mux_ILog               *m_pILog;
     mux_IFunctionsControl  *m_pIFunctionsControl;
+    mux_INotify            *m_pINotify;
+    mux_IObjectInfo        *m_pIObjectInfo;
 
 public:
     // mux_IUnknown

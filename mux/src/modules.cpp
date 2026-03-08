@@ -17,7 +17,9 @@ static MUX_CLASS_INFO netmux_classes[] =
     { CID_ServerEventsSource },
     { CID_QueryClient        },
     { CID_Functions          },
-    { CID_LogPSFactory       }
+    { CID_LogPSFactory       },
+    { CID_Notify             },
+    { CID_ObjectInfo         }
 };
 #define NUM_CLASSES (sizeof(netmux_classes)/sizeof(netmux_classes[0]))
 
@@ -124,6 +126,46 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
 
         mr = pLogPSFactory->QueryInterface(iid, ppv);
         pLogPSFactory->Release();
+    }
+    else if (CID_Notify == cid)
+    {
+        CNotifyFactory *pNotifyFactory = nullptr;
+        try
+        {
+            pNotifyFactory = new CNotifyFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == pNotifyFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pNotifyFactory->QueryInterface(iid, ppv);
+        pNotifyFactory->Release();
+    }
+    else if (CID_ObjectInfo == cid)
+    {
+        CObjectInfoFactory *pObjectInfoFactory = nullptr;
+        try
+        {
+            pObjectInfoFactory = new CObjectInfoFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == pObjectInfoFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pObjectInfoFactory->QueryInterface(iid, ppv);
+        pObjectInfoFactory->Release();
     }
     return mr;
 }
@@ -786,4 +828,361 @@ uint32_t CResultsSet::AddRef(void)
 {
     m_cRef++;
     return m_cRef;
+}
+
+// ---------------------------------------------------------------------------
+// CNotify — mux_INotify implementation (in-process only, no marshaling).
+// ---------------------------------------------------------------------------
+
+class CNotify : public mux_INotify
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+
+    virtual MUX_RESULT Notify(dbref target, const UTF8 *msg);
+    virtual MUX_RESULT RawNotify(dbref target, const UTF8 *msg);
+
+    CNotify(void);
+    virtual ~CNotify();
+
+private:
+    uint32_t m_cRef;
+};
+
+CNotify::CNotify(void) : m_cRef(1)
+{
+}
+
+CNotify::~CNotify()
+{
+}
+
+MUX_RESULT CNotify::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_INotify *>(this);
+    }
+    else if (IID_INotify == iid)
+    {
+        *ppv = static_cast<mux_INotify *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CNotify::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CNotify::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CNotify::Notify(dbref target, const UTF8 *msg)
+{
+    if (!Good_obj(target))
+    {
+        return MUX_E_INVALIDARG;
+    }
+    notify(target, msg);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CNotify::RawNotify(dbref target, const UTF8 *msg)
+{
+    if (!Good_obj(target))
+    {
+        return MUX_E_INVALIDARG;
+    }
+    raw_notify(target, msg);
+    return MUX_S_OK;
+}
+
+CNotifyFactory::CNotifyFactory(void) : m_cRef(1)
+{
+}
+
+CNotifyFactory::~CNotifyFactory()
+{
+}
+
+MUX_RESULT CNotifyFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CNotifyFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CNotifyFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CNotifyFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
+{
+    if (nullptr != pUnknownOuter)
+    {
+        return MUX_E_NOAGGREGATION;
+    }
+
+    CNotify *pNotify = nullptr;
+    try
+    {
+        pNotify = new CNotify;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pNotify)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pNotify->QueryInterface(iid, ppv);
+    pNotify->Release();
+    return mr;
+}
+
+MUX_RESULT CNotifyFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CObjectInfo — mux_IObjectInfo implementation (in-process only).
+// ---------------------------------------------------------------------------
+
+class CObjectInfo : public mux_IObjectInfo
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+
+    virtual MUX_RESULT IsValid(dbref obj, bool *pValid);
+    virtual MUX_RESULT GetName(dbref obj, const UTF8 **ppName);
+    virtual MUX_RESULT GetOwner(dbref obj, dbref *pOwner);
+    virtual MUX_RESULT GetLocation(dbref obj, dbref *pLocation);
+    virtual MUX_RESULT GetType(dbref obj, int *pType);
+
+    CObjectInfo(void);
+    virtual ~CObjectInfo();
+
+private:
+    uint32_t m_cRef;
+};
+
+CObjectInfo::CObjectInfo(void) : m_cRef(1)
+{
+}
+
+CObjectInfo::~CObjectInfo()
+{
+}
+
+MUX_RESULT CObjectInfo::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IObjectInfo *>(this);
+    }
+    else if (IID_IObjectInfo == iid)
+    {
+        *ppv = static_cast<mux_IObjectInfo *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CObjectInfo::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CObjectInfo::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CObjectInfo::IsValid(dbref obj, bool *pValid)
+{
+    *pValid = Good_obj(obj);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::GetName(dbref obj, const UTF8 **ppName)
+{
+    if (!Good_obj(obj))
+    {
+        *ppName = nullptr;
+        return MUX_E_INVALIDARG;
+    }
+    *ppName = Name(obj);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::GetOwner(dbref obj, dbref *pOwner)
+{
+    if (!Good_obj(obj))
+    {
+        *pOwner = NOTHING;
+        return MUX_E_INVALIDARG;
+    }
+    *pOwner = Owner(obj);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::GetLocation(dbref obj, dbref *pLocation)
+{
+    if (!Good_obj(obj))
+    {
+        *pLocation = NOTHING;
+        return MUX_E_INVALIDARG;
+    }
+    *pLocation = Location(obj);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::GetType(dbref obj, int *pType)
+{
+    if (!Good_obj(obj))
+    {
+        *pType = TYPE_GARBAGE;
+        return MUX_E_INVALIDARG;
+    }
+    *pType = Typeof(obj);
+    return MUX_S_OK;
+}
+
+CObjectInfoFactory::CObjectInfoFactory(void) : m_cRef(1)
+{
+}
+
+CObjectInfoFactory::~CObjectInfoFactory()
+{
+}
+
+MUX_RESULT CObjectInfoFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CObjectInfoFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CObjectInfoFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CObjectInfoFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
+{
+    if (nullptr != pUnknownOuter)
+    {
+        return MUX_E_NOAGGREGATION;
+    }
+
+    CObjectInfo *pObjectInfo = nullptr;
+    try
+    {
+        pObjectInfo = new CObjectInfo;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pObjectInfo)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pObjectInfo->QueryInterface(iid, ppv);
+    pObjectInfo->Release();
+    return mr;
+}
+
+MUX_RESULT CObjectInfoFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
 }

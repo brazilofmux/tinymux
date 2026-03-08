@@ -30,59 +30,59 @@
   }
 -
 #
-# Test 2: mname() hits the object info wall.
+# Test 2: mname() returns object name via mux_IObjectInfo.
 #
 &tr.tc002 test_exp3_fn=
   @if strmatch(
     setr(0,mname(#1)),
-    #-1 NO OBJECT INFO INTERFACE)=
+    Wizard)=
   {
-    @log smoke=TC002: mname object info wall. Succeeded.
+    @log smoke=TC002: mname returns name. Succeeded.
   },
   {
-    @log smoke=TC002: mname object info wall. Failed (%q0).
+    @log smoke=TC002: mname returns name. Failed (%q0).
   }
 -
 #
-# Test 3: mtell() hits the notify wall.
+# Test 3: mtell() sends notification via mux_INotify (returns empty on success).
 #
 &tr.tc003 test_exp3_fn=
   @if strmatch(
     setr(0,mtell(#1,Hello)),
-    #-1 NO NOTIFY INTERFACE)=
+    )=
   {
-    @log smoke=TC003: mtell notify wall. Succeeded.
+    @log smoke=TC003: mtell sends notification. Succeeded.
   },
   {
-    @log smoke=TC003: mtell notify wall. Failed (%q0).
+    @log smoke=TC003: mtell sends notification. Failed (%q0).
   }
 -
 #
-# Test 4: mowner() hits the object info wall.
+# Test 4: mowner() returns owner dbref via mux_IObjectInfo.
 #
 &tr.tc004 test_exp3_fn=
   @if strmatch(
     setr(0,mowner(#1)),
-    #-1 NO OBJECT INFO INTERFACE)=
+    #1)=
   {
-    @log smoke=TC004: mowner object info wall. Succeeded.
+    @log smoke=TC004: mowner returns owner. Succeeded.
   },
   {
-    @log smoke=TC004: mowner object info wall. Failed (%q0).
+    @log smoke=TC004: mowner returns owner. Failed (%q0).
   }
 -
 #
-# Test 5: mloc() hits the object info wall.
+# Test 5: mloc() returns location dbref via mux_IObjectInfo.
 #
 &tr.tc005 test_exp3_fn=
   @if strmatch(
     setr(0,mloc(#1)),
-    #-1 NO OBJECT INFO INTERFACE)=
+    #0)=
   {
-    @log smoke=TC005: mloc object info wall. Succeeded.
+    @log smoke=TC005: mloc returns location. Succeeded.
   },
   {
-    @log smoke=TC005: mloc object info wall. Failed (%q0).
+    @log smoke=TC005: mloc returns location. Failed (%q0).
   }
 -
 #
@@ -100,17 +100,17 @@
   }
 -
 #
-# Test 7: mtype() hits the object info wall.
+# Test 7: mtype() returns type name via mux_IObjectInfo.
 #
 &tr.tc007 test_exp3_fn=
   @if strmatch(
     setr(0,mtype(#1)),
-    #-1 NO OBJECT INFO INTERFACE)=
+    PLAYER)=
   {
-    @log smoke=TC007: mtype object info wall. Succeeded.
+    @log smoke=TC007: mtype returns type. Succeeded.
   },
   {
-    @log smoke=TC007: mtype object info wall. Failed (%q0).
+    @log smoke=TC007: mtype returns type. Failed (%q0).
   }
 -
 #

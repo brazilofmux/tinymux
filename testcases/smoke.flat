@@ -1721,17 +1721,17 @@
 >258
 "@log smoke=End exp3() test cases.;@notify smoke"
 >259
-"@if strmatch(setr(0,mname(#1)),#-1 NO OBJECT INFO INTERFACE)={@log smoke=TC002: mname object info wall. Succeeded.},{@log smoke=TC002: mname object info wall. Failed (%q0).}"
+"@if strmatch(setr(0,mname(#1)),Wizard)={@log smoke=TC002: mname returns name. Succeeded.},{@log smoke=TC002: mname returns name. Failed (%q0).}"
 >260
-"@if strmatch(setr(0,mtell(#1,Hello)),#-1 NO NOTIFY INTERFACE)={@log smoke=TC003: mtell notify wall. Succeeded.},{@log smoke=TC003: mtell notify wall. Failed (%q0).}"
+"@if strmatch(setr(0,mtell(#1,Hello)),)={@log smoke=TC003: mtell sends notification. Succeeded.},{@log smoke=TC003: mtell sends notification. Failed (%q0).}"
 >261
-"@if strmatch(setr(0,mowner(#1)),#-1 NO OBJECT INFO INTERFACE)={@log smoke=TC004: mowner object info wall. Succeeded.},{@log smoke=TC004: mowner object info wall. Failed (%q0).}"
+"@if strmatch(setr(0,mowner(#1)),#1)={@log smoke=TC004: mowner returns owner. Succeeded.},{@log smoke=TC004: mowner returns owner. Failed (%q0).}"
 >262
-"@if strmatch(setr(0,mloc(#1)),#-1 NO OBJECT INFO INTERFACE)={@log smoke=TC005: mloc object info wall. Succeeded.},{@log smoke=TC005: mloc object info wall. Failed (%q0).}"
+"@if strmatch(setr(0,mloc(#1)),#0)={@log smoke=TC005: mloc returns location. Succeeded.},{@log smoke=TC005: mloc returns location. Failed (%q0).}"
 >263
 "@if strmatch(setr(0,meval(#1,2+2)),#-1 NO EVALUATOR INTERFACE)={@log smoke=TC006: meval evaluator wall. Succeeded.},{@log smoke=TC006: meval evaluator wall. Failed (%q0).}"
 >264
-"@if strmatch(setr(0,mtype(#1)),#-1 NO OBJECT INFO INTERFACE)={@log smoke=TC007: mtype object info wall. Succeeded.},{@log smoke=TC007: mtype object info wall. Failed (%q0).}"
+"@if strmatch(setr(0,mtype(#1)),PLAYER)={@log smoke=TC007: mtype returns type. Succeeded.},{@log smoke=TC007: mtype returns type. Failed (%q0).}"
 >265
 "@if strmatch(setr(0,mset(#1/TEST,hello)),#-1 NO ATTRIBUTE WRITE INTERFACE)={@log smoke=TC008: mset attribute write wall. Succeeded.},{@log smoke=TC008: mset attribute write wall. Failed (%q0).}"
 >267
