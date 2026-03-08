@@ -3907,6 +3907,119 @@ void CMailMod::do_mail_proof(dbref player)
     }
 }
 
+void CMailMod::do_edit_msg(dbref player, const UTF8 *from, const UTF8 *to)
+{
+    // Check composing state.
+    //
+    bool bComposing = false;
+    if (nullptr != m_pIMailDelivery)
+    {
+        m_pIMailDelivery->IsComposing(player, &bComposing);
+    }
+    if (!bComposing)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: No message in progress."));
+        }
+        return;
+    }
+
+    // Read current message.
+    //
+    UTF8 aMailMsg[MOD_LBUF_SIZE];
+    aMailMsg[0] = '\0';
+    if (nullptr != m_pIAttributeAccess)
+    {
+        size_t nLen = 0;
+        m_pIAttributeAccess->GetAttribute(player, player,
+            T("Mailmsg"), aMailMsg, sizeof(aMailMsg) - 1, &nLen);
+        aMailMsg[nLen] = '\0';
+    }
+
+    // Simple find-and-replace (first occurrence only, matching server behavior).
+    //
+    const char *pFrom = reinterpret_cast<const char *>(from);
+    const char *pTo = reinterpret_cast<const char *>(to);
+    size_t nFrom = strlen(pFrom);
+    size_t nTo = strlen(pTo);
+
+    if (nFrom == 0)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: Nothing to edit."));
+        }
+        return;
+    }
+
+    // Build result with all occurrences replaced.
+    //
+    UTF8 result[MOD_LBUF_SIZE];
+    char *rp = reinterpret_cast<char *>(result);
+    const char *src = reinterpret_cast<const char *>(aMailMsg);
+    size_t remain = sizeof(result) - 1;
+
+    while (*src)
+    {
+        const char *found = strstr(src, pFrom);
+        if (found)
+        {
+            // Copy prefix.
+            //
+            size_t prefix = found - src;
+            if (prefix > remain)
+            {
+                prefix = remain;
+            }
+            memcpy(rp, src, prefix);
+            rp += prefix;
+            remain -= prefix;
+
+            // Copy replacement.
+            //
+            size_t rlen = nTo;
+            if (rlen > remain)
+            {
+                rlen = remain;
+            }
+            memcpy(rp, pTo, rlen);
+            rp += rlen;
+            remain -= rlen;
+
+            src = found + nFrom;
+        }
+        else
+        {
+            // Copy rest.
+            //
+            size_t rest = strlen(src);
+            if (rest > remain)
+            {
+                rest = remain;
+            }
+            memcpy(rp, src, rest);
+            rp += rest;
+            remain -= rest;
+            break;
+        }
+    }
+    *rp = '\0';
+
+    // Write back.
+    //
+    if (nullptr != m_pIAttributeAccess)
+    {
+        m_pIAttributeAccess->SetAttribute(player, player,
+            T("Mailmsg"), result);
+    }
+
+    if (nullptr != m_pINotify)
+    {
+        m_pINotify->RawNotify(player, T("Text edited."));
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Malias helpers and commands.
 // ---------------------------------------------------------------------------
@@ -5450,9 +5563,8 @@ MUX_RESULT CMailMod::MailCommand(dbref executor, int key,
         return MUX_S_OK;
 
     case MAIL_EDIT:
-        // @mail/edit is handled server-side (needs mux_exec for editing).
-        //
-        return MUX_E_NOTIMPLEMENTED;
+        do_edit_msg(executor, pArg1, pArg2);
+        return MUX_S_OK;
 
     case 0:
         // Default @mail (no switch).

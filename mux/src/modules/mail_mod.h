@@ -284,6 +284,7 @@ private:
     void do_mail_reply(dbref player, const UTF8 *msg, bool all,
         int key);
     void do_mail_proof(dbref player);
+    void do_edit_msg(dbref player, const UTF8 *from, const UTF8 *to);
 
     // Malias helpers.
     //
