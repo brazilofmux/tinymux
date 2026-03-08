@@ -2906,6 +2906,20 @@ int DCL_CDECL main(int argc, char *argv[])
     g_float_precision = mudconf.float_precision;
     g_space_compress = mudstate.bStandAlone || mudconf.space_compress;
 
+    // Try to discover the comsys module.  If not loaded, the pointer
+    // stays nullptr and the built-in comsys code handles everything.
+    //
+    mudstate.pIComsysControl = nullptr;
+    mr = mux_CreateInstance(CID_Comsys, nullptr, UseSameProcess,
+                            IID_IComsysControl,
+                            reinterpret_cast<void **>(&mudstate.pIComsysControl));
+    if (MUX_SUCCEEDED(mr))
+    {
+        STARTLOG(LOG_ALWAYS, "INI", "MOD");
+        log_printf(T("Comsys module discovered via mux_IComsysControl."));
+        ENDLOG;
+    }
+
     mr = mux_CreateInstance(CID_QueryServer, nullptr, UseSlaveProcess, IID_IQueryControl, (void **)&mudstate.pIQueryControl);
     if (MUX_SUCCEEDED(mr))
     {

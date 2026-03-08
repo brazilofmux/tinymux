@@ -371,6 +371,7 @@ void cf_init(void)
     mudstate.pISlaveControl = nullptr;
 #endif // STUB_SLAVE
     mudstate.pIQueryControl = nullptr;
+    mudstate.pIComsysControl = nullptr;
 }
 
 // ---------------------------------------------------------------------------

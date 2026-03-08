@@ -2065,11 +2065,23 @@ UTF8 *process_command
         }
     }
 
-    if (  !Slave(executor)
-       && !do_comsystem(executor, pCommand))
+    if (!Slave(executor))
     {
-        mudstate.debug_cmd = cmdsave;
-        return preserve_cmd;
+        bool bHandled = false;
+        if (nullptr != mudstate.pIComsysControl)
+        {
+            mudstate.pIComsysControl->ProcessCommand(executor, pCommand,
+                                                     &bHandled);
+        }
+        else
+        {
+            bHandled = !do_comsystem(executor, pCommand);
+        }
+        if (bHandled)
+        {
+            mudstate.debug_cmd = cmdsave;
+            return preserve_cmd;
+        }
     }
 
     // Check for the HOME command.

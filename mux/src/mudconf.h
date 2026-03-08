@@ -547,6 +547,7 @@ struct statedata
     int iRow;                           // Current Row.
 #endif // STUB_SLAVE
     mux_IQueryControl *pIQueryControl;
+    mux_IComsysControl *pIComsysControl;
 
     CLinearTimeAbsolute check_counter;  /* Countdown to next db check */
     CLinearTimeAbsolute cpu_count_from; /* When did we last reset CPU counters? */

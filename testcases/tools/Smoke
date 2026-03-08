@@ -80,6 +80,7 @@ player_queue_limit 100000
 include alias.conf
 include compat.conf
 module exp3
+module comsys_mod
 _EOF
 #
 #	Kick off MUX
