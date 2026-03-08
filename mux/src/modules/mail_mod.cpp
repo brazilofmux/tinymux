@@ -2305,6 +2305,34 @@ void CMailMod::do_mail_retract(dbref player, const UTF8 *name,
         return;
     }
 
+    // Handle malias target.
+    //
+    if (*name == '*')
+    {
+        int nResult;
+        malias_t *m = get_malias(player, name, &nResult);
+        if (nResult == GMA_NOTFOUND)
+        {
+            UTF8 msg[256];
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "MAIL: Mail alias %s not found.",
+                     reinterpret_cast<const char *>(name));
+            m_pINotify->RawNotify(player, msg);
+            return;
+        }
+        if (nResult == GMA_FOUND)
+        {
+            for (int k = 0; k < m->numrecep; k++)
+            {
+                UTF8 dbrefbuf[32];
+                snprintf(reinterpret_cast<char *>(dbrefbuf),
+                         sizeof(dbrefbuf), "#%d", m->list[k]);
+                do_mail_retract(player, dbrefbuf, msglist);
+            }
+        }
+        return;
+    }
+
     // Look up target player.
     //
     dbref target = NOTHING;
