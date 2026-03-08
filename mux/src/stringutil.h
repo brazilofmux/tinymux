@@ -1679,6 +1679,8 @@ typedef struct
     int  color16;
 } PALETTE_ENTRY;
 extern PALETTE_ENTRY palette[];
+extern const unsigned int ColorTable[256];
+bool parse_rgb(size_t n, const UTF8 *p, RGB &rgb);
 
 int FindNearestPaletteEntry(RGB &rgb, bool fColor256);
 UTF8 *LettersToBinary(UTF8 *pLetters);

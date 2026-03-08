@@ -6,7 +6,7 @@
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
-#include "externs.h"
+#include "core.h"
 
 bool g_no_flash = false;
 bool g_space_compress = true;
@@ -6321,122 +6321,6 @@ bool BMH_StringSearchI(size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t 
     return BMH_StringSearch(pnMatched, nLowerPat, LowPat, nLowerSrc, pLowerSrc);
 }
 
-// ---------------------------------------------------------------------------
-// cf_art_except:
-//
-// Add an article rule to the ruleset.
-//
-
-CF_HAND(cf_art_rule)
-{
-    UNUSED_PARAMETER(pExtra);
-    UNUSED_PARAMETER(nExtra);
-    UTF8 *pCurrent = str;
-    while (mux_isspace(*pCurrent))
-    {
-        pCurrent++;
-    }
-    UTF8 *pArticle = pCurrent;
-    while (  !mux_isspace(*pCurrent)
-          && *pCurrent != '\0')
-    {
-        pCurrent++;
-    }
-    if (*pCurrent == '\0')
-    {
-        cf_log_syntax(player, cmd, T("No article or regexp specified."));
-        return -1;
-    }
-    bool bUseAn = false;
-    bool bOkay = false;
-    if (pCurrent - pArticle <= 2)
-    {
-        if (  'a' == pArticle[0]
-           || 'A' == pArticle[0])
-        {
-            if (  'n' == pArticle[1]
-               || 'N' == pArticle[1])
-            {
-                bUseAn = true;
-                bOkay = true;
-            }
-            if (mux_isspace(pArticle[1]))
-            {
-                bOkay = true;
-            }
-        }
-    }
-    if (!bOkay)
-    {
-        *pCurrent = '\0';
-        cf_log_syntax(player, cmd, T("Invalid article \xE2\x80\x98%s\xE2\x80\x99."), pArticle);
-        return -1;
-    }
-    while (mux_isspace(*pCurrent))
-    {
-        pCurrent++;
-    }
-    if (*pCurrent == '\0')
-    {
-        cf_log_syntax(player, cmd, T("No regexp specified."));
-        return -1;
-    }
-
-    // PCRE2 compilation
-    PCRE2_SIZE erroffset;
-    int errcode;
-    pcre2_code *reNewRegexp = pcre2_compile_8(
-        pCurrent,                  // pattern string
-        PCRE2_ZERO_TERMINATED,     // pattern is zero-terminated
-        PCRE2_UTF,                 // options
-        &errcode,                  // for error code
-        &erroffset,                // for error offset
-        nullptr                    // use default compile context
-    );
-
-    if (!reNewRegexp)
-    {
-        // Get the error message
-        PCRE2_UCHAR errbuf[256];
-        pcre2_get_error_message(errcode, errbuf, sizeof(errbuf));
-
-        cf_log_syntax(player, cmd, T("Error processing regexp \xE2\x80\x98%s\xE2\x80\x99: %s"),
-              pCurrent, errbuf);
-        return -1;
-    }
-
-    // Optional JIT compilation (replaces pcre_study)
-    pcre2_jit_compile(reNewRegexp, PCRE2_JIT_COMPLETE);
-
-    ArtRuleset** arRules = (ArtRuleset **) vp;
-    ArtRuleset* arNewRule = nullptr;
-    try
-    {
-        arNewRule = new ArtRuleset;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr != arNewRule)
-    {
-        // Push new rule at head of list.
-        arNewRule->m_pNextRule = *arRules;
-        arNewRule->m_bUseAn = bUseAn;
-        arNewRule->m_pRegexp = reNewRegexp;
-        // No study field needed anymore
-        *arRules = arNewRule;
-    }
-    else
-    {
-        pcre2_code_free(reNewRegexp);
-        cf_log_syntax(player, cmd, T("Out of memory."));
-        return -1;
-    }
-    return 0;
-}
-
 /*! \brief Constructs mux_string object.
  *
  * This constructor puts the mux_string object into an initial, reasonable,
@@ -7461,9 +7345,6 @@ void mux_string::export_TextHtml
         csNext = m_vcs[i];
         if (0 != (csNext & ~CS_ALLBITS))
         {
-            STARTLOG(LOG_BUGS, "BUG", "INFO");
-            Log.tinyprintf(T("csNext = 0x%08llX, (csNext & CS_ALLBITS) = 0x%08llX, %d, %d" ENDLINE), csNext, csNext & CS_ALLBITS, i, m_iLast.m_point);
-            ENDLOG;
         }
         mux_assert((csNext & ~CS_ALLBITS) == 0);
 
