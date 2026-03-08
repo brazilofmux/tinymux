@@ -22,7 +22,8 @@ static MUX_CLASS_INFO netmux_classes[] =
     { CID_ObjectInfo         },
     { CID_AttributeAccess    },
     { CID_Evaluator          },
-    { CID_Permissions        }
+    { CID_Permissions        },
+    { CID_MailDelivery       }
 };
 #define NUM_CLASSES (sizeof(netmux_classes)/sizeof(netmux_classes[0]))
 
@@ -229,6 +230,26 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
 
         mr = pPermissionsFactory->QueryInterface(iid, ppv);
         pPermissionsFactory->Release();
+    }
+    else if (CID_MailDelivery == cid)
+    {
+        CMailDeliveryFactory *pMailDeliveryFactory = nullptr;
+        try
+        {
+            pMailDeliveryFactory = new CMailDeliveryFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == pMailDeliveryFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pMailDeliveryFactory->QueryInterface(iid, ppv);
+        pMailDeliveryFactory->Release();
     }
     return mr;
 }
@@ -1978,6 +1999,322 @@ MUX_RESULT CPermissionsFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_
 }
 
 MUX_RESULT CPermissionsFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CMailDelivery — server-provided implementation of mux_IMailDelivery.
+//
+// Wraps server-internal lock evaluation, attribute triggers, flag management,
+// and throttling so that the mail module can deliver mail without linking
+// against server internals.
+// ---------------------------------------------------------------------------
+
+class CMailDelivery : public mux_IMailDelivery
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+
+    virtual MUX_RESULT MailCheck(dbref player, dbref target, bool *pResult);
+    virtual MUX_RESULT NotifyDelivery(dbref sender, dbref target,
+        const UTF8 *subject, bool silent);
+    virtual MUX_RESULT IsComposing(dbref player, bool *pResult);
+    virtual MUX_RESULT SetComposing(dbref player, bool bComposing);
+    virtual MUX_RESULT ThrottleCheck(dbref player, bool *pResult);
+
+    CMailDelivery(void);
+    virtual ~CMailDelivery();
+
+private:
+    uint32_t m_cRef;
+};
+
+CMailDelivery::CMailDelivery(void) : m_cRef(1)
+{
+}
+
+CMailDelivery::~CMailDelivery()
+{
+}
+
+MUX_RESULT CMailDelivery::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IMailDelivery *>(this);
+    }
+    else if (IID_IMailDelivery == iid)
+    {
+        *ppv = static_cast<mux_IMailDelivery *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CMailDelivery::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CMailDelivery::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+// MailCheck — Evaluate A_LMAIL lock in both directions.
+//
+// Mirrors the server's mail_check() function:
+//   1. If player can't pass target's A_LMAIL, call mail_return (sends MFAIL).
+//   2. If target can't pass player's A_LMAIL, reject unless player is Wizard.
+//
+MUX_RESULT CMailDelivery::MailCheck(dbref player, dbref target, bool *pResult)
+{
+    if (nullptr == pResult)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(player) || !Good_obj(target))
+    {
+        *pResult = false;
+        return MUX_E_INVALIDARG;
+    }
+
+    if (!could_doit(player, target, A_LMAIL))
+    {
+        // Target rejects player's mail — send MFAIL message.
+        //
+        dbref aowner;
+        int aflags;
+        UTF8 *str = atr_pget(target, A_MFAIL, &aowner, &aflags);
+        if (*str)
+        {
+            UTF8 *str2, *bp;
+            str2 = bp = alloc_lbuf("mail_delivery.check");
+            mux_exec(str, LBUF_SIZE-1, str2, &bp, target, player, player,
+                 AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP|EV_NO_LOCATION),
+                 nullptr, 0);
+            *bp = '\0';
+            if (*str2)
+            {
+                CLinearTimeAbsolute ltaNow;
+                ltaNow.GetLocal();
+                FIELDEDTIME ft;
+                ltaNow.ReturnFields(&ft);
+
+                raw_notify(player, tprintf(T("MAIL: Reject message from %s: %s"),
+                    Moniker(target), str2));
+                raw_notify(target, tprintf(T("[%d:%02d] MAIL: Reject message sent to %s."),
+                    ft.iHour, ft.iMinute, Moniker(player)));
+            }
+            free_lbuf(str2);
+        }
+        else
+        {
+            raw_notify(player, tprintf(T("Sorry, %s is not accepting mail."),
+                Moniker(target)));
+        }
+        free_lbuf(str);
+        *pResult = false;
+        return MUX_S_OK;
+    }
+
+    if (!could_doit(target, player, A_LMAIL))
+    {
+        if (Wizard(player))
+        {
+            raw_notify(player, tprintf(
+                T("Warning: %s can\xE2\x80\x99t return your mail."),
+                Moniker(target)));
+            *pResult = true;
+        }
+        else
+        {
+            raw_notify(player, tprintf(
+                T("Sorry, %s can\xE2\x80\x99t return your mail."),
+                Moniker(target)));
+            *pResult = false;
+        }
+        return MUX_S_OK;
+    }
+
+    *pResult = true;
+    return MUX_S_OK;
+}
+
+// NotifyDelivery — Send post-delivery notifications and trigger attributes.
+//
+// Called by the module after a message has been stored. This handles:
+//   - "You sent your message to <target>" to sender (unless silent)
+//   - "You have new mail from <sender>" to target
+//   - did_it(sender, target, A_MAIL, ..., A_AMAIL, ...) for attribute triggers
+//
+MUX_RESULT CMailDelivery::NotifyDelivery(dbref sender, dbref target,
+    const UTF8 *subject, bool silent)
+{
+    if (!Good_obj(sender) || !Good_obj(target))
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    if (!silent)
+    {
+        raw_notify(sender, tprintf(T("MAIL: You sent your message to %s."),
+            Moniker(target)));
+    }
+
+    raw_notify(target, tprintf(
+        T("MAIL: You have a new message from %s. Subject: %s"),
+        Moniker(sender), subject));
+
+    did_it(sender, target, A_MAIL, nullptr, 0, nullptr, A_AMAIL, 0,
+        nullptr, NOTHING);
+
+    return MUX_S_OK;
+}
+
+// IsComposing — Check PLAYER_MAILS flag in Flags2.
+//
+MUX_RESULT CMailDelivery::IsComposing(dbref player, bool *pResult)
+{
+    if (nullptr == pResult)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(player))
+    {
+        *pResult = false;
+        return MUX_E_INVALIDARG;
+    }
+    *pResult = (Flags2(player) & PLAYER_MAILS) != 0;
+    return MUX_S_OK;
+}
+
+// SetComposing — Set or clear the PLAYER_MAILS flag in Flags2.
+//
+MUX_RESULT CMailDelivery::SetComposing(dbref player, bool bComposing)
+{
+    if (!Good_obj(player))
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (bComposing)
+    {
+        s_Flags(player, FLAG_WORD2, Flags2(player) | PLAYER_MAILS);
+    }
+    else
+    {
+        s_Flags(player, FLAG_WORD2, Flags2(player) & ~PLAYER_MAILS);
+    }
+    return MUX_S_OK;
+}
+
+// ThrottleCheck — Has player sent too much mail recently?
+//
+MUX_RESULT CMailDelivery::ThrottleCheck(dbref player, bool *pResult)
+{
+    if (nullptr == pResult)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(player))
+    {
+        *pResult = true;
+        return MUX_E_INVALIDARG;
+    }
+    *pResult = ThrottleMail(player);
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CMailDeliveryFactory
+// ---------------------------------------------------------------------------
+
+CMailDeliveryFactory::CMailDeliveryFactory(void) : m_cRef(1)
+{
+}
+
+CMailDeliveryFactory::~CMailDeliveryFactory()
+{
+}
+
+MUX_RESULT CMailDeliveryFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CMailDeliveryFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CMailDeliveryFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CMailDeliveryFactory::CreateInstance(mux_IUnknown *pUnknownOuter,
+    MUX_IID iid, void **ppv)
+{
+    UNUSED_PARAMETER(pUnknownOuter);
+
+    CMailDelivery *pMailDelivery = nullptr;
+    try
+    {
+        pMailDelivery = new CMailDelivery;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pMailDelivery)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pMailDelivery->QueryInterface(iid, ppv);
+    pMailDelivery->Release();
+    return mr;
+}
+
+MUX_RESULT CMailDeliveryFactory::LockServer(bool bLock)
 {
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;

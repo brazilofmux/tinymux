@@ -112,6 +112,7 @@ CMailMod::CMailMod(void) : m_cRef(1),
     m_pIObjectInfo(nullptr),
     m_pIAttributeAccess(nullptr),
     m_pIPermissions(nullptr),
+    m_pIMailDelivery(nullptr),
     m_db(nullptr),
     m_mail_expiration(14),
     m_mail_per_player(250),
@@ -174,6 +175,10 @@ MUX_RESULT CMailMod::FinalConstruct(void)
     mux_CreateInstance(CID_Permissions, nullptr, UseSameProcess,
                        IID_IPermissions,
                        reinterpret_cast<void **>(&m_pIPermissions));
+
+    mux_CreateInstance(CID_MailDelivery, nullptr, UseSameProcess,
+                       IID_IMailDelivery,
+                       reinterpret_cast<void **>(&m_pIMailDelivery));
 
     // Log that we are alive.
     //
@@ -244,6 +249,12 @@ CMailMod::~CMailMod()
     {
         m_pIPermissions->Release();
         m_pIPermissions = nullptr;
+    }
+
+    if (nullptr != m_pIMailDelivery)
+    {
+        m_pIMailDelivery->Release();
+        m_pIMailDelivery = nullptr;
     }
 
     g_cComponents--;
@@ -2429,6 +2440,1474 @@ void CMailMod::do_mail_nuke(dbref player)
 }
 
 // ---------------------------------------------------------------------------
+// Delivery pipeline — send_mail, mail_to_list, make_numlist, make_namelist.
+// ---------------------------------------------------------------------------
+
+struct mail *CMailMod::mail_fetch(dbref player, int num)
+{
+    int i = 0;
+    int fld = player_folder(player);
+    struct mail *mp;
+    for (mp = MailListFirst(player); nullptr != mp;
+         mp = MailListNext(mp, player))
+    {
+        if (  Folder(mp) == fld
+           && mail_to_player(player, mp))
+        {
+            i++;
+            if (i == num)
+            {
+                return mp;
+            }
+        }
+    }
+    return nullptr;
+}
+
+void CMailMod::send_mail
+(
+    dbref player,
+    dbref target,
+    const UTF8 *tolist,
+    const UTF8 *subject,
+    int number,
+    mail_flag flags,
+    bool silent
+)
+{
+    // Verify target is a player.
+    //
+    bool bIsPlayer = false;
+    if (nullptr != m_pIObjectInfo)
+    {
+        m_pIObjectInfo->IsPlayer(target, &bIsPlayer);
+    }
+    if (!bIsPlayer)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: You cannot send mail to non-existent people."));
+        }
+        return;
+    }
+
+    // Check mail lock via IMailDelivery.
+    //
+    if (nullptr != m_pIMailDelivery)
+    {
+        bool bOk = false;
+        m_pIMailDelivery->MailCheck(player, target, &bOk);
+        if (!bOk)
+        {
+            return;
+        }
+    }
+
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetLocal();
+    const UTF8 *pTimeStr = ltaNow.ReturnDateString(0);
+
+    // Initialize the mail structure.
+    //
+    struct mail *newp = nullptr;
+    try
+    {
+        newp = new struct mail;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == newp)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: Out of memory."));
+        }
+        return;
+    }
+
+    newp->to = target;
+    newp->sqlite_id = -1;
+
+    // Determine sender: if player is not a player, use owner if owner
+    // is a wizard.
+    //
+    if (bIsPlayer)
+    {
+        // Check if player itself is a player.
+        //
+        bool bSenderIsPlayer = false;
+        if (nullptr != m_pIObjectInfo)
+        {
+            m_pIObjectInfo->IsPlayer(player, &bSenderIsPlayer);
+        }
+        if (bSenderIsPlayer)
+        {
+            newp->from = player;
+        }
+        else
+        {
+            dbref mailbag = -1;
+            if (nullptr != m_pIObjectInfo)
+            {
+                m_pIObjectInfo->GetOwner(player, &mailbag);
+            }
+            bool bWiz = false;
+            if (nullptr != m_pIPermissions && mailbag >= 0)
+            {
+                m_pIPermissions->IsWizard(mailbag, &bWiz);
+            }
+            newp->from = bWiz ? player : mailbag;
+        }
+    }
+    else
+    {
+        newp->from = player;
+    }
+
+    if (!tolist || tolist[0] == '\0')
+    {
+        newp->tolist = reinterpret_cast<UTF8 *>(strdup("*HIDDEN*"));
+    }
+    else
+    {
+        newp->tolist = reinterpret_cast<UTF8 *>(strdup(reinterpret_cast<const char *>(tolist)));
+    }
+
+    newp->number = number;
+    MessageReferenceInc(number);
+    newp->time = reinterpret_cast<UTF8 *>(strdup(reinterpret_cast<const char *>(pTimeStr)));
+    newp->subject = reinterpret_cast<UTF8 *>(strdup(reinterpret_cast<const char *>(subject)));
+
+    // Send to folder 0.
+    //
+    newp->read = flags & M_FMASK;
+
+    // Reject if the target's mailbox is full.
+    //
+    if (0 < m_mail_per_player)
+    {
+        // Check No_Mail_Expire — we don't have direct access to the power,
+        // but Wizards always have it, and that's what the server checks too.
+        //
+        bool bWizTarget = false;
+        if (nullptr != m_pIPermissions)
+        {
+            m_pIPermissions->IsWizard(target, &bWizTarget);
+        }
+        if (!bWizTarget)
+        {
+            int total = 0;
+            struct mail *mp;
+            for (mp = MailListFirst(target); nullptr != mp;
+                 mp = MailListNext(mp, target))
+            {
+                total++;
+            }
+            if (total >= m_mail_per_player)
+            {
+                UTF8 targetname[MOD_LBUF_SIZE];
+                get_player_name(target, targetname, sizeof(targetname));
+
+                UTF8 msg[MOD_LBUF_SIZE];
+                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                    "MAIL: %s\xE2\x80\x99s mailbox is full (%d messages).",
+                    targetname, total);
+                if (nullptr != m_pINotify)
+                {
+                    m_pINotify->RawNotify(player, msg);
+                }
+
+                MessageReferenceDec(newp->number);
+                free(newp->subject);
+                free(newp->tolist);
+                free(newp->time);
+                delete newp;
+                return;
+            }
+        }
+    }
+
+    // Append to target's mail list and persist.
+    //
+    MailListAppend(target, newp);
+    sqlite_wt_insert_mail(newp);
+
+    // Notify via IMailDelivery.
+    //
+    if (nullptr != m_pIMailDelivery)
+    {
+        m_pIMailDelivery->NotifyDelivery(newp->from, target, subject, silent);
+    }
+}
+
+// make_numlist — resolve space-separated player names/aliases to dbref numbers.
+//
+// Returns a malloc'd string of space-separated dbref numbers, or nullptr
+// on error. Caller must free() the result.
+//
+UTF8 *CMailMod::make_numlist(dbref player, const UTF8 *arg, bool bBlind)
+{
+    if (!arg || !*arg)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: No players specified."));
+        }
+        return nullptr;
+    }
+
+    dbref aRecip[4000];
+    int nRecip = 0;
+
+    // Work on a mutable copy.
+    //
+    UTF8 buf[MOD_LBUF_SIZE];
+    strncpy(reinterpret_cast<char *>(buf),
+            reinterpret_cast<const char *>(arg), MOD_LBUF_SIZE - 1);
+    buf[MOD_LBUF_SIZE - 1] = '\0';
+
+    UTF8 *head = buf;
+    while (head && *head)
+    {
+        while (*head == ' ')
+        {
+            head++;
+        }
+        if (!*head)
+        {
+            break;
+        }
+
+        UTF8 *tail = head;
+        while (*tail && *tail != ' ')
+        {
+            if (*tail == '"')
+            {
+                head++;
+                tail++;
+                while (*tail && *tail != '"')
+                {
+                    tail++;
+                }
+            }
+            if (*tail)
+            {
+                tail++;
+            }
+        }
+        tail--;
+        if (*tail != '"')
+        {
+            tail++;
+        }
+        UTF8 spot = *tail;
+        *tail = '\0';
+
+        if (*head == '*')
+        {
+            // Malias expansion.
+            //
+            int nResult;
+            malias_t *m = get_malias(player, head, &nResult);
+            if (nResult == GMA_NOTFOUND)
+            {
+                UTF8 msg[MOD_LBUF_SIZE];
+                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                    "MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 does not exist.",
+                    reinterpret_cast<const char *>(head));
+                if (nullptr != m_pINotify)
+                {
+                    m_pINotify->RawNotify(player, msg);
+                }
+                return nullptr;
+            }
+            else if (nResult == GMA_INVALIDFORM)
+            {
+                UTF8 msg[MOD_LBUF_SIZE];
+                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                    "MAIL: \xE2\x80\x98%s\xE2\x80\x99 is a badly-formed alias.",
+                    reinterpret_cast<const char *>(head));
+                if (nullptr != m_pINotify)
+                {
+                    m_pINotify->RawNotify(player, msg);
+                }
+                return nullptr;
+            }
+            for (int i = 0; i < m->numrecep && nRecip < 4000; i++)
+            {
+                aRecip[nRecip++] = m->list[i];
+            }
+        }
+        else
+        {
+            // Player lookup via IObjectInfo::MatchThing.
+            //
+            UTF8 lookup[MOD_LBUF_SIZE];
+            if (*head != '*')
+            {
+                snprintf(reinterpret_cast<char *>(lookup), sizeof(lookup),
+                    "*%s", reinterpret_cast<const char *>(head));
+            }
+            else
+            {
+                strncpy(reinterpret_cast<char *>(lookup),
+                        reinterpret_cast<const char *>(head), sizeof(lookup) - 1);
+                lookup[sizeof(lookup) - 1] = '\0';
+            }
+
+            dbref target = NOTHING;
+            if (nullptr != m_pIObjectInfo)
+            {
+                m_pIObjectInfo->MatchThing(player, lookup, &target);
+            }
+            if (target >= 0)
+            {
+                if (nRecip < 4000)
+                {
+                    aRecip[nRecip++] = target;
+                }
+            }
+            else
+            {
+                UTF8 msg[MOD_LBUF_SIZE];
+                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                    "MAIL: \xE2\x80\x98%s\xE2\x80\x99 does not exist.",
+                    reinterpret_cast<const char *>(head));
+                if (nullptr != m_pINotify)
+                {
+                    m_pINotify->RawNotify(player, msg);
+                }
+                return nullptr;
+            }
+        }
+
+        *tail = spot;
+        head = tail;
+        if (*head == '"')
+        {
+            head++;
+        }
+    }
+
+    if (nRecip <= 0)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: No players specified."));
+        }
+        return nullptr;
+    }
+
+    // De-duplicate and build result string.
+    //
+    UTF8 result[MOD_LBUF_SIZE];
+    UTF8 *rp = result;
+    for (int i = 0; i < nRecip; i++)
+    {
+        if (aRecip[i] != NOTHING)
+        {
+            // Remove duplicates.
+            //
+            for (int j = i + 1; j < nRecip; j++)
+            {
+                if (aRecip[i] == aRecip[j])
+                {
+                    aRecip[j] = NOTHING;
+                }
+            }
+
+            if (rp != result)
+            {
+                *rp++ = ' ';
+            }
+            if (bBlind)
+            {
+                *rp++ = '!';
+            }
+            int n = snprintf(reinterpret_cast<char *>(rp),
+                sizeof(result) - (rp - result),
+                "%d", aRecip[i]);
+            rp += n;
+        }
+    }
+    *rp = '\0';
+
+    return reinterpret_cast<UTF8 *>(strdup(reinterpret_cast<const char *>(result)));
+}
+
+// make_namelist — convert space-separated dbref numbers to player names.
+//
+// Returns a malloc'd string. Caller must free().
+//
+UTF8 *CMailMod::make_namelist(dbref player, const UTF8 *arg)
+{
+    UNUSED_PARAMETER(player);
+
+    if (!arg || !*arg)
+    {
+        return reinterpret_cast<UTF8 *>(strdup(""));
+    }
+
+    UTF8 buf[MOD_LBUF_SIZE];
+    strncpy(reinterpret_cast<char *>(buf),
+            reinterpret_cast<const char *>(arg), MOD_LBUF_SIZE - 1);
+    buf[MOD_LBUF_SIZE - 1] = '\0';
+
+    UTF8 result[MOD_LBUF_SIZE];
+    UTF8 *rp = result;
+    bool bFirst = true;
+
+    char *saveptr = nullptr;
+    char *token = strtok_r(reinterpret_cast<char *>(buf), " ", &saveptr);
+    while (token)
+    {
+        if (!bFirst)
+        {
+            size_t remain = sizeof(result) - (rp - result);
+            if (remain > 2)
+            {
+                *rp++ = ',';
+                *rp++ = ' ';
+            }
+        }
+        bFirst = false;
+
+        char *p = token;
+        bool bBCC = false;
+        if (*p == '!')
+        {
+            bBCC = true;
+            p++;
+        }
+
+        if (isdigit(static_cast<unsigned char>(*p)))
+        {
+            dbref target = atoi(p);
+            UTF8 name[MOD_LBUF_SIZE];
+            get_player_name(target, name, sizeof(name));
+
+            if (bBCC)
+            {
+                size_t remain = sizeof(result) - (rp - result);
+                if (remain > 1)
+                {
+                    *rp++ = '!';
+                }
+            }
+            size_t nlen = strlen(reinterpret_cast<const char *>(name));
+            size_t remain = sizeof(result) - (rp - result);
+            if (nlen < remain)
+            {
+                memcpy(rp, name, nlen);
+                rp += nlen;
+            }
+        }
+        else
+        {
+            size_t tlen = strlen(token);
+            size_t remain = sizeof(result) - (rp - result);
+            if (tlen < remain)
+            {
+                memcpy(rp, token, tlen);
+                rp += tlen;
+            }
+        }
+
+        token = strtok_r(nullptr, " ", &saveptr);
+    }
+    *rp = '\0';
+
+    return reinterpret_cast<UTF8 *>(strdup(reinterpret_cast<const char *>(result)));
+}
+
+// mail_to_list — send mail to all recipients in a numlist.
+//
+void CMailMod::mail_to_list(dbref player, UTF8 *list, const UTF8 *subject,
+    const UTF8 *message, mail_flag flags, bool silent)
+{
+    if (!list)
+    {
+        return;
+    }
+    if (!*list)
+    {
+        free(list);
+        return;
+    }
+
+    // Build tolist (excluding BCC) and senderlist (including BCC).
+    //
+    UTF8 tolist[MOD_LBUF_SIZE];
+    UTF8 *p = tolist;
+    UTF8 senderlist[MOD_LBUF_SIZE];
+    UTF8 *sp = senderlist;
+    UTF8 *head = list;
+
+    while (*head)
+    {
+        while (*head == ' ')
+        {
+            head++;
+        }
+        if (!*head)
+        {
+            break;
+        }
+
+        UTF8 *tail = head;
+        while (*tail && *tail != ' ')
+        {
+            if (*tail == '"')
+            {
+                head++;
+                tail++;
+                while (*tail && *tail != '"')
+                {
+                    tail++;
+                }
+            }
+            if (*tail)
+            {
+                tail++;
+            }
+        }
+        tail--;
+        if (*tail != '"')
+        {
+            tail++;
+        }
+
+        // Append to senderlist.
+        //
+        size_t seglen = tail - head;
+        if (sp != senderlist)
+        {
+            size_t remain = sizeof(senderlist) - (sp - senderlist);
+            if (remain > 1)
+            {
+                *sp++ = ' ';
+            }
+        }
+        {
+            size_t remain = sizeof(senderlist) - (sp - senderlist);
+            if (seglen < remain)
+            {
+                memcpy(sp, head, seglen);
+                sp += seglen;
+            }
+        }
+
+        // Append to tolist if not BCC (!-prefixed).
+        //
+        if (*head != '!')
+        {
+            if (p != tolist)
+            {
+                size_t remain = sizeof(tolist) - (p - tolist);
+                if (remain > 1)
+                {
+                    *p++ = ' ';
+                }
+            }
+            size_t remain = sizeof(tolist) - (p - tolist);
+            if (seglen < remain)
+            {
+                memcpy(p, head, seglen);
+                p += seglen;
+            }
+        }
+
+        head = tail;
+        if (*head == '"')
+        {
+            head++;
+        }
+    }
+    *p = '\0';
+    *sp = '\0';
+
+    // Add the message body (with signature evaluation).
+    //
+    int number = add_mail_message(player, message);
+    if (number == NOTHING)
+    {
+        free(list);
+        return;
+    }
+
+    // Iterate recipients and send.
+    //
+    head = list;
+    while (*head)
+    {
+        while (*head == ' ')
+        {
+            head++;
+        }
+        if (!*head)
+        {
+            break;
+        }
+
+        UTF8 *tail = head;
+        while (*tail && *tail != ' ')
+        {
+            if (*tail == '"')
+            {
+                head++;
+                tail++;
+                while (*tail && *tail != '"')
+                {
+                    tail++;
+                }
+            }
+            if (*tail)
+            {
+                tail++;
+            }
+        }
+        tail--;
+        if (*tail != '"')
+        {
+            tail++;
+        }
+        UTF8 spot = *tail;
+        *tail = '\0';
+
+        if (*head == '!')
+        {
+            head++;
+        }
+
+        if (*head == '*')
+        {
+            // Malias — expand and send to each member.
+            //
+            int nResult;
+            malias_t *m = get_malias(player, head, &nResult);
+            if (nResult == GMA_FOUND && nullptr != m)
+            {
+                for (int i = 0; i < m->numrecep; i++)
+                {
+                    bool bTargetIsPlayer = false;
+                    if (nullptr != m_pIObjectInfo)
+                    {
+                        m_pIObjectInfo->IsPlayer(m->list[i], &bTargetIsPlayer);
+                    }
+                    if (bTargetIsPlayer)
+                    {
+                        send_mail(player, m->list[i],
+                            (m->list[i] == player) ? senderlist : tolist,
+                            subject, number, flags, silent);
+                    }
+                }
+            }
+        }
+        else
+        {
+            dbref target = atoi(reinterpret_cast<const char *>(head));
+            bool bTargetIsPlayer = false;
+            if (nullptr != m_pIObjectInfo)
+            {
+                m_pIObjectInfo->IsPlayer(target, &bTargetIsPlayer);
+            }
+            if (bTargetIsPlayer)
+            {
+                send_mail(player, target,
+                    (target == player) ? senderlist : tolist,
+                    subject, number, flags, silent);
+            }
+        }
+
+        *tail = spot;
+        head = tail;
+        if (*head == '"')
+        {
+            head++;
+        }
+    }
+    MessageReferenceDec(number);
+    free(list);
+}
+
+// add_mail_message — store a message body, optionally appending signature.
+//
+// This is the module equivalent of the server's add_mail_message(). It reads
+// A_SIGNATURE via IAttributeAccess and evaluates it via IEvaluator.
+//
+int CMailMod::add_mail_message(dbref player, const UTF8 *message)
+{
+    // Reject if message says "clear" (common user error).
+    //
+    if (0 == strcasecmp(reinterpret_cast<const char *>(message), "clear"))
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: You probably did not intend to send a @mail saying "
+                  "\xE2\x80\x98" "clear\xE2\x80\x99."));
+        }
+        return NOTHING;
+    }
+
+    // Read and evaluate signature.
+    //
+    UTF8 sigraw[MOD_LBUF_SIZE];
+    sigraw[0] = '\0';
+    if (nullptr != m_pIAttributeAccess)
+    {
+        size_t nLen = 0;
+        MUX_RESULT mr = m_pIAttributeAccess->GetAttribute(player, player,
+            T("Signature"), sigraw, sizeof(sigraw) - 1, &nLen);
+        if (MUX_SUCCEEDED(mr))
+        {
+            sigraw[nLen] = '\0';
+        }
+        else
+        {
+            sigraw[0] = '\0';
+        }
+    }
+
+    // Evaluate the signature if non-empty.
+    //
+    UTF8 sigeval[MOD_LBUF_SIZE];
+    sigeval[0] = '\0';
+    if (sigraw[0] != '\0' && nullptr != m_pIMailDelivery)
+    {
+        // Use IEvaluator if available; otherwise use raw signature.
+        //
+        mux_IEvaluator *pIEval = nullptr;
+        MUX_RESULT mr = mux_CreateInstance(CID_Evaluator, nullptr,
+            UseSameProcess, IID_IEvaluator,
+            reinterpret_cast<void **>(&pIEval));
+        if (MUX_SUCCEEDED(mr) && nullptr != pIEval)
+        {
+            size_t nResultLen = 0;
+            pIEval->Eval(player, player, player, sigraw,
+                sigeval, sizeof(sigeval) - 1, &nResultLen);
+            sigeval[nResultLen] = '\0';
+            pIEval->Release();
+        }
+        else
+        {
+            strncpy(reinterpret_cast<char *>(sigeval),
+                    reinterpret_cast<const char *>(sigraw),
+                    sizeof(sigeval) - 1);
+            sigeval[sizeof(sigeval) - 1] = '\0';
+        }
+    }
+
+    // Combine message + signature.
+    //
+    UTF8 combined[MOD_LBUF_SIZE];
+    if (sigeval[0] != '\0')
+    {
+        snprintf(reinterpret_cast<char *>(combined), sizeof(combined),
+            "%s %s",
+            reinterpret_cast<const char *>(message),
+            reinterpret_cast<const char *>(sigeval));
+    }
+    else
+    {
+        strncpy(reinterpret_cast<char *>(combined),
+                reinterpret_cast<const char *>(message),
+                sizeof(combined) - 1);
+        combined[sizeof(combined) - 1] = '\0';
+    }
+
+    return new_mail_message(combined, NOTHING);
+}
+
+// ---------------------------------------------------------------------------
+// Composition commands.
+// ---------------------------------------------------------------------------
+
+void CMailMod::do_expmail_start(dbref player, const UTF8 *arg,
+    const UTF8 *subject)
+{
+    if (!arg || !*arg)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: I do not know whom you want to mail."));
+        }
+        return;
+    }
+    if (!subject || !*subject)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: No subject."));
+        }
+        return;
+    }
+
+    // Check if already composing.
+    //
+    if (nullptr != m_pIMailDelivery)
+    {
+        bool bComposing = false;
+        m_pIMailDelivery->IsComposing(player, &bComposing);
+        if (bComposing)
+        {
+            if (nullptr != m_pINotify)
+            {
+                m_pINotify->RawNotify(player,
+                    T("MAIL: Mail message already in progress."));
+            }
+            return;
+        }
+    }
+
+    // Throttle check.
+    //
+    if (nullptr != m_pIMailDelivery)
+    {
+        bool bWiz = false;
+        if (nullptr != m_pIPermissions)
+        {
+            m_pIPermissions->IsWizard(player, &bWiz);
+        }
+        if (!bWiz)
+        {
+            bool bThrottled = false;
+            m_pIMailDelivery->ThrottleCheck(player, &bThrottled);
+            if (bThrottled)
+            {
+                if (nullptr != m_pINotify)
+                {
+                    m_pINotify->RawNotify(player,
+                        T("MAIL: Too much @mail sent recently."));
+                }
+                return;
+            }
+        }
+    }
+
+    // Resolve recipients.
+    //
+    UTF8 *tolist = make_numlist(player, arg, false);
+    if (!tolist)
+    {
+        return;
+    }
+
+    // Store composition state on player attributes.
+    //
+    if (nullptr != m_pIAttributeAccess)
+    {
+        m_pIAttributeAccess->SetAttribute(player, player,
+            T("Mailto"), tolist);
+        m_pIAttributeAccess->SetAttribute(player, player,
+            T("Mailsub"), subject);
+        m_pIAttributeAccess->SetAttribute(player, player,
+            T("Mailflags"), T("0"));
+        m_pIAttributeAccess->SetAttribute(player, player,
+            T("Mailmsg"), T(""));
+    }
+
+    // Set composing flag.
+    //
+    if (nullptr != m_pIMailDelivery)
+    {
+        m_pIMailDelivery->SetComposing(player, true);
+    }
+
+    // Notify with recipient names.
+    //
+    UTF8 *names = make_namelist(player, tolist);
+    if (nullptr != m_pINotify && nullptr != names)
+    {
+        UTF8 msg[MOD_LBUF_SIZE];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+            "MAIL: You are sending mail to \xE2\x80\x98%s\xE2\x80\x99.",
+            reinterpret_cast<const char *>(names));
+        m_pINotify->RawNotify(player, msg);
+    }
+    if (names)
+    {
+        free(names);
+    }
+    free(tolist);
+}
+
+void CMailMod::do_expmail_stop(dbref player, int flags)
+{
+    // Check composing state.
+    //
+    bool bComposing = false;
+    if (nullptr != m_pIMailDelivery)
+    {
+        m_pIMailDelivery->IsComposing(player, &bComposing);
+    }
+    if (!bComposing)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: No message started."));
+        }
+        return;
+    }
+
+    // Read composition attributes.
+    //
+    UTF8 aTolist[MOD_LBUF_SIZE];
+    aTolist[0] = '\0';
+    UTF8 aMailMsg[MOD_LBUF_SIZE];
+    aMailMsg[0] = '\0';
+    UTF8 aMailSub[MOD_LBUF_SIZE];
+    aMailSub[0] = '\0';
+    UTF8 aMailFlags[MOD_LBUF_SIZE];
+    aMailFlags[0] = '\0';
+
+    if (nullptr != m_pIAttributeAccess)
+    {
+        size_t nLen;
+        m_pIAttributeAccess->GetAttribute(player, player,
+            T("Mailto"), aTolist, sizeof(aTolist) - 1, &nLen);
+        aTolist[nLen] = '\0';
+
+        m_pIAttributeAccess->GetAttribute(player, player,
+            T("Mailmsg"), aMailMsg, sizeof(aMailMsg) - 1, &nLen);
+        aMailMsg[nLen] = '\0';
+
+        m_pIAttributeAccess->GetAttribute(player, player,
+            T("Mailsub"), aMailSub, sizeof(aMailSub) - 1, &nLen);
+        aMailSub[nLen] = '\0';
+
+        m_pIAttributeAccess->GetAttribute(player, player,
+            T("Mailflags"), aMailFlags, sizeof(aMailFlags) - 1, &nLen);
+        aMailFlags[nLen] = '\0';
+    }
+
+    if (aTolist[0] == '\0')
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: No recipients."));
+        }
+        return;
+    }
+
+    if (aMailMsg[0] == '\0')
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: The body of this message is empty.  Use - to add to the message."));
+        }
+        return;
+    }
+
+    // Build numlist copy for mail_to_list (which takes ownership).
+    //
+    UTF8 *tolist_copy = reinterpret_cast<UTF8 *>(
+        strdup(reinterpret_cast<const char *>(aTolist)));
+
+    int combinedFlags = flags | atoi(reinterpret_cast<const char *>(aMailFlags));
+    mail_to_list(player, tolist_copy, aMailSub, aMailMsg, combinedFlags, false);
+
+    // Clear composing flag.
+    //
+    if (nullptr != m_pIMailDelivery)
+    {
+        m_pIMailDelivery->SetComposing(player, false);
+    }
+}
+
+void CMailMod::do_expmail_abort(dbref player)
+{
+    if (nullptr != m_pIMailDelivery)
+    {
+        m_pIMailDelivery->SetComposing(player, false);
+    }
+    if (nullptr != m_pINotify)
+    {
+        m_pINotify->RawNotify(player, T("MAIL: Message aborted."));
+    }
+}
+
+void CMailMod::do_mail_quick(dbref player, const UTF8 *arg1,
+    const UTF8 *arg2)
+{
+    if (!arg1 || !*arg1)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: I don\xE2\x80\x99t know who you want to mail."));
+        }
+        return;
+    }
+    if (!arg2 || !*arg2)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: No message."));
+        }
+        return;
+    }
+
+    // Check composing state.
+    //
+    bool bComposing = false;
+    if (nullptr != m_pIMailDelivery)
+    {
+        m_pIMailDelivery->IsComposing(player, &bComposing);
+    }
+    if (bComposing)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: Mail message already in progress."));
+        }
+        return;
+    }
+
+    // Throttle check.
+    //
+    bool bWiz = false;
+    if (nullptr != m_pIPermissions)
+    {
+        m_pIPermissions->IsWizard(player, &bWiz);
+    }
+    if (!bWiz && nullptr != m_pIMailDelivery)
+    {
+        bool bThrottled = false;
+        m_pIMailDelivery->ThrottleCheck(player, &bThrottled);
+        if (bThrottled)
+        {
+            if (nullptr != m_pINotify)
+            {
+                m_pINotify->RawNotify(player,
+                    T("MAIL: Too much @mail sent recently."));
+            }
+            return;
+        }
+    }
+
+    // Parse "recipients/subject" from arg1.
+    //
+    UTF8 bufDest[MOD_LBUF_SIZE];
+    strncpy(reinterpret_cast<char *>(bufDest),
+            reinterpret_cast<const char *>(arg1),
+            sizeof(bufDest) - 1);
+    bufDest[sizeof(bufDest) - 1] = '\0';
+
+    UTF8 *pSubject = reinterpret_cast<UTF8 *>(
+        strchr(reinterpret_cast<char *>(bufDest), '/'));
+    if (!pSubject)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: No subject."));
+        }
+        return;
+    }
+    *pSubject++ = '\0';
+
+    UTF8 *numlist = make_numlist(player, bufDest, false);
+    mail_to_list(player, numlist, pSubject, arg2, 0, false);
+}
+
+void CMailMod::do_mail_fwd(dbref player, const UTF8 *msg,
+    const UTF8 *tolist)
+{
+    // Check composing state.
+    //
+    bool bComposing = false;
+    if (nullptr != m_pIMailDelivery)
+    {
+        m_pIMailDelivery->IsComposing(player, &bComposing);
+    }
+    if (bComposing)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: Mail message already in progress."));
+        }
+        return;
+    }
+    if (!msg || !*msg)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: No message list."));
+        }
+        return;
+    }
+    if (!tolist || !*tolist)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: To whom should I forward?"));
+        }
+        return;
+    }
+
+    // Throttle check.
+    //
+    bool bWiz = false;
+    if (nullptr != m_pIPermissions)
+    {
+        m_pIPermissions->IsWizard(player, &bWiz);
+    }
+    if (!bWiz && nullptr != m_pIMailDelivery)
+    {
+        bool bThrottled = false;
+        m_pIMailDelivery->ThrottleCheck(player, &bThrottled);
+        if (bThrottled)
+        {
+            if (nullptr != m_pINotify)
+            {
+                m_pINotify->RawNotify(player,
+                    T("MAIL: Too much @mail sent recently."));
+            }
+            return;
+        }
+    }
+
+    int num = atoi(reinterpret_cast<const char *>(msg));
+    if (!num)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: I don\xE2\x80\x99t understand that message number."));
+        }
+        return;
+    }
+
+    struct mail *mp = mail_fetch(player, num);
+    if (!mp)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: You can\xE2\x80\x99t forward non-existent messages."));
+        }
+        return;
+    }
+
+    // Build subject: "Original Subject (fwd from SenderName)"
+    //
+    UTF8 fromname[MOD_LBUF_SIZE];
+    get_player_name(mp->from, fromname, sizeof(fromname));
+    UTF8 subj[MOD_LBUF_SIZE];
+    snprintf(reinterpret_cast<char *>(subj), sizeof(subj),
+        "%s (fwd from %s)",
+        reinterpret_cast<const char *>(mp->subject),
+        reinterpret_cast<const char *>(fromname));
+
+    do_expmail_start(player, tolist, subj);
+
+    // Set message body to the forwarded message.
+    //
+    const UTF8 *body = MessageFetch(mp->number);
+    if (nullptr != m_pIAttributeAccess && body)
+    {
+        m_pIAttributeAccess->SetAttribute(player, player,
+            T("Mailmsg"), body);
+    }
+
+    // Set M_FORWARD flag.
+    //
+    if (nullptr != m_pIAttributeAccess)
+    {
+        UTF8 aFlags[32];
+        size_t nLen = 0;
+        m_pIAttributeAccess->GetAttribute(player, player,
+            T("Mailflags"), aFlags, sizeof(aFlags) - 1, &nLen);
+        aFlags[nLen] = '\0';
+        int iFlag = M_FORWARD;
+        if (aFlags[0])
+        {
+            iFlag |= atoi(reinterpret_cast<const char *>(aFlags));
+        }
+        UTF8 flagbuf[16];
+        snprintf(reinterpret_cast<char *>(flagbuf), sizeof(flagbuf),
+            "%d", iFlag);
+        m_pIAttributeAccess->SetAttribute(player, player,
+            T("Mailflags"), flagbuf);
+    }
+}
+
+void CMailMod::do_mail_reply(dbref player, const UTF8 *msg, bool all,
+    int key)
+{
+    // Check composing state.
+    //
+    bool bComposing = false;
+    if (nullptr != m_pIMailDelivery)
+    {
+        m_pIMailDelivery->IsComposing(player, &bComposing);
+    }
+    if (bComposing)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: Mail message already in progress."));
+        }
+        return;
+    }
+    if (!msg || !*msg)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: No message list."));
+        }
+        return;
+    }
+
+    // Throttle check.
+    //
+    bool bWiz = false;
+    if (nullptr != m_pIPermissions)
+    {
+        m_pIPermissions->IsWizard(player, &bWiz);
+    }
+    if (!bWiz && nullptr != m_pIMailDelivery)
+    {
+        bool bThrottled = false;
+        m_pIMailDelivery->ThrottleCheck(player, &bThrottled);
+        if (bThrottled)
+        {
+            if (nullptr != m_pINotify)
+            {
+                m_pINotify->RawNotify(player,
+                    T("MAIL: Too much @mail sent recently."));
+            }
+            return;
+        }
+    }
+
+    int num = atoi(reinterpret_cast<const char *>(msg));
+    if (!num)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: I don\xE2\x80\x99t understand that message number."));
+        }
+        return;
+    }
+
+    struct mail *mp = mail_fetch(player, num);
+    if (!mp)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: You can\xE2\x80\x99t reply to non-existent messages."));
+        }
+        return;
+    }
+
+    if (!mail_from_player(mp->from, mp))
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: The original sender no longer exists."));
+        }
+        return;
+    }
+
+    // Build recipient list.
+    //
+    UTF8 tolist[MOD_LBUF_SIZE];
+    UTF8 *bp = tolist;
+
+    if (all)
+    {
+        // Include all original recipients except the original sender.
+        //
+        UTF8 oldlist[MOD_LBUF_SIZE];
+        strncpy(reinterpret_cast<char *>(oldlist),
+                reinterpret_cast<const char *>(mp->tolist),
+                sizeof(oldlist) - 1);
+        oldlist[sizeof(oldlist) - 1] = '\0';
+
+        char *saveptr = nullptr;
+        char *token = strtok_r(reinterpret_cast<char *>(oldlist),
+            " ", &saveptr);
+        while (token)
+        {
+            if (atoi(token) != mp->from)
+            {
+                if (bp != tolist)
+                {
+                    *bp++ = ' ';
+                }
+                *bp++ = '#';
+                size_t tlen = strlen(token);
+                size_t remain = sizeof(tolist) - (bp - tolist);
+                if (tlen < remain)
+                {
+                    memcpy(bp, token, tlen);
+                    bp += tlen;
+                }
+            }
+            token = strtok_r(nullptr, " ", &saveptr);
+        }
+
+        // Add original sender.
+        //
+        if (bp != tolist)
+        {
+            *bp++ = ' ';
+        }
+        bp += snprintf(reinterpret_cast<char *>(bp),
+            sizeof(tolist) - (bp - tolist),
+            "#%d", mp->from);
+    }
+    else
+    {
+        bp += snprintf(reinterpret_cast<char *>(bp),
+            sizeof(tolist) - (bp - tolist),
+            "#%d", mp->from);
+    }
+    *bp = '\0';
+
+    // Build subject.
+    //
+    const UTF8 *pSubject = mp->subject;
+    UTF8 subj[MOD_LBUF_SIZE];
+    if (strncmp(reinterpret_cast<const char *>(pSubject), "Re:", 3))
+    {
+        snprintf(reinterpret_cast<char *>(subj), sizeof(subj),
+            "Re: %s", reinterpret_cast<const char *>(pSubject));
+    }
+    else
+    {
+        strncpy(reinterpret_cast<char *>(subj),
+                reinterpret_cast<const char *>(pSubject),
+                sizeof(subj) - 1);
+        subj[sizeof(subj) - 1] = '\0';
+    }
+
+    do_expmail_start(player, tolist, subj);
+
+    // Quote original message if requested.
+    //
+    if (key & MAIL_QUOTE)
+    {
+        UTF8 fromname[MOD_LBUF_SIZE];
+        get_player_name(mp->from, fromname, sizeof(fromname));
+        const UTF8 *pMessage = MessageFetch(mp->number);
+        const UTF8 *pTime = mp->time;
+
+        UTF8 body[MOD_LBUF_SIZE];
+        snprintf(reinterpret_cast<char *>(body), sizeof(body),
+            "On %s, %s wrote:\r\n\r\n%s\r\n\r\n********** End of included message from %s\r\n",
+            reinterpret_cast<const char *>(pTime),
+            reinterpret_cast<const char *>(fromname),
+            pMessage ? reinterpret_cast<const char *>(pMessage) : "",
+            reinterpret_cast<const char *>(fromname));
+
+        if (nullptr != m_pIAttributeAccess)
+        {
+            m_pIAttributeAccess->SetAttribute(player, player,
+                T("Mailmsg"), body);
+        }
+    }
+
+    // Set M_REPLY flag.
+    //
+    if (nullptr != m_pIAttributeAccess)
+    {
+        UTF8 aFlags[32];
+        size_t nLen = 0;
+        m_pIAttributeAccess->GetAttribute(player, player,
+            T("Mailflags"), aFlags, sizeof(aFlags) - 1, &nLen);
+        aFlags[nLen] = '\0';
+        int iFlag = M_REPLY;
+        if (aFlags[0])
+        {
+            iFlag |= atoi(reinterpret_cast<const char *>(aFlags));
+        }
+        UTF8 flagbuf[16];
+        snprintf(reinterpret_cast<char *>(flagbuf), sizeof(flagbuf),
+            "%d", iFlag);
+        m_pIAttributeAccess->SetAttribute(player, player,
+            T("Mailflags"), flagbuf);
+    }
+}
+
+void CMailMod::do_mail_proof(dbref player)
+{
+    // Check composing state.
+    //
+    bool bComposing = false;
+    if (nullptr != m_pIMailDelivery)
+    {
+        m_pIMailDelivery->IsComposing(player, &bComposing);
+    }
+    if (!bComposing)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: No message started."));
+        }
+        return;
+    }
+
+    // Read and display the draft.
+    //
+    UTF8 aTolist[MOD_LBUF_SIZE];
+    aTolist[0] = '\0';
+    UTF8 aMailMsg[MOD_LBUF_SIZE];
+    aMailMsg[0] = '\0';
+    UTF8 aMailSub[MOD_LBUF_SIZE];
+    aMailSub[0] = '\0';
+
+    if (nullptr != m_pIAttributeAccess)
+    {
+        size_t nLen;
+        m_pIAttributeAccess->GetAttribute(player, player,
+            T("Mailto"), aTolist, sizeof(aTolist) - 1, &nLen);
+        aTolist[nLen] = '\0';
+        m_pIAttributeAccess->GetAttribute(player, player,
+            T("Mailmsg"), aMailMsg, sizeof(aMailMsg) - 1, &nLen);
+        aMailMsg[nLen] = '\0';
+        m_pIAttributeAccess->GetAttribute(player, player,
+            T("Mailsub"), aMailSub, sizeof(aMailSub) - 1, &nLen);
+        aMailSub[nLen] = '\0';
+    }
+
+    UTF8 *names = make_namelist(player, aTolist);
+    if (nullptr != m_pINotify)
+    {
+        UTF8 msg[MOD_LBUF_SIZE];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+            "MAIL: To: %s",
+            names ? reinterpret_cast<const char *>(names) : "");
+        m_pINotify->RawNotify(player, msg);
+
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+            "MAIL: Subject: %s",
+            reinterpret_cast<const char *>(aMailSub));
+        m_pINotify->RawNotify(player, msg);
+
+        m_pINotify->RawNotify(player, aMailMsg);
+    }
+    if (names)
+    {
+        free(names);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Malias helpers and commands.
 // ---------------------------------------------------------------------------
 
@@ -3927,6 +5406,53 @@ MUX_RESULT CMailMod::MailCommand(dbref executor, int key,
     case MAIL_NUKE:
         do_mail_nuke(executor);
         return MUX_S_OK;
+
+    case MAIL_SEND:
+        do_expmail_stop(executor, 0);
+        return MUX_S_OK;
+
+    case MAIL_QUICK:
+        do_mail_quick(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    case MAIL_CC:
+        do_mail_quick(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    case MAIL_BCC:
+        // BCC uses blind numlist.
+        //
+        do_mail_quick(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    case MAIL_PROOF:
+        do_mail_proof(executor);
+        return MUX_S_OK;
+
+    case MAIL_ABORT:
+        do_expmail_abort(executor);
+        return MUX_S_OK;
+
+    case MAIL_FORWARD:
+        do_mail_fwd(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    case MAIL_REPLY:
+        do_mail_reply(executor, pArg1, false, key);
+        return MUX_S_OK;
+
+    case MAIL_REPLYALL:
+        do_mail_reply(executor, pArg1, true, key);
+        return MUX_S_OK;
+
+    case MAIL_URGENT:
+        do_expmail_stop(executor, M_URGENT);
+        return MUX_S_OK;
+
+    case MAIL_EDIT:
+        // @mail/edit is handled server-side (needs mux_exec for editing).
+        //
+        return MUX_E_NOTIMPLEMENTED;
 
     case 0:
         // Default @mail (no switch).

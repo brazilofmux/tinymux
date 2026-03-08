@@ -174,6 +174,7 @@ private:
     mux_IObjectInfo           *m_pIObjectInfo;
     mux_IAttributeAccess      *m_pIAttributeAccess;
     mux_IPermissions          *m_pIPermissions;
+    mux_IMailDelivery         *m_pIMailDelivery;
 
     // SQLite connection — module's own handle to the game database.
     //
@@ -258,6 +259,31 @@ private:
     void do_mail_retract(dbref player, const UTF8 *name,
         const UTF8 *msglist);
     void do_mail_nuke(dbref player);
+
+    // Delivery pipeline.
+    //
+    void send_mail(dbref player, dbref target, const UTF8 *tolist,
+        const UTF8 *subject, int number, mail_flag flags, bool silent);
+    void mail_to_list(dbref player, UTF8 *list, const UTF8 *subject,
+        const UTF8 *message, mail_flag flags, bool silent);
+    UTF8 *make_numlist(dbref player, const UTF8 *arg, bool bBlind);
+    UTF8 *make_namelist(dbref player, const UTF8 *arg);
+    struct mail *mail_fetch(dbref player, int num);
+    int  add_mail_message(dbref player, const UTF8 *message);
+
+    // Composition commands.
+    //
+    void do_expmail_start(dbref player, const UTF8 *arg,
+        const UTF8 *subject);
+    void do_expmail_stop(dbref player, int flags);
+    void do_expmail_abort(dbref player);
+    void do_mail_quick(dbref player, const UTF8 *arg1,
+        const UTF8 *arg2);
+    void do_mail_fwd(dbref player, const UTF8 *msg,
+        const UTF8 *tolist);
+    void do_mail_reply(dbref player, const UTF8 *msg, bool all,
+        int key);
+    void do_mail_proof(dbref player);
 
     // Malias helpers.
     //

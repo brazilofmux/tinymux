@@ -65,6 +65,7 @@ const MUX_CID CID_Evaluator             = UINT64_C(0x00000002E7B3A51D);
 const MUX_IID IID_IEvaluator            = UINT64_C(0x000000023C6D8F72);
 const MUX_CID CID_Permissions           = UINT64_C(0x00000002A4C7E831);
 const MUX_IID IID_IPermissions          = UINT64_C(0x0000000257B1D946);
+const MUX_CID CID_MailDelivery          = UINT64_C(0x00000002B3F5D721);
 
 interface mux_ILog : public mux_IUnknown
 {
@@ -381,6 +382,39 @@ public:
     virtual MUX_RESULT CountMail(dbref player, int folder,
         int *pRead, int *pUnread, int *pCleared) = 0;
     virtual MUX_RESULT DestroyPlayerMail(dbref player) = 0;
+};
+
+// Mail delivery — server-provided interface for mail permission checks,
+// notifications, and composition state.  The module owns all mail data;
+// the server handles lock evaluation, attribute triggers, flag management,
+// and throttling.
+//
+const MUX_IID IID_IMailDelivery        = UINT64_C(0x00000002A1B7C3D4);
+
+interface mux_IMailDelivery : public mux_IUnknown
+{
+public:
+    // Check if player can mail target (evaluates A_LMAIL lock).
+    // On failure, sends the MFAIL message to player.
+    //
+    virtual MUX_RESULT MailCheck(dbref player, dbref target,
+        bool *pResult) = 0;
+
+    // Post-delivery notification and attribute triggers.
+    // Sends "You have new mail" to target, "You sent mail" to sender,
+    // and triggers A_MAIL/A_AMAIL on target.
+    //
+    virtual MUX_RESULT NotifyDelivery(dbref sender, dbref target,
+        const UTF8 *subject, bool silent) = 0;
+
+    // Composition state (PLAYER_MAILS flag in Flags2).
+    //
+    virtual MUX_RESULT IsComposing(dbref player, bool *pResult) = 0;
+    virtual MUX_RESULT SetComposing(dbref player, bool bComposing) = 0;
+
+    // Throttle check (has player sent too much mail recently?).
+    //
+    virtual MUX_RESULT ThrottleCheck(dbref player, bool *pResult) = 0;
 };
 
 #endif // MODULES_H
