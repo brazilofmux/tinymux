@@ -42,6 +42,16 @@ const MUX_CID CID_ComsysMod = UINT64_C(0x00000002C5A2F193);
 #define ALIAS_SIZE       16
 #define MAX_ALIASES_PER_PLAYER 100
 
+// Command switch keys (mirrored from externs.h).
+//
+#define CEMIT_NOHEADER  1
+#define CLIST_FULL      1
+#define CLIST_HEADERS   2
+#define COMTITLE_ON     1
+#define COMTITLE_OFF    2
+#define COMTITLE_GAG    3
+#define COMTITLE_UNGAG  4
+
 // Per-user channel subscription record.
 //
 struct comuser
@@ -167,6 +177,15 @@ public:
     MUX_RESULT ClearAliases(dbref executor) override;
     MUX_RESULT CreateChannel(dbref executor, const UTF8 *pName) override;
     MUX_RESULT DestroyChannel(dbref executor, const UTF8 *pName) override;
+    MUX_RESULT AllCom(dbref executor, const UTF8 *pAction) override;
+    MUX_RESULT ComList(dbref executor, const UTF8 *pPattern) override;
+    MUX_RESULT ComTitle(dbref executor, const UTF8 *pAlias,
+        const UTF8 *pTitle, int key) override;
+    MUX_RESULT ChanList(dbref executor, const UTF8 *pPattern,
+        int key) override;
+    MUX_RESULT ChanWho(dbref executor, const UTF8 *pArg) override;
+    MUX_RESULT CEmit(dbref executor, const UTF8 *pChannel,
+        const UTF8 *pText, int key) override;
     MUX_RESULT ProcessCommand(dbref executor, const UTF8 *pCmd,
         bool *pbHandled) override;
 

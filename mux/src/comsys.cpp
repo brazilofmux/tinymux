@@ -2855,6 +2855,12 @@ void do_comtitle
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    if (nullptr != mudstate.pIComsysControl)
+    {
+        mudstate.pIComsysControl->ComTitle(executor, arg1, arg2, key);
+        return;
+    }
+
     if (!*arg1)
     {
         raw_notify(executor, T("Need an alias to do comtitle."));
@@ -2934,6 +2940,12 @@ void do_comlist
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
+
+    if (nullptr != mudstate.pIComsysControl)
+    {
+        mudstate.pIComsysControl->ComList(executor, pattern);
+        return;
+    }
 
     bool bWild;
     if (nullptr != pattern
@@ -3051,6 +3063,12 @@ void do_allcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    if (nullptr != mudstate.pIComsysControl)
+    {
+        mudstate.pIComsysControl->AllCom(executor, arg1);
+        return;
+    }
+
     if (strcmp(reinterpret_cast<char*>(arg1), "who") != 0
         && strcmp(reinterpret_cast<char*>(arg1), "on") != 0
         && strcmp(reinterpret_cast<char*>(arg1), "off") != 0)
@@ -3100,6 +3118,12 @@ void do_channelwho(const dbref executor, const dbref caller, dbref enactor, cons
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
+
+    if (nullptr != mudstate.pIComsysControl)
+    {
+        mudstate.pIComsysControl->ChanWho(executor, arg1);
+        return;
+    }
 
     UTF8 channel[MAX_CHANNEL_LEN + 1];
     size_t i = 0;
@@ -3612,6 +3636,12 @@ void do_cemit
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    if (nullptr != mudstate.pIComsysControl)
+    {
+        mudstate.pIComsysControl->CEmit(executor, chan, text, key);
+        return;
+    }
+
     struct channel* ch = select_channel(chan);
     if (!ch)
     {
@@ -3932,6 +3962,12 @@ void do_chanlist
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
+
+    if (nullptr != mudstate.pIComsysControl)
+    {
+        mudstate.pIComsysControl->ChanList(executor, pattern, key);
+        return;
+    }
 
     if (key & CLIST_FULL)
     {

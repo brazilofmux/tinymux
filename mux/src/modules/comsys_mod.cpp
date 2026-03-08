@@ -1826,6 +1826,513 @@ MUX_RESULT CComsysMod::PlayerNuke(dbref player)
     return MUX_S_OK;
 }
 
+// ---------------------------------------------------------------------------
+// allcom — send command to all channels.
+// ---------------------------------------------------------------------------
+
+MUX_RESULT CComsysMod::AllCom(dbref executor, const UTF8 *pAction)
+{
+    if (nullptr == pAction)
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    const char *a = reinterpret_cast<const char *>(pAction);
+    if (0 != strcmp(a, "who") && 0 != strcmp(a, "on") && 0 != strcmp(a, "off"))
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor,
+                T("Only options available are: on, off and who."));
+        }
+        return MUX_E_INVALIDARG;
+    }
+
+    comsys_t *c = get_comsys(executor);
+    if (nullptr == c)
+    {
+        return MUX_S_OK;
+    }
+
+    for (int i = 0; i < c->numchannels; i++)
+    {
+        do_processcom(executor, c->channels[i],
+            const_cast<UTF8 *>(pAction));
+        if (0 == strcmp(a, "who") && nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor, T(""));
+        }
+    }
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// comlist — list player's channel aliases.
+// ---------------------------------------------------------------------------
+
+MUX_RESULT CComsysMod::ComList(dbref executor, const UTF8 *pPattern)
+{
+    if (nullptr == m_pINotify)
+    {
+        return MUX_E_FAIL;
+    }
+
+    m_pINotify->RawNotify(executor,
+        T("Alias           Channel            Status   Title"));
+
+    comsys_t *c = get_comsys(executor);
+    if (nullptr == c)
+    {
+        m_pINotify->RawNotify(executor, T("-- End of comlist --"));
+        return MUX_S_OK;
+    }
+
+    bool bWild = (nullptr != pPattern && '\0' != *pPattern);
+
+    for (int i = 0; i < c->numchannels; i++)
+    {
+        struct channel *ch = select_channel(c->channels[i]);
+        struct comuser *user = (nullptr != ch)
+            ? select_user(ch, executor) : nullptr;
+
+        if (nullptr != user)
+        {
+            // Simple wildcard: if pattern provided, check if channel
+            // name contains it.
+            //
+            if (bWild && nullptr == strstr(
+                    reinterpret_cast<const char *>(c->channels[i]),
+                    reinterpret_cast<const char *>(pPattern)))
+            {
+                continue;
+            }
+
+            UTF8 msg[256];
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "%-15.15s %-18.18s %s %s%s %s",
+                     reinterpret_cast<const char *>(c->alias + i * ALIAS_SIZE),
+                     reinterpret_cast<const char *>(c->channels[i]),
+                     user->bUserIsOn ? "on " : "off",
+                     user->ComTitleStatus ? "con " : "coff",
+                     user->bGagJoinLeave ? " gag" : "",
+                     (nullptr != user->title)
+                         ? reinterpret_cast<const char *>(user->title) : "");
+            m_pINotify->RawNotify(executor, msg);
+        }
+        else
+        {
+            UTF8 msg[256];
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "Bad Comsys Alias: %s for Channel: %s",
+                     reinterpret_cast<const char *>(c->alias + i * ALIAS_SIZE),
+                     reinterpret_cast<const char *>(c->channels[i]));
+            m_pINotify->RawNotify(executor, msg);
+        }
+    }
+
+    m_pINotify->RawNotify(executor, T("-- End of comlist --"));
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// comtitle — set/get comtitle for a channel alias.
+// ---------------------------------------------------------------------------
+
+MUX_RESULT CComsysMod::ComTitle(dbref executor, const UTF8 *pAlias,
+    const UTF8 *pTitle, int key)
+{
+    if (nullptr == pAlias || '\0' == *pAlias)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor,
+                T("Need an alias to do comtitle."));
+        }
+        return MUX_E_INVALIDARG;
+    }
+
+    const UTF8 *chName = get_channel_from_alias(executor, pAlias);
+    if ('\0' == chName[0])
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor, T("Unknown alias."));
+        }
+        return MUX_E_NOTFOUND;
+    }
+
+    struct channel *ch = select_channel(chName);
+    if (nullptr == ch)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor,
+                T("Illegal comsys alias, please delete."));
+        }
+        return MUX_E_NOTFOUND;
+    }
+
+    struct comuser *user = select_user(ch, executor);
+    if (nullptr == user)
+    {
+        return MUX_E_NOTFOUND;
+    }
+
+    UTF8 msg[256];
+    switch (key)
+    {
+    case COMTITLE_OFF:
+        if (0 == (ch->type & CHANNEL_SPOOF))
+        {
+            user->ComTitleStatus = false;
+            sqlite_wt_channel_user(ch->name, user);
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "Comtitles are now off for channel %s",
+                     reinterpret_cast<const char *>(ch->name));
+        }
+        else
+        {
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "You can not turn off comtitles on that channel.");
+        }
+        break;
+
+    case COMTITLE_ON:
+        user->ComTitleStatus = true;
+        sqlite_wt_channel_user(ch->name, user);
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "Comtitles are now on for channel %s",
+                 reinterpret_cast<const char *>(ch->name));
+        break;
+
+    case COMTITLE_GAG:
+        user->bGagJoinLeave = true;
+        sqlite_wt_channel_user(ch->name, user);
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "Join/leave messages are now gagged for channel %s",
+                 reinterpret_cast<const char *>(ch->name));
+        break;
+
+    case COMTITLE_UNGAG:
+        user->bGagJoinLeave = false;
+        sqlite_wt_channel_user(ch->name, user);
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "Join/leave messages are now ungagged for channel %s",
+                 reinterpret_cast<const char *>(ch->name));
+        break;
+
+    default:
+        // Set title.
+        //
+        if (nullptr != user->title)
+        {
+            free(user->title);
+        }
+        if (nullptr != pTitle && '\0' != *pTitle)
+        {
+            // Truncate to MAX_TITLE_LEN.
+            //
+            char truncated[MAX_TITLE_LEN + 1];
+            strncpy(truncated,
+                    reinterpret_cast<const char *>(pTitle), MAX_TITLE_LEN);
+            truncated[MAX_TITLE_LEN] = '\0';
+            user->title = reinterpret_cast<UTF8 *>(strdup(truncated));
+        }
+        else
+        {
+            user->title = reinterpret_cast<UTF8 *>(strdup(""));
+        }
+        sqlite_wt_channel_user(ch->name, user);
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "Title set to \xE2\x80\x98%s\xE2\x80\x99 on channel %s.",
+                 (nullptr != user->title)
+                     ? reinterpret_cast<const char *>(user->title) : "",
+                 reinterpret_cast<const char *>(ch->name));
+        break;
+    }
+
+    if (nullptr != m_pINotify)
+    {
+        m_pINotify->RawNotify(executor, msg);
+    }
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// @clist — list channels.
+// ---------------------------------------------------------------------------
+
+MUX_RESULT CComsysMod::ChanList(dbref executor, const UTF8 *pPattern,
+    int key)
+{
+    if (nullptr == m_pINotify)
+    {
+        return MUX_E_FAIL;
+    }
+
+    if (key & CLIST_HEADERS)
+    {
+        m_pINotify->RawNotify(executor,
+            T("*** Channel       Owner           Header"));
+    }
+    else
+    {
+        m_pINotify->RawNotify(executor,
+            T("*** Channel       Owner           Description"));
+    }
+
+    bool bWild = (nullptr != pPattern && '\0' != *pPattern);
+
+    for (auto it = m_channels.begin(); it != m_channels.end(); ++it)
+    {
+        struct channel *ch = it->second;
+
+        // Simple wildcard filter.
+        //
+        if (bWild && nullptr == strstr(
+                reinterpret_cast<const char *>(ch->name),
+                reinterpret_cast<const char *>(pPattern)))
+        {
+            continue;
+        }
+
+        // Visibility check: public or owner or Comm_All.
+        //
+        bool bVisible = ((ch->type & CHANNEL_PUBLIC) != 0);
+        if (!bVisible && nullptr != m_pIPermissions)
+        {
+            bool bCommAll = false;
+            m_pIPermissions->HasCommAll(executor, &bCommAll);
+            bVisible = bCommAll;
+        }
+        if (!bVisible)
+        {
+            bool bControls = false;
+            if (nullptr != m_pIPermissions)
+            {
+                m_pIPermissions->HasControl(executor, ch->charge_who,
+                    &bControls);
+            }
+            bVisible = bControls;
+        }
+
+        if (!bVisible)
+        {
+            continue;
+        }
+
+        const UTF8 *pOwnerName = nullptr;
+        if (nullptr != m_pIObjectInfo)
+        {
+            m_pIObjectInfo->GetMoniker(ch->charge_who, &pOwnerName);
+        }
+        if (nullptr == pOwnerName)
+        {
+            pOwnerName = T("???");
+        }
+
+        const char *pDesc = (key & CLIST_HEADERS)
+            ? reinterpret_cast<const char *>(ch->header)
+            : "No description.";
+
+        UTF8 line[256];
+        snprintf(reinterpret_cast<char *>(line), sizeof(line),
+                 "%c%c%c %-13.13s %-15.15s %s",
+                 (ch->type & CHANNEL_PUBLIC) ? 'P' : '-',
+                 (ch->type & CHANNEL_LOUD) ? 'L' : '-',
+                 (ch->type & CHANNEL_SPOOF) ? 'S' : '-',
+                 reinterpret_cast<const char *>(ch->name),
+                 reinterpret_cast<const char *>(pOwnerName),
+                 pDesc);
+        m_pINotify->RawNotify(executor, line);
+    }
+
+    m_pINotify->RawNotify(executor,
+        T("-- End of list of Channels --"));
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// @cwho — who is on a channel.
+// ---------------------------------------------------------------------------
+
+MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
+{
+    if (nullptr == m_pINotify)
+    {
+        return MUX_E_FAIL;
+    }
+
+    if (nullptr == pArg || '\0' == *pArg)
+    {
+        m_pINotify->RawNotify(executor, T("You must specify a channel."));
+        return MUX_E_INVALIDARG;
+    }
+
+    // Parse "channel/all" format.
+    //
+    UTF8 chanName[MAX_CHANNEL_LEN + 1];
+    size_t i = 0;
+    while ('\0' != pArg[i] && '/' != pArg[i] && i < MAX_CHANNEL_LEN)
+    {
+        chanName[i] = pArg[i];
+        i++;
+    }
+    chanName[i] = '\0';
+
+    bool bAll = ('/' == pArg[i] && 'a' == pArg[i + 1]);
+
+    struct channel *ch = select_channel(chanName);
+    if (nullptr == ch)
+    {
+        UTF8 msg[256];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "Unknown channel %s.",
+                 reinterpret_cast<const char *>(chanName));
+        m_pINotify->RawNotify(executor, msg);
+        return MUX_E_NOTFOUND;
+    }
+
+    // Permission check.
+    //
+    bool bAllowed = false;
+    if (nullptr != m_pIPermissions)
+    {
+        m_pIPermissions->HasCommAll(executor, &bAllowed);
+        if (!bAllowed)
+        {
+            m_pIPermissions->HasControl(executor, ch->charge_who, &bAllowed);
+        }
+    }
+    if (!bAllowed)
+    {
+        m_pINotify->RawNotify(executor, T("Permission denied."));
+        return MUX_E_PERMISSION;
+    }
+
+    UTF8 msg[256];
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "-- %s --", reinterpret_cast<const char *>(ch->name));
+    m_pINotify->RawNotify(executor, msg);
+
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "%-29.29s %-6.6s %-6.6s", "Name", "Status", "Player");
+    m_pINotify->RawNotify(executor, msg);
+
+    for (int j = 0; j < ch->num_users; j++)
+    {
+        struct comuser *user = ch->users[j];
+
+        // If not showing all, only show connected users.
+        //
+        if (!bAll)
+        {
+            bool bConnected = false;
+            if (nullptr != m_pIObjectInfo)
+            {
+                m_pIObjectInfo->IsConnected(user->who, &bConnected);
+            }
+            if (!bConnected)
+            {
+                continue;
+            }
+        }
+
+        const UTF8 *pName = nullptr;
+        if (nullptr != m_pIObjectInfo)
+        {
+            m_pIObjectInfo->GetName(user->who, &pName);
+        }
+        if (nullptr == pName)
+        {
+            pName = T("???");
+        }
+
+        bool bPlayer = false;
+        if (nullptr != m_pIObjectInfo)
+        {
+            m_pIObjectInfo->IsPlayer(user->who, &bPlayer);
+        }
+
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "%-29.29s %-6.6s %-6.6s",
+                 reinterpret_cast<const char *>(pName),
+                 user->bUserIsOn ? "on " : "off",
+                 bPlayer ? "yes" : "no ");
+        m_pINotify->RawNotify(executor, msg);
+    }
+
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "-- %s --", reinterpret_cast<const char *>(ch->name));
+    m_pINotify->RawNotify(executor, msg);
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// @cemit — emit to a channel.
+// ---------------------------------------------------------------------------
+
+MUX_RESULT CComsysMod::CEmit(dbref executor, const UTF8 *pChannel,
+    const UTF8 *pText, int key)
+{
+    if (nullptr == pChannel || nullptr == pText)
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    struct channel *ch = select_channel(pChannel);
+    if (nullptr == ch)
+    {
+        if (nullptr != m_pINotify)
+        {
+            UTF8 msg[256];
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "Channel %s does not exist.",
+                     reinterpret_cast<const char *>(pChannel));
+            m_pINotify->RawNotify(executor, msg);
+        }
+        return MUX_E_NOTFOUND;
+    }
+
+    // Permission check.
+    //
+    bool bAllowed = false;
+    if (nullptr != m_pIPermissions)
+    {
+        m_pIPermissions->HasCommAll(executor, &bAllowed);
+        if (!bAllowed)
+        {
+            m_pIPermissions->HasControl(executor, ch->charge_who, &bAllowed);
+        }
+    }
+    if (!bAllowed)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor, T("Permission denied."));
+        }
+        return MUX_E_PERMISSION;
+    }
+
+    UTF8 msg[4096];
+    if (key == CEMIT_NOHEADER)
+    {
+        strncpy(reinterpret_cast<char *>(msg),
+                reinterpret_cast<const char *>(pText), sizeof(msg) - 1);
+        msg[sizeof(msg) - 1] = '\0';
+    }
+    else
+    {
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "%s %s",
+                 reinterpret_cast<const char *>(ch->header),
+                 reinterpret_cast<const char *>(pText));
+    }
+
+    SendChannelMessage(executor, ch, msg, false);
+    return MUX_S_OK;
+}
+
 MUX_RESULT CComsysMod::ProcessCommand(dbref executor, const UTF8 *pCmd,
     bool *pbHandled)
 {

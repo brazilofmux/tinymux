@@ -306,6 +306,18 @@ public:
     virtual MUX_RESULT CreateChannel(dbref executor, const UTF8 *pName) = 0;
     virtual MUX_RESULT DestroyChannel(dbref executor, const UTF8 *pName) = 0;
 
+    // Channel operations.
+    //
+    virtual MUX_RESULT AllCom(dbref executor, const UTF8 *pAction) = 0;
+    virtual MUX_RESULT ComList(dbref executor, const UTF8 *pPattern) = 0;
+    virtual MUX_RESULT ComTitle(dbref executor, const UTF8 *pAlias,
+        const UTF8 *pTitle, int key) = 0;
+    virtual MUX_RESULT ChanList(dbref executor, const UTF8 *pPattern,
+        int key) = 0;
+    virtual MUX_RESULT ChanWho(dbref executor, const UTF8 *pArg) = 0;
+    virtual MUX_RESULT CEmit(dbref executor, const UTF8 *pChannel,
+        const UTF8 *pText, int key) = 0;
+
     // Alias-based command dispatch (returns true to stop further matching).
     //
     virtual MUX_RESULT ProcessCommand(dbref executor, const UTF8 *pCmd,
