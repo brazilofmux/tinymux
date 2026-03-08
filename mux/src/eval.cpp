@@ -769,7 +769,7 @@ void parse_arglist( dbref executor, dbref caller, dbref enactor, UTF8 *dstr,
         bp = fargs[iArg] = alloc_lbuf("parse_arglist");
         if (eval & EV_EVAL)
         {
-            mux_exec(tstr, LBUF_SIZE-1, fargs[iArg], &bp, executor, caller, enactor,
+            mux_exec2(tstr, LBUF_SIZE-1, fargs[iArg], &bp, executor, caller, enactor,
                      eval | EV_FCHECK, cargs, ncargs);
             *bp = '\0';
         }
