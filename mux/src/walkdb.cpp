@@ -33,12 +33,21 @@ static void bind_and_process(dbref executor, dbref caller, dbref enactor,
                              int eval, UTF8 *action, UTF8 *argstr,
                              const UTF8 *cargs[], int ncargs, int number)
 {
-    UTF8 *command = replace_tokens(action,
-        mudconf.safer_iter ? nullptr : argstr,
-        mudconf.safer_iter ? nullptr : mux_ltoa_t(number),
-        nullptr);
-    process_command(executor, caller, enactor, eval, false, command, cargs, ncargs);
-    free_lbuf(command);
+    bool bLoopInBounds = (  0 <= mudstate.in_loop
+                         && mudstate.in_loop < MAX_ITEXT);
+    if (bLoopInBounds)
+    {
+        mudstate.itext[mudstate.in_loop] = argstr;
+        mudstate.inum[mudstate.in_loop] = number;
+    }
+    mudstate.in_loop++;
+    process_command(executor, caller, enactor, eval, false, action, cargs, ncargs);
+    mudstate.in_loop--;
+    if (bLoopInBounds)
+    {
+        mudstate.itext[mudstate.in_loop] = nullptr;
+        mudstate.inum[mudstate.in_loop] = 0;
+    }
 }
 
 // New @dolist.  i.e.:
@@ -988,13 +997,24 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
         {
             buff[0] = '#';
             mux_ltoa(thing, buff+1);
-            UTF8 *buff2 = replace_tokens(parm->s_rst_eval,
-                mudconf.safer_iter ? nullptr : buff, nullptr, nullptr);
+            bool bLoopInBounds = (  0 <= mudstate.in_loop
+                                 && mudstate.in_loop < MAX_ITEXT);
+            if (bLoopInBounds)
+            {
+                mudstate.itext[mudstate.in_loop] = buff;
+                mudstate.inum[mudstate.in_loop] = 0;
+            }
+            mudstate.in_loop++;
             result = bp = alloc_lbuf("search_perform");
-            mux_exec2(buff2, LBUF_SIZE-1, result, &bp, executor, caller, enactor,
+            mux_exec2(parm->s_rst_eval, LBUF_SIZE-1, result, &bp, executor, caller, enactor,
                 EV_FCHECK | EV_EVAL | EV_NOTRACE, nullptr, 0);
             *bp = '\0';
-            free_lbuf(buff2);
+            mudstate.in_loop--;
+            if (bLoopInBounds)
+            {
+                mudstate.itext[mudstate.in_loop] = nullptr;
+                mudstate.inum[mudstate.in_loop] = 0;
+            }
             if (!*result || !xlate(result))
             {
                 free_lbuf(result);
