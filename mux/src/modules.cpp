@@ -23,7 +23,8 @@ static MUX_CLASS_INFO netmux_classes[] =
     { CID_AttributeAccess    },
     { CID_Evaluator          },
     { CID_Permissions        },
-    { CID_MailDelivery       }
+    { CID_MailDelivery       },
+    { CID_HelpSystem         }
 };
 #define NUM_CLASSES (sizeof(netmux_classes)/sizeof(netmux_classes[0]))
 
@@ -250,6 +251,26 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
 
         mr = pMailDeliveryFactory->QueryInterface(iid, ppv);
         pMailDeliveryFactory->Release();
+    }
+    else if (CID_HelpSystem == cid)
+    {
+        CHelpSystemFactory *pHelpSystemFactory = nullptr;
+        try
+        {
+            pHelpSystemFactory = new CHelpSystemFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == pHelpSystemFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pHelpSystemFactory->QueryInterface(iid, ppv);
+        pHelpSystemFactory->Release();
     }
     return mr;
 }
@@ -2315,6 +2336,253 @@ MUX_RESULT CMailDeliveryFactory::CreateInstance(mux_IUnknown *pUnknownOuter,
 }
 
 MUX_RESULT CMailDeliveryFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CHelpSystem — server-provided implementation of mux_IHelpSystem.
+//
+// Wraps the existing help.cpp lookup and indexing functions so that
+// modules can access the in-game help system without linking against
+// server internals.
+// ---------------------------------------------------------------------------
+
+class CHelpSystem : public mux_IHelpSystem
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+
+    virtual MUX_RESULT LookupTopic(dbref executor, int iHelpfile,
+        const UTF8 *pTopic, UTF8 *pResult, size_t nResultMax,
+        size_t *pnResultLen);
+    virtual MUX_RESULT FindHelpFile(const UTF8 *pCommandName,
+        int *pIndex);
+    virtual MUX_RESULT GetHelpFileCount(int *pCount);
+    virtual MUX_RESULT ReloadIndexes(dbref player);
+
+    CHelpSystem(void);
+    virtual ~CHelpSystem();
+
+private:
+    uint32_t m_cRef;
+};
+
+CHelpSystem::CHelpSystem(void) : m_cRef(1)
+{
+}
+
+CHelpSystem::~CHelpSystem()
+{
+}
+
+MUX_RESULT CHelpSystem::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IHelpSystem *>(this);
+    }
+    else if (IID_IHelpSystem == iid)
+    {
+        *ppv = static_cast<mux_IHelpSystem *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CHelpSystem::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CHelpSystem::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+// LookupTopic — look up a help topic and return the rendered text.
+//
+// Delegates to help_helper() which does the full lookup including
+// prefix matching, file reading, and optional softcode evaluation.
+//
+MUX_RESULT CHelpSystem::LookupTopic(dbref executor, int iHelpfile,
+    const UTF8 *pTopic, UTF8 *pResult, size_t nResultMax,
+    size_t *pnResultLen)
+{
+    if (nullptr == pResult || nullptr == pnResultLen)
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    if (  iHelpfile < 0
+       || mudstate.mHelpDesc <= iHelpfile
+       || mudstate.nHelpDesc <= iHelpfile)
+    {
+        *pnResultLen = 0;
+        pResult[0] = '\0';
+        return MUX_E_NOTFOUND;
+    }
+
+    // help_helper writes into an alloc_lbuf using safe_str pattern.
+    //
+    UTF8 *buff = alloc_lbuf("CHelpSystem.LookupTopic");
+    UTF8 *bufc = buff;
+
+    // help_helper expects a mutable topic argument.
+    //
+    UTF8 topic_buf[LBUF_SIZE];
+    mux_strncpy(topic_buf, pTopic, LBUF_SIZE - 1);
+
+    help_helper(executor, iHelpfile, topic_buf, buff, &bufc);
+    *bufc = '\0';
+
+    size_t nLen = bufc - buff;
+    if (nLen > nResultMax)
+    {
+        nLen = nResultMax;
+    }
+    memcpy(pResult, buff, nLen);
+    pResult[nLen] = '\0';
+    *pnResultLen = nLen;
+
+    free_lbuf(buff);
+    return MUX_S_OK;
+}
+
+// FindHelpFile — find the help file index for a given command name.
+//
+MUX_RESULT CHelpSystem::FindHelpFile(const UTF8 *pCommandName,
+    int *pIndex)
+{
+    if (nullptr == pCommandName || nullptr == pIndex)
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    for (int i = 0; i < mudstate.nHelpDesc; i++)
+    {
+        if (  nullptr != mudstate.aHelpDesc[i].CommandName
+           && 0 == mux_stricmp(pCommandName,
+                               mudstate.aHelpDesc[i].CommandName))
+        {
+            *pIndex = i;
+            return MUX_S_OK;
+        }
+    }
+
+    *pIndex = -1;
+    return MUX_E_NOTFOUND;
+}
+
+// GetHelpFileCount — return the number of registered help files.
+//
+MUX_RESULT CHelpSystem::GetHelpFileCount(int *pCount)
+{
+    if (nullptr == pCount)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pCount = mudstate.nHelpDesc;
+    return MUX_S_OK;
+}
+
+// ReloadIndexes — reload all help file indexes.
+//
+MUX_RESULT CHelpSystem::ReloadIndexes(dbref player)
+{
+    helpindex_load(player);
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CHelpSystemFactory
+// ---------------------------------------------------------------------------
+
+CHelpSystemFactory::CHelpSystemFactory(void) : m_cRef(1)
+{
+}
+
+CHelpSystemFactory::~CHelpSystemFactory()
+{
+}
+
+MUX_RESULT CHelpSystemFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CHelpSystemFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CHelpSystemFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CHelpSystemFactory::CreateInstance(mux_IUnknown *pUnknownOuter,
+    MUX_IID iid, void **ppv)
+{
+    UNUSED_PARAMETER(pUnknownOuter);
+
+    CHelpSystem *pHelpSystem = nullptr;
+    try
+    {
+        pHelpSystem = new CHelpSystem;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pHelpSystem)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pHelpSystem->QueryInterface(iid, ppv);
+    pHelpSystem->Release();
+    return mr;
+}
+
+MUX_RESULT CHelpSystemFactory::LockServer(bool bLock)
 {
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;

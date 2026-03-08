@@ -26,6 +26,7 @@ private:
     mux_IObjectInfo        *m_pIObjectInfo;
     mux_IAttributeAccess   *m_pIAttributeAccess;
     mux_IEvaluator         *m_pIEvaluator;
+    mux_IHelpSystem        *m_pIHelpSystem;
 
 public:
     // mux_IUnknown

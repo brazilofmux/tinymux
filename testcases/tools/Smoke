@@ -58,6 +58,14 @@ cp smoke.flat $DATA/$INPUT_DB
 cp ../mux/game/alias.conf .
 cp ../mux/game/compat.conf .
 touch logs/M-smoke.log
+cat > text/smokehelp.txt <<\_HELPEOF
+& help
+This is the smoke test help system.
+& test topic
+This is a test topic for mhelp().
+& another topic
+Another test topic.
+_HELPEOF
 cat > smoke.conf <<\_EOF
 # smoke.conf - TinyMUX configuration file for smoke testing.
 #
@@ -79,6 +87,7 @@ player_queue_limit 100000
 #
 include alias.conf
 include compat.conf
+raw_helpfile help text/smokehelp
 module exp3
 module comsys_mod
 module mail_mod

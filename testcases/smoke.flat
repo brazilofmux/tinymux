@@ -1737,7 +1737,11 @@
 >267
 "@if strmatch(setr(0,mget(badref/ATTR)),#-1 INVALID DBREF)={@log smoke=TC009: mget invalid dbref. Succeeded.},{@log smoke=TC009: mget invalid dbref. Failed (%q0).}"
 >268
-"think [mset(#0/EXP3_EXPR,name(#0))];@if strmatch(setr(0,meval(#0,[mget(#0/EXP3_EXPR)])),Limbo)={@log smoke=TC010: meval roundtrip evaluation. Succeeded.},{@log smoke=TC010: meval roundtrip evaluation. Failed (%q0).};@trig me/tr.done"
+"think [mset(#0/EXP3_EXPR,name(#0))];@if strmatch(setr(0,meval(#0,[mget(#0/EXP3_EXPR)])),Limbo)={@log smoke=TC010: meval roundtrip evaluation. Succeeded.},{@log smoke=TC010: meval roundtrip evaluation. Failed (%q0).}"
+>269
+"@if strmatch(setr(0,mhelp(test topic)),This is a test topic for mhelp*.)={@log smoke=TC011: mhelp topic lookup. Succeeded.},{@log smoke=TC011: mhelp topic lookup. Failed (%q0).}"
+>270
+"@if strmatch(setr(0,mhelp(xyzzy_no_such_topic)),#-1 TOPIC DOES NOT EXIST)={@log smoke=TC012: mhelp nonexistent topic. Succeeded.},{@log smoke=TC012: mhelp nonexistent topic. Failed (%q0).};@trig me/tr.done"
 <
 !55
 "test_exp_fn"

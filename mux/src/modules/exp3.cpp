@@ -32,6 +32,9 @@
  *   mset(obj/attr, value) — Set an attribute on an object.
  *                      RESOLVED: Uses mux_IAttributeAccess::SetAttribute().
  *
+ *   mhelp(topic) or mhelp(helpfile, topic) — Look up a help topic.
+ *                      RESOLVED: Uses mux_IHelpSystem::LookupTopic().
+ *
  * FINDINGS (updated as walls are hit):
  *
  * 1. ATTRIBUTE READ — RESOLVED.  mux_IAttributeAccess (CID_AttributeAccess)
@@ -246,7 +249,8 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 
 CExp3::CExp3(void) : m_cRef(1), m_pILog(nullptr), m_pIFunctionsControl(nullptr),
     m_pINotify(nullptr), m_pIObjectInfo(nullptr),
-    m_pIAttributeAccess(nullptr), m_pIEvaluator(nullptr)
+    m_pIAttributeAccess(nullptr), m_pIEvaluator(nullptr),
+    m_pIHelpSystem(nullptr)
 {
     g_cComponents++;
 }
@@ -291,6 +295,7 @@ MUX_RESULT CExp3::FinalConstruct(void)
             m_pIFunctionsControl->Add(5, T("MEVAL"),  pIFunction, 2, 2, 2, 0, 0);
             m_pIFunctionsControl->Add(6, T("MTYPE"),  pIFunction, 1, 1, 1, 0, 0);
             m_pIFunctionsControl->Add(7, T("MSET"),   pIFunction, 2, 2, 2, 0, 0);
+            m_pIFunctionsControl->Add(8, T("MHELP"),  pIFunction, 1, 1, 2, 0, 0);
             pIFunction->Release();
         }
     }
@@ -314,6 +319,10 @@ MUX_RESULT CExp3::FinalConstruct(void)
     mux_CreateInstance(CID_Evaluator, nullptr, UseSameProcess,
                        IID_IEvaluator,
                        reinterpret_cast<void **>(&m_pIEvaluator));
+
+    mux_CreateInstance(CID_HelpSystem, nullptr, UseSameProcess,
+                       IID_IHelpSystem,
+                       reinterpret_cast<void **>(&m_pIHelpSystem));
 
     return mr;
 }
@@ -361,6 +370,12 @@ CExp3::~CExp3()
     {
         m_pIEvaluator->Release();
         m_pIEvaluator = nullptr;
+    }
+
+    if (nullptr != m_pIHelpSystem)
+    {
+        m_pIHelpSystem->Release();
+        m_pIHelpSystem = nullptr;
     }
 
     g_cComponents--;
@@ -709,6 +724,52 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
                     safe_copy_str(T("#-1 PERMISSION DENIED"), buff, bufc);
                 }
                 // On success, return empty (like @set).
+            }
+        }
+        break;
+
+    case 8: // MHELP(topic) or MHELP(helpfile, topic)
+        {
+            if (nullptr == m_pIHelpSystem)
+            {
+                safe_copy_str(T("#-1 NO HELP SYSTEM INTERFACE"), buff, bufc);
+            }
+            else
+            {
+                int iHelpfile = 0; // Default to first help file.
+                const UTF8 *pTopic;
+
+                if (2 == nfargs)
+                {
+                    // Two-arg form: mhelp(helpfile, topic)
+                    //
+                    MUX_RESULT mr = m_pIHelpSystem->FindHelpFile(
+                        fargs[0], &iHelpfile);
+                    if (MUX_FAILED(mr))
+                    {
+                        safe_copy_str(T("#-1 NO SUCH HELPFILE"), buff, bufc);
+                        break;
+                    }
+                    pTopic = fargs[1];
+                }
+                else
+                {
+                    pTopic = fargs[0];
+                }
+
+                UTF8 result[LBUF_SIZE];
+                size_t nLen;
+                MUX_RESULT mr = m_pIHelpSystem->LookupTopic(
+                    executor, iHelpfile, pTopic, result, sizeof(result) - 1,
+                    &nLen);
+                if (MUX_SUCCEEDED(mr))
+                {
+                    safe_copy_str(result, buff, bufc);
+                }
+                else
+                {
+                    safe_copy_str(T("#-1 TOPIC NOT FOUND"), buff, bufc);
+                }
             }
         }
         break;

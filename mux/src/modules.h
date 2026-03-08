@@ -66,6 +66,8 @@ const MUX_IID IID_IEvaluator            = UINT64_C(0x000000023C6D8F72);
 const MUX_CID CID_Permissions           = UINT64_C(0x00000002A4C7E831);
 const MUX_IID IID_IPermissions          = UINT64_C(0x0000000257B1D946);
 const MUX_CID CID_MailDelivery          = UINT64_C(0x00000002B3F5D721);
+const MUX_CID CID_HelpSystem           = UINT64_C(0x00000002C4D6E832);
+const MUX_IID IID_IHelpSystem          = UINT64_C(0x0000000238A9F157);
 
 interface mux_ILog : public mux_IUnknown
 {
@@ -415,6 +417,39 @@ public:
     // Throttle check (has player sent too much mail recently?).
     //
     virtual MUX_RESULT ThrottleCheck(dbref player, bool *pResult) = 0;
+};
+
+// Help system — server-provided interface exposing the in-game help
+// file lookup to modules.  The help system (files, indexes, command
+// registration) stays in netmux; modules call through this interface
+// to look up topics.
+//
+interface mux_IHelpSystem : public mux_IUnknown
+{
+public:
+    // Look up a help topic and return the rendered text.
+    // iHelpfile identifies which help file to search (-1 for default).
+    // Evaluates softcode in help text if the file was registered with
+    // bEval=true.
+    //
+    virtual MUX_RESULT LookupTopic(dbref executor, int iHelpfile,
+        const UTF8 *pTopic, UTF8 *pResult, size_t nResultMax,
+        size_t *pnResultLen) = 0;
+
+    // Find the help file index for a given command name (e.g., "help",
+    // "news", "+help").  Returns MUX_S_OK and the index, or
+    // MUX_E_NOTFOUND if no such help file is registered.
+    //
+    virtual MUX_RESULT FindHelpFile(const UTF8 *pCommandName,
+        int *pIndex) = 0;
+
+    // Return the number of registered help files.
+    //
+    virtual MUX_RESULT GetHelpFileCount(int *pCount) = 0;
+
+    // Reload all help file indexes.
+    //
+    virtual MUX_RESULT ReloadIndexes(dbref player) = 0;
 };
 
 #endif // MODULES_H

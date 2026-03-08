@@ -156,6 +156,34 @@
   },
   {
     @log smoke=TC010: meval roundtrip evaluation. Failed (%q0).
+  }
+-
+#
+# Test 11: mhelp() looks up a topic via mux_IHelpSystem.
+#
+&tr.tc011 test_exp3_fn=
+  @if strmatch(
+    setr(0,mhelp(test topic)),
+    This is a test topic for mhelp*.)=
+  {
+    @log smoke=TC011: mhelp topic lookup. Succeeded.
+  },
+  {
+    @log smoke=TC011: mhelp topic lookup. Failed (%q0).
+  }
+-
+#
+# Test 12: mhelp() with nonexistent topic returns help_helper error.
+#
+&tr.tc012 test_exp3_fn=
+  @if strmatch(
+    setr(0,mhelp(xyzzy_no_such_topic)),
+    #-1 TOPIC DOES NOT EXIST)=
+  {
+    @log smoke=TC012: mhelp nonexistent topic. Succeeded.
+  },
+  {
+    @log smoke=TC012: mhelp nonexistent topic. Failed (%q0).
   };
   @trig me/tr.done
 -
