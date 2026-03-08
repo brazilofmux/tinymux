@@ -51,6 +51,9 @@ struct bque
     int     iRow;                   // Current Row
 #endif // STUB_SLAVE
     bool    IsTimed;                // Is there a waittime time on this entry?
+    UTF8    *switch_token;          // #$ context for queued @switch
+    UTF8    *iter_token;            // ## context for queued @dolist
+    int     iter_number;            // #@ context for queued @dolist
 };
 
 class CBitField

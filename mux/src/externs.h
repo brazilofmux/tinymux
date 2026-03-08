@@ -172,7 +172,9 @@ int  nfy_que(dbref, int, int, int);
 int  halt_que(dbref, dbref);
 void wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
               const CLinearTimeAbsolute&, dbref, int, UTF8 *, int, const UTF8 *[], reg_ref *[],
-              NamedRegsMap *named_sargs = nullptr);
+              NamedRegsMap *named_sargs = nullptr,
+              const UTF8 *iter_token = nullptr, int iter_number = 0,
+              const UTF8 *switch_token = nullptr);
 void query_complete(uint32_t hQuery, uint32_t iError, CResultsSet *prs);
 
 #if defined(UNIX_CRYPT)

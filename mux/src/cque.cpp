@@ -125,6 +125,29 @@ static void Task_RunQueueEntry(void *pEntry, const int iUnused)
             mudstate.iRow = point->iRow;
 #endif // STUB_SLAVE
 
+            // Restore iter/switch context from queue entry.
+            //
+            bool bIterContext = (point->iter_token != nullptr);
+            bool bSwitchContext = (point->switch_token != nullptr);
+            const UTF8 *save_switch = nullptr;
+
+            if (bIterContext)
+            {
+                bool bLoopInBounds = (  0 <= mudstate.in_loop
+                                     && mudstate.in_loop < MAX_ITEXT);
+                if (bLoopInBounds)
+                {
+                    mudstate.itext[mudstate.in_loop] = point->iter_token;
+                    mudstate.inum[mudstate.in_loop] = point->iter_number;
+                }
+                mudstate.in_loop++;
+            }
+            if (bSwitchContext)
+            {
+                save_switch = mudstate.switch_token;
+                mudstate.switch_token = point->switch_token;
+            }
+
             UTF8 *command = point->comm;
 
             mux_assert(!mudstate.inpipe);
@@ -230,6 +253,24 @@ static void Task_RunQueueEntry(void *pEntry, const int iUnused)
             mudstate.pipe_nest_lev = 0;
             mudstate.inpipe = false;
             mudstate.poutobj = NOTHING;
+
+            // Restore iter/switch context.
+            //
+            if (bIterContext)
+            {
+                mudstate.in_loop--;
+                bool bLoopInBounds = (  0 <= mudstate.in_loop
+                                     && mudstate.in_loop < MAX_ITEXT);
+                if (bLoopInBounds)
+                {
+                    mudstate.itext[mudstate.in_loop] = nullptr;
+                    mudstate.inum[mudstate.in_loop] = 0;
+                }
+            }
+            if (bSwitchContext)
+            {
+                mudstate.switch_token = save_switch;
+            }
         }
     }
 
@@ -261,6 +302,17 @@ static void Task_RunQueueEntry(void *pEntry, const int iUnused)
         mudstate.pResultsSet = nullptr;
     }
 #endif // STUB_SLAVE
+
+    if (point->switch_token)
+    {
+        free_lbuf(point->switch_token);
+        point->switch_token = nullptr;
+    }
+    if (point->iter_token)
+    {
+        free_lbuf(point->iter_token);
+        point->iter_token = nullptr;
+    }
 
     MEMFREE(point->text);
     point->text = nullptr;
@@ -353,6 +405,17 @@ static int CallBack_HaltQueue(const PTASK_RECORD p)
                 }
             }
             NamedRegsClear(point->named_scr);
+
+            if (point->switch_token)
+            {
+                free_lbuf(point->switch_token);
+                point->switch_token = nullptr;
+            }
+            if (point->iter_token)
+            {
+                free_lbuf(point->iter_token);
+                point->iter_token = nullptr;
+            }
 
             MEMFREE(point->text);
             point->text = nullptr;
@@ -451,6 +514,17 @@ static int CallBack_HaltQueueByPid(const PTASK_RECORD p)
                 }
             }
             NamedRegsClear(point->named_scr);
+
+            if (point->switch_token)
+            {
+                free_lbuf(point->switch_token);
+                point->switch_token = nullptr;
+            }
+            if (point->iter_token)
+            {
+                free_lbuf(point->iter_token);
+                point->iter_token = nullptr;
+            }
 
             MEMFREE(point->text);
             point->text = nullptr;
@@ -659,6 +733,17 @@ static int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
                     }
                 }
                 NamedRegsClear(point->named_scr);
+
+                if (point->switch_token)
+                {
+                    free_lbuf(point->switch_token);
+                    point->switch_token = nullptr;
+                }
+                if (point->iter_token)
+                {
+                    free_lbuf(point->iter_token);
+                    point->iter_token = nullptr;
+                }
 
                 MEMFREE(point->text);
                 point->text = nullptr;
@@ -1031,6 +1116,9 @@ static BQUE *setup_que
     tmp->caller = caller;
     tmp->eval = eval;
     tmp->nargs = nargs;
+    tmp->switch_token = nullptr;
+    tmp->iter_token = nullptr;
+    tmp->iter_number = 0;
     return tmp;
 }
 
@@ -1051,7 +1139,10 @@ void wait_que
     const int      nargs,
     const UTF8 *args[],
     reg_ref *sargs[],
-    NamedRegsMap *named_sargs
+    NamedRegsMap *named_sargs,
+    const UTF8 *iter_token,
+    int iter_number,
+    const UTF8 *switch_token
 )
 {
     if (!(mudconf.control_flags & CF_INTERP))
@@ -1067,6 +1158,20 @@ void wait_que
     if (!tmp)
     {
         return;
+    }
+
+    // Copy iter/switch context if provided.
+    //
+    if (iter_token)
+    {
+        tmp->iter_token = alloc_lbuf("wait_que.iter_token");
+        mux_strncpy(tmp->iter_token, iter_token, LBUF_SIZE-1);
+        tmp->iter_number = iter_number;
+    }
+    if (switch_token)
+    {
+        tmp->switch_token = alloc_lbuf("wait_que.switch_token");
+        mux_strncpy(tmp->switch_token, switch_token, LBUF_SIZE-1);
     }
 
     int iPriority;
