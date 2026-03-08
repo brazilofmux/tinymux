@@ -328,7 +328,7 @@ Based on the codebase survey, these subsystems have relatively clean boundaries:
 | Module | Current files | LOC | Dependencies | Status |
 |---|---|---|---|---|
 | Comsys | comsys.cpp | 4,500 | db, notify, player | **COMPLETE** |
-| Mail | mail.cpp | 6,000 | db, notify, player | Planned |
+| Mail | mail.cpp | 6,000 | db, notify, player | **COMPLETE** |
 | Help | help.cpp | 800 | file I/O, notify | Future |
 | Guests | mguests.cpp | 350 | db, player, config | Future |
 
@@ -384,46 +384,67 @@ The channel communication system is fully extracted into `comsys_mod.so`.
 - The server delegation pattern (null-check + early return) is clean
   and preserves backward compatibility
 
-### Mail Module — PLANNED
+### Mail Module — COMPLETE (brazil branch, 2026-03-08)
 
-The @mail system is the next extraction target.  It follows the same
-pattern as comsys: module owns the data, opens its own SQLite connection,
-communicates through COM interfaces.
+The @mail system is fully extracted into `mail_mod.so`.
 
-**Current state of mail.cpp:** 6,022 lines, 45 mudstate refs, 7 mudconf refs.
+**Files:** `mux/src/modules/mail_mod.h` (~400 lines),
+`mux/src/modules/mail_mod.cpp` (~5,800 lines)
 
-**Server dependencies to bridge:**
-- `raw_notify` (240 usages) → mux_INotify
-- `atr_get/atr_add` (45+ usages) → mux_IAttributeAccess
-- `Wizard/God/Owner` (15 usages) → mux_IPermissions
-- `Moniker` (25 usages) → mux_IObjectInfo::GetMoniker
-- `Good_obj/isPlayer/Connected` (29 usages) → mux_IObjectInfo
-- `mudstate.mail_htab/mail_db_top` → module-internal state
-- `mudconf.mail_max_per_player/mail_expiration` → Initialize params
+**Interfaces:**
 
-**SQLite tables:** `mail_headers`, `mail_bodies`, `mail_aliases`
-(schema already exists from SQLite storage migration).
+`mux_IMailControl` (11 methods, implemented by mail_mod.so):
 
-**Proposed interface:** `mux_IMailControl`
-
-| Method group | Methods |
+| Method | Server command |
 |---|---|
-| Lifecycle | Initialize, PlayerConnect, PlayerDisconnect, PlayerNuke |
-| Core mail | Send, Read, List, Clear, Purge, Forward, Reply |
-| Folders | FileToFolder, ListFolder, SetFolder |
-| Admin | Stats, Nuke, Debug |
-| Aliases | MaliasCreate, MaliasDelete, MaliasList, MaliasAdd, MaliasRemove |
-| Query | CheckMail, FetchMail, CountMail |
+| Initialize | Module startup (opens own SQLite connection, loads data) |
+| PlayerConnect | Check/announce new mail on connect |
+| PlayerNuke | Destroy all mail for a player |
+| MailCommand | All @mail switches (31 cases: read/list/send/reply/forward/etc.) |
+| MaliasCommand | All @malias switches (9 cases: create/delete/add/remove/etc.) |
+| FolderCommand | All @folder switches (set/read/file/list) |
+| CheckMail | Count and announce unread/urgent mail |
+| ExpireMail | Expire old messages |
+| CountMail | Return read/unread/cleared counts |
+| DestroyPlayerMail | Remove all mail for a destroyed player |
 
-**Extraction plan:**
-1. Define `mux_IMailControl` interface in modules.h
-2. Create mail_mod.h/cpp skeleton with class, factory, registration
-3. Move mail data structures (struct mail, MailList, malias_t, mail_body)
-4. Implement SQLite connection + data loading (same pattern as comsys)
-5. Implement core send/read/list/clear path
-6. Add delegation stubs in mail.cpp (same null-check pattern as comsys)
-7. Wire initialization in game.cpp
-8. Incrementally move remaining commands
+`mux_IMailDelivery` (5 methods, implemented by netmux server):
+
+| Method | Server function wrapped |
+|---|---|
+| MailCheck | could_doit(A_LMAIL) + mail_return (MFAIL evaluation) |
+| NotifyDelivery | raw_notify with Moniker + did_it(A_MAIL, A_AMAIL) |
+| IsComposing | Flags2(player) & PLAYER_MAILS |
+| SetComposing | Set/clear PLAYER_MAILS in Flags2 |
+| ThrottleCheck | ThrottleMail() |
+
+**Architecture:**
+- Module links against system `-lsqlite3` (no `-rdynamic`)
+- Opens its own SQLite connection with WAL mode + busy_timeout
+- Owns all mail data: `m_mail_htab` map, `m_mail_list` body storage,
+  `m_malias` alias array
+- Full write-through: every mutation persisted via prepared statements
+- Receives connect/disconnect/shutdown events via `mux_IServerEventsSink`
+- Uses 8 COM interfaces for server callbacks: ILog, IServerEventsControl,
+  INotify, IObjectInfo, IAttributeAccess, IEvaluator, IPermissions,
+  IMailDelivery
+- Server fallback: all command handlers check `mudstate.pIMailControl`
+  and delegate if non-null; built-in code runs when module is not loaded
+- Signature evaluation uses IEvaluator (mux_exec via COM interface)
+- String editing (@mail/edit) uses simple find-and-replace, no mux_exec
+
+**What the mail extraction proved:**
+- The mux_IMailDelivery pattern (server-provides-interface-to-module)
+  cleanly separates data ownership from server-internal operations like
+  lock evaluation, attribute triggers, and flag management
+- Bidirectional interfaces work: module implements mux_IMailControl for
+  the server to call, server implements mux_IMailDelivery for the module
+  to call back
+- The full @mail command surface (31 cases) fits comfortably behind a
+  single MailCommand(executor, key, arg1, arg2) dispatch method
+- Composition state (A_MAILTO/A_MAILSUB/A_MAILMSG/A_MAILFLAGS) stored
+  on player attributes via IAttributeAccess works without server-internal
+  attribute functions
 
 ### Feasibility Assessment
 
@@ -439,8 +460,8 @@ communicates through COM interfaces.
    extraction showed that a 19-method interface + ~3,200 lines of module code
    is manageable.  The scaffolding overhead is modest relative to the logic.
 
-3. **Testing:** 409 smoke tests pass with the comsys module loaded.  The
-   delegation pattern (null-check + fallback) means unloading the module
+3. **Testing:** 409 smoke tests pass with comsys and mail modules loaded.
+   The delegation pattern (null-check + fallback) means unloading a module
    restores built-in behavior.
 
 4. **Diminishing returns:** The comsys extraction proved the pattern works.
@@ -450,8 +471,8 @@ communicates through COM interfaces.
 
 **Tier 1 — Low risk, clear value:**
 - ~~Comsys behind mux_IComsysControl interface~~ — **COMPLETE**
-- Mail system behind mux_IMailControl interface — **NEXT**
-- Help system behind mux_IHelp interface
+- ~~Mail system behind mux_IMailControl interface~~ — **COMPLETE**
+- Help system behind mux_IHelp interface — **NEXT**
 
 **Tier 2 — Medium risk, already done as infrastructure:**
 - ~~Attribute access behind mux_IAttributeAccess~~ — **COMPLETE** (in-process)
@@ -728,11 +749,12 @@ targeted includes once those types are accessible.
 |---|---|---|---|
 | IID_IServerEventsSink | mux_IServerEventsSink | 12 (lifecycle events) | exp3, comsys_mod |
 | IID_IServerEventsControl | mux_IServerEventsControl | Advise/Unadvise | exp3, comsys_mod |
-| IID_INotify | mux_INotify | Notify, RawNotify, NotifyCheck | comsys_mod |
-| IID_IObjectInfo | mux_IObjectInfo | IsValid, GetName, GetOwner, GetLocation, GetType, IsConnected, IsPlayer, IsGoing, GetMoniker, MatchThing | comsys_mod |
-| IID_IAttributeAccess | mux_IAttributeAccess | GetAttribute, SetAttribute | comsys_mod |
-| IID_IEvaluator | mux_IEvaluator | Eval | comsys_mod |
-| IID_IPermissions | mux_IPermissions | IsWizard, IsGod, HasControl, HasCommAll | comsys_mod |
+| IID_INotify | mux_INotify | Notify, RawNotify, NotifyCheck | comsys_mod, mail_mod |
+| IID_IObjectInfo | mux_IObjectInfo | IsValid, GetName, GetOwner, GetLocation, GetType, IsConnected, IsPlayer, IsGoing, GetMoniker, MatchThing | comsys_mod, mail_mod |
+| IID_IAttributeAccess | mux_IAttributeAccess | GetAttribute, SetAttribute | comsys_mod, mail_mod |
+| IID_IEvaluator | mux_IEvaluator | Eval | comsys_mod, mail_mod |
+| IID_IPermissions | mux_IPermissions | IsWizard, IsGod, HasControl, HasCommAll | comsys_mod, mail_mod |
+| IID_IMailDelivery | mux_IMailDelivery | MailCheck, NotifyDelivery, IsComposing, SetComposing, ThrottleCheck | mail_mod |
 | IID_IFunction | mux_IFunction | Call (per softcode invocation) | exp3 |
 | IID_IFunctionsControl | mux_IFunctionsControl | Add, Remove | exp3 |
 
@@ -741,4 +763,4 @@ targeted includes once those types are accessible.
 | IID | Interface | CID | Methods | Module |
 |---|---|---|---|---|
 | IID_IComsysControl | mux_IComsysControl | CID_Comsys | 19 | comsys_mod.so |
-| IID_IMailControl | mux_IMailControl | CID_Mail | TBD | mail_mod.so (planned) |
+| IID_IMailControl | mux_IMailControl | CID_Mail | 11 | mail_mod.so |
