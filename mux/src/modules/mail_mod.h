@@ -222,6 +222,11 @@ private:
     void do_mail_read(dbref player, const UTF8 *arg1,
         const UTF8 *arg2);
     void do_mail_next(dbref player);
+    void do_mail_file(dbref player, const UTF8 *msglist,
+        const UTF8 *folder);
+    void do_mail_stats(dbref player, int folder);
+    bool do_mail_stub(dbref player, const UTF8 *arg1,
+        const UTF8 *arg2);
 
     // Message body management.
     //

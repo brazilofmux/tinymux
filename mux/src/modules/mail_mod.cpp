@@ -1894,6 +1894,173 @@ void CMailMod::do_mail_purge(dbref player)
 }
 
 // ---------------------------------------------------------------------------
+// @mail/file — move messages to a folder.
+// ---------------------------------------------------------------------------
+
+void CMailMod::do_mail_file(dbref player, const UTF8 *msglist,
+    const UTF8 *folder)
+{
+    struct mail_selector ms;
+    if (!parse_msglist(msglist, &ms, player))
+    {
+        return;
+    }
+
+    // Parse folder number.
+    //
+    int foldernum = -1;
+    if (nullptr != folder && isdigit(*folder))
+    {
+        foldernum = atoi(reinterpret_cast<const char *>(folder));
+        if (foldernum < 0 || foldernum > MAX_FOLDERS)
+        {
+            foldernum = -1;
+        }
+    }
+    if (-1 == foldernum)
+    {
+        m_pINotify->RawNotify(player,
+            T("MAIL: Invalid folder specification"));
+        return;
+    }
+
+    int i = 0, j = 0;
+    int origfold = player_folder(player);
+
+    struct mail *mp = MailListFirst(player);
+    while (nullptr != mp)
+    {
+        if (All(ms) || (Folder(mp) == origfold))
+        {
+            i++;
+            if (mail_match(mp, ms, i))
+            {
+                j++;
+                mp->read &= M_FMASK;
+                mp->read |= FolderBit(foldernum);
+                sqlite_wt_update_mail_flags(mp);
+
+                UTF8 msg[128];
+                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                         "MAIL: Msg %d filed in folder %d", i, foldernum);
+                m_pINotify->RawNotify(player, msg);
+            }
+        }
+        mp = MailListNext(mp, player);
+    }
+
+    if (!j)
+    {
+        m_pINotify->RawNotify(player,
+            T("MAIL: You don\xE2\x80\x99t have any matching messages!"));
+    }
+}
+
+// ---------------------------------------------------------------------------
+// @mail/stats — personal mail statistics.
+// ---------------------------------------------------------------------------
+
+void CMailMod::do_mail_stats(dbref player, int folder)
+{
+    int fc = 0, fr = 0, fu = 0, tc = 0;
+    size_t fs = 0;
+
+    struct mail *mp = MailListFirst(player);
+    while (nullptr != mp)
+    {
+        if (0 == folder || Folder(mp) == folder)
+        {
+            fc++;
+            if (Read(mp))
+            {
+                fr++;
+            }
+            else
+            {
+                fu++;
+            }
+            if (Cleared(mp))
+            {
+                tc++;
+            }
+            fs += MessageFetchSize(mp->number);
+        }
+        mp = MailListNext(mp, player);
+    }
+
+    UTF8 msg[MOD_LBUF_SIZE];
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "STRSTRSTR: %d messages in folder %d [%d read, %d unread, %d cleared].",
+             fc, folder, fr, fu, tc);
+
+    // Use a simpler format.
+    //
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "MAIL: %d messages (%d read, %d unread, %d cleared). %zu bytes total.",
+             fc, fr, fu, tc, fs);
+    m_pINotify->RawNotify(player, msg);
+}
+
+// ---------------------------------------------------------------------------
+// Default @mail handler — routes to list, read, clear, purge, or send.
+// Returns true if handled, false if sending (unimplemented).
+// ---------------------------------------------------------------------------
+
+bool CMailMod::do_mail_stub(dbref player, const UTF8 *arg1,
+    const UTF8 *arg2)
+{
+    if (nullptr == arg1 || '\0' == *arg1)
+    {
+        if (arg2 && *arg2)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: Invalid mail command."));
+            return true;
+        }
+        do_mail_list(player, arg1, nullptr);
+        return true;
+    }
+
+    if (0 == strcasecmp(reinterpret_cast<const char *>(arg1), "purge"))
+    {
+        do_mail_purge(player);
+        return true;
+    }
+
+    if (0 == strcasecmp(reinterpret_cast<const char *>(arg1), "clear"))
+    {
+        do_mail_flags(player, arg2, M_CLEARED, false);
+        return true;
+    }
+
+    if (0 == strcasecmp(reinterpret_cast<const char *>(arg1), "unclear"))
+    {
+        do_mail_flags(player, arg2, M_CLEARED, true);
+        return true;
+    }
+
+    if (nullptr != arg2 && '\0' != *arg2)
+    {
+        // Sending mail — not yet implemented in module.
+        //
+        return false;
+    }
+
+    // Must be reading or listing mail.
+    //
+    if (isdigit(*arg1) && nullptr == strchr(
+            reinterpret_cast<const char *>(arg1), '-'))
+    {
+        do_mail_read(player, arg1, nullptr);
+    }
+    else
+    {
+        do_mail_list(player, arg1, nullptr);
+    }
+    return true;
+}
+
+// ---------------------------------------------------------------------------
 // mux_IMailControl implementation.
 // ---------------------------------------------------------------------------
 
@@ -1953,6 +2120,31 @@ MUX_RESULT CMailMod::MailCommand(dbref executor, int key,
     case MAIL_NEXT:
         do_mail_next(executor);
         return MUX_S_OK;
+
+    case MAIL_FILE:
+        do_mail_file(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    case MAIL_STATS:
+        do_mail_stats(executor, 0);
+        return MUX_S_OK;
+
+    case MAIL_DSTATS:
+        do_mail_stats(executor, 0);
+        return MUX_S_OK;
+
+    case MAIL_FSTATS:
+        do_mail_stats(executor, 0);
+        return MUX_S_OK;
+
+    case 0:
+        // Default @mail (no switch).
+        //
+        if (do_mail_stub(executor, pArg1, pArg2))
+        {
+            return MUX_S_OK;
+        }
+        return MUX_E_NOTIMPLEMENTED;
 
     default:
         return MUX_E_NOTIMPLEMENTED;
