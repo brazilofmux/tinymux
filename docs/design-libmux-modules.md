@@ -141,17 +141,19 @@ stub themselves are interface-specific and cannot be macro-generated.
 **Open question:** Is the boilerplate reduction worth the macro complexity?
 With only a handful of marshaled interfaces, probably not yet.
 
-#### 2.4 Harden the pipe protocol
+#### 2.4 Harden the pipe protocol — COMPLETE
 
-- **Frame length validation:** Pipe_DecodeFrames does not enforce a maximum
-  frame length.  A malformed or malicious stubslave could send an unbounded
-  frame.  Add a configurable limit (e.g., 1 MB).
+- **Frame length validation:** Done (03467ecc).  The DFA-based framing was
+  replaced with a simple Type+Channel+Length header.  MAX_FRAME_PAYLOAD
+  (1 MB) is enforced in the decoder; oversized frames trigger a protocol
+  error.
 - **Channel exhaustion:** nNextChannel is a uint32_t that only increments.
-  After 4 billion channel allocations it wraps.  Not a practical concern but
-  document the assumption.
-- **Error propagation:** When a stub Invoke() fails, the error is returned as
-  the transport-level MUX_RESULT.  Distinguish transport errors from
-  application errors.
+  At one allocation per cross-process interface connection, 4 billion is
+  not a practical concern.  Accepted as a documented assumption.
+- **Error propagation:** Transport errors (MUX_E_INVALIDARG, MUX_E_UNEXPECTED)
+  are returned from Invoke() while application errors come back as marshaled
+  data in the return frame.  The MUX_RESULT code spaces are distinct enough
+  in practice.  Accepted as-is.
 
 
 ## Phase 3: Grow libmux.so
