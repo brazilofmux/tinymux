@@ -1614,8 +1614,7 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         return;
     }
 
-    // Missing closing ')' — mux_exec's parse_arglist_lite returns
-    // nullptr in this case and the function is NOT dispatched.  Output
+    // Missing closing ')' — the function is NOT dispatched.  Output
     // the function name and '(' literally, then evaluate the argument
     // children (%-substitutions must be resolved, matching the classic
     // parser which evaluates as it scans).
