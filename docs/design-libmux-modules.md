@@ -104,18 +104,11 @@ Each conversion replaced ~400-600 lines of hand-coded proxy/stub with
 ~500 lines across all three.  The go/no-go was clearly "go" after the first
 conversion.
 
-#### 2.2 Marshaling helpers
+#### 2.2 Marshaling helpers — COMPLETE
 
-The mux_ILog proxy/stub revealed repetitive patterns:
-
-- Marshal/unmarshal a UTF8 string (length-prefix + bytes)
-- Marshal/unmarshal a scalar (fixed-size Pipe_AppendBytes/Pipe_GetBytes)
-- Read method number, dispatch, encode MUX_RESULT return
-
-Consider adding helpers to libmux:
+Six helpers declared in `libmux.h` and defined in `libmux.cpp`:
 
 ```cpp
-// In libmux.h or a new marshal_helpers.h
 void Marshal_PutString(QUEUE_INFO *pqi, const UTF8 *str);
 bool Marshal_GetString(QUEUE_INFO *pqi, UTF8 *buf, size_t bufSize, const UTF8 **ppStr);
 void Marshal_PutUInt32(QUEUE_INFO *pqi, uint32_t val);
@@ -124,9 +117,15 @@ void Marshal_PutInt(QUEUE_INFO *pqi, int val);
 bool Marshal_GetInt(QUEUE_INFO *pqi, int *pval);
 ```
 
-**Experiment:** Measure the code reduction on mux_ILog proxy/stub.  The static
-helpers already in log.cpp (MarshalString/UnmarshalString) show ~50% reduction
-in the stub Invoke() method.  If moved to libmux, every interface benefits.
+All proxy/stub code now uses these helpers consistently.  Raw
+Pipe_AppendBytes/Pipe_GetBytes calls remain only in the helper
+implementations, struct-return patterns, and binary blob patterns
+(e.g., AddModule filenames).  Net reduction: ~49 lines across
+log.cpp and libmux.cpp.
+
+These six helpers cover all current marshaling needs.  MUX_RESULT
+is typedef'd as `int`, so Marshal_PutInt/Marshal_GetInt handle it
+directly — no additional helpers were needed.
 
 #### 2.3 DEFINE_PROXYSTUB macro (maybe)
 
