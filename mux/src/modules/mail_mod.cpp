@@ -2401,6 +2401,827 @@ void CMailMod::do_mail_nuke(dbref player)
 }
 
 // ---------------------------------------------------------------------------
+// Malias helpers and commands.
+// ---------------------------------------------------------------------------
+
+bool CMailMod::is_exp_mail(dbref player)
+{
+    bool bWiz = false;
+    if (nullptr != m_pIPermissions)
+    {
+        m_pIPermissions->IsWizard(player, &bWiz);
+    }
+    return bWiz;
+}
+
+bool CMailMod::make_canonical_alias(const UTF8 *alias, UTF8 *buf,
+    size_t bufsize, size_t *pnLen)
+{
+    if (nullptr == alias || !isalpha(*alias))
+    {
+        *pnLen = 0;
+        return false;
+    }
+
+    const UTF8 *p = alias;
+    UTF8 *q = buf;
+    size_t nLeft = bufsize - 1;
+
+    while (*p && nLeft)
+    {
+        if (!isalpha(*p) && !isdigit(*p) && *p != '_')
+        {
+            break;
+        }
+        *q++ = *p++;
+        nLeft--;
+    }
+    *q = '\0';
+    *pnLen = q - buf;
+    return true;
+}
+
+malias_t *CMailMod::get_malias(dbref player, const UTF8 *alias, int *pnResult)
+{
+    *pnResult = GMA_INVALIDFORM;
+    if (nullptr == alias)
+    {
+        return nullptr;
+    }
+
+    if (alias[0] == '#')
+    {
+        if (is_exp_mail(player))
+        {
+            int x = atoi(reinterpret_cast<const char *>(alias + 1));
+            if (x < 0 || x >= m_ma_top)
+            {
+                *pnResult = GMA_NOTFOUND;
+                return nullptr;
+            }
+            *pnResult = GMA_FOUND;
+            return m_malias[x];
+        }
+    }
+    else if (alias[0] == '*')
+    {
+        UTF8 canonical[SIZEOF_MALIAS];
+        size_t nLen;
+        if (make_canonical_alias(alias + 1, canonical, sizeof(canonical), &nLen))
+        {
+            for (int i = 0; i < m_ma_top; i++)
+            {
+                malias_t *m = m_malias[i];
+                if (  m->owner == player
+                   || m->owner == 1  // GOD
+                   || is_exp_mail(player))
+                {
+                    if (0 == strcasecmp(
+                            reinterpret_cast<const char *>(canonical),
+                            reinterpret_cast<const char *>(m->name)))
+                    {
+                        *pnResult = GMA_FOUND;
+                        return m;
+                    }
+                }
+            }
+            *pnResult = GMA_NOTFOUND;
+        }
+    }
+
+    if (*pnResult == GMA_INVALIDFORM)
+    {
+        if (is_exp_mail(player))
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: Mail aliases must be of the form *<name> or #<num>."));
+        }
+        else
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: Mail aliases must be of the form *<name>."));
+        }
+    }
+    return nullptr;
+}
+
+void CMailMod::do_malias_create(dbref player, const UTF8 *alias,
+    const UTF8 *tolist)
+{
+    int nResult;
+    get_malias(player, alias, &nResult);
+
+    if (nResult == GMA_INVALIDFORM)
+    {
+        m_pINotify->RawNotify(player,
+            T("MAIL: What alias do you want to create?."));
+        return;
+    }
+    if (nResult == GMA_FOUND)
+    {
+        UTF8 msg[256];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "MAIL: Mail Alias \xE2\x80\x98%s\xE2\x80\x99 already exists.",
+                 reinterpret_cast<const char *>(alias));
+        m_pINotify->RawNotify(player, msg);
+        return;
+    }
+
+    malias_t *pt = static_cast<malias_t *>(calloc(1, sizeof(malias_t)));
+    if (nullptr == pt)
+    {
+        m_pINotify->RawNotify(player, T("MAIL: Out of memory."));
+        return;
+    }
+
+    // Grow alias array if needed.
+    //
+    if (0 == m_ma_size)
+    {
+        m_ma_size = MA_INC;
+        m_malias = static_cast<malias_t **>(
+            calloc(m_ma_size, sizeof(malias_t *)));
+        if (nullptr == m_malias)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: Out of memory."));
+            free(pt);
+            return;
+        }
+    }
+    else if (m_ma_top >= m_ma_size)
+    {
+        m_ma_size += MA_INC;
+        malias_t **nm = static_cast<malias_t **>(
+            calloc(m_ma_size, sizeof(malias_t *)));
+        if (nullptr == nm)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: Out of memory."));
+            free(pt);
+            return;
+        }
+        for (int i = 0; i < m_ma_top; i++)
+        {
+            nm[i] = m_malias[i];
+        }
+        free(m_malias);
+        m_malias = nm;
+    }
+
+    m_malias[m_ma_top] = pt;
+
+    // Parse the player list.
+    //
+    UTF8 head_buf[MOD_LBUF_SIZE];
+    strncpy(reinterpret_cast<char *>(head_buf),
+            reinterpret_cast<const char *>(tolist),
+            sizeof(head_buf) - 1);
+    head_buf[sizeof(head_buf) - 1] = '\0';
+
+    char *head = reinterpret_cast<char *>(head_buf);
+    int count = 0;
+
+    while (*head && count < (MAX_MALIAS_MEMBERSHIP - 1))
+    {
+        while (*head == ' ')
+        {
+            head++;
+        }
+        if (!*head)
+        {
+            break;
+        }
+
+        char *tail = head;
+        if (*tail == '"')
+        {
+            head++;
+            tail++;
+            while (*tail && *tail != '"')
+            {
+                tail++;
+            }
+        }
+        else
+        {
+            while (*tail && *tail != ' ')
+            {
+                tail++;
+            }
+        }
+
+        char saved = *tail;
+        *tail = '\0';
+
+        // Look up target.
+        //
+        dbref target = NOTHING;
+        if (0 == strcasecmp(head, "me"))
+        {
+            target = player;
+        }
+        else if (*head == '#')
+        {
+            target = atoi(head + 1);
+        }
+        else if (nullptr != m_pIObjectInfo)
+        {
+            UTF8 namebuf[256];
+            snprintf(reinterpret_cast<char *>(namebuf), sizeof(namebuf),
+                     "*%s", head);
+            m_pIObjectInfo->MatchThing(player, namebuf, &target);
+        }
+
+        bool bPlayer = false;
+        if (target >= 0 && nullptr != m_pIObjectInfo)
+        {
+            m_pIObjectInfo->IsPlayer(target, &bPlayer);
+        }
+
+        if (!bPlayer)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: No such player."));
+        }
+        else
+        {
+            UTF8 addmsg[256];
+            UTF8 szName[64];
+            get_player_name(target, szName, sizeof(szName));
+            snprintf(reinterpret_cast<char *>(addmsg), sizeof(addmsg),
+                     "MAIL: %s added to alias %s",
+                     reinterpret_cast<const char *>(szName),
+                     reinterpret_cast<const char *>(alias));
+            m_pINotify->RawNotify(player, addmsg);
+            pt->list[count] = target;
+            count++;
+        }
+
+        *tail = saved;
+        head = tail;
+        if (*head == '"' || *head == ' ')
+        {
+            head++;
+        }
+    }
+
+    UTF8 canonical[SIZEOF_MALIAS];
+    size_t nLen;
+    if (!make_canonical_alias(alias + 1, canonical, sizeof(canonical), &nLen))
+    {
+        m_pINotify->RawNotify(player, T("MAIL: Invalid mail alias."));
+        free(pt);
+        return;
+    }
+
+    pt->list[count] = NOTHING;
+    pt->name = reinterpret_cast<UTF8 *>(strdup(
+        reinterpret_cast<const char *>(canonical)));
+    pt->numrecep = count;
+    pt->owner = player;
+    pt->desc = reinterpret_cast<UTF8 *>(strdup(
+        reinterpret_cast<const char *>(canonical)));
+    pt->desc_width = nLen;
+    m_ma_top++;
+    sqlite_wt_sync_all_aliases();
+
+    UTF8 msg[256];
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "MAIL: Alias set \xE2\x80\x98%s\xE2\x80\x99 defined.",
+             reinterpret_cast<const char *>(alias));
+    m_pINotify->RawNotify(player, msg);
+}
+
+void CMailMod::do_malias_list(dbref player, const UTF8 *alias)
+{
+    int nResult;
+    malias_t *m = get_malias(player, alias, &nResult);
+    if (nResult == GMA_NOTFOUND)
+    {
+        UTF8 msg[256];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 not found.",
+                 reinterpret_cast<const char *>(alias));
+        m_pINotify->RawNotify(player, msg);
+        return;
+    }
+    if (nResult != GMA_FOUND)
+    {
+        return;
+    }
+
+    bool bGod = false;
+    if (nullptr != m_pIPermissions)
+    {
+        m_pIPermissions->IsGod(m->owner, &bGod);
+    }
+    if (!is_exp_mail(player) && player != m->owner && !bGod)
+    {
+        m_pINotify->RawNotify(player, T("MAIL: Permission denied."));
+        return;
+    }
+
+    UTF8 buf[MOD_LBUF_SIZE];
+    char *bp = reinterpret_cast<char *>(buf);
+    bp += snprintf(bp, sizeof(buf), "MAIL: Alias *%s: ",
+                   reinterpret_cast<const char *>(m->name));
+
+    for (int i = m->numrecep - 1; i >= 0; i--)
+    {
+        UTF8 szName[64];
+        get_player_name(m->list[i], szName, sizeof(szName));
+        const char *n = reinterpret_cast<const char *>(szName);
+        size_t remain = sizeof(buf) - (bp - reinterpret_cast<char *>(buf));
+        if (remain < 64)
+        {
+            break;
+        }
+        if (strchr(n, ' '))
+        {
+            bp += snprintf(bp, remain, "\"%s\" ", n);
+        }
+        else
+        {
+            bp += snprintf(bp, remain, "%s ", n);
+        }
+    }
+    m_pINotify->RawNotify(player, buf);
+}
+
+void CMailMod::do_malias_list_all(dbref player)
+{
+    bool bGod = false;
+    if (nullptr != m_pIPermissions)
+    {
+        m_pIPermissions->IsGod(player, &bGod);
+    }
+
+    bool notified = false;
+    for (int i = 0; i < m_ma_top; i++)
+    {
+        malias_t *m = m_malias[i];
+        bool bOwnerGod = false;
+        if (nullptr != m_pIPermissions)
+        {
+            m_pIPermissions->IsGod(m->owner, &bOwnerGod);
+        }
+        if (bOwnerGod || m->owner == player || bGod)
+        {
+            if (!notified)
+            {
+                m_pINotify->RawNotify(player,
+                    T("Name         Description                              Owner"));
+                notified = true;
+            }
+
+            UTF8 szOwner[64];
+            get_player_name(m->owner, szOwner, sizeof(szOwner));
+
+            UTF8 line[256];
+            snprintf(reinterpret_cast<char *>(line), sizeof(line),
+                     "%-12s %-40s %-15.15s",
+                     reinterpret_cast<const char *>(m->name),
+                     reinterpret_cast<const char *>(m->desc),
+                     reinterpret_cast<const char *>(szOwner));
+            m_pINotify->RawNotify(player, line);
+        }
+    }
+    m_pINotify->RawNotify(player, T("*****  End of Mail Aliases *****"));
+}
+
+void CMailMod::do_malias_adminlist(dbref player)
+{
+    if (!is_exp_mail(player))
+    {
+        do_malias_list_all(player);
+        return;
+    }
+
+    m_pINotify->RawNotify(player,
+        T("Num  Name         Description                              Owner"));
+
+    for (int i = 0; i < m_ma_top; i++)
+    {
+        malias_t *m = m_malias[i];
+        UTF8 szOwner[64];
+        get_player_name(m->owner, szOwner, sizeof(szOwner));
+
+        UTF8 line[256];
+        snprintf(reinterpret_cast<char *>(line), sizeof(line),
+                 "%-4d %-12s %-40s %-15.15s",
+                 i,
+                 reinterpret_cast<const char *>(m->name),
+                 reinterpret_cast<const char *>(m->desc),
+                 reinterpret_cast<const char *>(szOwner));
+        m_pINotify->RawNotify(player, line);
+    }
+    m_pINotify->RawNotify(player, T("***** End of Mail Aliases *****"));
+}
+
+void CMailMod::do_malias_desc(dbref player, const UTF8 *alias,
+    const UTF8 *desc)
+{
+    int nResult;
+    malias_t *m = get_malias(player, alias, &nResult);
+    if (nResult == GMA_NOTFOUND)
+    {
+        UTF8 msg[256];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 not found.",
+                 reinterpret_cast<const char *>(alias));
+        m_pINotify->RawNotify(player, msg);
+        return;
+    }
+    if (nResult != GMA_FOUND)
+    {
+        return;
+    }
+    bool bOwnerGod = false;
+    if (nullptr != m_pIPermissions)
+    {
+        m_pIPermissions->IsGod(m->owner, &bOwnerGod);
+    }
+    if (bOwnerGod && !is_exp_mail(player))
+    {
+        m_pINotify->RawNotify(player, T("MAIL: Permission denied."));
+        return;
+    }
+
+    if (nullptr == desc || '\0' == *desc)
+    {
+        m_pINotify->RawNotify(player, T("MAIL: Description is not valid."));
+        return;
+    }
+
+    // Simple validation: just use the desc as-is (truncated).
+    //
+    size_t nDesc = strlen(reinterpret_cast<const char *>(desc));
+    if (nDesc > 40)
+    {
+        nDesc = 40;
+    }
+    free(m->desc);
+    m->desc = reinterpret_cast<UTF8 *>(strndup(
+        reinterpret_cast<const char *>(desc), nDesc));
+    m->desc_width = nDesc;
+    sqlite_wt_sync_all_aliases();
+    m_pINotify->RawNotify(player, T("MAIL: Description changed."));
+}
+
+void CMailMod::do_malias_chown(dbref player, const UTF8 *alias,
+    const UTF8 *owner)
+{
+    if (!is_exp_mail(player))
+    {
+        m_pINotify->RawNotify(player, T("MAIL: You cannot do that!"));
+        return;
+    }
+
+    int nResult;
+    malias_t *m = get_malias(player, alias, &nResult);
+    if (nResult == GMA_NOTFOUND)
+    {
+        UTF8 msg[256];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 not found.",
+                 reinterpret_cast<const char *>(alias));
+        m_pINotify->RawNotify(player, msg);
+        return;
+    }
+    if (nResult != GMA_FOUND)
+    {
+        return;
+    }
+
+    dbref target = NOTHING;
+    if (nullptr != m_pIObjectInfo)
+    {
+        UTF8 namebuf[256];
+        snprintf(reinterpret_cast<char *>(namebuf), sizeof(namebuf),
+                 "*%s", reinterpret_cast<const char *>(owner));
+        m_pIObjectInfo->MatchThing(player, namebuf, &target);
+    }
+    if (NOTHING == target)
+    {
+        m_pINotify->RawNotify(player, T("MAIL: I do not see that here."));
+        return;
+    }
+    m->owner = target;
+    sqlite_wt_sync_all_aliases();
+    m_pINotify->RawNotify(player, T("MAIL: Owner changed for alias."));
+}
+
+void CMailMod::do_malias_add(dbref player, const UTF8 *alias,
+    const UTF8 *person)
+{
+    int nResult;
+    malias_t *m = get_malias(player, alias, &nResult);
+    if (nResult == GMA_NOTFOUND)
+    {
+        UTF8 msg[256];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 not found.",
+                 reinterpret_cast<const char *>(alias));
+        m_pINotify->RawNotify(player, msg);
+        return;
+    }
+    if (nResult != GMA_FOUND)
+    {
+        return;
+    }
+
+    bool bOwnerGod = false;
+    if (nullptr != m_pIPermissions)
+    {
+        m_pIPermissions->IsGod(m->owner, &bOwnerGod);
+    }
+    if (bOwnerGod && !is_exp_mail(player))
+    {
+        m_pINotify->RawNotify(player, T("MAIL: Permission denied."));
+        return;
+    }
+
+    dbref thing = NOTHING;
+    if (nullptr != person && *person == '#')
+    {
+        thing = atoi(reinterpret_cast<const char *>(person) + 1);
+        bool bPlayer = false;
+        if (thing >= 0 && nullptr != m_pIObjectInfo)
+        {
+            m_pIObjectInfo->IsPlayer(thing, &bPlayer);
+        }
+        if (!bPlayer)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: Only players may be added."));
+            return;
+        }
+    }
+    if (NOTHING == thing && nullptr != m_pIObjectInfo)
+    {
+        UTF8 namebuf[256];
+        snprintf(reinterpret_cast<char *>(namebuf), sizeof(namebuf),
+                 "*%s", reinterpret_cast<const char *>(person));
+        m_pIObjectInfo->MatchThing(player, namebuf, &thing);
+    }
+    if (NOTHING == thing)
+    {
+        m_pINotify->RawNotify(player, T("MAIL: I do not see that person here."));
+        return;
+    }
+
+    for (int i = 0; i < m->numrecep; i++)
+    {
+        if (m->list[i] == thing)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: That person is already on the list."));
+            return;
+        }
+    }
+    if (m->numrecep >= (MAX_MALIAS_MEMBERSHIP - 1))
+    {
+        m_pINotify->RawNotify(player, T("MAIL: The list is full."));
+        return;
+    }
+
+    m->list[m->numrecep] = thing;
+    m->numrecep++;
+    sqlite_wt_sync_all_aliases();
+
+    UTF8 szName[64];
+    get_player_name(thing, szName, sizeof(szName));
+    UTF8 msg[256];
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "MAIL: %s added to %s",
+             reinterpret_cast<const char *>(szName),
+             reinterpret_cast<const char *>(m->name));
+    m_pINotify->RawNotify(player, msg);
+}
+
+void CMailMod::do_malias_remove(dbref player, const UTF8 *alias,
+    const UTF8 *person)
+{
+    int nResult;
+    malias_t *m = get_malias(player, alias, &nResult);
+    if (nResult == GMA_NOTFOUND)
+    {
+        UTF8 msg[256];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 not found.",
+                 reinterpret_cast<const char *>(alias));
+        m_pINotify->RawNotify(player, msg);
+        return;
+    }
+    if (nResult != GMA_FOUND)
+    {
+        return;
+    }
+
+    bool bOwnerGod = false;
+    if (nullptr != m_pIPermissions)
+    {
+        m_pIPermissions->IsGod(m->owner, &bOwnerGod);
+    }
+    if (bOwnerGod && !is_exp_mail(player))
+    {
+        m_pINotify->RawNotify(player, T("MAIL: Permission denied."));
+        return;
+    }
+
+    dbref thing = NOTHING;
+    if (nullptr != person && *person == '#')
+    {
+        thing = atoi(reinterpret_cast<const char *>(person) + 1);
+    }
+    if (NOTHING == thing && nullptr != m_pIObjectInfo)
+    {
+        UTF8 namebuf[256];
+        snprintf(reinterpret_cast<char *>(namebuf), sizeof(namebuf),
+                 "*%s", reinterpret_cast<const char *>(person));
+        m_pIObjectInfo->MatchThing(player, namebuf, &thing);
+    }
+    if (NOTHING == thing)
+    {
+        m_pINotify->RawNotify(player, T("MAIL: I do not see that person here."));
+        return;
+    }
+
+    bool found = false;
+    for (int i = 0; i < m->numrecep; i++)
+    {
+        if (found)
+        {
+            m->list[i] = m->list[i + 1];
+        }
+        else if (m->list[i] == thing)
+        {
+            m->list[i] = m->list[i + 1];
+            found = true;
+        }
+    }
+
+    if (found)
+    {
+        m->numrecep--;
+        sqlite_wt_sync_all_aliases();
+
+        UTF8 szName[64];
+        get_player_name(thing, szName, sizeof(szName));
+        UTF8 msg[256];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "MAIL: %s removed from alias %s.",
+                 reinterpret_cast<const char *>(szName),
+                 reinterpret_cast<const char *>(alias));
+        m_pINotify->RawNotify(player, msg);
+    }
+    else
+    {
+        UTF8 szName[64];
+        get_player_name(thing, szName, sizeof(szName));
+        UTF8 msg[256];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "MAIL: %s is not a member of alias %s.",
+                 reinterpret_cast<const char *>(szName),
+                 reinterpret_cast<const char *>(alias));
+        m_pINotify->RawNotify(player, msg);
+    }
+}
+
+void CMailMod::do_malias_rename(dbref player, const UTF8 *alias,
+    const UTF8 *newname)
+{
+    int nResult;
+    malias_t *m = get_malias(player, newname, &nResult);
+    if (nResult == GMA_FOUND)
+    {
+        m_pINotify->RawNotify(player, T("MAIL: That name already exists!"));
+        return;
+    }
+    if (nResult != GMA_NOTFOUND)
+    {
+        return;
+    }
+    m = get_malias(player, alias, &nResult);
+    if (nResult == GMA_NOTFOUND)
+    {
+        m_pINotify->RawNotify(player, T("MAIL: I cannot find that alias!"));
+        return;
+    }
+    if (nResult != GMA_FOUND)
+    {
+        return;
+    }
+    if (!is_exp_mail(player) && m->owner != player)
+    {
+        m_pINotify->RawNotify(player, T("MAIL: Permission denied."));
+        return;
+    }
+
+    UTF8 canonical[SIZEOF_MALIAS];
+    size_t nLen;
+    if (make_canonical_alias(newname + 1, canonical, sizeof(canonical), &nLen))
+    {
+        free(m->name);
+        m->name = reinterpret_cast<UTF8 *>(strdup(
+            reinterpret_cast<const char *>(canonical)));
+        sqlite_wt_sync_all_aliases();
+        m_pINotify->RawNotify(player, T("MAIL: Mailing Alias renamed."));
+    }
+    else
+    {
+        m_pINotify->RawNotify(player, T("MAIL: Alias is not valid."));
+    }
+}
+
+void CMailMod::do_malias_delete(dbref player, const UTF8 *alias)
+{
+    int nResult;
+    malias_t *m = get_malias(player, alias, &nResult);
+    if (nResult == GMA_NOTFOUND)
+    {
+        UTF8 msg[256];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 not found.",
+                 reinterpret_cast<const char *>(alias));
+        m_pINotify->RawNotify(player, msg);
+        return;
+    }
+    if (nResult != GMA_FOUND)
+    {
+        return;
+    }
+
+    bool done = false;
+    for (int i = 0; i < m_ma_top; i++)
+    {
+        if (done)
+        {
+            m_malias[i] = m_malias[i + 1];
+        }
+        else if (m == m_malias[i])
+        {
+            if (m->owner == player || is_exp_mail(player))
+            {
+                done = true;
+                m_pINotify->RawNotify(player, T("MAIL: Alias Deleted."));
+                m_malias[i] = m_malias[i + 1];
+            }
+        }
+    }
+
+    if (!done)
+    {
+        UTF8 msg[256];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 not found.",
+                 reinterpret_cast<const char *>(alias));
+        m_pINotify->RawNotify(player, msg);
+    }
+    else
+    {
+        m_ma_top--;
+        free(m->name);
+        free(m->desc);
+        free(m);
+        sqlite_wt_sync_all_aliases();
+    }
+}
+
+void CMailMod::do_malias_status(dbref player)
+{
+    if (!is_exp_mail(player))
+    {
+        m_pINotify->RawNotify(player, T("MAIL: Permission denied."));
+        return;
+    }
+    UTF8 msg[128];
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "MAIL: Number of mail aliases defined: %d", m_ma_top);
+    m_pINotify->RawNotify(player, msg);
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "MAIL: Allocated slots %d", m_ma_size);
+    m_pINotify->RawNotify(player, msg);
+}
+
+void CMailMod::do_malias_switch(dbref player, const UTF8 *a1,
+    const UTF8 *a2)
+{
+    if (nullptr != a1 && '\0' != *a1)
+    {
+        if (nullptr != a2 && '\0' != *a2)
+        {
+            do_malias_create(player, a1, a2);
+        }
+        else
+        {
+            do_malias_list(player, a1);
+        }
+    }
+    else
+    {
+        do_malias_list_all(player);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Command implementations.
 // ---------------------------------------------------------------------------
 
@@ -3096,12 +3917,47 @@ MUX_RESULT CMailMod::MailCommand(dbref executor, int key,
 MUX_RESULT CMailMod::MaliasCommand(dbref executor, int key,
     const UTF8 *pArg1, const UTF8 *pArg2)
 {
-    // TODO: Implement malias command dispatch.
-    UNUSED_PARAMETER(executor);
-    UNUSED_PARAMETER(key);
-    UNUSED_PARAMETER(pArg1);
-    UNUSED_PARAMETER(pArg2);
-    return MUX_E_NOTIMPLEMENTED;
+    switch (key)
+    {
+    case 0:
+        do_malias_switch(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    case MALIAS_DESC:
+        do_malias_desc(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    case MALIAS_CHOWN:
+        do_malias_chown(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    case MALIAS_ADD:
+        do_malias_add(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    case MALIAS_REMOVE:
+        do_malias_remove(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    case MALIAS_DELETE:
+        do_malias_delete(executor, pArg1);
+        return MUX_S_OK;
+
+    case MALIAS_RENAME:
+        do_malias_rename(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    case MALIAS_LIST:
+        do_malias_adminlist(executor);
+        return MUX_S_OK;
+
+    case MALIAS_STATUS:
+        do_malias_status(executor);
+        return MUX_S_OK;
+
+    default:
+        return MUX_E_NOTIMPLEMENTED;
+    }
 }
 
 MUX_RESULT CMailMod::FolderCommand(dbref executor, int key, int nargs,

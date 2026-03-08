@@ -133,6 +133,13 @@ struct mail_body
 // Mail alias.
 //
 #define MAX_MALIAS_MEMBERSHIP 100
+#define MA_INC  3
+
+#define GMA_NOTFOUND    1
+#define GMA_FOUND       2
+#define GMA_INVALIDFORM 3
+
+#define SIZEOF_MALIAS   64
 
 typedef struct malias
 {
@@ -251,6 +258,28 @@ private:
     void do_mail_retract(dbref player, const UTF8 *name,
         const UTF8 *msglist);
     void do_mail_nuke(dbref player);
+
+    // Malias helpers.
+    //
+    malias_t *get_malias(dbref player, const UTF8 *alias, int *pnResult);
+    bool is_exp_mail(dbref player);
+    bool make_canonical_alias(const UTF8 *alias, UTF8 *buf,
+        size_t bufsize, size_t *pnLen);
+
+    // Malias command implementations.
+    //
+    void do_malias_switch(dbref player, const UTF8 *a1, const UTF8 *a2);
+    void do_malias_create(dbref player, const UTF8 *alias, const UTF8 *tolist);
+    void do_malias_list(dbref player, const UTF8 *alias);
+    void do_malias_list_all(dbref player);
+    void do_malias_adminlist(dbref player);
+    void do_malias_desc(dbref player, const UTF8 *alias, const UTF8 *desc);
+    void do_malias_chown(dbref player, const UTF8 *alias, const UTF8 *owner);
+    void do_malias_add(dbref player, const UTF8 *alias, const UTF8 *person);
+    void do_malias_remove(dbref player, const UTF8 *alias, const UTF8 *person);
+    void do_malias_rename(dbref player, const UTF8 *alias, const UTF8 *newname);
+    void do_malias_delete(dbref player, const UTF8 *alias);
+    void do_malias_status(dbref player);
 
     // Message body management.
     //
