@@ -1,4 +1,4 @@
-# Makefile.am for TinyMUX 2.13 modules
+# Makefile.am for TinyMUX 2.14 modules
 
 # Shared build flags
 AM_CPPFLAGS = -I$(top_srcdir)

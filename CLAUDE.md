@@ -28,9 +28,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Patch files for upgrading from previous version (.patch.gz)
   - SHA256 checksums for all distribution files
 - Generated files:
-  - `mux-2.13.0.x.unix.tar.gz` - Complete distribution
-  - `mux-2.13.0.x.unix.tar.bz2` - Same, in bzip2 format
-  - `mux-2.13.0.[x-1]-2.13.0.x.unix.patch.gz` - Patch from previous version
+  - `mux-2.14.0.x.unix.tar.gz` - Complete distribution
+  - `mux-2.14.0.x.unix.tar.bz2` - Same, in bzip2 format
+  - `mux-2.14.0.[x-1]-2.14.0.x.unix.patch.gz` - Patch from previous version
   - Each file has a corresponding .sha256 checksum file
 
 ## Code Style Guidelines

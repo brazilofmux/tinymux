@@ -39,8 +39,8 @@ mux/game/*.pem
 mux/game/*.pfx
 
 # Release/patch archives and reference directories
-mux2.13/
-mux2.13_*/
+mux2.14/
+mux2.14_*/
 patches_src/
 patches_bin/
 

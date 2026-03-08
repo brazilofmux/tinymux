@@ -4,7 +4,7 @@ date: March 2026
 title: SSL
 ---
 
-SSL is always enabled in TinyMUX 2.13.  OpenSSL is a required dependency.
+SSL is always enabled in TinyMUX 2.14.  OpenSSL is a required dependency.
 
 1. Once the game has been compiled you will need to create an SSL
    certificate.  You can create a self-signed certificate using the
@@ -50,7 +50,7 @@ SSL is always enabled in TinyMUX 2.13.  OpenSSL is a required dependency.
    If you do not see this line, look for SSL error messages in the log.
    A likely cause is an improper certificate passphrase.
 
-   If TinyMUX 2.13 cannot initialize the SSL engine, the game will still
+   If TinyMUX 2.14 cannot initialize the SSL engine, the game will still
    run but the SSL ports will not be opened and the TLS option will be
    disabled.
 

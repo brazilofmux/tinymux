@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# Makefile.am for TinyMUX 2.13
+# Makefile.am for TinyMUX 2.14
 
 
 VPATH = @srcdir@

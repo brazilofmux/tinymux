@@ -9,16 +9,16 @@ set -e  # Exit on error
 set -o pipefail
 
 # Version information
-OLD_BUILD=8
-OLD_VERSION="2.13.0.$OLD_BUILD"
-NEW_BUILD=9
-NEW_VERSION="2.13.0.$NEW_BUILD"
+OLD_BUILD=0
+OLD_VERSION="2.14.0.$OLD_BUILD"
+NEW_BUILD=0
+NEW_VERSION="2.14.0.$NEW_BUILD"
 
 # Directory structure
 CHANGES_DIR=mux
-REFERENCE_DIR=mux2.13_$OLD_BUILD
-DISTRO_DIR=mux2.13
-NEW_DIR=mux2.13_$NEW_BUILD
+REFERENCE_DIR=mux2.14_$OLD_BUILD
+DISTRO_DIR=mux2.14
+NEW_DIR=mux2.14_$NEW_BUILD
 
 echo "Checking for required tools..."
 if ! command -v xdelta3 &> /dev/null; then

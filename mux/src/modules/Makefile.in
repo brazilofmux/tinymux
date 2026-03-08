@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# Makefile.am for TinyMUX 2.13 modules
+# Makefile.am for TinyMUX 2.14 modules
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \

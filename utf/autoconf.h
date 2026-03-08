@@ -44,10 +44,10 @@
 #define PACKAGE_BUGREPORT ""
 
 /* Define to the full name of this package. */
-#define PACKAGE_NAME "Tinymux-UTF 2.13"
+#define PACKAGE_NAME "Tinymux-UTF 2.14"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Tinymux-UTF 2.13 tinymux@googlegroups.com"
+#define PACKAGE_STRING "Tinymux-UTF 2.14 tinymux@googlegroups.com"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "tinymux-utf-2-13"

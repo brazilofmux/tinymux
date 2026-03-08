@@ -71,7 +71,7 @@ to export a flatfile and `db_load` to import it on the other end.
 
 # On Making Backups:
 
-TinyMUX 2.13 includes a `Backup` script in the `game` directory. It uses
+TinyMUX 2.14 includes a `Backup` script in the `game` directory. It uses
 the SQLite `.backup` command to create a timestamped, compressed copy of
 the database:
 

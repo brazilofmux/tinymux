@@ -4,7 +4,7 @@ date: March 2026
 title: CONFIGURATION
 ---
 
-TinyMUX 2.13 gets the information it needs to operate the game (aside from
+TinyMUX 2.14 gets the information it needs to operate the game (aside from
 the database itself) from a configuration file that is read in at startup.
 The configuration file contains various parameters, such as what port to
 listen for connects, and many other things.
@@ -143,7 +143,7 @@ forbid_site 194.205.0.0 255.255.0.0
 # Existing users may connect, newbies cannot.
 register_site 137.120.19.0 255.255.255.0
 register_site 152.0.0.0 255.0.0.0
-register_site 62.136.0.0 255.255.0.0
+register_site 62.146.0.0 255.255.0.0
 register_site 195.92.0.0 255.255.0.0
 register_site 195.166.0.0 255.255.0.0
 ```

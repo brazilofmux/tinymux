@@ -4,15 +4,15 @@ date: March 2026
 title: UPGRADING
 ---
 
-# Upgrading to TinyMUX 2.13
+# Upgrading to TinyMUX 2.14
 
-TinyMUX 2.13 replaces the flatfile and CHashFile (`.dir`/`.pag`) storage
+TinyMUX 2.14 replaces the flatfile and CHashFile (`.dir`/`.pag`) storage
 with a single SQLite database.  This guide walks through upgrading from
 earlier TinyMUX versions.
 
 ## Compatible Flatfile Formats
 
-TinyMUX 2.13 can read flatfiles from:
+TinyMUX 2.14 can read flatfiles from:
 
 > TinyMUX 2.0, 2.1, 2.2, 2.3, 2.4, 2.6, 2.7, 2.9, 2.10, 2.12
 
@@ -89,20 +89,20 @@ you have a structure file and need to re-export with `db_unload` (or
 
 Keep `comsys.db` and `mail.db` from the old `game/data` directory as-is.
 
-## Step 3 -- Build TinyMUX 2.13
+## Step 3 -- Build TinyMUX 2.14
 
-TinyMUX 2.13 untars into its own directory, so your old installation is
+TinyMUX 2.14 untars into its own directory, so your old installation is
 not disturbed.
 
 ```
-tar xzf mux-2.13.0.x.unix.tar.gz
+tar xzf mux-2.14.0.x.unix.tar.gz
 cd mux/src
 ./configure
 make
 make install
 ```
 
-The `make install` step is new in 2.13 -- it creates symlinks in `game/bin/`
+The `make install` step is new in 2.14 -- it creates symlinks in `game/bin/`
 that the startup scripts expect.
 
 Optional `configure` flags:
@@ -231,7 +231,7 @@ Connect as `Wizard` and verify:
 
 ## Ongoing Differences
 
-Once running on 2.13, the day-to-day experience is mostly the same with
+Once running on 2.14, the day-to-day experience is mostly the same with
 a few changes:
 
 - **`@dump`** performs a WAL checkpoint (fast, no fork).  It does not write

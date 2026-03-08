@@ -4,9 +4,9 @@ date: March 2026
 title: DISTRIBUTIONS
 ---
 
-# Where You Can Get TinyMUX 2.13
+# Where You Can Get TinyMUX 2.14
 
-TinyMUX 2.13 is developed by Stephen Dennis (brazilofmux@gmail.com) and a
+TinyMUX 2.14 is developed by Stephen Dennis (brazilofmux@gmail.com) and a
 small group of enthusiastic volunteers.  The server is simultaneously
 developed on Windows and Unix platforms.  For the latest version, updates,
 and news, please look at any of the project websites:
@@ -41,7 +41,7 @@ Release cycle history:
 | 2008--2009  | 2.9     |
 | 2010--2011  | 2.10    |
 | 2012--2019  | 2.12    |
-| 2020--      | 2.13    |
+| 2020--      | 2.14    |
 
 Typically, development for each release cycle begins in January.  After twelve
 months, it will usually enter a beta period and stay there for three or four

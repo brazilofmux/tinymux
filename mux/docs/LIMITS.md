@@ -29,7 +29,7 @@ The number of unique attribute names is limited to the maximum value of an
 
 # Attributes per Object
 
-TinyMUX 2.13 stores attributes in SQLite.  The number of attributes per
+TinyMUX 2.14 stores attributes in SQLite.  The number of attributes per
 object is not subject to the legacy 8000-byte A_LIST encoding limit.
 The practical limit is determined by available disk space and memory.
 

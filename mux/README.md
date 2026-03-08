@@ -4,7 +4,7 @@ date: March 2026
 title: README (Unix)
 ---
 
-Congratulations and welcome to the `README.md` file for TinyMUX 2.13. That
+Congratulations and welcome to the `README.md` file for TinyMUX 2.14. That
 you have chosen to actually read the file is a sign of bravery equal to
 that of Beowulf facing Grendel or anyone who has ever faced the garden
 variety lumbering behemoth.
@@ -21,7 +21,7 @@ because we want you to succeed, we are happy to provide a file that
 will, in our sincerest hopes, provide you with enough information to
 make that possible. If not, it should be at least an entertaining read.
 
-The TinyMUX 2.13 `README` and supplemental documentation has been divided
+The TinyMUX 2.14 `README` and supplemental documentation has been divided
 into multiple files. For discussion and instructions on how to do
 various things associated with the care and feeding of your TinyMUX,
 please refer to the following files:
@@ -30,9 +30,9 @@ please refer to the following files:
   `README.md`          General information on the distribution, platforms it has been shown to run under out of the box, and how to report bugs.
   `CHANGES.md`         New features, commands, and bug fixes.
   `INSTALL.md`         How to compile your game, step-by-step.
-  `NOTES.md`           All kinds of tidbits made much easier to find. Known compiling issues and known fixes are found here. Known OSes that TinyMUX 2.13 will run on and compiling issues. Has basic conversion information.
+  `NOTES.md`           All kinds of tidbits made much easier to find. Known compiling issues and known fixes are found here. Known OSes that TinyMUX 2.14 will run on and compiling issues. Has basic conversion information.
   `UPGRADING.md`       Step-by-step guide for upgrading from earlier TinyMUX versions, including the flatfile-to-SQLite migration.
-  `docs/BACKUPS.md`        A file about the TinyMUX 2.13 Backup script.
+  `docs/BACKUPS.md`        A file about the TinyMUX 2.14 Backup script.
   `docs/CONFIGURATION.md` How to set up your TinyMUX, including an explanation of the common configuration items and how to customize your `GAMENAME`.
   `docs/CREDITS.md`       The people who helped make this server possible.
   `docs/GUESTS.md`        How the current guest implementation works and how to set it up.
@@ -41,7 +41,7 @@ please refer to the following files:
 
 # General Information:
 
-TinyMUX 2.13 is written in a mix of C and C++ and is currently being
+TinyMUX 2.14 is written in a mix of C and C++ and is currently being
 developed on Windows, Debian, and FreeBSD. It is a continuation of the
 TinyMUX 1.x flavor of MUSH servers.
 
@@ -92,7 +92,7 @@ formalized. Sometimes, due to lack of available time, it is ad-hoc.
 
 # Environment:
 
-TinyMUX 2.13 should run on most Unixes with BSD-style sockets and a C++
+TinyMUX 2.14 should run on most Unixes with BSD-style sockets and a C++
 compiler that groks function prototypes. It is 64-bit clean code
 supporting both IPv4 and IPv6.
 

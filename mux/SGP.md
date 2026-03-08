@@ -1,5 +1,5 @@
 ---
-title: TinyMUX 2.13 SGP Minimal DB
+title: TinyMUX 2.14 SGP Minimal DB
 date: March 2026
 author:
  - Brazil

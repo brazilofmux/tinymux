@@ -14,7 +14,7 @@ occur and entire games have disappeared forever because of it.
 
 # Making a Backup
 
-TinyMUX 2.13 stores all game data (objects, attributes, comsys, and mail)
+TinyMUX 2.14 stores all game data (objects, attributes, comsys, and mail)
 in a single SQLite database file.  The included `Backup` script, located in
 the `game/` directory, uses the SQLite `.backup` command to create a
 timestamped, compressed copy of the database.

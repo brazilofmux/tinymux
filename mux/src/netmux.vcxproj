@@ -100,7 +100,7 @@
     <Link>
       <AdditionalDependencies>ganl.lib;wsock32.lib;ws2_32.lib;secur32.lib;crypt32.lib;ncrypt.lib;pcre2-8.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>.\bin_release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <Version>2.13</Version>
+      <Version>2.14</Version>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
       <DataExecutionPrevention />

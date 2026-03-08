@@ -378,7 +378,7 @@
 #define PACKAGE_NAME "TinyMUX"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "TinyMUX 2.13"
+#define PACKAGE_STRING "TinyMUX 2.14"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "tinymux"
@@ -387,7 +387,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "2.13"
+#define PACKAGE_VERSION "2.14"
 
 /* Define if calling signal with SIGCHLD when handling SIGCHLD blows chow. */
 /* #undef SIGNAL_SIGCHLD_BRAINDAMAGE */

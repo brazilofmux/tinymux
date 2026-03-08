@@ -1,4 +1,4 @@
-# Makefile.am for TinyMUX 2.13
+# Makefile.am for TinyMUX 2.14
 
 SUBDIRS = tools ganl . modules
 

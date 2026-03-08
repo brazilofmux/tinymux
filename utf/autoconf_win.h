@@ -20,8 +20,8 @@
 #define HAVE__BOOL 1
 #define STDC_HEADERS 1
 
-#define PACKAGE_NAME "Tinymux-UTF 2.13"
-#define PACKAGE_STRING "Tinymux-UTF 2.13"
-#define PACKAGE_TARNAME "tinymux-utf-2-13"
+#define PACKAGE_NAME "Tinymux-UTF 2.14"
+#define PACKAGE_STRING "Tinymux-UTF 2.14"
+#define PACKAGE_TARNAME "tinymux-utf-2-14"
 #define PACKAGE_URL ""
-#define PACKAGE_VERSION "2.13"
+#define PACKAGE_VERSION "2.14"

@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.71])
-AC_INIT([TinyMUX],[2.13],[tinymux@googlegroups.com])
+AC_INIT([TinyMUX],[2.14],[tinymux@googlegroups.com])
 AC_CONFIG_SRCDIR([game.cpp])
 AC_CONFIG_HEADERS([autoconf.h] [modules/autoconf.h] [tools/autoconf.h])
 AM_INIT_AUTOMAKE([foreign subdir-objects])

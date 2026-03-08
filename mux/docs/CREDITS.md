@@ -4,7 +4,7 @@ date: March 2026
 title: CREDITS
 ---
 
-TinyMUX 2.13 is maintained by Stephen Dennis (Brazil@BrazilMUX) and would not
+TinyMUX 2.14 is maintained by Stephen Dennis (Brazil@BrazilMUX) and would not
 exist without the generous contributions of many individuals.  Ideas for
 features, occasionally code, documentation, project support, bug hunting,
 came from many places, including TinyMUSH, ChaoticMUX, RhostMUSH, and

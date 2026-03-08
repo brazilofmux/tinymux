@@ -1,4 +1,4 @@
-# Makefile.am for TinyMUX 2.13 tools
+# Makefile.am for TinyMUX 2.14 tools
 
 # Build the announce utility
 bin_PROGRAMS = announce

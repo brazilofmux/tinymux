@@ -71,7 +71,7 @@ library or tool is missing.
 
       - cd to the game directory. `cd ../game`
       - Make your configuration file, as described in `docs/CONFIGURATION.md`
-      - Type `./Startmux`. TinyMUX 2.13 automatically creates a minimal DB
+      - Type `./Startmux`. TinyMUX 2.14 automatically creates a minimal DB
         if one does not exist in the `game/data` directory.
       - Log into the game as player wizard `connect wizard potrzebie` and
         shut it down again.
@@ -79,7 +79,7 @@ library or tool is missing.
 5. Edit the .txt files in `game/text` to your liking. In particular,
     `connect.txt` and `motd.txt`.
 
-6. Start TinyMUX 2.13 by running `./Startmux` again.
+6. Start TinyMUX 2.14 by running `./Startmux` again.
 
 7. `@ccreate` a channel named `Public`, and a channel named `Guests`
     from within the TinyMUX. Created players will automatically be
@@ -146,5 +146,5 @@ upgrade.
       accordingly, BEFORE you restart the game, or else ALL `@mail` older
       than the default value of 14 days will be deleted.
 
-5. Start TinyMUX 2.13 by running `./Startmux`.
+5. Start TinyMUX 2.14 by running `./Startmux`.
 
