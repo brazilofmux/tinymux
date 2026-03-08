@@ -278,7 +278,11 @@ std::string ast_raw_text(const ASTNode *n)
                 if (i > 0) r += ",";
                 r += ast_raw_text(n->children[i].get());
             }
-            return r + ")";
+            if (n->has_close_paren)
+            {
+                r += ")";
+            }
+            return r;
         }
 
     case AST_EVALBRACKET:
