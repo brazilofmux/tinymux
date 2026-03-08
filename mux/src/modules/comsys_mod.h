@@ -127,6 +127,18 @@ private:
     void do_comconnectraw_notify(dbref player, UTF8 *chan);
     void do_comdisconnectraw_notify(dbref player, UTF8 *chan);
 
+    bool test_transmit_access(dbref player, struct channel *ch);
+    bool test_receive_access(dbref player, struct channel *ch);
+    void do_processcom(dbref player, const UTF8 *channel, UTF8 *msg);
+    void SendChannelMessage(dbref executor, struct channel *ch,
+        const UTF8 *msg, bool bJoinLeaveMsg);
+    void do_joinchannel(dbref player, struct channel *ch);
+    void do_leavechannel(dbref player, struct channel *ch);
+    void do_comwho(dbref player, struct channel *ch);
+
+    void sqlite_wt_channel_user(const UTF8 *channel_name, struct comuser *user);
+    void sqlite_wt_channel(struct channel *ch);
+
 public:
     // mux_IUnknown
     //

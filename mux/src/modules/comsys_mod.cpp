@@ -935,6 +935,497 @@ void CComsysMod::do_comdisconnectchannel(dbref player, UTF8 *channel)
 }
 
 // ---------------------------------------------------------------------------
+// SQLite write-through helpers.
+// ---------------------------------------------------------------------------
+
+void CComsysMod::sqlite_wt_channel_user(const UTF8 *channel_name,
+    struct comuser *user)
+{
+    if (nullptr == m_db)
+    {
+        return;
+    }
+
+    const char *sql =
+        "INSERT OR REPLACE INTO channel_users "
+        "(channel_name, who, is_on, comtitle_status, gag_joinleave, title) "
+        "VALUES (?, ?, ?, ?, ?, ?);";
+
+    sqlite3_stmt *stmt = nullptr;
+    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
+    {
+        return;
+    }
+
+    sqlite3_bind_text(stmt, 1,
+        reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 2, user->who);
+    sqlite3_bind_int(stmt, 3, user->bUserIsOn ? 1 : 0);
+    sqlite3_bind_int(stmt, 4, user->ComTitleStatus ? 1 : 0);
+    sqlite3_bind_int(stmt, 5, user->bGagJoinLeave ? 1 : 0);
+    sqlite3_bind_text(stmt, 6,
+        (nullptr != user->title)
+            ? reinterpret_cast<const char *>(user->title) : "",
+        -1, SQLITE_STATIC);
+
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+}
+
+void CComsysMod::sqlite_wt_channel(struct channel *ch)
+{
+    if (nullptr == m_db)
+    {
+        return;
+    }
+
+    const char *sql =
+        "INSERT OR REPLACE INTO channels "
+        "(name, header, type, temp1, temp2, charge, charge_who, "
+        "amount_col, num_messages, chan_obj) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+
+    sqlite3_stmt *stmt = nullptr;
+    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
+    {
+        return;
+    }
+
+    sqlite3_bind_text(stmt, 1,
+        reinterpret_cast<const char *>(ch->name), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2,
+        reinterpret_cast<const char *>(ch->header), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 3, ch->type);
+    sqlite3_bind_int(stmt, 4, ch->temp1);
+    sqlite3_bind_int(stmt, 5, ch->temp2);
+    sqlite3_bind_int(stmt, 6, ch->charge);
+    sqlite3_bind_int(stmt, 7, ch->charge_who);
+    sqlite3_bind_int(stmt, 8, ch->amount_col);
+    sqlite3_bind_int(stmt, 9, ch->num_messages);
+    sqlite3_bind_int(stmt, 10, ch->chan_obj);
+
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+}
+
+// ---------------------------------------------------------------------------
+// Channel access checks.
+// ---------------------------------------------------------------------------
+
+bool CComsysMod::test_transmit_access(dbref player, struct channel *ch)
+{
+    if (nullptr != m_pIPermissions)
+    {
+        bool bCommAll = false;
+        m_pIPermissions->HasCommAll(player, &bCommAll);
+        if (bCommAll)
+        {
+            return true;
+        }
+    }
+
+    int access;
+    if (nullptr != m_pIObjectInfo)
+    {
+        bool bPlayer = false;
+        m_pIObjectInfo->IsPlayer(player, &bPlayer);
+        access = bPlayer ? CHANNEL_PLAYER_TRANSMIT : CHANNEL_OBJECT_TRANSMIT;
+    }
+    else
+    {
+        access = CHANNEL_PLAYER_TRANSMIT;
+    }
+
+    return ((ch->type & access) != 0);
+}
+
+bool CComsysMod::test_receive_access(dbref player, struct channel *ch)
+{
+    if (nullptr != m_pIPermissions)
+    {
+        bool bCommAll = false;
+        m_pIPermissions->HasCommAll(player, &bCommAll);
+        if (bCommAll)
+        {
+            return true;
+        }
+    }
+
+    int access;
+    if (nullptr != m_pIObjectInfo)
+    {
+        bool bPlayer = false;
+        m_pIObjectInfo->IsPlayer(player, &bPlayer);
+        access = bPlayer ? CHANNEL_PLAYER_RECEIVE : CHANNEL_OBJECT_RECEIVE;
+    }
+    else
+    {
+        access = CHANNEL_PLAYER_RECEIVE;
+    }
+
+    return ((ch->type & access) != 0);
+}
+
+// ---------------------------------------------------------------------------
+// Channel message broadcasting.
+// ---------------------------------------------------------------------------
+
+void CComsysMod::SendChannelMessage(dbref executor, struct channel *ch,
+    const UTF8 *msg, bool bJoinLeaveMsg)
+{
+    ch->num_messages++;
+    sqlite_wt_channel(ch);
+
+    if (nullptr == m_pINotify)
+    {
+        return;
+    }
+
+    for (struct comuser *user = ch->on_users; user; user = user->on_next)
+    {
+        if (bJoinLeaveMsg && user->bGagJoinLeave)
+        {
+            continue;
+        }
+        if (user->bUserIsOn && test_receive_access(user->who, ch))
+        {
+            m_pINotify->RawNotify(user->who, msg);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Join/leave channel.
+// ---------------------------------------------------------------------------
+
+void CComsysMod::do_joinchannel(dbref player, struct channel *ch)
+{
+    struct comuser *user = select_user(ch, player);
+
+    if (nullptr == user)
+    {
+        // Create new user on channel.
+        //
+        user = static_cast<struct comuser *>(calloc(1, sizeof(struct comuser)));
+        if (nullptr == user)
+        {
+            if (nullptr != m_pINotify)
+            {
+                m_pINotify->RawNotify(player, T("Out of memory."));
+            }
+            return;
+        }
+
+        ch->num_users++;
+        if (ch->num_users >= ch->max_users)
+        {
+            int newmax = ch->num_users + 10;
+            struct comuser **cu = static_cast<struct comuser **>(
+                realloc(ch->users, newmax * sizeof(struct comuser *)));
+            if (nullptr == cu)
+            {
+                free(user);
+                ch->num_users--;
+                return;
+            }
+            ch->users = cu;
+            ch->max_users = newmax;
+        }
+
+        // Insert sorted by dbref.
+        //
+        int i;
+        for (i = ch->num_users - 1;
+             0 < i && player < ch->users[i - 1]->who; --i)
+        {
+            ch->users[i] = ch->users[i - 1];
+        }
+        ch->users[i] = user;
+
+        user->who = player;
+        user->bUserIsOn = true;
+        user->ComTitleStatus = true;
+        user->bGagJoinLeave = false;
+        user->title = reinterpret_cast<UTF8 *>(strdup(""));
+        user->on_next = ch->on_users;
+        ch->on_users = user;
+
+        sqlite_wt_channel_user(ch->name, user);
+    }
+    else if (!user->bUserIsOn)
+    {
+        user->bUserIsOn = true;
+        sqlite_wt_channel_user(ch->name, user);
+    }
+    else
+    {
+        if (nullptr != m_pINotify)
+        {
+            UTF8 msg[256];
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "You are already on channel %s.",
+                     reinterpret_cast<const char *>(ch->name));
+            m_pINotify->RawNotify(player, msg);
+        }
+        return;
+    }
+
+    // Send join notification.
+    //
+    const UTF8 *pName = nullptr;
+    if (nullptr != m_pIObjectInfo)
+    {
+        m_pIObjectInfo->GetMoniker(player, &pName);
+    }
+    if (nullptr == pName)
+    {
+        pName = T("???");
+    }
+
+    UTF8 msg[1024];
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "%s %s has joined this channel.",
+             reinterpret_cast<const char *>(ch->header),
+             reinterpret_cast<const char *>(pName));
+    SendChannelMessage(player, ch, msg, true);
+}
+
+void CComsysMod::do_leavechannel(dbref player, struct channel *ch)
+{
+    struct comuser *user = select_user(ch, player);
+    if (nullptr == user)
+    {
+        return;
+    }
+
+    if (nullptr != m_pINotify)
+    {
+        UTF8 msg[256];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "You have left channel %s.",
+                 reinterpret_cast<const char *>(ch->name));
+        m_pINotify->RawNotify(player, msg);
+    }
+
+    if (user->bUserIsOn)
+    {
+        // Send leave notification before turning off.
+        //
+        const UTF8 *pName = nullptr;
+        if (nullptr != m_pIObjectInfo)
+        {
+            m_pIObjectInfo->GetMoniker(player, &pName);
+        }
+        if (nullptr == pName)
+        {
+            pName = T("???");
+        }
+
+        UTF8 msg[1024];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "%s %s has left this channel.",
+                 reinterpret_cast<const char *>(ch->header),
+                 reinterpret_cast<const char *>(pName));
+        SendChannelMessage(player, ch, msg, true);
+
+        user->bUserIsOn = false;
+        sqlite_wt_channel_user(ch->name, user);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Channel who list.
+// ---------------------------------------------------------------------------
+
+void CComsysMod::do_comwho(dbref player, struct channel *ch)
+{
+    if (nullptr == m_pINotify || nullptr == m_pIObjectInfo)
+    {
+        return;
+    }
+
+    UTF8 msg[256];
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "-- %s --", reinterpret_cast<const char *>(ch->name));
+    m_pINotify->RawNotify(player, msg);
+
+    int count = 0;
+    for (struct comuser *user = ch->on_users; user; user = user->on_next)
+    {
+        if (user->bUserIsOn)
+        {
+            const UTF8 *pName = nullptr;
+            m_pIObjectInfo->GetMoniker(user->who, &pName);
+            if (nullptr != pName)
+            {
+                m_pINotify->RawNotify(player, pName);
+                count++;
+            }
+        }
+    }
+
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "-- %s -- %d connected", reinterpret_cast<const char *>(ch->name),
+             count);
+    m_pINotify->RawNotify(player, msg);
+}
+
+// ---------------------------------------------------------------------------
+// Process a channel message (alias dispatch target).
+// ---------------------------------------------------------------------------
+
+void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
+{
+    if (nullptr == arg2 || '\0' == *arg2)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player, T("No message."));
+        }
+        return;
+    }
+
+    // Truncate excessively long messages.
+    //
+    if (3500 < strlen(reinterpret_cast<const char *>(arg2)))
+    {
+        arg2[3500] = '\0';
+    }
+
+    struct channel *ch = select_channel(arg1);
+    if (nullptr == ch)
+    {
+        if (nullptr != m_pINotify)
+        {
+            UTF8 msg[256];
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "Unknown channel %s.",
+                     reinterpret_cast<const char *>(arg1));
+            m_pINotify->RawNotify(player, msg);
+        }
+        return;
+    }
+
+    struct comuser *user = select_user(ch, player);
+    if (nullptr == user)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("You are not listed as on that channel.  "
+                  "Delete this alias and readd."));
+        }
+        return;
+    }
+
+    // Handle sub-commands.
+    //
+    if (0 == strcmp(reinterpret_cast<const char *>(arg2), "on"))
+    {
+        do_joinchannel(player, ch);
+        return;
+    }
+    if (0 == strcmp(reinterpret_cast<const char *>(arg2), "off"))
+    {
+        do_leavechannel(player, ch);
+        return;
+    }
+
+    if (!user->bUserIsOn)
+    {
+        if (nullptr != m_pINotify)
+        {
+            UTF8 msg[256];
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "You must be on %s to do that.",
+                     reinterpret_cast<const char *>(arg1));
+            m_pINotify->RawNotify(player, msg);
+        }
+        return;
+    }
+
+    if (0 == strcmp(reinterpret_cast<const char *>(arg2), "who"))
+    {
+        do_comwho(player, ch);
+        return;
+    }
+
+    // Check transmit access.
+    //
+    if (!test_transmit_access(player, ch))
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("That channel type cannot be transmitted on."));
+        }
+        return;
+    }
+
+    // Build and send the message.
+    //
+    const UTF8 *pMoniker = nullptr;
+    if (nullptr != m_pIObjectInfo)
+    {
+        m_pIObjectInfo->GetMoniker(player, &pMoniker);
+    }
+    if (nullptr == pMoniker)
+    {
+        pMoniker = T("???");
+    }
+
+    UTF8 msg[4096];
+    const char *pPose = reinterpret_cast<const char *>(arg2);
+
+    if (':' == pPose[0])
+    {
+        // Pose: "<header> <name> <action>"
+        //
+        pPose++;
+        if (' ' == *pPose)
+        {
+            pPose++;
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "%s %s%s",
+                     reinterpret_cast<const char *>(ch->header),
+                     reinterpret_cast<const char *>(pMoniker),
+                     pPose);
+        }
+        else
+        {
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "%s %s %s",
+                     reinterpret_cast<const char *>(ch->header),
+                     reinterpret_cast<const char *>(pMoniker),
+                     pPose);
+        }
+    }
+    else if (';' == pPose[0])
+    {
+        // Semipose: "<header> <name><text>"
+        //
+        pPose++;
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "%s %s%s",
+                 reinterpret_cast<const char *>(ch->header),
+                 reinterpret_cast<const char *>(pMoniker),
+                 pPose);
+    }
+    else
+    {
+        // Say: "<header> <name> says, \xe2\x80\x9c<text>\xe2\x80\x9d"
+        //
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "%s %s says, \xE2\x80\x9C%s\xE2\x80\x9D",
+                 reinterpret_cast<const char *>(ch->header),
+                 reinterpret_cast<const char *>(pMoniker),
+                 pPose);
+    }
+
+    SendChannelMessage(player, ch, msg, false);
+}
+
+// ---------------------------------------------------------------------------
 // mux_IComsysControl implementation.
 // ---------------------------------------------------------------------------
 
@@ -1166,10 +1657,11 @@ MUX_RESULT CComsysMod::ProcessCommand(dbref executor, const UTF8 *pCmd,
         return MUX_S_OK;
     }
 
-    // Found a valid alias — this command is handled.
-    // TODO: Call do_processcom equivalent here.
+    // Found a valid alias — dispatch to the channel message processor.
     //
-    *pbHandled = false;  // Until we implement message sending, fall through.
+    UTF8 *pMsg = const_cast<UTF8 *>(reinterpret_cast<const UTF8 *>(t + 1));
+    do_processcom(executor, ch, pMsg);
+    *pbHandled = true;
     return MUX_S_OK;
 }
 
