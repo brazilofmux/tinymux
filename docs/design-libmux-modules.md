@@ -452,13 +452,71 @@ may start as interfaces and move to direct calls if the indirection hurts;
 others may start direct and get wrapped in interfaces if cross-process use
 emerges.  The choice is not all-or-nothing.
 
-### Survey 1: Global state audit
+### Survey 1: Global state audit — COMPLETE
 
 **Purpose:** Catalog all references to mudconf and mudstate from each .cpp file.
 
-**Method:** grep for mudconf\. and mudstate\. across the source tree.  Count
-references per file.  Identify which files could function without direct access
-to these globals.
+**Method:** grep -co for `mudconf\.` and `mudstate\.` across mux/src/*.cpp
+(excluding utf8tables.cpp).
+
+**Results (2026-03-08):**
+
+51 files have at least one reference.  26 files have zero.  Total: ~2,900
+references (mudconf ~1,300, mudstate ~1,600).
+
+**Heavily coupled (>100 refs) — stay in netmux:**
+
+| File | mudconf | mudstate | Total | Subsystem |
+|---|---|---|---|---|
+| conf.cpp | 446 | 145 | 591 | Configuration |
+| command.cpp | 143 | 117 | 260 | Command dispatch |
+| netcommon.cpp | 64 | 121 | 185 | Network I/O |
+| functions.cpp | 36 | 134 | 170 | Softcode functions |
+| game.cpp | 47 | 113 | 160 | Main loop / startup |
+| db.cpp | 20 | 122 | 142 | Database core |
+| predicates.cpp | 19 | 85 | 104 | Object predicates |
+
+**Moderately coupled (10-100 refs) — interface candidates:**
+
+| File | mudconf | mudstate | Total |
+|---|---|---|---|
+| object.cpp | 49 | 42 | 91 |
+| cque.cpp | 13 | 72 | 85 |
+| ganl_adapter.cpp | 38 | 37 | 75 |
+| walkdb.cpp | 17 | 54 | 71 |
+| ast.cpp | 6 | 61 | 67 |
+| timer.cpp | 20 | 46 | 66 |
+| look.cpp | 35 | 19 | 54 |
+| mail.cpp | 7 | 45 | 52 |
+| comsys.cpp | 2 | 40 | 42 |
+| mguests.cpp | 41 | 0 | 41 |
+| attrcache.cpp | 2 | 35 | 37 |
+| funceval2.cpp | 9 | 26 | 35 |
+
+**Lightly coupled (1-9 refs) — possible to extract with minor refactoring:**
+
+stringutil (3), mathutil (4), match (3), alloc (18), eval (22),
+log (17), help (15), wild (8), modules (8), and others.
+
+**Zero references — ready for libmux.so migration:**
+
+| Category | Files |
+|---|---|
+| UTF-8 / Unicode | utf8_collate, utf8_grapheme, utf8_normalize |
+| Time utilities | timeabsolute, timedelta, timeparser, timeutil, timezone |
+| Crypto / hash | sha1, svdhash, svdrand |
+| Math | funmath, strtod |
+| Network helpers | netaddr, telnet, slave |
+| Data structures | htab |
+| Module infra | libmux, muxcli, stubslave |
+| Storage | sqlite_backend, sqlitedb |
+| Other | alarm, ast_scan, _build, local |
+
+**Key insight:** The zero-reference files align closely with the Phase 3
+migration candidates already identified (string utils, time utils, math,
+buffer pool).  The lightly coupled files (stringutil at 3 refs, mathutil
+at 4 refs) could migrate with minor refactoring — likely passing config
+values as parameters instead of reading globals directly.
 
 ### Survey 2: Include dependency graph
 
