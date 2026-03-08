@@ -929,3 +929,840 @@ MUX_RESULT CLogFactory::LockServer(bool bLock)
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;
 }
+
+// Standard Marshaling support for mux_ILog.
+//
+// Method numbers (0-2 are IUnknown, not marshalled):
+//
+//  3: start_log
+//  4: log_perror
+//  5: log_text
+//  6: log_number
+//  7: log_name
+//  8: log_name_and_loc
+//  9: log_type_and_name
+// 10: end_log
+//
+
+// Helper to marshal a UTF8 string into a queue.
+//
+static void MarshalString(QUEUE_INFO *pqi, const UTF8 *str)
+{
+    size_t n = (nullptr != str) ? strlen(reinterpret_cast<const char *>(str)) + 1 : 0;
+    Pipe_AppendBytes(pqi, sizeof(n), &n);
+    if (0 < n)
+    {
+        Pipe_AppendBytes(pqi, n, str);
+    }
+}
+
+// Helper to unmarshal a UTF8 string from a queue.  Returns a pointer into a
+// caller-provided buffer, or nullptr on failure.
+//
+static bool UnmarshalString(QUEUE_INFO *pqi, UTF8 *buf, size_t bufSize, const UTF8 **ppStr)
+{
+    size_t n;
+    size_t nWanted = sizeof(n);
+    if (  !Pipe_GetBytes(pqi, &nWanted, &n)
+       || nWanted != sizeof(n))
+    {
+        return false;
+    }
+
+    if (0 == n)
+    {
+        *ppStr = nullptr;
+        return true;
+    }
+
+    if (n > bufSize)
+    {
+        return false;
+    }
+
+    nWanted = n;
+    if (  !Pipe_GetBytes(pqi, &nWanted, buf)
+       || nWanted != n)
+    {
+        return false;
+    }
+    *ppStr = buf;
+    return true;
+}
+
+// CLogProxy: client-side proxy for mux_ILog over a pipe channel.
+//
+class CLogProxy : public mux_ILog, public mux_IRpcProxyBuffer
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+
+    // mux_IRpcProxyBuffer
+    //
+    virtual MUX_RESULT Connect(uint32_t nChannel);
+    virtual void       Disconnect(void);
+
+    // mux_ILog
+    //
+    virtual MUX_RESULT start_log(bool *pStarted, int key, const UTF8 *primary, const UTF8 *secondary);
+    virtual MUX_RESULT log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object);
+    virtual MUX_RESULT log_text(const UTF8 *text);
+    virtual MUX_RESULT log_number(int num);
+    virtual MUX_RESULT log_name(dbref target);
+    virtual MUX_RESULT log_name_and_loc(dbref player);
+    virtual MUX_RESULT log_type_and_name(dbref thing);
+    virtual MUX_RESULT end_log(void);
+
+    CLogProxy(void);
+    virtual ~CLogProxy();
+
+private:
+    uint32_t m_cRef;
+    uint32_t m_nChannel;
+};
+
+CLogProxy::CLogProxy(void) : m_cRef(1), m_nChannel(CHANNEL_INVALID)
+{
+}
+
+CLogProxy::~CLogProxy()
+{
+}
+
+MUX_RESULT CLogProxy::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_ILog *>(this);
+    }
+    else if (IID_ILog == iid)
+    {
+        *ppv = static_cast<mux_ILog *>(this);
+    }
+    else if (mux_IID_IRpcProxyBuffer == iid)
+    {
+        *ppv = static_cast<mux_IRpcProxyBuffer *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CLogProxy::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CLogProxy::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        if (CHANNEL_INVALID != m_nChannel)
+        {
+            QUEUE_INFO qiFrame;
+            Pipe_InitializeQueueInfo(&qiFrame);
+            (void)Pipe_SendDiscPacket(m_nChannel, &qiFrame);
+            Pipe_EmptyQueue(&qiFrame);
+            m_nChannel = CHANNEL_INVALID;
+        }
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CLogProxy::Connect(uint32_t nChannel)
+{
+    m_nChannel = nChannel;
+    return MUX_S_OK;
+}
+
+void CLogProxy::Disconnect(void)
+{
+    m_nChannel = CHANNEL_INVALID;
+}
+
+MUX_RESULT CLogProxy::start_log(bool *pStarted, int key, const UTF8 *primary, const UTF8 *secondary)
+{
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    uint32_t iMethod = 3;
+    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+    Pipe_AppendBytes(&qiFrame, sizeof(key), &key);
+    MarshalString(&qiFrame, primary);
+    MarshalString(&qiFrame, secondary);
+
+    MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+    if (MUX_SUCCEEDED(mr))
+    {
+        struct RETURN
+        {
+            MUX_RESULT mr;
+            bool       bStarted;
+        } ReturnFrame;
+
+        size_t nWanted = sizeof(ReturnFrame);
+        if (  Pipe_GetBytes(&qiFrame, &nWanted, &ReturnFrame)
+           && nWanted == sizeof(ReturnFrame))
+        {
+            *pStarted = ReturnFrame.bStarted;
+            mr = ReturnFrame.mr;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+MUX_RESULT CLogProxy::log_perror(const UTF8 *primary, const UTF8 *secondary, const UTF8 *extra, const UTF8 *failing_object)
+{
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    uint32_t iMethod = 4;
+    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+    MarshalString(&qiFrame, primary);
+    MarshalString(&qiFrame, secondary);
+    MarshalString(&qiFrame, extra);
+    MarshalString(&qiFrame, failing_object);
+
+    MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+    if (MUX_SUCCEEDED(mr))
+    {
+        MUX_RESULT mrReturn;
+        size_t nWanted = sizeof(mrReturn);
+        if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrReturn)
+           && nWanted == sizeof(mrReturn))
+        {
+            mr = mrReturn;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+MUX_RESULT CLogProxy::log_text(const UTF8 *text)
+{
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    uint32_t iMethod = 5;
+    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+    MarshalString(&qiFrame, text);
+
+    MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+    if (MUX_SUCCEEDED(mr))
+    {
+        MUX_RESULT mrReturn;
+        size_t nWanted = sizeof(mrReturn);
+        if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrReturn)
+           && nWanted == sizeof(mrReturn))
+        {
+            mr = mrReturn;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+MUX_RESULT CLogProxy::log_number(int num)
+{
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    uint32_t iMethod = 6;
+    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+    Pipe_AppendBytes(&qiFrame, sizeof(num), &num);
+
+    MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+    if (MUX_SUCCEEDED(mr))
+    {
+        MUX_RESULT mrReturn;
+        size_t nWanted = sizeof(mrReturn);
+        if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrReturn)
+           && nWanted == sizeof(mrReturn))
+        {
+            mr = mrReturn;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+MUX_RESULT CLogProxy::log_name(dbref target)
+{
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    uint32_t iMethod = 7;
+    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+    Pipe_AppendBytes(&qiFrame, sizeof(target), &target);
+
+    MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+    if (MUX_SUCCEEDED(mr))
+    {
+        MUX_RESULT mrReturn;
+        size_t nWanted = sizeof(mrReturn);
+        if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrReturn)
+           && nWanted == sizeof(mrReturn))
+        {
+            mr = mrReturn;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+MUX_RESULT CLogProxy::log_name_and_loc(dbref player)
+{
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    uint32_t iMethod = 8;
+    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+    Pipe_AppendBytes(&qiFrame, sizeof(player), &player);
+
+    MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+    if (MUX_SUCCEEDED(mr))
+    {
+        MUX_RESULT mrReturn;
+        size_t nWanted = sizeof(mrReturn);
+        if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrReturn)
+           && nWanted == sizeof(mrReturn))
+        {
+            mr = mrReturn;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+MUX_RESULT CLogProxy::log_type_and_name(dbref thing)
+{
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    uint32_t iMethod = 9;
+    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+    Pipe_AppendBytes(&qiFrame, sizeof(thing), &thing);
+
+    MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+    if (MUX_SUCCEEDED(mr))
+    {
+        MUX_RESULT mrReturn;
+        size_t nWanted = sizeof(mrReturn);
+        if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrReturn)
+           && nWanted == sizeof(mrReturn))
+        {
+            mr = mrReturn;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+MUX_RESULT CLogProxy::end_log(void)
+{
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    uint32_t iMethod = 10;
+    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+
+    MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+    if (MUX_SUCCEEDED(mr))
+    {
+        MUX_RESULT mrReturn;
+        size_t nWanted = sizeof(mrReturn);
+        if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrReturn)
+           && nWanted == sizeof(mrReturn))
+        {
+            mr = mrReturn;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+// CLogStub: server-side stub for mux_ILog over a pipe channel.
+//
+class CLogStub : public mux_IRpcStubBuffer
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+
+    // mux_IRpcStubBuffer
+    //
+    virtual MUX_RESULT Connect(mux_IUnknown *pUnknownServer);
+    virtual void       Disconnect(void);
+    virtual MUX_RESULT Invoke(QUEUE_INFO *pqi);
+    virtual MUX_RESULT IsSupported(MUX_IID riid);
+    virtual uint32_t   CountRefs(void);
+
+    CLogStub(void);
+    virtual ~CLogStub();
+
+private:
+    uint32_t   m_cRef;
+    mux_ILog  *m_pILog;
+};
+
+CLogStub::CLogStub(void) : m_cRef(1), m_pILog(nullptr)
+{
+}
+
+CLogStub::~CLogStub()
+{
+    if (nullptr != m_pILog)
+    {
+        m_pILog->Release();
+        m_pILog = nullptr;
+    }
+}
+
+MUX_RESULT CLogStub::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IRpcStubBuffer *>(this);
+    }
+    else if (mux_IID_IRpcStubBuffer == iid)
+    {
+        *ppv = static_cast<mux_IRpcStubBuffer *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CLogStub::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CLogStub::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CLogStub::Connect(mux_IUnknown *pUnknownServer)
+{
+    if (nullptr != m_pILog)
+    {
+        m_pILog->Release();
+        m_pILog = nullptr;
+    }
+
+    if (nullptr == pUnknownServer)
+    {
+        return MUX_S_OK;
+    }
+
+    return pUnknownServer->QueryInterface(IID_ILog, (void **)&m_pILog);
+}
+
+void CLogStub::Disconnect(void)
+{
+    if (nullptr != m_pILog)
+    {
+        m_pILog->Release();
+        m_pILog = nullptr;
+    }
+}
+
+MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
+{
+    if (nullptr == m_pILog)
+    {
+        return MUX_E_UNEXPECTED;
+    }
+
+    uint32_t iMethod;
+    size_t nWanted = sizeof(iMethod);
+    if (  !Pipe_GetBytes(pqi, &nWanted, &iMethod)
+       || nWanted != sizeof(iMethod))
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    MUX_RESULT mr = MUX_S_OK;
+
+    switch (iMethod)
+    {
+    case 3: // start_log
+        {
+            int key;
+            nWanted = sizeof(key);
+            if (  !Pipe_GetBytes(pqi, &nWanted, &key)
+               || nWanted != sizeof(key))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            UTF8 bufPrimary[LBUF_SIZE];
+            UTF8 bufSecondary[LBUF_SIZE];
+            const UTF8 *pPrimary;
+            const UTF8 *pSecondary;
+
+            if (  !UnmarshalString(pqi, bufPrimary, sizeof(bufPrimary), &pPrimary)
+               || !UnmarshalString(pqi, bufSecondary, sizeof(bufSecondary), &pSecondary))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            bool bStarted = false;
+            mr = m_pILog->start_log(&bStarted, key, pPrimary, pSecondary);
+
+            struct RETURN
+            {
+                MUX_RESULT mr;
+                bool       bStarted;
+            } ReturnFrame;
+
+            ReturnFrame.mr = mr;
+            ReturnFrame.bStarted = bStarted;
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
+        }
+        break;
+
+    case 4: // log_perror
+        {
+            UTF8 bufPrimary[LBUF_SIZE];
+            UTF8 bufSecondary[LBUF_SIZE];
+            UTF8 bufExtra[LBUF_SIZE];
+            UTF8 bufFailing[LBUF_SIZE];
+            const UTF8 *pPrimary;
+            const UTF8 *pSecondary;
+            const UTF8 *pExtra;
+            const UTF8 *pFailing;
+
+            if (  !UnmarshalString(pqi, bufPrimary, sizeof(bufPrimary), &pPrimary)
+               || !UnmarshalString(pqi, bufSecondary, sizeof(bufSecondary), &pSecondary)
+               || !UnmarshalString(pqi, bufExtra, sizeof(bufExtra), &pExtra)
+               || !UnmarshalString(pqi, bufFailing, sizeof(bufFailing), &pFailing))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            mr = m_pILog->log_perror(pPrimary, pSecondary, pExtra, pFailing);
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+        }
+        break;
+
+    case 5: // log_text
+        {
+            UTF8 bufText[LBUF_SIZE];
+            const UTF8 *pText;
+            if (!UnmarshalString(pqi, bufText, sizeof(bufText), &pText))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            mr = m_pILog->log_text(pText);
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+        }
+        break;
+
+    case 6: // log_number
+        {
+            int num;
+            nWanted = sizeof(num);
+            if (  !Pipe_GetBytes(pqi, &nWanted, &num)
+               || nWanted != sizeof(num))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            mr = m_pILog->log_number(num);
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+        }
+        break;
+
+    case 7: // log_name
+        {
+            dbref target;
+            nWanted = sizeof(target);
+            if (  !Pipe_GetBytes(pqi, &nWanted, &target)
+               || nWanted != sizeof(target))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            mr = m_pILog->log_name(target);
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+        }
+        break;
+
+    case 8: // log_name_and_loc
+        {
+            dbref player;
+            nWanted = sizeof(player);
+            if (  !Pipe_GetBytes(pqi, &nWanted, &player)
+               || nWanted != sizeof(player))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            mr = m_pILog->log_name_and_loc(player);
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+        }
+        break;
+
+    case 9: // log_type_and_name
+        {
+            dbref thing;
+            nWanted = sizeof(thing);
+            if (  !Pipe_GetBytes(pqi, &nWanted, &thing)
+               || nWanted != sizeof(thing))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            mr = m_pILog->log_type_and_name(thing);
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+        }
+        break;
+
+    case 10: // end_log
+        {
+            mr = m_pILog->end_log();
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+        }
+        break;
+
+    default:
+        mr = MUX_E_NOTIMPLEMENTED;
+        break;
+    }
+    return mr;
+}
+
+MUX_RESULT CLogStub::IsSupported(MUX_IID riid)
+{
+    if (IID_ILog == riid)
+    {
+        return MUX_S_OK;
+    }
+    return MUX_S_FALSE;
+}
+
+uint32_t CLogStub::CountRefs(void)
+{
+    return (nullptr != m_pILog) ? 1 : 0;
+}
+
+// CLogPSFactory: proxy-stub factory for mux_ILog.
+//
+CLogPSFactory::CLogPSFactory(void) : m_cRef(1)
+{
+}
+
+CLogPSFactory::~CLogPSFactory()
+{
+}
+
+MUX_RESULT CLogPSFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IPSFactoryBuffer *>(this);
+    }
+    else if (mux_IID_IPSFactoryBuffer == iid)
+    {
+        *ppv = static_cast<mux_IPSFactoryBuffer *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CLogPSFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CLogPSFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CLogPSFactory::CreateProxy(mux_IUnknown *pUnknownOuter, MUX_IID riid, mux_IRpcProxyBuffer **ppProxy, void **ppv)
+{
+    UNUSED_PARAMETER(pUnknownOuter);
+
+    if (IID_ILog != riid)
+    {
+        *ppProxy = nullptr;
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+
+    CLogProxy *pProxy = nullptr;
+    try
+    {
+        pProxy = new CLogProxy;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pProxy)
+    {
+        *ppProxy = nullptr;
+        *ppv = nullptr;
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    // Both ppProxy and ppv point into the same object.
+    //
+    *ppProxy = static_cast<mux_IRpcProxyBuffer *>(pProxy);
+    pProxy->AddRef();
+    *ppv = static_cast<mux_ILog *>(pProxy);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CLogPSFactory::CreateStub(MUX_IID riid, mux_IUnknown *pUnknownOuter, mux_IRpcStubBuffer **ppStub)
+{
+    if (IID_ILog != riid)
+    {
+        *ppStub = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+
+    CLogStub *pStub = nullptr;
+    try
+    {
+        pStub = new CLogStub;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pStub)
+    {
+        *ppStub = nullptr;
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    if (nullptr != pUnknownOuter)
+    {
+        MUX_RESULT mr = pStub->Connect(pUnknownOuter);
+        if (MUX_FAILED(mr))
+        {
+            pStub->Release();
+            *ppStub = nullptr;
+            return mr;
+        }
+    }
+
+    *ppStub = static_cast<mux_IRpcStubBuffer *>(pStub);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CLogPSFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
+{
+    // This factory is used via IPSFactoryBuffer, but also via IClassFactory
+    // for the standard marshaler to obtain it through mux_CreateInstance.
+    //
+    if (nullptr != pUnknownOuter)
+    {
+        return MUX_E_NOAGGREGATION;
+    }
+    return QueryInterface(iid, ppv);
+}
+
+MUX_RESULT CLogPSFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}

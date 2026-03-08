@@ -11,8 +11,8 @@
  *
  * There is support for spawning a stubslave process which can then load
  * modules out-of-proc.  There is a primative poor man's RPC for communicating
- * with stubslave across a pipe and marhshaling across interfaces and
- * arguments.  Custom Marshaling works, and Standard Marshaling is planned.
+ * with stubslave across a pipe and marshaling across interfaces and
+ * arguments.  Both Custom Marshaling and Standard Marshaling are supported.
  *
  * While there is no support for multiple threads, methods are expected to be
  * re-entrant.  Don't be surprised if your call to another process results
@@ -139,14 +139,13 @@ extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendMsgPacket(uint32_t nChannel
 extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendDiscPacket(uint32_t nChannel, QUEUE_INFO *pqi);
 
 
-// The following is part of what is called 'Standard Marshaling'.  Since this
-// is only partially implemented, the related interfaces are subject to change.
+// The following is part of what is called 'Standard Marshaling'.
 //
 interface mux_IRpcProxyBuffer : public mux_IUnknown
 {
 public:
     virtual MUX_RESULT Connect(uint32_t nChannel) = 0;
-    virtual void       Disconnect(void);
+    virtual void       Disconnect(void) = 0;
 };
 
 interface mux_IRpcStubBuffer : public mux_IUnknown

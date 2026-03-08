@@ -1025,6 +1025,7 @@ public:
     virtual MUX_RESULT ReleaseMarshalData(QUEUE_INFO *pqi);
     virtual MUX_RESULT DisconnectObject(void);
 
+    CStandardMarshaler(void);
     CStandardMarshaler(MUX_IID riid, marshal_context ctx);
     virtual ~CStandardMarshaler();
 
@@ -1104,10 +1105,34 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_UnmarshalInterface(QUEUE_INFO *pqi,
     if (  Pipe_GetBytes(pqi, &nWanted, &cidProxy)
        && sizeof(cidProxy) == nWanted)
     {
-        // Open an IMarshal interface on the given proxy and pass it the marshal packet.
-        //
         mux_IMarshal *pIMarshal = nullptr;
-        mr = mux_CreateInstance(cidProxy, nullptr, UseSameProcess, mux_IID_IMarshal, (void **)&pIMarshal);
+        if (mux_CID_StandardMarshaler == cidProxy)
+        {
+            // The standard marshaler is internal to libmux and not registered
+            // in the class table.  Create it directly.
+            //
+            try
+            {
+                pIMarshal = new CStandardMarshaler();
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
+
+            if (nullptr == pIMarshal)
+            {
+                mr = MUX_E_OUTOFMEMORY;
+            }
+        }
+        else
+        {
+            // Open an IMarshal interface on the given proxy and pass it
+            // the marshal packet.
+            //
+            mr = mux_CreateInstance(cidProxy, nullptr, UseSameProcess, mux_IID_IMarshal, (void **)&pIMarshal);
+        }
+
         if (MUX_SUCCEEDED(mr))
         {
             mr = pIMarshal->UnmarshalInterface(pqi, riid, ppv);
@@ -1744,6 +1769,10 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendDiscPacket(uint32_t iReturnCha
 
 // Standard Marshaler which is not directly accessible.
 //
+CStandardMarshaler::CStandardMarshaler(void) : m_cRef(1), m_riid(0), m_ctx(CrossProcess)
+{
+}
+
 CStandardMarshaler::CStandardMarshaler(MUX_IID riid, marshal_context ctx) : m_cRef(1)
 {
     m_riid = riid;
@@ -1882,7 +1911,56 @@ MUX_RESULT CStandardMarshaler::MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, v
 
 MUX_RESULT CStandardMarshaler::UnmarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, void **ppv)
 {
-    return MUX_E_NOTIMPLEMENTED;
+    // The marshal data written by MarshalInterface contains: riid | nChannel.
+    //
+    MUX_IID riidStored;
+    size_t nWanted = sizeof(riidStored);
+    if (  !Pipe_GetBytes(pqi, &nWanted, &riidStored)
+       || nWanted != sizeof(riidStored))
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    uint32_t nChannel;
+    nWanted = sizeof(nChannel);
+    if (  !Pipe_GetBytes(pqi, &nWanted, &nChannel)
+       || nWanted != sizeof(nChannel))
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    // Look up the proxy-stub factory for this interface.
+    //
+    std::map<MUX_IID, MUX_INTERFACE_INFO *>::iterator it = g_Interfaces.find(riidStored);
+    if (g_Interfaces.end() == it)
+    {
+        return MUX_E_NOINTERFACE;
+    }
+
+    MUX_CID cidProxyStub = it->second->cidProxyStub;
+    mux_IPSFactoryBuffer *pIPSFactoryBuffer = nullptr;
+    MUX_RESULT mr = mux_CreateInstance(cidProxyStub, nullptr, UseSameProcess, mux_IID_IPSFactoryBuffer, (void **)&pIPSFactoryBuffer);
+    if (MUX_FAILED(mr))
+    {
+        return mr;
+    }
+
+    mux_IRpcProxyBuffer *pProxyBuffer = nullptr;
+    mr = pIPSFactoryBuffer->CreateProxy(nullptr, riidStored, &pProxyBuffer, ppv);
+    pIPSFactoryBuffer->Release();
+    if (MUX_FAILED(mr))
+    {
+        return mr;
+    }
+
+    mr = pProxyBuffer->Connect(nChannel);
+    pProxyBuffer->Release();
+    if (MUX_FAILED(mr))
+    {
+        reinterpret_cast<mux_IUnknown *>(*ppv)->Release();
+        *ppv = nullptr;
+    }
+    return mr;
 }
 
 MUX_RESULT CStandardMarshaler::ReleaseMarshalData(QUEUE_INFO *pqi)

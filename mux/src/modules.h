@@ -52,6 +52,7 @@ const MUX_IID IID_IFunction              = UINT64_C(0x00000002D34910C1);
 const MUX_IID IID_IQueryControl          = UINT64_C(0x00000002ECD689FC);
 const MUX_IID IID_IServerEventsSink      = UINT64_C(0x00000002F0F2753F);
 const MUX_IID CID_QueryClient            = UINT64_C(0x00000002F571AB88);
+const MUX_CID CID_LogPSFactory           = UINT64_C(0x00000002BC269C88);
 const MUX_CID CID_Functions              = UINT64_C(0x00000002FE32BEA1);
 
 interface mux_ILog : public mux_IUnknown

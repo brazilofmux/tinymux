@@ -1437,4 +1437,20 @@ DEFINE_FACTORY(CServerEventsSourceFactory)
 DEFINE_FACTORY(CQueryClientFactory)
 DEFINE_FACTORY(CFunctionsFactory)
 
+class CLogPSFactory : public mux_IPSFactoryBuffer, public mux_IClassFactory
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+    virtual MUX_RESULT CreateProxy(mux_IUnknown *pUnknownOuter, MUX_IID riid, mux_IRpcProxyBuffer **ppProxy, void **ppv);
+    virtual MUX_RESULT CreateStub(MUX_IID riid, mux_IUnknown *pUnknownOuter, mux_IRpcStubBuffer **ppStub);
+    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);
+    virtual MUX_RESULT LockServer(bool bLock);
+    CLogPSFactory(void);
+    virtual ~CLogPSFactory();
+private:
+    uint32_t m_cRef;
+};
+
 #endif // EXTERNS_H

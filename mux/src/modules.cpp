@@ -17,7 +17,8 @@ static MUX_CLASS_INFO netmux_classes[] =
     { CID_ServerEventsSource },
     { CID_StubSlaveProxy     },
     { CID_QueryClient        },
-    { CID_Functions          }
+    { CID_Functions          },
+    { CID_LogPSFactory       }
 };
 #define NUM_CLASSES (sizeof(netmux_classes)/sizeof(netmux_classes[0]))
 
@@ -127,8 +128,34 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
         mr = pFunctionsFactory->QueryInterface(iid, ppv);
         pFunctionsFactory->Release();
     }
+    else if (CID_LogPSFactory == cid)
+    {
+        CLogPSFactory *pLogPSFactory = nullptr;
+        try
+        {
+            pLogPSFactory = new CLogPSFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == pLogPSFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pLogPSFactory->QueryInterface(iid, ppv);
+        pLogPSFactory->Release();
+    }
     return mr;
 }
+
+static MUX_INTERFACE_INFO netmux_interfaces[] =
+{
+    { IID_ILog, CID_LogPSFactory }
+};
+#define NUM_INTERFACES (sizeof(netmux_interfaces)/sizeof(netmux_interfaces[0]))
 
 MUX_RESULT init_modules(void)
 {
@@ -136,6 +163,10 @@ MUX_RESULT init_modules(void)
     if (MUX_SUCCEEDED(mr))
     {
         mr = mux_RegisterClassObjects(NUM_CLASSES, netmux_classes, netmux_GetClassObject);
+    }
+    if (MUX_SUCCEEDED(mr))
+    {
+        mr = mux_RegisterInterfaces(NUM_INTERFACES, netmux_interfaces);
     }
     return mr;
 }
@@ -195,6 +226,8 @@ void final_stubslave(void)
 void final_modules(void)
 {
     MUX_RESULT mr = MUX_S_OK;
+
+    mux_RevokeInterfaces(NUM_INTERFACES, netmux_interfaces);
 
     mr = mux_RevokeClassObjects(NUM_CLASSES, netmux_classes);
     if (MUX_FAILED(mr))

@@ -4302,7 +4302,7 @@ printf "%s\n" "$ac_try_echo"; } >&5
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }
 then :
-  # Autoconf-2.14 could set the ac_cv_exeext variable to `no'.
+  # Autoconf-2.13 could set the ac_cv_exeext variable to `no'.
 # So ignore a value of `no', otherwise this would lead to `EXEEXT = no'
 # in a Makefile.  We should not override ac_cv_exeext if it was cached,
 # so that the user can short-circuit this test for compilers unknown to
