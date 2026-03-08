@@ -39,6 +39,7 @@ const MUX_CID CID_MailMod = UINT64_C(0x00000002D7A3E1B5);
 #define M_REPLY     0x4000
 
 #define MAX_FOLDERS 15
+#define FOLDER_NAME_LEN 20
 #define All(ms)     ((ms).flags & M_ALL)
 #define FolderBit(f) (256 * (f))
 #define Folder(m)   ((m->read & ~M_FMASK) >> 8)
@@ -204,6 +205,16 @@ private:
         dbref player);
     bool mail_match(struct mail *mp, struct mail_selector &ms, int num);
     int  player_folder(dbref player);
+    void set_player_folder(dbref player, int fnum);
+    const UTF8 *get_folder_name(dbref player, int fld);
+    int  get_folder_number(dbref player, const UTF8 *name);
+    int  parse_folder(dbref player, const UTF8 *folder_string);
+    void add_folder_name(dbref player, int fld, const UTF8 *name);
+    bool mail_to_player(dbref player, struct mail *mp);
+    bool mail_from_player(dbref player, struct mail *mp);
+    void count_mail_internal(dbref player, int folder,
+        int *rcount, int *ucount, int *ccount);
+    void urgent_mail_internal(dbref player, int folder, int *ucount);
 
     // Display helpers.
     //
@@ -227,6 +238,16 @@ private:
     void do_mail_stats(dbref player, int folder);
     bool do_mail_stub(dbref player, const UTF8 *arg1,
         const UTF8 *arg2);
+    void do_mail_change_folder(dbref player, const UTF8 *fld,
+        const UTF8 *newname);
+    void DoListMailBrief(dbref player);
+    void ListMailInFolder(dbref player, const UTF8 *folder_name,
+        const UTF8 *msglist);
+    void ListMailInFolderNumber(dbref player, int folder_num,
+        const UTF8 *msglist);
+    void do_mail_review(dbref player, const UTF8 *name,
+        const UTF8 *msglist);
+    void do_mail_review_all(dbref player, const UTF8 *msglist);
 
     // Message body management.
     //

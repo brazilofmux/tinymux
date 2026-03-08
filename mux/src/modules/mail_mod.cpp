@@ -25,6 +25,24 @@
 
 #include <cstring>
 #include <cstdlib>
+#include <cctype>
+
+// En-dash line for mail display borders.
+//
+static const UTF8 *MOD_DASH_LINE =
+    T("\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93");
 
 // Module bookkeeping.
 //
@@ -1452,6 +1470,828 @@ int CMailMod::player_folder(dbref player)
     return atoi(reinterpret_cast<const char *>(buf));
 }
 
+void CMailMod::set_player_folder(dbref player, int fnum)
+{
+    if (nullptr == m_pIAttributeAccess)
+    {
+        return;
+    }
+    UTF8 buf[16];
+    snprintf(reinterpret_cast<char *>(buf), sizeof(buf), "%d", fnum);
+    m_pIAttributeAccess->SetAttribute(1, player, T("Mailcurf"), buf);
+}
+
+const UTF8 *CMailMod::get_folder_name(dbref player, int fld)
+{
+    if (nullptr == m_pIAttributeAccess)
+    {
+        return T("unnamed");
+    }
+
+    UTF8 aFolders[MOD_LBUF_SIZE];
+    size_t nFolders = 0;
+    MUX_RESULT mr = m_pIAttributeAccess->GetAttribute(player, player,
+        T("Mailfolders"), aFolders, sizeof(aFolders) - 1, &nFolders);
+    if (MUX_FAILED(mr) || 0 == nFolders)
+    {
+        return T("unnamed");
+    }
+    aFolders[nFolders] = '\0';
+
+    // Build pattern "N:" where N is the folder number.
+    //
+    char pattern[16];
+    snprintf(pattern, sizeof(pattern), "%d:", fld);
+    size_t nPattern = strlen(pattern);
+
+    const char *found = strstr(reinterpret_cast<const char *>(aFolders), pattern);
+    if (nullptr == found)
+    {
+        return T("unnamed");
+    }
+
+    static UTF8 result[FOLDER_NAME_LEN + 1];
+    const char *p = found + nPattern;
+    char *q = reinterpret_cast<char *>(result);
+    while (*p && *p != ':' && q < reinterpret_cast<char *>(result) + FOLDER_NAME_LEN)
+    {
+        *q++ = *p++;
+    }
+    *q = '\0';
+    return result;
+}
+
+int CMailMod::get_folder_number(dbref player, const UTF8 *name)
+{
+    if (nullptr == m_pIAttributeAccess || nullptr == name || '\0' == *name)
+    {
+        return -1;
+    }
+
+    UTF8 aFolders[MOD_LBUF_SIZE];
+    size_t nFolders = 0;
+    MUX_RESULT mr = m_pIAttributeAccess->GetAttribute(player, player,
+        T("Mailfolders"), aFolders, sizeof(aFolders) - 1, &nFolders);
+    if (MUX_FAILED(mr) || 0 == nFolders)
+    {
+        return -1;
+    }
+    aFolders[nFolders] = '\0';
+
+    // Build upper-case pattern ":NAME:".
+    //
+    char pattern[FOLDER_NAME_LEN + 4];
+    pattern[0] = ':';
+    size_t i = 1;
+    const char *s = reinterpret_cast<const char *>(name);
+    while (*s && i < sizeof(pattern) - 2)
+    {
+        pattern[i++] = toupper(*s);
+        s++;
+    }
+    pattern[i++] = ':';
+    pattern[i] = '\0';
+
+    // Need upper-case version of aFolders for case-insensitive match.
+    //
+    char upper[MOD_LBUF_SIZE];
+    for (size_t k = 0; k <= nFolders; k++)
+    {
+        upper[k] = toupper(aFolders[k]);
+    }
+
+    const char *found = strstr(upper, pattern);
+    if (nullptr == found)
+    {
+        return -1;
+    }
+
+    // The folder number follows the closing ':'.
+    //
+    const char *p = found + strlen(pattern);
+    while (*p && isspace(*p))
+    {
+        p++;
+    }
+    if ('#' == *p)
+    {
+        p++;
+    }
+    return atoi(p);
+}
+
+int CMailMod::parse_folder(dbref player, const UTF8 *folder_string)
+{
+    if (nullptr == folder_string || '\0' == *folder_string)
+    {
+        return -1;
+    }
+    if (isdigit(*folder_string))
+    {
+        int fnum = atoi(reinterpret_cast<const char *>(folder_string));
+        if (fnum < 0 || fnum > MAX_FOLDERS)
+        {
+            return -1;
+        }
+        return fnum;
+    }
+    return get_folder_number(player, folder_string);
+}
+
+void CMailMod::add_folder_name(dbref player, int fld, const UTF8 *name)
+{
+    if (nullptr == m_pIAttributeAccess)
+    {
+        return;
+    }
+
+    UTF8 aFolders[MOD_LBUF_SIZE];
+    size_t nFolders = 0;
+    MUX_RESULT mr = m_pIAttributeAccess->GetAttribute(player, player,
+        T("Mailfolders"), aFolders, sizeof(aFolders) - 1, &nFolders);
+    if (MUX_FAILED(mr))
+    {
+        nFolders = 0;
+    }
+    aFolders[nFolders] = '\0';
+
+    // Build the new record "N:NAME:N" upper-cased.
+    //
+    char record[FOLDER_NAME_LEN + 16];
+    snprintf(record, sizeof(record), "%d:", fld);
+    size_t rlen = strlen(record);
+    const char *s = reinterpret_cast<const char *>(name);
+    while (*s && rlen < sizeof(record) - 8)
+    {
+        record[rlen++] = toupper(*s);
+        s++;
+    }
+    snprintf(record + rlen, sizeof(record) - rlen, ":%d", fld);
+
+    if (0 == nFolders)
+    {
+        // No existing folders — just set the new record.
+        //
+        m_pIAttributeAccess->SetAttribute(1, player,
+            T("Mailfolders"),
+            reinterpret_cast<const UTF8 *>(record));
+        return;
+    }
+
+    // Build pattern "N:" to find existing entry.
+    //
+    char pattern[16];
+    snprintf(pattern, sizeof(pattern), "%d:", fld);
+
+    char *found = strstr(reinterpret_cast<char *>(aFolders), pattern);
+    if (nullptr != found)
+    {
+        // Replace existing entry: skip to end of old record.
+        //
+        UTF8 aNew[MOD_LBUF_SIZE];
+        size_t before = found - reinterpret_cast<char *>(aFolders);
+        memcpy(aNew, aFolders, before);
+        size_t nNew = before;
+
+        // Skip old record (format "N:name:N").
+        //
+        char *end = found + strlen(pattern);
+        while (*end && *end != ' ')
+        {
+            end++;
+        }
+        if (*end == ' ')
+        {
+            end++;
+        }
+
+        // Append new record.
+        //
+        size_t rsize = strlen(record);
+        memcpy(aNew + nNew, record, rsize);
+        nNew += rsize;
+
+        // Append remainder.
+        //
+        size_t remain = nFolders - (end - reinterpret_cast<char *>(aFolders));
+        if (remain > 0)
+        {
+            aNew[nNew++] = ' ';
+            memcpy(aNew + nNew, end, remain);
+            nNew += remain;
+        }
+        aNew[nNew] = '\0';
+
+        m_pIAttributeAccess->SetAttribute(1, player, T("Mailfolders"), aNew);
+    }
+    else
+    {
+        // Append new record.
+        //
+        size_t nOld = strlen(reinterpret_cast<const char *>(aFolders));
+        size_t nRec = strlen(record);
+        if (nOld + 1 + nRec < MOD_LBUF_SIZE)
+        {
+            UTF8 aNew[MOD_LBUF_SIZE];
+            memcpy(aNew, aFolders, nOld);
+            aNew[nOld] = ' ';
+            memcpy(aNew + nOld + 1, record, nRec + 1);
+            m_pIAttributeAccess->SetAttribute(1, player,
+                T("Mailfolders"), aNew);
+        }
+    }
+}
+
+bool CMailMod::mail_to_player(dbref player, struct mail *mp)
+{
+    if (mp->to != player)
+    {
+        return false;
+    }
+    // Check that the mail postdates the player's creation (recycled dbref guard).
+    //
+    if (nullptr == m_pIAttributeAccess)
+    {
+        return true;
+    }
+    UTF8 buf[128];
+    size_t nLen = 0;
+    MUX_RESULT mr = m_pIAttributeAccess->GetAttribute(player, player,
+        T("Created"), buf, sizeof(buf) - 1, &nLen);
+    if (MUX_FAILED(mr) || 0 == nLen)
+    {
+        return false;
+    }
+    buf[nLen] = '\0';
+    CLinearTimeAbsolute ltaCreated, ltaMail;
+    if (  ltaCreated.SetString(buf)
+       && ltaMail.SetString(mp->time))
+    {
+        return ltaCreated <= ltaMail;
+    }
+    return false;
+}
+
+bool CMailMod::mail_from_player(dbref player, struct mail *mp)
+{
+    if (mp->from != player)
+    {
+        return false;
+    }
+    if (nullptr == m_pIAttributeAccess)
+    {
+        return true;
+    }
+    UTF8 buf[128];
+    size_t nLen = 0;
+    MUX_RESULT mr = m_pIAttributeAccess->GetAttribute(player, player,
+        T("Created"), buf, sizeof(buf) - 1, &nLen);
+    if (MUX_FAILED(mr) || 0 == nLen)
+    {
+        return false;
+    }
+    buf[nLen] = '\0';
+    CLinearTimeAbsolute ltaCreated, ltaMail;
+    if (  ltaCreated.SetString(buf)
+       && ltaMail.SetString(mp->time))
+    {
+        return ltaCreated <= ltaMail;
+    }
+    return false;
+}
+
+void CMailMod::count_mail_internal(dbref player, int folder,
+    int *rcount, int *ucount, int *ccount)
+{
+    int rc = 0, uc = 0, cc = 0;
+
+    struct mail *mp = MailListFirst(player);
+    while (nullptr != mp)
+    {
+        if (  Folder(mp) == folder
+           && mail_to_player(player, mp))
+        {
+            if (Read(mp))
+            {
+                rc++;
+            }
+            else
+            {
+                uc++;
+            }
+            if (Cleared(mp))
+            {
+                cc++;
+            }
+        }
+        mp = MailListNext(mp, player);
+    }
+    *rcount = rc;
+    *ucount = uc;
+    *ccount = cc;
+}
+
+void CMailMod::urgent_mail_internal(dbref player, int folder, int *ucount)
+{
+    int uc = 0;
+    struct mail *mp = MailListFirst(player);
+    while (nullptr != mp)
+    {
+        if (  Folder(mp) == folder
+           && mail_to_player(player, mp))
+        {
+            if (Unread(mp) && Urgent(mp))
+            {
+                uc++;
+            }
+        }
+        mp = MailListNext(mp, player);
+    }
+    *ucount = uc;
+}
+
+// ---------------------------------------------------------------------------
+// Folder commands.
+// ---------------------------------------------------------------------------
+
+void CMailMod::do_mail_change_folder(dbref player, const UTF8 *fld,
+    const UTF8 *newname)
+{
+    if (nullptr == fld || '\0' == *fld)
+    {
+        DoListMailBrief(player);
+        return;
+    }
+
+    int pfld = parse_folder(player, fld);
+    if (pfld < 0)
+    {
+        m_pINotify->RawNotify(player, T("MAIL: What folder is that?"));
+        return;
+    }
+
+    if (nullptr != newname && '\0' != *newname)
+    {
+        // Rename folder.
+        //
+        if (strlen(reinterpret_cast<const char *>(newname)) > FOLDER_NAME_LEN)
+        {
+            m_pINotify->RawNotify(player, T("MAIL: Folder name too long"));
+            return;
+        }
+        const UTF8 *p;
+        for (p = newname; isalnum(*p); p++)
+            ;
+        if (*p != '\0')
+        {
+            m_pINotify->RawNotify(player, T("MAIL: Illegal folder name"));
+            return;
+        }
+
+        add_folder_name(player, pfld, newname);
+
+        UTF8 msg[128];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "MAIL: Folder %d now named \xE2\x80\x98%s\xE2\x80\x99",
+                 pfld, reinterpret_cast<const char *>(newname));
+        m_pINotify->RawNotify(player, msg);
+    }
+    else
+    {
+        // Switch to folder.
+        //
+        set_player_folder(player, pfld);
+
+        UTF8 msg[128];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "MAIL: Current folder set to %d [%s].",
+                 pfld,
+                 reinterpret_cast<const char *>(get_folder_name(player, pfld)));
+        m_pINotify->RawNotify(player, msg);
+    }
+}
+
+void CMailMod::DoListMailBrief(dbref player)
+{
+    for (int folder = 0; folder < MAX_FOLDERS; folder++)
+    {
+        int rc, uc, cc, gc;
+        count_mail_internal(player, folder, &rc, &uc, &cc);
+        urgent_mail_internal(player, folder, &gc);
+
+        if (rc + uc > 0)
+        {
+            UTF8 msg[256];
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "MAIL: %d messages in folder %d [%s] (%d unread, %d cleared).",
+                     rc + uc, folder,
+                     reinterpret_cast<const char *>(get_folder_name(player, folder)),
+                     uc, cc);
+            m_pINotify->RawNotify(player, msg);
+        }
+        else
+        {
+            const UTF8 *fname = get_folder_name(player, folder);
+            if (0 != strcmp(reinterpret_cast<const char *>(fname), "unnamed"))
+            {
+                UTF8 msg[256];
+                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                         "MAIL: 0 messages in folder %d [%s].",
+                         folder, reinterpret_cast<const char *>(fname));
+                m_pINotify->RawNotify(player, msg);
+            }
+        }
+
+        if (gc > 0)
+        {
+            UTF8 msg[256];
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "URGENT MAIL: You have %d urgent messages in folder %d [%s].",
+                     gc, folder,
+                     reinterpret_cast<const char *>(get_folder_name(player, folder)));
+            m_pINotify->RawNotify(player, msg);
+        }
+    }
+
+    int current_folder = player_folder(player);
+
+    UTF8 msg[256];
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "MAIL: Current folder is %d [%s].",
+             current_folder,
+             reinterpret_cast<const char *>(get_folder_name(player, current_folder)));
+    m_pINotify->RawNotify(player, msg);
+}
+
+void CMailMod::ListMailInFolderNumber(dbref player, int folder_num,
+    const UTF8 *msglist)
+{
+    int original_folder = player_folder(player);
+    set_player_folder(player, folder_num);
+
+    struct mail_selector ms;
+    if (!parse_msglist(msglist, &ms, player))
+    {
+        set_player_folder(player, original_folder);
+        return;
+    }
+
+    UTF8 hdr[MOD_LBUF_SIZE];
+    snprintf(reinterpret_cast<char *>(hdr), sizeof(hdr),
+             "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+             "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+             "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+             "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+             "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+             "   MAIL: Folder %d   "
+             "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+             "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+             "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+             "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+             "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93",
+             folder_num);
+    m_pINotify->RawNotify(player, hdr);
+
+    int i = 0;
+    struct mail *mp = MailListFirst(player);
+    while (nullptr != mp)
+    {
+        if (Folder(mp) == folder_num)
+        {
+            i++;
+            if (mail_match(mp, ms, i))
+            {
+                UTF8 *time = mail_list_time(mp->time);
+                size_t nSize = MessageFetchSize(mp->number);
+
+                UTF8 szFromName[64];
+                get_player_name(mp->from, szFromName, sizeof(szFromName));
+
+                UTF8 line[MOD_LBUF_SIZE];
+                snprintf(reinterpret_cast<char *>(line), sizeof(line),
+                    "[%s] %-3d (%4zu) From: %-16s Sub: %.25s",
+                    reinterpret_cast<const char *>(status_chars(mp)),
+                    i, nSize,
+                    reinterpret_cast<const char *>(szFromName),
+                    reinterpret_cast<const char *>(mp->subject));
+                m_pINotify->RawNotify(player, line);
+            }
+        }
+        mp = MailListNext(mp, player);
+    }
+    m_pINotify->RawNotify(player, MOD_DASH_LINE);
+
+    set_player_folder(player, original_folder);
+}
+
+void CMailMod::ListMailInFolder(dbref player, const UTF8 *folder_name,
+    const UTF8 *msglist)
+{
+    int folder = 0;
+
+    if (nullptr == folder_name || '\0' == *folder_name)
+    {
+        folder = player_folder(player);
+    }
+    else
+    {
+        folder = parse_folder(player, folder_name);
+    }
+
+    if (-1 == folder)
+    {
+        m_pINotify->RawNotify(player, T("MAIL: No such folder."));
+        return;
+    }
+    ListMailInFolderNumber(player, folder, msglist);
+}
+
+// ---------------------------------------------------------------------------
+// @mail/review — review sent mail.
+// ---------------------------------------------------------------------------
+
+void CMailMod::do_mail_review_all(dbref player, const UTF8 *msglist)
+{
+    int i = 0, j = 0;
+
+    if (nullptr == msglist || '\0' == *msglist)
+    {
+        // Summary mode: list all sent messages grouped by recipient.
+        //
+        for (auto &kv : m_mail_htab)
+        {
+            dbref target = kv.first;
+            bool bHeader = false;
+
+            struct mail *mp = MailListFirst(target);
+            while (nullptr != mp)
+            {
+                if (mail_from_player(player, mp))
+                {
+                    i++;
+
+                    if (!bHeader)
+                    {
+                        UTF8 szName[64];
+                        get_player_name(target, szName, sizeof(szName));
+
+                        UTF8 hdr[MOD_LBUF_SIZE];
+                        snprintf(reinterpret_cast<char *>(hdr), sizeof(hdr),
+                                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                                 "   To: %-25s   "
+                                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93",
+                                 reinterpret_cast<const char *>(szName));
+                        m_pINotify->RawNotify(player, hdr);
+                        bHeader = true;
+                    }
+
+                    UTF8 szFromName[64];
+                    get_player_name(mp->from, szFromName, sizeof(szFromName));
+
+                    size_t nSize = MessageFetchSize(mp->number);
+                    UTF8 line[MOD_LBUF_SIZE];
+                    snprintf(reinterpret_cast<char *>(line), sizeof(line),
+                             "[%s] %-3d (%4zu) From: %-16s Sub: %.25s",
+                             reinterpret_cast<const char *>(status_chars(mp)),
+                             i, nSize,
+                             reinterpret_cast<const char *>(szFromName),
+                             reinterpret_cast<const char *>(mp->subject));
+                    m_pINotify->RawNotify(player, line);
+                }
+                mp = MailListNext(mp, target);
+            }
+        }
+
+        if (0 == i)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: You have no matching messages."));
+        }
+        else
+        {
+            m_pINotify->RawNotify(player, MOD_DASH_LINE);
+        }
+    }
+    else
+    {
+        // Detail mode: show full messages matching msglist.
+        //
+        struct mail_selector ms;
+        if (!parse_msglist(msglist, &ms, player))
+        {
+            return;
+        }
+
+        for (auto &kv : m_mail_htab)
+        {
+            dbref target = kv.first;
+
+            struct mail *mp = MailListFirst(target);
+            while (nullptr != mp)
+            {
+                if (mail_from_player(player, mp))
+                {
+                    i++;
+                    if (mail_match(mp, ms, i))
+                    {
+                        j++;
+                        const UTF8 *body = MessageFetch(mp->number);
+
+                        UTF8 szFromName[64];
+                        get_player_name(mp->from, szFromName, sizeof(szFromName));
+
+                        m_pINotify->RawNotify(player, MOD_DASH_LINE);
+
+                        UTF8 hdr[MOD_LBUF_SIZE];
+                        snprintf(reinterpret_cast<char *>(hdr), sizeof(hdr),
+                            "%-3d         From:  %-16s  At: %-25s  %s\r\n"
+                            "Fldr   : %-2d Status: %s%s%s%s%s%s%s\r\n"
+                            "Subject: %.65s",
+                            i,
+                            reinterpret_cast<const char *>(szFromName),
+                            reinterpret_cast<const char *>(mp->time),
+                            is_connected_visible(mp->from, player) ? " (Conn)" : "      ",
+                            0,
+                            Read(mp)     ? "Read"    : "Unread",
+                            Cleared(mp)  ? " Cleared" : "",
+                            Urgent(mp)   ? " Urgent"  : "",
+                            Mass(mp)     ? " Mass"    : "",
+                            Forward(mp)  ? " Forward" : "",
+                            M_Safe(mp)   ? " Safe"    : "",
+                            Tagged(mp)   ? " Tagged"  : "",
+                            reinterpret_cast<const char *>(mp->subject));
+                        m_pINotify->RawNotify(player, hdr);
+                        m_pINotify->RawNotify(player, MOD_DASH_LINE);
+                        m_pINotify->RawNotify(player, body);
+                        m_pINotify->RawNotify(player, MOD_DASH_LINE);
+                    }
+                }
+                mp = MailListNext(mp, target);
+            }
+        }
+
+        if (!j)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: You don\xE2\x80\x99t have that many matching messages!"));
+        }
+    }
+}
+
+void CMailMod::do_mail_review(dbref player, const UTF8 *name,
+    const UTF8 *msglist)
+{
+    if (  nullptr != name
+       && '\0' != *name
+       && 0 == strcasecmp(reinterpret_cast<const char *>(name), "all"))
+    {
+        do_mail_review_all(player, msglist);
+        return;
+    }
+
+    // Look up the target player.
+    //
+    if (nullptr == name || '\0' == *name)
+    {
+        m_pINotify->RawNotify(player, T("MAIL: No such player."));
+        return;
+    }
+
+    dbref target = NOTHING;
+    if (nullptr != m_pIObjectInfo)
+    {
+        // Prefix with '*' for player lookup.
+        //
+        UTF8 namebuf[256];
+        snprintf(reinterpret_cast<char *>(namebuf), sizeof(namebuf),
+                 "*%s", reinterpret_cast<const char *>(name));
+        m_pIObjectInfo->MatchThing(player, namebuf, &target);
+    }
+
+    if (NOTHING == target)
+    {
+        m_pINotify->RawNotify(player, T("MAIL: No such player."));
+        return;
+    }
+
+    int i = 0, j = 0;
+
+    if (nullptr == msglist || '\0' == *msglist)
+    {
+        // Summary: list mail sent to target.
+        //
+        UTF8 szName[64];
+        get_player_name(target, szName, sizeof(szName));
+
+        UTF8 hdr[MOD_LBUF_SIZE];
+        snprintf(reinterpret_cast<char *>(hdr), sizeof(hdr),
+                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                 "   To: %-25s   "
+                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+                 "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93",
+                 reinterpret_cast<const char *>(szName));
+        m_pINotify->RawNotify(player, hdr);
+
+        struct mail *mp = MailListFirst(target);
+        while (nullptr != mp)
+        {
+            if (mail_from_player(player, mp))
+            {
+                i++;
+
+                UTF8 szFromName[64];
+                get_player_name(mp->from, szFromName, sizeof(szFromName));
+
+                size_t nSize = MessageFetchSize(mp->number);
+                UTF8 line[MOD_LBUF_SIZE];
+                snprintf(reinterpret_cast<char *>(line), sizeof(line),
+                         "[%s] %-3d (%4zu) From: %-16s Sub: %.25s",
+                         reinterpret_cast<const char *>(status_chars(mp)),
+                         i, nSize,
+                         reinterpret_cast<const char *>(szFromName),
+                         reinterpret_cast<const char *>(mp->subject));
+                m_pINotify->RawNotify(player, line);
+            }
+            mp = MailListNext(mp, target);
+        }
+        m_pINotify->RawNotify(player, MOD_DASH_LINE);
+    }
+    else
+    {
+        // Detail mode: show full messages.
+        //
+        struct mail_selector ms;
+        if (!parse_msglist(msglist, &ms, target))
+        {
+            return;
+        }
+
+        struct mail *mp = MailListFirst(target);
+        while (nullptr != mp)
+        {
+            if (mail_from_player(player, mp))
+            {
+                i++;
+                if (mail_match(mp, ms, i))
+                {
+                    j++;
+                    const UTF8 *body = MessageFetch(mp->number);
+
+                    UTF8 szFromName[64];
+                    get_player_name(mp->from, szFromName, sizeof(szFromName));
+
+                    m_pINotify->RawNotify(player, MOD_DASH_LINE);
+
+                    UTF8 hdr2[MOD_LBUF_SIZE];
+                    snprintf(reinterpret_cast<char *>(hdr2), sizeof(hdr2),
+                        "%-3d         From:  %-16s  At: %-25s  %s\r\n"
+                        "Fldr   : %-2d Status: %s%s%s%s%s%s%s\r\n"
+                        "Subject: %.65s",
+                        i,
+                        reinterpret_cast<const char *>(szFromName),
+                        reinterpret_cast<const char *>(mp->time),
+                        is_connected_visible(mp->from, player) ? " (Conn)" : "      ",
+                        0,
+                        Read(mp)     ? "Read"    : "Unread",
+                        Cleared(mp)  ? " Cleared" : "",
+                        Urgent(mp)   ? " Urgent"  : "",
+                        Mass(mp)     ? " Mass"    : "",
+                        Forward(mp)  ? " Forward" : "",
+                        M_Safe(mp)   ? " Safe"    : "",
+                        Tagged(mp)   ? " Tagged"  : "",
+                        reinterpret_cast<const char *>(mp->subject));
+                    m_pINotify->RawNotify(player, hdr2);
+                    m_pINotify->RawNotify(player, MOD_DASH_LINE);
+                    m_pINotify->RawNotify(player, body);
+                    m_pINotify->RawNotify(player, MOD_DASH_LINE);
+                }
+            }
+            mp = MailListNext(mp, target);
+        }
+
+        if (!j)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: You don\xE2\x80\x99t have that many matching messages!"));
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Command implementations.
 // ---------------------------------------------------------------------------
@@ -1541,23 +2381,6 @@ void CMailMod::do_mail_flags(dbref player, const UTF8 *msglist,
 // ---------------------------------------------------------------------------
 // Display helpers.
 // ---------------------------------------------------------------------------
-
-// En-dash line for mail display borders.
-//
-static const UTF8 *MOD_DASH_LINE =
-    T("\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93");
 
 UTF8 *CMailMod::status_chars(struct mail *mp)
 {
@@ -2066,9 +2889,8 @@ bool CMailMod::do_mail_stub(dbref player, const UTF8 *arg1,
 
 MUX_RESULT CMailMod::PlayerConnect(dbref player)
 {
-    // TODO: Check mail on connect and notify player.
-    UNUSED_PARAMETER(player);
-    return MUX_E_NOTIMPLEMENTED;
+    CheckMail(player, player_folder(player), false);
+    return MUX_S_OK;
 }
 
 MUX_RESULT CMailMod::PlayerNuke(dbref player)
@@ -2081,8 +2903,6 @@ MUX_RESULT CMailMod::PlayerNuke(dbref player)
 MUX_RESULT CMailMod::MailCommand(dbref executor, int key,
     const UTF8 *pArg1, const UTF8 *pArg2)
 {
-    UNUSED_PARAMETER(pArg2);
-
     switch (key & ~MAIL_QUOTE)
     {
     case MAIL_CLEAR:
@@ -2137,6 +2957,14 @@ MUX_RESULT CMailMod::MailCommand(dbref executor, int key,
         do_mail_stats(executor, 0);
         return MUX_S_OK;
 
+    case MAIL_REVIEW:
+        do_mail_review(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    case MAIL_FOLDER:
+        do_mail_change_folder(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
     case 0:
         // Default @mail (no switch).
         //
@@ -2165,22 +2993,72 @@ MUX_RESULT CMailMod::MaliasCommand(dbref executor, int key,
 MUX_RESULT CMailMod::FolderCommand(dbref executor, int key, int nargs,
     const UTF8 *pArg1, const UTF8 *pArg2)
 {
-    // TODO: Implement folder command dispatch.
-    UNUSED_PARAMETER(executor);
-    UNUSED_PARAMETER(key);
-    UNUSED_PARAMETER(nargs);
-    UNUSED_PARAMETER(pArg1);
-    UNUSED_PARAMETER(pArg2);
-    return MUX_E_NOTIMPLEMENTED;
+    switch (key)
+    {
+    case FOLDER_FILE:
+        do_mail_file(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    case FOLDER_LIST:
+        ListMailInFolder(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    case FOLDER_READ:
+        do_mail_read(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    case FOLDER_SET:
+        do_mail_change_folder(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    default:
+        if (nullptr == pArg1 || '\0' == *pArg1)
+        {
+            DoListMailBrief(executor);
+        }
+        else if (2 == nargs)
+        {
+            do_mail_read(executor, pArg1, pArg2);
+        }
+        else
+        {
+            do_mail_change_folder(executor, pArg1, pArg2);
+        }
+        return MUX_S_OK;
+    }
 }
 
 MUX_RESULT CMailMod::CheckMail(dbref player, int folder, bool silent)
 {
-    // TODO: Implement check mail (needs get_folder_name, urgent_mail).
-    UNUSED_PARAMETER(player);
-    UNUSED_PARAMETER(folder);
-    UNUSED_PARAMETER(silent);
-    return MUX_E_NOTIMPLEMENTED;
+    int rc, uc, cc, gc;
+    count_mail_internal(player, folder, &rc, &uc, &cc);
+    urgent_mail_internal(player, folder, &gc);
+
+    if (rc + uc > 0)
+    {
+        UTF8 msg[256];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "MAIL: %d messages in folder %d [%s] (%d unread, %d cleared).",
+                 rc + uc, folder,
+                 reinterpret_cast<const char *>(get_folder_name(player, folder)),
+                 uc, cc);
+        m_pINotify->RawNotify(player, msg);
+    }
+    else if (!silent)
+    {
+        m_pINotify->RawNotify(player,
+            T("\r\nMAIL: You have no mail.\r\n"));
+    }
+    if (gc > 0)
+    {
+        UTF8 msg[256];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "URGENT MAIL: You have %d urgent messages in folder %d [%s].",
+                 gc, folder,
+                 reinterpret_cast<const char *>(get_folder_name(player, folder)));
+        m_pINotify->RawNotify(player, msg);
+    }
+    return MUX_S_OK;
 }
 
 MUX_RESULT CMailMod::ExpireMail(void)
@@ -2192,13 +3070,8 @@ MUX_RESULT CMailMod::ExpireMail(void)
 MUX_RESULT CMailMod::CountMail(dbref player, int folder,
     int *pRead, int *pUnread, int *pCleared)
 {
-    // TODO: Enable when module fully owns mail data.
-    UNUSED_PARAMETER(player);
-    UNUSED_PARAMETER(folder);
-    UNUSED_PARAMETER(pRead);
-    UNUSED_PARAMETER(pUnread);
-    UNUSED_PARAMETER(pCleared);
-    return MUX_E_NOTIMPLEMENTED;
+    count_mail_internal(player, folder, pRead, pUnread, pCleared);
+    return MUX_S_OK;
 }
 
 MUX_RESULT CMailMod::DestroyPlayerMail(dbref player)
