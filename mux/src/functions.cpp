@@ -2164,23 +2164,6 @@ static FUNCTION(fun_eval)
     get_handler(buff, bufc, executor, fargs, GET_EVAL);
 }
 
-// eval2() — evaluate via the AST-based evaluator.
-// This is a testing/comparison function for the Phase 2 AST evaluator.
-// eval2(<string>) evaluates <string> using mux_exec2 instead of mux_exec.
-//
-static FUNCTION(fun_eval2)
-{
-    UNUSED_PARAMETER(fp);
-    UNUSED_PARAMETER(cargs);
-    UNUSED_PARAMETER(ncargs);
-
-    if (nfargs >= 1)
-    {
-        mux_exec2(fargs[0], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
-            eval|EV_EVAL|EV_FCHECK, nullptr, 0);
-    }
-}
-
 /*
  * ---------------------------------------------------------------------------
  * * fun_u and fun_ulocal:  Call a user-defined function.
@@ -11757,7 +11740,6 @@ static FUN builtin_function_list[] =
     {T("ESCAPE"),      fun_escape,           1, 1,       1,         0, CA_PUBLIC},
     {T("ETIMEFMT"),    fun_etimefmt,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("EVAL"),        fun_eval,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {T("EVAL2"),       fun_eval2,            1, 1,       1,         0, CA_PUBLIC},
     {T("EXIT"),        fun_exit,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("EXP"),         fun_exp,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("EXPTIME"),     fun_exptime,    MAX_ARG, 1,       1,         0, CA_PUBLIC},

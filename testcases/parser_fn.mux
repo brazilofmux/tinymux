@@ -2,8 +2,8 @@
 # parser_fn.mux - Test Cases for parser behavior.
 #
 # Tests fundamental expression parser mechanics rather than any
-# particular softcode function.  Each test verifies that eval2()
-# (AST evaluator) produces the same result as direct evaluation.
+# particular softcode function.  Each test verifies that eval()
+# produces the same result as direct evaluation.
 #
 @create test_parser_fn
 -
@@ -21,9 +21,9 @@
 &tr.tc001 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(hello world)]
-            [eval2(ABCDEFG)]
-            [eval2(1234567890)]
+            [eval(hello world)]
+            [eval(ABCDEFG)]
+            [eval(1234567890)]
           )
         ),
         setr(1,sha1(
@@ -46,9 +46,9 @@
 &tr.tc002 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(a  b)]
-            [eval2(a    b)]
-            [eval2(a          b)]
+            [eval(a  b)]
+            [eval(a    b)]
+            [eval(a          b)]
           )
         ),
         setr(1,sha1(
@@ -71,9 +71,9 @@
 &tr.tc003 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(a%bb)]
-            [eval2(a%rb)]
-            [eval2(a%tb)]
+            [eval(a%bb)]
+            [eval(a%rb)]
+            [eval(a%tb)]
           )
         ),
         setr(1,sha1(
@@ -93,13 +93,13 @@
 #
 # Test Case #4 - %-substitutions: %# (enactor), %! (executor).
 #
-# Dbrefs vary per run so we compare eval2 vs direct evaluation.
+# Dbrefs vary per run so we compare eval vs direct evaluation.
 #
 &tr.tc004 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(enactor=%#)]
-            [eval2(executor=%!)]
+            [eval(enactor=%#)]
+            [eval(executor=%!)]
           )
         ),
         setr(1,sha1(
@@ -123,7 +123,7 @@
         setr(0,sha1(
             [setr(1,apple)]
             [setr(2,banana)]
-            [eval2(%q1-%q2)]
+            [eval(%q1-%q2)]
           )
         ),
         setr(3,sha1(
@@ -143,15 +143,15 @@
 #
 # Test Case #6 - Eval brackets: [function()] evaluates inline.
 #
-# Use \[ and \] to pass literal brackets into eval2's argument.
-# The outer eval turns \[ into [, then eval2 re-evaluates.
+# Use \[ and \] to pass literal brackets into eval's argument.
+# The outer eval turns \[ into [, then eval re-evaluates.
 #
 &tr.tc006 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(\[add(1,2)\])]
-            [eval2(\[mul(3,4)\])]
-            [eval2(x\[add(5,6)\]y)]
+            [eval(\[add(1,2)\])]
+            [eval(\[mul(3,4)\])]
+            [eval(x\[add(5,6)\]y)]
           )
         ),
         setr(1,sha1(
@@ -174,7 +174,7 @@
 &tr.tc007 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(\[add(1,1)\]\[add(2,2)\]\[add(3,3)\])]
+            [eval(\[add(1,1)\]\[add(2,2)\]\[add(3,3)\])]
           )
         ),
         setr(1,sha1(
@@ -195,9 +195,9 @@
 &tr.tc008 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(if(1,{hello},{goodbye}))]
-            [eval2(if(0,{hello},{goodbye}))]
-            [eval2(switch(b,a,{alpha},b,{beta},*,{other}))]
+            [eval(if(1,{hello},{goodbye}))]
+            [eval(if(0,{hello},{goodbye}))]
+            [eval(switch(b,a,{alpha},b,{beta},*,{other}))]
           )
         ),
         setr(1,sha1(
@@ -220,8 +220,8 @@
 &tr.tc009 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(switch(a,a,{result,with,commas},*,other))]
-            [eval2(if(1,{x,y,z}))]
+            [eval(switch(a,a,{result,with,commas},*,other))]
+            [eval(if(1,{x,y,z}))]
           )
         ),
         setr(1,sha1(
@@ -243,7 +243,7 @@
 &tr.tc010 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(if(1,{outer {inner} text}))]
+            [eval(if(1,{outer {inner} text}))]
           )
         ),
         setr(1,sha1(
@@ -264,10 +264,10 @@
 &tr.tc011 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(add(1,2))]
-            [eval2(add(1,mul(2,3)))]
-            [eval2(pi())]
-            [eval2(e())]
+            [eval(add(1,2))]
+            [eval(add(1,mul(2,3)))]
+            [eval(pi())]
+            [eval(e())]
           )
         ),
         setr(1,sha1(
@@ -291,8 +291,8 @@
 &tr.tc012 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(add(1,add(2,add(3,add(4,5)))))]
-            [eval2(strlen(ucstr(lcstr(mid(hello world,0,5)))))]
+            [eval(add(1,add(2,add(3,add(4,5)))))]
+            [eval(strlen(ucstr(lcstr(mid(hello world,0,5)))))]
           )
         ),
         setr(1,sha1(
@@ -309,29 +309,6 @@
   }
 -
 #
-# Test Case #13 - Commas are literal text outside function calls.
-#
-# eval2 has maxArgsParsed=1 so commas are literal in its argument.
-#
-&tr.tc013 test_parser_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [eval2(a,b,c)]
-          )
-        ),
-        setr(1,sha1(
-            a,b,c
-          )
-        )
-      )=
-  {
-    @log smoke=TC013: parser literal commas. Succeeded.
-  },
-  {
-    @log smoke=TC013: parser literal commas. Failed (%q0 vs %q1).
-  }
--
-#
 # Test Case #14 - Empty function arguments.
 #
 # Test that the parser correctly handles empty arguments in function
@@ -341,9 +318,9 @@
 &tr.tc014 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(if(,yes,no))]
-            [eval2(add(,1))]
-            [eval2(strlen(cat(a,,b)))]
+            [eval(if(,yes,no))]
+            [eval(add(,1))]
+            [eval(strlen(cat(a,,b)))]
           )
         ),
         setr(1,sha1(
@@ -367,8 +344,8 @@
 &tr.tc015 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(sha1(hello,world))]
-            [eval2(sha1(a,b,c))]
+            [eval(sha1(hello,world))]
+            [eval(sha1(a,b,c))]
           )
         ),
         setr(1,sha1(
@@ -390,8 +367,8 @@
 &tr.tc016 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(notafunc(x))]
-            [eval2(xyzzy(1,2,3))]
+            [eval(notafunc(x))]
+            [eval(xyzzy(1,2,3))]
           )
         ),
         setr(1,sha1(
@@ -413,8 +390,8 @@
 &tr.tc017 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(if(1,{[add(1,2)]},{[mul(3,4)]}))]
-            [eval2(switch(a,a,{[ucstr(hello)]},*,{none}))]
+            [eval(if(1,{[add(1,2)]},{[mul(3,4)]}))]
+            [eval(switch(a,a,{[ucstr(hello)]},*,{none}))]
           )
         ),
         setr(1,sha1(
@@ -436,8 +413,8 @@
 &tr.tc018 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(@@(this is a comment))]
-            [eval2(hello[@@(invisible)]world)]
+            [eval(@@(this is a comment))]
+            [eval(hello[@@(invisible)]world)]
           )
         ),
         setr(1,sha1(
@@ -459,8 +436,8 @@
 &tr.tc019 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(switchall(a,a,first,a,second,*,star))]
-            [eval2(caseall(a,a,first,a,second,*,star))]
+            [eval(switchall(a,a,first,a,second,*,star))]
+            [eval(caseall(a,a,first,a,second,*,star))]
           )
         ),
         setr(1,sha1(
@@ -482,8 +459,8 @@
 &tr.tc020 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2(iter(X Y Z,%i0))]
-            [eval2(iter(10 20 30,[add(%i0,1)]))]
+            [eval(iter(X Y Z,%i0))]
+            [eval(iter(10 20 30,[add(%i0,1)]))]
           )
         ),
         setr(1,sha1(
@@ -502,14 +479,13 @@
 #
 # Test Case #21 - Edge probe: unterminated function call text.
 #
-# Compatibility probe for malformed input.  If eval2 diverges from
-# direct eval here, that is a known parser-compatibility choice.
+# Compatibility probe for malformed input.
 #
 &tr.tc021 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
             [setr(9,EDGE)]
-            [eval2({notafunc(%q9})]
+            [eval({notafunc(%q9})]
           )
         ),
         D1CA511E282F982BB9FB5557A7BE19D2A0E0A547
@@ -530,9 +506,9 @@
 &tr.tc022 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({%q<missing})]
-            [eval2({%x<blue})]
-            [eval2({%=<attr})]
+            [eval({%q<missing})]
+            [eval({%x<blue})]
+            [eval({%=<attr})]
           )
         ),
         setr(1,sha1(
@@ -557,8 +533,8 @@
 &tr.tc023 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({A%x?B})]
-            [eval2({A%c?B})]
+            [eval({A%x?B})]
+            [eval({A%c?B})]
           )
         ),
         setr(1,sha1(
@@ -582,7 +558,7 @@
 &tr.tc024 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({prefix [add(1,2)] %q<oops suffix})]
+            [eval({prefix [add(1,2)] %q<oops suffix})]
           )
         ),
         5BC915E1A1836B6B2A5D86314A1DD90848D1F581
@@ -600,7 +576,7 @@
 &tr.tc025 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({notafunc([add(1,2)]})]
+            [eval({notafunc([add(1,2)]})]
           )
         ),
         320AFE3C83E91C94CA68B8FC478F95DD8F59ED81
@@ -618,7 +594,7 @@
 &tr.tc026 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({notafunc(foo(bar(1)})]
+            [eval({notafunc(foo(bar(1)})]
           )
         ),
         0A72419F0727120131B818813AC604EF2B6B4402
@@ -636,7 +612,7 @@
 &tr.tc027 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({notafunc(a,b,c})]
+            [eval({notafunc(a,b,c})]
           )
         ),
         8FE475F218B6252E71BEE7369015D0A79294D478
@@ -654,9 +630,9 @@
 &tr.tc028 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({%q<>})]
-            [eval2({%q<0>})]
-            [eval2({%q<name>>})]
+            [eval({%q<>})]
+            [eval({%q<0>})]
+            [eval({%q<name>>})]
           )
         ),
         091385BE99B45F459A231582D583EC9F3FA3D194
@@ -674,10 +650,10 @@
 &tr.tc029 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({A%xB})]
-            [eval2({A%x<})]
-            [eval2({A%x<noend})]
-            [eval2({A%c?B})]
+            [eval({A%xB})]
+            [eval({A%x<})]
+            [eval({A%x<noend})]
+            [eval({A%c?B})]
           )
         ),
         68F4E3E995DA3BD32BC4084581F81DD513E1C358
@@ -695,11 +671,11 @@
 &tr.tc030 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({%=})]
-            [eval2({%=<})]
-            [eval2({%=<0})]
-            [eval2({%=<9999>})]
-            [eval2({%=<bad attr>})]
+            [eval({%=})]
+            [eval({%=<})]
+            [eval({%=<0})]
+            [eval({%=<9999>})]
+            [eval({%=<bad attr>})]
           )
         ),
         setr(1,sha1(
@@ -725,7 +701,7 @@
   @if strmatch(
         setr(0,sha1(
             [setr(3,MIX)]
-            [eval2({%q<bad notafunc(%q3 [add(2,2)]})]
+            [eval({%q<bad notafunc(%q3 [add(2,2)]})]
           )
         ),
         5F08604B6375DED60CA9001612314F5301C0A80A
@@ -743,7 +719,7 @@
 &tr.tc032 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({{foo(bar},baz)})]
+            [eval({{foo(bar},baz)})]
           )
         ),
         setr(1,sha1(
@@ -764,7 +740,7 @@
 &tr.tc033 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({A%q<bad;next})]
+            [eval({A%q<bad;next})]
           )
         ),
         setr(1,sha1(
@@ -785,7 +761,7 @@
 &tr.tc034 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({A%x<bad;next})]
+            [eval({A%x<bad;next})]
           )
         ),
         setr(1,sha1(
@@ -806,7 +782,7 @@
 &tr.tc035 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({A%=<bad;next})]
+            [eval({A%=<bad;next})]
           )
         ),
         setr(1,sha1(
@@ -827,7 +803,7 @@
 &tr.tc036 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({A%q<bad(foo})]
+            [eval({A%q<bad(foo})]
           )
         ),
         setr(1,sha1(
@@ -848,7 +824,7 @@
 &tr.tc037 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({A%q<bad\escape})]
+            [eval({A%q<bad\escape})]
           )
         ),
         setr(1,sha1(
@@ -870,7 +846,7 @@
   @if strmatch(
         setr(0,sha1(
             [setr(4,NEST)]
-            [eval2({A%q<bad%q4})]
+            [eval({A%q<bad%q4})]
           )
         ),
         setr(1,sha1(
@@ -892,8 +868,8 @@
 &tr.tc039 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({A%q<bad]tail})]
-            [eval2({A%q<bad}tail})]
+            [eval({A%q<bad]tail})]
+            [eval({A%q<bad}tail})]
           )
         ),
         setr(1,sha1(
@@ -915,7 +891,7 @@
 &tr.tc040 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({A%q<bad;B[add(1,2)]C})]
+            [eval({A%q<bad;B[add(1,2)]C})]
           )
         ),
         setr(1,sha1(
@@ -936,8 +912,8 @@
 &tr.tc041 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({A%=<bad;name>})]
-            [eval2({A%=<bad(name>})]
+            [eval({A%=<bad;name>})]
+            [eval({A%=<bad(name>})]
           )
         ),
         setr(1,sha1(
@@ -959,8 +935,8 @@
 &tr.tc042 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({%q<bad;[add(1,2)]})]
-            [eval2({%x<bad;[mul(2,3)]})]
+            [eval({%q<bad;[add(1,2)]})]
+            [eval({%x<bad;[mul(2,3)]})]
           )
         ),
         setr(1,sha1(
@@ -982,7 +958,7 @@
 &tr.tc043 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({A%q<bad;[add(1,2)]})]
+            [eval({A%q<bad;[add(1,2)]})]
           )
         ),
         setr(1,sha1(
@@ -1003,7 +979,7 @@
 &tr.tc044 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({A%q<bad(foo[add(1,2)]})]
+            [eval({A%q<bad(foo[add(1,2)]})]
           )
         ),
         setr(1,sha1(
@@ -1024,7 +1000,7 @@
 &tr.tc045 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({A%x<bad;[mul(2,3)]})]
+            [eval({A%x<bad;[mul(2,3)]})]
           )
         ),
         setr(1,sha1(
@@ -1045,7 +1021,7 @@
 &tr.tc046 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({A%=<bad;[strcat(x,y)]})]
+            [eval({A%=<bad;[strcat(x,y)]})]
           )
         ),
         setr(1,sha1(
@@ -1067,7 +1043,7 @@
   @if strmatch(
         setr(0,sha1(
             [setr(0,QQ)]
-            [eval2({A%q<bad(%q0)tail})]
+            [eval({A%q<bad(%q0)tail})]
           )
         ),
         setr(1,sha1(
@@ -1089,7 +1065,7 @@
 &tr.tc048 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({A%q<bad;next;more})]
+            [eval({A%q<bad;next;more})]
           )
         ),
         setr(1,sha1(
@@ -1110,7 +1086,7 @@
 &tr.tc049 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({A%x<bad(]tail})]
+            [eval({A%x<bad(]tail})]
           )
         ),
         setr(1,sha1(
@@ -1131,7 +1107,7 @@
 &tr.tc050 test_parser_fn=
   @if strmatch(
         setr(0,sha1(
-            [eval2({A%=<bad(name>;tail})]
+            [eval({A%=<bad(name>;tail})]
           )
         ),
         setr(1,sha1(
@@ -1153,7 +1129,7 @@
   @if strmatch(
         setr(0,sha1(
             [setr(1,TAIL)]
-            [eval2({%q<bad;[add(1,2)]%q1})]
+            [eval({%q<bad;[add(1,2)]%q1})]
           )
         ),
         setr(1,sha1(
@@ -1176,7 +1152,7 @@
   @if strmatch(
         setr(0,sha1(
             [setr(2,POST)]
-            [eval2({pre%q<bad;mid%q2post})]
+            [eval({pre%q<bad;mid%q2post})]
           )
         ),
         setr(1,sha1(
