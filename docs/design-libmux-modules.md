@@ -309,8 +309,8 @@ If going with Approach C, these are the lowest-risk candidates:
    Pattern rule compiles .cpp → .lo with -fPIC.  libmux.so links all .lo
    files.  CLEANFILES handles .lo cleanup.
 
-4. **Testing:** Tested indirectly through smoke tests (406 pass).  A unit
-   test harness remains a future possibility.
+4. **Testing:** Tested indirectly through smoke tests (409 pass, 0 fail).
+   A unit test harness remains a future possibility.
 
 
 ## Phase 4: Modularize the Server
@@ -325,12 +325,12 @@ at startup.
 
 Based on the codebase survey, these subsystems have relatively clean boundaries:
 
-| Module | Current files | LOC | Dependencies |
-|---|---|---|---|
-| Mail | mail.cpp | 6,000 | db, notify, player |
-| Comsys | comsys.cpp | 4,500 | db, notify, player |
-| Help | help.cpp | 800 | file I/O, notify |
-| Guests | mguests.cpp | 350 | db, player, config |
+| Module | Current files | LOC | Dependencies | Status |
+|---|---|---|---|---|
+| Comsys | comsys.cpp | 4,500 | db, notify, player | **COMPLETE** |
+| Mail | mail.cpp | 6,000 | db, notify, player | Planned |
+| Help | help.cpp | 800 | file I/O, notify | Future |
+| Guests | mguests.cpp | 350 | db, player, config | Future |
 
 These subsystems are deeply entangled and harder to extract:
 
@@ -342,6 +342,89 @@ These subsystems are deeply entangled and harder to extract:
 | Networking | Owns descriptors, interleaved with command processing |
 | Objects | Tightly coupled to db, flags, powers |
 
+### Comsys Module — COMPLETE (brazil branch, 2026-03-08)
+
+The channel communication system is fully extracted into `comsys_mod.so`.
+
+**Files:** `mux/src/modules/comsys_mod.h` (~260 lines),
+`mux/src/modules/comsys_mod.cpp` (~3,200 lines)
+
+**Interface:** `mux_IComsysControl` (19 methods):
+
+| Method | Server command |
+|---|---|
+| Initialize | Module startup (opens own SQLite connection) |
+| PlayerConnect / PlayerDisconnect / PlayerNuke | Connection lifecycle |
+| AddAlias / DelAlias / ClearAliases | addcom / delcom / clearcom |
+| CreateChannel / DestroyChannel | @ccreate / @cdestroy |
+| AllCom / ComList / ComTitle | allcom / comlist / comtitle |
+| ChanList / ChanWho / CEmit | @clist / @cwho / @cemit |
+| CSet | @cset (public/private/loud/quiet/spoof/object/header/log) |
+| EditChannel | @ccharge / @cchown / @coflags / @cpflags |
+| CBoot | @cboot |
+| ProcessCommand | Alias-based say/pose/who/on/off/last dispatch |
+
+**Architecture:**
+- Module links against system `-lsqlite3` (no `-rdynamic`)
+- Opens its own SQLite connection with WAL mode + busy_timeout
+- Owns all channel data: `m_channels` map, `m_comsys_table[500]` hash
+- Full write-through: every mutation persisted via prepared statements
+- Receives connect/disconnect/shutdown events via `mux_IServerEventsSink`
+- Uses 7 COM interfaces for server callbacks: ILog, IServerEventsControl,
+  INotify, IObjectInfo, IAttributeAccess, IEvaluator, IPermissions
+- Server fallback: all command handlers check `mudstate.pIComsysControl`
+  and delegate if non-null; built-in code runs when module is not loaded
+
+**What the comsys extraction proved:**
+- The COM interface pattern scales to a 19-method interface without
+  excessive boilerplate
+- `mux_IObjectInfo::MatchThing` was added to bridge the name-matching
+  gap (modules can't call init_match/match_everything directly)
+- Modules can own their own SQLite connections alongside the server's
+- The server delegation pattern (null-check + early return) is clean
+  and preserves backward compatibility
+
+### Mail Module — PLANNED
+
+The @mail system is the next extraction target.  It follows the same
+pattern as comsys: module owns the data, opens its own SQLite connection,
+communicates through COM interfaces.
+
+**Current state of mail.cpp:** 6,022 lines, 45 mudstate refs, 7 mudconf refs.
+
+**Server dependencies to bridge:**
+- `raw_notify` (240 usages) → mux_INotify
+- `atr_get/atr_add` (45+ usages) → mux_IAttributeAccess
+- `Wizard/God/Owner` (15 usages) → mux_IPermissions
+- `Moniker` (25 usages) → mux_IObjectInfo::GetMoniker
+- `Good_obj/isPlayer/Connected` (29 usages) → mux_IObjectInfo
+- `mudstate.mail_htab/mail_db_top` → module-internal state
+- `mudconf.mail_max_per_player/mail_expiration` → Initialize params
+
+**SQLite tables:** `mail_headers`, `mail_bodies`, `mail_aliases`
+(schema already exists from SQLite storage migration).
+
+**Proposed interface:** `mux_IMailControl`
+
+| Method group | Methods |
+|---|---|
+| Lifecycle | Initialize, PlayerConnect, PlayerDisconnect, PlayerNuke |
+| Core mail | Send, Read, List, Clear, Purge, Forward, Reply |
+| Folders | FileToFolder, ListFolder, SetFolder |
+| Admin | Stats, Nuke, Debug |
+| Aliases | MaliasCreate, MaliasDelete, MaliasList, MaliasAdd, MaliasRemove |
+| Query | CheckMail, FetchMail, CountMail |
+
+**Extraction plan:**
+1. Define `mux_IMailControl` interface in modules.h
+2. Create mail_mod.h/cpp skeleton with class, factory, registration
+3. Move mail data structures (struct mail, MailList, malias_t, mail_body)
+4. Implement SQLite connection + data loading (same pattern as comsys)
+5. Implement core send/read/list/clear path
+6. Add delegation stubs in mail.cpp (same null-check pattern as comsys)
+7. Wire initialization in game.cpp
+8. Incrementally move remaining commands
+
 ### Feasibility Assessment
 
 **Honest risks:**
@@ -352,42 +435,40 @@ These subsystems are deeply entangled and harder to extract:
    indirection could be measurable.
 
 2. **Complexity budget:** Each module boundary requires an interface definition,
-   proxy/stub pair (if cross-process), factory, registration, and lifecycle
-   management.  The mux_ILog PoC was ~830 lines for an 8-method interface.
-   Applying this to 10 subsystems with 20+ methods each is 8,000-16,000 lines
-   of scaffolding.
+   factory, registration, and lifecycle management.  In practice, the comsys
+   extraction showed that a 19-method interface + ~3,200 lines of module code
+   is manageable.  The scaffolding overhead is modest relative to the logic.
 
-3. **Testing:** Module interactions are harder to test than monolithic code.
-   Need integration tests beyond the current smoke suite.
+3. **Testing:** 409 smoke tests pass with the comsys module loaded.  The
+   delegation pattern (null-check + fallback) means unloading the module
+   restores built-in behavior.
 
-4. **Diminishing returns:** The server works.  Modularization enables future
-   extension but adds complexity now.  The benefit is strongest for subsystems
-   that game admins might want to swap (storage backend, networking) and weakest
-   for subsystems that are inherently game-specific (commands, eval).
+4. **Diminishing returns:** The comsys extraction proved the pattern works.
+   Mail follows the same structure with more commands but the same architecture.
 
 ### Recommended Strategy
 
-Start with the subsystems that have the clearest boundaries and lowest coupling:
-
 **Tier 1 — Low risk, clear value:**
-- Mail system behind mux_IMail interface
-- Comsys behind mux_IComsys interface
+- ~~Comsys behind mux_IComsysControl interface~~ — **COMPLETE**
+- Mail system behind mux_IMailControl interface — **NEXT**
 - Help system behind mux_IHelp interface
 
-**Tier 2 — Medium risk, moderate value:**
-- Attribute access behind mux_IAttributeStore (already partially done
-  with IStorageBackend)
-- Player notification behind mux_INotify
+**Tier 2 — Medium risk, already done as infrastructure:**
+- ~~Attribute access behind mux_IAttributeAccess~~ — **COMPLETE** (in-process)
+- ~~Player notification behind mux_INotify~~ — **COMPLETE** (in-process)
+- ~~Object info behind mux_IObjectInfo~~ — **COMPLETE** (in-process)
+- ~~Evaluator behind mux_IEvaluator~~ — **COMPLETE** (in-process)
+- ~~Permissions behind mux_IPermissions~~ — **COMPLETE** (in-process)
 
 **Tier 3 — High risk, evaluate carefully:**
 - Command processor
-- Evaluator
 - Object system
 
 **Tier 4 — Leave in netmux:**
 - Main loop and signal handling
 - Module orchestration
 - Networking (too intertwined with the event loop)
+- Evaluator (hot path, deeply coupled to mudstate)
 
 
 ## Experiments and Surveys
@@ -632,7 +713,7 @@ targeted includes once those types are accessible.
 
 ## Appendix: Interface Registry
 
-Standard-marshaled interfaces (proxy/stub/factory in libmux.cpp):
+### Standard-marshaled interfaces (proxy/stub/factory in libmux.cpp)
 
 | IID | Interface | CID ProxyStub | Status |
 |---|---|---|---|
@@ -641,21 +722,23 @@ Standard-marshaled interfaces (proxy/stub/factory in libmux.cpp):
 | IID_IQuerySink | mux_IQuerySink | CID_QuerySinkPSFactory | Complete |
 | IID_IQueryControl | mux_IQueryControl | CID_QueryControlPSFactory | Complete |
 
-Interfaces not currently marshaled (in-process only):
+### In-process interfaces (modules.h, implemented in modules.cpp)
 
-| Interface | Notes |
-|---|---|
-| mux_IServerEventsSink | Sink registration, not cross-process |
-| mux_IServerEventsControl | Advise takes interface pointer arg |
-| mux_IFunction | Called in-process by eval |
-| mux_IFunctionsControl | Registration only |
+| IID | Interface | Methods | Used by |
+|---|---|---|---|
+| IID_IServerEventsSink | mux_IServerEventsSink | 12 (lifecycle events) | exp3, comsys_mod |
+| IID_IServerEventsControl | mux_IServerEventsControl | Advise/Unadvise | exp3, comsys_mod |
+| IID_INotify | mux_INotify | Notify, RawNotify, NotifyCheck | comsys_mod |
+| IID_IObjectInfo | mux_IObjectInfo | IsValid, GetName, GetOwner, GetLocation, GetType, IsConnected, IsPlayer, IsGoing, GetMoniker, MatchThing | comsys_mod |
+| IID_IAttributeAccess | mux_IAttributeAccess | GetAttribute, SetAttribute | comsys_mod |
+| IID_IEvaluator | mux_IEvaluator | Eval | comsys_mod |
+| IID_IPermissions | mux_IPermissions | IsWizard, IsGod, HasControl, HasCommAll | comsys_mod |
+| IID_IFunction | mux_IFunction | Call (per softcode invocation) | exp3 |
+| IID_IFunctionsControl | mux_IFunctionsControl | Add, Remove | exp3 |
 
-Interfaces identified by Experiment 3 (not yet defined):
+### Module interfaces (modules.h, implemented in module .so files)
 
-| Interface | Methods needed | Hot path? |
-|---|---|---|
-| Attribute read | get by dbref/attrnum | Yes |
-| Attribute write | set by dbref/attrnum | Medium |
-| Object info | name, owner, location, type | Medium |
-| Evaluator | eval expression in context | Yes |
-| Notify | send text to player | Medium |
+| IID | Interface | CID | Methods | Module |
+|---|---|---|---|---|
+| IID_IComsysControl | mux_IComsysControl | CID_Comsys | 19 | comsys_mod.so |
+| IID_IMailControl | mux_IMailControl | CID_Mail | TBD | mail_mod.so (planned) |
