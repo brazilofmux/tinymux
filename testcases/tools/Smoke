@@ -51,6 +51,9 @@ if [ ! -r text ]; then
     echo "Creating ./text directory."
     mkdir text
 fi
+if [ ! -r bin ]; then
+    ln -s $BIN bin
+fi
 cp smoke.flat $DATA/$INPUT_DB
 cp ../mux/game/alias.conf .
 cp ../mux/game/compat.conf .
@@ -61,8 +64,6 @@ cat > smoke.conf <<\_EOF
 input_database	smoke.d/smoke.db
 output_database	smoke.d/smoke.db.new
 crash_database	smoke.d/smoke.db.CRASH
-game_dir_file	smoke.d/smoke.dir
-game_pag_file	smoke.d/smoke.pag
 #
 # Mail, comsystem, and macro databases.
 #
@@ -102,6 +103,20 @@ export SHLIB_PATH
 $BIN/netmux -c $GAMENAME.conf -p $PIDFILE -e $LOGDIR >/dev/null 2>&1
 
 #
+#	Wait for MUX to finish shutdown.
+#
+waited=0
+while [ -r "$PIDFILE" ] && kill -0 `cat $PIDFILE 2>/dev/null` 2>/dev/null; do
+    sleep 1
+    waited=`expr $waited + 1`
+    if [ "$waited" -ge 120 ]; then
+        echo "MUX process still running after ${waited}s."
+        exit 1
+    fi
+done
+sleep 1
+
+#
 #	Grab resulting log file and clean up.
 #
 mv logs/M-smoke.log smoke.log
@@ -112,3 +127,4 @@ echo "Deleting $DATA, logs, and text directories."
 rm -rf $DATA ./logs ./text
 rm alias.conf
 rm compat.conf
+rm -f bin
