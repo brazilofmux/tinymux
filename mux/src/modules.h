@@ -294,6 +294,18 @@ public:
     virtual MUX_RESULT PlayerDisconnect(dbref player) = 0;
     virtual MUX_RESULT PlayerNuke(dbref player) = 0;
 
+    // Alias management.
+    //
+    virtual MUX_RESULT AddAlias(dbref executor, const UTF8 *pAlias,
+        const UTF8 *pChannel) = 0;
+    virtual MUX_RESULT DelAlias(dbref executor, const UTF8 *pAlias) = 0;
+    virtual MUX_RESULT ClearAliases(dbref executor) = 0;
+
+    // Channel creation/destruction.
+    //
+    virtual MUX_RESULT CreateChannel(dbref executor, const UTF8 *pName) = 0;
+    virtual MUX_RESULT DestroyChannel(dbref executor, const UTF8 *pName) = 0;
+
     // Alias-based command dispatch (returns true to stop further matching).
     //
     virtual MUX_RESULT ProcessCommand(dbref executor, const UTF8 *pCmd,

@@ -1008,6 +1008,80 @@ void CComsysMod::sqlite_wt_channel(struct channel *ch)
     sqlite3_finalize(stmt);
 }
 
+void CComsysMod::sqlite_wt_player_channel(dbref who, const UTF8 *alias,
+    const UTF8 *channel_name)
+{
+    if (nullptr == m_db)
+    {
+        return;
+    }
+
+    const char *sql =
+        "INSERT OR REPLACE INTO player_channels (who, alias, channel_name) "
+        "VALUES (?, ?, ?);";
+
+    sqlite3_stmt *stmt = nullptr;
+    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
+    {
+        return;
+    }
+
+    sqlite3_bind_int(stmt, 1, who);
+    sqlite3_bind_text(stmt, 2,
+        reinterpret_cast<const char *>(alias), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 3,
+        reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+}
+
+void CComsysMod::sqlite_wt_delete_player_channel(dbref who, const UTF8 *alias)
+{
+    if (nullptr == m_db)
+    {
+        return;
+    }
+
+    const char *sql =
+        "DELETE FROM player_channels WHERE who = ? AND alias = ?;";
+
+    sqlite3_stmt *stmt = nullptr;
+    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
+    {
+        return;
+    }
+
+    sqlite3_bind_int(stmt, 1, who);
+    sqlite3_bind_text(stmt, 2,
+        reinterpret_cast<const char *>(alias), -1, SQLITE_STATIC);
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+}
+
+void CComsysMod::sqlite_wt_delete_channel_user(const UTF8 *channel_name,
+    dbref who)
+{
+    if (nullptr == m_db)
+    {
+        return;
+    }
+
+    const char *sql =
+        "DELETE FROM channel_users WHERE channel_name = ? AND who = ?;";
+
+    sqlite3_stmt *stmt = nullptr;
+    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
+    {
+        return;
+    }
+
+    sqlite3_bind_text(stmt, 1,
+        reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 2, who);
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+}
+
 // ---------------------------------------------------------------------------
 // Channel access checks.
 // ---------------------------------------------------------------------------
@@ -1064,6 +1138,131 @@ bool CComsysMod::test_receive_access(dbref player, struct channel *ch)
     }
 
     return ((ch->type & access) != 0);
+}
+
+bool CComsysMod::test_join_access(dbref player, struct channel *ch)
+{
+    if (nullptr != m_pIPermissions)
+    {
+        bool bCommAll = false;
+        m_pIPermissions->HasCommAll(player, &bCommAll);
+        if (bCommAll)
+        {
+            return true;
+        }
+    }
+
+    int access;
+    if (nullptr != m_pIObjectInfo)
+    {
+        bool bPlayer = false;
+        m_pIObjectInfo->IsPlayer(player, &bPlayer);
+        access = bPlayer ? CHANNEL_PLAYER_JOIN : CHANNEL_OBJECT_JOIN;
+    }
+    else
+    {
+        access = CHANNEL_PLAYER_JOIN;
+    }
+
+    return ((ch->type & access) != 0);
+}
+
+// ---------------------------------------------------------------------------
+// Unsubscribe a player from a channel completely.
+// ---------------------------------------------------------------------------
+
+void CComsysMod::do_delcomchannel(dbref player, const UTF8 *channel,
+    bool bQuiet)
+{
+    struct channel *ch = select_channel(channel);
+    if (nullptr == ch)
+    {
+        return;
+    }
+
+    struct comuser *user = select_user(ch, player);
+    if (nullptr == user)
+    {
+        return;
+    }
+
+    if (user->bUserIsOn)
+    {
+        if (!bQuiet && nullptr != m_pINotify)
+        {
+            const UTF8 *pName = nullptr;
+            if (nullptr != m_pIObjectInfo)
+            {
+                m_pIObjectInfo->GetMoniker(player, &pName);
+            }
+            if (nullptr == pName)
+            {
+                pName = T("???");
+            }
+
+            UTF8 msg[1024];
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "%s %s has left this channel.",
+                     reinterpret_cast<const char *>(ch->header),
+                     reinterpret_cast<const char *>(pName));
+            SendChannelMessage(player, ch, msg, true);
+        }
+
+        // Remove from on_users list.
+        //
+        do_comdisconnectchannel(player,
+            const_cast<UTF8 *>(channel));
+    }
+
+    // Remove from users array.
+    //
+    for (int i = 0; i < ch->num_users; i++)
+    {
+        if (ch->users[i] == user)
+        {
+            if (nullptr != user->title)
+            {
+                free(user->title);
+            }
+            free(user);
+            ch->num_users--;
+            for (int j = i; j < ch->num_users; j++)
+            {
+                ch->users[j] = ch->users[j + 1];
+            }
+            break;
+        }
+    }
+
+    sqlite_wt_delete_channel_user(channel, player);
+}
+
+// ---------------------------------------------------------------------------
+// Sort aliases for binary search.
+// ---------------------------------------------------------------------------
+
+void CComsysMod::sort_com_aliases(comsys_t *c)
+{
+    // Insertion sort by alias name.
+    //
+    for (int i = 1; i < c->numchannels; i++)
+    {
+        UTF8 tmpAlias[ALIAS_SIZE];
+        memcpy(tmpAlias, c->alias + i * ALIAS_SIZE, ALIAS_SIZE);
+        UTF8 *tmpChan = c->channels[i];
+
+        int j = i - 1;
+        while (j >= 0 && strcmp(reinterpret_cast<const char *>(c->alias + j * ALIAS_SIZE),
+                                reinterpret_cast<const char *>(tmpAlias)) > 0)
+        {
+            memcpy(c->alias + (j + 1) * ALIAS_SIZE,
+                   c->alias + j * ALIAS_SIZE, ALIAS_SIZE);
+            c->channels[j + 1] = c->channels[j];
+            j--;
+        }
+        memcpy(c->alias + (j + 1) * ALIAS_SIZE, tmpAlias, ALIAS_SIZE);
+        c->channels[j + 1] = tmpChan;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -1662,6 +1861,434 @@ MUX_RESULT CComsysMod::ProcessCommand(dbref executor, const UTF8 *pCmd,
     UTF8 *pMsg = const_cast<UTF8 *>(reinterpret_cast<const UTF8 *>(t + 1));
     do_processcom(executor, ch, pMsg);
     *pbHandled = true;
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// Alias management.
+// ---------------------------------------------------------------------------
+
+MUX_RESULT CComsysMod::AddAlias(dbref executor, const UTF8 *pAlias,
+    const UTF8 *pChannel)
+{
+    if (nullptr == pAlias || '\0' == pAlias[0])
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor,
+                T("You need to specify a valid alias."));
+        }
+        return MUX_E_INVALIDARG;
+    }
+    if (nullptr == pChannel || '\0' == pChannel[0])
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor,
+                T("You need to specify a channel."));
+        }
+        return MUX_E_INVALIDARG;
+    }
+
+    // Validate alias length.
+    //
+    size_t nAlias = strlen(reinterpret_cast<const char *>(pAlias));
+    if (nAlias > MAX_ALIAS_LEN)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor,
+                T("You need to specify a valid alias."));
+        }
+        return MUX_E_INVALIDARG;
+    }
+
+    struct channel *ch = select_channel(pChannel);
+    if (nullptr == ch)
+    {
+        if (nullptr != m_pINotify)
+        {
+            UTF8 msg[256];
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "Channel %s does not exist yet.",
+                     reinterpret_cast<const char *>(pChannel));
+            m_pINotify->RawNotify(executor, msg);
+        }
+        return MUX_E_NOTFOUND;
+    }
+
+    if (!test_join_access(executor, ch))
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor,
+                T("Sorry, this channel type does not allow you to join."));
+        }
+        return MUX_E_PERMISSION;
+    }
+
+    comsys_t *c = get_comsys(executor);
+    if (c->numchannels >= MAX_ALIASES_PER_PLAYER)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor,
+                T("Sorry, but you have reached the maximum number of "
+                  "aliases allowed."));
+        }
+        return MUX_E_FAIL;
+    }
+
+    // Check for duplicate alias.
+    //
+    for (int j = 0; j < c->numchannels; j++)
+    {
+        if (0 == strcmp(reinterpret_cast<const char *>(pAlias),
+                        reinterpret_cast<const char *>(c->alias + j * ALIAS_SIZE)))
+        {
+            if (nullptr != m_pINotify)
+            {
+                UTF8 msg[256];
+                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                         "That alias is already in use for channel %s.",
+                         reinterpret_cast<const char *>(c->channels[j]));
+                m_pINotify->RawNotify(executor, msg);
+            }
+            return MUX_E_FAIL;
+        }
+    }
+
+    // Grow arrays if needed.
+    //
+    if (c->numchannels >= c->maxchannels)
+    {
+        int newmax = c->maxchannels + 10;
+        UTF8 *na = static_cast<UTF8 *>(
+            realloc(c->alias, ALIAS_SIZE * newmax));
+        UTF8 **nc = static_cast<UTF8 **>(
+            realloc(c->channels, sizeof(UTF8 *) * newmax));
+        if (nullptr == na || nullptr == nc)
+        {
+            if (nullptr != na) c->alias = na;
+            if (nullptr != nc) c->channels = nc;
+            return MUX_E_OUTOFMEMORY;
+        }
+        c->alias = na;
+        c->channels = nc;
+        c->maxchannels = newmax;
+    }
+
+    // Append and sort.
+    //
+    int where = c->numchannels;
+    memcpy(c->alias + where * ALIAS_SIZE, pAlias, nAlias);
+    *(c->alias + where * ALIAS_SIZE + nAlias) = '\0';
+    c->channels[where] = reinterpret_cast<UTF8 *>(
+        strdup(reinterpret_cast<const char *>(ch->name)));
+    c->numchannels++;
+
+    sort_com_aliases(c);
+    sqlite_wt_player_channel(executor, pAlias, ch->name);
+
+    // Join channel if not already a user.
+    //
+    if (nullptr == select_user(ch, executor))
+    {
+        do_joinchannel(executor, ch);
+    }
+
+    if (nullptr != m_pINotify)
+    {
+        UTF8 msg[256];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "Channel %s added with alias %s.",
+                 reinterpret_cast<const char *>(ch->name),
+                 reinterpret_cast<const char *>(pAlias));
+        m_pINotify->RawNotify(executor, msg);
+    }
+
+    return MUX_S_OK;
+}
+
+MUX_RESULT CComsysMod::DelAlias(dbref executor, const UTF8 *pAlias)
+{
+    if (nullptr == pAlias || '\0' == pAlias[0])
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor,
+                T("Need an alias to delete."));
+        }
+        return MUX_E_INVALIDARG;
+    }
+
+    comsys_t *c = get_comsys(executor);
+
+    for (int i = 0; i < c->numchannels; i++)
+    {
+        if (0 != strcmp(reinterpret_cast<const char *>(pAlias),
+                        reinterpret_cast<const char *>(c->alias + i * ALIAS_SIZE)))
+        {
+            continue;
+        }
+
+        // Count other aliases for same channel.
+        //
+        int found = 0;
+        for (int itmp = 0; itmp < c->numchannels; itmp++)
+        {
+            if (0 == strcmp(reinterpret_cast<const char *>(c->channels[itmp]),
+                            reinterpret_cast<const char *>(c->channels[i])))
+            {
+                found++;
+            }
+        }
+
+        // If last alias for this channel, remove from channel.
+        //
+        if (found <= 1)
+        {
+            do_delcomchannel(executor, c->channels[i], false);
+            if (nullptr != m_pINotify)
+            {
+                UTF8 msg[256];
+                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                         "Alias %s for channel %s deleted.",
+                         reinterpret_cast<const char *>(pAlias),
+                         reinterpret_cast<const char *>(c->channels[i]));
+                m_pINotify->RawNotify(executor, msg);
+            }
+            free(c->channels[i]);
+        }
+        else
+        {
+            if (nullptr != m_pINotify)
+            {
+                UTF8 msg[256];
+                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                         "Alias %s for channel %s deleted.",
+                         reinterpret_cast<const char *>(pAlias),
+                         reinterpret_cast<const char *>(c->channels[i]));
+                m_pINotify->RawNotify(executor, msg);
+            }
+        }
+
+        sqlite_wt_delete_player_channel(executor, pAlias);
+        c->channels[i] = nullptr;
+        c->numchannels--;
+
+        for (; i < c->numchannels; i++)
+        {
+            memcpy(c->alias + i * ALIAS_SIZE,
+                   c->alias + (i + 1) * ALIAS_SIZE, ALIAS_SIZE);
+            c->channels[i] = c->channels[i + 1];
+        }
+        return MUX_S_OK;
+    }
+
+    if (nullptr != m_pINotify)
+    {
+        m_pINotify->RawNotify(executor, T("Unable to find that alias."));
+    }
+    return MUX_E_NOTFOUND;
+}
+
+MUX_RESULT CComsysMod::ClearAliases(dbref executor)
+{
+    comsys_t *c = get_comsys(executor);
+    if (nullptr == c)
+    {
+        return MUX_S_OK;
+    }
+
+    // Walk backwards to safely remove each alias.
+    //
+    while (c->numchannels > 0)
+    {
+        const UTF8 *pAlias = c->alias + (c->numchannels - 1) * ALIAS_SIZE;
+        DelAlias(executor, pAlias);
+    }
+
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// Channel creation/destruction.
+// ---------------------------------------------------------------------------
+
+MUX_RESULT CComsysMod::CreateChannel(dbref executor, const UTF8 *pName)
+{
+    if (nullptr == pName || '\0' == pName[0])
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor,
+                T("You must specify a channel to create."));
+        }
+        return MUX_E_INVALIDARG;
+    }
+
+    // Check permission.
+    //
+    if (nullptr != m_pIPermissions)
+    {
+        bool bCommAll = false;
+        m_pIPermissions->HasCommAll(executor, &bCommAll);
+        if (!bCommAll)
+        {
+            if (nullptr != m_pINotify)
+            {
+                m_pINotify->RawNotify(executor,
+                    T("You do not have permission to create channels."));
+            }
+            return MUX_E_PERMISSION;
+        }
+    }
+
+    // Check for existing channel.
+    //
+    if (nullptr != select_channel(pName))
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor,
+                T("That channel already exists."));
+        }
+        return MUX_E_FAIL;
+    }
+
+    // Create the channel.
+    //
+    struct channel *ch = static_cast<struct channel *>(
+        calloc(1, sizeof(struct channel)));
+    if (nullptr == ch)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    strncpy(reinterpret_cast<char *>(ch->name),
+            reinterpret_cast<const char *>(pName), MAX_CHANNEL_LEN);
+    ch->name[MAX_CHANNEL_LEN] = '\0';
+
+    snprintf(reinterpret_cast<char *>(ch->header), MAX_HEADER_LEN + 1,
+             "[%s]", reinterpret_cast<const char *>(ch->name));
+
+    ch->type = CHANNEL_DEFAULT;
+    ch->charge_who = executor;
+    ch->chan_obj = NOTHING;
+
+    std::vector<UTF8> key(ch->name,
+        ch->name + strlen(reinterpret_cast<const char *>(ch->name)) + 1);
+    m_channels[key] = ch;
+    m_num_channels++;
+
+    sqlite_wt_channel(ch);
+
+    if (nullptr != m_pINotify)
+    {
+        UTF8 msg[256];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "Channel %s created.",
+                 reinterpret_cast<const char *>(ch->name));
+        m_pINotify->RawNotify(executor, msg);
+    }
+
+    return MUX_S_OK;
+}
+
+MUX_RESULT CComsysMod::DestroyChannel(dbref executor, const UTF8 *pName)
+{
+    if (nullptr == pName || '\0' == pName[0])
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor,
+                T("You must specify a channel to destroy."));
+        }
+        return MUX_E_INVALIDARG;
+    }
+
+    struct channel *ch = select_channel(pName);
+    if (nullptr == ch)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor,
+                T("That channel does not exist."));
+        }
+        return MUX_E_NOTFOUND;
+    }
+
+    // Check permission: must be owner or Comm_All.
+    //
+    bool bAllowed = (ch->charge_who == executor);
+    if (!bAllowed && nullptr != m_pIPermissions)
+    {
+        bool bCommAll = false;
+        m_pIPermissions->HasCommAll(executor, &bCommAll);
+        bAllowed = bCommAll;
+    }
+
+    if (!bAllowed)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor,
+                T("You do not have permission to destroy that channel."));
+        }
+        return MUX_E_PERMISSION;
+    }
+
+    // Free all users.
+    //
+    if (nullptr != ch->users)
+    {
+        for (int j = 0; j < ch->num_users; j++)
+        {
+            if (nullptr != ch->users[j])
+            {
+                if (nullptr != ch->users[j]->title)
+                {
+                    free(ch->users[j]->title);
+                }
+                free(ch->users[j]);
+            }
+        }
+        free(ch->users);
+    }
+
+    // Remove from SQLite.
+    //
+    if (nullptr != m_db)
+    {
+        const char *sql = "DELETE FROM channels WHERE name = ?;";
+        sqlite3_stmt *stmt = nullptr;
+        if (SQLITE_OK == sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
+        {
+            sqlite3_bind_text(stmt, 1,
+                reinterpret_cast<const char *>(ch->name), -1, SQLITE_STATIC);
+            sqlite3_step(stmt);
+            sqlite3_finalize(stmt);
+        }
+    }
+
+    // Remove from map.
+    //
+    std::vector<UTF8> key(ch->name,
+        ch->name + strlen(reinterpret_cast<const char *>(ch->name)) + 1);
+    m_channels.erase(key);
+    m_num_channels--;
+
+    if (nullptr != m_pINotify)
+    {
+        UTF8 msg[256];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "Channel %s destroyed.",
+                 reinterpret_cast<const char *>(pName));
+        m_pINotify->RawNotify(executor, msg);
+    }
+
+    free(ch);
     return MUX_S_OK;
 }
 

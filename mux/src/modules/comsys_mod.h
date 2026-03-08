@@ -40,6 +40,7 @@ const MUX_CID CID_ComsysMod = UINT64_C(0x00000002C5A2F193);
 #define MAX_TITLE_LEN   200
 #define MAX_ALIAS_LEN    15
 #define ALIAS_SIZE       16
+#define MAX_ALIASES_PER_PLAYER 100
 
 // Per-user channel subscription record.
 //
@@ -138,6 +139,14 @@ private:
 
     void sqlite_wt_channel_user(const UTF8 *channel_name, struct comuser *user);
     void sqlite_wt_channel(struct channel *ch);
+    void sqlite_wt_player_channel(dbref who, const UTF8 *alias,
+        const UTF8 *channel_name);
+    void sqlite_wt_delete_player_channel(dbref who, const UTF8 *alias);
+    void sqlite_wt_delete_channel_user(const UTF8 *channel_name, dbref who);
+
+    bool test_join_access(dbref player, struct channel *ch);
+    void do_delcomchannel(dbref player, const UTF8 *channel, bool bQuiet);
+    void sort_com_aliases(comsys_t *c);
 
 public:
     // mux_IUnknown
@@ -152,6 +161,12 @@ public:
     MUX_RESULT PlayerConnect(dbref player) override;
     MUX_RESULT PlayerDisconnect(dbref player) override;
     MUX_RESULT PlayerNuke(dbref player) override;
+    MUX_RESULT AddAlias(dbref executor, const UTF8 *pAlias,
+        const UTF8 *pChannel) override;
+    MUX_RESULT DelAlias(dbref executor, const UTF8 *pAlias) override;
+    MUX_RESULT ClearAliases(dbref executor) override;
+    MUX_RESULT CreateChannel(dbref executor, const UTF8 *pName) override;
+    MUX_RESULT DestroyChannel(dbref executor, const UTF8 *pName) override;
     MUX_RESULT ProcessCommand(dbref executor, const UTF8 *pCmd,
         bool *pbHandled) override;
 

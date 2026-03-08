@@ -2373,6 +2373,22 @@ void do_addcom
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    if (nullptr != mudstate.pIComsysControl)
+    {
+        bool bValidAlias;
+        size_t nValidAlias;
+        UTF8* pValid = MakeCanonicalComAlias(arg1, &nValidAlias, &bValidAlias);
+        if (bValidAlias)
+        {
+            mudstate.pIComsysControl->AddAlias(executor, pValid, channel);
+        }
+        else
+        {
+            raw_notify(executor, T("You need to specify a valid alias."));
+        }
+        return;
+    }
+
     bool bValidAlias;
     size_t nValidAlias;
     UTF8* pValidAlias = MakeCanonicalComAlias(arg1, &nValidAlias, &bValidAlias);
@@ -2476,6 +2492,12 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
+
+    if (nullptr != mudstate.pIComsysControl)
+    {
+        mudstate.pIComsysControl->DelAlias(executor, arg1);
+        return;
+    }
 
     if (!arg1)
     {
@@ -2597,6 +2619,12 @@ void do_createchannel(const dbref executor, const dbref caller, dbref enactor, c
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    if (nullptr != mudstate.pIComsysControl)
+    {
+        mudstate.pIComsysControl->CreateChannel(executor, channel);
+        return;
+    }
+
     if ('\0' == channel[0])
     {
         raw_notify(executor, T("You must specify a channel to create."));
@@ -2709,6 +2737,12 @@ void do_destroychannel
     UNUSED_PARAMETER(key);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
+
+    if (nullptr != mudstate.pIComsysControl)
+    {
+        mudstate.pIComsysControl->DestroyChannel(executor, channel_name);
+        return;
+    }
 
     const auto channel_name_length = strlen(reinterpret_cast<char*>(channel_name));
     const vector<UTF8> channel_name_vector(channel_name, channel_name + channel_name_length);
@@ -2947,6 +2981,11 @@ void do_comlist
 //
 void do_channelnuke(const dbref player)
 {
+    if (nullptr != mudstate.pIComsysControl)
+    {
+        return;  // Module handles via IServerEventsSink::data_free.
+    }
+
     bool found = true;
     while (found)
     {
@@ -2987,6 +3026,12 @@ void do_clearcom(const dbref executor, const dbref caller, const dbref enactor, 
 {
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
+
+    if (nullptr != mudstate.pIComsysControl)
+    {
+        mudstate.pIComsysControl->ClearAliases(executor);
+        return;
+    }
 
     const comsys_t* c = get_comsys(executor);
 
@@ -3201,6 +3246,11 @@ static void do_comconnectchannel(dbref player, UTF8* channel, UTF8* alias, int i
 //
 void do_comdisconnect(const dbref player)
 {
+    if (nullptr != mudstate.pIComsysControl)
+    {
+        return;  // Module handles via IServerEventsSink::disconnect.
+    }
+
     const comsys_t* c = get_comsys(player);
 
     for (int i = 0; i < c->numchannels; i++)
@@ -3236,6 +3286,11 @@ void do_comdisconnect(const dbref player)
 //
 void do_comconnect(const dbref player)
 {
+    if (nullptr != mudstate.pIComsysControl)
+    {
+        return;  // Module handles via IServerEventsSink::connect.
+    }
+
     const comsys_t* c = get_comsys(player);
 
     for (int i = 0; i < c->numchannels; i++)
