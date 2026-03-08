@@ -272,6 +272,29 @@ public:
     virtual MUX_RESULT HasCommAll(dbref obj, bool *pCommAll) = 0;
 };
 
+// Comsys module — channel system provided by loadable module.
+//
+// mux_IComsysControl is obtained by the server at startup.
+// It calls into the comsys module for command dispatch and events.
+//
+const MUX_CID CID_Comsys                = UINT64_C(0x00000002C5A2F193);
+const MUX_IID IID_IComsysControl        = UINT64_C(0x000000028E4B63D7);
+
+interface mux_IComsysControl : public mux_IUnknown
+{
+public:
+    // Connection events.
+    //
+    virtual MUX_RESULT PlayerConnect(dbref player) = 0;
+    virtual MUX_RESULT PlayerDisconnect(dbref player) = 0;
+    virtual MUX_RESULT PlayerNuke(dbref player) = 0;
+
+    // Alias-based command dispatch (returns true to stop further matching).
+    //
+    virtual MUX_RESULT ProcessCommand(dbref executor, const UTF8 *pCmd,
+        bool *pbHandled) = 0;
+};
+
 // Attribute read/write with built-in permission checks.
 //
 interface mux_IAttributeAccess : public mux_IUnknown
