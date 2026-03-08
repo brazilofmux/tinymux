@@ -1484,158 +1484,61 @@ extern "C" size_t DCL_EXPORT DCL_API Pipe_QueueLength(QUEUE_INFO *pqi)
     return n;
 }
 
-typedef enum
-{
-    eUnknown = 0,
-    eCall,
-    eReturn,
-    eMessage,
-    eDisconnect
-} FrameType;
-
-// Decoder
+// Frame types for the pipe protocol.
 //
-int           g_iState = 0;
-FrameType     g_eType = eUnknown;
-
-union LENGTH
-{
-    uint32_t n;
-    uint8_t ch[4];
-} Length = { 0 };
-
-uint32_t        g_nChannel = 0;
-size_t        g_nLengthRemaining = 0;
-
-const uint8_t CallMagic[4]   = { 0xC3, 0x9B, 0x71, 0xF9 };  // 17, 14,  9, 20
-const uint8_t ReturnMagic[4] = { 0x35, 0x97, 0x2D, 0xD0 };  //  7, 13,  6, 18
-const uint8_t MsgMagic[4]    = { 0xF6, 0x9E, 0x18, 0x36 };  // 19, 15,  3,  8
-const uint8_t DiscMagic[4]   = { 0x96, 0x0A, 0xA3, 0x81 };  // 12,  1, 16, 10
-const uint8_t EndMagic[4]    = { 0x27, 0x11, 0x8B, 0x26 };  //  5,  2, 11,  4
-
-const uint8_t decoder_itt[256] =
-{
-//  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
+// Wire format: Type[1] + Channel[4] + Length[4] + Payload[Length]
 //
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  // 0
-    0,  2,  0,  0,  0,  0,  0,  0,  3,  0,  0,  0,  0,  0,  0,  0,  // 1
-    0,  0,  0,  0,  0,  0,  4,  5,  0,  0,  0,  0,  0,  6,  0,  0,  // 2
-    0,  0,  0,  0,  0,  7,  8,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 3
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 4
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 5
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 6
-    0,  9,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 7
-
-    0, 10,  0,  0,  0,  0,  0,  0,  0,  0,  0, 11,  0,  0,  0,  0,  // 8
-    0,  0,  0,  0,  0,  0, 12, 13,  0,  0,  0, 14,  0,  0, 15,  0,  // 9
-    0,  0,  0, 16,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // A
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // B
-    0,  0,  0, 17,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // C
-    18, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // D
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // E
-    0,  0,  0,  0,  0,  0, 19,  0,  0, 20,  0,  0,  0,  0,  0,  0   // F
-};
-
-const uint8_t decoder_stt[23][21] =
-{
-//     0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20
+// Type identifies the frame kind.  Channel routes to the correct stub or
+// blocked caller.  Length is the payload size (does not include the 9-byte
+// header).  All multi-byte fields are native byte order (same machine).
 //
-    {  0,  0,  0,  0,  0,  0,  0, 14,  0,  0,  0,  0, 20,  0,  0,  0,  0,  1,  0, 17,  0 }, //  0 Start
-    {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  2,  0,  0,  0,  0,  0,  0 }, //  1 Call0
-    {  0,  0,  0,  0,  0,  0,  0,  0,  0,  3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 }, //  2 Call1
-    {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  4 }, //  3 Call2
-    {  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5 }, //  4 Call3/Return3/Msg3/Disc3
-    {  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6 }, //  5 Length0
-    {  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7,  7 }, //  6 Length1
-    {  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8 }, //  7 Length2
-    { 12, 12, 12, 12, 12,  9, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12 }, //  8 Length3
-    { 12, 12, 10, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12 }, //  9 End0
-    { 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12 }, // 10 End1
-    { 12, 12, 12, 12, 13, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12 }, // 11 End2
-    {  0,  0,  0,  0,  0,  0,  0, 14,  0,  0,  0,  0, 20,  0,  0,  0,  0,  1,  0, 17,  0 }, // 12 Cleanup
-    {  0,  0,  0,  0,  0,  0,  0, 14,  0,  0,  0,  0, 20,  0,  0,  0,  0,  1,  0, 17,  0 }, // 13 Accept
-    {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 15,  0,  0,  0,  0,  0,  0,  0 }, // 14 Return0
-    {  0,  0,  0,  0,  0,  0, 16,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 }, // 15 Return1
-    {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  4,  0,  0 }, // 16 Return2
-    {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 18,  0,  0,  0,  0,  0 }, // 17 Msg0
-    {  0,  0,  0, 19,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 }, // 18 Msg1
-    {  0,  0,  0,  0,  0,  0,  0,  0,  4,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 }, // 19 Msg2
-    {  0, 21,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 }, // 20 Disc0
-    {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 22,  0,  0,  0,  0 }, // 21 Disc1
-    {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  4,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 }  // 22 Disc2
-};
+#define FRAME_CALL    0  // Synchronous RPC.  Sender blocks for FRAME_RETURN.
+#define FRAME_RETURN  1  // Response to FRAME_CALL, routed by channel.
+#define FRAME_MSG     2  // Fire-and-forget.  Same dispatch as Call, no reply.
+#define FRAME_DISC    3  // Disconnect.  Tears down the channel.
 
-// Decode bytes out of Queue_In to Queue_Frame.
+#define FRAME_HEADER_SIZE  9  // type(1) + channel(4) + length(4)
+#define MAX_FRAME_PAYLOAD  (1024 * 1024)  // 1 MB limit per frame.
+
+// Decoder state, persistent across calls for partial-read resumption.
+//
+static bool     g_bHaveHeader = false;
+static uint8_t  g_FrameType = 0;
+static uint32_t g_nChannel = 0;
+static uint32_t g_nPayloadLength = 0;
+static size_t   g_nPayloadRemaining = 0;
+
+// Try to read exactly n bytes from the queue.  Returns true only if all
+// n bytes were available.  On false, no bytes are consumed.
+//
+static bool Pipe_ReadExact(QUEUE_INFO *pqi, size_t n, void *pv)
+{
+    if (Pipe_QueueLength(pqi) < n)
+    {
+        return false;
+    }
+    size_t nGot = n;
+    Pipe_GetBytes(pqi, &nGot, pv);
+    return nGot == n;
+}
+
+// Decode one frame at a time from g_pQueue_In.
+//
+// Returns true when a FRAME_RETURN matching iReturnChannel has been received
+// and its payload is in pqiFrame.  Other frame types are dispatched inline.
 //
 extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(uint32_t iReturnChannel, QUEUE_INFO *pqiFrame)
 {
-    uint8_t buffer[512];
-
-    if (8 == g_iState)
+    for (;;)
     {
-        // We must remain in the Length3 state until we have consumed all of the expected data.
+        // Resume reading payload if we were interrupted mid-frame.
         //
-        while (0 < g_nLengthRemaining)
+        if (g_bHaveHeader && g_nPayloadRemaining > 0)
         {
-            size_t nWanted = g_nLengthRemaining;
-            if (sizeof(buffer) < nWanted)
+            uint8_t buffer[512];
+            while (0 < g_nPayloadRemaining)
             {
-                nWanted = sizeof(buffer);
-            }
-
-            if (  !Pipe_GetBytes(g_pQueue_In, &nWanted, buffer)
-               || 0 == nWanted)
-            {
-                return false;
-            }
-            Pipe_AppendBytes(pqiFrame, nWanted, buffer);
-            g_nLengthRemaining -= nWanted;
-        }
-    }
-
-    uint8_t ch;
-    while (Pipe_GetByte(g_pQueue_In, &ch))
-    {
-        g_iState = decoder_stt[g_iState][decoder_itt[ch]];
-        switch (g_iState)
-        {
-        case 3: // Call2
-            g_eType = eCall;
-            break;
-
-        case 16: // Return2
-            g_eType = eReturn;
-            break;
-
-        case 19: // Msg2
-            g_eType = eMessage;
-            break;
-
-        case 22: // Disc2
-            g_eType = eDisconnect;
-            break;
-
-        case 5: // Length0
-            Length.ch[0] = ch;
-            break;
-
-        case 6: // Length1
-            Length.ch[1] = ch;
-            break;
-
-        case 7: // Length2
-            Length.ch[2] = ch;
-            break;
-
-        case 8: // Length3
-            Length.ch[3] = ch;
-            g_nLengthRemaining = Length.n;
-
-            // We've been told how long to expect the packet to be.
-            //
-            while (0 < g_nLengthRemaining)
-            {
-                size_t nWanted = g_nLengthRemaining;
+                size_t nWanted = g_nPayloadRemaining;
                 if (sizeof(buffer) < nWanted)
                 {
                     nWanted = sizeof(buffer);
@@ -1644,110 +1547,125 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(uint32_t iReturnChannel, QU
                 if (  !Pipe_GetBytes(g_pQueue_In, &nWanted, buffer)
                    || 0 == nWanted)
                 {
-                    // We'll leave the state machine and try to pick up again at the same place later.
-                    //
                     return false;
                 }
                 Pipe_AppendBytes(pqiFrame, nWanted, buffer);
-                g_nLengthRemaining -= nWanted;
+                g_nPayloadRemaining -= nWanted;
             }
-            break;
 
-        case 12: // Cleanup
-
-            // Something went wrong. Re-initialize all the decoding variables.
+            // Fall through to dispatch.
+        }
+        else if (!g_bHaveHeader)
+        {
+            // Read the 9-byte header atomically.
             //
-            g_eType   = eUnknown;
-            Length.n = 0;
-            g_nChannel = 0;
-            Pipe_EmptyQueue(pqiFrame);
-            break;
-
-        case 13: // Accept
-            if (4 <= Length.n)
+            uint8_t header[FRAME_HEADER_SIZE];
+            if (!Pipe_ReadExact(g_pQueue_In, FRAME_HEADER_SIZE, header))
             {
-                size_t nWanted = sizeof(g_nChannel);
-                if (  Pipe_GetBytes(pqiFrame, &nWanted, &g_nChannel)
-                   && nWanted == sizeof(g_nChannel))
+                return false;
+            }
+
+            g_FrameType = header[0];
+            memcpy(&g_nChannel, header + 1, sizeof(g_nChannel));
+            memcpy(&g_nPayloadLength, header + 5, sizeof(g_nPayloadLength));
+
+            // Validate.
+            //
+            if (g_FrameType > FRAME_DISC || g_nPayloadLength > MAX_FRAME_PAYLOAD)
+            {
+                // Protocol error.  The pipe is broken.
+                //
+                g_bHaveHeader = false;
+                return false;
+            }
+
+            g_bHaveHeader = true;
+            g_nPayloadRemaining = g_nPayloadLength;
+
+            // Read payload (may be zero-length).
+            //
+            uint8_t buffer[512];
+            while (0 < g_nPayloadRemaining)
+            {
+                size_t nWanted = g_nPayloadRemaining;
+                if (sizeof(buffer) < nWanted)
                 {
-                    if (eReturn == g_eType)
+                    nWanted = sizeof(buffer);
+                }
+
+                if (  !Pipe_GetBytes(g_pQueue_In, &nWanted, buffer)
+                   || 0 == nWanted)
+                {
+                    return false;
+                }
+                Pipe_AppendBytes(pqiFrame, nWanted, buffer);
+                g_nPayloadRemaining -= nWanted;
+            }
+        }
+
+        // Header and payload are complete.  Dispatch.
+        //
+        g_bHaveHeader = false;
+
+        if (FRAME_RETURN == g_FrameType)
+        {
+            if (g_nChannel == iReturnChannel)
+            {
+                return true;
+            }
+
+            // Return for a channel we're not waiting on.  Discard.
+            //
+            Pipe_EmptyQueue(pqiFrame);
+        }
+        else
+        {
+            std::map<uint32_t, CHANNEL_INFO *>::iterator it = g_Channels.find(g_nChannel);
+            PCHANNEL_INFO pci;
+            if (g_Channels.end() != it && nullptr != (pci = it->second))
+            {
+                switch (g_FrameType)
+                {
+                case FRAME_CALL:
+                    if (nullptr != pci->pfCall)
                     {
-                        if (g_nChannel == iReturnChannel)
+                        MUX_RESULT mr = pci->pfCall(pci, pqiFrame);
+                        if (MUX_FAILED(mr))
                         {
-                            g_eType    = eUnknown;
-                            Length.n   = 0;
-                            g_nChannel = 0;
-                            return true;
+                            Pipe_EmptyQueue(pqiFrame);
                         }
-                        else
-                        {
-                            // TODO: Bad.
-                            //
-                            break;
-                        }
+
+                        // Send response back to caller.
+                        //
+                        uint8_t type = FRAME_RETURN;
+                        uint32_t nReturn = static_cast<uint32_t>(Pipe_QueueLength(pqiFrame));
+
+                        Pipe_AppendBytes(g_pQueue_Out, 1, &type);
+                        Pipe_AppendBytes(g_pQueue_Out, sizeof(g_nChannel), &g_nChannel);
+                        Pipe_AppendBytes(g_pQueue_Out, sizeof(nReturn), &nReturn);
+                        Pipe_AppendQueue(g_pQueue_Out, pqiFrame);
                     }
-                    else
+                    break;
+
+                case FRAME_MSG:
+                    if (nullptr != pci->pfMsg)
                     {
-                        std::map<uint32_t, CHANNEL_INFO *>::iterator it = g_Channels.find(g_nChannel);
-                        PCHANNEL_INFO pci;
-                        if (g_Channels.end() != it && nullptr != (pci = it->second))
-                        {
-                            switch (g_eType)
-                            {
-                            case eCall:
-                                if (nullptr != pci->pfCall)
-                                {
-                                    MUX_RESULT mr = pci->pfCall(pci, pqiFrame);
-                                    if (MUX_FAILED(mr))
-                                    {
-                                        Pipe_EmptyQueue(pqiFrame);
-                                    }
-
-                                    // Send Queue_Frame back to sender.
-                                    //
-                                    uint32_t nReturn = static_cast<uint32_t>(sizeof(g_nChannel) + Pipe_QueueLength(pqiFrame));
-
-                                    Pipe_AppendBytes(g_pQueue_Out, sizeof(ReturnMagic), ReturnMagic);
-                                    Pipe_AppendBytes(g_pQueue_Out, sizeof(nReturn), &nReturn);
-                                    Pipe_AppendBytes(g_pQueue_Out, sizeof(g_nChannel), &g_nChannel);
-                                    Pipe_AppendQueue(g_pQueue_Out, pqiFrame);
-                                    Pipe_AppendBytes(g_pQueue_Out, sizeof(EndMagic), EndMagic);
-                                }
-                                break;
-
-                            case eMessage:
-                                if (nullptr != pci->pfMsg)
-                                {
-                                    pci->pfMsg(pci, pqiFrame);
-                                }
-                                break;
-
-                            case eDisconnect:
-                                if (nullptr != pci->pfDisc)
-                                {
-                                    pci->pfDisc(pci, pqiFrame);
-                                }
-                                break;
-
-                            default:
-                                break;
-                            }
-                        }
+                        pci->pfMsg(pci, pqiFrame);
                     }
+                    break;
+
+                case FRAME_DISC:
+                    if (nullptr != pci->pfDisc)
+                    {
+                        pci->pfDisc(pci, pqiFrame);
+                    }
+                    break;
                 }
             }
 
-            // The packet was too short to contain a channel number, the
-            // channel did not exist, or the call completed successfully.
-            //
-            g_eType    = eUnknown;
-            Length.n   = 0;
-            g_nChannel = 0;
             Pipe_EmptyQueue(pqiFrame);
-            break;
         }
     }
-    return false;
 }
 
 static MUX_RESULT Pipe_SendReceive(uint32_t iReturnChannel, QUEUE_INFO *pqi)
@@ -1765,36 +1683,34 @@ static MUX_RESULT Pipe_SendReceive(uint32_t iReturnChannel, QUEUE_INFO *pqi)
     return mr;
 }
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(uint32_t iReturnChannel, QUEUE_INFO *pqiFrame)
+static void Pipe_WriteHeader(uint8_t type, uint32_t nChannel, uint32_t nPayload)
 {
-    uint32_t nLength = static_cast<uint32_t>(sizeof(iReturnChannel) + Pipe_QueueLength(pqiFrame));
-    Pipe_AppendBytes(g_pQueue_Out, sizeof(CallMagic), CallMagic);
-    Pipe_AppendBytes(g_pQueue_Out, sizeof(nLength), &nLength);
-    Pipe_AppendBytes(g_pQueue_Out, sizeof(iReturnChannel), &iReturnChannel);
-    Pipe_AppendQueue(g_pQueue_Out, pqiFrame);
-    Pipe_AppendBytes(g_pQueue_Out, sizeof(EndMagic), EndMagic);
-    return Pipe_SendReceive(iReturnChannel, pqiFrame);
+    Pipe_AppendBytes(g_pQueue_Out, 1, &type);
+    Pipe_AppendBytes(g_pQueue_Out, sizeof(nChannel), &nChannel);
+    Pipe_AppendBytes(g_pQueue_Out, sizeof(nPayload), &nPayload);
 }
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendMsgPacket(uint32_t iReturnChannel, QUEUE_INFO *pqiFrame)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(uint32_t nChannel, QUEUE_INFO *pqiFrame)
 {
-    uint32_t nLength = static_cast<uint32_t>(sizeof(iReturnChannel) + Pipe_QueueLength(pqiFrame));
-    Pipe_AppendBytes(g_pQueue_Out, sizeof(MsgMagic), MsgMagic);
-    Pipe_AppendBytes(g_pQueue_Out, sizeof(nLength), &nLength);
-    Pipe_AppendBytes(g_pQueue_Out, sizeof(iReturnChannel), &iReturnChannel);
+    uint32_t nPayload = static_cast<uint32_t>(Pipe_QueueLength(pqiFrame));
+    Pipe_WriteHeader(FRAME_CALL, nChannel, nPayload);
     Pipe_AppendQueue(g_pQueue_Out, pqiFrame);
-    Pipe_AppendBytes(g_pQueue_Out, sizeof(EndMagic), EndMagic);
+    return Pipe_SendReceive(nChannel, pqiFrame);
+}
+
+extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendMsgPacket(uint32_t nChannel, QUEUE_INFO *pqiFrame)
+{
+    uint32_t nPayload = static_cast<uint32_t>(Pipe_QueueLength(pqiFrame));
+    Pipe_WriteHeader(FRAME_MSG, nChannel, nPayload);
+    Pipe_AppendQueue(g_pQueue_Out, pqiFrame);
     return MUX_S_OK;
 }
 
-extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendDiscPacket(uint32_t iReturnChannel, QUEUE_INFO *pqiFrame)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendDiscPacket(uint32_t nChannel, QUEUE_INFO *pqiFrame)
 {
-    uint32_t nLength = static_cast<uint32_t>(sizeof(iReturnChannel) + Pipe_QueueLength(pqiFrame));
-    Pipe_AppendBytes(g_pQueue_Out, sizeof(DiscMagic), DiscMagic);
-    Pipe_AppendBytes(g_pQueue_Out, sizeof(nLength), &nLength);
-    Pipe_AppendBytes(g_pQueue_Out, sizeof(iReturnChannel), &iReturnChannel);
+    uint32_t nPayload = static_cast<uint32_t>(Pipe_QueueLength(pqiFrame));
+    Pipe_WriteHeader(FRAME_DISC, nChannel, nPayload);
     Pipe_AppendQueue(g_pQueue_Out, pqiFrame);
-    Pipe_AppendBytes(g_pQueue_Out, sizeof(EndMagic), EndMagic);
     return MUX_S_OK;
 }
 
