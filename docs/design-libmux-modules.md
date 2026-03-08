@@ -156,13 +156,49 @@ With only a handful of marshaled interfaces, probably not yet.
   in practice.  Accepted as-is.
 
 
-## Phase 3: Grow libmux.so
+## Phase 3: Grow libmux.so — SUBSTANTIALLY COMPLETE
 
 ### The Problem
 
 Modules cannot call netmux functions because those symbols live in the netmux
 binary, not in libmux.so.  To decompose the server into modules, those modules
 need access to foundational services.
+
+### Results (brazil branch, 2026-03-08)
+
+Created `core.h` — a utility-layer subset of externs.h providing base types,
+string utilities, time utilities, math, hash/random, buffer management, ANSI
+constants, and SHA1.  No game-state dependency.  externs.h includes core.h as
+its first action, so existing code is unaffected.
+
+**18 of 19 LIBMUX_SRC files now compile with core.h** (no externs.h):
+
+| Category | Files |
+|----------|-------|
+| Crypto/hash | sha1, svdrand, svdhash |
+| Time | timeutil, timeabsolute, timedelta, timeparser, timezone |
+| UTF-8 | utf8_collate, utf8_grapheme, utf8_normalize, utf8tables |
+| String | stringutil |
+| Math | mathutil, strtod |
+| Other | alarm, ast_scan, libmux |
+
+**1 file remains on externs.h:** alloc.cpp — its diagnostic logging uses
+STARTLOG/Log/start_log which depend on mudstate.logging, mudconf.log_info,
+and the CLogFile class.  Converting it would require also extracting the
+logging subsystem, which is not worth the complexity.
+
+**Build system:** Makefile.am splits sources into LIBMUX_SRC (19 files,
+compiled as .lo with -fPIC) and NETMUX_SRC (game server files).  libmux.so
+exports 513 symbols.  netmux links against libmux.so.
+
+**Decoupling techniques used:**
+- Global variables bridging core→server layer: `g_float_precision` (mathutil.h),
+  `g_no_flash` / `g_space_compress` (stringutil.h).  Server syncs from mudconf
+  after config load; `g_no_flash` written directly by config table.
+- Declarations migrated from externs.h to appropriate utility headers:
+  IEEE_MAKE_* and strtod functions → mathutil.h; parse_rgb/ColorTable →
+  stringutil.h; ansi.h → core.h.
+- cf_art_rule() config handler moved from stringutil.cpp to conf.cpp.
 
 ### Two Approaches
 
@@ -259,26 +295,22 @@ If going with Approach C, these are the lowest-risk candidates:
 - Networking (bsd.cpp, netcommon.cpp) — owns descriptor state
 - Commands — depend on everything
 
-### Open Questions for Phase 3
+### Phase 3 Questions — Resolved
 
-1. **Global state ownership:** mudconf and mudstate are massive structs living
-   in netmux's data segment.  If libmux.so needs to access them, they must
-   either (a) move into the .so, (b) be passed as pointers during init, or
-   (c) be accessed through an interface.  Option (a) is simplest but means
-   the .so and the binary share mutable global state.
+1. **Global state ownership:** Resolved with option (d): small globals in
+   utility headers (g_float_precision, g_no_flash, g_space_compress) that the
+   server syncs from mudconf after config load.  mudconf/mudstate stay in
+   netmux; core-layer code uses the globals.
 
-2. **ABI stability:** Modules compiled against one version of libmux.so may
-   load into a different version.  COM interfaces are ABI-stable by design
-   (vtable layout).  Direct function calls are not.  How much do we care?
-   For a self-hosted server where admin compiles modules, probably not much.
+2. **ABI stability:** Accepted as non-issue for self-hosted servers where
+   admin compiles modules alongside the server.
 
-3. **Build system:** Currently libmux.so is built from a single .cpp file via
-   a custom rule in Makefile.am.  Growing it to multiple files requires proper
-   automake shared library support (libtool or manual rules).
+3. **Build system:** Resolved.  LIBMUX_SRC/NETMUX_SRC split in Makefile.am.
+   Pattern rule compiles .cpp → .lo with -fPIC.  libmux.so links all .lo
+   files.  CLEANFILES handles .lo cleanup.
 
-4. **Testing:** How do we test libmux.so independently?  Currently tested
-   indirectly through the smoke tests.  A unit test harness for the shared
-   library would be valuable.
+4. **Testing:** Tested indirectly through smoke tests (406 pass).  A unit
+   test harness remains a future possibility.
 
 
 ## Phase 4: Modularize the Server
@@ -582,11 +614,13 @@ targeted includes once those types are accessible.
    boundary-wall pattern gates access cleanly.  Phase 4 is worth pursuing
    for Tier 1 and Tier 2 subsystems.
 
-### Open
+3. **Phase 3 scope?**  Resolved.  Surveys 1 and 2 completed.  18 of 19
+   LIBMUX_SRC files decoupled to core.h.  alloc.cpp remains on externs.h
+   (logging subsystem entanglement — not worth the complexity to extract).
+   libmux.so exports 513 symbols covering strings, time, math, hash, crypto,
+   UTF-8, ANSI color, and buffer management.
 
-3. **Phase 3 scope?**  Survey 1 and 2 are still needed to determine what can
-   move into libmux.so without dragging in the world.  If stringutil and
-   timeutil compile cleanly, start there.
+### Open
 
 4. **Interface vs. direct, per API.**  Approach C (hybrid) is the direction,
    but the interface-vs-direct decision is made independently for each API.
