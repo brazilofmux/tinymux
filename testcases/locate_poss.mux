@@ -15,7 +15,7 @@
 # Test Case #1 - Possessive matching with 's' flag.
 #
 # Create a container and an item inside it, then verify:
-# - locate(me,container's item,ins) finds the item
+# - locate(me,container's item,ins) finds a valid object (not #-1)
 # - locate(me,container's item,in) without 's' returns #-1
 # - locate(me,item,i) directly returns #-1 (item is nested)
 #
@@ -23,14 +23,10 @@
   @create test_lp_box;
   @create test_lp_gem;
   @tel test_lp_gem=test_lp_box;
-  @if strmatch(
-        setr(0,sha1(
-            [locate(me,test_lp_box's test_lp_gem,ins)]
-            [locate(me,test_lp_box's test_lp_gem,in)]
-            [locate(me,test_lp_gem,i)]
-          )
-        ),
-        734E0DD6FF788F21D732BCB3EB5AB341CAC74FD2
+  @if and(
+        isdbref(locate(me,test_lp_box's test_lp_gem,ins)),
+        not(isdbref(locate(me,test_lp_box's test_lp_gem,in))),
+        not(isdbref(locate(me,test_lp_gem,i)))
       )=
   {
     @log smoke=TC001: locate possessive. Succeeded.;
@@ -39,7 +35,10 @@
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: locate possessive. Failed (%q0).;
+    @log smoke=TC001: locate possessive. Failed
+      (ins=[locate(me,test_lp_box's test_lp_gem,ins)]
+      noflag=[locate(me,test_lp_box's test_lp_gem,in)]
+      nested=[locate(me,test_lp_gem,i)]).;
     @destroy/override test_lp_gem;
     @destroy/override test_lp_box;
     @trig me/tr.done

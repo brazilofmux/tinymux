@@ -31,19 +31,19 @@
 #
 # Test Case #2 - Set a lock via lock() and verify it reads back.
 #
+# lock(me,me) sets the default lock to the executor's dbref.
+# lock(me) reads it back as "#<dbref>".
+# Compare against num(me) to avoid dbref-dependent hashes.
+#
 &tr.tc002 test_lock_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [lock(me,me)]
-            [lock(me)]
-          )),
-        32FEA2DA4C196E2BFEB79FF2707D46E742E8C614
-      )=
+  think >>> lock set: [lock(me,me)];
+  @if strmatch(lock(me),[num(me)])=
   {
     @log smoke=TC002: lock set. Succeeded.
   },
   {
-    @log smoke=TC002: lock set. Failed (%q0).
+    @log smoke=TC002: lock set. Failed
+      (read=[lock(me)] expected=[num(me)]).
   }
 -
 #
