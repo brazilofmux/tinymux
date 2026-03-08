@@ -2223,7 +2223,7 @@ MUX_RESULT CSlaveControlProxy::AddModule(const UTF8 aModuleName[], const UTF8 aF
     if (MUX_SUCCEEDED(mr))
     {
         MUX_RESULT mrReturn;
-        if (Marshal_GetInt(&qiFrame, reinterpret_cast<int *>(&mrReturn)))
+        if (Marshal_GetInt(&qiFrame, &mrReturn))
         {
             mr = mrReturn;
         }
@@ -2248,7 +2248,7 @@ MUX_RESULT CSlaveControlProxy::RemoveModule(const UTF8 aModuleName[])
     if (MUX_SUCCEEDED(mr))
     {
         MUX_RESULT mrReturn;
-        if (Marshal_GetInt(&qiFrame, reinterpret_cast<int *>(&mrReturn)))
+        if (Marshal_GetInt(&qiFrame, &mrReturn))
         {
             mr = mrReturn;
         }
@@ -2348,7 +2348,7 @@ MUX_RESULT CSlaveControlProxy::ModuleMaintenance(void)
     if (MUX_SUCCEEDED(mr))
     {
         MUX_RESULT mrReturn;
-        if (Marshal_GetInt(&qiFrame, reinterpret_cast<int *>(&mrReturn)))
+        if (Marshal_GetInt(&qiFrame, &mrReturn))
         {
             mr = mrReturn;
         }
@@ -2372,7 +2372,7 @@ MUX_RESULT CSlaveControlProxy::ShutdownSlave(void)
     if (MUX_SUCCEEDED(mr))
     {
         MUX_RESULT mrReturn;
-        if (Marshal_GetInt(&qiFrame, reinterpret_cast<int *>(&mrReturn)))
+        if (Marshal_GetInt(&qiFrame, &mrReturn))
         {
             mr = mrReturn;
         }
@@ -2553,7 +2553,7 @@ MUX_RESULT CSlaveControlStub::Invoke(QUEUE_INFO *pqi)
             delete [] pFileName;
 
             Pipe_EmptyQueue(pqi);
-            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+            Marshal_PutInt(pqi, mr);
         }
         break;
 
@@ -2569,7 +2569,7 @@ MUX_RESULT CSlaveControlStub::Invoke(QUEUE_INFO *pqi)
             mr = m_pISlaveControl->RemoveModule(pModuleName);
 
             Pipe_EmptyQueue(pqi);
-            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+            Marshal_PutInt(pqi, mr);
         }
         break;
 
@@ -2620,7 +2620,7 @@ MUX_RESULT CSlaveControlStub::Invoke(QUEUE_INFO *pqi)
             mr = m_pISlaveControl->ModuleMaintenance();
 
             Pipe_EmptyQueue(pqi);
-            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+            Marshal_PutInt(pqi, mr);
         }
         break;
 
@@ -2629,7 +2629,7 @@ MUX_RESULT CSlaveControlStub::Invoke(QUEUE_INFO *pqi)
             mr = m_pISlaveControl->ShutdownSlave();
 
             Pipe_EmptyQueue(pqi);
-            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+            Marshal_PutInt(pqi, mr);
         }
         break;
 
@@ -2912,8 +2912,7 @@ MUX_RESULT CQuerySinkProxy::Result(uint32_t iQueryHandle, uint32_t iError, QUEUE
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    uint32_t iMethod = 3;
-    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+    Marshal_PutUInt32(&qiFrame, 3);
     Marshal_PutUInt32(&qiFrame, iQueryHandle);
     Marshal_PutUInt32(&qiFrame, iError);
     Pipe_AppendQueue(&qiFrame, pqiResultsSet);
@@ -2923,9 +2922,7 @@ MUX_RESULT CQuerySinkProxy::Result(uint32_t iQueryHandle, uint32_t iError, QUEUE
     if (MUX_SUCCEEDED(mr))
     {
         MUX_RESULT mrResult;
-        size_t nWanted = sizeof(mrResult);
-        if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrResult)
-           && nWanted == sizeof(mrResult))
+        if (Marshal_GetInt(&qiFrame, &mrResult))
         {
             mr = mrResult;
         }
@@ -3044,9 +3041,7 @@ MUX_RESULT CQuerySinkStub::Invoke(QUEUE_INFO *pqi)
     }
 
     uint32_t iMethod;
-    size_t nWanted = sizeof(iMethod);
-    if (  !Pipe_GetBytes(pqi, &nWanted, &iMethod)
-       || nWanted != sizeof(iMethod))
+    if (!Marshal_GetUInt32(pqi, &iMethod))
     {
         return MUX_E_INVALIDARG;
     }
@@ -3061,8 +3056,7 @@ MUX_RESULT CQuerySinkStub::Invoke(QUEUE_INFO *pqi)
                || !Marshal_GetUInt32(pqi, &iError))
             {
                 Pipe_EmptyQueue(pqi);
-                MUX_RESULT mrReturn = MUX_E_INVALIDARG;
-                Pipe_AppendBytes(pqi, sizeof(mrReturn), &mrReturn);
+                Marshal_PutInt(pqi, static_cast<int>(MUX_E_INVALIDARG));
                 return MUX_S_OK;
             }
 
@@ -3071,7 +3065,7 @@ MUX_RESULT CQuerySinkStub::Invoke(QUEUE_INFO *pqi)
             MUX_RESULT mrReturn = m_pIQuerySink->Result(iQueryHandle, iError, pqi);
 
             Pipe_EmptyQueue(pqi);
-            Pipe_AppendBytes(pqi, sizeof(mrReturn), &mrReturn);
+            Marshal_PutInt(pqi, mrReturn);
             return MUX_S_OK;
         }
         break;
@@ -3339,8 +3333,7 @@ MUX_RESULT CQueryControlProxy::Connect(const UTF8 *pServer, const UTF8 *pDatabas
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    uint32_t iMethod = 3;
-    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+    Marshal_PutUInt32(&qiFrame, 3);
     Marshal_PutString(&qiFrame, pServer);
     Marshal_PutString(&qiFrame, pDatabase);
     Marshal_PutString(&qiFrame, pUser);
@@ -3351,9 +3344,7 @@ MUX_RESULT CQueryControlProxy::Connect(const UTF8 *pServer, const UTF8 *pDatabas
     if (MUX_SUCCEEDED(mr))
     {
         MUX_RESULT mrResult;
-        size_t nWanted = sizeof(mrResult);
-        if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrResult)
-           && nWanted == sizeof(mrResult))
+        if (Marshal_GetInt(&qiFrame, &mrResult))
         {
             mr = mrResult;
         }
@@ -3374,8 +3365,7 @@ MUX_RESULT CQueryControlProxy::Advise(mux_IQuerySink *pIQuerySink)
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    uint32_t iMethod = 4;
-    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+    Marshal_PutUInt32(&qiFrame, 4);
 
     mr = mux_MarshalInterface(&qiFrame, IID_IQuerySink, pIQuerySink, CrossProcess);
     if (MUX_SUCCEEDED(mr))
@@ -3385,9 +3375,7 @@ MUX_RESULT CQueryControlProxy::Advise(mux_IQuerySink *pIQuerySink)
         if (MUX_SUCCEEDED(mr))
         {
             MUX_RESULT mrResult;
-            size_t nWanted = sizeof(mrResult);
-            if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrResult)
-               && nWanted == sizeof(mrResult))
+            if (Marshal_GetInt(&qiFrame, &mrResult))
             {
                 mr = mrResult;
             }
@@ -3409,8 +3397,7 @@ MUX_RESULT CQueryControlProxy::Query(uint32_t iQueryHandle, const UTF8 *pDatabas
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    uint32_t iMethod = 5;
-    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+    Marshal_PutUInt32(&qiFrame, 5);
     Marshal_PutUInt32(&qiFrame, iQueryHandle);
     Marshal_PutString(&qiFrame, pDatabaseName);
     Marshal_PutString(&qiFrame, pQuery);
@@ -3526,9 +3513,7 @@ MUX_RESULT CQueryControlStub::Invoke(QUEUE_INFO *pqi)
     }
 
     uint32_t iMethod;
-    size_t nWanted = sizeof(iMethod);
-    if (  !Pipe_GetBytes(pqi, &nWanted, &iMethod)
-       || nWanted != sizeof(iMethod))
+    if (!Marshal_GetUInt32(pqi, &iMethod))
     {
         return MUX_E_INVALIDARG;
     }
@@ -3560,7 +3545,7 @@ MUX_RESULT CQueryControlStub::Invoke(QUEUE_INFO *pqi)
             }
 
             Pipe_EmptyQueue(pqi);
-            Pipe_AppendBytes(pqi, sizeof(mrReturn), &mrReturn);
+            Marshal_PutInt(pqi, mrReturn);
             return MUX_S_OK;
         }
         break;
@@ -3576,7 +3561,7 @@ MUX_RESULT CQueryControlStub::Invoke(QUEUE_INFO *pqi)
             }
 
             Pipe_EmptyQueue(pqi);
-            Pipe_AppendBytes(pqi, sizeof(mrReturn), &mrReturn);
+            Marshal_PutInt(pqi, mrReturn);
             return MUX_S_OK;
         }
         break;
@@ -3602,7 +3587,7 @@ MUX_RESULT CQueryControlStub::Invoke(QUEUE_INFO *pqi)
             }
 
             Pipe_EmptyQueue(pqi);
-            Pipe_AppendBytes(pqi, sizeof(mrReturn), &mrReturn);
+            Marshal_PutInt(pqi, mrReturn);
             return MUX_S_OK;
         }
         break;

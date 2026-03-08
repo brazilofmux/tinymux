@@ -1052,9 +1052,8 @@ MUX_RESULT CLogProxy::start_log(bool *pStarted, int key, const UTF8 *primary, co
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    uint32_t iMethod = 3;
-    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
-    Pipe_AppendBytes(&qiFrame, sizeof(key), &key);
+    Marshal_PutUInt32(&qiFrame, 3);
+    Marshal_PutInt(&qiFrame, key);
     Marshal_PutString(&qiFrame, primary);
     Marshal_PutString(&qiFrame, secondary);
 
@@ -1088,8 +1087,7 @@ MUX_RESULT CLogProxy::log_perror(const UTF8 *primary, const UTF8 *secondary, con
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    uint32_t iMethod = 4;
-    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+    Marshal_PutUInt32(&qiFrame, 4);
     Marshal_PutString(&qiFrame, primary);
     Marshal_PutString(&qiFrame, secondary);
     Marshal_PutString(&qiFrame, extra);
@@ -1099,9 +1097,7 @@ MUX_RESULT CLogProxy::log_perror(const UTF8 *primary, const UTF8 *secondary, con
     if (MUX_SUCCEEDED(mr))
     {
         MUX_RESULT mrReturn;
-        size_t nWanted = sizeof(mrReturn);
-        if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrReturn)
-           && nWanted == sizeof(mrReturn))
+        if (Marshal_GetInt(&qiFrame, &mrReturn))
         {
             mr = mrReturn;
         }
@@ -1119,17 +1115,14 @@ MUX_RESULT CLogProxy::log_text(const UTF8 *text)
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    uint32_t iMethod = 5;
-    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+    Marshal_PutUInt32(&qiFrame, 5);
     Marshal_PutString(&qiFrame, text);
 
     MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
     if (MUX_SUCCEEDED(mr))
     {
         MUX_RESULT mrReturn;
-        size_t nWanted = sizeof(mrReturn);
-        if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrReturn)
-           && nWanted == sizeof(mrReturn))
+        if (Marshal_GetInt(&qiFrame, &mrReturn))
         {
             mr = mrReturn;
         }
@@ -1147,17 +1140,14 @@ MUX_RESULT CLogProxy::log_number(int num)
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    uint32_t iMethod = 6;
-    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
-    Pipe_AppendBytes(&qiFrame, sizeof(num), &num);
+    Marshal_PutUInt32(&qiFrame, 6);
+    Marshal_PutInt(&qiFrame, num);
 
     MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
     if (MUX_SUCCEEDED(mr))
     {
         MUX_RESULT mrReturn;
-        size_t nWanted = sizeof(mrReturn);
-        if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrReturn)
-           && nWanted == sizeof(mrReturn))
+        if (Marshal_GetInt(&qiFrame, &mrReturn))
         {
             mr = mrReturn;
         }
@@ -1175,17 +1165,14 @@ MUX_RESULT CLogProxy::log_name(dbref target)
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    uint32_t iMethod = 7;
-    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
-    Pipe_AppendBytes(&qiFrame, sizeof(target), &target);
+    Marshal_PutUInt32(&qiFrame, 7);
+    Marshal_PutInt(&qiFrame, target);
 
     MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
     if (MUX_SUCCEEDED(mr))
     {
         MUX_RESULT mrReturn;
-        size_t nWanted = sizeof(mrReturn);
-        if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrReturn)
-           && nWanted == sizeof(mrReturn))
+        if (Marshal_GetInt(&qiFrame, &mrReturn))
         {
             mr = mrReturn;
         }
@@ -1203,17 +1190,14 @@ MUX_RESULT CLogProxy::log_name_and_loc(dbref player)
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    uint32_t iMethod = 8;
-    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
-    Pipe_AppendBytes(&qiFrame, sizeof(player), &player);
+    Marshal_PutUInt32(&qiFrame, 8);
+    Marshal_PutInt(&qiFrame, player);
 
     MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
     if (MUX_SUCCEEDED(mr))
     {
         MUX_RESULT mrReturn;
-        size_t nWanted = sizeof(mrReturn);
-        if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrReturn)
-           && nWanted == sizeof(mrReturn))
+        if (Marshal_GetInt(&qiFrame, &mrReturn))
         {
             mr = mrReturn;
         }
@@ -1231,17 +1215,14 @@ MUX_RESULT CLogProxy::log_type_and_name(dbref thing)
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    uint32_t iMethod = 9;
-    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
-    Pipe_AppendBytes(&qiFrame, sizeof(thing), &thing);
+    Marshal_PutUInt32(&qiFrame, 9);
+    Marshal_PutInt(&qiFrame, thing);
 
     MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
     if (MUX_SUCCEEDED(mr))
     {
         MUX_RESULT mrReturn;
-        size_t nWanted = sizeof(mrReturn);
-        if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrReturn)
-           && nWanted == sizeof(mrReturn))
+        if (Marshal_GetInt(&qiFrame, &mrReturn))
         {
             mr = mrReturn;
         }
@@ -1259,16 +1240,13 @@ MUX_RESULT CLogProxy::end_log(void)
     QUEUE_INFO qiFrame;
     Pipe_InitializeQueueInfo(&qiFrame);
 
-    uint32_t iMethod = 10;
-    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+    Marshal_PutUInt32(&qiFrame, 10);
 
     MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
     if (MUX_SUCCEEDED(mr))
     {
         MUX_RESULT mrReturn;
-        size_t nWanted = sizeof(mrReturn);
-        if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrReturn)
-           && nWanted == sizeof(mrReturn))
+        if (Marshal_GetInt(&qiFrame, &mrReturn))
         {
             mr = mrReturn;
         }
@@ -1390,9 +1368,7 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
     }
 
     uint32_t iMethod;
-    size_t nWanted = sizeof(iMethod);
-    if (  !Pipe_GetBytes(pqi, &nWanted, &iMethod)
-       || nWanted != sizeof(iMethod))
+    if (!Marshal_GetUInt32(pqi, &iMethod))
     {
         return MUX_E_INVALIDARG;
     }
@@ -1404,9 +1380,7 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
     case 3: // start_log
         {
             int key;
-            nWanted = sizeof(key);
-            if (  !Pipe_GetBytes(pqi, &nWanted, &key)
-               || nWanted != sizeof(key))
+            if (!Marshal_GetInt(pqi, &key))
             {
                 return MUX_E_INVALIDARG;
             }
@@ -1461,7 +1435,7 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
             mr = m_pILog->log_perror(pPrimary, pSecondary, pExtra, pFailing);
 
             Pipe_EmptyQueue(pqi);
-            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+            Marshal_PutInt(pqi, mr);
         }
         break;
 
@@ -1477,16 +1451,14 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
             mr = m_pILog->log_text(pText);
 
             Pipe_EmptyQueue(pqi);
-            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+            Marshal_PutInt(pqi, mr);
         }
         break;
 
     case 6: // log_number
         {
             int num;
-            nWanted = sizeof(num);
-            if (  !Pipe_GetBytes(pqi, &nWanted, &num)
-               || nWanted != sizeof(num))
+            if (!Marshal_GetInt(pqi, &num))
             {
                 return MUX_E_INVALIDARG;
             }
@@ -1494,16 +1466,14 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
             mr = m_pILog->log_number(num);
 
             Pipe_EmptyQueue(pqi);
-            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+            Marshal_PutInt(pqi, mr);
         }
         break;
 
     case 7: // log_name
         {
             dbref target;
-            nWanted = sizeof(target);
-            if (  !Pipe_GetBytes(pqi, &nWanted, &target)
-               || nWanted != sizeof(target))
+            if (!Marshal_GetInt(pqi, &target))
             {
                 return MUX_E_INVALIDARG;
             }
@@ -1511,16 +1481,14 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
             mr = m_pILog->log_name(target);
 
             Pipe_EmptyQueue(pqi);
-            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+            Marshal_PutInt(pqi, mr);
         }
         break;
 
     case 8: // log_name_and_loc
         {
             dbref player;
-            nWanted = sizeof(player);
-            if (  !Pipe_GetBytes(pqi, &nWanted, &player)
-               || nWanted != sizeof(player))
+            if (!Marshal_GetInt(pqi, &player))
             {
                 return MUX_E_INVALIDARG;
             }
@@ -1528,16 +1496,14 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
             mr = m_pILog->log_name_and_loc(player);
 
             Pipe_EmptyQueue(pqi);
-            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+            Marshal_PutInt(pqi, mr);
         }
         break;
 
     case 9: // log_type_and_name
         {
             dbref thing;
-            nWanted = sizeof(thing);
-            if (  !Pipe_GetBytes(pqi, &nWanted, &thing)
-               || nWanted != sizeof(thing))
+            if (!Marshal_GetInt(pqi, &thing))
             {
                 return MUX_E_INVALIDARG;
             }
@@ -1545,7 +1511,7 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
             mr = m_pILog->log_type_and_name(thing);
 
             Pipe_EmptyQueue(pqi);
-            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+            Marshal_PutInt(pqi, mr);
         }
         break;
 
@@ -1554,7 +1520,7 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
             mr = m_pILog->end_log();
 
             Pipe_EmptyQueue(pqi);
-            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+            Marshal_PutInt(pqi, mr);
         }
         break;
 
