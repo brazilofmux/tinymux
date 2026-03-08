@@ -16,7 +16,6 @@
 
 # Makefile.am for TinyMUX 2.14
 
-
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -114,17 +113,6 @@ CONFIG_CLEAN_VPATH_FILES =
 @STUBSLAVE_ENABLED_TRUE@am__EXEEXT_1 = stubslave$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-LIBRARIES = $(noinst_LIBRARIES)
-AR = ar
-ARFLAGS = cru
-AM_V_AR = $(am__v_AR_@AM_V@)
-am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
-am__v_AR_0 = @echo "  AR      " $@;
-am__v_AR_1 = 
-libmux_a_AR = $(AR) $(ARFLAGS)
-libmux_a_LIBADD =
-am_libmux_a_OBJECTS = libmux.$(OBJEXT)
-libmux_a_OBJECTS = $(am_libmux_a_OBJECTS)
 am__netmux_SOURCES_DIST = _build.cpp alarm.cpp alloc.cpp ast.cpp \
 	ast_scan.cpp attrcache.cpp boolexp.cpp bsd.cpp command.cpp \
 	comsys.cpp conf.cpp cque.cpp create.cpp db.cpp db_rw.cpp \
@@ -172,7 +160,7 @@ am__objects_2 = _build.$(OBJEXT) alarm.$(OBJEXT) alloc.$(OBJEXT) \
 am_netmux_OBJECTS = $(am__objects_2) version.$(OBJEXT)
 netmux_OBJECTS = $(am_netmux_OBJECTS)
 am__DEPENDENCIES_1 =
-netmux_DEPENDENCIES = libmux.a ganl/libganl.a $(am__DEPENDENCIES_1) \
+netmux_DEPENDENCIES = libmux.so ganl/libganl.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am_slave_OBJECTS = slave.$(OBJEXT)
@@ -180,7 +168,7 @@ slave_OBJECTS = $(am_slave_OBJECTS)
 slave_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_stubslave_OBJECTS = stubslave.$(OBJEXT)
 stubslave_OBJECTS = $(am_stubslave_OBJECTS)
-stubslave_DEPENDENCIES = libmux.a $(am__DEPENDENCIES_1)
+stubslave_DEPENDENCIES = libmux.so $(am__DEPENDENCIES_1)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -208,8 +196,8 @@ am__depfiles_remade = ./$(DEPDIR)/_build.Po ./$(DEPDIR)/alarm.Po \
 	./$(DEPDIR)/functions.Po ./$(DEPDIR)/funmath.Po \
 	./$(DEPDIR)/game.Po ./$(DEPDIR)/ganl_adapter.Po \
 	./$(DEPDIR)/help.Po ./$(DEPDIR)/htab.Po ./$(DEPDIR)/levels.Po \
-	./$(DEPDIR)/libmux.Po ./$(DEPDIR)/local.Po ./$(DEPDIR)/log.Po \
-	./$(DEPDIR)/look.Po ./$(DEPDIR)/mail.Po ./$(DEPDIR)/match.Po \
+	./$(DEPDIR)/local.Po ./$(DEPDIR)/log.Po ./$(DEPDIR)/look.Po \
+	./$(DEPDIR)/mail.Po ./$(DEPDIR)/match.Po \
 	./$(DEPDIR)/mathutil.Po ./$(DEPDIR)/mguests.Po \
 	./$(DEPDIR)/modules.Po ./$(DEPDIR)/move.Po \
 	./$(DEPDIR)/muxcli.Po ./$(DEPDIR)/netaddr.Po \
@@ -259,10 +247,9 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(libmux_a_SOURCES) $(netmux_SOURCES) $(slave_SOURCES) \
+SOURCES = $(netmux_SOURCES) $(slave_SOURCES) $(stubslave_SOURCES)
+DIST_SOURCES = $(am__netmux_SOURCES_DIST) $(slave_SOURCES) \
 	$(stubslave_SOURCES)
-DIST_SOURCES = $(libmux_a_SOURCES) $(am__netmux_SOURCES_DIST) \
-	$(slave_SOURCES) $(stubslave_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -504,14 +491,10 @@ NETMUX_SRC = _build.cpp alarm.cpp alloc.cpp ast.cpp ast_scan.cpp \
 	utf8_grapheme.cpp utf8_normalize.cpp utf8tables.cpp vattr.cpp \
 	walkdb.cpp wild.cpp wiz.cpp $(am__append_1) sqlitedb.cpp \
 	sqlite_backend.cpp sqlite/sqlite3.c
-noinst_LIBRARIES = libmux.a
-
-# libmux library
-libmux_a_SOURCES = libmux.cpp
 
 # netmux main program
 netmux_SOURCES = $(NETMUX_SRC) version.cpp
-netmux_LDADD = libmux.a ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
+netmux_LDADD = libmux.so ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
 
 # slave program
 slave_SOURCES = slave.cpp
@@ -519,7 +502,7 @@ slave_LDADD = $(LIBS)
 
 # stubslave program
 stubslave_SOURCES = stubslave.cpp
-stubslave_LDADD = libmux.a $(LIBS) $(STUBLIBS) 
+stubslave_LDADD = libmux.so $(LIBS) $(STUBLIBS)
 BUILT_SOURCES = ast_scan.cpp
 
 # Clean up additional files
@@ -622,14 +605,6 @@ uninstall-binPROGRAMS:
 
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
-
-clean-noinstLIBRARIES:
-	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-
-libmux.a: $(libmux_a_OBJECTS) $(libmux_a_DEPENDENCIES) $(EXTRA_libmux_a_DEPENDENCIES) 
-	$(AM_V_at)-rm -f libmux.a
-	$(AM_V_AR)$(libmux_a_AR) libmux.a $(libmux_a_OBJECTS) $(libmux_a_LIBADD)
-	$(AM_V_at)$(RANLIB) libmux.a
 sqlite/$(am__dirstamp):
 	@$(MKDIR_P) sqlite
 	@: > sqlite/$(am__dirstamp)
@@ -685,7 +660,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/help.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/htab.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/levels.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmux.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/local.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/look.Po@am__quote@ # am--include-marker
@@ -1081,7 +1055,7 @@ distcleancheck: distclean
 check-am: all-am
 check: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) check-recursive
-all-am: Makefile $(PROGRAMS) $(LIBRARIES) autoconf.h all-local
+all-am: Makefile $(PROGRAMS) autoconf.h all-local
 installdirs: installdirs-recursive
 installdirs-am:
 	for dir in "$(DESTDIR)$(bindir)"; do \
@@ -1125,8 +1099,7 @@ maintainer-clean-generic:
 	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-recursive
 
-clean-am: clean-binPROGRAMS clean-generic clean-noinstLIBRARIES \
-	mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
@@ -1157,7 +1130,6 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/help.Po
 	-rm -f ./$(DEPDIR)/htab.Po
 	-rm -f ./$(DEPDIR)/levels.Po
-	-rm -f ./$(DEPDIR)/libmux.Po
 	-rm -f ./$(DEPDIR)/local.Po
 	-rm -f ./$(DEPDIR)/log.Po
 	-rm -f ./$(DEPDIR)/look.Po
@@ -1284,7 +1256,6 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/help.Po
 	-rm -f ./$(DEPDIR)/htab.Po
 	-rm -f ./$(DEPDIR)/levels.Po
-	-rm -f ./$(DEPDIR)/libmux.Po
 	-rm -f ./$(DEPDIR)/local.Po
 	-rm -f ./$(DEPDIR)/log.Po
 	-rm -f ./$(DEPDIR)/look.Po
@@ -1358,29 +1329,26 @@ uninstall-am: uninstall-binPROGRAMS
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am all-local \
 	am--depfiles am--refresh check check-am clean \
-	clean-binPROGRAMS clean-cscope clean-generic \
-	clean-noinstLIBRARIES cscope cscopelist-am ctags ctags-am dist \
-	dist-all dist-bzip2 dist-gzip dist-lzip dist-shar dist-tarZ \
-	dist-xz dist-zip dist-zstd distcheck distclean \
-	distclean-compile distclean-generic distclean-hdr \
-	distclean-tags distcleancheck distdir distuninstallcheck dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-binPROGRAMS install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-exec-hook \
-	install-html install-html-am install-info install-info-am \
-	install-man install-pdf install-pdf-am install-ps \
-	install-ps-am install-strip installcheck installcheck-am \
-	installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-binPROGRAMS
+	clean-binPROGRAMS clean-cscope clean-generic cscope \
+	cscopelist-am ctags ctags-am dist dist-all dist-bzip2 \
+	dist-gzip dist-lzip dist-shar dist-tarZ dist-xz dist-zip \
+	dist-zstd distcheck distclean distclean-compile \
+	distclean-generic distclean-hdr distclean-tags distcleancheck \
+	distdir distuninstallcheck dvi dvi-am html html-am info \
+	info-am install install-am install-binPROGRAMS install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-exec-hook install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs installdirs-am \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am uninstall-binPROGRAMS
 
 .PRECIOUS: Makefile
 
 
-# No unsplit utility anymore
-
-# Dynamic library (for modules)
+# libmux shared library (modules resolve symbols from this at runtime)
 all-local: libmux.so
 
 libmux.so: libmux.cpp

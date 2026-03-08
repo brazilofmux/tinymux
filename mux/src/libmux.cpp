@@ -88,7 +88,7 @@ public:
     ModuleState      eState;
 };
 
-static Module g_MainModule;
+static Module g_AprioriModule;
 static Module *g_pModule = nullptr;
 static std::map<MUX_CID, Module *> g_ModulesByClass;
 static std::map<const UTF8 *, Module *, ltstr> g_ModulesByName;
@@ -181,7 +181,10 @@ static Module *ModuleAdd(const UTF8 aModuleName[], const UTF8 aFileName[])
 {
     // If the module name is already being used, we won't add it again.
     //
-    if (g_ModulesByName.end() == g_ModulesByName.find(aModuleName))
+    if (g_ModulesByName.end() != g_ModulesByName.find(aModuleName))
+    {
+        return nullptr;
+    }
     {
         // Ensure that enough room is available to append a new Module.
         //
@@ -349,7 +352,10 @@ static void ModuleUnload(Module *pModule)
 {
     if (pModule->bLoaded)
     {
-        MOD_CLOSE(pModule->hInst);
+        if (nullptr != pModule->hInst)
+        {
+            MOD_CLOSE(pModule->hInst);
+        }
         pModule->hInst = nullptr;
         pModule->fpGetClassObject = nullptr;
         pModule->fpCanUnloadNow = nullptr;
@@ -387,7 +393,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
         std::map<MUX_CID, Module *>::iterator it = g_ModulesByClass.find(cid);
         if (g_ModulesByClass.end() != it && nullptr != (pModule = it->second))
         {
-            if (pModule == &g_MainModule)
+            if (pModule == &g_AprioriModule)
             {
                 if (nullptr == pModule->fpGetClassObject)
                 {
@@ -510,7 +516,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_C
         // These classes are implemented in the main program (netmux or
         // stubslave).
         //
-        pModule = &g_MainModule;
+        pModule = &g_AprioriModule;
         if (nullptr != pModule->fpGetClassObject)
         {
             // The main program is attempting to register another handler.
@@ -522,7 +528,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_C
     // If these classes are implemented in the main program (netmux or
     // stubslave), save the private GetClassObject method.
     //
-    if (&g_MainModule == pModule)
+    if (&g_AprioriModule == pModule)
     {
         pModule->fpGetClassObject = fpGetClassObject;
     }
@@ -589,7 +595,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, MUX_CLA
     // If these classes are implemented by the main program (netmux or
     // stubslave), we need to clear the handler as well.
     //
-    if (pModule == &g_MainModule)
+    if (pModule == &g_AprioriModule)
     {
         pModule->fpGetClassObject = nullptr;
     }
@@ -892,9 +898,33 @@ static MUX_INTERFACE_INFO libmux_interfaces[] =
 };
 #define NUM_LIBMUX_INTERFACES (sizeof(libmux_interfaces)/sizeof(libmux_interfaces[0]))
 
-// Defined after PSFactory classes below.
+// libmux module entry points.  libmux.so registers itself as a Module so
+// that its proxy/stub factory classes coexist cleanly with netmux's classes.
+// The class factory is defined after the PSFactory classes below.
 //
 extern "C" MUX_RESULT DCL_API libmux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv);
+
+static MUX_RESULT libmux_Register(void)
+{
+    MUX_RESULT mr = mux_RegisterClassObjects(NUM_LIBMUX_CLASSES, libmux_classes, nullptr);
+    if (MUX_SUCCEEDED(mr))
+    {
+        mr = mux_RegisterInterfaces(NUM_LIBMUX_INTERFACES, libmux_interfaces);
+    }
+    return mr;
+}
+
+static MUX_RESULT libmux_Unregister(void)
+{
+    return mux_RevokeClassObjects(NUM_LIBMUX_CLASSES, libmux_classes);
+}
+
+static MUX_RESULT libmux_CanUnloadNow(void)
+{
+    // libmux can never truly unload while the process is running.
+    //
+    return MUX_S_OK;
+}
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context ctx)
 {
@@ -906,13 +936,38 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context c
         g_pQueue_Out = nullptr;
         g_LibraryState = eLibraryInitialized;
 
-        // Register libmux-internal classes and interfaces.
+        // Register libmux as a Module.  It has its own proxy/stub factory
+        // classes that need to coexist with netmux's classes.
         //
-        MUX_RESULT mr = mux_RegisterClassObjects(NUM_LIBMUX_CLASSES, libmux_classes, libmux_GetClassObject);
-        if (MUX_SUCCEEDED(mr))
+        Module *pModule = ModuleAdd(T("libmux"), T("./bin/libmux.so"));
+        if (nullptr == pModule)
         {
-            mr = mux_RegisterInterfaces(NUM_LIBMUX_INTERFACES, libmux_interfaces);
+            return MUX_E_OUTOFMEMORY;
         }
+
+        // Open a handle to ourselves so that ModuleUnload can dlclose
+        // it during teardown.  This increments our refcount (harmless —
+        // netmux still holds the linker reference).
+        //
+        pModule->hInst = MOD_OPEN(pModule->pFileName);
+
+        // Fill in the entry points directly — libmux knows its own
+        // function pointers without needing dlopen/dlsym.
+        //
+        pModule->fpGetClassObject = libmux_GetClassObject;
+        pModule->fpCanUnloadNow   = libmux_CanUnloadNow;
+        pModule->fpRegister       = libmux_Register;
+        pModule->fpUnregister     = libmux_Unregister;
+        pModule->bLoaded = true;
+
+        // Register libmux's classes through the normal module path.
+        //
+        pModule->eState = eModuleRegistering;
+        g_pModule = pModule;
+        MUX_RESULT mr = pModule->fpRegister();
+        g_pModule = nullptr;
+        pModule->eState = eModuleRegistered;
+
         return mr;
     }
     else

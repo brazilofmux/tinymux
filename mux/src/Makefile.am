@@ -30,18 +30,20 @@ NETMUX_SRC += sqlitedb.cpp sqlite_backend.cpp sqlite/sqlite3.c
 
 # Build executables
 bin_PROGRAMS = netmux slave
-noinst_LIBRARIES = libmux.a
 
 if STUBSLAVE_ENABLED
 bin_PROGRAMS += stubslave
 endif
 
-# libmux library
-libmux_a_SOURCES = libmux.cpp
+# libmux shared library (modules resolve symbols from this at runtime)
+all-local: libmux.so
+
+libmux.so: libmux.cpp
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(LIBS) $(DL_LIB) $(SQL_LIBS)
 
 # netmux main program
 netmux_SOURCES = $(NETMUX_SRC) version.cpp
-netmux_LDADD = libmux.a ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
+netmux_LDADD = libmux.so ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
 
 # slave program
 slave_SOURCES = slave.cpp
@@ -49,15 +51,7 @@ slave_LDADD = $(LIBS)
 
 # stubslave program
 stubslave_SOURCES = stubslave.cpp
-stubslave_LDADD = libmux.a $(LIBS) $(STUBLIBS) 
-
-# No unsplit utility anymore
-
-# Dynamic library (for modules)
-all-local: libmux.so
-
-libmux.so: libmux.cpp
-	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(LIBS) $(DL_LIB) $(SQL_LIBS)
+stubslave_LDADD = libmux.so $(LIBS) $(STUBLIBS)
 
 # Version number routines
 # The DEBIAN_BUILD environment variable can be set to create deterministic builds
