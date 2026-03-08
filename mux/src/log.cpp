@@ -944,51 +944,6 @@ MUX_RESULT CLogFactory::LockServer(bool bLock)
 // 10: end_log
 //
 
-// Helper to marshal a UTF8 string into a queue.
-//
-static void MarshalString(QUEUE_INFO *pqi, const UTF8 *str)
-{
-    size_t n = (nullptr != str) ? strlen(reinterpret_cast<const char *>(str)) + 1 : 0;
-    Pipe_AppendBytes(pqi, sizeof(n), &n);
-    if (0 < n)
-    {
-        Pipe_AppendBytes(pqi, n, str);
-    }
-}
-
-// Helper to unmarshal a UTF8 string from a queue.  Returns a pointer into a
-// caller-provided buffer, or nullptr on failure.
-//
-static bool UnmarshalString(QUEUE_INFO *pqi, UTF8 *buf, size_t bufSize, const UTF8 **ppStr)
-{
-    size_t n;
-    size_t nWanted = sizeof(n);
-    if (  !Pipe_GetBytes(pqi, &nWanted, &n)
-       || nWanted != sizeof(n))
-    {
-        return false;
-    }
-
-    if (0 == n)
-    {
-        *ppStr = nullptr;
-        return true;
-    }
-
-    if (n > bufSize)
-    {
-        return false;
-    }
-
-    nWanted = n;
-    if (  !Pipe_GetBytes(pqi, &nWanted, buf)
-       || nWanted != n)
-    {
-        return false;
-    }
-    *ppStr = buf;
-    return true;
-}
 
 // CLogProxy: client-side proxy for mux_ILog over a pipe channel.
 //
@@ -1100,8 +1055,8 @@ MUX_RESULT CLogProxy::start_log(bool *pStarted, int key, const UTF8 *primary, co
     uint32_t iMethod = 3;
     Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
     Pipe_AppendBytes(&qiFrame, sizeof(key), &key);
-    MarshalString(&qiFrame, primary);
-    MarshalString(&qiFrame, secondary);
+    Marshal_PutString(&qiFrame, primary);
+    Marshal_PutString(&qiFrame, secondary);
 
     MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
     if (MUX_SUCCEEDED(mr))
@@ -1135,10 +1090,10 @@ MUX_RESULT CLogProxy::log_perror(const UTF8 *primary, const UTF8 *secondary, con
 
     uint32_t iMethod = 4;
     Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
-    MarshalString(&qiFrame, primary);
-    MarshalString(&qiFrame, secondary);
-    MarshalString(&qiFrame, extra);
-    MarshalString(&qiFrame, failing_object);
+    Marshal_PutString(&qiFrame, primary);
+    Marshal_PutString(&qiFrame, secondary);
+    Marshal_PutString(&qiFrame, extra);
+    Marshal_PutString(&qiFrame, failing_object);
 
     MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
     if (MUX_SUCCEEDED(mr))
@@ -1166,7 +1121,7 @@ MUX_RESULT CLogProxy::log_text(const UTF8 *text)
 
     uint32_t iMethod = 5;
     Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
-    MarshalString(&qiFrame, text);
+    Marshal_PutString(&qiFrame, text);
 
     MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
     if (MUX_SUCCEEDED(mr))
@@ -1461,8 +1416,8 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
             const UTF8 *pPrimary;
             const UTF8 *pSecondary;
 
-            if (  !UnmarshalString(pqi, bufPrimary, sizeof(bufPrimary), &pPrimary)
-               || !UnmarshalString(pqi, bufSecondary, sizeof(bufSecondary), &pSecondary))
+            if (  !Marshal_GetString(pqi, bufPrimary, sizeof(bufPrimary), &pPrimary)
+               || !Marshal_GetString(pqi, bufSecondary, sizeof(bufSecondary), &pSecondary))
             {
                 return MUX_E_INVALIDARG;
             }
@@ -1495,10 +1450,10 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
             const UTF8 *pExtra;
             const UTF8 *pFailing;
 
-            if (  !UnmarshalString(pqi, bufPrimary, sizeof(bufPrimary), &pPrimary)
-               || !UnmarshalString(pqi, bufSecondary, sizeof(bufSecondary), &pSecondary)
-               || !UnmarshalString(pqi, bufExtra, sizeof(bufExtra), &pExtra)
-               || !UnmarshalString(pqi, bufFailing, sizeof(bufFailing), &pFailing))
+            if (  !Marshal_GetString(pqi, bufPrimary, sizeof(bufPrimary), &pPrimary)
+               || !Marshal_GetString(pqi, bufSecondary, sizeof(bufSecondary), &pSecondary)
+               || !Marshal_GetString(pqi, bufExtra, sizeof(bufExtra), &pExtra)
+               || !Marshal_GetString(pqi, bufFailing, sizeof(bufFailing), &pFailing))
             {
                 return MUX_E_INVALIDARG;
             }
@@ -1514,7 +1469,7 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
         {
             UTF8 bufText[LBUF_SIZE];
             const UTF8 *pText;
-            if (!UnmarshalString(pqi, bufText, sizeof(bufText), &pText))
+            if (!Marshal_GetString(pqi, bufText, sizeof(bufText), &pText))
             {
                 return MUX_E_INVALIDARG;
             }

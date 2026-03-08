@@ -14,6 +14,7 @@
 #endif // HAVE_DLOPEN
 
 #include "libmux.h"
+#include "modules.h"
 
 extern "C"
 {
@@ -873,6 +874,24 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleMaintenance(void)
 
 static bool GrowChannels(void);
 
+// libmux-internal class factory and interface registration.
+//
+static MUX_CLASS_INFO libmux_classes[] =
+{
+    { CID_SlaveControlPSFactory }
+};
+#define NUM_LIBMUX_CLASSES (sizeof(libmux_classes)/sizeof(libmux_classes[0]))
+
+static MUX_INTERFACE_INFO libmux_interfaces[] =
+{
+    { IID_ISlaveControl, CID_SlaveControlPSFactory }
+};
+#define NUM_LIBMUX_INTERFACES (sizeof(libmux_interfaces)/sizeof(libmux_interfaces[0]))
+
+// Defined after CSlaveControlPSFactory class below.
+//
+extern "C" MUX_RESULT DCL_API libmux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv);
+
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context ctx)
 {
     if (eLibraryDown == g_LibraryState)
@@ -882,7 +901,15 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context c
         g_pQueue_In  = nullptr;
         g_pQueue_Out = nullptr;
         g_LibraryState = eLibraryInitialized;
-        return MUX_S_OK;
+
+        // Register libmux-internal classes and interfaces.
+        //
+        MUX_RESULT mr = mux_RegisterClassObjects(NUM_LIBMUX_CLASSES, libmux_classes, libmux_GetClassObject);
+        if (MUX_SUCCEEDED(mr))
+        {
+            mr = mux_RegisterInterfaces(NUM_LIBMUX_INTERFACES, libmux_interfaces);
+        }
+        return mr;
     }
     else
     {
@@ -1767,6 +1794,71 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendDiscPacket(uint32_t iReturnCha
     return MUX_S_OK;
 }
 
+// Marshaling helpers for proxy/stub implementations.
+//
+extern "C" void DCL_EXPORT DCL_API Marshal_PutString(QUEUE_INFO *pqi, const UTF8 *str)
+{
+    size_t n = (nullptr != str) ? strlen(reinterpret_cast<const char *>(str)) + 1 : 0;
+    Pipe_AppendBytes(pqi, sizeof(n), &n);
+    if (0 < n)
+    {
+        Pipe_AppendBytes(pqi, n, str);
+    }
+}
+
+extern "C" bool DCL_EXPORT DCL_API Marshal_GetString(QUEUE_INFO *pqi, UTF8 *buf, size_t bufSize, const UTF8 **ppStr)
+{
+    size_t n;
+    size_t nWanted = sizeof(n);
+    if (  !Pipe_GetBytes(pqi, &nWanted, &n)
+       || nWanted != sizeof(n))
+    {
+        return false;
+    }
+
+    if (0 == n)
+    {
+        *ppStr = nullptr;
+        return true;
+    }
+
+    if (n > bufSize)
+    {
+        return false;
+    }
+
+    nWanted = n;
+    if (  !Pipe_GetBytes(pqi, &nWanted, buf)
+       || nWanted != n)
+    {
+        return false;
+    }
+    *ppStr = buf;
+    return true;
+}
+
+extern "C" void DCL_EXPORT DCL_API Marshal_PutUInt32(QUEUE_INFO *pqi, uint32_t val)
+{
+    Pipe_AppendBytes(pqi, sizeof(val), &val);
+}
+
+extern "C" bool DCL_EXPORT DCL_API Marshal_GetUInt32(QUEUE_INFO *pqi, uint32_t *pval)
+{
+    size_t nWanted = sizeof(*pval);
+    return Pipe_GetBytes(pqi, &nWanted, pval) && nWanted == sizeof(*pval);
+}
+
+extern "C" void DCL_EXPORT DCL_API Marshal_PutInt(QUEUE_INFO *pqi, int val)
+{
+    Pipe_AppendBytes(pqi, sizeof(val), &val);
+}
+
+extern "C" bool DCL_EXPORT DCL_API Marshal_GetInt(QUEUE_INFO *pqi, int *pval)
+{
+    size_t nWanted = sizeof(*pval);
+    return Pipe_GetBytes(pqi, &nWanted, pval) && nWanted == sizeof(*pval);
+}
+
 // Standard Marshaler which is not directly accessible.
 //
 CStandardMarshaler::CStandardMarshaler(void) : m_cRef(1), m_riid(0), m_ctx(CrossProcess)
@@ -2011,3 +2103,765 @@ void mux_dlclose(MODULE_HANDLE h)
 }
 
 #endif // PRETEND_DYNALIB
+
+// Standard Marshaling support for mux_ISlaveControl.
+//
+// Method numbers (0-2 are IUnknown, not marshalled):
+//
+//  3: AddModule
+//  4: RemoveModule
+//  5: ModuleInfo
+//  6: ModuleMaintenance
+//  7: ShutdownSlave
+//
+
+// CSlaveControlProxy: client-side proxy for mux_ISlaveControl.
+//
+class CSlaveControlProxy : public mux_ISlaveControl, public mux_IRpcProxyBuffer
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+
+    // mux_IRpcProxyBuffer
+    //
+    virtual MUX_RESULT Connect(uint32_t nChannel);
+    virtual void       Disconnect(void);
+
+    // mux_ISlaveControl
+    //
+#if defined(WINDOWS_FILES)
+    virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF16 aFileName[]);
+#elif defined(UNIX_FILES)
+    virtual MUX_RESULT AddModule(const UTF8 aModuleName[], const UTF8 aFileName[]);
+#endif // UNIX_FILES
+    virtual MUX_RESULT RemoveModule(const UTF8 aModuleName[]);
+    virtual MUX_RESULT ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo);
+    virtual MUX_RESULT ModuleMaintenance(void);
+    virtual MUX_RESULT ShutdownSlave(void);
+
+    CSlaveControlProxy(void);
+    virtual ~CSlaveControlProxy();
+
+private:
+    uint32_t m_cRef;
+    uint32_t m_nChannel;
+    UTF8    *m_pModuleName;
+};
+
+CSlaveControlProxy::CSlaveControlProxy(void) : m_cRef(1), m_nChannel(CHANNEL_INVALID), m_pModuleName(nullptr)
+{
+}
+
+CSlaveControlProxy::~CSlaveControlProxy()
+{
+    if (nullptr != m_pModuleName)
+    {
+        delete [] m_pModuleName;
+        m_pModuleName = nullptr;
+    }
+}
+
+MUX_RESULT CSlaveControlProxy::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_ISlaveControl *>(this);
+    }
+    else if (IID_ISlaveControl == iid)
+    {
+        *ppv = static_cast<mux_ISlaveControl *>(this);
+    }
+    else if (mux_IID_IRpcProxyBuffer == iid)
+    {
+        *ppv = static_cast<mux_IRpcProxyBuffer *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CSlaveControlProxy::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CSlaveControlProxy::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        if (CHANNEL_INVALID != m_nChannel)
+        {
+            QUEUE_INFO qiFrame;
+            Pipe_InitializeQueueInfo(&qiFrame);
+            (void)Pipe_SendDiscPacket(m_nChannel, &qiFrame);
+            Pipe_EmptyQueue(&qiFrame);
+            m_nChannel = CHANNEL_INVALID;
+        }
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CSlaveControlProxy::Connect(uint32_t nChannel)
+{
+    m_nChannel = nChannel;
+    return MUX_S_OK;
+}
+
+void CSlaveControlProxy::Disconnect(void)
+{
+    m_nChannel = CHANNEL_INVALID;
+}
+
+#if defined(WINDOWS_FILES)
+MUX_RESULT CSlaveControlProxy::AddModule(const UTF8 aModuleName[], const UTF16 aFileName[])
+#elif defined(UNIX_FILES)
+MUX_RESULT CSlaveControlProxy::AddModule(const UTF8 aModuleName[], const UTF8 aFileName[])
+#endif // UNIX_FILES
+{
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    Marshal_PutUInt32(&qiFrame, 3);
+    Marshal_PutString(&qiFrame, aModuleName);
+
+#if defined(WINDOWS_FILES)
+    size_t nFileName = (wcslen(aFileName) + 1) * sizeof(UTF16);
+#elif defined(UNIX_FILES)
+    size_t nFileName = strlen(reinterpret_cast<const char *>(aFileName)) + 1;
+#endif // UNIX_FILES
+    Pipe_AppendBytes(&qiFrame, sizeof(nFileName), &nFileName);
+    Pipe_AppendBytes(&qiFrame, nFileName, aFileName);
+
+    MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+    if (MUX_SUCCEEDED(mr))
+    {
+        MUX_RESULT mrReturn;
+        if (Marshal_GetInt(&qiFrame, reinterpret_cast<int *>(&mrReturn)))
+        {
+            mr = mrReturn;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+MUX_RESULT CSlaveControlProxy::RemoveModule(const UTF8 aModuleName[])
+{
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    Marshal_PutUInt32(&qiFrame, 4);
+    Marshal_PutString(&qiFrame, aModuleName);
+
+    MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+    if (MUX_SUCCEEDED(mr))
+    {
+        MUX_RESULT mrReturn;
+        if (Marshal_GetInt(&qiFrame, reinterpret_cast<int *>(&mrReturn)))
+        {
+            mr = mrReturn;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+MUX_RESULT CSlaveControlProxy::ModuleInfo(int iModule, MUX_MODULE_INFO *pModuleInfo)
+{
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    Marshal_PutUInt32(&qiFrame, 5);
+    Marshal_PutInt(&qiFrame, iModule);
+
+    MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+    if (MUX_SUCCEEDED(mr))
+    {
+        struct RETURN
+        {
+            MUX_RESULT mr;
+            bool       bLoaded;
+            size_t     nName;
+        } ReturnFrame;
+
+        size_t nWanted = sizeof(ReturnFrame);
+        if (  Pipe_GetBytes(&qiFrame, &nWanted, &ReturnFrame)
+           && nWanted == sizeof(ReturnFrame))
+        {
+            mr = ReturnFrame.mr;
+            pModuleInfo->bLoaded = ReturnFrame.bLoaded;
+
+            if (nullptr != m_pModuleName)
+            {
+                delete [] m_pModuleName;
+                m_pModuleName = nullptr;
+            }
+
+            if (  MUX_SUCCEEDED(mr)
+               && MUX_S_FALSE != mr
+               && 0 < ReturnFrame.nName)
+            {
+                try
+                {
+                    m_pModuleName = new UTF8[ReturnFrame.nName];
+                }
+                catch (...)
+                {
+                    ; // Nothing.
+                }
+
+                if (nullptr != m_pModuleName)
+                {
+                    nWanted = ReturnFrame.nName;
+                    if (  Pipe_GetBytes(&qiFrame, &nWanted, m_pModuleName)
+                       && nWanted == ReturnFrame.nName)
+                    {
+                        pModuleInfo->pName = m_pModuleName;
+                    }
+                    else
+                    {
+                        mr = MUX_E_FAIL;
+                    }
+                }
+                else
+                {
+                    mr = MUX_E_OUTOFMEMORY;
+                }
+            }
+            else
+            {
+                pModuleInfo->pName = nullptr;
+            }
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+MUX_RESULT CSlaveControlProxy::ModuleMaintenance(void)
+{
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    Marshal_PutUInt32(&qiFrame, 6);
+
+    MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+    if (MUX_SUCCEEDED(mr))
+    {
+        MUX_RESULT mrReturn;
+        if (Marshal_GetInt(&qiFrame, reinterpret_cast<int *>(&mrReturn)))
+        {
+            mr = mrReturn;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+MUX_RESULT CSlaveControlProxy::ShutdownSlave(void)
+{
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    Marshal_PutUInt32(&qiFrame, 7);
+
+    MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+    if (MUX_SUCCEEDED(mr))
+    {
+        MUX_RESULT mrReturn;
+        if (Marshal_GetInt(&qiFrame, reinterpret_cast<int *>(&mrReturn)))
+        {
+            mr = mrReturn;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+// CSlaveControlStub: server-side stub for mux_ISlaveControl.
+//
+class CSlaveControlStub : public mux_IRpcStubBuffer
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+
+    virtual MUX_RESULT Connect(mux_IUnknown *pUnknownServer);
+    virtual void       Disconnect(void);
+    virtual MUX_RESULT Invoke(QUEUE_INFO *pqi);
+    virtual MUX_RESULT IsSupported(MUX_IID riid);
+    virtual uint32_t   CountRefs(void);
+
+    CSlaveControlStub(void);
+    virtual ~CSlaveControlStub();
+
+private:
+    uint32_t           m_cRef;
+    mux_ISlaveControl *m_pISlaveControl;
+};
+
+CSlaveControlStub::CSlaveControlStub(void) : m_cRef(1), m_pISlaveControl(nullptr)
+{
+}
+
+CSlaveControlStub::~CSlaveControlStub()
+{
+    if (nullptr != m_pISlaveControl)
+    {
+        m_pISlaveControl->Release();
+        m_pISlaveControl = nullptr;
+    }
+}
+
+MUX_RESULT CSlaveControlStub::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IRpcStubBuffer *>(this);
+    }
+    else if (mux_IID_IRpcStubBuffer == iid)
+    {
+        *ppv = static_cast<mux_IRpcStubBuffer *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CSlaveControlStub::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CSlaveControlStub::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CSlaveControlStub::Connect(mux_IUnknown *pUnknownServer)
+{
+    if (nullptr != m_pISlaveControl)
+    {
+        m_pISlaveControl->Release();
+        m_pISlaveControl = nullptr;
+    }
+
+    if (nullptr == pUnknownServer)
+    {
+        return MUX_S_OK;
+    }
+
+    return pUnknownServer->QueryInterface(IID_ISlaveControl, (void **)&m_pISlaveControl);
+}
+
+void CSlaveControlStub::Disconnect(void)
+{
+    if (nullptr != m_pISlaveControl)
+    {
+        m_pISlaveControl->Release();
+        m_pISlaveControl = nullptr;
+    }
+}
+
+MUX_RESULT CSlaveControlStub::Invoke(QUEUE_INFO *pqi)
+{
+    if (nullptr == m_pISlaveControl)
+    {
+        return MUX_E_UNEXPECTED;
+    }
+
+    uint32_t iMethod;
+    if (!Marshal_GetUInt32(pqi, &iMethod))
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    MUX_RESULT mr = MUX_S_OK;
+
+    switch (iMethod)
+    {
+    case 3: // AddModule
+        {
+            UTF8 bufModuleName[SIZEOF_PATHNAME];
+            const UTF8 *pModuleName;
+            if (!Marshal_GetString(pqi, bufModuleName, sizeof(bufModuleName), &pModuleName))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            size_t nFileName;
+            size_t nWanted = sizeof(nFileName);
+            if (  !Pipe_GetBytes(pqi, &nWanted, &nFileName)
+               || nWanted != sizeof(nFileName))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+#if defined(WINDOWS_FILES)
+            UTF16 *pFileName = nullptr;
+#elif defined(UNIX_FILES)
+            UTF8  *pFileName = nullptr;
+#endif // UNIX_FILES
+            try
+            {
+#if defined(WINDOWS_FILES)
+                pFileName = new UTF16[nFileName / sizeof(UTF16)];
+#elif defined(UNIX_FILES)
+                pFileName = new UTF8[nFileName];
+#endif // UNIX_FILES
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
+
+            if (nullptr == pFileName)
+            {
+                return MUX_E_OUTOFMEMORY;
+            }
+
+            nWanted = nFileName;
+            if (  Pipe_GetBytes(pqi, &nWanted, pFileName)
+               && nWanted == nFileName)
+            {
+                mr = m_pISlaveControl->AddModule(pModuleName, pFileName);
+            }
+            else
+            {
+                mr = MUX_E_INVALIDARG;
+            }
+
+            delete [] pFileName;
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+        }
+        break;
+
+    case 4: // RemoveModule
+        {
+            UTF8 bufModuleName[SIZEOF_PATHNAME];
+            const UTF8 *pModuleName;
+            if (!Marshal_GetString(pqi, bufModuleName, sizeof(bufModuleName), &pModuleName))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            mr = m_pISlaveControl->RemoveModule(pModuleName);
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+        }
+        break;
+
+    case 5: // ModuleInfo
+        {
+            int iModule;
+            if (!Marshal_GetInt(pqi, &iModule))
+            {
+                return MUX_E_INVALIDARG;
+            }
+
+            MUX_MODULE_INFO ModuleInfo;
+            mr = m_pISlaveControl->ModuleInfo(iModule, &ModuleInfo);
+
+            struct RETURN
+            {
+                MUX_RESULT mr;
+                bool       bLoaded;
+                size_t     nName;
+            } ReturnFrame;
+
+            ReturnFrame.mr = mr;
+            ReturnFrame.bLoaded = false;
+            ReturnFrame.nName = 0;
+
+            if (  MUX_SUCCEEDED(mr)
+               && MUX_S_FALSE != mr)
+            {
+                ReturnFrame.bLoaded = ModuleInfo.bLoaded;
+                if (nullptr != ModuleInfo.pName)
+                {
+                    ReturnFrame.nName = strlen(reinterpret_cast<const char *>(ModuleInfo.pName)) + 1;
+                }
+            }
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(ReturnFrame), &ReturnFrame);
+
+            if (0 < ReturnFrame.nName)
+            {
+                Pipe_AppendBytes(pqi, ReturnFrame.nName, ModuleInfo.pName);
+            }
+        }
+        break;
+
+    case 6: // ModuleMaintenance
+        {
+            mr = m_pISlaveControl->ModuleMaintenance();
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+        }
+        break;
+
+    case 7: // ShutdownSlave
+        {
+            mr = m_pISlaveControl->ShutdownSlave();
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(mr), &mr);
+        }
+        break;
+
+    default:
+        mr = MUX_E_NOTIMPLEMENTED;
+        break;
+    }
+    return mr;
+}
+
+MUX_RESULT CSlaveControlStub::IsSupported(MUX_IID riid)
+{
+    if (IID_ISlaveControl == riid)
+    {
+        return MUX_S_OK;
+    }
+    return MUX_S_FALSE;
+}
+
+uint32_t CSlaveControlStub::CountRefs(void)
+{
+    return (nullptr != m_pISlaveControl) ? 1 : 0;
+}
+
+// CSlaveControlPSFactory: proxy-stub factory for mux_ISlaveControl.
+//
+class CSlaveControlPSFactory : public mux_IPSFactoryBuffer, public mux_IClassFactory
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+
+    virtual MUX_RESULT CreateProxy(mux_IUnknown *pUnknownOuter, MUX_IID riid, mux_IRpcProxyBuffer **ppProxy, void **ppv);
+    virtual MUX_RESULT CreateStub(MUX_IID riid, mux_IUnknown *pUnknownOuter, mux_IRpcStubBuffer **ppStub);
+
+    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);
+    virtual MUX_RESULT LockServer(bool bLock);
+
+    CSlaveControlPSFactory(void);
+    virtual ~CSlaveControlPSFactory();
+
+private:
+    uint32_t m_cRef;
+};
+
+CSlaveControlPSFactory::CSlaveControlPSFactory(void) : m_cRef(1)
+{
+}
+
+CSlaveControlPSFactory::~CSlaveControlPSFactory()
+{
+}
+
+MUX_RESULT CSlaveControlPSFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IPSFactoryBuffer *>(this);
+    }
+    else if (mux_IID_IPSFactoryBuffer == iid)
+    {
+        *ppv = static_cast<mux_IPSFactoryBuffer *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CSlaveControlPSFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CSlaveControlPSFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CSlaveControlPSFactory::CreateProxy(mux_IUnknown *pUnknownOuter, MUX_IID riid, mux_IRpcProxyBuffer **ppProxy, void **ppv)
+{
+    UNUSED_PARAMETER(pUnknownOuter);
+
+    if (IID_ISlaveControl != riid)
+    {
+        *ppProxy = nullptr;
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+
+    CSlaveControlProxy *pProxy = nullptr;
+    try
+    {
+        pProxy = new CSlaveControlProxy;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pProxy)
+    {
+        *ppProxy = nullptr;
+        *ppv = nullptr;
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    *ppProxy = static_cast<mux_IRpcProxyBuffer *>(pProxy);
+    pProxy->AddRef();
+    *ppv = static_cast<mux_ISlaveControl *>(pProxy);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CSlaveControlPSFactory::CreateStub(MUX_IID riid, mux_IUnknown *pUnknownOuter, mux_IRpcStubBuffer **ppStub)
+{
+    if (IID_ISlaveControl != riid)
+    {
+        *ppStub = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+
+    CSlaveControlStub *pStub = nullptr;
+    try
+    {
+        pStub = new CSlaveControlStub;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pStub)
+    {
+        *ppStub = nullptr;
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    if (nullptr != pUnknownOuter)
+    {
+        MUX_RESULT mr = pStub->Connect(pUnknownOuter);
+        if (MUX_FAILED(mr))
+        {
+            pStub->Release();
+            *ppStub = nullptr;
+            return mr;
+        }
+    }
+
+    *ppStub = static_cast<mux_IRpcStubBuffer *>(pStub);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CSlaveControlPSFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
+{
+    if (nullptr != pUnknownOuter)
+    {
+        return MUX_E_NOAGGREGATION;
+    }
+    return QueryInterface(iid, ppv);
+}
+
+MUX_RESULT CSlaveControlPSFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
+// libmux-internal class object factory.
+//
+extern "C" MUX_RESULT DCL_API libmux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv)
+{
+    MUX_RESULT mr = MUX_E_CLASSNOTAVAILABLE;
+
+    if (CID_SlaveControlPSFactory == cid)
+    {
+        CSlaveControlPSFactory *pFactory = nullptr;
+        try
+        {
+            pFactory = new CSlaveControlPSFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == pFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pFactory->QueryInterface(iid, ppv);
+        pFactory->Release();
+    }
+    return mr;
+}

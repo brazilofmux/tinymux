@@ -138,6 +138,14 @@ extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(uint32_t 
 extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendMsgPacket(uint32_t nChannel, QUEUE_INFO *pqi);
 extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendDiscPacket(uint32_t nChannel, QUEUE_INFO *pqi);
 
+// Marshaling helpers for proxy/stub implementations.
+//
+extern "C" void DCL_EXPORT DCL_API Marshal_PutString(QUEUE_INFO *pqi, const UTF8 *str);
+extern "C" bool DCL_EXPORT DCL_API Marshal_GetString(QUEUE_INFO *pqi, UTF8 *buf, size_t bufSize, const UTF8 **ppStr);
+extern "C" void DCL_EXPORT DCL_API Marshal_PutUInt32(QUEUE_INFO *pqi, uint32_t val);
+extern "C" bool DCL_EXPORT DCL_API Marshal_GetUInt32(QUEUE_INFO *pqi, uint32_t *pval);
+extern "C" void DCL_EXPORT DCL_API Marshal_PutInt(QUEUE_INFO *pqi, int val);
+extern "C" bool DCL_EXPORT DCL_API Marshal_GetInt(QUEUE_INFO *pqi, int *pval);
 
 // The following is part of what is called 'Standard Marshaling'.
 //
