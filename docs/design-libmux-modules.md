@@ -35,8 +35,11 @@ A ~2,000-line library providing:
   framed pipe protocol (Call/Return/Msg/Disc)
 - Marshaling: custom (mux_IMarshal) and standard (CStandardMarshaler)
 
-Built as both `libmux.a` (statically linked into netmux and stubslave) and
-`libmux.so` (dynamically loaded by modules at runtime).
+Built as `libmux.so` — linked into netmux and stubslave at build time, and
+loaded by modules at runtime via dlopen.  (The former `libmux.a` static
+library was removed; netmux now links directly against the shared object.)
+libmux self-registers as a Module during init so its proxy/stub factory
+classes coexist with netmux's classes (see g_AprioriModule).
 
 ### What can modules access today?
 
@@ -88,21 +91,18 @@ per-interface boilerplate cost.
 
 ### Work Items
 
-#### 2.1 Proxy/stub pairs for remaining cross-process interfaces
+#### 2.1 Proxy/stub pairs for remaining cross-process interfaces — COMPLETE
 
-Currently custom-marshaled:
+All three cross-process interfaces converted to standard marshaling:
 
-- **mux_ISlaveControl** — CStubSlaveProxy in modules.cpp / CStubSlave_Call in
-  stubslave.cpp (~350 lines of hand-coded proxy + ~250 lines of stub)
-- **mux_IQuerySink** — CQueryClient in modules.cpp / CQuerySinkProxy in
-  modules/sqlslave.cpp (~200 + ~150 lines)
+- **mux_ISlaveControl** — proxy/stub/factory in libmux.cpp
+- **mux_IQuerySink** — proxy/stub/factory in libmux.cpp
+- **mux_IQueryControl** — proxy/stub/factory in libmux.cpp
 
-These could be converted to standard marshaling (proxy/stub/factory like the
-mux_ILog PoC), saving ~500 lines and proving the pattern at scale.
-
-**Go/no-go:** Convert mux_ISlaveControl first.  If the proxy/stub code is
-significantly shorter and equally correct, proceed with mux_IQuerySink.
-If the reduction is marginal, leave them as custom marshals.
+Each conversion replaced ~400-600 lines of hand-coded proxy/stub with
+~200-300 lines of structured proxy/stub/factory classes.  Net reduction of
+~500 lines across all three.  The go/no-go was clearly "go" after the first
+conversion.
 
 #### 2.2 Marshaling helpers
 
@@ -200,13 +200,17 @@ vtable dispatch.
 - Every new function requires adding to the interface and proxy/stub
 - Marshaling cost for cross-process modules on hot paths
 
-#### Approach C: Hybrid (recommended for evaluation)
+#### Approach C: Hybrid — CHOSEN DIRECTION
 
 Move a carefully chosen subset into libmux.so (string utilities, type
 definitions, buffer management).  Expose subsystem access through interfaces
 for things modules genuinely call (logging, notification, attribute access).
 Keep the evaluator and command processor in netmux — modules don't need to
 call `mux_exec()` directly.
+
+The interface-vs-direct decision is made per API, not globally.  We can
+change our mind on any particular API as we go — start with an interface,
+move to direct if the indirection hurts, or vice versa.
 
 ### What Modules Actually Need
 
@@ -357,7 +361,7 @@ Start with the subsystems that have the clearest boundaries and lowest coupling:
 
 Before proceeding with Phase 3, run these experiments:
 
-### Experiment 1: Convert mux_ISlaveControl to standard marshaling
+### Experiment 1: Convert mux_ISlaveControl to standard marshaling — COMPLETE
 
 **Purpose:** Validate that standard marshaling works for a real cross-process
 interface, not just a PoC.
@@ -365,6 +369,13 @@ interface, not just a PoC.
 **Success criteria:** Code is shorter, functionality identical, smoke tests
 pass.  The stubslave successfully loads and manages modules through the new
 proxy/stub.
+
+**Results (brazil branch):** mux_ISlaveControl, mux_IQuerySink, and
+mux_IQueryControl were all converted from custom to standard marshaling.
+Each conversion replaced ~400-600 lines of hand-coded proxy/stub with
+~200-300 lines of structured proxy/stub/factory classes.  All smoke tests
+pass.  This also surfaced the g_MainModule single-handler bug (fixed by
+the libmux self-loading approach described in Experiment 3).
 
 ### Experiment 2: Measure interface dispatch overhead
 
@@ -379,7 +390,7 @@ interfaces.
 orders of magnitude slower, confirming that cross-process marshaling is
 only viable for low-frequency calls.
 
-### Experiment 3: Build a non-trivial module
+### Experiment 3: Build a non-trivial module — COMPLETE
 
 **Purpose:** Discover what a real module needs from netmux.
 
@@ -389,6 +400,56 @@ the module needs to call back into netmux.
 
 **Outcome:** A concrete list of functions/interfaces that must be available
 to modules, informing the Phase 3 migration scope.
+
+**Results (brazil branch, 2026-03-08):**
+
+The exp3 module provides 8 softcode functions (mget, mset, mname, mowner,
+mloc, mtype, meval, mtell).  Each deliberately omits the interface it needs,
+so it hits the boundary wall and returns an error.  9 smoke tests verify the
+walls are correct.
+
+The boundary walls define the interface surface a real module requires:
+
+| Function | Wall hit | Interface needed |
+|---|---|---|
+| mget() | attribute access | Attribute read |
+| mset() | attribute write | Attribute write |
+| mname() | object info | Object info |
+| mowner() | object info | Object info |
+| mloc() | object info | Object info |
+| mtype() | object info | Object info |
+| meval() | evaluator | Evaluator |
+| mtell() | notify | Notify |
+
+This distills to **5 distinct interfaces**: attribute read, attribute write,
+object info, evaluator, and notify.  These map closely to the Tier 2 items
+already identified in Phase 4.
+
+**Unplanned discoveries:**
+
+1. **libmux must be a Module.**  Once libmux registers its own classes
+   (proxy/stub factories for standard marshaling), it cannot share netmux's
+   single fpGetClassObject slot.  Fixed by renaming g_MainModule to
+   g_AprioriModule (exclusively netmux) and having libmux self-register as a
+   proper Module during mux_InitModuleLibrary().
+
+2. **The full module lifecycle works end-to-end.**  dlopen, mux_Register,
+   class factory lookup, fpGetClassObject dispatch, mux_Unregister — all
+   functional with libmux and exp3 loaded simultaneously.
+
+3. **The smoke infrastructure supports modules.**  The `module` config
+   directive, bin symlink for library path, and the existing test harness
+   work without modification.
+
+**Implications for Phase 3:**
+
+The COM boundary-wall pattern works cleanly.  The interface surface is
+substantial but bounded — a realistic module needs ~5 interfaces, not dozens.
+This favors Approach C (hybrid), with the additional insight that the
+interface-vs-direct decision can be made independently per API.  Some APIs
+may start as interfaces and move to direct calls if the indirection hurts;
+others may start direct and get wrapped in interfaces if cross-process use
+emerges.  The choice is not all-or-nothing.
 
 ### Survey 1: Global state audit
 
@@ -409,37 +470,41 @@ timeutil) with only libmux.h and config.h.  Record missing dependencies.
 
 ## Decision Points
 
-After the experiments:
+### Resolved
 
-1. **Phase 2 complete → Phase 3?**  If Experiment 1 succeeds and marshaling
-   helpers reduce boilerplate, proceed.  If the standard marshaler proves
-   fragile or the code reduction is marginal, reconsider.
+1. **Phase 2 complete → Phase 3?**  Yes.  Experiment 1 succeeded — all three
+   cross-process interfaces converted to standard marshaling with meaningful
+   code reduction and no regressions.
 
-2. **Phase 3 scope?**  Survey 1 and 2 determine what can move into libmux.so
-   without dragging in the world.  If stringutil and timeutil compile cleanly,
-   start there.  If everything depends on mudstate, the hybrid approach (C) may
-   not be practical without first refactoring the global state.
+2. **Phase 4 at all?**  Yes, selectively.  Experiment 3 showed that the
+   interface surface for a real module is ~5 interfaces, not dozens.  The
+   boundary-wall pattern gates access cleanly.  Phase 4 is worth pursuing
+   for Tier 1 and Tier 2 subsystems.
 
-3. **Phase 4 at all?**  Experiment 3 determines whether the interface-based
-   module model is practical for non-trivial subsystems.  If the interface
-   surface is too large or the performance overhead is unacceptable, Phase 4
-   may not be worth pursuing beyond Tier 1 (mail, comsys, help).
+### Open
+
+3. **Phase 3 scope?**  Survey 1 and 2 are still needed to determine what can
+   move into libmux.so without dragging in the world.  If stringutil and
+   timeutil compile cleanly, start there.
+
+4. **Interface vs. direct, per API.**  Approach C (hybrid) is the direction,
+   but the interface-vs-direct decision is made independently for each API.
+   Some may start as interfaces and move to direct calls if indirection hurts
+   on hot paths; others may start direct and get wrapped in interfaces if
+   cross-process use emerges.  The choice is not all-or-nothing and can be
+   revisited as we learn more.
 
 
 ## Appendix: Interface Registry
 
-Current registered interfaces after the standard marshaler PoC:
+Standard-marshaled interfaces (proxy/stub/factory in libmux.cpp):
 
 | IID | Interface | CID ProxyStub | Status |
 |---|---|---|---|
-| IID_ILog | mux_ILog | CID_LogPSFactory | Standard marshal PoC |
-
-Current custom-marshaled interfaces:
-
-| Interface | Proxy class | Stub handler | Location |
-|---|---|---|---|
-| mux_ISlaveControl | CStubSlaveProxy | CStubSlave_Call | modules.cpp / stubslave.cpp |
-| mux_IQuerySink | CQueryClient | CQuerySinkProxy | modules.cpp / sqlslave.cpp |
+| IID_ILog | mux_ILog | CID_LogPSFactory | Complete |
+| IID_ISlaveControl | mux_ISlaveControl | CID_SlaveControlPSFactory | Complete |
+| IID_IQuerySink | mux_IQuerySink | CID_QuerySinkPSFactory | Complete |
+| IID_IQueryControl | mux_IQueryControl | CID_QueryControlPSFactory | Complete |
 
 Interfaces not currently marshaled (in-process only):
 
@@ -449,4 +514,13 @@ Interfaces not currently marshaled (in-process only):
 | mux_IServerEventsControl | Advise takes interface pointer arg |
 | mux_IFunction | Called in-process by eval |
 | mux_IFunctionsControl | Registration only |
-| mux_IQueryControl | Used via custom-marshaled proxy |
+
+Interfaces identified by Experiment 3 (not yet defined):
+
+| Interface | Methods needed | Hot path? |
+|---|---|---|
+| Attribute read | get by dbref/attrnum | Yes |
+| Attribute write | set by dbref/attrnum | Medium |
+| Object info | name, owner, location, type | Medium |
+| Evaluator | eval expression in context | Yes |
+| Notify | send text to player | Medium |
