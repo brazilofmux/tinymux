@@ -778,12 +778,13 @@ void do_switch
             }
             else
             {
-                UTF8 *tbuf = replace_tokens(args[a+1], nullptr, nullptr, expr);
                 wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
-                    tbuf,
+                    args[a+1],
                     ncargs, cargs,
-                    mudstate.global_regs);
-                free_lbuf(tbuf);
+                    mudstate.global_regs,
+                    nullptr,    // named_sargs
+                    nullptr, 0, // iter context
+                    expr);      // switch_token
             }
             mudstate.switch_token = save_switch;
             bAny = true;
@@ -803,12 +804,13 @@ void do_switch
         }
         else
         {
-            UTF8 *tbuf = replace_tokens(args[a], nullptr, nullptr, expr);
             wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
-                tbuf,
+                args[a],
                 ncargs, cargs,
-                mudstate.global_regs);
-            free_lbuf(tbuf);
+                mudstate.global_regs,
+                nullptr,    // named_sargs
+                nullptr, 0, // iter context
+                expr);      // switch_token
         }
         mudstate.switch_token = save_switch;
     }

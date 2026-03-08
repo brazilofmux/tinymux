@@ -17,16 +17,15 @@ static void bind_and_queue(dbref executor, dbref caller, dbref enactor,
                            int eval, UTF8 *action, UTF8 *argstr,
                            const UTF8 *cargs[], int ncargs, int number)
 {
-    UTF8 *command = replace_tokens(action,
-        mudconf.safer_iter ? nullptr : argstr,
-        mudconf.safer_iter ? nullptr : mux_ltoa_t(number),
-        nullptr);
     CLinearTimeAbsolute lta;
     wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
-        command,
+        action,
         ncargs, cargs,
-        mudstate.global_regs);
-    free_lbuf(command);
+        mudstate.global_regs,
+        nullptr,   // named_sargs
+        mudconf.safer_iter ? nullptr : argstr,  // iter_token
+        number,                                  // iter_number
+        nullptr);                                // switch_token
 }
 
 static void bind_and_process(dbref executor, dbref caller, dbref enactor,
