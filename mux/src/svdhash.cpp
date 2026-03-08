@@ -6,7 +6,7 @@
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
-#include "externs.h"
+#include "core.h"
 
 static const uint32_t CRC32_Table[256] =
 {

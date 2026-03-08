@@ -11,7 +11,7 @@
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
-#include "externs.h"
+#include "core.h"
 
 // Hangul constants (Unicode 3.0+ algorithmic composition/decomposition).
 //

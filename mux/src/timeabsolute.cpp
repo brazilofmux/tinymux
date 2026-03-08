@@ -8,7 +8,7 @@
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
-#include "externs.h"
+#include "core.h"
 
 #include <memory>
 #include <string>

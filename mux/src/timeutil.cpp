@@ -11,7 +11,7 @@
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
-#include "externs.h"
+#include "core.h"
 
 const int64_t FACTOR_MS_PER_SECOND    = INT64_C(1000);
 const int64_t FACTOR_US_PER_SECOND    = INT64_C(1000000);

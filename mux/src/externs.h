@@ -1,18 +1,15 @@
 /*! \file externs.h
  * \brief Prototypes for externs not defined elsewhere.
  *
+ * This header pulls in the entire server.  Files that only need core
+ * utility types (UTF8, string utilities, time, hash, buffers) should
+ * include "core.h" instead.
  */
 
 #ifndef EXTERNS_H
 #define EXTERNS_H
 
-#include "_build.h"
-
-#include "timeutil.h"
-#include "svdrand.h"
-#include "svdhash.h"
-
-#include "libmux.h"
+#include "core.h"
 
 class CResultsSet
 {
@@ -42,20 +39,8 @@ private:
     int         m_iCurrentField;
 };
 
-#include "alloc.h"
-
 #define WIDTHOF_DOING_STRING 45
 #define SIZEOF_DOING_STRING (2*WIDTHOF_DOING_STRING)
-
-typedef struct
-{
-    size_t n_bytes;
-    size_t n_points;
-    const UTF8 *p;
-} string_desc;
-
-#include "utf8tables.h"
-#include "stringutil.h"
 
 #include "htab.h"
 
@@ -77,16 +62,12 @@ typedef struct
 #endif // REALITY_LVLS
 #include "mail.h"
 #include "match.h"
-#include "mathutil.h"
 #include "mguests.h"
 #include "modules.h"
 #include "mudconf.h"
 #include "muxcli.h"
 #include "powers.h"
 #include "misc.h"
-#ifndef UNIX_DIGEST
-#include "sha1.h"
-#endif
 #include "vattr.h"
 
 // From conf.cpp
