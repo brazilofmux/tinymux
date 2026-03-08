@@ -2948,6 +2948,49 @@ int DCL_CDECL main(int argc, char *argv[])
         }
     }
 
+    // Try to discover the mail module.  If not loaded, the pointer
+    // stays nullptr and the built-in mail code handles everything.
+    //
+    mudstate.pIMailControl = nullptr;
+    mr = mux_CreateInstance(CID_Mail, nullptr, UseSameProcess,
+                            IID_IMailControl,
+                            reinterpret_cast<void **>(&mudstate.pIMailControl));
+    if (MUX_SUCCEEDED(mr))
+    {
+        // Compute SQLite database path from input database path.
+        //
+        char szMailDbPath[SIZEOF_PATHNAME];
+        mux_strncpy(reinterpret_cast<UTF8 *>(szMailDbPath), mudconf.indb,
+                     sizeof(szMailDbPath) - 1);
+        szMailDbPath[sizeof(szMailDbPath) - 1] = '\0';
+        size_t nMailPath = strlen(szMailDbPath);
+        if (nMailPath > 3 && strcmp(szMailDbPath + nMailPath - 3, ".db") == 0)
+        {
+            strcpy(szMailDbPath + nMailPath - 3, ".sqlite");
+        }
+        else
+        {
+            strcat(szMailDbPath, ".sqlite");
+        }
+
+        mr = mudstate.pIMailControl->Initialize(
+            reinterpret_cast<const UTF8 *>(szMailDbPath),
+            mudconf.mail_expiration, mudconf.mail_max_per_player);
+        if (MUX_SUCCEEDED(mr))
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "MOD");
+            log_printf(T("Mail module initialized with database: %s"),
+                       szMailDbPath);
+            ENDLOG;
+        }
+        else
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "MOD");
+            log_printf(T("Mail module Initialize failed (mr=%d)."), mr);
+            ENDLOG;
+        }
+    }
+
     mr = mux_CreateInstance(CID_QueryServer, nullptr, UseSlaveProcess, IID_IQueryControl, (void **)&mudstate.pIQueryControl);
     if (MUX_SUCCEEDED(mr))
     {

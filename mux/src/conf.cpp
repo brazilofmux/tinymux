@@ -372,6 +372,7 @@ void cf_init(void)
 #endif // STUB_SLAVE
     mudstate.pIQueryControl = nullptr;
     mudstate.pIComsysControl = nullptr;
+    mudstate.pIMailControl = nullptr;
 }
 
 // ---------------------------------------------------------------------------

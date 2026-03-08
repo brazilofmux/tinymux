@@ -347,4 +347,40 @@ public:
         const UTF8 *pAttrName, const UTF8 *pValue) = 0;
 };
 
+// Mail module — @mail system provided by loadable module.
+//
+const MUX_CID CID_Mail                  = UINT64_C(0x00000002D7A3E1B5);
+const MUX_IID IID_IMailControl          = UINT64_C(0x00000002F9C84D62);
+
+interface mux_IMailControl : public mux_IUnknown
+{
+public:
+    // One-time initialization: pass the SQLite database path and config.
+    //
+    virtual MUX_RESULT Initialize(const UTF8 *pDatabasePath,
+        int mail_expiration, int mail_per_player) = 0;
+
+    // Connection events.
+    //
+    virtual MUX_RESULT PlayerConnect(dbref player) = 0;
+    virtual MUX_RESULT PlayerNuke(dbref player) = 0;
+
+    // Main command dispatcher.
+    //
+    virtual MUX_RESULT MailCommand(dbref executor, int key,
+        const UTF8 *pArg1, const UTF8 *pArg2) = 0;
+    virtual MUX_RESULT MaliasCommand(dbref executor, int key,
+        const UTF8 *pArg1, const UTF8 *pArg2) = 0;
+    virtual MUX_RESULT FolderCommand(dbref executor, int key, int nargs,
+        const UTF8 *pArg1, const UTF8 *pArg2) = 0;
+
+    // Queries used by server code outside @mail.
+    //
+    virtual MUX_RESULT CheckMail(dbref player, int folder, bool silent) = 0;
+    virtual MUX_RESULT ExpireMail(void) = 0;
+    virtual MUX_RESULT CountMail(dbref player, int folder,
+        int *pRead, int *pUnread, int *pCleared) = 0;
+    virtual MUX_RESULT DestroyPlayerMail(dbref player) = 0;
+};
+
 #endif // MODULES_H

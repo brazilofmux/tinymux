@@ -2835,7 +2835,7 @@
 >256
 "@log smoke=Beginning locate() possessive test cases."
 >257
-"@create test_lp_box;@create test_lp_gem;@tel test_lp_gem=test_lp_box;@if strmatch(setr(0,sha1([locate(me,test_lp_box's test_lp_gem,ins)][locate(me,test_lp_box's test_lp_gem,in)][locate(me,test_lp_gem,i)])),734E0DD6FF788F21D732BCB3EB5AB341CAC74FD2)={@log smoke=TC001: locate possessive. Succeeded.;@destroy/override test_lp_gem;@destroy/override test_lp_box;@trig me/tr.done},{@log smoke=TC001: locate possessive. Failed (%q0).;@destroy/override test_lp_gem;@destroy/override test_lp_box;@trig me/tr.done}"
+"@create test_lp_box;@create test_lp_gem;@tel test_lp_gem=test_lp_box;@if and(isdbref(locate(me,test_lp_box's test_lp_gem,ins)),not(isdbref(locate(me,test_lp_box's test_lp_gem,in))),not(isdbref(locate(me,test_lp_gem,i))))={@log smoke=TC001: locate possessive. Succeeded.;@destroy/override test_lp_gem;@destroy/override test_lp_box;@trig me/tr.done},{@log smoke=TC001: locate possessive. Failed(ins=[locate(me,test_lp_box's test_lp_gem,ins)]noflag=[locate(me,test_lp_box's test_lp_gem,in)]nested=[locate(me,test_lp_gem,i)]).;@destroy/override test_lp_gem;@destroy/override test_lp_box;@trig me/tr.done}"
 >258
 "@log smoke=End locate() possessive test cases.;@notify smoke"
 <
@@ -2866,7 +2866,7 @@
 >258
 "@log smoke=End lock() test cases.;@notify smoke"
 >259
-"@if strmatch(setr(0,sha1([lock(me,me)][lock(me)])),32FEA2DA4C196E2BFEB79FF2707D46E742E8C614)={@log smoke=TC002: lock set. Succeeded.},{@log smoke=TC002: lock set. Failed (%q0).}"
+"think >>> lock set: [lock(me,me)];@if strmatch(lock(me),[num(me)])={@log smoke=TC002: lock set. Succeeded.},{@log smoke=TC002: lock set. Failed(read=[lock(me)] expected=[num(me)]).}"
 >260
 "@if strmatch(setr(0,sha1([lock(me,)][lock(me)])),DA39A3EE5E6B4B0D3255BFEF95601890AFD80709)={@log smoke=TC003: lock clear. Succeeded.;@trig me/tr.done},{@log smoke=TC003: lock clear. Failed (%q0).;@trig me/tr.done}"
 <

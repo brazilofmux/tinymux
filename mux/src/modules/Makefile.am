@@ -4,7 +4,7 @@
 AM_CPPFLAGS = -I$(top_srcdir)
 
 # Need to build modules as shared objects
-all-local: funcs.so sample.so sum.so sqlproxy.so sqlslave.so exp3.so comsys_mod.so
+all-local: funcs.so sample.so sum.so sqlproxy.so sqlslave.so exp3.so comsys_mod.so mail_mod.so
 
 # Generic rule for building module shared objects
 funcs.so: funcs.cpp funcs.h
@@ -25,6 +25,9 @@ exp3.so: exp3.cpp exp3.h
 comsys_mod.so: comsys_mod.cpp comsys_mod.h
 	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(PCRE2_LIBS) -lsqlite3
 
+mail_mod.so: mail_mod.cpp mail_mod.h
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(PCRE2_LIBS) -lsqlite3
+
 # SQL slave needs special treatment for SQL libraries
 sqlslave.so: sqlslave.cpp sql.h
 	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(SQL_INCLUDE) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(SQL_LIBPATH) $(SQL_LIBS) $(PCRE2_LIBS)
@@ -39,6 +42,7 @@ install-exec-local:
 	cd $(abs_top_srcdir)/../game/bin && rm -f sqlslave.so && $(LN_S) $(abs_builddir)/sqlslave.so .
 	cd $(abs_top_srcdir)/../game/bin && rm -f exp3.so && $(LN_S) $(abs_builddir)/exp3.so .
 	cd $(abs_top_srcdir)/../game/bin && rm -f comsys_mod.so && $(LN_S) $(abs_builddir)/comsys_mod.so .
+	cd $(abs_top_srcdir)/../game/bin && rm -f mail_mod.so && $(LN_S) $(abs_builddir)/mail_mod.so .
 
 # Clean up additional files
 CLEANFILES = *.so *.so~
@@ -46,4 +50,5 @@ CLEANFILES = *.so *.so~
 # Source files to include in distribution
 EXTRA_DIST = funcs.cpp funcs.h sample.cpp sample.h sum.cpp sum.h \
     sqlproxy.cpp sql.h sqlslave.cpp exp3.cpp exp3.h \
-    comsys_mod.cpp comsys_mod.h
+    comsys_mod.cpp comsys_mod.h \
+    mail_mod.cpp mail_mod.h
