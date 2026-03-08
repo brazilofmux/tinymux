@@ -13,7 +13,7 @@
   choose_fn chr_fn citer_fn clone_fn cmd_say columns_fn comp_fn convtime_fn 
   cor_fn corbool_fn cos_fn cpad_fn crc32_fn ctu_fn 
   dec_fn delete_fn digest_fn digittime_fn dist2d_fn dist3d_fn 
-  e_fn edit_fn elements_fn eq_fn escape_fn exp_fn exptime_fn extract_fn 
+  e_fn edit_fn elements_fn eq_fn escape_fn exp3_fn exp_fn exptime_fn extract_fn 
   fdiv_fn first_fn floor_fn floordiv_fn fmod_fn grab_fn graball_fn gt_fn gte_fn 
   iadd_fn iabs_fn idiv_fn imul_fn inc_fn index_fn insert_fn 
   isdbref_fn isign_fn isint_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn
