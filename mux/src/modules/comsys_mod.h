@@ -184,6 +184,7 @@ private:
 
     bool test_join_access(dbref player, struct channel *ch);
     void do_delcomchannel(dbref player, const UTF8 *channel, bool bQuiet);
+    void do_comlast(dbref player, struct channel *ch, int arg);
     void sort_com_aliases(comsys_t *c);
 
 public:

@@ -1470,6 +1470,93 @@ void CComsysMod::do_comwho(dbref player, struct channel *ch)
 }
 
 // ---------------------------------------------------------------------------
+// Recall channel message history from channel object attributes.
+// ---------------------------------------------------------------------------
+
+void CComsysMod::do_comlast(dbref player, struct channel *ch, int arg)
+{
+    if (nullptr == m_pINotify || nullptr == m_pIAttributeAccess)
+    {
+        return;
+    }
+
+    // Validate the channel object.
+    //
+    bool bValid = false;
+    if (NOTHING != ch->chan_obj && nullptr != m_pIObjectInfo)
+    {
+        m_pIObjectInfo->IsValid(ch->chan_obj, &bValid);
+    }
+    if (!bValid)
+    {
+        m_pINotify->RawNotify(player,
+            T("Channel does not have an object."));
+        return;
+    }
+
+    const dbref obj = ch->chan_obj;
+
+    // Read MAX_LOG attribute to determine logging depth.
+    //
+    UTF8 valbuf[64];
+    size_t nLen = 0;
+    int logmax = 0;
+    MUX_RESULT mr = m_pIAttributeAccess->GetAttribute(player, obj,
+        T("MAX_LOG"), valbuf, sizeof(valbuf) - 1, &nLen);
+    if (MUX_SUCCEEDED(mr) && 0 < nLen)
+    {
+        valbuf[nLen] = '\0';
+        logmax = atoi(reinterpret_cast<const char *>(valbuf));
+    }
+
+    if (logmax < 1)
+    {
+        m_pINotify->RawNotify(player, T("Channel does not log."));
+        return;
+    }
+
+    if (arg < 1)
+    {
+        arg = 1;
+    }
+    if (arg > logmax)
+    {
+        arg = logmax;
+    }
+
+    int histnum = ch->num_messages - arg;
+
+    UTF8 msg[MOD_LBUF_SIZE];
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "%s -- Begin Comsys Recall --",
+             reinterpret_cast<const char *>(ch->header));
+    m_pINotify->RawNotify(player, msg);
+
+    for (int count = 0; count < arg; count++)
+    {
+        histnum++;
+        UTF8 attrname[64];
+        snprintf(reinterpret_cast<char *>(attrname), sizeof(attrname),
+                 "HISTORY_%d", ((histnum % logmax) + logmax) % logmax);
+
+        UTF8 message[MOD_LBUF_SIZE];
+        size_t msgLen = 0;
+        mr = m_pIAttributeAccess->GetAttribute(player, obj,
+            attrname, message, sizeof(message) - 1, &msgLen);
+        if (MUX_SUCCEEDED(mr) && 0 < msgLen)
+        {
+            message[msgLen] = '\0';
+            m_pINotify->RawNotify(player, message);
+        }
+    }
+
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "%s -- End Comsys Recall --",
+             reinterpret_cast<const char *>(ch->header));
+    m_pINotify->RawNotify(player, msg);
+}
+
+// ---------------------------------------------------------------------------
 // Process a channel message (alias dispatch target).
 // ---------------------------------------------------------------------------
 
@@ -1546,6 +1633,22 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
     if (0 == strcmp(reinterpret_cast<const char *>(arg2), "who"))
     {
         do_comwho(player, ch);
+        return;
+    }
+
+    // Handle "last [N]" — channel history recall.
+    //
+    if (0 == strncmp(reinterpret_cast<const char *>(arg2), "last", 4)
+        && ('\0' == arg2[4]
+            || (' ' == arg2[4]
+                && '\0' != arg2[5])))
+    {
+        int nRecall = 10; // DFLT_RECALL_REQUEST
+        if (' ' == arg2[4])
+        {
+            nRecall = atoi(reinterpret_cast<const char *>(arg2 + 5));
+        }
+        do_comlast(player, ch, nRecall);
         return;
     }
 
@@ -2482,11 +2585,141 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
         }
         break;
 
-    default:
-        // CSET_LOG and CSET_LOG_TIME require channel object attribute
-        // access which the module does not yet support.
-        //
-        msg = reinterpret_cast<const UTF8 *>("@cset: Not supported in module.");
+    case CSET_LOG:
+        {
+            if (nullptr == pValue || '\0' == pValue[0])
+            {
+                msg = reinterpret_cast<const UTF8 *>(
+                    "@cset: Maximum history must be a number less than "
+                    "or equal to 200.");
+                break;
+            }
+            int value = atoi(reinterpret_cast<const char *>(pValue));
+            if (value < 0 || value > 200)
+            {
+                msg = reinterpret_cast<const UTF8 *>(
+                    "@cset: Maximum history must be a number less than "
+                    "or equal to 200.");
+                break;
+            }
+
+            bool bObjValid = false;
+            if (NOTHING != ch->chan_obj && nullptr != m_pIObjectInfo)
+            {
+                m_pIObjectInfo->IsValid(ch->chan_obj, &bObjValid);
+            }
+            if (!bObjValid)
+            {
+                msg = reinterpret_cast<const UTF8 *>(
+                    "@cset: Channel has no object. Use @cset/object first.");
+                break;
+            }
+
+            // Read old MAX_LOG value.
+            //
+            UTF8 oldbuf[64];
+            size_t nOldLen = 0;
+            int oldnum = 0;
+            MUX_RESULT mr2 = m_pIAttributeAccess->GetAttribute(
+                executor, ch->chan_obj, T("MAX_LOG"),
+                oldbuf, sizeof(oldbuf) - 1, &nOldLen);
+            if (MUX_SUCCEEDED(mr2) && 0 < nOldLen)
+            {
+                oldbuf[nOldLen] = '\0';
+                oldnum = atoi(reinterpret_cast<const char *>(oldbuf));
+            }
+
+            // If reducing, clear old HISTORY_N attributes.
+            //
+            if (value < oldnum)
+            {
+                for (int count = 0; count <= oldnum; count++)
+                {
+                    UTF8 histattr[64];
+                    snprintf(reinterpret_cast<char *>(histattr),
+                             sizeof(histattr), "HISTORY_%d", count);
+                    m_pIAttributeAccess->SetAttribute(
+                        executor, ch->chan_obj, histattr, T(""));
+                }
+            }
+
+            // Set MAX_LOG.
+            //
+            UTF8 vbuf[32];
+            snprintf(reinterpret_cast<char *>(vbuf), sizeof(vbuf),
+                     "%d", value);
+            m_pIAttributeAccess->SetAttribute(
+                executor, ch->chan_obj, T("MAX_LOG"), vbuf);
+
+            snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                     "@cset: Channel %s maximum history set.",
+                     reinterpret_cast<const char *>(pChannel));
+            msg = msgbuf;
+        }
+        break;
+
+    case CSET_LOG_TIME:
+        {
+            if (nullptr == pValue || '\0' == pValue[0])
+            {
+                msg = reinterpret_cast<const UTF8 *>("@cset: Failed.");
+                break;
+            }
+            int value = atoi(reinterpret_cast<const char *>(pValue));
+            if (value != 0 && value != 1)
+            {
+                msg = reinterpret_cast<const UTF8 *>("@cset: Failed.");
+                break;
+            }
+
+            bool bObjValid = false;
+            if (NOTHING != ch->chan_obj && nullptr != m_pIObjectInfo)
+            {
+                m_pIObjectInfo->IsValid(ch->chan_obj, &bObjValid);
+            }
+            if (!bObjValid)
+            {
+                snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                         "@cset: Failed.  Is logging enabled for %s?",
+                         reinterpret_cast<const char *>(pChannel));
+                msg = msgbuf;
+                break;
+            }
+
+            // Verify logging is enabled (MAX_LOG exists).
+            //
+            UTF8 logbuf[64];
+            size_t nLogLen = 0;
+            MUX_RESULT mr2 = m_pIAttributeAccess->GetAttribute(
+                executor, ch->chan_obj, T("MAX_LOG"),
+                logbuf, sizeof(logbuf) - 1, &nLogLen);
+            if (MUX_FAILED(mr2) || 0 == nLogLen)
+            {
+                snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                         "@cset: Failed.  Is logging enabled for %s?",
+                         reinterpret_cast<const char *>(pChannel));
+                msg = msgbuf;
+                break;
+            }
+
+            // Set or clear LOG_TIMESTAMPS.
+            //
+            if (value)
+            {
+                m_pIAttributeAccess->SetAttribute(
+                    executor, ch->chan_obj, T("LOG_TIMESTAMPS"), T("1"));
+            }
+            else
+            {
+                m_pIAttributeAccess->SetAttribute(
+                    executor, ch->chan_obj, T("LOG_TIMESTAMPS"), T(""));
+            }
+
+            snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                     "@cset: Channel %s timestamp logging set.",
+                     reinterpret_cast<const char *>(pChannel));
+            msg = msgbuf;
+        }
         break;
     }
 
