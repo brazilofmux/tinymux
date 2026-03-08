@@ -878,17 +878,19 @@ static bool GrowChannels(void);
 //
 static MUX_CLASS_INFO libmux_classes[] =
 {
-    { CID_SlaveControlPSFactory }
+    { CID_SlaveControlPSFactory },
+    { CID_QuerySinkPSFactory    }
 };
 #define NUM_LIBMUX_CLASSES (sizeof(libmux_classes)/sizeof(libmux_classes[0]))
 
 static MUX_INTERFACE_INFO libmux_interfaces[] =
 {
-    { IID_ISlaveControl, CID_SlaveControlPSFactory }
+    { IID_ISlaveControl, CID_SlaveControlPSFactory },
+    { IID_IQuerySink,    CID_QuerySinkPSFactory    }
 };
 #define NUM_LIBMUX_INTERFACES (sizeof(libmux_interfaces)/sizeof(libmux_interfaces[0]))
 
-// Defined after CSlaveControlPSFactory class below.
+// Defined after PSFactory classes below.
 //
 extern "C" MUX_RESULT DCL_API libmux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv);
 
@@ -2837,6 +2839,431 @@ MUX_RESULT CSlaveControlPSFactory::LockServer(bool bLock)
     return MUX_S_OK;
 }
 
+// CQuerySinkProxy: client-side proxy for mux_IQuerySink.
+//
+class CQuerySinkProxy : public mux_IQuerySink, public mux_IRpcProxyBuffer
+{
+public:
+    // mux_IUnknown
+    //
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
+
+    // mux_IRpcProxyBuffer
+    //
+    virtual MUX_RESULT Connect(uint32_t nChannel);
+    virtual void       Disconnect(void);
+
+    // mux_IQuerySink
+    //
+    virtual MUX_RESULT Result(uint32_t iQueryHandle, uint32_t iError, QUEUE_INFO *pqiResultsSet);
+
+    CQuerySinkProxy(void);
+    virtual ~CQuerySinkProxy();
+
+private:
+    uint32_t m_cRef;
+    uint32_t m_nChannel;
+};
+
+CQuerySinkProxy::CQuerySinkProxy(void) : m_cRef(1), m_nChannel(CHANNEL_INVALID)
+{
+}
+
+CQuerySinkProxy::~CQuerySinkProxy()
+{
+}
+
+MUX_RESULT CQuerySinkProxy::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IQuerySink *>(this);
+    }
+    else if (IID_IQuerySink == iid)
+    {
+        *ppv = static_cast<mux_IQuerySink *>(this);
+    }
+    else if (mux_IID_IRpcProxyBuffer == iid)
+    {
+        *ppv = static_cast<mux_IRpcProxyBuffer *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CQuerySinkProxy::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CQuerySinkProxy::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        QUEUE_INFO qiFrame;
+        Pipe_InitializeQueueInfo(&qiFrame);
+        (void)Pipe_SendDiscPacket(m_nChannel, &qiFrame);
+        m_nChannel = CHANNEL_INVALID;
+        Pipe_EmptyQueue(&qiFrame);
+
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CQuerySinkProxy::Connect(uint32_t nChannel)
+{
+    m_nChannel = nChannel;
+    return MUX_S_OK;
+}
+
+void CQuerySinkProxy::Disconnect(void)
+{
+    m_nChannel = CHANNEL_INVALID;
+}
+
+MUX_RESULT CQuerySinkProxy::Result(uint32_t iQueryHandle, uint32_t iError, QUEUE_INFO *pqiResultsSet)
+{
+    MUX_RESULT mr = MUX_S_OK;
+
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    uint32_t iMethod = 3;
+    Pipe_AppendBytes(&qiFrame, sizeof(iMethod), &iMethod);
+    Marshal_PutUInt32(&qiFrame, iQueryHandle);
+    Marshal_PutUInt32(&qiFrame, iError);
+    Pipe_AppendQueue(&qiFrame, pqiResultsSet);
+
+    mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+
+    if (MUX_SUCCEEDED(mr))
+    {
+        MUX_RESULT mrResult;
+        size_t nWanted = sizeof(mrResult);
+        if (  Pipe_GetBytes(&qiFrame, &nWanted, &mrResult)
+           && nWanted == sizeof(mrResult))
+        {
+            mr = mrResult;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+// CQuerySinkStub: server-side stub for mux_IQuerySink.
+//
+class CQuerySinkStub : public mux_IRpcStubBuffer
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
+
+    virtual MUX_RESULT Connect(mux_IUnknown *pUnknownServer);
+    virtual void       Disconnect(void);
+    virtual MUX_RESULT Invoke(QUEUE_INFO *pqi);
+    virtual MUX_RESULT IsSupported(MUX_IID riid);
+    virtual uint32_t     CountRefs(void);
+
+    CQuerySinkStub(void);
+    virtual ~CQuerySinkStub();
+
+private:
+    uint32_t         m_cRef;
+    mux_IQuerySink *m_pIQuerySink;
+};
+
+CQuerySinkStub::CQuerySinkStub(void) : m_cRef(1), m_pIQuerySink(nullptr)
+{
+}
+
+CQuerySinkStub::~CQuerySinkStub()
+{
+    if (nullptr != m_pIQuerySink)
+    {
+        m_pIQuerySink->Release();
+        m_pIQuerySink = nullptr;
+    }
+}
+
+MUX_RESULT CQuerySinkStub::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IRpcStubBuffer *>(this);
+    }
+    else if (mux_IID_IRpcStubBuffer == iid)
+    {
+        *ppv = static_cast<mux_IRpcStubBuffer *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CQuerySinkStub::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CQuerySinkStub::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CQuerySinkStub::Connect(mux_IUnknown *pUnknownServer)
+{
+    if (nullptr != m_pIQuerySink)
+    {
+        m_pIQuerySink->Release();
+        m_pIQuerySink = nullptr;
+    }
+
+    MUX_RESULT mr = MUX_E_INVALIDARG;
+    if (nullptr != pUnknownServer)
+    {
+        mr = pUnknownServer->QueryInterface(IID_IQuerySink, (void **)&m_pIQuerySink);
+    }
+    return mr;
+}
+
+void CQuerySinkStub::Disconnect(void)
+{
+    if (nullptr != m_pIQuerySink)
+    {
+        m_pIQuerySink->Release();
+        m_pIQuerySink = nullptr;
+    }
+}
+
+MUX_RESULT CQuerySinkStub::Invoke(QUEUE_INFO *pqi)
+{
+    if (nullptr == m_pIQuerySink)
+    {
+        return MUX_E_NOINTERFACE;
+    }
+
+    uint32_t iMethod;
+    size_t nWanted = sizeof(iMethod);
+    if (  !Pipe_GetBytes(pqi, &nWanted, &iMethod)
+       || nWanted != sizeof(iMethod))
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    switch (iMethod)
+    {
+    case 3: // MUX_RESULT Result(uint32_t iQueryHandle, uint32_t iError, QUEUE_INFO *pqiResultsSet)
+        {
+            uint32_t iQueryHandle;
+            uint32_t iError;
+            if (  !Marshal_GetUInt32(pqi, &iQueryHandle)
+               || !Marshal_GetUInt32(pqi, &iError))
+            {
+                Pipe_EmptyQueue(pqi);
+                MUX_RESULT mrReturn = MUX_E_INVALIDARG;
+                Pipe_AppendBytes(pqi, sizeof(mrReturn), &mrReturn);
+                return MUX_S_OK;
+            }
+
+            // The remaining queue data is the results set.
+            //
+            MUX_RESULT mrReturn = m_pIQuerySink->Result(iQueryHandle, iError, pqi);
+
+            Pipe_EmptyQueue(pqi);
+            Pipe_AppendBytes(pqi, sizeof(mrReturn), &mrReturn);
+            return MUX_S_OK;
+        }
+        break;
+    }
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CQuerySinkStub::IsSupported(MUX_IID riid)
+{
+    if (IID_IQuerySink == riid)
+    {
+        return MUX_S_OK;
+    }
+    return MUX_S_FALSE;
+}
+
+uint32_t CQuerySinkStub::CountRefs(void)
+{
+    return (nullptr != m_pIQuerySink) ? 1 : 0;
+}
+
+// CQuerySinkPSFactory: proxy-stub factory for mux_IQuerySink.
+//
+class CQuerySinkPSFactory : public mux_IPSFactoryBuffer, public mux_IClassFactory
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t     AddRef(void);
+    virtual uint32_t     Release(void);
+
+    virtual MUX_RESULT CreateProxy(mux_IUnknown *pUnknownOuter, MUX_IID riid, mux_IRpcProxyBuffer **ppProxy, void **ppv);
+    virtual MUX_RESULT CreateStub(MUX_IID riid, mux_IUnknown *pUnknownOuter, mux_IRpcStubBuffer **ppStub);
+
+    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);
+    virtual MUX_RESULT LockServer(bool bLock);
+
+    CQuerySinkPSFactory(void);
+    virtual ~CQuerySinkPSFactory();
+
+private:
+    uint32_t m_cRef;
+};
+
+CQuerySinkPSFactory::CQuerySinkPSFactory(void) : m_cRef(1)
+{
+}
+
+CQuerySinkPSFactory::~CQuerySinkPSFactory()
+{
+}
+
+MUX_RESULT CQuerySinkPSFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IPSFactoryBuffer *>(this);
+    }
+    else if (mux_IID_IPSFactoryBuffer == iid)
+    {
+        *ppv = static_cast<mux_IPSFactoryBuffer *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CQuerySinkPSFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CQuerySinkPSFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CQuerySinkPSFactory::CreateProxy(mux_IUnknown *pUnknownOuter, MUX_IID riid, mux_IRpcProxyBuffer **ppProxy, void **ppv)
+{
+    UNUSED_PARAMETER(pUnknownOuter);
+
+    if (IID_IQuerySink != riid)
+    {
+        return MUX_E_NOINTERFACE;
+    }
+
+    CQuerySinkProxy *pProxy = nullptr;
+    try
+    {
+        pProxy = new CQuerySinkProxy;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pProxy)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pProxy->QueryInterface(mux_IID_IRpcProxyBuffer, (void **)ppProxy);
+    if (MUX_SUCCEEDED(mr))
+    {
+        mr = pProxy->QueryInterface(riid, ppv);
+    }
+    pProxy->Release();
+    return mr;
+}
+
+MUX_RESULT CQuerySinkPSFactory::CreateStub(MUX_IID riid, mux_IUnknown *pUnknownOuter, mux_IRpcStubBuffer **ppStub)
+{
+    UNUSED_PARAMETER(pUnknownOuter);
+
+    if (IID_IQuerySink != riid)
+    {
+        return MUX_E_NOINTERFACE;
+    }
+
+    CQuerySinkStub *pStub = nullptr;
+    try
+    {
+        pStub = new CQuerySinkStub;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pStub)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pStub->QueryInterface(mux_IID_IRpcStubBuffer, (void **)ppStub);
+    pStub->Release();
+    return mr;
+}
+
+MUX_RESULT CQuerySinkPSFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
+{
+    UNUSED_PARAMETER(pUnknownOuter);
+    return QueryInterface(iid, ppv);
+}
+
+MUX_RESULT CQuerySinkPSFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
 // libmux-internal class object factory.
 //
 extern "C" MUX_RESULT DCL_API libmux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv)
@@ -2849,6 +3276,26 @@ extern "C" MUX_RESULT DCL_API libmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
         try
         {
             pFactory = new CSlaveControlPSFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == pFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pFactory->QueryInterface(iid, ppv);
+        pFactory->Release();
+    }
+    else if (CID_QuerySinkPSFactory == cid)
+    {
+        CQuerySinkPSFactory *pFactory = nullptr;
+        try
+        {
+            pFactory = new CQuerySinkPSFactory;
         }
         catch (...)
         {
