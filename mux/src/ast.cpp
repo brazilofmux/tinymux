@@ -1119,8 +1119,7 @@ static void ast_eval_subst(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 // Helper: evaluate an AST subtree for a NOEVAL branch (if/switch/iter).
 //
 // ##/#@/#$ are resolved natively as AST_SUBST nodes at eval time
-// (from mudstate.itext/inum/switch_token), so no serialization or
-// replace_tokens pass is needed.
+// (from mudstate.itext/inum/switch_token).
 //
 static void ast_eval_branch(const ASTNode *child, UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
@@ -1463,8 +1462,7 @@ static void ast_noeval_iter(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         }
 
         // Evaluate the body subtree directly. ## and #@ resolve
-        // natively from mudstate.itext/inum, making this safe
-        // without replace_tokens.
+        // natively from mudstate.itext/inum.
         //
         ast_eval_branch(node->children[1].get(), buff, bufc,
             executor, caller, enactor, eval, cargs, ncargs);

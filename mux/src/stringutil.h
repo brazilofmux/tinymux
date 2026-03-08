@@ -1693,13 +1693,6 @@ int  string_compare(const UTF8 *, const UTF8 *);
 int  string_prefix(const UTF8 *, const UTF8 *);
 const UTF8 *string_match(const UTF8 *, const UTF8 *);
 UTF8 *replace_string(const UTF8 *, const UTF8 *, const UTF8 *);
-UTF8 *replace_tokens
-(
-    const UTF8 *s,
-    const UTF8 *pBound,
-    const UTF8 *pListPlace,
-    const UTF8 *pSwitch
-);
 bool minmatch(const UTF8 *str, const UTF8 *target, int min);
 UTF8 *StringCloneLen(const UTF8 *str, size_t nStr);
 UTF8 *StringClone(const UTF8 *str);
