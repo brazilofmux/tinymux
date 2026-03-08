@@ -2915,9 +2915,37 @@ int DCL_CDECL main(int argc, char *argv[])
                             reinterpret_cast<void **>(&mudstate.pIComsysControl));
     if (MUX_SUCCEEDED(mr))
     {
-        STARTLOG(LOG_ALWAYS, "INI", "MOD");
-        log_printf(T("Comsys module discovered via mux_IComsysControl."));
-        ENDLOG;
+        // Compute SQLite database path from input database path.
+        //
+        char szDbPath[SIZEOF_PATHNAME];
+        mux_strncpy(reinterpret_cast<UTF8 *>(szDbPath), mudconf.indb,
+                     sizeof(szDbPath) - 1);
+        szDbPath[sizeof(szDbPath) - 1] = '\0';
+        size_t nPath = strlen(szDbPath);
+        if (nPath > 3 && strcmp(szDbPath + nPath - 3, ".db") == 0)
+        {
+            strcpy(szDbPath + nPath - 3, ".sqlite");
+        }
+        else
+        {
+            strcat(szDbPath, ".sqlite");
+        }
+
+        mr = mudstate.pIComsysControl->Initialize(
+            reinterpret_cast<const UTF8 *>(szDbPath));
+        if (MUX_SUCCEEDED(mr))
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "MOD");
+            log_printf(T("Comsys module initialized with database: %s"),
+                       szDbPath);
+            ENDLOG;
+        }
+        else
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "MOD");
+            log_printf(T("Comsys module Initialize failed (mr=%d)."), mr);
+            ENDLOG;
+        }
     }
 
     mr = mux_CreateInstance(CID_QueryServer, nullptr, UseSlaveProcess, IID_IQueryControl, (void **)&mudstate.pIQueryControl);

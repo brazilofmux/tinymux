@@ -283,6 +283,11 @@ const MUX_IID IID_IComsysControl        = UINT64_C(0x000000028E4B63D7);
 interface mux_IComsysControl : public mux_IUnknown
 {
 public:
+    // One-time initialization: pass the SQLite database path so the
+    // module can open its own connection.
+    //
+    virtual MUX_RESULT Initialize(const UTF8 *pDatabasePath) = 0;
+
     // Connection events.
     //
     virtual MUX_RESULT PlayerConnect(dbref player) = 0;

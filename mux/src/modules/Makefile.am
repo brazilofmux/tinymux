@@ -23,7 +23,7 @@ exp3.so: exp3.cpp exp3.h
 	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(PCRE2_LIBS)
 
 comsys_mod.so: comsys_mod.cpp comsys_mod.h
-	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(PCRE2_LIBS)
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(PCRE2_LIBS) -lsqlite3
 
 # SQL slave needs special treatment for SQL libraries
 sqlslave.so: sqlslave.cpp sql.h
