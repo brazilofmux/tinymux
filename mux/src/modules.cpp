@@ -19,7 +19,8 @@ static MUX_CLASS_INFO netmux_classes[] =
     { CID_Functions          },
     { CID_LogPSFactory       },
     { CID_Notify             },
-    { CID_ObjectInfo         }
+    { CID_ObjectInfo         },
+    { CID_AttributeAccess    }
 };
 #define NUM_CLASSES (sizeof(netmux_classes)/sizeof(netmux_classes[0]))
 
@@ -166,6 +167,26 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
 
         mr = pObjectInfoFactory->QueryInterface(iid, ppv);
         pObjectInfoFactory->Release();
+    }
+    else if (CID_AttributeAccess == cid)
+    {
+        CAttributeAccessFactory *pAttributeAccessFactory = nullptr;
+        try
+        {
+            pAttributeAccessFactory = new CAttributeAccessFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == pAttributeAccessFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pAttributeAccessFactory->QueryInterface(iid, ppv);
+        pAttributeAccessFactory->Release();
     }
     return mr;
 }
@@ -1182,6 +1203,241 @@ MUX_RESULT CObjectInfoFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_I
 }
 
 MUX_RESULT CObjectInfoFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CAttributeAccess — mux_IAttributeAccess implementation (in-process only).
+// ---------------------------------------------------------------------------
+
+class CAttributeAccess : public mux_IAttributeAccess
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+
+    virtual MUX_RESULT GetAttribute(dbref executor, dbref obj,
+        const UTF8 *pAttrName, UTF8 *pValue, size_t nValueMax,
+        size_t *pnValueLen);
+    virtual MUX_RESULT SetAttribute(dbref executor, dbref obj,
+        const UTF8 *pAttrName, const UTF8 *pValue);
+
+    CAttributeAccess(void);
+    virtual ~CAttributeAccess();
+
+private:
+    uint32_t m_cRef;
+};
+
+CAttributeAccess::CAttributeAccess(void) : m_cRef(1)
+{
+}
+
+CAttributeAccess::~CAttributeAccess()
+{
+}
+
+MUX_RESULT CAttributeAccess::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IAttributeAccess *>(this);
+    }
+    else if (IID_IAttributeAccess == iid)
+    {
+        *ppv = static_cast<mux_IAttributeAccess *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CAttributeAccess::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CAttributeAccess::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CAttributeAccess::GetAttribute(dbref executor, dbref obj,
+    const UTF8 *pAttrName, UTF8 *pValue, size_t nValueMax,
+    size_t *pnValueLen)
+{
+    if (nullptr == pValue || 0 == nValueMax)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    pValue[0] = '\0';
+    if (nullptr != pnValueLen)
+    {
+        *pnValueLen = 0;
+    }
+
+    if (!Good_obj(obj))
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    ATTR *pattr = atr_str(pAttrName);
+    if (nullptr == pattr)
+    {
+        return MUX_E_NOTFOUND;
+    }
+
+    if (!bCanReadAttr(executor, obj, pattr, false))
+    {
+        return MUX_E_PERMISSION;
+    }
+
+    dbref aowner;
+    int   aflags;
+    size_t nLen;
+    UTF8 buf[LBUF_SIZE];
+    atr_get_str_LEN(buf, obj, pattr->number, &aowner, &aflags, &nLen);
+
+    if (0 == nLen)
+    {
+        return MUX_S_OK;
+    }
+
+    if (nLen >= nValueMax)
+    {
+        nLen = nValueMax - 1;
+    }
+    memcpy(pValue, buf, nLen);
+    pValue[nLen] = '\0';
+
+    if (nullptr != pnValueLen)
+    {
+        *pnValueLen = nLen;
+    }
+    return MUX_S_OK;
+}
+
+MUX_RESULT CAttributeAccess::SetAttribute(dbref executor, dbref obj,
+    const UTF8 *pAttrName, const UTF8 *pValue)
+{
+    if (!Good_obj(obj))
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    // mkattr() looks up or creates the vattr as needed.
+    //
+    int anum = mkattr(executor, pAttrName);
+    if (anum <= 0)
+    {
+        return MUX_E_NOTFOUND;
+    }
+
+    ATTR *pattr = atr_num(anum);
+    if (nullptr == pattr)
+    {
+        return MUX_E_NOTFOUND;
+    }
+
+    if (!bCanSetAttr(executor, obj, pattr))
+    {
+        return MUX_E_PERMISSION;
+    }
+
+    dbref aowner;
+    int   aflags;
+    atr_pget_info(obj, pattr->number, &aowner, &aflags);
+    atr_add(obj, pattr->number, pValue, Owner(executor), aflags);
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CAttributeAccessFactory
+// ---------------------------------------------------------------------------
+
+CAttributeAccessFactory::CAttributeAccessFactory(void) : m_cRef(1)
+{
+}
+
+CAttributeAccessFactory::~CAttributeAccessFactory()
+{
+}
+
+MUX_RESULT CAttributeAccessFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CAttributeAccessFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CAttributeAccessFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CAttributeAccessFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
+{
+    UNUSED_PARAMETER(pUnknownOuter);
+
+    CAttributeAccess *pAttributeAccess = nullptr;
+    try
+    {
+        pAttributeAccess = new CAttributeAccess;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pAttributeAccess)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pAttributeAccess->QueryInterface(iid, ppv);
+    pAttributeAccess->Release();
+    return mr;
+}
+
+MUX_RESULT CAttributeAccessFactory::LockServer(bool bLock)
 {
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;

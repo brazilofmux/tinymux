@@ -24,6 +24,7 @@ private:
     mux_IFunctionsControl  *m_pIFunctionsControl;
     mux_INotify            *m_pINotify;
     mux_IObjectInfo        *m_pIObjectInfo;
+    mux_IAttributeAccess   *m_pIAttributeAccess;
 
 public:
     // mux_IUnknown

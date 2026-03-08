@@ -1717,7 +1717,7 @@
 >256
 "@log smoke=Beginning exp3() test cases."
 >257
-"@if strmatch(setr(0,mget(#1/DESC)),#-1 NO ATTRIBUTE ACCESS INTERFACE)={@log smoke=TC001: mget attribute wall. Succeeded.},{@log smoke=TC001: mget attribute wall. Failed (%q0).}"
+"@if strmatch(setr(0,mset(#0/EXP3_TEST,exp3 roundtrip)),)={@log smoke=TC001: mset writes attribute. Succeeded.},{@log smoke=TC001: mset writes attribute. Failed (%q0).}"
 >258
 "@log smoke=End exp3() test cases.;@notify smoke"
 >259
@@ -1733,7 +1733,7 @@
 >264
 "@if strmatch(setr(0,mtype(#1)),PLAYER)={@log smoke=TC007: mtype returns type. Succeeded.},{@log smoke=TC007: mtype returns type. Failed (%q0).}"
 >265
-"@if strmatch(setr(0,mset(#1/TEST,hello)),#-1 NO ATTRIBUTE WRITE INTERFACE)={@log smoke=TC008: mset attribute write wall. Succeeded.},{@log smoke=TC008: mset attribute write wall. Failed (%q0).}"
+"@if strmatch(setr(0,mget(#0/EXP3_TEST)),exp3 roundtrip)={@log smoke=TC008: mget reads attribute. Succeeded.},{@log smoke=TC008: mget reads attribute. Failed (%q0).}"
 >267
 "@if strmatch(setr(0,mget(badref/ATTR)),#-1 INVALID DBREF)={@log smoke=TC009: mget invalid dbref. Succeeded.},{@log smoke=TC009: mget invalid dbref. Failed (%q0).};@trig me/tr.done"
 <

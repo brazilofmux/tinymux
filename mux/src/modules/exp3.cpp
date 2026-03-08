@@ -9,7 +9,7 @@
  * Functions provided:
  *
  *   mget(obj/attr)   — Read an attribute value.
- *                      WALL: No mux_IDatabase or attribute-access interface.
+ *                      RESOLVED: Uses mux_IAttributeAccess::GetAttribute().
  *
  *   mname(obj)       — Return the name of an object.
  *                      RESOLVED: Uses mux_IObjectInfo::GetName().
@@ -30,14 +30,13 @@
  *                      RESOLVED: Uses mux_IObjectInfo::GetType().
  *
  *   mset(obj/attr, value) — Set an attribute on an object.
- *                      WALL: No attribute-write interface.
+ *                      RESOLVED: Uses mux_IAttributeAccess::SetAttribute().
  *
  * FINDINGS (updated as walls are hit):
  *
- * 1. ATTRIBUTE READ — A module receives (executor, fargs) but has no way
- *    to call atr_get_str() or atr_pget_str().  These are linked into
- *    netmux, not exported.  Needs: mux_IAttributeAccess with methods
- *    like GetAttribute(dbref obj, const UTF8 *attrname, ...).
+ * 1. ATTRIBUTE READ — RESOLVED.  mux_IAttributeAccess (CID_AttributeAccess)
+ *    provides GetAttribute(executor, obj, attrname, ...) with built-in
+ *    permission checks via bCanReadAttr().  Implemented in modules.cpp.
  *
  * 2. OBJECT PROPERTIES — RESOLVED.  mux_IObjectInfo (CID_ObjectInfo)
  *    provides IsValid, GetName, GetOwner, GetLocation, GetType.
@@ -52,14 +51,13 @@
  *    softcode.  Needs: mux_IEvaluator with Eval(dbref executor,
  *    const UTF8 *expr, UTF8 *result, size_t resultSize).
  *
- * 5. ATTRIBUTE WRITE — atr_add_raw_LEN() is netmux-internal.  Needs to
- *    be part of mux_IAttributeAccess with SetAttribute().
+ * 5. ATTRIBUTE WRITE — RESOLVED.  mux_IAttributeAccess::SetAttribute()
+ *    wraps atr_add() with bCanSetAttr() permission checks.
  *
- * 6. PERMISSION CHECKS — could_doit(), Examinable(), Controls() are all
- *    netmux-internal.  A module doing attribute reads would need to
- *    check permissions.  Could be methods on the attribute interface
- *    (GetAttribute does the permission check internally) or a separate
- *    mux_IPermissions interface.
+ * 6. PERMISSION CHECKS — RESOLVED for attributes.  GetAttribute() uses
+ *    bCanReadAttr() internally; SetAttribute() uses bCanSetAttr().
+ *    General permission checks (Controls, Examinable) are not yet
+ *    exposed as a separate interface.
  *
  * 7. DBREF PARSING — The module receives fargs as strings.  Converting
  *    "#123" to a dbref requires mux_atol() and Good_obj() validation.
@@ -248,7 +246,8 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 // ---------------------------------------------------------------------------
 
 CExp3::CExp3(void) : m_cRef(1), m_pILog(nullptr), m_pIFunctionsControl(nullptr),
-    m_pINotify(nullptr), m_pIObjectInfo(nullptr)
+    m_pINotify(nullptr), m_pIObjectInfo(nullptr),
+    m_pIAttributeAccess(nullptr)
 {
     g_cComponents++;
 }
@@ -309,6 +308,10 @@ MUX_RESULT CExp3::FinalConstruct(void)
                        IID_IObjectInfo,
                        reinterpret_cast<void **>(&m_pIObjectInfo));
 
+    mux_CreateInstance(CID_AttributeAccess, nullptr, UseSameProcess,
+                       IID_IAttributeAccess,
+                       reinterpret_cast<void **>(&m_pIAttributeAccess));
+
     return mr;
 }
 
@@ -343,6 +346,12 @@ CExp3::~CExp3()
     {
         m_pIObjectInfo->Release();
         m_pIObjectInfo = nullptr;
+    }
+
+    if (nullptr != m_pIAttributeAccess)
+    {
+        m_pIAttributeAccess->Release();
+        m_pIAttributeAccess = nullptr;
     }
 
     g_cComponents--;
@@ -416,32 +425,60 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
     {
     case 0: // MGET(obj/attr) or MGET(obj, attr)
         {
-            // Parse the argument.  We receive the obj/attr string but have
-            // no way to resolve it.
-            //
-            // WALL 1: Cannot call atr_get_str() — it's in netmux.
-            // WALL 6: Cannot call Examinable()/could_doit() for permission
-            //          checks.
-            // WALL 7: Cannot call match_thing() to resolve "me"/"here".
-            // WALL 7: Cannot validate dbref with Good_obj() (needs db_top).
-            // WALL 8: Had to duplicate safe_copy_str (should be in libmux).
-            //
-            // What we CAN do: parse the string, but we hit a dead end
-            // because we can't read the database.
-            //
-            int obj = parse_dbref(fargs[0]);
+            int obj;
+            const UTF8 *pAttrName;
+            if (2 == nfargs)
+            {
+                // Two-arg form: mget(#obj, attrname)
+                //
+                obj = parse_dbref(fargs[0]);
+                pAttrName = fargs[1];
+            }
+            else
+            {
+                // One-arg form: mget(#obj/attrname)
+                //
+                UTF8 *pSlash = (UTF8 *)strchr((const char *)fargs[0], '/');
+                if (nullptr == pSlash)
+                {
+                    safe_copy_str(T("#-1 NO ATTR NAME"), buff, bufc);
+                    break;
+                }
+                *pSlash = '\0';
+                obj = parse_dbref(fargs[0]);
+                pAttrName = pSlash + 1;
+            }
+
             if (obj < 0)
             {
                 safe_copy_str(T("#-1 INVALID DBREF"), buff, bufc);
             }
+            else if (nullptr == m_pIAttributeAccess)
+            {
+                safe_copy_str(T("#-1 NO ATTRIBUTE ACCESS INTERFACE"), buff, bufc);
+            }
             else
             {
-                // We have a dbref number but cannot:
-                // - Verify it exists (need db_top)
-                // - Read any attribute (need atr_get_str)
-                // - Check read permissions (need Examinable)
-                //
-                safe_copy_str(T("#-1 NO ATTRIBUTE ACCESS INTERFACE"), buff, bufc);
+                UTF8 value[LBUF_SIZE];
+                size_t nLen;
+                MUX_RESULT mr = m_pIAttributeAccess->GetAttribute(
+                    executor, obj, pAttrName, value, sizeof(value), &nLen);
+                if (MUX_E_INVALIDARG == mr)
+                {
+                    safe_copy_str(T("#-1 NO SUCH OBJECT"), buff, bufc);
+                }
+                else if (MUX_E_NOTFOUND == mr)
+                {
+                    safe_copy_str(T("#-1 NO SUCH ATTRIBUTE"), buff, bufc);
+                }
+                else if (MUX_E_PERMISSION == mr)
+                {
+                    safe_copy_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+                }
+                else if (MUX_SUCCEEDED(mr))
+                {
+                    safe_copy_str(value, buff, bufc);
+                }
             }
         }
         break;
@@ -608,17 +645,41 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
 
     case 7: // MSET(obj/attr, value)
         {
-            // WALL 5: Cannot call atr_add_raw_LEN() — in netmux.
-            // WALL 6: Cannot check write permissions.
-            //
+            UTF8 *pSlash = (UTF8 *)strchr((const char *)fargs[0], '/');
+            if (nullptr == pSlash)
+            {
+                safe_copy_str(T("#-1 NO ATTR NAME"), buff, bufc);
+                break;
+            }
+            *pSlash = '\0';
             int obj = parse_dbref(fargs[0]);
+            const UTF8 *pAttrName = pSlash + 1;
+
             if (obj < 0)
             {
                 safe_copy_str(T("#-1 INVALID DBREF"), buff, bufc);
             }
-            else
+            else if (nullptr == m_pIAttributeAccess)
             {
                 safe_copy_str(T("#-1 NO ATTRIBUTE WRITE INTERFACE"), buff, bufc);
+            }
+            else
+            {
+                MUX_RESULT mr = m_pIAttributeAccess->SetAttribute(
+                    executor, obj, pAttrName, fargs[1]);
+                if (MUX_E_INVALIDARG == mr)
+                {
+                    safe_copy_str(T("#-1 NO SUCH OBJECT"), buff, bufc);
+                }
+                else if (MUX_E_NOTFOUND == mr)
+                {
+                    safe_copy_str(T("#-1 NO SUCH ATTRIBUTE"), buff, bufc);
+                }
+                else if (MUX_E_PERMISSION == mr)
+                {
+                    safe_copy_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+                }
+                // On success, return empty (like @set).
             }
         }
         break;

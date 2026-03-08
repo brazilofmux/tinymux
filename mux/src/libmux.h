@@ -38,6 +38,7 @@ typedef uint64_t MUX_IID;
 #define MUX_E_NOTREADY          (-8)
 #define MUX_E_NOTFOUND          (-9)
 #define MUX_E_NOAGGREGATION     (-10)
+#define MUX_E_PERMISSION        (-11)
 
 #define MUX_FAILED(x)    (static_cast<MUX_RESULT>(x) < 0)
 #define MUX_SUCCEEDED(x) (0 <= static_cast<MUX_RESULT>(x))

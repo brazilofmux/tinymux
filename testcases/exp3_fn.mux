@@ -16,17 +16,17 @@
   @log smoke=Beginning exp3() test cases.
 -
 #
-# Test 1: mget() hits the attribute access wall.
+# Test 1: mset() writes an attribute via mux_IAttributeAccess (returns empty on success).
 #
 &tr.tc001 test_exp3_fn=
   @if strmatch(
-    setr(0,mget(#1/DESC)),
-    #-1 NO ATTRIBUTE ACCESS INTERFACE)=
+    setr(0,mset(#0/EXP3_TEST,exp3 roundtrip)),
+    )=
   {
-    @log smoke=TC001: mget attribute wall. Succeeded.
+    @log smoke=TC001: mset writes attribute. Succeeded.
   },
   {
-    @log smoke=TC001: mget attribute wall. Failed (%q0).
+    @log smoke=TC001: mset writes attribute. Failed (%q0).
   }
 -
 #
@@ -114,17 +114,17 @@
   }
 -
 #
-# Test 8: mset() hits the attribute write wall.
+# Test 8: mget() reads back the attribute written by TC001.
 #
 &tr.tc008 test_exp3_fn=
   @if strmatch(
-    setr(0,mset(#1/TEST,hello)),
-    #-1 NO ATTRIBUTE WRITE INTERFACE)=
+    setr(0,mget(#0/EXP3_TEST)),
+    exp3 roundtrip)=
   {
-    @log smoke=TC008: mset attribute write wall. Succeeded.
+    @log smoke=TC008: mget reads attribute. Succeeded.
   },
   {
-    @log smoke=TC008: mset attribute write wall. Failed (%q0).
+    @log smoke=TC008: mget reads attribute. Failed (%q0).
   }
 -
 #

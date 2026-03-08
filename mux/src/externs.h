@@ -1401,6 +1401,7 @@ DEFINE_FACTORY(CQueryClientFactory)
 DEFINE_FACTORY(CFunctionsFactory)
 DEFINE_FACTORY(CNotifyFactory)
 DEFINE_FACTORY(CObjectInfoFactory)
+DEFINE_FACTORY(CAttributeAccessFactory)
 
 class CLogPSFactory : public mux_IPSFactoryBuffer, public mux_IClassFactory
 {

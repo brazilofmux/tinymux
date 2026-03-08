@@ -59,6 +59,8 @@ const MUX_CID CID_Notify                 = UINT64_C(0x00000002B880897B);
 const MUX_IID IID_INotify                = UINT64_C(0x00000002621F4385);
 const MUX_CID CID_ObjectInfo             = UINT64_C(0x00000002251565F1);
 const MUX_IID IID_IObjectInfo            = UINT64_C(0x00000002722A6C49);
+const MUX_CID CID_AttributeAccess       = UINT64_C(0x000000024A3E71B5);
+const MUX_IID IID_IAttributeAccess      = UINT64_C(0x00000002D89F42C3);
 
 interface mux_ILog : public mux_IUnknown
 {
@@ -237,6 +239,18 @@ public:
     virtual MUX_RESULT GetOwner(dbref obj, dbref *pOwner) = 0;
     virtual MUX_RESULT GetLocation(dbref obj, dbref *pLocation) = 0;
     virtual MUX_RESULT GetType(dbref obj, int *pType) = 0;
+};
+
+// Attribute read/write with built-in permission checks.
+//
+interface mux_IAttributeAccess : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT GetAttribute(dbref executor, dbref obj,
+        const UTF8 *pAttrName, UTF8 *pValue, size_t nValueMax,
+        size_t *pnValueLen) = 0;
+    virtual MUX_RESULT SetAttribute(dbref executor, dbref obj,
+        const UTF8 *pAttrName, const UTF8 *pValue) = 0;
 };
 
 #endif // MODULES_H
