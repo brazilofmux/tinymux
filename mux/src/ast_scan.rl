@@ -14,13 +14,14 @@
 
 #include "ast.h"
 
-#include <string>
+#include <string_view>
 #include <vector>
 
-// Helper: construct token text from Ragel ts/te pointers.
+// Helper: construct token text view from Ragel ts/te pointers.
+// Views point directly into the input buffer — no allocation.
 //
-#define TOK_TEXT() std::string(reinterpret_cast<const char *>(ts), \
-                               static_cast<size_t>(te - ts))
+#define TOK_TEXT() std::string_view(reinterpret_cast<const char *>(ts), \
+                                    static_cast<size_t>(te - ts))
 
 %%{
     machine ast_scanner;

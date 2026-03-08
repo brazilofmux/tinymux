@@ -19,6 +19,7 @@
 #define AST_H
 
 #include <string>
+#include <string_view>
 #include <vector>
 #include <memory>
 
@@ -44,7 +45,7 @@ struct ASTNode {
     std::vector<std::unique_ptr<ASTNode>> children;
     bool has_close_paren;   // FUNCCALL: true if ')' was found
 
-    ASTNode(ASTNodeType t, const std::string &s = "")
+    ASTNode(ASTNodeType t, std::string_view s = "")
         : type(t), text(s), has_close_paren(true) {}
 
     void addChild(std::unique_ptr<ASTNode> child) {
@@ -75,7 +76,7 @@ enum ASTTokenType {
 
 struct ASTToken {
     ASTTokenType type;
-    std::string text;
+    std::string_view text;
 };
 
 // ---------------------------------------------------------------
