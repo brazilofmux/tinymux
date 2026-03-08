@@ -248,6 +248,9 @@ private:
     void do_mail_review(dbref player, const UTF8 *name,
         const UTF8 *msglist);
     void do_mail_review_all(dbref player, const UTF8 *msglist);
+    void do_mail_retract(dbref player, const UTF8 *name,
+        const UTF8 *msglist);
+    void do_mail_nuke(dbref player);
 
     // Message body management.
     //

@@ -2293,6 +2293,114 @@ void CMailMod::do_mail_review(dbref player, const UTF8 *name,
 }
 
 // ---------------------------------------------------------------------------
+// @mail/retract — retract unread sent mail.
+// ---------------------------------------------------------------------------
+
+void CMailMod::do_mail_retract(dbref player, const UTF8 *name,
+    const UTF8 *msglist)
+{
+    if (nullptr == name || '\0' == *name)
+    {
+        m_pINotify->RawNotify(player, T("MAIL: No such player."));
+        return;
+    }
+
+    // Look up target player.
+    //
+    dbref target = NOTHING;
+    if (nullptr != m_pIObjectInfo)
+    {
+        UTF8 namebuf[256];
+        snprintf(reinterpret_cast<char *>(namebuf), sizeof(namebuf),
+                 "*%s", reinterpret_cast<const char *>(name));
+        m_pIObjectInfo->MatchThing(player, namebuf, &target);
+    }
+
+    if (NOTHING == target)
+    {
+        m_pINotify->RawNotify(player, T("MAIL: No such player."));
+        return;
+    }
+
+    struct mail_selector ms;
+    if (!parse_msglist(msglist, &ms, target))
+    {
+        return;
+    }
+
+    int i = 0, j = 0;
+    struct mail *mp = MailListFirst(target);
+    while (nullptr != mp)
+    {
+        struct mail *next = MailListNext(mp, target);
+        if (mail_from_player(player, mp))
+        {
+            i++;
+            if (mail_match(mp, ms, i))
+            {
+                j++;
+                if (Unread(mp))
+                {
+                    sqlite_wt_delete_mail(mp);
+                    MailListRemove(target, mp);
+                    m_pINotify->RawNotify(player, T("MAIL: Mail retracted."));
+                }
+                else
+                {
+                    m_pINotify->RawNotify(player,
+                        T("MAIL: That message has been read."));
+                }
+            }
+        }
+        mp = next;
+    }
+
+    if (!j)
+    {
+        m_pINotify->RawNotify(player, T("MAIL: No matching messages."));
+    }
+}
+
+// ---------------------------------------------------------------------------
+// @mail/nuke — admin: clear all mail in the database.
+// ---------------------------------------------------------------------------
+
+void CMailMod::do_mail_nuke(dbref player)
+{
+    bool bGod = false;
+    if (nullptr != m_pIPermissions)
+    {
+        m_pIPermissions->IsGod(player, &bGod);
+    }
+    if (!bGod)
+    {
+        m_pINotify->RawNotify(player,
+            T("The postal service issues a warrant for your arrest."));
+        return;
+    }
+
+    // Remove all mail from all players.
+    //
+    for (auto it = m_mail_htab.begin(); it != m_mail_htab.end(); )
+    {
+        dbref target = it->first;
+        ++it;
+        MailListRemoveAll(target);
+        sqlite_wt_delete_all_mail(target);
+    }
+
+    UTF8 msg[128];
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "MAIL: ** MAIL PURGE ** done by #%d.", player);
+    if (nullptr != m_pILog)
+    {
+        m_pILog->log_text(msg);
+    }
+    m_pINotify->RawNotify(player,
+        T("You annihilate the post office. All messages cleared."));
+}
+
+// ---------------------------------------------------------------------------
 // Command implementations.
 // ---------------------------------------------------------------------------
 
@@ -2895,9 +3003,7 @@ MUX_RESULT CMailMod::PlayerConnect(dbref player)
 
 MUX_RESULT CMailMod::PlayerNuke(dbref player)
 {
-    // TODO: Enable when module fully owns mail data.
-    UNUSED_PARAMETER(player);
-    return MUX_E_NOTIMPLEMENTED;
+    return DestroyPlayerMail(player);
 }
 
 MUX_RESULT CMailMod::MailCommand(dbref executor, int key,
@@ -2963,6 +3069,14 @@ MUX_RESULT CMailMod::MailCommand(dbref executor, int key,
 
     case MAIL_FOLDER:
         do_mail_change_folder(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    case MAIL_RETRACT:
+        do_mail_retract(executor, pArg1, pArg2);
+        return MUX_S_OK;
+
+    case MAIL_NUKE:
+        do_mail_nuke(executor);
         return MUX_S_OK;
 
     case 0:
@@ -3076,9 +3190,48 @@ MUX_RESULT CMailMod::CountMail(dbref player, int folder,
 
 MUX_RESULT CMailMod::DestroyPlayerMail(dbref player)
 {
-    // TODO: Enable when module fully owns mail data.
-    UNUSED_PARAMETER(player);
-    return MUX_E_NOTIMPLEMENTED;
+    // Step 1: Purge received mail.
+    //
+    MailListRemoveAll(player);
+    sqlite_wt_delete_all_mail(player);
+
+    // Step 2: Orphan sent mail in every other player's mailbox.
+    //
+    for (auto &kv : m_mail_htab)
+    {
+        struct mail *mp = MailListFirst(kv.first);
+        while (nullptr != mp)
+        {
+            if (mp->from == player)
+            {
+                mp->from = NOTHING;
+                sqlite_wt_update_mail_flags(mp);
+            }
+            mp = MailListNext(mp, kv.first);
+        }
+    }
+
+    // Step 3: Clean up mail aliases.
+    //
+    for (int i = 0; i < m_ma_top; i++)
+    {
+        if (nullptr != m_malias[i])
+        {
+            for (int j = 0; j < m_malias[i]->numrecep; j++)
+            {
+                if (m_malias[i]->list[j] == player)
+                {
+                    m_malias[i]->list[j] =
+                        m_malias[i]->list[m_malias[i]->numrecep - 1];
+                    m_malias[i]->numrecep--;
+                    j--;
+                }
+            }
+        }
+    }
+    sqlite_wt_sync_all_aliases();
+
+    return MUX_S_OK;
 }
 
 // ---------------------------------------------------------------------------
