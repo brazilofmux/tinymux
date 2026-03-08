@@ -13,6 +13,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../timeutil.h"
+
 #ifndef NOTHING
 #define NOTHING (-1)
 #endif
@@ -37,6 +39,7 @@ const MUX_CID CID_MailMod = UINT64_C(0x00000002D7A3E1B5);
 #define M_REPLY     0x4000
 
 #define MAX_FOLDERS 15
+#define All(ms)     ((ms).flags & M_ALL)
 #define FolderBit(f) (256 * (f))
 #define Folder(m)   ((m->read & ~M_FMASK) >> 8)
 #define Read(m)     (m->read & M_ISREAD)
@@ -194,6 +197,19 @@ private:
     bool LoadMailHeaders(void);
     bool LoadMailAliases(void);
     void ClearRuntimeData(void);
+
+    // Selector and matching helpers.
+    //
+    bool parse_msglist(const UTF8 *msglist, struct mail_selector *ms,
+        dbref player);
+    bool mail_match(struct mail *mp, struct mail_selector &ms, int num);
+    int  player_folder(dbref player);
+
+    // Command implementations.
+    //
+    void do_mail_flags(dbref player, const UTF8 *msglist,
+        mail_flag flag, bool negate);
+    void do_mail_purge(dbref player);
 
     // Message body management.
     //

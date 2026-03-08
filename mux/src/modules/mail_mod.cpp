@@ -1106,6 +1106,458 @@ MUX_RESULT CMailMod::Initialize(const UTF8 *pDatabasePath,
     return MUX_S_OK;
 }
 
+// ---------------------------------------------------------------------------
+// Selector parsing and matching — ported from mail.cpp.
+// ---------------------------------------------------------------------------
+
+static const UTF8 *mailmsg[] =
+{
+    T("MAIL: Invalid message range"),
+    T("MAIL: Invalid message number"),
+    T("MAIL: Invalid age"),
+    T("MAIL: Invalid dbref #"),
+    T("MAIL: Invalid player"),
+    T("MAIL: Invalid message specification"),
+    T("MAIL: Invalid player or trying to send @mail to a @malias without a subject"),
+};
+
+#define MAIL_INVALID_RANGE  0
+#define MAIL_INVALID_NUMBER 1
+#define MAIL_INVALID_AGE    2
+#define MAIL_INVALID_DBREF  3
+#define MAIL_INVALID_PLAYER 4
+#define MAIL_INVALID_SPEC   5
+#define MAIL_INVALID_PLAYER_OR_USING_MALIAS 6
+
+bool CMailMod::parse_msglist(const UTF8 *msglist, struct mail_selector *ms,
+    dbref player)
+{
+    ms->low = 0;
+    ms->high = 0;
+    ms->flags = 0x0FFF | M_MSUNREAD;
+    ms->player = 0;
+    ms->days = -1;
+    ms->day_comp = 0;
+
+    if (nullptr == msglist || '\0' == *msglist)
+    {
+        return true;
+    }
+
+    const UTF8 *p = msglist;
+    while (isspace(*p))
+    {
+        p++;
+    }
+
+    if ('\0' == *p)
+    {
+        return true;
+    }
+
+    if (isdigit(*p))
+    {
+        const char *q = strchr(reinterpret_cast<const char *>(p), '-');
+        if (q)
+        {
+            q++;
+            ms->low = atol(reinterpret_cast<const char *>(p));
+            if (ms->low <= 0)
+            {
+                m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_RANGE]);
+                return false;
+            }
+            if ('\0' == *q)
+            {
+                ms->high = 0;
+            }
+            else
+            {
+                ms->high = atol(q);
+                if (ms->low > ms->high)
+                {
+                    m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_RANGE]);
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            ms->low = ms->high = atol(reinterpret_cast<const char *>(p));
+            if (ms->low <= 0)
+            {
+                m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_NUMBER]);
+                return false;
+            }
+        }
+    }
+    else
+    {
+        switch (*p)
+        {
+        case '-':
+            p++;
+            if ('\0' == *p)
+            {
+                m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_RANGE]);
+                return false;
+            }
+            ms->high = atol(reinterpret_cast<const char *>(p));
+            if (ms->high <= 0)
+            {
+                m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_RANGE]);
+                return false;
+            }
+            break;
+
+        case '~':
+            p++;
+            if ('\0' == *p)
+            {
+                m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_AGE]);
+                return false;
+            }
+            ms->day_comp = 0;
+            ms->days = atol(reinterpret_cast<const char *>(p));
+            if (ms->days < 0)
+            {
+                m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_AGE]);
+                return false;
+            }
+            break;
+
+        case '<':
+            p++;
+            if ('\0' == *p)
+            {
+                m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_AGE]);
+                return false;
+            }
+            ms->day_comp = -1;
+            ms->days = atol(reinterpret_cast<const char *>(p));
+            if (ms->days < 0)
+            {
+                m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_AGE]);
+                return false;
+            }
+            break;
+
+        case '>':
+            p++;
+            if ('\0' == *p)
+            {
+                m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_AGE]);
+                return false;
+            }
+            ms->day_comp = 1;
+            ms->days = atol(reinterpret_cast<const char *>(p));
+            if (ms->days < 0)
+            {
+                m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_AGE]);
+                return false;
+            }
+            break;
+
+        case '#':
+            p++;
+            if ('\0' == *p)
+            {
+                m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_DBREF]);
+                return false;
+            }
+            ms->player = atol(reinterpret_cast<const char *>(p));
+            break;
+
+        case '*':
+            // From player name — use IObjectInfo::MatchThing.
+            //
+            p++;
+            if ('\0' == *p)
+            {
+                m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_PLAYER]);
+                return false;
+            }
+            {
+                UTF8 namebuf[MOD_LBUF_SIZE];
+                namebuf[0] = '*';
+                strncpy(reinterpret_cast<char *>(namebuf + 1),
+                        reinterpret_cast<const char *>(p),
+                        MOD_LBUF_SIZE - 2);
+                namebuf[MOD_LBUF_SIZE - 1] = '\0';
+                dbref result = NOTHING;
+                if (nullptr != m_pIObjectInfo)
+                {
+                    m_pIObjectInfo->MatchThing(player, namebuf, &result);
+                }
+                if (NOTHING == result)
+                {
+                    m_pINotify->RawNotify(player,
+                        mailmsg[MAIL_INVALID_PLAYER_OR_USING_MALIAS]);
+                    return false;
+                }
+                ms->player = result;
+            }
+            break;
+
+        case 'a':
+        case 'A':
+            p++;
+            if ('\0' == *p || ((*p != 'l' && *p != 'L')))
+            {
+                m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_SPEC]);
+                return false;
+            }
+            p++;
+            if ('\0' == *p || ((*p != 'l' && *p != 'L')))
+            {
+                m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_SPEC]);
+                return false;
+            }
+            p++;
+            if ('\0' == *p)
+            {
+                ms->flags = M_ALL;
+            }
+            else
+            {
+                m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_SPEC]);
+                return false;
+            }
+            break;
+
+        case 'u':
+        case 'U':
+            p++;
+            if ('\0' == *p)
+            {
+                m_pINotify->RawNotify(player,
+                    T("MAIL: U is ambiguous (urgent or unread?)"));
+                return false;
+            }
+            if ('r' == *p || 'R' == *p)
+            {
+                ms->flags = M_URGENT;
+            }
+            else if ('n' == *p || 'N' == *p)
+            {
+                ms->flags = M_MSUNREAD;
+            }
+            else
+            {
+                m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_SPEC]);
+                return false;
+            }
+            break;
+
+        case 'r':
+        case 'R':
+            ms->flags = M_ISREAD;
+            break;
+
+        case 'c':
+        case 'C':
+            ms->flags = M_CLEARED;
+            break;
+
+        case 't':
+        case 'T':
+            ms->flags = M_TAG;
+            break;
+
+        case 'm':
+        case 'M':
+            ms->flags = M_MASS;
+            break;
+
+        case 'f':
+        case 'F':
+            ms->flags = M_FORWARD;
+            break;
+
+        default:
+            m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_SPEC]);
+            return false;
+        }
+    }
+    return true;
+}
+
+static int sign(int x)
+{
+    if (x == 0) return 0;
+    return (x < 0) ? -1 : 1;
+}
+
+bool CMailMod::mail_match(struct mail *mp, struct mail_selector &ms, int num)
+{
+    if (ms.low && num < ms.low)
+    {
+        return false;
+    }
+    if (ms.high && ms.high < num)
+    {
+        return false;
+    }
+    if (ms.player && mp->from != ms.player)
+    {
+        return false;
+    }
+
+    mail_flag mpflag = Read(mp)
+        ? (mp->read | M_ALL)
+        : (mp->read | M_ALL | M_MSUNREAD);
+
+    if ((ms.flags & mpflag) == 0)
+    {
+        return false;
+    }
+
+    if (ms.days == -1)
+    {
+        return true;
+    }
+
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetLocal();
+
+    CLinearTimeAbsolute ltaMail;
+    if (ltaMail.SetString(mp->time))
+    {
+        CLinearTimeDelta ltd(ltaMail, ltaNow);
+        int iDiffDays = ltd.ReturnDays();
+        if (sign(iDiffDays - ms.days) == ms.day_comp)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+int CMailMod::player_folder(dbref player)
+{
+    if (nullptr == m_pIAttributeAccess)
+    {
+        return 0;
+    }
+
+    UTF8 buf[64];
+    size_t nLen = 0;
+    MUX_RESULT mr = m_pIAttributeAccess->GetAttribute(player, player,
+        T("Mailcurf"), buf, sizeof(buf) - 1, &nLen);
+    if (MUX_FAILED(mr) || 0 == nLen)
+    {
+        return 0;
+    }
+    buf[nLen] = '\0';
+    return atoi(reinterpret_cast<const char *>(buf));
+}
+
+// ---------------------------------------------------------------------------
+// Command implementations.
+// ---------------------------------------------------------------------------
+
+void CMailMod::do_mail_flags(dbref player, const UTF8 *msglist,
+    mail_flag flag, bool negate)
+{
+    struct mail_selector ms;
+
+    if (!parse_msglist(msglist, &ms, player))
+    {
+        return;
+    }
+
+    int i = 0, j = 0;
+    int folder = player_folder(player);
+
+    struct mail *mp = MailListFirst(player);
+    while (nullptr != mp)
+    {
+        if (All(ms) || Folder(mp) == folder)
+        {
+            i++;
+            if (mail_match(mp, ms, i))
+            {
+                j++;
+                if (negate)
+                {
+                    mp->read &= ~flag;
+                }
+                else
+                {
+                    mp->read |= flag;
+                }
+                sqlite_wt_update_mail_flags(mp);
+
+                UTF8 msg[MOD_LBUF_SIZE];
+                switch (flag)
+                {
+                case M_TAG:
+                    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                             "MAIL: Msg #%d %s.", i,
+                             negate ? "untagged" : "tagged");
+                    break;
+
+                case M_CLEARED:
+                    if (Unread(mp) && !negate)
+                    {
+                        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                                 "MAIL: Unread Msg #%d cleared! Use @mail/unclear %d to recover.",
+                                 i, i);
+                    }
+                    else
+                    {
+                        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                                 "MAIL: Msg #%d %s.", i,
+                                 negate ? "uncleared" : "cleared");
+                    }
+                    break;
+
+                case M_SAFE:
+                    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                             "MAIL: Msg #%d marked safe.", i);
+                    break;
+
+                default:
+                    msg[0] = '\0';
+                    break;
+                }
+
+                if (msg[0] != '\0')
+                {
+                    m_pINotify->RawNotify(player, msg);
+                }
+            }
+        }
+        mp = MailListNext(mp, player);
+    }
+
+    if (!j)
+    {
+        m_pINotify->RawNotify(player,
+            T("MAIL: You don\xE2\x80\x99t have any matching messages!"));
+    }
+}
+
+void CMailMod::do_mail_purge(dbref player)
+{
+    struct mail *mp = MailListFirst(player);
+    while (nullptr != mp)
+    {
+        struct mail *next = MailListNext(mp, player);
+        if (Cleared(mp))
+        {
+            sqlite_wt_delete_mail(mp);
+            MailListRemove(player, mp);
+        }
+        mp = next;
+    }
+    m_pINotify->RawNotify(player, T("MAIL: Mailbox purged."));
+}
+
+// ---------------------------------------------------------------------------
+// mux_IMailControl implementation.
+// ---------------------------------------------------------------------------
+
 MUX_RESULT CMailMod::PlayerConnect(dbref player)
 {
     // TODO: Check mail on connect and notify player.
@@ -1123,12 +1575,37 @@ MUX_RESULT CMailMod::PlayerNuke(dbref player)
 MUX_RESULT CMailMod::MailCommand(dbref executor, int key,
     const UTF8 *pArg1, const UTF8 *pArg2)
 {
-    // TODO: Implement mail command dispatch.
-    UNUSED_PARAMETER(executor);
-    UNUSED_PARAMETER(key);
-    UNUSED_PARAMETER(pArg1);
     UNUSED_PARAMETER(pArg2);
-    return MUX_E_NOTIMPLEMENTED;
+
+    switch (key & ~MAIL_QUOTE)
+    {
+    case MAIL_CLEAR:
+        do_mail_flags(executor, pArg1, M_CLEARED, false);
+        return MUX_S_OK;
+
+    case MAIL_UNCLEAR:
+        do_mail_flags(executor, pArg1, M_CLEARED, true);
+        return MUX_S_OK;
+
+    case MAIL_TAG:
+        do_mail_flags(executor, pArg1, M_TAG, false);
+        return MUX_S_OK;
+
+    case MAIL_UNTAG:
+        do_mail_flags(executor, pArg1, M_TAG, true);
+        return MUX_S_OK;
+
+    case MAIL_SAFE:
+        do_mail_flags(executor, pArg1, M_SAFE, false);
+        return MUX_S_OK;
+
+    case MAIL_PURGE:
+        do_mail_purge(executor);
+        return MUX_S_OK;
+
+    default:
+        return MUX_E_NOTIMPLEMENTED;
+    }
 }
 
 MUX_RESULT CMailMod::MaliasCommand(dbref executor, int key,
