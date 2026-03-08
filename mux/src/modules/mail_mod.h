@@ -205,11 +205,23 @@ private:
     bool mail_match(struct mail *mp, struct mail_selector &ms, int num);
     int  player_folder(dbref player);
 
+    // Display helpers.
+    //
+    static UTF8 *status_chars(struct mail *mp);
+    UTF8 *mail_list_time(const UTF8 *the_time);
+    void get_player_name(dbref who, UTF8 *buf, size_t bufsize);
+    bool is_connected_visible(dbref who, dbref viewer);
+
     // Command implementations.
     //
     void do_mail_flags(dbref player, const UTF8 *msglist,
         mail_flag flag, bool negate);
     void do_mail_purge(dbref player);
+    void do_mail_list(dbref player, const UTF8 *arg1,
+        const UTF8 *arg2);
+    void do_mail_read(dbref player, const UTF8 *arg1,
+        const UTF8 *arg2);
+    void do_mail_next(dbref player);
 
     // Message body management.
     //
