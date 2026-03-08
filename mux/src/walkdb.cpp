@@ -1005,7 +1005,7 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
             }
             mudstate.in_loop++;
             result = bp = alloc_lbuf("search_perform");
-            mux_exec2(parm->s_rst_eval, LBUF_SIZE-1, result, &bp, executor, caller, enactor,
+            mux_exec(parm->s_rst_eval, LBUF_SIZE-1, result, &bp, executor, caller, enactor,
                 EV_FCHECK | EV_EVAL | EV_NOTRACE, nullptr, 0);
             *bp = '\0';
             mudstate.in_loop--;

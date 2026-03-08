@@ -1529,7 +1529,7 @@ static void BuildChannelMessage
             //
             UTF8 TempToEval[LBUF_SIZE];
             mux_strncpy(TempToEval, user->title, sizeof(TempToEval) - 1);
-            mux_exec2(TempToEval, LBUF_SIZE - 1, *messNormal, &mnptr, user->who, user->who, user->who,
+            mux_exec(TempToEval, LBUF_SIZE - 1, *messNormal, &mnptr, user->who, user->who, user->who,
                      EV_FCHECK | EV_EVAL | EV_TOP, nullptr, 0);
         }
         else
@@ -1888,7 +1888,7 @@ static void ChannelMOTD(dbref executor, dbref enactor, int attr)
             UTF8* buf = alloc_lbuf("chanmotd");
             UTF8* bp = buf;
 
-            mux_exec2(q, LBUF_SIZE - 1, buf, &bp, executor, executor, enactor,
+            mux_exec(q, LBUF_SIZE - 1, buf, &bp, executor, executor, enactor,
                      AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), nullptr, 0);
             *bp = '\0';
 

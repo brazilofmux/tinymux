@@ -327,7 +327,7 @@ static int u_comp(ucomp_context *pctx, const void *s1, const void *s2)
     mux_strncpy(tbuf, pctx->buff, LBUF_SIZE-1);
     UTF8 *result = alloc_lbuf("u_comp");
     UTF8 *bp = result;
-    mux_exec2(tbuf, LBUF_SIZE-1, result, &bp, pctx->executor, pctx->caller, pctx->enactor,
+    mux_exec(tbuf, LBUF_SIZE-1, result, &bp, pctx->executor, pctx->caller, pctx->enactor,
              AttrTrace(pctx->aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), elems, 2);
     *bp = '\0';
     int n = mux_atol(result);
@@ -767,7 +767,7 @@ FUNCTION(fun_mix)
                 os[i] = T("");
             }
         }
-        mux_exec2(atext, LBUF_SIZE-1, buff, bufc, thing, executor, enactor,
+        mux_exec(atext, LBUF_SIZE-1, buff, bufc, thing, executor, enactor,
             AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL),
             os, lastn);
     }
@@ -836,7 +836,7 @@ FUNCTION(fun_step)
         {
             os[i] = split_token(&cp, isep);
         }
-        mux_exec2(atext, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+        mux_exec(atext, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
              AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), os, i);
     }
     free_lbuf(atext);
@@ -933,7 +933,7 @@ FUNCTION(fun_foreach)
                 }
             }
 
-            mux_exec2(atext, LBUF_SIZE-1, buff, bufc, thing, executor, enactor,
+            mux_exec(atext, LBUF_SIZE-1, buff, bufc, thing, executor, enactor,
                 AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &bp, 1);
             prev = cbuf[0];
         }
@@ -946,7 +946,7 @@ FUNCTION(fun_foreach)
         {
             nBytes = sStr->export_Char_UTF8(i, cbuf);
 
-            mux_exec2(atext, LBUF_SIZE-1, buff, bufc, thing, executor, enactor,
+            mux_exec(atext, LBUF_SIZE-1, buff, bufc, thing, executor, enactor,
                 AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &bp, 1);
             i = i + nBytes;
         }
@@ -1064,7 +1064,7 @@ FUNCTION(fun_munge)
     bp = rlist = alloc_lbuf("fun_munge");
     uargs[0] = list1;
     uargs[1] = sep.str;
-    mux_exec2(atext, LBUF_SIZE-1, rlist, &bp, executor, caller, enactor,
+    mux_exec(atext, LBUF_SIZE-1, rlist, &bp, executor, caller, enactor,
              AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), uargs, 2);
     *bp = '\0';
     free_lbuf(atext);

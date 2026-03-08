@@ -81,7 +81,7 @@ std::unique_ptr<ASTNode> ast_parse_string(const UTF8 *input, size_t nLen);
 std::string ast_raw_text(const ASTNode *node);
 
 // Drop-in replacement for mux_exec (parse + cache + evaluate)
-void mux_exec2(const UTF8 *pStr, size_t nStr,
+void mux_exec(const UTF8 *pStr, size_t nStr,
                UTF8 *buff, UTF8 **bufc,
                dbref executor, dbref caller, dbref enactor,
                int eval, const UTF8 *cargs[], int ncargs);
@@ -216,14 +216,14 @@ if (mudconf.shadow_eval && !mudstate.bShadowActive && !alarm_clock.alarmed)
 {
     mudstate.bShadowActive = true;
     // Save registers + counters
-    // Run mux_exec2 into separate buffer
+    // Run mux_exec into separate buffer
     // Restore registers + counters
     // Compare outputs, log mismatches via LOG_BUGS "EVAL" "SHADOW"
     mudstate.bShadowActive = false;
 }
 ```
 
-- `bShadowActive` flag prevents recursion (mux_exec2's handlers call mux_exec)
+- `bShadowActive` flag prevents recursion (mux_exec's handlers call mux_exec)
 - State save/restore: global registers, func_invk_ctr, func_nest_lev
 - Smoke tests run with `shadow_eval yes` — 358/360 pass, zero mismatches
 
@@ -277,9 +277,9 @@ Commits:
 - `f124a8cd` Factor shared tokenizer/parser/AST into mux_parse.h
 - `a92cf12f` Add AST parser to production build (Phase 1 stub)
 
-### Phase 2: mux_exec2 (COMPLETE)
+### Phase 2: mux_exec (COMPLETE)
 
-`mux_exec2()` is a drop-in replacement. `eval2()` softcode function
+`mux_exec()` is a drop-in replacement. `eval2()` softcode function
 exposes the AST evaluator for A/B testing. `shadow_eval` config runs
 both evaluators in parallel and logs mismatches.
 
@@ -289,7 +289,7 @@ Commits:
 - `a29bf743` Inline color substitutions natively in AST evaluator
 - `5bb4c8f7` Add native NOEVAL handlers for AST evaluator
 - `8541e080` Add AST parse cache and direct subtree evaluation
-- `e4351d79` Add shadow eval mode to compare mux_exec and mux_exec2
+- `e4351d79` Add shadow eval mode to compare mux_exec and mux_exec
 
 ### Phase 3: Migration (NEXT)
 
@@ -302,7 +302,7 @@ and can be diagnosed from the server log.
 
 ### Phase 4: Deprecation
 
-Once all call sites use `mux_exec2`, remove the old `mux_exec`.
+Once all call sites use `mux_exec`, remove the old `mux_exec`.
 Remove `replace_tokens`, `isSpecial` tables, `parse_to`/`parse_to_lite`.
 
 ### Phase 5: Compilation (future)
@@ -321,7 +321,7 @@ With a stable AST, the evaluator can be replaced with a compiler:
 | `mux/src/ast.h` | AST node types, token types, public API (117 lines) |
 | `mux/src/ast.cpp` | Tokenizer, parser, evaluator, cache, native handlers (2057 lines) |
 | `mux/src/eval.cpp` | Shadow eval comparison block in mux_exec |
-| `mux/src/externs.h` | mux_exec2 declaration |
+| `mux/src/externs.h` | mux_exec declaration |
 | `mux/src/mudconf.h` | shadow_eval config, bShadowActive state |
 | `mux/src/conf.cpp` | shadow_eval defaults and config registration |
 | `testcases/eval2_fn.mux` | 12 eval2() smoke tests (338 lines) |

@@ -560,7 +560,7 @@ UTF8 *get_rlevel_desc
                 *piDescUsed = desclist->descs[i];
             }
 
-            mux_exec2(d, LBUF_SIZE-1, buff, &bp, thing, thing, player,
+            mux_exec(d, LBUF_SIZE-1, buff, &bp, thing, thing, player,
                 AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
                 nullptr, 0);
         }
@@ -580,7 +580,7 @@ UTF8 *get_rlevel_desc
                 save_global_regs(preserve);
             }
 
-            mux_exec2(d, LBUF_SIZE-1, buff, &bp, thing, thing, player,
+            mux_exec(d, LBUF_SIZE-1, buff, &bp, thing, thing, player,
                 AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
                 nullptr, 0);
             *bp = '\0';
@@ -669,7 +669,7 @@ void did_it_rlevel
                     save_global_regs(preserve);
                 }
                 buff = bp = alloc_lbuf("did_it.1");
-                mux_exec2(d, LBUF_SIZE-1, buff, &bp, thing, thing, player,
+                mux_exec(d, LBUF_SIZE-1, buff, &bp, thing, thing, player,
                     AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP),
                     args, nargs);
                 *bp = '\0';
@@ -708,7 +708,7 @@ void did_it_rlevel
                     save_global_regs(preserve);
                 }
                 buff = bp = alloc_lbuf("did_it.1");
-                mux_exec2(d, LBUF_SIZE-1, buff, &bp, thing, thing, player,
+                mux_exec(d, LBUF_SIZE-1, buff, &bp, thing, thing, player,
                     AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP),
                     args, nargs);
                 *bp = '\0';
@@ -751,7 +751,7 @@ void did_it_rlevel
              save_global_regs(preserve);
           }
           buff = bp = alloc_lbuf("did_it.1");
-          mux_exec2(d, LBUF_SIZE-1, buff, &bp, thing, thing, player,
+          mux_exec(d, LBUF_SIZE-1, buff, &bp, thing, thing, player,
               AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP),
               args, nargs);
           *bp = '\0';
@@ -778,7 +778,7 @@ void did_it_rlevel
                 save_global_regs(preserve);
             }
             buff = bp = alloc_lbuf("did_it.2");
-            mux_exec2(d, LBUF_SIZE-1, buff, &bp, thing, thing, player,
+            mux_exec(d, LBUF_SIZE-1, buff, &bp, thing, thing, player,
                 AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_TOP),
                 args, nargs);
             *bp = '\0';

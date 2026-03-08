@@ -1466,7 +1466,7 @@ FUNCTION(fun_objeval)
     }
     UTF8 *name = alloc_lbuf("fun_objeval");
     UTF8 *bp = name;
-    mux_exec2(fargs[0], LBUF_SIZE-1, name, &bp, executor, caller, enactor,
+    mux_exec(fargs[0], LBUF_SIZE-1, name, &bp, executor, caller, enactor,
              eval|EV_FCHECK|EV_STRIP_CURLY|EV_EVAL, cargs, ncargs);
     *bp = '\0';
 
@@ -1488,7 +1488,7 @@ FUNCTION(fun_objeval)
     }
 
     mudstate.nObjEvalNest++;
-    mux_exec2(fargs[1], LBUF_SIZE-1, buff, bufc, obj, executor, enactor,
+    mux_exec(fargs[1], LBUF_SIZE-1, buff, bufc, obj, executor, enactor,
              eval|EV_FCHECK|EV_STRIP_CURLY|EV_EVAL, cargs, ncargs);
     mudstate.nObjEvalNest--;
 }
@@ -1501,7 +1501,7 @@ FUNCTION(fun_localize)
     preserve = PushRegisters(MAX_GLOBAL_REGS);
     save_global_regs(preserve);
 
-    mux_exec2(fargs[0], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+    mux_exec(fargs[0], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
         eval|EV_FCHECK|EV_STRIP_CURLY|EV_EVAL, cargs, ncargs);
 
     restore_global_regs(preserve);
@@ -1620,7 +1620,7 @@ FUNCTION(fun_zfun)
         free_lbuf(tbuf1);
         return;
     }
-    mux_exec2(tbuf1, LBUF_SIZE-1, buff, bufc, zone, executor, enactor,
+    mux_exec(tbuf1, LBUF_SIZE-1, buff, bufc, zone, executor, enactor,
        AttrTrace(aflags, EV_EVAL|EV_STRIP_CURLY|EV_FCHECK),
         (const UTF8 **)fargs + 1, nfargs - 1);
     free_lbuf(tbuf1);
@@ -2209,7 +2209,7 @@ FUNCTION(fun_ifelse)
     //
     UTF8 *lbuff = alloc_lbuf("fun_ifelse");
     UTF8 *bp = lbuff;
-    mux_exec2(fargs[0], LBUF_SIZE-1, lbuff, &bp, executor, caller, enactor,
+    mux_exec(fargs[0], LBUF_SIZE-1, lbuff, &bp, executor, caller, enactor,
         eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     *bp = '\0';
 
@@ -2219,13 +2219,13 @@ FUNCTION(fun_ifelse)
     {
         if (nfargs == 3)
         {
-            mux_exec2(fargs[2], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+            mux_exec(fargs[2], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
                 eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         }
     }
     else
     {
-        mux_exec2(fargs[1], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+        mux_exec(fargs[1], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     }
     mudstate.switch_token = save_switch;
@@ -2649,7 +2649,7 @@ static void default_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
     //
     UTF8 *objattr = alloc_lbuf("default_handler");
     UTF8 *bp = objattr;
-    mux_exec2(fargs[0], LBUF_SIZE-1, objattr, &bp, executor, caller, enactor,
+    mux_exec(fargs[0], LBUF_SIZE-1, objattr, &bp, executor, caller, enactor,
              eval|EV_EVAL|EV_STRIP_CURLY|EV_FCHECK, cargs, ncargs);
     *bp = '\0';
 
@@ -2680,7 +2680,7 @@ static void default_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
                 break;
 
             case DEFAULT_EDEFAULT:
-                mux_exec2(atr_gotten, LBUF_SIZE-1, buff, bufc, thing, executor, executor,
+                mux_exec(atr_gotten, LBUF_SIZE-1, buff, bufc, thing, executor, executor,
                      AttrTrace(aflags, EV_FIGNORE|EV_EVAL),
                      nullptr, 0);
                 break;
@@ -2695,14 +2695,14 @@ static void default_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
                         xargs[i] = alloc_lbuf("fun_udefault_args");
                         UTF8 *bp2 = xargs[i];
 
-                        mux_exec2(fargs[i+2], LBUF_SIZE-1, xargs[i], &bp2,
+                        mux_exec(fargs[i+2], LBUF_SIZE-1, xargs[i], &bp2,
                             thing, caller, enactor,
                             eval|EV_TOP|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL,
                             cargs, ncargs);
                         *bp2 = '\0';
                     }
 
-                    mux_exec2(atr_gotten, LBUF_SIZE-1, buff, bufc, thing, caller, enactor,
+                    mux_exec(atr_gotten, LBUF_SIZE-1, buff, bufc, thing, caller, enactor,
                         AttrTrace(aflags, EV_FCHECK|EV_EVAL), (const UTF8 **)xargs,
                         nxargs);
 
@@ -2723,7 +2723,7 @@ static void default_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
     // If we've hit this point, we've not gotten anything useful, so
     // we go and evaluate the default.
     //
-    mux_exec2(fargs[1], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+    mux_exec(fargs[1], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
              eval|EV_EVAL|EV_STRIP_CURLY|EV_FCHECK, cargs, ncargs);
 }
 

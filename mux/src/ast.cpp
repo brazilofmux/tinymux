@@ -1765,7 +1765,7 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             }
 
             int feval = eval & ~(EV_TOP | EV_FMAND);
-            mux_exec2(tbuf, LBUF_SIZE-1, buff, bufc, obj, executor, enactor,
+            mux_exec(tbuf, LBUF_SIZE-1, buff, bufc, obj, executor, enactor,
                 AttrTrace(aflags, feval),
                 const_cast<const UTF8 **>(fargs), nfargs);
 
@@ -2153,12 +2153,12 @@ static const size_t AST_CACHE_MAX = 1024;
 static const size_t AST_CACHE_MIN_LEN = 16;
 
 // ---------------------------------------------------------------
-// mux_exec2 — drop-in replacement for mux_exec
+// mux_exec — drop-in replacement for mux_exec
 // ---------------------------------------------------------------
 //
 // Parse into AST (with caching), then evaluate via ast_eval_node.
 //
-void mux_exec2(const UTF8 *pStr, size_t nStr,
+void mux_exec(const UTF8 *pStr, size_t nStr,
                UTF8 *buff, UTF8 **bufc,
                dbref executor, dbref caller, dbref enactor,
                int eval, const UTF8 *cargs[], int ncargs)

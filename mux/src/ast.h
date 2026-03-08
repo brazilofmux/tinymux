@@ -2,7 +2,7 @@
  * \brief AST-based expression parser and evaluator.
  *
  * This provides mux_parse() and mux_eval() as the future replacement
- * for mux_exec(). During transition, mux_exec2() is a drop-in
+ * for mux_exec(). During transition, mux_exec() is a drop-in
  * replacement that combines parse + eval.
  *
  * Design constraints:
@@ -104,13 +104,13 @@ std::string ast_raw_text(const ASTNode *node);
 void ast_dump(const ASTNode *node, int indent = 0);
 
 // ---------------------------------------------------------------
-// mux_exec2 — drop-in replacement for mux_exec
+// mux_exec — drop-in replacement for mux_exec
 // ---------------------------------------------------------------
 
 // Parse + evaluate in one call. Same signature as mux_exec.
-// During transition, both mux_exec and mux_exec2 coexist.
+// During transition, both mux_exec and mux_exec coexist.
 //
-void mux_exec2(const UTF8 *pStr, size_t nStr,
+void mux_exec(const UTF8 *pStr, size_t nStr,
                UTF8 *buff, UTF8 **bufc,
                dbref executor, dbref caller, dbref enactor,
                int eval, const UTF8 *cargs[], int ncargs);

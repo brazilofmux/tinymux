@@ -189,7 +189,7 @@ void parse_arglist(dbref executor, dbref caller, dbref enactor, UTF8 *,
                     int, UTF8 *[], int, const UTF8 *[], int, int *);
 int get_gender(dbref);
 const PRONOUN_SET *get_pronoun_set(dbref);
-void mux_exec2(const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref executor,
+void mux_exec(const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref executor,
                dbref caller, dbref enactor, int eval, const UTF8 *cargs[], int ncargs);
 
 inline void BufAddRef(lbuf_ref *lbufref)

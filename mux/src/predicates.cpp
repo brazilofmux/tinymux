@@ -765,7 +765,7 @@ void do_switch
            a += 2)
     {
         bp = buff;
-        mux_exec2(args[a], LBUF_SIZE-1, buff, &bp, executor, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
+        mux_exec(args[a], LBUF_SIZE-1, buff, &bp, executor, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
             cargs, ncargs);
         *bp = '\0';
         if (wild_match(buff, expr))
@@ -851,7 +851,7 @@ void do_if
     CLinearTimeAbsolute lta;
     buff = bp = alloc_lbuf("do_if");
 
-    mux_exec2(expr, LBUF_SIZE-1, buff, &bp, player, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
+    mux_exec(expr, LBUF_SIZE-1, buff, &bp, player, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
         cargs, ncargs);
     *bp = '\0';
 
@@ -2555,7 +2555,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
                 save_global_regs(preserve);
 
                 buff = bp = alloc_lbuf("did_it.1");
-                mux_exec2(d, LBUF_SIZE-1, buff, &bp, thing, player, player,
+                mux_exec(d, LBUF_SIZE-1, buff, &bp, thing, player, player,
                     AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_FCHECK|EV_TOP),
                     args, nargs);
                 *bp = '\0';
@@ -2628,7 +2628,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
                 save_global_regs(preserve);
             }
             buff = bp = alloc_lbuf("did_it.2");
-            mux_exec2(d, LBUF_SIZE-1, buff, &bp, thing, player, player,
+            mux_exec(d, LBUF_SIZE-1, buff, &bp, thing, player, player,
                  AttrTrace(aflags, EV_EVAL|EV_FIGNORE|EV_FCHECK|EV_TOP),
                  args, nargs);
             *bp = '\0';
