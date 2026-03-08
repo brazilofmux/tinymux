@@ -63,6 +63,8 @@ const MUX_CID CID_AttributeAccess       = UINT64_C(0x000000024A3E71B5);
 const MUX_IID IID_IAttributeAccess      = UINT64_C(0x00000002D89F42C3);
 const MUX_CID CID_Evaluator             = UINT64_C(0x00000002E7B3A51D);
 const MUX_IID IID_IEvaluator            = UINT64_C(0x000000023C6D8F72);
+const MUX_CID CID_Permissions           = UINT64_C(0x00000002A4C7E831);
+const MUX_IID IID_IPermissions          = UINT64_C(0x0000000257B1D946);
 
 interface mux_ILog : public mux_IUnknown
 {
@@ -229,6 +231,8 @@ interface mux_INotify : public mux_IUnknown
 public:
     virtual MUX_RESULT Notify(dbref target, const UTF8 *msg) = 0;
     virtual MUX_RESULT RawNotify(dbref target, const UTF8 *msg) = 0;
+    virtual MUX_RESULT NotifyCheck(dbref target, dbref sender,
+        const UTF8 *msg, int key) = 0;
 };
 
 // Object property queries.
@@ -241,6 +245,10 @@ public:
     virtual MUX_RESULT GetOwner(dbref obj, dbref *pOwner) = 0;
     virtual MUX_RESULT GetLocation(dbref obj, dbref *pLocation) = 0;
     virtual MUX_RESULT GetType(dbref obj, int *pType) = 0;
+    virtual MUX_RESULT IsConnected(dbref obj, bool *pConnected) = 0;
+    virtual MUX_RESULT IsPlayer(dbref obj, bool *pPlayer) = 0;
+    virtual MUX_RESULT IsGoing(dbref obj, bool *pGoing) = 0;
+    virtual MUX_RESULT GetMoniker(dbref obj, const UTF8 **ppMoniker) = 0;
 };
 
 // Softcode evaluator.
@@ -251,6 +259,17 @@ public:
     virtual MUX_RESULT Eval(dbref executor, dbref caller, dbref enactor,
         const UTF8 *pExpr, UTF8 *pResult, size_t nResultMax,
         size_t *pnResultLen) = 0;
+};
+
+// Permission queries.
+//
+interface mux_IPermissions : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT IsWizard(dbref obj, bool *pWizard) = 0;
+    virtual MUX_RESULT IsGod(dbref obj, bool *pGod) = 0;
+    virtual MUX_RESULT HasControl(dbref who, dbref what, bool *pControls) = 0;
+    virtual MUX_RESULT HasCommAll(dbref obj, bool *pCommAll) = 0;
 };
 
 // Attribute read/write with built-in permission checks.

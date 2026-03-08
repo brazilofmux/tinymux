@@ -21,7 +21,8 @@ static MUX_CLASS_INFO netmux_classes[] =
     { CID_Notify             },
     { CID_ObjectInfo         },
     { CID_AttributeAccess    },
-    { CID_Evaluator          }
+    { CID_Evaluator          },
+    { CID_Permissions        }
 };
 #define NUM_CLASSES (sizeof(netmux_classes)/sizeof(netmux_classes[0]))
 
@@ -208,6 +209,26 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
 
         mr = pEvaluatorFactory->QueryInterface(iid, ppv);
         pEvaluatorFactory->Release();
+    }
+    else if (CID_Permissions == cid)
+    {
+        CPermissionsFactory *pPermissionsFactory = nullptr;
+        try
+        {
+            pPermissionsFactory = new CPermissionsFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == pPermissionsFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pPermissionsFactory->QueryInterface(iid, ppv);
+        pPermissionsFactory->Release();
     }
     return mr;
 }
@@ -885,6 +906,8 @@ public:
 
     virtual MUX_RESULT Notify(dbref target, const UTF8 *msg);
     virtual MUX_RESULT RawNotify(dbref target, const UTF8 *msg);
+    virtual MUX_RESULT NotifyCheck(dbref target, dbref sender,
+        const UTF8 *msg, int key);
 
     CNotify(void);
     virtual ~CNotify();
@@ -954,6 +977,17 @@ MUX_RESULT CNotify::RawNotify(dbref target, const UTF8 *msg)
         return MUX_E_INVALIDARG;
     }
     raw_notify(target, msg);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CNotify::NotifyCheck(dbref target, dbref sender,
+    const UTF8 *msg, int key)
+{
+    if (!Good_obj(target))
+    {
+        return MUX_E_INVALIDARG;
+    }
+    notify_check(target, sender, msg, key);
     return MUX_S_OK;
 }
 
@@ -1050,6 +1084,10 @@ public:
     virtual MUX_RESULT GetOwner(dbref obj, dbref *pOwner);
     virtual MUX_RESULT GetLocation(dbref obj, dbref *pLocation);
     virtual MUX_RESULT GetType(dbref obj, int *pType);
+    virtual MUX_RESULT IsConnected(dbref obj, bool *pConnected);
+    virtual MUX_RESULT IsPlayer(dbref obj, bool *pPlayer);
+    virtual MUX_RESULT IsGoing(dbref obj, bool *pGoing);
+    virtual MUX_RESULT GetMoniker(dbref obj, const UTF8 **ppMoniker);
 
     CObjectInfo(void);
     virtual ~CObjectInfo();
@@ -1149,6 +1187,66 @@ MUX_RESULT CObjectInfo::GetType(dbref obj, int *pType)
         return MUX_E_INVALIDARG;
     }
     *pType = Typeof(obj);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::IsConnected(dbref obj, bool *pConnected)
+{
+    if (nullptr == pConnected)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *pConnected = false;
+        return MUX_E_INVALIDARG;
+    }
+    *pConnected = Connected(obj);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::IsPlayer(dbref obj, bool *pPlayer)
+{
+    if (nullptr == pPlayer)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *pPlayer = false;
+        return MUX_E_INVALIDARG;
+    }
+    *pPlayer = isPlayer(obj);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::IsGoing(dbref obj, bool *pGoing)
+{
+    if (nullptr == pGoing)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *pGoing = false;
+        return MUX_E_INVALIDARG;
+    }
+    *pGoing = Going(obj);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::GetMoniker(dbref obj, const UTF8 **ppMoniker)
+{
+    if (nullptr == ppMoniker)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *ppMoniker = nullptr;
+        return MUX_E_INVALIDARG;
+    }
+    *ppMoniker = Moniker(obj);
     return MUX_S_OK;
 }
 
@@ -1657,6 +1755,211 @@ MUX_RESULT CEvaluatorFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_II
 }
 
 MUX_RESULT CEvaluatorFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CPermissions — mux_IPermissions implementation (in-process only).
+// ---------------------------------------------------------------------------
+
+class CPermissions : public mux_IPermissions
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+
+    virtual MUX_RESULT IsWizard(dbref obj, bool *pWizard);
+    virtual MUX_RESULT IsGod(dbref obj, bool *pGod);
+    virtual MUX_RESULT HasControl(dbref who, dbref what, bool *pControls);
+    virtual MUX_RESULT HasCommAll(dbref obj, bool *pCommAll);
+
+    CPermissions(void);
+    virtual ~CPermissions();
+
+private:
+    uint32_t m_cRef;
+};
+
+CPermissions::CPermissions(void) : m_cRef(1)
+{
+}
+
+CPermissions::~CPermissions()
+{
+}
+
+MUX_RESULT CPermissions::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IPermissions *>(this);
+    }
+    else if (IID_IPermissions == iid)
+    {
+        *ppv = static_cast<mux_IPermissions *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CPermissions::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CPermissions::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CPermissions::IsWizard(dbref obj, bool *pWizard)
+{
+    if (nullptr == pWizard)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *pWizard = false;
+        return MUX_E_INVALIDARG;
+    }
+    *pWizard = Wizard(obj);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CPermissions::IsGod(dbref obj, bool *pGod)
+{
+    if (nullptr == pGod)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *pGod = false;
+        return MUX_E_INVALIDARG;
+    }
+    *pGod = God(obj);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CPermissions::HasControl(dbref who, dbref what, bool *pControls)
+{
+    if (nullptr == pControls)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(who) || !Good_obj(what))
+    {
+        *pControls = false;
+        return MUX_E_INVALIDARG;
+    }
+    *pControls = Controls(who, what);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CPermissions::HasCommAll(dbref obj, bool *pCommAll)
+{
+    if (nullptr == pCommAll)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *pCommAll = false;
+        return MUX_E_INVALIDARG;
+    }
+    *pCommAll = Comm_All(obj);
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CPermissionsFactory
+// ---------------------------------------------------------------------------
+
+CPermissionsFactory::CPermissionsFactory(void) : m_cRef(1)
+{
+}
+
+CPermissionsFactory::~CPermissionsFactory()
+{
+}
+
+MUX_RESULT CPermissionsFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CPermissionsFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CPermissionsFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CPermissionsFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
+{
+    UNUSED_PARAMETER(pUnknownOuter);
+
+    CPermissions *pPermissions = nullptr;
+    try
+    {
+        pPermissions = new CPermissions;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pPermissions)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pPermissions->QueryInterface(iid, ppv);
+    pPermissions->Release();
+    return mr;
+}
+
+MUX_RESULT CPermissionsFactory::LockServer(bool bLock)
 {
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;
