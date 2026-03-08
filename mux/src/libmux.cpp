@@ -87,7 +87,7 @@ public:
     ModuleState      eState;
 };
 
-static Module g_MainModule;
+static Module g_AprioriModule;
 static Module *g_pModule = nullptr;
 static std::map<MUX_CID, Module *> g_ModulesByClass;
 static std::map<const UTF8 *, Module *, ltstr> g_ModulesByName;
@@ -348,7 +348,10 @@ static void ModuleUnload(Module *pModule)
 {
     if (pModule->bLoaded)
     {
-        MOD_CLOSE(pModule->hInst);
+        if (nullptr != pModule->hInst)
+        {
+            MOD_CLOSE(pModule->hInst);
+        }
         pModule->hInst = nullptr;
         pModule->fpGetClassObject = nullptr;
         pModule->fpCanUnloadNow = nullptr;
@@ -386,7 +389,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
         std::map<MUX_CID, Module *>::iterator it = g_ModulesByClass.find(cid);
         if (g_ModulesByClass.end() != it && nullptr != (pModule = it->second))
         {
-            if (pModule == &g_MainModule)
+            if (pModule == &g_AprioriModule)
             {
                 if (nullptr == pModule->fpGetClassObject)
                 {
@@ -509,7 +512,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_C
         // These classes are implemented in the main program (netmux or
         // stubslave).
         //
-        pModule = &g_MainModule;
+        pModule = &g_AprioriModule;
         if (nullptr != pModule->fpGetClassObject)
         {
             // The main program is attempting to register another handler.
@@ -521,7 +524,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_C
     // If these classes are implemented in the main program (netmux or
     // stubslave), save the private GetClassObject method.
     //
-    if (&g_MainModule == pModule)
+    if (&g_AprioriModule == pModule)
     {
         pModule->fpGetClassObject = fpGetClassObject;
     }
@@ -588,7 +591,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, MUX_CLA
     // If these classes are implemented by the main program (netmux or
     // stubslave), we need to clear the handler as well.
     //
-    if (pModule == &g_MainModule)
+    if (pModule == &g_AprioriModule)
     {
         pModule->fpGetClassObject = nullptr;
     }
@@ -882,6 +885,12 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context c
         g_pQueue_In  = nullptr;
         g_pQueue_Out = nullptr;
         g_LibraryState = eLibraryInitialized;
+
+        // Note: When libmux registers its own classes (e.g., proxy/stub
+        // factories for standard marshaling), it must self-register as a
+        // Module here so its classes coexist with netmux's g_AprioriModule
+        // classes.  See the brazil branch for the full implementation.
+        //
         return MUX_S_OK;
     }
     else

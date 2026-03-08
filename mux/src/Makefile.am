@@ -30,18 +30,20 @@ NETMUX_SRC += sqlitedb.cpp sqlite_backend.cpp sqlite/sqlite3.c
 
 # Build executables
 bin_PROGRAMS = netmux slave
-noinst_LIBRARIES = libmux.a
 
 if STUBSLAVE_ENABLED
 bin_PROGRAMS += stubslave
 endif
 
-# libmux library
-libmux_a_SOURCES = libmux.cpp
+# Dynamic library (for modules) — must be built before netmux
+all-local: libmux.so
+
+libmux.so: libmux.cpp
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(LIBS) $(DL_LIB) $(SQL_LIBS)
 
 # netmux main program
 netmux_SOURCES = $(NETMUX_SRC) version.cpp
-netmux_LDADD = libmux.a ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
+netmux_LDADD = libmux.so ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
 
 # slave program
 slave_SOURCES = slave.cpp
@@ -49,15 +51,7 @@ slave_LDADD = $(LIBS)
 
 # stubslave program
 stubslave_SOURCES = stubslave.cpp
-stubslave_LDADD = libmux.a $(LIBS) $(STUBLIBS) 
-
-# No unsplit utility anymore
-
-# Dynamic library (for modules)
-all-local: libmux.so
-
-libmux.so: libmux.cpp
-	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(LIBS) $(DL_LIB) $(SQL_LIBS)
+stubslave_LDADD = libmux.so $(LIBS) $(STUBLIBS)
 
 # Version number routines
 # The DEBIAN_BUILD environment variable can be set to create deterministic builds
@@ -79,8 +73,6 @@ bindir = $(abs_top_srcdir)/../game/bin
 install-exec-hook:
 	cd $(DESTDIR)$(bindir) && rm -f dbconvert && ln -s netmux dbconvert
 	cd $(DESTDIR)$(bindir) && rm -f libmux.so && $(LN_S) $(abs_builddir)/libmux.so .
-
-# No need for manual dependency tracking - automake handles this now
 
 # Clean up additional files
 CLEANFILES = libmux.so
