@@ -8,6 +8,9 @@
 #include "config.h"
 #include "externs.h"
 
+bool g_no_flash = false;
+bool g_space_compress = true;
+
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
 using namespace std;
@@ -2652,7 +2655,7 @@ static UTF8 *ColorTransitionANSI
     {
         for (unsigned int iAttr = COLOR_INDEX_ATTR; iAttr < COLOR_INDEX_FG; iAttr++)
         {
-            if (  mudconf.no_flash
+            if (  g_no_flash
                && COLOR_INDEX_BLINK == iAttr)
             {
                 continue;
@@ -3599,8 +3602,7 @@ UTF8 *grabto(UTF8 **str, UTF8 targ)
 
 int string_compare(const UTF8 *s1, const UTF8 *s2)
 {
-    if (  mudstate.bStandAlone
-       || mudconf.space_compress)
+    if (g_space_compress)
     {
         while (mux_isspace(*s1))
         {

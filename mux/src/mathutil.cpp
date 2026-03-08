@@ -6,7 +6,9 @@
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
-#include "externs.h"
+#include "core.h"
+
+int g_float_precision = -1;
 
 #ifdef HAVE_IEEE_FP_FORMAT
 
@@ -500,13 +502,13 @@ UTF8 *mux_ftoa(double r, bool bRounded, int frac)
 
     // If float_precision is enabled, let it override nRequestMaximum.
     //
-    if (0 <= mudconf.float_precision)
+    if (0 <= g_float_precision)
     {
         mode = 5;
-        if (mudconf.float_precision < nRequestMaximum)
+        if (g_float_precision < nRequestMaximum)
         {
-            nRequestMaximum = mudconf.float_precision;
-            nRequest        = mudconf.float_precision;
+            nRequestMaximum = g_float_precision;
+            nRequest        = g_float_precision;
         }
     }
 

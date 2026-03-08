@@ -80,4 +80,27 @@ extern const UTF8 Digits16U[17];
 extern const UTF8 Digits16L[17];
 extern void safe_hex(uint8_t md[], size_t len, bool bUpper, UTF8 *buff, UTF8 **bufc);
 
+// IEEE special-value construction codes (used by MakeSpecialFloat).
+//
+#define IEEE_MAKE_NAN  1
+#define IEEE_MAKE_IND  2
+#define IEEE_MAKE_PINF 3
+#define IEEE_MAKE_NINF 4
+
+double MakeSpecialFloat(int iWhich);
+
+// From strtod.cpp — low-level float-to-string / string-to-float.
+//
+void   mux_FPInit();
+void   mux_FPSet();
+void   mux_FPRestore();
+double mux_strtod(const UTF8 *s00, UTF8 **se);
+double mux_ulp(double);
+UTF8  *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign, UTF8 **rve);
+
+// Float-to-string precision limit.  Server layer sets this from
+// mudconf.float_precision during startup.  Default -1 means unlimited.
+//
+extern int g_float_precision;
+
 #endif // !MATHUTIL_H

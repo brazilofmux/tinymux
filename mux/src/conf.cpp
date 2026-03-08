@@ -109,7 +109,7 @@ void cf_init(void)
 
     mudconf.art_rules = nullptr;
     mudconf.indent_desc = false;
-    mudconf.no_flash = false;
+    g_no_flash = false;
     mudconf.terse_nospoof = false;
     mudconf.name_spaces = true;
 #if defined(HAVE_WORKING_FORK)
@@ -1919,7 +1919,7 @@ static CONFPARM conftable[] =
     {T("module"),                    cf_module,      CA_GOD,    CA_WIZARD,   nullptr,                  nullptr,            0},
     {T("mud_name"),                  cf_string,      CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(mudconf.mud_name),         nullptr,           32},
     {T("newuser_file"),              cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.crea_file),       nullptr, SIZEOF_PATHNAME},
-    {T("no_flash"),                  cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.no_flash),        nullptr,            0},
+    {T("no_flash"),                  cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&g_no_flash),             nullptr,            0},
     {T("noguest_site"),              cf_site,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.access_list),    nullptr,   HC_NOGUEST},
     {T("nositemon_site"),            cf_site,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.access_list),    nullptr, HC_NOSITEMON},
     {T("notify_recursion_limit"),    cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.ntfy_nest_lim,          nullptr,            0},

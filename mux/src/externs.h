@@ -44,7 +44,6 @@ private:
 
 #include "htab.h"
 
-#include "ansi.h"
 #include "attrcache.h"
 #include "attrs.h"
 #include "command.h"
@@ -500,13 +499,6 @@ bool eval_boolexp_atr(dbref, dbref, dbref, UTF8 *);
 
 /* From functions.cpp */
 bool xlate(UTF8 *);
-
-#define IEEE_MAKE_NAN  1
-#define IEEE_MAKE_IND  2
-#define IEEE_MAKE_PINF 3
-#define IEEE_MAKE_NINF 4
-
-double MakeSpecialFloat(int iWhich);
 
 /* From unparse.cpp */
 UTF8 *unparse_boolexp(dbref, BOOLEXP *);
@@ -1365,12 +1357,6 @@ CLinearTimeAbsolute fetch_logouttime(dbref target);
 // From strtod.cpp
 //
 void FLOAT_Initialize(void);
-void mux_FPInit();
-void mux_FPSet();
-void mux_FPRestore();
-double mux_strtod(const UTF8* s00, UTF8** se);
-double mux_ulp(double);
-UTF8 *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign, UTF8 **rve);
 
 // From wiz.cpp
 //

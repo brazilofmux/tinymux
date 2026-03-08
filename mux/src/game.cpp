@@ -2901,6 +2901,11 @@ int DCL_CDECL main(int argc, char *argv[])
     mudconf.log_dir = StringClone(pErrorBasename);
     cf_read();
 
+    // Sync core-layer globals from mudconf after config is loaded.
+    //
+    g_float_precision = mudconf.float_precision;
+    g_space_compress = mudstate.bStandAlone || mudconf.space_compress;
+
     mr = mux_CreateInstance(CID_QueryServer, nullptr, UseSlaveProcess, IID_IQueryControl, (void **)&mudstate.pIQueryControl);
     if (MUX_SUCCEEDED(mr))
     {

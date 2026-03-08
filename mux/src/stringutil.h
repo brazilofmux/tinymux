@@ -2405,4 +2405,10 @@ void strip_fancy_quotes(UTF8 *str);
 UTF8 *find_pattern_delimiter(UTF8 *str);
 void unescape_pattern_colons(UTF8 *str);
 
+// Server-layer globals mirrored from mudconf/mudstate so that
+// stringutil.cpp can be compiled with core.h alone.
+//
+extern bool g_no_flash;         // mudconf.no_flash
+extern bool g_space_compress;   // mudstate.bStandAlone || mudconf.space_compress
+
 #endif // STRINGUTIL_H

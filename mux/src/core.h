@@ -29,6 +29,7 @@ typedef struct
     const UTF8 *p;
 } string_desc;
 
+#include "ansi.h"
 #include "utf8tables.h"
 #include "stringutil.h"
 #include "mathutil.h"
