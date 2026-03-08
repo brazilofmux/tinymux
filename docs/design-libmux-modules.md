@@ -518,13 +518,55 @@ buffer pool).  The lightly coupled files (stringutil at 3 refs, mathutil
 at 4 refs) could migrate with minor refactoring — likely passing config
 values as parameters instead of reading globals directly.
 
-### Survey 2: Include dependency graph
+### Survey 2: Include dependency graph — COMPLETE
 
 **Purpose:** Understand which .cpp files can compile independently of the full
 server.
 
-**Method:** Attempt to compile individual .cpp files (stringutil, mathutil,
-timeutil) with only libmux.h and config.h.  Record missing dependencies.
+**Method:** For each of the 26 zero-mudconf/mudstate files, trace actual type
+and function usage against the include tree.  All 26 files include `externs.h`
+(the kitchen-sink header that pulls in the entire server), but most only use
+a small subset of what `externs.h` provides.
+
+**The blocker:** `externs.h` includes `mudconf.h`, `db.h`, `interface.h`, and
+35+ other headers.  Every .cpp file includes it.  Extracting files into
+libmux.so requires either (a) creating a lighter header or (b) refactoring
+`externs.h` into layers.
+
+**Actual dependency chains for GREEN files:**
+
+| File group | Actually needs | From headers |
+|---|---|---|
+| sha1, svdhash, svdrand | UTF8, uint types | config.h |
+| utf8_collate, utf8_grapheme | UTF8, UTF32, utf8_FirstByte, LBUF_SIZE, UNI_EOF | config.h, stringutil.h, alloc.h |
+| utf8_normalize | above + string_desc | config.h, stringutil.h, externs.h (for string_desc) |
+| timeutil | UTF8, FIELDEDTIME, mux_isdigit, mux_atol | config.h, timeutil.h, stringutil.h |
+| timeabsolute, timedelta | above + mux_sprintf, mux_assert | config.h, timeutil.h, stringutil.h |
+| timeparser, timezone | FIELDEDTIME, UTF8 | config.h, timeutil.h |
+| strtod | basic types only | config.h |
+| netaddr, telnet | UTF8, socket types | config.h, system headers |
+| alarm | std threading | config.h, system headers |
+
+**Classification of 26 zero-reference files:**
+
+- **GREEN (18 files)** — Could compile with config.h + 1-2 utility headers:
+  time utilities (5), UTF-8 (3), crypto/hash (3), strtod, netaddr, telnet,
+  alarm, _build, muxcli, ast_scan, slave
+
+- **YELLOW (6 files)** — Need minor refactoring:
+  funmath (FUNCTION macro framework), libmux (modules.h), sqlite_backend
+  and sqlitedb (dbref type), stubslave (module infra), utf8_normalize
+  (string_desc in externs.h)
+
+- **RED (2 files)** — Cannot extract:
+  htab (dbref, NAMETAB, God(), check_access, notify, alloc_lbuf),
+  local (server command/function registration)
+
+**Practical path forward:** The string_desc typedef and LBUF_SIZE constant
+could be moved from externs.h/alloc.h into a small `libmux_types.h` or
+into config.h itself.  The GREEN files don't need db.h, mudconf.h, or
+interface.h at all — their `#include "externs.h"` could be replaced with
+targeted includes once those types are accessible.
 
 
 ## Decision Points
