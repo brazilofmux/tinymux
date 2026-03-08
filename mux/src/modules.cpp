@@ -1088,6 +1088,8 @@ public:
     virtual MUX_RESULT IsPlayer(dbref obj, bool *pPlayer);
     virtual MUX_RESULT IsGoing(dbref obj, bool *pGoing);
     virtual MUX_RESULT GetMoniker(dbref obj, const UTF8 **ppMoniker);
+    virtual MUX_RESULT MatchThing(dbref executor, const UTF8 *pName,
+        dbref *pResult);
 
     CObjectInfo(void);
     virtual ~CObjectInfo();
@@ -1247,6 +1249,22 @@ MUX_RESULT CObjectInfo::GetMoniker(dbref obj, const UTF8 **ppMoniker)
         return MUX_E_INVALIDARG;
     }
     *ppMoniker = Moniker(obj);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::MatchThing(dbref executor, const UTF8 *pName,
+    dbref *pResult)
+{
+    if (nullptr == pResult)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (nullptr == pName)
+    {
+        *pResult = NOTHING;
+        return MUX_E_INVALIDARG;
+    }
+    *pResult = match_thing(executor, pName);
     return MUX_S_OK;
 }
 

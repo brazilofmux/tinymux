@@ -52,6 +52,34 @@ const MUX_CID CID_ComsysMod = UINT64_C(0x00000002C5A2F193);
 #define COMTITLE_GAG    3
 #define COMTITLE_UNGAG  4
 
+// @cset switch keys (mirrored from externs.h).
+//
+#define CSET_PUBLIC     0
+#define CSET_PRIVATE    1
+#define CSET_LOUD       2
+#define CSET_QUIET      3
+#define CSET_LIST       4
+#define CSET_OBJECT     5
+#define CSET_SPOOF      6
+#define CSET_NOSPOOF    7
+#define CSET_HEADER     8
+#define CSET_LOG        9
+#define CSET_LOG_TIME  10
+
+// @cboot switch keys.
+//
+#define CBOOT_QUIET     1
+
+// @editchannel flag keys.
+//
+#define EDIT_CHANNEL_CCHOWN   0
+#define EDIT_CHANNEL_CCHARGE  1
+#define EDIT_CHANNEL_CPFLAGS  2
+#define EDIT_CHANNEL_COFLAGS  3
+
+#define MAX_COST        32767
+#define MOD_LBUF_SIZE   8000
+
 // Per-user channel subscription record.
 //
 struct comuser
@@ -186,6 +214,12 @@ public:
     MUX_RESULT ChanWho(dbref executor, const UTF8 *pArg) override;
     MUX_RESULT CEmit(dbref executor, const UTF8 *pChannel,
         const UTF8 *pText, int key) override;
+    MUX_RESULT CSet(dbref executor, const UTF8 *pChannel,
+        const UTF8 *pValue, int key) override;
+    MUX_RESULT EditChannel(dbref executor, const UTF8 *pChannel,
+        const UTF8 *pValue, int flag) override;
+    MUX_RESULT CBoot(dbref executor, const UTF8 *pChannel,
+        const UTF8 *pVictim, int key) override;
     MUX_RESULT ProcessCommand(dbref executor, const UTF8 *pCmd,
         bool *pbHandled) override;
 

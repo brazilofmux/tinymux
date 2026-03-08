@@ -3392,6 +3392,12 @@ void do_editchannel
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    if (nullptr != mudstate.pIComsysControl)
+    {
+        mudstate.pIComsysControl->EditChannel(executor, arg1, arg2, flag);
+        return;
+    }
+
     struct channel* ch = select_channel(arg1);
     if (!ch)
     {
@@ -3685,6 +3691,12 @@ void do_chopen
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    if (nullptr != mudstate.pIComsysControl)
+    {
+        mudstate.pIComsysControl->CSet(executor, chan, value, key);
+        return;
+    }
+
     if (key == CSET_LIST)
     {
         do_chanlist(executor, caller, enactor, 0, 1, nullptr, nullptr, 0);
@@ -3812,6 +3824,12 @@ void do_chboot
     UNUSED_PARAMETER(nargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
+
+    if (nullptr != mudstate.pIComsysControl)
+    {
+        mudstate.pIComsysControl->CBoot(executor, channel, victim, key);
+        return;
+    }
 
     // I sure hope it's not going to be that long.
     //

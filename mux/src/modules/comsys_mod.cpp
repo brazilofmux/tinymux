@@ -786,7 +786,7 @@ void CComsysMod::do_comconnectraw_notify(dbref player, UTF8 *chan)
         //
         // Build a simple connect message.
         //
-        UTF8 msg[1024];
+        UTF8 msg[MOD_LBUF_SIZE];
         const UTF8 *pName = nullptr;
         if (nullptr != m_pIObjectInfo)
         {
@@ -833,7 +833,7 @@ void CComsysMod::do_comdisconnectraw_notify(dbref player, UTF8 *chan)
     if (  (ch->type & CHANNEL_LOUD)
        && cu->bUserIsOn)
     {
-        UTF8 msg[1024];
+        UTF8 msg[MOD_LBUF_SIZE];
         const UTF8 *pName = nullptr;
         if (nullptr != m_pIObjectInfo)
         {
@@ -1200,7 +1200,7 @@ void CComsysMod::do_delcomchannel(dbref player, const UTF8 *channel,
                 pName = T("???");
             }
 
-            UTF8 msg[1024];
+            UTF8 msg[MOD_LBUF_SIZE];
             snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                      "%s %s has left this channel.",
                      reinterpret_cast<const char *>(ch->header),
@@ -1381,7 +1381,7 @@ void CComsysMod::do_joinchannel(dbref player, struct channel *ch)
         pName = T("???");
     }
 
-    UTF8 msg[1024];
+    UTF8 msg[MOD_LBUF_SIZE];
     snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
              "%s %s has joined this channel.",
              reinterpret_cast<const char *>(ch->header),
@@ -1420,7 +1420,7 @@ void CComsysMod::do_leavechannel(dbref player, struct channel *ch)
             pName = T("???");
         }
 
-        UTF8 msg[1024];
+        UTF8 msg[MOD_LBUF_SIZE];
         snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                  "%s %s has left this channel.",
                  reinterpret_cast<const char *>(ch->header),
@@ -1573,7 +1573,7 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
         pMoniker = T("???");
     }
 
-    UTF8 msg[4096];
+    UTF8 msg[MOD_LBUF_SIZE];
     const char *pPose = reinterpret_cast<const char *>(arg2);
 
     if (':' == pPose[0])
@@ -2314,7 +2314,7 @@ MUX_RESULT CComsysMod::CEmit(dbref executor, const UTF8 *pChannel,
         return MUX_E_PERMISSION;
     }
 
-    UTF8 msg[4096];
+    UTF8 msg[MOD_LBUF_SIZE];
     if (key == CEMIT_NOHEADER)
     {
         strncpy(reinterpret_cast<char *>(msg),
@@ -2330,6 +2330,456 @@ MUX_RESULT CComsysMod::CEmit(dbref executor, const UTF8 *pChannel,
     }
 
     SendChannelMessage(executor, ch, msg, false);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
+    const UTF8 *pValue, int key)
+{
+    if (CSET_LIST == key)
+    {
+        // Redirect to ChanList with CLIST_FULL.
+        //
+        return ChanList(executor, nullptr, CLIST_FULL);
+    }
+
+    struct channel *ch = select_channel(pChannel);
+    if (nullptr == ch)
+    {
+        UTF8 msg[MOD_LBUF_SIZE];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "@cset: Channel %s does not exist.",
+                 reinterpret_cast<const char *>(pChannel));
+        m_pINotify->Notify(executor, msg);
+        return MUX_S_OK;
+    }
+
+    // Permission check: must control channel owner or have Comm_All.
+    //
+    bool bControls = false;
+    m_pIPermissions->HasControl(executor, ch->charge_who, &bControls);
+    bool bCommAll = false;
+    m_pIPermissions->HasCommAll(executor, &bCommAll);
+    if (!bControls && !bCommAll)
+    {
+        m_pINotify->Notify(executor,
+            reinterpret_cast<const UTF8 *>("Permission denied."));
+        return MUX_S_OK;
+    }
+
+    const UTF8 *msg = nullptr;
+    UTF8 msgbuf[MOD_LBUF_SIZE];
+
+    switch (key)
+    {
+    case CSET_PUBLIC:
+        ch->type |= CHANNEL_PUBLIC;
+        snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                 "@cset: Channel %s placed on the public listings.",
+                 reinterpret_cast<const char *>(pChannel));
+        msg = msgbuf;
+        break;
+
+    case CSET_PRIVATE:
+        ch->type &= ~CHANNEL_PUBLIC;
+        snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                 "@cset: Channel %s taken off the public listings.",
+                 reinterpret_cast<const char *>(pChannel));
+        msg = msgbuf;
+        break;
+
+    case CSET_LOUD:
+        ch->type |= CHANNEL_LOUD;
+        snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                 "@cset: Channel %s now sends connect/disconnect msgs.",
+                 reinterpret_cast<const char *>(pChannel));
+        msg = msgbuf;
+        break;
+
+    case CSET_QUIET:
+        ch->type &= ~CHANNEL_LOUD;
+        snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                 "@cset: Channel %s connect/disconnect msgs muted.",
+                 reinterpret_cast<const char *>(pChannel));
+        msg = msgbuf;
+        break;
+
+    case CSET_SPOOF:
+        ch->type |= CHANNEL_SPOOF;
+        snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                 "@cset: Channel %s set spoofable.",
+                 reinterpret_cast<const char *>(pChannel));
+        msg = msgbuf;
+        break;
+
+    case CSET_NOSPOOF:
+        ch->type &= ~CHANNEL_SPOOF;
+        snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                 "@cset: Channel %s set unspoofable.",
+                 reinterpret_cast<const char *>(pChannel));
+        msg = msgbuf;
+        break;
+
+    case CSET_OBJECT:
+        {
+            dbref thing = NOTHING;
+            if (nullptr != pValue && '\0' != pValue[0])
+            {
+                m_pIObjectInfo->MatchThing(executor, pValue, &thing);
+            }
+            bool bValid = false;
+            if (NOTHING != thing)
+            {
+                m_pIObjectInfo->IsValid(thing, &bValid);
+            }
+            if (NOTHING == thing)
+            {
+                ch->chan_obj = NOTHING;
+                snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                         "Channel %s is now disassociated from any channel object.",
+                         reinterpret_cast<const char *>(ch->name));
+            }
+            else if (bValid)
+            {
+                ch->chan_obj = thing;
+                const UTF8 *pName = nullptr;
+                m_pIObjectInfo->GetName(thing, &pName);
+                snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                         "Channel %s is now using %s(#%d) as channel object.",
+                         reinterpret_cast<const char *>(ch->name),
+                         pName ? reinterpret_cast<const char *>(pName) : "???",
+                         thing);
+            }
+            else
+            {
+                snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                         "%d is not a valid channel object.", thing);
+            }
+            msg = msgbuf;
+        }
+        break;
+
+    case CSET_HEADER:
+        {
+            if (nullptr == pValue || '\0' == pValue[0])
+            {
+                // Reset to default bold [ChannelName] header.
+                // COLOR_INTENSE = \xEF\x94\x81, COLOR_RESET = \xEF\x94\x80
+                //
+                snprintf(reinterpret_cast<char *>(ch->header),
+                         sizeof(ch->header),
+                         "\xEF\x94\x81[%s]\xEF\x94\x80",
+                         reinterpret_cast<const char *>(ch->name));
+            }
+            else
+            {
+                strncpy(reinterpret_cast<char *>(ch->header),
+                        reinterpret_cast<const char *>(pValue),
+                        MAX_HEADER_LEN);
+                ch->header[MAX_HEADER_LEN] = '\0';
+            }
+            msg = reinterpret_cast<const UTF8 *>("Set.");
+        }
+        break;
+
+    default:
+        // CSET_LOG and CSET_LOG_TIME require channel object attribute
+        // access which the module does not yet support.
+        //
+        msg = reinterpret_cast<const UTF8 *>("@cset: Not supported in module.");
+        break;
+    }
+
+    sqlite_wt_channel(ch);
+    if (nullptr != msg)
+    {
+        m_pINotify->Notify(executor, msg);
+    }
+    return MUX_S_OK;
+}
+
+MUX_RESULT CComsysMod::EditChannel(dbref executor, const UTF8 *pChannel,
+    const UTF8 *pValue, int flag)
+{
+    struct channel *ch = select_channel(pChannel);
+    if (nullptr == ch)
+    {
+        UTF8 msg[MOD_LBUF_SIZE];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "Unknown channel %s.",
+                 reinterpret_cast<const char *>(pChannel));
+        m_pINotify->Notify(executor, msg);
+        return MUX_S_OK;
+    }
+
+    // Permission check.
+    //
+    bool bControls = false;
+    m_pIPermissions->HasControl(executor, ch->charge_who, &bControls);
+    bool bCommAll = false;
+    m_pIPermissions->HasCommAll(executor, &bCommAll);
+    if (!bControls && !bCommAll)
+    {
+        m_pINotify->Notify(executor,
+            reinterpret_cast<const UTF8 *>("Permission denied."));
+        return MUX_S_OK;
+    }
+
+    bool add_remove = true;
+    const UTF8 *s = pValue;
+    if (nullptr != s && '!' == *s)
+    {
+        add_remove = false;
+        s++;
+    }
+
+    switch (flag)
+    {
+    case EDIT_CHANNEL_CCHOWN:
+        {
+            dbref who = NOTHING;
+            if (nullptr != pValue)
+            {
+                m_pIObjectInfo->MatchThing(executor, pValue, &who);
+            }
+            bool bValid = false;
+            if (NOTHING != who)
+            {
+                m_pIObjectInfo->IsValid(who, &bValid);
+            }
+            if (bValid)
+            {
+                ch->charge_who = who;
+                m_pINotify->Notify(executor,
+                    reinterpret_cast<const UTF8 *>("Set."));
+            }
+            else
+            {
+                m_pINotify->Notify(executor,
+                    reinterpret_cast<const UTF8 *>("Invalid player."));
+            }
+        }
+        break;
+
+    case EDIT_CHANNEL_CCHARGE:
+        {
+            int c_charge = 0;
+            if (nullptr != pValue)
+            {
+                c_charge = atoi(reinterpret_cast<const char *>(pValue));
+            }
+            if (0 <= c_charge && c_charge <= MAX_COST)
+            {
+                ch->charge = c_charge;
+                m_pINotify->Notify(executor,
+                    reinterpret_cast<const UTF8 *>("Set."));
+            }
+            else
+            {
+                m_pINotify->Notify(executor,
+                    reinterpret_cast<const UTF8 *>(
+                        "That is not a reasonable cost."));
+            }
+        }
+        break;
+
+    case EDIT_CHANNEL_CPFLAGS:
+        {
+            int access = 0;
+            if (nullptr != s)
+            {
+                if (strcmp(reinterpret_cast<const char *>(s), "join") == 0)
+                {
+                    access = CHANNEL_PLAYER_JOIN;
+                }
+                else if (strcmp(reinterpret_cast<const char *>(s),
+                               "receive") == 0)
+                {
+                    access = CHANNEL_PLAYER_RECEIVE;
+                }
+                else if (strcmp(reinterpret_cast<const char *>(s),
+                               "transmit") == 0)
+                {
+                    access = CHANNEL_PLAYER_TRANSMIT;
+                }
+            }
+
+            if (access)
+            {
+                if (add_remove)
+                {
+                    ch->type |= access;
+                    m_pINotify->Notify(executor,
+                        reinterpret_cast<const UTF8 *>("@cpflags: Set."));
+                }
+                else
+                {
+                    ch->type &= ~access;
+                    m_pINotify->Notify(executor,
+                        reinterpret_cast<const UTF8 *>("@cpflags: Cleared."));
+                }
+            }
+            else
+            {
+                m_pINotify->Notify(executor,
+                    reinterpret_cast<const UTF8 *>("@cpflags: Unknown Flag."));
+            }
+        }
+        break;
+
+    case EDIT_CHANNEL_COFLAGS:
+        {
+            int access = 0;
+            if (nullptr != s)
+            {
+                if (strcmp(reinterpret_cast<const char *>(s), "join") == 0)
+                {
+                    access = CHANNEL_OBJECT_JOIN;
+                }
+                else if (strcmp(reinterpret_cast<const char *>(s),
+                               "receive") == 0)
+                {
+                    access = CHANNEL_OBJECT_RECEIVE;
+                }
+                else if (strcmp(reinterpret_cast<const char *>(s),
+                               "transmit") == 0)
+                {
+                    access = CHANNEL_OBJECT_TRANSMIT;
+                }
+            }
+
+            if (access)
+            {
+                if (add_remove)
+                {
+                    ch->type |= access;
+                    m_pINotify->Notify(executor,
+                        reinterpret_cast<const UTF8 *>("@coflags: Set."));
+                }
+                else
+                {
+                    ch->type &= ~access;
+                    m_pINotify->Notify(executor,
+                        reinterpret_cast<const UTF8 *>("@coflags: Cleared."));
+                }
+            }
+            else
+            {
+                m_pINotify->Notify(executor,
+                    reinterpret_cast<const UTF8 *>("@coflags: Unknown Flag."));
+            }
+        }
+        break;
+    }
+
+    sqlite_wt_channel(ch);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CComsysMod::CBoot(dbref executor, const UTF8 *pChannel,
+    const UTF8 *pVictim, int key)
+{
+    struct channel *ch = select_channel(pChannel);
+    if (nullptr == ch)
+    {
+        m_pINotify->Notify(executor,
+            reinterpret_cast<const UTF8 *>("@cboot: Unknown channel."));
+        return MUX_S_OK;
+    }
+
+    struct comuser *user = select_user(ch, executor);
+    if (nullptr == user)
+    {
+        m_pINotify->Notify(executor,
+            reinterpret_cast<const UTF8 *>(
+                "@cboot: You are not on that channel."));
+        return MUX_S_OK;
+    }
+
+    // Permission check.
+    //
+    bool bControls = false;
+    m_pIPermissions->HasControl(executor, ch->charge_who, &bControls);
+    bool bCommAll = false;
+    m_pIPermissions->HasCommAll(executor, &bCommAll);
+    if (!bControls && !bCommAll)
+    {
+        m_pINotify->Notify(executor,
+            reinterpret_cast<const UTF8 *>(
+                "@cboot: You can\xE2\x80\x99t do that!"));
+        return MUX_S_OK;
+    }
+
+    // Resolve victim name to dbref.
+    //
+    dbref thing = NOTHING;
+    if (nullptr != pVictim)
+    {
+        m_pIObjectInfo->MatchThing(executor, pVictim, &thing);
+    }
+    bool bValid = false;
+    if (NOTHING != thing)
+    {
+        m_pIObjectInfo->IsValid(thing, &bValid);
+    }
+    if (!bValid)
+    {
+        return MUX_S_OK;
+    }
+
+    struct comuser *vu = select_user(ch, thing);
+    if (nullptr == vu)
+    {
+        const UTF8 *pMoniker = nullptr;
+        m_pIObjectInfo->GetMoniker(thing, &pMoniker);
+        UTF8 msg[MOD_LBUF_SIZE];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "@cboot: %s is not on the channel.",
+                 pMoniker ? reinterpret_cast<const char *>(pMoniker)
+                          : "???");
+        m_pINotify->Notify(executor, msg);
+        return MUX_S_OK;
+    }
+
+    // Notify executor and victim.
+    //
+    const UTF8 *pExecMoniker = nullptr;
+    m_pIObjectInfo->GetMoniker(executor, &pExecMoniker);
+    const UTF8 *pVictMoniker = nullptr;
+    m_pIObjectInfo->GetMoniker(thing, &pVictMoniker);
+
+    UTF8 msg[MOD_LBUF_SIZE];
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "You boot %s off channel %s.",
+             pVictMoniker ? reinterpret_cast<const char *>(pVictMoniker)
+                          : "???",
+             reinterpret_cast<const char *>(ch->name));
+    m_pINotify->Notify(executor, msg);
+
+    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+             "%s boots you off channel %s.",
+             pExecMoniker ? reinterpret_cast<const char *>(pExecMoniker)
+                          : "???",
+             reinterpret_cast<const char *>(ch->name));
+    m_pINotify->Notify(thing, msg);
+
+    if (!(key & CBOOT_QUIET))
+    {
+        // Broadcast boot message to channel.
+        //
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                 "%s %s boots %s off the channel.",
+                 reinterpret_cast<const char *>(ch->header),
+                 pExecMoniker ? reinterpret_cast<const char *>(pExecMoniker)
+                              : "???",
+                 pVictMoniker ? reinterpret_cast<const char *>(pVictMoniker)
+                              : "???");
+        SendChannelMessage(executor, ch, msg, false);
+    }
+
+    // Remove victim from channel.
+    //
+    do_delcomchannel(thing, ch->name, (key & CBOOT_QUIET) != 0);
     return MUX_S_OK;
 }
 

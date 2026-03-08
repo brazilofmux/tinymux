@@ -249,6 +249,8 @@ public:
     virtual MUX_RESULT IsPlayer(dbref obj, bool *pPlayer) = 0;
     virtual MUX_RESULT IsGoing(dbref obj, bool *pGoing) = 0;
     virtual MUX_RESULT GetMoniker(dbref obj, const UTF8 **ppMoniker) = 0;
+    virtual MUX_RESULT MatchThing(dbref executor, const UTF8 *pName,
+        dbref *pResult) = 0;
 };
 
 // Softcode evaluator.
@@ -317,6 +319,15 @@ public:
     virtual MUX_RESULT ChanWho(dbref executor, const UTF8 *pArg) = 0;
     virtual MUX_RESULT CEmit(dbref executor, const UTF8 *pChannel,
         const UTF8 *pText, int key) = 0;
+
+    // Channel administration.
+    //
+    virtual MUX_RESULT CSet(dbref executor, const UTF8 *pChannel,
+        const UTF8 *pValue, int key) = 0;
+    virtual MUX_RESULT EditChannel(dbref executor, const UTF8 *pChannel,
+        const UTF8 *pValue, int flag) = 0;
+    virtual MUX_RESULT CBoot(dbref executor, const UTF8 *pChannel,
+        const UTF8 *pVictim, int key) = 0;
 
     // Alias-based command dispatch (returns true to stop further matching).
     //
