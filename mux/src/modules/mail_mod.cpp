@@ -1110,14 +1110,14 @@ MUX_RESULT CMailMod::PlayerConnect(dbref player)
 {
     // TODO: Check mail on connect and notify player.
     UNUSED_PARAMETER(player);
-    return MUX_S_OK;
+    return MUX_E_NOTIMPLEMENTED;
 }
 
 MUX_RESULT CMailMod::PlayerNuke(dbref player)
 {
-    sqlite_wt_delete_all_mail(player);
-    MailListRemoveAll(player);
-    return MUX_S_OK;
+    // TODO: Enable when module fully owns mail data.
+    UNUSED_PARAMETER(player);
+    return MUX_E_NOTIMPLEMENTED;
 }
 
 MUX_RESULT CMailMod::MailCommand(dbref executor, int key,
@@ -1156,60 +1156,36 @@ MUX_RESULT CMailMod::FolderCommand(dbref executor, int key, int nargs,
 
 MUX_RESULT CMailMod::CheckMail(dbref player, int folder, bool silent)
 {
-    // TODO: Implement check mail.
+    // TODO: Implement check mail (needs get_folder_name, urgent_mail).
     UNUSED_PARAMETER(player);
     UNUSED_PARAMETER(folder);
     UNUSED_PARAMETER(silent);
-    return MUX_S_OK;
+    return MUX_E_NOTIMPLEMENTED;
 }
 
 MUX_RESULT CMailMod::ExpireMail(void)
 {
-    // TODO: Implement mail expiration.
-    return MUX_S_OK;
+    // TODO: Implement mail expiration (needs DO_WHOLE_DB, No_Mail_Expire, time classes).
+    return MUX_E_NOTIMPLEMENTED;
 }
 
 MUX_RESULT CMailMod::CountMail(dbref player, int folder,
     int *pRead, int *pUnread, int *pCleared)
 {
-    if (nullptr == pRead || nullptr == pUnread || nullptr == pCleared)
-    {
-        return MUX_E_INVALIDARG;
-    }
-
-    *pRead = 0;
-    *pUnread = 0;
-    *pCleared = 0;
-
-    struct mail *mp = MailListFirst(player);
-    while (nullptr != mp)
-    {
-        if (0 == folder || Folder(mp) == folder)
-        {
-            if (Read(mp))
-            {
-                (*pRead)++;
-            }
-            else
-            {
-                (*pUnread)++;
-            }
-            if (Cleared(mp))
-            {
-                (*pCleared)++;
-            }
-        }
-        mp = MailListNext(mp, player);
-    }
-
-    return MUX_S_OK;
+    // TODO: Enable when module fully owns mail data.
+    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(folder);
+    UNUSED_PARAMETER(pRead);
+    UNUSED_PARAMETER(pUnread);
+    UNUSED_PARAMETER(pCleared);
+    return MUX_E_NOTIMPLEMENTED;
 }
 
 MUX_RESULT CMailMod::DestroyPlayerMail(dbref player)
 {
-    sqlite_wt_delete_all_mail(player);
-    MailListRemoveAll(player);
-    return MUX_S_OK;
+    // TODO: Enable when module fully owns mail data.
+    UNUSED_PARAMETER(player);
+    return MUX_E_NOTIMPLEMENTED;
 }
 
 // ---------------------------------------------------------------------------
@@ -1300,7 +1276,8 @@ void CMailMod::data_clone(dbref clone, dbref source)
 
 void CMailMod::data_free(dbref object)
 {
-    PlayerNuke(object);
+    // TODO: Enable when module fully owns mail data.
+    UNUSED_PARAMETER(object);
 }
 
 // ---------------------------------------------------------------------------

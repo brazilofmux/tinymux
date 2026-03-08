@@ -2542,6 +2542,15 @@ int mail_fetch_from(dbref player, int num)
 //
 void count_mail(dbref player, int folder, int *rcount, int *ucount, int *ccount)
 {
+    if (nullptr != mudstate.pIMailControl)
+    {
+        MUX_RESULT mr = mudstate.pIMailControl->CountMail(player, folder, rcount, ucount, ccount);
+        if (MUX_SUCCEEDED(mr))
+        {
+            return;
+        }
+    }
+
     int rc = 0;
     int uc = 0;
     int cc = 0;
@@ -2816,6 +2825,15 @@ static void do_mail_nuke(dbref player)
 //
 void mail_destroy_player(dbref victim)
 {
+    if (nullptr != mudstate.pIMailControl)
+    {
+        MUX_RESULT mr = mudstate.pIMailControl->DestroyPlayerMail(victim);
+        if (MUX_SUCCEEDED(mr))
+        {
+            return;
+        }
+    }
+
     // Step 1: Purge received mail.
     //
     MailList ml(victim);
@@ -3828,6 +3846,15 @@ void load_mail(FILE *fp)
 
 void check_mail_expiration(void)
 {
+    if (nullptr != mudstate.pIMailControl)
+    {
+        MUX_RESULT mr = mudstate.pIMailControl->ExpireMail();
+        if (MUX_SUCCEEDED(mr))
+        {
+            return;
+        }
+    }
+
     // Negative values for expirations never expire.
     //
     if (0 > mudconf.mail_expiration)
@@ -3879,6 +3906,15 @@ void check_mail_expiration(void)
 
 void check_mail(dbref player, int folder, bool silent)
 {
+    if (nullptr != mudstate.pIMailControl)
+    {
+        MUX_RESULT mr = mudstate.pIMailControl->CheckMail(player, folder, silent);
+        if (MUX_SUCCEEDED(mr))
+        {
+            return;
+        }
+    }
+
     // Check for new @mail
     //
     int rc;     // Read messages.
@@ -5270,6 +5306,15 @@ void do_malias
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    if (nullptr != mudstate.pIMailControl)
+    {
+        MUX_RESULT mr = mudstate.pIMailControl->MaliasCommand(executor, key, arg1, arg2);
+        if (MUX_SUCCEEDED(mr))
+        {
+            return;
+        }
+    }
+
     switch (key)
     {
     case 0:
@@ -5324,6 +5369,15 @@ void do_mail
     UNUSED_PARAMETER(nargs);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
+
+    if (nullptr != mudstate.pIMailControl)
+    {
+        MUX_RESULT mr = mudstate.pIMailControl->MailCommand(executor, key, arg1, arg2);
+        if (MUX_SUCCEEDED(mr))
+        {
+            return;
+        }
+    }
 
     // HACK: Fix to allow @mail/quick from objects.
     //
@@ -5665,6 +5719,15 @@ void do_folder
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
+
+    if (nullptr != mudstate.pIMailControl)
+    {
+        MUX_RESULT mr = mudstate.pIMailControl->FolderCommand(executor, key, nargs, arg1, arg2);
+        if (MUX_SUCCEEDED(mr))
+        {
+            return;
+        }
+    }
 
     switch (key)
     {
