@@ -1729,13 +1729,15 @@
 >262
 "@if strmatch(setr(0,mloc(#1)),#0)={@log smoke=TC005: mloc returns location. Succeeded.},{@log smoke=TC005: mloc returns location. Failed (%q0).}"
 >263
-"@if strmatch(setr(0,meval(#1,2+2)),#-1 NO EVALUATOR INTERFACE)={@log smoke=TC006: meval evaluator wall. Succeeded.},{@log smoke=TC006: meval evaluator wall. Failed (%q0).}"
+"@if strmatch(setr(0,meval(#1,add(2,2))),4)={@log smoke=TC006: meval evaluates expression. Succeeded.},{@log smoke=TC006: meval evaluates expression. Failed (%q0).}"
 >264
 "@if strmatch(setr(0,mtype(#1)),PLAYER)={@log smoke=TC007: mtype returns type. Succeeded.},{@log smoke=TC007: mtype returns type. Failed (%q0).}"
 >265
 "@if strmatch(setr(0,mget(#0/EXP3_TEST)),exp3 roundtrip)={@log smoke=TC008: mget reads attribute. Succeeded.},{@log smoke=TC008: mget reads attribute. Failed (%q0).}"
 >267
-"@if strmatch(setr(0,mget(badref/ATTR)),#-1 INVALID DBREF)={@log smoke=TC009: mget invalid dbref. Succeeded.},{@log smoke=TC009: mget invalid dbref. Failed (%q0).};@trig me/tr.done"
+"@if strmatch(setr(0,mget(badref/ATTR)),#-1 INVALID DBREF)={@log smoke=TC009: mget invalid dbref. Succeeded.},{@log smoke=TC009: mget invalid dbref. Failed (%q0).}"
+>268
+"think [mset(#0/EXP3_EXPR,name(#0))];@if strmatch(setr(0,meval(#0,[mget(#0/EXP3_EXPR)])),Limbo)={@log smoke=TC010: meval roundtrip evaluation. Succeeded.},{@log smoke=TC010: meval roundtrip evaluation. Failed (%q0).};@trig me/tr.done"
 <
 !55
 "test_exp_fn"

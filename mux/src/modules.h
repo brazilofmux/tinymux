@@ -61,6 +61,8 @@ const MUX_CID CID_ObjectInfo             = UINT64_C(0x00000002251565F1);
 const MUX_IID IID_IObjectInfo            = UINT64_C(0x00000002722A6C49);
 const MUX_CID CID_AttributeAccess       = UINT64_C(0x000000024A3E71B5);
 const MUX_IID IID_IAttributeAccess      = UINT64_C(0x00000002D89F42C3);
+const MUX_CID CID_Evaluator             = UINT64_C(0x00000002E7B3A51D);
+const MUX_IID IID_IEvaluator            = UINT64_C(0x000000023C6D8F72);
 
 interface mux_ILog : public mux_IUnknown
 {
@@ -239,6 +241,16 @@ public:
     virtual MUX_RESULT GetOwner(dbref obj, dbref *pOwner) = 0;
     virtual MUX_RESULT GetLocation(dbref obj, dbref *pLocation) = 0;
     virtual MUX_RESULT GetType(dbref obj, int *pType) = 0;
+};
+
+// Softcode evaluator.
+//
+interface mux_IEvaluator : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT Eval(dbref executor, dbref caller, dbref enactor,
+        const UTF8 *pExpr, UTF8 *pResult, size_t nResultMax,
+        size_t *pnResultLen) = 0;
 };
 
 // Attribute read/write with built-in permission checks.

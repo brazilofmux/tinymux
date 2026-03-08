@@ -20,7 +20,8 @@ static MUX_CLASS_INFO netmux_classes[] =
     { CID_LogPSFactory       },
     { CID_Notify             },
     { CID_ObjectInfo         },
-    { CID_AttributeAccess    }
+    { CID_AttributeAccess    },
+    { CID_Evaluator          }
 };
 #define NUM_CLASSES (sizeof(netmux_classes)/sizeof(netmux_classes[0]))
 
@@ -187,6 +188,26 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
 
         mr = pAttributeAccessFactory->QueryInterface(iid, ppv);
         pAttributeAccessFactory->Release();
+    }
+    else if (CID_Evaluator == cid)
+    {
+        CEvaluatorFactory *pEvaluatorFactory = nullptr;
+        try
+        {
+            pEvaluatorFactory = new CEvaluatorFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == pEvaluatorFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pEvaluatorFactory->QueryInterface(iid, ppv);
+        pEvaluatorFactory->Release();
     }
     return mr;
 }
@@ -1438,6 +1459,204 @@ MUX_RESULT CAttributeAccessFactory::CreateInstance(mux_IUnknown *pUnknownOuter, 
 }
 
 MUX_RESULT CAttributeAccessFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CEvaluator — mux_IEvaluator implementation (in-process only).
+// ---------------------------------------------------------------------------
+
+class CEvaluator : public mux_IEvaluator
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+
+    virtual MUX_RESULT Eval(dbref executor, dbref caller, dbref enactor,
+        const UTF8 *pExpr, UTF8 *pResult, size_t nResultMax,
+        size_t *pnResultLen);
+
+    CEvaluator(void);
+    virtual ~CEvaluator();
+
+private:
+    uint32_t m_cRef;
+};
+
+CEvaluator::CEvaluator(void) : m_cRef(1)
+{
+}
+
+CEvaluator::~CEvaluator()
+{
+}
+
+MUX_RESULT CEvaluator::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IEvaluator *>(this);
+    }
+    else if (IID_IEvaluator == iid)
+    {
+        *ppv = static_cast<mux_IEvaluator *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CEvaluator::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CEvaluator::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CEvaluator::Eval(dbref executor, dbref caller, dbref enactor,
+    const UTF8 *pExpr, UTF8 *pResult, size_t nResultMax,
+    size_t *pnResultLen)
+{
+    if (nullptr == pExpr || nullptr == pResult || 0 == nResultMax)
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    if (!Good_obj(executor))
+    {
+        pResult[0] = '\0';
+        if (nullptr != pnResultLen)
+        {
+            *pnResultLen = 0;
+        }
+        return MUX_E_INVALIDARG;
+    }
+
+    // Use the caller/enactor if valid, otherwise default to executor.
+    //
+    if (!Good_obj(caller))
+    {
+        caller = executor;
+    }
+    if (!Good_obj(enactor))
+    {
+        enactor = executor;
+    }
+
+    // Evaluate into an LBUF, then copy to the caller's buffer.
+    //
+    UTF8 buf[LBUF_SIZE];
+    UTF8 *bufc = buf;
+    size_t nExpr = strlen((const char *)pExpr);
+    mux_exec(pExpr, nExpr, buf, &bufc, executor, caller, enactor,
+             EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, nullptr, 0);
+    *bufc = '\0';
+
+    size_t nLen = bufc - buf;
+    if (nLen >= nResultMax)
+    {
+        nLen = nResultMax - 1;
+    }
+    memcpy(pResult, buf, nLen);
+    pResult[nLen] = '\0';
+
+    if (nullptr != pnResultLen)
+    {
+        *pnResultLen = nLen;
+    }
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CEvaluatorFactory
+// ---------------------------------------------------------------------------
+
+CEvaluatorFactory::CEvaluatorFactory(void) : m_cRef(1)
+{
+}
+
+CEvaluatorFactory::~CEvaluatorFactory()
+{
+}
+
+MUX_RESULT CEvaluatorFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CEvaluatorFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CEvaluatorFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CEvaluatorFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
+{
+    UNUSED_PARAMETER(pUnknownOuter);
+
+    CEvaluator *pEvaluator = nullptr;
+    try
+    {
+        pEvaluator = new CEvaluator;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pEvaluator)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pEvaluator->QueryInterface(iid, ppv);
+    pEvaluator->Release();
+    return mr;
+}
+
+MUX_RESULT CEvaluatorFactory::LockServer(bool bLock)
 {
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;

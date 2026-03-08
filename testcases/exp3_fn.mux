@@ -86,17 +86,17 @@
   }
 -
 #
-# Test 6: meval() hits the evaluator wall.
+# Test 6: meval() evaluates softcode via mux_IEvaluator.
 #
 &tr.tc006 test_exp3_fn=
   @if strmatch(
-    setr(0,meval(#1,2+2)),
-    #-1 NO EVALUATOR INTERFACE)=
+    setr(0,meval(#1,add(2,2))),
+    4)=
   {
-    @log smoke=TC006: meval evaluator wall. Succeeded.
+    @log smoke=TC006: meval evaluates expression. Succeeded.
   },
   {
-    @log smoke=TC006: meval evaluator wall. Failed (%q0).
+    @log smoke=TC006: meval evaluates expression. Failed (%q0).
   }
 -
 #
@@ -139,6 +139,23 @@
   },
   {
     @log smoke=TC009: mget invalid dbref. Failed (%q0).
+  }
+-
+#
+# Test 10: meval() actually evaluates — store an expression via mset,
+# retrieve it unevaluated via mget, pass to meval.  Proves the
+# evaluator does real work, not just passthrough.
+#
+&tr.tc010 test_exp3_fn=
+  think [mset(#0/EXP3_EXPR,name(#0))];
+  @if strmatch(
+    setr(0,meval(#0,[mget(#0/EXP3_EXPR)])),
+    Limbo)=
+  {
+    @log smoke=TC010: meval roundtrip evaluation. Succeeded.
+  },
+  {
+    @log smoke=TC010: meval roundtrip evaluation. Failed (%q0).
   };
   @trig me/tr.done
 -

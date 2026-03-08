@@ -24,7 +24,7 @@
  *                      RESOLVED: Uses mux_IObjectInfo::GetLocation().
  *
  *   meval(obj, expr) — Evaluate a softcode expression as obj.
- *                      WALL: No evaluator interface.
+ *                      RESOLVED: Uses mux_IEvaluator::Eval().
  *
  *   mtype(obj)       — Return the type of an object (ROOM, PLAYER, etc.).
  *                      RESOLVED: Uses mux_IObjectInfo::GetType().
@@ -46,10 +46,9 @@
  *    provides Notify and RawNotify.
  *    Implemented in modules.cpp as CNotify.
  *
- * 4. EVALUATOR — mux_exec() is deeply embedded in netmux (accesses
- *    mudstate, db[], the parse cache, etc.).  A module cannot evaluate
- *    softcode.  Needs: mux_IEvaluator with Eval(dbref executor,
- *    const UTF8 *expr, UTF8 *result, size_t resultSize).
+ * 4. EVALUATOR — RESOLVED.  mux_IEvaluator (CID_Evaluator) provides
+ *    Eval(executor, caller, enactor, expr, result, ...).  Wraps
+ *    mux_exec() in modules.cpp as CEvaluator.
  *
  * 5. ATTRIBUTE WRITE — RESOLVED.  mux_IAttributeAccess::SetAttribute()
  *    wraps atr_add() with bCanSetAttr() permission checks.
@@ -247,7 +246,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 
 CExp3::CExp3(void) : m_cRef(1), m_pILog(nullptr), m_pIFunctionsControl(nullptr),
     m_pINotify(nullptr), m_pIObjectInfo(nullptr),
-    m_pIAttributeAccess(nullptr)
+    m_pIAttributeAccess(nullptr), m_pIEvaluator(nullptr)
 {
     g_cComponents++;
 }
@@ -312,6 +311,10 @@ MUX_RESULT CExp3::FinalConstruct(void)
                        IID_IAttributeAccess,
                        reinterpret_cast<void **>(&m_pIAttributeAccess));
 
+    mux_CreateInstance(CID_Evaluator, nullptr, UseSameProcess,
+                       IID_IEvaluator,
+                       reinterpret_cast<void **>(&m_pIEvaluator));
+
     return mr;
 }
 
@@ -352,6 +355,12 @@ CExp3::~CExp3()
     {
         m_pIAttributeAccess->Release();
         m_pIAttributeAccess = nullptr;
+    }
+
+    if (nullptr != m_pIEvaluator)
+    {
+        m_pIEvaluator->Release();
+        m_pIEvaluator = nullptr;
     }
 
     g_cComponents--;
@@ -599,11 +608,31 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
 
     case 5: // MEVAL(obj, expr)
         {
-            // WALL 4: Cannot call mux_exec() — deeply embedded in netmux.
-            //         Accesses mudstate, db[], parse cache, register stacks,
-            //         iteration context, etc.  This is the hardest wall.
-            //
-            safe_copy_str(T("#-1 NO EVALUATOR INTERFACE"), buff, bufc);
+            int obj = parse_dbref(fargs[0]);
+            if (obj < 0)
+            {
+                safe_copy_str(T("#-1 INVALID DBREF"), buff, bufc);
+            }
+            else if (nullptr == m_pIEvaluator)
+            {
+                safe_copy_str(T("#-1 NO EVALUATOR INTERFACE"), buff, bufc);
+            }
+            else
+            {
+                UTF8 result[LBUF_SIZE];
+                size_t nLen;
+                MUX_RESULT mr = m_pIEvaluator->Eval(
+                    obj, executor, executor,
+                    fargs[1], result, sizeof(result), &nLen);
+                if (MUX_SUCCEEDED(mr))
+                {
+                    safe_copy_str(result, buff, bufc);
+                }
+                else
+                {
+                    safe_copy_str(T("#-1 EVAL FAILED"), buff, bufc);
+                }
+            }
         }
         break;
 
