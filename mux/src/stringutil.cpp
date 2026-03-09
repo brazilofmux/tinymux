@@ -11,6 +11,26 @@
 bool g_no_flash = false;
 bool g_space_compress = true;
 
+UTF8 *DCL_CDECL tprintf(const UTF8 *fmt,...)
+{
+    static UTF8 buff[LBUF_SIZE];
+    va_list ap;
+    va_start(ap, fmt);
+    mux_vsnprintf(buff, LBUF_SIZE, fmt, ap);
+    va_end(ap);
+    return buff;
+}
+
+void DCL_CDECL safe_tprintf_str(UTF8 *str, UTF8 **bp, const UTF8 *fmt,...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    size_t nAvailable = LBUF_SIZE - (*bp - str);
+    size_t len = mux_vsnprintf(*bp, static_cast<int>(nAvailable), fmt, ap);
+    va_end(ap);
+    *bp += len;
+}
+
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
 using namespace std;

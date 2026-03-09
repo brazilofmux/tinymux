@@ -2407,6 +2407,11 @@ void strip_fancy_quotes(UTF8 *str);
 UTF8 *find_pattern_delimiter(UTF8 *str);
 void unescape_pattern_colons(UTF8 *str);
 
+// Formatted string utilities.
+//
+DCL_EXPORT UTF8 * DCL_CDECL tprintf(const UTF8 *, ...);
+void DCL_CDECL safe_tprintf_str(UTF8 *, UTF8 **, const UTF8 *, ...);
+
 // Server-layer globals mirrored from mudconf/mudstate so that
 // stringutil.cpp can be compiled with core.h alone.
 //

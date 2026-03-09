@@ -37,25 +37,6 @@ static inline const UTF8 *utf8_advance_predicate(const UTF8 *p)
 
 #include "ganl_adapter.h"
 
-UTF8 *DCL_CDECL tprintf(const UTF8 *fmt,...)
-{
-    static UTF8 buff[LBUF_SIZE];
-    va_list ap;
-    va_start(ap, fmt);
-    mux_vsnprintf(buff, LBUF_SIZE, fmt, ap);
-    va_end(ap);
-    return buff;
-}
-
-void DCL_CDECL safe_tprintf_str(UTF8 *str, UTF8 **bp, const UTF8 *fmt,...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    size_t nAvailable = LBUF_SIZE - (*bp - str);
-    size_t len = mux_vsnprintf(*bp, static_cast<int>(nAvailable), fmt, ap);
-    va_end(ap);
-    *bp += len;
-}
 
 /* ---------------------------------------------------------------------------
  * insert_first, remove_first: Insert or remove objects from lists.

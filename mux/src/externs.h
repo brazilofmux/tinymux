@@ -690,8 +690,6 @@ void pcache_reload(dbref);
 DCL_EXPORT void pcache_init(void);
 
 /* From predicates.cpp */
-DCL_EXPORT UTF8 * DCL_CDECL tprintf(const UTF8 *, ...);
-void DCL_CDECL safe_tprintf_str(UTF8 *, UTF8 **, const UTF8 *, ...);
 dbref insert_first(dbref, dbref);
 dbref remove_first(dbref, dbref);
 dbref reverse_list(dbref);
