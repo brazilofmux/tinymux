@@ -10,7 +10,7 @@
 
 // Zenty does OOP.
 //
-class CGuests
+class DCL_EXPORT CGuests
 {
 private:
     static UTF8 name[50];
@@ -34,7 +34,7 @@ public:
     void  CleanUp(void);
 };
 
-extern CGuests Guest;
+extern DCL_EXPORT CGuests Guest;
 
 #define GUEST_PASSWORD "Guest"
 

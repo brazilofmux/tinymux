@@ -47,8 +47,6 @@ extern const UTF8* disc_reasons[];
 extern const UTF8* connect_fail;
 void site_mon_send(const SOCKET port, const UTF8* address, DESC* d, const UTF8* msg);
 void announce_connect(const dbref player, DESC* d);
-UTF8* ConvertCRLFtoSpace(const UTF8* pString);
-
 namespace
 {
     struct RemoteEndpoint

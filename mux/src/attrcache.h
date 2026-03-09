@@ -21,11 +21,11 @@ typedef struct Aname
 const UTF8 *cache_get(Aname *nam, size_t *pLen, dbref *owner, int *flags);
 bool cache_put(Aname *nam, const UTF8 *obj, size_t len, dbref owner, int flags);
 int cache_init(const UTF8 *indb);
-void cache_close(void);
+DCL_EXPORT void cache_close(void);
 void cache_tick(void);
-bool cache_sync(void);
+DCL_EXPORT bool cache_sync(void);
 bool cache_del(Aname *nam);
-void cache_preload(dbref obj);
+DCL_EXPORT void cache_preload(dbref obj);
 void list_cache_stats(dbref player);
 
 #endif // !ATTRCACHE_H

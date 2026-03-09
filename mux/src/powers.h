@@ -69,7 +69,7 @@ typedef struct powerset
     POWER   word2;
 } POWERSET;
 
-extern void init_powertab(void);
+extern DCL_EXPORT void init_powertab(void);
 extern void display_powertab(dbref);
 extern void power_set(dbref, dbref, UTF8 *, int);
 extern UTF8 *powers_list(dbref executor, dbref thing);

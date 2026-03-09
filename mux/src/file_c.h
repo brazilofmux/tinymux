@@ -25,10 +25,10 @@
 
 /* File cache routines */
 
-extern void fcache_rawdump(SOCKET fd, int num);
-extern void fcache_dump(DESC *d, int num);
+extern DCL_EXPORT void fcache_rawdump(SOCKET fd, int num);
+extern DCL_EXPORT void fcache_dump(DESC *d, int num);
 extern void fcache_send(dbref, int);
 extern void fcache_load(dbref);
-extern void fcache_init(void);
+extern DCL_EXPORT void fcache_init(void);
 
 #endif // !FILE_C

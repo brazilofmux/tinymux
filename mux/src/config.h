@@ -354,7 +354,7 @@ typedef char  boolexp_type;
 #endif
 
 #define DCL_CDECL
-#define DCL_EXPORT
+#define DCL_EXPORT __attribute__((visibility("default")))
 #define DCL_API
 
 #ifndef O_BINARY
@@ -417,10 +417,10 @@ typedef uint32_t UTF32;
 #define LARGEST_INT_LTE_NEG_QUOTIENT
 #endif // !SMALLEST_INT_GTE_NEG_QUOTIENT
 
-extern bool AssertionFailed(const UTF8 *SourceFile, unsigned int LineNo);
+extern DCL_EXPORT bool AssertionFailed(const UTF8 *SourceFile, unsigned int LineNo);
 #define mux_assert(exp) (void)( (exp) || (AssertionFailed(reinterpret_cast<const UTF8 *>(__FILE__), __LINE__), 0) )
 
-extern void OutOfMemory(const UTF8 *SourceFile, unsigned int LineNo);
+extern DCL_EXPORT void OutOfMemory(const UTF8 *SourceFile, unsigned int LineNo);
 #define ISOUTOFMEMORY(exp) {if (!(exp)) { OutOfMemory(reinterpret_cast<const UTF8 *>(__FILE__), __LINE__); }}
 
 #define MEMALLOC(n)          malloc((n))

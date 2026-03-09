@@ -286,7 +286,7 @@ struct confdata
     ArtRuleset* art_rules;      /* Rulesets for defining exceptions. */
 };
 
-extern CONFDATA mudconf;
+extern DCL_EXPORT CONFDATA mudconf;
 
 // Subnets
 //
@@ -598,7 +598,7 @@ struct statedata
     CBitField bfTraverse;       // Used for LROOMS.
 };
 
-extern STATEDATA mudstate;
+extern DCL_EXPORT STATEDATA mudstate;
 
 /* Configuration parameter handler definition */
 

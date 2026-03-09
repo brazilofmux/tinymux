@@ -243,7 +243,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleInfo(int iModule, MUX_MODULE_
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_ModuleMaintenance(void);
 
 #define DEFINE_FACTORY(x)                                                                      \
-class x : public mux_IClassFactory                                                             \
+class DCL_EXPORT x : public mux_IClassFactory                                                  \
 {                                                                                              \
 public:                                                                                        \
     virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);                                \

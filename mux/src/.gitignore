@@ -1,6 +1,7 @@
 # Object files
 *.o
 *.lo
+*.eo
 *.so
 *.a
 

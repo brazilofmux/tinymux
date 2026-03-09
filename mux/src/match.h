@@ -53,7 +53,7 @@ extern dbref noisy_match_result(void);
 extern void save_match_state(MSTATE *);
 extern void restore_match_state(MSTATE *);
 extern void match_zone_exit(void);
-extern dbref match_thing(dbref player, const UTF8 *name);
+extern DCL_EXPORT dbref match_thing(dbref player, const UTF8 *name);
 extern dbref match_thing_quiet(dbref player, const UTF8 *name);
 extern dbref match_thing_quiet(dbref player, const UTF8 *name, size_t n);
 extern void safe_match_result(dbref it, UTF8 *buff, UTF8 **bufc);

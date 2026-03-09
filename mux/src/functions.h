@@ -42,7 +42,7 @@ typedef struct ufun {
 
 #define MAX_UFUN_NAME_LEN (SBUF_SIZE-1)
 
-void init_functab(void);
+DCL_EXPORT void init_functab(void);
 void list_functable(dbref);
 extern UFUN *ufun_head;
 

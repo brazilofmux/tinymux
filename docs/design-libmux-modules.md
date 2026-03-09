@@ -1057,24 +1057,42 @@ With Stages 1–3 complete, the actual mitosis is mechanical:
 
 1. **Build system:** Add engine.so target to Makefile.am.  Engine files
    compile as .lo with -fPIC.  engine.so links against libmux.so.
-   netmux links against libmux.so only, loads engine.so via COM.
+   netmux compiled with -fPIC/-pie (eliminates copy relocations for
+   C++ globals with constructors like mudstate's unordered_map members).
+   DONE — commit 3fefcf36.
 
 2. **Module front door:** engine.so exports mux_Register/mux_Unregister.
    Registers CID_GameEngine.  netmux calls mux_CreateInstance(CID_GameEngine)
-   to get mux_IGameEngine.
+   to get mux_IGameEngine.  DONE.
 
 3. **Driver-provided interfaces.**  netmux implements and registers COM
    interfaces that the engine acquires during Initialize:
    - mux_IConnectionManager — send output, query sessions, boot connections
    - mux_ILog — already exists
    - mux_IServerEventsControl — already exists
+   DONE — conn_bridge.cpp delegates all 41 accessor functions through COM.
+   conn_bridge_init() called from driver.cpp after CGameEngine creation.
 
 4. **Existing modules unchanged.**  comsys_mod.so, mail_mod.so, exp3.so
    continue to link against libmux.so and acquire engine-side interfaces
    (INotify, IObjectInfo, etc.) through COM.  The fact that those interfaces
    now live in engine.so instead of netmux is invisible to them.
 
-5. **Smoke tests pass.**  The same 411 tests verify identical behavior.
+5. **Smoke tests pass.**  411/411 tests pass with three-binary split.
+
+6. **Symbol visibility (next).**  Remove -Bsymbolic from engine.so link
+   line.  Instead, compile engine.so with -fvisibility=hidden (the Windows
+   DLL model: hidden unless explicitly exported).  Only the COM front-door
+   functions (mux_CanUnloadNow, mux_Register, mux_Unregister) are marked
+   with DCL_EXPORT, which on Unix expands to
+   __attribute__((visibility("default"))).  This eliminates the 41 duplicate
+   symbols between conn_bridge.cpp and net.cpp without relying on
+   -Bsymbolic's implicit local binding.  Engine.so becomes a proper COM
+   server whose only public surface is the COM entry points.
+
+   The same pattern can later be applied to libmux.so: hidden by default,
+   with only the mux_CreateInstance/mux_RegisterClassObjects/etc. API
+   functions exported.
 
 ### Future: JIT
 

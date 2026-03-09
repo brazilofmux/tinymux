@@ -28,7 +28,7 @@ typedef unsigned char UTF8;
 constexpr dbref NOTHING = -1;
 #endif
 
-class CSQLiteDB
+class DCL_EXPORT CSQLiteDB
 {
 public:
     CSQLiteDB();

@@ -61,26 +61,28 @@ all-local: libmux.so engine.so
 
 LIBMUX_OBJS = $(LIBMUX_SRC:.cpp=.lo)
 
-# Compile each shared-library source with -fPIC.
-# .lo suffix is used for both libmux and engine PIC objects.
+# Compile libmux sources with -fPIC (default visibility).
 %.lo: %.cpp
 	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -c -o $@ $<
-
-# Special rule for sqlite3.c (C, not C++)
-sqlite/sqlite3.lo: sqlite/sqlite3.c
-	$(CC) $(CFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -c -o $@ $<
 
 libmux.so: $(LIBMUX_OBJS)
 	$(CXX) $(CXXFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $(LIBMUX_OBJS) $(LIBS) $(DL_LIB) $(SQL_LIBS)
 
 # engine.so — game logic shared library.
-# -Bsymbolic ensures internal references (e.g., conn_bridge.cpp's
-# send_text_to_player) bind to engine.so's own definitions, not the
-# dynamic symbol table.  Links against libmux.so only.
-ENGINE_CXX_OBJS = $(ENGINE_CXX_SRC:.cpp=.lo)
+# -fvisibility=hidden: all symbols hidden unless marked DCL_EXPORT.
+# Only COM front-door functions are exported (mux_Register, etc.).
+# Engine uses .eo suffix to distinguish from libmux's .lo objects.
+ENGINE_CXX_OBJS = $(ENGINE_CXX_SRC:.cpp=.eo)
 
-engine.so: $(ENGINE_CXX_OBJS) sqlite/sqlite3.lo libmux.so
-	$(CXX) $(CXXFLAGS) $(DYNAMICLIB_CXXFLAGS) -Wl,-Bsymbolic -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(abs_builddir) -o $@ $(ENGINE_CXX_OBJS) sqlite/sqlite3.lo libmux.so $(PCRE2_LIBS)
+%.eo: %.cpp
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -fvisibility=hidden -c -o $@ $<
+
+# Special rule for sqlite3.c (C, not C++)
+sqlite/sqlite3.eo: sqlite/sqlite3.c
+	$(CC) $(CFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -fvisibility=hidden -c -o $@ $<
+
+engine.so: $(ENGINE_CXX_OBJS) sqlite/sqlite3.eo libmux.so
+	$(CXX) $(CXXFLAGS) $(DYNAMICLIB_CXXFLAGS) -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(abs_builddir) -o $@ $(ENGINE_CXX_OBJS) sqlite/sqlite3.eo libmux.so $(PCRE2_LIBS)
 
 # netmux driver program — links against libmux.so and engine.so.
 # RPATH: $ORIGIN finds .so files next to the binary (installed or symlinked);
@@ -129,7 +131,7 @@ ast_scan.cpp: ast_scan.rl ast.h
 BUILT_SOURCES = ast_scan.cpp
 
 # Clean up additional files
-CLEANFILES = libmux.so engine.so *.lo sqlite/sqlite3.lo
+CLEANFILES = libmux.so engine.so *.lo *.eo sqlite/sqlite3.eo
 
 # Additional distributions
 EXTRA_DIST = buildnum.sh ast_scan.rl
