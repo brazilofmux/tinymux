@@ -241,6 +241,8 @@ extern DESC *find_desc_by_socket(SOCKET s);
 extern DESC *find_desc_by_player(dbref target);
 extern int get_total_connections(void);
 extern void for_each_connected_player(void (*callback)(dbref player, void *context), void *context);
+extern void set_player_encoding(dbref target, int encoding);
+extern void reset_player_encoding(dbref target);
 extern const UTF8 *time_format_1(int Seconds, size_t maxWidth);
 extern const UTF8 *time_format_2(int Seconds);
 extern void update_quotas(CLinearTimeAbsolute& tLast, const CLinearTimeAbsolute& tCurrent);

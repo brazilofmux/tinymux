@@ -310,38 +310,42 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
     }
 }
 
+struct wall_broadcast_context
+{
+    int target;
+    dbref player;
+    UTF8 *message;
+};
+
+static void wall_broadcast_callback(dbref connected_player, void *ctx)
+{
+    wall_broadcast_context *wbc = static_cast<wall_broadcast_context *>(ctx);
+    switch (wbc->target)
+    {
+    case SHOUT_WIZARD:
+        if (Wizard(connected_player))
+        {
+            notify_with_cause(connected_player, wbc->player, wbc->message);
+        }
+        break;
+
+    case SHOUT_ADMIN:
+        if (WizRoy(connected_player))
+        {
+            notify_with_cause(connected_player, wbc->player, wbc->message);
+        }
+        break;
+
+    default:
+        notify_with_cause(connected_player, wbc->player, wbc->message);
+        break;
+    }
+}
+
 static void wall_broadcast(int target, dbref player, UTF8 *message)
 {
-    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
-    {
-        DESC* d = *it;
-        if (d->flags & DS_CONNECTED)
-        {
-            switch (target)
-            {
-            case SHOUT_WIZARD:
-
-                if (Wizard(d->player))
-                {
-                    notify_with_cause(d->player, player, message);
-                }
-                break;
-
-            case SHOUT_ADMIN:
-
-                if (WizRoy(d->player))
-                {
-                    notify_with_cause(d->player, player, message);
-                }
-                break;
-
-            default:
-
-                notify_with_cause(d->player, player, message);
-                break;
-            }
-        }
-    }
+    wall_broadcast_context ctx = { target, player, message };
+    for_each_connected_player(wall_broadcast_callback, &ctx);
 }
 
 static const UTF8 *announce_msg = T("Announcement: ");

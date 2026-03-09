@@ -262,9 +262,6 @@ static bool fh_staff
 }
 
 
-/* External reference to our telnet routine to resynch charset */
-extern void send_charset_request(DESC* d);
-
 /*
  * ---------------------------------------------------------------------------
  * * fh_unicode: only players may set or clear this bit.
@@ -279,25 +276,13 @@ static bool fh_unicode(dbref target, dbref player, FLAG flag, int fflags, bool r
 
     if (fh_any(target, player, flag, fflags, reset))
     {
-        const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
-        for (auto it = range.first; it != range.second; ++it)
+        if (!reset)
         {
-            DESC* dtemp = it->second;
-            if (!reset)
-            {
-                if (CHARSET_UTF8 != dtemp->encoding)
-                {
-                    // Since we are changing to the UTF-8 character set, the
-                    // printable state machine needs to be initialized.
-                    //
-                    dtemp->encoding = CHARSET_UTF8;
-                    dtemp->raw_codepoint_state = CL_PRINT_START_STATE;
-                }
-            }
-            else
-            {
-                dtemp->encoding = dtemp->negotiated_encoding;
-            }
+            set_player_encoding(target, CHARSET_UTF8);
+        }
+        else
+        {
+            reset_player_encoding(target);
         }
         return true;
     }
@@ -319,14 +304,13 @@ static bool fh_ascii(const dbref target, const dbref player, FLAG flag, int ffla
 
     if (result)
     {
-        const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
-        for (auto it = range.first; it != range.second; ++it)
+        if (!reset)
         {
-            DESC* dtemp = it->second;
-            if (!reset)
-                dtemp->encoding = CHARSET_ASCII;
-            else
-                dtemp->encoding = dtemp->negotiated_encoding;
+            set_player_encoding(target, CHARSET_ASCII);
+        }
+        else
+        {
+            reset_player_encoding(target);
         }
     }
 

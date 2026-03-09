@@ -1479,6 +1479,42 @@ void for_each_connected_player(void (*callback)(dbref player, void *context), vo
     }
 }
 
+// ---------------------------------------------------------------------------
+// set_player_encoding: Force a character encoding on all of a player's
+// connections.  Called when the engine sets the UNICODE or ASCII flag.
+//
+void set_player_encoding(dbref target, int encoding)
+{
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        DESC* d = it->second;
+        if (encoding != d->encoding)
+        {
+            d->encoding = encoding;
+            if (CHARSET_UTF8 == encoding)
+            {
+                d->raw_codepoint_state = CL_PRINT_START_STATE;
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// reset_player_encoding: Reset all of a player's connections to their
+// negotiated encoding.  Called when the engine clears the UNICODE or ASCII
+// flag.
+//
+void reset_player_encoding(dbref target)
+{
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        DESC* d = it->second;
+        d->encoding = d->negotiated_encoding;
+    }
+}
+
 // A NOTE about AUTODARK: It only works for wizard players. Wizard players
 // are automatically set DARK if they are not already set DARK and they have
 // no session which is unidle.
