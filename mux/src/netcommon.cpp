@@ -1421,6 +1421,64 @@ int fetch_connect(dbref target)
     }
 }
 
+// ---------------------------------------------------------------------------
+// find_desc_by_socket: Return connected descriptor matching a socket number,
+// or nullptr if not found.  Used by softcode functions that accept a port
+// number argument (height, width, doing, idle, etc.).
+//
+DESC *find_desc_by_socket(SOCKET s)
+{
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
+    {
+        DESC* d = *it;
+        if ((d->flags & DS_CONNECTED) && d->socket == s)
+        {
+            return d;
+        }
+    }
+    return nullptr;
+}
+
+// ---------------------------------------------------------------------------
+// find_desc_by_player: Return first connected descriptor for a player,
+// or nullptr if not connected.
+//
+DESC *find_desc_by_player(dbref target)
+{
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
+    if (range.first != range.second)
+    {
+        return range.first->second;
+    }
+    return nullptr;
+}
+
+// ---------------------------------------------------------------------------
+// get_total_connections: Return the total number of descriptor entries.
+// Used by @list stats.
+//
+int get_total_connections(void)
+{
+    return static_cast<int>(mudstate.dbref_to_descriptors_map.size());
+}
+
+// ---------------------------------------------------------------------------
+// for_each_connected_player: Call a function for each connected player dbref.
+// Used by wall_broadcast, keepalive, and similar operations that need to
+// iterate all connected sessions without touching DESC internals.
+//
+void for_each_connected_player(void (*callback)(dbref player, void *context), void *context)
+{
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
+    {
+        DESC* d = *it;
+        if (d->flags & DS_CONNECTED)
+        {
+            callback(d->player, context);
+        }
+    }
+}
+
 // A NOTE about AUTODARK: It only works for wizard players. Wizard players
 // are automatically set DARK if they are not already set DARK and they have
 // no session which is unidle.

@@ -3860,7 +3860,7 @@ static void list_hashstats(const dbref player)
     list_hashstat_abbreviated(player, T("Attr Names"), static_cast<int>(mudstate.builtin_attribute_names.size()));
     list_hashstat_abbreviated(player, T("Vattr Names"), static_cast<int>(mudstate.vattr_name_map.size()));
     list_hashstat_abbreviated(player, T("Player Names"), static_cast<int>(mudstate.player_htab.size()));
-    list_hashstat_abbreviated(player, T("Net Descr."), static_cast<int>(mudstate.dbref_to_descriptors_map.size()));;
+    list_hashstat_abbreviated(player, T("Net Descr."), get_total_connections());
     list_hashstat_abbreviated(player, T("Fwd. lists"), static_cast<int>(mudstate.forward_lists.size()));
     list_hashstat_abbreviated(player, T("Excl. $-cmds"), static_cast<int>(mudstate.parent_htab.size()));
     list_hashstat_abbreviated(player, T("Mail Messages"), static_cast<int>(mudstate.mail_htab.size()));
