@@ -27,6 +27,7 @@ static MUX_CLASS_INFO netmux_classes[] =
     { CID_MailDelivery       },
     { CID_HelpSystem         },
     { CID_GameEngine         },
+    { CID_PlayerSession      },
     { CID_ConnectionManager  }
 };
 #define NUM_CLASSES (sizeof(netmux_classes)/sizeof(netmux_classes[0]))
@@ -294,6 +295,26 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
 
         mr = pGameEngineFactory->QueryInterface(iid, ppv);
         pGameEngineFactory->Release();
+    }
+    else if (CID_PlayerSession == cid)
+    {
+        CPlayerSessionFactory *pFactory = nullptr;
+        try
+        {
+            pFactory = new CPlayerSessionFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == pFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pFactory->QueryInterface(iid, ppv);
+        pFactory->Release();
     }
     else if (CID_ConnectionManager == cid)
     {
@@ -2890,6 +2911,19 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
     fcache_init();
     helpindex_init();
 
+    // Create the player session interface for driver use.
+    //
+    mudstate.pIPlayerSession = nullptr;
+    mr = mux_CreateInstance(CID_PlayerSession, nullptr, UseSameProcess,
+                            IID_IPlayerSession,
+                            reinterpret_cast<void **>(&mudstate.pIPlayerSession));
+    if (MUX_FAILED(mr))
+    {
+        STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+        log_printf(T("Failed to create PlayerSession interface (%d)."), mr);
+        ENDLOG;
+    }
+
     // Open or create the SQLite database.
     //
     if (bMinDB)
@@ -3192,6 +3226,658 @@ MUX_RESULT CGameEngineFactory::CreateInstance(mux_IUnknown *pUnknownOuter,
 }
 
 MUX_RESULT CGameEngineFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CPlayerSession — engine-side implementation of mux_IPlayerSession.
+// Handles player authentication, creation, and connect/disconnect lifecycle.
+// The driver calls these methods; all player/game-state operations are here.
+// ---------------------------------------------------------------------------
+
+class CPlayerSession : public mux_IPlayerSession
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+
+    virtual MUX_RESULT ConnectPlayer(const UTF8 *name, const UTF8 *password,
+        const UTF8 *host, const UTF8 *username, const UTF8 *ipaddr,
+        dbref *pPlayer);
+    virtual MUX_RESULT CreatePlayer(const UTF8 *name, const UTF8 *password,
+        dbref creator, bool isRobot, dbref *pPlayer,
+        const UTF8 **ppMsg);
+    virtual MUX_RESULT AddToPublicChannel(dbref player);
+    virtual MUX_RESULT AddToPlayerChannels(dbref player);
+    virtual MUX_RESULT AnnounceConnect(dbref player, int numConnections,
+        bool isPueblo, bool isSuspect, const UTF8 *host,
+        const UTF8 *username, const UTF8 *ipaddr, int *pTimeout);
+    virtual MUX_RESULT AnnounceDisconnect(dbref player, int numConnections,
+        bool isSuspect, bool wasAutoDark, const UTF8 *reason);
+
+    CPlayerSession(void);
+    virtual ~CPlayerSession();
+
+private:
+    uint32_t m_cRef;
+};
+
+CPlayerSession::CPlayerSession(void) : m_cRef(1)
+{
+}
+
+CPlayerSession::~CPlayerSession()
+{
+}
+
+MUX_RESULT CPlayerSession::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IPlayerSession *>(this);
+    }
+    else if (IID_IPlayerSession == iid)
+    {
+        *ppv = static_cast<mux_IPlayerSession *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CPlayerSession::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CPlayerSession::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CPlayerSession::ConnectPlayer(const UTF8 *name,
+    const UTF8 *password, const UTF8 *host, const UTF8 *username,
+    const UTF8 *ipaddr, dbref *pPlayer)
+{
+    if (nullptr == pPlayer)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pPlayer = connect_player(const_cast<UTF8 *>(name),
+        const_cast<UTF8 *>(password), const_cast<UTF8 *>(host),
+        const_cast<UTF8 *>(username), const_cast<UTF8 *>(ipaddr));
+    return (*pPlayer == NOTHING) ? MUX_E_NOTFOUND : MUX_S_OK;
+}
+
+MUX_RESULT CPlayerSession::CreatePlayer(const UTF8 *name,
+    const UTF8 *password, dbref creator, bool isRobot,
+    dbref *pPlayer, const UTF8 **ppMsg)
+{
+    if (nullptr == pPlayer)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pPlayer = create_player(name, password, creator, isRobot, ppMsg);
+    return (*pPlayer == NOTHING) ? MUX_E_FAIL : MUX_S_OK;
+}
+
+MUX_RESULT CPlayerSession::AddToPublicChannel(dbref player)
+{
+    ::AddToPublicChannel(player);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CPlayerSession::AddToPlayerChannels(dbref player)
+{
+    ::AddToPlayerChannels(player);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CPlayerSession::AnnounceConnect(dbref player, int numConnections,
+    bool isPueblo, bool isSuspect, const UTF8 *host,
+    const UTF8 *username, const UTF8 *ipaddr, int *pTimeout)
+{
+    // Preload built-in attributes for the player and their location.
+    //
+    cache_preload(player);
+    const dbref ploc = Location(player);
+    if (Good_obj(ploc))
+    {
+        cache_preload(ploc);
+    }
+
+    // Track record player count.
+    //
+    int count = numConnections;
+    if (mudstate.record_players < count)
+    {
+        mudstate.record_players = count;
+        g_pSQLiteBackend->GetDB().PutMeta("record_players",
+            mudstate.record_players);
+    }
+
+    // Read A_TIMEOUT and return it to the driver.
+    //
+    if (nullptr != pTimeout)
+    {
+        UTF8 *buf = alloc_lbuf("AnnounceConnect.timeout");
+        dbref aowner;
+        int aflags;
+        size_t nLen;
+        atr_pget_str_LEN(buf, player, A_TIMEOUT, &aowner, &aflags, &nLen);
+        if (nLen)
+        {
+            *pTimeout = mux_atol(buf);
+            if (*pTimeout <= 0)
+            {
+                *pTimeout = mudconf.idle_timeout;
+            }
+        }
+        else
+        {
+            *pTimeout = mudconf.idle_timeout;
+        }
+        free_lbuf(buf);
+    }
+
+    // Set Connected flag.  Set Html if Pueblo client.
+    //
+    const dbref loc = Location(player);
+    s_Connected(player);
+
+    if (isPueblo)
+    {
+        s_Html(player);
+    }
+
+    // MOTD messages.
+    //
+    if ('\0' != mudconf.motd_msg[0])
+    {
+        raw_notify(player, tprintf(T("\n%sMOTD:%s %s\n"), COLOR_INTENSE,
+                    COLOR_RESET, mudconf.motd_msg));
+    }
+
+    if (Wizard(player))
+    {
+        if ('\0' != mudconf.wizmotd_msg[0])
+        {
+            raw_notify(player, tprintf(T("%sWIZMOTD:%s %s\n"), COLOR_INTENSE,
+                        COLOR_RESET, mudconf.wizmotd_msg));
+        }
+
+        if (!(mudconf.control_flags & CF_LOGIN))
+        {
+            raw_notify(player, T("*** Logins are disabled."));
+        }
+    }
+
+    // Page lock warning.
+    //
+    {
+        UTF8 *buf = alloc_lbuf("AnnounceConnect.lpage");
+        dbref aowner;
+        int aflags;
+        size_t nLen;
+        atr_get_str_LEN(buf, player, A_LPAGE, &aowner, &aflags, &nLen);
+        if (nLen)
+        {
+            raw_notify(player, T("Your PAGE LOCK is set.  You may be unable to receive some pages."));
+        }
+        free_lbuf(buf);
+    }
+
+    // Check for forced encoding.
+    //
+    if (Unicode(player))
+    {
+        set_player_encoding(player, CHARSET_UTF8);
+    }
+    if (Ascii(player))
+    {
+        set_player_encoding(player, CHARSET_ASCII);
+    }
+
+    // Reset vacation flag.  Clear DARK on guests.
+    //
+    s_Flags(player, FLAG_WORD2, Flags2(player) & ~VACATION);
+    if (Guest(player))
+    {
+        s_Flags(player, FLAG_WORD1, db[player].fs.word[FLAG_WORD1] & ~DARK);
+    }
+
+    // Room and monitor announcements.
+    //
+    const UTF8 *pRoomAnnounceFmt;
+    const UTF8 *pMonitorAnnounceFmt;
+    if (numConnections < 2)
+    {
+        pRoomAnnounceFmt = T("%s has connected.");
+        do_comconnect(player);
+        if (  Hidden(player)
+           && Can_Hide(player))
+        {
+            pMonitorAnnounceFmt = T("GAME: %s has DARK-connected.");
+        }
+        else
+        {
+            pMonitorAnnounceFmt = T("GAME: %s has connected.");
+        }
+        if (  Suspect(player)
+           || isSuspect)
+        {
+            raw_broadcast(WIZARD, T("[Suspect] %s has connected."),
+                Moniker(player));
+        }
+    }
+    else
+    {
+        pRoomAnnounceFmt = T("%s has reconnected.");
+        pMonitorAnnounceFmt = T("GAME: %s has reconnected.");
+        if (  Suspect(player)
+           || isSuspect)
+        {
+            raw_broadcast(WIZARD, T("[Suspect] %s has reconnected."),
+                Moniker(player));
+        }
+    }
+
+    UTF8 *buf = alloc_lbuf("AnnounceConnect.room");
+    mux_sprintf(buf, LBUF_SIZE, pRoomAnnounceFmt, Moniker(player));
+    raw_broadcast(MONITOR, pMonitorAnnounceFmt, Moniker(player));
+
+    int key = MSG_INV;
+    if (  loc != NOTHING
+       && !(  Hidden(player)
+           && Can_Hide(player)))
+    {
+        key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
+    }
+
+    dbref temp = mudstate.curr_enactor;
+    mudstate.curr_enactor = player;
+#ifdef REALITY_LVLS
+    if (NOTHING == loc)
+    {
+        notify_check(player, player, buf, key);
+    }
+    else
+    {
+        notify_except_rlevel(loc, player, player, buf, 0);
+    }
+#else
+    notify_check(player, player, buf, key);
+#endif // REALITY_LVLS
+
+    // ACONNECT triggers: player, master room, zone.
+    //
+    dbref aowner, zone, obj;
+    int aflags;
+    size_t nLen;
+    CLinearTimeAbsolute lta;
+    atr_pget_str_LEN(buf, player, A_ACONNECT, &aowner, &aflags, &nLen);
+    if (nLen)
+    {
+        wait_que(player, player, player, AttrTrace(aflags, 0), false, lta,
+            NOTHING, 0, buf, 0, nullptr, nullptr);
+    }
+    if (mudconf.master_room != NOTHING)
+    {
+        atr_pget_str_LEN(buf, mudconf.master_room, A_ACONNECT, &aowner,
+            &aflags, &nLen);
+        if (nLen)
+        {
+            wait_que(mudconf.master_room, player, player,
+                AttrTrace(aflags, 0), false, lta, NOTHING, 0, buf,
+                0, nullptr, nullptr);
+        }
+        DOLIST(obj, Contents(mudconf.master_room))
+        {
+            atr_pget_str_LEN(buf, obj, A_ACONNECT, &aowner, &aflags, &nLen);
+            if (nLen)
+            {
+                wait_que(obj, player, player, AttrTrace(aflags, 0), false, lta,
+                    NOTHING, 0, buf, 0, nullptr, nullptr);
+            }
+        }
+    }
+
+    // Zone ACONNECT.
+    //
+    if (  mudconf.have_zones
+       && Good_obj(zone = Zone(loc)))
+    {
+        switch (Typeof(zone))
+        {
+        case TYPE_THING:
+            atr_pget_str_LEN(buf, zone, A_ACONNECT, &aowner, &aflags, &nLen);
+            if (nLen)
+            {
+                wait_que(zone, player, player, AttrTrace(aflags, 0), false,
+                    lta, NOTHING, 0, buf, 0, nullptr, nullptr);
+            }
+            break;
+
+        case TYPE_ROOM:
+            DOLIST(obj, Contents(zone))
+            {
+                atr_pget_str_LEN(buf, obj, A_ACONNECT, &aowner, &aflags,
+                    &nLen);
+                if (nLen)
+                {
+                    wait_que(obj, player, player, AttrTrace(aflags, 0), false,
+                        lta, NOTHING, 0, buf, 0, nullptr, nullptr);
+                }
+            }
+            break;
+
+        default:
+            log_printf(T("Invalid zone #%d for %s(#%d) has bad type %d"),
+                zone, PureName(player), player, Typeof(zone));
+        }
+    }
+    free_lbuf(buf);
+
+    // Record login, check mail, show room.
+    //
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetLocal();
+    const UTF8 *time_str = ltaNow.ReturnDateString(7);
+    record_login(player, true, time_str, host, username, ipaddr);
+    check_mail(player, 0, false);
+    look_in(player, Location(player), (LK_SHOWEXIT|LK_OBEYTERSE|LK_SHOWVRML));
+    mudstate.curr_enactor = temp;
+
+    local_connect(player, 0, numConnections);
+
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (nullptr != p)
+    {
+        p->pSink->connect(player, 0, numConnections);
+        p = p->pNext;
+    }
+
+    return MUX_S_OK;
+}
+
+MUX_RESULT CPlayerSession::AnnounceDisconnect(dbref player,
+    int numConnections, bool isSuspect, bool wasAutoDark,
+    const UTF8 *reason)
+{
+    int key;
+    const dbref temp = mudstate.curr_enactor;
+    mudstate.curr_enactor = player;
+    const dbref loc = Location(player);
+
+    if (numConnections < 2)
+    {
+        // Last connection — full disconnect.
+        //
+        if (  Suspect(player)
+           || isSuspect)
+        {
+            raw_broadcast(WIZARD, T("[Suspect] %s has disconnected."),
+                Moniker(player));
+        }
+        UTF8 *buf = alloc_lbuf("AnnounceDisconnect.only");
+
+        mux_sprintf(buf, LBUF_SIZE, T("%s has disconnected."),
+            Moniker(player));
+        key = MSG_INV;
+        if (  loc != NOTHING
+           && !(  Hidden(player)
+               && Can_Hide(player)))
+        {
+            key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
+        }
+#ifdef REALITY_LVLS
+        if (NOTHING == loc)
+        {
+            notify_check(player, player, buf, key);
+        }
+        else
+        {
+            notify_except_rlevel(loc, player, player, buf, 0);
+        }
+#else
+        notify_check(player, player, buf, key);
+#endif // REALITY_LVLS
+
+        do_mail_purge(player);
+
+        raw_broadcast(MONITOR, T("GAME: %s has disconnected. <%s>"),
+            Moniker(player), reason);
+
+        c_Connected(player);
+        do_comdisconnect(player);
+
+        // ADISCONNECT triggers: player, master room, zone.
+        //
+        dbref aowner, zone, obj;
+        int aflags;
+        size_t nLen;
+        CLinearTimeAbsolute lta;
+        atr_pget_str_LEN(buf, player, A_ADISCONNECT, &aowner, &aflags, &nLen);
+        if (nLen)
+        {
+            wait_que(player, player, player, AttrTrace(aflags, 0), false,
+                lta, NOTHING, 0, buf, 1, &reason, nullptr);
+        }
+        if (mudconf.master_room != NOTHING)
+        {
+            atr_pget_str_LEN(buf, mudconf.master_room, A_ADISCONNECT, &aowner,
+                &aflags, &nLen);
+            if (nLen)
+            {
+                wait_que(mudconf.master_room, player, player,
+                    AttrTrace(aflags, 0), false, lta, NOTHING, 0, buf,
+                    0, nullptr, nullptr);
+            }
+            DOLIST(obj, Contents(mudconf.master_room))
+            {
+                atr_pget_str_LEN(buf, obj, A_ADISCONNECT, &aowner, &aflags,
+                    &nLen);
+                if (nLen)
+                {
+                    wait_que(obj, player, player, AttrTrace(aflags, 0), false,
+                        lta, NOTHING, 0, buf, 0, nullptr, nullptr);
+                }
+            }
+        }
+
+        // Zone ADISCONNECT.
+        //
+        if (mudconf.have_zones && Good_obj(zone = Zone(loc)))
+        {
+            switch (Typeof(zone))
+            {
+            case TYPE_THING:
+                atr_pget_str_LEN(buf, zone, A_ADISCONNECT, &aowner, &aflags,
+                    &nLen);
+                if (nLen)
+                {
+                    wait_que(zone, player, player, AttrTrace(aflags, 0),
+                        false, lta, NOTHING, 0, buf, 0, nullptr, nullptr);
+                }
+                break;
+
+            case TYPE_ROOM:
+                DOLIST(obj, Contents(zone))
+                {
+                    atr_pget_str_LEN(buf, obj, A_ADISCONNECT, &aowner, &aflags,
+                        &nLen);
+                    if (nLen)
+                    {
+                        wait_que(obj, player, player, AttrTrace(aflags, 0),
+                            false, lta, NOTHING, 0, buf, 0, nullptr, nullptr);
+                    }
+                }
+                break;
+
+            default:
+                log_printf(T("Invalid zone #%d for %s(#%d) has bad type %d"),
+                    zone, PureName(player), player, Typeof(zone));
+            }
+        }
+        free_lbuf(buf);
+
+        // Clear AUTODARK, darken guests, halt guest queues.
+        //
+        if (wasAutoDark)
+        {
+            s_Flags(player, FLAG_WORD1,
+                db[player].fs.word[FLAG_WORD1] & ~DARK);
+        }
+
+        if (Guest(player))
+        {
+            s_Flags(player, FLAG_WORD1,
+                db[player].fs.word[FLAG_WORD1] | DARK);
+            halt_que(NOTHING, player);
+        }
+    }
+    else
+    {
+        // Partial disconnect — other connections remain.
+        //
+        if (  Suspect(player)
+           || isSuspect)
+        {
+            raw_broadcast(WIZARD,
+                T("[Suspect] %s has partially disconnected."),
+                Moniker(player));
+        }
+        UTF8 *mbuf = alloc_mbuf("AnnounceDisconnect.partial");
+        mux_sprintf(mbuf, MBUF_SIZE, T("%s has partially disconnected."),
+            Moniker(player));
+        key = MSG_INV;
+        if (  loc != NOTHING
+           && !(  Hidden(player)
+               && Can_Hide(player)))
+        {
+            key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
+        }
+#ifdef REALITY_LVLS
+        if (NOTHING == loc)
+        {
+            notify_check(player, player, mbuf, key);
+        }
+        else
+        {
+            notify_except_rlevel(loc, player, player, mbuf, 0);
+        }
+#else
+        notify_check(player, player, mbuf, key);
+#endif // REALITY_LVLS
+        raw_broadcast(MONITOR, T("GAME: %s has partially disconnected."),
+            Moniker(player));
+        free_mbuf(mbuf);
+    }
+
+    mudstate.curr_enactor = temp;
+
+    local_disconnect(player, numConnections);
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (nullptr != p)
+    {
+        p->pSink->disconnect(player, numConnections);
+        p = p->pNext;
+    }
+
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CPlayerSessionFactory
+// ---------------------------------------------------------------------------
+
+CPlayerSessionFactory::CPlayerSessionFactory(void) : m_cRef(1)
+{
+}
+
+CPlayerSessionFactory::~CPlayerSessionFactory()
+{
+}
+
+MUX_RESULT CPlayerSessionFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CPlayerSessionFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CPlayerSessionFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CPlayerSessionFactory::CreateInstance(mux_IUnknown *pUnknownOuter,
+    MUX_IID iid, void **ppv)
+{
+    if (nullptr != pUnknownOuter)
+    {
+        return MUX_E_NOAGGREGATION;
+    }
+
+    CPlayerSession *pPlayerSession = nullptr;
+    try
+    {
+        pPlayerSession = new CPlayerSession;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pPlayerSession)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pPlayerSession->QueryInterface(iid, ppv);
+    pPlayerSession->Release();
+    return mr;
+}
+
+MUX_RESULT CPlayerSessionFactory::LockServer(bool bLock)
 {
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;

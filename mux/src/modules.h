@@ -509,6 +509,62 @@ public:
     virtual MUX_RESULT ShouldShutdown(bool *pbShutdown) = 0;
 };
 
+// Player session — the interface the driver uses for player authentication,
+// creation, and connect/disconnect lifecycle.  The engine implements this;
+// the driver acquires it via mux_CreateInstance(CID_PlayerSession).
+//
+// All methods operate on players (engine domain).  The driver handles
+// networking (DESC binding, socket I/O) and calls these when the network
+// state changes.
+//
+const MUX_CID CID_PlayerSession        = UINT64_C(0x00000002A1B2C3D4);
+const MUX_IID IID_IPlayerSession       = UINT64_C(0x00000002B3C4D5E6);
+
+interface mux_IPlayerSession : public mux_IUnknown
+{
+public:
+    // Authenticate a player by name and password.
+    // Returns the player dbref in *pPlayer, or NOTHING on failure.
+    //
+    virtual MUX_RESULT ConnectPlayer(const UTF8 *name, const UTF8 *password,
+        const UTF8 *host, const UTF8 *username, const UTF8 *ipaddr,
+        dbref *pPlayer) = 0;
+
+    // Create a new player.
+    // Returns the player dbref in *pPlayer, or NOTHING on failure.
+    // On failure, *ppMsg points to a static error message string.
+    //
+    virtual MUX_RESULT CreatePlayer(const UTF8 *name, const UTF8 *password,
+        dbref creator, bool isRobot, dbref *pPlayer,
+        const UTF8 **ppMsg) = 0;
+
+    // Add a newly-created player to the public channel and configured
+    // player channels.
+    //
+    virtual MUX_RESULT AddToPublicChannel(dbref player) = 0;
+    virtual MUX_RESULT AddToPlayerChannels(dbref player) = 0;
+
+    // Engine-side connect announcement: set flags, MOTD, ACONNECT triggers,
+    // record_login, check_mail, look_in, do_comconnect.
+    // The driver has already bound the DESC and passes derived state:
+    //   numConnections: total connections for this player after binding.
+    //   isPueblo:       true if the DESC negotiated Pueblo.
+    //   isSuspect:      true if the connection address is suspect.
+    //   pTimeout:       out — engine reads A_TIMEOUT; driver sets on DESC.
+    //
+    virtual MUX_RESULT AnnounceConnect(dbref player, int numConnections,
+        bool isPueblo, bool isSuspect, const UTF8 *host,
+        const UTF8 *username, const UTF8 *ipaddr, int *pTimeout) = 0;
+
+    // Engine-side disconnect announcement: room/monitor messages,
+    // ADISCONNECT triggers, do_comdisconnect, mail purge, flag cleanup.
+    //   numConnections: total connections BEFORE this one drops.
+    //   wasAutoDark:    true if the DESC had DS_AUTODARK set.
+    //
+    virtual MUX_RESULT AnnounceDisconnect(dbref player, int numConnections,
+        bool isSuspect, bool wasAutoDark, const UTF8 *reason) = 0;
+};
+
 // Connection manager — the interface the engine uses to interact with
 // connections owned by the driver.  The driver implements this; the engine
 // acquires it via mux_CreateInstance(CID_ConnectionManager) during startup.

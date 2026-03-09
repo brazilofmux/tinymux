@@ -373,6 +373,7 @@ void cf_init(void)
     mudstate.pIQueryControl = nullptr;
     mudstate.pIComsysControl = nullptr;
     mudstate.pIMailControl = nullptr;
+    mudstate.pIPlayerSession = nullptr;
 }
 
 // ---------------------------------------------------------------------------

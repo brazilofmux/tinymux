@@ -549,6 +549,7 @@ struct statedata
     mux_IQueryControl *pIQueryControl;
     mux_IComsysControl *pIComsysControl;
     mux_IMailControl *pIMailControl;
+    mux_IPlayerSession *pIPlayerSession;
 
     CLinearTimeAbsolute check_counter;  /* Countdown to next db check */
     CLinearTimeAbsolute cpu_count_from; /* When did we last reset CPU counters? */

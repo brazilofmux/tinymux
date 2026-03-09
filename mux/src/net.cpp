@@ -793,6 +793,17 @@ void announce_connect(const dbref player, DESC *d)
 void announce_disconnect(const dbref player, DESC *d, const UTF8 *reason)
 {
     int num = count_player_descs(player);
+
+    if (nullptr != mudstate.pIPlayerSession)
+    {
+        bool isSusp = mudstate.access_list.isSuspect(&d->address);
+        bool wasAutoDark = (d->flags & DS_AUTODARK) != 0;
+        mudstate.pIPlayerSession->AnnounceDisconnect(player, num,
+            isSusp, wasAutoDark, reason);
+        desc_delhash(d);
+        return;
+    }
+
     int key;
 
     const dbref temp = mudstate.curr_enactor;
@@ -2227,7 +2238,16 @@ static bool check_connect(DESC *d, UTF8 *msg)
 
         UTF8 host_address[MBUF_SIZE];
         d->address.ntop(host_address, sizeof(host_address));
-        player = connect_player(user, password, d->addr, d->username, host_address);
+        if (nullptr != mudstate.pIPlayerSession)
+        {
+            mudstate.pIPlayerSession->ConnectPlayer(user, password,
+                d->addr, d->username, host_address, &player);
+        }
+        else
+        {
+            player = connect_player(user, password, d->addr, d->username,
+                host_address);
+        }
         if (  player == NOTHING
            || (!isGuest && Guest.CheckGuest(player)))
         {
@@ -2339,21 +2359,36 @@ static bool check_connect(DESC *d, UTF8 *msg)
                     fcache_dump(d, FC_WIZMOTD);
                 free_lbuf(buff);
             }
-            announce_connect(player, d);
-
-            int num_con = 0;
-            const auto range2 = mudstate.dbref_to_descriptors_map.equal_range(player);
-            for (auto it = range2.first; it != range2.second; ++it)
+            if (nullptr != mudstate.pIPlayerSession)
             {
-                num_con++;
+                desc_addhash(d);
+                int num_con = count_player_descs(player);
+                bool isPueblo = (d->flags & DS_PUEBLOCLIENT) != 0;
+                bool isSusp = mudstate.access_list.isSuspect(&d->address);
+                int timeout = mudconf.idle_timeout;
+                mudstate.pIPlayerSession->AnnounceConnect(player, num_con,
+                    isPueblo, isSusp, d->addr, d->username, host_address,
+                    &timeout);
+                d->timeout = timeout;
             }
-            local_connect(player, 0, num_con);
-
-            ServerEventsSinkNode *pNode = g_pServerEventsSinkListHead;
-            while (nullptr != pNode)
+            else
             {
-                pNode->pSink->connect(player, 0, num_con);
-                pNode = pNode->pNext;
+                announce_connect(player, d);
+
+                int num_con = 0;
+                const auto range2 = mudstate.dbref_to_descriptors_map.equal_range(player);
+                for (auto it = range2.first; it != range2.second; ++it)
+                {
+                    num_con++;
+                }
+                local_connect(player, 0, num_con);
+
+                ServerEventsSinkNode *pNode = g_pServerEventsSinkListHead;
+                while (nullptr != pNode)
+                {
+                    pNode->pSink->connect(player, 0, num_con);
+                    pNode = pNode->pNext;
+                }
             }
 
             // If stuck in an @prog, show the prompt.
@@ -2423,7 +2458,15 @@ static bool check_connect(DESC *d, UTF8 *msg)
         else
         {
             const UTF8 *pmsg;
-            player = create_player(user, password, NOTHING, false, &pmsg);
+            if (nullptr != mudstate.pIPlayerSession)
+            {
+                mudstate.pIPlayerSession->CreatePlayer(user, password,
+                    NOTHING, false, &player, &pmsg);
+            }
+            else
+            {
+                player = create_player(user, password, NOTHING, false, &pmsg);
+            }
             if (player == NOTHING)
             {
                 queue_write(d, pmsg);
@@ -2437,8 +2480,16 @@ static bool check_connect(DESC *d, UTF8 *msg)
             }
             else
             {
-                AddToPublicChannel(player);
-                AddToPlayerChannels(player);
+                if (nullptr != mudstate.pIPlayerSession)
+                {
+                    mudstate.pIPlayerSession->AddToPublicChannel(player);
+                    mudstate.pIPlayerSession->AddToPlayerChannels(player);
+                }
+                else
+                {
+                    AddToPublicChannel(player);
+                    AddToPlayerChannels(player);
+                }
                 STARTLOG(LOG_LOGIN | LOG_PCREATES, "CON", "CREA");
                 buff = alloc_mbuf("check_conn.LOG.create");
                 mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Created "), d->socket, d->addr);
@@ -2451,17 +2502,34 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 d->connected_at.GetUTC();
                 d->player = player;
                 fcache_dump(d, FC_CREA_NEW);
-                announce_connect(player, d);
 
-                // Since it is on the create call, assume connection count
-                // is 0 and indicate the connect is a new character.
-                //
-                local_connect(player, 1, 0);
-                ServerEventsSinkNode *pNode = g_pServerEventsSinkListHead;
-                while (nullptr != pNode)
+                if (nullptr != mudstate.pIPlayerSession)
                 {
-                    pNode->pSink->connect(player, 1, 0);
-                    pNode = pNode->pNext;
+                    desc_addhash(d);
+                    bool isPueblo = (d->flags & DS_PUEBLOCLIENT) != 0;
+                    bool isSusp = mudstate.access_list.isSuspect(&d->address);
+                    UTF8 crea_host[MBUF_SIZE];
+                    d->address.ntop(crea_host, sizeof(crea_host));
+                    int timeout = mudconf.idle_timeout;
+                    mudstate.pIPlayerSession->AnnounceConnect(player, 1,
+                        isPueblo, isSusp, d->addr, d->username,
+                        crea_host, &timeout);
+                    d->timeout = timeout;
+                }
+                else
+                {
+                    announce_connect(player, d);
+
+                    // Since it is on the create call, assume connection count
+                    // is 0 and indicate the connect is a new character.
+                    //
+                    local_connect(player, 1, 0);
+                    ServerEventsSinkNode *pNode = g_pServerEventsSinkListHead;
+                    while (nullptr != pNode)
+                    {
+                        pNode->pSink->connect(player, 1, 0);
+                        pNode = pNode->pNext;
+                    }
                 }
             }
         }

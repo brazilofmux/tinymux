@@ -1678,6 +1678,7 @@ DEFINE_FACTORY(CPermissionsFactory)
 DEFINE_FACTORY(CMailDeliveryFactory)
 DEFINE_FACTORY(CHelpSystemFactory)
 DEFINE_FACTORY(CGameEngineFactory)
+DEFINE_FACTORY(CPlayerSessionFactory)
 DEFINE_FACTORY(CConnectionManagerFactory)
 
 class DCL_EXPORT CLogPSFactory : public mux_IPSFactoryBuffer, public mux_IClassFactory
