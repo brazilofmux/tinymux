@@ -1256,7 +1256,7 @@ bool GanlAdapter::initialize() {
     ganl::ErrorCode error = 0;
 
 #if defined(HAVE_WORKING_FORK)
-    if (mudstate.restarting) {
+    if (g_restarting) {
         // --- Restart path: adopt surviving fds from before exec ---
         restarting_ = true;
 

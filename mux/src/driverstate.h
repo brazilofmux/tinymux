@@ -60,6 +60,11 @@ extern bool g_bStandAlone;
 //
 extern bool g_shutdown_flag;
 
+// Restart flag — driver sets during @restart sequence, engine reads
+// via mux_IDriverControl::GetRestarting().
+//
+extern bool g_restarting;
+
 // Logged-out command table — built and used only by driver.
 // StringPtrMap is defined in mudconf.h (included via externs.h).
 //

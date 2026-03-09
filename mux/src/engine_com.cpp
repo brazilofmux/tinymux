@@ -2322,6 +2322,17 @@ public:
         const UTF8 *basename, bool bCheck, bool bLoad, bool bUnload,
         const UTF8 *comsys_file, const UTF8 *mail_file);
     virtual MUX_RESULT GetConfig(DRIVER_CONFIG *pConfig);
+    virtual MUX_RESULT SetStartTime(const CLinearTimeAbsolute &time);
+    virtual MUX_RESULT GetStartTime(CLinearTimeAbsolute *pTime);
+    virtual MUX_RESULT SetRestartTime(const CLinearTimeAbsolute &time);
+    virtual MUX_RESULT SetRestartCount(unsigned int count);
+    virtual MUX_RESULT GetRestartCount(unsigned int *pCount);
+    virtual MUX_RESULT SetCpuCountFrom(const CLinearTimeAbsolute &time);
+    virtual MUX_RESULT SetRecordPlayers(int count);
+    virtual MUX_RESULT GetDoingHdr(UTF8 *buf, size_t bufSize);
+    virtual MUX_RESULT SetDoingHdr(const UTF8 *hdr, size_t len);
+    virtual MUX_RESULT GetRecordPlayers(int *pCount);
+    virtual MUX_RESULT GetBCanRestart(bool *pbCanRestart);
 
     CGameEngine(void);
     virtual ~CGameEngine();
@@ -2892,6 +2903,102 @@ MUX_RESULT CGameEngine::GetConfig(DRIVER_CONFIG *pConfig)
     mux_strncpy(pConfig->mail_sendname, mudconf.mail_sendname, sizeof(pConfig->mail_sendname) - 1);
     mux_strncpy(pConfig->mail_ehlo, mudconf.mail_ehlo, sizeof(pConfig->mail_ehlo) - 1);
 
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::SetStartTime(const CLinearTimeAbsolute &time)
+{
+    mudstate.start_time = time;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::GetStartTime(CLinearTimeAbsolute *pTime)
+{
+    if (nullptr == pTime)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pTime = mudstate.start_time;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::SetRestartTime(const CLinearTimeAbsolute &time)
+{
+    mudstate.restart_time = time;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::SetRestartCount(unsigned int count)
+{
+    mudstate.restart_count = count;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::GetRestartCount(unsigned int *pCount)
+{
+    if (nullptr == pCount)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pCount = mudstate.restart_count;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::SetCpuCountFrom(const CLinearTimeAbsolute &time)
+{
+    mudstate.cpu_count_from = time;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::SetRecordPlayers(int count)
+{
+    mudstate.record_players = count;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::GetDoingHdr(UTF8 *buf, size_t bufSize)
+{
+    if (nullptr == buf || 0 == bufSize)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    mux_strncpy(buf, mudstate.doing_hdr, bufSize - 1);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::SetDoingHdr(const UTF8 *hdr, size_t len)
+{
+    if (nullptr == hdr)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    size_t nCopy = len;
+    if (nCopy >= sizeof(mudstate.doing_hdr))
+    {
+        nCopy = sizeof(mudstate.doing_hdr) - 1;
+    }
+    memcpy(mudstate.doing_hdr, hdr, nCopy);
+    mudstate.doing_hdr[nCopy] = '\0';
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::GetRecordPlayers(int *pCount)
+{
+    if (nullptr == pCount)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pCount = mudstate.record_players;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::GetBCanRestart(bool *pbCanRestart)
+{
+    if (nullptr == pbCanRestart)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pbCanRestart = mudstate.bCanRestart;
     return MUX_S_OK;
 }
 

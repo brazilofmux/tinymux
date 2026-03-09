@@ -407,11 +407,11 @@ int DCL_CDECL main(int argc, char *argv[])
 
     build_signal_names_table();
 
-    mudstate.restart_time.GetUTC();
-    mudstate.start_time = mudstate.restart_time;
-    mudstate.restart_count= 0;
-
-    mudstate.cpu_count_from.GetUTC();
+    // Timing state is engine-owned; the driver captures the values here
+    // and pushes them via COM after LoadGame.
+    //
+    CLinearTimeAbsolute ltaStartup;
+    ltaStartup.GetUTC();
     pool_init(POOL_LBUF, LBUF_SIZE);
     pool_init(POOL_MBUF, MBUF_SIZE);
     pool_init(POOL_SBUF, SBUF_SIZE);
@@ -488,6 +488,13 @@ int DCL_CDECL main(int argc, char *argv[])
         return 2;
     }
 
+    // Push initial timing state to the engine.
+    //
+    pGameEngine->SetStartTime(ltaStartup);
+    pGameEngine->SetRestartTime(ltaStartup);
+    pGameEngine->SetRestartCount(0);
+    pGameEngine->SetCpuCountFrom(ltaStartup);
+
     // Create the player session interface (driver-owned).
     //
     mr = mux_CreateInstance(CID_PlayerSession, nullptr, UseSameProcess,
@@ -504,7 +511,7 @@ int DCL_CDECL main(int argc, char *argv[])
 
 #if defined(HAVE_WORKING_FORK)
     load_restart_db();
-    if (!mudstate.restarting)
+    if (!g_restarting)
 #endif // HAVE_WORKING_FORK
     {
         fclose(stdout);

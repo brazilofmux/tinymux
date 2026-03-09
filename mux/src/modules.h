@@ -616,6 +616,24 @@ public:
     // after LoadGame to get a snapshot of mudconf values it needs.
     //
     virtual MUX_RESULT GetConfig(DRIVER_CONFIG *pConfig) = 0;
+
+    // --- Driver ↔ Engine state ---
+    // Timing/restart state owned by the engine, set by the driver.
+    //
+    virtual MUX_RESULT SetStartTime(const CLinearTimeAbsolute &time) = 0;
+    virtual MUX_RESULT GetStartTime(CLinearTimeAbsolute *pTime) = 0;
+    virtual MUX_RESULT SetRestartTime(const CLinearTimeAbsolute &time) = 0;
+    virtual MUX_RESULT SetRestartCount(unsigned int count) = 0;
+    virtual MUX_RESULT GetRestartCount(unsigned int *pCount) = 0;
+    virtual MUX_RESULT SetCpuCountFrom(const CLinearTimeAbsolute &time) = 0;
+    virtual MUX_RESULT SetRecordPlayers(int count) = 0;
+
+    // Engine state getters/setters for driver.
+    //
+    virtual MUX_RESULT GetDoingHdr(UTF8 *buf, size_t bufSize) = 0;
+    virtual MUX_RESULT SetDoingHdr(const UTF8 *hdr, size_t len) = 0;
+    virtual MUX_RESULT GetRecordPlayers(int *pCount) = 0;
+    virtual MUX_RESULT GetBCanRestart(bool *pbCanRestart) = 0;
 };
 
 // Player session — the interface the driver uses for player authentication,
@@ -688,6 +706,10 @@ public:
     // and the networking loop exits on its next iteration.
     //
     virtual MUX_RESULT ShutdownRequest(void) = 0;
+
+    // Query whether the driver is in a @restart sequence.
+    //
+    virtual MUX_RESULT GetRestarting(bool *pbRestarting) = 0;
 };
 
 // Connection manager — the interface the engine uses to interact with

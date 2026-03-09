@@ -1326,7 +1326,11 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
         {
             queue_write(e, T(" "));
         }
-        queue_string(e, mudstate.doing_hdr);
+        {
+            UTF8 doingBuf[SIZEOF_DOING_STRING];
+            g_pIGameEngine->GetDoingHdr(doingBuf, sizeof(doingBuf));
+            queue_string(e, doingBuf);
+        }
         queue_write_LEN(e, T("\r\n"), 2);
     }
     int count = 0;
@@ -1515,8 +1519,10 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
 
     // Sometimes I like the ternary operator.
     //
+    int nRecPlayers = 0;
+    g_pIGameEngine->GetRecordPlayers(&nRecPlayers);
     mux_sprintf(buf, MBUF_SIZE, T("%d Player%slogged in, %d record, %s maximum.\r\n"), count,
-        (count == 1) ? T(" ") : T("s "), mudstate.record_players,
+        (count == 1) ? T(" ") : T("s "), nRecPlayers,
         (g_dc.max_players == -1) ? T("no") : mux_ltoa_t(g_dc.max_players));
     queue_write(e, buf);
 
@@ -1570,7 +1576,8 @@ static void dump_info(DESC *arg_desc)
 
     queue_string(arg_desc, tprintf(T("Name: %s\r\n"), g_dc.mud_name));
 
-    CLinearTimeAbsolute lta = mudstate.start_time;
+    CLinearTimeAbsolute lta;
+    g_pIGameEngine->GetStartTime(&lta);
     lta.UTC2Local();
     const UTF8 *temp = lta.ReturnDateString();
     queue_write(arg_desc, tprintf(T("Uptime: %s\r\n"), temp));
@@ -3040,10 +3047,20 @@ void dump_restart_db(void)
         putref(f, 0);
 #endif
     }
-    putref(f, mudstate.start_time.ReturnSeconds());
-    putstring(f, mudstate.doing_hdr);
-    putref(f, mudstate.record_players);
-    putref(f, mudstate.restart_count);
+    // Query engine-owned state for restart file.
+    //
+    CLinearTimeAbsolute ltaStart;
+    UTF8 doingHdr[SIZEOF_DOING_STRING];
+    int nRecordPlayers = 0;
+    g_pIGameEngine->GetStartTime(&ltaStart);
+    g_pIGameEngine->GetDoingHdr(doingHdr, sizeof(doingHdr));
+    g_pIGameEngine->GetRecordPlayers(&nRecordPlayers);
+    unsigned int nRestartCount = 0;
+    g_pIGameEngine->GetRestartCount(&nRestartCount);
+    putref(f, ltaStart.ReturnSeconds());
+    putstring(f, doingHdr);
+    putref(f, nRecordPlayers);
+    putref(f, nRestartCount);
     for (auto it = g_descriptors_list.begin(); it != g_descriptors_list.end(); ++it)
     {
         d = *it;
@@ -3083,10 +3100,10 @@ void load_restart_db(void)
     FILE *f;
     if (!mux_fopen(&f, T("restart.db"), T("rb")))
     {
-        mudstate.restarting = false;
+        g_restarting = false;
         return;
     }
-    mudstate.restarting = true;
+    g_restarting = true;
 
     char buf[8];
     fgets(buf, 3, f);
@@ -3133,7 +3150,11 @@ void load_restart_db(void)
         //
         mux_assert(0);
     }
-    mudstate.start_time.SetSeconds(getref(f));
+    {
+        CLinearTimeAbsolute ltaStart;
+        ltaStart.SetSeconds(getref(f));
+        g_pIGameEngine->SetStartTime(ltaStart);
+    }
 
     size_t nBuffer;
     UTF8 *pBuffer = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBuffer));
@@ -3143,17 +3164,20 @@ void load_restart_db(void)
         //
         pBuffer = ConvertToUTF8(reinterpret_cast<char *>(pBuffer), &nBuffer);
     }
-    memcpy(mudstate.doing_hdr, pBuffer, nBuffer+1);
+    g_pIGameEngine->SetDoingHdr(pBuffer, nBuffer);
 
-    mudstate.record_players = getref(f);
-    if (g_dc.reset_players)
     {
-        mudstate.record_players = 0;
+        int nRecPlayers = getref(f);
+        if (g_dc.reset_players)
+        {
+            nRecPlayers = 0;
+        }
+        g_pIGameEngine->SetRecordPlayers(nRecPlayers);
     }
 
     if (4 <= version)
     {
-        mudstate.restart_count = getref(f) + 1;
+        g_pIGameEngine->SetRestartCount(static_cast<unsigned int>(getref(f)) + 1);
     }
 
     int val;

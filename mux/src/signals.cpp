@@ -399,14 +399,18 @@ static void DCL_CDECL sighandler(int sig)
     {
 #if defined(UNIX_SIGNALS)
     case SIGUSR1:
-        if (mudstate.bCanRestart)
         {
-            log_signal(sig);
-            do_restart(GOD, GOD, GOD, 0, 0);
-        }
-        else
-        {
-            log_signal_ignore(sig);
+            bool bCan = false;
+            g_pIGameEngine->GetBCanRestart(&bCan);
+            if (bCan)
+            {
+                log_signal(sig);
+                do_restart(GOD, GOD, GOD, 0, 0);
+            }
+            else
+            {
+                log_signal_ignore(sig);
+            }
         }
         break;
 
@@ -575,8 +579,11 @@ static void DCL_CDECL sighandler(int sig)
         pcache_sync();
         SYNC;
 
+        {
+        bool bCanRestart = false;
+        g_pIGameEngine->GetBCanRestart(&bCanRestart);
         if (  g_dc.sig_action != SA_EXIT
-           && mudstate.bCanRestart)
+           && bCanRestart)
         {
             raw_broadcast(0,
                     T("GAME: Fatal signal %s caught, restarting."), signal_desc(sig));
@@ -630,6 +637,7 @@ static void DCL_CDECL sighandler(int sig)
             unset_signals();
             signal(sig, SIG_DFL);
             exit(1);
+        }
         }
         break;
 

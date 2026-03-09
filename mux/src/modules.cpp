@@ -661,6 +661,7 @@ public:
     virtual uint32_t   Release(void);
 
     virtual MUX_RESULT ShutdownRequest(void);
+    virtual MUX_RESULT GetRestarting(bool *pbRestarting);
 
     CDriverControl(void);
     virtual ~CDriverControl();
@@ -716,6 +717,16 @@ uint32_t CDriverControl::Release(void)
 MUX_RESULT CDriverControl::ShutdownRequest(void)
 {
     g_shutdown_flag = true;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CDriverControl::GetRestarting(bool *pbRestarting)
+{
+    if (nullptr == pbRestarting)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pbRestarting = g_restarting;
     return MUX_S_OK;
 }
 
