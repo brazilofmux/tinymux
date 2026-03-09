@@ -231,6 +231,16 @@ extern int fetch_width(dbref target);
 extern DESC *find_desc_by_socket(SOCKET s);
 extern DESC *find_desc_by_player(dbref target);
 extern int get_total_connections(void);
+extern dbref desc_player(const DESC *d);
+extern int desc_height(const DESC *d);
+extern int desc_width(const DESC *d);
+extern int desc_encoding(const DESC *d);
+extern int desc_command_count(const DESC *d);
+extern const UTF8 *desc_ttype(const DESC *d);
+extern CLinearTimeAbsolute desc_last_time(const DESC *d);
+extern CLinearTimeAbsolute desc_connected_at(const DESC *d);
+extern int desc_nvt_him_state(const DESC *d, unsigned char chOption);
+extern SocketState desc_socket_state(const DESC *d);
 extern void for_each_connected_player(void (*callback)(dbref player, void *context), void *context);
 extern void set_player_encoding(dbref target, int encoding);
 extern void reset_player_encoding(dbref target);
@@ -564,11 +574,6 @@ int load_game(int ccPageFile);
 
 class CSQLiteDB;
 bool clear_sqlite_after_sync_failure(CSQLiteDB &sqldb);
-
-#define MUX_OPEN_INVALID_HANDLE_VALUE (-1)
-bool mux_fopen(FILE **pFile, const UTF8 *filename, const UTF8 *mode);
-bool mux_open(int *pfh, const UTF8 *filename, int oflag);
-const UTF8 *mux_strerror(int errnum);
 
 /* From htab.cpp */
 int  cf_ntab_access(int *, UTF8 *, void *, uint32_t, dbref, UTF8 *);

@@ -7,7 +7,6 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
-#include "interface.h"
 #include "ast.h"
 using namespace std;
 
@@ -8023,7 +8022,7 @@ static FUNCTION(fun_height)
         DESC* d = find_desc_by_socket(s);
         if (nullptr != d)
         {
-            nHeight = d->height;
+            nHeight = desc_height(d);
         }
     }
     else
@@ -8059,7 +8058,7 @@ static FUNCTION(fun_width)
         DESC* d = find_desc_by_socket(s);
         if (nullptr != d)
         {
-            nWidth = d->width;
+            nWidth = desc_width(d);
         }
     }
     else
@@ -8095,7 +8094,7 @@ static FUNCTION(fun_colordepth)
         DESC* d = find_desc_by_socket(s);
         if (nullptr != d)
         {
-            target = d->player;
+            target = desc_player(d);
         }
     }
     else
@@ -8153,12 +8152,12 @@ static FUNCTION(fun_idle)
         SOCKET s = mux_atol(fargs[0]);
         DESC *d = find_desc_by_socket(s);
         if (  nullptr != d
-           && (  d->player == executor
+           && (  desc_player(d) == executor
               || Wizard_Who(executor)))
         {
             CLinearTimeAbsolute ltaNow;
             ltaNow.GetUTC();
-            CLinearTimeDelta ltdResult = ltaNow - d->last_time;
+            CLinearTimeDelta ltdResult = ltaNow - desc_last_time(d);
             nIdle = ltdResult.ReturnSeconds();
         }
     }
@@ -8195,12 +8194,12 @@ static FUNCTION(fun_conn)
         SOCKET s = mux_atol(fargs[0]);
         DESC *d = find_desc_by_socket(s);
         if (  nullptr != d
-           && (  d->player == executor
+           && (  desc_player(d) == executor
               || Wizard_Who(executor)))
         {
             CLinearTimeAbsolute ltaNow;
             ltaNow.GetUTC();
-            CLinearTimeDelta ltdResult = ltaNow - d->connected_at;
+            CLinearTimeDelta ltdResult = ltaNow - desc_connected_at(d);
             nConnected = ltdResult.ReturnSeconds();
         }
     }
@@ -8238,7 +8237,7 @@ static FUNCTION(fun_terminfo)
         d = find_desc_by_socket(s);
 
         if (  nullptr != d
-           && (  d->player != executor
+           && (  desc_player(d) != executor
               && !Wizard_Who(executor)))
         {
             safe_noperm(buff, bufc);
@@ -8272,34 +8271,34 @@ static FUNCTION(fun_terminfo)
         return;
     }
 
-    if (d->ttype)
+    if (desc_ttype(d))
     {
-        safe_str(d->ttype, buff, bufc);
+        safe_str(desc_ttype(d), buff, bufc);
         safe_str(T(" telnet"), buff, bufc);
     }
     else
     {
         safe_str(T("unknown"), buff, bufc);
-        if (  d->nvt_him_state[TELNET_NAWS]
-           || d->nvt_him_state[TELNET_SGA]
-           || d->nvt_him_state[TELNET_EOR])
+        if (  desc_nvt_him_state(d, TELNET_NAWS)
+           || desc_nvt_him_state(d, TELNET_SGA)
+           || desc_nvt_him_state(d, TELNET_EOR))
         {
             safe_str(T(" telnet"), buff, bufc);
         }
     }
 
-    if (Html(d->player))
+    if (Html(desc_player(d)))
     {
         safe_str(T(" pueblo"), buff, bufc);
     }
 
-    if (CHARSET_UTF8 == d->encoding)
+    if (CHARSET_UTF8 == desc_encoding(d))
     {
         safe_str(T(" unicode"), buff, bufc);
     }
 
 #ifdef UNIX_SSL
-    if (d->ss != SocketState::Accepted)
+    if (desc_socket_state(d) != SocketState::Accepted)
     {
         safe_str(T(" ssl"), buff, bufc);
     }
@@ -10488,10 +10487,10 @@ static FUNCTION(fun_cmds)
         SOCKET s = mux_atol(fargs[0]);
         DESC *d = find_desc_by_socket(s);
         if (  nullptr != d
-           && (  d->player == executor
+           && (  desc_player(d) == executor
               || Wizard_Who(executor)))
         {
-            nCmds = d->command_count;
+            nCmds = desc_command_count(d);
         }
     }
     else

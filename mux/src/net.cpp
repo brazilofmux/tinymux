@@ -1206,6 +1206,60 @@ int get_total_connections(void)
 }
 
 // ---------------------------------------------------------------------------
+// DESC field accessors: Let engine code query individual DESC fields without
+// seeing the struct definition.  DESC* is opaque to engine files.
+//
+dbref desc_player(const DESC *d)
+{
+    return d->player;
+}
+
+int desc_height(const DESC *d)
+{
+    return d->height;
+}
+
+int desc_width(const DESC *d)
+{
+    return d->width;
+}
+
+int desc_encoding(const DESC *d)
+{
+    return d->encoding;
+}
+
+int desc_command_count(const DESC *d)
+{
+    return d->command_count;
+}
+
+const UTF8 *desc_ttype(const DESC *d)
+{
+    return d->ttype;
+}
+
+CLinearTimeAbsolute desc_last_time(const DESC *d)
+{
+    return d->last_time;
+}
+
+CLinearTimeAbsolute desc_connected_at(const DESC *d)
+{
+    return d->connected_at;
+}
+
+int desc_nvt_him_state(const DESC *d, unsigned char chOption)
+{
+    return d->nvt_him_state[chOption];
+}
+
+SocketState desc_socket_state(const DESC *d)
+{
+    return d->ss;
+}
+
+// ---------------------------------------------------------------------------
 // for_each_connected_player: Call a function for each connected player dbref.
 // Used by wall_broadcast, keepalive, and similar operations that need to
 // iterate all connected sessions without touching DESC internals.
@@ -2688,6 +2742,74 @@ void logged_out0(dbref executor, dbref caller, dbref enactor, int eval, int key)
     logged_out1(executor, caller, enactor, 0, key, const_cast<UTF8 *>(T("")), nullptr, 0);
 }
 
+/*
+ * @prog 'glues' a user's input to a command. Once executed, the first string
+ * input from any of the doer's logged in descriptors, will go into
+ * A_PROGMSG, which can be substituted in <command> with %0. Commands already
+ * queued by the doer will be processed normally.
+ */
+
+void handle_prog(DESC *d, UTF8 *message)
+{
+    // Allow the player to pipe a command while in interactive mode.
+    //
+    if (*message == '|')
+    {
+        do_command(d, message + 1);
+
+        if (d->program_data != nullptr)
+        {
+            queue_string(d, tprintf(T("%s>%s "), COLOR_INTENSE, COLOR_RESET));
+
+            if (OPTION_YES == us_state(d, TELNET_EOR))
+            {
+                // Use telnet protocol's EOR command to show prompt.
+                //
+                const UTF8 aEOR[2] = { NVT_IAC, NVT_EOR };
+                queue_write_LEN(d, aEOR, sizeof(aEOR));
+            }
+            else if (OPTION_YES != us_state(d, TELNET_SGA))
+            {
+                // Use telnet protocol's GOAHEAD command to show prompt.
+                //
+                const UTF8 aGoAhead[2] = { NVT_IAC, NVT_GA };
+                queue_write_LEN(d, aGoAhead, sizeof(aGoAhead));
+            }
+        }
+        return;
+    }
+    dbref aowner;
+    int aflags;
+    UTF8 *cmd = atr_get("handle_prog.1215", d->player, A_PROGCMD, &aowner, &aflags);
+    CLinearTimeAbsolute lta;
+    wait_que(d->program_data->wait_enactor, d->player, d->player,
+        AttrTrace(aflags, 0), false, lta, NOTHING, 0,
+        cmd,
+        1, const_cast<const UTF8**>(&message),
+        d->program_data->wait_regs,
+        d->program_data->named_wait_regs);
+
+    // Detach program_data from all of this player's descriptors.
+    //
+    program_data* program = detach_player_program(d->player);
+    if (program)
+    {
+        for (auto& wait_reg : program->wait_regs)
+        {
+            if (wait_reg)
+            {
+                RegRelease(wait_reg);
+                wait_reg = nullptr;
+            }
+        }
+        NamedRegsClear(program->named_wait_regs);
+        MEMFREE(program);
+        program = nullptr;
+    }
+    atr_clr(d->player, A_PROGCMD);
+    free_lbuf(cmd);
+}
+
 void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
 {
     UNUSED_PARAMETER(arg_iInteger);
@@ -3318,3 +3440,354 @@ bool mux_subnets::isSuspect(MUX_SOCKADDR *msa)
     search(msnRoot, msa, &ulInfo);
     return 0 != (ulInfo & HI_SUSPECT);
 }
+
+#if defined(HAVE_WORKING_FORK)
+/* ---------------------------------------------------------------------------
+ * dump_restart_db: Writes out socket information.
+ */
+void dump_restart_db(void)
+{
+    FILE *f;
+    DESC *d;
+    int version = 4;
+
+    mux_assert(mux_fopen(&f, T("restart.db"), T("wb")));
+    mux_fprintf(f, T("+V%d\n"), version);
+    putref(f, num_main_game_ports);
+    for (int i = 0; i < num_main_game_ports; i++)
+    {
+        putref(f, main_game_ports[i].msa.port());
+        putref(f, main_game_ports[i].socket);
+#ifdef UNIX_SSL
+        putref(f, main_game_ports[i].fSSL ? 1 : 0);
+#else
+        putref(f, 0);
+#endif
+    }
+    putref(f, mudstate.start_time.ReturnSeconds());
+    putstring(f, mudstate.doing_hdr);
+    putref(f, mudstate.record_players);
+    putref(f, mudstate.restart_count);
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
+    {
+        d = *it;
+        putref(f, d->socket);
+        putref(f, d->flags);
+        putref(f, d->connected_at.ReturnSeconds());
+        putref(f, d->command_count);
+        putref(f, d->timeout);
+        putref(f, 0);
+        putref(f, d->player);
+        putref(f, d->last_time.ReturnSeconds());
+        putref(f, d->raw_input_state);
+        putref(f, d->raw_codepoint_state);
+
+        for (int stateloop = 0; stateloop < 256; stateloop++) {
+            putref(f, d->nvt_him_state[stateloop]);
+            putref(f, d->nvt_us_state[stateloop]);
+        }
+
+        putref(f, d->height);
+        putref(f, d->width);
+        putstring(f, d->ttype);
+        putref(f, d->encoding);
+        putstring(f, d->output_prefix);
+        putstring(f, d->output_suffix);
+        putstring(f, d->addr);
+        putstring(f, d->doing);
+        putstring(f, d->username);
+    }
+    putref(f, 0);
+
+    fclose(f);
+}
+
+void load_restart_db(void)
+{
+    FILE *f;
+    if (!mux_fopen(&f, T("restart.db"), T("rb")))
+    {
+        mudstate.restarting = false;
+        return;
+    }
+    DebugTotalFiles++;
+    mudstate.restarting = true;
+
+    char buf[8];
+    fgets(buf, 3, f);
+    mux_assert(strncmp(buf, "+V", 2) == 0);
+    int version = getref(f);
+    if (  1 == version
+       || 2 == version
+       || 3 == version
+       || 4 == version)
+    {
+        // Version 1 started on 2001-DEC-03
+        // Version 2 started on 2005-NOV-08
+        // Version 3 started on 2007-MAR-09
+        // Version 4 started on 2007-AUG-12
+        //
+        num_main_game_ports = getref(f);
+        for (int i = 0; i < num_main_game_ports; i++)
+        {
+            unsigned short usPort = getref(f);
+            main_game_ports[i].socket = getref(f);
+            socklen_t n = main_game_ports[i].msa.maxaddrlen();
+            if (  0 != getsockname(main_game_ports[i].socket, main_game_ports[i].msa.sa(), &n)
+               || usPort != main_game_ports[i].msa.port())
+            {
+                mux_assert(0);
+            }
+
+            if (3 <= version)
+            {
+#ifdef UNIX_SSL
+                main_game_ports[i].fSSL = (0 != getref(f));
+#else
+                // Eat meaningless field.
+                (void)getref(f);
+#endif
+            }
+        }
+    }
+    else
+    {
+        // The restart file, restart.db, has a version other than 1.  You
+        // cannot @restart from the previous version to the new version.  Use
+        // @shutdown instead.
+        //
+        mux_assert(0);
+    }
+    DebugTotalSockets += num_main_game_ports;
+
+    mudstate.start_time.SetSeconds(getref(f));
+
+    size_t nBuffer;
+    UTF8 *pBuffer = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBuffer));
+    if (version < 3)
+    {
+        // Convert Latin1 and ANSI to UTF-8 code points.
+        //
+        pBuffer = ConvertToUTF8(reinterpret_cast<char *>(pBuffer), &nBuffer);
+    }
+    memcpy(mudstate.doing_hdr, pBuffer, nBuffer+1);
+
+    mudstate.record_players = getref(f);
+    if (mudconf.reset_players)
+    {
+        mudstate.record_players = 0;
+    }
+
+    if (4 <= version)
+    {
+        mudstate.restart_count = getref(f) + 1;
+    }
+
+    int val;
+    DESC *d;
+    while ((val = getref(f)) != 0)
+    {
+        DebugTotalSockets++;
+        d = alloc_desc("restart");
+        init_desc(d);
+        d->socket = val;
+        d->flags = getref(f);
+        d->connected_at.SetSeconds(getref(f));
+        d->command_count = getref(f);
+        d->timeout = getref(f);
+        getref(f); // Eat host_info
+        d->player = getref(f);
+        d->last_time.SetSeconds(getref(f));
+        for (int i = 0; i < 256; i++)
+        {
+            d->nvt_him_state[i] = OPTION_NO;
+        }
+        for (int i = 0; i < 256; i++)
+        {
+            d->nvt_us_state[i] = OPTION_NO;
+        }
+        d->raw_codepoint_length = 0;
+        d->ttype = nullptr;
+        d->encoding = mudconf.default_charset;
+        if (3 <= version)
+        {
+            d->raw_input_state              = getref(f);
+            d->raw_codepoint_state          = getref(f);
+            for (int stateloop = 0; stateloop < 256; stateloop++)
+            {
+                d->nvt_him_state[stateloop] = getref(f);
+                d->nvt_us_state[stateloop] = getref(f);
+            }
+
+            d->height = getref(f);
+            d->width = getref(f);
+
+            size_t nBuffer;
+            char *temp = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBuffer));
+            if ('\0' != temp[0])
+            {
+                d->ttype = reinterpret_cast<UTF8 *>(MEMALLOC(nBuffer+1));
+                ISOUTOFMEMORY(d->ttype);
+                memcpy(d->ttype, temp, nBuffer + 1);
+            }
+
+            d->encoding = getref(f);
+        }
+        else if (2 == version)
+        {
+            d->raw_input_state              = getref(f);
+            d->raw_codepoint_state          = CL_PRINT_START_STATE;
+            d->nvt_him_state[TELNET_SGA]    = getref(f);
+            d->nvt_us_state[TELNET_SGA]     = getref(f);
+            d->nvt_him_state[TELNET_EOR]    = getref(f);
+            d->nvt_us_state[TELNET_EOR]     = getref(f);
+            d->nvt_him_state[TELNET_NAWS]   = getref(f);
+            d->nvt_us_state[TELNET_NAWS]    = getref(f);
+            d->height = getref(f);
+            d->width = getref(f);
+        }
+        else
+        {
+            d->raw_input_state    = NVT_IS_NORMAL;
+            d->raw_codepoint_state= CL_PRINT_START_STATE;
+            d->height = 24;
+            d->width = 78;
+        }
+
+        if (3 <= version)
+        {
+            // Output Prefix.
+            //
+            size_t nBufferUnicode;
+            UTF8 *pBufferUnicode = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBufferUnicode));
+            if ('\0' != pBufferUnicode[0])
+            {
+                d->output_prefix = alloc_lbuf("set_userstring");
+                memcpy(d->output_prefix, pBufferUnicode, nBufferUnicode+1);
+            }
+            else
+            {
+                d->output_prefix = nullptr;
+            }
+
+            // Output Suffix
+            //
+            pBufferUnicode = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBufferUnicode));
+            if ('\0' != pBufferUnicode[0])
+            {
+                d->output_suffix = alloc_lbuf("set_userstring");
+                memcpy(d->output_suffix, pBufferUnicode, nBufferUnicode+1);
+            }
+            else
+            {
+                d->output_suffix = nullptr;
+            }
+
+            // Host address.
+            //
+            pBufferUnicode = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBufferUnicode));
+            memcpy(d->addr, pBufferUnicode, nBufferUnicode+1);
+
+            // Doing.
+            //
+            pBufferUnicode = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBufferUnicode));
+            memcpy(d->doing, pBufferUnicode, nBufferUnicode+1);
+
+            // User name.
+            //
+            pBufferUnicode = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBufferUnicode));
+            memcpy(d->username, pBufferUnicode, nBufferUnicode+1);
+        }
+        else
+        {
+            // Output Prefix.
+            //
+            size_t nBufferUnicode;
+            UTF8  *pBufferUnicode;
+            size_t nBufferLatin1;
+            char  *pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBufferLatin1));
+            if ('\0' != pBufferLatin1[0])
+            {
+                pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+                d->output_prefix = alloc_lbuf("set_userstring");
+                memcpy(d->output_prefix, pBufferUnicode, nBufferUnicode+1);
+            }
+            else
+            {
+                d->output_prefix = nullptr;
+            }
+
+            // Output Suffix
+            //
+            pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBufferLatin1));
+            if ('\0' != pBufferLatin1[0])
+            {
+                pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+                d->output_suffix = alloc_lbuf("set_userstring");
+                memcpy(d->output_suffix, pBufferUnicode, nBufferUnicode+1);
+            }
+            else
+            {
+                d->output_suffix = nullptr;
+            }
+
+            // Host address.
+            //
+            pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBufferLatin1));
+            pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+            memcpy(d->addr, pBufferUnicode, nBufferUnicode+1);
+
+            // Doing.
+            //
+            pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBufferLatin1));
+            pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+            memcpy(d->doing, pBufferUnicode, nBufferUnicode+1);
+
+            // User name.
+            //
+            pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBufferLatin1));
+            pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+            memcpy(d->username, pBufferUnicode, nBufferUnicode+1);
+        }
+
+        d->output_size = 0;
+        d->output_tot = 0;
+        d->output_lost = 0;
+        d->input_size = 0;
+        d->input_tot = 0;
+        d->input_lost = 0;
+        d->raw_input_buf = nullptr;
+        d->raw_input_at = nullptr;
+        d->nOption = 0;
+        d->quota = mudconf.cmd_quota_max;
+        d->program_data = nullptr;
+
+        auto it = mudstate.descriptors_list.insert(mudstate.descriptors_list.end(), d);
+        mudstate.descriptors_map.insert(make_pair(d, it));
+
+        desc_addhash(d);
+        if (isPlayer(d->player))
+        {
+            s_Connected(d->player);
+        }
+    }
+
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
+    {
+        d = *it;
+	++it;
+        if (  (d->flags & DS_CONNECTED)
+           && !isPlayer(d->player))
+        {
+            shutdownsock(d, R_QUIT);
+        }
+    }
+
+    if (fclose(f) == 0)
+    {
+        DebugTotalFiles--;
+    }
+    remove("restart.db");
+    raw_broadcast(0, T("GAME: Restart finished."));
+}
+#endif // HAVE_WORKING_FORK

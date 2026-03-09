@@ -9219,3 +9219,63 @@ void strip_fancy_quotes(UTF8 *str)
     }
     *w = '\0';
 }
+
+bool mux_fopen(FILE **pFile, const UTF8 *filename, const UTF8 *mode)
+{
+    if (pFile)
+    {
+        *pFile = nullptr;
+        if (  nullptr != filename
+           && nullptr != mode)
+        {
+#if defined(WINDOWS_FILES) && !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
+            // 1400 is Visual C++ 2005
+            //
+            return (fopen_s(pFile, reinterpret_cast<const char *>(filename), reinterpret_cast<const char *>(mode)) == 0);
+#else
+            *pFile = fopen(reinterpret_cast<const char *>(filename), reinterpret_cast<const char *>(mode));
+            if (nullptr != *pFile)
+            {
+                return true;
+            }
+#endif // WINDOWS_FILES
+        }
+    }
+    return false;
+}
+
+bool mux_open(int *pfh, const UTF8 *filename, int oflag)
+{
+    if (nullptr != pfh)
+    {
+        *pfh = MUX_OPEN_INVALID_HANDLE_VALUE;
+        if (nullptr != filename)
+        {
+#if defined(WINDOWS_FILES) && !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
+            // 1400 is Visual C++ 2005
+            //
+            return (_sopen_s(pfh, reinterpret_cast<const char *>(filename), oflag, _SH_DENYNO, _S_IREAD|_S_IWRITE) == 0);
+#elif defined(WINDOWS_FILES)
+            *pfh = _open(reinterpret_cast<const char *>(filename), oflag, _S_IREAD|_S_IWRITE);
+            return (0 <= *pfh);
+#else
+            *pfh = open(reinterpret_cast<const char *>(filename), oflag, 0600);
+            return (0 <= *pfh);
+#endif
+        }
+    }
+    return false;
+}
+
+const UTF8 *mux_strerror(int errnum)
+{
+#if defined(WINDOWS_FILES) && !defined(__INTEL_COMPILER) && (_MSC_VER >= 1400)
+    // 1400 is Visual C++ 2005
+    //
+    static UTF8 buffer[80];
+    strerror_s(reinterpret_cast<char *>(buffer), sizeof(buffer), errnum);
+    return buffer;
+#else
+    return reinterpret_cast<UTF8 *>(strerror(errnum));
+#endif
+}

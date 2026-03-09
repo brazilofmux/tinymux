@@ -11,7 +11,6 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
-#include "interface.h"
 
 static inline const UTF8 *utf8_advance_predicate(const UTF8 *p)
 {
@@ -1290,74 +1289,6 @@ void do_delcommand
     {
         notify(player, T("Command not found in command table."));
     }
-}
-
-/*
- * @prog 'glues' a user's input to a command. Once executed, the first string
- * input from any of the doers's logged in descriptors, will go into
- * A_PROGMSG, which can be substituted in <command> with %0. Commands already
- * queued by the doer will be processed normally.
- */
-
-void handle_prog(DESC *d, UTF8 *message)
-{
-    // Allow the player to pipe a command while in interactive mode.
-    //
-    if (*message == '|')
-    {
-        do_command(d, message + 1);
-
-        if (d->program_data != nullptr)
-        {
-            queue_string(d, tprintf(T("%s>%s "), COLOR_INTENSE, COLOR_RESET));
-
-            if (OPTION_YES == us_state(d, TELNET_EOR))
-            {
-                // Use telnet protocol's EOR command to show prompt.
-                //
-                const UTF8 aEOR[2] = { NVT_IAC, NVT_EOR };
-                queue_write_LEN(d, aEOR, sizeof(aEOR));
-            }
-            else if (OPTION_YES != us_state(d, TELNET_SGA))
-            {
-                // Use telnet protocol's GOAHEAD command to show prompt.
-                //
-                const UTF8 aGoAhead[2] = { NVT_IAC, NVT_GA };
-                queue_write_LEN(d, aGoAhead, sizeof(aGoAhead));
-            }
-        }
-        return;
-    }
-    dbref aowner;
-    int aflags;
-    UTF8 *cmd = atr_get("handle_prog.1215", d->player, A_PROGCMD, &aowner, &aflags);
-    CLinearTimeAbsolute lta;
-    wait_que(d->program_data->wait_enactor, d->player, d->player,
-        AttrTrace(aflags, 0), false, lta, NOTHING, 0,
-        cmd,
-        1, const_cast<const UTF8**>(&message),
-        d->program_data->wait_regs,
-        d->program_data->named_wait_regs);
-
-    // Detach program_data from all of this player's descriptors.
-    //
-    program_data* program = detach_player_program(d->player);
-    if (program)
-    {
-        for (auto& wait_reg : program->wait_regs)
-        {
-            if (wait_reg)
-            {
-                RegRelease(wait_reg);
-                wait_reg = nullptr;
-            }
-        }
-        NamedRegsClear(program->named_wait_regs);
-        MEMFREE(program);
-        program = nullptr;
-    }
-    atr_clr(d->player, A_PROGCMD);
-    free_lbuf(cmd);
 }
 
 void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, UTF8 *name, const UTF8 *cargs[], int ncargs)
