@@ -469,6 +469,92 @@ typedef struct descriptor_data DESC;
 enum class SocketState;
 struct program_data;
 
+// Static configuration basket: one-time snapshot of mudconf values that
+// the driver queries after LoadGame.  All fixed-size arrays; no pointers
+// cross the .so boundary.  Time deltas are raw 100-nanosecond ticks
+// (CLinearTimeDelta underlying representation).
+//
+#define DRIVER_CONFIG_MAX_PORTS 20
+
+struct DRIVER_CONFIG
+{
+    // Ports and networking.
+    //
+    int     ports[DRIVER_CONFIG_MAX_PORTS];
+    int     nPorts;
+    int     sslPorts[DRIVER_CONFIG_MAX_PORTS];
+    int     nSslPorts;
+    UTF8    ip_address[128];
+    bool    use_hostname;
+    int     retry_limit;
+    int     idle_timeout;
+    int     conn_timeout;
+    int     cmd_quota_max;
+    int     output_limit;
+    int     default_charset;
+    int     max_players;
+    int     control_flags;
+
+    // Guest configuration.
+    //
+    UTF8    guest_prefix[32];
+    int     number_guests;
+    dbref   guest_char;
+
+    // SSL/TLS.
+    //
+    UTF8    ssl_certificate_file[128];
+    UTF8    ssl_certificate_key[128];
+    UTF8    ssl_certificate_password[128];
+
+    // Game identity.
+    //
+    UTF8    mud_name[32];
+
+    // File paths (copied from pointer fields).
+    //
+    UTF8    pid_file[128];
+    UTF8    log_dir[128];
+    UTF8    config_file[128];
+
+    // Messages.
+    //
+    UTF8    crash_msg[1024];
+    UTF8    downmotd_msg[1024];
+    UTF8    fullmotd_msg[1024];
+    UTF8    pueblo_msg[1024];
+
+    // Timing (raw 100ns ticks).
+    //
+    int64_t max_cmdsecs;
+    int64_t rpt_cmdsecs;
+    int64_t timeslice;
+
+    // Behavior flags and limits.
+    //
+    int     sig_action;
+    bool    fork_dump;
+    bool    name_spaces;
+    bool    idle_wiz_dark;
+    bool    reset_players;
+    unsigned int site_chars;
+    dbref   start_room;
+
+    // SQL.
+    //
+    UTF8    sql_server[128];
+    UTF8    sql_user[128];
+    UTF8    sql_password[128];
+    UTF8    sql_database[128];
+
+    // Mail relay.
+    //
+    UTF8    mail_server[128];
+    UTF8    mail_sendaddr[128];
+    UTF8    mail_sendname[128];
+    UTF8    mail_ehlo[128];
+};
+
 // Game engine — the interface the driver uses to call into the engine.
 // In the current in-process build, CGameEngine wraps direct function calls.
 // When the engine is split into engine.so, the driver creates this via
@@ -520,6 +606,11 @@ public:
     virtual MUX_RESULT DbConvert(const UTF8 *infile, const UTF8 *outfile,
         const UTF8 *basename, bool bCheck, bool bLoad, bool bUnload,
         const UTF8 *comsys_file, const UTF8 *mail_file) = 0;
+
+    // Query the static configuration basket.  The driver calls this once
+    // after LoadGame to get a snapshot of mudconf values it needs.
+    //
+    virtual MUX_RESULT GetConfig(DRIVER_CONFIG *pConfig) = 0;
 };
 
 // Player session — the interface the driver uses for player authentication,

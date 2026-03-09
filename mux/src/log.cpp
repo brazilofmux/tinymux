@@ -1689,9 +1689,10 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
     case 11: // WriteString
         {
             UTF8 bufText[LBUF_SIZE];
-            if (Marshal_GetString(pqi, sizeof(bufText), bufText))
+            const UTF8 *pText;
+            if (Marshal_GetString(pqi, bufText, sizeof(bufText), &pText))
             {
-                mr = m_pILog->WriteString(bufText);
+                mr = m_pILog->WriteString(pText);
             }
             Pipe_EmptyQueue(pqi);
             Marshal_PutInt(pqi, mr);
@@ -1701,9 +1702,10 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
     case 12: // SetBasename
         {
             UTF8 bufBasename[LBUF_SIZE];
-            if (Marshal_GetString(pqi, sizeof(bufBasename), bufBasename))
+            const UTF8 *pBasename;
+            if (Marshal_GetString(pqi, bufBasename, sizeof(bufBasename), &pBasename))
             {
-                mr = m_pILog->SetBasename(bufBasename);
+                mr = m_pILog->SetBasename(pBasename);
             }
             Pipe_EmptyQueue(pqi);
             Marshal_PutInt(pqi, mr);

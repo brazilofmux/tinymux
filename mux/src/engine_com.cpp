@@ -2317,6 +2317,7 @@ public:
     virtual MUX_RESULT DbConvert(const UTF8 *infile, const UTF8 *outfile,
         const UTF8 *basename, bool bCheck, bool bLoad, bool bUnload,
         const UTF8 *comsys_file, const UTF8 *mail_file);
+    virtual MUX_RESULT GetConfig(DRIVER_CONFIG *pConfig);
 
     CGameEngine(void);
     virtual ~CGameEngine();
@@ -2791,6 +2792,123 @@ MUX_RESULT CGameEngine::ShouldShutdown(bool *pbShutdown)
         return MUX_E_INVALIDARG;
     }
     *pbShutdown = mudstate.shutdown_flag;
+    return MUX_S_OK;
+}
+
+static void safe_copy_str(UTF8 *dst, size_t dstSize, const UTF8 *src)
+{
+    if (nullptr != src)
+    {
+        mux_strncpy(dst, src, dstSize - 1);
+    }
+    else
+    {
+        dst[0] = '\0';
+    }
+}
+
+MUX_RESULT CGameEngine::GetConfig(DRIVER_CONFIG *pConfig)
+{
+    if (nullptr == pConfig)
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    memset(pConfig, 0, sizeof(DRIVER_CONFIG));
+
+    // Ports and networking.
+    //
+    pConfig->nPorts = static_cast<int>(mudconf.ports.size());
+    if (pConfig->nPorts > DRIVER_CONFIG_MAX_PORTS)
+    {
+        pConfig->nPorts = DRIVER_CONFIG_MAX_PORTS;
+    }
+    for (int i = 0; i < pConfig->nPorts; i++)
+    {
+        pConfig->ports[i] = mudconf.ports[i];
+    }
+
+#if defined(UNIX_SSL) || defined(_WIN32)
+    pConfig->nSslPorts = static_cast<int>(mudconf.sslPorts.size());
+    if (pConfig->nSslPorts > DRIVER_CONFIG_MAX_PORTS)
+    {
+        pConfig->nSslPorts = DRIVER_CONFIG_MAX_PORTS;
+    }
+    for (int i = 0; i < pConfig->nSslPorts; i++)
+    {
+        pConfig->sslPorts[i] = mudconf.sslPorts[i];
+    }
+    mux_strncpy(pConfig->ssl_certificate_file, mudconf.ssl_certificate_file, sizeof(pConfig->ssl_certificate_file) - 1);
+    mux_strncpy(pConfig->ssl_certificate_key, mudconf.ssl_certificate_key, sizeof(pConfig->ssl_certificate_key) - 1);
+    mux_strncpy(pConfig->ssl_certificate_password, mudconf.ssl_certificate_password, sizeof(pConfig->ssl_certificate_password) - 1);
+#else
+    pConfig->nSslPorts = 0;
+#endif
+
+    safe_copy_str(pConfig->ip_address, sizeof(pConfig->ip_address), mudconf.ip_address);
+    pConfig->use_hostname       = mudconf.use_hostname;
+    pConfig->retry_limit        = mudconf.retry_limit;
+    pConfig->idle_timeout       = mudconf.idle_timeout;
+    pConfig->conn_timeout       = mudconf.conn_timeout;
+    pConfig->cmd_quota_max      = mudconf.cmd_quota_max;
+    pConfig->output_limit       = mudconf.output_limit;
+    pConfig->default_charset    = mudconf.default_charset;
+    pConfig->max_players        = mudconf.max_players;
+    pConfig->control_flags      = mudconf.control_flags;
+
+    // Guest configuration.
+    //
+    mux_strncpy(pConfig->guest_prefix, mudconf.guest_prefix, sizeof(pConfig->guest_prefix) - 1);
+    pConfig->number_guests      = mudconf.number_guests;
+    pConfig->guest_char         = mudconf.guest_char;
+
+    // Game identity.
+    //
+    mux_strncpy(pConfig->mud_name, mudconf.mud_name, sizeof(pConfig->mud_name) - 1);
+
+    // File paths (pointer fields copied into fixed buffers).
+    //
+    safe_copy_str(pConfig->pid_file, sizeof(pConfig->pid_file), mudconf.pid_file);
+    safe_copy_str(pConfig->log_dir, sizeof(pConfig->log_dir), mudconf.log_dir);
+    safe_copy_str(pConfig->config_file, sizeof(pConfig->config_file), mudconf.config_file);
+
+    // Messages.
+    //
+    mux_strncpy(pConfig->crash_msg, mudconf.crash_msg, sizeof(pConfig->crash_msg) - 1);
+    mux_strncpy(pConfig->downmotd_msg, mudconf.downmotd_msg, sizeof(pConfig->downmotd_msg) - 1);
+    mux_strncpy(pConfig->fullmotd_msg, mudconf.fullmotd_msg, sizeof(pConfig->fullmotd_msg) - 1);
+    mux_strncpy(pConfig->pueblo_msg, mudconf.pueblo_msg, sizeof(pConfig->pueblo_msg) - 1);
+
+    // Timing (raw 100ns ticks).
+    //
+    pConfig->max_cmdsecs        = mudconf.max_cmdsecs.Return100ns();
+    pConfig->rpt_cmdsecs        = mudconf.rpt_cmdsecs.Return100ns();
+    pConfig->timeslice          = mudconf.timeslice.Return100ns();
+
+    // Behavior flags and limits.
+    //
+    pConfig->sig_action         = mudconf.sig_action;
+    pConfig->fork_dump          = mudconf.fork_dump;
+    pConfig->name_spaces        = mudconf.name_spaces;
+    pConfig->idle_wiz_dark      = mudconf.idle_wiz_dark;
+    pConfig->reset_players      = mudconf.reset_players;
+    pConfig->site_chars         = mudconf.site_chars;
+    pConfig->start_room         = mudconf.start_room;
+
+    // SQL.
+    //
+    mux_strncpy(pConfig->sql_server, mudconf.sql_server, sizeof(pConfig->sql_server) - 1);
+    mux_strncpy(pConfig->sql_user, mudconf.sql_user, sizeof(pConfig->sql_user) - 1);
+    mux_strncpy(pConfig->sql_password, mudconf.sql_password, sizeof(pConfig->sql_password) - 1);
+    mux_strncpy(pConfig->sql_database, mudconf.sql_database, sizeof(pConfig->sql_database) - 1);
+
+    // Mail relay.
+    //
+    mux_strncpy(pConfig->mail_server, mudconf.mail_server, sizeof(pConfig->mail_server) - 1);
+    mux_strncpy(pConfig->mail_sendaddr, mudconf.mail_sendaddr, sizeof(pConfig->mail_sendaddr) - 1);
+    mux_strncpy(pConfig->mail_sendname, mudconf.mail_sendname, sizeof(pConfig->mail_sendname) - 1);
+    mux_strncpy(pConfig->mail_ehlo, mudconf.mail_ehlo, sizeof(pConfig->mail_ehlo) - 1);
+
     return MUX_S_OK;
 }
 

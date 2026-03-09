@@ -24,6 +24,7 @@ constexpr int MBUF_SIZE   = 400;     // Medium
 constexpr int PBUF_SIZE   = 128;     // Pathname
 constexpr int SBUF_SIZE   = 64;      // Small
 
+extern bool g_paranoid_alloc;
 void pool_init(int, int);
 UTF8* pool_alloc(int poolnum, const UTF8* tag, const UTF8* file, const int line);
 UTF8* pool_alloc_lbuf(const UTF8* tag, const UTF8* file, const int line);

@@ -9,6 +9,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "modules.h"
 #include "driver_log.h"
 
 #ifdef SOLARIS
@@ -444,7 +445,7 @@ static void DCL_CDECL sighandler(int sig)
                 }
                 else
 #endif // STUB_SLAVE
-                if (  mudconf.fork_dump
+                if (  g_dc.fork_dump
                    && mudstate.dumping)
                 {
                     mudstate.dumped = child;
@@ -523,9 +524,9 @@ static void DCL_CDECL sighandler(int sig)
         check_panicking(sig);
         log_signal(sig);
         raw_broadcast(0, T("GAME: Caught signal %s, exiting."), signal_desc(sig));
-        if ('\0' != mudconf.crash_msg[0])
+        if ('\0' != g_dc.crash_msg[0])
         {
-            raw_broadcast(0, T("GAME: %s"), mudconf.crash_msg);
+            raw_broadcast(0, T("GAME: %s"), g_dc.crash_msg);
         }
         mudstate.shutdown_flag = true;
         break;
@@ -573,15 +574,15 @@ static void DCL_CDECL sighandler(int sig)
         pcache_sync();
         SYNC;
 
-        if (  mudconf.sig_action != SA_EXIT
+        if (  g_dc.sig_action != SA_EXIT
            && mudstate.bCanRestart)
         {
             raw_broadcast(0,
                     T("GAME: Fatal signal %s caught, restarting."), signal_desc(sig));
 
-            if ('\0' != mudconf.crash_msg[0])
+            if ('\0' != g_dc.crash_msg[0])
             {
-                raw_broadcast(0, T("GAME: %s"), mudconf.crash_msg);
+                raw_broadcast(0, T("GAME: %s"), g_dc.crash_msg);
             }
 
             // There is no older DB. It's a fiction. Our only choice is
@@ -615,9 +616,9 @@ static void DCL_CDECL sighandler(int sig)
 #endif // HAVE_WORKING_FORK
 
 #ifdef GAME_DOOFERMUX
-            execl("bin/netmux", mudconf.mud_name, "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, static_cast<char *>(nullptr));
+            execl("bin/netmux", g_dc.mud_name, "-c", g_dc.config_file, "-p", g_dc.pid_file, "-e", g_dc.log_dir, static_cast<char *>(nullptr));
 #else // GAME_DOOFERMUX
-            execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p", mudconf.pid_file, "-e", mudconf.log_dir, static_cast<char *>(nullptr));
+            execl("bin/netmux", "netmux", "-c", g_dc.config_file, "-p", g_dc.pid_file, "-e", g_dc.log_dir, static_cast<char *>(nullptr));
 #endif // GAME_DOOFERMUX
             mux_assert(false);
             break;

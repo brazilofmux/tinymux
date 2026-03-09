@@ -18,6 +18,7 @@
 #include "driver_log.h"
 
 mux_ILog *g_pILog = nullptr;
+DRIVER_CONFIG g_dc;
 
 #if defined(INLINESQL)
 #include <mysql.h>
@@ -160,6 +161,7 @@ static const UTF8 *conffile = nullptr;
 static bool bVersion = false;
 static const UTF8 *pErrorBasename = T("");
 static bool bServerOption = false;
+static const UTF8 *driver_pid_file = T("netmux.pid");
 
 #define NUM_CLI_OPTIONS (sizeof(OptionTable)/sizeof(OptionTable[0]))
 static CLI_OptionEntry OptionTable[] =
@@ -188,7 +190,7 @@ static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
         {
         case CLI_DO_PID_FILE:
             bServerOption = true;
-            mudconf.pid_file = reinterpret_cast<const UTF8 *>(pValue);
+            driver_pid_file = reinterpret_cast<const UTF8 *>(pValue);
             break;
 
         case CLI_DO_CONFIG_FILE:
@@ -291,7 +293,8 @@ int DCL_CDECL main(int argc, char *argv[])
         mudstate.bStandAlone = true;
     }
 
-    mudconf.pid_file = T("netmux.pid");
+    // pid_file is driver-owned — set from CLI or default.
+    //
 
     // Parse the command line
     //
@@ -399,7 +402,7 @@ int DCL_CDECL main(int argc, char *argv[])
     ENDLOG;
 
     game_pid = mux_getpid();
-    write_pidfile(mudconf.pid_file);
+    write_pidfile(driver_pid_file);
 
     build_signal_names_table();
 
@@ -435,7 +438,8 @@ int DCL_CDECL main(int argc, char *argv[])
     init_stubslave();
 #endif // HAVE_WORKING_FORK && STUB_SLAVE
 
-    mudconf.log_dir = StringClone(pErrorBasename);
+    // log_dir was previously written to mudconf here; it's now
+    // passed via pErrorBasename to SetBasename above.
 
     // Create the game engine interface.  In the current in-process build
     // this is a thin wrapper; when engine.so is split out, the driver
@@ -465,6 +469,18 @@ int DCL_CDECL main(int argc, char *argv[])
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
         g_pILog->log_text(tprintf(T("Game engine LoadGame failed (%d)."), mr));
+        ENDLOG;
+        pGameEngine->Release();
+        return 2;
+    }
+
+    // Query the static configuration basket from the engine.
+    //
+    mr = pGameEngine->GetConfig(&g_dc);
+    if (MUX_FAILED(mr))
+    {
+        STARTLOG(LOG_ALWAYS, "INI", "CONF");
+        g_pILog->log_text(tprintf(T("Failed to get driver config basket (%d)."), mr));
         ENDLOG;
         pGameEngine->Release();
         return 2;

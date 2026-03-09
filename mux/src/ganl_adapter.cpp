@@ -1,5 +1,7 @@
 #include "autoconf.h"
 #include "ganl_adapter.h"
+#include "modules.h"
+#include "driverstate.h"
 #include "driver_log.h"
 #include "interface.h"
 #include "connection.h" // Include ConnectionBase definition
@@ -248,7 +250,7 @@ namespace
             free_mbuf(siteBuffer);
         }
 
-        if (mudconf.use_hostname && d->addr[0] != '\0')
+        if (g_dc.use_hostname && d->addr[0] != '\0')
         {
             adapter.queue_dns_lookup(d->addr);
         }
@@ -383,7 +385,7 @@ namespace
         if (d->program_data != nullptr)
         {
             int num = 0;
-            const auto range = mudstate.dbref_to_descriptors_map.equal_range(d->player);
+            const auto range = g_dbref_to_descriptors_map.equal_range(d->player);
             for (auto it = range.first; it != range.second; ++it)
             {
                 num++;
@@ -411,25 +413,25 @@ namespace
         if (d->player != NOTHING)
         {
             const dbref player = d->player;
-            const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
+            const auto range = g_dbref_to_descriptors_map.equal_range(player);
             for (auto it = range.first; it != range.second; ++it)
             {
                 if (it->second == d)
                 {
-                    mudstate.dbref_to_descriptors_map.erase(it);
+                    g_dbref_to_descriptors_map.erase(it);
                     break;
                 }
             }
         }
 
         d->connected_at.GetUTC();
-        d->retries_left = mudconf.retry_limit;
+        d->retries_left = g_dc.retry_limit;
         d->command_count = 0;
-        d->timeout = mudconf.idle_timeout;
+        d->timeout = g_dc.idle_timeout;
         d->player = NOTHING;
         d->username[0] = '\0';
         d->doing[0] = '\0';
-        d->quota = mudconf.cmd_quota_max;
+        d->quota = g_dc.cmd_quota_max;
         d->last_time = d->connected_at;
         d->input_tot = d->input_size;
         d->output_tot = 0;
@@ -455,7 +457,7 @@ public:
     ganl::SessionId onConnectionOpen(ganl::ConnectionHandle handle, const std::string& remoteAddress) override {
         // During @restart, DESCs already exist — just wire up the mappings.
         if (adapter_.restarting_) {
-            for (DESC* d : mudstate.descriptors_list) {
+            for (DESC* d : g_descriptors_list) {
                 if (d && d->socket == static_cast<int>(handle)) {
                     std::shared_ptr<ganl::ConnectionBase> conn;
                     {
@@ -522,9 +524,9 @@ public:
         d->flags = 0;
         d->connected_at.GetUTC();
         d->last_time = d->connected_at;
-        d->retries_left = mudconf.retry_limit;
+        d->retries_left = g_dc.retry_limit;
         d->command_count = 0;
-        d->timeout = mudconf.idle_timeout;
+        d->timeout = g_dc.idle_timeout;
         d->player = NOTHING;
         d->addr[0] = '\0';
         d->doing[0] = '\0';
@@ -543,13 +545,13 @@ public:
         d->raw_input_state = NVT_IS_NORMAL;
         d->raw_codepoint_state = CL_PRINT_START_STATE;
         d->raw_codepoint_length = 0;
-        d->quota = mudconf.cmd_quota_max;
+        d->quota = g_dc.cmd_quota_max;
         d->program_data = nullptr;
         d->ttype = nullptr;
         d->height = 24;
         d->width = 78;
-        d->encoding = mudconf.default_charset;
-        d->negotiated_encoding = mudconf.default_charset;
+        d->encoding = g_dc.default_charset;
+        d->negotiated_encoding = g_dc.default_charset;
 
         for (auto& state : d->nvt_him_state) {
             state = OPTION_NO;
@@ -608,8 +610,8 @@ public:
             return ganl::InvalidSessionId;
         }
 
-        auto listIt = mudstate.descriptors_list.insert(mudstate.descriptors_list.begin(), d);
-        mudstate.descriptors_map.insert(std::make_pair(d, listIt));
+        auto listIt = g_descriptors_list.insert(g_descriptors_list.begin(), d);
+        g_descriptors_map.insert(std::make_pair(d, listIt));
 
 #ifdef UNIX_SSL
         d->ss = useTls ? SocketState::SSLAcceptAgain : SocketState::Accepted;
@@ -660,7 +662,7 @@ public:
         {
             // Clear the DS_AUTODARK on every related session.
             //
-            const auto range = mudstate.dbref_to_descriptors_map.equal_range(d->player);
+            const auto range = g_dbref_to_descriptors_map.equal_range(d->player);
             for (auto it = range.first; it != range.second; ++it)
             {
                 DESC* d1 = it->second;
@@ -730,7 +732,7 @@ public:
         if (d->program_data != nullptr)
         {
             int num = 0;
-            const auto range = mudstate.dbref_to_descriptors_map.equal_range(d->player);
+            const auto range = g_dbref_to_descriptors_map.equal_range(d->player);
             for (auto it = range.first; it != range.second; ++it)
             {
                 num++;
@@ -758,21 +760,21 @@ public:
         if (d->player != NOTHING)
         {
             const dbref player = d->player;
-            const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
+            const auto range = g_dbref_to_descriptors_map.equal_range(player);
             for (auto itPlayer = range.first; itPlayer != range.second; ++itPlayer)
             {
                 if (itPlayer->second == d)
                 {
-                    mudstate.dbref_to_descriptors_map.erase(itPlayer);
+                    g_dbref_to_descriptors_map.erase(itPlayer);
                     break;
                 }
             }
         }
 
-        auto mapIt = mudstate.descriptors_map.find(d);
-        if (mapIt != mudstate.descriptors_map.end()) {
-            mudstate.descriptors_list.erase(mapIt->second);
-            mudstate.descriptors_map.erase(mapIt);
+        auto mapIt = g_descriptors_map.find(d);
+        if (mapIt != g_descriptors_map.end()) {
+            g_descriptors_list.erase(mapIt->second);
+            g_descriptors_map.erase(mapIt);
         }
 
         // Remove mapping FIRST
@@ -803,7 +805,7 @@ public:
             : ganl::InvalidConnectionHandle;
 
         bool sentAny = false;
-        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it) {
+        for (auto it = g_descriptors_list.begin(); it != g_descriptors_list.end(); ++it) {
             DESC* target = *it;
             if (!target) {
                 continue;
@@ -899,14 +901,14 @@ public:
 
         bool isGuestConnect = false;
 
-        if (string_prefix(user, mudconf.guest_prefix)) {
+        if (string_prefix(user, g_dc.guest_prefix)) {
             if (hostInfo & HI_NOGUEST) {
                 return rejectWithMessage(T("CONN"), T("Connect"), T("Guest Site Forbidden"), NOTHING,
-                    FC_CONN_REG, mudconf.downmotd_msg, ganl::DisconnectReason::ServerShutdown);
+                    FC_CONN_REG, g_dc.downmotd_msg, ganl::DisconnectReason::ServerShutdown);
             }
 
-            if (mudconf.control_flags & CF_LOGIN) {
-                if (mudconf.number_guests <= 0 || !Good_obj(mudconf.guest_char) || !(mudconf.control_flags & CF_GUEST)) {
+            if (g_dc.control_flags & CF_LOGIN) {
+                if (g_dc.number_guests <= 0 || !Good_obj(g_dc.guest_char) || !(g_dc.control_flags & CF_GUEST)) {
                     queue_write(d, T("Guest logins are disabled.\r\n"));
                     cleanupBuffers();
                     return false;
@@ -925,11 +927,11 @@ public:
         }
 
         int nplayers;
-        if (mudconf.max_players < 0) {
-            nplayers = mudconf.max_players - 1;
+        if (g_dc.max_players < 0) {
+            nplayers = g_dc.max_players - 1;
         } else {
             nplayers = 0;
-            for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it) {
+            for (auto it = g_descriptors_list.begin(); it != g_descriptors_list.end(); ++it) {
                 DESC* d2 = *it;
                 if (d2->flags & DS_CONNECTED) {
                     nplayers++;
@@ -969,22 +971,22 @@ public:
             return false;
         }
 
-        const bool loginsEnabled = (mudconf.control_flags & CF_LOGIN) != 0;
-        const bool belowCap = (mudconf.max_players < 0) || (nplayers < mudconf.max_players);
+        const bool loginsEnabled = (g_dc.control_flags & CF_LOGIN) != 0;
+        const bool belowCap = (g_dc.max_players < 0) || (nplayers < g_dc.max_players);
         const bool privileged = RealWizRoy(player) || God(player);
 
         if (!( (loginsEnabled && belowCap) || privileged )) {
             if (!loginsEnabled) {
                 return rejectWithMessage(T("CON"), T("Connect"), T("Logins Disabled"), player,
-                    FC_CONN_DOWN, mudconf.downmotd_msg, ganl::DisconnectReason::ServerShutdown);
+                    FC_CONN_DOWN, g_dc.downmotd_msg, ganl::DisconnectReason::ServerShutdown);
             }
             return rejectWithMessage(T("CON"), T("Connect"), T("Game Full"), player,
-                FC_CONN_FULL, mudconf.fullmotd_msg, ganl::DisconnectReason::GameFull);
+                FC_CONN_FULL, g_dc.fullmotd_msg, ganl::DisconnectReason::GameFull);
         }
 
         if (Guest(player) && (hostInfo & HI_NOGUEST)) {
             return rejectWithMessage(T("CON"), T("Connect"), T("Guest Site Forbidden"), player,
-                FC_CONN_SITE, mudconf.downmotd_msg, ganl::DisconnectReason::ServerShutdown);
+                FC_CONN_SITE, g_dc.downmotd_msg, ganl::DisconnectReason::ServerShutdown);
         }
 
         STARTLOG(LOG_LOGIN, "CON", "LOGIN");
@@ -999,7 +1001,7 @@ public:
         d->connected_at.GetUTC();
         d->player = player;
 
-        const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
+        const auto range = g_dbref_to_descriptors_map.equal_range(player);
         for (auto it = range.first; it != range.second; ++it) {
             DESC* d2 = it->second;
             if (d2->program_data != nullptr && d->program_data == nullptr) {
@@ -1016,7 +1018,7 @@ public:
             int numConnections = count_player_descs(player);
             bool isPueblo = (d->flags & DS_PUEBLOCLIENT) != 0;
             bool isSusp = mudstate.access_list.isSuspect(&d->address);
-            int timeout = mudconf.idle_timeout;
+            int timeout = g_dc.idle_timeout;
             mudstate.pIPlayerSession->AnnounceConnect(player, numConnections,
                 isPueblo, isSusp, d->addr, d->username, hostAddress,
                 &timeout);
@@ -1215,9 +1217,9 @@ bool GanlAdapter::initialize() {
     secureTransport_ = ganl::SecureTransportFactory::createTransport();
     if (secureTransport_) {
         ganl::TlsConfig tlsConfig;
-        tlsConfig.certificateFile = reinterpret_cast<const char *>(mudconf.ssl_certificate_file); // Assuming UTF8 is compatible
-        tlsConfig.keyFile = reinterpret_cast<const char *>(mudconf.ssl_certificate_key);
-        tlsConfig.password = reinterpret_cast<const char *>(mudconf.ssl_certificate_password);
+        tlsConfig.certificateFile = reinterpret_cast<const char *>(g_dc.ssl_certificate_file); // Assuming UTF8 is compatible
+        tlsConfig.keyFile = reinterpret_cast<const char *>(g_dc.ssl_certificate_key);
+        tlsConfig.password = reinterpret_cast<const char *>(g_dc.ssl_certificate_password);
         // tlsConfig.verifyPeer = false; // Default
 
         if (!secureTransport_->initialize(tlsConfig)) {
@@ -1297,8 +1299,8 @@ bool GanlAdapter::initialize() {
         }
 
         // Adopt surviving connection fds from the descriptor list
-        // (loaded by load_restart_db into mudstate.descriptors_list).
-        for (DESC* d : mudstate.descriptors_list) {
+        // (loaded by load_restart_db into g_descriptors_list).
+        for (DESC* d : g_descriptors_list) {
             if (!d || d->socket < 0) {
                 continue;
             }
@@ -1346,9 +1348,9 @@ bool GanlAdapter::initialize() {
 #endif // HAVE_WORKING_FORK
     {
         // --- Normal (fresh) start path ---
-        for (size_t i = 0; i < mudconf.ports.size(); ++i) {
-            int port = mudconf.ports[i];
-            std::string host = mudconf.ip_address ? reinterpret_cast<const char *>(mudconf.ip_address) : "";
+        for (int i = 0; i < g_dc.nPorts; ++i) {
+            int port = g_dc.ports[i];
+            std::string host = (g_dc.ip_address[0] != '\0') ? reinterpret_cast<const char *>(g_dc.ip_address) : "";
 
             ganl::ListenerHandle handle = networkEngine_->createListener(host, port, error);
             if (handle != ganl::InvalidListenerHandle) {
@@ -1372,9 +1374,9 @@ bool GanlAdapter::initialize() {
 
         // Create SSL Listeners
         if (secureTransport_) {
-            for (size_t i = 0; i < mudconf.sslPorts.size(); ++i) {
-                int port = mudconf.sslPorts[i];
-                std::string host = mudconf.ip_address ? reinterpret_cast<const char *>(mudconf.ip_address) : "";
+            for (int i = 0; i < g_dc.nSslPorts; ++i) {
+                int port = g_dc.sslPorts[i];
+                std::string host = (g_dc.ip_address[0] != '\0') ? reinterpret_cast<const char *>(g_dc.ip_address) : "";
 
                 ganl::ListenerHandle handle = networkEngine_->createListener(host, port, error);
                 if (handle != ganl::InvalidListenerHandle) {
@@ -1431,8 +1433,8 @@ void GanlAdapter::shutdown() {
     for (ganl::ListenerHandle handle : sslHandles) networkEngine_->closeListener(handle);
 
     // Send farewell message to all connected clients.
-    for (auto it = mudstate.descriptors_list.begin();
-         it != mudstate.descriptors_list.end(); ++it)
+    for (auto it = g_descriptors_list.begin();
+         it != g_descriptors_list.end(); ++it)
     {
         DESC* d = *it;
         if (d) {
@@ -1557,7 +1559,7 @@ void GanlAdapter::prepare_for_restart() {
 #ifdef UNIX_SSL
     {
         std::vector<DESC*> tls_descs;
-        for (DESC* d : mudstate.descriptors_list) {
+        for (DESC* d : g_descriptors_list) {
             if (d && d->ss != SocketState::Accepted) {
                 tls_descs.push_back(d);
             }
@@ -1569,7 +1571,7 @@ void GanlAdapter::prepare_for_restart() {
 #endif
 
     // 3. Flush output for remaining non-TLS connections.
-    for (DESC* d : mudstate.descriptors_list) {
+    for (DESC* d : g_descriptors_list) {
         if (d) {
             process_output(d, false);
         }
@@ -1670,7 +1672,7 @@ void GanlAdapter::run_main_loop() {
     SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
 #endif
 
-    if (mudconf.use_hostname) {
+    if (g_dc.use_hostname) {
         start_dns_slave();
     }
 
@@ -1734,7 +1736,7 @@ void GanlAdapter::run_main_loop() {
 
                     // Reject if we've exhausted available descriptors.
                     //
-                    if (mudstate.descriptors_list.size() >= avail_descriptors)
+                    if (g_descriptors_list.size() >= avail_descriptors)
                     {
                         STARTLOG(LOG_NET, "NET", "FULL");
                         g_pILog->WriteString(tprintf(T("%.90s"), T("Descriptor limit reached, rejecting connection.")));
@@ -1869,7 +1871,7 @@ void GanlAdapter::process_tinyMUX_tasks() {
 #endif
 
     // Flush pending output so queued text reaches clients promptly.
-    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
+    for (auto it = g_descriptors_list.begin(); it != g_descriptors_list.end(); ++it)
     {
         DESC* d = *it;
         if (d && !d->output_queue.empty())
@@ -1884,7 +1886,7 @@ void GanlAdapter::process_tinyMUX_tasks() {
 
 bool GanlAdapter::start_dns_slave() {
 #if defined(_WIN32)
-    if (!mudconf.use_hostname) {
+    if (!g_dc.use_hostname) {
         return false;
     }
 
@@ -1901,7 +1903,7 @@ bool GanlAdapter::start_dns_slave() {
     g_pILog->WriteString(tprintf(T("GANL: DNS worker threads started (%d threads).\n"), DNS_THREAD_COUNT));
     return true;
 #else
-    if (!mudconf.use_hostname || !networkEngine_) {
+    if (!g_dc.use_hostname || !networkEngine_) {
         return false;
     }
 
@@ -1980,7 +1982,7 @@ void GanlAdapter::shutdown_dns_slave() {
 
 void GanlAdapter::queue_dns_lookup(const UTF8* numericAddress) {
 #if defined(_WIN32)
-    if (!mudconf.use_hostname || !numericAddress || *numericAddress == '\0') {
+    if (!g_dc.use_hostname || !numericAddress || *numericAddress == '\0') {
         return;
     }
 
@@ -1993,7 +1995,7 @@ void GanlAdapter::queue_dns_lookup(const UTF8* numericAddress) {
     }
     dnsCv_.notify_one();
 #else
-    if (!mudconf.use_hostname || !numericAddress || *numericAddress == '\0') {
+    if (!g_dc.use_hostname || !numericAddress || *numericAddress == '\0') {
         return;
     }
 
@@ -2165,7 +2167,7 @@ void GanlAdapter::apply_reverse_dns_result(const std::string& numericAddress, co
     std::strncpy(reinterpret_cast<char*>(hostBuffer), hostname.c_str(), sizeof(hostBuffer) - 1);
     hostBuffer[sizeof(hostBuffer) - 1] = '\0';
 
-    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it) {
+    for (auto it = g_descriptors_list.begin(); it != g_descriptors_list.end(); ++it) {
         DESC* d = *it;
         if (std::strcmp(reinterpret_cast<const char*>(d->addr), reinterpret_cast<const char*>(numericBuffer)) != 0) {
             continue;
@@ -2283,7 +2285,7 @@ bool GanlAdapter::start_email_send(dbref executor, const UTF8* recipient,
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags    = AI_ADDRCONFIG;
 
-    UTF8* pMailServer = ConvertCRLFtoSpace(mudconf.mail_server);
+    UTF8* pMailServer = ConvertCRLFtoSpace(g_dc.mail_server);
 
     MUX_ADDRINFO* servinfo = nullptr;
     if (0 != mux_getaddrinfo(pMailServer, reinterpret_cast<const UTF8*>("25"),
@@ -2330,11 +2332,11 @@ bool GanlAdapter::start_email_send(dbref executor, const UTF8* recipient,
     channel->subject       = reinterpret_cast<const char*>(subject);
     channel->encodedBody   = reinterpret_cast<const char*>(encodedBody);
     channel->senderAddr    = reinterpret_cast<const char*>(
-        ConvertCRLFtoSpace(mudconf.mail_sendaddr));
+        ConvertCRLFtoSpace(g_dc.mail_sendaddr));
     channel->senderName    = reinterpret_cast<const char*>(
-        ConvertCRLFtoSpace(mudconf.mail_sendname));
+        ConvertCRLFtoSpace(g_dc.mail_sendname));
     channel->ehloHost      = reinterpret_cast<const char*>(
-        ConvertCRLFtoSpace(mudconf.mail_ehlo));
+        ConvertCRLFtoSpace(g_dc.mail_ehlo));
 
     // adoptConnection sets non-blocking and registers with the I/O engine.
     ganl::ErrorCode error = 0;

@@ -12,6 +12,13 @@
 #include "config.h"
 #include "externs.h"
 
+// libmux.so cannot access mudconf directly (it lives in engine.so).
+// This flag mirrors g_paranoid_alloc; the engine sets it after
+// loading configuration via g_paranoid_alloc in alloc.h (future work:
+// libmux config broadcast).  For now, default to false.
+//
+bool g_paranoid_alloc = false;
+
 /*! \brief Per-buffer header to manage and organize client allocation.
  *
  * The POOLHDR structure preceeds a client area which must be properly
@@ -220,7 +227,7 @@ static void pool_check(const UTF8 *tag, const UTF8 *file, const int line)
 
 UTF8 *pool_alloc(int poolnum, const UTF8 *tag, const UTF8 *file, const int line)
 {
-    if (mudconf.paranoid_alloc)
+    if (g_paranoid_alloc)
     {
         pool_check(tag, file, line);
     }
@@ -312,7 +319,7 @@ UTF8 *pool_alloc(int poolnum, const UTF8 *tag, const UTF8 *file, const int line)
 
 UTF8 *pool_alloc_lbuf(const UTF8 *tag, const UTF8 *file, const int line)
 {
-    if (mudconf.paranoid_alloc)
+    if (g_paranoid_alloc)
     {
         pool_check(tag, file, line);
     }
@@ -413,7 +420,7 @@ void pool_free(int poolnum, UTF8* buf, const UTF8* file, const int line)
     const auto pf = reinterpret_cast<POOLFTR*>(buf + pools[poolnum].pool_client_size);
     const auto pui = reinterpret_cast<unsigned*>(buf);
 
-    if (mudconf.paranoid_alloc)
+    if (g_paranoid_alloc)
     {
         pool_check(ph->u.buf_tag, file, line);
     }
@@ -480,7 +487,7 @@ void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
     const auto pf = reinterpret_cast<POOLFTR*>(buf + LBUF_SIZE);
     const auto pui = reinterpret_cast<unsigned*>(buf);
 
-    if (mudconf.paranoid_alloc)
+    if (g_paranoid_alloc)
     {
         pool_check(ph->u.buf_tag, file, line);
     }

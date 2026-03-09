@@ -9,6 +9,7 @@
 #include "config.h"
 #include "externs.h"
 #include "interface.h"
+#include "driverstate.h"
 
 void site_mon_send(const SOCKET port, const UTF8 *address, DESC *d, const UTF8 *msg)
 {
@@ -40,7 +41,7 @@ void site_mon_send(const SOCKET port, const UTF8 *address, DESC *d, const UTF8 *
             address, suspect ? T(" (SUSPECT)"): T(""));
     }
 
-    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
+    for (auto it = g_descriptors_list.begin(); it != g_descriptors_list.end(); )
     {
         DESC* nd = *it;
         ++it;

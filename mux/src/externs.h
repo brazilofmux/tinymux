@@ -217,6 +217,9 @@ extern void emergency_shutdown();
 class mux_ILog;
 extern mux_ILog *g_pILog;
 
+struct DRIVER_CONFIG;
+extern DRIVER_CONFIG g_dc;
+
 // From conn_bridge.cpp
 //
 extern void conn_bridge_init(void);

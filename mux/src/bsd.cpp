@@ -11,8 +11,16 @@
 #include "externs.h"
 #include "interface.h"
 #include "ganl_adapter.h"
+#include "modules.h"
+#include "driverstate.h"
 #include "driver_log.h"
 using namespace std;
+
+// Driver-local descriptor tracking containers (definitions).
+//
+std::list<DESC*> g_descriptors_list;
+std::unordered_map<DESC*, std::list<DESC*>::iterator, DriverPointerHasher> g_descriptors_map;
+std::multimap<dbref, DESC*> g_dbref_to_descriptors_map;
 
 #ifdef UNIX_SSL
 port_info main_game_ports[MAX_LISTEN_PORTS * 2];
@@ -221,7 +229,7 @@ void shutdownsock(DESC *d, int reason)
     if (d->program_data != nullptr)
     {
         int num = 0;
-        const auto range = mudstate.dbref_to_descriptors_map.equal_range(d->player);
+        const auto range = g_dbref_to_descriptors_map.equal_range(d->player);
         for (auto it = range.first; it != range.second; ++it)
         {
             num++;
@@ -247,12 +255,12 @@ void shutdownsock(DESC *d, int reason)
     if (reason == R_LOGOUT)
     {
         d->connected_at.GetUTC();
-        d->retries_left = mudconf.retry_limit;
+        d->retries_left = g_dc.retry_limit;
         d->command_count = 0;
-        d->timeout = mudconf.idle_timeout;
+        d->timeout = g_dc.idle_timeout;
         d->player = 0;
         d->doing[0] = '\0';
-        d->quota = mudconf.cmd_quota_max;
+        d->quota = g_dc.cmd_quota_max;
         d->last_time = d->connected_at;
         d->input_tot = d->input_size;
         d->output_tot = 0;
@@ -272,9 +280,9 @@ void shutdownsock(DESC *d, int reason)
         }
         d->socket = INVALID_SOCKET;
 
-        auto it = mudstate.descriptors_map.find(d);
-        mudstate.descriptors_list.erase(it->second);
-        mudstate.descriptors_map.erase(it);
+        auto it = g_descriptors_map.find(d);
+        g_descriptors_list.erase(it->second);
+        g_descriptors_map.erase(it);
 
         // If we don't have queued IOs, then we can free these, now.
         //
@@ -314,7 +322,7 @@ void close_listening_ports(void)
 
 static void close_sockets_emergency(const UTF8* message)
 {
-    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
+    for (auto it = g_descriptors_list.begin(); it != g_descriptors_list.end(); ++it)
     {
         DESC* d = *it;
         SOCKET_WRITE(d->socket, reinterpret_cast<const char*>(message), strlen(reinterpret_cast<const char*>(message)), 0);
