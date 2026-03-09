@@ -2314,6 +2314,9 @@ public:
     virtual MUX_RESULT DumpDatabase(void);
     virtual MUX_RESULT Shutdown(void);
     virtual MUX_RESULT ShouldShutdown(bool *pbShutdown);
+    virtual MUX_RESULT DbConvert(const UTF8 *infile, const UTF8 *outfile,
+        const UTF8 *basename, bool bCheck, bool bLoad, bool bUnload,
+        const UTF8 *comsys_file, const UTF8 *mail_file);
 
     CGameEngine(void);
     virtual ~CGameEngine();
@@ -2711,6 +2714,11 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
 
 MUX_RESULT CGameEngine::Startup(void)
 {
+    // Set up the COM bridge so engine-side code can reach the driver's
+    // connection manager through free-function stubs.
+    //
+    conn_bridge_init();
+
     Guest.StartUp();
 
     // Do a consistency check and set up the freelist.
@@ -2764,6 +2772,7 @@ MUX_RESULT CGameEngine::DumpDatabase(void)
 
 MUX_RESULT CGameEngine::Shutdown(void)
 {
+    conn_bridge_final();
     local_shutdown();
 
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
@@ -2782,6 +2791,294 @@ MUX_RESULT CGameEngine::ShouldShutdown(bool *pbShutdown)
         return MUX_E_INVALIDARG;
     }
     *pbShutdown = mudstate.shutdown_flag;
+    return MUX_S_OK;
+}
+
+static void dbconvert_info(int fmt, int flags, int ver)
+{
+    const UTF8 *cp;
+
+    if (fmt == F_MUX)
+    {
+        cp = T("MUX");
+    }
+    else
+    {
+        cp = T("*unknown*");
+    }
+    mux_fprintf(stderr, T("%s version %d:"), cp, ver);
+    if (  ver < MIN_SUPPORTED_VERSION
+       || MAX_SUPPORTED_VERSION < ver)
+    {
+        mux_fprintf(stderr, T(" Unsupported version"));
+        exit(1);
+    }
+    else if (  (  (  1 == ver
+                  || 2 == ver)
+               && (flags & MANDFLAGS_V2) != MANDFLAGS_V2)
+            || (  3 == ver
+               && (flags & MANDFLAGS_V3) != MANDFLAGS_V3)
+            || (  4 == ver
+               && (flags & MANDFLAGS_V4) != MANDFLAGS_V4))
+    {
+        mux_fprintf(stderr, T(" Unsupported flags"));
+        exit(1);
+    }
+    if (flags & V_DATABASE)
+        mux_fprintf(stderr, T(" Database"));
+    if (flags & V_ATRNAME)
+        mux_fprintf(stderr, T(" AtrName"));
+    if (flags & V_ATRKEY)
+        mux_fprintf(stderr, T(" AtrKey"));
+    if (flags & V_ATRMONEY)
+        mux_fprintf(stderr, T(" AtrMoney"));
+    mux_fprintf(stderr, T(ENDLINE));
+}
+
+MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
+    const UTF8 *basename, bool bCheck, bool bLoad, bool bUnload,
+    const UTF8 *comsys_file, const UTF8 *mail_file)
+{
+    int setflags, clrflags, ver;
+    int db_ver, db_format, db_flags;
+
+    SeedRandomNumberGenerator();
+
+    pool_init(POOL_LBUF, LBUF_SIZE);
+    pool_init(POOL_MBUF, MBUF_SIZE);
+    pool_init(POOL_SBUF, SBUF_SIZE);
+    pool_init(POOL_BOOL, sizeof(struct boolexp));
+    pool_init(POOL_STRING, sizeof(mux_string));
+
+    cf_init();
+
+    // Decide what conversions to do and how to format the output file.
+    //
+    setflags = clrflags = ver = 0;
+    bool do_redirect = false;
+
+    bool do_write = true;
+    if (bCheck || bLoad)
+    {
+        do_write = false;
+    }
+    if (bLoad)
+    {
+        clrflags = 0xffffffff;
+        setflags = OUTPUT_FLAGS;
+        ver = OUTPUT_VERSION;
+        do_redirect = true;
+    }
+    else if (bUnload)
+    {
+        clrflags = 0xffffffff;
+        setflags = UNLOAD_FLAGS;
+        ver = UNLOAD_VERSION;
+    }
+
+    // Open the database
+    //
+    init_attrtab();
+
+    int cc = init_dbfile(basename);
+    if (cc == HF_OPEN_STATUS_ERROR)
+    {
+        mux_fprintf(stderr, T("Can\xE2\x80\x99t open SQLite database.\n"));
+        return MUX_E_FAIL;
+    }
+    else if (cc == HF_OPEN_STATUS_OLD)
+    {
+        if (setflags == OUTPUT_FLAGS)
+        {
+            mux_fprintf(stderr, T("Would overwrite existing SQLite database.\n"));
+            CLOSE;
+            return MUX_E_FAIL;
+        }
+    }
+    else if (cc == HF_OPEN_STATUS_NEW)
+    {
+        if (setflags == UNLOAD_FLAGS)
+        {
+            mux_fprintf(stderr, T("SQLite database is empty.\n"));
+            CLOSE;
+            return MUX_E_FAIL;
+        }
+    }
+
+    bool bLoadedFromSQLite = false;
+    if (nullptr == infile && HF_OPEN_STATUS_OLD == cc)
+    {
+        int sqlite_load_rc = sqlite_load_game();
+        if (sqlite_load_rc < 0)
+        {
+            mux_fprintf(stderr, T("Input: SQLite database load failed.\n"));
+            return MUX_E_FAIL;
+        }
+        bLoadedFromSQLite = (sqlite_load_rc > 0);
+    }
+
+    if (bLoadedFromSQLite)
+    {
+        mux_fprintf(stderr, T("Input: SQLite database\n"));
+        db_format = F_MUX;
+        db_ver = OUTPUT_VERSION;
+        db_flags = OUTPUT_FLAGS;
+    }
+    else
+    {
+        if (nullptr == infile)
+        {
+            mux_fprintf(stderr, T("No input flatfile provided and SQLite has no loadable game data.\n"));
+            return MUX_E_FAIL;
+        }
+        FILE *fpIn;
+        if (!mux_fopen(&fpIn, infile, T("rb")))
+        {
+            return MUX_E_FAIL;
+        }
+
+        setvbuf(fpIn, nullptr, _IOFBF, 16384);
+        CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+        if (!sqldb.Begin() || !sqldb.ClearAttributes())
+        {
+            sqldb.Rollback();
+            mux_fprintf(stderr, T("SQLite attribute clear failed before flatfile import.\n"));
+            fclose(fpIn);
+            return MUX_E_FAIL;
+        }
+        mudstate.bSQLiteLoading = true;
+        if (db_read(fpIn, &db_format, &db_ver, &db_flags) < 0)
+        {
+            mudstate.bSQLiteLoading = false;
+            sqldb.Rollback();
+            fclose(fpIn);
+            return MUX_E_FAIL;
+        }
+        mudstate.bSQLiteLoading = false;
+        if (!sqldb.Commit())
+        {
+            sqldb.Rollback();
+            mux_fprintf(stderr, T("SQLite attribute import commit failed.\n"));
+            fclose(fpIn);
+            return MUX_E_FAIL;
+        }
+        if (!sqlite_sync_runtime())
+        {
+            if (!clear_sqlite_after_sync_failure(sqldb))
+            {
+                mux_fprintf(stderr, T("SQLite cleanup failed after sync failure.\n"));
+            }
+            mux_fprintf(stderr, T("SQLite metadata sync failed.\n"));
+            return MUX_E_FAIL;
+        }
+        mux_fprintf(stderr, T("Input: "));
+        dbconvert_info(db_format, db_flags, db_ver);
+
+        if (bCheck)
+        {
+            do_dbck(NOTHING, NOTHING, NOTHING, 0, DBCK_FULL);
+        }
+        fclose(fpIn);
+    }
+
+    // Import comsys from flatfile into SQLite.
+    //
+    if (bLoad && comsys_file)
+    {
+        load_comsys(const_cast<UTF8 *>(comsys_file));
+        if (!sqlite_sync_comsys())
+        {
+            mux_fprintf(stderr, T("Import comsys into SQLite failed.\n"));
+            return MUX_E_FAIL;
+        }
+        mux_fprintf(stderr, T("Imported comsys into SQLite.\n"));
+    }
+
+    // Import mail from flatfile into SQLite.
+    //
+    if (bLoad && mail_file)
+    {
+        FILE *fpMail;
+        if (mux_fopen(&fpMail, mail_file, T("rb")))
+        {
+            setvbuf(fpMail, nullptr, _IOFBF, 16384);
+            load_mail(fpMail);
+            fclose(fpMail);
+            if (!sqlite_sync_mail())
+            {
+                mux_fprintf(stderr, T("Import mail into SQLite failed.\n"));
+                return MUX_E_FAIL;
+            }
+            mux_fprintf(stderr, T("Imported mail into SQLite.\n"));
+        }
+    }
+
+    // Export comsys from SQLite to flatfile.
+    //
+    if (bUnload && comsys_file)
+    {
+        int sqlite_comsys_rc = sqlite_load_comsys();
+        if (sqlite_comsys_rc > 0)
+        {
+            save_comsys(const_cast<UTF8 *>(comsys_file));
+            mux_fprintf(stderr, T("Exported comsys from SQLite.\n"));
+        }
+        else if (sqlite_comsys_rc < 0)
+        {
+            mux_fprintf(stderr, T("Export comsys from SQLite failed.\n"));
+            return MUX_E_FAIL;
+        }
+    }
+
+    // Export mail from SQLite to flatfile.
+    //
+    if (bUnload && mail_file)
+    {
+        int sqlite_mail_rc = sqlite_load_mail();
+        if (sqlite_mail_rc > 0)
+        {
+            FILE *fpMail;
+            if (mux_fopen(&fpMail, mail_file, T("wb")))
+            {
+                dump_mail(fpMail);
+                fclose(fpMail);
+                mux_fprintf(stderr, T("Exported mail from SQLite.\n"));
+            }
+        }
+        else if (sqlite_mail_rc < 0)
+        {
+            mux_fprintf(stderr, T("Export mail from SQLite failed.\n"));
+            return MUX_E_FAIL;
+        }
+    }
+
+    if (do_write)
+    {
+        FILE *fpOut;
+        if (!mux_fopen(&fpOut, outfile, T("wb")))
+        {
+            return MUX_E_FAIL;
+        }
+
+        db_flags = (db_flags & ~clrflags) | setflags;
+        if (db_format != F_MUX)
+        {
+            db_ver = 3;
+        }
+        if (ver != 0)
+        {
+            db_ver = ver;
+        }
+        mux_fprintf(stderr, T("Output: "));
+        dbconvert_info(F_MUX, db_flags, db_ver);
+        setvbuf(fpOut, nullptr, _IOFBF, 16384);
+        db_write(fpOut, F_MUX, db_ver | db_flags);
+        fclose(fpOut);
+    }
+    CLOSE;
+#ifdef SELFCHECK
+    db_free();
+#endif
     return MUX_S_OK;
 }
 

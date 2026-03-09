@@ -13,6 +13,7 @@
 #include "externs.h"
 #include "interface.h"
 #include "sqlite_backend.h"
+#include "driver_log.h"
 
 // Driver-side CIDs — only CID_ConnectionManager lives in netmux.
 //
@@ -94,13 +95,13 @@ MUX_RESULT init_stubslave(void)
     if (MUX_SUCCEEDED(mr))
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_printf(T("Opened interface for StubSlave management."));
+        g_pILog->log_text(T("Opened interface for StubSlave management."));
         ENDLOG;
     }
     else
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_printf(T("Failed to open interface for StubSlave management (%d)."), mr);
+        g_pILog->log_text(tprintf(T("Failed to open interface for StubSlave management (%d)."), mr));
         ENDLOG;
     }
     return mr;
@@ -116,7 +117,7 @@ void final_stubslave(void)
         if (MUX_FAILED(mr))
         {
             STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-            log_printf(T("Failed to request stubslave to shutdown (%d)."), mr);
+            g_pILog->log_text(tprintf(T("Failed to request stubslave to shutdown (%d)."), mr));
             ENDLOG;
         }
 
@@ -140,13 +141,13 @@ void final_modules(void)
     if (MUX_FAILED(mr))
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_printf(T("Failed to revoke netmux modules (%d)."), mr);
+        g_pILog->log_text(tprintf(T("Failed to revoke netmux modules (%d)."), mr));
         ENDLOG;
     }
     else
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_printf(T("Revoked netmux modules."), mr);
+        g_pILog->log_text(T("Revoked netmux modules."));
         ENDLOG;
     }
     mux_FinalizeModuleLibrary();

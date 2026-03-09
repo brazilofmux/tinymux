@@ -11,6 +11,7 @@
 #include "externs.h"
 #include "interface.h"
 #include "ganl_adapter.h"
+#include "driver_log.h"
 using namespace std;
 
 #ifdef UNIX_SSL
@@ -152,10 +153,10 @@ void shutdownsock(DESC *d, int reason)
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "LOGO")
             buff = alloc_mbuf("shutdownsock.LOG.logout");
             mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Logout by "), d->socket, d->addr);
-            log_text(buff);
-            log_name(d->player);
+            g_pILog->log_text(buff);
+            g_pILog->log_name(d->player);
             mux_sprintf(buff, MBUF_SIZE, T(" <Reason: %s>"), disc_reasons[reason]);
-            log_text(buff);
+            g_pILog->log_text(buff);
             free_mbuf(buff);
             ENDLOG;
         }
@@ -165,10 +166,10 @@ void shutdownsock(DESC *d, int reason)
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "DISC")
             buff = alloc_mbuf("shutdownsock.LOG.disconn");
             mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Logout by "), d->socket, d->addr);
-            log_text(buff);
-            log_name(d->player);
+            g_pILog->log_text(buff);
+            g_pILog->log_name(d->player);
             mux_sprintf(buff, MBUF_SIZE, T(" <Reason: %s>"), disc_reasons[reason]);
-            log_text(buff);
+            g_pILog->log_text(buff);
             free_mbuf(buff);
             ENDLOG;
             site_mon_send(d->socket, d->addr, d, T("Disconnection"));
@@ -188,7 +189,7 @@ void shutdownsock(DESC *d, int reason)
         mux_sprintf(buff, LBUF_SIZE, T("%d %s %d %d %d %d [%s] <%s> %s"), d->player, buff2, d->command_count,
                 Seconds, locPlayer, penPlayer, d->addr, disc_reasons[reason],
                 PlayerName);
-        log_text(buff);
+        g_pILog->log_text(buff);
         free_lbuf(buff);
         free_sbuf(buff2);
         ENDLOG;
@@ -204,7 +205,7 @@ void shutdownsock(DESC *d, int reason)
         buff = alloc_mbuf("shutdownsock.LOG.neverconn");
         mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Connection closed, never connected. <Reason: %s>"),
             d->socket, d->addr, disc_reasons[reason]);
-        log_text(buff);
+        g_pILog->log_text(buff);
         free_mbuf(buff);
         ENDLOG;
         site_mon_send(d->socket, d->addr, d, T("N/C Connection Closed"));
@@ -320,7 +321,7 @@ static void close_sockets_emergency(const UTF8* message)
 
         if (IS_SOCKET_ERROR(shutdown(d->socket, SD_BOTH)))
         {
-            log_perror(T("NET"), T("FAIL"), nullptr, T("shutdown"));
+            g_pILog->log_perror(T("NET"), T("FAIL"), nullptr, T("shutdown"));
         }
         SOCKET_CLOSE(d->socket);
     }

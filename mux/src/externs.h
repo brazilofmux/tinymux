@@ -211,6 +211,12 @@ typedef struct program_data
 //
 extern void emergency_shutdown();
 
+// Driver-side COM interface for logging.  Acquired at startup, used by all
+// driver files instead of direct Log/start_log/end_log/log_text calls.
+//
+class mux_ILog;
+extern mux_ILog *g_pILog;
+
 // From conn_bridge.cpp
 //
 extern void conn_bridge_init(void);

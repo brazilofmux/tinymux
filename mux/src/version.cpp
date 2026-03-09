@@ -7,6 +7,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "driver_log.h"
 
 void do_version(dbref executor, dbref caller, dbref enactor, int eval, int key)
 {
@@ -83,11 +84,11 @@ void build_version(void)
 void init_version(void)
 {
     STARTLOG(LOG_ALWAYS, "INI", "START");
-    log_text(T("Starting: "));
-    log_text(mudstate.version);
+    g_pILog->log_text(T("Starting: "));
+    g_pILog->log_text(mudstate.version);
     ENDLOG;
     STARTLOG(LOG_ALWAYS, "INI", "START");
-    log_text(T("Build date: "));
-    log_text(reinterpret_cast<const UTF8 *>(MUX_BUILD_DATE));
+    g_pILog->log_text(T("Build date: "));
+    g_pILog->log_text(reinterpret_cast<const UTF8 *>(MUX_BUILD_DATE));
     ENDLOG;
 }

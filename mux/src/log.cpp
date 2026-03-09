@@ -773,6 +773,10 @@ public:
     virtual MUX_RESULT log_name_and_loc(dbref player);
     virtual MUX_RESULT log_type_and_name(dbref thing);
     virtual MUX_RESULT end_log(void);
+    virtual MUX_RESULT WriteString(const UTF8 *text);
+    virtual MUX_RESULT SetBasename(const UTF8 *pBasename);
+    virtual MUX_RESULT StartLogging(void);
+    virtual MUX_RESULT Flush(void);
 
     CLog(void);
     virtual ~CLog();
@@ -878,6 +882,30 @@ MUX_RESULT CLog::log_type_and_name(dbref thing)
 MUX_RESULT CLog::end_log(void)
 {
     ::end_log();
+    return MUX_S_OK;
+}
+
+MUX_RESULT CLog::WriteString(const UTF8 *text)
+{
+    Log.WriteString(text);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CLog::SetBasename(const UTF8 *pBasename)
+{
+    Log.SetBasename(pBasename);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CLog::StartLogging(void)
+{
+    Log.StartLogging();
+    return MUX_S_OK;
+}
+
+MUX_RESULT CLog::Flush(void)
+{
+    Log.Flush();
     return MUX_S_OK;
 }
 
@@ -1003,6 +1031,10 @@ public:
     virtual MUX_RESULT log_name_and_loc(dbref player);
     virtual MUX_RESULT log_type_and_name(dbref thing);
     virtual MUX_RESULT end_log(void);
+    virtual MUX_RESULT WriteString(const UTF8 *text);
+    virtual MUX_RESULT SetBasename(const UTF8 *pBasename);
+    virtual MUX_RESULT StartLogging(void);
+    virtual MUX_RESULT Flush(void);
 
     CLogProxy(void);
     virtual ~CLogProxy();
@@ -1291,6 +1323,104 @@ MUX_RESULT CLogProxy::end_log(void)
     return mr;
 }
 
+MUX_RESULT CLogProxy::WriteString(const UTF8 *text)
+{
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    Marshal_PutUInt32(&qiFrame, 11);
+    Marshal_PutString(&qiFrame, text);
+
+    MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+    if (MUX_SUCCEEDED(mr))
+    {
+        MUX_RESULT mrReturn;
+        if (Marshal_GetInt(&qiFrame, &mrReturn))
+        {
+            mr = mrReturn;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+MUX_RESULT CLogProxy::SetBasename(const UTF8 *pBasename)
+{
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    Marshal_PutUInt32(&qiFrame, 12);
+    Marshal_PutString(&qiFrame, pBasename);
+
+    MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+    if (MUX_SUCCEEDED(mr))
+    {
+        MUX_RESULT mrReturn;
+        if (Marshal_GetInt(&qiFrame, &mrReturn))
+        {
+            mr = mrReturn;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+MUX_RESULT CLogProxy::StartLogging(void)
+{
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    Marshal_PutUInt32(&qiFrame, 13);
+
+    MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+    if (MUX_SUCCEEDED(mr))
+    {
+        MUX_RESULT mrReturn;
+        if (Marshal_GetInt(&qiFrame, &mrReturn))
+        {
+            mr = mrReturn;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
+MUX_RESULT CLogProxy::Flush(void)
+{
+    QUEUE_INFO qiFrame;
+    Pipe_InitializeQueueInfo(&qiFrame);
+
+    Marshal_PutUInt32(&qiFrame, 14);
+
+    MUX_RESULT mr = Pipe_SendCallPacketAndWait(m_nChannel, &qiFrame);
+    if (MUX_SUCCEEDED(mr))
+    {
+        MUX_RESULT mrReturn;
+        if (Marshal_GetInt(&qiFrame, &mrReturn))
+        {
+            mr = mrReturn;
+        }
+        else
+        {
+            mr = MUX_E_FAIL;
+        }
+    }
+    Pipe_EmptyQueue(&qiFrame);
+    return mr;
+}
+
 // CLogStub: server-side stub for mux_ILog over a pipe channel.
 //
 class CLogStub : public mux_IRpcStubBuffer
@@ -1550,6 +1680,48 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
     case 10: // end_log
         {
             mr = m_pILog->end_log();
+
+            Pipe_EmptyQueue(pqi);
+            Marshal_PutInt(pqi, mr);
+        }
+        break;
+
+    case 11: // WriteString
+        {
+            UTF8 bufText[LBUF_SIZE];
+            if (Marshal_GetString(pqi, sizeof(bufText), bufText))
+            {
+                mr = m_pILog->WriteString(bufText);
+            }
+            Pipe_EmptyQueue(pqi);
+            Marshal_PutInt(pqi, mr);
+        }
+        break;
+
+    case 12: // SetBasename
+        {
+            UTF8 bufBasename[LBUF_SIZE];
+            if (Marshal_GetString(pqi, sizeof(bufBasename), bufBasename))
+            {
+                mr = m_pILog->SetBasename(bufBasename);
+            }
+            Pipe_EmptyQueue(pqi);
+            Marshal_PutInt(pqi, mr);
+        }
+        break;
+
+    case 13: // StartLogging
+        {
+            mr = m_pILog->StartLogging();
+
+            Pipe_EmptyQueue(pqi);
+            Marshal_PutInt(pqi, mr);
+        }
+        break;
+
+    case 14: // Flush
+        {
+            mr = m_pILog->Flush();
 
             Pipe_EmptyQueue(pqi);
             Marshal_PutInt(pqi, mr);

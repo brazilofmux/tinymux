@@ -12,6 +12,7 @@
 #include "externs.h"
 #include "interface.h"
 #include "sqlite_backend.h"
+#include "driver_log.h"
 using namespace std;
 
 NAMETAB default_charset_nametab[] =
@@ -152,11 +153,11 @@ void queue_write_LEN(DESC *d, const UTF8 *b, size_t n)
         UTF8 *buf = alloc_lbuf("queue_write.LOG");
         mux_sprintf(buf, LBUF_SIZE, T("[%u/%s] Output buffer overflow, %zu chars discarded by "),
             d->socket, d->addr, nchars);
-        log_text(buf);
+        g_pILog->log_text(buf);
         free_lbuf(buf);
         if (d->flags & DS_CONNECTED)
         {
-            log_name(d->player);
+            g_pILog->log_name(d->player);
         }
         ENDLOG;
 
@@ -1674,19 +1675,19 @@ static void failconn(const UTF8 *logcode, const UTF8 *logtype, const UTF8 *logre
     STARTLOG(LOG_LOGIN | LOG_SECURITY, logcode, "RJCT");
     UTF8 *buff = alloc_mbuf("failconn.LOG");
     mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] %s rejected to "), d->socket, d->addr, logtype);
-    log_text(buff);
+    g_pILog->log_text(buff);
     free_mbuf(buff);
     if (player != NOTHING)
     {
-        log_name(player);
+        g_pILog->log_name(player);
     }
     else
     {
-        log_text(user);
+        g_pILog->log_text(user);
     }
-    log_text(T(" ("));
-    log_text(logreason);
-    log_text(T(")"));
+    g_pILog->log_text(T(" ("));
+    g_pILog->log_text(logreason);
+    g_pILog->log_text(T(")"));
     ENDLOG;
     fcache_dump(d, filecache);
     if (*motd_msg)
@@ -1813,7 +1814,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
             buff = alloc_lbuf("check_conn.LOG.bad");
             mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Failed connect to \xE2\x80\x98%s\xE2\x80\x99"), d->socket, d->addr, user);
-            log_text(buff);
+            g_pILog->log_text(buff);
             free_lbuf(buff);
             ENDLOG;
             if (--(d->retries_left) <= 0)
@@ -1867,8 +1868,8 @@ static bool check_connect(DESC *d, UTF8 *msg)
             STARTLOG(LOG_LOGIN, "CON", "LOGIN");
             buff = alloc_mbuf("check_conn.LOG.login");
             mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Connected to "), d->socket, d->addr);
-            log_text(buff);
-            log_name_and_loc(player);
+            g_pILog->log_text(buff);
+            g_pILog->log_name_and_loc(player);
             free_mbuf(buff);
             ENDLOG;
             d->flags |= DS_CONNECTED;
@@ -2003,7 +2004,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 STARTLOG(LOG_SECURITY | LOG_PCREATES, "CON", "BAD");
                 buff = alloc_lbuf("check_conn.LOG.badcrea");
                 mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Create of \xE2\x80\x98%s\xE2\x80\x99 failed"), d->socket, d->addr, user);
-                log_text(buff);
+                g_pILog->log_text(buff);
                 free_lbuf(buff);
                 ENDLOG;
             }
@@ -2014,8 +2015,8 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 STARTLOG(LOG_LOGIN | LOG_PCREATES, "CON", "CREA");
                 buff = alloc_mbuf("check_conn.LOG.create");
                 mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Created "), d->socket, d->addr);
-                log_text(buff);
-                log_name(player);
+                g_pILog->log_text(buff);
+                g_pILog->log_name(player);
                 free_mbuf(buff);
                 ENDLOG;
                 move_object(player, mudconf.start_room);
@@ -2046,7 +2047,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
         buff = alloc_mbuf("check_conn.LOG.bad");
         msg[150] = '\0';
         mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Failed connect: \xE2\x80\x98%s\xE2\x80\x99"), d->socket, d->addr, msg);
-        log_text(buff);
+        g_pILog->log_text(buff);
         free_mbuf(buff);
         ENDLOG;
     }
@@ -2114,7 +2115,7 @@ static void do_logged_out_internal(DESC *d, int key, const UTF8 *arg)
             UTF8 buf[LBUF_SIZE * 2];
             STARTLOG(LOG_BUGS, "BUG", "PARSE");
             mux_sprintf(buf, sizeof(buf), T("Logged-out command with no handler: \xE2\x80\x98%s\xE2\x80\x99"), mudstate.debug_cmd);
-            log_text(buf);
+            g_pILog->log_text(buf);
             ENDLOG;
         }
     }
@@ -2177,13 +2178,13 @@ void do_command(DESC *d, UTF8 *command)
         if (ltd > mudconf.rpt_cmdsecs)
         {
             STARTLOG(LOG_PROBLEMS, "CMD", "CPU");
-            log_name_and_loc(d->player);
+            g_pILog->log_name_and_loc(d->player);
             UTF8 *logbuf = alloc_lbuf("do_command.LOG.cpu");
             mux_sprintf(logbuf, LBUF_SIZE, T(" queued command taking %s secs: "),
                 ltd.ReturnSecondsString(4));
-            log_text(logbuf);
+            g_pILog->log_text(logbuf);
             free_lbuf(logbuf);
-            log_text(log_cmdbuf);
+            g_pILog->log_text(log_cmdbuf);
             ENDLOG;
         }
 

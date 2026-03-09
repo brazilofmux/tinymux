@@ -14,58 +14,16 @@
 #include "sqlite_backend.h"
 
 #include "ganl_adapter.h"
+#include "modules.h"
+#include "driver_log.h"
+
+mux_ILog *g_pILog = nullptr;
 
 #if defined(INLINESQL)
 #include <mysql.h>
 
 MYSQL *mush_database = nullptr;
 #endif // INLINESQL
-
-/*
- * ---------------------------------------------------------------------------
- * * info: display info about the file being read or written.
- */
-
-static void info(int fmt, int flags, int ver)
-{
-    const UTF8 *cp;
-
-    if (fmt == F_MUX)
-    {
-        cp = T("MUX");
-    }
-    else
-    {
-        cp = T("*unknown*");
-    }
-    Log.tinyprintf(T("%s version %d:"), cp, ver);
-    if (  ver < MIN_SUPPORTED_VERSION
-       || MAX_SUPPORTED_VERSION < ver)
-    {
-        Log.WriteString(T(" Unsupported version"));
-        exit(1);
-    }
-    else if (  (  (  1 == ver
-                  || 2 == ver)
-               && (flags & MANDFLAGS_V2) != MANDFLAGS_V2)
-            || (  3 == ver
-               && (flags & MANDFLAGS_V3) != MANDFLAGS_V3)
-            || (  4 == ver
-               && (flags & MANDFLAGS_V4) != MANDFLAGS_V4))
-    {
-        Log.WriteString(T(" Unsupported flags"));
-        exit(1);
-    }
-    if (flags & V_DATABASE)
-        Log.WriteString(T(" Database"));
-    if (flags & V_ATRNAME)
-        Log.WriteString(T(" AtrName"));
-    if (flags & V_ATRKEY)
-        Log.WriteString(T(" AtrKey"));
-    if (flags & V_ATRMONEY)
-        Log.WriteString(T(" AtrMoney"));
-    Log.WriteString(T(ENDLINE));
-}
 
 static const UTF8 *standalone_infile = nullptr;
 static const UTF8 *standalone_outfile = nullptr;
@@ -76,256 +34,32 @@ static bool standalone_unload = false;
 static const UTF8 *standalone_comsys_file = nullptr;
 static const UTF8 *standalone_mail_file = nullptr;
 
+// dbconvert delegates to engine via mux_IGameEngine::DbConvert.
+//
 static void dbconvert(void)
 {
-    int setflags, clrflags, ver;
-    int db_ver, db_format, db_flags;
-
-    Log.SetBasename(T("-"));
-    Log.StartLogging();
-
-    SeedRandomNumberGenerator();
-
-    pool_init(POOL_LBUF, LBUF_SIZE);
-    pool_init(POOL_MBUF, MBUF_SIZE);
-    pool_init(POOL_SBUF, SBUF_SIZE);
-    pool_init(POOL_BOOL, sizeof(struct boolexp));
-    pool_init(POOL_STRING, sizeof(mux_string));
-
-    cf_init();
-
-    // Decide what conversions to do and how to format the output file.
-    //
-    setflags = clrflags = ver = 0;
-    bool do_redirect = false;
-
-    bool do_write = true;
-    if (standalone_check || standalone_load)
+    MUX_RESULT mr = init_modules();
+    if (MUX_FAILED(mr))
     {
-        do_write = false;
-    }
-    if (standalone_load)
-    {
-        clrflags = 0xffffffff;
-        setflags = OUTPUT_FLAGS;
-        ver = OUTPUT_VERSION;
-        do_redirect = true;
-    }
-    else if (standalone_unload)
-    {
-        clrflags = 0xffffffff;
-        setflags = UNLOAD_FLAGS;
-        ver = UNLOAD_VERSION;
-    }
-
-    // Open the database
-    //
-    init_attrtab();
-
-    int cc = init_dbfile(standalone_basename);
-    if (cc == HF_OPEN_STATUS_ERROR)
-    {
-        Log.tinyprintf(T("Can\xE2\x80\x99t open SQLite database.\n"));
+        mux_fprintf(stderr, T("Failed to initialize modules.\n"));
         exit(1);
     }
-    else if (cc == HF_OPEN_STATUS_OLD)
+
+    mux_IGameEngine *pEngine = nullptr;
+    mr = mux_CreateInstance(CID_GameEngine, nullptr, UseSameProcess,
+                            IID_IGameEngine,
+                            reinterpret_cast<void **>(&pEngine));
+    if (MUX_FAILED(mr) || nullptr == pEngine)
     {
-        if (setflags == OUTPUT_FLAGS)
-        {
-            Log.tinyprintf(T("Would overwrite existing SQLite database.\n"));
-            CLOSE;
-            exit(1);
-        }
-    }
-    else if (cc == HF_OPEN_STATUS_NEW)
-    {
-        if (setflags == UNLOAD_FLAGS)
-        {
-            Log.tinyprintf(T("SQLite database is empty.\n"));
-            CLOSE;
-            exit(1);
-        }
+        mux_fprintf(stderr, T("Failed to create game engine.\n"));
+        exit(1);
     }
 
-    bool bLoadedFromSQLite = false;
-    if (nullptr == standalone_infile && HF_OPEN_STATUS_OLD == cc)
-    {
-        int sqlite_load_rc = sqlite_load_game();
-        if (sqlite_load_rc < 0)
-        {
-            Log.WriteString(T("Input: SQLite database load failed.\n"));
-            exit(1);
-        }
-        bLoadedFromSQLite = (sqlite_load_rc > 0);
-    }
-
-    if (bLoadedFromSQLite)
-    {
-        // No input flatfile given, but SQLite database exists.
-        // Load from SQLite for export.
-        //
-        Log.WriteString(T("Input: SQLite database\n"));
-        db_format = F_MUX;
-        db_ver = OUTPUT_VERSION;
-        db_flags = OUTPUT_FLAGS;
-    }
-    else
-    {
-        if (nullptr == standalone_infile)
-        {
-            Log.WriteString(T("No input flatfile provided and SQLite has no loadable game data.\n"));
-            exit(1);
-        }
-        FILE *fpIn;
-        if (!mux_fopen(&fpIn, standalone_infile, T("rb")))
-        {
-            exit(1);
-        }
-
-        // Go do it.
-        //
-        setvbuf(fpIn, nullptr, _IOFBF, 16384);
-        CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
-        if (!sqldb.Begin() || !sqldb.ClearAttributes())
-        {
-            sqldb.Rollback();
-            Log.WriteString(T("SQLite attribute clear failed before flatfile import.\n"));
-            fclose(fpIn);
-            exit(1);
-        }
-        mudstate.bSQLiteLoading = true;
-        if (db_read(fpIn, &db_format, &db_ver, &db_flags) < 0)
-        {
-            mudstate.bSQLiteLoading = false;
-            sqldb.Rollback();
-            exit(1);
-        }
-        mudstate.bSQLiteLoading = false;
-        if (!sqldb.Commit())
-        {
-            sqldb.Rollback();
-            Log.WriteString(T("SQLite attribute import commit failed.\n"));
-            fclose(fpIn);
-            exit(1);
-        }
-        if (!sqlite_sync_runtime())
-        {
-            if (!clear_sqlite_after_sync_failure(sqldb))
-            {
-                Log.WriteString(T("SQLite cleanup failed after sync failure.\n"));
-            }
-            Log.WriteString(T("SQLite metadata sync failed.\n"));
-            exit(1);
-        }
-        Log.WriteString(T("Input: "));
-        info(db_format, db_flags, db_ver);
-
-        if (standalone_check)
-        {
-            do_dbck(NOTHING, NOTHING, NOTHING, 0, DBCK_FULL);
-        }
-        fclose(fpIn);
-    }
-
-    // Import comsys from flatfile into SQLite.
-    //
-    if (standalone_load && standalone_comsys_file)
-    {
-        load_comsys(const_cast<UTF8 *>(standalone_comsys_file));
-        if (!sqlite_sync_comsys())
-        {
-            Log.WriteString(T("Import comsys into SQLite failed.\n"));
-            exit(1);
-        }
-        Log.WriteString(T("Imported comsys into SQLite.\n"));
-    }
-
-    // Import mail from flatfile into SQLite.
-    //
-    if (standalone_load && standalone_mail_file)
-    {
-        FILE *fpMail;
-        if (mux_fopen(&fpMail, standalone_mail_file, T("rb")))
-        {
-            setvbuf(fpMail, nullptr, _IOFBF, 16384);
-            load_mail(fpMail);
-            fclose(fpMail);
-            if (!sqlite_sync_mail())
-            {
-                Log.WriteString(T("Import mail into SQLite failed.\n"));
-                exit(1);
-            }
-            Log.WriteString(T("Imported mail into SQLite.\n"));
-        }
-    }
-
-    // Export comsys from SQLite to flatfile.
-    //
-    if (standalone_unload && standalone_comsys_file)
-    {
-        int sqlite_comsys_rc = sqlite_load_comsys();
-        if (sqlite_comsys_rc > 0)
-        {
-            save_comsys(const_cast<UTF8 *>(standalone_comsys_file));
-            Log.WriteString(T("Exported comsys from SQLite.\n"));
-        }
-        else if (sqlite_comsys_rc < 0)
-        {
-            Log.WriteString(T("Export comsys from SQLite failed.\n"));
-            exit(1);
-        }
-    }
-
-    // Export mail from SQLite to flatfile.
-    //
-    if (standalone_unload && standalone_mail_file)
-    {
-        int sqlite_mail_rc = sqlite_load_mail();
-        if (sqlite_mail_rc > 0)
-        {
-            FILE *fpMail;
-            if (mux_fopen(&fpMail, standalone_mail_file, T("wb")))
-            {
-                dump_mail(fpMail);
-                fclose(fpMail);
-                Log.WriteString(T("Exported mail from SQLite.\n"));
-            }
-        }
-        else if (sqlite_mail_rc < 0)
-        {
-            Log.WriteString(T("Export mail from SQLite failed.\n"));
-            exit(1);
-        }
-    }
-
-    if (do_write)
-    {
-        FILE *fpOut;
-        if (!mux_fopen(&fpOut, standalone_outfile, T("wb")))
-        {
-            exit(1);
-        }
-
-        db_flags = (db_flags & ~clrflags) | setflags;
-        if (db_format != F_MUX)
-        {
-            db_ver = 3;
-        }
-        if (ver != 0)
-        {
-            db_ver = ver;
-        }
-        Log.WriteString(T("Output: "));
-        info(F_MUX, db_flags, db_ver);
-        setvbuf(fpOut, nullptr, _IOFBF, 16384);
-        db_write(fpOut, F_MUX, db_ver | db_flags);
-        fclose(fpOut);
-    }
-    CLOSE;
-#ifdef SELFCHECK
-    db_free();
-#endif
-    exit(0);
+    mr = pEngine->DbConvert(standalone_infile, standalone_outfile,
+        standalone_basename, standalone_check, standalone_load,
+        standalone_unload, standalone_comsys_file, standalone_mail_file);
+    pEngine->Release();
+    exit(MUX_SUCCEEDED(mr) ? 0 : 1);
 }
 
 static void write_pidfile(const UTF8 *pFilename)
@@ -339,7 +73,7 @@ static void write_pidfile(const UTF8 *pFilename)
     else
     {
         STARTLOG(LOG_ALWAYS, "PID", "FAIL");
-        Log.tinyprintf(T("Failed to write pidfile %s\n"), pFilename);
+        g_pILog->WriteString(tprintf(T("Failed to write pidfile %s\n"), pFilename));
         ENDLOG;
     }
 }
@@ -350,12 +84,12 @@ void init_sql(void)
     if ('\0' != mudconf.sql_server[0])
     {
         STARTLOG(LOG_STARTUP,"SQL","CONN");
-        log_text(T("Connecting: "));
-        log_text(mudconf.sql_database);
-        log_text(T("@"));
-        log_text(mudconf.sql_server);
-        log_text(T(" as "));
-        log_text(mudconf.sql_user);
+        g_pILog->log_text(T("Connecting: "));
+        g_pILog->log_text(mudconf.sql_database);
+        g_pILog->log_text(T("@"));
+        g_pILog->log_text(mudconf.sql_server);
+        g_pILog->log_text(T(" as "));
+        g_pILog->log_text(mudconf.sql_user);
         ENDLOG;
 
         mush_database = mysql_init(nullptr);
@@ -382,13 +116,13 @@ void init_sql(void)
                 mysql_options(mush_database, MYSQL_OPT_RECONNECT, reinterpret_cast<const char *>(&reconnect));
 #endif
                 STARTLOG(LOG_STARTUP,"SQL","CONN");
-                log_text(T("Connected to MySQL"));
+                g_pILog->log_text(T("Connected to MySQL"));
                 ENDLOG;
             }
             else
             {
                 STARTLOG(LOG_STARTUP,"SQL","CONN");
-                log_text(T("Unable to connect"));
+                g_pILog->log_text(T("Unable to connect"));
                 ENDLOG;
                 mysql_close(mush_database);
                 mush_database = nullptr;
@@ -397,7 +131,7 @@ void init_sql(void)
         else
         {
             STARTLOG(LOG_STARTUP,"SQL","CONN");
-            log_text(T("MySQL Library unavailable"));
+            g_pILog->log_text(T("MySQL Library unavailable"));
             ENDLOG;
         }
     }
@@ -635,22 +369,32 @@ int DCL_CDECL main(int argc, char *argv[])
     //
     MUX_RESULT mr = init_modules();
 
+    // Acquire the logging interface from engine.so immediately after
+    // module registration so all driver code can log through COM.
+    //
+    mr = mux_CreateInstance(CID_Log, nullptr, UseSameProcess,
+                            IID_ILog,
+                            reinterpret_cast<void **>(&g_pILog));
+
     // TODO: Create platform interface
 
     TimezoneCache::initialize();
     SeedRandomNumberGenerator();
 
-    Log.SetBasename(pErrorBasename);
-    Log.StartLogging();
+    if (g_pILog)
+    {
+        g_pILog->SetBasename(pErrorBasename);
+        g_pILog->StartLogging();
+    }
 
     STARTLOG(LOG_ALWAYS, "INI", "LOAD");
     if (MUX_SUCCEEDED(mr))
     {
-        log_printf(T("Registered netmux modules."));
+        g_pILog->log_text(T("Registered netmux modules."));
     }
     else
     {
-        log_printf(T("Failed either to initialize module subsystem or register netmux modules (%d)."), mr);
+        g_pILog->log_text(tprintf(T("Failed either to initialize module subsystem or register netmux modules (%d)."), mr));
     }
     ENDLOG;
 
@@ -704,7 +448,7 @@ int DCL_CDECL main(int argc, char *argv[])
     if (MUX_FAILED(mr) || nullptr == pGameEngine)
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_printf(T("Failed to create game engine interface (%d)."), mr);
+        g_pILog->log_text(tprintf(T("Failed to create game engine interface (%d)."), mr));
         ENDLOG;
         return 2;
     }
@@ -720,19 +464,13 @@ int DCL_CDECL main(int argc, char *argv[])
     if (MUX_FAILED(mr))
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_printf(T("Game engine LoadGame failed (%d)."), mr);
+        g_pILog->log_text(tprintf(T("Game engine LoadGame failed (%d)."), mr));
         ENDLOG;
         pGameEngine->Release();
         return 2;
     }
 
     set_signals();
-
-    // Initialize the connection bridge so engine.so's free-function
-    // stubs (conn_bridge.cpp) can delegate to the driver's real
-    // implementations via mux_IConnectionManager COM interface.
-    //
-    conn_bridge_init();
 
 #if defined(HAVE_WORKING_FORK)
     load_restart_db();
@@ -758,7 +496,7 @@ int DCL_CDECL main(int argc, char *argv[])
          mysql_close(mush_database);
          mush_database = nullptr;
          STARTLOG(LOG_STARTUP,"SQL","DISC");
-         log_text(T("SQL shut down"));
+         g_pILog->log_text(T("SQL shut down"));
          ENDLOG;
      }
 #endif // INLINESQL
@@ -769,7 +507,6 @@ int DCL_CDECL main(int argc, char *argv[])
     // local extensions.
     //
     pGameEngine->Shutdown();
-    conn_bridge_final();
     pGameEngine->Release();
     pGameEngine = nullptr;
 #if defined(STUB_SLAVE)
@@ -809,14 +546,14 @@ void init_rlimit(void)
 
     if (getrlimit(RLIMIT_NOFILE, rlp))
     {
-        log_perror(T("RLM"), T("FAIL"), nullptr, T("getrlimit()"));
+        g_pILog->log_perror(T("RLM"), T("FAIL"), nullptr, T("getrlimit()"));
         free_lbuf(rlp);
         return;
     }
     rlp->rlim_cur = rlp->rlim_max;
     if (setrlimit(RLIMIT_NOFILE, rlp))
     {
-        log_perror(T("RLM"), T("FAIL"), nullptr, T("setrlimit()"));
+        g_pILog->log_perror(T("RLM"), T("FAIL"), nullptr, T("setrlimit()"));
     }
     free_lbuf(rlp);
 

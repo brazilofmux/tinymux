@@ -9,6 +9,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "driver_log.h"
 
 #ifdef SOLARIS
 extern const int _sys_nsig;
@@ -349,8 +350,8 @@ static UTF8 *signal_desc(const int iSignal)
 static void log_signal(const int iSignal)
 {
     STARTLOG(LOG_PROBLEMS, T("SIG"), T("CATCH"));
-    log_text(T("Caught signal "));
-    log_text(signal_desc(iSignal));
+    g_pILog->log_text(T("Caught signal "));
+    g_pILog->log_text(signal_desc(iSignal));
     ENDLOG;
 }
 
@@ -359,9 +360,9 @@ static void log_signal(const int iSignal)
 static void log_signal_ignore(int iSignal)
 {
     STARTLOG(LOG_PROBLEMS, "SIG", "CATCH");
-    log_text(T("Caught signal and ignored signal "));
-    log_text(signal_desc(iSignal));
-    log_text(T(" because server just came up."));
+    g_pILog->log_text(T("Caught signal and ignored signal "));
+    g_pILog->log_text(signal_desc(iSignal));
+    g_pILog->log_text(T(" because server just came up."));
     ENDLOG;
 }
 
@@ -370,15 +371,15 @@ void LogStatBuf(int stat_buf, const char *Name)
     STARTLOG(LOG_ALWAYS, "NET", Name);
     if (WIFEXITED(stat_buf))
     {
-        Log.tinyprintf(T("process exited unexpectedly with exit status %d."), WEXITSTATUS(stat_buf));
+        g_pILog->WriteString(tprintf(T("process exited unexpectedly with exit status %d."), WEXITSTATUS(stat_buf)));
     }
     else if (WIFSIGNALED(stat_buf))
     {
-        Log.tinyprintf(T("process was terminated with signal %s."), signal_desc(WTERMSIG(stat_buf)));
+        g_pILog->WriteString(tprintf(T("process was terminated with signal %s."), signal_desc(WTERMSIG(stat_buf))));
     }
     else
     {
-        log_text(T("process ended unexpectedly."));
+        g_pILog->log_text(T("process ended unexpectedly."));
     }
     ENDLOG;
 }
@@ -479,11 +480,11 @@ static void DCL_CDECL sighandler(int sig)
 #if defined(HAVE_WORKING_FORK)
             STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
 #ifdef STUB_SLAVE
-            Log.tinyprintf(T("mudstate.dumper=%d, child=%d, stubslave_pid=%d" ENDLINE),
-                mudstate.dumper, child, stubslave_pid);
+            g_pILog->WriteString(tprintf(T("mudstate.dumper=%d, child=%d, stubslave_pid=%d" ENDLINE),
+                mudstate.dumper, child, stubslave_pid));
 #else
-            Log.tinyprintf(T("mudstate.dumper=%d, child=%d" ENDLINE),
-                mudstate.dumper, child);
+            g_pILog->WriteString(tprintf(T("mudstate.dumper=%d, child=%d" ENDLINE),
+                mudstate.dumper, child));
 #endif // STUB_SLAVE
             ENDLOG;
 #endif // HAVE_WORKING_FORK
@@ -550,7 +551,7 @@ static void DCL_CDECL sighandler(int sig)
 
         // Panic save + restart.
         //
-        Log.Flush();
+        g_pILog->Flush();
         check_panicking(sig);
         log_signal(sig);
         report();

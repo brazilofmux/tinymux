@@ -1,5 +1,6 @@
 #include "autoconf.h"
 #include "ganl_adapter.h"
+#include "driver_log.h"
 #include "interface.h"
 #include "connection.h" // Include ConnectionBase definition
 #include "network_types.h"
@@ -307,10 +308,10 @@ namespace
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "LOGO")
             UTF8* buff = alloc_mbuf("ganl_close.LOG.logout");
             mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Logout by "), d->socket, d->addr);
-            log_text(buff);
-            log_name(d->player);
+            g_pILog->log_text(buff);
+            g_pILog->log_name(d->player);
             mux_sprintf(buff, MBUF_SIZE, T(" <Reason: %s>"), disc_reasons[mux_reason]);
-            log_text(buff);
+            g_pILog->log_text(buff);
             free_mbuf(buff);
             ENDLOG;
         }
@@ -320,10 +321,10 @@ namespace
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "DISC")
             UTF8* buff = alloc_mbuf("ganl_close.LOG.disconn");
             mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Logout by "), d->socket, d->addr);
-            log_text(buff);
-            log_name(d->player);
+            g_pILog->log_text(buff);
+            g_pILog->log_name(d->player);
             mux_sprintf(buff, MBUF_SIZE, T(" <Reason: %s>"), disc_reasons[mux_reason]);
-            log_text(buff);
+            g_pILog->log_text(buff);
             free_mbuf(buff);
             ENDLOG;
             site_mon_send(d->socket, d->addr, d, T("Disconnection"));
@@ -340,7 +341,7 @@ namespace
         mux_sprintf(accnt, LBUF_SIZE, T("%d %s %d %d %d %d [%s] <%s> %s"),
             d->player, flags, d->command_count, Seconds, locPlayer, penPlayer,
             d->addr, disc_reasons[mux_reason], PlayerName);
-        log_text(accnt);
+        g_pILog->log_text(accnt);
         free_lbuf(accnt);
         free_sbuf(flags);
         ENDLOG;
@@ -357,7 +358,7 @@ namespace
         UTF8* buff = alloc_mbuf("ganl_close.LOG.neverconn");
         mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Connection closed, never connected."),
             d->socket, d->addr);
-        log_text(buff);
+        g_pILog->log_text(buff);
         free_mbuf(buff);
         ENDLOG;
         site_mon_send(d->socket, d->addr, d, T("N/C Connection Closed"));
@@ -505,15 +506,15 @@ public:
             }
         }
         if (!conn) {
-            Log.tinyprintf(T("GANL: Missing ConnectionBase for handle %llu\n"),
-                static_cast<unsigned long long>(handle));
+            g_pILog->WriteString(tprintf(T("GANL: Missing ConnectionBase for handle %llu\n"),
+                static_cast<unsigned long long>(handle)));
             return ganl::InvalidSessionId;
         }
 
         DESC* d = adapter_.allocate_desc();
         if (!d) {
-            Log.tinyprintf(T("GANL: Failed to allocate DESC for handle %llu\n"),
-                static_cast<unsigned long long>(handle));
+            g_pILog->WriteString(tprintf(T("GANL: Failed to allocate DESC for handle %llu\n"),
+                static_cast<unsigned long long>(handle)));
             return ganl::InvalidSessionId;
         }
 
@@ -590,7 +591,7 @@ public:
             UTF8* logBuf = alloc_mbuf("ganl_connection.LOG.badsite");
             mux_sprintf(logBuf, MBUF_SIZE, T("[%u/%s] Connection refused.  (Remote port %d)"),
                 d->socket, addrText[0] != '\0' ? addrText : T("UNKNOWN"), d->address.port());
-            log_text(logBuf);
+            g_pILog->log_text(logBuf);
             free_mbuf(logBuf);
             ENDLOG;
 
@@ -621,10 +622,10 @@ public:
         const unsigned short resolvedPort = haveSockAddr ? d->address.port() : endpoint.port;
 
         STARTLOG(LOG_NET | LOG_LOGIN, "NET", "CONN");
-        Log.tinyprintf(T("[%d/%s] Connection opened (remote port %u)"),
+        g_pILog->WriteString(tprintf(T("[%d/%s] Connection opened (remote port %u)"),
             d->socket,
             addrText[0] != '\0' ? addrText : T("UNKNOWN"),
-            static_cast<unsigned int>(resolvedPort));
+            static_cast<unsigned int>(resolvedPort)));
         ENDLOG;
 
         // GANL ACPT — suppressed (redundant with NET/CONN log).
@@ -867,16 +868,16 @@ public:
             STARTLOG(LOG_LOGIN | LOG_SECURITY, logcode, T("RJCT"));
             UTF8* buff = alloc_mbuf("ganl_auth.reject");
             mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] %s rejected to "), d->socket, d->addr, logtype);
-            log_text(buff);
+            g_pILog->log_text(buff);
             free_mbuf(buff);
             if (playerRef != NOTHING) {
-                log_name(playerRef);
+                g_pILog->log_name(playerRef);
             } else {
-                log_text(user);
+                g_pILog->log_text(user);
             }
-            log_text(T(" ("));
-            log_text(logreason);
-            log_text(T(")"));
+            g_pILog->log_text(T(" ("));
+            g_pILog->log_text(logreason);
+            g_pILog->log_text(T(")"));
             ENDLOG;
         };
 
@@ -955,7 +956,7 @@ public:
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
             UTF8* buff = alloc_lbuf("ganl_auth.badconnect");
             mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Failed connect to \xE2\x80\x98%s\xE2\x80\x99"), d->socket, d->addr, user);
-            log_text(buff);
+            g_pILog->log_text(buff);
             free_lbuf(buff);
             ENDLOG;
 
@@ -989,8 +990,8 @@ public:
         STARTLOG(LOG_LOGIN, "CON", "LOGIN");
         UTF8* loginBuff = alloc_mbuf("ganl_auth.login");
         mux_sprintf(loginBuff, MBUF_SIZE, T("[%u/%s] Connected to "), d->socket, d->addr);
-        log_text(loginBuff);
-        log_name_and_loc(player);
+        g_pILog->log_text(loginBuff);
+        g_pILog->log_name_and_loc(player);
         free_mbuf(loginBuff);
         ENDLOG;
 
@@ -1187,24 +1188,24 @@ bool GanlAdapter::initialize() {
 
     // Register GANL logging callback so the library can write to the game log.
     ganl::setLogger([](const char* msg) {
-        Log.tinyprintf(T("GANL %s" ENDLINE), msg);
-        Log.Flush();
+        g_pILog->WriteString(tprintf(T("GANL %s" ENDLINE), msg));
+        g_pILog->Flush();
     });
 
-    Log.WriteString(T("Initializing GANL Adapter...\n"));
+    g_pILog->WriteString(T("Initializing GANL Adapter...\n"));
 
     // 1. Create Network Engine
     networkEngine_ = ganl::NetworkEngineFactory::createEngine();
     if (!networkEngine_) {
-        Log.WriteString(T("FATAL: Failed to create GANL network engine.\n"));
+        g_pILog->WriteString(T("FATAL: Failed to create GANL network engine.\n"));
         return false;
     }
-    Log.tinyprintf(T("Using GANL Network Engine: %d\n"), networkEngine_->getIoModelType());
+    g_pILog->WriteString(tprintf(T("Using GANL Network Engine: %d\n"), networkEngine_->getIoModelType()));
 
 
     // 2. Initialize Network Engine
     if (!networkEngine_->initialize()) {
-        Log.WriteString(T("FATAL: Failed to initialize GANL network engine.\n"));
+        g_pILog->WriteString(T("FATAL: Failed to initialize GANL network engine.\n"));
         networkEngine_.reset(); // Release the failed engine
         return false;
     }
@@ -1220,16 +1221,16 @@ bool GanlAdapter::initialize() {
         // tlsConfig.verifyPeer = false; // Default
 
         if (!secureTransport_->initialize(tlsConfig)) {
-            Log.tinyprintf(T("Warning: Failed to initialize GANL secure transport: %s\n"),
-                secureTransport_->getLastTlsErrorString(0).c_str());
+            g_pILog->WriteString(tprintf(T("Warning: Failed to initialize GANL secure transport: %s\n"),
+                secureTransport_->getLastTlsErrorString(0).c_str()));
             secureTransport_.reset(); // Don't use TLS if init failed
         }
         else {
-            Log.WriteString(T("GANL Secure Transport initialized.\n"));
+            g_pILog->WriteString(T("GANL Secure Transport initialized.\n"));
         }
     }
     else {
-        Log.WriteString(T("No GANL Secure Transport available or created.\n"));
+        g_pILog->WriteString(T("No GANL Secure Transport available or created.\n"));
     }
 
     // 4. Create Protocol Handler (raw passthrough — TinyMUX handles telnet)
@@ -1238,7 +1239,7 @@ bool GanlAdapter::initialize() {
     // 5. Create Session Manager
     sessionManager_ = std::make_unique<GanlTinyMuxSessionManager>(*this);
     if (!sessionManager_->initialize()) {
-        Log.WriteString(T("FATAL: Failed to initialize GANL session manager.\n"));
+        g_pILog->WriteString(T("FATAL: Failed to initialize GANL session manager.\n"));
         // Need proper cleanup
         networkEngine_->shutdown();
         networkEngine_.reset();
@@ -1272,15 +1273,15 @@ bool GanlAdapter::initialize() {
 
             ganl::ListenerHandle handle = networkEngine_->adoptListener(fd, error);
             if (handle == ganl::InvalidListenerHandle) {
-                Log.tinyprintf(T("GANL: Failed to adopt listener fd %d for port %d: %s\n"),
-                    fd, port, networkEngine_->getErrorString(error).c_str());
+                g_pILog->WriteString(tprintf(T("GANL: Failed to adopt listener fd %d for port %d: %s\n"),
+                    fd, port, networkEngine_->getErrorString(error).c_str()));
                 continue;
             }
 
             listener_contexts_[handle] = { port, isSsl };
             if (!networkEngine_->startListening(handle, &listener_contexts_[handle], error)) {
-                Log.tinyprintf(T("GANL: Failed to start adopted listener fd %d for port %d: %s\n"),
-                    fd, port, networkEngine_->getErrorString(error).c_str());
+                g_pILog->WriteString(tprintf(T("GANL: Failed to start adopted listener fd %d for port %d: %s\n"),
+                    fd, port, networkEngine_->getErrorString(error).c_str()));
                 networkEngine_->closeListener(handle);
                 continue;
             }
@@ -1291,8 +1292,8 @@ bool GanlAdapter::initialize() {
                 port_listeners_[port] = handle;
             }
 
-            Log.tinyprintf(T("GANL: Adopted listener fd %d for %sport %d\n"),
-                fd, isSsl ? "SSL " : "", port);
+            g_pILog->WriteString(tprintf(T("GANL: Adopted listener fd %d for %sport %d\n"),
+                fd, isSsl ? "SSL " : "", port));
         }
 
         // Adopt surviving connection fds from the descriptor list
@@ -1305,8 +1306,8 @@ bool GanlAdapter::initialize() {
             ganl::ConnectionHandle connHandle = networkEngine_->adoptConnection(
                 d->socket, nullptr, error);
             if (connHandle == ganl::InvalidConnectionHandle) {
-                Log.tinyprintf(T("GANL: Failed to adopt connection fd %d: %s\n"),
-                    d->socket, networkEngine_->getErrorString(error).c_str());
+                g_pILog->WriteString(tprintf(T("GANL: Failed to adopt connection fd %d: %s\n"),
+                    d->socket, networkEngine_->getErrorString(error).c_str()));
                 continue;
             }
 
@@ -1318,8 +1319,8 @@ bool GanlAdapter::initialize() {
                 *sessionManager_);
 
             if (!conn) {
-                Log.tinyprintf(T("GANL: Failed to create ConnectionBase for adopted fd %d\n"),
-                    d->socket);
+                g_pILog->WriteString(tprintf(T("GANL: Failed to create ConnectionBase for adopted fd %d\n"),
+                    d->socket));
                 networkEngine_->closeConnection(connHandle);
                 continue;
             }
@@ -1330,14 +1331,14 @@ bool GanlAdapter::initialize() {
 
             // initialize(false) triggers onConnectionOpen via the restart path
             if (!conn->initialize(false)) {
-                Log.tinyprintf(T("GANL: Connection initialize failed for adopted fd %d\n"),
-                    d->socket);
+                g_pILog->WriteString(tprintf(T("GANL: Connection initialize failed for adopted fd %d\n"),
+                    d->socket));
                 handle_to_conn_.erase(connHandle);
                 continue;
             }
 
-            Log.tinyprintf(T("GANL: Adopted connection fd %d (player %d)\n"),
-                d->socket, d->player);
+            g_pILog->WriteString(tprintf(T("GANL: Adopted connection fd %d (player %d)\n"),
+                d->socket, d->player));
         }
 
         restarting_ = false;
@@ -1354,18 +1355,18 @@ bool GanlAdapter::initialize() {
                 listener_contexts_[handle] = { port, false };
                 if (networkEngine_->startListening(handle, &listener_contexts_[handle], error)) {
                     port_listeners_[port] = handle;
-                    Log.tinyprintf(T("GANL listening on %s:%d (Handle: %llu)\n"),
-                        host.empty() ? "*" : host.c_str(), port, (unsigned long long)handle);
+                    g_pILog->WriteString(tprintf(T("GANL listening on %s:%d (Handle: %llu)\n"),
+                        host.empty() ? "*" : host.c_str(), port, (unsigned long long)handle));
                 }
                 else {
-                    Log.tinyprintf(T("GANL failed to start listening on port %d: %s\n"),
-                        port, networkEngine_->getErrorString(error).c_str());
+                    g_pILog->WriteString(tprintf(T("GANL failed to start listening on port %d: %s\n"),
+                        port, networkEngine_->getErrorString(error).c_str()));
                     networkEngine_->closeListener(handle);
                 }
             }
             else {
-                Log.tinyprintf(T("GANL failed to create listener for port %d: %s\n"),
-                    port, networkEngine_->getErrorString(error).c_str());
+                g_pILog->WriteString(tprintf(T("GANL failed to create listener for port %d: %s\n"),
+                    port, networkEngine_->getErrorString(error).c_str()));
             }
         }
 
@@ -1380,29 +1381,29 @@ bool GanlAdapter::initialize() {
                     listener_contexts_[handle] = { port, true };
                     if (networkEngine_->startListening(handle, &listener_contexts_[handle], error)) {
                         ssl_port_listeners_[port] = handle;
-                        Log.tinyprintf(T("GANL listening with SSL on %s:%d (Handle: %llu)\n"),
-                            host.empty() ? "*" : host.c_str(), port, (unsigned long long)handle);
+                        g_pILog->WriteString(tprintf(T("GANL listening with SSL on %s:%d (Handle: %llu)\n"),
+                            host.empty() ? "*" : host.c_str(), port, (unsigned long long)handle));
                     }
                     else {
-                        Log.tinyprintf(T("GANL failed to start SSL listening on port %d: %s\n"),
-                            port, networkEngine_->getErrorString(error).c_str());
+                        g_pILog->WriteString(tprintf(T("GANL failed to start SSL listening on port %d: %s\n"),
+                            port, networkEngine_->getErrorString(error).c_str()));
                         networkEngine_->closeListener(handle);
                     }
                 }
                 else {
-                    Log.tinyprintf(T("GANL failed to create SSL listener for port %d: %s\n"),
-                        port, networkEngine_->getErrorString(error).c_str());
+                    g_pILog->WriteString(tprintf(T("GANL failed to create SSL listener for port %d: %s\n"),
+                        port, networkEngine_->getErrorString(error).c_str()));
                 }
             }
         }
     }
 
     if (port_listeners_.empty() && ssl_port_listeners_.empty()) {
-        Log.WriteString(T("Warning: No GANL listeners successfully started.\n"));
+        g_pILog->WriteString(T("Warning: No GANL listeners successfully started.\n"));
     }
 
     initialized_ = true;
-    Log.WriteString(T("GANL Adapter initialized.\n"));
+    g_pILog->WriteString(T("GANL Adapter initialized.\n"));
     return true;
 }
 
@@ -1411,7 +1412,7 @@ void GanlAdapter::shutdown() {
     if (!initialized_) return;
     initialized_ = false; // Mark as shutting down immediately
 
-    Log.WriteString(T("Shutting down GANL Adapter...\n"));
+    g_pILog->WriteString(T("Shutting down GANL Adapter...\n"));
 
     // Release lock before calling potentially blocking shutdown methods
     lock.unlock();
@@ -1507,11 +1508,11 @@ void GanlAdapter::shutdown() {
     desc_to_handle_.clear();
     listener_contexts_.clear();
 
-    Log.WriteString(T("GANL Adapter shut down.\n"));
+    g_pILog->WriteString(T("GANL Adapter shut down.\n"));
 }
 
 void GanlAdapter::prepare_for_restart() {
-    Log.WriteString(T("GANL: Preparing for @restart...\n"));
+    g_pILog->WriteString(T("GANL: Preparing for @restart...\n"));
 
     // 1. Populate main_game_ports[] from listener handles so dump_restart_db()
     //    can serialize them.  Listener handles ARE the file descriptors.
@@ -1658,12 +1659,12 @@ void GanlAdapter::prepare_for_restart() {
         initialized_ = false;
     }
 
-    Log.WriteString(T("GANL: Ready for exec.\n"));
+    g_pILog->WriteString(T("GANL: Ready for exec.\n"));
 }
 
 void GanlAdapter::run_main_loop() {
-    Log.WriteString(T("GANL: Entering main loop.\n"));
-    Log.Flush();
+    g_pILog->WriteString(T("GANL: Entering main loop.\n"));
+    g_pILog->Flush();
 
 #if defined(_WIN32)
     SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
@@ -1710,7 +1711,7 @@ void GanlAdapter::run_main_loop() {
         int num_events = networkEngine_->processEvents(timeout_ms, events, MAX_EVENTS_PER_CALL);
 
         if (num_events < 0) {
-            Log.WriteString(T("GANL: Network engine processEvents error. Shutting down.\n"));
+            g_pILog->WriteString(T("GANL: Network engine processEvents error. Shutting down.\n"));
             mudstate.shutdown_flag = true;
             break;
         }
@@ -1736,7 +1737,7 @@ void GanlAdapter::run_main_loop() {
                     if (mudstate.descriptors_list.size() >= avail_descriptors)
                     {
                         STARTLOG(LOG_NET, "NET", "FULL");
-                        Log.tinyprintf(T("%.90s"), T("Descriptor limit reached, rejecting connection."));
+                        g_pILog->WriteString(tprintf(T("%.90s"), T("Descriptor limit reached, rejecting connection.")));
                         ENDLOG;
                         networkEngine_->closeConnection(connHandle);
                         continue;
@@ -1758,8 +1759,8 @@ void GanlAdapter::run_main_loop() {
                         *sessionManager_);
 
                     if (!conn) {
-                        Log.tinyprintf(T("GANL: Failed to allocate ConnectionBase for handle %llu\n"),
-                            static_cast<unsigned long long>(connHandle));
+                        g_pILog->WriteString(tprintf(T("GANL: Failed to allocate ConnectionBase for handle %llu\n"),
+                            static_cast<unsigned long long>(connHandle)));
                         networkEngine_->closeConnection(connHandle);
                         continue;
                     }
@@ -1797,8 +1798,8 @@ void GanlAdapter::run_main_loop() {
                         conn->handleNetworkEvent(events[i]);
                     }
                     else {
-                        Log.tinyprintf(T("GANL: Mismatched context for event on handle %llu\n"),
-                            static_cast<unsigned long long>(events[i].connection));
+                        g_pILog->WriteString(tprintf(T("GANL: Mismatched context for event on handle %llu\n"),
+                            static_cast<unsigned long long>(events[i].connection)));
                     }
                 }
                 else {
@@ -1817,7 +1818,7 @@ void GanlAdapter::run_main_loop() {
     SetConsoleCtrlHandler(ConsoleCtrlHandler, FALSE);
 #endif
 
-    Log.WriteString(T("GANL: Exiting main loop.\n"));
+    g_pILog->WriteString(T("GANL: Exiting main loop.\n"));
 }
 
 // Helper to run periodic TinyMUX tasks (quotas, scheduler, output flush).
@@ -1877,7 +1878,7 @@ void GanlAdapter::process_tinyMUX_tasks() {
         }
     }
 
-    Log.Flush();
+    g_pILog->Flush();
 }
 
 
@@ -1897,7 +1898,7 @@ bool GanlAdapter::start_dns_slave() {
         dnsThreads_.emplace_back(&GanlAdapter::dns_worker_func, this);
     }
 
-    Log.tinyprintf(T("GANL: DNS worker threads started (%d threads).\n"), DNS_THREAD_COUNT);
+    g_pILog->WriteString(tprintf(T("GANL: DNS worker threads started (%d threads).\n"), DNS_THREAD_COUNT));
     return true;
 #else
     if (!mudconf.use_hostname || !networkEngine_) {
@@ -1921,8 +1922,8 @@ bool GanlAdapter::start_dns_slave() {
     ganl::ConnectionHandle handle = networkEngine_->spawnSlave(options, error);
     if (handle == ganl::InvalidConnectionHandle) {
         lock.unlock();
-        Log.tinyprintf(T("GANL: Failed to spawn DNS slave: %s\n"),
-            networkEngine_->getErrorString(error).c_str());
+        g_pILog->WriteString(tprintf(T("GANL: Failed to spawn DNS slave: %s\n"),
+            networkEngine_->getErrorString(error).c_str()));
         return false;
     }
 
@@ -1931,7 +1932,7 @@ bool GanlAdapter::start_dns_slave() {
     dns_slave_ = std::move(channel);
     lock.unlock();
 
-    Log.WriteString(T("GANL: DNS slave channel started.\n"));
+    g_pILog->WriteString(T("GANL: DNS slave channel started.\n"));
     return true;
 #endif
 }
@@ -1960,7 +1961,7 @@ void GanlAdapter::shutdown_dns_slave() {
         dnsResults_.clear();
     }
 
-    Log.WriteString(T("GANL: DNS worker threads stopped.\n"));
+    g_pILog->WriteString(T("GANL: DNS worker threads stopped.\n"));
 #else
     std::unique_lock<std::mutex> lock(mutex_);
     if (!dns_slave_) {
@@ -2088,7 +2089,7 @@ bool GanlAdapter::process_dns_slave_read_locked() {
     }
 
     if (nbytes == 0) {
-        Log.WriteString(T("GANL: DNS slave closed its connection.\n"));
+        g_pILog->WriteString(T("GANL: DNS slave closed its connection.\n"));
         return false;
     }
 
@@ -2096,7 +2097,7 @@ bool GanlAdapter::process_dns_slave_read_locked() {
         return true;
     }
 
-    Log.tinyprintf(T("GANL: DNS slave read error: %s\n"), strerror(errno));
+    g_pILog->WriteString(tprintf(T("GANL: DNS slave read error: %s\n"), strerror(errno)));
     return false;
 #endif
 }
@@ -2133,15 +2134,15 @@ bool GanlAdapter::flush_dns_slave_writes_locked() {
                 if (networkEngine_->postWrite(dns_slave_->handle, nullptr, 0, dns_slave_.get(), error)) {
                     dns_slave_->writeInterest = true;
                 } else {
-                    Log.tinyprintf(T("GANL: Failed to request write interest for DNS slave: %s\n"),
-                        networkEngine_->getErrorString(error).c_str());
+                    g_pILog->WriteString(tprintf(T("GANL: Failed to request write interest for DNS slave: %s\n"),
+                        networkEngine_->getErrorString(error).c_str()));
                     return false;
                 }
             }
             return true;
         }
 
-        Log.tinyprintf(T("GANL: DNS slave write error: %s\n"), strerror(errno));
+        g_pILog->WriteString(tprintf(T("GANL: DNS slave write error: %s\n"), strerror(errno)));
         return false;
     }
 #endif
@@ -2813,8 +2814,8 @@ bool GanlAdapter::boot_stubslave()
     stubslave_channel_->fd = sv[0];
 
     STARTLOG(LOG_ALWAYS, "NET", "STUB");
-    log_text(T("Stub slave started on fd "));
-    log_number(stubslave_channel_->fd);
+    g_pILog->log_text(T("Stub slave started on fd "));
+    g_pILog->log_number(stubslave_channel_->fd);
     ENDLOG;
     return true;
 
@@ -2827,8 +2828,8 @@ failure:
     stubslave_pid = 0;
 
     STARTLOG(LOG_ALWAYS, "NET", "STUB");
-    log_text(T(pFailedFunc));
-    log_number(errno);
+    g_pILog->log_text(T(pFailedFunc));
+    g_pILog->log_number(errno);
     ENDLOG;
     return false;
 }
@@ -2879,7 +2880,7 @@ MUX_RESULT GanlAdapter::pump_stubslave()
         int iSocketError = errno;
         if (EBADF == iSocketError)
         {
-            log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("poll"));
+            g_pILog->log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("poll"));
             struct stat fstatbuf;
             if (fstat(fd, &fstatbuf) < 0)
             {
@@ -2889,7 +2890,7 @@ MUX_RESULT GanlAdapter::pump_stubslave()
         }
         else if (EINTR != iSocketError)
         {
-            log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("poll"));
+            g_pILog->log_perror(T("NET"), T("FAIL"), T("checking for activity"), T("poll"));
         }
         return MUX_S_OK;
     }
@@ -2910,7 +2911,7 @@ MUX_RESULT GanlAdapter::pump_stubslave()
                 shutdown_stubslave();
 
                 STARTLOG(LOG_ALWAYS, "NET", "STUB");
-                log_text(T("read() of stubslave failed. Stubslave stopped."));
+                g_pILog->log_text(T("read() of stubslave failed. Stubslave stopped."));
                 ENDLOG;
 
                 return MUX_E_FAIL;
@@ -2922,7 +2923,7 @@ MUX_RESULT GanlAdapter::pump_stubslave()
                 shutdown_stubslave();
 
                 STARTLOG(LOG_ALWAYS, "NET", "STUB");
-                log_text(T("Stubslave pipe closed (EOF). Stubslave stopped."));
+                g_pILog->log_text(T("Stubslave pipe closed (EOF). Stubslave stopped."));
                 ENDLOG;
 
                 return MUX_E_FAIL;
@@ -2949,7 +2950,7 @@ MUX_RESULT GanlAdapter::pump_stubslave()
                     shutdown_stubslave();
 
                     STARTLOG(LOG_ALWAYS, "NET", "STUB");
-                    log_text(T("write() of stubslave failed. Stubslave stopped."));
+                    g_pILog->log_text(T("write() of stubslave failed. Stubslave stopped."));
                     ENDLOG;
 
                     return MUX_E_FAIL;

@@ -80,6 +80,13 @@ public:
     virtual MUX_RESULT log_name_and_loc(dbref player) = 0;
     virtual MUX_RESULT log_type_and_name(dbref thing) = 0;
     virtual MUX_RESULT end_log(void) = 0;
+
+    // Direct CLogFile operations for driver startup/shutdown/signals.
+    //
+    virtual MUX_RESULT WriteString(const UTF8 *text) = 0;
+    virtual MUX_RESULT SetBasename(const UTF8 *pBasename) = 0;
+    virtual MUX_RESULT StartLogging(void) = 0;
+    virtual MUX_RESULT Flush(void) = 0;
 };
 
 interface mux_IServerEventsSink : public mux_IUnknown
@@ -507,6 +514,12 @@ public:
     // Check if the engine wants to shut down.
     //
     virtual MUX_RESULT ShouldShutdown(bool *pbShutdown) = 0;
+
+    // Standalone database conversion (dbconvert mode).
+    //
+    virtual MUX_RESULT DbConvert(const UTF8 *infile, const UTF8 *outfile,
+        const UTF8 *basename, bool bCheck, bool bLoad, bool bUnload,
+        const UTF8 *comsys_file, const UTF8 *mail_file) = 0;
 };
 
 // Player session — the interface the driver uses for player authentication,

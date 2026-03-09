@@ -132,19 +132,14 @@ static void pool_err
     const int          line
 )
 {
-    if (0 == mudstate.logging)
-    {
-        STARTLOG(logflag, logsys, "ALLOC")
-	        Log.tinyprintf(T("%s[%d] (tag %s) %s in %s line %d at %p. (%s)"), action,
-	                       pools[poolnum].pool_client_size, tag, reason, file, line, ph,
-	                       mudstate.debug_cmd);
-        ENDLOG
-    }
-    else if (LOG_ALLOCATE != logflag)
-    {
-        Log.tinyprintf(T(ENDLINE "***< %s[%d] (tag %s) %s in %s line %d at %p. >***"),
-            action, pools[poolnum].pool_client_size, tag, reason, file, line, ph);
-    }
+    UNUSED_PARAMETER(logflag);
+
+    // alloc.cpp is in libmux.so and cannot call engine-side logging.
+    // Use stderr for pool error diagnostics.
+    //
+    mux_fprintf(stderr, T("%s %s[%d] (tag %s) %s in %s line %d at %p." ENDLINE),
+        logsys, action, pools[poolnum].pool_client_size, tag, reason,
+        file, line, ph);
 }
 
 /*! \brief Validates the buffers in the in-use list.
@@ -300,15 +295,8 @@ UTF8 *pool_alloc(int poolnum, const UTF8 *tag, const UTF8 *file, const int line)
     pools[poolnum].tot_alloc++;
     pools[poolnum].num_alloc++;
 
-    if (  (LOG_ALLOCATE & mudconf.log_options)
-       && mudstate.logging == 0
-       && start_log(T("DBG"), T("ALLOC")))
-    {
-        Log.tinyprintf(T("Alloc[%d] (tag %s) in %s line %d buffer at %p. (%s)"),
-            pools[poolnum].pool_client_size, tag, file, line, ph,
-            mudstate.debug_cmd);
-        end_log();
-    }
+    // Alloc tracing — libmux.so uses stderr, not engine logging.
+    //
 
     // If the buffer was modified after it was last freed, log it.
     //
@@ -399,14 +387,8 @@ UTF8 *pool_alloc_lbuf(const UTF8 *tag, const UTF8 *file, const int line)
     pools[POOL_LBUF].tot_alloc++;
     pools[POOL_LBUF].num_alloc++;
 
-    if (  (LOG_ALLOCATE & mudconf.log_options)
-       && mudstate.logging == 0
-       && start_log(T("DBG"), T("ALLOC")))
-    {
-        Log.tinyprintf(T("Alloc[%d] (tag %s) in %s line %d buffer at %p. (%s)"),
-            LBUF_SIZE, tag, file, line, ph, mudstate.debug_cmd);
-        end_log();
-    }
+    // Alloc tracing — libmux.so uses stderr, not engine logging.
+    //
 
     // If the buffer was modified after it was last freed, log it.
     //
@@ -424,9 +406,7 @@ void pool_free(int poolnum, UTF8* buf, const UTF8* file, const int line)
 {
     if (buf == nullptr)
     {
-        STARTLOG(LOG_PROBLEMS, "BUG", "ALLOC")
-			log_printf(T("Attempt to free null pointer in %s line %d."), file, line);
-        ENDLOG
+        mux_fprintf(stderr, T("BUG ALLOC: Attempt to free null pointer in %s line %d." ENDLINE), file, line);
         return;
     }
     POOLHDR *ph = reinterpret_cast<POOLHDR*>(buf) - 1;
@@ -469,15 +449,8 @@ void pool_free(int poolnum, UTF8* buf, const UTF8* file, const int line)
         return;
     }
 
-    if (  (LOG_ALLOCATE & mudconf.log_options)
-       && mudstate.logging == 0
-       && start_log(T("DBG"), T("ALLOC")))
-    {
-        Log.tinyprintf(T("Free[%d] (tag %s) in %s line %d buffer at %p. (%s)"),
-            pools[poolnum].pool_client_size, ph->u.buf_tag, file, line, ph,
-            mudstate.debug_cmd);
-        end_log();
-    }
+    // Free tracing — libmux.so uses stderr, not engine logging.
+    //
 
     // Make sure we aren't freeing an already free buffer.  If we are, log an
     // error, otherwise update the pool header and stats.
@@ -500,9 +473,7 @@ void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
 {
     if (buf == nullptr)
     {
-        STARTLOG(LOG_PROBLEMS, "BUG", "ALLOC")
-        log_printf(T("Attempt to free_lbuf null pointer in %s line %d."), file, line);
-        ENDLOG
+        mux_fprintf(stderr, T("BUG ALLOC: Attempt to free_lbuf null pointer in %s line %d." ENDLINE), file, line);
         return;
     }
     POOLHDR *ph = reinterpret_cast<POOLHDR*>(buf) - 1;
@@ -558,14 +529,8 @@ void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
         }
     }
 
-    if (  (LOG_ALLOCATE & mudconf.log_options)
-       && mudstate.logging == 0
-       && start_log(T("DBG"), T("ALLOC")))
-    {
-        Log.tinyprintf(T("Free[%d] (tag %s) in %s line %d buffer at %p. (%s)"),
-            LBUF_SIZE, ph->u.buf_tag, file, line, ph, mudstate.debug_cmd);
-        end_log();
-    }
+    // Free tracing — libmux.so uses stderr, not engine logging.
+    //
 
     // Update the pool header and stats.
     //

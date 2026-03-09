@@ -3803,39 +3803,7 @@ static void list_vattrs(dbref player, UTF8 *s_mask)
     free_lbuf(buff);
 }
 
-size_t LeftJustifyString(UTF8 *field, size_t nWidth, const UTF8 *value)
-{
-    size_t n = strlen(reinterpret_cast<const char *>(value));
-    if (n > nWidth)
-    {
-        n = nWidth;
-    }
-    memcpy(field, value, n);
-    memset(field+n, ' ', nWidth-n);
-    return nWidth;
-}
-
-size_t RightJustifyNumber(UTF8 *field, size_t nWidth, int64_t value, UTF8 chFill)
-{
-    UTF8   buffer[I64BUF_SIZE];
-    size_t nReturn = 0;
-    if (nWidth < sizeof(buffer))
-    {
-        size_t n = mux_i64toa(value, buffer);
-        if (n < sizeof(buffer))
-        {
-            nReturn = n;
-            if (n < nWidth)
-            {
-                memset(field, chFill, nWidth-n);
-                field += nWidth-n;
-                nReturn = nWidth;
-            }
-            memcpy(field, buffer, n);
-        }
-    }
-    return nReturn;
-}
+// LeftJustifyString and RightJustifyNumber moved to stringutil.cpp (libmux.so).
 
 // list_hashstats: List information from hash tables
 //

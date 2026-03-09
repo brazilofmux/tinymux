@@ -2418,4 +2418,7 @@ void DCL_CDECL safe_tprintf_str(UTF8 *, UTF8 **, const UTF8 *, ...);
 extern bool g_no_flash;         // mudconf.no_flash
 extern bool g_space_compress;   // mudstate.bStandAlone || mudconf.space_compress
 
+size_t LeftJustifyString(UTF8 *field, size_t nWidth, const UTF8 *value);
+size_t RightJustifyNumber(UTF8 *field, size_t nWidth, int64_t value, UTF8 chFill);
+
 #endif // STRINGUTIL_H
