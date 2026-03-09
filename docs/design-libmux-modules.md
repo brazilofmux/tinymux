@@ -524,6 +524,322 @@ verify topic lookup and nonexistent-topic error handling.
 - Evaluator (hot path, deeply coupled to mudstate)
 
 
+## Phase 5: Driver/Engine Split (Mitosis)
+
+### Motivation
+
+Phases 1–4 decomposed netmux from the bottom up: extracting subsystems (comsys,
+mail) into modules behind COM interfaces.  That approach has reached diminishing
+returns — the remaining subsystems (commands, objects, evaluator, database) are
+deeply entangled with each other and not worth extracting individually.
+
+The next move is from the top down.  Inspired by the LPMud driver/game
+architecture, split netmux into two layers:
+
+```
+netmux (driver)         — main(), networking, signals, module orchestration
+  ↓ COM interface
+engine.so (game engine) — database, commands, evaluator, scheduler, objects
+  ↓ direct link
+libmux.so (core)        — strings, time, math, hash, COM infrastructure
+```
+
+**Key constraints:**
+- `engine.so` links against `libmux.so` only.  Exports `mux_Register` /
+  `mux_Unregister` like any module — standard COM front door.
+- `netmux` links against `libmux.so` only.  Loads `engine.so` via COM.
+  **No `-rdynamic`.**  No symbol exports from netmux to engine.
+- Engine calls back to driver through COM interfaces, same pattern as
+  comsys_mod and mail_mod calling mux_INotify or mux_IObjectInfo.
+- All existing modules (comsys_mod.so, mail_mod.so, exp3.so) continue to
+  link against libmux.so and communicate with the engine through the same
+  COM interfaces they use today.
+
+### Guiding Principle
+
+Dbrefs are quintessentially game.  Sockets, TLS, telnet, and charsets are
+quintessentially driver.  The engine only wants UTF-8.  The driver only wants
+"send this text to connection X" and "connection Y sent this command."
+
+The biggest violation of this division today is the DESC struct, which mixes
+network state (fd, TLS context, telnet negotiation, NAWS dimensions) with
+game state (player dbref, command quota, doing string, output prefix/suffix).
+The engine should see connections as opaque handles — COM pointers or integer
+IDs — never touching socket-level details.
+
+### Pre-Mitosis Stages
+
+Before the physical split, three preparation stages bring the codebase to a
+state where mitosis is mechanical.  At the end of Stage 3, every file is
+classified Driver or Engine, the headers are clean, and the code compiles
+exactly as before — still one binary.  Nothing has changed from the linker's
+perspective.  The actual .so split becomes trivial.
+
+---
+
+### Stage 1: Classification (Documentation)
+
+Establish a clear mental model of what belongs to Driver vs Engine.  Every
+source file, every struct, every global — classify it.  Document the boundary
+violations.  This is a state of mind, not a code change.
+
+#### File Classification
+
+**Driver (stays in netmux):**
+
+| File | Role |
+|------|------|
+| game.cpp | main(), startup orchestration, shutdown sequence |
+| ganl_adapter.cpp | Event loop, I/O multiplexing, connection lifecycle |
+| bsd.cpp | Descriptor lifecycle, socket I/O, output flushing |
+| telnet.cpp | NVT state machine, option negotiation |
+| netaddr.cpp | IP/IPv6 address parsing |
+| signals.cpp | POSIX signal handlers |
+| sitemon.cpp | IP-level site bans |
+| slave.cpp | DNS resolver child process |
+| modules.cpp | COM infrastructure, module loading, interface factories |
+| _build.cpp | Version stamp |
+
+**Engine (moves to engine.so):**
+
+| File | Role |
+|------|------|
+| db.cpp, db_rw.cpp | Database core, object creation/destruction |
+| sqlitedb.cpp, sqlite_backend.cpp | SQLite storage layer |
+| attrcache.cpp | Attribute cache and LRU |
+| ast.cpp, ast_scan.cpp, eval.cpp | Parser and evaluator |
+| functions.cpp, funceval.cpp, funceval2.cpp, funmath.cpp | Softcode functions |
+| command.cpp | Command dispatch table and processing |
+| speech.cpp, look.cpp, set.cpp, create.cpp, move.cpp | Game commands |
+| wiz.cpp, rob.cpp, quota.cpp | Admin/economy commands |
+| object.cpp, player.cpp, player_c.cpp | Object/player lifecycle |
+| flags.cpp, powers.cpp | Flag and power systems |
+| cque.cpp | Command queue and scheduler |
+| timer.cpp | Scheduled tasks, idle checks, @daily |
+| conf.cpp | Configuration parsing (mudconf) |
+| mail.cpp, comsys.cpp | Built-in subsystem fallbacks |
+| help.cpp | Help file indexing and lookup |
+| log.cpp | Logging subsystem |
+| wild.cpp, match.cpp | Wildcard and name matching |
+| boolexp.cpp | Lock evaluation |
+| unparse.cpp, walkdb.cpp, vattr.cpp | DB utilities |
+| predicates.cpp | Object predicates and permission checks |
+| mguests.cpp | Guest system |
+| file_c.cpp | File cache (connect.txt, motd.txt, etc.) |
+| htab.cpp | Hash tables (NAMETAB-based) |
+| plusemail.cpp | Email validation |
+| local.cpp | Local extensions hook |
+| levels.cpp | Reality levels (optional) |
+| version.cpp | Version string |
+
+**Hybrid (need splitting or reclassification):**
+
+| File | Driver part | Engine part |
+|------|------------|-------------|
+| netcommon.cpp | — | update_quotas, raw_notify, announce_connect/disconnect, welcome_user, save_command |
+| game.cpp | main(), ganl calls | cf_read, load_game, dump_database, module discovery |
+
+#### The DESC Boundary
+
+The DESC struct (interface.h:142–188) is the primary boundary violation.
+Current fields classified:
+
+**Network-side (stays in Driver):**
+- `socket` (SOCKET) — file descriptor
+- `ss` (SocketState) — TLS state machine
+- `nOption`, `aOption[]` — Telnet negotiation state
+- `raw_input_buf`, `raw_input_at`, `raw_input_state`, `raw_codepoint_*` — NVT parser state
+- `nvt_him_state[256]`, `nvt_us_state[256]` — Telnet option states
+- `ttype` — Terminal type string
+- `encoding`, `negotiated_encoding`, `charset_request_pending` — Charset state
+- `width`, `height` — NAWS terminal dimensions
+- `address` (mux_sockaddr), `addr[]`, `username[]` — Remote endpoint
+- `connected_at` — Connection timestamp
+- `output_queue`, `output_size`, `output_tot`, `output_lost` — Output buffer
+- `input_queue`, `input_size`, `input_tot`, `input_lost` — Input buffer
+
+**Game-side (belongs to Engine):**
+- `player` (dbref) — Connected player object
+- `flags` (DS_CONNECTED, DS_AUTODARK, DS_PUEBLOCLIENT)
+- `quota` (int) — Command quota remaining
+- `command_count` — Session command counter
+- `timeout` — Idle timeout in seconds
+- `retries_left` — Login retry counter
+- `output_prefix`, `output_suffix` — Per-session output decoration
+- `doing[]` — DOING string
+- `program_data` — Interactive editing state (@edit)
+- `last_time` — Last command timestamp (used by both sides)
+
+**Resolution:** The engine sees connections as opaque handles.  A
+driver-provided COM interface (e.g., `mux_IConnectionManager`) lets the
+engine query connection state and send output without touching DESC fields
+directly.  Alternatively, DESC splits into a driver-side struct and an
+engine-side companion indexed by connection handle.
+
+#### Descriptor Access from Engine Files
+
+The following engine files currently reach into descriptor collections
+(`mudstate.descriptors_list`, `dbref_to_descriptors_map`).  Each of these
+access points must be wrapped behind an interface or moved to the driver:
+
+| Engine file | What it does with descriptors |
+|-------------|------------------------------|
+| netcommon.cpp | raw_notify (find DESCs by player), update_quotas (iterate all), announce_connect/disconnect (count sessions, set flags) |
+| functions.cpp | WHO, PORTS, LPORTS, DOING, IDLE, CONN (iterate connected DESCs) |
+| predicates.cpp | connected() test, idle time queries |
+| speech.cpp | Broadcast to room (connected players) |
+| timer.cpp | Idle timeout checks, keepalive |
+| flags.cpp | DS_CONNECTED flag checks |
+| db.cpp | Object destroy cleanup |
+| command.cpp | @boot, session-aware commands |
+| file_c.cpp | fcache_dump to descriptor |
+
+#### Global State Ownership
+
+| Global | Owner | Notes |
+|--------|-------|-------|
+| mudconf | Engine | All configuration parameters |
+| mudstate | Engine | Game state — but contains descriptor lists |
+| db[] | Engine | Object database array |
+| scheduler | Engine | Task queue (CScheduler) |
+| mudstate.descriptors_list | **Driver** | Must migrate to driver ownership |
+| mudstate.dbref_to_descriptors_map | **Driver** | Must migrate to driver ownership |
+| mudstate.shutdown_flag | Shared | Engine sets it, driver reads it |
+| mudstate.restarting | Shared | Driver sets it, both read it |
+
+#### netcommon.cpp: The Key Hybrid
+
+netcommon.cpp is misnamed — it is not "network-independent common code."  It
+contains critical engine functions that happen to operate on descriptors:
+
+| Function | Classification | Why |
+|----------|---------------|-----|
+| update_quotas() | Engine | Quota recharge is game policy, but iterates DESCs |
+| raw_notify() | Engine | Message delivery by dbref, but queues on DESC |
+| raw_notify_html() | Engine | Same, HTML variant |
+| announce_connect() | Engine | Player login bookkeeping, A_TIMEOUT, cache_preload |
+| announce_disconnect() | Engine | Triggers A_ADISCONNECT, broadcasts, zone notify |
+| welcome_user() | Boundary | Sends connect.txt file to new connection |
+| save_command() | Boundary | Queues raw input line for game processing |
+| process_input_helper() | Boundary | NVT parsing → command queue entry |
+
+The resolution is an interface.  announce_connect/disconnect are engine
+functions that should call back to the driver through a COM interface for
+descriptor-specific operations (count sessions, send raw output, flag a
+descriptor as connected).
+
+---
+
+### Stage 2: In-Place Separation
+
+With the classification established, go through the code and separate things
+that combine Engine and Driver concerns.  No files move.  Everything still
+compiles into netmux.  Smoke tests pass after every change.
+
+**Work items:**
+
+1. **Split DESC game-state from network-state.**  Either create a parallel
+   game-state struct indexed by connection handle, or define accessor
+   functions/interfaces that the engine calls instead of touching DESC
+   fields directly.
+
+2. **Move descriptor collections to driver ownership.**  The descriptor
+   lists currently live in mudstate.  Move them out (or wrap them behind
+   accessor functions) so engine code never iterates descriptors directly.
+
+3. **Split netcommon.cpp.**  Game-side functions (announce_connect,
+   announce_disconnect, raw_notify, update_quotas) move into an engine
+   file.  Connection-level operations they need become interface calls.
+
+4. **Split shutdownsock() in bsd.cpp.**  Lines doing game cleanup
+   (announce_disconnect, attribute writes, accounting) become an engine
+   function called from the driver's shutdown sequence.
+
+5. **Wrap descriptor queries.**  Functions in functions.cpp (WHO, IDLE,
+   CONN, PORTS) and predicates.cpp (connected test) currently iterate
+   descriptors.  These should call through a connection-query interface.
+
+6. **Create new headers as needed.**  Separate driver declarations from
+   engine declarations.  This may mean splitting interface.h further or
+   creating a connection_iface.h for the engine↔driver boundary.
+
+Each item is a small, testable change.
+
+---
+
+### Stage 3: File-Level Separation
+
+At this point, every source file is cleanly either Driver or Engine.  The
+hybrid functions have been split.  The descriptor access is behind interfaces.
+
+**Work items:**
+
+1. **Header split.**  Rename externs.h to engine.h (it already is, mostly).
+   Pull driver-only declarations into a driver.h or keep them in
+   interface.h.  Engine files include engine.h.  Driver files include both.
+
+2. **Verify the boundary.**  Every engine file compiles without including
+   interface.h or any driver header.  Every driver file can call engine
+   functions through the mux_IGameEngine COM interface.
+
+3. **Define mux_IGameEngine.**  The interface the driver uses to call the
+   engine:
+
+   | Method | Wraps |
+   |--------|-------|
+   | LoadGame(configPath) | cf_read, load_game, module discovery |
+   | Startup() | local_startup, module startup, init_timer |
+   | RunTasks(ltaNow) | scheduler.RunTasks() |
+   | UpdateQuotas(ltaLast, ltaNow) | update_quotas() |
+   | WhenNext(pltaNext) | Scheduler query for next task time |
+   | DumpDatabase() | dump_database() |
+   | Shutdown() | local_shutdown, module shutdown, cleanup |
+   | ShouldShutdown(pbFlag) | mudstate.shutdown_flag |
+
+4. **Implement CGameEngine in-process.**  A COM class wrapping the above
+   functions.  main() creates it via mux_CreateInstance and calls through
+   the interface.  Still one binary — but the interface boundary is live
+   and tested.
+
+At the end of Stage 3, the codebase is ready for mitosis.  The physical
+split into engine.so is a build-system change: move engine files to a new
+Makefile target, link as shared library, done.
+
+---
+
+### Phase 5 Proper: The Split
+
+With Stages 1–3 complete, the actual mitosis is mechanical:
+
+1. **Build system:** Add engine.so target to Makefile.am.  Engine files
+   compile as .lo with -fPIC.  engine.so links against libmux.so.
+   netmux links against libmux.so only, loads engine.so via COM.
+
+2. **Module front door:** engine.so exports mux_Register/mux_Unregister.
+   Registers CID_GameEngine.  netmux calls mux_CreateInstance(CID_GameEngine)
+   to get mux_IGameEngine.
+
+3. **Driver-provided interfaces.**  netmux implements and registers COM
+   interfaces that the engine acquires during Initialize:
+   - mux_IConnectionManager — send output, query sessions, boot connections
+   - mux_ILog — already exists
+   - mux_IServerEventsControl — already exists
+
+4. **Existing modules unchanged.**  comsys_mod.so, mail_mod.so, exp3.so
+   continue to link against libmux.so and acquire engine-side interfaces
+   (INotify, IObjectInfo, etc.) through COM.  The fact that those interfaces
+   now live in engine.so instead of netmux is invisible to them.
+
+5. **Smoke tests pass.**  The same 411 tests verify identical behavior.
+
+### Future: JIT
+
+Once the engine is a proper .so, it becomes the natural home for platform-
+specific JIT backends (ARM, Intel, RISC-V).  The evaluator (ast.cpp, eval.cpp)
+is already self-contained within the engine boundary.  JIT compilation replaces
+the AST interpreter without touching the driver or libmux at all.
+
+
 ## Experiments and Surveys
 
 Before proceeding with Phase 3, run these experiments:
