@@ -226,14 +226,21 @@ void fcache_dump(DESC *d, int num)
     }
 }
 
+struct fcache_send_context
+{
+    int num;
+};
+
+static void fcache_send_callback(DESC *d, void *ctx)
+{
+    const fcache_send_context *fsc = static_cast<fcache_send_context *>(ctx);
+    fcache_dump(d, fsc->num);
+}
+
 void fcache_send(const dbref player, const int num)
 {
-    const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
-    for (auto it = range.first; it != range.second; ++it)
-    {
-        DESC* d = it->second;
-        fcache_dump(d, num);
-    }
+    fcache_send_context ctx = { num };
+    for_each_player_desc(player, fcache_send_callback, &ctx);
 }
 
 void fcache_load(dbref player)

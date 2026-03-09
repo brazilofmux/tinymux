@@ -1338,37 +1338,20 @@ void handle_prog(DESC *d, UTF8 *message)
         d->program_data->wait_regs,
         d->program_data->named_wait_regs);
 
-    // First, set 'all' to a descriptor we find for this player.
+    // Detach program_data from all of this player's descriptors.
     //
-    program_data* program = nullptr;
-    const auto range = mudstate.dbref_to_descriptors_map.equal_range(d->player);
-    for (auto it = range.first; it != range.second; ++it)
-    {
-        DESC* d = it->second;
-        if (it == range.first)
-        {
-            program = d->program_data;
-            if (program)
-            {
-                for (auto& wait_reg : program->wait_regs)
-                {
-                    if (wait_reg)
-                    {
-                        RegRelease(wait_reg);
-                        wait_reg = nullptr;
-                    }
-                }
-                NamedRegsClear(program->named_wait_regs);
-            }
-        }
-        else
-        {
-            mux_assert(program == d->program_data);
-            d->program_data = nullptr;
-        }
-    }
+    program_data* program = detach_player_program(d->player);
     if (program)
     {
+        for (auto& wait_reg : program->wait_regs)
+        {
+            if (wait_reg)
+            {
+                RegRelease(wait_reg);
+                wait_reg = nullptr;
+            }
+        }
+        NamedRegsClear(program->named_wait_regs);
         MEMFREE(program);
         program = nullptr;
     }
@@ -1414,52 +1397,24 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, U
         notify(player, T("That player is not connected."));
         return;
     }
-    bool isprog = false;
-    const auto range = mudstate.dbref_to_descriptors_map.equal_range(doer);
-    for (auto it = range.first; it != range.second; ++it)
-    {
-        const DESC* d = it->second;
-        if (nullptr != d->program_data)
-        {
-            isprog = true;
-        }
-    }
-
-    if (!isprog)
+    if (!player_has_program(doer))
     {
         notify(player, T("Player is not in an @program."));
         return;
     }
 
-    program_data* program = nullptr;
-    const auto range2 = mudstate.dbref_to_descriptors_map.equal_range(doer);
-    for (auto it = range2.first; it != range2.second; ++it)
-    {
-        DESC* d = it->second;
-        if (it == range2.first)
-        {
-            program = d->program_data;
-            if (program)
-            {
-                for (auto& wait_reg : program->wait_regs)
-                {
-                    if (wait_reg)
-                    {
-                        RegRelease(wait_reg);
-                        wait_reg = nullptr;
-                    }
-                }
-                NamedRegsClear(program->named_wait_regs);
-            }
-        }
-        else
-        {
-            mux_assert(program == d->program_data);
-            d->program_data = nullptr;
-        }
-    }
+    program_data* program = detach_player_program(doer);
     if (program)
     {
+        for (auto& wait_reg : program->wait_regs)
+        {
+            if (wait_reg)
+            {
+                RegRelease(wait_reg);
+                wait_reg = nullptr;
+            }
+        }
+        NamedRegsClear(program->named_wait_regs);
         MEMFREE(program);
         program = nullptr;
     }
@@ -1519,15 +1474,10 @@ void do_prog
 
     // Check to see if the enactor already has an @prog input pending.
     //
-    const auto range = mudstate.dbref_to_descriptors_map.equal_range(doer);
-    for (auto it = range.first; it != range.second; ++it)
+    if (player_has_program(doer))
     {
-        DESC* d = it->second;
-        if (d->program_data != nullptr)
-        {
-            notify(player, T("Input already pending."));
-            return;
-        }
+        notify(player, T("Input already pending."));
+        return;
     }
 
     UTF8 *msg = command;
@@ -1606,29 +1556,8 @@ void do_prog
 
     // Now, start waiting.
     //
-    const auto range2 = mudstate.dbref_to_descriptors_map.equal_range(doer);
-    for (auto it = range2.first; it != range2.second; ++it)
-    {
-        DESC* d = it->second;
-        d->program_data = program;
-
-        queue_string(d, tprintf(T("%s>%s "), COLOR_INTENSE, COLOR_RESET));
-
-        if (OPTION_YES == us_state(d, TELNET_EOR))
-        {
-            // Use telnet protocol's EOR command to show prompt.
-            //
-            const UTF8 aEOR[2] = { NVT_IAC, NVT_EOR };
-            queue_write_LEN(d, aEOR, sizeof(aEOR));
-        }
-        else if (OPTION_YES != us_state(d, TELNET_SGA))
-        {
-            // Use telnet protocol's GOAHEAD command to show prompt.
-            //
-            const UTF8 aGoAhead[2] = { NVT_IAC, NVT_GA };
-            queue_write_LEN(d, aGoAhead, sizeof(aGoAhead));
-        }
-    }
+    set_player_program(doer, program);
+    send_prog_prompt(doer);
 }
 
 /* ---------------------------------------------------------------------------

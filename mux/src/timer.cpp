@@ -110,19 +110,7 @@ void dispatch_KeepAlive(void *pUnused, int iUnused)
     UNUSED_PARAMETER(pUnused);
     UNUSED_PARAMETER(iUnused);
 
-    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
-    {
-        DESC* d = *it;
-        if (  (d->flags & DS_CONNECTED)
-           && KeepAlive(d->player))
-        {
-            // Send a Telnet NOP code - creates traffic to keep NAT routers
-            // happy.
-            //
-            const UTF8 aNOP[2] = { NVT_IAC, NVT_NOP };
-            queue_write_LEN(d, aNOP, sizeof(aNOP));
-        }
-    }
+    send_keepalive_nops();
 
     // Schedule ourselves again.
     //

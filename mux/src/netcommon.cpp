@@ -1515,6 +1515,120 @@ void reset_player_encoding(dbref target)
     }
 }
 
+// ---------------------------------------------------------------------------
+// for_each_player_desc: Call a function for each descriptor belonging to a
+// given player.  Used by fcache_send and similar per-player operations.
+//
+void for_each_player_desc(dbref target, void (*callback)(DESC *d, void *context), void *context)
+{
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        callback(it->second, context);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// send_keepalive_nops: Send a Telnet NOP to all connected players that have
+// the KeepAlive flag set.  Creates traffic to keep NAT routers happy.
+//
+void send_keepalive_nops(void)
+{
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
+    {
+        DESC* d = *it;
+        if (  (d->flags & DS_CONNECTED)
+           && KeepAlive(d->player))
+        {
+            const UTF8 aNOP[2] = { NVT_IAC, NVT_NOP };
+            queue_write_LEN(d, aNOP, sizeof(aNOP));
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// player_has_program: Return true if any descriptor for the given player has
+// non-null program_data (i.e., the player is in @program mode).
+//
+bool player_has_program(dbref target)
+{
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        if (nullptr != it->second->program_data)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+// ---------------------------------------------------------------------------
+// detach_player_program: Remove program_data from all of a player's
+// descriptors and return it.  The caller is responsible for freeing the
+// returned program_data (and clearing its wait_regs).
+//
+program_data *detach_player_program(dbref target)
+{
+    program_data *program = nullptr;
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        DESC* d = it->second;
+        if (it == range.first)
+        {
+            program = d->program_data;
+        }
+        else
+        {
+            mux_assert(program == d->program_data);
+        }
+        d->program_data = nullptr;
+    }
+    return program;
+}
+
+// ---------------------------------------------------------------------------
+// set_player_program: Set program_data on all of a player's descriptors.
+//
+void set_player_program(dbref target, program_data *program)
+{
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        it->second->program_data = program;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// send_prog_prompt: Send the @program prompt ("> ") to all of a player's
+// descriptors, using EOR or GA telnet sequences as appropriate.
+//
+void send_prog_prompt(dbref target)
+{
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        DESC* d = it->second;
+        queue_string(d, tprintf(T("%s>%s "), COLOR_INTENSE, COLOR_RESET));
+
+        if (OPTION_YES == us_state(d, TELNET_EOR))
+        {
+            // Use telnet protocol's EOR command to show prompt.
+            //
+            const UTF8 aEOR[2] = { NVT_IAC, NVT_EOR };
+            queue_write_LEN(d, aEOR, sizeof(aEOR));
+        }
+        else if (OPTION_YES != us_state(d, TELNET_SGA))
+        {
+            // Use telnet protocol's GOAHEAD command to show prompt.
+            //
+            const UTF8 aGoAhead[2] = { NVT_IAC, NVT_GA };
+            queue_write_LEN(d, aGoAhead, sizeof(aGoAhead));
+        }
+    }
+}
+
 // A NOTE about AUTODARK: It only works for wizard players. Wizard players
 // are automatically set DARK if they are not already set DARK and they have
 // no session which is unidle.
