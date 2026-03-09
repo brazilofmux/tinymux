@@ -918,22 +918,86 @@ Each item is a small, testable change.
 
 ---
 
-### Stage 3: File-Level Separation
+### Stage 3A: File Splits
 
-At this point, every source file is cleanly either Driver or Engine.  The
-hybrid functions have been split.  The descriptor access is behind interfaces.
+Split the three hybrid files so every source file is cleanly Driver or Engine.
+All files remain in `mux/src/` — no subdirectory moves until the physical
+`.so` split.
+
+**netcommon.cpp → net.cpp (driver) + session.cpp (engine):**
+
+net.cpp (driver) — owns descriptor collections, I/O queuing, connection
+lifecycle:
+
+| Function | Role |
+|----------|------|
+| `clearstrings`, `init_desc`, `destroy_desc`, `freeqs` | DESC memory |
+| `add_to_output_queue`, `queue_write_LEN`, `queue_write`, `encode_iac` | I/O queuing |
+| `queue_string` (×2) | Encoded output |
+| `desc_addhash`, `desc_delhash` | Hash management |
+| `save_command`, `set_userstring` | Input handling |
+| `parse_connect`, `check_connect`, `failconn` | Login processing |
+| `do_logged_out_internal`, `do_command`, `Task_ProcessCommand` | Command dispatch |
+| `welcome_user` | Connect screens |
+| `init_logout_cmdtab`, `logged_out0`, `logged_out1` | Logout command table |
+| `check_idle` | Idle check (iterates descriptors) |
+| `dump_users`, `dump_info` | WHO display |
+| `boot_off`, `boot_by_port`, `desc_reload` | Connection management |
+| `find_oldest`, `find_least_idle` | Descriptor queries |
+| All 12 Stage 2 accessor functions | Boundary layer |
+| `mux_subnets` class | Subnet matching |
+
+session.cpp (engine) — game logic, notification, softcode:
+
+| Function | Role |
+|----------|------|
+| `raw_notify` (×2), `raw_notify_html`, `raw_notify_newline` | Notification |
+| `raw_broadcast` | Broadcast messages |
+| `announce_connect`, `announce_disconnect` | Game-level connect/disconnect |
+| `update_quotas` | Quota management |
+| `make_portlist`, `make_port_ulist`, `make_ulist` | List builders |
+| `fetch_session`, `fetch_idle`, `fetch_connect`, `fetch_height`, `fetch_width` | Softcode fetch |
+| `fetch_cmds`, `fetch_ConnectionInfoFields`, `fetch_ConnectionInfoField` | Softcode fetch |
+| `fetch_logouttime`, `ParseConnectionInfoString` | Softcode fetch |
+| `find_connected_name` | Name matching |
+| `MakeCanonicalDoing`, `do_doing` | @doing |
+| `check_events` | @daily, etc. |
+| `list_siteinfo` | @list |
+| `trimmed_name`, `trimmed_site` | Display helpers |
+| `fun_doing`, `fun_host`, `fun_poll`, `fun_motd`, `fun_siteinfo` | Softcode functions |
+
+**game.cpp → driver.cpp (driver) + engine.cpp (engine):**
+
+driver.cpp: `main()`, startup orchestration, shutdown sequence, GANL calls.
+
+engine.cpp: `cf_read`, `load_game`, `dump_database`, module discovery,
+`local_startup`, `local_shutdown`.
+
+**Note:** bsd.cpp should be audited for dead code at a stopping point.
+All networking has migrated to GANL; any remaining select()-based code in
+bsd.cpp is likely dead.
+
+### Stage 3B: Boundary Hardening
+
+Reduce cross-side visibility so Driver and Engine files don't leak
+declarations into each other.
 
 **Work items:**
 
-1. **Header split.**  Rename externs.h to engine.h (it already is, mostly).
-   Pull driver-only declarations into a driver.h or keep them in
-   interface.h.  Engine files include engine.h.  Driver files include both.
+1. **Header split.**  Split externs.h into engine.h and driver.h.
+   externs.h is already mostly engine declarations.  Pull driver-only
+   declarations (DESC, socket operations, telnet state) into driver.h.
+   Engine files include engine.h only.  Driver files include both.
 
-2. **Verify the boundary.**  Every engine file compiles without including
-   interface.h or any driver header.  Every driver file can call engine
-   functions through the mux_IGameEngine COM interface.
+2. **Static declarations.**  Functions that are internal to one side
+   become `static` or move to anonymous namespaces.  Eliminate extern
+   declarations that cross the boundary unnecessarily.
 
-3. **Define mux_IGameEngine.**  The interface the driver uses to call the
+3. **Verify the boundary.**  Every engine file compiles without including
+   driver.h or interface.h.  Every driver file can call engine functions
+   through the engine.h declarations (and eventually mux_IGameEngine).
+
+4. **Define mux_IGameEngine.**  The interface the driver uses to call the
    engine:
 
    | Method | Wraps |
@@ -947,7 +1011,7 @@ hybrid functions have been split.  The descriptor access is behind interfaces.
    | Shutdown() | local_shutdown, module shutdown, cleanup |
    | ShouldShutdown(pbFlag) | mudstate.shutdown_flag |
 
-4. **Implement CGameEngine in-process.**  A COM class wrapping the above
+5. **Implement CGameEngine in-process.**  A COM class wrapping the above
    functions.  main() creates it via mux_CreateInstance and calls through
    the interface.  Still one binary — but the interface boundary is live
    and tested.
