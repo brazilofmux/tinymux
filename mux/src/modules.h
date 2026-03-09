@@ -499,4 +499,143 @@ public:
     virtual MUX_RESULT ShouldShutdown(bool *pbShutdown) = 0;
 };
 
+// Connection manager — the interface the engine uses to interact with
+// connections owned by the driver.  The driver implements this; the engine
+// acquires it via mux_CreateInstance(CID_ConnectionManager) during startup.
+//
+// This replaces all direct calls from engine files to net.cpp accessor
+// functions (find_desc_by_socket, send_text_to_player, etc.).
+//
+const MUX_CID CID_ConnectionManager    = UINT64_C(0x00000002E3F4A5B6);
+const MUX_IID IID_IConnectionManager   = UINT64_C(0x00000002F1D2C3E4);
+
+interface mux_IConnectionManager : public mux_IUnknown
+{
+public:
+    // --- Output ---
+
+    // Send encoded UTF-8 text to all of a player's connections.
+    //
+    virtual MUX_RESULT SendText(dbref target, const UTF8 *text) = 0;
+
+    // Send raw bytes to all of a player's connections.
+    //
+    virtual MUX_RESULT SendRaw(dbref target, const UTF8 *data, size_t len) = 0;
+
+    // Broadcast text to all connected players matching flag mask, then flush.
+    //
+    virtual MUX_RESULT BroadcastAndFlush(int inflags, const UTF8 *text) = 0;
+
+    // Send @program prompt to all of a player's descriptors.
+    //
+    virtual MUX_RESULT SendProgPrompt(dbref target) = 0;
+
+    // Send Telnet NOP keepalives to all connections with KeepAlive set.
+    //
+    virtual MUX_RESULT SendKeepaliveNops(void) = 0;
+
+    // --- Queries by dbref ---
+
+    // Query total number of active connections.
+    //
+    virtual MUX_RESULT GetTotalConnections(int *pCount) = 0;
+
+    // Query number of descriptors for a given player.
+    //
+    virtual MUX_RESULT CountPlayerDescs(dbref target, int *pCount) = 0;
+
+    // Query sum of command_count for a given player (-1 if not connected).
+    //
+    virtual MUX_RESULT SumPlayerCommandCount(dbref target, int *pCount) = 0;
+
+    // Query height of a player's least-idle connection.
+    //
+    virtual MUX_RESULT FetchHeight(dbref target, int *pHeight) = 0;
+
+    // Query width of a player's least-idle connection.
+    //
+    virtual MUX_RESULT FetchWidth(dbref target, int *pWidth) = 0;
+
+    // Query smallest idle time for a player (-1 if not connected).
+    //
+    virtual MUX_RESULT FetchIdle(dbref target, int *pIdle) = 0;
+
+    // Query largest connect time for a player (-1 if not connected).
+    //
+    virtual MUX_RESULT FetchConnect(dbref target, int *pConnect) = 0;
+
+    // --- Queries by opaque connection handle (DESC*) ---
+    // Engine code holds DESC* as an opaque pointer and queries fields here.
+
+    // Find connected descriptor by socket number, or nullptr if not found.
+    //
+    virtual MUX_RESULT FindDescBySocket(SOCKET s, DESC **ppDesc) = 0;
+
+    // Find first connected descriptor for a player, or nullptr.
+    //
+    virtual MUX_RESULT FindDescByPlayer(dbref target, DESC **ppDesc) = 0;
+
+    // Query individual fields of an opaque descriptor handle.
+    //
+    virtual MUX_RESULT DescPlayer(const DESC *d, dbref *pPlayer) = 0;
+    virtual MUX_RESULT DescHeight(const DESC *d, int *pHeight) = 0;
+    virtual MUX_RESULT DescWidth(const DESC *d, int *pWidth) = 0;
+    virtual MUX_RESULT DescEncoding(const DESC *d, int *pEncoding) = 0;
+    virtual MUX_RESULT DescCommandCount(const DESC *d, int *pCount) = 0;
+    virtual MUX_RESULT DescTtype(const DESC *d, const UTF8 **ppTtype) = 0;
+    virtual MUX_RESULT DescLastTime(const DESC *d,
+        CLinearTimeAbsolute *pTime) = 0;
+    virtual MUX_RESULT DescConnectedAt(const DESC *d,
+        CLinearTimeAbsolute *pTime) = 0;
+    virtual MUX_RESULT DescNvtHimState(const DESC *d,
+        unsigned char chOption, int *pState) = 0;
+    virtual MUX_RESULT DescSocketState(const DESC *d,
+        SocketState *pState) = 0;
+
+    // --- Iteration ---
+
+    // Call a function for each connected player dbref.
+    //
+    virtual MUX_RESULT ForEachConnectedPlayer(
+        void (*callback)(dbref player, void *context), void *context) = 0;
+
+    // Call a function for each connected descriptor (player + socket).
+    //
+    virtual MUX_RESULT ForEachConnectedDesc(
+        void (*callback)(dbref player, SOCKET sock, void *context),
+        void *context) = 0;
+
+    // --- @program state ---
+
+    virtual MUX_RESULT PlayerHasProgram(dbref target, bool *pbHas) = 0;
+    virtual MUX_RESULT DetachPlayerProgram(dbref target,
+        program_data **ppProgram) = 0;
+    virtual MUX_RESULT SetPlayerProgram(dbref target,
+        program_data *program) = 0;
+
+    // --- Encoding / Display ---
+
+    virtual MUX_RESULT SetPlayerEncoding(dbref target, int encoding) = 0;
+    virtual MUX_RESULT ResetPlayerEncoding(dbref target) = 0;
+    virtual MUX_RESULT SetDoingAll(dbref target, const UTF8 *doing,
+        size_t len) = 0;
+    virtual MUX_RESULT SetDoingLeastIdle(dbref target, const UTF8 *doing,
+        size_t len, bool *pbFound) = 0;
+
+    // --- Quota ---
+
+    virtual MUX_RESULT UpdateAllDescQuotas(int nExtra, int nMax) = 0;
+
+    // --- Connection lifecycle ---
+
+    virtual MUX_RESULT BootOff(dbref target, const UTF8 *message,
+        int *pCount) = 0;
+    virtual MUX_RESULT BootByPort(SOCKET port, bool bGod,
+        const UTF8 *message, int *pCount) = 0;
+
+    // --- Idle check ---
+
+    virtual MUX_RESULT CheckIdle(void) = 0;
+};
+
 #endif // MODULES_H
