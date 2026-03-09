@@ -318,8 +318,6 @@ extern "C" MUX_RESULT DCL_API pipepump(void);
 
 extern NAMETAB sigactions_nametab[];
 
-extern long DebugTotalSockets;
-
 #include "file_c.h"
 #ifdef REALITY_LVLS
 #include "levels.h"
@@ -1335,8 +1333,6 @@ void raw_notify_html(dbref player, const mux_string &sMsg);
 void do_lock(dbref executor, dbref caller, dbref enactor, int eval, int key,
                     int nargs, UTF8 *name, UTF8 *keytext, const UTF8 *cargs[], int ncargs);
 void check_events(void);
-void list_system_resources(dbref player);
-
 #if defined(WOD_REALMS) || defined(REALITY_LVLS)
 
 #define ACTION_IS_STATIONARY    0
@@ -1356,7 +1352,6 @@ void list_system_resources(dbref player);
 int DoThingToThingVisibility(dbref looker, dbref lookee, int action_state);
 #endif // WOD_REALMS
 
-extern long DebugTotalFiles;
 extern pid_t game_pid;
 
 #if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)

@@ -3021,7 +3021,6 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
             FILE *f;
             if (mux_fopen(&f, mudconf.mail_db, T("rb")))
             {
-                DebugTotalFiles++;
                 setvbuf(f, nullptr, _IOFBF, 16384);
                 Log.tinyprintf(T("LOADING: %s" ENDLINE), mudconf.mail_db);
                 load_mail(f);
@@ -3033,7 +3032,6 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
                     log_printf(T("fclose failed for %s"), mudconf.mail_db);
                     ENDLOG;
                 }
-                DebugTotalFiles--;
             }
         }
     }

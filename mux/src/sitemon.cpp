@@ -1,7 +1,7 @@
 /*! \file sitemon.cpp
- * \brief Site monitoring and system resource listing.
+ * \brief Site monitoring.
  *
- * Functions for site connection monitoring and reporting system resource usage.
+ * Functions for site connection monitoring.
  */
 
 #include "copyright.h"
@@ -9,26 +9,6 @@
 #include "config.h"
 #include "externs.h"
 #include "interface.h"
-
-void list_system_resources(dbref player)
-{
-    UTF8 buffer[80];
-
-    int nTotal = 0;
-    notify(player, T("System Resources"));
-
-    mux_sprintf(buffer, sizeof(buffer), T("Total Open Files: %ld"), DebugTotalFiles);
-    notify(player, buffer);
-    nTotal += DebugTotalFiles;
-
-    mux_sprintf(buffer, sizeof(buffer), T("Total Sockets: %ld"), DebugTotalSockets);
-    notify(player, buffer);
-    nTotal += DebugTotalSockets;
-
-    mux_sprintf(buffer, sizeof(buffer), T("Total Handles (sum of above): %d"), nTotal);
-    notify(player, buffer);
-}
-
 
 void site_mon_send(const SOCKET port, const UTF8 *address, DESC *d, const UTF8 *msg)
 {

@@ -21,9 +21,6 @@
 MYSQL *mush_database = nullptr;
 #endif // INLINESQL
 
-long DebugTotalFiles = 3;
-long DebugTotalSockets = 0;
-
 /*
  * ---------------------------------------------------------------------------
  * * info: display info about the file being read or written.
@@ -737,14 +734,8 @@ int DCL_CDECL main(int argc, char *argv[])
     if (!mudstate.restarting)
 #endif // HAVE_WORKING_FORK
     {
-        if (fclose(stdout) == 0)
-        {
-            DebugTotalFiles--;
-        }
-        if (fclose(stdin) == 0)
-        {
-            DebugTotalFiles--;
-        }
+        fclose(stdout);
+        fclose(stdin);
     }
 
     // All initialization should be complete, allow the local

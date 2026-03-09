@@ -4037,7 +4037,6 @@ static void list_rlevels(dbref player)
 #define LIST_DB_STATS   20
 #define LIST_PROCESS    21
 #define LIST_BADNAMES   22
-#define LIST_RESOURCES  23
 #define LIST_GUESTS     24
 #define LIST_MODULES    25
 #define LIST_CACHE      26
@@ -4068,7 +4067,6 @@ NAMETAB list_names[] =
     {T("permissions"),        2,  CA_WIZARD,  LIST_PERMS},
     {T("powers"),             2,  CA_WIZARD,  LIST_POWERS},
     {T("process"),            2,  CA_WIZARD,  LIST_PROCESS},
-    {T("resources"),          1,  CA_WIZARD,  LIST_RESOURCES},
     {T("site_information"),   2,  CA_WIZARD,  LIST_SITEINFO},
     {T("switches"),           2,  CA_PUBLIC,  LIST_SWITCHES},
     {T("user_attributes"),    1,  CA_WIZARD,  LIST_VATTRS},
@@ -4178,9 +4176,6 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, const int ke
         break;
     case LIST_BADNAMES:
         badname_list(executor, T("Disallowed names:"));
-        break;
-    case LIST_RESOURCES:
-        list_system_resources(executor);
         break;
     case LIST_GUESTS:
         Guest.ListAll(executor);

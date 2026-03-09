@@ -268,7 +268,6 @@ void shutdownsock(DESC *d, int reason)
         shutdown(d->socket, SD_BOTH);
         if (0 == SOCKET_CLOSE(d->socket))
         {
-            DebugTotalSockets--;
         }
         d->socket = INVALID_SOCKET;
 
@@ -306,10 +305,7 @@ void close_listening_ports(void)
 {
     for (int i = 0; i < num_main_game_ports; i++)
     {
-        if (0 == SOCKET_CLOSE(main_game_ports[i].socket))
-        {
-            DebugTotalSockets--;
-        }
+        SOCKET_CLOSE(main_game_ports[i].socket);
         main_game_ports[i].socket = INVALID_SOCKET;
     }
 }
@@ -326,10 +322,7 @@ static void close_sockets_emergency(const UTF8* message)
         {
             log_perror(T("NET"), T("FAIL"), nullptr, T("shutdown"));
         }
-        if (0 == SOCKET_CLOSE(d->socket))
-        {
-            DebugTotalSockets--;
-        }
+        SOCKET_CLOSE(d->socket);
     }
     close_listening_ports();
 }

@@ -1366,11 +1366,7 @@ void do_shutdown
     {
         mux_write(fd, message, static_cast<unsigned int>(strlen(reinterpret_cast<char *>(message))));
         mux_write(fd, ENDLINE, sizeof(ENDLINE)-1);
-        DebugTotalFiles++;
-        if (mux_close(fd) == 0)
-        {
-            DebugTotalFiles--;
-        }
+        mux_close(fd);
     }
 
     // Do we perform a normal or an emergency shutdown? Normal
@@ -1522,13 +1518,9 @@ void dump_database_internal(int dump_type)
 
             if (bOpen)
             {
-                DebugTotalFiles++;
                 setvbuf(f, nullptr, _IOFBF, 16384);
                 db_write(f, F_MUX, dp->fType);
-                if (fclose(f) == 0)
-                {
-                    DebugTotalFiles--;
-                }
+                fclose(f);
 
                 if (dp->bUseTemporary)
                 {
@@ -1858,7 +1850,6 @@ int load_game(int ccPageFile)
     {
         return LOAD_GAME_CANNOT_OPEN;
     }
-    DebugTotalFiles++;
     setvbuf(f, nullptr, _IOFBF, 16384);
 
     // Ok, read it in.
@@ -1876,10 +1867,7 @@ int load_game(int ccPageFile)
     if (!sqldb.Begin() || !sqldb.ClearAttributes())
     {
         sqldb.Rollback();
-        if (fclose(f) == 0)
-        {
-            DebugTotalFiles--;
-        }
+        fclose(f);
         f = 0;
         STARTLOG(LOG_ALWAYS, "INI", "FATAL")
         log_text(T("Error clearing SQLite attributes before flatfile load."));
@@ -1894,10 +1882,7 @@ int load_game(int ccPageFile)
         sqldb.Rollback();
         // Everything is not ok.
         //
-        if (fclose(f) == 0)
-        {
-            DebugTotalFiles--;
-        }
+        fclose(f);
         f = 0;
 
         STARTLOG(LOG_ALWAYS, "INI", "FATAL")
@@ -1910,10 +1895,7 @@ int load_game(int ccPageFile)
     if (!sqldb.Commit())
     {
         sqldb.Rollback();
-        if (fclose(f) == 0)
-        {
-            DebugTotalFiles--;
-        }
+        fclose(f);
         f = 0;
         STARTLOG(LOG_ALWAYS, "INI", "FATAL")
         log_text(T("Error committing SQLite attributes after flatfile load."));
@@ -1923,10 +1905,7 @@ int load_game(int ccPageFile)
 
     // Everything is ok.
     //
-    if (fclose(f) == 0)
-    {
-        DebugTotalFiles--;
-    }
+    fclose(f);
     f = 0;
 
     // Bulk-sync object and attribute-name metadata from db[] into SQLite.
@@ -1978,7 +1957,6 @@ int load_game(int ccPageFile)
     else
     if (mux_fopen(&f, mudconf.mail_db, T("rb")))
     {
-        DebugTotalFiles++;
         setvbuf(f, nullptr, _IOFBF, 16384);
         Log.tinyprintf(T("LOADING: %s" ENDLINE), mudconf.mail_db);
         load_mail(f);
@@ -1989,7 +1967,6 @@ int load_game(int ccPageFile)
             log_printf(T("fclose failed for %s"), mudconf.mail_db);
             ENDLOG;
         }
-        DebugTotalFiles--;
         f = 0;
     }
     STARTLOG(LOG_STARTUP, "INI", "LOAD");

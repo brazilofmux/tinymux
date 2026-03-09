@@ -340,24 +340,3 @@ void final_stubslave(void)
     // The driver handles stubslave cleanup after engine shutdown.
 }
 
-// --- System resources display ---
-// Only uses globals (DebugTotalFiles, DebugTotalSockets) and notify.
-//
-void list_system_resources(dbref player)
-{
-    UTF8 buffer[80];
-
-    int nTotal = 0;
-    notify(player, T("System Resources"));
-
-    mux_sprintf(buffer, sizeof(buffer), T("Total Open Files: %ld"), DebugTotalFiles);
-    notify(player, buffer);
-    nTotal += DebugTotalFiles;
-
-    mux_sprintf(buffer, sizeof(buffer), T("Total Sockets: %ld"), DebugTotalSockets);
-    notify(player, buffer);
-    nTotal += DebugTotalSockets;
-
-    mux_sprintf(buffer, sizeof(buffer), T("Total Handles (sum of above): %d"), nTotal);
-    notify(player, buffer);
-}

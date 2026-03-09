@@ -159,8 +159,6 @@ void save_comsys(UTF8* filename)
         Log.tinyprintf(T("Unable to open %s for writing." ENDLINE), buffer);
         return;
     }
-    DebugTotalFiles++;
-
     mux_fprintf(fp, T("+V5\n"));
     mux_fprintf(fp, T("*** Begin CHANNELS ***\n"));
 
@@ -169,10 +167,7 @@ void save_comsys(UTF8* filename)
     mux_fprintf(fp, T("*** Begin COMSYS ***\n"));
     save_comsystem(fp);
 
-    if (fclose(fp) == 0)
-    {
-        DebugTotalFiles--;
-    }
+    fclose(fp);
 
     ReplaceFile(buffer, filename);
 }
@@ -1363,7 +1358,6 @@ void load_comsys(UTF8* filename)
     }
     else
     {
-        DebugTotalFiles++;
         Log.tinyprintf(T("LOADING: %s" ENDLINE), filename);
         const int ch = getc(fp);
         if (EOF == ch)
@@ -1409,8 +1403,6 @@ void load_comsys(UTF8* filename)
             log_printf(T("fclose failed for %s"), filename);
             ENDLOG;
         }
-        DebugTotalFiles--;
-
         Log.tinyprintf(T("LOADING: %s (done)" ENDLINE), filename);
     }
 }

@@ -3510,7 +3510,6 @@ void load_restart_db(void)
         mudstate.restarting = false;
         return;
     }
-    DebugTotalFiles++;
     mudstate.restarting = true;
 
     char buf[8];
@@ -3558,8 +3557,6 @@ void load_restart_db(void)
         //
         mux_assert(0);
     }
-    DebugTotalSockets += num_main_game_ports;
-
     mudstate.start_time.SetSeconds(getref(f));
 
     size_t nBuffer;
@@ -3587,7 +3584,6 @@ void load_restart_db(void)
     DESC *d;
     while ((val = getref(f)) != 0)
     {
-        DebugTotalSockets++;
         d = alloc_desc("restart");
         init_desc(d);
         d->socket = val;
@@ -3783,10 +3779,7 @@ void load_restart_db(void)
         }
     }
 
-    if (fclose(f) == 0)
-    {
-        DebugTotalFiles--;
-    }
+    fclose(f);
     remove("restart.db");
     raw_broadcast(0, T("GAME: Restart finished."));
 }

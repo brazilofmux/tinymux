@@ -577,8 +577,6 @@ public:
             d->addr[sizeof(d->addr) - 1] = '\0';
         }
 
-        DebugTotalSockets++;
-
         UTF8 addrText[MBUF_SIZE];
         addrText[0] = '\0';
         if (haveSockAddr) {
@@ -606,7 +604,6 @@ public:
             }
             fcache_rawdump(static_cast<SOCKET>(d->socket), FC_CONN_SITE);
 
-            DebugTotalSockets--;
             adapter_.free_desc2(d);
             return ganl::InvalidSessionId;
         }
@@ -784,8 +781,6 @@ public:
         // Free queues, then destroy non-trivial members, then free the DESC.
         freeqs(d);
         adapter_.free_desc2(d);
-
-        DebugTotalSockets--;
     }
 
     bool sendToSession(ganl::SessionId sessionId, const std::string& message) override {
@@ -2820,7 +2815,6 @@ bool GanlAdapter::boot_stubslave()
 
     stubslave_channel_ = std::make_unique<StubSlaveChannel>();
     stubslave_channel_->fd = sv[0];
-    DebugTotalSockets++;
 
     STARTLOG(LOG_ALWAYS, "NET", "STUB");
     log_text(T("Stub slave started on fd "));
@@ -2850,10 +2844,7 @@ void GanlAdapter::shutdown_stubslave()
         if (stubslave_channel_->fd >= 0)
         {
             ::shutdown(stubslave_channel_->fd, SD_BOTH);
-            if (0 == SOCKET_CLOSE(stubslave_channel_->fd))
-            {
-                DebugTotalSockets--;
-            }
+            SOCKET_CLOSE(stubslave_channel_->fd);
         }
         stubslave_channel_.reset();
     }

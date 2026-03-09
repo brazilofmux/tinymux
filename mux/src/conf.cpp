@@ -1708,8 +1708,6 @@ static CF_HAND(cf_include)
         cf_log_notfound(player, cmd, T("Config file"), str);
         return -1;
     }
-    DebugTotalFiles++;
-
     UTF8 *buf = alloc_lbuf("cf_include");
     if (nullptr == fgets(reinterpret_cast<char *>(buf), LBUF_SIZE, fp))
     {
@@ -1791,10 +1789,7 @@ static CF_HAND(cf_include)
         }
     }
     free_lbuf(buf);
-    if (fclose(fp) == 0)
-    {
-        DebugTotalFiles--;
-    }
+    fclose(fp);
     return 0;
 }
 

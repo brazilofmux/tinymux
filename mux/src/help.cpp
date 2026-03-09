@@ -134,8 +134,6 @@ static void helpindex_read(int iHelpfile)
         ENDLOG;
         return;
     }
-    DebugTotalFiles++;
-
     size_t pos   = 0;
     size_t nTopicOriginal = 0;
     UTF8   topic[TOPIC_NAME_LEN+1];
@@ -211,10 +209,7 @@ static void helpindex_read(int iHelpfile)
     }
     HelpIndex_End();
 
-    if (fclose(fp) == 0)
-    {
-        DebugTotalFiles--;
-    }
+    fclose(fp);
 }
 
 void helpindex_load(dbref player)
@@ -310,8 +305,6 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
         ENDLOG;
         return false;
     }
-    DebugTotalFiles++;
-
     if (fseek(fp, static_cast<long>(offset), 0) < 0L)
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "SEEK");
@@ -320,10 +313,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
         log_text(line);
         free_lbuf(line);
         ENDLOG;
-        if (fclose(fp) == 0)
-        {
-            DebugTotalFiles--;
-        }
+        fclose(fp);
         return false;
     }
     UTF8 *line = alloc_lbuf("ReportTopic");
@@ -390,10 +380,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     }
     *bp = '\0';
 
-    if (fclose(fp) == 0)
-    {
-        DebugTotalFiles--;
-    }
+    fclose(fp);
     free_lbuf(line);
     return true;
 }

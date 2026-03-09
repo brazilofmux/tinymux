@@ -131,7 +131,6 @@ static int fcache_read(FBLOCK **cp, UTF8 *filename)
         ENDLOG
         return -1;
     }
-    DebugTotalFiles++;
     buff = alloc_lbuf("fcache_read.temp");
 
     // Set up the initial cache buffer to make things easier.
@@ -166,10 +165,7 @@ static int fcache_read(FBLOCK **cp, UTF8 *filename)
         nmax = mux_read(fd, buff, LBUF_SIZE);
     }
     free_lbuf(buff);
-    if (mux_close(fd) == 0)
-    {
-        DebugTotalFiles--;
-    }
+    mux_close(fd);
 
     // If we didn't read anything in, toss the initial buffer.
     //
