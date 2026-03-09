@@ -9,6 +9,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "interface.h"
 
 /*! \brief Table to quickly classify characters recieved from the wire with
  * their Telnet meaning.

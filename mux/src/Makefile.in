@@ -117,14 +117,14 @@ am__netmux_SOURCES_DIST = _build.cpp ast.cpp ast_scan.cpp \
 	attrcache.cpp boolexp.cpp bsd.cpp command.cpp comsys.cpp \
 	conf.cpp cque.cpp create.cpp db.cpp db_rw.cpp eval.cpp \
 	file_c.cpp flags.cpp funceval.cpp funceval2.cpp functions.cpp \
-	funmath.cpp game.cpp ganl_adapter.cpp help.cpp htab.cpp \
-	local.cpp log.cpp look.cpp mail.cpp match.cpp mguests.cpp \
-	modules.cpp move.cpp muxcli.cpp netaddr.cpp net.cpp object.cpp \
-	predicates.cpp player.cpp player_c.cpp plusemail.cpp \
-	powers.cpp quota.cpp rob.cpp set.cpp signals.cpp sitemon.cpp \
-	session.cpp speech.cpp telnet.cpp timer.cpp unparse.cpp \
-	vattr.cpp walkdb.cpp wild.cpp wiz.cpp levels.cpp sqlitedb.cpp \
-	sqlite_backend.cpp sqlite/sqlite3.c version.cpp
+	funmath.cpp driver.cpp engine.cpp ganl_adapter.cpp help.cpp \
+	htab.cpp local.cpp log.cpp look.cpp mail.cpp match.cpp \
+	mguests.cpp modules.cpp move.cpp muxcli.cpp netaddr.cpp \
+	net.cpp object.cpp predicates.cpp player.cpp player_c.cpp \
+	plusemail.cpp powers.cpp quota.cpp rob.cpp set.cpp signals.cpp \
+	sitemon.cpp session.cpp speech.cpp telnet.cpp timer.cpp \
+	unparse.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp levels.cpp \
+	sqlitedb.cpp sqlite_backend.cpp sqlite/sqlite3.c version.cpp
 @REALITY_ENABLED_TRUE@am__objects_1 = levels.$(OBJEXT)
 am__dirstamp = $(am__leading_dot)dirstamp
 am__objects_2 = _build.$(OBJEXT) ast.$(OBJEXT) ast_scan.$(OBJEXT) \
@@ -133,18 +133,19 @@ am__objects_2 = _build.$(OBJEXT) ast.$(OBJEXT) ast_scan.$(OBJEXT) \
 	cque.$(OBJEXT) create.$(OBJEXT) db.$(OBJEXT) db_rw.$(OBJEXT) \
 	eval.$(OBJEXT) file_c.$(OBJEXT) flags.$(OBJEXT) \
 	funceval.$(OBJEXT) funceval2.$(OBJEXT) functions.$(OBJEXT) \
-	funmath.$(OBJEXT) game.$(OBJEXT) ganl_adapter.$(OBJEXT) \
-	help.$(OBJEXT) htab.$(OBJEXT) local.$(OBJEXT) log.$(OBJEXT) \
-	look.$(OBJEXT) mail.$(OBJEXT) match.$(OBJEXT) \
-	mguests.$(OBJEXT) modules.$(OBJEXT) move.$(OBJEXT) \
-	muxcli.$(OBJEXT) netaddr.$(OBJEXT) net.$(OBJEXT) \
-	object.$(OBJEXT) predicates.$(OBJEXT) player.$(OBJEXT) \
-	player_c.$(OBJEXT) plusemail.$(OBJEXT) powers.$(OBJEXT) \
-	quota.$(OBJEXT) rob.$(OBJEXT) set.$(OBJEXT) signals.$(OBJEXT) \
-	sitemon.$(OBJEXT) session.$(OBJEXT) speech.$(OBJEXT) \
-	telnet.$(OBJEXT) timer.$(OBJEXT) unparse.$(OBJEXT) \
-	vattr.$(OBJEXT) walkdb.$(OBJEXT) wild.$(OBJEXT) wiz.$(OBJEXT) \
-	$(am__objects_1) sqlitedb.$(OBJEXT) sqlite_backend.$(OBJEXT) \
+	funmath.$(OBJEXT) driver.$(OBJEXT) engine.$(OBJEXT) \
+	ganl_adapter.$(OBJEXT) help.$(OBJEXT) htab.$(OBJEXT) \
+	local.$(OBJEXT) log.$(OBJEXT) look.$(OBJEXT) mail.$(OBJEXT) \
+	match.$(OBJEXT) mguests.$(OBJEXT) modules.$(OBJEXT) \
+	move.$(OBJEXT) muxcli.$(OBJEXT) netaddr.$(OBJEXT) \
+	net.$(OBJEXT) object.$(OBJEXT) predicates.$(OBJEXT) \
+	player.$(OBJEXT) player_c.$(OBJEXT) plusemail.$(OBJEXT) \
+	powers.$(OBJEXT) quota.$(OBJEXT) rob.$(OBJEXT) set.$(OBJEXT) \
+	signals.$(OBJEXT) sitemon.$(OBJEXT) session.$(OBJEXT) \
+	speech.$(OBJEXT) telnet.$(OBJEXT) timer.$(OBJEXT) \
+	unparse.$(OBJEXT) vattr.$(OBJEXT) walkdb.$(OBJEXT) \
+	wild.$(OBJEXT) wiz.$(OBJEXT) $(am__objects_1) \
+	sqlitedb.$(OBJEXT) sqlite_backend.$(OBJEXT) \
 	sqlite/sqlite3.$(OBJEXT)
 am_netmux_OBJECTS = $(am__objects_2) version.$(OBJEXT)
 netmux_OBJECTS = $(am_netmux_OBJECTS)
@@ -178,16 +179,17 @@ am__depfiles_remade = ./$(DEPDIR)/_build.Po ./$(DEPDIR)/ast.Po \
 	./$(DEPDIR)/boolexp.Po ./$(DEPDIR)/bsd.Po \
 	./$(DEPDIR)/command.Po ./$(DEPDIR)/comsys.Po \
 	./$(DEPDIR)/conf.Po ./$(DEPDIR)/cque.Po ./$(DEPDIR)/create.Po \
-	./$(DEPDIR)/db.Po ./$(DEPDIR)/db_rw.Po ./$(DEPDIR)/eval.Po \
+	./$(DEPDIR)/db.Po ./$(DEPDIR)/db_rw.Po ./$(DEPDIR)/driver.Po \
+	./$(DEPDIR)/engine.Po ./$(DEPDIR)/eval.Po \
 	./$(DEPDIR)/file_c.Po ./$(DEPDIR)/flags.Po \
 	./$(DEPDIR)/funceval.Po ./$(DEPDIR)/funceval2.Po \
 	./$(DEPDIR)/functions.Po ./$(DEPDIR)/funmath.Po \
-	./$(DEPDIR)/game.Po ./$(DEPDIR)/ganl_adapter.Po \
-	./$(DEPDIR)/help.Po ./$(DEPDIR)/htab.Po ./$(DEPDIR)/levels.Po \
-	./$(DEPDIR)/local.Po ./$(DEPDIR)/log.Po ./$(DEPDIR)/look.Po \
-	./$(DEPDIR)/mail.Po ./$(DEPDIR)/match.Po \
-	./$(DEPDIR)/mguests.Po ./$(DEPDIR)/modules.Po \
-	./$(DEPDIR)/move.Po ./$(DEPDIR)/muxcli.Po ./$(DEPDIR)/net.Po \
+	./$(DEPDIR)/ganl_adapter.Po ./$(DEPDIR)/help.Po \
+	./$(DEPDIR)/htab.Po ./$(DEPDIR)/levels.Po ./$(DEPDIR)/local.Po \
+	./$(DEPDIR)/log.Po ./$(DEPDIR)/look.Po ./$(DEPDIR)/mail.Po \
+	./$(DEPDIR)/match.Po ./$(DEPDIR)/mguests.Po \
+	./$(DEPDIR)/modules.Po ./$(DEPDIR)/move.Po \
+	./$(DEPDIR)/muxcli.Po ./$(DEPDIR)/net.Po \
 	./$(DEPDIR)/netaddr.Po ./$(DEPDIR)/object.Po \
 	./$(DEPDIR)/player.Po ./$(DEPDIR)/player_c.Po \
 	./$(DEPDIR)/plusemail.Po ./$(DEPDIR)/powers.Po \
@@ -470,7 +472,7 @@ LIBMUX_SRC = libmux.cpp \
 NETMUX_SRC = _build.cpp ast.cpp ast_scan.cpp attrcache.cpp boolexp.cpp \
 	bsd.cpp command.cpp comsys.cpp conf.cpp cque.cpp create.cpp \
 	db.cpp db_rw.cpp eval.cpp file_c.cpp flags.cpp funceval.cpp \
-	funceval2.cpp functions.cpp funmath.cpp game.cpp \
+	funceval2.cpp functions.cpp funmath.cpp driver.cpp engine.cpp \
 	ganl_adapter.cpp help.cpp htab.cpp local.cpp log.cpp look.cpp \
 	mail.cpp match.cpp mguests.cpp modules.cpp move.cpp muxcli.cpp \
 	netaddr.cpp net.cpp object.cpp predicates.cpp player.cpp \
@@ -635,6 +637,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/create.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/db.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/db_rw.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/driver.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/engine.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eval.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file_c.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/flags.Po@am__quote@ # am--include-marker
@@ -642,7 +646,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/funceval2.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/functions.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/funmath.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/game.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ganl_adapter.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/help.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/htab.Po@am__quote@ # am--include-marker
@@ -1089,6 +1092,8 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/create.Po
 	-rm -f ./$(DEPDIR)/db.Po
 	-rm -f ./$(DEPDIR)/db_rw.Po
+	-rm -f ./$(DEPDIR)/driver.Po
+	-rm -f ./$(DEPDIR)/engine.Po
 	-rm -f ./$(DEPDIR)/eval.Po
 	-rm -f ./$(DEPDIR)/file_c.Po
 	-rm -f ./$(DEPDIR)/flags.Po
@@ -1096,7 +1101,6 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/funceval2.Po
 	-rm -f ./$(DEPDIR)/functions.Po
 	-rm -f ./$(DEPDIR)/funmath.Po
-	-rm -f ./$(DEPDIR)/game.Po
 	-rm -f ./$(DEPDIR)/ganl_adapter.Po
 	-rm -f ./$(DEPDIR)/help.Po
 	-rm -f ./$(DEPDIR)/htab.Po
@@ -1199,6 +1203,8 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/create.Po
 	-rm -f ./$(DEPDIR)/db.Po
 	-rm -f ./$(DEPDIR)/db_rw.Po
+	-rm -f ./$(DEPDIR)/driver.Po
+	-rm -f ./$(DEPDIR)/engine.Po
 	-rm -f ./$(DEPDIR)/eval.Po
 	-rm -f ./$(DEPDIR)/file_c.Po
 	-rm -f ./$(DEPDIR)/flags.Po
@@ -1206,7 +1212,6 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/funceval2.Po
 	-rm -f ./$(DEPDIR)/functions.Po
 	-rm -f ./$(DEPDIR)/funmath.Po
-	-rm -f ./$(DEPDIR)/game.Po
 	-rm -f ./$(DEPDIR)/ganl_adapter.Po
 	-rm -f ./$(DEPDIR)/help.Po
 	-rm -f ./$(DEPDIR)/htab.Po

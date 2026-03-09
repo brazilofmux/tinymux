@@ -1,5 +1,6 @@
 #include "autoconf.h"
 #include "ganl_adapter.h"
+#include "interface.h"
 #include "connection.h" // Include ConnectionBase definition
 #include "network_types.h"
 

@@ -1,6 +1,11 @@
 /*! \file interface.h
- * \brief Declarations relating to network connections.
+ * \brief Driver-side declarations: DESC struct, telnet, and socket types.
  *
+ * This header provides the full descriptor_data (DESC) struct definition
+ * and related networking constants.  Engine files that only need forward
+ * declarations of DESC or program_data get those from externs.h.
+ *
+ * Only include this header in files that dereference DESC members.
  */
 
 #pragma once
@@ -8,52 +13,6 @@
 
 #ifndef INTERFACE_H
 #define INTERFACE_H
-
-struct NamedRegsMap;
-
-/* these symbols must be defined by the interface */
-
-/* Disconnection reason codes */
-
-constexpr int R_MIN       = 0;
-constexpr int R_UNKNOWN   = 0;   /* Unknown/unexpected */
-constexpr int R_QUIT      = 1;   /* User quit */
-constexpr int R_TIMEOUT   = 2;   /* Inactivity timeout */
-constexpr int R_BOOT      = 3;   /* Victim of @boot, @toad, or @destroy */
-constexpr int R_SOCKDIED  = 4;   /* Other end of socked closed it */
-constexpr int R_GOING_DOWN = 5;   /* Game is going down */
-constexpr int R_BADLOGIN  = 6;   /* Too many failed login attempts */
-constexpr int R_GAMEDOWN  = 7;   /* Not admitting users now */
-constexpr int R_LOGOUT    = 8;   /* Logged out w/o disconnecting */
-constexpr int R_GAMEFULL  = 9;   /* Too many players logged in */
-constexpr int R_RESTART   = 10;  /* Restarting, and this socket cannot be preserved */
-constexpr int R_MAX       = 10;
-
-/* Logged out command table definitions */
-
-constexpr int CMD_QUIT    = 1;
-constexpr int CMD_WHO     = 2;
-constexpr int CMD_DOING   = 3;
-constexpr int CMD_PREFIX  = 5;
-constexpr int CMD_SUFFIX  = 6;
-constexpr int CMD_LOGOUT  = 7;
-constexpr int CMD_SESSION = 8;
-constexpr int CMD_PUEBLOCLIENT = 9;
-constexpr int CMD_INFO    = 10;
-constexpr int CMD_HELP    = 11;
-
-constexpr int CMD_MASK    = 0xff;
-constexpr int CMD_NOxFIX  = 0x100;
-
-extern NAMETAB logout_cmdtable[];
-extern NAMETAB default_charset_nametab[];
-
-typedef struct program_data
-{
-    dbref    wait_enactor;
-    reg_ref *wait_regs[MAX_GLOBAL_REGS];
-    NamedRegsMap *named_wait_regs;
-} program_data;
 
 // Input state
 //
@@ -118,12 +77,6 @@ constexpr int TELNETSB_REJECT         = 3;
 constexpr int TELNETSB_NAME           = 3;
 constexpr int TELNETSB_USERVAR        = 3;
 
-constexpr int CHARSET_ASCII           = 0;
-constexpr int CHARSET_CP437           = 1;
-constexpr int CHARSET_LATIN1          = 2;
-constexpr int CHARSET_LATIN2          = 3;
-constexpr int CHARSET_UTF8            = 4;
-
 enum class SocketState {
     Initialized = 0,
     Accepted,
@@ -138,7 +91,9 @@ enum class SocketState {
 #endif
 };
 
-typedef struct descriptor_data DESC;
+// Full descriptor_data struct definition.
+// Engine files use only the forward declaration from externs.h.
+//
 struct descriptor_data
 {
   SocketState ss;
@@ -209,104 +164,11 @@ typedef struct port_info
 #endif
 } port_info;
 
-constexpr int MAX_LISTEN_PORTS = 30;
 #ifdef UNIX_SSL
 extern port_info main_game_ports[MAX_LISTEN_PORTS * 2];
 #else
 extern port_info main_game_ports[MAX_LISTEN_PORTS];
 #endif
 extern int      num_main_game_ports;
-
-extern void emergency_shutdown();
-extern void shutdownsock(DESC *, int);
-void process_output(DESC *, int);
-void process_input_helper(DESC *d, char *pBytes, int nBytes);
-#if defined(HAVE_WORKING_FORK)
-extern void dump_restart_db(void);
-#endif // HAVE_WORKING_FORK
-
-extern void build_signal_names_table();
-extern void set_signals();
-
-// From net.cpp and session.cpp
-//
-extern void make_ulist(dbref, UTF8 *, UTF8 **, bool);
-extern void make_port_ulist(dbref, UTF8 *, UTF8 **);
-extern int fetch_session(dbref target);
-extern int fetch_idle(dbref target);
-extern int fetch_connect(dbref target);
-extern int fetch_height(dbref target);
-extern int fetch_width(dbref target);
-extern DESC *find_desc_by_socket(SOCKET s);
-extern DESC *find_desc_by_player(dbref target);
-extern int get_total_connections(void);
-extern void for_each_connected_player(void (*callback)(dbref player, void *context), void *context);
-extern void set_player_encoding(dbref target, int encoding);
-extern void reset_player_encoding(dbref target);
-extern void for_each_player_desc(dbref target, void (*callback)(DESC *d, void *context), void *context);
-extern void send_keepalive_nops(void);
-extern bool player_has_program(dbref target);
-extern program_data *detach_player_program(dbref target);
-extern void set_player_program(dbref target, program_data *program);
-extern void send_prog_prompt(dbref target);
-extern void send_text_to_player(dbref target, const UTF8 *text);
-extern void send_text_to_player(dbref target, const mux_string &text);
-extern void send_raw_to_player(dbref target, const UTF8 *data, size_t len);
-extern int count_player_descs(dbref target);
-extern int sum_player_command_count(dbref target);
-extern void set_doing_all(dbref target, const UTF8 *doing, size_t len);
-extern bool set_doing_least_idle(dbref target, const UTF8 *doing, size_t len);
-extern void update_all_desc_quotas(int nExtra, int nMax);
-extern void broadcast_and_flush(int inflags, const UTF8 *text);
-extern void for_each_connected_desc(void (*callback)(dbref player, SOCKET sock, void *context), void *context);
-extern const UTF8 *time_format_1(int Seconds, size_t maxWidth);
-extern const UTF8 *time_format_2(int Seconds);
-extern void update_quotas(CLinearTimeAbsolute& tLast, const CLinearTimeAbsolute& tCurrent);
-extern void raw_notify(dbref, const UTF8 *);
-extern void raw_notify(dbref player, const mux_string &sMsg);
-extern void raw_notify_newline(dbref);
-extern void clearstrings(DESC *);
-extern void queue_write_LEN(DESC *, const UTF8 *, size_t n);
-extern void queue_write(DESC *, const UTF8 *);
-extern void queue_string(DESC *, const UTF8 *);
-extern void queue_string(DESC *d, const mux_string &s);
-extern void freeqs(DESC *);
-extern void welcome_user(DESC *);
-extern void save_command(DESC *, const UTF8 *, size_t);
-extern void init_desc(DESC *d);
-extern void destroy_desc(DESC *d);
-extern void announce_disconnect(dbref, DESC *, const UTF8 *);
-extern int boot_by_port(SOCKET port, bool bGod, const UTF8 *message);
-extern void find_oldest(dbref target, DESC *dOldest[2]);
-extern void check_idle();
-void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger);
-extern dbref  find_connected_name(dbref, const UTF8 *);
-extern void do_command(DESC *, UTF8 *);
-extern void desc_addhash(DESC *);
-
-// From predicates.cpp
-//
-#define alloc_desc(s) reinterpret_cast<DESC *>(pool_alloc(POOL_DESC, reinterpret_cast<const UTF8 *>(s), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__))
-#define free_desc(b) pool_free(POOL_DESC,reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
-extern void handle_prog(DESC *d, UTF8 *message);
-
-// From player.cpp
-//
-void record_login(dbref, bool, const UTF8 *, const UTF8 *, const UTF8 *, const UTF8 *);
-extern dbref connect_player(UTF8 *, UTF8 *, UTF8 *, UTF8 *, UTF8 *);
-
-// From bsd.cpp.
-//
-void close_sockets_emergency(const UTF8* message);
-int mux_getaddrinfo(const UTF8 *node, const UTF8 *service, const MUX_ADDRINFO *hints, MUX_ADDRINFO **res);
-void mux_freeaddrinfo(MUX_ADDRINFO *res);
-int mux_getnameinfo(const mux_sockaddr *msa, UTF8 *host, size_t hostlen, UTF8 *serv, size_t servlen, int flags);
-#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
-extern "C" MUX_RESULT DCL_API pipepump(void);
-#endif // HAVE_WORKING_FORK && STUB_SLAVE
-
-extern NAMETAB sigactions_nametab[];
-
-extern long DebugTotalSockets;
 
 #endif // !INTERFACE_H

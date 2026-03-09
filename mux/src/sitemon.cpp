@@ -8,6 +8,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "interface.h"
 
 void list_system_resources(dbref player)
 {

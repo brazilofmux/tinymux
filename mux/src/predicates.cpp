@@ -11,6 +11,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "interface.h"
 
 static inline const UTF8 *utf8_advance_predicate(const UTF8 *p)
 {

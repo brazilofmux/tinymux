@@ -10,6 +10,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "interface.h"
 #include "sqlite_backend.h"
 
 #include "ganl_adapter.h"

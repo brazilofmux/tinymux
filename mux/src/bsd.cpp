@@ -9,6 +9,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "interface.h"
 #include "ganl_adapter.h"
 using namespace std;
 
