@@ -24,7 +24,8 @@ static MUX_CLASS_INFO netmux_classes[] =
     { CID_Evaluator          },
     { CID_Permissions        },
     { CID_MailDelivery       },
-    { CID_HelpSystem         }
+    { CID_HelpSystem         },
+    { CID_GameEngine         }
 };
 #define NUM_CLASSES (sizeof(netmux_classes)/sizeof(netmux_classes[0]))
 
@@ -271,6 +272,26 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
 
         mr = pHelpSystemFactory->QueryInterface(iid, ppv);
         pHelpSystemFactory->Release();
+    }
+    else if (CID_GameEngine == cid)
+    {
+        CGameEngineFactory *pGameEngineFactory = nullptr;
+        try
+        {
+            pGameEngineFactory = new CGameEngineFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == pGameEngineFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pGameEngineFactory->QueryInterface(iid, ppv);
+        pGameEngineFactory->Release();
     }
     return mr;
 }
@@ -2583,6 +2604,246 @@ MUX_RESULT CHelpSystemFactory::CreateInstance(mux_IUnknown *pUnknownOuter,
 }
 
 MUX_RESULT CHelpSystemFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CGameEngine — in-process COM wrapper for the game engine.
+//
+// The driver creates this via mux_CreateInstance(CID_GameEngine) and calls
+// through the mux_IGameEngine interface.  In the current single-binary
+// build this is a thin delegation layer; when the engine moves to
+// engine.so, this class moves with it and becomes the COM front door.
+// ---------------------------------------------------------------------------
+
+class CGameEngine : public mux_IGameEngine
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+
+    virtual MUX_RESULT LoadGame(const UTF8 *configFile, const UTF8 *inputDb,
+        bool bMinDB);
+    virtual MUX_RESULT Startup(void);
+    virtual MUX_RESULT RunTasks(CLinearTimeAbsolute &ltaNow);
+    virtual MUX_RESULT UpdateQuotas(CLinearTimeAbsolute &ltaLast,
+        const CLinearTimeAbsolute &ltaCurrent);
+    virtual MUX_RESULT WhenNext(CLinearTimeAbsolute *pltaWhen);
+    virtual MUX_RESULT DumpDatabase(void);
+    virtual MUX_RESULT Shutdown(void);
+    virtual MUX_RESULT ShouldShutdown(bool *pbShutdown);
+
+    CGameEngine(void);
+    virtual ~CGameEngine();
+
+private:
+    uint32_t m_cRef;
+};
+
+CGameEngine::CGameEngine(void) : m_cRef(1)
+{
+}
+
+CGameEngine::~CGameEngine()
+{
+}
+
+MUX_RESULT CGameEngine::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IGameEngine *>(this);
+    }
+    else if (IID_IGameEngine == iid)
+    {
+        *ppv = static_cast<mux_IGameEngine *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CGameEngine::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CGameEngine::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
+    const UTF8 *inputDb, bool bMinDB)
+{
+    UNUSED_PARAMETER(configFile);
+    UNUSED_PARAMETER(inputDb);
+    UNUSED_PARAMETER(bMinDB);
+
+    // TODO: Move cf_read, load_game, module discovery here from driver.cpp.
+    // For now this is a placeholder — main() still calls these directly.
+    //
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::Startup(void)
+{
+    local_startup();
+
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (nullptr != p)
+    {
+        p->pSink->startup();
+        p = p->pNext;
+    }
+
+    init_timer();
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::RunTasks(CLinearTimeAbsolute &ltaNow)
+{
+    scheduler.RunTasks(ltaNow);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::UpdateQuotas(CLinearTimeAbsolute &ltaLast,
+    const CLinearTimeAbsolute &ltaCurrent)
+{
+    update_quotas(ltaLast, ltaCurrent);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::WhenNext(CLinearTimeAbsolute *pltaWhen)
+{
+    if (nullptr == pltaWhen)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    scheduler.WhenNext(pltaWhen);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::DumpDatabase(void)
+{
+    dump_database();
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::Shutdown(void)
+{
+    local_shutdown();
+
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (nullptr != p)
+    {
+        p->pSink->shutdown();
+        p = p->pNext;
+    }
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::ShouldShutdown(bool *pbShutdown)
+{
+    if (nullptr == pbShutdown)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pbShutdown = mudstate.shutdown_flag;
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CGameEngineFactory
+// ---------------------------------------------------------------------------
+
+CGameEngineFactory::CGameEngineFactory(void) : m_cRef(1)
+{
+}
+
+CGameEngineFactory::~CGameEngineFactory()
+{
+}
+
+MUX_RESULT CGameEngineFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CGameEngineFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CGameEngineFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CGameEngineFactory::CreateInstance(mux_IUnknown *pUnknownOuter,
+    MUX_IID iid, void **ppv)
+{
+    if (nullptr != pUnknownOuter)
+    {
+        return MUX_E_NOAGGREGATION;
+    }
+
+    CGameEngine *pGameEngine = nullptr;
+    try
+    {
+        pGameEngine = new CGameEngine;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pGameEngine)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pGameEngine->QueryInterface(iid, ppv);
+    pGameEngine->Release();
+    return mr;
+}
+
+MUX_RESULT CGameEngineFactory::LockServer(bool bLock)
 {
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;

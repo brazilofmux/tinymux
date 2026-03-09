@@ -1026,19 +1026,26 @@ int DCL_CDECL main(int argc, char *argv[])
         }
     }
 
-    // All intialization should be complete, allow the local
-    // extensions to configure themselves.
+    // Create the game engine interface.  In the current in-process build
+    // this is a thin wrapper; when engine.so is split out, the driver
+    // creates it via mux_CreateInstance to load the engine shared library.
     //
-    local_startup();
-
-    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-    while (nullptr != p)
+    mux_IGameEngine *pGameEngine = nullptr;
+    mr = mux_CreateInstance(CID_GameEngine, nullptr, UseSameProcess,
+                            IID_IGameEngine,
+                            reinterpret_cast<void **>(&pGameEngine));
+    if (MUX_FAILED(mr) || nullptr == pGameEngine)
     {
-        p->pSink->startup();
-        p = p->pNext;
+        STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+        log_printf(T("Failed to create game engine interface (%d)."), mr);
+        ENDLOG;
+        return 2;
     }
 
-    init_timer();
+    // All initialization should be complete, allow the local
+    // extensions to configure themselves.
+    //
+    pGameEngine->Startup();
 
     ganl_initialize();
     ganl_main_loop();
@@ -1055,19 +1062,14 @@ int DCL_CDECL main(int argc, char *argv[])
      }
 #endif // INLINESQL
 
-    dump_database();
+    pGameEngine->DumpDatabase();
 
     // All shutdown, barring logfiles, should be done, shutdown the
     // local extensions.
     //
-    local_shutdown();
-
-    p = g_pServerEventsSinkListHead;
-    while (nullptr != p)
-    {
-        p->pSink->shutdown();
-        p = p->pNext;
-    }
+    pGameEngine->Shutdown();
+    pGameEngine->Release();
+    pGameEngine = nullptr;
 #if defined(STUB_SLAVE)
     final_stubslave();
 #endif // STUB_SLAVE

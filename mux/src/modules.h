@@ -452,4 +452,51 @@ public:
     virtual MUX_RESULT ReloadIndexes(dbref player) = 0;
 };
 
+// Game engine — the interface the driver uses to call into the engine.
+// In the current in-process build, CGameEngine wraps direct function calls.
+// When the engine is split into engine.so, the driver creates this via
+// mux_CreateInstance(CID_GameEngine) to get the engine's front door.
+//
+const MUX_CID CID_GameEngine           = UINT64_C(0x00000002D4E5F6A7);
+const MUX_IID IID_IGameEngine          = UINT64_C(0x0000000247B8C9D1);
+
+interface mux_IGameEngine : public mux_IUnknown
+{
+public:
+    // Load configuration and game database.
+    // Returns MUX_S_OK on success.
+    //
+    virtual MUX_RESULT LoadGame(const UTF8 *configFile, const UTF8 *inputDb,
+        bool bMinDB) = 0;
+
+    // Post-load initialization: local_startup, module startup, init_timer.
+    //
+    virtual MUX_RESULT Startup(void) = 0;
+
+    // Run scheduled tasks up to the given time.
+    //
+    virtual MUX_RESULT RunTasks(CLinearTimeAbsolute &ltaNow) = 0;
+
+    // Update command quotas between time intervals.
+    //
+    virtual MUX_RESULT UpdateQuotas(CLinearTimeAbsolute &ltaLast,
+        const CLinearTimeAbsolute &ltaCurrent) = 0;
+
+    // Query when the next scheduled task is due.
+    //
+    virtual MUX_RESULT WhenNext(CLinearTimeAbsolute *pltaWhen) = 0;
+
+    // Save the game database (WAL checkpoint in SQLite mode).
+    //
+    virtual MUX_RESULT DumpDatabase(void) = 0;
+
+    // Clean shutdown: local_shutdown, module shutdown, cleanup.
+    //
+    virtual MUX_RESULT Shutdown(void) = 0;
+
+    // Check if the engine wants to shut down.
+    //
+    virtual MUX_RESULT ShouldShutdown(bool *pbShutdown) = 0;
+};
+
 #endif // MODULES_H
