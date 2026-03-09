@@ -495,6 +495,16 @@ int DCL_CDECL main(int argc, char *argv[])
     pGameEngine->SetRestartCount(0);
     pGameEngine->SetCpuCountFrom(ltaStartup);
 
+    // Acquire the notification interface (driver→engine).
+    //
+    mr = mux_CreateInstance(CID_Notify, nullptr, UseSameProcess,
+                            IID_INotify,
+                            reinterpret_cast<void **>(&g_pINotify));
+    if (MUX_FAILED(mr))
+    {
+        g_pINotify = nullptr;
+    }
+
     // Create the player session interface (driver-owned).
     //
     mr = mux_CreateInstance(CID_PlayerSession, nullptr, UseSameProcess,

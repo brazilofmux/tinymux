@@ -44,9 +44,9 @@ ENGINE_SRC = $(ENGINE_CXX_SRC) sqlite/sqlite3.c
 # Source files for netmux (driver) — thin networking shell.
 # These files #include "interface.h" and own the DESC struct.
 #
-DRIVER_SRC = _build.cpp bsd.cpp driver.cpp ganl_adapter.cpp \
-    modules.cpp muxcli.cpp net.cpp netaddr.cpp signals.cpp \
-    sitemon.cpp telnet.cpp
+DRIVER_SRC = _build.cpp bsd.cpp driver.cpp driver_bridge.cpp \
+    ganl_adapter.cpp modules.cpp muxcli.cpp net.cpp netaddr.cpp \
+    signals.cpp sitemon.cpp telnet.cpp
 
 # Build executables
 bin_PROGRAMS = netmux slave

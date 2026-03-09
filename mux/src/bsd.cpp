@@ -27,6 +27,7 @@ UTF8 g_short_ver[64];
 
 mux_IGameEngine  *g_pIGameEngine = nullptr;
 mux_IPlayerSession *g_pIPlayerSession = nullptr;
+mux_INotify        *g_pINotify = nullptr;
 
 bool g_bStandAlone = false;
 bool g_shutdown_flag = false;

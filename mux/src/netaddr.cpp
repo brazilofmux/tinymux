@@ -9,6 +9,40 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "modules.h"
+#include "driverstate.h"
+#include "driver_log.h"
+
+// Driver-local cf_log_syntax: logs during config read, notifies at runtime.
+// Replaces the engine's version (conf.cpp) for driver-side code.
+//
+void DCL_CDECL cf_log_syntax(dbref player, UTF8 *cmd, const UTF8 *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+
+    UTF8 *buf = alloc_lbuf("cf_log_syntax");
+    mux_vsnprintf(buf, LBUF_SIZE, fmt, ap);
+    if (g_bStandAlone || !g_pINotify)
+    {
+        // During config read or standalone mode: log it.
+        //
+        STARTLOG(LOG_STARTUP, "CNF", "SYNTX")
+        g_pILog->log_text(cmd);
+        g_pILog->log_text(T(": "));
+        g_pILog->log_text(buf);
+        ENDLOG;
+    }
+    else
+    {
+        // At runtime (@site command): notify the player.
+        //
+        g_pINotify->NotifyCheck(player, player, buf,
+            MSG_PUP_ALWAYS|MSG_ME_ALL|MSG_F_DOWN);
+    }
+    free_lbuf(buf);
+    va_end(ap);
+}
 
 #if defined(HAVE_IN_ADDR)
 typedef struct

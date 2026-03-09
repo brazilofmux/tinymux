@@ -114,11 +114,11 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__objects_1 = netmux-_build.$(OBJEXT) netmux-bsd.$(OBJEXT) \
-	netmux-driver.$(OBJEXT) netmux-ganl_adapter.$(OBJEXT) \
-	netmux-modules.$(OBJEXT) netmux-muxcli.$(OBJEXT) \
-	netmux-net.$(OBJEXT) netmux-netaddr.$(OBJEXT) \
-	netmux-signals.$(OBJEXT) netmux-sitemon.$(OBJEXT) \
-	netmux-telnet.$(OBJEXT)
+	netmux-driver.$(OBJEXT) netmux-driver_bridge.$(OBJEXT) \
+	netmux-ganl_adapter.$(OBJEXT) netmux-modules.$(OBJEXT) \
+	netmux-muxcli.$(OBJEXT) netmux-net.$(OBJEXT) \
+	netmux-netaddr.$(OBJEXT) netmux-signals.$(OBJEXT) \
+	netmux-sitemon.$(OBJEXT) netmux-telnet.$(OBJEXT)
 am_netmux_OBJECTS = $(am__objects_1) netmux-version.$(OBJEXT)
 netmux_OBJECTS = $(am_netmux_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -150,6 +150,7 @@ depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/netmux-_build.Po \
 	./$(DEPDIR)/netmux-bsd.Po ./$(DEPDIR)/netmux-driver.Po \
+	./$(DEPDIR)/netmux-driver_bridge.Po \
 	./$(DEPDIR)/netmux-ganl_adapter.Po \
 	./$(DEPDIR)/netmux-modules.Po ./$(DEPDIR)/netmux-muxcli.Po \
 	./$(DEPDIR)/netmux-net.Po ./$(DEPDIR)/netmux-netaddr.Po \
@@ -432,9 +433,9 @@ ENGINE_SRC = $(ENGINE_CXX_SRC) sqlite/sqlite3.c
 # Source files for netmux (driver) — thin networking shell.
 # These files #include "interface.h" and own the DESC struct.
 #
-DRIVER_SRC = _build.cpp bsd.cpp driver.cpp ganl_adapter.cpp \
-    modules.cpp muxcli.cpp net.cpp netaddr.cpp signals.cpp \
-    sitemon.cpp telnet.cpp
+DRIVER_SRC = _build.cpp bsd.cpp driver.cpp driver_bridge.cpp \
+    ganl_adapter.cpp modules.cpp muxcli.cpp net.cpp netaddr.cpp \
+    signals.cpp sitemon.cpp telnet.cpp
 
 LIBMUX_OBJS = $(LIBMUX_SRC:.cpp=.lo)
 
@@ -583,6 +584,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-_build.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-bsd.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-driver.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-driver_bridge.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-ganl_adapter.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-modules.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-muxcli.Po@am__quote@ # am--include-marker
@@ -658,6 +660,20 @@ netmux-driver.obj: driver.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='driver.cpp' object='netmux-driver.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-driver.obj `if test -f 'driver.cpp'; then $(CYGPATH_W) 'driver.cpp'; else $(CYGPATH_W) '$(srcdir)/driver.cpp'; fi`
+
+netmux-driver_bridge.o: driver_bridge.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-driver_bridge.o -MD -MP -MF $(DEPDIR)/netmux-driver_bridge.Tpo -c -o netmux-driver_bridge.o `test -f 'driver_bridge.cpp' || echo '$(srcdir)/'`driver_bridge.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-driver_bridge.Tpo $(DEPDIR)/netmux-driver_bridge.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='driver_bridge.cpp' object='netmux-driver_bridge.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-driver_bridge.o `test -f 'driver_bridge.cpp' || echo '$(srcdir)/'`driver_bridge.cpp
+
+netmux-driver_bridge.obj: driver_bridge.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-driver_bridge.obj -MD -MP -MF $(DEPDIR)/netmux-driver_bridge.Tpo -c -o netmux-driver_bridge.obj `if test -f 'driver_bridge.cpp'; then $(CYGPATH_W) 'driver_bridge.cpp'; else $(CYGPATH_W) '$(srcdir)/driver_bridge.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-driver_bridge.Tpo $(DEPDIR)/netmux-driver_bridge.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='driver_bridge.cpp' object='netmux-driver_bridge.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-driver_bridge.obj `if test -f 'driver_bridge.cpp'; then $(CYGPATH_W) 'driver_bridge.cpp'; else $(CYGPATH_W) '$(srcdir)/driver_bridge.cpp'; fi`
 
 netmux-ganl_adapter.o: ganl_adapter.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-ganl_adapter.o -MD -MP -MF $(DEPDIR)/netmux-ganl_adapter.Tpo -c -o netmux-ganl_adapter.o `test -f 'ganl_adapter.cpp' || echo '$(srcdir)/'`ganl_adapter.cpp
@@ -1139,6 +1155,7 @@ distclean: distclean-recursive
 		-rm -f ./$(DEPDIR)/netmux-_build.Po
 	-rm -f ./$(DEPDIR)/netmux-bsd.Po
 	-rm -f ./$(DEPDIR)/netmux-driver.Po
+	-rm -f ./$(DEPDIR)/netmux-driver_bridge.Po
 	-rm -f ./$(DEPDIR)/netmux-ganl_adapter.Po
 	-rm -f ./$(DEPDIR)/netmux-modules.Po
 	-rm -f ./$(DEPDIR)/netmux-muxcli.Po
@@ -1201,6 +1218,7 @@ maintainer-clean: maintainer-clean-recursive
 		-rm -f ./$(DEPDIR)/netmux-_build.Po
 	-rm -f ./$(DEPDIR)/netmux-bsd.Po
 	-rm -f ./$(DEPDIR)/netmux-driver.Po
+	-rm -f ./$(DEPDIR)/netmux-driver_bridge.Po
 	-rm -f ./$(DEPDIR)/netmux-ganl_adapter.Po
 	-rm -f ./$(DEPDIR)/netmux-modules.Po
 	-rm -f ./$(DEPDIR)/netmux-muxcli.Po

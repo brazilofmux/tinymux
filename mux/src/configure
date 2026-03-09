@@ -616,7 +616,7 @@ PACKAGE_STRING='TinyMUX 2.14'
 PACKAGE_BUGREPORT='tinymux@googlegroups.com'
 PACKAGE_URL=''
 
-ac_unique_file="game.cpp"
+ac_unique_file="driver.cpp"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stddef.h>
