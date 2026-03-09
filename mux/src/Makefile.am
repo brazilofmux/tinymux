@@ -21,7 +21,7 @@ LIBMUX_SRC = libmux.cpp \
 NETMUX_SRC = _build.cpp ast.cpp ast_scan.cpp attrcache.cpp boolexp.cpp \
     bsd.cpp command.cpp comsys.cpp conf.cpp cque.cpp create.cpp db.cpp \
     db_rw.cpp eval.cpp file_c.cpp flags.cpp funceval.cpp funceval2.cpp \
-    functions.cpp funmath.cpp game.cpp ganl_adapter.cpp help.cpp htab.cpp \
+    functions.cpp funmath.cpp driver.cpp engine.cpp ganl_adapter.cpp help.cpp htab.cpp \
     local.cpp log.cpp look.cpp mail.cpp match.cpp mguests.cpp \
     modules.cpp move.cpp muxcli.cpp netaddr.cpp net.cpp object.cpp \
     predicates.cpp player.cpp player_c.cpp plusemail.cpp powers.cpp \

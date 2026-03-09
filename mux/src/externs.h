@@ -309,7 +309,18 @@ bool html_escape(const UTF8 *src, UTF8 *dest, UTF8 **destp);
 #define DUMP_I_SIGNAL    4  // UNLOAD to a .FLAT file from signal.
 #define NUM_DUMP_TYPES   5
 void dump_database_internal(int);
+void dump_database(void);
 void fork_and_dump(int key);
+void process_preload(void);
+
+#define LOAD_GAME_SUCCESS           0
+#define LOAD_GAME_NO_INPUT_DB     (-1)
+#define LOAD_GAME_CANNOT_OPEN     (-2)
+#define LOAD_GAME_LOADING_PROBLEM (-3)
+int load_game(int ccPageFile);
+
+class CSQLiteDB;
+bool clear_sqlite_after_sync_failure(CSQLiteDB &sqldb);
 
 #define MUX_OPEN_INVALID_HANDLE_VALUE (-1)
 bool mux_fopen(FILE **pFile, const UTF8 *filename, const UTF8 *mode);

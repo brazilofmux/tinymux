@@ -589,7 +589,7 @@ violations.  This is a state of mind, not a code change.
 
 | File | Role |
 |------|------|
-| game.cpp | main(), startup orchestration, shutdown sequence |
+| driver.cpp | main(), startup orchestration, shutdown sequence |
 | ganl_adapter.cpp | Event loop, I/O multiplexing, connection lifecycle |
 | bsd.cpp | Descriptor lifecycle, socket I/O, output flushing |
 | telnet.cpp | NVT state machine, option negotiation |
@@ -637,7 +637,7 @@ violations.  This is a state of mind, not a code change.
 | File | Driver part | Engine part |
 |------|------------|-------------|
 | netcommon.cpp | — | update_quotas, raw_notify, announce_connect/disconnect, welcome_user, save_command |
-| game.cpp | main(), ganl calls | cf_read, load_game, dump_database, module discovery |
+| driver.cpp / engine.cpp | main(), ganl calls | load_game, dump_database, notify_check |
 
 #### The DESC Boundary
 
@@ -966,12 +966,36 @@ session.cpp (engine) — game logic, notification, softcode:
 | `trimmed_name`, `trimmed_site` | Display helpers |
 | `fun_doing`, `fun_host`, `fun_poll`, `fun_motd`, `fun_siteinfo` | Softcode functions |
 
-**game.cpp → driver.cpp (driver) + engine.cpp (engine):**
+**game.cpp → driver.cpp (driver) + engine.cpp (engine): COMPLETE**
 
-driver.cpp: `main()`, startup orchestration, shutdown sequence, GANL calls.
+driver.cpp (driver, 1179 lines) — program entry, CLI, orchestration:
 
-engine.cpp: `cf_read`, `load_game`, `dump_database`, module discovery,
-`local_startup`, `local_shutdown`.
+| Function | Role |
+|----------|------|
+| `main()` | Program entry point, startup/shutdown orchestration |
+| `dbconvert()` | Standalone database conversion tool |
+| `CLI_CallBack`, `OptionTable` | Command-line option parsing |
+| `write_pidfile` | PID file management |
+| `init_sql` | MySQL initialization (INLINESQL) |
+| `info` | Database format display |
+| `init_rlimit` | File descriptor limit setup |
+| `mux_fopen`, `mux_open`, `mux_strerror` | I/O utilities |
+
+engine.cpp (engine, 2215 lines) — game logic, notification, matching, dumps:
+
+| Function | Role |
+|----------|------|
+| `do_dump`, `dump_database`, `dump_database_internal`, `fork_and_dump` | Database dumps |
+| `load_game`, `clear_sqlite_after_sync_failure` | Database loading |
+| `process_preload` | STARTUP processing |
+| `notify_check` (×2), `notify_except`, `notify_except2`, `notify_except_N` | Notification dispatch |
+| `check_filter`, `make_prefix`, `html_escape` | Notification helpers |
+| `report` | Error reporting |
+| `regexp_match`, `atr_match1`, `atr_match`, `list_check` | Attribute matching |
+| `Hearer` | Listener detection |
+| `do_shutdown` | @shutdown command |
+| `do_timecheck`, `report_timecheck` | CPU time reporting |
+| `do_readcache` | @readcache command |
 
 **Note:** bsd.cpp should be audited for dead code at a stopping point.
 All networking has migrated to GANL; any remaining select()-based code in
