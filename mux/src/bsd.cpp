@@ -32,6 +32,7 @@ bool g_bStandAlone = false;
 bool g_shutdown_flag = false;
 bool g_restarting = false;
 bool g_panicking = false;
+volatile pid_t g_dump_child_pid = 0;
 mux_subnets g_access_list;
 StringPtrMap g_logout_cmd_htab;
 

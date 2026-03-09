@@ -452,11 +452,11 @@ static void DCL_CDECL sighandler(int sig)
 #endif // STUB_SLAVE
                 if (g_dc.fork_dump)
                 {
-                    MUX_RESULT mr = g_pIGameEngine->DumpChildExited(child);
-                    if (MUX_SUCCEEDED(mr))
-                    {
-                        continue;
-                    }
+                    // Record the event for the main loop to pick up.
+                    // No COM calls from signal handlers.
+                    //
+                    g_dump_child_pid = child;
+                    continue;
                 }
             }
 #endif // HAVE_WORKING_FORK

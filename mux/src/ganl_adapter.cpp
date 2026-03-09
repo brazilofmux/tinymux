@@ -1811,6 +1811,16 @@ void GanlAdapter::run_main_loop() {
             // TODO: Handle listener errors? (events[i].listener != InvalidListenerHandle)
         }
 
+        // If SIGCHLD recorded a dump child exit, report it to the
+        // engine now (safe context, not a signal handler).
+        //
+        pid_t dump_pid = g_dump_child_pid;
+        if (0 != dump_pid)
+        {
+            g_dump_child_pid = 0;
+            g_pIGameEngine->DumpChildExited(dump_pid);
+        }
+
         // Process TinyMUX Tasks (Timers, Idle, Quotas, etc.)
         process_tinyMUX_tasks();
 
