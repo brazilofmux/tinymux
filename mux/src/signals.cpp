@@ -318,7 +318,7 @@ static void check_panicking(int sig)
 {
     // If we are panicking, turn off signal catching and resignal.
     //
-    if (mudstate.panicking)
+    if (g_panicking)
     {
         unset_signals();
 
@@ -331,7 +331,7 @@ static void check_panicking(int sig)
         kill(game_pid, sig);
 #endif // UNIX_PROCESSES
     }
-    mudstate.panicking = true;
+    g_panicking = true;
 }
 
 static UTF8 *signal_desc(const int iSignal)
@@ -450,32 +450,13 @@ static void DCL_CDECL sighandler(int sig)
                 }
                 else
 #endif // STUB_SLAVE
-                if (  g_dc.fork_dump
-                   && mudstate.dumping)
+                if (g_dc.fork_dump)
                 {
-                    mudstate.dumped = child;
-                    if (mudstate.dumper == mudstate.dumped)
+                    MUX_RESULT mr = g_pIGameEngine->DumpChildExited(child);
+                    if (MUX_SUCCEEDED(mr))
                     {
-                        // The dumping process finished.
-                        //
-                        mudstate.dumper  = 0;
-                        mudstate.dumped  = 0;
+                        continue;
                     }
-                    else
-                    {
-                        // The dumping process finished before we could
-                        // obtain its process id from fork().
-                        //
-                    }
-                    mudstate.dumping = false;
-                    local_dump_complete_signal();
-                    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-                    while (nullptr != p)
-                    {
-                        p->pSink->dump_complete_signal();
-                        p = p->pNext;
-                    }
-                    continue;
                 }
             }
 #endif // HAVE_WORKING_FORK
@@ -486,11 +467,11 @@ static void DCL_CDECL sighandler(int sig)
 #if defined(HAVE_WORKING_FORK)
             STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
 #ifdef STUB_SLAVE
-            g_pILog->WriteString(tprintf(T("mudstate.dumper=%d, child=%d, stubslave_pid=%d" ENDLINE),
-                mudstate.dumper, child, stubslave_pid));
+            g_pILog->WriteString(tprintf(T("Unknown child=%d, stubslave_pid=%d" ENDLINE),
+                child, stubslave_pid));
 #else
-            g_pILog->WriteString(tprintf(T("mudstate.dumper=%d, child=%d" ENDLINE),
-                mudstate.dumper, child));
+            g_pILog->WriteString(tprintf(T("Unknown child=%d" ENDLINE),
+                child));
 #endif // STUB_SLAVE
             ENDLOG;
 #endif // HAVE_WORKING_FORK
@@ -502,10 +483,7 @@ static void DCL_CDECL sighandler(int sig)
         // Perform a database dump.
         //
         log_signal(sig);
-        extern void dispatch_DatabaseDump(void *pUnused, int iUnused);
-        scheduler.CancelTask(dispatch_DatabaseDump, 0, 0);
-        mudstate.dump_counter.GetUTC();
-        scheduler.DeferTask(mudstate.dump_counter, PRIORITY_SYSTEM, dispatch_DatabaseDump, 0, 0);
+        g_pIGameEngine->DumpDatabase();
         break;
 
 #endif // UNIX_SIGNALS
@@ -651,7 +629,7 @@ static void DCL_CDECL sighandler(int sig)
         exit(1);
     }
     signal(sig, CAST_SIGNAL_FUNC sighandler);
-    mudstate.panicking = false;
+    g_panicking = false;
 }
 
 NAMETAB sigactions_nametab[] =

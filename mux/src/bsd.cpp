@@ -31,6 +31,7 @@ mux_IPlayerSession *g_pIPlayerSession = nullptr;
 bool g_bStandAlone = false;
 bool g_shutdown_flag = false;
 bool g_restarting = false;
+bool g_panicking = false;
 mux_subnets g_access_list;
 StringPtrMap g_logout_cmd_htab;
 

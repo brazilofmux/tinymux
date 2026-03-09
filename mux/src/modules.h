@@ -617,6 +617,11 @@ public:
     //
     virtual MUX_RESULT GetConfig(DRIVER_CONFIG *pConfig) = 0;
 
+    // Notify the engine that a forked dump child process has exited.
+    // Called from the driver's SIGCHLD handler.
+    //
+    virtual MUX_RESULT DumpChildExited(int child_pid) = 0;
+
     // --- Driver ↔ Engine state ---
     // Timing/restart state owned by the engine, set by the driver.
     //

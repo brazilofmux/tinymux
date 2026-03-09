@@ -2322,6 +2322,7 @@ public:
         const UTF8 *basename, bool bCheck, bool bLoad, bool bUnload,
         const UTF8 *comsys_file, const UTF8 *mail_file);
     virtual MUX_RESULT GetConfig(DRIVER_CONFIG *pConfig);
+    virtual MUX_RESULT DumpChildExited(int child_pid);
     virtual MUX_RESULT SetStartTime(const CLinearTimeAbsolute &time);
     virtual MUX_RESULT GetStartTime(CLinearTimeAbsolute *pTime);
     virtual MUX_RESULT SetRestartTime(const CLinearTimeAbsolute &time);
@@ -2903,6 +2904,39 @@ MUX_RESULT CGameEngine::GetConfig(DRIVER_CONFIG *pConfig)
     mux_strncpy(pConfig->mail_sendname, mudconf.mail_sendname, sizeof(pConfig->mail_sendname) - 1);
     mux_strncpy(pConfig->mail_ehlo, mudconf.mail_ehlo, sizeof(pConfig->mail_ehlo) - 1);
 
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::DumpChildExited(int child_pid)
+{
+    if (!mudstate.dumping)
+    {
+        return MUX_S_FALSE;
+    }
+
+    mudstate.dumped = child_pid;
+    if (mudstate.dumper == mudstate.dumped)
+    {
+        // Normal completion — fork() returned before SIGCHLD.
+        //
+        mudstate.dumper = 0;
+        mudstate.dumped = 0;
+    }
+    else
+    {
+        // SIGCHLD arrived before fork() returned the PID.
+        // dumped is set; fork_and_dump will notice on return.
+        //
+    }
+    mudstate.dumping = false;
+
+    local_dump_complete_signal();
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (nullptr != p)
+    {
+        p->pSink->dump_complete_signal();
+        p = p->pNext;
+    }
     return MUX_S_OK;
 }
 

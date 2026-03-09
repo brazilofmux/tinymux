@@ -65,6 +65,12 @@ extern bool g_shutdown_flag;
 //
 extern bool g_restarting;
 
+// Panic guard — prevents recursive signal handler entry.  If we
+// SIGSEGV inside a SIGSEGV handler, we know we're the biggest risk
+// to the data and bail immediately.
+//
+extern bool g_panicking;
+
 // Site access list — driver owns, engine mutates via
 // mux_IDriverControl::SiteUpdate().  Driver reads directly (hot path).
 //
