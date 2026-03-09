@@ -1701,4 +1701,8 @@ private:
     uint32_t m_cRef;
 };
 
+#if defined(INLINESQL)
+void init_sql(void);
+#endif // INLINESQL
+
 #endif // EXTERNS_H

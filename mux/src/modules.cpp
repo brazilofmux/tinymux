@@ -10,6 +10,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "sqlite_backend.h"
 
 static MUX_CLASS_INFO netmux_classes[] =
 {
@@ -2711,18 +2712,346 @@ uint32_t CGameEngine::Release(void)
 MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
     const UTF8 *inputDb, bool bMinDB)
 {
-    UNUSED_PARAMETER(configFile);
     UNUSED_PARAMETER(inputDb);
-    UNUSED_PARAMETER(bMinDB);
 
-    // TODO: Move cf_read, load_game, module discovery here from driver.cpp.
-    // For now this is a placeholder — main() still calls these directly.
+    MUX_RESULT mr;
+
+    // Initialize engine subsystems.
     //
+    tcache_init();
+    pcache_init();
+    cf_init();
+    init_cmdtab();
+    init_flagtab();
+    init_powertab();
+    init_functab();
+    init_attrtab();
+
+    // Read configuration file.
+    //
+    if (nullptr != configFile)
+    {
+        mudconf.config_file = StringClone(configFile);
+    }
+    cf_read();
+
+    // Sync core-layer globals from mudconf after config is loaded.
+    //
+    g_float_precision = mudconf.float_precision;
+    g_space_compress = mudstate.bStandAlone || mudconf.space_compress;
+
+    // Try to discover the comsys module.  If not loaded, the pointer
+    // stays nullptr and the built-in comsys code handles everything.
+    //
+    mudstate.pIComsysControl = nullptr;
+    mr = mux_CreateInstance(CID_Comsys, nullptr, UseSameProcess,
+                            IID_IComsysControl,
+                            reinterpret_cast<void **>(&mudstate.pIComsysControl));
+    if (MUX_SUCCEEDED(mr))
+    {
+        // Compute SQLite database path from input database path.
+        //
+        char szDbPath[SIZEOF_PATHNAME];
+        mux_strncpy(reinterpret_cast<UTF8 *>(szDbPath), mudconf.indb,
+                     sizeof(szDbPath) - 1);
+        szDbPath[sizeof(szDbPath) - 1] = '\0';
+        size_t nPath = strlen(szDbPath);
+        if (nPath > 3 && strcmp(szDbPath + nPath - 3, ".db") == 0)
+        {
+            strcpy(szDbPath + nPath - 3, ".sqlite");
+        }
+        else
+        {
+            strcat(szDbPath, ".sqlite");
+        }
+
+        mr = mudstate.pIComsysControl->Initialize(
+            reinterpret_cast<const UTF8 *>(szDbPath));
+        if (MUX_SUCCEEDED(mr))
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "MOD");
+            log_printf(T("Comsys module initialized with database: %s"),
+                       szDbPath);
+            ENDLOG;
+        }
+        else
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "MOD");
+            log_printf(T("Comsys module Initialize failed (mr=%d)."), mr);
+            ENDLOG;
+        }
+    }
+
+    // Try to discover the mail module.  If not loaded, the pointer
+    // stays nullptr and the built-in mail code handles everything.
+    //
+    mudstate.pIMailControl = nullptr;
+    mr = mux_CreateInstance(CID_Mail, nullptr, UseSameProcess,
+                            IID_IMailControl,
+                            reinterpret_cast<void **>(&mudstate.pIMailControl));
+    if (MUX_SUCCEEDED(mr))
+    {
+        // Compute SQLite database path from input database path.
+        //
+        char szMailDbPath[SIZEOF_PATHNAME];
+        mux_strncpy(reinterpret_cast<UTF8 *>(szMailDbPath), mudconf.indb,
+                     sizeof(szMailDbPath) - 1);
+        szMailDbPath[sizeof(szMailDbPath) - 1] = '\0';
+        size_t nMailPath = strlen(szMailDbPath);
+        if (nMailPath > 3 && strcmp(szMailDbPath + nMailPath - 3, ".db") == 0)
+        {
+            strcpy(szMailDbPath + nMailPath - 3, ".sqlite");
+        }
+        else
+        {
+            strcat(szMailDbPath, ".sqlite");
+        }
+
+        mr = mudstate.pIMailControl->Initialize(
+            reinterpret_cast<const UTF8 *>(szMailDbPath),
+            mudconf.mail_expiration, mudconf.mail_max_per_player);
+        if (MUX_SUCCEEDED(mr))
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "MOD");
+            log_printf(T("Mail module initialized with database: %s"),
+                       szMailDbPath);
+            ENDLOG;
+        }
+        else
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "MOD");
+            log_printf(T("Mail module Initialize failed (mr=%d)."), mr);
+            ENDLOG;
+        }
+    }
+
+    mr = mux_CreateInstance(CID_QueryServer, nullptr, UseSlaveProcess,
+                            IID_IQueryControl,
+                            (void **)&mudstate.pIQueryControl);
+    if (MUX_SUCCEEDED(mr))
+    {
+        mr = mudstate.pIQueryControl->Connect(mudconf.sql_server,
+            mudconf.sql_database, mudconf.sql_user, mudconf.sql_password);
+        if (MUX_SUCCEEDED(mr))
+        {
+            mux_IQuerySink *pIQuerySink = nullptr;
+            mr = mux_CreateInstance(CID_QueryClient, nullptr, UseSameProcess,
+                                    IID_IQuerySink,
+                                    (void **)&pIQuerySink);
+            if (MUX_SUCCEEDED(mr))
+            {
+                mr = mudstate.pIQueryControl->Advise(pIQuerySink);
+                if (MUX_SUCCEEDED(mr))
+                {
+                    pIQuerySink->Release();
+                    pIQuerySink = nullptr;
+                }
+                else
+                {
+                    mudstate.pIQueryControl->Release();
+                    mudstate.pIQueryControl = nullptr;
+
+                    STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+                    log_printf(T("Couldn\xE2\x80\x99t connect sink to server (%d)."), mr);
+                    ENDLOG;
+                }
+            }
+            else
+            {
+                mudstate.pIQueryControl->Release();
+                mudstate.pIQueryControl = nullptr;
+
+                STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+                log_printf(T("Couldn\xE2\x80\x99t create Query Sink (%d)."), mr);
+                ENDLOG;
+            }
+        }
+        else
+        {
+            mudstate.pIQueryControl->Release();
+            mudstate.pIQueryControl = nullptr;
+
+            STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+            log_printf(T("Couldn\xE2\x80\x99t connect to Query Server (%d)."), mr);
+            ENDLOG;
+        }
+    }
+    else
+    {
+        STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+        log_text(T("Couldn\xE2\x80\x99t create interface to Query Server."));
+        ENDLOG;
+    }
+
+#if defined(INLINESQL)
+    init_sql();
+#endif // INLINESQL
+
+    fcache_init();
+    helpindex_init();
+
+    // Open or create the SQLite database.
+    //
+    if (bMinDB)
+    {
+        // Remove the SQLite database to start fresh.
+        //
+        char sqlitefile[SIZEOF_PATHNAME];
+        mux_strncpy((UTF8 *)sqlitefile, mudconf.indb,
+                     sizeof(sqlitefile) - 1);
+        sqlitefile[sizeof(sqlitefile) - 1] = '\0';
+        size_t n = strlen(sqlitefile);
+        if (n > 3 && strcmp(sqlitefile + n - 3, ".db") == 0)
+        {
+            strcpy(sqlitefile + n - 3, ".sqlite");
+        }
+        else
+        {
+            strcat(sqlitefile, ".sqlite");
+        }
+        RemoveFile((UTF8 *)sqlitefile);
+    }
+    int ccPageFile = init_dbfile(mudconf.indb);
+    if (HF_OPEN_STATUS_ERROR == ccPageFile)
+    {
+        STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+        log_text(T("Couldn\xE2\x80\x99t open storage backend."));
+        ENDLOG;
+        return MUX_E_FAIL;
+    }
+
+    mudstate.record_players = 0;
+    bool bLoadedGameFromSQLite = false;
+
+    if (bMinDB)
+    {
+        if (!db_make_minimal())
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "LOAD")
+            log_text(T("Failed to build minimal database."));
+            ENDLOG
+            return MUX_E_FAIL;
+        }
+    }
+    else
+    {
+        bool bDoFlatfileLoad = true;
+        if (HF_OPEN_STATUS_OLD == ccPageFile)
+        {
+            int sqlite_load_rc = sqlite_load_game();
+            if (sqlite_load_rc > 0)
+            {
+                // Warm start: loaded everything from SQLite.
+                // No flatfile needed.
+                //
+                bDoFlatfileLoad = false;
+                bLoadedGameFromSQLite = true;
+            }
+            else if (sqlite_load_rc < 0)
+            {
+                STARTLOG(LOG_ALWAYS, "INI", "LOAD")
+                log_text(T("SQLite warm-load failed."));
+                ENDLOG
+                return MUX_E_FAIL;
+            }
+        }
+
+        int ccInFile = LOAD_GAME_SUCCESS;
+        if (bDoFlatfileLoad)
+        {
+            ccInFile = load_game(ccPageFile);
+        }
+        if (LOAD_GAME_NO_INPUT_DB == ccInFile)
+        {
+            // The input file didn't exist.
+            //
+            if (HF_OPEN_STATUS_NEW == ccPageFile)
+            {
+                // Since the .db file didn't exist, and the .pag/.dir files
+                // were newly created, just create a minimal DB.
+                //
+                if (!db_make_minimal())
+                {
+                    ccInFile = LOAD_GAME_LOADING_PROBLEM;
+                }
+                else
+                {
+                    ccInFile = LOAD_GAME_SUCCESS;
+                }
+            }
+        }
+        if (ccInFile != LOAD_GAME_SUCCESS)
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "LOAD")
+            log_text(T("Couldn\xE2\x80\x99t load: "));
+            log_text(mudconf.indb);
+            ENDLOG
+            return MUX_E_FAIL;
+        }
+    }
+
+    // Warm-start path skips load_game(); explicitly load aux SQLite/flatfile
+    // subsystems here.
+    //
+    if (bLoadedGameFromSQLite)
+    {
+        int load_comsys_rc = sqlite_load_comsys();
+        if (load_comsys_rc < 0)
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "LOAD")
+            log_text(T("SQLite comsys load failed."));
+            ENDLOG
+            return MUX_E_FAIL;
+        }
+        if (0 == load_comsys_rc)
+        {
+            load_comsys(mudconf.comsys_db);
+        }
+
+        int load_mail_rc = sqlite_load_mail();
+        if (load_mail_rc < 0)
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "LOAD")
+            log_text(T("SQLite mail load failed."));
+            ENDLOG
+            return MUX_E_FAIL;
+        }
+        if (0 == load_mail_rc)
+        {
+            FILE *f;
+            if (mux_fopen(&f, mudconf.mail_db, T("rb")))
+            {
+                DebugTotalFiles++;
+                setvbuf(f, nullptr, _IOFBF, 16384);
+                Log.tinyprintf(T("LOADING: %s" ENDLINE), mudconf.mail_db);
+                load_mail(f);
+                Log.tinyprintf(T("LOADING: %s (done)" ENDLINE),
+                               mudconf.mail_db);
+                if (fclose(f) != 0)
+                {
+                    STARTLOG(LOG_PROBLEMS, "DB", "FCLOSE");
+                    log_printf(T("fclose failed for %s"), mudconf.mail_db);
+                    ENDLOG;
+                }
+                DebugTotalFiles--;
+            }
+        }
+    }
+
     return MUX_S_OK;
 }
 
 MUX_RESULT CGameEngine::Startup(void)
 {
+    Guest.StartUp();
+
+    // Do a consistency check and set up the freelist.
+    //
+    do_dbck(NOTHING, NOTHING, NOTHING, 0, 0);
+
+    ValidateConfigurationDbrefs();
+    process_preload();
+
     local_startup();
 
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
