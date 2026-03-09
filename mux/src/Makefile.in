@@ -119,10 +119,10 @@ am__netmux_SOURCES_DIST = _build.cpp ast.cpp ast_scan.cpp \
 	file_c.cpp flags.cpp funceval.cpp funceval2.cpp functions.cpp \
 	funmath.cpp game.cpp ganl_adapter.cpp help.cpp htab.cpp \
 	local.cpp log.cpp look.cpp mail.cpp match.cpp mguests.cpp \
-	modules.cpp move.cpp muxcli.cpp netaddr.cpp netcommon.cpp \
-	object.cpp predicates.cpp player.cpp player_c.cpp \
-	plusemail.cpp powers.cpp quota.cpp rob.cpp set.cpp signals.cpp \
-	sitemon.cpp speech.cpp telnet.cpp timer.cpp unparse.cpp \
+	modules.cpp move.cpp muxcli.cpp netaddr.cpp net.cpp object.cpp \
+	predicates.cpp player.cpp player_c.cpp plusemail.cpp \
+	powers.cpp quota.cpp rob.cpp set.cpp signals.cpp sitemon.cpp \
+	session.cpp speech.cpp telnet.cpp timer.cpp unparse.cpp \
 	vattr.cpp walkdb.cpp wild.cpp wiz.cpp levels.cpp sqlitedb.cpp \
 	sqlite_backend.cpp sqlite/sqlite3.c version.cpp
 @REALITY_ENABLED_TRUE@am__objects_1 = levels.$(OBJEXT)
@@ -137,14 +137,14 @@ am__objects_2 = _build.$(OBJEXT) ast.$(OBJEXT) ast_scan.$(OBJEXT) \
 	help.$(OBJEXT) htab.$(OBJEXT) local.$(OBJEXT) log.$(OBJEXT) \
 	look.$(OBJEXT) mail.$(OBJEXT) match.$(OBJEXT) \
 	mguests.$(OBJEXT) modules.$(OBJEXT) move.$(OBJEXT) \
-	muxcli.$(OBJEXT) netaddr.$(OBJEXT) netcommon.$(OBJEXT) \
+	muxcli.$(OBJEXT) netaddr.$(OBJEXT) net.$(OBJEXT) \
 	object.$(OBJEXT) predicates.$(OBJEXT) player.$(OBJEXT) \
 	player_c.$(OBJEXT) plusemail.$(OBJEXT) powers.$(OBJEXT) \
 	quota.$(OBJEXT) rob.$(OBJEXT) set.$(OBJEXT) signals.$(OBJEXT) \
-	sitemon.$(OBJEXT) speech.$(OBJEXT) telnet.$(OBJEXT) \
-	timer.$(OBJEXT) unparse.$(OBJEXT) vattr.$(OBJEXT) \
-	walkdb.$(OBJEXT) wild.$(OBJEXT) wiz.$(OBJEXT) $(am__objects_1) \
-	sqlitedb.$(OBJEXT) sqlite_backend.$(OBJEXT) \
+	sitemon.$(OBJEXT) session.$(OBJEXT) speech.$(OBJEXT) \
+	telnet.$(OBJEXT) timer.$(OBJEXT) unparse.$(OBJEXT) \
+	vattr.$(OBJEXT) walkdb.$(OBJEXT) wild.$(OBJEXT) wiz.$(OBJEXT) \
+	$(am__objects_1) sqlitedb.$(OBJEXT) sqlite_backend.$(OBJEXT) \
 	sqlite/sqlite3.$(OBJEXT)
 am_netmux_OBJECTS = $(am__objects_2) version.$(OBJEXT)
 netmux_OBJECTS = $(am_netmux_OBJECTS)
@@ -187,12 +187,12 @@ am__depfiles_remade = ./$(DEPDIR)/_build.Po ./$(DEPDIR)/ast.Po \
 	./$(DEPDIR)/local.Po ./$(DEPDIR)/log.Po ./$(DEPDIR)/look.Po \
 	./$(DEPDIR)/mail.Po ./$(DEPDIR)/match.Po \
 	./$(DEPDIR)/mguests.Po ./$(DEPDIR)/modules.Po \
-	./$(DEPDIR)/move.Po ./$(DEPDIR)/muxcli.Po \
-	./$(DEPDIR)/netaddr.Po ./$(DEPDIR)/netcommon.Po \
-	./$(DEPDIR)/object.Po ./$(DEPDIR)/player.Po \
-	./$(DEPDIR)/player_c.Po ./$(DEPDIR)/plusemail.Po \
-	./$(DEPDIR)/powers.Po ./$(DEPDIR)/predicates.Po \
-	./$(DEPDIR)/quota.Po ./$(DEPDIR)/rob.Po ./$(DEPDIR)/set.Po \
+	./$(DEPDIR)/move.Po ./$(DEPDIR)/muxcli.Po ./$(DEPDIR)/net.Po \
+	./$(DEPDIR)/netaddr.Po ./$(DEPDIR)/object.Po \
+	./$(DEPDIR)/player.Po ./$(DEPDIR)/player_c.Po \
+	./$(DEPDIR)/plusemail.Po ./$(DEPDIR)/powers.Po \
+	./$(DEPDIR)/predicates.Po ./$(DEPDIR)/quota.Po \
+	./$(DEPDIR)/rob.Po ./$(DEPDIR)/session.Po ./$(DEPDIR)/set.Po \
 	./$(DEPDIR)/signals.Po ./$(DEPDIR)/sitemon.Po \
 	./$(DEPDIR)/slave.Po ./$(DEPDIR)/speech.Po \
 	./$(DEPDIR)/sqlite_backend.Po ./$(DEPDIR)/sqlitedb.Po \
@@ -473,11 +473,11 @@ NETMUX_SRC = _build.cpp ast.cpp ast_scan.cpp attrcache.cpp boolexp.cpp \
 	funceval2.cpp functions.cpp funmath.cpp game.cpp \
 	ganl_adapter.cpp help.cpp htab.cpp local.cpp log.cpp look.cpp \
 	mail.cpp match.cpp mguests.cpp modules.cpp move.cpp muxcli.cpp \
-	netaddr.cpp netcommon.cpp object.cpp predicates.cpp player.cpp \
+	netaddr.cpp net.cpp object.cpp predicates.cpp player.cpp \
 	player_c.cpp plusemail.cpp powers.cpp quota.cpp rob.cpp \
-	set.cpp signals.cpp sitemon.cpp speech.cpp telnet.cpp \
-	timer.cpp unparse.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp \
-	$(am__append_1) sqlitedb.cpp sqlite_backend.cpp \
+	set.cpp signals.cpp sitemon.cpp session.cpp speech.cpp \
+	telnet.cpp timer.cpp unparse.cpp vattr.cpp walkdb.cpp wild.cpp \
+	wiz.cpp $(am__append_1) sqlitedb.cpp sqlite_backend.cpp \
 	sqlite/sqlite3.c
 LIBMUX_OBJS = $(LIBMUX_SRC:.cpp=.lo)
 
@@ -656,8 +656,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/modules.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/move.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/muxcli.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/net.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netaddr.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netcommon.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/object.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/player.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/player_c.Po@am__quote@ # am--include-marker
@@ -666,6 +666,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/predicates.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/quota.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rob.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/session.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/signals.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sitemon.Po@am__quote@ # am--include-marker
@@ -1109,8 +1110,8 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/modules.Po
 	-rm -f ./$(DEPDIR)/move.Po
 	-rm -f ./$(DEPDIR)/muxcli.Po
+	-rm -f ./$(DEPDIR)/net.Po
 	-rm -f ./$(DEPDIR)/netaddr.Po
-	-rm -f ./$(DEPDIR)/netcommon.Po
 	-rm -f ./$(DEPDIR)/object.Po
 	-rm -f ./$(DEPDIR)/player.Po
 	-rm -f ./$(DEPDIR)/player_c.Po
@@ -1119,6 +1120,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/predicates.Po
 	-rm -f ./$(DEPDIR)/quota.Po
 	-rm -f ./$(DEPDIR)/rob.Po
+	-rm -f ./$(DEPDIR)/session.Po
 	-rm -f ./$(DEPDIR)/set.Po
 	-rm -f ./$(DEPDIR)/signals.Po
 	-rm -f ./$(DEPDIR)/sitemon.Po
@@ -1218,8 +1220,8 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/modules.Po
 	-rm -f ./$(DEPDIR)/move.Po
 	-rm -f ./$(DEPDIR)/muxcli.Po
+	-rm -f ./$(DEPDIR)/net.Po
 	-rm -f ./$(DEPDIR)/netaddr.Po
-	-rm -f ./$(DEPDIR)/netcommon.Po
 	-rm -f ./$(DEPDIR)/object.Po
 	-rm -f ./$(DEPDIR)/player.Po
 	-rm -f ./$(DEPDIR)/player_c.Po
@@ -1228,6 +1230,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/predicates.Po
 	-rm -f ./$(DEPDIR)/quota.Po
 	-rm -f ./$(DEPDIR)/rob.Po
+	-rm -f ./$(DEPDIR)/session.Po
 	-rm -f ./$(DEPDIR)/set.Po
 	-rm -f ./$(DEPDIR)/signals.Po
 	-rm -f ./$(DEPDIR)/sitemon.Po

@@ -228,7 +228,7 @@ extern void dump_restart_db(void);
 extern void build_signal_names_table();
 extern void set_signals();
 
-// From netcommon.cpp
+// From net.cpp and session.cpp
 //
 extern void make_ulist(dbref, UTF8 *, UTF8 **, bool);
 extern void make_port_ulist(dbref, UTF8 *, UTF8 **);

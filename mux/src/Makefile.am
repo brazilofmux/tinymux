@@ -23,10 +23,10 @@ NETMUX_SRC = _build.cpp ast.cpp ast_scan.cpp attrcache.cpp boolexp.cpp \
     db_rw.cpp eval.cpp file_c.cpp flags.cpp funceval.cpp funceval2.cpp \
     functions.cpp funmath.cpp game.cpp ganl_adapter.cpp help.cpp htab.cpp \
     local.cpp log.cpp look.cpp mail.cpp match.cpp mguests.cpp \
-    modules.cpp move.cpp muxcli.cpp netaddr.cpp netcommon.cpp object.cpp \
+    modules.cpp move.cpp muxcli.cpp netaddr.cpp net.cpp object.cpp \
     predicates.cpp player.cpp player_c.cpp plusemail.cpp powers.cpp \
     quota.cpp rob.cpp set.cpp signals.cpp sitemon.cpp \
-    speech.cpp telnet.cpp timer.cpp \
+    session.cpp speech.cpp telnet.cpp timer.cpp \
     unparse.cpp vattr.cpp \
     walkdb.cpp wild.cpp wiz.cpp
 
