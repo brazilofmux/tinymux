@@ -1006,39 +1006,44 @@ bsd.cpp is likely dead.
 Reduce cross-side visibility so Driver and Engine files don't leak
 declarations into each other.
 
-**Work items:**
+**Work items:** (all COMPLETE)
 
-1. **Header split.**  Split externs.h into engine.h and driver.h.
-   externs.h is already mostly engine declarations.  Pull driver-only
-   declarations (DESC, socket operations, telnet state) into driver.h.
-   Engine files include engine.h only.  Driver files include both.
+1. **Header split.**  ~~Split externs.h into engine.h and driver.h.~~
+   Removed `#include "interface.h"` from externs.h.  Moved forward
+   declarations (DESC, program_data), all constants (R\_\*, CMD\_\*,
+   CHARSET\_\*, NVT\_\*, TELNET\_\*, OPTION\_\*, TELNETSB\_\*, DS\_\*,
+   SocketState, MAX\_LISTEN\_PORTS), and function declarations to
+   externs.h.  interface.h now contains only the DESC struct body and
+   port\_info.  9 driver-side .cpp files explicitly include interface.h;
+   ~48 engine files compile with only forward-declared DESC\*.
 
-2. **Static declarations.**  Functions that are internal to one side
-   become `static` or move to anonymous namespaces.  Eliminate extern
-   declarations that cross the boundary unnecessarily.
+2. **Static declarations.**  `close_sockets_emergency()` static in
+   bsd.cpp, `mux_getnameinfo()` static in netaddr.cpp (both single-file
+   only).  Remaining cross-boundary functions verified as multi-file.
 
 3. **Verify the boundary.**  Every engine file compiles without including
-   driver.h or interface.h.  Every driver file can call engine functions
-   through the engine.h declarations (and eventually mux_IGameEngine).
+   interface.h.  9 driver files that dereference DESC members include it
+   explicitly: bsd, db, driver, functions, ganl\_adapter, net,
+   predicates, sitemon, telnet.
 
-4. **Define mux_IGameEngine.**  The interface the driver uses to call the
-   engine:
+4. **Define mux\_IGameEngine.**  Interface in modules.h with 8 methods:
 
    | Method | Wraps |
    |--------|-------|
-   | LoadGame(configPath) | cf_read, load_game, module discovery |
-   | Startup() | local_startup, module startup, init_timer |
+   | LoadGame(configFile, inputDb, bMinDB) | cf\_read, load\_game, module discovery |
+   | Startup() | local\_startup, module startup, init\_timer |
    | RunTasks(ltaNow) | scheduler.RunTasks() |
-   | UpdateQuotas(ltaLast, ltaNow) | update_quotas() |
-   | WhenNext(pltaNext) | Scheduler query for next task time |
-   | DumpDatabase() | dump_database() |
-   | Shutdown() | local_shutdown, module shutdown, cleanup |
-   | ShouldShutdown(pbFlag) | mudstate.shutdown_flag |
+   | UpdateQuotas(ltaLast, ltaNow) | update\_quotas() |
+   | WhenNext(pltaWhen) | Scheduler query for next task time |
+   | DumpDatabase() | dump\_database() |
+   | Shutdown() | local\_shutdown, module shutdown, cleanup |
+   | ShouldShutdown(pbShutdown) | mudstate.shutdown\_flag |
 
-5. **Implement CGameEngine in-process.**  A COM class wrapping the above
-   functions.  main() creates it via mux_CreateInstance and calls through
-   the interface.  Still one binary — but the interface boundary is live
-   and tested.
+5. **Implement CGameEngine in-process.**  CGameEngine class in
+   modules.cpp with CGameEngineFactory.  main() creates it via
+   mux\_CreateInstance(CID\_GameEngine) and calls Startup(),
+   DumpDatabase(), Shutdown() through the interface.  LoadGame() is a
+   placeholder; RunTasks/UpdateQuotas/WhenNext ready for GANL integration.
 
 At the end of Stage 3, the codebase is ready for mitosis.  The physical
 split into engine.so is a build-system change: move engine files to a new
