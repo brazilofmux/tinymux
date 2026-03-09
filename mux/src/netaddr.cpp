@@ -1045,7 +1045,7 @@ static int lookup_servicename(const unsigned short port, UTF8 *serv, size_t serv
 }
 #endif
 
-int mux_getnameinfo(const MUX_SOCKADDR *msa, UTF8 *host, const size_t hostlen, UTF8 *serv, const size_t servlen, const int flags)
+static int mux_getnameinfo(const MUX_SOCKADDR *msa, UTF8 *host, const size_t hostlen, UTF8 *serv, const size_t servlen, const int flags)
 {
 #if defined(HAVE_GETNAMEINFO)
     return getnameinfo(msa->saro(), msa->salen(), reinterpret_cast<char *>(host), hostlen, reinterpret_cast<char *>(serv), servlen, flags);

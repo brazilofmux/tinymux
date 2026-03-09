@@ -315,7 +315,7 @@ void close_listening_ports(void)
 }
 
 
-void close_sockets_emergency(const UTF8* message)
+static void close_sockets_emergency(const UTF8* message)
 {
     for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
     {
