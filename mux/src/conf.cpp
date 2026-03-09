@@ -1259,93 +1259,11 @@ static CF_HAND(cf_badname)
 static CF_HAND(cf_site)
 {
     UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(vp);
 
-    mux_subnet *pSubnet = parse_subnet(str, player, cmd);
-    if (nullptr == pSubnet)
-    {
-        return -1;
-    }
-
-    mux_subnets *subnets = reinterpret_cast<mux_subnets *>(vp);
-    switch (nExtra)
-    {
-    case HC_PERMIT:
-        if (!subnets->permit(pSubnet))
-        {
-            return -1;
-        }
-        break;
-
-    case HC_REGISTER:
-        if (!subnets->registered(pSubnet))
-        {
-            return -1;
-        }
-        break;
-
-    case HC_FORBID:
-        if (!subnets->forbid(pSubnet))
-        {
-            return -1;
-        }
-        break;
-
-    case HC_NOSITEMON:
-        if (!subnets->nositemon(pSubnet))
-        {
-            return -1;
-        }
-        break;
-
-    case HC_SITEMON:
-        if (!subnets->sitemon(pSubnet))
-        {
-            return -1;
-        }
-        break;
-
-    case HC_NOGUEST:
-        if (!subnets->noguest(pSubnet))
-        {
-            return -1;
-        }
-        break;
-
-    case HC_GUEST:
-        if (!subnets->guest(pSubnet))
-        {
-            return -1;
-        }
-        break;
-
-    case HC_SUSPECT:
-        if (!subnets->suspect(pSubnet))
-        {
-            return -1;
-        }
-        break;
-
-    case HC_TRUST:
-        if (!subnets->trust(pSubnet))
-        {
-            return -1;
-        }
-        break;
-
-    case HC_RESET:
-        if (!subnets->reset(pSubnet))
-        {
-            delete pSubnet;
-            return -1;
-        }
-        break;
-
-    default:
-        delete pSubnet;
-        return -1;
-    }
-
-    return 0;
+    // The access list lives in the driver.  Route the update through COM.
+    //
+    return site_update(str, player, cmd, nExtra);
 }
 
 // ---------------------------------------------------------------------------
@@ -1967,7 +1885,7 @@ static CONFPARM conftable[] =
     {T("flag_alias"),                cf_flagalias,   CA_GOD,    CA_DISABLED, nullptr,                         nullptr,            0},
     {T("flag_name"),                 cf_flag_name,   CA_GOD,    CA_DISABLED, nullptr,                         nullptr,            0},
     {T("float_precision"),           cf_int,         CA_STATIC, CA_PUBLIC,   &mudconf.float_precision,        nullptr,            0},
-    {T("forbid_site"),               cf_site,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.access_list),    nullptr,    HC_FORBID},
+    {T("forbid_site"),               cf_site,        CA_GOD,    CA_DISABLED, nullptr,    nullptr,    HC_FORBID},
 #if defined(HAVE_WORKING_FORK)
     {T("fork_dump"),                 cf_bool,        CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.fork_dump),       nullptr,            0},
 #endif // HAVE_WORKING_FORK
@@ -1984,7 +1902,7 @@ static CONFPARM conftable[] =
     {T("guest_file"),                cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.guest_file),      nullptr, SIZEOF_PATHNAME},
     {T("guest_nuker"),               cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.guest_nuker,            nullptr,            0},
     {T("guest_prefix"),              cf_string,      CA_STATIC, CA_PUBLIC,   reinterpret_cast<int *>(mudconf.guest_prefix),     nullptr,           32},
-    {T("guest_site"),                cf_site,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.access_list),    nullptr,     HC_GUEST},
+    {T("guest_site"),                cf_site,        CA_GOD,    CA_DISABLED, nullptr,    nullptr,     HC_GUEST},
     {T("guests_channel"),            cf_string,      CA_STATIC, CA_PUBLIC,   reinterpret_cast<int *>(mudconf.guests_channel),   nullptr,           32},
     {T("guests_channel_alias"),      cf_string,      CA_STATIC, CA_PUBLIC,   reinterpret_cast<int *>(mudconf.guests_channel_alias), nullptr,       32},
     {T("have_zones"),                cf_bool,        CA_STATIC, CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.have_zones),      nullptr,            0},
@@ -2034,8 +1952,8 @@ static CONFPARM conftable[] =
     {T("mud_name"),                  cf_string,      CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(mudconf.mud_name),         nullptr,           32},
     {T("newuser_file"),              cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.crea_file),       nullptr, SIZEOF_PATHNAME},
     {T("no_flash"),                  cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&g_no_flash),             nullptr,            0},
-    {T("noguest_site"),              cf_site,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.access_list),    nullptr,   HC_NOGUEST},
-    {T("nositemon_site"),            cf_site,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.access_list),    nullptr, HC_NOSITEMON},
+    {T("noguest_site"),              cf_site,        CA_GOD,    CA_DISABLED, nullptr,    nullptr,   HC_NOGUEST},
+    {T("nositemon_site"),            cf_site,        CA_GOD,    CA_DISABLED, nullptr,    nullptr, HC_NOSITEMON},
     {T("notify_recursion_limit"),    cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.ntfy_nest_lim,          nullptr,            0},
     {T("number_guests"),             cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.number_guests,          nullptr,            0},
     {T("open_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.opencost,               nullptr,            0},
@@ -2048,7 +1966,7 @@ static CONFPARM conftable[] =
     {T("paycheck"),                  cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.paycheck,               nullptr,            0},
     {T("pemit_any_object"),          cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.pemit_any),       nullptr,            0},
     {T("pemit_far_players"),         cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.pemit_players),   nullptr,            0},
-    {T("permit_site"),               cf_site,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.access_list),    nullptr,    HC_PERMIT},
+    {T("permit_site"),               cf_site,        CA_GOD,    CA_DISABLED, nullptr,    nullptr,    HC_PERMIT},
     {T("player_flags"),              cf_set_flags,   CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudconf.player_flags),    nullptr,            0},
     {T("player_listen"),             cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.player_listen),   nullptr,            0},
     {T("player_match_own_commands"), cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.match_mine_pl),   nullptr,            0},
@@ -2083,9 +2001,9 @@ static CONFPARM conftable[] =
     {T("read_remote_name"),          cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.read_rem_name),   nullptr,            0},
     {T("references_per_hour"),       cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.references_per_hour,    nullptr,            0},
     {T("register_create_file"),      cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.regf_file),       nullptr, SIZEOF_PATHNAME},
-    {T("register_site"),             cf_site,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.access_list),    nullptr,  HC_REGISTER},
+    {T("register_site"),             cf_site,        CA_GOD,    CA_DISABLED, nullptr,    nullptr,  HC_REGISTER},
     {T("reset_players"),             cf_bool,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudconf.reset_players),   nullptr,            0},
-    {T("reset_site"),                cf_site,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.access_list),    nullptr,     HC_RESET},
+    {T("reset_site"),                cf_site,        CA_GOD,    CA_DISABLED, nullptr,    nullptr,     HC_RESET},
     {T("restrict_home"),             cf_bool,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudconf.restrict_home),   nullptr,            0},
     {T("retry_limit"),               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.retry_limit,            nullptr,            0},
     {T("robot_cost"),                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.robotcost,              nullptr,            0},
@@ -2105,7 +2023,7 @@ static CONFPARM conftable[] =
     {T("see_owned_dark"),            cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.see_own_dark),    nullptr,            0},
     {T("signal_action"),             cf_option,      CA_STATIC, CA_GOD,      &mudconf.sig_action,             sigactions_nametab, 0},
     {T("site_chars"),                cf_int,         CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.site_chars),      nullptr,            0},
-    {T("sitemon_site"),              cf_site,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.access_list),    nullptr,   HC_SITEMON},
+    {T("sitemon_site"),              cf_site,        CA_GOD,    CA_DISABLED, nullptr,    nullptr,   HC_SITEMON},
     {T("space_compress"),            cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.space_compress),  nullptr,            0},
 #if defined(UNIX_SSL) || defined(_WIN32)
     {T("ssl_certificate_file"),      cf_string,      CA_STATIC, CA_DISABLED, reinterpret_cast<int *>(mudconf.ssl_certificate_file),nullptr,       128},
@@ -2116,7 +2034,7 @@ static CONFPARM conftable[] =
     {T("starting_quota"),            cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.start_quota,            nullptr,            0},
     {T("status_file"),               cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.status_file),     nullptr, SIZEOF_PATHNAME},
     {T("stripped_flags"),            cf_set_flags,   CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudconf.stripped_flags),  nullptr,            0},
-    {T("suspect_site"),              cf_site,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.access_list),    nullptr,   HC_SUSPECT},
+    {T("suspect_site"),              cf_site,        CA_GOD,    CA_DISABLED, nullptr,    nullptr,   HC_SUSPECT},
     {T("sweep_dark"),                cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.sweep_dark),      nullptr,            0},
     {T("switch_default_all"),        cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.switch_df_all),   nullptr,            0},
     {T("talk_mode_default"),         cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.talk_mode_default), nullptr,          0},
@@ -2132,7 +2050,7 @@ static CONFPARM conftable[] =
     {T("toad_recipient"),            cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.toad_recipient,         nullptr,            0},
     {T("trace_output_limit"),        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.trace_limit,            nullptr,            0},
     {T("trace_topdown"),             cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.trace_topdown),   nullptr,            0},
-    {T("trust_site"),                cf_site,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.access_list),    nullptr,     HC_TRUST},
+    {T("trust_site"),                cf_site,        CA_GOD,    CA_DISABLED, nullptr,    nullptr,     HC_TRUST},
     {T("unowned_safe"),              cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.safe_unowned),    nullptr,            0},
     {T("user_attr_access"),          cf_modify_bits, CA_GOD,    CA_DISABLED, &mudconf.vattr_flags,            attraccess_nametab, 0},
     {T("user_attr_per_hour"),        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.vattr_per_hour,         nullptr,            0},

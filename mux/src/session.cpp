@@ -361,7 +361,10 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
 
 void list_siteinfo(dbref player)
 {
-    mudstate.access_list.listinfo(player);
+    // TODO: access_list lives in the driver.  Need a
+    // mux_IDriverControl::ListSiteInfo() COM method to display it.
+    //
+    notify(player, T("@list sites not yet available via COM interface."));
 }
 
 /* ---------------------------------------------------------------------------

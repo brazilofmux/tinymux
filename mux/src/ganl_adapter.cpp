@@ -588,7 +588,7 @@ public:
             addrText[MBUF_SIZE - 1] = '\0';
         }
 
-        if (haveSockAddr && mudstate.access_list.isForbid(&d->address)) {
+        if (haveSockAddr && g_access_list.isForbid(&d->address)) {
             STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
             UTF8* logBuf = alloc_mbuf("ganl_connection.LOG.badsite");
             mux_sprintf(logBuf, MBUF_SIZE, T("[%u/%s] Connection refused.  (Remote port %d)"),
@@ -897,7 +897,7 @@ public:
             return false;
         };
 
-        const int hostInfo = mudstate.access_list.check(&d->address);
+        const int hostInfo = g_access_list.check(&d->address);
 
         bool isGuestConnect = false;
 
@@ -1017,7 +1017,7 @@ public:
             desc_addhash(d);
             int numConnections = count_player_descs(player);
             bool isPueblo = (d->flags & DS_PUEBLOCLIENT) != 0;
-            bool isSusp = mudstate.access_list.isSuspect(&d->address);
+            bool isSusp = g_access_list.isSuspect(&d->address);
             int timeout = g_dc.idle_timeout;
             g_pIPlayerSession->AnnounceConnect(player, numConnections,
                 isPueblo, isSusp, d->addr, d->username, hostAddress,
@@ -1074,7 +1074,7 @@ public:
     bool isAddressAllowed(const std::string& address) override {
         // Rework: Need NetworkAddress
         // ganl::NetworkAddress netAddr = ... ; // How to construct from string? Needs helper
-        // return !mudstate.access_list.isForbid(&netAddr);
+        // return !g_access_list.isForbid(&netAddr);
         return true; // Placeholder
     }
     bool isAddressRegistered(const std::string& address) override {

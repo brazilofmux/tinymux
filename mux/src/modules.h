@@ -710,6 +710,13 @@ public:
     // Query whether the driver is in a @restart sequence.
     //
     virtual MUX_RESULT GetRestarting(bool *pbRestarting) = 0;
+
+    // Update the site access list.  The engine calls this when a wizard
+    // uses @register_site, @forbid_site, etc.  The driver parses the
+    // subnet string and applies it to its local access list.
+    //
+    virtual MUX_RESULT SiteUpdate(const UTF8 *subnetStr,
+        dbref player, UTF8 *cmd, int operation) = 0;
 };
 
 // Connection manager — the interface the engine uses to interact with

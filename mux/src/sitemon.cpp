@@ -16,7 +16,7 @@ void site_mon_send(const SOCKET port, const UTF8 *address, DESC *d, const UTF8 *
     int host_info = 0;
     if (nullptr != d)
     {
-        host_info = mudstate.access_list.check(&d->address);
+        host_info = g_access_list.check(&d->address);
     }
 
     // Don't do sitemon for blocked sites.

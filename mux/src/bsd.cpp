@@ -31,6 +31,7 @@ mux_IPlayerSession *g_pIPlayerSession = nullptr;
 bool g_bStandAlone = false;
 bool g_shutdown_flag = false;
 bool g_restarting = false;
+mux_subnets g_access_list;
 StringPtrMap g_logout_cmd_htab;
 
 #ifdef UNIX_SSL
@@ -97,7 +98,7 @@ void shutdownsock(DESC *d, int reason)
     UTF8 *buff;
 
     if (  R_LOGOUT == reason
-       && mudstate.access_list.isForbid(&d->address))
+       && g_access_list.isForbid(&d->address))
     {
         reason = R_QUIT;
     }

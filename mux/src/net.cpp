@@ -385,7 +385,7 @@ static void desc_delhash(const DESC *d)
 
 void welcome_user(DESC *d)
 {
-    if (mudstate.access_list.isRegistered(&d->address))
+    if (g_access_list.isRegistered(&d->address))
     {
         fcache_dump(d, FC_CONN_REG);
     }
@@ -550,7 +550,7 @@ static void parse_connect(const UTF8 *msg, UTF8 command[LBUF_SIZE], UTF8 user[LB
 void announce_disconnect(const dbref player, DESC *d, const UTF8 *reason)
 {
     int num = count_player_descs(player);
-    bool isSusp = mudstate.access_list.isSuspect(&d->address);
+    bool isSusp = g_access_list.isSuspect(&d->address);
     bool wasAutoDark = (d->flags & DS_AUTODARK) != 0;
     g_pIPlayerSession->AnnounceDisconnect(player, num,
         isSusp, wasAutoDark, reason);
@@ -1416,7 +1416,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
                         safe_copy_chr_ascii('+', flist, &fp, sizeof(flist)-1);
                     }
                 }
-                const int host_info = mudstate.access_list.check(&d->address);
+                const int host_info = g_access_list.check(&d->address);
                 if (host_info & HI_FORBID)
                 {
                     safe_copy_chr_ascii('F', slist, &sp, sizeof(slist)-1);
@@ -1734,7 +1734,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
     UTF8 *password = alloc_lbuf("check_conn.pass");
     parse_connect(msg, command, user, password);
 
-    int host_info = mudstate.access_list.check(&d->address);
+    int host_info = g_access_list.check(&d->address);
 
     // At this point, command, user, and password are all less than
     // MBUF_SIZE.
@@ -1929,7 +1929,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 desc_addhash(d);
                 int num_con = count_player_descs(player);
                 bool isPueblo = (d->flags & DS_PUEBLOCLIENT) != 0;
-                bool isSusp = mudstate.access_list.isSuspect(&d->address);
+                bool isSusp = g_access_list.isSuspect(&d->address);
                 int timeout = g_dc.idle_timeout;
                 g_pIPlayerSession->AnnounceConnect(player, num_con,
                     isPueblo, isSusp, d->addr, d->username, host_address,
@@ -2037,7 +2037,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 {
                     desc_addhash(d);
                     bool isPueblo = (d->flags & DS_PUEBLOCLIENT) != 0;
-                    bool isSusp = mudstate.access_list.isSuspect(&d->address);
+                    bool isSusp = g_access_list.isSuspect(&d->address);
                     UTF8 crea_host[MBUF_SIZE];
                     d->address.ntop(crea_host, sizeof(crea_host));
                     int timeout = g_dc.idle_timeout;
@@ -2598,7 +2598,7 @@ FUNCTION(fun_siteinfo)
 
     if (d)
     {
-        int host_info = mudstate.access_list.check(&d->address);
+        int host_info = g_access_list.check(&d->address);
         if (host_info & HI_FORBID)
         {
             safe_chr('F', buff, bufc);

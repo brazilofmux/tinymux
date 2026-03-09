@@ -662,6 +662,8 @@ public:
 
     virtual MUX_RESULT ShutdownRequest(void);
     virtual MUX_RESULT GetRestarting(bool *pbRestarting);
+    virtual MUX_RESULT SiteUpdate(const UTF8 *subnetStr,
+        dbref player, UTF8 *cmd, int operation);
 
     CDriverControl(void);
     virtual ~CDriverControl();
@@ -728,6 +730,53 @@ MUX_RESULT CDriverControl::GetRestarting(bool *pbRestarting)
     }
     *pbRestarting = g_restarting;
     return MUX_S_OK;
+}
+
+MUX_RESULT CDriverControl::SiteUpdate(const UTF8 *subnetStr,
+    dbref player, UTF8 *cmd, int operation)
+{
+    if (nullptr == subnetStr)
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    // parse_subnet needs a mutable copy.
+    //
+    UTF8 buf[LBUF_SIZE];
+    mux_strncpy(buf, subnetStr, sizeof(buf) - 1);
+
+    mux_subnet *pSubnet = parse_subnet(buf, player, cmd);
+    if (nullptr == pSubnet)
+    {
+        return MUX_E_FAIL;
+    }
+
+    bool bOK = false;
+    switch (operation)
+    {
+    case HC_PERMIT:     bOK = g_access_list.permit(pSubnet);     break;
+    case HC_REGISTER:   bOK = g_access_list.registered(pSubnet); break;
+    case HC_FORBID:     bOK = g_access_list.forbid(pSubnet);     break;
+    case HC_NOSITEMON:  bOK = g_access_list.nositemon(pSubnet);  break;
+    case HC_SITEMON:    bOK = g_access_list.sitemon(pSubnet);    break;
+    case HC_NOGUEST:    bOK = g_access_list.noguest(pSubnet);    break;
+    case HC_GUEST:      bOK = g_access_list.guest(pSubnet);      break;
+    case HC_SUSPECT:    bOK = g_access_list.suspect(pSubnet);    break;
+    case HC_TRUST:      bOK = g_access_list.trust(pSubnet);      break;
+    case HC_RESET:
+        if (!g_access_list.reset(pSubnet))
+        {
+            delete pSubnet;
+            return MUX_E_FAIL;
+        }
+        bOK = true;
+        break;
+    default:
+        delete pSubnet;
+        return MUX_E_INVALIDARG;
+    }
+
+    return bOK ? MUX_S_OK : MUX_E_FAIL;
 }
 
 // ---------------------------------------------------------------------------

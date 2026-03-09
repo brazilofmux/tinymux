@@ -225,6 +225,7 @@ extern DRIVER_CONFIG g_dc;
 extern void conn_bridge_init(void);
 extern void conn_bridge_final(void);
 extern void request_shutdown(void);
+extern int  site_update(const UTF8 *subnetStr, dbref player, UTF8 *cmd, int operation);
 
 // From bsd.cpp
 //

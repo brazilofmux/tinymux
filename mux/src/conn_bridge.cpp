@@ -73,6 +73,16 @@ void request_shutdown(void)
     }
 }
 
+int site_update(const UTF8 *subnetStr, dbref player, UTF8 *cmd, int operation)
+{
+    if (g_pDriverCtl)
+    {
+        MUX_RESULT mr = g_pDriverCtl->SiteUpdate(subnetStr, player, cmd, operation);
+        return MUX_SUCCEEDED(mr) ? 0 : -1;
+    }
+    return -1;
+}
+
 // --- Output ---
 
 void send_text_to_player(dbref target, const UTF8 *text)

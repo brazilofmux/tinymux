@@ -65,6 +65,11 @@ extern bool g_shutdown_flag;
 //
 extern bool g_restarting;
 
+// Site access list — driver owns, engine mutates via
+// mux_IDriverControl::SiteUpdate().  Driver reads directly (hot path).
+//
+extern mux_subnets g_access_list;
+
 // Logged-out command table — built and used only by driver.
 // StringPtrMap is defined in mudconf.h (included via externs.h).
 //
