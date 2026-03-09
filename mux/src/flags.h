@@ -170,11 +170,11 @@ typedef struct flagset
     FLAG  word[3];
 } FLAGSET;
 
-DCL_EXPORT void init_flagtab(void);
+void init_flagtab(void);
 void display_flagtab(dbref);
 void flag_set(dbref, dbref, UTF8 *, int);
 UTF8 *flag_description(dbref, dbref);
-DCL_EXPORT UTF8 *decode_flags(dbref, FLAGSET *);
+UTF8 *decode_flags(dbref, FLAGSET *);
 bool has_flag(dbref, dbref, const UTF8 *);
 UTF8 *unparse_object(dbref player, dbref target, bool obey_myopic);
 UTF8 *unparse_object_numonly(dbref);

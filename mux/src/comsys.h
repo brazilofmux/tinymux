@@ -104,7 +104,7 @@ typedef struct tagComsys
 
 //! \brief Save communication system data to disk
 //! \param filename - file to use for for writing data
-DCL_EXPORT void save_comsys(UTF8 *filename);
+void save_comsys(UTF8 *filename);
 
 //! \brief Save user aliases on a per-channel basis
 //! \param fp - FILE pointer used for writing data
@@ -115,7 +115,7 @@ void save_comsystem(FILE *fp);
 
 //! \brief Open file and load comsystem data from disk
 //! \param filename - filename to open for reading
-DCL_EXPORT void load_comsys(UTF8 *filename);
+void load_comsys(UTF8 *filename);
 
 //! \brief Delete comsystem information for the given dbref
 void del_comsys(dbref who);
@@ -135,7 +135,7 @@ void do_joinchannel(dbref player, struct channel *ch);
 
 //! \brief Remove disconnecting player from the active user list for all channels
 //! \param player - dbref to remove
-DCL_EXPORT void do_comdisconnect(dbref player);
+void do_comdisconnect(dbref player);
 
 //! \brief Remove player from the active user list of channel
 //! \param player - dbref of the player to remove
@@ -144,7 +144,7 @@ void do_comdisconnectchannel(dbref player, UTF8 *channel);
 
 //! \brief Handle connecting player channel activations
 //! \param player - dbref of the connecting player to process
-DCL_EXPORT void do_comconnect(dbref player);
+void do_comconnect(dbref player);
 
 //! \brief Remove objects with no channels or objects that are destroyed
 void purge_comsystem(void);

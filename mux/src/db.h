@@ -28,8 +28,8 @@ struct attr
 UTF8 *MakeCanonicalAttributeName(const UTF8 *pName, size_t *pnName, bool *pbValid);
 UTF8 *MakeCanonicalAttributeCommand(const UTF8 *pName, size_t *pnName, bool *pbValid);
 
-extern DCL_EXPORT ATTR *atr_num(int anum);
-extern DCL_EXPORT ATTR *atr_str(const UTF8 *s);
+extern ATTR *atr_num(int anum);
+extern ATTR *atr_str(const UTF8 *s);
 
 extern ATTR AttrTable[];
 
@@ -144,7 +144,7 @@ struct object
 
 const int INITIAL_ATRLIST_SIZE = 10;
 
-extern DCL_EXPORT OBJ *db;
+extern OBJ *db;
 
 #define Location(t)     db[t].location
 
@@ -176,7 +176,7 @@ void s_Next(dbref t, dbref n);
 void s_Link(dbref t, dbref n);
 void s_Owner(dbref t, dbref n);
 void s_Parent(dbref t, dbref n);
-DCL_EXPORT void s_Flags(dbref t, int f, FLAG n);
+void s_Flags(dbref t, int f, FLAG n);
 void s_Powers(dbref t, POWER n);
 void s_Powers2(dbref t, POWER n);
 void s_Home(dbref t, dbref n);
@@ -186,7 +186,7 @@ void s_Dropto(dbref t, dbref n);
 #define s_ThRefs(t,n)       db[t].throttled_references = (n);
 #define s_ThEmail(t,n)      db[t].throttled_email = (n);
 
-DCL_EXPORT int  Pennies(dbref obj);
+int  Pennies(dbref obj);
 void s_Pennies(dbref obj, int howfew);
 void s_PenniesDirect(dbref obj, int howfew);
 
@@ -194,27 +194,27 @@ void s_PenniesDirect(dbref obj, int howfew);
 void load_restart_db(void);
 #endif // HAVE_WORKING_FORK
 
-DCL_EXPORT dbref    getref(FILE *);
-DCL_EXPORT void putref(FILE *, dbref);
+dbref    getref(FILE *);
+void putref(FILE *, dbref);
 void free_boolexp(BOOLEXP *);
 dbref    parse_dbref(const UTF8 *);
 int64_t  creation_seconds(dbref obj);
-DCL_EXPORT bool ThrottleMail(dbref executor);
+bool ThrottleMail(dbref executor);
 bool ThrottleEmail(dbref executor);
 bool ThrottleAttributeNames(dbref executor);
 bool ThrottleReferences(dbref executor);
 bool ThrottlePlayerCreate(void);
-DCL_EXPORT int  mkattr(dbref executor, const UTF8 *);
+int  mkattr(dbref executor, const UTF8 *);
 void db_grow(dbref);
 void db_free(void);
-DCL_EXPORT bool db_make_minimal(void);
-DCL_EXPORT dbref    db_read(FILE *, int *, int *, int *);
-DCL_EXPORT dbref    db_write(FILE *, int, int);
+bool db_make_minimal(void);
+dbref    db_read(FILE *, int *, int *, int *);
+dbref    db_write(FILE *, int, int);
 void destroy_thing(dbref);
 void destroy_exit(dbref);
-DCL_EXPORT void putstring(FILE *f, const UTF8 *s);
-DCL_EXPORT void *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer);
-DCL_EXPORT void init_attrtab(void);
+void putstring(FILE *f, const UTF8 *s);
+void *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer);
+void init_attrtab(void);
 int GrowFiftyPercent(int x, int low, int high);
 
 #define DOLIST(thing,list) \

@@ -1,10 +1,12 @@
 /*! \file engine_com.cpp
- * \brief Engine-side COM class implementations.
+ * \brief Engine-side COM class implementations and COM front-door.
  *
  * These classes implement the server-provided COM interfaces that
- * external modules use to interact with the game engine.  They
- * belong in engine.so and will ultimately be registered via
- * engine.so's mux_Register() rather than the apriori netmux classes.
+ * external modules use to interact with the game engine.
+ *
+ * engine.so is a proper COM server.  Only 4 extern "C" functions are
+ * exported: mux_Register, mux_Unregister, mux_GetClassObject, and
+ * mux_CanUnloadNow.  All other symbols have hidden visibility.
  */
 
 #include "copyright.h"
@@ -12,6 +14,60 @@
 #include "config.h"
 #include "externs.h"
 #include "sqlite_backend.h"
+
+// ---------------------------------------------------------------------------
+// Factory class declarations for engine-side COM components.
+// These are internal to engine.so (no DCL_EXPORT).
+// ---------------------------------------------------------------------------
+
+#define DEFINE_ENGINE_FACTORY(x)                                                               \
+class x : public mux_IClassFactory                                                             \
+{                                                                                              \
+public:                                                                                        \
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);                                \
+    virtual uint32_t   AddRef(void);                                                           \
+    virtual uint32_t   Release(void);                                                          \
+    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);   \
+    virtual MUX_RESULT LockServer(bool bLock);                                                 \
+    x(void);                                                                                   \
+    virtual ~x();                                                                              \
+private:                                                                                       \
+    uint32_t m_cRef;                                                                           \
+};
+
+// Factory classes defined in log.cpp (also in engine.so).
+// Full declarations needed here for the COM front-door dispatch.
+//
+DEFINE_ENGINE_FACTORY(CLogFactory)
+
+class CLogPSFactory : public mux_IPSFactoryBuffer, public mux_IClassFactory
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+    virtual MUX_RESULT CreateProxy(mux_IUnknown *pUnknownOuter, MUX_IID riid, mux_IRpcProxyBuffer **ppProxy, void **ppv);
+    virtual MUX_RESULT CreateStub(MUX_IID riid, mux_IUnknown *pUnknownOuter, mux_IRpcStubBuffer **ppStub);
+    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);
+    virtual MUX_RESULT LockServer(bool bLock);
+    CLogPSFactory(void);
+    virtual ~CLogPSFactory();
+private:
+    uint32_t m_cRef;
+};
+
+DEFINE_ENGINE_FACTORY(CServerEventsSourceFactory)
+DEFINE_ENGINE_FACTORY(CQueryClientFactory)
+DEFINE_ENGINE_FACTORY(CFunctionsFactory)
+DEFINE_ENGINE_FACTORY(CNotifyFactory)
+DEFINE_ENGINE_FACTORY(CObjectInfoFactory)
+DEFINE_ENGINE_FACTORY(CAttributeAccessFactory)
+DEFINE_ENGINE_FACTORY(CEvaluatorFactory)
+DEFINE_ENGINE_FACTORY(CPermissionsFactory)
+DEFINE_ENGINE_FACTORY(CMailDeliveryFactory)
+DEFINE_ENGINE_FACTORY(CHelpSystemFactory)
+DEFINE_ENGINE_FACTORY(CGameEngineFactory)
+DEFINE_ENGINE_FACTORY(CPlayerSessionFactory)
 
 // CServerEventsSource component which is not directly accessible.
 //
@@ -3461,5 +3517,89 @@ MUX_RESULT CPlayerSessionFactory::LockServer(bool bLock)
 {
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;
+}
+
+// ===========================================================================
+// COM Front-Door — engine.so exports only these 4 functions.
+// ===========================================================================
+
+static MUX_CLASS_INFO engine_classes[] =
+{
+    { CID_Log                },
+    { CID_ServerEventsSource },
+    { CID_QueryClient        },
+    { CID_Functions          },
+    { CID_LogPSFactory       },
+    { CID_Notify             },
+    { CID_ObjectInfo         },
+    { CID_AttributeAccess    },
+    { CID_Evaluator          },
+    { CID_Permissions        },
+    { CID_MailDelivery       },
+    { CID_HelpSystem         },
+    { CID_GameEngine         },
+    { CID_PlayerSession      },
+};
+#define NUM_ENGINE_CLASSES (sizeof(engine_classes)/sizeof(engine_classes[0]))
+
+#define MAKE_FACTORY(cls, cid)                                      \
+    if (cid == cid_arg)                                             \
+    {                                                               \
+        cls *pFactory = nullptr;                                    \
+        try { pFactory = new cls; } catch (...) { ; }              \
+        if (nullptr == pFactory) return MUX_E_OUTOFMEMORY;         \
+        mr = pFactory->QueryInterface(iid, ppv);                   \
+        pFactory->Release();                                        \
+        return mr;                                                  \
+    }
+
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetClassObject(MUX_CID cid_arg, MUX_IID iid, void **ppv)
+{
+    MUX_RESULT mr = MUX_E_CLASSNOTAVAILABLE;
+
+    MAKE_FACTORY(CLogFactory,                CID_Log)
+    MAKE_FACTORY(CServerEventsSourceFactory, CID_ServerEventsSource)
+    MAKE_FACTORY(CQueryClientFactory,        CID_QueryClient)
+    MAKE_FACTORY(CFunctionsFactory,          CID_Functions)
+    MAKE_FACTORY(CLogPSFactory,              CID_LogPSFactory)
+    MAKE_FACTORY(CNotifyFactory,             CID_Notify)
+    MAKE_FACTORY(CObjectInfoFactory,         CID_ObjectInfo)
+    MAKE_FACTORY(CAttributeAccessFactory,    CID_AttributeAccess)
+    MAKE_FACTORY(CEvaluatorFactory,          CID_Evaluator)
+    MAKE_FACTORY(CPermissionsFactory,        CID_Permissions)
+    MAKE_FACTORY(CMailDeliveryFactory,       CID_MailDelivery)
+    MAKE_FACTORY(CHelpSystemFactory,         CID_HelpSystem)
+    MAKE_FACTORY(CGameEngineFactory,         CID_GameEngine)
+    MAKE_FACTORY(CPlayerSessionFactory,      CID_PlayerSession)
+
+    return mr;
+}
+
+static MUX_INTERFACE_INFO engine_interfaces[] =
+{
+    { IID_ILog, CID_LogPSFactory }
+};
+#define NUM_ENGINE_INTERFACES (sizeof(engine_interfaces)/sizeof(engine_interfaces[0]))
+
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
+{
+    MUX_RESULT mr = mux_RegisterClassObjects(NUM_ENGINE_CLASSES, engine_classes, mux_GetClassObject);
+    if (MUX_SUCCEEDED(mr))
+    {
+        mr = mux_RegisterInterfaces(NUM_ENGINE_INTERFACES, engine_interfaces);
+    }
+    return mr;
+}
+
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
+{
+    mux_RevokeInterfaces(NUM_ENGINE_INTERFACES, engine_interfaces);
+    return mux_RevokeClassObjects(NUM_ENGINE_CLASSES, engine_classes);
+}
+
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CanUnloadNow(void)
+{
+    // The engine can never be unloaded.
+    return MUX_S_FALSE;
 }
 

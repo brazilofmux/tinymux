@@ -14,311 +14,19 @@
 #include "interface.h"
 #include "sqlite_backend.h"
 
-static MUX_CLASS_INFO netmux_classes[] =
+// Driver-side CIDs — only CID_ConnectionManager lives in netmux.
+//
+static MUX_CLASS_INFO driver_classes[] =
 {
-    { CID_Log                },
-    { CID_ServerEventsSource },
-    { CID_QueryClient        },
-    { CID_Functions          },
-    { CID_LogPSFactory       },
-    { CID_Notify             },
-    { CID_ObjectInfo         },
-    { CID_AttributeAccess    },
-    { CID_Evaluator          },
-    { CID_Permissions        },
-    { CID_MailDelivery       },
-    { CID_HelpSystem         },
-    { CID_GameEngine         },
-    { CID_PlayerSession      },
     { CID_ConnectionManager  }
 };
-#define NUM_CLASSES (sizeof(netmux_classes)/sizeof(netmux_classes[0]))
+#define NUM_DRIVER_CLASSES (sizeof(driver_classes)/sizeof(driver_classes[0]))
 
 extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv)
 {
     MUX_RESULT mr = MUX_E_CLASSNOTAVAILABLE;
 
-    if (CID_Log == cid)
-    {
-        CLogFactory *pLogFactory = nullptr;
-        try
-        {
-            pLogFactory = new CLogFactory;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == pLogFactory)
-        {
-            return MUX_E_OUTOFMEMORY;
-        }
-
-        mr = pLogFactory->QueryInterface(iid, ppv);
-        pLogFactory->Release();
-    }
-    else if (CID_ServerEventsSource == cid)
-    {
-        CServerEventsSourceFactory *pServerEventsSourceFactory = nullptr;
-        try
-        {
-            pServerEventsSourceFactory = new CServerEventsSourceFactory;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == pServerEventsSourceFactory)
-        {
-            return MUX_E_OUTOFMEMORY;
-        }
-
-        mr = pServerEventsSourceFactory->QueryInterface(iid, ppv);
-        pServerEventsSourceFactory->Release();
-    }
-    else if (CID_QueryClient == cid)
-    {
-        CQueryClientFactory *pQueryClientFactory = nullptr;
-        try
-        {
-            pQueryClientFactory = new CQueryClientFactory;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == pQueryClientFactory)
-        {
-            return MUX_E_OUTOFMEMORY;
-        }
-
-        mr = pQueryClientFactory->QueryInterface(iid, ppv);
-        pQueryClientFactory->Release();
-    }
-    else if (CID_Functions == cid)
-    {
-        CFunctionsFactory *pFunctionsFactory = nullptr;
-        try
-        {
-            pFunctionsFactory = new CFunctionsFactory;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == pFunctionsFactory)
-        {
-            return MUX_E_OUTOFMEMORY;
-        }
-
-        mr = pFunctionsFactory->QueryInterface(iid, ppv);
-        pFunctionsFactory->Release();
-    }
-    else if (CID_LogPSFactory == cid)
-    {
-        CLogPSFactory *pLogPSFactory = nullptr;
-        try
-        {
-            pLogPSFactory = new CLogPSFactory;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == pLogPSFactory)
-        {
-            return MUX_E_OUTOFMEMORY;
-        }
-
-        mr = pLogPSFactory->QueryInterface(iid, ppv);
-        pLogPSFactory->Release();
-    }
-    else if (CID_Notify == cid)
-    {
-        CNotifyFactory *pNotifyFactory = nullptr;
-        try
-        {
-            pNotifyFactory = new CNotifyFactory;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == pNotifyFactory)
-        {
-            return MUX_E_OUTOFMEMORY;
-        }
-
-        mr = pNotifyFactory->QueryInterface(iid, ppv);
-        pNotifyFactory->Release();
-    }
-    else if (CID_ObjectInfo == cid)
-    {
-        CObjectInfoFactory *pObjectInfoFactory = nullptr;
-        try
-        {
-            pObjectInfoFactory = new CObjectInfoFactory;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == pObjectInfoFactory)
-        {
-            return MUX_E_OUTOFMEMORY;
-        }
-
-        mr = pObjectInfoFactory->QueryInterface(iid, ppv);
-        pObjectInfoFactory->Release();
-    }
-    else if (CID_AttributeAccess == cid)
-    {
-        CAttributeAccessFactory *pAttributeAccessFactory = nullptr;
-        try
-        {
-            pAttributeAccessFactory = new CAttributeAccessFactory;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == pAttributeAccessFactory)
-        {
-            return MUX_E_OUTOFMEMORY;
-        }
-
-        mr = pAttributeAccessFactory->QueryInterface(iid, ppv);
-        pAttributeAccessFactory->Release();
-    }
-    else if (CID_Evaluator == cid)
-    {
-        CEvaluatorFactory *pEvaluatorFactory = nullptr;
-        try
-        {
-            pEvaluatorFactory = new CEvaluatorFactory;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == pEvaluatorFactory)
-        {
-            return MUX_E_OUTOFMEMORY;
-        }
-
-        mr = pEvaluatorFactory->QueryInterface(iid, ppv);
-        pEvaluatorFactory->Release();
-    }
-    else if (CID_Permissions == cid)
-    {
-        CPermissionsFactory *pPermissionsFactory = nullptr;
-        try
-        {
-            pPermissionsFactory = new CPermissionsFactory;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == pPermissionsFactory)
-        {
-            return MUX_E_OUTOFMEMORY;
-        }
-
-        mr = pPermissionsFactory->QueryInterface(iid, ppv);
-        pPermissionsFactory->Release();
-    }
-    else if (CID_MailDelivery == cid)
-    {
-        CMailDeliveryFactory *pMailDeliveryFactory = nullptr;
-        try
-        {
-            pMailDeliveryFactory = new CMailDeliveryFactory;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == pMailDeliveryFactory)
-        {
-            return MUX_E_OUTOFMEMORY;
-        }
-
-        mr = pMailDeliveryFactory->QueryInterface(iid, ppv);
-        pMailDeliveryFactory->Release();
-    }
-    else if (CID_HelpSystem == cid)
-    {
-        CHelpSystemFactory *pHelpSystemFactory = nullptr;
-        try
-        {
-            pHelpSystemFactory = new CHelpSystemFactory;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == pHelpSystemFactory)
-        {
-            return MUX_E_OUTOFMEMORY;
-        }
-
-        mr = pHelpSystemFactory->QueryInterface(iid, ppv);
-        pHelpSystemFactory->Release();
-    }
-    else if (CID_GameEngine == cid)
-    {
-        CGameEngineFactory *pGameEngineFactory = nullptr;
-        try
-        {
-            pGameEngineFactory = new CGameEngineFactory;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == pGameEngineFactory)
-        {
-            return MUX_E_OUTOFMEMORY;
-        }
-
-        mr = pGameEngineFactory->QueryInterface(iid, ppv);
-        pGameEngineFactory->Release();
-    }
-    else if (CID_PlayerSession == cid)
-    {
-        CPlayerSessionFactory *pFactory = nullptr;
-        try
-        {
-            pFactory = new CPlayerSessionFactory;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == pFactory)
-        {
-            return MUX_E_OUTOFMEMORY;
-        }
-
-        mr = pFactory->QueryInterface(iid, ppv);
-        pFactory->Release();
-    }
-    else if (CID_ConnectionManager == cid)
+    if (CID_ConnectionManager == cid)
     {
         CConnectionManagerFactory *pFactory = nullptr;
         try
@@ -341,22 +49,27 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
     return mr;
 }
 
-static MUX_INTERFACE_INFO netmux_interfaces[] =
-{
-    { IID_ILog, CID_LogPSFactory }
-};
-#define NUM_INTERFACES (sizeof(netmux_interfaces)/sizeof(netmux_interfaces[0]))
+// engine.so front-door — called directly since engine.so is linked.
+//
+extern "C" MUX_RESULT DCL_API mux_Register(void);
+extern "C" MUX_RESULT DCL_API mux_Unregister(void);
 
 MUX_RESULT init_modules(void)
 {
     MUX_RESULT mr = mux_InitModuleLibrary(IsMainProcess);
+
+    // Register driver-side CIDs (CConnectionManager).
+    //
     if (MUX_SUCCEEDED(mr))
     {
-        mr = mux_RegisterClassObjects(NUM_CLASSES, netmux_classes, netmux_GetClassObject);
+        mr = mux_RegisterClassObjects(NUM_DRIVER_CLASSES, driver_classes, netmux_GetClassObject);
     }
+
+    // Register engine-side CIDs via engine.so's COM front-door.
+    //
     if (MUX_SUCCEEDED(mr))
     {
-        mr = mux_RegisterInterfaces(NUM_INTERFACES, netmux_interfaces);
+        mr = mux_Register();
     }
     return mr;
 }
@@ -417,9 +130,13 @@ void final_modules(void)
 {
     MUX_RESULT mr = MUX_S_OK;
 
-    mux_RevokeInterfaces(NUM_INTERFACES, netmux_interfaces);
+    // Revoke engine-side CIDs.
+    //
+    mux_Unregister();
 
-    mr = mux_RevokeClassObjects(NUM_CLASSES, netmux_classes);
+    // Revoke driver-side CIDs.
+    //
+    mr = mux_RevokeClassObjects(NUM_DRIVER_CLASSES, driver_classes);
     if (MUX_FAILED(mr))
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");

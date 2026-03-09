@@ -48,11 +48,8 @@ private:
 #include "attrs.h"
 #include "command.h"
 
-// Explicit DCL_EXPORT for command functions called from driver code.
-// CMD_NO_ARG() doesn't include DCL_EXPORT, so we redeclare here.
-//
-extern DCL_EXPORT void do_dbck(dbref executor, dbref caller, dbref enactor, int eval, int key);
-extern DCL_EXPORT void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key);
+extern void do_dbck(dbref executor, dbref caller, dbref enactor, int eval, int key);
+extern void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key);
 
 #include "comsys.h"
 #include "flags.h"
@@ -216,8 +213,8 @@ extern void emergency_shutdown();
 
 // From conn_bridge.cpp
 //
-extern DCL_EXPORT void conn_bridge_init(void);
-extern DCL_EXPORT void conn_bridge_final(void);
+extern void conn_bridge_init(void);
+extern void conn_bridge_final(void);
 
 // From bsd.cpp
 //
@@ -272,10 +269,10 @@ extern bool set_doing_least_idle(dbref target, const UTF8 *doing, size_t len);
 extern void update_all_desc_quotas(int nExtra, int nMax);
 extern void broadcast_and_flush(int inflags, const UTF8 *text);
 extern void for_each_connected_desc(void (*callback)(dbref player, SOCKET sock, void *context), void *context);
-extern DCL_EXPORT const UTF8 *time_format_1(int Seconds, size_t maxWidth);
-extern DCL_EXPORT const UTF8 *time_format_2(int Seconds);
-extern DCL_EXPORT void update_quotas(CLinearTimeAbsolute& tLast, const CLinearTimeAbsolute& tCurrent);
-extern DCL_EXPORT void raw_notify(dbref, const UTF8 *);
+extern const UTF8 *time_format_1(int Seconds, size_t maxWidth);
+extern const UTF8 *time_format_2(int Seconds);
+extern void update_quotas(CLinearTimeAbsolute& tLast, const CLinearTimeAbsolute& tCurrent);
+extern void raw_notify(dbref, const UTF8 *);
 extern void raw_notify(dbref player, const mux_string &sMsg);
 extern void raw_notify_newline(dbref);
 extern void clearstrings(DESC *);
@@ -305,8 +302,8 @@ extern void handle_prog(DESC *d, UTF8 *message);
 
 // From player.cpp
 //
-DCL_EXPORT void record_login(dbref, bool, const UTF8 *, const UTF8 *, const UTF8 *, const UTF8 *);
-extern DCL_EXPORT dbref connect_player(UTF8 *, UTF8 *, UTF8 *, UTF8 *, UTF8 *);
+void record_login(dbref, bool, const UTF8 *, const UTF8 *, const UTF8 *, const UTF8 *);
+extern dbref connect_player(UTF8 *, UTF8 *, UTF8 *, UTF8 *, UTF8 *);
 
 // From bsd.cpp and netaddr.cpp
 //
@@ -337,13 +334,13 @@ extern NAMETAB sigactions_nametab[];
 void cf_log_notfound(dbref, const UTF8 *, const UTF8 *, const UTF8 *);
 void cf_log_alreadyexists(dbref, const UTF8*, const UTF8*, const UTF8*);
 int  cf_modify_bits(int *, UTF8 *, void *, uint32_t, dbref, UTF8 *);
-DCL_EXPORT void DCL_CDECL cf_log_syntax(dbref player, UTF8 *cmd, const UTF8 *fmt, ...);
-DCL_EXPORT void ValidateConfigurationDbrefs(void);
+void DCL_CDECL cf_log_syntax(dbref player, UTF8 *cmd, const UTF8 *fmt, ...);
+void ValidateConfigurationDbrefs(void);
 #if defined(HAVE_IN_ADDR)
 bool make_canonical_IPv4(const UTF8 *str, in_addr_t *pnIP);
 #endif
-DCL_EXPORT int  cf_read(void);
-DCL_EXPORT void cf_init(void);
+int  cf_read(void);
+void cf_init(void);
 void cf_list(dbref, UTF8 *, UTF8 **);
 void cf_display(dbref, UTF8 *, UTF8 *, UTF8 **);
 void list_cf_access(dbref);
@@ -356,24 +353,24 @@ CF_HAND(cf_flag_access);
 CF_HAND(cf_flag_name);
 // From local.cpp.
 //
-DCL_EXPORT void local_startup(void);
+void local_startup(void);
 void local_presync_database(void);
-DCL_EXPORT void local_presync_database_sigsegv(void);
+void local_presync_database_sigsegv(void);
 void local_dump_database(int);
-DCL_EXPORT void local_dump_complete_signal(void);
-DCL_EXPORT void local_shutdown(void);
+void local_dump_complete_signal(void);
+void local_shutdown(void);
 void local_dbck(void);
-DCL_EXPORT void local_connect(dbref, int, int);
-DCL_EXPORT void local_disconnect(dbref, int);
+void local_connect(dbref, int, int);
+void local_disconnect(dbref, int);
 void local_data_create(dbref);
 void local_data_clone(dbref, dbref);
 void local_data_free(dbref);
-DCL_EXPORT const UTF8 **local_get_info_table(void);
+const UTF8 **local_get_info_table(void);
 
 // From mail.cpp.
 //
-DCL_EXPORT void load_mail(FILE *);
-DCL_EXPORT int  dump_mail(FILE *);
+void load_mail(FILE *);
+int  dump_mail(FILE *);
 struct mail *mail_fetch(dbref, int);
 UTF8 *MakeCanonicalMailAlias
 (
@@ -398,7 +395,7 @@ void finish_mail();
 
 // From netcommon.cpp.
 //
-DCL_EXPORT void DCL_CDECL raw_broadcast(int, const UTF8 *, ...);
+void DCL_CDECL raw_broadcast(int, const UTF8 *, ...);
 void list_siteinfo(dbref);
 void logged_out0(dbref executor, dbref caller, dbref enactor, int eval, int key);
 void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg, const UTF8 *cargs[], int ncargs);
@@ -410,8 +407,8 @@ LBUF_OFFSET trimmed_name(dbref player, UTF8 cbuff[MBUF_SIZE], LBUF_OFFSET nMin, 
 
 /* From cque.cpp */
 int  nfy_que(dbref, int, int, int);
-DCL_EXPORT int  halt_que(dbref, dbref);
-DCL_EXPORT void wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
+int  halt_que(dbref, dbref);
+void wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
               const CLinearTimeAbsolute&, dbref, int, UTF8 *, int, const UTF8 *[], reg_ref *[],
               NamedRegsMap *named_sargs = nullptr,
               const UTF8 *iter_token = nullptr, int iter_number = 0,
@@ -424,13 +421,13 @@ extern "C" char *crypt(const char *inptr, const char *inkey);
 extern bool break_called;
 
 /* From eval.cpp */
-DCL_EXPORT void tcache_init(void);
+void tcache_init(void);
 UTF8 *parse_to(UTF8 **, UTF8, int);
 void parse_arglist(dbref executor, dbref caller, dbref enactor, UTF8 *,
                     int, UTF8 *[], int, const UTF8 *[], int, int *);
 int get_gender(dbref);
 const PRONOUN_SET *get_pronoun_set(dbref);
-DCL_EXPORT void mux_exec(const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref executor,
+void mux_exec(const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref executor,
                dbref caller, dbref enactor, int eval, const UTF8 *cargs[], int ncargs);
 
 inline void BufAddRef(lbuf_ref *lbufref)
@@ -480,7 +477,7 @@ inline void RegRelease(reg_ref *regref)
 }
 void RegAssign(reg_ref **regref, size_t nLength, const UTF8 *ptr);
 
-DCL_EXPORT void NamedRegsClear(NamedRegsMap *&map);
+void NamedRegsClear(NamedRegsMap *&map);
 NamedRegsMap *NamedRegsCopy(const NamedRegsMap *src);
 void NamedRegAssign(NamedRegsMap *&map, const UTF8 *name, size_t nNameLen, size_t nValueLen, const UTF8 *value);
 reg_ref *NamedRegRead(const NamedRegsMap *map, const UTF8 *name, size_t nNameLen);
@@ -530,10 +527,10 @@ void notify_except2(dbref, dbref, dbref, dbref, const UTF8 *);
 void notify_except_N(dbref loc, dbref player, dbref aExclude[], int nExclude, const UTF8 *msg, int key);
 
 void notify_check(dbref target, dbref sender, const mux_string &msg, int key);
-DCL_EXPORT void notify_check(dbref, dbref, const UTF8 *, int);
+void notify_check(dbref, dbref, const UTF8 *, int);
 
 bool Hearer(dbref);
-DCL_EXPORT void report(void);
+void report(void);
 
 bool atr_match
 (
@@ -571,37 +568,37 @@ bool html_escape(const UTF8 *src, UTF8 *dest, UTF8 **destp);
 #define DUMP_I_FLAT      3  // UNLOAD to a .FLAT file
 #define DUMP_I_SIGNAL    4  // UNLOAD to a .FLAT file from signal.
 #define NUM_DUMP_TYPES   5
-DCL_EXPORT void dump_database_internal(int);
-DCL_EXPORT void dump_database(void);
+void dump_database_internal(int);
+void dump_database(void);
 void fork_and_dump(int key);
-DCL_EXPORT void process_preload(void);
+void process_preload(void);
 
 #define LOAD_GAME_SUCCESS           0
 #define LOAD_GAME_NO_INPUT_DB     (-1)
 #define LOAD_GAME_CANNOT_OPEN     (-2)
 #define LOAD_GAME_LOADING_PROBLEM (-3)
-DCL_EXPORT int load_game(int ccPageFile);
+int load_game(int ccPageFile);
 
 class CSQLiteDB;
-DCL_EXPORT bool clear_sqlite_after_sync_failure(CSQLiteDB &sqldb);
+bool clear_sqlite_after_sync_failure(CSQLiteDB &sqldb);
 
 /* From htab.cpp */
 int  cf_ntab_access(int *, UTF8 *, void *, uint32_t, dbref, UTF8 *);
 
 /* From log.cpp */
-DCL_EXPORT bool start_log(const UTF8 *primary, const UTF8 *secondary);
-DCL_EXPORT void end_log(void);
-DCL_EXPORT void log_perror(const UTF8 *, const UTF8 *,const UTF8 *,
+bool start_log(const UTF8 *primary, const UTF8 *secondary);
+void end_log(void);
+void log_perror(const UTF8 *, const UTF8 *,const UTF8 *,
             const UTF8 *);
-DCL_EXPORT void log_text(const UTF8 *);
+void log_text(const UTF8 *);
 void log_number(int);
-DCL_EXPORT void DCL_CDECL log_printf(const UTF8 *fmt, ...);
-DCL_EXPORT void log_name(dbref);
-DCL_EXPORT void log_name_and_loc(dbref);
+void DCL_CDECL log_printf(const UTF8 *fmt, ...);
+void log_name(dbref);
+void log_name_and_loc(dbref);
 void log_type_and_name(dbref);
 
 #define SIZEOF_LOG_BUFFER 1024
-class DCL_EXPORT CLogFile
+class CLogFile
 {
 private:
     CLinearTimeAbsolute m_ltaStarted;
@@ -640,17 +637,17 @@ public:
     void Rotate(void);
 };
 
-extern DCL_EXPORT CLogFile Log;
+extern CLogFile Log;
 
 /* From look.cpp */
-DCL_EXPORT void look_in(dbref,dbref, int);
+void look_in(dbref,dbref, int);
 void show_vrml_url(dbref, dbref);
 #define NUM_ATTRIBUTE_CODES 13
 size_t decode_attr_flags(int aflags, UTF8 buff[NUM_ATTRIBUTE_CODES+1]);
 void   decode_attr_flag_names(int aflags, UTF8 *buf, UTF8 **bufc);
 
 /* From move.cpp */
-DCL_EXPORT void move_object(dbref, dbref);
+void move_object(dbref, dbref);
 void move_via_generic(dbref, dbref, dbref, int);
 bool move_via_teleport(dbref, dbref, dbref, int);
 void move_exit(dbref, dbref, bool, const UTF8 *, int);
@@ -669,14 +666,14 @@ void  empty_obj(dbref);
 void  link_exit(const dbref, const dbref, const dbref);
 
 /* From player.cpp */
-DCL_EXPORT dbref create_player(const UTF8 *name, const UTF8 *pass, dbref executor, bool isrobot, const UTF8 **pmsg);
-DCL_EXPORT void AddToPublicChannel(dbref player);
-DCL_EXPORT void AddToPlayerChannels(dbref player);
+dbref create_player(const UTF8 *name, const UTF8 *pass, dbref executor, bool isrobot, const UTF8 **pmsg);
+void AddToPublicChannel(dbref player);
+void AddToPlayerChannels(dbref player);
 bool add_player_name(dbref player, const UTF8 *name, bool bAlias);
 bool delete_player_name(dbref player, const UTF8 *name, bool bAlias);
 void delete_all_player_names();
 dbref lookup_player_name(const UTF8 *name, bool &bAlias);
-DCL_EXPORT dbref lookup_player(dbref doer, UTF8 *name, bool check_who);
+dbref lookup_player(dbref doer, UTF8 *name, bool check_who);
 void load_player_names(void);
 void badname_add(UTF8 *);
 void badname_remove(UTF8 *);
@@ -687,14 +684,14 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSalt, int *piType);
 int  QueueMax(dbref);
 int  a_Queue(dbref, int);
 void pcache_reload(dbref);
-DCL_EXPORT void pcache_init(void);
+void pcache_init(void);
 
 /* From predicates.cpp */
 dbref insert_first(dbref, dbref);
 dbref remove_first(dbref, dbref);
 dbref reverse_list(dbref);
 bool member(dbref, dbref);
-DCL_EXPORT bool could_doit(dbref, dbref, int);
+bool could_doit(dbref, dbref, int);
 bool can_see(dbref, dbref, bool);
 void add_quota(dbref, int);
 bool canpayfees(dbref, dbref, int, int);
@@ -711,16 +708,16 @@ void parse_range(UTF8 **, dbref *, dbref *);
 bool parse_thing_slash(dbref, const UTF8 *, const UTF8 **, dbref *);
 bool get_obj_and_lock(dbref, const UTF8 *, dbref *, ATTR **, UTF8 *, UTF8 **);
 dbref where_is(dbref);
-DCL_EXPORT dbref where_room(dbref);
+dbref where_room(dbref);
 bool locatable(dbref, dbref, dbref);
 bool nearby(dbref, dbref);
 bool exit_visible(dbref, dbref, int);
 bool exit_displayable(dbref, dbref, int);
-DCL_EXPORT void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
+void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
             const UTF8 *odef, int awhat, int ctrl_flags,
             const UTF8 *args[], int nargs);
-DCL_EXPORT bool bCanReadAttr(dbref executor, dbref target, ATTR *tattr, bool bParentCheck);
-DCL_EXPORT bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr);
+bool bCanReadAttr(dbref executor, dbref target, ATTR *tattr, bool bParentCheck);
+bool bCanSetAttr(dbref executor, dbref target, ATTR *tattr);
 bool bCanLockAttr(dbref executor, dbref target, ATTR *tattr);
 
 struct reference_entry
@@ -785,10 +782,10 @@ bool quick_wild(const UTF8 *, const UTF8 *);
 /* From command.cpp */
 bool check_access(dbref player, int mask);
 void cache_prefix_cmds(void);
-DCL_EXPORT UTF8 *process_command(dbref executor, dbref caller, dbref enactor, int, bool,
+UTF8 *process_command(dbref executor, dbref caller, dbref enactor, int, bool,
     UTF8 *, const UTF8 *[], int);
-DCL_EXPORT size_t LeftJustifyString(UTF8 *field, size_t nWidth, const UTF8 *value);
-DCL_EXPORT size_t RightJustifyNumber(UTF8 *field, size_t nWidth, int64_t value, UTF8 chFill);
+size_t LeftJustifyString(UTF8 *field, size_t nWidth, const UTF8 *value);
+size_t RightJustifyNumber(UTF8 *field, size_t nWidth, int64_t value, UTF8 chFill);
 
 #define Protect(f) (cmdp->perms & f)
 
@@ -802,9 +799,9 @@ bool Commer(dbref);
 void s_Pass(dbref, const UTF8 *);
 void s_Name(dbref, const UTF8 *);
 void s_Moniker(dbref thing, const UTF8 *s);
-DCL_EXPORT const UTF8 *Name(dbref thing);
-DCL_EXPORT const UTF8 *PureName(dbref thing);
-DCL_EXPORT const UTF8 *Moniker(dbref thing);
+const UTF8 *Name(dbref thing);
+const UTF8 *PureName(dbref thing);
+const UTF8 *Moniker(dbref thing);
 FWDLIST *fwdlist_load(dbref player, UTF8 *atext);
 void fwdlist_set(dbref, FWDLIST *);
 void fwdlist_clr(dbref);
@@ -814,13 +811,13 @@ void atr_push(void);
 void atr_pop(void);
 int  atr_head(dbref, unsigned char **);
 int  atr_next(UTF8 **);
-DCL_EXPORT int  init_dbfile(const UTF8 *indb);
+int  init_dbfile(const UTF8 *indb);
 void atr_cpy(dbref dest, dbref source, bool bInternal);
 void atr_chown(dbref);
-DCL_EXPORT bool atr_clr(dbref, int);
+bool atr_clr(dbref, int);
 bool atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue);
-DCL_EXPORT bool atr_add_raw(dbref, int, const UTF8 *);
-DCL_EXPORT void atr_add(dbref, int, const UTF8 *, dbref, int);
+bool atr_add_raw(dbref, int, const UTF8 *);
+void atr_add(dbref, int, const UTF8 *, dbref, int);
 void atr_set_flags(dbref, int, int);
 const UTF8 *atr_decode_flags_owner(const UTF8 *iattr, dbref *owner, int *flags);
 
@@ -829,22 +826,22 @@ const UTF8 *atr_decode_flags_owner(const UTF8 *iattr, dbref *owner, int *flags);
 const UTF8 *atr_get_raw_LEN(dbref, int, size_t *);
 const UTF8 *atr_get_raw(dbref, int);
 UTF8 *atr_get_LEN(dbref, int, dbref *, int *, size_t *);
-DCL_EXPORT UTF8 *atr_get_real(const UTF8 *tag, dbref, int, dbref *, int *, const UTF8 *, const int);
+UTF8 *atr_get_real(const UTF8 *tag, dbref, int, dbref *, int *, const UTF8 *, const int);
 #define atr_get(g,t,a,o,f) atr_get_real(reinterpret_cast<const UTF8 *>(g),t,a,o,f, reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
 
 // The atr_pget family looks up attributes on the object or parent (if set)
 //
 UTF8 *atr_pget_LEN(dbref, int, dbref *, int *, size_t *);
-DCL_EXPORT UTF8 *atr_pget_real(dbref, int, dbref *, int *, const UTF8 *, const int);
+UTF8 *atr_pget_real(dbref, int, dbref *, int *, const UTF8 *, const int);
 #define atr_pget(t,a,o,f) atr_pget_real(t,a,o,f, reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
-DCL_EXPORT UTF8 *atr_get_str_LEN(UTF8 *s, dbref, int, dbref *, int *, size_t *);
+UTF8 *atr_get_str_LEN(UTF8 *s, dbref, int, dbref *, int *, size_t *);
 UTF8 *atr_get_str(UTF8 *, dbref, int, dbref *, int *);
-DCL_EXPORT UTF8 *atr_pget_str_LEN(UTF8 *, dbref, int, dbref *, int *, size_t *);
+UTF8 *atr_pget_str_LEN(UTF8 *, dbref, int, dbref *, int *, size_t *);
 UTF8 *atr_pget_str(UTF8 *, dbref, int, dbref *, int *);
 bool atr_get_info(dbref, int, dbref *, int *);
-DCL_EXPORT bool atr_pget_info(dbref, int, dbref *, int *);
+bool atr_pget_info(dbref, int, dbref *, int *);
 void atr_free(dbref);
-DCL_EXPORT bool check_zone_handler(dbref player, dbref thing, bool bPlayerCheck);
+bool check_zone_handler(dbref player, dbref thing, bool bPlayerCheck);
 #define check_zone(player, thing) check_zone_handler(player, thing, false)
 void ReleaseAllResources(dbref obj);
 bool fwdlist_ck(dbref player, dbref thing, int anum, UTF8 *atext);
@@ -1269,12 +1266,12 @@ extern NAMETAB method_nametab[];
 extern const UTF8 *NOMATCH_MESSAGE;
 extern const UTF8 *AMBIGUOUS_MESSAGE;
 extern const UTF8 *NOPERM_MESSAGE;
-extern DCL_EXPORT const UTF8 *FUNC_FAIL_MESSAGE;
+extern const UTF8 *FUNC_FAIL_MESSAGE;
 extern const UTF8 *FUNC_NOMATCH_MESSAGE;
 extern const UTF8 *OUT_OF_RANGE;
 extern const UTF8 *FUNC_NOT_FOUND;
 extern const UTF8 *FUNC_AMBIGUOUS;
-extern DCL_EXPORT const UTF8 *FUNC_NOPERM_MESSAGE;
+extern const UTF8 *FUNC_NOPERM_MESSAGE;
 extern const UTF8 *OUT_OF_MEMORY;
 extern const UTF8 *NOT_CONNECTED;
 
@@ -1286,12 +1283,12 @@ extern const UTF8 *NOT_CONNECTED;
 #define safe_notfound(b,p)  safe_copy_buf(FUNC_NOT_FOUND,13,(b),(p))
 #define safe_notconnected(b,p)  safe_copy_buf(NOT_CONNECTED,17,(b),(p))
 
-DCL_EXPORT int  ReplaceFile(UTF8 *old_name, UTF8 *new_name_arg);
-DCL_EXPORT void RemoveFile(const UTF8 *name);
+int  ReplaceFile(UTF8 *old_name, UTF8 *new_name_arg);
+void RemoveFile(const UTF8 *name);
 
 // From plusemail.cpp
 //
-DCL_EXPORT UTF8 *ConvertCRLFtoSpace(const UTF8 *pString);
+UTF8 *ConvertCRLFtoSpace(const UTF8 *pString);
 
 void destroy_player(dbref agent, dbref victim);
 void do_pemit_list
@@ -1319,12 +1316,12 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
 int  boot_off(dbref player, const UTF8 *message);
 void do_mail_clear(dbref player, UTF8 *msglist);
-DCL_EXPORT void do_mail_purge(dbref player);
+void do_mail_purge(dbref player);
 void mail_destroy_player(dbref victim);
 void malias_cleanup(dbref player);
 void count_mail(dbref player, int folder, int *rcount, int *ucount, int *ccount);
 void check_mail_expiration(void);
-DCL_EXPORT void check_mail(dbref player, int folder, bool silent);
+void check_mail(dbref player, int folder, bool silent);
 const UTF8 *mail_fetch_message(dbref player, int num);
 int  mail_fetch_from(dbref player, int num);
 void raw_notify_html(dbref player, const mux_string &sMsg);
@@ -1358,8 +1355,8 @@ extern pid_t stubslave_pid;
 
 // From timer.cpp
 //
-DCL_EXPORT void init_timer(void);
-DCL_EXPORT void dispatch_DatabaseDump(void *pUnused, int iUnused);
+void init_timer(void);
+void dispatch_DatabaseDump(void *pUnused, int iUnused);
 void dispatch_FreeListReconstruction(void *pUnused, int iUnused);
 void dispatch_IdleCheck(void *pUnused, int iUnused);
 void dispatch_CheckEvents(void *pUnused, int iUnused);
@@ -1561,7 +1558,7 @@ public:
     }
 };
 
-class DCL_EXPORT CScheduler
+class CScheduler
 {
 private:
     CTaskHeap<CompareWhenGreater>     m_WhenHeap;
@@ -1587,12 +1584,12 @@ public:
     int  GetMinPriority(void) { return m_minPriority; }
 };
 
-extern DCL_EXPORT CScheduler scheduler;
+extern CScheduler scheduler;
 
 int fetch_cmds(dbref target);
-DCL_EXPORT void fetch_ConnectionInfoFields(dbref target, long anFields[4]);
+void fetch_ConnectionInfoFields(dbref target, long anFields[4]);
 long fetch_ConnectionInfoField(dbref target, int iField);
-DCL_EXPORT void put_ConnectionInfoFields
+void put_ConnectionInfoFields
 (
     dbref target,
     long anFields[4],
@@ -1634,19 +1631,19 @@ void init_version(void);
 
 // From player_c.cpp
 //
-DCL_EXPORT void pcache_sync(void);
+void pcache_sync(void);
 void pcache_trim(void);
 
 // From attrcache.cpp
 //
 class CSQLiteBackend;
-extern DCL_EXPORT CSQLiteBackend *g_pSQLiteBackend;
-DCL_EXPORT bool sqlite_sync_runtime(void);
-DCL_EXPORT int sqlite_load_game(void);
-DCL_EXPORT bool sqlite_sync_comsys(void);
-DCL_EXPORT int sqlite_load_comsys(void);
-DCL_EXPORT bool sqlite_sync_mail(void);
-DCL_EXPORT int sqlite_load_mail(void);
+extern CSQLiteBackend *g_pSQLiteBackend;
+bool sqlite_sync_runtime(void);
+int sqlite_load_game(void);
+bool sqlite_sync_comsys(void);
+int sqlite_load_comsys(void);
+bool sqlite_sync_mail(void);
+int sqlite_load_mail(void);
 
 // From speech.cpp
 //
@@ -1656,44 +1653,19 @@ UTF8 *modSpeech(dbref player, const UTF8 *message, bool bWhich, const UTF8 *comm
 //
 bool parse_and_get_attrib(dbref, UTF8 *[], UTF8 **, dbref *, dbref *, int *, UTF8 *, UTF8 **);
 
-DEFINE_FACTORY(CLogFactory)
-
+// Engine-side factory classes are internal to engine.so.  Their
+// declarations live in engine_com.cpp and log.cpp respectively.
+// Only the ServerEventsSinkNode list head is shared across the boundary.
+//
 typedef struct ServerEventsSinkNode
 {
     mux_IServerEventsSink        *pSink;
     struct ServerEventsSinkNode  *pNext;
 } ServerEventsSinkNode;
-extern ServerEventsSinkNode *g_pServerEventsSinkListHead;
+extern DCL_EXPORT ServerEventsSinkNode *g_pServerEventsSinkListHead;
 
-DEFINE_FACTORY(CServerEventsSourceFactory)
-DEFINE_FACTORY(CQueryClientFactory)
-DEFINE_FACTORY(CFunctionsFactory)
-DEFINE_FACTORY(CNotifyFactory)
-DEFINE_FACTORY(CObjectInfoFactory)
-DEFINE_FACTORY(CAttributeAccessFactory)
-DEFINE_FACTORY(CEvaluatorFactory)
-DEFINE_FACTORY(CPermissionsFactory)
-DEFINE_FACTORY(CMailDeliveryFactory)
-DEFINE_FACTORY(CHelpSystemFactory)
-DEFINE_FACTORY(CGameEngineFactory)
-DEFINE_FACTORY(CPlayerSessionFactory)
+// Driver-side factory class (modules.cpp).
 DEFINE_FACTORY(CConnectionManagerFactory)
-
-class DCL_EXPORT CLogPSFactory : public mux_IPSFactoryBuffer, public mux_IClassFactory
-{
-public:
-    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
-    virtual uint32_t   AddRef(void);
-    virtual uint32_t   Release(void);
-    virtual MUX_RESULT CreateProxy(mux_IUnknown *pUnknownOuter, MUX_IID riid, mux_IRpcProxyBuffer **ppProxy, void **ppv);
-    virtual MUX_RESULT CreateStub(MUX_IID riid, mux_IUnknown *pUnknownOuter, mux_IRpcStubBuffer **ppStub);
-    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);
-    virtual MUX_RESULT LockServer(bool bLock);
-    CLogPSFactory(void);
-    virtual ~CLogPSFactory();
-private:
-    uint32_t m_cRef;
-};
 
 #if defined(INLINESQL)
 void init_sql(void);

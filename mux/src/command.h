@@ -227,7 +227,7 @@ void commands_one_arg_add(CMDENT_ONE_ARG cmdent[]);
 void commands_one_arg_cmdarg_add(CMDENT_ONE_ARG cmdent[]);
 void commands_two_arg_add(CMDENT_TWO_ARG cmdent[]);
 void commands_two_arg_argv_add(CMDENT_TWO_ARG_ARGV cmdent[]);
-DCL_EXPORT void init_cmdtab();
+void init_cmdtab();
 void finish_cmdtab();
 
 extern NAMETAB access_nametab[];

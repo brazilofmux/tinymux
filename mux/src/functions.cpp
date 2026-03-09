@@ -10,6 +10,22 @@
 #include "ast.h"
 using namespace std;
 
+// Factory class declaration — internal to engine.so (no DCL_EXPORT).
+//
+class CFunctionsFactory : public mux_IClassFactory
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+    virtual MUX_RESULT CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv);
+    virtual MUX_RESULT LockServer(bool bLock);
+    CFunctionsFactory(void);
+    virtual ~CFunctionsFactory();
+private:
+    uint32_t m_cRef;
+};
+
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
 
