@@ -697,10 +697,10 @@ int DCL_CDECL main(int argc, char *argv[])
     // this is a thin wrapper; when engine.so is split out, the driver
     // creates it via mux_CreateInstance to load the engine shared library.
     //
-    mux_IGameEngine *pGameEngine = nullptr;
     mr = mux_CreateInstance(CID_GameEngine, nullptr, UseSameProcess,
                             IID_IGameEngine,
-                            reinterpret_cast<void **>(&pGameEngine));
+                            reinterpret_cast<void **>(&mudstate.pIGameEngine));
+    mux_IGameEngine *pGameEngine = mudstate.pIGameEngine;
     if (MUX_FAILED(mr) || nullptr == pGameEngine)
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");

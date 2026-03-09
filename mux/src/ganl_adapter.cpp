@@ -46,7 +46,6 @@ extern const UTF8* disc_messages[];
 extern const UTF8* disc_reasons[];
 extern const UTF8* connect_fail;
 void site_mon_send(const SOCKET port, const UTF8* address, DESC* d, const UTF8* msg);
-void announce_connect(const dbref player, DESC* d);
 namespace
 {
     struct RemoteEndpoint
@@ -949,7 +948,8 @@ public:
             mux_strncpy(hostAddress, reinterpret_cast<const UTF8*>(remote.c_str()), sizeof(hostAddress) - 1);
         }
 
-        dbref player = connect_player(user, pass, d->addr, d->username, hostAddress);
+        dbref player = NOTHING;
+        mudstate.pIPlayerSession->ConnectPlayer(user, pass, d->addr, d->username, hostAddress, &player);
         if (player == NOTHING || (!isGuestConnect && Guest.CheckGuest(player))) {
             queue_write(d, connect_fail);
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
@@ -1010,20 +1010,16 @@ public:
 
         ganl_associate_player(d, player);
 
-        announce_connect(player, d);
-
-        int numConnections = 0;
-        const auto range2 = mudstate.dbref_to_descriptors_map.equal_range(player);
-        for (auto it = range2.first; it != range2.second; ++it) {
-            numConnections++;
-        }
-
-        local_connect(player, 0, numConnections);
-
-        ServerEventsSinkNode* sinkNode = g_pServerEventsSinkListHead;
-        while (nullptr != sinkNode) {
-            sinkNode->pSink->connect(player, 0, numConnections);
-            sinkNode = sinkNode->pNext;
+        {
+            desc_addhash(d);
+            int numConnections = count_player_descs(player);
+            bool isPueblo = (d->flags & DS_PUEBLOCLIENT) != 0;
+            bool isSusp = mudstate.access_list.isSuspect(&d->address);
+            int timeout = mudconf.idle_timeout;
+            mudstate.pIPlayerSession->AnnounceConnect(player, numConnections,
+                isPueblo, isSusp, d->addr, d->username, hostAddress,
+                &timeout);
+            d->timeout = timeout;
         }
 
         if (nullptr != d->program_data) {
@@ -1830,7 +1826,7 @@ void GanlAdapter::process_tinyMUX_tasks() {
     ltaNow.GetUTC();
 
     // Update command quotas (same as shovechars timeslice logic).
-    update_quotas(ltaLastSlice_, ltaNow);
+    mudstate.pIGameEngine->UpdateQuotas(ltaLastSlice_, ltaNow);
     ltaLastSlice_ = ltaNow;
 
     // Finalize TLS connections that have completed their handshake.

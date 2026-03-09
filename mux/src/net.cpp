@@ -544,450 +544,14 @@ static void parse_connect(const UTF8 *msg, UTF8 command[LBUF_SIZE], UTF8 user[LB
     *p = '\0';
 }
 
-void announce_connect(const dbref player, DESC *d)
-{
-    desc_addhash(d);
-
-    // Preload built-in attributes for the player and their location
-    // in a single bulk read each, avoiding individual cache misses.
-    //
-    cache_preload(player);
-    const dbref ploc = Location(player);
-    if (Good_obj(ploc))
-    {
-        cache_preload(ploc);
-    }
-
-    int count = get_total_connections();
-
-    if (mudstate.record_players < count)
-    {
-        mudstate.record_players = count;
-        if (!g_pSQLiteBackend->GetDB().PutMeta("record_players", mudstate.record_players))
-        {
-            Log.tinyprintf(T("announce_connect: failed to persist record_players=%d" ENDLINE),
-                mudstate.record_players);
-        }
-    }
-
-    UTF8 *buf = alloc_lbuf("announce_connect");
-    dbref aowner;
-    int aflags;
-    size_t nLen;
-    atr_pget_str_LEN(buf, player, A_TIMEOUT, &aowner, &aflags, &nLen);
-    if (nLen)
-    {
-        d->timeout = mux_atol(buf);
-        if (d->timeout <= 0)
-        {
-            d->timeout = mudconf.idle_timeout;
-        }
-    }
-
-    const dbref loc = Location(player);
-    s_Connected(player);
-
-    if (d->flags & DS_PUEBLOCLIENT)
-    {
-        s_Html(player);
-    }
-
-    if ('\0' != mudconf.motd_msg[0])
-    {
-        raw_notify( player, tprintf(T("\n%sMOTD:%s %s\n"), COLOR_INTENSE,
-                    COLOR_RESET, mudconf.motd_msg));
-    }
-
-    if (Wizard(player))
-    {
-        if ('\0' != mudconf.wizmotd_msg[0])
-        {
-            raw_notify(player, tprintf(T("%sWIZMOTD:%s %s\n"), COLOR_INTENSE,
-                        COLOR_RESET, mudconf.wizmotd_msg));
-        }
-
-        if (!(mudconf.control_flags & CF_LOGIN))
-        {
-            raw_notify(player, T("*** Logins are disabled."));
-        }
-    }
-    atr_get_str_LEN(buf, player, A_LPAGE, &aowner, &aflags, &nLen);
-    if (nLen)
-    {
-        raw_notify(player, T("Your PAGE LOCK is set.  You may be unable to receive some pages."));
-    }
-
-    int num = count_player_descs(player);
-
-    // Check for MUX_UNICODE forced on
-    //
-    if (Unicode(player))
-    {
-        set_player_encoding(player, CHARSET_UTF8);
-    }
-
-    if (Ascii(player))
-    {
-        set_player_encoding(player, CHARSET_ASCII);
-    }
-
-    // Reset vacation flag.
-    //
-    s_Flags(player, FLAG_WORD2, Flags2(player) & ~VACATION);
-    if (Guest(player))
-    {
-        s_Flags(player, FLAG_WORD1, db[player].fs.word[FLAG_WORD1] & ~DARK);
-    }
-
-    const UTF8 *pRoomAnnounceFmt;
-    const UTF8 *pMonitorAnnounceFmt;
-    if (num < 2)
-    {
-        pRoomAnnounceFmt = T("%s has connected.");
-        do_comconnect(player);
-        if (  Hidden(player)
-           && Can_Hide(player))
-        {
-            pMonitorAnnounceFmt = T("GAME: %s has DARK-connected.");
-        }
-        else
-        {
-            pMonitorAnnounceFmt = T("GAME: %s has connected.");
-        }
-        if (  Suspect(player)
-           || mudstate.access_list.isSuspect(&d->address))
-        {
-            raw_broadcast(WIZARD, T("[Suspect] %s has connected."), Moniker(player));
-        }
-    }
-    else
-    {
-        pRoomAnnounceFmt = T("%s has reconnected.");
-        pMonitorAnnounceFmt = T("GAME: %s has reconnected.");
-        if (  Suspect(player)
-           || mudstate.access_list.isSuspect(&d->address))
-        {
-            raw_broadcast(WIZARD, T("[Suspect] %s has reconnected."), Moniker(player));
-        }
-    }
-    mux_sprintf(buf, LBUF_SIZE, pRoomAnnounceFmt, Moniker(player));
-    raw_broadcast(MONITOR, pMonitorAnnounceFmt, Moniker(player));
-
-    int key = MSG_INV;
-    if (  loc != NOTHING
-       && !(  Hidden(player)
-           && Can_Hide(player)))
-    {
-        key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
-    }
-
-    dbref temp = mudstate.curr_enactor;
-    mudstate.curr_enactor = player;
-#ifdef REALITY_LVLS
-    if (NOTHING == loc)
-    {
-        notify_check(player, player, buf, key);
-    }
-    else
-    {
-        notify_except_rlevel(loc, player, player, buf, 0);
-    }
-#else
-    notify_check(player, player, buf, key);
-#endif // REALITY_LVLS
-    atr_pget_str_LEN(buf, player, A_ACONNECT, &aowner, &aflags, &nLen);
-    CLinearTimeAbsolute lta;
-    dbref zone, obj;
-    if (nLen)
-    {
-        wait_que(player, player, player, AttrTrace(aflags, 0), false, lta,
-            NOTHING, 0,
-            buf,
-            0, nullptr,
-            nullptr);
-    }
-    if (mudconf.master_room != NOTHING)
-    {
-        atr_pget_str_LEN(buf, mudconf.master_room, A_ACONNECT, &aowner,
-            &aflags, &nLen);
-        if (nLen)
-        {
-            wait_que(mudconf.master_room, player, player, AttrTrace(aflags, 0),
-                false, lta, NOTHING, 0,
-                buf,
-                0, nullptr,
-                nullptr);
-        }
-        DOLIST(obj, Contents(mudconf.master_room))
-        {
-            atr_pget_str_LEN(buf, obj, A_ACONNECT, &aowner, &aflags, &nLen);
-            if (nLen)
-            {
-                wait_que(obj, player, player, AttrTrace(aflags, 0), false, lta,
-                    NOTHING, 0,
-                    buf,
-                    0, nullptr,
-                    nullptr);
-            }
-        }
-    }
-
-    // Do the zone of the player's location's possible aconnect.
-    //
-    if (  mudconf.have_zones
-       && Good_obj(zone = Zone(loc)))
-    {
-        switch (Typeof(zone))
-        {
-        case TYPE_THING:
-
-            atr_pget_str_LEN(buf, zone, A_ACONNECT, &aowner, &aflags, &nLen);
-            if (nLen)
-            {
-                wait_que(zone, player, player, AttrTrace(aflags, 0), false,
-                    lta, NOTHING, 0,
-                    buf,
-                    0, nullptr,
-                    nullptr);
-            }
-            break;
-
-        case TYPE_ROOM:
-
-            // check every object in the room for a connect action.
-            //
-            DOLIST(obj, Contents(zone))
-            {
-                atr_pget_str_LEN(buf, obj, A_ACONNECT, &aowner, &aflags,
-                    &nLen);
-                if (nLen)
-                {
-                    wait_que(obj, player, player, AttrTrace(aflags, 0), false,
-                        lta, NOTHING, 0,
-                        buf,
-                        0, nullptr,
-                        nullptr);
-                }
-            }
-            break;
-
-        default:
-
-            log_printf(T("Invalid zone #%d for %s(#%d) has bad type %d"),
-                zone, PureName(player), player, Typeof(zone));
-        }
-    }
-    free_lbuf(buf);
-    CLinearTimeAbsolute ltaNow;
-    ltaNow.GetLocal();
-    const UTF8 *time_str = ltaNow.ReturnDateString(7);
-
-    UTF8 host_address[MBUF_SIZE];
-    d->address.ntop(host_address, sizeof(host_address));
-    record_login(player, true, time_str, d->addr, d->username, host_address);
-    check_mail(player, 0, false);
-    look_in(player, Location(player), (LK_SHOWEXIT|LK_OBEYTERSE|LK_SHOWVRML));
-    mudstate.curr_enactor = temp;
-}
-
 void announce_disconnect(const dbref player, DESC *d, const UTF8 *reason)
 {
     int num = count_player_descs(player);
-
-    if (nullptr != mudstate.pIPlayerSession)
-    {
-        bool isSusp = mudstate.access_list.isSuspect(&d->address);
-        bool wasAutoDark = (d->flags & DS_AUTODARK) != 0;
-        mudstate.pIPlayerSession->AnnounceDisconnect(player, num,
-            isSusp, wasAutoDark, reason);
-        desc_delhash(d);
-        return;
-    }
-
-    int key;
-
-    const dbref temp = mudstate.curr_enactor;
-    mudstate.curr_enactor = player;
-    const dbref loc = Location(player);
-
-    if (num < 2)
-    {
-        if (  Suspect(player)
-           || mudstate.access_list.isSuspect(&d->address))
-        {
-            raw_broadcast(WIZARD, T("[Suspect] %s has disconnected."), Moniker(player));
-        }
-        UTF8 *buf = alloc_lbuf("announce_disconnect.only");
-
-        mux_sprintf(buf, LBUF_SIZE, T("%s has disconnected."), Moniker(player));
-        key = MSG_INV;
-        if (  loc != NOTHING
-           && !(  Hidden(player)
-               && Can_Hide(player)))
-        {
-            key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
-        }
-#ifdef REALITY_LVLS
-        if (NOTHING == loc)
-        {
-            notify_check(player, player, buf, key);
-        }
-        else
-        {
-            notify_except_rlevel(loc, player, player, buf, 0);
-        }
-#else
-        notify_check(player, player, buf, key);
-#endif // REALITY_LVLS
-
-        do_mail_purge(player);
-
-        raw_broadcast(MONITOR, T("GAME: %s has disconnected. <%s>"), Moniker(player), reason);
-
-        c_Connected(player);
-
-        do_comdisconnect(player);
-
-        dbref aowner, zone, obj;
-        int aflags;
-        size_t nLen;
-        CLinearTimeAbsolute lta;
-        atr_pget_str_LEN(buf, player, A_ADISCONNECT, &aowner, &aflags, &nLen);
-        if (nLen)
-        {
-            wait_que(player, player, player, AttrTrace(aflags, 0), false,
-                lta, NOTHING, 0,
-                buf,
-                1, &reason,
-                nullptr);
-        }
-        if (mudconf.master_room != NOTHING)
-        {
-            atr_pget_str_LEN(buf, mudconf.master_room, A_ADISCONNECT, &aowner,
-                &aflags, &nLen);
-            if (nLen)
-            {
-                wait_que(mudconf.master_room, player, player,
-                    AttrTrace(aflags, 0), false, lta, NOTHING, 0,
-                    buf,
-                    0, nullptr,
-                    nullptr);
-            }
-            DOLIST(obj, Contents(mudconf.master_room))
-            {
-                atr_pget_str_LEN(buf, obj, A_ADISCONNECT, &aowner, &aflags,
-                    &nLen);
-                if (nLen)
-                {
-                    wait_que(obj, player, player, AttrTrace(aflags, 0), false,
-                        lta, NOTHING, 0,
-                        buf,
-                        0, nullptr,
-                        nullptr);
-                }
-            }
-        }
-
-        // Do the zone of the player's location's possible adisconnect.
-        //
-        if (mudconf.have_zones && Good_obj(zone = Zone(loc)))
-        {
-            switch (Typeof(zone))
-            {
-            case TYPE_THING:
-
-                atr_pget_str_LEN(buf, zone, A_ADISCONNECT, &aowner, &aflags,
-                    &nLen);
-                if (nLen)
-                {
-                    wait_que(zone, player, player, AttrTrace(aflags, 0),
-                        false, lta, NOTHING, 0,
-                        buf,
-                        0, nullptr,
-                        nullptr);
-                }
-                break;
-
-            case TYPE_ROOM:
-
-                // check every object in the room for a connect action.
-                //
-                DOLIST(obj, Contents(zone))
-                {
-                    atr_pget_str_LEN(buf, obj, A_ADISCONNECT, &aowner, &aflags,
-                        &nLen);
-                    if (nLen)
-                    {
-                        wait_que(obj, player, player, AttrTrace(aflags, 0),
-                            false, lta, NOTHING, 0,
-                            buf,
-                            0, nullptr,
-                            nullptr);
-                    }
-                }
-                break;
-
-            default:
-                log_printf(T("Invalid zone #%d for %s(#%d) has bad type %d"),
-                    zone, PureName(player), player, Typeof(zone));
-            }
-        }
-        free_lbuf(buf);
-        if (d->flags & DS_AUTODARK)
-        {
-            d->flags &= ~DS_AUTODARK;
-            s_Flags(player, FLAG_WORD1, db[player].fs.word[FLAG_WORD1] & ~DARK);
-        }
-
-        if (Guest(player))
-        {
-            s_Flags(player, FLAG_WORD1, db[player].fs.word[FLAG_WORD1] | DARK);
-            halt_que(NOTHING, player);
-        }
-    }
-    else
-    {
-        if (  Suspect(player)
-           || mudstate.access_list.isSuspect(&d->address))
-        {
-            raw_broadcast(WIZARD, T("[Suspect] %s has partially disconnected."), Moniker(player));
-        }
-        UTF8 *mbuf = alloc_mbuf("announce_disconnect.partial");
-        mux_sprintf(mbuf, MBUF_SIZE, T("%s has partially disconnected."), Moniker(player));
-        key = MSG_INV;
-        if (  loc != NOTHING
-           && !(  Hidden(player)
-               && Can_Hide(player)))
-        {
-            key |= (MSG_NBR | MSG_NBR_EXITS | MSG_LOC | MSG_FWDLIST);
-        }
-#ifdef REALITY_LVLS
-        if (NOTHING == loc)
-        {
-            notify_check(player, player, mbuf, key);
-        }
-        else
-        {
-            notify_except_rlevel(loc, player, player, mbuf, 0);
-        }
-#else
-        notify_check(player, player, mbuf, key);
-#endif // REALITY_LVLS
-        raw_broadcast(MONITOR, T("GAME: %s has partially disconnected."),
-            Moniker(player));
-        free_mbuf(mbuf);
-    }
-
-    mudstate.curr_enactor = temp;
+    bool isSusp = mudstate.access_list.isSuspect(&d->address);
+    bool wasAutoDark = (d->flags & DS_AUTODARK) != 0;
+    mudstate.pIPlayerSession->AnnounceDisconnect(player, num,
+        isSusp, wasAutoDark, reason);
     desc_delhash(d);
-
-    local_disconnect(player, num);
-    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-    while (nullptr != p)
-    {
-        p->pSink->disconnect(player, num);
-        p = p->pNext;
-    }
 }
 
 int boot_off(const dbref player, const UTF8 *message)
@@ -2238,16 +1802,8 @@ static bool check_connect(DESC *d, UTF8 *msg)
 
         UTF8 host_address[MBUF_SIZE];
         d->address.ntop(host_address, sizeof(host_address));
-        if (nullptr != mudstate.pIPlayerSession)
-        {
-            mudstate.pIPlayerSession->ConnectPlayer(user, password,
-                d->addr, d->username, host_address, &player);
-        }
-        else
-        {
-            player = connect_player(user, password, d->addr, d->username,
-                host_address);
-        }
+        mudstate.pIPlayerSession->ConnectPlayer(user, password,
+            d->addr, d->username, host_address, &player);
         if (  player == NOTHING
            || (!isGuest && Guest.CheckGuest(player)))
         {
@@ -2359,7 +1915,6 @@ static bool check_connect(DESC *d, UTF8 *msg)
                     fcache_dump(d, FC_WIZMOTD);
                 free_lbuf(buff);
             }
-            if (nullptr != mudstate.pIPlayerSession)
             {
                 desc_addhash(d);
                 int num_con = count_player_descs(player);
@@ -2370,25 +1925,6 @@ static bool check_connect(DESC *d, UTF8 *msg)
                     isPueblo, isSusp, d->addr, d->username, host_address,
                     &timeout);
                 d->timeout = timeout;
-            }
-            else
-            {
-                announce_connect(player, d);
-
-                int num_con = 0;
-                const auto range2 = mudstate.dbref_to_descriptors_map.equal_range(player);
-                for (auto it = range2.first; it != range2.second; ++it)
-                {
-                    num_con++;
-                }
-                local_connect(player, 0, num_con);
-
-                ServerEventsSinkNode *pNode = g_pServerEventsSinkListHead;
-                while (nullptr != pNode)
-                {
-                    pNode->pSink->connect(player, 0, num_con);
-                    pNode = pNode->pNext;
-                }
             }
 
             // If stuck in an @prog, show the prompt.
@@ -2458,15 +1994,8 @@ static bool check_connect(DESC *d, UTF8 *msg)
         else
         {
             const UTF8 *pmsg;
-            if (nullptr != mudstate.pIPlayerSession)
-            {
-                mudstate.pIPlayerSession->CreatePlayer(user, password,
-                    NOTHING, false, &player, &pmsg);
-            }
-            else
-            {
-                player = create_player(user, password, NOTHING, false, &pmsg);
-            }
+            mudstate.pIPlayerSession->CreatePlayer(user, password,
+                NOTHING, false, &player, &pmsg);
             if (player == NOTHING)
             {
                 queue_write(d, pmsg);
@@ -2480,16 +2009,8 @@ static bool check_connect(DESC *d, UTF8 *msg)
             }
             else
             {
-                if (nullptr != mudstate.pIPlayerSession)
-                {
-                    mudstate.pIPlayerSession->AddToPublicChannel(player);
-                    mudstate.pIPlayerSession->AddToPlayerChannels(player);
-                }
-                else
-                {
-                    AddToPublicChannel(player);
-                    AddToPlayerChannels(player);
-                }
+                mudstate.pIPlayerSession->AddToPublicChannel(player);
+                mudstate.pIPlayerSession->AddToPlayerChannels(player);
                 STARTLOG(LOG_LOGIN | LOG_PCREATES, "CON", "CREA");
                 buff = alloc_mbuf("check_conn.LOG.create");
                 mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Created "), d->socket, d->addr);
@@ -2503,7 +2024,6 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 d->player = player;
                 fcache_dump(d, FC_CREA_NEW);
 
-                if (nullptr != mudstate.pIPlayerSession)
                 {
                     desc_addhash(d);
                     bool isPueblo = (d->flags & DS_PUEBLOCLIENT) != 0;
@@ -2515,21 +2035,6 @@ static bool check_connect(DESC *d, UTF8 *msg)
                         isPueblo, isSusp, d->addr, d->username,
                         crea_host, &timeout);
                     d->timeout = timeout;
-                }
-                else
-                {
-                    announce_connect(player, d);
-
-                    // Since it is on the create call, assume connection count
-                    // is 0 and indicate the connect is a new character.
-                    //
-                    local_connect(player, 1, 0);
-                    ServerEventsSinkNode *pNode = g_pServerEventsSinkListHead;
-                    while (nullptr != pNode)
-                    {
-                        pNode->pSink->connect(player, 1, 0);
-                        pNode = pNode->pNext;
-                    }
                 }
             }
         }
