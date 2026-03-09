@@ -1297,9 +1297,7 @@ extern const UTF8 *NOT_CONNECTED;
 int  ReplaceFile(UTF8 *old_name, UTF8 *new_name_arg);
 void RemoveFile(const UTF8 *name);
 
-// From plusemail.cpp
-//
-UTF8 *ConvertCRLFtoSpace(const UTF8 *pString);
+// ConvertCRLFtoSpace moved to stringutil.h (libmux.so).
 
 void destroy_player(dbref agent, dbref victim);
 void do_pemit_list

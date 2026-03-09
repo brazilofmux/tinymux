@@ -851,6 +851,19 @@ public:
     virtual MUX_RESULT WizardWho(dbref obj, bool *pResult);
     virtual MUX_RESULT SeeHidden(dbref obj, bool *pResult);
 
+    virtual MUX_RESULT AtrAddRaw(dbref obj, int attrnum, const UTF8 *value);
+    virtual MUX_RESULT AtrClr(dbref obj, int attrnum);
+    virtual MUX_RESULT AtrGet(dbref obj, int attrnum, UTF8 *pValue,
+        size_t nValueMax, dbref *pOwner, int *pFlags);
+    virtual MUX_RESULT AtrPGet(dbref obj, int attrnum, UTF8 *pValue,
+        size_t nValueMax, dbref *pOwner, int *pFlags);
+    virtual MUX_RESULT LookupPlayer(dbref executor, const UTF8 *pName,
+        bool bConnected, dbref *pResult);
+    virtual MUX_RESULT FetchConnectionInfoFields(dbref player,
+        long anFields[4]);
+    virtual MUX_RESULT PutConnectionInfoFields(dbref player,
+        long anFields[4], CLinearTimeAbsolute &ltaNow);
+
     CObjectInfo(void);
     virtual ~CObjectInfo();
 
@@ -1185,6 +1198,100 @@ MUX_RESULT CObjectInfo::SeeHidden(dbref obj, bool *pResult)
         return MUX_E_INVALIDARG;
     }
     *pResult = See_Hidden(obj) ? true : false;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::AtrAddRaw(dbref obj, int attrnum, const UTF8 *value)
+{
+    if (!Good_obj(obj))
+    {
+        return MUX_E_INVALIDARG;
+    }
+    atr_add_raw(obj, attrnum, value);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::AtrClr(dbref obj, int attrnum)
+{
+    if (!Good_obj(obj))
+    {
+        return MUX_E_INVALIDARG;
+    }
+    atr_clr(obj, attrnum);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::AtrGet(dbref obj, int attrnum, UTF8 *pValue,
+    size_t nValueMax, dbref *pOwner, int *pFlags)
+{
+    if (nullptr == pValue || nullptr == pOwner || nullptr == pFlags)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *pValue = '\0';
+        return MUX_E_INVALIDARG;
+    }
+    const UTF8 *p = atr_get("com_bridge", obj, attrnum, pOwner, pFlags);
+    mux_strncpy(pValue, p, nValueMax - 1);
+    free_lbuf(const_cast<UTF8 *>(p));
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::AtrPGet(dbref obj, int attrnum, UTF8 *pValue,
+    size_t nValueMax, dbref *pOwner, int *pFlags)
+{
+    if (nullptr == pValue || nullptr == pOwner || nullptr == pFlags)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *pValue = '\0';
+        return MUX_E_INVALIDARG;
+    }
+    const UTF8 *p = atr_pget(obj, attrnum, pOwner, pFlags);
+    mux_strncpy(pValue, p, nValueMax - 1);
+    free_lbuf(const_cast<UTF8 *>(p));
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::LookupPlayer(dbref executor, const UTF8 *pName,
+    bool bConnected, dbref *pResult)
+{
+    if (nullptr == pResult)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (nullptr == pName)
+    {
+        *pResult = NOTHING;
+        return MUX_E_INVALIDARG;
+    }
+    *pResult = lookup_player(executor, const_cast<UTF8 *>(pName), bConnected);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::FetchConnectionInfoFields(dbref player,
+    long anFields[4])
+{
+    if (!Good_obj(player))
+    {
+        return MUX_E_INVALIDARG;
+    }
+    fetch_ConnectionInfoFields(player, anFields);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::PutConnectionInfoFields(dbref player,
+    long anFields[4], CLinearTimeAbsolute &ltaNow)
+{
+    if (!Good_obj(player))
+    {
+        return MUX_E_INVALIDARG;
+    }
+    put_ConnectionInfoFields(player, anFields, ltaNow);
     return MUX_S_OK;
 }
 
@@ -3605,6 +3712,8 @@ public:
         const UTF8 *username, const UTF8 *ipaddr, int *pTimeout);
     virtual MUX_RESULT AnnounceDisconnect(dbref player, int numConnections,
         bool isSuspect, bool wasAutoDark, const UTF8 *reason);
+    virtual MUX_RESULT FcacheSend(DESC *d, int num);
+    virtual MUX_RESULT FcacheRawSend(SOCKET fd, int num);
 
     CPlayerSession(void);
     virtual ~CPlayerSession();
@@ -4146,6 +4255,22 @@ MUX_RESULT CPlayerSession::AnnounceDisconnect(dbref player,
         p = p->pNext;
     }
 
+    return MUX_S_OK;
+}
+
+MUX_RESULT CPlayerSession::FcacheSend(DESC *d, int num)
+{
+    if (nullptr == d)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    fcache_dump(d, num);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CPlayerSession::FcacheRawSend(SOCKET fd, int num)
+{
+    fcache_rawdump(fd, num);
     return MUX_S_OK;
 }
 

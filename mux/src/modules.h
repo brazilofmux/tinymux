@@ -288,6 +288,29 @@ public:
     virtual MUX_RESULT CanIdle(dbref obj, bool *pResult) = 0;
     virtual MUX_RESULT WizardWho(dbref obj, bool *pResult) = 0;
     virtual MUX_RESULT SeeHidden(dbref obj, bool *pResult) = 0;
+
+    // Raw attribute access (by attrnum) for driver-side connection
+    // lifecycle operations (A_REASON, A_LAST, A_PROGCMD, etc.).
+    //
+    virtual MUX_RESULT AtrAddRaw(dbref obj, int attrnum,
+        const UTF8 *value) = 0;
+    virtual MUX_RESULT AtrClr(dbref obj, int attrnum) = 0;
+    virtual MUX_RESULT AtrGet(dbref obj, int attrnum, UTF8 *pValue,
+        size_t nValueMax, dbref *pOwner, int *pFlags) = 0;
+    virtual MUX_RESULT AtrPGet(dbref obj, int attrnum, UTF8 *pValue,
+        size_t nValueMax, dbref *pOwner, int *pFlags) = 0;
+
+    // Player lookup by name.
+    //
+    virtual MUX_RESULT LookupPlayer(dbref executor, const UTF8 *pName,
+        bool bConnected, dbref *pResult) = 0;
+
+    // ConnectionInfo fields (A_CONNINFO attribute).
+    //
+    virtual MUX_RESULT FetchConnectionInfoFields(dbref player,
+        long anFields[4]) = 0;
+    virtual MUX_RESULT PutConnectionInfoFields(dbref player,
+        long anFields[4], CLinearTimeAbsolute &ltaNow) = 0;
 };
 
 // Softcode evaluator.
@@ -722,6 +745,16 @@ public:
     //
     virtual MUX_RESULT AnnounceDisconnect(dbref player, int numConnections,
         bool isSuspect, bool wasAutoDark, const UTF8 *reason) = 0;
+
+    // Send a cached text file (welcome, MOTD, etc.) to a descriptor.
+    // num is an FC_* constant.  The engine reads its fcache and queues
+    // the output through mux_IConnectionManager::DescQueueWrite.
+    //
+    virtual MUX_RESULT FcacheSend(DESC *d, int num) = 0;
+
+    // Send a cached text file using raw socket writes (emergency/pre-login).
+    //
+    virtual MUX_RESULT FcacheRawSend(SOCKET fd, int num) = 0;
 };
 
 // Driver control — the interface the engine uses for non-connection
@@ -894,6 +927,19 @@ public:
     // Close all sockets immediately (panic shutdown).
     //
     virtual MUX_RESULT EmergencyShutdown(void) = 0;
+
+    // --- Low-level descriptor I/O ---
+
+    // Queue raw bytes on a specific descriptor (opaque handle).
+    // Used by engine code (e.g., fcache_dump) that writes to a specific
+    // connection rather than broadcasting to all of a player's sessions.
+    //
+    virtual MUX_RESULT DescQueueWrite(DESC *d, const UTF8 *data,
+        size_t len) = 0;
+
+    // Queue encoded text on a specific descriptor (color/charset aware).
+    //
+    virtual MUX_RESULT DescQueueString(DESC *d, const UTF8 *text) = 0;
 };
 
 #endif // MODULES_H

@@ -245,6 +245,9 @@ public:
     virtual MUX_RESULT CheckIdle(void);
     virtual MUX_RESULT EmergencyShutdown(void);
 
+    virtual MUX_RESULT DescQueueWrite(DESC *d, const UTF8 *data, size_t len);
+    virtual MUX_RESULT DescQueueString(DESC *d, const UTF8 *text);
+
     CConnectionManager(void);
     virtual ~CConnectionManager();
 
@@ -567,6 +570,27 @@ MUX_RESULT CConnectionManager::CheckIdle(void)
 MUX_RESULT CConnectionManager::EmergencyShutdown(void)
 {
     emergency_shutdown();
+    return MUX_S_OK;
+}
+
+MUX_RESULT CConnectionManager::DescQueueWrite(DESC *d, const UTF8 *data,
+    size_t len)
+{
+    if (nullptr == d || nullptr == data)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    queue_write_LEN(d, data, len);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CConnectionManager::DescQueueString(DESC *d, const UTF8 *text)
+{
+    if (nullptr == d || nullptr == text)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    queue_string(d, text);
     return MUX_S_OK;
 }
 

@@ -269,50 +269,7 @@ UTF8 *EncodeBody(UTF8 *pBody)
 
 // Transform CRLF runs to a space.
 //
-UTF8 *ConvertCRLFtoSpace(const UTF8 *pString)
-{
-    static UTF8 buf[LBUF_SIZE];
-    UTF8 *bp = buf;
-
-    // Skip any leading CRLF.
-    //
-    while (  '\r' == *pString
-          || '\n' == *pString)
-    {
-        pString++;
-    }
-
-    bool bFirst = true;
-    while (*pString)
-    {
-        if (!bFirst)
-        {
-            safe_chr(' ', buf, &bp);
-        }
-        else
-        {
-            bFirst = false;
-        }
-
-        while (  *pString
-              && '\r' != *pString
-              && '\n' != *pString)
-        {
-            safe_chr(*pString, buf, &bp);
-            pString++;
-        }
-
-        // Skip any CRLF.
-        //
-        while (  '\r' == *pString
-              || '\n' == *pString)
-        {
-            pString++;
-        }
-    }
-    *bp = '\0';
-    return buf;
-}
+// ConvertCRLFtoSpace moved to stringutil.cpp (libmux.so).
 
 void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
                  int nargs, UTF8 *arg1, UTF8 *arg2, const UTF8 *cargs[], int ncargs)

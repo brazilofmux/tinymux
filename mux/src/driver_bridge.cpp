@@ -14,6 +14,12 @@
 #include "modules.h"
 #include "driverstate.h"
 
+// String constants also defined in match.cpp (engine).  The driver
+// needs its own copies since engine.so doesn't export them.
+//
+const UTF8 *FUNC_FAIL_MESSAGE = T("#-1");
+const UTF8 *FUNC_NOPERM_MESSAGE = T("#-1 PERMISSION DENIED");
+
 // notify_check — driver-side bridge through mux_INotify.
 //
 void notify_check(dbref target, dbref sender, const UTF8 *msg, int key)
@@ -200,4 +206,98 @@ bool drv_See_Hidden(dbref obj)
         g_pIObjectInfo->SeeHidden(obj, &result);
     }
     return result;
+}
+
+// Attribute access — driver-side bridges through mux_IObjectInfo.
+//
+
+bool atr_add_raw(dbref obj, int attrnum, const UTF8 *value)
+{
+    if (g_pIObjectInfo)
+    {
+        return MUX_SUCCEEDED(g_pIObjectInfo->AtrAddRaw(obj, attrnum, value));
+    }
+    return false;
+}
+
+bool atr_clr(dbref obj, int attrnum)
+{
+    if (g_pIObjectInfo)
+    {
+        return MUX_SUCCEEDED(g_pIObjectInfo->AtrClr(obj, attrnum));
+    }
+    return false;
+}
+
+UTF8 *atr_get_real(const UTF8 *tag, dbref obj, int attrnum, dbref *pOwner,
+    int *pFlags, const UTF8 *file, const int line)
+{
+    UNUSED_PARAMETER(file);
+    UNUSED_PARAMETER(line);
+    UTF8 *buf = alloc_lbuf(tag);
+    buf[0] = '\0';
+    if (g_pIObjectInfo)
+    {
+        g_pIObjectInfo->AtrGet(obj, attrnum, buf, LBUF_SIZE, pOwner, pFlags);
+    }
+    return buf;
+}
+
+UTF8 *atr_pget_real(dbref obj, int attrnum, dbref *pOwner, int *pFlags,
+    const UTF8 *file, const int line)
+{
+    UNUSED_PARAMETER(file);
+    UNUSED_PARAMETER(line);
+    UTF8 *buf = alloc_lbuf("drv_atr_pget");
+    buf[0] = '\0';
+    if (g_pIObjectInfo)
+    {
+        g_pIObjectInfo->AtrPGet(obj, attrnum, buf, LBUF_SIZE, pOwner, pFlags);
+    }
+    return buf;
+}
+
+dbref lookup_player(dbref executor, UTF8 *pName, bool bConnected)
+{
+    dbref result = NOTHING;
+    if (g_pIObjectInfo)
+    {
+        g_pIObjectInfo->LookupPlayer(executor, pName, bConnected, &result);
+    }
+    return result;
+}
+
+void fetch_ConnectionInfoFields(dbref player, long anFields[4])
+{
+    if (g_pIObjectInfo)
+    {
+        g_pIObjectInfo->FetchConnectionInfoFields(player, anFields);
+    }
+}
+
+void put_ConnectionInfoFields(dbref player, long anFields[4],
+    CLinearTimeAbsolute &ltaNow)
+{
+    if (g_pIObjectInfo)
+    {
+        g_pIObjectInfo->PutConnectionInfoFields(player, anFields, ltaNow);
+    }
+}
+
+// File cache — driver-side bridge through mux_IPlayerSession.
+//
+void fcache_dump(DESC *d, int num)
+{
+    if (g_pIPlayerSession)
+    {
+        g_pIPlayerSession->FcacheSend(d, num);
+    }
+}
+
+void fcache_rawdump(SOCKET fd, int num)
+{
+    if (g_pIPlayerSession)
+    {
+        g_pIPlayerSession->FcacheRawSend(fd, num);
+    }
 }

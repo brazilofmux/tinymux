@@ -9333,3 +9333,51 @@ size_t RightJustifyNumber(UTF8 *field, size_t nWidth, int64_t value, UTF8 chFill
     }
     return nReturn;
 }
+
+// ConvertCRLFtoSpace — replace CRLF sequences with spaces.
+// Returns a pointer to a static buffer.
+//
+UTF8 *ConvertCRLFtoSpace(const UTF8 *pString)
+{
+    static UTF8 buf[LBUF_SIZE];
+    UTF8 *bp = buf;
+
+    // Skip any leading CRLF.
+    //
+    while (  '\r' == *pString
+          || '\n' == *pString)
+    {
+        pString++;
+    }
+
+    bool bFirst = true;
+    while (*pString)
+    {
+        if (!bFirst)
+        {
+            safe_chr(' ', buf, &bp);
+        }
+        else
+        {
+            bFirst = false;
+        }
+
+        while (  *pString
+              && '\r' != *pString
+              && '\n' != *pString)
+        {
+            safe_chr(*pString, buf, &bp);
+            pString++;
+        }
+
+        // Skip any CRLF.
+        //
+        while (  '\r' == *pString
+              || '\n' == *pString)
+        {
+            pString++;
+        }
+    }
+    *bp = '\0';
+    return buf;
+}

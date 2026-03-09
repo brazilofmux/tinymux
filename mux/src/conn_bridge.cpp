@@ -357,6 +357,18 @@ void emergency_shutdown(void)
     if (g_pConnMgr) g_pConnMgr->EmergencyShutdown();
 }
 
+// --- Low-level descriptor I/O ---
+
+void queue_write_LEN(DESC *d, const UTF8 *data, size_t len)
+{
+    if (g_pConnMgr) g_pConnMgr->DescQueueWrite(d, data, len);
+}
+
+void queue_string(DESC *d, const UTF8 *text)
+{
+    if (g_pConnMgr) g_pConnMgr->DescQueueString(d, text);
+}
+
 // --- Driver lifecycle ---
 // These are driver-side cleanup calls that the engine invokes during
 // SHUTDN_PANIC.  In the future, the engine should signal the driver

@@ -2420,5 +2420,6 @@ extern bool g_space_compress;   // mudstate.bStandAlone || mudconf.space_compres
 
 size_t LeftJustifyString(UTF8 *field, size_t nWidth, const UTF8 *value);
 size_t RightJustifyNumber(UTF8 *field, size_t nWidth, int64_t value, UTF8 chFill);
+UTF8 *ConvertCRLFtoSpace(const UTF8 *pString);
 
 #endif // STRINGUTIL_H
