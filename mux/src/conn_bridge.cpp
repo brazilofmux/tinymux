@@ -21,31 +21,55 @@
 #include "config.h"
 #include "externs.h"
 
-// The engine acquires this during initialization.
+// The engine acquires these during initialization.
 //
 static mux_IConnectionManager *g_pConnMgr = nullptr;
+static mux_IDriverControl     *g_pDriverCtl = nullptr;
 
 void conn_bridge_init(void)
 {
-    if (nullptr != g_pConnMgr)
+    if (nullptr == g_pConnMgr)
     {
-        return;
+        MUX_RESULT mr = mux_CreateInstance(CID_ConnectionManager, nullptr,
+            UseSameProcess, IID_IConnectionManager,
+            reinterpret_cast<void **>(&g_pConnMgr));
+        if (MUX_FAILED(mr))
+        {
+            g_pConnMgr = nullptr;
+        }
     }
-    MUX_RESULT mr = mux_CreateInstance(CID_ConnectionManager, nullptr,
-        UseSameProcess, IID_IConnectionManager,
-        reinterpret_cast<void **>(&g_pConnMgr));
-    if (MUX_FAILED(mr))
+
+    if (nullptr == g_pDriverCtl)
     {
-        g_pConnMgr = nullptr;
+        MUX_RESULT mr = mux_CreateInstance(CID_DriverControl, nullptr,
+            UseSameProcess, IID_IDriverControl,
+            reinterpret_cast<void **>(&g_pDriverCtl));
+        if (MUX_FAILED(mr))
+        {
+            g_pDriverCtl = nullptr;
+        }
     }
 }
 
 void conn_bridge_final(void)
 {
+    if (nullptr != g_pDriverCtl)
+    {
+        g_pDriverCtl->Release();
+        g_pDriverCtl = nullptr;
+    }
     if (nullptr != g_pConnMgr)
     {
         g_pConnMgr->Release();
         g_pConnMgr = nullptr;
+    }
+}
+
+void request_shutdown(void)
+{
+    if (g_pDriverCtl)
+    {
+        g_pDriverCtl->ShutdownRequest();
     }
 }
 

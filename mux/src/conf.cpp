@@ -310,7 +310,7 @@ void cf_init(void)
     mudstate.curr_enactor = NOTHING;
     mudstate.shutdown_flag  = false;
     mudstate.attr_next = A_USER_START;
-    mudstate.debug_cmd = T("< init >");
+    g_debug_cmd = T("< init >");
     mudstate.curr_cmd  = T("< none >");
     mux_strncpy(mudstate.doing_hdr, T("Doing"), sizeof(mudstate.doing_hdr)-1);
     mudstate.badname_head = nullptr;

@@ -10,6 +10,7 @@
 #include "config.h"
 #include "externs.h"
 #include "modules.h"
+#include "driverstate.h"
 #include "driver_log.h"
 
 #ifdef SOLARIS
@@ -528,7 +529,7 @@ static void DCL_CDECL sighandler(int sig)
         {
             raw_broadcast(0, T("GAME: %s"), g_dc.crash_msg);
         }
-        mudstate.shutdown_flag = true;
+        g_shutdown_flag = true;
         break;
 
     case SIGILL:

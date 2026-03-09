@@ -19,13 +19,13 @@ void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
 
     if (mudconf.control_flags & CF_DBCHECK)
     {
-        const UTF8 *cmdsave = mudstate.debug_cmd;
-        mudstate.debug_cmd = T("< dbck >");
+        const UTF8 *cmdsave = g_debug_cmd;
+        g_debug_cmd = T("< dbck >");
         do_dbck(NOTHING, NOTHING, NOTHING, 0, 0);
         Guest.CleanUp();
         pcache_trim();
         pool_reset();
-        mudstate.debug_cmd = cmdsave;
+        g_debug_cmd = cmdsave;
     }
 
     // Schedule ourselves again.
@@ -50,8 +50,8 @@ void dispatch_DatabaseDump(void *pUnused, int iUnused)
 
     if (mudconf.control_flags & CF_CHECKPOINT)
     {
-        const UTF8 *cmdsave = mudstate.debug_cmd;
-        mudstate.debug_cmd = T("< dump >");
+        const UTF8 *cmdsave = g_debug_cmd;
+        g_debug_cmd = T("< dump >");
 #if defined(HAVE_WORKING_FORK)
         if (mudstate.dumping)
         {
@@ -67,7 +67,7 @@ void dispatch_DatabaseDump(void *pUnused, int iUnused)
         {
             fork_and_dump(0);
         }
-        mudstate.debug_cmd = cmdsave;
+        g_debug_cmd = cmdsave;
     }
 
     // Schedule ourselves again.
@@ -89,10 +89,10 @@ void dispatch_IdleCheck(void *pUnused, int iUnused)
 
     if (mudconf.control_flags & CF_IDLECHECK)
     {
-        const UTF8 *cmdsave = mudstate.debug_cmd;
-        mudstate.debug_cmd = T("< idlecheck >");
+        const UTF8 *cmdsave = g_debug_cmd;
+        g_debug_cmd = T("< idlecheck >");
         check_idle();
-        mudstate.debug_cmd = cmdsave;
+        g_debug_cmd = cmdsave;
     }
 
     // Schedule ourselves again.
@@ -131,10 +131,10 @@ void dispatch_CheckEvents(void *pUnused, int iUnused)
 
     if (mudconf.control_flags & CF_EVENTCHECK)
     {
-        const UTF8 *cmdsave = mudstate.debug_cmd;
-        mudstate.debug_cmd = T("< eventcheck >");
+        const UTF8 *cmdsave = g_debug_cmd;
+        g_debug_cmd = T("< eventcheck >");
         check_events();
-        mudstate.debug_cmd = cmdsave;
+        g_debug_cmd = cmdsave;
     }
 
     // Schedule ourselves again.
@@ -151,8 +151,8 @@ void dispatch_CacheTick(void *pUnused, int iUnused)
     UNUSED_PARAMETER(pUnused);
     UNUSED_PARAMETER(iUnused);
 
-    const UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = T("< cachetick >");
+    const UTF8 *cmdsave = g_debug_cmd;
+    g_debug_cmd = T("< cachetick >");
 
     CLinearTimeDelta ltd = 0;
     if (mudconf.cache_tick_period <= ltd)
@@ -168,7 +168,7 @@ void dispatch_CacheTick(void *pUnused, int iUnused)
     ltaNextTime.GetUTC();
     ltaNextTime += mudconf.cache_tick_period;
     scheduler.DeferTask(ltaNextTime, PRIORITY_SYSTEM, dispatch_CacheTick, 0, 0);
-    mudstate.debug_cmd = cmdsave;
+    g_debug_cmd = cmdsave;
 }
 
 static void dispatch_CanRestart(void *pUnused, int iUnused)

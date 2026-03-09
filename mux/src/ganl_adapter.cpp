@@ -37,7 +37,7 @@ static BOOL WINAPI ConsoleCtrlHandler(DWORD dwCtrlType)
     case CTRL_CLOSE_EVENT:
     case CTRL_BREAK_EVENT:
     case CTRL_SHUTDOWN_EVENT:
-        mudstate.shutdown_flag = true;
+        g_shutdown_flag = true;
         return TRUE;
     default:
         return FALSE;
@@ -1690,7 +1690,7 @@ void GanlAdapter::run_main_loop() {
     avail_descriptors = sysconf(_SC_OPEN_MAX) - 7;
 #endif
 
-    while (!mudstate.shutdown_flag) {
+    while (!g_shutdown_flag) {
         int timeout_ms = 100; // Default timeout for processEvents
 
         // Calculate minimum timeout based on scheduled tasks
@@ -1714,7 +1714,7 @@ void GanlAdapter::run_main_loop() {
 
         if (num_events < 0) {
             g_pILog->WriteString(T("GANL: Network engine processEvents error. Shutting down.\n"));
-            mudstate.shutdown_flag = true;
+            g_shutdown_flag = true;
             break;
         }
 
@@ -1814,7 +1814,7 @@ void GanlAdapter::run_main_loop() {
         // Process TinyMUX Tasks (Timers, Idle, Quotas, etc.)
         process_tinyMUX_tasks();
 
-    } // end while (!mudstate.shutdown_flag)
+    } // end while (!g_shutdown_flag)
 
 #if defined(_WIN32)
     SetConsoleCtrlHandler(ConsoleCtrlHandler, FALSE);
@@ -2857,7 +2857,7 @@ void GanlAdapter::shutdown_stubslave()
 
 MUX_RESULT GanlAdapter::pump_stubslave()
 {
-    mudstate.debug_cmd = T("< pipepump >");
+    g_debug_cmd = T("< pipepump >");
 
     if (!stubslave_channel_ || stubslave_channel_->fd < 0)
     {

@@ -12,14 +12,16 @@
 #include "config.h"
 #include "externs.h"
 #include "interface.h"
+#include "driverstate.h"
 #include "sqlite_backend.h"
 #include "driver_log.h"
 
-// Driver-side CIDs — only CID_ConnectionManager lives in netmux.
+// Driver-side CIDs that live in netmux.
 //
 static MUX_CLASS_INFO driver_classes[] =
 {
-    { CID_ConnectionManager  }
+    { CID_ConnectionManager },
+    { CID_DriverControl     }
 };
 #define NUM_DRIVER_CLASSES (sizeof(driver_classes)/sizeof(driver_classes[0]))
 
@@ -33,6 +35,26 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
         try
         {
             pFactory = new CConnectionManagerFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == pFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pFactory->QueryInterface(iid, ppv);
+        pFactory->Release();
+    }
+    else if (CID_DriverControl == cid)
+    {
+        CDriverControlFactory *pFactory = nullptr;
+        try
+        {
+            pFactory = new CDriverControlFactory;
         }
         catch (...)
         {
@@ -621,6 +643,155 @@ MUX_RESULT CConnectionManagerFactory::CreateInstance(mux_IUnknown *pUnknownOuter
 }
 
 MUX_RESULT CConnectionManagerFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CDriverControl — driver-side implementation of mux_IDriverControl.
+// Provides non-connection driver operations (shutdown requests, etc.).
+// ---------------------------------------------------------------------------
+
+class CDriverControl : public mux_IDriverControl
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+
+    virtual MUX_RESULT ShutdownRequest(void);
+
+    CDriverControl(void);
+    virtual ~CDriverControl();
+
+private:
+    uint32_t m_cRef;
+};
+
+CDriverControl::CDriverControl(void) : m_cRef(1)
+{
+}
+
+CDriverControl::~CDriverControl()
+{
+}
+
+MUX_RESULT CDriverControl::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IDriverControl *>(this);
+    }
+    else if (IID_IDriverControl == iid)
+    {
+        *ppv = static_cast<mux_IDriverControl *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CDriverControl::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CDriverControl::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CDriverControl::ShutdownRequest(void)
+{
+    g_shutdown_flag = true;
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CDriverControlFactory
+// ---------------------------------------------------------------------------
+
+CDriverControlFactory::CDriverControlFactory(void) : m_cRef(1)
+{
+}
+
+CDriverControlFactory::~CDriverControlFactory()
+{
+}
+
+MUX_RESULT CDriverControlFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CDriverControlFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CDriverControlFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CDriverControlFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
+{
+    UNUSED_PARAMETER(pUnknownOuter);
+
+    CDriverControl *pDC = nullptr;
+    try
+    {
+        pDC = new CDriverControl;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pDC)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pDC->QueryInterface(iid, ppv);
+    pDC->Release();
+    return mr;
+}
+
+MUX_RESULT CDriverControlFactory::LockServer(bool bLock)
 {
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;

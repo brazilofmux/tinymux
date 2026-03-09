@@ -224,6 +224,7 @@ extern DRIVER_CONFIG g_dc;
 //
 extern void conn_bridge_init(void);
 extern void conn_bridge_final(void);
+extern void request_shutdown(void);
 
 // From bsd.cpp
 //
@@ -1673,8 +1674,9 @@ typedef struct ServerEventsSinkNode
 } ServerEventsSinkNode;
 extern DCL_EXPORT ServerEventsSinkNode *g_pServerEventsSinkListHead;
 
-// Driver-side factory class (modules.cpp).
+// Driver-side factory classes (modules.cpp).
 DEFINE_FACTORY(CConnectionManagerFactory)
+DEFINE_FACTORY(CDriverControlFactory)
 
 #if defined(INLINESQL)
 void init_sql(void);

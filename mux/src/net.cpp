@@ -1701,7 +1701,7 @@ static void failconn(const UTF8 *logcode, const UTF8 *logtype, const UTF8 *logre
     free_lbuf(user);
     free_lbuf(password);
     shutdownsock(d, disconnect_reason);
-    mudstate.debug_cmd = cmdsave;
+    g_debug_cmd = cmdsave;
     return;
 }
 
@@ -1713,8 +1713,8 @@ static bool check_connect(DESC *d, UTF8 *msg)
     dbref player, aowner;
     int aflags, nplayers;
 
-    const UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = T("< check_connect >");
+    const UTF8 *cmdsave = g_debug_cmd;
+    g_debug_cmd = T("< check_connect >");
 
     // Hide the password length from SESSION.
     //
@@ -1765,7 +1765,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                     free_lbuf(command);
                     free_lbuf(user);
                     free_lbuf(password);
-                    mudstate.debug_cmd = cmdsave;
+                    g_debug_cmd = cmdsave;
                     return false;
                 }
 
@@ -1775,7 +1775,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                     free_lbuf(command);
                     free_lbuf(user);
                     free_lbuf(password);
-                    mudstate.debug_cmd = cmdsave;
+                    g_debug_cmd = cmdsave;
                     return false;
                 }
                 mux_strncpy(user, p, LBUF_SIZE-1);
@@ -1825,7 +1825,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 free_lbuf(user);
                 free_lbuf(password);
                 shutdownsock(d, R_BADLOGIN);
-                mudstate.debug_cmd = cmdsave;
+                g_debug_cmd = cmdsave;
                 return false;
             }
         }
@@ -2057,7 +2057,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
     free_lbuf(user);
     free_lbuf(password);
 
-    mudstate.debug_cmd = cmdsave;
+    g_debug_cmd = cmdsave;
     return true;
 }
 
@@ -2116,7 +2116,7 @@ static void do_logged_out_internal(DESC *d, int key, const UTF8 *arg)
         {
             UTF8 buf[LBUF_SIZE * 2];
             STARTLOG(LOG_BUGS, "BUG", "PARSE");
-            mux_sprintf(buf, sizeof(buf), T("Logged-out command with no handler: \xE2\x80\x98%s\xE2\x80\x99"), mudstate.debug_cmd);
+            mux_sprintf(buf, sizeof(buf), T("Logged-out command with no handler: \xE2\x80\x98%s\xE2\x80\x99"), g_debug_cmd);
             g_pILog->log_text(buf);
             ENDLOG;
         }
@@ -2125,8 +2125,8 @@ static void do_logged_out_internal(DESC *d, int key, const UTF8 *arg)
 
 void do_command(DESC *d, UTF8 *command)
 {
-    const UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = T("< do_command >");
+    const UTF8 *cmdsave = g_debug_cmd;
+    g_debug_cmd = T("< do_command >");
 
     if (d->flags & DS_CONNECTED)
     {
@@ -2196,7 +2196,7 @@ void do_command(DESC *d, UTF8 *command)
             queue_string(d, d->output_suffix);
             queue_write_LEN(d, T("\r\n"), 2);
         }
-        mudstate.debug_cmd = cmdsave;
+        g_debug_cmd = cmdsave;
         return;
     }
 
@@ -2224,7 +2224,7 @@ void do_command(DESC *d, UTF8 *command)
         //
         mudstate.curr_executor = NOTHING;
         mudstate.curr_enactor = NOTHING;
-        mudstate.debug_cmd = cmdsave;
+        g_debug_cmd = cmdsave;
         check_connect(d, command);
         return;
     }
@@ -2248,7 +2248,7 @@ void do_command(DESC *d, UTF8 *command)
     }
     else
     {
-        mudstate.debug_cmd = cp->name;
+        g_debug_cmd = cp->name;
         do_logged_out_internal(d, cp->flag & CMD_MASK, cmd_argument);
     }
     // QUIT or LOGOUT will close the connection and cause the
@@ -2264,7 +2264,7 @@ void do_command(DESC *d, UTF8 *command)
             queue_write_LEN(d, T("\r\n"), 2);
         }
     }
-    mudstate.debug_cmd = cmdsave;
+    g_debug_cmd = cmdsave;
 }
 
 void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg, const UTF8 *cargs[], int ncargs)

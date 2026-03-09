@@ -5,9 +5,9 @@
  * only read/written by driver-side code.  The engine accesses descriptor
  * containers through the mux_IConnectionManager COM interface.
  *
- * Fields that are shared between driver and engine (shutdown_flag,
- * debug_cmd, curr_executor, etc.) stay in mudstate for now and will
- * migrate to COM interfaces as those are added.
+ * Fields that are shared between driver and engine (debug_cmd,
+ * curr_executor, etc.) stay in mudstate for now and will migrate to
+ * COM interfaces as those are added.
  */
 
 #ifndef DRIVERSTATE_H
@@ -48,6 +48,17 @@ class mux_IGameEngine;
 class mux_IPlayerSession;
 extern mux_IGameEngine  *g_pIGameEngine;
 extern mux_IPlayerSession *g_pIPlayerSession;
+
+// CLI mode flag — true when running as dbconvert.  The engine has its
+// own copy (mudstate.bStandAlone) set in CGameEngine::DbConvert().
+//
+extern bool g_bStandAlone;
+
+// Shutdown flag — set by signal handlers (driver) or by
+// mux_IDriverControl::ShutdownRequest() (engine's @shutdown command).
+// The GANL main loop checks this to know when to exit.
+//
+extern bool g_shutdown_flag;
 
 // Logged-out command table — built and used only by driver.
 // StringPtrMap is defined in mudconf.h (included via externs.h).

@@ -6,7 +6,8 @@
  *
  * engine.so is a proper COM server.  Only 4 extern "C" functions are
  * exported: mux_Register, mux_Unregister, mux_GetClassObject, and
- * mux_CanUnloadNow.  All other symbols have hidden visibility.
+ * mux_CanUnloadNow.  The sole additional export is g_debug_cmd (see
+ * modules.h for rationale).  All other symbols have hidden visibility.
  */
 
 #include "copyright.h"
@@ -14,6 +15,10 @@
 #include "config.h"
 #include "externs.h"
 #include "sqlite_backend.h"
+
+// Sole exported variable — crash diagnostic.  See modules.h comment.
+//
+DCL_EXPORT const UTF8 *g_debug_cmd = T("< init >");
 
 // ---------------------------------------------------------------------------
 // Factory class declarations for engine-side COM components.
@@ -2313,7 +2318,6 @@ public:
     virtual MUX_RESULT WhenNext(CLinearTimeAbsolute *pltaWhen);
     virtual MUX_RESULT DumpDatabase(void);
     virtual MUX_RESULT Shutdown(void);
-    virtual MUX_RESULT ShouldShutdown(bool *pbShutdown);
     virtual MUX_RESULT DbConvert(const UTF8 *infile, const UTF8 *outfile,
         const UTF8 *basename, bool bCheck, bool bLoad, bool bUnload,
         const UTF8 *comsys_file, const UTF8 *mail_file);
@@ -2771,16 +2775,6 @@ MUX_RESULT CGameEngine::Shutdown(void)
         p->pSink->shutdown();
         p = p->pNext;
     }
-    return MUX_S_OK;
-}
-
-MUX_RESULT CGameEngine::ShouldShutdown(bool *pbShutdown)
-{
-    if (nullptr == pbShutdown)
-    {
-        return MUX_E_INVALIDARG;
-    }
-    *pbShutdown = mudstate.shutdown_flag;
     return MUX_S_OK;
 }
 

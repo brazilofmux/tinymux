@@ -1829,8 +1829,8 @@ UTF8 *process_command
 
     // Robustify player.
     //
-    const UTF8 *cmdsave = mudstate.debug_cmd;
-    mudstate.debug_cmd = T("< process_command >");
+    const UTF8 *cmdsave = g_debug_cmd;
+    g_debug_cmd = T("< process_command >");
     mudstate.nStackNest = 0;
     mudstate.bStackLimitReached = false;
 
@@ -1841,7 +1841,7 @@ UTF8 *process_command
         STARTLOG(LOG_BUGS, T("CMD"), T("PLYR"));
         log_printf(T("Bad player in process_command: %d"), executor);
         ENDLOG;
-        mudstate.debug_cmd = cmdsave;
+        g_debug_cmd = cmdsave;
         return pOriginalCommand;
     }
 
@@ -1854,7 +1854,7 @@ UTF8 *process_command
     {
         notify(Owner(executor),
             tprintf(T("Attempt to execute command by halted object #%d"), executor));
-        mudstate.debug_cmd = cmdsave;
+        g_debug_cmd = cmdsave;
         return pOriginalCommand;
     }
     if (  Suspect(executor)
@@ -1894,7 +1894,7 @@ UTF8 *process_command
         pOriginalCommand++;
     }
     mux_strncpy(preserve_cmd, pOriginalCommand, sizeof(preserve_cmd)-1);
-    mudstate.debug_cmd = pOriginalCommand;
+    g_debug_cmd = pOriginalCommand;
     mudstate.curr_cmd = preserve_cmd;
 
     UTF8 *pCommand;
@@ -2010,7 +2010,7 @@ UTF8 *process_command
                 {
                     notify(executor, NOPERM_MESSAGE);
                 }
-                mudstate.debug_cmd = cmdsave;
+                g_debug_cmd = cmdsave;
                 return preserve_cmd;
             }
             process_cmdent(cmdp, nullptr, executor, caller, enactor,
@@ -2025,7 +2025,7 @@ UTF8 *process_command
             }
             mudstate.bStackLimitReached = false;
 
-            mudstate.debug_cmd = cmdsave;
+            g_debug_cmd = cmdsave;
             return preserve_cmd;
         }
     }
@@ -2050,7 +2050,7 @@ UTF8 *process_command
             //
             if ('\0' == *pCommand)
             {
-                mudstate.debug_cmd = cmdsave;
+                g_debug_cmd = cmdsave;
                 return preserve_cmd;
             }
         }
@@ -2060,7 +2060,7 @@ UTF8 *process_command
             //
             do_say(executor, caller, enactor, eval, SAY_SAY, pCommand,
                 args, nargs);
-            mudstate.debug_cmd = cmdsave;
+            g_debug_cmd = cmdsave;
             return preserve_cmd;
         }
     }
@@ -2079,7 +2079,7 @@ UTF8 *process_command
         }
         if (bHandled)
         {
-            mudstate.debug_cmd = cmdsave;
+            g_debug_cmd = cmdsave;
             return preserve_cmd;
         }
     }
@@ -2116,13 +2116,13 @@ UTF8 *process_command
             if (!check_access(executor, mudconf.restrict_home))
             {
                 notify(executor, NOPERM_MESSAGE);
-                mudstate.debug_cmd = cmdsave;
+                g_debug_cmd = cmdsave;
                 return preserve_cmd;
             }
             if (cval == 1)
             {
                 notify(executor, NOPERM_MESSAGE);
-                mudstate.debug_cmd = cmdsave;
+                g_debug_cmd = cmdsave;
                 return preserve_cmd;
             }
             if (  (  Fixed(executor)
@@ -2130,11 +2130,11 @@ UTF8 *process_command
                && !WizRoy(executor))
             {
                 notify(executor, mudconf.fixed_home_msg);
-                mudstate.debug_cmd = cmdsave;
+                g_debug_cmd = cmdsave;
                 return preserve_cmd;
             }
             do_move(executor, caller, enactor, eval, 0, const_cast<UTF8 *>(T("home")), nullptr, 0);
-            mudstate.debug_cmd = cmdsave;
+            g_debug_cmd = cmdsave;
             return preserve_cmd;
         }
     }
@@ -2215,7 +2215,7 @@ UTF8 *process_command
                     {
                         notify(executor, NOPERM_MESSAGE);
                     }
-                    mudstate.debug_cmd = cmdsave;
+                    g_debug_cmd = cmdsave;
                     return preserve_cmd;
                 }
 
@@ -2239,7 +2239,7 @@ UTF8 *process_command
                 {
                     process_hook(executor, goto_cmdp, CEF_HOOK_AFTER, false);
                 }
-                mudstate.debug_cmd = cmdsave;
+                g_debug_cmd = cmdsave;
                 return preserve_cmd;
             }
         }
@@ -2404,7 +2404,7 @@ UTF8 *process_command
                 {
                     notify(executor, NOPERM_MESSAGE);
                 }
-                mudstate.debug_cmd = cmdsave;
+                g_debug_cmd = cmdsave;
                 return preserve_cmd;
             }
             if (  mudconf.space_compress
@@ -2438,7 +2438,7 @@ UTF8 *process_command
                 ENDLOG;
             }
             mudstate.bStackLimitReached = false;
-            mudstate.debug_cmd = cmdsave;
+            g_debug_cmd = cmdsave;
             return preserve_cmd;
         }
     }
@@ -2527,7 +2527,7 @@ UTF8 *process_command
                         {
                             notify(executor, NOPERM_MESSAGE);
                         }
-                        mudstate.debug_cmd = cmdsave;
+                        g_debug_cmd = cmdsave;
                         return preserve_cmd;
                     }
 
@@ -2545,7 +2545,7 @@ UTF8 *process_command
                         process_hook(executor, cmdp, CEF_HOOK_AFTER, false);
                     }
 
-                    mudstate.debug_cmd = cmdsave;
+                    g_debug_cmd = cmdsave;
                     return preserve_cmd;
                 }
             }
@@ -2622,7 +2622,7 @@ UTF8 *process_command
                             {
                                 notify(executor, NOPERM_MESSAGE);
                             }
-                            mudstate.debug_cmd = cmdsave;
+                            g_debug_cmd = cmdsave;
                             return preserve_cmd;
                         }
 
@@ -2639,13 +2639,13 @@ UTF8 *process_command
                         {
                             process_hook(executor, cmdp, CEF_HOOK_AFTER, false);
                         }
-                        mudstate.debug_cmd = cmdsave;
+                        g_debug_cmd = cmdsave;
                         return preserve_cmd;
                     }
                     else if (cval == 1)
                     {
                         notify_quiet(executor, NOPERM_MESSAGE);
-                        mudstate.debug_cmd = cmdsave;
+                        g_debug_cmd = cmdsave;
                         return preserve_cmd;
                     }
                 }
@@ -2710,7 +2710,7 @@ UTF8 *process_command
                     if (exit != NOTHING)
                     {
                         move_exit(executor, exit, true, nullptr, 0);
-                        mudstate.debug_cmd = cmdsave;
+                        g_debug_cmd = cmdsave;
                         return preserve_cmd;
                     }
                     succ |= list_check(Contents(zone_loc), executor,
@@ -2796,7 +2796,7 @@ UTF8 *process_command
             ENDLOG;
         }
     }
-    mudstate.debug_cmd = cmdsave;
+    g_debug_cmd = cmdsave;
     return preserve_cmd;
 }
 

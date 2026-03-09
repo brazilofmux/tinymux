@@ -39,7 +39,7 @@ void report(void)
 {
     STARTLOG(LOG_BUGS, "BUG", "INFO");
     log_text(T("Command: \xE2\x80\x98"));
-    log_text(mudstate.debug_cmd);
+    log_text(g_debug_cmd);
     log_text(T("\xE2\x80\x99"));
     ENDLOG;
     if (Good_obj(mudstate.curr_executor))
@@ -1408,9 +1408,9 @@ void do_shutdown
         ENDLOG;
     }
 
-    // Set up for normal shutdown.
+    // Request normal shutdown via COM call to the driver.
     //
-    mudstate.shutdown_flag = true;
+    request_shutdown();
 }
 
 // There are several types of dumps:

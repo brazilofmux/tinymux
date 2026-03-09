@@ -555,6 +555,15 @@ struct DRIVER_CONFIG
     UTF8    mail_ehlo[128];
 };
 
+// SOLE EXCEPTION to the "engine.so exports only 4 COM front-door
+// functions" rule.  debug_cmd is a crash diagnostic read by the signal
+// handler during SIGSEGV/SIGBUS — a context where COM vtable calls are
+// unsafe.  Both engine and driver write this pointer; the signal handler
+// reads it.  When the engine moves out-of-process (stubslave), this
+// export goes away and debug_cmd becomes process-local.
+//
+extern DCL_EXPORT const UTF8 *g_debug_cmd;
+
 // Game engine — the interface the driver uses to call into the engine.
 // In the current in-process build, CGameEngine wraps direct function calls.
 // When the engine is split into engine.so, the driver creates this via
@@ -596,10 +605,6 @@ public:
     // Clean shutdown: local_shutdown, module shutdown, cleanup.
     //
     virtual MUX_RESULT Shutdown(void) = 0;
-
-    // Check if the engine wants to shut down.
-    //
-    virtual MUX_RESULT ShouldShutdown(bool *pbShutdown) = 0;
 
     // Standalone database conversion (dbconvert mode).
     //
@@ -667,6 +672,22 @@ public:
     //
     virtual MUX_RESULT AnnounceDisconnect(dbref player, int numConnections,
         bool isSuspect, bool wasAutoDark, const UTF8 *reason) = 0;
+};
+
+// Driver control — the interface the engine uses for non-connection
+// driver operations (shutdown requests, etc.).  The driver implements this;
+// the engine acquires it via mux_CreateInstance(CID_DriverControl).
+//
+const MUX_CID CID_DriverControl        = UINT64_C(0x00000002E4A5B6C7);
+const MUX_IID IID_IDriverControl       = UINT64_C(0x00000002F2E3D4C5);
+
+interface mux_IDriverControl : public mux_IUnknown
+{
+public:
+    // Request a graceful shutdown.  The driver sets its shutdown flag
+    // and the networking loop exits on its next iteration.
+    //
+    virtual MUX_RESULT ShutdownRequest(void) = 0;
 };
 
 // Connection manager — the interface the engine uses to interact with

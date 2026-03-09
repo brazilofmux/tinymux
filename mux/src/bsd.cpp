@@ -28,6 +28,8 @@ UTF8 g_short_ver[64];
 mux_IGameEngine  *g_pIGameEngine = nullptr;
 mux_IPlayerSession *g_pIPlayerSession = nullptr;
 
+bool g_bStandAlone = false;
+bool g_shutdown_flag = false;
 StringPtrMap g_logout_cmd_htab;
 
 #ifdef UNIX_SSL

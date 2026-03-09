@@ -215,42 +215,42 @@ static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
             break;
 
         case CLI_DO_INFILE:
-            mudstate.bStandAlone = true;
+            g_bStandAlone = true;
             standalone_infile = reinterpret_cast<const UTF8 *>(pValue);
             break;
 
         case CLI_DO_OUTFILE:
-            mudstate.bStandAlone = true;
+            g_bStandAlone = true;
             standalone_outfile = reinterpret_cast<const UTF8 *>(pValue);
             break;
 
         case CLI_DO_CHECK:
-            mudstate.bStandAlone = true;
+            g_bStandAlone = true;
             standalone_check = true;
             break;
 
         case CLI_DO_LOAD:
-            mudstate.bStandAlone = true;
+            g_bStandAlone = true;
             standalone_load = true;
             break;
 
         case CLI_DO_UNLOAD:
-            mudstate.bStandAlone = true;
+            g_bStandAlone = true;
             standalone_unload = true;
             break;
 
         case CLI_DO_BASENAME:
-            mudstate.bStandAlone = true;
+            g_bStandAlone = true;
             standalone_basename = reinterpret_cast<const UTF8 *>(pValue);
             break;
 
         case CLI_DO_COMSYS_FILE:
-            mudstate.bStandAlone = true;
+            g_bStandAlone = true;
             standalone_comsys_file = reinterpret_cast<const UTF8 *>(pValue);
             break;
 
         case CLI_DO_MAIL_FILE:
-            mudstate.bStandAlone = true;
+            g_bStandAlone = true;
             standalone_mail_file = reinterpret_cast<const UTF8 *>(pValue);
             break;
 
@@ -287,11 +287,11 @@ int DCL_CDECL main(int argc, char *argv[])
         pProg--;
     }
     pProg++;
-    mudstate.bStandAlone = false;
+    g_bStandAlone = false;
     if (  mux_stricmp(reinterpret_cast<const UTF8 *>(pProg), DBCONVERT_NAME1) == 0
        || mux_stricmp(reinterpret_cast<const UTF8 *>(pProg), DBCONVERT_NAME2) == 0)
     {
-        mudstate.bStandAlone = true;
+        g_bStandAlone = true;
     }
 
     // pid_file is driver-owned — set from CLI or default.
@@ -301,7 +301,7 @@ int DCL_CDECL main(int argc, char *argv[])
     //
     CLI_Process(argc, argv, OptionTable, NUM_CLI_OPTIONS, CLI_CallBack);
 
-    if (mudstate.bStandAlone)
+    if (g_bStandAlone)
     {
         int n = 0;
         if (standalone_check)
@@ -342,7 +342,7 @@ int DCL_CDECL main(int argc, char *argv[])
        || !bServerOption)
     {
         mux_fprintf(stderr, T("Version: %s" ENDLINE), g_version);
-        if (mudstate.bStandAlone)
+        if (g_bStandAlone)
         {
             mux_fprintf(stderr, T("Usage: %s -d <dbname> [-i <infile>] [-o <outfile>] [-l|-u|-k] [-C <comsys>] [-m <mail>]" ENDLINE), pProg);
             mux_fprintf(stderr, T("  -d  Basename." ENDLINE));
@@ -367,7 +367,7 @@ int DCL_CDECL main(int argc, char *argv[])
         return 1;
     }
 
-    mudstate.bStandAlone = false;
+    g_bStandAlone = false;
 
     // Initialize Modules very, very early.
     //
