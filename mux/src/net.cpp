@@ -552,7 +552,7 @@ void announce_disconnect(const dbref player, DESC *d, const UTF8 *reason)
     int num = count_player_descs(player);
     bool isSusp = mudstate.access_list.isSuspect(&d->address);
     bool wasAutoDark = (d->flags & DS_AUTODARK) != 0;
-    mudstate.pIPlayerSession->AnnounceDisconnect(player, num,
+    g_pIPlayerSession->AnnounceDisconnect(player, num,
         isSusp, wasAutoDark, reason);
     desc_delhash(d);
 }
@@ -1595,7 +1595,7 @@ static void dump_info(DESC *arg_desc)
     }
     queue_write(arg_desc, tprintf(T("Connected: %d\r\n"), count));
     queue_write(arg_desc, tprintf(T("Size: %d\r\n"), mudstate.db_top));
-    queue_write(arg_desc, tprintf(T("Version: %s\r\n"), mudstate.short_ver));
+    queue_write(arg_desc, tprintf(T("Version: %s\r\n"), g_short_ver));
 
     if (  0 != nDumpInfoTable
        || 0 != nLocalDumpInfoTable)
@@ -1665,7 +1665,7 @@ void init_logout_cmdtab(void)
     //
     for (cp = logout_cmdtable; cp->flag; cp++)
     {
-        mudstate.logout_cmd_htab.emplace(std::vector<UTF8>(cp->name, cp->name + strlen(reinterpret_cast<const char *>(cp->name))), cp);
+        g_logout_cmd_htab.emplace(std::vector<UTF8>(cp->name, cp->name + strlen(reinterpret_cast<const char *>(cp->name))), cp);
     }
 }
 
@@ -1805,7 +1805,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
 
         UTF8 host_address[MBUF_SIZE];
         d->address.ntop(host_address, sizeof(host_address));
-        mudstate.pIPlayerSession->ConnectPlayer(user, password,
+        g_pIPlayerSession->ConnectPlayer(user, password,
             d->addr, d->username, host_address, &player);
         if (  player == NOTHING
            || (!isGuest && Guest.CheckGuest(player)))
@@ -1924,7 +1924,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 bool isPueblo = (d->flags & DS_PUEBLOCLIENT) != 0;
                 bool isSusp = mudstate.access_list.isSuspect(&d->address);
                 int timeout = g_dc.idle_timeout;
-                mudstate.pIPlayerSession->AnnounceConnect(player, num_con,
+                g_pIPlayerSession->AnnounceConnect(player, num_con,
                     isPueblo, isSusp, d->addr, d->username, host_address,
                     &timeout);
                 d->timeout = timeout;
@@ -1997,7 +1997,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
         else
         {
             const UTF8 *pmsg;
-            mudstate.pIPlayerSession->CreatePlayer(user, password,
+            g_pIPlayerSession->CreatePlayer(user, password,
                 NOTHING, false, &player, &pmsg);
             if (player == NOTHING)
             {
@@ -2012,8 +2012,8 @@ static bool check_connect(DESC *d, UTF8 *msg)
             }
             else
             {
-                mudstate.pIPlayerSession->AddToPublicChannel(player);
-                mudstate.pIPlayerSession->AddToPlayerChannels(player);
+                g_pIPlayerSession->AddToPublicChannel(player);
+                g_pIPlayerSession->AddToPlayerChannels(player);
                 STARTLOG(LOG_LOGIN | LOG_PCREATES, "CON", "CREA");
                 buff = alloc_mbuf("check_conn.LOG.create");
                 mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Created "), d->socket, d->addr);
@@ -2034,7 +2034,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                     UTF8 crea_host[MBUF_SIZE];
                     d->address.ntop(crea_host, sizeof(crea_host));
                     int timeout = g_dc.idle_timeout;
-                    mudstate.pIPlayerSession->AnnounceConnect(player, 1,
+                    g_pIPlayerSession->AnnounceConnect(player, 1,
                         isPueblo, isSusp, d->addr, d->username,
                         crea_host, &timeout);
                     d->timeout = timeout;
@@ -2216,8 +2216,8 @@ void do_command(DESC *d, UTF8 *command)
 
     // Look up the command in the logged-out command table.
     //
-    auto it_logout = mudstate.logout_cmd_htab.find(std::vector<UTF8>(command, command + iArg));
-    NAMETAB *cp = (it_logout != mudstate.logout_cmd_htab.end()) ? static_cast<NAMETAB*>(it_logout->second) : nullptr;
+    auto it_logout = g_logout_cmd_htab.find(std::vector<UTF8>(command, command + iArg));
+    NAMETAB *cp = (it_logout != g_logout_cmd_htab.end()) ? static_cast<NAMETAB*>(it_logout->second) : nullptr;
     if (cp == nullptr)
     {
         // Not in the logged-out command table, so maybe a connect attempt.

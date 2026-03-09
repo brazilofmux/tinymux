@@ -36,4 +36,22 @@ extern std::list<DESC*> g_descriptors_list;
 extern std::unordered_map<DESC*, std::list<DESC*>::iterator, DriverPointerHasher> g_descriptors_map;
 extern std::multimap<dbref, DESC*> g_dbref_to_descriptors_map;
 
+// Version strings — built by build_version() (driver), read by driver.
+//
+extern UTF8 g_version[128];
+extern UTF8 g_short_ver[64];
+
+// Driver-side COM interface pointers.  The driver creates these via
+// mux_CreateInstance after init_modules/LoadGame.
+//
+class mux_IGameEngine;
+class mux_IPlayerSession;
+extern mux_IGameEngine  *g_pIGameEngine;
+extern mux_IPlayerSession *g_pIPlayerSession;
+
+// Logged-out command table — built and used only by driver.
+// StringPtrMap is defined in mudconf.h (included via externs.h).
+//
+extern StringPtrMap g_logout_cmd_htab;
+
 #endif // DRIVERSTATE_H

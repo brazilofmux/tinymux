@@ -15,6 +15,7 @@
 
 #include "ganl_adapter.h"
 #include "modules.h"
+#include "driverstate.h"
 #include "driver_log.h"
 
 mux_ILog *g_pILog = nullptr;
@@ -333,14 +334,14 @@ int DCL_CDECL main(int argc, char *argv[])
 
     if (bVersion)
     {
-        mux_fprintf(stderr, T("Version: %s" ENDLINE), mudstate.version);
+        mux_fprintf(stderr, T("Version: %s" ENDLINE), g_version);
         return 1;
     }
     if (  bSyntaxError
        || conffile == nullptr
        || !bServerOption)
     {
-        mux_fprintf(stderr, T("Version: %s" ENDLINE), mudstate.version);
+        mux_fprintf(stderr, T("Version: %s" ENDLINE), g_version);
         if (mudstate.bStandAlone)
         {
             mux_fprintf(stderr, T("Usage: %s -d <dbname> [-i <infile>] [-o <outfile>] [-l|-u|-k] [-C <comsys>] [-m <mail>]" ENDLINE), pProg);
@@ -447,8 +448,8 @@ int DCL_CDECL main(int argc, char *argv[])
     //
     mr = mux_CreateInstance(CID_GameEngine, nullptr, UseSameProcess,
                             IID_IGameEngine,
-                            reinterpret_cast<void **>(&mudstate.pIGameEngine));
-    mux_IGameEngine *pGameEngine = mudstate.pIGameEngine;
+                            reinterpret_cast<void **>(&g_pIGameEngine));
+    mux_IGameEngine *pGameEngine = g_pIGameEngine;
     if (MUX_FAILED(mr) || nullptr == pGameEngine)
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
@@ -461,9 +462,10 @@ int DCL_CDECL main(int argc, char *argv[])
     //
     mr = pGameEngine->LoadGame(conffile, nullptr, bMinDB);
 
-    // cf_init() inside LoadGame clears mudstate.pIGameEngine; restore it.
+    // cf_init() inside LoadGame clears mudstate; g_pIGameEngine is now
+    // driver-local and unaffected, but keep the explicit assignment.
     //
-    mudstate.pIGameEngine = pGameEngine;
+    g_pIGameEngine = pGameEngine;
 
     if (MUX_FAILED(mr))
     {
@@ -484,6 +486,18 @@ int DCL_CDECL main(int argc, char *argv[])
         ENDLOG;
         pGameEngine->Release();
         return 2;
+    }
+
+    // Create the player session interface (driver-owned).
+    //
+    mr = mux_CreateInstance(CID_PlayerSession, nullptr, UseSameProcess,
+                            IID_IPlayerSession,
+                            reinterpret_cast<void **>(&g_pIPlayerSession));
+    if (MUX_FAILED(mr))
+    {
+        STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+        g_pILog->log_text(tprintf(T("Failed to create PlayerSession interface (%d)."), mr));
+        ENDLOG;
     }
 
     set_signals();

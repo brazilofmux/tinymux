@@ -2551,18 +2551,7 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
     fcache_init();
     helpindex_init();
 
-    // Create the player session interface for driver use.
-    //
-    mudstate.pIPlayerSession = nullptr;
-    mr = mux_CreateInstance(CID_PlayerSession, nullptr, UseSameProcess,
-                            IID_IPlayerSession,
-                            reinterpret_cast<void **>(&mudstate.pIPlayerSession));
-    if (MUX_FAILED(mr))
-    {
-        STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_printf(T("Failed to create PlayerSession interface (%d)."), mr);
-        ENDLOG;
-    }
+    // PlayerSession interface is now created by the driver after LoadGame.
 
     // Open or create the SQLite database.
     //

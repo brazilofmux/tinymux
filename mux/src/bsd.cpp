@@ -16,11 +16,19 @@
 #include "driver_log.h"
 using namespace std;
 
-// Driver-local descriptor tracking containers (definitions).
+// Driver-local state (definitions).  See driverstate.h for declarations.
 //
 std::list<DESC*> g_descriptors_list;
 std::unordered_map<DESC*, std::list<DESC*>::iterator, DriverPointerHasher> g_descriptors_map;
 std::multimap<dbref, DESC*> g_dbref_to_descriptors_map;
+
+UTF8 g_version[128];
+UTF8 g_short_ver[64];
+
+mux_IGameEngine  *g_pIGameEngine = nullptr;
+mux_IPlayerSession *g_pIPlayerSession = nullptr;
+
+StringPtrMap g_logout_cmd_htab;
 
 #ifdef UNIX_SSL
 port_info main_game_ports[MAX_LISTEN_PORTS * 2];

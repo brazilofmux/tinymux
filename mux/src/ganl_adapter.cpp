@@ -952,7 +952,7 @@ public:
         }
 
         dbref player = NOTHING;
-        mudstate.pIPlayerSession->ConnectPlayer(user, pass, d->addr, d->username, hostAddress, &player);
+        g_pIPlayerSession->ConnectPlayer(user, pass, d->addr, d->username, hostAddress, &player);
         if (player == NOTHING || (!isGuestConnect && Guest.CheckGuest(player))) {
             queue_write(d, connect_fail);
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
@@ -1019,7 +1019,7 @@ public:
             bool isPueblo = (d->flags & DS_PUEBLOCLIENT) != 0;
             bool isSusp = mudstate.access_list.isSuspect(&d->address);
             int timeout = g_dc.idle_timeout;
-            mudstate.pIPlayerSession->AnnounceConnect(player, numConnections,
+            g_pIPlayerSession->AnnounceConnect(player, numConnections,
                 isPueblo, isSusp, d->addr, d->username, hostAddress,
                 &timeout);
             d->timeout = timeout;
@@ -1829,7 +1829,7 @@ void GanlAdapter::process_tinyMUX_tasks() {
     ltaNow.GetUTC();
 
     // Update command quotas (same as shovechars timeslice logic).
-    mudstate.pIGameEngine->UpdateQuotas(ltaLastSlice_, ltaNow);
+    g_pIGameEngine->UpdateQuotas(ltaLastSlice_, ltaNow);
     ltaLastSlice_ = ltaNow;
 
     // Finalize TLS connections that have completed their handshake.
@@ -2663,7 +2663,7 @@ void GanlAdapter::email_advance_state_locked(const std::string& responseLine) {
                        " <" + email_channel_->senderAddr + ">\r\n";
             payload += "To: " + email_channel_->recipientAddr + "\r\n";
             payload += "X-Mailer: TinyMUX ";
-            payload += reinterpret_cast<const char*>(mudstate.short_ver);
+            payload += reinterpret_cast<const char*>(g_short_ver);
             payload += "\r\n";
             payload += "MIME-Version: 1.0\r\n";
             payload += "Content-Type: text/plain; charset=utf-8\r\n";
