@@ -15,6 +15,7 @@
 #include "modules.h"
 #include "driverstate.h"
 #include "driver_log.h"
+#include "driver_bridge.h"
 using namespace std;
 
 NAMETAB default_charset_nametab[] =
@@ -231,15 +232,16 @@ void queue_string(DESC *d, const UTF8 *s)
 {
     const UTF8 *p;
     if (  (d->flags & DS_CONNECTED)
-       && Ansi(d->player))
+       && (drv_Flags(d->player, FLAG_WORD2) & ANSI))
     {
-        if (Html(d->player))
+        if (drv_Flags(d->player, FLAG_WORD2) & HTML)
         {
             p = convert_to_html(s);
         }
         else
         {
-            p = convert_color(s, NoBleed(d->player), Color256(d->player));
+            p = convert_color(s, (drv_Flags(d->player, FLAG_WORD2) & NOBLEED) != 0,
+                              (drv_Flags(d->player, FLAG_WORD2) & COLOR256) != 0);
         }
     }
     else
@@ -278,7 +280,8 @@ void queue_string(DESC *d, const UTF8 *s)
 
 void queue_string(DESC *d, const mux_string &s)
 {
-    const UTF8 *p = s.export_TextConverted((d->flags & DS_CONNECTED) && Ansi(d->player), NoBleed(d->player), Color256(d->player), Html(d->player));
+    const unsigned int f2 = (d->flags & DS_CONNECTED) ? drv_Flags(d->player, FLAG_WORD2) : 0;
+    const UTF8 *p = s.export_TextConverted((f2 & ANSI) != 0, (f2 & NOBLEED) != 0, (f2 & COLOR256) != 0, (f2 & HTML) != 0);
 
     const UTF8 *q;
     if (CHARSET_UTF8 == d->encoding)
@@ -913,7 +916,7 @@ void send_keepalive_nops(void)
     {
         DESC* d = *it;
         if (  (d->flags & DS_CONNECTED)
-           && KeepAlive(d->player))
+           && (drv_Flags(d->player, FLAG_WORD2) & CKEEPALIVE))
         {
             const UTF8 aNOP[2] = { NVT_IAC, NVT_NOP };
             queue_write_LEN(d, aNOP, sizeof(aNOP));
@@ -1123,7 +1126,7 @@ void broadcast_and_flush(int inflags, const UTF8 *text)
         ++it;
         if (d->flags & DS_CONNECTED)
         {
-            if ((Flags(d->player) & inflags) == inflags)
+            if ((drv_Flags(d->player, FLAG_WORD1) & inflags) == inflags)
             {
                 queue_string(d, text);
                 queue_write_LEN(d, T("\r\n"), 2);
@@ -1183,10 +1186,10 @@ void check_idle(void)
             }
 
             CLinearTimeDelta ltdIdle = ltaNow - d->last_time;
-            if (Can_Idle(d->player))
+            if (drv_Can_Idle(d->player))
             {
                 if (  g_dc.idle_wiz_dark
-                   && (Flags(d->player) & (WIZARD|DARK)) == WIZARD
+                   && (drv_Flags(d->player, FLAG_WORD1) & (WIZARD|DARK)) == WIZARD
                    && ltdIdle.ReturnSeconds() > g_dc.idle_timeout)
                 {
                     // Make sure this Wizard player does not have some other
@@ -1209,7 +1212,7 @@ void check_idle(void)
                     }
                     if (!found)
                     {
-                        s_Flags(d->player, FLAG_WORD1, db[d->player].fs.word[FLAG_WORD1] | DARK);
+                        drv_s_Flags(d->player, FLAG_WORD1, drv_Flags(d->player, FLAG_WORD1) | DARK);
                         auto range2 = g_dbref_to_descriptors_map.equal_range(d->player);
                         for (auto it = range2.first; it != range2.second; ++it)
                         {
@@ -1242,7 +1245,7 @@ void check_idle(void)
 LBUF_OFFSET trimmed_name(const dbref player, UTF8 cbuff[MBUF_SIZE], const LBUF_OFFSET nMin, const LBUF_OFFSET nMax, const LBUF_OFFSET nPad)
 {
     mux_field nName = StripTabsAndTruncate(
-                                             Moniker(player),
+                                             drv_Moniker(player),
                                              cbuff,
                                              MBUF_SIZE-1,
                                              nMax
@@ -1293,7 +1296,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
     }
 
     if (  (e->flags & (DS_PUEBLOCLIENT|DS_CONNECTED))
-       && Html(e->player))
+       && (drv_Flags(e->player, FLAG_WORD2) & HTML))
     {
         queue_write(e, T("<pre>"));
     }
@@ -1310,15 +1313,15 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
         queue_write(e, T("Port Pend  Lost     Total  Pend  Lost     Total\r\n"));
     }
     else if (  (e->flags & DS_CONNECTED)
-            && Wizard_Who(e->player)
+            && drv_Wizard_Who(e->player)
             && key == CMD_WHO)
     {
         queue_write(e, T("  Room    Cmds   Host\r\n"));
     }
     else
     {
-        if (  Wizard_Who(e->player)
-           || See_Hidden(e->player))
+        if (  drv_Wizard_Who(e->player)
+           || drv_See_Hidden(e->player))
         {
             queue_write(e, T("  "));
         }
@@ -1342,27 +1345,27 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
     {
         DESC* d = *it;
         if (!(  (  (e->flags & DS_CONNECTED)
-                && SiteMon(e->player))
+                && (drv_Flags(e->player, FLAG_WORD3) & SITEMON))
              || (d->flags & DS_CONNECTED)))
         {
             continue;
         }
         if (  !(d->flags & DS_CONNECTED)
-           || !Hidden(d->player)
+           || !(drv_Flags(d->player, FLAG_WORD1) & DARK)
            || (  (e->flags & DS_CONNECTED)
-              && (  Wizard_Who(e->player)
-                 || See_Hidden(e->player))))
+              && (  drv_Wizard_Who(e->player)
+                 || drv_See_Hidden(e->player))))
         {
             count++;
             if (  match
                && (  !(d->flags & DS_CONNECTED)
-                  || string_prefix(Name(d->player), match) == 0))
+                  || string_prefix(drv_Name(d->player), match) == 0))
             {
                 continue;
             }
             if (  key == CMD_SESSION
                && (  !(e->flags & DS_CONNECTED)
-                  || !Wizard_Who(e->player))
+                  || !drv_Wizard_Who(e->player))
                && (  !(e->flags & DS_CONNECTED)
                   || !(d->flags & DS_CONNECTED)
                   || d->player != e->player))
@@ -1375,10 +1378,10 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
             fp = flist;
             sp = slist;
             if (  (e->flags & DS_CONNECTED)
-               && Wizard_Who(e->player))
+               && drv_Wizard_Who(e->player))
             {
                 if (  (d->flags & DS_CONNECTED)
-                   && Hidden(d->player))
+                   && (drv_Flags(d->player, FLAG_WORD1) & DARK))
                 {
                     if (d->flags & DS_AUTODARK)
                     {
@@ -1391,16 +1394,16 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
                 }
                 if (d->flags & DS_CONNECTED)
                 {
-                    if (Hideout(d->player))
+                    if (drv_Flags(d->player, FLAG_WORD2) & UNFINDABLE)
                     {
                         safe_copy_chr_ascii('U', flist, &fp, sizeof(flist)-1);
                     }
                     else
                     {
                         const dbref room_it = where_room(d->player);
-                        if (Good_obj(room_it))
+                        if (drv_Good_obj(room_it))
                         {
-                            if (Hideout(room_it))
+                            if (drv_Flags(room_it, FLAG_WORD2) & UNFINDABLE)
                             {
                                 safe_copy_chr_ascii('u', flist, &fp, sizeof(flist)-1);
                             }
@@ -1411,7 +1414,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
                         }
                     }
 
-                    if (Suspect(d->player))
+                    if (drv_Flags(drv_Owner(d->player), FLAG_WORD2) & SUSPECT)
                     {
                         safe_copy_chr_ascii('+', flist, &fp, sizeof(flist)-1);
                     }
@@ -1436,8 +1439,8 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
             }
             else if (  (e->flags & DS_CONNECTED)
                     && (d->flags & DS_CONNECTED)
-                    && See_Hidden(e->player)
-                    && Hidden(d->player))
+                    && drv_See_Hidden(e->player)
+                    && (drv_Flags(d->player, FLAG_WORD1) & DARK))
             {
                 if (d->flags & DS_AUTODARK)
                 {
@@ -1470,7 +1473,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
             const UTF8 *pTimeStamp2 = time_format_2(ltdLastTime.ReturnSeconds());
 
             if (  (e->flags & DS_CONNECTED)
-               && Wizard_Who(e->player)
+               && drv_Wizard_Who(e->player)
                && key == CMD_WHO)
             {
                 mux_sprintf(buf, MBUF_SIZE, T("%s%s %4s%-3s#%-6d%5d%3s%s\r\n"),
@@ -1478,7 +1481,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
                     pTimeStamp1,
                     pTimeStamp2,
                     flist,
-                    ((d->flags & DS_CONNECTED) ? Location(d->player) : -1),
+                    ((d->flags & DS_CONNECTED) ? drv_Location(d->player) : -1),
                     d->command_count,
                     slist,
                     trimmed_site(((d->username[0] != '\0') ? tprintf(T("%s@%s"), d->username, d->addr) : d->addr)));
@@ -1495,8 +1498,8 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
                     d->output_size, d->output_lost,
                     d->output_tot);
             }
-            else if (  Wizard_Who(e->player)
-                    || See_Hidden(e->player))
+            else if (  drv_Wizard_Who(e->player)
+                    || drv_See_Hidden(e->player))
             {
                 mux_sprintf(buf, MBUF_SIZE, T("%s%s %4s%-3s%s\r\n"),
                     NameField,
@@ -1527,7 +1530,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
     queue_write(e, buf);
 
     if (  (e->flags & (DS_PUEBLOCLIENT|DS_CONNECTED))
-       && Html(e->player))
+       && (drv_Flags(e->player, FLAG_WORD2) & HTML))
     {
         queue_write(e, T("</pre>"));
     }
@@ -1588,13 +1591,13 @@ static void dump_info(DESC *arg_desc)
         DESC* d = *it;
         if (d->flags & DS_CONNECTED)
         {
-            if (!Good_obj(d->player))
+            if (!drv_Good_obj(d->player))
             {
                 continue;
             }
-            if (  !Hidden(d->player)
+            if (  !(drv_Flags(d->player, FLAG_WORD1) & DARK)
                || (  (arg_desc->flags & DS_CONNECTED)
-                  && See_Hidden(arg_desc->player)))
+                  && drv_See_Hidden(arg_desc->player)))
             {
                 count++;
             }
@@ -1765,7 +1768,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             if (g_dc.control_flags & CF_LOGIN)
             {
                 if (  g_dc.number_guests <= 0
-                   || !Good_obj(g_dc.guest_char)
+                   || !drv_Good_obj(g_dc.guest_char)
                    || !(g_dc.control_flags & CF_GUEST))
                 {
                     queue_write(d, T("Guest logins are disabled.\r\n"));
@@ -1838,14 +1841,14 @@ static bool check_connect(DESC *d, UTF8 *msg)
         }
         else if (  (  (g_dc.control_flags & CF_LOGIN)
                    && (nplayers < g_dc.max_players))
-                || RealWizRoy(player)
+                || drv_WizRoy(player)
                 || God(player))
         {
             if (  strncmp(reinterpret_cast<char*>(command), "cd", 2) == 0
-               && (  RealWizard(player)
+               && (  drv_Wizard(player)
                   || God(player)))
             {
-                s_Flags(player, FLAG_WORD1, db[player].fs.word[FLAG_WORD1] | DARK);
+                drv_s_Flags(player, FLAG_WORD1, drv_Flags(player, FLAG_WORD1) | DARK);
             }
 
             // Make sure we don't have a guest from an unwanted host.
@@ -1862,7 +1865,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             // different from @newpassword'ing them. Oh well. We are just
             // following orders. ;)
             //
-            if (  Guest(player)
+            if (  (drv_Powers(player) & POW_GUEST)
                && (host_info & HI_NOGUEST))
             {
                 failconn(T("CON"), T("Connect"), T("Guest Site Forbidden"), d,
@@ -1910,7 +1913,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             // message(s). Use raw notifies so the player doesn't try
             // to match on the text.
             //
-            if (Guest(player))
+            if (drv_Powers(player) & POW_GUEST)
             {
                 fcache_dump(d, FC_CONN_GUEST);
             }
@@ -1921,7 +1924,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                     fcache_dump(d, FC_CREA_NEW);
                 else
                     fcache_dump(d, FC_MOTD);
-                if (Wizard(player))
+                if (drv_Wizard(player))
                     fcache_dump(d, FC_WIZMOTD);
                 free_lbuf(buff);
             }
@@ -2179,7 +2182,7 @@ void do_command(DESC *d, UTF8 *command)
         {
             notify(d->player, T("GAME: Expensive activity abbreviated."));
             halt_que(d->player, NOTHING);
-            s_Flags(d->player, FLAG_WORD1, Flags(d->player) | HALT);
+            drv_s_Flags(d->player, FLAG_WORD1, drv_Flags(d->player, FLAG_WORD1) | HALT);
         }
         alarm_clock.clear();
 
@@ -2294,7 +2297,7 @@ void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key,
         }
         // Set the player's flag.
         //
-        s_Html(executor);
+        drv_s_Flags(executor, FLAG_WORD2, drv_Flags(executor, FLAG_WORD2) | HTML);
         return;
     }
 
@@ -2472,7 +2475,7 @@ FUNCTION(fun_doing)
         DESC *d = find_desc_by_socket(s);
         if (d)
         {
-            if (d->player == executor || Wizard_Who(executor))
+            if (d->player == executor || drv_Wizard_Who(executor))
             {
                 safe_str(d->doing, buff, bufc);
             }
@@ -2491,8 +2494,8 @@ FUNCTION(fun_doing)
             return;
         }
 
-        if (  Wizard_Who(executor)
-           || !Hidden(victim))
+        if (  drv_Wizard_Who(executor)
+           || !(drv_Flags(victim, FLAG_WORD1) & DARK))
         {
             DESC *d = find_desc_by_player(victim);
             if (d)
@@ -2517,7 +2520,7 @@ FUNCTION(fun_host)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!Wizard_Who(executor))
+    if (!drv_Wizard_Who(executor))
     {
         safe_noperm(buff, bufc);
         return;
@@ -2572,7 +2575,7 @@ FUNCTION(fun_siteinfo)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    if (!Wizard_Who(executor))
+    if (!drv_Wizard_Who(executor))
     {
         safe_noperm(buff, bufc);
         return;
@@ -3362,9 +3365,9 @@ void load_restart_db(void)
         g_descriptors_map.insert(make_pair(d, it));
 
         desc_addhash(d);
-        if (isPlayer(d->player))
+        if ((drv_Flags(d->player, FLAG_WORD1) & TYPE_MASK) == TYPE_PLAYER)
         {
-            s_Connected(d->player);
+            drv_s_Flags(d->player, FLAG_WORD2, drv_Flags(d->player, FLAG_WORD2) | CONNECTED);
         }
     }
 
@@ -3373,7 +3376,7 @@ void load_restart_db(void)
         d = *it;
 	++it;
         if (  (d->flags & DS_CONNECTED)
-           && !isPlayer(d->player))
+           && !((drv_Flags(d->player, FLAG_WORD1) & TYPE_MASK) == TYPE_PLAYER))
         {
             shutdownsock(d, R_QUIT);
         }

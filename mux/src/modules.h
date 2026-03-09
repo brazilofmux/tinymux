@@ -261,6 +261,33 @@ public:
     virtual MUX_RESULT GetMoniker(dbref obj, const UTF8 **ppMoniker) = 0;
     virtual MUX_RESULT MatchThing(dbref executor, const UTF8 *pName,
         dbref *pResult) = 0;
+
+    // Flag/power accessors — word is FLAG_WORD1/2/3.
+    //
+    virtual MUX_RESULT GetFlags(dbref obj, int word, unsigned int *pFlags) = 0;
+    virtual MUX_RESULT SetFlags(dbref obj, int word, unsigned int flags) = 0;
+    virtual MUX_RESULT GetPowers(dbref obj, unsigned int *pPowers) = 0;
+
+    // Pennies accessor.
+    //
+    virtual MUX_RESULT GetPennies(dbref obj, int *pPennies) = 0;
+
+    // PureName — returns the unadorned name (no ANSI).
+    //
+    virtual MUX_RESULT GetPureName(dbref obj, const UTF8 **ppName) = 0;
+
+    // DecodeFlags — printable flag string (caller must free_sbuf).
+    //
+    virtual MUX_RESULT DecodeFlags(dbref player, dbref obj, UTF8 **ppStr) = 0;
+
+    // Compound permission queries — these wrap the complex macro chains
+    // (Owner/Inherits/Flags) so the driver doesn't need db[] access.
+    //
+    virtual MUX_RESULT IsWizard(dbref obj, bool *pResult) = 0;
+    virtual MUX_RESULT IsWizRoy(dbref obj, bool *pResult) = 0;
+    virtual MUX_RESULT CanIdle(dbref obj, bool *pResult) = 0;
+    virtual MUX_RESULT WizardWho(dbref obj, bool *pResult) = 0;
+    virtual MUX_RESULT SeeHidden(dbref obj, bool *pResult) = 0;
 };
 
 // Softcode evaluator.

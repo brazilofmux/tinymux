@@ -838,6 +838,19 @@ public:
     virtual MUX_RESULT MatchThing(dbref executor, const UTF8 *pName,
         dbref *pResult);
 
+    virtual MUX_RESULT GetFlags(dbref obj, int word, unsigned int *pFlags);
+    virtual MUX_RESULT SetFlags(dbref obj, int word, unsigned int flags);
+    virtual MUX_RESULT GetPowers(dbref obj, unsigned int *pPowers);
+    virtual MUX_RESULT GetPennies(dbref obj, int *pPennies);
+    virtual MUX_RESULT GetPureName(dbref obj, const UTF8 **ppName);
+    virtual MUX_RESULT DecodeFlags(dbref player, dbref obj, UTF8 **ppStr);
+
+    virtual MUX_RESULT IsWizard(dbref obj, bool *pResult);
+    virtual MUX_RESULT IsWizRoy(dbref obj, bool *pResult);
+    virtual MUX_RESULT CanIdle(dbref obj, bool *pResult);
+    virtual MUX_RESULT WizardWho(dbref obj, bool *pResult);
+    virtual MUX_RESULT SeeHidden(dbref obj, bool *pResult);
+
     CObjectInfo(void);
     virtual ~CObjectInfo();
 
@@ -1012,6 +1025,166 @@ MUX_RESULT CObjectInfo::MatchThing(dbref executor, const UTF8 *pName,
         return MUX_E_INVALIDARG;
     }
     *pResult = match_thing(executor, pName);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::GetFlags(dbref obj, int word, unsigned int *pFlags)
+{
+    if (nullptr == pFlags)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj) || word < FLAG_WORD1 || word > FLAG_WORD3)
+    {
+        *pFlags = 0;
+        return MUX_E_INVALIDARG;
+    }
+    *pFlags = db[obj].fs.word[word];
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::SetFlags(dbref obj, int word, unsigned int flags)
+{
+    if (!Good_obj(obj) || word < FLAG_WORD1 || word > FLAG_WORD3)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    s_Flags(obj, word, flags);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::GetPowers(dbref obj, unsigned int *pPowers)
+{
+    if (nullptr == pPowers)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *pPowers = 0;
+        return MUX_E_INVALIDARG;
+    }
+    *pPowers = Powers(obj);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::GetPennies(dbref obj, int *pPennies)
+{
+    if (nullptr == pPennies)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *pPennies = 0;
+        return MUX_E_INVALIDARG;
+    }
+    *pPennies = Pennies(obj);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::GetPureName(dbref obj, const UTF8 **ppName)
+{
+    if (nullptr == ppName)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *ppName = nullptr;
+        return MUX_E_INVALIDARG;
+    }
+    *ppName = PureName(obj);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::DecodeFlags(dbref player, dbref obj, UTF8 **ppStr)
+{
+    if (nullptr == ppStr)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *ppStr = nullptr;
+        return MUX_E_INVALIDARG;
+    }
+    *ppStr = decode_flags(player, &(db[obj].fs));
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::IsWizard(dbref obj, bool *pResult)
+{
+    if (nullptr == pResult)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *pResult = false;
+        return MUX_E_INVALIDARG;
+    }
+    *pResult = Wizard(obj) ? true : false;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::IsWizRoy(dbref obj, bool *pResult)
+{
+    if (nullptr == pResult)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *pResult = false;
+        return MUX_E_INVALIDARG;
+    }
+    *pResult = WizRoy(obj) ? true : false;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::CanIdle(dbref obj, bool *pResult)
+{
+    if (nullptr == pResult)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *pResult = false;
+        return MUX_E_INVALIDARG;
+    }
+    *pResult = Can_Idle(obj) ? true : false;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::WizardWho(dbref obj, bool *pResult)
+{
+    if (nullptr == pResult)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *pResult = false;
+        return MUX_E_INVALIDARG;
+    }
+    *pResult = Wizard_Who(obj) ? true : false;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::SeeHidden(dbref obj, bool *pResult)
+{
+    if (nullptr == pResult)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(obj))
+    {
+        *pResult = false;
+        return MUX_E_INVALIDARG;
+    }
+    *pResult = See_Hidden(obj) ? true : false;
     return MUX_S_OK;
 }
 

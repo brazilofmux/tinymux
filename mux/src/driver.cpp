@@ -505,6 +505,16 @@ int DCL_CDECL main(int argc, char *argv[])
         g_pINotify = nullptr;
     }
 
+    // Acquire the object-info interface (driver→engine).
+    //
+    mr = mux_CreateInstance(CID_ObjectInfo, nullptr, UseSameProcess,
+                            IID_IObjectInfo,
+                            reinterpret_cast<void **>(&g_pIObjectInfo));
+    if (MUX_FAILED(mr))
+    {
+        g_pIObjectInfo = nullptr;
+    }
+
     // Create the player session interface (driver-owned).
     //
     mr = mux_CreateInstance(CID_PlayerSession, nullptr, UseSameProcess,

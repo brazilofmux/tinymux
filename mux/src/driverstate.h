@@ -47,9 +47,11 @@ extern UTF8 g_short_ver[64];
 class mux_IGameEngine;
 class mux_IPlayerSession;
 class mux_INotify;
+class mux_IObjectInfo;
 extern mux_IGameEngine  *g_pIGameEngine;
 extern mux_IPlayerSession *g_pIPlayerSession;
 extern mux_INotify        *g_pINotify;
+extern mux_IObjectInfo    *g_pIObjectInfo;
 
 // CLI mode flag — true when running as dbconvert.  The engine has its
 // own copy (mudstate.bStandAlone) set in CGameEngine::DbConvert().

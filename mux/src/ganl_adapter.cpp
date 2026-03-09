@@ -3,6 +3,7 @@
 #include "modules.h"
 #include "driverstate.h"
 #include "driver_log.h"
+#include "driver_bridge.h"
 #include "interface.h"
 #include "connection.h" // Include ConnectionBase definition
 #include "network_types.h"
@@ -336,10 +337,10 @@ namespace
         CLinearTimeDelta ltd = ltaNow - d->connected_at;
         const int Seconds = ltd.ReturnSeconds();
         UTF8* accnt = alloc_lbuf("ganl_close.LOG.accnt");
-        const auto flags = decode_flags(GOD, &(db[d->player].fs));
-        const auto locPlayer = Location(d->player);
-        const auto penPlayer = Pennies(d->player);
-        const auto PlayerName = PureName(d->player);
+        const auto flags = drv_decode_flags(GOD, d->player);
+        const auto locPlayer = drv_Location(d->player);
+        const auto penPlayer = drv_Pennies(d->player);
+        const auto PlayerName = drv_PureName(d->player);
         mux_sprintf(accnt, LBUF_SIZE, T("%d %s %d %d %d %d [%s] <%s> %s"),
             d->player, flags, d->command_count, Seconds, locPlayer, penPlayer,
             d->addr, disc_reasons[mux_reason], PlayerName);
@@ -668,7 +669,7 @@ public:
                 DESC* d1 = it->second;
                 d1->flags &= ~DS_AUTODARK;
             }
-            s_Flags(d->player, FLAG_WORD1, db[d->player].fs.word[FLAG_WORD1] & ~DARK);
+            drv_s_Flags(d->player, FLAG_WORD1, drv_Flags(d->player, FLAG_WORD1) & ~DARK);
         }
 
         // Feed raw bytes through TinyMUX's existing NVT parser.
@@ -908,7 +909,7 @@ public:
             }
 
             if (g_dc.control_flags & CF_LOGIN) {
-                if (g_dc.number_guests <= 0 || !Good_obj(g_dc.guest_char) || !(g_dc.control_flags & CF_GUEST)) {
+                if (g_dc.number_guests <= 0 || !drv_Good_obj(g_dc.guest_char) || !(g_dc.control_flags & CF_GUEST)) {
                     queue_write(d, T("Guest logins are disabled.\r\n"));
                     cleanupBuffers();
                     return false;
@@ -973,7 +974,7 @@ public:
 
         const bool loginsEnabled = (g_dc.control_flags & CF_LOGIN) != 0;
         const bool belowCap = (g_dc.max_players < 0) || (nplayers < g_dc.max_players);
-        const bool privileged = RealWizRoy(player) || God(player);
+        const bool privileged = drv_WizRoy(player) || God(player);
 
         if (!( (loginsEnabled && belowCap) || privileged )) {
             if (!loginsEnabled) {
@@ -984,7 +985,7 @@ public:
                 FC_CONN_FULL, g_dc.fullmotd_msg, ganl::DisconnectReason::GameFull);
         }
 
-        if (Guest(player) && (hostInfo & HI_NOGUEST)) {
+        if ((drv_Powers(player) & POW_GUEST) && (hostInfo & HI_NOGUEST)) {
             return rejectWithMessage(T("CON"), T("Connect"), T("Guest Site Forbidden"), player,
                 FC_CONN_SITE, g_dc.downmotd_msg, ganl::DisconnectReason::ServerShutdown);
         }

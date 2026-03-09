@@ -14,6 +14,7 @@
 #include "modules.h"
 #include "driverstate.h"
 #include "driver_log.h"
+#include "driver_bridge.h"
 using namespace std;
 
 // Driver-local state (definitions).  See driverstate.h for declarations.
@@ -28,6 +29,7 @@ UTF8 g_short_ver[64];
 mux_IGameEngine  *g_pIGameEngine = nullptr;
 mux_IPlayerSession *g_pIPlayerSession = nullptr;
 mux_INotify        *g_pINotify = nullptr;
+mux_IObjectInfo    *g_pIObjectInfo = nullptr;
 
 bool g_bStandAlone = false;
 bool g_shutdown_flag = false;
@@ -205,10 +207,10 @@ void shutdownsock(DESC *d, int reason)
         auto ltd = ltaNow - d->connected_at;
         const int Seconds = ltd.ReturnSeconds();
         buff = alloc_lbuf("shutdownsock.LOG.accnt");
-        const auto buff2 = decode_flags(GOD, &(db[d->player].fs));
-        const auto locPlayer = Location(d->player);
-        const auto penPlayer = Pennies(d->player);
-        const auto PlayerName = PureName(d->player);
+        const auto buff2 = drv_decode_flags(GOD, d->player);
+        const auto locPlayer = drv_Location(d->player);
+        const auto penPlayer = drv_Pennies(d->player);
+        const auto PlayerName = drv_PureName(d->player);
         mux_sprintf(buff, LBUF_SIZE, T("%d %s %d %d %d %d [%s] <%s> %s"), d->player, buff2, d->command_count,
                 Seconds, locPlayer, penPlayer, d->addr, disc_reasons[reason],
                 PlayerName);

@@ -10,6 +10,7 @@
 #include "externs.h"
 #include "interface.h"
 #include "driverstate.h"
+#include "driver_bridge.h"
 
 void site_mon_send(const SOCKET port, const UTF8 *address, DESC *d, const UTF8 *msg)
 {
@@ -47,7 +48,7 @@ void site_mon_send(const SOCKET port, const UTF8 *address, DESC *d, const UTF8 *
         ++it;
         if (nd->flags & DS_CONNECTED)
         {
-            if (SiteMon(nd->player))
+            if (drv_Flags(nd->player, FLAG_WORD3) & SITEMON)
             {
                 queue_string(nd, send_msg);
                 queue_write_LEN(nd, T("\r\n"), 2);
