@@ -676,36 +676,187 @@ engine query connection state and send output without touching DESC fields
 directly.  Alternatively, DESC splits into a driver-side struct and an
 engine-side companion indexed by connection handle.
 
-#### Descriptor Access from Engine Files
+#### Descriptor Access from Engine Files — Detailed Audit
 
-The following engine files currently reach into descriptor collections
-(`mudstate.descriptors_list`, `dbref_to_descriptors_map`).  Each of these
-access points must be wrapped behind an interface or moved to the driver:
+Every engine file that reaches into DESC structs or descriptor collections.
+Severity reflects how deep the violation goes:
 
-| Engine file | What it does with descriptors |
-|-------------|------------------------------|
-| netcommon.cpp | raw_notify (find DESCs by player), update_quotas (iterate all), announce_connect/disconnect (count sessions, set flags) |
-| functions.cpp | WHO, PORTS, LPORTS, DOING, IDLE, CONN (iterate connected DESCs) |
-| predicates.cpp | connected() test, idle time queries |
-| speech.cpp | Broadcast to room (connected players) |
-| timer.cpp | Idle timeout checks, keepalive |
-| flags.cpp | DS_CONNECTED flag checks |
-| db.cpp | Object destroy cleanup |
-| command.cpp | @boot, session-aware commands |
-| file_c.cpp | fcache_dump to descriptor |
+**CRITICAL — writes to DESC fields or driver collections:**
 
-#### Global State Ownership
+| Engine file | Function | What it does |
+|-------------|----------|--------------|
+| predicates.cpp | handle_prog() | Reads `d->player`, writes `d->program_data`, calls `queue_string`/`queue_write_LEN`, iterates `dbref_to_descriptors_map` |
+| predicates.cpp | do_quitprog() | Iterates `dbref_to_descriptors_map`, writes `d->program_data = nullptr` |
+| predicates.cpp | do_prog() | Iterates `dbref_to_descriptors_map`, writes `d->program_data`, calls `queue_string`/`queue_write_LEN` |
+| db.cpp | load_restart_db() | Creates DESC structs, fills all fields from file, inserts into `descriptors_list`/`descriptors_map`, calls `shutdownsock()` |
 
-| Global | Owner | Notes |
-|--------|-------|-------|
-| mudconf | Engine | All configuration parameters |
-| mudstate | Engine | Game state — but contains descriptor lists |
-| db[] | Engine | Object database array |
-| scheduler | Engine | Task queue (CScheduler) |
-| mudstate.descriptors_list | **Driver** | Must migrate to driver ownership |
-| mudstate.dbref_to_descriptors_map | **Driver** | Must migrate to driver ownership |
-| mudstate.shutdown_flag | Shared | Engine sets it, driver reads it |
-| mudstate.restarting | Shared | Driver sets it, both read it |
+**HIGH — calls driver output functions:**
+
+| Engine file | Function | What it does |
+|-------------|----------|--------------|
+| db.cpp | dump_restart_db() | Iterates `descriptors_list`, reads 20+ DESC fields to persist across @restart |
+| file_c.cpp | fcache_dump() | Takes DESC* param, calls `queue_write_LEN(d, ...)` |
+| file_c.cpp | fcache_send() | Iterates `dbref_to_descriptors_map`, calls `fcache_dump(d, ...)` |
+| mguests.cpp | CGuests::Create() | Takes DESC* param, calls `queue_string(d, ...)` for error messages |
+| timer.cpp | heartbeat() | Iterates `descriptors_list`, reads `d->flags`/`d->player`, calls `queue_write_LEN` for keepalive NOPs |
+| netcommon.cpp | raw_notify() | Iterates `dbref_to_descriptors_map`, calls `queue_string(d, msg)` |
+| netcommon.cpp | shutdownsock() 5x, process_output() 2x | Calls driver functions for connection lifecycle |
+
+**MEDIUM — reads DESC fields via collection iteration:**
+
+| Engine file | Function | What it does |
+|-------------|----------|--------------|
+| functions.cpp | connection_func() (7 variants) | WHO, CONNCOUNT, DOING, WHERE, LASTSITE, INFO, LOCATIONS — iterates `descriptors_list`, reads `d->flags`, `d->player` |
+| speech.cpp | raw_broadcast() | Iterates `descriptors_list`, reads `d->flags`/`d->player` for room broadcast |
+
+**LOW — minimal descriptor collection access:**
+
+| Engine file | Function | What it does |
+|-------------|----------|--------------|
+| flags.cpp | flag set/clear (2 sites) | `dbref_to_descriptors_map.equal_range()` to find connected sessions |
+| flags.cpp | charset flag change (1 site) | Calls `send_charset_request(d)` — driver function |
+| command.cpp | @list stats (1 site) | `dbref_to_descriptors_map.size()` for descriptor count |
+
+**Key observations:**
+
+1. `program_data` is game state (interactive @prog/@edit) stored on a driver
+   struct.  It must move to engine-side storage indexed by connection handle.
+
+2. `dump_restart_db` / `load_restart_db` are inherently boundary operations —
+   they serialize the full DESC state across exec().  These will need
+   cooperation between driver and engine.
+
+3. `queue_string` / `queue_write_LEN` are the most common cross-boundary
+   calls.  They appear in 6 engine files.  A driver-provided "send output to
+   connection" interface eliminates all of them.
+
+4. No engine files `#include "interface.h"` directly.  DESC visibility comes
+   through `externs.h` → `mudconf.h` → forward declarations.
+
+#### Global State Ownership — STATEDATA Audit
+
+STATEDATA (mudstate) contains ~120 fields.  Classification:
+
+**Driver fields (3) — must migrate to driver ownership:**
+
+| Field | Type | Notes |
+|-------|------|-------|
+| descriptors_list | list\<DESC*\> | All active descriptors |
+| descriptors_map | unordered_map\<DESC*, iterator\> | Reverse map for O(1) erase |
+| dbref_to_descriptors_map | multimap\<dbref, DESC*\> | Player-to-connection lookup |
+
+**Shared fields (12) — both sides need access:**
+
+| Field | Type | Who sets | Who reads |
+|-------|------|----------|-----------|
+| shutdown_flag | bool | Engine (conf.cpp, @shutdown) | Driver (ganl_adapter main loop) |
+| restarting | bool | Engine (db.cpp) | Driver (ganl_adapter), Engine (game.cpp) |
+| dumping | bool | Engine (game.cpp) | Driver (signals.cpp), Engine (predicates) |
+| bCanRestart | bool | Driver (signals.cpp) | Engine (predicates.cpp) |
+| panicking | bool | Driver (signals.cpp) | Engine (conf.cpp) |
+| dumper | dbref | Engine (game.cpp) | Driver (signals.cpp) |
+| dumped | dbref | Engine (game.cpp) | Driver (signals.cpp) |
+| pISlaveControl | mux_ISlaveControl* | Engine (conf.cpp) | Driver (modules.cpp) |
+| pIQueryControl | mux_IQueryControl* | Engine (conf.cpp) | Shared |
+| pIComsysControl | mux_IComsysControl* | Engine (conf.cpp) | Shared |
+| pIMailControl | mux_IMailControl* | Engine (conf.cpp) | Shared |
+| restart_count | uint | Driver | Engine |
+
+**Engine fields (~105) — pure game state:**
+
+All remaining fields: execution context (curr_executor, curr_enactor),
+database state (db_top, db_size, freelist), evaluation limits (func_invk_ctr,
+func_nest_lev, nStackNest), hash tables (command_htab, player_htab,
+builtin_functions, etc.), attribute cache, timing counters, bit caches,
+global registers, and string buffers.
+
+**Driver-relevant CONFDATA fields (~13):**
+
+| Field | Type | Notes |
+|-------|------|-------|
+| ports | vector\<int\> | Listening ports |
+| sslPorts | vector\<int\> | SSL listening ports |
+| ssl_certificate_file/key/password | UTF8[] | TLS configuration |
+| ip_address | UTF8* | Bind address |
+| pid_file | const UTF8* | PID file path |
+| conn_timeout | int | Login timeout |
+| retry_limit | int | Bad login retries |
+| max_players | int | Connection limit |
+| use_hostname | bool | DNS display preference |
+| control_flags | int | CF_LOGIN etc. |
+| site_file, conn_file, creg_file | UTF8* | Connection display files |
+
+All other CONFDATA fields (~60) are pure engine (game costs, quotas, flags,
+defaults, command limits, timing intervals, messages).
+
+#### Engine→Driver Callback Surface
+
+Functions defined in driver files that engine code calls.  This is the
+interface surface that must become COM methods:
+
+**From bsd.cpp — connection lifecycle:**
+
+| Function | Called from (engine) | Frequency | What it does |
+|----------|---------------------|-----------|--------------|
+| shutdownsock(DESC*, reason) | netcommon.cpp (5x), db.cpp (1x) | Per disconnect | Close connection, log, trigger disconnect events |
+| process_output(DESC*, flag) | netcommon.cpp (2x) | Per output flush | Write output queue to socket via GANL |
+
+**From bsd.cpp — output queueing:**
+
+| Function | Called from (engine) | Frequency | What it does |
+|----------|---------------------|-----------|--------------|
+| queue_string(DESC*, UTF8*) | predicates.cpp (6x), mguests.cpp (4x), netcommon.cpp | Per output line | Append UTF-8 string to DESC output queue |
+| queue_write_LEN(DESC*, data, len) | predicates.cpp (3x), file_c.cpp (1x), timer.cpp (1x) | Per output chunk | Append raw bytes to DESC output queue |
+
+**From telnet.cpp — protocol negotiation:**
+
+| Function | Called from (engine) | Frequency | What it does |
+|----------|---------------------|-----------|--------------|
+| send_charset_request(DESC*, bool) | flags.cpp (1x) | Per charset flag change | Send CHARSET telnet negotiation |
+
+**From ganl_adapter.cpp — lifecycle (called from game.cpp only):**
+
+| Function | Called from | Frequency | What it does |
+|----------|------------|-----------|--------------|
+| ganl_initialize() | game.cpp | Once at startup | Initialize GANL networking |
+| ganl_main_loop() | game.cpp | Once (blocks) | Main event loop |
+| ganl_shutdown() | game.cpp | Once at exit | Tear down networking |
+
+**From signals.cpp — setup (called from game.cpp only):**
+
+| Function | Called from | Frequency | What it does |
+|----------|------------|-----------|--------------|
+| build_signal_names_table() | game.cpp | Once | Populate signal name table |
+| set_signals() | game.cpp | Once | Install signal handlers |
+
+**From modules.cpp — module lifecycle (called from game.cpp only):**
+
+| Function | Called from | Frequency | What it does |
+|----------|------------|-----------|--------------|
+| init_modules() | game.cpp | Once | Initialize COM subsystem |
+| final_modules() | game.cpp, predicates.cpp, signals.cpp | Once | Release all modules |
+
+**Proposed driver-provided COM interface:**
+
+The 4 high-frequency functions (shutdownsock, process_output, queue_string,
+queue_write_LEN) plus the descriptor query operations map naturally to a
+single interface:
+
+```
+mux_IConnectionManager:
+    SendText(conn_handle, UTF8 *text)        — replaces queue_string
+    SendRaw(conn_handle, data, len)          — replaces queue_write_LEN
+    FlushOutput(conn_handle)                 — replaces process_output
+    CloseConnection(conn_handle, reason)     — replaces shutdownsock
+    GetConnectionCount(dbref player)         — replaces equal_range().count
+    GetConnectionInfo(dbref player, index)   — replaces descriptor iteration
+    GetTotalConnections()                    — replaces descriptors_list.size
+    IsConnected(dbref player)                — replaces equal_range check
+    SetCharset(conn_handle, charset)         — replaces send_charset_request
+```
+
+The game.cpp lifecycle calls (ganl_initialize, set_signals, init_modules)
+stay as direct function calls — game.cpp is a driver file.
 
 #### netcommon.cpp: The Key Hybrid
 
