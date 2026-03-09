@@ -712,6 +712,11 @@ int DCL_CDECL main(int argc, char *argv[])
     // Engine loads configuration, discovers modules, opens database.
     //
     mr = pGameEngine->LoadGame(conffile, nullptr, bMinDB);
+
+    // cf_init() inside LoadGame clears mudstate.pIGameEngine; restore it.
+    //
+    mudstate.pIGameEngine = pGameEngine;
+
     if (MUX_FAILED(mr))
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");

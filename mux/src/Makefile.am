@@ -22,7 +22,7 @@ LIBMUX_SRC = libmux.cpp \
 #
 ENGINE_CXX_SRC = ast.cpp ast_scan.cpp attrcache.cpp boolexp.cpp \
     command.cpp comsys.cpp conf.cpp conn_bridge.cpp cque.cpp create.cpp \
-    db.cpp db_rw.cpp engine.cpp eval.cpp file_c.cpp flags.cpp \
+    db.cpp db_rw.cpp engine.cpp engine_com.cpp eval.cpp file_c.cpp flags.cpp \
     funceval.cpp funceval2.cpp functions.cpp funmath.cpp help.cpp htab.cpp \
     local.cpp log.cpp look.cpp mail.cpp match.cpp mguests.cpp \
     move.cpp object.cpp predicates.cpp player.cpp player_c.cpp \

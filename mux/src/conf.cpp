@@ -373,8 +373,8 @@ void cf_init(void)
     mudstate.pIQueryControl = nullptr;
     mudstate.pIComsysControl = nullptr;
     mudstate.pIMailControl = nullptr;
-    mudstate.pIGameEngine = nullptr;
-    mudstate.pIPlayerSession = nullptr;
+    // Note: pIGameEngine and pIPlayerSession are set by the driver before
+    // LoadGame() calls cf_init().  Do not clear them here.
 }
 
 // ---------------------------------------------------------------------------
