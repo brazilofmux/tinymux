@@ -452,6 +452,16 @@ public:
     virtual MUX_RESULT ReloadIndexes(dbref player) = 0;
 };
 
+// Forward declarations for types used by engine/driver COM interfaces below.
+// These are defined in core.h (CLinearTimeAbsolute) and externs.h (the rest),
+// but modules.h must be self-contained for libmux.so compilation.
+//
+class CLinearTimeAbsolute;
+struct descriptor_data;
+typedef struct descriptor_data DESC;
+enum class SocketState;
+struct program_data;
+
 // Game engine — the interface the driver uses to call into the engine.
 // In the current in-process build, CGameEngine wraps direct function calls.
 // When the engine is split into engine.so, the driver creates this via
