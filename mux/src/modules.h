@@ -517,8 +517,8 @@ public:
 // networking (DESC binding, socket I/O) and calls these when the network
 // state changes.
 //
-const MUX_CID CID_PlayerSession        = UINT64_C(0x00000002A1B2C3D4);
-const MUX_IID IID_IPlayerSession       = UINT64_C(0x00000002B3C4D5E6);
+const MUX_CID CID_PlayerSession        = UINT64_C(0x00000002F1A2B3C4);
+const MUX_IID IID_IPlayerSession       = UINT64_C(0x00000002F2B3C4D5);
 
 interface mux_IPlayerSession : public mux_IUnknown
 {
