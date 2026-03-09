@@ -2939,6 +2939,7 @@ public:
 
     // Idle check
     virtual MUX_RESULT CheckIdle(void);
+    virtual MUX_RESULT EmergencyShutdown(void);
 
     CConnectionManager(void);
     virtual ~CConnectionManager();
@@ -3256,6 +3257,12 @@ MUX_RESULT CConnectionManager::BootByPort(SOCKET port, bool bGod, const UTF8 *me
 MUX_RESULT CConnectionManager::CheckIdle(void)
 {
     check_idle();
+    return MUX_S_OK;
+}
+
+MUX_RESULT CConnectionManager::EmergencyShutdown(void)
+{
+    emergency_shutdown();
     return MUX_S_OK;
 }
 

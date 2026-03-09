@@ -314,3 +314,50 @@ void check_idle(void)
 {
     if (g_pConnMgr) g_pConnMgr->CheckIdle();
 }
+
+// --- Emergency shutdown ---
+// Called from do_shutdown() SHUTDN_PANIC path.  Closes all sockets.
+//
+void emergency_shutdown(void)
+{
+    if (g_pConnMgr) g_pConnMgr->EmergencyShutdown();
+}
+
+// --- Driver lifecycle ---
+// These are driver-side cleanup calls that the engine invokes during
+// SHUTDN_PANIC.  In the future, the engine should signal the driver
+// and let the driver handle these directly.
+//
+void final_modules(void)
+{
+    // In the .so build, this is a no-op from the engine side.
+    // The driver handles module cleanup after engine shutdown.
+}
+
+void final_stubslave(void)
+{
+    // In the .so build, this is a no-op from the engine side.
+    // The driver handles stubslave cleanup after engine shutdown.
+}
+
+// --- System resources display ---
+// Only uses globals (DebugTotalFiles, DebugTotalSockets) and notify.
+//
+void list_system_resources(dbref player)
+{
+    UTF8 buffer[80];
+
+    int nTotal = 0;
+    notify(player, T("System Resources"));
+
+    mux_sprintf(buffer, sizeof(buffer), T("Total Open Files: %ld"), DebugTotalFiles);
+    notify(player, buffer);
+    nTotal += DebugTotalFiles;
+
+    mux_sprintf(buffer, sizeof(buffer), T("Total Sockets: %ld"), DebugTotalSockets);
+    notify(player, buffer);
+    nTotal += DebugTotalSockets;
+
+    mux_sprintf(buffer, sizeof(buffer), T("Total Handles (sum of above): %d"), nTotal);
+    notify(player, buffer);
+}

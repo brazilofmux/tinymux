@@ -636,6 +636,12 @@ public:
     // --- Idle check ---
 
     virtual MUX_RESULT CheckIdle(void) = 0;
+
+    // --- Emergency shutdown ---
+
+    // Close all sockets immediately (panic shutdown).
+    //
+    virtual MUX_RESULT EmergencyShutdown(void) = 0;
 };
 
 #endif // MODULES_H
