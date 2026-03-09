@@ -276,8 +276,7 @@ AM_CPPFLAGS = -I$(top_srcdir)
 CLEANFILES = *.so *.so~
 
 # Source files to include in distribution
-EXTRA_DIST = \
-    sqlproxy.cpp sql.h sqlslave.cpp exp3.cpp exp3.h \
+EXTRA_DIST = sqlproxy.cpp sql.h sqlslave.cpp exp3.cpp exp3.h \
     comsys_mod.cpp comsys_mod.h \
     mail_mod.cpp mail_mod.h
 

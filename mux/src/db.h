@@ -6,6 +6,8 @@
 #ifndef DB_H
 #define DB_H
 
+#include "dbutil.h"
+
 #define SYNC                    cache_sync()
 #define CLOSE                   cache_close()
 
@@ -194,8 +196,6 @@ void s_PenniesDirect(dbref obj, int howfew);
 void load_restart_db(void);
 #endif // HAVE_WORKING_FORK
 
-dbref    getref(FILE *);
-void putref(FILE *, dbref);
 void free_boolexp(BOOLEXP *);
 dbref    parse_dbref(const UTF8 *);
 int64_t  creation_seconds(dbref obj);
@@ -212,8 +212,6 @@ dbref    db_read(FILE *, int *, int *, int *);
 dbref    db_write(FILE *, int, int);
 void destroy_thing(dbref);
 void destroy_exit(dbref);
-void putstring(FILE *f, const UTF8 *s);
-void *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer);
 void init_attrtab(void);
 int GrowFiftyPercent(int x, int low, int high);
 

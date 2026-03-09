@@ -416,11 +416,10 @@ static void DCL_CDECL sighandler(int sig)
 
     case SIGUSR2:
 
-        // Drop a flatfile.
+        // With SQLite write-through, flatfile dumps from a signal handler
+        // are both unnecessary and dangerous.  Log and ignore.
         //
-        log_signal(sig);
-        raw_broadcast(0, T("Caught signal %s requesting a flatfile @dump. Please wait."), signal_desc(sig));
-        dump_database_internal(DUMP_I_SIGNAL);
+        log_signal_ignore(sig);
         break;
 
     case SIGCHLD:
@@ -554,8 +553,10 @@ static void DCL_CDECL sighandler(int sig)
 #endif // STUB_SLAVE
         final_modules();
 
-        pcache_sync();
-        SYNC;
+        // SQLite write-through means the database is already durable.
+        // Do NOT call pcache_sync/cache_sync/cache_close from a signal
+        // handler — calling into SQLite here risks WAL corruption.
+        //
 
         {
         bool bCanRestart = false;
@@ -571,13 +572,9 @@ static void DCL_CDECL sighandler(int sig)
                 raw_broadcast(0, T("GAME: %s"), g_dc.crash_msg);
             }
 
-            // There is no older DB. It's a fiction. Our only choice is
-            // between unamed attributes and named ones. We go with what we
-            // got.
+            // SQLite write-through means the database is already durable.
+            // No flatfile dump or WAL checkpoint from a signal handler.
             //
-            dump_database_internal(DUMP_I_RESTART);
-            SYNC;
-            CLOSE;
 #if defined(WINDOWS_PROCESSES)
             unset_signals();
             signal(sig, SIG_DFL);
