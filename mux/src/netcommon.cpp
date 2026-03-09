@@ -29,6 +29,17 @@ NAMETAB default_charset_nametab[] =
  * make_portlist: Make a list of ports for PORTS().
  */
 
+struct portlist_context
+{
+    ITL *pitl;
+};
+
+static void portlist_callback(DESC *d, void *ctx)
+{
+    portlist_context *pc = static_cast<portlist_context *>(ctx);
+    ItemToList_AddInteger64(pc->pitl, d->socket);
+}
+
 void make_portlist(dbref player, dbref target, UTF8 *buff, UTF8 **bufc)
 {
     UNUSED_PARAMETER(player);
@@ -36,18 +47,8 @@ void make_portlist(dbref player, dbref target, UTF8 *buff, UTF8 **bufc)
     ITL itl;
     ItemToList_Init(&itl, buff, bufc);
 
-    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
-    {
-        DESC* d = *it;
-        if (d->flags & DS_CONNECTED)
-        {
-            if (d->player == target
-                && !ItemToList_AddInteger64(&itl, d->socket))
-            {
-                break;
-            }
-        }
-    }
+    portlist_context ctx = { &itl };
+    for_each_player_desc(target, portlist_callback, &ctx);
     ItemToList_Final(&itl);
 }
 
@@ -55,36 +56,40 @@ void make_portlist(dbref player, dbref target, UTF8 *buff, UTF8 **bufc)
 // make_port_ulist: Make a list of connected user numbers for the LPORTS function.
 // ---------------------------------------------------------------------------
 
+struct port_ulist_context
+{
+    dbref viewer;
+    ITL *pitl;
+    UTF8 *tmp;
+};
+
+static void port_ulist_callback(dbref player, SOCKET sock, void *ctx)
+{
+    port_ulist_context *puc = static_cast<port_ulist_context *>(ctx);
+    if (  !See_Hidden(puc->viewer)
+       && Hidden(player))
+    {
+        return;
+    }
+
+    UTF8* p = puc->tmp;
+    p += mux_ltoa(player, p);
+    *p++ = ':';
+    p += mux_i64toa(sock, p);
+
+    const size_t n = p - puc->tmp;
+    ItemToList_AddStringLEN(puc->pitl, n, puc->tmp);
+}
+
 void make_port_ulist(dbref player, UTF8 *buff, UTF8 **bufc)
 {
     ITL itl;
     UTF8 *tmp = alloc_sbuf("make_port_ulist");
     ItemToList_Init(&itl, buff, bufc, '#');
-    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
-    {
-        DESC* d = *it;
-        if (d->flags & DS_CONNECTED)
-        {
-            if (  !See_Hidden(player)
-               && Hidden(d->player))
-            {
-                continue;
-            }
 
-            // printf format: printf("%d:%d", d->player, d->socket);
-            //
-            UTF8* p = tmp;
-            p += mux_ltoa(d->player, p);
-            *p++ = ':';
-            p += mux_i64toa(d->socket, p);
+    port_ulist_context ctx = { player, &itl, tmp };
+    for_each_connected_desc(port_ulist_callback, &ctx);
 
-            const size_t n = p - tmp;
-            if (!ItemToList_AddStringLEN(&itl, n, tmp))
-            {
-                break;
-            }
-        }
-    }
     ItemToList_Final(&itl);
     free_sbuf(tmp);
 }
@@ -112,15 +117,7 @@ void update_quotas(CLinearTimeAbsolute& ltaLast, const CLinearTimeAbsolute& ltaC
 
     if (nExtraQuota > 0)
     {
-        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
-        {
-            DESC* d = *it;
-            d->quota += nExtraQuota;
-            if (d->quota > mudconf.cmd_quota_max)
-            {
-                d->quota = mudconf.cmd_quota_max;
-            }
-        }
+        update_all_desc_quotas(nExtraQuota, mudconf.cmd_quota_max);
     }
     ltaLast += mudconf.timeslice * nSlices;
 }
@@ -146,12 +143,7 @@ void raw_notify_html(dbref player, const mux_string &sMsg)
         return;
     }
 
-    const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
-    for (auto it = range.first; it != range.second; ++it)
-    {
-        DESC *d = it->second;
-        queue_string(d, sMsg);
-    }
+    send_text_to_player(player, sMsg);
 }
 
 /* ---------------------------------------------------------------------------
@@ -180,13 +172,8 @@ void raw_notify(dbref player, const UTF8 *msg)
         return;
     }
 
-    const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
-    for (auto it = range.first; it != range.second; ++it)
-    {
-        DESC* d = it->second;
-        queue_string(d, msg);
-        queue_write_LEN(d, T("\r\n"), 2);
-    }
+    send_text_to_player(player, msg);
+    send_raw_to_player(player, T("\r\n"), 2);
 }
 
 void raw_notify(dbref player, const mux_string &sMsg)
@@ -210,13 +197,8 @@ void raw_notify(dbref player, const mux_string &sMsg)
         return;
     }
 
-    const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
-    for (auto it = range.first; it != range.second; ++it)
-    {
-        DESC* d = it->second;
-        queue_string(d, sMsg);
-        queue_write_LEN(d, T("\r\n"), 2);
-    }
+    send_text_to_player(player, sMsg);
+    send_raw_to_player(player, T("\r\n"), 2);
 }
 
 void raw_notify_newline(dbref player)
@@ -232,12 +214,7 @@ void raw_notify_newline(dbref player)
         return;
     }
 
-    const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
-    for (auto it = range.first; it != range.second; ++it)
-    {
-        DESC* d = it->second;
-        queue_write_LEN(d, T("\r\n"), 2);
-    }
+    send_raw_to_player(player, T("\r\n"), 2);
 }
 
 /* ---------------------------------------------------------------------------
@@ -258,20 +235,7 @@ void DCL_CDECL raw_broadcast(int inflags, const UTF8 *fmt, ...)
     mux_vsnprintf(buff, LBUF_SIZE, fmt, ap);
     va_end(ap);
 
-    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
-    {
-        DESC* d = *it;
-        ++it;
-        if (d->flags & DS_CONNECTED)
-        {
-            if ((Flags(d->player) & inflags) == inflags)
-            {
-                queue_string(d, buff);
-                queue_write_LEN(d, T("\r\n"), 2);
-                process_output(d, false);
-            }
-        }
-    }
+    broadcast_and_flush(inflags, buff);
 }
 
 /* ---------------------------------------------------------------------------
@@ -771,15 +735,7 @@ void announce_connect(const dbref player, DESC *d)
         cache_preload(ploc);
     }
 
-    int count = 0;
-    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
-    {
-        DESC* d = *it;
-        if (d->flags & DS_CONNECTED)
-        {
-            count++;
-        }
-    }
+    int count = get_total_connections();
 
     if (mudstate.record_players < count)
     {
@@ -838,40 +794,18 @@ void announce_connect(const dbref player, DESC *d)
         raw_notify(player, T("Your PAGE LOCK is set.  You may be unable to receive some pages."));
     }
 
-    int num = 0;
-    const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
-    for (auto it = range.first; it != range.second; ++it)
-    {
-        num++;
-    }
+    int num = count_player_descs(player);
 
     // Check for MUX_UNICODE forced on
     //
     if (Unicode(player))
     {
-        const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
-        for (auto it = range.first; it != range.second; ++it)
-        {
-            DESC* dtemp = it->second;
-            if (CHARSET_UTF8 != dtemp->encoding)
-            {
-                // Since we are changing to the UTF-8 character set, the
-                // printable state machine needs to be initialized.
-                //
-                dtemp->encoding = CHARSET_UTF8;
-                dtemp->raw_codepoint_state = CL_PRINT_START_STATE;
-            }
-        }
+        set_player_encoding(player, CHARSET_UTF8);
     }
 
     if (Ascii(player))
     {
-        const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
-        for (auto it = range.first; it != range.second; ++it)
-        {
-            DESC *dtemp = it->second;
-            dtemp->encoding = CHARSET_ASCII;
-        }
+        set_player_encoding(player, CHARSET_ASCII);
     }
 
     // Reset vacation flag.
@@ -1035,12 +969,8 @@ void announce_connect(const dbref player, DESC *d)
 
 void announce_disconnect(const dbref player, DESC *d, const UTF8 *reason)
 {
-    int num = 0, key;
-    const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);
-    for (auto it = range.first; it != range.second; ++it)
-    {
-        num++;
-    }
+    int num = count_player_descs(player);
+    int key;
 
     const dbref temp = mudstate.curr_enactor;
     mudstate.curr_enactor = player;
@@ -1305,13 +1235,7 @@ void desc_reload(dbref player)
 //
 int fetch_session(dbref target)
 {
-    int count = 0;
-    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
-    for (auto it = range.first; it != range.second; ++it)
-    {
-        count++;
-    }
-    return count;
+    return count_player_descs(target);
 }
 
 static DESC *find_least_idle(dbref target)
@@ -1625,6 +1549,152 @@ void send_prog_prompt(dbref target)
             //
             const UTF8 aGoAhead[2] = { NVT_IAC, NVT_GA };
             queue_write_LEN(d, aGoAhead, sizeof(aGoAhead));
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// send_text_to_player: Queue encoded text to all of a player's connections.
+//
+void send_text_to_player(dbref target, const UTF8 *text)
+{
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        queue_string(it->second, text);
+    }
+}
+
+void send_text_to_player(dbref target, const mux_string &text)
+{
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        queue_string(it->second, text);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// send_raw_to_player: Queue raw bytes to all of a player's connections.
+//
+void send_raw_to_player(dbref target, const UTF8 *data, size_t len)
+{
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        queue_write_LEN(it->second, data, len);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// count_player_descs: Return the number of descriptors for a given player.
+//
+int count_player_descs(dbref target)
+{
+    int count = 0;
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        count++;
+    }
+    return count;
+}
+
+// ---------------------------------------------------------------------------
+// sum_player_command_count: Return the sum of command_count across all of a
+// player's descriptors, or -1 if not connected.
+//
+int sum_player_command_count(dbref target)
+{
+    int sum = 0;
+    bool bFound = false;
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        sum += it->second->command_count;
+        bFound = true;
+    }
+    return bFound ? sum : -1;
+}
+
+// ---------------------------------------------------------------------------
+// set_doing_all: Set the doing string on all of a player's descriptors.
+//
+void set_doing_all(dbref target, const UTF8 *doing, size_t len)
+{
+    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        memcpy(it->second->doing, doing, len + 1);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// set_doing_least_idle: Set the doing string on the least-idle descriptor.
+// Returns true if a descriptor was found.
+//
+bool set_doing_least_idle(dbref target, const UTF8 *doing, size_t len)
+{
+    DESC *d = find_least_idle(target);
+    if (d)
+    {
+        memcpy(d->doing, doing, len + 1);
+        return true;
+    }
+    return false;
+}
+
+// ---------------------------------------------------------------------------
+// update_all_desc_quotas: Add quota to all descriptors, clamped to max.
+//
+void update_all_desc_quotas(int nExtra, int nMax)
+{
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
+    {
+        DESC* d = *it;
+        d->quota += nExtra;
+        if (d->quota > nMax)
+        {
+            d->quota = nMax;
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// broadcast_and_flush: Send text to all connected players matching flags,
+// and flush output immediately.
+//
+void broadcast_and_flush(int inflags, const UTF8 *text)
+{
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
+    {
+        DESC* d = *it;
+        ++it;
+        if (d->flags & DS_CONNECTED)
+        {
+            if ((Flags(d->player) & inflags) == inflags)
+            {
+                queue_string(d, text);
+                queue_write_LEN(d, T("\r\n"), 2);
+                process_output(d, false);
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// for_each_connected_desc: Call a function for each connected descriptor.
+// Unlike for_each_connected_player (which only passes dbref), this passes
+// the descriptor itself, along with player dbref and socket.
+//
+void for_each_connected_desc(void (*callback)(dbref player, SOCKET sock, void *context), void *context)
+{
+    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
+    {
+        DESC* d = *it;
+        if (d->flags & DS_CONNECTED)
+        {
+            callback(d->player, d->socket, context);
         }
     }
 }
@@ -2217,16 +2287,10 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     key &= DOING_MASK;
     if (key == DOING_MESSAGE)
     {
-        bool found = false;
-        const auto range = mudstate.dbref_to_descriptors_map.equal_range(executor);
-        for (auto it = range.first; it != range.second; ++it)
+        int count = count_player_descs(executor);
+        if (count > 0)
         {
-            DESC* d = it->second;
-            memcpy(d->doing, szValidDoing, nValidDoing+1);
-            found = true;
-        }
-        if (found)
-        {
+            set_doing_all(executor, szValidDoing, nValidDoing);
             if (  !bQuiet
                && !Quiet(executor))
             {
@@ -2240,22 +2304,8 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     }
     else if (key == DOING_UNIQUE)
     {
-        DESC *dMax = nullptr;
-        CLinearTimeAbsolute ltaMax;
-        const auto range = mudstate.dbref_to_descriptors_map.equal_range(executor);
-        for (auto it = range.first; it != range.second; ++it)
+        if (set_doing_least_idle(executor, szValidDoing, nValidDoing))
         {
-            DESC* d = it->second;
-            if (  !dMax
-               && ltaMax < d->last_time)
-            {
-                ltaMax = d->last_time;
-                dMax = d;
-            }
-        }
-        if (dMax)
-        {
-            memcpy(dMax->doing, szValidDoing, nValidDoing+1);
             if (  !bQuiet
                && !Quiet(executor))
             {
@@ -3052,6 +3102,23 @@ void list_siteinfo(dbref player)
  * make_ulist: Make a list of connected user numbers for the LWHO function.
  */
 
+struct ulist_context
+{
+    dbref viewer;
+    ITL *pitl;
+};
+
+static void ulist_callback(dbref player, void *ctx)
+{
+    ulist_context *uc = static_cast<ulist_context *>(ctx);
+    if (  !See_Hidden(uc->viewer)
+       && Hidden(player))
+    {
+        return;
+    }
+    ItemToList_AddInteger(uc->pitl, player);
+}
+
 void make_ulist(dbref player, UTF8 *buff, UTF8 **bufc, bool bPorts)
 {
     if (bPorts)
@@ -3062,22 +3129,8 @@ void make_ulist(dbref player, UTF8 *buff, UTF8 **bufc, bool bPorts)
     {
         ITL pContext;
         ItemToList_Init(&pContext, buff, bufc, '#');
-        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
-        {
-            DESC* d = *it;
-            if (d->flags & DS_CONNECTED)
-            {
-                if (!See_Hidden(player)
-                    && Hidden(d->player))
-                {
-                    continue;
-                }
-                if (!ItemToList_AddInteger(&pContext, d->player))
-                {
-                    break;
-                }
-            }
-        }
+        ulist_context ctx = { player, &pContext };
+        for_each_connected_player(ulist_callback, &ctx);
         ItemToList_Final(&pContext);
     }
 }
@@ -3088,33 +3141,45 @@ void make_ulist(dbref player, UTF8 *buff, UTF8 **bufc, bool bPorts)
  * was unique.
  */
 
+struct connected_name_context
+{
+    dbref viewer;
+    const UTF8 *name;
+    dbref found;
+    bool ambiguous;
+};
+
+static void connected_name_callback(dbref player, void *ctx)
+{
+    connected_name_context *cnc = static_cast<connected_name_context *>(ctx);
+    if (cnc->ambiguous)
+    {
+        return;
+    }
+    if (  Good_obj(cnc->viewer)
+       && !See_Hidden(cnc->viewer)
+       && Hidden(player))
+    {
+        return;
+    }
+    if (!string_prefix(Name(player), cnc->name))
+    {
+        return;
+    }
+    if (  cnc->found != NOTHING
+       && cnc->found != player)
+    {
+        cnc->ambiguous = true;
+        return;
+    }
+    cnc->found = player;
+}
+
 dbref find_connected_name(const dbref player, const UTF8 *name)
 {
-    dbref found = NOTHING;
-    for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
-    {
-        DESC* d = *it;
-        if (d->flags & DS_CONNECTED)
-        {
-            if (  Good_obj(player)
-               && !See_Hidden(player)
-               && Hidden(d->player))
-            {
-                continue;
-            }
-            if (!string_prefix(Name(d->player), name))
-            {
-                continue;
-            }
-            if (  found != NOTHING
-               && found != d->player)
-            {
-                return NOTHING;
-            }
-            found = d->player;
-        }
-    }
-    return found;
+    connected_name_context ctx = { player, name, NOTHING, false };
+    for_each_connected_player(connected_name_callback, &ctx);
+    return ctx.ambiguous ? NOTHING : ctx.found;
 }
 
 FUNCTION(fun_doing)
@@ -3129,23 +3194,16 @@ FUNCTION(fun_doing)
     if (is_rational(fargs[0]))
     {
         const SOCKET s = mux_atol(fargs[0]);
-        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
+        DESC *d = find_desc_by_socket(s);
+        if (d)
         {
-            DESC* d = *it;
-            if (d->flags & DS_CONNECTED)
+            if (d->player == executor || Wizard_Who(executor))
             {
-                if (d->socket == s)
-                {
-                    if (d->player == executor || Wizard_Who(executor))
-                    {
-                        safe_str(d->doing, buff, bufc);
-                    }
-                    else
-                    {
-                        safe_nothing(buff, bufc);
-                    }
-                    break;
-                }
+                safe_str(d->doing, buff, bufc);
+            }
+            else
+            {
+                safe_nothing(buff, bufc);
             }
         }
     }
@@ -3161,17 +3219,11 @@ FUNCTION(fun_doing)
         if (  Wizard_Who(executor)
            || !Hidden(victim))
         {
-            for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
+            DESC *d = find_desc_by_player(victim);
+            if (d)
             {
-                DESC* d = *it;
-                if (d->flags & DS_CONNECTED)
-                {
-                    if (d->player == victim)
-                    {
-                        safe_str(d->doing, buff, bufc);
-                        return;
-                    }
-                }
+                safe_str(d->doing, buff, bufc);
+                return;
             }
         }
         safe_str(T("#-1 NOT A CONNECTED PLAYER"), buff, bufc);
@@ -3197,23 +3249,11 @@ FUNCTION(fun_host)
     }
 
     const bool isPort = is_rational(fargs[0]);
-    bool bFound = false;
     DESC* d = nullptr;
     if (isPort)
     {
         const SOCKET s = mux_atol(fargs[0]);
-        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
-        {
-            d = *it;
-            if (d->flags & DS_CONNECTED)
-            {
-                if (d->socket == s)
-                {
-                    bFound = true;
-                    break;
-                }
-            }
-        }
+        d = find_desc_by_socket(s);
     }
     else
     {
@@ -3223,20 +3263,9 @@ FUNCTION(fun_host)
             safe_str(T("#-1 PLAYER DOES NOT EXIST"), buff, bufc);
             return;
         }
-        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
-        {
-            d = *it;
-            if (d->flags & DS_CONNECTED)
-            {
-                if (d->player == victim)
-                {
-                    bFound = true;
-                    break;
-                }
-            }
-        }
+        d = find_desc_by_player(victim);
     }
-    if (bFound)
+    if (d)
     {
         const UTF8 *hostname = ((d->username[0] != '\0') ?
                                     tprintf(T("%s@%s"), d->username, d->addr) : d->addr);
@@ -3301,23 +3330,11 @@ FUNCTION(fun_siteinfo)
     }
 
     const bool isPort = is_rational(fargs[0]);
-    bool bFound = false;
     DESC* d = nullptr;
     if (isPort)
     {
         const SOCKET s = mux_atol(fargs[0]);
-        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
-        {
-            d = *it;
-            if (d->flags & DS_CONNECTED)
-            {
-                if (d->socket == s)
-                {
-                    bFound = true;
-                    break;
-                }
-            }
-        }
+        d = find_desc_by_socket(s);
     }
     else
     {
@@ -3327,21 +3344,10 @@ FUNCTION(fun_siteinfo)
             safe_str(T("#-1 PLAYER DOES NOT EXIST"), buff, bufc);
             return;
         }
-        for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
-        {
-            d = *it;
-            if (d->flags & DS_CONNECTED)
-            {
-                if (d->player == victim)
-                {
-                    bFound = true;
-                    break;
-                }
-            }
-        }
+        d = find_desc_by_player(victim);
     }
 
-    if (bFound)
+    if (d)
     {
         int host_info = mudstate.access_list.check(&d->address);
         if (host_info & HI_FORBID)
@@ -3371,32 +3377,13 @@ FUNCTION(fun_siteinfo)
     {
         safe_str(T("#-1 NOT A CONNECTED PLAYER"), buff, bufc);
     }
-
 }
 
 // fetch_cmds - Retrieve Player's number of commands entered.
 //
 int fetch_cmds(const dbref target)
 {
-    int sum = 0;
-    bool bFound = false;
-
-    const auto range = mudstate.dbref_to_descriptors_map.equal_range(target);
-    for (auto it = range.first; it != range.second; ++it)
-    {
-        DESC* d = it->second;
-        sum += d->command_count;
-        bFound = true;
-    }
-
-    if (bFound)
-    {
-        return sum;
-    }
-    else
-    {
-        return -1;
-    }
+    return sum_player_command_count(target);
 }
 
 static void ParseConnectionInfoString(UTF8 *pConnInfo, UTF8 *pFields[5])
