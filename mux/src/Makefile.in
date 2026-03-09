@@ -113,46 +113,20 @@ CONFIG_CLEAN_VPATH_FILES =
 @STUBSLAVE_ENABLED_TRUE@am__EXEEXT_1 = stubslave$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am__netmux_SOURCES_DIST = _build.cpp ast.cpp ast_scan.cpp \
-	attrcache.cpp boolexp.cpp bsd.cpp command.cpp comsys.cpp \
-	conf.cpp cque.cpp create.cpp db.cpp db_rw.cpp eval.cpp \
-	file_c.cpp flags.cpp funceval.cpp funceval2.cpp functions.cpp \
-	funmath.cpp driver.cpp engine.cpp ganl_adapter.cpp help.cpp \
-	htab.cpp local.cpp log.cpp look.cpp mail.cpp match.cpp \
-	mguests.cpp modules.cpp move.cpp muxcli.cpp netaddr.cpp \
-	net.cpp object.cpp predicates.cpp player.cpp player_c.cpp \
-	plusemail.cpp powers.cpp quota.cpp rob.cpp set.cpp signals.cpp \
-	sitemon.cpp session.cpp speech.cpp telnet.cpp timer.cpp \
-	unparse.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp levels.cpp \
-	sqlitedb.cpp sqlite_backend.cpp sqlite/sqlite3.c version.cpp
-@REALITY_ENABLED_TRUE@am__objects_1 = levels.$(OBJEXT)
-am__dirstamp = $(am__leading_dot)dirstamp
-am__objects_2 = _build.$(OBJEXT) ast.$(OBJEXT) ast_scan.$(OBJEXT) \
-	attrcache.$(OBJEXT) boolexp.$(OBJEXT) bsd.$(OBJEXT) \
-	command.$(OBJEXT) comsys.$(OBJEXT) conf.$(OBJEXT) \
-	cque.$(OBJEXT) create.$(OBJEXT) db.$(OBJEXT) db_rw.$(OBJEXT) \
-	eval.$(OBJEXT) file_c.$(OBJEXT) flags.$(OBJEXT) \
-	funceval.$(OBJEXT) funceval2.$(OBJEXT) functions.$(OBJEXT) \
-	funmath.$(OBJEXT) driver.$(OBJEXT) engine.$(OBJEXT) \
-	ganl_adapter.$(OBJEXT) help.$(OBJEXT) htab.$(OBJEXT) \
-	local.$(OBJEXT) log.$(OBJEXT) look.$(OBJEXT) mail.$(OBJEXT) \
-	match.$(OBJEXT) mguests.$(OBJEXT) modules.$(OBJEXT) \
-	move.$(OBJEXT) muxcli.$(OBJEXT) netaddr.$(OBJEXT) \
-	net.$(OBJEXT) object.$(OBJEXT) predicates.$(OBJEXT) \
-	player.$(OBJEXT) player_c.$(OBJEXT) plusemail.$(OBJEXT) \
-	powers.$(OBJEXT) quota.$(OBJEXT) rob.$(OBJEXT) set.$(OBJEXT) \
-	signals.$(OBJEXT) sitemon.$(OBJEXT) session.$(OBJEXT) \
-	speech.$(OBJEXT) telnet.$(OBJEXT) timer.$(OBJEXT) \
-	unparse.$(OBJEXT) vattr.$(OBJEXT) walkdb.$(OBJEXT) \
-	wild.$(OBJEXT) wiz.$(OBJEXT) $(am__objects_1) \
-	sqlitedb.$(OBJEXT) sqlite_backend.$(OBJEXT) \
-	sqlite/sqlite3.$(OBJEXT)
-am_netmux_OBJECTS = $(am__objects_2) version.$(OBJEXT)
+am__objects_1 = netmux-_build.$(OBJEXT) netmux-bsd.$(OBJEXT) \
+	netmux-driver.$(OBJEXT) netmux-ganl_adapter.$(OBJEXT) \
+	netmux-modules.$(OBJEXT) netmux-muxcli.$(OBJEXT) \
+	netmux-net.$(OBJEXT) netmux-netaddr.$(OBJEXT) \
+	netmux-signals.$(OBJEXT) netmux-sitemon.$(OBJEXT) \
+	netmux-telnet.$(OBJEXT)
+am_netmux_OBJECTS = $(am__objects_1) netmux-version.$(OBJEXT)
 netmux_OBJECTS = $(am_netmux_OBJECTS)
 am__DEPENDENCIES_1 =
-netmux_DEPENDENCIES = libmux.so ganl/libganl.a $(am__DEPENDENCIES_1) \
+netmux_DEPENDENCIES = engine.so libmux.so ganl/libganl.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+netmux_LINK = $(CXXLD) $(netmux_CXXFLAGS) $(CXXFLAGS) \
+	$(netmux_LDFLAGS) $(LDFLAGS) -o $@
 am_slave_OBJECTS = slave.$(OBJEXT)
 slave_OBJECTS = $(am_slave_OBJECTS)
 slave_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -174,48 +148,19 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/modules -I$(top_builddir)/tools
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/_build.Po ./$(DEPDIR)/ast.Po \
-	./$(DEPDIR)/ast_scan.Po ./$(DEPDIR)/attrcache.Po \
-	./$(DEPDIR)/boolexp.Po ./$(DEPDIR)/bsd.Po \
-	./$(DEPDIR)/command.Po ./$(DEPDIR)/comsys.Po \
-	./$(DEPDIR)/conf.Po ./$(DEPDIR)/cque.Po ./$(DEPDIR)/create.Po \
-	./$(DEPDIR)/db.Po ./$(DEPDIR)/db_rw.Po ./$(DEPDIR)/driver.Po \
-	./$(DEPDIR)/engine.Po ./$(DEPDIR)/eval.Po \
-	./$(DEPDIR)/file_c.Po ./$(DEPDIR)/flags.Po \
-	./$(DEPDIR)/funceval.Po ./$(DEPDIR)/funceval2.Po \
-	./$(DEPDIR)/functions.Po ./$(DEPDIR)/funmath.Po \
-	./$(DEPDIR)/ganl_adapter.Po ./$(DEPDIR)/help.Po \
-	./$(DEPDIR)/htab.Po ./$(DEPDIR)/levels.Po ./$(DEPDIR)/local.Po \
-	./$(DEPDIR)/log.Po ./$(DEPDIR)/look.Po ./$(DEPDIR)/mail.Po \
-	./$(DEPDIR)/match.Po ./$(DEPDIR)/mguests.Po \
-	./$(DEPDIR)/modules.Po ./$(DEPDIR)/move.Po \
-	./$(DEPDIR)/muxcli.Po ./$(DEPDIR)/net.Po \
-	./$(DEPDIR)/netaddr.Po ./$(DEPDIR)/object.Po \
-	./$(DEPDIR)/player.Po ./$(DEPDIR)/player_c.Po \
-	./$(DEPDIR)/plusemail.Po ./$(DEPDIR)/powers.Po \
-	./$(DEPDIR)/predicates.Po ./$(DEPDIR)/quota.Po \
-	./$(DEPDIR)/rob.Po ./$(DEPDIR)/session.Po ./$(DEPDIR)/set.Po \
-	./$(DEPDIR)/signals.Po ./$(DEPDIR)/sitemon.Po \
-	./$(DEPDIR)/slave.Po ./$(DEPDIR)/speech.Po \
-	./$(DEPDIR)/sqlite_backend.Po ./$(DEPDIR)/sqlitedb.Po \
-	./$(DEPDIR)/stubslave.Po ./$(DEPDIR)/telnet.Po \
-	./$(DEPDIR)/timer.Po ./$(DEPDIR)/unparse.Po \
-	./$(DEPDIR)/vattr.Po ./$(DEPDIR)/version.Po \
-	./$(DEPDIR)/walkdb.Po ./$(DEPDIR)/wild.Po ./$(DEPDIR)/wiz.Po \
-	sqlite/$(DEPDIR)/sqlite3.Po
+am__depfiles_remade = ./$(DEPDIR)/netmux-_build.Po \
+	./$(DEPDIR)/netmux-bsd.Po ./$(DEPDIR)/netmux-driver.Po \
+	./$(DEPDIR)/netmux-ganl_adapter.Po \
+	./$(DEPDIR)/netmux-modules.Po ./$(DEPDIR)/netmux-muxcli.Po \
+	./$(DEPDIR)/netmux-net.Po ./$(DEPDIR)/netmux-netaddr.Po \
+	./$(DEPDIR)/netmux-signals.Po ./$(DEPDIR)/netmux-sitemon.Po \
+	./$(DEPDIR)/netmux-telnet.Po ./$(DEPDIR)/netmux-version.Po \
+	./$(DEPDIR)/slave.Po ./$(DEPDIR)/stubslave.Po
 am__mv = mv -f
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-AM_V_CC = $(am__v_CC_@AM_V@)
-am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
-am__v_CC_0 = @echo "  CC      " $@;
-am__v_CC_1 = 
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-AM_V_CCLD = $(am__v_CCLD_@AM_V@)
-am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
-am__v_CCLD_0 = @echo "  CCLD    " $@;
-am__v_CCLD_1 = 
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 AM_V_CXX = $(am__v_CXX_@AM_V@)
@@ -230,8 +175,7 @@ am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(netmux_SOURCES) $(slave_SOURCES) $(stubslave_SOURCES)
-DIST_SOURCES = $(am__netmux_SOURCES_DIST) $(slave_SOURCES) \
-	$(stubslave_SOURCES)
+DIST_SOURCES = $(netmux_SOURCES) $(slave_SOURCES) $(stubslave_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -465,27 +409,48 @@ LIBMUX_SRC = libmux.cpp \
     strtod.cpp alarm.cpp mathutil.cpp stringutil.cpp alloc.cpp
 
 
-# Source files for netmux — game server with full externs.h dependency.
+# Source files for engine.so — game logic with full externs.h dependency.
+# These files have no #include "interface.h" and no direct DESC access.
+# They call driver functions through conn_bridge.cpp (COM delegation).
 #
 
 # SQLite storage backend (always enabled)
-NETMUX_SRC = _build.cpp ast.cpp ast_scan.cpp attrcache.cpp boolexp.cpp \
-	bsd.cpp command.cpp comsys.cpp conf.cpp cque.cpp create.cpp \
-	db.cpp db_rw.cpp eval.cpp file_c.cpp flags.cpp funceval.cpp \
-	funceval2.cpp functions.cpp funmath.cpp driver.cpp engine.cpp \
-	ganl_adapter.cpp help.cpp htab.cpp local.cpp log.cpp look.cpp \
-	mail.cpp match.cpp mguests.cpp modules.cpp move.cpp muxcli.cpp \
-	netaddr.cpp net.cpp object.cpp predicates.cpp player.cpp \
-	player_c.cpp plusemail.cpp powers.cpp quota.cpp rob.cpp \
-	set.cpp signals.cpp sitemon.cpp session.cpp speech.cpp \
-	telnet.cpp timer.cpp unparse.cpp vattr.cpp walkdb.cpp wild.cpp \
-	wiz.cpp $(am__append_1) sqlitedb.cpp sqlite_backend.cpp \
-	sqlite/sqlite3.c
+ENGINE_CXX_SRC = ast.cpp ast_scan.cpp attrcache.cpp boolexp.cpp \
+	command.cpp comsys.cpp conf.cpp conn_bridge.cpp cque.cpp \
+	create.cpp db.cpp db_rw.cpp engine.cpp eval.cpp file_c.cpp \
+	flags.cpp funceval.cpp funceval2.cpp functions.cpp funmath.cpp \
+	help.cpp htab.cpp local.cpp log.cpp look.cpp mail.cpp \
+	match.cpp mguests.cpp move.cpp object.cpp predicates.cpp \
+	player.cpp player_c.cpp plusemail.cpp powers.cpp quota.cpp \
+	rob.cpp set.cpp session.cpp speech.cpp timer.cpp unparse.cpp \
+	vattr.cpp walkdb.cpp wild.cpp wiz.cpp $(am__append_1) \
+	sqlitedb.cpp sqlite_backend.cpp
+
+# Combined source list (for reference only)
+ENGINE_SRC = $(ENGINE_CXX_SRC) sqlite/sqlite3.c
+
+# Source files for netmux (driver) — thin networking shell.
+# These files #include "interface.h" and own the DESC struct.
+#
+DRIVER_SRC = _build.cpp bsd.cpp driver.cpp ganl_adapter.cpp \
+    modules.cpp muxcli.cpp net.cpp netaddr.cpp signals.cpp \
+    sitemon.cpp telnet.cpp
+
 LIBMUX_OBJS = $(LIBMUX_SRC:.cpp=.lo)
 
-# netmux main program
-netmux_SOURCES = $(NETMUX_SRC) version.cpp
-netmux_LDADD = libmux.so ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
+# engine.so — game logic shared library.
+# -Bsymbolic ensures internal references (e.g., conn_bridge.cpp's
+# send_text_to_player) bind to engine.so's own definitions, not the
+# dynamic symbol table.  Links against libmux.so only.
+ENGINE_CXX_OBJS = $(ENGINE_CXX_SRC:.cpp=.lo)
+
+# netmux driver program — links against libmux.so and engine.so.
+# RPATH: $ORIGIN finds .so files next to the binary (installed or symlinked);
+# abs_builddir covers running from the build tree before install.
+netmux_SOURCES = $(DRIVER_SRC) version.cpp
+netmux_CXXFLAGS = $(AM_CXXFLAGS) -fPIC
+netmux_LDFLAGS = -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(abs_builddir) -pie
+netmux_LDADD = engine.so libmux.so ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
 
 # slave program
 slave_SOURCES = slave.cpp
@@ -497,7 +462,7 @@ stubslave_LDADD = libmux.so $(LIBS) $(STUBLIBS)
 BUILT_SOURCES = ast_scan.cpp
 
 # Clean up additional files
-CLEANFILES = libmux.so *.lo
+CLEANFILES = libmux.so engine.so *.lo sqlite/sqlite3.lo
 
 # Additional distributions
 EXTRA_DIST = buildnum.sh ast_scan.rl
@@ -505,7 +470,7 @@ all: $(BUILT_SOURCES) autoconf.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .c .cpp .o .obj
+.SUFFIXES: .cpp .o .obj
 am--refresh: Makefile
 	@:
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
@@ -596,18 +561,10 @@ uninstall-binPROGRAMS:
 
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
-sqlite/$(am__dirstamp):
-	@$(MKDIR_P) sqlite
-	@: > sqlite/$(am__dirstamp)
-sqlite/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) sqlite/$(DEPDIR)
-	@: > sqlite/$(DEPDIR)/$(am__dirstamp)
-sqlite/sqlite3.$(OBJEXT): sqlite/$(am__dirstamp) \
-	sqlite/$(DEPDIR)/$(am__dirstamp)
 
 netmux$(EXEEXT): $(netmux_OBJECTS) $(netmux_DEPENDENCIES) $(EXTRA_netmux_DEPENDENCIES) 
 	@rm -f netmux$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(netmux_OBJECTS) $(netmux_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(netmux_LINK) $(netmux_OBJECTS) $(netmux_LDADD) $(LIBS)
 
 slave$(EXEEXT): $(slave_OBJECTS) $(slave_DEPENDENCIES) $(EXTRA_slave_DEPENDENCIES) 
 	@rm -f slave$(EXEEXT)
@@ -619,96 +576,30 @@ stubslave$(EXEEXT): $(stubslave_OBJECTS) $(stubslave_DEPENDENCIES) $(EXTRA_stubs
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
-	-rm -f sqlite/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/_build.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ast.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ast_scan.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/attrcache.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/boolexp.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bsd.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/command.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comsys.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/conf.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cque.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/create.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/db.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/db_rw.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/driver.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/engine.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eval.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file_c.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/flags.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/funceval.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/funceval2.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/functions.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/funmath.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ganl_adapter.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/help.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/htab.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/levels.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/local.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/look.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mail.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/match.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mguests.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/modules.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/move.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/muxcli.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/net.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netaddr.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/object.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/player.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/player_c.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/plusemail.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/powers.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/predicates.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/quota.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rob.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/session.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/signals.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sitemon.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-_build.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-bsd.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-driver.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-ganl_adapter.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-modules.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-muxcli.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-net.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-netaddr.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-signals.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-sitemon.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-telnet.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-version.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slave.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/speech.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sqlite_backend.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sqlitedb.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stubslave.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/telnet.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timer.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unparse.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vattr.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/version.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/walkdb.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wild.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wiz.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@sqlite/$(DEPDIR)/sqlite3.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
 	@echo '# dummy' >$@-t && $(am__mv) $@-t $@
 
 am--depfiles: $(am__depfiles_remade)
-
-.c.o:
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
-
-.c.obj:
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -725,6 +616,174 @@ am--depfiles: $(am__depfiles_remade)
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+netmux-_build.o: _build.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-_build.o -MD -MP -MF $(DEPDIR)/netmux-_build.Tpo -c -o netmux-_build.o `test -f '_build.cpp' || echo '$(srcdir)/'`_build.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-_build.Tpo $(DEPDIR)/netmux-_build.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='_build.cpp' object='netmux-_build.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-_build.o `test -f '_build.cpp' || echo '$(srcdir)/'`_build.cpp
+
+netmux-_build.obj: _build.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-_build.obj -MD -MP -MF $(DEPDIR)/netmux-_build.Tpo -c -o netmux-_build.obj `if test -f '_build.cpp'; then $(CYGPATH_W) '_build.cpp'; else $(CYGPATH_W) '$(srcdir)/_build.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-_build.Tpo $(DEPDIR)/netmux-_build.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='_build.cpp' object='netmux-_build.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-_build.obj `if test -f '_build.cpp'; then $(CYGPATH_W) '_build.cpp'; else $(CYGPATH_W) '$(srcdir)/_build.cpp'; fi`
+
+netmux-bsd.o: bsd.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-bsd.o -MD -MP -MF $(DEPDIR)/netmux-bsd.Tpo -c -o netmux-bsd.o `test -f 'bsd.cpp' || echo '$(srcdir)/'`bsd.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-bsd.Tpo $(DEPDIR)/netmux-bsd.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='bsd.cpp' object='netmux-bsd.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-bsd.o `test -f 'bsd.cpp' || echo '$(srcdir)/'`bsd.cpp
+
+netmux-bsd.obj: bsd.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-bsd.obj -MD -MP -MF $(DEPDIR)/netmux-bsd.Tpo -c -o netmux-bsd.obj `if test -f 'bsd.cpp'; then $(CYGPATH_W) 'bsd.cpp'; else $(CYGPATH_W) '$(srcdir)/bsd.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-bsd.Tpo $(DEPDIR)/netmux-bsd.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='bsd.cpp' object='netmux-bsd.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-bsd.obj `if test -f 'bsd.cpp'; then $(CYGPATH_W) 'bsd.cpp'; else $(CYGPATH_W) '$(srcdir)/bsd.cpp'; fi`
+
+netmux-driver.o: driver.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-driver.o -MD -MP -MF $(DEPDIR)/netmux-driver.Tpo -c -o netmux-driver.o `test -f 'driver.cpp' || echo '$(srcdir)/'`driver.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-driver.Tpo $(DEPDIR)/netmux-driver.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='driver.cpp' object='netmux-driver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-driver.o `test -f 'driver.cpp' || echo '$(srcdir)/'`driver.cpp
+
+netmux-driver.obj: driver.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-driver.obj -MD -MP -MF $(DEPDIR)/netmux-driver.Tpo -c -o netmux-driver.obj `if test -f 'driver.cpp'; then $(CYGPATH_W) 'driver.cpp'; else $(CYGPATH_W) '$(srcdir)/driver.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-driver.Tpo $(DEPDIR)/netmux-driver.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='driver.cpp' object='netmux-driver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-driver.obj `if test -f 'driver.cpp'; then $(CYGPATH_W) 'driver.cpp'; else $(CYGPATH_W) '$(srcdir)/driver.cpp'; fi`
+
+netmux-ganl_adapter.o: ganl_adapter.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-ganl_adapter.o -MD -MP -MF $(DEPDIR)/netmux-ganl_adapter.Tpo -c -o netmux-ganl_adapter.o `test -f 'ganl_adapter.cpp' || echo '$(srcdir)/'`ganl_adapter.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-ganl_adapter.Tpo $(DEPDIR)/netmux-ganl_adapter.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='ganl_adapter.cpp' object='netmux-ganl_adapter.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-ganl_adapter.o `test -f 'ganl_adapter.cpp' || echo '$(srcdir)/'`ganl_adapter.cpp
+
+netmux-ganl_adapter.obj: ganl_adapter.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-ganl_adapter.obj -MD -MP -MF $(DEPDIR)/netmux-ganl_adapter.Tpo -c -o netmux-ganl_adapter.obj `if test -f 'ganl_adapter.cpp'; then $(CYGPATH_W) 'ganl_adapter.cpp'; else $(CYGPATH_W) '$(srcdir)/ganl_adapter.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-ganl_adapter.Tpo $(DEPDIR)/netmux-ganl_adapter.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='ganl_adapter.cpp' object='netmux-ganl_adapter.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-ganl_adapter.obj `if test -f 'ganl_adapter.cpp'; then $(CYGPATH_W) 'ganl_adapter.cpp'; else $(CYGPATH_W) '$(srcdir)/ganl_adapter.cpp'; fi`
+
+netmux-modules.o: modules.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-modules.o -MD -MP -MF $(DEPDIR)/netmux-modules.Tpo -c -o netmux-modules.o `test -f 'modules.cpp' || echo '$(srcdir)/'`modules.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-modules.Tpo $(DEPDIR)/netmux-modules.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='modules.cpp' object='netmux-modules.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-modules.o `test -f 'modules.cpp' || echo '$(srcdir)/'`modules.cpp
+
+netmux-modules.obj: modules.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-modules.obj -MD -MP -MF $(DEPDIR)/netmux-modules.Tpo -c -o netmux-modules.obj `if test -f 'modules.cpp'; then $(CYGPATH_W) 'modules.cpp'; else $(CYGPATH_W) '$(srcdir)/modules.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-modules.Tpo $(DEPDIR)/netmux-modules.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='modules.cpp' object='netmux-modules.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-modules.obj `if test -f 'modules.cpp'; then $(CYGPATH_W) 'modules.cpp'; else $(CYGPATH_W) '$(srcdir)/modules.cpp'; fi`
+
+netmux-muxcli.o: muxcli.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-muxcli.o -MD -MP -MF $(DEPDIR)/netmux-muxcli.Tpo -c -o netmux-muxcli.o `test -f 'muxcli.cpp' || echo '$(srcdir)/'`muxcli.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-muxcli.Tpo $(DEPDIR)/netmux-muxcli.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='muxcli.cpp' object='netmux-muxcli.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-muxcli.o `test -f 'muxcli.cpp' || echo '$(srcdir)/'`muxcli.cpp
+
+netmux-muxcli.obj: muxcli.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-muxcli.obj -MD -MP -MF $(DEPDIR)/netmux-muxcli.Tpo -c -o netmux-muxcli.obj `if test -f 'muxcli.cpp'; then $(CYGPATH_W) 'muxcli.cpp'; else $(CYGPATH_W) '$(srcdir)/muxcli.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-muxcli.Tpo $(DEPDIR)/netmux-muxcli.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='muxcli.cpp' object='netmux-muxcli.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-muxcli.obj `if test -f 'muxcli.cpp'; then $(CYGPATH_W) 'muxcli.cpp'; else $(CYGPATH_W) '$(srcdir)/muxcli.cpp'; fi`
+
+netmux-net.o: net.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-net.o -MD -MP -MF $(DEPDIR)/netmux-net.Tpo -c -o netmux-net.o `test -f 'net.cpp' || echo '$(srcdir)/'`net.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-net.Tpo $(DEPDIR)/netmux-net.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='net.cpp' object='netmux-net.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-net.o `test -f 'net.cpp' || echo '$(srcdir)/'`net.cpp
+
+netmux-net.obj: net.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-net.obj -MD -MP -MF $(DEPDIR)/netmux-net.Tpo -c -o netmux-net.obj `if test -f 'net.cpp'; then $(CYGPATH_W) 'net.cpp'; else $(CYGPATH_W) '$(srcdir)/net.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-net.Tpo $(DEPDIR)/netmux-net.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='net.cpp' object='netmux-net.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-net.obj `if test -f 'net.cpp'; then $(CYGPATH_W) 'net.cpp'; else $(CYGPATH_W) '$(srcdir)/net.cpp'; fi`
+
+netmux-netaddr.o: netaddr.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-netaddr.o -MD -MP -MF $(DEPDIR)/netmux-netaddr.Tpo -c -o netmux-netaddr.o `test -f 'netaddr.cpp' || echo '$(srcdir)/'`netaddr.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-netaddr.Tpo $(DEPDIR)/netmux-netaddr.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='netaddr.cpp' object='netmux-netaddr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-netaddr.o `test -f 'netaddr.cpp' || echo '$(srcdir)/'`netaddr.cpp
+
+netmux-netaddr.obj: netaddr.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-netaddr.obj -MD -MP -MF $(DEPDIR)/netmux-netaddr.Tpo -c -o netmux-netaddr.obj `if test -f 'netaddr.cpp'; then $(CYGPATH_W) 'netaddr.cpp'; else $(CYGPATH_W) '$(srcdir)/netaddr.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-netaddr.Tpo $(DEPDIR)/netmux-netaddr.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='netaddr.cpp' object='netmux-netaddr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-netaddr.obj `if test -f 'netaddr.cpp'; then $(CYGPATH_W) 'netaddr.cpp'; else $(CYGPATH_W) '$(srcdir)/netaddr.cpp'; fi`
+
+netmux-signals.o: signals.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-signals.o -MD -MP -MF $(DEPDIR)/netmux-signals.Tpo -c -o netmux-signals.o `test -f 'signals.cpp' || echo '$(srcdir)/'`signals.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-signals.Tpo $(DEPDIR)/netmux-signals.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='signals.cpp' object='netmux-signals.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-signals.o `test -f 'signals.cpp' || echo '$(srcdir)/'`signals.cpp
+
+netmux-signals.obj: signals.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-signals.obj -MD -MP -MF $(DEPDIR)/netmux-signals.Tpo -c -o netmux-signals.obj `if test -f 'signals.cpp'; then $(CYGPATH_W) 'signals.cpp'; else $(CYGPATH_W) '$(srcdir)/signals.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-signals.Tpo $(DEPDIR)/netmux-signals.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='signals.cpp' object='netmux-signals.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-signals.obj `if test -f 'signals.cpp'; then $(CYGPATH_W) 'signals.cpp'; else $(CYGPATH_W) '$(srcdir)/signals.cpp'; fi`
+
+netmux-sitemon.o: sitemon.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-sitemon.o -MD -MP -MF $(DEPDIR)/netmux-sitemon.Tpo -c -o netmux-sitemon.o `test -f 'sitemon.cpp' || echo '$(srcdir)/'`sitemon.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-sitemon.Tpo $(DEPDIR)/netmux-sitemon.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='sitemon.cpp' object='netmux-sitemon.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-sitemon.o `test -f 'sitemon.cpp' || echo '$(srcdir)/'`sitemon.cpp
+
+netmux-sitemon.obj: sitemon.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-sitemon.obj -MD -MP -MF $(DEPDIR)/netmux-sitemon.Tpo -c -o netmux-sitemon.obj `if test -f 'sitemon.cpp'; then $(CYGPATH_W) 'sitemon.cpp'; else $(CYGPATH_W) '$(srcdir)/sitemon.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-sitemon.Tpo $(DEPDIR)/netmux-sitemon.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='sitemon.cpp' object='netmux-sitemon.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-sitemon.obj `if test -f 'sitemon.cpp'; then $(CYGPATH_W) 'sitemon.cpp'; else $(CYGPATH_W) '$(srcdir)/sitemon.cpp'; fi`
+
+netmux-telnet.o: telnet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-telnet.o -MD -MP -MF $(DEPDIR)/netmux-telnet.Tpo -c -o netmux-telnet.o `test -f 'telnet.cpp' || echo '$(srcdir)/'`telnet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-telnet.Tpo $(DEPDIR)/netmux-telnet.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='telnet.cpp' object='netmux-telnet.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-telnet.o `test -f 'telnet.cpp' || echo '$(srcdir)/'`telnet.cpp
+
+netmux-telnet.obj: telnet.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-telnet.obj -MD -MP -MF $(DEPDIR)/netmux-telnet.Tpo -c -o netmux-telnet.obj `if test -f 'telnet.cpp'; then $(CYGPATH_W) 'telnet.cpp'; else $(CYGPATH_W) '$(srcdir)/telnet.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-telnet.Tpo $(DEPDIR)/netmux-telnet.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='telnet.cpp' object='netmux-telnet.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-telnet.obj `if test -f 'telnet.cpp'; then $(CYGPATH_W) 'telnet.cpp'; else $(CYGPATH_W) '$(srcdir)/telnet.cpp'; fi`
+
+netmux-version.o: version.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-version.o -MD -MP -MF $(DEPDIR)/netmux-version.Tpo -c -o netmux-version.o `test -f 'version.cpp' || echo '$(srcdir)/'`version.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-version.Tpo $(DEPDIR)/netmux-version.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='version.cpp' object='netmux-version.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-version.o `test -f 'version.cpp' || echo '$(srcdir)/'`version.cpp
+
+netmux-version.obj: version.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-version.obj -MD -MP -MF $(DEPDIR)/netmux-version.Tpo -c -o netmux-version.obj `if test -f 'version.cpp'; then $(CYGPATH_W) 'version.cpp'; else $(CYGPATH_W) '$(srcdir)/version.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-version.Tpo $(DEPDIR)/netmux-version.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='version.cpp' object='netmux-version.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-version.obj `if test -f 'version.cpp'; then $(CYGPATH_W) 'version.cpp'; else $(CYGPATH_W) '$(srcdir)/version.cpp'; fi`
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run 'make' without going through this Makefile.
@@ -1066,8 +1125,6 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
-	-rm -f sqlite/$(DEPDIR)/$(am__dirstamp)
-	-rm -f sqlite/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -1079,69 +1136,20 @@ clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-		-rm -f ./$(DEPDIR)/_build.Po
-	-rm -f ./$(DEPDIR)/ast.Po
-	-rm -f ./$(DEPDIR)/ast_scan.Po
-	-rm -f ./$(DEPDIR)/attrcache.Po
-	-rm -f ./$(DEPDIR)/boolexp.Po
-	-rm -f ./$(DEPDIR)/bsd.Po
-	-rm -f ./$(DEPDIR)/command.Po
-	-rm -f ./$(DEPDIR)/comsys.Po
-	-rm -f ./$(DEPDIR)/conf.Po
-	-rm -f ./$(DEPDIR)/cque.Po
-	-rm -f ./$(DEPDIR)/create.Po
-	-rm -f ./$(DEPDIR)/db.Po
-	-rm -f ./$(DEPDIR)/db_rw.Po
-	-rm -f ./$(DEPDIR)/driver.Po
-	-rm -f ./$(DEPDIR)/engine.Po
-	-rm -f ./$(DEPDIR)/eval.Po
-	-rm -f ./$(DEPDIR)/file_c.Po
-	-rm -f ./$(DEPDIR)/flags.Po
-	-rm -f ./$(DEPDIR)/funceval.Po
-	-rm -f ./$(DEPDIR)/funceval2.Po
-	-rm -f ./$(DEPDIR)/functions.Po
-	-rm -f ./$(DEPDIR)/funmath.Po
-	-rm -f ./$(DEPDIR)/ganl_adapter.Po
-	-rm -f ./$(DEPDIR)/help.Po
-	-rm -f ./$(DEPDIR)/htab.Po
-	-rm -f ./$(DEPDIR)/levels.Po
-	-rm -f ./$(DEPDIR)/local.Po
-	-rm -f ./$(DEPDIR)/log.Po
-	-rm -f ./$(DEPDIR)/look.Po
-	-rm -f ./$(DEPDIR)/mail.Po
-	-rm -f ./$(DEPDIR)/match.Po
-	-rm -f ./$(DEPDIR)/mguests.Po
-	-rm -f ./$(DEPDIR)/modules.Po
-	-rm -f ./$(DEPDIR)/move.Po
-	-rm -f ./$(DEPDIR)/muxcli.Po
-	-rm -f ./$(DEPDIR)/net.Po
-	-rm -f ./$(DEPDIR)/netaddr.Po
-	-rm -f ./$(DEPDIR)/object.Po
-	-rm -f ./$(DEPDIR)/player.Po
-	-rm -f ./$(DEPDIR)/player_c.Po
-	-rm -f ./$(DEPDIR)/plusemail.Po
-	-rm -f ./$(DEPDIR)/powers.Po
-	-rm -f ./$(DEPDIR)/predicates.Po
-	-rm -f ./$(DEPDIR)/quota.Po
-	-rm -f ./$(DEPDIR)/rob.Po
-	-rm -f ./$(DEPDIR)/session.Po
-	-rm -f ./$(DEPDIR)/set.Po
-	-rm -f ./$(DEPDIR)/signals.Po
-	-rm -f ./$(DEPDIR)/sitemon.Po
+		-rm -f ./$(DEPDIR)/netmux-_build.Po
+	-rm -f ./$(DEPDIR)/netmux-bsd.Po
+	-rm -f ./$(DEPDIR)/netmux-driver.Po
+	-rm -f ./$(DEPDIR)/netmux-ganl_adapter.Po
+	-rm -f ./$(DEPDIR)/netmux-modules.Po
+	-rm -f ./$(DEPDIR)/netmux-muxcli.Po
+	-rm -f ./$(DEPDIR)/netmux-net.Po
+	-rm -f ./$(DEPDIR)/netmux-netaddr.Po
+	-rm -f ./$(DEPDIR)/netmux-signals.Po
+	-rm -f ./$(DEPDIR)/netmux-sitemon.Po
+	-rm -f ./$(DEPDIR)/netmux-telnet.Po
+	-rm -f ./$(DEPDIR)/netmux-version.Po
 	-rm -f ./$(DEPDIR)/slave.Po
-	-rm -f ./$(DEPDIR)/speech.Po
-	-rm -f ./$(DEPDIR)/sqlite_backend.Po
-	-rm -f ./$(DEPDIR)/sqlitedb.Po
 	-rm -f ./$(DEPDIR)/stubslave.Po
-	-rm -f ./$(DEPDIR)/telnet.Po
-	-rm -f ./$(DEPDIR)/timer.Po
-	-rm -f ./$(DEPDIR)/unparse.Po
-	-rm -f ./$(DEPDIR)/vattr.Po
-	-rm -f ./$(DEPDIR)/version.Po
-	-rm -f ./$(DEPDIR)/walkdb.Po
-	-rm -f ./$(DEPDIR)/wild.Po
-	-rm -f ./$(DEPDIR)/wiz.Po
-	-rm -f sqlite/$(DEPDIR)/sqlite3.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-tags
@@ -1190,69 +1198,20 @@ installcheck-am:
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-		-rm -f ./$(DEPDIR)/_build.Po
-	-rm -f ./$(DEPDIR)/ast.Po
-	-rm -f ./$(DEPDIR)/ast_scan.Po
-	-rm -f ./$(DEPDIR)/attrcache.Po
-	-rm -f ./$(DEPDIR)/boolexp.Po
-	-rm -f ./$(DEPDIR)/bsd.Po
-	-rm -f ./$(DEPDIR)/command.Po
-	-rm -f ./$(DEPDIR)/comsys.Po
-	-rm -f ./$(DEPDIR)/conf.Po
-	-rm -f ./$(DEPDIR)/cque.Po
-	-rm -f ./$(DEPDIR)/create.Po
-	-rm -f ./$(DEPDIR)/db.Po
-	-rm -f ./$(DEPDIR)/db_rw.Po
-	-rm -f ./$(DEPDIR)/driver.Po
-	-rm -f ./$(DEPDIR)/engine.Po
-	-rm -f ./$(DEPDIR)/eval.Po
-	-rm -f ./$(DEPDIR)/file_c.Po
-	-rm -f ./$(DEPDIR)/flags.Po
-	-rm -f ./$(DEPDIR)/funceval.Po
-	-rm -f ./$(DEPDIR)/funceval2.Po
-	-rm -f ./$(DEPDIR)/functions.Po
-	-rm -f ./$(DEPDIR)/funmath.Po
-	-rm -f ./$(DEPDIR)/ganl_adapter.Po
-	-rm -f ./$(DEPDIR)/help.Po
-	-rm -f ./$(DEPDIR)/htab.Po
-	-rm -f ./$(DEPDIR)/levels.Po
-	-rm -f ./$(DEPDIR)/local.Po
-	-rm -f ./$(DEPDIR)/log.Po
-	-rm -f ./$(DEPDIR)/look.Po
-	-rm -f ./$(DEPDIR)/mail.Po
-	-rm -f ./$(DEPDIR)/match.Po
-	-rm -f ./$(DEPDIR)/mguests.Po
-	-rm -f ./$(DEPDIR)/modules.Po
-	-rm -f ./$(DEPDIR)/move.Po
-	-rm -f ./$(DEPDIR)/muxcli.Po
-	-rm -f ./$(DEPDIR)/net.Po
-	-rm -f ./$(DEPDIR)/netaddr.Po
-	-rm -f ./$(DEPDIR)/object.Po
-	-rm -f ./$(DEPDIR)/player.Po
-	-rm -f ./$(DEPDIR)/player_c.Po
-	-rm -f ./$(DEPDIR)/plusemail.Po
-	-rm -f ./$(DEPDIR)/powers.Po
-	-rm -f ./$(DEPDIR)/predicates.Po
-	-rm -f ./$(DEPDIR)/quota.Po
-	-rm -f ./$(DEPDIR)/rob.Po
-	-rm -f ./$(DEPDIR)/session.Po
-	-rm -f ./$(DEPDIR)/set.Po
-	-rm -f ./$(DEPDIR)/signals.Po
-	-rm -f ./$(DEPDIR)/sitemon.Po
+		-rm -f ./$(DEPDIR)/netmux-_build.Po
+	-rm -f ./$(DEPDIR)/netmux-bsd.Po
+	-rm -f ./$(DEPDIR)/netmux-driver.Po
+	-rm -f ./$(DEPDIR)/netmux-ganl_adapter.Po
+	-rm -f ./$(DEPDIR)/netmux-modules.Po
+	-rm -f ./$(DEPDIR)/netmux-muxcli.Po
+	-rm -f ./$(DEPDIR)/netmux-net.Po
+	-rm -f ./$(DEPDIR)/netmux-netaddr.Po
+	-rm -f ./$(DEPDIR)/netmux-signals.Po
+	-rm -f ./$(DEPDIR)/netmux-sitemon.Po
+	-rm -f ./$(DEPDIR)/netmux-telnet.Po
+	-rm -f ./$(DEPDIR)/netmux-version.Po
 	-rm -f ./$(DEPDIR)/slave.Po
-	-rm -f ./$(DEPDIR)/speech.Po
-	-rm -f ./$(DEPDIR)/sqlite_backend.Po
-	-rm -f ./$(DEPDIR)/sqlitedb.Po
 	-rm -f ./$(DEPDIR)/stubslave.Po
-	-rm -f ./$(DEPDIR)/telnet.Po
-	-rm -f ./$(DEPDIR)/timer.Po
-	-rm -f ./$(DEPDIR)/unparse.Po
-	-rm -f ./$(DEPDIR)/vattr.Po
-	-rm -f ./$(DEPDIR)/version.Po
-	-rm -f ./$(DEPDIR)/walkdb.Po
-	-rm -f ./$(DEPDIR)/wild.Po
-	-rm -f ./$(DEPDIR)/wiz.Po
-	-rm -f sqlite/$(DEPDIR)/sqlite3.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -1294,15 +1253,24 @@ uninstall-am: uninstall-binPROGRAMS
 .PRECIOUS: Makefile
 
 
-# libmux shared library (modules resolve symbols from this at runtime)
-all-local: libmux.so
+# Shared libraries (modules resolve symbols from libmux.so at runtime;
+# netmux resolves engine symbols from engine.so at link time).
+all-local: libmux.so engine.so
 
-# Compile each libmux source with -fPIC
+# Compile each shared-library source with -fPIC.
+# .lo suffix is used for both libmux and engine PIC objects.
 %.lo: %.cpp
 	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -c -o $@ $<
 
+# Special rule for sqlite3.c (C, not C++)
+sqlite/sqlite3.lo: sqlite/sqlite3.c
+	$(CC) $(CFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -c -o $@ $<
+
 libmux.so: $(LIBMUX_OBJS)
 	$(CXX) $(CXXFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $(LIBMUX_OBJS) $(LIBS) $(DL_LIB) $(SQL_LIBS)
+
+engine.so: $(ENGINE_CXX_OBJS) sqlite/sqlite3.lo libmux.so
+	$(CXX) $(CXXFLAGS) $(DYNAMICLIB_CXXFLAGS) -Wl,-Bsymbolic -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(abs_builddir) -o $@ $(ENGINE_CXX_OBJS) sqlite/sqlite3.lo libmux.so $(PCRE2_LIBS)
 
 # Version number routines
 # The DEBIAN_BUILD environment variable can be set to create deterministic builds
@@ -1321,6 +1289,7 @@ FORCE:
 install-exec-hook:
 	cd $(DESTDIR)$(bindir) && rm -f dbconvert && ln -s netmux dbconvert
 	cd $(DESTDIR)$(bindir) && rm -f libmux.so && $(LN_S) $(abs_builddir)/libmux.so .
+	cd $(DESTDIR)$(bindir) && rm -f engine.so && $(LN_S) $(abs_builddir)/engine.so .
 
 # No need for manual dependency tracking - automake handles this now
 

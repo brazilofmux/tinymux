@@ -207,6 +207,11 @@ typedef struct program_data
 //
 extern void emergency_shutdown();
 
+// From conn_bridge.cpp
+//
+extern void conn_bridge_init(void);
+extern void conn_bridge_final(void);
+
 // From bsd.cpp
 //
 extern void shutdownsock(DESC *, int);

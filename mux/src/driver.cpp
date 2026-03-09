@@ -1042,6 +1042,12 @@ int DCL_CDECL main(int argc, char *argv[])
         return 2;
     }
 
+    // Initialize the connection bridge so engine.so's free-function
+    // stubs (conn_bridge.cpp) can delegate to the driver's real
+    // implementations via mux_IConnectionManager COM interface.
+    //
+    conn_bridge_init();
+
     // All initialization should be complete, allow the local
     // extensions to configure themselves.
     //
@@ -1068,6 +1074,7 @@ int DCL_CDECL main(int argc, char *argv[])
     // local extensions.
     //
     pGameEngine->Shutdown();
+    conn_bridge_final();
     pGameEngine->Release();
     pGameEngine = nullptr;
 #if defined(STUB_SLAVE)
