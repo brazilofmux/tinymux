@@ -3485,11 +3485,15 @@ mux_subnet_node *mux_subnets::remove(mux_subnet_node *msnRoot, mux_subnet *msn_a
 
     case mux_subnet::SubnetComparison::kEqual:
         {
-            mux_subnet_node *x = msnRoot;
-            delete msnRoot->pnInside;
-            msnRoot->pnInside = nullptr;
-            msnRoot = joinlr(msnRoot->pnLeft, msnRoot->pnRight);
-            delete x;
+            mux_subnet_node *pnLeft = msnRoot->pnLeft;
+            mux_subnet_node *pnRight = msnRoot->pnRight;
+            msnRoot->pnLeft = nullptr;
+            msnRoot->pnRight = nullptr;
+            // pnInside is intentionally left attached — the
+            // destructor will recursively delete contained subnets.
+            //
+            delete msnRoot;
+            msnRoot = joinlr(pnLeft, pnRight);
         }
         break;
 
@@ -3498,8 +3502,22 @@ mux_subnet_node *mux_subnets::remove(mux_subnet_node *msnRoot, mux_subnet *msn_a
         break;
 
     case mux_subnet::SubnetComparison::kContainedBy:
-        delete msnRoot;
-        msnRoot = nullptr;
+        {
+            // The current node is within the range being reset.
+            // Delete it and its inside subtree, but left/right
+            // siblings may be outside the range — detach them,
+            // recurse to remove any that are also contained,
+            // then rejoin the survivors.
+            //
+            mux_subnet_node *pnLeft = msnRoot->pnLeft;
+            mux_subnet_node *pnRight = msnRoot->pnRight;
+            msnRoot->pnLeft = nullptr;
+            msnRoot->pnRight = nullptr;
+            delete msnRoot;
+            pnLeft = remove(pnLeft, msn_arg);
+            pnRight = remove(pnRight, msn_arg);
+            msnRoot = joinlr(pnLeft, pnRight);
+        }
         break;
 
     case mux_subnet::SubnetComparison::kGreaterThan:
@@ -3574,7 +3592,7 @@ bool mux_subnets::trust(mux_subnet *msn_arg)
 
 bool mux_subnets::reset(mux_subnet *msn_arg)
 {
-    mux_subnet_node *msn = remove(msnRoot, msn_arg);
+    msnRoot = remove(msnRoot, msn_arg);
     return true;
 }
 
