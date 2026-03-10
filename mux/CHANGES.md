@@ -110,6 +110,18 @@ author:
  - Fix squish() with multi-character separators.
  - Fix bugs in Poor Man's COM: infinite loop, delete[] misuse.
  - Short options were being parsed oddly.
+ - Fix IPv6 subnet comparison: operator== compared array pointers
+   instead of contents (always false); operator< didn't early-exit
+   correctly. Also fix mux_sockaddr IPv6 memcmp using wrong size.
+ - Fix subnet tree remove/reset: reset() discarded return value so
+   @reset_site was a no-op; kContainedBy case deleted unrelated
+   siblings; kEqual case didn't detach children before deletion.
+ - Fix parse_to_lite reading past boundary when scanning for closing
+   ')' inside bounded mux_exec calls (affected parenmatch and nested
+   function evaluation).
+ - Fix trim_space_sep_LEN declaration/definition signature mismatch
+   (const SEP& vs SEP*) that prevented cross-file linking.
+ - Fix null handle crash in ModuleUnload when dlopen handle is NULL.
 
 # Performance Enhancements:
 
@@ -194,7 +206,9 @@ author:
    std::condition_variable.
  - Replaced ReplaceFile/RemoveFile ifdefs with std::filesystem.
  - Replaced local-scope new[]/delete[] with std::vector.
- - Replaced hand-rolled MT19937 with std::mt19937.
+ - Replaced hand-rolled MT19937 with PCG (pcg64 with 128-bit state
+   when available, pcg32 fallback). 32 bytes of state replaces 2496.
+   Seeded from /dev/urandom with ASLR+time fallback.
  - Modernized mux_string class: std::vector, Rule of Five, API cleanup.
  - Replaced C-style casts with static_cast/reinterpret_cast across
    codebase.
@@ -234,6 +248,12 @@ author:
  - Removed deprecated stack subsystem.
  - Removed dead cache statistics counters.
  - Removed database compression feature.
+ - Remove SQLite calls from SIGUSR2, SIGSEGV, and crash signal
+   handlers. Write-through makes them unnecessary and they risk WAL
+   corruption.
+ - Suppress verbose per-event GANL debug logging in production.
+ - Updated help topics for Unicode-aware string functions (ord, chr,
+   strlen, strmem, mid, citer, stripaccents).
  - Added 175 new smoke test cases expanding coverage to 348 total.
  - `dbconvert` supports `-C` and `-m` flags for comsys and mail
    flatfile import/export.
