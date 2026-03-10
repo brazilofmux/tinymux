@@ -231,6 +231,8 @@ XFUNCTION(fun_isjson);
 XFUNCTION(fun_json);
 XFUNCTION(fun_json_query);
 XFUNCTION(fun_json_mod);
+XFUNCTION(fun_url_escape);
+XFUNCTION(fun_url_unescape);
 
 // In netcommon.cpp
 XFUNCTION(fun_doing);

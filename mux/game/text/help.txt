@@ -14860,6 +14860,44 @@ USER-DEFINED COMMANDS
 
   Related Topics: arbitrary commands
 
+& URL_ESCAPE()
+URL_ESCAPE()
+
+  FUNCTION: url_escape(<string>)
+
+  Percent-encodes <string> per RFC 3986 for use in URLs.  Unreserved
+  characters (A-Z, a-z, 0-9, -, _, ., ~) pass through unchanged.
+  All other bytes are encoded as %XX.
+
+  Examples:
+    > say url_escape(hello world)
+    You say, "hello%20world"
+    > say url_escape(foo@bar.com)
+    You say, "foo%40bar.com"
+    > say url_escape(key=value&x=1)
+    You say, "key%3Dvalue%26x%3D1"
+
+  Related Topics: url_unescape().
+
+& URL_UNESCAPE()
+URL_UNESCAPE()
+
+  FUNCTION: url_unescape(<string>)
+
+  Decodes a percent-encoded URL string.  %XX sequences are replaced
+  with the corresponding byte.  The '+' character is decoded as a
+  space (application/x-www-form-urlencoded compatibility).
+
+  Examples:
+    > say url_unescape(hello%20world)
+    You say, "hello world"
+    > say url_unescape(hello+world)
+    You say, "hello world"
+    > say url_unescape(%41%42%43)
+    You say, "ABC"
+
+  Related Topics: url_escape().
+
 & V()
 V()
 

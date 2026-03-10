@@ -1,5 +1,5 @@
 /*! \file funcweb.cpp
- * \brief Web integration functions: base64, HMAC, JSON.
+ * \brief Web integration functions: base64, HMAC, JSON, URL encoding.
  *
  */
 
@@ -1048,5 +1048,92 @@ FUNCTION(fun_json_mod)
     else
     {
         safe_str(T("#-1 UNKNOWN OPERATION"), buff, bufc);
+    }
+}
+
+// --------------------------------------------------------------------------
+// URL percent-encoding (RFC 3986)
+// --------------------------------------------------------------------------
+
+// Unreserved characters: A-Z a-z 0-9 - _ . ~
+//
+static bool url_is_unreserved(UTF8 ch)
+{
+    return mux_isalnum(ch) || ch == '-' || ch == '_' || ch == '.' || ch == '~';
+}
+
+static const UTF8 hex_digits[] = "0123456789ABCDEF";
+
+XFUNCTION(fun_url_escape)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+    UNUSED_PARAMETER(fp);
+
+    const UTF8 *p = fargs[0];
+    while (*p)
+    {
+        if (url_is_unreserved(*p))
+        {
+            safe_chr(*p, buff, bufc);
+        }
+        else
+        {
+            safe_chr('%', buff, bufc);
+            safe_chr(hex_digits[(*p >> 4) & 0x0F], buff, bufc);
+            safe_chr(hex_digits[*p & 0x0F], buff, bufc);
+        }
+        p++;
+    }
+}
+
+static int hex_val(UTF8 ch)
+{
+    if ('0' <= ch && ch <= '9') return ch - '0';
+    if ('A' <= ch && ch <= 'F') return ch - 'A' + 10;
+    if ('a' <= ch && ch <= 'f') return ch - 'a' + 10;
+    return -1;
+}
+
+XFUNCTION(fun_url_unescape)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+    UNUSED_PARAMETER(fp);
+
+    const UTF8 *p = fargs[0];
+    while (*p)
+    {
+        if ('%' == *p && p[1] && p[2])
+        {
+            int hi = hex_val(p[1]);
+            int lo = hex_val(p[2]);
+            if (hi >= 0 && lo >= 0)
+            {
+                safe_chr(static_cast<UTF8>((hi << 4) | lo), buff, bufc);
+                p += 3;
+                continue;
+            }
+        }
+        else if ('+' == *p)
+        {
+            // application/x-www-form-urlencoded: + is space.
+            //
+            safe_chr(' ', buff, bufc);
+            p++;
+            continue;
+        }
+        safe_chr(*p, buff, bufc);
+        p++;
     }
 }

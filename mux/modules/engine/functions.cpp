@@ -12255,6 +12255,8 @@ static FUN builtin_function_list[] =
     {T("UDEFAULT"),    fun_udefault,   MAX_ARG, 2, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
     {T("ULOCAL"),      fun_ulocal,     MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {T("UNPACK"),      fun_unpack,     MAX_ARG, 1,       3,         0, CA_PUBLIC},
+    {T("URL_ESCAPE"),  fun_url_escape, MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("URL_UNESCAPE"),fun_url_unescape,MAX_ARG,1,       1,         0, CA_PUBLIC},
     {T("V"),           fun_v,          MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("VADD"),        fun_vadd,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {T("VALID"),       fun_valid,      MAX_ARG, 2,       2,         0, CA_PUBLIC},

@@ -21,7 +21,7 @@ the gap between TinyMUX and PennMUSH/RhostMUSH on web integration.
 | 7 | letq() | TODO | Scoped named registers (Penn) |
 | 8 | sortkey() | TODO | Sort by computed key (Penn) |
 | 9 | Account system | TODO | Multi-character accounts (Rhost) |
-| 10 | url_escape/url_unescape | TODO | URL encoding. Needed alongside JSON/HTTP. |
+| 10 | url_escape/url_unescape | **Done** | RFC 3986 percent-encoding. + decoded as space for form compat. |
 | 11 | Template system | TODO | template() presentation/logic separation (Rhost) |
 | 12 | strdistance() | TODO | Levenshtein edit distance (Rhost) |
 | 13 | lockencode/lockdecode | TODO | Programmatic lock manipulation (Rhost) |
