@@ -8638,6 +8638,50 @@ INZONE()
 
   Related Topics: zchildren(), zexits(), zrooms(), zthings(), zwho(), ZONES.
 
+& ISALNUM()
+ISALNUM()
+
+  FUNCTION: isalnum(<string>)
+
+  Returns 1 if every character in <string> is a Unicode letter or decimal
+  digit.  Returns 0 if the string is empty or contains any non-alphanumeric
+  character.  This is Unicode-aware: accented letters, CJK ideographs, and
+  non-ASCII decimal digits (e.g. Arabic-Indic, Devanagari) all count.
+
+  Examples:
+    > say isalnum(Hello123)
+    You say, "1"
+    > say isalnum(Hello World)
+    You say, "0"
+    > say isalnum()
+    You say, "0"
+
+  Related Topics: isalpha(), isdigit(), isnum(), isint().
+
+& ISALPHA()
+ISALPHA()
+
+  FUNCTION: isalpha(<string>)
+
+  Returns 1 if every character in <string> is a Unicode letter
+  (General_Category L*: uppercase, lowercase, titlecase, modifier, or
+  other letter).  Returns 0 if the string is empty or contains any
+  non-letter character.
+
+  This is Unicode-aware: accented letters like e-acute, CJK ideographs,
+  Cyrillic, Arabic, Hebrew, Devanagari, and other scripts all count as
+  letters.
+
+  Examples:
+    > say isalpha(Hello)
+    You say, "1"
+    > say isalpha(Hello123)
+    You say, "0"
+    > say isalpha()
+    You say, "0"
+
+  Related Topics: isalnum(), isdigit(), isnum(), isint().
+
 & ISDBREF()
 ISDBREF()
 
@@ -8678,6 +8722,34 @@ ISIGN()
     You say, "-1"
 
   Related Topics: abs(), iabs(), sign().
+
+& ISDIGIT()
+ISDIGIT()
+
+  FUNCTION: isdigit(<string>)
+
+  Returns 1 if every character in <string> is a Unicode decimal digit
+  (General_Category Nd).  Returns 0 if the string is empty or contains any
+  non-digit character.
+
+  This is Unicode-aware: Arabic-Indic digits, Devanagari digits, and other
+  script-specific digit characters all count as digits.
+
+  Note: isdigit() tests whether each character is a digit glyph.  isnum()
+  tests whether the entire string is a valid number (including signs,
+  decimal points, and scientific notation).
+
+  Examples:
+    > say isdigit(12345)
+    You say, "1"
+    > say isdigit(123.45)
+    You say, "0"
+    > say isdigit(-5)
+    You say, "0"
+    > say isdigit()
+    You say, "0"
+
+  Related Topics: isalnum(), isalpha(), isnum(), isint().
 
 & ISINT()
 ISINT()

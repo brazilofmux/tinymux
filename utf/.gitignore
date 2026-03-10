@@ -13,6 +13,9 @@ strings
 # Generated intermediate data
 Decompositions.txt
 UnicodeMaster.txt
+cl_Alpha.txt
+cl_Alnum.txt
+cl_Digit.txt
 cl_PrivateUse.txt
 tr_class.txt
 tr_decimal_value.txt

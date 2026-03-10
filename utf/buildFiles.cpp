@@ -638,6 +638,9 @@ public:
     void SaveClassifyPrivateUse(void);
     void SaveDecompositions(void);
     void SaveClassifyPrintable(void);
+    void SaveClassifyAlpha(void);
+    void SaveClassifyDigit(void);
+    void SaveClassifyAlnum(void);
     void SaveCombiningClass(void);
     void SaveWidths(void);
 
@@ -708,6 +711,9 @@ int main(int argc, char *argv[])
     g_UniData->SaveClassifyPrivateUse();
     g_UniData->SaveDecompositions();
     g_UniData->SaveClassifyPrintable();
+    g_UniData->SaveClassifyAlpha();
+    g_UniData->SaveClassifyDigit();
+    g_UniData->SaveClassifyAlnum();
     g_UniData->SaveCombiningClass();
     g_UniData->SaveWidths();
 
@@ -1878,6 +1884,64 @@ void UniData::SaveClassifyPrivateUse()
     {
         if (  cp[pt].IsDefined()
            && (CATEGORY_OTHER|SUBCATEGORY_PRIVATE_USE) == cp[pt].GetCategory())
+        {
+            fprintf(fp, "%04X;%s\n", static_cast<unsigned int>(pt), cp[pt].GetDescription());
+        }
+    }
+    fclose(fp);
+}
+
+void UniData::SaveClassifyAlpha(void)
+{
+    FILE *fp = fopen("cl_Alpha.txt", "w+");
+    if (nullptr == fp)
+    {
+        return;
+    }
+
+    for (UTF32 pt = 0; pt <= codepoints; pt++)
+    {
+        if (  cp[pt].IsDefined()
+           && (cp[pt].GetCategory() & CATEGORY_LETTER))
+        {
+            fprintf(fp, "%04X;%s\n", static_cast<unsigned int>(pt), cp[pt].GetDescription());
+        }
+    }
+    fclose(fp);
+}
+
+void UniData::SaveClassifyDigit(void)
+{
+    FILE *fp = fopen("cl_Digit.txt", "w+");
+    if (nullptr == fp)
+    {
+        return;
+    }
+
+    for (UTF32 pt = 0; pt <= codepoints; pt++)
+    {
+        if (  cp[pt].IsDefined()
+           && cp[pt].GetCategory() == (CATEGORY_NUMBER|SUBCATEGORY_DECIMAL_DIGIT))
+        {
+            fprintf(fp, "%04X;%s\n", static_cast<unsigned int>(pt), cp[pt].GetDescription());
+        }
+    }
+    fclose(fp);
+}
+
+void UniData::SaveClassifyAlnum(void)
+{
+    FILE *fp = fopen("cl_Alnum.txt", "w+");
+    if (nullptr == fp)
+    {
+        return;
+    }
+
+    for (UTF32 pt = 0; pt <= codepoints; pt++)
+    {
+        if (  cp[pt].IsDefined()
+           && (  (cp[pt].GetCategory() & CATEGORY_LETTER)
+              || cp[pt].GetCategory() == (CATEGORY_NUMBER|SUBCATEGORY_DECIMAL_DIGIT)))
         {
             fprintf(fp, "%04X;%s\n", static_cast<unsigned int>(pt), cp[pt].GetDescription());
         }

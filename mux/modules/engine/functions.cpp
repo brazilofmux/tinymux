@@ -11439,6 +11439,105 @@ static FUNCTION(fun_strdistance)
 }
 
 // ---------------------------------------------------------------------------
+// fun_isalpha: Returns 1 if every codepoint in the string is a Unicode letter
+// (General_Category L*), 0 otherwise.  Empty string returns 0.
+//
+static FUNCTION(fun_isalpha)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    const UTF8 *p = fargs[0];
+    if ('\0' == *p)
+    {
+        safe_chr('0', buff, bufc);
+        return;
+    }
+
+    while ('\0' != *p)
+    {
+        if (!mux_isalpha_utf8(p))
+        {
+            safe_chr('0', buff, bufc);
+            return;
+        }
+        p += utf8_FirstByte[static_cast<unsigned char>(*p)];
+    }
+    safe_chr('1', buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// fun_isdigit: Returns 1 if every codepoint in the string is a Unicode
+// decimal digit (General_Category Nd), 0 otherwise.  Empty string returns 0.
+//
+static FUNCTION(fun_isdigit)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    const UTF8 *p = fargs[0];
+    if ('\0' == *p)
+    {
+        safe_chr('0', buff, bufc);
+        return;
+    }
+
+    while ('\0' != *p)
+    {
+        if (!mux_isdigit_utf8(p))
+        {
+            safe_chr('0', buff, bufc);
+            return;
+        }
+        p += utf8_FirstByte[static_cast<unsigned char>(*p)];
+    }
+    safe_chr('1', buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// fun_isalnum: Returns 1 if every codepoint in the string is a Unicode letter
+// or decimal digit, 0 otherwise.  Empty string returns 0.
+//
+static FUNCTION(fun_isalnum)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    const UTF8 *p = fargs[0];
+    if ('\0' == *p)
+    {
+        safe_chr('0', buff, bufc);
+        return;
+    }
+
+    while ('\0' != *p)
+    {
+        if (!mux_isalnum_utf8(p))
+        {
+            safe_chr('0', buff, bufc);
+            return;
+        }
+        p += utf8_FirstByte[static_cast<unsigned char>(*p)];
+    }
+    safe_chr('1', buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
 // fun_chr:
 //
 // Takes an integer and returns the corresponding character from the character
@@ -12098,7 +12197,10 @@ static FUN builtin_function_list[] =
     {T("INSERT"),      fun_insert,     MAX_ARG, 3,       5,         0, CA_PUBLIC},
     {T("INUM"),        fun_inum,       MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("INZONE"),      fun_inzone,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("ISALNUM"),     fun_isalnum,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("ISALPHA"),     fun_isalpha,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ISDBREF"),     fun_isdbref,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {T("ISDIGIT"),     fun_isdigit,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ISIGN"),       fun_isign,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ISINT"),       fun_isint,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ISNUM"),       fun_isnum,      MAX_ARG, 1,       1,         0, CA_PUBLIC},

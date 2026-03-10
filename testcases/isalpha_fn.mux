@@ -1,0 +1,90 @@
+#
+# isalpha_fn.mux - Test Cases for isalpha(), isdigit(), isalnum().
+#
+@create test_isalpha_fn
+-
+@set test_isalpha_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_isalpha_fn=
+  @log smoke=Beginning isalpha()/isdigit()/isalnum() test cases.
+-
+#
+# Test Case #1 - isalpha basic ASCII.
+#
+&tr.tc001 test_isalpha_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isalpha(Hello)]
+            [isalpha(Hello123)]
+            [isalpha(123)]
+            [isalpha()]
+            [isalpha( )]
+          )
+        ),
+        5FE8FCE76CCD41B0DCCE96953DD5577D48596409
+      )=
+  {
+    @log smoke=TC001: isalpha basic. Succeeded.
+  },
+  {
+    @log smoke=TC001: isalpha basic. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - isdigit basic ASCII.
+#
+&tr.tc002 test_isalpha_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isdigit(12345)]
+            [isdigit(123.45)]
+            [isdigit(Hello)]
+            [isdigit()]
+            [isdigit(-5)]
+          )
+        ),
+        F9788D95E17B31DE62835DDE79BA6F5208C491FD
+      )=
+  {
+    @log smoke=TC002: isdigit basic. Succeeded.
+  },
+  {
+    @log smoke=TC002: isdigit basic. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - isalnum basic ASCII.
+#
+&tr.tc003 test_isalpha_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isalnum(Hello123)]
+            [isalnum(Hello 123)]
+            [isalnum(Hello)]
+            [isalnum(123)]
+            [isalnum()]
+          )
+        ),
+        8FD1FC2C28887717617AFEC2A2F1548A0F08BC45
+      )=
+  {
+    @log smoke=TC003: isalnum basic. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: isalnum basic. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_isalpha_fn=
+  @log smoke=End isalpha()/isdigit()/isalnum() test cases.;
+  @notify smoke
+-
+drop test_isalpha_fn
+-
+#
+# End of Test Cases
+#

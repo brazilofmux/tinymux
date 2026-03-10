@@ -17,6 +17,39 @@ extern const unsigned char cl_print_itt[256];
 extern const unsigned short cl_print_sot[314];
 extern const unsigned short cl_print_sbt[4597];
 
+// utf/cl_Alpha.txt
+//
+// 141028 included, 973084 excluded, 0 errors.
+// 298 states, 95 columns, 8842 bytes
+//
+#define CL_ALPHA_START_STATE (0)
+#define CL_ALPHA_ACCEPTING_STATES_START (298)
+extern const unsigned char cl_alpha_itt[256];
+extern const unsigned short cl_alpha_sot[298];
+extern const unsigned short cl_alpha_sbt[3995];
+
+// utf/cl_Digit.txt
+//
+// 760 included, 1113352 excluded, 0 errors.
+// 25 states, 65 columns, 624 bytes
+//
+#define CL_DIGIT_START_STATE (0)
+#define CL_DIGIT_ACCEPTING_STATES_START (25)
+extern const unsigned char cl_digit_itt[256];
+extern const unsigned short cl_digit_sot[25];
+extern const unsigned char cl_digit_sbt[318];
+
+// utf/cl_Alnum.txt
+//
+// 141788 included, 972324 excluded, 0 errors.
+// 314 states, 95 columns, 9440 bytes
+//
+#define CL_ALNUM_START_STATE (0)
+#define CL_ALNUM_ACCEPTING_STATES_START (314)
+extern const unsigned char cl_alnum_itt[256];
+extern const unsigned short cl_alnum_sot[314];
+extern const unsigned short cl_alnum_sbt[4278];
+
 // utf/cl_AttrNameInitial.txt
 //
 // 177 included, 1113935 excluded, 0 errors.

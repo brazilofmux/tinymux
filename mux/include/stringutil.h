@@ -20,7 +20,6 @@ extern const bool mux_isprint_latin2[256];
 extern const bool mux_isdigit[256];
 extern const bool mux_isxdigit[256];
 extern const bool mux_isazAZ[256];
-extern const bool mux_isalpha[256];
 extern const bool mux_isalnum[256];
 extern const bool mux_islower_ascii[256];
 extern const bool mux_isupper_ascii[256];
@@ -231,6 +230,153 @@ inline bool mux_isprint(const unsigned char *p)
         }
     } while (iState < CL_PRINT_ACCEPTING_STATES_START);
     return ((iState - CL_PRINT_ACCEPTING_STATES_START) == 1) ? true : false;
+}
+
+// utf/cl_Alpha.txt
+//
+inline bool mux_isalpha_utf8(const unsigned char *p)
+{
+    unsigned short iState = CL_ALPHA_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        unsigned char iColumn = cl_alpha_itt[static_cast<unsigned char>(ch)];
+        unsigned short iOffset = cl_alpha_sot[iState];
+        for (;;)
+        {
+            int y = cl_alpha_sbt[iOffset];
+            if (y < 128)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = cl_alpha_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = 256-y;
+                if (iColumn < y)
+                {
+                    iState = cl_alpha_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned short>(iOffset + y + 1);
+                }
+            }
+        }
+    } while (iState < CL_ALPHA_ACCEPTING_STATES_START);
+    return ((iState - CL_ALPHA_ACCEPTING_STATES_START) == 1) ? true : false;
+}
+
+// utf/cl_Digit.txt
+//
+inline bool mux_isdigit_utf8(const unsigned char *p)
+{
+    unsigned char iState = CL_DIGIT_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        unsigned char iColumn = cl_digit_itt[static_cast<unsigned char>(ch)];
+        unsigned char iOffset = cl_digit_sot[iState];
+        for (;;)
+        {
+            int y = cl_digit_sbt[iOffset];
+            if (y < 128)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = cl_digit_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = 256-y;
+                if (iColumn < y)
+                {
+                    iState = cl_digit_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned char>(iOffset + y + 1);
+                }
+            }
+        }
+    } while (iState < CL_DIGIT_ACCEPTING_STATES_START);
+    return ((iState - CL_DIGIT_ACCEPTING_STATES_START) == 1) ? true : false;
+}
+
+// utf/cl_Alnum.txt
+//
+inline bool mux_isalnum_utf8(const unsigned char *p)
+{
+    unsigned short iState = CL_ALNUM_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        unsigned char iColumn = cl_alnum_itt[static_cast<unsigned char>(ch)];
+        unsigned short iOffset = cl_alnum_sot[iState];
+        for (;;)
+        {
+            int y = cl_alnum_sbt[iOffset];
+            if (y < 128)
+            {
+                // RUN phrase.
+                //
+                if (iColumn < y)
+                {
+                    iState = cl_alnum_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                // COPY phrase.
+                //
+                y = 256-y;
+                if (iColumn < y)
+                {
+                    iState = cl_alnum_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = static_cast<unsigned char>(iColumn - y);
+                    iOffset = static_cast<unsigned short>(iOffset + y + 1);
+                }
+            }
+        }
+    } while (iState < CL_ALNUM_ACCEPTING_STATES_START);
+    return ((iState - CL_ALNUM_ACCEPTING_STATES_START) == 1) ? true : false;
 }
 
 // utf/cl_AttrNameInitial.txt

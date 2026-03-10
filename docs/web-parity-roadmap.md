@@ -26,7 +26,7 @@ the gap between TinyMUX and PennMUSH/RhostMUSH on web integration.
 | 12 | strdistance() | **Done** | Levenshtein edit distance, Unicode-aware. |
 | 13 | lockencode/lockdecode | TODO | Programmatic lock manipulation (Rhost) |
 | 14 | Regex attr matching | TODO | reglattr/regnattr family (Penn) |
-| 15 | Character classification | TODO | isunicode(), isutf8(), isalpha(), etc. |
+| 15 | Character classification | **Partial** | isalpha(), isdigit(), isalnum() done via DFA. isunicode()/isutf8() deferred. |
 | 16 | dynhelp() | TODO | Dynamic help from object attributes (Rhost) |
 | 17 | mailsend() | TODO | Send mail from softcode. @mail exists as command. |
 
