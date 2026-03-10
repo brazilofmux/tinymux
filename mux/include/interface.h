@@ -15,6 +15,8 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
+struct ws_state;
+
 // Full descriptor_data struct definition.
 // Engine files use only the forward declaration from externs.h.
 //
@@ -58,6 +60,7 @@ struct descriptor_data
   int height;
   int quota;
   struct program_data* program_data;
+  ws_state *ws;                            // WebSocket state (nullptr if telnet)
 
   mux_sockaddr address;
 

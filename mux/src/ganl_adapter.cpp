@@ -5,6 +5,7 @@
 #include "driver_log.h"
 #include "driver_bridge.h"
 #include "interface.h"
+#include "websocket.h"
 #include "connection.h" // Include ConnectionBase definition
 #include "network_types.h"
 
@@ -548,6 +549,7 @@ public:
         d->raw_codepoint_length = 0;
         d->quota = g_dc.cmd_quota_max;
         d->program_data = nullptr;
+        d->ws = nullptr;
         d->ttype = nullptr;
         d->height = 24;
         d->width = 78;
@@ -641,8 +643,11 @@ public:
             std::lock_guard<std::mutex> lock(adapter_.mutex_);
             adapter_.pending_finalizations_.push_back({handle, true});
         } else {
-            // Non-TLS connections can be finalized immediately.
-            FinalizeGanlConnection(adapter_, d, false);
+            // Defer finalization until first data arrives so we can
+            // distinguish telnet from WebSocket before sending telnet
+            // negotiation bytes (which would corrupt a WS handshake).
+            //
+            d->flags |= DS_NEED_PROTO;
         }
 
         return static_cast<ganl::SessionId>(handle);
@@ -670,6 +675,51 @@ public:
                 d1->flags &= ~DS_AUTODARK;
             }
             drv_s_Flags(d->player, FLAG_WORD1, drv_Flags(d->player, FLAG_WORD1) & ~DARK);
+        }
+
+        // WebSocket: if handshake is in progress, continue it.
+        //
+        if (d->flags & DS_WEBSOCKET_HS)
+        {
+            if (ws_process_handshake(d, data.data(), data.size()))
+            {
+                // Handshake complete (success or failure).
+                //
+                d->flags &= ~DS_WEBSOCKET_HS;
+            }
+            return;
+        }
+
+        // WebSocket: if upgraded, decode frames.
+        //
+        if (d->flags & DS_WEBSOCKET)
+        {
+            ws_process_input(d, data.data(), data.size());
+            return;
+        }
+
+        // Protocol detection on first data from a non-TLS connection.
+        // We deferred telnet initialization so telnet IAC bytes don't
+        // corrupt a potential WebSocket HTTP upgrade handshake.
+        //
+        if (d->flags & DS_NEED_PROTO)
+        {
+            d->flags &= ~DS_NEED_PROTO;
+
+            if (ws_is_upgrade_request(data.data(), data.size()))
+            {
+                d->ws = new ws_state();
+                d->flags |= DS_WEBSOCKET_HS;
+                if (ws_process_handshake(d, data.data(), data.size()))
+                {
+                    d->flags &= ~DS_WEBSOCKET_HS;
+                }
+                return;
+            }
+
+            // Not WebSocket — finalize as a telnet connection.
+            //
+            FinalizeGanlConnection(adapter_, d, false);
         }
 
         // Feed raw bytes through TinyMUX's existing NVT parser.
@@ -724,6 +774,14 @@ public:
         process_output(d, false);
         clearstrings(d);
         freeqs(d);
+
+        // Free WebSocket state if allocated.
+        //
+        if (d->ws)
+        {
+            delete d->ws;
+            d->ws = nullptr;
+        }
 
         if (d->flags & DS_CONNECTED)
         {

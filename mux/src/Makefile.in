@@ -117,7 +117,8 @@ am__objects_1 = netmux-_build.$(OBJEXT) netmux-bsd.$(OBJEXT) \
 	netmux-ganl_adapter.$(OBJEXT) netmux-modules.$(OBJEXT) \
 	netmux-muxcli.$(OBJEXT) netmux-net.$(OBJEXT) \
 	netmux-netaddr.$(OBJEXT) netmux-signals.$(OBJEXT) \
-	netmux-sitemon.$(OBJEXT) netmux-telnet.$(OBJEXT)
+	netmux-sitemon.$(OBJEXT) netmux-telnet.$(OBJEXT) \
+	netmux-websocket.$(OBJEXT)
 am_netmux_OBJECTS = $(am__objects_1) netmux-version.$(OBJEXT)
 netmux_OBJECTS = $(am_netmux_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -157,7 +158,8 @@ am__depfiles_remade = ./$(DEPDIR)/netmux-_build.Po \
 	./$(DEPDIR)/netmux-net.Po ./$(DEPDIR)/netmux-netaddr.Po \
 	./$(DEPDIR)/netmux-signals.Po ./$(DEPDIR)/netmux-sitemon.Po \
 	./$(DEPDIR)/netmux-telnet.Po ./$(DEPDIR)/netmux-version.Po \
-	./$(DEPDIR)/slave.Po ./$(DEPDIR)/stubslave.Po
+	./$(DEPDIR)/netmux-websocket.Po ./$(DEPDIR)/slave.Po \
+	./$(DEPDIR)/stubslave.Po
 am__mv = mv -f
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -337,7 +339,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdi
 
 DRIVER_SRC = _build.cpp bsd.cpp driver.cpp driver_bridge.cpp \
     ganl_adapter.cpp modules.cpp muxcli.cpp net.cpp netaddr.cpp \
-    signals.cpp sitemon.cpp telnet.cpp
+    signals.cpp sitemon.cpp telnet.cpp websocket.cpp
 
 
 # netmux driver — links against libmux.so only.
@@ -465,6 +467,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-sitemon.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-telnet.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-version.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-websocket.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slave.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stubslave.Po@am__quote@ # am--include-marker
 
@@ -658,6 +661,20 @@ netmux-telnet.obj: telnet.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-telnet.obj `if test -f 'telnet.cpp'; then $(CYGPATH_W) 'telnet.cpp'; else $(CYGPATH_W) '$(srcdir)/telnet.cpp'; fi`
 
+netmux-websocket.o: websocket.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-websocket.o -MD -MP -MF $(DEPDIR)/netmux-websocket.Tpo -c -o netmux-websocket.o `test -f 'websocket.cpp' || echo '$(srcdir)/'`websocket.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-websocket.Tpo $(DEPDIR)/netmux-websocket.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='websocket.cpp' object='netmux-websocket.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-websocket.o `test -f 'websocket.cpp' || echo '$(srcdir)/'`websocket.cpp
+
+netmux-websocket.obj: websocket.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-websocket.obj -MD -MP -MF $(DEPDIR)/netmux-websocket.Tpo -c -o netmux-websocket.obj `if test -f 'websocket.cpp'; then $(CYGPATH_W) 'websocket.cpp'; else $(CYGPATH_W) '$(srcdir)/websocket.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-websocket.Tpo $(DEPDIR)/netmux-websocket.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='websocket.cpp' object='netmux-websocket.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-websocket.obj `if test -f 'websocket.cpp'; then $(CYGPATH_W) 'websocket.cpp'; else $(CYGPATH_W) '$(srcdir)/websocket.cpp'; fi`
+
 netmux-version.o: version.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-version.o -MD -MP -MF $(DEPDIR)/netmux-version.Tpo -c -o netmux-version.o `test -f 'version.cpp' || echo '$(srcdir)/'`version.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-version.Tpo $(DEPDIR)/netmux-version.Po
@@ -811,6 +828,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/netmux-sitemon.Po
 	-rm -f ./$(DEPDIR)/netmux-telnet.Po
 	-rm -f ./$(DEPDIR)/netmux-version.Po
+	-rm -f ./$(DEPDIR)/netmux-websocket.Po
 	-rm -f ./$(DEPDIR)/slave.Po
 	-rm -f ./$(DEPDIR)/stubslave.Po
 	-rm -f Makefile
@@ -872,6 +890,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/netmux-sitemon.Po
 	-rm -f ./$(DEPDIR)/netmux-telnet.Po
 	-rm -f ./$(DEPDIR)/netmux-version.Po
+	-rm -f ./$(DEPDIR)/netmux-websocket.Po
 	-rm -f ./$(DEPDIR)/slave.Po
 	-rm -f ./$(DEPDIR)/stubslave.Po
 	-rm -f Makefile

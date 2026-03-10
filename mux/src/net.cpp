@@ -11,6 +11,7 @@
 #include "config.h"
 #include "externs.h"
 #include "interface.h"
+#include "websocket.h"
 #include "sqlite_backend.h"
 #include "modules.h"
 #include "driverstate.h"
@@ -169,12 +170,23 @@ void queue_write_LEN(DESC *d, const UTF8 *b, size_t n)
         d->output_queue.pop_front();
     }
 
-    // Append the request to the end of the output queue for later transmission.
-    //
-    add_to_output_queue(d, b, n);
-    d->output_size += n;
-    d->output_tot += n;
-
+    if (d->flags & DS_WEBSOCKET)
+    {
+        // Wrap in a WebSocket text frame.  ws_queue_frame handles
+        // pushing to d->output_queue and updating d->output_size.
+        //
+        ws_queue_frame(d, reinterpret_cast<const uint8_t *>(b), n);
+        d->output_tot += n;
+    }
+    else
+    {
+        // Append the request to the end of the output queue for later
+        // transmission.
+        //
+        add_to_output_queue(d, b, n);
+        d->output_size += n;
+        d->output_tot += n;
+    }
 }
 
 void queue_write(DESC *d, const UTF8 *b)
@@ -274,7 +286,12 @@ void queue_string(DESC *d, const UTF8 *s)
         }
     }
 
-    q = encode_iac(q);
+    // WebSocket connections don't use telnet IAC encoding.
+    //
+    if (!(d->flags & DS_WEBSOCKET))
+    {
+        q = encode_iac(q);
+    }
     queue_write(d, q);
 }
 
@@ -308,7 +325,10 @@ void queue_string(DESC *d, const mux_string &s)
         }
     }
 
-    q = encode_iac(q);
+    if (!(d->flags & DS_WEBSOCKET))
+    {
+        q = encode_iac(q);
+    }
     queue_write(d, q);
 }
 
@@ -320,6 +340,11 @@ void init_desc(DESC *d)
 
 void destroy_desc(DESC *d)
 {
+    if (d->ws)
+    {
+        delete d->ws;
+        d->ws = nullptr;
+    }
     d->output_queue.~deque();
     d->input_queue.~deque();
 }

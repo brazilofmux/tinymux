@@ -187,6 +187,9 @@ enum class SocketState {
 constexpr int DS_CONNECTED    = 0x0001;      // player is connected.
 constexpr int DS_AUTODARK     = 0x0002;      // Wizard was auto set dark.
 constexpr int DS_PUEBLOCLIENT = 0x0004;      // Client is Pueblo-enhanced.
+constexpr int DS_WEBSOCKET    = 0x0008;      // WebSocket connection (RFC 6455).
+constexpr int DS_WEBSOCKET_HS = 0x0010;      // WebSocket handshake in progress.
+constexpr int DS_NEED_PROTO   = 0x0020;      // Awaiting protocol detection (telnet vs WS).
 
 // Telnet option helpers (implementations access DESC internals)
 //
