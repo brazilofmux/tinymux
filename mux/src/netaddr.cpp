@@ -1269,7 +1269,7 @@ bool mux_sockaddr::operator==(const mux_sockaddr &it) const
     case AF_INET6:
         // Intentionally ignoring sin6_flowinfo, sin6_scopeid, and others for now.
         //
-        if (  memcmp(&it.u.sai6.sin6_addr, &u.sai6.sin6_addr, sizeof(u.sai6.sin6_family)) == 0
+        if (  memcmp(&it.u.sai6.sin6_addr, &u.sai6.sin6_addr, sizeof(u.sai6.sin6_addr)) == 0
            && it.u.sai6.sin6_family == u.sai6.sin6_family
            && it.u.sai6.sin6_port == u.sai6.sin6_port)
         {
@@ -1365,13 +1365,7 @@ bool mux_in6_addr::operator<(const mux_addr &it) const
     if (AF_INET6 == it.getFamily())
     {
         const auto* t = dynamic_cast<const mux_in6_addr *>(&it);
-        for (size_t i = 0; i < sizeof(m_ia6.s6_addr)/sizeof(m_ia6.s6_addr[0]); i++)
-        {
-            if (m_ia6.s6_addr[i] < t->m_ia6.s6_addr[i])
-            {
-                return true;
-            }
-        }
+        return memcmp(m_ia6.s6_addr, t->m_ia6.s6_addr, 16) < 0;
     }
     return false;
 }
@@ -1381,7 +1375,7 @@ bool mux_in6_addr::operator==(const mux_addr &it) const
     if (AF_INET6 == it.getFamily())
     {
         const auto* t = dynamic_cast<const mux_in6_addr *>(&it);
-        return (m_ia6.s6_addr == t->m_ia6.s6_addr);
+        return memcmp(m_ia6.s6_addr, t->m_ia6.s6_addr, 16) == 0;
     }
     return false;
 }
