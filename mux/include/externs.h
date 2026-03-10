@@ -1673,7 +1673,7 @@ typedef struct ServerEventsSinkNode
     mux_IServerEventsSink        *pSink;
     struct ServerEventsSinkNode  *pNext;
 } ServerEventsSinkNode;
-extern DCL_EXPORT ServerEventsSinkNode *g_pServerEventsSinkListHead;
+extern ServerEventsSinkNode *g_pServerEventsSinkListHead;
 
 // Driver-side factory classes (modules.cpp).
 DEFINE_FACTORY(CConnectionManagerFactory)

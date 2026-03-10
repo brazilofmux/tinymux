@@ -6,8 +6,8 @@
  *
  * engine.so is a proper COM server.  Only 4 extern "C" functions are
  * exported: mux_Register, mux_Unregister, mux_GetClassObject, and
- * mux_CanUnloadNow.  The sole additional export is g_debug_cmd (see
- * modules.h for rationale).  All other symbols have hidden visibility.
+ * mux_CanUnloadNow.  All other symbols have hidden visibility.
+ * g_debug_cmd lives in libmux.so (shared crash breadcrumb).
  */
 
 #include "copyright.h"
@@ -100,7 +100,7 @@ CServerEventsSource::CServerEventsSource(void) : m_cRef(1), m_pSink(nullptr)
 {
 }
 
-DCL_EXPORT ServerEventsSinkNode *g_pServerEventsSinkListHead = nullptr;
+ServerEventsSinkNode *g_pServerEventsSinkListHead = nullptr;
 
 CServerEventsSource::~CServerEventsSource()
 {
