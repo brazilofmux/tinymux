@@ -1332,6 +1332,7 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key,
 int  boot_off(dbref player, const UTF8 *message);
 void do_mail_clear(dbref player, UTF8 *msglist);
 void do_mail_purge(dbref player);
+const UTF8 *do_mail_send_softcode(dbref player, UTF8 *recipients, UTF8 *subject, UTF8 *message);
 void mail_destroy_player(dbref victim);
 void malias_cleanup(dbref player);
 void count_mail(dbref player, int folder, int *rcount, int *ucount, int *ccount);

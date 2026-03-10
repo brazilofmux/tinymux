@@ -28,7 +28,7 @@ the gap between TinyMUX and PennMUSH/RhostMUSH on web integration.
 | 14 | Regex attr matching | **Done** | reglattr/regnattr/reglattri/regnattri via PCRE2. |
 | 15 | Character classification | **Partial** | isalpha(), isdigit(), isalnum() done via DFA. isunicode()/isutf8() deferred. |
 | 16 | dynhelp() | **Done** | Dynamic help from object attributes. Prefix matching, custom prefix, case-insensitive. |
-| 17 | mailsend() | TODO | Send mail from softcode. @mail exists as command. |
+| 17 | mailsend() | **Done** | Send mail from softcode. Resolves to owner, full permission checks, throttle, signature. |
 
 ## Tier 3 — Long-Term
 

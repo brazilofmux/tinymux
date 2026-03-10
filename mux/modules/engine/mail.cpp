@@ -4574,6 +4574,56 @@ static void do_mail_quick(dbref player, UTF8 *arg1, UTF8 *arg2)
     free_lbuf(bufDest);
 }
 
+// ---------------------------------------------------------------------------
+// do_mail_send_softcode: Entry point for mailsend() softcode function.
+//
+// Returns: 1 on success, or a static error string on failure.
+//
+const UTF8 *do_mail_send_softcode(dbref player, UTF8 *recipients, UTF8 *subject, UTF8 *message)
+{
+    // Resolve to the owning player — softcode may run on a non-player object.
+    //
+    player = Owner(player);
+    if (!Good_obj(player) || !isPlayer(player))
+    {
+        return T("#-1 NOT A PLAYER");
+    }
+    if (!recipients || !*recipients)
+    {
+        return T("#-1 NO RECIPIENTS");
+    }
+    if (!subject || !*subject)
+    {
+        return T("#-1 NO SUBJECT");
+    }
+    if (!message || !*message)
+    {
+        return T("#-1 NO MESSAGE");
+    }
+    if (Flags2(player) & PLAYER_MAILS)
+    {
+        return T("#-1 MAIL ALREADY IN PROGRESS");
+    }
+    if (  !Wizard(player)
+       && ThrottleMail(player))
+    {
+        return T("#-1 TOO MUCH MAIL SENT");
+    }
+
+    UTF8 *numlist = make_numlist(player, recipients, false);
+    if (!numlist || !*numlist)
+    {
+        if (numlist)
+        {
+            free_lbuf(numlist);
+        }
+        return T("#-1 NO VALID RECIPIENTS");
+    }
+
+    mail_to_list(player, numlist, subject, message, 0, true);
+    return nullptr;
+}
+
 static void do_expmail_stop(dbref player, int flags)
 {
     if ((Flags2(player) & PLAYER_MAILS) != PLAYER_MAILS)

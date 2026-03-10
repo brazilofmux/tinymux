@@ -5624,6 +5624,46 @@ static FUNCTION(fun_lockdecode)
     free_boolexp(okey);
 }
 
+// ---------------------------------------------------------------------------
+// mailsend(): Send mail from softcode.
+//
+// mailsend(<recipients>, <subject>, <message>)
+//
+// Sends mail as the executor to the named recipients.  Returns 1 on success,
+// or a #-1 error string on failure.
+//
+static FUNCTION(fun_mailsend)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (check_command(executor, T("@mail"), buff, bufc))
+    {
+        return;
+    }
+
+    // make_numlist modifies its input, so copy recipients.
+    //
+    UTF8 *recipients = alloc_lbuf("fun_mailsend.recip");
+    mux_strncpy(recipients, fargs[0], LBUF_SIZE-1);
+
+    const UTF8 *err = do_mail_send_softcode(executor, recipients, fargs[1], fargs[2]);
+    free_lbuf(recipients);
+
+    if (err)
+    {
+        safe_str(err, buff, bufc);
+    }
+    else
+    {
+        safe_chr('1', buff, bufc);
+    }
+}
+
 /* ---------------------------------------------------------------------------
  * fun_lwho: Return list of connected users.
  */
@@ -12931,6 +12971,7 @@ static FUN builtin_function_list[] =
     {T("MAIL"),        fun_mail,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("MAILFROM"),    fun_mailfrom,   MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("MAILREVIEW"),  fun_mailreview, MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {T("MAILSEND"),    fun_mailsend,   MAX_ARG, 3,       3,         0, CA_PUBLIC},
     {T("MAILSIZE"),    fun_mailsize,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("MAILSUBJ"),    fun_mailsubj,   MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("MALIAS"),      fun_malias,     MAX_ARG, 0,       1,         0, CA_PUBLIC},

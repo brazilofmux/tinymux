@@ -1,0 +1,115 @@
+#
+# mailsend_fn.mux - Test Cases for mailsend().
+#
+# Note: Smoke tests run via @startup as Wizard (#1).
+# We test function recognition, error handling, and actual send/receive.
+#
+@create test_mailsend_fn
+-
+@set test_mailsend_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_mailsend_fn=
+  @log smoke=Beginning mailsend() test cases.
+-
+#
+# Test Case #1 - mailsend with valid args returns 1.
+#
+&tr.tc001 test_mailsend_fn=
+  @if strmatch(
+        setr(0,mailsend(Wizard,Test Subject,Test message body)),
+        1
+      )=
+  {
+    @log smoke=TC001: mailsend basic send. Succeeded.
+  },
+  {
+    @log smoke=TC001: mailsend basic send. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Verify mail was received via mail() count.
+# mail(Wizard) returns "read unread cleared" — first word should be > 0.
+#
+&tr.tc002 test_mailsend_fn=
+  @if strmatch(
+        setr(0,gt(extract(mail(Wizard),2,1),0)),
+        1
+      )=
+  {
+    @log smoke=TC002: mailsend mail received. Succeeded.
+  },
+  {
+    @log smoke=TC002: mailsend mail received. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - mailsend with no recipients returns error.
+#
+&tr.tc003 test_mailsend_fn=
+  @if strmatch(
+        setr(0,mailsend(,Test Subject,Test message)),
+        #-1 NO RECIPIENTS
+      )=
+  {
+    @log smoke=TC003: mailsend no recipients. Succeeded.
+  },
+  {
+    @log smoke=TC003: mailsend no recipients. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - mailsend with no subject returns error.
+#
+&tr.tc004 test_mailsend_fn=
+  @if strmatch(
+        setr(0,mailsend(Wizard,,Test message)),
+        #-1 NO SUBJECT
+      )=
+  {
+    @log smoke=TC004: mailsend no subject. Succeeded.
+  },
+  {
+    @log smoke=TC004: mailsend no subject. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - mailsend with no message returns error.
+#
+&tr.tc005 test_mailsend_fn=
+  @if strmatch(
+        setr(0,mailsend(Wizard,Test Subject,)),
+        #-1 NO MESSAGE
+      )=
+  {
+    @log smoke=TC005: mailsend no message. Succeeded.
+  },
+  {
+    @log smoke=TC005: mailsend no message. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - mailsend with bad player returns error.
+#
+&tr.tc006 test_mailsend_fn=
+  @if strmatch(
+        setr(0,mailsend(NoSuchPlayer9999,Test Subject,Test message)),
+        #-1 NO VALID RECIPIENTS
+      )=
+  {
+    @log smoke=TC006: mailsend bad player. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC006: mailsend bad player. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_mailsend_fn=
+  @log smoke=End mailsend() test cases.;
+  @notify smoke
+-
+drop test_mailsend_fn
+-

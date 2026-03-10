@@ -10601,7 +10601,41 @@ MAILSUBJ()
   First form returns the subject line from the executor's <num>'th mail item.
   Second form returns the subject line from the <player>'s <num>'th mail item.
 
-  Related Topics: mail(), mailj(), mailsize().
+  Related Topics: mail(), mailj(), mailsend(), mailsize().
+
+& MAILSEND()
+MAILSEND()
+
+  FUNCTION: mailsend(<recipients>, <subject>, <message>)
+
+  Sends mail from softcode.  The mail is sent as the executor's owner
+  (the player who owns the object running the code).
+
+  <recipients> is a space-separated list of player names, using the same
+  syntax as @mail: bare names for players, *alias for mail aliases.
+
+  Returns 1 on success, or a #-1 error on failure.
+
+  Errors:
+    #-1 NOT A PLAYER          Executor's owner is not a valid player
+    #-1 NO RECIPIENTS          No recipients specified
+    #-1 NO SUBJECT             No subject specified
+    #-1 NO MESSAGE             No message body specified
+    #-1 NO VALID RECIPIENTS    No valid player names found
+    #-1 MAIL ALREADY IN PROGRESS  Player is composing via @mail
+    #-1 TOO MUCH MAIL SENT    Mail throttle exceeded
+
+  Examples:
+    > say mailsend(Bob, Meeting, The meeting is at 3pm.)
+    You say, "1"
+    > say mailsend(Bob Alice, Alert, Server reboot tonight.)
+    You say, "1"
+
+  The player's @signature attribute is automatically appended to the
+  message body.  Normal @mail permission checks (A_LMAIL lock, mailbox
+  limits) apply to each recipient.
+
+  Related Topics: @mail, mail(), mailsubj(), mailfrom().
 
 & MALIAS()
 MALIAS()
