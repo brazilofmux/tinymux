@@ -6777,6 +6777,41 @@ DUMPING()
 
   Related Topics: @dump
 
+& DYNHELP()
+DYNHELP()
+
+  FUNCTION: dynhelp(<object>, <topic>[, <prefix>])
+
+  Retrieves help text stored as attributes on <object>.  The function
+  looks for an attribute named <prefix><topic> (default prefix: HELP_).
+
+  If no exact match is found, prefix matching is attempted: if <topic>
+  uniquely matches the beginning of one attribute's topic portion, that
+  attribute's value is returned.
+
+  Returns "#-1 NO SUCH TOPIC" if no match is found, or "#-1 AMBIGUOUS
+  TOPIC" if the prefix matches multiple topics.  You must be able to
+  examine <object>.
+
+  To create a dynamic help system, set HELP_* attributes on an object:
+    &HELP_COMMANDS helpobj=List of commands: look, say, go
+    &HELP_BUILDING helpobj=Building guide: @dig, @create, @open
+
+  Examples:
+    > say dynhelp(helpobj, COMMANDS)
+    You say, "List of commands: look, say, go"
+    > say dynhelp(helpobj, BUILD)
+    You say, "Building guide: @dig, @create, @open"
+    > say dynhelp(helpobj, NOSUCH)
+    You say, "#-1 NO SUCH TOPIC"
+
+  A custom prefix can be used to organize multiple help categories:
+    &INFO_RULES helpobj=Server rules text
+    > say dynhelp(helpobj, RULES, INFO_)
+    You say, "Server rules text"
+
+  Related Topics: textfile(), help.
+
 & E()
 E()
 

@@ -1,0 +1,160 @@
+#
+# dynhelp_fn.mux - Test Cases for dynhelp().
+#
+# We use the test object itself, adding HELP_* attributes for topics.
+#
+@create test_dynhelp_fn
+-
+@set test_dynhelp_fn=INHERIT QUIET
+-
+#
+# Set up help topics on the test object.
+#
+&HELP_COMMANDS test_dynhelp_fn=List of commands: look, say, go
+-
+&HELP_BUILDING test_dynhelp_fn=Building guide: @dig, @create, @open
+-
+&HELP_COMBAT test_dynhelp_fn=Combat system overview
+-
+&HELP_COMM test_dynhelp_fn=Communication channels
+-
+&INFO_RULES test_dynhelp_fn=Server rules and policies
+-
+&INFO_STAFF test_dynhelp_fn=Staff listing
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_dynhelp_fn=
+  @log smoke=Beginning dynhelp() test cases.
+-
+#
+# Test Case #1 - Exact topic match.
+#
+&tr.tc001 test_dynhelp_fn=
+  @if strmatch(
+        setr(0,dynhelp(me,COMMANDS)),
+        List of commands*
+      )=
+  {
+    @log smoke=TC001: dynhelp exact match. Succeeded.
+  },
+  {
+    @log smoke=TC001: dynhelp exact match. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Prefix match (unambiguous).
+#
+&tr.tc002 test_dynhelp_fn=
+  @if strmatch(
+        setr(0,dynhelp(me,BUILD)),
+        Building guide*
+      )=
+  {
+    @log smoke=TC002: dynhelp prefix match. Succeeded.
+  },
+  {
+    @log smoke=TC002: dynhelp prefix match. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Ambiguous prefix returns error.
+# "COM" matches both COMBAT and COMM.
+#
+&tr.tc003 test_dynhelp_fn=
+  @if strmatch(
+        setr(0,dynhelp(me,COM)),
+        #-1 AMBIGUOUS TOPIC
+      )=
+  {
+    @log smoke=TC003: dynhelp ambiguous. Succeeded.
+  },
+  {
+    @log smoke=TC003: dynhelp ambiguous. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - No such topic.
+#
+&tr.tc004 test_dynhelp_fn=
+  @if strmatch(
+        setr(0,dynhelp(me,ZZZZZ)),
+        #-1 NO SUCH TOPIC
+      )=
+  {
+    @log smoke=TC004: dynhelp no such topic. Succeeded.
+  },
+  {
+    @log smoke=TC004: dynhelp no such topic. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - Custom prefix.
+#
+&tr.tc005 test_dynhelp_fn=
+  @if strmatch(
+        setr(0,dynhelp(me,RULES,INFO_)),
+        Server rules*
+      )=
+  {
+    @log smoke=TC005: dynhelp custom prefix. Succeeded.
+  },
+  {
+    @log smoke=TC005: dynhelp custom prefix. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - Case insensitive topic lookup.
+#
+&tr.tc006 test_dynhelp_fn=
+  @if strmatch(
+        setr(0,dynhelp(me,commands)),
+        List of commands*
+      )=
+  {
+    @log smoke=TC006: dynhelp case insensitive. Succeeded.
+  },
+  {
+    @log smoke=TC006: dynhelp case insensitive. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - Bad object reference.
+#
+&tr.tc007 test_dynhelp_fn=
+  @if strmatch(
+        setr(0,dynhelp(#-1,COMMANDS)),
+        #-1*
+      )=
+  {
+    @log smoke=TC007: dynhelp bad object. Succeeded.
+  },
+  {
+    @log smoke=TC007: dynhelp bad object. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - Exact match wins over prefix (COMM vs COMMANDS).
+# "COMM" exactly matches HELP_COMM, not a prefix of HELP_COMMANDS.
+#
+&tr.tc008 test_dynhelp_fn=
+  @if strmatch(
+        setr(0,dynhelp(me,COMM)),
+        Communication channels
+      )=
+  {
+    @log smoke=TC008: dynhelp exact beats prefix. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC008: dynhelp exact beats prefix. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_dynhelp_fn=
+  @log smoke=End dynhelp() test cases.;
+  @notify smoke
+-
+drop test_dynhelp_fn
+-

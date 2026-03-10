@@ -6197,6 +6197,150 @@ static FUNCTION(fun_attrcnt)
 }
 
 // ---------------------------------------------------------------------------
+// dynhelp(): Retrieve help text from attributes on an object.
+//
+// dynhelp(<object>, <topic>[, <prefix>])
+//
+// Looks for attribute <PREFIX><TOPIC> on <object>.  Default prefix is HELP_.
+// Supports prefix matching: if no exact match, finds unique prefix match
+// among attributes starting with <prefix>.
+//
+static FUNCTION(fun_dynhelp)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    dbref thing = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(thing))
+    {
+        safe_match_result(thing, buff, bufc);
+        return;
+    }
+
+    if (!Examinable(executor, thing))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    // Determine the prefix (default HELP_).
+    //
+    const UTF8 *prefix = T("HELP_");
+    if (3 <= nfargs && fargs[2][0] != '\0')
+    {
+        prefix = fargs[2];
+    }
+
+    // Build the full attribute name: PREFIX + TOPIC, uppercased.
+    //
+    UTF8 fullname[SBUF_SIZE];
+    UTF8 *fnp = fullname;
+    safe_str(prefix, fullname, &fnp);
+    safe_str(fargs[1], fullname, &fnp);
+    *fnp = '\0';
+
+    size_t nFullname;
+    UTF8 *pUpper = mux_strupr(fullname, nFullname);
+
+    // Try exact match first.
+    //
+    ATTR *pattr = atr_str(pUpper);
+    if (pattr && See_attr(executor, thing, pattr))
+    {
+        dbref aowner;
+        int   aflags;
+        UTF8 *tbuf = atr_get("fun_dynhelp", thing, pattr->number,
+            &aowner, &aflags);
+        safe_str(tbuf, buff, bufc);
+        free_lbuf(tbuf);
+        return;
+    }
+
+    // No exact match.  Try prefix matching among attributes starting
+    // with the prefix.
+    //
+    size_t nPrefix;
+    UTF8 prefixUpper[SBUF_SIZE];
+    mux_strncpy(prefixUpper, mux_strupr(prefix, nPrefix), SBUF_SIZE-1);
+
+    size_t nTopic;
+    UTF8 topicUpper[SBUF_SIZE];
+    mux_strncpy(topicUpper, mux_strupr(fargs[1], nTopic), SBUF_SIZE-1);
+
+    ATTR *match = nullptr;
+    bool bAmbiguous = false;
+
+    atr_push();
+    unsigned char *as;
+    for (int ca = atr_head(thing, &as); ca; ca = atr_next(&as))
+    {
+        ATTR *pa = atr_num(ca);
+        if (!pa || !See_attr(executor, thing, pa))
+        {
+            continue;
+        }
+
+        // Check if attr name starts with the prefix.
+        //
+        if (mux_memicmp(pa->name, prefixUpper, nPrefix) != 0)
+        {
+            continue;
+        }
+
+        // Get the topic portion (after the prefix).
+        //
+        const UTF8 *attrTopic = pa->name + nPrefix;
+        size_t nAttrTopic = strlen(reinterpret_cast<const char *>(attrTopic));
+
+        // Check if our topic is a prefix of this attribute's topic.
+        //
+        if (  nTopic <= nAttrTopic
+           && mux_memicmp(attrTopic, topicUpper, nTopic) == 0)
+        {
+            if (nTopic == nAttrTopic)
+            {
+                // Exact match — use it immediately.
+                //
+                match = pa;
+                bAmbiguous = false;
+                break;
+            }
+            if (nullptr == match)
+            {
+                match = pa;
+            }
+            else
+            {
+                bAmbiguous = true;
+            }
+        }
+    }
+    atr_pop();
+
+    if (bAmbiguous)
+    {
+        safe_str(T("#-1 AMBIGUOUS TOPIC"), buff, bufc);
+        return;
+    }
+
+    if (nullptr == match)
+    {
+        safe_str(T("#-1 NO SUCH TOPIC"), buff, bufc);
+        return;
+    }
+
+    dbref aowner;
+    int   aflags;
+    UTF8 *tbuf = atr_get("fun_dynhelp", thing, match->number,
+        &aowner, &aflags);
+    safe_str(tbuf, buff, bufc);
+    free_lbuf(tbuf);
+}
+
+// ---------------------------------------------------------------------------
 // reglattr_handler: Return list or count of attributes matching a regex.
 //
 // reglattr(obj, regexp)   — list matching attr names
@@ -12653,6 +12797,7 @@ static FUN builtin_function_list[] =
     {T("DISTRIBUTE"),  fun_distribute, MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("DOING"),       fun_doing,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("DUMPING"),     fun_dumping,    MAX_ARG, 0,       0,         0, CA_PUBLIC},
+    {T("DYNHELP"),     fun_dynhelp,    MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("E"),           fun_e,          MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {T("EDEFAULT"),    fun_edefault,   MAX_ARG, 2,       2, FN_NOEVAL, CA_PUBLIC},
     {T("EDIT"),        fun_edit,       MAX_ARG, 3, MAX_ARG,         0, CA_PUBLIC},
