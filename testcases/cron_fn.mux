@@ -1,0 +1,74 @@
+#
+# cron_fn.mux - Test Cases for @cron, @crondel, @crontab.
+#
+# Note: Smoke tests run via @startup as Wizard (#1).
+# Since @cron is a command (not a function), we cannot capture its
+# return value. We exercise the commands to verify they don't crash
+# and check side effects where possible.
+#
+@create test_cron_fn
+-
+@set test_cron_fn=INHERIT QUIET
+-
+#
+# Helper attribute for cron to trigger.
+#
+&CRON_TARGET test_cron_fn=
+  think cron_target_fired
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_cron_fn=
+  @log smoke=Beginning @cron test cases.
+-
+#
+# Test Case #1 - @cron with valid args does not crash.
+#
+&tr.tc001 test_cron_fn=
+  @cron me/CRON_TARGET = 0 * * * *;
+  @log smoke=TC001: @cron basic add. Succeeded.
+-
+#
+# Test Case #2 - @cron with step syntax does not crash.
+#
+&tr.tc002 test_cron_fn=
+  @cron me/CRON_TARGET = */15 * * * *;
+  @log smoke=TC002: @cron step syntax. Succeeded.
+-
+#
+# Test Case #3 - @cron with range syntax does not crash.
+#
+&tr.tc003 test_cron_fn=
+  @cron me/CRON_TARGET = 0 9-17 * * mon-fri;
+  @log smoke=TC003: @cron range syntax. Succeeded.
+-
+#
+# Test Case #4 - @crontab does not crash.
+#
+&tr.tc004 test_cron_fn=
+  @crontab me;
+  @log smoke=TC004: @crontab. Succeeded.
+-
+#
+# Test Case #5 - @crondel specific attr does not crash.
+#
+&tr.tc005 test_cron_fn=
+  @crondel me/CRON_TARGET;
+  @log smoke=TC005: @crondel specific. Succeeded.
+-
+#
+# Test Case #6 - @crondel all does not crash.
+#
+&tr.tc006 test_cron_fn=
+  @cron me/CRON_TARGET = 0 0 * * *;
+  @crondel me;
+  @log smoke=TC006: @crondel all. Succeeded.;
+  @trig me/tr.done
+-
+&tr.done test_cron_fn=
+  @log smoke=End @cron test cases.;
+  @notify smoke
+-
+drop test_cron_fn
+-

@@ -36,10 +36,10 @@ the gap between TinyMUX and PennMUSH/RhostMUSH on web integration.
 |---|---------|--------|-------|
 | 18 | HTTP server | TODO | Built-in HTTP request handling (Penn). Big attack surface. |
 | 19 | Scripting language | TODO | Lua or leverage AST/JIT from ~/slow-32 and ~/risv |
-| 20 | @cron | TODO | Cron-style scheduling (TinyMUSH) |
+| 20 | @cron | **Done** | Vixie-style scheduler integration, 5-field Unix cron syntax. @cron/@crondel/@crontab. |
 | 21 | Totem/tag system | TODO | User-definable markers beyond MARKER0-9 (Rhost) |
 | 22 | Shared-memory debugging | TODO | Live debugging via shmem IPC (Rhost) |
-| 23 | PCG RNG | TODO | Modern random number generator (Penn) |
+| 23 | PCG RNG | **Done** | Modern random number generator (Penn) |
 
 ## Architecture Notes
 
