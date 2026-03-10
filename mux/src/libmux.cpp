@@ -3821,3 +3821,34 @@ extern "C" MUX_RESULT DCL_API libmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
     }
     return mr;
 }
+
+// ---------------------------------------------------------------------------
+// Crash diagnostic global — set by engine during command processing.
+// ---------------------------------------------------------------------------
+
+DCL_EXPORT const UTF8 *g_debug_cmd = T("< init >");
+
+// ---------------------------------------------------------------------------
+// AssertionFailed / OutOfMemory — libmux versions.
+//
+// These are intentionally simple: log to stderr and abort.  The engine
+// has richer versions (using mudstate, restart logic) but any code in
+// libmux.so or the driver that hits an assertion should crash hard.
+// ---------------------------------------------------------------------------
+
+DCL_EXPORT void OutOfMemory(const UTF8 *SourceFile, unsigned int LineNo)
+{
+    fprintf(stderr, "%s(%u): Out of memory.\n",
+        reinterpret_cast<const char *>(SourceFile), LineNo);
+    fflush(stderr);
+    abort();
+}
+
+DCL_EXPORT bool AssertionFailed(const UTF8 *SourceFile, unsigned int LineNo)
+{
+    fprintf(stderr, "%s(%u): Assertion failed.\n",
+        reinterpret_cast<const char *>(SourceFile), LineNo);
+    fflush(stderr);
+    abort();
+    return false;
+}

@@ -17,6 +17,7 @@
 #include "modules.h"
 #include "driverstate.h"
 #include "driver_log.h"
+#include "driver_bridge.h"
 
 mux_ILog *g_pILog = nullptr;
 DRIVER_CONFIG g_dc;
@@ -452,6 +453,7 @@ int DCL_CDECL main(int argc, char *argv[])
     mux_IGameEngine *pGameEngine = g_pIGameEngine;
     if (MUX_FAILED(mr) || nullptr == pGameEngine)
     {
+        fprintf(stderr, "FATAL: Failed to create game engine interface (%d).\n", mr);
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
         g_pILog->log_text(tprintf(T("Failed to create game engine interface (%d)."), mr));
         ENDLOG;
@@ -469,6 +471,7 @@ int DCL_CDECL main(int argc, char *argv[])
 
     if (MUX_FAILED(mr))
     {
+        fprintf(stderr, "FATAL: Game engine LoadGame failed (%d).\n", mr);
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
         g_pILog->log_text(tprintf(T("Game engine LoadGame failed (%d)."), mr));
         ENDLOG;
@@ -481,6 +484,7 @@ int DCL_CDECL main(int argc, char *argv[])
     mr = pGameEngine->GetConfig(&g_dc);
     if (MUX_FAILED(mr))
     {
+        fprintf(stderr, "FATAL: Failed to get driver config basket (%d).\n", mr);
         STARTLOG(LOG_ALWAYS, "INI", "CONF");
         g_pILog->log_text(tprintf(T("Failed to get driver config basket (%d)."), mr));
         ENDLOG;
@@ -570,7 +574,7 @@ int DCL_CDECL main(int argc, char *argv[])
     final_stubslave();
 #endif // STUB_SLAVE
     final_modules();
-    CLOSE;
+    drv_CacheClose();
 
 #if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
     g_GanlAdapter.shutdown_stubslave();

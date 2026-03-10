@@ -15,9 +15,8 @@
 #include "driverstate.h"
 #include "sqlite_backend.h"
 #include "driver_log.h"
+#include "ganl_adapter.h"
 
-// Driver-side CIDs that live in netmux.
-//
 static MUX_CLASS_INFO driver_classes[] =
 {
     { CID_ConnectionManager },
@@ -25,7 +24,9 @@ static MUX_CLASS_INFO driver_classes[] =
 };
 #define NUM_DRIVER_CLASSES (sizeof(driver_classes)/sizeof(driver_classes[0]))
 
-extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv)
+// Driver-only class factory dispatcher.
+//
+extern "C" MUX_RESULT DCL_API driver_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv)
 {
     MUX_RESULT mr = MUX_E_CLASSNOTAVAILABLE;
 
@@ -72,27 +73,25 @@ extern "C" MUX_RESULT DCL_API netmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
     return mr;
 }
 
-// engine.so front-door — called directly since engine.so is linked.
-//
-extern "C" MUX_RESULT DCL_API mux_Register(void);
-extern "C" MUX_RESULT DCL_API mux_Unregister(void);
-
 MUX_RESULT init_modules(void)
 {
     MUX_RESULT mr = mux_InitModuleLibrary(IsMainProcess);
 
-    // Register driver-side CIDs (CConnectionManager).
+    // Register driver-side classes.
     //
     if (MUX_SUCCEEDED(mr))
     {
-        mr = mux_RegisterClassObjects(NUM_DRIVER_CLASSES, driver_classes, netmux_GetClassObject);
+        mr = mux_RegisterClassObjects(NUM_DRIVER_CLASSES, driver_classes,
+            driver_GetClassObject);
     }
 
-    // Register engine-side CIDs via engine.so's COM front-door.
+    // Load engine.so as a proper COM module via libmux.
+    // This dlopen's engine.so and calls its mux_Register(), which
+    // registers all engine-side classes and interfaces.
     //
     if (MUX_SUCCEEDED(mr))
     {
-        mr = mux_Register();
+        mr = mux_AddModule(T("engine"), T("./bin/engine.so"));
     }
     return mr;
 }
@@ -153,9 +152,15 @@ void final_modules(void)
 {
     MUX_RESULT mr = MUX_S_OK;
 
-    // Revoke engine-side CIDs.
+    // Unload the engine module (calls mux_Unregister inside engine.so).
     //
-    mux_Unregister();
+    mr = mux_RemoveModule(T("engine"));
+    if (MUX_FAILED(mr))
+    {
+        STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+        g_pILog->log_text(tprintf(T("Failed to remove engine module (%d)."), mr));
+        ENDLOG;
+    }
 
     // Revoke driver-side CIDs.
     //
@@ -247,6 +252,24 @@ public:
 
     virtual MUX_RESULT DescQueueWrite(DESC *d, const UTF8 *data, size_t len);
     virtual MUX_RESULT DescQueueString(DESC *d, const UTF8 *text);
+
+    virtual MUX_RESULT DescReload(dbref player);
+    virtual MUX_RESULT TrimmedName(dbref player, UTF8 *cbuff,
+        size_t cbuffSize, unsigned short nMin, unsigned short nMax,
+        unsigned short nPad, unsigned short *pResult);
+    virtual MUX_RESULT MakePortlist(dbref player, dbref target,
+        UTF8 *buff, UTF8 **bufc);
+    virtual MUX_RESULT ForEachPlayerDesc(dbref target,
+        void (*callback)(DESC *d, void *context), void *context);
+    virtual MUX_RESULT FunHost(dbref executor, dbref caller, dbref enactor,
+        int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+        UTF8 **bufc);
+    virtual MUX_RESULT FunDoing(dbref executor, dbref caller, dbref enactor,
+        int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+        UTF8 **bufc);
+    virtual MUX_RESULT FunSiteinfo(dbref executor, dbref caller,
+        dbref enactor, int eval, UTF8 *fargs[], int nfargs,
+        UTF8 *buff, UTF8 **bufc);
 
     CConnectionManager(void);
     virtual ~CConnectionManager();
@@ -594,6 +617,65 @@ MUX_RESULT CConnectionManager::DescQueueString(DESC *d, const UTF8 *text)
     return MUX_S_OK;
 }
 
+MUX_RESULT CConnectionManager::DescReload(dbref player)
+{
+    desc_reload(player);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CConnectionManager::TrimmedName(dbref player, UTF8 *cbuff,
+    size_t cbuffSize, unsigned short nMin, unsigned short nMax,
+    unsigned short nPad, unsigned short *pResult)
+{
+    UNUSED_PARAMETER(cbuffSize);
+    if (nullptr == cbuff || nullptr == pResult) return MUX_E_INVALIDARG;
+    *pResult = trimmed_name(player, cbuff, nMin, nMax, nPad);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CConnectionManager::MakePortlist(dbref player, dbref target,
+    UTF8 *buff, UTF8 **bufc)
+{
+    if (nullptr == buff || nullptr == bufc) return MUX_E_INVALIDARG;
+    make_portlist(player, target, buff, bufc);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CConnectionManager::ForEachPlayerDesc(dbref target,
+    void (*callback)(DESC *d, void *context), void *context)
+{
+    if (nullptr == callback) return MUX_E_INVALIDARG;
+    for_each_player_desc(target, callback, context);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CConnectionManager::FunHost(dbref executor, dbref caller,
+    dbref enactor, int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+    UTF8 **bufc)
+{
+    fun_host(nullptr, buff, bufc, executor, caller, enactor, eval,
+        fargs, nfargs, nullptr, 0);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CConnectionManager::FunDoing(dbref executor, dbref caller,
+    dbref enactor, int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+    UTF8 **bufc)
+{
+    fun_doing(nullptr, buff, bufc, executor, caller, enactor, eval,
+        fargs, nfargs, nullptr, 0);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CConnectionManager::FunSiteinfo(dbref executor, dbref caller,
+    dbref enactor, int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+    UTF8 **bufc)
+{
+    fun_siteinfo(nullptr, buff, bufc, executor, caller, enactor, eval,
+        fargs, nfargs, nullptr, 0);
+    return MUX_S_OK;
+}
+
 // ---------------------------------------------------------------------------
 // CConnectionManagerFactory
 // ---------------------------------------------------------------------------
@@ -688,6 +770,26 @@ public:
     virtual MUX_RESULT GetRestarting(bool *pbRestarting);
     virtual MUX_RESULT SiteUpdate(const UTF8 *subnetStr,
         dbref player, UTF8 *cmd, int operation);
+
+    virtual MUX_RESULT GetPid(int *pPid);
+    virtual MUX_RESULT GetCharsetNametab(NAMETAB **ppTable);
+    virtual MUX_RESULT GetSigactionsNametab(NAMETAB **ppTable);
+    virtual MUX_RESULT GetLogoutCmdtable(NAMETAB **ppTable);
+    virtual MUX_RESULT LoggedOut0(dbref executor, dbref caller,
+        dbref enactor, int eval, int key);
+    virtual MUX_RESULT LoggedOut1(dbref executor, dbref caller,
+        dbref enactor, int eval, int key, UTF8 *arg,
+        const UTF8 *cargs[], int ncargs);
+    virtual MUX_RESULT DoVersion(dbref executor, dbref caller,
+        dbref enactor, int eval, int key);
+    virtual MUX_RESULT DoStartSlave(dbref executor, dbref caller,
+        dbref enactor, int eval, int key);
+    virtual MUX_RESULT GetTaskProcessCommand(
+        void (**ppfTask)(void *, int));
+    virtual MUX_RESULT DumpRestartDb(void);
+    virtual MUX_RESULT PrepareNetworkForRestart(void);
+    virtual MUX_RESULT StartEmailSend(dbref executor, const UTF8 *recipient,
+        const UTF8 *subject, const UTF8 *body, bool *pResult);
 
     CDriverControl(void);
     virtual ~CDriverControl();
@@ -801,6 +903,93 @@ MUX_RESULT CDriverControl::SiteUpdate(const UTF8 *subnetStr,
     }
 
     return bOK ? MUX_S_OK : MUX_E_FAIL;
+}
+
+MUX_RESULT CDriverControl::GetPid(int *pPid)
+{
+    if (nullptr == pPid) return MUX_E_INVALIDARG;
+    *pPid = static_cast<int>(game_pid);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CDriverControl::GetCharsetNametab(NAMETAB **ppTable)
+{
+    if (nullptr == ppTable) return MUX_E_INVALIDARG;
+    *ppTable = default_charset_nametab;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CDriverControl::GetSigactionsNametab(NAMETAB **ppTable)
+{
+    if (nullptr == ppTable) return MUX_E_INVALIDARG;
+    *ppTable = sigactions_nametab;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CDriverControl::GetLogoutCmdtable(NAMETAB **ppTable)
+{
+    if (nullptr == ppTable) return MUX_E_INVALIDARG;
+    *ppTable = logout_cmdtable;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CDriverControl::LoggedOut0(dbref executor, dbref caller,
+    dbref enactor, int eval, int key)
+{
+    logged_out0(executor, caller, enactor, eval, key);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CDriverControl::LoggedOut1(dbref executor, dbref caller,
+    dbref enactor, int eval, int key, UTF8 *arg,
+    const UTF8 *cargs[], int ncargs)
+{
+    logged_out1(executor, caller, enactor, eval, key, arg, cargs, ncargs);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CDriverControl::DoVersion(dbref executor, dbref caller,
+    dbref enactor, int eval, int key)
+{
+    do_version(executor, caller, enactor, eval, key);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CDriverControl::DoStartSlave(dbref executor, dbref caller,
+    dbref enactor, int eval, int key)
+{
+    do_startslave(executor, caller, enactor, eval, key);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CDriverControl::GetTaskProcessCommand(
+    void (**ppfTask)(void *, int))
+{
+    if (nullptr == ppfTask) return MUX_E_INVALIDARG;
+    *ppfTask = Task_ProcessCommand;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CDriverControl::DumpRestartDb(void)
+{
+    dump_restart_db();
+    return MUX_S_OK;
+}
+
+MUX_RESULT CDriverControl::PrepareNetworkForRestart(void)
+{
+    g_GanlAdapter.prepare_for_restart();
+    return MUX_S_OK;
+}
+
+MUX_RESULT CDriverControl::StartEmailSend(dbref executor,
+    const UTF8 *recipient, const UTF8 *subject, const UTF8 *body,
+    bool *pResult)
+{
+    if (nullptr == pResult) return MUX_E_INVALIDARG;
+    *pResult = g_GanlAdapter.start_email_send(executor, recipient,
+        subject, body);
+    return MUX_S_OK;
 }
 
 // ---------------------------------------------------------------------------

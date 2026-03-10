@@ -17,7 +17,7 @@
 #include "config.h"
 #include "externs.h"
 
-#include "ganl_adapter.h"
+#include "ganl_stub.h"
 
 #include <string>
 

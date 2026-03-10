@@ -11,7 +11,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
-#include "ganl_adapter.h"
+#include "ganl_stub.h"
 
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>

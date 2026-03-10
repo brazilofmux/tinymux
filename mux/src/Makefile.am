@@ -82,15 +82,16 @@ sqlite/sqlite3.eo: sqlite/sqlite3.c
 	$(CC) $(CFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -fvisibility=hidden -c -o $@ $<
 
 engine.so: $(ENGINE_CXX_OBJS) sqlite/sqlite3.eo libmux.so
-	$(CXX) $(CXXFLAGS) $(DYNAMICLIB_CXXFLAGS) -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(abs_builddir) -o $@ $(ENGINE_CXX_OBJS) sqlite/sqlite3.eo libmux.so $(PCRE2_LIBS)
+	$(CXX) $(CXXFLAGS) $(DYNAMICLIB_CXXFLAGS) -Wl,--no-undefined -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(abs_builddir) -o $@ $(ENGINE_CXX_OBJS) sqlite/sqlite3.eo libmux.so $(LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
 
-# netmux driver program — links against libmux.so and engine.so.
+# netmux driver program — links against libmux.so only.
+# engine.so is loaded at runtime via mux_AddModule (COM module).
 # RPATH: $ORIGIN finds .so files next to the binary (installed or symlinked);
 # abs_builddir covers running from the build tree before install.
 netmux_SOURCES = $(DRIVER_SRC) version.cpp
 netmux_CXXFLAGS = $(AM_CXXFLAGS) -fPIC
 netmux_LDFLAGS = -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(abs_builddir) -pie
-netmux_LDADD = engine.so libmux.so ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
+netmux_LDADD = libmux.so ganl/libganl.a $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
 
 # slave program
 slave_SOURCES = slave.cpp

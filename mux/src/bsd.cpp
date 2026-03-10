@@ -289,7 +289,7 @@ void shutdownsock(DESC *d, int reason)
     {
         // Cancel any scheduled processing on this socket.
         //
-        scheduler.CancelTask(Task_ProcessCommand, d, 0);
+        drv_CancelTask(Task_ProcessCommand, d, 0);
 
         shutdown(d->socket, SD_BOTH);
         if (0 == SOCKET_CLOSE(d->socket))

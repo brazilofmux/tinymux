@@ -422,7 +422,7 @@ void save_command(DESC *d, const UTF8 *cmd, size_t len)
     {
         // We have added our first command to an empty queue. Go process it later.
         //
-        scheduler.DeferImmediateTask(PRIORITY_SYSTEM, Task_ProcessCommand, d, 0);
+        drv_DeferImmediateTask(PRIORITY_SYSTEM, Task_ProcessCommand, d, 0);
     }
 }
 
@@ -1400,7 +1400,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
                     }
                     else
                     {
-                        const dbref room_it = where_room(d->player);
+                        const dbref room_it = drv_WhereRoom(d->player);
                         if (drv_Good_obj(room_it))
                         {
                             if (drv_Flags(room_it, FLAG_WORD2) & UNFINDABLE)
@@ -1469,8 +1469,8 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
             //
             const size_t nOnFor = 30 - vwNameField;
 
-            const UTF8 *pTimeStamp1 = time_format_1(ltdConnected.ReturnSeconds(), nOnFor);
-            const UTF8 *pTimeStamp2 = time_format_2(ltdLastTime.ReturnSeconds());
+            const UTF8 *pTimeStamp1 = drv_TimeFormat1(ltdConnected.ReturnSeconds(), nOnFor);
+            const UTF8 *pTimeStamp2 = drv_TimeFormat2(ltdLastTime.ReturnSeconds());
 
             if (  (e->flags & DS_CONNECTED)
                && drv_Wizard_Who(e->player)
@@ -1560,7 +1560,7 @@ static void dump_info(DESC *arg_desc)
         nDumpInfoTable++;
     }
 
-    const UTF8 **LocalDumpInfoTable = local_get_info_table();
+    const UTF8 **LocalDumpInfoTable = drv_GetInfoTable();
     size_t nLocalDumpInfoTable = 0;
     while (nullptr != LocalDumpInfoTable[nLocalDumpInfoTable])
     {
@@ -1604,7 +1604,7 @@ static void dump_info(DESC *arg_desc)
         }
     }
     queue_write(arg_desc, tprintf(T("Connected: %d\r\n"), count));
-    queue_write(arg_desc, tprintf(T("Size: %d\r\n"), mudstate.db_top));
+    queue_write(arg_desc, tprintf(T("Size: %d\r\n"), drv_GetDbTop()));
     queue_write(arg_desc, tprintf(T("Version: %s\r\n"), g_short_ver));
 
     if (  0 != nDumpInfoTable
@@ -1779,7 +1779,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                     return false;
                 }
 
-                const UTF8* p = Guest.Create(d);
+                const UTF8* p = drv_CreateGuest(d);
                 if (!p)
                 {
                     free_lbuf(command);
@@ -1818,7 +1818,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
         g_pIPlayerSession->ConnectPlayer(user, password,
             d->addr, d->username, host_address, &player);
         if (  player == NOTHING
-           || (!isGuest && Guest.CheckGuest(player)))
+           || (!isGuest && drv_CheckGuest(player)))
         {
             // Not a player, or wrong password.
             //
@@ -2031,7 +2031,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 g_pILog->log_name(player);
                 free_mbuf(buff);
                 ENDLOG;
-                move_object(player, g_dc.start_room);
+                drv_MoveObject(player, g_dc.start_room);
                 d->flags |= DS_CONNECTED;
                 d->connected_at.GetUTC();
                 d->player = player;
@@ -2148,32 +2148,13 @@ void do_command(DESC *d, UTF8 *command)
             queue_string(d, d->output_prefix);
             queue_write_LEN(d, T("\r\n"), 2);
         }
-        mudstate.curr_executor = d->player;
-        mudstate.curr_enactor = d->player;
-        for (int i = 0; i < MAX_GLOBAL_REGS; i++)
-        {
-            if (mudstate.global_regs[i])
-            {
-                RegRelease(mudstate.global_regs[i]);
-                mudstate.global_regs[i] = nullptr;
-            }
-        }
-        NamedRegsClear(mudstate.named_regs);
-
-#if defined(STUB_SLAVE)
-        mudstate.iRow = RS_TOP;
-        if (nullptr != mudstate.pResultsSet)
-        {
-            mudstate.pResultsSet->Release();
-            mudstate.pResultsSet = nullptr;
-        }
-#endif // STUB_SLAVE
+        drv_PrepareForCommand(d->player);
 
         CLinearTimeAbsolute ltaBegin;
         ltaBegin.GetUTC();
         alarm_clock.set(CLinearTimeDelta(g_dc.max_cmdsecs));
 
-        UTF8 *log_cmdbuf = process_command(d->player, d->player, d->player,
+        UTF8 *log_cmdbuf = drv_ProcessCommand(d->player, d->player, d->player,
             0, true, command, nullptr, 0);
 
         CLinearTimeAbsolute ltaEnd;
@@ -2181,7 +2162,7 @@ void do_command(DESC *d, UTF8 *command)
         if (alarm_clock.alarmed)
         {
             notify(d->player, T("GAME: Expensive activity abbreviated."));
-            halt_que(d->player, NOTHING);
+            drv_HaltQueue(d->player, NOTHING);
             drv_s_Flags(d->player, FLAG_WORD1, drv_Flags(d->player, FLAG_WORD1) | HALT);
         }
         alarm_clock.clear();
@@ -2200,7 +2181,7 @@ void do_command(DESC *d, UTF8 *command)
             ENDLOG;
         }
 
-        mudstate.curr_cmd = T("");
+        drv_FinishCommand();
         if (d->output_suffix)
         {
             queue_string(d, d->output_suffix);
@@ -2232,8 +2213,7 @@ void do_command(DESC *d, UTF8 *command)
     {
         // Not in the logged-out command table, so maybe a connect attempt.
         //
-        mudstate.curr_executor = NOTHING;
-        mudstate.curr_enactor = NOTHING;
+        drv_PrepareForCommand(NOTHING);
         g_debug_cmd = cmdsave;
         check_connect(d, command);
         return;
@@ -2368,7 +2348,7 @@ void handle_prog(DESC *d, UTF8 *message)
     int aflags;
     UTF8 *cmd = atr_get("handle_prog.1215", d->player, A_PROGCMD, &aowner, &aflags);
     CLinearTimeAbsolute lta;
-    wait_que(d->program_data->wait_enactor, d->player, d->player,
+    drv_WaitQueue(d->program_data->wait_enactor, d->player, d->player,
         AttrTrace(aflags, 0), false, lta, NOTHING, 0,
         cmd,
         1, const_cast<const UTF8**>(&message),
@@ -2415,7 +2395,7 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
                 {
                     // There are still commands to process, so schedule another looksee.
                     //
-                    scheduler.DeferImmediateTask(PRIORITY_SYSTEM, Task_ProcessCommand, d, 0);
+                    drv_DeferImmediateTask(PRIORITY_SYSTEM, Task_ProcessCommand, d, 0);
                 }
 
                 d->input_size -= cmd.size();
@@ -2432,7 +2412,7 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
                 {
                     if (!d->input_queue.empty())
                     {
-                        scheduler.DeferImmediateTask(PRIORITY_SYSTEM, Task_ProcessCommand, d, 0);
+                        drv_DeferImmediateTask(PRIORITY_SYSTEM, Task_ProcessCommand, d, 0);
                     }
                     return;
                 }
@@ -2454,7 +2434,7 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
                 CLinearTimeAbsolute lsaWhen;
                 lsaWhen.GetUTC();
 
-                scheduler.DeferTask(lsaWhen + CLinearTimeDelta(g_dc.timeslice), PRIORITY_SYSTEM, Task_ProcessCommand, d, 0);
+                drv_DeferTask(lsaWhen + CLinearTimeDelta(g_dc.timeslice), PRIORITY_SYSTEM, Task_ProcessCommand, d, 0);
             }
         }
     }

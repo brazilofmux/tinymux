@@ -12,6 +12,7 @@
 #include "modules.h"
 #include "driverstate.h"
 #include "driver_log.h"
+#include "driver_bridge.h"
 
 #ifdef SOLARIS
 extern const int _sys_nsig;
@@ -405,7 +406,7 @@ static void DCL_CDECL sighandler(int sig)
             if (bCan)
             {
                 log_signal(sig);
-                do_restart(GOD, GOD, GOD, 0, 0);
+                drv_DoRestart(GOD, GOD, GOD, 0, 0);
             }
             else
             {
@@ -537,17 +538,9 @@ static void DCL_CDECL sighandler(int sig)
         g_pILog->Flush();
         check_panicking(sig);
         log_signal(sig);
-        report();
+        drv_Report();
 
-        local_presync_database_sigsegv();
-        {
-            ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
-            while (nullptr != p)
-            {
-                p->pSink->presync_database_sigsegv();
-                p = p->pNext;
-            }
-        }
+        drv_PresyncDatabaseSigsegv();
 #if defined(STUB_SLAVE)
         final_stubslave();
 #endif // STUB_SLAVE
@@ -621,7 +614,7 @@ static void DCL_CDECL sighandler(int sig)
         // Coredump.
         //
         log_signal(sig);
-        report();
+        drv_Report();
 
         exit(1);
     }

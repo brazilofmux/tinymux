@@ -410,6 +410,8 @@ void DCL_CDECL raw_broadcast(int, const UTF8 *, ...);
 void list_siteinfo(dbref);
 void logged_out0(dbref executor, dbref caller, dbref enactor, int eval, int key);
 void logged_out1(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg, const UTF8 *cargs[], int ncargs);
+void do_version(dbref executor, dbref caller, dbref enactor, int eval, int key);
+void do_startslave(dbref executor, dbref caller, dbref enactor, int eval, int key);
 void init_logout_cmdtab(void);
 void desc_reload(dbref);
 void make_portlist(dbref, dbref, UTF8 *, UTF8 **);

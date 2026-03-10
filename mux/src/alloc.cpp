@@ -19,6 +19,10 @@
 //
 bool g_paranoid_alloc = false;
 
+// Output callback for @list buffers — set by engine at startup.
+//
+ALLOC_NOTIFY_FN g_alloc_notify_fn = nullptr;
+
 /*! \brief Per-buffer header to manage and organize client allocation.
  *
  * The POOLHDR structure preceeds a client area which must be properly
@@ -547,16 +551,24 @@ void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
     pools[POOL_LBUF].num_alloc--;
 }
 
+static inline void alloc_notify(dbref player, const UTF8 *msg)
+{
+    if (g_alloc_notify_fn)
+    {
+        g_alloc_notify_fn(player, msg);
+    }
+}
+
 static void pool_trace(const dbref player, const int poolnum, const UTF8 *text)
 {
 	int numfree = 0;
-    notify(player, tprintf(T("----- %s -----"), text));
+    alloc_notify(player, tprintf(T("----- %s -----"), text));
     for (POOLHDR* ph = pools[poolnum].chain_head; ph != nullptr; ph = ph->next)
     {
         if (ph->magicnum != pools[poolnum].poolmagic)
         {
-            notify(player, T("*** CORRUPTED BUFFER HEADER, ABORTING SCAN ***"));
-            notify(player, tprintf(T("%d free %s (before corruption)"),
+            alloc_notify(player, T("*** CORRUPTED BUFFER HEADER, ABORTING SCAN ***"));
+            alloc_notify(player, tprintf(T("%d free %s (before corruption)"),
                        numfree, text));
             return;
         }
@@ -565,19 +577,19 @@ static void pool_trace(const dbref player, const int poolnum, const UTF8 *text)
         const auto ibuf = reinterpret_cast<unsigned*>(h);
         if (*ibuf != pools[poolnum].poolmagic)
         {
-            notify(player, ph->u.buf_tag);
+            alloc_notify(player, ph->u.buf_tag);
         }
         else
         {
             numfree++;
         }
     }
-    notify(player, tprintf(T("%d free %s"), numfree, text));
+    alloc_notify(player, tprintf(T("%d free %s"), numfree, text));
 }
 
 void list_bufstats(dbref player)
 {
-    notify(player, T("Buffer Stats  Size      InUse      Total           Allocs   Lost"));
+    alloc_notify(player, T("Buffer Stats  Size      InUse      Total           Allocs   Lost"));
     for (int i = 0; i < NUM_POOLS; i++)
     {
         UTF8 buff[MBUF_SIZE];
@@ -589,7 +601,7 @@ void list_bufstats(dbref player)
         p += RightJustifyNumber(p, 10, static_cast<int64_t>(pools[i].max_alloc),        ' '); *p++ = ' ';
         p += RightJustifyNumber(p, 16, static_cast<int64_t>(pools[i].tot_alloc),        ' '); *p++ = ' ';
         p += RightJustifyNumber(p,  6, static_cast<int64_t>(pools[i].num_lost),         ' '); *p = '\0';
-        notify(player, buff);
+        alloc_notify(player, buff);
     }
 }
 

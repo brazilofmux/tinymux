@@ -30,6 +30,12 @@ UTF8* pool_alloc(int poolnum, const UTF8* tag, const UTF8* file, const int line)
 UTF8* pool_alloc_lbuf(const UTF8* tag, const UTF8* file, const int line);
 void pool_free(int poolnum, UTF8* buf, const UTF8* file, const int line);
 void pool_free_lbuf(UTF8* buf, const UTF8* file, const int line);
+// alloc_notify_fn — callback for @list buffers output.
+// Engine sets this to a function that calls notify().
+//
+typedef void (*ALLOC_NOTIFY_FN)(dbref player, const UTF8 *text);
+extern ALLOC_NOTIFY_FN g_alloc_notify_fn;
+
 void list_bufstats(dbref);
 void list_buftrace(dbref);
 void pool_reset(void);

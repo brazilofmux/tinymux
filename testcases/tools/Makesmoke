@@ -51,6 +51,9 @@ if [ ! -r text ]; then
     echo "Creating text directory."
     mkdir text
 fi
+if [ ! -r bin ]; then
+    ln -s $BIN bin
+fi
 cp ../mux/game/alias.conf .
 cp ../mux/game/compat.conf .
 cat > smoke.conf <<\_EOF
@@ -151,3 +154,4 @@ mv $TMP smoke.flat
 #
 rm smoke.conf $PIDFILE shutdown.status alias.conf compat.conf
 rm -rf $DATA text
+rm -f bin

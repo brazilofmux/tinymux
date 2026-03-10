@@ -386,3 +386,294 @@ void final_stubslave(void)
     // The driver handles stubslave cleanup after engine shutdown.
 }
 
+// ---------------------------------------------------------------------------
+// Driver data accessors — engine calls these instead of using externs.
+// ---------------------------------------------------------------------------
+
+pid_t game_pid;  // Cached copy, filled by conn_bridge_init.
+
+static NAMETAB *s_pDefaultCharsetNametab = nullptr;
+static NAMETAB *s_pSigactionsNametab = nullptr;
+static NAMETAB *s_pLogoutCmdtable = nullptr;
+
+NAMETAB *conn_bridge_get_charset_nametab(void)
+{
+    if (nullptr == s_pDefaultCharsetNametab && g_pDriverCtl)
+    {
+        g_pDriverCtl->GetCharsetNametab(&s_pDefaultCharsetNametab);
+    }
+    return s_pDefaultCharsetNametab;
+}
+
+NAMETAB *conn_bridge_get_sigactions_nametab(void)
+{
+    if (nullptr == s_pSigactionsNametab && g_pDriverCtl)
+    {
+        g_pDriverCtl->GetSigactionsNametab(&s_pSigactionsNametab);
+    }
+    return s_pSigactionsNametab;
+}
+
+NAMETAB *conn_bridge_get_logout_cmdtable(void)
+{
+    if (nullptr == s_pLogoutCmdtable && g_pDriverCtl)
+    {
+        g_pDriverCtl->GetLogoutCmdtable(&s_pLogoutCmdtable);
+    }
+    return s_pLogoutCmdtable;
+}
+
+// ---------------------------------------------------------------------------
+// Login-screen command handler bridges — these have the same signature as
+// the real functions in net.cpp so they can be used as function pointers
+// in command.cpp's command tables.
+// ---------------------------------------------------------------------------
+
+void logged_out0(dbref executor, dbref caller, dbref enactor, int eval,
+    int key)
+{
+    if (g_pDriverCtl)
+    {
+        g_pDriverCtl->LoggedOut0(executor, caller, enactor, eval, key);
+    }
+}
+
+void logged_out1(dbref executor, dbref caller, dbref enactor, int eval,
+    int key, UTF8 *arg, const UTF8 *cargs[], int ncargs)
+{
+    if (g_pDriverCtl)
+    {
+        g_pDriverCtl->LoggedOut1(executor, caller, enactor, eval, key,
+            arg, cargs, ncargs);
+    }
+}
+
+void do_version(dbref executor, dbref caller, dbref enactor, int eval,
+    int key)
+{
+    if (g_pDriverCtl)
+    {
+        g_pDriverCtl->DoVersion(executor, caller, enactor, eval, key);
+    }
+}
+
+void do_startslave(dbref executor, dbref caller, dbref enactor, int eval,
+    int key)
+{
+    if (g_pDriverCtl)
+    {
+        g_pDriverCtl->DoStartSlave(executor, caller, enactor, eval, key);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Task_ProcessCommand — the scheduler uses this as a function pointer.
+// We fetch the real pointer from the driver via COM once, then cache it.
+// cque.cpp compares task function pointers by address, so the engine
+// must use the same address the driver registered.
+// ---------------------------------------------------------------------------
+
+static void (*s_pfTaskProcessCommand)(void *, int) = nullptr;
+
+void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
+{
+    if (nullptr == s_pfTaskProcessCommand && g_pDriverCtl)
+    {
+        g_pDriverCtl->GetTaskProcessCommand(&s_pfTaskProcessCommand);
+    }
+    if (s_pfTaskProcessCommand)
+    {
+        s_pfTaskProcessCommand(arg_voidptr, arg_iInteger);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Restart / dump helpers.
+// ---------------------------------------------------------------------------
+
+void dump_restart_db(void)
+{
+    if (g_pDriverCtl)
+    {
+        g_pDriverCtl->DumpRestartDb();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Connection-related bridges.
+// ---------------------------------------------------------------------------
+
+void desc_reload(dbref player)
+{
+    if (g_pConnMgr)
+    {
+        g_pConnMgr->DescReload(player);
+    }
+}
+
+LBUF_OFFSET trimmed_name(const dbref player, UTF8 cbuff[MBUF_SIZE],
+    const LBUF_OFFSET nMin, const LBUF_OFFSET nMax,
+    const LBUF_OFFSET nPad)
+{
+    unsigned short result = 0;
+    if (g_pConnMgr)
+    {
+        g_pConnMgr->TrimmedName(player, cbuff, MBUF_SIZE, nMin, nMax,
+            nPad, &result);
+    }
+    return result;
+}
+
+void make_portlist(dbref player, dbref target, UTF8 *buff, UTF8 **bufc)
+{
+    if (g_pConnMgr)
+    {
+        g_pConnMgr->MakePortlist(player, target, buff, bufc);
+    }
+}
+
+void for_each_player_desc(dbref target,
+    void (*callback)(DESC *d, void *context), void *context)
+{
+    if (g_pConnMgr)
+    {
+        g_pConnMgr->ForEachPlayerDesc(target, callback, context);
+    }
+}
+
+// Softcode function bridges — same signature as the net.cpp originals.
+//
+void fun_host(FUN *fp, UTF8 *buff, UTF8 **bufc, dbref executor,
+    dbref caller, dbref enactor, int eval, UTF8 *fargs[], int nfargs,
+    const UTF8 *cargs[], int ncargs)
+{
+    UNUSED_PARAMETER(fp);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+    if (g_pConnMgr)
+    {
+        g_pConnMgr->FunHost(executor, caller, enactor, eval,
+            fargs, nfargs, buff, bufc);
+    }
+}
+
+void fun_doing(FUN *fp, UTF8 *buff, UTF8 **bufc, dbref executor,
+    dbref caller, dbref enactor, int eval, UTF8 *fargs[], int nfargs,
+    const UTF8 *cargs[], int ncargs)
+{
+    UNUSED_PARAMETER(fp);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+    if (g_pConnMgr)
+    {
+        g_pConnMgr->FunDoing(executor, caller, enactor, eval,
+            fargs, nfargs, buff, bufc);
+    }
+}
+
+void fun_siteinfo(FUN *fp, UTF8 *buff, UTF8 **bufc, dbref executor,
+    dbref caller, dbref enactor, int eval, UTF8 *fargs[], int nfargs,
+    const UTF8 *cargs[], int ncargs)
+{
+    UNUSED_PARAMETER(fp);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+    if (g_pConnMgr)
+    {
+        g_pConnMgr->FunSiteinfo(executor, caller, enactor, eval,
+            fargs, nfargs, buff, bufc);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Driver-owned nametab arrays.  The originals live in net.cpp and
+// signals.cpp (driver).  Engine code (conf.cpp config tables, command.cpp
+// do_list) takes addresses of these arrays at compile time, so they must
+// exist as actual symbols in engine.so.  We duplicate the read-only content.
+// ---------------------------------------------------------------------------
+
+NAMETAB default_charset_nametab[] =
+{
+    {T("ascii"),           5,       0,     CHARSET_ASCII},
+    {T("oem"),             3,       0,     CHARSET_CP437},
+    {T("cp437"),           5,       0,     CHARSET_CP437},
+    {T("latin-1"),         7,       0,     CHARSET_LATIN1},
+    {T("latin-2"),         7,       0,     CHARSET_LATIN2},
+    {T("iso8859-1"),       9,       0,     CHARSET_LATIN1},
+    {T("iso8859-2"),       9,       0,     CHARSET_LATIN2},
+    {nullptr,              0,       0,     0}
+};
+
+NAMETAB sigactions_nametab[] =
+{
+    {T("exit"),        3,  0,  SA_EXIT},
+    {T("default"),     1,  0,  SA_DFLT},
+    {static_cast<UTF8 *>(nullptr), 0,  0,  0}
+};
+
+NAMETAB logout_cmdtable[] =
+{
+    {T("DOING"),         5,  CA_PUBLIC,  CMD_DOING},
+    {T("LOGOUT"),        6,  CA_PUBLIC,  CMD_LOGOUT},
+    {T("OUTPUTPREFIX"), 12,  CA_PUBLIC,  CMD_PREFIX|CMD_NOxFIX},
+    {T("OUTPUTSUFFIX"), 12,  CA_PUBLIC,  CMD_SUFFIX|CMD_NOxFIX},
+    {T("QUIT"),          4,  CA_PUBLIC,  CMD_QUIT},
+    {T("SESSION"),       7,  CA_PUBLIC,  CMD_SESSION},
+    {T("WHO"),           3,  CA_PUBLIC,  CMD_WHO},
+    {T("PUEBLOCLIENT"), 12,  CA_PUBLIC,  CMD_PUEBLOCLIENT},
+    {T("HELP"),          4,  CA_PUBLIC,  CMD_HELP},
+    {T("INFO"),          4,  CA_PUBLIC,  CMD_INFO},
+    {nullptr,            0,          0,         0}
+};
+
+// ---------------------------------------------------------------------------
+// GANL adapter bridges.
+// ---------------------------------------------------------------------------
+
+// GanlAdapter is driver-owned.  The engine references g_GanlAdapter for
+// email send and prepare_for_restart.  We provide a stub object that
+// delegates through COM.  The class declaration is in ganl_stub.h.
+//
+#include "ganl_stub.h"
+
+bool GanlAdapter::start_email_send(dbref executor, const UTF8 *recipient,
+    const UTF8 *subject, const UTF8 *body)
+{
+    bool result = false;
+    if (g_pDriverCtl)
+    {
+        g_pDriverCtl->StartEmailSend(executor, recipient, subject,
+            body, &result);
+    }
+    return result;
+}
+
+void GanlAdapter::prepare_for_restart(void)
+{
+    if (g_pDriverCtl)
+    {
+        g_pDriverCtl->PrepareNetworkForRestart();
+    }
+}
+
+GanlAdapter g_GanlAdapter;
+
+// ---------------------------------------------------------------------------
+// mux_subnets — the class body is in net.cpp (driver).  mudconf contains
+// a mux_subnets member, so the constructor/destructor must be available
+// when conf.cpp constructs mudconf.  We provide stub implementations
+// here; the driver initializes the real access list separately.
+// ---------------------------------------------------------------------------
+
+mux_subnets::mux_subnets() : msnRoot(nullptr)
+{
+}
+
+mux_subnets::~mux_subnets()
+{
+    // Stub — the real destructor is in net.cpp (driver).
+    // Engine-side mudconf members are never populated, so nothing to free.
+    //
+    msnRoot = nullptr;
+}
+

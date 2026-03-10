@@ -35,7 +35,7 @@ static inline const UTF8 *utf8_advance_predicate(const UTF8 *p)
     return p + n;
 }
 
-#include "ganl_adapter.h"
+#include "ganl_stub.h"
 
 
 /* ---------------------------------------------------------------------------
@@ -2793,59 +2793,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
 }
 
-// --------------------------------------------------------------------------
-// OutOfMemory: handle an out of memory condition.
-//
-void OutOfMemory(const UTF8 *SourceFile, unsigned int LineNo)
-{
-    mudstate.asserting++;
-    if (  1 <= mudstate.asserting
-       && mudstate.asserting <= 2)
-    {
-        Log.tinyprintf(T("%s(%u): Out of memory." ENDLINE), SourceFile, LineNo);
-        Log.Flush();
-        if (  !mudstate.bStandAlone
-           && mudstate.bCanRestart)
-        {
-            do_restart(GOD, GOD, GOD, 0, 0);
-        }
-        else
-        {
-            abort();
-        }
-    }
-    mudstate.asserting--;
-}
-
-// --------------------------------------------------------------------------
-// AssertionFailed: A logical assertion has failed.
-//
-bool AssertionFailed(const UTF8 *SourceFile, unsigned int LineNo)
-{
-    mudstate.asserting++;
-    if (  1 <= mudstate.asserting
-       && mudstate.asserting <= 2)
-    {
-        Log.tinyprintf(T("%s(%u): Assertion failed." ENDLINE), SourceFile, LineNo);
-        report();
-        Log.Flush();
-        if (  !mudstate.bStandAlone
-           && mudstate.bCanRestart)
-        {
-            do_restart(GOD, GOD, GOD, 0, 0);
-        }
-        else
-        {
-            abort();
-        }
-    }
-    else
-    {
-        abort();
-    }
-    mudstate.asserting--;
-    return false;
-}
+// AssertionFailed and OutOfMemory moved to libmux.cpp.
 
 static void ListReferences(dbref executor, UTF8 *reference_name)
 {

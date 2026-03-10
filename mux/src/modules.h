@@ -9,6 +9,21 @@
 #ifndef MODULES_H
 #define MODULES_H
 
+// Forward declarations for types used by COM interfaces below.
+// These are defined in core.h, alloc.h, mudconf.h, and externs.h;
+// modules.h must be self-contained for external module compilation.
+//
+class CLinearTimeAbsolute;
+class CLinearTimeDelta;
+struct descriptor_data;
+typedef struct descriptor_data DESC;
+enum class SocketState;
+struct program_data;
+struct reg_ref;
+struct NamedRegsMap;
+struct name_table;
+typedef struct name_table NAMETAB;
+
 /* Logging options */
 
 #define LOG_ALLCOMMANDS 0x00000001  /* Log all commands */
@@ -509,16 +524,6 @@ public:
     virtual MUX_RESULT ReloadIndexes(dbref player) = 0;
 };
 
-// Forward declarations for types used by engine/driver COM interfaces below.
-// These are defined in core.h (CLinearTimeAbsolute) and externs.h (the rest),
-// but modules.h must be self-contained for libmux.so compilation.
-//
-class CLinearTimeAbsolute;
-struct descriptor_data;
-typedef struct descriptor_data DESC;
-enum class SocketState;
-struct program_data;
-
 // Static configuration basket: one-time snapshot of mudconf values that
 // the driver queries after LoadGame.  All fixed-size arrays; no pointers
 // cross the .so boundary.  Time deltas are raw 100-nanosecond ticks
@@ -689,6 +694,54 @@ public:
     virtual MUX_RESULT SetDoingHdr(const UTF8 *hdr, size_t len) = 0;
     virtual MUX_RESULT GetRecordPlayers(int *pCount) = 0;
     virtual MUX_RESULT GetBCanRestart(bool *pbCanRestart) = 0;
+
+    // Scheduler — driver delegates task management to engine's CScheduler.
+    // Uses raw function pointer type since FTASK isn't declared yet.
+    //
+    virtual MUX_RESULT CancelTask(void (*fpTask)(void *, int),
+        void *arg_voidptr, int arg_Integer) = 0;
+    virtual MUX_RESULT DeferImmediateTask(int iPriority,
+        void (*fpTask)(void *, int), void *arg_voidptr,
+        int arg_Integer) = 0;
+    virtual MUX_RESULT DeferTask(const CLinearTimeAbsolute &ltWhen,
+        int iPriority, void (*fpTask)(void *, int),
+        void *arg_voidptr, int arg_Integer) = 0;
+
+    // Command execution — the driver's do_command block delegates these.
+    //
+    virtual MUX_RESULT PrepareForCommand(dbref player) = 0;
+    virtual MUX_RESULT ProcessCommand(dbref executor, dbref caller,
+        dbref enactor, int eval, bool bHasCmdArg, UTF8 *command,
+        const UTF8 *cargs[], int ncargs, UTF8 **ppLogBuf) = 0;
+    virtual MUX_RESULT FinishCommand(void) = 0;
+    virtual MUX_RESULT HaltQueue(dbref executor, dbref target) = 0;
+    virtual MUX_RESULT WaitQueue(dbref executor, dbref caller,
+        dbref enactor, int eval, bool bTimed,
+        const CLinearTimeAbsolute &ltaWhen, dbref sem, int attr,
+        UTF8 *command, int ncargs, const UTF8 *cargs[],
+        reg_ref *regs[], NamedRegsMap *named) = 0;
+
+    // Object movement — for newly created players.
+    //
+    virtual MUX_RESULT MoveObject(dbref thing, dbref dest) = 0;
+
+    // Queries for WHO/INFO display.
+    //
+    virtual MUX_RESULT WhereRoom(dbref what, dbref *pRoom) = 0;
+    virtual MUX_RESULT TimeFormat1(int seconds, size_t maxWidth,
+        const UTF8 **ppResult) = 0;
+    virtual MUX_RESULT TimeFormat2(int seconds,
+        const UTF8 **ppResult) = 0;
+    virtual MUX_RESULT GetDbTop(int *pDbTop) = 0;
+    virtual MUX_RESULT GetInfoTable(const UTF8 ***pppTable) = 0;
+
+    // Emergency/signal operations.
+    //
+    virtual MUX_RESULT Report(void) = 0;
+    virtual MUX_RESULT PresyncDatabaseSigsegv(void) = 0;
+    virtual MUX_RESULT DoRestart(dbref executor, dbref caller,
+        dbref enactor, int eval, int key) = 0;
+    virtual MUX_RESULT CacheClose(void) = 0;
 };
 
 // Player session — the interface the driver uses for player authentication,
@@ -755,6 +808,11 @@ public:
     // Send a cached text file using raw socket writes (emergency/pre-login).
     //
     virtual MUX_RESULT FcacheRawSend(SOCKET fd, int num) = 0;
+
+    // Guest management — engine owns the CGuests object.
+    //
+    virtual MUX_RESULT CreateGuest(DESC *d, const UTF8 **ppName) = 0;
+    virtual MUX_RESULT CheckGuest(dbref player, bool *pResult) = 0;
 };
 
 // Driver control — the interface the engine uses for non-connection
@@ -782,6 +840,46 @@ public:
     //
     virtual MUX_RESULT SiteUpdate(const UTF8 *subnetStr,
         dbref player, UTF8 *cmd, int operation) = 0;
+
+    // Process ID.
+    //
+    virtual MUX_RESULT GetPid(int *pPid) = 0;
+
+    // Config nametables owned by the driver.
+    //
+    virtual MUX_RESULT GetCharsetNametab(NAMETAB **ppTable) = 0;
+    virtual MUX_RESULT GetSigactionsNametab(NAMETAB **ppTable) = 0;
+    virtual MUX_RESULT GetLogoutCmdtable(NAMETAB **ppTable) = 0;
+
+    // Login-screen command handlers (logged_out0 / logged_out1).
+    //
+    virtual MUX_RESULT LoggedOut0(dbref executor, dbref caller,
+        dbref enactor, int eval, int key) = 0;
+    virtual MUX_RESULT LoggedOut1(dbref executor, dbref caller,
+        dbref enactor, int eval, int key, UTF8 *arg,
+        const UTF8 *cargs[], int ncargs) = 0;
+
+    // Driver-side command handlers.
+    //
+    virtual MUX_RESULT DoVersion(dbref executor, dbref caller,
+        dbref enactor, int eval, int key) = 0;
+    virtual MUX_RESULT DoStartSlave(dbref executor, dbref caller,
+        dbref enactor, int eval, int key) = 0;
+
+    // Task_ProcessCommand function pointer (for scheduler callbacks).
+    //
+    virtual MUX_RESULT GetTaskProcessCommand(
+        void (**ppfTask)(void *, int)) = 0;
+
+    // Restart / dump helpers.
+    //
+    virtual MUX_RESULT DumpRestartDb(void) = 0;
+    virtual MUX_RESULT PrepareNetworkForRestart(void) = 0;
+
+    // Email send (GANL adapter).
+    //
+    virtual MUX_RESULT StartEmailSend(dbref executor, const UTF8 *recipient,
+        const UTF8 *subject, const UTF8 *body, bool *pResult) = 0;
 };
 
 // Connection manager — the interface the engine uses to interact with
@@ -940,6 +1038,39 @@ public:
     // Queue encoded text on a specific descriptor (color/charset aware).
     //
     virtual MUX_RESULT DescQueueString(DESC *d, const UTF8 *text) = 0;
+
+    // Reload descriptors after dbread (reconnect cached player refs).
+    //
+    virtual MUX_RESULT DescReload(dbref player) = 0;
+
+    // Trimmed name for WHO/mail display.
+    //
+    virtual MUX_RESULT TrimmedName(dbref player, UTF8 *cbuff,
+        size_t cbuffSize, unsigned short nMin, unsigned short nMax,
+        unsigned short nPad, unsigned short *pResult) = 0;
+
+    // Port list for ports() function.
+    //
+    virtual MUX_RESULT MakePortlist(dbref player, dbref target,
+        UTF8 *buff, UTF8 **bufc) = 0;
+
+    // Per-descriptor iteration (for file cache sends, etc.).
+    //
+    virtual MUX_RESULT ForEachPlayerDesc(dbref target,
+        void (*callback)(DESC *d, void *context), void *context) = 0;
+
+    // Softcode function implementations that query connection state.
+    // These write results into buff/bufc in the standard MUX way.
+    //
+    virtual MUX_RESULT FunHost(dbref executor, dbref caller, dbref enactor,
+        int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+        UTF8 **bufc) = 0;
+    virtual MUX_RESULT FunDoing(dbref executor, dbref caller, dbref enactor,
+        int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+        UTF8 **bufc) = 0;
+    virtual MUX_RESULT FunSiteinfo(dbref executor, dbref caller,
+        dbref enactor, int eval, UTF8 *fargs[], int nfargs,
+        UTF8 *buff, UTF8 **bufc) = 0;
 };
 
 #endif // MODULES_H

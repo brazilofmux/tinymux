@@ -409,7 +409,7 @@ namespace
             d->program_data = nullptr;
         }
 
-        scheduler.CancelTask(Task_ProcessCommand, d, 0);
+        drv_CancelTask(Task_ProcessCommand, d, 0);
 
         if (d->player != NOTHING)
         {
@@ -756,7 +756,7 @@ public:
             d->program_data = nullptr;
         }
 
-        scheduler.CancelTask(Task_ProcessCommand, d, 0);
+        drv_CancelTask(Task_ProcessCommand, d, 0);
 
         if (d->player != NOTHING)
         {
@@ -915,7 +915,7 @@ public:
                     return false;
                 }
 
-                const UTF8* guestUser = Guest.Create(d);
+                const UTF8* guestUser = drv_CreateGuest(d);
                 if (!guestUser) {
                     cleanupBuffers();
                     return false;
@@ -954,7 +954,7 @@ public:
 
         dbref player = NOTHING;
         g_pIPlayerSession->ConnectPlayer(user, pass, d->addr, d->username, hostAddress, &player);
-        if (player == NOTHING || (!isGuestConnect && Guest.CheckGuest(player))) {
+        if (player == NOTHING || (!isGuestConnect && drv_CheckGuest(player))) {
             queue_write(d, connect_fail);
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
             UTF8* buff = alloc_lbuf("ganl_auth.badconnect");
@@ -1696,7 +1696,7 @@ void GanlAdapter::run_main_loop() {
 
         // Calculate minimum timeout based on scheduled tasks
         CLinearTimeAbsolute ltaNextTask;
-        if (scheduler.WhenNext(&ltaNextTask)) {
+        if (MUX_SUCCEEDED(g_pIGameEngine->WhenNext(&ltaNextTask))) {
             CLinearTimeAbsolute ltaNow;
             ltaNow.GetUTC();
             if (ltaNextTask > ltaNow) {
@@ -1874,7 +1874,7 @@ void GanlAdapter::process_tinyMUX_tasks() {
     }
 
     // Run scheduled tasks (timers, idle checks, @daily, DB checkpoints).
-    scheduler.RunTasks(ltaNow);
+    g_pIGameEngine->RunTasks(ltaNow);
 
 #if defined(_WIN32)
     // Collect completed reverse DNS lookups from worker threads.
@@ -3038,7 +3038,7 @@ void GanlAdapter::close_connection(DESC* d, ganl::DisconnectReason reason) {
         {
             d->flags &= ~DS_CONNECTED;
         }
-        scheduler.CancelTask(Task_ProcessCommand, d, 0);
+        drv_CancelTask(Task_ProcessCommand, d, 0);
         destroy_desc(d);
         free_desc(d); // Free DESC if GANL doesn't know about it
     }

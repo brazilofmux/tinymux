@@ -15,10 +15,9 @@
 #include "config.h"
 #include "externs.h"
 #include "sqlite_backend.h"
+#include "mguests.h"
 
-// Sole exported variable — crash diagnostic.  See modules.h comment.
-//
-DCL_EXPORT const UTF8 *g_debug_cmd = T("< init >");
+// g_debug_cmd moved to libmux.cpp — shared by all layers.
 
 // ---------------------------------------------------------------------------
 // Factory class declarations for engine-side COM components.
@@ -2614,6 +2613,38 @@ public:
     virtual MUX_RESULT SetDoingHdr(const UTF8 *hdr, size_t len);
     virtual MUX_RESULT GetRecordPlayers(int *pCount);
     virtual MUX_RESULT GetBCanRestart(bool *pbCanRestart);
+    virtual MUX_RESULT CancelTask(void (*fpTask)(void *, int),
+        void *arg_voidptr, int arg_Integer);
+    virtual MUX_RESULT DeferImmediateTask(int iPriority,
+        void (*fpTask)(void *, int), void *arg_voidptr,
+        int arg_Integer);
+    virtual MUX_RESULT DeferTask(const CLinearTimeAbsolute &ltWhen,
+        int iPriority, void (*fpTask)(void *, int),
+        void *arg_voidptr, int arg_Integer);
+    virtual MUX_RESULT PrepareForCommand(dbref player);
+    virtual MUX_RESULT ProcessCommand(dbref executor, dbref caller,
+        dbref enactor, int eval, bool bHasCmdArg, UTF8 *command,
+        const UTF8 *cargs[], int ncargs, UTF8 **ppLogBuf);
+    virtual MUX_RESULT FinishCommand(void);
+    virtual MUX_RESULT HaltQueue(dbref executor, dbref target);
+    virtual MUX_RESULT WaitQueue(dbref executor, dbref caller,
+        dbref enactor, int eval, bool bTimed,
+        const CLinearTimeAbsolute &ltaWhen, dbref sem, int attr,
+        UTF8 *command, int ncargs, const UTF8 *cargs[],
+        reg_ref *regs[], NamedRegsMap *named);
+    virtual MUX_RESULT MoveObject(dbref thing, dbref dest);
+    virtual MUX_RESULT WhereRoom(dbref what, dbref *pRoom);
+    virtual MUX_RESULT TimeFormat1(int seconds, size_t maxWidth,
+        const UTF8 **ppResult);
+    virtual MUX_RESULT TimeFormat2(int seconds,
+        const UTF8 **ppResult);
+    virtual MUX_RESULT GetDbTop(int *pDbTop);
+    virtual MUX_RESULT GetInfoTable(const UTF8 ***pppTable);
+    virtual MUX_RESULT Report(void);
+    virtual MUX_RESULT PresyncDatabaseSigsegv(void);
+    virtual MUX_RESULT DoRestart(dbref executor, dbref caller,
+        dbref enactor, int eval, int key);
+    virtual MUX_RESULT CacheClose(void);
 
     CGameEngine(void);
     virtual ~CGameEngine();
@@ -2666,12 +2697,23 @@ uint32_t CGameEngine::Release(void)
     return m_cRef;
 }
 
+// alloc.cpp callback for @list buffers output.
+//
+static void engine_alloc_notify(dbref player, const UTF8 *text)
+{
+    notify(player, text);
+}
+
 MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
     const UTF8 *inputDb, bool bMinDB)
 {
     UNUSED_PARAMETER(inputDb);
 
     MUX_RESULT mr;
+
+    // Wire up alloc.cpp's output callback so @list buffers works.
+    //
+    g_alloc_notify_fn = engine_alloc_notify;
 
     // Initialize engine subsystems.
     //
@@ -3316,6 +3358,182 @@ MUX_RESULT CGameEngine::GetBCanRestart(bool *pbCanRestart)
     return MUX_S_OK;
 }
 
+MUX_RESULT CGameEngine::CancelTask(void (*fpTask)(void *, int),
+    void *arg_voidptr, int arg_Integer)
+{
+    scheduler.CancelTask(fpTask, arg_voidptr, arg_Integer);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::DeferImmediateTask(int iPriority,
+    void (*fpTask)(void *, int), void *arg_voidptr, int arg_Integer)
+{
+    scheduler.DeferImmediateTask(iPriority, fpTask, arg_voidptr, arg_Integer);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::DeferTask(const CLinearTimeAbsolute &ltWhen,
+    int iPriority, void (*fpTask)(void *, int), void *arg_voidptr,
+    int arg_Integer)
+{
+    scheduler.DeferTask(ltWhen, iPriority, fpTask, arg_voidptr, arg_Integer);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::PrepareForCommand(dbref player)
+{
+    mudstate.curr_executor = player;
+    mudstate.curr_enactor = player;
+    for (int i = 0; i < MAX_GLOBAL_REGS; i++)
+    {
+        if (mudstate.global_regs[i])
+        {
+            RegRelease(mudstate.global_regs[i]);
+            mudstate.global_regs[i] = nullptr;
+        }
+    }
+    NamedRegsClear(mudstate.named_regs);
+
+#if defined(STUB_SLAVE)
+    mudstate.iRow = RS_TOP;
+    if (nullptr != mudstate.pResultsSet)
+    {
+        mudstate.pResultsSet->Release();
+        mudstate.pResultsSet = nullptr;
+    }
+#endif // STUB_SLAVE
+
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::ProcessCommand(dbref executor, dbref caller,
+    dbref enactor, int eval, bool bHasCmdArg, UTF8 *command,
+    const UTF8 *cargs[], int ncargs, UTF8 **ppLogBuf)
+{
+    if (nullptr == ppLogBuf)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *ppLogBuf = process_command(executor, caller, enactor, eval, bHasCmdArg,
+        command, cargs, ncargs);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::FinishCommand(void)
+{
+    mudstate.curr_cmd = T("");
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::HaltQueue(dbref executor, dbref target)
+{
+    halt_que(executor, target);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::WaitQueue(dbref executor, dbref caller,
+    dbref enactor, int eval, bool bTimed,
+    const CLinearTimeAbsolute &ltaWhen, dbref sem, int attr,
+    UTF8 *command, int ncargs, const UTF8 *cargs[],
+    reg_ref *regs[], NamedRegsMap *named)
+{
+    wait_que(executor, caller, enactor, eval, bTimed, ltaWhen, sem, attr,
+        command, ncargs, cargs, regs, named);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::MoveObject(dbref thing, dbref dest)
+{
+    move_object(thing, dest);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::WhereRoom(dbref what, dbref *pRoom)
+{
+    if (nullptr == pRoom)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pRoom = where_room(what);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::TimeFormat1(int seconds, size_t maxWidth,
+    const UTF8 **ppResult)
+{
+    if (nullptr == ppResult)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *ppResult = time_format_1(seconds, maxWidth);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::TimeFormat2(int seconds,
+    const UTF8 **ppResult)
+{
+    if (nullptr == ppResult)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *ppResult = time_format_2(seconds);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::GetDbTop(int *pDbTop)
+{
+    if (nullptr == pDbTop)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pDbTop = mudstate.db_top;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::GetInfoTable(const UTF8 ***pppTable)
+{
+    if (nullptr == pppTable)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pppTable = local_get_info_table();
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::Report(void)
+{
+    report();
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::PresyncDatabaseSigsegv(void)
+{
+    local_presync_database_sigsegv();
+
+    // Notify all registered module sinks.
+    //
+    ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
+    while (nullptr != p)
+    {
+        p->pSink->presync_database_sigsegv();
+        p = p->pNext;
+    }
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::DoRestart(dbref executor, dbref caller,
+    dbref enactor, int eval, int key)
+{
+    do_restart(executor, caller, enactor, eval, key);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::CacheClose(void)
+{
+    cache_close();
+    return MUX_S_OK;
+}
+
 static void dbconvert_info(int fmt, int flags, int ver)
 {
     const UTF8 *cp;
@@ -3714,6 +3932,8 @@ public:
         bool isSuspect, bool wasAutoDark, const UTF8 *reason);
     virtual MUX_RESULT FcacheSend(DESC *d, int num);
     virtual MUX_RESULT FcacheRawSend(SOCKET fd, int num);
+    virtual MUX_RESULT CreateGuest(DESC *d, const UTF8 **ppName);
+    virtual MUX_RESULT CheckGuest(dbref player, bool *pResult);
 
     CPlayerSession(void);
     virtual ~CPlayerSession();
@@ -4271,6 +4491,30 @@ MUX_RESULT CPlayerSession::FcacheSend(DESC *d, int num)
 MUX_RESULT CPlayerSession::FcacheRawSend(SOCKET fd, int num)
 {
     fcache_rawdump(fd, num);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CPlayerSession::CreateGuest(DESC *d, const UTF8 **ppName)
+{
+    if (nullptr == ppName)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *ppName = Guest.Create(d);
+    if (nullptr == *ppName)
+    {
+        return MUX_E_FAIL;
+    }
+    return MUX_S_OK;
+}
+
+MUX_RESULT CPlayerSession::CheckGuest(dbref player, bool *pResult)
+{
+    if (nullptr == pResult)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pResult = Guest.CheckGuest(player);
     return MUX_S_OK;
 }
 

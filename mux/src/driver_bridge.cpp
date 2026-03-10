@@ -301,3 +301,241 @@ void fcache_rawdump(SOCKET fd, int num)
         g_pIPlayerSession->FcacheRawSend(fd, num);
     }
 }
+
+// Scheduler — driver-side bridges through mux_IGameEngine.
+//
+void drv_CancelTask(FTASK *fpTask, void *arg_voidptr, int arg_Integer)
+{
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->CancelTask(fpTask, arg_voidptr, arg_Integer);
+    }
+}
+
+void drv_DeferImmediateTask(int iPriority, FTASK *fpTask,
+    void *arg_voidptr, int arg_Integer)
+{
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->DeferImmediateTask(iPriority, fpTask,
+            arg_voidptr, arg_Integer);
+    }
+}
+
+void drv_DeferTask(const CLinearTimeAbsolute &ltWhen, int iPriority,
+    FTASK *fpTask, void *arg_voidptr, int arg_Integer)
+{
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->DeferTask(ltWhen, iPriority, fpTask,
+            arg_voidptr, arg_Integer);
+    }
+}
+
+// Guest management — driver-side bridges through mux_IPlayerSession.
+//
+const UTF8 *drv_CreateGuest(DESC *d)
+{
+    const UTF8 *pName = nullptr;
+    if (g_pIPlayerSession)
+    {
+        g_pIPlayerSession->CreateGuest(d, &pName);
+    }
+    return pName;
+}
+
+bool drv_CheckGuest(dbref player)
+{
+    bool result = false;
+    if (g_pIPlayerSession)
+    {
+        g_pIPlayerSession->CheckGuest(player, &result);
+    }
+    return result;
+}
+
+// NamedRegsClear — driver-local copy.  RegRelease is inline in externs.h,
+// so the driver can clean up named registers without a COM round-trip.
+//
+void NamedRegsClear(NamedRegsMap *&map)
+{
+    if (nullptr == map)
+    {
+        return;
+    }
+    for (auto &kv : *map)
+    {
+        RegRelease(kv.second);
+    }
+    delete map;
+    map = nullptr;
+}
+
+// raw_broadcast — driver-side implementation.  Formats the variadic args
+// and calls broadcast_and_flush() directly (both live in the driver).
+//
+void DCL_CDECL raw_broadcast(int inflags, const UTF8 *fmt, ...)
+{
+    if (!fmt || !*fmt)
+    {
+        return;
+    }
+
+    UTF8 buff[LBUF_SIZE];
+
+    va_list ap;
+    va_start(ap, fmt);
+    mux_vsnprintf(buff, LBUF_SIZE, fmt, ap);
+    va_end(ap);
+
+    broadcast_and_flush(inflags, buff);
+}
+
+// Command execution — driver-side bridges through mux_IGameEngine.
+//
+void drv_PrepareForCommand(dbref player)
+{
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->PrepareForCommand(player);
+    }
+}
+
+UTF8 *drv_ProcessCommand(dbref executor, dbref caller, dbref enactor,
+    int eval, bool bHasCmdArg, UTF8 *command,
+    const UTF8 *cargs[], int ncargs)
+{
+    UTF8 *pLogBuf = nullptr;
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->ProcessCommand(executor, caller, enactor, eval,
+            bHasCmdArg, command, cargs, ncargs, &pLogBuf);
+    }
+    return pLogBuf;
+}
+
+void drv_FinishCommand(void)
+{
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->FinishCommand();
+    }
+}
+
+void drv_HaltQueue(dbref executor, dbref target)
+{
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->HaltQueue(executor, target);
+    }
+}
+
+void drv_WaitQueue(dbref executor, dbref caller, dbref enactor,
+    int eval, bool bTimed, const CLinearTimeAbsolute &ltaWhen,
+    dbref sem, int attr, UTF8 *command, int ncargs,
+    const UTF8 *cargs[], reg_ref *regs[], NamedRegsMap *named)
+{
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->WaitQueue(executor, caller, enactor, eval, bTimed,
+            ltaWhen, sem, attr, command, ncargs, cargs, regs, named);
+    }
+}
+
+// Object movement.
+//
+void drv_MoveObject(dbref thing, dbref dest)
+{
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->MoveObject(thing, dest);
+    }
+}
+
+// Queries for WHO/INFO display.
+//
+dbref drv_WhereRoom(dbref what)
+{
+    dbref room = NOTHING;
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->WhereRoom(what, &room);
+    }
+    return room;
+}
+
+const UTF8 *drv_TimeFormat1(int seconds, size_t maxWidth)
+{
+    const UTF8 *pResult = T("");
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->TimeFormat1(seconds, maxWidth, &pResult);
+    }
+    return pResult;
+}
+
+const UTF8 *drv_TimeFormat2(int seconds)
+{
+    const UTF8 *pResult = T("");
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->TimeFormat2(seconds, &pResult);
+    }
+    return pResult;
+}
+
+int drv_GetDbTop(void)
+{
+    int dbTop = 0;
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->GetDbTop(&dbTop);
+    }
+    return dbTop;
+}
+
+const UTF8 **drv_GetInfoTable(void)
+{
+    static const UTF8 *empty[] = { nullptr };
+    const UTF8 **ppTable = nullptr;
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->GetInfoTable(&ppTable);
+    }
+    return ppTable ? ppTable : empty;
+}
+
+// Emergency/signal/shutdown operations.
+//
+void drv_Report(void)
+{
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->Report();
+    }
+}
+
+void drv_PresyncDatabaseSigsegv(void)
+{
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->PresyncDatabaseSigsegv();
+    }
+}
+
+void drv_DoRestart(dbref executor, dbref caller, dbref enactor,
+    int eval, int key)
+{
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->DoRestart(executor, caller, enactor, eval, key);
+    }
+}
+
+void drv_CacheClose(void)
+{
+    if (g_pIGameEngine)
+    {
+        g_pIGameEngine->CacheClose();
+    }
+}
