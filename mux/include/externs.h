@@ -190,6 +190,7 @@ constexpr int DS_PUEBLOCLIENT = 0x0004;      // Client is Pueblo-enhanced.
 constexpr int DS_WEBSOCKET    = 0x0008;      // WebSocket connection (RFC 6455).
 constexpr int DS_WEBSOCKET_HS = 0x0010;      // WebSocket handshake in progress.
 constexpr int DS_NEED_PROTO   = 0x0020;      // Awaiting protocol detection (telnet vs WS).
+constexpr int DS_TLS          = 0x0040;      // Connection uses TLS (GANL transport layer).
 
 // Telnet option helpers (implementations access DESC internals)
 //

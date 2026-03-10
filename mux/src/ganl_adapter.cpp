@@ -698,12 +698,13 @@ public:
             return;
         }
 
-        // Protocol detection on first data from a non-TLS connection.
-        // We deferred telnet initialization so telnet IAC bytes don't
-        // corrupt a potential WebSocket HTTP upgrade handshake.
+        // Protocol detection on first data.  We deferred telnet
+        // initialization so IAC bytes don't corrupt a potential
+        // WebSocket HTTP upgrade handshake (ws:// or wss://).
         //
         if (d->flags & DS_NEED_PROTO)
         {
+            const bool isTls = (d->flags & DS_TLS) != 0;
             d->flags &= ~DS_NEED_PROTO;
 
             if (ws_is_upgrade_request(data.data(), data.size()))
@@ -719,7 +720,7 @@ public:
 
             // Not WebSocket — finalize as a telnet connection.
             //
-            FinalizeGanlConnection(adapter_, d, false);
+            FinalizeGanlConnection(adapter_, d, isTls);
         }
 
         // Feed raw bytes through TinyMUX's existing NVT parser.
@@ -1926,7 +1927,14 @@ void GanlAdapter::process_tinyMUX_tasks() {
         for (auto& pf : ready) {
             DESC* d = get_desc(pf.handle);
             if (d) {
-                FinalizeGanlConnection(*this, d, pf.isTls);
+                // Defer protocol detection to onDataReceived so that
+                // telnet negotiation bytes don't corrupt a wss:// handshake.
+                //
+                d->flags |= DS_NEED_PROTO;
+                if (pf.isTls)
+                {
+                    d->flags |= DS_TLS;
+                }
             }
         }
     }
