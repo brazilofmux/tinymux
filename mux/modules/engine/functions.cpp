@@ -5556,6 +5556,74 @@ static FUNCTION(fun_elock)
     }
 }
 
+// ---------------------------------------------------------------------------
+// lockencode(): Validate and normalize a lock expression to canonical form.
+//
+// lockencode(<lock-string>)
+//
+// Parses the lock expression using the standard lock parser (with name
+// matching), then returns it in the quiet/canonical form with (#N) dbrefs.
+// Returns #-1 error if the expression is invalid.
+//
+static FUNCTION(fun_lockencode)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (fargs[0][0] == '\0')
+    {
+        return;
+    }
+
+    BOOLEXP *okey = parse_boolexp(executor, fargs[0], false);
+    if (okey == TRUE_BOOLEXP)
+    {
+        safe_str(T("#-1 I DON'T UNDERSTAND THAT KEY"), buff, bufc);
+        return;
+    }
+
+    safe_str(unparse_boolexp_quiet(executor, okey), buff, bufc);
+    free_boolexp(okey);
+}
+
+// ---------------------------------------------------------------------------
+// lockdecode(): Convert a canonical lock string to human-readable form.
+//
+// lockdecode(<encoded-string>)
+//
+// Parses a lock expression in internal (#N) format and returns it in
+// the function format with *PlayerName notation.
+//
+static FUNCTION(fun_lockdecode)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (fargs[0][0] == '\0')
+    {
+        return;
+    }
+
+    BOOLEXP *okey = parse_boolexp(executor, fargs[0], true);
+    if (okey == TRUE_BOOLEXP)
+    {
+        safe_str(T("#-1 I DON'T UNDERSTAND THAT KEY"), buff, bufc);
+        return;
+    }
+
+    UTF8 *tbuf = unparse_boolexp_function(executor, okey);
+    safe_str(tbuf, buff, bufc);
+    free_boolexp(okey);
+}
+
 /* ---------------------------------------------------------------------------
  * fun_lwho: Return list of connected users.
  */
@@ -12701,6 +12769,8 @@ static FUN builtin_function_list[] =
     {T("LOCALIZE"),    fun_localize,   MAX_ARG, 1,       1, FN_NOEVAL, CA_PUBLIC},
     {T("LOCATE"),      fun_locate,     MAX_ARG, 3,       3,         0, CA_PUBLIC},
     {T("LOCK"),        fun_lock,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {T("LOCKDECODE"),  fun_lockdecode, MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("LOCKENCODE"),  fun_lockencode, MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("LOG"),         fun_log,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("LOR"),         fun_lor,        MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("LPAD"),        fun_lpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},

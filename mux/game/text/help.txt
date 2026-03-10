@@ -9914,7 +9914,46 @@ LOCK()
     > say lock(myobj,)
     You say, ""
 
-  Related Topics: @lock, @unlock, elock()
+  Related Topics: @lock, @unlock, elock(), lockencode(), lockdecode().
+
+& LOCKENCODE()
+LOCKENCODE()
+
+  FUNCTION: lockencode(<lock-string>)
+
+  Validates and normalizes a lock expression, returning it in canonical
+  form with (#N) dbref notation.  This lets you validate a lock string
+  without actually setting it on an object, and produces a portable
+  representation suitable for storage in attributes.
+
+  Returns "#-1 I DON'T UNDERSTAND THAT KEY" if the expression is invalid.
+
+  Examples:
+    > say lockencode(*Wizard)
+    You say, "(#1)"
+    > say lockencode(*Wizard&!me)
+    You say, "(#1)&!(#226)"
+    > say lockencode(&&&)
+    You say, "#-1 I DON'T UNDERSTAND THAT KEY"
+
+  Related Topics: lockdecode(), lock(), @lock.
+
+& LOCKDECODE()
+LOCKDECODE()
+
+  FUNCTION: lockdecode(<encoded-string>)
+
+  Converts a canonical lock string (with (#N) dbref notation) back to
+  human-readable form with *PlayerName notation.  This is the inverse
+  of lockencode().
+
+  Examples:
+    > say lockdecode((#1))
+    You say, "*Wizard"
+    > say lockdecode((#1)&!(#226))
+    You say, "*Wizard&!*Mortal"
+
+  Related Topics: lockencode(), lock(), @lock.
 
 & LOG()
 LOG()

@@ -24,7 +24,7 @@ the gap between TinyMUX and PennMUSH/RhostMUSH on web integration.
 | 10 | url_escape/url_unescape | **Done** | RFC 3986 percent-encoding. + decoded as space for form compat. |
 | 11 | Template system | TODO | template() presentation/logic separation (Rhost) |
 | 12 | strdistance() | **Done** | Levenshtein edit distance, Unicode-aware. |
-| 13 | lockencode/lockdecode | TODO | Programmatic lock manipulation (Rhost) |
+| 13 | lockencode/lockdecode | **Done** | Validate/normalize lock expressions. lockencode() → canonical (#N) form, lockdecode() → *PlayerName form. |
 | 14 | Regex attr matching | **Done** | reglattr/regnattr/reglattri/regnattri via PCRE2. |
 | 15 | Character classification | **Partial** | isalpha(), isdigit(), isalnum() done via DFA. isunicode()/isutf8() deferred. |
 | 16 | dynhelp() | TODO | Dynamic help from object attributes (Rhost) |

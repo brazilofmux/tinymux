@@ -1,0 +1,142 @@
+#
+# lockencode_fn.mux - Test Cases for lockencode()/lockdecode().
+#
+@create test_lockencode_fn
+-
+@set test_lockencode_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_lockencode_fn=
+  @log smoke=Beginning lockencode()/lockdecode() test cases.
+-
+#
+# Test Case #1 - lockencode with simple object reference.
+# *Wizard should encode to (#1).
+#
+&tr.tc001 test_lockencode_fn=
+  @if strmatch(
+        setr(0,lockencode(*Wizard)),
+        (#1)
+      )=
+  {
+    @log smoke=TC001: lockencode player ref. Succeeded.
+  },
+  {
+    @log smoke=TC001: lockencode player ref. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - lockencode with AND expression.
+#
+&tr.tc002 test_lockencode_fn=
+  @if strmatch(
+        setr(0,lockencode(*Wizard&me)),
+        (#1)&(#*)
+      )=
+  {
+    @log smoke=TC002: lockencode AND. Succeeded.
+  },
+  {
+    @log smoke=TC002: lockencode AND. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - lockencode with OR expression.
+#
+&tr.tc003 test_lockencode_fn=
+  @if strmatch(
+        setr(0,lockencode(*Wizard|me)),
+        (#1)|(#*)
+      )=
+  {
+    @log smoke=TC003: lockencode OR. Succeeded.
+  },
+  {
+    @log smoke=TC003: lockencode OR. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - lockencode with NOT expression.
+#
+&tr.tc004 test_lockencode_fn=
+  @if strmatch(
+        setr(0,lockencode(!*Wizard)),
+        !(#1)
+      )=
+  {
+    @log smoke=TC004: lockencode NOT. Succeeded.
+  },
+  {
+    @log smoke=TC004: lockencode NOT. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - lockencode with invalid expression.
+#
+&tr.tc005 test_lockencode_fn=
+  @if strmatch(
+        setr(0,lockencode(&&&)),
+        #-1 I DON'T UNDERSTAND THAT KEY
+      )=
+  {
+    @log smoke=TC005: lockencode invalid. Succeeded.
+  },
+  {
+    @log smoke=TC005: lockencode invalid. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - lockdecode with NOT expression.
+#
+&tr.tc006 test_lockencode_fn=
+  @if strmatch(
+        setr(0,lockdecode(!(#1))),
+        !*Wizard
+      )=
+  {
+    @log smoke=TC006: lockdecode NOT. Succeeded.
+  },
+  {
+    @log smoke=TC006: lockdecode NOT. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - lockdecode converts (#1) to *Wizard.
+#
+&tr.tc007 test_lockencode_fn=
+  @if strmatch(
+        setr(0,lockdecode(%(#1%))),
+        *Wizard
+      )=
+  {
+    @log smoke=TC007: lockdecode player ref. Succeeded.
+  },
+  {
+    @log smoke=TC007: lockdecode player ref. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - roundtrip: lockdecode(lockencode(X)) preserves semantics.
+#
+&tr.tc008 test_lockencode_fn=
+  @if strmatch(
+        setr(0,lockdecode(lockencode(*Wizard))),
+        *Wizard
+      )=
+  {
+    @log smoke=TC008: roundtrip encode/decode. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC008: roundtrip encode/decode. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_lockencode_fn=
+  @log smoke=End lockencode()/lockdecode() test cases.;
+  @notify smoke
+-
+drop test_lockencode_fn
+-
