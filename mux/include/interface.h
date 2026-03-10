@@ -61,6 +61,7 @@ struct descriptor_data
   int quota;
   struct program_data* program_data;
   ws_state *ws;                            // WebSocket state (nullptr if telnet)
+  int64_t connlog_id;                      // SQLite connlog row (0 if not logged)
 
   mux_sockaddr address;
 

@@ -24,7 +24,7 @@
             [isalpha( )]
           )
         ),
-        5FE8FCE76CCD41B0DCCE96953DD5577D48596409
+        69970CED7C774C603DEFCA271EB6B11F15B125BB
       )=
   {
     @log smoke=TC001: isalpha basic. Succeeded.
@@ -46,7 +46,7 @@
             [isdigit(-5)]
           )
         ),
-        F9788D95E17B31DE62835DDE79BA6F5208C491FD
+        0E6CE05DD9D01E8F360365DEE7648F7EC1645678
       )=
   {
     @log smoke=TC002: isdigit basic. Succeeded.
@@ -68,7 +68,7 @@
             [isalnum()]
           )
         ),
-        8FD1FC2C28887717617AFEC2A2F1548A0F08BC45
+        244A237FBE721E815E0C2A17AE47A46EE658315B
       )=
   {
     @log smoke=TC003: isalnum basic. Succeeded.;

@@ -1,0 +1,88 @@
+#
+# connlog_fn.mux - Test Cases for connlog() and addrlog().
+#
+# NOTE: Smoke tests run via @startup with no player connected, so the
+# connlog table is empty.  We test function recognition, error handling,
+# and empty-result behavior.
+#
+@create test_connlog_fn
+-
+@set test_connlog_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_connlog_fn=
+  @log smoke=Beginning connlog()/addrlog() test cases.
+-
+#
+# Test Case #1 - connlog returns empty when no connections logged.
+#
+&tr.tc001 test_connlog_fn=
+  @if strmatch(
+        setr(0,eq(strlen(connlog(*Wizard,1)),0)),
+        1
+      )=
+  {
+    @log smoke=TC001: connlog empty (no connections). Succeeded.
+  },
+  {
+    @log smoke=TC001: connlog empty (no connections). Failed (%q0).
+  }
+-
+#
+# Test Case #2 - connlog with bad player returns error.
+#
+&tr.tc002 test_connlog_fn=
+  @if strmatch(
+        setr(0,connlog(NoSuchPlayer9999,1)),
+        #-1 PLAYER NOT FOUND
+      )=
+  {
+    @log smoke=TC002: connlog bad player. Succeeded.
+  },
+  {
+    @log smoke=TC002: connlog bad player. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - addrlog returns empty when no connections logged.
+#
+&tr.tc003 test_connlog_fn=
+  @if strmatch(
+        setr(0,eq(strlen(addrlog(%%,1)),0)),
+        1
+      )=
+  {
+    @log smoke=TC003: addrlog empty (no connections). Succeeded.
+  },
+  {
+    @log smoke=TC003: addrlog empty (no connections). Failed (%q0).
+  }
+-
+#
+# Test Case #4 - connlog is a recognized function (not literal passthrough).
+#
+&tr.tc004 test_connlog_fn=
+  @if strmatch(
+        setr(0,not(strmatch(connlog(*Wizard,1),connlog*))),
+        1
+      )=
+  {
+    @log smoke=TC004: connlog recognized as function. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: connlog recognized as function. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_connlog_fn=
+  @log smoke=End connlog()/addrlog() test cases.;
+  @notify smoke
+-
+drop test_connlog_fn
+-
+#
+# End of Test Cases
+#

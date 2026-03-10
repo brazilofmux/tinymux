@@ -581,7 +581,7 @@ void announce_disconnect(const dbref player, DESC *d, const UTF8 *reason)
     bool isSusp = g_access_list.isSuspect(&d->address);
     bool wasAutoDark = (d->flags & DS_AUTODARK) != 0;
     g_pIPlayerSession->AnnounceDisconnect(player, num,
-        isSusp, wasAutoDark, reason);
+        isSusp, wasAutoDark, reason, d->connlog_id);
     desc_delhash(d);
 }
 
@@ -1961,7 +1961,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 int timeout = g_dc.idle_timeout;
                 g_pIPlayerSession->AnnounceConnect(player, num_con,
                     isPueblo, isSusp, d->addr, d->username, host_address,
-                    &timeout);
+                    &timeout, &d->connlog_id);
                 d->timeout = timeout;
             }
 
@@ -2071,7 +2071,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                     int timeout = g_dc.idle_timeout;
                     g_pIPlayerSession->AnnounceConnect(player, 1,
                         isPueblo, isSusp, d->addr, d->username,
-                        crea_host, &timeout);
+                        crea_host, &timeout, &d->connlog_id);
                     d->timeout = timeout;
                 }
             }
@@ -3383,6 +3383,7 @@ void load_restart_db(void)
         d->nOption = 0;
         d->quota = g_dc.cmd_quota_max;
         d->program_data = nullptr;
+        d->connlog_id = 0;
 
         auto it = g_descriptors_list.insert(g_descriptors_list.end(), d);
         g_descriptors_map.insert(make_pair(d, it));

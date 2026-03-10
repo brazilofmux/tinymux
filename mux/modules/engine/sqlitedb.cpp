@@ -68,6 +68,10 @@ CSQLiteDB::CSQLiteDB()
       m_stmtMailHeaderLoadAll(nullptr),
       m_stmtMailBodyLoadAll(nullptr),
       m_stmtMailAliasLoadAll(nullptr),
+      m_stmtConnlogInsert(nullptr),
+      m_stmtConnlogUpdate(nullptr),
+      m_stmtConnlogByPlayer(nullptr),
+      m_stmtConnlogByAddr(nullptr),
       m_stats{}
 {
 }
@@ -264,6 +268,18 @@ bool CSQLiteDB::CreateSchema()
         "    members     TEXT NOT NULL DEFAULT ''"
         ");"
 
+        // Connection log (audit trail).
+        //
+        "CREATE TABLE IF NOT EXISTS connlog ("
+        "    id              INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "    player          INTEGER NOT NULL,"
+        "    connect_time    INTEGER NOT NULL,"
+        "    disconnect_time INTEGER NOT NULL DEFAULT 0,"
+        "    host            TEXT NOT NULL DEFAULT '',"
+        "    ipaddr          TEXT NOT NULL DEFAULT '',"
+        "    reason          TEXT NOT NULL DEFAULT ''"
+        ");"
+
         // Secondary indexes for common query patterns.
         //
         "CREATE INDEX IF NOT EXISTS idx_objects_owner ON objects(owner);"
@@ -273,7 +289,10 @@ bool CSQLiteDB::CreateSchema()
         "CREATE INDEX IF NOT EXISTS idx_mail_headers_to ON mail_headers(to_player);"
         "CREATE INDEX IF NOT EXISTS idx_channel_users_who ON channel_users(who);"
         "CREATE INDEX IF NOT EXISTS idx_player_channels_channel"
-        "    ON player_channels(channel_name);";
+        "    ON player_channels(channel_name);"
+        "CREATE INDEX IF NOT EXISTS idx_connlog_player ON connlog(player);"
+        "CREATE INDEX IF NOT EXISTS idx_connlog_time ON connlog(connect_time);"
+        "CREATE INDEX IF NOT EXISTS idx_connlog_ipaddr ON connlog(ipaddr);";
 
     char *errmsg = nullptr;
     int rc = sqlite3_exec(m_db, schema, nullptr, nullptr, &errmsg);
@@ -317,7 +336,7 @@ static bool RunMigration(sqlite3 *db, const char *sql, int target_version)
 
 bool CSQLiteDB::MigrateSchema()
 {
-    static const int CURRENT_SCHEMA_VERSION = 5;
+    static const int CURRENT_SCHEMA_VERSION = 6;
 
     int version = 0;
     sqlite3_stmt *stmt = nullptr;
@@ -491,6 +510,37 @@ bool CSQLiteDB::MigrateSchema()
             return false;
         }
         version = 5;
+    }
+
+    // ---------------------------------------------------------------
+    // v5 -> v6: add connlog table for connection audit trail.
+    // ---------------------------------------------------------------
+    //
+    if (version < 6)
+    {
+        const char *migration_v6 =
+            "BEGIN;"
+            "CREATE TABLE IF NOT EXISTS connlog ("
+            "    id              INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "    player          INTEGER NOT NULL,"
+            "    connect_time    INTEGER NOT NULL,"
+            "    disconnect_time INTEGER NOT NULL DEFAULT 0,"
+            "    host            TEXT NOT NULL DEFAULT '',"
+            "    ipaddr          TEXT NOT NULL DEFAULT '',"
+            "    reason          TEXT NOT NULL DEFAULT ''"
+            ");"
+            "CREATE INDEX IF NOT EXISTS idx_connlog_player ON connlog(player);"
+            "CREATE INDEX IF NOT EXISTS idx_connlog_time ON connlog(connect_time);"
+            "CREATE INDEX IF NOT EXISTS idx_connlog_ipaddr ON connlog(ipaddr);"
+            "INSERT OR REPLACE INTO metadata(key, value)"
+            "    VALUES('schema_version', 6);"
+            "COMMIT;";
+
+        if (!RunMigration(m_db, migration_v6, 6))
+        {
+            return false;
+        }
+        version = 6;
     }
 
     // Log any FK violations (informational, not fatal).
@@ -791,6 +841,39 @@ bool CSQLiteDB::PrepareStatements()
         return false;
     }
 
+    // Connlog statements.
+    //
+    if (!Prepare(m_db,
+        "INSERT INTO connlog (player, connect_time, host, ipaddr)"
+        " VALUES (?, ?, ?, ?)",
+        &m_stmtConnlogInsert))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "UPDATE connlog SET disconnect_time=?, reason=? WHERE id=?",
+        &m_stmtConnlogUpdate))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "SELECT id, player, connect_time, disconnect_time, host, ipaddr, reason"
+        " FROM connlog WHERE player=? ORDER BY connect_time DESC LIMIT ?",
+        &m_stmtConnlogByPlayer))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "SELECT id, player, connect_time, disconnect_time, host, ipaddr, reason"
+        " FROM connlog WHERE ipaddr LIKE ? ORDER BY connect_time DESC LIMIT ?",
+        &m_stmtConnlogByAddr))
+    {
+        return false;
+    }
+
     return true;
 }
 
@@ -852,6 +935,10 @@ void CSQLiteDB::FinalizeStatements()
     Finalize(&m_stmtMailHeaderLoadAll);
     Finalize(&m_stmtMailBodyLoadAll);
     Finalize(&m_stmtMailAliasLoadAll);
+    Finalize(&m_stmtConnlogInsert);
+    Finalize(&m_stmtConnlogUpdate);
+    Finalize(&m_stmtConnlogByPlayer);
+    Finalize(&m_stmtConnlogByAddr);
 }
 
 // ---------------------------------------------------------------------------
@@ -1355,6 +1442,107 @@ static bool RunSearch(sqlite3 *db, const char *sql,
     sqlite3_finalize(stmt);
     return SQLITE_DONE == rc;
 }
+
+// ---------------------------------------------------------------------------
+// Connection log operations
+// ---------------------------------------------------------------------------
+
+int64_t CSQLiteDB::ConnlogInsert(dbref player, int64_t connect_time,
+                                  const UTF8 *host, const UTF8 *ipaddr)
+{
+    sqlite3_reset(m_stmtConnlogInsert);
+    sqlite3_bind_int(m_stmtConnlogInsert, 1, player);
+    sqlite3_bind_int64(m_stmtConnlogInsert, 2, connect_time);
+    sqlite3_bind_text(m_stmtConnlogInsert, 3,
+        reinterpret_cast<const char *>(host), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(m_stmtConnlogInsert, 4,
+        reinterpret_cast<const char *>(ipaddr), -1, SQLITE_TRANSIENT);
+
+    if (SQLITE_DONE != sqlite3_step(m_stmtConnlogInsert))
+    {
+        fprintf(stderr, "CSQLiteDB::ConnlogInsert: %s\n",
+            sqlite3_errmsg(m_db));
+        return -1;
+    }
+    return sqlite3_last_insert_rowid(m_db);
+}
+
+bool CSQLiteDB::ConnlogUpdate(int64_t id, int64_t disconnect_time,
+                               const UTF8 *reason)
+{
+    sqlite3_reset(m_stmtConnlogUpdate);
+    sqlite3_bind_int64(m_stmtConnlogUpdate, 1, disconnect_time);
+    sqlite3_bind_text(m_stmtConnlogUpdate, 2,
+        reinterpret_cast<const char *>(reason), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int64(m_stmtConnlogUpdate, 3, id);
+
+    if (SQLITE_DONE != sqlite3_step(m_stmtConnlogUpdate))
+    {
+        fprintf(stderr, "CSQLiteDB::ConnlogUpdate: %s\n",
+            sqlite3_errmsg(m_db));
+        return false;
+    }
+    return true;
+}
+
+bool CSQLiteDB::ConnlogByPlayer(dbref player, int limit, ConnlogCallback cb)
+{
+    sqlite3_reset(m_stmtConnlogByPlayer);
+    sqlite3_bind_int(m_stmtConnlogByPlayer, 1, player);
+    sqlite3_bind_int(m_stmtConnlogByPlayer, 2, limit);
+
+    int rc;
+    while (SQLITE_ROW == (rc = sqlite3_step(m_stmtConnlogByPlayer)))
+    {
+        cb(sqlite3_column_int64(m_stmtConnlogByPlayer, 0),
+           sqlite3_column_int(m_stmtConnlogByPlayer, 1),
+           sqlite3_column_int64(m_stmtConnlogByPlayer, 2),
+           sqlite3_column_int64(m_stmtConnlogByPlayer, 3),
+           reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtConnlogByPlayer, 4)),
+           reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtConnlogByPlayer, 5)),
+           reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtConnlogByPlayer, 6)));
+    }
+
+    if (SQLITE_DONE != rc)
+    {
+        fprintf(stderr, "CSQLiteDB::ConnlogByPlayer: %s\n",
+            sqlite3_errmsg(m_db));
+        return false;
+    }
+    return true;
+}
+
+bool CSQLiteDB::ConnlogByAddr(const UTF8 *ipaddr, int limit, ConnlogCallback cb)
+{
+    sqlite3_reset(m_stmtConnlogByAddr);
+    sqlite3_bind_text(m_stmtConnlogByAddr, 1,
+        reinterpret_cast<const char *>(ipaddr), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(m_stmtConnlogByAddr, 2, limit);
+
+    int rc;
+    while (SQLITE_ROW == (rc = sqlite3_step(m_stmtConnlogByAddr)))
+    {
+        cb(sqlite3_column_int64(m_stmtConnlogByAddr, 0),
+           sqlite3_column_int(m_stmtConnlogByAddr, 1),
+           sqlite3_column_int64(m_stmtConnlogByAddr, 2),
+           sqlite3_column_int64(m_stmtConnlogByAddr, 3),
+           reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtConnlogByAddr, 4)),
+           reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtConnlogByAddr, 5)),
+           reinterpret_cast<const UTF8 *>(sqlite3_column_text(m_stmtConnlogByAddr, 6)));
+    }
+
+    if (SQLITE_DONE != rc)
+    {
+        fprintf(stderr, "CSQLiteDB::ConnlogByAddr: %s\n",
+            sqlite3_errmsg(m_db));
+        return false;
+    }
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// Search operations
+// ---------------------------------------------------------------------------
 
 bool CSQLiteDB::SearchByOwner(dbref owner, int type, dbref low, dbref high,
                               SearchCallback cb)

@@ -1081,7 +1081,7 @@ public:
             int timeout = g_dc.idle_timeout;
             g_pIPlayerSession->AnnounceConnect(player, numConnections,
                 isPueblo, isSusp, d->addr, d->username, hostAddress,
-                &timeout);
+                &timeout, &d->connlog_id);
             d->timeout = timeout;
         }
 

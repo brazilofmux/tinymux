@@ -8,6 +8,7 @@
 #include "config.h"
 #include "externs.h"
 #include "ast.h"
+#include "sqlite_backend.h"
 using namespace std;
 
 // Factory class declaration — internal to engine.so (no DCL_EXPORT).
@@ -11538,6 +11539,131 @@ static FUNCTION(fun_isalnum)
 }
 
 // ---------------------------------------------------------------------------
+// fun_connlog: connlog(<player>[, <limit>])
+//
+// Returns connection log entries for <player>.  Each entry is a pipe-delimited
+// record: id|player|connect_time|disconnect_time|host|ipaddr|reason
+// Records are separated by newlines.  Default limit is 10, max 100.
+//
+static FUNCTION(fun_connlog)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    dbref target = lookup_player(executor, fargs[0], true);
+    if (!Good_obj(target))
+    {
+        safe_str(T("#-1 PLAYER NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    // Permission: must be the player themselves or a Wizard.
+    //
+    if (  executor != target
+       && !Wizard(executor))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    int limit = 10;
+    if (nfargs >= 2)
+    {
+        limit = mux_atol(fargs[1]);
+        if (limit < 1) limit = 1;
+        if (limit > 100) limit = 100;
+    }
+
+    bool bFirst = true;
+    g_pSQLiteBackend->GetDB().ConnlogByPlayer(target, limit,
+        [&](int64_t id, dbref player, int64_t connect_time,
+            int64_t disconnect_time, const UTF8 *host,
+            const UTF8 *ipaddr, const UTF8 *reason)
+        {
+            if (!bFirst)
+            {
+                safe_str(T("\r\n"), buff, bufc);
+            }
+            bFirst = false;
+
+            safe_i64toa(id, buff, bufc);
+            safe_chr('|', buff, bufc);
+            safe_chr('#', buff, bufc);
+            safe_ltoa(player, buff, bufc);
+            safe_chr('|', buff, bufc);
+            safe_i64toa(connect_time, buff, bufc);
+            safe_chr('|', buff, bufc);
+            safe_i64toa(disconnect_time, buff, bufc);
+            safe_chr('|', buff, bufc);
+            if (host) safe_str(host, buff, bufc);
+            safe_chr('|', buff, bufc);
+            if (ipaddr) safe_str(ipaddr, buff, bufc);
+            safe_chr('|', buff, bufc);
+            if (reason) safe_str(reason, buff, bufc);
+        });
+}
+
+// ---------------------------------------------------------------------------
+// fun_addrlog: addrlog(<ipaddr-pattern>[, <limit>])
+//
+// Returns connection log entries matching an IP address pattern (SQL LIKE).
+// Wizard-only.  Each entry is pipe-delimited like connlog().
+//
+static FUNCTION(fun_addrlog)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (!Wizard(executor))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    int limit = 10;
+    if (nfargs >= 2)
+    {
+        limit = mux_atol(fargs[1]);
+        if (limit < 1) limit = 1;
+        if (limit > 100) limit = 100;
+    }
+
+    bool bFirst = true;
+    g_pSQLiteBackend->GetDB().ConnlogByAddr(fargs[0], limit,
+        [&](int64_t id, dbref player, int64_t connect_time,
+            int64_t disconnect_time, const UTF8 *host,
+            const UTF8 *ipaddr, const UTF8 *reason)
+        {
+            if (!bFirst)
+            {
+                safe_str(T("\r\n"), buff, bufc);
+            }
+            bFirst = false;
+
+            safe_i64toa(id, buff, bufc);
+            safe_chr('|', buff, bufc);
+            safe_chr('#', buff, bufc);
+            safe_ltoa(player, buff, bufc);
+            safe_chr('|', buff, bufc);
+            safe_i64toa(connect_time, buff, bufc);
+            safe_chr('|', buff, bufc);
+            safe_i64toa(disconnect_time, buff, bufc);
+            safe_chr('|', buff, bufc);
+            if (host) safe_str(host, buff, bufc);
+            safe_chr('|', buff, bufc);
+            if (ipaddr) safe_str(ipaddr, buff, bufc);
+            safe_chr('|', buff, bufc);
+            if (reason) safe_str(reason, buff, bufc);
+        });
+}
+
+// ---------------------------------------------------------------------------
 // fun_chr:
 //
 // Takes an integer and returns the corresponding character from the character
@@ -12048,6 +12174,7 @@ static FUN builtin_function_list[] =
     {T("ACCENT"),      fun_accent,     MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("ACOS"),        fun_acos,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("ADD"),         fun_add,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {T("ADDRLOG"),     fun_addrlog,    MAX_ARG, 1,       2,         0, CA_WIZARD},
     {T("AFTER"),       fun_after,      MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("ALPHAMAX"),    fun_alphamax,   MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {T("ALPHAMIN"),    fun_alphamin,   MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
@@ -12099,6 +12226,7 @@ static FUN builtin_function_list[] =
     {T("CONN"),        fun_conn,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("CONNLAST"),    fun_connlast,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("CONNLEFT"),    fun_connleft,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("CONNLOG"),     fun_connlog,    MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("CONNMAX"),     fun_connmax,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("CONNNUM"),     fun_connnum,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("CONNRECORD"),  fun_connrecord, MAX_ARG, 0,       0,         0, CA_PUBLIC},

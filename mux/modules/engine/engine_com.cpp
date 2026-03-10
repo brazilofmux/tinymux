@@ -3928,9 +3928,11 @@ public:
     virtual MUX_RESULT AddToPlayerChannels(dbref player);
     virtual MUX_RESULT AnnounceConnect(dbref player, int numConnections,
         bool isPueblo, bool isSuspect, const UTF8 *host,
-        const UTF8 *username, const UTF8 *ipaddr, int *pTimeout);
+        const UTF8 *username, const UTF8 *ipaddr, int *pTimeout,
+        int64_t *pConnlogId);
     virtual MUX_RESULT AnnounceDisconnect(dbref player, int numConnections,
-        bool isSuspect, bool wasAutoDark, const UTF8 *reason);
+        bool isSuspect, bool wasAutoDark, const UTF8 *reason,
+        int64_t connlogId);
     virtual MUX_RESULT FcacheSend(DESC *d, int num);
     virtual MUX_RESULT FcacheRawSend(SOCKET fd, int num);
     virtual MUX_RESULT CreateGuest(DESC *d, const UTF8 **ppName);
@@ -4027,7 +4029,8 @@ MUX_RESULT CPlayerSession::AddToPlayerChannels(dbref player)
 
 MUX_RESULT CPlayerSession::AnnounceConnect(dbref player, int numConnections,
     bool isPueblo, bool isSuspect, const UTF8 *host,
-    const UTF8 *username, const UTF8 *ipaddr, int *pTimeout)
+    const UTF8 *username, const UTF8 *ipaddr, int *pTimeout,
+    int64_t *pConnlogId)
 {
     // Preload built-in attributes for the player and their location.
     //
@@ -4276,6 +4279,17 @@ MUX_RESULT CPlayerSession::AnnounceConnect(dbref player, int numConnections,
     ltaNow.GetLocal();
     const UTF8 *time_str = ltaNow.ReturnDateString(7);
     record_login(player, true, time_str, host, username, ipaddr);
+
+    // Log connection to connlog table.
+    //
+    if (nullptr != pConnlogId)
+    {
+        CLinearTimeAbsolute ltaUtc;
+        ltaUtc.GetUTC();
+        int64_t utcSeconds = ltaUtc.ReturnSeconds();
+        *pConnlogId = g_pSQLiteBackend->GetDB().ConnlogInsert(
+            player, utcSeconds, host, ipaddr);
+    }
     check_mail(player, 0, false);
     look_in(player, Location(player), (LK_SHOWEXIT|LK_OBEYTERSE|LK_SHOWVRML));
     mudstate.curr_enactor = temp;
@@ -4294,8 +4308,18 @@ MUX_RESULT CPlayerSession::AnnounceConnect(dbref player, int numConnections,
 
 MUX_RESULT CPlayerSession::AnnounceDisconnect(dbref player,
     int numConnections, bool isSuspect, bool wasAutoDark,
-    const UTF8 *reason)
+    const UTF8 *reason, int64_t connlogId)
 {
+    // Update connlog row with disconnect time and reason.
+    //
+    if (0 != connlogId)
+    {
+        CLinearTimeAbsolute ltaUtc;
+        ltaUtc.GetUTC();
+        int64_t utcSeconds = ltaUtc.ReturnSeconds();
+        g_pSQLiteBackend->GetDB().ConnlogUpdate(connlogId, utcSeconds, reason);
+    }
+
     int key;
     const dbref temp = mudstate.curr_enactor;
     mudstate.curr_enactor = player;

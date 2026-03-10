@@ -4391,6 +4391,27 @@ ADD()
   Related Topics: dec(), iadd(), idiv(), imul(), inc(), isub(),
             fdiv(), mod(), mul(), sub().
 
+& ADDRLOG()
+ADDRLOG()
+
+  FUNCTION: addrlog(<ipaddr-pattern>[, <limit>])
+
+  Wizard-only.  Returns connection log entries whose IP address matches
+  <ipaddr-pattern> using SQL LIKE pattern matching (% for any sequence of
+  characters, _ for a single character).  Each entry is a pipe-delimited
+  record:
+
+    id|#dbref|connect_time|disconnect_time|host|ipaddr|reason
+
+  Times are Unix epoch seconds.  A disconnect_time of 0 means the session
+  is still active.  Default <limit> is 10, maximum 100.
+
+  Example:
+    > think addrlog(192.168.%, 5)
+    42|#1|1741500000|1741503600|localhost|192.168.1.10|quit
+
+  Related Topics: connlog().
+
 & ADDCOM
 ADDCOM
 
@@ -6089,6 +6110,27 @@ CONNTOTAL()
 
   Related Topics: connmax(), connlast(), connnum(), connleft(), secs(),
       conn().
+
+& CONNLOG()
+CONNLOG()
+
+  FUNCTION: connlog(<player>[, <limit>])
+
+  Returns connection log entries for <player>.  You must be the player
+  or a Wizard.  Each entry is a pipe-delimited record:
+
+    id|#dbref|connect_time|disconnect_time|host|ipaddr|reason
+
+  Times are Unix epoch seconds.  A disconnect_time of 0 means the session
+  is still active.  Default <limit> is 10, maximum 100.
+
+  Example:
+    > think connlog(%#, 3)
+    42|#1|1741500000|1741503600|localhost|127.0.0.1|quit
+    41|#1|1741400000|1741403600|localhost|127.0.0.1|quit
+    40|#1|1741300000|1741303600|localhost|127.0.0.1|quit
+
+  Related Topics: addrlog(), conn(), connlast(), connmax(), conntotal().
 
 & CONTROL
 CONTROL

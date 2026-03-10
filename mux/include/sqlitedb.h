@@ -197,6 +197,19 @@ public:
         const UTF8 *desc, int desc_width, const UTF8 *members)> MailAliasCallback;
     bool LoadAllMailAliases(MailAliasCallback cb);
 
+    // Connection log operations (audit trail).
+    //
+    int64_t ConnlogInsert(dbref player, int64_t connect_time,
+                          const UTF8 *host, const UTF8 *ipaddr);
+    bool ConnlogUpdate(int64_t id, int64_t disconnect_time,
+                       const UTF8 *reason);
+    typedef std::function<void(int64_t id, dbref player,
+        int64_t connect_time, int64_t disconnect_time,
+        const UTF8 *host, const UTF8 *ipaddr,
+        const UTF8 *reason)> ConnlogCallback;
+    bool ConnlogByPlayer(dbref player, int limit, ConnlogCallback cb);
+    bool ConnlogByAddr(const UTF8 *ipaddr, int limit, ConnlogCallback cb);
+
     // Search queries.
     // These return non-GOING dbrefs matching the criteria, ordered by dbref.
     // The callback receives each matching dbref.
@@ -296,6 +309,13 @@ private:
     sqlite3_stmt *m_stmtMailHeaderLoadAll;
     sqlite3_stmt *m_stmtMailBodyLoadAll;
     sqlite3_stmt *m_stmtMailAliasLoadAll;
+
+    // Connlog statements.
+    //
+    sqlite3_stmt *m_stmtConnlogInsert;
+    sqlite3_stmt *m_stmtConnlogUpdate;
+    sqlite3_stmt *m_stmtConnlogByPlayer;
+    sqlite3_stmt *m_stmtConnlogByAddr;
 
     Stats m_stats;
 

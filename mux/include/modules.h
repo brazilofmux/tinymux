@@ -789,15 +789,18 @@ public:
     //
     virtual MUX_RESULT AnnounceConnect(dbref player, int numConnections,
         bool isPueblo, bool isSuspect, const UTF8 *host,
-        const UTF8 *username, const UTF8 *ipaddr, int *pTimeout) = 0;
+        const UTF8 *username, const UTF8 *ipaddr, int *pTimeout,
+        int64_t *pConnlogId) = 0;
 
     // Engine-side disconnect announcement: room/monitor messages,
     // ADISCONNECT triggers, do_comdisconnect, mail purge, flag cleanup.
     //   numConnections: total connections BEFORE this one drops.
     //   wasAutoDark:    true if the DESC had DS_AUTODARK set.
+    //   connlogId:      connlog row id from AnnounceConnect (0 if none).
     //
     virtual MUX_RESULT AnnounceDisconnect(dbref player, int numConnections,
-        bool isSuspect, bool wasAutoDark, const UTF8 *reason) = 0;
+        bool isSuspect, bool wasAutoDark, const UTF8 *reason,
+        int64_t connlogId) = 0;
 
     // Send a cached text file (welcome, MOTD, etc.) to a descriptor.
     // num is an FC_* constant.  The engine reads its fcache and queues
