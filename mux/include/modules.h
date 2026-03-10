@@ -349,6 +349,103 @@ public:
     virtual MUX_RESULT HasCommAll(dbref obj, bool *pCommAll) = 0;
 };
 
+// Storage interfaces — engine-provided access to the shared SQLite
+// database.  Modules call these instead of linking sqlite3 directly.
+//
+const MUX_CID CID_ComsysStorage         = UINT64_C(0x00000002A3B4C5D6);
+const MUX_IID IID_IComsysStorage        = UINT64_C(0x00000002B4C5D6E7);
+const MUX_CID CID_MailStorage           = UINT64_C(0x00000002C5D6E7F8);
+const MUX_IID IID_IMailStorage          = UINT64_C(0x00000002D6E7F809);
+
+// Callback typedefs for bulk-load operations (C function pointers for
+// ABI safety across .so boundaries).
+//
+typedef void (*PFN_CHANNEL_CB)(void *context,
+    const UTF8 *name, const UTF8 *header,
+    int type, int temp1, int temp2, int charge, int charge_who,
+    int amount_col, int num_messages, int chan_obj);
+
+typedef void (*PFN_CHANNEL_USER_CB)(void *context,
+    const UTF8 *channel_name, int who,
+    bool is_on, bool comtitle_status, bool gag_join_leave,
+    const UTF8 *title);
+
+typedef void (*PFN_PLAYER_CHANNEL_CB)(void *context,
+    int who, const UTF8 *alias, const UTF8 *channel_name);
+
+typedef void (*PFN_MAIL_HEADER_CB)(void *context,
+    int64_t rowid, int to_player, int from_player, int body_number,
+    const UTF8 *tolist, const UTF8 *time_str, const UTF8 *subject,
+    int read_flags);
+
+typedef void (*PFN_MAIL_BODY_CB)(void *context,
+    int number, const UTF8 *message);
+
+typedef void (*PFN_MAIL_ALIAS_CB)(void *context,
+    int owner, const UTF8 *name, const UTF8 *desc,
+    int desc_width, const UTF8 *members);
+
+interface mux_IComsysStorage : public mux_IUnknown
+{
+public:
+    // Bulk load (called once at module initialization).
+    //
+    virtual MUX_RESULT LoadAllChannels(PFN_CHANNEL_CB pfn, void *context) = 0;
+    virtual MUX_RESULT LoadAllChannelUsers(PFN_CHANNEL_USER_CB pfn, void *context) = 0;
+    virtual MUX_RESULT LoadAllPlayerChannels(PFN_PLAYER_CHANNEL_CB pfn, void *context) = 0;
+
+    // Write-through.
+    //
+    virtual MUX_RESULT SyncChannel(const UTF8 *name, const UTF8 *header,
+        int type, int temp1, int temp2, int charge, int charge_who,
+        int amount_col, int num_messages, int chan_obj) = 0;
+    virtual MUX_RESULT SyncChannelUser(const UTF8 *channel_name, int who,
+        bool is_on, bool comtitle_status, bool gag_join_leave,
+        const UTF8 *title) = 0;
+    virtual MUX_RESULT SyncPlayerChannel(int who, const UTF8 *alias,
+        const UTF8 *channel_name) = 0;
+
+    // Delete.
+    //
+    virtual MUX_RESULT DeleteChannel(const UTF8 *name) = 0;
+    virtual MUX_RESULT DeleteChannelUser(const UTF8 *channel_name, int who) = 0;
+    virtual MUX_RESULT DeletePlayerChannel(int who, const UTF8 *alias) = 0;
+    virtual MUX_RESULT DeleteAllPlayerChannels(int who) = 0;
+    virtual MUX_RESULT ClearComsysTables(void) = 0;
+};
+
+interface mux_IMailStorage : public mux_IUnknown
+{
+public:
+    // Bulk load.
+    //
+    virtual MUX_RESULT LoadAllMailHeaders(PFN_MAIL_HEADER_CB pfn, void *context) = 0;
+    virtual MUX_RESULT LoadAllMailBodies(PFN_MAIL_BODY_CB pfn, void *context) = 0;
+    virtual MUX_RESULT LoadAllMailAliases(PFN_MAIL_ALIAS_CB pfn, void *context) = 0;
+    virtual MUX_RESULT GetMeta(const UTF8 *key, int *pValue) = 0;
+
+    // Write-through: headers.
+    //
+    virtual MUX_RESULT InsertMailHeader(int to_player, int from_player,
+        int body_number, const UTF8 *tolist, const UTF8 *time_str,
+        const UTF8 *subject, int read_flags, int64_t *pRowid) = 0;
+    virtual MUX_RESULT UpdateMailReadFlags(int64_t rowid, int read_flags) = 0;
+    virtual MUX_RESULT DeleteMailHeader(int64_t rowid) = 0;
+    virtual MUX_RESULT DeleteAllMailHeaders(int to_player) = 0;
+
+    // Write-through: bodies.
+    //
+    virtual MUX_RESULT SyncMailBody(int number, const UTF8 *message) = 0;
+    virtual MUX_RESULT DeleteMailBody(int number) = 0;
+
+    // Write-through: aliases.
+    //
+    virtual MUX_RESULT SyncMailAlias(int owner, const UTF8 *name,
+        const UTF8 *desc, int desc_width, const UTF8 *members) = 0;
+    virtual MUX_RESULT ClearMailAliases(void) = 0;
+    virtual MUX_RESULT ClearMailTables(void) = 0;
+};
+
 // Comsys module — channel system provided by loadable module.
 //
 // mux_IComsysControl is obtained by the server at startup.
@@ -360,10 +457,10 @@ const MUX_IID IID_IComsysControl        = UINT64_C(0x000000028E4B63D7);
 interface mux_IComsysControl : public mux_IUnknown
 {
 public:
-    // One-time initialization: pass the SQLite database path so the
-    // module can open its own connection.
+    // One-time initialization: the engine passes a storage interface
+    // so the module accesses SQLite through the engine's connection.
     //
-    virtual MUX_RESULT Initialize(const UTF8 *pDatabasePath) = 0;
+    virtual MUX_RESULT Initialize(mux_IComsysStorage *pStorage) = 0;
 
     // Connection events.
     //
@@ -430,9 +527,10 @@ const MUX_IID IID_IMailControl          = UINT64_C(0x00000002F9C84D62);
 interface mux_IMailControl : public mux_IUnknown
 {
 public:
-    // One-time initialization: pass the SQLite database path and config.
+    // One-time initialization: the engine passes a storage interface
+    // so the module accesses SQLite through the engine's connection.
     //
-    virtual MUX_RESULT Initialize(const UTF8 *pDatabasePath,
+    virtual MUX_RESULT Initialize(mux_IMailStorage *pStorage,
         int mail_expiration, int mail_per_player) = 0;
 
     // Connection events.

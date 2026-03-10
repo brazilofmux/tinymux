@@ -8,7 +8,6 @@
 #ifndef MAIL_MOD_H
 #define MAIL_MOD_H
 
-#include <sqlite3.h>
 #include <map>
 #include <unordered_map>
 #include <vector>
@@ -176,9 +175,9 @@ private:
     mux_IPermissions          *m_pIPermissions;
     mux_IMailDelivery         *m_pIMailDelivery;
 
-    // SQLite connection — module's own handle to the game database.
+    // Storage interface — provided by the engine via Initialize().
     //
-    sqlite3 *m_db;
+    mux_IMailStorage *m_pIStorage;
 
     // Configuration (passed via Initialize).
     //
@@ -200,8 +199,6 @@ private:
 
     // Internal helpers.
     //
-    bool OpenDatabase(const UTF8 *pPath);
-    void CloseDatabase(void);
     bool LoadMailBodies(void);
     bool LoadMailHeaders(void);
     bool LoadMailAliases(void);
@@ -344,7 +341,7 @@ public:
 
     // mux_IMailControl
     //
-    MUX_RESULT Initialize(const UTF8 *pDatabasePath,
+    MUX_RESULT Initialize(mux_IMailStorage *pStorage,
         int mail_expiration, int mail_per_player) override;
     MUX_RESULT PlayerConnect(dbref player) override;
     MUX_RESULT PlayerNuke(dbref player) override;

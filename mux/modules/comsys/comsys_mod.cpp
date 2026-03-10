@@ -101,7 +101,7 @@ CComsysMod::CComsysMod(void) : m_cRef(1),
     m_pIAttributeAccess(nullptr),
     m_pIEvaluator(nullptr),
     m_pIPermissions(nullptr),
-    m_db(nullptr),
+    m_pIStorage(nullptr),
     m_num_channels(0)
 {
     memset(m_comsys_table, 0, sizeof(m_comsys_table));
@@ -180,9 +180,13 @@ MUX_RESULT CComsysMod::FinalConstruct(void)
 
 CComsysMod::~CComsysMod()
 {
-    // Close our SQLite connection.
+    // Release the storage interface.
     //
-    CloseDatabase();
+    if (nullptr != m_pIStorage)
+    {
+        m_pIStorage->Release();
+        m_pIStorage = nullptr;
+    }
 
     // Free channel data.
     //
@@ -331,204 +335,118 @@ uint32_t CComsysMod::Release(void)
 }
 
 // ---------------------------------------------------------------------------
-// SQLite database access — module's own connection.
-// ---------------------------------------------------------------------------
-
-bool CComsysMod::OpenDatabase(const UTF8 *pPath)
-{
-    if (nullptr != m_db)
-    {
-        return true;
-    }
-
-    int rc = sqlite3_open(reinterpret_cast<const char *>(pPath), &m_db);
-    if (SQLITE_OK != rc)
-    {
-        if (nullptr != m_pILog)
-        {
-            bool fStarted;
-            m_pILog->start_log(&fStarted, LOG_ALWAYS, T("COM"), T("DB"));
-            if (fStarted)
-            {
-                m_pILog->log_text(T("Comsys module: sqlite3_open failed: "));
-                m_pILog->log_text(reinterpret_cast<const UTF8 *>(
-                    sqlite3_errmsg(m_db)));
-                m_pILog->end_log();
-            }
-        }
-        sqlite3_close(m_db);
-        m_db = nullptr;
-        return false;
-    }
-
-    // Match server pragmas for WAL mode.
-    //
-    sqlite3_exec(m_db, "PRAGMA journal_mode=WAL;", nullptr, nullptr, nullptr);
-    sqlite3_exec(m_db, "PRAGMA busy_timeout=5000;", nullptr, nullptr, nullptr);
-
-    return true;
-}
-
-void CComsysMod::CloseDatabase(void)
-{
-    if (nullptr != m_db)
-    {
-        sqlite3_close(m_db);
-        m_db = nullptr;
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Channel data loading from SQLite.
+// Channel data loading via engine storage interface.
 // ---------------------------------------------------------------------------
 
 bool CComsysMod::LoadChannels(void)
 {
-    if (nullptr == m_db)
+    if (nullptr == m_pIStorage)
     {
         return false;
     }
 
-    const char *sql = "SELECT name, header, type, temp1, temp2, charge, "
-                      "charge_who, amount_col, num_messages, chan_obj "
-                      "FROM channels;";
-
-    sqlite3_stmt *stmt = nullptr;
-    int rc = sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr);
-    if (SQLITE_OK != rc)
-    {
-        return false;
-    }
-
-    while (SQLITE_ROW == sqlite3_step(stmt))
-    {
-        struct channel *ch = static_cast<struct channel *>(
-            calloc(1, sizeof(struct channel)));
-        if (nullptr == ch)
+    MUX_RESULT mr = m_pIStorage->LoadAllChannels(
+        [](void *ctx, const UTF8 *name, const UTF8 *header,
+            int type, int temp1, int temp2, int charge, int charge_who,
+            int amount_col, int num_messages, int chan_obj)
         {
-            break;
-        }
+            CComsysMod *self = static_cast<CComsysMod *>(ctx);
 
-        const UTF8 *pName = reinterpret_cast<const UTF8 *>(
-            sqlite3_column_text(stmt, 0));
-        const UTF8 *pHeader = reinterpret_cast<const UTF8 *>(
-            sqlite3_column_text(stmt, 1));
+            struct channel *ch = static_cast<struct channel *>(
+                calloc(1, sizeof(struct channel)));
+            if (nullptr == ch) return;
 
-        if (nullptr != pName)
-        {
-            strncpy(reinterpret_cast<char *>(ch->name),
-                    reinterpret_cast<const char *>(pName), MAX_CHANNEL_LEN);
-            ch->name[MAX_CHANNEL_LEN] = '\0';
-        }
+            if (nullptr != name)
+            {
+                strncpy(reinterpret_cast<char *>(ch->name),
+                        reinterpret_cast<const char *>(name), MAX_CHANNEL_LEN);
+                ch->name[MAX_CHANNEL_LEN] = '\0';
+            }
+            if (nullptr != header)
+            {
+                strncpy(reinterpret_cast<char *>(ch->header),
+                        reinterpret_cast<const char *>(header), MAX_HEADER_LEN);
+                ch->header[MAX_HEADER_LEN] = '\0';
+            }
 
-        if (nullptr != pHeader)
-        {
-            strncpy(reinterpret_cast<char *>(ch->header),
-                    reinterpret_cast<const char *>(pHeader), MAX_HEADER_LEN);
-            ch->header[MAX_HEADER_LEN] = '\0';
-        }
+            ch->type         = type;
+            ch->temp1        = temp1;
+            ch->temp2        = temp2;
+            ch->charge       = charge;
+            ch->charge_who   = charge_who;
+            ch->amount_col   = amount_col;
+            ch->num_messages = num_messages;
+            ch->chan_obj     = chan_obj;
+            ch->num_users    = 0;
+            ch->max_users    = 0;
+            ch->users        = nullptr;
+            ch->on_users     = nullptr;
 
-        ch->type        = sqlite3_column_int(stmt, 2);
-        ch->temp1       = sqlite3_column_int(stmt, 3);
-        ch->temp2       = sqlite3_column_int(stmt, 4);
-        ch->charge      = sqlite3_column_int(stmt, 5);
-        ch->charge_who  = sqlite3_column_int(stmt, 6);
-        ch->amount_col  = sqlite3_column_int(stmt, 7);
-        ch->num_messages = sqlite3_column_int(stmt, 8);
-        ch->chan_obj     = sqlite3_column_int(stmt, 9);
-        ch->num_users    = 0;
-        ch->max_users    = 0;
-        ch->users        = nullptr;
-        ch->on_users     = nullptr;
+            std::vector<UTF8> key(ch->name,
+                ch->name + strlen(reinterpret_cast<const char *>(ch->name)) + 1);
+            self->m_channels[key] = ch;
+            self->m_num_channels++;
+        }, this);
 
-        std::vector<UTF8> key(ch->name,
-            ch->name + strlen(reinterpret_cast<const char *>(ch->name)) + 1);
-        m_channels[key] = ch;
-        m_num_channels++;
-    }
-
-    sqlite3_finalize(stmt);
-    return true;
+    return MUX_SUCCEEDED(mr);
 }
 
 bool CComsysMod::LoadChannelUsers(void)
 {
-    if (nullptr == m_db)
+    if (nullptr == m_pIStorage)
     {
         return false;
     }
 
-    const char *sql = "SELECT channel_name, who, is_on, comtitle_status, "
-                      "gag_joinleave, title FROM channel_users;";
-
-    sqlite3_stmt *stmt = nullptr;
-    int rc = sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr);
-    if (SQLITE_OK != rc)
-    {
-        return false;
-    }
-
-    while (SQLITE_ROW == sqlite3_step(stmt))
-    {
-        const UTF8 *pChanName = reinterpret_cast<const UTF8 *>(
-            sqlite3_column_text(stmt, 0));
-        if (nullptr == pChanName)
+    MUX_RESULT mr = m_pIStorage->LoadAllChannelUsers(
+        [](void *ctx, const UTF8 *channel_name, int who,
+            bool is_on, bool comtitle_status, bool gag_join_leave,
+            const UTF8 *title)
         {
-            continue;
-        }
+            CComsysMod *self = static_cast<CComsysMod *>(ctx);
 
-        struct channel *ch = select_channel(pChanName);
-        if (nullptr == ch)
-        {
-            continue;
-        }
+            if (nullptr == channel_name) return;
 
-        struct comuser *cu = static_cast<struct comuser *>(
-            calloc(1, sizeof(struct comuser)));
-        if (nullptr == cu)
-        {
-            break;
-        }
+            struct channel *ch = self->select_channel(channel_name);
+            if (nullptr == ch) return;
 
-        cu->who             = sqlite3_column_int(stmt, 1);
-        cu->bUserIsOn       = (0 != sqlite3_column_int(stmt, 2));
-        cu->ComTitleStatus  = (0 != sqlite3_column_int(stmt, 3));
-        cu->bGagJoinLeave   = (0 != sqlite3_column_int(stmt, 4));
-        cu->on_next         = nullptr;
+            struct comuser *cu = static_cast<struct comuser *>(
+                calloc(1, sizeof(struct comuser)));
+            if (nullptr == cu) return;
 
-        const UTF8 *pTitle = reinterpret_cast<const UTF8 *>(
-            sqlite3_column_text(stmt, 5));
-        if (nullptr != pTitle && pTitle[0] != '\0')
-        {
-            cu->title = reinterpret_cast<UTF8 *>(
-                strdup(reinterpret_cast<const char *>(pTitle)));
-        }
-        else
-        {
-            cu->title = nullptr;
-        }
+            cu->who            = who;
+            cu->bUserIsOn      = is_on;
+            cu->ComTitleStatus = comtitle_status;
+            cu->bGagJoinLeave  = gag_join_leave;
+            cu->on_next        = nullptr;
 
-        // Grow users array if needed.
-        //
-        if (ch->num_users >= ch->max_users)
-        {
-            int newmax = (ch->max_users == 0) ? 8 : ch->max_users * 2;
-            struct comuser **newusers = static_cast<struct comuser **>(
-                realloc(ch->users, newmax * sizeof(struct comuser *)));
-            if (nullptr == newusers)
+            if (nullptr != title && title[0] != '\0')
             {
-                free(cu->title);
-                free(cu);
-                break;
+                cu->title = reinterpret_cast<UTF8 *>(
+                    strdup(reinterpret_cast<const char *>(title)));
             }
-            ch->users = newusers;
-            ch->max_users = newmax;
-        }
-        ch->users[ch->num_users] = cu;
-        ch->num_users++;
-    }
+            else
+            {
+                cu->title = nullptr;
+            }
 
-    sqlite3_finalize(stmt);
+            if (ch->num_users >= ch->max_users)
+            {
+                int newmax = (ch->max_users == 0) ? 8 : ch->max_users * 2;
+                struct comuser **newusers = static_cast<struct comuser **>(
+                    realloc(ch->users, newmax * sizeof(struct comuser *)));
+                if (nullptr == newusers)
+                {
+                    free(cu->title);
+                    free(cu);
+                    return;
+                }
+                ch->users = newusers;
+                ch->max_users = newmax;
+            }
+            ch->users[ch->num_users] = cu;
+            ch->num_users++;
+        }, this);
 
     // Sort users arrays by dbref for binary search.
     //
@@ -537,8 +455,6 @@ bool CComsysMod::LoadChannelUsers(void)
         struct channel *ch = it->second;
         if (ch->num_users > 1)
         {
-            // Simple insertion sort (users array is typically small).
-            //
             for (int i = 1; i < ch->num_users; i++)
             {
                 struct comuser *key = ch->users[i];
@@ -553,95 +469,84 @@ bool CComsysMod::LoadChannelUsers(void)
         }
     }
 
-    return true;
+    return MUX_SUCCEEDED(mr);
 }
 
 bool CComsysMod::LoadPlayerChannels(void)
 {
-    if (nullptr == m_db)
+    if (nullptr == m_pIStorage)
     {
         return false;
     }
 
-    const char *sql = "SELECT who, alias, channel_name FROM player_channels "
-                      "ORDER BY who;";
-
-    sqlite3_stmt *stmt = nullptr;
-    int rc = sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr);
-    if (SQLITE_OK != rc)
+    struct LoadState
     {
-        return false;
-    }
+        CComsysMod *self;
+        dbref current_who;
+        comsys_t *c;
+    };
 
-    dbref current_who = NOTHING;
-    comsys_t *c = nullptr;
+    LoadState ls;
+    ls.self = this;
+    ls.current_who = NOTHING;
+    ls.c = nullptr;
 
-    while (SQLITE_ROW == sqlite3_step(stmt))
-    {
-        dbref who = sqlite3_column_int(stmt, 0);
-        const UTF8 *pAlias = reinterpret_cast<const UTF8 *>(
-            sqlite3_column_text(stmt, 1));
-        const UTF8 *pChan = reinterpret_cast<const UTF8 *>(
-            sqlite3_column_text(stmt, 2));
-
-        if (nullptr == pAlias || nullptr == pChan)
+    MUX_RESULT mr = m_pIStorage->LoadAllPlayerChannels(
+        [](void *ctx, int who, const UTF8 *alias,
+            const UTF8 *channel_name)
         {
-            continue;
-        }
+            LoadState *ls = static_cast<LoadState *>(ctx);
+            CComsysMod *self = ls->self;
 
-        if (who != current_who)
-        {
-            if (nullptr != c)
+            if (nullptr == alias || nullptr == channel_name) return;
+
+            if (who != ls->current_who)
             {
-                add_comsys(c);
+                if (nullptr != ls->c)
+                {
+                    self->add_comsys(ls->c);
+                }
+                ls->c = self->create_new_comsys();
+                ls->c->who = who;
+                ls->current_who = who;
             }
-            c = create_new_comsys();
-            c->who = who;
-            current_who = who;
-        }
 
-        // Grow arrays if needed.
-        //
-        if (c->numchannels >= c->maxchannels)
-        {
-            int newmax = (c->maxchannels == 0) ? 4 : c->maxchannels * 2;
-            UTF8 *newAlias = static_cast<UTF8 *>(
-                realloc(c->alias, newmax * ALIAS_SIZE));
-            UTF8 **newChannels = static_cast<UTF8 **>(
-                realloc(c->channels, newmax * sizeof(UTF8 *)));
-            if (nullptr == newAlias || nullptr == newChannels)
+            comsys_t *c = ls->c;
+            if (c->numchannels >= c->maxchannels)
             {
-                if (nullptr != newAlias) c->alias = newAlias;
-                if (nullptr != newChannels) c->channels = newChannels;
-                break;
+                int newmax = (c->maxchannels == 0) ? 4 : c->maxchannels * 2;
+                UTF8 *newAlias = static_cast<UTF8 *>(
+                    realloc(c->alias, newmax * ALIAS_SIZE));
+                UTF8 **newChannels = static_cast<UTF8 **>(
+                    realloc(c->channels, newmax * sizeof(UTF8 *)));
+                if (nullptr == newAlias || nullptr == newChannels)
+                {
+                    if (nullptr != newAlias) c->alias = newAlias;
+                    if (nullptr != newChannels) c->channels = newChannels;
+                    return;
+                }
+                c->alias = newAlias;
+                c->channels = newChannels;
+                c->maxchannels = newmax;
             }
-            c->alias = newAlias;
-            c->channels = newChannels;
-            c->maxchannels = newmax;
-        }
 
-        // Copy alias into the contiguous alias buffer.
-        //
-        UTF8 *pSlot = c->alias + c->numchannels * ALIAS_SIZE;
-        strncpy(reinterpret_cast<char *>(pSlot),
-                reinterpret_cast<const char *>(pAlias), MAX_ALIAS_LEN);
-        pSlot[MAX_ALIAS_LEN] = '\0';
+            UTF8 *pSlot = c->alias + c->numchannels * ALIAS_SIZE;
+            strncpy(reinterpret_cast<char *>(pSlot),
+                    reinterpret_cast<const char *>(alias), MAX_ALIAS_LEN);
+            pSlot[MAX_ALIAS_LEN] = '\0';
 
-        // Clone channel name.
-        //
-        c->channels[c->numchannels] = reinterpret_cast<UTF8 *>(
-            strdup(reinterpret_cast<const char *>(pChan)));
+            c->channels[c->numchannels] = reinterpret_cast<UTF8 *>(
+                strdup(reinterpret_cast<const char *>(channel_name)));
 
-        c->numchannels++;
-    }
+            c->numchannels++;
+        }, &ls);
 
-    if (nullptr != c)
+    if (nullptr != ls.c)
     {
-        add_comsys(c);
+        add_comsys(ls.c);
     }
 
-    sqlite3_finalize(stmt);
-    return true;
+    return MUX_SUCCEEDED(mr);
 }
 
 // ---------------------------------------------------------------------------
@@ -941,151 +846,45 @@ void CComsysMod::do_comdisconnectchannel(dbref player, UTF8 *channel)
 }
 
 // ---------------------------------------------------------------------------
-// SQLite write-through helpers.
+// Write-through helpers — delegate to engine storage interface.
 // ---------------------------------------------------------------------------
 
 void CComsysMod::sqlite_wt_channel_user(const UTF8 *channel_name,
     struct comuser *user)
 {
-    if (nullptr == m_db)
-    {
-        return;
-    }
-
-    const char *sql =
-        "INSERT OR REPLACE INTO channel_users "
-        "(channel_name, who, is_on, comtitle_status, gag_joinleave, title) "
-        "VALUES (?, ?, ?, ?, ?, ?);";
-
-    sqlite3_stmt *stmt = nullptr;
-    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
-    {
-        return;
-    }
-
-    sqlite3_bind_text(stmt, 1,
-        reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
-    sqlite3_bind_int(stmt, 2, user->who);
-    sqlite3_bind_int(stmt, 3, user->bUserIsOn ? 1 : 0);
-    sqlite3_bind_int(stmt, 4, user->ComTitleStatus ? 1 : 0);
-    sqlite3_bind_int(stmt, 5, user->bGagJoinLeave ? 1 : 0);
-    sqlite3_bind_text(stmt, 6,
-        (nullptr != user->title)
-            ? reinterpret_cast<const char *>(user->title) : "",
-        -1, SQLITE_STATIC);
-
-    sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    if (nullptr == m_pIStorage) return;
+    m_pIStorage->SyncChannelUser(channel_name, user->who,
+        user->bUserIsOn, user->ComTitleStatus, user->bGagJoinLeave,
+        (nullptr != user->title) ? user->title
+            : reinterpret_cast<const UTF8 *>(""));
 }
 
 void CComsysMod::sqlite_wt_channel(struct channel *ch)
 {
-    if (nullptr == m_db)
-    {
-        return;
-    }
-
-    const char *sql =
-        "INSERT OR REPLACE INTO channels "
-        "(name, header, type, temp1, temp2, charge, charge_who, "
-        "amount_col, num_messages, chan_obj) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
-
-    sqlite3_stmt *stmt = nullptr;
-    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
-    {
-        return;
-    }
-
-    sqlite3_bind_text(stmt, 1,
-        reinterpret_cast<const char *>(ch->name), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2,
-        reinterpret_cast<const char *>(ch->header), -1, SQLITE_STATIC);
-    sqlite3_bind_int(stmt, 3, ch->type);
-    sqlite3_bind_int(stmt, 4, ch->temp1);
-    sqlite3_bind_int(stmt, 5, ch->temp2);
-    sqlite3_bind_int(stmt, 6, ch->charge);
-    sqlite3_bind_int(stmt, 7, ch->charge_who);
-    sqlite3_bind_int(stmt, 8, ch->amount_col);
-    sqlite3_bind_int(stmt, 9, ch->num_messages);
-    sqlite3_bind_int(stmt, 10, ch->chan_obj);
-
-    sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    if (nullptr == m_pIStorage) return;
+    m_pIStorage->SyncChannel(ch->name, ch->header, ch->type,
+        ch->temp1, ch->temp2, ch->charge, ch->charge_who,
+        ch->amount_col, ch->num_messages, ch->chan_obj);
 }
 
 void CComsysMod::sqlite_wt_player_channel(dbref who, const UTF8 *alias,
     const UTF8 *channel_name)
 {
-    if (nullptr == m_db)
-    {
-        return;
-    }
-
-    const char *sql =
-        "INSERT OR REPLACE INTO player_channels (who, alias, channel_name) "
-        "VALUES (?, ?, ?);";
-
-    sqlite3_stmt *stmt = nullptr;
-    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
-    {
-        return;
-    }
-
-    sqlite3_bind_int(stmt, 1, who);
-    sqlite3_bind_text(stmt, 2,
-        reinterpret_cast<const char *>(alias), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 3,
-        reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
-    sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    if (nullptr == m_pIStorage) return;
+    m_pIStorage->SyncPlayerChannel(who, alias, channel_name);
 }
 
 void CComsysMod::sqlite_wt_delete_player_channel(dbref who, const UTF8 *alias)
 {
-    if (nullptr == m_db)
-    {
-        return;
-    }
-
-    const char *sql =
-        "DELETE FROM player_channels WHERE who = ? AND alias = ?;";
-
-    sqlite3_stmt *stmt = nullptr;
-    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
-    {
-        return;
-    }
-
-    sqlite3_bind_int(stmt, 1, who);
-    sqlite3_bind_text(stmt, 2,
-        reinterpret_cast<const char *>(alias), -1, SQLITE_STATIC);
-    sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    if (nullptr == m_pIStorage) return;
+    m_pIStorage->DeletePlayerChannel(who, alias);
 }
 
 void CComsysMod::sqlite_wt_delete_channel_user(const UTF8 *channel_name,
     dbref who)
 {
-    if (nullptr == m_db)
-    {
-        return;
-    }
-
-    const char *sql =
-        "DELETE FROM channel_users WHERE channel_name = ? AND who = ?;";
-
-    sqlite3_stmt *stmt = nullptr;
-    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
-    {
-        return;
-    }
-
-    sqlite3_bind_text(stmt, 1,
-        reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
-    sqlite3_bind_int(stmt, 2, who);
-    sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    if (nullptr == m_pIStorage) return;
+    m_pIStorage->DeleteChannelUser(channel_name, who);
 }
 
 // ---------------------------------------------------------------------------
@@ -1737,17 +1536,15 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
 // mux_IComsysControl implementation.
 // ---------------------------------------------------------------------------
 
-MUX_RESULT CComsysMod::Initialize(const UTF8 *pDatabasePath)
+MUX_RESULT CComsysMod::Initialize(mux_IComsysStorage *pStorage)
 {
-    if (nullptr == pDatabasePath)
+    if (nullptr == pStorage)
     {
         return MUX_E_INVALIDARG;
     }
 
-    if (!OpenDatabase(pDatabasePath))
-    {
-        return MUX_E_FAIL;
-    }
+    m_pIStorage = pStorage;
+    m_pIStorage->AddRef();
 
     // Load all channel data from SQLite.
     //
@@ -1892,19 +1689,9 @@ MUX_RESULT CComsysMod::PlayerNuke(dbref player)
 
                 // Delete from SQLite.
                 //
-                if (nullptr != m_db)
+                if (nullptr != m_pIStorage)
                 {
-                    const char *sql = "DELETE FROM channels WHERE name = ?;";
-                    sqlite3_stmt *stmt = nullptr;
-                    if (SQLITE_OK == sqlite3_prepare_v2(m_db, sql, -1,
-                                                         &stmt, nullptr))
-                    {
-                        sqlite3_bind_text(stmt, 1,
-                            reinterpret_cast<const char *>(ch->name), -1,
-                            SQLITE_STATIC);
-                        sqlite3_step(stmt);
-                        sqlite3_finalize(stmt);
-                    }
+                    m_pIStorage->DeleteChannel(ch->name);
                 }
 
                 // Free users.
@@ -3455,17 +3242,9 @@ MUX_RESULT CComsysMod::DestroyChannel(dbref executor, const UTF8 *pName)
 
     // Remove from SQLite.
     //
-    if (nullptr != m_db)
+    if (nullptr != m_pIStorage)
     {
-        const char *sql = "DELETE FROM channels WHERE name = ?;";
-        sqlite3_stmt *stmt = nullptr;
-        if (SQLITE_OK == sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
-        {
-            sqlite3_bind_text(stmt, 1,
-                reinterpret_cast<const char *>(ch->name), -1, SQLITE_STATIC);
-            sqlite3_step(stmt);
-            sqlite3_finalize(stmt);
-        }
+        m_pIStorage->DeleteChannel(ch->name);
     }
 
     // Remove from map.

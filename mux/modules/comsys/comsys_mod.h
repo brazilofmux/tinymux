@@ -9,7 +9,6 @@
 #ifndef COMSYS_MOD_H
 #define COMSYS_MOD_H
 
-#include <sqlite3.h>
 #include <map>
 #include <vector>
 
@@ -137,9 +136,9 @@ private:
     mux_IEvaluator            *m_pIEvaluator;
     mux_IPermissions          *m_pIPermissions;
 
-    // SQLite connection — module's own handle to the game database.
+    // Storage interface — routes SQLite access through the engine.
     //
-    sqlite3 *m_db;
+    mux_IComsysStorage *m_pIStorage;
 
     // Channel data — owned by the module.
     //
@@ -149,8 +148,6 @@ private:
 
     // Internal helpers.
     //
-    bool OpenDatabase(const UTF8 *pPath);
-    void CloseDatabase(void);
     bool LoadChannels(void);
     bool LoadChannelUsers(void);
     bool LoadPlayerChannels(void);
@@ -196,7 +193,7 @@ public:
 
     // mux_IComsysControl
     //
-    MUX_RESULT Initialize(const UTF8 *pDatabasePath) override;
+    MUX_RESULT Initialize(mux_IComsysStorage *pStorage) override;
     MUX_RESULT PlayerConnect(dbref player) override;
     MUX_RESULT PlayerDisconnect(dbref player) override;
     MUX_RESULT PlayerNuke(dbref player) override;

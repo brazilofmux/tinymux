@@ -13,7 +13,7 @@
  *   mux_ILog              — logging
  *
  * Mail data is loaded from and persisted to the game's SQLite database
- * via the module's own sqlite3 connection.
+ * via the mux_IMailStorage COM interface provided by the engine.
  */
 
 #include "copyright.h"
@@ -132,7 +132,7 @@ CMailMod::CMailMod(void) : m_cRef(1),
     m_pIAttributeAccess(nullptr),
     m_pIPermissions(nullptr),
     m_pIMailDelivery(nullptr),
-    m_db(nullptr),
+    m_pIStorage(nullptr),
     m_mail_expiration(14),
     m_mail_per_player(250),
     m_mail_list(nullptr),
@@ -218,9 +218,13 @@ MUX_RESULT CMailMod::FinalConstruct(void)
 
 CMailMod::~CMailMod()
 {
-    // Close our SQLite connection.
+    // Release storage interface.
     //
-    CloseDatabase();
+    if (nullptr != m_pIStorage)
+    {
+        m_pIStorage->Release();
+        m_pIStorage = nullptr;
+    }
 
     // Free mail data.
     //
@@ -389,54 +393,6 @@ uint32_t CMailMod::Release(void)
         return 0;
     }
     return m_cRef;
-}
-
-// ---------------------------------------------------------------------------
-// SQLite database access — module's own connection.
-// ---------------------------------------------------------------------------
-
-bool CMailMod::OpenDatabase(const UTF8 *pPath)
-{
-    if (nullptr != m_db)
-    {
-        return true;
-    }
-
-    int rc = sqlite3_open(reinterpret_cast<const char *>(pPath), &m_db);
-    if (SQLITE_OK != rc)
-    {
-        if (nullptr != m_pILog)
-        {
-            bool fStarted;
-            m_pILog->start_log(&fStarted, LOG_ALWAYS, T("MAIL"), T("DB"));
-            if (fStarted)
-            {
-                m_pILog->log_text(T("Mail module: sqlite3_open failed: "));
-                m_pILog->log_text(reinterpret_cast<const UTF8 *>(
-                    sqlite3_errmsg(m_db)));
-                m_pILog->end_log();
-            }
-        }
-        sqlite3_close(m_db);
-        m_db = nullptr;
-        return false;
-    }
-
-    // Match server pragmas for WAL mode.
-    //
-    sqlite3_exec(m_db, "PRAGMA journal_mode=WAL;", nullptr, nullptr, nullptr);
-    sqlite3_exec(m_db, "PRAGMA busy_timeout=5000;", nullptr, nullptr, nullptr);
-
-    return true;
-}
-
-void CMailMod::CloseDatabase(void)
-{
-    if (nullptr != m_db)
-    {
-        sqlite3_close(m_db);
-        m_db = nullptr;
-    }
 }
 
 // ---------------------------------------------------------------------------
@@ -694,145 +650,58 @@ void CMailMod::MailListRemoveAll(dbref player)
 
 void CMailMod::sqlite_wt_insert_mail(struct mail *mp)
 {
-    if (m_bLoading || nullptr == m_db) return;
+    if (m_bLoading || nullptr == m_pIStorage) return;
 
-    const char *sql =
-        "INSERT INTO mail_headers (to_player, from_player, body_number, "
-        "tolist, time_str, subject, read_flags) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?);";
+    int64_t rowid = -1;
+    MUX_RESULT mr = m_pIStorage->InsertMailHeader(
+        mp->to, mp->from, mp->number,
+        mp->tolist, mp->time, mp->subject, mp->read, &rowid);
 
-    sqlite3_stmt *stmt = nullptr;
-    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
-    {
-        return;
-    }
-
-    sqlite3_bind_int(stmt, 1, mp->to);
-    sqlite3_bind_int(stmt, 2, mp->from);
-    sqlite3_bind_int(stmt, 3, mp->number);
-    sqlite3_bind_text(stmt, 4, reinterpret_cast<const char *>(mp->tolist), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 5, reinterpret_cast<const char *>(mp->time), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 6, reinterpret_cast<const char *>(mp->subject), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int(stmt, 7, mp->read);
-
-    if (SQLITE_DONE == sqlite3_step(stmt))
-    {
-        mp->sqlite_id = sqlite3_last_insert_rowid(m_db);
-    }
-    else
-    {
-        mp->sqlite_id = -1;
-    }
-
-    sqlite3_finalize(stmt);
+    mp->sqlite_id = MUX_SUCCEEDED(mr) ? rowid : -1;
 }
 
 void CMailMod::sqlite_wt_update_mail_flags(struct mail *mp)
 {
-    if (m_bLoading || nullptr == m_db || mp->sqlite_id < 0) return;
+    if (m_bLoading || nullptr == m_pIStorage || mp->sqlite_id < 0) return;
 
-    const char *sql = "UPDATE mail_headers SET read_flags = ? WHERE rowid = ?;";
-
-    sqlite3_stmt *stmt = nullptr;
-    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
-    {
-        return;
-    }
-
-    sqlite3_bind_int(stmt, 1, mp->read);
-    sqlite3_bind_int64(stmt, 2, mp->sqlite_id);
-    sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    m_pIStorage->UpdateMailReadFlags(mp->sqlite_id, mp->read);
 }
 
 void CMailMod::sqlite_wt_delete_mail(struct mail *mp)
 {
-    if (m_bLoading || nullptr == m_db || mp->sqlite_id < 0) return;
+    if (m_bLoading || nullptr == m_pIStorage || mp->sqlite_id < 0) return;
 
-    const char *sql = "DELETE FROM mail_headers WHERE rowid = ?;";
-
-    sqlite3_stmt *stmt = nullptr;
-    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
-    {
-        return;
-    }
-
-    sqlite3_bind_int64(stmt, 1, mp->sqlite_id);
-    sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    m_pIStorage->DeleteMailHeader(mp->sqlite_id);
 }
 
 void CMailMod::sqlite_wt_delete_all_mail(int to_player)
 {
-    if (m_bLoading || nullptr == m_db) return;
+    if (m_bLoading || nullptr == m_pIStorage) return;
 
-    const char *sql = "DELETE FROM mail_headers WHERE to_player = ?;";
-
-    sqlite3_stmt *stmt = nullptr;
-    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
-    {
-        return;
-    }
-
-    sqlite3_bind_int(stmt, 1, to_player);
-    sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    m_pIStorage->DeleteAllMailHeaders(to_player);
 }
 
 void CMailMod::sqlite_wt_mail_body(int number, const UTF8 *message)
 {
-    if (m_bLoading || nullptr == m_db) return;
+    if (m_bLoading || nullptr == m_pIStorage) return;
 
-    const char *sql =
-        "INSERT OR REPLACE INTO mail_bodies (number, message) VALUES (?, ?);";
-
-    sqlite3_stmt *stmt = nullptr;
-    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
-    {
-        return;
-    }
-
-    sqlite3_bind_int(stmt, 1, number);
-    sqlite3_bind_text(stmt, 2, reinterpret_cast<const char *>(message),
-                      -1, SQLITE_TRANSIENT);
-    sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    m_pIStorage->SyncMailBody(number, message);
 }
 
 void CMailMod::sqlite_wt_delete_mail_body(int number)
 {
-    if (m_bLoading || nullptr == m_db) return;
+    if (m_bLoading || nullptr == m_pIStorage) return;
 
-    const char *sql = "DELETE FROM mail_bodies WHERE number = ?;";
-
-    sqlite3_stmt *stmt = nullptr;
-    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
-    {
-        return;
-    }
-
-    sqlite3_bind_int(stmt, 1, number);
-    sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    m_pIStorage->DeleteMailBody(number);
 }
 
 void CMailMod::sqlite_wt_sync_all_aliases(void)
 {
-    if (m_bLoading || nullptr == m_db) return;
+    if (m_bLoading || nullptr == m_pIStorage) return;
 
     // Clear existing aliases.
     //
-    sqlite3_exec(m_db, "DELETE FROM mail_aliases;", nullptr, nullptr, nullptr);
-
-    const char *sql =
-        "INSERT INTO mail_aliases (owner, name, description, desc_width, members) "
-        "VALUES (?, ?, ?, ?, ?);";
-
-    sqlite3_stmt *stmt = nullptr;
-    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
-    {
-        return;
-    }
+    m_pIStorage->ClearMailAliases();
 
     for (int i = 0; i < m_ma_top; i++)
     {
@@ -854,18 +723,11 @@ void CMailMod::sqlite_wt_sync_all_aliases(void)
         }
         *bp = '\0';
 
-        sqlite3_reset(stmt);
-        sqlite3_bind_int(stmt, 1, m->owner);
-        sqlite3_bind_text(stmt, 2, reinterpret_cast<const char *>(m->name),
-                          -1, SQLITE_TRANSIENT);
-        sqlite3_bind_text(stmt, 3, reinterpret_cast<const char *>(m->desc),
-                          -1, SQLITE_TRANSIENT);
-        sqlite3_bind_int(stmt, 4, static_cast<int>(m->desc_width));
-        sqlite3_bind_text(stmt, 5, members_buf, -1, SQLITE_TRANSIENT);
-        sqlite3_step(stmt);
+        m_pIStorage->SyncMailAlias(
+            m->owner, m->name, m->desc,
+            static_cast<int>(m->desc_width),
+            reinterpret_cast<const UTF8 *>(members_buf));
     }
-
-    sqlite3_finalize(stmt);
 }
 
 // ---------------------------------------------------------------------------
@@ -874,153 +736,132 @@ void CMailMod::sqlite_wt_sync_all_aliases(void)
 
 bool CMailMod::LoadMailBodies(void)
 {
-    if (nullptr == m_db) return false;
+    if (nullptr == m_pIStorage) return false;
 
-    const char *sql = "SELECT number, message FROM mail_bodies;";
-
-    sqlite3_stmt *stmt = nullptr;
-    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
-    {
-        return false;
-    }
-
-    while (SQLITE_ROW == sqlite3_step(stmt))
-    {
-        int number = sqlite3_column_int(stmt, 0);
-        const UTF8 *message = reinterpret_cast<const UTF8 *>(
-            sqlite3_column_text(stmt, 1));
-        if (nullptr != message)
+    MUX_RESULT mr = m_pIStorage->LoadAllMailBodies(
+        [](void *ctx, int number, const UTF8 *message)
         {
-            new_mail_message(message, number);
-        }
-    }
+            CMailMod *pThis = static_cast<CMailMod *>(ctx);
+            if (nullptr != message)
+            {
+                pThis->new_mail_message(message, number);
+            }
+        }, this);
 
-    sqlite3_finalize(stmt);
-    return true;
+    return MUX_SUCCEEDED(mr);
 }
 
 bool CMailMod::LoadMailHeaders(void)
 {
-    if (nullptr == m_db) return false;
+    if (nullptr == m_pIStorage) return false;
 
-    const char *sql =
-        "SELECT rowid, to_player, from_player, body_number, "
-        "tolist, time_str, subject, read_flags FROM mail_headers;";
-
-    sqlite3_stmt *stmt = nullptr;
-    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
-    {
-        return false;
-    }
-
-    while (SQLITE_ROW == sqlite3_step(stmt))
-    {
-        struct mail *mp = nullptr;
-        try
+    MUX_RESULT mr = m_pIStorage->LoadAllMailHeaders(
+        [](void *ctx, int64_t rowid, int to_player, int from_player,
+            int body_number, const UTF8 *tolist, const UTF8 *time_str,
+            const UTF8 *subject, int read_flags)
         {
-            mp = new struct mail;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
+            CMailMod *pThis = static_cast<CMailMod *>(ctx);
 
-        if (nullptr == mp)
-        {
-            break;
-        }
+            struct mail *mp = nullptr;
+            try
+            {
+                mp = new struct mail;
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
 
-        mp->sqlite_id = sqlite3_column_int64(stmt, 0);
-        mp->to        = sqlite3_column_int(stmt, 1);
-        mp->from      = sqlite3_column_int(stmt, 2);
-        mp->number    = sqlite3_column_int(stmt, 3);
+            if (nullptr == mp)
+            {
+                return;
+            }
 
-        MessageReferenceInc(mp->number);
+            mp->sqlite_id = rowid;
+            mp->to        = to_player;
+            mp->from      = from_player;
+            mp->number    = body_number;
 
-        const char *pTolist  = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4));
-        const char *pTime    = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 5));
-        const char *pSubject = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 6));
+            pThis->MessageReferenceInc(mp->number);
 
-        mp->tolist  = pTolist  ? reinterpret_cast<UTF8 *>(strdup(pTolist))  : reinterpret_cast<UTF8 *>(strdup(""));
-        mp->time    = pTime    ? reinterpret_cast<UTF8 *>(strdup(pTime))    : reinterpret_cast<UTF8 *>(strdup(""));
-        mp->subject = pSubject ? reinterpret_cast<UTF8 *>(strdup(pSubject)) : reinterpret_cast<UTF8 *>(strdup(""));
-        mp->read    = sqlite3_column_int(stmt, 7);
+            mp->tolist  = tolist  ? reinterpret_cast<UTF8 *>(strdup(reinterpret_cast<const char *>(tolist)))  : reinterpret_cast<UTF8 *>(strdup(""));
+            mp->time    = time_str ? reinterpret_cast<UTF8 *>(strdup(reinterpret_cast<const char *>(time_str))) : reinterpret_cast<UTF8 *>(strdup(""));
+            mp->subject = subject ? reinterpret_cast<UTF8 *>(strdup(reinterpret_cast<const char *>(subject))) : reinterpret_cast<UTF8 *>(strdup(""));
+            mp->read    = read_flags;
 
-        mp->next = nullptr;
-        mp->prev = nullptr;
+            mp->next = nullptr;
+            mp->prev = nullptr;
 
-        MailListAppend(mp->to, mp);
-    }
+            pThis->MailListAppend(mp->to, mp);
+        }, this);
 
-    sqlite3_finalize(stmt);
-    return true;
+    return MUX_SUCCEEDED(mr);
 }
 
 bool CMailMod::LoadMailAliases(void)
 {
-    if (nullptr == m_db) return false;
+    if (nullptr == m_pIStorage) return false;
 
-    const char *sql =
-        "SELECT owner, name, description, desc_width, members "
-        "FROM mail_aliases;";
+    // Collect aliases into a vector via callback, then build the array.
+    //
+    std::vector<malias_t *> alias_vec;
 
-    sqlite3_stmt *stmt = nullptr;
-    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
+    MUX_RESULT mr = m_pIStorage->LoadAllMailAliases(
+        [](void *ctx, int owner, const UTF8 *name, const UTF8 *desc,
+            int desc_width, const UTF8 *members)
+        {
+            auto *pVec = static_cast<std::vector<malias_t *> *>(ctx);
+
+            malias_t *m = nullptr;
+            try
+            {
+                m = new malias_t;
+            }
+            catch (...)
+            {
+                ; // Nothing.
+            }
+
+            if (nullptr == m)
+            {
+                return;
+            }
+
+            m->owner = owner;
+
+            const char *pName = reinterpret_cast<const char *>(name);
+            const char *pDesc = reinterpret_cast<const char *>(desc);
+
+            m->name = pName ? reinterpret_cast<UTF8 *>(strdup(pName)) : reinterpret_cast<UTF8 *>(strdup(""));
+            m->desc = pDesc ? reinterpret_cast<UTF8 *>(strdup(pDesc)) : reinterpret_cast<UTF8 *>(strdup(""));
+            m->desc_width = desc_width;
+
+            // Parse space-separated member list.
+            //
+            m->numrecep = 0;
+            const char *pMembers = reinterpret_cast<const char *>(members);
+            if (nullptr != pMembers && pMembers[0] != '\0')
+            {
+                char buf[MOD_LBUF_SIZE];
+                strncpy(buf, pMembers, MOD_LBUF_SIZE - 1);
+                buf[MOD_LBUF_SIZE - 1] = '\0';
+                char *p = buf;
+                while (*p && m->numrecep < MAX_MALIAS_MEMBERSHIP)
+                {
+                    while (*p == ' ') p++;
+                    if (*p == '\0') break;
+                    m->list[m->numrecep++] = atoi(p);
+                    while (*p && *p != ' ') p++;
+                }
+            }
+
+            pVec->push_back(m);
+        }, &alias_vec);
+
+    if (MUX_FAILED(mr))
     {
         return false;
     }
-
-    std::vector<malias_t *> alias_vec;
-
-    while (SQLITE_ROW == sqlite3_step(stmt))
-    {
-        malias_t *m = nullptr;
-        try
-        {
-            m = new malias_t;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == m)
-        {
-            break;
-        }
-
-        m->owner = sqlite3_column_int(stmt, 0);
-
-        const char *pName = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1));
-        const char *pDesc = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2));
-
-        m->name = pName ? reinterpret_cast<UTF8 *>(strdup(pName)) : reinterpret_cast<UTF8 *>(strdup(""));
-        m->desc = pDesc ? reinterpret_cast<UTF8 *>(strdup(pDesc)) : reinterpret_cast<UTF8 *>(strdup(""));
-        m->desc_width = sqlite3_column_int(stmt, 3);
-
-        // Parse space-separated member list.
-        //
-        m->numrecep = 0;
-        const char *pMembers = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4));
-        if (nullptr != pMembers && pMembers[0] != '\0')
-        {
-            char buf[MOD_LBUF_SIZE];
-            strncpy(buf, pMembers, MOD_LBUF_SIZE - 1);
-            buf[MOD_LBUF_SIZE - 1] = '\0';
-            char *p = buf;
-            while (*p && m->numrecep < MAX_MALIAS_MEMBERSHIP)
-            {
-                while (*p == ' ') p++;
-                if (*p == '\0') break;
-                m->list[m->numrecep++] = atoi(p);
-                while (*p && *p != ' ') p++;
-            }
-        }
-
-        alias_vec.push_back(m);
-    }
-
-    sqlite3_finalize(stmt);
 
     if (!alias_vec.empty())
     {
@@ -1060,36 +901,26 @@ bool CMailMod::LoadMailAliases(void)
 // mux_IMailControl implementation.
 // ---------------------------------------------------------------------------
 
-MUX_RESULT CMailMod::Initialize(const UTF8 *pDatabasePath,
+MUX_RESULT CMailMod::Initialize(mux_IMailStorage *pStorage,
     int mail_expiration, int mail_per_player)
 {
-    if (nullptr == pDatabasePath)
+    if (nullptr == pStorage)
     {
         return MUX_E_INVALIDARG;
     }
 
+    // Store and AddRef the storage interface.
+    //
+    m_pIStorage = pStorage;
+    m_pIStorage->AddRef();
+
     m_mail_expiration = mail_expiration;
     m_mail_per_player = mail_per_player;
 
-    if (!OpenDatabase(pDatabasePath))
-    {
-        return MUX_E_FAIL;
-    }
-
     // Check for mail_db_top metadata to know if mail data exists.
     //
-    const char *sql = "SELECT value FROM metadata WHERE key = 'mail_db_top';";
-    sqlite3_stmt *stmt = nullptr;
     int mail_top = 0;
-
-    if (SQLITE_OK == sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
-    {
-        if (SQLITE_ROW == sqlite3_step(stmt))
-        {
-            mail_top = sqlite3_column_int(stmt, 0);
-        }
-        sqlite3_finalize(stmt);
-    }
+    m_pIStorage->GetMeta(T("mail_db_top"), &mail_top);
 
     m_bLoading = true;
 
@@ -5817,7 +5648,13 @@ void CMailMod::dump_complete_signal(void)
 
 void CMailMod::shutdown(void)
 {
-    CloseDatabase();
+    // Release storage interface.
+    //
+    if (nullptr != m_pIStorage)
+    {
+        m_pIStorage->Release();
+        m_pIStorage = nullptr;
+    }
 
     if (nullptr != m_pILog)
     {
