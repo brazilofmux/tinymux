@@ -27,6 +27,8 @@ Required for any HTTP/webhook/API integration.
 
 **Effort:** Small. Standard base64 is ~50 lines. **Dependencies:** None.
 
+**Status:** Implemented in MUX 2.14.
+
 ### 2. printf() — Formatted Output
 
 `printf(<format>, <arg1>, <arg2>, ...)` — C-style formatted output with
@@ -35,6 +37,8 @@ ljust()/rjust()/center().
 
 **Worth borrowing?** Yes. Very useful for softcoders writing formatted reports
 and tables. More readable than nested ljust/rjust calls.
+
+**Status:** Implemented in MUX 2.14 — ANSI-aware formatted output with %s/%d/%f/%c, width, alignment, precision.
 
 ### 3. Account System (account_)
 
@@ -70,6 +74,8 @@ of static files. Allows softcode-driven help systems.
 **Worth borrowing?** Yes. MUX has `textfile()` for reading static help files,
 but dynamic help from objects is more flexible for game-specific help systems.
 
+**Status:** Implemented in MUX 2.14 — prefix matching, custom prefix, case-insensitive.
+
 ### 7. Totem System
 
 A flexible tagging system beyond flags. Totems are user-definable markers on
@@ -103,10 +109,10 @@ Rhost has several string functions MUX lacks:
 |----------|-------------|----------|
 | editansi() | Edit text preserving ANSI codes | Medium |
 | garble() | Randomize text (drunk/foreign speech) | Low-Medium |
-| printf() | Formatted output | High (listed above) |
+| printf() | Formatted output | **Done 2.14** |
 | strlenvis() | Visible string length (excludes ANSI) | Medium |
 | strlenraw() | Raw byte length | Low |
-| strdistance() | Levenshtein edit distance | Medium |
+| strdistance() | Levenshtein edit distance | **Done 2.14** |
 | strmath() | Math on numeric strings | Low |
 | streval() | Evaluate string as expression | Low |
 | strfunc() | Apply function to string chars | Low |
@@ -153,6 +159,8 @@ Rhost has several string functions MUX lacks:
 relevant for MUX's UTF-8 work. The ASCII ones are trivial but occasionally
 useful.
 
+**Status:** Partially implemented in MUX 2.14 — isalpha(), isdigit(), isupper(), islower(), ispunct(), isspace(), isword() via Unicode DFA.
+
 ### 13. Lua Scripting Integration (lua.c)
 
 Embedded Lua interpreter with MUD-specific bindings:
@@ -186,6 +194,8 @@ representation.
 **Worth borrowing?** Useful for softcode that manipulates locks
 programmatically (e.g., building systems that construct locks).
 
+**Status:** Implemented in MUX 2.14.
+
 ### 16. Mail Functions
 
 Rhost has: `mailread()`, `mailsend()`, `mailquick()`, `mailquota()`,
@@ -197,6 +207,8 @@ MUX has: `mail()`, `mailfrom()`, `mailreview()`, `mailsubj()`, `mailsize()`,
 **Worth borrowing?** `mailsend()` (send mail from softcode) is the most useful
 — enables automated mail systems without @mail command parsing. MUX
 currently requires `@mail` via `@force` or similar hacks.
+
+**Status:** mailsend() implemented in MUX 2.14.
 
 ### 17. nslookup() — DNS Lookup from Softcode
 
@@ -380,16 +392,16 @@ Both Rhost and MUX have these. No delta.
 
 | Feature | TinyMUSH | PennMUSH | RhostMUSH | TinyMUX |
 |---------|----------|----------|-----------|---------|
-| JSON | No | **Yes** | No | No |
-| WebSocket | No | **Yes** | **Yes** | No |
+| JSON | No | **Yes** | No | **Yes** (2.14) |
+| WebSocket | No | **Yes** | **Yes** | **Yes** (2.14) |
 | HTTP server | No | **Yes** | No | No |
-| Base64 | No | **Yes** | **Yes** | No |
-| HMAC | No | **Yes** | No | No |
+| Base64 | No | **Yes** | **Yes** | **Yes** (2.14) |
+| HMAC | No | **Yes** | No | **Yes** (2.14) |
 | SQLite | No | **Yes** | **Yes** | **Yes** |
 | MySQL | No | Via module | **Yes** | No |
 | Lua | No | No | **Yes** | No |
-| Connection log | No | **Yes** (SQLite) | No | No |
-| printf() | No | No | **Yes** | No |
+| Connection log | No | **Yes** (SQLite) | No | **Yes** (2.14) |
+| printf() | No | No | **Yes** | **Yes** (2.14) |
 | Account system | No | No | **Yes** | No |
 | Exec scripts | No | No | **Yes** | No |
 | Totem/tags | No | No | **Yes** | No |
@@ -400,6 +412,13 @@ Both Rhost and MUX have these. No delta.
 | SQL result sets | No | No | No | **Yes** |
 | Reality levels | No | No | Optional | **Yes** |
 | Flatfile converter | No | dbtools | No | **Omega** |
+| PCRE2 | No | **Yes** | No | **Yes** (2.14) |
+| AST evaluator | No | No | No | **Yes** (2.14) |
+| @cron | **Yes** | No | No | **Yes** (2.14) |
+| PCG RNG | No | **Yes** | No | **Yes** (2.14) |
+| letq() | No | **Yes** | No | **Yes** (2.14) |
+| COM modules | **Yes** | No | No | **Yes** (2.14) |
+| Smoke tests | No | **Yes** (Perl) | No | **Yes** (489 cases) |
 
 ---
 
@@ -407,56 +426,55 @@ Both Rhost and MUX have these. No delta.
 
 ### Tier 1 — High Value, Implement
 
-1. **JSON support** — Penn has it, web integration demands it, SQLite
-   JSON1 already in the stack
-2. **WebSocket support** — Both Penn and Rhost have it, essential for
-   modern web clients
-3. **Base64 encode/decode** — Both Penn and Rhost have it, needed for
-   HTTP/API work
-4. **Connection logging** — Penn's SQLite-based approach fits MUX
-   perfectly
-5. **printf()** — Rhost has it, genuinely useful for softcoders
-6. **mailsend()** — Send mail from softcode without @force hacks
+1. **JSON support** — **Done** (2.14). SQLite JSON1 + native functions.
+2. **WebSocket support** — **Done** (2.14). RFC 6455 in GANL layer.
+3. **Base64 encode/decode** — **Done** (2.14).
+4. **Connection logging** — **Done** (2.14). SQLite-based.
+5. **printf()** — **Done** (2.14). ANSI-aware formatted output.
+6. **mailsend()** — **Done** (2.14). Send mail from softcode.
 
 ### Tier 2 — Medium Value, Consider
 
-7. **letq()** — Penn's scoped registers, clean design
-8. **sortkey()** — Penn's sort-by-computed-key
-9. **Account system** — Rhost's multi-character accounts, modern games
-   want this
-10. **HMAC** — Penn has it, needed for webhook verification
-11. **Template system** — Rhost's template(), presentation/logic separation
-12. **strdistance()** — Levenshtein distance, useful for fuzzy matching
-13. **lockencode/lockdecode** — Programmatic lock manipulation
-14. **Regex attribute matching** — Penn's reglattr/regnattr family
-15. **Character classification** — isunicode(), isutf8(), isalpha(), etc.
-16. **dynhelp()** — Dynamic help from object attributes
+7. **letq()** — **Done** (2.14). Scoped registers.
+8. **sortkey()** — **Done** (2.14). Sort-by-computed-key.
+9. **Account system** — TODO. Multi-character accounts.
+10. **HMAC** — **Done** (2.14). Webhook verification.
+11. **Template system** — TODO. Presentation/logic separation.
+12. **strdistance()** — **Done** (2.14). Levenshtein distance.
+13. **lockencode/lockdecode** — **Done** (2.14). Programmatic lock manipulation.
+14. **Regex attribute matching** — **Done** (2.14). reglattr/regnattr family.
+15. **Character classification** — **Partial** (2.14). Unicode DFA for
+    isalpha/isdigit/isupper/islower/ispunct/isspace/isword.
+16. **dynhelp()** — **Done** (2.14). Dynamic help from object attributes.
 
 ### Tier 3 — Low Value or Long-Term
 
-17. **HTTP server** — Penn has it, very ambitious
-18. **Lua scripting** — Rhost has it, relates to parser roadmap item #5
-19. **execscript()** — External process integration, security concerns
-20. **@cron** — TinyMUSH has it, scheduled attribute triggers
-21. **Totem/tag system** — Rhost's user-definable markers
-22. **Shared-memory debugging** — Rhost's approach, useful for operators
-23. **CIEDE2000 color** — TinyMUSH's perceptual color matching
-24. **PCG RNG** — Penn's modern random number generator
+17. **HTTP server** — TODO. Very ambitious.
+18. **Lua scripting** — TODO. Relates to parser roadmap item #5.
+19. **execscript()** — TODO. External process integration, security concerns.
+20. **@cron** — **Done** (2.14). Vixie-style scheduler integration.
+21. **Totem/tag system** — TODO. User-definable markers.
+22. **Shared-memory debugging** — TODO. Useful for operators.
+23. **CIEDE2000 color** — TODO. Perceptual color matching.
+24. **PCG RNG** — **Done** (2.14). PCG-XSL-RR-128/64.
 
 ---
 
 ## Bottom Line
 
+MUX 2.14 has closed most of the gaps identified across all three server
+surveys. All Tier 1 items are done (JSON, WebSocket, base64, connection
+logging, printf, mailsend). Most of Tier 2 is done (letq, sortkey, HMAC,
+strdistance, lockencode/lockdecode, regex attr matching, dynhelp, partial
+character classification). Tier 3 picked up @cron and PCG RNG.
+
+The remaining items are: HTTP server, account system, template system,
+Lua/scripting, totem/tags, execscript, shared-memory debugging, and
+CIEDE2000 color. Of these, the account system and HTTP server are the most
+impactful for modern MU* games; the rest are niche or long-term.
+
 Rhost's approach is "add everything, let config sort it out." This produces an
 impressive feature count but also a maintenance burden and a learning curve
-that can overwhelm new users. The 549 config options tell the story.
-
-MUX should cherry-pick the genuinely useful features (JSON, WebSocket, base64,
-printf, connection logging) while maintaining its leaner design philosophy.
-The consolidated Tier 1 list across all three surveys is remarkably
-consistent: web integration primitives (JSON, WebSocket, base64, HTTP) are the
-biggest gap in MUX's feature set.
-
-The parser discussion (roadmap item #5) intersects with Rhost's Lua
-integration — if MUX ever adds a real programming language, Lua is the
-proven choice in this space.
+that can overwhelm new users. The 549 config options tell the story. MUX
+maintains a leaner design philosophy — fewer functions, cleaner interfaces,
+COM module architecture for extensibility.

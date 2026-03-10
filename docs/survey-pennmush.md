@@ -6,10 +6,13 @@ Purpose: Identify features, patterns, or ideas worth borrowing for TinyMUX.
 ## Verdict
 
 Significantly more interesting than TinyMUSH. Penn took a different
-architectural path and has several mature features MUX lacks entirely: JSON
+architectural path and has several mature features MUX previously lacked: JSON
 support, WebSockets, connection logging, an HTTP server, and base64 encoding.
-The function library is ~30% larger (520 vs 388). Several items are worth
-serious consideration.
+
+**Update (2.14):** MUX has now implemented all Tier 1 items from this survey:
+JSON, WebSockets, base64, HMAC, connection logging, plus Penn-inspired letq(),
+sortkey(), and regex attribute matching. The remaining gap is Penn's built-in
+HTTP server.
 
 ---
 
@@ -33,6 +36,9 @@ web portals, Discord bots, or external integrations need this. MUX already has
 SQLite with JSON1 — could leverage that for queries and add softcode
 functions on top.
 
+**Status:** Implemented in MUX 2.14. isjson() is a native RFC 8259 parser;
+json(), json_query(), json_mod() use SQLite JSON1.
+
 ### 2. WebSocket Support (websock.c)
 
 RFC 6455 compliant WebSocket implementation:
@@ -45,6 +51,9 @@ RFC 6455 compliant WebSocket implementation:
 **Worth borrowing?** Yes. WebSocket support is essential for modern web
 clients. Every serious MU* web client (Evennia, Ares) uses WebSockets. Without
 this, MUX games are limited to telnet clients or proxy servers.
+
+**Status:** Implemented in MUX 2.14. RFC 6455 with same-port auto-detection
+and wss:// (WebSocket over TLS) via deferred protocol detection.
 
 ### 3. Connection Logging (connlog.c)
 
@@ -60,6 +69,9 @@ SQLite-based connection audit trail:
 softcode. MUX logs connections to text files which are hard to query. With
 SQLite already in the stack, this is straightforward.
 
+**Status:** Implemented in MUX 2.14. SQLite connlog table, connlog()/addrlog()
+softcode functions, INSERT on connect, UPDATE on disconnect.
+
 ### 4. Base64 Functions (encode64/decode64)
 
 `encode64(<string>)` and `decode64(<string>)` — standard base64
@@ -68,6 +80,8 @@ encoding/decoding.
 **Worth borrowing?** Yes. Small, useful, easy to implement. Needed for any
 HTTP/API integration work.
 
+**Status:** Implemented in MUX 2.14.
+
 ### 5. HMAC Function
 
 `hmac(<message>, <key>, <algorithm>)` — keyed-hash message authentication
@@ -75,6 +89,9 @@ code.
 
 **Worth borrowing?** Yes, if doing webhook verification or API auth. Goes with
 the JSON/HTTP theme.
+
+**Status:** Implemented in MUX 2.14. hmac() via OpenSSL, default sha256, any
+digest() algorithm.
 
 ---
 
@@ -105,6 +122,8 @@ overwritten. `letq()` prevents register pollution in nested calls.
 **Worth borrowing?** Good idea. Clean, safe, reduces debugging headaches for
 softcoders working with nested u() calls.
 
+**Status:** Implemented in MUX 2.14.
+
 ### 8. sortkey() — Sort by Computed Key
 
 `sortkey(<ufun>, <list>)` — sort a list where the sort key is computed by a
@@ -113,6 +132,8 @@ pattern that MUSH coders currently do manually.
 
 **Worth borrowing?** Nice quality-of-life for softcoders. Simple to implement
 on top of existing sort infrastructure.
+
+**Status:** Implemented in MUX 2.14.
 
 ### 9. Nospoof Emit Variants (nsoemit, nspemit, nsremit, nszemit, etc.)
 
@@ -136,6 +157,9 @@ Penn uses PCG (Permuted Congruential Generator):
 known statistical weaknesses, PCG is a good modern replacement. Low priority
 unless someone finds bias in the current generator.
 
+**Status:** Implemented in MUX 2.14 — PCG-XSL-RR-128/64 (pcg64), replacing
+Mersenne Twister.
+
 ### 11. Spell Suggestion (spellfix.c, suggest())
 
 `suggest(<word>, <dictionary>)` — phonetic spell correction using SQLite's
@@ -154,6 +178,8 @@ Full suite of regex-based attribute name matching:
 
 **Worth borrowing?** Useful for code introspection. MUX has `lattr()` with
 wildcards but no regex variant.
+
+**Status:** Implemented in MUX 2.14 — reglattr()/reglattrp() via PCRE2.
 
 ### 13. Extended Lock Types
 
@@ -289,12 +315,14 @@ softcode.
 | Color | 16/256/24-bit, JSON palette | 16/256/24-bit, Unicode PUA |
 | Unicode | Latin-1 base, UTF-8 patches | Full UTF-8, NFC, DFA tables |
 | SSL | OpenSSL with slave proxy | OpenSSL integrated |
-| RNG | PCG | Custom (RandomINT32) |
-| Regex | PCRE2 | PCRE |
+| RNG | PCG | PCG-XSL-RR-128/64 |
+| Regex | PCRE2 | PCRE2 |
 | SQL | SQLite + MySQL + PostgreSQL | SQLite |
-| JSON | cJSON + SQLite JSON1 | None |
-| WebSocket | RFC 6455 | None |
+| JSON | cJSON + SQLite JSON1 | isjson + SQLite JSON1 |
+| WebSocket | RFC 6455 | RFC 6455 (same-port) |
 | HTTP | Built-in server | None |
+| Evaluator | Token-based | AST + Ragel scanner + LRU cache |
+| Architecture | Monolithic | Three-layer (libmux/engine/driver) |
 | Build | Autoconf | Autoconf |
 | Tests | C framework + Perl harness | Expect-based smoke tests |
 
@@ -304,13 +332,18 @@ softcode.
 
 Penn is the most interesting of the three servers to survey. The JSON,
 WebSocket, and HTTP features represent a genuine architectural vision: turning
-the MU* into a web-native application server. MUX should cherry-pick the
-high-value items (JSON, WebSockets, connection logging, base64) while
-leveraging its existing SQLite infrastructure for implementation.
+the MU* into a web-native application server.
 
-The function library differences are mostly noise — Penn has more variants
-of existing concepts (nspemit vs pemit, reglattr vs lattr) rather than
-fundamentally different capabilities. The exceptions are JSON, crypto, and web
-protocol support.
+**Update (2.14):** MUX has now cherry-picked all the high-value items
+identified here: JSON (isjson + SQLite JSON1), WebSockets (RFC 6455,
+same-port), connection logging (SQLite connlog), base64, HMAC, letq(),
+sortkey(), regex attribute matching (reglattr/reglattrp via PCRE2), and PCG
+RNG. MUX also went beyond the survey with an AST evaluator (Ragel scanner +
+LRU parse cache) and a three-layer architecture split (libmux/engine/driver).
+
+The remaining gap is Penn's built-in HTTP server (@http/@respond). The
+function library differences are now mostly noise — Penn has more variants
+of existing concepts (nspemit vs pemit) rather than fundamentally different
+capabilities.
 
 Next survey: RhostMUSH (expected to be the largest, most divergent).

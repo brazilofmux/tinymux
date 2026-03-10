@@ -1,4 +1,4 @@
-# TinyMUSH 4 Survey
+# TinyMUSH 4.0 Survey
 
 Surveyed: /tmp/tinymush (2026-03-06)
 Purpose: Identify features, patterns, or ideas worth borrowing for TinyMUX.
@@ -43,9 +43,7 @@ Unix-style cron scheduling for timed attribute triggers. Full cron syntax
 (minute, hour, DOM, month, DOW, ranges, steps). Tasks stored as attributes on
 objects, checked every server pulse. Bitmap-based storage.
 
-**Worth borrowing?** Interesting for game builders who want scheduled events
-without softcode timer loops. MUX has @wait and @daily but no cron-style
-granularity. Low effort to implement but niche demand.
+**Worth borrowing?** ~~Interesting for game builders.~~ **Done in MUX 2.14** — @cron/@crondel/@crontab implemented with Vixie-style computed next-fire-time scheduling (no polling loop). Supports ranges, lists, steps, month/day-of-week names, DOM/DOW OR-semantics.
 
 ### 4. benchmark() Function
 
@@ -133,7 +131,7 @@ merit:
 | HELPTEXT | Read help file entries from softcode | Low |
 | NATTR | Count of attributes on object | MUX has ATTRCNT |
 | STREQ | Case-insensitive string equality | MUX has comp() and strmatch() |
-| URL_ESCAPE / URL_UNESCAPE | URL encoding | Could be useful for HTTP integration |
+| URL_ESCAPE / URL_UNESCAPE | URL encoding | **Done in 2.14** (RFC 3986) |
 | WILDGREP / WILDMATCH / WILDPARSE | Wildcard variants of grep/match | Low |
 | WHILE / UNTIL | Loop constructs | MUX has iter/loop patterns |
 
@@ -152,7 +150,7 @@ Notable TinyMUSH commands MUX doesn't have:
 
 | Command | Description | Interest |
 |---------|-------------|----------|
-| @cron/@crontab/@crondel | Cron-style scheduling | Moderate |
+| @cron/@crontab/@crondel | Cron-style scheduling | **Done in 2.14** |
 | @addcommand/@delcommand | Dynamic command creation (GOD-only) | MUX has @addcommand |
 | @hook | Pre/post command hooks | MUX has @hook |
 | @redirect | Output redirection | Low |
@@ -171,21 +169,31 @@ Most of these MUX already has or doesn't need.
   more modern and performant.
 - **DNS:** Background thread with SysV message queues. MUX uses a slave
   process. Both work; MUX's approach is more portable.
-- **Eval:** Similar token-based parser. Has a separate `parse_to_cleanup()`
-  pass. Uses configurable stack limit. No fundamental differences.
+- **Eval:** TinyMUSH has a similar token-based parser with a separate `parse_to_cleanup()` pass. MUX 2.14 replaced this with an AST-based evaluator — Ragel-generated scanner, parsed into AST, LRU cache (1024 entries). A significant architectural divergence.
 - **Queue:** Split across 7 files (cque*.c). Has explicit PID allocation
   per queue entry and economy-tied queue costs. MUX's queue is comparable.
-- **Flags:** 3-word (96 flags max) vs MUX's 4-word design.
+- **Flags:** 3-word (96 flags max) vs MUX's 4-word (128 flags). Comparable.
+- **Regex:** Both use PCRE. MUX 2.14 upgraded to PCRE2.
+- **RNG:** TinyMUSH uses standard rand()/random(). MUX 2.14 uses PCG-XSL-RR-128/64.
+- **Storage:** TinyMUSH offers GDBM or LMDB. MUX uses SQLite with write-through.
+- **Modules:** Both have module systems. MUX 2.14 uses COM interfaces with engine.so as a loadable module.
 
 ---
 
 ## Bottom Line
 
-TinyMUSH 4 is a competent modernization of TinyMUSH 3 but hasn't meaningfully
+TinyMUSH 4.0 is a competent modernization of TinyMUSH 3 but hasn't meaningfully
 expanded the feature set. The codebase is clean and well-organized (good file
 splitting, modern C practices) but there's almost nothing here that MUX
 doesn't already do as well or better. The CIEDE2000 color matching is the one
 genuinely clever implementation detail.
+
+MUX 2.14 has now addressed the @cron item (the one feature with clear
+borrowing potential) and pulled further ahead architecturally: AST-based
+evaluator with Ragel scanner and parse cache, PCRE2, PCG-XSL-RR-128/64 RNG,
+SQLite write-through storage, and a three-layer architecture
+(libmux.so/engine.so/netmux) with COM interfaces. The gap between the two
+codebases has widened considerably.
 
 The structures/grid/stack features represent a design philosophy of adding
 engine-level primitives for things that softcode handles adequately. MUX's

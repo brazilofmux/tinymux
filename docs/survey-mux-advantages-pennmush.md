@@ -75,6 +75,68 @@ write-through. Penn stores these in separate flatfiles.
 
 **Impact:** Unified backup, unified queries, no separate dump cycles.
 
+### 4a. AST-Based Expression Evaluator
+
+Penn has a traditional token-based parser (`eval.c`). MUX 2.14 replaced its
+parser with an AST-based evaluator:
+
+- Ragel-generated goto-driven scanner for tokenization
+- Expressions parsed into an AST and cached in an LRU cache (1024 entries)
+- All %-substitutions, `##`/`#@`/`#$` tokens, and NOEVAL constructs handled
+  natively
+
+**Impact:** Faster evaluation, especially for frequently-executed expressions.
+Penn's parser re-parses every invocation.
+
+### 4b. Three-Layer Architecture
+
+MUX 2.14 splits into three shared objects: `libmux.so` (core types), `engine.so`
+(game engine as COM module), `netmux` (network driver). 12 COM interfaces bridge
+engine and driver. Penn is monolithic.
+
+**Impact:** Foundation for process isolation. Clean separation enables engine
+restarts without dropping connections.
+
+### 4c. PCRE2 Parity
+
+Both Penn and MUX now use PCRE2. This was previously a Penn advantage.
+
+### 4d. PCG RNG Parity
+
+Both Penn and MUX now use PCG random number generators. MUX uses PCG-XSL-RR-128/64
+(128-bit state, 64-bit output) vs Penn's PCG basic (64-bit state, 32-bit output).
+MUX's variant has larger state and wider output.
+
+### 4e. JSON/WebSocket/Connection Logging Parity
+
+MUX 2.14 now has:
+
+- **JSON:** isjson() (native RFC 8259 parser), json()/json_query()/json_mod()
+  (via SQLite JSON1) — comparable to Penn's cJSON + JSON1 approach
+- **WebSocket:** RFC 6455 with same-port auto-detection and wss:// — comparable
+  to Penn's implementation
+- **Connection logging:** SQLite connlog table with connlog()/addrlog() —
+  comparable to Penn's connlog.c
+
+These were previously Penn-only features and the primary items from the PennMUSH
+survey. The remaining Penn-only web feature is the built-in HTTP server.
+
+### Architecture Comparison
+
+| Area | PennMUSH | TinyMUX |
+|------|----------|---------|
+| Storage | Flatfile + chunk allocator | SQLite (write-through) |
+| Networking | select() | GANL (epoll/kqueue) |
+| Unicode | Latin-1 base, UTF-8 patches | Full UTF-8, NFC, DFA tables |
+| Regex | PCRE2 | PCRE2 |
+| RNG | PCG (64-bit state) | PCG-XSL-RR-128/64 |
+| JSON | cJSON + SQLite JSON1 | isjson + SQLite JSON1 |
+| WebSocket | RFC 6455 | RFC 6455 (same-port) |
+| HTTP | Built-in server | None |
+| Evaluator | Token-based | AST + Ragel + LRU cache |
+| Architecture | Monolithic | Three-layer (libmux/engine/driver) |
+| Tests | C framework + Perl harness | 489 smoke test cases |
+
 ---
 
 ## Unicode
@@ -206,11 +268,17 @@ with Omega, converting to/from Penn's P6H format is a single command.
 
 ## Summary
 
-Penn's advantages over MUX (JSON, WebSocket, HTTP server, connection logging)
-are feature additions. MUX's advantages over Penn (SQLite write-through, GANL
-networking, full UTF-8/NFC, cursor-based SQL) are architectural foundations
-that are much harder to retrofit. Both servers handle connection-preserving
-reboot.
+Penn's web-facing features (JSON, WebSocket, connection logging) were its primary
+advantages over MUX. As of 2.14, MUX has implemented all of these plus HMAC,
+base64, letq(), and sortkey(). Penn retains its built-in HTTP server, object
+warning system, and extended lock types.
 
-The ideal MU* server would combine MUX's storage/networking/Unicode
-architecture with Penn's web-facing features.
+MUX's architectural advantages remain: SQLite write-through (crash durability),
+GANL networking (scalability), full UTF-8/NFC (correctness), cursor-based SQL
+(capability), AST evaluator (performance), and three-layer architecture
+(isolation). These are harder to retrofit than adding functions.
+
+The remaining gap is Penn's HTTP server — the one Tier 1 web feature MUX has
+not yet implemented. Penn's Perl-based test harness is also more sophisticated
+than MUX's Expect-based smoke tests, though MUX's 489 test cases provide
+broader function coverage.

@@ -56,6 +56,39 @@ TinyMUSH uses `select()`. MUX's GANL layer provides:
 **Impact:** Scales to thousands of concurrent connections without performance
 degradation. select() is O(n) in file descriptors.
 
+### 3a. AST-Based Expression Evaluator
+
+TinyMUSH has a traditional token-based parser with a `parse_to_cleanup()` pass.
+MUX 2.14 replaced its parser with an AST-based evaluator:
+
+- Ragel-generated goto-driven scanner for tokenization
+- Expressions parsed into an AST and cached in an LRU cache (1024 entries)
+- All %-substitutions, `##`/`#@`/`#$` tokens, and NOEVAL constructs handled
+  natively
+- Eliminates re-parsing of frequently evaluated expressions
+
+**Impact:** Faster evaluation of complex softcode, especially in loops.
+Architectural foundation for future optimization (JIT compilation).
+
+### 3b. Three-Layer Architecture
+
+MUX 2.14 splits into three shared objects:
+
+- `libmux.so` — core types and utilities
+- `engine.so` — game engine loaded as a COM module
+- `netmux` — network driver
+
+The engine communicates with the driver exclusively through 12 COM interfaces.
+TinyMUSH has a module system via dlsym() but the core server is monolithic.
+
+**Impact:** Foundation for process isolation (engine crashes don't kill the
+driver). Clean separation of concerns.
+
+### 3c. PCRE2
+
+TinyMUSH uses PCRE. MUX 2.14 upgraded to PCRE2 with JIT compilation support,
+better Unicode handling, and modern memory management.
+
 ### 4. @restart — Connection Preservation
 
 Both TinyMUSH and MUX preserve player connections across restart. The
@@ -102,6 +135,19 @@ e+combining-acute normalize to the same form. No mojibake.
 | **colordepth()** | Per-connection color capability detection |
 | **moniker()** | ANSI-decorated display name |
 | **pack() / unpack()** | Multi-radix (2-64) binary encoding |
+| **JSON** (isjson, json, json_query, json_mod) | JSON construction, querying, and modification via SQLite JSON1 |
+| **WebSocket** (wsjson, wshtml) | WebSocket output functions — TinyMUSH has no WebSocket support |
+| **Connection logging** (connlog, addrlog) | SQLite-based connection audit trail |
+| **encode64() / decode64()** | Base64 encoding/decoding |
+| **hmac()** | Keyed-hash message authentication |
+| **printf()** | ANSI-aware formatted output with field widths |
+| **letq()** | Scoped named registers |
+| **sortkey()** | Sort by computed key |
+| **strdistance()** | Levenshtein edit distance |
+| **lockencode() / lockdecode()** | Lock serialization |
+| **dynhelp()** | Dynamic help from object attributes |
+| **reglattr() / reglattrp()** | Regex attribute matching |
+| **@cron / @crondel / @crontab** | Vixie-style cron scheduling |
 
 ### Medium Value
 
@@ -163,7 +209,14 @@ conversion tool.
 
 ## Summary
 
-TinyMUSH would benefit most from: SQLite storage (eliminates dump-cycle risk),
-GANL networking (scalability), UTF-8/NFC (internationalization), and
-connection-preserving @restart (operational reliability). These are deep
-architectural advantages, not simple function additions.
+The gap between MUX and TinyMUSH has widened significantly with 2.14. Beyond
+the existing architectural advantages — SQLite storage, GANL networking,
+UTF-8/NFC, connection-preserving @restart — MUX now has web integration
+features (JSON, WebSocket, base64) that TinyMUSH completely lacks, plus
+architectural advances that have no TinyMUSH counterpart: an AST-based
+expression evaluator with parse caching, a three-layer driver/engine/library
+split communicating through COM interfaces, and PCRE2 with JIT support.
+TinyMUSH's LMDB backend and module system are genuine improvements over its
+older architecture, but the scope of MUX's 2.14 changes — 489 smoke tests
+covering the expanded feature set — puts it on a fundamentally different
+trajectory.

@@ -74,6 +74,44 @@ doesn't address the fundamental scalability issue.
 **Impact:** Better performance under load. select() scans all fds every
 iteration.
 
+### 2a. AST-Based Expression Evaluator
+
+Rhost has a traditional TinyMUSH 2.2.5-derived token-based parser. MUX 2.14
+replaced its parser with an AST-based evaluator:
+
+- Ragel-generated goto-driven scanner for tokenization
+- Expressions parsed into an AST and cached in an LRU cache (1024 entries)
+- All %-substitutions, `##`/`#@`/`#$` tokens, and NOEVAL constructs handled
+  natively
+
+**Impact:** Faster evaluation of complex softcode. Rhost re-parses every
+invocation. Both servers descend from the same TinyMUSH 2.2.5 parser base —
+MUX has now fundamentally replaced it.
+
+### 2b. Three-Layer Architecture
+
+MUX 2.14 splits into three shared objects: `libmux.so` (core types), `engine.so`
+(game engine as COM module), `netmux` (network driver). 12 COM interfaces bridge
+engine and driver. Rhost is monolithic (82 source files, single binary).
+
+**Impact:** Foundation for process isolation and independent module development.
+
+### 2c. PCRE2
+
+Rhost uses PCRE. MUX 2.14 upgraded to PCRE2 with JIT compilation support and
+better Unicode handling.
+
+### 2d. Web Integration Parity
+
+Rhost has WebSocket support (two implementations). MUX 2.14 now also has
+WebSocket support (RFC 6455, same-port auto-detection, wss://), plus web
+features Rhost lacks:
+
+- **JSON:** isjson(), json(), json_query(), json_mod() — Rhost has none
+- **Connection logging:** SQLite connlog table — Rhost has none
+- **HMAC:** hmac() for webhook verification — Rhost has none
+- **Base64:** encode64()/decode64() — both now have this
+
 ### 3. @restart / @reboot — Connection Preservation
 
 Both Rhost and MUX preserve player connections across reboot. The mechanism is
@@ -206,6 +244,27 @@ essential for sophisticated text processing.
 | ports() / lports() | Port information |
 | mail() / mailfrom() | Mail query functions |
 
+### Web and Crypto Functions (New in 2.14)
+
+| Function | Description |
+|----------|-------------|
+| isjson() / json() / json_query() / json_mod() | JSON construction, querying, modification |
+| connlog() / addrlog() | Connection logging queries |
+| hmac() | Keyed-hash message authentication |
+| printf() | ANSI-aware formatted output (Rhost has this; MUX now matches) |
+| letq() | Scoped named registers |
+| sortkey() | Sort by computed key |
+| strdistance() | Levenshtein edit distance (Rhost has this; MUX now matches) |
+| lockencode() / lockdecode() | Lock serialization (Rhost has this; MUX now matches) |
+| dynhelp() | Dynamic help from attributes (Rhost has this; MUX now matches) |
+| reglattr() / reglattrp() | Regex attribute matching |
+| url_escape() / url_unescape() | RFC 3986 percent-encoding |
+| @cron / @crondel / @crontab | Vixie-style cron scheduling |
+
+Note: printf(), strdistance(), lockencode/lockdecode, and dynhelp() close gaps
+where Rhost previously had features MUX lacked. The JSON, connlog, hmac, letq,
+sortkey, reglattr functions are new MUX advantages.
+
 ### Zone Content Functions
 
 - `zchildren()`, `zexits()`, `zrooms()`, `zthings()` — enumerate zone
@@ -239,7 +298,7 @@ integrate into CI/CD.
 
 ### Smoke Tests
 
-MUX has 348 automated test cases covering functions, Unicode, sort behavior,
+MUX has 489 automated test cases covering functions, Unicode, sort behavior,
 and regressions. Tests run via `./tools/Makesmoke && ./tools/Smoke` with
 deterministic pass/fail.
 
@@ -249,14 +308,19 @@ Rhost has no comparable automated test suite.
 
 ## Summary
 
-Rhost's advantages over MUX are in feature breadth: more functions, more
+Rhost's remaining advantages over MUX are in configuration surface area: more
 flags, more toggles, more config options, Lua scripting, MySQL support. These
 are additive features.
 
-MUX's advantages over Rhost are in engineering depth: SQLite write-through
-(crash durability), GANL networking (scalability), full
-UTF-8/NFC (correctness), indexed @search (performance), cursor-based SQL API
-(capability), regex functions (text processing), and Omega converter
-(portability).
+MUX 2.14's advantages span both engineering depth and functional breadth.
+On the depth side: SQLite write-through (crash durability), GANL networking
+(scalability), full UTF-8/NFC (correctness), AST-based expression evaluator
+(performance), three-layer architecture (modularity), PCRE2 (modern regex),
+indexed @search (performance), and Omega converter (portability). On the
+breadth side: MUX has closed several feature gaps where Rhost led — printf(),
+strdistance(), lockencode/lockdecode, dynhelp(), base64, mailsend() — and
+added new capabilities Rhost lacks entirely: JSON functions, connection
+logging, HMAC, letq(), sortkey(), @cron scheduling, and cursor-based SQL.
 
-Breadth is easy to add. Depth is hard to retrofit.
+The gap has shifted. Rhost still has the most toggles. MUX now has both the
+stronger architecture and the features that matter for modern MU* operation.

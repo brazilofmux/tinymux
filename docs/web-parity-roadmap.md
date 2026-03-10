@@ -26,7 +26,7 @@ the gap between TinyMUX and PennMUSH/RhostMUSH on web integration.
 | 12 | strdistance() | **Done** | Levenshtein edit distance, Unicode-aware. |
 | 13 | lockencode/lockdecode | **Done** | Validate/normalize lock expressions. lockencode() → canonical (#N) form, lockdecode() → *PlayerName form. |
 | 14 | Regex attr matching | **Done** | reglattr/regnattr/reglattri/regnattri via PCRE2. |
-| 15 | Character classification | **Partial** | isalpha(), isdigit(), isalnum() done via DFA. isunicode()/isutf8() deferred. |
+| 15 | Character classification | **Partial** | isalpha(), isdigit(), isupper(), islower(), ispunct(), isspace(), isword() done via Unicode DFA. isunicode()/isutf8() deferred. |
 | 16 | dynhelp() | **Done** | Dynamic help from object attributes. Prefix matching, custom prefix, case-insensitive. |
 | 17 | mailsend() | **Done** | Send mail from softcode. Resolves to owner, full permission checks, throttle, signature. |
 
@@ -35,20 +35,30 @@ the gap between TinyMUX and PennMUSH/RhostMUSH on web integration.
 | # | Feature | Status | Notes |
 |---|---------|--------|-------|
 | 18 | HTTP server | TODO | Built-in HTTP request handling (Penn). Big attack surface. |
-| 19 | Scripting language | TODO | Lua or leverage AST/JIT from ~/slow-32 and ~/risv |
+| 19 | Scripting language | TODO | Lua or leverage AST/JIT from ~/slow-32 and ~/riscv |
 | 20 | @cron | **Done** | Vixie-style scheduler integration, 5-field Unix cron syntax. @cron/@crondel/@crontab. |
 | 21 | Totem/tag system | TODO | User-definable markers beyond MARKER0-9 (Rhost) |
 | 22 | Shared-memory debugging | TODO | Live debugging via shmem IPC (Rhost) |
 | 23 | PCG RNG | **Done** | Modern random number generator (Penn) |
 
+## Progress Summary
+
+- **Tier 1:** 6/6 complete — all high-value web integration features shipped.
+- **Tier 2:** 9/11 complete — Account system and Template system remain.
+- **Tier 3:** 2/6 complete — @cron and PCG RNG done. HTTP server, scripting
+  language, totem/tag system, and shared-memory debugging remain.
+- **Overall:** 17/23 items done (74%). All survey-identified gaps in web
+  integration, crypto, and utility functions are closed.
+
 ## Architecture Notes
 
-- WebSocket goes in the driver (networking layer). Needs HTTP upgrade
-  handshake detection in the connection accept path, then frame codec
-  for ongoing I/O. Output channels: text, JSON, HTML, prompt.
-- Connection logging is a natural fit for SQLite — separate table or
-  separate database file. R-tree index for time-range queries (Penn's
-  approach).
-- printf() is pure engine-side string formatting. No dependencies.
+- WebSocket implemented in the driver layer with same-port auto-detection
+  and wss:// via deferred protocol detection (GANL handles TLS natively).
+- Connection logging uses the main SQLite database (connlog table, schema v6).
+  INSERT on connect, UPDATE on disconnect, connlog()/addrlog() for queries.
+- printf() is pure engine-side formatting. ANSI-aware field widths.
 - Tier 2 items are mostly self-contained engine functions.
-- Tier 3 items are architectural and need design work first.
+- Remaining Tier 3 items are architectural and need design work:
+  - HTTP server: biggest remaining gap vs PennMUSH. Significant attack surface.
+  - Scripting language: relates to AST/JIT work from ~/slow-32 and ~/riscv.
+  - Totem/tag system: user-definable markers, extends MARKER0-9 concept.
