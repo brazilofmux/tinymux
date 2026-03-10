@@ -1,5 +1,5 @@
 /*! \file svdrand.h
- * \brief Random Numbers.
+ * \brief Random Numbers — PCG-XSL-RR-128/64 (pcg64).
  *
  */
 
