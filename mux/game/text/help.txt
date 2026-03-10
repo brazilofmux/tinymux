@@ -11805,6 +11805,44 @@ POWER()
 
   Related Topics: exp(), ln(), log(), sqrt()
 
+& PRINTF()
+PRINTF()
+
+  FUNCTION: printf(<format>, <arg1>, <arg2>, ...)
+
+  Produces formatted output using a format string with conversion
+  specifiers.  Each specifier consumes the next argument.
+
+  Conversion specifiers:
+    %s   String.  Field width counts visible columns (ANSI-aware).
+    %d   Integer (decimal).
+    %f   Floating point.  Default 6 decimal places.
+    %c   First character of the argument.
+    %%   Literal percent sign (consumes no argument).
+
+  Modifiers (between % and the type letter):
+    -    Left-justify within the field width.
+    =    Center within the field width (MUX extension).
+    0    Zero-pad (numeric types only).
+    N    Minimum field width in visible columns.
+    .N   Precision: max columns for %s, decimal places for %f.
+
+  Examples:
+    > say printf(Hello %s!, World)
+    You say, "Hello World!"
+    > say printf(|%-10s|%5d|, Apples, 42)
+    You say, "|Apples    |   42|"
+    > say printf(|%=10s|, Mid)
+    You say, "|   Mid    |"
+    > say printf(%05d, 7)
+    You say, "00007"
+    > say printf(%.2f, 3.14159)
+    You say, "3.14"
+    > say printf(|%.5s|, Hello World)
+    You say, "|Hello|"
+
+  Related Topics: ljust(), rjust(), center(), lpad(), rpad(), cpad().
+
 & POWERS LIST
 POWERS LIST
 

@@ -10,9 +10,9 @@ the gap between TinyMUX and PennMUSH/RhostMUSH on web integration.
 | 1 | base64 encode/decode | **Done** | 7f9e8cb0 | encode64(), decode64() in funcweb.cpp |
 | 2 | JSON support | **Done** | 7f9e8cb0 | isjson() native RFC 8259; json(), json_query(), json_mod() via SQLite JSON1 |
 | 3 | HMAC | **Done** | 7f9e8cb0 | hmac() via OpenSSL, default sha256, any digest() algo |
-| 4 | WebSocket support | TODO | | RFC 6455 in driver layer. HTTP upgrade handshake, text/binary frames, ping/pong. Penn and Rhost both have this. |
+| 4 | WebSocket support | **Done** | a3fe85bb, b1833c20 | RFC 6455 same-port auto-detect. ws:// and wss:// via deferred protocol detection. |
 | 5 | Connection logging | TODO | | SQLite table for connect/disconnect audit trail. connlog()/addrlog() softcode functions. Penn has this. |
-| 6 | printf() | TODO | | Formatted output. Rhost has this. Replaces nested ljust/rjust/center. |
+| 6 | printf() | **Done** | | ANSI-aware formatted output. %s/%d/%f/%c with width, alignment (-/=), precision, zero-pad. |
 
 ## Tier 2 — Medium Value, Consider
 

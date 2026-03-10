@@ -9284,6 +9284,305 @@ static FUNCTION(fun_cpad)
     centerjustcombo(CJC_CENTER, buff, bufc, fargs, nfargs, false);
 }
 
+// printf(<format>, <arg1>, <arg2>, ...) — Formatted output.
+//
+// Format specifiers:
+//   %s   — string (ANSI-aware width)
+//   %d   — integer
+//   %f   — floating point
+//   %c   — first character
+//   %%   — literal %
+//
+// Modifiers (between % and type):
+//   -    — left-justify
+//   =    — center (MU* extension)
+//   0    — zero-pad (numeric only)
+//   N    — field width (visible columns)
+//   .N   — precision (max columns for %s, decimal places for %f)
+//
+static FUNCTION(fun_printf)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (nfargs < 1)
+    {
+        return;
+    }
+
+    const UTF8 *fmt = fargs[0];
+    int iArg = 1; // next argument index
+
+    while (*fmt)
+    {
+        if ('%' != *fmt)
+        {
+            // Literal character — copy it.
+            //
+            size_t d = utf8_FirstByte[*fmt];
+            safe_copy_buf(fmt, d, buff, bufc);
+            fmt += d;
+            continue;
+        }
+
+        // Skip the '%'.
+        //
+        fmt++;
+
+        // Parse flags.
+        //
+        bool bLeft = false;
+        bool bCenter = false;
+        bool bZero = false;
+
+        bool bParsing = true;
+        while (*fmt && bParsing)
+        {
+            switch (*fmt)
+            {
+            case '-': bLeft = true;   fmt++; break;
+            case '=': bCenter = true; fmt++; break;
+            case '0': bZero = true;   fmt++; break;
+            default:  bParsing = false;      break;
+            }
+        }
+
+        // Parse width.
+        //
+        int nWidth = 0;
+        bool bWidth = false;
+        while (mux_isdigit(*fmt))
+        {
+            nWidth = nWidth * 10 + (*fmt - '0');
+            fmt++;
+            bWidth = true;
+        }
+
+        // Parse precision.
+        //
+        int nPrec = -1;
+        if ('.' == *fmt)
+        {
+            fmt++;
+            nPrec = 0;
+            while (mux_isdigit(*fmt))
+            {
+                nPrec = nPrec * 10 + (*fmt - '0');
+                fmt++;
+            }
+        }
+
+        // Parse conversion.
+        //
+        if ('\0' == *fmt)
+        {
+            break;
+        }
+
+        UTF8 cConv = *fmt++;
+
+        if ('%' == cConv)
+        {
+            safe_chr('%', buff, bufc);
+            continue;
+        }
+
+        // Consume the next argument.
+        //
+        const UTF8 *pArg = T("");
+        if (iArg < nfargs)
+        {
+            pArg = fargs[iArg++];
+        }
+
+        // Format the value into a temporary buffer.
+        //
+        UTF8 valBuf[LBUF_SIZE];
+        UTF8 *pVal = valBuf;
+
+        switch (cConv)
+        {
+        case 's':
+            pVal = const_cast<UTF8 *>(pArg);
+            break;
+
+        case 'd':
+        case 'i':
+            {
+                long v = mux_atol(pArg);
+                mux_ltoa(v, valBuf);
+            }
+            break;
+
+        case 'f':
+            {
+                double v = mux_atof(pArg, false);
+                int places = (nPrec >= 0) ? nPrec : 6;
+                if (places > 20)
+                {
+                    places = 20;
+                }
+
+                // Use fval-style output for default precision,
+                // or fixed-point for explicit precision.
+                //
+                if (nPrec < 0)
+                {
+                    fval(valBuf, &pVal, v);
+                    pVal = valBuf;
+                }
+                else
+                {
+                    snprintf(reinterpret_cast<char *>(valBuf),
+                             sizeof(valBuf), "%.*f", places, v);
+                }
+                nPrec = -1; // consumed by %f
+            }
+            break;
+
+        case 'c':
+            {
+                size_t d = utf8_FirstByte[*pArg];
+                if (d > 0 && *pArg)
+                {
+                    memcpy(valBuf, pArg, d);
+                    valBuf[d] = '\0';
+                }
+                else
+                {
+                    valBuf[0] = '\0';
+                }
+            }
+            break;
+
+        default:
+            // Unknown conversion — output literal.
+            //
+            safe_chr('%', buff, bufc);
+            safe_chr(cConv, buff, bufc);
+            continue;
+        }
+
+        // Apply width and alignment using ANSI-aware mux_string.
+        //
+        if (!bWidth || nWidth <= 0)
+        {
+            // No width — apply precision truncation for %s, then output.
+            //
+            if ('s' == cConv && nPrec >= 0)
+            {
+                mux_string sVal(pVal);
+                mux_cursor iEnd;
+                sVal.cursor_from_column(iEnd, static_cast<LBUF_OFFSET>(nPrec));
+                size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+                *bufc += sVal.export_TextColor(*bufc, CursorMin, iEnd, nMax);
+            }
+            else
+            {
+                safe_str(pVal, buff, bufc);
+            }
+            continue;
+        }
+
+        if (LBUF_SIZE <= static_cast<size_t>(nWidth))
+        {
+            safe_range(buff, bufc);
+            continue;
+        }
+
+        // For numeric types with zero-pad, handle directly.
+        //
+        if (bZero && !bLeft && !bCenter
+            && ('d' == cConv || 'i' == cConv || 'f' == cConv))
+        {
+            size_t vlen = strlen(reinterpret_cast<const char *>(pVal));
+            bool bNeg = ('-' == pVal[0]);
+            const UTF8 *pDigits = bNeg ? pVal + 1 : pVal;
+            size_t dlen = bNeg ? vlen - 1 : vlen;
+
+            if (bNeg)
+            {
+                safe_chr('-', buff, bufc);
+            }
+            for (size_t i = dlen; i < static_cast<size_t>(nWidth) - (bNeg ? 1 : 0); i++)
+            {
+                safe_chr('0', buff, bufc);
+            }
+            safe_str(pDigits, buff, bufc);
+            continue;
+        }
+
+        // ANSI-aware padding using mux_string.
+        //
+        mux_string sVal(pVal);
+        LBUF_OFFSET nValWidth = sVal.visual_width();
+        mux_cursor nValLen = sVal.length_cursor();
+
+        // Apply precision truncation for %s.
+        //
+        if ('s' == cConv && nPrec >= 0
+            && nValWidth > static_cast<LBUF_OFFSET>(nPrec))
+        {
+            mux_cursor iEnd;
+            sVal.cursor_from_column(iEnd, static_cast<LBUF_OFFSET>(nPrec));
+            nValLen = iEnd;
+            nValWidth = static_cast<LBUF_OFFSET>(nPrec);
+        }
+
+        if (nValWidth >= static_cast<LBUF_OFFSET>(nWidth))
+        {
+            // Value fills or exceeds width — output as-is (truncated to width).
+            //
+            mux_cursor iEnd;
+            sVal.cursor_from_column(iEnd, static_cast<LBUF_OFFSET>(nWidth));
+            size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+            *bufc += sVal.export_TextColor(*bufc, CursorMin, iEnd, nMax);
+            continue;
+        }
+
+        LBUF_OFFSET nPad = static_cast<LBUF_OFFSET>(nWidth) - nValWidth;
+        LBUF_OFFSET nLeading = 0;
+        LBUF_OFFSET nTrailing = 0;
+
+        if (bCenter)
+        {
+            nLeading = nPad / 2;
+            nTrailing = nPad - nLeading;
+        }
+        else if (bLeft)
+        {
+            nTrailing = nPad;
+        }
+        else
+        {
+            nLeading = nPad;
+        }
+
+        // Leading padding.
+        //
+        for (LBUF_OFFSET i = 0; i < nLeading; i++)
+        {
+            safe_chr(' ', buff, bufc);
+        }
+
+        // Value.
+        //
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sVal.export_TextColor(*bufc, CursorMin, nValLen, nMax);
+
+        // Trailing padding.
+        //
+        for (LBUF_OFFSET i = 0; i < nTrailing; i++)
+        {
+            safe_chr(' ', buff, bufc);
+        }
+    }
+}
+
 /* ---------------------------------------------------------------------------
  * setq, setr, r: set and read global registers.
  */
@@ -11842,6 +12141,7 @@ static FUN builtin_function_list[] =
     {T("POSS"),        fun_poss,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("POWER"),       fun_power,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("POWERS"),      fun_powers,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("PRINTF"),      fun_printf,     MAX_ARG, 1,      11,         0, CA_PUBLIC},
     {T("R"),           fun_r,          MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("RAND"),        fun_rand,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("REGMATCH"),    fun_regmatch,   MAX_ARG, 2,       3,         0, CA_PUBLIC},

@@ -1,0 +1,127 @@
+#
+# printf_fn.mux - Test Cases for printf().
+#
+@create test_printf_fn
+-
+@set test_printf_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_printf_fn=
+  @log smoke=Beginning printf() test cases.
+-
+#
+# Test Case #1 - Basic conversions.
+#
+&tr.tc001 test_printf_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [printf(Hello %s!, World)]
+            [printf(%d items, 42)]
+            [printf(%05d, 7)]
+            [printf(%%)]
+            [printf(%c, Hello)]
+          )
+        ),
+        791367F7A06491C8C5E70821A60214855DE1E9A7
+      )=
+  {
+    @log smoke=TC001: printf basic conversions. Succeeded.
+  },
+  {
+    @log smoke=TC001: printf basic conversions. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Alignment.
+#
+&tr.tc002 test_printf_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [printf(|%-10s|, Left)]
+            [printf(|%10s|, Right)]
+            [printf(|%=10s|, Mid)]
+          )
+        ),
+        9855C2DCCF320FEC10106841E2CDA13CEA00E8E8
+      )=
+  {
+    @log smoke=TC002: printf alignment. Succeeded.
+  },
+  {
+    @log smoke=TC002: printf alignment. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Precision and width.
+#
+&tr.tc003 test_printf_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [printf(|%.3s|, Hello)]
+            [printf(|%-10.5s|, Hello World)]
+            [printf(|%10d|, 42)]
+            [printf(|%-10d|, 42)]
+          )
+        ),
+        0C54D493347FBEAE62A3D22B328CDA0B578477CB
+      )=
+  {
+    @log smoke=TC003: printf precision and width. Succeeded.
+  },
+  {
+    @log smoke=TC003: printf precision and width. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - Float formatting.
+#
+&tr.tc004 test_printf_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [printf(%f, 3.14)]
+            [printf(%.2f, 3.14159)]
+            [printf(%.0f, 42.7)]
+          )
+        ),
+        55626DA3D67EBF7B5EEFED978B1B4DBC1BEA6C19
+      )=
+  {
+    @log smoke=TC004: printf float. Succeeded.
+  },
+  {
+    @log smoke=TC004: printf float. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - Mixed arguments.
+#
+&tr.tc005 test_printf_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [printf(no args)]
+            [printf(%s %s %s, one, two, three)]
+            [printf(%s and %d, hello, 99)]
+          )
+        ),
+        1BE2763C0148096FC36E2DB9AC4E527C8C635402
+      )=
+  {
+    @log smoke=TC005: printf mixed args. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC005: printf mixed args. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_printf_fn=
+  @log smoke=End printf() test cases.;
+  @notify smoke
+-
+drop test_printf_fn
+-
+#
+# End of Test Cases
+#
