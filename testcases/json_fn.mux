@@ -1,0 +1,150 @@
+#
+# json_fn.mux - Test Cases for json(), json_query(), json_mod().
+#
+@create test_json_fn
+-
+@set test_json_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_json_fn=
+  @log smoke=Beginning json/json_query/json_mod test cases.
+-
+#
+# Test Case #1 - json() construction.
+#
+&tr.tc001 test_json_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [json(string,Hello World)]
+            [json(number,42)]
+            [json(boolean,1)]
+            [json(boolean,0)]
+            [json(null)]
+          )
+        ),
+        557C2F1F7E467CB4566594B50918D91811AC79C3
+      )=
+  {
+    @log smoke=TC001: json construction. Succeeded.;
+  },
+  {
+    @log smoke=TC001: json construction. Failed (%q0).;
+  }
+-
+#
+# Test Case #2 - json_query() type.
+#
+&tr.tc002 test_json_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [json_query({"a":1})]
+            [json_query([1,2,3])]
+            [json_query("hello")]
+            [json_query(42)]
+            [json_query(true)]
+            [json_query(null)]
+          )
+        ),
+        EE241811877D969257E4846E9ABCE91D02D208BB
+      )=
+  {
+    @log smoke=TC002: json_query type. Succeeded.;
+  },
+  {
+    @log smoke=TC002: json_query type. Failed (%q0).;
+  }
+-
+#
+# Test Case #3 - json_query() get and size.
+#
+&tr.tc003 test_json_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [json_query({"name":"Bob","age":30},get,$.name)]
+            [json_query({"name":"Bob","age":30},get,$.age)]
+            [json_query([10,20,30],size)]
+            [json_query({"a":1,"b":2},size)]
+          )
+        ),
+        8357B685620ADF1C8B0689B11BE6D75D82CD84B6
+      )=
+  {
+    @log smoke=TC003: json_query get/size. Succeeded.;
+  },
+  {
+    @log smoke=TC003: json_query get/size. Failed (%q0).;
+  }
+-
+#
+# Test Case #4 - json_query() keys and exists.
+#
+&tr.tc004 test_json_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [json_query({"a":1,"b":2},keys)]
+            [json_query({"a":1},exists,$.a)]
+            [json_query({"a":1},exists,$.z)]
+          )
+        ),
+        89F13B6196C7B63997CB2833E242BCAA957FEA61
+      )=
+  {
+    @log smoke=TC004: json_query keys/exists. Succeeded.;
+  },
+  {
+    @log smoke=TC004: json_query keys/exists. Failed (%q0).;
+  }
+-
+#
+# Test Case #5 - json_mod() set/remove.
+#
+&tr.tc005 test_json_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [json_mod({"a":1},set,$.b,2)]
+            [json_mod({"a":1,"b":2},remove,$.b)]
+          )
+        ),
+        9CC0807747A2FFB05FFBAD51A9A0F9570571DB58
+      )=
+  {
+    @log smoke=TC005: json_mod set/remove. Succeeded.;
+  },
+  {
+    @log smoke=TC005: json_mod set/remove. Failed (%q0).;
+  }
+-
+#
+# Test Case #6 - json_mod() insert/replace.
+#
+&tr.tc006 test_json_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [json_mod({"a":1},insert,$.b,2)]
+            [json_mod({"a":1},insert,$.a,99)]
+            [json_mod({"a":1},replace,$.a,99)]
+            [json_mod({"a":1},replace,$.z,99)]
+          )
+        ),
+        8357B685620ADF1C8B0689B11BE6D75D82CD84B6
+      )=
+  {
+    @log smoke=TC006: json_mod insert/replace. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC006: json_mod insert/replace. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_json_fn=
+  @log smoke=End json/json_query/json_mod test cases.;
+  @notify smoke
+-
+drop test_json_fn
+-
+#
+# End of Test Cases
+#

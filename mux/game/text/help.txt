@@ -6467,6 +6467,21 @@ DEC()
 
   Related Topics: sub(), add(), inc().
 
+& DECODE64()
+DECODE64()
+
+  FUNCTION: decode64(<base64-string>)
+
+  Decodes a base64-encoded string back to its original content.
+
+  Examples:
+    > say decode64(SGVsbG8=)
+    You say, "Hello"
+    > say decode64(dGVzdA==)
+    You say, "test"
+
+  Related Topics: encode64().
+
 & DECRYPT()
 DECRYPT()
 
@@ -6833,6 +6848,23 @@ ENACTOR
     %A/%a ...              - Absolute possessive pronoun (his hers its theirs)
 
   Related Topics: SUBSTITUTION.
+
+& ENCODE64()
+ENCODE64()
+
+  FUNCTION: encode64(<string>)
+
+  Returns the base64 encoding of <string>. Base64 is a standard encoding
+  used in HTTP, email, and API integrations to represent binary data as
+  printable ASCII characters.
+
+  Examples:
+    > say encode64(Hello)
+    You say, "SGVsbG8="
+    > say encode64(test)
+    You say, "dGVzdA=="
+
+  Related Topics: decode64().
 
 & ENCRYPT()
 ENCRYPT()
@@ -8197,6 +8229,31 @@ HEIGHT()
 
   Related Topics: colordepth(), terminfo(), width().
 
+& HMAC()
+HMAC()
+
+  FUNCTION: hmac(<message>, <key>[, <algorithm>])
+
+  Returns the hex-encoded HMAC (Hash-based Message Authentication Code)
+  of <message> using <key>. The default algorithm is sha256.
+
+  Any algorithm supported by digest() may be used as the optional third
+  argument (e.g., sha1, sha384, sha512, md5).
+
+  HMAC is used for verifying the authenticity and integrity of messages,
+  such as webhook signatures from external services.
+
+  Example:
+    > say hmac(hello, secret)
+    You say, "88AABB..."
+    > say hmac(hello, secret, sha1)
+    You say, "AA74..."
+
+  Requires SSL support. Returns #-1 HMAC REQUIRES SSL if SSL is not
+  compiled in.
+
+  Related Topics: digest(), sha1().
+
 & HERE
 HERE
 
@@ -8689,6 +8746,31 @@ ISOBJID()
 
   Related Topics: objid(), isdbref().
 
+& ISJSON()
+ISJSON()
+
+  FUNCTION: isjson(<string>[, <type>])
+
+  Returns 1 if <string> is valid JSON (RFC 8259), 0 otherwise.
+
+  The optional <type> argument checks that the JSON value is of a
+  specific type. Valid types are: string, number, object, array,
+  true, false, null, boolean.
+
+  Examples:
+    > say isjson({"name":"Bob"})
+    You say, "1"
+    > say isjson(not json)
+    You say, "0"
+    > say isjson(42, number)
+    You say, "1"
+    > say isjson(42, string)
+    You say, "0"
+    > say isjson(true, boolean)
+    You say, "1"
+
+  Related Topics: json(), json_query(), json_mod().
+
 & ISRAT()
 ISRAT()
 
@@ -8831,6 +8913,95 @@ ITEXT()
   You say, "red:fish red:shoe blue:fish blue:shoe green:fish green:shoe"
 
   Related Topics: iter(), inum(), ilev().
+
+& JSON()
+JSON()
+
+  FUNCTION: json(<type>[, <value>])
+
+  Constructs a JSON value of the given type.
+
+  Types:
+    string   Wraps <value> in quotes with proper JSON escaping.
+    number   Validates and returns a JSON number.
+    boolean  Converts MUX truth value to true or false.
+    null     Returns null (no <value> needed).
+    array    Treats <value> as a space-separated list of JSON values
+             and returns a JSON array.
+    object   Treats <value> as alternating key value pairs and returns
+             a JSON object.
+
+  Examples:
+    > say json(string, Hello World)
+    You say, ""Hello World""
+    > say json(number, 42)
+    You say, "42"
+    > say json(boolean, 1)
+    You say, "true"
+    > say json(null)
+    You say, "null"
+    > say json(array, 1 2 3)
+    You say, "[1,2,3]"
+
+  Related Topics: isjson(), json_query(), json_mod().
+
+& JSON_MOD()
+JSON_MOD()
+
+  FUNCTION: json_mod(<json>, <operation>, <path>[, <value>])
+
+  Modifies a JSON document and returns the result. Operations:
+
+    set      Set value at path (create if missing, replace if exists).
+    insert   Insert value at path only if it does not already exist.
+    replace  Replace value at path only if it already exists.
+    remove   Remove the value at path.
+    patch    Apply an RFC 7396 merge-patch.
+
+  Paths use SQLite JSON path syntax: $.key, $.key.subkey, $[0], etc.
+
+  Examples:
+    > say json_mod({"a":1}, set, $.b, 2)
+    You say, "{"a":1,"b":2}"
+    > say json_mod({"a":1}, remove, $.a)
+    You say, "{}"
+    > say json_mod([1,2,3], replace, $[1], 99)
+    You say, "[1,99,3]"
+
+  Related Topics: isjson(), json(), json_query().
+
+& JSON_QUERY()
+JSON_QUERY()
+
+  FUNCTION: json_query(<json>[, <query-type>[, <path>]])
+
+  Queries a JSON document. Query types:
+
+    type     Returns the JSON type at <path>: object, array, string,
+             integer, real, true, false, or null. This is the default
+             when no query type is given.
+    size     For arrays and objects, returns the element count.
+    exists   Returns 1 if <path> exists in the document, 0 otherwise.
+    get      Returns the value at <path>.
+    keys     For objects, returns a space-separated list of keys.
+    values   For objects or arrays, returns a space-separated list of
+             values.
+
+  Paths use SQLite JSON path syntax: $.key, $.key.subkey, $[0], etc.
+
+  Examples:
+    > say json_query({"name":"Bob","age":30}, type)
+    You say, "object"
+    > say json_query({"name":"Bob","age":30}, get, $.name)
+    You say, "Bob"
+    > say json_query({"name":"Bob","age":30}, keys)
+    You say, "name age"
+    > say json_query([10,20,30], size)
+    You say, "3"
+    > say json_query({"a":1}, exists, $.a)
+    You say, "1"
+
+  Related Topics: isjson(), json(), json_mod().
 
 & JUMP_OK
 JUMP_OK

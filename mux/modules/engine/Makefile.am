@@ -14,7 +14,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdi
 ENGINE_CXX_SRC = ast.cpp ast_scan.cpp attrcache.cpp boolexp.cpp \
     command.cpp comsys.cpp conf.cpp conn_bridge.cpp cque.cpp create.cpp \
     db.cpp db_rw.cpp engine.cpp engine_com.cpp eval.cpp file_c.cpp flags.cpp \
-    funceval.cpp funceval2.cpp functions.cpp funmath.cpp help.cpp htab.cpp \
+    funceval.cpp funceval2.cpp functions.cpp funmath.cpp funcweb.cpp help.cpp htab.cpp \
     local.cpp log.cpp look.cpp mail.cpp match.cpp mguests.cpp \
     move.cpp object.cpp predicates.cpp player.cpp player_c.cpp \
     plusemail.cpp powers.cpp quota.cpp rob.cpp set.cpp \

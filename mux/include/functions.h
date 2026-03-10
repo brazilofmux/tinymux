@@ -223,6 +223,15 @@ XFUNCTION(fun_trigger);
 XFUNCTION(fun_verb);
 XFUNCTION(fun_wipe);
 
+// In funcweb.cpp
+XFUNCTION(fun_encode64);
+XFUNCTION(fun_decode64);
+XFUNCTION(fun_hmac);
+XFUNCTION(fun_isjson);
+XFUNCTION(fun_json);
+XFUNCTION(fun_json_query);
+XFUNCTION(fun_json_mod);
+
 // In netcommon.cpp
 XFUNCTION(fun_doing);
 XFUNCTION(fun_host);

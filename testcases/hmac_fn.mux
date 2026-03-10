@@ -1,0 +1,78 @@
+#
+# hmac_fn.mux - Test Cases for hmac().
+#
+@create test_hmac_fn
+-
+@set test_hmac_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_hmac_fn=
+  @log smoke=Beginning hmac() test cases.
+-
+#
+# Test Case #1 - HMAC-SHA256 basic.
+#
+&tr.tc001 test_hmac_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [hmac(hello,secret)]
+          )
+        ),
+        975305EE513E641C3FA23A6C17F58487389538AF
+      )=
+  {
+    @log smoke=TC001: hmac sha256 basic. Succeeded.;
+  },
+  {
+    @log smoke=TC001: hmac sha256 basic. Failed (%q0).;
+  }
+-
+#
+# Test Case #2 - HMAC-SHA1 explicit algorithm.
+#
+&tr.tc002 test_hmac_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [hmac(hello,secret,sha1)]
+          )
+        ),
+        5FB65A0CA350F0C283CDE7AA3FA2A9AD41F4DC0F
+      )=
+  {
+    @log smoke=TC002: hmac sha1 explicit. Succeeded.;
+  },
+  {
+    @log smoke=TC002: hmac sha1 explicit. Failed (%q0).;
+  }
+-
+#
+# Test Case #3 - HMAC with invalid algorithm.
+#
+&tr.tc003 test_hmac_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [hmac(hello,secret,bogus)]
+          )
+        ),
+        755CD8293F0BFDEB77F8F15DE8F7046759BD6FD2
+      )=
+  {
+    @log smoke=TC003: hmac invalid algo. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: hmac invalid algo. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_hmac_fn=
+  @log smoke=End hmac() test cases.;
+  @notify smoke
+-
+drop test_hmac_fn
+-
+#
+# End of Test Cases
+#

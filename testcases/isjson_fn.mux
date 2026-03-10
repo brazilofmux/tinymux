@@ -1,0 +1,95 @@
+#
+# isjson_fn.mux - Test Cases for isjson().
+#
+@create test_isjson_fn
+-
+@set test_isjson_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_isjson_fn=
+  @log smoke=Beginning isjson() test cases.
+-
+#
+# Test Case #1 - Valid JSON values.
+#
+&tr.tc001 test_isjson_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isjson({"a":1})]
+            [isjson([1,2,3])]
+            [isjson("hello")]
+            [isjson(42)]
+            [isjson(true)]
+            [isjson(false)]
+            [isjson(null)]
+          )
+        ),
+        0EED7D9EC40BB4E1EFA39B2FE4464CB941D7EE79
+      )=
+  {
+    @log smoke=TC001: isjson valid. Succeeded.;
+  },
+  {
+    @log smoke=TC001: isjson valid. Failed (%q0).;
+  }
+-
+#
+# Test Case #2 - Invalid JSON values.
+#
+&tr.tc002 test_isjson_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isjson(not json)]
+            [isjson({bad})]
+            [isjson()]
+            [isjson([1,])]
+          )
+        ),
+        228DBDBA8F07B97E12CB576440614D1A594403BF
+      )=
+  {
+    @log smoke=TC002: isjson invalid. Succeeded.;
+  },
+  {
+    @log smoke=TC002: isjson invalid. Failed (%q0).;
+  }
+-
+#
+# Test Case #3 - Type checking.
+#
+&tr.tc003 test_isjson_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isjson({"a":1},object)]
+            [isjson({"a":1},array)]
+            [isjson([1],array)]
+            [isjson("hi",string)]
+            [isjson(42,number)]
+            [isjson(42,string)]
+            [isjson(true,boolean)]
+            [isjson(false,boolean)]
+            [isjson(null,null)]
+          )
+        ),
+        07856E08400009762E8143AD586260FA80ADE604
+      )=
+  {
+    @log smoke=TC003: isjson type check. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: isjson type check. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_isjson_fn=
+  @log smoke=End isjson() test cases.;
+  @notify smoke
+-
+drop test_isjson_fn
+-
+#
+# End of Test Cases
+#
