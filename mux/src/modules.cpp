@@ -17,6 +17,11 @@
 #include "driver_log.h"
 #include "ganl_adapter.h"
 
+// Driver-side factory classes — only used in this file.
+//
+DEFINE_FACTORY(CConnectionManagerFactory)
+DEFINE_FACTORY(CDriverControlFactory)
+
 static MUX_CLASS_INFO driver_classes[] =
 {
     { CID_ConnectionManager },

@@ -23,7 +23,7 @@ static inline int ctz64(uint64_t x)
 #else
 static inline int ctz64(uint64_t x)
 {
-    return ctz64(x);
+    return __builtin_ctzll(x);
 }
 #endif
 
