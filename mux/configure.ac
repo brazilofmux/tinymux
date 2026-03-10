@@ -2,8 +2,8 @@ dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.71])
 AC_INIT([TinyMUX],[2.14],[tinymux@googlegroups.com])
-AC_CONFIG_SRCDIR([driver.cpp])
-AC_CONFIG_HEADERS([autoconf.h] [modules/autoconf.h] [tools/autoconf.h])
+AC_CONFIG_SRCDIR([src/driver.cpp])
+AC_CONFIG_HEADERS([include/autoconf.h] [modules/autoconf.h] [announce/autoconf.h])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 AC_MSG_CHECKING(whether to enable Reality Levels)
@@ -594,8 +594,12 @@ fi
 
 AC_CONFIG_FILES([
     Makefile
+    lib/Makefile
+    src/Makefile
     modules/Makefile
-    tools/Makefile
+    modules/engine/Makefile
+    sqlite/Makefile
+    announce/Makefile
     ganl/Makefile
 ])
 

@@ -96,10 +96,10 @@
  *   utf8_FirstByte table           — UTF-8 handling
  */
 
-#include "../autoconf.h"
-#include "../config.h"
-#include "../libmux.h"
-#include "../modules.h"
+#include "autoconf.h"
+#include "config.h"
+#include "libmux.h"
+#include "modules.h"
 #include "exp3.h"
 
 static int32_t g_cComponents  = 0;

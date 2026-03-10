@@ -1,7 +1,7 @@
 # Makefile.am for GANL (Game/Graphics Abstraction Network Library)
 
 # Include paths
-AM_CPPFLAGS = -I$(top_srcdir) -I$(srcdir)/include -I$(srcdir)
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(srcdir)/include -I$(srcdir)
 
 # Library definition
 noinst_LIBRARIES = libganl.a

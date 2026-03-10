@@ -3590,6 +3590,7 @@ MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
     pool_init(POOL_BOOL, sizeof(struct boolexp));
     pool_init(POOL_STRING, sizeof(mux_string));
 
+    pcache_init();
     cf_init();
 
     // Decide what conversions to do and how to format the output file.
@@ -4664,7 +4665,7 @@ static MUX_INTERFACE_INFO engine_interfaces[] =
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
 {
-    MUX_RESULT mr = mux_RegisterClassObjects(NUM_ENGINE_CLASSES, engine_classes, mux_GetClassObject);
+    MUX_RESULT mr = mux_RegisterClassObjects(NUM_ENGINE_CLASSES, engine_classes, nullptr);
     if (MUX_SUCCEEDED(mr))
     {
         mr = mux_RegisterInterfaces(NUM_ENGINE_INTERFACES, engine_interfaces);

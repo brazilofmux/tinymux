@@ -6,10 +6,10 @@
  * with configurations that load it.
  */
 
-#include "../autoconf.h"
-#include "../config.h"
-#include "../libmux.h"
-#include "../modules.h"
+#include "autoconf.h"
+#include "config.h"
+#include "libmux.h"
+#include "modules.h"
 
 static int32_t g_cServerLocks = 0;
 

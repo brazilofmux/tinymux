@@ -17,11 +17,11 @@
  * via the module's own sqlite3 connection.
  */
 
-#include "../copyright.h"
-#include "../autoconf.h"
-#include "../config.h"
-#include "../libmux.h"
-#include "../modules.h"
+#include "copyright.h"
+#include "autoconf.h"
+#include "config.h"
+#include "libmux.h"
+#include "modules.h"
 #include "comsys_mod.h"
 
 #include <cstring>

@@ -3,10 +3,10 @@
  *
  */
 
-#include "../autoconf.h"
-#include "../config.h"
-#include "../libmux.h"
-#include "../modules.h"
+#include "autoconf.h"
+#include "config.h"
+#include "libmux.h"
+#include "modules.h"
 #include "autoconf.h"
 #if defined(HAVE_MYSQL_H)
 #include <mysql.h>

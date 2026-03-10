@@ -616,7 +616,7 @@ PACKAGE_STRING='TinyMUX 2.14'
 PACKAGE_BUGREPORT='tinymux@googlegroups.com'
 PACKAGE_URL=''
 
-ac_unique_file="driver.cpp"
+ac_unique_file="src/driver.cpp"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stddef.h>
@@ -3268,7 +3268,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-ac_config_headers="$ac_config_headers autoconf.h modules/autoconf.h tools/autoconf.h"
+ac_config_headers="$ac_config_headers include/autoconf.h modules/autoconf.h announce/autoconf.h"
 
 am__api_version='1.16'
 
@@ -10844,7 +10844,7 @@ printf "%s\n" "#define HAVE_DEV_URANDOM /**/" >>confdefs.h
 
 fi
 
-ac_config_files="$ac_config_files Makefile modules/Makefile tools/Makefile ganl/Makefile"
+ac_config_files="$ac_config_files Makefile lib/Makefile src/Makefile modules/Makefile modules/engine/Makefile sqlite/Makefile announce/Makefile ganl/Makefile"
 
 
 
@@ -11795,13 +11795,17 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "autoconf.h") CONFIG_HEADERS="$CONFIG_HEADERS autoconf.h" ;;
+    "include/autoconf.h") CONFIG_HEADERS="$CONFIG_HEADERS include/autoconf.h" ;;
     "modules/autoconf.h") CONFIG_HEADERS="$CONFIG_HEADERS modules/autoconf.h" ;;
-    "tools/autoconf.h") CONFIG_HEADERS="$CONFIG_HEADERS tools/autoconf.h" ;;
+    "announce/autoconf.h") CONFIG_HEADERS="$CONFIG_HEADERS announce/autoconf.h" ;;
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "lib/Makefile") CONFIG_FILES="$CONFIG_FILES lib/Makefile" ;;
+    "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "modules/Makefile") CONFIG_FILES="$CONFIG_FILES modules/Makefile" ;;
-    "tools/Makefile") CONFIG_FILES="$CONFIG_FILES tools/Makefile" ;;
+    "modules/engine/Makefile") CONFIG_FILES="$CONFIG_FILES modules/engine/Makefile" ;;
+    "sqlite/Makefile") CONFIG_FILES="$CONFIG_FILES sqlite/Makefile" ;;
+    "announce/Makefile") CONFIG_FILES="$CONFIG_FILES announce/Makefile" ;;
     "ganl/Makefile") CONFIG_FILES="$CONFIG_FILES ganl/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
