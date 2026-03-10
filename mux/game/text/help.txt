@@ -13844,6 +13844,30 @@ STRLEN()
 
   Related Topics: strmem(), UNICODE.
 
+& STRDISTANCE()
+STRDISTANCE()
+
+  FUNCTION: strdistance(<string1>, <string2>)
+
+  Returns the Levenshtein edit distance between two strings: the minimum
+  number of single-character insertions, deletions, or substitutions
+  needed to transform <string1> into <string2>.  Operates on Unicode
+  codepoints, not bytes.
+
+  Useful for fuzzy matching, typo detection, and similarity scoring.
+
+  Examples:
+    > say strdistance(kitten, sitting)
+    You say, "3"
+    > say strdistance(hello, hello)
+    You say, "0"
+    > say strdistance(abc, ab)
+    You say, "1"
+    > say strdistance(, abc)
+    You say, "3"
+
+  Related Topics: comp(), match(), strmatch().
+
 & STRMATCH()
 STRMATCH()
 

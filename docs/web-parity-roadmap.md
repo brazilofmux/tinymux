@@ -23,7 +23,7 @@ the gap between TinyMUX and PennMUSH/RhostMUSH on web integration.
 | 9 | Account system | TODO | Multi-character accounts (Rhost) |
 | 10 | url_escape/url_unescape | **Done** | RFC 3986 percent-encoding. + decoded as space for form compat. |
 | 11 | Template system | TODO | template() presentation/logic separation (Rhost) |
-| 12 | strdistance() | TODO | Levenshtein edit distance (Rhost) |
+| 12 | strdistance() | **Done** | Levenshtein edit distance, Unicode-aware. |
 | 13 | lockencode/lockdecode | TODO | Programmatic lock manipulation (Rhost) |
 | 14 | Regex attr matching | TODO | reglattr/regnattr family (Penn) |
 | 15 | Character classification | TODO | isunicode(), isutf8(), isalpha(), etc. |

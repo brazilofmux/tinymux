@@ -11369,6 +11369,76 @@ static FUNCTION(fun_ord)
 }
 
 // ---------------------------------------------------------------------------
+// strdistance: Levenshtein edit distance between two strings.
+//
+// Operates on Unicode codepoints (not bytes).
+//
+static FUNCTION(fun_strdistance)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    const UTF8 *s = fargs[0];
+    const UTF8 *t = fargs[1];
+
+    // Decode both strings to codepoint arrays.
+    //
+    UTF32 sCp[LBUF_SIZE], tCp[LBUF_SIZE];
+    size_t sLen = 0, tLen = 0;
+
+    while (*s && sLen < LBUF_SIZE - 1)
+    {
+        UTF32 ch = ConvertFromUTF8(s);
+        if (UNI_EOF == ch) break;
+        sCp[sLen++] = ch;
+        s += utf8_FirstByte[static_cast<unsigned char>(*s)];
+    }
+    while (*t && tLen < LBUF_SIZE - 1)
+    {
+        UTF32 ch = ConvertFromUTF8(t);
+        if (UNI_EOF == ch) break;
+        tCp[tLen++] = ch;
+        t += utf8_FirstByte[static_cast<unsigned char>(*t)];
+    }
+
+    // Single-row DP: prev[j] holds dist(s[0..i-1], t[0..j]).
+    //
+    if (sLen > 4000 || tLen > 4000)
+    {
+        safe_str(T("#-1 STRINGS TOO LONG"), buff, bufc);
+        return;
+    }
+
+    std::vector<size_t> prev(tLen + 1);
+    for (size_t j = 0; j <= tLen; j++)
+    {
+        prev[j] = j;
+    }
+
+    for (size_t i = 1; i <= sLen; i++)
+    {
+        size_t prevDiag = prev[0];
+        prev[0] = i;
+        for (size_t j = 1; j <= tLen; j++)
+        {
+            size_t cost = (sCp[i-1] == tCp[j-1]) ? 0 : 1;
+            size_t val = prevDiag + cost;
+            if (prev[j] + 1 < val) val = prev[j] + 1;
+            if (prev[j-1] + 1 < val) val = prev[j-1] + 1;
+            prevDiag = prev[j];
+            prev[j] = val;
+        }
+    }
+
+    safe_ltoa(static_cast<long>(prev[tLen]), buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
 // fun_chr:
 //
 // Takes an integer and returns the corresponding character from the character
@@ -12225,6 +12295,7 @@ static FUN builtin_function_list[] =
     {T("STRLEN"),      fun_strlen,           1, 0,       1,         0, CA_PUBLIC},
     {T("STRMATCH"),    fun_strmatch,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("STRMEM"),      fun_strmem,           1, 0,       1,         0, CA_PUBLIC},
+    {T("STRDISTANCE"), fun_strdistance,MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("STRTRUNC"),    fun_strtrunc,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("SUB"),         fun_sub,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("SUBEVAL"),     fun_subeval,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
