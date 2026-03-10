@@ -16,8 +16,8 @@ typedef struct
 
 #define MUX_SHA1_DIGEST_LENGTH 20
 
-void MUX_SHA1_Init(MUX_SHA_CTX *p);
-void MUX_SHA1_Update(MUX_SHA_CTX *p, const UTF8 *buf, size_t n);
-void MUX_SHA1_Final(uint8_t md[MUX_SHA1_DIGEST_LENGTH], MUX_SHA_CTX *p);
+LIBMUX_API void MUX_SHA1_Init(MUX_SHA_CTX *p);
+LIBMUX_API void MUX_SHA1_Update(MUX_SHA_CTX *p, const UTF8 *buf, size_t n);
+LIBMUX_API void MUX_SHA1_Final(uint8_t md[MUX_SHA1_DIGEST_LENGTH], MUX_SHA_CTX *p);
 
 #endif // SHA1_H

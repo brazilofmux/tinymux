@@ -91,7 +91,11 @@ MUX_RESULT init_modules(void)
     //
     if (MUX_SUCCEEDED(mr))
     {
+#if defined(WINDOWS_FILES)
+        mr = mux_AddModule(T("engine"), L"./bin/engine.dll");
+#elif defined(UNIX_FILES)
         mr = mux_AddModule(T("engine"), T("./bin/engine.so"));
+#endif
     }
     return mr;
 }
@@ -972,7 +976,9 @@ MUX_RESULT CDriverControl::GetTaskProcessCommand(
 
 MUX_RESULT CDriverControl::DumpRestartDb(void)
 {
+#if defined(HAVE_WORKING_FORK)
     dump_restart_db();
+#endif
     return MUX_S_OK;
 }
 

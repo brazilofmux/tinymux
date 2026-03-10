@@ -13,28 +13,28 @@ inline bool isEmpty(const UTF8 *p)
     return ((nullptr == p) || ('\0' == p[0]));
 }
 
-extern const bool mux_isprint_ascii[256];
-extern const bool mux_isprint_cp437[256];
-extern const bool mux_isprint_latin1[256];
-extern const bool mux_isprint_latin2[256];
-extern const bool mux_isdigit[256];
-extern const bool mux_isxdigit[256];
-extern const bool mux_isazAZ[256];
-extern const bool mux_isalnum[256];
-extern const bool mux_islower_ascii[256];
-extern const bool mux_isupper_ascii[256];
-extern const bool mux_isspace[256];
-extern const bool mux_issecure[256];
-extern const bool mux_isescape[256];
-extern const unsigned char mux_hex2dec[256];
+extern LIBMUX_API const bool mux_isprint_ascii[256];
+extern LIBMUX_API const bool mux_isprint_cp437[256];
+extern LIBMUX_API const bool mux_isprint_latin1[256];
+extern LIBMUX_API const bool mux_isprint_latin2[256];
+extern LIBMUX_API const bool mux_isdigit[256];
+extern LIBMUX_API const bool mux_isxdigit[256];
+extern LIBMUX_API const bool mux_isazAZ[256];
+extern LIBMUX_API const bool mux_isalnum[256];
+extern LIBMUX_API const bool mux_islower_ascii[256];
+extern LIBMUX_API const bool mux_isupper_ascii[256];
+extern LIBMUX_API const bool mux_isspace[256];
+extern LIBMUX_API const bool mux_issecure[256];
+extern LIBMUX_API const bool mux_isescape[256];
+extern LIBMUX_API const unsigned char mux_hex2dec[256];
 // mux_toupper_ascii[] and mux_tolower_ascii[] handle ASCII A-Z/a-z only.
 // Use mux_toupper()/mux_tolower() (state-machine transforms) for Unicode.
 // These ASCII tables are appropriate only when the input is known to be ASCII
 // (e.g., format modifiers, month abbreviations, %VA-%VZ attribute indices).
 //
-extern const unsigned char mux_toupper_ascii[256];
-extern const unsigned char mux_tolower_ascii[256];
-extern const UTF8 TableATOI[16][10];
+extern LIBMUX_API const unsigned char mux_toupper_ascii[256];
+extern LIBMUX_API const unsigned char mux_tolower_ascii[256];
+extern LIBMUX_API const UTF8 TableATOI[16][10];
 
 #define UTF8_SIZE1     1
 #define UTF8_SIZE2     2
@@ -42,12 +42,12 @@ extern const UTF8 TableATOI[16][10];
 #define UTF8_SIZE4     4
 #define UTF8_CONTINUE  5
 #define UTF8_ILLEGAL   6
-extern const unsigned char utf8_FirstByte[256];
-extern const UTF8 *cp437_utf8[256];
+extern LIBMUX_API const unsigned char utf8_FirstByte[256];
+extern LIBMUX_API const UTF8 *cp437_utf8[256];
 #define cp437_utf8(x) (reinterpret_cast<const UTF8 *>(cp437_utf8[static_cast<unsigned char>(x)]))
-extern const UTF8 *latin1_utf8[256];
+extern LIBMUX_API const UTF8 *latin1_utf8[256];
 #define latin1_utf8(x) (reinterpret_cast<const UTF8 *>(latin1_utf8[static_cast<unsigned char>(x)]))
-extern const UTF8 *latin2_utf8[256];
+extern LIBMUX_API const UTF8 *latin2_utf8[256];
 #define latin2_utf8(x) (reinterpret_cast<const UTF8 *>(latin2_utf8[static_cast<unsigned char>(x)]))
 
 #define UNI_EOF ((UTF32)-1)
@@ -871,35 +871,35 @@ inline bool mux_iskatakana(const unsigned char *p)
 
 // utf/tr_utf8_ascii.txt
 //
-const UTF8 *ConvertToAscii(const UTF8 *pString);
+LIBMUX_API const UTF8 *ConvertToAscii(const UTF8 *pString);
 
 // utf/tr_utf8_cp437.txt
 //
-const UTF8 *ConvertToCp437(const UTF8 *pString);
+LIBMUX_API const UTF8 *ConvertToCp437(const UTF8 *pString);
 
 // utf/tr_utf8_latin1.txt
 //
-const UTF8 *ConvertToLatin1(const UTF8 *pString);
+LIBMUX_API const UTF8 *ConvertToLatin1(const UTF8 *pString);
 
 // utf/tr_utf8_latin2.txt
 //
-const UTF8 *ConvertToLatin2(const UTF8 *pString);
+LIBMUX_API const UTF8 *ConvertToLatin2(const UTF8 *pString);
 
 // utf/tr_widths.txt
 //
-int ConsoleWidth(const UTF8 *pCodePoint);
+LIBMUX_API int ConsoleWidth(const UTF8 *pCodePoint);
 
 // utf/utf8_normalize.cpp — NFC normalization.
 //
-bool utf8_is_nfc(const UTF8 *src, size_t nSrc);
-void utf8_normalize_nfc(const UTF8 *src, size_t nSrc, UTF8 *dst, size_t nDstMax, size_t *pnDst);
+LIBMUX_API bool utf8_is_nfc(const UTF8 *src, size_t nSrc);
+LIBMUX_API void utf8_normalize_nfc(const UTF8 *src, size_t nSrc, UTF8 *dst, size_t nDstMax, size_t *pnDst);
 
 // utf8_collate.cpp — Unicode Collation Algorithm (UCA).
 //
-int mux_collate_cmp(const UTF8 *a, size_t nA, const UTF8 *b, size_t nB);
-size_t mux_collate_sortkey(const UTF8 *src, size_t nSrc, UTF8 *key, size_t nKeyMax);
-int mux_collate_cmp_ci(const UTF8 *a, size_t nA, const UTF8 *b, size_t nB);
-size_t mux_collate_sortkey_ci(const UTF8 *src, size_t nSrc, UTF8 *key, size_t nKeyMax);
+LIBMUX_API int mux_collate_cmp(const UTF8 *a, size_t nA, const UTF8 *b, size_t nB);
+LIBMUX_API size_t mux_collate_sortkey(const UTF8 *src, size_t nSrc, UTF8 *key, size_t nKeyMax);
+LIBMUX_API int mux_collate_cmp_ci(const UTF8 *a, size_t nA, const UTF8 *b, size_t nB);
+LIBMUX_API size_t mux_collate_sortkey_ci(const UTF8 *src, size_t nSrc, UTF8 *key, size_t nKeyMax);
 
 // utf/tr_tolower.txt
 //
@@ -1188,7 +1188,7 @@ inline int mux_color(const unsigned char *p)
 
 #define mux_haswidth(x) mux_isprint(x)
 
-bool utf8_strlen(const UTF8 *pString, size_t &nString);
+LIBMUX_API bool utf8_strlen(const UTF8 *pString, size_t &nString);
 
 // This class replaces the functionality of the strtok() C runtime library
 // function. Set the source and control, and then call parse to obtain tokens.
@@ -1197,7 +1197,7 @@ bool utf8_strlen(const UTF8 *pString, size_t &nString);
 // parsing does not consume -all- of the controlling delimiters that separate
 // two tokens. It consumes only the first one.
 //
-class string_token
+class LIBMUX_API string_token
 {
 public:
     string_token() : source(nullptr)
@@ -1799,7 +1799,7 @@ typedef struct
     size_t      nEscape;
 } MUX_COLOR_SET;
 
-extern const MUX_COLOR_SET aColors[];
+extern LIBMUX_API const MUX_COLOR_SET aColors[];
 
 typedef struct
 {
@@ -1824,49 +1824,49 @@ typedef struct
     int  color8;
     int  color16;
 } PALETTE_ENTRY;
-extern PALETTE_ENTRY palette[];
-extern DCL_EXPORT const unsigned int ColorTable[256];
-DCL_EXPORT bool parse_rgb(size_t n, const UTF8 *p, RGB &rgb);
+extern LIBMUX_API PALETTE_ENTRY palette[];
+extern LIBMUX_API const unsigned int ColorTable[256];
+LIBMUX_API bool parse_rgb(size_t n, const UTF8 *p, RGB &rgb);
 
-int FindNearestPaletteEntry(RGB &rgb, bool fColor256);
-UTF8 *LettersToBinary(UTF8 *pLetters);
+LIBMUX_API int FindNearestPaletteEntry(RGB &rgb, bool fColor256);
+LIBMUX_API UTF8 *LettersToBinary(UTF8 *pLetters);
 
-UTF8 *convert_to_html(const UTF8 *pString);
-UTF8 *convert_color(const UTF8 *pString, bool fNoBleed, bool fColor256);
-UTF8 *strip_color(const UTF8 *pString, size_t *pnLength = 0, size_t *pnPoints = 0);
-UTF8 *munge_space(const UTF8 *);
-UTF8 *trim_spaces(const UTF8 *);
-UTF8 *grabto(UTF8 **, UTF8);
-int  string_compare(const UTF8 *, const UTF8 *);
-int  string_prefix(const UTF8 *, const UTF8 *);
-const UTF8 *string_match(const UTF8 *, const UTF8 *);
-UTF8 *replace_string(const UTF8 *, const UTF8 *, const UTF8 *);
-bool minmatch(const UTF8 *str, const UTF8 *target, int min);
-UTF8 *StringCloneLen(const UTF8 *str, size_t nStr);
-UTF8 *StringClone(const UTF8 *str);
-void safe_copy_str(const UTF8 *src, UTF8 *buff, UTF8 **bufp, size_t nSizeOfBuffer);
-void safe_copy_str_lbuf(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
-size_t safe_copy_buf(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufp);
-size_t safe_fill(UTF8 *buff, UTF8 **bufc, UTF8 chFile, size_t nSpaces);
-void safe_chr_utf8(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
+LIBMUX_API UTF8 *convert_to_html(const UTF8 *pString);
+LIBMUX_API UTF8 *convert_color(const UTF8 *pString, bool fNoBleed, bool fColor256);
+LIBMUX_API UTF8 *strip_color(const UTF8 *pString, size_t *pnLength = 0, size_t *pnPoints = 0);
+LIBMUX_API UTF8 *munge_space(const UTF8 *);
+LIBMUX_API UTF8 *trim_spaces(const UTF8 *);
+LIBMUX_API UTF8 *grabto(UTF8 **, UTF8);
+LIBMUX_API int  string_compare(const UTF8 *, const UTF8 *);
+LIBMUX_API int  string_prefix(const UTF8 *, const UTF8 *);
+LIBMUX_API const UTF8 *string_match(const UTF8 *, const UTF8 *);
+LIBMUX_API UTF8 *replace_string(const UTF8 *, const UTF8 *, const UTF8 *);
+LIBMUX_API bool minmatch(const UTF8 *str, const UTF8 *target, int min);
+LIBMUX_API UTF8 *StringCloneLen(const UTF8 *str, size_t nStr);
+LIBMUX_API UTF8 *StringClone(const UTF8 *str);
+LIBMUX_API void safe_copy_str(const UTF8 *src, UTF8 *buff, UTF8 **bufp, size_t nSizeOfBuffer);
+LIBMUX_API void safe_copy_str_lbuf(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
+LIBMUX_API size_t safe_copy_buf(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufp);
+LIBMUX_API size_t safe_fill(UTF8 *buff, UTF8 **bufc, UTF8 chFile, size_t nSpaces);
+LIBMUX_API void safe_chr_utf8(const UTF8 *src, UTF8 *buff, UTF8 **bufp);
 #define utf8_safe_chr safe_chr_utf8
-UTF8 *ConvertToUTF8(UTF32 ch);
-UTF8 *ConvertToUTF8(const char *p, size_t *pn);
-UTF16 *ConvertToUTF16(UTF32 ch);
-UTF32 ConvertFromUTF8(const UTF8 *p);
-size_t ConvertFromUTF16(UTF16 *pString, UTF32 &ch);
-UTF16 *ConvertFromUTF8ToUTF16(const UTF8 *pString, size_t& length);
-UTF8  *ConvertFromUTF16ToUTF8(const UTF16 *pSTring);
-void mux_strncpy(UTF8 *dest, const UTF8 *src, size_t length_to_copy);
-bool matches_exit_from_list(const UTF8 *, const UTF8 *);
-UTF8 *translate_string(const UTF8 *, bool);
-bool IsDecompFriendly(const UTF8 *pString);
-int mux_stricmp(const UTF8 *a, const UTF8 *b);
-int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n);
-UTF8 *mux_strlwr(const UTF8 *a, size_t &n);
-UTF8 *mux_strupr(const UTF8 *a, size_t &n);
-void mux_toupper_first(UTF8 *buff, UTF8 **bufc, size_t nBufferTotal);
-UTF8 *mux_foldmatch(const UTF8 *a, size_t &n, bool &fChanged);
+LIBMUX_API UTF8 *ConvertToUTF8(UTF32 ch);
+LIBMUX_API UTF8 *ConvertToUTF8(const char *p, size_t *pn);
+LIBMUX_API UTF16 *ConvertToUTF16(UTF32 ch);
+LIBMUX_API UTF32 ConvertFromUTF8(const UTF8 *p);
+LIBMUX_API size_t ConvertFromUTF16(UTF16 *pString, UTF32 &ch);
+LIBMUX_API UTF16 *ConvertFromUTF8ToUTF16(const UTF8 *pString, size_t& length);
+LIBMUX_API UTF8  *ConvertFromUTF16ToUTF8(const UTF16 *pSTring);
+LIBMUX_API void mux_strncpy(UTF8 *dest, const UTF8 *src, size_t length_to_copy);
+LIBMUX_API bool matches_exit_from_list(const UTF8 *, const UTF8 *);
+LIBMUX_API UTF8 *translate_string(const UTF8 *, bool);
+LIBMUX_API bool IsDecompFriendly(const UTF8 *pString);
+LIBMUX_API int mux_stricmp(const UTF8 *a, const UTF8 *b);
+LIBMUX_API int mux_memicmp(const void *p1_arg, const void *p2_arg, size_t n);
+LIBMUX_API UTF8 *mux_strlwr(const UTF8 *a, size_t &n);
+LIBMUX_API UTF8 *mux_strupr(const UTF8 *a, size_t &n);
+LIBMUX_API void mux_toupper_first(UTF8 *buff, UTF8 **bufc, size_t nBufferTotal);
+LIBMUX_API UTF8 *mux_foldmatch(const UTF8 *a, size_t &n, bool &fChanged);
 
 typedef struct tag_itl
 {
@@ -1878,18 +1878,18 @@ typedef struct tag_itl
     size_t nBufferAvailable;
 } ITL;
 
-void ItemToList_Init(ITL *pContext, UTF8 *arg_buff, UTF8 **arg_bufc,
+LIBMUX_API void ItemToList_Init(ITL *pContext, UTF8 *arg_buff, UTF8 **arg_bufc,
     UTF8 arg_chPrefix = 0, UTF8 arg_chSep = ' ');
-bool ItemToList_AddInteger(ITL *pContext, int i);
-bool ItemToList_AddInteger64(ITL *pContext, int64_t i);
-bool ItemToList_AddString(ITL *pContext, const UTF8 *pStr);
-bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, const UTF8 *pStr);
-void ItemToList_Final(ITL *pContext);
+LIBMUX_API bool ItemToList_AddInteger(ITL *pContext, int i);
+LIBMUX_API bool ItemToList_AddInteger64(ITL *pContext, int64_t i);
+LIBMUX_API bool ItemToList_AddString(ITL *pContext, const UTF8 *pStr);
+LIBMUX_API bool ItemToList_AddStringLEN(ITL *pContext, size_t nStr, const UTF8 *pStr);
+LIBMUX_API void ItemToList_Final(ITL *pContext);
 
-size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, va_list va);
-void DCL_CDECL mux_sprintf(UTF8 *buff, size_t count, const UTF8 *fmt, ...);
-void DCL_CDECL mux_fprintf(FILE *fp, const UTF8 *fmt, ...);
-size_t GetLineTrunc(UTF8 *Buffer, size_t nBuffer, FILE *fp);
+LIBMUX_API size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, va_list va);
+LIBMUX_API void DCL_CDECL mux_sprintf(UTF8 *buff, size_t count, const UTF8 *fmt, ...);
+LIBMUX_API void DCL_CDECL mux_fprintf(FILE *fp, const UTF8 *fmt, ...);
+LIBMUX_API size_t GetLineTrunc(UTF8 *Buffer, size_t nBuffer, FILE *fp);
 
 typedef struct
 {
@@ -1897,12 +1897,12 @@ typedef struct
     size_t m_skip2;
 } BMH_State;
 
-extern void BMH_Prepare(BMH_State *bmhs, size_t nPat, const UTF8 *pPat);
-extern bool BMH_Execute(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc);
-extern bool BMH_StringSearch(size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc);
-extern void BMH_PrepareI(BMH_State *bmhs, size_t nPat, const UTF8 *pPat);
-extern bool BMH_ExecuteI(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc);
-extern bool BMH_StringSearchI(size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc);
+extern LIBMUX_API void BMH_Prepare(BMH_State *bmhs, size_t nPat, const UTF8 *pPat);
+extern LIBMUX_API bool BMH_Execute(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc);
+extern LIBMUX_API bool BMH_StringSearch(size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc);
+extern LIBMUX_API void BMH_PrepareI(BMH_State *bmhs, size_t nPat, const UTF8 *pPat);
+extern LIBMUX_API bool BMH_ExecuteI(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc);
+extern LIBMUX_API bool BMH_StringSearchI(size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc);
 
 struct ArtRuleset
 {
@@ -2105,27 +2105,27 @@ public:
 static const mux_field fldAscii(1, 1);
 static const mux_field fldMin(0, 0);
 
-bool utf8_strlen(const UTF8 *pString, mux_cursor &nString);
+LIBMUX_API bool utf8_strlen(const UTF8 *pString, mux_cursor &nString);
 
 // utf8_grapheme.cpp — Extended Grapheme Cluster segmentation (UAX #29).
 //
-mux_cursor utf8_next_grapheme(const UTF8 *src, size_t nSrc);
-size_t utf8_cluster_count(const UTF8 *src, size_t nSrc);
-size_t utf8_clusters_before(const UTF8 *src, size_t nSrc, size_t nBefore);
+LIBMUX_API mux_cursor utf8_next_grapheme(const UTF8 *src, size_t nSrc);
+LIBMUX_API size_t utf8_cluster_count(const UTF8 *src, size_t nSrc);
+LIBMUX_API size_t utf8_clusters_before(const UTF8 *src, size_t nSrc, size_t nBefore);
 
-mux_field StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer,
+LIBMUX_API mux_field StripTabsAndTruncate(const UTF8 *pString, UTF8 *pBuffer,
     size_t nLength, size_t nWidth);
-mux_field PadField(UTF8 *pBuffer, size_t nMaxBytes, LBUF_OFFSET nMinWidth,
+LIBMUX_API mux_field PadField(UTF8 *pBuffer, size_t nMaxBytes, LBUF_OFFSET nMinWidth,
                    mux_field fldOutput = fldMin);
 
-size_t TruncateToBuffer(const UTF8 *pString, UTF8 *pBuffer, size_t nBuffer);
+LIBMUX_API size_t TruncateToBuffer(const UTF8 *pString, UTF8 *pBuffer, size_t nBuffer);
 
 static const mux_cursor CursorMin(0,0);
 static const mux_cursor CursorMax(LBUF_SIZE - 1, LBUF_SIZE - 1);
 
 static const mux_cursor curAscii(1, 1);
 
-class mux_string
+class LIBMUX_API mux_string
 {
     // m_iLast, m_autf, and m_vcs work together as follows:
     //
@@ -2524,7 +2524,7 @@ public:
 //
 #define MAX_WORDS LBUF_SIZE
 
-class mux_words
+class LIBMUX_API mux_words
 {
 private:
     LBUF_OFFSET m_nWords;
@@ -2549,23 +2549,23 @@ inline int mux_min(int x, int y)
     else return y;
 }
 
-void strip_fancy_quotes(UTF8 *str);
-UTF8 *find_pattern_delimiter(UTF8 *str);
-void unescape_pattern_colons(UTF8 *str);
+LIBMUX_API void strip_fancy_quotes(UTF8 *str);
+LIBMUX_API UTF8 *find_pattern_delimiter(UTF8 *str);
+LIBMUX_API void unescape_pattern_colons(UTF8 *str);
 
 // Formatted string utilities.
 //
 DCL_EXPORT UTF8 * DCL_CDECL tprintf(const UTF8 *, ...);
-void DCL_CDECL safe_tprintf_str(UTF8 *, UTF8 **, const UTF8 *, ...);
+LIBMUX_API void DCL_CDECL safe_tprintf_str(UTF8 *, UTF8 **, const UTF8 *, ...);
 
 // Server-layer globals mirrored from mudconf/mudstate so that
 // stringutil.cpp can be compiled with core.h alone.
 //
-extern bool g_no_flash;         // mudconf.no_flash
-extern bool g_space_compress;   // mudstate.bStandAlone || mudconf.space_compress
+extern LIBMUX_API bool g_no_flash;         // mudconf.no_flash
+extern LIBMUX_API bool g_space_compress;   // mudstate.bStandAlone || mudconf.space_compress
 
-size_t LeftJustifyString(UTF8 *field, size_t nWidth, const UTF8 *value);
-size_t RightJustifyNumber(UTF8 *field, size_t nWidth, int64_t value, UTF8 chFill);
-UTF8 *ConvertCRLFtoSpace(const UTF8 *pString);
+LIBMUX_API size_t LeftJustifyString(UTF8 *field, size_t nWidth, const UTF8 *value);
+LIBMUX_API size_t RightJustifyNumber(UTF8 *field, size_t nWidth, int64_t value, UTF8 chFill);
+LIBMUX_API UTF8 *ConvertCRLFtoSpace(const UTF8 *pString);
 
 #endif // STRINGUTIL_H

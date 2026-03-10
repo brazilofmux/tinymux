@@ -24,21 +24,21 @@ constexpr int MBUF_SIZE   = 400;     // Medium
 constexpr int PBUF_SIZE   = 128;     // Pathname
 constexpr int SBUF_SIZE   = 64;      // Small
 
-extern bool g_paranoid_alloc;
-void pool_init(int, int);
-UTF8* pool_alloc(int poolnum, const UTF8* tag, const UTF8* file, const int line);
-UTF8* pool_alloc_lbuf(const UTF8* tag, const UTF8* file, const int line);
-void pool_free(int poolnum, UTF8* buf, const UTF8* file, const int line);
-void pool_free_lbuf(UTF8* buf, const UTF8* file, const int line);
+extern LIBMUX_API bool g_paranoid_alloc;
+LIBMUX_API void pool_init(int, int);
+LIBMUX_API UTF8* pool_alloc(int poolnum, const UTF8* tag, const UTF8* file, const int line);
+LIBMUX_API UTF8* pool_alloc_lbuf(const UTF8* tag, const UTF8* file, const int line);
+LIBMUX_API void pool_free(int poolnum, UTF8* buf, const UTF8* file, const int line);
+LIBMUX_API void pool_free_lbuf(UTF8* buf, const UTF8* file, const int line);
 // alloc_notify_fn — callback for @list buffers output.
 // Engine sets this to a function that calls notify().
 //
 typedef void (*ALLOC_NOTIFY_FN)(dbref player, const UTF8 *text);
-extern ALLOC_NOTIFY_FN g_alloc_notify_fn;
+extern LIBMUX_API ALLOC_NOTIFY_FN g_alloc_notify_fn;
 
-void list_bufstats(dbref);
-void list_buftrace(dbref);
-void pool_reset(void);
+LIBMUX_API void list_bufstats(dbref);
+LIBMUX_API void list_buftrace(dbref);
+LIBMUX_API void pool_reset(void);
 
 #define alloc_lbuf(s)    pool_alloc_lbuf(T(s), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
 #define free_lbuf(b)     pool_free_lbuf(reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)

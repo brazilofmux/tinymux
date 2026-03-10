@@ -84,7 +84,11 @@ static const char *find_header(const char *headers, const char *name)
     {
         // Find line start.
         //
+#if defined(WIN32)
+        if (  0 == _strnicmp(p, name, nlen)
+#else
         if (  0 == strncasecmp(p, name, nlen)
+#endif
            && p[nlen] == ':')
         {
             const char *v = p + nlen + 1;
@@ -497,7 +501,7 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                 //
                 size_t need = ws->frame_expected - ws->frame_buf.size();
                 size_t avail = static_cast<size_t>(end - p);
-                size_t take = std::min(need, avail);
+                size_t take = (std::min)(need, avail);
 
                 ws->frame_buf.append(reinterpret_cast<const char *>(p), take);
                 p += take;

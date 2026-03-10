@@ -3231,6 +3231,7 @@ MUX_RESULT CGameEngine::GetConfig(DRIVER_CONFIG *pConfig)
 
 MUX_RESULT CGameEngine::DumpChildExited(int child_pid)
 {
+#if defined(HAVE_WORKING_FORK)
     if (!mudstate.dumping)
     {
         return MUX_S_FALSE;
@@ -3260,6 +3261,10 @@ MUX_RESULT CGameEngine::DumpChildExited(int child_pid)
         p = p->pNext;
     }
     return MUX_S_OK;
+#else
+    UNUSED_PARAMETER(child_pid);
+    return MUX_S_FALSE;
+#endif
 }
 
 MUX_RESULT CGameEngine::SetStartTime(const CLinearTimeAbsolute &time)

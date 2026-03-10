@@ -12,6 +12,21 @@
 #include "core.h"
 #include "externs.h"
 
+#if defined(_MSC_VER)
+#include <intrin.h>
+static inline int ctz64(uint64_t x)
+{
+    unsigned long idx;
+    _BitScanForward64(&idx, x);
+    return (int)idx;
+}
+#else
+static inline int ctz64(uint64_t x)
+{
+    return ctz64(x);
+}
+#endif
+
 // Bitmap field limits.
 //
 #define CRON_MINUTE_MIN  0
@@ -79,7 +94,7 @@ static int next_set_bit(uint64_t bitmap, int pos)
     {
         return -1;
     }
-    return __builtin_ctzll(mask);
+    return ctz64(mask);
 }
 
 // Return the lowest set bit position, or -1.
@@ -90,7 +105,7 @@ static int first_set_bit(uint64_t bitmap)
     {
         return -1;
     }
-    return __builtin_ctzll(bitmap);
+    return ctz64(bitmap);
 }
 
 // -------------------------------------------------------------------------

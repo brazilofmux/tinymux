@@ -10,7 +10,8 @@
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
-#include "externs.h"
+#include "core.h"
+#include "modules.h"
 
 // libmux.so cannot access mudconf directly (it lives in engine.so).
 // This flag mirrors g_paranoid_alloc; the engine sets it after

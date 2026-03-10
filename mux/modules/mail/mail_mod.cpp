@@ -27,6 +27,25 @@
 #include <cstdlib>
 #include <cctype>
 
+// Windows compatibility for POSIX functions.
+//
+#ifdef _MSC_VER
+#define strcasecmp  _stricmp
+#define strtok_r    strtok_s
+
+static inline char *strndup(const char *s, size_t n)
+{
+    size_t len = strnlen(s, n);
+    char *p = static_cast<char *>(malloc(len + 1));
+    if (p)
+    {
+        memcpy(p, s, len);
+        p[len] = '\0';
+    }
+    return p;
+}
+#endif
+
 // En-dash line for mail display borders.
 //
 static const UTF8 *MOD_DASH_LINE =

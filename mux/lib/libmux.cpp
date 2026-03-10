@@ -939,7 +939,11 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context c
         // Register libmux as a Module.  It has its own proxy/stub factory
         // classes that need to coexist with netmux's classes.
         //
+#if defined(WINDOWS_FILES)
+        Module *pModule = ModuleAdd(T("libmux"), L"./bin/libmux.dll");
+#elif defined(UNIX_FILES)
         Module *pModule = ModuleAdd(T("libmux"), T("./bin/libmux.so"));
+#endif
         if (nullptr == pModule)
         {
             return MUX_E_OUTOFMEMORY;
@@ -3826,7 +3830,7 @@ extern "C" MUX_RESULT DCL_API libmux_GetClassObject(MUX_CID cid, MUX_IID iid, vo
 // Crash diagnostic global — set by engine during command processing.
 // ---------------------------------------------------------------------------
 
-DCL_EXPORT const UTF8 *g_debug_cmd = T("< init >");
+LIBMUX_API const UTF8 *g_debug_cmd = T("< init >");
 
 // ---------------------------------------------------------------------------
 // AssertionFailed / OutOfMemory — libmux versions.

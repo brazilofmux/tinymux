@@ -46,39 +46,39 @@ typedef struct
 
 } PARSE_FLOAT_RESULT;
 
-int mux_fpclass(double result);
-bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const UTF8 *str, bool bStrict = true);
+LIBMUX_API int mux_fpclass(double result);
+LIBMUX_API bool ParseFloat(PARSE_FLOAT_RESULT *pfr, const UTF8 *str, bool bStrict = true);
 
-double AddDoubles(int n, double pd[]);
-void fval(UTF8 *buff, UTF8 **bufc, double result);
-double NearestPretty(double R);
+LIBMUX_API double AddDoubles(int n, double pd[]);
+LIBMUX_API void fval(UTF8 *buff, UTF8 **bufc, double result);
+LIBMUX_API double NearestPretty(double R);
 
-size_t mux_utox(unsigned long uval, UTF8 *buf, bool bUpperCase);
-size_t mux_ui64tox(uint64_t uval, UTF8 *buf, bool bUpperCase);
-size_t mux_utoa(unsigned long uval, UTF8 *buf);
-size_t mux_ui64toa(uint64_t uval, UTF8 *buf);
-size_t mux_ltoa(long val, UTF8 *buf);
-size_t mux_i64toa(int64_t val, UTF8 *buf);
-double mux_atof(const UTF8 *szString, bool bStrict = true);
+LIBMUX_API size_t mux_utox(unsigned long uval, UTF8 *buf, bool bUpperCase);
+LIBMUX_API size_t mux_ui64tox(uint64_t uval, UTF8 *buf, bool bUpperCase);
+LIBMUX_API size_t mux_utoa(unsigned long uval, UTF8 *buf);
+LIBMUX_API size_t mux_ui64toa(uint64_t uval, UTF8 *buf);
+LIBMUX_API size_t mux_ltoa(long val, UTF8 *buf);
+LIBMUX_API size_t mux_i64toa(int64_t val, UTF8 *buf);
+LIBMUX_API double mux_atof(const UTF8 *szString, bool bStrict = true);
 
-UTF8 *mux_ltoa_t(long val);
-UTF8 *mux_i64toa_t(int64_t val);
-UTF8 *mux_ftoa(double r, bool bRounded, int frac);
+LIBMUX_API UTF8 *mux_ltoa_t(long val);
+LIBMUX_API UTF8 *mux_i64toa_t(int64_t val);
+LIBMUX_API UTF8 *mux_ftoa(double r, bool bRounded, int frac);
 
-long mux_atol(const UTF8 *pString);
-int64_t mux_atoi64(const UTF8 *pString);
+LIBMUX_API long mux_atol(const UTF8 *pString);
+LIBMUX_API int64_t mux_atoi64(const UTF8 *pString);
 
-void safe_ltoa(long val, UTF8 *buff, UTF8 **bufc);
-void safe_i64toa(int64_t val, UTF8 *buff, UTF8 **bufc);
+LIBMUX_API void safe_ltoa(long val, UTF8 *buff, UTF8 **bufc);
+LIBMUX_API void safe_i64toa(int64_t val, UTF8 *buff, UTF8 **bufc);
 
-bool is_integer(const UTF8 *str, int *pDigits = nullptr);
-bool is_rational(const UTF8 *str);
-bool is_real(const UTF8 *str);
+LIBMUX_API bool is_integer(const UTF8 *str, int *pDigits = nullptr);
+LIBMUX_API bool is_rational(const UTF8 *str);
+LIBMUX_API bool is_real(const UTF8 *str);
 
-extern const UTF8 *mux_FPStrings[8];
-extern const UTF8 Digits16U[17];
-extern const UTF8 Digits16L[17];
-extern void safe_hex(uint8_t md[], size_t len, bool bUpper, UTF8 *buff, UTF8 **bufc);
+extern LIBMUX_API const UTF8 *mux_FPStrings[8];
+extern LIBMUX_API const UTF8 Digits16U[17];
+extern LIBMUX_API const UTF8 Digits16L[17];
+LIBMUX_API void safe_hex(uint8_t md[], size_t len, bool bUpper, UTF8 *buff, UTF8 **bufc);
 
 // IEEE special-value construction codes (used by MakeSpecialFloat).
 //
@@ -87,20 +87,20 @@ extern void safe_hex(uint8_t md[], size_t len, bool bUpper, UTF8 *buff, UTF8 **b
 #define IEEE_MAKE_PINF 3
 #define IEEE_MAKE_NINF 4
 
-double MakeSpecialFloat(int iWhich);
+LIBMUX_API double MakeSpecialFloat(int iWhich);
 
 // From strtod.cpp — low-level float-to-string / string-to-float.
 //
-void   mux_FPInit();
-void   mux_FPSet();
-void   mux_FPRestore();
-double mux_strtod(const UTF8 *s00, UTF8 **se);
-double mux_ulp(double);
-UTF8  *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign, UTF8 **rve);
+LIBMUX_API void   mux_FPInit();
+LIBMUX_API void   mux_FPSet();
+LIBMUX_API void   mux_FPRestore();
+LIBMUX_API double mux_strtod(const UTF8 *s00, UTF8 **se);
+LIBMUX_API double mux_ulp(double);
+LIBMUX_API UTF8  *mux_dtoa(double d, int mode, int ndigits, int *decpt, int *sign, UTF8 **rve);
 
 // Float-to-string precision limit.  Server layer sets this from
 // mudconf.float_precision during startup.  Default -1 means unlimited.
 //
-extern int g_float_precision;
+extern LIBMUX_API int g_float_precision;
 
 #endif // !MATHUTIL_H

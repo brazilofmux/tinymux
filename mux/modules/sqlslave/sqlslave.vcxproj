@@ -39,12 +39,14 @@
     <_ProjectFileVersion>12.0.30501.0</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>..\bin_release\</OutDir>
+    <OutDir>..\..\bin_release\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IncludePath>C:\tinymux\mux\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>..\bin_debug\</OutDir>
+    <OutDir>..\..\bin_debug\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IncludePath>C:\tinymux\mux\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
@@ -114,14 +116,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\config.h" />
-    <ClInclude Include="..\libmux.h" />
-    <ClInclude Include="..\modules.h" />
-    <ClInclude Include="autoconf.h" />
-    <ClInclude Include="sql.h" />
+    <ClInclude Include="..\..\include\config.h" />
+    <ClInclude Include="..\..\include\libmux.h" />
+    <ClInclude Include="..\..\include\modules.h" />
+    <ClInclude Include="..\..\include\sql.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\libmux.vcxproj">
+    <ProjectReference Include="..\..\libmux.vcxproj">
       <Project>{fea073c1-4f18-42a1-ac39-1a2ec0a65e92}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

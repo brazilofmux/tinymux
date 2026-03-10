@@ -26,6 +26,12 @@
 
 #include <cstring>
 
+// Windows compatibility for POSIX functions.
+//
+#ifdef _MSC_VER
+#define strcasecmp _stricmp
+#endif
+
 // Module bookkeeping.
 //
 static uint32_t g_cComponents  = 0;

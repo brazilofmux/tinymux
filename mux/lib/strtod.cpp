@@ -202,7 +202,7 @@ void mux_FPRestore(void)
 
 #endif
 
-void FLOAT_Initialize(void)
+LIBMUX_API void FLOAT_Initialize(void)
 {
     mux_FPInit();
     mux_FPSet();

@@ -36,17 +36,17 @@ typedef struct
 
 class CLinearTimeDelta;
 
-class CLinearTimeAbsolute
+class LIBMUX_API CLinearTimeAbsolute
 {
     friend class CLinearTimeDelta;
-    friend bool operator<(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
-    friend bool operator>(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
-    friend bool operator==(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
-    friend bool operator<=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
-    friend bool operator>=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
-    friend CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd) noexcept;
-    friend CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd) noexcept;
-    friend CLinearTimeDelta operator-(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
+    friend LIBMUX_API bool operator<(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+    friend LIBMUX_API bool operator>(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+    friend LIBMUX_API bool operator==(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+    friend LIBMUX_API bool operator<=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+    friend LIBMUX_API bool operator>=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+    friend LIBMUX_API CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd) noexcept;
+    friend LIBMUX_API CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd) noexcept;
+    friend LIBMUX_API CLinearTimeDelta operator-(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb);
 
 private:
     UnderlyingTickType m_tAbsolute;
@@ -119,30 +119,30 @@ public:
 };
 
 //! Less than comparison
-bool operator<(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+LIBMUX_API bool operator<(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
 
 //! Greater than comparison
-bool operator>(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+LIBMUX_API bool operator>(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
 
 //! Equality comparison
-bool operator==(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+LIBMUX_API bool operator==(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
 
 //! Less than or equal comparison
-bool operator<=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+LIBMUX_API bool operator<=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
 
 //! Greater than or equal comparison
-bool operator>=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
+LIBMUX_API bool operator>=(const CLinearTimeAbsolute& lta, const CLinearTimeAbsolute& ltb) noexcept;
 
 //! Add time delta to absolute time
-CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd) noexcept;
+LIBMUX_API CLinearTimeAbsolute operator+(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd) noexcept;
 
 //! Subtract time delta from absolute time
-CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd) noexcept;
+LIBMUX_API CLinearTimeAbsolute operator-(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& ltd) noexcept;
 
-bool FieldedTimeToLinearTime(FIELDEDTIME *ft, int64_t *plt);
-bool LinearTimeToFieldedTime(int64_t lt, FIELDEDTIME *ft);
+LIBMUX_API bool FieldedTimeToLinearTime(FIELDEDTIME *ft, int64_t *plt);
+LIBMUX_API bool LinearTimeToFieldedTime(int64_t lt, FIELDEDTIME *ft);
 
-class CLinearTimeDelta {
+class LIBMUX_API CLinearTimeDelta {
 public:
     // --- Chrono Integration ---
     // Define the equivalent chrono duration type publicly
@@ -196,12 +196,12 @@ public:
     CLinearTimeDelta& operator-=(const CLinearTimeDelta& ltd) noexcept;
 
     // Comparison operators (declare as friends or non-members)
-    friend bool operator==(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
-    friend bool operator!=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
-    friend bool operator<=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
-    friend bool operator<(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
-    friend bool operator>=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
-    friend bool operator>(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+    friend LIBMUX_API bool operator==(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+    friend LIBMUX_API bool operator!=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+    friend LIBMUX_API bool operator<=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+    friend LIBMUX_API bool operator<(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+    friend LIBMUX_API bool operator>=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+    friend LIBMUX_API bool operator>(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
 
 private:
     UnderlyingTickType m_tDelta; // The core data: count of 100ns intervals
@@ -214,12 +214,18 @@ private:
 };
 
 // Non-member operators (use UnderlyingTickType, check division by zero)
-CLinearTimeDelta operator-(const CLinearTimeAbsolute& ltaA, const CLinearTimeAbsolute& ltaB);
-CLinearTimeDelta operator-(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
-CLinearTimeDelta operator*(const CLinearTimeDelta& ltd, int Scale);
-UnderlyingTickType operator/(const CLinearTimeDelta& ltdA, const CLinearTimeDelta& ltdB);
+LIBMUX_API CLinearTimeDelta operator-(const CLinearTimeAbsolute& ltaA, const CLinearTimeAbsolute& ltaB);
+LIBMUX_API CLinearTimeDelta operator-(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+LIBMUX_API CLinearTimeDelta operator*(const CLinearTimeDelta& ltd, int Scale);
+LIBMUX_API UnderlyingTickType operator/(const CLinearTimeDelta& ltdA, const CLinearTimeDelta& ltdB);
+LIBMUX_API bool operator==(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+LIBMUX_API bool operator!=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+LIBMUX_API bool operator<=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+LIBMUX_API bool operator<(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+LIBMUX_API bool operator>=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
+LIBMUX_API bool operator>(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
 
-class mux_alarm
+class LIBMUX_API mux_alarm
 {
 private:
     bool alarm_set_{};
@@ -242,7 +248,7 @@ public:
     void clear();
 };
 
-extern mux_alarm alarm_clock;
+extern LIBMUX_API mux_alarm alarm_clock;
 
 #define FACTOR_NANOSECONDS_PER_100NS 100
 #define FACTOR_100NS_PER_MICROSECOND 10
@@ -252,13 +258,13 @@ extern mux_alarm alarm_clock;
 #define LATEST_VALID_DATE         INT64_C(9222834959999999999)
 #define TIMEUTIL_TIME_T_MIN_VALUE INT64_C(-922283539200)
 #define TIMEUTIL_TIME_T_MAX_VALUE INT64_C(910638979199)
-extern const int64_t FACTOR_MS_PER_SECOND;
-extern const int64_t FACTOR_US_PER_SECOND;
-extern const int64_t FACTOR_100NS_PER_SECOND;
-extern const int64_t FACTOR_100NS_PER_MINUTE;
-extern const int64_t FACTOR_100NS_PER_HOUR;
-extern const int64_t FACTOR_100NS_PER_DAY;
-extern const int64_t FACTOR_100NS_PER_WEEK;
+extern LIBMUX_API const int64_t FACTOR_MS_PER_SECOND;
+extern LIBMUX_API const int64_t FACTOR_US_PER_SECOND;
+extern LIBMUX_API const int64_t FACTOR_100NS_PER_SECOND;
+extern LIBMUX_API const int64_t FACTOR_100NS_PER_MINUTE;
+extern LIBMUX_API const int64_t FACTOR_100NS_PER_HOUR;
+extern LIBMUX_API const int64_t FACTOR_100NS_PER_DAY;
+extern LIBMUX_API const int64_t FACTOR_100NS_PER_WEEK;
 
 const CLinearTimeDelta time_200us = 200*FACTOR_100NS_PER_MICROSECOND;
 const CLinearTimeDelta time_5ms   = 5*FACTOR_100NS_PER_MILLISECOND;
@@ -273,22 +279,22 @@ const CLinearTimeDelta time_30m   = 30*FACTOR_100NS_PER_MINUTE;
 const CLinearTimeDelta time_1w    = FACTOR_100NS_PER_WEEK;
 
 namespace TimezoneCache {
-    void initialize(void);
-    CLinearTimeDelta queryLocalOffsetAtUTC(const CLinearTimeAbsolute& utc_lta, bool* is_dst);
-    CLinearTimeDelta getCurrentLocalOffset(bool* is_dst);
+    LIBMUX_API void initialize(void);
+    LIBMUX_API CLinearTimeDelta queryLocalOffsetAtUTC(const CLinearTimeAbsolute& utc_lta, bool* is_dst);
+    LIBMUX_API CLinearTimeDelta getCurrentLocalOffset(bool* is_dst);
 }
 
 #ifdef SMALLEST_INT_GTE_NEG_QUOTIENT
-int64_t i64Mod(int64_t x, int64_t y);
-int64_t i64FloorDivision(int64_t x, int64_t y);
+LIBMUX_API int64_t i64Mod(int64_t x, int64_t y);
+LIBMUX_API int64_t i64FloorDivision(int64_t x, int64_t y);
 inline int64_t i64Division(int64_t x, int64_t y) { return x / y; }
 inline int64_t i64Remainder(int64_t x, int64_t y) { return x % y; }
-int iFloorDivisionMod(int x, int y, int *piMod);
+LIBMUX_API int iFloorDivisionMod(int x, int y, int *piMod);
 #else // SMALLEST_INT_GTE_NEG_QUOTIENT
 inline int64_t i64Mod(int64_t x, int64_t y) { return x % y; }
 inline int64_t i64FloorDivision(int64_t x, int64_t y) { return x / y; }
-int64_t i64Division(int64_t x, int64_t y);
-int64_t i64Remainder(int64_t x, int64_t y);
+LIBMUX_API int64_t i64Division(int64_t x, int64_t y);
+LIBMUX_API int64_t i64Remainder(int64_t x, int64_t y);
 inline int iFloorDivisionMod(int x, int y, int *piMod) \
 {                   \
     *piMod = x % y; \
@@ -296,25 +302,25 @@ inline int iFloorDivisionMod(int x, int y, int *piMod) \
 }
 #endif // SMALLEST_INT_GTE_NEG_QUOTIENT
 
-int iMod(int x, int y);
-int iFloorDivision(int x, int y);
-int64_t i64FloorDivisionMod(int64_t x, int64_t y, int64_t *piMod);
-bool ParseDate(CLinearTimeAbsolute &lta, UTF8 *pDateString, bool *pbZoneSpecified);
-void ParseDecimalSeconds(size_t n, const UTF8 *p, unsigned short *iMilli,
+LIBMUX_API int iMod(int x, int y);
+LIBMUX_API int iFloorDivision(int x, int y);
+LIBMUX_API int64_t i64FloorDivisionMod(int64_t x, int64_t y, int64_t *piMod);
+LIBMUX_API bool ParseDate(CLinearTimeAbsolute &lta, UTF8 *pDateString, bool *pbZoneSpecified);
+LIBMUX_API void ParseDecimalSeconds(size_t n, const UTF8 *p, unsigned short *iMilli,
                          unsigned short *iMicro, unsigned short *iNano);
-bool isLeapYear(long iYear);
-void ConvertToSecondsString(UTF8 *buffer, int64_t n64, int nFracDigits);
-bool ParseFractionalSecondsString(int64_t &i64, const UTF8 *str);
-void GetUTCLinearTime(int64_t *plt);
-bool do_convtime(const UTF8 *str, FIELDEDTIME *ft);
-CLinearTimeDelta QueryLocalOffsetAtUTC
+LIBMUX_API bool isLeapYear(long iYear);
+LIBMUX_API void ConvertToSecondsString(UTF8 *buffer, int64_t n64, int nFracDigits);
+LIBMUX_API bool ParseFractionalSecondsString(int64_t &i64, const UTF8 *str);
+LIBMUX_API void GetUTCLinearTime(int64_t *plt);
+LIBMUX_API bool do_convtime(const UTF8 *str, FIELDEDTIME *ft);
+LIBMUX_API CLinearTimeDelta QueryLocalOffsetAtUTC
 (
     const CLinearTimeAbsolute &lta,
     bool *pisDST
 );
 
-extern const UTF8 *monthtab[12];
-extern const char daystab[12];
-extern const UTF8 *DayOfWeekString[7];
+extern LIBMUX_API const UTF8 *monthtab[12];
+extern LIBMUX_API const char daystab[12];
+extern LIBMUX_API const UTF8 *DayOfWeekString[7];
 
 #endif // TIMEUTIL_H

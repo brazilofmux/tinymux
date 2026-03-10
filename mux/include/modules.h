@@ -617,7 +617,7 @@ struct DRIVER_CONFIG
 // reads it.  When the engine moves out-of-process (stubslave), this
 // export goes away and debug_cmd becomes process-local.
 //
-extern DCL_EXPORT const UTF8 *g_debug_cmd;
+extern LIBMUX_API const UTF8 *g_debug_cmd;
 
 // Game engine — the interface the driver uses to call into the engine.
 // In the current in-process build, CGameEngine wraps direct function calls.

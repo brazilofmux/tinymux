@@ -1637,7 +1637,7 @@ CLinearTimeAbsolute fetch_logouttime(dbref target);
 
 // From strtod.cpp
 //
-void FLOAT_Initialize(void);
+LIBMUX_API void FLOAT_Initialize(void);
 
 // From wiz.cpp
 //
@@ -1684,8 +1684,11 @@ typedef struct ServerEventsSinkNode
 extern ServerEventsSinkNode *g_pServerEventsSinkListHead;
 
 // Driver-side factory classes (modules.cpp).
+// Only visible when building the driver (netmux.exe).
+#ifdef BUILDING_DRIVER
 DEFINE_FACTORY(CConnectionManagerFactory)
 DEFINE_FACTORY(CDriverControlFactory)
+#endif
 
 #if defined(INLINESQL)
 void init_sql(void);

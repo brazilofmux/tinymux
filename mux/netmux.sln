@@ -6,9 +6,17 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmux", "libmux.vcxproj", 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "netmux", "netmux.vcxproj", "{4B7BC7FB-4A90-487B-9818-A7F86B0E6831}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sqlproxy", "modules\sqlproxy.vcxproj", "{5689B87D-E634-4061-8090-BC93974ABB2E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "engine", "modules\engine\engine.vcxproj", "{B1C2D3E4-F5A6-7890-BCDE-F12345678901}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sqlslave", "modules\sqlslave.vcxproj", "{87FF7E1D-10EF-4B5D-8710-F8EFC963FE1D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "comsys", "modules\comsys\comsys.vcxproj", "{C2D3E4F5-A6B7-8901-CDEF-123456789012}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mail", "modules\mail\mail.vcxproj", "{D3E4F5A6-B7C8-9012-DEFA-234567890123}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "exp3", "modules\exp3\exp3.vcxproj", "{E4F5A6B7-C8D9-0123-EFAB-345678901234}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sqlproxy", "modules\sqlproxy\sqlproxy.vcxproj", "{5689B87D-E634-4061-8090-BC93974ABB2E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sqlslave", "modules\sqlslave\sqlslave.vcxproj", "{87FF7E1D-10EF-4B5D-8710-F8EFC963FE1D}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ganl", "ganl\ganl.vcxproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
 EndProject
@@ -26,6 +34,22 @@ Global
 		{4B7BC7FB-4A90-487B-9818-A7F86B0E6831}.Debug|x64.Build.0 = Debug|x64
 		{4B7BC7FB-4A90-487B-9818-A7F86B0E6831}.Release|x64.ActiveCfg = Release|x64
 		{4B7BC7FB-4A90-487B-9818-A7F86B0E6831}.Release|x64.Build.0 = Release|x64
+		{B1C2D3E4-F5A6-7890-BCDE-F12345678901}.Debug|x64.ActiveCfg = Debug|x64
+		{B1C2D3E4-F5A6-7890-BCDE-F12345678901}.Debug|x64.Build.0 = Debug|x64
+		{B1C2D3E4-F5A6-7890-BCDE-F12345678901}.Release|x64.ActiveCfg = Release|x64
+		{B1C2D3E4-F5A6-7890-BCDE-F12345678901}.Release|x64.Build.0 = Release|x64
+		{C2D3E4F5-A6B7-8901-CDEF-123456789012}.Debug|x64.ActiveCfg = Debug|x64
+		{C2D3E4F5-A6B7-8901-CDEF-123456789012}.Debug|x64.Build.0 = Debug|x64
+		{C2D3E4F5-A6B7-8901-CDEF-123456789012}.Release|x64.ActiveCfg = Release|x64
+		{C2D3E4F5-A6B7-8901-CDEF-123456789012}.Release|x64.Build.0 = Release|x64
+		{D3E4F5A6-B7C8-9012-DEFA-234567890123}.Debug|x64.ActiveCfg = Debug|x64
+		{D3E4F5A6-B7C8-9012-DEFA-234567890123}.Debug|x64.Build.0 = Debug|x64
+		{D3E4F5A6-B7C8-9012-DEFA-234567890123}.Release|x64.ActiveCfg = Release|x64
+		{D3E4F5A6-B7C8-9012-DEFA-234567890123}.Release|x64.Build.0 = Release|x64
+		{E4F5A6B7-C8D9-0123-EFAB-345678901234}.Debug|x64.ActiveCfg = Debug|x64
+		{E4F5A6B7-C8D9-0123-EFAB-345678901234}.Debug|x64.Build.0 = Debug|x64
+		{E4F5A6B7-C8D9-0123-EFAB-345678901234}.Release|x64.ActiveCfg = Release|x64
+		{E4F5A6B7-C8D9-0123-EFAB-345678901234}.Release|x64.Build.0 = Release|x64
 		{5689B87D-E634-4061-8090-BC93974ABB2E}.Debug|x64.ActiveCfg = Debug|x64
 		{5689B87D-E634-4061-8090-BC93974ABB2E}.Debug|x64.Build.0 = Debug|x64
 		{5689B87D-E634-4061-8090-BC93974ABB2E}.Release|x64.ActiveCfg = Release|x64

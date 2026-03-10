@@ -10,9 +10,9 @@
 
 #include <cstdio>
 
-void putref(FILE *f, int ref);
-int  getref(FILE *f);
-void putstring(FILE *f, const UTF8 *s);
-void *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer);
+LIBMUX_API void putref(FILE *f, int ref);
+LIBMUX_API int  getref(FILE *f);
+LIBMUX_API void putstring(FILE *f, const UTF8 *s);
+LIBMUX_API void *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer);
 
 #endif // DBUTIL_H

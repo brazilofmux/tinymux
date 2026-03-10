@@ -41,8 +41,8 @@ typedef struct
 // Portable file I/O wrappers
 //
 #define MUX_OPEN_INVALID_HANDLE_VALUE (-1)
-bool mux_fopen(FILE **pFile, const UTF8 *filename, const UTF8 *mode);
-bool mux_open(int *pfh, const UTF8 *filename, int oflag);
-const UTF8 *mux_strerror(int errnum);
+LIBMUX_API bool mux_fopen(FILE **pFile, const UTF8 *filename, const UTF8 *mode);
+LIBMUX_API bool mux_open(int *pfh, const UTF8 *filename, int oflag);
+LIBMUX_API const UTF8 *mux_strerror(int errnum);
 
 #endif // CORE_H

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{5689B87D-E634-4061-8090-BC93974ABB2E}</ProjectGuid>
+    <ProjectGuid>{C2D3E4F5-A6B7-8901-CDEF-123456789012}</ProjectGuid>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -41,12 +41,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>..\..\bin_release\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>C:\tinymux\mux\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\tinymux\mux\include;C:\tinymux\mux\sqlite;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>..\..\bin_debug\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>C:\tinymux\mux\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\tinymux\mux\include;C:\tinymux\mux\sqlite;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
@@ -54,7 +54,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>X64</TargetEnvironment>
-      <TypeLibraryName>.\bin_release/sqlproxy.tlb</TypeLibraryName>
+      <TypeLibraryName>.\bin_release/comsys.tlb</TypeLibraryName>
       <HeaderFileName />
     </Midl>
     <ClCompile>
@@ -86,7 +86,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>X64</TargetEnvironment>
-      <TypeLibraryName>.\bin_debug/sqlproxy.tlb</TypeLibraryName>
+      <TypeLibraryName>.\bin_debug/comsys.tlb</TypeLibraryName>
       <HeaderFileName />
     </Midl>
     <ClCompile>
@@ -107,7 +107,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="sqlproxy.cpp">
+    <ClCompile Include="comsys_mod.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">WIN32;_DEBUG;UNICODE</PreprocessorDefinitions>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
@@ -116,14 +116,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\config.h" />
-    <ClInclude Include="..\..\include\libmux.h" />
-    <ClInclude Include="..\..\include\modules.h" />
-    <ClInclude Include="..\..\include\sql.h" />
+    <ClInclude Include="..\..\include\autoconf-win32.h" />
+    <ClInclude Include="..\autoconf-win32.h" />
+    <ClInclude Include="..\config.h" />
+    <ClInclude Include="..\libmux.h" />
+    <ClInclude Include="..\modules.h" />
+    <ClInclude Include="comsys_mod.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\libmux.vcxproj">
-      <Project>{fea073c1-4f18-42a1-ac39-1a2ec0a65e92}</Project>
+      <Project>{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

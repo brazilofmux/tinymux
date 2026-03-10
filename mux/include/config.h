@@ -316,6 +316,12 @@ typedef char  boolexp_type;
 #define DCL_EXPORT __declspec(dllexport)
 #define DCL_API    __stdcall
 
+#ifdef BUILDING_LIBMUX
+#define LIBMUX_API __declspec(dllexport)
+#else
+#define LIBMUX_API __declspec(dllimport)
+#endif
+
 #define LOCALTIME_TIME_T_MIN_VALUE 0
 #if (_MSC_VER >= 1400)
 // 1600 is Visual C++ 10.0 (2010)
@@ -356,6 +362,7 @@ typedef char  boolexp_type;
 #define DCL_CDECL
 #define DCL_EXPORT __attribute__((visibility("default")))
 #define DCL_API
+#define LIBMUX_API __attribute__((visibility("default")))
 
 #ifndef O_BINARY
 #define O_BINARY 0
