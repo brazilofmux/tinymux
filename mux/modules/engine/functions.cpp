@@ -6128,6 +6128,166 @@ static FUNCTION(fun_attrcnt)
     olist_pop();
 }
 
+// ---------------------------------------------------------------------------
+// reglattr_handler: Return list or count of attributes matching a regex.
+//
+// reglattr(obj, regexp)   — list matching attr names
+// regnattr(obj, regexp)   — count matching attr names
+// reglattri(obj, regexp)  — case-insensitive list
+// regnattri(obj, regexp)  — case-insensitive count
+// ---------------------------------------------------------------------------
+
+static void reglattr_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
+    UTF8 *fargs[], bool bCount, bool bCaseInsens)
+{
+    dbref thing = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(thing))
+    {
+        safe_match_result(thing, buff, bufc);
+        return;
+    }
+
+    if (!Examinable(executor, thing))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    if (!fargs[1] || !*fargs[1])
+    {
+        safe_str(T("#-1 INVALID REGEXP"), buff, bufc);
+        return;
+    }
+
+    PCRE2_SIZE erroffset;
+    int errcode;
+    uint32_t options = PCRE2_UTF;
+    if (bCaseInsens)
+    {
+        options |= PCRE2_CASELESS;
+    }
+
+    pcre2_code *re = pcre2_compile_8(
+        fargs[1],
+        PCRE2_ZERO_TERMINATED,
+        options,
+        &errcode,
+        &erroffset,
+        nullptr);
+
+    if (!re)
+    {
+        PCRE2_UCHAR errbuf[256];
+        pcre2_get_error_message(errcode, errbuf, sizeof(errbuf));
+        safe_str(T("#-1 REGEXP ERROR "), buff, bufc);
+        safe_str(reinterpret_cast<UTF8 *>(errbuf), buff, bufc);
+        return;
+    }
+
+    pcre2_match_data *match_data = pcre2_match_data_create_from_pattern(re, nullptr);
+    if (!match_data)
+    {
+        pcre2_code_free(re);
+        safe_str(T("#-1 REGEXP MATCH DATA ERROR"), buff, bufc);
+        return;
+    }
+
+    bool bFirst = true;
+    int count = 0;
+
+    atr_push();
+    unsigned char *as;
+    for (int ca = atr_head(thing, &as); ca; ca = atr_next(&as))
+    {
+        ATTR *pattr = atr_num(ca);
+        if (!pattr)
+        {
+            continue;
+        }
+
+        if (!See_attr(executor, thing, pattr))
+        {
+            continue;
+        }
+
+        int rc = pcre2_match(re, pattr->name,
+            PCRE2_ZERO_TERMINATED, 0, 0, match_data, nullptr);
+        if (rc >= 0)
+        {
+            if (bCount)
+            {
+                count++;
+            }
+            else
+            {
+                if (!bFirst)
+                {
+                    safe_chr(' ', buff, bufc);
+                }
+                bFirst = false;
+                safe_str(pattr->name, buff, bufc);
+            }
+        }
+    }
+    atr_pop();
+
+    pcre2_match_data_free(match_data);
+    pcre2_code_free(re);
+
+    if (bCount)
+    {
+        safe_ltoa(count, buff, bufc);
+    }
+}
+
+static FUNCTION(fun_reglattr)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    reglattr_handler(buff, bufc, executor, fargs, false, false);
+}
+
+static FUNCTION(fun_reglattri)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    reglattr_handler(buff, bufc, executor, fargs, false, true);
+}
+
+static FUNCTION(fun_regnattr)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    reglattr_handler(buff, bufc, executor, fargs, true, false);
+}
+
+static FUNCTION(fun_regnattri)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    reglattr_handler(buff, bufc, executor, fargs, true, true);
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * fun_reverse, fun_revwords: Reverse things.
@@ -8619,6 +8779,173 @@ static FUNCTION(fun_sort)
 
     arr2list(ptrs, nitems, buff, bufc, osep);
     free_lbuf(list);
+}
+
+// ---------------------------------------------------------------------------
+// sortkey(): Sort a list by computed key values.
+//
+// sortkey([obj/]attr, list[, sort_type[, delim[, osep]]])
+//
+// For each element, evaluates attr with %0 = element to produce a key.
+// Sorts the original elements by those keys using the specified sort type.
+//
+static FUNCTION(fun_sortkey)
+{
+    SEP sep;
+    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(5, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
+    {
+        return;
+    }
+
+    UTF8 *atext;
+    dbref thing;
+    dbref aowner;
+    int   aflags;
+    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, &aowner, &aflags, buff, bufc))
+    {
+        return;
+    }
+
+    if ((aflags & AF_NOEVAL) || NoEval(executor))
+    {
+        free_lbuf(atext);
+        return;
+    }
+
+    // Split the list into an array.
+    //
+    UTF8 *list = alloc_lbuf("fun_sortkey.list");
+    mux_strncpy(list, fargs[1], LBUF_SIZE-1);
+    UTF8 *ptrs[LBUF_SIZE / 2];
+    int nitems = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
+
+    if (nitems <= 1)
+    {
+        arr2list(ptrs, nitems, buff, bufc, osep);
+        free_lbuf(list);
+        free_lbuf(atext);
+        return;
+    }
+
+    // Compute a sort key for each element.
+    //
+    UTF8 *keys[LBUF_SIZE / 2];
+    int nkeys = 0;
+    for (int i = 0; i < nitems; i++)
+    {
+        keys[i] = alloc_lbuf("fun_sortkey.key");
+        UTF8 *bp = keys[i];
+
+        UTF8 *tbuf = alloc_lbuf("fun_sortkey.attr");
+        mux_strncpy(tbuf, atext, LBUF_SIZE-1);
+
+        const UTF8 *elems[1] = { ptrs[i] };
+        mux_exec(tbuf, LBUF_SIZE-1, keys[i], &bp, thing, executor,
+            enactor, AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL),
+            elems, 1);
+        *bp = '\0';
+
+        free_lbuf(tbuf);
+        nkeys = i + 1;
+
+        if (  mudstate.func_invk_ctr > mudconf.func_invk_lim
+           || alarm_clock.alarmed)
+        {
+            for (int j = 0; j < nkeys; j++)
+            {
+                free_lbuf(keys[j]);
+            }
+            free_lbuf(list);
+            free_lbuf(atext);
+            return;
+        }
+    }
+
+    // Determine sort type from the keys.
+    //
+    int sort_type = ASCII_LIST;
+    if (3 <= nfargs && fargs[2][0] != '\0')
+    {
+        switch (fargs[2][0])
+        {
+        case 'd': case 'D': sort_type = DBREF_LIST;      break;
+        case 'n': case 'N': sort_type = NUMERIC_LIST;     break;
+        case 'f': case 'F': sort_type = FLOAT_LIST;       break;
+        case 'i': case 'I': sort_type = CI_ASCII_LIST;    break;
+        case 'u': case 'U': sort_type = UNICODE_LIST;     break;
+        case 'a': case 'A': sort_type = ASCII_LIST;       break;
+        case 'c': case 'C': sort_type = CI_UNICODE_LIST;  break;
+        case '?':
+        case '\0':
+            {
+                AutoDetect ad;
+                ad.ExamineList(nitems, keys);
+                sort_type = ad.GetType();
+            }
+            break;
+        }
+    }
+    else
+    {
+        AutoDetect ad;
+        ad.ExamineList(nitems, keys);
+        sort_type = ad.GetType();
+    }
+
+    // Sort keys using do_asort_start, which rearranges the keys[] array
+    // in place.  We save the original key pointers alongside their element
+    // pointers so we can follow the rearrangement.
+    //
+    // Build parallel arrays: save original (key, element) pairs.
+    //
+    struct sk_pair { UTF8 *key; UTF8 *elem; };
+    sk_pair pairs[LBUF_SIZE / 2];
+    for (int i = 0; i < nitems; i++)
+    {
+        pairs[i].key  = keys[i];
+        pairs[i].elem = ptrs[i];
+    }
+
+    SortContext sc;
+    if (do_asort_start(&sc, nitems, keys, sort_type))
+    {
+        do_asort_finish(&sc);
+    }
+
+    // keys[] is now sorted.  For each sorted position, find the original
+    // pair by pointer identity and emit the corresponding element.
+    //
+    UTF8 *sorted[LBUF_SIZE / 2];
+    bool used[LBUF_SIZE / 2];
+    memset(used, 0, sizeof(bool) * nitems);
+
+    for (int i = 0; i < nitems; i++)
+    {
+        for (int j = 0; j < nitems; j++)
+        {
+            if (!used[j] && keys[i] == pairs[j].key)
+            {
+                sorted[i] = pairs[j].elem;
+                used[j] = true;
+                break;
+            }
+        }
+    }
+
+    arr2list(sorted, nitems, buff, bufc, osep);
+
+    for (int i = 0; i < nitems; i++)
+    {
+        free_lbuf(pairs[i].key);
+    }
+    free_lbuf(list);
+    free_lbuf(atext);
 }
 
 /* ---------------------------------------------------------------------------
@@ -12358,6 +12685,7 @@ static FUN builtin_function_list[] =
     {T("LCSTR"),       fun_lcstr,            1, 1,       1,         0, CA_PUBLIC},
     {T("LDELETE"),     fun_ldelete,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {T("LEDIT"),       fun_ledit,      MAX_ARG, 3,       5,         0, CA_PUBLIC},
+    {T("LETQ"),        fun_letq,       MAX_ARG, 3, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
     {T("LEXITS"),      fun_lexits,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("LFLAGS"),      fun_lflags,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("LINK"),        fun_link,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
@@ -12454,6 +12782,10 @@ static FUN builtin_function_list[] =
     {T("REGEDITI"),    fun_regediti,   MAX_ARG, 3, MAX_ARG,         0, CA_PUBLIC},
     {T("REGEDITALL"),  fun_regeditall, MAX_ARG, 3, MAX_ARG,         0, CA_PUBLIC},
     {T("REGEDITALLI"), fun_regeditalli,MAX_ARG, 3, MAX_ARG,         0, CA_PUBLIC},
+    {T("REGLATTR"),    fun_reglattr,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("REGLATTRI"),   fun_reglattri,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("REGNATTR"),    fun_regnattr,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("REGNATTRI"),   fun_regnattri,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("REMAINDER"),   fun_remainder,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("REMIT"),       fun_remit,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("REMOVE"),      fun_remove,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
@@ -12506,6 +12838,7 @@ static FUN builtin_function_list[] =
     {T("SITEINFO"),    fun_siteinfo,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("SORT"),        fun_sort,       MAX_ARG, 1,       4,         0, CA_PUBLIC},
     {T("SORTBY"),      fun_sortby,     MAX_ARG, 2,       4,         0, CA_PUBLIC},
+    {T("SORTKEY"),     fun_sortkey,    MAX_ARG, 2,       5,         0, CA_PUBLIC},
     {T("SPACE"),       fun_space,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("SPELLNUM"),    fun_spellnum,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("SPLICE"),      fun_splice,     MAX_ARG, 3,       5,         0, CA_PUBLIC},

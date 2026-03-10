@@ -1,0 +1,128 @@
+#
+# letq_fn.mux - Test Cases for letq().
+#
+@create test_letq_fn
+-
+@set test_letq_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_letq_fn=
+  @log smoke=Beginning letq() test cases.
+-
+#
+# Test Case #1 - Basic letq with single-char register.
+#
+&tr.tc001 test_letq_fn=
+  @if strmatch(
+        setr(0,sha1(letq(a,hello,%qa))),
+        AAF4C61DDCC5E8A2DABEDE0F3B482CD9AEA9434D
+      )=
+  {
+    @log smoke=TC001: letq single-char register. Succeeded.
+  },
+  {
+    @log smoke=TC001: letq single-char register. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - letq scoping: register restored after body.
+# setq(b,OUTER) then letq(b,INNER,%qb) returns INNER, then %qb is OUTER.
+# Result: "INNEROUTER"
+#
+&tr.tc002 test_letq_fn=
+  @if strmatch(
+        setr(0,sha1([setq(b,OUTER)][letq(b,INNER,%qb)][%qb])),
+        2262DB7FE7506BF1CB454E9357DFA92B8FE68B7F
+      )=
+  {
+    @log smoke=TC002: letq scoping. Succeeded.
+  },
+  {
+    @log smoke=TC002: letq scoping. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - letq with multiple name/value pairs.
+#
+&tr.tc003 test_letq_fn=
+  @if strmatch(
+        setr(0,sha1(letq(a,one,b,two,%qa-%qb))),
+        F6FA341FA921754426A93DE8913698FCE864F18E
+      )=
+  {
+    @log smoke=TC003: letq multiple pairs. Succeeded.
+  },
+  {
+    @log smoke=TC003: letq multiple pairs. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - letq with named registers.
+#
+&tr.tc004 test_letq_fn=
+  @if strmatch(
+        setr(0,sha1(letq(foo,BAR,%q<foo>))),
+        A5D5C1BBA91FDB6C669E1AE0413820885BBFC455
+      )=
+  {
+    @log smoke=TC004: letq named register. Succeeded.
+  },
+  {
+    @log smoke=TC004: letq named register. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - letq error: even number of args (no body).
+#
+&tr.tc005 test_letq_fn=
+  @if strmatch(
+        setr(0,letq(a,hello)),
+        #-1 FUNCTION*
+      )=
+  {
+    @log smoke=TC005: letq even args error. Succeeded.
+  },
+  {
+    @log smoke=TC005: letq even args error. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - letq error: invalid register name (contains space).
+#
+&tr.tc006 test_letq_fn=
+  @if strmatch(
+        setr(0,letq(bad name,val,body)),
+        #-1 INVALID GLOBAL REGISTER
+      )=
+  {
+    @log smoke=TC006: letq invalid register name. Succeeded.
+  },
+  {
+    @log smoke=TC006: letq invalid register name. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - letq body evaluates expressions.
+#
+&tr.tc007 test_letq_fn=
+  @if strmatch(
+        setr(0,letq(x,5,add(%qx,3))),
+        8
+      )=
+  {
+    @log smoke=TC007: letq body evaluation. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC007: letq body evaluation. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_letq_fn=
+  @log smoke=End letq() test cases.;
+  @notify smoke
+-
+drop test_letq_fn
+-

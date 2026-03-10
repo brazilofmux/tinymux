@@ -17,7 +17,7 @@
   fdiv_fn first_fn floor_fn floordiv_fn fmod_fn grab_fn graball_fn gt_fn gte_fn 
   hmac_fn iadd_fn iabs_fn idiv_fn imul_fn inc_fn index_fn insert_fn 
   isalpha_fn isdbref_fn isign_fn isint_fn isjson_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn 
-  json_fn
+  json_fn letq_fn
 -
 &suite.list.2 smoke=
   ladd_fn land_fn last_fn lcstr_fn ldelete_fn ljust_fn lmax_fn lmin_fn 
@@ -25,10 +25,10 @@
   match_fn matchall_fn max_fn member_fn merge_fn mid_fn min_fn mod_fn mul_fn 
   neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn 
   parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn printf_fn 
-  remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn 
+  reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn 
   right_fn rjust_fn roman_fn round_fn rpad_fn 
   secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn 
-  shuffle_fn sign_fn sin_fn singletime_fn sort_fn space_fn spellnum_fn 
+  shuffle_fn sign_fn sin_fn singletime_fn sort_fn sortkey_fn space_fn spellnum_fn 
   splice_fn sqrt_fn squish_fn strcat_fn strip_fn stripansi_fn strlen_fn 
   strmatch_fn strmem_fn strdistance_fn strtrunc_fn sub_fn switch_fn 
   t_fn table_fn tan_fn tr_fn translate_fn trim_fn trunc_fn ucstr_fn url_escape_fn 

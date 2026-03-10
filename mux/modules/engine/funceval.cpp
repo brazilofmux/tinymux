@@ -1508,6 +1508,91 @@ FUNCTION(fun_localize)
     PopRegisters(preserve, MAX_GLOBAL_REGS);
 }
 
+// ---------------------------------------------------------------------------
+// fun_letq: letq(name, value, ..., body)
+//
+// Scoped named registers.  Assigns name/value pairs, evaluates the body
+// expression, then restores all registers to their prior state.  The body
+// sees both the letq bindings and any pre-existing registers.
+//
+// Requires an odd number of args >= 3 (pairs + body).
+//
+FUNCTION(fun_letq)
+{
+    if (nfargs < 3 || (nfargs % 2) != 1)
+    {
+        safe_str(T("#-1 FUNCTION (LETQ) EXPECTS AN ODD NUMBER OF ARGUMENTS"), buff, bufc);
+        return;
+    }
+
+    // Save all registers (global + named).
+    //
+    reg_ref **preserve = PushRegisters(MAX_GLOBAL_REGS);
+    save_global_regs(preserve);
+
+    // Evaluate and assign each name/value pair.
+    //
+    UTF8 *tbuf = alloc_lbuf("fun_letq.name");
+    UTF8 *vbuf = alloc_lbuf("fun_letq.value");
+    bool bError = false;
+
+    for (int i = 0; i < nfargs - 1; i += 2)
+    {
+        // Evaluate the register name.
+        //
+        UTF8 *tp = tbuf;
+        mux_exec(fargs[i], LBUF_SIZE-1, tbuf, &tp, executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        *tp = '\0';
+
+        // Evaluate the value.
+        //
+        UTF8 *vp = vbuf;
+        mux_exec(fargs[i + 1], LBUF_SIZE-1, vbuf, &vp, executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        *vp = '\0';
+
+        size_t nVal = vp - vbuf;
+
+        int regnum;
+        if (IsSingleCharReg(tbuf, regnum))
+        {
+            RegAssign(&mudstate.global_regs[regnum], nVal, vbuf);
+        }
+        else
+        {
+            size_t nName = tp - tbuf;
+            if (IsValidNamedReg(tbuf, nName))
+            {
+                NamedRegAssign(mudstate.named_regs, tbuf, nName, nVal, vbuf);
+            }
+            else
+            {
+                safe_str(T("#-1 INVALID GLOBAL REGISTER"), buff, bufc);
+                bError = true;
+                break;
+            }
+        }
+    }
+
+    free_lbuf(vbuf);
+    free_lbuf(tbuf);
+
+    // Evaluate the body (last argument).
+    //
+    if (!bError)
+    {
+        mux_exec(fargs[nfargs - 1], LBUF_SIZE-1, buff, bufc, executor,
+            caller, enactor, eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL,
+            cargs, ncargs);
+    }
+
+    // Restore all registers.
+    //
+    restore_global_regs(preserve);
+    PopRegisters(preserve, MAX_GLOBAL_REGS);
+}
+
 FUNCTION(fun_null)
 {
     UNUSED_PARAMETER(buff);

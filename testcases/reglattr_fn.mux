@@ -1,0 +1,158 @@
+#
+# reglattr_fn.mux - Test Cases for reglattr()/regnattr()/reglattri()/regnattri().
+#
+# We use the test object itself as the target, adding known attributes to it.
+#
+@create test_reglattr_fn
+-
+@set test_reglattr_fn=INHERIT QUIET
+-
+#
+# Add test attributes to the test object itself.
+#
+&ALPHA test_reglattr_fn=1
+-
+&ALPHA_ONE test_reglattr_fn=2
+-
+&ALPHA_TWO test_reglattr_fn=3
+-
+&BETA test_reglattr_fn=4
+-
+&BETA_ONE test_reglattr_fn=5
+-
+&GAMMA test_reglattr_fn=6
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_reglattr_fn=
+  @log smoke=Beginning reglattr()/regnattr() test cases.
+-
+#
+# Test Case #1 - reglattr matches attrs by regex.
+#
+&tr.tc001 test_reglattr_fn=
+  @if strmatch(
+        setr(0,sha1(sort(reglattr(me,^ALPHA)))),
+        FEC6E34731AE08ED0E5E9CA88CE4F1CBC4BA36D5
+      )=
+  {
+    @log smoke=TC001: reglattr ALPHA. Succeeded.
+  },
+  {
+    @log smoke=TC001: reglattr ALPHA. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - regnattr counts matching attrs.
+#
+&tr.tc002 test_reglattr_fn=
+  @if strmatch(
+        setr(0,regnattr(me,^ALPHA)),
+        3
+      )=
+  {
+    @log smoke=TC002: regnattr ALPHA count. Succeeded.
+  },
+  {
+    @log smoke=TC002: regnattr ALPHA count. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - reglattr with exact match regex.
+#
+&tr.tc003 test_reglattr_fn=
+  @if strmatch(
+        setr(0,reglattr(me,^BETA$)),
+        BETA
+      )=
+  {
+    @log smoke=TC003: reglattr exact BETA. Succeeded.
+  },
+  {
+    @log smoke=TC003: reglattr exact BETA. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - reglattri case-insensitive match.
+#
+&tr.tc004 test_reglattr_fn=
+  @if strmatch(
+        setr(0,sha1(sort(reglattri(me,^alpha)))),
+        FEC6E34731AE08ED0E5E9CA88CE4F1CBC4BA36D5
+      )=
+  {
+    @log smoke=TC004: reglattri case-insensitive. Succeeded.
+  },
+  {
+    @log smoke=TC004: reglattri case-insensitive. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - regnattri case-insensitive count.
+#
+&tr.tc005 test_reglattr_fn=
+  @if strmatch(
+        setr(0,regnattri(me,^alpha)),
+        3
+      )=
+  {
+    @log smoke=TC005: regnattri case-insensitive count. Succeeded.
+  },
+  {
+    @log smoke=TC005: regnattri case-insensitive count. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - reglattr no matches returns empty.
+#
+&tr.tc006 test_reglattr_fn=
+  @if strmatch(
+        setr(0,eq(strlen(reglattr(me,^ZZZZZ)),0)),
+        1
+      )=
+  {
+    @log smoke=TC006: reglattr no matches. Succeeded.
+  },
+  {
+    @log smoke=TC006: reglattr no matches. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - reglattr bad regex returns error.
+#
+&tr.tc007 test_reglattr_fn=
+  @if strmatch(
+        setr(0,reglattr(me,\[invalid)),
+        #-1 REGEXP ERROR*
+      )=
+  {
+    @log smoke=TC007: reglattr bad regex. Succeeded.
+  },
+  {
+    @log smoke=TC007: reglattr bad regex. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - reglattr with _ONE suffix pattern.
+#
+&tr.tc008 test_reglattr_fn=
+  @if strmatch(
+        setr(0,sha1(sort(reglattr(me,_ONE$)))),
+        0CA923E1C9FE9DE4138C1274783DCFD127997667
+      )=
+  {
+    @log smoke=TC008: reglattr _ONE suffix. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC008: reglattr _ONE suffix. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_reglattr_fn=
+  @log smoke=End reglattr()/regnattr() test cases.;
+  @notify smoke
+-
+drop test_reglattr_fn
+-

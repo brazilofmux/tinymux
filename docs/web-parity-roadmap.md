@@ -18,14 +18,14 @@ the gap between TinyMUX and PennMUSH/RhostMUSH on web integration.
 
 | # | Feature | Status | Notes |
 |---|---------|--------|-------|
-| 7 | letq() | TODO | Scoped named registers (Penn) |
-| 8 | sortkey() | TODO | Sort by computed key (Penn) |
+| 7 | letq() | **Done** | Scoped named registers. FN_NOEVAL, save/restore registers. |
+| 8 | sortkey() | **Done** | Sort by computed key. Uses do_asort_start infrastructure. |
 | 9 | Account system | TODO | Multi-character accounts (Rhost) |
 | 10 | url_escape/url_unescape | **Done** | RFC 3986 percent-encoding. + decoded as space for form compat. |
 | 11 | Template system | TODO | template() presentation/logic separation (Rhost) |
 | 12 | strdistance() | **Done** | Levenshtein edit distance, Unicode-aware. |
 | 13 | lockencode/lockdecode | TODO | Programmatic lock manipulation (Rhost) |
-| 14 | Regex attr matching | TODO | reglattr/regnattr family (Penn) |
+| 14 | Regex attr matching | **Done** | reglattr/regnattr/reglattri/regnattri via PCRE2. |
 | 15 | Character classification | **Partial** | isalpha(), isdigit(), isalnum() done via DFA. isunicode()/isutf8() deferred. |
 | 16 | dynhelp() | TODO | Dynamic help from object attributes (Rhost) |
 | 17 | mailsend() | TODO | Send mail from softcode. @mail exists as command. |

@@ -9438,6 +9438,32 @@ LEDIT()
 
   Related Topics: edit(), iter(), ldelete(), replace().
 
+& LETQ()
+LETQ()
+
+  FUNCTION: letq(<name1>, <value1> [, <name2>, <value2>, ...], <body>)
+
+  Evaluates <body> with the given named or single-character global registers
+  temporarily set to the specified values.  The registers are restored to
+  their prior values after <body> is evaluated.
+
+  This function always takes an odd number of arguments: one or more
+  name/value pairs followed by a body expression.  Each <name> can be a
+  single character (0-9, A-Z) for the standard q-registers, or a longer
+  alphanumeric name for named registers.
+
+  Examples:
+    > say letq(a, hello, %qa)
+    You say, "hello"
+    > say [setq(b,OUTER)][letq(b, INNER, %qb)] %qb
+    INNER OUTER
+    > say letq(x, 5, y, 3, add(%qx, %qy))
+    You say, "8"
+    > say letq(color, red, size, large, %q<color> %q<size>)
+    You say, "red large"
+
+  Related Topics: localize(), setq(), setr(), r().
+
 & LEXITS()
 LEXITS()
 
@@ -12442,6 +12468,57 @@ REGEDITALLI()
 
   Related Topics: regedit(), regediti(), regeditall(), regexp syntax.
 
+& REGLATTR()
+REGLATTR()
+
+  FUNCTION: reglattr(<object>, <regexp>)
+
+  Returns a space-separated list of attribute names on <object> whose names
+  match the regular expression <regexp>.  You must be able to examine the
+  object.
+
+  Examples:
+    > say reglattr(me, ^CMD)
+    CMD_GO CMD_LOOK CMD_SAY
+    > say reglattr(me, _DATA$)
+    PLAYER_DATA ROOM_DATA
+
+  See also: reglattri(), regnattr(), regnattri().
+
+  Related Topics: lattr(), lattrp(), regmatch(), regexp syntax.
+
+& REGLATTRI()
+REGLATTRI()
+
+  FUNCTION: reglattri(<object>, <regexp>)
+
+  Like reglattr(), but performs case-insensitive matching on attribute names.
+
+  Related Topics: reglattr(), regnattri(), regexp syntax.
+
+& REGNATTR()
+REGNATTR()
+
+  FUNCTION: regnattr(<object>, <regexp>)
+
+  Returns the count of attributes on <object> whose names match the regular
+  expression <regexp>.  This is the counting equivalent of reglattr().
+
+  Examples:
+    > say regnattr(me, ^CMD)
+    3
+
+  Related Topics: reglattr(), attrcnt(), regexp syntax.
+
+& REGNATTRI()
+REGNATTRI()
+
+  FUNCTION: regnattri(<object>, <regexp>)
+
+  Like regnattr(), but performs case-insensitive matching on attribute names.
+
+  Related Topics: regnattr(), reglattri(), regexp syntax.
+
 & REMAINDER()
 REMAINDER()
 
@@ -13609,7 +13686,39 @@ SORTBY()
   this limit is exceeded, the function will fail _silently_. List and
   function sizes should be kept reasonable.
 
-  Related Topics: munge(), sort()
+  Related Topics: munge(), sort(), sortkey().
+
+& SORTKEY()
+SORTKEY()
+
+  FUNCTION: sortkey([<obj>/]<attrib>, <list>[, <sort type>[, <idelim>
+            [, <odelim>]]])
+
+  Sorts <list> by computing a key for each element.  For each element,
+  <obj>/<attrib> is evaluated with %0 set to the element, and the result
+  is used as the sort key.  The original elements are returned in the
+  order determined by sorting their keys.
+
+  <sort type> may be: a (alpha), n (numeric), d (dbref), f (float),
+  i (case-insensitive alpha), u (unicode), c (case-insensitive unicode),
+  or ? (auto-detect).  If omitted, the type is auto-detected from the keys.
+
+  This is more efficient than sortby() when the comparison function is
+  expensive, because each element's key is computed only once rather than
+  being re-evaluated during every comparison.
+
+  Examples:
+    > &STRLEN me=strlen(%0)
+    > say sortkey(me/STRLEN, aaa bb c dddd, n)
+    You say, "c bb aaa dddd"
+    > &NEG me=mul(%0, -1)
+    > say sortkey(me/NEG, 1 5 3 2 4, n)
+    You say, "5 4 3 2 1"
+    > &LOWER me=lcstr(%0)
+    > say sortkey(me/LOWER, Banana apple Cherry, i)
+    You say, "apple Banana Cherry"
+
+  Related Topics: sort(), sortby(), munge().
 
 & SPACE()
 SPACE()
