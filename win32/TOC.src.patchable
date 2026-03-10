@@ -161,6 +161,7 @@ modules/autoconf.h.in
 modules/autoconf-win32.h
 modules/comsys/comsys_mod.cpp
 modules/comsys/comsys_mod.h
+modules/comsys/comsys.vcxproj
 modules/engine/ast.cpp
 modules/engine/ast_scan.cpp
 modules/engine/ast_scan.rl
@@ -215,11 +216,14 @@ modules/engine/vattr.cpp
 modules/engine/walkdb.cpp
 modules/engine/wild.cpp
 modules/engine/wiz.cpp
+modules/engine/engine.vcxproj
 modules/exp3/exp3.cpp
 modules/exp3/exp3.h
+modules/exp3/exp3.vcxproj
 modules/interfaces.txt
 modules/mail/mail_mod.cpp
 modules/mail/mail_mod.h
+modules/mail/mail.vcxproj
 modules/Makefile.am
 MODULES.md
 modules/sqlproxy/sqlproxy.cpp

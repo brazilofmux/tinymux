@@ -13,4 +13,7 @@ docs/LIMITS
 docs/MEMORY
 docs/PATCHES
 docs/REALMS
+game/bin/funcs.dll
+game/bin/sample.dll
+game/bin/sum.dll
 src/copyright.h
