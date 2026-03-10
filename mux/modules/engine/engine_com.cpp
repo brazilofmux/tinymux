@@ -2764,7 +2764,7 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
             if (MUX_SUCCEEDED(mr))
             {
                 STARTLOG(LOG_ALWAYS, "INI", "MOD");
-                g_pILog->log_text(T("Comsys module initialized (via engine storage)."));
+                log_text(T("Comsys module initialized (via engine storage)."));
                 ENDLOG;
             }
             else
@@ -2799,7 +2799,7 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
             if (MUX_SUCCEEDED(mr))
             {
                 STARTLOG(LOG_ALWAYS, "INI", "MOD");
-                g_pILog->log_text(T("Mail module initialized (via engine storage)."));
+                log_text(T("Mail module initialized (via engine storage)."));
                 ENDLOG;
             }
             else

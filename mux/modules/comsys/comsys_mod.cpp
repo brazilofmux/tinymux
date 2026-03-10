@@ -3309,7 +3309,11 @@ void CComsysMod::dump_complete_signal(void)
 
 void CComsysMod::shutdown(void)
 {
-    CloseDatabase();
+    if (nullptr != m_pIStorage)
+    {
+        m_pIStorage->Release();
+        m_pIStorage = nullptr;
+    }
 
     if (nullptr != m_pILog)
     {
