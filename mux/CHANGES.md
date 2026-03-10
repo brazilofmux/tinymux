@@ -42,6 +42,19 @@ author:
  - The `safer_iter` config option allows disabling `##` itext
    substitution in iter()/list() for games that use `##` in attribute
    contents (#688).
+ - The server is now split into three shared objects: `libmux.so`
+   (core types and utilities), `engine.so` (game engine loaded as a
+   COM module), and `netmux` (network driver). The engine communicates
+   with the driver exclusively through COM interfaces. This is the
+   foundation for future process isolation.
+ - The softcode expression evaluator has been replaced with an
+   AST-based parser. Expressions are tokenized by a Ragel-generated
+   scanner, parsed into an AST, and cached in an LRU cache. All
+   %-substitutions, `##`/`#@`/`#$` tokens, and NOEVAL constructs
+   (iter, switch, if/ifelse, cand/cor) are handled natively.
+ - Replaced Mersenne Twister (std::mt19937) with PCG-XSL-RR-128/64
+   (pcg64). 32 bytes of state replaces 2496 bytes. Seeded from
+   /dev/urandom with unbiased rejection sampling for bounded output.
 
 # Feature Additions:
 
@@ -66,6 +79,31 @@ author:
  - Support `::` escape for literal `:` in `$-command` and `^-listen`
    patterns (#662).
  - Store full recipient list in sender's `@mail/bcc` copy.
+ - `@cron`/`@crondel`/`@crontab` commands for scheduled attribute
+   triggers using 5-field Unix cron syntax. Vixie-style computed
+   next-fire-time scheduling integrates with the scheduler — no
+   polling loop. Supports ranges, lists, steps, and month/day-of-week
+   names. DOM/DOW OR-semantics per Vixie cron. In-memory, not
+   persisted (use `@startup` to recreate entries across restarts).
+ - `letq()` function for scoped temporary registers.
+ - `sortkey()` function for custom sort-key evaluation.
+ - `reglattr()` and `reglattrp()` regex attribute matching functions.
+ - `lockencode()` and `lockdecode()` functions for lock
+   serialization.
+ - `dynhelp()` function for dynamic help from object attributes.
+ - `mailsend()` function for sending mail from softcode.
+ - `strdistance()` Levenshtein edit distance function.
+ - `url_escape()` and `url_unescape()` functions (RFC 3986).
+ - `printf()` formatted output function with ANSI-aware field widths.
+ - `encode64()`, `decode64()`, `hmac()` cryptographic functions.
+ - `isjson()`, `json()`, `json_query()`, `json_mod()` JSON functions.
+ - `connlog()` and `addrlog()` connection logging query functions.
+ - `isalpha()`, `isdigit()`, `isupper()`, `islower()`, `ispunct()`,
+   `isspace()`, `isword()` Unicode character classification functions.
+ - WebSocket support (RFC 6455) with same-port auto-detection and
+   `wss://` (WebSocket over TLS) via deferred protocol detection.
+ - Connection logging: SQLite `connlog` table records connect/
+   disconnect events with timestamps, IPs, and player dbrefs.
 
 # Bug Fixes:
 
@@ -123,6 +161,9 @@ author:
  - Replaced CTaskHeap with std::vector + STL heap algorithms.
  - Eliminated A_LIST attribute enumeration; replaced with direct SQLite
    queries and STL iteration context.
+ - AST parse cache (LRU, 1024 entries) eliminates re-parsing of
+   frequently evaluated expressions.
+ - Ragel-generated goto-driven scanner for expression tokenization.
 
 # Cosmetic Changes:
 
@@ -194,7 +235,7 @@ author:
    std::condition_variable.
  - Replaced ReplaceFile/RemoveFile ifdefs with std::filesystem.
  - Replaced local-scope new[]/delete[] with std::vector.
- - Replaced hand-rolled MT19937 with std::mt19937.
+ - Replaced std::mt19937 with PCG-XSL-RR-128/64 (pcg64).
  - Modernized mux_string class: std::vector, Rule of Five, API cleanup.
  - Replaced C-style casts with static_cast/reinterpret_cast across
    codebase.
@@ -234,6 +275,28 @@ author:
  - Removed deprecated stack subsystem.
  - Removed dead cache statistics counters.
  - Removed database compression feature.
- - Added 175 new smoke test cases expanding coverage to 348 total.
+ - Added 489 smoke test cases covering 184 test suites.
  - `dbconvert` supports `-C` and `-m` flags for comsys and mail
    flatfile import/export.
+ - Three-layer build: libmux.so (core types/utilities), engine.so
+   (game engine as COM module), netmux (network driver).
+ - Source tree restructured: headers in `include/`, library sources in
+   `lib/`, engine sources in `modules/engine/`, driver sources in
+   `src/`, top-level autotools.
+ - 12 server-provided COM interfaces bridge engine and driver:
+   INotify, IObjectInfo, IAttributeAccess, IEvaluator, IPermissions,
+   IMailDelivery, IHelpSystem, IGameEngine, IConnectionManager,
+   IPlayerSession, ILog, IDriverControl.
+ - Comsys module extraction: `modules/comsys/comsys_mod.cpp` provides
+   channel management as a loadable COM module with its own SQLite
+   connection.
+ - Mail module extraction: `modules/mail/mail_mod.cpp` provides @mail
+   read, flag, purge, folder, and malias operations as a loadable COM
+   module.
+ - game.cpp split into driver.cpp (network lifecycle) and engine.cpp
+   (game logic). netcommon.cpp split into net.cpp (driver) and
+   session.cpp (engine). interface.h restricted to driver files only.
+ - Help entries for @cron, @crondel, @crontab, dynhelp(), mailsend(),
+   lockencode(), lockdecode(), letq(), sortkey().
+ - engine.so uses `-fvisibility=hidden`; only COM front-door functions
+   are exported.

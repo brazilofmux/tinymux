@@ -1,7 +1,8 @@
+.depend
 game/data/netmux.db
 game/mux.config
-game/netmux.conf
 game/muxssl.conf
+game/netmux.conf
 game/text/badsite.txt
 game/text/connect.txt
 game/text/create_reg.txt
@@ -17,5 +18,4 @@ game/text/register.txt
 game/text/staffhelp.txt
 game/text/wizmotd.txt
 game/text/wiznews.txt
-src/.depend
-src/modules/.depend
+modules/.depend
