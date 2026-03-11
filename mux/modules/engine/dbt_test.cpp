@@ -712,6 +712,464 @@ static void test_x0_always_zero() {
 }
 
 // ---------------------------------------------------------------
+// Coverage gap tests
+// ---------------------------------------------------------------
+
+static void test_sub_word_loads() {
+    printf("test_sub_word_loads...\n");
+
+    // Write 0xFEDCBA98 to memory, then test LB/LBU/LH/LHU/SB/SH.
+    auto r = run_code({
+        ADDI(1, 0, -1),                                         // x1 = 0xFFFF...FF
+        s_type(OP_STORE, ST_SW, 2, 1, -16),                     // SW x1, -16(sp) -> 0xFFFFFFFF
+        // LB: load byte signed from byte 0 -> 0xFF -> sign-ext to -1
+        i_type(OP_LOAD, 3, LD_LB, 2, -16),
+        // LBU: load byte unsigned from byte 0 -> 0xFF -> zero-ext to 255
+        i_type(OP_LOAD, 4, LD_LBU, 2, -16),
+        // LH: load halfword signed -> 0xFFFF -> sign-ext to -1
+        i_type(OP_LOAD, 5, LD_LH, 2, -16),
+        // LHU: load halfword unsigned -> 0xFFFF -> zero-ext to 65535
+        i_type(OP_LOAD, 6, LD_LHU, 2, -16),
+        // SB: store byte 0x42 then load it back
+        ADDI(7, 0, 0x42),
+        s_type(OP_STORE, ST_SB, 2, 7, -8),
+        i_type(OP_LOAD, 8, LD_LBU, 2, -8),
+        // SH: store halfword 0x1234 then load it back
+        ADDI(9, 0, 0x234),
+        ADDI(11, 0, 1),
+        SLLI(11, 11, 12),                                       // x11 = 0x1000
+        ADD(9, 9, 11),                                           // x9 = 0x1234
+        s_type(OP_STORE, ST_SH, 2, 9, -8),
+        i_type(OP_LOAD, 12, LD_LHU, 2, -8),
+        ADDI(17, 0, 93),
+        ADDI(10, 0, 0),
+        ECALL()
+    });
+
+    CHECK_EQ("LB sign-ext", r.state.x[3], static_cast<uint64_t>(-1LL));
+    CHECK_EQ("LBU zero-ext", r.state.x[4], 0xFF);
+    CHECK_EQ("LH sign-ext", r.state.x[5], static_cast<uint64_t>(-1LL));
+    CHECK_EQ("LHU zero-ext", r.state.x[6], 0xFFFF);
+    CHECK_EQ("SB/LBU roundtrip", r.state.x[8], 0x42);
+    CHECK_EQ("SH/LHU roundtrip", r.state.x[12], 0x1234);
+}
+
+static void test_branches_all() {
+    printf("test_branches_all...\n");
+
+    // BLT: signed less than
+    auto r1 = run_code({
+        ADDI(1, 0, -5),         // x1 = -5 (signed)
+        ADDI(2, 0, 3),          // x2 = 3
+        b_type(OP_BRANCH, BR_BLT, 1, 2, 8),  // -5 < 3 -> taken
+        ADDI(3, 0, 0),          // skipped
+        ADDI(3, 0, 1),          // x3 = 1
+        ADDI(17, 0, 93), ADDI(10, 3, 0), ECALL()
+    });
+    CHECK_EQ("BLT signed taken", r1.state.x[3], 1);
+
+    // BGE: signed greater-or-equal
+    auto r2 = run_code({
+        ADDI(1, 0, 5),
+        ADDI(2, 0, 5),
+        b_type(OP_BRANCH, BR_BGE, 1, 2, 8),  // 5 >= 5 -> taken
+        ADDI(3, 0, 0),
+        ADDI(3, 0, 1),
+        ADDI(17, 0, 93), ADDI(10, 3, 0), ECALL()
+    });
+    CHECK_EQ("BGE equal taken", r2.state.x[3], 1);
+
+    // BLTU: unsigned less than (-1 unsigned is MAX, so not < 3)
+    auto r3 = run_code({
+        ADDI(1, 0, -1),         // x1 = 0xFFFF...FF (huge unsigned)
+        ADDI(2, 0, 3),
+        b_type(OP_BRANCH, BR_BLTU, 1, 2, 8), // MAX < 3 -> NOT taken
+        ADDI(3, 0, 0),          // x3 = 0 (not skipped)
+        ADDI(3, 0, 1),
+        ADDI(17, 0, 93), ADDI(10, 3, 0), ECALL()
+    });
+    CHECK_EQ("BLTU unsigned not taken", r3.state.x[3], 1);
+
+    // BGEU: unsigned greater-or-equal
+    auto r4 = run_code({
+        ADDI(1, 0, -1),         // MAX unsigned
+        ADDI(2, 0, 3),
+        b_type(OP_BRANCH, BR_BGEU, 1, 2, 8), // MAX >= 3 -> taken
+        ADDI(3, 0, 0),
+        ADDI(3, 0, 1),
+        ADDI(17, 0, 93), ADDI(10, 3, 0), ECALL()
+    });
+    CHECK_EQ("BGEU unsigned taken", r4.state.x[3], 1);
+}
+
+static void test_logical_ops() {
+    printf("test_logical_ops...\n");
+
+    auto r = run_code({
+        ADDI(1, 0, 0x0F),                                // x1 = 0x0F
+        ADDI(2, 0, 0x36),                                // x2 = 0x36
+        // Immediate forms
+        i_type(OP_IMM, 3, ALU_XORI, 1, -1),                // XORI x3 = 0x0F ^ -1 = ~0x0F
+        i_type(OP_IMM, 4, ALU_ORI, 1, 0x30),             // ORI  x4 = 0x0F | 0x30 = 0x3F
+        i_type(OP_IMM, 5, ALU_ANDI, 2, 0x0F),            // ANDI x5 = 0x36 & 0x0F = 0x06
+        // Register forms
+        r_type(OP_REG, 6, ALU_XOR, 1, 2, 0x00),          // XOR x6 = 0x0F ^ 0x36 = 0x39
+        r_type(OP_REG, 7, ALU_OR, 1, 2, 0x00),           // OR  x7 = 0x0F | 0x36 = 0x3F
+        r_type(OP_REG, 8, ALU_AND, 1, 2, 0x00),          // AND x8 = 0x0F & 0x36 = 0x06
+        // SLT/SLTU
+        ADDI(9, 0, -1),                                   // x9 = -1
+        r_type(OP_REG, 11, ALU_SLT, 9, 1, 0x00),         // SLT x11 = (-1 < 15) = 1
+        r_type(OP_REG, 12, ALU_SLTU, 9, 1, 0x00),        // SLTU x12 = (MAX < 15) = 0
+        i_type(OP_IMM, 13, ALU_SLTI, 9, 5),              // SLTI x13 = (-1 < 5) = 1
+        i_type(OP_IMM, 14, ALU_SLTIU, 1, 0x20),          // SLTIU x14 = (15 < 32) = 1
+        ADDI(17, 0, 93), ADDI(10, 0, 0), ECALL()
+    });
+
+    // XORI with -1 (sign-extended to 64-bit) = bitwise NOT
+    CHECK_EQ("XORI", r.state.x[3], ~static_cast<uint64_t>(0x0F));
+    CHECK_EQ("ORI", r.state.x[4], 0x3F);
+    CHECK_EQ("ANDI", r.state.x[5], 0x06);
+    CHECK_EQ("XOR", r.state.x[6], 0x39);
+    CHECK_EQ("OR", r.state.x[7], 0x3F);
+    CHECK_EQ("AND", r.state.x[8], 0x06);
+    CHECK_EQ("SLT signed", r.state.x[11], 1);
+    CHECK_EQ("SLTU unsigned", r.state.x[12], 0);
+    CHECK_EQ("SLTI", r.state.x[13], 1);
+    CHECK_EQ("SLTIU", r.state.x[14], 1);
+}
+
+static void test_register_shifts() {
+    printf("test_register_shifts...\n");
+
+    auto r = run_code({
+        ADDI(1, 0, 1),
+        ADDI(2, 0, 40),
+        r_type(OP_REG, 3, ALU_SLL, 1, 2, 0x00),         // SLL x3 = 1 << 40
+        ADDI(4, 0, -1),                                   // x4 = all ones
+        ADDI(5, 0, 60),
+        r_type(OP_REG, 6, ALU_SRL, 4, 5, 0x00),          // SRL x6 = 0xFFF...F >> 60 = 0xF
+        r_type(OP_REG, 7, ALU_SRL, 4, 5, 0x20),          // SRA x7 = (int64)-1 >> 60 = -1
+        ADDI(17, 0, 93), ADDI(10, 0, 0), ECALL()
+    });
+
+    CHECK_EQ("SLL reg", r.state.x[3], UINT64_C(1) << 40);
+    CHECK_EQ("SRL reg", r.state.x[6], 0xF);
+    CHECK_EQ("SRA reg", r.state.x[7], static_cast<uint64_t>(-1LL));
+}
+
+static void test_auipc() {
+    printf("test_auipc...\n");
+
+    // AUIPC x1, 0x1000 — at PC=0, x1 = 0 + 0x1000 = 0x1000
+    auto r = run_code({
+        u_type(OP_AUIPC, 1, 0x1000),     // AUIPC x1, 0x1000 (at PC=0)
+        ADDI(17, 0, 93), ADDI(10, 1, 0), ECALL()
+    });
+
+    CHECK_EQ("AUIPC", r.state.x[1], 0x1000);
+}
+
+static void test_jal_jalr() {
+    printf("test_jal_jalr...\n");
+
+    // JAL: jump forward 8, save return address
+    //   0: JAL x1, +12    -> x1 = 4, PC = 12
+    //   4: ADDI x2, x0, 1   (skipped)
+    //   8: ADDI x2, x0, 2   (skipped)
+    //  12: ADDI x2, x0, 3   (landed here)
+
+    // J-type encoding for JAL: imm[20|10:1|11|19:12]
+    // imm=12 -> bits: 0|000000110|0|00000000 -> complex encoding
+    // Let me use the raw encoding helper.
+    // JAL rd=1, imm=12
+    uint32_t jal_imm = 12;
+    uint32_t jal_word = OP_JAL | (1 << 7)  // rd=1
+        | (((jal_imm >> 12) & 0xFF) << 12)          // bits 19:12
+        | (((jal_imm >> 11) & 1) << 20)             // bit 11
+        | (((jal_imm >> 1) & 0x3FF) << 21)          // bits 10:1
+        | (((jal_imm >> 20) & 1) << 31);            // bit 20 (sign)
+
+    auto r = run_code({
+        jal_word,                // JAL x1, +12
+        ADDI(2, 0, 1),          // skipped
+        ADDI(2, 0, 2),          // skipped
+        ADDI(2, 0, 3),          // landed
+        ADDI(17, 0, 93), ADDI(10, 2, 0), ECALL()
+    });
+
+    CHECK_EQ("JAL target", r.state.x[2], 3);
+    CHECK_EQ("JAL link", r.state.x[1], 4); // return addr = next after JAL
+
+    // JALR: indirect jump
+    auto r2 = run_code({
+        ADDI(1, 0, 12),         // x1 = 12 (target addr)
+        i_type(OP_JALR, 3, 0, 1, 0), // JALR x3, x1, 0 -> x3 = 8, PC = 12
+        ADDI(2, 0, 1),          // skipped
+        ADDI(2, 0, 3),          // landed
+        ADDI(17, 0, 93), ADDI(10, 2, 0), ECALL()
+    });
+
+    CHECK_EQ("JALR target", r2.state.x[2], 3);
+    CHECK_EQ("JALR link", r2.state.x[3], 8);
+}
+
+static void test_fp_fsqrt() {
+    printf("test_fp_fsqrt...\n");
+
+    double val = 49.0;
+    uint64_t bits;
+    memcpy(&bits, &val, 8);
+
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    memcpy(memory.data() + 0x1000, &bits, 8);
+
+    std::vector<uint32_t> code = {
+        LUI(1, 0x1000),
+        i_type(OP_FP_LOAD, 1, 3, 1, 0),                             // FLD f1, 0(x1) = 49.0
+        r_type(OP_FP, 2, 0, 1, 0, (FP_FSQRT << 2) | FP_FMT_D),     // FSQRT.D f2, f1
+        r_type(OP_FP, 3, 0, 2, 0, (FP_FCLASS << 2) | FP_FMT_D),    // FMV.X.D x3, f2
+        ADDI(17, 0, 93), ADDI(10, 0, 0), ECALL()
+    };
+
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    rv64_memory_t mem = { memory.data(), MEM_SIZE };
+    rv64_state_t state = {};
+    state.pc = 0;
+    state.x[2] = MEM_SIZE - 16;
+
+    rv64_interp_run(&state, &mem, test_ecall, nullptr);
+
+    double result;
+    memcpy(&result, &state.x[3], 8);
+    CHECK_FEQ("FSQRT.D 49", result, 7.0);
+}
+
+static void test_fp_minmax() {
+    printf("test_fp_minmax...\n");
+
+    double a = 3.0, b = 5.0;
+    uint64_t a_bits, b_bits;
+    memcpy(&a_bits, &a, 8);
+    memcpy(&b_bits, &b, 8);
+
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    memcpy(memory.data() + 0x1000, &a_bits, 8);
+    memcpy(memory.data() + 0x1008, &b_bits, 8);
+
+    std::vector<uint32_t> code = {
+        LUI(1, 0x1000),
+        i_type(OP_FP_LOAD, 1, 3, 1, 0),                              // FLD f1 = 3.0
+        i_type(OP_FP_LOAD, 2, 3, 1, 8),                              // FLD f2 = 5.0
+        r_type(OP_FP, 3, 0, 1, 2, (FP_FMINMAX << 2) | FP_FMT_D),    // FMIN.D f3, f1, f2
+        r_type(OP_FP, 4, 1, 1, 2, (FP_FMINMAX << 2) | FP_FMT_D),    // FMAX.D f4, f1, f2
+        // Move results to integer regs
+        r_type(OP_FP, 5, 0, 3, 0, (FP_FCLASS << 2) | FP_FMT_D),     // FMV.X.D x5, f3
+        r_type(OP_FP, 6, 0, 4, 0, (FP_FCLASS << 2) | FP_FMT_D),     // FMV.X.D x6, f4
+        ADDI(17, 0, 93), ADDI(10, 0, 0), ECALL()
+    };
+
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    rv64_memory_t mem = { memory.data(), MEM_SIZE };
+    rv64_state_t state = {};
+    state.pc = 0;
+    state.x[2] = MEM_SIZE - 16;
+    rv64_interp_run(&state, &mem, test_ecall, nullptr);
+
+    double min_r, max_r;
+    memcpy(&min_r, &state.x[5], 8);
+    memcpy(&max_r, &state.x[6], 8);
+    CHECK_FEQ("FMIN.D", min_r, 3.0);
+    CHECK_FEQ("FMAX.D", max_r, 5.0);
+}
+
+static void test_fp_sign_inject() {
+    printf("test_fp_sign_inject...\n");
+
+    double pos = 42.0, neg = -42.0;
+    uint64_t pos_bits, neg_bits;
+    memcpy(&pos_bits, &pos, 8);
+    memcpy(&neg_bits, &neg, 8);
+
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    memcpy(memory.data() + 0x1000, &pos_bits, 8);
+    memcpy(memory.data() + 0x1008, &neg_bits, 8);
+
+    std::vector<uint32_t> code = {
+        LUI(1, 0x1000),
+        i_type(OP_FP_LOAD, 1, 3, 1, 0),                              // f1 = +42.0
+        i_type(OP_FP_LOAD, 2, 3, 1, 8),                              // f2 = -42.0
+        // FSGNJ: take sign of f2 -> -42.0
+        r_type(OP_FP, 3, 0, 1, 2, (FP_FSGNJ << 2) | FP_FMT_D),
+        // FSGNJN: take negated sign of f2 -> +42.0
+        r_type(OP_FP, 4, 1, 1, 2, (FP_FSGNJ << 2) | FP_FMT_D),
+        // FSGNJX: XOR signs (+42 ^ -42 = negative) -> -42.0
+        r_type(OP_FP, 5, 2, 1, 2, (FP_FSGNJ << 2) | FP_FMT_D),
+        // Move to integer regs
+        r_type(OP_FP, 6, 0, 3, 0, (FP_FCLASS << 2) | FP_FMT_D),
+        r_type(OP_FP, 7, 0, 4, 0, (FP_FCLASS << 2) | FP_FMT_D),
+        r_type(OP_FP, 8, 0, 5, 0, (FP_FCLASS << 2) | FP_FMT_D),
+        ADDI(17, 0, 93), ADDI(10, 0, 0), ECALL()
+    };
+
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    rv64_memory_t mem = { memory.data(), MEM_SIZE };
+    rv64_state_t state = {};
+    state.pc = 0;
+    state.x[2] = MEM_SIZE - 16;
+    rv64_interp_run(&state, &mem, test_ecall, nullptr);
+
+    double fsgnj_r, fsgnjn_r, fsgnjx_r;
+    memcpy(&fsgnj_r, &state.x[6], 8);
+    memcpy(&fsgnjn_r, &state.x[7], 8);
+    memcpy(&fsgnjx_r, &state.x[8], 8);
+    CHECK_FEQ("FSGNJ.D", fsgnj_r, -42.0);
+    CHECK_FEQ("FSGNJN.D", fsgnjn_r, 42.0);
+    CHECK_FEQ("FSGNJX.D", fsgnjx_r, -42.0);
+}
+
+static void test_fp_fma() {
+    printf("test_fp_fma...\n");
+
+    double a = 3.0, b = 5.0, c = 7.0;
+    uint64_t a_bits, b_bits, c_bits;
+    memcpy(&a_bits, &a, 8);
+    memcpy(&b_bits, &b, 8);
+    memcpy(&c_bits, &c, 8);
+
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    memcpy(memory.data() + 0x1000, &a_bits, 8);
+    memcpy(memory.data() + 0x1008, &b_bits, 8);
+    memcpy(memory.data() + 0x1010, &c_bits, 8);
+
+    std::vector<uint32_t> code = {
+        LUI(1, 0x1000),
+        i_type(OP_FP_LOAD, 1, 3, 1, 0),      // f1 = 3.0
+        i_type(OP_FP_LOAD, 2, 3, 1, 8),      // f2 = 5.0
+        i_type(OP_FP_LOAD, 3, 3, 1, 16),     // f3 = 7.0
+        // FMADD.D f4, f1, f2, f3 = 3*5 + 7 = 22
+        r4_type(OP_FMADD, 4, 0, 1, 2, 3, FP_FMT_D),
+        // FMSUB.D f5, f1, f2, f3 = 3*5 - 7 = 8
+        r4_type(OP_FMSUB, 5, 0, 1, 2, 3, FP_FMT_D),
+        // FNMSUB.D f6, f1, f2, f3 = -(3*5) + 7 = -8
+        r4_type(OP_FNMSUB, 6, 0, 1, 2, 3, FP_FMT_D),
+        // FNMADD.D f7, f1, f2, f3 = -(3*5) - 7 = -22
+        r4_type(OP_FNMADD, 7, 0, 1, 2, 3, FP_FMT_D),
+        // Move to integer regs (use x20-x23 to avoid clobbering a0)
+        r_type(OP_FP, 20, 0, 4, 0, (FP_FCLASS << 2) | FP_FMT_D),
+        r_type(OP_FP, 21, 0, 5, 0, (FP_FCLASS << 2) | FP_FMT_D),
+        r_type(OP_FP, 22, 0, 6, 0, (FP_FCLASS << 2) | FP_FMT_D),
+        r_type(OP_FP, 23, 0, 7, 0, (FP_FCLASS << 2) | FP_FMT_D),
+        ADDI(17, 0, 93), ADDI(10, 0, 0), ECALL()
+    };
+
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    rv64_memory_t mem = { memory.data(), MEM_SIZE };
+    rv64_state_t state = {};
+    state.pc = 0;
+    state.x[2] = MEM_SIZE - 16;
+    rv64_interp_run(&state, &mem, test_ecall, nullptr);
+
+    double fmadd_r, fmsub_r, fnmsub_r, fnmadd_r;
+    memcpy(&fmadd_r, &state.x[20], 8);
+    memcpy(&fmsub_r, &state.x[21], 8);
+    memcpy(&fnmsub_r, &state.x[22], 8);
+    memcpy(&fnmadd_r, &state.x[23], 8);
+    CHECK_FEQ("FMADD.D 3*5+7", fmadd_r, 22.0);
+    CHECK_FEQ("FMSUB.D 3*5-7", fmsub_r, 8.0);
+    CHECK_FEQ("FNMSUB.D -(3*5)+7", fnmsub_r, -8.0);
+    CHECK_FEQ("FNMADD.D -(3*5)-7", fnmadd_r, -22.0);
+}
+
+static void test_fp_fclass() {
+    printf("test_fp_fclass...\n");
+
+    // FCLASS.D returns a 10-bit mask classifying the FP value.
+    double pos_normal = 42.0;
+    double neg_inf;
+    uint64_t neg_inf_bits = 0xFFF0000000000000ULL; // -infinity
+    memcpy(&neg_inf, &neg_inf_bits, 8);
+    double pos_zero = 0.0;
+
+    uint64_t pn_bits, ni_bits, pz_bits;
+    memcpy(&pn_bits, &pos_normal, 8);
+    memcpy(&ni_bits, &neg_inf, 8);
+    memcpy(&pz_bits, &pos_zero, 8);
+
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    memcpy(memory.data() + 0x1000, &pn_bits, 8);
+    memcpy(memory.data() + 0x1008, &ni_bits, 8);
+    memcpy(memory.data() + 0x1010, &pz_bits, 8);
+
+    std::vector<uint32_t> code = {
+        LUI(1, 0x1000),
+        i_type(OP_FP_LOAD, 1, 3, 1, 0),                              // f1 = +42.0
+        i_type(OP_FP_LOAD, 2, 3, 1, 8),                              // f2 = -inf
+        i_type(OP_FP_LOAD, 3, 3, 1, 16),                             // f3 = +0.0
+        r_type(OP_FP, 4, 1, 1, 0, (FP_FCLASS << 2) | FP_FMT_D),    // FCLASS x4, f1
+        r_type(OP_FP, 5, 1, 2, 0, (FP_FCLASS << 2) | FP_FMT_D),    // FCLASS x5, f2
+        r_type(OP_FP, 6, 1, 3, 0, (FP_FCLASS << 2) | FP_FMT_D),    // FCLASS x6, f3
+        ADDI(17, 0, 93), ADDI(10, 0, 0), ECALL()
+    };
+
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    rv64_memory_t mem = { memory.data(), MEM_SIZE };
+    rv64_state_t state = {};
+    state.pc = 0;
+    state.x[2] = MEM_SIZE - 16;
+    rv64_interp_run(&state, &mem, test_ecall, nullptr);
+
+    CHECK_EQ("FCLASS +normal", state.x[4], 1 << 6);  // bit 6 = +normal
+    CHECK_EQ("FCLASS -inf", state.x[5], 1 << 0);     // bit 0 = -inf
+    CHECK_EQ("FCLASS +zero", state.x[6], 1 << 4);    // bit 4 = +zero
+}
+
+static void test_fp_fmv_dx() {
+    printf("test_fp_fmv_dx...\n");
+
+    // FMV.D.X: move integer bits to FP, then FMV.X.D back.
+    double val = 123.456;
+    uint64_t bits;
+    memcpy(&bits, &val, 8);
+
+    auto r = run_code({
+        // Load bits into x1 via LUI+ADDI sequence (hard with 64-bit).
+        // Instead, use FCVT to get a known value, then FMV.X.D, then FMV.D.X.
+        ADDI(1, 0, 42),
+        r_type(OP_FP, 1, 0, 1, 2, (FP_FCVTDW << 2) | FP_FMT_D),    // FCVT.D.L f1, x1 -> f1 = 42.0
+        r_type(OP_FP, 2, 0, 1, 0, (FP_FCLASS << 2) | FP_FMT_D),    // FMV.X.D x2, f1 -> x2 = bits(42.0)
+        r_type(OP_FP, 3, 0, 2, 0, (FP_FMVDX << 2) | FP_FMT_D),    // FMV.D.X f3, x2 -> f3 = 42.0
+        r_type(OP_FP, 4, 0, 3, 0, (FP_FCLASS << 2) | FP_FMT_D),    // FMV.X.D x4, f3 -> x4 = bits(42.0)
+        ADDI(17, 0, 93), ADDI(10, 0, 0), ECALL()
+    });
+
+    CHECK_EQ("FMV roundtrip", r.state.x[2], r.state.x[4]);
+
+    double result;
+    memcpy(&result, &r.state.x[4], 8);
+    CHECK_FEQ("FMV.D.X value", result, 42.0);
+}
+
+// ---------------------------------------------------------------
 // Cross-compiled ELF test
 // ---------------------------------------------------------------
 
@@ -799,6 +1257,18 @@ int main(int argc, char *argv[]) {
     test_fp_compare();
     test_mulh();
     test_x0_always_zero();
+    test_sub_word_loads();
+    test_branches_all();
+    test_logical_ops();
+    test_register_shifts();
+    test_auipc();
+    test_jal_jalr();
+    test_fp_fsqrt();
+    test_fp_minmax();
+    test_fp_sign_inject();
+    test_fp_fma();
+    test_fp_fclass();
+    test_fp_fmv_dx();
 
     printf("\n==============================\n");
     printf("Hand-assembled: %d run, %d passed, %d failed\n",
