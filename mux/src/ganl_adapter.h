@@ -78,7 +78,9 @@ public:
     std::unique_ptr<ganl::SessionManager> sessionManager_;
 
     bool initialized_ = false;
-    std::mutex mutex_; // Protect maps
+    // No mutex needed — single-threaded server. The previous mutex_
+    // caused deadlocks when shared_ptr destructors re-entered adapter
+    // methods during prepare_for_restart().
 
     // Mappings
     std::map<ganl::ConnectionHandle, DESC*> handle_to_desc_;

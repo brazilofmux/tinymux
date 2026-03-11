@@ -3637,6 +3637,7 @@ void load_restart_db(void)
         DebugTotalSockets++;
         d = alloc_desc("restart");
         init_desc(d);
+        d->ss = SocketState::Accepted;
         d->socket = val;
         d->flags = getref(f);
         d->connected_at.SetSeconds(getref(f));
