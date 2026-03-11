@@ -29,14 +29,14 @@
 
 #include "dbt.h"
 #include "dbt_decoder.h"
+#include "engine_api.h"
 
 // ---------------------------------------------------------------
 // ECALL handler for the harness.
 //
 // Uses the real mudstate.builtin_functions and real LBUFs.
+// Supports both string-based (0x100) and indexed (0x101) dispatch.
 // ---------------------------------------------------------------
-
-static constexpr uint64_t ECALL_CALL_FUNC = 0x100;
 
 struct harness_ctx {
     uint8_t *memory;
@@ -46,13 +46,65 @@ struct harness_ctx {
     dbref    enactor;
 };
 
+// Common helper: call FUN* with guest-memory arguments.
+//
+static int harness_invoke_fun(FUN *fp, harness_ctx *hc, rv64_ctx_t *ctx,
+                              uint64_t fargs_addr, int nfargs,
+                              uint64_t out_addr, uint64_t out_size) {
+    UTF8 *fargs[MAX_ARG];
+    if (nfargs > MAX_ARG) nfargs = MAX_ARG;
+    for (int i = 0; i < nfargs; i++) {
+        uint64_t ptr;
+        memcpy(&ptr, hc->memory + fargs_addr + i * 8, 8);
+        if (ptr >= hc->memory_size) {
+            ctx->x[10] = 0;
+            return -1;
+        }
+        fargs[i] = hc->memory + ptr;
+    }
+
+    UTF8 *buff = alloc_lbuf("harness_ecall");
+    UTF8 *bufc = buff;
+
+    fp->fun(fp, buff, &bufc, hc->executor, hc->caller, hc->enactor,
+            0, fargs, nfargs, nullptr, 0);
+
+    *bufc = '\0';
+    size_t result_len = static_cast<size_t>(bufc - buff);
+    if (result_len >= out_size) result_len = out_size - 1;
+    memcpy(hc->memory + out_addr, buff, result_len);
+    hc->memory[out_addr + result_len] = '\0';
+
+    free_lbuf(buff);
+
+    ctx->x[10] = static_cast<uint64_t>(result_len);
+    return -1;
+}
+
 static int harness_ecall(rv64_ctx_t *ctx, void *user_data) {
     harness_ctx *hc = static_cast<harness_ctx *>(user_data);
     uint64_t syscall_num = ctx->x[17];
 
     switch (syscall_num) {
-    case 93: // exit
+    case ECALL_EXIT:
         return static_cast<int>(ctx->x[10]);
+
+    case ECALL_CALL_INDEX: {
+        int func_idx = static_cast<int>(ctx->x[10]);
+        uint64_t fargs_addr = ctx->x[11];
+        int nfargs = static_cast<int>(ctx->x[12]);
+        uint64_t out_addr = ctx->x[13];
+        uint64_t out_size = ctx->x[14];
+
+        if (func_idx <= 0 || func_idx >= engine_api_count ||
+            out_addr + out_size > hc->memory_size) {
+            ctx->x[10] = 0;
+            return -1;
+        }
+
+        return harness_invoke_fun(engine_api_table[func_idx], hc, ctx,
+                                  fargs_addr, nfargs, out_addr, out_size);
+    }
 
     case ECALL_CALL_FUNC: {
         uint64_t name_addr = ctx->x[10];
@@ -61,21 +113,18 @@ static int harness_ecall(rv64_ctx_t *ctx, void *user_data) {
         uint64_t out_addr = ctx->x[13];
         uint64_t out_size = ctx->x[14];
 
-        // Bounds checks.
         if (name_addr >= hc->memory_size ||
             out_addr + out_size > hc->memory_size) {
             ctx->x[10] = 0;
             return -1;
         }
 
-        // Look up function by name.
         const UTF8 *func_name = hc->memory + name_addr;
         size_t nCased;
         UTF8 *pCased = mux_strupr(func_name, nCased);
         std::vector<UTF8> key(pCased, pCased + nCased);
         auto it = mudstate.builtin_functions.find(key);
         if (it == mudstate.builtin_functions.end()) {
-            // Function not found — write error to output.
             const char *err = "#-1 FUNCTION NOT FOUND";
             size_t elen = strlen(err);
             if (elen >= out_size) elen = out_size - 1;
@@ -85,40 +134,8 @@ static int harness_ecall(rv64_ctx_t *ctx, void *user_data) {
             return -1;
         }
 
-        FUN *fp = it->second;
-
-        // Build host fargs[].
-        UTF8 *fargs[MAX_ARG];
-        if (nfargs > MAX_ARG) nfargs = MAX_ARG;
-        for (int i = 0; i < nfargs; i++) {
-            uint64_t ptr;
-            memcpy(&ptr, hc->memory + fargs_addr + i * 8, 8);
-            if (ptr >= hc->memory_size) {
-                ctx->x[10] = 0;
-                return -1;
-            }
-            fargs[i] = hc->memory + ptr;
-        }
-
-        // Allocate real LBUF for output.
-        UTF8 *buff = alloc_lbuf("harness_ecall");
-        UTF8 *bufc = buff;
-
-        // Call the real engine function.
-        fp->fun(fp, buff, &bufc, hc->executor, hc->caller, hc->enactor,
-                0, fargs, nfargs, nullptr, 0);
-
-        // Copy result to guest memory.
-        *bufc = '\0';
-        size_t result_len = static_cast<size_t>(bufc - buff);
-        if (result_len >= out_size) result_len = out_size - 1;
-        memcpy(hc->memory + out_addr, buff, result_len);
-        hc->memory[out_addr + result_len] = '\0';
-
-        free_lbuf(buff);
-
-        ctx->x[10] = static_cast<uint64_t>(result_len);
-        return -1; // continue
+        return harness_invoke_fun(it->second, hc, ctx,
+                                  fargs_addr, nfargs, out_addr, out_size);
     }
 
     default:
@@ -235,8 +252,8 @@ FUNCTION(fun_rvcall)
     // Assemble RV64 code.
     std::vector<uint32_t> code;
 
-    // a7 = 0x100 (ECALL_CALL_FUNC)
-    code.push_back(rv_ADDI(17, 0, 0x100));
+    // a7 = ECALL_CALL_FUNC (string-based — rvcall uses runtime names)
+    code.push_back(rv_ADDI(17, 0, ECALL_CALL_FUNC));
 
     // a0 = name_addr
     rv_load_addr(code, 10, name_addr);

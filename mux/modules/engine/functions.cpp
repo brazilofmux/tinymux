@@ -9,6 +9,7 @@
 #include "externs.h"
 #include "ast.h"
 #include "sqlite_backend.h"
+#include "engine_api.h"
 using namespace std;
 
 // Factory class declaration — internal to engine.so (no DCL_EXPORT).
@@ -13218,6 +13219,38 @@ void init_functab(void)
 {
     functions_add(builtin_function_list);
     ufun_head = nullptr;
+    engine_api_init();
+}
+
+// ---------------------------------------------------------------
+// Engine API: indexed function dispatch table.
+// ---------------------------------------------------------------
+
+FUN *engine_api_table[ENGINE_API_MAX_FUNCS];
+int   engine_api_count = 0;
+
+void engine_api_init()
+{
+    memset(engine_api_table, 0, sizeof(engine_api_table));
+    engine_api_count = 1;  // index 0 is reserved (invalid)
+
+    for (FUN *fp = builtin_function_list; fp->name; fp++) {
+        if (engine_api_count >= ENGINE_API_MAX_FUNCS) break;
+        engine_api_table[engine_api_count] = fp;
+        engine_api_count++;
+    }
+}
+
+int engine_api_lookup(const char *name)
+{
+    // Linear scan — called at compile time only, not in the hot path.
+    for (int i = 1; i < engine_api_count; i++) {
+        if (mux_stricmp((const UTF8 *)name,
+                        engine_api_table[i]->name) == 0) {
+            return i;
+        }
+    }
+    return 0;
 }
 
 // MakeCanonicalUserFunctionName

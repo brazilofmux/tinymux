@@ -47,6 +47,7 @@
 
 #include "dbt.h"
 #include "dbt_decoder.h"
+#include "engine_api.h"
 
 #include <cstdio>
 #include <cstring>
@@ -449,26 +450,32 @@ static void rv_load_val(std::vector<uint32_t> &code, uint8_t rd,
 }
 
 // Emit ECALL to call a function.
-//   name_addr: guest pointer to function name string
-//   fargs_addr: guest pointer to fargs[] array
-//   nfargs: number of arguments
-//   out_addr: guest pointer to output buffer
-//   out_size: output buffer size
+//
+// If func_idx > 0, uses indexed dispatch (ECALL_CALL_INDEX, a0 = index).
+// Otherwise, uses string dispatch (ECALL_CALL_FUNC, a0 = name_addr).
 //
 static void rv_emit_call(std::vector<uint32_t> &code,
                           uint64_t name_addr, uint64_t fargs_addr,
-                          int nfargs, uint64_t out_addr, int out_size) {
-    code.push_back(rv_ADDI(17, 0, 0x100));   // a7 = ECALL_CALL_FUNC
-    rv_load_val(code, 10, name_addr);          // a0 = name
-    rv_load_val(code, 11, fargs_addr);         // a1 = fargs
-    code.push_back(rv_ADDI(12, 0, nfargs));   // a2 = nfargs
-    rv_load_val(code, 13, out_addr);           // a3 = output
-    rv_load_val(code, 14, out_size);           // a4 = outsize
+                          int nfargs, uint64_t out_addr, int out_size,
+                          int func_idx = 0) {
+    if (func_idx > 0) {
+        // Indexed dispatch — no string lookup at runtime.
+        code.push_back(rv_ADDI(17, 0, 0x101));    // a7 = ECALL_CALL_INDEX
+        rv_load_val(code, 10, func_idx);            // a0 = function index
+    } else {
+        // String-based dispatch (fallback).
+        code.push_back(rv_ADDI(17, 0, 0x100));    // a7 = ECALL_CALL_FUNC
+        rv_load_val(code, 10, name_addr);           // a0 = name
+    }
+    rv_load_val(code, 11, fargs_addr);             // a1 = fargs
+    code.push_back(rv_ADDI(12, 0, nfargs));        // a2 = nfargs
+    rv_load_val(code, 13, out_addr);               // a3 = output
+    rv_load_val(code, 14, out_size);               // a4 = outsize
     code.push_back(rv_ECALL());
 }
 
 static void rv_emit_exit(std::vector<uint32_t> &code) {
-    code.push_back(rv_ADDI(17, 0, 93));
+    code.push_back(rv_ADDI(17, 0, ECALL_EXIT));
     code.push_back(rv_ADDI(10, 0, 0));
     code.push_back(rv_ECALL());
 }
@@ -1019,13 +1026,14 @@ static compile_result compile_sequence(rv_compiler &rc, const ASTNode *node) {
         child_addrs.push_back(cr.addr);
     }
 
-    uint64_t name_addr = rc.pool_str("strcat");
+    int strcat_idx = engine_api_lookup("STRCAT");
+    uint64_t name_addr = strcat_idx ? 0 : rc.pool_str("strcat");
     uint64_t fargs_addr = rc.alloc_fargs(child_addrs);
     uint64_t out_addr = rc.alloc_output();
 
     rv_emit_call(rc.code, name_addr, fargs_addr,
                  static_cast<int>(child_addrs.size()),
-                 out_addr, rv_compiler::OUT_SLOT);
+                 out_addr, rv_compiler::OUT_SLOT, strcat_idx);
 
     rc.ecalls++;
     rc.needs_jit = true;
@@ -1236,13 +1244,14 @@ static compile_result compile_funccall(rv_compiler &rc, const ASTNode *node) {
         arg_addrs.push_back(ar.addr);
     }
 
-    uint64_t name_addr = rc.pool_str(node->text);
+    int func_idx = engine_api_lookup(upper.c_str());
+    uint64_t name_addr = func_idx ? 0 : rc.pool_str(node->text);
     uint64_t fargs_addr = rc.alloc_fargs(arg_addrs);
     uint64_t out_addr = rc.alloc_output();
 
     rv_emit_call(rc.code, name_addr, fargs_addr,
                  static_cast<int>(arg_addrs.size()),
-                 out_addr, rv_compiler::OUT_SLOT);
+                 out_addr, rv_compiler::OUT_SLOT, func_idx);
 
     rc.ecalls++;
     rc.needs_jit = true;
@@ -1391,8 +1400,6 @@ static dbt_state_t *get_dbt(uint8_t *memory, size_t memory_size,
 
 // ECALL handler context and forward declaration.
 //
-static constexpr uint64_t ECALL_CALL_FUNC = 0x100;
-
 struct eval_ctx {
     uint8_t *memory;
     size_t   memory_size;
@@ -1524,15 +1531,72 @@ static bool run_cached_program(compiled_program *prog,
 
 // ECALL handler implementation.
 //
+// Common helper: call a FUN* with guest-memory arguments and write
+// result to guest output buffer.  Returns bytes written.
+//
+static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
+                            uint64_t fargs_addr, int nfargs,
+                            uint64_t out_addr, uint64_t out_size) {
+    UTF8 *fargs[MAX_ARG];
+    if (nfargs > MAX_ARG) nfargs = MAX_ARG;
+    for (int i = 0; i < nfargs; i++) {
+        uint64_t ptr;
+        memcpy(&ptr, ec->memory + fargs_addr + i * 8, 8);
+        if (ptr >= ec->memory_size) {
+            ctx->x[10] = 0;
+            return -1;
+        }
+        fargs[i] = ec->memory + ptr;
+    }
+
+    UTF8 *buff = alloc_lbuf("eval_ecall");
+    UTF8 *bufc = buff;
+
+    fp->fun(fp, buff, &bufc, ec->executor, ec->caller, ec->enactor,
+            0, fargs, nfargs, nullptr, 0);
+
+    *bufc = '\0';
+    size_t result_len = static_cast<size_t>(bufc - buff);
+    if (result_len >= out_size) result_len = out_size - 1;
+    memcpy(ec->memory + out_addr, buff, result_len);
+    ec->memory[out_addr + result_len] = '\0';
+
+    free_lbuf(buff);
+
+    ctx->x[10] = static_cast<uint64_t>(result_len);
+    return -1;
+}
+
 static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
     eval_ctx *ec = static_cast<eval_ctx *>(user_data);
     uint64_t syscall_num = ctx->x[17];
 
     switch (syscall_num) {
-    case 93:
+    case ECALL_EXIT:
         return static_cast<int>(ctx->x[10]);
 
+    case ECALL_CALL_INDEX: {
+        // Indexed dispatch: a0 = function index, a1 = fargs,
+        // a2 = nfargs, a3 = output, a4 = outsize.
+        int func_idx = static_cast<int>(ctx->x[10]);
+        uint64_t fargs_addr = ctx->x[11];
+        int nfargs = static_cast<int>(ctx->x[12]);
+        uint64_t out_addr = ctx->x[13];
+        uint64_t out_size = ctx->x[14];
+
+        if (func_idx <= 0 || func_idx >= engine_api_count ||
+            out_addr + out_size > ec->memory_size) {
+            ctx->x[10] = 0;
+            return -1;
+        }
+
+        FUN *fp = engine_api_table[func_idx];
+        return ecall_invoke_fun(fp, ec, ctx, fargs_addr, nfargs,
+                                out_addr, out_size);
+    }
+
     case ECALL_CALL_FUNC: {
+        // String-based dispatch (fallback): a0 = name ptr.
         uint64_t name_addr = ctx->x[10];
         uint64_t fargs_addr = ctx->x[11];
         int nfargs = static_cast<int>(ctx->x[12]);
@@ -1560,36 +1624,8 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             return -1;
         }
 
-        FUN *fp = it->second;
-
-        UTF8 *fargs[MAX_ARG];
-        if (nfargs > MAX_ARG) nfargs = MAX_ARG;
-        for (int i = 0; i < nfargs; i++) {
-            uint64_t ptr;
-            memcpy(&ptr, ec->memory + fargs_addr + i * 8, 8);
-            if (ptr >= ec->memory_size) {
-                ctx->x[10] = 0;
-                return -1;
-            }
-            fargs[i] = ec->memory + ptr;
-        }
-
-        UTF8 *buff = alloc_lbuf("eval_ecall");
-        UTF8 *bufc = buff;
-
-        fp->fun(fp, buff, &bufc, ec->executor, ec->caller, ec->enactor,
-                0, fargs, nfargs, nullptr, 0);
-
-        *bufc = '\0';
-        size_t result_len = static_cast<size_t>(bufc - buff);
-        if (result_len >= out_size) result_len = out_size - 1;
-        memcpy(ec->memory + out_addr, buff, result_len);
-        ec->memory[out_addr + result_len] = '\0';
-
-        free_lbuf(buff);
-
-        ctx->x[10] = static_cast<uint64_t>(result_len);
-        return -1;
+        return ecall_invoke_fun(it->second, ec, ctx, fargs_addr, nfargs,
+                                out_addr, out_size);
     }
 
     default:

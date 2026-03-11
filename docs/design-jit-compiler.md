@@ -662,10 +662,36 @@ Expected performance improvement over current DBT: 30-50% reduction
 in per-block execution cost, directly reducing the ECALL overhead
 floor and improving all native arithmetic paths.
 
-### Stage 2: Engine API / Function Pointer Table
+### Stage 2: Engine API / Function Pointer Table ✅
 
-Define the stable ABI between compiled code and the game engine.
-This is a struct of function pointers:
+#### Stage 2a: Indexed Function Dispatch (DONE)
+
+Replaced the string-based ECALL dispatch with O(1) indexed lookup.
+The compiler resolves function names to integer indices at compile
+time; the ECALL handler uses `engine_api_table[index]` instead of
+`mux_strupr()` + `map::find()`.
+
+Files:
+ - `engine_api.h` — ECALL constants, table declaration, lookup API
+ - `functions.cpp` — `engine_api_init()` builds flat FUN* array
+ - `dbt_compile.cpp` — emits ECALL_CALL_INDEX (0x101) when known
+ - `dbt_harness.cpp` — handles both 0x100 and 0x101 dispatch
+
+ECALL convention:
+ - `a7 = 0x100` (ECALL_CALL_FUNC): a0 = name ptr (string fallback)
+ - `a7 = 0x101` (ECALL_CALL_INDEX): a0 = function index (O(1) lookup)
+ - `a7 = 93` (ECALL_EXIT): a0 = exit code
+
+Performance impact (cached path):
+ - ECALL dispatch: 0.49→0.41 us (16% faster, 1-ECALL expr)
+ - 2-ECALL expr: 0.64→0.50 us (22% faster)
+ - Mixed expr: 0.48→0.43 us (10% faster)
+ - JIT now **faster than native C++ eval** on mixed expressions
+
+#### Stage 2b: High-Level Engine API (FUTURE)
+
+For Tier 2 (cross-compiled RISC-V library), define a struct of
+function pointers for game-state access:
 
 ```c
 struct EngineAPI {
@@ -699,11 +725,9 @@ struct EngineAPI {
 };
 ```
 
-Deliverable: Header file with the API struct. Wrapper implementations
-in the engine that delegate to existing functions.
-
-Validation: Write a hand-coded RISC-V test function that calls
-through the API and verifies results match the interpreter.
+This becomes relevant when Tier 2 functions (cross-compiled C → RV64)
+need to call back into the engine.  Not needed for Tier 1 where the
+compiler handles function semantics directly.
 
 ### Stage 3: Softcode Compiler (SSA Pipeline)
 
