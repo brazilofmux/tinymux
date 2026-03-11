@@ -780,12 +780,23 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             int rs2 = rc_read(&e, &rc, insn.rs2);
             int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : X64_RAX;
 
+            // Guard against rd==rs2 aliasing: when the destination
+            // register is the same host register as rs2 (but different
+            // from rs1), "mov rd, rs1" clobbers rs2 before the
+            // operation reads it.  For commutative ops we can just
+            // swap; for non-commutative ops we save rs2 to a temp.
+            bool rd_rs2_alias = (rd == rs2 && rd != rs1);
+
             if (insn.funct7 == 0x01) {
                 // M extension (multiply/divide).
                 switch (insn.funct3) {
-                case 0: // MUL
-                    emit_mov_r64(&e, rd, rs1);
-                    emit_imul_r64(&e, rd, rs2);
+                case 0: // MUL (commutative)
+                    if (rd_rs2_alias) {
+                        emit_imul_r64(&e, rd, rs1);
+                    } else {
+                        emit_mov_r64(&e, rd, rs1);
+                        emit_imul_r64(&e, rd, rs2);
+                    }
                     break;
                 case 1: // MULH (signed * signed, high 64)
                     rc_load(&e, &rc, X64_RAX, insn.rs1);
@@ -832,11 +843,25 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                 // Base integer.
                 switch (insn.funct3) {
                 case ALU_ADD:
-                    emit_mov_r64(&e, rd, rs1);
-                    if (insn.funct7 == 0x20)
-                        emit_sub_r64(&e, rd, rs2);
-                    else
-                        emit_add_r64(&e, rd, rs2);
+                    if (insn.funct7 == 0x20) {
+                        // SUB (non-commutative)
+                        if (rd_rs2_alias) {
+                            emit_mov_r64(&e, X64_RAX, rs2);
+                            emit_mov_r64(&e, rd, rs1);
+                            emit_sub_r64(&e, rd, X64_RAX);
+                        } else {
+                            emit_mov_r64(&e, rd, rs1);
+                            emit_sub_r64(&e, rd, rs2);
+                        }
+                    } else {
+                        // ADD (commutative)
+                        if (rd_rs2_alias) {
+                            emit_add_r64(&e, rd, rs1);
+                        } else {
+                            emit_mov_r64(&e, rd, rs1);
+                            emit_add_r64(&e, rd, rs2);
+                        }
+                    }
                     break;
                 case ALU_SLL:
                     emit_mov_r64(&e, X64_RCX, rs2);
@@ -854,8 +879,12 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                     emit_movzx_r64_r8(&e, rd, rd);
                     break;
                 case ALU_XOR:
-                    emit_mov_r64(&e, rd, rs1);
-                    emit_xor_r64_op(&e, rd, rs2);
+                    if (rd_rs2_alias) {
+                        emit_xor_r64_op(&e, rd, rs1);
+                    } else {
+                        emit_mov_r64(&e, rd, rs1);
+                        emit_xor_r64_op(&e, rd, rs2);
+                    }
                     break;
                 case ALU_SRL:
                     emit_mov_r64(&e, X64_RCX, rs2);
@@ -866,12 +895,20 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                         emit_shr_r64_cl(&e, rd);
                     break;
                 case ALU_OR:
-                    emit_mov_r64(&e, rd, rs1);
-                    emit_or_r64(&e, rd, rs2);
+                    if (rd_rs2_alias) {
+                        emit_or_r64(&e, rd, rs1);
+                    } else {
+                        emit_mov_r64(&e, rd, rs1);
+                        emit_or_r64(&e, rd, rs2);
+                    }
                     break;
                 case ALU_AND:
-                    emit_mov_r64(&e, rd, rs1);
-                    emit_and_r64(&e, rd, rs2);
+                    if (rd_rs2_alias) {
+                        emit_and_r64(&e, rd, rs1);
+                    } else {
+                        emit_mov_r64(&e, rd, rs1);
+                        emit_and_r64(&e, rd, rs2);
+                    }
                     break;
                 }
             }
@@ -919,13 +956,18 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             int rs1 = rc_read(&e, &rc, insn.rs1);
             int rs2 = rc_read(&e, &rc, insn.rs2);
             int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : X64_RAX;
+            bool rd_rs2_alias_w = (rd == rs2 && rd != rs1);
 
             if (insn.funct7 == 0x01) {
                 // M extension W-suffix.
                 switch (insn.funct3) {
-                case 0: // MULW
-                    emit_mov_r64(&e, rd, rs1);
-                    emit_imul_r32(&e, rd, rs2);
+                case 0: // MULW (commutative)
+                    if (rd_rs2_alias_w) {
+                        emit_imul_r32(&e, rd, rs1);
+                    } else {
+                        emit_mov_r64(&e, rd, rs1);
+                        emit_imul_r32(&e, rd, rs2);
+                    }
                     emit_movsxd(&e, rd, rd);
                     break;
                 case 4: // DIVW
@@ -974,11 +1016,25 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             } else {
                 switch (insn.funct3) {
                 case 0: // ADDW / SUBW
-                    emit_mov_r64(&e, rd, rs1);
-                    if (insn.funct7 == 0x20)
-                        emit_sub_r32(&e, rd, rs2);
-                    else
-                        emit_add_r32(&e, rd, rs2);
+                    if (insn.funct7 == 0x20) {
+                        // SUBW (non-commutative)
+                        if (rd_rs2_alias_w) {
+                            emit_mov_r64(&e, X64_RAX, rs2);
+                            emit_mov_r64(&e, rd, rs1);
+                            emit_sub_r32(&e, rd, X64_RAX);
+                        } else {
+                            emit_mov_r64(&e, rd, rs1);
+                            emit_sub_r32(&e, rd, rs2);
+                        }
+                    } else {
+                        // ADDW (commutative)
+                        if (rd_rs2_alias_w) {
+                            emit_add_r32(&e, rd, rs1);
+                        } else {
+                            emit_mov_r64(&e, rd, rs1);
+                            emit_add_r32(&e, rd, rs2);
+                        }
+                    }
                     emit_movsxd(&e, rd, rd);
                     break;
                 case 1: // SLLW

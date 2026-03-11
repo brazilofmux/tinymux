@@ -1092,11 +1092,75 @@
         1
       )=
   {
-    @log smoke=TC071: rveval abs(sign(sub(3,10)))=1. Succeeded.;
+    @log smoke=TC071: rveval abs(sign(sub(3,10)))=1. Succeeded.
+  },
+  {
+    @log smoke=TC071: rveval abs(sign(sub(3,10)))=1. Failed (%q0).
+  }
+-
+#
+# Test Case #72 - Tier 2 cat: cat(rand(1),hello) = "0 hello".
+# rand(1) is runtime (not foldable) → cat goes through Tier 2 JAL.
+#
+&tr.tc072 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(cat(rand(1),hello))),
+        0 hello
+      )=
+  {
+    @log smoke=TC072: rveval Tier2 cat(rand(1),hello)=0 hello. Succeeded.
+  },
+  {
+    @log smoke=TC072: rveval Tier2 cat(rand(1),hello)=0 hello. Failed (%q0).
+  }
+-
+#
+# Test Case #73 - Tier 2 strlen: strlen(cat(rand(1),hello)) = 7.
+# cat result is runtime → strlen also goes through Tier 2 JAL.
+#
+&tr.tc073 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(strlen(cat(rand(1),hello)))),
+        7
+      )=
+  {
+    @log smoke=TC073: rveval Tier2 strlen(cat(rand(1),hello))=7. Succeeded.
+  },
+  {
+    @log smoke=TC073: rveval Tier2 strlen(cat(rand(1),hello))=7. Failed (%q0).
+  }
+-
+#
+# Test Case #74 - Tier 2 strcat: strcat(rand(1),hello) = "0hello".
+# rand(1) is runtime → strcat (HIR_STRCAT) goes through Tier 2 JAL.
+#
+&tr.tc074 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(strcat(rand(1),hello))),
+        0hello
+      )=
+  {
+    @log smoke=TC074: rveval Tier2 strcat(rand(1),hello)=0hello. Succeeded.
+  },
+  {
+    @log smoke=TC074: rveval Tier2 strcat(rand(1),hello)=0hello. Failed (%q0).
+  }
+-
+#
+# Test Case #75 - Tier 2 chain: strlen(strcat(rand(1),hello)) = 6.
+# strcat("0","hello")="0hello", strlen("0hello")=6.
+#
+&tr.tc075 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(strlen(strcat(rand(1),hello)))),
+        6
+      )=
+  {
+    @log smoke=TC075: rveval Tier2 strlen(strcat(rand(1),hello))=6. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC071: rveval abs(sign(sub(3,10)))=1. Failed (%q0).;
+    @log smoke=TC075: rveval Tier2 strlen(strcat(rand(1),hello))=6. Failed (%q0).;
     @trig me/tr.done
   }
 -

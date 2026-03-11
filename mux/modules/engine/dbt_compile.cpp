@@ -50,6 +50,8 @@
 #include "engine_api.h"
 #include "hir.h"
 
+#include "../../rv64/rv64blob.h"
+
 #include <cstdio>
 #include <cstring>
 #include <cmath>
@@ -57,6 +59,127 @@
 #include <algorithm>
 #include <vector>
 #include <string>
+#include <map>
+
+// ---------------------------------------------------------------
+// Tier 2: pre-compiled RV64 library blob
+// ---------------------------------------------------------------
+
+struct tier2_entry {
+    uint32_t code_off;    // offset within blob code section
+    uint32_t guest_addr;  // absolute guest address after loading
+};
+
+static struct {
+    bool loaded;
+    std::vector<uint8_t> code;           // code section bytes
+    std::vector<uint8_t> rodata;         // rodata section bytes
+    std::map<std::string, tier2_entry> funcs;  // name → entry
+    uint64_t guest_base;                 // where code is loaded in guest memory
+} s_tier2 = { false, {}, {}, {}, 0 };
+
+// Map MUX function names (uppercase) to Tier 2 blob entry names.
+// The blob uses rv64_ prefixed names; MUX uses plain uppercase.
+//
+static const struct { const char *mux_name; const char *blob_name; } s_tier2_map[] = {
+    { "CAT",    "rv64_cat" },
+    { "STRLEN", "rv64_strlen" },
+    { "STRCAT", "rv64_strcat" },
+    { nullptr, nullptr }
+};
+
+// Load the Tier 2 blob from a file.
+// Called once at init time.  Guest base address is where the blob's
+// code section will be mapped in each program's guest memory.
+//
+static bool tier2_load(const char *path, uint64_t guest_base) {
+    FILE *f = fopen(path, "rb");
+    if (!f) return false;
+
+    rv64_blob_header hdr;
+    if (fread(&hdr, sizeof(hdr), 1, f) != 1) { fclose(f); return false; }
+    if (hdr.magic != RV64_BLOB_MAGIC || hdr.version != RV64_BLOB_VERSION) {
+        fclose(f);
+        return false;
+    }
+
+    // Read code section.
+    s_tier2.code.resize(hdr.code_size);
+    fseek(f, hdr.code_offset, SEEK_SET);
+    if (fread(s_tier2.code.data(), hdr.code_size, 1, f) != 1) {
+        fclose(f);
+        return false;
+    }
+
+    // Read rodata section (if present).
+    if (hdr.rodata_size > 0 && hdr.rodata_offset > 0) {
+        s_tier2.rodata.resize(hdr.rodata_size);
+        fseek(f, hdr.rodata_offset, SEEK_SET);
+        if (fread(s_tier2.rodata.data(), hdr.rodata_size, 1, f) != 1) {
+            fclose(f);
+            return false;
+        }
+    }
+
+    // Read entry table.
+    std::vector<rv64_blob_entry> entries(hdr.entry_count);
+    fseek(f, hdr.entry_offset, SEEK_SET);
+    if (fread(entries.data(), sizeof(rv64_blob_entry), hdr.entry_count, f)
+        != hdr.entry_count) {
+        fclose(f);
+        return false;
+    }
+    fclose(f);
+
+    // Build lookup table.
+    s_tier2.guest_base = guest_base;
+    s_tier2.funcs.clear();
+    for (uint32_t i = 0; i < hdr.entry_count; i++) {
+        tier2_entry te;
+        te.code_off = entries[i].code_off;
+        te.guest_addr = static_cast<uint32_t>(guest_base) + entries[i].code_off;
+        s_tier2.funcs[entries[i].name] = te;
+    }
+
+    // Build MUX name → blob mapping.
+    for (int i = 0; s_tier2_map[i].mux_name; i++) {
+        auto it = s_tier2.funcs.find(s_tier2_map[i].blob_name);
+        if (it != s_tier2.funcs.end()) {
+            s_tier2.funcs[s_tier2_map[i].mux_name] = it->second;
+        }
+    }
+
+    s_tier2.loaded = true;
+    return true;
+}
+
+// Look up a function by MUX name (uppercase).
+// Returns guest address, or 0 if not found.
+//
+static uint64_t tier2_lookup(const std::string &mux_name) {
+    if (!s_tier2.loaded) return 0;
+    auto it = s_tier2.funcs.find(mux_name);
+    if (it != s_tier2.funcs.end()) return it->second.guest_addr;
+    return 0;
+}
+
+// Copy blob code into a program's guest memory.
+// Called during compile_expression() before codegen.
+//
+static void tier2_install(std::vector<uint8_t> &memory, uint64_t guest_base) {
+    if (!s_tier2.loaded) return;
+    if (guest_base + s_tier2.code.size() > memory.size()) return;
+    memcpy(memory.data() + guest_base,
+           s_tier2.code.data(), s_tier2.code.size());
+    if (!s_tier2.rodata.empty()) {
+        uint64_t rodata_base = guest_base + s_tier2.code.size();
+        rodata_base = (rodata_base + 7) & ~7ULL;
+        if (rodata_base + s_tier2.rodata.size() <= memory.size()) {
+            memcpy(memory.data() + rodata_base,
+                   s_tier2.rodata.data(), s_tier2.rodata.size());
+        }
+    }
+}
 
 // ---------------------------------------------------------------
 // Compiler state
@@ -78,7 +201,7 @@ struct rv_compiler {
     int native_ops;         // number of native arithmetic ops
     bool needs_jit;         // true if any runtime code was emitted
 
-    static constexpr size_t MEM_SIZE     = 64 * 1024;
+    static constexpr size_t MEM_SIZE     = 128 * 1024;
     static constexpr uint64_t CODE_BASE  = 0x0000;
     static constexpr uint64_t CODE_LIMIT = 0x1000;
     static constexpr uint64_t STR_BASE   = 0x1000;
@@ -88,7 +211,11 @@ struct rv_compiler {
     static constexpr uint64_t OUT_BASE   = 0x8000;
     static constexpr uint64_t OUT_LIMIT  = 0xF000;
     static constexpr int      OUT_SLOT   = 256;
-    static constexpr uint64_t STACK_TOP  = MEM_SIZE - 16;
+    static constexpr uint64_t STACK_TOP  = 0xFFF0;
+
+    // Tier 2 blob loaded at 0x10000 (above the per-expression region).
+    static constexpr uint64_t BLOB_BASE  = 0x10000;
+    static constexpr uint64_t BLOB_LIMIT = 0x20000;  // 64KB for blob
 
     rv_compiler() : memory(MEM_SIZE, 0),
                     str_pool(STR_BASE),
@@ -486,6 +613,23 @@ static void rv_emit_exit(std::vector<uint32_t> &code) {
     code.push_back(rv_ADDI(17, 0, ECALL_EXIT));
     code.push_back(rv_ADDI(10, 0, 0));
     code.push_back(rv_ECALL());
+}
+
+// Emit a Tier 2 call: JAL to pre-compiled blob function.
+// Calling convention: a0=output, a1=fargs, a2=nfargs.
+// Return value in a0 (pointer to output buffer).
+//
+static void rv_emit_tier2_call(std::vector<uint32_t> &code,
+                                uint64_t fargs_addr, int nfargs,
+                                uint64_t out_addr, uint64_t func_guest_addr) {
+    rv_load_val(code, 10, out_addr);                  // a0 = output
+    rv_load_val(code, 11, fargs_addr);                // a1 = fargs
+    code.push_back(rv_ADDI(12, 0, nfargs));           // a2 = nfargs
+
+    // JAL ra, target — offset relative to current PC.
+    uint64_t current_pc = code.size() * 4;  // guest PC of the JAL
+    int32_t offset = static_cast<int32_t>(func_guest_addr - current_pc);
+    code.push_back(rv_JAL(1, offset));                // JAL ra, blob_func
 }
 
 // ---------------------------------------------------------------
@@ -1557,11 +1701,17 @@ general_lowering:
 
     int fidx = engine_api_lookup(upper.c_str());
 
-    // ECALL results are always strings in guest memory.  If the
+    // Check Tier 2 blob before falling through to ECALL.
+    uint64_t t2addr = tier2_lookup(upper);
+
+    // ECALL/Tier2 results are always strings in guest memory.  If the
     // function is known to return integers (strlen, eq, etc.),
     // mark known_int so downstream ops can ATOI and use natively.
     int i = h.emit_call(TY_STRING, fidx,
                          args.data(), nargs);
+    if (t2addr) {
+        h.tier2_addr[i] = t2addr;
+    }
     if (returns_int(upper)) {
         h.known_int[i] = true;
     }
@@ -2346,9 +2496,17 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                     farg_addrs.push_back(loc[ai].addr);
                 }
                 uint64_t fargs_addr = rc.alloc_fargs(farg_addrs);
-                int fidx = h.func_idx[i];
-                rv_emit_call(rc.code, 0, fargs_addr, na,
-                              out_addr, rv_compiler::OUT_SLOT, fidx);
+
+                if (h.tier2_addr[i]) {
+                    // Tier 2: JAL to pre-compiled blob function.
+                    rv_emit_tier2_call(rc.code, fargs_addr, na,
+                                        out_addr, h.tier2_addr[i]);
+                } else {
+                    // ECALL to engine function.
+                    int fidx = h.func_idx[i];
+                    rv_emit_call(rc.code, 0, fargs_addr, na,
+                                  out_addr, rv_compiler::OUT_SLOT, fidx);
+                }
                 loc[i].addr = out_addr;
                 loc[i].in_reg = false;
                 break;
@@ -2364,10 +2522,16 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                     farg_addrs.push_back(loc[ai].addr);
                 }
                 uint64_t fargs_addr = rc.alloc_fargs(farg_addrs);
-                int fidx = h.func_idx[i];
-                uint64_t name_addr = fidx ? 0 : rc.pool_str("strcat");
-                rv_emit_call(rc.code, name_addr, fargs_addr, na,
-                              out_addr, rv_compiler::OUT_SLOT, fidx);
+                uint64_t t2addr = tier2_lookup("STRCAT");
+                if (t2addr) {
+                    rv_emit_tier2_call(rc.code, fargs_addr, na,
+                                        out_addr, t2addr);
+                } else {
+                    int fidx = h.func_idx[i];
+                    uint64_t name_addr = fidx ? 0 : rc.pool_str("strcat");
+                    rv_emit_call(rc.code, name_addr, fargs_addr, na,
+                                  out_addr, rv_compiler::OUT_SLOT, fidx);
+                }
                 loc[i].addr = out_addr;
                 loc[i].in_reg = false;
                 break;
@@ -2508,14 +2672,35 @@ struct compiled_program {
     bool needs_jit;         // true if JIT execution required
 };
 
+// Lazy-init Tier 2 blob on first compile.
+static bool s_tier2_init = false;
+static void tier2_lazy_init() {
+    if (s_tier2_init) return;
+    s_tier2_init = true;
+
+    // Try to load from the game's bin directory (where engine.so lives).
+    const char *paths[] = {
+        "bin/softlib.rv64",
+        "./softlib.rv64",
+        nullptr
+    };
+    for (int i = 0; paths[i]; i++) {
+        if (tier2_load(paths[i], rv_compiler::BLOB_BASE)) {
+            return;
+        }
+    }
+    // No blob found — Tier 2 disabled, ECALL fallback for everything.
+}
+
 static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
+    tier2_lazy_init();
+
     compiled_program prog;
     prog.ok = false;
     prog.folds = 0;
     prog.ecalls = 0;
     prog.native_ops = 0;
     prog.needs_jit = false;
-
 
     // Parse the expression.
     auto ast = ast_parse_string(expr, nLen);
@@ -2527,6 +2712,10 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
 
     // Phase 1: Lower AST → HIR.
     rv_compiler rc;
+
+    // Install Tier 2 blob into guest memory (if loaded).
+    tier2_install(rc.memory, rv_compiler::BLOB_BASE);
+
     hir_program h;
     h.init();
     qreg_init();

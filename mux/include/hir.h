@@ -136,6 +136,9 @@ struct hir_program {
     // For HIR_CALL: function index (engine_api index) or 0 for string-based.
     int func_idx[HIR_MAX_INSNS];
 
+    // For HIR_CALL: Tier 2 blob guest address, or 0 for ECALL.
+    uint64_t tier2_addr[HIR_MAX_INSNS];
+
     // PHI arguments (flattened array, M2+).
     // For HIR_PHI at instruction i:
     //   pbase[i] = starting index into pblk[]/pval[]
@@ -221,6 +224,7 @@ struct hir_program {
         cbase[i] = 0;
         cnargs[i] = 0;
         func_idx[i] = 0;
+        tier2_addr[i] = 0;
         pbase[i] = 0;
         pnargs[i] = 0;
         sval[i].clear();
