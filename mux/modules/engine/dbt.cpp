@@ -184,6 +184,114 @@ static void cache_insert(dbt_state_t *dbt, uint64_t pc, uint8_t *code) {
 }
 
 // ---------------------------------------------------------------
+// Return Address Stack (RAS) helpers
+// ---------------------------------------------------------------
+
+// Emit inline RAS push: ras[ras_top++ & MASK] = return_addr.
+// Clobbers RAX, RCX, RDX.
+//
+static void emit_ras_push(emit_t *e, uint64_t return_addr) {
+    // mov eax, [rbx + CTX_RAS_TOP_OFF]  — load ras_top (32-bit)
+    emit_byte(e, 0x8B);
+    emit_byte(e, modrm(0x02, X64_RAX, X64_RBX));
+    emit_u32(e, CTX_RAS_TOP_OFF);
+
+    // mov ecx, eax ; and ecx, RAS_MASK  — index
+    emit_mov_r64(e, X64_RCX, X64_RAX);
+    emit_and_r64_imm(e, X64_RCX, RAS_MASK);
+
+    // mov qword [rbx + CTX_RAS_OFF + rcx*8], return_addr
+    // Use: lea rdx, [rbx + CTX_RAS_OFF]; mov [rdx + rcx*8], imm
+    // Actually, simpler: compute offset = CTX_RAS_OFF + rcx*8 in rdx
+    emit_shl_r64_imm(e, X64_RCX, 3);   // rcx *= 8
+    emit_add_r64_imm(e, X64_RCX, CTX_RAS_OFF);
+    // mov rdx, return_addr
+    emit_mov_r64_imm32(e, X64_RDX, static_cast<int32_t>(return_addr));
+    // mov [rbx + rcx], rdx
+    emit_byte(e, rex(1, reg_hi(X64_RDX), 0, 0));
+    emit_byte(e, 0x89);
+    emit_byte(e, modrm(0x01, X64_RDX, 0x04)); // SIB follows
+    emit_byte(e, static_cast<uint8_t>((reg_lo(X64_RCX) << 3) | reg_lo(X64_RBX)));
+    emit_byte(e, 0x00); // disp8 = 0
+
+    // inc dword [rbx + CTX_RAS_TOP_OFF]
+    emit_add_r64_imm(e, X64_RAX, 1);
+    emit_byte(e, 0x89); // mov [rbx + CTX_RAS_TOP_OFF], eax (32-bit)
+    emit_byte(e, modrm(0x02, X64_RAX, X64_RBX));
+    emit_u32(e, CTX_RAS_TOP_OFF);
+}
+
+// Emit inline RAS pop + block cache probe for JALR returns.
+// RCX holds the actual computed target.  Clobbers RAX, RDX.
+// On RAS hit + cache hit: jumps directly to native code (no ret).
+// On miss: falls through to emit_exit_indirect.
+//
+static void emit_ras_pop_and_probe(emit_t *e, dbt_state_t *dbt) {
+    // dec dword [rbx + CTX_RAS_TOP_OFF]
+    emit_byte(e, 0x8B); // mov eax, [rbx + CTX_RAS_TOP_OFF]
+    emit_byte(e, modrm(0x02, X64_RAX, X64_RBX));
+    emit_u32(e, CTX_RAS_TOP_OFF);
+    emit_add_r64_imm(e, X64_RAX, -1);
+    emit_byte(e, 0x89); // mov [rbx + CTX_RAS_TOP_OFF], eax
+    emit_byte(e, modrm(0x02, X64_RAX, X64_RBX));
+    emit_u32(e, CTX_RAS_TOP_OFF);
+
+    // Load predicted: rdx = ras[eax & RAS_MASK]
+    emit_and_r64_imm(e, X64_RAX, RAS_MASK);
+    emit_shl_r64_imm(e, X64_RAX, 3); // * 8
+    emit_add_r64_imm(e, X64_RAX, CTX_RAS_OFF);
+    // mov rdx, [rbx + rax]
+    emit_byte(e, rex(1, reg_hi(X64_RDX), 0, 0));
+    emit_byte(e, 0x8B);
+    emit_byte(e, modrm(0x01, X64_RDX, 0x04)); // SIB
+    emit_byte(e, static_cast<uint8_t>((reg_lo(X64_RAX) << 3) | reg_lo(X64_RBX)));
+    emit_byte(e, 0x00); // disp8 = 0
+
+    // Compare actual (RCX) vs predicted (RDX)
+    emit_cmp_r64(e, X64_RCX, X64_RDX);
+    uint32_t jne_miss = emit_jcc_rel32(e, JCC_NE);
+
+    // RAS hit: inline block cache probe.
+    // index = (rcx >> 2) & BLOCK_CACHE_MASK
+    emit_mov_r64(e, X64_RAX, X64_RCX);
+    emit_shr_r64_imm(e, X64_RAX, 2);
+    emit_and_r64_imm(e, X64_RAX, static_cast<int32_t>(BLOCK_CACHE_MASK));
+
+    // entry = R13 + index * 16 (sizeof block_entry_t)
+    emit_shl_r64_imm(e, X64_RAX, 4);
+    // cmp [r13 + rax + 0], rcx  — check guest_pc
+    emit_byte(e, rex(1, reg_hi(X64_RCX), reg_hi(X64_RAX), 1));
+    emit_byte(e, 0x3B);
+    emit_byte(e, modrm(0x01, X64_RCX, 0x04)); // SIB
+    emit_byte(e, static_cast<uint8_t>((reg_lo(X64_RAX) << 3) | reg_lo(X64_R13)));
+    emit_byte(e, 0x00); // disp8 = 0
+    uint32_t jne_cache_miss = emit_jcc_rel32(e, JCC_NE);
+
+    // Cache hit: load native_code and jump.
+    // mov rax, [r13 + rax + 8]
+    emit_byte(e, rex(1, reg_hi(X64_RAX), reg_hi(X64_RAX), 1));
+    emit_byte(e, 0x8B);
+    emit_byte(e, modrm(0x01, X64_RAX, 0x04)); // SIB
+    emit_byte(e, static_cast<uint8_t>((reg_lo(X64_RAX) << 3) | reg_lo(X64_R13)));
+    emit_byte(e, 0x08); // disp8 = 8
+
+    // test rax, rax (null check)
+    emit_test_r64(e, X64_RAX, X64_RAX);
+    uint32_t jz_null = emit_jcc_rel32(e, JCC_E);
+
+    // jmp rax — direct to native code!
+    emit_byte(e, 0xFF);
+    emit_byte(e, modrm(0x03, 4, X64_RAX)); // jmp rax
+    dbt->ras_hits++;
+
+    // Miss paths: fall through to indirect exit.
+    emit_patch_rel32(e, jne_miss, emit_pos(e));
+    emit_patch_rel32(e, jne_cache_miss, emit_pos(e));
+    emit_patch_rel32(e, jz_null, emit_pos(e));
+    dbt->ras_misses++;
+}
+
+// ---------------------------------------------------------------
 // Block chaining helpers
 // ---------------------------------------------------------------
 
@@ -392,7 +500,13 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                 int rd = rc_write(&e, &rc, insn.rd);
                 emit_mov_r64_imm32(&e, rd, static_cast<int32_t>(pc + 4));
             }
-            rc_flush(&e, &rc);
+            // RAS push: if rd=x1 (ra), this is a function call.
+            if (insn.rd == 1) {
+                rc_flush(&e, &rc);
+                emit_ras_push(&e, static_cast<uint64_t>(pc + 4));
+            } else {
+                rc_flush(&e, &rc);
+            }
             emit_exit_chained(&e, dbt, target);
             goto done;
         }
@@ -410,6 +524,13 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                 emit_mov_r64_imm32(&e, rd, static_cast<int32_t>(pc + 4));
             }
             rc_flush(&e, &rc);
+
+            // RAS pop: if rs1=x1 (ra), this is a function return.
+            // Pop the predicted address and inline cache probe.
+            if (insn.rs1 == 1) {
+                emit_ras_pop_and_probe(&e, dbt);
+            }
+
             emit_exit_indirect(&e, X64_RCX);
             goto done;
         }
