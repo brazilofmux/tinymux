@@ -31,10 +31,17 @@ static const int rc_host_regs[RC_NUM_SLOTS] = {
     X64_R10, X64_R11, X64_R14, X64_R15
 };
 
+// Pinned guest registers: a0-a3 (x10-x13) in slots 0-3.
+// Pre-loaded by the trampoline, persist across chained block exits.
+//
+static constexpr int RC_NUM_PINNED = 4;
+static const int rc_pinned_guest[RC_NUM_PINNED] = { 10, 11, 12, 13 };
+
 struct rc_slot_t {
     int guest_reg;  // -1 = free
     int dirty;
     int last_use;
+    int pinned;     // if true, never evict
 };
 
 struct reg_cache_t {
@@ -47,8 +54,23 @@ static void rc_init(reg_cache_t *rc) {
         rc->slots[i].guest_reg = -1;
         rc->slots[i].dirty = 0;
         rc->slots[i].last_use = 0;
+        rc->slots[i].pinned = 0;
     }
     rc->clock = 0;
+}
+
+// Initialize with pinned guest registers pre-populated.
+// The trampoline pre-loads these into the corresponding host registers,
+// and they persist across chained block transitions.
+//
+static void rc_init_pinned(reg_cache_t *rc) {
+    rc_init(rc);
+    for (int i = 0; i < RC_NUM_PINNED; i++) {
+        rc->slots[i].guest_reg = rc_pinned_guest[i];
+        rc->slots[i].dirty = 0;
+        rc->slots[i].last_use = 0;
+        rc->slots[i].pinned = 1;
+    }
 }
 
 static int rc_find(reg_cache_t *rc, int guest_reg) {
@@ -58,12 +80,22 @@ static int rc_find(reg_cache_t *rc, int guest_reg) {
 }
 
 static int rc_alloc(reg_cache_t *rc, emit_t *e) {
+    // Prefer free (non-pinned) slots.
     for (int i = 0; i < RC_NUM_SLOTS; i++)
-        if (rc->slots[i].guest_reg == -1) return i;
-    // Evict LRU.
-    int lru = 0;
-    for (int i = 1; i < RC_NUM_SLOTS; i++)
-        if (rc->slots[i].last_use < rc->slots[lru].last_use) lru = i;
+        if (rc->slots[i].guest_reg == -1 && !rc->slots[i].pinned)
+            return i;
+    // Evict LRU among non-pinned slots.
+    int lru = -1;
+    for (int i = 0; i < RC_NUM_SLOTS; i++) {
+        if (rc->slots[i].pinned) continue;
+        if (lru < 0 || rc->slots[i].last_use < rc->slots[lru].last_use)
+            lru = i;
+    }
+    if (lru < 0) {
+        // All slots pinned — shouldn't happen with RC_NUM_PINNED < RC_NUM_SLOTS.
+        // Fall back to slot 0 as last resort.
+        lru = 0;
+    }
     if (rc->slots[lru].dirty)
         emit_store_guest(e, rc->slots[lru].guest_reg, rc_host_regs[lru]);
     rc->slots[lru].guest_reg = -1;
@@ -235,7 +267,7 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
     e.capacity = CODE_BUF_SIZE - dbt->code_used;
 
     reg_cache_t rc;
-    rc_init(&rc);
+    rc_init_pinned(&rc);
 
     uint64_t pc = guest_pc;
     int count = 0;
@@ -1032,7 +1064,7 @@ static void emit_trampoline(dbt_state_t *dbt) {
     emit_t e;
     e.buf = dbt->code_buf;
     e.offset = 0;
-    e.capacity = 256;
+    e.capacity = 512;
 
     // Save callee-saved registers.
     emit_push(&e, X64_RBX);
@@ -1057,9 +1089,23 @@ static void emit_trampoline(dbt_state_t *dbt) {
     emit_byte(&e, 0x89);
     emit_byte(&e, modrm(0x03, X64_RCX, reg_lo(X64_R13)));
 
+    // Pre-load pinned guest registers from ctx.
+    // a0 (x10) → RSI, a1 (x11) → RDI, a2 (x12) → R8, a3 (x13) → R9
+    //
+    for (int i = 0; i < RC_NUM_PINNED; i++) {
+        emit_load_guest(&e, rc_host_regs[i], rc_pinned_guest[i]);
+    }
+
     // call rdx (block code)
     emit_byte(&e, 0xFF);
     emit_byte(&e, modrm(0x03, 2, X64_RDX));
+
+    // Post-store pinned guest registers back to ctx.
+    // Ensures ctx is up-to-date when control returns to C++.
+    //
+    for (int i = 0; i < RC_NUM_PINNED; i++) {
+        emit_store_guest(&e, rc_pinned_guest[i], rc_host_regs[i]);
+    }
 
     // Restore callee-saved.
     emit_pop(&e, X64_R15);
