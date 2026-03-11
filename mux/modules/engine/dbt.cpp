@@ -414,14 +414,12 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             goto done;
         }
 
-        // -- Branches --
+        // -- Branches (with diamond merge for short forward branches) --
         //
         case OP_BRANCH: {
             uint64_t target = pc + static_cast<int64_t>(insn.imm);
-            int rs1 = rc_read(&e, &rc, insn.rs1);
-            int rs2 = rc_read(&e, &rc, insn.rs2);
-            emit_cmp_r64(&e, rs1, rs2);
 
+            // Determine the branch condition code.
             uint8_t cc;
             switch (insn.funct3) {
             case 0: cc = JCC_E;  break; // BEQ
@@ -434,6 +432,117 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                 rc_flush(&e, &rc);
                 emit_exit_chained(&e, dbt, pc);
                 goto done;
+            }
+
+            // Diamond merge: branch-over-one pattern.
+            // If the branch skips exactly 1 instruction (+8) and that
+            // instruction is a simple ALU op, convert to CMOVcc.
+            //
+            if (insn.imm == 8 && pc + 8 <= dbt->memory_size) {
+                uint32_t skip_word;
+                memcpy(&skip_word, dbt->memory + pc + 4, 4);
+                rv64_insn_t skip;
+                rv64_decode(skip_word, &skip);
+
+                // The skipped instruction runs when branch is NOT taken.
+                // CMOVcc inverse condition: branch taken → skip (no move).
+                // We need the INVERSE condition for CMOVcc.
+                //
+                uint8_t cmov_cc;
+                switch (insn.funct3) {
+                case 0: cmov_cc = CMOV_NE; break; // BEQ skips → exec if NE
+                case 1: cmov_cc = CMOV_E;  break; // BNE skips → exec if E
+                case 4: cmov_cc = CMOV_GE; break; // BLT skips → exec if GE
+                case 5: cmov_cc = CMOV_L;  break; // BGE skips → exec if L
+                case 6: cmov_cc = CMOV_AE; break; // BLTU skips → exec if AE
+                case 7: cmov_cc = CMOV_B;  break; // BGEU skips → exec if B
+                default: goto no_diamond;
+                }
+
+                bool can_predicate = false;
+
+                // OP_IMM: ADDI, XORI, ORI, ANDI (not shifts — different emit)
+                if (skip.opcode == OP_IMM && skip.rd != 0
+                    && (skip.funct3 == ALU_ADDI || skip.funct3 == ALU_XORI
+                        || skip.funct3 == ALU_ORI || skip.funct3 == ALU_ANDI)) {
+                    can_predicate = true;
+                }
+                // OP_REG: ADD, SUB, AND, OR, XOR (not M-ext, not shifts)
+                if (skip.opcode == OP_REG && skip.rd != 0
+                    && skip.funct7 != 0x01
+                    && (skip.funct3 == ALU_ADD || skip.funct3 == ALU_XOR
+                        || skip.funct3 == ALU_OR || skip.funct3 == ALU_AND)) {
+                    can_predicate = true;
+                }
+                // OP_LUI: load upper immediate
+                if (skip.opcode == OP_LUI && skip.rd != 0) {
+                    can_predicate = true;
+                }
+
+                if (can_predicate) {
+                    // Compute the ALU result in scratch (RCX) FIRST
+                    // (this may clobber flags).
+                    //
+                    if (skip.opcode == OP_LUI) {
+                        emit_mov_r64_imm32(&e, X64_RCX, skip.imm);
+                    } else if (skip.opcode == OP_IMM) {
+                        int hr_src = rc_read(&e, &rc, skip.rs1);
+                        emit_mov_r64(&e, X64_RCX, hr_src);
+                        switch (skip.funct3) {
+                        case ALU_ADDI: emit_add_r64_imm(&e, X64_RCX, skip.imm); break;
+                        case ALU_XORI: emit_xor_r64_imm(&e, X64_RCX, skip.imm); break;
+                        case ALU_ORI:  emit_or_r64_imm(&e, X64_RCX, skip.imm); break;
+                        case ALU_ANDI: emit_and_r64_imm(&e, X64_RCX, skip.imm); break;
+                        }
+                    } else { // OP_REG
+                        int hr_s1 = rc_read(&e, &rc, skip.rs1);
+                        int hr_s2 = rc_read(&e, &rc, skip.rs2);
+                        emit_mov_r64(&e, X64_RCX, hr_s1);
+                        switch (skip.funct3) {
+                        case ALU_ADD:
+                            if (skip.funct7 == 0x20)
+                                emit_sub_r64(&e, X64_RCX, hr_s2);
+                            else
+                                emit_add_r64(&e, X64_RCX, hr_s2);
+                            break;
+                        case ALU_XOR: emit_xor_r64_op(&e, X64_RCX, hr_s2); break;
+                        case ALU_OR:  emit_or_r64(&e, X64_RCX, hr_s2); break;
+                        case ALU_AND: emit_and_r64(&e, X64_RCX, hr_s2); break;
+                        }
+                    }
+
+                    // Ensure rd has its OLD value in a host register.
+                    int hr_rd = rc_read(&e, &rc, skip.rd);
+
+                    // Now do the branch comparison (after ALU, since ALU
+                    // may clobber flags).
+                    int hr_rs1 = rc_read(&e, &rc, insn.rs1);
+                    int hr_rs2 = rc_read(&e, &rc, insn.rs2);
+                    emit_cmp_r64(&e, hr_rs1, hr_rs2);
+
+                    // CMOVcc: update rd only when branch NOT taken.
+                    emit_cmovcc(&e, cmov_cc, hr_rd, X64_RCX);
+
+                    // Mark rd dirty (value may have changed).
+                    int slot = rc_find(&rc, skip.rd);
+                    if (slot >= 0) {
+                        rc.slots[slot].dirty = 1;
+                        rc.slots[slot].last_use = ++rc.clock;
+                    }
+
+                    pc += 8; // consumed branch + skipped instruction
+                    count++;
+                    dbt->insns_fused++;
+                    continue;
+                }
+            }
+        no_diamond:
+
+            // Normal branch: terminate block with two exits.
+            {
+                int rs1 = rc_read(&e, &rc, insn.rs1);
+                int rs2 = rc_read(&e, &rc, insn.rs2);
+                emit_cmp_r64(&e, rs1, rs2);
             }
 
             // Emit: jcc taken; [fall-through]; jmp not_taken

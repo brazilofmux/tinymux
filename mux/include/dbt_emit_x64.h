@@ -563,6 +563,24 @@ static inline void emit_setcc(emit_t *e, uint8_t cc, int reg) {
     emit_byte(e, modrm(0x03, 0, reg));
 }
 
+// CMOVcc r64, r64 — conditional move (REX.W 0F 4x /r)
+// cc values: CMOV_E=0x44, CMOV_NE=0x45, CMOV_L=0x4C, CMOV_GE=0x4D,
+//            CMOV_B=0x42, CMOV_AE=0x43
+//
+static constexpr uint8_t CMOV_E  = 0x44;
+static constexpr uint8_t CMOV_NE = 0x45;
+static constexpr uint8_t CMOV_L  = 0x4C;
+static constexpr uint8_t CMOV_GE = 0x4D;
+static constexpr uint8_t CMOV_B  = 0x42;
+static constexpr uint8_t CMOV_AE = 0x43;
+
+static inline void emit_cmovcc(emit_t *e, uint8_t cc, int dst, int src) {
+    emit_byte(e, rex(1, reg_hi(dst), 0, reg_hi(src)));
+    emit_byte(e, 0x0F);
+    emit_byte(e, cc);
+    emit_byte(e, modrm(0x03, dst, src));
+}
+
 // movzx r64, r8 (zero-extend byte to 64-bit)
 static inline void emit_movzx_r64_r8(emit_t *e, int dst, int src) {
     emit_byte(e, rex(1, reg_hi(dst), 0, reg_hi(src)));
