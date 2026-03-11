@@ -54,6 +54,7 @@
 #include <cstring>
 #include <cmath>
 #include <ctime>
+#include <algorithm>
 #include <vector>
 #include <string>
 
@@ -77,16 +78,6 @@ struct rv_compiler {
     int native_ops;         // number of native arithmetic ops
     bool needs_jit;         // true if any runtime code was emitted
 
-    // Integer register allocator.
-    // Uses saved registers s1-s11 (x9, x18-x27).
-    int int_reg_idx;
-    static constexpr uint8_t INT_REGS[11] = {9, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27};
-
-    uint8_t alloc_int_reg() {
-        if (int_reg_idx >= 11) return 0;  // out of registers
-        return INT_REGS[int_reg_idx++];
-    }
-
     static constexpr size_t MEM_SIZE     = 64 * 1024;
     static constexpr uint64_t CODE_BASE  = 0x0000;
     static constexpr uint64_t CODE_LIMIT = 0x1000;
@@ -107,8 +98,7 @@ struct rv_compiler {
                     folds(0),
                     ecalls(0),
                     native_ops(0),
-                    needs_jit(false),
-                    int_reg_idx(0) {}
+                    needs_jit(false) {}
 
     // Allocate string in pool, return guest addr.
     uint64_t pool_str(const char *s, size_t len) {
@@ -228,6 +218,24 @@ static uint32_t rv_SB(uint8_t base, uint8_t src, int32_t off) {
 //
 static uint32_t rv_LBU(uint8_t rd, uint8_t base, int32_t off) {
     return rv_i_type(OP_LOAD, rd, LD_LBU, base, off);
+}
+
+// Store doubleword.
+//
+static uint32_t rv_SD(uint8_t base, uint8_t src, int32_t off) {
+    uint32_t u = static_cast<uint32_t>(off);
+    return OP_STORE
+         | ((u & 0x1F) << 7)
+         | (static_cast<uint32_t>(ST_SD) << 12)
+         | (static_cast<uint32_t>(base) << 15)
+         | (static_cast<uint32_t>(src) << 20)
+         | (((u >> 5) & 0x7F) << 25);
+}
+
+// Load doubleword.
+//
+static uint32_t rv_LD(uint8_t rd, uint8_t base, int32_t off) {
+    return rv_i_type(OP_LOAD, rd, LD_LD, base, off);
 }
 
 // J-type encoding (JAL).
@@ -1510,9 +1518,10 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
 // ===============================================================
 
 struct hir_loc {
-    uint64_t addr;      // guest memory address (for strings)
-    uint8_t  reg;       // RV64 register (for integers)
-    bool     in_reg;    // true if value is in a register
+    uint64_t addr;       // guest memory address (for strings)
+    uint8_t  reg;        // RV64 register (for integers)
+    bool     in_reg;     // true if value is in a register
+    int      spill_slot; // -1 = not spilled, >=0 = stack slot index
 };
 
 // Branch patch record for backpatching.
@@ -1520,6 +1529,285 @@ struct branch_patch {
     int code_idx;       // index into rc.code
     int target_blk;     // target block number
 };
+
+// ---------------------------------------------------------------
+// Register allocation: linear scan over SSA live ranges
+//
+// Poletto-Sarkar algorithm.  Computes live intervals for all
+// integer-typed SSA values, then assigns the 11 saved registers
+// (s1-s11).  When register pressure exceeds 11, the interval
+// ending furthest in the future is spilled to the RV64 stack.
+// ---------------------------------------------------------------
+
+// Allocatable integer registers: s1-s11 (x9, x18-x27).
+static constexpr int RA_NUM_REGS = 11;
+static constexpr uint8_t RA_REGS[RA_NUM_REGS] = {
+    9, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27
+};
+
+// Scratch register for spill/reload (s0 = x8, callee-saved).
+static constexpr uint8_t RA_SCRATCH = 8;
+
+// Second scratch for two-operand instructions (t3 = x28).
+// Safe because arithmetic ops don't call atoi/itoa.
+static constexpr uint8_t RA_SCRATCH2 = 28;
+
+struct live_interval {
+    int     value;      // HIR instruction index (SSA value number)
+    int     start;      // program point of definition
+    int     end;        // program point of last use (inclusive)
+};
+
+struct reg_alloc_result {
+    uint8_t reg[HIR_MAX_INSNS];        // assigned register (0 = spilled/none)
+    int     spill_slot[HIR_MAX_INSNS]; // -1 = not spilled
+    int     n_spill_slots;             // total spill slots used
+};
+
+// Returns true if HIR instruction i produces an integer that needs
+// a register.
+//
+static bool needs_int_reg(hir_program &h, int i) {
+    switch (h.kind[i]) {
+    case HIR_ICONST:
+    case HIR_ATOI:
+    case HIR_ADD: case HIR_SUB: case HIR_MUL: case HIR_REM:
+    case HIR_EQ:  case HIR_NE:  case HIR_GT:  case HIR_LT:
+    case HIR_GE:  case HIR_LE:
+    case HIR_NOT:
+    case HIR_INC: case HIR_DEC:
+    case HIR_NEG:
+        return true;
+    case HIR_PHI:
+        return h.ty[i] == TY_INT;
+    case HIR_COPY:
+        return h.ty[i] == TY_INT;
+    default:
+        return false;
+    }
+}
+
+// Compute live intervals for all integer-typed SSA values.
+//
+static void compute_live_ranges(hir_program &h,
+                                 std::vector<live_interval> &intervals) {
+    // Assign program points in codegen order (blocks in layout order,
+    // instructions within each block in order).
+    int prog_point[HIR_MAX_INSNS];
+    int block_end_pp[HIR_MAX_BLOCKS];
+    memset(prog_point, -1, sizeof(int) * h.n_insns);
+
+    int pp = 0;
+    for (int b = 0; b < h.n_blocks; b++) {
+        if (h.block_first[b] <= h.block_last[b]) {
+            for (int i = h.block_first[b]; i <= h.block_last[b]; i++) {
+                if (h.blk[i] == b) {
+                    prog_point[i] = pp++;
+                }
+            }
+        }
+        block_end_pp[b] = pp++;  // virtual point at end of block
+    }
+    int max_pp = pp;
+
+    // Find last use program point for each value.
+    int last_use[HIR_MAX_INSNS];
+    memset(last_use, -1, sizeof(int) * h.n_insns);
+
+    for (int i = 0; i < h.n_insns; i++) {
+        if (prog_point[i] < 0) continue;
+        int pp_i = prog_point[i];
+
+        // src1 is always a value reference.
+        if (h.src1[i] >= 0 && h.src1[i] < h.n_insns) {
+            if (pp_i > last_use[h.src1[i]])
+                last_use[h.src1[i]] = pp_i;
+        }
+
+        // src2 is a value reference EXCEPT for BRC (where it's a block).
+        if (h.kind[i] != HIR_BRC && h.src2[i] >= 0 && h.src2[i] < h.n_insns) {
+            if (pp_i > last_use[h.src2[i]])
+                last_use[h.src2[i]] = pp_i;
+        }
+
+        // Call/strcat arguments.
+        if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
+            for (int j = 0; j < h.cnargs[i]; j++) {
+                int arg = h.carg[h.cbase[i] + j];
+                if (arg >= 0 && arg < h.n_insns) {
+                    if (pp_i > last_use[arg])
+                        last_use[arg] = pp_i;
+                }
+            }
+        }
+
+        // PHI arguments: value is used at end of predecessor block.
+        if (h.kind[i] == HIR_PHI) {
+            for (int j = 0; j < h.pnargs[i]; j++) {
+                int val = h.pval[h.pbase[i] + j];
+                int pred_blk = h.pblk[h.pbase[i] + j];
+                if (val >= 0 && val < h.n_insns &&
+                    pred_blk >= 0 && pred_blk < h.n_blocks) {
+                    int end_pp = block_end_pp[pred_blk];
+                    if (end_pp > last_use[val])
+                        last_use[val] = end_pp;
+                }
+            }
+        }
+    }
+
+    // The final result must survive to the end of the program.
+    if (h.result >= 0 && h.result < h.n_insns && needs_int_reg(h, h.result)) {
+        last_use[h.result] = max_pp - 1;
+    }
+
+    // Build intervals for integer-typed values.
+    intervals.clear();
+    for (int i = 0; i < h.n_insns; i++) {
+        if (!needs_int_reg(h, i)) continue;
+        if (prog_point[i] < 0) continue;  // unreachable
+
+        int def = prog_point[i];
+        int end = (last_use[i] >= def) ? last_use[i] : def;
+
+        intervals.push_back({i, def, end});
+    }
+}
+
+// Poletto-Sarkar linear scan register allocation.
+//
+static reg_alloc_result linear_scan(std::vector<live_interval> &intervals) {
+    reg_alloc_result result;
+    memset(result.reg, 0, sizeof(result.reg));
+    memset(result.spill_slot, -1, sizeof(result.spill_slot));
+    result.n_spill_slots = 0;
+
+    if (intervals.empty()) return result;
+
+    // Sort intervals by start point.
+    std::sort(intervals.begin(), intervals.end(),
+              [](const live_interval &a, const live_interval &b) {
+                  return a.start < b.start;
+              });
+
+    // Free register pool (stack-based for fast alloc/free).
+    uint8_t free_regs[RA_NUM_REGS];
+    int n_free = RA_NUM_REGS;
+    for (int i = 0; i < RA_NUM_REGS; i++) {
+        free_regs[i] = RA_REGS[RA_NUM_REGS - 1 - i];  // s11 at bottom
+    }
+
+    // Active intervals, sorted by end point ascending.
+    // Small-N (max 11 entries), so linear insertion is fine.
+    struct active_entry {
+        int end;
+        int value;
+        uint8_t reg;
+    };
+    std::vector<active_entry> active;
+
+    for (auto &iv : intervals) {
+        // ExpireOldIntervals: remove intervals that ended before iv.start.
+        size_t j = 0;
+        while (j < active.size()) {
+            if (active[j].end >= iv.start) break;  // sorted: rest are live
+            // Return register to free pool.
+            free_regs[n_free++] = active[j].reg;
+            active.erase(active.begin() + j);
+            // Don't increment j — next element shifted down.
+        }
+
+        if (n_free > 0) {
+            // Assign a register.
+            uint8_t reg = free_regs[--n_free];
+            result.reg[iv.value] = reg;
+
+            // Insert into active, maintaining sort by end.
+            active_entry ae = {iv.end, iv.value, reg};
+            auto pos = std::lower_bound(active.begin(), active.end(), ae,
+                [](const active_entry &a, const active_entry &b) {
+                    return a.end < b.end;
+                });
+            active.insert(pos, ae);
+        } else {
+            // Spill: evict the interval ending furthest in the future.
+            auto &spill = active.back();  // largest end
+            if (spill.end > iv.end) {
+                // Spill the active interval, give its register to iv.
+                result.reg[iv.value] = spill.reg;
+                result.reg[spill.value] = 0;
+                result.spill_slot[spill.value] = result.n_spill_slots++;
+
+                // Remove spilled interval from active.
+                active.pop_back();
+
+                // Insert iv into active.
+                active_entry ae = {iv.end, iv.value, result.reg[iv.value]};
+                auto pos = std::lower_bound(active.begin(), active.end(), ae,
+                    [](const active_entry &a, const active_entry &b) {
+                        return a.end < b.end;
+                    });
+                active.insert(pos, ae);
+            } else {
+                // Spill the new interval (it ends later than everything).
+                result.spill_slot[iv.value] = result.n_spill_slots++;
+            }
+        }
+    }
+
+    return result;
+}
+
+// Spill slot stack offset: -8*(slot+1) from SP.
+static int32_t spill_offset(int slot) {
+    return -8 * (slot + 1);
+}
+
+// Emit SD reg, off(sp) — store integer register to spill slot.
+static void emit_spill_store(std::vector<uint32_t> &code, uint8_t reg, int slot) {
+    code.push_back(rv_SD(2, reg, spill_offset(slot)));
+}
+
+// Emit LD rd, off(sp) — reload integer register from spill slot.
+static void emit_spill_load(std::vector<uint32_t> &code, uint8_t rd, int slot) {
+    code.push_back(rv_LD(rd, 2, spill_offset(slot)));
+}
+
+// Get the register holding integer value v, reloading from spill
+// slot if necessary.  scratch = register to reload into if spilled.
+//
+static uint8_t ra_get_reg(rv_compiler &rc, hir_loc *loc, int v,
+                           uint8_t scratch) {
+    if (v < 0) return 0;
+    if (loc[v].spill_slot >= 0 && !loc[v].in_reg) {
+        emit_spill_load(rc.code, scratch, loc[v].spill_slot);
+        return scratch;
+    }
+    return loc[v].reg;
+}
+
+// Set loc[i] from allocation result and optionally emit spill.
+// dest = the register the value was computed into.
+// Returns the destination register.
+//
+static void ra_set_loc(rv_compiler &rc, hir_loc *loc,
+                        reg_alloc_result &alloc, int i, uint8_t computed_in) {
+    uint8_t assigned = alloc.reg[i];
+    int slot = alloc.spill_slot[i];
+
+    if (assigned != 0) {
+        // Value lives in a register.
+        loc[i].reg = assigned;
+        loc[i].in_reg = true;
+        loc[i].spill_slot = -1;
+    } else if (slot >= 0) {
+        // Value is spilled — emit store.
+        emit_spill_store(rc.code, computed_in, slot);
+        loc[i].reg = 0;
+        loc[i].in_reg = false;
+        loc[i].spill_slot = slot;
+    }
+}
 
 // Emit PHI copies: when branching from from_blk to to_blk,
 // emit moves for any PHI nodes at the target block.
@@ -1537,14 +1825,29 @@ static void emit_phi_copies(hir_program &h, rv_compiler &rc,
             int val = h.pval[base + j];
             if (val < 0) break;
 
-            if (loc[i].in_reg) {
-                // Integer PHI: MV phi_reg, val_reg.
+            bool phi_is_int = (loc[i].in_reg || loc[i].spill_slot >= 0);
+            if (phi_is_int) {
+                // Integer PHI (registered or spilled).
+                uint8_t phi_dest = loc[i].in_reg ? loc[i].reg : RA_SCRATCH;
+                uint8_t val_reg;
                 if (loc[val].in_reg) {
-                    rc.code.push_back(rv_ADD(loc[i].reg, loc[val].reg, 0));
+                    val_reg = loc[val].reg;
+                } else if (loc[val].spill_slot >= 0) {
+                    // Spilled integer operand: reload.
+                    emit_spill_load(rc.code, RA_SCRATCH2, loc[val].spill_slot);
+                    val_reg = RA_SCRATCH2;
                 } else {
                     // String value used as int PHI — load addr and atoi.
                     rv_load_val(rc.code, 10, loc[val].addr);
-                    rv_emit_atoi(rc.code, 10, loc[i].reg);
+                    rv_emit_atoi(rc.code, 10, phi_dest);
+                    if (loc[i].spill_slot >= 0 && !loc[i].in_reg) {
+                        emit_spill_store(rc.code, phi_dest, loc[i].spill_slot);
+                    }
+                    break;
+                }
+                rc.code.push_back(rv_ADD(phi_dest, val_reg, 0));
+                if (loc[i].spill_slot >= 0 && !loc[i].in_reg) {
+                    emit_spill_store(rc.code, phi_dest, loc[i].spill_slot);
                 }
             } else {
                 // String PHI: copy string to PHI's output buffer.
@@ -1552,9 +1855,13 @@ static void emit_phi_copies(hir_program &h, rv_compiler &rc,
                     // Integer val → ITOA to PHI buffer.
                     rv_load_val(rc.code, 10, loc[i].addr);
                     rv_emit_itoa(rc.code, loc[val].reg, 10);
+                } else if (loc[val].spill_slot >= 0) {
+                    // Spilled integer val → reload, then ITOA.
+                    emit_spill_load(rc.code, RA_SCRATCH, loc[val].spill_slot);
+                    rv_load_val(rc.code, 10, loc[i].addr);
+                    rv_emit_itoa(rc.code, RA_SCRATCH, 10);
                 } else {
                     // String → string: byte copy.
-                    // Use t1(x6), t2(x7) as temp src/dest regs.
                     rv_load_val(rc.code, 7, loc[i].addr);    // t2 = dest
                     rv_load_val(rc.code, 6, loc[val].addr);  // t1 = src
                     rv_emit_strcpy(rc.code, 7, 6);
@@ -1569,25 +1876,37 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
     // Location map: where each instruction's result lives.
     hir_loc loc[HIR_MAX_INSNS];
     memset(loc, 0, sizeof(loc));
+    for (int i = 0; i < h.n_insns; i++) loc[i].spill_slot = -1;
 
     // Block code offsets for branch backpatching.
     int block_offset[HIR_MAX_BLOCKS];
     memset(block_offset, 0, sizeof(block_offset));
     std::vector<branch_patch> patches;
 
+    // Run linear scan register allocation.
+    std::vector<live_interval> intervals;
+    compute_live_ranges(h, intervals);
+    reg_alloc_result alloc = linear_scan(intervals);
+
     // Pre-allocate PHI locations before codegen starts.
     for (int i = 0; i < h.n_insns; i++) {
         if (h.kind[i] == HIR_PHI) {
             if (h.ty[i] == TY_INT) {
-                uint8_t reg = rc.alloc_int_reg();
+                uint8_t reg = alloc.reg[i];
                 if (reg) {
                     loc[i].reg = reg;
                     loc[i].in_reg = true;
+                    loc[i].spill_slot = -1;
+                } else if (alloc.spill_slot[i] >= 0) {
+                    loc[i].reg = 0;
+                    loc[i].in_reg = false;
+                    loc[i].spill_slot = alloc.spill_slot[i];
                 }
             } else {
                 uint64_t out = rc.alloc_output();
                 loc[i].addr = out;
                 loc[i].in_reg = false;
+                loc[i].spill_slot = -1;
             }
         }
     }
@@ -1607,36 +1926,39 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                 break;
 
             case HIR_ICONST: {
-                uint8_t reg = rc.alloc_int_reg();
-                if (!reg) break;
-                rv_load_i64(rc.code, reg, h.val[i]);
-                loc[i].reg = reg;
-                loc[i].in_reg = true;
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rv_load_i64(rc.code, dest, h.val[i]);
+                ra_set_loc(rc, loc, alloc, i, dest);
                 break;
             }
 
             case HIR_ATOI: {
                 int s1 = h.src1[i];
-                uint8_t reg = rc.alloc_int_reg();
-                if (!reg) break;
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
                 if (h.kind[s1] == HIR_SCONST) {
                     int64_t v = static_cast<int64_t>(
                         mux_atol(u8(h.sval[s1])));
-                    rv_load_i64(rc.code, reg, v);
+                    rv_load_i64(rc.code, dest, v);
                 } else {
                     rv_load_val(rc.code, 10, loc[s1].addr);
-                    rv_emit_atoi(rc.code, 10, reg);
+                    rv_emit_atoi(rc.code, 10, dest);
                 }
-                loc[i].reg = reg;
-                loc[i].in_reg = true;
+                ra_set_loc(rc, loc, alloc, i, dest);
                 break;
             }
 
             case HIR_ITOA: {
                 int s1 = h.src1[i];
+                uint8_t s1r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 uint64_t out_addr = rc.alloc_output();
                 rv_load_val(rc.code, 10, out_addr);
-                rv_emit_itoa(rc.code, loc[s1].reg, 10);
+                rv_emit_itoa(rc.code, s1r, 10);
                 loc[i].addr = out_addr;
                 loc[i].in_reg = false;
                 break;
@@ -1644,131 +1966,162 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
 
             case HIR_ADD: {
                 int s1 = h.src1[i], s2 = h.src2[i];
-                uint8_t reg = rc.alloc_int_reg();
-                if (!reg) break;
-                rc.code.push_back(rv_ADD(reg, loc[s1].reg, loc[s2].reg));
-                loc[i].reg = reg;
-                loc[i].in_reg = true;
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_ADD(dest, r1, r2));
+                ra_set_loc(rc, loc, alloc, i, dest);
                 break;
             }
             case HIR_SUB: {
                 int s1 = h.src1[i], s2 = h.src2[i];
-                uint8_t reg = rc.alloc_int_reg();
-                if (!reg) break;
-                rc.code.push_back(rv_SUB(reg, loc[s1].reg, loc[s2].reg));
-                loc[i].reg = reg;
-                loc[i].in_reg = true;
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_SUB(dest, r1, r2));
+                ra_set_loc(rc, loc, alloc, i, dest);
                 break;
             }
             case HIR_MUL: {
                 int s1 = h.src1[i], s2 = h.src2[i];
-                uint8_t reg = rc.alloc_int_reg();
-                if (!reg) break;
-                rc.code.push_back(rv_MUL(reg, loc[s1].reg, loc[s2].reg));
-                loc[i].reg = reg;
-                loc[i].in_reg = true;
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_MUL(dest, r1, r2));
+                ra_set_loc(rc, loc, alloc, i, dest);
                 break;
             }
             case HIR_REM: {
                 int s1 = h.src1[i], s2 = h.src2[i];
-                uint8_t reg = rc.alloc_int_reg();
-                if (!reg) break;
-                rc.code.push_back(rv_REM(reg, loc[s1].reg, loc[s2].reg));
-                loc[i].reg = reg;
-                loc[i].in_reg = true;
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_REM(dest, r1, r2));
+                ra_set_loc(rc, loc, alloc, i, dest);
                 break;
             }
 
             case HIR_EQ: {
                 int s1 = h.src1[i], s2 = h.src2[i];
-                uint8_t reg = rc.alloc_int_reg();
-                if (!reg) break;
-                rc.code.push_back(rv_SUB(5, loc[s1].reg, loc[s2].reg));
-                rc.code.push_back(rv_i_type(OP_IMM, reg, ALU_SLTIU, 5, 1));
-                loc[i].reg = reg;
-                loc[i].in_reg = true;
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_SUB(5, r1, r2));
+                rc.code.push_back(rv_i_type(OP_IMM, dest, ALU_SLTIU, 5, 1));
+                ra_set_loc(rc, loc, alloc, i, dest);
                 break;
             }
             case HIR_NE: {
                 int s1 = h.src1[i], s2 = h.src2[i];
-                uint8_t reg = rc.alloc_int_reg();
-                if (!reg) break;
-                rc.code.push_back(rv_SUB(5, loc[s1].reg, loc[s2].reg));
-                rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLTU, 0, 5, 0));
-                loc[i].reg = reg;
-                loc[i].in_reg = true;
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_SUB(5, r1, r2));
+                rc.code.push_back(rv_r_type(OP_REG, dest, ALU_SLTU, 0, 5, 0));
+                ra_set_loc(rc, loc, alloc, i, dest);
                 break;
             }
             case HIR_GT: {
                 int s1 = h.src1[i], s2 = h.src2[i];
-                uint8_t reg = rc.alloc_int_reg();
-                if (!reg) break;
-                rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLT,
-                                             loc[s2].reg, loc[s1].reg, 0));
-                loc[i].reg = reg;
-                loc[i].in_reg = true;
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_r_type(OP_REG, dest, ALU_SLT, r2, r1, 0));
+                ra_set_loc(rc, loc, alloc, i, dest);
                 break;
             }
             case HIR_LT: {
                 int s1 = h.src1[i], s2 = h.src2[i];
-                uint8_t reg = rc.alloc_int_reg();
-                if (!reg) break;
-                rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLT,
-                                             loc[s1].reg, loc[s2].reg, 0));
-                loc[i].reg = reg;
-                loc[i].in_reg = true;
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_r_type(OP_REG, dest, ALU_SLT, r1, r2, 0));
+                ra_set_loc(rc, loc, alloc, i, dest);
                 break;
             }
             case HIR_GE: {
                 int s1 = h.src1[i], s2 = h.src2[i];
-                uint8_t reg = rc.alloc_int_reg();
-                if (!reg) break;
-                rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLT,
-                                             loc[s1].reg, loc[s2].reg, 0));
-                rc.code.push_back(rv_i_type(OP_IMM, reg, ALU_XORI, reg, 1));
-                loc[i].reg = reg;
-                loc[i].in_reg = true;
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_r_type(OP_REG, dest, ALU_SLT, r1, r2, 0));
+                rc.code.push_back(rv_i_type(OP_IMM, dest, ALU_XORI, dest, 1));
+                ra_set_loc(rc, loc, alloc, i, dest);
                 break;
             }
             case HIR_LE: {
                 int s1 = h.src1[i], s2 = h.src2[i];
-                uint8_t reg = rc.alloc_int_reg();
-                if (!reg) break;
-                rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLT,
-                                             loc[s2].reg, loc[s1].reg, 0));
-                rc.code.push_back(rv_i_type(OP_IMM, reg, ALU_XORI, reg, 1));
-                loc[i].reg = reg;
-                loc[i].in_reg = true;
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_r_type(OP_REG, dest, ALU_SLT, r2, r1, 0));
+                rc.code.push_back(rv_i_type(OP_IMM, dest, ALU_XORI, dest, 1));
+                ra_set_loc(rc, loc, alloc, i, dest);
                 break;
             }
 
             case HIR_NOT: {
                 int s1 = h.src1[i];
-                uint8_t reg = rc.alloc_int_reg();
-                if (!reg) break;
-                rc.code.push_back(rv_i_type(OP_IMM, reg, ALU_SLTIU,
-                                             loc[s1].reg, 1));
-                loc[i].reg = reg;
-                loc[i].in_reg = true;
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_i_type(OP_IMM, dest, ALU_SLTIU, r1, 1));
+                ra_set_loc(rc, loc, alloc, i, dest);
                 break;
             }
 
             case HIR_INC: {
                 int s1 = h.src1[i];
-                uint8_t reg = rc.alloc_int_reg();
-                if (!reg) break;
-                rc.code.push_back(rv_ADDI(reg, loc[s1].reg, 1));
-                loc[i].reg = reg;
-                loc[i].in_reg = true;
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_ADDI(dest, r1, 1));
+                ra_set_loc(rc, loc, alloc, i, dest);
                 break;
             }
             case HIR_DEC: {
                 int s1 = h.src1[i];
-                uint8_t reg = rc.alloc_int_reg();
-                if (!reg) break;
-                rc.code.push_back(rv_ADDI(reg, loc[s1].reg, -1));
-                loc[i].reg = reg;
-                loc[i].in_reg = true;
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_ADDI(dest, r1, -1));
+                ra_set_loc(rc, loc, alloc, i, dest);
                 break;
             }
 
@@ -1811,7 +2164,16 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
 
             case HIR_COPY: {
                 int s1 = h.src1[i];
-                if (s1 >= 0) {
+                if (s1 < 0) break;
+                if (needs_int_reg(h, i)) {
+                    uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH2);
+                    uint8_t reg = alloc.reg[i];
+                    bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                    uint8_t dest = spilled ? RA_SCRATCH : reg;
+                    if (!dest) { loc[i] = loc[s1]; break; }
+                    rc.code.push_back(rv_ADD(dest, r1, 0));
+                    ra_set_loc(rc, loc, alloc, i, dest);
+                } else {
                     loc[i] = loc[s1];
                 }
                 break;
@@ -1827,10 +2189,12 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                 int true_blk = static_cast<int>(h.val[i]);
                 int false_blk = h.src2[i];
 
+                uint8_t cond_reg = ra_get_reg(rc, loc, cond_insn, RA_SCRATCH);
+
                 // Emit PHI copies for true path, then BNE.
                 emit_phi_copies(h, rc, loc, b, true_blk);
                 int bne_idx = static_cast<int>(rc.code.size());
-                rc.code.push_back(rv_BNE(loc[cond_insn].reg, 0, 0));
+                rc.code.push_back(rv_BNE(cond_reg, 0, 0));
                 patches.push_back({bne_idx, true_blk});
 
                 // Emit PHI copies for false path.
@@ -1901,6 +2265,13 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
             uint64_t out_addr = rc.alloc_output();
             rv_load_val(rc.code, 10, out_addr);
             rv_emit_itoa(rc.code, loc[ri].reg, 10);
+            rc.final_out = out_addr;
+        } else if (loc[ri].spill_slot >= 0) {
+            // Final result is spilled — reload and ITOA.
+            uint64_t out_addr = rc.alloc_output();
+            emit_spill_load(rc.code, RA_SCRATCH, loc[ri].spill_slot);
+            rv_load_val(rc.code, 10, out_addr);
+            rv_emit_itoa(rc.code, RA_SCRATCH, 10);
             rc.final_out = out_addr;
         } else {
             rc.final_out = loc[ri].addr;
