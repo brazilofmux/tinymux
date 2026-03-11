@@ -63,15 +63,15 @@ enum hir_kind {
 
     // SSA (M2+)
     HIR_COPY,       // src1 = source value
-    HIR_PHI,        // phi node
+    HIR_PHI,        // phi node: val = %q register number
 
     // Memory (M2+)
-    HIR_LOAD_Q,     // load %q register
-    HIR_STORE_Q,    // store %q register
+    HIR_LOAD_Q,     // load %q register: val = register number
+    HIR_STORE_Q,    // store %q register: val = register number, src1 = value
 
     // Control flow (M2+)
-    HIR_BR,         // unconditional branch
-    HIR_BRC,        // conditional branch
+    HIR_BR,         // unconditional branch: val = target block
+    HIR_BRC,        // conditional branch: src1 = cond, val = true block, src2 = false block
 
     HIR_NUM_KINDS
 };
@@ -93,6 +93,9 @@ enum hir_type {
 static constexpr int HIR_MAX_INSNS  = 4096;
 static constexpr int HIR_MAX_BLOCKS = 256;
 static constexpr int HIR_MAX_CARGS  = 2048;
+static constexpr int HIR_MAX_PARGS  = 4096;
+static constexpr int HIR_MAX_PREDS  = 2048;
+static constexpr int HIR_NUM_QREGS  = 10;
 
 struct hir_program {
     // Per-instruction arrays.
@@ -127,8 +130,44 @@ struct hir_program {
     // For HIR_CALL: function index (engine_api index) or 0 for string-based.
     int func_idx[HIR_MAX_INSNS];
 
+    // PHI arguments (flattened array, M2+).
+    // For HIR_PHI at instruction i:
+    //   pbase[i] = starting index into pblk[]/pval[]
+    //   pnargs[i] = number of PHI arguments
+    //   pblk[pbase[i]+j] = predecessor block
+    //   pval[pbase[i]+j] = value (insn index) from that predecessor
+    //
+    int pblk[HIR_MAX_PARGS];
+    int pval[HIR_MAX_PARGS];
+    int pbase[HIR_MAX_INSNS];
+    int pnargs[HIR_MAX_INSNS];
+    int n_pargs;
+
+    // ---------------------------------------------------------------
     // Basic blocks (M2+; M1 uses block 0 only).
+    // ---------------------------------------------------------------
+
     int n_blocks;
+    int block_first[HIR_MAX_BLOCKS];    // first insn in block
+    int block_last[HIR_MAX_BLOCKS];     // last insn in block (inclusive)
+
+    // CFG edges.
+    int block_succ[HIR_MAX_BLOCKS][2];  // successors (-1 = none)
+    int block_nsucc[HIR_MAX_BLOCKS];    // number of successors (0-2)
+
+    // Predecessor list (flattened).
+    int pred_list[HIR_MAX_PREDS];
+    int pred_base[HIR_MAX_BLOCKS];
+    int n_pred[HIR_MAX_BLOCKS];
+    int n_pred_total;
+
+    // Reverse post order.
+    int rpo[HIR_MAX_BLOCKS];            // blocks in RPO
+    int rpo_pos[HIR_MAX_BLOCKS];        // position in RPO for each block
+    int n_rpo;
+
+    // Dominator tree.
+    int idom[HIR_MAX_BLOCKS];           // immediate dominator (-1 = none)
 
     // Final result instruction index.
     int result;
@@ -142,12 +181,24 @@ struct hir_program {
     void init() {
         n_insns = 0;
         n_cargs = 0;
+        n_pargs = 0;
         n_blocks = 1;
+        n_pred_total = 0;
+        n_rpo = 0;
         result = -1;
         folds = 0;
         ecalls = 0;
         native_ops = 0;
         needs_jit = false;
+
+        // Initialize block 0.
+        block_first[0] = 0;
+        block_last[0] = -1;
+        block_succ[0][0] = block_succ[0][1] = -1;
+        block_nsucc[0] = 0;
+        pred_base[0] = 0;
+        n_pred[0] = 0;
+        idom[0] = -1;
     }
 
     // Emit an instruction, return its index.
@@ -160,12 +211,16 @@ struct hir_program {
         src1[i] = s1;
         src2[i] = s2;
         val[i] = v;
-        blk[i] = 0;
+        blk[i] = n_blocks - 1;
         cbase[i] = 0;
         cnargs[i] = 0;
         func_idx[i] = 0;
+        pbase[i] = 0;
+        pnargs[i] = 0;
         sval[i].clear();
         known_int[i] = false;
+        // Update block instruction range.
+        block_last[n_blocks - 1] = i;
         return i;
     }
 
@@ -210,6 +265,43 @@ struct hir_program {
         return i;
     }
 
+    // Emit a PHI node with arguments.
+    int emit_phi(hir_type t, int qreg,
+                 const int *blocks, const int *vals, int nargs) {
+        int i = emit(HIR_PHI, t, -1, -1, qreg);
+        if (i < 0) return -1;
+        if (n_pargs + nargs > HIR_MAX_PARGS) return -1;
+        pbase[i] = n_pargs;
+        pnargs[i] = nargs;
+        for (int j = 0; j < nargs; j++) {
+            pblk[n_pargs] = blocks[j];
+            pval[n_pargs] = vals[j];
+            n_pargs++;
+        }
+        return i;
+    }
+
+    // Start a new basic block.  Returns block index.
+    int new_block() {
+        if (n_blocks >= HIR_MAX_BLOCKS) return -1;
+        int b = n_blocks++;
+        block_first[b] = n_insns;
+        block_last[b] = -1;
+        block_succ[b][0] = block_succ[b][1] = -1;
+        block_nsucc[b] = 0;
+        pred_base[b] = 0;
+        n_pred[b] = 0;
+        idom[b] = -1;
+        return b;
+    }
+
+    // Add a CFG edge from block src to block dst.
+    void add_edge(int src, int dst) {
+        if (block_nsucc[src] < 2) {
+            block_succ[src][block_nsucc[src]++] = dst;
+        }
+    }
+
     // Is instruction i a compile-time constant?
     bool is_const(int i) const {
         return i >= 0 && (kind[i] == HIR_ICONST || kind[i] == HIR_SCONST);
@@ -238,5 +330,9 @@ struct hir_program {
         return "";
     }
 };
+
+// SSA construction (hir_ssa.cpp).
+void hir_build_cfg(hir_program &h);
+void hir_ssa_construct(hir_program &h);
 
 #endif // HIR_H

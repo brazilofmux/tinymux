@@ -18,7 +18,8 @@ ENGINE_CXX_SRC = ast.cpp ast_scan.cpp attrcache.cpp boolexp.cpp \
     local.cpp log.cpp look.cpp mail.cpp match.cpp mguests.cpp \
     move.cpp object.cpp predicates.cpp player.cpp player_c.cpp \
     plusemail.cpp powers.cpp quota.cpp rob.cpp set.cpp \
-    dbt.cpp dbt_compile.cpp dbt_harness.cpp dbt_interp.cpp dbt_elf64.cpp session.cpp speech.cpp timer.cpp \
+    dbt.cpp dbt_compile.cpp dbt_harness.cpp dbt_interp.cpp dbt_elf64.cpp \
+    hir_ssa.cpp session.cpp speech.cpp timer.cpp \
     unparse.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp
 
 # Add reality levels if enabled

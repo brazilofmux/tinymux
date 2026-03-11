@@ -899,7 +899,23 @@ static bool returns_int(const std::string &upper) {
 //
 // Produces a linear sequence of HIR instructions from the AST.
 // Constant folding and native arithmetic decisions happen here.
+//
+// %q register tracking (M2):
+//   For single-block programs, setq/setr/r are handled at compile
+//   time via the qreg[] array.  Each entry tracks the HIR instruction
+//   index currently holding that register's value.
+//   For multi-block programs (M4+), STORE_Q/LOAD_Q instructions
+//   are emitted and SSA construction promotes them.
 // ===============================================================
+
+// Compile-time %q register tracking.
+static int qreg[HIR_NUM_QREGS];
+static bool qreg_used;  // true if any setq/setr/r was seen
+
+static void qreg_init() {
+    for (int i = 0; i < HIR_NUM_QREGS; i++) qreg[i] = -1;
+    qreg_used = false;
+}
 
 static int hir_lower_node(hir_program &h, rv_compiler &rc,
                            const ASTNode *node);
@@ -951,6 +967,63 @@ static int hir_lower_sequence(hir_program &h, rv_compiler &rc,
 //
 static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                                const ASTNode *node) {
+    // ---------------------------------------------------------------
+    // %q register operations (compile-time tracking for single block).
+    // ---------------------------------------------------------------
+
+    // Uppercase name for comparison.
+    std::string fname = node->text;
+    for (auto &c : fname)
+        c = static_cast<char>(toupper(static_cast<unsigned char>(c)));
+
+    // r(n) — read %q register.
+    if (fname == "R" && node->children.size() == 1) {
+        // Register number must be a literal constant 0-9.
+        const ASTNode *arg0 = node->children[0].get();
+        if (arg0->type == AST_LITERAL && !arg0->text.empty()) {
+            int rn = arg0->text[0] - '0';
+            if (rn >= 0 && rn < HIR_NUM_QREGS && qreg[rn] >= 0) {
+                qreg_used = true;
+                return qreg[rn];
+            }
+        }
+        // Fall through to ECALL if register number unknown or not set.
+    }
+
+    // setq(n, value) — set %q register, return empty string.
+    if (fname == "SETQ" && node->children.size() == 2) {
+        const ASTNode *arg0 = node->children[0].get();
+        if (arg0->type == AST_LITERAL && !arg0->text.empty()) {
+            int rn = arg0->text[0] - '0';
+            if (rn >= 0 && rn < HIR_NUM_QREGS) {
+                int val = hir_lower_node(h, rc, node->children[1].get());
+                qreg[rn] = val;
+                qreg_used = true;
+                // setq() returns empty string.
+                uint64_t addr = rc.pool_str("");
+                return h.emit_sconst(addr, "");
+            }
+        }
+    }
+
+    // setr(n, value) — set %q register, return value.
+    if (fname == "SETR" && node->children.size() == 2) {
+        const ASTNode *arg0 = node->children[0].get();
+        if (arg0->type == AST_LITERAL && !arg0->text.empty()) {
+            int rn = arg0->text[0] - '0';
+            if (rn >= 0 && rn < HIR_NUM_QREGS) {
+                int val = hir_lower_node(h, rc, node->children[1].get());
+                qreg[rn] = val;
+                qreg_used = true;
+                return val;
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // General function call lowering.
+    // ---------------------------------------------------------------
+
     // Lower arguments.
     std::vector<int> args;
     for (auto &child : node->children) {
@@ -974,10 +1047,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         }
     }
 
-    // Uppercase for native arithmetic checks.
-    std::string upper = node->text;
-    for (auto &c : upper)
-        c = static_cast<char>(toupper(static_cast<unsigned char>(c)));
+    // Use the uppercase name already computed above.
+    const std::string &upper = fname;
 
     // ---------------------------------------------------------------
     // Native integer arithmetic.
@@ -1441,9 +1512,17 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
     rv_compiler rc;
     hir_program h;
     h.init();
+    qreg_init();
     h.result = hir_lower_node(h, rc, ast.get());
 
-    // Phase 2: Codegen HIR → RV64.
+    // Phase 2: SSA construction (for multi-block programs, M4+).
+    // For single-block programs this is a no-op but builds the CFG.
+    hir_build_cfg(h);
+    if (h.n_blocks > 1) {
+        hir_ssa_construct(h);
+    }
+
+    // Phase 3: Codegen HIR → RV64.
     hir_codegen(h, rc);
 
     // Copy code to guest memory.

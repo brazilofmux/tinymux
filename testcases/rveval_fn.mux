@@ -506,11 +506,89 @@
         1
       )=
   {
-    @log smoke=TC033: rveval native chain not(eq(mod(add(rand(1),42),5),0))=1. Succeeded.;
+    @log smoke=TC033: rveval native chain not(eq(mod(add(rand(1),42),5),0))=1. Succeeded.
+  },
+  {
+    @log smoke=TC033: rveval native chain not(eq(mod(add(rand(1),42),5),0))=1. Failed (%q0).
+  }
+-
+#
+# Test Case #34 - setr: setr(0,add(1,2)) returns value = 3.
+#
+&tr.tc034 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(setr(0,add(1,2)))),
+        3
+      )=
+  {
+    @log smoke=TC034: rveval setr(0,add(1,2))=3. Succeeded.
+  },
+  {
+    @log smoke=TC034: rveval setr(0,add(1,2))=3. Failed (%q0).
+  }
+-
+#
+# Test Case #35 - setq+r: setq stores, r retrieves.
+# setq(0,42) returns empty, r(0) returns 42.
+# Sequence: [setq(0,42)][r(0)] = 42.
+#
+&tr.tc035 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(strcat(setq(0,42),r(0)))),
+        42
+      )=
+  {
+    @log smoke=TC035: rveval setq(0,42)+r(0)=42. Succeeded.
+  },
+  {
+    @log smoke=TC035: rveval setq(0,42)+r(0)=42. Failed (%q0).
+  }
+-
+#
+# Test Case #36 - setr+r: setr stores and returns, r retrieves same.
+# setr(0,add(10,20))r(0) = 3030.
+#
+&tr.tc036 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(strcat(setr(0,add(10,20)),r(0)))),
+        3030
+      )=
+  {
+    @log smoke=TC036: rveval setr(0,add(10,20))r(0)=3030. Succeeded.
+  },
+  {
+    @log smoke=TC036: rveval setr(0,add(10,20))r(0)=3030. Failed (%q0).
+  }
+-
+#
+# Test Case #37 - Multiple qregs: setq(0,10) setq(1,20) add(r(0),r(1)) = 30.
+#
+&tr.tc037 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(strcat(setq(0,10),setq(1,20),add(r(0),r(1))))),
+        30
+      )=
+  {
+    @log smoke=TC037: rveval multi-qreg add(r(0),r(1))=30. Succeeded.
+  },
+  {
+    @log smoke=TC037: rveval multi-qreg add(r(0),r(1))=30. Failed (%q0).
+  }
+-
+#
+# Test Case #38 - Chain: setr(0,mul(3,4)) then add(r(0),r(0)) = 24.
+#
+&tr.tc038 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(strcat(setr(0,mul(3,4)),add(r(0),r(0))))),
+        1224
+      )=
+  {
+    @log smoke=TC038: rveval setr(0,mul(3,4))+add(r(0),r(0))=1224. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC033: rveval native chain not(eq(mod(add(rand(1),42),5),0))=1. Failed (%q0).;
+    @log smoke=TC038: rveval setr(0,mul(3,4))+add(r(0),r(0))=1224. Failed (%q0).;
     @trig me/tr.done
   }
 -
