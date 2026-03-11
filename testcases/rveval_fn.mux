@@ -1,0 +1,117 @@
+#
+# rveval_fn.mux - Test Cases for rveval().
+#
+# Tests the RISC-V compiler: rveval() parses a softcode expression,
+# compiles it to RV64 via AST, and runs it through the JIT.
+#
+@create test_rveval_fn
+-
+@set test_rveval_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_rveval_fn=
+  @log smoke=Beginning rveval() test cases.
+-
+#
+# Test Case #1 - Simple add via compiler.
+#
+&tr.tc001 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(add(1,2))),
+        3
+      )=
+  {
+    @log smoke=TC001: rveval add(1,2)=3. Succeeded.
+  },
+  {
+    @log smoke=TC001: rveval add(1,2)=3. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Float add.
+#
+&tr.tc002 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(add(1.5,2.5))),
+        4
+      )=
+  {
+    @log smoke=TC002: rveval add(1.5,2.5)=4. Succeeded.
+  },
+  {
+    @log smoke=TC002: rveval add(1.5,2.5)=4. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Multiply.
+#
+&tr.tc003 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(mul(6,7))),
+        42
+      )=
+  {
+    @log smoke=TC003: rveval mul(6,7)=42. Succeeded.
+  },
+  {
+    @log smoke=TC003: rveval mul(6,7)=42. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - Nested: add(mul(3,4),5) = 17.
+#
+&tr.tc004 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(add(mul(3,4),5))),
+        17
+      )=
+  {
+    @log smoke=TC004: rveval add(mul(3,4),5)=17. Succeeded.
+  },
+  {
+    @log smoke=TC004: rveval add(mul(3,4),5)=17. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - Subtract.
+#
+&tr.tc005 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(sub(100,58))),
+        42
+      )=
+  {
+    @log smoke=TC005: rveval sub(100,58)=42. Succeeded.
+  },
+  {
+    @log smoke=TC005: rveval sub(100,58)=42. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - Deep nesting: add(mul(2,3),mul(4,5)) = 26.
+#
+&tr.tc006 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(add(mul(2,3),mul(4,5)))),
+        26
+      )=
+  {
+    @log smoke=TC006: rveval add(mul(2,3),mul(4,5))=26. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC006: rveval add(mul(2,3),mul(4,5))=26. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_rveval_fn=
+  @log smoke=End rveval() test cases.;
+  @notify smoke
+-
+drop test_rveval_fn
+-
+#
+# End of Test Cases
+#
