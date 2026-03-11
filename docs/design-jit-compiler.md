@@ -472,9 +472,9 @@ Current optimization state:
  - ✅ Immediate size optimization (imm8 short forms)
  - ✅ Zero-register special handling (x0 never stored)
  - ✅ FP sign-injection idioms (fmv.d/fneg.d/fabs.d)
- - ❌ Register cache scoped per-block (flushed at every boundary)
- - ❌ No block chaining (every exit returns to trampoline)
- - ❌ No instruction fusion (LUI+ADDI, SLT+branch, AUIPC+JALR)
+ - ✅ Pinned register persistence: a0-a3 in host regs across chained blocks
+ - ✅ Block chaining: direct JMP between translated blocks, backpatching
+ - ✅ Instruction fusion: LUI+ADDI, AUIPC+ADDI, AUIPC+JALR
  - ❌ No diamond merge (short forward branches → CMOVcc)
  - ❌ No superblocks (no cross-branch block extension)
  - ❌ RAS struct exists but is never used for JALR prediction
