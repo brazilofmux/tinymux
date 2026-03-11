@@ -852,6 +852,36 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
 //   think rveval(strlen(hello))      → 5   (folded)
 // ---------------------------------------------------------------
 
+// ---------------------------------------------------------------
+// Persistent DBT state — avoids mmap/munmap per call.
+//
+// The 64 MB mmap + 1 MB block cache allocation dominated the
+// ECALL path.  By keeping the dbt_state_t alive, we amortize
+// the cost to one-time initialization.
+// ---------------------------------------------------------------
+
+static dbt_state_t s_persistent_dbt;
+static bool s_dbt_ready = false;
+
+// Get a reset DBT state, initializing on first use.
+// Returns nullptr on allocation failure.
+//
+static dbt_state_t *get_dbt(uint8_t *memory, size_t memory_size,
+                             int (*ecall_fn)(rv64_ctx_t *, void *),
+                             void *ecall_user) {
+    dbt_state_t *dbt = &s_persistent_dbt;
+    if (!s_dbt_ready) {
+        if (dbt_init(dbt, memory, memory_size, ecall_fn, ecall_user) != 0) {
+            return nullptr;
+        }
+        s_dbt_ready = true;
+        return dbt;
+    }
+    // Reset for new program: keep mmap'd code buffer + cache allocation.
+    dbt_reset(dbt, memory, memory_size, ecall_fn, ecall_user);
+    return dbt;
+}
+
 // ECALL handler (same as dbt_harness.cpp).
 //
 static constexpr uint64_t ECALL_CALL_FUNC = 0x100;
@@ -968,7 +998,7 @@ FUNCTION(fun_rveval)
         return;
     }
 
-    // Run through the JIT.
+    // Run through the JIT (persistent DBT — no mmap per call).
     eval_ctx ec;
     ec.memory = prog.memory.data();
     ec.memory_size = prog.memory_size;
@@ -976,15 +1006,14 @@ FUNCTION(fun_rveval)
     ec.caller = caller;
     ec.enactor = enactor;
 
-    dbt_state_t dbt;
-    if (dbt_init(&dbt, prog.memory.data(), prog.memory_size,
-                 eval_ecall, &ec) != 0) {
+    dbt_state_t *dbt = get_dbt(prog.memory.data(), prog.memory_size,
+                                eval_ecall, &ec);
+    if (!dbt) {
         safe_str(T("#-1 DBT INIT FAILED"), buff, bufc);
         return;
     }
 
-    int rc = dbt_run(&dbt, 0, rv_compiler::STACK_TOP);
-    dbt_cleanup(&dbt);
+    int rc = dbt_run(dbt, 0, rv_compiler::STACK_TOP);
 
     if (rc != 0) {
         safe_str(T("#-1 DBT EXECUTION ERROR"), buff, bufc);
@@ -1040,14 +1069,11 @@ static bool run_compiled(compiled_program &prog,
     ec.caller = caller_db;
     ec.enactor = enactor;
 
-    dbt_state_t dbt;
-    if (dbt_init(&dbt, prog.memory.data(), prog.memory_size,
-                 eval_ecall, &ec) != 0) {
-        return false;
-    }
+    dbt_state_t *dbt = get_dbt(prog.memory.data(), prog.memory_size,
+                                eval_ecall, &ec);
+    if (!dbt) return false;
 
-    int rc = dbt_run(&dbt, 0, rv_compiler::STACK_TOP);
-    dbt_cleanup(&dbt);
+    int rc = dbt_run(dbt, 0, rv_compiler::STACK_TOP);
 
     if (rc != 0) return false;
 

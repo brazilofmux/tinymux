@@ -983,6 +983,33 @@ int dbt_init(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
     return 0;
 }
 
+void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
+               int (*ecall_fn)(rv64_ctx_t *, void *), void *ecall_user) {
+    // Update program pointers.
+    dbt->memory = memory;
+    dbt->memory_size = memory_size;
+    dbt->ecall_fn = ecall_fn;
+    dbt->ecall_user = ecall_user;
+
+    // Clear block cache (invalidate all translated blocks).
+    memset(dbt->cache, 0, BLOCK_CACHE_SIZE * sizeof(block_entry_t));
+
+    // Reset code buffer after the trampoline and re-emit it.
+    // The trampoline is small (~30 bytes) and identical every time,
+    // but re-emitting is simpler than tracking its exact size.
+    dbt->code_used = 0;
+    emit_trampoline(dbt);
+
+    // Reset statistics.
+    dbt->blocks_translated = 0;
+    dbt->cache_hits = 0;
+    dbt->cache_misses = 0;
+    dbt->insns_translated = 0;
+    dbt->ras_hits = 0;
+    dbt->ras_misses = 0;
+    dbt->trace = 0;
+}
+
 int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
     typedef void (*trampoline_fn_t)(rv64_ctx_t *ctx, uint8_t *mem,
                                      void *block, void *cache);

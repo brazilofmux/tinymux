@@ -114,6 +114,8 @@ struct dbt_state_t {
 //
 int  dbt_init(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
               int (*ecall_fn)(rv64_ctx_t *, void *), void *ecall_user);
+void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
+               int (*ecall_fn)(rv64_ctx_t *, void *), void *ecall_user);
 int  dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top);
 void dbt_cleanup(dbt_state_t *dbt);
 
