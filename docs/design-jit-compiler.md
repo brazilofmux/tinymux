@@ -477,7 +477,7 @@ Current optimization state:
  - ✅ Instruction fusion: LUI+ADDI, AUIPC+ADDI, AUIPC+JALR
  - ✅ Diamond merge: branch-over-one → CMOVcc (ADDI/ADD/SUB/AND/OR/XOR/LUI)
  - ❌ No superblocks (no cross-branch block extension)
- - ❌ RAS struct exists but is never used for JALR prediction
+ - ✅ RAS: JAL rd=x1 pushes, JALR rs1=x1 pops + inline cache probe
  - ❌ No intrinsic stubs (memcpy, strlen as native x86)
 
 **1d. Block cache** — COMPLETE
