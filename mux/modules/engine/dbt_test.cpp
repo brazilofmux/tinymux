@@ -2,10 +2,11 @@
  * \brief Standalone test harness for the RV64IMD interpreter.
  *
  * Compile:
- *   g++ -std=c++17 -O2 -I../../include -o dbt_test dbt_test.cpp dbt_interp.cpp
+ *   g++ -std=c++17 -O2 -I../../include -o dbt_test dbt_test.cpp dbt_interp.cpp dbt_elf64.cpp
  *
  * Run:
- *   ./dbt_test
+ *   ./dbt_test                          # hand-assembled tests only
+ *   ./dbt_test dbt_rt/test_rv64.elf     # also run cross-compiled ELF
  *
  * Tests hand-assembled RV64IMD instruction sequences against expected
  * results.  Each test allocates a small memory buffer, writes machine
@@ -14,10 +15,12 @@
 
 #include "dbt_interp.h"
 #include "dbt_decoder.h"
+#include "dbt_elf64.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <unistd.h>
 #include <cmath>
 #include <vector>
 
@@ -709,15 +712,70 @@ static void test_x0_always_zero() {
 }
 
 // ---------------------------------------------------------------
-// Cross-compiled test (optional, if cross-compiler available)
+// Cross-compiled ELF test
 // ---------------------------------------------------------------
-// Future: load ELF, run, compare against interpreter.
+
+// ECALL handler for ELF binaries: exit + write.
+//
+static int elf_ecall(rv64_state_t *state, void *user_data) {
+    rv64_memory_t *mem = static_cast<rv64_memory_t *>(user_data);
+    uint64_t syscall_num = state->x[17]; // a7
+
+    switch (syscall_num) {
+    case 93: // exit(code)
+        return static_cast<int>(state->x[10]);
+
+    case 64: { // write(fd, buf, len)
+        uint64_t fd  = state->x[10];
+        uint64_t buf = state->x[11];
+        uint64_t len = state->x[12];
+        if (buf + len > mem->size) {
+            state->x[10] = static_cast<uint64_t>(-1LL);
+            return -1;
+        }
+        ssize_t written = write(static_cast<int>(fd),
+                                mem->data + buf, static_cast<size_t>(len));
+        state->x[10] = static_cast<uint64_t>(written);
+        return -1; // continue
+    }
+
+    default:
+        fprintf(stderr, "elf_ecall: unhandled ecall %llu at PC=0x%llX\n",
+                (unsigned long long)syscall_num,
+                (unsigned long long)(state->pc - 4));
+        return -1;
+    }
+}
+
+static bool run_elf_test(const char *path) {
+    printf("\nRunning ELF: %s\n", path);
+
+    rv64_binary_t bin;
+    if (rv64_load_elf(path, &bin) != 0) {
+        fprintf(stderr, "Failed to load %s\n", path);
+        return false;
+    }
+
+    rv64_state_t state = {};
+    state.pc = bin.entry_point;
+    state.x[2] = bin.stack_top; // sp
+
+    rv64_memory_t mem = { bin.memory, bin.memory_size };
+
+    int rc = rv64_interp_run(&state, &mem, elf_ecall, &mem);
+
+    printf("ELF exited with code %d (%llu instructions)\n",
+           rc, (unsigned long long)state.insn_count);
+
+    rv64_free_binary(&bin);
+    return rc == 0;
+}
 
 // ---------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------
 
-int main() {
+int main(int argc, char *argv[]) {
     printf("RV64IMD Interpreter Test Suite\n");
     printf("==============================\n\n");
 
@@ -743,8 +801,22 @@ int main() {
     test_x0_always_zero();
 
     printf("\n==============================\n");
-    printf("Tests: %d run, %d passed, %d failed\n",
+    printf("Hand-assembled: %d run, %d passed, %d failed\n",
            g_tests_run, g_tests_passed, g_tests_failed);
 
-    return (g_tests_failed > 0) ? 1 : 0;
+    // Run ELF tests if provided on command line.
+    //
+    int elf_failures = 0;
+    for (int i = 1; i < argc; i++) {
+        if (!run_elf_test(argv[i])) {
+            elf_failures++;
+        }
+    }
+
+    if (argc > 1) {
+        printf("\nELF tests: %d run, %d passed, %d failed\n",
+               argc - 1, argc - 1 - elf_failures, elf_failures);
+    }
+
+    return (g_tests_failed > 0 || elf_failures > 0) ? 1 : 0;
 }
