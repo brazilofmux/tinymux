@@ -1076,37 +1076,121 @@ static compile_result compile_funccall(rv_compiler &rc, const ASTNode *node) {
     // emit RV64 ADD/SUB instead of ECALL.
     // ---------------------------------------------------------------
 
-    if ((upper == "ADD" || upper == "SUB") && nargs >= 2) {
+    // Helper: try to emit a binary native op.  Returns true if
+    // successful, false if registers exhausted (fall through to ECALL).
+    //
+    auto try_native_binop = [&](auto emit_fn) -> bool {
         bool all_int = true;
         for (auto &ar : arg_results) {
             if (!is_int_result(ar)) { all_int = false; break; }
         }
-        if (all_int && rc.int_reg_idx + nargs < 11) {
-            compile_result acc = ensure_int(rc, arg_results[0]);
-            if (acc.type == RT_INT) {
-                bool ok = true;
-                for (int i = 1; i < nargs; i++) {
-                    compile_result b = ensure_int(rc, arg_results[i]);
-                    if (b.type != RT_INT) { ok = false; break; }
-                    uint8_t rd = rc.alloc_int_reg();
-                    if (!rd) { ok = false; break; }
-                    if (upper == "ADD" || i > 1) {
-                        // SUB only applies to first pair; subsequent args
-                        // would need different semantics.  For n-ary ADD,
-                        // accumulate with ADD.
-                        rc.code.push_back(rv_ADD(rd, acc.reg, b.reg));
-                    } else {
-                        rc.code.push_back(rv_SUB(rd, acc.reg, b.reg));
-                    }
-                    acc = compile_result::int_reg(rd);
+        if (!all_int || rc.int_reg_idx + nargs >= 11) return false;
+        compile_result acc = ensure_int(rc, arg_results[0]);
+        if (acc.type != RT_INT) return false;
+        for (int i = 1; i < nargs; i++) {
+            compile_result b = ensure_int(rc, arg_results[i]);
+            if (b.type != RT_INT) return false;
+            uint8_t rd = rc.alloc_int_reg();
+            if (!rd) return false;
+            emit_fn(rc.code, rd, acc.reg, b.reg, i);
+            acc = compile_result::int_reg(rd);
+        }
+        rc.native_ops++;
+        rc.needs_jit = true;
+        arg_results.clear();  // signal success
+        arg_results.push_back({}); // placeholder
+        arg_results[0] = acc;  // stash result
+        return true;
+    };
+
+    if ((upper == "ADD" || upper == "SUB") && nargs >= 2) {
+        bool is_add = (upper == "ADD");
+        if (try_native_binop([is_add](auto &code, uint8_t rd, uint8_t rs1,
+                                       uint8_t rs2, int i) {
+            if (is_add || i > 1) code.push_back(rv_ADD(rd, rs1, rs2));
+            else                 code.push_back(rv_SUB(rd, rs1, rs2));
+        })) {
+            return arg_results[0];
+        }
+    }
+
+    if (upper == "MUL" && nargs >= 2) {
+        if (try_native_binop([](auto &code, uint8_t rd, uint8_t rs1,
+                                uint8_t rs2, int) {
+            code.push_back(rv_MUL(rd, rs1, rs2));
+        })) {
+            return arg_results[0];
+        }
+    }
+
+    if (upper == "MOD" && nargs == 2) {
+        if (try_native_binop([](auto &code, uint8_t rd, uint8_t rs1,
+                                uint8_t rs2, int) {
+            code.push_back(rv_REM(rd, rs1, rs2));
+        })) {
+            return arg_results[0];
+        }
+    }
+
+    // Native comparisons: eq, neq, gt, gte, lt, lte.
+    // All return 0 or 1 in a register.
+    //
+    if ((upper == "EQ" || upper == "NEQ" || upper == "GT" || upper == "GTE"
+         || upper == "LT" || upper == "LTE") && nargs == 2
+        && is_int_result(arg_results[0]) && is_int_result(arg_results[1])) {
+        compile_result a = ensure_int(rc, arg_results[0]);
+        compile_result b = ensure_int(rc, arg_results[1]);
+        if (a.type == RT_INT && b.type == RT_INT) {
+            uint8_t rd = rc.alloc_int_reg();
+            if (rd) {
+                // SLT rd, rs1, rs2  — set if less than (signed).
+                // We compose comparisons from SUB + SLT + XORI.
+                //
+                if (upper == "EQ") {
+                    // rd = (a == b) ? 1 : 0
+                    // SUB t0, a, b; SLTIU rd, t0, 1
+                    rc.code.push_back(rv_SUB(5, a.reg, b.reg));
+                    rc.code.push_back(rv_i_type(OP_IMM, rd, ALU_SLTIU, 5, 1));
+                } else if (upper == "NEQ") {
+                    // rd = (a != b) ? 1 : 0
+                    // SUB t0, a, b; SLTU rd, x0, t0
+                    rc.code.push_back(rv_SUB(5, a.reg, b.reg));
+                    rc.code.push_back(rv_r_type(OP_REG, rd, ALU_SLTU, 0, 5, 0));
+                } else if (upper == "GT") {
+                    // rd = (a > b) ? 1 : 0 = (b < a) ? 1 : 0
+                    rc.code.push_back(rv_r_type(OP_REG, rd, ALU_SLT, b.reg, a.reg, 0));
+                } else if (upper == "LT") {
+                    // rd = (a < b) ? 1 : 0
+                    rc.code.push_back(rv_r_type(OP_REG, rd, ALU_SLT, a.reg, b.reg, 0));
+                } else if (upper == "GTE") {
+                    // rd = (a >= b) ? 1 : 0 = NOT(a < b)
+                    rc.code.push_back(rv_r_type(OP_REG, rd, ALU_SLT, a.reg, b.reg, 0));
+                    rc.code.push_back(rv_i_type(OP_IMM, rd, ALU_XORI, rd, 1));
+                } else if (upper == "LTE") {
+                    // rd = (a <= b) ? 1 : 0 = NOT(b < a)
+                    rc.code.push_back(rv_r_type(OP_REG, rd, ALU_SLT, b.reg, a.reg, 0));
+                    rc.code.push_back(rv_i_type(OP_IMM, rd, ALU_XORI, rd, 1));
                 }
-                if (ok) {
-                    rc.native_ops++;
-                    rc.needs_jit = true;
-                    return acc;
-                }
+                rc.native_ops++;
+                rc.needs_jit = true;
+                return compile_result::int_reg(rd);
             }
-            // Fall through to ECALL if register allocation failed.
+        }
+    }
+
+    // Native NOT: not(x) = (x == 0) ? 1 : 0
+    //
+    if (upper == "NOT" && nargs == 1 && is_int_result(arg_results[0])) {
+        compile_result a = ensure_int(rc, arg_results[0]);
+        if (a.type == RT_INT) {
+            uint8_t rd = rc.alloc_int_reg();
+            if (rd) {
+                // SLTIU rd, a, 1  — rd = (a < 1u) = (a == 0) ? 1 : 0
+                rc.code.push_back(rv_i_type(OP_IMM, rd, ALU_SLTIU, a.reg, 1));
+                rc.native_ops++;
+                rc.needs_jit = true;
+                return compile_result::int_reg(rd);
+            }
         }
     }
 

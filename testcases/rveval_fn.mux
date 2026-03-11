@@ -414,11 +414,103 @@
         1
       )=
   {
-    @log smoke=TC027: rveval fdiv(10,3)>3.33. Succeeded.;
+    @log smoke=TC027: rveval fdiv(10,3)>3.33. Succeeded.
+  },
+  {
+    @log smoke=TC027: rveval fdiv(10,3)>3.33. Failed (%q0).
+  }
+-
+#
+# Test Case #28 - Native mul: mul(rand(1),0) = 0 (forces JIT path).
+#
+&tr.tc028 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(mul(rand(1),0))),
+        0
+      )=
+  {
+    @log smoke=TC028: rveval native mul(rand(1),0)=0. Succeeded.
+  },
+  {
+    @log smoke=TC028: rveval native mul(rand(1),0)=0. Failed (%q0).
+  }
+-
+#
+# Test Case #29 - Native mod: mod(add(rand(1),10),5) = 0.
+# rand(1) always returns 0, so add(0,10)=10, mod(10,5)=0.
+#
+&tr.tc029 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(mod(add(rand(1),10),5))),
+        0
+      )=
+  {
+    @log smoke=TC029: rveval native mod(add(rand(1),10),5)=0. Succeeded.
+  },
+  {
+    @log smoke=TC029: rveval native mod(add(rand(1),10),5)=0. Failed (%q0).
+  }
+-
+#
+# Test Case #30 - Native eq: eq(add(rand(1),5),5) = 1.
+#
+&tr.tc030 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(eq(add(rand(1),5),5))),
+        1
+      )=
+  {
+    @log smoke=TC030: rveval native eq(add(rand(1),5),5)=1. Succeeded.
+  },
+  {
+    @log smoke=TC030: rveval native eq(add(rand(1),5),5)=1. Failed (%q0).
+  }
+-
+#
+# Test Case #31 - Native gt: gt(add(rand(1),10),5) = 1.
+#
+&tr.tc031 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(gt(add(rand(1),10),5))),
+        1
+      )=
+  {
+    @log smoke=TC031: rveval native gt(add(rand(1),10),5)=1. Succeeded.
+  },
+  {
+    @log smoke=TC031: rveval native gt(add(rand(1),10),5)=1. Failed (%q0).
+  }
+-
+#
+# Test Case #32 - Native not: not(rand(1)) = 1 (rand(1)=0, not(0)=1).
+#
+&tr.tc032 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(not(rand(1)))),
+        1
+      )=
+  {
+    @log smoke=TC032: rveval native not(rand(1))=1. Succeeded.
+  },
+  {
+    @log smoke=TC032: rveval native not(rand(1))=1. Failed (%q0).
+  }
+-
+#
+# Test Case #33 - Chain: not(eq(mod(add(rand(1),42),5),0)) = 1.
+# All native: rand(1)=0, add(0,42)=42, mod(42,5)=2, eq(2,0)=0, not(0)=1.
+#
+&tr.tc033 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(not(eq(mod(add(rand(1),42),5),0)))),
+        1
+      )=
+  {
+    @log smoke=TC033: rveval native chain not(eq(mod(add(rand(1),42),5),0))=1. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC027: rveval fdiv(10,3)>3.33. Failed (%q0).;
+    @log smoke=TC033: rveval native chain not(eq(mod(add(rand(1),42),5),0))=1. Failed (%q0).;
     @trig me/tr.done
   }
 -

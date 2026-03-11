@@ -97,7 +97,22 @@
 #
 &tr.tc012 test_rvbench_fn=
   @log smoke=BENCH012:
-    [rvbench(lnum(add(2,3)),10000)];
+    [rvbench(lnum(add(2,3)),10000)]
+-
+#
+# Benchmark #13 - Native mul: mul(rand(100),rand(100)).
+#
+&tr.tc013 test_rvbench_fn=
+  @log smoke=BENCH013:
+    [rvbench(mul(rand(100),rand(100)),10000)]
+-
+#
+# Benchmark #14 - Native chain: not(eq(mod(add(rand(1),42),5),0)).
+# 1 ECALL (rand) + 5 native ops (add, mod, eq, not — all in RV64).
+#
+&tr.tc014 test_rvbench_fn=
+  @log smoke=BENCH014:
+    [rvbench(not(eq(mod(add(rand(1),42),5),0)),10000)];
   @trig me/tr.done
 -
 &tr.done test_rvbench_fn=
