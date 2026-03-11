@@ -67,6 +67,18 @@ static constexpr size_t BLOCK_CACHE_MASK = BLOCK_CACHE_SIZE - 1;
 
 static constexpr size_t CODE_BUF_SIZE = 256 * 1024;    // 256 KB JIT buffer
 
+// Block chaining: patch site for backpatching JMP targets.
+// When a block exit targets a not-yet-translated PC, we record a patch
+// site.  When that PC is later translated, we backpatch the JMP to go
+// directly to the new native code, eliminating the trampoline round-trip.
+//
+struct patch_site_t {
+    uint32_t jmp_offset;    // offset in code_buf of the JMP rel32 displacement
+    uint64_t target_pc;     // guest PC this exit wants to reach
+};
+
+static constexpr size_t MAX_PATCH_SITES = 8192;
+
 // Max guest instructions per translated block.
 //
 static constexpr int MAX_BLOCK_INSNS = 64;
@@ -90,6 +102,11 @@ struct dbt_state_t {
     uint8_t *code_buf;
     uint32_t code_used;
 
+    // Block chaining patch sites.
+    //
+    patch_site_t *patches;
+    uint32_t num_patches;
+
     // Statistics.
     //
     uint64_t blocks_translated;
@@ -98,6 +115,8 @@ struct dbt_state_t {
     uint64_t insns_translated;
     uint64_t ras_hits;
     uint64_t ras_misses;
+    uint64_t chain_hits;
+    uint64_t chain_misses;
 
     // ECALL callback — same signature as the interpreter.
     // Return >= 0 to exit, < 0 to continue.

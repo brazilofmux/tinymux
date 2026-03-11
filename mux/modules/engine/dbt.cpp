@@ -152,16 +152,74 @@ static void cache_insert(dbt_state_t *dbt, uint64_t pc, uint8_t *code) {
 }
 
 // ---------------------------------------------------------------
+// Block chaining helpers
+// ---------------------------------------------------------------
+
+// Backpatch a JMP rel32 in the code buffer to point to a new target.
+//
+static void backpatch_jmp(uint8_t *code_buf, uint32_t jmp_disp_offset,
+                           uint8_t *target) {
+    int32_t disp = static_cast<int32_t>(
+        target - (code_buf + jmp_disp_offset + 4));
+    memcpy(code_buf + jmp_disp_offset, &disp, 4);
+}
+
+// Backpatch all pending exits that target the given guest PC.
+//
+static void backpatch_chains(dbt_state_t *dbt, uint64_t guest_pc,
+                              uint8_t *native_code) {
+    for (uint32_t i = 0; i < dbt->num_patches; i++) {
+        if (dbt->patches[i].target_pc == guest_pc) {
+            backpatch_jmp(dbt->code_buf, dbt->patches[i].jmp_offset,
+                          native_code);
+            dbt->chain_hits++;
+        }
+    }
+}
+
+// ---------------------------------------------------------------
 // Block exit helpers
 // ---------------------------------------------------------------
 
-// Emit a chained exit: inline cache probe + fallback to trampoline return.
+// Emit a chained exit: if target block is already translated, emit a
+// direct JMP.  Otherwise emit JMP to a slow-path stub and record a
+// patch site for backpatching when the target is later translated.
 //
-static void emit_exit_chained(emit_t *e, uint64_t target_pc) {
-    // Store next_pc and return.
-    // For now, no inline cache probing — just set next_pc and ret.
-    // Block chaining will be added as an optimization later.
-    emit_exit_with_pc(e, target_pc);
+static void emit_exit_chained(emit_t *e, dbt_state_t *dbt,
+                               uint64_t target_pc) {
+    // Check if target is already translated.
+    uint32_t idx = cache_hash(target_pc);
+    block_entry_t *be = &dbt->cache[idx];
+    bool known = (be->guest_pc == target_pc && be->native_code);
+
+    // Emit JMP rel32.
+    emit_byte(e, 0xE9);
+    uint32_t jmp_patch = emit_pos(e);
+    emit_u32(e, 0); // placeholder
+
+    if (known) {
+        // Target already translated — patch JMP to go directly there.
+        // Compute target offset relative to e->buf for emit_patch_rel32.
+        uint32_t target_off = static_cast<uint32_t>(
+            be->native_code - e->buf);
+        emit_patch_rel32(e, jmp_patch, target_off);
+    } else {
+        // Record patch site for backpatching.  Store offset relative to
+        // code_buf (not e->buf) since backpatch_jmp uses code_buf base.
+        uint32_t abs_offset = static_cast<uint32_t>(
+            e->buf - dbt->code_buf) + jmp_patch;
+        if (dbt->num_patches < MAX_PATCH_SITES) {
+            dbt->patches[dbt->num_patches].jmp_offset = abs_offset;
+            dbt->patches[dbt->num_patches].target_pc = target_pc;
+            dbt->num_patches++;
+            dbt->chain_misses++;
+        }
+
+        // Slow-path stub: store next_pc and return to trampoline.
+        uint32_t stub_pos = emit_pos(e);
+        emit_patch_rel32(e, jmp_patch, stub_pos);
+        emit_exit_with_pc(e, target_pc);
+    }
 }
 
 // ---------------------------------------------------------------
@@ -185,7 +243,7 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
     while (count < MAX_BLOCK_INSNS) {
         if (pc + 4 > dbt->memory_size) {
             rc_flush(&e, &rc);
-            emit_exit_chained(&e, pc);
+            emit_exit_chained(&e, dbt, pc);
             break;
         }
 
@@ -234,7 +292,7 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                 emit_mov_r64_imm32(&e, rd, static_cast<int32_t>(pc + 4));
             }
             rc_flush(&e, &rc);
-            emit_exit_chained(&e, target);
+            emit_exit_chained(&e, dbt, target);
             goto done;
         }
 
@@ -273,7 +331,7 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             case 7: cc = JCC_AE; break; // BGEU
             default:
                 rc_flush(&e, &rc);
-                emit_exit_chained(&e, pc);
+                emit_exit_chained(&e, dbt, pc);
                 goto done;
             }
 
@@ -282,12 +340,12 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
 
             // Fall-through: continue to pc+4.
             rc_flush(&e, &rc);
-            emit_exit_chained(&e, pc + 4);
+            emit_exit_chained(&e, dbt, pc + 4);
 
             // Taken path:
             emit_patch_rel32(&e, jcc_patch, emit_pos(&e));
             rc_flush(&e, &rc);
-            emit_exit_chained(&e, target);
+            emit_exit_chained(&e, dbt, target);
             goto done;
         }
 
@@ -881,14 +939,14 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             // Unhandled instruction: skip it (advance PC by 4).
             // The caller should use the interpreter for full coverage.
             rc_flush(&e, &rc);
-            emit_exit_chained(&e, pc + 4);
+            emit_exit_chained(&e, dbt, pc + 4);
             goto done;
         }
     }
 
     // Block size limit reached.
     rc_flush(&e, &rc);
-    emit_exit_chained(&e, pc);
+    emit_exit_chained(&e, dbt, pc);
 
 done:
     dbt->blocks_translated++;
@@ -965,6 +1023,17 @@ int dbt_init(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
         return -1;
     }
 
+    // Allocate patch sites for block chaining.
+    dbt->patches = static_cast<patch_site_t *>(
+        calloc(MAX_PATCH_SITES, sizeof(patch_site_t)));
+    if (!dbt->patches) {
+        fprintf(stderr, "dbt: cannot allocate patch sites\n");
+        free(dbt->cache);
+        dbt->cache = nullptr;
+        return -1;
+    }
+    dbt->num_patches = 0;
+
     // Allocate JIT code buffer (RWX).
     dbt->code_buf = static_cast<uint8_t *>(
         mmap(nullptr, CODE_BUF_SIZE,
@@ -991,8 +1060,9 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
     dbt->ecall_fn = ecall_fn;
     dbt->ecall_user = ecall_user;
 
-    // Clear block cache (invalidate all translated blocks).
+    // Clear block cache and patch sites (invalidate all translated blocks).
     memset(dbt->cache, 0, BLOCK_CACHE_SIZE * sizeof(block_entry_t));
+    dbt->num_patches = 0;
 
     // Reset code buffer after the trampoline and re-emit it.
     // The trampoline is small (~30 bytes) and identical every time,
@@ -1007,6 +1077,8 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
     dbt->insns_translated = 0;
     dbt->ras_hits = 0;
     dbt->ras_misses = 0;
+    dbt->chain_hits = 0;
+    dbt->chain_misses = 0;
     dbt->trace = 0;
 }
 
@@ -1062,6 +1134,9 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
         } else {
             code = translate_block(dbt, pc);
             cache_insert(dbt, pc, code);
+
+            // Backpatch any chained exits that were waiting for this block.
+            backpatch_chains(dbt, pc, code);
         }
 
         // Execute.
@@ -1077,4 +1152,6 @@ void dbt_cleanup(dbt_state_t *dbt) {
     }
     free(dbt->cache);
     dbt->cache = nullptr;
+    free(dbt->patches);
+    dbt->patches = nullptr;
 }
