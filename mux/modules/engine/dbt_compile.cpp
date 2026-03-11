@@ -1389,7 +1389,7 @@ static dbt_state_t *get_dbt(uint8_t *memory, size_t memory_size,
     return dbt;
 }
 
-// ECALL handler (same as dbt_harness.cpp).
+// ECALL handler context and forward declaration.
 //
 static constexpr uint64_t ECALL_CALL_FUNC = 0x100;
 
@@ -1401,6 +1401,129 @@ struct eval_ctx {
     dbref    enactor;
 };
 
+static int eval_ecall(rv64_ctx_t *ctx, void *user_data);
+
+// ---------------------------------------------------------------
+// Compile cache — LRU cache of compiled programs.
+//
+// Keyed by expression text.  Cache hits skip compilation entirely.
+// Combined with DBT block cache persistence (dbt_rerun), repeated
+// evaluation of the same expression does zero compilation and zero
+// JIT translation — just runs the cached native code.
+//
+// The DBT tracks which program it was last set up for.  Same
+// program → dbt_rerun (keep translated blocks).  Different
+// program → dbt_reset (re-translate).
+// ---------------------------------------------------------------
+
+struct compile_cache_entry {
+    compiled_program prog;
+    std::list<std::string>::iterator lru_it;
+};
+
+static std::unordered_map<std::string, compile_cache_entry> s_compile_cache;
+static std::list<std::string> s_compile_lru;
+static constexpr size_t COMPILE_CACHE_MAX = 256;
+static constexpr size_t COMPILE_CACHE_MIN_LEN = 8;
+
+// Track which program the DBT was last set up for, so we can
+// use dbt_rerun (fast) instead of dbt_reset (slow) on cache hits.
+//
+static uint8_t *s_dbt_last_memory = nullptr;
+
+// Look up or compile an expression.  Returns a pointer to the
+// cached compiled_program (owned by the cache — do not free).
+// Returns nullptr on compilation failure.
+//
+static compiled_program *compile_cached(const UTF8 *expr, size_t nLen) {
+    std::string key(reinterpret_cast<const char *>(expr), nLen);
+
+    auto it = s_compile_cache.find(key);
+    if (it != s_compile_cache.end()) {
+        // Cache hit — move to front of LRU.
+        s_compile_lru.splice(s_compile_lru.begin(), s_compile_lru,
+                             it->second.lru_it);
+        return &it->second.prog;
+    }
+
+    // Cache miss — compile.
+    compiled_program prog = compile_expression(expr, nLen);
+    if (!prog.ok) return nullptr;
+
+    // Evict LRU entries if cache is full.
+    while (s_compile_cache.size() >= COMPILE_CACHE_MAX) {
+        auto &victim_key = s_compile_lru.back();
+        // If the DBT was pointing at this victim's memory, invalidate.
+        auto vit = s_compile_cache.find(victim_key);
+        if (vit != s_compile_cache.end()
+            && s_dbt_last_memory == vit->second.prog.memory.data()) {
+            s_dbt_last_memory = nullptr;
+        }
+        s_compile_cache.erase(victim_key);
+        s_compile_lru.pop_back();
+    }
+
+    s_compile_lru.push_front(key);
+    auto [ins_it, _] = s_compile_cache.emplace(
+        key, compile_cache_entry{std::move(prog), s_compile_lru.begin()});
+    return &ins_it->second.prog;
+}
+
+// Run a cached program.  Uses dbt_rerun if the DBT already has
+// translated blocks for this program, otherwise dbt_reset.
+//
+static bool run_cached_program(compiled_program *prog,
+                                dbref executor, dbref caller_db,
+                                dbref enactor,
+                                UTF8 *out, size_t out_size) {
+    if (!prog->needs_jit) {
+        const char *r = reinterpret_cast<const char *>(
+            prog->memory.data() + prog->out_addr);
+        size_t n = strlen(r);
+        if (n >= out_size) n = out_size - 1;
+        memcpy(out, r, n);
+        out[n] = '\0';
+        return true;
+    }
+
+    // Clear output region for clean re-run.
+    memset(prog->memory.data() + rv_compiler::OUT_BASE, 0,
+           rv_compiler::OUT_LIMIT - rv_compiler::OUT_BASE);
+
+    eval_ctx ec;
+    ec.memory = prog->memory.data();
+    ec.memory_size = prog->memory_size;
+    ec.executor = executor;
+    ec.caller = caller_db;
+    ec.enactor = enactor;
+
+    dbt_state_t *dbt;
+    if (s_dbt_ready && s_dbt_last_memory == prog->memory.data()) {
+        // Same program as last time — keep translated blocks.
+        dbt = &s_persistent_dbt;
+        dbt_rerun(dbt, eval_ecall, &ec);
+    } else {
+        // Different program — full reset needed.
+        dbt = get_dbt(prog->memory.data(), prog->memory_size,
+                       eval_ecall, &ec);
+        if (!dbt) return false;
+        s_dbt_last_memory = prog->memory.data();
+    }
+
+    int rc = dbt_run(dbt, 0, rv_compiler::STACK_TOP);
+    if (rc != 0) return false;
+
+    const char *r = reinterpret_cast<const char *>(
+        prog->memory.data() + prog->out_addr);
+    size_t n = strlen(r);
+    if (n >= out_size) n = out_size - 1;
+    memcpy(out, r, n);
+    out[n] = '\0';
+    return true;
+}
+
+// ECALL handler implementation.
+//
 static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
     eval_ctx *ec = static_cast<eval_ctx *>(user_data);
     uint64_t syscall_num = ctx->x[17];
@@ -1487,48 +1610,32 @@ FUNCTION(fun_rveval)
         return;
     }
 
-    // Compile the expression.
     const UTF8 *expr = fargs[0];
     size_t nLen = strlen(reinterpret_cast<const char *>(expr));
 
-    compiled_program prog = compile_expression(expr, nLen);
-    if (!prog.ok) {
+    // Look up in compile cache (or compile on miss).
+    compiled_program *prog = compile_cached(expr, nLen);
+    if (!prog) {
         safe_str(T("#-1 COMPILATION FAILED"), buff, bufc);
         return;
     }
 
     // If everything was constant-folded, the result is already
     // in the string pool — no need to run the JIT at all.
-    if (!prog.needs_jit) {
-        const UTF8 *result = prog.memory.data() + prog.out_addr;
+    if (!prog->needs_jit) {
+        const UTF8 *result = prog->memory.data() + prog->out_addr;
         safe_str(result, buff, bufc);
         return;
     }
 
-    // Run through the JIT (persistent DBT — no mmap per call).
-    eval_ctx ec;
-    ec.memory = prog.memory.data();
-    ec.memory_size = prog.memory_size;
-    ec.executor = executor;
-    ec.caller = caller;
-    ec.enactor = enactor;
-
-    dbt_state_t *dbt = get_dbt(prog.memory.data(), prog.memory_size,
-                                eval_ecall, &ec);
-    if (!dbt) {
-        safe_str(T("#-1 DBT INIT FAILED"), buff, bufc);
-        return;
-    }
-
-    int rc = dbt_run(dbt, 0, rv_compiler::STACK_TOP);
-
-    if (rc != 0) {
+    // Run through the JIT with compile+block cache.
+    UTF8 result[LBUF_SIZE];
+    if (!run_cached_program(prog, executor, caller, enactor,
+                             result, sizeof(result))) {
         safe_str(T("#-1 DBT EXECUTION ERROR"), buff, bufc);
         return;
     }
 
-    // Copy result from guest output buffer.
-    const UTF8 *result = prog.memory.data() + prog.out_addr;
     safe_str(result, buff, bufc);
 }
 
@@ -1657,20 +1764,33 @@ FUNCTION(fun_rvbench)
     clock_gettime(CLOCK_MONOTONIC, &t1);
     double compile_each_us = elapsed_us(t0, t1);
 
-    // --- Benchmark 3: rveval compile-once ---
-    // First run does full dbt_reset; subsequent runs reuse the DBT
-    // with translated blocks cached (dbt_rerun — no re-translation).
+    // --- Benchmark 3: production path (compile cache + block cache) ---
+    // Uses compile_cached (LRU) + run_cached_program (dbt_rerun).
+    // First iteration is a cache miss (compiles + JIT translates);
+    // subsequent iterations hit both caches — zero compilation,
+    // zero JIT translation.
+    //
+    // Invalidate the compile cache entry for this expression first
+    // so the first iteration is a genuine miss.
+    {
+        std::string key(reinterpret_cast<const char *>(expr), nLen);
+        auto cit = s_compile_cache.find(key);
+        if (cit != s_compile_cache.end()) {
+            if (s_dbt_last_memory == cit->second.prog.memory.data()) {
+                s_dbt_last_memory = nullptr;
+            }
+            s_compile_lru.erase(cit->second.lru_it);
+            s_compile_cache.erase(cit);
+        }
+    }
     clock_gettime(CLOCK_MONOTONIC, &t0);
     for (int i = 0; i < iterations; i++) {
-        UTF8 result[256];
-        // Re-init guest memory for ECALL path (outputs get overwritten).
-        if (prog.needs_jit) {
-            // Reset output region for clean re-run.
-            memset(prog.memory.data() + rv_compiler::OUT_BASE, 0,
-                   rv_compiler::OUT_LIMIT - rv_compiler::OUT_BASE);
+        compiled_program *cp = compile_cached(expr, nLen);
+        if (cp) {
+            UTF8 result[256];
+            run_cached_program(cp, executor, caller, enactor,
+                               result, sizeof(result));
         }
-        run_compiled(prog, executor, caller, enactor, result, sizeof(result),
-                     /*reuse_dbt=*/i > 0);
     }
     clock_gettime(CLOCK_MONOTONIC, &t1);
     double cached_us = elapsed_us(t0, t1);
