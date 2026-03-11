@@ -212,6 +212,194 @@ static uint32_t rv_SUB(uint8_t rd, uint8_t rs1, uint8_t rs2) {
     return rv_r_type(OP_REG, rd, ALU_ADD, rs1, rs2, 0x20);
 }
 
+// B-type encoding (branches).
+//
+static uint32_t rv_b_type(uint8_t funct3, uint8_t rs1, uint8_t rs2,
+                           int32_t imm) {
+    uint32_t u = static_cast<uint32_t>(imm);
+    return OP_BRANCH
+         | (((u >> 11) & 1) << 7)
+         | (((u >> 1) & 0xF) << 8)
+         | (static_cast<uint32_t>(funct3) << 12)
+         | (static_cast<uint32_t>(rs1) << 15)
+         | (static_cast<uint32_t>(rs2) << 20)
+         | (((u >> 5) & 0x3F) << 25)
+         | (((u >> 12) & 1) << 31);
+}
+static uint32_t rv_BEQ(uint8_t rs1, uint8_t rs2, int32_t off) {
+    return rv_b_type(BR_BEQ, rs1, rs2, off);
+}
+static uint32_t rv_BNE(uint8_t rs1, uint8_t rs2, int32_t off) {
+    return rv_b_type(BR_BNE, rs1, rs2, off);
+}
+static uint32_t rv_BGE(uint8_t rs1, uint8_t rs2, int32_t off) {
+    return rv_b_type(BR_BGE, rs1, rs2, off);
+}
+static uint32_t rv_BGEU(uint8_t rs1, uint8_t rs2, int32_t off) {
+    return rv_b_type(BR_BGEU, rs1, rs2, off);
+}
+
+// S-type encoding (stores).
+//
+static uint32_t rv_SB(uint8_t base, uint8_t src, int32_t off) {
+    uint32_t u = static_cast<uint32_t>(off);
+    return OP_STORE
+         | ((u & 0x1F) << 7)
+         | (static_cast<uint32_t>(ST_SB) << 12)
+         | (static_cast<uint32_t>(base) << 15)
+         | (static_cast<uint32_t>(src) << 20)
+         | (((u >> 5) & 0x7F) << 25);
+}
+
+// Load byte unsigned.
+//
+static uint32_t rv_LBU(uint8_t rd, uint8_t base, int32_t off) {
+    return rv_i_type(OP_LOAD, rd, LD_LBU, base, off);
+}
+
+// M extension: MUL, DIV, REM.
+//
+static uint32_t rv_MUL(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return rv_r_type(OP_REG, rd, 0, rs1, rs2, 0x01);
+}
+static uint32_t rv_DIV(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return rv_r_type(OP_REG, rd, 4, rs1, rs2, 0x01);
+}
+static uint32_t rv_REM(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return rv_r_type(OP_REG, rd, 6, rs1, rs2, 0x01);
+}
+
+// ---------------------------------------------------------------
+// Inline RISC-V atoi: parse decimal string → signed integer.
+//
+// Input:  addr_reg = guest address of NUL-terminated string
+// Output: out_reg  = signed 64-bit integer
+// Clobbers: t0(x5), t1(x6), t2(x7), t3(x28), t4(x29), addr_reg
+// 19 instructions.
+// ---------------------------------------------------------------
+
+static void rv_emit_atoi(std::vector<uint32_t> &code,
+                          uint8_t addr_reg, uint8_t out_reg) {
+    constexpr uint8_t t0=5, t1=6, t2=7, t3=28, t4=29;
+
+    code.push_back(rv_ADDI(t1, 0, 0));                 //  0: acc = 0
+    code.push_back(rv_ADDI(t2, 0, 0));                 //  1: sign = 0
+    code.push_back(rv_LBU(t0, addr_reg, 0));           //  2: load byte
+    code.push_back(rv_ADDI(t3, 0, 45));                //  3: t3 = '-'
+    size_t bne_sign = code.size();
+    code.push_back(0);                                  //  4: BNE → skip_sign (patch)
+    code.push_back(rv_ADDI(t2, 0, 1));                 //  5: sign = 1
+    code.push_back(rv_ADDI(addr_reg, addr_reg, 1));    //  6: advance past '-'
+    // skip_sign:
+    size_t skip_sign = code.size();
+    code[bne_sign] = rv_BNE(t0, t3,
+        static_cast<int32_t>((skip_sign - bne_sign) * 4));
+
+    code.push_back(rv_LBU(t0, addr_reg, 0));           //  7: (re)load byte
+    // digit_loop:
+    size_t digit_loop = code.size();
+    code.push_back(rv_ADDI(t4, t0, -48));              //  8: digit = byte - '0'
+    code.push_back(rv_ADDI(t3, 0, 10));                //  9: t3 = 10
+    size_t bgeu_done = code.size();
+    code.push_back(0);                                  // 10: BGEU → done (patch)
+    code.push_back(rv_MUL(t1, t1, t3));                // 11: acc *= 10
+    code.push_back(rv_ADD(t1, t1, t4));                 // 12: acc += digit
+    code.push_back(rv_ADDI(addr_reg, addr_reg, 1));    // 13: advance
+    code.push_back(rv_LBU(t0, addr_reg, 0));           // 14: load next byte
+    size_t bk = code.size();
+    code.push_back(rv_BEQ(0, 0,                        // 15: j digit_loop
+        static_cast<int32_t>((digit_loop - bk) * 4)));
+    // done:
+    size_t done = code.size();
+    code[bgeu_done] = rv_BGEU(t4, t3,
+        static_cast<int32_t>((done - bgeu_done) * 4));
+
+    size_t beq_pos = code.size();
+    code.push_back(0);                                  // 16: BEQ → skip_neg (patch)
+    code.push_back(rv_SUB(t1, 0, t1));                 // 17: negate
+    size_t skip_neg = code.size();
+    code[beq_pos] = rv_BEQ(t2, 0,
+        static_cast<int32_t>((skip_neg - beq_pos) * 4));
+
+    code.push_back(rv_ADDI(out_reg, t1, 0));           // 18: mv out, acc
+}
+
+// ---------------------------------------------------------------
+// Inline RISC-V itoa: signed integer → decimal string.
+//
+// Input:  val_reg = signed 64-bit integer
+//         buf_reg = guest address of output buffer (≥21 bytes)
+// Output: NUL-terminated string at buf_reg
+// Clobbers: t0(x5), t1(x6), t2(x7), t3(x28), t4(x29),
+//           t5(x30), t6(x31), buf_reg
+// 30 instructions.
+// ---------------------------------------------------------------
+
+static void rv_emit_itoa(std::vector<uint32_t> &code,
+                          uint8_t val_reg, uint8_t buf_reg) {
+    constexpr uint8_t t0=5, t1=6, t2=7, t3=28, t4=29, t5=30, t6=31;
+
+    code.push_back(rv_ADDI(t0, buf_reg, 0));           //  0: wr = buf
+    code.push_back(rv_ADDI(t1, val_reg, 0));            //  1: t1 = val
+    size_t bge_pos = code.size();
+    code.push_back(0);                                  //  2: BGE → skip_neg (patch)
+    code.push_back(rv_ADDI(t4, 0, 45));                //  3: t4 = '-'
+    code.push_back(rv_SB(t0, t4, 0));                  //  4: write '-'
+    code.push_back(rv_ADDI(t0, t0, 1));                //  5: advance wr
+    code.push_back(rv_SUB(t1, 0, t1));                 //  6: negate
+    // skip_neg:
+    size_t skip_neg = code.size();
+    code[bge_pos] = rv_BGE(t1, 0,
+        static_cast<int32_t>((skip_neg - bge_pos) * 4));
+
+    code.push_back(rv_ADDI(t5, t0, 0));                //  7: digit_start = wr
+    size_t bne_nz = code.size();
+    code.push_back(0);                                  //  8: BNE → digit_loop (patch)
+    code.push_back(rv_ADDI(t4, 0, 48));                //  9: '0'
+    code.push_back(rv_SB(t0, t4, 0));                  // 10: write '0'
+    code.push_back(rv_ADDI(t0, t0, 1));                // 11: advance
+    size_t beq_nul = code.size();
+    code.push_back(0);                                  // 12: BEQ → nul_term (patch)
+
+    // digit_loop:
+    size_t digit_loop = code.size();
+    code[bne_nz] = rv_BNE(t1, 0,
+        static_cast<int32_t>((digit_loop - bne_nz) * 4));
+    code.push_back(rv_ADDI(t3, 0, 10));                // 13: t3 = 10
+    code.push_back(rv_REM(t2, t1, t3));                // 14: t2 = val % 10
+    code.push_back(rv_DIV(t1, t1, t3));                // 15: t1 = val / 10
+    code.push_back(rv_ADDI(t2, t2, 48));               // 16: '0' + digit
+    code.push_back(rv_SB(t0, t2, 0));                  // 17: write digit
+    code.push_back(rv_ADDI(t0, t0, 1));                // 18: advance
+    code.push_back(rv_BNE(t1, 0,                       // 19: loop if more
+        static_cast<int32_t>((digit_loop - (code.size())) * 4)));
+
+    // nul_term:
+    size_t nul_term = code.size();
+    code[beq_nul] = rv_BEQ(0, 0,
+        static_cast<int32_t>((nul_term - beq_nul) * 4));
+    code.push_back(rv_SB(t0, 0, 0));                   // 20: write '\0'
+    code.push_back(rv_ADDI(t6, t0, -1));               // 21: end = wr - 1
+
+    // reverse_loop:
+    size_t rev_loop = code.size();
+    size_t bge_rev = code.size();
+    code.push_back(0);                                  // 22: BGE → done (patch)
+    code.push_back(rv_LBU(t3, t5, 0));                 // 23: t3 = *start
+    code.push_back(rv_LBU(t4, t6, 0));                 // 24: t4 = *end
+    code.push_back(rv_SB(t5, t4, 0));                  // 25: *start = t4
+    code.push_back(rv_SB(t6, t3, 0));                  // 26: *end = t3
+    code.push_back(rv_ADDI(t5, t5, 1));                // 27: start++
+    code.push_back(rv_ADDI(t6, t6, -1));               // 28: end--
+    code.push_back(rv_BEQ(0, 0,                        // 29: j reverse_loop
+        static_cast<int32_t>((rev_loop - (code.size())) * 4)));
+
+    // done:
+    size_t done = code.size();
+    code[bge_rev] = rv_BGE(t5, t6,
+        static_cast<int32_t>((done - bge_rev) * 4));
+}
+
 // Load a signed 64-bit value into a register.
 //
 static void rv_load_i64(std::vector<uint32_t> &code, uint8_t rd, int64_t val) {
@@ -737,12 +925,8 @@ static bool is_int_result(const compile_result &cr) {
     return cr.known_int;
 }
 
-// Lightweight ECALL numbers (no function dispatch overhead).
-//
-static constexpr int ECALL_ATOI = 0x101;
-static constexpr int ECALL_ITOA = 0x102;
-
 // Convert a compile_result to RT_INT (integer in register).
+// Uses inline RISC-V atoi — no ECALL boundary crossing.
 //
 static compile_result ensure_int(rv_compiler &rc, compile_result cr) {
     if (cr.type == RT_INT) return cr;
@@ -757,29 +941,26 @@ static compile_result ensure_int(rv_compiler &rc, compile_result cr) {
         return compile_result::int_reg(reg);
     }
 
-    // Runtime string — emit lightweight ECALL_ATOI.
-    rv_load_val(rc.code, 10, cr.addr);              // a0 = string addr
-    rc.code.push_back(rv_ADDI(17, 0, ECALL_ATOI));  // a7 = 0x101
-    rc.code.push_back(rv_ECALL());
+    // Runtime string — emit inline atoi (stays in JIT, no ECALL).
+    // Load guest address into a0, then atoi parses into out_reg.
     uint8_t reg = rc.alloc_int_reg();
     if (!reg) return cr;
-    rc.code.push_back(rv_ADDI(reg, 10, 0));          // mv sN, a0
+    rv_load_val(rc.code, 10, cr.addr);               // a0 = string addr
+    rv_emit_atoi(rc.code, 10, reg);                   // inline parse → reg
     rc.needs_jit = true;
     return compile_result::int_reg(reg);
 }
 
 // Convert a compile_result from RT_INT to RT_STRING.
+// Uses inline RISC-V itoa — no ECALL boundary crossing.
 //
 static compile_result ensure_string(rv_compiler &rc, compile_result cr) {
     if (cr.type == RT_STRING) return cr;
 
-    // RT_INT in register — emit lightweight ECALL_ITOA.
+    // RT_INT in register — emit inline itoa.
     uint64_t out_addr = rc.alloc_output();
-    rc.code.push_back(rv_ADDI(10, cr.reg, 0));                  // a0 = integer
-    rv_load_val(rc.code, 11, out_addr);                          // a1 = output buf
-    rv_load_val(rc.code, 12, rv_compiler::OUT_SLOT);             // a2 = buf size
-    rc.code.push_back(rv_ADDI(17, 0, ECALL_ITOA));              // a7 = 0x102
-    rc.code.push_back(rv_ECALL());
+    rv_load_val(rc.code, 10, out_addr);               // a0 = output buf addr
+    rv_emit_itoa(rc.code, cr.reg, 10);                // inline format → buf
     rc.needs_jit = true;
     return compile_result::runtime(out_addr);
 }
@@ -1201,37 +1382,6 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         free_lbuf(buff);
 
         ctx->x[10] = static_cast<uint64_t>(result_len);
-        return -1;
-    }
-
-    case 0x101: {  // ECALL_ATOI — lightweight string→integer.
-        uint64_t addr = ctx->x[10];
-        if (addr < ec->memory_size) {
-            ctx->x[10] = static_cast<uint64_t>(
-                static_cast<int64_t>(mux_atol(ec->memory + addr)));
-        } else {
-            ctx->x[10] = 0;
-        }
-        return -1;
-    }
-
-    case 0x102: {  // ECALL_ITOA — lightweight integer→string.
-        int64_t val = static_cast<int64_t>(ctx->x[10]);
-        uint64_t out_addr = ctx->x[11];
-        uint64_t out_size = ctx->x[12];
-        if (out_addr + out_size <= ec->memory_size && out_size > 0) {
-            UTF8 buf[64];
-            UTF8 *bufc = buf;
-            safe_i64toa(val, buf, &bufc);
-            *bufc = '\0';
-            size_t len = static_cast<size_t>(bufc - buf);
-            if (len >= out_size) len = out_size - 1;
-            memcpy(ec->memory + out_addr, buf, len);
-            ec->memory[out_addr + len] = '\0';
-            ctx->x[10] = static_cast<uint64_t>(len);
-        } else {
-            ctx->x[10] = 0;
-        }
         return -1;
     }
 
