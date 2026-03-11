@@ -185,6 +185,7 @@ struct hir_program {
     // Statistics.
     int folds;
     int ecalls;
+    int tier2_calls;
     int native_ops;
     bool needs_jit;
 
@@ -199,6 +200,7 @@ struct hir_program {
         result = -1;
         folds = 0;
         ecalls = 0;
+        tier2_calls = 0;
         native_ops = 0;
         needs_jit = false;
 

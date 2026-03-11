@@ -1156,11 +1156,133 @@
         6
       )=
   {
-    @log smoke=TC075: rveval Tier2 strlen(strcat(rand(1),hello))=6. Succeeded.;
+    @log smoke=TC075: rveval Tier2 strlen(strcat(rand(1),hello))=6. Succeeded.
+  },
+  {
+    @log smoke=TC075: rveval Tier2 strlen(strcat(rand(1),hello))=6. Failed (%q0).
+  }
+-
+#
+# TC076-TC083: switch() and case() tests.
+#
+# TC076: case() with constant match — first pattern.
+#
+&tr.tc076 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(case(foo, foo, MATCHED, bar, WRONG, DEFAULT))),
+        MATCHED
+      )=
+  {
+    @log smoke=TC076: rveval case(foo,foo,MATCHED) first match. Succeeded.
+  },
+  {
+    @log smoke=TC076: rveval case(foo,foo,MATCHED) first match. Failed (%q0).
+  }
+-
+#
+# TC077: case() with constant match — second pattern.
+#
+&tr.tc077 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(case(bar, foo, WRONG, bar, MATCHED, DEFAULT))),
+        MATCHED
+      )=
+  {
+    @log smoke=TC077: rveval case(bar,...,bar,MATCHED) second match. Succeeded.
+  },
+  {
+    @log smoke=TC077: rveval case(bar,...,bar,MATCHED) second match. Failed (%q0).
+  }
+-
+#
+# TC078: case() with no match — default.
+#
+&tr.tc078 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(case(baz, foo, WRONG, bar, WRONG2, DEFAULT))),
+        DEFAULT
+      )=
+  {
+    @log smoke=TC078: rveval case(baz,...) default. Succeeded.
+  },
+  {
+    @log smoke=TC078: rveval case(baz,...) default. Failed (%q0).
+  }
+-
+#
+# TC079: case() with no match, no default — empty string.
+#
+&tr.tc079 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(case(baz, foo, WRONG, bar, WRONG2))),
+
+      )=
+  {
+    @log smoke=TC079: rveval case(baz,...) no default=empty. Succeeded.
+  },
+  {
+    @log smoke=TC079: rveval case(baz,...) no default=empty. Failed (%q0).
+  }
+-
+#
+# TC080: switch() with wildcard match — trailing *.
+#
+&tr.tc080 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(switch(foobar, foo*, MATCHED, bar*, WRONG, DEFAULT))),
+        MATCHED
+      )=
+  {
+    @log smoke=TC080: rveval switch(foobar,foo*,MATCHED) wildcard. Succeeded.
+  },
+  {
+    @log smoke=TC080: rveval switch(foobar,foo*,MATCHED) wildcard. Failed (%q0).
+  }
+-
+#
+# TC081: switch() with wildcard — leading *.
+#
+&tr.tc081 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(switch(foobar, *baz, WRONG, *bar, MATCHED, DEFAULT))),
+        MATCHED
+      )=
+  {
+    @log smoke=TC081: rveval switch(foobar,*bar,MATCHED) leading wild. Succeeded.
+  },
+  {
+    @log smoke=TC081: rveval switch(foobar,*bar,MATCHED) leading wild. Failed (%q0).
+  }
+-
+#
+# TC082: switch() default when no pattern matches.
+#
+&tr.tc082 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(switch(xyz, foo*, WRONG, bar*, WRONG2, NONE))),
+        NONE
+      )=
+  {
+    @log smoke=TC082: rveval switch(xyz,...) default=NONE. Succeeded.
+  },
+  {
+    @log smoke=TC082: rveval switch(xyz,...) default=NONE. Failed (%q0).
+  }
+-
+#
+# TC083: case() with numeric result — type preserved through PHI.
+#
+&tr.tc083 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(add(case(b, a, 10, b, 20, 30), 5))),
+        25
+      )=
+  {
+    @log smoke=TC083: rveval add(case(b,a,10,b,20,30),5)=25. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC075: rveval Tier2 strlen(strcat(rand(1),hello))=6. Failed (%q0).;
+    @log smoke=TC083: rveval add(case(b,a,10,b,20,30),5)=25. Failed (%q0).;
     @trig me/tr.done
   }
 -

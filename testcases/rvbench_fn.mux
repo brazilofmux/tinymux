@@ -221,7 +221,45 @@
 #
 &tr.tc029 test_rvbench_fn=
   @log smoke=BENCH029:
-    [rvbench(abs(sign(sub(rand(100),50))),10000)];
+    [rvbench(abs(sign(sub(rand(100),50))),10000)]
+-
+#
+# Benchmark #30 - Tier 2 JAL: cat() with runtime args.
+# cat() via Tier 2 blob — no ECALL boundary crossing.
+#
+&tr.tc030 test_rvbench_fn=
+  @log smoke=BENCH030:
+    [rvbench(cat(rand(100),rand(100)),10000)]
+-
+#
+# Benchmark #31 - Tier 2 JAL: strlen() with runtime arg.
+#
+&tr.tc031 test_rvbench_fn=
+  @log smoke=BENCH031:
+    [rvbench(strlen(cat(rand(100),rand(100))),10000)]
+-
+#
+# Benchmark #32 - Tier 2 JAL: strcat() with runtime args.
+#
+&tr.tc032 test_rvbench_fn=
+  @log smoke=BENCH032:
+    [rvbench(strcat(rand(100),rand(100)),10000)]
+-
+#
+# Benchmark #33 - Tier 2 chain: strlen(strcat(rand,rand,rand)).
+# 2 Tier 2 JAL calls + 1 ECALL (rand).
+#
+&tr.tc033 test_rvbench_fn=
+  @log smoke=BENCH033:
+    [rvbench(strlen(strcat(rand(100),rand(100),rand(100))),10000)]
+-
+#
+# Benchmark #34 - Tier 2 vs ECALL comparison: cat() with 4 args.
+# Tests Tier 2 blob with heavier workload.
+#
+&tr.tc034 test_rvbench_fn=
+  @log smoke=BENCH034:
+    [rvbench(cat(rand(10),rand(10),rand(10),rand(10)),10000)];
   @trig me/tr.done
 -
 &tr.done test_rvbench_fn=

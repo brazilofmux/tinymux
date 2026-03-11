@@ -1095,7 +1095,8 @@ static bool returns_int(const std::string &upper) {
         || upper == "NOT" || upper == "T" || upper == "COMP"
         || upper == "INC" || upper == "DEC" || upper == "SIGN"
         || upper == "MOD" || upper == "ABS" || upper == "MAX"
-        || upper == "MIN" || upper == "BOUND" || upper == "IDIV";
+        || upper == "MIN" || upper == "BOUND" || upper == "IDIV"
+        || upper == "STRMATCH";
 }
 
 // (Old compile_node chain removed — replaced by HIR pipeline below.)
@@ -1166,6 +1167,51 @@ static int hir_lower_sequence(hir_program &h, rv_compiler &rc,
     h.ecalls++;
     h.needs_jit = true;
     return i;
+}
+
+static int hir_lower_node(hir_program &h, rv_compiler &rc,
+                           const ASTNode *node);
+
+// Lower a NOEVAL child, stripping leading/trailing spaces.
+//
+// MUX NOEVAL functions (switch/case/if/iter) evaluate their arguments
+// with EV_STRIP_CURLY, which strips leading/trailing whitespace.
+// In the AST, the space after a comma becomes an AST_SPACE node at
+// the start of the argument's sequence.  This helper skips those.
+//
+static int hir_lower_trimmed(hir_program &h, rv_compiler &rc,
+                              const ASTNode *child) {
+    if (child->type == AST_SEQUENCE && !child->children.empty()) {
+        size_t first = 0, last = child->children.size();
+        while (first < last && child->children[first]->type == AST_SPACE) first++;
+        while (last > first && child->children[last-1]->type == AST_SPACE) last--;
+        if (first == last) {
+            uint64_t addr = rc.pool_str("");
+            return h.emit_sconst(addr, "");
+        }
+        if (first == 0 && last == child->children.size()) {
+            return hir_lower_node(h, rc, child);
+        }
+        // Lower only the trimmed children.
+        std::vector<int> parts;
+        for (size_t i = first; i < last; i++) {
+            parts.push_back(hir_lower_node(h, rc, child->children[i].get()));
+        }
+        if (parts.size() == 1) return parts[0];
+        // Concatenate: ensure all parts are strings.
+        for (auto &p : parts) {
+            if (h.ty[p] == TY_INT) {
+                p = h.emit(HIR_ITOA, TY_STRING, p);
+            }
+        }
+        int strcat_idx = engine_api_lookup("STRCAT");
+        int r = h.emit_strcat(parts.data(), static_cast<int>(parts.size()));
+        if (r >= 0) h.func_idx[r] = strcat_idx;
+        h.ecalls++;
+        h.needs_jit = true;
+        return r;
+    }
+    return hir_lower_node(h, rc, child);
 }
 
 // Lower a function call: try fold, try native arith, else ECALL.
@@ -1491,6 +1537,166 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     }
 
     // ---------------------------------------------------------------
+    // switch(expr, pat1, res1, pat2, res2, ..., default)
+    // case(expr, pat1, res1, pat2, res2, ..., default)
+    //
+    // Evaluate expr once.  Then test each pattern in order:
+    //   case(): exact string comparison (strcmp == 0)
+    //   switch(): wildcard match via ECALL STRMATCH
+    // Only the matching result branch is evaluated (NOEVAL).
+    // If no pattern matches, evaluate the default (if present).
+    //
+    // Structure: chain of test blocks, each with BRC to either
+    // the result block or the next test.  Results and default
+    // branch to a merge block with a PHI.
+    // ---------------------------------------------------------------
+
+    if ((fname == "SWITCH" || fname == "CASE"
+         || fname == "SWITCHALL" || fname == "CASEALL")
+        && node->children.size() >= 3) {
+        bool bWild = (fname == "SWITCH" || fname == "SWITCHALL");
+        bool bAll = (fname == "SWITCHALL" || fname == "CASEALL");
+        int nfargs = static_cast<int>(node->children.size());
+
+        // switchall/caseall: fall through to ECALL for now.
+        // These evaluate ALL matching branches, not just the first.
+        if (bAll) goto general_lowering;
+
+        // Evaluate the target expression (child[0]), trimmed.
+        int target = hir_lower_trimmed(h, rc,node->children[0].get());
+        // Ensure target is a string for comparison.
+        if (h.ty[target] == TY_INT) {
+            target = h.emit(HIR_ITOA, TY_STRING, target);
+        }
+
+        // Count pattern/result pairs and whether there's a default.
+        int npairs = (nfargs - 1) / 2;  // number of pat/res pairs
+        bool has_default = ((nfargs - 1) % 2) == 1;
+
+        // We need: npairs test blocks, npairs result blocks,
+        // optionally a default block, and a merge block.
+        // Allocate blocks as we go (like cand/cor).
+
+        // Pre-resolve ECALL indices we'll need.
+        int strmatch_idx = bWild ? engine_api_lookup("STRMATCH") : 0;
+        int comp_idx = bWild ? 0 : engine_api_lookup("COMP");
+
+        // Track result values and their exit blocks for the final PHI.
+        std::vector<int> result_vals;
+        std::vector<int> result_exits;
+
+        int merge_blk = -1;  // allocated after all test/result blocks
+
+        for (int pi = 0; pi < npairs; pi++) {
+            // We're in the current test block.
+            int test_block = h.cur_block;
+
+            // Lower the pattern (always evaluated), trimmed.
+            int pat = hir_lower_trimmed(h, rc,
+                node->children[1 + pi * 2].get());
+            if (h.ty[pat] == TY_INT) {
+                pat = h.emit(HIR_ITOA, TY_STRING, pat);
+            }
+
+            // Compare target against pattern.
+            int cond;
+            if (bWild) {
+                // ECALL STRMATCH(target, pattern) → "0" or "1"
+                int cargs[2] = { target, pat };
+                int sm = h.emit_call(TY_STRING, strmatch_idx, cargs, 2);
+                h.known_int[sm] = true;
+                h.ecalls++;
+                // Convert to int: strmatch returns "1" for match.
+                cond = h.emit(HIR_ATOI, TY_INT, sm);
+            } else {
+                // ECALL COMP(target, pattern) → "-1"/"0"/"1"
+                int cargs[2] = { target, pat };
+                int cm = h.emit_call(TY_STRING, comp_idx, cargs, 2);
+                h.known_int[cm] = true;
+                h.ecalls++;
+                // comp==0 means match; convert: eq(comp,0) → 1 if match.
+                int cm_int = h.emit(HIR_ATOI, TY_INT, cm);
+                int zero = h.emit_iconst(0);
+                cond = h.emit(HIR_EQ, TY_INT, cm_int, zero);
+                h.native_ops++;
+            }
+
+            // Allocate result block and next-test block.
+            int result_blk = h.new_block();
+            int next_blk;
+            if (pi < npairs - 1) {
+                next_blk = h.new_block();
+            } else if (has_default) {
+                next_blk = h.new_block();  // default block
+            } else {
+                next_blk = h.new_block();  // "no match" block
+            }
+
+            // BRC: cond true → result_blk, false → next_blk.
+            h.emit(HIR_BRC, TY_VOID, cond, next_blk, result_blk);
+            h.add_edge(test_block, result_blk);
+            h.add_edge(test_block, next_blk);
+
+            // Lower result branch (NOEVAL — only evaluated on match), trimmed.
+            h.cur_block = result_blk;
+            int rval = hir_lower_trimmed(h, rc,
+                node->children[2 + pi * 2].get());
+            result_vals.push_back(rval);
+            result_exits.push_back(h.cur_block);
+            // BR to merge (patched later).
+            h.emit(HIR_BR, TY_VOID, -1, -1, -1);  // target = merge, patched below
+
+            // Move to next test block.
+            h.cur_block = next_blk;
+        }
+
+        // Handle default or "no match" (empty string).
+        int default_val;
+        if (has_default) {
+            default_val = hir_lower_trimmed(h, rc,
+                node->children[nfargs - 1].get());
+        } else {
+            uint64_t addr = rc.pool_str("");
+            default_val = h.emit_sconst(addr, "");
+        }
+        result_vals.push_back(default_val);
+        result_exits.push_back(h.cur_block);
+        // BR to merge (patched below).
+        h.emit(HIR_BR, TY_VOID, -1, -1, -1);
+
+        // Allocate merge block.
+        merge_blk = h.new_block();
+        h.cur_block = merge_blk;
+
+        // Patch all BR instructions to point to merge_blk and add edges.
+        // The BR instructions are the last insn in each result/default block.
+        for (int ri = 0; ri < static_cast<int>(result_exits.size()); ri++) {
+            int blk = result_exits[ri];
+            // Find the BR instruction (last in block — scan backwards).
+            for (int ii = h.n_insns - 1; ii >= 0; ii--) {
+                if (h.blk[ii] == blk && h.kind[ii] == HIR_BR && h.val[ii] == -1) {
+                    h.val[ii] = merge_blk;
+                    h.add_edge(blk, merge_blk);
+                    break;
+                }
+            }
+        }
+
+        // Build PHI node at merge.
+        hir_type rty = TY_STRING;
+        for (int rv : result_vals) {
+            if (h.ty[rv] != TY_INT) { rty = TY_STRING; break; }
+            rty = TY_INT;
+        }
+        int phi = h.emit_phi(rty, -1,
+            result_exits.data(), result_vals.data(),
+            static_cast<int>(result_vals.size()));
+
+        h.needs_jit = true;
+        return phi;
+    }
+
+    // ---------------------------------------------------------------
     // General function call lowering.
     // ---------------------------------------------------------------
 general_lowering:
@@ -1711,11 +1917,13 @@ general_lowering:
                          args.data(), nargs);
     if (t2addr) {
         h.tier2_addr[i] = t2addr;
+        h.tier2_calls++;
+    } else {
+        h.ecalls++;
     }
     if (returns_int(upper)) {
         h.known_int[i] = true;
     }
-    h.ecalls++;
     h.needs_jit = true;
     return i;
 }
@@ -2668,6 +2876,7 @@ struct compiled_program {
     bool ok;
     int folds;
     int ecalls;
+    int tier2_calls;
     int native_ops;
     bool needs_jit;         // true if JIT execution required
 };
@@ -2699,6 +2908,7 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
     prog.ok = false;
     prog.folds = 0;
     prog.ecalls = 0;
+    prog.tier2_calls = 0;
     prog.native_ops = 0;
     prog.needs_jit = false;
 
@@ -2745,6 +2955,7 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
     prog.ok = true;
     prog.folds = h.folds;
     prog.ecalls = h.ecalls;
+    prog.tier2_calls = h.tier2_calls;
     prog.native_ops = h.native_ops;
     prog.needs_jit = h.needs_jit;
     return prog;
@@ -3234,12 +3445,12 @@ FUNCTION(fun_rvbench)
 
     UTF8 report[LBUF_SIZE];
     snprintf(reinterpret_cast<char *>(report), sizeof(report),
-        "expr=%s iters=%d folds=%d ecalls=%d nativ=%d | "
+        "expr=%s iters=%d folds=%d ecalls=%d tier2=%d nativ=%d | "
         "native=%.2fus/call | "
         "compile-each=%.2fus/call (%.1fx) | "
         "cached=%.2fus/call (%.1fx)",
         reinterpret_cast<const char *>(expr),
-        iterations, prog.folds, prog.ecalls, prog.native_ops,
+        iterations, prog.folds, prog.ecalls, prog.tier2_calls, prog.native_ops,
         per_native,
         per_compile, per_compile / per_native,
         per_cached, per_cached / per_native);
