@@ -1,8 +1,8 @@
 # JIT Compilation via RISC-V and Dynamic Binary Translation
 
-## Status: Design
+## Status: Stage 1 In Progress
 
-Branch: `brazil` (future)
+Branch: `brazil`
 
 Predecessors: `docs/PARSER.md` (study), `docs/PARSER_REPLACE.md` (AST evaluator)
 
@@ -402,6 +402,35 @@ What must be written fresh for TinyMUX:
 
 ## Implementation Stages
 
+### Proof of Concept (Complete)
+
+Before beginning the staged implementation, a pragmatic shortcut
+proved the end-to-end architecture: AST → direct RV64 emission with
+constant folding, bypassing SSA. This delivered production-competitive
+performance for the expressions it handles and validated every layer
+of the stack.
+
+**What was built** (dbt_compile.cpp, ~1800 lines):
+ - AST-to-RV64 compiler with constant folding (28 functions)
+ - Type tracking (RT_STRING / RT_INT) with inline atoi/itoa (no ECALL)
+ - Native RV64 arithmetic: add, sub, mul, mod, eq, neq, gt, gte,
+   lt, lte, not, inc, dec — emit RV64 ADD/SUB/MUL/REM/SLT/SLTIU
+ - 256-entry LRU compile cache (skip recompilation on repeat calls)
+ - Block cache persistence via dbt_rerun (skip re-translation)
+ - Softcode functions: rvcall(), rveval(), rvbench()
+
+**Benchmark results** (production cache path, 10K iterations):
+ - Folded expressions: 0.03-0.05 us/call (10-20x faster than AST eval)
+ - ECALL expressions: 0.5-0.7 us/call (at parity with native AST eval)
+ - Native AST eval baseline: 0.3-1.0 us/call
+
+**Key insight**: The proof of concept is useful and stays, but further
+investment in the shortcut compiler would crowd out the real plan.
+The next function absorbed into Tier 1 should be the last before
+turning to Stage 1 completion. The DBT quality improvements benefit
+everything built on top — SSA pipeline, Tier 2 library, the eventual
+mux_exec replacement — automatically.
+
 ### Stage 1: RV64IMD DBT Runtime
 
 Build an RV64IMD dynamic binary translator, using ~/riscv's RV32IMFD
@@ -417,46 +446,221 @@ executor/caller/enactor, mudstate, function table). Compiled into
 
 Files: `dbt_decoder.h`, `dbt_interp.cpp`, `dbt.cpp`, `dbt_emit_x64.h`
 
-**1a. RV64IMD decoder** (`dbt_decoder.h`): Decode all RV64IMD instructions
-into a structured format. RV64I adds ADDIW/ADDW/SUBW/SLLW/SRLW/SRAW
-(32-bit ops with sign-extend), LD/SD/LWU (64-bit load/store). RV64M
-adds MULW/DIVW/DIVUW/REMW/REMUW. RV64D is identical to RV32D (FP
-registers are always 64-bit). Instruction encoding is the same as
-RV32 — the difference is register width and a handful of new opcodes.
+**1a. RV64IMD decoder** — COMPLETE
 
-**1b. Reference interpreter** (`interp.c`): Straightforward
-fetch-decode-execute loop over 64-bit register file. Used for
-correctness testing — every test runs on both interpreter and DBT,
-results must match. ECALL dispatches to a callback function pointer
-(initially a test harness, later the EngineAPI).
+`dbt_decoder.h`: Full RV64IMD instruction decode. Covers RV64I base
+(including W-suffix: ADDIW, ADDW, SUBW, SLLW, SRLW, SRAW), RV64M
+(MUL/MULH/DIV/REM + W variants), RV64D (all FP ops including FMA,
+conversions, sign injection, comparisons). FENCE recognized but
+no-op. Only RVC (compressed) intentionally omitted.
 
-**1c. x86-64 translator** (`dbt.c`, `emit_x64.h`): Block-at-a-time
-translation of RV64IMD to x86-64. Carry over from ~/riscv:
-block chaining, 8-slot LRU register cache, superblocks with side-exit
-snapshots, instruction fusion (LUI+ADDI, AUIPC+ADDI, AUIPC+JALR,
-SLT+branch), diamond merge, return address stack, intrinsic stubs.
-Key difference: all guest register operations are 64-bit (REX.W
-throughout), W-suffix instructions need 32-bit ops with MOVSXD
-sign-extension.
+**1b. Reference interpreter** — COMPLETE
 
-**1d. Block cache**: Direct-mapped hash table for translated blocks,
-same design as ~/riscv (64K entries × 16 bytes).
+`dbt_interp.cpp` (931 lines): Full RV64IMD interpreter with 1:1
+instruction parity with the decoder. 128-bit multiply helpers for
+MULH variants. Bounds-checked memory access. Full FP state (frm,
+fflags). ECALL dispatches to callback function pointer.
 
-**1e. Test suite**: Arithmetic (int64 edge cases, W-suffix
-sign-extension), floating point (RV64D — same as RV32D), control
-flow (branches, JAL/JALR), ECALL dispatch, register cache
-correctness (spill/restore), superblock formation.
+**1c. x86-64 translator** — FUNCTIONAL, OPTIMIZATION INCOMPLETE
 
-Deliverable: A standalone `rv64-run` tool that executes RV64IMD
-binary from a byte buffer, dispatching ECALLs through a configurable
-function pointer. No ELF loading required (code is passed as raw
-bytes + entry offset), though ELF support is useful for testing
-with cross-compiled C programs.
+`dbt.cpp` + `dbt_emit_x64.h`: Block-at-a-time translation of all
+RV64IMD instructions to x86-64. Correct for all instruction groups.
 
-Validation: Hand-written RV64IMD test sequences covering all
-instruction groups. Cross-compiled C test programs using
-`riscv64-unknown-elf-gcc -march=rv64imd -mabi=lp64d`. Interpreter
-and DBT must produce identical results for all tests.
+Current optimization state:
+ - ✅ 8-slot LRU register cache (RSI/RDI/R8-R11/R14/R15)
+ - ✅ AUIPC 32-bit immediate compression
+ - ✅ Immediate size optimization (imm8 short forms)
+ - ✅ Zero-register special handling (x0 never stored)
+ - ✅ FP sign-injection idioms (fmv.d/fneg.d/fabs.d)
+ - ❌ Register cache scoped per-block (flushed at every boundary)
+ - ❌ No block chaining (every exit returns to trampoline)
+ - ❌ No instruction fusion (LUI+ADDI, SLT+branch, AUIPC+JALR)
+ - ❌ No diamond merge (short forward branches → CMOVcc)
+ - ❌ No superblocks (no cross-branch block extension)
+ - ❌ RAS struct exists but is never used for JALR prediction
+ - ❌ No intrinsic stubs (memcpy, strlen as native x86)
+
+**1d. Block cache** — COMPLETE
+
+1024-entry direct-mapped hash table. O(1) lookup. Statistics tracked
+(cache_hits, cache_misses, blocks_translated, insns_translated).
+Persistent across runs via dbt_rerun() (callback update without
+cache invalidation).
+
+**1e. Test suite** — PARTIAL
+
+33 rveval smoke tests + 14 benchmarks cover the compiler+DBT stack.
+Missing: standalone low-level DBT tests for instruction correctness
+(int64 edge cases, W-suffix sign-extension, FP corner cases, register
+cache spill/restore, ECALL argument passing). Cross-compiled C test
+programs not yet attempted.
+
+**1f. ELF loader** — COMPLETE
+
+`dbt_elf64.cpp`: Loads RV64 ELF binaries for testing with cross-
+compiled programs. Not used in the production softcode path.
+
+#### Stage 1 Remaining Work (in priority order)
+
+Each item below is a well-understood optimization from ~/riscv.
+None are research problems. Each is independently testable and
+measurable via the existing benchmark infrastructure.
+
+**1c-i. Block chaining** (HIGH IMPACT)
+
+Currently every block exit stores next_pc and returns to the
+trampoline. The trampoline looks up the next block in the cache and
+calls it. This is ~10-20 cycles of overhead per block transition.
+
+Block chaining: when translating a direct branch (JAL, BEQ taken/
+not-taken), if the target block is already translated, patch the
+exit to jump directly to the target's native code. Eliminates the
+trampoline round-trip for the common case.
+
+For conditional branches: emit the taken path as a direct jump to
+the target block's native code (if cached), with the not-taken path
+falling through to the next instruction. Side exits go through the
+trampoline.
+
+Implementation: `emit_exit_chained()` writes a direct JMP to the
+target's native code address. On cache miss, the JMP target is the
+trampoline entry. When the target is later translated, backpatch
+the JMP.
+
+Validation: Run all existing rveval tests + benchmarks. Measure
+BENCH011-014 (ECALL path) for improvement — these have multiple
+block transitions per execution.
+
+**1c-ii. Cross-block register persistence** (HIGH IMPACT)
+
+Currently the 8-slot register cache is flushed at every block
+boundary. This means every block starts with a cold cache and loads
+guest registers from memory on first use.
+
+With block chaining, adjacent blocks can share register state. The
+exit of block A writes the register cache descriptor into a known
+location; the entry of block B reads it and inherits the mappings
+instead of starting cold.
+
+This requires: (a) a register cache snapshot structure, (b) snapshot
+emission at block exits, (c) snapshot loading at chained block
+entries, (d) fallback to cold-start when entering from the
+trampoline (cache miss path).
+
+Validation: Register-intensive test sequences (e.g., loop with
+accumulator across multiple blocks). Verify correctness and measure
+reduced guest-memory traffic.
+
+**1c-iii. Instruction fusion** (HIGH IMPACT)
+
+Peek ahead during translation. When the current instruction and the
+next form a known pattern, emit a single fused x86-64 sequence:
+
+ - **LUI + ADDI → MOV imm32**: Guest loads a 32-bit constant in
+   two instructions. Fused: single `mov reg, imm32`.
+ - **AUIPC + ADDI → LEA**: PC-relative address computation.
+   Fused: single address calculation.
+ - **AUIPC + JALR → direct CALL**: PC-relative function call.
+   Fused: direct jump/call to known target.
+ - **SLT + BNE/BEQ → single Jcc**: Set-less-than followed by
+   branch-on-result. Fused: single conditional jump (JL, JGE, etc.).
+ - **ADDI x0 + next → NOP elimination**: ADDI with rd=x0 is a NOP.
+   Skip emission entirely.
+
+Implementation: In translate_block(), after decoding instruction N,
+peek at instruction N+1. If a fusion pattern matches, emit the fused
+sequence and advance the PC by 8 (two instructions consumed).
+
+Validation: Hand-written test sequences with known fusion
+opportunities. Verify fused output matches unfused semantics.
+Count fused pairs in benchmarks.
+
+**1c-iv. Diamond merge** (MEDIUM IMPACT)
+
+Short forward branches (≤N instructions of guest code on the taken
+path, where N is small, e.g., 4) are better translated as
+conditional moves (CMOVcc) than as branches. This eliminates branch
+misprediction for simple `if (cond) x = a; else x = b;` patterns.
+
+Detection: During translation, when a BEQ/BNE target is a small
+positive offset and the taken path ends with a branch to the merge
+point, replace the branch+taken+merge sequence with:
+ - Compute condition in flags
+ - Emit CMOVcc for each value that differs between paths
+ - Continue with the merge point
+
+This is particularly valuable for the inline atoi/itoa sequences
+emitted by the softcode compiler, which have several short forward
+branches for sign handling and zero detection.
+
+**1c-v. Return Address Stack (RAS)** (MEDIUM IMPACT)
+
+The RAS struct already exists in rv64_ctx_t (32 entries, circular
+buffer) but is never used. JAL (link register = ra) should push the
+return address onto the RAS. JALR with rs1=ra should pop the RAS and
+use the predicted target for block lookup, falling back to indirect
+dispatch on mispredict.
+
+This turns function call/return pairs (common in compiled softcode
+with nested function calls) from indirect branches (~5-10 cycle
+penalty) into predicted direct jumps.
+
+Implementation: In the JAL handler, push pc+4 to RAS when rd=x1
+(ra). In the JALR handler, when rs1=x1, pop RAS, compare predicted
+vs. actual target, emit direct jump on match or fallback on mismatch.
+
+**1c-vi. Superblock formation** (LOWER PRIORITY)
+
+Extend basic blocks across branch points by speculating on the
+likely path (e.g., loop back-edges are likely taken). The extended
+block includes side-exit stubs that restore state and transfer to
+the other path.
+
+This is the most complex optimization and builds on block chaining
++ register persistence. Defer until the simpler optimizations are
+measured and stable.
+
+**1c-vii. Intrinsic stubs** (LOWER PRIORITY)
+
+For ECALL operations that are pure computation (no game state
+mutation), emit inline x86-64 instead of the full ECALL exit.
+Candidates: memcpy, strlen, memswap, mux_atol, mux_ltoa.
+
+This is the bridge to the Tier 2 RISC-V library vision — instead
+of calling through ECALL, the DBT recognizes specific call targets
+and inlines native implementations. Learned from ~/slow-32: byte-
+level operations (memcpy, strlen) are better as native x86 than
+interpreted RISC-V byte loops.
+
+**1e-ii. Standalone DBT test suite** (SHOULD HAVE)
+
+Write instruction-level tests independent of the softcode compiler:
+
+ - Int64 edge cases: overflow, underflow, sign extension
+ - W-suffix correctness: ADDW sign-extends to 64-bit
+ - FP corner cases: NaN propagation, rounding modes, denormals
+ - Register cache: spill/restore correctness under pressure
+ - Block cache: collision handling, eviction behavior
+ - ECALL: argument passing, return value
+ - Cross-compiled C programs via riscv64-unknown-elf-gcc
+
+These tests validate the DBT independently of the softcode
+compiler, making it safe to optimize the translator without worrying
+about higher-level regressions.
+
+#### Stage 1 Deliverable
+
+A production-quality RV64IMD DBT runtime with:
+ - Block chaining (no trampoline overhead for cached paths)
+ - Cross-block register persistence
+ - Instruction fusion (LUI+ADDI, SLT+branch, AUIPC+JALR)
+ - RAS prediction for call/return pairs
+ - Diamond merge for short forward branches
+ - Comprehensive standalone test suite
+
+Expected performance improvement over current DBT: 30-50% reduction
+in per-block execution cost, directly reducing the ECALL overhead
+floor and improving all native arithmetic paths.
 
 ### Stage 2: Engine API / Function Pointer Table
 
@@ -501,96 +705,71 @@ in the engine that delegate to existing functions.
 Validation: Write a hand-coded RISC-V test function that calls
 through the API and verifies results match the interpreter.
 
-### Stage 3: SSA IR Definition
+### Stage 3: Softcode Compiler (SSA Pipeline)
 
-Define the SSA intermediate representation:
+The proof-of-concept compiler (AST → direct RV64) demonstrated
+constant folding and native arithmetic. The production compiler
+uses an SSA intermediate representation for more powerful
+optimization.
 
- - **Value types**: int64, f64, dbref, string (handle), void
- - **Operations**: arithmetic, comparison, conversion, call, phi,
+**3a. SSA IR definition**:
+ - Value types: int64, f64, dbref, string (handle), void
+ - Operations: arithmetic, comparison, conversion, call, phi,
    branch, string_concat, string_alloc, string_free
- - **Blocks**: basic blocks with phi nodes at entry, terminator at exit
- - **Side-effect ordering**: call nodes carry a memory token (like
-   LLVM's `memory` operand) to enforce ordering
- - **Type annotations**: each value carries its type from the lattice
+ - Blocks: basic blocks with phi nodes at entry, terminator at exit
+ - Side-effect ordering: call nodes carry a memory token
+ - Type annotations: each value carries its type from the lattice
 
-Deliverable: C++ data structures for the IR (`SSAValue`, `SSABlock`,
-`SSAFunction`). Printer that dumps human-readable IR for debugging.
-
-Validation: Manually construct SSA for a few test expressions, verify
-the printer output is sensible.
-
-### Stage 4: AST-to-SSA Lowering
-
-Walk the AST and emit SSA IR:
-
+**3b. AST-to-SSA lowering**:
  - Literal nodes → SSA constants (typed: int64/f64/string)
- - Function calls → SSA call nodes (inline for compiled functions,
-   engine API call for runtime functions)
- - `%q0`-`%q9` → SSA load/store through a register file passed in
-   the runtime context
+ - Function calls → SSA call nodes (inline or engine API)
+ - `%q0`-`%q9` → SSA load/store through register file
  - `if()`/`ifelse()` → conditional branches + phi nodes
  - `iter()` → loop with phi for `%i0`, `inum()` as loop counter
  - `u()` → engine API `ucall` with argument marshaling
- - %-substitutions → loads from the execution context struct
+ - %-substitutions → loads from execution context struct
 
-Type inference runs during or immediately after lowering: each value
-gets a type from the lattice based on production rules, then
-consumption constraints propagate backward to insert or eliminate
-conversions.
+**3c. SSA optimization passes** (in priority order):
+ 1. Conversion elimination — keep values in machine types
+ 2. Constant folding — subsumes the proof-of-concept folder
+ 3. Dead code elimination
+ 4. Common subexpression elimination
+ 5. Loop-invariant code motion
 
-Deliverable: `ast_to_ssa(ASTNode* root) -> SSAFunction*`
+**3d. RISC-V code generation**:
+ - Instruction selection (BURG tree matcher)
+ - Register allocation (linear scan over RV64 register file)
+ - Code emission to byte buffer
 
-Validation: Compile simple expressions (`add(1,2)`, `if(t(%q0),yes,no)`,
-`iter(a b c,strlen(%i0))`) and verify SSA output. Compare interpreted
-vs. SSA-interpreted results for a suite of test expressions.
+### Stage 4: Tier 2 — RISC-V Function Library
 
-### Stage 5: SSA Optimization Passes
+The architectural insight from the proof of concept: softcode
+support functions do not need to exist as C++ `fun_*()` functions
+in engine.so. Each function is either absorbed into the compiler
+(Tier 1 — constant folding, native arithmetic) or cross-compiled
+to a RISC-V binary blob that compiled softcode calls via JAL
+instead of ECALL (Tier 2). **No duplication** — each function
+lives in exactly one place, and the C++ implementation is deleted.
 
-Implement in order of impact:
+**Tier 1 (compiler intelligence)**: Functions where the compiler
+reasons about types and semantics. add(), sub(), mul(), eq(), not(),
+strlen(), mid(), pos() — these become compiler intrinsics.
 
- 1. **Conversion elimination** — the biggest win. Prove that adjacent
-    numeric operations can share machine types without string
-    round-trips.
- 2. **Constant folding** — evaluate pure functions with constant
-    arguments at compile time. `add(1,2)` → `3`.
- 3. **Dead code elimination** — remove values that are computed but
-    never used (common in MUXcode with side-effect-only branches).
- 4. **Common subexpression elimination** — `get(obj/attr)` called
-    twice in the same expression becomes one call + reuse, if no
-    intervening `set()` could modify it.
- 5. **Loop-invariant code motion** — hoist `get()` calls out of
-    `iter()` / `while()` bodies when the attribute isn't modified
-    inside the loop.
+**Tier 2 (RISC-V library)**: Function bodies cross-compiled to
+RV64 via `riscv64-linux-gnu-gcc -march=rv64imd -O2`. Loaded as a
+binary blob into guest memory. Compiled softcode calls via JAL —
+same address space, no context switch. Candidates: sort(), iter(),
+match(), edit(), regex, anything too complex for compile-time
+reasoning.
 
-Each pass is independently testable. Verify SSA before/after and
-confirm behavioral equivalence.
+**Intrinsics (native fast-path)**: memcpy, strlen, memswap —
+better as native x86 than interpreted RV64 byte loops. Small set
+of fast ECALLs or direct libc trampolines. (Learned from ~/slow-32.)
 
-### Stage 6: RISC-V Code Generation
+**ECALL (rare escape hatch)**: Only for operations needing host
+state — database access, network I/O, @pemit, object manipulation.
 
- - **Instruction selection**: BURG tree matcher maps SSA operations
-   to RISC-V instruction sequences. Arithmetic maps 1:1. Conversions
-   map to call sequences. String operations map to engine API calls.
- - **Register allocation**: Linear scan or graph coloring over the
-   RV64IMD register file (31 integer + 32 FP). Spill to stack frame.
-   Reserve registers for the engine API pointer, stack pointer, and
-   runtime context pointer.
- - **Calling convention**: Engine API calls follow the standard
-   RISC-V calling convention (a0-a7 for arguments, a0-a1 for return
-   values). This means the DBT layer's register mapping works
-   naturally.
- - **Code emission**: Emit RISC-V binary into a byte buffer.
-   Relocations for engine API calls resolved at link time (offsets
-   into the function pointer table).
-
-Deliverable: `ssa_to_riscv(SSAFunction*) -> CompiledCode` where
-`CompiledCode` is a byte buffer + metadata (entry point offset,
-relocation table, source hash).
-
-Validation: Compile test expressions, execute via DBT runtime,
-compare results against interpreter. Run the full smoke test suite
-with compiled eval and verify all 489 tests pass.
-
-### Stage 7: SQLite Code Cache
+### Stage 5: SQLite Code Cache
 
 Schema addition:
 
@@ -610,7 +789,7 @@ Integration points:
  - `@dump` checkpoints the code cache with the rest of the database.
  - Cache can be rebuilt from source at any time (it's a pure cache).
 
-### Stage 8: Tiered Promotion
+### Stage 6: Tiered Promotion
 
 Add execution counters to the AST parse cache. Promotion policy:
 
@@ -623,7 +802,7 @@ Add execution counters to the AST parse cache. Promotion policy:
    Tier 2 entries live forever (they're small and the database is
    the compilation artifact).
 
-### Stage 9: Lua Frontend (Optional, Future)
+### Stage 7: Lua Frontend (Optional, Future)
 
 Add a Lua parser that produces SSA IR using the same infrastructure.
 Lua attributes (marked by convention or flag) are parsed by the Lua

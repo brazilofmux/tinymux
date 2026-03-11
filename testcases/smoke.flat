@@ -4763,7 +4763,11 @@
 >276
 "@log smoke=BENCH011:[rvbench(add(rand(100),1),10000)]"
 >277
-"@log smoke=BENCH012:[rvbench(lnum(add(2,3)),10000)];@trig me/tr.done"
+"@log smoke=BENCH012:[rvbench(lnum(add(2,3)),10000)]"
+>278
+"@log smoke=BENCH013:[rvbench(mul(rand(100),rand(100)),10000)]"
+>279
+"@log smoke=BENCH014:[rvbench(not(eq(mod(add(rand(1),42),5),0)),10000)];@trig me/tr.done"
 <
 !149
 "test_rvcall_fn"
@@ -4883,7 +4887,19 @@
 >291
 "@if strmatch(setr(0, rveval(comp(abc,def))),-1)={@log smoke=TC026: rveval comp(abc,def)=-1. Succeeded.},{@log smoke=TC026: rveval comp(abc,def)=-1. Failed (%q0).}"
 >292
-"@if strmatch(setr(0, rveval(gt(fdiv(10,3),3.33))),1)={@log smoke=TC027: rveval fdiv(10,3)>3.33. Succeeded.;@trig me/tr.done},{@log smoke=TC027: rveval fdiv(10,3)>3.33. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0, rveval(gt(fdiv(10,3),3.33))),1)={@log smoke=TC027: rveval fdiv(10,3)>3.33. Succeeded.},{@log smoke=TC027: rveval fdiv(10,3)>3.33. Failed (%q0).}"
+>293
+"@if strmatch(setr(0, rveval(mul(rand(1),0))),0)={@log smoke=TC028: rveval native mul(rand(1),0)=0. Succeeded.},{@log smoke=TC028: rveval native mul(rand(1),0)=0. Failed (%q0).}"
+>294
+"@if strmatch(setr(0, rveval(mod(add(rand(1),10),5))),0)={@log smoke=TC029: rveval native mod(add(rand(1),10),5)=0. Succeeded.},{@log smoke=TC029: rveval native mod(add(rand(1),10),5)=0. Failed (%q0).}"
+>295
+"@if strmatch(setr(0, rveval(eq(add(rand(1),5),5))),1)={@log smoke=TC030: rveval native eq(add(rand(1),5),5)=1. Succeeded.},{@log smoke=TC030: rveval native eq(add(rand(1),5),5)=1. Failed (%q0).}"
+>296
+"@if strmatch(setr(0, rveval(gt(add(rand(1),10),5))),1)={@log smoke=TC031: rveval native gt(add(rand(1),10),5)=1. Succeeded.},{@log smoke=TC031: rveval native gt(add(rand(1),10),5)=1. Failed (%q0).}"
+>297
+"@if strmatch(setr(0, rveval(not(rand(1)))),1)={@log smoke=TC032: rveval native not(rand(1))=1. Succeeded.},{@log smoke=TC032: rveval native not(rand(1))=1. Failed (%q0).}"
+>298
+"@if strmatch(setr(0, rveval(not(eq(mod(add(rand(1),42),5),0)))),1)={@log smoke=TC033: rveval native chain not(eq(mod(add(rand(1),42),5),0))=1. Succeeded.;@trig me/tr.done},{@log smoke=TC033: rveval native chain not(eq(mod(add(rand(1),42),5),0))=1. Failed (%q0).;@trig me/tr.done}"
 <
 !151
 "test_secure_fn"
