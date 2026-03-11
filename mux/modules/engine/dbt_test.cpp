@@ -16,6 +16,7 @@
 #include "dbt_interp.h"
 #include "dbt_decoder.h"
 #include "dbt_elf64.h"
+#include "dbt.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -1230,6 +1231,75 @@ static bool run_elf_test(const char *path) {
 }
 
 // ---------------------------------------------------------------
+// DBT (JIT) ELF test
+// ---------------------------------------------------------------
+
+struct dbt_ecall_ctx {
+    uint8_t *memory;
+    size_t   memory_size;
+};
+
+static int dbt_elf_ecall2(rv64_ctx_t *ctx, void *user_data) {
+    dbt_ecall_ctx *ec = static_cast<dbt_ecall_ctx *>(user_data);
+    uint64_t syscall_num = ctx->x[17];
+
+    switch (syscall_num) {
+    case 93:
+        return static_cast<int>(ctx->x[10]);
+
+    case 64: {
+        uint64_t fd  = ctx->x[10];
+        uint64_t buf = ctx->x[11];
+        uint64_t len = ctx->x[12];
+        if (buf + len > ec->memory_size) {
+            ctx->x[10] = static_cast<uint64_t>(-1LL);
+            return -1;
+        }
+        ssize_t written = write(static_cast<int>(fd),
+                                ec->memory + buf, static_cast<size_t>(len));
+        ctx->x[10] = static_cast<uint64_t>(written);
+        return -1;
+    }
+
+    default:
+        fprintf(stderr, "dbt_elf_ecall: unhandled ecall %llu\n",
+                (unsigned long long)syscall_num);
+        return -1;
+    }
+}
+
+static bool run_dbt_elf_test(const char *path) {
+    printf("\nRunning DBT/JIT: %s\n", path);
+
+    rv64_binary_t bin;
+    if (rv64_load_elf(path, &bin) != 0) {
+        fprintf(stderr, "Failed to load %s\n", path);
+        return false;
+    }
+
+    dbt_ecall_ctx ec = { bin.memory, bin.memory_size };
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, bin.memory, bin.memory_size, dbt_elf_ecall2, &ec) != 0) {
+        fprintf(stderr, "Failed to init DBT\n");
+        rv64_free_binary(&bin);
+        return false;
+    }
+
+    int rc = dbt_run(&dbt, bin.entry_point, bin.stack_top);
+
+    printf("DBT exited with code %d (%llu blocks, %llu hits, %llu misses)\n",
+           rc,
+           (unsigned long long)dbt.blocks_translated,
+           (unsigned long long)dbt.cache_hits,
+           (unsigned long long)dbt.cache_misses);
+
+    dbt_cleanup(&dbt);
+    rv64_free_binary(&bin);
+    return rc == 0;
+}
+
+// ---------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------
 
@@ -1284,9 +1354,23 @@ int main(int argc, char *argv[]) {
     }
 
     if (argc > 1) {
-        printf("\nELF tests: %d run, %d passed, %d failed\n",
+        printf("\nELF interpreter: %d run, %d passed, %d failed\n",
                argc - 1, argc - 1 - elf_failures, elf_failures);
     }
 
-    return (g_tests_failed > 0 || elf_failures > 0) ? 1 : 0;
+    // Run ELF tests through the DBT (JIT).
+    //
+    int dbt_failures = 0;
+    for (int i = 1; i < argc; i++) {
+        if (!run_dbt_elf_test(argv[i])) {
+            dbt_failures++;
+        }
+    }
+
+    if (argc > 1) {
+        printf("\nELF DBT/JIT: %d run, %d passed, %d failed\n",
+               argc - 1, argc - 1 - dbt_failures, dbt_failures);
+    }
+
+    return (g_tests_failed > 0 || elf_failures > 0 || dbt_failures > 0) ? 1 : 0;
 }
