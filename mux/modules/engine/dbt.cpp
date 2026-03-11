@@ -137,7 +137,7 @@ static inline uint32_t cache_hash(uint64_t pc) {
 
 static block_entry_t *cache_lookup(dbt_state_t *dbt, uint64_t pc) {
     block_entry_t *e = &dbt->cache[cache_hash(pc)];
-    if (e->guest_pc == pc) {
+    if (e->guest_pc == pc && e->native_code) {
         dbt->cache_hits++;
         return e;
     }
