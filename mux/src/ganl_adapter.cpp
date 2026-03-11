@@ -462,12 +462,9 @@ public:
             for (DESC* d : g_descriptors_list) {
                 if (d && d->socket == static_cast<int>(handle)) {
                     std::shared_ptr<ganl::ConnectionBase> conn;
-                    {
-                        std::lock_guard<std::mutex> lock(adapter_.mutex_);
-                        auto it = adapter_.handle_to_conn_.find(handle);
-                        if (it != adapter_.handle_to_conn_.end()) {
-                            conn = it->second;
-                        }
+                    auto it = adapter_.handle_to_conn_.find(handle);
+                    if (it != adapter_.handle_to_conn_.end()) {
+                        conn = it->second;
                     }
                     adapter_.add_mapping(handle, d, conn);
                     return static_cast<ganl::SessionId>(handle);
@@ -480,34 +477,28 @@ public:
         ganl::NetworkAddress remoteNetAddr;
         bool useTls = false;
 
-        {
-            std::lock_guard<std::mutex> lock(adapter_.mutex_);
-            auto ctxIt = adapter_.connection_listener_map_.find(handle);
-            if (ctxIt != adapter_.connection_listener_map_.end()) {
-                listenerCtx = ctxIt->second;
-                adapter_.connection_listener_map_.erase(ctxIt);
-            }
+        auto ctxIt = adapter_.connection_listener_map_.find(handle);
+        if (ctxIt != adapter_.connection_listener_map_.end()) {
+            listenerCtx = ctxIt->second;
+            adapter_.connection_listener_map_.erase(ctxIt);
+        }
 
-            auto addrIt = adapter_.pending_remote_addresses_.find(handle);
-            if (addrIt != adapter_.pending_remote_addresses_.end()) {
-                remoteNetAddr = addrIt->second;
-                adapter_.pending_remote_addresses_.erase(addrIt);
-            }
+        auto addrIt = adapter_.pending_remote_addresses_.find(handle);
+        if (addrIt != adapter_.pending_remote_addresses_.end()) {
+            remoteNetAddr = addrIt->second;
+            adapter_.pending_remote_addresses_.erase(addrIt);
+        }
 
-            auto tlsIt = adapter_.pending_tls_flags_.find(handle);
-            if (tlsIt != adapter_.pending_tls_flags_.end()) {
-                useTls = tlsIt->second;
-                adapter_.pending_tls_flags_.erase(tlsIt);
-            }
+        auto tlsIt = adapter_.pending_tls_flags_.find(handle);
+        if (tlsIt != adapter_.pending_tls_flags_.end()) {
+            useTls = tlsIt->second;
+            adapter_.pending_tls_flags_.erase(tlsIt);
         }
 
         std::shared_ptr<ganl::ConnectionBase> conn;
-        {
-            std::lock_guard<std::mutex> lock(adapter_.mutex_);
-            auto itConn = adapter_.handle_to_conn_.find(handle);
-            if (itConn != adapter_.handle_to_conn_.end()) {
-                conn = itConn->second;
-            }
+        auto itConn = adapter_.handle_to_conn_.find(handle);
+        if (itConn != adapter_.handle_to_conn_.end()) {
+            conn = itConn->second;
         }
         if (!conn) {
             g_pILog->WriteString(tprintf(T("GANL: Missing ConnectionBase for handle %llu\n"),
@@ -640,7 +631,6 @@ public:
             // completes and the GANL connection reaches Running state.
             // Sending welcome text before TLS is established causes it to
             // buffer in applicationOutput_ and never get flushed.
-            std::lock_guard<std::mutex> lock(adapter_.mutex_);
             adapter_.pending_finalizations_.push_back({handle, true});
         } else {
             // Defer finalization until first data arrives so we can
@@ -1245,7 +1235,6 @@ GanlAdapter::~GanlAdapter() {
 }
 
 bool GanlAdapter::initialize() {
-    std::lock_guard<std::mutex> lock(mutex_);
     if (initialized_) return true;
 
     // Register GANL logging callback so the library can write to the game log.
@@ -1470,14 +1459,10 @@ bool GanlAdapter::initialize() {
 }
 
 void GanlAdapter::shutdown() {
-    std::unique_lock<std::mutex> lock(mutex_); // Use unique_lock for manual control
     if (!initialized_) return;
     initialized_ = false; // Mark as shutting down immediately
 
     g_pILog->WriteString(T("Shutting down GANL Adapter...\n"));
-
-    // Release lock before calling potentially blocking shutdown methods
-    lock.unlock();
 
     shutdown_dns_slave();
     shutdown_email_channel();
@@ -1513,7 +1498,6 @@ void GanlAdapter::shutdown() {
         int num = networkEngine_->processEvents(100, events, MAX_EVENTS);
         for (int i = 0; i < num; ++i) {
             if (events[i].connection != ganl::InvalidConnectionHandle) {
-                std::lock_guard<std::mutex> lk(mutex_);
                 auto it = handle_to_conn_.find(events[i].connection);
                 if (it != handle_to_conn_.end() && it->second) {
                     it->second->handleNetworkEvent(events[i]);
@@ -1527,14 +1511,11 @@ void GanlAdapter::shutdown() {
     // a destroyed engine.
     {
         std::vector<std::shared_ptr<ganl::ConnectionBase>> connsToClose;
-        {
-            std::lock_guard<std::mutex> connLock(mutex_);
-            connsToClose.reserve(handle_to_conn_.size());
-            for (auto& pair : handle_to_conn_) {
-                connsToClose.push_back(pair.second);
-            }
-            handle_to_conn_.clear();
+        connsToClose.reserve(handle_to_conn_.size());
+        for (auto& pair : handle_to_conn_) {
+            connsToClose.push_back(pair.second);
         }
+        handle_to_conn_.clear();
         for (auto& conn : connsToClose) {
             if (conn && conn->getState() != ganl::ConnectionState::Closed) {
                 conn->close(ganl::DisconnectReason::ServerShutdown);
@@ -1563,7 +1544,6 @@ void GanlAdapter::shutdown() {
         networkEngine_.reset();
     }
 
-    lock.lock();
     port_listeners_.clear();
     ssl_port_listeners_.clear();
     handle_to_desc_.clear();
@@ -1642,7 +1622,6 @@ void GanlAdapter::prepare_for_restart() {
         int num = networkEngine_->processEvents(100, events, MAX_EVENTS);
         for (int i = 0; i < num; ++i) {
             if (events[i].connection != ganl::InvalidConnectionHandle) {
-                std::lock_guard<std::mutex> lk(mutex_);
                 auto it = handle_to_conn_.find(events[i].connection);
                 if (it != handle_to_conn_.end() && it->second) {
                     it->second->handleNetworkEvent(events[i]);
@@ -1653,21 +1632,15 @@ void GanlAdapter::prepare_for_restart() {
 
     // 4. Clear desc mappings so Connection destructors won't trigger
     //    onConnectionClose cleanup for surviving connections.
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        handle_to_desc_.clear();
-        desc_to_handle_.clear();
-    }
+    handle_to_desc_.clear();
+    desc_to_handle_.clear();
 
     // 5. Detach all remaining connection fds from the engine.
     {
         std::vector<ganl::ConnectionHandle> connHandles;
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            connHandles.reserve(handle_to_conn_.size());
-            for (const auto& pair : handle_to_conn_) {
-                connHandles.push_back(pair.first);
-            }
+        connHandles.reserve(handle_to_conn_.size());
+        for (const auto& pair : handle_to_conn_) {
+            connHandles.push_back(pair.first);
         }
         for (ganl::ConnectionHandle h : connHandles) {
             networkEngine_->detachConnection(h);
@@ -1685,10 +1658,7 @@ void GanlAdapter::prepare_for_restart() {
     // 7. Clear handle_to_conn_ — Connection objects destruct safely
     //    (closeConnection = no-op since fd already detached,
     //     onConnectionClose = no-op since desc mappings cleared).
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        handle_to_conn_.clear();
-    }
+    handle_to_conn_.clear();
 
     // 8. Shut down engine, transport, session manager, protocol handler.
     shutdown_dns_slave();
@@ -1709,17 +1679,14 @@ void GanlAdapter::prepare_for_restart() {
         networkEngine_.reset();
     }
 
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        port_listeners_.clear();
-        ssl_port_listeners_.clear();
-        listener_contexts_.clear();
-        connection_listener_map_.clear();
-        pending_remote_addresses_.clear();
-        pending_tls_flags_.clear();
-        pending_finalizations_.clear();
-        initialized_ = false;
-    }
+    port_listeners_.clear();
+    ssl_port_listeners_.clear();
+    listener_contexts_.clear();
+    connection_listener_map_.clear();
+    pending_remote_addresses_.clear();
+    pending_tls_flags_.clear();
+    pending_finalizations_.clear();
+    initialized_ = false;
 
     g_pILog->WriteString(T("GANL: Ready for exec.\n"));
 }
@@ -1827,16 +1794,12 @@ void GanlAdapter::run_main_loop() {
                         continue;
                     }
 
-                    {
-                        std::lock_guard<std::mutex> lock(mutex_);
-                        connection_listener_map_[connHandle] = listenerCtx;
-                        pending_remote_addresses_[connHandle] = events[i].remoteAddress;
-                        pending_tls_flags_[connHandle] = useTls;
-                        handle_to_conn_[connHandle] = conn;
-                    }
+                    connection_listener_map_[connHandle] = listenerCtx;
+                    pending_remote_addresses_[connHandle] = events[i].remoteAddress;
+                    pending_tls_flags_[connHandle] = useTls;
+                    handle_to_conn_[connHandle] = conn;
 
                     if (!conn->initialize(useTls)) {
-                        std::lock_guard<std::mutex> lock(mutex_);
                         handle_to_conn_.erase(connHandle);
                         connection_listener_map_.erase(connHandle);
                         pending_remote_addresses_.erase(connHandle);
@@ -1847,12 +1810,9 @@ void GanlAdapter::run_main_loop() {
             }
             else if (events[i].connection != ganl::InvalidConnectionHandle) {
                 std::shared_ptr<ganl::ConnectionBase> conn = nullptr;
-                {
-                    std::lock_guard<std::mutex> lock(mutex_);
-                    auto it = handle_to_conn_.find(events[i].connection);
-                    if (it != handle_to_conn_.end()) {
-                        conn = it->second; // Get the shared_ptr
-                    }
+                auto it = handle_to_conn_.find(events[i].connection);
+                if (it != handle_to_conn_.end()) {
+                    conn = it->second; // Get the shared_ptr
                 }
                 if (conn) {
                     // Event context should be the ConnectionBase* itself
@@ -1907,21 +1867,18 @@ void GanlAdapter::process_tinyMUX_tasks() {
     // so that output doesn't get stuck in GANL's applicationOutput_ buffer.
     if (!pending_finalizations_.empty()) {
         std::vector<PendingFinalization> ready;
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            auto it = pending_finalizations_.begin();
-            while (it != pending_finalizations_.end()) {
-                auto connIt = handle_to_conn_.find(it->handle);
-                if (connIt != handle_to_conn_.end() && connIt->second &&
-                    connIt->second->getState() == ganl::ConnectionState::Running) {
-                    ready.push_back(*it);
-                    it = pending_finalizations_.erase(it);
-                } else if (connIt == handle_to_conn_.end()) {
-                    // Connection was closed before TLS completed
-                    it = pending_finalizations_.erase(it);
-                } else {
-                    ++it;
-                }
+        auto it = pending_finalizations_.begin();
+        while (it != pending_finalizations_.end()) {
+            auto connIt = handle_to_conn_.find(it->handle);
+            if (connIt != handle_to_conn_.end() && connIt->second &&
+                connIt->second->getState() == ganl::ConnectionState::Running) {
+                ready.push_back(*it);
+                it = pending_finalizations_.erase(it);
+            } else if (connIt == handle_to_conn_.end()) {
+                // Connection was closed before TLS completed
+                it = pending_finalizations_.erase(it);
+            } else {
+                ++it;
             }
         }
         for (auto& pf : ready) {
@@ -1984,7 +1941,6 @@ bool GanlAdapter::start_dns_slave() {
         return false;
     }
 
-    std::unique_lock<std::mutex> lock(mutex_);
     if (dns_slave_) {
         return true;
     }
@@ -2000,7 +1956,6 @@ bool GanlAdapter::start_dns_slave() {
     ganl::ErrorCode error = 0;
     ganl::ConnectionHandle handle = networkEngine_->spawnSlave(options, error);
     if (handle == ganl::InvalidConnectionHandle) {
-        lock.unlock();
         g_pILog->WriteString(tprintf(T("GANL: Failed to spawn DNS slave: %s\n"),
             networkEngine_->getErrorString(error).c_str()));
         return false;
@@ -2009,7 +1964,6 @@ bool GanlAdapter::start_dns_slave() {
     channel->handle = handle;
     channel->fd = static_cast<int>(handle);
     dns_slave_ = std::move(channel);
-    lock.unlock();
 
     g_pILog->WriteString(T("GANL: DNS slave channel started.\n"));
     return true;
@@ -2042,14 +1996,12 @@ void GanlAdapter::shutdown_dns_slave() {
 
     g_pILog->WriteString(T("GANL: DNS worker threads stopped.\n"));
 #else
-    std::unique_lock<std::mutex> lock(mutex_);
     if (!dns_slave_) {
         return;
     }
 
     auto handle = dns_slave_->handle;
     dns_slave_.reset();
-    lock.unlock();
 
     if (networkEngine_ && handle != ganl::InvalidConnectionHandle) {
         networkEngine_->closeConnection(handle);
@@ -2076,17 +2028,13 @@ void GanlAdapter::queue_dns_lookup(const UTF8* numericAddress) {
         return;
     }
 
-    bool needShutdown = false;
-    {
-        std::unique_lock<std::mutex> lock(mutex_);
-        if (!dns_slave_) {
-            return;
-        }
-
-        dns_slave_->pendingWrites.emplace_back(reinterpret_cast<const char*>(numericAddress));
-        dns_slave_->pendingWrites.back().push_back('\n');
-        needShutdown = !flush_dns_slave_writes_locked();
+    if (!dns_slave_) {
+        return;
     }
+
+    dns_slave_->pendingWrites.emplace_back(reinterpret_cast<const char*>(numericAddress));
+    dns_slave_->pendingWrites.back().push_back('\n');
+    bool needShutdown = !flush_dns_slave_writes_locked();
 
     if (needShutdown) {
         shutdown_dns_slave();
@@ -2098,27 +2046,24 @@ void GanlAdapter::handle_dns_slave_event(const ganl::IoEvent& event) {
 #if defined(_WIN32)
     UNUSED_PARAMETER(event);
 #else
-    bool needShutdown = false;
-    {
-        std::unique_lock<std::mutex> lock(mutex_);
-        if (!dns_slave_ || (event.connection != dns_slave_->handle && event.context != dns_slave_.get())) {
-            return;
-        }
+    if (!dns_slave_ || (event.connection != dns_slave_->handle && event.context != dns_slave_.get())) {
+        return;
+    }
 
-        switch (event.type) {
-        case ganl::IoEventType::Read:
-            needShutdown = !process_dns_slave_read_locked();
-            break;
-        case ganl::IoEventType::Write:
-            needShutdown = !process_dns_slave_write_locked();
-            break;
-        case ganl::IoEventType::Close:
-        case ganl::IoEventType::Error:
-            needShutdown = true;
-            break;
-        default:
-            break;
-        }
+    bool needShutdown = false;
+    switch (event.type) {
+    case ganl::IoEventType::Read:
+        needShutdown = !process_dns_slave_read_locked();
+        break;
+    case ganl::IoEventType::Write:
+        needShutdown = !process_dns_slave_write_locked();
+        break;
+    case ganl::IoEventType::Close:
+    case ganl::IoEventType::Error:
+        needShutdown = true;
+        break;
+    default:
+        break;
     }
 
     if (needShutdown) {
@@ -2346,12 +2291,9 @@ bool GanlAdapter::start_email_send(dbref executor, const UTF8* recipient,
         return false;
     }
 
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (email_channel_) {
-            notify(executor, T("@email: Another email is already in progress."));
-            return false;
-        }
+    if (email_channel_) {
+        notify(executor, T("@email: Another email is already in progress."));
+        return false;
     }
 
     // DNS resolution (blocking — acceptable for same-box SMTP).
@@ -2453,23 +2395,18 @@ bool GanlAdapter::start_email_send(dbref executor, const UTF8* recipient,
         return false;
     }
 
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        email_channel_ = std::move(channel);
-    }
+    email_channel_ = std::move(channel);
 
     return true;
 }
 
 void GanlAdapter::shutdown_email_channel() {
-    std::unique_lock<std::mutex> lock(mutex_);
     if (!email_channel_) {
         return;
     }
 
     auto handle = email_channel_->handle;
     email_channel_.reset();
-    lock.unlock();
 
     if (networkEngine_ && handle != ganl::InvalidConnectionHandle) {
         networkEngine_->closeConnection(handle);
@@ -2477,17 +2414,15 @@ void GanlAdapter::shutdown_email_channel() {
 }
 
 void GanlAdapter::handle_email_channel_event(const ganl::IoEvent& event) {
+    if (!email_channel_ || (event.connection != email_channel_->handle &&
+                            event.context != email_channel_.get())) {
+        return;
+    }
+
     bool needCleanup = false;
     const UTF8* errorMsg = nullptr;
 
-    {
-        std::unique_lock<std::mutex> lock(mutex_);
-        if (!email_channel_ || (event.connection != email_channel_->handle &&
-                                event.context != email_channel_.get())) {
-            return;
-        }
-
-        switch (event.type) {
+    switch (event.type) {
         case ganl::IoEventType::Write:
             if (email_channel_->state == EmailChannel::State::Connecting) {
                 // Check if non-blocking connect() succeeded.
@@ -2534,7 +2469,6 @@ void GanlAdapter::handle_email_channel_event(const ganl::IoEvent& event) {
         default:
             break;
         }
-    }
 
     if (needCleanup) {
         if (errorMsg) {
@@ -2782,11 +2716,8 @@ void GanlAdapter::email_advance_state_locked(const std::string& responseLine) {
 
 void GanlAdapter::email_notify_and_cleanup(const UTF8* message) {
     dbref executor = NOTHING;
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (email_channel_) {
-            executor = email_channel_->executor;
-        }
+    if (email_channel_) {
+        executor = email_channel_->executor;
     }
 
     if (executor != NOTHING && message) {
@@ -3132,7 +3063,6 @@ int GanlAdapter::get_socket_descriptor(DESC* d) {
 
 // --- Mapping Implementation ---
 void GanlAdapter::add_mapping(ganl::ConnectionHandle handle, DESC* d, std::shared_ptr<ganl::ConnectionBase> conn) {
-    std::lock_guard<std::mutex> lock(mutex_);
     handle_to_desc_[handle] = d;
     desc_to_handle_[d] = handle;
     handle_to_conn_[handle] = conn; // Store the shared_ptr
@@ -3140,7 +3070,6 @@ void GanlAdapter::add_mapping(ganl::ConnectionHandle handle, DESC* d, std::share
 }
 
 void GanlAdapter::remove_mapping(DESC* d) {
-    std::lock_guard<std::mutex> lock(mutex_);
     auto it_dth = desc_to_handle_.find(d);
     if (it_dth != desc_to_handle_.end()) {
         ganl::ConnectionHandle handle = it_dth->second;
@@ -3156,13 +3085,11 @@ void GanlAdapter::remove_mapping(DESC* d) {
 }
 
 DESC* GanlAdapter::get_desc(ganl::ConnectionHandle handle) {
-    std::lock_guard<std::mutex> lock(mutex_);
     auto it = handle_to_desc_.find(handle);
     return (it != handle_to_desc_.end()) ? it->second : nullptr;
 }
 
 std::shared_ptr<ganl::ConnectionBase> GanlAdapter::get_connection(DESC* d) {
-    std::lock_guard<std::mutex> lock(mutex_);
     auto it_dth = desc_to_handle_.find(d);
     if (it_dth != desc_to_handle_.end()) {
         ganl::ConnectionHandle handle = it_dth->second;
@@ -3176,7 +3103,6 @@ std::shared_ptr<ganl::ConnectionBase> GanlAdapter::get_connection(DESC* d) {
 
 
 ganl::ConnectionHandle GanlAdapter::get_handle(DESC* d) {
-    std::lock_guard<std::mutex> lock(mutex_);
     auto it = desc_to_handle_.find(d);
     return (it != desc_to_handle_.end()) ? it->second : ganl::InvalidConnectionHandle;
 }
