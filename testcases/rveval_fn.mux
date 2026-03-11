@@ -218,11 +218,207 @@
         Result:42
       )=
   {
-    @log smoke=TC014: rveval strcat(Result:,add(21,21))=Result:42. Succeeded.;
+    @log smoke=TC014: rveval strcat(Result:,add(21,21))=Result:42. Succeeded.
+  },
+  {
+    @log smoke=TC014: rveval strcat(Result:,add(21,21))=Result:42. Failed (%q0).
+  }
+-
+#
+# Test Case #15 - eq(): eq(42,42) = 1.
+#
+&tr.tc015 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(eq(42,42))),
+        1
+      )=
+  {
+    @log smoke=TC015: rveval eq(42,42)=1. Succeeded.
+  },
+  {
+    @log smoke=TC015: rveval eq(42,42)=1. Failed (%q0).
+  }
+-
+#
+# Test Case #16 - gt(): gt(5,3) = 1.
+#
+&tr.tc016 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(gt(5,3))),
+        1
+      )=
+  {
+    @log smoke=TC016: rveval gt(5,3)=1. Succeeded.
+  },
+  {
+    @log smoke=TC016: rveval gt(5,3)=1. Failed (%q0).
+  }
+-
+#
+# Test Case #17 - not(): not(0) = 1.
+#
+&tr.tc017 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(not(0))),
+        1
+      )=
+  {
+    @log smoke=TC017: rveval not(0)=1. Succeeded.
+  },
+  {
+    @log smoke=TC017: rveval not(0)=1. Failed (%q0).
+  }
+-
+#
+# Test Case #18 - Chained folds: not(eq(mod(42,5),0)) = 1.
+# mod(42,5)=2, eq(2,0)=0, not(0)=1.
+#
+&tr.tc018 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(not(eq(mod(42,5),0)))),
+        1
+      )=
+  {
+    @log smoke=TC018: rveval not(eq(mod(42,5),0))=1. Succeeded.
+  },
+  {
+    @log smoke=TC018: rveval not(eq(mod(42,5),0))=1. Failed (%q0).
+  }
+-
+#
+# Test Case #19 - inc/dec: inc(41) = 42, dec(43) = 42.
+#
+&tr.tc019 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(eq(inc(41),dec(43)))),
+        1
+      )=
+  {
+    @log smoke=TC019: rveval eq(inc(41),dec(43))=1. Succeeded.
+  },
+  {
+    @log smoke=TC019: rveval eq(inc(41),dec(43))=1. Failed (%q0).
+  }
+-
+#
+# Test Case #20 - max/min: max(3,7,1) = 7, min(3,7,1) = 1.
+#
+&tr.tc020 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(sub(max(3,7,1),min(3,7,1)))),
+        6
+      )=
+  {
+    @log smoke=TC020: rveval sub(max(3,7,1),min(3,7,1))=6. Succeeded.
+  },
+  {
+    @log smoke=TC020: rveval sub(max(3,7,1),min(3,7,1))=6. Failed (%q0).
+  }
+-
+#
+# Test Case #21 - abs/sign: abs(-5)=5, sign(-5)=-1.
+#
+&tr.tc021 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(add(abs(-5),sign(-5)))),
+        4
+      )=
+  {
+    @log smoke=TC021: rveval add(abs(-5),sign(-5))=4. Succeeded.
+  },
+  {
+    @log smoke=TC021: rveval add(abs(-5),sign(-5))=4. Failed (%q0).
+  }
+-
+#
+# Test Case #22 - floor/ceil: floor(3.7)=3, ceil(3.2)=4.
+#
+&tr.tc022 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(add(floor(3.7),ceil(3.2)))),
+        7
+      )=
+  {
+    @log smoke=TC022: rveval add(floor(3.7),ceil(3.2))=7. Succeeded.
+  },
+  {
+    @log smoke=TC022: rveval add(floor(3.7),ceil(3.2))=7. Failed (%q0).
+  }
+-
+#
+# Test Case #23 - words/first: words(the quick brown fox)=4.
+#
+&tr.tc023 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(words(the quick brown fox))),
+        4
+      )=
+  {
+    @log smoke=TC023: rveval words(the quick brown fox)=4. Succeeded.
+  },
+  {
+    @log smoke=TC023: rveval words(the quick brown fox)=4. Failed (%q0).
+  }
+-
+#
+# Test Case #24 - first: first(hello world)=hello.
+#
+&tr.tc024 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(first(hello world))),
+        hello
+      )=
+  {
+    @log smoke=TC024: rveval first(hello world)=hello. Succeeded.
+  },
+  {
+    @log smoke=TC024: rveval first(hello world)=hello. Failed (%q0).
+  }
+-
+#
+# Test Case #25 - pos: pos(cd,abcdef)=3.
+#
+&tr.tc025 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(pos(cd,abcdef))),
+        3
+      )=
+  {
+    @log smoke=TC025: rveval pos(cd,abcdef)=3. Succeeded.
+  },
+  {
+    @log smoke=TC025: rveval pos(cd,abcdef)=3. Failed (%q0).
+  }
+-
+#
+# Test Case #26 - comp: comp(abc,def)=-1.
+#
+&tr.tc026 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(comp(abc,def))),
+        -1
+      )=
+  {
+    @log smoke=TC026: rveval comp(abc,def)=-1. Succeeded.
+  },
+  {
+    @log smoke=TC026: rveval comp(abc,def)=-1. Failed (%q0).
+  }
+-
+#
+# Test Case #27 - fdiv: fdiv(10,3) = 3.333333.
+#
+&tr.tc027 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(gt(fdiv(10,3),3.33))),
+        1
+      )=
+  {
+    @log smoke=TC027: rveval fdiv(10,3)>3.33. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC014: rveval strcat(Result:,add(21,21))=Result:42. Failed (%q0).;
+    @log smoke=TC027: rveval fdiv(10,3)>3.33. Failed (%q0).;
     @trig me/tr.done
   }
 -

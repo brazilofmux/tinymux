@@ -43,22 +43,21 @@
     [rvbench(strlen(cat(hello,world)),10000)]
 -
 #
-# Benchmark #5 - eq() — NOT in fold list, forces ECALL path.
+# Benchmark #5 - eq() — NOW foldable.
 #
 &tr.tc005 test_rvbench_fn=
   @log smoke=BENCH005:
     [rvbench(eq(1,1),10000)]
 -
 #
-# Benchmark #6 - comp() — NOT foldable, forces ECALL path.
+# Benchmark #6 - comp() — NOW foldable.
 #
 &tr.tc006 test_rvbench_fn=
   @log smoke=BENCH006:
     [rvbench(comp(abc,def),10000)]
 -
 #
-# Benchmark #7 - Mixed: foldable inner + non-foldable outer.
-# add(1,2) folds to 3, but gt(3,0) still needs ECALL.
+# Benchmark #7 - gt(add(1,2),0) — fully foldable now.
 #
 &tr.tc007 test_rvbench_fn=
   @log smoke=BENCH007:
@@ -69,7 +68,36 @@
 #
 &tr.tc008 test_rvbench_fn=
   @log smoke=BENCH008:
-    [rvbench(add(1,2)add(3,4),10000)];
+    [rvbench(add(1,2)add(3,4),10000)]
+-
+#
+# Benchmark #9 - Chain: not(eq(mod(42,5),0)) — all foldable.
+#
+&tr.tc009 test_rvbench_fn=
+  @log smoke=BENCH009:
+    [rvbench(not(eq(mod(42,5),0)),10000)]
+-
+#
+# Benchmark #10 - words/first/pos — string folds.
+#
+&tr.tc010 test_rvbench_fn=
+  @log smoke=BENCH010:
+    [rvbench(words(the quick brown fox),10000)]
+-
+#
+# Benchmark #11 - Non-foldable: rand() forces ECALL.
+#
+&tr.tc011 test_rvbench_fn=
+  @log smoke=BENCH011:
+    [rvbench(add(rand(100),1),10000)]
+-
+#
+# Benchmark #12 - Mixed: foldable args + non-foldable outer.
+# lnum() is not in fold list.
+#
+&tr.tc012 test_rvbench_fn=
+  @log smoke=BENCH012:
+    [rvbench(lnum(add(2,3)),10000)];
   @trig me/tr.done
 -
 &tr.done test_rvbench_fn=
