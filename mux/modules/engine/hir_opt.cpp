@@ -171,6 +171,50 @@ void hir_const_fold(hir_program &h) {
                     changed = true;
                 }
                 break;
+            case HIR_DIV:
+                if (s1 >= 0 && s2 >= 0
+                    && h.kind[s1] == HIR_ICONST && h.kind[s2] == HIR_ICONST
+                    && h.val[s2] != 0) {
+                    h.kind[i] = HIR_ICONST;
+                    h.val[i] = h.val[s1] / h.val[s2];
+                    h.src1[i] = h.src2[i] = -1;
+                    changed = true;
+                }
+                break;
+            case HIR_ABS:
+                if (s1 >= 0 && h.kind[s1] == HIR_ICONST) {
+                    h.kind[i] = HIR_ICONST;
+                    h.val[i] = (h.val[s1] < 0) ? -h.val[s1] : h.val[s1];
+                    h.src1[i] = -1;
+                    changed = true;
+                }
+                break;
+            case HIR_SIGN:
+                if (s1 >= 0 && h.kind[s1] == HIR_ICONST) {
+                    h.kind[i] = HIR_ICONST;
+                    h.val[i] = (h.val[s1] < 0) ? -1 : (h.val[s1] > 0) ? 1 : 0;
+                    h.src1[i] = -1;
+                    changed = true;
+                }
+                break;
+            case HIR_MAX:
+                if (s1 >= 0 && s2 >= 0
+                    && h.kind[s1] == HIR_ICONST && h.kind[s2] == HIR_ICONST) {
+                    h.kind[i] = HIR_ICONST;
+                    h.val[i] = (h.val[s1] >= h.val[s2]) ? h.val[s1] : h.val[s2];
+                    h.src1[i] = h.src2[i] = -1;
+                    changed = true;
+                }
+                break;
+            case HIR_MIN:
+                if (s1 >= 0 && s2 >= 0
+                    && h.kind[s1] == HIR_ICONST && h.kind[s2] == HIR_ICONST) {
+                    h.kind[i] = HIR_ICONST;
+                    h.val[i] = (h.val[s1] <= h.val[s2]) ? h.val[s1] : h.val[s2];
+                    h.src1[i] = h.src2[i] = -1;
+                    changed = true;
+                }
+                break;
 
             // Comparisons on two ICONSTs.
             case HIR_EQ:
@@ -233,6 +277,15 @@ void hir_const_fold(hir_program &h) {
                 if (s1 >= 0 && h.kind[s1] == HIR_ICONST) {
                     h.kind[i] = HIR_ICONST;
                     h.val[i] = (h.val[s1] == 0) ? 1 : 0;
+                    h.src1[i] = -1;
+                    changed = true;
+                }
+                break;
+            // BOOL (t) of ICONST.
+            case HIR_BOOL:
+                if (s1 >= 0 && h.kind[s1] == HIR_ICONST) {
+                    h.kind[i] = HIR_ICONST;
+                    h.val[i] = (h.val[s1] != 0) ? 1 : 0;
                     h.src1[i] = -1;
                     changed = true;
                 }

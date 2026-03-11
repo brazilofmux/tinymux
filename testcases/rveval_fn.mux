@@ -836,11 +836,267 @@
         0
       )=
   {
-    @log smoke=TC054: rveval cor(rand(1),0)=0. Succeeded.;
+    @log smoke=TC054: rveval cor(rand(1),0)=0. Succeeded.
+  },
+  {
+    @log smoke=TC054: rveval cor(rand(1),0)=0. Failed (%q0).
+  }
+-
+#
+# Test Case #55 - t() truthiness: t(5)=1 (native SNEZ).
+#
+&tr.tc055 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(t(add(2,3)))),
+        1
+      )=
+  {
+    @log smoke=TC055: rveval t(add(2,3))=1. Succeeded.
+  },
+  {
+    @log smoke=TC055: rveval t(add(2,3))=1. Failed (%q0).
+  }
+-
+#
+# Test Case #56 - t(0)=0 (native SNEZ on zero).
+#
+&tr.tc056 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(t(sub(3,3)))),
+        0
+      )=
+  {
+    @log smoke=TC056: rveval t(sub(3,3))=0. Succeeded.
+  },
+  {
+    @log smoke=TC056: rveval t(sub(3,3))=0. Failed (%q0).
+  }
+-
+#
+# Test Case #57 - abs(-7)=7 (native branchless abs).
+#
+&tr.tc057 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(abs(sub(3,10)))),
+        7
+      )=
+  {
+    @log smoke=TC057: rveval abs(sub(3,10))=7. Succeeded.
+  },
+  {
+    @log smoke=TC057: rveval abs(sub(3,10))=7. Failed (%q0).
+  }
+-
+#
+# Test Case #58 - abs(5)=5 (positive passthrough).
+#
+&tr.tc058 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(abs(add(2,3)))),
+        5
+      )=
+  {
+    @log smoke=TC058: rveval abs(add(2,3))=5. Succeeded.
+  },
+  {
+    @log smoke=TC058: rveval abs(add(2,3))=5. Failed (%q0).
+  }
+-
+#
+# Test Case #59 - sign(-5)=-1 (native sign).
+#
+&tr.tc059 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(sign(sub(3,8)))),
+        -1
+      )=
+  {
+    @log smoke=TC059: rveval sign(sub(3,8))=-1. Succeeded.
+  },
+  {
+    @log smoke=TC059: rveval sign(sub(3,8))=-1. Failed (%q0).
+  }
+-
+#
+# Test Case #60 - sign(0)=0.
+#
+&tr.tc060 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(sign(sub(5,5)))),
+        0
+      )=
+  {
+    @log smoke=TC060: rveval sign(sub(5,5))=0. Succeeded.
+  },
+  {
+    @log smoke=TC060: rveval sign(sub(5,5))=0. Failed (%q0).
+  }
+-
+#
+# Test Case #61 - sign(7)=1.
+#
+&tr.tc061 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(sign(add(3,4)))),
+        1
+      )=
+  {
+    @log smoke=TC061: rveval sign(add(3,4))=1. Succeeded.
+  },
+  {
+    @log smoke=TC061: rveval sign(add(3,4))=1. Failed (%q0).
+  }
+-
+#
+# Test Case #62 - max(3,7)=7 (native max).
+#
+&tr.tc062 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(max(add(1,2),add(3,4)))),
+        7
+      )=
+  {
+    @log smoke=TC062: rveval max(add(1,2),add(3,4))=7. Succeeded.
+  },
+  {
+    @log smoke=TC062: rveval max(add(1,2),add(3,4))=7. Failed (%q0).
+  }
+-
+#
+# Test Case #63 - min(3,7)=3 (native min).
+#
+&tr.tc063 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(min(add(1,2),add(3,4)))),
+        3
+      )=
+  {
+    @log smoke=TC063: rveval min(add(1,2),add(3,4))=3. Succeeded.
+  },
+  {
+    @log smoke=TC063: rveval min(add(1,2),add(3,4))=3. Failed (%q0).
+  }
+-
+#
+# Test Case #64 - max with negative: max(-3, 2)=2.
+#
+&tr.tc064 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(max(sub(0,3),add(1,1)))),
+        2
+      )=
+  {
+    @log smoke=TC064: rveval max(sub(0,3),add(1,1))=2. Succeeded.
+  },
+  {
+    @log smoke=TC064: rveval max(sub(0,3),add(1,1))=2. Failed (%q0).
+  }
+-
+#
+# Test Case #65 - min with negative: min(-3, 2)=-3.
+#
+&tr.tc065 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(min(sub(0,3),add(1,1)))),
+        -3
+      )=
+  {
+    @log smoke=TC065: rveval min(sub(0,3),add(1,1))=-3. Succeeded.
+  },
+  {
+    @log smoke=TC065: rveval min(sub(0,3),add(1,1))=-3. Failed (%q0).
+  }
+-
+#
+# Test Case #66 - idiv(17,5)=3 (native integer division).
+#
+&tr.tc066 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(idiv(add(10,7),add(2,3)))),
+        3
+      )=
+  {
+    @log smoke=TC066: rveval idiv(add(10,7),add(2,3))=3. Succeeded.
+  },
+  {
+    @log smoke=TC066: rveval idiv(add(10,7),add(2,3))=3. Failed (%q0).
+  }
+-
+#
+# Test Case #67 - idiv(-7,2)=-3 (truncation toward zero).
+#
+&tr.tc067 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(idiv(sub(0,7),add(1,1)))),
+        -3
+      )=
+  {
+    @log smoke=TC067: rveval idiv(sub(0,7),add(1,1))=-3. Succeeded.
+  },
+  {
+    @log smoke=TC067: rveval idiv(sub(0,7),add(1,1))=-3. Failed (%q0).
+  }
+-
+#
+# Test Case #68 - bound(5,1,10)=5 (within range).
+#
+&tr.tc068 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(bound(add(2,3),add(0,1),add(5,5)))),
+        5
+      )=
+  {
+    @log smoke=TC068: rveval bound(5,1,10)=5. Succeeded.
+  },
+  {
+    @log smoke=TC068: rveval bound(5,1,10)=5. Failed (%q0).
+  }
+-
+#
+# Test Case #69 - bound(15,1,10)=10 (clamped high).
+#
+&tr.tc069 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(bound(add(10,5),add(0,1),add(5,5)))),
+        10
+      )=
+  {
+    @log smoke=TC069: rveval bound(15,1,10)=10. Succeeded.
+  },
+  {
+    @log smoke=TC069: rveval bound(15,1,10)=10. Failed (%q0).
+  }
+-
+#
+# Test Case #70 - bound(-5,1,10)=1 (clamped low).
+#
+&tr.tc070 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(bound(sub(0,5),add(0,1),add(5,5)))),
+        1
+      )=
+  {
+    @log smoke=TC070: rveval bound(-5,1,10)=1. Succeeded.
+  },
+  {
+    @log smoke=TC070: rveval bound(-5,1,10)=1. Failed (%q0).
+  }
+-
+#
+# Test Case #71 - Chain: abs(sign(sub(3,10)))=1.
+# Native chain: sub→sign→abs — all Tier 1, zero ECALLs.
+#
+&tr.tc071 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(abs(sign(sub(3,10))))),
+        1
+      )=
+  {
+    @log smoke=TC071: rveval abs(sign(sub(3,10)))=1. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC054: rveval cor(rand(1),0)=0. Failed (%q0).;
+    @log smoke=TC071: rveval abs(sign(sub(3,10)))=1. Failed (%q0).;
     @trig me/tr.done
   }
 -

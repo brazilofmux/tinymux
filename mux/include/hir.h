@@ -32,8 +32,13 @@ enum hir_kind {
     HIR_ADD,        // src1 + src2
     HIR_SUB,        // src1 - src2
     HIR_MUL,        // src1 * src2
+    HIR_DIV,        // src1 / src2 (signed integer division)
     HIR_REM,        // src1 % src2
     HIR_NEG,        // -src1
+    HIR_ABS,        // |src1| (branchless absolute value)
+    HIR_SIGN,       // sign(src1): -1, 0, or 1
+    HIR_MAX,        // max(src1, src2)
+    HIR_MIN,        // min(src1, src2)
 
     // Comparison (native RV64, result is int 0/1)
     HIR_EQ,         // src1 == src2
@@ -45,6 +50,7 @@ enum hir_kind {
 
     // Logic
     HIR_NOT,        // !src1 (int → int)
+    HIR_BOOL,       // t(src1): 0→0, nonzero→1 (SNEZ)
 
     // Unary arithmetic
     HIR_INC,        // src1 + 1

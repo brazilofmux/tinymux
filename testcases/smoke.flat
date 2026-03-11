@@ -1,6 +1,6 @@
 +X996100
 +S202
-+N332
++N349
 -R1
 +A256
 "1:TR.TC000"
@@ -143,16 +143,50 @@
 +A325
 "1:TR.TC054"
 +A326
-"1:SUITE.LIST.1"
+"1:TR.TC055"
 +A327
-"1:SUITE.LIST.2"
+"1:TR.TC056"
 +A328
-"1:SUITE.TR"
+"1:TR.TC057"
 +A329
-"1:FN_STRLEN"
+"1:TR.TC058"
 +A330
-"1:FN_NEG"
+"1:TR.TC059"
 +A331
+"1:TR.TC060"
++A332
+"1:TR.TC061"
++A333
+"1:TR.TC062"
++A334
+"1:TR.TC063"
++A335
+"1:TR.TC064"
++A336
+"1:TR.TC065"
++A337
+"1:TR.TC066"
++A338
+"1:TR.TC067"
++A339
+"1:TR.TC068"
++A340
+"1:TR.TC069"
++A341
+"1:TR.TC070"
++A342
+"1:TR.TC071"
++A343
+"1:SUITE.LIST.1"
++A344
+"1:SUITE.LIST.2"
++A345
+"1:SUITE.TR"
++A346
+"1:FN_STRLEN"
++A347
+"1:FN_NEG"
++A348
 "1:FN_IDENT"
 !0
 "Limbo"
@@ -4771,7 +4805,37 @@
 >278
 "@log smoke=BENCH013:[rvbench(mul(rand(100),rand(100)),10000)]"
 >279
-"@log smoke=BENCH014:[rvbench(not(eq(mod(add(rand(1),42),5),0)),10000)];@trig me/tr.done"
+"@log smoke=BENCH014:[rvbench(not(eq(mod(add(rand(1),42),5),0)),10000)]"
+>280
+"@log smoke=BENCH015:[rvbench(if(gt(5,3),yes),10000)]"
+>281
+"@log smoke=BENCH016:[rvbench(ifelse(gt(rand(100),50),big,small),10000)]"
+>282
+"@log smoke=BENCH017:[rvbench(cand(1,1,1),10000)]"
+>283
+"@log smoke=BENCH018:[rvbench(cand(gt(rand(100),0),1),10000)]"
+>284
+"@log smoke=BENCH019:[rvbench(cor(gt(rand(100),99),0),10000)]"
+>285
+"@log smoke=BENCH020:[rvbench(add(add(add(rand(1),rand(1)),add(rand(1),rand(1))),add(rand(1),rand(1))),10000)]"
+>286
+"@log smoke=BENCH021:[rvbench(add(setr(0,rand(100)),r(0)),10000)]"
+>287
+"@log smoke=BENCH022:[rvbench(abs(sub(rand(100),50)),10000)]"
+>288
+"@log smoke=BENCH023:[rvbench(sign(sub(rand(100),50)),10000)]"
+>289
+"@log smoke=BENCH024:[rvbench(t(rand(100)),10000)]"
+>290
+"@log smoke=BENCH025:[rvbench(max(rand(100),rand(100)),10000)]"
+>291
+"@log smoke=BENCH026:[rvbench(min(rand(100),rand(100)),10000)]"
+>292
+"@log smoke=BENCH027:[rvbench(idiv(rand(100),add(rand(10),1)),10000)]"
+>293
+"@log smoke=BENCH028:[rvbench(bound(rand(100),10,90),10000)]"
+>294
+"@log smoke=BENCH029:[rvbench(abs(sign(sub(rand(100),50))),10000)];@trig me/tr.done"
 <
 !149
 "test_rvcall_fn"
@@ -4945,7 +5009,41 @@
 >324
 "@if strmatch(setr(0, rveval(cor(gt(5,3),rand(1)))),1)={@log smoke=TC053: rveval cor(gt(5,3),rand(1))=1. Succeeded.},{@log smoke=TC053: rveval cor(gt(5,3),rand(1))=1. Failed (%q0).}"
 >325
-"@if strmatch(setr(0, rveval(cor(rand(1),0))),0)={@log smoke=TC054: rveval cor(rand(1),0)=0. Succeeded.;@trig me/tr.done},{@log smoke=TC054: rveval cor(rand(1),0)=0. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0, rveval(cor(rand(1),0))),0)={@log smoke=TC054: rveval cor(rand(1),0)=0. Succeeded.},{@log smoke=TC054: rveval cor(rand(1),0)=0. Failed (%q0).}"
+>326
+"@if strmatch(setr(0, rveval(t(add(2,3)))),1)={@log smoke=TC055: rveval t(add(2,3))=1. Succeeded.},{@log smoke=TC055: rveval t(add(2,3))=1. Failed (%q0).}"
+>327
+"@if strmatch(setr(0, rveval(t(sub(3,3)))),0)={@log smoke=TC056: rveval t(sub(3,3))=0. Succeeded.},{@log smoke=TC056: rveval t(sub(3,3))=0. Failed (%q0).}"
+>328
+"@if strmatch(setr(0, rveval(abs(sub(3,10)))),7)={@log smoke=TC057: rveval abs(sub(3,10))=7. Succeeded.},{@log smoke=TC057: rveval abs(sub(3,10))=7. Failed (%q0).}"
+>329
+"@if strmatch(setr(0, rveval(abs(add(2,3)))),5)={@log smoke=TC058: rveval abs(add(2,3))=5. Succeeded.},{@log smoke=TC058: rveval abs(add(2,3))=5. Failed (%q0).}"
+>330
+"@if strmatch(setr(0, rveval(sign(sub(3,8)))),-1)={@log smoke=TC059: rveval sign(sub(3,8))=-1. Succeeded.},{@log smoke=TC059: rveval sign(sub(3,8))=-1. Failed (%q0).}"
+>331
+"@if strmatch(setr(0, rveval(sign(sub(5,5)))),0)={@log smoke=TC060: rveval sign(sub(5,5))=0. Succeeded.},{@log smoke=TC060: rveval sign(sub(5,5))=0. Failed (%q0).}"
+>332
+"@if strmatch(setr(0, rveval(sign(add(3,4)))),1)={@log smoke=TC061: rveval sign(add(3,4))=1. Succeeded.},{@log smoke=TC061: rveval sign(add(3,4))=1. Failed (%q0).}"
+>333
+"@if strmatch(setr(0, rveval(max(add(1,2),add(3,4)))),7)={@log smoke=TC062: rveval max(add(1,2),add(3,4))=7. Succeeded.},{@log smoke=TC062: rveval max(add(1,2),add(3,4))=7. Failed (%q0).}"
+>334
+"@if strmatch(setr(0, rveval(min(add(1,2),add(3,4)))),3)={@log smoke=TC063: rveval min(add(1,2),add(3,4))=3. Succeeded.},{@log smoke=TC063: rveval min(add(1,2),add(3,4))=3. Failed (%q0).}"
+>335
+"@if strmatch(setr(0, rveval(max(sub(0,3),add(1,1)))),2)={@log smoke=TC064: rveval max(sub(0,3),add(1,1))=2. Succeeded.},{@log smoke=TC064: rveval max(sub(0,3),add(1,1))=2. Failed (%q0).}"
+>336
+"@if strmatch(setr(0, rveval(min(sub(0,3),add(1,1)))),-3)={@log smoke=TC065: rveval min(sub(0,3),add(1,1))=-3. Succeeded.},{@log smoke=TC065: rveval min(sub(0,3),add(1,1))=-3. Failed (%q0).}"
+>337
+"@if strmatch(setr(0, rveval(idiv(add(10,7),add(2,3)))),3)={@log smoke=TC066: rveval idiv(add(10,7),add(2,3))=3. Succeeded.},{@log smoke=TC066: rveval idiv(add(10,7),add(2,3))=3. Failed (%q0).}"
+>338
+"@if strmatch(setr(0, rveval(idiv(sub(0,7),add(1,1)))),-3)={@log smoke=TC067: rveval idiv(sub(0,7),add(1,1))=-3. Succeeded.},{@log smoke=TC067: rveval idiv(sub(0,7),add(1,1))=-3. Failed (%q0).}"
+>339
+"@if strmatch(setr(0, rveval(bound(add(2,3),add(0,1),add(5,5)))),5)={@log smoke=TC068: rveval bound(5,1,10)=5. Succeeded.},{@log smoke=TC068: rveval bound(5,1,10)=5. Failed (%q0).}"
+>340
+"@if strmatch(setr(0, rveval(bound(add(10,5),add(0,1),add(5,5)))),10)={@log smoke=TC069: rveval bound(15,1,10)=10. Succeeded.},{@log smoke=TC069: rveval bound(15,1,10)=10. Failed (%q0).}"
+>341
+"@if strmatch(setr(0, rveval(bound(sub(0,5),add(0,1),add(5,5)))),1)={@log smoke=TC070: rveval bound(-5,1,10)=1. Succeeded.},{@log smoke=TC070: rveval bound(-5,1,10)=1. Failed (%q0).}"
+>342
+"@if strmatch(setr(0, rveval(abs(sign(sub(3,10))))),1)={@log smoke=TC071: rveval abs(sign(sub(3,10)))=1. Succeeded.;@trig me/tr.done},{@log smoke=TC071: rveval abs(sign(sub(3,10)))=1. Failed (%q0).;@trig me/tr.done}"
 <
 !151
 "test_secure_fn"
@@ -5319,11 +5417,11 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->326
+>343
 "abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn and_fn andbool_fn asin_fn atan_fn atan2_fn attrib_set_fn band_fn baseconv_fn before_fn bnand_fn bor_fn bxor_fn cand_fn candbool_fn capstr_fn case_fn cat_fn ceil_fn center_fn choose_fn chr_fn citer_fn clone_fn cmd_say columns_fn comp_fn convtime_fn connlog_fn cor_fn corbool_fn cos_fn cpad_fn crc32_fn cron_fn ctu_fn dec_fn delete_fn digest_fn digittime_fn dist2d_fn dist3d_fn dynhelp_fn e_fn edit_fn elements_fn encode64_fn eq_fn escape_fn exp3_fn exp_fn exptime_fn extract_fn fdiv_fn first_fn floor_fn floordiv_fn fmod_fn grab_fn graball_fn gt_fn gte_fn hmac_fn iadd_fn iabs_fn idiv_fn imul_fn inc_fn index_fn insert_fn isalpha_fn isdbref_fn isign_fn isint_fn isjson_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn json_fn letq_fn"
->327
+>344
 "ladd_fn land_fn last_fn lcstr_fn ldelete_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn lockencode_fn log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn mailsend_fn match_fn matchall_fn max_fn member_fn merge_fn mid_fn min_fn mod_fn mul_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn printf_fn reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn rpad_fn rvcall_fn rveval_fn rvbench_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn sign_fn sin_fn singletime_fn sort_fn sortkey_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn strcat_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strdistance_fn strtrunc_fn sub_fn switch_fn t_fn table_fn tan_fn tr_fn translate_fn trim_fn trunc_fn ucstr_fn url_escape_fn vadd_fn vcross_fn vdot_fn vmag_fn vmul_fn vsub_fn vunit_fn visual_width_fn wordpos_fn words_fn wrap_fn xor_fn shutdown"
->328
+>345
 "@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
 <
 !164
@@ -5395,11 +5493,11 @@
 "@if strmatch(setr(0,eq(strlen(sortkey(me/fn_ident,)),0)),1)={@log smoke=TC005: sortkey empty list. Succeeded.},{@log smoke=TC005: sortkey empty list. Failed (%q0).}"
 >263
 "@if strmatch(setr(0,sortkey(me/fn_ident,only)),only)={@log smoke=TC006: sortkey single element. Succeeded.;@trig me/tr.done},{@log smoke=TC006: sortkey single element. Failed (%q0).;@trig me/tr.done}"
->329
+>346
 "strlen(%0)"
->330
+>347
 "mul(%0,-1)"
->331
+>348
 "%0"
 <
 !166

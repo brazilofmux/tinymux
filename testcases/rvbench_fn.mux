@@ -112,7 +112,116 @@
 #
 &tr.tc014 test_rvbench_fn=
   @log smoke=BENCH014:
-    [rvbench(not(eq(mod(add(rand(1),42),5),0)),10000)];
+    [rvbench(not(eq(mod(add(rand(1),42),5),0)),10000)]
+-
+#
+# Benchmark #15 - if() with foldable condition.
+#
+&tr.tc015 test_rvbench_fn=
+  @log smoke=BENCH015:
+    [rvbench(if(gt(5,3),yes),10000)]
+-
+#
+# Benchmark #16 - ifelse() with runtime condition.
+#
+&tr.tc016 test_rvbench_fn=
+  @log smoke=BENCH016:
+    [rvbench(ifelse(gt(rand(100),50),big,small),10000)]
+-
+#
+# Benchmark #17 - cand() all constants (foldable).
+#
+&tr.tc017 test_rvbench_fn=
+  @log smoke=BENCH017:
+    [rvbench(cand(1,1,1),10000)]
+-
+#
+# Benchmark #18 - cand() with runtime condition.
+#
+&tr.tc018 test_rvbench_fn=
+  @log smoke=BENCH018:
+    [rvbench(cand(gt(rand(100),0),1),10000)]
+-
+#
+# Benchmark #19 - cor() with runtime condition.
+#
+&tr.tc019 test_rvbench_fn=
+  @log smoke=BENCH019:
+    [rvbench(cor(gt(rand(100),99),0),10000)]
+-
+#
+# Benchmark #20 - High register pressure: 6 simultaneous integer values.
+# add(add(add(rand(1),rand(1)),add(rand(1),rand(1))),add(rand(1),rand(1)))
+#
+&tr.tc020 test_rvbench_fn=
+  @log smoke=BENCH020:
+    [rvbench(add(add(add(rand(1),rand(1)),add(rand(1),rand(1))),add(rand(1),rand(1))),10000)]
+-
+#
+# Benchmark #21 - %q register round-trip: setr/r.
+#
+&tr.tc021 test_rvbench_fn=
+  @log smoke=BENCH021:
+    [rvbench(add(setr(0,rand(100)),r(0)),10000)]
+-
+#
+# Benchmark #22 - Native abs: abs(sub(rand(100),50)).
+#
+&tr.tc022 test_rvbench_fn=
+  @log smoke=BENCH022:
+    [rvbench(abs(sub(rand(100),50)),10000)]
+-
+#
+# Benchmark #23 - Native sign: sign(sub(rand(100),50)).
+#
+&tr.tc023 test_rvbench_fn=
+  @log smoke=BENCH023:
+    [rvbench(sign(sub(rand(100),50)),10000)]
+-
+#
+# Benchmark #24 - Native t: t(rand(100)).
+#
+&tr.tc024 test_rvbench_fn=
+  @log smoke=BENCH024:
+    [rvbench(t(rand(100)),10000)]
+-
+#
+# Benchmark #25 - Native max: max(rand(100),rand(100)).
+#
+&tr.tc025 test_rvbench_fn=
+  @log smoke=BENCH025:
+    [rvbench(max(rand(100),rand(100)),10000)]
+-
+#
+# Benchmark #26 - Native min: min(rand(100),rand(100)).
+#
+&tr.tc026 test_rvbench_fn=
+  @log smoke=BENCH026:
+    [rvbench(min(rand(100),rand(100)),10000)]
+-
+#
+# Benchmark #27 - Native idiv: idiv(rand(100),add(rand(10),1)).
+# 2 ECALLs + 2 native ops (add, idiv).
+#
+&tr.tc027 test_rvbench_fn=
+  @log smoke=BENCH027:
+    [rvbench(idiv(rand(100),add(rand(10),1)),10000)]
+-
+#
+# Benchmark #28 - Native bound: bound(rand(100),10,90).
+# Synthesized as max(10,min(90,x)) — 2 native ops.
+#
+&tr.tc028 test_rvbench_fn=
+  @log smoke=BENCH028:
+    [rvbench(bound(rand(100),10,90),10000)]
+-
+#
+# Benchmark #29 - Native chain: abs(sign(sub(rand(100),50))).
+# 1 ECALL + 3 native ops (sub, sign, abs).
+#
+&tr.tc029 test_rvbench_fn=
+  @log smoke=BENCH029:
+    [rvbench(abs(sign(sub(rand(100),50))),10000)];
   @trig me/tr.done
 -
 &tr.done test_rvbench_fn=

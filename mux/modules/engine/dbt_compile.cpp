@@ -661,6 +661,21 @@ static bool try_fold(const std::string &func_name,
         return true;
     }
 
+    // --- IDIV(a, b) ---
+    if (upper == "IDIV" && nargs == 2) {
+        int64_t top = mux_atoi64(u8(args[0]));
+        int64_t bot = mux_atoi64(u8(args[1]));
+        if (bot == 0) {
+            result = "#-1 DIVIDE BY ZERO";
+        } else {
+            UTF8 buf[64]; UTF8 *bufc = buf;
+            safe_i64toa(i64Division(top, bot), buf, &bufc);
+            *bufc = '\0';
+            result = reinterpret_cast<const char *>(buf);
+        }
+        return true;
+    }
+
     // --- MOD(a, b) ---
     if (upper == "MOD" && nargs == 2) {
         int64_t top = mux_atoi64(u8(args[0]));
@@ -746,6 +761,15 @@ static bool try_fold(const std::string &func_name,
             if (d < m) m = d;
         }
         result = format_double(m);
+        return true;
+    }
+    if (upper == "BOUND" && nargs == 3) {
+        long x = mux_atol(u8(args[0]));
+        long lo = mux_atol(u8(args[1]));
+        long hi = mux_atol(u8(args[2]));
+        if (x < lo) x = lo;
+        if (x > hi) x = hi;
+        result = format_long(x);
         return true;
     }
 
@@ -926,7 +950,8 @@ static bool returns_int(const std::string &upper) {
         || upper == "GT" || upper == "GTE" || upper == "LT" || upper == "LTE"
         || upper == "NOT" || upper == "T" || upper == "COMP"
         || upper == "INC" || upper == "DEC" || upper == "SIGN"
-        || upper == "MOD";
+        || upper == "MOD" || upper == "ABS" || upper == "MAX"
+        || upper == "MIN" || upper == "BOUND" || upper == "IDIV";
 }
 
 // (Old compile_node chain removed — replaced by HIR pipeline below.)
@@ -1452,6 +1477,73 @@ general_lowering:
         return r;
     }
 
+    // T: truthiness (0→0, nonzero→1).
+    if (upper == "T" && nargs == 1 && h.is_int(args[0])) {
+        int a = ensure_hi(args[0]);
+        int r = h.emit(HIR_BOOL, TY_INT, a);
+        h.native_ops++;
+        h.needs_jit = true;
+        return r;
+    }
+
+    // ABS: absolute value.
+    if (upper == "ABS" && nargs == 1 && h.is_int(args[0])) {
+        int a = ensure_hi(args[0]);
+        int r = h.emit(HIR_ABS, TY_INT, a);
+        h.native_ops++;
+        h.needs_jit = true;
+        return r;
+    }
+
+    // SIGN: sign of integer (-1, 0, 1).
+    if (upper == "SIGN" && nargs == 1 && h.is_int(args[0])) {
+        int a = ensure_hi(args[0]);
+        int r = h.emit(HIR_SIGN, TY_INT, a);
+        h.native_ops++;
+        h.needs_jit = true;
+        return r;
+    }
+
+    // MAX / MIN: binary integer max/min.
+    if (upper == "MAX" && nargs == 2 && all_int()) {
+        int a = ensure_hi(args[0]);
+        int b = ensure_hi(args[1]);
+        int r = h.emit(HIR_MAX, TY_INT, a, b);
+        h.native_ops++;
+        h.needs_jit = true;
+        return r;
+    }
+    if (upper == "MIN" && nargs == 2 && all_int()) {
+        int a = ensure_hi(args[0]);
+        int b = ensure_hi(args[1]);
+        int r = h.emit(HIR_MIN, TY_INT, a, b);
+        h.native_ops++;
+        h.needs_jit = true;
+        return r;
+    }
+
+    // IDIV: integer division (truncate toward zero).
+    if (upper == "IDIV" && nargs == 2 && all_int()) {
+        int a = ensure_hi(args[0]);
+        int b = ensure_hi(args[1]);
+        int r = h.emit(HIR_DIV, TY_INT, a, b);
+        h.native_ops++;
+        h.needs_jit = true;
+        return r;
+    }
+
+    // BOUND: clamp x to [lo, hi] — synthesized as max(lo, min(hi, x)).
+    if (upper == "BOUND" && nargs == 3 && all_int()) {
+        int x = ensure_hi(args[0]);
+        int lo = ensure_hi(args[1]);
+        int hi = ensure_hi(args[2]);
+        int clamped_hi = h.emit(HIR_MIN, TY_INT, x, hi);
+        int r = h.emit(HIR_MAX, TY_INT, clamped_hi, lo);
+        h.native_ops += 2;
+        h.needs_jit = true;
+        return r;
+    }
+
     // ---------------------------------------------------------------
     // Fall through to ECALL.
     // ---------------------------------------------------------------
@@ -1571,12 +1663,13 @@ static bool needs_int_reg(hir_program &h, int i) {
     switch (h.kind[i]) {
     case HIR_ICONST:
     case HIR_ATOI:
-    case HIR_ADD: case HIR_SUB: case HIR_MUL: case HIR_REM:
+    case HIR_ADD: case HIR_SUB: case HIR_MUL: case HIR_DIV: case HIR_REM:
+    case HIR_NEG: case HIR_ABS: case HIR_SIGN:
+    case HIR_MAX: case HIR_MIN:
     case HIR_EQ:  case HIR_NE:  case HIR_GT:  case HIR_LT:
     case HIR_GE:  case HIR_LE:
-    case HIR_NOT:
+    case HIR_NOT: case HIR_BOOL:
     case HIR_INC: case HIR_DEC:
-    case HIR_NEG:
         return true;
     case HIR_PHI:
         return h.ty[i] == TY_INT;
@@ -2012,6 +2105,110 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                 ra_set_loc(rc, loc, alloc, i, dest);
                 break;
             }
+            case HIR_DIV: {
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_DIV(dest, r1, r2));
+                ra_set_loc(rc, loc, alloc, i, dest);
+                break;
+            }
+
+            // ABS: branchless absolute value.
+            // SRA tmp, rs, 63 (sign mask: all 1s if negative, all 0s if positive)
+            // XOR dest, rs, tmp
+            // SUB dest, dest, tmp
+            case HIR_ABS: {
+                int s1 = h.src1[i];
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                constexpr uint8_t t0 = 5;  // scratch for sign mask
+                // SRAI t0, r1, 63 — arithmetic shift right by 63
+                rc.code.push_back(rv_i_type(OP_IMM, t0, ALU_SRLI, r1, 63)
+                                  | (0x10u << 26));  // set funct6 high bit for SRAI
+                // XOR dest, r1, t0
+                rc.code.push_back(rv_r_type(OP_REG, dest, ALU_XOR, r1, t0, 0));
+                // SUB dest, dest, t0
+                rc.code.push_back(rv_SUB(dest, dest, t0));
+                ra_set_loc(rc, loc, alloc, i, dest);
+                break;
+            }
+
+            // SIGN: returns -1, 0, or 1.
+            // SLT t0, rs, x0   (t0 = 1 if rs < 0)
+            // SLT dest, x0, rs (dest = 1 if rs > 0, i.e., 0 < rs)
+            // SUB dest, dest, t0
+            case HIR_SIGN: {
+                int s1 = h.src1[i];
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                constexpr uint8_t t0 = 5;
+                rc.code.push_back(rv_r_type(OP_REG, t0, ALU_SLT, r1, 0, 0));
+                rc.code.push_back(rv_r_type(OP_REG, dest, ALU_SLT, 0, r1, 0));
+                rc.code.push_back(rv_SUB(dest, dest, t0));
+                ra_set_loc(rc, loc, alloc, i, dest);
+                break;
+            }
+
+            // MAX: max(a, b) — branchless via SLT + conditional select.
+            // SLT t0, r1, r2   (t0 = 1 if r1 < r2)
+            // BEQ t0, x0, +8   (skip if r1 >= r2, i.e., r1 is already max)
+            // MV dest, r2       (r2 is larger)
+            // Otherwise dest = r1.
+            // Actually simpler: compute both, select.
+            // SUB t0, r1, r2
+            // SRA t0, t0, 63   (sign mask: all 1s if r1 < r2)
+            // AND t0, t0, SUB → use the mask to select
+            // Better: just branch.
+            // BLT r1, r2, +12; MV dest, r1; JAL x0, +8; MV dest, r2
+            case HIR_MAX: {
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                // BGE r1, r2, +12 (skip to dest=r1 case when r1 >= r2)
+                rc.code.push_back(rv_BGE(r1, r2, 12));
+                // r1 < r2: dest = r2
+                rc.code.push_back(rv_ADD(dest, r2, 0));  // MV dest, r2
+                rc.code.push_back(rv_JAL(0, 8));          // skip next
+                // r1 >= r2: dest = r1
+                rc.code.push_back(rv_ADD(dest, r1, 0));  // MV dest, r1
+                ra_set_loc(rc, loc, alloc, i, dest);
+                break;
+            }
+
+            // MIN: min(a, b) — mirror of MAX.
+            case HIR_MIN: {
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                // BLT r1, r2, +12 (skip to dest=r1 case when r1 < r2)
+                rc.code.push_back(rv_b_type(BR_BLT, r1, r2, 12));
+                // r1 >= r2: dest = r2
+                rc.code.push_back(rv_ADD(dest, r2, 0));  // MV dest, r2
+                rc.code.push_back(rv_JAL(0, 8));          // skip next
+                // r1 < r2: dest = r1
+                rc.code.push_back(rv_ADD(dest, r1, 0));  // MV dest, r1
+                ra_set_loc(rc, loc, alloc, i, dest);
+                break;
+            }
 
             case HIR_EQ: {
                 int s1 = h.src1[i], s2 = h.src2[i];
@@ -2098,6 +2295,20 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rc.code.push_back(rv_i_type(OP_IMM, dest, ALU_SLTIU, r1, 1));
+                ra_set_loc(rc, loc, alloc, i, dest);
+                break;
+            }
+
+            // BOOL (t function): SNEZ — set if not equal to zero.
+            // SLTU dest, x0, r1 → dest = (0 < r1) unsigned = (r1 != 0)
+            case HIR_BOOL: {
+                int s1 = h.src1[i];
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t reg = alloc.reg[i];
+                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_r_type(OP_REG, dest, ALU_SLTU, 0, r1, 0));
                 ra_set_loc(rc, loc, alloc, i, dest);
                 break;
             }
