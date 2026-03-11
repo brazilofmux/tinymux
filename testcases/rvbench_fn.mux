@@ -1,0 +1,83 @@
+#
+# rvbench_fn.mux - Benchmark rveval() vs native mux_exec.
+#
+# Runs rvbench() on several expression types and logs the results.
+# The benchmark numbers appear in the smoke log for analysis.
+#
+@create test_rvbench_fn
+-
+@set test_rvbench_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_rvbench_fn=
+  @log smoke=Beginning rvbench() benchmarks.
+-
+#
+# Benchmark #1 - Simple add (foldable).
+#
+&tr.tc001 test_rvbench_fn=
+  @log smoke=BENCH001:
+    [rvbench(add(1,2),10000)]
+-
+#
+# Benchmark #2 - Nested arithmetic (foldable).
+#
+&tr.tc002 test_rvbench_fn=
+  @log smoke=BENCH002:
+    [rvbench(add(mul(3,4),sub(100,58)),10000)]
+-
+#
+# Benchmark #3 - Deep nesting (foldable).
+#
+&tr.tc003 test_rvbench_fn=
+  @log smoke=BENCH003:
+    [rvbench(add(mul(2,3),add(mul(4,5),sub(100,90))),10000)]
+-
+#
+# Benchmark #4 - String function (foldable).
+#
+&tr.tc004 test_rvbench_fn=
+  @log smoke=BENCH004:
+    [rvbench(strlen(cat(hello,world)),10000)]
+-
+#
+# Benchmark #5 - eq() — NOT in fold list, forces ECALL path.
+#
+&tr.tc005 test_rvbench_fn=
+  @log smoke=BENCH005:
+    [rvbench(eq(1,1),10000)]
+-
+#
+# Benchmark #6 - comp() — NOT foldable, forces ECALL path.
+#
+&tr.tc006 test_rvbench_fn=
+  @log smoke=BENCH006:
+    [rvbench(comp(abc,def),10000)]
+-
+#
+# Benchmark #7 - Mixed: foldable inner + non-foldable outer.
+# add(1,2) folds to 3, but gt(3,0) still needs ECALL.
+#
+&tr.tc007 test_rvbench_fn=
+  @log smoke=BENCH007:
+    [rvbench(gt(add(1,2),0),10000)]
+-
+#
+# Benchmark #8 - Sequence: add(1,2)add(3,4) — fully foldable.
+#
+&tr.tc008 test_rvbench_fn=
+  @log smoke=BENCH008:
+    [rvbench(add(1,2)add(3,4),10000)];
+  @trig me/tr.done
+-
+&tr.done test_rvbench_fn=
+  @log smoke=End rvbench() benchmarks.;
+  @notify smoke
+-
+drop test_rvbench_fn
+-
+#
+# End of Benchmarks
+#

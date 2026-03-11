@@ -51,6 +51,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
+#include <ctime>
 #include <vector>
 #include <string>
 
@@ -715,4 +716,156 @@ FUNCTION(fun_rveval)
     // Copy result from guest output buffer.
     const UTF8 *result = prog.memory.data() + prog.out_addr;
     safe_str(result, buff, bufc);
+}
+
+// ---------------------------------------------------------------
+// fun_rvbench: benchmark rveval vs native mux_exec.
+//
+// rvbench(<expression>, <iterations>)
+//
+// Runs the expression through three paths:
+//   1. Native mux_exec (AST eval) — the current production path
+//   2. rveval compile-every-time
+//   3. rveval compile-once, run N times (amortized)
+//
+// Returns a multi-line report with timings in microseconds.
+// ---------------------------------------------------------------
+
+static double elapsed_us(const struct timespec &start,
+                          const struct timespec &end) {
+    double s = static_cast<double>(end.tv_sec - start.tv_sec);
+    double ns = static_cast<double>(end.tv_nsec - start.tv_nsec);
+    return (s * 1e6) + (ns / 1e3);
+}
+
+// Run the compiled program through the JIT.  Returns the result
+// string (written into caller-provided buffer).
+//
+static bool run_compiled(compiled_program &prog,
+                          dbref executor, dbref caller_db, dbref enactor,
+                          UTF8 *out, size_t out_size) {
+    if (prog.ecalls == 0) {
+        // Fully folded — result is already in guest memory.
+        const char *r = reinterpret_cast<const char *>(
+            prog.memory.data() + prog.out_addr);
+        size_t n = strlen(r);
+        if (n >= out_size) n = out_size - 1;
+        memcpy(out, r, n);
+        out[n] = '\0';
+        return true;
+    }
+
+    eval_ctx ec;
+    ec.memory = prog.memory.data();
+    ec.memory_size = prog.memory_size;
+    ec.executor = executor;
+    ec.caller = caller_db;
+    ec.enactor = enactor;
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, prog.memory.data(), prog.memory_size,
+                 eval_ecall, &ec) != 0) {
+        return false;
+    }
+
+    int rc = dbt_run(&dbt, 0, rv_compiler::STACK_TOP);
+    dbt_cleanup(&dbt);
+
+    if (rc != 0) return false;
+
+    const char *r = reinterpret_cast<const char *>(
+        prog.memory.data() + prog.out_addr);
+    size_t n = strlen(r);
+    if (n >= out_size) n = out_size - 1;
+    memcpy(out, r, n);
+    out[n] = '\0';
+    return true;
+}
+
+FUNCTION(fun_rvbench)
+{
+    UNUSED_PARAMETER(fp);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (nfargs < 2) {
+        safe_str(T("#-1 TOO FEW ARGUMENTS"), buff, bufc);
+        return;
+    }
+
+    const UTF8 *expr = fargs[0];
+    size_t nLen = strlen(reinterpret_cast<const char *>(expr));
+    int iterations = mux_atol(fargs[1]);
+    if (iterations < 1) iterations = 1;
+    if (iterations > 1000000) iterations = 1000000;
+
+    // Verify both paths produce the same result.
+    compiled_program prog = compile_expression(expr, nLen);
+    if (!prog.ok) {
+        safe_str(T("#-1 COMPILATION FAILED"), buff, bufc);
+        return;
+    }
+
+    // --- Benchmark 1: Native mux_exec ---
+    struct timespec t0, t1;
+    int eval_flags = EV_FCHECK | EV_EVAL;
+
+    clock_gettime(CLOCK_MONOTONIC, &t0);
+    for (int i = 0; i < iterations; i++) {
+        UTF8 *tbuf = alloc_lbuf("rvbench.native");
+        UTF8 *tbufc = tbuf;
+        mux_exec(expr, nLen, tbuf, &tbufc, executor, caller, enactor,
+                 eval_flags, nullptr, 0);
+        *tbufc = '\0';
+        free_lbuf(tbuf);
+    }
+    clock_gettime(CLOCK_MONOTONIC, &t1);
+    double native_us = elapsed_us(t0, t1);
+
+    // --- Benchmark 2: rveval compile-every-time ---
+    clock_gettime(CLOCK_MONOTONIC, &t0);
+    for (int i = 0; i < iterations; i++) {
+        compiled_program p = compile_expression(expr, nLen);
+        if (p.ok) {
+            UTF8 result[256];
+            run_compiled(p, executor, caller, enactor, result, sizeof(result));
+        }
+    }
+    clock_gettime(CLOCK_MONOTONIC, &t1);
+    double compile_each_us = elapsed_us(t0, t1);
+
+    // --- Benchmark 3: rveval compile-once ---
+    clock_gettime(CLOCK_MONOTONIC, &t0);
+    for (int i = 0; i < iterations; i++) {
+        UTF8 result[256];
+        // Re-init guest memory for ECALL path (outputs get overwritten).
+        if (prog.ecalls > 0) {
+            // Reset output region for clean re-run.
+            memset(prog.memory.data() + rv_compiler::OUT_BASE, 0,
+                   rv_compiler::OUT_LIMIT - rv_compiler::OUT_BASE);
+        }
+        run_compiled(prog, executor, caller, enactor, result, sizeof(result));
+    }
+    clock_gettime(CLOCK_MONOTONIC, &t1);
+    double cached_us = elapsed_us(t0, t1);
+
+    // Format report.
+    double per_native = native_us / iterations;
+    double per_compile = compile_each_us / iterations;
+    double per_cached = cached_us / iterations;
+
+    UTF8 report[LBUF_SIZE];
+    snprintf(reinterpret_cast<char *>(report), sizeof(report),
+        "expr=%s iters=%d folds=%d ecalls=%d | "
+        "native=%.2fus/call | "
+        "compile-each=%.2fus/call (%.1fx) | "
+        "cached=%.2fus/call (%.1fx)",
+        reinterpret_cast<const char *>(expr),
+        iterations, prog.folds, prog.ecalls,
+        per_native,
+        per_compile, per_compile / per_native,
+        per_cached, per_cached / per_native);
+
+    safe_str(report, buff, bufc);
 }

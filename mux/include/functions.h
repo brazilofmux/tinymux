@@ -114,6 +114,7 @@ void functions_add(FUN funlist[]);
 // In dbt_harness.cpp / dbt_compile.cpp
 XFUNCTION(fun_rvcall);
 XFUNCTION(fun_rveval);
+XFUNCTION(fun_rvbench);
 // In comsys.cpp
 XFUNCTION(fun_channels);
 XFUNCTION(fun_comalias);

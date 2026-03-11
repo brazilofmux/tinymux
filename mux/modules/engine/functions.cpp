@@ -13073,6 +13073,7 @@ static FUN builtin_function_list[] =
 #ifdef REALITY_LVLS
     {T("RXLEVEL"),     fun_rxlevel,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
 #endif // REALITY_LVLS
+    {T("RVBENCH"),     fun_rvbench,    MAX_ARG, 2,       2, FN_NOEVAL, CA_WIZARD},
     {T("RVCALL"),      fun_rvcall,     MAX_ARG, 2, MAX_ARG,         0, CA_WIZARD},
     {T("RVEVAL"),      fun_rveval,           1, 1,       1, FN_NOEVAL, CA_WIZARD},
     {T("S"),           fun_s,                1, 1,       1,         0, CA_PUBLIC},

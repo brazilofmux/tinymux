@@ -26,7 +26,7 @@
   neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn 
   parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn printf_fn 
   reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn 
-  right_fn rjust_fn roman_fn round_fn rpad_fn rvcall_fn rveval_fn 
+  right_fn rjust_fn roman_fn round_fn rpad_fn rvcall_fn rveval_fn rvbench_fn 
   secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn 
   shuffle_fn sign_fn sin_fn singletime_fn sort_fn sortkey_fn space_fn spellnum_fn 
   splice_fn sqrt_fn squish_fn strcat_fn strip_fn stripansi_fn strlen_fn 
