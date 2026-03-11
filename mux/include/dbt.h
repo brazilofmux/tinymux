@@ -62,10 +62,10 @@ struct block_entry_t {
 
 static_assert(sizeof(block_entry_t) == 16, "block_entry_t must be 16 bytes");
 
-static constexpr size_t BLOCK_CACHE_SIZE = 64 * 1024;  // must be power of 2
+static constexpr size_t BLOCK_CACHE_SIZE = 1024;       // must be power of 2
 static constexpr size_t BLOCK_CACHE_MASK = BLOCK_CACHE_SIZE - 1;
 
-static constexpr size_t CODE_BUF_SIZE = 64 * 1024 * 1024;  // 64 MB JIT buffer
+static constexpr size_t CODE_BUF_SIZE = 256 * 1024;    // 256 KB JIT buffer
 
 // Max guest instructions per translated block.
 //
