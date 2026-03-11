@@ -254,11 +254,42 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
         rv64_decode(word, &insn);
         count++;
 
+        // -- Peek-ahead for instruction fusion --
+        //
+        // Decode the next instruction if available, for LUI+ADDI,
+        // AUIPC+ADDI, and AUIPC+JALR fusion patterns.
+        //
+        rv64_insn_t next;
+        bool have_next = false;
+        if (pc + 8 <= dbt->memory_size) {
+            uint32_t next_word;
+            memcpy(&next_word, dbt->memory + pc + 4, 4);
+            rv64_decode(next_word, &next);
+            have_next = true;
+        }
+
         switch (insn.opcode) {
 
-        // -- LUI --
+        // -- LUI (with LUI+ADDI fusion) --
         //
         case OP_LUI: {
+            // Fusion: LUI rd, upper + ADDI rd, rd, lower → MOV rd, imm32
+            if (have_next && insn.rd
+                && next.opcode == OP_IMM && next.funct3 == ALU_ADDI
+                && next.rd == insn.rd && next.rs1 == insn.rd) {
+                int64_t val = static_cast<int64_t>(insn.imm)
+                            + static_cast<int64_t>(next.imm);
+                int rd = rc_write(&e, &rc, insn.rd);
+                if (val >= INT32_MIN && val <= INT32_MAX) {
+                    emit_mov_r64_imm32(&e, rd, static_cast<int32_t>(val));
+                } else {
+                    emit_mov_r64_imm64(&e, rd, static_cast<uint64_t>(val));
+                }
+                pc += 8;
+                count++;
+                dbt->insns_fused++;
+                continue;
+            }
             if (insn.rd) {
                 int rd = rc_write(&e, &rc, insn.rd);
                 emit_mov_r64_imm32(&e, rd, insn.imm);
@@ -267,9 +298,47 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             continue;
         }
 
-        // -- AUIPC --
+        // -- AUIPC (with AUIPC+ADDI and AUIPC+JALR fusion) --
         //
         case OP_AUIPC: {
+            // Fusion: AUIPC rd, upper + JALR rs1=rd → direct jump/call
+            if (have_next && insn.rd
+                && next.opcode == OP_JALR
+                && next.rs1 == insn.rd) {
+                int64_t target = static_cast<int64_t>(pc)
+                               + static_cast<int64_t>(insn.imm)
+                               + static_cast<int64_t>(next.imm);
+                target &= ~1LL; // clear bit 0 per JALR spec
+                if (next.rd) {
+                    int rd = rc_write(&e, &rc, next.rd);
+                    emit_mov_r64_imm32(&e, rd,
+                        static_cast<int32_t>(pc + 8));
+                }
+                rc_flush(&e, &rc);
+                emit_exit_chained(&e, dbt, static_cast<uint64_t>(target));
+                count++;
+                dbt->insns_fused++;
+                goto done;
+            }
+            // Fusion: AUIPC rd, upper + ADDI rd, rd, lower → MOV rd, pc+imm
+            if (have_next && insn.rd
+                && next.opcode == OP_IMM && next.funct3 == ALU_ADDI
+                && next.rd == insn.rd && next.rs1 == insn.rd) {
+                int64_t val = static_cast<int64_t>(pc)
+                            + static_cast<int64_t>(insn.imm)
+                            + static_cast<int64_t>(next.imm);
+                int rd = rc_write(&e, &rc, insn.rd);
+                if (val >= INT32_MIN && val <= INT32_MAX) {
+                    emit_mov_r64_imm32(&e, rd, static_cast<int32_t>(val));
+                } else {
+                    emit_mov_r64_imm64(&e, rd, static_cast<uint64_t>(val));
+                }
+                pc += 8;
+                count++;
+                dbt->insns_fused++;
+                continue;
+            }
+            // Unfused AUIPC.
             if (insn.rd) {
                 int rd = rc_write(&e, &rc, insn.rd);
                 int64_t val = static_cast<int64_t>(pc) + static_cast<int64_t>(insn.imm);
@@ -1079,6 +1148,7 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
     dbt->ras_misses = 0;
     dbt->chain_hits = 0;
     dbt->chain_misses = 0;
+    dbt->insns_fused = 0;
     dbt->trace = 0;
 }
 

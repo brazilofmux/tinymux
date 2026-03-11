@@ -117,6 +117,7 @@ struct dbt_state_t {
     uint64_t ras_misses;
     uint64_t chain_hits;
     uint64_t chain_misses;
+    uint64_t insns_fused;
 
     // ECALL callback — same signature as the interpreter.
     // Return >= 0 to exit, < 0 to continue.
