@@ -222,14 +222,14 @@ static uint64_t compile_sequence(rv_compiler &rc, const ASTNode *node) {
         return rc.pool_str(merged);
     }
 
-    // Mixed sequence: compile each child, use cat() to concatenate.
-    // cat(a, b, c, ...) joins without separators.
+    // Mixed sequence: compile each child, use strcat() to concatenate.
+    // strcat(a, b, c, ...) joins without separators.
     std::vector<uint64_t> child_addrs;
     for (auto &child : node->children) {
         child_addrs.push_back(compile_node(rc, child.get()));
     }
 
-    uint64_t name_addr = rc.pool_str("cat");
+    uint64_t name_addr = rc.pool_str("strcat");
     uint64_t fargs_addr = rc.alloc_fargs(child_addrs);
     uint64_t out_addr = rc.alloc_output();
 

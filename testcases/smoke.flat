@@ -4792,7 +4792,23 @@
 >262
 "@if strmatch(setr(0, rveval(sub(100,58))),42)={@log smoke=TC005: rveval sub(100,58)=42. Succeeded.},{@log smoke=TC005: rveval sub(100,58)=42. Failed (%q0).}"
 >263
-"@if strmatch(setr(0, rveval(add(mul(2,3),mul(4,5)))),26)={@log smoke=TC006: rveval add(mul(2,3),mul(4,5))=26. Succeeded.;@trig me/tr.done},{@log smoke=TC006: rveval add(mul(2,3),mul(4,5))=26. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0, rveval(add(mul(2,3),mul(4,5)))),26)={@log smoke=TC006: rveval add(mul(2,3),mul(4,5))=26. Succeeded.},{@log smoke=TC006: rveval add(mul(2,3),mul(4,5))=26. Failed (%q0).}"
+>264
+"@if strmatch(setr(0, rveval(strlen(hello))),5)={@log smoke=TC007: rveval strlen(hello)=5. Succeeded.},{@log smoke=TC007: rveval strlen(hello)=5. Failed (%q0).}"
+>265
+"@if strmatch(setr(0, rveval(cat(hello,world))),hello world)={@log smoke=TC008: rveval cat(hello,world)=hello world. Succeeded.},{@log smoke=TC008: rveval cat(hello,world)=hello world. Failed (%q0).}"
+>274
+"@if strmatch(setr(0, rveval(strcat(abc,def))),abcdef)={@log smoke=TC009: rveval strcat(abc,def)=abcdef. Succeeded.},{@log smoke=TC009: rveval strcat(abc,def)=abcdef. Failed (%q0).}"
+>275
+"@if strmatch(setr(0, rveval(mid(abcdef,2,3))),cde)={@log smoke=TC010: rveval mid(abcdef,2,3)=cde. Succeeded.},{@log smoke=TC010: rveval mid(abcdef,2,3)=cde. Failed (%q0).}"
+>276
+"@if strmatch(setr(0, rveval(hello)),hello)={@log smoke=TC011: rveval literal hello. Succeeded.},{@log smoke=TC011: rveval literal hello. Failed (%q0).}"
+>277
+"@if strmatch(setr(0, rveval(add(1,2)add(3,4))),37)={@log smoke=TC012: rveval add(1,2)add(3,4)=37. Succeeded.},{@log smoke=TC012: rveval add(1,2)add(3,4)=37. Failed (%q0).}"
+>278
+"@if strmatch(setr(0, rveval(strlen(cat(ab,cd)))),5)={@log smoke=TC013: rveval strlen(cat(ab,cd))=5. Succeeded.},{@log smoke=TC013: rveval strlen(cat(ab,cd))=5. Failed (%q0).}"
+>279
+"@if strmatch(setr(0, rveval(strcat(Result:,add(21,21)))),Result:42)={@log smoke=TC014: rveval strcat(Result:,add(21,21))=Result:42. Succeeded.;@trig me/tr.done},{@log smoke=TC014: rveval strcat(Result:,add(21,21))=Result:42. Failed (%q0).;@trig me/tr.done}"
 <
 !150
 "test_secure_fn"
