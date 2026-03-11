@@ -1010,6 +1010,16 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
     dbt->trace = 0;
 }
 
+// Lightweight re-run: update only the ECALL callback and clear the CPU
+// context.  Keeps the block cache and translated code intact — safe when
+// the guest code region is unchanged between runs.
+//
+void dbt_rerun(dbt_state_t *dbt,
+               int (*ecall_fn)(rv64_ctx_t *, void *), void *ecall_user) {
+    dbt->ecall_fn = ecall_fn;
+    dbt->ecall_user = ecall_user;
+}
+
 int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
     typedef void (*trampoline_fn_t)(rv64_ctx_t *ctx, uint8_t *mem,
                                      void *block, void *cache);

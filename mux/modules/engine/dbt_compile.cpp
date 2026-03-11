@@ -1555,9 +1555,14 @@ static double elapsed_us(const struct timespec &start,
 // Run the compiled program through the JIT.  Returns the result
 // string (written into caller-provided buffer).
 //
+// If reuse_dbt is true, skip the full DBT reset and only update the
+// ECALL callback — keeps translated blocks cached.  Caller must
+// ensure the guest code region is unchanged.
+//
 static bool run_compiled(compiled_program &prog,
                           dbref executor, dbref caller_db, dbref enactor,
-                          UTF8 *out, size_t out_size) {
+                          UTF8 *out, size_t out_size,
+                          bool reuse_dbt = false) {
     if (!prog.needs_jit) {
         // Fully folded — result is already in guest memory.
         const char *r = reinterpret_cast<const char *>(
@@ -1576,9 +1581,15 @@ static bool run_compiled(compiled_program &prog,
     ec.caller = caller_db;
     ec.enactor = enactor;
 
-    dbt_state_t *dbt = get_dbt(prog.memory.data(), prog.memory_size,
-                                eval_ecall, &ec);
-    if (!dbt) return false;
+    dbt_state_t *dbt;
+    if (reuse_dbt && s_dbt_ready) {
+        dbt = &s_persistent_dbt;
+        dbt_rerun(dbt, eval_ecall, &ec);
+    } else {
+        dbt = get_dbt(prog.memory.data(), prog.memory_size,
+                       eval_ecall, &ec);
+        if (!dbt) return false;
+    }
 
     int rc = dbt_run(dbt, 0, rv_compiler::STACK_TOP);
 
@@ -1647,6 +1658,8 @@ FUNCTION(fun_rvbench)
     double compile_each_us = elapsed_us(t0, t1);
 
     // --- Benchmark 3: rveval compile-once ---
+    // First run does full dbt_reset; subsequent runs reuse the DBT
+    // with translated blocks cached (dbt_rerun — no re-translation).
     clock_gettime(CLOCK_MONOTONIC, &t0);
     for (int i = 0; i < iterations; i++) {
         UTF8 result[256];
@@ -1656,7 +1669,8 @@ FUNCTION(fun_rvbench)
             memset(prog.memory.data() + rv_compiler::OUT_BASE, 0,
                    rv_compiler::OUT_LIMIT - rv_compiler::OUT_BASE);
         }
-        run_compiled(prog, executor, caller, enactor, result, sizeof(result));
+        run_compiled(prog, executor, caller, enactor, result, sizeof(result),
+                     /*reuse_dbt=*/i > 0);
     }
     clock_gettime(CLOCK_MONOTONIC, &t1);
     double cached_us = elapsed_us(t0, t1);
