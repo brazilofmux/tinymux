@@ -48,6 +48,7 @@
 #include "dbt.h"
 #include "dbt_decoder.h"
 #include "engine_api.h"
+#include "hir.h"
 
 #include <cstdio>
 #include <cstring>
@@ -145,35 +146,6 @@ struct rv_compiler {
     }
 };
 
-// ---------------------------------------------------------------
-// Compile result: carries both guest address and optional
-// compile-time constant value, plus type tracking for native
-// integer arithmetic.
-// ---------------------------------------------------------------
-
-enum result_type { RT_STRING, RT_INT };
-
-struct compile_result {
-    uint64_t addr;          // guest address of result (RT_STRING)
-    bool is_const;          // true if value is known at compile time
-    std::string value;      // the string value (valid only if is_const)
-    result_type type;       // RT_STRING or RT_INT
-    uint8_t reg;            // RV64 register holding integer (RT_INT)
-    bool known_int;         // if RT_STRING, true if known to be integer
-
-    static compile_result constant(uint64_t a, const std::string &v) {
-        return {a, true, v, RT_STRING, 0, false};
-    }
-    static compile_result runtime(uint64_t a) {
-        return {a, false, {}, RT_STRING, 0, false};
-    }
-    static compile_result runtime_int(uint64_t a) {
-        return {a, false, {}, RT_STRING, 0, true};
-    }
-    static compile_result int_reg(uint8_t r) {
-        return {0, false, {}, RT_INT, r, true};
-    }
-};
 
 // ---------------------------------------------------------------
 // RV64 instruction encoding
@@ -921,155 +893,84 @@ static bool returns_int(const std::string &upper) {
         || upper == "MOD";
 }
 
-// Is this result provably an integer?
+// (Old compile_node chain removed — replaced by HIR pipeline below.)
+// ===============================================================
+// HIR LOWERING: AST → HIR
 //
-static bool is_int_result(const compile_result &cr) {
-    if (cr.type == RT_INT) return true;
-    if (cr.is_const) {
-        int nDigits;
-        return is_integer(u8(cr.value), &nDigits);
-    }
-    return cr.known_int;
-}
+// Produces a linear sequence of HIR instructions from the AST.
+// Constant folding and native arithmetic decisions happen here.
+// ===============================================================
 
-// Convert a compile_result to RT_INT (integer in register).
-// Uses inline RISC-V atoi — no ECALL boundary crossing.
+static int hir_lower_node(hir_program &h, rv_compiler &rc,
+                           const ASTNode *node);
+
+// Lower a sequence node (string concatenation).
 //
-static compile_result ensure_int(rv_compiler &rc, compile_result cr) {
-    if (cr.type == RT_INT) return cr;
-
-    if (cr.is_const) {
-        // Parse at compile time, load as immediate.
-        int64_t val = static_cast<int64_t>(mux_atol(u8(cr.value)));
-        uint8_t reg = rc.alloc_int_reg();
-        if (!reg) return cr;  // out of registers
-        rv_load_i64(rc.code, reg, val);
-        rc.needs_jit = true;
-        return compile_result::int_reg(reg);
-    }
-
-    // Runtime string — emit inline atoi (stays in JIT, no ECALL).
-    // Load guest address into a0, then atoi parses into out_reg.
-    uint8_t reg = rc.alloc_int_reg();
-    if (!reg) return cr;
-    rv_load_val(rc.code, 10, cr.addr);               // a0 = string addr
-    rv_emit_atoi(rc.code, 10, reg);                   // inline parse → reg
-    rc.needs_jit = true;
-    return compile_result::int_reg(reg);
-}
-
-// Convert a compile_result from RT_INT to RT_STRING.
-// Uses inline RISC-V itoa — no ECALL boundary crossing.
-//
-static compile_result ensure_string(rv_compiler &rc, compile_result cr) {
-    if (cr.type == RT_STRING) return cr;
-
-    // RT_INT in register — emit inline itoa.
-    uint64_t out_addr = rc.alloc_output();
-    rv_load_val(rc.code, 10, out_addr);               // a0 = output buf addr
-    rv_emit_itoa(rc.code, cr.reg, 10);                // inline format → buf
-    rc.needs_jit = true;
-    return compile_result::runtime(out_addr);
-}
-
-// ---------------------------------------------------------------
-// AST compilation (recursive, bottom-up)
-//
-// Returns a compile_result with guest address and optional
-// compile-time constant value.
-// ---------------------------------------------------------------
-
-// Forward declaration.
-static compile_result compile_node(rv_compiler &rc, const ASTNode *node);
-
-// Compile a sequence: concatenate child results.
-//
-static compile_result compile_sequence(rv_compiler &rc, const ASTNode *node) {
+static int hir_lower_sequence(hir_program &h, rv_compiler &rc,
+                               const ASTNode *node) {
     if (node->children.size() == 1) {
-        return compile_node(rc, node->children[0].get());
+        return hir_lower_node(h, rc, node->children[0].get());
     }
 
-    // Compile each child.
-    std::vector<compile_result> child_results;
+    // Lower each child.
+    std::vector<int> children;
     for (auto &child : node->children) {
-        child_results.push_back(compile_node(rc, child.get()));
+        children.push_back(hir_lower_node(h, rc, child.get()));
     }
 
-    // Check if all children are compile-time constants.
+    // Check if all constant.
     bool all_const = true;
-    for (auto &cr : child_results) {
-        if (!cr.is_const) {
-            all_const = false;
-            break;
-        }
+    for (int ci : children) {
+        if (!h.is_const(ci)) { all_const = false; break; }
     }
 
     if (all_const) {
-        // Merge at compile time.
         std::string merged;
-        for (auto &cr : child_results) {
-            merged += cr.value;
-        }
+        for (int ci : children) merged += h.const_str(ci);
         uint64_t addr = rc.pool_str(merged);
-        return compile_result::constant(addr, merged);
+        return h.emit_sconst(addr, merged);
     }
 
-    // Mixed sequence: emit strcat() ECALL at runtime.
-    // Convert any RT_INT children to strings first.
-    for (auto &cr : child_results) {
-        if (cr.type == RT_INT) {
-            cr = ensure_string(rc, cr);
+    // Mixed: emit STRCAT.  Convert any ints to strings first.
+    for (auto &ci : children) {
+        if (h.ty[ci] == TY_INT) {
+            ci = h.emit(HIR_ITOA, TY_STRING, ci);
         }
-    }
-    std::vector<uint64_t> child_addrs;
-    for (auto &cr : child_results) {
-        child_addrs.push_back(cr.addr);
     }
 
     int strcat_idx = engine_api_lookup("STRCAT");
-    uint64_t name_addr = strcat_idx ? 0 : rc.pool_str("strcat");
-    uint64_t fargs_addr = rc.alloc_fargs(child_addrs);
-    uint64_t out_addr = rc.alloc_output();
-
-    rv_emit_call(rc.code, name_addr, fargs_addr,
-                 static_cast<int>(child_addrs.size()),
-                 out_addr, rv_compiler::OUT_SLOT, strcat_idx);
-
-    rc.ecalls++;
-    rc.needs_jit = true;
-    return compile_result::runtime(out_addr);
+    int i = h.emit_strcat(children.data(),
+                           static_cast<int>(children.size()));
+    if (i >= 0) h.func_idx[i] = strcat_idx;
+    h.ecalls++;
+    h.needs_jit = true;
+    return i;
 }
 
-// Compile a function call: try constant fold, else emit ECALL.
+// Lower a function call: try fold, try native arith, else ECALL.
 //
-static compile_result compile_funccall(rv_compiler &rc, const ASTNode *node) {
-    // node->text is the function name.
-    // node->children are the argument expressions.
-
-    // Compile each argument.
-    std::vector<compile_result> arg_results;
+static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
+                               const ASTNode *node) {
+    // Lower arguments.
+    std::vector<int> args;
     for (auto &child : node->children) {
-        arg_results.push_back(compile_node(rc, child.get()));
+        args.push_back(hir_lower_node(h, rc, child.get()));
     }
+    int nargs = static_cast<int>(args.size());
 
-    // Try constant folding: if all args are compile-time constants,
-    // evaluate the function at compile time.
+    // Try constant folding.
     bool all_const = true;
     std::vector<std::string> arg_values;
-    for (auto &ar : arg_results) {
-        if (!ar.is_const) {
-            all_const = false;
-            break;
-        }
-        arg_values.push_back(ar.value);
+    for (int ai : args) {
+        if (!h.is_const(ai)) { all_const = false; break; }
+        arg_values.push_back(h.const_str(ai));
     }
-
     if (all_const) {
         std::string folded;
         if (try_fold(node->text, arg_values, folded)) {
             uint64_t addr = rc.pool_str(folded);
-            rc.folds++;
-            return compile_result::constant(addr, folded);
+            h.folds++;
+            return h.emit_sconst(addr, folded);
         }
     }
 
@@ -1077,224 +978,432 @@ static compile_result compile_funccall(rv_compiler &rc, const ASTNode *node) {
     std::string upper = node->text;
     for (auto &c : upper)
         c = static_cast<char>(toupper(static_cast<unsigned char>(c)));
-    int nargs = static_cast<int>(arg_results.size());
 
     // ---------------------------------------------------------------
-    // Native integer arithmetic: when all args are provably integer,
-    // emit RV64 ADD/SUB instead of ECALL.
+    // Native integer arithmetic.
     // ---------------------------------------------------------------
 
-    // Helper: try to emit a binary native op.  Returns true if
-    // successful, false if registers exhausted (fall through to ECALL).
-    //
-    auto try_native_binop = [&](auto emit_fn) -> bool {
-        bool all_int = true;
-        for (auto &ar : arg_results) {
-            if (!is_int_result(ar)) { all_int = false; break; }
+    // Helper: check if all args are provably integer.
+    auto all_int = [&]() -> bool {
+        for (int ai : args) {
+            if (!h.is_int(ai)) return false;
         }
-        if (!all_int || rc.int_reg_idx + nargs >= 11) return false;
-        compile_result acc = ensure_int(rc, arg_results[0]);
-        if (acc.type != RT_INT) return false;
-        for (int i = 1; i < nargs; i++) {
-            compile_result b = ensure_int(rc, arg_results[i]);
-            if (b.type != RT_INT) return false;
-            uint8_t rd = rc.alloc_int_reg();
-            if (!rd) return false;
-            emit_fn(rc.code, rd, acc.reg, b.reg, i);
-            acc = compile_result::int_reg(rd);
-        }
-        rc.native_ops++;
-        rc.needs_jit = true;
-        arg_results.clear();  // signal success
-        arg_results.push_back({}); // placeholder
-        arg_results[0] = acc;  // stash result
         return true;
     };
 
-    if ((upper == "ADD" || upper == "SUB") && nargs >= 2) {
+    // Helper: ensure arg is TY_INT (emit ATOI or ICONST as needed).
+    auto ensure_hi = [&](int ai) -> int {
+        if (h.ty[ai] == TY_INT) return ai;
+        if (h.kind[ai] == HIR_SCONST) {
+            int64_t v = static_cast<int64_t>(mux_atol(u8(h.sval[ai])));
+            return h.emit_iconst(v);
+        }
+        return h.emit(HIR_ATOI, TY_INT, ai);
+    };
+
+    // Binary ops: ADD, SUB, MUL, MOD.
+    if ((upper == "ADD" || upper == "SUB") && nargs >= 2 && all_int()) {
         bool is_add = (upper == "ADD");
-        if (try_native_binop([is_add](auto &code, uint8_t rd, uint8_t rs1,
-                                       uint8_t rs2, int i) {
-            if (is_add || i > 1) code.push_back(rv_ADD(rd, rs1, rs2));
-            else                 code.push_back(rv_SUB(rd, rs1, rs2));
-        })) {
-            return arg_results[0];
+        int acc = ensure_hi(args[0]);
+        for (int i = 1; i < nargs; i++) {
+            int b = ensure_hi(args[i]);
+            hir_kind op = (is_add || i > 1) ? HIR_ADD : HIR_SUB;
+            acc = h.emit(op, TY_INT, acc, b);
         }
+        h.native_ops++;
+        h.needs_jit = true;
+        return acc;
     }
 
-    if (upper == "MUL" && nargs >= 2) {
-        if (try_native_binop([](auto &code, uint8_t rd, uint8_t rs1,
-                                uint8_t rs2, int) {
-            code.push_back(rv_MUL(rd, rs1, rs2));
-        })) {
-            return arg_results[0];
+    if (upper == "MUL" && nargs >= 2 && all_int()) {
+        int acc = ensure_hi(args[0]);
+        for (int i = 1; i < nargs; i++) {
+            int b = ensure_hi(args[i]);
+            acc = h.emit(HIR_MUL, TY_INT, acc, b);
         }
+        h.native_ops++;
+        h.needs_jit = true;
+        return acc;
     }
 
-    if (upper == "MOD" && nargs == 2) {
-        if (try_native_binop([](auto &code, uint8_t rd, uint8_t rs1,
-                                uint8_t rs2, int) {
-            code.push_back(rv_REM(rd, rs1, rs2));
-        })) {
-            return arg_results[0];
-        }
+    if (upper == "MOD" && nargs == 2 && all_int()) {
+        int a = ensure_hi(args[0]);
+        int b = ensure_hi(args[1]);
+        int r = h.emit(HIR_REM, TY_INT, a, b);
+        h.native_ops++;
+        h.needs_jit = true;
+        return r;
     }
 
-    // Native comparisons: eq, neq, gt, gte, lt, lte.
-    // All return 0 or 1 in a register.
-    //
+    // Comparisons: EQ, NEQ, GT, GTE, LT, LTE.
     if ((upper == "EQ" || upper == "NEQ" || upper == "GT" || upper == "GTE"
          || upper == "LT" || upper == "LTE") && nargs == 2
-        && is_int_result(arg_results[0]) && is_int_result(arg_results[1])) {
-        compile_result a = ensure_int(rc, arg_results[0]);
-        compile_result b = ensure_int(rc, arg_results[1]);
-        if (a.type == RT_INT && b.type == RT_INT) {
-            uint8_t rd = rc.alloc_int_reg();
-            if (rd) {
-                // SLT rd, rs1, rs2  — set if less than (signed).
-                // We compose comparisons from SUB + SLT + XORI.
-                //
-                if (upper == "EQ") {
-                    // rd = (a == b) ? 1 : 0
-                    // SUB t0, a, b; SLTIU rd, t0, 1
-                    rc.code.push_back(rv_SUB(5, a.reg, b.reg));
-                    rc.code.push_back(rv_i_type(OP_IMM, rd, ALU_SLTIU, 5, 1));
-                } else if (upper == "NEQ") {
-                    // rd = (a != b) ? 1 : 0
-                    // SUB t0, a, b; SLTU rd, x0, t0
-                    rc.code.push_back(rv_SUB(5, a.reg, b.reg));
-                    rc.code.push_back(rv_r_type(OP_REG, rd, ALU_SLTU, 0, 5, 0));
-                } else if (upper == "GT") {
-                    // rd = (a > b) ? 1 : 0 = (b < a) ? 1 : 0
-                    rc.code.push_back(rv_r_type(OP_REG, rd, ALU_SLT, b.reg, a.reg, 0));
-                } else if (upper == "LT") {
-                    // rd = (a < b) ? 1 : 0
-                    rc.code.push_back(rv_r_type(OP_REG, rd, ALU_SLT, a.reg, b.reg, 0));
-                } else if (upper == "GTE") {
-                    // rd = (a >= b) ? 1 : 0 = NOT(a < b)
-                    rc.code.push_back(rv_r_type(OP_REG, rd, ALU_SLT, a.reg, b.reg, 0));
-                    rc.code.push_back(rv_i_type(OP_IMM, rd, ALU_XORI, rd, 1));
-                } else if (upper == "LTE") {
-                    // rd = (a <= b) ? 1 : 0 = NOT(b < a)
-                    rc.code.push_back(rv_r_type(OP_REG, rd, ALU_SLT, b.reg, a.reg, 0));
-                    rc.code.push_back(rv_i_type(OP_IMM, rd, ALU_XORI, rd, 1));
-                }
-                rc.native_ops++;
-                rc.needs_jit = true;
-                return compile_result::int_reg(rd);
-            }
-        }
+        && h.is_int(args[0]) && h.is_int(args[1])) {
+        int a = ensure_hi(args[0]);
+        int b = ensure_hi(args[1]);
+        hir_kind op;
+        if (upper == "EQ")       op = HIR_EQ;
+        else if (upper == "NEQ") op = HIR_NE;
+        else if (upper == "GT")  op = HIR_GT;
+        else if (upper == "GTE") op = HIR_GE;
+        else if (upper == "LT")  op = HIR_LT;
+        else                     op = HIR_LE;
+        int r = h.emit(op, TY_INT, a, b);
+        h.native_ops++;
+        h.needs_jit = true;
+        return r;
     }
 
-    // Native NOT: not(x) = (x == 0) ? 1 : 0
-    //
-    if (upper == "NOT" && nargs == 1 && is_int_result(arg_results[0])) {
-        compile_result a = ensure_int(rc, arg_results[0]);
-        if (a.type == RT_INT) {
-            uint8_t rd = rc.alloc_int_reg();
-            if (rd) {
-                // SLTIU rd, a, 1  — rd = (a < 1u) = (a == 0) ? 1 : 0
-                rc.code.push_back(rv_i_type(OP_IMM, rd, ALU_SLTIU, a.reg, 1));
-                rc.native_ops++;
-                rc.needs_jit = true;
-                return compile_result::int_reg(rd);
-            }
-        }
+    // NOT: not(x) → (x == 0)
+    if (upper == "NOT" && nargs == 1 && h.is_int(args[0])) {
+        int a = ensure_hi(args[0]);
+        int r = h.emit(HIR_NOT, TY_INT, a);
+        h.native_ops++;
+        h.needs_jit = true;
+        return r;
     }
 
-    if (upper == "INC" && nargs >= 1 && is_int_result(arg_results[0])) {
-        compile_result a = ensure_int(rc, arg_results[0]);
-        if (a.type == RT_INT) {
-            uint8_t rd = rc.alloc_int_reg();
-            if (rd) {
-                rc.code.push_back(rv_ADDI(rd, a.reg, 1));
-                rc.native_ops++;
-                rc.needs_jit = true;
-                return compile_result::int_reg(rd);
-            }
-        }
+    // INC / DEC.
+    if (upper == "INC" && nargs >= 1 && h.is_int(args[0])) {
+        int a = ensure_hi(args[0]);
+        int r = h.emit(HIR_INC, TY_INT, a);
+        h.native_ops++;
+        h.needs_jit = true;
+        return r;
     }
-
-    if (upper == "DEC" && nargs >= 1 && is_int_result(arg_results[0])) {
-        compile_result a = ensure_int(rc, arg_results[0]);
-        if (a.type == RT_INT) {
-            uint8_t rd = rc.alloc_int_reg();
-            if (rd) {
-                rc.code.push_back(rv_ADDI(rd, a.reg, -1));
-                rc.native_ops++;
-                rc.needs_jit = true;
-                return compile_result::int_reg(rd);
-            }
-        }
+    if (upper == "DEC" && nargs >= 1 && h.is_int(args[0])) {
+        int a = ensure_hi(args[0]);
+        int r = h.emit(HIR_DEC, TY_INT, a);
+        h.native_ops++;
+        h.needs_jit = true;
+        return r;
     }
 
     // ---------------------------------------------------------------
     // Fall through to ECALL.
     // ---------------------------------------------------------------
 
-    // For RT_INT args, convert to string for the ECALL convention.
-    for (auto &ar : arg_results) {
-        if (ar.type == RT_INT) {
-            ar = ensure_string(rc, ar);
+    // Convert any TY_INT args to strings for the ECALL convention.
+    for (auto &ai : args) {
+        if (h.ty[ai] == TY_INT) {
+            ai = h.emit(HIR_ITOA, TY_STRING, ai);
         }
     }
 
-    std::vector<uint64_t> arg_addrs;
-    for (auto &ar : arg_results) {
-        arg_addrs.push_back(ar.addr);
-    }
+    int fidx = engine_api_lookup(upper.c_str());
 
-    int func_idx = engine_api_lookup(upper.c_str());
-    uint64_t name_addr = func_idx ? 0 : rc.pool_str(node->text);
-    uint64_t fargs_addr = rc.alloc_fargs(arg_addrs);
-    uint64_t out_addr = rc.alloc_output();
-
-    rv_emit_call(rc.code, name_addr, fargs_addr,
-                 static_cast<int>(arg_addrs.size()),
-                 out_addr, rv_compiler::OUT_SLOT, func_idx);
-
-    rc.ecalls++;
-    rc.needs_jit = true;
-
-    // Mark result as integer if function is known to return integers.
+    // ECALL results are always strings in guest memory.  If the
+    // function is known to return integers (strlen, eq, etc.),
+    // mark known_int so downstream ops can ATOI and use natively.
+    int i = h.emit_call(TY_STRING, fidx,
+                         args.data(), nargs);
     if (returns_int(upper)) {
-        return compile_result::runtime_int(out_addr);
+        h.known_int[i] = true;
     }
-    return compile_result::runtime(out_addr);
+    h.ecalls++;
+    h.needs_jit = true;
+    return i;
 }
 
-static compile_result compile_node(rv_compiler &rc, const ASTNode *node) {
+static int hir_lower_node(hir_program &h, rv_compiler &rc,
+                           const ASTNode *node) {
     switch (node->type) {
     case AST_LITERAL:
     case AST_SPACE: {
         uint64_t addr = rc.pool_str(node->text);
-        return compile_result::constant(addr, node->text);
+        return h.emit_sconst(addr, node->text);
     }
 
     case AST_SEQUENCE:
-        return compile_sequence(rc, node);
+        return hir_lower_sequence(h, rc, node);
 
     case AST_FUNCCALL:
-        return compile_funccall(rc, node);
+        return hir_lower_funccall(h, rc, node);
 
     case AST_EVALBRACKET:
-        // [expr] — compile the inner sequence.
         if (node->children.size() == 1) {
-            return compile_node(rc, node->children[0].get());
+            return hir_lower_node(h, rc, node->children[0].get());
         }
-        // Shouldn't happen, but fall through.
         {
             uint64_t addr = rc.pool_str("");
-            return compile_result::constant(addr, "");
+            return h.emit_sconst(addr, "");
         }
 
-    default:
-        // Unsupported node type — return empty string.
-        {
-            uint64_t addr = rc.pool_str("");
-            return compile_result::constant(addr, "");
+    default: {
+        uint64_t addr = rc.pool_str("");
+        return h.emit_sconst(addr, "");
+    }
+    }
+}
+
+// ===============================================================
+// HIR CODEGEN: HIR → RV64
+//
+// Walks the HIR instruction array and emits RV64 instructions.
+// Each HIR instruction gets a "location" — either a guest memory
+// address (TY_STRING) or an RV64 register (TY_INT).
+// ===============================================================
+
+struct hir_loc {
+    uint64_t addr;      // guest memory address (for strings)
+    uint8_t  reg;       // RV64 register (for integers)
+    bool     in_reg;    // true if value is in a register
+};
+
+static void hir_codegen(hir_program &h, rv_compiler &rc) {
+    // Location map: where each instruction's result lives.
+    hir_loc loc[HIR_MAX_INSNS];
+    memset(loc, 0, sizeof(loc));
+
+    for (int i = 0; i < h.n_insns; i++) {
+        switch (h.kind[i]) {
+        case HIR_SCONST:
+            loc[i].addr = static_cast<uint64_t>(h.val[i]);
+            loc[i].in_reg = false;
+            break;
+
+        case HIR_ICONST: {
+            uint8_t reg = rc.alloc_int_reg();
+            if (!reg) break;
+            rv_load_i64(rc.code, reg, h.val[i]);
+            loc[i].reg = reg;
+            loc[i].in_reg = true;
+            break;
+        }
+
+        case HIR_ATOI: {
+            int s1 = h.src1[i];
+            uint8_t reg = rc.alloc_int_reg();
+            if (!reg) break;
+            if (h.kind[s1] == HIR_SCONST) {
+                // Constant string — parse at compile time.
+                int64_t v = static_cast<int64_t>(
+                    mux_atol(u8(h.sval[s1])));
+                rv_load_i64(rc.code, reg, v);
+            } else if (h.kind[s1] == HIR_CALL) {
+                // ECALL result — string in output buffer.
+                rv_load_val(rc.code, 10, loc[s1].addr);
+                rv_emit_atoi(rc.code, 10, reg);
+            } else {
+                rv_load_val(rc.code, 10, loc[s1].addr);
+                rv_emit_atoi(rc.code, 10, reg);
+            }
+            loc[i].reg = reg;
+            loc[i].in_reg = true;
+            break;
+        }
+
+        case HIR_ITOA: {
+            int s1 = h.src1[i];
+            uint64_t out_addr = rc.alloc_output();
+            rv_load_val(rc.code, 10, out_addr);
+            rv_emit_itoa(rc.code, loc[s1].reg, 10);
+            loc[i].addr = out_addr;
+            loc[i].in_reg = false;
+            break;
+        }
+
+        case HIR_ADD: {
+            int s1 = h.src1[i], s2 = h.src2[i];
+            uint8_t reg = rc.alloc_int_reg();
+            if (!reg) break;
+            rc.code.push_back(rv_ADD(reg, loc[s1].reg, loc[s2].reg));
+            loc[i].reg = reg;
+            loc[i].in_reg = true;
+            break;
+        }
+        case HIR_SUB: {
+            int s1 = h.src1[i], s2 = h.src2[i];
+            uint8_t reg = rc.alloc_int_reg();
+            if (!reg) break;
+            rc.code.push_back(rv_SUB(reg, loc[s1].reg, loc[s2].reg));
+            loc[i].reg = reg;
+            loc[i].in_reg = true;
+            break;
+        }
+        case HIR_MUL: {
+            int s1 = h.src1[i], s2 = h.src2[i];
+            uint8_t reg = rc.alloc_int_reg();
+            if (!reg) break;
+            rc.code.push_back(rv_MUL(reg, loc[s1].reg, loc[s2].reg));
+            loc[i].reg = reg;
+            loc[i].in_reg = true;
+            break;
+        }
+        case HIR_REM: {
+            int s1 = h.src1[i], s2 = h.src2[i];
+            uint8_t reg = rc.alloc_int_reg();
+            if (!reg) break;
+            rc.code.push_back(rv_REM(reg, loc[s1].reg, loc[s2].reg));
+            loc[i].reg = reg;
+            loc[i].in_reg = true;
+            break;
+        }
+
+        case HIR_EQ: {
+            int s1 = h.src1[i], s2 = h.src2[i];
+            uint8_t reg = rc.alloc_int_reg();
+            if (!reg) break;
+            rc.code.push_back(rv_SUB(5, loc[s1].reg, loc[s2].reg));
+            rc.code.push_back(rv_i_type(OP_IMM, reg, ALU_SLTIU, 5, 1));
+            loc[i].reg = reg;
+            loc[i].in_reg = true;
+            break;
+        }
+        case HIR_NE: {
+            int s1 = h.src1[i], s2 = h.src2[i];
+            uint8_t reg = rc.alloc_int_reg();
+            if (!reg) break;
+            rc.code.push_back(rv_SUB(5, loc[s1].reg, loc[s2].reg));
+            rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLTU, 0, 5, 0));
+            loc[i].reg = reg;
+            loc[i].in_reg = true;
+            break;
+        }
+        case HIR_GT: {
+            int s1 = h.src1[i], s2 = h.src2[i];
+            uint8_t reg = rc.alloc_int_reg();
+            if (!reg) break;
+            rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLT,
+                                         loc[s2].reg, loc[s1].reg, 0));
+            loc[i].reg = reg;
+            loc[i].in_reg = true;
+            break;
+        }
+        case HIR_LT: {
+            int s1 = h.src1[i], s2 = h.src2[i];
+            uint8_t reg = rc.alloc_int_reg();
+            if (!reg) break;
+            rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLT,
+                                         loc[s1].reg, loc[s2].reg, 0));
+            loc[i].reg = reg;
+            loc[i].in_reg = true;
+            break;
+        }
+        case HIR_GE: {
+            int s1 = h.src1[i], s2 = h.src2[i];
+            uint8_t reg = rc.alloc_int_reg();
+            if (!reg) break;
+            rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLT,
+                                         loc[s1].reg, loc[s2].reg, 0));
+            rc.code.push_back(rv_i_type(OP_IMM, reg, ALU_XORI, reg, 1));
+            loc[i].reg = reg;
+            loc[i].in_reg = true;
+            break;
+        }
+        case HIR_LE: {
+            int s1 = h.src1[i], s2 = h.src2[i];
+            uint8_t reg = rc.alloc_int_reg();
+            if (!reg) break;
+            rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLT,
+                                         loc[s2].reg, loc[s1].reg, 0));
+            rc.code.push_back(rv_i_type(OP_IMM, reg, ALU_XORI, reg, 1));
+            loc[i].reg = reg;
+            loc[i].in_reg = true;
+            break;
+        }
+
+        case HIR_NOT: {
+            int s1 = h.src1[i];
+            uint8_t reg = rc.alloc_int_reg();
+            if (!reg) break;
+            rc.code.push_back(rv_i_type(OP_IMM, reg, ALU_SLTIU,
+                                         loc[s1].reg, 1));
+            loc[i].reg = reg;
+            loc[i].in_reg = true;
+            break;
+        }
+
+        case HIR_INC: {
+            int s1 = h.src1[i];
+            uint8_t reg = rc.alloc_int_reg();
+            if (!reg) break;
+            rc.code.push_back(rv_ADDI(reg, loc[s1].reg, 1));
+            loc[i].reg = reg;
+            loc[i].in_reg = true;
+            break;
+        }
+        case HIR_DEC: {
+            int s1 = h.src1[i];
+            uint8_t reg = rc.alloc_int_reg();
+            if (!reg) break;
+            rc.code.push_back(rv_ADDI(reg, loc[s1].reg, -1));
+            loc[i].reg = reg;
+            loc[i].in_reg = true;
+            break;
+        }
+
+        case HIR_CALL: {
+            // Allocate guest output buffer.
+            uint64_t out_addr = rc.alloc_output();
+
+            // Build fargs array in guest memory.
+            int na = h.cnargs[i];
+            int base = h.cbase[i];
+            std::vector<uint64_t> farg_addrs;
+            for (int j = 0; j < na; j++) {
+                int ai = h.carg[base + j];
+                farg_addrs.push_back(loc[ai].addr);
+            }
+            uint64_t fargs_addr = rc.alloc_fargs(farg_addrs);
+
+            int fidx = h.func_idx[i];
+            uint64_t name_addr = 0;  // only used for string-based fallback
+            rv_emit_call(rc.code, name_addr, fargs_addr, na,
+                          out_addr, rv_compiler::OUT_SLOT, fidx);
+
+            loc[i].addr = out_addr;
+            loc[i].in_reg = false;
+            break;
+        }
+
+        case HIR_STRCAT: {
+            uint64_t out_addr = rc.alloc_output();
+
+            int na = h.cnargs[i];
+            int base = h.cbase[i];
+            std::vector<uint64_t> farg_addrs;
+            for (int j = 0; j < na; j++) {
+                int ai = h.carg[base + j];
+                farg_addrs.push_back(loc[ai].addr);
+            }
+            uint64_t fargs_addr = rc.alloc_fargs(farg_addrs);
+
+            int fidx = h.func_idx[i];
+            uint64_t name_addr = fidx ? 0 : rc.pool_str("strcat");
+            rv_emit_call(rc.code, name_addr, fargs_addr, na,
+                          out_addr, rv_compiler::OUT_SLOT, fidx);
+
+            loc[i].addr = out_addr;
+            loc[i].in_reg = false;
+            break;
+        }
+
+        case HIR_RET:
+            rv_emit_exit(rc.code);
+            break;
+
+        default:
+            break;
         }
     }
+
+    // Set the result location in the rv_compiler.
+    int ri = h.result;
+    if (ri >= 0) {
+        if (loc[ri].in_reg) {
+            // Final result is in a register — need ITOA.
+            uint64_t out_addr = rc.alloc_output();
+            rv_load_val(rc.code, 10, out_addr);
+            rv_emit_itoa(rc.code, loc[ri].reg, 10);
+            rc.final_out = out_addr;
+        } else {
+            rc.final_out = loc[ri].addr;
+        }
+    }
+
+    // Emit exit.
+    rv_emit_exit(rc.code);
 }
 
 // ---------------------------------------------------------------
@@ -1326,17 +1435,16 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
         return prog;
     }
 
-    // Compile.
+    // --- HIR pipeline ---
+
+    // Phase 1: Lower AST → HIR.
     rv_compiler rc;
-    compile_result cr = compile_node(rc, ast.get());
+    hir_program h;
+    h.init();
+    h.result = hir_lower_node(h, rc, ast.get());
 
-    // If the final result is RT_INT, convert to string for output.
-    if (cr.type == RT_INT) {
-        cr = ensure_string(rc, cr);
-    }
-
-    // Emit exit.
-    rv_emit_exit(rc.code);
+    // Phase 2: Codegen HIR → RV64.
+    hir_codegen(h, rc);
 
     // Copy code to guest memory.
     for (size_t i = 0; i < rc.code.size() && i * 4 < rv_compiler::CODE_LIMIT; i++) {
@@ -1345,12 +1453,12 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
 
     prog.memory = std::move(rc.memory);
     prog.memory_size = rv_compiler::MEM_SIZE;
-    prog.out_addr = cr.addr;
+    prog.out_addr = rc.final_out;
     prog.ok = true;
-    prog.folds = rc.folds;
-    prog.ecalls = rc.ecalls;
-    prog.native_ops = rc.native_ops;
-    prog.needs_jit = rc.needs_jit;
+    prog.folds = h.folds;
+    prog.ecalls = h.ecalls;
+    prog.native_ops = h.native_ops;
+    prog.needs_jit = h.needs_jit;
     return prog;
 }
 

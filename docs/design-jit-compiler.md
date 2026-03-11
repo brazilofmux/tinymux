@@ -734,36 +734,92 @@ compiler handles function semantics directly.
 The proof-of-concept compiler (AST → direct RV64) demonstrated
 constant folding and native arithmetic. The production compiler
 uses an SSA intermediate representation for more powerful
-optimization.
+optimization. Architecture follows the same parallel-array HIR
+design proven in ~/slow-32/selfhost (14K-line C compiler with
+full SSA pipeline).
 
-**3a. SSA IR definition**:
- - Value types: int64, f64, dbref, string (handle), void
- - Operations: arithmetic, comparison, conversion, call, phi,
-   branch, string_concat, string_alloc, string_free
- - Blocks: basic blocks with phi nodes at entry, terminator at exit
- - Side-effect ordering: call nodes carry a memory token
- - Type annotations: each value carries its type from the lattice
+#### IR Design
 
-**3b. AST-to-SSA lowering**:
- - Literal nodes → SSA constants (typed: int64/f64/string)
- - Function calls → SSA call nodes (inline or engine API)
- - `%q0`-`%q9` → SSA load/store through register file
- - `if()`/`ifelse()` → conditional branches + phi nodes
- - `iter()` → loop with phi for `%i0`, `inum()` as loop counter
- - `u()` → engine API `ucall` with argument marshaling
- - %-substitutions → loads from execution context struct
+**Parallel-array HIR** (instruction index = value number):
+ - `h_kind[]` — instruction kind (see below)
+ - `h_ty[]` — result type: TY_INT, TY_STRING, TY_VOID
+ - `h_src1[]`, `h_src2[]` — operand instruction indices
+ - `h_val[]` — immediate values or metadata
+ - `h_blk[]` — containing basic block
+ - `h_carg[]`/`h_cbase[]` — flattened call argument arrays
+ - `h_pblk[]`/`h_pval[]`/`h_pbase[]` — flattened PHI arguments
 
-**3c. SSA optimization passes** (in priority order):
- 1. Conversion elimination — keep values in machine types
- 2. Constant folding — subsumes the proof-of-concept folder
- 3. Dead code elimination
- 4. Common subexpression elimination
- 5. Loop-invariant code motion
+**Instruction kinds**:
+ - Values: ICONST, SCONST, COPY, PHI
+ - Arithmetic: ADD, SUB, MUL, DIV, REM, NEG (native RV64)
+ - Comparison: EQ, NE, LT, LE, GT, GE (native RV64, return int)
+ - Logic: NOT
+ - Conversion: ATOI (string→int), ITOA (int→string)
+ - Calls: CALL (ECALL to engine), STRCAT
+ - Control: BR, BRC, RET
+ - Memory: LOAD_Q, STORE_Q (%q registers)
+ - Softcode: ITER_INIT, ITER_NEXT, UCALL
 
-**3d. RISC-V code generation**:
- - Instruction selection (BURG tree matcher)
- - Register allocation (linear scan over RV64 register file)
- - Code emission to byte buffer
+**Type lattice**: TY_INT (64-bit in register), TY_STRING (guest
+memory address), TY_VOID (side-effect only). Three types total.
+
+**SSA-promotable variables**: %q0-%q9 (10 registers), itext/inum
+inside iter() loops. All other values are already SSA (functional
+expression language).
+
+#### File Plan
+
+```
+mux/include/hir.h                — HIR definition, parallel arrays
+mux/modules/engine/hir_lower.cpp — AST → HIR lowering
+mux/modules/engine/hir_ssa.cpp   — SSA construction
+mux/modules/engine/hir_opt.cpp   — SSA optimization passes
+mux/modules/engine/hir_codegen.cpp — HIR → RV64 code generation
+```
+
+dbt_compile.cpp orchestrates:
+AST → hir_lower → hir_ssa → hir_opt → hir_codegen → guest memory → DBT
+
+#### Milestones
+
+Each milestone is independently testable and shippable.
+
+ - ❌ **M1: HIR + lowering** — parallel-array IR, AST→HIR for
+   literals/calls/sequences, RV64 codegen from HIR. Replaces
+   direct emission. (~600-800 lines)
+   Done when: 534 smoke tests pass, benchmarks within 10%.
+
+ - ❌ **M2: SSA construction** — CFG, RPO, dominator tree,
+   dominance frontiers, PHI insertion, renaming. %q registers
+   become SSA variables. (~500-700 lines)
+   Done when: new rveval tests with setq/r work.
+
+ - ❌ **M3: SSA optimization** — constant folding (subsumes
+   try_fold), copy propagation, DCE. (~400-600 lines)
+   Done when: benchmarks improve, folded exprs still 0.03 us.
+
+ - ❌ **M4: Control flow** — if/ifelse → BRC+PHI, switch →
+   branch chain, iter → loop with PHI. (~300-500 lines)
+   Done when: new rveval tests with control flow pass.
+
+ - ❌ **M5: Register allocation** — linear scan over SSA live
+   ranges, spill/reload. Replaces bump allocator. (~400-500 lines)
+   Done when: expressions exceeding s1-s11 work correctly.
+
+ - ❌ **M6: Advanced optimizations** — CSE, LICM, strength
+   reduction. Natural stopping point. (~300-400 lines)
+   Done when: loop-heavy benchmarks show improvement.
+
+Estimated total: 2,500-3,500 lines.
+
+#### What NOT to Build
+
+ - No BURG instruction selection — RV64 is regular enough for
+   direct pattern matching. BURG was needed for SLOW-32's
+   irregular ISA.
+ - No instruction scheduling — x86-64 OoO handles this downstream.
+ - No interprocedural optimization — each rveval() is one unit.
+ - No separate immediate selection — RV64 immediates are uniform.
 
 ### Stage 4: Tier 2 — RISC-V Function Library
 
