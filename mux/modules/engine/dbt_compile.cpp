@@ -1450,8 +1450,20 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
             break;
         }
 
+        case HIR_COPY: {
+            // Copy the location from the source instruction.
+            int s1 = h.src1[i];
+            if (s1 >= 0) {
+                loc[i] = loc[s1];
+            }
+            break;
+        }
+
         case HIR_RET:
             rv_emit_exit(rc.code);
+            break;
+
+        case HIR_NOP:
             break;
 
         default:
@@ -1522,7 +1534,10 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
         hir_ssa_construct(h);
     }
 
-    // Phase 3: Codegen HIR → RV64.
+    // Phase 3: SSA optimization (constant fold, copy prop, DCE).
+    hir_optimize(h);
+
+    // Phase 4: Codegen HIR → RV64.
     hir_codegen(h, rc);
 
     // Copy code to guest memory.
