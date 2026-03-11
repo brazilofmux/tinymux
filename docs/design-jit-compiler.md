@@ -279,24 +279,34 @@ This provides:
  - 31 general-purpose registers + zero register
  - Clean encoding, no legacy complications
 
-### Dynamic Binary Translation (from ~/riscv)
+### Dynamic Binary Translation
 
-On non-RISC-V hosts, the DBT runtime translates RISC-V blocks to
-native code at execution time:
+On non-RISC-V hosts, the DBT runtime translates RV64IMD blocks to
+native code at execution time. The initial host target is **x86-64**
+(the only host with a proven translator in ~/riscv). ARM64 host
+support is a future addition.
 
  - **Block translation**: Translate basic blocks on first execution,
    cache the native translation.
  - **Superblocks**: Chain hot blocks across branches to reduce
    translation overhead and enable cross-block optimization.
- - **Register caching**: Map frequently-used RISC-V registers to host
-   registers across block boundaries.
- - **Peephole optimization**: Pattern-match and simplify common
-   instruction sequences in the translated output.
+ - **Register caching**: Map frequently-used RV64 registers to host
+   registers across block boundaries. 8-slot LRU cache using
+   RSI/RDI/R8-R11/R14/R15 on x86-64.
+ - **Instruction fusion**: LUI+ADDI → single MOV imm32. AUIPC+ADDI
+   → LEA. AUIPC+JALR → direct CALL. SLT+branch → single Jcc.
+ - **Diamond merge**: Short forward branches (≤16 bytes of guest
+   code) translated as conditional moves instead of branches.
+ - **Return address stack**: Predict JALR returns to avoid indirect
+   branch overhead.
 
 The DBT layer is host-specific (one implementation per target
-architecture) but the input is always the same RISC-V binary. This
+architecture) but the input is always the same RV64IMD binary. This
 inverts the traditional cross-compilation problem: instead of N
 compiler backends, you have N thin translation layers.
+
+On native RISC-V hosts, compiled code executes directly — no
+translation needed. The DBT layer is bypassed entirely.
 
 ### What Gets Compiled vs. Runtime Calls
 
@@ -337,25 +347,116 @@ slow-32 was converging toward. The `~/riscv` project crystallized this
 The custom ISA is unnecessary when a real, well-supported ISA has the
 same properties.
 
-For TinyMUX, this means we don't need to design an ISA or build an
-assembler. We emit RISC-V machine code directly (or via a thin
-encoding layer), store it in SQLite, and the DBT runtime from ~/riscv
-handles execution on any host.
+Both projects are **studies and reference implementations**, not
+dependencies. TinyMUX's execution environment is fundamentally
+different from a microcontroller profile:
+
+ - **No guest memory model**: Compiled softcode doesn't do pointer
+   arithmetic, heap allocation, or file I/O in the guest. The "memory"
+   is a register file (q-registers, loop state) and engine API calls.
+ - **No ELF loading**: Code is emitted directly into byte buffers,
+   not compiled as separate ELF binaries. No linker, no crt0, no
+   guest libc.
+ - **ECALL = Engine API**: Instead of Linux syscall numbers, ECALL
+   dispatches to the EngineAPI function pointer table (get_attr,
+   set_attr, notify, etc.). The sandbox boundary.
+ - **RV64 not RV32**: ~/riscv targets RV32IMFD (32-bit integers,
+   32-bit pointers). TinyMUX needs RV64IMD — 64-bit integers for
+   timestamps, counters, and pennies; 64-bit pointers for calling
+   into the host engine API on 64-bit hosts. The decoder and
+   translator must be ported from 32-bit to 64-bit register width.
+
+What carries over from ~/riscv unchanged:
+
+ - **DBT techniques**: Block translation, superblock formation,
+   register caching (LRU), instruction fusion (LUI+ADDI, AUIPC+ADDI,
+   AUIPC+JALR, SLT+branch), diamond merge for short forward branches,
+   block chaining via inline cache probes, return address stack
+   prediction.
+ - **Host register convention**: RBX = context pointer, R12 = memory
+   base, R13 = cache base, 8-slot LRU register cache in RSI/RDI/
+   R8-R11/R14/R15. (Adapted for 64-bit guest registers.)
+ - **Block cache**: Direct-mapped hash table for translated blocks.
+ - **Interpreter**: Reference interpreter for correctness testing
+   and debugging, runs the same RV64IMD code without translation.
+
+What must be written fresh for TinyMUX:
+
+ - **RV64 decoder**: Widen all register reads/writes from 32 to 64
+   bits. Add RV64-specific instructions: ADDIW, ADDW, SUBW, SLLW,
+   SRLW, SRAW, MULW, DIVW, REMW (and unsigned variants) — the W-suffix
+   instructions that operate on the lower 32 bits with sign extension.
+   LD/SD (64-bit load/store) replace LW/SW as the primary width.
+ - **RV64 x86-64 emitter**: Guest registers are now 64-bit, so the
+   emitter uses full 64-bit host register operations (REX.W prefixes
+   throughout). The 8-slot register cache maps 64-bit guest registers
+   to 64-bit host registers — same LRU logic, wider values.
+ - **ECALL dispatch**: Replace Linux syscall routing with EngineAPI
+   dispatch. Each ECALL number maps to an EngineAPI function pointer.
+   Arguments in a0-a7, return value in a0 — same calling convention,
+   different dispatch table.
+ - **Simplified memory model**: No guest heap, no W^X enforcement.
+   Compiled code accesses a small, fixed-size context struct (q-regs,
+   loop counters, executor/caller/enactor) via a base pointer. All
+   game state access goes through ECALL.
 
 ## Implementation Stages
 
-### Stage 1: DBT Runtime Integration
+### Stage 1: RV64IMD DBT Runtime
 
-Port the ~/riscv DBT runtime into libmux.so (or a companion shared
-library). This is the foundation — without it, RISC-V code can't
-execute on x86/ARM hosts.
+Build an RV64IMD dynamic binary translator, using ~/riscv's RV32IMFD
+DBT as a reference for the translation techniques. This is not a port
+(the code diverges too much) — it is a fresh implementation informed
+by proven patterns.
 
-Deliverable: A function `dbt_execute(const uint8_t* riscv_code,
-size_t len, RuntimeContext* ctx)` that runs RISC-V binary on any
-host.
+**Location**: `mux/modules/engine/` — alongside `ast.cpp` and
+`eval.cpp`. The DBT is part of the engine, not a separate module.
+It needs the same access as the AST evaluator (q-registers,
+executor/caller/enactor, mudstate, function table). Compiled into
+`engine.so`. Can be separated later if needed.
 
-Validation: Run existing ~/riscv test cases through the integrated
-runtime. Verify correctness and performance targets (~70% native).
+Files: `dbt_decoder.h`, `dbt_interp.cpp`, `dbt.cpp`, `dbt_emit_x64.h`
+
+**1a. RV64IMD decoder** (`dbt_decoder.h`): Decode all RV64IMD instructions
+into a structured format. RV64I adds ADDIW/ADDW/SUBW/SLLW/SRLW/SRAW
+(32-bit ops with sign-extend), LD/SD/LWU (64-bit load/store). RV64M
+adds MULW/DIVW/DIVUW/REMW/REMUW. RV64D is identical to RV32D (FP
+registers are always 64-bit). Instruction encoding is the same as
+RV32 — the difference is register width and a handful of new opcodes.
+
+**1b. Reference interpreter** (`interp.c`): Straightforward
+fetch-decode-execute loop over 64-bit register file. Used for
+correctness testing — every test runs on both interpreter and DBT,
+results must match. ECALL dispatches to a callback function pointer
+(initially a test harness, later the EngineAPI).
+
+**1c. x86-64 translator** (`dbt.c`, `emit_x64.h`): Block-at-a-time
+translation of RV64IMD to x86-64. Carry over from ~/riscv:
+block chaining, 8-slot LRU register cache, superblocks with side-exit
+snapshots, instruction fusion (LUI+ADDI, AUIPC+ADDI, AUIPC+JALR,
+SLT+branch), diamond merge, return address stack, intrinsic stubs.
+Key difference: all guest register operations are 64-bit (REX.W
+throughout), W-suffix instructions need 32-bit ops with MOVSXD
+sign-extension.
+
+**1d. Block cache**: Direct-mapped hash table for translated blocks,
+same design as ~/riscv (64K entries × 16 bytes).
+
+**1e. Test suite**: Arithmetic (int64 edge cases, W-suffix
+sign-extension), floating point (RV64D — same as RV32D), control
+flow (branches, JAL/JALR), ECALL dispatch, register cache
+correctness (spill/restore), superblock formation.
+
+Deliverable: A standalone `rv64-run` tool that executes RV64IMD
+binary from a byte buffer, dispatching ECALLs through a configurable
+function pointer. No ELF loading required (code is passed as raw
+bytes + entry offset), though ELF support is useful for testing
+with cross-compiled C programs.
+
+Validation: Hand-written RV64IMD test sequences covering all
+instruction groups. Cross-compiled C test programs using
+`riscv64-unknown-elf-gcc -march=rv64imd -mabi=lp64d`. Interpreter
+and DBT must produce identical results for all tests.
 
 ### Stage 2: Engine API / Function Pointer Table
 
