@@ -72,6 +72,18 @@ struct rv_compiler {
     // Statistics.
     int folds;              // number of constant-folded calls
     int ecalls;             // number of runtime ECALL calls
+    int native_ops;         // number of native arithmetic ops
+    bool needs_jit;         // true if any runtime code was emitted
+
+    // Integer register allocator.
+    // Uses saved registers s1-s11 (x9, x18-x27).
+    int int_reg_idx;
+    static constexpr uint8_t INT_REGS[11] = {9, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27};
+
+    uint8_t alloc_int_reg() {
+        if (int_reg_idx >= 11) return 0;  // out of registers
+        return INT_REGS[int_reg_idx++];
+    }
 
     static constexpr size_t MEM_SIZE     = 64 * 1024;
     static constexpr uint64_t CODE_BASE  = 0x0000;
@@ -91,7 +103,10 @@ struct rv_compiler {
                     out_pool(OUT_BASE),
                     final_out(0),
                     folds(0),
-                    ecalls(0) {}
+                    ecalls(0),
+                    native_ops(0),
+                    needs_jit(false),
+                    int_reg_idx(0) {}
 
     // Allocate string in pool, return guest addr.
     uint64_t pool_str(const char *s, size_t len) {
@@ -131,19 +146,31 @@ struct rv_compiler {
 
 // ---------------------------------------------------------------
 // Compile result: carries both guest address and optional
-// compile-time constant value.
+// compile-time constant value, plus type tracking for native
+// integer arithmetic.
 // ---------------------------------------------------------------
 
+enum result_type { RT_STRING, RT_INT };
+
 struct compile_result {
-    uint64_t addr;          // guest address of result
+    uint64_t addr;          // guest address of result (RT_STRING)
     bool is_const;          // true if value is known at compile time
     std::string value;      // the string value (valid only if is_const)
+    result_type type;       // RT_STRING or RT_INT
+    uint8_t reg;            // RV64 register holding integer (RT_INT)
+    bool known_int;         // if RT_STRING, true if known to be integer
 
     static compile_result constant(uint64_t a, const std::string &v) {
-        return {a, true, v};
+        return {a, true, v, RT_STRING, 0, false};
     }
     static compile_result runtime(uint64_t a) {
-        return {a, false, {}};
+        return {a, false, {}, RT_STRING, 0, false};
+    }
+    static compile_result runtime_int(uint64_t a) {
+        return {a, false, {}, RT_STRING, 0, true};
+    }
+    static compile_result int_reg(uint8_t r) {
+        return {0, false, {}, RT_INT, r, true};
     }
 };
 
@@ -169,6 +196,43 @@ static uint32_t rv_LUI(uint8_t rd, int32_t imm) {
 }
 static uint32_t rv_ECALL() {
     return rv_i_type(OP_SYSTEM, 0, 0, 0, 0);
+}
+
+// R-type encoding for register-register ALU ops.
+//
+static uint32_t rv_r_type(uint8_t opcode, uint8_t rd, uint8_t funct3,
+                           uint8_t rs1, uint8_t rs2, uint8_t funct7) {
+    return opcode | (rd << 7) | (funct3 << 12) | (rs1 << 15)
+         | (rs2 << 20) | (static_cast<uint32_t>(funct7) << 25);
+}
+static uint32_t rv_ADD(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return rv_r_type(OP_REG, rd, ALU_ADD, rs1, rs2, 0x00);
+}
+static uint32_t rv_SUB(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return rv_r_type(OP_REG, rd, ALU_ADD, rs1, rs2, 0x20);
+}
+
+// Load a signed 64-bit value into a register.
+//
+static void rv_load_i64(std::vector<uint32_t> &code, uint8_t rd, int64_t val) {
+    if (val >= -2048 && val <= 2047) {
+        code.push_back(rv_ADDI(rd, 0, static_cast<int32_t>(val)));
+        return;
+    }
+    if (val >= -2147483648LL && val <= 2147483647LL) {
+        uint32_t uval = static_cast<uint32_t>(static_cast<int32_t>(val));
+        uint32_t hi = uval & 0xFFFFF000;
+        int32_t lo = static_cast<int32_t>(uval & 0xFFF);
+        if (lo & 0x800) {
+            hi += 0x1000;
+            lo -= 0x1000;
+        }
+        code.push_back(rv_LUI(rd, static_cast<int32_t>(hi)));
+        if (lo) code.push_back(rv_ADDI(rd, rd, lo));
+        return;
+    }
+    // Values beyond 32-bit: load zero (shouldn't happen for typical softcode).
+    code.push_back(rv_ADDI(rd, 0, 0));
 }
 
 // Load a value into a register using LUI + ADDI.
@@ -648,6 +712,79 @@ static bool try_fold(const std::string &func_name,
 }
 
 // ---------------------------------------------------------------
+// Type tracking for native integer arithmetic
+// ---------------------------------------------------------------
+
+// Functions known to always return integer strings.
+//
+static bool returns_int(const std::string &upper) {
+    return upper == "RAND" || upper == "STRLEN" || upper == "WORDS"
+        || upper == "POS" || upper == "EQ" || upper == "NEQ"
+        || upper == "GT" || upper == "GTE" || upper == "LT" || upper == "LTE"
+        || upper == "NOT" || upper == "T" || upper == "COMP"
+        || upper == "INC" || upper == "DEC" || upper == "SIGN"
+        || upper == "MOD";
+}
+
+// Is this result provably an integer?
+//
+static bool is_int_result(const compile_result &cr) {
+    if (cr.type == RT_INT) return true;
+    if (cr.is_const) {
+        int nDigits;
+        return is_integer(u8(cr.value), &nDigits);
+    }
+    return cr.known_int;
+}
+
+// Lightweight ECALL numbers (no function dispatch overhead).
+//
+static constexpr int ECALL_ATOI = 0x101;
+static constexpr int ECALL_ITOA = 0x102;
+
+// Convert a compile_result to RT_INT (integer in register).
+//
+static compile_result ensure_int(rv_compiler &rc, compile_result cr) {
+    if (cr.type == RT_INT) return cr;
+
+    if (cr.is_const) {
+        // Parse at compile time, load as immediate.
+        int64_t val = static_cast<int64_t>(mux_atol(u8(cr.value)));
+        uint8_t reg = rc.alloc_int_reg();
+        if (!reg) return cr;  // out of registers
+        rv_load_i64(rc.code, reg, val);
+        rc.needs_jit = true;
+        return compile_result::int_reg(reg);
+    }
+
+    // Runtime string — emit lightweight ECALL_ATOI.
+    rv_load_val(rc.code, 10, cr.addr);              // a0 = string addr
+    rc.code.push_back(rv_ADDI(17, 0, ECALL_ATOI));  // a7 = 0x101
+    rc.code.push_back(rv_ECALL());
+    uint8_t reg = rc.alloc_int_reg();
+    if (!reg) return cr;
+    rc.code.push_back(rv_ADDI(reg, 10, 0));          // mv sN, a0
+    rc.needs_jit = true;
+    return compile_result::int_reg(reg);
+}
+
+// Convert a compile_result from RT_INT to RT_STRING.
+//
+static compile_result ensure_string(rv_compiler &rc, compile_result cr) {
+    if (cr.type == RT_STRING) return cr;
+
+    // RT_INT in register — emit lightweight ECALL_ITOA.
+    uint64_t out_addr = rc.alloc_output();
+    rc.code.push_back(rv_ADDI(10, cr.reg, 0));                  // a0 = integer
+    rv_load_val(rc.code, 11, out_addr);                          // a1 = output buf
+    rv_load_val(rc.code, 12, rv_compiler::OUT_SLOT);             // a2 = buf size
+    rc.code.push_back(rv_ADDI(17, 0, ECALL_ITOA));              // a7 = 0x102
+    rc.code.push_back(rv_ECALL());
+    rc.needs_jit = true;
+    return compile_result::runtime(out_addr);
+}
+
+// ---------------------------------------------------------------
 // AST compilation (recursive, bottom-up)
 //
 // Returns a compile_result with guest address and optional
@@ -690,6 +827,12 @@ static compile_result compile_sequence(rv_compiler &rc, const ASTNode *node) {
     }
 
     // Mixed sequence: emit strcat() ECALL at runtime.
+    // Convert any RT_INT children to strings first.
+    for (auto &cr : child_results) {
+        if (cr.type == RT_INT) {
+            cr = ensure_string(rc, cr);
+        }
+    }
     std::vector<uint64_t> child_addrs;
     for (auto &cr : child_results) {
         child_addrs.push_back(cr.addr);
@@ -704,6 +847,7 @@ static compile_result compile_sequence(rv_compiler &rc, const ASTNode *node) {
                  out_addr, rv_compiler::OUT_SLOT);
 
     rc.ecalls++;
+    rc.needs_jit = true;
     return compile_result::runtime(out_addr);
 }
 
@@ -740,7 +884,88 @@ static compile_result compile_funccall(rv_compiler &rc, const ASTNode *node) {
         }
     }
 
+    // Uppercase for native arithmetic checks.
+    std::string upper = node->text;
+    for (auto &c : upper)
+        c = static_cast<char>(toupper(static_cast<unsigned char>(c)));
+    int nargs = static_cast<int>(arg_results.size());
+
+    // ---------------------------------------------------------------
+    // Native integer arithmetic: when all args are provably integer,
+    // emit RV64 ADD/SUB instead of ECALL.
+    // ---------------------------------------------------------------
+
+    if ((upper == "ADD" || upper == "SUB") && nargs >= 2) {
+        bool all_int = true;
+        for (auto &ar : arg_results) {
+            if (!is_int_result(ar)) { all_int = false; break; }
+        }
+        if (all_int && rc.int_reg_idx + nargs < 11) {
+            compile_result acc = ensure_int(rc, arg_results[0]);
+            if (acc.type == RT_INT) {
+                bool ok = true;
+                for (int i = 1; i < nargs; i++) {
+                    compile_result b = ensure_int(rc, arg_results[i]);
+                    if (b.type != RT_INT) { ok = false; break; }
+                    uint8_t rd = rc.alloc_int_reg();
+                    if (!rd) { ok = false; break; }
+                    if (upper == "ADD" || i > 1) {
+                        // SUB only applies to first pair; subsequent args
+                        // would need different semantics.  For n-ary ADD,
+                        // accumulate with ADD.
+                        rc.code.push_back(rv_ADD(rd, acc.reg, b.reg));
+                    } else {
+                        rc.code.push_back(rv_SUB(rd, acc.reg, b.reg));
+                    }
+                    acc = compile_result::int_reg(rd);
+                }
+                if (ok) {
+                    rc.native_ops++;
+                    rc.needs_jit = true;
+                    return acc;
+                }
+            }
+            // Fall through to ECALL if register allocation failed.
+        }
+    }
+
+    if (upper == "INC" && nargs >= 1 && is_int_result(arg_results[0])) {
+        compile_result a = ensure_int(rc, arg_results[0]);
+        if (a.type == RT_INT) {
+            uint8_t rd = rc.alloc_int_reg();
+            if (rd) {
+                rc.code.push_back(rv_ADDI(rd, a.reg, 1));
+                rc.native_ops++;
+                rc.needs_jit = true;
+                return compile_result::int_reg(rd);
+            }
+        }
+    }
+
+    if (upper == "DEC" && nargs >= 1 && is_int_result(arg_results[0])) {
+        compile_result a = ensure_int(rc, arg_results[0]);
+        if (a.type == RT_INT) {
+            uint8_t rd = rc.alloc_int_reg();
+            if (rd) {
+                rc.code.push_back(rv_ADDI(rd, a.reg, -1));
+                rc.native_ops++;
+                rc.needs_jit = true;
+                return compile_result::int_reg(rd);
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------
     // Fall through to ECALL.
+    // ---------------------------------------------------------------
+
+    // For RT_INT args, convert to string for the ECALL convention.
+    for (auto &ar : arg_results) {
+        if (ar.type == RT_INT) {
+            ar = ensure_string(rc, ar);
+        }
+    }
+
     std::vector<uint64_t> arg_addrs;
     for (auto &ar : arg_results) {
         arg_addrs.push_back(ar.addr);
@@ -755,6 +980,12 @@ static compile_result compile_funccall(rv_compiler &rc, const ASTNode *node) {
                  out_addr, rv_compiler::OUT_SLOT);
 
     rc.ecalls++;
+    rc.needs_jit = true;
+
+    // Mark result as integer if function is known to return integers.
+    if (returns_int(upper)) {
+        return compile_result::runtime_int(out_addr);
+    }
     return compile_result::runtime(out_addr);
 }
 
@@ -803,6 +1034,8 @@ struct compiled_program {
     bool ok;
     int folds;
     int ecalls;
+    int native_ops;
+    bool needs_jit;         // true if JIT execution required
 };
 
 static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
@@ -810,6 +1043,8 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
     prog.ok = false;
     prog.folds = 0;
     prog.ecalls = 0;
+    prog.native_ops = 0;
+    prog.needs_jit = false;
 
     // Parse the expression.
     auto ast = ast_parse_string(expr, nLen);
@@ -820,6 +1055,11 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
     // Compile.
     rv_compiler rc;
     compile_result cr = compile_node(rc, ast.get());
+
+    // If the final result is RT_INT, convert to string for output.
+    if (cr.type == RT_INT) {
+        cr = ensure_string(rc, cr);
+    }
 
     // Emit exit.
     rv_emit_exit(rc.code);
@@ -835,6 +1075,8 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
     prog.ok = true;
     prog.folds = rc.folds;
     prog.ecalls = rc.ecalls;
+    prog.native_ops = rc.native_ops;
+    prog.needs_jit = rc.needs_jit;
     return prog;
 }
 
@@ -962,6 +1204,37 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         return -1;
     }
 
+    case 0x101: {  // ECALL_ATOI — lightweight string→integer.
+        uint64_t addr = ctx->x[10];
+        if (addr < ec->memory_size) {
+            ctx->x[10] = static_cast<uint64_t>(
+                static_cast<int64_t>(mux_atol(ec->memory + addr)));
+        } else {
+            ctx->x[10] = 0;
+        }
+        return -1;
+    }
+
+    case 0x102: {  // ECALL_ITOA — lightweight integer→string.
+        int64_t val = static_cast<int64_t>(ctx->x[10]);
+        uint64_t out_addr = ctx->x[11];
+        uint64_t out_size = ctx->x[12];
+        if (out_addr + out_size <= ec->memory_size && out_size > 0) {
+            UTF8 buf[64];
+            UTF8 *bufc = buf;
+            safe_i64toa(val, buf, &bufc);
+            *bufc = '\0';
+            size_t len = static_cast<size_t>(bufc - buf);
+            if (len >= out_size) len = out_size - 1;
+            memcpy(ec->memory + out_addr, buf, len);
+            ec->memory[out_addr + len] = '\0';
+            ctx->x[10] = static_cast<uint64_t>(len);
+        } else {
+            ctx->x[10] = 0;
+        }
+        return -1;
+    }
+
     default:
         ctx->x[10] = 0;
         return -1;
@@ -992,7 +1265,7 @@ FUNCTION(fun_rveval)
 
     // If everything was constant-folded, the result is already
     // in the string pool — no need to run the JIT at all.
-    if (prog.ecalls == 0) {
+    if (!prog.needs_jit) {
         const UTF8 *result = prog.memory.data() + prog.out_addr;
         safe_str(result, buff, bufc);
         return;
@@ -1051,7 +1324,7 @@ static double elapsed_us(const struct timespec &start,
 static bool run_compiled(compiled_program &prog,
                           dbref executor, dbref caller_db, dbref enactor,
                           UTF8 *out, size_t out_size) {
-    if (prog.ecalls == 0) {
+    if (!prog.needs_jit) {
         // Fully folded — result is already in guest memory.
         const char *r = reinterpret_cast<const char *>(
             prog.memory.data() + prog.out_addr);
@@ -1144,7 +1417,7 @@ FUNCTION(fun_rvbench)
     for (int i = 0; i < iterations; i++) {
         UTF8 result[256];
         // Re-init guest memory for ECALL path (outputs get overwritten).
-        if (prog.ecalls > 0) {
+        if (prog.needs_jit) {
             // Reset output region for clean re-run.
             memset(prog.memory.data() + rv_compiler::OUT_BASE, 0,
                    rv_compiler::OUT_LIMIT - rv_compiler::OUT_BASE);
@@ -1161,12 +1434,12 @@ FUNCTION(fun_rvbench)
 
     UTF8 report[LBUF_SIZE];
     snprintf(reinterpret_cast<char *>(report), sizeof(report),
-        "expr=%s iters=%d folds=%d ecalls=%d | "
+        "expr=%s iters=%d folds=%d ecalls=%d nativ=%d | "
         "native=%.2fus/call | "
         "compile-each=%.2fus/call (%.1fx) | "
         "cached=%.2fus/call (%.1fx)",
         reinterpret_cast<const char *>(expr),
-        iterations, prog.folds, prog.ecalls,
+        iterations, prog.folds, prog.ecalls, prog.native_ops,
         per_native,
         per_compile, per_compile / per_native,
         per_cached, per_cached / per_native);
