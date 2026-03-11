@@ -1,6 +1,6 @@
 +X996100
 +S202
-+N330
++N332
 -R1
 +A256
 "1:TR.TC000"
@@ -139,16 +139,20 @@
 +A323
 "1:GAMMA"
 +A324
-"1:SUITE.LIST.1"
+"1:TR.TC053"
 +A325
-"1:SUITE.LIST.2"
+"1:TR.TC054"
 +A326
-"1:SUITE.TR"
+"1:SUITE.LIST.1"
 +A327
-"1:FN_STRLEN"
+"1:SUITE.LIST.2"
 +A328
-"1:FN_NEG"
+"1:SUITE.TR"
 +A329
+"1:FN_STRLEN"
++A330
+"1:FN_NEG"
++A331
 "1:FN_IDENT"
 !0
 "Limbo"
@@ -4925,7 +4929,23 @@
 >310
 "@if strmatch(setr(0, rveval(ifelse(not(rand(1)),10,20))),10)={@log smoke=TC045: rveval ifelse(not(rand(1)),10,20)=10. Succeeded.},{@log smoke=TC045: rveval ifelse(not(rand(1)),10,20)=10. Failed (%q0).}"
 >311
-"@if strmatch(setr(0, rveval(add(ifelse(gt(5,3),10,20),5))),15)={@log smoke=TC046: rveval add(ifelse(gt(5,3),10,20),5)=15. Succeeded.;@trig me/tr.done},{@log smoke=TC046: rveval add(ifelse(gt(5,3),10,20),5)=15. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0, rveval(add(ifelse(gt(5,3),10,20),5))),15)={@log smoke=TC046: rveval add(ifelse(gt(5,3),10,20),5)=15. Succeeded.},{@log smoke=TC046: rveval add(ifelse(gt(5,3),10,20),5)=15. Failed (%q0).}"
+>312
+"@if strmatch(setr(0, rveval(cand(1,1,1))),1)={@log smoke=TC047: rveval cand(1,1,1)=1. Succeeded.},{@log smoke=TC047: rveval cand(1,1,1)=1. Failed (%q0).}"
+>313
+"@if strmatch(setr(0, rveval(cand(1,0,1))),0)={@log smoke=TC048: rveval cand(1,0,1)=0. Succeeded.},{@log smoke=TC048: rveval cand(1,0,1)=0. Failed (%q0).}"
+>314
+"@if strmatch(setr(0, rveval(cor(0,0,0))),0)={@log smoke=TC049: rveval cor(0,0,0)=0. Succeeded.},{@log smoke=TC049: rveval cor(0,0,0)=0. Failed (%q0).}"
+>315
+"@if strmatch(setr(0, rveval(cor(0,1,0))),1)={@log smoke=TC050: rveval cor(0,1,0)=1. Succeeded.},{@log smoke=TC050: rveval cor(0,1,0)=1. Failed (%q0).}"
+>316
+"@if strmatch(setr(0, rveval(cand(gt(1,rand(1)),1))),1)={@log smoke=TC051: rveval cand(gt(1,rand(1)),1)=1. Succeeded.},{@log smoke=TC051: rveval cand(gt(1,rand(1)),1)=1. Failed (%q0).}"
+>317
+"@if strmatch(setr(0, rveval(cand(1,rand(1)))),0)={@log smoke=TC052: rveval cand(1,rand(1))=0. Succeeded.},{@log smoke=TC052: rveval cand(1,rand(1))=0. Failed (%q0).}"
+>324
+"@if strmatch(setr(0, rveval(cor(gt(5,3),rand(1)))),1)={@log smoke=TC053: rveval cor(gt(5,3),rand(1))=1. Succeeded.},{@log smoke=TC053: rveval cor(gt(5,3),rand(1))=1. Failed (%q0).}"
+>325
+"@if strmatch(setr(0, rveval(cor(rand(1),0))),0)={@log smoke=TC054: rveval cor(rand(1),0)=0. Succeeded.;@trig me/tr.done},{@log smoke=TC054: rveval cor(rand(1),0)=0. Failed (%q0).;@trig me/tr.done}"
 <
 !151
 "test_secure_fn"
@@ -5299,11 +5319,11 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->324
-"abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn and_fn andbool_fn asin_fn atan_fn atan2_fn attrib_set_fn band_fn baseconv_fn before_fn bnand_fn bor_fn bxor_fn cand_fn candbool_fn capstr_fn case_fn cat_fn ceil_fn center_fn choose_fn chr_fn citer_fn clone_fn cmd_say columns_fn comp_fn convtime_fn connlog_fn cor_fn corbool_fn cos_fn cpad_fn crc32_fn cron_fn ctu_fn dec_fn delete_fn digest_fn digittime_fn dist2d_fn dist3d_fn dynhelp_fn e_fn edit_fn elements_fn encode64_fn eq_fn escape_fn exp3_fn exp_fn exptime_fn extract_fn fdiv_fn first_fn floor_fn floordiv_fn fmod_fn grab_fn graball_fn gt_fn gte_fn hmac_fn iadd_fn iabs_fn idiv_fn imul_fn inc_fn index_fn insert_fn isalpha_fn isdbref_fn isign_fn isint_fn isjson_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn json_fn letq_fn"
->325
-"ladd_fn land_fn last_fn lcstr_fn ldelete_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn lockencode_fn log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn mailsend_fn match_fn matchall_fn max_fn member_fn merge_fn mid_fn min_fn mod_fn mul_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn printf_fn reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn rpad_fn rvcall_fn rveval_fn rvbench_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn sign_fn sin_fn singletime_fn sort_fn sortkey_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn strcat_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strdistance_fn strtrunc_fn sub_fn switch_fn t_fn table_fn tan_fn tr_fn translate_fn trim_fn trunc_fn ucstr_fn url_escape_fn vadd_fn vcross_fn vdot_fn vmag_fn vmul_fn vsub_fn vunit_fn visual_width_fn wordpos_fn words_fn wrap_fn xor_fn shutdown"
 >326
+"abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn and_fn andbool_fn asin_fn atan_fn atan2_fn attrib_set_fn band_fn baseconv_fn before_fn bnand_fn bor_fn bxor_fn cand_fn candbool_fn capstr_fn case_fn cat_fn ceil_fn center_fn choose_fn chr_fn citer_fn clone_fn cmd_say columns_fn comp_fn convtime_fn connlog_fn cor_fn corbool_fn cos_fn cpad_fn crc32_fn cron_fn ctu_fn dec_fn delete_fn digest_fn digittime_fn dist2d_fn dist3d_fn dynhelp_fn e_fn edit_fn elements_fn encode64_fn eq_fn escape_fn exp3_fn exp_fn exptime_fn extract_fn fdiv_fn first_fn floor_fn floordiv_fn fmod_fn grab_fn graball_fn gt_fn gte_fn hmac_fn iadd_fn iabs_fn idiv_fn imul_fn inc_fn index_fn insert_fn isalpha_fn isdbref_fn isign_fn isint_fn isjson_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn json_fn letq_fn"
+>327
+"ladd_fn land_fn last_fn lcstr_fn ldelete_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn lockencode_fn log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn mailsend_fn match_fn matchall_fn max_fn member_fn merge_fn mid_fn min_fn mod_fn mul_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn printf_fn reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn rpad_fn rvcall_fn rveval_fn rvbench_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn sign_fn sin_fn singletime_fn sort_fn sortkey_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn strcat_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strdistance_fn strtrunc_fn sub_fn switch_fn t_fn table_fn tan_fn tr_fn translate_fn trim_fn trunc_fn ucstr_fn url_escape_fn vadd_fn vcross_fn vdot_fn vmag_fn vmul_fn vsub_fn vunit_fn visual_width_fn wordpos_fn words_fn wrap_fn xor_fn shutdown"
+>328
 "@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
 <
 !164
@@ -5375,11 +5395,11 @@
 "@if strmatch(setr(0,eq(strlen(sortkey(me/fn_ident,)),0)),1)={@log smoke=TC005: sortkey empty list. Succeeded.},{@log smoke=TC005: sortkey empty list. Failed (%q0).}"
 >263
 "@if strmatch(setr(0,sortkey(me/fn_ident,only)),only)={@log smoke=TC006: sortkey single element. Succeeded.;@trig me/tr.done},{@log smoke=TC006: sortkey single element. Failed (%q0).;@trig me/tr.done}"
->327
-"strlen(%0)"
->328
-"mul(%0,-1)"
 >329
+"strlen(%0)"
+>330
+"mul(%0,-1)"
+>331
 "%0"
 <
 !166

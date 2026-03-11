@@ -1135,6 +1135,185 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     }
 
     // ---------------------------------------------------------------
+    // Short-circuit logic: cand/candbool/cor/corbool
+    //
+    // cand(a,b,c): eval a, if false → 0; eval b, if false → 0;
+    //   eval c, if false → 0; result = 1.
+    // cor(a,b,c):  eval a, if true → 1; eval b, if true → 1;
+    //   eval c, if true → 1; result = 0.
+    //
+    // Structure: chain of test blocks, each with BRC to either the
+    // next test or the short-circuit result.  Final merge via PHI.
+    // ---------------------------------------------------------------
+
+    if ((fname == "CAND" || fname == "CANDBOOL"
+         || fname == "COR" || fname == "CORBOOL")
+        && node->children.size() >= 1) {
+        bool is_and = (fname == "CAND" || fname == "CANDBOOL");
+        int nfargs = static_cast<int>(node->children.size());
+
+        // Lower args one at a time (preserving short-circuit semantics).
+        // Chain blocks are allocated during the loop; result blocks are
+        // allocated AFTER the loop so they get higher block numbers
+        // (ensuring all branches in the generated code go forward).
+        //
+        // BRC instructions emitted during the loop use a placeholder (-1)
+        // for the short-circuit target (false_blk or true_blk).  After
+        // the result blocks are allocated, we patch those BRC instructions.
+        bool multi_block = false;
+        bool last_was_brc = false;
+        std::vector<int> brc_patch_insns;    // BRC insn indices to patch
+        std::vector<int> br_shortcircuit;    // BR insns → short-circuit target
+        int br_allpassed = -1;               // BR insn → "all passed" target
+
+        for (int ai = 0; ai < nfargs; ai++) {
+            int cond = hir_lower_node(h, rc, node->children[ai].get());
+
+            // Ensure condition is integer.
+            if (h.ty[cond] != TY_INT) {
+                if (h.kind[cond] == HIR_SCONST) {
+                    int64_t v = static_cast<int64_t>(
+                        mux_atol(u8(h.sval[cond])));
+                    cond = h.emit_iconst(v);
+                } else if (h.known_int[cond]) {
+                    cond = h.emit(HIR_ATOI, TY_INT, cond);
+                } else {
+                    goto general_lowering;
+                }
+            }
+
+            // Constant: fold at compile time.
+            if (h.kind[cond] == HIR_ICONST) {
+                bool truthy = (h.val[cond] != 0);
+                if (is_and && !truthy) {
+                    if (!multi_block) {
+                        uint64_t addr = rc.pool_str("0");
+                        return h.emit_sconst(addr, "0");
+                    }
+                    int br = h.emit(HIR_BR, TY_VOID, -1, -1, -1);
+                    br_shortcircuit.push_back(br);
+                    goto cand_cor_done;
+                }
+                if (!is_and && truthy) {
+                    if (!multi_block) {
+                        uint64_t addr = rc.pool_str("1");
+                        return h.emit_sconst(addr, "1");
+                    }
+                    int br = h.emit(HIR_BR, TY_VOID, -1, -1, -1);
+                    br_shortcircuit.push_back(br);
+                    goto cand_cor_done;
+                }
+                last_was_brc = false;
+                continue;
+            }
+
+            multi_block = true;
+            last_was_brc = true;
+
+            // Allocate next test block for non-last args.
+            if (ai < nfargs - 1) {
+                int next_blk = h.new_block();
+                if (is_and) {
+                    // cand: true → next, false → false_blk (placeholder -1).
+                    int brc = h.emit(HIR_BRC, TY_VOID, cond, -1, next_blk);
+                    brc_patch_insns.push_back(brc);
+                    h.add_edge(h.cur_block, next_blk);
+                } else {
+                    // cor: true → true_blk (placeholder -1), false → next.
+                    int brc = h.emit(HIR_BRC, TY_VOID, cond, next_blk, -1);
+                    brc_patch_insns.push_back(brc);
+                    h.add_edge(h.cur_block, next_blk);
+                }
+                h.cur_block = next_blk;
+            } else {
+                // Last arg: both paths go to result blocks (placeholders).
+                int brc = h.emit(HIR_BRC, TY_VOID, cond, -1, -1);
+                brc_patch_insns.push_back(brc);
+            }
+        }
+
+        // Fell through all args (no constant short-circuit).
+        if (!multi_block) {
+            uint64_t addr = rc.pool_str(is_and ? "1" : "0");
+            return h.emit_sconst(addr, is_and ? "1" : "0");
+        }
+
+        // If the last arg was a constant (no BRC terminated the block),
+        // we need a BR as terminator → "all passed" result.
+        if (!last_was_brc) {
+            br_allpassed = h.emit(HIR_BR, TY_VOID, -1, -1, -1);
+        }
+
+    cand_cor_done:
+        {
+            // Allocate result blocks (after all chain blocks).
+            int true_blk = h.new_block();
+            int false_blk = h.new_block();
+            int merge_blk = h.new_block();
+
+            // Patch BRC instructions.
+            for (int pi : brc_patch_insns) {
+                if (is_and) {
+                    h.src2[pi] = false_blk;
+                    h.add_edge(h.blk[pi], false_blk);
+                    if (h.val[pi] == -1) {
+                        // Last arg's BRC: true path also needs patching.
+                        h.val[pi] = true_blk;
+                        h.add_edge(h.blk[pi], true_blk);
+                    }
+                } else {
+                    if (h.val[pi] == -1) {
+                        h.val[pi] = true_blk;
+                    }
+                    h.add_edge(h.blk[pi], true_blk);
+                    if (h.src2[pi] == -1) {
+                        // Last arg's BRC: false path also needs patching.
+                        h.src2[pi] = false_blk;
+                        h.add_edge(h.blk[pi], false_blk);
+                    }
+                }
+            }
+
+            // Patch short-circuit BRs (constant fold → early exit).
+            for (int bi : br_shortcircuit) {
+                int target = is_and ? false_blk : true_blk;
+                h.val[bi] = target;
+                h.add_edge(h.blk[bi], target);
+            }
+
+            // Patch "all passed" BR (last arg was constant true/false pass-through).
+            if (br_allpassed >= 0) {
+                int target = is_and ? true_blk : false_blk;
+                h.val[br_allpassed] = target;
+                h.add_edge(h.blk[br_allpassed], target);
+            }
+
+            // True result block.
+            h.cur_block = true_blk;
+            int val_t = h.emit_iconst(1);
+            int true_exit = h.cur_block;
+            h.emit(HIR_BR, TY_VOID, -1, -1, merge_blk);
+            h.add_edge(true_exit, merge_blk);
+
+            // False result block.
+            h.cur_block = false_blk;
+            int val_f = h.emit_iconst(0);
+            int false_exit = h.cur_block;
+            h.emit(HIR_BR, TY_VOID, -1, -1, merge_blk);
+            h.add_edge(false_exit, merge_blk);
+
+            // Merge with PHI.
+            h.cur_block = merge_blk;
+            int blocks[2] = { true_exit, false_exit };
+            int vals[2] = { val_t, val_f };
+            int phi = h.emit_phi(TY_INT, -1, blocks, vals, 2);
+
+            h.needs_jit = true;
+            return phi;
+        }
+    }
+
+    // ---------------------------------------------------------------
     // General function call lowering.
     // ---------------------------------------------------------------
 general_lowering:
@@ -1754,6 +1933,7 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
     prog.ecalls = 0;
     prog.native_ops = 0;
     prog.needs_jit = false;
+
 
     // Parse the expression.
     auto ast = ast_parse_string(expr, nLen);

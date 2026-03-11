@@ -712,11 +712,135 @@
         15
       )=
   {
-    @log smoke=TC046: rveval add(ifelse(gt(5,3),10,20),5)=15. Succeeded.;
+    @log smoke=TC046: rveval add(ifelse(gt(5,3),10,20),5)=15. Succeeded.
+  },
+  {
+    @log smoke=TC046: rveval add(ifelse(gt(5,3),10,20),5)=15. Failed (%q0).
+  }
+-
+#
+# Test Case #47 - cand: all constant true.
+#
+&tr.tc047 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(cand(1,1,1))),
+        1
+      )=
+  {
+    @log smoke=TC047: rveval cand(1,1,1)=1. Succeeded.
+  },
+  {
+    @log smoke=TC047: rveval cand(1,1,1)=1. Failed (%q0).
+  }
+-
+#
+# Test Case #48 - cand: constant false short-circuit.
+#
+&tr.tc048 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(cand(1,0,1))),
+        0
+      )=
+  {
+    @log smoke=TC048: rveval cand(1,0,1)=0. Succeeded.
+  },
+  {
+    @log smoke=TC048: rveval cand(1,0,1)=0. Failed (%q0).
+  }
+-
+#
+# Test Case #49 - cor: all constant false.
+#
+&tr.tc049 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(cor(0,0,0))),
+        0
+      )=
+  {
+    @log smoke=TC049: rveval cor(0,0,0)=0. Succeeded.
+  },
+  {
+    @log smoke=TC049: rveval cor(0,0,0)=0. Failed (%q0).
+  }
+-
+#
+# Test Case #50 - cor: constant true short-circuit.
+#
+&tr.tc050 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(cor(0,1,0))),
+        1
+      )=
+  {
+    @log smoke=TC050: rveval cor(0,1,0)=1. Succeeded.
+  },
+  {
+    @log smoke=TC050: rveval cor(0,1,0)=1. Failed (%q0).
+  }
+-
+#
+# Test Case #51 - cand: runtime condition, all true.
+# rand(1) always returns 0, so gt(1,rand(1)) is always true.
+#
+&tr.tc051 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(cand(gt(1,rand(1)),1))),
+        1
+      )=
+  {
+    @log smoke=TC051: rveval cand(gt(1,rand(1)),1)=1. Succeeded.
+  },
+  {
+    @log smoke=TC051: rveval cand(gt(1,rand(1)),1)=1. Failed (%q0).
+  }
+-
+#
+# Test Case #52 - cand: runtime condition, false at second arg.
+# rand(1) always returns 0.
+#
+&tr.tc052 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(cand(1,rand(1)))),
+        0
+      )=
+  {
+    @log smoke=TC052: rveval cand(1,rand(1))=0. Succeeded.
+  },
+  {
+    @log smoke=TC052: rveval cand(1,rand(1))=0. Failed (%q0).
+  }
+-
+#
+# Test Case #53 - cor: runtime condition, true at first arg.
+# gt(5,3)=1 is a folded constant, so cor short-circuits.
+#
+&tr.tc053 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(cor(gt(5,3),rand(1)))),
+        1
+      )=
+  {
+    @log smoke=TC053: rveval cor(gt(5,3),rand(1))=1. Succeeded.
+  },
+  {
+    @log smoke=TC053: rveval cor(gt(5,3),rand(1))=1. Failed (%q0).
+  }
+-
+#
+# Test Case #54 - cor: runtime condition, all false.
+# rand(1) always returns 0.
+#
+&tr.tc054 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(cor(rand(1),0))),
+        0
+      )=
+  {
+    @log smoke=TC054: rveval cor(rand(1),0)=0. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC046: rveval add(ifelse(gt(5,3),10,20),5)=15. Failed (%q0).;
+    @log smoke=TC054: rveval cor(rand(1),0)=0. Failed (%q0).;
     @trig me/tr.done
   }
 -
