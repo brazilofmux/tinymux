@@ -475,7 +475,7 @@ Current optimization state:
  - ✅ Pinned register persistence: a0-a3 in host regs across chained blocks
  - ✅ Block chaining: direct JMP between translated blocks, backpatching
  - ✅ Instruction fusion: LUI+ADDI, AUIPC+ADDI, AUIPC+JALR
- - ❌ No diamond merge (short forward branches → CMOVcc)
+ - ✅ Diamond merge: branch-over-one → CMOVcc (ADDI/ADD/SUB/AND/OR/XOR/LUI)
  - ❌ No superblocks (no cross-branch block extension)
  - ❌ RAS struct exists but is never used for JALR prediction
  - ❌ No intrinsic stubs (memcpy, strlen as native x86)
