@@ -111,6 +111,8 @@ void functions_add(FUN funlist[]);
 // Function definitions from funceval.cpp
 //
 
+// In dbt_harness.cpp
+XFUNCTION(fun_rvcall);
 // In comsys.cpp
 XFUNCTION(fun_channels);
 XFUNCTION(fun_comalias);
