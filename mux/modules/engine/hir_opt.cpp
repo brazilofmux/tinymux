@@ -300,8 +300,8 @@ void hir_copy_prop(hir_program &h) {
                     changed = true;
                 }
             }
-            // Propagate through src2.
-            if (h.src2[i] >= 0) {
+            // Propagate through src2 (skip BRC — src2 is a block number).
+            if (h.src2[i] >= 0 && h.kind[i] != HIR_BRC) {
                 int r = resolve_copy(h, h.src2[i]);
                 if (r != h.src2[i]) {
                     h.src2[i] = r;
@@ -382,7 +382,9 @@ void hir_dce(hir_program &h) {
                 used[h.src1[i]] = true;
                 changed = true;
             }
-            if (h.src2[i] >= 0 && !used[h.src2[i]]) {
+            // Skip BRC — src2 is a block number, not an insn ref.
+            if (h.src2[i] >= 0 && h.kind[i] != HIR_BRC
+                && !used[h.src2[i]]) {
                 used[h.src2[i]] = true;
                 changed = true;
             }

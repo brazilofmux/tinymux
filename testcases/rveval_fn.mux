@@ -584,11 +584,139 @@
         1224
       )=
   {
-    @log smoke=TC038: rveval setr(0,mul(3,4))+add(r(0),r(0))=1224. Succeeded.;
+    @log smoke=TC038: rveval setr(0,mul(3,4))+add(r(0),r(0))=1224. Succeeded.
+  },
+  {
+    @log smoke=TC038: rveval setr(0,mul(3,4))+add(r(0),r(0))=1224. Failed (%q0).
+  }
+-
+#
+# Test Case #39 - ifelse with constant true condition.
+# ifelse(1,yes,no) = yes (folded at compile time).
+#
+&tr.tc039 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(ifelse(1,yes,no))),
+        yes
+      )=
+  {
+    @log smoke=TC039: rveval ifelse(1,yes,no)=yes. Succeeded.
+  },
+  {
+    @log smoke=TC039: rveval ifelse(1,yes,no)=yes. Failed (%q0).
+  }
+-
+#
+# Test Case #40 - ifelse with constant false condition.
+# ifelse(0,yes,no) = no (folded at compile time).
+#
+&tr.tc040 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(ifelse(0,yes,no))),
+        no
+      )=
+  {
+    @log smoke=TC040: rveval ifelse(0,yes,no)=no. Succeeded.
+  },
+  {
+    @log smoke=TC040: rveval ifelse(0,yes,no)=no. Failed (%q0).
+  }
+-
+#
+# Test Case #41 - ifelse with folded condition.
+# ifelse(gt(5,3),yes,no) = yes (gt(5,3) folds to 1).
+#
+&tr.tc041 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(ifelse(gt(5,3),yes,no))),
+        yes
+      )=
+  {
+    @log smoke=TC041: rveval ifelse(gt(5,3),yes,no)=yes. Succeeded.
+  },
+  {
+    @log smoke=TC041: rveval ifelse(gt(5,3),yes,no)=yes. Failed (%q0).
+  }
+-
+#
+# Test Case #42 - ifelse with runtime condition (BRC path).
+# rand(1) always returns 0 → ifelse(rand(1),yes,no) = no.
+#
+&tr.tc042 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(ifelse(rand(1),yes,no))),
+        no
+      )=
+  {
+    @log smoke=TC042: rveval ifelse(rand(1),yes,no)=no. Succeeded.
+  },
+  {
+    @log smoke=TC042: rveval ifelse(rand(1),yes,no)=no. Failed (%q0).
+  }
+-
+#
+# Test Case #43 - if() with constant true condition.
+# if(1,hello) = hello.
+#
+&tr.tc043 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(if(1,hello))),
+        hello
+      )=
+  {
+    @log smoke=TC043: rveval if(1,hello)=hello. Succeeded.
+  },
+  {
+    @log smoke=TC043: rveval if(1,hello)=hello. Failed (%q0).
+  }
+-
+#
+# Test Case #44 - if() with constant false condition.
+# if(0,hello) = (empty string).
+#
+&tr.tc044 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(if(0,hello))),
+
+      )=
+  {
+    @log smoke=TC044: rveval if(0,hello)=empty. Succeeded.
+  },
+  {
+    @log smoke=TC044: rveval if(0,hello)=empty. Failed (%q0).
+  }
+-
+#
+# Test Case #45 - ifelse with runtime cond + integer result.
+# ifelse(not(rand(1)),10,20) = 10 (not(0)=1, so true branch).
+#
+&tr.tc045 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(ifelse(not(rand(1)),10,20))),
+        10
+      )=
+  {
+    @log smoke=TC045: rveval ifelse(not(rand(1)),10,20)=10. Succeeded.
+  },
+  {
+    @log smoke=TC045: rveval ifelse(not(rand(1)),10,20)=10. Failed (%q0).
+  }
+-
+#
+# Test Case #46 - ifelse result used in arithmetic.
+# add(ifelse(gt(5,3),10,20),5) = 15 (folded: gt(5,3)→1→true→10, add(10,5)=15).
+#
+&tr.tc046 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(add(ifelse(gt(5,3),10,20),5))),
+        15
+      )=
+  {
+    @log smoke=TC046: rveval add(ifelse(gt(5,3),10,20),5)=15. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC038: rveval setr(0,mul(3,4))+add(r(0),r(0))=1224. Failed (%q0).;
+    @log smoke=TC046: rveval add(ifelse(gt(5,3),10,20),5)=15. Failed (%q0).;
     @trig me/tr.done
   }
 -

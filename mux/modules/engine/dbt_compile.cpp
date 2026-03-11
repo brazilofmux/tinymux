@@ -230,6 +230,34 @@ static uint32_t rv_LBU(uint8_t rd, uint8_t base, int32_t off) {
     return rv_i_type(OP_LOAD, rd, LD_LBU, base, off);
 }
 
+// J-type encoding (JAL).
+//
+static uint32_t rv_JAL(uint8_t rd, int32_t imm) {
+    uint32_t u = static_cast<uint32_t>(imm);
+    return OP_JAL
+         | (static_cast<uint32_t>(rd) << 7)
+         | (((u >> 12) & 0xFF) << 12)
+         | (((u >> 11) & 1) << 20)
+         | (((u >> 1) & 0x3FF) << 21)
+         | (((u >> 20) & 1) << 31);
+}
+
+// Inline string copy: copy NUL-terminated string from src_reg to dest_reg.
+// Clobbers t0 (x5).  5 instructions (byte-by-byte loop).
+//
+static void rv_emit_strcpy(std::vector<uint32_t> &code,
+                            uint8_t dest_reg, uint8_t src_reg) {
+    constexpr uint8_t t0 = 5;
+    // loop:
+    size_t loop = code.size();
+    code.push_back(rv_LBU(t0, src_reg, 0));             // LBU t0, 0(src)
+    code.push_back(rv_SB(dest_reg, t0, 0));              // SB t0, 0(dest)
+    code.push_back(rv_ADDI(src_reg, src_reg, 1));        // src++
+    code.push_back(rv_ADDI(dest_reg, dest_reg, 1));      // dest++
+    int32_t off = -static_cast<int32_t>((code.size() - loop) * 4);
+    code.push_back(rv_BNE(t0, 0, off));                  // BNE t0, x0, loop
+}
+
 // M extension: MUL, DIV, REM.
 //
 static uint32_t rv_MUL(uint8_t rd, uint8_t rs1, uint8_t rs2) {
@@ -1021,8 +1049,95 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     }
 
     // ---------------------------------------------------------------
+    // Control flow: if(cond, true) / ifelse(cond, true, false)
+    //
+    // Short-circuit: only the selected branch is evaluated.
+    // Constant condition: fold at compile time (no blocks needed).
+    // Runtime condition: emit BRC + blocks + PHI.
+    // ---------------------------------------------------------------
+
+    if ((fname == "IFELSE" && node->children.size() == 3)
+        || (fname == "IF" && node->children.size() == 2)) {
+        bool has_else = (fname == "IFELSE");
+
+        // Lower the condition (always evaluated).
+        int cond = hir_lower_node(h, rc, node->children[0].get());
+
+        // Ensure condition is integer.
+        if (h.ty[cond] != TY_INT) {
+            if (h.kind[cond] == HIR_SCONST) {
+                int64_t v = static_cast<int64_t>(
+                    mux_atol(u8(h.sval[cond])));
+                cond = h.emit_iconst(v);
+            } else if (h.known_int[cond]) {
+                cond = h.emit(HIR_ATOI, TY_INT, cond);
+            } else {
+                // Non-integer condition (string truth = non-empty).
+                // Fall through to ECALL for safety.
+                goto general_lowering;
+            }
+        }
+
+        // Constant condition: fold — only lower the selected branch.
+        if (h.kind[cond] == HIR_ICONST) {
+            if (h.val[cond] != 0) {
+                return hir_lower_node(h, rc, node->children[1].get());
+            } else if (has_else) {
+                return hir_lower_node(h, rc, node->children[2].get());
+            } else {
+                uint64_t addr = rc.pool_str("");
+                return h.emit_sconst(addr, "");
+            }
+        }
+
+        // Runtime condition: multi-block code.
+        int entry_block = h.cur_block;
+        int true_block = h.new_block();
+        int false_block = h.new_block();
+        int merge_block = h.new_block();
+
+        // BRC in entry block: src1=cond, val=true_block, src2=false_block.
+        h.emit(HIR_BRC, TY_VOID, cond, false_block, true_block);
+        h.add_edge(entry_block, true_block);
+        h.add_edge(entry_block, false_block);
+
+        // Lower true branch.
+        h.cur_block = true_block;
+        int true_val = hir_lower_node(h, rc, node->children[1].get());
+        int true_exit = h.cur_block;  // might change with nested ifelse
+        h.emit(HIR_BR, TY_VOID, -1, -1, merge_block);
+        h.add_edge(true_exit, merge_block);
+
+        // Lower false branch.
+        h.cur_block = false_block;
+        int false_val;
+        if (has_else) {
+            false_val = hir_lower_node(h, rc, node->children[2].get());
+        } else {
+            // if() with no else: false branch returns empty string.
+            uint64_t addr = rc.pool_str("");
+            false_val = h.emit_sconst(addr, "");
+        }
+        int false_exit = h.cur_block;
+        h.emit(HIR_BR, TY_VOID, -1, -1, merge_block);
+        h.add_edge(false_exit, merge_block);
+
+        // Merge block with PHI.
+        h.cur_block = merge_block;
+        hir_type rty = (h.ty[true_val] == TY_INT && h.ty[false_val] == TY_INT)
+                     ? TY_INT : TY_STRING;
+        int blocks[2] = { true_exit, false_exit };
+        int vals[2] = { true_val, false_val };
+        int phi = h.emit_phi(rty, -1, blocks, vals, 2);
+
+        h.needs_jit = true;
+        return phi;
+    }
+
+    // ---------------------------------------------------------------
     // General function call lowering.
     // ---------------------------------------------------------------
+general_lowering:
 
     // Lower arguments.
     std::vector<int> args;
@@ -1221,253 +1336,381 @@ struct hir_loc {
     bool     in_reg;    // true if value is in a register
 };
 
+// Branch patch record for backpatching.
+struct branch_patch {
+    int code_idx;       // index into rc.code
+    int target_blk;     // target block number
+};
+
+// Emit PHI copies: when branching from from_blk to to_blk,
+// emit moves for any PHI nodes at the target block.
+//
+static void emit_phi_copies(hir_program &h, rv_compiler &rc,
+                             hir_loc *loc, int from_blk, int to_blk) {
+    if (h.block_first[to_blk] > h.block_last[to_blk]) return;
+    for (int i = h.block_first[to_blk]; i <= h.block_last[to_blk]; i++) {
+        if (h.blk[i] != to_blk || h.kind[i] != HIR_PHI) continue;
+
+        // Find the PHI argument for from_blk.
+        int base = h.pbase[i];
+        for (int j = 0; j < h.pnargs[i]; j++) {
+            if (h.pblk[base + j] != from_blk) continue;
+            int val = h.pval[base + j];
+            if (val < 0) break;
+
+            if (loc[i].in_reg) {
+                // Integer PHI: MV phi_reg, val_reg.
+                if (loc[val].in_reg) {
+                    rc.code.push_back(rv_ADD(loc[i].reg, loc[val].reg, 0));
+                } else {
+                    // String value used as int PHI — load addr and atoi.
+                    rv_load_val(rc.code, 10, loc[val].addr);
+                    rv_emit_atoi(rc.code, 10, loc[i].reg);
+                }
+            } else {
+                // String PHI: copy string to PHI's output buffer.
+                if (loc[val].in_reg) {
+                    // Integer val → ITOA to PHI buffer.
+                    rv_load_val(rc.code, 10, loc[i].addr);
+                    rv_emit_itoa(rc.code, loc[val].reg, 10);
+                } else {
+                    // String → string: byte copy.
+                    // Use t1(x6), t2(x7) as temp src/dest regs.
+                    rv_load_val(rc.code, 7, loc[i].addr);    // t2 = dest
+                    rv_load_val(rc.code, 6, loc[val].addr);  // t1 = src
+                    rv_emit_strcpy(rc.code, 7, 6);
+                }
+            }
+            break;
+        }
+    }
+}
+
 static void hir_codegen(hir_program &h, rv_compiler &rc) {
     // Location map: where each instruction's result lives.
     hir_loc loc[HIR_MAX_INSNS];
     memset(loc, 0, sizeof(loc));
 
+    // Block code offsets for branch backpatching.
+    int block_offset[HIR_MAX_BLOCKS];
+    memset(block_offset, 0, sizeof(block_offset));
+    std::vector<branch_patch> patches;
+
+    // Pre-allocate PHI locations before codegen starts.
     for (int i = 0; i < h.n_insns; i++) {
-        switch (h.kind[i]) {
-        case HIR_SCONST:
-            loc[i].addr = static_cast<uint64_t>(h.val[i]);
-            loc[i].in_reg = false;
-            break;
-
-        case HIR_ICONST: {
-            uint8_t reg = rc.alloc_int_reg();
-            if (!reg) break;
-            rv_load_i64(rc.code, reg, h.val[i]);
-            loc[i].reg = reg;
-            loc[i].in_reg = true;
-            break;
-        }
-
-        case HIR_ATOI: {
-            int s1 = h.src1[i];
-            uint8_t reg = rc.alloc_int_reg();
-            if (!reg) break;
-            if (h.kind[s1] == HIR_SCONST) {
-                // Constant string — parse at compile time.
-                int64_t v = static_cast<int64_t>(
-                    mux_atol(u8(h.sval[s1])));
-                rv_load_i64(rc.code, reg, v);
-            } else if (h.kind[s1] == HIR_CALL) {
-                // ECALL result — string in output buffer.
-                rv_load_val(rc.code, 10, loc[s1].addr);
-                rv_emit_atoi(rc.code, 10, reg);
+        if (h.kind[i] == HIR_PHI) {
+            if (h.ty[i] == TY_INT) {
+                uint8_t reg = rc.alloc_int_reg();
+                if (reg) {
+                    loc[i].reg = reg;
+                    loc[i].in_reg = true;
+                }
             } else {
-                rv_load_val(rc.code, 10, loc[s1].addr);
-                rv_emit_atoi(rc.code, 10, reg);
+                uint64_t out = rc.alloc_output();
+                loc[i].addr = out;
+                loc[i].in_reg = false;
             }
-            loc[i].reg = reg;
-            loc[i].in_reg = true;
-            break;
         }
+    }
 
-        case HIR_ITOA: {
-            int s1 = h.src1[i];
-            uint64_t out_addr = rc.alloc_output();
-            rv_load_val(rc.code, 10, out_addr);
-            rv_emit_itoa(rc.code, loc[s1].reg, 10);
-            loc[i].addr = out_addr;
-            loc[i].in_reg = false;
-            break;
-        }
+    // Process blocks in layout order.
+    for (int b = 0; b < h.n_blocks; b++) {
+        block_offset[b] = static_cast<int>(rc.code.size());
+        if (h.block_first[b] > h.block_last[b]) continue;
 
-        case HIR_ADD: {
-            int s1 = h.src1[i], s2 = h.src2[i];
-            uint8_t reg = rc.alloc_int_reg();
-            if (!reg) break;
-            rc.code.push_back(rv_ADD(reg, loc[s1].reg, loc[s2].reg));
-            loc[i].reg = reg;
-            loc[i].in_reg = true;
-            break;
-        }
-        case HIR_SUB: {
-            int s1 = h.src1[i], s2 = h.src2[i];
-            uint8_t reg = rc.alloc_int_reg();
-            if (!reg) break;
-            rc.code.push_back(rv_SUB(reg, loc[s1].reg, loc[s2].reg));
-            loc[i].reg = reg;
-            loc[i].in_reg = true;
-            break;
-        }
-        case HIR_MUL: {
-            int s1 = h.src1[i], s2 = h.src2[i];
-            uint8_t reg = rc.alloc_int_reg();
-            if (!reg) break;
-            rc.code.push_back(rv_MUL(reg, loc[s1].reg, loc[s2].reg));
-            loc[i].reg = reg;
-            loc[i].in_reg = true;
-            break;
-        }
-        case HIR_REM: {
-            int s1 = h.src1[i], s2 = h.src2[i];
-            uint8_t reg = rc.alloc_int_reg();
-            if (!reg) break;
-            rc.code.push_back(rv_REM(reg, loc[s1].reg, loc[s2].reg));
-            loc[i].reg = reg;
-            loc[i].in_reg = true;
-            break;
-        }
+        for (int i = h.block_first[b]; i <= h.block_last[b]; i++) {
+            if (h.blk[i] != b) continue;
 
-        case HIR_EQ: {
-            int s1 = h.src1[i], s2 = h.src2[i];
-            uint8_t reg = rc.alloc_int_reg();
-            if (!reg) break;
-            rc.code.push_back(rv_SUB(5, loc[s1].reg, loc[s2].reg));
-            rc.code.push_back(rv_i_type(OP_IMM, reg, ALU_SLTIU, 5, 1));
-            loc[i].reg = reg;
-            loc[i].in_reg = true;
-            break;
-        }
-        case HIR_NE: {
-            int s1 = h.src1[i], s2 = h.src2[i];
-            uint8_t reg = rc.alloc_int_reg();
-            if (!reg) break;
-            rc.code.push_back(rv_SUB(5, loc[s1].reg, loc[s2].reg));
-            rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLTU, 0, 5, 0));
-            loc[i].reg = reg;
-            loc[i].in_reg = true;
-            break;
-        }
-        case HIR_GT: {
-            int s1 = h.src1[i], s2 = h.src2[i];
-            uint8_t reg = rc.alloc_int_reg();
-            if (!reg) break;
-            rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLT,
-                                         loc[s2].reg, loc[s1].reg, 0));
-            loc[i].reg = reg;
-            loc[i].in_reg = true;
-            break;
-        }
-        case HIR_LT: {
-            int s1 = h.src1[i], s2 = h.src2[i];
-            uint8_t reg = rc.alloc_int_reg();
-            if (!reg) break;
-            rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLT,
-                                         loc[s1].reg, loc[s2].reg, 0));
-            loc[i].reg = reg;
-            loc[i].in_reg = true;
-            break;
-        }
-        case HIR_GE: {
-            int s1 = h.src1[i], s2 = h.src2[i];
-            uint8_t reg = rc.alloc_int_reg();
-            if (!reg) break;
-            rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLT,
-                                         loc[s1].reg, loc[s2].reg, 0));
-            rc.code.push_back(rv_i_type(OP_IMM, reg, ALU_XORI, reg, 1));
-            loc[i].reg = reg;
-            loc[i].in_reg = true;
-            break;
-        }
-        case HIR_LE: {
-            int s1 = h.src1[i], s2 = h.src2[i];
-            uint8_t reg = rc.alloc_int_reg();
-            if (!reg) break;
-            rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLT,
-                                         loc[s2].reg, loc[s1].reg, 0));
-            rc.code.push_back(rv_i_type(OP_IMM, reg, ALU_XORI, reg, 1));
-            loc[i].reg = reg;
-            loc[i].in_reg = true;
-            break;
-        }
+            switch (h.kind[i]) {
+            case HIR_SCONST:
+                loc[i].addr = static_cast<uint64_t>(h.val[i]);
+                loc[i].in_reg = false;
+                break;
 
-        case HIR_NOT: {
-            int s1 = h.src1[i];
-            uint8_t reg = rc.alloc_int_reg();
-            if (!reg) break;
-            rc.code.push_back(rv_i_type(OP_IMM, reg, ALU_SLTIU,
-                                         loc[s1].reg, 1));
-            loc[i].reg = reg;
-            loc[i].in_reg = true;
-            break;
-        }
-
-        case HIR_INC: {
-            int s1 = h.src1[i];
-            uint8_t reg = rc.alloc_int_reg();
-            if (!reg) break;
-            rc.code.push_back(rv_ADDI(reg, loc[s1].reg, 1));
-            loc[i].reg = reg;
-            loc[i].in_reg = true;
-            break;
-        }
-        case HIR_DEC: {
-            int s1 = h.src1[i];
-            uint8_t reg = rc.alloc_int_reg();
-            if (!reg) break;
-            rc.code.push_back(rv_ADDI(reg, loc[s1].reg, -1));
-            loc[i].reg = reg;
-            loc[i].in_reg = true;
-            break;
-        }
-
-        case HIR_CALL: {
-            // Allocate guest output buffer.
-            uint64_t out_addr = rc.alloc_output();
-
-            // Build fargs array in guest memory.
-            int na = h.cnargs[i];
-            int base = h.cbase[i];
-            std::vector<uint64_t> farg_addrs;
-            for (int j = 0; j < na; j++) {
-                int ai = h.carg[base + j];
-                farg_addrs.push_back(loc[ai].addr);
+            case HIR_ICONST: {
+                uint8_t reg = rc.alloc_int_reg();
+                if (!reg) break;
+                rv_load_i64(rc.code, reg, h.val[i]);
+                loc[i].reg = reg;
+                loc[i].in_reg = true;
+                break;
             }
-            uint64_t fargs_addr = rc.alloc_fargs(farg_addrs);
 
-            int fidx = h.func_idx[i];
-            uint64_t name_addr = 0;  // only used for string-based fallback
-            rv_emit_call(rc.code, name_addr, fargs_addr, na,
-                          out_addr, rv_compiler::OUT_SLOT, fidx);
-
-            loc[i].addr = out_addr;
-            loc[i].in_reg = false;
-            break;
-        }
-
-        case HIR_STRCAT: {
-            uint64_t out_addr = rc.alloc_output();
-
-            int na = h.cnargs[i];
-            int base = h.cbase[i];
-            std::vector<uint64_t> farg_addrs;
-            for (int j = 0; j < na; j++) {
-                int ai = h.carg[base + j];
-                farg_addrs.push_back(loc[ai].addr);
+            case HIR_ATOI: {
+                int s1 = h.src1[i];
+                uint8_t reg = rc.alloc_int_reg();
+                if (!reg) break;
+                if (h.kind[s1] == HIR_SCONST) {
+                    int64_t v = static_cast<int64_t>(
+                        mux_atol(u8(h.sval[s1])));
+                    rv_load_i64(rc.code, reg, v);
+                } else {
+                    rv_load_val(rc.code, 10, loc[s1].addr);
+                    rv_emit_atoi(rc.code, 10, reg);
+                }
+                loc[i].reg = reg;
+                loc[i].in_reg = true;
+                break;
             }
-            uint64_t fargs_addr = rc.alloc_fargs(farg_addrs);
 
-            int fidx = h.func_idx[i];
-            uint64_t name_addr = fidx ? 0 : rc.pool_str("strcat");
-            rv_emit_call(rc.code, name_addr, fargs_addr, na,
-                          out_addr, rv_compiler::OUT_SLOT, fidx);
-
-            loc[i].addr = out_addr;
-            loc[i].in_reg = false;
-            break;
-        }
-
-        case HIR_COPY: {
-            // Copy the location from the source instruction.
-            int s1 = h.src1[i];
-            if (s1 >= 0) {
-                loc[i] = loc[s1];
+            case HIR_ITOA: {
+                int s1 = h.src1[i];
+                uint64_t out_addr = rc.alloc_output();
+                rv_load_val(rc.code, 10, out_addr);
+                rv_emit_itoa(rc.code, loc[s1].reg, 10);
+                loc[i].addr = out_addr;
+                loc[i].in_reg = false;
+                break;
             }
-            break;
+
+            case HIR_ADD: {
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t reg = rc.alloc_int_reg();
+                if (!reg) break;
+                rc.code.push_back(rv_ADD(reg, loc[s1].reg, loc[s2].reg));
+                loc[i].reg = reg;
+                loc[i].in_reg = true;
+                break;
+            }
+            case HIR_SUB: {
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t reg = rc.alloc_int_reg();
+                if (!reg) break;
+                rc.code.push_back(rv_SUB(reg, loc[s1].reg, loc[s2].reg));
+                loc[i].reg = reg;
+                loc[i].in_reg = true;
+                break;
+            }
+            case HIR_MUL: {
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t reg = rc.alloc_int_reg();
+                if (!reg) break;
+                rc.code.push_back(rv_MUL(reg, loc[s1].reg, loc[s2].reg));
+                loc[i].reg = reg;
+                loc[i].in_reg = true;
+                break;
+            }
+            case HIR_REM: {
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t reg = rc.alloc_int_reg();
+                if (!reg) break;
+                rc.code.push_back(rv_REM(reg, loc[s1].reg, loc[s2].reg));
+                loc[i].reg = reg;
+                loc[i].in_reg = true;
+                break;
+            }
+
+            case HIR_EQ: {
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t reg = rc.alloc_int_reg();
+                if (!reg) break;
+                rc.code.push_back(rv_SUB(5, loc[s1].reg, loc[s2].reg));
+                rc.code.push_back(rv_i_type(OP_IMM, reg, ALU_SLTIU, 5, 1));
+                loc[i].reg = reg;
+                loc[i].in_reg = true;
+                break;
+            }
+            case HIR_NE: {
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t reg = rc.alloc_int_reg();
+                if (!reg) break;
+                rc.code.push_back(rv_SUB(5, loc[s1].reg, loc[s2].reg));
+                rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLTU, 0, 5, 0));
+                loc[i].reg = reg;
+                loc[i].in_reg = true;
+                break;
+            }
+            case HIR_GT: {
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t reg = rc.alloc_int_reg();
+                if (!reg) break;
+                rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLT,
+                                             loc[s2].reg, loc[s1].reg, 0));
+                loc[i].reg = reg;
+                loc[i].in_reg = true;
+                break;
+            }
+            case HIR_LT: {
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t reg = rc.alloc_int_reg();
+                if (!reg) break;
+                rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLT,
+                                             loc[s1].reg, loc[s2].reg, 0));
+                loc[i].reg = reg;
+                loc[i].in_reg = true;
+                break;
+            }
+            case HIR_GE: {
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t reg = rc.alloc_int_reg();
+                if (!reg) break;
+                rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLT,
+                                             loc[s1].reg, loc[s2].reg, 0));
+                rc.code.push_back(rv_i_type(OP_IMM, reg, ALU_XORI, reg, 1));
+                loc[i].reg = reg;
+                loc[i].in_reg = true;
+                break;
+            }
+            case HIR_LE: {
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t reg = rc.alloc_int_reg();
+                if (!reg) break;
+                rc.code.push_back(rv_r_type(OP_REG, reg, ALU_SLT,
+                                             loc[s2].reg, loc[s1].reg, 0));
+                rc.code.push_back(rv_i_type(OP_IMM, reg, ALU_XORI, reg, 1));
+                loc[i].reg = reg;
+                loc[i].in_reg = true;
+                break;
+            }
+
+            case HIR_NOT: {
+                int s1 = h.src1[i];
+                uint8_t reg = rc.alloc_int_reg();
+                if (!reg) break;
+                rc.code.push_back(rv_i_type(OP_IMM, reg, ALU_SLTIU,
+                                             loc[s1].reg, 1));
+                loc[i].reg = reg;
+                loc[i].in_reg = true;
+                break;
+            }
+
+            case HIR_INC: {
+                int s1 = h.src1[i];
+                uint8_t reg = rc.alloc_int_reg();
+                if (!reg) break;
+                rc.code.push_back(rv_ADDI(reg, loc[s1].reg, 1));
+                loc[i].reg = reg;
+                loc[i].in_reg = true;
+                break;
+            }
+            case HIR_DEC: {
+                int s1 = h.src1[i];
+                uint8_t reg = rc.alloc_int_reg();
+                if (!reg) break;
+                rc.code.push_back(rv_ADDI(reg, loc[s1].reg, -1));
+                loc[i].reg = reg;
+                loc[i].in_reg = true;
+                break;
+            }
+
+            case HIR_CALL: {
+                uint64_t out_addr = rc.alloc_output();
+                int na = h.cnargs[i];
+                int base = h.cbase[i];
+                std::vector<uint64_t> farg_addrs;
+                for (int j = 0; j < na; j++) {
+                    int ai = h.carg[base + j];
+                    farg_addrs.push_back(loc[ai].addr);
+                }
+                uint64_t fargs_addr = rc.alloc_fargs(farg_addrs);
+                int fidx = h.func_idx[i];
+                rv_emit_call(rc.code, 0, fargs_addr, na,
+                              out_addr, rv_compiler::OUT_SLOT, fidx);
+                loc[i].addr = out_addr;
+                loc[i].in_reg = false;
+                break;
+            }
+
+            case HIR_STRCAT: {
+                uint64_t out_addr = rc.alloc_output();
+                int na = h.cnargs[i];
+                int base = h.cbase[i];
+                std::vector<uint64_t> farg_addrs;
+                for (int j = 0; j < na; j++) {
+                    int ai = h.carg[base + j];
+                    farg_addrs.push_back(loc[ai].addr);
+                }
+                uint64_t fargs_addr = rc.alloc_fargs(farg_addrs);
+                int fidx = h.func_idx[i];
+                uint64_t name_addr = fidx ? 0 : rc.pool_str("strcat");
+                rv_emit_call(rc.code, name_addr, fargs_addr, na,
+                              out_addr, rv_compiler::OUT_SLOT, fidx);
+                loc[i].addr = out_addr;
+                loc[i].in_reg = false;
+                break;
+            }
+
+            case HIR_COPY: {
+                int s1 = h.src1[i];
+                if (s1 >= 0) {
+                    loc[i] = loc[s1];
+                }
+                break;
+            }
+
+            case HIR_PHI:
+                // Location already allocated above.
+                break;
+
+            case HIR_BRC: {
+                // Conditional branch: if cond != 0, go to true_blk.
+                int cond_insn = h.src1[i];
+                int true_blk = static_cast<int>(h.val[i]);
+                int false_blk = h.src2[i];
+
+                // Emit PHI copies for true path, then BNE.
+                emit_phi_copies(h, rc, loc, b, true_blk);
+                int bne_idx = static_cast<int>(rc.code.size());
+                rc.code.push_back(rv_BNE(loc[cond_insn].reg, 0, 0));
+                patches.push_back({bne_idx, true_blk});
+
+                // Emit PHI copies for false path.
+                emit_phi_copies(h, rc, loc, b, false_blk);
+
+                // If false block is not the next in layout, emit JAL.
+                if (false_blk != b + 1) {
+                    int jal_idx = static_cast<int>(rc.code.size());
+                    rc.code.push_back(rv_JAL(0, 0));
+                    patches.push_back({jal_idx, false_blk});
+                }
+                break;
+            }
+
+            case HIR_BR: {
+                int target = static_cast<int>(h.val[i]);
+
+                // Emit PHI copies for target.
+                emit_phi_copies(h, rc, loc, b, target);
+
+                // If target is not the next block, emit JAL.
+                if (target != b + 1) {
+                    int jal_idx = static_cast<int>(rc.code.size());
+                    rc.code.push_back(rv_JAL(0, 0));
+                    patches.push_back({jal_idx, target});
+                }
+                break;
+            }
+
+            case HIR_RET:
+                rv_emit_exit(rc.code);
+                break;
+
+            case HIR_NOP:
+                break;
+
+            default:
+                break;
+            }
         }
+    }
 
-        case HIR_RET:
-            rv_emit_exit(rc.code);
-            break;
-
-        case HIR_NOP:
-            break;
-
-        default:
-            break;
+    // Backpatch branch offsets.
+    for (auto &p : patches) {
+        int target_off = block_offset[p.target_blk];
+        int branch_off = p.code_idx;
+        int32_t rel = static_cast<int32_t>((target_off - branch_off) * 4);
+        uint32_t insn = rc.code[branch_off];
+        uint8_t opcode = insn & 0x7F;
+        if (opcode == OP_BRANCH) {
+            // B-type: re-encode with correct offset.
+            uint8_t funct3 = (insn >> 12) & 7;
+            uint8_t rs1 = (insn >> 15) & 0x1F;
+            uint8_t rs2 = (insn >> 20) & 0x1F;
+            rc.code[branch_off] = rv_b_type(funct3, rs1, rs2, rel);
+        } else if (opcode == OP_JAL) {
+            // J-type: re-encode with correct offset.
+            uint8_t rd = (insn >> 7) & 0x1F;
+            rc.code[branch_off] = rv_JAL(rd, rel);
         }
     }
 

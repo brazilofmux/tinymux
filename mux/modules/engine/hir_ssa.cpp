@@ -32,12 +32,47 @@
 // ---------------------------------------------------------------
 
 void hir_build_cfg(hir_program &h) {
-    // For single-block programs, just finalize the block range.
+    // Compute block instruction ranges from blk[] tags.
+    for (int b = 0; b < h.n_blocks; b++) {
+        h.block_first[b] = h.n_insns;  // sentinel
+        h.block_last[b] = -1;
+    }
+    for (int i = 0; i < h.n_insns; i++) {
+        int b = h.blk[i];
+        if (b >= 0 && b < h.n_blocks) {
+            if (i < h.block_first[b]) h.block_first[b] = i;
+            if (i > h.block_last[b]) h.block_last[b] = i;
+        }
+    }
+
+    // Build successor edges from terminator instructions (BR/BRC).
+    // The lowering already called add_edge(), but rebuild from
+    // instructions for correctness after optimization.
+    for (int b = 0; b < h.n_blocks; b++) {
+        h.block_nsucc[b] = 0;
+        h.block_succ[b][0] = h.block_succ[b][1] = -1;
+    }
+    for (int i = 0; i < h.n_insns; i++) {
+        int b = h.blk[i];
+        if (h.kind[i] == HIR_BR) {
+            int target = static_cast<int>(h.val[i]);
+            if (h.block_nsucc[b] < 2) {
+                h.block_succ[b][h.block_nsucc[b]++] = target;
+            }
+        } else if (h.kind[i] == HIR_BRC) {
+            int true_blk = static_cast<int>(h.val[i]);
+            int false_blk = h.src2[i];
+            if (h.block_nsucc[b] < 2) {
+                h.block_succ[b][h.block_nsucc[b]++] = true_blk;
+            }
+            if (h.block_nsucc[b] < 2) {
+                h.block_succ[b][h.block_nsucc[b]++] = false_blk;
+            }
+        }
+    }
+
+    // For single-block programs, set up trivially and return.
     if (h.n_blocks == 1) {
-        h.block_first[0] = 0;
-        h.block_last[0] = h.n_insns - 1;
-        h.block_nsucc[0] = 0;
-        h.block_succ[0][0] = h.block_succ[0][1] = -1;
         h.n_pred[0] = 0;
         h.pred_base[0] = 0;
         h.n_pred_total = 0;
@@ -49,7 +84,6 @@ void hir_build_cfg(hir_program &h) {
     }
 
     // Build predecessor lists from successor edges.
-    // First pass: count predecessors.
     for (int b = 0; b < h.n_blocks; b++) {
         h.n_pred[b] = 0;
     }
@@ -62,15 +96,12 @@ void hir_build_cfg(hir_program &h) {
         }
     }
 
-    // Compute base offsets.
     h.n_pred_total = 0;
     for (int b = 0; b < h.n_blocks; b++) {
         h.pred_base[b] = h.n_pred_total;
         h.n_pred_total += h.n_pred[b];
     }
 
-    // Second pass: fill predecessor lists.
-    // Use a temporary count array to track fill position.
     int fill[HIR_MAX_BLOCKS];
     memset(fill, 0, sizeof(int) * h.n_blocks);
     for (int b = 0; b < h.n_blocks; b++) {

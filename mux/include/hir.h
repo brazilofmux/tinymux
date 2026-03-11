@@ -148,8 +148,9 @@ struct hir_program {
     // ---------------------------------------------------------------
 
     int n_blocks;
-    int block_first[HIR_MAX_BLOCKS];    // first insn in block
-    int block_last[HIR_MAX_BLOCKS];     // last insn in block (inclusive)
+    int cur_block;                          // current block during lowering
+    int block_first[HIR_MAX_BLOCKS];    // first insn in block (computed by hir_build_cfg)
+    int block_last[HIR_MAX_BLOCKS];     // last insn in block (inclusive, computed by hir_build_cfg)
 
     // CFG edges.
     int block_succ[HIR_MAX_BLOCKS][2];  // successors (-1 = none)
@@ -183,6 +184,7 @@ struct hir_program {
         n_cargs = 0;
         n_pargs = 0;
         n_blocks = 1;
+        cur_block = 0;
         n_pred_total = 0;
         n_rpo = 0;
         result = -1;
@@ -192,8 +194,6 @@ struct hir_program {
         needs_jit = false;
 
         // Initialize block 0.
-        block_first[0] = 0;
-        block_last[0] = -1;
         block_succ[0][0] = block_succ[0][1] = -1;
         block_nsucc[0] = 0;
         pred_base[0] = 0;
@@ -211,7 +211,7 @@ struct hir_program {
         src1[i] = s1;
         src2[i] = s2;
         val[i] = v;
-        blk[i] = n_blocks - 1;
+        blk[i] = cur_block;
         cbase[i] = 0;
         cnargs[i] = 0;
         func_idx[i] = 0;
@@ -219,8 +219,6 @@ struct hir_program {
         pnargs[i] = 0;
         sval[i].clear();
         known_int[i] = false;
-        // Update block instruction range.
-        block_last[n_blocks - 1] = i;
         return i;
     }
 
@@ -281,12 +279,11 @@ struct hir_program {
         return i;
     }
 
-    // Start a new basic block.  Returns block index.
+    // Allocate a new basic block.  Returns block index.
+    // Does NOT switch cur_block — caller must set it explicitly.
     int new_block() {
         if (n_blocks >= HIR_MAX_BLOCKS) return -1;
         int b = n_blocks++;
-        block_first[b] = n_insns;
-        block_last[b] = -1;
         block_succ[b][0] = block_succ[b][1] = -1;
         block_nsucc[b] = 0;
         pred_base[b] = 0;

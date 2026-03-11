@@ -4909,7 +4909,23 @@
 >302
 "@if strmatch(setr(0, rveval(strcat(setq(0,10),setq(1,20),add(r(0),r(1))))),30)={@log smoke=TC037: rveval multi-qreg add(r(0),r(1))=30. Succeeded.},{@log smoke=TC037: rveval multi-qreg add(r(0),r(1))=30. Failed (%q0).}"
 >303
-"@if strmatch(setr(0, rveval(strcat(setr(0,mul(3,4)),add(r(0),r(0))))),1224)={@log smoke=TC038: rveval setr(0,mul(3,4))+add(r(0),r(0))=1224. Succeeded.;@trig me/tr.done},{@log smoke=TC038: rveval setr(0,mul(3,4))+add(r(0),r(0))=1224. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0, rveval(strcat(setr(0,mul(3,4)),add(r(0),r(0))))),1224)={@log smoke=TC038: rveval setr(0,mul(3,4))+add(r(0),r(0))=1224. Succeeded.},{@log smoke=TC038: rveval setr(0,mul(3,4))+add(r(0),r(0))=1224. Failed (%q0).}"
+>304
+"@if strmatch(setr(0, rveval(ifelse(1,yes,no))),yes)={@log smoke=TC039: rveval ifelse(1,yes,no)=yes. Succeeded.},{@log smoke=TC039: rveval ifelse(1,yes,no)=yes. Failed (%q0).}"
+>305
+"@if strmatch(setr(0, rveval(ifelse(0,yes,no))),no)={@log smoke=TC040: rveval ifelse(0,yes,no)=no. Succeeded.},{@log smoke=TC040: rveval ifelse(0,yes,no)=no. Failed (%q0).}"
+>306
+"@if strmatch(setr(0, rveval(ifelse(gt(5,3),yes,no))),yes)={@log smoke=TC041: rveval ifelse(gt(5,3),yes,no)=yes. Succeeded.},{@log smoke=TC041: rveval ifelse(gt(5,3),yes,no)=yes. Failed (%q0).}"
+>307
+"@if strmatch(setr(0, rveval(ifelse(rand(1),yes,no))),no)={@log smoke=TC042: rveval ifelse(rand(1),yes,no)=no. Succeeded.},{@log smoke=TC042: rveval ifelse(rand(1),yes,no)=no. Failed (%q0).}"
+>308
+"@if strmatch(setr(0, rveval(if(1,hello))),hello)={@log smoke=TC043: rveval if(1,hello)=hello. Succeeded.},{@log smoke=TC043: rveval if(1,hello)=hello. Failed (%q0).}"
+>309
+"@if strmatch(setr(0, rveval(if(0,hello))),)={@log smoke=TC044: rveval if(0,hello)=empty. Succeeded.},{@log smoke=TC044: rveval if(0,hello)=empty. Failed (%q0).}"
+>310
+"@if strmatch(setr(0, rveval(ifelse(not(rand(1)),10,20))),10)={@log smoke=TC045: rveval ifelse(not(rand(1)),10,20)=10. Succeeded.},{@log smoke=TC045: rveval ifelse(not(rand(1)),10,20)=10. Failed (%q0).}"
+>311
+"@if strmatch(setr(0, rveval(add(ifelse(gt(5,3),10,20),5))),15)={@log smoke=TC046: rveval add(ifelse(gt(5,3),10,20),5)=15. Succeeded.;@trig me/tr.done},{@log smoke=TC046: rveval add(ifelse(gt(5,3),10,20),5)=15. Failed (%q0).;@trig me/tr.done}"
 <
 !151
 "test_secure_fn"
