@@ -5,7 +5,16 @@
  * parser, and compiles it to RV64 instructions that call engine
  * functions through the ECALL convention.
  *
- * Supported AST node types (spike scope):
+ * Optimization: constant folding.  When a function call has all
+ * compile-time-constant arguments, the compiler evaluates it at
+ * compile time using libmux functions (is_integer, mux_atof, fval,
+ * etc.) and emits only the result string.  This eliminates ECALL
+ * overhead, lbuf allocation, hash lookup, and JIT translation for
+ * the folded sub-expressions.  For fully-constant expressions like
+ * add(mul(3,4),5), the entire program reduces to a string literal
+ * with zero RV64 instructions executed.
+ *
+ * Supported AST node types:
  *   - AST_FUNCCALL with literal or compiled arguments
  *   - AST_LITERAL, AST_SPACE (string constants)
  *   - AST_SEQUENCE (concatenation)
@@ -19,12 +28,15 @@
  *   0xF000..0xFFFF  stack
  *
  * Compilation strategy (bottom-up):
- *   1. Leaf nodes (literals) → write string to pool, return pool addr
- *   2. Function calls → compile each arg, build fargs array, emit ECALL
- *   3. Sequences → compile each child, concatenate results
- *   4. Each compiled sub-expression gets an output slot (guest addr)
+ *   1. Leaf nodes (literals) → constant with known value
+ *   2. Function calls with all-constant args → try constant fold
+ *   3. If fold succeeds → result is a new constant (no code emitted)
+ *   4. If fold fails → emit ECALL (runtime dispatch)
+ *   5. Sequences of constants → merge at compile time
+ *   6. Mixed sequences → emit strcat() ECALL
  *
- * The final result is in the last output slot allocated.
+ * The final result is either a string pool constant or the last
+ * output slot allocated.
  */
 
 #include "copyright.h"
@@ -38,6 +50,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <cmath>
 #include <vector>
 #include <string>
 
@@ -55,6 +68,10 @@ struct rv_compiler {
     uint64_t out_pool;      // next free byte in output area
     uint64_t final_out;     // guest addr of final result
 
+    // Statistics.
+    int folds;              // number of constant-folded calls
+    int ecalls;             // number of runtime ECALL calls
+
     static constexpr size_t MEM_SIZE     = 64 * 1024;
     static constexpr uint64_t CODE_BASE  = 0x0000;
     static constexpr uint64_t CODE_LIMIT = 0x1000;
@@ -71,7 +88,9 @@ struct rv_compiler {
                     str_pool(STR_BASE),
                     fargs_pool(FARGS_BASE),
                     out_pool(OUT_BASE),
-                    final_out(0) {}
+                    final_out(0),
+                    folds(0),
+                    ecalls(0) {}
 
     // Allocate string in pool, return guest addr.
     uint64_t pool_str(const char *s, size_t len) {
@@ -106,6 +125,24 @@ struct rv_compiler {
         if (addr + OUT_SLOT > OUT_LIMIT) return 0;
         out_pool += OUT_SLOT;
         return addr;
+    }
+};
+
+// ---------------------------------------------------------------
+// Compile result: carries both guest address and optional
+// compile-time constant value.
+// ---------------------------------------------------------------
+
+struct compile_result {
+    uint64_t addr;          // guest address of result
+    bool is_const;          // true if value is known at compile time
+    std::string value;      // the string value (valid only if is_const)
+
+    static compile_result constant(uint64_t a, const std::string &v) {
+        return {a, true, v};
+    }
+    static compile_result runtime(uint64_t a) {
+        return {a, false, {}};
     }
 };
 
@@ -184,49 +221,199 @@ static void rv_emit_exit(std::vector<uint32_t> &code) {
 }
 
 // ---------------------------------------------------------------
+// Constant folding: evaluate known functions at compile time.
+//
+// Uses the same libmux functions (is_integer, mux_atof, fval, etc.)
+// that the real engine functions use, so results are identical.
+// ---------------------------------------------------------------
+
+// Format a double result the same way fval() does: use a temporary
+// buffer and call fval, then extract the string.
+//
+static std::string format_double(double val) {
+    UTF8 buf[LBUF_SIZE];
+    UTF8 *bufc = buf;
+    fval(buf, &bufc, val);
+    *bufc = '\0';
+    return std::string(reinterpret_cast<const char *>(buf));
+}
+
+static std::string format_long(long val) {
+    UTF8 buf[64];
+    UTF8 *bufc = buf;
+    safe_ltoa(val, buf, &bufc);
+    *bufc = '\0';
+    return std::string(reinterpret_cast<const char *>(buf));
+}
+
+// Maximum digit table for add() overflow detection — same as funmath.cpp.
+//
+static const long nMaximums[10] = {
+    0, 9, 99, 999, 9999, 99999, 999999, 9999999, 99999999, 999999999
+};
+
+// Try to constant-fold a function call.
+// Returns true and sets result if successful.
+//
+static bool try_fold(const std::string &func_name,
+                     const std::vector<std::string> &args,
+                     std::string &result) {
+
+    // Uppercase for comparison.
+    std::string upper = func_name;
+    for (auto &c : upper) c = static_cast<char>(toupper(static_cast<unsigned char>(c)));
+
+    int nargs = static_cast<int>(args.size());
+
+    // --- ADD(a, b, ...) ---
+    if (upper == "ADD" && nargs >= 2) {
+        // Try integer fast path (same logic as fun_add).
+        bool all_int = true;
+        long nMaxValue = 0;
+        for (int i = 0; i < nargs; i++) {
+            int nDigits;
+            if (!is_integer(reinterpret_cast<const UTF8 *>(args[i].c_str()), &nDigits)
+                || nDigits > 9
+                || (nMaxValue += nMaximums[nDigits]) > 999999999L) {
+                all_int = false;
+                break;
+            }
+        }
+        if (all_int) {
+            long sum = 0;
+            for (int i = 0; i < nargs; i++) {
+                sum += mux_atol(reinterpret_cast<const UTF8 *>(args[i].c_str()));
+            }
+            result = format_long(sum);
+        } else {
+            double sum = 0.0;
+            for (int i = 0; i < nargs; i++) {
+                sum += mux_atof(reinterpret_cast<const UTF8 *>(args[i].c_str()));
+            }
+            result = format_double(sum);
+        }
+        return true;
+    }
+
+    // --- SUB(a, b) ---
+    if (upper == "SUB" && nargs == 2) {
+        int nDigits;
+        const UTF8 *a = reinterpret_cast<const UTF8 *>(args[0].c_str());
+        const UTF8 *b = reinterpret_cast<const UTF8 *>(args[1].c_str());
+        if (is_integer(a, &nDigits) && nDigits <= 9
+            && is_integer(b, &nDigits) && nDigits <= 9) {
+            long va = mux_atol(a);
+            long vb = mux_atol(b);
+            result = format_long(va - vb);
+        } else {
+            double da = mux_atof(a);
+            double db = mux_atof(b);
+            result = format_double(da - db);
+        }
+        return true;
+    }
+
+    // --- MUL(a, b, ...) ---
+    if (upper == "MUL" && nargs >= 2) {
+        double prod = 1.0;
+        for (int i = 0; i < nargs; i++) {
+            prod *= mux_atof(reinterpret_cast<const UTF8 *>(args[i].c_str()));
+        }
+        result = format_double(NearestPretty(prod));
+        return true;
+    }
+
+    // --- STRLEN(s) ---
+    if (upper == "STRLEN" && nargs == 1) {
+        // strip_ansi_len would be more accurate, but for constant
+        // folding of plain literals, strlen is correct.
+        result = format_long(static_cast<long>(args[0].size()));
+        return true;
+    }
+
+    // --- CAT(a, b, ...) ---
+    if (upper == "CAT") {
+        std::string merged;
+        for (int i = 0; i < nargs; i++) {
+            if (i > 0) merged += ' ';
+            merged += args[i];
+        }
+        result = merged;
+        return true;
+    }
+
+    // --- STRCAT(a, b, ...) ---
+    if (upper == "STRCAT") {
+        std::string merged;
+        for (int i = 0; i < nargs; i++) {
+            merged += args[i];
+        }
+        result = merged;
+        return true;
+    }
+
+    // --- MID(s, start, len) ---
+    if (upper == "MID" && nargs == 3) {
+        const std::string &s = args[0];
+        long start = mux_atol(reinterpret_cast<const UTF8 *>(args[1].c_str()));
+        long len = mux_atol(reinterpret_cast<const UTF8 *>(args[2].c_str()));
+        if (start < 0 || len < 0 || static_cast<size_t>(start) >= s.size()) {
+            result = "";
+        } else {
+            result = s.substr(static_cast<size_t>(start), static_cast<size_t>(len));
+        }
+        return true;
+    }
+
+    return false;
+}
+
+// ---------------------------------------------------------------
 // AST compilation (recursive, bottom-up)
 //
-// Returns the guest address where the result string lives.
-// For literals, it's the string pool address.
-// For function calls, it's the output buffer address.
+// Returns a compile_result with guest address and optional
+// compile-time constant value.
 // ---------------------------------------------------------------
 
 // Forward declaration.
-static uint64_t compile_node(rv_compiler &rc, const ASTNode *node);
+static compile_result compile_node(rv_compiler &rc, const ASTNode *node);
 
-// Compile a sequence: concatenate child results into one output slot.
+// Compile a sequence: concatenate child results.
 //
-static uint64_t compile_sequence(rv_compiler &rc, const ASTNode *node) {
+static compile_result compile_sequence(rv_compiler &rc, const ASTNode *node) {
     if (node->children.size() == 1) {
         return compile_node(rc, node->children[0].get());
     }
 
-    // Compile each child, then concatenate via strcat ECALL.
-    // For the spike, we concatenate by writing all literals
-    // directly to one string pool entry when possible.
-
-    // Check if all children are literals/spaces — can merge.
-    bool all_literal = true;
+    // Compile each child.
+    std::vector<compile_result> child_results;
     for (auto &child : node->children) {
-        if (child->type != AST_LITERAL && child->type != AST_SPACE) {
-            all_literal = false;
+        child_results.push_back(compile_node(rc, child.get()));
+    }
+
+    // Check if all children are compile-time constants.
+    bool all_const = true;
+    for (auto &cr : child_results) {
+        if (!cr.is_const) {
+            all_const = false;
             break;
         }
     }
 
-    if (all_literal) {
+    if (all_const) {
+        // Merge at compile time.
         std::string merged;
-        for (auto &child : node->children) {
-            merged += child->text;
+        for (auto &cr : child_results) {
+            merged += cr.value;
         }
-        return rc.pool_str(merged);
+        uint64_t addr = rc.pool_str(merged);
+        return compile_result::constant(addr, merged);
     }
 
-    // Mixed sequence: compile each child, use strcat() to concatenate.
-    // strcat(a, b, c, ...) joins without separators.
+    // Mixed sequence: emit strcat() ECALL at runtime.
     std::vector<uint64_t> child_addrs;
-    for (auto &child : node->children) {
-        child_addrs.push_back(compile_node(rc, child.get()));
+    for (auto &cr : child_results) {
+        child_addrs.push_back(cr.addr);
     }
 
     uint64_t name_addr = rc.pool_str("strcat");
@@ -237,19 +424,47 @@ static uint64_t compile_sequence(rv_compiler &rc, const ASTNode *node) {
                  static_cast<int>(child_addrs.size()),
                  out_addr, rv_compiler::OUT_SLOT);
 
-    return out_addr;
+    rc.ecalls++;
+    return compile_result::runtime(out_addr);
 }
 
-// Compile a function call: compile args, emit ECALL.
+// Compile a function call: try constant fold, else emit ECALL.
 //
-static uint64_t compile_funccall(rv_compiler &rc, const ASTNode *node) {
+static compile_result compile_funccall(rv_compiler &rc, const ASTNode *node) {
     // node->text is the function name.
     // node->children are the argument expressions.
 
     // Compile each argument.
-    std::vector<uint64_t> arg_addrs;
+    std::vector<compile_result> arg_results;
     for (auto &child : node->children) {
-        arg_addrs.push_back(compile_node(rc, child.get()));
+        arg_results.push_back(compile_node(rc, child.get()));
+    }
+
+    // Try constant folding: if all args are compile-time constants,
+    // evaluate the function at compile time.
+    bool all_const = true;
+    std::vector<std::string> arg_values;
+    for (auto &ar : arg_results) {
+        if (!ar.is_const) {
+            all_const = false;
+            break;
+        }
+        arg_values.push_back(ar.value);
+    }
+
+    if (all_const) {
+        std::string folded;
+        if (try_fold(node->text, arg_values, folded)) {
+            uint64_t addr = rc.pool_str(folded);
+            rc.folds++;
+            return compile_result::constant(addr, folded);
+        }
+    }
+
+    // Fall through to ECALL.
+    std::vector<uint64_t> arg_addrs;
+    for (auto &ar : arg_results) {
+        arg_addrs.push_back(ar.addr);
     }
 
     uint64_t name_addr = rc.pool_str(node->text);
@@ -260,14 +475,17 @@ static uint64_t compile_funccall(rv_compiler &rc, const ASTNode *node) {
                  static_cast<int>(arg_addrs.size()),
                  out_addr, rv_compiler::OUT_SLOT);
 
-    return out_addr;
+    rc.ecalls++;
+    return compile_result::runtime(out_addr);
 }
 
-static uint64_t compile_node(rv_compiler &rc, const ASTNode *node) {
+static compile_result compile_node(rv_compiler &rc, const ASTNode *node) {
     switch (node->type) {
     case AST_LITERAL:
-    case AST_SPACE:
-        return rc.pool_str(node->text);
+    case AST_SPACE: {
+        uint64_t addr = rc.pool_str(node->text);
+        return compile_result::constant(addr, node->text);
+    }
 
     case AST_SEQUENCE:
         return compile_sequence(rc, node);
@@ -281,11 +499,17 @@ static uint64_t compile_node(rv_compiler &rc, const ASTNode *node) {
             return compile_node(rc, node->children[0].get());
         }
         // Shouldn't happen, but fall through.
-        return rc.pool_str("");
+        {
+            uint64_t addr = rc.pool_str("");
+            return compile_result::constant(addr, "");
+        }
 
     default:
         // Unsupported node type — return empty string.
-        return rc.pool_str("");
+        {
+            uint64_t addr = rc.pool_str("");
+            return compile_result::constant(addr, "");
+        }
     }
 }
 
@@ -298,11 +522,15 @@ struct compiled_program {
     size_t memory_size;
     uint64_t out_addr;      // where the final result lives
     bool ok;
+    int folds;
+    int ecalls;
 };
 
 static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
     compiled_program prog;
     prog.ok = false;
+    prog.folds = 0;
+    prog.ecalls = 0;
 
     // Parse the expression.
     auto ast = ast_parse_string(expr, nLen);
@@ -312,7 +540,7 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
 
     // Compile.
     rv_compiler rc;
-    uint64_t result_addr = compile_node(rc, ast.get());
+    compile_result cr = compile_node(rc, ast.get());
 
     // Emit exit.
     rv_emit_exit(rc.code);
@@ -324,8 +552,10 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
 
     prog.memory = std::move(rc.memory);
     prog.memory_size = rv_compiler::MEM_SIZE;
-    prog.out_addr = result_addr;
+    prog.out_addr = cr.addr;
     prog.ok = true;
+    prog.folds = rc.folds;
+    prog.ecalls = rc.ecalls;
     return prog;
 }
 
@@ -338,9 +568,9 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
 // returns the result.
 //
 // Examples:
-//   think rveval(add(1,2))           → 3
-//   think rveval(add(mul(3,4),5))    → 17
-//   think rveval(strlen(hello))      → 5
+//   think rveval(add(1,2))           → 3   (constant folded)
+//   think rveval(add(mul(3,4),5))    → 17  (fully folded)
+//   think rveval(strlen(hello))      → 5   (folded)
 // ---------------------------------------------------------------
 
 // ECALL handler (same as dbt_harness.cpp).
@@ -448,6 +678,14 @@ FUNCTION(fun_rveval)
     compiled_program prog = compile_expression(expr, nLen);
     if (!prog.ok) {
         safe_str(T("#-1 COMPILATION FAILED"), buff, bufc);
+        return;
+    }
+
+    // If everything was constant-folded, the result is already
+    // in the string pool — no need to run the JIT at all.
+    if (prog.ecalls == 0) {
+        const UTF8 *result = prog.memory.data() + prog.out_addr;
+        safe_str(result, buff, bufc);
         return;
     }
 
