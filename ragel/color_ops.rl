@@ -26,6 +26,22 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Safe-write helpers: all output buffers are LBUF_SIZE.
+ * wp_end = out + LBUF_SIZE - 1 (leave room for NUL).
+ * These macros silently truncate when the buffer is full. */
+
+#define WP_SAFE(wp, wp_end, byte) \
+    do { if ((wp) < (wp_end)) *(wp)++ = (byte); } while (0)
+
+static inline size_t wp_safe_copy(unsigned char *wp, const unsigned char *wp_end,
+                                  const unsigned char *src, size_t n)
+{
+    size_t avail = (size_t)(wp_end - wp);
+    if (n > avail) n = avail;
+    memcpy(wp, src, n);
+    return n;
+}
+
 /* ---------- Ragel machine definitions ---------- */
 
 %%{
@@ -645,30 +661,26 @@ size_t co_strip_color(unsigned char *out, const unsigned char *data,
     action mark { mark = p; }
     action emit_color {
         const unsigned char *s = mark;
-        while (s <= p) *wp++ = *s++;
+        while (s <= p) WP_SAFE(wp, wp_end, *s++);
     }
     action emit_upper {
         size_t src = (size_t)(p - mark + 1);
         int bXor;
         const co_string_desc *desc = co_dfa_toupper(mark, &bXor);
         if (!desc) {
-            /* Identity — copy as-is. */
             const unsigned char *s = mark;
-            while (s <= p) *wp++ = *s++;
+            while (s <= p) WP_SAFE(wp, wp_end, *s++);
         } else {
             size_t out_len = desc->n_bytes;
             if (bXor && out_len != src) {
-                /* XOR length mismatch — copy as-is. */
                 const unsigned char *s = mark;
-                while (s <= p) *wp++ = *s++;
+                while (s <= p) WP_SAFE(wp, wp_end, *s++);
             } else if (bXor) {
-                /* XOR transform (same byte count). */
                 for (size_t j = 0; j < out_len; j++)
-                    *wp++ = mark[j] ^ desc->p[j];
+                    WP_SAFE(wp, wp_end, mark[j] ^ desc->p[j]);
             } else {
-                /* Literal replacement (may differ in byte count). */
                 for (size_t j = 0; j < out_len; j++)
-                    *wp++ = desc->p[j];
+                    WP_SAFE(wp, wp_end, desc->p[j]);
             }
         }
     }
@@ -685,6 +697,7 @@ size_t co_toupper(unsigned char *out, const unsigned char *data, size_t len)
     const unsigned char *pe = data + len;
     const unsigned char *mark = data;
     unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     %% write init;
     %% write exec;
@@ -702,7 +715,7 @@ size_t co_toupper(unsigned char *out, const unsigned char *data, size_t len)
     action mark { mark = p; }
     action emit_color {
         const unsigned char *s = mark;
-        while (s <= p) *wp++ = *s++;
+        while (s <= p) WP_SAFE(wp, wp_end, *s++);
     }
     action emit_lower {
         size_t src = (size_t)(p - mark + 1);
@@ -710,18 +723,18 @@ size_t co_toupper(unsigned char *out, const unsigned char *data, size_t len)
         const co_string_desc *desc = co_dfa_tolower(mark, &bXor);
         if (!desc) {
             const unsigned char *s = mark;
-            while (s <= p) *wp++ = *s++;
+            while (s <= p) WP_SAFE(wp, wp_end, *s++);
         } else {
             size_t out_len = desc->n_bytes;
             if (bXor && out_len != src) {
                 const unsigned char *s = mark;
-                while (s <= p) *wp++ = *s++;
+                while (s <= p) WP_SAFE(wp, wp_end, *s++);
             } else if (bXor) {
                 for (size_t j = 0; j < out_len; j++)
-                    *wp++ = mark[j] ^ desc->p[j];
+                    WP_SAFE(wp, wp_end, mark[j] ^ desc->p[j]);
             } else {
                 for (size_t j = 0; j < out_len; j++)
-                    *wp++ = desc->p[j];
+                    WP_SAFE(wp, wp_end, desc->p[j]);
             }
         }
     }
@@ -738,6 +751,7 @@ size_t co_tolower(unsigned char *out, const unsigned char *data, size_t len)
     const unsigned char *pe = data + len;
     const unsigned char *mark = data;
     unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     %% write init;
     %% write exec;
@@ -751,6 +765,7 @@ size_t co_tolower(unsigned char *out, const unsigned char *data, size_t len)
 size_t co_totitle(unsigned char *out, const unsigned char *data, size_t len)
 {
     const unsigned char *pe = data + len;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     /* Skip any leading color. */
     const unsigned char *p = co_skip_color(data, pe);
@@ -758,8 +773,8 @@ size_t co_totitle(unsigned char *out, const unsigned char *data, size_t len)
     /* Copy any leading color. */
     unsigned char *wp = out;
     if (p > data) {
-        memcpy(wp, data, (size_t)(p - data));
-        wp += (size_t)(p - data);
+        size_t cb = (size_t)(p - data);
+        wp += wp_safe_copy(wp, wp_end, data, cb);
     }
 
     if (p < pe) {
@@ -780,18 +795,17 @@ size_t co_totitle(unsigned char *out, const unsigned char *data, size_t len)
         int bXor;
         const co_string_desc *desc = co_dfa_totitle(p, &bXor);
         if (!desc) {
-            /* Identity — copy as-is. */
-            for (j = 0; j < src; j++) *wp++ = p[j];
+            for (j = 0; j < src; j++) WP_SAFE(wp, wp_end, p[j]);
         } else {
             size_t out_len = desc->n_bytes;
             if (bXor && out_len != src) {
-                for (j = 0; j < src; j++) *wp++ = p[j];
+                for (j = 0; j < src; j++) WP_SAFE(wp, wp_end, p[j]);
             } else if (bXor) {
                 for (j = 0; j < out_len; j++)
-                    *wp++ = p[j] ^ desc->p[j];
+                    WP_SAFE(wp, wp_end, p[j] ^ desc->p[j]);
             } else {
                 for (j = 0; j < out_len; j++)
-                    *wp++ = desc->p[j];
+                    WP_SAFE(wp, wp_end, desc->p[j]);
             }
         }
         p += src;
@@ -800,8 +814,7 @@ size_t co_totitle(unsigned char *out, const unsigned char *data, size_t len)
     /* Copy remainder unchanged. */
     if (p < pe) {
         size_t remaining = (size_t)(pe - p);
-        memcpy(wp, p, remaining);
-        wp += remaining;
+        wp += wp_safe_copy(wp, wp_end, p, remaining);
     }
 
     *wp = '\0';
@@ -883,21 +896,24 @@ size_t co_edit(unsigned char *out,
 {
     const unsigned char *pe = str + slen;
     unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     /* Empty pattern: return original unchanged. */
     if (flen == 0) {
-        memcpy(out, str, slen);
-        out[slen] = '\0';
-        return slen;
+        size_t cb = slen < LBUF_SIZE - 1 ? slen : LBUF_SIZE - 1;
+        memcpy(out, str, cb);
+        out[cb] = '\0';
+        return cb;
     }
 
     /* Strip color from pattern for matching. */
     unsigned char fplain[LBUF_SIZE];
     size_t fplain_len = co_strip_color(fplain, from, flen);
     if (fplain_len == 0) {
-        memcpy(out, str, slen);
-        out[slen] = '\0';
-        return slen;
+        size_t cb = slen < LBUF_SIZE - 1 ? slen : LBUF_SIZE - 1;
+        memcpy(out, str, cb);
+        out[cb] = '\0';
+        return cb;
     }
 
     /* Count visible code points in pattern (for advancing past match). */
@@ -905,29 +921,26 @@ size_t co_edit(unsigned char *out,
 
     const unsigned char *p = str;
 
-    while (p < pe) {
+    while (p < pe && wp < wp_end) {
         /* Search for pattern from current position. */
         const unsigned char *match = co_search(p, (size_t)(pe - p), from, flen);
 
         if (!match) {
             /* No more matches — copy remainder. */
             size_t cb = (size_t)(pe - p);
-            memcpy(wp, p, cb);
-            wp += cb;
+            wp += wp_safe_copy(wp, wp_end, p, cb);
             break;
         }
 
         /* Copy everything before the match. */
         if (match > p) {
             size_t cb = (size_t)(match - p);
-            memcpy(wp, p, cb);
-            wp += cb;
+            wp += wp_safe_copy(wp, wp_end, p, cb);
         }
 
         /* Emit replacement. */
         if (tlen > 0) {
-            memcpy(wp, to, tlen);
-            wp += tlen;
+            wp += wp_safe_copy(wp, wp_end, to, tlen);
         }
 
         /* Advance past the matched visible code points in the source. */
@@ -1095,6 +1108,7 @@ size_t co_lpos(unsigned char *out,
     const unsigned char *pe = data + hlen;
     const unsigned char *p = data;
     unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
     size_t vis_idx = 0;
     int first = 1;
 
@@ -1104,12 +1118,11 @@ size_t co_lpos(unsigned char *out,
 
         /* Check if this visible byte matches. */
         if (*p < 0x80 && *p == pattern) {
-            if (!first) *wp++ = ' ';
+            if (!first) WP_SAFE(wp, wp_end, ' ');
             /* Write the 0-based index as decimal. */
             char num[20];
             int n = snprintf(num, sizeof(num), "%zu", vis_idx);
-            memcpy(wp, num, (size_t)n);
-            wp += n;
+            wp += wp_safe_copy(wp, wp_end, (const unsigned char *)num, (size_t)n);
             first = 0;
         }
 
@@ -1172,7 +1185,7 @@ size_t co_member(const unsigned char *target, size_t tlen,
  * fill/fill_len is the fill string.  If fill_len is 0, uses spaces.
  * Returns bytes written to wp.
  */
-static size_t emit_fill(unsigned char *wp,
+static size_t emit_fill(unsigned char *wp, const unsigned char *wp_end,
                         size_t nPad,
                         const unsigned char *fill, size_t fill_len)
 {
@@ -1182,6 +1195,8 @@ static size_t emit_fill(unsigned char *wp,
 
     if (fill_len == 0 || (fill_len == 1 && fill[0] == ' ')) {
         /* Fast path: space fill. */
+        size_t avail = (size_t)(wp_end - wp);
+        if (nPad > avail) nPad = avail;
         memset(wp, ' ', nPad);
         return nPad;
     }
@@ -1189,22 +1204,28 @@ static size_t emit_fill(unsigned char *wp,
     /* Count visible code points in fill pattern. */
     size_t fill_vis = co_visible_length(fill, fill_len);
     if (fill_vis == 0) {
+        size_t avail = (size_t)(wp_end - wp);
+        if (nPad > avail) nPad = avail;
         memset(wp, ' ', nPad);
         return nPad;
     }
 
     /* Cycle through the fill pattern. */
     size_t emitted = 0;
-    while (emitted < nPad) {
+    while (emitted < nPad && wp < wp_end) {
         size_t remaining = nPad - emitted;
         if (remaining >= fill_vis) {
             /* Copy entire fill pattern. */
-            memcpy(wp, fill, fill_len);
-            wp += fill_len;
+            size_t cb = wp_safe_copy(wp, wp_end, fill, fill_len);
+            wp += cb;
             emitted += fill_vis;
         } else {
             /* Partial fill — copy only 'remaining' visible code points. */
-            size_t nb = co_copy_visible(wp, fill, fill + fill_len, remaining);
+            size_t avail = (size_t)(wp_end - wp);
+            unsigned char tmp[LBUF_SIZE];
+            size_t nb = co_copy_visible(tmp, fill, fill + fill_len, remaining);
+            if (nb > avail) nb = avail;
+            memcpy(wp, tmp, nb);
             wp += nb;
             emitted += remaining;
         }
@@ -1220,6 +1241,7 @@ size_t co_center(unsigned char *out,
                  size_t width,
                  const unsigned char *fill, size_t fill_len)
 {
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
     size_t str_vis = co_visible_length(data, len);
 
     if (str_vis >= width) {
@@ -1234,14 +1256,13 @@ size_t co_center(unsigned char *out,
     unsigned char *wp = out;
 
     /* Left padding. */
-    wp += emit_fill(wp, left_pad, fill, fill_len);
+    wp += emit_fill(wp, wp_end, left_pad, fill, fill_len);
 
     /* Content. */
-    memcpy(wp, data, len);
-    wp += len;
+    wp += wp_safe_copy(wp, wp_end, data, len);
 
     /* Right padding. */
-    wp += emit_fill(wp, right_pad, fill, fill_len);
+    wp += emit_fill(wp, wp_end, right_pad, fill, fill_len);
 
     *wp = '\0';
     return (size_t)(wp - out);
@@ -1254,6 +1275,7 @@ size_t co_ljust(unsigned char *out,
                 size_t width,
                 const unsigned char *fill, size_t fill_len)
 {
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
     size_t str_vis = co_visible_length(data, len);
 
     if (str_vis >= width) {
@@ -1263,11 +1285,10 @@ size_t co_ljust(unsigned char *out,
     unsigned char *wp = out;
 
     /* Content. */
-    memcpy(wp, data, len);
-    wp += len;
+    wp += wp_safe_copy(wp, wp_end, data, len);
 
     /* Right padding. */
-    wp += emit_fill(wp, width - str_vis, fill, fill_len);
+    wp += emit_fill(wp, wp_end, width - str_vis, fill, fill_len);
 
     *wp = '\0';
     return (size_t)(wp - out);
@@ -1280,6 +1301,7 @@ size_t co_rjust(unsigned char *out,
                 size_t width,
                 const unsigned char *fill, size_t fill_len)
 {
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
     size_t str_vis = co_visible_length(data, len);
 
     if (str_vis >= width) {
@@ -1289,11 +1311,10 @@ size_t co_rjust(unsigned char *out,
     unsigned char *wp = out;
 
     /* Left padding. */
-    wp += emit_fill(wp, width - str_vis, fill, fill_len);
+    wp += emit_fill(wp, wp_end, width - str_vis, fill, fill_len);
 
     /* Content. */
-    memcpy(wp, data, len);
-    wp += len;
+    wp += wp_safe_copy(wp, wp_end, data, len);
 
     *wp = '\0';
     return (size_t)(wp - out);
@@ -1436,10 +1457,11 @@ size_t co_splice(unsigned char *out,
     size_t sp_len = co_strip_color(splain, search, slen);
 
     unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
     unsigned char wplain[LBUF_SIZE];
 
-    for (size_t i = 0; i < n1; i++) {
-        if (i > 0) *wp++ = osep;
+    for (size_t i = 0; i < n1 && wp < wp_end; i++) {
+        if (i > 0) WP_SAFE(wp, wp_end, osep);
 
         /* Strip color from word in list1 and compare. */
         size_t wlen = co_strip_color(wplain, w1[i].start,
@@ -1459,8 +1481,7 @@ size_t co_splice(unsigned char *out,
         }
 
         size_t cb = (size_t)(src_end - src_start);
-        memcpy(wp, src_start, cb);
-        wp += cb;
+        wp += wp_safe_copy(wp, wp_end, src_start, cb);
     }
 
     *wp = '\0';
@@ -1479,6 +1500,7 @@ size_t co_insert_word(unsigned char *out,
     size_t nWords = split_words(list, llen, delim, words, LBUF_SIZE / 2);
 
     unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     /* Convert 1-based to 0-based insertion point. */
     size_t ins = (iPos > 0) ? iPos - 1 : 0;
@@ -1486,19 +1508,17 @@ size_t co_insert_word(unsigned char *out,
 
     size_t emitted = 0;
 
-    for (size_t i = 0; i <= nWords; i++) {
+    for (size_t i = 0; i <= nWords && wp < wp_end; i++) {
         if (i == ins) {
             /* Insert the new word here. */
-            if (emitted > 0) *wp++ = osep;
-            memcpy(wp, word, wlen);
-            wp += wlen;
+            if (emitted > 0) WP_SAFE(wp, wp_end, osep);
+            wp += wp_safe_copy(wp, wp_end, word, wlen);
             emitted++;
         }
         if (i < nWords) {
-            if (emitted > 0) *wp++ = osep;
+            if (emitted > 0) WP_SAFE(wp, wp_end, osep);
             size_t cb = (size_t)(words[i].end - words[i].start);
-            memcpy(wp, words[i].start, cb);
-            wp += cb;
+            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
             emitted++;
         }
     }
@@ -1607,11 +1627,11 @@ static size_t emit_sorted(unsigned char *out,
                           unsigned char osep)
 {
     unsigned char *wp = out;
-    for (size_t i = 0; i < n; i++) {
-        if (i > 0) *wp++ = osep;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+    for (size_t i = 0; i < n && wp < wp_end; i++) {
+        if (i > 0) WP_SAFE(wp, wp_end, osep);
         size_t cb = (size_t)(elems[i].end - elems[i].start);
-        memcpy(wp, elems[i].start, cb);
-        wp += cb;
+        wp += wp_safe_copy(wp, wp_end, elems[i].start, cb);
     }
     *wp = '\0';
     return (size_t)(wp - out);
@@ -2111,6 +2131,7 @@ size_t co_apply_color(unsigned char *out,
                       co_ColorState cs)
 {
     unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
     co_ColorState normal = CO_CS_NORMAL;
 
     /* Emit transition from NORMAL to desired state. */
@@ -2118,8 +2139,7 @@ size_t co_apply_color(unsigned char *out,
 
     /* Copy the string. */
     if (len > 0) {
-        memcpy(wp, data, len);
-        wp += len;
+        wp += wp_safe_copy(wp, wp_end, data, len);
     }
 
     *wp = '\0';
