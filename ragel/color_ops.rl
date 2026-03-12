@@ -868,19 +868,18 @@ size_t co_reverse(unsigned char *out, const unsigned char *data, size_t len)
 
     /* Build output: leading color + reversed elements. */
     unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     /* Emit leading color. */
     if (leading_end > data) {
         size_t cb = (size_t)(leading_end - data);
-        memcpy(wp, data, cb);
-        wp += cb;
+        wp += wp_safe_copy(wp, wp_end, data, cb);
     }
 
     /* Emit elements in reverse order. */
-    for (size_t i = nElems; i > 0; i--) {
+    for (size_t i = nElems; i > 0 && wp < wp_end; i--) {
         size_t cb = (size_t)(elems[i-1].end - elems[i-1].start);
-        memcpy(wp, elems[i-1].start, cb);
-        wp += cb;
+        wp += wp_safe_copy(wp, wp_end, elems[i-1].start, cb);
     }
 
     *wp = '\0';
@@ -982,20 +981,21 @@ size_t co_transform(unsigned char *out,
     const unsigned char *p = str;
     const unsigned char *pe = str + slen;
     unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
-    while (p < pe) {
+    while (p < pe && wp < wp_end) {
         /* Copy color bytes unchanged. */
         const unsigned char *q = co_skip_color(p, pe);
-        while (p < q) { *wp++ = *p++; }
+        while (p < q) WP_SAFE(wp, wp_end, *p++);
         if (p >= pe) break;
 
         /* Visible code point: transform if single-byte ASCII. */
         if (*p < 0x80) {
-            *wp++ = table[*p++];
+            WP_SAFE(wp, wp_end, table[*p++]);
         } else {
             /* Multi-byte visible: copy unchanged. */
             const unsigned char *after = co_visible_advance(p, pe, 1, NULL);
-            while (p < after) { *wp++ = *p++; }
+            while (p < after) WP_SAFE(wp, wp_end, *p++);
         }
     }
 
@@ -1012,13 +1012,14 @@ size_t co_compress(unsigned char *out,
     const unsigned char *pe = data + len;
     const unsigned char *p = data;
     unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
     int in_run = 0;
 
-    while (p < pe) {
+    while (p < pe && wp < wp_end) {
         /* Copy color bytes. */
         const unsigned char *q = co_skip_color(p, pe);
         if (!in_run) {
-            while (p < q) { *wp++ = *p++; }
+            while (p < q) WP_SAFE(wp, wp_end, *p++);
         } else {
             p = q;  /* Skip color inside compressed run. */
         }
@@ -1034,7 +1035,7 @@ size_t co_compress(unsigned char *out,
         if (is_compress) {
             if (!in_run) {
                 /* First char of run: copy it. */
-                *wp++ = *p;
+                WP_SAFE(wp, wp_end, *p);
                 in_run = 1;
             }
             /* Skip this char (either first copied or subsequent). */
@@ -1043,7 +1044,7 @@ size_t co_compress(unsigned char *out,
             in_run = 0;
             /* Copy visible code point. */
             const unsigned char *after = co_visible_advance(p, pe, 1, NULL);
-            while (p < after) { *wp++ = *p++; }
+            while (p < after) WP_SAFE(wp, wp_end, *p++);
         }
     }
 
@@ -1331,11 +1332,12 @@ size_t co_repeat(unsigned char *out,
         return 0;
     }
 
-    size_t total = len * count;
-    if (total > LBUF_SIZE - 1) {
+    /* Check for overflow before multiplication. */
+    if (count > (LBUF_SIZE - 1) / len) {
         out[0] = '\0';
         return 0;  /* too long */
     }
+    size_t total = len * count;
 
     unsigned char *wp = out;
     for (size_t i = 0; i < count; i++) {
@@ -1359,11 +1361,13 @@ size_t co_delete(unsigned char *out,
 {
     const unsigned char *pe = data + len;
     unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     if (nCount == 0) {
-        memcpy(out, data, len);
-        out[len] = '\0';
-        return len;
+        size_t cb = len < LBUF_SIZE - 1 ? len : LBUF_SIZE - 1;
+        memcpy(out, data, cb);
+        out[cb] = '\0';
+        return cb;
     }
 
     /* Copy everything before iStart (including color). */
@@ -1389,8 +1393,7 @@ size_t co_delete(unsigned char *out,
     /* Copy remainder. */
     if (p < pe) {
         size_t cb = (size_t)(pe - p);
-        memcpy(wp, p, cb);
-        wp += cb;
+        wp += wp_safe_copy(wp, wp_end, p, cb);
     }
 
     *wp = '\0';
@@ -1650,6 +1653,7 @@ size_t co_sort_words(unsigned char *out,
     if (nWords <= 1) {
         if (nWords == 1) {
             size_t cb = (size_t)(words[0].end - words[0].start);
+            if (cb > LBUF_SIZE - 1) cb = LBUF_SIZE - 1;
             memcpy(out, words[0].start, cb);
             out[cb] = '\0';
             return cb;
@@ -1963,19 +1967,22 @@ static int find_nearest_palette(uint8_t r, uint8_t g, uint8_t b)
 
 /* ---- Emit PUA bytes for a code point ---- */
 
-static size_t emit_pua_bmp(unsigned char *wp, unsigned int cp)
+static size_t emit_pua_bmp(unsigned char *wp, const unsigned char *wp_end,
+                           unsigned int cp)
 {
     /* U+F500-F7FF → 3-byte UTF-8 */
+    if (wp + 3 > wp_end) return 0;
     wp[0] = 0xEF;
     wp[1] = (unsigned char)(0x80 | ((cp >> 6) & 0x3F));
     wp[2] = (unsigned char)(0x80 | (cp & 0x3F));
     return 3;
 }
 
-static size_t emit_pua_smp(unsigned char *wp, unsigned int channel,
-                           uint8_t value)
+static size_t emit_pua_smp(unsigned char *wp, const unsigned char *wp_end,
+                           unsigned int channel, uint8_t value)
 {
     /* U+F0000 + channel*256 + value → 4-byte UTF-8 */
+    if (wp + 4 > wp_end) return 0;
     unsigned int cp = 0xF0000 + channel * 256 + value;
     wp[0] = 0xF3;
     wp[1] = 0xB0;
@@ -1989,6 +1996,7 @@ static size_t emit_pua_smp(unsigned char *wp, unsigned int channel,
  * Returns bytes written to wp.
  */
 static size_t emit_transition(unsigned char *wp,
+                              const unsigned char *wp_end,
                               const co_ColorState *old_cs,
                               const co_ColorState *new_cs)
 {
@@ -2014,19 +2022,19 @@ static size_t emit_transition(unsigned char *wp,
     if (cur.bg != -1 && new_cs->bg == -1) need_reset = 1;
 
     if (need_reset) {
-        wp += emit_pua_bmp(wp, 0xF500);
+        wp += emit_pua_bmp(wp, wp_end, 0xF500);
         cur = CO_CS_NORMAL;
     }
 
     /* Step 2: Emit changed attributes. */
     if (new_cs->intense && !cur.intense)
-        wp += emit_pua_bmp(wp, 0xF501);
+        wp += emit_pua_bmp(wp, wp_end, 0xF501);
     if (new_cs->underline && !cur.underline)
-        wp += emit_pua_bmp(wp, 0xF504);
+        wp += emit_pua_bmp(wp, wp_end, 0xF504);
     if (new_cs->blink && !cur.blink)
-        wp += emit_pua_bmp(wp, 0xF505);
+        wp += emit_pua_bmp(wp, wp_end, 0xF505);
     if (new_cs->inverse && !cur.inverse)
-        wp += emit_pua_bmp(wp, 0xF507);
+        wp += emit_pua_bmp(wp, wp_end, 0xF507);
 
     /* Step 3: Emit FG color if changed. */
     int fg_changed = (cur.fg != new_cs->fg ||
@@ -2036,18 +2044,18 @@ static size_t emit_transition(unsigned char *wp,
     if (fg_changed && new_cs->fg != -1) {
         if (new_cs->fg >= 0 && new_cs->fg <= 255) {
             /* Indexed FG: emit palette code. */
-            wp += emit_pua_bmp(wp, 0xF600 + (unsigned int)new_cs->fg);
+            wp += emit_pua_bmp(wp, wp_end, 0xF600 + (unsigned int)new_cs->fg);
         } else if (new_cs->fg == -2) {
             /* RGB FG: find nearest palette, emit base + deltas. */
             int idx = find_nearest_palette(new_cs->fg_r, new_cs->fg_g,
                                            new_cs->fg_b);
-            wp += emit_pua_bmp(wp, 0xF600 + (unsigned int)idx);
+            wp += emit_pua_bmp(wp, wp_end, 0xF600 + (unsigned int)idx);
             if (new_cs->fg_r != xterm_palette[idx].r)
-                wp += emit_pua_smp(wp, 0, new_cs->fg_r);
+                wp += emit_pua_smp(wp, wp_end, 0, new_cs->fg_r);
             if (new_cs->fg_g != xterm_palette[idx].g)
-                wp += emit_pua_smp(wp, 1, new_cs->fg_g);
+                wp += emit_pua_smp(wp, wp_end, 1, new_cs->fg_g);
             if (new_cs->fg_b != xterm_palette[idx].b)
-                wp += emit_pua_smp(wp, 2, new_cs->fg_b);
+                wp += emit_pua_smp(wp, wp_end, 2, new_cs->fg_b);
         }
     }
 
@@ -2058,17 +2066,17 @@ static size_t emit_transition(unsigned char *wp,
                       cur.bg_b != new_cs->bg_b);
     if (bg_changed && new_cs->bg != -1) {
         if (new_cs->bg >= 0 && new_cs->bg <= 255) {
-            wp += emit_pua_bmp(wp, 0xF700 + (unsigned int)new_cs->bg);
+            wp += emit_pua_bmp(wp, wp_end, 0xF700 + (unsigned int)new_cs->bg);
         } else if (new_cs->bg == -2) {
             int idx = find_nearest_palette(new_cs->bg_r, new_cs->bg_g,
                                            new_cs->bg_b);
-            wp += emit_pua_bmp(wp, 0xF700 + (unsigned int)idx);
+            wp += emit_pua_bmp(wp, wp_end, 0xF700 + (unsigned int)idx);
             if (new_cs->bg_r != xterm_palette[idx].r)
-                wp += emit_pua_smp(wp, 3, new_cs->bg_r);
+                wp += emit_pua_smp(wp, wp_end, 3, new_cs->bg_r);
             if (new_cs->bg_g != xterm_palette[idx].g)
-                wp += emit_pua_smp(wp, 4, new_cs->bg_g);
+                wp += emit_pua_smp(wp, wp_end, 4, new_cs->bg_g);
             if (new_cs->bg_b != xterm_palette[idx].b)
-                wp += emit_pua_smp(wp, 5, new_cs->bg_b);
+                wp += emit_pua_smp(wp, wp_end, 5, new_cs->bg_b);
         }
     }
 
@@ -2083,11 +2091,12 @@ size_t co_collapse_color(unsigned char *out,
     const unsigned char *pe = data + len;
     const unsigned char *p = data;
     unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     co_ColorState emitted = CO_CS_NORMAL;
     co_ColorState pending = CO_CS_NORMAL;
 
-    while (p < pe) {
+    while (p < pe && wp < wp_end) {
         /* BMP PUA color: EF (94-9F) xx */
         if (p[0] == 0xEF && (p + 2) < pe
             && p[1] >= 0x94 && p[1] <= 0x9F) {
@@ -2106,18 +2115,18 @@ size_t co_collapse_color(unsigned char *out,
         }
 
         /* Visible code point: emit transition + copy visible bytes. */
-        wp += emit_transition(wp, &emitted, &pending);
+        wp += emit_transition(wp, wp_end, &emitted, &pending);
         emitted = pending;
 
         /* Copy visible code point bytes. */
         const unsigned char *after = co_visible_advance(p, pe, 1, NULL);
-        while (p < after) *wp++ = *p++;
+        while (p < after) WP_SAFE(wp, wp_end, *p++);
     }
 
     /* Emit trailing color if pending differs from emitted.
      * Typically a trailing RESET — preserve it so concatenation works. */
     if (!co_cs_equal(&pending, &emitted)) {
-        wp += emit_transition(wp, &emitted, &pending);
+        wp += emit_transition(wp, wp_end, &emitted, &pending);
     }
 
     *wp = '\0';
@@ -2135,7 +2144,7 @@ size_t co_apply_color(unsigned char *out,
     co_ColorState normal = CO_CS_NORMAL;
 
     /* Emit transition from NORMAL to desired state. */
-    wp += emit_transition(wp, &normal, &cs);
+    wp += emit_transition(wp, wp_end, &normal, &cs);
 
     /* Copy the string. */
     if (len > 0) {
