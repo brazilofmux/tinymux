@@ -4901,7 +4901,33 @@
 >306
 "@log smoke=BENCH041:[rvbench(iter(aa bb cc dd ee ff gg hh ii jj, X),10000)]"
 >307
-"@log smoke=BENCH042:[rvbench(iter(a b c d e f g, X),10000)];@trig me/tr.done"
+"@log smoke=BENCH042:[rvbench(iter(a b c d e f g, X),10000)]"
+>308
+"@log smoke=BENCH043:[rvbench(first(cat(rand(10),rand(10),rand(10))),10000)]"
+>309
+"@log smoke=BENCH044:[rvbench(rest(cat(rand(10),rand(10),rand(10))),10000)]"
+>310
+"@log smoke=BENCH045:[rvbench(last(cat(rand(10),rand(10),rand(10))),10000)]"
+>311
+"@log smoke=BENCH046:[rvbench(member(alpha beta gamma delta,gamma),10000)]"
+>312
+"@log smoke=BENCH047:[rvbench(repeat(cat(rand(10),x),5),10000)]"
+>313
+"@log smoke=BENCH048:[rvbench(trim(cat(%b,rand(100),%b)),10000)]"
+>314
+"@log smoke=BENCH049:[rvbench(before(cat(rand(10),|,rand(10)),|),10000)]"
+>315
+"@log smoke=BENCH050:[rvbench(after(cat(rand(10),|,rand(10)),|),10000)]"
+>316
+"@log smoke=BENCH051:[rvbench(ldelete(cat(rand(10),rand(10),rand(10),rand(10)),2),10000)]"
+>317
+"@log smoke=BENCH052:[rvbench(replace(cat(rand(10),rand(10),rand(10)),2,ZZZ),10000)]"
+>324
+"@log smoke=BENCH053:[rvbench(insert(cat(rand(10),rand(10),rand(10)),2,ZZZ),10000)]"
+>325
+"@log smoke=BENCH054:[rvbench(first(rest(cat(rand(10),rand(10),rand(10),rand(10)))),10000)]"
+>326
+"@log smoke=BENCH055:[rvbench(iter(a|1 b|2 c|3 d|4 e|5, before(##\\,|)),10000)];@trig me/tr.done"
 <
 !149
 "test_rvcall_fn"

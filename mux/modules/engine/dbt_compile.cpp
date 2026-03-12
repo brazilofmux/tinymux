@@ -89,6 +89,17 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "EXTRACT",     "rv64_extract" },
     { "WORDS",       "rv64_words" },
     { "SPLIT_TOKEN", "rv64_split_token" },
+    { "FIRST",       "rv64_first" },
+    { "REST",        "rv64_rest" },
+    { "LAST",        "rv64_last" },
+    { "MEMBER",      "rv64_member" },
+    { "REPEAT",      "rv64_repeat" },
+    { "TRIM",        "rv64_trim" },
+    { "BEFORE",      "rv64_before" },
+    { "AFTER",       "rv64_after" },
+    { "LDELETE",     "rv64_ldelete" },
+    { "REPLACE",     "rv64_replace" },
+    { "INSERT",      "rv64_insert" },
     { nullptr, nullptr }
 };
 
@@ -1139,7 +1150,7 @@ static bool returns_int(const std::string &upper) {
         || upper == "INC" || upper == "DEC" || upper == "SIGN"
         || upper == "MOD" || upper == "ABS" || upper == "MAX"
         || upper == "MIN" || upper == "BOUND" || upper == "IDIV"
-        || upper == "STRMATCH";
+        || upper == "STRMATCH" || upper == "MEMBER";
 }
 
 // (Old compile_node chain removed — replaced by HIR pipeline below.)

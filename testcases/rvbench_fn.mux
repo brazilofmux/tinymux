@@ -318,7 +318,99 @@
 #
 &tr.tc042 test_rvbench_fn=
   @log smoke=BENCH042:
-    [rvbench(iter(a b c d e f g, X),10000)];
+    [rvbench(iter(a b c d e f g, X),10000)]
+-
+#
+# Benchmark #43 - Tier 2: first() with runtime arg.
+#
+&tr.tc043 test_rvbench_fn=
+  @log smoke=BENCH043:
+    [rvbench(first(cat(rand(10),rand(10),rand(10))),10000)]
+-
+#
+# Benchmark #44 - Tier 2: rest() with runtime arg.
+#
+&tr.tc044 test_rvbench_fn=
+  @log smoke=BENCH044:
+    [rvbench(rest(cat(rand(10),rand(10),rand(10))),10000)]
+-
+#
+# Benchmark #45 - Tier 2: last() with runtime arg.
+#
+&tr.tc045 test_rvbench_fn=
+  @log smoke=BENCH045:
+    [rvbench(last(cat(rand(10),rand(10),rand(10))),10000)]
+-
+#
+# Benchmark #46 - Tier 2: member() with runtime list.
+#
+&tr.tc046 test_rvbench_fn=
+  @log smoke=BENCH046:
+    [rvbench(member(alpha beta gamma delta,gamma),10000)]
+-
+#
+# Benchmark #47 - Tier 2: repeat() with runtime string.
+#
+&tr.tc047 test_rvbench_fn=
+  @log smoke=BENCH047:
+    [rvbench(repeat(cat(rand(10),x),5),10000)]
+-
+#
+# Benchmark #48 - Tier 2: trim().
+#
+&tr.tc048 test_rvbench_fn=
+  @log smoke=BENCH048:
+    [rvbench(trim(cat(%b,rand(100),%b)),10000)]
+-
+#
+# Benchmark #49 - Tier 2: before() with runtime arg.
+#
+&tr.tc049 test_rvbench_fn=
+  @log smoke=BENCH049:
+    [rvbench(before(cat(rand(10),|,rand(10)),|),10000)]
+-
+#
+# Benchmark #50 - Tier 2: after() with runtime arg.
+#
+&tr.tc050 test_rvbench_fn=
+  @log smoke=BENCH050:
+    [rvbench(after(cat(rand(10),|,rand(10)),|),10000)]
+-
+#
+# Benchmark #51 - Tier 2: ldelete() with runtime list.
+#
+&tr.tc051 test_rvbench_fn=
+  @log smoke=BENCH051:
+    [rvbench(ldelete(cat(rand(10),rand(10),rand(10),rand(10)),2),10000)]
+-
+#
+# Benchmark #52 - Tier 2: replace() with runtime list.
+#
+&tr.tc052 test_rvbench_fn=
+  @log smoke=BENCH052:
+    [rvbench(replace(cat(rand(10),rand(10),rand(10)),2,ZZZ),10000)]
+-
+#
+# Benchmark #53 - Tier 2: insert() with runtime list.
+#
+&tr.tc053 test_rvbench_fn=
+  @log smoke=BENCH053:
+    [rvbench(insert(cat(rand(10),rand(10),rand(10)),2,ZZZ),10000)]
+-
+#
+# Benchmark #54 - Tier 2 chain: first(rest(cat(...))).
+# Common pattern in softcode: drill into a list.
+#
+&tr.tc054 test_rvbench_fn=
+  @log smoke=BENCH054:
+    [rvbench(first(rest(cat(rand(10),rand(10),rand(10),rand(10)))),10000)]
+-
+#
+# Benchmark #55 - Tier 2: iter with first/rest body.
+#
+&tr.tc055 test_rvbench_fn=
+  @log smoke=BENCH055:
+    [rvbench(iter(a|1 b|2 c|3 d|4 e|5, before(##\,|)),10000)];
   @trig me/tr.done
 -
 &tr.done test_rvbench_fn=
