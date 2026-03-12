@@ -1294,11 +1294,123 @@
         X X X
       )=
   {
-    @log smoke=TC084: rveval iter(a b c, X)=X X X. Succeeded.;
+    @log smoke=TC084: rveval iter(a b c, X)=X X X. Succeeded.
+  },
+  {
+    @log smoke=TC084: rveval iter(a b c, X)=X X X. Failed (%q0).
+  }
+-
+#
+# TC085: iter() with ## substitution — current element.
+# iter(10 20 30, add(##,1)) = "11 21 31"
+#
+&tr.tc085 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(iter(10 20 30, add(##,1)))),
+        11 21 31
+      )=
+  {
+    @log smoke=TC085: rveval iter ## subst=11 21 31. Succeeded.
+  },
+  {
+    @log smoke=TC085: rveval iter ## subst=11 21 31. Failed (%q0).
+  }
+-
+#
+# TC086: iter() with #@ substitution — iteration number (1-based).
+# iter(a b c, #@) = "1 2 3"
+#
+&tr.tc086 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(iter(a b c, #@))),
+        1 2 3
+      )=
+  {
+    @log smoke=TC086: rveval iter #@ inum=1 2 3. Succeeded.
+  },
+  {
+    @log smoke=TC086: rveval iter #@ inum=1 2 3. Failed (%q0).
+  }
+-
+#
+# TC087: iter() single element — no separator in output.
+# iter(hello, ##) = "hello"
+#
+&tr.tc087 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(iter(hello, ##))),
+        hello
+      )=
+  {
+    @log smoke=TC087: rveval iter single elem=hello. Succeeded.
+  },
+  {
+    @log smoke=TC087: rveval iter single elem=hello. Failed (%q0).
+  }
+-
+#
+# TC088: iter() empty list — should produce empty string.
+# iter(, X) = ""
+#
+&tr.tc088 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(iter(, X))),
+
+      )=
+  {
+    @log smoke=TC088: rveval iter empty list=empty. Succeeded.
+  },
+  {
+    @log smoke=TC088: rveval iter empty list=empty. Failed (%q0).
+  }
+-
+#
+# TC089: iter() with custom osep.
+# iter(a|b|c, ##, |, -) = "a-b-c"
+#
+&tr.tc089 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(iter(a|b|c, ##, |, -))),
+        a-b-c
+      )=
+  {
+    @log smoke=TC089: rveval iter osep=a-b-c. Succeeded.
+  },
+  {
+    @log smoke=TC089: rveval iter osep=a-b-c. Failed (%q0).
+  }
+-
+#
+# TC090: iter() result in arithmetic — strlen of iter output.
+# strlen(iter(a b c, X)) = 5  (length of "X X X")
+#
+&tr.tc090 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(strlen(iter(a b c, X)))),
+        5
+      )=
+  {
+    @log smoke=TC090: rveval strlen(iter)=5. Succeeded.
+  },
+  {
+    @log smoke=TC090: rveval strlen(iter)=5. Failed (%q0).
+  }
+-
+#
+# TC091: iter() body with expression — mul(##,##).
+# iter(2 3 4, mul(##,##)) = "4 9 16"
+#
+&tr.tc091 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(iter(2 3 4, mul(##,##)))),
+        4 9 16
+      )=
+  {
+    @log smoke=TC091: rveval iter mul(##,##)=4 9 16. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC084: rveval iter(a b c, X)=X X X. Failed (%q0).;
+    @log smoke=TC091: rveval iter mul(##,##)=4 9 16. Failed (%q0).;
     @trig me/tr.done
   }
 -

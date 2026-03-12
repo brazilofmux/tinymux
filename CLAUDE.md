@@ -3,17 +3,18 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Build Commands
-- Configure: `./configure [options]` (options: --enable-memorybased, --enable-realitylvls, etc.)
-- Standard configuration: `./configure --enable-realitylvls --enable-wodrealms --enable-stubslave`
-- GANL networking and SSL are enabled by default; use `--disable-ganl` for legacy networking
-- Build: `make`
-- Install: `make install` (required — creates symlinks in game/bin)
+- Configure (one-time): `cd mux && ./configure --enable-realitylvls --enable-wodrealms`
+  - For release builds add `--enable-stubslave`; omit for smoke testing
+- **Build everything from repo root**: `make install`
+  - Builds libmux.so, netmux, engine.so, all modules, creates game/bin symlinks
+  - This is the standard workflow — always build from the repo root
 - Clean: `make clean` or `make realclean`
-- Run server: `cd mux/game && ./bin/netmux` (starts the MUD server)
-- Dependency tracking is handled automatically by automake
+- Run server: `cd mux/game && ./bin/netmux`
+- **Do NOT build from mux/src/ directly** — that only builds netmux, not engine.so or modules
 
 ## Testing
-- Run smoke tests: `cd testcases/tools && ./Makesmoke && ./Smoke`
+- Run smoke tests: `make test` (from repo root — builds, installs, then tests)
+- Or manually: `cd testcases && ./tools/Makesmoke && ./tools/Smoke`
 - Test output in: `testcases/smoke.log`
 
 ## Release Process

@@ -1861,12 +1861,18 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         h.emit(HIR_BR, TY_VOID, -1, -1, header_block);
         h.add_edge(latch_block, header_block);
 
-        // Exit: result = accumulated string.
-        // RET prevents fall-through into loop-interior blocks that
-        // follow in layout order.
+        // Exit → continuation block.
+        // The continuation block is allocated AFTER all loop-interior
+        // blocks, so it has a higher block number and sits after them
+        // in layout order.  This prevents fall-through into loop
+        // blocks.  We use BR (not RET) so iter can be a subexpression.
         h.cur_block = exit_block;
+        int cont_block = h.new_block();
+        h.emit(HIR_BR, TY_VOID, -1, -1, cont_block);
+        h.add_edge(exit_block, cont_block);
+
+        h.cur_block = cont_block;
         int result = h.emit(HIR_LOAD_Q, TY_STRING, -1, -1, QREG_ITER_ACC);
-        h.emit(HIR_RET, TY_VOID);
 
         h.needs_jit = true;
         return result;

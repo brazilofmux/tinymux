@@ -8,10 +8,11 @@ Predecessors: `docs/PARSER.md` (study), `docs/PARSER_REPLACE.md` (AST evaluator)
 
 External work: `~/riscv` (DBT runtime), `~/slow-32` (ISA design + toolchain history)
 
-**As of 2026-03-11**: 576 smoke tests (75 rveval + 34 benchmarks), 7,520 lines
-across 8 files. Full SSA compiler pipeline operational: AST → HIR → SSA →
-optimize → linear-scan regalloc → RV64 → x86-64 JIT. Tier 2 blob
-(cat/strlen/strcat) working via JAL.
+**As of 2026-03-11**: 585 smoke tests (84 rveval + 34 benchmarks), 5,035 lines
+across 4 compiler files (+ DBT runtime). Full SSA compiler pipeline operational:
+AST → HIR → SSA → optimize → linear-scan regalloc → RV64 → x86-64 JIT.
+Loop compilation (iter) with SSA back-edges and PHI nodes. Tier 2 blob
+(cat/strlen/strcat) working via JAL. switch/case compilation via branch chains.
 
 ## Motivation
 
@@ -315,7 +316,7 @@ Not every softcode function becomes inline machine code. The split:
 **Compiled (inline RISC-V)**:
  - Arithmetic: `add()`, `sub()`, `mul()`, `div()`, `mod()`, comparisons
  - Logic: `and()`, `or()`, `not()`, `t()`
- - Control flow: `if()`, `ifelse()`, `switch()`, `iter()`, `while()`
+ - Control flow: `if()`, `ifelse()`, `switch()` ✅, `iter()` ✅, `while()`
  - String building: literal concatenation, `%r`, `%b`, `%t`
  - Register access: `%q0`-`%q9`, `setr()`, `setq()`
  - Type conversions: `int_to_string`, `string_to_int`, etc.
@@ -410,14 +411,17 @@ compiler with control flow, register allocation, and Tier 2 blob
 support. The "PoC" label no longer applies — this is the production
 compiler.
 
-**What exists** (dbt_compile.cpp, 3253 lines + hir.h/hir_ssa/hir_opt):
+**What exists** (dbt_compile.cpp, 3725 lines + hir.h/hir_ssa/hir_opt):
  - Full HIR-based SSA pipeline: AST → HIR → SSA → optimize → codegen
  - Constant folding for 28+ functions at compile time
  - Type tracking (TY_INT / TY_STRING) with inline RV64 atoi/itoa
  - Native RV64 arithmetic: add, sub, mul, div, rem, abs, sign, max,
    min, inc, dec, eq, ne, lt, le, gt, ge, not, bool
- - Control flow: if/ifelse → BRC+PHI, cand/cor → short-circuit chains
- - SSA: CFG, RPO, dominator tree, PHI insertion, renaming (%q0-%q9)
+ - Control flow: if/ifelse → BRC+PHI, cand/cor → short-circuit chains,
+   switch/case → branch-chain codegen with ECALL pattern matching,
+   iter() → multi-block loop with SSA back-edges and PHI nodes
+ - SSA: CFG, RPO, dominator tree, PHI insertion, renaming (%q0-%q9),
+   loop-aware liveness analysis for cross-iteration register safety
  - Linear-scan register allocation (Poletto-Sarkar, 11 regs, spill/reload)
  - 256-entry LRU compile cache (skip recompilation on repeat calls)
  - Block cache persistence via dbt_rerun (skip re-translation)
@@ -486,7 +490,7 @@ cache invalidation).
 
 **1e. Test suite** — PARTIAL
 
-75 rveval smoke tests + 34 benchmarks cover the compiler+DBT stack.
+84 rveval smoke tests + 34 benchmarks cover the compiler+DBT stack.
 Missing: standalone low-level DBT tests for instruction correctness
 (int64 edge cases, W-suffix sign-extension, FP corner cases, register
 cache spill/restore, ECALL argument passing). Cross-compiled C test
@@ -595,8 +599,8 @@ memory address), TY_VOID (side-effect only).
 
 ```
 mux/include/hir.h                  — HIR definition (353 lines)
-mux/modules/engine/dbt_compile.cpp — lowering + codegen + caching (3253 lines)
-mux/modules/engine/hir_ssa.cpp     — SSA construction (411 lines)
+mux/modules/engine/dbt_compile.cpp — lowering + codegen + caching (3725 lines)
+mux/modules/engine/hir_ssa.cpp     — SSA construction (453 lines)
 mux/modules/engine/hir_opt.cpp     — SSA optimization passes (504 lines)
 ```
 
@@ -620,24 +624,27 @@ AST → hir_lower → hir_build_cfg → hir_ssa_construct → hir_optimize
    DCE (reachability marking). Multi-pass convergence (3 rounds).
    `hir_opt.cpp` (504 lines). Folded exprs still 0.03 us.
 
- - ✅ **M4: Control flow** (partial) — if/ifelse → BRC + 3 blocks
-   + merge PHI. cand/cor/candbool/corbool → short-circuit chains
-   with forward BRC jumps. Constant conditions folded at compile
-   time (no blocks emitted).
-   **Not yet**: `switch()` (needs wild_match via ECALL or Tier 2),
-   `iter()` (needs back-edge handling in SSA — loop PHIs, LOAD_Q/
-   STORE_Q across the back-edge).
+ - ✅ **M4: Control flow** — if/ifelse → BRC + 3 blocks + merge PHI.
+   cand/cor/candbool/corbool → short-circuit chains with forward BRC
+   jumps. switch/case → branch-chain codegen with ECALL pattern
+   matching and fallthrough. iter() → 7-block loop (init, header,
+   body, first-iter, not-first, latch, exit) with SSA back-edges,
+   PHI nodes for inum and accumulator, loop-aware register allocation.
+   Constant conditions folded at compile time (no blocks emitted).
 
  - ✅ **M5: Register allocation** — linear scan (Poletto-Sarkar)
    over SSA live ranges. 11 allocatable integer regs (s1-s11).
    Spill/reload to stack slots via scratch register (s0).
-   Expressions exceeding 11 live values work correctly.
+   Loop-aware liveness: values used inside loops but defined outside
+   have live ranges extended to the latch block, preventing
+   cross-iteration register corruption.
 
  - ⬜ **M6: Advanced optimizations** — not yet implemented.
-   CSE, strength reduction. LICM not applicable (no loops yet).
-   Natural stopping point once iter() adds loops.
+   CSE, strength reduction. LICM now applicable (iter loops).
+   **Not yet**: `while()` (similar to iter, needs back-edge + exit
+   condition), nested loops.
 
-Actual total: ~4,500 lines (vs. 2,500-3,500 estimated).
+Actual total: ~5,035 lines (vs. 2,500-3,500 estimated).
 
 #### What NOT to Build
 
@@ -689,8 +696,9 @@ Performance is near-parity because ECALL calls to rand() dominate.
 The real win comes when Tier 2 handles more complex functions or
 when expressions chain multiple Tier 2 calls without ECALL.
 
-Next Tier 2 candidates: sort(), iter(), match(), edit(), regex —
-anything too complex for compile-time reasoning.
+Next Tier 2 candidates: sort(), match(), edit(), regex —
+anything too complex for compile-time reasoning. (iter() is now
+compiled directly as a multi-block loop, not a Tier 2 call.)
 
 **Intrinsics (native fast-path)**: See Stage 1 item 1c-vii. The
 DBT recognizes specific Tier 2 call targets and replaces the RV64

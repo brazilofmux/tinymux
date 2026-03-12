@@ -259,7 +259,31 @@
 #
 &tr.tc034 test_rvbench_fn=
   @log smoke=BENCH034:
-    [rvbench(cat(rand(10),rand(10),rand(10),rand(10)),10000)];
+    [rvbench(cat(rand(10),rand(10),rand(10),rand(10)),10000)]
+-
+#
+# Benchmark #35 - iter() loop: literal body.
+# Tests loop compilation overhead vs native iter eval.
+#
+&tr.tc035 test_rvbench_fn=
+  @log smoke=BENCH035:
+    [rvbench(iter(a b c d e, X),10000)]
+-
+#
+# Benchmark #36 - iter() loop: ## substitution with arithmetic.
+# Tests loop body with ECALL (extract) + native ops.
+#
+&tr.tc036 test_rvbench_fn=
+  @log smoke=BENCH036:
+    [rvbench(iter(1 2 3 4 5, add(##\,1)),10000)]
+-
+#
+# Benchmark #37 - iter() loop: longer list (10 elements).
+# Tests loop scaling with more iterations.
+#
+&tr.tc037 test_rvbench_fn=
+  @log smoke=BENCH037:
+    [rvbench(iter(a b c d e f g h i j, X),10000)];
   @trig me/tr.done
 -
 &tr.done test_rvbench_fn=
