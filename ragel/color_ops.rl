@@ -195,12 +195,12 @@ const unsigned char *co_visible_advance(const unsigned char *data,
     include color_scan;
 
     action copy_byte {
-        *wp++ = fc;
+        WP_SAFE(wp, wp_end, fc);
     }
 
     action vis_copied {
         nCopied++;
-        if (nCopied >= limit) {
+        if (nCopied >= limit || wp >= wp_end) {
             fbreak;
         }
     }
@@ -222,6 +222,7 @@ size_t co_copy_visible(unsigned char *out, const unsigned char *data,
     const unsigned char *p = data;
     const unsigned char *eof = pe;
     unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
     size_t nCopied = 0;
 
     %% write init;
@@ -270,11 +271,13 @@ const unsigned char *co_find_delim(const unsigned char *data,
 
 /*
  * Helper: copy bytes from [start, end) to out, return bytes written.
+ * Clamped to LBUF_SIZE - 1.
  */
 static size_t raw_copy(unsigned char *out, const unsigned char *start,
                        const unsigned char *end)
 {
     size_t n = (size_t)(end - start);
+    if (n > LBUF_SIZE - 1) n = LBUF_SIZE - 1;
     memcpy(out, start, n);
     out[n] = '\0';
     return n;
@@ -398,6 +401,7 @@ size_t co_extract(unsigned char *out,
 {
     const unsigned char *pe = data + len;
     unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     if (iFirst == 0) iFirst = 1;
     if (nWords == 0) {
@@ -409,15 +413,14 @@ size_t co_extract(unsigned char *out,
     size_t copied = 0;
     const unsigned char *p = data;
 
-    while (p < pe) {
+    while (p < pe && wp < wp_end) {
         /* Skip leading delimiters. */
         const unsigned char *q = co_skip_color(p, pe);
         if (q >= pe) {
             /* Only color left — copy it if we are mid-extraction. */
             if (copied > 0 && q > p) {
                 size_t cb = (size_t)(q - p);
-                memcpy(wp, p, cb);
-                wp += cb;
+                wp += wp_safe_copy(wp, wp_end, p, cb);
             }
             break;
         }
@@ -431,11 +434,10 @@ size_t co_extract(unsigned char *out,
 
         if (iWord >= iFirst && iWord < iFirst + nWords) {
             if (copied > 0) {
-                *wp++ = osep;
+                WP_SAFE(wp, wp_end, osep);
             }
             size_t cb = (size_t)(word_end - word_start);
-            memcpy(wp, word_start, cb);
-            wp += cb;
+            wp += wp_safe_copy(wp, wp_end, word_start, cb);
             copied++;
             if (copied >= nWords) break;
         }
@@ -545,14 +547,13 @@ size_t co_trim(unsigned char *out,
 
     /* Build output: optional color prefix + trimmed content. */
     unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
     if (color_prefix && end > start) {
-        memcpy(wp, color_prefix, color_prefix_len);
-        wp += color_prefix_len;
+        wp += wp_safe_copy(wp, wp_end, color_prefix, color_prefix_len);
     }
     if (end > start) {
         size_t content_len = (size_t)(end - start);
-        memcpy(wp, start, content_len);
-        wp += content_len;
+        wp += wp_safe_copy(wp, wp_end, start, content_len);
     }
     *wp = '\0';
     return (size_t)(wp - out);
@@ -628,7 +629,7 @@ const unsigned char *co_search(const unsigned char *haystack, size_t hlen,
     action mark { mark = p; }
     action emit_vis {
         const unsigned char *s = mark;
-        while (s <= p) *wp++ = *s++;
+        while (s <= p) WP_SAFE(wp, wp_end, *s++);
     }
 
     main := ( color | visible >mark @emit_vis )*;
@@ -644,6 +645,7 @@ size_t co_strip_color(unsigned char *out, const unsigned char *data,
     const unsigned char *pe = data + len;
     const unsigned char *mark = data;
     unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     %% write init;
     %% write exec;
