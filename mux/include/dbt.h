@@ -129,6 +129,12 @@ struct dbt_state_t {
     int (*ecall_fn)(rv64_ctx_t *ctx, void *user);
     void *ecall_user;
 
+    // Intrinsics: guest addresses the DBT replaces with native x86-64.
+    //
+    uint64_t intrinsic_slen;     // rv64_slen guest address (0 = not registered)
+    uint64_t intrinsic_scopy;    // rv64_scopy guest address (0 = not registered)
+    uint64_t intrinsic_hits;     // stat: intrinsic calls emitted
+
     // Debug.
     //
     int trace;

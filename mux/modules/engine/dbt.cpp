@@ -201,6 +201,129 @@ static void rc_invalidate_reload(emit_t *e, reg_cache_t *rc) {
 }
 
 // ---------------------------------------------------------------
+// Intrinsic emitters: native x86-64 replacements for known Tier 2
+// helper functions.  When the DBT encounters a JAL to one of these,
+// it emits inline x86-64 instead of translating the RV64 byte loops.
+//
+// All intrinsics use only RAX/RCX/RDX as scratch (not in register
+// cache).  Pinned registers (RSI=a0, RDI=a1, R8=a2, R9=a3) carry
+// the arguments and results.
+// ---------------------------------------------------------------
+
+// rv64_slen(a0=string_ptr) → a0=length
+// Counts bytes until NUL.  All pointers are guest addresses (R12-based).
+//
+static void emit_intrinsic_slen(emit_t *e) {
+    // lea rax, [r12 + rsi]   ; host pointer = mem_base + guest_addr
+    emit_byte(e, rex(1, reg_hi(X64_RAX), 0, 1));
+    emit_byte(e, 0x8D);
+    emit_byte(e, modrm(0x00, X64_RAX, 0x04)); // SIB
+    emit_byte(e, static_cast<uint8_t>((reg_lo(X64_RSI) << 3) | reg_lo(X64_R12)));
+
+    // xor ecx, ecx           ; counter = 0
+    emit_byte(e, 0x31);
+    emit_byte(e, modrm(0x03, X64_RCX, X64_RCX));
+
+    // .loop:
+    uint32_t loop_top = emit_pos(e);
+    // cmp byte [rax + rcx], 0
+    emit_byte(e, 0x80);
+    emit_byte(e, modrm(0x01, 7, 0x04)); // SIB + cmp /7
+    emit_byte(e, static_cast<uint8_t>((reg_lo(X64_RCX) << 3) | reg_lo(X64_RAX)));
+    emit_byte(e, 0x00); // disp8 = 0
+    emit_byte(e, 0x00); // imm8 = 0
+
+    // je .done
+    uint32_t je_patch = emit_pos(e);
+    emit_byte(e, 0x74);
+    emit_byte(e, 0x00); // rel8 placeholder
+
+    // inc rcx
+    emit_byte(e, rex(1, 0, 0, 0));
+    emit_byte(e, 0xFF);
+    emit_byte(e, modrm(0x03, 0, X64_RCX));
+
+    // jmp .loop
+    int32_t jmp_off = static_cast<int32_t>(loop_top) -
+                      static_cast<int32_t>(emit_pos(e) + 2);
+    emit_byte(e, 0xEB);
+    emit_byte(e, static_cast<uint8_t>(jmp_off));
+
+    // .done:
+    uint32_t done_pos = emit_pos(e);
+    e->buf[je_patch + 1] = static_cast<uint8_t>(done_pos - (je_patch + 2));
+
+    // mov rsi, rcx            ; result length → a0
+    emit_mov_r64(e, X64_RSI, X64_RCX);
+}
+
+// rv64_scopy(a0=dst, a1=src) → a0=pointer AT NUL terminator
+// Copies bytes from src to dst until NUL, writes NUL, returns
+// the guest address of the NUL byte in dst.
+//
+static void emit_intrinsic_scopy(emit_t *e) {
+    // lea rcx, [r12 + rsi]   ; host dst = mem_base + guest_dst
+    emit_byte(e, rex(1, reg_hi(X64_RCX), 0, 1));
+    emit_byte(e, 0x8D);
+    emit_byte(e, modrm(0x00, X64_RCX, 0x04)); // SIB
+    emit_byte(e, static_cast<uint8_t>((reg_lo(X64_RSI) << 3) | reg_lo(X64_R12)));
+
+    // lea rdx, [r12 + rdi]   ; host src = mem_base + guest_src
+    emit_byte(e, rex(1, reg_hi(X64_RDX), 0, 1));
+    emit_byte(e, 0x8D);
+    emit_byte(e, modrm(0x00, X64_RDX, 0x04)); // SIB
+    emit_byte(e, static_cast<uint8_t>((reg_lo(X64_RDI) << 3) | reg_lo(X64_R12)));
+
+    // .loop:
+    uint32_t loop_top = emit_pos(e);
+    // movzx eax, byte [rdx]   ; load src byte
+    emit_byte(e, 0x0F);
+    emit_byte(e, 0xB6);
+    emit_byte(e, modrm(0x00, X64_RAX, X64_RDX));
+
+    // mov [rcx], al            ; store to dst
+    emit_byte(e, 0x88);
+    emit_byte(e, modrm(0x00, X64_RAX, X64_RCX));
+
+    // test al, al
+    emit_byte(e, 0x84);
+    emit_byte(e, modrm(0x03, X64_RAX, X64_RAX));
+
+    // je .done
+    uint32_t je_patch = emit_pos(e);
+    emit_byte(e, 0x74);
+    emit_byte(e, 0x00); // rel8 placeholder
+
+    // inc rcx
+    emit_byte(e, rex(1, 0, 0, 0));
+    emit_byte(e, 0xFF);
+    emit_byte(e, modrm(0x03, 0, X64_RCX));
+
+    // inc rdx
+    emit_byte(e, rex(1, 0, 0, 0));
+    emit_byte(e, 0xFF);
+    emit_byte(e, modrm(0x03, 0, X64_RDX));
+
+    // jmp .loop
+    int32_t jmp_off = static_cast<int32_t>(loop_top) -
+                      static_cast<int32_t>(emit_pos(e) + 2);
+    emit_byte(e, 0xEB);
+    emit_byte(e, static_cast<uint8_t>(jmp_off));
+
+    // .done:
+    uint32_t done_pos = emit_pos(e);
+    e->buf[je_patch + 1] = static_cast<uint8_t>(done_pos - (je_patch + 2));
+
+    // sub rcx, r12            ; convert host ptr back to guest address
+    emit_byte(e, rex(1, reg_hi(X64_RCX), 0, 1));
+    emit_byte(e, 0x2B);
+    emit_byte(e, modrm(0x03, X64_RCX, reg_lo(X64_R12)));
+
+    // mov rsi, rcx             ; result → a0
+    emit_mov_r64(e, X64_RSI, X64_RCX);
+}
+
+// ---------------------------------------------------------------
 // Block cache
 // ---------------------------------------------------------------
 
@@ -675,6 +798,40 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             if (self_loop && insn.rd == 0 && insn.imm > 0) {
                 pc = target;
                 continue;
+            }
+
+            // Intrinsic: if the JAL targets a known intrinsic function,
+            // emit inline x86-64 instead of calling the translated RV64.
+            // No CALL/RET, no block break — the native code runs inline.
+            //
+            if (insn.rd == 1) {
+                bool is_intrinsic = false;
+                if (dbt->intrinsic_slen && target == dbt->intrinsic_slen) {
+                    // Flush dirty regs so intrinsic reads correct values.
+                    rc_flush(&e, &rc);
+                    emit_intrinsic_slen(&e);
+                    // Only a0 (slot 0, RSI) changed — mark it dirty.
+                    // Other pinned/cached values remain valid.
+                    rc.slots[0].dirty = 1;
+                    rc.slots[0].last_use = ++rc.clock;
+                    dbt->intrinsic_hits++;
+                    is_intrinsic = true;
+                } else if (dbt->intrinsic_scopy && target == dbt->intrinsic_scopy) {
+                    rc_flush(&e, &rc);
+                    emit_intrinsic_scopy(&e);
+                    rc.slots[0].dirty = 1;
+                    rc.slots[0].last_use = ++rc.clock;
+                    dbt->intrinsic_hits++;
+                    is_intrinsic = true;
+                }
+                if (is_intrinsic) {
+                    // Write ra = pc+4 (JAL rd=1 convention).
+                    int rd = rc_write(&e, &rc, 1);
+                    emit_mov_r64_imm32(&e, rd, static_cast<int32_t>(pc + 4));
+                    pc += 4;
+                    count++;
+                    continue;
+                }
             }
 
             // Superblock native CALL: if this is a function call (JAL ra)

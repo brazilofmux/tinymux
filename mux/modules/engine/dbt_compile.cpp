@@ -176,6 +176,17 @@ static void pretranslate_tier2(dbt_state_t *dbt) {
     for (auto &kv : s_tier2.funcs) {
         dbt_pretranslate(dbt, kv.second.guest_addr);
     }
+
+    // Register intrinsics — the DBT will emit native x86-64 for JAL
+    // calls to these addresses instead of translating the RV64 code.
+    auto slen_it = s_tier2.funcs.find("rv64_slen");
+    if (slen_it != s_tier2.funcs.end()) {
+        dbt->intrinsic_slen = slen_it->second.guest_addr;
+    }
+    auto scopy_it = s_tier2.funcs.find("rv64_scopy");
+    if (scopy_it != s_tier2.funcs.end()) {
+        dbt->intrinsic_scopy = scopy_it->second.guest_addr;
+    }
 }
 
 // Copy blob code into a program's guest memory.
@@ -3859,10 +3870,11 @@ FUNCTION(fun_rvbench)
     uint64_t sb = s_persistent_dbt.superblock_count;
     uint64_t se = s_persistent_dbt.side_exits_total;
     uint64_t ic = s_persistent_dbt.inline_calls;
+    uint64_t ih = s_persistent_dbt.intrinsic_hits;
 
     UTF8 report[LBUF_SIZE];
     snprintf(reinterpret_cast<char *>(report), sizeof(report),
-        "expr=%s iters=%d folds=%d ecalls=%d tier2=%d nativ=%d disp=%llu sb=%llu/%llu ic=%llu | "
+        "expr=%s iters=%d folds=%d ecalls=%d tier2=%d nativ=%d disp=%llu sb=%llu/%llu ic=%llu ih=%llu | "
         "native=%.2fus/call | "
         "compile-each=%.2fus/call (%.1fx) | "
         "cached=%.2fus/call (%.1fx)",
@@ -3870,6 +3882,7 @@ FUNCTION(fun_rvbench)
         iterations, prog.folds, prog.ecalls, prog.tier2_calls, prog.native_ops,
         (unsigned long long)disp,
         (unsigned long long)sb, (unsigned long long)se, (unsigned long long)ic,
+        (unsigned long long)ih,
         per_native,
         per_compile, per_compile / per_native,
         per_cached, per_cached / per_native);

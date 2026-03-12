@@ -18,22 +18,30 @@
 
 typedef unsigned long uint64_t;
 
+/* Forward declarations for intrinsics (defined below). */
+int   rv64_slen(const char *s);
+char *rv64_scopy(char *dst, const char *src);
+
 /* ---------------------------------------------------------------
- * Helper: inline strlen (no libc dependency).
- * Once intrinsics are wired up, this becomes a trampoline call.
+ * Intrinsic helpers — global and noinline so the DBT can intercept
+ * JAL calls to these and emit native x86-64 instead of translating
+ * the RV64 byte loops.  On native RISC-V hosts, these are normal
+ * function calls with fallback implementations.
+ *
+ * Calling convention (standard RISC-V):
+ *   slen:  a0 = string pointer, returns length in a0
+ *   scopy: a0 = dst, a1 = src, returns pointer AT NUL in a0
  * --------------------------------------------------------------- */
 
-static int slen(const char *s) {
+__attribute__((noinline))
+int rv64_slen(const char *s) {
     int n = 0;
     while (s[n]) n++;
     return n;
 }
 
-/* ---------------------------------------------------------------
- * Helper: inline string copy, returns pointer past NUL.
- * --------------------------------------------------------------- */
-
-static char *scopy(char *dst, const char *src) {
+__attribute__((noinline))
+char *rv64_scopy(char *dst, const char *src) {
     while (*src) *dst++ = *src++;
     *dst = '\0';
     return dst;
@@ -74,7 +82,7 @@ char *rv64_cat(char *out, const char **fargs, int nfargs) {
     char *p = out;
     for (int i = 0; i < nfargs; i++) {
         if (i > 0) *p++ = ' ';
-        p = scopy(p, fargs[i]);
+        p = rv64_scopy(p, fargs[i]);
     }
     if (nfargs == 0) *p = '\0';
     return out;
@@ -89,7 +97,7 @@ char *rv64_cat(char *out, const char **fargs, int nfargs) {
 char *rv64_strlen(char *out, const char **fargs, int nfargs) {
     int len = 0;
     if (nfargs >= 1) {
-        len = slen(fargs[0]);
+        len = rv64_slen(fargs[0]);
     }
     sitoa(out, len);
     return out;
@@ -104,7 +112,7 @@ char *rv64_strlen(char *out, const char **fargs, int nfargs) {
 char *rv64_strcat(char *out, const char **fargs, int nfargs) {
     char *p = out;
     for (int i = 0; i < nfargs; i++) {
-        p = scopy(p, fargs[i]);
+        p = rv64_scopy(p, fargs[i]);
     }
     if (nfargs == 0) *p = '\0';
     return out;
