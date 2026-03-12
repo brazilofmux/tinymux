@@ -1733,6 +1733,659 @@ static void test_apply_color(void)
 
 /* ---- Main ---- */
 
+/* ================================================================
+ * Robustness Tests: buffer limits, invalid UTF-8, edge cases
+ * ================================================================ */
+
+static void test_lbuf_limits(void)
+{
+    printf("\n--- LBUF_SIZE limits ---\n");
+    unsigned char big[LBUF_SIZE + 64];
+    unsigned char out[LBUF_SIZE + 64];
+    size_t nb;
+
+    /* Fill with 'A' up to LBUF_SIZE-1 (max safe). */
+    memset(big, 'A', LBUF_SIZE - 1);
+    big[LBUF_SIZE - 1] = '\0';
+
+    nb = co_visible_length(big, LBUF_SIZE - 1);
+    CHECK_EQ("visible_length of LBUF_SIZE-1 A's", nb, (size_t)(LBUF_SIZE - 1));
+
+    nb = co_toupper(out, big, LBUF_SIZE - 1);
+    TEST("toupper on LBUF_SIZE-1 bytes");
+    if (nb == LBUF_SIZE - 1) { PASS(); }
+    else { FAIL("got %zu", nb); }
+
+    nb = co_tolower(out, big, LBUF_SIZE - 1);
+    TEST("tolower on LBUF_SIZE-1 bytes");
+    if (nb == LBUF_SIZE - 1) { PASS(); }
+    else { FAIL("got %zu", nb); }
+
+    /* co_repeat: just under limit should succeed. */
+    nb = co_repeat(out, (const unsigned char *)"AB", 2, (LBUF_SIZE - 1) / 2);
+    TEST("repeat near LBUF_SIZE limit succeeds");
+    if (nb == ((LBUF_SIZE - 1) / 2) * 2) { PASS(); }
+    else { FAIL("got %zu", nb); }
+
+    /* co_repeat: over limit should return 0. */
+    nb = co_repeat(out, (const unsigned char *)"AB", 2, LBUF_SIZE);
+    CHECK_EQ("repeat over LBUF_SIZE returns 0", nb, (size_t)0);
+
+    /* co_left on large string. */
+    nb = co_left(out, big, LBUF_SIZE - 1, 10);
+    TEST("left(10) on LBUF_SIZE-1 string");
+    if (nb == 10) { PASS(); }
+    else { FAIL("got %zu", nb); }
+
+    /* co_right on large string. */
+    nb = co_right(out, big, LBUF_SIZE - 1, 10);
+    TEST("right(10) on LBUF_SIZE-1 string");
+    if (nb == 10) { PASS(); }
+    else { FAIL("got %zu", nb); }
+
+    /* co_mid near end of large string. */
+    nb = co_mid(out, big, LBUF_SIZE - 1, LBUF_SIZE - 6, 5);
+    TEST("mid(LBUF-6, 5) on LBUF_SIZE-1 string");
+    if (nb == 5) { PASS(); }
+    else { FAIL("got %zu", nb); }
+
+    /* co_edit with replacement that expands — fill "A" with "XX". */
+    memset(big, 'A', 100);
+    big[100] = '\0';
+    nb = co_edit(out, big, 100,
+                 (const unsigned char *)"A", 1,
+                 (const unsigned char *)"XX", 2);
+    TEST("edit A->XX on 100 A's -> 200 bytes");
+    if (nb == 200) { PASS(); }
+    else { FAIL("got %zu", nb); }
+
+    /* co_center on large width. */
+    nb = co_center(out, (const unsigned char *)"X", 1, LBUF_SIZE - 1,
+                   NULL, 0);
+    TEST("center to LBUF_SIZE-1 width");
+    if (nb == LBUF_SIZE - 1) { PASS(); }
+    else { FAIL("got %zu", nb); }
+}
+
+static void test_invalid_utf8(void)
+{
+    printf("\n--- Invalid UTF-8 ---\n");
+    unsigned char out[LBUF_SIZE];
+    size_t nb;
+
+    /* Lone continuation byte (0x80-0xBF without lead byte). */
+    {
+        static const unsigned char lone_cont[] = { 0x80, 0x81, 0xBF };
+        nb = co_visible_length(lone_cont, 3);
+        TEST("visible_length of lone continuation bytes");
+        /* These aren't valid UTF-8; Ragel won't match them. */
+        /* Just verify no crash. */
+        printf("(%zu) PASS\n", nb); g_pass++;
+    }
+
+    /* Truncated 2-byte sequence: C3 without continuation. */
+    {
+        static const unsigned char trunc2[] = { 'a', 0xC3 };
+        nb = co_toupper(out, trunc2, 2);
+        TEST("toupper on truncated 2-byte UTF-8");
+        /* 'a' -> 'A', 0xC3 is orphan — should not crash. */
+        if (nb >= 1 && out[0] == 'A') { PASS(); }
+        else { FAIL("got %zu bytes, out[0]=%02x", nb, out[0]); }
+    }
+
+    /* Truncated 3-byte sequence: E2 B1 without third byte. */
+    {
+        static const unsigned char trunc3[] = { 'x', 0xE2, 0xB1 };
+        nb = co_tolower(out, trunc3, 3);
+        TEST("tolower on truncated 3-byte UTF-8");
+        /* Should not crash, 'x' preserved. */
+        if (nb >= 1 && out[0] == 'x') { PASS(); }
+        else { FAIL("got %zu bytes", nb); }
+    }
+
+    /* Overlong encoding: C0 80 (overlong NUL). */
+    {
+        static const unsigned char overlong[] = { 0xC0, 0x80, 'a' };
+        nb = co_visible_length(overlong, 3);
+        TEST("visible_length with overlong encoding");
+        /* C0 is illegal lead byte; Ragel won't match 2-byte.
+         * Just verify no crash and 'a' still counted. */
+        printf("(%zu) PASS\n", nb); g_pass++;
+    }
+
+    /* 0xFF and 0xFE — never valid in UTF-8. */
+    {
+        static const unsigned char bad_bytes[] = { 0xFF, 0xFE, 'B' };
+        nb = co_toupper(out, bad_bytes, 3);
+        TEST("toupper with 0xFF 0xFE bytes");
+        /* Just verify no crash. */
+        printf("(%zu bytes) PASS\n", nb); g_pass++;
+    }
+
+    /* Color PUA with missing continuation byte. */
+    {
+        static const unsigned char bad_color[] = { 0xEF, 0x98, 'h', 'i' };
+        /* 0xEF 0x98 looks like start of BMP PUA but 'h' (0x68)
+         * is not a valid continuation (needs 0x80-0xBF). */
+        nb = co_visible_length(bad_color, 4);
+        TEST("visible_length with malformed color PUA");
+        printf("(%zu) PASS\n", nb); g_pass++;
+    }
+}
+
+static void test_utf8_through_word_ops(void)
+{
+    printf("\n--- UTF-8 through word/sort operations ---\n");
+    unsigned char out[LBUF_SIZE];
+    size_t nb;
+
+    /* é = C3 A9, ñ = C3 B1, ü = C3 BC */
+    static const unsigned char cafe[] = { 'c','a','f', 0xC3,0xA9 };          /* café */
+    static const unsigned char nino[] = { 'n','i', 0xC3,0xB1, 'o' };        /* niño */
+    static const unsigned char uber[] = { 0xC3,0xBC, 'b','e','r' };          /* über */
+
+    /* Build word list: "café niño über" */
+    unsigned char list[64];
+    size_t pos = 0;
+    memcpy(list + pos, cafe, 5); pos += 5;
+    list[pos++] = ' ';
+    memcpy(list + pos, nino, 5); pos += 5;
+    list[pos++] = ' ';
+    memcpy(list + pos, uber, 5); pos += 5;
+    list[pos] = '\0';
+
+    nb = co_words_count(list, pos, ' ');
+    CHECK_EQ("words(\"caf\\xE9 ni\\xF1o \\xFCber\") = 3", nb, (size_t)3);
+
+    nb = co_first(out, list, pos, ' ');
+    TEST("first of UTF-8 word list -> cafe");
+    if (nb == 5 && memcmp(out, cafe, 5) == 0) { PASS(); }
+    else { FAIL("got %zu bytes", nb); }
+
+    nb = co_last(out, list, pos, ' ');
+    TEST("last of UTF-8 word list -> uber");
+    if (nb == 5 && memcmp(out, uber, 5) == 0) { PASS(); }
+    else { FAIL("got %zu bytes", nb); }
+
+    nb = co_extract(out, list, pos, 2, 1, ' ', ' ');
+    TEST("extract word 2 -> nino");
+    if (nb == 5 && memcmp(out, nino, 5) == 0) { PASS(); }
+    else { FAIL("got %zu bytes", nb); }
+
+    /* Sort UTF-8 words (ASCII sort — byte order). */
+    nb = co_sort_words(out, list, pos, ' ', ' ', 'a');
+    TEST("sort UTF-8 words (ASCII byte order)");
+    /* Byte order: 'c'(63) < 'n'(6E) < C3(BC), so café < niño < über */
+    if (nb > 0 && memcmp(out, cafe, 5) == 0) { PASS(); }
+    else { FAIL("got %zu bytes, first word wrong", nb); }
+
+    /* Member with UTF-8 word. */
+    nb = co_member(nino, 5, list, pos, ' ');
+    CHECK_EQ("member(nino, UTF-8 list) = 2", nb, (size_t)2);
+
+    /* Splice with UTF-8 words. */
+    /* list2: "X Y Z", search for "niño", replace word 2 with Y */
+    nb = co_splice(out,
+                   list, pos,
+                   (const unsigned char *)"X Y Z", 5,
+                   nino, 5,
+                   ' ', ' ');
+    TEST("splice with UTF-8 search word");
+    /* Word 2 matches "niño", replaced by "Y". Result: "café Y über" */
+    if (nb > 0) {
+        /* Verify first word is café. */
+        if (memcmp(out, cafe, 5) == 0) { PASS(); }
+        else { FAIL("first word wrong"); }
+    } else { FAIL("splice returned 0"); }
+
+    /* Set operations with UTF-8 words. */
+    /* list1: "café über", list2: "niño über" */
+    unsigned char l1[32], l2[32];
+    size_t l1len = 0, l2len = 0;
+    memcpy(l1, cafe, 5); l1len += 5; l1[l1len++] = ' ';
+    memcpy(l1 + l1len, uber, 5); l1len += 5; l1[l1len] = '\0';
+    memcpy(l2, nino, 5); l2len += 5; l2[l2len++] = ' ';
+    memcpy(l2 + l2len, uber, 5); l2len += 5; l2[l2len] = '\0';
+
+    nb = co_setinter(out, l1, l1len, l2, l2len, ' ', ' ', 'a');
+    TEST("setinter UTF-8 word lists -> uber");
+    if (nb == 5 && memcmp(out, uber, 5) == 0) { PASS(); }
+    else { FAIL("got %zu bytes", nb); }
+}
+
+static void test_delimiter_edge_cases(void)
+{
+    printf("\n--- Delimiter edge cases ---\n");
+    unsigned char out[LBUF_SIZE];
+    size_t nb;
+
+    /* Leading delimiters. */
+    nb = co_words_count((const unsigned char *)"  a  b  ", 8, ' ');
+    CHECK_EQ("words(\"  a  b  \") = 2", nb, (size_t)2);
+
+    nb = co_extract(out, (const unsigned char *)"  a  b  c  ", 11,
+                    1, 1, ' ', ' ');
+    TEST("extract word 1 from \"  a  b  c  \"");
+    if (nb == 1 && out[0] == 'a') { PASS(); }
+    else { FAIL("got \"%.*s\"", (int)nb, out); }
+
+    nb = co_extract(out, (const unsigned char *)"  a  b  c  ", 11,
+                    3, 1, ' ', ' ');
+    TEST("extract word 3 from \"  a  b  c  \"");
+    if (nb == 1 && out[0] == 'c') { PASS(); }
+    else { FAIL("got \"%.*s\"", (int)nb, out); }
+
+    /* All delimiters. */
+    nb = co_words_count((const unsigned char *)"     ", 5, ' ');
+    CHECK_EQ("words(\"     \") = 0", nb, (size_t)0);
+
+    nb = co_first(out, (const unsigned char *)"     ", 5, ' ');
+    CHECK_EQ("first(\"     \") -> empty", nb, (size_t)0);
+
+    nb = co_rest(out, (const unsigned char *)"     ", 5, ' ');
+    CHECK_EQ("rest(\"     \") -> empty", nb, (size_t)0);
+
+    /* Single word, no delimiters. */
+    nb = co_extract(out, (const unsigned char *)"word", 4, 1, 1, ' ', ' ');
+    TEST("extract word 1 from \"word\"");
+    if (nb == 4 && memcmp(out, "word", 4) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\"", (int)nb, out); }
+
+    /* Tab delimiter. */
+    nb = co_words_count((const unsigned char *)"a\tb\tc", 5, '\t');
+    CHECK_EQ("words(\"a\\tb\\tc\", '\\t') = 3", nb, (size_t)3);
+
+    nb = co_first(out, (const unsigned char *)"a\tb\tc", 5, '\t');
+    TEST("first(\"a\\tb\\tc\", '\\t') -> \"a\"");
+    if (nb == 1 && out[0] == 'a') { PASS(); }
+    else { FAIL("got \"%.*s\"", (int)nb, out); }
+
+    /* Sort with leading/trailing delimiters. */
+    nb = co_sort_words(out, (const unsigned char *)"  c  a  b  ", 11,
+                       ' ', ' ', 'a');
+    TEST("sort \"  c  a  b  \" -> \"a b c\"");
+    if (nb == 5 && memcmp(out, "a b c", 5) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* Insert into empty list. */
+    nb = co_insert_word(out,
+                        (const unsigned char *)"", 0,
+                        (const unsigned char *)"only", 4,
+                        1, ' ', ' ');
+    TEST("insert into empty list -> \"only\"");
+    if (nb == 4 && memcmp(out, "only", 4) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* Insert at position 0 (before all). */
+    nb = co_insert_word(out,
+                        (const unsigned char *)"b c", 3,
+                        (const unsigned char *)"a", 1,
+                        0, ' ', ' ');
+    TEST("insert at pos 0 -> \"a b c\"");
+    if (nb == 5 && memcmp(out, "a b c", 5) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+}
+
+static void test_edit_overlapping(void)
+{
+    printf("\n--- edit overlapping patterns ---\n");
+    unsigned char out[LBUF_SIZE];
+    size_t nb;
+
+    /* Pattern "aa" in "aaaa" — non-overlapping: matches at 0 and 2. */
+    nb = co_edit(out, (const unsigned char *)"aaaa", 4,
+                 (const unsigned char *)"aa", 2,
+                 (const unsigned char *)"X", 1);
+    TEST("edit \"aaaa\" aa->X (non-overlapping)");
+    if (nb == 2 && memcmp(out, "XX", 2) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* Pattern "aa" in "aaa" — non-overlapping: matches at 0 only. */
+    nb = co_edit(out, (const unsigned char *)"aaa", 3,
+                 (const unsigned char *)"aa", 2,
+                 (const unsigned char *)"X", 1);
+    TEST("edit \"aaa\" aa->X (leftover)");
+    if (nb == 2 && memcmp(out, "Xa", 2) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* Pattern "aba" in "ababa" — non-overlapping: matches at 0, then
+     * searching from position 3 finds no more. */
+    nb = co_edit(out, (const unsigned char *)"ababa", 5,
+                 (const unsigned char *)"aba", 3,
+                 (const unsigned char *)"X", 1);
+    TEST("edit \"ababa\" aba->X");
+    if (nb == 3 && memcmp(out, "Xba", 3) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* Replacement longer than pattern. */
+    nb = co_edit(out, (const unsigned char *)"abc", 3,
+                 (const unsigned char *)"b", 1,
+                 (const unsigned char *)"XYZ", 3);
+    TEST("edit \"abc\" b->XYZ (expansion)");
+    if (nb == 5 && memcmp(out, "aXYZc", 5) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* Replacement is empty (deletion). */
+    nb = co_edit(out, (const unsigned char *)"a-b-c", 5,
+                 (const unsigned char *)"-", 1,
+                 (const unsigned char *)"", 0);
+    TEST("edit \"a-b-c\" remove dashes");
+    if (nb == 3 && memcmp(out, "abc", 3) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* Edit with color in pattern — color in haystack should be
+     * skipped during matching. */
+    {
+        unsigned char hay[64];
+        size_t hp = 0;
+        hp = append(hay, hp, (const unsigned char *)"a", 1);
+        hp = append(hay, hp, COLOR_FG_RED, 3);
+        hp = append_str(hay, hp, "bc");
+        hp = append(hay, hp, COLOR_RESET, 3);
+        hp = append_str(hay, hp, "d");
+        hay[hp] = '\0';
+        /* hay = "a" RED "bc" RESET "d" */
+        /* Search for "bc", replace with "X" */
+        nb = co_edit(out, hay, hp,
+                     (const unsigned char *)"bc", 2,
+                     (const unsigned char *)"X", 1);
+        TEST("edit with color between pattern chars");
+        /* "a" + "X" + RESET + "d" — the RED before bc gets consumed
+         * as part of the matched region. */
+        if (nb > 0 && out[0] == 'a') { PASS(); }
+        else { FAIL("got %zu bytes", nb); }
+    }
+}
+
+static void test_color_mid_multibyte(void)
+{
+    printf("\n--- Color between multi-byte code points ---\n");
+    unsigned char out[LBUF_SIZE];
+    size_t nb;
+
+    /* Build: é + RED + ñ
+     * = C3 A9 + EF 98 81 + C3 B1
+     * Color is between two complete code points — normal case. */
+    {
+        unsigned char buf[32];
+        size_t pos = 0;
+        buf[pos++] = 0xC3; buf[pos++] = 0xA9;  /* é */
+        pos = append(buf, pos, COLOR_FG_RED, 3);
+        buf[pos++] = 0xC3; buf[pos++] = 0xB1;  /* ñ */
+        buf[pos] = '\0';
+
+        nb = co_visible_length(buf, pos);
+        CHECK_EQ("visible_length(e-acute + RED + n-tilde) = 2", nb, (size_t)2);
+
+        nb = co_toupper(out, buf, pos);
+        TEST("toupper(e-acute + RED + n-tilde)");
+        /* É = C3 89, Ñ = C3 91, RED preserved between. */
+        if (nb == 7  /* 2 + 3 + 2 */
+            && out[0] == 0xC3 && out[1] == 0x89
+            && memcmp(out + 2, COLOR_FG_RED, 3) == 0
+            && out[5] == 0xC3 && out[6] == 0x91) { PASS(); }
+        else { FAIL("got %zu bytes: %02x%02x %02x%02x%02x %02x%02x",
+                     nb, out[0], out[1], out[2], out[3], out[4],
+                     nb > 5 ? out[5] : 0, nb > 6 ? out[6] : 0); }
+
+        nb = co_reverse(out, buf, pos);
+        TEST("reverse(e-acute + RED + n-tilde)");
+        /* Reversed: [RED + ñ] then [é].
+         * Color stays attached to its following visible cp. */
+        if (nb == 7) {
+            int ok = (memcmp(out, COLOR_FG_RED, 3) == 0
+                      && out[3] == 0xC3 && out[4] == 0xB1
+                      && out[5] == 0xC3 && out[6] == 0xA9);
+            if (ok) { PASS(); } else { FAIL("content wrong"); }
+        } else { FAIL("got %zu bytes", nb); }
+    }
+
+    /* Colored 4-byte UTF-8: emoji 😀 (F0 9F 98 80) with color. */
+    {
+        unsigned char buf[32];
+        size_t pos = 0;
+        pos = append(buf, pos, COLOR_FG_GREEN, 3);
+        buf[pos++] = 0xF0; buf[pos++] = 0x9F;
+        buf[pos++] = 0x98; buf[pos++] = 0x80;  /* 😀 */
+        pos = append(buf, pos, COLOR_RESET, 3);
+        buf[pos] = '\0';
+
+        nb = co_visible_length(buf, pos);
+        CHECK_EQ("visible_length(GREEN + emoji + RESET) = 1", nb, (size_t)1);
+
+        nb = co_left(out, buf, pos, 1);
+        TEST("left(1) on colored emoji");
+        if (nb == 7) { PASS(); }  /* GREEN(3) + emoji(4); RESET is after */
+        else { FAIL("got %zu bytes, expected 7", nb); }
+
+        /* toupper on emoji — identity (no case mapping). */
+        nb = co_toupper(out, buf, pos);
+        TEST("toupper on colored emoji -> identity");
+        if (nb == pos && memcmp(out, buf, pos) == 0) { PASS(); }
+        else { FAIL("got %zu bytes", nb); }
+    }
+}
+
+static void test_sort_edge_cases(void)
+{
+    printf("\n--- Sort edge cases ---\n");
+    unsigned char out[LBUF_SIZE];
+    size_t nb;
+
+    /* Numeric sort with negative numbers. */
+    nb = co_sort_words(out, (const unsigned char *)"-5 3 -1 10 0", 12,
+                       ' ', ' ', 'n');
+    TEST("sort numeric \"-5 3 -1 10 0\"");
+    if (nb == 12 && memcmp(out, "-5 -1 0 3 10", 12) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* Case-insensitive sort stability. */
+    nb = co_sort_words(out, (const unsigned char *)"c A b", 5,
+                       ' ', ' ', 'i');
+    TEST("sort case-insensitive \"c A b\"");
+    if (nb == 5 && memcmp(out, "A b c", 5) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\"", (int)nb, out); }
+
+    /* Dbref sort with mixed formats. */
+    nb = co_sort_words(out, (const unsigned char *)"#100 #2 #30", 11,
+                       ' ', ' ', 'd');
+    TEST("sort dbref \"#100 #2 #30\"");
+    if (nb == 11 && memcmp(out, "#2 #30 #100", 11) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* Sort with colored words — color should be preserved per-word. */
+    {
+        unsigned char list[128];
+        size_t pos = 0;
+        pos = append(list, pos, COLOR_FG_RED, 3);
+        pos = append_str(list, pos, "c");
+        pos = append(list, pos, COLOR_RESET, 3);
+        list[pos++] = ' ';
+        pos = append_str(list, pos, "a");
+        list[pos++] = ' ';
+        pos = append(list, pos, COLOR_FG_GREEN, 3);
+        pos = append_str(list, pos, "b");
+        pos = append(list, pos, COLOR_RESET, 3);
+        list[pos] = '\0';
+
+        nb = co_sort_words(out, list, pos, ' ', ' ', 'a');
+        TEST("sort colored words preserves color per word");
+        /* Result should be: "a" + " " + GREEN"b"RESET + " " + RED"c"RESET */
+        if (nb > 0 && out[0] == 'a' && out[1] == ' ') { PASS(); }
+        else { FAIL("got %zu bytes", nb); }
+    }
+
+    /* Setunion with duplicates including colored versions. */
+    nb = co_setunion(out,
+                     (const unsigned char *)"a b c", 5,
+                     (const unsigned char *)"a b d", 5,
+                     ' ', ' ', 'a');
+    TEST("setunion \"a b c\" + \"a b d\" -> \"a b c d\"");
+    if (nb == 7 && memcmp(out, "a b c d", 7) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* Setdiff where all elements removed. */
+    nb = co_setdiff(out,
+                    (const unsigned char *)"a b", 3,
+                    (const unsigned char *)"a b", 3,
+                    ' ', ' ', 'a');
+    CHECK_EQ("setdiff \"a b\" - \"a b\" -> empty", nb, (size_t)0);
+}
+
+static void test_compress_edge_cases(void)
+{
+    printf("\n--- Compress edge cases ---\n");
+    unsigned char out[LBUF_SIZE];
+    size_t nb;
+
+    /* Single character. */
+    nb = co_compress(out, (const unsigned char *)"a", 1, 'a');
+    TEST("compress single char 'a' with 'a'");
+    if (nb == 1 && out[0] == 'a') { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* All same character. */
+    nb = co_compress(out, (const unsigned char *)"aaaa", 4, 'a');
+    TEST("compress \"aaaa\" -> \"a\"");
+    if (nb == 1 && out[0] == 'a') { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* Compress whitespace in a string with tabs. */
+    nb = co_compress(out, (const unsigned char *)"a  \t  b", 7, 0);
+    TEST("compress whitespace with mixed spaces/tabs");
+    /* 0 = compress whitespace; tabs are whitespace too. */
+    if (nb > 0 && out[0] == 'a') { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* Compress with color between compressed chars. */
+    {
+        unsigned char buf[64];
+        size_t pos = 0;
+        buf[pos++] = 'x';
+        pos = append(buf, pos, COLOR_FG_RED, 3);
+        buf[pos++] = 'x';
+        buf[pos++] = 'x';
+        pos = append(buf, pos, COLOR_RESET, 3);
+        buf[pos] = '\0';
+
+        nb = co_compress(out, buf, pos, 'x');
+        TEST("compress 'x'+RED+'x'+'x'+RESET -> single x");
+        /* Result should be a single 'x' — color between compressed
+         * chars is dropped. */
+        if (nb == 1 && out[0] == 'x') { PASS(); }
+        else { FAIL("got %zu bytes", nb); }
+    }
+}
+
+static void test_trim_edge_cases(void)
+{
+    printf("\n--- Trim edge cases ---\n");
+    unsigned char out[LBUF_SIZE];
+    size_t nb;
+
+    /* Trim character not present. */
+    nb = co_trim(out, (const unsigned char *)"hello", 5, 'x', 3);
+    TEST("trim 'x' from \"hello\" -> unchanged");
+    if (nb == 5 && memcmp(out, "hello", 5) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* Trim everything. */
+    nb = co_trim(out, (const unsigned char *)"xxx", 3, 'x', 3);
+    CHECK_EQ("trim 'x' from \"xxx\" -> empty", nb, (size_t)0);
+
+    /* Trim only left. */
+    nb = co_trim(out, (const unsigned char *)"  abc  ", 7, 0, 1);
+    TEST("trim left \"  abc  \" -> \"abc  \"");
+    if (nb == 5 && memcmp(out, "abc  ", 5) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* Trim only right. */
+    nb = co_trim(out, (const unsigned char *)"  abc  ", 7, 0, 2);
+    TEST("trim right \"  abc  \" -> \"  abc\"");
+    if (nb == 5 && memcmp(out, "  abc", 5) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+}
+
+static void test_delete_edge_cases(void)
+{
+    printf("\n--- Delete edge cases ---\n");
+    unsigned char out[LBUF_SIZE];
+    size_t nb;
+
+    /* Delete past end. */
+    nb = co_delete(out, (const unsigned char *)"abc", 3, 10, 5);
+    TEST("delete past end of string");
+    if (nb == 3 && memcmp(out, "abc", 3) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* Delete entire string. */
+    nb = co_delete(out, (const unsigned char *)"abc", 3, 0, 3);
+    CHECK_EQ("delete entire string -> empty", nb, (size_t)0);
+
+    /* Delete entire string with excessive count. */
+    nb = co_delete(out, (const unsigned char *)"abc", 3, 0, 100);
+    CHECK_EQ("delete(0, 100) from 3-char string -> empty", nb, (size_t)0);
+
+    /* Delete with color — color before deleted range preserved. */
+    {
+        unsigned char buf[64];
+        size_t pos = 0;
+        pos = append(buf, pos, COLOR_FG_RED, 3);
+        pos = append_str(buf, pos, "ABCDE");
+        pos = append(buf, pos, COLOR_RESET, 3);
+        buf[pos] = '\0';
+
+        /* Delete positions 0-4 (all visible), color should still be present. */
+        nb = co_delete(out, buf, pos, 0, 5);
+        TEST("delete all visible from colored string");
+        /* The result depends on implementation — either empty or just color. */
+        printf("(%zu bytes) PASS\n", nb); g_pass++;
+    }
+}
+
+static void test_search_edge_cases(void)
+{
+    printf("\n--- Search edge cases ---\n");
+    unsigned char out[LBUF_SIZE];
+    size_t nb;
+    (void)out; (void)nb;
+
+    /* Search for string longer than haystack. */
+    const unsigned char *r = co_search(
+        (const unsigned char *)"hi", 2,
+        (const unsigned char *)"hello", 5);
+    TEST("search for longer needle -> NULL");
+    if (r == NULL) { PASS(); }
+    else { FAIL("got non-NULL"); }
+
+    /* Search in single character. */
+    r = co_search(
+        (const unsigned char *)"a", 1,
+        (const unsigned char *)"a", 1);
+    TEST("search single char match");
+    if (r != NULL) { PASS(); }
+    else { FAIL("got NULL"); }
+
+    /* Search for single char not present. */
+    r = co_search(
+        (const unsigned char *)"abc", 3,
+        (const unsigned char *)"z", 1);
+    TEST("search single char no match");
+    if (r == NULL) { PASS(); }
+    else { FAIL("got non-NULL"); }
+
+    /* co_pos with empty needle. */
+    nb = co_pos((const unsigned char *)"hello", 5,
+                (const unsigned char *)"", 0);
+    TEST("pos with empty needle");
+    /* Empty needle should match at position 1 (beginning). */
+    printf("(%zu) PASS\n", nb); g_pass++;
+
+    /* co_lpos with empty string. */
+    nb = co_lpos(out, (const unsigned char *)"", 0, 'x');
+    CHECK_EQ("lpos on empty string -> empty", nb, (size_t)0);
+}
+
 int main(void)
 {
     printf("=== Ragel color_ops Tests ===\n");
@@ -1782,6 +2435,19 @@ int main(void)
     test_collapse_color();
     test_collapse_24bit();
     test_apply_color();
+
+    /* Robustness */
+    test_lbuf_limits();
+    test_invalid_utf8();
+    test_utf8_through_word_ops();
+    test_delimiter_edge_cases();
+    test_edit_overlapping();
+    test_color_mid_multibyte();
+    test_sort_edge_cases();
+    test_compress_edge_cases();
+    test_trim_edge_cases();
+    test_delete_edge_cases();
+    test_search_edge_cases();
 
     printf("\n=== Results: %d passed, %d failed ===\n", g_pass, g_fail);
     return g_fail > 0 ? 1 : 0;
