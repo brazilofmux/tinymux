@@ -621,8 +621,8 @@ char *rv64_before(char *out, const char **fargs, int nfargs) {
         p++;
     }
 
-    /* Pattern not found — return empty. */
-    out[0] = '\0';
+    /* Pattern not found — return the entire string (matching MUX). */
+    rv64_scopy(out, str);
     return out;
 }
 

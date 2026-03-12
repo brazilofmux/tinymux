@@ -84,7 +84,10 @@ static struct {
 //
 static const struct { const char *mux_name; const char *blob_name; } s_tier2_map[] = {
     { "CAT",         "rv64_cat" },
-    { "STRLEN",      "rv64_strlen" },
+    // strlen: native strips ANSI and counts UTF-8 clusters; Tier 2 counts
+    // raw bytes.  Must use ECALL for correct behavior.
+    //
+    // { "STRLEN",      "rv64_strlen" },
     { "STRCAT",      "rv64_strcat" },
     { "EXTRACT",     "rv64_extract" },
     { "WORDS",       "rv64_words" },
@@ -97,9 +100,13 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "TRIM",        "rv64_trim" },
     { "BEFORE",      "rv64_before" },
     { "AFTER",       "rv64_after" },
-    { "LDELETE",     "rv64_ldelete" },
-    { "REPLACE",     "rv64_replace" },
-    { "INSERT",      "rv64_insert" },
+    // ldelete/replace/insert: native supports multi-position lists and
+    // negative indices; Tier 2 handles single positive int only.  Fall
+    // back to ECALL for correctness.  Can revisit with full support later.
+    //
+    // { "LDELETE",     "rv64_ldelete" },
+    // { "REPLACE",     "rv64_replace" },
+    // { "INSERT",      "rv64_insert" },
     { nullptr, nullptr }
 };
 
