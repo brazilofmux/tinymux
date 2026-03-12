@@ -180,3 +180,66 @@ char *rv64_extract(char *out, const char **fargs, int nfargs) {
     *op = '\0';
     return out;
 }
+
+/* ---------------------------------------------------------------
+ * words(list, delim) — count words in a list.
+ *
+ * Equivalent to MUX words(): count delimiter-separated tokens.
+ * Delimiter defaults to space if empty or missing.  Leading
+ * delimiters are skipped (matching MUX trim_space_sep behavior).
+ * --------------------------------------------------------------- */
+
+char *rv64_words(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1 || fargs[0][0] == '\0') {
+        out[0] = '0';
+        out[1] = '\0';
+        return out;
+    }
+
+    char delim = ' ';
+    if (nfargs >= 2 && fargs[1][0] != '\0') {
+        delim = fargs[1][0];
+    }
+
+    const char *p = fargs[0];
+
+    /* Skip leading delimiters (trim_space_sep). */
+    while (*p == delim) p++;
+    if (*p == '\0') {
+        out[0] = '0';
+        out[1] = '\0';
+        return out;
+    }
+
+    int n = 1;
+    if (delim == ' ') {
+        /* Space delimiter: skip runs of consecutive spaces. */
+        while (*p) {
+            if (*p == ' ') {
+                n++;
+                while (p[1] == ' ') p++;
+            }
+            p++;
+        }
+    } else {
+        /* Non-space delimiter: each delimiter counts. */
+        while (*p) {
+            if (*p == delim) n++;
+            p++;
+        }
+    }
+
+    /* itoa into output buffer. */
+    char buf[20];
+    int pos = 0;
+    int val = n;
+    while (val > 0) {
+        buf[pos++] = '0' + (val % 10);
+        val /= 10;
+    }
+    for (int i = 0; i < pos; i++) {
+        out[i] = buf[pos - 1 - i];
+    }
+    out[pos] = '\0';
+    return out;
+}

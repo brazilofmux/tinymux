@@ -86,6 +86,7 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "STRLEN",  "rv64_strlen" },
     { "STRCAT",  "rv64_strcat" },
     { "EXTRACT", "rv64_extract" },
+    { "WORDS",   "rv64_words" },
     { nullptr, nullptr }
 };
 
@@ -1756,12 +1757,18 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
             osep_val = h.emit_sconst(addr, " ");
         }
 
-        // Count elements: nwords = ECALL WORDS(list, delim).
+        // Count elements: nwords = WORDS(list, delim) — Tier 2 if available.
         int words_idx = engine_api_lookup("WORDS");
         int wargs[2] = { list_val, delim_val };
         int nwords_str = h.emit_call(TY_STRING, words_idx, wargs, 2);
         h.known_int[nwords_str] = true;
-        h.ecalls++;
+        uint64_t t2words = tier2_lookup("WORDS");
+        if (t2words) {
+            h.tier2_addr[nwords_str] = t2words;
+            h.tier2_calls++;
+        } else {
+            h.ecalls++;
+        }
         int nwords_int = h.emit(HIR_ATOI, TY_INT, nwords_str);
 
         // Initialize loop state.
@@ -1855,7 +1862,11 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         int cargs[3] = { acc, osep_val, body_val };
         int new_acc = h.emit_strcat(cargs, 3);
         if (new_acc >= 0) h.func_idx[new_acc] = strcat_idx;
-        h.ecalls++;
+        if (tier2_lookup("STRCAT")) {
+            h.tier2_calls++;
+        } else {
+            h.ecalls++;
+        }
         h.emit(HIR_STORE_Q, TY_VOID, new_acc, -1, QREG_ITER_ACC);
         h.emit(HIR_BR, TY_VOID, -1, -1, latch_block);
         h.add_edge(cat_block, latch_block);
