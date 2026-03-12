@@ -4891,7 +4891,17 @@
 >301
 "@log smoke=BENCH036:[rvbench(iter(1 2 3 4 5, add(##\\,1)),10000)]"
 >302
-"@log smoke=BENCH037:[rvbench(iter(a b c d e f g h i j, X),10000)];@trig me/tr.done"
+"@log smoke=BENCH037:[rvbench(iter(a b c d e f g h i j, X),10000)]"
+>303
+"@log smoke=BENCH038:[rvbench(iter(a b c, X),10000)]"
+>304
+"@log smoke=BENCH039:[rvbench(iter(a b c d e f g h i j k l m n o, X),10000)]"
+>305
+"@log smoke=BENCH040:[rvbench(iter(a b c d e f g h i j k l m n o p q r s t, X),10000)]"
+>306
+"@log smoke=BENCH041:[rvbench(iter(aa bb cc dd ee ff gg hh ii jj, X),10000)]"
+>307
+"@log smoke=BENCH042:[rvbench(iter(a b c d e f g, X),10000)];@trig me/tr.done"
 <
 !149
 "test_rvcall_fn"

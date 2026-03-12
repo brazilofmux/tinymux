@@ -118,6 +118,10 @@ struct dbt_state_t {
     uint64_t chain_hits;
     uint64_t chain_misses;
     uint64_t insns_fused;
+    uint64_t dispatch_count;     // dispatch loop iterations per dbt_run
+    uint64_t superblock_count;   // blocks with self-loop detected
+    uint64_t side_exits_total;   // total side exits across all superblocks
+    uint64_t inline_calls;       // Tier 2 calls inlined via native CALL
 
     // ECALL callback — same signature as the interpreter.
     // Return >= 0 to exit, < 0 to continue.
@@ -138,6 +142,7 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
                int (*ecall_fn)(rv64_ctx_t *, void *), void *ecall_user);
 void dbt_rerun(dbt_state_t *dbt,
                int (*ecall_fn)(rv64_ctx_t *, void *), void *ecall_user);
+void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc);
 int  dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top);
 void dbt_cleanup(dbt_state_t *dbt);
 

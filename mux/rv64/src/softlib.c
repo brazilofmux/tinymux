@@ -40,6 +40,31 @@ static char *scopy(char *dst, const char *src) {
 }
 
 /* ---------------------------------------------------------------
+ * Helper: inline itoa, writes decimal to buf, returns length.
+ * --------------------------------------------------------------- */
+
+static int sitoa(char *buf, int val) {
+    if (val == 0) {
+        buf[0] = '0';
+        buf[1] = '\0';
+        return 1;
+    }
+    int neg = 0;
+    if (val < 0) { neg = 1; val = -val; }
+    char tmp[20];
+    int pos = 0;
+    while (val > 0) {
+        tmp[pos++] = '0' + (val % 10);
+        val /= 10;
+    }
+    char *p = buf;
+    if (neg) *p++ = '-';
+    for (int i = pos - 1; i >= 0; i--) *p++ = tmp[i];
+    *p = '\0';
+    return (int)(p - buf);
+}
+
+/* ---------------------------------------------------------------
  * cat(s1, s2, ..., sN) — concatenate with space separators.
  *
  * Equivalent to MUX cat(): join all arguments with single spaces.
@@ -66,26 +91,7 @@ char *rv64_strlen(char *out, const char **fargs, int nfargs) {
     if (nfargs >= 1) {
         len = slen(fargs[0]);
     }
-
-    /* itoa: write decimal digits. */
-    if (len == 0) {
-        out[0] = '0';
-        out[1] = '\0';
-        return out;
-    }
-
-    char buf[20];
-    int pos = 0;
-    int val = len;
-    while (val > 0) {
-        buf[pos++] = '0' + (val % 10);
-        val /= 10;
-    }
-    /* Reverse into output. */
-    for (int i = 0; i < pos; i++) {
-        out[i] = buf[pos - 1 - i];
-    }
-    out[pos] = '\0';
+    sitoa(out, len);
     return out;
 }
 
@@ -229,17 +235,61 @@ char *rv64_words(char *out, const char **fargs, int nfargs) {
         }
     }
 
-    /* itoa into output buffer. */
-    char buf[20];
-    int pos = 0;
-    int val = n;
-    while (val > 0) {
-        buf[pos++] = '0' + (val % 10);
-        val /= 10;
+    sitoa(out, n);
+    return out;
+}
+
+/* ---------------------------------------------------------------
+ * split_token(list, offset_str, delim, cursor_out) — extract one token.
+ *
+ * Splits the list starting at byte offset (given as decimal string).
+ * Writes the extracted token to out.  Writes the new byte offset
+ * (past the delimiter) as a decimal string to fargs[3] (cursor_out).
+ *
+ * For space delimiters, skips runs of consecutive spaces (matching
+ * MUX trim_space_sep / next_token behavior).
+ *
+ * Returns: out (token).
+ * --------------------------------------------------------------- */
+
+char *rv64_split_token(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 4) {
+        out[0] = '\0';
+        return out;
     }
-    for (int i = 0; i < pos; i++) {
-        out[i] = buf[pos - 1 - i];
+
+    const char *list = fargs[0];
+    int offset = satoi(fargs[1]);
+    char delim = ' ';
+    if (fargs[2][0] != '\0') {
+        delim = fargs[2][0];
     }
-    out[pos] = '\0';
+
+    const char *p = list + offset;
+
+    /* Skip leading delimiters for space (matching trim_space_sep). */
+    if (delim == ' ') {
+        while (*p == ' ') p++;
+    }
+
+    /* Copy token until delimiter or end of string. */
+    char *op = out;
+    while (*p && *p != delim) {
+        *op++ = *p++;
+    }
+    *op = '\0';
+
+    /* Advance past delimiter. */
+    if (*p == delim) {
+        p++;
+        /* For space, skip consecutive delimiters. */
+        if (delim == ' ') {
+            while (*p == ' ') p++;
+        }
+    }
+    int new_offset = (int)(p - list);
+
+    /* Write new cursor offset to fargs[3] (writable output buffer). */
+    sitoa((char *)fargs[3], new_offset);
     return out;
 }

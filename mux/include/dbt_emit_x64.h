@@ -734,6 +734,24 @@ static inline void emit_call_rax(emit_t *e) {
     emit_byte(e, 0xD0);
 }
 
+// call rel32 (placeholder — patch later, same as jmp rel32 but opcode E8)
+static inline uint32_t emit_call_rel32(emit_t *e) {
+    emit_byte(e, 0xE8);
+    uint32_t patch = emit_pos(e);
+    emit_u32(e, 0);
+    return patch;
+}
+
+// cmp qword [rbx + disp32], sign-extended imm32
+// Used for checking ctx fields against known constants.
+static inline void emit_cmp_ctx_imm32(emit_t *e, int ctx_offset, int32_t imm) {
+    emit_byte(e, rex(1, 0, 0, 0));      // REX.W
+    emit_byte(e, 0x81);                  // CMP r/m64, imm32
+    emit_byte(e, modrm(0x02, 7, X64_RBX)); // /7 = CMP, [rbx + disp32]
+    emit_u32(e, static_cast<uint32_t>(ctx_offset));
+    emit_u32(e, static_cast<uint32_t>(imm));
+}
+
 // ---------------------------------------------------------------
 // Block exit helpers
 // ---------------------------------------------------------------

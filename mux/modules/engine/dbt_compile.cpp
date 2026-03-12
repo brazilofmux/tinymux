@@ -83,11 +83,12 @@ static struct {
 // The blob uses rv64_ prefixed names; MUX uses plain uppercase.
 //
 static const struct { const char *mux_name; const char *blob_name; } s_tier2_map[] = {
-    { "CAT",     "rv64_cat" },
-    { "STRLEN",  "rv64_strlen" },
-    { "STRCAT",  "rv64_strcat" },
-    { "EXTRACT", "rv64_extract" },
-    { "WORDS",   "rv64_words" },
+    { "CAT",         "rv64_cat" },
+    { "STRLEN",      "rv64_strlen" },
+    { "STRCAT",      "rv64_strcat" },
+    { "EXTRACT",     "rv64_extract" },
+    { "WORDS",       "rv64_words" },
+    { "SPLIT_TOKEN", "rv64_split_token" },
     { nullptr, nullptr }
 };
 
@@ -164,6 +165,17 @@ static uint64_t tier2_lookup(const std::string &mux_name) {
     auto it = s_tier2.funcs.find(mux_name);
     if (it != s_tier2.funcs.end()) return it->second.guest_addr;
     return 0;
+}
+
+// Pre-translate all Tier 2 blob entry points so that superblocks
+// can use native CALL continuation for Tier 2 function calls.
+// Called after dbt_init/dbt_reset, before dbt_run.
+//
+static void pretranslate_tier2(dbt_state_t *dbt) {
+    if (!s_tier2.loaded) return;
+    for (auto &kv : s_tier2.funcs) {
+        dbt_pretranslate(dbt, kv.second.guest_addr);
+    }
 }
 
 // Copy blob code into a program's guest memory.
@@ -1146,8 +1158,9 @@ static void qreg_init() {
 // Internal Q register indices for iter() loop state.
 // These are promoted to PHI nodes by SSA construction.
 //
-static constexpr int QREG_ITER_INUM = 10;  // iteration counter (0-based, TY_INT)
-static constexpr int QREG_ITER_ACC  = 11;  // accumulated result string
+static constexpr int QREG_ITER_INUM   = 10;  // iteration counter (0-based, TY_INT)
+static constexpr int QREG_ITER_ACC    = 11;  // accumulated result string
+static constexpr int QREG_ITER_CURSOR = 12;  // byte offset into list (TY_STRING)
 
 // Iter context: set during body lowering so AST_SUBST nodes (## / #@)
 // resolve to the current element and 1-based index.
@@ -1789,6 +1802,11 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         }
         int nwords_int = h.emit(HIR_ATOI, TY_INT, nwords_str);
 
+        // Allocate a fixed cursor buffer in the output region.
+        // Cleared to 0x00 before each run; satoi("") returns 0
+        // which is the correct initial offset.
+        uint64_t cursor_addr = rc.alloc_output();
+
         // Initialize loop state.
         int inum_init = h.emit_iconst(0);
         h.emit(HIR_STORE_Q, TY_VOID, inum_init, -1, QREG_ITER_INUM);
@@ -1816,27 +1834,42 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         h.add_edge(header_block, body_block);
         h.add_edge(header_block, exit_block);
 
-        // Body: extract element, set iter context, lower body.
+        // Body: split_token or extract element, set iter context, lower body.
         h.cur_block = body_block;
 
-        // inum_1based = inum + 1 (for EXTRACT and #@).
+        // inum_1based for #@ resolution in body.
         int one_int = h.emit_iconst(1);
         int inum_1based = h.emit(HIR_ADD, TY_INT, inum, one_int);
-        int inum_1str = h.emit(HIR_ITOA, TY_STRING, inum_1based);
         h.native_ops++;
 
-        // EXTRACT(list, inum_1based, 1, delim) — Tier 2 if available.
-        int extract_idx = engine_api_lookup("EXTRACT");
-        uint64_t one_addr = rc.pool_str("1");
-        int one_str = h.emit_sconst(one_addr, "1");
-        int eargs[4] = { list_val, inum_1str, one_str, delim_val };
-        int elem = h.emit_call(TY_STRING, extract_idx, eargs, 4);
-        uint64_t t2ext = tier2_lookup("EXTRACT");
-        if (t2ext) {
-            h.tier2_addr[elem] = t2ext;
+        // Element extraction: use SPLIT_TOKEN (O(n) cursor) if available,
+        // else fall back to EXTRACT (O(n²) re-scan).
+        uint64_t t2split = tier2_lookup("SPLIT_TOKEN");
+        int elem;
+        if (t2split) {
+            // SPLIT_TOKEN(list, cursor, delim, cursor) — reads cursor,
+            // writes new cursor back to same buffer.  cursor_addr is a
+            // fixed output slot cleared to 0x00 before each run.
+            int cursor_val = h.emit_sconst(cursor_addr, "");
+            int stargs[4] = { list_val, cursor_val, delim_val, cursor_val };
+            elem = h.emit_call(TY_STRING, 0, stargs, 4);
+            h.tier2_addr[elem] = t2split;
             h.tier2_calls++;
         } else {
-            h.ecalls++;
+            // Fallback: EXTRACT(list, inum+1, 1, delim).
+            int inum_1str = h.emit(HIR_ITOA, TY_STRING, inum_1based);
+            int extract_idx = engine_api_lookup("EXTRACT");
+            uint64_t one_addr = rc.pool_str("1");
+            int one_str = h.emit_sconst(one_addr, "1");
+            int eargs[4] = { list_val, inum_1str, one_str, delim_val };
+            elem = h.emit_call(TY_STRING, extract_idx, eargs, 4);
+            uint64_t t2ext = tier2_lookup("EXTRACT");
+            if (t2ext) {
+                h.tier2_addr[elem] = t2ext;
+                h.tier2_calls++;
+            } else {
+                h.ecalls++;
+            }
         }
 
         // Set iter context for ## and #@ resolution in body.
@@ -3179,6 +3212,7 @@ struct compiled_program {
     std::vector<uint8_t> memory;
     size_t memory_size;
     uint64_t out_addr;      // where the final result lives
+    uint64_t out_used;      // bytes of output region actually allocated
     bool ok;
     int folds;
     int ecalls;
@@ -3214,6 +3248,7 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
 
     compiled_program prog;
     prog.ok = false;
+    prog.out_used = 0;
     prog.folds = 0;
     prog.ecalls = 0;
     prog.tier2_calls = 0;
@@ -3260,6 +3295,7 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
     prog.memory = std::move(rc.memory);
     prog.memory_size = rv_compiler::MEM_SIZE;
     prog.out_addr = rc.final_out;
+    prog.out_used = rc.out_pool - rv_compiler::OUT_BASE;
     prog.ok = true;
     prog.folds = h.folds;
     prog.ecalls = h.ecalls;
@@ -3369,6 +3405,7 @@ static compiled_program reconstruct_from_cache(
     tier2_install(prog.memory, rv_compiler::BLOB_BASE);
     prog.memory_size = rv_compiler::MEM_SIZE;
     prog.out_addr = static_cast<uint64_t>(rec.out_addr);
+    prog.out_used = rv_compiler::OUT_LIMIT - rv_compiler::OUT_BASE;  // conservative
     prog.ok = true;
     prog.needs_jit = rec.needs_jit != 0;
     prog.folds = rec.folds;
@@ -3494,6 +3531,7 @@ static bool run_cached_program(compiled_program *prog,
                        eval_ecall, &ec);
         if (!dbt) return false;
         s_dbt_last_memory = prog->memory.data();
+        pretranslate_tier2(dbt);
     }
 
     int rc = dbt_run(dbt, 0, rv_compiler::STACK_TOP);
@@ -3713,6 +3751,7 @@ static bool run_compiled(compiled_program &prog,
         dbt = get_dbt(prog.memory.data(), prog.memory_size,
                        eval_ecall, &ec);
         if (!dbt) return false;
+        pretranslate_tier2(dbt);
     }
 
     int rc = dbt_run(dbt, 0, rv_compiler::STACK_TOP);
@@ -3816,15 +3855,21 @@ FUNCTION(fun_rvbench)
     double per_native = native_us / iterations;
     double per_compile = compile_each_us / iterations;
     double per_cached = cached_us / iterations;
+    uint64_t disp = s_persistent_dbt.dispatch_count;
+    uint64_t sb = s_persistent_dbt.superblock_count;
+    uint64_t se = s_persistent_dbt.side_exits_total;
+    uint64_t ic = s_persistent_dbt.inline_calls;
 
     UTF8 report[LBUF_SIZE];
     snprintf(reinterpret_cast<char *>(report), sizeof(report),
-        "expr=%s iters=%d folds=%d ecalls=%d tier2=%d nativ=%d | "
+        "expr=%s iters=%d folds=%d ecalls=%d tier2=%d nativ=%d disp=%llu sb=%llu/%llu ic=%llu | "
         "native=%.2fus/call | "
         "compile-each=%.2fus/call (%.1fx) | "
         "cached=%.2fus/call (%.1fx)",
         reinterpret_cast<const char *>(expr),
         iterations, prog.folds, prog.ecalls, prog.tier2_calls, prog.native_ops,
+        (unsigned long long)disp,
+        (unsigned long long)sb, (unsigned long long)se, (unsigned long long)ic,
         per_native,
         per_compile, per_compile / per_native,
         per_cached, per_cached / per_native);

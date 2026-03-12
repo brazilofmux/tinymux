@@ -49,6 +49,17 @@ struct reg_cache_t {
     int clock;
 };
 
+// Superblock side exits: snapshot register cache at each forward branch.
+// Cold stubs emitted after the block flush dirty registers from snapshot.
+//
+static constexpr int MAX_SIDE_EXITS = 8;
+
+struct side_exit_t {
+    uint32_t jcc_patch;         // offset of Jcc rel32 displacement
+    uint64_t target_pc;         // guest PC of the taken path
+    rc_slot_t snapshot[RC_NUM_SLOTS];
+};
+
 static void rc_init(reg_cache_t *rc) {
     for (int i = 0; i < RC_NUM_SLOTS; i++) {
         rc->slots[i].guest_reg = -1;
@@ -159,12 +170,44 @@ static void rc_flush(emit_t *e, reg_cache_t *rc) {
             emit_store_guest(e, rc->slots[i].guest_reg, rc_host_regs[i]);
 }
 
+// Invalidate all register cache slots and reload pinned registers.
+// Used after a native CALL where the callee may have modified any guest
+// register — the cached values are stale and must be reloaded from ctx.
+//
+// The trampoline unconditionally stores pinned host registers (RSI, RDI,
+// R8, R9) back to ctx after the block RETs.  If we clear the pinned
+// mapping, the translator may reassign those host registers to other
+// guest registers, and the trampoline post-store will overwrite ctx
+// with wrong values.  Re-establishing the pinned slots + emitting
+// reload instructions keeps the convention intact.
+//
+static void rc_invalidate_reload(emit_t *e, reg_cache_t *rc) {
+    for (int i = 0; i < RC_NUM_SLOTS; i++) {
+        rc->slots[i].guest_reg = -1;
+        rc->slots[i].dirty = 0;
+        rc->slots[i].last_use = 0;
+        rc->slots[i].pinned = 0;
+    }
+    rc->clock = 0;
+
+    // Restore pinned slots and reload from ctx.
+    for (int i = 0; i < RC_NUM_PINNED; i++) {
+        rc->slots[i].guest_reg = rc_pinned_guest[i];
+        rc->slots[i].dirty = 0;
+        rc->slots[i].last_use = 0;
+        rc->slots[i].pinned = 1;
+        emit_load_guest(e, rc_host_regs[i], rc_pinned_guest[i]);
+    }
+}
+
 // ---------------------------------------------------------------
 // Block cache
 // ---------------------------------------------------------------
 
 static inline uint32_t cache_hash(uint64_t pc) {
-    return static_cast<uint32_t>((pc >> 2) & BLOCK_CACHE_MASK);
+    uint32_t h = static_cast<uint32_t>(pc >> 2);
+    h ^= (h >> 10);
+    return h & BLOCK_CACHE_MASK;
 }
 
 static block_entry_t *cache_lookup(dbt_state_t *dbt, uint64_t pc) {
@@ -252,9 +295,16 @@ static void emit_ras_pop_and_probe(emit_t *e, dbt_state_t *dbt) {
     uint32_t jne_miss = emit_jcc_rel32(e, JCC_NE);
 
     // RAS hit: inline block cache probe.
-    // index = (rcx >> 2) & BLOCK_CACHE_MASK
+    // index = ((rcx >> 2) ^ ((rcx >> 2) >> 10)) & BLOCK_CACHE_MASK
     emit_mov_r64(e, X64_RAX, X64_RCX);
     emit_shr_r64_imm(e, X64_RAX, 2);
+    // xor rax, (rax >> 10) — spread high bits to avoid Tier 2 collisions
+    emit_mov_r64(e, X64_RDX, X64_RAX);
+    emit_shr_r64_imm(e, X64_RDX, 10);
+    // xor rax, rdx
+    emit_byte(e, rex(1, reg_hi(X64_RAX), 0, 0));
+    emit_byte(e, 0x33);
+    emit_byte(e, modrm(0x03, X64_RAX, X64_RDX));
     emit_and_r64_imm(e, X64_RAX, static_cast<int32_t>(BLOCK_CACHE_MASK));
 
     // entry = R13 + index * 16 (sizeof block_entry_t)
@@ -377,6 +427,121 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
     reg_cache_t rc;
     rc_init_pinned(&rc);
 
+    // Self-loop detection: pre-scan to find if any branch targets start_pc.
+    // If so, pre-warm the register cache and record a warm_entry point.
+    // The back-edge jumps to warm_entry (inside this block), keeping the
+    // entire loop in one contiguous x86-64 block.
+    //
+    uint32_t warm_entry = 0;
+    bool self_loop = false;
+    {
+        uint64_t scan_pc = guest_pc;
+        int used[32] = {0};
+        bool past_first_branch = false;
+        for (int i = 0; i < MAX_BLOCK_INSNS && scan_pc + 4 <= dbt->memory_size; i++) {
+            uint32_t w;
+            memcpy(&w, dbt->memory + scan_pc, 4);
+            rv64_insn_t si;
+            rv64_decode(w, &si);
+            if (!past_first_branch) {
+                if (si.rs1) used[si.rs1] = 1;
+                if ((si.opcode == OP_REG || si.opcode == OP_BRANCH || si.opcode == OP_STORE) && si.rs2)
+                    used[si.rs2] = 1;
+            }
+            if (si.opcode == OP_BRANCH) {
+                uint64_t target = scan_pc + static_cast<int64_t>(si.imm);
+                if (target == guest_pc) {
+                    self_loop = true;
+                    break;
+                }
+                if (si.imm < 0) break;  // backward branch elsewhere
+                past_first_branch = true;
+                // Follow the branch target (not fall-through) since our
+                // codegen uses BNE-to-body / fall-through-to-exit pattern.
+                scan_pc = target;
+                continue;
+            }
+            if (si.opcode == OP_JAL) {
+                if (si.rd != 0) {
+                    // JAL ra, target — function call.  The call returns to
+                    // pc+4, so for loop detection purposes, skip past it.
+                    past_first_branch = true;
+                    scan_pc += 4;
+                    continue;
+                }
+                uint64_t target = scan_pc + static_cast<int64_t>(si.imm);
+                if (target == guest_pc) {
+                    self_loop = true;
+                    break;
+                }
+                // Forward unconditional jump: follow target.
+                if (si.imm > 0 && target + 4 <= dbt->memory_size) {
+                    past_first_branch = true;
+                    scan_pc = target;
+                    continue;
+                }
+                break;
+            }
+            if (si.opcode == OP_JALR) {
+                // Skip past returns (JALR x0, ra, 0) — they return
+                // from Tier 2 calls back to the next instruction.
+                if (si.rd == 0 && si.rs1 == 1 && si.imm == 0) {
+                    scan_pc += 4;
+                    continue;
+                }
+                break;  // other indirect jumps — stop
+            }
+            if (si.opcode == OP_SYSTEM)
+                break;
+            scan_pc += 4;
+        }
+        if (self_loop) {
+            // Pre-load frequently used registers.  Since we flush at the
+            // back-edge (register mapping may diverge through complex loop
+            // bodies), warm_entry only avoids loading from cold context on
+            // the first entry.  Still beneficial: the x86-64 loads at
+            // warm_entry become the reload targets for subsequent iterations.
+            int loaded = 0;
+            for (int r = 1; r < 32 && loaded < RC_NUM_SLOTS; r++) {
+                if (used[r]) { rc_read(&e, &rc, r); loaded++; }
+            }
+
+            // Align warm_entry to 32-byte boundary (absolute address).
+            // The backward branch targets this point every iteration —
+            // good alignment avoids instruction decode stalls from
+            // cache line crossings.
+            uintptr_t abs_cur = reinterpret_cast<uintptr_t>(e.buf) + emit_pos(&e);
+            uint32_t pad_needed = ((abs_cur + 31) & ~(uintptr_t)31) - abs_cur;
+            uint32_t target_pos = emit_pos(&e) + pad_needed;
+            // Use multi-byte NOPs for padding.
+            while (emit_pos(&e) < target_pos) {
+                uint32_t pad = target_pos - emit_pos(&e);
+                if (pad >= 8) {
+                    // 8-byte NOP: 0F 1F 84 00 00 00 00 00
+                    emit_byte(&e, 0x0F); emit_byte(&e, 0x1F);
+                    emit_byte(&e, 0x84); emit_byte(&e, 0x00);
+                    emit_byte(&e, 0x00); emit_byte(&e, 0x00);
+                    emit_byte(&e, 0x00); emit_byte(&e, 0x00);
+                } else if (pad >= 4) {
+                    // 4-byte NOP: 0F 1F 40 00
+                    emit_byte(&e, 0x0F); emit_byte(&e, 0x1F);
+                    emit_byte(&e, 0x40); emit_byte(&e, 0x00);
+                } else if (pad >= 2) {
+                    // 2-byte NOP: 66 90
+                    emit_byte(&e, 0x66); emit_byte(&e, 0x90);
+                } else {
+                    // 1-byte NOP: 90
+                    emit_byte(&e, 0x90);
+                }
+            }
+
+            warm_entry = emit_pos(&e);
+        }
+    }
+
+    side_exit_t side_exits[MAX_SIDE_EXITS];
+    int num_side_exits = 0;
+
     uint64_t pc = guest_pc;
     int count = 0;
 
@@ -496,6 +661,77 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
         //
         case OP_JAL: {
             uint64_t target = pc + static_cast<int64_t>(insn.imm);
+
+            // Superblock: unconditional backward jump to loop start.
+            if (self_loop && insn.rd == 0 && target == guest_pc) {
+                // Flush all dirty registers, then JMP to warm_entry.
+                rc_flush(&e, &rc);
+                uint32_t jmp_patch = emit_jmp_rel32(&e);
+                emit_patch_rel32(&e, jmp_patch, warm_entry);
+                goto done;
+            }
+
+            // Superblock: forward unconditional jump — follow inline.
+            if (self_loop && insn.rd == 0 && insn.imm > 0) {
+                pc = target;
+                continue;
+            }
+
+            // Superblock native CALL: if this is a function call (JAL ra)
+            // and the target is already translated, emit a native x86-64
+            // CALL instead of exiting the block.  The callee's translated
+            // code ends with RET (via emit_exit_indirect), which returns
+            // here.  The entire loop body stays in one x86-64 block.
+            //
+            if (insn.rd == 1) {
+                uint32_t idx = cache_hash(target);
+                block_entry_t *be = &dbt->cache[idx];
+                if (be->guest_pc == target && be->native_code) {
+                    // Flush cached registers — callee reads from ctx.
+                    rc_flush(&e, &rc);
+
+                    // Store ra = pc+4 in ctx (callee's JALR reads this).
+                    emit_mov_r64_imm32(&e, X64_RAX,
+                                       static_cast<int32_t>(pc + 4));
+                    emit_store_guest(&e, 1, X64_RAX);
+
+                    // Poison the RAS so the callee's pop_and_probe
+                    // mismatches and falls through to RET.
+                    emit_ras_push(&e, 1ULL);
+
+                    // Native CALL to the translated target.
+                    uint32_t call_patch = emit_call_rel32(&e);
+                    uint32_t target_off = static_cast<uint32_t>(
+                        be->native_code - e.buf);
+                    emit_patch_rel32(&e, call_patch, target_off);
+
+                    // Check: did the callee return normally?
+                    // If ctx.next_pc != pc+4, the callee exited early
+                    // (internal block not yet chained).  Fall back to
+                    // the dispatch loop.
+                    emit_cmp_ctx_imm32(&e, CTX_NEXT_PC_OFF,
+                                       static_cast<int32_t>(pc + 4));
+                    uint32_t jne_cold = emit_jcc_rel32(&e, JCC_NE);
+
+                    // Hot path: callee returned normally.
+                    // Reload register cache (callee clobbered regs).
+                    rc_invalidate_reload(&e, &rc);
+
+                    // Store the cold-exit patch for later emission.
+                    // We'll emit the stub after the main block code.
+                    if (num_side_exits < MAX_SIDE_EXITS) {
+                        side_exits[num_side_exits].jcc_patch = jne_cold;
+                        side_exits[num_side_exits].target_pc = 0; // sentinel
+                        num_side_exits++;
+                    }
+
+                    dbt->inline_calls++;
+                    pc += 4;
+                    count++;
+                    continue;
+                }
+            }
+
             if (insn.rd) {
                 int rd = rc_write(&e, &rc, insn.rd);
                 emit_mov_r64_imm32(&e, rd, static_cast<int32_t>(pc + 4));
@@ -552,6 +788,25 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             default:
                 rc_flush(&e, &rc);
                 emit_exit_chained(&e, dbt, pc);
+                goto done;
+            }
+
+            // Self-loop: back-edge to block start → internal Jcc.
+            // The entire loop stays in one contiguous x86-64 block.
+            // Flush to context before jumping since register mapping
+            // may have diverged from warm_entry's layout.
+            //
+            if (self_loop && target == guest_pc) {
+                int rs1 = rc_read(&e, &rc, insn.rs1);
+                int rs2 = rc_read(&e, &rc, insn.rs2);
+                // Flush before CMP to avoid clobbering flags.
+                // Use store-to-context for dirty regs, then CMP, then Jcc.
+                rc_flush(&e, &rc);
+                emit_cmp_r64(&e, rs1, rs2);
+                uint32_t jcc_patch = emit_jcc_rel32(&e, cc);
+                emit_patch_rel32(&e, jcc_patch, warm_entry);
+                // Fall-through = loop exit.
+                emit_exit_chained(&e, dbt, pc + 4);
                 goto done;
             }
 
@@ -658,6 +913,26 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                 }
             }
         no_diamond:
+
+            // Superblock side exit: if we're inside a self-loop scan and
+            // this is a forward branch, record the taken path as a cold
+            // side exit and continue translating the fall-through inline.
+            //
+            if (self_loop && insn.imm > 0
+                && num_side_exits < MAX_SIDE_EXITS
+                && count < MAX_BLOCK_INSNS - 4) {
+                int rs1 = rc_read(&e, &rc, insn.rs1);
+                int rs2 = rc_read(&e, &rc, insn.rs2);
+                emit_cmp_r64(&e, rs1, rs2);
+                uint32_t jcc_patch = emit_jcc_rel32(&e, cc);
+                side_exits[num_side_exits].jcc_patch = jcc_patch;
+                side_exits[num_side_exits].target_pc = target;
+                memcpy(side_exits[num_side_exits].snapshot, rc.slots,
+                       sizeof(rc.slots));
+                num_side_exits++;
+                pc += 4;
+                continue;
+            }
 
             // Normal branch: terminate block with two exits.
             {
@@ -1336,8 +1611,35 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
     emit_exit_chained(&e, dbt, pc);
 
 done:
+    // Emit cold stubs for superblock side exits.
+    // Each stub: restore dirty registers from snapshot at branch point,
+    // then chained exit to the taken-path target.
+    //
+    for (int i = 0; i < num_side_exits; i++) {
+        emit_patch_rel32(&e, side_exits[i].jcc_patch, emit_pos(&e));
+        if (side_exits[i].target_pc == 0) {
+            // Cold exit from native CALL: callee set ctx.next_pc
+            // to an internal address (not fully chained yet).
+            // Return to the dispatch loop which will handle it.
+            emit_ret(&e);
+        } else {
+            for (int j = 0; j < RC_NUM_SLOTS; j++) {
+                if (side_exits[i].snapshot[j].guest_reg >= 0
+                    && side_exits[i].snapshot[j].dirty) {
+                    emit_store_guest(&e, side_exits[i].snapshot[j].guest_reg,
+                                     rc_host_regs[j]);
+                }
+            }
+            emit_exit_chained(&e, dbt, side_exits[i].target_pc);
+        }
+    }
+
     dbt->blocks_translated++;
     dbt->insns_translated += count;
+    if (self_loop) {
+        dbt->superblock_count++;
+        dbt->side_exits_total += num_side_exits;
+    }
     dbt->code_used += e.offset;
     return block_start;
 }
@@ -1494,6 +1796,67 @@ void dbt_rerun(dbt_state_t *dbt,
     dbt->ecall_user = ecall_user;
 }
 
+// Pre-translate all reachable blocks from a guest address.
+// Used to ensure Tier 2 blob functions are fully translated and chained
+// before superblocks try to inline-call them.
+//
+void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc) {
+    // Worklist of PCs to translate.
+    static constexpr int MAX_WORKLIST = 64;
+    uint64_t worklist[MAX_WORKLIST];
+    int wl_count = 0;
+
+    if (!cache_lookup(dbt, guest_pc)) {
+        worklist[wl_count++] = guest_pc;
+    }
+
+    while (wl_count > 0) {
+        uint64_t pc = worklist[--wl_count];
+        if (cache_lookup(dbt, pc)) continue;
+
+        uint8_t *code = translate_block(dbt, pc);
+        cache_insert(dbt, pc, code);
+        backpatch_chains(dbt, pc, code);
+
+        // Scan the RV64 code at pc to find block exits.
+        // Follow branches and JAL to discover successor blocks.
+        uint64_t scan_pc = pc;
+        for (int i = 0; i < MAX_BLOCK_INSNS && scan_pc + 4 <= dbt->memory_size; i++) {
+            uint32_t w;
+            memcpy(&w, dbt->memory + scan_pc, 4);
+            rv64_insn_t si;
+            rv64_decode(w, &si);
+
+            if (si.opcode == OP_BRANCH) {
+                uint64_t target = scan_pc + static_cast<int64_t>(si.imm);
+                // Add both branch target and fall-through.
+                if (wl_count < MAX_WORKLIST && !cache_lookup(dbt, target))
+                    worklist[wl_count++] = target;
+                if (wl_count < MAX_WORKLIST && !cache_lookup(dbt, scan_pc + 4))
+                    worklist[wl_count++] = scan_pc + 4;
+                break;
+            }
+            if (si.opcode == OP_JAL) {
+                uint64_t target = scan_pc + static_cast<int64_t>(si.imm);
+                if (si.rd == 0) {
+                    // Unconditional jump — follow target.
+                    if (wl_count < MAX_WORKLIST && !cache_lookup(dbt, target))
+                        worklist[wl_count++] = target;
+                } else {
+                    // Function call — fall-through is the successor.
+                    if (wl_count < MAX_WORKLIST && !cache_lookup(dbt, scan_pc + 4))
+                        worklist[wl_count++] = scan_pc + 4;
+                }
+                break;
+            }
+            if (si.opcode == OP_JALR || si.opcode == OP_SYSTEM) {
+                break; // indirect jump / ecall — can't follow statically
+            }
+            scan_pc += 4;
+        }
+    }
+}
+
 int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
     typedef void (*trampoline_fn_t)(rv64_ctx_t *ctx, uint8_t *mem,
                                      void *block, void *cache);
@@ -1503,8 +1866,10 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
     dbt->ctx = {};
     dbt->ctx.next_pc = entry_pc;
     dbt->ctx.x[2] = stack_top; // SP
+    uint64_t dispatch_count = 0;
 
     for (;;) {
+        dispatch_count++;
         uint64_t pc = dbt->ctx.next_pc;
 
         if (dbt->trace) {
@@ -1516,13 +1881,17 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
         if (pc & 1) {
             dbt->ctx.next_pc = (pc & ~3ULL) + 4;
             int rc = dbt->ecall_fn(&dbt->ctx, dbt->ecall_user);
-            if (rc >= 0) return rc;
+            if (rc >= 0) {
+                dbt->dispatch_count = dispatch_count;
+                return rc;
+            }
             dbt->ctx.x[0] = 0;
             continue;
         }
 
         // EBREAK signal: bit 1 set.
         if (pc & 2) {
+            dbt->dispatch_count = dispatch_count;
             fprintf(stderr, "dbt: EBREAK at 0x%llX\n",
                     static_cast<unsigned long long>(pc & ~3ULL));
             return -1;

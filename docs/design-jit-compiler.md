@@ -8,13 +8,16 @@ Predecessors: `docs/PARSER.md` (study), `docs/PARSER_REPLACE.md` (AST evaluator)
 
 External work: `~/riscv` (DBT runtime), `~/slow-32` (ISA design + toolchain history)
 
-**As of 2026-03-11**: 592 smoke tests (91 rveval + 37 benchmarks), ~5,300 lines
-across 4 compiler files (+ DBT runtime). Full SSA compiler pipeline operational:
+**As of 2026-03-12**: 592 smoke tests (91 rveval + 42 benchmarks), ~8,200 lines
+across 8 files (+ DBT runtime). Full SSA compiler pipeline operational:
 AST → HIR → SSA → optimize → linear-scan regalloc → RV64 → x86-64 JIT.
 Loop compilation (iter) with SSA back-edges and PHI nodes. Tier 2 blob
-(cat/strlen/strcat/extract/words) working via JAL — zero-ECALL iter loops.
-switch/case compilation via branch chains. SQLite code cache (Stage 5)
-persists compiled programs across restarts (schema v7).
+(cat/strlen/strcat/extract/words/split_token) working via JAL — zero-ECALL
+iter loops. switch/case compilation via branch chains. SQLite code cache
+(Stage 5) persists compiled programs across restarts (schema v7).
+Native CALL continuation: Tier 2 function calls emit x86-64 CALL rel32
+to pre-translated code, keeping entire loop bodies in one translated block.
+Pre-translation, cache hash XOR spreading, RAS poisoning, cold exit stubs.
 
 ## Motivation
 
@@ -416,7 +419,7 @@ compiler with control flow, register allocation, and Tier 2 blob
 support. The "PoC" label no longer applies — this is the production
 compiler.
 
-**What exists** (dbt_compile.cpp, 3725 lines + hir.h/hir_ssa/hir_opt):
+**What exists** (dbt_compile.cpp, ~3870 lines + hir.h/hir_ssa/hir_opt):
  - Full HIR-based SSA pipeline: AST → HIR → SSA → optimize → codegen
  - Constant folding for 28+ functions at compile time
  - Type tracking (TY_INT / TY_STRING) with inline RV64 atoi/itoa
@@ -434,10 +437,12 @@ compiler.
  - Softcode functions: rvcall(), rveval(), rvbench()
 
 **Benchmark results** (production cache path, 10K iterations):
- - Folded expressions: 0.03-0.05 us/call (10-20x faster than AST eval)
- - ECALL expressions: 0.39-0.50 us/call (at parity or faster than AST eval)
- - Tier 2 JAL: 0.47-0.56 us/call (at parity, ECALL cost dominates)
- - Native arithmetic chains: 0.40-0.42 us/call (20% faster than AST eval)
+ - Folded expressions: 0.03-0.06 us/call (10-20x faster than AST eval)
+ - ECALL expressions: 0.41-0.52 us/call (at parity or faster than AST eval)
+ - Tier 2 w/ native CALL: 0.49-0.63 us/call (native CALL inline, no block breaks)
+ - iter(3 elems): 0.49 us/call (beats native 0.90us)
+ - iter(5 elems, add): 0.79 us/call (beats native 1.92us)
+ - Native arithmetic chains: 0.41-0.44 us/call (20% faster than AST eval)
  - Native AST eval baseline: 0.3-1.0 us/call
 
 ### Stage 1: RV64IMD DBT Runtime ✅ (2 items remaining)
@@ -447,7 +452,7 @@ RV64IMD dynamic binary translator, fresh implementation informed by
 
 **Location**: `mux/modules/engine/` — compiled into `engine.so`.
 
-Files: `dbt_decoder.h`, `dbt_interp.cpp`, `dbt.cpp` (1559 lines),
+Files: `dbt_decoder.h`, `dbt_interp.cpp`, `dbt.cpp` (~1600 lines),
 `dbt_emit_x64.h`, `dbt_elf64.cpp`, `dbt_harness.cpp`
 
 **1a. RV64IMD decoder** — ✅ COMPLETE
@@ -465,10 +470,11 @@ instruction parity with the decoder. 128-bit multiply helpers for
 MULH variants. Bounds-checked memory access. Full FP state (frm,
 fflags). ECALL dispatches to callback function pointer.
 
-**1c. x86-64 translator** — ✅ COMPLETE (2 optimizations deferred)
+**1c. x86-64 translator** — ✅ COMPLETE (1 optimization deferred)
 
-`dbt.cpp` (1559 lines): Block-at-a-time translation of all RV64IMD
-instructions to x86-64. Correct for all instruction groups.
+`dbt.cpp` (~1600 lines): Block-at-a-time translation of all RV64IMD
+instructions to x86-64. Self-loop detection with superblock side exits.
+Native CALL continuation for Tier 2 function calls.
 
 Optimization state:
  - ✅ 8-slot LRU register cache (RSI/RDI/R8-R11/R14/R15)
@@ -483,8 +489,13 @@ Optimization state:
  - ✅ Zero-register special handling (x0 never stored)
  - ✅ FP sign-injection idioms (fmv.d/fneg.d/fabs.d)
  - ✅ Register aliasing safety: rd==rs2 detection for commutative/non-commutative ops
- - ❌ Superblocks (cross-branch block extension) — lower priority
- - ❌ Native intrinsic stubs (x86-64 memcpy/strlen/memswap callable from RV64) — lower priority
+ - ✅ Self-loop detection: pre-scan finds backward branches (follows JAL-ra calls, JALR returns)
+ - ✅ 32-byte warm_entry alignment for self-loop back-edge targets
+ - ✅ Superblock side exits: forward branches → Jcc cold stubs, fall-through inline
+ - ✅ Native CALL continuation: JAL-ra to pre-translated Tier 2 → x86-64 CALL rel32
+ - ✅ Pre-translation: worklist-based ahead-of-time translation of Tier 2 entry points
+ - ✅ Cache hash XOR spreading: prevents Tier 2 / program code slot collisions
+ - 🔲 Native intrinsic stubs (x86-64 replacements for Tier 2 RV64 bodies)
 
 **1d. Block cache** — ✅ COMPLETE
 
@@ -495,7 +506,7 @@ cache invalidation).
 
 **1e. Test suite** — PARTIAL
 
-84 rveval smoke tests + 34 benchmarks cover the compiler+DBT stack.
+91 rveval smoke tests + 42 benchmarks cover the compiler+DBT stack.
 Missing: standalone low-level DBT tests for instruction correctness
 (int64 edge cases, W-suffix sign-extension, FP corner cases, register
 cache spill/restore, ECALL argument passing). Cross-compiled C test
@@ -508,28 +519,44 @@ compiled programs. Not used in the production softcode path.
 
 #### Stage 1 Remaining Work
 
-Two deferred optimizations, neither blocking. Both are well-understood
-patterns from ~/riscv.
+**1c-vi. Full superblock formation** — ✅ COMPLETE
 
-**1c-vi. Superblock formation** (LOWER PRIORITY)
+Self-loop detection, side exits, and **native CALL continuation**
+are all implemented. When a JAL-ra targets a pre-translated Tier 2
+function, the translator emits an x86-64 CALL rel32 instead of
+exiting the block. The callee's RET returns to the caller, and
+translation continues inline. Mechanism:
 
-Extend basic blocks across branch points by speculating on the
-likely path (e.g., loop back-edges are likely taken). The extended
-block includes side-exit stubs that restore state and transfer to
-the other path. Builds on block chaining + register persistence.
+ 1. `dbt_pretranslate()` — worklist-based pre-translation of all
+    Tier 2 entry points before the first `dbt_run()`.
+ 2. `cache_hash()` XOR spreading — prevents Tier 2 (0x10000+) and
+    program code (0x0000+) from colliding in the direct-mapped cache.
+ 3. At JAL rd=1: if `cache[hash(target)]` hits, emit:
+    - `rc_flush()` + store ra=pc+4 in ctx
+    - `emit_ras_push(1)` — poison RAS so callee's probe mismatches
+    - `CALL rel32` to callee's native code
+    - `CMP [rbx+CTX_NEXT_PC], pc+4` — check callee returned normally
+    - `JNE cold_stub` → cold stub emits `RET` to dispatch loop
+    - `rc_invalidate()` — callee may have clobbered any register
+ 4. The entire iter() loop body stays in one translated block.
 
-**1c-vii. Native intrinsic stubs** (LOWER PRIORITY)
+**1c-vii. Native intrinsic stubs** (MEDIUM PRIORITY)
 
 When the DBT translates a JAL/JALR to a known Tier 2 function
-address, emit inline x86-64 instead of interpreting the RV64 byte
-loops. Candidates: memcpy, strlen, memswap. These are byte-level
-operations where native x86 REP MOVSB / SCASB vastly outperforms
-interpreted RV64. Learned from ~/slow-32.
+address, emit inline x86-64 instead of the translated RV64 byte
+loops. This would eliminate the function call overhead entirely.
 
-This is distinct from the Tier 2 blob: Tier 2 gives us RV64
-implementations callable via JAL (no ECALL boundary). Intrinsic
-stubs go further — the DBT recognizes the call target and replaces
-the entire RV64 function body with a native x86-64 sequence.
+Candidates for iter() loops:
+ - `rv64_split_token` — cursor-based element extraction (byte scan)
+ - `rv64_words` — word counting (byte scan)
+ - `rv64_strcat` — concatenation (memcpy-like)
+ - `rv64_cat` — concatenation with separators
+
+General candidates: memcpy, strlen, memswap (REP MOVSB / SCASB).
+
+With native CALL continuation working, the block-breaking problem is
+solved. Intrinsic stubs are a further optimization to eliminate the
+call/return overhead and RV64-level byte loops entirely.
 
 **1e-ii. Standalone DBT test suite** (SHOULD HAVE)
 
@@ -656,7 +683,7 @@ AST → hir_lower → hir_build_cfg → hir_ssa_construct → hir_optimize
    All 7 NOEVAL functions compiled: if, ifelse, cand/candbool,
    cor/corbool, switch/case/switchall/caseall, iter.
 
-Actual total: ~5,193 lines (vs. 2,500-3,500 estimated).
+Actual total: ~5,600 lines (vs. 2,500-3,500 estimated).
 
 #### What NOT to Build
 
@@ -685,12 +712,13 @@ Loaded as a binary blob into guest memory at BLOB_BASE (0x10000).
 Compiled softcode calls via JAL — same address space, no ECALL
 boundary crossing.
 
-Currently implemented (5 functions in `mux/rv64/src/softlib.c`):
+Currently implemented (6 functions in `mux/rv64/src/softlib.c`):
  - `rv64_cat` — concatenate with space separators
  - `rv64_strlen` — return string length as decimal string
  - `rv64_strcat` — concatenate without separators
  - `rv64_extract` — extract elements from delimiter-separated list
  - `rv64_words` — count words in delimiter-separated list
+ - `rv64_split_token` — cursor-based token extraction (O(n) vs EXTRACT's O(n²))
 
 Build toolchain:
  - `mux/rv64/Makefile` — cross-compile softlib.c → softlib.elf
@@ -701,17 +729,34 @@ Build toolchain:
  - `tier2_lookup()` — maps MUX function name → blob guest address
  - `rv_emit_tier2_call()` — emits a0/a1/a2 setup + JAL ra,target
 
-Benchmark (BENCH030-037, cached path vs AST eval baseline):
- - cat(rand,rand): 0.47us (tier2=1, ecalls=2) vs 0.49us native
- - strlen(cat(rand,rand)): 0.49us (tier2=2) vs 0.61us native
- - strcat(rand,rand): 0.48us (tier2=1) vs 0.52us native
- - iter(5 elems, literal): 0.70us (tier2=3, ecalls=0) vs 0.40us native (1.8x)
- - iter(5 elems, add(##,1)): 1.16us (tier2=3, ecalls=2) vs 1.92us native (0.6x — beats native)
- - iter(10 elems, literal): 4.56us (tier2=3, ecalls=0) vs 0.61us native (7.5x — needs investigation)
+Benchmark (BENCH030-042, cached path vs AST eval baseline):
+ - cat(rand,rand): 0.50us (tier2=1, ecalls=2, ic=10K) vs 0.51us native
+ - strlen(cat(rand,rand)): 0.52us (tier2=2, ic=30K) vs 0.61us native
+ - strcat(rand,rand): 0.49us (tier2=1, ic=40K) vs 0.55us native
+ - iter(3 elems, X): 0.49us vs 0.90us native (**beats native**)
+ - iter(5 elems, X): 0.66us vs 0.38us native (1.7x)
+ - iter(5 elems, add(##,1)): 0.79us vs 1.92us native (**beats native**)
+ - iter(7 elems, X): 0.82us vs 0.48us native (1.7x)
+ - iter(10 single-char, X): 5.47us vs 0.59us native (9.3x — residual jitter)
+ - iter(10 two-char, X): 1.13us vs 0.64us native (1.8x)
+ - iter(15 elems, X): 2.77us vs 0.79us native (3.5x)
+ - iter(20 elems, X): 2.46us vs 1.02us native (2.4x)
 
-The 5-element iter with computation **beats native eval by 40%** because
-native re-parses on every call while the JIT compiles once. The 10-element
-literal-body case has a regression that needs profiling.
+The 3-element iter and computation-in-loop cases **beat native eval**
+because native re-parses on every call while the JIT compiles once.
+
+Native CALL continuation (`ic=` column) keeps the entire loop body in
+one translated x86-64 block. Pre-translated Tier 2 functions are called
+via CALL rel32, and the callee's RET returns inline. The `ic` counter
+confirms inline calls fire per-iteration (ic grows linearly with
+iterations × Tier 2 calls per iteration).
+
+**Residual alignment sensitivity**. BENCH037 (10 single-char elements)
+still shows variance (5-9x) between runs. The loop body is now one
+block (native CALL continuation works), but the translated RV64
+byte-loop code inside Tier 2 functions still has microarchitectural
+jitter. Intrinsic stubs (1c-vii) would eliminate this by replacing
+RV64 byte loops with native x86-64 sequences.
 
 EXTRACT and WORDS are wired directly into iter()'s internal element
 extraction and word counting, eliminating all ECALL overhead from

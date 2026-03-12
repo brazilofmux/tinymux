@@ -283,7 +283,42 @@
 #
 &tr.tc037 test_rvbench_fn=
   @log smoke=BENCH037:
-    [rvbench(iter(a b c d e f g h i j, X),10000)];
+    [rvbench(iter(a b c d e f g h i j, X),10000)]
+-
+#
+# Benchmark #38 - iter() loop: 3 elements (scaling baseline).
+#
+&tr.tc038 test_rvbench_fn=
+  @log smoke=BENCH038:
+    [rvbench(iter(a b c, X),10000)]
+-
+#
+# Benchmark #39 - iter() loop: 15 elements (scaling test).
+#
+&tr.tc039 test_rvbench_fn=
+  @log smoke=BENCH039:
+    [rvbench(iter(a b c d e f g h i j k l m n o, X),10000)]
+-
+#
+# Benchmark #40 - iter() loop: 20 elements (scaling test).
+#
+&tr.tc040 test_rvbench_fn=
+  @log smoke=BENCH040:
+    [rvbench(iter(a b c d e f g h i j k l m n o p q r s t, X),10000)]
+-
+#
+# Benchmark #41 - iter() loop: 10 long elements (different layout).
+#
+&tr.tc041 test_rvbench_fn=
+  @log smoke=BENCH041:
+    [rvbench(iter(aa bb cc dd ee ff gg hh ii jj, X),10000)]
+-
+#
+# Benchmark #42 - iter() loop: 7 elements.
+#
+&tr.tc042 test_rvbench_fn=
+  @log smoke=BENCH042:
+    [rvbench(iter(a b c d e f g, X),10000)];
   @trig me/tr.done
 -
 &tr.done test_rvbench_fn=
