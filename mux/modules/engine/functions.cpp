@@ -12638,98 +12638,82 @@ static FUNCTION(fun_accent)
     }
 }
 
-void transform_range(mux_string &sStr)
+static size_t expand_range(UTF8 *buf, size_t len)
 {
-    // Look for a-z type character ranges. Dashes that don't have another
-    // character on each end of them are treated literally.
+    // Expand a-z, A-Z, 0-9 character ranges in-place.
+    // Dashes without valid endpoints are treated literally.
     //
-    mux_cursor nPos, nStart;
-    UTF8 cBefore, cAfter;
+    UTF8 out[LBUF_SIZE];
+    size_t wp = 0;
 
-    mux_string *sTemp = nullptr;
-    try
+    for (size_t i = 0; i < len; i++)
     {
-        sTemp = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == sTemp)
-    {
-        return;
-    }
-
-    sTemp->cursor_start(nStart);
-    sTemp->cursor_next(nStart);
-
-    bool bSucceeded = sStr.search(T("-"), &nPos, nStart);
-    while (bSucceeded)
-    {
-        nStart = nPos;
-        cBefore = sStr.export_Char(nStart.m_byte-1);
-        cAfter = sStr.export_Char(nStart.m_byte+1);
-        if ('\0' == cAfter)
+        if (  '-' == buf[i]
+           && 0 < i
+           && i + 1 < len)
         {
-            break;
-        }
-        if (  mux_isazAZ(cBefore)
-           && mux_isazAZ(cAfter))
-        {
-            // Character range.
-            //
-            sTemp->truncate(CursorMin);
-            if (mux_islower_ascii(cBefore) == mux_islower_ascii(cAfter))
+            UTF8 cBefore = out[wp - 1];
+            UTF8 cAfter = buf[i + 1];
+
+            if (  mux_isazAZ(cBefore)
+               && mux_isazAZ(cAfter)
+               && mux_islower_ascii(cBefore) == mux_islower_ascii(cAfter)
+               && cBefore < cAfter)
             {
-                cBefore++;
-                while (cBefore < cAfter)
+                // Same-case letter range: b through cAfter-1.
+                //
+                for (UTF8 c = cBefore + 1; c < cAfter && wp < LBUF_SIZE - 1; c++)
                 {
-                    sTemp->append_TextPlain(&cBefore, 1);
-                    cBefore++;
+                    out[wp++] = c;
                 }
-                mux_cursor nReplace(1, 1);
-                sStr.replace_Chars(*sTemp, nStart, nReplace);
+                i++; // skip cAfter, it will be copied normally next iteration
+                // But we need to copy cAfter now.
+                if (wp < LBUF_SIZE - 1) out[wp++] = cAfter;
             }
             else if (  mux_islower_ascii(cBefore)
                     && mux_isupper_ascii(cAfter))
             {
-                cBefore++;
-                while (cBefore <= 'z')
+                // Cross-case range: cBefore+1..z, A..cAfter-1.
+                //
+                for (UTF8 c = cBefore + 1; c <= 'z' && wp < LBUF_SIZE - 1; c++)
                 {
-                    sTemp->append_TextPlain(&cBefore, 1);
-                    cBefore++;
+                    out[wp++] = c;
                 }
-                cBefore = 'A';
-                while (cBefore < cAfter)
+                for (UTF8 c = 'A'; c < cAfter && wp < LBUF_SIZE - 1; c++)
                 {
-                    sTemp->append_TextPlain(&cBefore, 1);
-                    cBefore++;
+                    out[wp++] = c;
                 }
-                mux_cursor nReplace(1, 1);
-                sStr.replace_Chars(*sTemp, nStart, nReplace);
+                i++;
+                if (wp < LBUF_SIZE - 1) out[wp++] = cAfter;
             }
-        }
-        else if (  mux_isdigit(cBefore)
-                && mux_isdigit(cAfter))
-        {
-            // Numeric range.
-            //
-            cBefore++;
-            sTemp->truncate(CursorMin);
-            while (cBefore < cAfter)
+            else if (  mux_isdigit(cBefore)
+                    && mux_isdigit(cAfter)
+                    && cBefore < cAfter)
             {
-                sTemp->append_TextPlain(&cBefore, 1);
-                cBefore++;
+                // Numeric range.
+                //
+                for (UTF8 c = cBefore + 1; c < cAfter && wp < LBUF_SIZE - 1; c++)
+                {
+                    out[wp++] = c;
+                }
+                i++;
+                if (wp < LBUF_SIZE - 1) out[wp++] = cAfter;
             }
-            mux_cursor nLen(1, 1);
-            sStr.replace_Chars(*sTemp, nStart, nLen);
+            else
+            {
+                // Literal dash.
+                //
+                if (wp < LBUF_SIZE - 1) out[wp++] = '-';
+            }
         }
-        sStr.cursor_next(nStart);
-        bSucceeded = sStr.search(T("-"), &nPos, nStart);
+        else
+        {
+            if (wp < LBUF_SIZE - 1) out[wp++] = buf[i];
+        }
     }
-
-    delete sTemp;
+    out[wp] = '\0';
+    memcpy(buf, out, wp + 1);
+    return wp;
 }
 
 static FUNCTION(fun_tr)
@@ -12745,53 +12729,39 @@ static FUNCTION(fun_tr)
     size_t nStr = strlen(reinterpret_cast<const char *>(fargs[0]));
     if (0 != nStr)
     {
-        // Process character ranges using mux_string (handles a-z expansion).
+        // Expand character ranges (a-z, A-Z, 0-9) in from/to sets.
         //
-        mux_string *sFrom = nullptr;
-        mux_string *sTo = nullptr;
-        try
+        UTF8 fromBuf[LBUF_SIZE], toBuf[LBUF_SIZE];
+        size_t fLen = strlen(reinterpret_cast<const char *>(fargs[1]));
+        size_t tLen = strlen(reinterpret_cast<const char *>(fargs[2]));
+
+        if (fLen >= LBUF_SIZE - 1) fLen = LBUF_SIZE - 2;
+        if (tLen >= LBUF_SIZE - 1) tLen = LBUF_SIZE - 2;
+
+        memcpy(fromBuf, fargs[1], fLen + 1);
+        memcpy(toBuf,   fargs[2], tLen + 1);
+
+        fLen = expand_range(fromBuf, fLen);
+        tLen = expand_range(toBuf,   tLen);
+
+        if (fLen != tLen)
         {
-            sFrom = new mux_string(fargs[1]);
-            sTo   = new mux_string(fargs[2]);
+            safe_str(T("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
         }
-        catch (...)
+        else
         {
-            ; // Nothing.
+            unsigned char out[LBUF_SIZE];
+            size_t nOut = co_transform(out,
+                reinterpret_cast<const unsigned char *>(fargs[0]), nStr,
+                reinterpret_cast<const unsigned char *>(fromBuf), fLen,
+                reinterpret_cast<const unsigned char *>(toBuf), tLen);
+
+            size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+            if (nOut > nMax) nOut = nMax;
+            memcpy(*bufc, out, nOut);
+            *bufc += nOut;
+            **bufc = '\0';
         }
-
-        if (  nullptr != sFrom
-           && nullptr != sTo)
-        {
-            transform_range(*sFrom);
-            transform_range(*sTo);
-
-            if (sFrom->length_cursor().m_point != sTo->length_cursor().m_point)
-            {
-                safe_str(T("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
-            }
-            else
-            {
-                // Export expanded from/to sets and use co_transform.
-                //
-                unsigned char fromBuf[LBUF_SIZE], toBuf[LBUF_SIZE];
-                size_t fLen = sFrom->export_TextPlain(fromBuf);
-                size_t tLen = sTo->export_TextPlain(toBuf);
-
-                unsigned char out[LBUF_SIZE];
-                size_t nOut = co_transform(out,
-                    reinterpret_cast<const unsigned char *>(fargs[0]), nStr,
-                    fromBuf, fLen, toBuf, tLen);
-
-                size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-                if (nOut > nMax) nOut = nMax;
-                memcpy(*bufc, out, nOut);
-                *bufc += nOut;
-                **bufc = '\0';
-            }
-        }
-
-        delete sFrom;
-        delete sTo;
     }
 }
 
