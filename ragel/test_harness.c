@@ -622,6 +622,109 @@ static void test_case_transforms(void)
     TEST("totitle(RED\"hello\"RESET)");
     if (nb == 11 && memcmp(out + 3, "Hello", 5) == 0) { PASS(); }
     else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* ---- Unicode case mapping tests ---- */
+
+    /* é (U+00E9, C3 A9) → É (U+00C9, C3 89) */
+    {
+        static const unsigned char e_acute_lower[] = { 0xC3, 0xA9 };  /* é */
+        static const unsigned char e_acute_upper[] = { 0xC3, 0x89 };  /* É */
+
+        nb = co_toupper(out, e_acute_lower, 2);
+        TEST("toupper(U+00E9 e-acute) -> U+00C9 E-acute");
+        if (nb == 2 && memcmp(out, e_acute_upper, 2) == 0) { PASS(); }
+        else { FAIL("got %zu bytes: %02x %02x", nb, out[0], out[1]); }
+
+        nb = co_tolower(out, e_acute_upper, 2);
+        TEST("tolower(U+00C9 E-acute) -> U+00E9 e-acute");
+        if (nb == 2 && memcmp(out, e_acute_lower, 2) == 0) { PASS(); }
+        else { FAIL("got %zu bytes: %02x %02x", nb, out[0], out[1]); }
+    }
+
+    /* Mixed ASCII + Unicode: "café" → "CAFÉ" */
+    {
+        static const unsigned char cafe_lower[] = { 'c','a','f', 0xC3,0xA9 };  /* café */
+        static const unsigned char cafe_upper[] = { 'C','A','F', 0xC3,0x89 };  /* CAFÉ */
+
+        nb = co_toupper(out, cafe_lower, 5);
+        TEST("toupper(\"caf\\xC3\\xA9\") -> \"CAF\\xC3\\x89\"");
+        if (nb == 5 && memcmp(out, cafe_upper, 5) == 0) { PASS(); }
+        else { FAIL("got %zu bytes", nb); }
+
+        nb = co_tolower(out, cafe_upper, 5);
+        TEST("tolower(\"CAF\\xC3\\x89\") -> \"caf\\xC3\\xA9\"");
+        if (nb == 5 && memcmp(out, cafe_lower, 5) == 0) { PASS(); }
+        else { FAIL("got %zu bytes", nb); }
+    }
+
+    /* Greek: Σ (U+03A3, CE A3) → σ (U+03C3, CF 83) */
+    {
+        static const unsigned char sigma_upper[] = { 0xCE, 0xA3 };  /* Σ */
+        static const unsigned char sigma_lower[] = { 0xCF, 0x83 };  /* σ */
+
+        nb = co_tolower(out, sigma_upper, 2);
+        TEST("tolower(U+03A3 Sigma) -> U+03C3 sigma");
+        if (nb == 2 && memcmp(out, sigma_lower, 2) == 0) { PASS(); }
+        else { FAIL("got %zu bytes: %02x %02x", nb, out[0], out[1]); }
+
+        nb = co_toupper(out, sigma_lower, 2);
+        TEST("toupper(U+03C3 sigma) -> U+03A3 Sigma");
+        if (nb == 2 && memcmp(out, sigma_upper, 2) == 0) { PASS(); }
+        else { FAIL("got %zu bytes: %02x %02x", nb, out[0], out[1]); }
+    }
+
+    /* totitle with Unicode: "élan" → "Élan" */
+    {
+        static const unsigned char elan_lower[] = { 0xC3,0xA9, 'l','a','n' };  /* élan */
+        static const unsigned char elan_title[] = { 0xC3,0x89, 'l','a','n' };  /* Élan */
+
+        nb = co_totitle(out, elan_lower, 5);
+        TEST("totitle(\"\\xC3\\xA9lan\") -> \"\\xC3\\x89lan\"");
+        if (nb == 5 && memcmp(out, elan_title, 5) == 0) { PASS(); }
+        else { FAIL("got %zu bytes: %02x %02x", nb, out[0], out[1]); }
+    }
+
+    /* Unicode toupper with color: RED + é + RESET → RED + É + RESET */
+    {
+        unsigned char cbuf[64];
+        size_t cpos = 0;
+        cpos = append(cbuf, cpos, COLOR_FG_RED, 3);
+        cbuf[cpos++] = 0xC3; cbuf[cpos++] = 0xA9;  /* é */
+        cpos = append(cbuf, cpos, COLOR_RESET, 3);
+        cbuf[cpos] = '\0';
+
+        nb = co_toupper(out, cbuf, cpos);
+        TEST("toupper(RED + U+00E9 + RESET) -> RED + U+00C9 + RESET");
+        /* RED(3) + É(2) + RESET(3) = 8 bytes */
+        if (nb == 8 && memcmp(out, COLOR_FG_RED, 3) == 0
+            && out[3] == 0xC3 && out[4] == 0x89
+            && memcmp(out + 5, COLOR_RESET, 3) == 0) { PASS(); }
+        else { FAIL("got %zu bytes", nb); }
+    }
+
+    /* ẞ (U+1E9E, E1 BA 9E) → ß (U+00DF, C3 9F) via tolower.
+     * This is a 3-byte → 2-byte mapping (code point count stays 1). */
+    {
+        static const unsigned char sharp_s_upper[] = { 0xE1, 0xBA, 0x9E };  /* ẞ */
+        static const unsigned char sharp_s_lower[] = { 0xC3, 0x9F };        /* ß */
+
+        nb = co_tolower(out, sharp_s_upper, 3);
+        TEST("tolower(U+1E9E cap-sharp-S) -> U+00DF sharp-s");
+        if (nb == 2 && memcmp(out, sharp_s_lower, 2) == 0) { PASS(); }
+        else { FAIL("got %zu bytes: %02x %02x", nb, out[0], nb > 1 ? out[1] : 0); }
+    }
+
+    /* µ (U+00B5, C2 B5) → Μ (U+039C, CE 9C) via toupper.
+     * Micro sign maps to Greek capital Mu — cross-script. */
+    {
+        static const unsigned char micro[] = { 0xC2, 0xB5 };  /* µ */
+        static const unsigned char mu_upper[] = { 0xCE, 0x9C };  /* Μ */
+
+        nb = co_toupper(out, micro, 2);
+        TEST("toupper(U+00B5 micro) -> U+039C Greek Mu");
+        if (nb == 2 && memcmp(out, mu_upper, 2) == 0) { PASS(); }
+        else { FAIL("got %zu bytes: %02x %02x", nb, out[0], out[1]); }
+    }
 }
 
 static void test_reverse(void)

@@ -187,9 +187,9 @@ const unsigned char *co_search(const unsigned char *haystack, size_t hlen,
 /*
  * co_toupper — Convert visible code points to uppercase, preserving color.
  *
- * Currently ASCII-only (a-z → A-Z).  Multi-byte visible code points
- * are copied unchanged.  Upgrade path: plug in mux_toupper DFA tables
- * from utf/ pipeline for full Unicode case mapping.
+ * Full Unicode case mapping via DFA tables from the utf/ pipeline
+ * (~1477 code points).  Output may be longer or shorter than input
+ * (e.g., ß → SS).  Color PUA code points are passed through unchanged.
  *
  * Returns bytes written to out.
  */
@@ -198,15 +198,15 @@ size_t co_toupper(unsigned char *out, const unsigned char *p, size_t len);
 /*
  * co_tolower — Convert visible code points to lowercase, preserving color.
  *
- * ASCII-only for now.  Same upgrade path as co_toupper.
+ * Full Unicode case mapping via DFA tables (~1460 code points).
  * Returns bytes written to out.
  */
 size_t co_tolower(unsigned char *out, const unsigned char *p, size_t len);
 
 /*
- * co_totitle — Capitalize first visible code point, preserving color.
+ * co_totitle — Title-case first visible code point, preserving color.
  *
- * ASCII-only for now.
+ * Full Unicode title-case mapping via DFA tables (~1481 code points).
  * Returns bytes written to out.
  */
 size_t co_totitle(unsigned char *out, const unsigned char *p, size_t len);

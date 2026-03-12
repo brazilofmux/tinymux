@@ -9,8 +9,8 @@ RAGEL   = ragel
 RFLAGS  = -G2 -C
 
 SRCS_RL = color_ops.rl
-SRCS_C  = color_ops.c test_harness.c
-OBJS    = color_ops.o test_harness.o
+SRCS_C  = color_ops.c unicode_tables.c test_harness.c
+OBJS    = color_ops.o unicode_tables.o test_harness.o
 
 .PHONY: all clean test
 
@@ -27,7 +27,8 @@ test_harness: $(OBJS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 test_harness.o: test_harness.c color_ops.h
-color_ops.o: color_ops.c color_ops.h
+color_ops.o: color_ops.c color_ops.h unicode_tables.h
+unicode_tables.o: unicode_tables.c unicode_tables.h
 
 test: test_harness
 	./test_harness

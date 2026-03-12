@@ -117,14 +117,22 @@ it completely.
 Second function: `co_apply_color(out, plain, len, color_state)` — inject a
 ColorState at start. Enables: `ansi()` function (apply named color to string).
 
-### Stage 6 — Full Unicode case mapping
+### Stage 6 — Full Unicode case mapping (COMPLETE)
 
-Replace ASCII-only toupper/tolower/totitle with full Unicode via `utf/` pipeline tables.
+10 tests. Replaced ASCII-only toupper/tolower/totitle with full Unicode via the
+existing DFA tables from `utf8tables.cpp`.
 
-The `mux_toupper`/`mux_tolower` DFA tables cover ~1460-1481 code points. Generate
-a Ragel machine or lookup table from the same source data.
+- Extracted DFA tables into `unicode_tables.c` / `unicode_tables.h` (pure C)
+- `co_dfa_toupper` / `co_dfa_tolower` / `co_dfa_totitle` — inline C functions
+  executing the compressed RUN/COPY DFA, returning `co_string_desc*` + XOR flag
+- Ragel `@emit_upper` / `@emit_lower` actions call the DFA per visible code point
+- Handles variable-length output: ẞ (3 bytes) → ß (2 bytes), µ → Μ (cross-script)
+- XOR optimization: same-length transforms applied as byte-wise XOR (e.g., é ↔ É)
+- Literal replacement: different-length transforms copy replacement bytes directly
+- Color PUA code points passed through unchanged (Ragel `color_scan` discriminates)
 
-This is the "upgrade path" noted in the Stage 2 code comments.
+Coverage: ~1460 tolower, ~1477 toupper, ~1481 totitle code point mappings.
+All Simple_Uppercase/Lowercase/Titlecase_Mapping from UnicodeData.txt.
 
 ### Stage 7 — Integration proving ground
 

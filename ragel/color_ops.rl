@@ -21,6 +21,7 @@
  */
 
 #include "color_ops.h"
+#include "unicode_tables.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -635,7 +636,7 @@ size_t co_strip_color(unsigned char *out, const unsigned char *data,
     return (size_t)(wp - out);
 }
 
-/* ---- co_toupper ---- */
+/* ---- co_toupper (full Unicode via DFA tables) ---- */
 
 %%{
     machine toupper_machine;
@@ -647,15 +648,27 @@ size_t co_strip_color(unsigned char *out, const unsigned char *data,
         while (s <= p) *wp++ = *s++;
     }
     action emit_upper {
-        if (mark == p && *p >= 'a' && *p <= 'z') {
-            *wp++ = *p - 32;
-        } else {
+        size_t src = (size_t)(p - mark + 1);
+        int bXor;
+        const co_string_desc *desc = co_dfa_toupper(mark, &bXor);
+        if (!desc) {
+            /* Identity — copy as-is. */
             const unsigned char *s = mark;
-            while (s <= p) {
-                unsigned char c = *s;
-                if (c >= 'a' && c <= 'z') c -= 32;
-                *wp++ = c;
-                s++;
+            while (s <= p) *wp++ = *s++;
+        } else {
+            size_t out_len = desc->n_bytes;
+            if (bXor && out_len != src) {
+                /* XOR length mismatch — copy as-is. */
+                const unsigned char *s = mark;
+                while (s <= p) *wp++ = *s++;
+            } else if (bXor) {
+                /* XOR transform (same byte count). */
+                for (size_t j = 0; j < out_len; j++)
+                    *wp++ = mark[j] ^ desc->p[j];
+            } else {
+                /* Literal replacement (may differ in byte count). */
+                for (size_t j = 0; j < out_len; j++)
+                    *wp++ = desc->p[j];
             }
         }
     }
@@ -680,7 +693,7 @@ size_t co_toupper(unsigned char *out, const unsigned char *data, size_t len)
     return (size_t)(wp - out);
 }
 
-/* ---- co_tolower ---- */
+/* ---- co_tolower (full Unicode via DFA tables) ---- */
 
 %%{
     machine tolower_machine;
@@ -692,15 +705,23 @@ size_t co_toupper(unsigned char *out, const unsigned char *data, size_t len)
         while (s <= p) *wp++ = *s++;
     }
     action emit_lower {
-        if (mark == p && *p >= 'A' && *p <= 'Z') {
-            *wp++ = *p + 32;
-        } else {
+        size_t src = (size_t)(p - mark + 1);
+        int bXor;
+        const co_string_desc *desc = co_dfa_tolower(mark, &bXor);
+        if (!desc) {
             const unsigned char *s = mark;
-            while (s <= p) {
-                unsigned char c = *s;
-                if (c >= 'A' && c <= 'Z') c += 32;
-                *wp++ = c;
-                s++;
+            while (s <= p) *wp++ = *s++;
+        } else {
+            size_t out_len = desc->n_bytes;
+            if (bXor && out_len != src) {
+                const unsigned char *s = mark;
+                while (s <= p) *wp++ = *s++;
+            } else if (bXor) {
+                for (size_t j = 0; j < out_len; j++)
+                    *wp++ = mark[j] ^ desc->p[j];
+            } else {
+                for (size_t j = 0; j < out_len; j++)
+                    *wp++ = desc->p[j];
             }
         }
     }
@@ -725,7 +746,7 @@ size_t co_tolower(unsigned char *out, const unsigned char *data, size_t len)
     return (size_t)(wp - out);
 }
 
-/* ---- co_totitle ---- */
+/* ---- co_totitle (full Unicode via DFA tables) ---- */
 
 size_t co_totitle(unsigned char *out, const unsigned char *data, size_t len)
 {
@@ -742,11 +763,38 @@ size_t co_totitle(unsigned char *out, const unsigned char *data, size_t len)
     }
 
     if (p < pe) {
-        /* Uppercase first visible byte (ASCII only). */
-        unsigned char c = *p;
-        if (c >= 'a' && c <= 'z') c -= 32;
-        *wp++ = c;
-        p++;
+        /* Determine byte length of first visible code point. */
+        size_t src = utf8_FirstByte[*p];
+        if (src >= CO_UTF8_CONTINUE) src = CO_UTF8_SIZE1;
+
+        /* Validate continuation bytes. */
+        size_t j;
+        for (j = 1; j < src && p + j < pe; j++) {
+            if (utf8_FirstByte[p[j]] != CO_UTF8_CONTINUE) {
+                src = CO_UTF8_SIZE1;
+                break;
+            }
+        }
+
+        /* Title-case via DFA. */
+        int bXor;
+        const co_string_desc *desc = co_dfa_totitle(p, &bXor);
+        if (!desc) {
+            /* Identity — copy as-is. */
+            for (j = 0; j < src; j++) *wp++ = p[j];
+        } else {
+            size_t out_len = desc->n_bytes;
+            if (bXor && out_len != src) {
+                for (j = 0; j < src; j++) *wp++ = p[j];
+            } else if (bXor) {
+                for (j = 0; j < out_len; j++)
+                    *wp++ = p[j] ^ desc->p[j];
+            } else {
+                for (j = 0; j < out_len; j++)
+                    *wp++ = desc->p[j];
+            }
+        }
+        p += src;
     }
 
     /* Copy remainder unchanged. */
