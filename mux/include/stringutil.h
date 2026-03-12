@@ -2343,9 +2343,6 @@ public:
         }
     }
 
-    void UpperCase();
-    void LowerCase();
-    void UpperCaseFirst();
     void FoldForMatching();
 
     // mux_string_cursor c;

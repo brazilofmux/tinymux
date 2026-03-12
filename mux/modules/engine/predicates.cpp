@@ -12,6 +12,10 @@
 #include "config.h"
 #include "externs.h"
 
+extern "C" {
+#include "color_ops.h"
+}
+
 static inline const UTF8 *utf8_advance_predicate(const UTF8 *p)
 {
     if (nullptr == p || '\0' == *p)
@@ -877,9 +881,14 @@ void do_addcommand
     {
         mux_string *sName = new mux_string(name);
         sName->strip(T("\r\n\t "));
-        sName->LowerCase();
         sName->export_TextPlain(pName);
         delete sName;
+        {
+            size_t nPlain = strlen(reinterpret_cast<const char *>(pName));
+            UTF8 tmp[LBUF_SIZE];
+            nPlain = co_tolower(tmp, pName, nPlain);
+            memcpy(pName, tmp, nPlain + 1);
+        }
     }
     if (  0 == nargs
        || '\0' == pName[0]

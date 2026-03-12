@@ -8,23 +8,39 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdi
     $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) \
     $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(OPENSSL_CFLAGS)
 
+AM_CFLAGS = -O2 -Wall -Wextra -Wno-implicit-fallthrough -std=c11
+
 LIBMUX_SRC = libmux.cpp \
     sha1.cpp svdrand.cpp svdhash.cpp \
     timeutil.cpp timeabsolute.cpp timedelta.cpp timeparser.cpp timezone.cpp \
     utf8_collate.cpp utf8_grapheme.cpp utf8_normalize.cpp utf8tables.cpp \
     strtod.cpp alarm.cpp mathutil.cpp stringutil.cpp alloc.cpp dbutil.cpp
 
-LIBMUX_OBJS = $(LIBMUX_SRC:.cpp=.lo)
+LIBMUX_C_SRC = color_ops.c
+
+LIBMUX_CXX_OBJS = $(LIBMUX_SRC:.cpp=.lo)
+LIBMUX_C_OBJS = $(LIBMUX_C_SRC:.c=.lo)
+LIBMUX_OBJS = $(LIBMUX_CXX_OBJS) $(LIBMUX_C_OBJS)
 
 all-local: libmux.so
 
-# Compile with -fPIC (default visibility).
+# Compile C++ with -fPIC (default visibility).
 %.lo: %.cpp
 	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -c -o $@ $<
+
+# Compile C (Ragel-generated color_ops, unicode tables) with -fPIC.
+%.lo: %.c
+	$(CC) $(AM_CFLAGS) -I$(top_srcdir)/include $(DYNAMICLIB_CXXFLAGS) -c -o $@ $<
+
+# Ragel .rl -> .c
+color_ops.c: color_ops.rl $(top_srcdir)/include/color_ops.h
+	ragel -G2 -C -o $@ $<
 
 libmux.so: $(LIBMUX_OBJS)
 	$(CXX) $(CXXFLAGS) $(DYNAMICLIB_CXXFLAGS) -Wl,-soname,libmux.so -o $@ $(LIBMUX_OBJS) $(LIBS) $(DL_LIB) $(SQL_LIBS)
 
-CLEANFILES = libmux.so *.lo
+BUILT_SOURCES = color_ops.c
 
-EXTRA_DIST = $(LIBMUX_SRC)
+CLEANFILES = libmux.so *.lo color_ops.c
+
+EXTRA_DIST = $(LIBMUX_SRC) $(LIBMUX_C_SRC) color_ops.rl

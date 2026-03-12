@@ -10,6 +10,10 @@
 #include "ast.h"
 #include "sqlite_backend.h"
 #include "engine_api.h"
+
+extern "C" {
+#include "color_ops.h"
+}
 using namespace std;
 
 // Factory class declaration — internal to engine.so (no DCL_EXPORT).
@@ -6020,12 +6024,14 @@ static FUNCTION(fun_lcstr)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string(fargs[0]);
-    sStr->LowerCase();
+    size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-
-    delete sStr;
+    unsigned char out[LBUF_SIZE];
+    size_t n = co_tolower(out, reinterpret_cast<const unsigned char *>(fargs[0]), nLen);
+    if (n > nMax) n = nMax;
+    memcpy(*bufc, out, n);
+    *bufc += n;
+    **bufc = '\0';
 }
 
 static FUNCTION(fun_ucstr)
@@ -6038,12 +6044,14 @@ static FUNCTION(fun_ucstr)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string(fargs[0]);
-    sStr->UpperCase();
+    size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-
-    delete sStr;
+    unsigned char out[LBUF_SIZE];
+    size_t n = co_toupper(out, reinterpret_cast<const unsigned char *>(fargs[0]), nLen);
+    if (n > nMax) n = nMax;
+    memcpy(*bufc, out, n);
+    *bufc += n;
+    **bufc = '\0';
 }
 
 static FUNCTION(fun_capstr)
@@ -6056,12 +6064,14 @@ static FUNCTION(fun_capstr)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string(fargs[0]);
-    sStr->UpperCaseFirst();
+    size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-
-    delete sStr;
+    unsigned char out[LBUF_SIZE];
+    size_t n = co_totitle(out, reinterpret_cast<const unsigned char *>(fargs[0]), nLen);
+    if (n > nMax) n = nMax;
+    memcpy(*bufc, out, n);
+    *bufc += n;
+    **bufc = '\0';
 }
 
 /*

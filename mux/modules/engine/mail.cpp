@@ -11,6 +11,10 @@
 #include "config.h"
 #include "externs.h"
 
+extern "C" {
+#include "color_ops.h"
+}
+
 const UTF8 *DASH_LINE =
     T("\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
       "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
@@ -464,12 +468,15 @@ static void add_folder_name(dbref player, int fld, UTF8 *name)
     sRecord->append(name);
     sRecord->append(T(":"));
     sRecord->append(static_cast<long>(fld));
-    sRecord->UpperCase();
-
     UTF8 *aNew = alloc_lbuf("add_folder_name.new");
     sRecord->export_TextPlain(aNew);
     delete sRecord;
     size_t nNew = strlen(reinterpret_cast<char *>(aNew));
+    {
+        UTF8 tmp[LBUF_SIZE];
+        nNew = co_toupper(tmp, aNew, nNew);
+        memcpy(aNew, tmp, nNew + 1);
+    }
 
     UTF8 *p, *q;
     if (0 != nFolders)
@@ -615,12 +622,16 @@ static int get_folder_number(dbref player, UTF8 *name)
         sRecord->append(T(":"));
         sRecord->append(name);
         sRecord->append(T(":"));
-        sRecord->UpperCase();
 
         UTF8 *aPattern = alloc_lbuf("add_folder_num_pat");
         sRecord->export_TextPlain(aPattern);
         delete sRecord;
         size_t nPattern = strlen(reinterpret_cast<char *>(aPattern));
+        {
+            UTF8 tmp[LBUF_SIZE];
+            nPattern = co_toupper(tmp, aPattern, nPattern);
+            memcpy(aPattern, tmp, nPattern + 1);
+        }
 
         size_t i;
         bool bSucceeded = BMH_StringSearch(&i, nPattern, aPattern, nFolders, aFolders);
