@@ -103,3 +103,80 @@ char *rv64_strcat(char *out, const char **fargs, int nfargs) {
     if (nfargs == 0) *p = '\0';
     return out;
 }
+
+/* ---------------------------------------------------------------
+ * Helper: inline atoi (no libc dependency).
+ * --------------------------------------------------------------- */
+
+static int satoi(const char *s) {
+    int v = 0;
+    int neg = 0;
+    if (*s == '-') { neg = 1; s++; }
+    while (*s >= '0' && *s <= '9') {
+        v = v * 10 + (*s - '0');
+        s++;
+    }
+    return neg ? -v : v;
+}
+
+/* ---------------------------------------------------------------
+ * extract(list, pos, count, delim) — extract elements from list.
+ *
+ * Equivalent to MUX extract(): 1-based position, returns count
+ * elements separated by the delimiter.  If pos or count is out
+ * of range, returns empty string.  Delimiter defaults to space
+ * if empty.
+ * --------------------------------------------------------------- */
+
+char *rv64_extract(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 3) {
+        out[0] = '\0';
+        return out;
+    }
+
+    const char *list = fargs[0];
+    int pos = satoi(fargs[1]);    /* 1-based */
+    int count = satoi(fargs[2]);
+    char delim = ' ';
+    if (nfargs >= 4 && fargs[3][0] != '\0') {
+        delim = fargs[3][0];
+    }
+
+    if (pos < 1 || count < 1) {
+        out[0] = '\0';
+        return out;
+    }
+
+    /* Skip to element at position pos (1-based). */
+    const char *p = list;
+    int cur = 1;
+    while (cur < pos && *p) {
+        if (*p == delim) cur++;
+        p++;
+    }
+    if (cur < pos || *p == '\0') {
+        /* If we ran past delimiters but landed exactly at pos,
+         * check if we're at a trailing delimiter. */
+        if (cur < pos) {
+            out[0] = '\0';
+            return out;
+        }
+    }
+
+    /* Copy 'count' elements. */
+    char *op = out;
+    int copied = 0;
+    while (copied < count && *p) {
+        if (*p == delim) {
+            copied++;
+            if (copied < count) {
+                *op++ = delim;
+            }
+        } else {
+            *op++ = *p;
+        }
+        p++;
+    }
+    *op = '\0';
+    return out;
+}

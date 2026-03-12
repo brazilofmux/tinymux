@@ -82,9 +82,10 @@ static struct {
 // The blob uses rv64_ prefixed names; MUX uses plain uppercase.
 //
 static const struct { const char *mux_name; const char *blob_name; } s_tier2_map[] = {
-    { "CAT",    "rv64_cat" },
-    { "STRLEN", "rv64_strlen" },
-    { "STRCAT", "rv64_strcat" },
+    { "CAT",     "rv64_cat" },
+    { "STRLEN",  "rv64_strlen" },
+    { "STRCAT",  "rv64_strcat" },
+    { "EXTRACT", "rv64_extract" },
     { nullptr, nullptr }
 };
 
@@ -1799,13 +1800,19 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         int inum_1str = h.emit(HIR_ITOA, TY_STRING, inum_1based);
         h.native_ops++;
 
-        // ECALL EXTRACT(list, inum_1based, 1, delim).
+        // EXTRACT(list, inum_1based, 1, delim) — Tier 2 if available.
         int extract_idx = engine_api_lookup("EXTRACT");
         uint64_t one_addr = rc.pool_str("1");
         int one_str = h.emit_sconst(one_addr, "1");
         int eargs[4] = { list_val, inum_1str, one_str, delim_val };
         int elem = h.emit_call(TY_STRING, extract_idx, eargs, 4);
-        h.ecalls++;
+        uint64_t t2ext = tier2_lookup("EXTRACT");
+        if (t2ext) {
+            h.tier2_addr[elem] = t2ext;
+            h.tier2_calls++;
+        } else {
+            h.ecalls++;
+        }
 
         // Set iter context for ## and #@ resolution in body.
         int saved_itext = iter_itext_val;
