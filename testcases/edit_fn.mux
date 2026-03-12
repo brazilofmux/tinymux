@@ -67,7 +67,7 @@
               [translate(edit(CONNECTEDCONNECTEDabcdefCONNECTEDCONNECTED,CONNECTED,%xr-),p)]
             )
           ),
-          529C98FE0F4AEC3A37243A14BDC0C8511EF92EAB
+          1DE0EC877205FF3F92DFCF17150C68BC951BAE91
         )=
     {
       @log smoke=TC003: Regressions. Succeeded.
@@ -76,7 +76,7 @@
       @log smoke=TC003: Regressions. Failed (%q0).
     }
   }
---
+-
 #
 # Test Case #4 - Length of single change
 #

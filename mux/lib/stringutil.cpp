@@ -7019,76 +7019,6 @@ void mux_string::delete_Chars(mux_cursor iStart, mux_cursor iEnd)
     m_autf[m_iLast.m_byte] = '\0';
 }
 
-/*! \brief Perform a search-and-replace-all operation, or prepend or
- * append the replacement string.
- *
- * If sFrom is "^", sTo is prepended to this string. If sFrom is "$",
- * sTo is appended to this string.  Search-and-replace-all for a literal
- * caret or dollar sign can be done by escaping them with a backslash or
- * percent sign, but in that case sFrom will be destructively modified
- * to remove the escape character.
- *
- * \param sFrom     String to search for within this string.
- * \param sTo       Replacement string.
- * \return          None.
- */
-
-void mux_string::edit(mux_string &sFrom, const mux_string &sTo)
-{
-    // Do the substitution.  Idea for prefix/suffix from R'nice@TinyTIM.
-    //
-    mux_cursor nFrom = sFrom.m_iLast;
-    if (  1 == nFrom.m_byte
-       && '^' == sFrom.m_autf[0])
-    {
-        // Prepend 'to' to string.
-        //
-        prepend(sTo);
-    }
-    else if (  1 == nFrom.m_byte
-            && '$' == sFrom.m_autf[0])
-    {
-        // Append 'to' to string.
-        //
-        append(sTo);
-    }
-    else
-    {
-        // Replace all occurances of 'from' with 'to'. Handle the special
-        // cases of from = \$ and \^.
-        //
-        if (  (  '\\' == sFrom.m_autf[0]
-              || '%' == sFrom.m_autf[0])
-           && (  '$' == sFrom.m_autf[1]
-              || '^' == sFrom.m_autf[1])
-           && 2 == nFrom.m_byte)
-        {
-            mux_cursor n(1, 1);
-            sFrom.delete_Chars(CursorMin, n);
-            nFrom(nFrom.m_byte-1, nFrom.m_point-1);
-        }
-
-        mux_cursor iStart = CursorMin, iFound = CursorMin;
-        mux_cursor nTo = sTo.m_iLast;
-        bool bSucceeded = search(sFrom, &iFound);
-        while (bSucceeded)
-        {
-            iStart = iFound;
-            replace_Chars(sTo, iStart, nFrom);
-            iStart = iStart + nTo;
-
-            if (iStart < m_iLast)
-            {
-                bSucceeded = search(sFrom, &iFound, iStart);
-            }
-            else
-            {
-                bSucceeded = false;
-            }
-        }
-    }
-}
-
 void mux_string::encode_Html()
 {
     mux_cursor iPos = CursorMin;
@@ -8386,21 +8316,6 @@ void mux_string::replace_Char(const mux_cursor &i, const mux_string &sStr, const
  * \return         None.
  */
 
-void mux_string::reverse()
-{
-    mux_string sTemp;
-    sTemp.ensure_color_capacity(m_vcs.size());
-
-    mux_cursor i = m_iLast, j = i;
-
-    while (cursor_prev(i))
-    {
-        sTemp.append(*this, i, j);
-        j = i;
-    }
-    import(sTemp);
-}
-
 /*! \brief Searches text for a specified pattern.
  *
  * \param pPattern Pointer to pattern to search for.
@@ -8826,29 +8741,6 @@ void mux_string::trim(const UTF8 ch, bool bLeft, bool bRight)
             cursor_from_byte(iEnd, iPos);
             delete_Chars(CursorMin, iEnd);
         }
-    }
-}
-
-void mux_string::trim(const UTF8 *p, bool bLeft, bool bRight)
-{
-    if (  0 == m_iLast.m_byte
-       || nullptr == p
-       || '\0' == p[0]
-       || (  !bLeft
-          && !bRight ))
-    {
-        return;
-    }
-
-    size_t n = strlen(reinterpret_cast<const char *>(p));
-
-    if (1 == n)
-    {
-        trim(p[0], bLeft, bRight);
-    }
-    else
-    {
-        trim(p, n, bLeft, bRight);
     }
 }
 

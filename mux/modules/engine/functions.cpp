@@ -6566,13 +6566,14 @@ static FUNCTION(fun_reverse)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = new mux_string(fargs[0]);
-
-    sStr->reverse();
+    size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-
-    delete sStr;
+    unsigned char out[LBUF_SIZE];
+    size_t n = co_reverse(out, reinterpret_cast<const unsigned char *>(fargs[0]), nLen);
+    if (n > nMax) n = nMax;
+    memcpy(*bufc, out, n);
+    *bufc += n;
+    **bufc = '\0';
 }
 
 static FUNCTION(fun_revwords)
@@ -8043,45 +8044,75 @@ static FUNCTION(fun_edit)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr  = nullptr;
-    mux_string *sFrom = nullptr;
-    mux_string *sTo   = nullptr;
+    unsigned char bufA[LBUF_SIZE], bufB[LBUF_SIZE];
+    size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
+    memcpy(bufA, fargs[0], nLen + 1);
 
-    try
+    unsigned char *pSrc = bufA, *pDst = bufB;
+    for (int i = 1; i + 1 < nfargs; i += 2)
     {
-        sStr  = new mux_string(fargs[0]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+        const unsigned char *pFrom = reinterpret_cast<const unsigned char *>(fargs[i]);
+        const unsigned char *pTo = reinterpret_cast<const unsigned char *>(fargs[i + 1]);
+        size_t fLen = strlen(reinterpret_cast<const char *>(pFrom));
+        size_t tLen = strlen(reinterpret_cast<const char *>(pTo));
 
-    if (nullptr != sStr)
-    {
-        for (int i = 1; i + 1 < nfargs; i += 2)
+        if (1 == fLen && '^' == pFrom[0])
         {
-            try
+            // Prepend 'to' to string.
+            //
+            size_t nTotal = tLen + nLen;
+            if (nTotal > LBUF_SIZE - 1) nTotal = LBUF_SIZE - 1;
+            size_t nToCopy = (tLen < LBUF_SIZE - 1) ? tLen : LBUF_SIZE - 1;
+            memcpy(pDst, pTo, nToCopy);
+            size_t nRemain = (nTotal > nToCopy) ? nTotal - nToCopy : 0;
+            if (nRemain > 0) memcpy(pDst + nToCopy, pSrc, nRemain);
+            nLen = nTotal;
+            pDst[nLen] = '\0';
+        }
+        else if (1 == fLen && '$' == pFrom[0])
+        {
+            // Append 'to' to string.
+            //
+            size_t nTotal = nLen + tLen;
+            if (nTotal > LBUF_SIZE - 1) nTotal = LBUF_SIZE - 1;
+            memcpy(pDst, pSrc, nLen);
+            size_t nAppend = nTotal - nLen;
+            if (nAppend > 0) memcpy(pDst + nLen, pTo, nAppend);
+            nLen = nTotal;
+            pDst[nLen] = '\0';
+        }
+        else
+        {
+            // Handle escaped ^ and $ (e.g., \^ or %^ → literal ^ or $).
+            //
+            const unsigned char *pFromActual = pFrom;
+            size_t fLenActual = fLen;
+            unsigned char fromBuf[LBUF_SIZE];
+            if (   2 == fLen
+                && ('\\' == pFrom[0] || '%' == pFrom[0])
+                && ('^' == pFrom[1] || '$' == pFrom[1]))
             {
-                sFrom = new mux_string(fargs[i]);
-                sTo = new mux_string(fargs[i + 1]);
+                fromBuf[0] = pFrom[1];
+                fromBuf[1] = '\0';
+                pFromActual = fromBuf;
+                fLenActual = 1;
             }
-            catch (...)
-            {
-                ; // Nothing.
-            }
-            if (nullptr != sFrom && nullptr != sTo)
-            {
-                sStr->edit(*sFrom, *sTo);
-            }
-            delete sFrom;
-            delete sTo;
+
+            nLen = co_edit(pDst, pSrc, nLen,
+                           pFromActual, fLenActual,
+                           pTo, tLen);
         }
 
-        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
+        unsigned char *tmp = pSrc;
+        pSrc = pDst;
+        pDst = tmp;
     }
 
-    delete sStr;
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    if (nLen > nMax) nLen = nMax;
+    memcpy(*bufc, pSrc, nLen);
+    *bufc += nLen;
+    **bufc = '\0';
 }
 
 /* ---------------------------------------------------------------------------
@@ -10716,33 +10747,47 @@ static FUNCTION(fun_trim)
         }
     }
 
-    mux_string *sStr = nullptr;
-    try
+    if (n <= 1)
     {
-        sStr = new mux_string(fargs[0]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == sStr)
-    {
-        return;
-    }
-
-    if (0 == n)
-    {
-        sStr->trim(' ', bLeft, bRight);
+        // Single-char trim (or default space): use co_trim.
+        //
+        unsigned char trim_char = (n == 1) ? p[0] : ' ';
+        int trim_flags = (bLeft ? 1 : 0) | (bRight ? 2 : 0);
+        size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
+        unsigned char out[LBUF_SIZE];
+        size_t nOut = co_trim(out,
+                              reinterpret_cast<const unsigned char *>(fargs[0]),
+                              nLen, trim_char, trim_flags);
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        if (nOut > nMax) nOut = nMax;
+        memcpy(*bufc, out, nOut);
+        *bufc += nOut;
+        **bufc = '\0';
     }
     else
     {
-        sStr->trim(p, n, bLeft, bRight);
-    }
+        // Pattern trim: fall back to mux_string.
+        //
+        mux_string *sStr = nullptr;
+        try
+        {
+            sStr = new mux_string(fargs[0]);
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
 
-    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-    delete sStr;
+        if (nullptr == sStr)
+        {
+            return;
+        }
+
+        sStr->trim(p, n, bLeft, bRight);
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
+        delete sStr;
+    }
 }
 
 static FUNCTION(fun_config)

@@ -2217,7 +2217,6 @@ public:
     void compress(const UTF8 *ch, size_t nSep);
     void compress_Spaces();
     void delete_Chars(mux_cursor iStart, mux_cursor iEnd);
-    void edit(mux_string &sFrom, const mux_string &sTo);
     void encode_Html();
     [[nodiscard]] UTF8 export_Char(size_t n) const; // Deprecated.
     [[nodiscard]] LBUF_OFFSET export_Char_UTF8(size_t iFirst, UTF8 *pBuffer) const;
@@ -2282,7 +2281,6 @@ public:
     void replace_Chars(const mux_string &pTo, mux_cursor iStart, mux_cursor nLen);
     bool replace_Point(const UTF8 *p, const mux_cursor &i);
     void replace_Char(const mux_cursor &i, const mux_string &sStr, const mux_cursor &j);
-    void reverse();
     [[nodiscard]] bool search
     (
         const UTF8 *pPattern,
@@ -2325,7 +2323,6 @@ public:
         size_t nLen = (LBUF_SIZE-1)
     );
     void trim(const UTF8 ch = ' ', bool bLeft = true, bool bRight = true);
-    void trim(const UTF8 *p, bool bLeft = true, bool bRight = true);
     void trim(const UTF8 *p, size_t n, bool bLeft = true, bool bRight = true);
     void truncate(mux_cursor iEnd);
 
