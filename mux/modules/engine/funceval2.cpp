@@ -14,6 +14,10 @@
 #include "config.h"
 #include "externs.h"
 
+extern "C" {
+#include "color_ops.h"
+}
+
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
 
@@ -443,26 +447,50 @@ FUNCTION(fun_last)
         return;
     }
 
-    mux_string *sStr = nullptr;
-    mux_words *words = nullptr;
-    try
+    if (1 == sep.n)
     {
-        sStr = new mux_string(fargs[0]);
-        words = new mux_words(*sStr);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+        // Single-char delimiter: use co_last.
+        // Trim leading/trailing delimiters for space (MUX compresses spaces).
+        //
+        UTF8 *bp = (' ' == sep.str[0])
+            ? trim_space_sep(fargs[0], sep) : fargs[0];
+        size_t slen = strlen(reinterpret_cast<const char *>(bp));
+        unsigned char out[LBUF_SIZE];
+        size_t nOut = co_last(out,
+            reinterpret_cast<const unsigned char *>(bp), slen,
+            static_cast<unsigned char>(sep.str[0]));
 
-    if (  nullptr != sStr
-       && nullptr != words)
-    {
-        LBUF_OFFSET nWords = words->find_Words(sep.str);
-        words->export_WordColor(nWords-1, buff, bufc);
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        if (nOut > nMax) nOut = nMax;
+        memcpy(*bufc, out, nOut);
+        *bufc += nOut;
+        **bufc = '\0';
     }
-    delete sStr;
-    delete words;
+    else
+    {
+        // Multi-char delimiter: fall back to mux_string.
+        //
+        mux_string *sStr = nullptr;
+        mux_words *words = nullptr;
+        try
+        {
+            sStr = new mux_string(fargs[0]);
+            words = new mux_words(*sStr);
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (  nullptr != sStr
+           && nullptr != words)
+        {
+            LBUF_OFFSET nWords = words->find_Words(sep.str);
+            words->export_WordColor(nWords-1, buff, bufc);
+        }
+        delete sStr;
+        delete words;
+    }
 }
 
 /*
@@ -485,34 +513,63 @@ FUNCTION(fun_lrest)
         return;
     }
 
-    mux_string *sStr = nullptr;
-    mux_words *words = nullptr;
-    try
+    if (  1 == sep.n
+       && ' ' == sep.str[0])
     {
-        sStr = new mux_string(fargs[0]);
-        words = new mux_words(*sStr);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+        // Space delimiter: use co_extract for words 1..N-1.
+        //
+        UTF8 *bp = trim_space_sep(fargs[0], sep);
+        const unsigned char *p = reinterpret_cast<const unsigned char *>(bp);
+        size_t slen = strlen(reinterpret_cast<const char *>(p));
+        unsigned char delim = ' ';
 
-    if (  nullptr != sStr
-       && nullptr != words)
-    {
-        LBUF_OFFSET nWords = words->find_Words(sep.str);
+        size_t nWords = co_words_count(p, slen, delim);
         if (nWords > 1)
         {
-            words->export_WordColor(0, buff, bufc);
-            for (LBUF_OFFSET i = 1; i < nWords - 1; i++)
-            {
-                print_sep(sep, buff, bufc);
-                words->export_WordColor(i, buff, bufc);
-            }
+            unsigned char out[LBUF_SIZE];
+            size_t nOut = co_extract(out, p, slen,
+                1, nWords - 1, delim, delim);
+
+            size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+            if (nOut > nMax) nOut = nMax;
+            memcpy(*bufc, out, nOut);
+            *bufc += nOut;
+            **bufc = '\0';
         }
     }
-    delete sStr;
-    delete words;
+    else
+    {
+        // Multi-char delimiter: fall back to mux_string.
+        //
+        mux_string *sStr = nullptr;
+        mux_words *words = nullptr;
+        try
+        {
+            sStr = new mux_string(fargs[0]);
+            words = new mux_words(*sStr);
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (  nullptr != sStr
+           && nullptr != words)
+        {
+            LBUF_OFFSET nWords = words->find_Words(sep.str);
+            if (nWords > 1)
+            {
+                words->export_WordColor(0, buff, bufc);
+                for (LBUF_OFFSET i = 1; i < nWords - 1; i++)
+                {
+                    print_sep(sep, buff, bufc);
+                    words->export_WordColor(i, buff, bufc);
+                }
+            }
+        }
+        delete sStr;
+        delete words;
+    }
 }
 
 // For an named object, or the executor, find the last created object

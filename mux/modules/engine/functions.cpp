@@ -3273,56 +3273,84 @@ static FUNCTION(fun_extract)
         return;
     }
 
-    mux_string *sStr = nullptr;
-    mux_words *words = nullptr;
-    try
-    {
-        sStr = new mux_string(trim_space_sep(fargs[0], sep));
-        words = new mux_words(*sStr);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    UTF8 *bp = trim_space_sep(fargs[0], sep);
 
-    if (  nullptr == sStr
-       || nullptr == words)
+    if (  1 == sep.n
+       && ' ' == sep.str[0]
+       && 1 == osep.n)
     {
+        // Space delimiter: use co_extract (compresses consecutive spaces).
+        //
+        size_t slen = strlen(reinterpret_cast<const char *>(bp));
+        unsigned char out[LBUF_SIZE];
+        size_t nOut = co_extract(out,
+            reinterpret_cast<const unsigned char *>(bp), slen,
+            static_cast<size_t>(iFirstWord),
+            static_cast<size_t>(nWordsToCopy),
+            static_cast<unsigned char>(sep.str[0]),
+            static_cast<unsigned char>(osep.str[0]));
+
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        if (nOut > nMax) nOut = nMax;
+        memcpy(*bufc, out, nOut);
+        *bufc += nOut;
+        **bufc = '\0';
+    }
+    else
+    {
+        // Multi-char delimiter: fall back to mux_string.
+        //
+        mux_string *sStr = nullptr;
+        mux_words *words = nullptr;
+        try
+        {
+            sStr = new mux_string(bp);
+            words = new mux_words(*sStr);
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (  nullptr == sStr
+           || nullptr == words)
+        {
+            delete sStr;
+            delete words;
+            return;
+        }
+
+        LBUF_OFFSET nWords = words->find_Words(sep.str);
+
+        iFirstWord--;
+        if (iFirstWord < nWords)
+        {
+            if (nWords < iFirstWord + nWordsToCopy)
+            {
+                nWordsToCopy = nWords - iFirstWord;
+            }
+
+            bool bFirst = true;
+
+            for (LBUF_OFFSET i = static_cast<LBUF_OFFSET>(iFirstWord);
+                 i < iFirstWord + nWordsToCopy;
+                 i++)
+            {
+                if (!bFirst)
+                {
+                    print_sep(osep, buff, bufc);
+                }
+                else
+                {
+                    bFirst = false;
+                }
+                words->export_WordColor(i, buff, bufc);
+            }
+        }
+
         delete sStr;
         delete words;
-        return;
     }
-
-    LBUF_OFFSET nWords = words->find_Words(sep.str);
-
-    iFirstWord--;
-    if (iFirstWord < nWords)
-    {
-        if (nWords < iFirstWord + nWordsToCopy)
-        {
-            nWordsToCopy = nWords - iFirstWord;
-        }
-
-        bool bFirst = true;
-
-        for (LBUF_OFFSET i = static_cast<LBUF_OFFSET>(iFirstWord);
-             i < iFirstWord + nWordsToCopy;
-             i++)
-        {
-            if (!bFirst)
-            {
-                print_sep(osep, buff, bufc);
-            }
-            else
-            {
-                bFirst = false;
-            }
-            words->export_WordColor(i, buff, bufc);
-        }
-    }
-
-    delete sStr;
-    delete words;
 }
 
 // xlate() controls the subtle definition of a softcode boolean.
