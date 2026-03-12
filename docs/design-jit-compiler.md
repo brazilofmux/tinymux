@@ -247,9 +247,10 @@ AST --> HIR lowering (hir_lower)                  [done]
 CFG + SSA construction (hir_ssa)                  [done]
     |
     v
-SSA optimization: fold + copy_prop + DCE          [done]
+SSA optimization: fold + copy_prop + CSE + DCE     [done]
     (constant folding for 28+ functions,
-     copy propagation, dead code elimination)
+     copy propagation, CSE, dead code elimination,
+     LICM for loop-invariant hoisting)
     |
     v
 Linear-scan register allocation (Poletto-Sarkar)  [done]
@@ -316,7 +317,9 @@ Not every softcode function becomes inline machine code. The split:
 **Compiled (inline RISC-V)**:
  - Arithmetic: `add()`, `sub()`, `mul()`, `div()`, `mod()`, comparisons
  - Logic: `and()`, `or()`, `not()`, `t()`
- - Control flow: `if()`, `ifelse()`, `switch()` ✅, `iter()` ✅, `while()`
+ - Control flow: `if()`, `ifelse()`, `switch()`/`case()`, `switchall()`/
+   `caseall()`, `cand()`/`cor()`, `candbool()`/`corbool()`, `iter()` — all
+   7 NOEVAL functions are compiled
  - String building: literal concatenation, `%r`, `%b`, `%t`
  - Register access: `%q0`-`%q9`, `setr()`, `setq()`
  - Type conversions: `int_to_string`, `string_to_int`, etc.
@@ -598,10 +601,10 @@ memory address), TY_VOID (side-effect only).
 #### Files
 
 ```
-mux/include/hir.h                  — HIR definition (353 lines)
-mux/modules/engine/dbt_compile.cpp — lowering + codegen + caching (3725 lines)
+mux/include/hir.h                  — HIR definition (355 lines)
+mux/modules/engine/dbt_compile.cpp — lowering + codegen + caching (3731 lines)
 mux/modules/engine/hir_ssa.cpp     — SSA construction (453 lines)
-mux/modules/engine/hir_opt.cpp     — SSA optimization passes (504 lines)
+mux/modules/engine/hir_opt.cpp     — SSA optimization passes (654 lines)
 ```
 
 Pipeline in `compile_expression()`:
@@ -621,8 +624,10 @@ AST → hir_lower → hir_build_cfg → hir_ssa_construct → hir_optimize
 
  - ✅ **M3: SSA optimization** — constant folding (28+ functions
    + algebraic identities), copy propagation (chain resolution),
-   DCE (reachability marking). Multi-pass convergence (3 rounds).
-   `hir_opt.cpp` (504 lines). Folded exprs still 0.03 us.
+   CSE (dominator-based duplicate elimination), DCE (reachability
+   marking). Multi-pass convergence (3 rounds). LICM hoists
+   loop-invariant pure ops to preheader. `hir_opt.cpp`. Folded
+   exprs still 0.03 us.
 
  - ✅ **M4: Control flow** — if/ifelse → BRC + 3 blocks + merge PHI.
    cand/cor/candbool/corbool → short-circuit chains with forward BRC
@@ -639,12 +644,17 @@ AST → hir_lower → hir_build_cfg → hir_ssa_construct → hir_optimize
    have live ranges extended to the latch block, preventing
    cross-iteration register corruption.
 
- - ⬜ **M6: Advanced optimizations** — not yet implemented.
-   CSE, strength reduction. LICM now applicable (iter loops).
-   **Not yet**: `while()` (similar to iter, needs back-edge + exit
-   condition), nested loops.
+ - ✅ **M6: Advanced optimizations** — CSE (common subexpression
+   elimination) and LICM (loop-invariant code motion) implemented.
+   CSE replaces duplicate pure instructions with COPYs using
+   dominator-based validity check.  LICM hoists loop-invariant
+   pure operations to the preheader.  Both limited to pure ops
+   (arithmetic, comparison, conversion) — ECALLs are excluded.
+   Nested iter() would need qreg stacking (currently flat).
+   All 7 NOEVAL functions compiled: if, ifelse, cand/candbool,
+   cor/corbool, switch/case/switchall/caseall, iter.
 
-Actual total: ~5,035 lines (vs. 2,500-3,500 estimated).
+Actual total: ~5,193 lines (vs. 2,500-3,500 estimated).
 
 #### What NOT to Build
 

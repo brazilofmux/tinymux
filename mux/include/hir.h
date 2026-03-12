@@ -347,7 +347,9 @@ void hir_ssa_construct(hir_program &h);
 // SSA optimization (hir_opt.cpp).
 void hir_const_fold(hir_program &h);
 void hir_copy_prop(hir_program &h);
+void hir_cse(hir_program &h);
 void hir_dce(hir_program &h);
+void hir_licm(hir_program &h);
 void hir_optimize(hir_program &h);
 
 #endif // HIR_H

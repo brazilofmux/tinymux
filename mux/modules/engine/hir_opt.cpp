@@ -480,17 +480,160 @@ void hir_dce(hir_program &h) {
 }
 
 // ---------------------------------------------------------------
+// Common Subexpression Elimination (CSE)
+//
+// Walk instructions in block order.  For each pure instruction,
+// check if an identical (kind, ty, src1, src2, val) exists earlier
+// in a dominating block.  If so, replace the duplicate with a COPY
+// referencing the original.  ECALLs and side-effecting instructions
+// are never CSE candidates (they may produce different results on
+// repeated calls, e.g., rand()).
+// ---------------------------------------------------------------
+
+static bool is_cse_candidate(hir_kind k) {
+    switch (k) {
+        case HIR_ADD: case HIR_SUB: case HIR_MUL: case HIR_DIV:
+        case HIR_REM: case HIR_NEG: case HIR_ABS: case HIR_SIGN:
+        case HIR_MAX: case HIR_MIN:
+        case HIR_EQ: case HIR_NE: case HIR_LT: case HIR_LE:
+        case HIR_GT: case HIR_GE:
+        case HIR_NOT: case HIR_BOOL:
+        case HIR_INC: case HIR_DEC:
+        case HIR_ATOI: case HIR_ITOA:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static bool dominates(const hir_program &h, int blk_d, int blk_b) {
+    // Does block blk_d dominate block blk_b?
+    if (blk_d == blk_b) return true;
+    int b = blk_b;
+    while (b >= 0) {
+        b = h.idom[b];
+        if (b == blk_d) return true;
+    }
+    return false;
+}
+
+void hir_cse(hir_program &h) {
+    // Simple value table: brute-force scan for matches among earlier insns.
+    // Sufficient for programs of our size (< 4096 insns).
+    for (int i = 0; i < h.n_insns; i++) {
+        if (h.kind[i] == HIR_NOP) continue;
+        if (!is_cse_candidate(h.kind[i])) continue;
+
+        // Search earlier instructions for a match.
+        for (int j = 0; j < i; j++) {
+            if (h.kind[j] != h.kind[i]) continue;
+            if (h.ty[j] != h.ty[i]) continue;
+            if (h.src1[j] != h.src1[i]) continue;
+            if (h.src2[j] != h.src2[i]) continue;
+            if (h.val[j] != h.val[i]) continue;
+
+            // Same instruction.  Check dominance.
+            if (dominates(h, h.blk[j], h.blk[i])) {
+                // Replace i with COPY of j.
+                h.kind[i] = HIR_COPY;
+                h.src1[i] = j;
+                h.src2[i] = -1;
+                h.val[i] = 0;
+                break;
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------
+// Loop-Invariant Code Motion (LICM)
+//
+// For each loop (identified by back-edges), move pure instructions
+// whose operands are all defined outside the loop to the preheader.
+// "Moving" an instruction means changing its block assignment.
+// The preheader is the unique predecessor of the header that is NOT
+// the latch (i.e., the entry block for our structured iter loops).
+// ---------------------------------------------------------------
+
+void hir_licm(hir_program &h) {
+    if (h.n_rpo == 0) return;
+
+    // Find back-edges and process each loop.
+    for (int latch = 0; latch < h.n_blocks; latch++) {
+        for (int s = 0; s < h.block_nsucc[latch]; s++) {
+            int header = h.block_succ[latch][s];
+            if (header < 0) continue;
+            if (h.rpo_pos[header] > h.rpo_pos[latch]) continue;
+
+            // Back-edge: latch → header.
+            // Find preheader: predecessor of header that is NOT in the loop.
+            int preheader = -1;
+            for (int p = 0; p < h.n_pred[header]; p++) {
+                int pred = h.pred_list[h.pred_base[header] + p];
+                if (h.rpo_pos[pred] < h.rpo_pos[header]) {
+                    preheader = pred;
+                    break;
+                }
+            }
+            if (preheader < 0) continue;
+
+            // Mark which blocks are in this loop (RPO between header
+            // and latch inclusive).
+            bool in_loop[HIR_MAX_BLOCKS];
+            memset(in_loop, 0, sizeof(in_loop));
+            for (int b = 0; b < h.n_blocks; b++) {
+                if (h.rpo_pos[b] >= h.rpo_pos[header] &&
+                    h.rpo_pos[b] <= h.rpo_pos[latch]) {
+                    in_loop[b] = true;
+                }
+            }
+
+            // Iteratively hoist loop-invariant instructions.
+            bool moved = true;
+            while (moved) {
+                moved = false;
+                for (int i = 0; i < h.n_insns; i++) {
+                    if (h.kind[i] == HIR_NOP) continue;
+                    if (!in_loop[h.blk[i]]) continue;
+                    if (!is_cse_candidate(h.kind[i])) continue;
+
+                    // Check if all operands are loop-invariant
+                    // (defined outside the loop or already hoisted).
+                    auto is_invariant = [&](int v) -> bool {
+                        if (v < 0) return true;
+                        if (v >= h.n_insns) return true;
+                        if (h.kind[v] == HIR_ICONST || h.kind[v] == HIR_SCONST)
+                            return true;
+                        return !in_loop[h.blk[v]];
+                    };
+
+                    if (!is_invariant(h.src1[i])) continue;
+                    if (h.kind[i] != HIR_BRC && !is_invariant(h.src2[i]))
+                        continue;
+
+                    // Hoist: move to preheader.
+                    h.blk[i] = preheader;
+                    moved = true;
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------
 // Top-level optimization entry point
 // ---------------------------------------------------------------
 
 void hir_optimize(hir_program &h) {
-    // Run constant folding + copy prop + DCE.
+    // Run constant folding + copy prop + CSE + DCE.
     // Iterate: folding can create new COPYs, copy prop can expose
-    // new constant operands, DCE can simplify the graph.
+    // new constant operands, CSE replaces duplicates with COPYs,
+    // DCE can simplify the graph.
     for (int pass = 0; pass < 3; pass++) {
         int prev = h.n_insns;
         hir_const_fold(h);
         hir_copy_prop(h);
+        hir_cse(h);
         hir_dce(h);
 
         // Count remaining live instructions to detect convergence.
@@ -500,5 +643,12 @@ void hir_optimize(hir_program &h) {
         }
         if (live == prev) break;  // converged
         prev = live;
+    }
+
+    // LICM runs once after the main optimization loop.
+    // It benefits from cleaned-up IR (constants folded, copies
+    // propagated, dead code eliminated).
+    if (h.n_blocks > 1) {
+        hir_licm(h);
     }
 }
