@@ -1,6 +1,6 @@
 # JIT Compilation via RISC-V and Dynamic Binary Translation
 
-## Status: Stage 4 In Progress (Stages 1-3 Substantially Complete)
+## Status: Stages 1-5 Complete
 
 Branch: `brazil`
 
@@ -8,11 +8,13 @@ Predecessors: `docs/PARSER.md` (study), `docs/PARSER_REPLACE.md` (AST evaluator)
 
 External work: `~/riscv` (DBT runtime), `~/slow-32` (ISA design + toolchain history)
 
-**As of 2026-03-11**: 585 smoke tests (84 rveval + 34 benchmarks), 5,035 lines
+**As of 2026-03-11**: 592 smoke tests (91 rveval + 37 benchmarks), ~5,300 lines
 across 4 compiler files (+ DBT runtime). Full SSA compiler pipeline operational:
 AST → HIR → SSA → optimize → linear-scan regalloc → RV64 → x86-64 JIT.
 Loop compilation (iter) with SSA back-edges and PHI nodes. Tier 2 blob
-(cat/strlen/strcat) working via JAL. switch/case compilation via branch chains.
+(cat/strlen/strcat/extract/words) working via JAL — zero-ECALL iter loops.
+switch/case compilation via branch chains. SQLite code cache (Stage 5)
+persists compiled programs across restarts (schema v7).
 
 ## Motivation
 
@@ -683,10 +685,12 @@ Loaded as a binary blob into guest memory at BLOB_BASE (0x10000).
 Compiled softcode calls via JAL — same address space, no ECALL
 boundary crossing.
 
-Currently implemented (3 functions in `mux/rv64/src/softlib.c`):
+Currently implemented (5 functions in `mux/rv64/src/softlib.c`):
  - `rv64_cat` — concatenate with space separators
  - `rv64_strlen` — return string length as decimal string
  - `rv64_strcat` — concatenate without separators
+ - `rv64_extract` — extract elements from delimiter-separated list
+ - `rv64_words` — count words in delimiter-separated list
 
 Build toolchain:
  - `mux/rv64/Makefile` — cross-compile softlib.c → softlib.elf
@@ -697,18 +701,24 @@ Build toolchain:
  - `tier2_lookup()` — maps MUX function name → blob guest address
  - `rv_emit_tier2_call()` — emits a0/a1/a2 setup + JAL ra,target
 
-Benchmark (BENCH030-034, cached path vs AST eval baseline):
+Benchmark (BENCH030-037, cached path vs AST eval baseline):
  - cat(rand,rand): 0.47us (tier2=1, ecalls=2) vs 0.49us native
  - strlen(cat(rand,rand)): 0.49us (tier2=2) vs 0.61us native
  - strcat(rand,rand): 0.48us (tier2=1) vs 0.52us native
+ - iter(5 elems, literal): 0.70us (tier2=3, ecalls=0) vs 0.40us native (1.8x)
+ - iter(5 elems, add(##,1)): 1.16us (tier2=3, ecalls=2) vs 1.92us native (0.6x — beats native)
+ - iter(10 elems, literal): 4.56us (tier2=3, ecalls=0) vs 0.61us native (7.5x — needs investigation)
 
-Performance is near-parity because ECALL calls to rand() dominate.
-The real win comes when Tier 2 handles more complex functions or
-when expressions chain multiple Tier 2 calls without ECALL.
+The 5-element iter with computation **beats native eval by 40%** because
+native re-parses on every call while the JIT compiles once. The 10-element
+literal-body case has a regression that needs profiling.
+
+EXTRACT and WORDS are wired directly into iter()'s internal element
+extraction and word counting, eliminating all ECALL overhead from
+pure-Tier-2 iter loops (ecalls=0 for literal body).
 
 Next Tier 2 candidates: sort(), match(), edit(), regex —
-anything too complex for compile-time reasoning. (iter() is now
-compiled directly as a multi-block loop, not a Tier 2 call.)
+anything too complex for compile-time reasoning.
 
 **Intrinsics (native fast-path)**: See Stage 1 item 1c-vii. The
 DBT recognizes specific Tier 2 call targets and replaces the RV64
@@ -718,25 +728,38 @@ strlen, memswap. Deferred.
 **ECALL (escape hatch)**: Only for operations needing host state —
 database access, network I/O, @pemit, object manipulation.
 
-### Stage 5: SQLite Code Cache
+### Stage 5: SQLite Code Cache — COMPLETE
 
-Schema addition:
+Schema (v7 migration):
 
 ```sql
 CREATE TABLE code_cache (
-    source_hash  BLOB PRIMARY KEY,  -- SHA-1 of source text
-    riscv_code   BLOB NOT NULL,     -- compiled RISC-V binary
-    metadata     BLOB,              -- entry point, relocations, types
-    compile_time INTEGER,           -- when compiled (for diagnostics)
-    hit_count    INTEGER DEFAULT 0  -- access tracking for eviction
+    source_hash  TEXT PRIMARY KEY,   -- expression text (exact key)
+    blob_hash    TEXT NOT NULL,      -- tier2 blob version for invalidation
+    memory_blob  BLOB NOT NULL,     -- guest memory [0..FARGS_LIMIT)
+    out_addr     INTEGER NOT NULL,  -- final result guest address
+    needs_jit    INTEGER NOT NULL,  -- 1 if JIT required, 0 if constant-folded
+    folds        INTEGER NOT NULL DEFAULT 0,
+    ecalls       INTEGER NOT NULL DEFAULT 0,
+    tier2_calls  INTEGER NOT NULL DEFAULT 0,
+    native_ops   INTEGER NOT NULL DEFAULT 0,
+    compile_time INTEGER NOT NULL DEFAULT 0
 );
 ```
 
-Integration points:
- - `mux_exec()` checks the cache before interpreting.
- - `atr_add_raw_LEN()` invalidates cache entries when source changes.
- - `@dump` checkpoints the code cache with the rest of the database.
- - Cache can be rebuilt from source at any time (it's a pure cache).
+Implementation:
+ - `CSQLiteDB::CodeCacheGet/Put/Flush` in sqlitedb.cpp
+ - `compile_cached()` checks SQLite on memory-cache miss before compiling
+ - After compilation, stores to SQLite for persistence across restarts
+ - Blob version = `size:func_count` of the Tier 2 blob; version mismatch
+   → stale entry skipped (baked JAL addresses would be wrong)
+ - Memory blob stores code + string pool + fargs (32KB max per entry)
+ - `reconstruct_from_cache()` restores full 128KB guest memory from blob,
+   reinstalls Tier 2 blob at BLOB_BASE
+ - `CodeCacheReset()` releases SQLite statement after blob copy to avoid
+   holding a read lock
+ - Expressions shorter than 8 bytes are not cached (constant-folded anyway)
+ - Cache can be rebuilt from source at any time (it's a pure cache)
 
 ### Stage 6: Tiered Promotion
 
