@@ -1750,3 +1750,330 @@ size_t co_setinter(unsigned char *out,
 
     return emit_sorted(out, result, nr, osep);
 }
+
+/* ================================================================
+ * Stage 5: Color collapse.
+ * ================================================================ */
+
+/* ---- XTERM 256-color palette ---- */
+
+typedef struct { uint8_t r, g, b; } rgb_t;
+
+static const rgb_t xterm_palette[256] = {
+    /* 0-7: Standard colors */
+    {0,0,0}, {128,0,0}, {0,128,0}, {128,128,0},
+    {0,0,128}, {128,0,128}, {0,128,128}, {192,192,192},
+    /* 8-15: Bright colors */
+    {128,128,128}, {255,0,0}, {0,255,0}, {255,255,0},
+    {0,0,255}, {255,0,255}, {0,255,255}, {255,255,255},
+    /* 16-231: 6x6x6 color cube */
+#define XC(v) ((v) == 0 ? 0 : 55 + 40 * (v))
+#define XCUBE(r,g,b) {XC(r), XC(g), XC(b)}
+#define XROW(r,g) XCUBE(r,g,0),XCUBE(r,g,1),XCUBE(r,g,2),XCUBE(r,g,3),XCUBE(r,g,4),XCUBE(r,g,5)
+#define XPLANE(r) XROW(r,0),XROW(r,1),XROW(r,2),XROW(r,3),XROW(r,4),XROW(r,5)
+    XPLANE(0), XPLANE(1), XPLANE(2), XPLANE(3), XPLANE(4), XPLANE(5),
+#undef XPLANE
+#undef XROW
+#undef XCUBE
+#undef XC
+    /* 232-255: Grayscale ramp */
+#define XG(i) {8+10*(i), 8+10*(i), 8+10*(i)}
+    XG(0), XG(1), XG(2), XG(3), XG(4), XG(5),
+    XG(6), XG(7), XG(8), XG(9), XG(10), XG(11),
+    XG(12), XG(13), XG(14), XG(15), XG(16), XG(17),
+    XG(18), XG(19), XG(20), XG(21), XG(22), XG(23)
+#undef XG
+};
+
+/* ---- PUA byte parsing ---- */
+
+/*
+ * Parse a BMP PUA color sequence (3 bytes starting with EF).
+ * Updates cs in place.  Returns 1 if parsed, 0 if not color.
+ */
+static int parse_bmp_color(const unsigned char *p, co_ColorState *cs)
+{
+    /* EF (94-9F) (80-BF) */
+    if (p[1] < 0x94 || p[1] > 0x9F) return 0;
+
+    /* Decode code point U+F500-F7FF from UTF-8. */
+    unsigned int cp = ((p[0] & 0x0F) << 12)
+                    | ((p[1] & 0x3F) << 6)
+                    | (p[2] & 0x3F);
+
+    if (cp == 0xF500) {
+        /* RESET */
+        *cs = CO_CS_NORMAL;
+    } else if (cp == 0xF501) {
+        cs->intense = 1;
+    } else if (cp == 0xF504) {
+        cs->underline = 1;
+    } else if (cp == 0xF505) {
+        cs->blink = 1;
+    } else if (cp == 0xF507) {
+        cs->inverse = 1;
+    } else if (cp >= 0xF600 && cp <= 0xF6FF) {
+        /* FG indexed color. */
+        int idx = (int)(cp - 0xF600);
+        cs->fg = (int16_t)idx;
+        cs->fg_r = xterm_palette[idx].r;
+        cs->fg_g = xterm_palette[idx].g;
+        cs->fg_b = xterm_palette[idx].b;
+    } else if (cp >= 0xF700 && cp <= 0xF7FF) {
+        /* BG indexed color. */
+        int idx = (int)(cp - 0xF700);
+        cs->bg = (int16_t)idx;
+        cs->bg_r = xterm_palette[idx].r;
+        cs->bg_g = xterm_palette[idx].g;
+        cs->bg_b = xterm_palette[idx].b;
+    }
+    return 1;
+}
+
+/*
+ * Parse an SMP PUA color sequence (4 bytes starting with F3 B0).
+ * Updates cs in place.  Returns 1 if parsed, 0 if not color.
+ */
+static int parse_smp_color(const unsigned char *p, co_ColorState *cs)
+{
+    /* F3 B0 (80-97) (80-BF) */
+    if (p[2] > 0x97) return 0;
+
+    unsigned int offset = ((unsigned int)(p[2] - 0x80) << 6)
+                        | (unsigned int)(p[3] - 0x80);
+    unsigned int channel = offset / 256;
+    uint8_t value = (uint8_t)(offset % 256);
+
+    switch (channel) {
+        case 0: /* red FG delta */
+            if (cs->fg >= 0 && cs->fg <= 255) cs->fg = -2;
+            cs->fg_r = value;
+            break;
+        case 1: /* green FG delta */
+            if (cs->fg >= 0 && cs->fg <= 255) cs->fg = -2;
+            cs->fg_g = value;
+            break;
+        case 2: /* blue FG delta */
+            if (cs->fg >= 0 && cs->fg <= 255) cs->fg = -2;
+            cs->fg_b = value;
+            break;
+        case 3: /* red BG delta */
+            if (cs->bg >= 0 && cs->bg <= 255) cs->bg = -2;
+            cs->bg_r = value;
+            break;
+        case 4: /* green BG delta */
+            if (cs->bg >= 0 && cs->bg <= 255) cs->bg = -2;
+            cs->bg_g = value;
+            break;
+        case 5: /* blue BG delta */
+            if (cs->bg >= 0 && cs->bg <= 255) cs->bg = -2;
+            cs->bg_b = value;
+            break;
+    }
+    return 1;
+}
+
+/* ---- Find nearest XTERM palette entry for an RGB color ---- */
+
+static int find_nearest_palette(uint8_t r, uint8_t g, uint8_t b)
+{
+    int best = 0;
+    int best_dist = 256 * 256 * 3;
+    for (int i = 0; i < 256; i++) {
+        int dr = (int)r - (int)xterm_palette[i].r;
+        int dg = (int)g - (int)xterm_palette[i].g;
+        int db = (int)b - (int)xterm_palette[i].b;
+        int dist = dr*dr + dg*dg + db*db;
+        if (dist < best_dist) {
+            best_dist = dist;
+            best = i;
+            if (dist == 0) break;
+        }
+    }
+    return best;
+}
+
+/* ---- Emit PUA bytes for a code point ---- */
+
+static size_t emit_pua_bmp(unsigned char *wp, unsigned int cp)
+{
+    /* U+F500-F7FF → 3-byte UTF-8 */
+    wp[0] = 0xEF;
+    wp[1] = (unsigned char)(0x80 | ((cp >> 6) & 0x3F));
+    wp[2] = (unsigned char)(0x80 | (cp & 0x3F));
+    return 3;
+}
+
+static size_t emit_pua_smp(unsigned char *wp, unsigned int channel,
+                           uint8_t value)
+{
+    /* U+F0000 + channel*256 + value → 4-byte UTF-8 */
+    unsigned int cp = 0xF0000 + channel * 256 + value;
+    wp[0] = 0xF3;
+    wp[1] = 0xB0;
+    wp[2] = (unsigned char)(0x80 | ((cp >> 6) & 0x3F));
+    wp[3] = (unsigned char)(0x80 | (cp & 0x3F));
+    return 4;
+}
+
+/*
+ * Emit minimal PUA transition from old_cs to new_cs.
+ * Returns bytes written to wp.
+ */
+static size_t emit_transition(unsigned char *wp,
+                              const co_ColorState *old_cs,
+                              const co_ColorState *new_cs)
+{
+    if (co_cs_equal(old_cs, new_cs)) return 0;
+
+    unsigned char *start = wp;
+    co_ColorState cur = *old_cs;
+
+    /* Step 1: Do we need RESET?
+     * RESET is required when:
+     *   - Any attribute is being turned OFF
+     *   - FG is going to default from non-default
+     *   - BG is going to default from non-default
+     */
+    int need_reset = 0;
+    if ((cur.intense && !new_cs->intense) ||
+        (cur.underline && !new_cs->underline) ||
+        (cur.blink && !new_cs->blink) ||
+        (cur.inverse && !new_cs->inverse)) {
+        need_reset = 1;
+    }
+    if (cur.fg != -1 && new_cs->fg == -1) need_reset = 1;
+    if (cur.bg != -1 && new_cs->bg == -1) need_reset = 1;
+
+    if (need_reset) {
+        wp += emit_pua_bmp(wp, 0xF500);
+        cur = CO_CS_NORMAL;
+    }
+
+    /* Step 2: Emit changed attributes. */
+    if (new_cs->intense && !cur.intense)
+        wp += emit_pua_bmp(wp, 0xF501);
+    if (new_cs->underline && !cur.underline)
+        wp += emit_pua_bmp(wp, 0xF504);
+    if (new_cs->blink && !cur.blink)
+        wp += emit_pua_bmp(wp, 0xF505);
+    if (new_cs->inverse && !cur.inverse)
+        wp += emit_pua_bmp(wp, 0xF507);
+
+    /* Step 3: Emit FG color if changed. */
+    int fg_changed = (cur.fg != new_cs->fg ||
+                      cur.fg_r != new_cs->fg_r ||
+                      cur.fg_g != new_cs->fg_g ||
+                      cur.fg_b != new_cs->fg_b);
+    if (fg_changed && new_cs->fg != -1) {
+        if (new_cs->fg >= 0 && new_cs->fg <= 255) {
+            /* Indexed FG: emit palette code. */
+            wp += emit_pua_bmp(wp, 0xF600 + (unsigned int)new_cs->fg);
+        } else if (new_cs->fg == -2) {
+            /* RGB FG: find nearest palette, emit base + deltas. */
+            int idx = find_nearest_palette(new_cs->fg_r, new_cs->fg_g,
+                                           new_cs->fg_b);
+            wp += emit_pua_bmp(wp, 0xF600 + (unsigned int)idx);
+            if (new_cs->fg_r != xterm_palette[idx].r)
+                wp += emit_pua_smp(wp, 0, new_cs->fg_r);
+            if (new_cs->fg_g != xterm_palette[idx].g)
+                wp += emit_pua_smp(wp, 1, new_cs->fg_g);
+            if (new_cs->fg_b != xterm_palette[idx].b)
+                wp += emit_pua_smp(wp, 2, new_cs->fg_b);
+        }
+    }
+
+    /* Step 4: Emit BG color if changed. */
+    int bg_changed = (cur.bg != new_cs->bg ||
+                      cur.bg_r != new_cs->bg_r ||
+                      cur.bg_g != new_cs->bg_g ||
+                      cur.bg_b != new_cs->bg_b);
+    if (bg_changed && new_cs->bg != -1) {
+        if (new_cs->bg >= 0 && new_cs->bg <= 255) {
+            wp += emit_pua_bmp(wp, 0xF700 + (unsigned int)new_cs->bg);
+        } else if (new_cs->bg == -2) {
+            int idx = find_nearest_palette(new_cs->bg_r, new_cs->bg_g,
+                                           new_cs->bg_b);
+            wp += emit_pua_bmp(wp, 0xF700 + (unsigned int)idx);
+            if (new_cs->bg_r != xterm_palette[idx].r)
+                wp += emit_pua_smp(wp, 3, new_cs->bg_r);
+            if (new_cs->bg_g != xterm_palette[idx].g)
+                wp += emit_pua_smp(wp, 4, new_cs->bg_g);
+            if (new_cs->bg_b != xterm_palette[idx].b)
+                wp += emit_pua_smp(wp, 5, new_cs->bg_b);
+        }
+    }
+
+    return (size_t)(wp - start);
+}
+
+/* ---- co_collapse_color ---- */
+
+size_t co_collapse_color(unsigned char *out,
+                         const unsigned char *data, size_t len)
+{
+    const unsigned char *pe = data + len;
+    const unsigned char *p = data;
+    unsigned char *wp = out;
+
+    co_ColorState emitted = CO_CS_NORMAL;
+    co_ColorState pending = CO_CS_NORMAL;
+
+    while (p < pe) {
+        /* BMP PUA color: EF (94-9F) xx */
+        if (p[0] == 0xEF && (p + 2) < pe
+            && p[1] >= 0x94 && p[1] <= 0x9F) {
+            parse_bmp_color(p, &pending);
+            p += 3;
+            continue;
+        }
+
+        /* SMP PUA color: F3 B0 (80-97) xx */
+        if (p[0] == 0xF3 && (p + 3) < pe
+            && p[1] == 0xB0
+            && p[2] >= 0x80 && p[2] <= 0x97) {
+            parse_smp_color(p, &pending);
+            p += 4;
+            continue;
+        }
+
+        /* Visible code point: emit transition + copy visible bytes. */
+        wp += emit_transition(wp, &emitted, &pending);
+        emitted = pending;
+
+        /* Copy visible code point bytes. */
+        const unsigned char *after = co_visible_advance(p, pe, 1, NULL);
+        while (p < after) *wp++ = *p++;
+    }
+
+    /* Emit trailing color if pending differs from emitted.
+     * Typically a trailing RESET — preserve it so concatenation works. */
+    if (!co_cs_equal(&pending, &emitted)) {
+        wp += emit_transition(wp, &emitted, &pending);
+    }
+
+    *wp = '\0';
+    return (size_t)(wp - out);
+}
+
+/* ---- co_apply_color ---- */
+
+size_t co_apply_color(unsigned char *out,
+                      const unsigned char *data, size_t len,
+                      co_ColorState cs)
+{
+    unsigned char *wp = out;
+    co_ColorState normal = CO_CS_NORMAL;
+
+    /* Emit transition from NORMAL to desired state. */
+    wp += emit_transition(wp, &normal, &cs);
+
+    /* Copy the string. */
+    if (len > 0) {
+        memcpy(wp, data, len);
+        wp += len;
+    }
+
+    *wp = '\0';
+    return (size_t)(wp - out);
+}

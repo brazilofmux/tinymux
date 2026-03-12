@@ -33,6 +33,7 @@
 #define COLOR_OPS_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 /* LBUF_SIZE matches TinyMUX. */
 #define LBUF_SIZE 8000
@@ -444,5 +445,71 @@ size_t co_setinter(unsigned char *out,
                    const unsigned char *list2, size_t len2,
                    unsigned char delim, unsigned char osep,
                    char sort_type);
+
+/* ---- Stage 5: Color collapse ---- */
+
+/*
+ * co_ColorState — Tracks the current color/attribute state.
+ *
+ * fg/bg: -1 = default (terminal default), 0-255 = XTERM palette index,
+ *        -2 = 24-bit RGB (use fg_r/g/b or bg_r/g/b).
+ * Attributes: 0 = off, 1 = on.
+ */
+typedef struct {
+    int16_t fg;        /* -1=default, 0-255=indexed, -2=RGB */
+    int16_t bg;        /* -1=default, 0-255=indexed, -2=RGB */
+    uint8_t fg_r, fg_g, fg_b;
+    uint8_t bg_r, bg_g, bg_b;
+    uint8_t intense, underline, blink, inverse;
+} co_ColorState;
+
+/* The default (reset) state. */
+#define CO_CS_NORMAL  ((co_ColorState){ -1, -1, 0,0,0, 0,0,0, 0,0,0,0 })
+
+/* Convenience constructors for common states. */
+static inline co_ColorState co_cs_fg(int idx) {
+    co_ColorState cs = CO_CS_NORMAL;
+    cs.fg = (int16_t)idx;
+    return cs;
+}
+static inline co_ColorState co_cs_bg(int idx) {
+    co_ColorState cs = CO_CS_NORMAL;
+    cs.bg = (int16_t)idx;
+    return cs;
+}
+
+/* Compare two color states for equality. */
+static inline int co_cs_equal(const co_ColorState *a, const co_ColorState *b) {
+    return a->fg == b->fg && a->bg == b->bg
+        && a->fg_r == b->fg_r && a->fg_g == b->fg_g && a->fg_b == b->fg_b
+        && a->bg_r == b->bg_r && a->bg_g == b->bg_g && a->bg_b == b->bg_b
+        && a->intense == b->intense && a->underline == b->underline
+        && a->blink == b->blink && a->inverse == b->inverse;
+}
+
+/*
+ * co_collapse_color — Eliminate redundant PUA color sequences.
+ *
+ * Scans input PUA-colored UTF-8.  For each visible code point, computes
+ * the net color state from all preceding PUA codes, then emits only the
+ * minimal PUA transition from the previously emitted state.
+ *
+ * Example: FG_RED + FG_GREEN + "A" → FG_GREEN + "A" (FG_RED dropped).
+ *
+ * Returns bytes written to out.
+ */
+size_t co_collapse_color(unsigned char *out,
+                         const unsigned char *p, size_t len);
+
+/*
+ * co_apply_color — Prepend a ColorState to a string as PUA bytes.
+ *
+ * Emits the minimal PUA sequence to transition from CO_CS_NORMAL
+ * to the given state, then copies the string.
+ * Returns bytes written to out.
+ */
+size_t co_apply_color(unsigned char *out,
+                      const unsigned char *p, size_t len,
+                      co_ColorState cs);
 
 #endif /* COLOR_OPS_H */

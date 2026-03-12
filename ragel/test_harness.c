@@ -1409,6 +1409,225 @@ static void test_setops(void)
     else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
 }
 
+/* ================================================================
+ * Stage 5 Tests: Color collapse
+ * ================================================================ */
+
+static void test_collapse_color(void)
+{
+    printf("\n--- collapse_color ---\n");
+    unsigned char out[LBUF_SIZE];
+    unsigned char buf[256];
+    size_t nb, pos;
+
+    /* No color: passthrough. */
+    nb = co_collapse_color(out, (const unsigned char *)"hello", 5);
+    TEST("collapse plain text -> unchanged");
+    if (nb == 5 && memcmp(out, "hello", 5) == 0) { PASS(); }
+    else { FAIL("got %zu bytes", nb); }
+
+    /* Already minimal: RED "A" RESET -> unchanged. */
+    pos = 0;
+    pos = append(buf, pos, COLOR_FG_RED, 3);
+    pos = append_str(buf, pos, "A");
+    pos = append(buf, pos, COLOR_RESET, 3);
+    buf[pos] = '\0';
+
+    nb = co_collapse_color(out, buf, pos);
+    TEST("collapse RED\"A\"RESET -> unchanged");
+    if (nb == pos && memcmp(out, buf, pos) == 0) { PASS(); }
+    else { FAIL("got %zu bytes, expected %zu", nb, pos); }
+
+    /* Redundant: RED RED "A" RESET -> RED "A" RESET. */
+    pos = 0;
+    pos = append(buf, pos, COLOR_FG_RED, 3);
+    pos = append(buf, pos, COLOR_FG_RED, 3);
+    pos = append_str(buf, pos, "A");
+    pos = append(buf, pos, COLOR_RESET, 3);
+    buf[pos] = '\0';
+
+    nb = co_collapse_color(out, buf, pos);
+    TEST("collapse RED RED \"A\" RESET -> RED \"A\" RESET");
+    /* RED(3) + A(1) + RESET(3) = 7 */
+    if (nb == 7) {
+        int ok = memcmp(out, COLOR_FG_RED, 3) == 0
+              && out[3] == 'A'
+              && memcmp(out + 4, COLOR_RESET, 3) == 0;
+        if (ok) { PASS(); } else { FAIL("wrong content"); }
+    } else { FAIL("got %zu bytes, expected 7", nb); }
+
+    /* Superseded: RED GREEN "A" RESET -> GREEN "A" RESET. */
+    pos = 0;
+    pos = append(buf, pos, COLOR_FG_RED, 3);
+    pos = append(buf, pos, COLOR_FG_GREEN, 3);
+    pos = append_str(buf, pos, "A");
+    pos = append(buf, pos, COLOR_RESET, 3);
+    buf[pos] = '\0';
+
+    nb = co_collapse_color(out, buf, pos);
+    TEST("collapse RED GREEN \"A\" RESET -> GREEN \"A\"");
+    /* GREEN(3) + A(1) + RESET(3) = 7 */
+    if (nb == 7 && memcmp(out, COLOR_FG_GREEN, 3) == 0 && out[3] == 'A') {
+        PASS();
+    } else { FAIL("got %zu bytes", nb); }
+
+    /* Mixed: RED "A" GREEN "B" RESET.
+     * Already minimal — two different colors on two chars. */
+    pos = 0;
+    pos = append(buf, pos, COLOR_FG_RED, 3);
+    pos = append_str(buf, pos, "A");
+    pos = append(buf, pos, COLOR_FG_GREEN, 3);
+    pos = append_str(buf, pos, "B");
+    pos = append(buf, pos, COLOR_RESET, 3);
+    buf[pos] = '\0';
+
+    nb = co_collapse_color(out, buf, pos);
+    TEST("collapse RED\"A\"GREEN\"B\"RESET -> unchanged");
+    if (nb == pos && memcmp(out, buf, pos) == 0) { PASS(); }
+    else { FAIL("got %zu bytes, expected %zu", nb, pos); }
+
+    /* Redundant RESET: "A" RESET RESET -> "A" RESET. */
+    pos = 0;
+    pos = append_str(buf, pos, "A");
+    pos = append(buf, pos, COLOR_RESET, 3);
+    pos = append(buf, pos, COLOR_RESET, 3);
+    buf[pos] = '\0';
+
+    nb = co_collapse_color(out, buf, pos);
+    TEST("collapse \"A\" RESET RESET -> \"A\" RESET");
+    /* "A"(1) + RESET(3) = 4. But emitted starts as NORMAL,
+     * two RESETs set pending to NORMAL. emitted is NORMAL after A.
+     * So trailing RESET is not emitted because pending==emitted==NORMAL. */
+    if (nb == 1 && out[0] == 'A') { PASS(); }
+    else { FAIL("got %zu bytes", nb); }
+
+    /* RESET at start is also redundant. */
+    pos = 0;
+    pos = append(buf, pos, COLOR_RESET, 3);
+    pos = append_str(buf, pos, "hello");
+    buf[pos] = '\0';
+
+    nb = co_collapse_color(out, buf, pos);
+    TEST("collapse RESET\"hello\" -> \"hello\"");
+    if (nb == 5 && memcmp(out, "hello", 5) == 0) { PASS(); }
+    else { FAIL("got %zu bytes", nb); }
+
+    /* Same FG before two chars: RED "AB" -> RED "AB" (no change between). */
+    pos = 0;
+    pos = append(buf, pos, COLOR_FG_RED, 3);
+    pos = append_str(buf, pos, "AB");
+    buf[pos] = '\0';
+
+    nb = co_collapse_color(out, buf, pos);
+    TEST("collapse RED\"AB\" -> same (no extra between)");
+    if (nb == pos && memcmp(out, buf, pos) == 0) { PASS(); }
+    else { FAIL("got %zu bytes, expected %zu", nb, pos); }
+
+    /* Visible length preserved through collapse. */
+    pos = 0;
+    pos = append(buf, pos, COLOR_FG_RED, 3);
+    pos = append(buf, pos, COLOR_FG_GREEN, 3);
+    pos = append(buf, pos, COLOR_FG_RED, 3);
+    pos = append_str(buf, pos, "XYZ");
+    pos = append(buf, pos, COLOR_RESET, 3);
+    buf[pos] = '\0';
+
+    nb = co_collapse_color(out, buf, pos);
+    size_t vis = co_visible_length(out, nb);
+    TEST("collapse preserves visible length");
+    if (vis == 3) { PASS(); } else { FAIL("got %zu vis", vis); }
+}
+
+static void test_collapse_24bit(void)
+{
+    printf("\n--- collapse 24-bit color ---\n");
+    unsigned char out[LBUF_SIZE];
+    unsigned char buf[256];
+    size_t nb, pos;
+
+    /* 24-bit FG: XTERM_RED + RED_DELTA_42 + GREEN_DELTA_17 + BLUE_DELTA_99 + "A"
+     * This is already minimal (one base + 3 deltas), should pass through. */
+    pos = 0;
+    pos = append(buf, pos, COLOR_FG_RED, 3);
+    pos = append(buf, pos, RED_FG_DELTA_42, 4);
+    pos = append(buf, pos, GREEN_FG_DELTA_17, 4);
+    pos = append(buf, pos, BLUE_FG_DELTA_99, 4);
+    pos = append_str(buf, pos, "A");
+    buf[pos] = '\0';
+
+    nb = co_collapse_color(out, buf, pos);
+    TEST("collapse 24-bit FG -> preserves visible");
+    size_t vis24 = co_visible_length(out, nb);
+    if (vis24 == 1) { PASS(); } else { FAIL("got %zu vis", vis24); }
+
+    /* Round-trip: collapse should be idempotent. */
+    unsigned char out2[LBUF_SIZE];
+    size_t nb2 = co_collapse_color(out2, out, nb);
+    TEST("collapse 24-bit is idempotent");
+    if (nb2 == nb && memcmp(out, out2, nb) == 0) { PASS(); }
+    else { FAIL("first %zu bytes, second %zu bytes", nb, nb2); }
+}
+
+static void test_apply_color(void)
+{
+    printf("\n--- apply_color ---\n");
+    unsigned char out[LBUF_SIZE];
+    size_t nb;
+
+    /* Apply FG_RED to "hello". */
+    co_ColorState red_fg = CO_CS_NORMAL;
+    red_fg.fg = 1;  /* XTERM palette index 1 = red */
+    red_fg.fg_r = 128; red_fg.fg_g = 0; red_fg.fg_b = 0;
+
+    nb = co_apply_color(out, (const unsigned char *)"hello", 5, red_fg);
+    TEST("apply_color FG_RED to \"hello\"");
+    /* Should be FG_RED(3) + "hello"(5) = 8 bytes */
+    if (nb == 8 && memcmp(out, COLOR_FG_RED, 3) == 0
+               && memcmp(out + 3, "hello", 5) == 0) { PASS(); }
+    else { FAIL("got %zu bytes", nb); }
+
+    /* Apply INTENSE to "hi". */
+    co_ColorState bold = CO_CS_NORMAL;
+    bold.intense = 1;
+
+    nb = co_apply_color(out, (const unsigned char *)"hi", 2, bold);
+    TEST("apply_color INTENSE to \"hi\"");
+    /* INTENSE = U+F501 = EF 94 81 (3 bytes) + "hi"(2) = 5 */
+    unsigned char expected_intense[] = { 0xEF, 0x94, 0x81 };
+    if (nb == 5 && memcmp(out, expected_intense, 3) == 0
+               && memcmp(out + 3, "hi", 2) == 0) { PASS(); }
+    else { FAIL("got %zu bytes", nb); }
+
+    /* Apply NORMAL (no-op). */
+    co_ColorState normal = CO_CS_NORMAL;
+    nb = co_apply_color(out, (const unsigned char *)"test", 4, normal);
+    TEST("apply_color NORMAL -> no prefix");
+    if (nb == 4 && memcmp(out, "test", 4) == 0) { PASS(); }
+    else { FAIL("got %zu bytes", nb); }
+
+    /* Apply FG + BG + attr. */
+    co_ColorState combo = CO_CS_NORMAL;
+    combo.fg = 1;  /* red */
+    combo.fg_r = 128; combo.fg_g = 0; combo.fg_b = 0;
+    combo.bg = 0;  /* black */
+    combo.bg_r = 0; combo.bg_g = 0; combo.bg_b = 0;
+    combo.intense = 1;
+
+    nb = co_apply_color(out, (const unsigned char *)"X", 1, combo);
+    TEST("apply_color FG+BG+INTENSE to \"X\"");
+    /* INTENSE(3) + FG_RED(3) + BG_BLACK(3) + "X"(1) = 10 */
+    size_t vis = co_visible_length(out, nb);
+    if (vis == 1 && nb == 10) { PASS(); }
+    else { FAIL("got %zu bytes, %zu vis", nb, vis); }
+
+    /* Round-trip: apply then collapse should be stable. */
+    unsigned char out2[LBUF_SIZE];
+    size_t nb2 = co_collapse_color(out2, out, nb);
+    TEST("apply then collapse is stable");
+    if (nb2 == nb && memcmp(out, out2, nb) == 0) { PASS(); }
+    else { FAIL("got %zu bytes after collapse, expected %zu", nb2, nb); }
+}
+
 /* ---- Main ---- */
 
 int main(void)
@@ -1455,6 +1674,11 @@ int main(void)
     test_insert_word();
     test_sort_words();
     test_setops();
+
+    /* Stage 5 */
+    test_collapse_color();
+    test_collapse_24bit();
+    test_apply_color();
 
     printf("\n=== Results: %d passed, %d failed ===\n", g_pass, g_fail);
     return g_fail > 0 ? 1 : 0;
