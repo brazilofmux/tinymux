@@ -101,7 +101,7 @@ static constexpr int HIR_MAX_BLOCKS = 256;
 static constexpr int HIR_MAX_CARGS  = 2048;
 static constexpr int HIR_MAX_PARGS  = 4096;
 static constexpr int HIR_MAX_PREDS  = 2048;
-static constexpr int HIR_NUM_QREGS  = 10;
+static constexpr int HIR_NUM_QREGS  = 14;   // 0-9 = user %q, 10-13 = compiler internal
 
 struct hir_program {
     // Per-instruction arrays.

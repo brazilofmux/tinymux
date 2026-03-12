@@ -248,12 +248,23 @@ static void hir_insert_phis(hir_program &h, dom_frontiers &dfr) {
     bool has_stores[HIR_NUM_QREGS];
     memset(has_stores, 0, sizeof(has_stores));
 
+    // Determine the type of each %q register from STORE_Q sources.
+    // Default TY_STRING; if any STORE_Q source is TY_INT, use TY_INT.
+    hir_type qreg_ty[HIR_NUM_QREGS];
+    for (int q = 0; q < HIR_NUM_QREGS; q++) {
+        qreg_ty[q] = TY_STRING;
+    }
+
     for (int i = 0; i < h.n_insns; i++) {
         if (h.kind[i] == HIR_STORE_Q) {
             int qn = static_cast<int>(h.val[i]);
             if (qn >= 0 && qn < HIR_NUM_QREGS) {
                 defs[qn][h.blk[i]] = true;
                 has_stores[qn] = true;
+                int src = h.src1[i];
+                if (src >= 0 && h.ty[src] == TY_INT) {
+                    qreg_ty[qn] = TY_INT;
+                }
             }
         }
     }
@@ -280,11 +291,18 @@ static void hir_insert_phis(hir_program &h, dom_frontiers &dfr) {
                     has_phi[qn][df_b] = true;
 
                     // Insert PHI at the beginning of df_b.
-                    // For now, emit with empty arguments — renaming
-                    // fills in the actual values.
-                    int phi = h.emit_phi(TY_STRING, qn, nullptr, nullptr, 0);
+                    // Emit with 0 arguments — renaming fills in values.
+                    // Reserve pargs space for n_pred[df_b] arguments so
+                    // multiple PHIs at the same block don't collide.
+                    int phi = h.emit_phi(qreg_ty[qn], qn,
+                                         nullptr, nullptr, 0);
                     if (phi >= 0) {
                         h.blk[phi] = df_b;
+                        // Reserve slots: each predecessor will add one arg.
+                        int reserve = h.n_pred[df_b];
+                        if (h.n_pargs + reserve <= HIR_MAX_PARGS) {
+                            h.n_pargs += reserve;
+                        }
                     }
 
                     // PHI is also a definition — propagate.
@@ -315,15 +333,23 @@ static void hir_rename_block(hir_program &h, int b,
     }
 
     // Process instructions in block b.
+    // Two-pass: PHIs first (they define values used by LOAD_Q),
+    // then LOAD_Q/STORE_Q.  This is necessary because SSA-inserted
+    // PHIs may have higher instruction indices than the LOAD_Q
+    // instructions they feed.
+    //
     for (int i = h.block_first[b]; i <= h.block_last[b] && i < h.n_insns; i++) {
         if (h.blk[i] != b) continue;
-
         if (h.kind[i] == HIR_PHI) {
             int qn = static_cast<int>(h.val[i]);
             if (qn >= 0 && qn < HIR_NUM_QREGS) {
                 stacks[qn].push_back(i);
             }
-        } else if (h.kind[i] == HIR_LOAD_Q) {
+        }
+    }
+    for (int i = h.block_first[b]; i <= h.block_last[b] && i < h.n_insns; i++) {
+        if (h.blk[i] != b) continue;
+        if (h.kind[i] == HIR_LOAD_Q) {
             int qn = static_cast<int>(h.val[i]);
             if (qn >= 0 && qn < HIR_NUM_QREGS && !stacks[qn].empty()) {
                 // Replace LOAD_Q with COPY of the current definition.
@@ -405,6 +431,22 @@ void hir_ssa_construct(hir_program &h) {
 
     // Step 4: Insert PHI nodes.
     hir_insert_phis(h, dfr);
+
+    // Step 4b: Rebuild block instruction ranges.
+    // hir_insert_phis() appends new PHI instructions that aren't
+    // reflected in block_first/block_last from hir_build_cfg().
+    //
+    for (int b = 0; b < h.n_blocks; b++) {
+        h.block_first[b] = h.n_insns;
+        h.block_last[b] = -1;
+    }
+    for (int i = 0; i < h.n_insns; i++) {
+        int b = h.blk[i];
+        if (b >= 0 && b < h.n_blocks) {
+            if (i < h.block_first[b]) h.block_first[b] = i;
+            if (i > h.block_last[b]) h.block_last[b] = i;
+        }
+    }
 
     // Step 5: Rename (replace LOAD_Q with direct refs, fill PHI args).
     hir_rename(h);

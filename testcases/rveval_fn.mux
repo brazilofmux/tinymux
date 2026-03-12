@@ -1278,11 +1278,27 @@
         25
       )=
   {
-    @log smoke=TC083: rveval add(case(b,a,10,b,20,30),5)=25. Succeeded.;
+    @log smoke=TC083: rveval add(case(b,a,10,b,20,30),5)=25. Succeeded.
+  },
+  {
+    @log smoke=TC083: rveval add(case(b,a,10,b,20,30),5)=25. Failed (%q0).
+  }
+-
+#
+# TC084: iter() basic — iterate with literal body.
+# iter(a b c, X) = "X X X"
+#
+&tr.tc084 test_rveval_fn=
+  @if strmatch(
+        setr(0, rveval(iter(a b c, X))),
+        X X X
+      )=
+  {
+    @log smoke=TC084: rveval iter(a b c, X)=X X X. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC083: rveval add(case(b,a,10,b,20,30),5)=25. Failed (%q0).;
+    @log smoke=TC084: rveval iter(a b c, X)=X X X. Failed (%q0).;
     @trig me/tr.done
   }
 -

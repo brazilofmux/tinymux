@@ -1123,6 +1123,18 @@ static void qreg_init() {
     qreg_used = false;
 }
 
+// Internal Q register indices for iter() loop state.
+// These are promoted to PHI nodes by SSA construction.
+//
+static constexpr int QREG_ITER_INUM = 10;  // iteration counter (0-based, TY_INT)
+static constexpr int QREG_ITER_ACC  = 11;  // accumulated result string
+
+// Iter context: set during body lowering so AST_SUBST nodes (## / #@)
+// resolve to the current element and 1-based index.
+//
+static int iter_itext_val = -1;  // HIR value: current element (TY_STRING)
+static int iter_inum1_val = -1;  // HIR value: 1-based index (TY_INT)
+
 static int hir_lower_node(hir_program &h, rv_compiler &rc,
                            const ASTNode *node);
 
@@ -1697,6 +1709,170 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     }
 
     // ---------------------------------------------------------------
+    // iter(list, body, delim, osep)
+    //
+    // Compile iter() as a counted loop:
+    //   entry: evaluate list, count words, init inum=0 acc=""
+    //   header: PHI(inum, acc), check inum < nwords, BRC → body/exit
+    //   body: extract element, set ## and #@, lower body,
+    //         accumulate: first iteration → body_val,
+    //         subsequent → strcat(acc, osep, body_val)
+    //   latch: inum++, BR → header (back-edge)
+    //   exit: result = acc
+    //
+    // STORE_Q/LOAD_Q + SSA construction handles the loop PHIs.
+    // ---------------------------------------------------------------
+
+    if (fname == "ITER" && node->children.size() >= 2) {
+        int nfargs = static_cast<int>(node->children.size());
+
+        // Evaluate the list (child[0]) — always evaluated.
+        int list_val = hir_lower_trimmed(h, rc, node->children[0].get());
+        if (h.ty[list_val] == TY_INT) {
+            list_val = h.emit(HIR_ITOA, TY_STRING, list_val);
+        }
+
+        // Evaluate delimiters (child[2] = input, child[3] = output).
+        int delim_val;
+        if (nfargs >= 3) {
+            delim_val = hir_lower_trimmed(h, rc, node->children[2].get());
+            if (h.ty[delim_val] == TY_INT) {
+                delim_val = h.emit(HIR_ITOA, TY_STRING, delim_val);
+            }
+        } else {
+            uint64_t addr = rc.pool_str(" ");
+            delim_val = h.emit_sconst(addr, " ");
+        }
+
+        int osep_val;
+        if (nfargs >= 4) {
+            osep_val = hir_lower_trimmed(h, rc, node->children[3].get());
+            if (h.ty[osep_val] == TY_INT) {
+                osep_val = h.emit(HIR_ITOA, TY_STRING, osep_val);
+            }
+        } else {
+            uint64_t addr = rc.pool_str(" ");
+            osep_val = h.emit_sconst(addr, " ");
+        }
+
+        // Count elements: nwords = ECALL WORDS(list, delim).
+        int words_idx = engine_api_lookup("WORDS");
+        int wargs[2] = { list_val, delim_val };
+        int nwords_str = h.emit_call(TY_STRING, words_idx, wargs, 2);
+        h.known_int[nwords_str] = true;
+        h.ecalls++;
+        int nwords_int = h.emit(HIR_ATOI, TY_INT, nwords_str);
+
+        // Initialize loop state.
+        int inum_init = h.emit_iconst(0);
+        h.emit(HIR_STORE_Q, TY_VOID, inum_init, -1, QREG_ITER_INUM);
+
+        uint64_t empty_addr = rc.pool_str("");
+        int acc_init = h.emit_sconst(empty_addr, "");
+        h.emit(HIR_STORE_Q, TY_VOID, acc_init, -1, QREG_ITER_ACC);
+
+        // entry → header.
+        int entry_block = h.cur_block;
+        int header_block = h.new_block();
+        h.emit(HIR_BR, TY_VOID, -1, -1, header_block);
+        h.add_edge(entry_block, header_block);
+
+        // Header: load inum, check < nwords, branch.
+        h.cur_block = header_block;
+        int inum = h.emit(HIR_LOAD_Q, TY_INT, -1, -1, QREG_ITER_INUM);
+        int acc = h.emit(HIR_LOAD_Q, TY_STRING, -1, -1, QREG_ITER_ACC);
+        int cond = h.emit(HIR_LT, TY_INT, inum, nwords_int);
+        h.native_ops++;
+
+        int body_block = h.new_block();
+        int exit_block = h.new_block();
+        h.emit(HIR_BRC, TY_VOID, cond, exit_block, body_block);
+        h.add_edge(header_block, body_block);
+        h.add_edge(header_block, exit_block);
+
+        // Body: extract element, set iter context, lower body.
+        h.cur_block = body_block;
+
+        // inum_1based = inum + 1 (for EXTRACT and #@).
+        int one_int = h.emit_iconst(1);
+        int inum_1based = h.emit(HIR_ADD, TY_INT, inum, one_int);
+        int inum_1str = h.emit(HIR_ITOA, TY_STRING, inum_1based);
+        h.native_ops++;
+
+        // ECALL EXTRACT(list, inum_1based, 1, delim).
+        int extract_idx = engine_api_lookup("EXTRACT");
+        uint64_t one_addr = rc.pool_str("1");
+        int one_str = h.emit_sconst(one_addr, "1");
+        int eargs[4] = { list_val, inum_1str, one_str, delim_val };
+        int elem = h.emit_call(TY_STRING, extract_idx, eargs, 4);
+        h.ecalls++;
+
+        // Set iter context for ## and #@ resolution in body.
+        int saved_itext = iter_itext_val;
+        int saved_inum1 = iter_inum1_val;
+        iter_itext_val = elem;
+        iter_inum1_val = inum_1based;
+
+        // Lower the body (child[1], NOEVAL — trimmed).
+        int body_val = hir_lower_trimmed(h, rc, node->children[1].get());
+        if (h.ty[body_val] == TY_INT) {
+            body_val = h.emit(HIR_ITOA, TY_STRING, body_val);
+        }
+
+        // Restore iter context.
+        iter_itext_val = saved_itext;
+        iter_inum1_val = saved_inum1;
+
+        // Accumulate: first iteration → body_val,
+        //             otherwise → strcat(acc, osep, body_val).
+        int zero = h.emit_iconst(0);
+        int is_first = h.emit(HIR_EQ, TY_INT, inum, zero);
+        h.native_ops++;
+
+        int first_block = h.new_block();
+        int cat_block = h.new_block();
+        h.emit(HIR_BRC, TY_VOID, is_first, cat_block, first_block);
+        h.add_edge(h.cur_block, first_block);
+        h.add_edge(h.cur_block, cat_block);
+
+        // First iteration: acc = body_val.
+        h.cur_block = first_block;
+        h.emit(HIR_STORE_Q, TY_VOID, body_val, -1, QREG_ITER_ACC);
+        int latch_block = h.new_block();
+        h.emit(HIR_BR, TY_VOID, -1, -1, latch_block);
+        h.add_edge(first_block, latch_block);
+
+        // Subsequent: acc = strcat(acc, osep, body_val).
+        h.cur_block = cat_block;
+        int strcat_idx = engine_api_lookup("STRCAT");
+        int cargs[3] = { acc, osep_val, body_val };
+        int new_acc = h.emit_strcat(cargs, 3);
+        if (new_acc >= 0) h.func_idx[new_acc] = strcat_idx;
+        h.ecalls++;
+        h.emit(HIR_STORE_Q, TY_VOID, new_acc, -1, QREG_ITER_ACC);
+        h.emit(HIR_BR, TY_VOID, -1, -1, latch_block);
+        h.add_edge(cat_block, latch_block);
+
+        // Latch: increment inum, branch back to header.
+        h.cur_block = latch_block;
+        int inum_next = h.emit(HIR_ADD, TY_INT, inum, one_int);
+        h.native_ops++;
+        h.emit(HIR_STORE_Q, TY_VOID, inum_next, -1, QREG_ITER_INUM);
+        h.emit(HIR_BR, TY_VOID, -1, -1, header_block);
+        h.add_edge(latch_block, header_block);
+
+        // Exit: result = accumulated string.
+        // RET prevents fall-through into loop-interior blocks that
+        // follow in layout order.
+        h.cur_block = exit_block;
+        int result = h.emit(HIR_LOAD_Q, TY_STRING, -1, -1, QREG_ITER_ACC);
+        h.emit(HIR_RET, TY_VOID);
+
+        h.needs_jit = true;
+        return result;
+    }
+
+    // ---------------------------------------------------------------
     // General function call lowering.
     // ---------------------------------------------------------------
 general_lowering:
@@ -1952,6 +2128,23 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
             return h.emit_sconst(addr, "");
         }
 
+    case AST_SUBST:
+        // ## (itext), #@ (inum), #$ (switch token).
+        // Resolved from iter/switch context set during lowering.
+        if (node->text.size() >= 2 && node->text[0] == '#') {
+            if (node->text[1] == '#' && iter_itext_val >= 0) {
+                return iter_itext_val;
+            }
+            if (node->text[1] == '@' && iter_inum1_val >= 0) {
+                return iter_inum1_val;
+            }
+        }
+        // Unresolvable substitution (no enclosing iter).
+        {
+            uint64_t addr = rc.pool_str("");
+            return h.emit_sconst(addr, "");
+        }
+
     default: {
         uint64_t addr = rc.pool_str("");
         return h.emit_sconst(addr, "");
@@ -2107,18 +2300,87 @@ static void compute_live_ranges(hir_program &h,
         }
     }
 
+    // Loop-aware liveness extension.
+    //
+    // A back-edge is (latch → header) where rpo_pos[header] <= rpo_pos[latch].
+    // Any value used inside the loop body must be live through the entire
+    // loop — its last_use must extend to at least the latch's block_end_pp.
+    // Without this, values used at the header (e.g., nwords for the loop
+    // condition) get their registers reused inside the body, corrupting
+    // the value on the next iteration.
+    //
+    if (h.n_rpo > 0) {
+        for (int b = 0; b < h.n_blocks; b++) {
+            for (int s = 0; s < h.block_nsucc[b]; s++) {
+                int tgt = h.block_succ[b][s];
+                if (tgt < 0) continue;
+                // Back-edge: successor has <= RPO position.
+                if (h.rpo_pos[tgt] <= h.rpo_pos[b]) {
+                    int latch_end = block_end_pp[b];
+                    // Extend every value used inside the loop
+                    // (any block with RPO position between header and latch).
+                    for (int i = 0; i < h.n_insns; i++) {
+                        if (prog_point[i] < 0) continue;
+                        int ib = h.blk[i];
+                        if (h.rpo_pos[ib] < h.rpo_pos[tgt] ||
+                            h.rpo_pos[ib] > h.rpo_pos[b]) continue;
+                        // This instruction is inside the loop.
+                        // Extend any operand defined outside the loop.
+                        auto extend = [&](int v) {
+                            if (v < 0 || v >= h.n_insns) return;
+                            if (prog_point[v] < 0) return;
+                            int vb = h.blk[v];
+                            // Value defined outside loop (or at header).
+                            if (h.rpo_pos[vb] <= h.rpo_pos[tgt]) {
+                                if (latch_end > last_use[v])
+                                    last_use[v] = latch_end;
+                            }
+                        };
+                        extend(h.src1[i]);
+                        if (h.kind[i] != HIR_BRC)
+                            extend(h.src2[i]);
+                        if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
+                            for (int j = 0; j < h.cnargs[i]; j++)
+                                extend(h.carg[h.cbase[i] + j]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // The final result must survive to the end of the program.
     if (h.result >= 0 && h.result < h.n_insns && needs_int_reg(h, h.result)) {
         last_use[h.result] = max_pp - 1;
     }
 
     // Build intervals for integer-typed values.
+    //
+    // For PHI nodes, the live range must start at the earliest
+    // block_end_pp of the PHI's predecessor blocks (where the PHI
+    // copy writes to the PHI's register), not at the PHI instruction's
+    // program point.  Without this, the allocator may assign a PHI the
+    // same register as a value that is still live across the block
+    // boundary, causing the PHI copy to clobber it.
+    //
     intervals.clear();
     for (int i = 0; i < h.n_insns; i++) {
         if (!needs_int_reg(h, i)) continue;
         if (prog_point[i] < 0) continue;  // unreachable
 
         int def = prog_point[i];
+
+        // PHI: start at earliest predecessor's block end point.
+        if (h.kind[i] == HIR_PHI && h.pnargs[i] > 0) {
+            for (int j = 0; j < h.pnargs[i]; j++) {
+                int pred_blk = h.pblk[h.pbase[i] + j];
+                if (pred_blk >= 0 && pred_blk < h.n_blocks) {
+                    int ep = block_end_pp[pred_blk];
+                    if (ep < def) def = ep;
+                }
+            }
+        }
+
         int end = (last_use[i] >= def) ? last_use[i] : def;
 
         intervals.push_back({i, def, end});
@@ -2812,6 +3074,8 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                 break;
 
             case HIR_NOP:
+            case HIR_STORE_Q:  // consumed by SSA construction
+            case HIR_LOAD_Q:   // should be COPY after SSA; harmless NOP
                 break;
 
             default:
@@ -3198,8 +3462,10 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         }
 
         FUN *fp = engine_api_table[func_idx];
-        return ecall_invoke_fun(fp, ec, ctx, fargs_addr, nfargs,
+
+        int rc = ecall_invoke_fun(fp, ec, ctx, fargs_addr, nfargs,
                                 out_addr, out_size);
+        return rc;
     }
 
     case ECALL_CALL_FUNC: {
