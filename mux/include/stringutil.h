@@ -2215,7 +2215,6 @@ public:
     void append_TextPlain(const UTF8 *pStr);
     void append_TextPlain(const UTF8 *pStr, size_t nLen);
     void compress(const UTF8 *ch, size_t nSep);
-    void compress_Spaces();
     void delete_Chars(mux_cursor iStart, mux_cursor iEnd);
     void encode_Html();
     [[nodiscard]] UTF8 export_Char(size_t n) const; // Deprecated.
@@ -2308,19 +2307,6 @@ public:
         const bool strip_table[UCHAR_MAX+1],
         mux_cursor iStart = CursorMin,
         mux_cursor iEnd = CursorMax
-    );
-    void transform
-    (
-        mux_string &from_set,
-        mux_string &to_set,
-        size_t start_position = 0,
-        size_t length = (LBUF_SIZE-1)
-    );
-    void transform_Ascii
-    (
-        const UTF8 asciiTable[SCHAR_MAX+1],
-        size_t nStart = 0,
-        size_t nLen = (LBUF_SIZE-1)
     );
     void trim(const UTF8 ch = ' ', bool bLeft = true, bool bRight = true);
     void trim(const UTF8 *p, size_t n, bool bLeft = true, bool bRight = true);

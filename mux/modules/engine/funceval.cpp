@@ -14,6 +14,10 @@
 #include "config.h"
 #include "externs.h"
 
+extern "C" {
+#include "color_ops.h"
+}
+
 /* Note: Many functions in this file have been taken, whole or in part, from
  * PennMUSH 1.50, and TinyMUSH 2.2, for softcode compatibility. The
  * maintainers of MUX would like to thank those responsible for PennMUSH 1.50
@@ -1628,13 +1632,32 @@ FUNCTION(fun_squish)
         return;
     }
 
-    mux_string *sStr = new mux_string(fargs[0]);
-
-    sStr->compress(sep.str, sep.n);
-    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-
-    delete sStr;
+    if (sep.n <= 1)
+    {
+        // Single-char compress (or default space): use co_compress.
+        //
+        unsigned char compress_char = (sep.n == 1) ? sep.str[0] : ' ';
+        size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
+        unsigned char out[LBUF_SIZE];
+        size_t nOut = co_compress(out,
+                                  reinterpret_cast<const unsigned char *>(fargs[0]),
+                                  nLen, compress_char);
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        if (nOut > nMax) nOut = nMax;
+        memcpy(*bufc, out, nOut);
+        *bufc += nOut;
+        **bufc = '\0';
+    }
+    else
+    {
+        // Multi-char separator: fall back to mux_string.
+        //
+        mux_string *sStr = new mux_string(fargs[0]);
+        sStr->compress(sep.str, sep.n);
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
+        delete sStr;
+    }
 }
 
 FUNCTION(fun_stripansi)

@@ -12742,58 +12742,57 @@ static FUNCTION(fun_tr)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = nullptr;
-    try
+    size_t nStr = strlen(reinterpret_cast<const char *>(fargs[0]));
+    if (0 != nStr)
     {
-        sStr = new mux_string(fargs[0]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr != sStr)
-    {
-        size_t nStr = sStr->length_byte();
-        if (0 != nStr)
+        // Process character ranges using mux_string (handles a-z expansion).
+        //
+        mux_string *sFrom = nullptr;
+        mux_string *sTo = nullptr;
+        try
         {
-            // Process character ranges.
-            //
-            mux_string *sFrom = nullptr;
-            mux_string *sTo = nullptr;
-            try
-            {
-                sFrom = new mux_string(fargs[1]);
-                sTo   = new mux_string(fargs[2]);
-            }
-            catch (...)
-            {
-                ; // Nothing.
-            }
-
-            if (  nullptr != sFrom
-               && nullptr != sTo)
-            {
-                transform_range(*sFrom);
-                transform_range(*sTo);
-
-                if (sFrom->length_cursor().m_point != sTo->length_cursor().m_point)
-                {
-                    safe_str(T("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
-                }
-                else
-                {
-                    sStr->transform(*sFrom, *sTo);
-                    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-                    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-                }
-            }
-
-            delete sFrom;
-            delete sTo;
+            sFrom = new mux_string(fargs[1]);
+            sTo   = new mux_string(fargs[2]);
         }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (  nullptr != sFrom
+           && nullptr != sTo)
+        {
+            transform_range(*sFrom);
+            transform_range(*sTo);
+
+            if (sFrom->length_cursor().m_point != sTo->length_cursor().m_point)
+            {
+                safe_str(T("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
+            }
+            else
+            {
+                // Export expanded from/to sets and use co_transform.
+                //
+                unsigned char fromBuf[LBUF_SIZE], toBuf[LBUF_SIZE];
+                size_t fLen = sFrom->export_TextPlain(fromBuf);
+                size_t tLen = sTo->export_TextPlain(toBuf);
+
+                unsigned char out[LBUF_SIZE];
+                size_t nOut = co_transform(out,
+                    reinterpret_cast<const unsigned char *>(fargs[0]), nStr,
+                    fromBuf, fLen, toBuf, tLen);
+
+                size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+                if (nOut > nMax) nOut = nMax;
+                memcpy(*bufc, out, nOut);
+                *bufc += nOut;
+                **bufc = '\0';
+            }
+        }
+
+        delete sFrom;
+        delete sTo;
     }
-    delete sStr;
 }
 
 // ----------------------------------------------------------------------------
