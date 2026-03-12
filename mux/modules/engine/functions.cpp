@@ -4837,56 +4837,28 @@ static FUNCTION(fun_secure)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = nullptr;
-    try
-    {
-        sStr = new mux_string(fargs[0]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == sStr)
+    size_t nStr = strlen(reinterpret_cast<const char *>(fargs[0]));
+    if (0 == nStr)
     {
         return;
     }
-    mux_cursor nLen = sStr->length_cursor();
 
-    mux_cursor i = CursorMin;
-    if (i < nLen)
-    {
-        mux_string *sTo = nullptr;
-        try
-        {
-            sTo = new mux_string(T(" "));
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
+    // Replace $%(),;[\]{} with spaces via co_transform.
+    //
+    static const unsigned char from_set[] = "$%(),;[\\]{}";
+    static const unsigned char to_set[]   = "           ";
 
-        if (nullptr == sTo)
-        {
-            return;
-        }
-
-        do
-        {
-            UTF8 ch = sStr->export_Char(i.m_byte);
-            if (mux_issecure(ch))
-            {
-                mux_cursor nReplace(utf8_FirstByte[ch], 1);
-                sStr->replace_Chars(*sTo, i, nReplace);
-            }
-        } while (sStr->cursor_next(i));
-        delete sTo;
-    }
+    unsigned char out[LBUF_SIZE];
+    size_t nOut = co_transform(out,
+        reinterpret_cast<const unsigned char *>(fargs[0]), nStr,
+        from_set, sizeof(from_set) - 1,
+        to_set, sizeof(to_set) - 1);
 
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextColor(*bufc, CursorMin, nLen, nMax);
-
-    delete sStr;
+    if (nOut > nMax) nOut = nMax;
+    memcpy(*bufc, out, nOut);
+    *bufc += nOut;
+    **bufc = '\0';
 }
 
 // fun_escape: This function prepends a '\' to the beginning of a
@@ -6651,71 +6623,38 @@ static FUNCTION(fun_after)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sPat = nullptr;
-    try
-    {
-        sPat = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == sPat)
-    {
-        return;
-    }
-
-    // Sanity-check arg1 and arg2.
+    // Default pattern is a single space.
     //
-    UTF8 *bp = fargs[0];
-    if (nfargs > 1)
-    {
-        sPat->import(fargs[1]);
-    }
-    else
-    {
-        sPat->import(T(" "), 1);
-    }
-    mux_cursor nPat = sPat->length_cursor();
+    const unsigned char *pat = reinterpret_cast<const unsigned char *>(fargs[1]);
+    size_t plen = (1 < nfargs) ? strlen(reinterpret_cast<const char *>(fargs[1])) : 0;
 
-    if (  nfargs <= 1
-       && 1 == nPat.m_byte
-       && ' ' == sPat->export_Char(0))
+    UTF8 *bp = fargs[0];
+    if (0 == plen)
     {
+        pat = reinterpret_cast<const unsigned char *>(" ");
+        plen = 1;
         bp = trim_space_sep(bp, sepSpace);
     }
 
-    // Look for the target string.
-    //
-    mux_string *sStr = nullptr;
-    try
-    {
-        sStr = new mux_string(bp);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    size_t slen = strlen(reinterpret_cast<const char *>(bp));
+    const unsigned char *str = reinterpret_cast<const unsigned char *>(bp);
 
-    if (nullptr == sStr)
+    const unsigned char *match = co_search(str, slen, pat, plen);
+    if (nullptr != match)
     {
-        delete sPat;
-        return;
-    }
-    mux_cursor i;
-
-    bool bSucceeded = sStr->search(*sPat, &i);
-    if (bSucceeded)
-    {
-        // Yup, return what follows.
+        // Advance past the matched visible code points.
         //
-        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextColor(*bufc, i + nPat, CursorMax, nMax);
-    }
+        size_t nPatVis = co_visible_length(pat, plen);
+        const unsigned char *after = co_visible_advance(match,
+            str + slen, nPatVis, nullptr);
 
-    delete sStr;
-    delete sPat;
+        size_t nBytes = static_cast<size_t>((str + slen) - after);
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        if (nBytes > nMax) nBytes = nMax;
+        memcpy(*bufc, after, nBytes);
+        *bufc += nBytes;
+        **bufc = '\0';
+    }
 }
 
 static FUNCTION(fun_before)
@@ -6727,80 +6666,44 @@ static FUNCTION(fun_before)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sPat = nullptr;
-    try
-    {
-        sPat = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == sPat)
-    {
-        return;
-    }
-    size_t nPat;
-
-    // Sanity-check arg1 and arg2.
+    // Default pattern is a single space.
     //
-    UTF8 *bp = fargs[0];
-    if (1 < nfargs)
-    {
-        sPat->import(fargs[1]);
-        nPat = sPat->length_byte();
-    }
-    else
-    {
-        sPat->import(T(" "), 1);
-        nPat = 1;
-    }
+    const unsigned char *pat = reinterpret_cast<const unsigned char *>(fargs[1]);
+    size_t plen = (1 < nfargs) ? strlen(reinterpret_cast<const char *>(fargs[1])) : 0;
 
-    if (  nfargs <= 1
-       && 1 == nPat
-       && ' ' == sPat->export_Char(0))
+    UTF8 *bp = fargs[0];
+    if (0 == plen)
     {
+        pat = reinterpret_cast<const unsigned char *>(" ");
+        plen = 1;
         bp = trim_space_sep(bp, sepSpace);
     }
 
-    // Look for the target string.
-    //
-    mux_string *sStr = nullptr;
-    try
-    {
-        sStr = new mux_string(bp);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    size_t slen = strlen(reinterpret_cast<const char *>(bp));
+    const unsigned char *str = reinterpret_cast<const unsigned char *>(bp);
 
-    if (nullptr == sStr)
+    const unsigned char *match = co_search(str, slen, pat, plen);
+    if (nullptr != match)
     {
-        delete sPat;
-        return;
-    }
-    mux_cursor i;
-
-    bool bSucceeded = sStr->search(*sPat, &i);
-    if (bSucceeded)
-    {
-        // Yup, return what follows.
+        // Return everything before the match.
         //
+        size_t nBytes = static_cast<size_t>(match - str);
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextColor(*bufc, CursorMin, i, nMax);
+        if (nBytes > nMax) nBytes = nMax;
+        memcpy(*bufc, str, nBytes);
+        *bufc += nBytes;
+        **bufc = '\0';
     }
     else
     {
-        // Ran off the end without finding it.
+        // Pattern not found — return entire string.
         //
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
+        if (slen > nMax) slen = nMax;
+        memcpy(*bufc, str, slen);
+        *bufc += slen;
+        **bufc = '\0';
     }
-
-    delete sStr;
-    delete sPat;
 }
 
 /*
@@ -10917,30 +10820,56 @@ static FUNCTION(fun_strip)
     {
         return;
     }
-    mux_string *sStr = nullptr;
-    try
-    {
-        sStr = new mux_string(fargs[0]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
 
-    if (nullptr == sStr)
-    {
-        return;
-    }
+    // Strip color from source to get plain text.
+    //
+    unsigned char plain[LBUF_SIZE];
+    size_t nPlain = co_strip_color(plain,
+        reinterpret_cast<const unsigned char *>(fargs[0]),
+        strlen(reinterpret_cast<const char *>(fargs[0])));
 
     if (  1 < nfargs
        && '\0' != fargs[1][0])
     {
-        sStr->strip(strip_color(fargs[1]));
-    }
-    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextPlain(*bufc, CursorMin, CursorMax, nMax);
+        // Build strip table from the character set.
+        //
+        bool strip_table[UCHAR_MAX + 1];
+        memset(strip_table, false, sizeof(strip_table));
 
-    delete sStr;
+        const UTF8 *pSet = strip_color(fargs[1]);
+        while ('\0' != *pSet)
+        {
+            UTF8 ch = *pSet++;
+            if (mux_isprint_ascii(ch))
+            {
+                strip_table[static_cast<unsigned char>(ch)] = true;
+            }
+        }
+
+        // Copy plain text, skipping stripped characters.
+        //
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        for (size_t i = 0; i < nPlain && nMax > 0; i++)
+        {
+            if (!strip_table[plain[i]])
+            {
+                **bufc = static_cast<UTF8>(plain[i]);
+                (*bufc)++;
+                nMax--;
+            }
+        }
+        **bufc = '\0';
+    }
+    else
+    {
+        // No strip set — just output plain text.
+        //
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        if (nPlain > nMax) nPlain = nMax;
+        memcpy(*bufc, plain, nPlain);
+        *bufc += nPlain;
+        **bufc = '\0';
+    }
 }
 
 #define DEFAULT_WIDTH 78
