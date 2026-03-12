@@ -221,6 +221,28 @@ public:
     bool SearchByParent(dbref parent, dbref low, dbref high, SearchCallback cb);
     bool SearchByFlags(FLAG f1, FLAG f2, FLAG f3, dbref low, dbref high, SearchCallback cb);
 
+    // Code cache (compiled softcode persistence).
+    //
+    struct CodeCacheRecord
+    {
+        const void *memory_blob;
+        int         memory_len;
+        int64_t     out_addr;
+        int         needs_jit;
+        int         folds;
+        int         ecalls;
+        int         tier2_calls;
+        int         native_ops;
+    };
+    bool CodeCacheGet(const char *source_hash, const char *blob_hash,
+                      CodeCacheRecord &rec);
+    bool CodeCachePut(const char *source_hash, const char *blob_hash,
+                      const void *memory_blob, int memory_len,
+                      int64_t out_addr, int needs_jit,
+                      int folds, int ecalls, int tier2_calls, int native_ops);
+    bool CodeCacheFlush();
+    void CodeCacheReset();
+
     // Maintenance
     //
     bool Checkpoint();
@@ -316,6 +338,12 @@ private:
     sqlite3_stmt *m_stmtConnlogUpdate;
     sqlite3_stmt *m_stmtConnlogByPlayer;
     sqlite3_stmt *m_stmtConnlogByAddr;
+
+    // Code cache statements.
+    //
+    sqlite3_stmt *m_stmtCodeCacheGet;
+    sqlite3_stmt *m_stmtCodeCachePut;
+    sqlite3_stmt *m_stmtCodeCacheFlush;
 
     Stats m_stats;
 

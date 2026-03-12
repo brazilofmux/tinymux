@@ -43,6 +43,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "sqlite_backend.h"
 #include "ast.h"
 
 #include "dbt.h"
@@ -181,6 +182,23 @@ static void tier2_install(std::vector<uint8_t> &memory, uint64_t guest_base) {
                    s_tier2.rodata.data(), s_tier2.rodata.size());
         }
     }
+}
+
+// ---------------------------------------------------------------
+// Blob version for cache invalidation
+// ---------------------------------------------------------------
+
+// Simple blob version: size + entry count.  If the blob changes
+// (new functions, recompiled at different offsets), this changes.
+//
+static std::string s_blob_version;
+
+static std::string compute_blob_version() {
+    if (!s_tier2.loaded || s_tier2.code.empty()) return "none";
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%zu:%zu",
+             s_tier2.code.size(), s_tier2.funcs.size());
+    return buf;
 }
 
 // ---------------------------------------------------------------
@@ -3183,10 +3201,12 @@ static void tier2_lazy_init() {
     };
     for (int i = 0; paths[i]; i++) {
         if (tier2_load(paths[i], rv_compiler::BLOB_BASE)) {
+            s_blob_version = compute_blob_version();
             return;
         }
     }
     // No blob found — Tier 2 disabled, ECALL fallback for everything.
+    s_blob_version = "none";
 }
 
 static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
@@ -3333,6 +3353,47 @@ static constexpr size_t COMPILE_CACHE_MIN_LEN = 8;
 //
 static uint8_t *s_dbt_last_memory = nullptr;
 
+// Reconstruct a compiled_program from a SQLite code cache record.
+// Copies memory_blob into a full-size guest memory vector and
+// installs the Tier 2 blob.
+//
+static compiled_program reconstruct_from_cache(
+    const CSQLiteDB::CodeCacheRecord &rec) {
+    compiled_program prog;
+    prog.memory.resize(rv_compiler::MEM_SIZE, 0);
+    int copy_len = rec.memory_len;
+    if (copy_len > static_cast<int>(rv_compiler::FARGS_LIMIT)) {
+        copy_len = static_cast<int>(rv_compiler::FARGS_LIMIT);
+    }
+    memcpy(prog.memory.data(), rec.memory_blob, copy_len);
+    tier2_install(prog.memory, rv_compiler::BLOB_BASE);
+    prog.memory_size = rv_compiler::MEM_SIZE;
+    prog.out_addr = static_cast<uint64_t>(rec.out_addr);
+    prog.ok = true;
+    prog.needs_jit = rec.needs_jit != 0;
+    prog.folds = rec.folds;
+    prog.ecalls = rec.ecalls;
+    prog.tier2_calls = rec.tier2_calls;
+    prog.native_ops = rec.native_ops;
+    return prog;
+}
+
+// Persist a compiled_program to the SQLite code cache.
+//
+static void store_to_sqlite_cache(const UTF8 *expr, size_t nLen,
+                                   const compiled_program &prog) {
+    if (!g_pSQLiteBackend) return;
+    CSQLiteDB &db = g_pSQLiteBackend->GetDB();
+    std::string src_key(reinterpret_cast<const char *>(expr), nLen);
+    int persist_len = static_cast<int>(rv_compiler::FARGS_LIMIT);
+    db.CodeCachePut(src_key.c_str(), s_blob_version.c_str(),
+                     prog.memory.data(), persist_len,
+                     static_cast<int64_t>(prog.out_addr),
+                     prog.needs_jit ? 1 : 0,
+                     prog.folds, prog.ecalls,
+                     prog.tier2_calls, prog.native_ops);
+}
+
 // Look up or compile an expression.  Returns a pointer to the
 // cached compiled_program (owned by the cache — do not free).
 // Returns nullptr on compilation failure.
@@ -3342,20 +3403,43 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen) {
 
     auto it = s_compile_cache.find(key);
     if (it != s_compile_cache.end()) {
-        // Cache hit — move to front of LRU.
+        // Memory cache hit — move to front of LRU.
         s_compile_lru.splice(s_compile_lru.begin(), s_compile_lru,
                              it->second.lru_it);
         return &it->second.prog;
     }
 
-    // Cache miss — compile.
-    compiled_program prog = compile_expression(expr, nLen);
-    if (!prog.ok) return nullptr;
+    // Memory cache miss — check SQLite persistent cache.
+    compiled_program prog;
+    bool from_sqlite = false;
 
-    // Evict LRU entries if cache is full.
+    if (g_pSQLiteBackend && nLen >= COMPILE_CACHE_MIN_LEN) {
+        CSQLiteDB &db = g_pSQLiteBackend->GetDB();
+        CSQLiteDB::CodeCacheRecord rec;
+        if (db.CodeCacheGet(key.c_str(), s_blob_version.c_str(), rec)) {
+            // rec.memory_blob points into SQLite statement memory.
+            // reconstruct_from_cache copies it; then we must release
+            // the statement to avoid holding a read lock.
+            prog = reconstruct_from_cache(rec);
+            db.CodeCacheReset();
+            from_sqlite = true;
+        }
+    }
+
+    if (!from_sqlite) {
+        // Full cache miss — compile from scratch.
+        prog = compile_expression(expr, nLen);
+        if (!prog.ok) return nullptr;
+
+        // Persist to SQLite for future restarts.
+        if (nLen >= COMPILE_CACHE_MIN_LEN) {
+            store_to_sqlite_cache(expr, nLen, prog);
+        }
+    }
+
+    // Insert into memory LRU cache.
     while (s_compile_cache.size() >= COMPILE_CACHE_MAX) {
         auto &victim_key = s_compile_lru.back();
-        // If the DBT was pointing at this victim's memory, invalidate.
         auto vit = s_compile_cache.find(victim_key);
         if (vit != s_compile_cache.end()
             && s_dbt_last_memory == vit->second.prog.memory.data()) {

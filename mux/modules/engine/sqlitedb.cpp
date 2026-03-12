@@ -72,6 +72,9 @@ CSQLiteDB::CSQLiteDB()
       m_stmtConnlogUpdate(nullptr),
       m_stmtConnlogByPlayer(nullptr),
       m_stmtConnlogByAddr(nullptr),
+      m_stmtCodeCacheGet(nullptr),
+      m_stmtCodeCachePut(nullptr),
+      m_stmtCodeCacheFlush(nullptr),
       m_stats{}
 {
 }
@@ -292,7 +295,22 @@ bool CSQLiteDB::CreateSchema()
         "    ON player_channels(channel_name);"
         "CREATE INDEX IF NOT EXISTS idx_connlog_player ON connlog(player);"
         "CREATE INDEX IF NOT EXISTS idx_connlog_time ON connlog(connect_time);"
-        "CREATE INDEX IF NOT EXISTS idx_connlog_ipaddr ON connlog(ipaddr);";
+        "CREATE INDEX IF NOT EXISTS idx_connlog_ipaddr ON connlog(ipaddr);"
+
+        // Code cache (compiled softcode persistence).
+        //
+        "CREATE TABLE IF NOT EXISTS code_cache ("
+        "    source_hash  TEXT PRIMARY KEY,"
+        "    blob_hash    TEXT NOT NULL,"
+        "    memory_blob  BLOB NOT NULL,"
+        "    out_addr     INTEGER NOT NULL,"
+        "    needs_jit    INTEGER NOT NULL,"
+        "    folds        INTEGER NOT NULL DEFAULT 0,"
+        "    ecalls       INTEGER NOT NULL DEFAULT 0,"
+        "    tier2_calls  INTEGER NOT NULL DEFAULT 0,"
+        "    native_ops   INTEGER NOT NULL DEFAULT 0,"
+        "    compile_time INTEGER NOT NULL DEFAULT 0"
+        ");";
 
     char *errmsg = nullptr;
     int rc = sqlite3_exec(m_db, schema, nullptr, nullptr, &errmsg);
@@ -541,6 +559,37 @@ bool CSQLiteDB::MigrateSchema()
             return false;
         }
         version = 6;
+    }
+
+    // ---------------------------------------------------------------
+    // v6 -> v7: add code_cache table for compiled softcode persistence.
+    // ---------------------------------------------------------------
+    //
+    if (version < 7)
+    {
+        const char *migration_v7 =
+            "BEGIN;"
+            "CREATE TABLE IF NOT EXISTS code_cache ("
+            "    source_hash  TEXT PRIMARY KEY,"
+            "    blob_hash    TEXT NOT NULL,"
+            "    memory_blob  BLOB NOT NULL,"
+            "    out_addr     INTEGER NOT NULL,"
+            "    needs_jit    INTEGER NOT NULL,"
+            "    folds        INTEGER NOT NULL DEFAULT 0,"
+            "    ecalls       INTEGER NOT NULL DEFAULT 0,"
+            "    tier2_calls  INTEGER NOT NULL DEFAULT 0,"
+            "    native_ops   INTEGER NOT NULL DEFAULT 0,"
+            "    compile_time INTEGER NOT NULL DEFAULT 0"
+            ");"
+            "INSERT OR REPLACE INTO metadata(key, value)"
+            "    VALUES('schema_version', 7);"
+            "COMMIT;";
+
+        if (!RunMigration(m_db, migration_v7, 7))
+        {
+            return false;
+        }
+        version = 7;
     }
 
     // Log any FK violations (informational, not fatal).
@@ -874,6 +923,33 @@ bool CSQLiteDB::PrepareStatements()
         return false;
     }
 
+    // Code cache statements.
+    //
+    if (!Prepare(m_db,
+        "SELECT memory_blob, out_addr, needs_jit, folds, ecalls, tier2_calls, native_ops"
+        " FROM code_cache WHERE source_hash=? AND blob_hash=?",
+        &m_stmtCodeCacheGet))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "INSERT OR REPLACE INTO code_cache"
+        " (source_hash, blob_hash, memory_blob, out_addr, needs_jit,"
+        "  folds, ecalls, tier2_calls, native_ops, compile_time)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?)",
+        &m_stmtCodeCachePut))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "DELETE FROM code_cache",
+        &m_stmtCodeCacheFlush))
+    {
+        return false;
+    }
+
     return true;
 }
 
@@ -939,6 +1015,9 @@ void CSQLiteDB::FinalizeStatements()
     Finalize(&m_stmtConnlogUpdate);
     Finalize(&m_stmtConnlogByPlayer);
     Finalize(&m_stmtConnlogByAddr);
+    Finalize(&m_stmtCodeCacheGet);
+    Finalize(&m_stmtCodeCachePut);
+    Finalize(&m_stmtCodeCacheFlush);
 }
 
 // ---------------------------------------------------------------------------
@@ -1538,6 +1617,75 @@ bool CSQLiteDB::ConnlogByAddr(const UTF8 *ipaddr, int limit, ConnlogCallback cb)
         return false;
     }
     return true;
+}
+
+// ---------------------------------------------------------------------------
+// Code cache operations
+// ---------------------------------------------------------------------------
+
+bool CSQLiteDB::CodeCacheGet(const char *source_hash, const char *blob_hash,
+                              CodeCacheRecord &rec)
+{
+    sqlite3_reset(m_stmtCodeCacheGet);
+    sqlite3_bind_text(m_stmtCodeCacheGet, 1, source_hash, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(m_stmtCodeCacheGet, 2, blob_hash, -1, SQLITE_TRANSIENT);
+
+    int rc = sqlite3_step(m_stmtCodeCacheGet);
+    if (SQLITE_ROW != rc)
+    {
+        sqlite3_reset(m_stmtCodeCacheGet);
+        return false;
+    }
+
+    rec.memory_blob = sqlite3_column_blob(m_stmtCodeCacheGet, 0);
+    rec.memory_len  = sqlite3_column_bytes(m_stmtCodeCacheGet, 0);
+    rec.out_addr    = sqlite3_column_int64(m_stmtCodeCacheGet, 1);
+    rec.needs_jit   = sqlite3_column_int(m_stmtCodeCacheGet, 2);
+    rec.folds       = sqlite3_column_int(m_stmtCodeCacheGet, 3);
+    rec.ecalls      = sqlite3_column_int(m_stmtCodeCacheGet, 4);
+    rec.tier2_calls = sqlite3_column_int(m_stmtCodeCacheGet, 5);
+    rec.native_ops  = sqlite3_column_int(m_stmtCodeCacheGet, 6);
+    // NOTE: memory_blob pointer is valid until next sqlite3_reset.
+    // Caller must copy the data before any further DB operations.
+    return true;
+}
+
+bool CSQLiteDB::CodeCachePut(const char *source_hash, const char *blob_hash,
+                              const void *memory_blob, int memory_len,
+                              int64_t out_addr, int needs_jit,
+                              int folds, int ecalls, int tier2_calls,
+                              int native_ops)
+{
+    sqlite3_reset(m_stmtCodeCachePut);
+    sqlite3_bind_text(m_stmtCodeCachePut, 1, source_hash, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(m_stmtCodeCachePut, 2, blob_hash, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_blob(m_stmtCodeCachePut, 3, memory_blob, memory_len, SQLITE_TRANSIENT);
+    sqlite3_bind_int64(m_stmtCodeCachePut, 4, out_addr);
+    sqlite3_bind_int(m_stmtCodeCachePut, 5, needs_jit);
+    sqlite3_bind_int(m_stmtCodeCachePut, 6, folds);
+    sqlite3_bind_int(m_stmtCodeCachePut, 7, ecalls);
+    sqlite3_bind_int(m_stmtCodeCachePut, 8, tier2_calls);
+    sqlite3_bind_int(m_stmtCodeCachePut, 9, native_ops);
+    sqlite3_bind_int64(m_stmtCodeCachePut, 10, static_cast<int64_t>(time(nullptr)));
+
+    if (SQLITE_DONE != sqlite3_step(m_stmtCodeCachePut))
+    {
+        fprintf(stderr, "CSQLiteDB::CodeCachePut: %s\n",
+            sqlite3_errmsg(m_db));
+        return false;
+    }
+    return true;
+}
+
+bool CSQLiteDB::CodeCacheFlush()
+{
+    sqlite3_reset(m_stmtCodeCacheFlush);
+    return SQLITE_DONE == sqlite3_step(m_stmtCodeCacheFlush);
+}
+
+void CSQLiteDB::CodeCacheReset()
+{
+    sqlite3_reset(m_stmtCodeCacheGet);
 }
 
 // ---------------------------------------------------------------------------
