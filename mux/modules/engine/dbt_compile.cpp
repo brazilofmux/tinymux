@@ -83,30 +83,40 @@ static struct {
 // The blob uses rv64_ prefixed names; MUX uses plain uppercase.
 //
 static const struct { const char *mux_name; const char *blob_name; } s_tier2_map[] = {
-    { "CAT",         "rv64_cat" },
-    // strlen: native strips ANSI and counts UTF-8 clusters; Tier 2 counts
-    // raw bytes.  Must use ECALL for correct behavior.
+    // --- Color-aware co_* wrappers (Ragel, PUA color, Unicode 16) ---
+    // These replace the ASCII-only rv64_* versions for functions where
+    // color preservation and grapheme-cluster-aware word boundaries matter.
     //
-    // { "STRLEN",      "rv64_strlen" },
+    { "FIRST",       "co_first_wrap" },
+    { "REST",        "co_rest_wrap" },
+    { "LAST",        "co_last_wrap" },
+    { "WORDS",       "co_words_wrap" },
+    { "EXTRACT",     "co_extract_wrap" },
+    { "MEMBER",      "co_member_wrap" },
+    { "TRIM",        "co_trim_wrap" },
+    { "REPEAT",      "co_repeat_wrap" },
+    { "MID",         "co_mid_wrap" },
+    { "POS",         "co_pos_wrap" },
+    { "SORT",        "co_sort_wrap" },
+    { "SETUNION",    "co_setunion_wrap" },
+    { "SETDIFF",     "co_setdiff_wrap" },
+    { "SETINTER",    "co_setinter_wrap" },
+    { "LDELETE",     "co_ldelete_wrap" },
+    { "REPLACE",     "co_replace_wrap" },
+    { "INSERT",      "co_insert_wrap" },
+
+    // --- ASCII-only rv64_* (no color, byte-level operations) ---
+    // These are fine for functions that don't handle colored text.
+    //
+    { "CAT",         "rv64_cat" },
     { "STRCAT",      "rv64_strcat" },
-    { "EXTRACT",     "rv64_extract" },
-    { "WORDS",       "rv64_words" },
-    { "SPLIT_TOKEN", "rv64_split_token" },
-    { "FIRST",       "rv64_first" },
-    { "REST",        "rv64_rest" },
-    { "LAST",        "rv64_last" },
-    { "MEMBER",      "rv64_member" },
-    { "REPEAT",      "rv64_repeat" },
-    { "TRIM",        "rv64_trim" },
     { "BEFORE",      "rv64_before" },
     { "AFTER",       "rv64_after" },
-    // ldelete/replace/insert: native supports multi-position lists and
-    // negative indices; Tier 2 handles single positive int only.  Fall
-    // back to ECALL for correctness.  Can revisit with full support later.
-    //
-    // { "LDELETE",     "rv64_ldelete" },
-    // { "REPLACE",     "rv64_replace" },
-    // { "INSERT",      "rv64_insert" },
+
+    // strlen: native strips ANSI and counts UTF-8 clusters; Tier 2 counts
+    // raw bytes.  Must use ECALL for correct behavior.
+    // { "STRLEN",      "rv64_strlen" },
+
     { nullptr, nullptr }
 };
 

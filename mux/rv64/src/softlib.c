@@ -18,6 +18,7 @@
 
 typedef unsigned long uint64_t;
 typedef unsigned long size_t;
+typedef long          int64_t;
 
 /* Forward declarations for intrinsics (defined below). */
 int   rv64_slen(const char *s);
@@ -26,6 +27,50 @@ void *memcpy(void *dst, const void *src, size_t n);
 int   memcmp(const void *a, const void *b, size_t n);
 void *memset(void *dst, int c, size_t n);
 void  memswap(void *a, void *b, size_t n);
+
+/* Forward declarations for co_* functions (in color_ops.o). */
+size_t co_first(unsigned char *out, const unsigned char *p, size_t len,
+                unsigned char delim);
+size_t co_rest(unsigned char *out, const unsigned char *p, size_t len,
+               unsigned char delim);
+size_t co_last(unsigned char *out, const unsigned char *p, size_t len,
+               unsigned char delim);
+size_t co_extract(unsigned char *out, const unsigned char *p, size_t len,
+                  size_t iFirst, size_t nWords, unsigned char delim,
+                  unsigned char osep);
+size_t co_words_count(const unsigned char *p, size_t len,
+                      unsigned char delim);
+size_t co_member(const unsigned char *target, size_t tlen,
+                 const unsigned char *list, size_t llen,
+                 unsigned char delim);
+size_t co_trim(unsigned char *out, const unsigned char *p, size_t len,
+               unsigned char trim_char, int trim_flags);
+size_t co_repeat(unsigned char *out, const unsigned char *p, size_t len,
+                 size_t count);
+size_t co_mid(unsigned char *out, const unsigned char *p, size_t len,
+              size_t iStart, size_t nCount);
+size_t co_pos(const unsigned char *haystack, size_t hlen,
+              const unsigned char *needle, size_t nlen);
+size_t co_sort_words(unsigned char *out, const unsigned char *list,
+                     size_t llen, unsigned char delim, unsigned char osep,
+                     char sort_type);
+size_t co_setunion(unsigned char *out, const unsigned char *a, size_t alen,
+                   const unsigned char *b, size_t blen,
+                   unsigned char delim, unsigned char osep, char sort_type);
+size_t co_setdiff(unsigned char *out, const unsigned char *a, size_t alen,
+                  const unsigned char *b, size_t blen,
+                  unsigned char delim, unsigned char osep, char sort_type);
+size_t co_setinter(unsigned char *out, const unsigned char *a, size_t alen,
+                   const unsigned char *b, size_t blen,
+                   unsigned char delim, unsigned char osep, char sort_type);
+size_t co_delete(unsigned char *out, const unsigned char *list, size_t llen,
+                 size_t pos, unsigned char delim, unsigned char osep);
+size_t co_splice(unsigned char *out, const unsigned char *list, size_t llen,
+                 size_t pos, size_t count, const unsigned char *word,
+                 size_t wlen, unsigned char delim, unsigned char osep);
+size_t co_insert_word(unsigned char *out, const unsigned char *list,
+                      size_t llen, size_t pos, const unsigned char *word,
+                      size_t wlen, unsigned char delim, unsigned char osep);
 
 /* ---------------------------------------------------------------
  * Intrinsic helpers — global and noinline so the DBT can intercept
@@ -96,6 +141,421 @@ void memswap(void *a, void *b, size_t n) {
         *pa++ = *pb;
         *pb++ = t;
     }
+}
+
+/* ---------------------------------------------------------------
+ * libc stubs — implementations for functions color_ops.c needs.
+ * --------------------------------------------------------------- */
+
+__attribute__((noinline))
+long atol(const char *s) {
+    long v = 0;
+    int neg = 0;
+    while (*s == ' ') s++;
+    if (*s == '-') { neg = 1; s++; }
+    else if (*s == '+') s++;
+    while (*s >= '0' && *s <= '9') {
+        v = v * 10 + (*s - '0');
+        s++;
+    }
+    return neg ? -v : v;
+}
+
+/* Minimal snprintf — only supports %zu (used by co_lpos). */
+__attribute__((noinline))
+int snprintf(char *buf, size_t size, const char *fmt, ...) {
+    /* co_lpos uses snprintf(p, remain, "%zu", value) exclusively.
+     * We handle that single format string and nothing else. */
+    if (size == 0) return 0;
+
+    /* Walk fmt, copying literals and handling %zu. */
+    char *out = buf;
+    char *end = buf + size - 1;
+    const unsigned char *f = (const unsigned char *)fmt;
+
+    /* Extract the va_list argument (first vararg = the size_t value). */
+    /* On RV64, varargs are passed in a3, a4, ... registers.
+     * We use __builtin_va_list for portability. */
+    __builtin_va_list ap;
+    __builtin_va_start(ap, fmt);
+
+    while (*f && out < end) {
+        if (*f == '%' && f[1] == 'z' && f[2] == 'u') {
+            size_t val = __builtin_va_arg(ap, size_t);
+            /* Convert to decimal. */
+            char tmp[20];
+            int pos = 0;
+            if (val == 0) {
+                tmp[pos++] = '0';
+            } else {
+                while (val > 0) {
+                    tmp[pos++] = '0' + (val % 10);
+                    val /= 10;
+                }
+            }
+            for (int i = pos - 1; i >= 0 && out < end; i--) {
+                *out++ = tmp[i];
+            }
+            f += 3;
+        } else {
+            *out++ = *f++;
+        }
+    }
+    *out = '\0';
+    __builtin_va_end(ap);
+    return (int)(out - buf);
+}
+
+/* qsort — Shellsort using memswap intrinsic.
+ * Classic qsort would recurse; Shellsort is iterative and compact. */
+__attribute__((noinline))
+void qsort(void *base, size_t nmemb, size_t size,
+            int (*compar)(const void *, const void *)) {
+    unsigned char *b = (unsigned char *)base;
+    /* Knuth's gap sequence: 1, 4, 13, 40, 121, ... */
+    size_t gap = 1;
+    while (gap < nmemb / 3) gap = gap * 3 + 1;
+
+    while (gap >= 1) {
+        for (size_t i = gap; i < nmemb; i++) {
+            size_t j = i;
+            while (j >= gap &&
+                   compar(b + j * size, b + (j - gap) * size) < 0) {
+                memswap(b + j * size, b + (j - gap) * size, size);
+                j -= gap;
+            }
+        }
+        gap /= 3;
+    }
+}
+
+/* co_console_width — DFA-driven Unicode console width.
+ * Returns 0 (combining), 1 (normal), or 2 (fullwidth/CJK). */
+extern const unsigned char  tr_widths_itt[256];
+extern const unsigned short tr_widths_sot[];
+extern const unsigned short tr_widths_sbt[];
+#define TR_WIDTHS_START_STATE (0)
+#define TR_WIDTHS_ACCEPTING_STATES_START (373)
+
+int co_console_width(const unsigned char *pCodePoint) {
+    const unsigned char *p = pCodePoint;
+    int iState = TR_WIDTHS_START_STATE;
+    do {
+        unsigned char ch = *p++;
+        unsigned char iColumn = tr_widths_itt[ch];
+        unsigned short iOffset = tr_widths_sot[iState];
+        for (;;) {
+            int y = tr_widths_sbt[iOffset];
+            if (y < 128) {
+                if (iColumn < y) {
+                    iState = tr_widths_sbt[iOffset + 1];
+                    break;
+                } else {
+                    iColumn = (unsigned char)(iColumn - y);
+                    iOffset += 2;
+                }
+            } else {
+                y = 256 - y;
+                if (iColumn < y) {
+                    iState = tr_widths_sbt[iOffset + iColumn + 1];
+                    break;
+                } else {
+                    iColumn = (unsigned char)(iColumn - y);
+                    iOffset = (unsigned short)(iOffset + y + 1);
+                }
+            }
+        }
+    } while (iState < TR_WIDTHS_ACCEPTING_STATES_START);
+    return (iState - TR_WIDTHS_ACCEPTING_STATES_START);
+}
+
+/* strlen — needed by freestanding.h inline but also by softlib. */
+__attribute__((noinline))
+size_t strlen(const char *s) {
+    size_t n = 0;
+    while (s[n]) n++;
+    return n;
+}
+
+/* Forward declarations for helpers defined below. */
+static int sitoa(char *buf, int val);
+static int satoi(const char *s);
+
+/* ---------------------------------------------------------------
+ * Tier 2 wrappers for co_* functions.
+ *
+ * These unpack the fargs calling convention (a0=out, a1=fargs[],
+ * a2=nfargs) and call the co_* Ragel functions which use explicit
+ * pointer+length parameters.
+ * --------------------------------------------------------------- */
+
+/* Helper: get delimiter from fargs, default space. */
+static unsigned char get_delim(const char **fargs, int nfargs, int idx) {
+    if (idx < nfargs && fargs[idx][0] != '\0')
+        return (unsigned char)fargs[idx][0];
+    return ' ';
+}
+
+/* Helper: get output separator, default = delimiter. */
+static unsigned char get_osep(const char **fargs, int nfargs, int idx,
+                               unsigned char delim) {
+    if (idx < nfargs && fargs[idx][0] != '\0')
+        return (unsigned char)fargs[idx][0];
+    return delim;
+}
+
+char *co_first_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '\0'; return out; }
+    unsigned char delim = get_delim(fargs, nfargs, 1);
+    size_t n = co_first((unsigned char *)out,
+                        (const unsigned char *)fargs[0],
+                        rv64_slen(fargs[0]), delim);
+    out[n] = '\0';
+    return out;
+}
+
+char *co_rest_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '\0'; return out; }
+    unsigned char delim = get_delim(fargs, nfargs, 1);
+    size_t n = co_rest((unsigned char *)out,
+                       (const unsigned char *)fargs[0],
+                       rv64_slen(fargs[0]), delim);
+    out[n] = '\0';
+    return out;
+}
+
+char *co_last_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '\0'; return out; }
+    unsigned char delim = get_delim(fargs, nfargs, 1);
+    size_t n = co_last((unsigned char *)out,
+                       (const unsigned char *)fargs[0],
+                       rv64_slen(fargs[0]), delim);
+    out[n] = '\0';
+    return out;
+}
+
+char *co_words_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1 || fargs[0][0] == '\0') {
+        out[0] = '0'; out[1] = '\0'; return out;
+    }
+    unsigned char delim = get_delim(fargs, nfargs, 1);
+    size_t count = co_words_count((const unsigned char *)fargs[0],
+                                  rv64_slen(fargs[0]), delim);
+    sitoa(out, (int)count);
+    return out;
+}
+
+char *co_extract_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 3) { out[0] = '\0'; return out; }
+    int pos = satoi(fargs[1]);
+    int count = satoi(fargs[2]);
+    unsigned char delim = get_delim(fargs, nfargs, 3);
+    unsigned char osep = get_osep(fargs, nfargs, 4, delim);
+    if (pos < 1 || count < 1) { out[0] = '\0'; return out; }
+    size_t n = co_extract((unsigned char *)out,
+                          (const unsigned char *)fargs[0],
+                          rv64_slen(fargs[0]),
+                          (size_t)pos, (size_t)count, delim, osep);
+    out[n] = '\0';
+    return out;
+}
+
+char *co_member_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '0'; out[1] = '\0'; return out; }
+    unsigned char delim = get_delim(fargs, nfargs, 2);
+    size_t pos = co_member((const unsigned char *)fargs[1],
+                           rv64_slen(fargs[1]),
+                           (const unsigned char *)fargs[0],
+                           rv64_slen(fargs[0]), delim);
+    sitoa(out, (int)pos);
+    return out;
+}
+
+char *co_trim_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '\0'; return out; }
+    unsigned char tc = ' ';
+    if (nfargs >= 3 && fargs[2][0] != '\0')
+        tc = (unsigned char)fargs[2][0];
+    /* Trim flags: 1=left, 2=right, 3=both */
+    int flags = 3;  /* both */
+    if (nfargs >= 2 && fargs[1][0] != '\0') {
+        char s = fargs[1][0];
+        if (s == 'l' || s == 'L') flags = 1;
+        else if (s == 'r' || s == 'R') flags = 2;
+    }
+    size_t n = co_trim((unsigned char *)out,
+                       (const unsigned char *)fargs[0],
+                       rv64_slen(fargs[0]), tc, flags);
+    out[n] = '\0';
+    return out;
+}
+
+char *co_repeat_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '\0'; return out; }
+    int count = satoi(fargs[1]);
+    if (count <= 0) { out[0] = '\0'; return out; }
+    size_t n = co_repeat((unsigned char *)out,
+                         (const unsigned char *)fargs[0],
+                         rv64_slen(fargs[0]),
+                         (size_t)count);
+    out[n] = '\0';
+    return out;
+}
+
+char *co_mid_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 3) { out[0] = '\0'; return out; }
+    int start = satoi(fargs[1]);
+    int count = satoi(fargs[2]);
+    if (count <= 0) { out[0] = '\0'; return out; }
+    size_t n = co_mid((unsigned char *)out,
+                      (const unsigned char *)fargs[0],
+                      rv64_slen(fargs[0]),
+                      (size_t)start, (size_t)count);
+    out[n] = '\0';
+    return out;
+}
+
+char *co_pos_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) {
+        out[0] = '#'; out[1] = '-'; out[2] = '1'; out[3] = '\0';
+        return out;
+    }
+    size_t pos = co_pos((const unsigned char *)fargs[1],
+                        rv64_slen(fargs[1]),
+                        (const unsigned char *)fargs[0],
+                        rv64_slen(fargs[0]));
+    /* co_pos returns 0 for not found, 1-based position otherwise. */
+    /* MUX match() returns #-1 for not found... but strmatch/pos
+     * returns a number. Let's return the raw position. */
+    sitoa(out, (int)pos);
+    return out;
+}
+
+char *co_sort_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '\0'; return out; }
+    unsigned char delim = get_delim(fargs, nfargs, 1);
+    unsigned char osep = get_osep(fargs, nfargs, 2, delim);
+    char sort_type = 'a';  /* alphabetic default */
+    if (nfargs >= 4 && fargs[3][0] != '\0')
+        sort_type = fargs[3][0];
+    size_t n = co_sort_words((unsigned char *)out,
+                             (const unsigned char *)fargs[0],
+                             rv64_slen(fargs[0]),
+                             delim, osep, sort_type);
+    out[n] = '\0';
+    return out;
+}
+
+char *co_setunion_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '\0'; return out; }
+    unsigned char delim = get_delim(fargs, nfargs, 2);
+    unsigned char osep = get_osep(fargs, nfargs, 3, delim);
+    char sort_type = 'a';
+    if (nfargs >= 5 && fargs[4][0] != '\0')
+        sort_type = fargs[4][0];
+    size_t n = co_setunion((unsigned char *)out,
+                           (const unsigned char *)fargs[0],
+                           rv64_slen(fargs[0]),
+                           (const unsigned char *)fargs[1],
+                           rv64_slen(fargs[1]),
+                           delim, osep, sort_type);
+    out[n] = '\0';
+    return out;
+}
+
+char *co_setdiff_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '\0'; return out; }
+    unsigned char delim = get_delim(fargs, nfargs, 2);
+    unsigned char osep = get_osep(fargs, nfargs, 3, delim);
+    char sort_type = 'a';
+    if (nfargs >= 5 && fargs[4][0] != '\0')
+        sort_type = fargs[4][0];
+    size_t n = co_setdiff((unsigned char *)out,
+                          (const unsigned char *)fargs[0],
+                          rv64_slen(fargs[0]),
+                          (const unsigned char *)fargs[1],
+                          rv64_slen(fargs[1]),
+                          delim, osep, sort_type);
+    out[n] = '\0';
+    return out;
+}
+
+char *co_setinter_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '\0'; return out; }
+    unsigned char delim = get_delim(fargs, nfargs, 2);
+    unsigned char osep = get_osep(fargs, nfargs, 3, delim);
+    char sort_type = 'a';
+    if (nfargs >= 5 && fargs[4][0] != '\0')
+        sort_type = fargs[4][0];
+    size_t n = co_setinter((unsigned char *)out,
+                           (const unsigned char *)fargs[0],
+                           rv64_slen(fargs[0]),
+                           (const unsigned char *)fargs[1],
+                           rv64_slen(fargs[1]),
+                           delim, osep, sort_type);
+    out[n] = '\0';
+    return out;
+}
+
+char *co_ldelete_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) {
+        if (nfargs >= 1) rv64_scopy(out, fargs[0]);
+        else out[0] = '\0';
+        return out;
+    }
+    int pos = satoi(fargs[1]);
+    unsigned char delim = get_delim(fargs, nfargs, 2);
+    unsigned char osep = get_osep(fargs, nfargs, 3, delim);
+    if (pos < 1) { rv64_scopy(out, fargs[0]); return out; }
+    size_t n = co_delete((unsigned char *)out,
+                         (const unsigned char *)fargs[0],
+                         rv64_slen(fargs[0]),
+                         (size_t)pos, delim, osep);
+    out[n] = '\0';
+    return out;
+}
+
+char *co_replace_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 3) {
+        if (nfargs >= 1) rv64_scopy(out, fargs[0]);
+        else out[0] = '\0';
+        return out;
+    }
+    int pos = satoi(fargs[1]);
+    unsigned char delim = get_delim(fargs, nfargs, 3);
+    unsigned char osep = get_osep(fargs, nfargs, 4, delim);
+    if (pos < 1) { rv64_scopy(out, fargs[0]); return out; }
+    /* replace = splice with count=1 */
+    size_t n = co_splice((unsigned char *)out,
+                         (const unsigned char *)fargs[0],
+                         rv64_slen(fargs[0]),
+                         (size_t)pos, 1,
+                         (const unsigned char *)fargs[2],
+                         rv64_slen(fargs[2]),
+                         delim, osep);
+    out[n] = '\0';
+    return out;
+}
+
+char *co_insert_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 3) {
+        if (nfargs >= 1) rv64_scopy(out, fargs[0]);
+        else out[0] = '\0';
+        return out;
+    }
+    int pos = satoi(fargs[1]);
+    unsigned char delim = get_delim(fargs, nfargs, 3);
+    unsigned char osep = get_osep(fargs, nfargs, 4, delim);
+    if (pos < 1) pos = 1;
+    size_t n = co_insert_word((unsigned char *)out,
+                              (const unsigned char *)fargs[0],
+                              rv64_slen(fargs[0]),
+                              (size_t)pos,
+                              (const unsigned char *)fargs[2],
+                              rv64_slen(fargs[2]),
+                              delim, osep);
+    out[n] = '\0';
+    return out;
 }
 
 /* ---------------------------------------------------------------
