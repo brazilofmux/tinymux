@@ -512,59 +512,187 @@ static void emit_stub_memswap(emit_t *e) {
     emit_intrinsic_return(e);
 }
 
-// Dispatch table: maps guest address → stub emitter.
+// ---- Generic co_* intrinsic stub emitter ----
 //
-typedef void (*stub_emitter_fn)(emit_t *e);
+// Emits a native CALL to the host co_* function.  Arguments are in
+// guest a0-a5 (x10-x15), mapped to System V: RDI, RSI, RDX, RCX, R8, R9.
+// Pointer arguments (guest addresses) are converted to host via +R12.
+// The host function returns size_t in RAX; the stub stores it to guest a0.
+//
+// The `fn` parameter is the host function pointer (cast to void*),
+// passed through the intrinsic_slot_t.host_fn field.
+//
+// Argument descriptor bits: 1 bit per arg, 0=integer, 1=guest pointer.
+// Packed into a uint8_t: bit 0 = arg 0 (a0), bit 1 = arg 1 (a1), etc.
+//
 
-struct intrinsic_entry_t {
-    uint64_t guest_addr;       // 0 = not registered
-    stub_emitter_fn emitter;
+static constexpr int x64_arg_regs[6] = {
+    X64_RDI, X64_RSI, X64_RDX, X64_RCX, X64_R8, X64_R9
 };
 
-static constexpr int MAX_INTRINSICS = 6;
+// Generic emitter for co_* functions with ≤6 args, result in a0.
+// `fn` is the host function pointer (from the intrinsic_slot_t).
+// The nargs and ptr_mask are encoded in the emitter function (one
+// emitter per signature pattern).
+//
+static void emit_stub_co_generic(void *ev, void *fn,
+                                  int nargs, uint8_t ptr_mask) {
+    emit_t *e = static_cast<emit_t *>(ev);
+    emit_stub_prologue(e);
+
+    // Load guest regs into x86-64 ABI positions.
+    // We load in reverse order to avoid clobbering RDI/RSI before reading
+    // them as ctx pointers (they're cached guest a0/a1 but we read from ctx).
+    //
+    for (int i = nargs - 1; i >= 0; i--) {
+        emit_load_ctx_reg(e, x64_arg_regs[i], 10 + i);  // guest a0+i
+        if (ptr_mask & (1 << i)) {
+            emit_guest_to_host(e, x64_arg_regs[i]);
+        }
+    }
+
+    emit_call_host(e, fn);
+
+    // Store return value (rax) to guest a0.
+    emit_store_ctx_reg(e, 10, X64_RAX);
+
+    emit_stub_epilogue(e);
+    emit_intrinsic_return(e);
+}
+
+// Macro to define a thin emitter wrapper for each co_* signature.
+// The wrapper captures the nargs and ptr_mask at compile time.
+//
+#define DEFINE_CO_EMITTER(name, nargs, ptr_mask) \
+    static void emit_stub_##name(void *e, void *fn) { \
+        emit_stub_co_generic(e, fn, nargs, ptr_mask); \
+    }
+
+// Signature patterns for co_* functions:
+//   PP_II: 2 pointers, 2 integers   → co_first(out,p,len,delim)
+//   P_II:  1 pointer, 2 integers    → co_words_count(p,len,delim)
+//   PP_III: 2 ptrs, 3 ints          → co_mid(out,p,len,start,count)
+//                                      co_trim(out,p,len,char,flags)
+//                                      co_member(tgt,tlen,list,llen,delim)
+//   PP_I:  2 ptrs, 1 int            → (no current use)
+//   PPII:  2 ptrs, 2 ints (alt pos) → co_pos(h,hlen,n,nlen)
+//                                      co_repeat(out,p,len,count)
+//   PP_IIII: 2 ptrs, 4 ints         → co_delete(out,list,llen,pos,delim,osep)
+//
+// ptr_mask bits: bit 0=a0, bit 1=a1, etc.
+// PP_II:    a0=ptr, a1=ptr → 0x03 (bits 0,1)
+// P_II:     a0=ptr         → 0x01
+// PPPP_II:  a0,a1=ptr      → 0x03 (same as PP_II, other args are ints)
+// PPP:      a0=ptr, a1,a2=int, a3=int, a4=ptr, a5=int → need per-function
+//
+// Since ptr_mask is per-arg, each function needs its own mask.
+
+// 4 args: co_first/co_rest/co_last(out, p, len, delim)
+//   a0=ptr, a1=ptr, a2=int, a3=int  → mask=0x03
+DEFINE_CO_EMITTER(co_4pp, 4, 0x03)
+
+// 4 args: co_repeat(out, p, len, count)
+//   a0=ptr, a1=ptr, a2=int, a3=int  → mask=0x03 (same as above)
+// (reuse co_4pp)
+
+// 4 args: co_pos(haystack, hlen, needle, nlen)
+//   a0=ptr, a1=int, a2=ptr, a3=int  → mask=0x05
+DEFINE_CO_EMITTER(co_pos, 4, 0x05)
+
+// 3 args: co_words_count(p, len, delim)
+//   a0=ptr, a1=int, a2=int  → mask=0x01
+DEFINE_CO_EMITTER(co_3p, 3, 0x01)
+
+// 5 args: co_mid(out, p, len, start, count)
+//   a0=ptr, a1=ptr, a2-a4=int  → mask=0x03
+DEFINE_CO_EMITTER(co_5pp, 5, 0x03)
+
+// 5 args: co_member(target, tlen, list, llen, delim)
+//   a0=ptr, a1=int, a2=ptr, a3-a4=int  → mask=0x05
+DEFINE_CO_EMITTER(co_member, 5, 0x05)
+
+// 5 args: co_trim(out, p, len, trim_char, trim_flags)
+//   a0=ptr, a1=ptr, a2-a4=int  → mask=0x03
+// (reuse co_5pp)
+
+// 6 args: co_sort_words(out, list, llen, delim, osep, sort_type)
+//   a0=ptr, a1=ptr, a2-a5=int  → mask=0x03
+DEFINE_CO_EMITTER(co_6pp, 6, 0x03)
+
+// 6 args: co_delete(out, list, llen, pos, delim, osep)
+//   same as co_6pp → mask=0x03
+
+// Wrapper emitters for the old-style stubs (no host_fn parameter).
+//
+static void emit_stub_slen_w(void *ev, void *) { emit_stub_slen(static_cast<emit_t *>(ev)); }
+static void emit_stub_scopy_w(void *ev, void *) { emit_stub_scopy(static_cast<emit_t *>(ev)); }
+static void emit_stub_memcpy_w(void *ev, void *) { emit_stub_memcpy(static_cast<emit_t *>(ev)); }
+static void emit_stub_memcmp_w(void *ev, void *) { emit_stub_memcmp(static_cast<emit_t *>(ev)); }
+static void emit_stub_memset_w(void *ev, void *) { emit_stub_memset(static_cast<emit_t *>(ev)); }
+static void emit_stub_memswap_w(void *ev, void *) { emit_stub_memswap(static_cast<emit_t *>(ev)); }
 
 // try_emit_intrinsic: check if guest_pc matches a known intrinsic.
 // If so, emit a complete native stub block and return the code pointer.
 // If not, return nullptr (normal translation proceeds).
 //
 static uint8_t *try_emit_intrinsic(dbt_state_t *dbt, uint64_t guest_pc) {
-    // Build the table from registered addresses.
-    intrinsic_entry_t table[MAX_INTRINSICS] = {
-        { dbt->intrinsic_slen,    emit_stub_slen },
-        { dbt->intrinsic_scopy,   emit_stub_scopy },
-        { dbt->intrinsic_memcpy,  emit_stub_memcpy },
-        { dbt->intrinsic_memcmp,  emit_stub_memcmp },
-        { dbt->intrinsic_memset,  emit_stub_memset },
-        { dbt->intrinsic_memswap, emit_stub_memswap },
-    };
+    for (int i = 0; i < dbt->num_intrinsics; i++) {
+        if (dbt->intrinsics[i].guest_addr == guest_pc) {
+            // Emit into the code buffer.
+            uint8_t *block_start = dbt->code_buf + dbt->code_used;
+            emit_t e;
+            e.buf = block_start;
+            e.offset = 0;
+            e.capacity = CODE_BUF_SIZE - dbt->code_used;
 
-    stub_emitter_fn emitter = nullptr;
-    for (int i = 0; i < MAX_INTRINSICS; i++) {
-        if (table[i].guest_addr && table[i].guest_addr == guest_pc) {
-            emitter = table[i].emitter;
-            break;
+            dbt->intrinsics[i].emitter(&e, dbt->intrinsics[i].host_fn);
+
+            if (e.offset > e.capacity) return nullptr;
+
+            dbt->code_used += e.offset;
+            dbt->intrinsic_hits++;
+
+            cache_insert(dbt, guest_pc, block_start);
+            return block_start;
         }
     }
-    if (!emitter) return nullptr;
+    return nullptr;
+}
 
-    // Emit into the code buffer.
-    uint8_t *block_start = dbt->code_buf + dbt->code_used;
-    emit_t e;
-    e.buf = block_start;
-    e.offset = 0;
-    e.capacity = CODE_BUF_SIZE - dbt->code_used;
+// ---------------------------------------------------------------
+// Intrinsic registration
+// ---------------------------------------------------------------
 
-    emitter(&e);
+// Maps dbt_emitter_id → function pointer.  The old-style stubs
+// (slen, scopy, etc.) ignore the host_fn parameter; the generic
+// co_* emitters use it as the CALL target.
+//
+typedef void (*generic_emitter_fn)(void *e, void *fn);
 
-    if (e.offset > e.capacity) return nullptr;  // overflow
+static generic_emitter_fn s_emitter_table[] = {
+    emit_stub_slen_w,      // DBT_EMIT_SLEN
+    emit_stub_scopy_w,     // DBT_EMIT_SCOPY
+    emit_stub_memcpy_w,    // DBT_EMIT_MEMCPY
+    emit_stub_memcmp_w,    // DBT_EMIT_MEMCMP
+    emit_stub_memset_w,    // DBT_EMIT_MEMSET
+    emit_stub_memswap_w,   // DBT_EMIT_MEMSWAP
+    emit_stub_co_3p,       // DBT_EMIT_CO_3P
+    emit_stub_co_4pp,      // DBT_EMIT_CO_4PP
+    emit_stub_co_pos,      // DBT_EMIT_CO_POS
+    emit_stub_co_5pp,      // DBT_EMIT_CO_5PP
+    emit_stub_co_member,   // DBT_EMIT_CO_MEMBER
+    emit_stub_co_6pp,      // DBT_EMIT_CO_6PP
+};
 
-    dbt->code_used += e.offset;
-    dbt->intrinsic_hits++;
+void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,
+                             dbt_emitter_id emitter_id, void *host_fn) {
+    if (dbt->num_intrinsics >= dbt_state_t::MAX_INTRINSICS) return;
+    if (!guest_addr) return;
 
-    // Insert into block cache so callers find it via normal lookup.
-    cache_insert(dbt, guest_pc, block_start);
-
-    return block_start;
+    auto &slot = dbt->intrinsics[dbt->num_intrinsics++];
+    slot.guest_addr = guest_addr;
+    slot.emitter = s_emitter_table[emitter_id];
+    slot.host_fn = host_fn;
 }
 
 // ---------------------------------------------------------------
@@ -2149,6 +2277,10 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
     // but re-emitting is simpler than tracking its exact size.
     dbt->code_used = 0;
     emit_trampoline(dbt);
+
+    // Clear intrinsics (re-registered by pretranslate_tier2).
+    dbt->num_intrinsics = 0;
+    memset(dbt->intrinsics, 0, sizeof(dbt->intrinsics));
 
     // Reset statistics.
     dbt->blocks_translated = 0;

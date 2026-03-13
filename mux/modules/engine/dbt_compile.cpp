@@ -199,35 +199,79 @@ static uint64_t tier2_lookup(const std::string &mux_name) {
 // can use native CALL continuation for Tier 2 function calls.
 // Called after dbt_init/dbt_reset, before dbt_run.
 //
+// Helper: register a blob symbol as an intrinsic if it exists.
+//
+static void reg_intrinsic(dbt_state_t *dbt, const char *blob_name,
+                           dbt_emitter_id eid, void *host_fn = nullptr) {
+    auto it = s_tier2.funcs.find(blob_name);
+    if (it != s_tier2.funcs.end()) {
+        dbt_register_intrinsic(dbt, it->second.guest_addr, eid, host_fn);
+    }
+}
+
+// Forward declarations for host co_* functions (in libmux.so).
+// These are the Ragel-generated native implementations.
+//
+extern "C" {
+    size_t co_first(unsigned char *, const unsigned char *, size_t, unsigned char);
+    size_t co_rest(unsigned char *, const unsigned char *, size_t, unsigned char);
+    size_t co_last(unsigned char *, const unsigned char *, size_t, unsigned char);
+    size_t co_words_count(const unsigned char *, size_t, unsigned char);
+    size_t co_repeat(unsigned char *, const unsigned char *, size_t, size_t);
+    size_t co_mid(unsigned char *, const unsigned char *, size_t, size_t, size_t);
+    size_t co_pos(const unsigned char *, size_t, const unsigned char *, size_t);
+    size_t co_member(const unsigned char *, size_t, const unsigned char *, size_t, unsigned char);
+    size_t co_trim(unsigned char *, const unsigned char *, size_t, unsigned char, int);
+    size_t co_delete(unsigned char *, const unsigned char *, size_t, size_t, unsigned char, unsigned char);
+    size_t co_sort_words(unsigned char *, const unsigned char *, size_t, unsigned char, unsigned char, char);
+}
+
 static void pretranslate_tier2(dbt_state_t *dbt) {
     if (!s_tier2.loaded) return;
 
     // Register intrinsics FIRST — translate_block() checks these
     // addresses and emits native x86-64 stubs instead of translating
-    // the RV64 byte-loop fallbacks.  Must happen before pretranslation
-    // so that rv64_slen, rv64_scopy, memcpy, etc. get stub blocks
-    // rather than translated RV64.
-    //
-    static const struct { const char *name; size_t offset; } intrinsic_map[] = {
-        { "rv64_slen",    offsetof(dbt_state_t, intrinsic_slen) },
-        { "rv64_scopy",   offsetof(dbt_state_t, intrinsic_scopy) },
-        { "memcpy",       offsetof(dbt_state_t, intrinsic_memcpy) },
-        { "memcmp",       offsetof(dbt_state_t, intrinsic_memcmp) },
-        { "memset",       offsetof(dbt_state_t, intrinsic_memset) },
-        { "memswap",      offsetof(dbt_state_t, intrinsic_memswap) },
-        { nullptr, 0 }
-    };
-    for (int i = 0; intrinsic_map[i].name; i++) {
-        auto it = s_tier2.funcs.find(intrinsic_map[i].name);
-        if (it != s_tier2.funcs.end()) {
-            *reinterpret_cast<uint64_t *>(
-                reinterpret_cast<char *>(dbt) + intrinsic_map[i].offset
-            ) = it->second.guest_addr;
-        }
-    }
+    // the RV64 bodies.  Must happen before pretranslation.
 
-    // Now pretranslate all Tier 2 functions.  For intrinsic addresses,
-    // translate_block() → try_emit_intrinsic() will emit native stubs.
+    // Block-level intrinsics (custom emitters).
+    //
+    reg_intrinsic(dbt, "rv64_slen",  DBT_EMIT_SLEN);
+    reg_intrinsic(dbt, "rv64_scopy", DBT_EMIT_SCOPY);
+    reg_intrinsic(dbt, "memcpy",     DBT_EMIT_MEMCPY);
+    reg_intrinsic(dbt, "memcmp",     DBT_EMIT_MEMCMP);
+    reg_intrinsic(dbt, "memset",     DBT_EMIT_MEMSET);
+    reg_intrinsic(dbt, "memswap",    DBT_EMIT_MEMSWAP);
+
+    // co_* Ragel functions → native host calls.
+    // The wrapper does fargs unpacking in RV64 (cheap to translate),
+    // then JALs to co_first/co_rest/etc.  The intrinsic intercepts
+    // the JAL and calls the host's native Ragel implementation directly.
+    //
+    // 4 args: (out:ptr, p:ptr, len:int, delim:int)
+    reg_intrinsic(dbt, "co_first",  DBT_EMIT_CO_4PP, reinterpret_cast<void *>(co_first));
+    reg_intrinsic(dbt, "co_rest",   DBT_EMIT_CO_4PP, reinterpret_cast<void *>(co_rest));
+    reg_intrinsic(dbt, "co_last",   DBT_EMIT_CO_4PP, reinterpret_cast<void *>(co_last));
+    reg_intrinsic(dbt, "co_repeat", DBT_EMIT_CO_4PP, reinterpret_cast<void *>(co_repeat));
+
+    // 3 args: (p:ptr, len:int, delim:int)
+    reg_intrinsic(dbt, "co_words_count", DBT_EMIT_CO_3P, reinterpret_cast<void *>(co_words_count));
+
+    // 4 args: (haystack:ptr, hlen:int, needle:ptr, nlen:int)
+    reg_intrinsic(dbt, "co_pos", DBT_EMIT_CO_POS, reinterpret_cast<void *>(co_pos));
+
+    // 5 args: (out:ptr, p:ptr, len:int, start:int, count:int)
+    reg_intrinsic(dbt, "co_mid",  DBT_EMIT_CO_5PP, reinterpret_cast<void *>(co_mid));
+    reg_intrinsic(dbt, "co_trim", DBT_EMIT_CO_5PP, reinterpret_cast<void *>(co_trim));
+
+    // 5 args: (target:ptr, tlen:int, list:ptr, llen:int, delim:int)
+    reg_intrinsic(dbt, "co_member", DBT_EMIT_CO_MEMBER, reinterpret_cast<void *>(co_member));
+
+    // 6 args: (out:ptr, list:ptr, llen:int, x:int, y:int, z:int)
+    reg_intrinsic(dbt, "co_delete",     DBT_EMIT_CO_6PP, reinterpret_cast<void *>(co_delete));
+    reg_intrinsic(dbt, "co_sort_words", DBT_EMIT_CO_6PP, reinterpret_cast<void *>(co_sort_words));
+
+    // Pretranslate all Tier 2 functions.  For intrinsic addresses,
+    // translate_block() → try_emit_intrinsic() emits native stubs.
     // For non-intrinsic functions, normal RV64 translation proceeds.
     //
     for (auto &kv : s_tier2.funcs) {

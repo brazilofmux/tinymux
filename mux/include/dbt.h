@@ -130,14 +130,19 @@ struct dbt_state_t {
     void *ecall_user;
 
     // Intrinsics: guest addresses the DBT replaces with native x86-64.
+    // Data-driven table — each entry maps a guest address to an emitter.
     //
-    uint64_t intrinsic_slen;     // rv64_slen guest address (0 = not registered)
-    uint64_t intrinsic_scopy;    // rv64_scopy guest address (0 = not registered)
-    uint64_t intrinsic_memcpy;   // rv64_memcpy guest address (0 = not registered)
-    uint64_t intrinsic_memcmp;   // rv64_memcmp guest address (0 = not registered)
-    uint64_t intrinsic_memset;   // rv64_memset guest address (0 = not registered)
-    uint64_t intrinsic_memswap;  // rv64_memswap guest address (0 = not registered)
-    uint64_t intrinsic_hits;     // stat: intrinsic calls emitted
+    static constexpr int MAX_INTRINSICS = 32;
+
+    struct intrinsic_slot_t {
+        uint64_t guest_addr;                       // 0 = empty slot
+        void (*emitter)(void *e, void *fn);        // generic emitter (emit_t* cast to void*)
+        void *host_fn;                             // host function to CALL
+    };
+
+    intrinsic_slot_t intrinsics[MAX_INTRINSICS];
+    int              num_intrinsics;
+    uint64_t         intrinsic_hits;     // stat: intrinsic calls emitted
 
     // Debug.
     //
@@ -155,5 +160,30 @@ void dbt_rerun(dbt_state_t *dbt,
 void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc);
 int  dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top);
 void dbt_cleanup(dbt_state_t *dbt);
+
+// Intrinsic registration — called from dbt_compile.cpp before pretranslation.
+//
+// Emitter IDs for built-in intrinsic stubs:
+enum dbt_emitter_id {
+    DBT_EMIT_SLEN = 0,      // rv64_slen → host strlen
+    DBT_EMIT_SCOPY,          // rv64_scopy → host strcpy+strlen
+    DBT_EMIT_MEMCPY,         // memcpy → host memcpy
+    DBT_EMIT_MEMCMP,         // memcmp → host memcmp
+    DBT_EMIT_MEMSET,         // memset → host memset
+    DBT_EMIT_MEMSWAP,        // memswap → inline qword swap
+
+    // Generic co_* emitters — data-driven, parameterized by host_fn.
+    // Signature encoded: number of args + which are guest pointers.
+    //
+    DBT_EMIT_CO_3P,          // 3 args: a0=ptr, a1-a2=int
+    DBT_EMIT_CO_4PP,         // 4 args: a0=ptr, a1=ptr, a2-a3=int
+    DBT_EMIT_CO_POS,         // 4 args: a0=ptr, a1=int, a2=ptr, a3=int
+    DBT_EMIT_CO_5PP,         // 5 args: a0=ptr, a1=ptr, a2-a4=int
+    DBT_EMIT_CO_MEMBER,      // 5 args: a0=ptr, a1=int, a2=ptr, a3-a4=int
+    DBT_EMIT_CO_6PP,         // 6 args: a0=ptr, a1=ptr, a2-a5=int
+};
+
+void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,
+                             dbt_emitter_id emitter_id, void *host_fn);
 
 #endif // DBT_H
