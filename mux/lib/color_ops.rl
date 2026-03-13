@@ -2197,3 +2197,71 @@ size_t co_apply_color(unsigned char *out,
     *wp = '\0';
     return (size_t)(wp - out);
 }
+
+/* ---- co_escape ---- */
+
+/*
+ * Escape table: characters that need a preceding backslash.
+ * Set: $%(),;[\]^{}
+ */
+static const unsigned char co_isescape[256] = {
+/*  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 0 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 1 */
+    0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0,  /* 2: $%(),  */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,  /* 3: ;      */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 4 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0,  /* 5: [\]^   */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 6 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0,  /* 7: {}     */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 8 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 9 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* A */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* B */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* C */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* D */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* E */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0   /* F */
+};
+
+size_t co_escape(unsigned char *out,
+                 const unsigned char *data, size_t len)
+{
+    const unsigned char *p = data;
+    const unsigned char *pe = data + len;
+    unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+    int bFirst = 1;
+
+    while (p < pe && wp < wp_end) {
+        /* Copy color PUA codes through to output. */
+        const unsigned char *q = co_skip_color(p, pe);
+        while (p < q && wp < wp_end) {
+            *wp++ = *p++;
+        }
+        if (p >= pe) break;
+
+        /* Determine visible code point length. */
+        unsigned char ch = *p;
+        size_t cplen;
+        if (ch < 0x80)       cplen = 1;
+        else if (ch < 0xE0)  cplen = 2;
+        else if (ch < 0xF0)  cplen = 3;
+        else                 cplen = 4;
+        if (p + cplen > pe) break;
+
+        /* Insert backslash before first visible char or escape chars. */
+        if (bFirst || (ch < 0x80 && co_isescape[ch])) {
+            WP_SAFE(wp, wp_end, '\\');
+            bFirst = 0;
+        }
+
+        /* Copy the visible code point. */
+        for (size_t i = 0; i < cplen; i++) {
+            WP_SAFE(wp, wp_end, *p++);
+        }
+    }
+
+    *wp = '\0';
+    return (size_t)(wp - out);
+}

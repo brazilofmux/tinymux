@@ -4904,73 +4904,17 @@ static FUNCTION(fun_escape)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = nullptr;
-    try
-    {
-        sStr = new mux_string(fargs[0]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    const unsigned char *p = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t slen = strlen(reinterpret_cast<const char *>(p));
 
-    if (nullptr == sStr)
-    {
-        return;
-    }
-
-    mux_string *sOut = nullptr;
-    try
-    {
-        sOut = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == sOut)
-    {
-        delete sStr;
-        return;
-    }
-    mux_cursor curStr;
-    mux_cursor curOut;
-
-    bool bBackslash = false;
-    sOut->cursor_start(curOut);
-    if (sStr->cursor_start(curStr))
-    {
-        for (;;)
-        {
-            if (  sStr->IsEscape(curStr)
-               || !bBackslash)
-            {
-                sOut->append(T("\\"));
-                sOut->set_Color(curOut.m_point, sStr->export_Color(curStr.m_point));
-                sOut->cursor_next(curOut);
-                bBackslash = true;
-            }
-
-            mux_cursor next = curStr;
-            if (sStr->cursor_next(next))
-            {
-                sOut->append(*sStr, curStr, next);
-                sOut->cursor_next(curOut);
-                curStr = next;
-            }
-            else
-            {
-                break;
-            }
-        }
-    }
+    unsigned char out[LBUF_SIZE];
+    size_t n = co_escape(out, p, slen);
 
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sOut->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-
-    delete sOut;
-    delete sStr;
+    if (n > nMax) n = nMax;
+    memcpy(*bufc, out, n);
+    *bufc += n;
+    **bufc = '\0';
 }
 
 /*

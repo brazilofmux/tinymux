@@ -177,82 +177,147 @@ FUNCTION(fun_shuffle)
         return;
     }
 
-    mux_string *sIn = nullptr;
-    try
+    if (1 == sep.n && 1 == osep.n)
     {
-        sIn = new mux_string(fargs[0]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+        // Single-char delimiter: use co_words_count + co_extract.
+        //
+        UTF8 *s = fargs[0];
+        if (' ' == sep.str[0])
+        {
+            s = trim_space_sep(s, sep);
+        }
+        const unsigned char *p = reinterpret_cast<const unsigned char *>(s);
+        size_t slen = strlen(reinterpret_cast<const char *>(p));
+        unsigned char delim = static_cast<unsigned char>(sep.str[0]);
+        unsigned char out_delim = static_cast<unsigned char>(osep.str[0]);
 
-    if (nullptr == sIn)
-    {
-        return;
-    }
+        size_t n = co_words_count(p, slen, delim);
+        if (0 == n)
+        {
+            return;
+        }
 
-    mux_words *words = nullptr;
-    try
-    {
-        words = new mux_words(*sIn);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+        // Build index array and Fisher-Yates shuffle.
+        //
+        LBUF_OFFSET indices[LBUF_SIZE / 2];
+        for (size_t i = 0; i < n; i++)
+        {
+            indices[i] = static_cast<LBUF_OFFSET>(i);
+        }
+        for (size_t i = n - 1; i > 0; i--)
+        {
+            size_t j = static_cast<size_t>(RandomINT32(0, static_cast<int32_t>(i)));
+            LBUF_OFFSET tmp = indices[i];
+            indices[i] = indices[j];
+            indices[j] = tmp;
+        }
 
-    if (nullptr == words)
-    {
-        delete sIn;
-        return;
-    }
+        // Output shuffled words using co_extract.
+        //
+        bool bFirst = true;
+        for (size_t i = 0; i < n; i++)
+        {
+            if (!bFirst)
+            {
+                safe_chr(static_cast<UTF8>(out_delim), buff, bufc);
+            }
+            else
+            {
+                bFirst = false;
+            }
 
-    LBUF_OFFSET n = words->find_Words(sep.str);
-    mux_string *sOut = nullptr;
-    try
-    {
-        sOut = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+            unsigned char word[LBUF_SIZE];
+            size_t nWord = co_extract(word, p, slen,
+                indices[i] + 1, 1, delim, delim);
 
-    if (nullptr == sOut)
+            size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+            if (nWord > nMax) nWord = nMax;
+            memcpy(*bufc, word, nWord);
+            *bufc += nWord;
+        }
+        **bufc = '\0';
+    }
+    else
     {
-        delete sIn;
+        // Multi-char delimiter: fall back to mux_string.
+        //
+        mux_string *sIn = nullptr;
+        mux_words *words = nullptr;
+        try
+        {
+            sIn = new mux_string(fargs[0]);
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == sIn)
+        {
+            return;
+        }
+
+        try
+        {
+            words = new mux_words(*sIn);
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == words)
+        {
+            delete sIn;
+            return;
+        }
+
+        LBUF_OFFSET n = words->find_Words(sep.str);
+        mux_string *sOut = nullptr;
+        try
+        {
+            sOut = new mux_string;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == sOut)
+        {
+            delete sIn;
+            delete words;
+            return;
+        }
+
+        bool bFirst = true;
+        LBUF_OFFSET i = 0;
+        mux_cursor iStart = CursorMin, iEnd = CursorMin;
+
+        while (n > 0)
+        {
+            if (bFirst)
+            {
+                bFirst = false;
+            }
+            else
+            {
+                sOut->append(osep.str, osep.n);
+            }
+            i = static_cast<LBUF_OFFSET>(RandomINT32(0, static_cast<int32_t>(n-1)));
+            iStart = words->wordBegin(i);
+            iEnd = words->wordEnd(i);
+            sOut->append(*sIn, iStart, iEnd);
+            words->ignore_Word(i);
+            n--;
+        }
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        *bufc += sOut->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
+
         delete words;
-        return;
+        delete sIn;
+        delete sOut;
     }
-
-    bool bFirst = true;
-    LBUF_OFFSET i = 0;
-    mux_cursor iStart = CursorMin, iEnd = CursorMin;
-
-    while (n > 0)
-    {
-        if (bFirst)
-        {
-            bFirst = false;
-        }
-        else
-        {
-            sOut->append(osep.str, osep.n);
-        }
-        i = static_cast<LBUF_OFFSET>(RandomINT32(0, static_cast<int32_t>(n-1)));
-        iStart = words->wordBegin(i);
-        iEnd = words->wordEnd(i);
-        sOut->append(*sIn, iStart, iEnd);
-        words->ignore_Word(i);
-        n--;
-    }
-    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sOut->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-
-    delete words;
-    delete sIn;
-    delete sOut;
 }
 
 // pickrand -- choose a random item from a list.
@@ -956,26 +1021,16 @@ FUNCTION(fun_foreach)
         return;
     }
 
+    // Trim leading/trailing whitespace directly on the buffer.
+    //
+    const UTF8 *pStr = fargs[1];
+    while (mux_isspace(*pStr)) pStr++;
+    size_t nStr = strlen(reinterpret_cast<const char *>(pStr));
+    while (nStr > 0 && mux_isspace(pStr[nStr - 1])) nStr--;
+
     UTF8 cbuf[5] = {'\0', '\0', '\0', '\0', '\0'};
     const UTF8 *bp = cbuf;
-    mux_string *sStr = nullptr;
-    try
-    {
-        sStr = new mux_string(fargs[1]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == sStr)
-    {
-        return;
-    }
-
-    sStr->trim();
-    size_t nStr = sStr->length_byte();
-    LBUF_OFFSET i = 0, nBytes = 0;
+    size_t i = 0;
 
     if (  4 == nfargs
        && '\0' != fargs[2][0]
@@ -988,8 +1043,19 @@ FUNCTION(fun_foreach)
               && mudstate.func_invk_ctr < mudconf.func_invk_lim
               && !alarm_clock.alarmed)
         {
-            nBytes = sStr->export_Char_UTF8(i, cbuf);
-            i = i + nBytes;
+            // Determine code point length from UTF-8 lead byte.
+            //
+            unsigned char ch = pStr[i];
+            size_t nBytes;
+            if (ch < 0x80)       nBytes = 1;
+            else if (ch < 0xE0)  nBytes = 2;
+            else if (ch < 0xF0)  nBytes = 3;
+            else                 nBytes = 4;
+            if (i + nBytes > nStr) break;
+
+            memcpy(cbuf, pStr + i, nBytes);
+            cbuf[nBytes] = '\0';
+            i += nBytes;
 
             if (flag)
             {
@@ -1028,15 +1094,23 @@ FUNCTION(fun_foreach)
               && mudstate.func_invk_ctr < mudconf.func_invk_lim
               && !alarm_clock.alarmed)
         {
-            nBytes = sStr->export_Char_UTF8(i, cbuf);
+            unsigned char ch = pStr[i];
+            size_t nBytes;
+            if (ch < 0x80)       nBytes = 1;
+            else if (ch < 0xE0)  nBytes = 2;
+            else if (ch < 0xF0)  nBytes = 3;
+            else                 nBytes = 4;
+            if (i + nBytes > nStr) break;
+
+            memcpy(cbuf, pStr + i, nBytes);
+            cbuf[nBytes] = '\0';
 
             mux_exec(atext, LBUF_SIZE-1, buff, bufc, thing, executor, enactor,
                 AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), &bp, 1);
-            i = i + nBytes;
+            i += nBytes;
         }
     }
     free_lbuf(atext);
-    delete sStr;
 }
 
 /* ---------------------------------------------------------------------------

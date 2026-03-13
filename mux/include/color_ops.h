@@ -512,4 +512,16 @@ size_t co_apply_color(unsigned char *out,
                       const unsigned char *p, size_t len,
                       co_ColorState cs);
 
+/*
+ * co_escape — Insert backslash before escape characters, preserving color.
+ *
+ * MUX escape() semantics: prepends '\' before the first visible character
+ * and before any character in the set: $%(),;[\]^{}.
+ * Color PUA codes are passed through unchanged.
+ *
+ * Returns bytes written to out.
+ */
+size_t co_escape(unsigned char *out,
+                 const unsigned char *data, size_t len);
+
 #endif /* COLOR_OPS_H */
