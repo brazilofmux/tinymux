@@ -530,21 +530,46 @@ static constexpr int x64_arg_regs[6] = {
     X64_RDI, X64_RSI, X64_RDX, X64_RCX, X64_R8, X64_R9
 };
 
-// Generic emitter for co_* functions with ≤6 args, result in a0.
+// Generic emitter for co_* functions, result in a0.
 // `fn` is the host function pointer (from the intrinsic_slot_t).
 // The nargs and ptr_mask are encoded in the emitter function (one
 // emitter per signature pattern).
+//
+// For nargs <= 6: all args in SysV registers (RDI,RSI,RDX,RCX,R8,R9).
+// For nargs > 6:  first 6 in registers, overflow pushed onto x86-64 stack.
+//   The prologue aligns RSP to 16; we sub additional space for stack args
+//   (padded to 16) and store via MOV [RSP+disp].  The epilogue's
+//   `mov rsp, rbp` cleans it all up.
 //
 static void emit_stub_co_generic(void *ev, void *fn,
                                   int nargs, uint8_t ptr_mask) {
     emit_t *e = static_cast<emit_t *>(ev);
     emit_stub_prologue(e);
 
-    // Load guest regs into x86-64 ABI positions.
-    // We load in reverse order to avoid clobbering RDI/RSI before reading
-    // them as ctx pointers (they're cached guest a0/a1 but we read from ctx).
+    int n_reg   = (nargs <= 6) ? nargs : 6;
+    int n_stack = (nargs > 6) ? (nargs - 6) : 0;
+
+    // Allocate stack space for overflow arguments (16-byte aligned).
     //
-    for (int i = nargs - 1; i >= 0; i--) {
+    if (n_stack > 0) {
+        int stack_bytes = ((n_stack * 8 + 15) & ~15);
+        emit_sub_r64_imm(e, X64_RSP, stack_bytes);
+
+        // Load overflow args via RAX scratch, store to [RSP + offset].
+        //
+        for (int i = nargs - 1; i >= 6; i--) {
+            emit_load_ctx_reg(e, X64_RAX, 10 + i);
+            if (ptr_mask & (1 << i)) {
+                emit_guest_to_host(e, X64_RAX);
+            }
+            emit_store_rsp(e, X64_RAX, (i - 6) * 8);
+        }
+    }
+
+    // Load register args (first 6) in reverse order to avoid clobbering
+    // RDI/RSI before reading them as ctx pointers.
+    //
+    for (int i = n_reg - 1; i >= 0; i--) {
         emit_load_ctx_reg(e, x64_arg_regs[i], 10 + i);  // guest a0+i
         if (ptr_mask & (1 << i)) {
             emit_guest_to_host(e, x64_arg_regs[i]);
@@ -622,6 +647,14 @@ DEFINE_CO_EMITTER(co_6pp, 6, 0x03)
 // 6 args: co_delete(out, list, llen, pos, delim, osep)
 //   same as co_6pp → mask=0x03
 
+// 7 args: co_extract(out, p, len, iFirst, nWords, delim, osep)
+//   a0=ptr, a1=ptr, a2-a6=int  → mask=0x03
+DEFINE_CO_EMITTER(co_7pp, 7, 0x03)
+
+// 8 args: co_setunion(out, list1, len1, list2, len2, delim, osep, sort_type)
+//   a0=ptr, a1=ptr, a2=int, a3=ptr, a4-a7=int  → mask=0x0B (bits 0,1,3)
+DEFINE_CO_EMITTER(co_8ppp, 8, 0x0B)
+
 // Wrapper emitters for the old-style stubs (no host_fn parameter).
 //
 static void emit_stub_slen_w(void *ev, void *) { emit_stub_slen(static_cast<emit_t *>(ev)); }
@@ -682,6 +715,8 @@ static generic_emitter_fn s_emitter_table[] = {
     emit_stub_co_5pp,      // DBT_EMIT_CO_5PP
     emit_stub_co_member,   // DBT_EMIT_CO_MEMBER
     emit_stub_co_6pp,      // DBT_EMIT_CO_6PP
+    emit_stub_co_7pp,      // DBT_EMIT_CO_7PP
+    emit_stub_co_8ppp,     // DBT_EMIT_CO_8PPP
 };
 
 void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,

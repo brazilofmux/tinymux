@@ -224,6 +224,10 @@ extern "C" {
     size_t co_trim(unsigned char *, const unsigned char *, size_t, unsigned char, int);
     size_t co_delete(unsigned char *, const unsigned char *, size_t, size_t, unsigned char, unsigned char);
     size_t co_sort_words(unsigned char *, const unsigned char *, size_t, unsigned char, unsigned char, char);
+    size_t co_extract(unsigned char *, const unsigned char *, size_t, size_t, size_t, unsigned char, unsigned char);
+    size_t co_setunion(unsigned char *, const unsigned char *, size_t, const unsigned char *, size_t, unsigned char, unsigned char, char);
+    size_t co_setdiff(unsigned char *, const unsigned char *, size_t, const unsigned char *, size_t, unsigned char, unsigned char, char);
+    size_t co_setinter(unsigned char *, const unsigned char *, size_t, const unsigned char *, size_t, unsigned char, unsigned char, char);
 }
 
 static void pretranslate_tier2(dbt_state_t *dbt) {
@@ -269,6 +273,14 @@ static void pretranslate_tier2(dbt_state_t *dbt) {
     // 6 args: (out:ptr, list:ptr, llen:int, x:int, y:int, z:int)
     reg_intrinsic(dbt, "co_delete",     DBT_EMIT_CO_6PP, reinterpret_cast<void *>(co_delete));
     reg_intrinsic(dbt, "co_sort_words", DBT_EMIT_CO_6PP, reinterpret_cast<void *>(co_sort_words));
+
+    // 7 args: (out:ptr, p:ptr, len:int, iFirst:int, nWords:int, delim:int, osep:int)
+    reg_intrinsic(dbt, "co_extract", DBT_EMIT_CO_7PP, reinterpret_cast<void *>(co_extract));
+
+    // 8 args: (out:ptr, list1:ptr, len1:int, list2:ptr, len2:int, delim:int, osep:int, sort_type:int)
+    reg_intrinsic(dbt, "co_setunion", DBT_EMIT_CO_8PPP, reinterpret_cast<void *>(co_setunion));
+    reg_intrinsic(dbt, "co_setdiff",  DBT_EMIT_CO_8PPP, reinterpret_cast<void *>(co_setdiff));
+    reg_intrinsic(dbt, "co_setinter", DBT_EMIT_CO_8PPP, reinterpret_cast<void *>(co_setinter));
 
     // Pretranslate all Tier 2 functions.  For intrinsic addresses,
     // translate_block() → try_emit_intrinsic() emits native stubs.

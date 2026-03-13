@@ -181,6 +181,11 @@ enum dbt_emitter_id {
     DBT_EMIT_CO_5PP,         // 5 args: a0=ptr, a1=ptr, a2-a4=int
     DBT_EMIT_CO_MEMBER,      // 5 args: a0=ptr, a1=int, a2=ptr, a3-a4=int
     DBT_EMIT_CO_6PP,         // 6 args: a0=ptr, a1=ptr, a2-a5=int
+
+    // Extended patterns — overflow args passed on x86-64 stack.
+    //
+    DBT_EMIT_CO_7PP,         // 7 args: a0=ptr, a1=ptr, a2-a6=int
+    DBT_EMIT_CO_8PPP,        // 8 args: a0=ptr, a1=ptr, a3=ptr, rest=int
 };
 
 void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,

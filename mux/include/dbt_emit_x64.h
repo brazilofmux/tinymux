@@ -728,6 +728,26 @@ static inline void emit_pop(emit_t *e, int reg) {
     emit_byte(e, 0x58 + reg_lo(reg));
 }
 
+// mov [rsp + disp], r64  — for stack-passed arguments to host calls.
+// RSP as ModR/M base requires a SIB byte (base=RSP, no index).
+//
+static inline void emit_store_rsp(emit_t *e, int reg, int disp) {
+    emit_byte(e, rex(1, reg_hi(reg), 0, 0));
+    emit_byte(e, 0x89);
+    if (disp == 0) {
+        emit_byte(e, modrm(0x00, reg, 0x04));  // SIB follows
+        emit_byte(e, 0x24);                     // SIB: base=RSP, no index
+    } else if (disp >= -128 && disp <= 127) {
+        emit_byte(e, modrm(0x01, reg, 0x04));
+        emit_byte(e, 0x24);
+        emit_byte(e, static_cast<uint8_t>(static_cast<int8_t>(disp)));
+    } else {
+        emit_byte(e, modrm(0x02, reg, 0x04));
+        emit_byte(e, 0x24);
+        emit_u32(e, static_cast<uint32_t>(disp));
+    }
+}
+
 // call rax
 static inline void emit_call_rax(emit_t *e) {
     emit_byte(e, 0xFF);
