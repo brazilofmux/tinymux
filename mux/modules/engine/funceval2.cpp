@@ -513,15 +513,14 @@ FUNCTION(fun_lrest)
         return;
     }
 
-    if (  1 == sep.n
-       && ' ' == sep.str[0])
+    if (1 == sep.n)
     {
-        // Space delimiter: use co_extract for words 1..N-1.
+        // Single-char delimiter: use co_extract for words 1..N-1.
         //
         UTF8 *bp = trim_space_sep(fargs[0], sep);
         const unsigned char *p = reinterpret_cast<const unsigned char *>(bp);
         size_t slen = strlen(reinterpret_cast<const char *>(p));
-        unsigned char delim = ' ';
+        unsigned char delim = static_cast<unsigned char>(sep.str[0]);
 
         size_t nWords = co_words_count(p, slen, delim);
         if (nWords > 1)

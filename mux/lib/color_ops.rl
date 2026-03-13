@@ -292,19 +292,31 @@ size_t co_words_count(const unsigned char *data, size_t len,
     const unsigned char *pe = data + len;
     size_t count = 0;
 
-    while (p < pe) {
-        /* Skip leading delimiters (with color pass-through). */
-        p = co_skip_color(p, pe);
-        if (p >= pe) break;
-        if (*p == delim) { p++; continue; }
+    if (delim == ' ') {
+        /* Space: compress consecutive delimiters. */
+        while (p < pe) {
+            p = co_skip_color(p, pe);
+            if (p >= pe) break;
+            if (*p == ' ') { p++; continue; }
 
-        /* We are at the start of a word. */
-        count++;
+            count++;
+            const unsigned char *d = co_find_delim(p, pe, ' ');
+            if (!d) break;
+            p = d + 1;
+        }
+    } else {
+        /* Non-space: each delimiter is significant.
+         * word count = 1 + number of delimiters (if any visible content).
+         * Empty/color-only string → 0 words. */
+        if (co_visible_length(data, len) == 0) return 0;
 
-        /* Advance to next delimiter or end. */
-        const unsigned char *d = co_find_delim(p, pe, delim);
-        if (!d) break;
-        p = d + 1;
+        count = 1;
+        while (p < pe) {
+            const unsigned char *d = co_find_delim(p, pe, delim);
+            if (!d) break;
+            count++;
+            p = d + 1;
+        }
     }
     return count;
 }
@@ -315,23 +327,26 @@ size_t co_first(unsigned char *out, const unsigned char *data, size_t len,
                 unsigned char delim)
 {
     const unsigned char *pe = data + len;
-    const unsigned char *p = data;
 
-    /* Skip leading delimiters (but remember where content starts
-     * including any color that precedes the first visible char). */
-    const unsigned char *content_start = data;
-    while (p < pe) {
-        const unsigned char *q = co_skip_color(p, pe);
-        if (q >= pe) break;
-        if (*q == delim) { p = q + 1; content_start = p; continue; }
-        break;
+    if (delim == ' ') {
+        /* Space: skip leading delimiters, then take first word. */
+        const unsigned char *p = data;
+        const unsigned char *content_start = data;
+        while (p < pe) {
+            const unsigned char *q = co_skip_color(p, pe);
+            if (q >= pe) break;
+            if (*q == ' ') { p = q + 1; content_start = p; continue; }
+            break;
+        }
+        const unsigned char *d = co_find_delim(content_start, pe, ' ');
+        const unsigned char *end = d ? d : pe;
+        return raw_copy(out, content_start, end);
+    } else {
+        /* Non-space: first word is everything before the first delimiter. */
+        const unsigned char *d = co_find_delim(data, pe, delim);
+        const unsigned char *end = d ? d : pe;
+        return raw_copy(out, data, end);
     }
-
-    /* Find end of first word. */
-    const unsigned char *d = co_find_delim(content_start, pe, delim);
-    const unsigned char *end = d ? d : pe;
-
-    return raw_copy(out, content_start, end);
 }
 
 /* ---- co_rest ---- */
@@ -341,26 +356,27 @@ size_t co_rest(unsigned char *out, const unsigned char *data, size_t len,
 {
     const unsigned char *pe = data + len;
 
-    /* Skip leading delimiters + color. */
-    const unsigned char *p = data;
-    while (p < pe) {
-        const unsigned char *q = co_skip_color(p, pe);
-        if (q >= pe) break;
-        if (*q == delim) { p = q + 1; continue; }
-        p = q;
-        break;
+    if (delim == ' ') {
+        /* Space: skip leading spaces, find end of first word, skip delimiter. */
+        const unsigned char *p = data;
+        while (p < pe) {
+            const unsigned char *q = co_skip_color(p, pe);
+            if (q >= pe) break;
+            if (*q == ' ') { p = q + 1; continue; }
+            p = q;
+            break;
+        }
+        const unsigned char *d = co_find_delim(p, pe, ' ');
+        if (!d) { out[0] = '\0'; return 0; }
+        const unsigned char *rest_start = d + 1;
+        return raw_copy(out, rest_start, pe);
+    } else {
+        /* Non-space: find first delimiter, return everything after it. */
+        const unsigned char *d = co_find_delim(data, pe, delim);
+        if (!d) { out[0] = '\0'; return 0; }
+        const unsigned char *rest_start = d + 1;
+        return raw_copy(out, rest_start, pe);
     }
-
-    /* Find end of first word. */
-    const unsigned char *d = co_find_delim(p, pe, delim);
-    if (!d) {
-        out[0] = '\0';
-        return 0;
-    }
-
-    /* Skip the delimiter itself, then copy rest. */
-    const unsigned char *rest_start = d + 1;
-    return raw_copy(out, rest_start, pe);
 }
 
 /* ---- co_last ---- */
@@ -404,46 +420,71 @@ size_t co_extract(unsigned char *out,
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     if (iFirst == 0) iFirst = 1;
-    if (nWords == 0) {
+    if (nWords == 0 || len == 0) {
         out[0] = '\0';
         return 0;
     }
 
     size_t iWord = 0;
     size_t copied = 0;
-    const unsigned char *p = data;
 
-    while (p < pe && wp < wp_end) {
-        /* Skip leading delimiters. */
-        const unsigned char *q = co_skip_color(p, pe);
-        if (q >= pe) {
-            /* Only color left — copy it if we are mid-extraction. */
-            if (copied > 0 && q > p) {
-                size_t cb = (size_t)(q - p);
-                wp += wp_safe_copy(wp, wp_end, p, cb);
+    if (delim == ' ') {
+        /* Space: compress consecutive delimiters. */
+        const unsigned char *p = data;
+        while (p < pe && wp < wp_end) {
+            const unsigned char *q = co_skip_color(p, pe);
+            if (q >= pe) {
+                if (copied > 0 && q > p) {
+                    size_t cb = (size_t)(q - p);
+                    wp += wp_safe_copy(wp, wp_end, p, cb);
+                }
+                break;
             }
-            break;
-        }
-        if (*q == delim) { p = q + 1; continue; }
+            if (*q == ' ') { p = q + 1; continue; }
 
-        /* Start of a word. */
-        iWord++;
-        const unsigned char *word_start = p;  /* include preceding color */
-        const unsigned char *d = co_find_delim(q, pe, delim);
-        const unsigned char *word_end = d ? d : pe;
+            iWord++;
+            const unsigned char *word_start = p;
+            const unsigned char *d = co_find_delim(q, pe, ' ');
+            const unsigned char *word_end = d ? d : pe;
 
-        if (iWord >= iFirst && iWord < iFirst + nWords) {
-            if (copied > 0) {
-                WP_SAFE(wp, wp_end, osep);
+            if (iWord >= iFirst && iWord < iFirst + nWords) {
+                if (copied > 0) {
+                    WP_SAFE(wp, wp_end, osep);
+                }
+                size_t cb = (size_t)(word_end - word_start);
+                wp += wp_safe_copy(wp, wp_end, word_start, cb);
+                copied++;
+                if (copied >= nWords) break;
             }
-            size_t cb = (size_t)(word_end - word_start);
-            wp += wp_safe_copy(wp, wp_end, word_start, cb);
-            copied++;
-            if (copied >= nWords) break;
-        }
 
-        if (!d) break;
-        p = d + 1;
+            if (!d) break;
+            p = d + 1;
+        }
+    } else {
+        /* Non-space: each delimiter is a word boundary.
+         * Word 1 = start to first delimiter.
+         * Word 2 = after first delimiter to second.
+         * Empty words between consecutive delimiters are valid. */
+        const unsigned char *word_start = data;
+
+        for (;;) {
+            const unsigned char *d = co_find_delim(word_start, pe, delim);
+            const unsigned char *word_end = d ? d : pe;
+
+            iWord++;
+            if (iWord >= iFirst && iWord < iFirst + nWords) {
+                if (copied > 0) {
+                    WP_SAFE(wp, wp_end, osep);
+                }
+                size_t cb = (size_t)(word_end - word_start);
+                wp += wp_safe_copy(wp, wp_end, word_start, cb);
+                copied++;
+                if (copied >= nWords) break;
+            }
+
+            if (!d) break;
+            word_start = d + 1;
+        }
     }
 
     *wp = '\0';

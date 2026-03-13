@@ -3275,11 +3275,10 @@ static FUNCTION(fun_extract)
 
     UTF8 *bp = trim_space_sep(fargs[0], sep);
 
-    if (  1 == sep.n
-       && ' ' == sep.str[0]
-       && 1 == osep.n)
+    if (1 == sep.n && 1 == osep.n)
     {
-        // Space delimiter: use co_extract (compresses consecutive spaces).
+        // Single-char delimiter: use co_extract.
+        // Space compresses consecutive delimiters; non-space treats each as significant.
         //
         size_t slen = strlen(reinterpret_cast<const char *>(bp));
         unsigned char out[LBUF_SIZE];
