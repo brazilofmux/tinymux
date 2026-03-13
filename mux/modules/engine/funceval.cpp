@@ -3024,55 +3024,98 @@ FUNCTION(fun_elements)
         return;
     }
 
-    // Turn the first list into an array.
-    //
-    mux_string *sStr = nullptr;
-    mux_words *words = nullptr;
-    try
+    if (1 == sep.n && 1 == osep.n)
     {
-        sStr  = new mux_string(fargs[0]);
-        words = new mux_words(*sStr);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+        // Single-char delimiter: use co_words_count + co_extract.
+        //
+        UTF8 *bp = trim_space_sep(fargs[0], sep);
+        const unsigned char *p = reinterpret_cast<const unsigned char *>(bp);
+        size_t slen = strlen(reinterpret_cast<const char *>(p));
+        unsigned char delim = static_cast<unsigned char>(sep.str[0]);
+        unsigned char out_delim = static_cast<unsigned char>(osep.str[0]);
 
-    if (  nullptr == sStr
-       || nullptr == words)
+        size_t nWords = co_words_count(p, slen, delim);
+
+        bool bFirst = true;
+        UTF8 *s = trim_space_sep(fargs[1], sepSpace);
+
+        do
+        {
+            UTF8 *r = split_token(&s, sepSpace);
+            int cur = mux_atol(r) - 1;
+            if (  0 <= cur
+               && static_cast<size_t>(cur) < nWords)
+            {
+                if (!bFirst)
+                {
+                    safe_chr(static_cast<UTF8>(out_delim), buff, bufc);
+                }
+                else
+                {
+                    bFirst = false;
+                }
+
+                unsigned char word[LBUF_SIZE];
+                size_t nWord = co_extract(word, p, slen,
+                    static_cast<size_t>(cur + 1), 1, delim, delim);
+
+                size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+                if (nWord > nMax) nWord = nMax;
+                memcpy(*bufc, word, nWord);
+                *bufc += nWord;
+            }
+        } while (s);
+        **bufc = '\0';
+    }
+    else
     {
+        // Multi-char delimiter: fall back to mux_string.
+        //
+        mux_string *sStr = nullptr;
+        mux_words *words = nullptr;
+        try
+        {
+            sStr  = new mux_string(fargs[0]);
+            words = new mux_words(*sStr);
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (  nullptr == sStr
+           || nullptr == words)
+        {
+            delete sStr;
+            delete words;
+            return;
+        }
+
+        LBUF_OFFSET nWords = words->find_Words(sep.str);
+
+        bool bFirst = true;
+        UTF8 *s = trim_space_sep(fargs[1], sepSpace);
+
+        do
+        {
+            UTF8 *r = split_token(&s, sepSpace);
+            int cur = mux_atol(r) - 1;
+            if (  0 <= cur
+               && cur < static_cast<int>(nWords))
+            {
+                if (!bFirst)
+                {
+                    print_sep(osep, buff, bufc);
+                }
+                else
+                {
+                    bFirst = false;
+                }
+                words->export_WordColor(static_cast<LBUF_OFFSET>(cur), buff, bufc);
+            }
+        } while (s);
+
         delete sStr;
         delete words;
-        return;
     }
-
-    LBUF_OFFSET nWords = words->find_Words(sep.str);
-
-    bool bFirst = true;
-    UTF8 *s = trim_space_sep(fargs[1], sepSpace);
-
-    // Go through the second list, grabbing the numbers and finding the
-    // corresponding elements.
-    //
-    do
-    {
-        UTF8 *r = split_token(&s, sepSpace);
-        int cur = mux_atol(r) - 1;
-        if (  0 <= cur
-           && cur < static_cast<int>(nWords))
-        {
-            if (!bFirst)
-            {
-                print_sep(osep, buff, bufc);
-            }
-            else
-            {
-                bFirst = false;
-            }
-            words->export_WordColor(static_cast<LBUF_OFFSET>(cur), buff, bufc);
-        }
-    } while (s);
-
-    delete sStr;
-    delete words;
 }

@@ -273,31 +273,59 @@ FUNCTION(fun_pickrand)
         return;
     }
 
-    mux_string *sStr = nullptr;
-    mux_words *words = nullptr;
-    try
+    if (1 == sep.n)
     {
-        sStr = new mux_string(s);
-        words = new mux_words(*sStr);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+        // Single-char delimiter: use co_words_count + co_extract.
+        //
+        const unsigned char *p = reinterpret_cast<const unsigned char *>(s);
+        size_t slen = strlen(reinterpret_cast<const char *>(s));
+        unsigned char delim = static_cast<unsigned char>(sep.str[0]);
 
-    if (  nullptr != sStr
-       && nullptr != words)
-    {
-        int32_t n = static_cast<int32_t>(words->find_Words(sep.str));
-
+        size_t n = co_words_count(p, slen, delim);
         if (0 < n)
         {
-            LBUF_OFFSET w = static_cast<LBUF_OFFSET>(RandomINT32(0, n-1));
-            words->export_WordColor(w, buff, bufc);
+            size_t w = static_cast<size_t>(RandomINT32(0, static_cast<int32_t>(n-1)));
+            unsigned char out[LBUF_SIZE];
+            size_t nOut = co_extract(out, p, slen,
+                w + 1, 1, delim, delim);
+
+            size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+            if (nOut > nMax) nOut = nMax;
+            memcpy(*bufc, out, nOut);
+            *bufc += nOut;
+            **bufc = '\0';
         }
     }
-    delete sStr;
-    delete words;
+    else
+    {
+        // Multi-char delimiter: fall back to mux_string.
+        //
+        mux_string *sStr = nullptr;
+        mux_words *words = nullptr;
+        try
+        {
+            sStr = new mux_string(s);
+            words = new mux_words(*sStr);
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (  nullptr != sStr
+           && nullptr != words)
+        {
+            int32_t n = static_cast<int32_t>(words->find_Words(sep.str));
+
+            if (0 < n)
+            {
+                LBUF_OFFSET w = static_cast<LBUF_OFFSET>(RandomINT32(0, n-1));
+                words->export_WordColor(w, buff, bufc);
+            }
+        }
+        delete sStr;
+        delete words;
+    }
 }
 
 // sortby()
