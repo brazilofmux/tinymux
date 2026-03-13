@@ -11,6 +11,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "color_ops.h"
 #include "sqlite_backend.h"
 
 #define PCRE2_CODE_UNIT_WIDTH 8
@@ -644,12 +645,13 @@ bool html_escape(const UTF8 *src, UTF8 *dest, UTF8 **destp)
     return ret;
 }
 
-void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
+void notify_check(dbref target, dbref sender, const UTF8 *msg, int key)
 {
     // If speaker is invalid or message is empty, just exit.
     //
     if (  !Good_obj(target)
-       || 0 == msg.length_byte())
+       || !msg
+       || !*msg)
     {
         return;
     }
@@ -683,11 +685,15 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
         return;
     }
 
-    mux_string *msg_ns = new mux_string;
-    mux_string *msgFinal = new mux_string;
+    // msg_ns: NOSPOOF prefix + msg.  All strings are PUA-encoded UTF-8.
+    //
+    UTF8 *msg_ns = alloc_lbuf("notify_check.msg_ns");
+    UTF8 *bp_ns = msg_ns;
+    UTF8 *msgFinal = alloc_lbuf("notify_check.final");
+    UTF8 *bp_final;
     UTF8 *tp;
     UTF8 *prefix;
-    dbref aowner,  recip, obj;
+    dbref aowner, recip, obj;
     int i, nargs, aflags;
     FWDLIST *fp;
 
@@ -701,72 +707,72 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
            && target != mudstate.curr_enactor
            && target != mudstate.curr_executor)
         {
-            // I'd really like to use tprintf here but I can't because the
-            // caller may have.  notify(target, tprintf(...)) is quite common
-            // in the code.
-            //
             if (  mudconf.terse_nospoof
                && (key & MSG_SAYPOSE))
             {
                 // Terse: just the dbref for say/pose.
                 //
-                msg_ns->import(T("["), 1);
-                msg_ns->append(sender);
-                msg_ns->append_TextPlain(T("] "), 2);
+                safe_chr('[', msg_ns, &bp_ns);
+                safe_chr('#', msg_ns, &bp_ns);
+                safe_ltoa(sender, msg_ns, &bp_ns);
+                safe_str(T("] "), msg_ns, &bp_ns);
             }
             else
             {
-                msg_ns->import(T("["), 1);
-                msg_ns->append(Moniker(sender));
-                msg_ns->append_TextPlain(T("("), 1);
-                msg_ns->append(sender);
-                msg_ns->append_TextPlain(T(")"), 1);
+                safe_chr('[', msg_ns, &bp_ns);
+                safe_str(Moniker(sender), msg_ns, &bp_ns);
+                safe_chr('(', msg_ns, &bp_ns);
+                safe_chr('#', msg_ns, &bp_ns);
+                safe_ltoa(sender, msg_ns, &bp_ns);
+                safe_chr(')', msg_ns, &bp_ns);
 
                 if (sender != Owner(sender))
                 {
-                    msg_ns->append_TextPlain(T("{"), 1);
-                    msg_ns->append(Moniker(Owner(sender)));
-                    msg_ns->append_TextPlain(T("}"), 1);
+                    safe_chr('{', msg_ns, &bp_ns);
+                    safe_str(Moniker(Owner(sender)), msg_ns, &bp_ns);
+                    safe_chr('}', msg_ns, &bp_ns);
                 }
 
                 if (sender != mudstate.curr_enactor)
                 {
-                    msg_ns->append_TextPlain(T("<-("), 3);
-                    msg_ns->append(mudstate.curr_enactor);
-                    msg_ns->append_TextPlain(T(")"), 1);
+                    safe_str(T("<-("), msg_ns, &bp_ns);
+                    safe_chr('#', msg_ns, &bp_ns);
+                    safe_ltoa(mudstate.curr_enactor, msg_ns, &bp_ns);
+                    safe_chr(')', msg_ns, &bp_ns);
                 }
 
                 switch (DecodeMsgSource(key))
                 {
                 case MSG_SRC_COMSYS:
-                    msg_ns->append_TextPlain(T(",comsys"));
+                    safe_str(T(",comsys"), msg_ns, &bp_ns);
                     break;
 
                 case MSG_SRC_KILL:
-                    msg_ns->append_TextPlain(T(",kill"));
+                    safe_str(T(",kill"), msg_ns, &bp_ns);
                     break;
 
                 case MSG_SRC_GIVE:
-                    msg_ns->append_TextPlain(T(",give"));
+                    safe_str(T(",give"), msg_ns, &bp_ns);
                     break;
 
                 case MSG_SRC_PAGE:
-                    msg_ns->append_TextPlain(T(",page"));
+                    safe_str(T(",page"), msg_ns, &bp_ns);
                     break;
 
                 default:
                     if (key & MSG_SAYPOSE)
                     {
-                        msg_ns->append_TextPlain(T(",saypose"));
+                        safe_str(T(",saypose"), msg_ns, &bp_ns);
                     }
                     break;
                 }
 
-                msg_ns->append_TextPlain(T("] "), 2);
+                safe_str(T("] "), msg_ns, &bp_ns);
             }
         }
     }
-    msg_ns->append(msg);
+    safe_str(msg, msg_ns, &bp_ns);
+    *bp_ns = '\0';
 
     // msg contains the raw message, msg_ns contains the NOSPOOFed msg.
     //
@@ -778,16 +784,17 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
         {
             if (key & MSG_HTML)
             {
-                raw_notify_html(target, *msg_ns);
+                raw_notify_html(target, msg_ns);
+            }
+            else if (Html(target))
+            {
+                bp_final = msgFinal;
+                html_escape(msg_ns, msgFinal, &bp_final);
+                raw_notify(target, msgFinal);
             }
             else
             {
-                msgFinal->import(*msg_ns);
-                if (Html(target))
-                {
-                    msgFinal->encode_Html();
-                }
-                raw_notify(target, *msgFinal);
+                raw_notify(target, msg_ns);
             }
         }
         if (!mudconf.player_listen)
@@ -807,7 +814,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
         if (  mudstate.inpipe
            && !isPlayer(target))
         {
-            raw_notify(target, *msg_ns);
+            raw_notify(target, msg_ns);
         }
 
         // Forward puppet message if it is for me.
@@ -823,16 +830,21 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
               || (  targetloc != Location(Owner(target))
                  && targetloc != Owner(target))))
         {
-            msgFinal->import(Moniker(target));
-            msgFinal->append_TextPlain(T("> "), 2);
-            msgFinal->append(*msg_ns);
-            raw_notify(Owner(target), *msgFinal);
+            bp_final = msgFinal;
+            safe_str(Moniker(target), msgFinal, &bp_final);
+            safe_str(T("> "), msgFinal, &bp_final);
+            safe_str(msg_ns, msgFinal, &bp_final);
+            *bp_final = '\0';
+            raw_notify(Owner(target), msgFinal);
         }
 
         // Check for @Listen match if it will be useful.
+        // Strip PUA color from msg to get plain text for matching.
         //
         UTF8 *msgPlain = alloc_lbuf("notify_check.plain");
-        msg.export_TextPlain(msgPlain);
+        co_strip_color(reinterpret_cast<unsigned char *>(msgPlain),
+                       reinterpret_cast<const unsigned char *>(msg),
+                       mux_strlen(msg));
         strip_fancy_quotes(msgPlain);
         bool pass_listen = false;
         UTF8 *args[NUM_ENV_VARS];
@@ -922,9 +934,11 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
             if (nullptr != fp)
             {
                 prefix = make_prefix(target, sender, A_PREFIX, nullptr);
-                msgFinal->import(prefix);
+                bp_final = msgFinal;
+                safe_str(prefix, msgFinal, &bp_final);
                 free_lbuf(prefix);
-                msgFinal->append(msg);
+                safe_str(msg, msgFinal, &bp_final);
+                *bp_final = '\0';
 
                 for (i = 0; i < fp->count; i++)
                 {
@@ -934,7 +948,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                     {
                         continue;
                     }
-                    notify_check(recip, sender, *msgFinal,
+                    notify_check(recip, sender, msgFinal,
                         MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE | (key & (MSG_SRC_MASK | MSG_SAYPOSE | MSG_OOC)));
                 }
             }
@@ -952,11 +966,13 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                       && check_filter(obj, sender, A_FILTER, msgPlain)))
                 {
                     prefix = make_prefix(obj, target, A_PREFIX, T("From a distance,"));
-                    msgFinal->import(prefix);
+                    bp_final = msgFinal;
+                    safe_str(prefix, msgFinal, &bp_final);
                     free_lbuf(prefix);
+                    safe_str(msg, msgFinal, &bp_final);
+                    *bp_final = '\0';
 
-                    msgFinal->append(msg);
-                    notify_check(recip, sender, *msgFinal,
+                    notify_check(recip, sender, msgFinal,
                         MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE | (key & (MSG_SRC_MASK | MSG_SAYPOSE | MSG_OOC)));
                 }
             }
@@ -975,17 +991,19 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
             if (key & MSG_S_INSIDE)
             {
                 prefix = make_prefix(target, sender, A_PREFIX, nullptr);
-                msgFinal->import(prefix);
+                bp_final = msgFinal;
+                safe_str(prefix, msgFinal, &bp_final);
                 free_lbuf(prefix);
-
-                msgFinal->append(msg);
+                safe_str(msg, msgFinal, &bp_final);
+                *bp_final = '\0';
             }
             else
             {
-                msgFinal->import(msg);
+                mux_strncpy(msgFinal, msg, LBUF_SIZE - 1);
             }
 
-            mux_string *msgPrefixed2 = new mux_string;
+            UTF8 *msgPrefixed2 = alloc_lbuf("notify_check.pfx2");
+            UTF8 *bp_pfx2;
 
             DOLIST(obj, Exits(Location(target)))
             {
@@ -997,15 +1015,17 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                    && check_filter(obj, sender, A_FILTER, msgPlain))
                 {
                     prefix = make_prefix(obj, target, A_PREFIX, T("From a distance,"));
-                    msgPrefixed2->import(prefix);
+                    bp_pfx2 = msgPrefixed2;
+                    safe_str(prefix, msgPrefixed2, &bp_pfx2);
                     free_lbuf(prefix);
+                    safe_str(msgFinal, msgPrefixed2, &bp_pfx2);
+                    *bp_pfx2 = '\0';
 
-                    msgPrefixed2->append(*msgFinal);
-                    notify_check(recip, sender, *msgPrefixed2,
+                    notify_check(recip, sender, msgPrefixed2,
                         MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE | (key & (MSG_SRC_MASK | MSG_SAYPOSE | MSG_OOC)));
                 }
             }
-            delete msgPrefixed2;
+            free_lbuf(msgPrefixed2);
         }
 
         // Deliver message to contents.
@@ -1020,14 +1040,15 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
             if (key & MSG_S_OUTSIDE)
             {
                 prefix = make_prefix(target, sender, A_INPREFIX, T(""));
-                msgFinal->import(prefix);
+                bp_final = msgFinal;
+                safe_str(prefix, msgFinal, &bp_final);
                 free_lbuf(prefix);
-
-                msgFinal->append(msg);
+                safe_str(msg, msgFinal, &bp_final);
+                *bp_final = '\0';
             }
             else
             {
-                msgFinal->import(msg);
+                mux_strncpy(msgFinal, msg, LBUF_SIZE - 1);
             }
 
             DOLIST(obj, Contents(target))
@@ -1035,7 +1056,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                 if (  obj != target
                    && !(isPlayer(obj) && Alone(target)))
                 {
-                    notify_check(obj, sender, *msgFinal,
+                    notify_check(obj, sender, msgFinal,
                         MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | (key & (MSG_HTML | MSG_SRC_MASK | MSG_SAYPOSE | MSG_OOC)));
                 }
             }
@@ -1052,14 +1073,15 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
             if (key & MSG_S_INSIDE)
             {
                 prefix = make_prefix(target, sender, A_PREFIX, T(""));
-                msgFinal->import(prefix);
+                bp_final = msgFinal;
+                safe_str(prefix, msgFinal, &bp_final);
                 free_lbuf(prefix);
-
-                msgFinal->append(msg);
+                safe_str(msg, msgFinal, &bp_final);
+                *bp_final = '\0';
             }
             else
             {
-                msgFinal->import(msg);
+                mux_strncpy(msgFinal, msg, LBUF_SIZE - 1);
             }
 
             DOLIST(obj, Contents(targetloc))
@@ -1068,7 +1090,7 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
                    && obj != targetloc
                    && !(isPlayer(obj) && Alone(targetloc)))
                 {
-                    notify_check(obj, sender, *msgFinal,
+                    notify_check(obj, sender, msgFinal,
                         MSG_ME | MSG_F_DOWN | MSG_S_OUTSIDE | (key & (MSG_SRC_MASK | MSG_SAYPOSE | MSG_OOC)));
                 }
             }
@@ -1085,41 +1107,25 @@ void notify_check(dbref target, dbref sender, const mux_string &msg, int key)
             if (key & MSG_S_INSIDE)
             {
                 prefix = make_prefix(target, sender, A_PREFIX, nullptr);
-                msgFinal->import(prefix);
+                bp_final = msgFinal;
+                safe_str(prefix, msgFinal, &bp_final);
                 free_lbuf(prefix);
-                msgFinal->append(msg);
+                safe_str(msg, msgFinal, &bp_final);
+                *bp_final = '\0';
             }
             else
             {
-                msgFinal->import(msg);
+                mux_strncpy(msgFinal, msg, LBUF_SIZE - 1);
             }
 
-            notify_check(targetloc, sender, *msgFinal,
+            notify_check(targetloc, sender, msgFinal,
                 MSG_ME | MSG_F_UP | MSG_S_INSIDE | (key & (MSG_SRC_MASK | MSG_SAYPOSE | MSG_OOC)));
         }
         free_lbuf(msgPlain);
     }
-    delete msgFinal;
-    delete msg_ns;
+    free_lbuf(msgFinal);
+    free_lbuf(msg_ns);
     mudstate.ntfy_nest_lev--;
-}
-
-void notify_check(dbref target, dbref sender, const UTF8 *msg, int key)
-{
-    // If speaker is invalid or message is empty, just exit.
-    //
-    if (  !Good_obj(target)
-       || !msg
-       || !*msg)
-    {
-        return;
-    }
-
-    mux_string *sMsg = new mux_string(msg);
-
-    notify_check(target, sender, *sMsg, key);
-
-    delete sMsg;
 }
 
 void notify_except(dbref loc, dbref player, dbref exception, const UTF8 *msg, int key)

@@ -1044,14 +1044,7 @@ void send_text_to_player(dbref target, const UTF8 *text)
     }
 }
 
-void send_text_to_player(dbref target, const mux_string &text)
-{
-    const auto range = g_dbref_to_descriptors_map.equal_range(target);
-    for (auto it = range.first; it != range.second; ++it)
-    {
-        queue_string(it->second, text);
-    }
-}
+// mux_string overload removed — all callers now use const UTF8 * version.
 
 // ---------------------------------------------------------------------------
 // send_raw_to_player: Queue raw bytes to all of a player's connections.

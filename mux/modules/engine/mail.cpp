@@ -462,15 +462,9 @@ static void add_folder_name(dbref player, int fld, UTF8 *name)
     // Build new record ("%d:%s:%d", fld, uppercase(name), fld) upper-casing
     // the provided folder name.
     //
-    mux_string *sRecord = new mux_string;
-    sRecord->append(static_cast<long>(fld));
-    sRecord->append(T(":"));
-    sRecord->append(name);
-    sRecord->append(T(":"));
-    sRecord->append(static_cast<long>(fld));
     UTF8 *aNew = alloc_lbuf("add_folder_name.new");
-    sRecord->export_TextPlain(aNew);
-    delete sRecord;
+    snprintf(reinterpret_cast<char *>(aNew), LBUF_SIZE,
+             "%d:%s:%d", fld, reinterpret_cast<const char *>(name), fld);
     size_t nNew = strlen(reinterpret_cast<char *>(aNew));
     {
         UTF8 tmp[LBUF_SIZE];
@@ -618,14 +612,9 @@ static int get_folder_number(dbref player, UTF8 *name)
     {
         // Convert the folder name provided into upper-case characters.
         //
-        mux_string *sRecord = new mux_string;
-        sRecord->append(T(":"));
-        sRecord->append(name);
-        sRecord->append(T(":"));
-
         UTF8 *aPattern = alloc_lbuf("add_folder_num_pat");
-        sRecord->export_TextPlain(aPattern);
-        delete sRecord;
+        snprintf(reinterpret_cast<char *>(aPattern), LBUF_SIZE,
+                 ":%s:", reinterpret_cast<const char *>(name));
         size_t nPattern = strlen(reinterpret_cast<char *>(aPattern));
         {
             UTF8 tmp[LBUF_SIZE];

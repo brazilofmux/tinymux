@@ -464,7 +464,8 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
     // at least one (display) segment.
     //
     UTF8 *ptr;
-    mux_string clean_names;
+    UTF8 clean_buf[MBUF_SIZE];
+    UTF8 *bp_clean = clean_buf;
     bool bHaveDisplay = false;
     for (ptr = st.parse(); ptr; ptr = st.parse())
     {
@@ -495,12 +496,12 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
             {
                 if (bHaveDisplay)
                 {
-                    clean_names.append(T(";"));
-                    clean_names.append(mux_string(pValidSegment));
+                    safe_mb_chr_ascii(';', clean_buf, &bp_clean);
+                    safe_mb_str(pValidSegment, clean_buf, &bp_clean);
                 }
                 else
                 {
-                    clean_names.prepend(pValidSegment);
+                    safe_mb_str(pValidSegment, clean_buf, &bp_clean);
                     bHaveDisplay = true;
                 }
             }
@@ -508,6 +509,7 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
         free_lbuf(pTrimmedSegment);
         pTrimmedSegment = nullptr;
     }
+    *bp_clean = '\0';
 
     *pbValid = bHaveDisplay;
     if (!bHaveDisplay)
@@ -516,7 +518,7 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
         return Buf;
     }
 
-    clean_names.export_TextColor(Buf);
+    mux_strncpy(Buf, clean_buf, MBUF_SIZE - 1);
     *pnName = mux_strlen(Buf);
 
     return Buf;
@@ -666,30 +668,47 @@ void handle_ears(dbref thing, bool could_hear, bool can_hear)
 {
     if (could_hear != can_hear)
     {
-        mux_string *sStr = new mux_string(Moniker(thing));
+        UTF8 *buf = alloc_lbuf("handle_ears");
+        UTF8 *bp = buf;
+
+        // Moniker returns PUA-encoded name.
+        //
+        const UTF8 *name = Moniker(thing);
         if (isExit(thing))
         {
-            mux_cursor iPos;
-            if (sStr->search(T(";"), &iPos))
+            // Truncate at first semicolon.
+            //
+            const UTF8 *semi = (const UTF8 *)strchr((const char *)name, ';');
+            if (semi)
             {
-                sStr->truncate(iPos);
+                safe_copy_buf(name, semi - name, buf, &bp);
+            }
+            else
+            {
+                safe_str(name, buf, &bp);
             }
         }
+        else
+        {
+            safe_str(name, buf, &bp);
+        }
+
         const PRONOUN_SET *pg = get_pronoun_set(thing);
 
         if (can_hear)
         {
-            sStr->append_TextPlain(tprintf(T(" grow%s ears and can now hear."),
-                                 pg->plural ? "" : "s"));
+            safe_tprintf_str(buf, &bp, T(" grow%s ears and can now hear."),
+                             pg->plural ? "" : "s");
         }
         else
         {
-            sStr->append_TextPlain(tprintf(T(" lose%s %s ears and become%s deaf."),
-                                 pg->plural ? "" : "s", pg->possessive,
-                                 pg->plural ? "" : "s"));
+            safe_tprintf_str(buf, &bp, T(" lose%s %s ears and become%s deaf."),
+                             pg->plural ? "" : "s", pg->possessive,
+                             pg->plural ? "" : "s");
         }
-        notify_check(thing, thing, *sStr, MSG_ME | MSG_NBR | MSG_LOC | MSG_INV);
-        delete sStr;
+        *bp = '\0';
+        notify_check(thing, thing, buf, MSG_ME | MSG_NBR | MSG_LOC | MSG_INV);
+        free_lbuf(buf);
     }
 }
 
@@ -879,10 +898,24 @@ void do_addcommand
     static UTF8 pName[LBUF_SIZE];
     if (1 <= nargs)
     {
-        mux_string *sName = new mux_string(name);
-        sName->strip(T("\r\n\t "));
-        sName->export_TextPlain(pName);
-        delete sName;
+        // Strip color, then strip \r\n\t and space.
+        //
+        {
+            size_t nRaw = strlen(reinterpret_cast<const char *>(name));
+            unsigned char plain[LBUF_SIZE];
+            size_t nPlain = co_strip_color(plain,
+                reinterpret_cast<const unsigned char *>(name), nRaw);
+            size_t j = 0;
+            for (size_t i = 0; i < nPlain; i++)
+            {
+                if (plain[i] != '\r' && plain[i] != '\n'
+                    && plain[i] != '\t' && plain[i] != ' ')
+                {
+                    pName[j++] = plain[i];
+                }
+            }
+            pName[j] = '\0';
+        }
         {
             size_t nPlain = strlen(reinterpret_cast<const char *>(pName));
             UTF8 tmp[LBUF_SIZE];
@@ -2808,13 +2841,11 @@ static void ListReferences(dbref executor, UTF8 *reference_name)
 {
     dbref target = NOTHING;
     bool global_only = false;
-    mux_string refstr(reference_name);
 
     if (  nullptr == reference_name
        || '\0' == reference_name[0])
     {
         global_only = true;
-        refstr.prepend('_');
     }
     else
     {
@@ -2930,7 +2961,6 @@ void do_reference
         }
     }
 
-    mux_string refstr(reference_name);
     if ('_' == reference_name[0])
     {
         if (!Wizard(executor))
@@ -2939,14 +2969,22 @@ void do_reference
             return;
         }
     }
-    else
-    {
-        refstr.append(T("."));
-        refstr.append(executor);
-    }
 
     UTF8 tbuf[LBUF_SIZE];
-    size_t tbuf_len = refstr.export_TextPlain(tbuf);
+    size_t tbuf_len;
+    if ('_' == reference_name[0])
+    {
+        tbuf_len = static_cast<size_t>(
+            snprintf(reinterpret_cast<char *>(tbuf), sizeof(tbuf),
+                     "%s", reinterpret_cast<const char *>(reference_name)));
+    }
+    else
+    {
+        tbuf_len = static_cast<size_t>(
+            snprintf(reinterpret_cast<char *>(tbuf), sizeof(tbuf),
+                     "%s.%ld", reinterpret_cast<const char *>(reference_name),
+                     static_cast<long>(executor)));
+    }
     auto it_ref = mudstate.reference_htab.find(std::vector<UTF8>(tbuf, tbuf + tbuf_len));
     struct reference_entry *result = (it_ref != mudstate.reference_htab.end())
         ? static_cast<reference_entry*>(it_ref->second) : nullptr;

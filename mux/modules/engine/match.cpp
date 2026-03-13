@@ -186,16 +186,21 @@ static dbref absolute_named_reference(UTF8 *name)
         return NOTHING;
     }
 
-    mux_string sRef(name);
-    if ('_' != name[0])
-    {
-        sRef.append(T("."));
-        sRef.append(md.player);
-    }
-
     UTF8 *pReferenceName = alloc_lbuf("absolute_named_reference");
-    size_t nReferenceName = 0;
-    nReferenceName = sRef.export_TextPlain(pReferenceName);
+    size_t nReferenceName;
+    if ('_' == name[0])
+    {
+        nReferenceName = static_cast<size_t>(
+            snprintf(reinterpret_cast<char *>(pReferenceName), LBUF_SIZE,
+                     "%s", reinterpret_cast<const char *>(name)));
+    }
+    else
+    {
+        nReferenceName = static_cast<size_t>(
+            snprintf(reinterpret_cast<char *>(pReferenceName), LBUF_SIZE,
+                     "%s.%ld", reinterpret_cast<const char *>(name),
+                     static_cast<long>(md.player)));
+    }
 
     auto it = mudstate.reference_htab.find(std::vector<UTF8>(pReferenceName, pReferenceName + nReferenceName));
     free_lbuf(pReferenceName);

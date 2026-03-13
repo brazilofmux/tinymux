@@ -1753,7 +1753,7 @@ static void do_processcom(dbref player, UTF8* arg1, UTF8* arg2)
     }
 }
 
-inline void notify_comsys(const dbref target, const dbref sender, const mux_string& msg)
+inline void notify_comsys(const dbref target, const dbref sender, const UTF8 *msg)
 {
     notify_with_cause_ooc(target, sender, msg, MSG_SRC_COMSYS);
 }

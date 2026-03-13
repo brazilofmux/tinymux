@@ -275,7 +275,6 @@ extern program_data *detach_player_program(dbref target);
 extern void set_player_program(dbref target, program_data *program);
 extern void send_prog_prompt(dbref target);
 extern void send_text_to_player(dbref target, const UTF8 *text);
-extern void send_text_to_player(dbref target, const mux_string &text);
 extern void send_raw_to_player(dbref target, const UTF8 *data, size_t len);
 extern int count_player_descs(dbref target);
 extern int sum_player_command_count(dbref target);
@@ -288,7 +287,6 @@ extern const UTF8 *time_format_1(int Seconds, size_t maxWidth);
 extern const UTF8 *time_format_2(int Seconds);
 extern void update_quotas(CLinearTimeAbsolute& tLast, const CLinearTimeAbsolute& tCurrent);
 extern void raw_notify(dbref, const UTF8 *);
-extern void raw_notify(dbref player, const mux_string &sMsg);
 extern void raw_notify_newline(dbref);
 extern void clearstrings(DESC *);
 extern void queue_write_LEN(DESC *, const UTF8 *, size_t n);
@@ -543,7 +541,6 @@ void notify_except(dbref, dbref, dbref, const UTF8 *, int key);
 void notify_except2(dbref, dbref, dbref, dbref, const UTF8 *);
 void notify_except_N(dbref loc, dbref player, dbref aExclude[], int nExclude, const UTF8 *msg, int key);
 
-void notify_check(dbref target, dbref sender, const mux_string &msg, int key);
 void notify_check(dbref, dbref, const UTF8 *, int);
 
 bool Hearer(dbref);
@@ -1343,7 +1340,7 @@ void check_mail_expiration(void);
 void check_mail(dbref player, int folder, bool silent);
 const UTF8 *mail_fetch_message(dbref player, int num);
 int  mail_fetch_from(dbref player, int num);
-void raw_notify_html(dbref player, const mux_string &sMsg);
+void raw_notify_html(dbref player, const UTF8 *msg);
 void do_lock(dbref executor, dbref caller, dbref enactor, int eval, int key,
                     int nargs, UTF8 *name, UTF8 *keytext, const UTF8 *cargs[], int ncargs);
 void check_events(void);

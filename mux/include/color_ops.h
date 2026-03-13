@@ -35,6 +35,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* LBUF_SIZE matches TinyMUX. */
 #define LBUF_SIZE 8000
 
@@ -646,5 +650,9 @@ size_t co_mid_cluster(unsigned char *out,
 size_t co_delete_cluster(unsigned char *out,
                          const unsigned char *data, size_t len,
                          size_t iStart, size_t nCount);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* COLOR_OPS_H */

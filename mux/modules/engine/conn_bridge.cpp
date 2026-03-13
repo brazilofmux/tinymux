@@ -90,20 +90,7 @@ void send_text_to_player(dbref target, const UTF8 *text)
     if (g_pConnMgr) g_pConnMgr->SendText(target, text);
 }
 
-void send_text_to_player(dbref target, const mux_string &text)
-{
-    // For the COM bridge, convert mux_string to raw UTF-8 and send.
-    // This loses color encoding; a future mux_IConnectionManager v2
-    // can add a mux_string-aware method.
-    //
-    if (g_pConnMgr)
-    {
-        UTF8 buf[LBUF_SIZE];
-        size_t n = text.export_TextPlain(buf, CursorMin, CursorMax, sizeof(buf));
-        buf[n] = '\0';
-        g_pConnMgr->SendText(target, buf);
-    }
-}
+// mux_string overload removed — all callers now use const UTF8 * version.
 
 void send_raw_to_player(dbref target, const UTF8 *data, size_t len)
 {

@@ -82,9 +82,9 @@ void update_quotas(CLinearTimeAbsolute& ltaLast, const CLinearTimeAbsolute& ltaC
 }
 
 /* raw_notify_html() -- raw_notify() without the newline */
-void raw_notify_html(dbref player, const mux_string &sMsg)
+void raw_notify_html(dbref player, const UTF8 *msg)
 {
-    if (0 == sMsg.length_byte())
+    if (!msg || !*msg)
     {
         return;
     }
@@ -92,8 +92,7 @@ void raw_notify_html(dbref player, const mux_string &sMsg)
     if (  mudstate.inpipe
        && player == mudstate.poutobj)
     {
-        mudstate.poutbufc += sMsg.export_TextColor( mudstate.poutbufc, CursorMin,
-                                CursorMax, mudstate.poutnew + LBUF_SIZE - mudstate.poutbufc);
+        safe_str(msg, mudstate.poutnew, &mudstate.poutbufc);
         return;
     }
     if (  !Connected(player)
@@ -102,7 +101,7 @@ void raw_notify_html(dbref player, const mux_string &sMsg)
         return;
     }
 
-    send_text_to_player(player, sMsg);
+    send_text_to_player(player, msg);
 }
 
 /* ---------------------------------------------------------------------------
@@ -133,30 +132,7 @@ void raw_notify(dbref player, const UTF8 *msg)
     send_raw_to_player(player, T("\r\n"), 2);
 }
 
-void raw_notify(dbref player, const mux_string &sMsg)
-{
-    if (0 == sMsg.length_byte())
-    {
-        return;
-    }
-
-    if (  mudstate.inpipe
-       && player == mudstate.poutobj)
-    {
-        mudstate.poutbufc += sMsg.export_TextColor( mudstate.poutbufc, CursorMin,
-                                CursorMax, mudstate.poutnew + LBUF_SIZE - mudstate.poutbufc);
-        safe_str(T("\r\n"), mudstate.poutnew, &mudstate.poutbufc);
-        return;
-    }
-
-    if (!Connected(player))
-    {
-        return;
-    }
-
-    send_text_to_player(player, sMsg);
-    send_raw_to_player(player, T("\r\n"), 2);
-}
+// mux_string overload removed — all callers now use const UTF8 * version.
 
 void raw_notify_newline(dbref player)
 {
