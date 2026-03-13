@@ -1493,180 +1493,341 @@ static FUNCTION(fun_etimefmt)
     safe_str(p, buff, bufc);
 }
 
+// pua_advance_columns — Advance through PUA-encoded UTF-8, counting visible
+// columns.  Returns byte offset where max_cols visible columns are reached.
+// *actual_cols receives the actual column count (may be less at end of string
+// or if a wide character would exceed max_cols).
+//
+static size_t pua_advance_columns(const UTF8 *p, size_t len,
+                                  size_t max_cols, size_t *actual_cols)
+{
+    const UTF8 *start = p;
+    const UTF8 *pe = p + len;
+    size_t cols = 0;
+
+    while (p < pe)
+    {
+        // Skip BMP PUA color (3 bytes: 0xEF 0x94..0x9F xx).
+        //
+        if (p[0] == 0xEF && (p + 2) < pe
+            && p[1] >= 0x94 && p[1] <= 0x9F)
+        {
+            p += 3;
+            continue;
+        }
+
+        // Skip SMP PUA color (4 bytes: 0xF3 0xB0 0x80..0x97 xx).
+        //
+        if (p[0] == 0xF3 && (p + 3) < pe
+            && p[1] == 0xB0
+            && p[2] >= 0x80 && p[2] <= 0x97)
+        {
+            p += 4;
+            continue;
+        }
+
+        // Visible code point — check display width.
+        //
+        int w = co_console_width(reinterpret_cast<const unsigned char *>(p));
+        if (cols + static_cast<size_t>(w) > max_cols)
+        {
+            break;
+        }
+        cols += static_cast<size_t>(w);
+
+        // Advance past UTF-8 sequence.
+        //
+        if (*p < 0x80)      p += 1;
+        else if (*p < 0xE0) p += 2;
+        else if (*p < 0xF0) p += 3;
+        else                p += 4;
+    }
+    *actual_cols = cols;
+    return static_cast<size_t>(p - start);
+}
+
+// pua_back_one — Move backward one visible character in PUA-encoded UTF-8.
+// Returns the new byte offset, or the same offset if at start.
+//
+static size_t pua_back_one(const UTF8 *base, size_t off)
+{
+    if (0 == off)
+    {
+        return 0;
+    }
+
+    // Walk backward past continuation bytes (0x80..0xBF).
+    //
+    size_t pos = off;
+    do
+    {
+        pos--;
+    } while (pos > 0 && (base[pos] & 0xC0) == 0x80);
+
+    // If we landed on a PUA color lead byte, keep going back.
+    //
+    if (base[pos] == 0xEF && (pos + 2) < off
+        && base[pos + 1] >= 0x94 && base[pos + 1] <= 0x9F)
+    {
+        return pua_back_one(base, pos);
+    }
+    if (base[pos] == 0xF3 && (pos + 3) < off
+        && base[pos + 1] == 0xB0
+        && base[pos + 2] >= 0x80 && base[pos + 2] <= 0x97)
+    {
+        return pua_back_one(base, pos);
+    }
+    return pos;
+}
+
+// expand_tabs — Expand tabs in PUA-encoded UTF-8 string to spaces.
+// Returns byte length of expanded string in out.
+//
+static size_t expand_tabs(const UTF8 *src, size_t src_len,
+                          UTF8 *out, size_t out_size)
+{
+    const UTF8 *sp = src;
+    const UTF8 *spe = src + src_len;
+    UTF8 *wp = out;
+    UTF8 *wpe = out + out_size - 1;
+    size_t col = 0;
+
+    while (sp < spe && wp < wpe)
+    {
+        if (*sp == '\t')
+        {
+            size_t nSpaces = 8 - (col % 8);
+            for (size_t i = 0; i < nSpaces && wp < wpe; i++)
+            {
+                *wp++ = ' ';
+            }
+            col += nSpaces;
+            sp++;
+        }
+        else if (*sp == '\r')
+        {
+            *wp++ = *sp++;
+            col = 0;
+        }
+        else
+        {
+            // Skip BMP PUA color (3 bytes).
+            //
+            if (sp[0] == 0xEF && (sp + 2) < spe
+                && sp[1] >= 0x94 && sp[1] <= 0x9F)
+            {
+                if (wp + 3 <= wpe) { wp[0]=sp[0]; wp[1]=sp[1]; wp[2]=sp[2]; wp += 3; }
+                sp += 3;
+                continue;
+            }
+
+            // Skip SMP PUA color (4 bytes).
+            //
+            if (sp[0] == 0xF3 && (sp + 3) < spe
+                && sp[1] == 0xB0
+                && sp[2] >= 0x80 && sp[2] <= 0x97)
+            {
+                if (wp + 4 <= wpe) { wp[0]=sp[0]; wp[1]=sp[1]; wp[2]=sp[2]; wp[3]=sp[3]; wp += 4; }
+                sp += 4;
+                continue;
+            }
+
+            // Visible code point — copy and count column width.
+            //
+            int w = co_console_width(reinterpret_cast<const unsigned char *>(sp));
+            size_t cplen;
+            if (*sp < 0x80)      cplen = 1;
+            else if (*sp < 0xE0) cplen = 2;
+            else if (*sp < 0xF0) cplen = 3;
+            else                 cplen = 4;
+
+            if (wp + cplen > wpe) break;
+            for (size_t i = 0; i < cplen && sp + i < spe; i++)
+            {
+                wp[i] = sp[i];
+            }
+            wp += cplen;
+            sp += cplen;
+            col += static_cast<size_t>(w);
+        }
+    }
+    *wp = '\0';
+    return static_cast<size_t>(wp - out);
+}
+
 LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
                                    UTF8 *pBuffer,  size_t      nBuffer,
                              const UTF8 *pLeft,    LBUF_OFFSET nLeft,
                              const UTF8 *pRight,   LBUF_OFFSET nRight,
                                    int   iJustKey, LBUF_OFFSET nHanging,
-                             const UTF8 *pOSep,    mux_cursor  curOSep,
+                             const UTF8 *pOSep,    LBUF_OFFSET nOSepBytes,
                              LBUF_OFFSET nWidth0)
 {
-    mux_string *sStr = nullptr;
-    try
-    {
-        sStr = new mux_string(pStr);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    // Expand tabs in the input string.
+    //
+    UTF8 *expanded = alloc_lbuf("linewrap.expand");
+    size_t nExpanded = expand_tabs(pStr, mux_strlen(pStr), expanded, LBUF_SIZE);
 
-    if (nullptr == sStr)
-    {
-        return 0;
-    }
+    size_t nOSepCols = static_cast<size_t>(
+        co_visual_width(reinterpret_cast<const unsigned char *>(pOSep),
+                        static_cast<size_t>(nOSepBytes)));
 
-    mux_cursor nStr = sStr->length_cursor();
     bool bFirst = true;
     mux_field fldLine, fldTemp, fldPad;
-    mux_cursor curStr, curEnd, curTab, iPos, curNext;
     LBUF_OFFSET nLineWidth = (0 < nWidth0 ? nWidth0 : nWidth);
+    size_t pos = 0;  // Current byte position in expanded string.
 
-    while (curStr < nStr)
+    while (pos < nExpanded)
     {
         if (bFirst)
         {
             bFirst = false;
         }
-        else if (nBuffer < static_cast<size_t>(fldLine.m_byte + curOSep.m_byte))
+        else if (nBuffer < static_cast<size_t>(fldLine.m_byte + nOSepBytes))
         {
             break;
         }
         else
         {
-            mux_strncpy( pBuffer + fldLine.m_byte, pOSep,
-                         nBuffer - fldLine.m_byte);
-            fldLine( fldLine.m_byte + curOSep.m_byte,
-                     fldLine.m_column + curOSep.m_point);
+            // Emit output separator between lines.
+            //
+            mux_strncpy(pBuffer + fldLine.m_byte, pOSep,
+                        nBuffer - fldLine.m_byte);
+            fldLine(fldLine.m_byte + nOSepBytes,
+                    fldLine.m_column + static_cast<LBUF_OFFSET>(nOSepCols));
             if (0 < nHanging)
             {
-                fldLine = PadField( pBuffer, nBuffer,
-                                    fldLine.m_column + nHanging, fldLine);
+                fldLine = PadField(pBuffer, nBuffer,
+                                   fldLine.m_column + nHanging, fldLine);
             }
             nLineWidth = nWidth;
         }
-        fldLine += StripTabsAndTruncate( pLeft, pBuffer + fldLine.m_byte,
-                                         nBuffer - fldLine.m_byte, nLeft);
 
-        if (!sStr->search(T("\r"), &iPos, curStr))
-        {
-            iPos = nStr;
-        }
+        // Emit left margin.
+        //
+        fldLine += StripTabsAndTruncate(pLeft, pBuffer + fldLine.m_byte,
+                                        nBuffer - fldLine.m_byte, nLeft);
 
-        sStr->cursor_from_point(curEnd, curStr.m_point + nLineWidth);
-        if (iPos < curEnd)
+        // Find \r (forced line break) in current segment.
+        //
+        const UTF8 *pCur = expanded + pos;
+        size_t remain = nExpanded - pos;
+        const UTF8 *pCR = reinterpret_cast<const UTF8 *>(
+            memchr(pCur, '\r', remain));
+        size_t crOff = pCR ? static_cast<size_t>(pCR - pCur) : remain;
+
+        // Find byte position at nLineWidth visible columns.
+        //
+        size_t actualCols;
+        size_t colOff = pua_advance_columns(pCur, remain,
+                                            static_cast<size_t>(nLineWidth),
+                                            &actualCols);
+
+        // Effective end: min of \r position and column limit.
+        //
+        size_t endOff, nextOff;
+        if (crOff < colOff)
         {
-            curEnd = iPos;
-            curNext = curEnd + curNewline;
+            endOff = crOff;
+            // Skip past \r (and \n if present).
+            //
+            nextOff = crOff + 1;
+            if (nextOff < remain && pCur[nextOff] == '\n')
+            {
+                nextOff++;
+            }
         }
         else
         {
-            curNext = curEnd;
+            endOff = colOff;
+            nextOff = colOff;
         }
 
-        while (sStr->search(T("\t"), &curTab, curStr, curEnd))
+        // Word wrap: if we hit the column limit (not \r, not end of string),
+        // backtrack to the last space.
+        //
+        if (endOff < remain && endOff == colOff && crOff >= colOff)
         {
-            mux_string *sSpaces = nullptr;
-            try
+            if (endOff > 0 && mux_isspace(pCur[endOff]))
             {
-                sSpaces = new mux_string(T("        "));
-            }
-            catch (...)
-            {
-                ; // Nothing.
-            }
+                // Already at a space — advance next past it.
+                //
+                nextOff = endOff;
+                while (nextOff < remain && pCur[nextOff] == ' ')
+                {
+                    nextOff++;
+                }
 
-            if (nullptr == sSpaces)
-            {
-                ISOUTOFMEMORY(sSpaces);
-                return 0;
-            }
-
-            LBUF_OFFSET nSpaces = 8 - ((curTab.m_point - curStr.m_point) % 8);
-            mux_cursor curSpaces(nSpaces, nSpaces);
-            sSpaces->truncate(curSpaces);
-            sStr->replace_Chars(*sSpaces, curTab, curAscii);
-            delete sSpaces;
-            nStr = sStr->length_cursor();
-            curNext = curTab + curSpaces;
-
-            // We have to recalculate the end of the line and whether the
-            // newline is within it now.
-            //
-            if (!sStr->search(T("\r"), &iPos, curStr))
-            {
-                iPos = nStr;
-            }
-            sStr->cursor_from_point(curEnd, curStr.m_point + nLineWidth);
-            if (iPos < curEnd)
-            {
-                curEnd = iPos;
-                curNext = curEnd + curNewline;
+                // Trim trailing spaces from end of line.
+                //
+                while (endOff > 0 && mux_isspace(pCur[endOff - 1]))
+                {
+                    endOff--;
+                }
             }
             else
             {
-                curNext = curEnd;
-            }
-            if (curNext < curEnd)
-            {
-                curNext = curEnd;
-            }
-        }
-
-        if (  curEnd == nStr
-           || mux_isspace(sStr->export_Char(curEnd.m_byte)))
-        {
-            // We already know where the line ends. Now we trim off trailing
-            // spaces so that right and center justifications come out right.
-            //
-            mux_cursor curSpace = curEnd;
-            if (' ' == sStr->export_Char(curEnd.m_byte))
-            {
-                sStr->cursor_next(curNext);
-            }
-            while (  mux_isspace(sStr->export_Char(curSpace.m_byte))
-                  && curStr < curSpace)
-            {
-                curEnd = curSpace;
-                sStr->cursor_prev(curSpace);
-            }
-        }
-        else
-        {
-            // We want to backtrack to the last space, so that we can do a nice
-            // line break between words.
-            //
-            mux_cursor curSpace = curEnd;
-            while (  !mux_isspace(sStr->export_Char(curSpace.m_byte))
-                  && curStr < curSpace)
-            {
-                sStr->cursor_prev(curSpace);
-            }
-            if (curStr < curSpace)
-            {
-                curNext = curSpace;
-                sStr->cursor_next(curNext);
-                while (  mux_isspace(sStr->export_Char(curSpace.m_byte))
-                      && curStr < curSpace)
+                // Backtrack to last space for word wrap.
+                //
+                size_t spOff = endOff;
+                while (spOff > 0 && !mux_isspace(pCur[pua_back_one(pCur, spOff)]))
                 {
-                    curEnd = curSpace;
-                    sStr->cursor_prev(curSpace);
+                    spOff = pua_back_one(pCur, spOff);
                 }
+
+                if (spOff > 0)
+                {
+                    // Found a space.  nextOff is just past the space.
+                    //
+                    nextOff = spOff;
+                    while (nextOff < remain && pCur[nextOff] == ' ')
+                    {
+                        nextOff++;
+                    }
+
+                    // Trim trailing spaces from end of line.
+                    //
+                    while (spOff > 0 && mux_isspace(pCur[spOff - 1]))
+                    {
+                        spOff--;
+                    }
+                    endOff = spOff;
+                }
+                // else: no space found, force break at column limit.
+            }
+        }
+        else if (endOff == remain)
+        {
+            // At end of string — trim trailing spaces for justification.
+            //
+            while (endOff > 0 && mux_isspace(pCur[endOff - 1]))
+            {
+                endOff--;
             }
         }
 
-        fldTemp(curEnd.m_byte - curStr.m_byte, curEnd.m_point - curStr.m_point);
-        if (  fldTemp.m_column < nLineWidth
+        // Compute visible column width of this line segment.
+        //
+        size_t segCols = co_visual_width(
+            reinterpret_cast<const unsigned char *>(pCur), endOff);
+
+        // Apply justification padding.
+        //
+        if (  segCols < static_cast<size_t>(nLineWidth)
            && CJC_LJUST != iJustKey)
         {
             LBUF_OFFSET nPadWidth;
             if (CJC_CENTER == iJustKey)
             {
-                nPadWidth = fldLine.m_column + (nLineWidth - fldTemp.m_column)/2;
+                nPadWidth = fldLine.m_column
+                          + static_cast<LBUF_OFFSET>(
+                                (static_cast<size_t>(nLineWidth) - segCols) / 2);
             }
-            else // if (CJC_RJUST == iJustKey)
+            else // CJC_RJUST
             {
-                nPadWidth = fldLine.m_column + nLineWidth - fldTemp.m_column;
+                nPadWidth = fldLine.m_column
+                          + static_cast<LBUF_OFFSET>(
+                                static_cast<size_t>(nLineWidth) - segCols);
             }
             fldPad = PadField(pBuffer, nBuffer, nPadWidth, fldLine);
         }
@@ -1674,25 +1835,43 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
         {
             fldPad = fldLine;
         }
-        LBUF_OFFSET nBytes = sStr->export_TextColor( pBuffer + fldPad.m_byte,
-                                                     curStr, curEnd,
-                                                     nBuffer - fldPad.m_byte);
-        fldTemp(nBytes, fldTemp.m_column);
+
+        // Copy line segment bytes (PUA is inline — just memcpy).
+        //
+        size_t nCopy = endOff;
+        if (nCopy > nBuffer - fldPad.m_byte)
+        {
+            nCopy = nBuffer - fldPad.m_byte;
+        }
+        memcpy(pBuffer + fldPad.m_byte, pCur, nCopy);
+
+        fldTemp(static_cast<LBUF_OFFSET>(nCopy),
+                static_cast<LBUF_OFFSET>(segCols));
         if (CJC_RJUST == iJustKey)
         {
             fldLine = fldPad + fldTemp;
         }
         else
         {
-            fldLine = PadField( pBuffer, nBuffer, fldLine.m_column + nLineWidth,
-                                fldPad + fldTemp);
+            fldLine = PadField(pBuffer, nBuffer,
+                               fldLine.m_column + nLineWidth,
+                               fldPad + fldTemp);
         }
-        curStr = curNext;
 
-        fldLine += StripTabsAndTruncate( pRight, pBuffer + fldLine.m_byte,
-                                         nBuffer - fldLine.m_byte, nRight);
+        pos += nextOff;
+
+        // Emit right margin.
+        //
+        fldLine += StripTabsAndTruncate(pRight, pBuffer + fldLine.m_byte,
+                                        nBuffer - fldLine.m_byte, nRight);
     }
-    delete sStr;
+
+    free_lbuf(expanded);
+
+    if (fldLine.m_byte <= nBuffer)
+    {
+        pBuffer[fldLine.m_byte] = '\0';
+    }
     return fldLine.m_byte;
 }
 
@@ -10720,19 +10899,20 @@ static FUNCTION(fun_wrap)
     // ARG 7: Output separator. Default: line break.
     //
     const UTF8 *pOSep = T("\r\n");
-    mux_cursor curOSep(2, 2);
+    LBUF_OFFSET nOSepBytes = 2;
     if (  7 <= nfargs
        && '\0' != fargs[6][0])
     {
         if (!strcmp(reinterpret_cast<char *>(fargs[6]), "@@"))
         {
             pOSep = T("");
+            nOSepBytes = 0;
         }
         else
         {
             pOSep = fargs[6];
+            nOSepBytes = static_cast<LBUF_OFFSET>(mux_strlen(pOSep));
         }
-        utf8_strlen(pOSep, curOSep);
     }
 
     // ARG 8: First line width. Default: same as arg 2.
@@ -10754,7 +10934,7 @@ static FUNCTION(fun_wrap)
                                pLeft, static_cast<LBUF_OFFSET>(nLeft),
                                pRight, static_cast<LBUF_OFFSET>(nRight),
                                iJustKey, static_cast<LBUF_OFFSET>(nHanging),
-                               pOSep, curOSep, static_cast<LBUF_OFFSET>(nFirstWidth));
+                               pOSep, nOSepBytes, static_cast<LBUF_OFFSET>(nFirstWidth));
 }
 
 typedef struct

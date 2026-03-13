@@ -512,15 +512,13 @@ extern const signed char mux_RegisterSet[256];
 #define CJC_LJUST  1
 #define CJC_RJUST  2
 
-static const mux_cursor curNewline(2, 2);
-
 LBUF_OFFSET linewrap_general(const UTF8 *pStr, LBUF_OFFSET nWidth,
                              UTF8 *pBuffer, size_t nBuffer,
                              const UTF8 *pLeft = T(""), LBUF_OFFSET nLeft = 0,
                              const UTF8 *pRight = T(""), LBUF_OFFSET nRight = 0,
                              int iJustKey = CJC_LJUST, LBUF_OFFSET nHanging = 0,
                              const UTF8 *pOSep = T("\r\n"),
-                             mux_cursor curOSep = curNewline,
+                             LBUF_OFFSET nOSepBytes = 2,
                              LBUF_OFFSET nWidth0 = 0);
 
 /* From game.cpp */
