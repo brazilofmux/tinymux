@@ -3580,7 +3580,6 @@ MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
     pool_init(POOL_MBUF, MBUF_SIZE);
     pool_init(POOL_SBUF, SBUF_SIZE);
     pool_init(POOL_BOOL, sizeof(struct boolexp));
-    pool_init(POOL_STRING, sizeof(mux_string));
 
     pcache_init();
     cf_init();

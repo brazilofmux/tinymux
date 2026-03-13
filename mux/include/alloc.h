@@ -15,8 +15,7 @@ constexpr int POOL_QENTRY  = 5;
 constexpr int POOL_PCACHE  = 6;
 constexpr int POOL_LBUFREF = 7;
 constexpr int POOL_REGREF  = 8;
-constexpr int POOL_STRING  = 9;
-constexpr int NUM_POOLS    = 10;
+constexpr int NUM_POOLS    = 9;
 
 #define LBUF_SIZE   8000    // Large (must remain #define for preprocessor conditionals)
 constexpr int GBUF_SIZE   = 1024;    // Generic
@@ -56,8 +55,6 @@ LIBMUX_API void pool_reset(void);
 #define free_lbufref(b)  pool_free(POOL_LBUFREF, reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
 #define alloc_regref(s)  reinterpret_cast<reg_ref *>(pool_alloc(POOL_REGREF, T(s), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__))
 #define free_regref(b)   pool_free(POOL_REGREF, reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
-#define alloc_string(s)  reinterpret_cast<mux_string *>(pool_alloc(POOL_STRING, T(s), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__))
-#define free_string(b)   pool_free(POOL_STRING, reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
 
 #define safe_copy_chr_ascii(src, buff, bufp, nSizeOfBuffer) \
 { \

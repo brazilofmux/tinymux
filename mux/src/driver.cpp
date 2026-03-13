@@ -422,7 +422,6 @@ int DCL_CDECL main(int argc, char *argv[])
     pool_init(POOL_QENTRY, sizeof(BQUE));
     pool_init(POOL_LBUFREF, sizeof(lbuf_ref));
     pool_init(POOL_REGREF, sizeof(reg_ref));
-    pool_init(POOL_STRING, sizeof(mux_string));
 
 #if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
     init_rlimit();

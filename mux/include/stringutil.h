@@ -2314,16 +2314,12 @@ public:
 
     static void * operator new(size_t size)
     {
-        mux_assert(size == sizeof(mux_string));
-        return alloc_string("new");
+        return ::operator new(size);
     }
 
     static void operator delete(void *p)
     {
-        if (nullptr != p)
-        {
-            free_string(p);
-        }
+        ::operator delete(p);
     }
 
     void FoldForMatching();
