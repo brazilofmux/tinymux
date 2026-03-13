@@ -1010,16 +1010,20 @@ static void emit_exit_chained(emit_t *e, dbt_state_t *dbt,
         // code_buf (not e->buf) since backpatch_jmp uses code_buf base.
         uint32_t abs_offset = static_cast<uint32_t>(
             e->buf - dbt->code_buf) + jmp_patch;
+        // Slow-path stub: store next_pc and return to trampoline.
+        uint32_t stub_pos = emit_pos(e);
+        emit_patch_rel32(e, jmp_patch, stub_pos);
+
+        // Record patch site (after stub_pos is known).
+        uint32_t stub_abs = static_cast<uint32_t>(
+            e->buf - dbt->code_buf) + stub_pos;
         if (dbt->num_patches < MAX_PATCH_SITES) {
             dbt->patches[dbt->num_patches].jmp_offset = abs_offset;
+            dbt->patches[dbt->num_patches].stub_offset = stub_abs;
             dbt->patches[dbt->num_patches].target_pc = target_pc;
             dbt->num_patches++;
             dbt->chain_misses++;
         }
-
-        // Slow-path stub: store next_pc and return to trampoline.
-        uint32_t stub_pos = emit_pos(e);
-        emit_patch_rel32(e, jmp_patch, stub_pos);
         emit_exit_with_pc(e, target_pc);
     }
 }
@@ -2850,6 +2854,42 @@ void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc) {
             }
             scan_pc += 4;
         }
+    }
+}
+
+void dbt_resolve_chains(dbt_state_t *dbt) {
+    // Second pass: resolve any patch sites whose targets are now in cache
+    // but weren't when the JMP was emitted.  Only patches still pointing
+    // to their slow-path stub (unresolved) are updated — already-resolved
+    // patches have been backpatched by backpatch_chains and must not be
+    // touched again.
+    //
+    uint32_t resolved = 0;
+    for (uint32_t i = 0; i < dbt->num_patches; i++) {
+        uint64_t target = dbt->patches[i].target_pc;
+        if (target == 0) continue;
+
+        // Check: is the JMP still pointing to the slow-path stub?
+        // Read the current JMP rel32 displacement.
+        uint32_t jmp_off = dbt->patches[i].jmp_offset;
+        int32_t cur_disp;
+        memcpy(&cur_disp, dbt->code_buf + jmp_off, 4);
+        uint32_t cur_target = jmp_off + 4 + static_cast<uint32_t>(cur_disp);
+
+        if (cur_target != dbt->patches[i].stub_offset) {
+            continue;  // already resolved by backpatch_chains
+        }
+
+        block_entry_t *be = cache_lookup(dbt, target);
+        if (be) {
+            backpatch_jmp(dbt->code_buf, jmp_off, be->native_code);
+            dbt->chain_hits++;
+            resolved++;
+        }
+    }
+    if ((dbt->trace & DBT_TRACE_TRANSLATE) && resolved) {
+        fprintf(stderr, "[dbt] resolve_chains: patched %u of %u pending\n",
+                resolved, dbt->num_patches);
     }
 }
 

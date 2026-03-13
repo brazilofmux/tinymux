@@ -327,6 +327,11 @@ static void pretranslate_tier2(dbt_state_t *dbt) {
     for (auto &kv : s_tier2.funcs) {
         dbt_pretranslate(dbt, kv.second.guest_addr);
     }
+
+    // Resolve cross-function chains: block A (from function X)
+    // exits to block B (from function Y) — the backpatch during Y's
+    // pretranslation won't find A's patch site.  This pass fixes them.
+    dbt_resolve_chains(dbt);
 }
 
 // Copy blob code into a program's guest memory.

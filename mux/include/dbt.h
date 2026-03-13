@@ -79,6 +79,7 @@ static constexpr size_t CODE_BUF_SIZE = 1024 * 1024;   // 1 MB JIT buffer
 //
 struct patch_site_t {
     uint32_t jmp_offset;    // offset in code_buf of the JMP rel32 displacement
+    uint32_t stub_offset;   // offset in code_buf of the slow-path stub
     uint64_t target_pc;     // guest PC this exit wants to reach
 };
 
@@ -172,6 +173,7 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
 void dbt_rerun(dbt_state_t *dbt,
                int (*ecall_fn)(rv64_ctx_t *, void *), void *ecall_user);
 void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc);
+void dbt_resolve_chains(dbt_state_t *dbt);
 int  dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top);
 void dbt_cleanup(dbt_state_t *dbt);
 
