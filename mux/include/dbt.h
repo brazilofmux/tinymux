@@ -148,6 +148,8 @@ struct dbt_state_t {
     // Debug.
     //
     int trace;
+    uint64_t trace_guest_pc;
+    bool trace_guest_pc_filter;
 };
 
 // Public API.
@@ -194,5 +196,10 @@ enum dbt_emitter_id {
 
 void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,
                              dbt_emitter_id emitter_id, void *host_fn);
+
+// Trace flags for dbt_state_t::trace.
+//
+static constexpr int DBT_TRACE_EXEC      = 1 << 0;  // dispatch/execution PCs
+static constexpr int DBT_TRACE_TRANSLATE = 1 << 1;  // translation-time summaries
 
 #endif // DBT_H

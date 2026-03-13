@@ -1,0 +1,33 @@
+#!/bin/sh
+#
+#   BuildAndSmoke - Build from repo root, install, and run smoke tests.
+#
+#   Usage:  cd testcases && ./tools/BuildAndSmoke
+#
+#   Skips Makesmoke if smoke.flat is already up to date (no .mux changes).
+#   Pass -f to force Makesmoke regardless.
+#
+set -e
+
+FORCE_MAKESMOKE=false
+if [ "$1" = "-f" ]; then
+    FORCE_MAKESMOKE=true
+fi
+
+cd ~/tinymux/mux && make && make install
+cd ~/tinymux/testcases
+
+if $FORCE_MAKESMOKE || [ ! -f smoke.flat ]; then
+    ./tools/Makesmoke
+elif [ -n "$(find . -maxdepth 1 -name '*.mux' -newer smoke.flat -print -quit 2>/dev/null)" ]; then
+    ./tools/Makesmoke
+fi
+
+./tools/Smoke
+
+# Post-test summary.
+echo "---"
+grep -c Succeeded smoke.log | xargs printf "Succeeded: %s\n"
+grep -c Failed smoke.log | xargs printf "Failed:    %s\n"
+wc -l < netmux.log | xargs printf "netmux.log: %s lines\n"
+grep -H SIGABRT smoke.d/*.log 2>/dev/null || true

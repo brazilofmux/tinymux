@@ -1,64 +1,60 @@
 #!/bin/sh
 #
-#	Smoke - Kick off the automated testing process.  Don't use this unless
-#	        you know what you're doing.  It may eat your database.
+#   Smoke - Run the automated smoke tests.
+#
+#   Expects to be run from the testcases/ directory after Makesmoke
+#   has generated smoke.flat.  Results go to smoke.log.
 #
 PATH=/usr/ucb:/bin:/usr/bin:.; export PATH
-#
-#	Verify that file dependencies are in a pristine state.
-#
+
 GAMENAME=smoke
 PIDFILE=$GAMENAME.pid
 BIN=../mux/game/bin
 TEXT=./text
 DATA=./$GAMENAME.d
 LOGDIR=$DATA
-NEW_DB=$GAMENAME.db.new
 INPUT_DB=$GAMENAME.db
-GDBM_DB=$GAMENAME
-CRASH_DB=$GAMENAME.db.CRASH
-SAVE_DB=$GAMENAME.db.old
+
 #
-#	Verify that temporary game directory does not already exist.
+#   Clean up any stale state from a previous run.
 #
-if [ -r $DATA ]; then
-	echo "$DATA directory already exists."
-	exit 1
+if [ -r "$DATA" ]; then
+    echo "Deleting $DATA, logs, and text directories."
+    rm -f smoke.conf alias.conf compat.conf "$PIDFILE" shutdown.status 2>/dev/null
+    rm -rf "$DATA" ./logs ./text
+    rm -f bin
 fi
+
 #
-#	Make sure the smoke test isn't already running.
+#   Make sure the smoke test isn't already running.
 #
 if [ -r "$PIDFILE" ]; then
-    oldpid=`cat $PIDFILE`
-    if [ "$oldpid" -gt 1 ]; then
-        nmux=`ps | grep $oldpid | grep netmux | wc -l`
-        if [ "$nmux" -gt 0 ]; then
-            echo "A smoke test already seems to be running."
-            exit 0
+    oldpid=$(cat "$PIDFILE")
+    if [ "$oldpid" -gt 1 ] 2>/dev/null; then
+        if kill -0 "$oldpid" 2>/dev/null; then
+            echo "A smoke test already seems to be running (pid $oldpid)."
+            exit 1
         fi
     fi
 fi
+
 #
-#	Create necessary environment.
+#   Create necessary environment.
 #
 echo "Creating $DATA directory."
-mkdir $DATA
-if [ ! -r logs ]; then
-    echo "Creating ./logs directory."
-    mkdir logs
+mkdir "$DATA"
+mkdir -p logs text
+
+if [ ! -e bin ]; then
+    ln -s "$BIN" bin
 fi
-if [ ! -r text ]; then
-    echo "Creating ./text directory."
-    mkdir text
-fi
-if [ ! -r bin ]; then
-    ln -s $BIN bin
-fi
-cp smoke.flat $DATA/$INPUT_DB
+
+cp smoke.flat "$DATA/$INPUT_DB"
 cp ../mux/game/alias.conf .
 cp ../mux/game/compat.conf .
 touch logs/M-smoke.log
-cat > text/smokehelp.txt <<\_HELPEOF
+
+cat > text/smokehelp.txt <<'_HELPEOF'
 & help
 This is the smoke test help system.
 & test topic
@@ -66,7 +62,8 @@ This is a test topic for mhelp().
 & another topic
 Another test topic.
 _HELPEOF
-cat > smoke.conf <<\_EOF
+
+cat > smoke.conf <<'_EOF'
 # smoke.conf - TinyMUX configuration file for smoke testing.
 #
 input_database	smoke.d/smoke.db
@@ -92,35 +89,24 @@ module exp3
 module comsys_mod
 module mail_mod
 _EOF
-#
-#	Kick off MUX
-#
-
-# Linux/Solaris
-LD_LIBRARY_PATH=$BIN
-export LD_LIBRARY_PATH
-
-# Mac OS X / NeXTStep / Mach
-DYLD_LIBRARY_PATH=$BIN
-export DYLD_LIBRARY_PATH
-
-# AIX
-LIBPATH=$BIN
-export LIBPATH
-
-# HP-UX
-SHLIB_PATH=$BIN
-export SHLIB_PATH
-
-$BIN/netmux -c $GAMENAME.conf -p $PIDFILE -e $LOGDIR >/dev/null 2>&1
 
 #
-#	Wait for MUX to finish shutdown.
+#   Kick off MUX.
+#
+LD_LIBRARY_PATH=$BIN; export LD_LIBRARY_PATH
+DYLD_LIBRARY_PATH=$BIN; export DYLD_LIBRARY_PATH
+LIBPATH=$BIN; export LIBPATH
+SHLIB_PATH=$BIN; export SHLIB_PATH
+
+$BIN/netmux -c $GAMENAME.conf -p $PIDFILE -e $LOGDIR > netmux.log 2>&1
+
+#
+#   Wait for MUX to finish shutdown.
 #
 waited=0
-while [ -r "$PIDFILE" ] && kill -0 `cat $PIDFILE 2>/dev/null` 2>/dev/null; do
+while [ -r "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE" 2>/dev/null)" 2>/dev/null; do
     sleep 1
-    waited=`expr $waited + 1`
+    waited=$((waited + 1))
     if [ "$waited" -ge 100000 ]; then
         echo "MUX process still running after ${waited}s."
         exit 1
@@ -129,14 +115,6 @@ done
 sleep 1
 
 #
-#	Grab resulting log file and clean up.
+#   Grab resulting log file.
 #
 mv logs/M-smoke.log smoke.log
-rm smoke.conf
-rm $PIDFILE
-rm shutdown.status
-echo "Deleting $DATA, logs, and text directories."
-rm -rf $DATA ./logs ./text
-rm alias.conf
-rm compat.conf
-rm -f bin

@@ -55,6 +55,8 @@
 
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
+#include <cerrno>
 #include <cmath>
 #include <ctime>
 #include <algorithm>
@@ -3479,6 +3481,43 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
 static dbt_state_t s_persistent_dbt;
 static bool s_dbt_ready = false;
 
+static int dbt_trace_mask_from_env() {
+    const char *env = getenv("TINYMUX_DBT_TRACE");
+    if (!env || !env[0]) return 0;
+
+    if (strcmp(env, "1") == 0 || strcmp(env, "all") == 0) {
+        return DBT_TRACE_EXEC | DBT_TRACE_TRANSLATE;
+    }
+
+    int mask = 0;
+    if (strstr(env, "exec")) mask |= DBT_TRACE_EXEC;
+    if (strstr(env, "xlate") || strstr(env, "translate")) {
+        mask |= DBT_TRACE_TRANSLATE;
+    }
+    return mask;
+}
+
+static void dbt_configure_trace_from_env(dbt_state_t *dbt) {
+    dbt->trace = dbt_trace_mask_from_env();
+    dbt->trace_guest_pc = 0;
+    dbt->trace_guest_pc_filter = false;
+
+    const char *env = getenv("TINYMUX_DBT_TRACE_PC");
+    if (!env || !env[0]) return;
+
+    errno = 0;
+    char *end = nullptr;
+    unsigned long long value = strtoull(env, &end, 0);
+    if (errno != 0 || end == env || *end != '\0') {
+        fprintf(stderr,
+                "dbt: ignoring invalid TINYMUX_DBT_TRACE_PC='%s'\n", env);
+        return;
+    }
+
+    dbt->trace_guest_pc = static_cast<uint64_t>(value);
+    dbt->trace_guest_pc_filter = true;
+}
+
 // Get a reset DBT state, initializing on first use.
 // Returns nullptr on allocation failure.
 //
@@ -3490,11 +3529,13 @@ static dbt_state_t *get_dbt(uint8_t *memory, size_t memory_size,
         if (dbt_init(dbt, memory, memory_size, ecall_fn, ecall_user) != 0) {
             return nullptr;
         }
+        dbt_configure_trace_from_env(dbt);
         s_dbt_ready = true;
         return dbt;
     }
     // Reset for new program: keep mmap'd code buffer + cache allocation.
     dbt_reset(dbt, memory, memory_size, ecall_fn, ecall_user);
+    dbt_configure_trace_from_env(dbt);
     return dbt;
 }
 
