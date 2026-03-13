@@ -8,13 +8,15 @@ Predecessors: `docs/PARSER.md` (study), `docs/PARSER_REPLACE.md` (AST evaluator)
 
 External work: `~/riscv` (DBT runtime), `~/slow-32` (ISA design + toolchain history)
 
-**As of 2026-03-12**: 592 smoke tests (91 rveval + 42 benchmarks), ~8,200 lines
-across 8 files (+ DBT runtime). Full SSA compiler pipeline operational:
+**As of 2026-03-13**: 593 smoke tests, ~8,400 lines across 8 files
+(+ DBT runtime). Full SSA compiler pipeline operational:
 AST → HIR → SSA → optimize → linear-scan regalloc → RV64 → x86-64 JIT.
 Loop compilation (iter) with SSA back-edges and PHI nodes. Tier 2 blob
-(cat/strlen/strcat/extract/words/split_token) working via JAL — zero-ECALL
-iter loops. switch/case compilation via branch chains. SQLite code cache
-(Stage 5) persists compiled programs across restarts (schema v7).
+with two layers: hand-written RV64 functions + cross-compiled Ragel
+color_ops (full PUA color, Unicode 16, CJK width). 17 co_* intrinsics
+bypass RV64 translation to call host's native Ragel implementations.
+switch/case compilation via branch chains. SQLite code cache (Stage 5)
+persists compiled programs across restarts (schema v7).
 Native CALL continuation: Tier 2 function calls emit x86-64 CALL rel32
 to pre-translated code, keeping entire loop bodies in one translated block.
 Pre-translation, cache hash XOR spreading, RAS poisoning, cold exit stubs.
@@ -264,7 +266,7 @@ Linear-scan register allocation (Poletto-Sarkar)  [done]
 HIR --> RV64 code generation (hir_codegen)        [done]
     |
     +--- Tier 1: native RV64 (add/sub/mul/etc.)   [done]
-    +--- Tier 2: JAL to pre-compiled blob          [done, 3 functions]
+    +--- Tier 2: JAL to pre-compiled blob          [done, 19 + co_* intrinsics]
     +--- ECALL: engine function dispatch           [done]
     |
     v
@@ -495,7 +497,11 @@ Optimization state:
  - ✅ Native CALL continuation: JAL-ra to pre-translated Tier 2 → x86-64 CALL rel32
  - ✅ Pre-translation: worklist-based ahead-of-time translation of Tier 2 entry points
  - ✅ Cache hash XOR spreading: prevents Tier 2 / program code slot collisions
- - 🔲 Native intrinsic stubs (x86-64 replacements for Tier 2 RV64 bodies)
+ - ✅ Native intrinsic stubs: data-driven array (32 slots), 6 block-level
+   (slen/scopy/memcpy/memcmp/memset/memswap) + 11 co_* Ragel intrinsics
+   (co_first/co_rest/co_last/co_repeat/co_words_count/co_pos/co_mid/
+   co_trim/co_member/co_delete/co_sort_words). Generic emitter with
+   nargs+ptr_mask parameterization covers all signature patterns.
 
 **1d. Block cache** — ✅ COMPLETE
 
@@ -540,23 +546,29 @@ translation continues inline. Mechanism:
     - `rc_invalidate()` — callee may have clobbered any register
  4. The entire iter() loop body stays in one translated block.
 
-**1c-vii. Native intrinsic stubs** (MEDIUM PRIORITY)
+**1c-vii. Native intrinsic stubs** — ✅ COMPLETE
 
-When the DBT translates a JAL/JALR to a known Tier 2 function
-address, emit inline x86-64 instead of the translated RV64 byte
-loops. This would eliminate the function call overhead entirely.
+Data-driven intrinsic system in dbt_state_t: up to 32 slots, each
+mapping a guest address to an emitter function + optional host
+function pointer.  Six signature patterns cover all current needs
+(3-6 args, bitfield indicates which are guest pointers).
 
-Candidates for iter() loops:
- - `rv64_split_token` — cursor-based element extraction (byte scan)
- - `rv64_words` — word counting (byte scan)
- - `rv64_strcat` — concatenation (memcpy-like)
- - `rv64_cat` — concatenation with separators
+Block-level intrinsics (custom x86-64 emitters):
+ - `rv64_slen` → host strlen
+ - `rv64_scopy` → host strcpy+strlen
+ - `memcpy`, `memcmp`, `memset` → host libc
+ - `memswap` → inline qword swap loop
 
-General candidates: memcpy, strlen, memswap (REP MOVSB / SCASB).
+co_* Ragel intrinsics (generic emitter, native host CALL):
+ - `co_first`, `co_rest`, `co_last`, `co_repeat` (4 args)
+ - `co_words_count` (3 args), `co_pos` (4 args)
+ - `co_mid`, `co_trim` (5 args), `co_member` (5 args)
+ - `co_delete`, `co_sort_words` (6 args)
 
-With native CALL continuation working, the block-breaking problem is
-solved. Intrinsic stubs are a further optimization to eliminate the
-call/return overhead and RV64-level byte loops entirely.
+When the DBT encounters a JAL to an intrinsic address, it emits
+native x86-64 that loads guest registers into System V ABI
+positions, converts guest pointers to host (add R12), CALLs the
+host function, and stores the result back to guest a0.
 
 **1e-ii. Standalone DBT test suite** (SHOULD HAVE)
 
@@ -712,22 +724,37 @@ Loaded as a binary blob into guest memory at BLOB_BASE (0x10000).
 Compiled softcode calls via JAL — same address space, no ECALL
 boundary crossing.
 
-Currently implemented (6 functions in `mux/rv64/src/softlib.c`):
+The blob has two layers:
+
+**Layer 1: Hand-written RV64 functions** (`softlib.c`, ~1400 lines):
  - `rv64_cat` — concatenate with space separators
- - `rv64_strlen` — return string length as decimal string
  - `rv64_strcat` — concatenate without separators
  - `rv64_extract` — extract elements from delimiter-separated list
  - `rv64_words` — count words in delimiter-separated list
- - `rv64_split_token` — cursor-based token extraction (O(n) vs EXTRACT's O(n²))
+ - `rv64_split_token` — cursor-based token extraction (O(n) vs O(n²))
+ - Plus helper functions (rv64_slen, rv64_scopy, sitoa, satoi, etc.)
+ - Plus 17 co_*_wrap() functions that unpack fargs calling convention
+   and forward to the cross-compiled Ragel functions
+
+**Layer 2: Cross-compiled Ragel functions** (`color_ops.c` + tables):
+ - Full PUA-color-aware, Unicode 16, CJK-width-aware implementations
+ - 43 co_* functions from the Ragel-generated color_ops.c
+ - Unicode DFA tables (`unicode_tables.c`, ~1200 lines): widths,
+   grapheme cluster break, toupper/tolower/totitle
+ - 11 of these registered as intrinsics (bypass RV64 translation,
+   call host's native Ragel implementation directly)
 
 Build toolchain:
- - `mux/rv64/Makefile` — cross-compile softlib.c → softlib.elf
+ - `mux/rv64/Makefile` — cross-compile 3 objects → softlib.elf
+ - `riscv64-unknown-elf-gcc -march=rv64imd -O2 -nostdlib -ffunction-sections`
+ - `-Wl,--gc-sections` with `KEEP(*(.text*))` preserves all entry points
  - `mux/src/tools/rv64strip.cpp` — extract .text → softlib.rv64
  - `mux/rv64/rv64blob.h` — blob header format (entry table)
  - `mux/rv64/src/softlib.ld` — linker script (base 0x10000)
  - `tier2_load()` in dbt_compile.cpp — lazy-loads blob on first compile
  - `tier2_lookup()` — maps MUX function name → blob guest address
  - `rv_emit_tier2_call()` — emits a0/a1/a2 setup + JAL ra,target
+ - `pretranslate_tier2()` — registers intrinsics + pre-translates all entries
 
 Benchmark (BENCH030-042, cached path vs AST eval baseline):
  - cat(rand,rand): 0.50us (tier2=1, ecalls=2, ic=10K) vs 0.51us native
@@ -762,13 +789,25 @@ EXTRACT and WORDS are wired directly into iter()'s internal element
 extraction and word counting, eliminating all ECALL overhead from
 pure-Tier-2 iter loops (ecalls=0 for literal body).
 
-Next Tier 2 candidates: sort(), match(), edit(), regex —
-anything too complex for compile-time reasoning.
+**The two-path strategy:** A Tier 2 function exists in two forms:
+(1) as cross-compiled RV64 code in the blob, callable via JAL from
+any compiled softcode, and (2) as a native intrinsic that the DBT
+substitutes when it recognizes the target address.  The RV64 path
+provides correctness (any RV64 host runs it natively).  The intrinsic
+path provides performance (host Ragel code runs at native speed).
 
-**Intrinsics (native fast-path)**: See Stage 1 item 1c-vii. The
-DBT recognizes specific Tier 2 call targets and replaces the RV64
-function body with native x86-64 sequences. Candidates: memcpy,
-strlen, memswap. Deferred.
+**What this unlocks for the compiler:** Every co_* function that has
+an intrinsic is now a "cheap" operation.  The compiler emits a JAL
+and the DBT handles the rest — no ECALL boundary, no string
+marshalling, no hash lookup.  The compiler doesn't need to understand
+color or Unicode; it just needs to know the function exists in the
+blob.  This is the same pattern as Tier 1 native ops (add/sub/mul)
+but for string operations.
+
+Next candidates for intrinsic registration:
+ - `co_extract`, `co_splice`, `co_insert_word` (already in blob,
+   need wrapper + signature pattern)
+ - `co_setunion`, `co_setdiff`, `co_setinter` (set operations)
 
 **ECALL (escape hatch)**: Only for operations needing host state —
 database access, network I/O, @pemit, object manipulation.
