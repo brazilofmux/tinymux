@@ -1401,57 +1401,288 @@ size_t co_member(const unsigned char *target, size_t tlen,
     return 0;  /* not found */
 }
 
-/* ---- padding helper ---- */
+/* ---- column-width helpers ---- */
 
 /*
- * Emit nPad visible code points from a fill pattern (cycled).
- * fill/fill_len is the fill string.  If fill_len is 0, uses spaces.
- * Returns bytes written to wp.
+ * co_visual_width — Total display column width, skipping PUA color.
  */
-static size_t emit_fill(unsigned char *wp, const unsigned char *wp_end,
-                        size_t nPad,
-                        const unsigned char *fill, size_t fill_len)
+size_t co_visual_width(const unsigned char *p, size_t len)
 {
-    if (nPad == 0) return 0;
+    const unsigned char *pe = p + len;
+    size_t cols = 0;
+    while (p < pe) {
+        /* Skip PUA color codes. */
+        if (p[0] == 0xEF && (p + 2) < pe
+            && p[1] >= 0x94 && p[1] <= 0x9F) {
+            p += 3;
+            continue;
+        }
+        if (p[0] == 0xF3 && (p + 3) < pe
+            && p[1] == 0xB0
+            && p[2] >= 0x80 && p[2] <= 0x97) {
+            p += 4;
+            continue;
+        }
+        /* Visible code point — get column width. */
+        cols += (size_t)co_console_width(p);
+        /* Advance past UTF-8 sequence. */
+        if (*p < 0x80)      p += 1;
+        else if (*p < 0xE0) p += 2;
+        else if (*p < 0xF0) p += 3;
+        else                p += 4;
+    }
+    return cols;
+}
+
+/*
+ * co_copy_columns — Copy up to ncols display columns, preserving color.
+ *
+ * Stops before emitting a character that would exceed the column limit.
+ * Returns bytes written to out.
+ */
+size_t co_copy_columns(unsigned char *out, const unsigned char *p,
+                       const unsigned char *pe, size_t ncols)
+{
+    unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+    size_t cols_emitted = 0;
+
+    while (p < pe && wp < wp_end) {
+        /* Copy PUA color codes transparently. */
+        if (p[0] == 0xEF && (p + 2) < pe
+            && p[1] >= 0x94 && p[1] <= 0x9F) {
+            if (wp + 3 <= wp_end) {
+                wp[0] = p[0]; wp[1] = p[1]; wp[2] = p[2];
+                wp += 3;
+            }
+            p += 3;
+            continue;
+        }
+        if (p[0] == 0xF3 && (p + 3) < pe
+            && p[1] == 0xB0
+            && p[2] >= 0x80 && p[2] <= 0x97) {
+            if (wp + 4 <= wp_end) {
+                wp[0] = p[0]; wp[1] = p[1]; wp[2] = p[2]; wp[3] = p[3];
+                wp += 4;
+            }
+            p += 4;
+            continue;
+        }
+
+        /* Visible code point. */
+        int w = co_console_width(p);
+        if (cols_emitted + (size_t)w > ncols) break;
+
+        size_t cplen;
+        if (*p < 0x80)      cplen = 1;
+        else if (*p < 0xE0) cplen = 2;
+        else if (*p < 0xF0) cplen = 3;
+        else                cplen = 4;
+
+        if (wp + cplen > wp_end) break;
+        for (size_t i = 0; i < cplen && p + i < pe; i++)
+            wp[i] = p[i];
+        wp += cplen;
+        p += cplen;
+        cols_emitted += (size_t)w;
+    }
+
+    *wp = '\0';
+    return (size_t)(wp - out);
+}
+
+/* Forward declarations for color helpers defined later in file. */
+static int parse_bmp_color(const unsigned char *p, co_ColorState *cs);
+static int parse_smp_color(const unsigned char *p, co_ColorState *cs);
+static size_t emit_transition(unsigned char *wp,
+                              const unsigned char *wp_end,
+                              const co_ColorState *old_cs,
+                              const co_ColorState *new_cs);
+
+/*
+ * strip_crnltab — Remove \r, \n, \t from fill pattern in-place.
+ * Returns new length.
+ */
+static size_t strip_crnltab(unsigned char *buf, size_t len)
+{
+    size_t j = 0;
+    for (size_t i = 0; i < len; i++) {
+        if (buf[i] != '\r' && buf[i] != '\n' && buf[i] != '\t')
+            buf[j++] = buf[i];
+    }
+    buf[j] = '\0';
+    return j;
+}
+
+/*
+ * Parsed fill character: visible bytes + color state at that position.
+ */
+typedef struct {
+    unsigned char bytes[4]; /* UTF-8 code point */
+    size_t len;             /* byte length (1-4) */
+    int width;              /* display column width */
+    co_ColorState color;    /* color state at this position */
+} fill_char_t;
+
+/*
+ * parse_fill_chars — Pre-process fill pattern into per-character colors.
+ *
+ * Walks the PUA-encoded fill string, absorbing PUA codes into a running
+ * color state and recording the (bytes, color) for each visible char.
+ * This mimics mux_string's import: PUA codes are consumed, not passed
+ * through, so internal resets (%cn) don't affect the outer context.
+ *
+ * Returns number of visible characters parsed.
+ */
+static size_t parse_fill_chars(fill_char_t *chars, size_t max_chars,
+                               const unsigned char *fill, size_t fill_len,
+                               size_t *out_total_width)
+{
+    const unsigned char *p = fill;
+    const unsigned char *pe = fill + fill_len;
+    co_ColorState cs = CO_CS_NORMAL;
+    size_t n = 0;
+    size_t total_w = 0;
+
+    while (p < pe && n < max_chars) {
+        /* Consume PUA codes. */
+        if (p[0] == 0xEF && (p + 2) < pe
+            && p[1] >= 0x94 && p[1] <= 0x9F) {
+            parse_bmp_color(p, &cs);
+            p += 3;
+            continue;
+        }
+        if (p[0] == 0xF3 && (p + 3) < pe
+            && p[1] == 0xB0
+            && p[2] >= 0x80 && p[2] <= 0x97) {
+            parse_smp_color(p, &cs);
+            p += 4;
+            continue;
+        }
+
+        /* Visible character. */
+        size_t cplen;
+        if (*p < 0x80)      cplen = 1;
+        else if (*p < 0xE0) cplen = 2;
+        else if (*p < 0xF0) cplen = 3;
+        else                cplen = 4;
+
+        if (p + cplen > pe) break;
+
+        chars[n].len = cplen;
+        for (size_t i = 0; i < cplen; i++)
+            chars[n].bytes[i] = p[i];
+        chars[n].color = cs;
+        chars[n].width = co_console_width(p);
+        total_w += (size_t)chars[n].width;
+        n++;
+        p += cplen;
+    }
+
+    if (out_total_width) *out_total_width = total_w;
+    return n;
+}
+
+/*
+ * emit_fill_from_chars — Emit ncols display columns from pre-parsed
+ * fill characters, starting at column offset 'phase'.
+ *
+ * Emits PUA transitions as needed, tracking color state in *emitted.
+ * Returns bytes written.
+ */
+static size_t emit_fill_from_chars(unsigned char *wp, const unsigned char *wp_end,
+                                   size_t ncols, size_t phase,
+                                   const fill_char_t *chars, size_t nchars,
+                                   size_t fill_width,
+                                   co_ColorState *emitted)
+{
+    if (ncols == 0 || nchars == 0) return 0;
 
     unsigned char *start = wp;
+    size_t col_offset = phase % fill_width;
+    size_t cols_done = 0;
 
-    if (fill_len == 0 || (fill_len == 1 && fill[0] == ' ')) {
-        /* Fast path: space fill. */
-        size_t avail = (size_t)(wp_end - wp);
-        if (nPad > avail) nPad = avail;
-        memset(wp, ' ', nPad);
-        return nPad;
-    }
-
-    /* Count visible code points in fill pattern. */
-    size_t fill_vis = co_visible_length(fill, fill_len);
-    if (fill_vis == 0) {
-        size_t avail = (size_t)(wp_end - wp);
-        if (nPad > avail) nPad = avail;
-        memset(wp, ' ', nPad);
-        return nPad;
-    }
-
-    /* Cycle through the fill pattern. */
-    size_t emitted = 0;
-    while (emitted < nPad && wp < wp_end) {
-        size_t remaining = nPad - emitted;
-        if (remaining >= fill_vis) {
-            /* Copy entire fill pattern. */
-            size_t cb = wp_safe_copy(wp, wp_end, fill, fill_len);
-            wp += cb;
-            emitted += fill_vis;
-        } else {
-            /* Partial fill — copy only 'remaining' visible code points. */
-            size_t avail = (size_t)(wp_end - wp);
-            unsigned char tmp[LBUF_SIZE];
-            size_t nb = co_copy_visible(tmp, fill, fill + fill_len, remaining);
-            if (nb > avail) nb = avail;
-            memcpy(wp, tmp, nb);
-            wp += nb;
-            emitted += remaining;
+    while (cols_done < ncols && wp < wp_end) {
+        /* Find starting character index for col_offset. */
+        size_t idx = 0;
+        size_t fcol = 0;
+        while (idx < nchars && fcol + (size_t)chars[idx].width <= col_offset) {
+            fcol += (size_t)chars[idx].width;
+            idx++;
         }
+
+        /* Emit characters from idx onward. */
+        while (idx < nchars && cols_done < ncols && wp < wp_end) {
+            if (cols_done + (size_t)chars[idx].width > ncols) break;
+
+            /* Emit color transition. */
+            wp += emit_transition(wp, wp_end, emitted, &chars[idx].color);
+            *emitted = chars[idx].color;
+
+            /* Emit character bytes. */
+            if (wp + chars[idx].len > wp_end) break;
+            for (size_t i = 0; i < chars[idx].len; i++)
+                wp[i] = chars[idx].bytes[i];
+            wp += chars[idx].len;
+            cols_done += (size_t)chars[idx].width;
+            idx++;
+        }
+
+        /* Wrap to start for next cycle. */
+        col_offset = 0;
+    }
+
+    return (size_t)(wp - start);
+}
+
+/*
+ * parse_data_chars — Walk data string to extract per-character colors.
+ *
+ * Same as parse_fill_chars but for the content string.  Returns the
+ * final color state in *out_final.
+ */
+static size_t emit_data_with_tracking(unsigned char *wp, const unsigned char *wp_end,
+                                      const unsigned char *data, size_t len,
+                                      co_ColorState *emitted)
+{
+    const unsigned char *p = data;
+    const unsigned char *pe = data + len;
+    co_ColorState cs = *emitted;
+    unsigned char *start = wp;
+
+    while (p < pe && wp < wp_end) {
+        /* Consume PUA codes. */
+        if (p[0] == 0xEF && (p + 2) < pe
+            && p[1] >= 0x94 && p[1] <= 0x9F) {
+            parse_bmp_color(p, &cs);
+            p += 3;
+            continue;
+        }
+        if (p[0] == 0xF3 && (p + 3) < pe
+            && p[1] == 0xB0
+            && p[2] >= 0x80 && p[2] <= 0x97) {
+            parse_smp_color(p, &cs);
+            p += 4;
+            continue;
+        }
+
+        /* Visible character: emit transition + bytes. */
+        size_t cplen;
+        if (*p < 0x80)      cplen = 1;
+        else if (*p < 0xE0) cplen = 2;
+        else if (*p < 0xF0) cplen = 3;
+        else                cplen = 4;
+
+        if (p + cplen > pe) break;
+
+        wp += emit_transition(wp, wp_end, emitted, &cs);
+        *emitted = cs;
+
+        if (wp + cplen > wp_end) break;
+        for (size_t i = 0; i < cplen; i++)
+            wp[i] = p[i];
+        wp += cplen;
+        p += cplen;
     }
 
     return (size_t)(wp - start);
@@ -1462,30 +1693,71 @@ static size_t emit_fill(unsigned char *wp, const unsigned char *wp_end,
 size_t co_center(unsigned char *out,
                  const unsigned char *data, size_t len,
                  size_t width,
-                 const unsigned char *fill, size_t fill_len)
+                 const unsigned char *fill, size_t fill_len,
+                 int bTrunc)
 {
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
-    size_t str_vis = co_visible_length(data, len);
+    size_t str_width = co_visual_width(data, len);
 
-    if (str_vis >= width) {
-        /* Truncate to width. */
-        return co_copy_visible(out, data, data + len, width);
+    if (str_width >= width) {
+        if (bTrunc) {
+            return co_copy_columns(out, data, data + len, width);
+        }
+        size_t nb = wp_safe_copy(out, wp_end, data, len);
+        out[nb] = '\0';
+        return nb;
     }
 
-    size_t total_pad = width - str_vis;
+    /* Prepare fill pattern. */
+    unsigned char fill_buf[LBUF_SIZE];
+    size_t flen = 0;
+    if (fill && fill_len > 0) {
+        if (fill_len > LBUF_SIZE - 1) fill_len = LBUF_SIZE - 1;
+        memcpy(fill_buf, fill, fill_len);
+        flen = strip_crnltab(fill_buf, fill_len);
+    }
+
+    /* Parse fill into per-character colors. */
+    fill_char_t fchars[LBUF_SIZE];
+    size_t fill_width = 0;
+    size_t nfchars = parse_fill_chars(fchars, LBUF_SIZE, fill_buf, flen,
+                                      &fill_width);
+    if (fill_width == 0) {
+        /* Default to space fill. */
+        fchars[0].bytes[0] = ' ';
+        fchars[0].len = 1;
+        fchars[0].width = 1;
+        fchars[0].color = (co_ColorState)CO_CS_NORMAL;
+        nfchars = 1;
+        fill_width = 1;
+    }
+
+    size_t total_pad = width - str_width;
     size_t left_pad = total_pad / 2;
     size_t right_pad = total_pad - left_pad;
 
     unsigned char *wp = out;
+    co_ColorState emitted = CO_CS_NORMAL;
 
-    /* Left padding. */
-    wp += emit_fill(wp, wp_end, left_pad, fill, fill_len);
+    /* Leading padding: phase 0. */
+    wp += emit_fill_from_chars(wp, wp_end, left_pad, 0,
+                               fchars, nfchars, fill_width, &emitted);
 
-    /* Content. */
-    wp += wp_safe_copy(wp, wp_end, data, len);
+    /* Content with color tracking. */
+    wp += emit_data_with_tracking(wp, wp_end, data, len, &emitted);
 
-    /* Right padding. */
-    wp += emit_fill(wp, wp_end, right_pad, fill, fill_len);
+    /* Trailing padding: phase = left_pad + str_width. */
+    wp += emit_fill_from_chars(wp, wp_end, right_pad,
+                               left_pad + str_width,
+                               fchars, nfchars, fill_width, &emitted);
+
+    /* Final reset to CS_NORMAL. */
+    {
+        co_ColorState normal = CO_CS_NORMAL;
+        if (!co_cs_equal(&emitted, &normal)) {
+            wp += emit_transition(wp, wp_end, &emitted, &normal);
+        }
+    }
 
     *wp = '\0';
     return (size_t)(wp - out);
@@ -1496,22 +1768,62 @@ size_t co_center(unsigned char *out,
 size_t co_ljust(unsigned char *out,
                 const unsigned char *data, size_t len,
                 size_t width,
-                const unsigned char *fill, size_t fill_len)
+                const unsigned char *fill, size_t fill_len,
+                int bTrunc)
 {
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
-    size_t str_vis = co_visible_length(data, len);
+    size_t str_width = co_visual_width(data, len);
 
-    if (str_vis >= width) {
-        return co_copy_visible(out, data, data + len, width);
+    if (str_width >= width) {
+        if (bTrunc) {
+            return co_copy_columns(out, data, data + len, width);
+        }
+        size_t nb = wp_safe_copy(out, wp_end, data, len);
+        out[nb] = '\0';
+        return nb;
+    }
+
+    /* Prepare fill. */
+    unsigned char fill_buf[LBUF_SIZE];
+    size_t flen = 0;
+    if (fill && fill_len > 0) {
+        if (fill_len > LBUF_SIZE - 1) fill_len = LBUF_SIZE - 1;
+        memcpy(fill_buf, fill, fill_len);
+        flen = strip_crnltab(fill_buf, fill_len);
+    }
+
+    /* Parse fill into per-character colors. */
+    fill_char_t fchars[LBUF_SIZE];
+    size_t fill_width = 0;
+    size_t nfchars = parse_fill_chars(fchars, LBUF_SIZE, fill_buf, flen,
+                                      &fill_width);
+    if (fill_width == 0) {
+        fchars[0].bytes[0] = ' ';
+        fchars[0].len = 1;
+        fchars[0].width = 1;
+        fchars[0].color = (co_ColorState)CO_CS_NORMAL;
+        nfchars = 1;
+        fill_width = 1;
     }
 
     unsigned char *wp = out;
+    co_ColorState emitted = CO_CS_NORMAL;
 
-    /* Content. */
-    wp += wp_safe_copy(wp, wp_end, data, len);
+    /* Content with color tracking. */
+    wp += emit_data_with_tracking(wp, wp_end, data, len, &emitted);
 
-    /* Right padding. */
-    wp += emit_fill(wp, wp_end, width - str_vis, fill, fill_len);
+    /* Right padding: phase = str_width. */
+    wp += emit_fill_from_chars(wp, wp_end, width - str_width,
+                               str_width, fchars, nfchars, fill_width,
+                               &emitted);
+
+    /* Final reset to CS_NORMAL. */
+    {
+        co_ColorState normal = CO_CS_NORMAL;
+        if (!co_cs_equal(&emitted, &normal)) {
+            wp += emit_transition(wp, wp_end, &emitted, &normal);
+        }
+    }
 
     *wp = '\0';
     return (size_t)(wp - out);
@@ -1522,22 +1834,61 @@ size_t co_ljust(unsigned char *out,
 size_t co_rjust(unsigned char *out,
                 const unsigned char *data, size_t len,
                 size_t width,
-                const unsigned char *fill, size_t fill_len)
+                const unsigned char *fill, size_t fill_len,
+                int bTrunc)
 {
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
-    size_t str_vis = co_visible_length(data, len);
+    size_t str_width = co_visual_width(data, len);
 
-    if (str_vis >= width) {
-        return co_copy_visible(out, data, data + len, width);
+    if (str_width >= width) {
+        if (bTrunc) {
+            return co_copy_columns(out, data, data + len, width);
+        }
+        size_t nb = wp_safe_copy(out, wp_end, data, len);
+        out[nb] = '\0';
+        return nb;
+    }
+
+    /* Prepare fill. */
+    unsigned char fill_buf[LBUF_SIZE];
+    size_t flen = 0;
+    if (fill && fill_len > 0) {
+        if (fill_len > LBUF_SIZE - 1) fill_len = LBUF_SIZE - 1;
+        memcpy(fill_buf, fill, fill_len);
+        flen = strip_crnltab(fill_buf, fill_len);
+    }
+
+    /* Parse fill into per-character colors. */
+    fill_char_t fchars[LBUF_SIZE];
+    size_t fill_width = 0;
+    size_t nfchars = parse_fill_chars(fchars, LBUF_SIZE, fill_buf, flen,
+                                      &fill_width);
+    if (fill_width == 0) {
+        fchars[0].bytes[0] = ' ';
+        fchars[0].len = 1;
+        fchars[0].width = 1;
+        fchars[0].color = (co_ColorState)CO_CS_NORMAL;
+        nfchars = 1;
+        fill_width = 1;
     }
 
     unsigned char *wp = out;
+    co_ColorState emitted = CO_CS_NORMAL;
 
-    /* Left padding. */
-    wp += emit_fill(wp, wp_end, width - str_vis, fill, fill_len);
+    /* Left padding: phase 0. */
+    wp += emit_fill_from_chars(wp, wp_end, width - str_width,
+                               0, fchars, nfchars, fill_width, &emitted);
 
-    /* Content. */
-    wp += wp_safe_copy(wp, wp_end, data, len);
+    /* Content with color tracking. */
+    wp += emit_data_with_tracking(wp, wp_end, data, len, &emitted);
+
+    /* Final reset to CS_NORMAL. */
+    {
+        co_ColorState normal = CO_CS_NORMAL;
+        if (!co_cs_equal(&emitted, &normal)) {
+            wp += emit_transition(wp, wp_end, &emitted, &normal);
+        }
+    }
 
     *wp = '\0';
     return (size_t)(wp - out);
@@ -2371,6 +2722,120 @@ size_t co_apply_color(unsigned char *out,
     /* Copy the string. */
     if (len > 0) {
         wp += wp_safe_copy(wp, wp_end, data, len);
+    }
+
+    *wp = '\0';
+    return (size_t)(wp - out);
+}
+
+/* ---- co_merge ---- */
+
+/*
+ * Consume PUA color codes at *pp, updating color state cs.
+ * Advances *pp past any PUA codes.  Returns pointer to first visible byte.
+ */
+static const unsigned char *consume_pua(const unsigned char **pp,
+                                        const unsigned char *pe,
+                                        co_ColorState *cs)
+{
+    const unsigned char *p = *pp;
+    for (;;) {
+        if (p >= pe) break;
+        if (p[0] == 0xEF && (p + 2) < pe
+            && p[1] >= 0x94 && p[1] <= 0x9F) {
+            parse_bmp_color(p, cs);
+            p += 3;
+            continue;
+        }
+        if (p[0] == 0xF3 && (p + 3) < pe
+            && p[1] == 0xB0
+            && p[2] >= 0x80 && p[2] <= 0x97) {
+            parse_smp_color(p, cs);
+            p += 4;
+            continue;
+        }
+        break;
+    }
+    *pp = p;
+    return p;
+}
+
+size_t co_merge(unsigned char *out,
+                const unsigned char *strA, size_t lenA,
+                const unsigned char *strB, size_t lenB,
+                const unsigned char *search, size_t slen)
+{
+    /* Strip color from search to get the match character. */
+    unsigned char splain[LBUF_SIZE];
+    size_t sp_len = co_strip_color(splain, search, slen);
+    if (sp_len == 0) { splain[0] = ' '; sp_len = 1; }
+
+    /* Verify visible lengths are equal. */
+    size_t vlenA = co_visible_length(strA, lenA);
+    size_t vlenB = co_visible_length(strB, lenB);
+    if (vlenA != vlenB) {
+        out[0] = '\0';
+        return 0;
+    }
+
+    const unsigned char *pa = strA, *pae = strA + lenA;
+    const unsigned char *pb = strB, *pbe = strB + lenB;
+    unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+
+    co_ColorState stateA = CO_CS_NORMAL;
+    co_ColorState stateB = CO_CS_NORMAL;
+    co_ColorState emitted = CO_CS_NORMAL;
+
+    while (pa < pae && pb < pbe && wp < wp_end) {
+        /* Consume PUA from both, updating color states. */
+        consume_pua(&pa, pae, &stateA);
+        consume_pua(&pb, pbe, &stateB);
+        if (pa >= pae || pb >= pbe) break;
+
+        /* Get visible code point from A. */
+        size_t cplenA;
+        unsigned char chA = *pa;
+        if (chA < 0x80)       cplenA = 1;
+        else if (chA < 0xE0)  cplenA = 2;
+        else if (chA < 0xF0)  cplenA = 3;
+        else                  cplenA = 4;
+
+        /* Get visible code point from B. */
+        size_t cplenB;
+        unsigned char chB = *pb;
+        if (chB < 0x80)       cplenB = 1;
+        else if (chB < 0xE0)  cplenB = 2;
+        else if (chB < 0xF0)  cplenB = 3;
+        else                  cplenB = 4;
+
+        /* Check if A's code point matches search. */
+        int match = (cplenA == sp_len && memcmp(pa, splain, cplenA) == 0);
+
+        if (match) {
+            /* Use B's color state and B's code point. */
+            wp += emit_transition(wp, wp_end, &emitted, &stateB);
+            emitted = stateB;
+            for (size_t i = 0; i < cplenB && pb + i < pbe; i++)
+                WP_SAFE(wp, wp_end, pb[i]);
+        } else {
+            /* Use A's color state and A's code point. */
+            wp += emit_transition(wp, wp_end, &emitted, &stateA);
+            emitted = stateA;
+            for (size_t i = 0; i < cplenA && pa + i < pae; i++)
+                WP_SAFE(wp, wp_end, pa[i]);
+        }
+
+        pa += cplenA;
+        pb += cplenB;
+    }
+
+    /* Emit trailing reset to CS_NORMAL, matching export_TextColor. */
+    {
+        co_ColorState normal = CO_CS_NORMAL;
+        if (!co_cs_equal(&emitted, &normal)) {
+            wp += emit_transition(wp, wp_end, &emitted, &normal);
+        }
     }
 
     *wp = '\0';

@@ -6822,64 +6822,32 @@ static FUNCTION(fun_merge)
         return;
     }
 
-    mux_string *sStrA = nullptr;
-    mux_string *sStrB = nullptr;
-    mux_string *sStrC = nullptr;
-    try
-    {
-        sStrA = new mux_string(fargs[0]);
-        sStrB = new mux_string(fargs[1]);
-        sStrC = new mux_string(fargs[2]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    const unsigned char *pA = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t lenA = strlen(reinterpret_cast<const char *>(pA));
+    const unsigned char *pB = reinterpret_cast<const unsigned char *>(fargs[1]);
+    size_t lenB = strlen(reinterpret_cast<const char *>(pB));
+    const unsigned char *pC = reinterpret_cast<const unsigned char *>(fargs[2]);
+    size_t lenC = strlen(reinterpret_cast<const char *>(pC));
 
-    if (  nullptr != sStrA
-       && nullptr != sStrB
-       && nullptr != sStrC)
+    // Check visible lengths are equal.
+    //
+    size_t vlenA = co_visible_length(pA, lenA);
+    size_t vlenB = co_visible_length(pB, lenB);
+    if (vlenA != vlenB)
     {
-        // Do length checks first.
-        //
-        mux_cursor nLenA = sStrA->length_cursor();
-        mux_cursor nLenB = sStrB->length_cursor();
-        if (nLenA.m_point != nLenB.m_point)
-        {
-            safe_str(T("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
-        }
-        else
-        {
-            // Find the character to look for.  Null character is considered a
-            // space.
-            //
-            if (0 == sStrC->length_point())
-            {
-                sStrC->import(T(" "));
-            }
-
-            mux_cursor iA, iB;
-            if (  sStrA->cursor_start(iA)
-               && sStrB->cursor_start(iB))
-            {
-                do
-                {
-                    if (sStrA->compare_Char(iA, *sStrC))
-                    {
-                        sStrA->replace_Char(iA, *sStrB, iB);
-                        sStrA->set_Color(iA.m_point, sStrB->export_Color(iB.m_point));
-                    }
-                } while (  sStrA->cursor_next(iA)
-                        && sStrB->cursor_next(iB));
-            }
-
-            size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-            *bufc += sStrA->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-        }
+        safe_str(T("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
     }
-    delete sStrA;
-    delete sStrB;
-    delete sStrC;
+    else
+    {
+        unsigned char out[LBUF_SIZE];
+        size_t nOut = co_merge(out, pA, lenA, pB, lenB, pC, lenC);
+
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        if (nOut > nMax) nOut = nMax;
+        memcpy(*bufc, out, nOut);
+        *bufc += nOut;
+        **bufc = '\0';
+    }
 }
 
 /* ---------------------------------------------------------------------------
@@ -9595,151 +9563,41 @@ static void centerjustcombo
         return;
     }
 
-    mux_string *sStr = nullptr;
-    try
-    {
-        sStr = new mux_string(fargs[0]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    const unsigned char *pStr = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t lenStr = strlen(reinterpret_cast<const char *>(pStr));
 
-    if (nullptr == sStr)
-    {
-        return;
-    }
-
-    mux_cursor nStr = sStr->length_cursor();
-    LBUF_OFFSET nStrWidth = sStr->visual_width();
-
-    // If there's no need to pad, then we are done.
-    //
-    if (nWidth <= nStrWidth)
-    {
-        mux_cursor iEnd = nStr;
-        if (bTrunc)
-        {
-            sStr->cursor_from_column(iEnd, nWidth);
-        }
-        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextColor(*bufc, CursorMin, iEnd, nMax);
-        delete sStr;
-        return;
-    }
-
-    // Determine string to pad with.
-    //
-    mux_string *sPad = nullptr;
-    try
-    {
-        sPad = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == sPad)
-    {
-        delete sStr;
-        return;
-    }
-
+    const unsigned char *pFill = nullptr;
+    size_t lenFill = 0;
     if (nfargs == 3 && *fargs[2])
     {
-        sPad->import(fargs[2]);
-        sPad->strip(T("\r\n\t"));
-    }
-    LBUF_OFFSET nPad = sPad->visual_width();
-    if (0 == nPad)
-    {
-        sPad->import(T(" "), 1);
-        nPad = 1;
+        pFill = reinterpret_cast<const unsigned char *>(fargs[2]);
+        lenFill = strlen(reinterpret_cast<const char *>(pFill));
     }
 
-    LBUF_OFFSET nLeading = 0;
+    unsigned char out[LBUF_SIZE];
+    size_t nOut = 0;
+
     if (iType == CJC_CENTER)
     {
-        nLeading = (nWidth - nStrWidth)/2;
+        nOut = co_center(out, pStr, lenStr, nWidth,
+                         pFill, lenFill, bTrunc ? 1 : 0);
     }
-    else if (iType == CJC_RJUST)
+    else if (iType == CJC_LJUST)
     {
-        nLeading = nWidth - nStrWidth;
+        nOut = co_ljust(out, pStr, lenStr, nWidth,
+                        pFill, lenFill, bTrunc ? 1 : 0);
     }
-    LBUF_OFFSET nTrailing = nWidth - nLeading - nStrWidth;
-    LBUF_OFFSET nPos = 0;
-
-    mux_string *s = nullptr;
-    try
+    else
     {
-        s = new mux_string;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == s)
-    {
-        delete sStr;
-        delete sPad;
-        return;
-    }
-
-    // Output leading padding.
-    //
-    while (nPos < nLeading)
-    {
-        mux_cursor iEnd;
-        sPad->cursor_from_column(iEnd, nLeading - nPos);
-        nPos = static_cast<LBUF_OFFSET>(nPos + nPad);
-        s->append(*sPad, CursorMin, iEnd);
-    }
-    nPos = nLeading;
-
-    // Output string.
-    //
-    s->append(*sStr, CursorMin, nStr);
-    nPos = static_cast<LBUF_OFFSET>(nPos + nStrWidth);
-
-    // Output first part of trailing padding.
-    //
-    if (0 < nTrailing)
-    {
-        LBUF_OFFSET nPadStart = static_cast<LBUF_OFFSET>(nPos % nPad);
-        LBUF_OFFSET nPadPart  = nWidth - nLeading - nStrWidth;
-        if (nPad - nPadStart < nPadPart)
-        {
-            nPadPart = nPad - nPadStart;
-        }
-
-        if (0 < nPadPart)
-        {
-            mux_cursor iStart, iEnd;
-            sPad->cursor_from_column(iStart, nPadStart);
-            sPad->cursor_from_column(iEnd, nPadStart+nPadPart);
-            nPos = static_cast<LBUF_OFFSET>(nPos + nPadPart);
-            s->append(*sPad, iStart, iEnd);
-        }
-    }
-
-    // Output trailing padding.
-    //
-    while (nPos < nWidth)
-    {
-        mux_cursor iEnd;
-        sPad->cursor_from_column(iEnd, nWidth-nPos);
-        nPos = static_cast<LBUF_OFFSET>(nPos + nPad);
-        s->append(*sPad, CursorMin, iEnd);
+        nOut = co_rjust(out, pStr, lenStr, nWidth,
+                        pFill, lenFill, bTrunc ? 1 : 0);
     }
 
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += s->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-
-    delete sStr;
-    delete sPad;
-    delete s;
+    if (nOut > nMax) nOut = nMax;
+    memcpy(*bufc, out, nOut);
+    *bufc += nOut;
+    **bufc = '\0';
 }
 
 static FUNCTION(fun_ljust)

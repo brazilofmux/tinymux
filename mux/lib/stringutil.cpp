@@ -1126,6 +1126,13 @@ int ConsoleWidth(const UTF8 *pCodePoint)
     return (iState - TR_WIDTHS_ACCEPTING_STATES_START);
 }
 
+// C-callable wrapper for use from color_ops.c (libmux.so internal).
+//
+extern "C" int co_console_width(const unsigned char *pCodePoint)
+{
+    return ConsoleWidth(pCodePoint);
+}
+
 // ColorTable — maps ASCII characters to color index flags.
 //
 const unsigned int ColorTable[256] =

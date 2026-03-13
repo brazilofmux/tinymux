@@ -315,38 +315,70 @@ size_t co_member(const unsigned char *target, size_t tlen,
                  unsigned char delim);
 
 /*
+ * co_console_width — Column width of a single visible code point.
+ *
+ * Returns 0 for combining marks, 2 for fullwidth/CJK, 1 otherwise.
+ * Wraps ConsoleWidth() from stringutil.cpp with C linkage.
+ */
+int co_console_width(const unsigned char *pCodePoint);
+
+/*
+ * co_visual_width — Total display column width of a PUA-colored string.
+ *
+ * Skips color PUA codes, sums co_console_width() for visible chars.
+ * Accounts for fullwidth (2 columns) and zero-width (0 columns).
+ */
+size_t co_visual_width(const unsigned char *p, size_t len);
+
+/*
+ * co_copy_columns — Copy up to n display columns, preserving color.
+ *
+ * Like co_copy_visible but counts display columns instead of code points.
+ * A fullwidth character counts as 2 columns.  Stops before emitting a
+ * character that would exceed the column limit.
+ * Returns bytes written to out.
+ */
+size_t co_copy_columns(unsigned char *out, const unsigned char *p,
+                       const unsigned char *pe, size_t ncols);
+
+/*
  * co_center — Center string with padding, preserving color.
  *
- * Pads string to exactly width visible code points, centered.
- * fill/fill_len is the fill pattern (cycled if multi-character).
- * If fill_len is 0, uses space.  Truncates if string is wider.
+ * Pads string to exactly 'width' display columns, centered.
+ * fill/fill_len is the fill pattern (cycled, phase-continuous).
+ * If fill_len is 0, uses space.  bTrunc: truncate if wider.
  *
  * Returns bytes written to out.
  */
 size_t co_center(unsigned char *out,
                  const unsigned char *p, size_t len,
                  size_t width,
-                 const unsigned char *fill, size_t fill_len);
+                 const unsigned char *fill, size_t fill_len,
+                 int bTrunc);
 
 /*
- * co_ljust — Left-justify (right-pad) to width, preserving color.
+ * co_ljust — Left-justify (right-pad) to width columns, preserving color.
  *
+ * bTrunc: if true, truncate input to width if wider.
  * Returns bytes written to out.
  */
 size_t co_ljust(unsigned char *out,
                 const unsigned char *p, size_t len,
                 size_t width,
-                const unsigned char *fill, size_t fill_len);
+                const unsigned char *fill, size_t fill_len,
+                int bTrunc);
 
 /*
- * co_rjust — Right-justify (left-pad) to width, preserving color.
+ * co_rjust — Right-justify (left-pad) to width columns, preserving color.
  *
+ * bTrunc: if true, truncate input to width if wider.
  * Returns bytes written to out.
  */
 size_t co_rjust(unsigned char *out,
                 const unsigned char *p, size_t len,
                 size_t width,
-                const unsigned char *fill, size_t fill_len);
+                const unsigned char *fill, size_t fill_len,
+                int bTrunc);
 
 /*
  * co_repeat — Repeat string n times, preserving color.
@@ -511,6 +543,21 @@ size_t co_collapse_color(unsigned char *out,
 size_t co_apply_color(unsigned char *out,
                       const unsigned char *p, size_t len,
                       co_ColorState cs);
+
+/*
+ * co_merge — Positional character merge with color tracking.
+ *
+ * MUX merge() semantics: for each position, if strA's visible code point
+ * matches search, replace with strB's code point and color.
+ * Tracks absolute color state for both strings and emits correct
+ * PUA transitions in the output.
+ *
+ * Returns bytes written to out, or 0 if visible lengths differ.
+ */
+size_t co_merge(unsigned char *out,
+                const unsigned char *strA, size_t lenA,
+                const unsigned char *strB, size_t lenB,
+                const unsigned char *search, size_t slen);
 
 /*
  * co_escape — Insert backslash before escape characters, preserving color.
