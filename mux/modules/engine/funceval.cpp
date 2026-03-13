@@ -2276,39 +2276,25 @@ FUNCTION(fun_strtrunc)
         return;
     }
 
-    mux_string *sStr = nullptr;
-    try
-    {
-        sStr = new mux_string(fargs[0]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    const unsigned char *p = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t slen = strlen(reinterpret_cast<const char *>(p));
+    size_t nClusters = co_cluster_count(p, slen);
 
-    if (nullptr == sStr)
-    {
-        return;
-    }
-
-    mux_cursor nLen = sStr->length_cursor();
-
-    UTF8 plainBuf[LBUF_SIZE];
-    size_t nPlainBytes = sStr->export_TextPlain(plainBuf);
-    size_t nClusters = utf8_cluster_count(plainBuf, nPlainBytes);
     if (static_cast<size_t>(nLeft) < nClusters)
     {
-        mux_cursor iEnd;
-        sStr->cursor_from_cluster(iEnd, static_cast<LBUF_OFFSET>(nLeft));
+        unsigned char out[LBUF_SIZE];
+        size_t n = co_mid_cluster(out, p, slen, 0, static_cast<size_t>(nLeft));
+
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextColor(*bufc, CursorMin, iEnd, nMax);
+        if (n > nMax) n = nMax;
+        memcpy(*bufc, out, n);
+        *bufc += n;
+        **bufc = '\0';
     }
-    else if (0 < nLen.m_point)
+    else if (co_visible_length(p, slen) > 0)
     {
         safe_str(fargs[0], buff, bufc);
     }
-
-    delete sStr;
 }
 
 FUNCTION(fun_ifelse)

@@ -26,6 +26,185 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* ---- Grapheme Cluster Break (GCB) DFA tables from utf8tables ---- */
+
+#define TR_GCB_START_STATE (0)
+#define TR_GCB_ACCEPTING_STATES_START (208)
+#define CL_EXTPICT_START_STATE (0)
+#define CL_EXTPICT_ACCEPTING_STATES_START (44)
+
+extern const unsigned char tr_gcb_itt[256];
+extern const unsigned short tr_gcb_sot[208];
+extern const unsigned char tr_gcb_sbt[2922];
+extern const unsigned char cl_extpict_itt[256];
+extern const unsigned short cl_extpict_sot[44];
+extern const unsigned char cl_extpict_sbt[510];
+
+/* GCB property values (must match utf8_grapheme.cpp). */
+enum {
+    GCB_Other              = 0,
+    GCB_CR                 = 1,
+    GCB_LF                 = 2,
+    GCB_Control            = 3,
+    GCB_Extend             = 4,
+    GCB_ZWJ                = 5,
+    GCB_Regional_Indicator = 6,
+    GCB_Prepend            = 7,
+    GCB_SpacingMark        = 8,
+    GCB_L                  = 9,
+    GCB_V                  = 10,
+    GCB_T                  = 11,
+    GCB_LV                 = 12,
+    GCB_LVT                = 13
+};
+
+/* Run DFA to get integer result from a byte sequence. */
+static int run_dfa(const unsigned char *itt, const unsigned short *sot,
+                   const unsigned char *sbt, int start, int accept_start,
+                   int default_val, const unsigned char *p,
+                   const unsigned char *pEnd)
+{
+    int iState = start;
+    while (p < pEnd) {
+        int iCol = itt[*p++];
+        int iOff = sot[iState];
+        for (;;) {
+            int y = (signed char)sbt[iOff];
+            if (y > 0) {
+                if (iCol < y) { iState = sbt[iOff + 1]; break; }
+                iCol -= y;
+                iOff += 2;
+            } else {
+                y = -y;
+                if (iCol < y) { iState = sbt[iOff + iCol + 1]; break; }
+                iCol -= y;
+                iOff += y + 1;
+            }
+        }
+    }
+    return (iState >= accept_start) ? iState - accept_start : default_val;
+}
+
+static int gcb_get(const unsigned char *p, const unsigned char *pEnd)
+{
+    return run_dfa(tr_gcb_itt, tr_gcb_sot, tr_gcb_sbt,
+                   TR_GCB_START_STATE, TR_GCB_ACCEPTING_STATES_START,
+                   GCB_Other, p, pEnd);
+}
+
+static int gcb_is_extpict(const unsigned char *p, const unsigned char *pEnd)
+{
+    int r = run_dfa(cl_extpict_itt, cl_extpict_sot, cl_extpict_sbt,
+                    CL_EXTPICT_START_STATE, CL_EXTPICT_ACCEPTING_STATES_START,
+                    0, p, pEnd);
+    return (r == 1);
+}
+
+/* Advance one UTF-8 code point (plain, no PUA awareness).
+ * Returns pointer past the code point, or p+1 on invalid. */
+static const unsigned char *utf8_cp_advance(const unsigned char *p,
+                                            const unsigned char *pEnd)
+{
+    if (p >= pEnd) return p;
+    unsigned char ch = *p;
+    size_t n;
+    if (ch < 0x80) n = 1;
+    else if (ch < 0xE0) n = 2;
+    else if (ch < 0xF0) n = 3;
+    else n = 4;
+    return (p + n <= pEnd) ? p + n : pEnd;
+}
+
+/*
+ * next_grapheme_plain: advance past one Extended Grapheme Cluster
+ * in a PLAIN (no PUA) UTF-8 buffer.  Returns bytes consumed.
+ * Implements UAX #29 GB rules (same as utf8_next_grapheme).
+ */
+static size_t next_grapheme_plain(const unsigned char *src, size_t nSrc)
+{
+    const unsigned char *p = src;
+    const unsigned char *pEnd = src + nSrc;
+
+    if (p >= pEnd) return 0;
+
+    /* First code point. */
+    const unsigned char *pFirstEnd = utf8_cp_advance(p, pEnd);
+    int prevGCB = gcb_get(p, pFirstEnd);
+    int bPrevExtPict = gcb_is_extpict(p, pFirstEnd);
+    const unsigned char *pCur = pFirstEnd;
+
+    /* GB4: (Control|CR|LF) ÷ */
+    if (GCB_Control == prevGCB || GCB_LF == prevGCB)
+        return (size_t)(pCur - src);
+
+    int bSeenEPEZ = bPrevExtPict;  /* GB11 */
+    int nRI = (GCB_Regional_Indicator == prevGCB) ? 1 : 0;  /* GB12/13 */
+
+    while (pCur < pEnd) {
+        const unsigned char *pNextEnd = utf8_cp_advance(pCur, pEnd);
+        int curGCB = gcb_get(pCur, pNextEnd);
+        int bCurExtPict = gcb_is_extpict(pCur, pNextEnd);
+
+        /* GB3: CR × LF */
+        if (GCB_CR == prevGCB && GCB_LF == curGCB)
+            return (size_t)(pNextEnd - src);
+
+        /* GB5: ÷ (Control|CR|LF) */
+        if (GCB_Control == curGCB || GCB_CR == curGCB || GCB_LF == curGCB)
+            break;
+
+        int extend = 0;
+
+        /* GB6: L × (L|V|LV|LVT) */
+        if (GCB_L == prevGCB &&
+            (GCB_L == curGCB || GCB_V == curGCB ||
+             GCB_LV == curGCB || GCB_LVT == curGCB))
+            extend = 1;
+
+        /* GB7: (LV|V) × (V|T) */
+        if (!extend && (GCB_LV == prevGCB || GCB_V == prevGCB) &&
+            (GCB_V == curGCB || GCB_T == curGCB))
+            extend = 1;
+
+        /* GB8: (LVT|T) × T */
+        if (!extend && (GCB_LVT == prevGCB || GCB_T == prevGCB) &&
+            GCB_T == curGCB)
+            extend = 1;
+
+        /* GB9: × (Extend|ZWJ) */
+        if (!extend && (GCB_Extend == curGCB || GCB_ZWJ == curGCB))
+            extend = 1;
+
+        /* GB9a: × SpacingMark */
+        if (!extend && GCB_SpacingMark == curGCB)
+            extend = 1;
+
+        /* GB9b: Prepend × */
+        if (!extend && GCB_Prepend == prevGCB)
+            extend = 1;
+
+        /* GB11: ExtPict Extend* ZWJ × ExtPict */
+        if (!extend && bSeenEPEZ && GCB_ZWJ == prevGCB && bCurExtPict)
+            extend = 1;
+
+        /* GB12/13: RI × RI (pairs only) */
+        if (!extend && GCB_Regional_Indicator == curGCB && (nRI % 2) == 1)
+            extend = 1;
+
+        if (!extend) break;  /* GB999: ÷ */
+
+        /* Continue cluster. */
+        if (GCB_Regional_Indicator == curGCB) nRI++;
+        if (bCurExtPict) bSeenEPEZ = 1;
+        else if (!bSeenEPEZ || (GCB_Extend != curGCB && GCB_ZWJ != curGCB))
+            bSeenEPEZ = 0;
+
+        prevGCB = curGCB;
+        pCur = pNextEnd;
+    }
+    return (size_t)(pCur - src);
+}
+
 /* Safe-write helpers: all output buffers are LBUF_SIZE.
  * wp_end = out + LBUF_SIZE - 1 (leave room for NUL).
  * These macros silently truncate when the buffer is full. */
@@ -2261,6 +2440,136 @@ size_t co_escape(unsigned char *out,
             WP_SAFE(wp, wp_end, *p++);
         }
     }
+
+    *wp = '\0';
+    return (size_t)(wp - out);
+}
+
+/* ================================================================
+ * Grapheme cluster operations on PUA-encoded strings.
+ *
+ * Strategy: strip color to get plain text, run UAX #29 grapheme
+ * segmentation on the plain buffer, then map the plain-text byte
+ * count back to PUA-encoded positions by walking the original
+ * string and skipping color codes.
+ * ================================================================ */
+
+/*
+ * advance_pua_by_plain_bytes: given a PUA-encoded pointer and a count
+ * of plain (visible) bytes consumed, advance the PUA pointer past
+ * that many visible bytes, skipping any interleaved PUA color codes.
+ * Returns pointer past the consumed visible bytes.
+ */
+static const unsigned char *advance_pua_by_plain_bytes(
+    const unsigned char *p, const unsigned char *pe, size_t nPlainBytes)
+{
+    size_t consumed = 0;
+    while (p < pe && consumed < nPlainBytes) {
+        /* Skip color PUA. */
+        const unsigned char *q = co_skip_color(p, pe);
+        p = q;
+        if (p >= pe) break;
+
+        /* Visible code point. */
+        unsigned char ch = *p;
+        size_t cplen;
+        if (ch < 0x80)       cplen = 1;
+        else if (ch < 0xE0)  cplen = 2;
+        else if (ch < 0xF0)  cplen = 3;
+        else                 cplen = 4;
+        if (p + cplen > pe) break;
+
+        p += cplen;
+        consumed += cplen;
+    }
+    return p;
+}
+
+size_t co_cluster_count(const unsigned char *data, size_t len)
+{
+    /* Strip color to get plain text. */
+    unsigned char plain[LBUF_SIZE];
+    size_t plen = co_strip_color(plain, data, len);
+
+    /* Count grapheme clusters in plain text. */
+    size_t nClusters = 0;
+    size_t nConsumed = 0;
+    while (nConsumed < plen) {
+        size_t cb = next_grapheme_plain(plain + nConsumed, plen - nConsumed);
+        if (0 == cb) break;
+        nConsumed += cb;
+        nClusters++;
+    }
+    return nClusters;
+}
+
+const unsigned char *co_cluster_advance(const unsigned char *data,
+                                        const unsigned char *pe,
+                                        size_t n, size_t *out_count)
+{
+    size_t len = (size_t)(pe - data);
+
+    /* Strip color to get plain text. */
+    unsigned char plain[LBUF_SIZE];
+    size_t plen = co_strip_color(plain, data, len);
+
+    /* Advance past n grapheme clusters in plain text. */
+    size_t nConsumed = 0;
+    size_t nClusters = 0;
+    while (nConsumed < plen && nClusters < n) {
+        size_t cb = next_grapheme_plain(plain + nConsumed, plen - nConsumed);
+        if (0 == cb) break;
+        nConsumed += cb;
+        nClusters++;
+    }
+
+    if (out_count) *out_count = nClusters;
+
+    /* Map nConsumed plain bytes back to PUA-encoded position. */
+    return advance_pua_by_plain_bytes(data, pe, nConsumed);
+}
+
+size_t co_mid_cluster(unsigned char *out,
+                      const unsigned char *data, size_t len,
+                      size_t iStart, size_t nCount)
+{
+    const unsigned char *pe = data + len;
+    unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+
+    /* Advance past iStart clusters to find the start position. */
+    const unsigned char *pStart = co_cluster_advance(data, pe, iStart, NULL);
+
+    /* Advance past nCount more clusters to find the end position. */
+    const unsigned char *pEnd = co_cluster_advance(pStart, pe, nCount, NULL);
+
+    /* Copy the range [pStart, pEnd) including any interleaved color. */
+    size_t cb = (size_t)(pEnd - pStart);
+    wp += wp_safe_copy(wp, wp_end, pStart, cb);
+
+    *wp = '\0';
+    return (size_t)(wp - out);
+}
+
+size_t co_delete_cluster(unsigned char *out,
+                         const unsigned char *data, size_t len,
+                         size_t iStart, size_t nCount)
+{
+    const unsigned char *pe = data + len;
+    unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+
+    /* Copy everything before iStart clusters. */
+    const unsigned char *pDelStart = co_cluster_advance(data, pe, iStart, NULL);
+    size_t cb_before = (size_t)(pDelStart - data);
+    wp += wp_safe_copy(wp, wp_end, data, cb_before);
+
+    /* Skip past nCount clusters (the deleted range). */
+    const unsigned char *pDelEnd = co_cluster_advance(pDelStart, pe, nCount, NULL);
+
+    /* Copy everything after the deleted range. */
+    size_t cb_after = (size_t)(pe - pDelEnd);
+    wp += wp_safe_copy(wp, wp_end, pDelEnd, cb_after);
 
     *wp = '\0';
     return (size_t)(wp - out);

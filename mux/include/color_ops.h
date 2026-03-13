@@ -524,4 +524,47 @@ size_t co_apply_color(unsigned char *out,
 size_t co_escape(unsigned char *out,
                  const unsigned char *data, size_t len);
 
+/* ---- Grapheme cluster operations ---- */
+
+/*
+ * co_cluster_count — Count Extended Grapheme Clusters in PUA-encoded string.
+ *
+ * Full UAX #29 grapheme segmentation (Unicode 16.0): handles combining
+ * marks, Hangul jamo, emoji ZWJ sequences, regional indicators.
+ * Color PUA code points are skipped (not counted as clusters).
+ */
+size_t co_cluster_count(const unsigned char *data, size_t len);
+
+/*
+ * co_cluster_advance — Advance past n grapheme clusters in PUA-encoded string.
+ *
+ * Returns pointer past the nth cluster (including any trailing color).
+ * If out_count is non-NULL, stores the actual number of clusters advanced.
+ */
+const unsigned char *co_cluster_advance(const unsigned char *data,
+                                        const unsigned char *pe,
+                                        size_t n, size_t *out_count);
+
+/*
+ * co_mid_cluster — Substring by grapheme cluster position, preserving color.
+ *
+ * iStart is 0-based cluster index, nCount is number of clusters to extract.
+ * Color interleaved in the extracted range is preserved.
+ *
+ * Returns bytes written to out.
+ */
+size_t co_mid_cluster(unsigned char *out,
+                      const unsigned char *data, size_t len,
+                      size_t iStart, size_t nCount);
+
+/*
+ * co_delete_cluster — Delete grapheme clusters by position, preserving color.
+ *
+ * iStart is 0-based cluster index, nCount is number of clusters to delete.
+ * Returns bytes written to out.
+ */
+size_t co_delete_cluster(unsigned char *out,
+                         const unsigned char *data, size_t len,
+                         size_t iStart, size_t nCount);
+
 #endif /* COLOR_OPS_H */

@@ -100,63 +100,44 @@ FUNCTION(fun_scramble)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = nullptr;
-    try
-    {
-        sStr = new mux_string(fargs[0]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    const unsigned char *p = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t slen = strlen(reinterpret_cast<const char *>(p));
+    size_t nClusters = co_cluster_count(p, slen);
 
-    if (nullptr == sStr)
+    if (nClusters < 2)
     {
+        safe_str(fargs[0], buff, bufc);
         return;
     }
 
-    UTF8 plainBuf[LBUF_SIZE];
-    size_t nPlainBytes = sStr->export_TextPlain(plainBuf);
-    size_t nClusters = utf8_cluster_count(plainBuf, nPlainBytes);
-
-    if (2 <= nClusters)
+    // Build index array and Fisher-Yates shuffle.
+    //
+    LBUF_OFFSET indices[LBUF_SIZE / 2];
+    for (size_t i = 0; i < nClusters; i++)
     {
-        mux_string *sOut = nullptr;
-        try
-        {
-            sOut = new mux_string;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == sOut)
-        {
-            delete sStr;
-            return;
-        }
-
-        LBUF_OFFSET iCluster;
-        mux_cursor iStart, iEnd;
-        while (0 < nClusters)
-        {
-            iCluster = static_cast<LBUF_OFFSET>(RandomINT32(0, static_cast<int32_t>(nClusters-1)));
-            sStr->cursor_from_cluster(iStart, iCluster);
-            sStr->cursor_from_cluster(iEnd, iCluster + 1);
-            sOut->append(*sStr, iStart, iEnd);
-            sStr->delete_Chars(iStart, iEnd);
-            nClusters--;
-        }
-        *bufc += sOut->export_TextColor(*bufc, CursorMin, CursorMax, buff + (LBUF_SIZE-1) - *bufc);
-        delete sOut;
+        indices[i] = static_cast<LBUF_OFFSET>(i);
     }
-    else
+    for (size_t i = nClusters - 1; i > 0; i--)
     {
-        safe_str(fargs[0], buff, bufc);
+        size_t j = static_cast<size_t>(RandomINT32(0, static_cast<int32_t>(i)));
+        LBUF_OFFSET tmp = indices[i];
+        indices[i] = indices[j];
+        indices[j] = tmp;
     }
 
-    delete sStr;
+    // Output clusters in shuffled order using co_mid_cluster.
+    //
+    for (size_t i = 0; i < nClusters; i++)
+    {
+        unsigned char cluster[LBUF_SIZE];
+        size_t cb = co_mid_cluster(cluster, p, slen, indices[i], 1);
+
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        if (cb > nMax) cb = nMax;
+        memcpy(*bufc, cluster, cb);
+        *bufc += cb;
+    }
+    **bufc = '\0';
 }
 
 /* ---------------------------------------------------------------------------

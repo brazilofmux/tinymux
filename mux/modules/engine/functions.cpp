@@ -2505,19 +2505,18 @@ static FUNCTION(fun_mid)
     // At this point, iStart and nMid are nonnegative numbers
     // which may -still- not refer to valid data in the string.
     //
-    mux_string *sStr = new mux_string(fargs[0]);
+    const unsigned char *p = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t slen = strlen(reinterpret_cast<const char *>(p));
 
-    mux_cursor iCurStart, iCurEnd;
-    sStr->cursor_from_cluster(iCurStart, static_cast<LBUF_OFFSET>(iStart));
-    sStr->cursor_from_cluster(iCurEnd, static_cast<LBUF_OFFSET>(iStart + nMid));
+    unsigned char out[LBUF_SIZE];
+    size_t n = co_mid_cluster(out, p, slen,
+        static_cast<size_t>(iStart), static_cast<size_t>(nMid));
 
-    if (iCurStart < iCurEnd)
-    {
-        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextColor(*bufc, iCurStart, iCurEnd, nMax);
-    }
-
-    delete sStr;
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    if (n > nMax) n = nMax;
+    memcpy(*bufc, out, n);
+    *bufc += n;
+    **bufc = '\0';
 }
 
 // ---------------------------------------------------------------------------
@@ -2545,25 +2544,27 @@ static FUNCTION(fun_right)
         return;
     }
 
-    mux_string *sStr = new mux_string(fargs[0]);
-    mux_cursor iStart, iEnd;
-    sStr->cursor_end(iEnd);
+    const unsigned char *p = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t slen = strlen(reinterpret_cast<const char *>(p));
+    size_t nClusters = co_cluster_count(p, slen);
 
-    size_t nBytes = 0;
-    UTF8 *pPlain = strip_color(fargs[0], &nBytes, nullptr);
-    size_t nClusters = utf8_cluster_count(pPlain, nBytes);
     if (static_cast<size_t>(nRight) < nClusters)
     {
-        sStr->cursor_from_cluster(iStart, static_cast<LBUF_OFFSET>(nClusters - nRight));
+        unsigned char out[LBUF_SIZE];
+        size_t n = co_mid_cluster(out, p, slen,
+            nClusters - static_cast<size_t>(nRight),
+            static_cast<size_t>(nRight));
+
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextColor(*bufc, iStart, iEnd, nMax);
+        if (n > nMax) n = nMax;
+        memcpy(*bufc, out, n);
+        *bufc += n;
+        **bufc = '\0';
     }
     else
     {
         safe_str(fargs[0], buff, bufc);
     }
-
-    delete sStr;
 }
 
 /*
@@ -4271,32 +4272,24 @@ static FUNCTION(fun_pos)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sPat = nullptr;
-    mux_string *sStr = nullptr;
-    try
-    {
-        sPat = new mux_string(fargs[0]);
-        sStr = new mux_string(fargs[1]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    const unsigned char *pPat = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t nPat = strlen(reinterpret_cast<const char *>(pPat));
+    const unsigned char *pStr = reinterpret_cast<const unsigned char *>(fargs[1]);
+    size_t nStr = strlen(reinterpret_cast<const char *>(pStr));
 
-    mux_cursor nPat;
-    if (  nullptr != sStr
-       && nullptr != sPat
-       && sStr->search(*sPat, &nPat))
+    const unsigned char *match = co_search(pStr, nStr, pPat, nPat);
+    if (nullptr != match)
     {
-        safe_ltoa(static_cast<long>(sStr->cluster_position(nPat) + 1), buff, bufc);
+        // Count clusters in the prefix before the match position.
+        //
+        size_t nBytesBefore = static_cast<size_t>(match - pStr);
+        size_t nClustersBefore = co_cluster_count(pStr, nBytesBefore);
+        safe_ltoa(static_cast<long>(nClustersBefore + 1), buff, bufc);
     }
     else
     {
         safe_nothing(buff, bufc);
     }
-
-    delete sStr;
-    delete sPat;
 }
 
 /* ---------------------------------------------------------------------------
@@ -4315,66 +4308,66 @@ static FUNCTION(fun_lpos)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    mux_string *sStr = nullptr;
-    try
-    {
-        sStr = new mux_string(fargs[0]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == sStr)
+    const unsigned char *pStr = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t nStr = strlen(reinterpret_cast<const char *>(pStr));
+    if (0 == nStr)
     {
         return;
     }
 
-    if (0 == sStr->length_byte())
+    const unsigned char *pPat = reinterpret_cast<const unsigned char *>(fargs[1]);
+    size_t nPat = strlen(reinterpret_cast<const char *>(pPat));
+
+    // Empty pattern defaults to space.
+    //
+    unsigned char spacebuf[2] = {' ', '\0'};
+    if (0 == nPat)
     {
-        delete sStr;
-        return;
+        pPat = spacebuf;
+        nPat = 1;
     }
 
-    mux_string *sPat = nullptr;
-    try
-    {
-        sPat = new mux_string(fargs[1]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    bool bFirst = true;
+    const unsigned char *pCur = pStr;
+    size_t nRemain = nStr;
 
-    if (nullptr == sPat)
+    while (nRemain > 0)
     {
-        delete sStr;
-        delete sPat;
-        return;
-    }
+        const unsigned char *match = co_search(pCur, nRemain, pPat, nPat);
+        if (nullptr == match)
+        {
+            break;
+        }
 
-    if (0 == sPat->length_byte())
-    {
-        sPat->import(T(" "), 1);
-    }
-
-    mux_cursor nPat, nStart = CursorMin;
-    bool bSucceeded = sStr->search(*sPat, &nPat);
-    while (bSucceeded)
-    {
-        if (CursorMin < nStart)
+        if (!bFirst)
         {
             safe_chr(' ', buff, bufc);
         }
-        nStart = nPat;
-        safe_ltoa(static_cast<long>(sStr->cluster_position(nStart)), buff, bufc);
-        sStr->cursor_next(nStart);
+        bFirst = false;
 
-        bSucceeded = sStr->search(*sPat, &nPat, nStart);
+        // Count clusters from the beginning of the string to this match.
+        //
+        size_t nBytesBefore = static_cast<size_t>(match - pStr);
+        size_t nClustersBefore = co_cluster_count(pStr, nBytesBefore);
+        safe_ltoa(static_cast<long>(nClustersBefore), buff, bufc);
+
+        // Advance past this match by one visible code point.
+        //
+        const unsigned char *pe = pStr + nStr;
+        const unsigned char *pNext = co_skip_color(match, pe);
+        if (pNext < pe)
+        {
+            unsigned char ch = *pNext;
+            size_t cplen;
+            if (ch < 0x80)       cplen = 1;
+            else if (ch < 0xE0)  cplen = 2;
+            else if (ch < 0xF0)  cplen = 3;
+            else                 cplen = 4;
+            pNext += cplen;
+        }
+        nRemain = static_cast<size_t>(pe - pNext);
+        pCur = pNext;
     }
-
-    delete sStr;
-    delete sPat;
 }
 
 
@@ -5356,16 +5349,18 @@ static FUNCTION(fun_delete)
     // At this point, iStart and nDelete are nonnegative numbers
     // which may -still- not refer to valid data in the string.
     //
-    mux_string *sStr = new mux_string(fargs[0]);
+    const unsigned char *p = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t slen = strlen(reinterpret_cast<const char *>(p));
 
-    mux_cursor iStartCur, iEnd;
-    sStr->cursor_from_cluster(iStartCur, static_cast<LBUF_OFFSET>(iStart));
-    sStr->cursor_from_cluster(iEnd, static_cast<LBUF_OFFSET>(iStart + nDelete));
-    sStr->delete_Chars(iStartCur, iEnd);
+    unsigned char out[LBUF_SIZE];
+    size_t n = co_delete_cluster(out, p, slen,
+        static_cast<size_t>(iStart), static_cast<size_t>(nDelete));
+
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-    *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-
-    delete sStr;
+    if (n > nMax) n = nMax;
+    memcpy(*bufc, out, n);
+    *bufc += n;
+    **bufc = '\0';
 }
 
 static FUNCTION(fun_lock)
