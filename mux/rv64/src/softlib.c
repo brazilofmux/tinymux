@@ -17,10 +17,15 @@
  */
 
 typedef unsigned long uint64_t;
+typedef unsigned long size_t;
 
 /* Forward declarations for intrinsics (defined below). */
 int   rv64_slen(const char *s);
 char *rv64_scopy(char *dst, const char *src);
+void *memcpy(void *dst, const void *src, size_t n);
+int   memcmp(const void *a, const void *b, size_t n);
+void *memset(void *dst, int c, size_t n);
+void  memswap(void *a, void *b, size_t n);
 
 /* ---------------------------------------------------------------
  * Intrinsic helpers — global and noinline so the DBT can intercept
@@ -45,6 +50,52 @@ char *rv64_scopy(char *dst, const char *src) {
     while (*src) *dst++ = *src++;
     *dst = '\0';
     return dst;
+}
+
+/* ---------------------------------------------------------------
+ * Host-native intrinsics — the DBT intercepts JAL calls to these
+ * and emits native x86-64 (rep movsb, rep cmpsb, rep stosb, etc.)
+ * instead of translating the RV64 byte loops.  The RV64 fallback
+ * implementations exist for correctness on native RISC-V hosts.
+ * --------------------------------------------------------------- */
+
+__attribute__((noinline))
+void *memcpy(void *dst, const void *src, size_t n) {
+    char *d = (char *)dst;
+    const char *s = (const char *)src;
+    while (n--) *d++ = *s++;
+    return dst;
+}
+
+__attribute__((noinline))
+int memcmp(const void *a, const void *b, size_t n) {
+    const unsigned char *pa = (const unsigned char *)a;
+    const unsigned char *pb = (const unsigned char *)b;
+    while (n--) {
+        if (*pa != *pb) return *pa - *pb;
+        pa++;
+        pb++;
+    }
+    return 0;
+}
+
+__attribute__((noinline))
+void *memset(void *dst, int c, size_t n) {
+    unsigned char *d = (unsigned char *)dst;
+    unsigned char v = (unsigned char)c;
+    while (n--) *d++ = v;
+    return dst;
+}
+
+__attribute__((noinline))
+void memswap(void *a, void *b, size_t n) {
+    unsigned char *pa = (unsigned char *)a;
+    unsigned char *pb = (unsigned char *)b;
+    while (n--) {
+        unsigned char t = *pa;
+        *pa++ = *pb;
+        *pb++ = t;
+    }
 }
 
 /* ---------------------------------------------------------------

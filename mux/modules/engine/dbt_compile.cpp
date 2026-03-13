@@ -191,19 +191,37 @@ static uint64_t tier2_lookup(const std::string &mux_name) {
 //
 static void pretranslate_tier2(dbt_state_t *dbt) {
     if (!s_tier2.loaded) return;
-    for (auto &kv : s_tier2.funcs) {
-        dbt_pretranslate(dbt, kv.second.guest_addr);
+
+    // Register intrinsics FIRST — translate_block() checks these
+    // addresses and emits native x86-64 stubs instead of translating
+    // the RV64 byte-loop fallbacks.  Must happen before pretranslation
+    // so that rv64_slen, rv64_scopy, memcpy, etc. get stub blocks
+    // rather than translated RV64.
+    //
+    static const struct { const char *name; size_t offset; } intrinsic_map[] = {
+        { "rv64_slen",    offsetof(dbt_state_t, intrinsic_slen) },
+        { "rv64_scopy",   offsetof(dbt_state_t, intrinsic_scopy) },
+        { "memcpy",       offsetof(dbt_state_t, intrinsic_memcpy) },
+        { "memcmp",       offsetof(dbt_state_t, intrinsic_memcmp) },
+        { "memset",       offsetof(dbt_state_t, intrinsic_memset) },
+        { "memswap",      offsetof(dbt_state_t, intrinsic_memswap) },
+        { nullptr, 0 }
+    };
+    for (int i = 0; intrinsic_map[i].name; i++) {
+        auto it = s_tier2.funcs.find(intrinsic_map[i].name);
+        if (it != s_tier2.funcs.end()) {
+            *reinterpret_cast<uint64_t *>(
+                reinterpret_cast<char *>(dbt) + intrinsic_map[i].offset
+            ) = it->second.guest_addr;
+        }
     }
 
-    // Register intrinsics — the DBT will emit native x86-64 for JAL
-    // calls to these addresses instead of translating the RV64 code.
-    auto slen_it = s_tier2.funcs.find("rv64_slen");
-    if (slen_it != s_tier2.funcs.end()) {
-        dbt->intrinsic_slen = slen_it->second.guest_addr;
-    }
-    auto scopy_it = s_tier2.funcs.find("rv64_scopy");
-    if (scopy_it != s_tier2.funcs.end()) {
-        dbt->intrinsic_scopy = scopy_it->second.guest_addr;
+    // Now pretranslate all Tier 2 functions.  For intrinsic addresses,
+    // translate_block() → try_emit_intrinsic() will emit native stubs.
+    // For non-intrinsic functions, normal RV64 translation proceeds.
+    //
+    for (auto &kv : s_tier2.funcs) {
+        dbt_pretranslate(dbt, kv.second.guest_addr);
     }
 }
 

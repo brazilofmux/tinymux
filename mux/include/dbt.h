@@ -133,6 +133,10 @@ struct dbt_state_t {
     //
     uint64_t intrinsic_slen;     // rv64_slen guest address (0 = not registered)
     uint64_t intrinsic_scopy;    // rv64_scopy guest address (0 = not registered)
+    uint64_t intrinsic_memcpy;   // rv64_memcpy guest address (0 = not registered)
+    uint64_t intrinsic_memcmp;   // rv64_memcmp guest address (0 = not registered)
+    uint64_t intrinsic_memset;   // rv64_memset guest address (0 = not registered)
+    uint64_t intrinsic_memswap;  // rv64_memswap guest address (0 = not registered)
     uint64_t intrinsic_hits;     // stat: intrinsic calls emitted
 
     // Debug.
