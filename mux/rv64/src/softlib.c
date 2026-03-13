@@ -72,6 +72,21 @@ size_t co_insert_word(unsigned char *out, const unsigned char *list,
                       size_t llen, size_t pos, const unsigned char *word,
                       size_t wlen, unsigned char delim, unsigned char osep);
 
+/* New co_* functions for Tier 2 wrappers below. */
+size_t co_cluster_count(const unsigned char *data, size_t len);
+size_t co_tolower(unsigned char *out, const unsigned char *p, size_t len);
+size_t co_toupper(unsigned char *out, const unsigned char *p, size_t len);
+size_t co_reverse(unsigned char *out, const unsigned char *p, size_t len);
+size_t co_escape(unsigned char *out, const unsigned char *data, size_t len);
+size_t co_left(unsigned char *out, const unsigned char *p, size_t len,
+               size_t n);
+size_t co_right(unsigned char *out, const unsigned char *p, size_t len,
+                size_t n);
+size_t co_compress(unsigned char *out, const unsigned char *p, size_t len,
+                   unsigned char compress_char);
+size_t co_lpos(unsigned char *out, const unsigned char *haystack, size_t hlen,
+               unsigned char pattern);
+
 /* ---------------------------------------------------------------
  * Intrinsic helpers — global and noinline so the DBT can intercept
  * JAL calls to these and emit native x86-64 instead of translating
@@ -554,6 +569,97 @@ char *co_insert_wrap(char *out, const char **fargs, int nfargs) {
                               (const unsigned char *)fargs[2],
                               rv64_slen(fargs[2]),
                               delim, osep);
+    out[n] = '\0';
+    return out;
+}
+
+/* ---------------------------------------------------------------
+ * Batch 2 wrappers: strlen, case conversion, reverse, escape,
+ * left/right, compress, lpos.
+ * --------------------------------------------------------------- */
+
+char *co_strlen_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1 || fargs[0][0] == '\0') {
+        out[0] = '0'; out[1] = '\0'; return out;
+    }
+    size_t count = co_cluster_count((const unsigned char *)fargs[0],
+                                     rv64_slen(fargs[0]));
+    sitoa(out, (int)count);
+    return out;
+}
+
+char *co_lcstr_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '\0'; return out; }
+    size_t n = co_tolower((unsigned char *)out,
+                          (const unsigned char *)fargs[0],
+                          rv64_slen(fargs[0]));
+    out[n] = '\0';
+    return out;
+}
+
+char *co_ucstr_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '\0'; return out; }
+    size_t n = co_toupper((unsigned char *)out,
+                          (const unsigned char *)fargs[0],
+                          rv64_slen(fargs[0]));
+    out[n] = '\0';
+    return out;
+}
+
+char *co_reverse_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '\0'; return out; }
+    size_t n = co_reverse((unsigned char *)out,
+                          (const unsigned char *)fargs[0],
+                          rv64_slen(fargs[0]));
+    out[n] = '\0';
+    return out;
+}
+
+char *co_escape_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '\0'; return out; }
+    size_t n = co_escape((unsigned char *)out,
+                         (const unsigned char *)fargs[0],
+                         rv64_slen(fargs[0]));
+    out[n] = '\0';
+    return out;
+}
+
+char *co_left_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '\0'; return out; }
+    size_t count = (size_t)atol(fargs[1]);
+    size_t n = co_left((unsigned char *)out,
+                       (const unsigned char *)fargs[0],
+                       rv64_slen(fargs[0]), count);
+    out[n] = '\0';
+    return out;
+}
+
+char *co_right_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '\0'; return out; }
+    size_t count = (size_t)atol(fargs[1]);
+    size_t n = co_right((unsigned char *)out,
+                        (const unsigned char *)fargs[0],
+                        rv64_slen(fargs[0]), count);
+    out[n] = '\0';
+    return out;
+}
+
+char *co_compress_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '\0'; return out; }
+    unsigned char ch = (nfargs >= 2 && fargs[1][0]) ? fargs[1][0] : ' ';
+    size_t n = co_compress((unsigned char *)out,
+                           (const unsigned char *)fargs[0],
+                           rv64_slen(fargs[0]), ch);
+    out[n] = '\0';
+    return out;
+}
+
+char *co_lpos_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2 || fargs[1][0] == '\0') { out[0] = '\0'; return out; }
+    size_t n = co_lpos((unsigned char *)out,
+                       (const unsigned char *)fargs[0],
+                       rv64_slen(fargs[0]),
+                       (unsigned char)fargs[1][0]);
     out[n] = '\0';
     return out;
 }

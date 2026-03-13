@@ -612,6 +612,14 @@ static void emit_stub_co_generic(void *ev, void *fn,
 //
 // Since ptr_mask is per-arg, each function needs its own mask.
 
+// 2 args: co_cluster_count(p, len)
+//   a0=ptr, a1=int  → mask=0x01
+DEFINE_CO_EMITTER(co_2p, 2, 0x01)
+
+// 3 args: co_tolower/co_toupper/co_reverse/co_escape(out, p, len)
+//   a0=ptr, a1=ptr, a2=int  → mask=0x03
+DEFINE_CO_EMITTER(co_3pp, 3, 0x03)
+
 // 4 args: co_first/co_rest/co_last(out, p, len, delim)
 //   a0=ptr, a1=ptr, a2=int, a3=int  → mask=0x03
 DEFINE_CO_EMITTER(co_4pp, 4, 0x03)
@@ -715,6 +723,8 @@ static generic_emitter_fn s_emitter_table[] = {
     emit_stub_co_5pp,      // DBT_EMIT_CO_5PP
     emit_stub_co_member,   // DBT_EMIT_CO_MEMBER
     emit_stub_co_6pp,      // DBT_EMIT_CO_6PP
+    emit_stub_co_2p,       // DBT_EMIT_CO_2P
+    emit_stub_co_3pp,      // DBT_EMIT_CO_3PP
     emit_stub_co_7pp,      // DBT_EMIT_CO_7PP
     emit_stub_co_8ppp,     // DBT_EMIT_CO_8PPP
 };
@@ -2180,6 +2190,9 @@ done:
         dbt->superblock_count++;
         dbt->side_exits_total += num_side_exits;
     }
+    if (e.offset > e.capacity) {
+        return nullptr;
+    }
     dbt->code_used += e.offset;
     return block_start;
 }
@@ -2303,19 +2316,28 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
     dbt->ecall_fn = ecall_fn;
     dbt->ecall_user = ecall_user;
 
-    // Clear block cache and patch sites (invalidate all translated blocks).
-    memset(dbt->cache, 0, BLOCK_CACHE_SIZE * sizeof(block_entry_t));
-    dbt->num_patches = 0;
-
-    // Reset code buffer after the trampoline and re-emit it.
-    // The trampoline is small (~30 bytes) and identical every time,
-    // but re-emitting is simpler than tracking its exact size.
-    dbt->code_used = 0;
-    emit_trampoline(dbt);
-
-    // Clear intrinsics (re-registered by pretranslate_tier2).
-    dbt->num_intrinsics = 0;
-    memset(dbt->intrinsics, 0, sizeof(dbt->intrinsics));
+    if (dbt->blob_code_end > 0) {
+        // Preserve blob translations: only clear program blocks.
+        // Evict cache entries whose native code is beyond the blob region.
+        uint8_t *blob_end = dbt->code_buf + dbt->blob_code_end;
+        for (size_t i = 0; i < BLOCK_CACHE_SIZE; i++) {
+            if (dbt->cache[i].native_code >= blob_end) {
+                dbt->cache[i].guest_pc = 0;
+                dbt->cache[i].native_code = nullptr;
+            }
+        }
+        dbt->num_patches = 0;
+        dbt->code_used = dbt->blob_code_end;
+        // Keep intrinsics — they're blob-related.
+    } else {
+        // No blob — full reset.
+        memset(dbt->cache, 0, BLOCK_CACHE_SIZE * sizeof(block_entry_t));
+        dbt->num_patches = 0;
+        dbt->code_used = 0;
+        emit_trampoline(dbt);
+        dbt->num_intrinsics = 0;
+        memset(dbt->intrinsics, 0, sizeof(dbt->intrinsics));
+    }
 
     // Reset statistics.
     dbt->blocks_translated = 0;
@@ -2359,6 +2381,7 @@ void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc) {
         if (cache_lookup(dbt, pc)) continue;
 
         uint8_t *code = translate_block(dbt, pc);
+        if (!code) continue;  // code buffer full — skip this block
         cache_insert(dbt, pc, code);
         backpatch_chains(dbt, pc, code);
 
@@ -2448,6 +2471,10 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
             code = be->native_code;
         } else {
             code = translate_block(dbt, pc);
+            if (!code) {
+                dbt->dispatch_count = dispatch_count;
+                return -1;  // code buffer full
+            }
             cache_insert(dbt, pc, code);
 
             // Backpatch any chained exits that were waiting for this block.

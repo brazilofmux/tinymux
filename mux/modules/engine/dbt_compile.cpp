@@ -113,9 +113,17 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "BEFORE",      "rv64_before" },
     { "AFTER",       "rv64_after" },
 
-    // strlen: native strips ANSI and counts UTF-8 clusters; Tier 2 counts
-    // raw bytes.  Must use ECALL for correct behavior.
-    // { "STRLEN",      "rv64_strlen" },
+    // --- Batch 2: case, reverse, escape, left/right, compress, lpos ---
+    //
+    { "STRLEN",      "co_strlen_wrap" },
+    { "LCSTR",       "co_lcstr_wrap" },
+    { "UCSTR",       "co_ucstr_wrap" },
+    { "REVERSE",     "co_reverse_wrap" },
+    { "ESCAPE",      "co_escape_wrap" },
+    { "LEFT",        "co_left_wrap" },
+    { "RIGHT",       "co_right_wrap" },
+    { "COMPRESS",    "co_compress_wrap" },
+    { "LPOS",        "co_lpos_wrap" },
 
     { nullptr, nullptr }
 };
@@ -228,6 +236,17 @@ extern "C" {
     size_t co_setunion(unsigned char *, const unsigned char *, size_t, const unsigned char *, size_t, unsigned char, unsigned char, char);
     size_t co_setdiff(unsigned char *, const unsigned char *, size_t, const unsigned char *, size_t, unsigned char, unsigned char, char);
     size_t co_setinter(unsigned char *, const unsigned char *, size_t, const unsigned char *, size_t, unsigned char, unsigned char, char);
+
+    // Batch 2: inner co_* functions called by wrappers.
+    size_t co_cluster_count(const unsigned char *, size_t);
+    size_t co_tolower(unsigned char *, const unsigned char *, size_t);
+    size_t co_toupper(unsigned char *, const unsigned char *, size_t);
+    size_t co_reverse(unsigned char *, const unsigned char *, size_t);
+    size_t co_escape(unsigned char *, const unsigned char *, size_t);
+    size_t co_left(unsigned char *, const unsigned char *, size_t, size_t);
+    size_t co_right(unsigned char *, const unsigned char *, size_t, size_t);
+    size_t co_compress(unsigned char *, const unsigned char *, size_t, unsigned char);
+    size_t co_lpos(unsigned char *, const unsigned char *, size_t, unsigned char);
 }
 
 static void pretranslate_tier2(dbt_state_t *dbt) {
@@ -281,6 +300,23 @@ static void pretranslate_tier2(dbt_state_t *dbt) {
     reg_intrinsic(dbt, "co_setunion", DBT_EMIT_CO_8PPP, reinterpret_cast<void *>(co_setunion));
     reg_intrinsic(dbt, "co_setdiff",  DBT_EMIT_CO_8PPP, reinterpret_cast<void *>(co_setdiff));
     reg_intrinsic(dbt, "co_setinter", DBT_EMIT_CO_8PPP, reinterpret_cast<void *>(co_setinter));
+
+    // Batch 2: inner co_* functions called by wrappers.
+    //
+    // 2 args: (data:ptr, len:int)
+    reg_intrinsic(dbt, "co_cluster_count", DBT_EMIT_CO_2P, reinterpret_cast<void *>(co_cluster_count));
+
+    // 3 args: (out:ptr, p:ptr, len:int)
+    reg_intrinsic(dbt, "co_tolower",  DBT_EMIT_CO_3PP, reinterpret_cast<void *>(co_tolower));
+    reg_intrinsic(dbt, "co_toupper",  DBT_EMIT_CO_3PP, reinterpret_cast<void *>(co_toupper));
+    reg_intrinsic(dbt, "co_reverse",  DBT_EMIT_CO_3PP, reinterpret_cast<void *>(co_reverse));
+    reg_intrinsic(dbt, "co_escape",   DBT_EMIT_CO_3PP, reinterpret_cast<void *>(co_escape));
+
+    // 4 args: (out:ptr, p:ptr, len:int, n:int)
+    reg_intrinsic(dbt, "co_left",     DBT_EMIT_CO_4PP, reinterpret_cast<void *>(co_left));
+    reg_intrinsic(dbt, "co_right",    DBT_EMIT_CO_4PP, reinterpret_cast<void *>(co_right));
+    reg_intrinsic(dbt, "co_compress", DBT_EMIT_CO_4PP, reinterpret_cast<void *>(co_compress));
+    reg_intrinsic(dbt, "co_lpos",     DBT_EMIT_CO_4PP, reinterpret_cast<void *>(co_lpos));
 
     // Pretranslate all Tier 2 functions.  For intrinsic addresses,
     // translate_block() → try_emit_intrinsic() emits native stubs.
@@ -346,7 +382,7 @@ struct rv_compiler {
     int native_ops;         // number of native arithmetic ops
     bool needs_jit;         // true if any runtime code was emitted
 
-    static constexpr size_t MEM_SIZE     = 128 * 1024;
+    static constexpr size_t MEM_SIZE     = 256 * 1024;
     static constexpr uint64_t CODE_BASE  = 0x0000;
     static constexpr uint64_t CODE_LIMIT = 0x1000;
     static constexpr uint64_t STR_BASE   = 0x1000;
@@ -360,7 +396,7 @@ struct rv_compiler {
 
     // Tier 2 blob loaded at 0x10000 (above the per-expression region).
     static constexpr uint64_t BLOB_BASE  = 0x10000;
-    static constexpr uint64_t BLOB_LIMIT = 0x20000;  // 64KB for blob
+    static constexpr uint64_t BLOB_LIMIT = 0x40000;  // 192KB for blob + rodata
 
     rv_compiler() : memory(MEM_SIZE, 0),
                     str_pool(STR_BASE),
@@ -3639,12 +3675,16 @@ static bool run_cached_program(compiled_program *prog,
         dbt = &s_persistent_dbt;
         dbt_rerun(dbt, eval_ecall, &ec);
     } else {
-        // Different program — full reset needed.
+        // Different program — reset and re-translate program blocks.
+        // Blob translations persist via blob_code_end.
         dbt = get_dbt(prog->memory.data(), prog->memory_size,
                        eval_ecall, &ec);
         if (!dbt) return false;
         s_dbt_last_memory = prog->memory.data();
-        pretranslate_tier2(dbt);
+        if (dbt->blob_code_end == 0) {
+            pretranslate_tier2(dbt);
+            dbt->blob_code_end = dbt->code_used;
+        }
     }
 
     int rc = dbt_run(dbt, 0, rv_compiler::STACK_TOP);
@@ -3864,7 +3904,10 @@ static bool run_compiled(compiled_program &prog,
         dbt = get_dbt(prog.memory.data(), prog.memory_size,
                        eval_ecall, &ec);
         if (!dbt) return false;
-        pretranslate_tier2(dbt);
+        if (dbt->blob_code_end == 0) {
+            pretranslate_tier2(dbt);
+            dbt->blob_code_end = dbt->code_used;
+        }
     }
 
     int rc = dbt_run(dbt, 0, rv_compiler::STACK_TOP);

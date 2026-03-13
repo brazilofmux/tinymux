@@ -65,7 +65,7 @@ static_assert(sizeof(block_entry_t) == 16, "block_entry_t must be 16 bytes");
 static constexpr size_t BLOCK_CACHE_SIZE = 1024;       // must be power of 2
 static constexpr size_t BLOCK_CACHE_MASK = BLOCK_CACHE_SIZE - 1;
 
-static constexpr size_t CODE_BUF_SIZE = 256 * 1024;    // 256 KB JIT buffer
+static constexpr size_t CODE_BUF_SIZE = 1024 * 1024;   // 1 MB JIT buffer
 
 // Block chaining: patch site for backpatching JMP targets.
 // When a block exit targets a not-yet-translated PC, we record a patch
@@ -101,6 +101,7 @@ struct dbt_state_t {
     //
     uint8_t *code_buf;
     uint32_t code_used;
+    uint32_t blob_code_end;     // code_used after blob pretranslation
 
     // Block chaining patch sites.
     //
@@ -181,6 +182,9 @@ enum dbt_emitter_id {
     DBT_EMIT_CO_5PP,         // 5 args: a0=ptr, a1=ptr, a2-a4=int
     DBT_EMIT_CO_MEMBER,      // 5 args: a0=ptr, a1=int, a2=ptr, a3-a4=int
     DBT_EMIT_CO_6PP,         // 6 args: a0=ptr, a1=ptr, a2-a5=int
+
+    DBT_EMIT_CO_2P,          // 2 args: a0=ptr, a1=int
+    DBT_EMIT_CO_3PP,         // 3 args: a0=ptr, a1=ptr, a2=int
 
     // Extended patterns — overflow args passed on x86-64 stack.
     //

@@ -10,7 +10,7 @@
 ENTRY(rv64_cat)
 
 SECTIONS {
-    . = 0;
+    . = 0x10000;
     .text : { KEEP(*(.text*)) }
     .rodata : { *(.rodata*) }
     .data : { *(.data*) }
