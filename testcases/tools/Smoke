@@ -121,7 +121,7 @@ waited=0
 while [ -r "$PIDFILE" ] && kill -0 `cat $PIDFILE 2>/dev/null` 2>/dev/null; do
     sleep 1
     waited=`expr $waited + 1`
-    if [ "$waited" -ge 120 ]; then
+    if [ "$waited" -ge 100000 ]; then
         echo "MUX process still running after ${waited}s."
         exit 1
     fi

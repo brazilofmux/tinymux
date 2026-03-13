@@ -1858,6 +1858,21 @@ LBUF_OFFSET linewrap_general(const UTF8 *pStr,     LBUF_OFFSET nWidth,
                                fldPad + fldTemp);
         }
 
+        // Guarantee forward progress — if nextOff is 0 (single char
+        // wider than nLineWidth), skip at least one code point.
+        //
+        if (0 == nextOff)
+        {
+            const UTF8 *q = pCur;
+            if (*q < 0x80)      nextOff = 1;
+            else if (*q < 0xE0) nextOff = 2;
+            else if (*q < 0xF0) nextOff = 3;
+            else                nextOff = 4;
+            if (nextOff > remain)
+            {
+                nextOff = remain;
+            }
+        }
         pos += nextOff;
 
         // Emit right margin.
