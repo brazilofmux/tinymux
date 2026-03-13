@@ -2830,6 +2830,14 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
 
     for (;;) {
         dispatch_count++;
+
+        if (dbt->max_dispatch && dispatch_count > dbt->max_dispatch) {
+            dbt->dispatch_count = dispatch_count;
+            fprintf(stderr, "dbt: dispatch limit exceeded (%llu)\n",
+                    static_cast<unsigned long long>(dbt->max_dispatch));
+            return -2;
+        }
+
         uint64_t pc = dbt->ctx.next_pc;
 
         if (dbt->trace & DBT_TRACE_EXEC) {

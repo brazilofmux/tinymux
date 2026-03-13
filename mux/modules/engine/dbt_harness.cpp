@@ -301,6 +301,7 @@ FUNCTION(fun_rvcall)
         safe_str(T("#-1 DBT INIT FAILED"), buff, bufc);
         return;
     }
+    dbt.max_dispatch = 100000;  // safety net: catch infinite loops
 
     int rc = dbt_run(&dbt, 0, MEM_SIZE - 16);
     dbt_cleanup(&dbt);

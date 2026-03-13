@@ -3530,6 +3530,12 @@ static dbt_state_t *get_dbt(uint8_t *memory, size_t memory_size,
             return nullptr;
         }
         dbt_configure_trace_from_env(dbt);
+
+        // Dispatch limit: safety net during development.
+        // TINYMUX_DBT_MAX_DISPATCH overrides; 0 = unlimited.
+        const char *md_env = getenv("TINYMUX_DBT_MAX_DISPATCH");
+        dbt->max_dispatch = md_env ? strtoull(md_env, nullptr, 0) : 10000000;
+
         s_dbt_ready = true;
         return dbt;
     }

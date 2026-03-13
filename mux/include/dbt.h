@@ -145,6 +145,12 @@ struct dbt_state_t {
     int              num_intrinsics;
     uint64_t         intrinsic_hits;     // stat: intrinsic calls emitted
 
+    // Dispatch limit — 0 means unlimited.  When non-zero, dbt_run
+    // returns -2 if the dispatch loop exceeds this count.  Turns
+    // infinite-loop bugs into test failures instead of hangs.
+    //
+    uint64_t max_dispatch;
+
     // Debug.
     //
     int trace;
