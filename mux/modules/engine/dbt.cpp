@@ -786,26 +786,44 @@ void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,
 // Block cache
 // ---------------------------------------------------------------
 
-static inline uint32_t cache_hash(uint64_t pc) {
+// Hash to set index (0..BLOCK_CACHE_SETS-1).
+//
+static inline uint32_t cache_set(uint64_t pc) {
     uint32_t h = static_cast<uint32_t>(pc >> 2);
     h ^= (h >> 10);
     return h & BLOCK_CACHE_MASK;
 }
 
+// For compatibility with JIT inline probes that use the old name.
+static inline uint32_t cache_hash(uint64_t pc) { return cache_set(pc); }
+
 static block_entry_t *cache_lookup(dbt_state_t *dbt, uint64_t pc) {
-    block_entry_t *e = &dbt->cache[cache_hash(pc)];
-    if (e->guest_pc == pc && e->native_code) {
-        dbt->cache_hits++;
-        return e;
+    uint32_t set = cache_set(pc);
+    block_entry_t *base = &dbt->cache[set * BLOCK_CACHE_WAYS];
+    for (size_t w = 0; w < BLOCK_CACHE_WAYS; w++) {
+        if (base[w].guest_pc == pc && base[w].native_code) {
+            dbt->cache_hits++;
+            return &base[w];
+        }
     }
     dbt->cache_misses++;
     return nullptr;
 }
 
 static void cache_insert(dbt_state_t *dbt, uint64_t pc, uint8_t *code) {
-    block_entry_t *e = &dbt->cache[cache_hash(pc)];
-    e->guest_pc = pc;
-    e->native_code = code;
+    uint32_t set = cache_set(pc);
+    block_entry_t *base = &dbt->cache[set * BLOCK_CACHE_WAYS];
+    // Use first empty way.
+    for (size_t w = 0; w < BLOCK_CACHE_WAYS; w++) {
+        if (base[w].guest_pc == 0) {
+            base[w].guest_pc = pc;
+            base[w].native_code = code;
+            return;
+        }
+    }
+    // All ways occupied — evict way 0 (FIFO).
+    base[0].guest_pc = pc;
+    base[0].native_code = code;
 }
 
 // ---------------------------------------------------------------
@@ -876,11 +894,11 @@ static void emit_ras_pop_and_probe(emit_t *e, dbt_state_t *dbt) {
     emit_cmp_r64(e, X64_RCX, X64_RDX);
     uint32_t jne_miss = emit_jcc_rel32(e, JCC_NE);
 
-    // RAS hit: inline block cache probe.
-    // index = ((rcx >> 2) ^ ((rcx >> 2) >> 10)) & BLOCK_CACHE_MASK
+    // RAS hit: inline block cache probe (4-way set-associative).
+    // set = ((rcx >> 2) ^ ((rcx >> 2) >> 10)) & BLOCK_CACHE_MASK
+    // base_offset = set * WAYS * 16 = set * 64
     emit_mov_r64(e, X64_RAX, X64_RCX);
     emit_shr_r64_imm(e, X64_RAX, 2);
-    // xor rax, (rax >> 10) — spread high bits to avoid Tier 2 collisions
     emit_mov_r64(e, X64_RDX, X64_RAX);
     emit_shr_r64_imm(e, X64_RDX, 10);
     // xor rax, rdx
@@ -888,38 +906,51 @@ static void emit_ras_pop_and_probe(emit_t *e, dbt_state_t *dbt) {
     emit_byte(e, 0x33);
     emit_byte(e, modrm(0x03, X64_RAX, X64_RDX));
     emit_and_r64_imm(e, X64_RAX, static_cast<int32_t>(BLOCK_CACHE_MASK));
+    // rax = set * 64 (4 ways × 16 bytes each)
+    emit_shl_r64_imm(e, X64_RAX, 6);
 
-    // entry = R13 + index * 16 (sizeof block_entry_t)
-    emit_shl_r64_imm(e, X64_RAX, 4);
-    // cmp [r13 + rax + 0], rcx  — check guest_pc
-    emit_byte(e, rex(1, reg_hi(X64_RCX), reg_hi(X64_RAX), 1));
-    emit_byte(e, 0x3B);
-    emit_byte(e, modrm(0x01, X64_RCX, 0x04)); // SIB
-    emit_byte(e, static_cast<uint8_t>((reg_lo(X64_RAX) << 3) | reg_lo(X64_R13)));
-    emit_byte(e, 0x00); // disp8 = 0
-    uint32_t jne_cache_miss = emit_jcc_rel32(e, JCC_NE);
+    // Probe 4 ways: check [r13 + rax + way*16].guest_pc == rcx
+    uint32_t jmp_hits[BLOCK_CACHE_WAYS];
+    uint32_t jne_misses[BLOCK_CACHE_WAYS];
+    for (size_t w = 0; w < BLOCK_CACHE_WAYS; w++) {
+        int32_t disp = static_cast<int32_t>(w * 16);
+        // cmp [r13 + rax + disp], rcx
+        emit_byte(e, rex(1, reg_hi(X64_RCX), reg_hi(X64_RAX), 1));
+        emit_byte(e, 0x3B);
+        if (disp == 0) {
+            emit_byte(e, modrm(0x01, X64_RCX, 0x04)); // SIB, disp8
+            emit_byte(e, static_cast<uint8_t>((reg_lo(X64_RAX) << 3) | reg_lo(X64_R13)));
+            emit_byte(e, 0x00);
+        } else {
+            emit_byte(e, modrm(0x01, X64_RCX, 0x04)); // SIB, disp8
+            emit_byte(e, static_cast<uint8_t>((reg_lo(X64_RAX) << 3) | reg_lo(X64_R13)));
+            emit_byte(e, static_cast<uint8_t>(disp));
+        }
+        jne_misses[w] = emit_jcc_rel32(e, JCC_NE);
 
-    // Cache hit: load native_code and jump.
-    // mov rax, [r13 + rax + 8]
-    emit_byte(e, rex(1, reg_hi(X64_RAX), reg_hi(X64_RAX), 1));
-    emit_byte(e, 0x8B);
-    emit_byte(e, modrm(0x01, X64_RAX, 0x04)); // SIB
-    emit_byte(e, static_cast<uint8_t>((reg_lo(X64_RAX) << 3) | reg_lo(X64_R13)));
-    emit_byte(e, 0x08); // disp8 = 8
+        // Hit: load native_code from [r13 + rax + disp + 8]
+        emit_byte(e, rex(1, reg_hi(X64_RDX), reg_hi(X64_RAX), 1));
+        emit_byte(e, 0x8B);
+        emit_byte(e, modrm(0x01, X64_RDX, 0x04)); // SIB, disp8
+        emit_byte(e, static_cast<uint8_t>((reg_lo(X64_RAX) << 3) | reg_lo(X64_R13)));
+        emit_byte(e, static_cast<uint8_t>(disp + 8));
 
-    // test rax, rax (null check)
-    emit_test_r64(e, X64_RAX, X64_RAX);
-    uint32_t jz_null = emit_jcc_rel32(e, JCC_E);
+        emit_test_r64(e, X64_RDX, X64_RDX);
+        uint32_t jz_skip = emit_jcc_rel32(e, JCC_E);
 
-    // jmp rax — direct to native code!
-    emit_byte(e, 0xFF);
-    emit_byte(e, modrm(0x03, 4, X64_RAX)); // jmp rax
-    dbt->ras_hits++;
+        // jmp rdx — direct to native code!
+        emit_byte(e, 0xFF);
+        emit_byte(e, modrm(0x03, 4, X64_RDX)); // jmp rdx
+        dbt->ras_hits++;
 
-    // Miss paths: fall through to indirect exit.
+        // Null native_code: fall through to next way.
+        emit_patch_rel32(e, jz_skip, emit_pos(e));
+        // Patch miss to next way's check.
+        emit_patch_rel32(e, jne_misses[w], emit_pos(e));
+    }
+
+    // All 4 ways missed: fall through to indirect exit.
     emit_patch_rel32(e, jne_miss, emit_pos(e));
-    emit_patch_rel32(e, jne_cache_miss, emit_pos(e));
-    emit_patch_rel32(e, jz_null, emit_pos(e));
     dbt->ras_misses++;
 }
 
@@ -959,10 +990,9 @@ static void backpatch_chains(dbt_state_t *dbt, uint64_t guest_pc,
 //
 static void emit_exit_chained(emit_t *e, dbt_state_t *dbt,
                                uint64_t target_pc) {
-    // Check if target is already translated.
-    uint32_t idx = cache_hash(target_pc);
-    block_entry_t *be = &dbt->cache[idx];
-    bool known = (be->guest_pc == target_pc && be->native_code);
+    // Check if target is already translated (4-way lookup).
+    block_entry_t *be = cache_lookup(dbt, target_pc);
+    bool known = (be != nullptr);
 
     // Emit JMP rel32.
     emit_byte(e, 0xE9);
@@ -1610,9 +1640,15 @@ no_addr_fusion:
             // here.  The entire loop body stays in one x86-64 block.
             //
             if (insn.rd == 1) {
-                uint32_t idx = cache_hash(target);
-                block_entry_t *be = &dbt->cache[idx];
-                if (be->guest_pc == target && be->native_code) {
+                block_entry_t *be = cache_lookup(dbt, target);
+                if (dbt_trace_translate_enabled(dbt, guest_pc)) {
+                    fprintf(stderr, "[dbt] inline_call? pc=0x%llX target=0x%llX "
+                            "found=%d\n",
+                            static_cast<unsigned long long>(pc),
+                            static_cast<unsigned long long>(target),
+                            be ? 1 : 0);
+                }
+                if (be) {
                     // Flush cached registers — callee reads from ctx.
                     rc_flush(&e, &rc);
 
@@ -2840,13 +2876,13 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
 
         uint64_t pc = dbt->ctx.next_pc;
 
-        if (dbt->trace & DBT_TRACE_EXEC) {
-            fprintf(stderr, "[dbt] pc=0x%llX\n",
-                    static_cast<unsigned long long>(pc & ~3ULL));
-        }
-
         // ECALL signal: bit 0 set.
         if (pc & 1) {
+            if (dbt->trace & DBT_TRACE_EXEC) {
+                fprintf(stderr, "[dbt] disp=%llu ECALL pc=0x%llX\n",
+                        static_cast<unsigned long long>(dispatch_count),
+                        static_cast<unsigned long long>(pc & ~3ULL));
+            }
             dbt->ctx.next_pc = (pc & ~3ULL) + 4;
             int rc = dbt->ecall_fn(&dbt->ctx, dbt->ecall_user);
             if (rc >= 0) {
@@ -2870,6 +2906,11 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
         uint8_t *code;
         if (be) {
             code = be->native_code;
+            if (dbt->trace & DBT_TRACE_EXEC) {
+                fprintf(stderr, "[dbt] disp=%llu HIT  pc=0x%llX\n",
+                        static_cast<unsigned long long>(dispatch_count),
+                        static_cast<unsigned long long>(pc));
+            }
         } else {
             code = translate_block(dbt, pc);
             if (!code) {
@@ -2880,6 +2921,11 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
 
             // Backpatch any chained exits that were waiting for this block.
             backpatch_chains(dbt, pc, code);
+            if (dbt->trace & DBT_TRACE_EXEC) {
+                fprintf(stderr, "[dbt] disp=%llu MISS pc=0x%llX\n",
+                        static_cast<unsigned long long>(dispatch_count),
+                        static_cast<unsigned long long>(pc));
+            }
         }
 
         // Execute.

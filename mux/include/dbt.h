@@ -53,7 +53,10 @@ static constexpr int CTX_FCSR_OFF    = 784;
 
 // Block cache entry — exactly 16 bytes for inline JIT lookup.
 // R13 points to cache[0] during execution.
-// Lookup: index = (pc >> 2) & MASK; entry = R13 + index * 16
+//
+// 4-way set-associative: 1024 sets × 4 ways = 4096 entries.
+// Layout: entries[set * WAYS + way].  Each set is 64 bytes (4 × 16).
+// Lookup: set = hash(pc); scan ways 0..3 for guest_pc match.
 //
 struct block_entry_t {
     uint64_t guest_pc;      // guest start address (0 = empty)
@@ -62,8 +65,10 @@ struct block_entry_t {
 
 static_assert(sizeof(block_entry_t) == 16, "block_entry_t must be 16 bytes");
 
-static constexpr size_t BLOCK_CACHE_SIZE = 1024;       // must be power of 2
-static constexpr size_t BLOCK_CACHE_MASK = BLOCK_CACHE_SIZE - 1;
+static constexpr size_t BLOCK_CACHE_SETS = 1024;       // must be power of 2
+static constexpr size_t BLOCK_CACHE_WAYS = 4;
+static constexpr size_t BLOCK_CACHE_SIZE = BLOCK_CACHE_SETS * BLOCK_CACHE_WAYS;
+static constexpr size_t BLOCK_CACHE_MASK = BLOCK_CACHE_SETS - 1;
 
 static constexpr size_t CODE_BUF_SIZE = 1024 * 1024;   // 1 MB JIT buffer
 
