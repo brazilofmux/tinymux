@@ -1650,13 +1650,20 @@ FUNCTION(fun_squish)
     }
     else
     {
-        // Multi-char separator: fall back to mux_string.
+        // Multi-char separator: use co_compress_str.
         //
-        mux_string *sStr = new mux_string(fargs[0]);
-        sStr->compress(sep.str, sep.n);
+        size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
+        unsigned char out[LBUF_SIZE];
+        size_t nOut = co_compress_str(out,
+                          reinterpret_cast<const unsigned char *>(fargs[0]),
+                          nLen,
+                          reinterpret_cast<const unsigned char *>(sep.str),
+                          sep.n);
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-        delete sStr;
+        if (nOut > nMax) nOut = nMax;
+        memcpy(*bufc, out, nOut);
+        *bufc += nOut;
+        **bufc = '\0';
     }
 }
 
@@ -1769,55 +1776,48 @@ FUNCTION(fun_columns)
         return;
     }
 
-    mux_string *sStr = nullptr;
-    mux_words *words = nullptr;
-    try
-    {
-        sStr = new mux_string(cp);
-        words = new mux_words(*sStr);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    const unsigned char *pData = reinterpret_cast<const unsigned char *>(cp);
+    size_t nLen_d = strlen(reinterpret_cast<const char *>(cp));
 
-    LBUF_OFFSET nWords;
-    if (  nullptr == sStr
-       || nullptr == words
-       || 0 == (nWords = words->find_Words(sep.str)))
+    size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+    size_t nWords = co_split_words(pData, nLen_d,
+                        reinterpret_cast<const unsigned char *>(sep.str),
+                        sep.n, wstarts, wends, LBUF_SIZE);
+
+    if (0 == nWords)
     {
-        delete sStr;
-        delete words;
         return;
     }
 
     int nColumns = (78-nIndent)/nWidth;
     int iColumn = 0;
     int nLen = 0;
-    mux_cursor iStart, iEnd, iWordStart, iWordEnd;
 
     size_t nBufferAvailable = LBUF_SIZE - (*bufc-buff) - 1;
     bool bNeedCRLF = false;
-    for (LBUF_OFFSET i = 0; i < nWords && 0 < nBufferAvailable; i++)
+    for (size_t i = 0; i < nWords && 0 < nBufferAvailable; i++)
     {
         if (iColumn == 0)
         {
             safe_fill(buff, bufc, ' ', nIndent);
         }
 
-        iWordStart = words->wordBegin(i);
-        iWordEnd = words->wordEnd(i);
-
-        nLen = sStr->visual_width(iWordStart, iWordEnd);
+        const unsigned char *pWord = pData + wstarts[i];
+        size_t nWordBytes = wends[i] - wstarts[i];
+        nLen = static_cast<int>(co_visual_width(pWord, nWordBytes));
         if (nWidth < nLen)
         {
             nLen = nWidth;
         }
 
-        iStart = iWordStart;
-        sStr->cursor_from_column(iEnd, static_cast<LBUF_OFFSET>(nLen), iWordStart);
+        /* Copy up to nLen display columns of this word. */
+        unsigned char wordOut[LBUF_SIZE];
+        size_t nOut = co_copy_columns(wordOut, pWord,
+                          pWord + nWordBytes, static_cast<size_t>(nLen));
         nBufferAvailable = LBUF_SIZE - (*bufc-buff) - 1;
-        *bufc += sStr->export_TextColor(*bufc, iStart, iEnd, nBufferAvailable);
+        if (nOut > nBufferAvailable) nOut = nBufferAvailable;
+        memcpy(*bufc, wordOut, nOut);
+        *bufc += nOut;
 
         if (nColumns-1 <= iColumn)
         {
@@ -1838,8 +1838,6 @@ FUNCTION(fun_columns)
     {
         safe_copy_buf(T("\r\n"), 2, buff, bufc);
     }
-    delete sStr;
-    delete words;
 }
 
 // table(<list>,<field width>,<line length>,<delimiter>,<output separator>, <padding>)
@@ -3055,29 +3053,14 @@ FUNCTION(fun_elements)
     }
     else
     {
-        // Multi-char delimiter: fall back to mux_string.
+        // Multi-char delimiter: use co_split_words.
         //
-        mux_string *sStr = nullptr;
-        mux_words *words = nullptr;
-        try
-        {
-            sStr  = new mux_string(fargs[0]);
-            words = new mux_words(*sStr);
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (  nullptr == sStr
-           || nullptr == words)
-        {
-            delete sStr;
-            delete words;
-            return;
-        }
-
-        LBUF_OFFSET nWords = words->find_Words(sep.str);
+        const unsigned char *pData = reinterpret_cast<const unsigned char *>(fargs[0]);
+        size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
+        size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+        size_t nWords = co_split_words(pData, nLen,
+                            reinterpret_cast<const unsigned char *>(sep.str),
+                            sep.n, wstarts, wends, LBUF_SIZE);
 
         bool bFirst = true;
         UTF8 *s = trim_space_sep(fargs[1], sepSpace);
@@ -3097,11 +3080,13 @@ FUNCTION(fun_elements)
                 {
                     bFirst = false;
                 }
-                words->export_WordColor(static_cast<LBUF_OFFSET>(cur), buff, bufc);
+                size_t nb = wends[cur] - wstarts[cur];
+                size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+                if (nb > nMax) nb = nMax;
+                memcpy(*bufc, pData + wstarts[cur], nb);
+                *bufc += nb;
             }
         } while (s);
-
-        delete sStr;
-        delete words;
+        **bufc = '\0';
     }
 }

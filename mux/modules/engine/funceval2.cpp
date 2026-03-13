@@ -220,62 +220,31 @@ FUNCTION(fun_shuffle)
     }
     else
     {
-        // Multi-char delimiter: fall back to mux_string.
+        // Multi-char delimiter: use co_split_words + Fisher-Yates.
         //
-        mux_string *sIn = nullptr;
-        mux_words *words = nullptr;
-        try
-        {
-            sIn = new mux_string(fargs[0]);
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
+        const unsigned char *pData = reinterpret_cast<const unsigned char *>(fargs[0]);
+        size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
+        size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+        size_t nWords = co_split_words(pData, nLen,
+                            reinterpret_cast<const unsigned char *>(sep.str),
+                            sep.n, wstarts, wends, LBUF_SIZE);
 
-        if (nullptr == sIn)
-        {
-            return;
-        }
+        /* Build index array and shuffle via Fisher-Yates. */
+        LBUF_OFFSET indices[LBUF_SIZE];
+        for (size_t j = 0; j < nWords; j++)
+            indices[j] = static_cast<LBUF_OFFSET>(j);
 
-        try
+        for (size_t j = nWords; j > 1; j--)
         {
-            words = new mux_words(*sIn);
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == words)
-        {
-            delete sIn;
-            return;
-        }
-
-        LBUF_OFFSET n = words->find_Words(sep.str);
-        mux_string *sOut = nullptr;
-        try
-        {
-            sOut = new mux_string;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == sOut)
-        {
-            delete sIn;
-            delete words;
-            return;
+            LBUF_OFFSET pick = static_cast<LBUF_OFFSET>(
+                RandomINT32(0, static_cast<int32_t>(j) - 1));
+            LBUF_OFFSET tmp = indices[j-1];
+            indices[j-1] = indices[pick];
+            indices[pick] = tmp;
         }
 
         bool bFirst = true;
-        LBUF_OFFSET i = 0;
-        mux_cursor iStart = CursorMin, iEnd = CursorMin;
-
-        while (n > 0)
+        for (size_t j = 0; j < nWords; j++)
         {
             if (bFirst)
             {
@@ -283,21 +252,16 @@ FUNCTION(fun_shuffle)
             }
             else
             {
-                sOut->append(osep.str, osep.n);
+                print_sep(osep, buff, bufc);
             }
-            i = static_cast<LBUF_OFFSET>(RandomINT32(0, static_cast<int32_t>(n-1)));
-            iStart = words->wordBegin(i);
-            iEnd = words->wordEnd(i);
-            sOut->append(*sIn, iStart, iEnd);
-            words->ignore_Word(i);
-            n--;
+            LBUF_OFFSET w = indices[j];
+            size_t nb = wends[w] - wstarts[w];
+            size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+            if (nb > nMax) nb = nMax;
+            memcpy(*bufc, pData + wstarts[w], nb);
+            *bufc += nb;
         }
-        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sOut->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-
-        delete words;
-        delete sIn;
-        delete sOut;
+        **bufc = '\0';
     }
 }
 
@@ -344,33 +308,25 @@ FUNCTION(fun_pickrand)
     }
     else
     {
-        // Multi-char delimiter: fall back to mux_string.
+        // Multi-char delimiter: use co_split_words.
         //
-        mux_string *sStr = nullptr;
-        mux_words *words = nullptr;
-        try
+        const unsigned char *pData = reinterpret_cast<const unsigned char *>(s);
+        size_t nLen = strlen(reinterpret_cast<const char *>(s));
+        size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+        size_t nWords = co_split_words(pData, nLen,
+                            reinterpret_cast<const unsigned char *>(sep.str),
+                            sep.n, wstarts, wends, LBUF_SIZE);
+        if (nWords > 0)
         {
-            sStr = new mux_string(s);
-            words = new mux_words(*sStr);
+            LBUF_OFFSET w = static_cast<LBUF_OFFSET>(
+                RandomINT32(0, static_cast<int32_t>(nWords) - 1));
+            size_t nb = wends[w] - wstarts[w];
+            size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+            if (nb > nMax) nb = nMax;
+            memcpy(*bufc, pData + wstarts[w], nb);
+            *bufc += nb;
+            **bufc = '\0';
         }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (  nullptr != sStr
-           && nullptr != words)
-        {
-            int32_t n = static_cast<int32_t>(words->find_Words(sep.str));
-
-            if (0 < n)
-            {
-                LBUF_OFFSET w = static_cast<LBUF_OFFSET>(RandomINT32(0, n-1));
-                words->export_WordColor(w, buff, bufc);
-            }
-        }
-        delete sStr;
-        delete words;
     }
 }
 
@@ -542,28 +498,23 @@ FUNCTION(fun_last)
     }
     else
     {
-        // Multi-char delimiter: fall back to mux_string.
+        // Multi-char delimiter: use co_split_words.
         //
-        mux_string *sStr = nullptr;
-        mux_words *words = nullptr;
-        try
+        const unsigned char *pData = reinterpret_cast<const unsigned char *>(fargs[0]);
+        size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
+        size_t ws[LBUF_SIZE], we[LBUF_SIZE];
+        size_t nWords = co_split_words(pData, nLen,
+                            reinterpret_cast<const unsigned char *>(sep.str),
+                            sep.n, ws, we, LBUF_SIZE);
+        if (nWords > 0)
         {
-            sStr = new mux_string(fargs[0]);
-            words = new mux_words(*sStr);
+            size_t nb = we[nWords-1] - ws[nWords-1];
+            size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+            if (nb > nMax) nb = nMax;
+            memcpy(*bufc, pData + ws[nWords-1], nb);
+            *bufc += nb;
+            **bufc = '\0';
         }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (  nullptr != sStr
-           && nullptr != words)
-        {
-            LBUF_OFFSET nWords = words->find_Words(sep.str);
-            words->export_WordColor(nWords-1, buff, bufc);
-        }
-        delete sStr;
-        delete words;
     }
 }
 
@@ -612,36 +563,32 @@ FUNCTION(fun_lrest)
     }
     else
     {
-        // Multi-char delimiter: fall back to mux_string.
+        // Multi-char delimiter: use co_split_words.
         //
-        mux_string *sStr = nullptr;
-        mux_words *words = nullptr;
-        try
+        const unsigned char *pData = reinterpret_cast<const unsigned char *>(fargs[0]);
+        size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
+        size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+        size_t nWords = co_split_words(pData, nLen,
+                            reinterpret_cast<const unsigned char *>(sep.str),
+                            sep.n, wstarts, wends, LBUF_SIZE);
+        if (nWords > 1)
         {
-            sStr = new mux_string(fargs[0]);
-            words = new mux_words(*sStr);
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (  nullptr != sStr
-           && nullptr != words)
-        {
-            LBUF_OFFSET nWords = words->find_Words(sep.str);
-            if (nWords > 1)
+            size_t nb = wends[0] - wstarts[0];
+            size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+            if (nb > nMax) nb = nMax;
+            memcpy(*bufc, pData + wstarts[0], nb);
+            *bufc += nb;
+            for (size_t i = 1; i < nWords - 1; i++)
             {
-                words->export_WordColor(0, buff, bufc);
-                for (LBUF_OFFSET i = 1; i < nWords - 1; i++)
-                {
-                    print_sep(sep, buff, bufc);
-                    words->export_WordColor(i, buff, bufc);
-                }
+                print_sep(sep, buff, bufc);
+                nb = wends[i] - wstarts[i];
+                nMax = buff + (LBUF_SIZE-1) - *bufc;
+                if (nb > nMax) nb = nMax;
+                memcpy(*bufc, pData + wstarts[i], nb);
+                *bufc += nb;
             }
+            **bufc = '\0';
         }
-        delete sStr;
-        delete words;
     }
 }
 

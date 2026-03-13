@@ -3298,43 +3298,26 @@ static FUNCTION(fun_extract)
     }
     else
     {
-        // Multi-char delimiter: fall back to mux_string.
+        // Multi-char delimiter: use co_split_words.
         //
-        mux_string *sStr = nullptr;
-        mux_words *words = nullptr;
-        try
-        {
-            sStr = new mux_string(bp);
-            words = new mux_words(*sStr);
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (  nullptr == sStr
-           || nullptr == words)
-        {
-            delete sStr;
-            delete words;
-            return;
-        }
-
-        LBUF_OFFSET nWords = words->find_Words(sep.str);
+        const unsigned char *pData = reinterpret_cast<const unsigned char *>(bp);
+        size_t nLen = strlen(reinterpret_cast<const char *>(bp));
+        size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+        size_t nWords = co_split_words(pData, nLen,
+                            reinterpret_cast<const unsigned char *>(sep.str),
+                            sep.n, wstarts, wends, LBUF_SIZE);
 
         iFirstWord--;
-        if (iFirstWord < nWords)
+        if (iFirstWord < static_cast<int>(nWords))
         {
-            if (nWords < iFirstWord + nWordsToCopy)
+            if (static_cast<int>(nWords) < iFirstWord + nWordsToCopy)
             {
-                nWordsToCopy = nWords - iFirstWord;
+                nWordsToCopy = static_cast<int>(nWords) - iFirstWord;
             }
 
             bool bFirst = true;
 
-            for (LBUF_OFFSET i = static_cast<LBUF_OFFSET>(iFirstWord);
-                 i < iFirstWord + nWordsToCopy;
-                 i++)
+            for (int i = iFirstWord; i < iFirstWord + nWordsToCopy; i++)
             {
                 if (!bFirst)
                 {
@@ -3344,12 +3327,14 @@ static FUNCTION(fun_extract)
                 {
                     bFirst = false;
                 }
-                words->export_WordColor(i, buff, bufc);
+                size_t nb = wends[i] - wstarts[i];
+                size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+                if (nb > nMax) nb = nMax;
+                memcpy(*bufc, pData + wstarts[i], nb);
+                *bufc += nb;
             }
+            **bufc = '\0';
         }
-
-        delete sStr;
-        delete words;
     }
 }
 
@@ -4387,27 +4372,21 @@ static FUNCTION(fun_lpos)
 #define IF_REPLACE  1
 #define IF_INSERT   2
 
-static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList,
-   int nPositions, int aPositions[], mux_string *sWord, const SEP &sep,
-   const SEP &osep, int flag)
+static void do_itemfuns(UTF8 *buff, UTF8 **bufc,
+   const unsigned char *pList, size_t nListLen,
+   int nPositions, int aPositions[],
+   const unsigned char *pWord, size_t nWordLen,
+   const SEP &sep, const SEP &osep, int flag)
 {
     int j;
-    if (nullptr == sList)
+    if (nullptr == pList || 0 == nListLen)
     {
-        // Return an empty string if passed a null string.
-        //
-        return;
-    }
-    else if (0 == sList->length_byte())
-    {
-        if (IF_INSERT != flag)
+        if (IF_INSERT != flag || 0 == nListLen)
         {
-            // Return an empty string if performing a non-insert on an empty string.
-            //
-            return;
-        }
-        else
-        {
+            if (IF_INSERT != flag)
+            {
+                return;
+            }
             // For an insert operation on an empty string, the only valid positions are 1 and -1.
             //
             bool fFoundOne = false;
@@ -4428,24 +4407,12 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList,
         }
     }
 
-    // Parse list into words
+    // Parse list into words using co_split_words.
     //
-    mux_words *words = nullptr;
-    try
-    {
-        words = new mux_words(*sList);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-    if (nullptr == words)
-    {
-        ISOUTOFMEMORY(words);
-        return;
-    }
-
-    LBUF_OFFSET nWords = words->find_Words(sep.str, true);
+    size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+    size_t nWords = co_split_words(pList, nListLen,
+                        reinterpret_cast<const unsigned char *>(sep.str),
+                        sep.n, wstarts, wends, LBUF_SIZE);
 
     // Remove positions which are out of bounds.
     //
@@ -4457,11 +4424,11 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList,
         {
             if (IF_INSERT == flag)
             {
-                aPositions[j] += nWords + 1;
+                aPositions[j] += static_cast<int>(nWords) + 1;
             }
             else
             {
-                aPositions[j] += nWords;
+                aPositions[j] += static_cast<int>(nWords);
             }
         }
         else
@@ -4470,9 +4437,9 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList,
         }
 
         if (  aPositions[j] < 0
-           || (  nWords <= aPositions[j]
+           || (  static_cast<int>(nWords) <= aPositions[j]
               && (  flag != IF_INSERT
-                 || nWords < aPositions[j])))
+                 || static_cast<int>(nWords) < aPositions[j])))
         {
             // Remove position from list.
             //
@@ -4490,11 +4457,11 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList,
     std::sort(aPositions, aPositions + nPositions);
 
     bool fFirst = true;
-    LBUF_OFFSET i = 0;
+    size_t i = 0;
 
     for (j = 0; j < nPositions; j++)
     {
-        while (i < static_cast<LBUF_OFFSET>(aPositions[j]))
+        while (i < static_cast<size_t>(aPositions[j]))
         {
             if (!fFirst)
             {
@@ -4504,7 +4471,12 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList,
             {
                 fFirst = false;
             }
-            words->export_WordColor(i++, buff, bufc);
+            size_t nb = wends[i] - wstarts[i];
+            size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+            if (nb > nMax) nb = nMax;
+            memcpy(*bufc, pList + wstarts[i], nb);
+            *bufc += nb;
+            i++;
         }
 
         if (IF_DELETE != flag)
@@ -4518,10 +4490,12 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList,
                 fFirst = false;
             }
 
-            if (sWord)
+            if (pWord && nWordLen > 0)
             {
                 size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-                *bufc += sWord->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
+                if (nWordLen > nMax) nWordLen = nMax;
+                memcpy(*bufc, pWord, nWordLen);
+                *bufc += nWordLen;
             }
         }
 
@@ -4551,10 +4525,14 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc, mux_string *sList,
         {
             fFirst = false;
         }
-        words->export_WordColor(i++, buff, bufc);
+        size_t nb = wends[i] - wstarts[i];
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        if (nb > nMax) nb = nMax;
+        memcpy(*bufc, pList + wstarts[i], nb);
+        *bufc += nb;
+        i++;
     }
-
-    delete words;
+    **bufc = '\0';
 }
 
 int DecodeListOfIntegers(UTF8 *pIntegerList, int ai[])
@@ -4584,15 +4562,15 @@ static FUNCTION(fun_ldelete)
         return;
     }
 
-    mux_string *sList = new mux_string(fargs[0]);
+    const unsigned char *pList = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t nListLen = strlen(reinterpret_cast<const char *>(fargs[0]));
     int ai[MAX_WORDS];
     int nai = DecodeListOfIntegers(fargs[1], ai);
 
     // Delete a word at position X of a list.
     //
-    do_itemfuns(buff, bufc, sList, nai, ai, nullptr, sep, osep, IF_DELETE);
-
-    delete sList;
+    do_itemfuns(buff, bufc, pList, nListLen, nai, ai,
+                nullptr, 0, sep, osep, IF_DELETE);
 }
 
 static FUNCTION(fun_replace)
@@ -4609,30 +4587,17 @@ static FUNCTION(fun_replace)
         return;
     }
 
-    mux_string *sList = nullptr;
-    mux_string *sWord = nullptr;
-    try
-    {
-        sList = new mux_string(fargs[0]);
-        sWord = new mux_string(fargs[2]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    const unsigned char *pList = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t nListLen = strlen(reinterpret_cast<const char *>(fargs[0]));
+    const unsigned char *pWord = reinterpret_cast<const unsigned char *>(fargs[2]);
+    size_t nWordLen = strlen(reinterpret_cast<const char *>(fargs[2]));
 
     // Replace a word at position X of a list.
     //
-    if (  nullptr != sList
-       && nullptr != sWord)
-    {
-        int ai[MAX_WORDS];
-        int nai = DecodeListOfIntegers(fargs[1], ai);
-        do_itemfuns(buff, bufc, sList, nai, ai, sWord, sep, osep, IF_REPLACE);
-    }
-
-    delete sList;
-    delete sWord;
+    int ai[MAX_WORDS];
+    int nai = DecodeListOfIntegers(fargs[1], ai);
+    do_itemfuns(buff, bufc, pList, nListLen, nai, ai,
+                pWord, nWordLen, sep, osep, IF_REPLACE);
 }
 
 static FUNCTION(fun_insert)
@@ -4649,46 +4614,18 @@ static FUNCTION(fun_insert)
         return;
     }
 
-    mux_string *sList = nullptr;
-    try
-    {
-        sList = new mux_string(fargs[0]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == sList)
-    {
-        return;
-    }
-
-    mux_string *sWord = nullptr;
-    try
-    {
-        sWord = new mux_string(fargs[2]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == sWord)
-    {
-        delete sList;
-        return;
-    }
+    const unsigned char *pList = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t nListLen = strlen(reinterpret_cast<const char *>(fargs[0]));
+    const unsigned char *pWord = reinterpret_cast<const unsigned char *>(fargs[2]);
+    size_t nWordLen = strlen(reinterpret_cast<const char *>(fargs[2]));
 
     int ai[MAX_WORDS];
     int nai = DecodeListOfIntegers(fargs[1], ai);
 
     // Insert a word at position X of a list.
     //
-    do_itemfuns(buff, bufc, sList, nai, ai, sWord, sep, osep, IF_INSERT);
-
-    delete sList;
-    delete sWord;
+    do_itemfuns(buff, bufc, pList, nListLen, nai, ai,
+                pWord, nWordLen, sep, osep, IF_INSERT);
 }
 
 /*
@@ -4709,107 +4646,69 @@ static FUNCTION(fun_remove)
         return;
     }
 
-    mux_string *sWord = nullptr;
-    try
-    {
-        sWord = new mux_string(fargs[1]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    const unsigned char *pWord = reinterpret_cast<const unsigned char *>(fargs[1]);
+    size_t nWordLen = strlen(reinterpret_cast<const char *>(fargs[1]));
 
-    if (nullptr == sWord)
-    {
-        return;
-    }
-
-    if (sWord->search(sep.str))
+    // Check that the word to remove doesn't contain the delimiter.
+    //
+    if (co_search(pWord, nWordLen,
+                  reinterpret_cast<const unsigned char *>(sep.str), sep.n))
     {
         safe_str(T("#-1 CAN ONLY REMOVE ONE ELEMENT"), buff, bufc);
-        delete sWord;
         return;
     }
 
-    mux_string *sStr = nullptr;
-    try
-    {
-        sStr = new mux_string(fargs[0]);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    const unsigned char *pList = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t nListLen = strlen(reinterpret_cast<const char *>(fargs[0]));
 
-    if (nullptr == sStr)
-    {
-        delete sWord;
-        return;
-    }
+    size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+    size_t nWords = co_split_words(pList, nListLen,
+                        reinterpret_cast<const unsigned char *>(sep.str),
+                        sep.n, wstarts, wends, LBUF_SIZE);
 
-    mux_words *words = nullptr;
-    try
-    {
-        words = new mux_words(*sStr);
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == words)
-    {
-        delete sWord;
-        delete sStr;
-        ISOUTOFMEMORY(words);
-        return;
-    }
-
-    LBUF_OFFSET nWords = words->find_Words(sep.str);
-    mux_cursor iPos = CursorMin, iStart = CursorMin, iEnd = CursorMin;
-    bool bSucceeded = sStr->search(*sWord, &iPos);
+    // Strip color from the word for comparison.
+    //
+    unsigned char wordPlain[LBUF_SIZE];
+    size_t nWordPlain = co_strip_color(wordPlain, pWord, nWordLen);
 
     // Walk through the string copying words until (if ever) we get to
     // one that matches the target word.
     //
     bool bFirst = true, bFound = false;
-    for (LBUF_OFFSET i = 0; i < nWords; i++)
+    for (size_t i = 0; i < nWords; i++)
     {
-        iStart = words->wordBegin(i);
-        iEnd = words->wordEnd(i);
-
-        if (  !bFound
-           && bSucceeded
-           && iPos < iStart)
+        if (!bFound)
         {
-            bSucceeded = sStr->search(*sWord, &iPos, iStart);
+            // Strip color from this word for comparison.
+            //
+            unsigned char wPlain[LBUF_SIZE];
+            size_t nwp = co_strip_color(wPlain,
+                             pList + wstarts[i],
+                             wends[i] - wstarts[i]);
+
+            if (nwp == nWordPlain
+                && 0 == memcmp(wPlain, wordPlain, nwp))
+            {
+                bFound = true;
+                continue;
+            }
         }
 
-        if (  !bFound
-           && sWord->length_cursor() == iEnd - iStart
-           && (  (  bSucceeded
-                 && iPos == iStart)
-              || 0 == sWord->length_byte()))
+        if (bFirst)
         {
-            bFound = true;
+            bFirst = false;
         }
         else
         {
-            if (bFirst)
-            {
-                bFirst = false;
-            }
-            else
-            {
-                print_sep(osep, buff, bufc);
-            }
-            words->export_WordColor(i, buff, bufc);
+            print_sep(osep, buff, bufc);
         }
+        size_t nb = wends[i] - wstarts[i];
+        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+        if (nb > nMax) nb = nMax;
+        memcpy(*bufc, pList + wstarts[i], nb);
+        *bufc += nb;
     }
-
-    delete sWord;
-    delete sStr;
-    delete words;
+    **bufc = '\0';
 }
 
 /*
@@ -6571,32 +6470,17 @@ static FUNCTION(fun_revwords)
     }
     else
     {
-        // Multi-char delimiter: fall back to mux_string.
+        // Multi-char delimiter: use co_split_words.
         //
-        mux_string *sStr = nullptr;
-        mux_words *words = nullptr;
-        try
-        {
-            sStr = new mux_string(fargs[0]);
-            words = new mux_words(*sStr);
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (  nullptr == sStr
-           || nullptr == words)
-        {
-            delete sStr;
-            delete words;
-            return;
-        }
-
-        LBUF_OFFSET nWords = words->find_Words(sep.str);
+        const unsigned char *pData = reinterpret_cast<const unsigned char *>(fargs[0]);
+        size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
+        size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+        size_t nWords = co_split_words(pData, nLen,
+                            reinterpret_cast<const unsigned char *>(sep.str),
+                            sep.n, wstarts, wends, LBUF_SIZE);
 
         bool bFirst = true;
-        for (LBUF_OFFSET i = 0; i < nWords; i++)
+        for (size_t i = 0; i < nWords; i++)
         {
             if (!bFirst)
             {
@@ -6606,11 +6490,14 @@ static FUNCTION(fun_revwords)
             {
                 bFirst = false;
             }
-            words->export_WordColor(nWords-i-1, buff, bufc);
+            size_t w = nWords - i - 1;
+            size_t nb = wends[w] - wstarts[w];
+            size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+            if (nb > nMax) nb = nMax;
+            memcpy(*bufc, pData + wstarts[w], nb);
+            *bufc += nb;
         }
-
-        delete sStr;
-        delete words;
+        **bufc = '\0';
     }
 }
 
@@ -9855,19 +9742,24 @@ static FUNCTION(fun_printf)
             continue;
         }
 
-        // Apply width and alignment using ANSI-aware mux_string.
+        // Apply width and alignment using co_* ANSI-aware primitives.
         //
+        const unsigned char *pv = reinterpret_cast<const unsigned char *>(pVal);
+        size_t pvlen = strlen(reinterpret_cast<const char *>(pVal));
+
         if (!bWidth || nWidth <= 0)
         {
             // No width — apply precision truncation for %s, then output.
             //
             if ('s' == cConv && nPrec >= 0)
             {
-                mux_string sVal(pVal);
-                mux_cursor iEnd;
-                sVal.cursor_from_column(iEnd, static_cast<LBUF_OFFSET>(nPrec));
+                unsigned char trunc[LBUF_SIZE];
+                size_t nOut = co_copy_columns(trunc, pv, pv + pvlen,
+                                  static_cast<size_t>(nPrec));
                 size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-                *bufc += sVal.export_TextColor(*bufc, CursorMin, iEnd, nMax);
+                if (nOut > nMax) nOut = nMax;
+                memcpy(*bufc, trunc, nOut);
+                *bufc += nOut;
             }
             else
             {
@@ -9904,37 +9796,42 @@ static FUNCTION(fun_printf)
             continue;
         }
 
-        // ANSI-aware padding using mux_string.
+        // ANSI-aware padding using co_* primitives.
         //
-        mux_string sVal(pVal);
-        LBUF_OFFSET nValWidth = sVal.visual_width();
-        mux_cursor nValLen = sVal.length_cursor();
+        size_t nValWidth = co_visual_width(pv, pvlen);
 
         // Apply precision truncation for %s.
         //
+        unsigned char truncVal[LBUF_SIZE];
+        size_t truncLen = pvlen;
+        const unsigned char *pOutput = pv;
         if ('s' == cConv && nPrec >= 0
-            && nValWidth > static_cast<LBUF_OFFSET>(nPrec))
+            && nValWidth > static_cast<size_t>(nPrec))
         {
-            mux_cursor iEnd;
-            sVal.cursor_from_column(iEnd, static_cast<LBUF_OFFSET>(nPrec));
-            nValLen = iEnd;
-            nValWidth = static_cast<LBUF_OFFSET>(nPrec);
+            truncLen = co_copy_columns(truncVal, pv, pv + pvlen,
+                           static_cast<size_t>(nPrec));
+            pOutput = truncVal;
+            nValWidth = static_cast<size_t>(nPrec);
         }
 
-        if (nValWidth >= static_cast<LBUF_OFFSET>(nWidth))
+        if (nValWidth >= static_cast<size_t>(nWidth))
         {
-            // Value fills or exceeds width — output as-is (truncated to width).
+            // Value fills or exceeds width — truncate to width.
             //
-            mux_cursor iEnd;
-            sVal.cursor_from_column(iEnd, static_cast<LBUF_OFFSET>(nWidth));
+            unsigned char out[LBUF_SIZE];
+            size_t nOut = co_copy_columns(out, pOutput,
+                              pOutput + truncLen,
+                              static_cast<size_t>(nWidth));
             size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-            *bufc += sVal.export_TextColor(*bufc, CursorMin, iEnd, nMax);
+            if (nOut > nMax) nOut = nMax;
+            memcpy(*bufc, out, nOut);
+            *bufc += nOut;
             continue;
         }
 
-        LBUF_OFFSET nPad = static_cast<LBUF_OFFSET>(nWidth) - nValWidth;
-        LBUF_OFFSET nLeading = 0;
-        LBUF_OFFSET nTrailing = 0;
+        size_t nPad = static_cast<size_t>(nWidth) - nValWidth;
+        size_t nLeading = 0;
+        size_t nTrailing = 0;
 
         if (bCenter)
         {
@@ -9952,19 +9849,23 @@ static FUNCTION(fun_printf)
 
         // Leading padding.
         //
-        for (LBUF_OFFSET i = 0; i < nLeading; i++)
+        for (size_t i = 0; i < nLeading; i++)
         {
             safe_chr(' ', buff, bufc);
         }
 
         // Value.
         //
-        size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sVal.export_TextColor(*bufc, CursorMin, nValLen, nMax);
+        {
+            size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+            if (truncLen > nMax) truncLen = nMax;
+            memcpy(*bufc, pOutput, truncLen);
+            *bufc += truncLen;
+        }
 
         // Trailing padding.
         //
-        for (LBUF_OFFSET i = 0; i < nTrailing; i++)
+        for (size_t i = 0; i < nTrailing; i++)
         {
             safe_chr(' ', buff, bufc);
         }
@@ -10532,27 +10433,21 @@ static FUNCTION(fun_trim)
     }
     else
     {
-        // Pattern trim: fall back to mux_string.
+        // Pattern trim: use co_trim_pattern.
         //
-        mux_string *sStr = nullptr;
-        try
-        {
-            sStr = new mux_string(fargs[0]);
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == sStr)
-        {
-            return;
-        }
-
-        sStr->trim(p, n, bLeft, bRight);
+        int trim_flags = (bLeft ? 1 : 0) | (bRight ? 2 : 0);
+        size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
+        unsigned char out[LBUF_SIZE];
+        size_t nOut = co_trim_pattern(out,
+                          reinterpret_cast<const unsigned char *>(fargs[0]),
+                          nLen,
+                          reinterpret_cast<const unsigned char *>(p), n,
+                          trim_flags);
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
-        *bufc += sStr->export_TextColor(*bufc, CursorMin, CursorMax, nMax);
-        delete sStr;
+        if (nOut > nMax) nOut = nMax;
+        memcpy(*bufc, out, nOut);
+        *bufc += nOut;
+        **bufc = '\0';
     }
 }
 

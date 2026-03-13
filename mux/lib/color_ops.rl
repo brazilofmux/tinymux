@@ -836,6 +836,278 @@ const unsigned char *co_search(const unsigned char *haystack, size_t hlen,
     return NULL;
 }
 
+/* ---- co_search_with_end ---- */
+/*
+ * Like co_search but also returns a pointer past the matched delimiter
+ * in the haystack.  Needed by co_split_words to know where the next
+ * word starts.
+ */
+static const unsigned char *co_search_with_end(
+    const unsigned char *haystack, const unsigned char *hpe,
+    const unsigned char *nplain, size_t nplain_len,
+    const unsigned char **match_end)
+{
+    const unsigned char *hp = haystack;
+    while (hp < hpe) {
+        hp = co_skip_color(hp, hpe);
+        if (hp >= hpe) break;
+
+        const unsigned char *match_start = hp;
+        const unsigned char *tp = hp;
+        size_t ni = 0;
+        int matched = 1;
+
+        while (ni < nplain_len && tp < hpe) {
+            tp = co_skip_color(tp, hpe);
+            if (tp >= hpe) { matched = 0; break; }
+            if (*tp != nplain[ni]) { matched = 0; break; }
+            tp++;
+            ni++;
+        }
+
+        if (matched && ni == nplain_len) {
+            if (match_end) *match_end = tp;
+            return match_start;
+        }
+
+        hp = co_visible_advance(hp, hpe, 1, NULL);
+    }
+
+    return NULL;
+}
+
+/* ---- co_split_words ---- */
+/*
+ * Split PUA-encoded string into word boundary pairs using a multi-char
+ * delimiter.  The delimiter is color-stripped before matching.
+ *
+ * For space delimiter: consecutive spaces are compressed (standard MUX
+ * word semantics).  For non-space: each delimiter occurrence is significant,
+ * and empty words are possible.
+ *
+ * word_starts[i] and word_ends[i] are byte offsets into data.
+ * Returns number of words found.
+ */
+size_t co_split_words(const unsigned char *data, size_t len,
+                      const unsigned char *sep, size_t sep_len,
+                      size_t *word_starts, size_t *word_ends,
+                      size_t max_words)
+{
+    if (max_words == 0 || len == 0) return 0;
+
+    const unsigned char *pe = data + len;
+
+    /* Strip color from delimiter. */
+    unsigned char splain[LBUF_SIZE];
+    size_t splain_len = 0;
+    {
+        const unsigned char *sp = sep;
+        const unsigned char *spe = sep + sep_len;
+        while (sp < spe) {
+            sp = co_skip_color(sp, spe);
+            if (sp >= spe) break;
+            const unsigned char *after = co_visible_advance(sp, spe, 1, NULL);
+            while (sp < after && splain_len < LBUF_SIZE - 1)
+                splain[splain_len++] = *sp++;
+            sp = after;
+        }
+    }
+
+    int is_space = (splain_len == 1 && splain[0] == ' ');
+    size_t nWords = 0;
+    const unsigned char *p = data;
+
+    if (is_space) {
+        /* Space-compress mode: skip leading spaces. */
+        while (p < pe) {
+            const unsigned char *q = co_skip_color(p, pe);
+            if (q >= pe) { p = pe; break; }
+            if (*q == ' ') { p = q + 1; continue; }
+            p = q;
+            break;
+        }
+
+        while (p < pe && nWords < max_words) {
+            /* Record word start. */
+            word_starts[nWords] = (size_t)(p - data);
+
+            /* Find next space. */
+            const unsigned char *dp = p;
+            while (dp < pe) {
+                dp = co_skip_color(dp, pe);
+                if (dp >= pe) break;
+                if (*dp == ' ') break;
+                dp = co_visible_advance(dp, pe, 1, NULL);
+            }
+
+            /* Word end is just before the space (or end of string). */
+            word_ends[nWords] = (size_t)(dp - data);
+            nWords++;
+
+            /* Skip past consecutive spaces. */
+            while (dp < pe) {
+                const unsigned char *q = co_skip_color(dp, pe);
+                if (q >= pe) { dp = pe; break; }
+                if (*q == ' ') { dp = q + 1; continue; }
+                dp = q;
+                break;
+            }
+            p = dp;
+        }
+    } else {
+        /* Non-space delimiter: each occurrence is significant. */
+        while (nWords + 1 < max_words) {
+            const unsigned char *match_end = NULL;
+            const unsigned char *found = co_search_with_end(
+                p, pe, splain, splain_len, &match_end);
+
+            if (!found) break;
+
+            word_starts[nWords] = (size_t)(p - data);
+            word_ends[nWords] = (size_t)(found - data);
+            nWords++;
+            p = match_end;
+        }
+
+        /* Last word: everything after the last delimiter. */
+        word_starts[nWords] = (size_t)(p - data);
+        word_ends[nWords] = (size_t)(pe - data);
+        nWords++;
+    }
+
+    return nWords;
+}
+
+/* ---- co_trim_pattern ---- */
+/*
+ * Multi-char pattern trim: trims repeating occurrences of a multi-byte
+ * pattern from left/right of data.  Pattern is matched cyclically at
+ * the raw byte level (same as mux_string::trim).
+ *
+ * trim_flags: 1 = trim left, 2 = trim right, 3 = both.
+ * Returns bytes written to out.
+ */
+size_t co_trim_pattern(unsigned char *out,
+                       const unsigned char *data, size_t len,
+                       const unsigned char *pattern, size_t plen,
+                       int trim_flags)
+{
+    if (len == 0 || plen == 0) {
+        if (len > LBUF_SIZE - 1) len = LBUF_SIZE - 1;
+        memcpy(out, data, len);
+        out[len] = '\0';
+        return len;
+    }
+
+    size_t start = 0;
+    size_t end = len;
+
+    /* Trim left: match pattern cyclically from the beginning. */
+    if (trim_flags & 1) {
+        size_t i = 0;
+        while (i < len && data[i] == pattern[i % plen])
+            i++;
+        start = i;
+    }
+
+    /* Trim right: match pattern cyclically from the end. */
+    if (trim_flags & 2) {
+        size_t i = len;
+        size_t dist = plen - 1;
+        while (i > start && data[i - 1] == pattern[dist]) {
+            i--;
+            dist = (dist > 0) ? dist - 1 : plen - 1;
+        }
+        end = i;
+    }
+
+    if (end <= start) {
+        out[0] = '\0';
+        return 0;
+    }
+
+    size_t nb = end - start;
+    if (nb > LBUF_SIZE - 1) nb = LBUF_SIZE - 1;
+    memcpy(out, data + start, nb);
+    out[nb] = '\0';
+    return nb;
+}
+
+/* ---- co_compress_str ---- */
+/*
+ * Compress runs of a multi-char separator into a single occurrence.
+ * Like co_compress but for multi-byte separators.
+ *
+ * Returns bytes written to out.
+ */
+size_t co_compress_str(unsigned char *out,
+                       const unsigned char *data, size_t len,
+                       const unsigned char *sep, size_t sep_len)
+{
+    const unsigned char *pe = data + len;
+    unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+
+    /* Strip color from separator for matching. */
+    unsigned char splain[LBUF_SIZE];
+    size_t splain_len = 0;
+    {
+        const unsigned char *sp = sep;
+        const unsigned char *spe = sep + sep_len;
+        while (sp < spe) {
+            sp = co_skip_color(sp, spe);
+            if (sp >= spe) break;
+            const unsigned char *after = co_visible_advance(sp, spe, 1, NULL);
+            while (sp < after && splain_len < LBUF_SIZE - 1)
+                splain[splain_len++] = *sp++;
+            sp = after;
+        }
+    }
+
+    if (splain_len == 0) {
+        /* Empty separator: just copy. */
+        size_t nb = len;
+        if (nb > LBUF_SIZE - 1) nb = LBUF_SIZE - 1;
+        memcpy(out, data, nb);
+        out[nb] = '\0';
+        return nb;
+    }
+
+    const unsigned char *p = data;
+    while (p < pe && wp < wp_end) {
+        const unsigned char *match_end = NULL;
+        const unsigned char *found = co_search_with_end(
+            p, pe, splain, splain_len, &match_end);
+
+        if (!found) {
+            /* Copy remainder. */
+            wp += wp_safe_copy(wp, wp_end, p, (size_t)(pe - p));
+            break;
+        }
+
+        /* Copy up to the match. */
+        if (found > p)
+            wp += wp_safe_copy(wp, wp_end, p, (size_t)(found - p));
+
+        /* Emit one copy of the separator (original bytes with color). */
+        if (sep_len <= (size_t)(wp_end - wp))
+            wp += wp_safe_copy(wp, wp_end, sep, sep_len);
+
+        /* Skip past consecutive occurrences of the separator. */
+        p = match_end;
+        while (p < pe) {
+            const unsigned char *next_end = NULL;
+            const unsigned char *next = co_search_with_end(
+                p, pe, splain, splain_len, &next_end);
+            if (next != p) break;
+            p = next_end;
+        }
+    }
+
+    *wp = '\0';
+    return (size_t)(wp - out);
+}
+
 /* ================================================================
  * Stage 2: Transforms, edit, reverse, compress.
  * ================================================================ */

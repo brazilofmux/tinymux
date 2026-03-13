@@ -182,6 +182,39 @@ size_t co_trim(unsigned char *out,
 const unsigned char *co_search(const unsigned char *haystack, size_t hlen,
                                const unsigned char *needle, size_t nlen);
 
+/*
+ * co_split_words — Split PUA-encoded string by multi-char delimiter.
+ *
+ * Populates word_starts[] and word_ends[] with byte offsets into data.
+ * Space delimiter uses compress semantics; non-space is exact.
+ * Returns number of words found.
+ */
+size_t co_split_words(const unsigned char *data, size_t len,
+                      const unsigned char *sep, size_t sep_len,
+                      size_t *word_starts, size_t *word_ends,
+                      size_t max_words);
+
+/*
+ * co_trim_pattern — Trim repeating multi-byte pattern from edges.
+ *
+ * Pattern is matched cyclically at the raw byte level.
+ * trim_flags: 1 = left, 2 = right, 3 = both.
+ * Returns bytes written to out.
+ */
+size_t co_trim_pattern(unsigned char *out,
+                       const unsigned char *data, size_t len,
+                       const unsigned char *pattern, size_t plen,
+                       int trim_flags);
+
+/*
+ * co_compress_str — Compress runs of a multi-char separator into one.
+ *
+ * Returns bytes written to out.
+ */
+size_t co_compress_str(unsigned char *out,
+                       const unsigned char *data, size_t len,
+                       const unsigned char *sep, size_t sep_len);
+
 /* ---- Stage 2: Transforms, edit, reverse ---- */
 
 /*
