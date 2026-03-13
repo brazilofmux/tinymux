@@ -292,7 +292,6 @@ extern void clearstrings(DESC *);
 extern void queue_write_LEN(DESC *, const UTF8 *, size_t n);
 extern void queue_write(DESC *, const UTF8 *);
 extern void queue_string(DESC *, const UTF8 *);
-extern void queue_string(DESC *d, const mux_string &s);
 extern void freeqs(DESC *);
 extern void welcome_user(DESC *);
 extern void save_command(DESC *, const UTF8 *, size_t);

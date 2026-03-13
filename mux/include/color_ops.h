@@ -46,7 +46,7 @@ extern "C" {
  * co_visible_length — Count visible code points (skipping color PUA).
  *
  * Returns the number of non-color Unicode code points in the string.
- * This is equivalent to mux_string::length_point() after import.
+ * This counts code points in a null-terminated UTF-8 string.
  */
 size_t co_visible_length(const unsigned char *p, size_t len);
 

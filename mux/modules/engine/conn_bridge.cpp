@@ -90,7 +90,6 @@ void send_text_to_player(dbref target, const UTF8 *text)
     if (g_pConnMgr) g_pConnMgr->SendText(target, text);
 }
 
-// mux_string overload removed — all callers now use const UTF8 * version.
 
 void send_raw_to_player(dbref target, const UTF8 *data, size_t len)
 {

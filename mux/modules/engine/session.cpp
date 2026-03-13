@@ -132,7 +132,6 @@ void raw_notify(dbref player, const UTF8 *msg)
     send_raw_to_player(player, T("\r\n"), 2);
 }
 
-// mux_string overload removed — all callers now use const UTF8 * version.
 
 void raw_notify_newline(dbref player)
 {

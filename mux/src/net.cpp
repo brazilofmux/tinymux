@@ -295,42 +295,6 @@ void queue_string(DESC *d, const UTF8 *s)
     queue_write(d, q);
 }
 
-void queue_string(DESC *d, const mux_string &s)
-{
-    const unsigned int f2 = (d->flags & DS_CONNECTED) ? drv_Flags(d->player, FLAG_WORD2) : 0;
-    const UTF8 *p = s.export_TextConverted((f2 & ANSI) != 0, (f2 & NOBLEED) != 0, (f2 & COLOR256) != 0, (f2 & HTML) != 0);
-
-    const UTF8 *q;
-    if (CHARSET_UTF8 == d->encoding)
-    {
-        q = p;
-    }
-    else
-    {
-        if (CHARSET_LATIN1 == d->encoding)
-        {
-            q = ConvertToLatin1(p);
-        }
-        else if (CHARSET_LATIN2 == d->encoding)
-        {
-            q = ConvertToLatin2(p);
-        }
-        else if (CHARSET_CP437 == d->encoding)
-        {
-            q = ConvertToCp437(p);
-        }
-        else // if (CHARSET_ASCII == d->encoding)
-        {
-            q = ConvertToAscii(p);
-        }
-    }
-
-    if (!(d->flags & DS_WEBSOCKET))
-    {
-        q = encode_iac(q);
-    }
-    queue_write(d, q);
-}
 
 void init_desc(DESC *d)
 {
@@ -1044,7 +1008,6 @@ void send_text_to_player(dbref target, const UTF8 *text)
     }
 }
 
-// mux_string overload removed — all callers now use const UTF8 * version.
 
 // ---------------------------------------------------------------------------
 // send_raw_to_player: Queue raw bytes to all of a player's connections.
