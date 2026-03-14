@@ -207,6 +207,7 @@ SQL_LIBS = @SQL_LIBS@
 SSL = @SSL@
 STRIP = @STRIP@
 STUB_SLAVE = @STUB_SLAVE@
+TINYMUX_JIT = @TINYMUX_JIT@
 VERSION = @VERSION@
 WOD_REALMS = @WOD_REALMS@
 abs_builddir = @abs_builddir@
@@ -262,7 +263,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdir)/sqlite \
-    $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) \
+    $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(TINYMUX_JIT) \
     $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(OPENSSL_CFLAGS)
 
 

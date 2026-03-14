@@ -712,6 +712,9 @@ SQL_LIBPATH
 SQL_INCLUDE
 SELFCHECK
 INLINESQL
+TINYMUX_JIT
+JIT_ENABLED_FALSE
+JIT_ENABLED_TRUE
 STUB_SLAVE
 STUBSLAVE_ENABLED_FALSE
 STUBSLAVE_ENABLED_TRUE
@@ -796,6 +799,7 @@ enable_silent_rules
 enable_realitylvls
 enable_wodrealms
 enable_stubslave
+enable_jit
 enable_inlinesql
 enable_selfcheck
 with_mysql_include
@@ -1452,6 +1456,7 @@ Optional Features:
   --enable-realitylvls    enable Reality Levels (default is NO)
   --enable-wodrealms      enable WOD Realms (default is NO)
   --enable-stubslave      enable Stub Slave (default is NO)
+  --enable-jit            enable JIT compiler via RISC-V DBT (default is NO)
   --enable-inlinesql      enable inline MySQL support compatible with PennMUSH
                           and TinyMUSH 3.x (default is NO)
   --enable-selfcheck      enable expensive self-checking (default is NO)
@@ -3983,6 +3988,41 @@ else
   STUBSLAVE_ENABLED_FALSE=
 fi
 
+
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable JIT compiler" >&5
+printf %s "checking whether to enable JIT compiler... " >&6; }
+# Check whether --enable-jit was given.
+if test ${enable_jit+y}
+then :
+  enableval=$enable_jit;
+    if test "x$enableval" = "xno"; then
+      jit_enabled=no
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+    else
+      jit_enabled=yes
+      TINYMUX_JIT="-DTINYMUX_JIT"
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+    fi
+
+else $as_nop
+
+    jit_enabled=no
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+fi
+
+ if test "x$jit_enabled" = "xyes"; then
+  JIT_ENABLED_TRUE=
+  JIT_ENABLED_FALSE='#'
+else
+  JIT_ENABLED_TRUE='#'
+  JIT_ENABLED_FALSE=
+fi
 
 
 
@@ -11185,6 +11225,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${STUBSLAVE_ENABLED_TRUE}" && test -z "${STUBSLAVE_ENABLED_FALSE}"; then
   as_fn_error $? "conditional \"STUBSLAVE_ENABLED\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${JIT_ENABLED_TRUE}" && test -z "${JIT_ENABLED_FALSE}"; then
+  as_fn_error $? "conditional \"JIT_ENABLED\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${AMDEP_TRUE}" && test -z "${AMDEP_FALSE}"; then

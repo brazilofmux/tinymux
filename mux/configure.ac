@@ -73,6 +73,27 @@ AC_SUBST(STUB_SLAVE)
 
 dnl SQLite storage backend is always enabled.
 
+AC_MSG_CHECKING(whether to enable JIT compiler)
+AC_ARG_ENABLE(
+  [jit],
+  AS_HELP_STRING([--enable-jit],[enable JIT compiler via RISC-V DBT (default is NO)]),
+  [
+    if test "x$enableval" = "xno"; then
+      jit_enabled=no
+      AC_MSG_RESULT(no)
+    else
+      jit_enabled=yes
+      TINYMUX_JIT="-DTINYMUX_JIT"
+      AC_MSG_RESULT(yes)
+    fi
+  ],
+  [
+    jit_enabled=no
+    AC_MSG_RESULT(no)
+  ])
+AM_CONDITIONAL([JIT_ENABLED], [test "x$jit_enabled" = "xyes"])
+AC_SUBST(TINYMUX_JIT)
+
 AC_MSG_CHECKING(whether to enable inline MySQL)
 AC_ARG_ENABLE(
   [inlinesql],

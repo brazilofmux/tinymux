@@ -5,7 +5,7 @@
 # engine.so is loaded at runtime via mux_AddModule (COM module).
 
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdir)/sqlite \
-    $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) \
+    $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(TINYMUX_JIT) \
     $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(OPENSSL_CFLAGS)
 
 DRIVER_SRC = _build.cpp bsd.cpp driver.cpp driver_bridge.cpp \
