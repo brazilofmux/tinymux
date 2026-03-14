@@ -58,6 +58,7 @@ static constexpr int MAX_SIDE_EXITS = 8;
 struct side_exit_t {
     uint32_t jcc_patch;         // offset of Jcc rel32 displacement
     uint64_t target_pc;         // guest PC of the taken path
+    uint64_t expected_next_pc;  // expected next_pc for inline CALL cold exits
     rc_slot_t snapshot[RC_NUM_SLOTS];
 };
 
@@ -203,6 +204,7 @@ static void rc_invalidate_reload(emit_t *e, reg_cache_t *rc) {
 
 // Forward declarations for block cache (defined below).
 static void cache_insert(dbt_state_t *dbt, uint64_t pc, uint8_t *code);
+static void emit_exit_chained(emit_t *e, dbt_state_t *dbt, uint64_t target_pc);
 
 static bool dbt_trace_translate_enabled(const dbt_state_t *dbt,
                                         uint64_t guest_pc) {
@@ -272,6 +274,25 @@ static void emit_store_next_pc(emit_t *e, int host_reg) {
     emit_byte(e, 0x89);
     emit_byte(e, modrm(0x02, host_reg, X64_RBX));
     emit_u32(e, CTX_NEXT_PC_OFF);
+}
+
+static bool resolve_direct_jalr_target(uint64_t pc, const rv64_insn_t &insn,
+                                       const rv64_insn_t &next,
+                                       uint64_t *target_out,
+                                       uint64_t *return_pc_out) {
+    if (!insn.rd) return false;
+    if (insn.opcode != OP_LUI && insn.opcode != OP_AUIPC) return false;
+    if (next.opcode != OP_JALR || next.rs1 != insn.rd) return false;
+
+    int64_t base = (insn.opcode == OP_AUIPC) ? static_cast<int64_t>(pc) : 0;
+    int64_t target = base + static_cast<int64_t>(insn.imm)
+                   + static_cast<int64_t>(next.imm);
+    target &= ~1LL; // clear bit 0 per JALR spec
+    if (target < 0) return false;
+
+    if (target_out) *target_out = static_cast<uint64_t>(target);
+    if (return_pc_out) *return_pc_out = pc + 8;
+    return true;
 }
 
 // Helper: emit "convert guest pointer in host_reg to host pointer"
@@ -954,6 +975,80 @@ static void emit_ras_pop_and_probe(emit_t *e, dbt_state_t *dbt) {
     dbt->ras_misses++;
 }
 
+static bool try_emit_inline_call(emit_t *e, reg_cache_t *rc, dbt_state_t *dbt,
+                                 uint64_t target_pc, block_entry_t *callee,
+                                 uint64_t return_pc,
+                                 side_exit_t *side_exits,
+                                 int *num_side_exits) {
+    (void)target_pc;
+    if (!callee || *num_side_exits >= MAX_SIDE_EXITS) return false;
+
+    // Flush cached registers — callee reads from ctx.
+    rc_flush(e, rc);
+
+    // Store ra = return_pc in ctx (callee's JALR reads this).
+    emit_mov_r64_imm32(e, X64_RAX, static_cast<int32_t>(return_pc));
+    emit_store_guest(e, 1, X64_RAX);
+
+    // Poison the RAS so the callee's pop_and_probe mismatches and falls
+    // through to RET, returning to this native CALL site.
+    emit_ras_push(e, 1ULL);
+
+    // Native CALL to the translated target.
+    uint32_t call_patch = emit_call_rel32(e);
+    uint32_t target_off = static_cast<uint32_t>(callee->native_code - e->buf);
+    emit_patch_rel32(e, call_patch, target_off);
+
+    // If ctx.next_pc != return_pc, the callee exited early and we must
+    // fall back to the dispatch loop through a cold side-exit stub.
+    emit_cmp_ctx_imm32(e, CTX_NEXT_PC_OFF, static_cast<int32_t>(return_pc));
+    uint32_t jne_cold = emit_jcc_rel32(e, JCC_NE);
+
+    // Hot path: callee returned normally. Reload register cache because
+    // the callee may have modified any guest register.
+    rc_invalidate_reload(e, rc);
+
+    side_exits[*num_side_exits].jcc_patch = jne_cold;
+    side_exits[*num_side_exits].target_pc = 0; // sentinel
+    side_exits[*num_side_exits].expected_next_pc = return_pc;
+    (*num_side_exits)++;
+    dbt->inline_calls++;
+    return true;
+}
+
+enum class direct_jalr_flow_t {
+    inline_call_done,
+    tail_call,
+    chained_exit,
+};
+
+static direct_jalr_flow_t emit_direct_jalr_flow(
+    emit_t *e, reg_cache_t *rc, dbt_state_t *dbt,
+    uint64_t guest_pc, uint64_t pc, uint64_t target_pc, uint64_t return_pc,
+    const rv64_insn_t &next, side_exit_t *side_exits, int *num_side_exits,
+    bool can_tail_inline, const char *call_trace, const char *tail_trace,
+    const char *exit_trace) {
+    if (next.rd == 1) {
+        block_entry_t *be = cache_lookup(dbt, target_pc);
+        if (try_emit_inline_call(e, rc, dbt, target_pc, be, return_pc,
+                                 side_exits, num_side_exits)) {
+            dbt_trace_fusion(dbt, pc, call_trace);
+            return direct_jalr_flow_t::inline_call_done;
+        }
+        emit_ras_push(e, return_pc);
+    }
+
+    if (next.rd == 0 && can_tail_inline) {
+        dbt_trace_fusion(dbt, pc, tail_trace);
+        return direct_jalr_flow_t::tail_call;
+    }
+
+    rc_flush(e, rc);
+    emit_exit_chained(e, dbt, target_pc);
+    dbt_trace_fusion(dbt, pc, exit_trace);
+    return direct_jalr_flow_t::chained_exit;
+}
+
 // ---------------------------------------------------------------
 // Block chaining helpers
 // ---------------------------------------------------------------
@@ -1350,6 +1445,7 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                 uint32_t jcc_patch = emit_jcc_rel32(&e, cc);
                 side_exits[num_side_exits].jcc_patch = jcc_patch;
                 side_exits[num_side_exits].target_pc = target;
+                side_exits[num_side_exits].expected_next_pc = 0;
                 memcpy(side_exits[num_side_exits].snapshot, rc.slots,
                        sizeof(rc.slots));
                 num_side_exits++;
@@ -1457,13 +1553,12 @@ no_addr_fusion:
         //
         case OP_LUI: {
             // Fusion: LUI rd, upper + JALR rs1=rd → direct jump/call
-            if (have_next && insn.rd
-                && next.opcode == OP_JALR
-                && next.rs1 == insn.rd) {
-                int64_t target = static_cast<int64_t>(insn.imm)
-                               + static_cast<int64_t>(next.imm);
-                target &= ~1LL; // clear bit 0 per JALR spec
-                uint64_t return_pc = pc + 8;
+            uint64_t target_u64;
+            uint64_t return_pc;
+            if (have_next
+                && resolve_direct_jalr_target(pc, insn, next, &target_u64,
+                                              &return_pc)) {
+                int64_t target = static_cast<int64_t>(target_u64);
 
                 // Materialize the LUI result if JALR writes a different rd.
                 if (insn.rd != next.rd && insn.rd != 0) {
@@ -1477,28 +1572,29 @@ no_addr_fusion:
                         static_cast<int32_t>(return_pc));
                 }
 
-                // RAS push for calls (JALR rd=ra).
-                if (next.rd == 1) {
-                    emit_ras_push(&e, return_pc);
-                }
-
-                // Tail call: inline jump like JAL rd=0 when safe.
-                if (next.rd == 0
-                    && !(target >= static_cast<int64_t>(guest_pc) && target <= static_cast<int64_t>(pc + 4))
-                    && count < MAX_BLOCK_INSNS - 4) {
-                    dbt_trace_fusion(dbt, pc, "lui_jalr_tail");
+                bool can_tail_inline =
+                    next.rd == 0
+                    && !(target >= static_cast<int64_t>(guest_pc)
+                         && target <= static_cast<int64_t>(pc + 4))
+                    && count < MAX_BLOCK_INSNS - 4;
+                switch (emit_direct_jalr_flow(&e, &rc, dbt, guest_pc, pc,
+                                              target_u64, return_pc, next,
+                                              side_exits, &num_side_exits,
+                                              can_tail_inline,
+                                              "lui_jalr_call",
+                                              "lui_jalr_tail",
+                                              "lui_jalr")) {
+                case direct_jalr_flow_t::tail_call:
                     pc = static_cast<uint64_t>(target);
                     count++;
                     dbt->insns_fused++;
                     continue;
+                case direct_jalr_flow_t::inline_call_done:
+                case direct_jalr_flow_t::chained_exit:
+                    count++;
+                    dbt->insns_fused++;
+                    goto done;
                 }
-
-                rc_flush(&e, &rc);
-                emit_exit_chained(&e, dbt, static_cast<uint64_t>(target));
-                dbt_trace_fusion(dbt, pc, "lui_jalr");
-                count++;
-                dbt->insns_fused++;
-                goto done;
             }
 
             // Fusion: LUI rd, upper + ADDI rd, rd, lower → MOV rd, imm32
@@ -1531,14 +1627,12 @@ no_addr_fusion:
         //
         case OP_AUIPC: {
             // Fusion: AUIPC rd, upper + JALR rs1=rd → direct jump/call
-            if (have_next && insn.rd
-                && next.opcode == OP_JALR
-                && next.rs1 == insn.rd) {
-                int64_t target = static_cast<int64_t>(pc)
-                               + static_cast<int64_t>(insn.imm)
-                               + static_cast<int64_t>(next.imm);
-                target &= ~1LL; // clear bit 0 per JALR spec
-                uint64_t return_pc = pc + 8;
+            uint64_t target_u64;
+            uint64_t return_pc;
+            if (have_next
+                && resolve_direct_jalr_target(pc, insn, next, &target_u64,
+                                              &return_pc)) {
+                int64_t target = static_cast<int64_t>(target_u64);
 
                 // Preserve the AUIPC result when JALR writes a different rd.
                 if (insn.rd != next.rd && insn.rd != 0) {
@@ -1557,28 +1651,29 @@ no_addr_fusion:
                         static_cast<int32_t>(return_pc));
                 }
 
-                // RAS push for calls (JALR rd=ra).
-                if (next.rd == 1) {
-                    emit_ras_push(&e, return_pc);
-                }
-
-                // Tail call: inline jump like JAL rd=0 when safe.
-                if (next.rd == 0
-                    && !(target >= static_cast<int64_t>(guest_pc) && target <= static_cast<int64_t>(pc + 4))
-                    && count < MAX_BLOCK_INSNS - 4) {
-                    dbt_trace_fusion(dbt, pc, "auipc_jalr_tail");
+                bool can_tail_inline =
+                    next.rd == 0
+                    && !(target >= static_cast<int64_t>(guest_pc)
+                         && target <= static_cast<int64_t>(pc + 4))
+                    && count < MAX_BLOCK_INSNS - 4;
+                switch (emit_direct_jalr_flow(&e, &rc, dbt, guest_pc, pc,
+                                              target_u64, return_pc, next,
+                                              side_exits, &num_side_exits,
+                                              can_tail_inline,
+                                              "auipc_jalr_call",
+                                              "auipc_jalr_tail",
+                                              "auipc_jalr")) {
+                case direct_jalr_flow_t::tail_call:
                     pc = static_cast<uint64_t>(target);
                     count++;
                     dbt->insns_fused++;
                     continue;
+                case direct_jalr_flow_t::inline_call_done:
+                case direct_jalr_flow_t::chained_exit:
+                    count++;
+                    dbt->insns_fused++;
+                    goto done;
                 }
-
-                rc_flush(&e, &rc);
-                emit_exit_chained(&e, dbt, static_cast<uint64_t>(target));
-                dbt_trace_fusion(dbt, pc, "auipc_jalr");
-                count++;
-                dbt->insns_fused++;
-                goto done;
             }
             // Fusion: AUIPC rd, upper + ADDI rd, rd, lower → MOV rd, pc+imm
             if (have_next && insn.rd
@@ -1652,46 +1747,8 @@ no_addr_fusion:
                             static_cast<unsigned long long>(target),
                             be ? 1 : 0);
                 }
-                if (be) {
-                    // Flush cached registers — callee reads from ctx.
-                    rc_flush(&e, &rc);
-
-                    // Store ra = pc+4 in ctx (callee's JALR reads this).
-                    emit_mov_r64_imm32(&e, X64_RAX,
-                                       static_cast<int32_t>(pc + 4));
-                    emit_store_guest(&e, 1, X64_RAX);
-
-                    // Poison the RAS so the callee's pop_and_probe
-                    // mismatches and falls through to RET.
-                    emit_ras_push(&e, 1ULL);
-
-                    // Native CALL to the translated target.
-                    uint32_t call_patch = emit_call_rel32(&e);
-                    uint32_t target_off = static_cast<uint32_t>(
-                        be->native_code - e.buf);
-                    emit_patch_rel32(&e, call_patch, target_off);
-
-                    // Check: did the callee return normally?
-                    // If ctx.next_pc != pc+4, the callee exited early
-                    // (internal block not yet chained).  Fall back to
-                    // the dispatch loop.
-                    emit_cmp_ctx_imm32(&e, CTX_NEXT_PC_OFF,
-                                       static_cast<int32_t>(pc + 4));
-                    uint32_t jne_cold = emit_jcc_rel32(&e, JCC_NE);
-
-                    // Hot path: callee returned normally.
-                    // Reload register cache (callee clobbered regs).
-                    rc_invalidate_reload(&e, &rc);
-
-                    // Store the cold-exit patch for later emission.
-                    // We'll emit the stub after the main block code.
-                    if (num_side_exits < MAX_SIDE_EXITS) {
-                        side_exits[num_side_exits].jcc_patch = jne_cold;
-                        side_exits[num_side_exits].target_pc = 0; // sentinel
-                        num_side_exits++;
-                    }
-
-                    dbt->inline_calls++;
+                if (try_emit_inline_call(&e, &rc, dbt, target, be, pc + 4,
+                                         side_exits, &num_side_exits)) {
                     pc += 4;
                     count++;
                     continue;
@@ -1703,6 +1760,9 @@ no_addr_fusion:
                 emit_mov_r64_imm32(&e, rd, static_cast<int32_t>(pc + 4));
             }
             rc_flush(&e, &rc);
+            if (insn.rd == 1) {
+                emit_ras_push(&e, pc + 4);
+            }
             emit_exit_chained(&e, dbt, target);
             goto done;
         }
@@ -1896,6 +1956,7 @@ no_addr_fusion:
                 uint32_t jcc_patch = emit_jcc_rel32(&e, cc);
                 side_exits[num_side_exits].jcc_patch = jcc_patch;
                 side_exits[num_side_exits].target_pc = target;
+                side_exits[num_side_exits].expected_next_pc = 0;
                 memcpy(side_exits[num_side_exits].snapshot, rc.slots,
                        sizeof(rc.slots));
                 num_side_exits++;
@@ -2591,10 +2652,12 @@ done:
             // unexpected next_pc.  Store diagnostics, then RET
             // to the dispatch loop.
             //
-            // inc qword [rbx + cold_exit_count_off]
-            static constexpr int32_t CE_COUNT_OFF = 1760;
-            static constexpr int32_t CE_ACTUAL_OFF = 1768;
-            static constexpr int32_t CE_EXPECTED_OFF = 1776;
+            static constexpr int32_t CE_COUNT_OFF =
+                static_cast<int32_t>(offsetof(dbt_state_t, cold_exit_count));
+            static constexpr int32_t CE_ACTUAL_OFF =
+                static_cast<int32_t>(offsetof(dbt_state_t, cold_exit_actual));
+            static constexpr int32_t CE_EXPECTED_OFF =
+                static_cast<int32_t>(offsetof(dbt_state_t, cold_exit_expected));
 
             // Store actual next_pc: mov rax, [rbx + next_pc]; mov [rbx + actual], rax
             emit_load_next_pc(&e, X64_RAX);
@@ -2603,11 +2666,13 @@ done:
             emit_byte(&e, modrm(0x02, X64_RAX, X64_RBX));
             emit_u32(&e, CE_ACTUAL_OFF);
 
-            // Store expected (from the side_exit's inline_expected field)
-            // We encode it as imm32 in a mov to [rbx + expected].
-            // The expected value was pc+4 at the inline CALL site.
-            // We need to pass it somehow — use a field stashed in the snapshot.
-            // For now, just increment the counter.
+            // Store expected next_pc for this inline CALL cold exit.
+            emit_mov_r64_imm64(&e, X64_RDX, side_exits[i].expected_next_pc);
+            emit_byte(&e, rex(1, reg_hi(X64_RDX), 0, 0));
+            emit_byte(&e, 0x89);
+            emit_byte(&e, modrm(0x02, X64_RDX, X64_RBX));
+            emit_u32(&e, CE_EXPECTED_OFF);
+
             // inc qword [rbx + CE_COUNT_OFF]
             emit_byte(&e, rex(1, 0, 0, 0));
             emit_byte(&e, 0xFF);
@@ -2801,6 +2866,8 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
     dbt->chain_misses = 0;
     dbt->insns_fused = 0;
     dbt->trace = 0;
+    dbt->trace_guest_pc = 0;
+    dbt->trace_guest_pc_filter = false;
 }
 
 // Lightweight re-run: update only the ECALL callback and clear the CPU
@@ -2836,8 +2903,14 @@ void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc) {
     uint64_t worklist[MAX_WORKLIST];
     int wl_count = 0;
 
-    worklist[wl_count++] = guest_pc;
-    mark_visited(guest_pc);
+    auto enqueue_pc = [&](uint64_t pc) -> bool {
+        if (wl_count >= MAX_WORKLIST || is_visited(pc)) return false;
+        mark_visited(pc);
+        worklist[wl_count++] = pc;
+        return true;
+    };
+
+    enqueue_pc(guest_pc);
 
     while (wl_count > 0) {
         uint64_t pc = worklist[--wl_count];
@@ -2854,17 +2927,19 @@ void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc) {
             rv64_insn_t si;
             rv64_decode(w, &si);
 
+            rv64_insn_t next_si;
+            bool have_next = false;
+            if (scan_pc + 8 <= dbt->memory_size) {
+                uint32_t next_w;
+                memcpy(&next_w, dbt->memory + scan_pc + 4, 4);
+                rv64_decode(next_w, &next_si);
+                have_next = true;
+            }
+
             if (si.opcode == OP_BRANCH) {
                 uint64_t target = scan_pc + static_cast<int64_t>(si.imm);
-                if (wl_count < MAX_WORKLIST && !is_visited(target)) {
-                    mark_visited(target);
-                    worklist[wl_count++] = target;
-                }
-                uint64_t ft = scan_pc + 4;
-                if (wl_count < MAX_WORKLIST && !is_visited(ft)) {
-                    mark_visited(ft);
-                    worklist[wl_count++] = ft;
-                }
+                enqueue_pc(target);
+                enqueue_pc(scan_pc + 4);
                 break;
             }
             if (si.opcode == OP_JAL) {
@@ -2875,19 +2950,28 @@ void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc) {
                     mark_visited(target);
                     dbt_pretranslate(dbt, target);
                 }
-                if (si.rd == 0 || si.rd != 0) {
-                    // Follow the target (unconditional or call target).
-                    if (wl_count < MAX_WORKLIST && !is_visited(target)) {
-                        mark_visited(target);
-                        worklist[wl_count++] = target;
-                    }
-                }
+                // Follow the jump/call target.
+                enqueue_pc(target);
                 if (si.rd != 0) {
-                    uint64_t ft = scan_pc + 4;
-                    if (wl_count < MAX_WORKLIST && !is_visited(ft)) {
-                        mark_visited(ft);
-                        worklist[wl_count++] = ft;
-                    }
+                    enqueue_pc(scan_pc + 4);
+                }
+                break;
+            }
+            uint64_t target;
+            uint64_t return_pc;
+            if (have_next
+                && resolve_direct_jalr_target(scan_pc, si, next_si, &target,
+                                              &return_pc)
+                && target < dbt->memory_size) {
+                if (next_si.rd != 0 && !is_visited(target)) {
+                    // Direct call encoded as AUIPC/LUI + JALR: pretranslate
+                    // callee first so shared inline CALL can find it.
+                    mark_visited(target);
+                    dbt_pretranslate(dbt, target);
+                }
+                enqueue_pc(target);
+                if (next_si.rd != 0) {
+                    enqueue_pc(return_pc);
                 }
                 break;
             }
