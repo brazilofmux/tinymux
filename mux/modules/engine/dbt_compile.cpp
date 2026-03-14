@@ -3930,6 +3930,38 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
     }
 }
 
+// ---------------------------------------------------------------
+// jit_eval: try to compile and execute an expression via the JIT.
+//
+// Returns true if the JIT handled it (result written to buff/bufc).
+// Returns false if compilation failed — caller should fall back to
+// the AST evaluator.
+//
+// This is the entry point for --enable-jit's mux_exec integration.
+// ---------------------------------------------------------------
+
+bool jit_eval(const UTF8 *expr, size_t nLen,
+              UTF8 *buff, UTF8 **bufc,
+              dbref executor, dbref caller, dbref enactor) {
+    compiled_program *prog = compile_cached(expr, nLen);
+    if (!prog) return false;
+
+    if (!prog->needs_jit) {
+        // Constant-folded — result is in the string pool.
+        const UTF8 *result = prog->memory.data() + prog->out_addr;
+        safe_str(result, buff, bufc);
+        return true;
+    }
+
+    UTF8 result[LBUF_SIZE];
+    if (!run_cached_program(prog, executor, caller, enactor,
+                             result, sizeof(result))) {
+        return false;  // JIT execution error — fall back to AST.
+    }
+    safe_str(result, buff, bufc);
+    return true;
+}
+
 FUNCTION(fun_rveval)
 {
     UNUSED_PARAMETER(fp);

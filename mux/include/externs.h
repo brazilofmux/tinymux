@@ -1681,4 +1681,13 @@ extern ServerEventsSinkNode *g_pServerEventsSinkListHead;
 void init_sql(void);
 #endif // INLINESQL
 
+#if defined(TINYMUX_JIT)
+// JIT evaluation entry point (dbt_compile.cpp).
+// Returns true if the JIT handled the expression.
+// Returns false on compilation failure — caller falls back to AST eval.
+bool jit_eval(const UTF8 *expr, size_t nLen,
+              UTF8 *buff, UTF8 **bufc,
+              dbref executor, dbref caller, dbref enactor);
+#endif // TINYMUX_JIT
+
 #endif // EXTERNS_H
