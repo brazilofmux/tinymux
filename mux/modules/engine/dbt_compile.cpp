@@ -473,10 +473,15 @@ struct rv_compiler {
     // (0x10000-0x2FFFF).  All other regions must avoid this range.
     static constexpr uint64_t BLOB_BASE  = 0x10000;
 
-    // Output region: AFTER the blob.  Each slot is LBUF_SIZE (8000)
-    // to avoid truncating MUX function return values.
-    static constexpr uint64_t OUT_BASE   = 0x30000;
-    static constexpr uint64_t OUT_LIMIT  = 0x3C000;  // 48KB (6 slots)
+    // Output region: split across two ranges to avoid the blob.
+    // Range 1: 0x8000-0xFFFF (32KB, below blob) — 4 slots
+    // Range 2: 0x30000-0x3BFFF (48KB, above blob) — 6 slots
+    // Total: 10 slots of 8000 bytes each.
+    // alloc_output uses the combined range seamlessly.
+    static constexpr uint64_t OUT_BASE   = 0x8000;
+    static constexpr uint64_t OUT_GAP_LO = 0x10000;  // blob starts here
+    static constexpr uint64_t OUT_GAP_HI = 0x30000;  // blob ends here
+    static constexpr uint64_t OUT_LIMIT  = 0x3C000;  // final output limit
     static constexpr int      OUT_SLOT   = 8000;     // LBUF_SIZE per slot
 
     // %0-%9 cargs region: 10 × 256-byte slots.
@@ -527,8 +532,13 @@ struct rv_compiler {
     // Allocate output buffer slot, return guest addr.
     uint64_t alloc_output() {
         uint64_t addr = out_pool;
+        // Skip the blob gap (0x10000-0x2FFFF).
+        if (addr >= OUT_GAP_LO && addr < OUT_GAP_HI) {
+            addr = OUT_GAP_HI;
+            out_pool = addr;
+        }
         if (addr + OUT_SLOT > OUT_LIMIT) return 0;
-        out_pool += OUT_SLOT;
+        out_pool = addr + OUT_SLOT;
         return addr;
     }
 };
@@ -3838,10 +3848,16 @@ static bool run_cached_program(compiled_program *prog,
         return true;
     }
 
-    // Clear output region + cargs region for clean re-run.
+    // Clear output regions + cargs for clean re-run.
+    // Two output ranges around the blob gap:
+    //   Range 1: OUT_BASE (0x8000) to OUT_GAP_LO (0x10000) — below blob
+    //   Range 2: OUT_GAP_HI (0x30000) to CARGS end — above blob
+    // Do NOT zero the blob region (0x10000-0x2FFFF)!
     memset(prog->memory.data() + rv_compiler::OUT_BASE, 0,
+           rv_compiler::OUT_GAP_LO - rv_compiler::OUT_BASE);
+    memset(prog->memory.data() + rv_compiler::OUT_GAP_HI, 0,
            rv_compiler::CARGS_BASE + rv_compiler::MAX_CARGS * rv_compiler::CARGS_SLOT
-           - rv_compiler::OUT_BASE);
+           - rv_compiler::OUT_GAP_HI);
 
     // Copy %0-%9 cargs into fixed guest memory slots.
     // Each carg gets a 256-byte slot at CARGS_BASE + idx * 256.
