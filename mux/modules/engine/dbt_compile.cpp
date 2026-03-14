@@ -163,6 +163,16 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "WORDPOS",     "rv64_wordpos" },
     { "REMOVE",      "rv64_remove" },
 
+    // --- Batch 8: list aggregation, reversal, type checks ---
+    { "LADD",        "rv64_ladd" },
+    { "LMAX",        "rv64_lmax" },
+    { "LMIN",        "rv64_lmin" },
+    { "LAND",        "rv64_land" },
+    { "LOR",         "rv64_lor" },
+    { "REVWORDS",    "rv64_revwords" },
+    { "FLIP",        "rv64_revwords" },   // alias
+    { "ISDBREF",     "rv64_isdbref" },
+
     { nullptr, nullptr }
 };
 

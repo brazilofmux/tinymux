@@ -1340,8 +1340,167 @@ char *rv64_null(char *out, const char **fargs, int nfargs) {
     return out;
 }
 
-/* objeval — can't do in blob, needs engine. */
-/* type/flags — can't do in blob, needs database. */
+/* ---------------------------------------------------------------
+ * Batch 8: list aggregation, list reversal, type checks.
+ * --------------------------------------------------------------- */
+
+/* ladd(list[, delim]) — sum of all numbers in list */
+char *rv64_ladd(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '0'; out[1] = '\0'; return out; }
+    unsigned char delim = ' ';
+    if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
+    const char *p = fargs[0];
+    long long sum = 0;
+    while (*p) {
+        while (*p == (char)delim) p++;
+        if (*p == '\0') break;
+        int neg = 0;
+        if (*p == '-') { neg = 1; p++; }
+        long long val = 0;
+        while (*p >= '0' && *p <= '9') { val = val * 10 + (*p - '0'); p++; }
+        if (neg) val = -val;
+        sum += val;
+        while (*p && *p != (char)delim) p++;
+    }
+    /* Format result. */
+    char *op = out;
+    if (sum < 0) { *op++ = '-'; sum = -sum; }
+    if (sum == 0) { out[0] = '0'; out[1] = '\0'; return out; }
+    char tmp[20]; int pos = 0;
+    while (sum > 0) { tmp[pos++] = '0' + (int)(sum % 10); sum /= 10; }
+    for (int i = pos - 1; i >= 0; i--) *op++ = tmp[i];
+    *op = '\0';
+    return out;
+}
+
+/* lmax(list[, delim]) — maximum number in list */
+char *rv64_lmax(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1 || fargs[0][0] == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
+    unsigned char delim = ' ';
+    if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
+    const char *p = fargs[0];
+    long long best = -9999999999LL;
+    int found = 0;
+    while (*p) {
+        while (*p == (char)delim) p++;
+        if (*p == '\0') break;
+        long long val = 0; int neg = 0;
+        if (*p == '-') { neg = 1; p++; }
+        while (*p >= '0' && *p <= '9') { val = val * 10 + (*p - '0'); p++; }
+        if (neg) val = -val;
+        if (!found || val > best) { best = val; found = 1; }
+        while (*p && *p != (char)delim) p++;
+    }
+    sitoa(out, (int)best);
+    return out;
+}
+
+/* lmin(list[, delim]) — minimum number in list */
+char *rv64_lmin(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1 || fargs[0][0] == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
+    unsigned char delim = ' ';
+    if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
+    const char *p = fargs[0];
+    long long best = 9999999999LL;
+    int found = 0;
+    while (*p) {
+        while (*p == (char)delim) p++;
+        if (*p == '\0') break;
+        long long val = 0; int neg = 0;
+        if (*p == '-') { neg = 1; p++; }
+        while (*p >= '0' && *p <= '9') { val = val * 10 + (*p - '0'); p++; }
+        if (neg) val = -val;
+        if (!found || val < best) { best = val; found = 1; }
+        while (*p && *p != (char)delim) p++;
+    }
+    sitoa(out, (int)best);
+    return out;
+}
+
+/* land(list[, delim]) — logical AND: 1 if all nonzero, else 0 */
+char *rv64_land(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1 || fargs[0][0] == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
+    unsigned char delim = ' ';
+    if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
+    const char *p = fargs[0];
+    while (*p) {
+        while (*p == (char)delim) p++;
+        if (*p == '\0') break;
+        int val = satoi(p);
+        if (val == 0) { out[0] = '0'; out[1] = '\0'; return out; }
+        while (*p && *p != (char)delim) p++;
+    }
+    out[0] = '1'; out[1] = '\0';
+    return out;
+}
+
+/* lor(list[, delim]) — logical OR: 1 if any nonzero, else 0 */
+char *rv64_lor(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1 || fargs[0][0] == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
+    unsigned char delim = ' ';
+    if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
+    const char *p = fargs[0];
+    while (*p) {
+        while (*p == (char)delim) p++;
+        if (*p == '\0') break;
+        int val = satoi(p);
+        if (val != 0) { out[0] = '1'; out[1] = '\0'; return out; }
+        while (*p && *p != (char)delim) p++;
+    }
+    out[0] = '0'; out[1] = '\0';
+    return out;
+}
+
+/* flip/revwords(list[, delim][, osep]) — reverse element order */
+char *rv64_revwords(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '\0'; return out; }
+    unsigned char delim = ' ';
+    unsigned char osep = ' ';
+    if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
+    if (nfargs >= 3 && fargs[2][0] != '\0') osep = (unsigned char)fargs[2][0];
+    /* Split into element start/len pairs. */
+    const unsigned char *p = (const unsigned char *)fargs[0];
+    const unsigned char *starts[4096];
+    size_t lens[4096];
+    int count = 0;
+    while (*p && count < 4096) {
+        if (delim == ' ') while (*p == ' ') p++;
+        if (*p == '\0') break;
+        starts[count] = p;
+        while (*p && *p != delim) p++;
+        lens[count] = (size_t)(p - starts[count]);
+        count++;
+        if (*p == delim) p++;
+    }
+    /* Output in reverse. */
+    unsigned char *op = (unsigned char *)out;
+    unsigned char *end = op + 7999;
+    for (int i = count - 1; i >= 0; i--) {
+        if (i < count - 1 && op < end) *op++ = osep;
+        size_t copy = lens[i];
+        if (op + copy > end) copy = (size_t)(end - op);
+        memcpy(op, starts[i], copy);
+        op += copy;
+    }
+    *op = '\0';
+    return out;
+}
+
+/* isdbref(string) — is it a valid dbref format (#NNN)? */
+char *rv64_isdbref(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1 || fargs[0][0] != '#') { out[0] = '0'; out[1] = '\0'; return out; }
+    const char *p = fargs[0] + 1;
+    if (*p == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
+    /* Allow negative dbrefs (#-1). */
+    if (*p == '-') p++;
+    if (*p == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
+    while (*p) {
+        if (*p < '0' || *p > '9') { out[0] = '0'; out[1] = '\0'; return out; }
+        p++;
+    }
+    out[0] = '1'; out[1] = '\0';
+    return out;
+}
 
 static int sitoa(char *buf, int val) {
     if (val == 0) {
