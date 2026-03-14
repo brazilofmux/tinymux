@@ -473,8 +473,6 @@ struct rv_compiler {
     static constexpr int      OUT_SLOT   = 256;
 
     // %0-%9 cargs region: 10 × 256-byte slots at fixed addresses.
-    // The compiler emits constant references to CARGS_BASE + idx*256.
-    // run_cached_program copies cargs[idx] into each slot before dbt_run.
     static constexpr uint64_t CARGS_BASE = 0xE800;
     static constexpr int      CARGS_SLOT = 256;
     static constexpr int      MAX_CARGS  = 10;

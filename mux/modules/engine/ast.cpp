@@ -2018,12 +2018,16 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
         if (ast_ptr->type == AST_LITERAL || ast_ptr->type == AST_SPACE)
             return false;
 
-        // For now, reject ANY expression with % or # substitutions.
-        // This is very conservative but lets us isolate whether the
-        // queue hang is from substitution handling or from something
-        // more fundamental in jit_eval's output mechanism.
         for (size_t i = 0; i < nLen; i++) {
             if (pStr[i] == '%' || pStr[i] == '#') return false;
+        }
+        // Reject expressions with setq/setr — the JIT's q-register
+        // writes don't sync back to mudstate.global_regs.
+        {
+            const char *s = reinterpret_cast<const char *>(pStr);
+            if (strstr(s, "setq(") || strstr(s, "setr(")
+                || strstr(s, "SETQ(") || strstr(s, "SETR("))
+                return false;
         }
         return true;
     };
