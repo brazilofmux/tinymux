@@ -469,8 +469,16 @@ struct rv_compiler {
     static constexpr uint64_t FARGS_BASE = 0x4000;
     static constexpr uint64_t FARGS_LIMIT= 0x8000;
     static constexpr uint64_t OUT_BASE   = 0x8000;
-    static constexpr uint64_t OUT_LIMIT  = 0xF000;
+    static constexpr uint64_t OUT_LIMIT  = 0xE800;
     static constexpr int      OUT_SLOT   = 256;
+
+    // %0-%9 cargs region: 10 × 256-byte slots at fixed addresses.
+    // The compiler emits constant references to CARGS_BASE + idx*256.
+    // run_cached_program copies cargs[idx] into each slot before dbt_run.
+    static constexpr uint64_t CARGS_BASE = 0xE800;
+    static constexpr int      CARGS_SLOT = 256;
+    static constexpr int      MAX_CARGS  = 10;
+
     static constexpr uint64_t STACK_TOP  = 0xFFF0;
 
     // Tier 2 blob loaded at 0x10000 (above the per-expression region).
@@ -2442,7 +2450,38 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                 return iter_inum1_val;
             }
         }
-        // Unresolvable substitution (no enclosing iter).
+
+        // %-substitutions.
+        if (node->text.size() >= 2 && node->text[0] == '%') {
+            char c = node->text[1];
+
+            // %0-%9: runtime cargs at fixed guest memory slots.
+            // run_cached_program copies cargs[idx] to CARGS_BASE + idx*256
+            // before each dbt_run.  The compiler emits a constant reference
+            // to that address — no pointer indirection, no ECALL.
+            if (c >= '0' && c <= '9') {
+                int idx = c - '0';
+                uint64_t carg_addr = rv_compiler::CARGS_BASE
+                                   + static_cast<uint64_t>(idx) * rv_compiler::CARGS_SLOT;
+                return h.emit_sconst(carg_addr, "");
+            }
+
+            // %b = space, %r = newline, %t = tab.
+            if (c == 'b' || c == 'B') {
+                uint64_t addr = rc.pool_str(" ");
+                return h.emit_sconst(addr, " ");
+            }
+            if (c == 'r' || c == 'R') {
+                uint64_t addr = rc.pool_str("\r\n");
+                return h.emit_sconst(addr, "\r\n");
+            }
+            if (c == 't' || c == 'T') {
+                uint64_t addr = rc.pool_str("\t");
+                return h.emit_sconst(addr, "\t");
+            }
+        }
+
+        // Unresolvable substitution.
         {
             uint64_t addr = rc.pool_str("");
             return h.emit_sconst(addr, "");
@@ -3630,6 +3669,8 @@ struct eval_ctx {
     dbref    executor;
     dbref    caller;
     dbref    enactor;
+    const UTF8 **cargs;
+    int        ncargs;
 };
 
 static int eval_ecall(rv64_ctx_t *ctx, void *user_data);
@@ -3771,7 +3812,9 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen) {
 static bool run_cached_program(compiled_program *prog,
                                 dbref executor, dbref caller_db,
                                 dbref enactor,
-                                UTF8 *out, size_t out_size) {
+                                UTF8 *out, size_t out_size,
+                                const UTF8 *cargs[] = nullptr,
+                                int ncargs = 0) {
     if (!prog->needs_jit) {
         const char *r = reinterpret_cast<const char *>(
             prog->memory.data() + prog->out_addr);
@@ -3782,9 +3825,24 @@ static bool run_cached_program(compiled_program *prog,
         return true;
     }
 
-    // Clear output region for clean re-run.
+    // Clear output region + cargs region for clean re-run.
     memset(prog->memory.data() + rv_compiler::OUT_BASE, 0,
-           rv_compiler::OUT_LIMIT - rv_compiler::OUT_BASE);
+           rv_compiler::CARGS_BASE + rv_compiler::MAX_CARGS * rv_compiler::CARGS_SLOT
+           - rv_compiler::OUT_BASE);
+
+    // Copy %0-%9 cargs into fixed guest memory slots.
+    // Each carg gets a 256-byte slot at CARGS_BASE + idx * 256.
+    for (int i = 0; i < rv_compiler::MAX_CARGS && i < ncargs; i++) {
+        if (cargs && cargs[i]) {
+            size_t len = strlen(reinterpret_cast<const char *>(cargs[i]));
+            if (len >= static_cast<size_t>(rv_compiler::CARGS_SLOT))
+                len = rv_compiler::CARGS_SLOT - 1;
+            uint64_t slot = rv_compiler::CARGS_BASE
+                          + static_cast<uint64_t>(i) * rv_compiler::CARGS_SLOT;
+            memcpy(prog->memory.data() + slot, cargs[i], len);
+            prog->memory[slot + len] = 0;
+        }
+    }
 
     eval_ctx ec;
     ec.memory = prog->memory.data();
@@ -3792,6 +3850,8 @@ static bool run_cached_program(compiled_program *prog,
     ec.executor = executor;
     ec.caller = caller_db;
     ec.enactor = enactor;
+    ec.cargs = cargs;
+    ec.ncargs = ncargs;
 
     dbt_state_t *dbt;
     if (s_dbt_ready && s_dbt_last_memory == prog->memory.data()) {
@@ -3942,7 +4002,8 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
 
 bool jit_eval(const UTF8 *expr, size_t nLen,
               UTF8 *buff, UTF8 **bufc,
-              dbref executor, dbref caller, dbref enactor) {
+              dbref executor, dbref caller, dbref enactor,
+              const UTF8 *cargs[], int ncargs) {
     compiled_program *prog = compile_cached(expr, nLen);
     if (!prog) return false;
 
@@ -3955,7 +4016,8 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
 
     UTF8 result[LBUF_SIZE];
     if (!run_cached_program(prog, executor, caller, enactor,
-                             result, sizeof(result))) {
+                             result, sizeof(result),
+                             cargs, ncargs)) {
         return false;  // JIT execution error — fall back to AST.
     }
     safe_str(result, buff, bufc);

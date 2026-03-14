@@ -1687,7 +1687,8 @@ void init_sql(void);
 // Returns false on compilation failure — caller falls back to AST eval.
 bool jit_eval(const UTF8 *expr, size_t nLen,
               UTF8 *buff, UTF8 **bufc,
-              dbref executor, dbref caller, dbref enactor);
+              dbref executor, dbref caller, dbref enactor,
+              const UTF8 *cargs[], int ncargs);
 #endif // TINYMUX_JIT
 
 #endif // EXTERNS_H
