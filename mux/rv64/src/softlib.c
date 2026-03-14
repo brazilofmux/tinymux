@@ -971,6 +971,148 @@ char *rv64_translate(char *out, const char **fargs, int nfargs) {
 }
 
 /* ---------------------------------------------------------------
+ * Batch 5: wildcard matching — strmatch, match, grab, graball.
+ * MUX wildcard rules: * matches 0+, ? matches 1, \ escapes.
+ * Case-insensitive.
+ * --------------------------------------------------------------- */
+
+static unsigned char wc_lower(unsigned char c) {
+    return (c >= 'A' && c <= 'Z') ? c + 32 : c;
+}
+
+/* Recursive wildcard match.  Returns 1 on match, 0 on no match. */
+static int wild_match(const unsigned char *pat, const unsigned char *str) {
+    while (*pat) {
+        if (*pat == '*') {
+            pat++;
+            while (*pat == '*') pat++;  /* collapse ** */
+            if (*pat == '\0') return 1; /* trailing * matches all */
+            while (*str) {
+                if (wild_match(pat, str)) return 1;
+                str++;
+            }
+            return wild_match(pat, str); /* try matching at end */
+        }
+        if (*pat == '?') {
+            if (*str == '\0') return 0;
+            pat++; str++;
+            continue;
+        }
+        if (*pat == '\\' && pat[1]) {
+            pat++;
+            /* fall through to literal compare */
+        }
+        if (wc_lower(*pat) != wc_lower(*str)) return 0;
+        pat++; str++;
+    }
+    return (*str == '\0') ? 1 : 0;
+}
+
+/* strmatch(string, pattern) — returns 1 or 0 */
+char *rv64_strmatch(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '0'; out[1] = '\0'; return out; }
+    int result = wild_match((const unsigned char *)fargs[1],
+                            (const unsigned char *)fargs[0]);
+    out[0] = result ? '1' : '0';
+    out[1] = '\0';
+    return out;
+}
+
+/* match(list, pattern[, delim]) — 1-based position of first match, 0 if none */
+char *rv64_match(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '0'; out[1] = '\0'; return out; }
+    unsigned char delim = ' ';
+    if (nfargs >= 3 && fargs[2][0] != '\0') delim = (unsigned char)fargs[2][0];
+    const unsigned char *pattern = (const unsigned char *)fargs[1];
+    const unsigned char *p = (const unsigned char *)fargs[0];
+    unsigned char elem[8192];
+    int pos = 1;
+    while (*p) {
+        /* Skip leading delimiters (space only). */
+        if (delim == ' ') while (*p == ' ') p++;
+        if (*p == '\0') break;
+        /* Extract element. */
+        unsigned char *ep = elem;
+        while (*p && *p != delim && ep < elem + sizeof(elem) - 1)
+            *ep++ = *p++;
+        *ep = '\0';
+        if (wild_match(pattern, elem)) {
+            sitoa(out, pos);
+            return out;
+        }
+        if (*p == delim) p++;
+        pos++;
+    }
+    out[0] = '0'; out[1] = '\0';
+    return out;
+}
+
+/* grab(list, pattern[, delim]) — first matching element */
+char *rv64_grab(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '\0'; return out; }
+    unsigned char delim = ' ';
+    if (nfargs >= 3 && fargs[2][0] != '\0') delim = (unsigned char)fargs[2][0];
+    const unsigned char *pattern = (const unsigned char *)fargs[1];
+    const unsigned char *p = (const unsigned char *)fargs[0];
+    while (*p) {
+        if (delim == ' ') while (*p == ' ') p++;
+        if (*p == '\0') break;
+        const unsigned char *start = p;
+        while (*p && *p != delim) p++;
+        size_t elen = (size_t)(p - start);
+        /* Copy to temp for NUL-termination. */
+        unsigned char elem[8192];
+        if (elen >= sizeof(elem)) elen = sizeof(elem) - 1;
+        memcpy(elem, start, elen);
+        elem[elen] = '\0';
+        if (wild_match(pattern, elem)) {
+            memcpy(out, start, elen);
+            out[elen] = '\0';
+            return out;
+        }
+        if (*p == delim) p++;
+    }
+    out[0] = '\0';
+    return out;
+}
+
+/* graball(list, pattern[, delim][, osep]) — all matching elements */
+char *rv64_graball(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '\0'; return out; }
+    unsigned char delim = ' ';
+    unsigned char osep = ' ';
+    if (nfargs >= 3 && fargs[2][0] != '\0') delim = (unsigned char)fargs[2][0];
+    if (nfargs >= 4 && fargs[3][0] != '\0') osep = (unsigned char)fargs[3][0];
+    const unsigned char *pattern = (const unsigned char *)fargs[1];
+    const unsigned char *p = (const unsigned char *)fargs[0];
+    unsigned char *op = (unsigned char *)out;
+    unsigned char *end = op + 7999;
+    int first = 1;
+    while (*p) {
+        if (delim == ' ') while (*p == ' ') p++;
+        if (*p == '\0') break;
+        const unsigned char *start = p;
+        while (*p && *p != delim) p++;
+        size_t elen = (size_t)(p - start);
+        unsigned char elem[8192];
+        if (elen >= sizeof(elem)) elen = sizeof(elem) - 1;
+        memcpy(elem, start, elen);
+        elem[elen] = '\0';
+        if (wild_match(pattern, elem)) {
+            if (!first && op < end) *op++ = osep;
+            first = 0;
+            size_t copy = elen;
+            if (op + copy > end) copy = (size_t)(end - op);
+            memcpy(op, start, copy);
+            op += copy;
+        }
+        if (*p == delim) p++;
+    }
+    *op = '\0';
+    return out;
+}
+
+/* ---------------------------------------------------------------
  * Helper: inline itoa, writes decimal to buf, returns length.
  * --------------------------------------------------------------- */
 

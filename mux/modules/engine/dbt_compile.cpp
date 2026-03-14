@@ -144,6 +144,12 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "ELEMENTS",    "rv64_elements" },
     { "TRANSLATE",   "rv64_translate" },
 
+    // --- Batch 5: wildcard matching ---
+    { "STRMATCH",   "rv64_strmatch" },
+    { "MATCH",       "rv64_match" },
+    { "GRAB",        "rv64_grab" },
+    { "GRABALL",     "rv64_graball" },
+
     { nullptr, nullptr }
 };
 
