@@ -2801,7 +2801,7 @@ void dbt_rerun(dbt_state_t *dbt,
 //
 void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc) {
     // Worklist of PCs to translate.
-    static constexpr int MAX_WORKLIST = 64;
+    static constexpr int MAX_WORKLIST = 256;
     uint64_t worklist[MAX_WORKLIST];
     int wl_count = 0;
 
@@ -2843,7 +2843,11 @@ void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc) {
                     if (wl_count < MAX_WORKLIST && !cache_lookup(dbt, target))
                         worklist[wl_count++] = target;
                 } else {
-                    // Function call — fall-through is the successor.
+                    // Function call — follow BOTH call target and fall-through.
+                    // The call target must be pretranslated for inline CALL
+                    // to work when the caller is later invoked.
+                    if (wl_count < MAX_WORKLIST && !cache_lookup(dbt, target))
+                        worklist[wl_count++] = target;
                     if (wl_count < MAX_WORKLIST && !cache_lookup(dbt, scan_pc + 4))
                         worklist[wl_count++] = scan_pc + 4;
                 }
