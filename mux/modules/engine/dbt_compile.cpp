@@ -159,6 +159,10 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "DEC2HEX",     "rv64_dec2hex" },
     { "HEX2DEC",     "rv64_hex2dec" },
 
+    // --- Batch 7: wordpos, remove ---
+    { "WORDPOS",     "rv64_wordpos" },
+    { "REMOVE",      "rv64_remove" },
+
     { nullptr, nullptr }
 };
 

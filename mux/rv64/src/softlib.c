@@ -1260,6 +1260,89 @@ char *rv64_hex2dec(char *out, const char **fargs, int nfargs) {
     return out;
 }
 
+/* ---------------------------------------------------------------
+ * Batch 7: wordpos, remove, table support, misc.
+ * --------------------------------------------------------------- */
+
+/* wordpos(string, word[, delim]) — position of exact word in string */
+char *rv64_wordpos(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '0'; out[1] = '\0'; return out; }
+    unsigned char delim = ' ';
+    if (nfargs >= 3 && fargs[2][0] != '\0') delim = (unsigned char)fargs[2][0];
+    const unsigned char *word = (const unsigned char *)fargs[1];
+    size_t wlen = rv64_slen(fargs[1]);
+    const unsigned char *p = (const unsigned char *)fargs[0];
+    int pos = 1;
+    while (*p) {
+        if (delim == ' ') while (*p == ' ') p++;
+        if (*p == '\0') break;
+        const unsigned char *start = p;
+        while (*p && *p != delim) p++;
+        size_t elen = (size_t)(p - start);
+        if (elen == wlen && memcmp(start, word, wlen) == 0) {
+            sitoa(out, pos);
+            return out;
+        }
+        if (*p == delim) p++;
+        pos++;
+    }
+    out[0] = '0'; out[1] = '\0';
+    return out;
+}
+
+/* remove(list, word[, delim][, osep]) — remove first occurrence of word */
+char *rv64_remove(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) {
+        if (nfargs >= 1) rv64_scopy(out, fargs[0]);
+        else out[0] = '\0';
+        return out;
+    }
+    unsigned char delim = ' ';
+    unsigned char osep = ' ';
+    if (nfargs >= 3 && fargs[2][0] != '\0') delim = (unsigned char)fargs[2][0];
+    if (nfargs >= 4 && fargs[3][0] != '\0') osep = (unsigned char)fargs[3][0];
+    const unsigned char *word = (const unsigned char *)fargs[1];
+    size_t wlen = rv64_slen(fargs[1]);
+    const unsigned char *p = (const unsigned char *)fargs[0];
+    unsigned char *op = (unsigned char *)out;
+    unsigned char *end = op + 7999;
+    int first = 1;
+    int removed = 0;
+    while (*p) {
+        if (delim == ' ') while (*p == ' ') p++;
+        if (*p == '\0') break;
+        const unsigned char *start = p;
+        while (*p && *p != delim) p++;
+        size_t elen = (size_t)(p - start);
+        if (!removed && elen == wlen && memcmp(start, word, wlen) == 0) {
+            removed = 1; /* skip this element */
+        } else {
+            if (!first && op < end) *op++ = osep;
+            first = 0;
+            size_t copy = elen;
+            if (op + copy > end) copy = (size_t)(end - op);
+            memcpy(op, start, copy);
+            op += copy;
+        }
+        if (*p == delim) p++;
+    }
+    *op = '\0';
+    return out;
+}
+
+/* iter_delim(list, delim) — count of delimiter-separated items (alias for words) */
+/* Already have WORDS. Skip. */
+
+/* null(args...) — evaluate args, return nothing */
+char *rv64_null(char *out, const char **fargs, int nfargs) {
+    (void)fargs; (void)nfargs;
+    out[0] = '\0';
+    return out;
+}
+
+/* objeval — can't do in blob, needs engine. */
+/* type/flags — can't do in blob, needs database. */
+
 static int sitoa(char *buf, int val) {
     if (val == 0) {
         buf[0] = '0';
