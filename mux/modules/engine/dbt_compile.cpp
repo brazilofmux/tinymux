@@ -320,9 +320,23 @@ static void pretranslate_tier2(dbt_state_t *dbt) {
     reg_intrinsic(dbt, "co_compress", DBT_EMIT_CO_4PP, reinterpret_cast<void *>(co_compress));
     reg_intrinsic(dbt, "co_lpos",     DBT_EMIT_CO_4PP, reinterpret_cast<void *>(co_lpos));
 
-    // Pretranslate all Tier 2 functions.  For intrinsic addresses,
-    // translate_block() → try_emit_intrinsic() emits native stubs.
-    // For non-intrinsic functions, normal RV64 translation proceeds.
+    // Pre-translate all intrinsic stubs into the cache BEFORE any
+    // function pretranslation.  Intrinsics are leaf functions (strlen,
+    // memcpy, sitoa, co_* wrappers) that blob functions call internally.
+    // By caching them first, every subsequent translate_block that
+    // encounters a JAL to an intrinsic address will find it in the
+    // cache and emit an inline CALL — regardless of worklist order
+    // or superblock extension boundaries.
+    //
+    for (int i = 0; i < dbt->num_intrinsics; i++) {
+        uint64_t addr = dbt->intrinsics[i].guest_addr;
+        if (addr) {
+            dbt_pretranslate(dbt, addr);
+        }
+    }
+
+    // Pretranslate all Tier 2 functions.  With intrinsics already cached,
+    // inline CALLs to intrinsic targets will fire on first encounter.
     //
     for (auto &kv : s_tier2.funcs) {
         dbt_pretranslate(dbt, kv.second.guest_addr);
