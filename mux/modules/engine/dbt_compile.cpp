@@ -150,6 +150,15 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "GRAB",        "rv64_grab" },
     { "GRABALL",     "rv64_graball" },
 
+    // --- Batch 6: numbers, chars, base conversion ---
+    { "LNUM",        "rv64_lnum" },
+    { "ISNUM",       "rv64_isnum" },
+    { "ISINT",       "rv64_isint" },
+    { "CHR",         "rv64_chr" },
+    { "ORD",         "rv64_ord" },
+    { "DEC2HEX",     "rv64_dec2hex" },
+    { "HEX2DEC",     "rv64_hex2dec" },
+
     { nullptr, nullptr }
 };
 

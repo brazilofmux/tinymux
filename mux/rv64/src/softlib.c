@@ -1116,6 +1116,150 @@ char *rv64_graball(char *out, const char **fargs, int nfargs) {
  * Helper: inline itoa, writes decimal to buf, returns length.
  * --------------------------------------------------------------- */
 
+/* ---------------------------------------------------------------
+ * Batch 6: lnum, isnum, isint, chr, ord, dec2hex, hex2dec, baseconv.
+ * --------------------------------------------------------------- */
+
+/* lnum(count) or lnum(start, end[, osep[, step]]) — generate number list */
+char *rv64_lnum(char *out, const char **fargs, int nfargs) {
+    int start = 0, end_val = 0, step = 1;
+    unsigned char osep = ' ';
+    if (nfargs == 1) {
+        end_val = satoi(fargs[0]) - 1;
+    } else if (nfargs >= 2) {
+        start = satoi(fargs[0]);
+        end_val = satoi(fargs[1]);
+    }
+    if (nfargs >= 3 && fargs[2][0] != '\0') osep = (unsigned char)fargs[2][0];
+    if (nfargs >= 4) {
+        step = satoi(fargs[3]);
+        if (step == 0) step = 1;
+    }
+    if (start > end_val && step > 0) step = -step;
+    char *op = out;
+    char *end = out + 7999;
+    int first = 1;
+    int i = start;
+    for (;;) {
+        if (step > 0 && i > end_val) break;
+        if (step < 0 && i < end_val) break;
+        if (!first && op < end) *op++ = (char)osep;
+        first = 0;
+        int n = sitoa(op, i);
+        op += n;
+        if (op >= end) break;
+        i += step;
+    }
+    *op = '\0';
+    return out;
+}
+
+/* isnum(string) — is it a valid number? */
+char *rv64_isnum(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1 || fargs[0][0] == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
+    const char *p = fargs[0];
+    if (*p == '-' || *p == '+') p++;
+    if (*p == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
+    int has_digit = 0, has_dot = 0;
+    while (*p) {
+        if (*p >= '0' && *p <= '9') { has_digit = 1; p++; }
+        else if (*p == '.' && !has_dot) { has_dot = 1; p++; }
+        else { out[0] = '0'; out[1] = '\0'; return out; }
+    }
+    out[0] = has_digit ? '1' : '0';
+    out[1] = '\0';
+    return out;
+}
+
+/* isint(string) — is it a valid integer? */
+char *rv64_isint(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1 || fargs[0][0] == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
+    const char *p = fargs[0];
+    if (*p == '-' || *p == '+') p++;
+    if (*p == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
+    while (*p) {
+        if (*p < '0' || *p > '9') { out[0] = '0'; out[1] = '\0'; return out; }
+        p++;
+    }
+    out[0] = '1'; out[1] = '\0';
+    return out;
+}
+
+/* chr(number) — ASCII/Unicode code point to character */
+char *rv64_chr(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '\0'; return out; }
+    int val = satoi(fargs[0]);
+    if (val < 1 || val > 127) { out[0] = '\0'; return out; }
+    out[0] = (char)val;
+    out[1] = '\0';
+    return out;
+}
+
+/* ord(string) — first character to ASCII code */
+char *rv64_ord(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1 || fargs[0][0] == '\0') { out[0] = '\0'; return out; }
+    sitoa(out, (int)(unsigned char)fargs[0][0]);
+    return out;
+}
+
+/* dec2hex(number) — decimal to hexadecimal */
+char *rv64_dec2hex(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '0'; out[1] = '\0'; return out; }
+    long long val = 0;
+    const char *p = fargs[0];
+    int neg = 0;
+    if (*p == '-') { neg = 1; p++; }
+    while (*p >= '0' && *p <= '9') { val = val * 10 + (*p - '0'); p++; }
+    if (neg) val = -val;
+    /* Format as hex. */
+    if (val == 0) { out[0] = '0'; out[1] = '\0'; return out; }
+    char tmp[20];
+    int pos = 0;
+    unsigned long long uv = (unsigned long long)val;
+    if (val < 0) uv = (unsigned long long)(-val);
+    while (uv > 0) {
+        int d = (int)(uv & 0xF);
+        tmp[pos++] = (d < 10) ? ('0' + d) : ('A' + d - 10);
+        uv >>= 4;
+    }
+    char *op = out;
+    if (neg) *op++ = '-';
+    for (int i = pos - 1; i >= 0; i--) *op++ = tmp[i];
+    *op = '\0';
+    return out;
+}
+
+/* hex2dec(hex_string) — hexadecimal to decimal */
+char *rv64_hex2dec(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1 || fargs[0][0] == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
+    const char *p = fargs[0];
+    int neg = 0;
+    if (*p == '-') { neg = 1; p++; }
+    /* Skip 0x prefix. */
+    if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) p += 2;
+    long long val = 0;
+    while (*p) {
+        int d;
+        if (*p >= '0' && *p <= '9') d = *p - '0';
+        else if (*p >= 'a' && *p <= 'f') d = *p - 'a' + 10;
+        else if (*p >= 'A' && *p <= 'F') d = *p - 'A' + 10;
+        else break;
+        val = val * 16 + d;
+        p++;
+    }
+    if (neg) val = -val;
+    /* Format as decimal using sitoa for the magnitude. */
+    char *op = out;
+    if (val < 0) { *op++ = '-'; val = -val; }
+    if (val == 0) { out[0] = '0'; out[1] = '\0'; return out; }
+    char tmp[20];
+    int pos = 0;
+    while (val > 0) { tmp[pos++] = '0' + (int)(val % 10); val /= 10; }
+    for (int i = pos - 1; i >= 0; i--) *op++ = tmp[i];
+    *op = '\0';
+    return out;
+}
+
 static int sitoa(char *buf, int val) {
     if (val == 0) {
         buf[0] = '0';
