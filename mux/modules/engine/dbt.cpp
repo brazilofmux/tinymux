@@ -2800,26 +2800,35 @@ void dbt_rerun(dbt_state_t *dbt,
 // before superblocks try to inline-call them.
 //
 void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc) {
-    // Worklist of PCs to translate.
-    static constexpr int MAX_WORKLIST = 256;
+    // Visited set: prevents re-scanning already-processed blocks.
+    // Direct-mapped hash — collisions just cause redundant work, not bugs.
+    static constexpr int VISITED_SIZE = 4096;
+    static constexpr int VISITED_MASK = VISITED_SIZE - 1;
+    uint64_t visited_map[VISITED_SIZE];
+    memset(visited_map, 0, sizeof(visited_map));
+
+    auto is_visited = [&](uint64_t pc) -> bool {
+        return visited_map[(pc >> 2) & VISITED_MASK] == pc;
+    };
+    auto mark_visited = [&](uint64_t pc) {
+        visited_map[(pc >> 2) & VISITED_MASK] = pc;
+    };
+
+    static constexpr int MAX_WORKLIST = 4096;
     uint64_t worklist[MAX_WORKLIST];
     int wl_count = 0;
 
-    if (!cache_lookup(dbt, guest_pc)) {
-        worklist[wl_count++] = guest_pc;
-    }
+    worklist[wl_count++] = guest_pc;
+    mark_visited(guest_pc);
 
     while (wl_count > 0) {
         uint64_t pc = worklist[--wl_count];
-        if (cache_lookup(dbt, pc)) continue;
 
-        uint8_t *code = translate_block(dbt, pc);
-        if (!code) continue;  // code buffer full — skip this block
-        cache_insert(dbt, pc, code);
-        backpatch_chains(dbt, pc, code);
-
-        // Scan the RV64 code at pc to find block exits.
-        // Follow branches and JAL to discover successor blocks.
+        // Scan RV64 code FIRST to discover successors.
+        // For function calls (JAL rd=1), recursively pretranslate the
+        // call target BEFORE translating this block.  This ensures the
+        // call target is in the cache when translate_block runs, so the
+        // inline CALL optimization fires.
         uint64_t scan_pc = pc;
         for (int i = 0; i < MAX_BLOCK_INSNS && scan_pc + 4 <= dbt->memory_size; i++) {
             uint32_t w;
@@ -2829,34 +2838,53 @@ void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc) {
 
             if (si.opcode == OP_BRANCH) {
                 uint64_t target = scan_pc + static_cast<int64_t>(si.imm);
-                // Add both branch target and fall-through.
-                if (wl_count < MAX_WORKLIST && !cache_lookup(dbt, target))
+                if (wl_count < MAX_WORKLIST && !is_visited(target)) {
+                    mark_visited(target);
                     worklist[wl_count++] = target;
-                if (wl_count < MAX_WORKLIST && !cache_lookup(dbt, scan_pc + 4))
-                    worklist[wl_count++] = scan_pc + 4;
+                }
+                uint64_t ft = scan_pc + 4;
+                if (wl_count < MAX_WORKLIST && !is_visited(ft)) {
+                    mark_visited(ft);
+                    worklist[wl_count++] = ft;
+                }
                 break;
             }
             if (si.opcode == OP_JAL) {
                 uint64_t target = scan_pc + static_cast<int64_t>(si.imm);
-                if (si.rd == 0) {
-                    // Unconditional jump — follow target.
-                    if (wl_count < MAX_WORKLIST && !cache_lookup(dbt, target))
+                if (si.rd != 0 && !is_visited(target)) {
+                    // Function call: pretranslate callee FIRST so inline
+                    // CALL can find it in the cache.
+                    mark_visited(target);
+                    dbt_pretranslate(dbt, target);
+                }
+                if (si.rd == 0 || si.rd != 0) {
+                    // Follow the target (unconditional or call target).
+                    if (wl_count < MAX_WORKLIST && !is_visited(target)) {
+                        mark_visited(target);
                         worklist[wl_count++] = target;
-                } else {
-                    // Function call — follow BOTH call target and fall-through.
-                    // The call target must be pretranslated for inline CALL
-                    // to work when the caller is later invoked.
-                    if (wl_count < MAX_WORKLIST && !cache_lookup(dbt, target))
-                        worklist[wl_count++] = target;
-                    if (wl_count < MAX_WORKLIST && !cache_lookup(dbt, scan_pc + 4))
-                        worklist[wl_count++] = scan_pc + 4;
+                    }
+                }
+                if (si.rd != 0) {
+                    uint64_t ft = scan_pc + 4;
+                    if (wl_count < MAX_WORKLIST && !is_visited(ft)) {
+                        mark_visited(ft);
+                        worklist[wl_count++] = ft;
+                    }
                 }
                 break;
             }
             if (si.opcode == OP_JALR || si.opcode == OP_SYSTEM) {
-                break; // indirect jump / ecall — can't follow statically
+                break;
             }
             scan_pc += 4;
+        }
+
+        // Translate if not already cached.
+        if (!cache_lookup(dbt, pc)) {
+            uint8_t *code = translate_block(dbt, pc);
+            if (!code) continue;
+            cache_insert(dbt, pc, code);
+            backpatch_chains(dbt, pc, code);
         }
     }
 }
