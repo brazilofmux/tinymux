@@ -4071,10 +4071,11 @@ FUNCTION(fun_rvbench)
     uint64_t ce = s_persistent_dbt.cold_exit_count;
     uint64_t ce_actual = s_persistent_dbt.cold_exit_actual;
     uint64_t ce_expected = s_persistent_dbt.cold_exit_expected;
+    uint64_t ce_from = s_persistent_dbt.last_exit_from;
 
     UTF8 report[LBUF_SIZE];
     snprintf(reinterpret_cast<char *>(report), sizeof(report),
-        "expr=%s iters=%d folds=%d ecalls=%d tier2=%d nativ=%d disp=%llu sb=%llu/%llu ic=%llu ih=%llu ce=%llu(a=0x%llX,e=0x%llX) | "
+        "expr=%s iters=%d folds=%d ecalls=%d tier2=%d nativ=%d disp=%llu sb=%llu/%llu ic=%llu ih=%llu ce=%llu(a=0x%llX,e=0x%llX,from=0x%llX) | "
         "native=%.2fus/call | "
         "compile-each=%.2fus/call (%.1fx) | "
         "cached=%.2fus/call (%.1fx)",
@@ -4082,7 +4083,7 @@ FUNCTION(fun_rvbench)
         iterations, prog.folds, prog.ecalls, prog.tier2_calls, prog.native_ops,
         (unsigned long long)disp,
         (unsigned long long)sb, (unsigned long long)se, (unsigned long long)ic,
-        (unsigned long long)ih, (unsigned long long)ce, (unsigned long long)ce_actual, (unsigned long long)ce_expected,
+        (unsigned long long)ih, (unsigned long long)ce, (unsigned long long)ce_actual, (unsigned long long)ce_expected, (unsigned long long)ce_from,
         per_native,
         per_compile, per_compile / per_native,
         per_cached, per_cached / per_native);

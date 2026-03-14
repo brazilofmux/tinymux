@@ -1304,7 +1304,6 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             have_next = true;
         }
 
-        // Instruction trace: enabled by TINYMUX_DBT_TRACE=translate + _PC filter.
         if (dbt_trace_translate_enabled(dbt, guest_pc)) {
             const char *n = "?";
             switch(insn.opcode) {
@@ -1314,8 +1313,9 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             case OP_STORE:n="SD";break; case OP_IMM:n="IMM";break;
             case OP_REG:n="REG";break; case OP_SYSTEM:n="SYS";break;
             }
-            fprintf(stderr, "[dbt-xlate] insn #%d pc=0x%llX %s rd=%d rs1=%d rs2=%d imm=%d\n",
-                    count, (unsigned long long)pc, n, insn.rd, insn.rs1, insn.rs2, insn.imm);
+            dbt_trace_translate_pc(dbt, guest_pc,
+                "insn #%d pc=0x%llX %s rd=%d rs1=%d rs2=%d imm=%d",
+                count, (unsigned long long)pc, n, insn.rd, insn.rs1, insn.rs2, insn.imm);
         }
 
         // Fusion: SLT/SLTI/SLTU/SLTIU + BEQ/BNE against x0.
@@ -1814,15 +1814,38 @@ no_addr_fusion:
 
             emit_load_next_pc(&e, X64_RCX);
 
-            // RAS return prediction for exact returns (JALR x0, ra, 0).
-            // Safe with inline CALLs: emit_store_next_pc above already
-            // wrote ctx.next_pc before the probe runs. If the probe hits
-            // and JMPs to the predicted block, next_pc is already correct
-            // for the inline CALL continuation's check.
-            if (insn.rs1 == 1 && insn.rd == 0 && insn.imm == 0) {
-                emit_ras_pop_and_probe(&e, dbt);
-            }
+            // RAS return prediction is DISABLED for now.
+            //
+            // The probe JMPs directly to the predicted block on a hit,
+            // bypassing emit_exit_indirect's RET. When this block runs
+            // inside an inline CALL context, the outer caller expects
+            // the callee to RET through the x86 stack. The probe's JMP
+            // breaks that contract — it transfers control without RET,
+            // leaving the inline CALL continuation stranded on the stack.
+            //
+            // Disabling the probe did NOT fix the 0x1096C cold exits
+            // (they have a different cause), but the probe remains
+            // architecturally unsafe for inline-call contexts. Since
+            // blob blocks serve both inline and dispatch-loop contexts,
+            // we cannot conditionally enable the probe per-block.
+            //
+            // Future: a context flag (e.g., pushed on the x86 stack by
+            // inline CALL, checked by the probe) could allow safe
+            // selective enablement.
 
+            // Tag this exit with the guest PC for cold-exit diagnostics.
+            // mov qword [rbx + last_exit_from_off], imm32(pc)
+            {
+                static constexpr int32_t EXIT_FROM_OFF =
+                    static_cast<int32_t>(offsetof(dbt_state_t, last_exit_from));
+                emit_mov_r64_imm32(&e, X64_RAX, static_cast<int32_t>(pc));
+                emit_byte(&e, rex(1, reg_hi(X64_RAX), 0, 0));
+                emit_byte(&e, 0x89);
+                emit_byte(&e, modrm(0x02, X64_RAX, X64_RBX));
+                emit_u32(&e, EXIT_FROM_OFF);
+                // Restore RCX from next_pc (RAX clobbered it).
+                emit_load_next_pc(&e, X64_RCX);
+            }
             emit_exit_indirect(&e, X64_RCX);
             goto done;
         }

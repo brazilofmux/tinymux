@@ -85,13 +85,15 @@ After the RET, the program's inline CALL continuation checks:
    confirms JALR x0, ra, 0 at insn #21. LD ra, 56(sp) at insn #13
    restores correct ra. Prologue (0x10820) saves ra at 56(sp).
 
-### Ruled Out: RAS Probe
+### RAS Probe: Not the Cause of This Symptom
 
-The RAS pop_and_probe was disabled globally — cold exit pattern
-unchanged. Proved the probe is NOT the cause. The probe is safe
-because `emit_store_next_pc` stores next_pc BEFORE the probe runs.
-Whether the probe hits (JMP to predicted block) or misses (fall
-through to exit_indirect), next_pc is already correct.
+Disabling emit_ras_pop_and_probe globally did not change the
+0x1096C cold-exit pattern — the probe is not the cause of THIS
+symptom. However, the probe remains architecturally unsafe for
+inline-call contexts: on a hit, it JMPs directly to the predicted
+block, bypassing emit_exit_indirect's RET. This breaks the x86
+CALL/RET contract that inline CALL callers depend on. The probe
+is currently disabled pending a context-aware mechanism.
 
 ### Open Questions
 
@@ -121,11 +123,16 @@ through to exit_indirect), next_pc is already correct.
    But what if the block has an IMPLICIT exit from one of the
    fusions or instruction handlers?
 
-5. **Is the cold exit from the OUTER inline CALL (program → blob)
-   or from the INNER inline CALL (blob → intrinsic)?** The
-   `cold_exit_expected` field now records the expected next_pc for
-   each cold exit. Check whether expected matches the outer (0x140)
-   or inner (0x1096C) return address.
+5. **ANSWERED: The cold exit is from the OUTER inline CALL.**
+   `cold_exit_expected` reports `e=0x140` (program return address),
+   confirming the OUTER program→blob inline CALL's cold exit fires.
+   The inner blob→intrinsic inline CALL succeeds (hot path).
+
+6. **Which emit_exit_indirect writes 0x1096C immediately before the
+   outer cold exit?** This is the key remaining question. If we can
+   identify WHICH block's exit_indirect fires with next_pc=0x1096C
+   and examine the x86 return address at that moment, we'll know
+   exactly where the return path breaks.
 
 ## Reproduction
 
@@ -136,7 +143,9 @@ TINYMUX_DBT_TRACE=exec TINYMUX_DBT_MAX_DISPATCH=50 \
 grep 'disp=.*pc=0x1096C' netmux.log | tail -5
 ```
 
-The cold-exit count appears in benchmark output as `ce=N(0x1096C)`.
+Cold-exit count appears in benchmark output as `ce=N(a=0xACTUAL,e=0xEXPECTED)`.
+Example: `ce=160029(a=0x1096C,e=0x140)` means 160029 cold exits,
+last actual next_pc=0x1096C, expected=0x140.
 
 ## Key Files
 

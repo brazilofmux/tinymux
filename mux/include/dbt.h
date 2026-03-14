@@ -162,6 +162,7 @@ struct dbt_state_t {
     uint64_t cold_exit_count;
     uint64_t cold_exit_actual;    // last next_pc that caused cold exit
     uint64_t cold_exit_expected;  // what was expected
+    uint64_t last_exit_from;      // guest_pc of last exit_indirect caller
 
     // Debug.
     //
