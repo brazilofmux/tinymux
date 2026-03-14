@@ -2028,7 +2028,7 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
         return true;
     };
 
-    if (nLen >= 8 && nLen < 4096
+    if (nLen >= 8 && nLen < 256
         && (eval & EV_EVAL)
         && !alarm_clock.alarmed
         && jit_can_handle())

@@ -2394,6 +2394,17 @@ general_lowering:
 
     int fidx = engine_api_lookup(upper.c_str());
 
+    // Validate argument count at compile time.  If the function
+    // requires more args than we have, return empty — don't emit
+    // an ECALL that would crash the fun_* handler.
+    if (fidx > 0 && fidx < ENGINE_API_MAX_FUNCS) {
+        FUN *fp = engine_api_table[fidx];
+        if (fp && nargs < fp->minArgs) {
+            uint64_t addr = rc.pool_str("");
+            return h.emit_sconst(addr, "");
+        }
+    }
+
     // Check Tier 2 blob before falling through to ECALL.
     uint64_t t2addr = tier2_lookup(upper);
 
@@ -3891,6 +3902,20 @@ static bool run_cached_program(compiled_program *prog,
 static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
                             uint64_t fargs_addr, int nfargs,
                             uint64_t out_addr, uint64_t out_size) {
+    // Validate argument count against function's declared limits.
+    // Prevents crashes from fun_* functions that don't tolerate
+    // wrong argument counts (e.g., accent() called with 0 args
+    // from literal text that the parser sees as a function call).
+    if (nfargs < fp->minArgs) {
+        // Too few arguments — return empty, don't call.
+        ec->memory[out_addr] = '\0';
+        ctx->x[10] = 0;
+        return -1;
+    }
+    if (fp->maxArgs >= 0 && nfargs > fp->maxArgs) {
+        nfargs = fp->maxArgs;
+    }
+
     UTF8 *fargs[MAX_ARG];
     if (nfargs > MAX_ARG) nfargs = MAX_ARG;
     for (int i = 0; i < nfargs; i++) {
