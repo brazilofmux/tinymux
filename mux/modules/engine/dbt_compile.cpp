@@ -468,19 +468,23 @@ struct rv_compiler {
     static constexpr uint64_t STR_LIMIT  = 0x4000;
     static constexpr uint64_t FARGS_BASE = 0x4000;
     static constexpr uint64_t FARGS_LIMIT= 0x8000;
-    static constexpr uint64_t OUT_BASE   = 0x8000;
-    static constexpr uint64_t OUT_LIMIT  = 0x38000;  // 192KB for output
-    static constexpr int      OUT_SLOT   = 8000;     // LBUF_SIZE per slot (24 slots)
 
-    // %0-%9 cargs region: 10 × 256-byte slots at fixed addresses.
-    static constexpr uint64_t CARGS_BASE = 0x38000;
+    // Tier 2 blob loaded at 0x10000.  Blob + rodata occupies ~128KB
+    // (0x10000-0x2FFFF).  All other regions must avoid this range.
+    static constexpr uint64_t BLOB_BASE  = 0x10000;
+
+    // Output region: AFTER the blob.  Each slot is LBUF_SIZE (8000)
+    // to avoid truncating MUX function return values.
+    static constexpr uint64_t OUT_BASE   = 0x30000;
+    static constexpr uint64_t OUT_LIMIT  = 0x3C000;  // 48KB (6 slots)
+    static constexpr int      OUT_SLOT   = 8000;     // LBUF_SIZE per slot
+
+    // %0-%9 cargs region: 10 × 256-byte slots.
+    static constexpr uint64_t CARGS_BASE = 0x3C000;
     static constexpr int      CARGS_SLOT = 256;
     static constexpr int      MAX_CARGS  = 10;
 
     static constexpr uint64_t STACK_TOP  = 0x3FFF0;
-
-    // Tier 2 blob loaded at 0x10000 (above the per-expression region).
-    static constexpr uint64_t BLOB_BASE  = 0x10000;
     static constexpr uint64_t BLOB_LIMIT = 0x40000;  // 192KB for blob + rodata
 
     rv_compiler() : memory(MEM_SIZE, 0),
