@@ -157,6 +157,12 @@ struct dbt_state_t {
     //
     uint64_t max_dispatch;
 
+    // Inline CALL cold-exit diagnostics.
+    //
+    uint64_t cold_exit_count;
+    uint64_t cold_exit_actual;    // last next_pc that caused cold exit
+    uint64_t cold_exit_expected;  // what was expected
+
     // Debug.
     //
     int trace;

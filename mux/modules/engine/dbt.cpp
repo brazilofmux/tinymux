@@ -1702,10 +1702,6 @@ no_addr_fusion:
                 int rd = rc_write(&e, &rc, insn.rd);
                 emit_mov_r64_imm32(&e, rd, static_cast<int32_t>(pc + 4));
             }
-            // Non-inline call: exit via chained JMP (no x86 CALL).
-            // Do NOT push RAS — the callee's RAS-predicted JMP would
-            // bypass the x86 CALL/RET stack discipline, stealing a
-            // return address from an outer inline CALL.
             rc_flush(&e, &rc);
             emit_exit_chained(&e, dbt, target);
             goto done;
@@ -2591,9 +2587,33 @@ done:
     for (int i = 0; i < num_side_exits; i++) {
         emit_patch_rel32(&e, side_exits[i].jcc_patch, emit_pos(&e));
         if (side_exits[i].target_pc == 0) {
-            // Cold exit from native CALL: callee set ctx.next_pc
-            // to an internal address (not fully chained yet).
-            // Return to the dispatch loop which will handle it.
+            // Cold exit from inline CALL: callee returned with
+            // unexpected next_pc.  Store diagnostics, then RET
+            // to the dispatch loop.
+            //
+            // inc qword [rbx + cold_exit_count_off]
+            static constexpr int32_t CE_COUNT_OFF = 1760;
+            static constexpr int32_t CE_ACTUAL_OFF = 1768;
+            static constexpr int32_t CE_EXPECTED_OFF = 1776;
+
+            // Store actual next_pc: mov rax, [rbx + next_pc]; mov [rbx + actual], rax
+            emit_load_next_pc(&e, X64_RAX);
+            emit_byte(&e, rex(1, reg_hi(X64_RAX), 0, 0));
+            emit_byte(&e, 0x89);
+            emit_byte(&e, modrm(0x02, X64_RAX, X64_RBX));
+            emit_u32(&e, CE_ACTUAL_OFF);
+
+            // Store expected (from the side_exit's inline_expected field)
+            // We encode it as imm32 in a mov to [rbx + expected].
+            // The expected value was pc+4 at the inline CALL site.
+            // We need to pass it somehow — use a field stashed in the snapshot.
+            // For now, just increment the counter.
+            // inc qword [rbx + CE_COUNT_OFF]
+            emit_byte(&e, rex(1, 0, 0, 0));
+            emit_byte(&e, 0xFF);
+            emit_byte(&e, modrm(0x02, 0, X64_RBX));  // inc [rbx + disp32]
+            emit_u32(&e, CE_COUNT_OFF);
+
             emit_ret(&e);
         } else {
             for (int j = 0; j < RC_NUM_SLOTS; j++) {
