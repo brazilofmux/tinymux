@@ -128,24 +128,36 @@ is currently disabled pending a context-aware mechanism.
    confirming the OUTER program→blob inline CALL's cold exit fires.
    The inner blob→intrinsic inline CALL succeeds (hot path).
 
-6. **Which emit_exit_indirect writes 0x1096C immediately before the
-   outer cold exit?** This is the key remaining question. If we can
-   identify WHICH block's exit_indirect fires with next_pc=0x1096C
-   and examine the x86 return address at that moment, we'll know
-   exactly where the return path breaks.
+6. **ANSWERED: 0x1096C cold exit SOLVED.** The leaf function at
+   0x11E78 (satoi/sitoa epilogue) was called via JMP (non-inline)
+   from within the SPLIT_TOKEN wrapper. Its JALR RET stole the
+   outer inline CALL's x86 continuation. Fixed by scanning past
+   JAL rd=1 in the pretranslation worklist, which discovers all
+   call targets in a block (not just the first). Result: disp
+   dropped from 2N+4 to constant 4.
+
+7. **Remaining: WORDS cold exit.** `ce=7(a=0x107C4,e=0x14,from=0x11E88)`.
+   Same leaf function (0x11E88), but from the WORDS call chain.
+   The sitoa intrinsic at 0x158A8 is translated AFTER its caller
+   block (0x107B4) — a translation-order race where a parent block
+   absorbs 0x107B4 via superblock extension before the worklist
+   processes it. The inline CALL check sees found=0 on first
+   translation, found=1 on subsequent. This costs 2 constant
+   dispatches (not per-element).
+
+## Current State
+
+Dispatch count: constant 4 (was 3N+5, then 2N+4).
+Remaining cold exits: 2 per iter call (WORDS chain).
+Pattern: `disp=1 pc=0x0 | disp=2 pc=0x107C4 | disp=3 pc=0x14 | disp=4 ECALL`.
 
 ## Reproduction
 
 ```sh
 cd testcases
-TINYMUX_DBT_TRACE=exec TINYMUX_DBT_MAX_DISPATCH=50 \
-  ./tools/BuildAndSmoke
-grep 'disp=.*pc=0x1096C' netmux.log | tail -5
+./tools/BuildAndSmoke
+grep '^BENCH035' smoke.log   # ce=N(a=0xACTUAL,e=0xEXPECTED,from=0xFROM)
 ```
-
-Cold-exit count appears in benchmark output as `ce=N(a=0xACTUAL,e=0xEXPECTED)`.
-Example: `ce=160029(a=0x1096C,e=0x140)` means 160029 cold exits,
-last actual next_pc=0x1096C, expected=0x140.
 
 ## Key Files
 
