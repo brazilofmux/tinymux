@@ -4004,6 +4004,18 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
               UTF8 *buff, UTF8 **bufc,
               dbref executor, dbref caller, dbref enactor,
               const UTF8 *cargs[], int ncargs) {
+    // Don't JIT until the Tier 2 blob is loaded and the persistent
+    // DBT state is initialized.  compile_cached calls tier2_lazy_init,
+    // but the DBT infrastructure (mmap, block cache) may not be safe
+    // to initialize during early startup (config loading, @startup).
+    // The s_dbt_ready flag is set after the first successful get_dbt.
+    if (!s_tier2_init) {
+        // First call: try to init.  If it works, proceed.
+        // If not, bail and let AST eval handle it.
+        tier2_lazy_init();
+        if (!s_tier2.loaded) return false;
+    }
+
     compiled_program *prog = compile_cached(expr, nLen);
     if (!prog) return false;
 
