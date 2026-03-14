@@ -224,6 +224,17 @@ static void dbt_trace_translate_pc(dbt_state_t *dbt, uint64_t guest_pc,
     va_end(ap);
 }
 
+static void dbt_trace_translate(dbt_state_t *dbt, const char *fmt, ...) {
+    if ((dbt->trace & DBT_TRACE_TRANSLATE) == 0) return;
+
+    va_list ap;
+    va_start(ap, fmt);
+    fputs("[dbt-xlate] ", stderr);
+    vfprintf(stderr, fmt, ap);
+    fputc('\n', stderr);
+    va_end(ap);
+}
+
 static void dbt_trace_fusion(dbt_state_t *dbt, uint64_t pc, const char *kind) {
     dbt_trace_translate_pc(dbt, pc, "fusion guest_pc=0x%llX kind=%s",
                            static_cast<unsigned long long>(pc), kind);
@@ -1293,6 +1304,20 @@ static uint8_t *translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             have_next = true;
         }
 
+        // Instruction trace: enabled by TINYMUX_DBT_TRACE=translate + _PC filter.
+        if (dbt_trace_translate_enabled(dbt, guest_pc)) {
+            const char *n = "?";
+            switch(insn.opcode) {
+            case OP_LUI:n="LUI";break; case OP_AUIPC:n="AUI";break;
+            case OP_JAL:n="JAL";break; case OP_JALR:n="JLR";break;
+            case OP_BRANCH:n="BRN";break; case OP_LOAD:n="LD";break;
+            case OP_STORE:n="SD";break; case OP_IMM:n="IMM";break;
+            case OP_REG:n="REG";break; case OP_SYSTEM:n="SYS";break;
+            }
+            fprintf(stderr, "[dbt-xlate] insn #%d pc=0x%llX %s rd=%d rs1=%d rs2=%d imm=%d\n",
+                    count, (unsigned long long)pc, n, insn.rd, insn.rs1, insn.rs2, insn.imm);
+        }
+
         // Fusion: SLT/SLTI/SLTU/SLTIU + BEQ/BNE against x0.
         // This preserves rd (if nonzero) but reuses the original compare
         // flags to branch directly, avoiding a redundant test of rd.
@@ -1740,13 +1765,11 @@ no_addr_fusion:
             //
             if (insn.rd == 1) {
                 block_entry_t *be = cache_lookup(dbt, target);
-                if (dbt_trace_translate_enabled(dbt, guest_pc)) {
-                    fprintf(stderr, "[dbt] inline_call? pc=0x%llX target=0x%llX "
-                            "found=%d\n",
-                            static_cast<unsigned long long>(pc),
-                            static_cast<unsigned long long>(target),
-                            be ? 1 : 0);
-                }
+                dbt_trace_translate_pc(dbt, guest_pc,
+                                       "inline_call guest_pc=0x%llX target=0x%llX found=%d",
+                                       static_cast<unsigned long long>(pc),
+                                       static_cast<unsigned long long>(target),
+                                       be ? 1 : 0);
                 if (try_emit_inline_call(&e, &rc, dbt, target, be, pc + 4,
                                          side_exits, &num_side_exits)) {
                     pc += 4;
@@ -3023,16 +3046,13 @@ void dbt_resolve_chains(dbt_state_t *dbt) {
             resolved++;
         } else {
             unresolvable++;
-            if (dbt->trace & DBT_TRACE_TRANSLATE) {
-                fprintf(stderr, "[dbt] unresolved chain: target=0x%llX\n",
-                        static_cast<unsigned long long>(target));
-            }
+            dbt_trace_translate(dbt, "unresolved chain: target=0x%llX",
+                                static_cast<unsigned long long>(target));
         }
     }
-    if (dbt->trace & DBT_TRACE_TRANSLATE) {
-        fprintf(stderr, "[dbt] resolve_chains: %u resolved, %u already_ok, %u unresolvable of %u total\n",
-                resolved, already_ok, unresolvable, dbt->num_patches);
-    }
+    dbt_trace_translate(dbt,
+                        "resolve_chains: %u resolved, %u already_ok, %u unresolvable of %u total",
+                        resolved, already_ok, unresolvable, dbt->num_patches);
 }
 
 int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
