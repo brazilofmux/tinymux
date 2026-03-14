@@ -1998,6 +1998,66 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
 
     // Evaluate the AST.
     //
+#if defined(TINYMUX_JIT)
+    // Only JIT expressions whose %-substitutions are fully supported.
+    // Currently: %0-%9, %b, %r, %t. Unsupported: %#, %!, %n, %l, %q,
+    // %c, %x, etc. Quick scan: if any % is followed by something
+    // we don't handle, fall back to AST.
+    //
+    // Check if the AST is a pure expression the JIT can compile:
+    // - Must be a single function call, eval-bracket, or sequence of
+    //   function calls. NOT mixed literal+command text.
+    // - No unsupported %-substitutions.
+    //
+    auto jit_can_handle = [&]() -> bool {
+        if (!ast_ptr) return false;
+
+        // The AST root must be a function call, eval bracket, or
+        // sequence of function calls/literals.  If it's just a literal
+        // (plain text), the JIT adds no value.
+        if (ast_ptr->type == AST_LITERAL || ast_ptr->type == AST_SPACE)
+            return false;
+
+        // For now, reject ANY expression with % or # substitutions.
+        // This is very conservative but lets us isolate whether the
+        // queue hang is from substitution handling or from something
+        // more fundamental in jit_eval's output mechanism.
+        for (size_t i = 0; i < nLen; i++) {
+            if (pStr[i] == '%' || pStr[i] == '#') return false;
+        }
+        return true;
+    };
+
+    if (nLen >= 8 && nLen < 4096
+        && (eval & EV_EVAL)
+        && !alarm_clock.alarmed
+        && jit_can_handle())
+    {
+        // Log BEFORE jit_eval to capture the expression that causes a crash.
+        static int jit_attempt = 0;
+        if (jit_attempt < 500) {
+            fprintf(stderr, "[jit-try] #%d len=%zu expr=%.60s\n",
+                    ++jit_attempt, nLen,
+                    reinterpret_cast<const char *>(pStr));
+        }
+
+        UTF8 *bufc_before = *bufc;
+        if (jit_eval(pStr, nLen, buff, bufc,
+                     executor, caller, enactor,
+                     cargs, ncargs))
+        {
+            // DIAGNOSTIC: log JIT-handled expressions and their output.
+            static int jit_log = 0;
+            if (jit_log < 500) {
+                size_t out_len = static_cast<size_t>(*bufc - bufc_before);
+                fprintf(stderr, "[jit] #%d len=%zu out=%zu expr=%.50s\n",
+                        ++jit_log, nLen, out_len,
+                        reinterpret_cast<const char *>(pStr));
+            }
+            return;
+        }
+    }
+#endif
     ast_eval_node(ast_ptr, buff, bufc,
         executor, caller, enactor, eval, cargs, ncargs);
 }
