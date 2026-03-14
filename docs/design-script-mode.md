@@ -138,227 +138,193 @@ TINYMUX_DB      — game directory (overridden by --db)
 TINYMUX_CONF    — config file path (overridden by -c)
 ```
 
-## Architecture
+## Architecture: Separate Binary via COM
 
-### Boot Sequence
+The key insight: **don't modify netmux.** netmux is the network driver —
+GANL, telnet, SSL, descriptor management, charset conversion. Script
+mode needs none of that. engine.so already contains the full evaluator,
+database, commands, functions — everything script mode needs.
 
-Script mode shares the normal boot path up to the networking split:
+Build a new minimal binary (`mux` or `muxscript`) that loads engine.so
+through the same COM interface that netmux uses. This is a second
+driver for the same engine — one that reads stdin instead of sockets.
 
 ```
-main()
-  ├─ Parse argv: detect --script flag
-  ├─ FLOAT_Initialize(), pools, modules, COM interfaces
-  ├─ LoadGame()  — full database + evaluator init
-  │   ├─ cf_init(), init_functab(), init_cmdtab()
-  │   ├─ cf_read() — config file
-  │   └─ database load (SQLite or flatfile)
-  ├─ Startup()  — dbck, process_preload
-  │
-  ├─ if (script_mode) {
-  │     script_main(executor, input_stream);
-  │     // does NOT call ganl_initialize()
-  │  } else {
-  │     ganl_initialize();
-  │     ganl_main_loop();
-  │     ganl_shutdown();
-  │  }
-  │
-  ├─ DumpDatabase()  — save (unless --readonly)
-  └─ Shutdown()
+netmux (existing)           mux (new)
+├─ ganl_adapter.cpp         ├─ mux_main.cpp (~300 lines)
+├─ driver.cpp               ├─ modules_cli.cpp (COM loader, ~200 lines)
+├─ net.cpp                  └─ (that's it)
+├─ telnet.cpp
+├─ sitemon.cpp
+├─ signals.cpp
+├─ modules.cpp (COM loader)
+└─ (2000+ lines of networking)
 ```
+
+### What `mux` Contains
+
+ - **mux_main.cpp**: argv parsing, COM initialization, LoadGame,
+   script loop (read stdin → process_command → drain queue),
+   DumpDatabase, Shutdown. ~300 lines.
+ - **modules_cli.cpp**: Stripped-down COM front-door. Loads engine.so
+   via dlopen, calls mux_Register/mux_GetClassObject to get
+   mux_IGameEngine. No connection manager, no server events source.
+   ~200 lines — literally just the dlopen + COM query.
+ - Links against: libmux.so (core), dl, sqlite3.
+ - Does NOT link: GANL, epoll, OpenSSL, telnet, sitemon, signals.
+
+### COM Interfaces Used
+
+```
+mux_IGameEngine         — LoadGame, Startup, Shutdown, RunTasks
+mux_INotify             — notify/raw_notify (output interception)
+```
+
+The script binary acquires IGameEngine from engine.so via COM.
+LoadGame loads the database. The script loop calls process_command
+for each input line, then RunTasks to drain the queue.
 
 ### Output Interception
 
-The notify pathway currently requires a DESC:
+**Option A: INotify hook (preferred)**
 
-```
-think "hello"
-  → do_think() → notify(player, "hello")
-    → raw_notify() → send_text_to_player()
-      → for each DESC of player: queue_string(d, msg)
-```
-
-Script mode needs to intercept at the `raw_notify` level.  Two options:
-
-**Option A: Notify hook (preferred)**
-
-Add a function pointer `mudstate.script_notify_fn` that, when non-null,
-is called instead of `send_text_to_player()`:
+The mux_INotify COM interface already exists. The script binary
+provides its own INotify implementation that writes to stdout:
 
 ```cpp
-// In raw_notify():
-if (mudstate.script_notify_fn) {
-    mudstate.script_notify_fn(target, msg, len);
-    return;
-}
-// ... normal DESC path
+class CScriptNotify : public mux_INotify {
+    void RawNotify(dbref target, const UTF8 *msg, int len) override {
+        fwrite(msg, 1, len, stdout);
+        fputc('\n', stdout);
+    }
+};
 ```
 
-The script mode sets this to a function that writes to stdout (fd 1).
-This requires zero changes to the DESC infrastructure.  No synthetic
-descriptors, no fake sockets.
+Register this as the IServerEventsSink before calling LoadGame.
+All notify/pemit/think output goes to stdout. Zero changes to
+the DESC infrastructure. No synthetic descriptors.
 
-**Option B: Synthetic DESC**
+**Option B: Synthetic DESC** — only if Connected() compatibility
+is critical. Creates one DESC with socket=STDOUT_FILENO.
 
-Create a single DESC with `socket = STDOUT_FILENO` and special
-`DS_CONSOLE` flag.  Output goes through the normal queue_string path
-but process_output writes to fd 1 instead of a socket.
+### Boot Sequence
 
-Option A is simpler and avoids touching the DESC/GANL code.  Option B
-is more compatible with code that checks `Connected(player)` or
-iterates descriptors.
+```
+mux main()
+  ├─ Parse argv: -e, -c, --readonly, --who, files
+  ├─ dlopen engine.so
+  ├─ COM: GetClassObject → IGameEngine
+  ├─ Register CScriptNotify as INotify sink
+  ├─ IGameEngine::LoadGame(conf)
+  ├─ IGameEngine::Startup()
+  │
+  ├─ script_loop(executor, input):
+  │     for each line:
+  │       process_command(executor, ...)
+  │       IGameEngine::RunTasks(now)   // drain queue
+  │     final RunTasks drain
+  │
+  ├─ IGameEngine::DumpDatabase()  (unless --readonly)
+  └─ IGameEngine::Shutdown()
+```
+
+No ganl_initialize. No epoll. No listener. No connections.
+No telnet negotiation. No charset conversion. No OpenSSL.
 
 ### Command Processing
 
 Script mode runs a synchronous loop:
 
 ```cpp
-void script_main(dbref executor, FILE *input) {
+void script_loop(dbref executor, FILE *input, mux_IGameEngine *engine) {
     UTF8 line[LBUF_SIZE];
     while (fgets(line, sizeof(line), input)) {
-        // Skip comments and blank lines.
         if (line[0] == '#' || line[0] == '\n') continue;
-
-        // Process as if typed by executor.
         process_command(executor, executor, executor,
                         0, true, line, nullptr, 0);
-
-        // Drain the command queue (handles @dolist, @trigger, etc.)
-        drain_queue();
+        engine->RunTasks(CLinearTimeAbsolute::GetUTC());
     }
-    // Final drain for any remaining queued commands.
-    drain_queue();
+    // Final drain.
+    engine->RunTasks(CLinearTimeAbsolute::GetUTC());
 }
 ```
 
-The `drain_queue()` function runs queued commands until the queue is
-empty.  This replaces the GANL event loop's periodic `RunTasks()` call.
-It must handle:
-
- - Immediate queue entries (@dolist, @trigger fired during processing)
- - @wait 0 entries (deferred to next "cycle")
- - Recursive triggers (A triggers B triggers C — all drain)
- - Infinite loop protection (configurable limit, default 10000 commands)
-
-Timed @wait (e.g., `@wait 5=command`) is problematic in script mode.
-Options:
- - Ignore timed waits (skip, warn to stderr)
- - Treat all @wait as @wait 0 (immediate)
- - Actually sleep (makes script mode slow but correct)
-
-Recommended: treat `@wait 0` as immediate, warn on `@wait N>0`.
-
 ### Database Considerations
 
-Script mode loads the full database.  Changes made by the script
-(object creation, attribute modification, etc.) are persisted on exit
-unless `--readonly` is specified.
-
-For disposable/test usage:
+Same as before: full database load. `--readonly` skips DumpDatabase.
+For disposable usage:
 ```bash
-# Copy database, run script, discard
-cp -r game/ /tmp/test-game/
-netmux --script --db /tmp/test-game/ < test.mux
+cp -r game/ /tmp/test/ && mux -c /tmp/test/netmux.conf < test.mux
 ```
-
-Or with `--readonly`, which skips the final DumpDatabase().
 
 ### Connected() and Descriptor Checks
 
-Many softcode functions and commands check `Connected(player)`.  In
-script mode with Option A (notify hook), the executing player has no
-DESC, so `Connected(#1)` returns false.  This affects:
-
- - `@pemit` to self (checks Connected) — would silently fail
- - `lwho()` — returns empty
- - `conn()` — returns -1
- - `idle()` — returns -1
-
-These are acceptable for scripting.  If full compatibility is needed,
-Option B (synthetic DESC) makes the player appear connected.
+With Option A, the executing player has no DESC. `Connected(#1)`
+returns false. `lwho()` returns empty. `conn()` returns -1.
+Acceptable for scripting. Option B (synthetic DESC) if needed.
 
 ## Implementation Plan
 
-### Phase 1: Minimal Viable Script Mode
+### Phase 1: Minimal Binary
 
- 1. Add `--script` flag parsing in driver.cpp main()
- 2. Add `mudstate.script_notify_fn` hook in raw_notify()
- 3. Implement `script_main()` loop: read lines, process_command, drain
- 4. Wire into main() as alternative to ganl_main_loop()
- 5. Test with `echo 'think add(2,3)' | netmux --script`
+ 1. `mux/script/mux_main.cpp` — argv, COM init, script_loop
+ 2. `mux/script/modules_cli.cpp` — dlopen engine.so, COM query
+ 3. `mux/script/Makefile.in` — build `mux` binary, link libmux.so
+ 4. `mux/script/CScriptNotify.cpp` — INotify → stdout
+ 5. Test: `echo 'think add(2,3)' | ./bin/mux -c smoke.conf`
 
-Estimated: ~150 lines of new code (mostly in driver.cpp).
+Estimated: ~500 lines total. No changes to engine.so or netmux.
 
 ### Phase 2: Usability
 
- 6. Comment and blank line handling
- 7. `--readonly` flag (skip DumpDatabase)
- 8. `-e 'expr'` single expression mode
- 9. `--who player` to set executor
- 10. ANSI stripping (default) / `--ansi` passthrough
- 11. Error messages to stderr
- 12. Shebang support validation
+ 6. `-e 'expr'` single expression mode
+ 7. `--who player` to set executor
+ 8. `--readonly` flag
+ 9. ANSI stripping (default) / `--ansi` passthrough
+ 10. Error messages to stderr
+ 11. Shebang: `#!/usr/local/bin/mux`
+ 12. Comment and blank line handling
 
 ### Phase 3: Smoke Test Integration
 
- 13. Write a `script_test.sh` that runs key tests via `--script`
- 14. Compare output against expected (like `diff` or `cmp`)
- 15. Optionally: parallel to existing expect-based Smoke, eventually
-     replace it
+ 13. `tools/ScriptSmoke` — runs key tests via `mux`
+ 14. Compare output against expected (`diff`)
+ 15. No port, no expect, no race conditions, no telnet
+ 16. Parallel to existing Smoke; eventually replace it
 
 ### Phase 4: Queue and Timing
 
- 16. Proper drain_queue() with infinite loop protection
- 17. @wait 0 support
- 18. @wait N warning/handling policy
- 19. @halt support (script halts the queue)
+ 17. Proper drain with infinite loop protection
+ 18. @wait 0 → immediate, @wait N → warn
+ 19. @halt support
 
 ## Relationship to Other Work
 
-### DBT/JIT Testing
-
-Script mode exercises the JIT through normal softcode:
-```
-think rveval(add(mul(3,4),5))
-```
-
-This tests the full compilation pipeline but NOT individual RV64
-instructions.  A standalone DBT test harness (Stage 1e-ii in
-design-jit-compiler.md) would operate at a lower level:
-
-```cpp
-// Hypothetical DBT test:
-uint32_t code[] = { rv_ADDI(10, 0, 42), rv_ECALL() };
-memcpy(memory, code, sizeof(code));
-int rc = dbt_run(&dbt, 0, STACK_TOP);
-assert(dbt.ctx.x[10] == 42);
-```
-
-The two are complementary: script mode for end-to-end, DBT harness
-for instruction-level.
-
 ### Engine/Driver Split (Phase 5)
 
-Script mode benefits from the engine/driver split.  With engine.so
-as a COM server, script mode is essentially a different driver that
-loads the same engine — one that reads stdin instead of sockets.
-Long-term, script mode could be a separate binary (`muxeval`) that
-links engine.so directly, without any of the networking code.
+This IS the payoff of the engine/driver split. engine.so is a COM
+server. netmux is one client. `mux` is another. Same engine, different
+front-ends. The split was designed for exactly this use case.
+
+### DBT/JIT Testing
+
+`mux` exercises the JIT through normal softcode:
+```bash
+echo 'think rveval(add(mul(3,4),5))' | mux -c smoke.conf
+```
+
+No port conflicts. No expect. No race conditions. Tests run in
+milliseconds, not seconds. Parallel test execution is trivial.
 
 ### Smoke Test Migration
 
-The current smoke test infrastructure (expect + telnet + port 2860)
-has several pain points:
- - Port conflicts with running servers
- - Race conditions in Makesmoke (dump timing)
- - Fragile expect scripting
- - Slow startup/shutdown per test run
+Current pain points eliminated:
+ - Port conflicts → no port
+ - Race conditions → synchronous
+ - Fragile expect → simple pipe
+ - Slow startup → one process, no connection setup
 
-Script mode eliminates all of these.  A test becomes:
 ```bash
-result=$(echo 'think sha1(hello world)' | netmux --script --readonly)
+result=$(echo 'think sha1(hello world)' | mux -c smoke.conf --readonly)
 [ "$result" = "2aae6c35c94fcfb415dbe95f408b9ce91ee846ed" ] || fail
 ```
-
-Migration can be incremental: new tests use script mode, existing
-tests continue with Smoke until ported.
