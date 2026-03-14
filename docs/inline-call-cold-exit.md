@@ -85,12 +85,22 @@ After the RET, the program's inline CALL continuation checks:
    confirms JALR x0, ra, 0 at insn #21. LD ra, 56(sp) at insn #13
    restores correct ra. Prologue (0x10820) saves ra at 56(sp).
 
+### Ruled Out: RAS Probe
+
+The RAS pop_and_probe was disabled globally — cold exit pattern
+unchanged. Proved the probe is NOT the cause. The probe is safe
+because `emit_store_next_pc` stores next_pc BEFORE the probe runs.
+Whether the probe hits (JMP to predicted block) or misses (fall
+through to exit_indirect), next_pc is already correct.
+
 ### Open Questions
 
 1. **Is the JALR at insn #21 actually executing?** Something might
-   cause the block to exit BEFORE reaching insn #21. But the block
-   has 21 instructions, no branches between #10 and #21, and
-   `side_exits=1` (only the inner inline CALL's cold exit).
+   cause the block to exit BEFORE reaching insn #21. The block has
+   21 instructions, no branches between #10 and #21, and
+   `side_exits=1` (only the inner inline CALL's cold exit). But an
+   implicit exit from a fusion or instruction handler could terminate
+   the block early.
 
 2. **Is `emit_store_next_pc` actually writing 0x140?** The LD at
    insn #13 loads from guest memory [sp+56]. If sp is wrong or the
@@ -101,22 +111,21 @@ After the RET, the program's inline CALL continuation checks:
    a continuation on the x86 stack. The callee's JALR does
    exit_indirect → RET. The RET should pop the continuation. If
    something between the CALL and the final RET consumes the
-   continuation (extra RET from an unchained exit, RAS probe JMP,
-   etc.), the cold exit fires.
+   continuation (extra RET from an unchained exit), the cold exit
+   fires. All 3043/3043 chains verified resolved, so no slow-path
+   stubs should execute.
 
-4. **Is the intrinsic stub's `emit_exit_indirect` RETs to the right
-   place?** The intrinsic at 0x15C7C is called via the INNER inline
-   CALL at insn #8. Its `emit_intrinsic_return` loads ra from ctx
-   and does exit_indirect → RET. This RET should pop the inner
-   inline CALL's continuation (within block 0x1094C). The hot-path
-   check passes (next_pc == 0x1096C). Then the block continues to
-   insn #10.
-
-5. **Could there be a SECOND exit path in the block?** The block
+4. **Could there be a SECOND exit path in the block?** The block
    has `side_exits=1` (from the inner inline CALL). If the inner
    inline CALL's hot-path check fires correctly, the block continues.
    But what if the block has an IMPLICIT exit from one of the
    fusions or instruction handlers?
+
+5. **Is the cold exit from the OUTER inline CALL (program → blob)
+   or from the INNER inline CALL (blob → intrinsic)?** The
+   `cold_exit_expected` field now records the expected next_pc for
+   each cold exit. Check whether expected matches the outer (0x140)
+   or inner (0x1096C) return address.
 
 ## Reproduction
 

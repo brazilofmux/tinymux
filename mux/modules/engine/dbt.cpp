@@ -1814,15 +1814,14 @@ no_addr_fusion:
 
             emit_load_next_pc(&e, X64_RCX);
 
-            // NOTE: RAS pop_and_probe is DISABLED.  The probe JMPs to
-            // the predicted return block, bypassing exit_indirect's RET.
-            // When the callee was entered via inline CALL, the RET must
-            // go to the caller's continuation (on the x86 stack), not
-            // to the predicted block.  The RAS JMP steals the return
-            // address and causes inline CALL cold-exit failures.
-            //
-            // Future: re-enable RAS for non-inline contexts, or use a
-            // mechanism that preserves x86 stack discipline.
+            // RAS return prediction for exact returns (JALR x0, ra, 0).
+            // Safe with inline CALLs: emit_store_next_pc above already
+            // wrote ctx.next_pc before the probe runs. If the probe hits
+            // and JMPs to the predicted block, next_pc is already correct
+            // for the inline CALL continuation's check.
+            if (insn.rs1 == 1 && insn.rd == 0 && insn.imm == 0) {
+                emit_ras_pop_and_probe(&e, dbt);
+            }
 
             emit_exit_indirect(&e, X64_RCX);
             goto done;
@@ -2729,6 +2728,16 @@ done:
     if (e.offset > e.capacity) {
         return nullptr;
     }
+    // Hex dump of JIT code for traced blocks.
+    if (dbt_trace_translate_enabled(dbt, guest_pc) && e.offset <= 2048) {
+        fprintf(stderr, "[dbt-xlate] native_code %p +%u:\n", block_start, e.offset);
+        for (uint32_t i = 0; i < e.offset; i++) {
+            if (i % 16 == 0) fprintf(stderr, "  %04X: ", i);
+            fprintf(stderr, "%02X ", block_start[i]);
+            if (i % 16 == 15 || i == e.offset - 1) fprintf(stderr, "\n");
+        }
+    }
+
     dbt_trace_translate_pc(dbt, guest_pc,
                            "block guest_pc=0x%llX bytes=%u insns=%d self_loop=%d side_exits=%d fused=%llu inline_calls=%llu total_fused=%llu total_inline_calls=%llu",
                            static_cast<unsigned long long>(guest_pc),
