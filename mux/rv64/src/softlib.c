@@ -665,6 +665,147 @@ char *co_lpos_wrap(char *out, const char **fargs, int nfargs) {
 }
 
 /* ---------------------------------------------------------------
+ * Batch 3 wrappers: ljust, rjust, center, edit, splice, totitle,
+ * strip_color, visible_length.
+ * --------------------------------------------------------------- */
+
+/* Forward declarations for co_* functions in color_ops. */
+size_t co_ljust(unsigned char *out, const unsigned char *data, size_t len,
+                size_t width, const unsigned char *fill, size_t fill_len,
+                int bTrunc);
+size_t co_rjust(unsigned char *out, const unsigned char *data, size_t len,
+                size_t width, const unsigned char *fill, size_t fill_len,
+                int bTrunc);
+size_t co_center(unsigned char *out, const unsigned char *data, size_t len,
+                 size_t width, const unsigned char *fill, size_t fill_len,
+                 int bTrunc);
+size_t co_edit(unsigned char *out, const unsigned char *str, size_t slen,
+               const unsigned char *from, size_t flen,
+               const unsigned char *to, size_t tlen);
+/* co_splice already declared above — (out, list, llen, pos, count, word, wlen, delim, osep) */
+size_t co_totitle(unsigned char *out, const unsigned char *data, size_t len);
+size_t co_strip_color(unsigned char *out, const unsigned char *data,
+                      size_t len);
+size_t co_visible_length(const unsigned char *data, size_t len);
+
+/* ljust(string, width[, fill]) */
+char *co_ljust_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '\0'; return out; }
+    size_t len = rv64_slen(fargs[0]);
+    int width = satoi(fargs[1]);
+    if (width < 0) width = 0;
+    const unsigned char *fill = (const unsigned char *)" ";
+    size_t fill_len = 1;
+    if (nfargs >= 3 && fargs[2][0] != '\0') {
+        fill = (const unsigned char *)fargs[2];
+        fill_len = rv64_slen(fargs[2]);
+    }
+    size_t n = co_ljust((unsigned char *)out,
+                        (const unsigned char *)fargs[0], len,
+                        (size_t)width, fill, fill_len, 0);
+    out[n] = '\0';
+    return out;
+}
+
+/* rjust(string, width[, fill]) */
+char *co_rjust_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '\0'; return out; }
+    size_t len = rv64_slen(fargs[0]);
+    int width = satoi(fargs[1]);
+    if (width < 0) width = 0;
+    const unsigned char *fill = (const unsigned char *)" ";
+    size_t fill_len = 1;
+    if (nfargs >= 3 && fargs[2][0] != '\0') {
+        fill = (const unsigned char *)fargs[2];
+        fill_len = rv64_slen(fargs[2]);
+    }
+    size_t n = co_rjust((unsigned char *)out,
+                        (const unsigned char *)fargs[0], len,
+                        (size_t)width, fill, fill_len, 0);
+    out[n] = '\0';
+    return out;
+}
+
+/* center(string, width[, fill]) */
+char *co_center_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '\0'; return out; }
+    size_t len = rv64_slen(fargs[0]);
+    int width = satoi(fargs[1]);
+    if (width < 0) width = 0;
+    const unsigned char *fill = (const unsigned char *)" ";
+    size_t fill_len = 1;
+    if (nfargs >= 3 && fargs[2][0] != '\0') {
+        fill = (const unsigned char *)fargs[2];
+        fill_len = rv64_slen(fargs[2]);
+    }
+    size_t n = co_center((unsigned char *)out,
+                         (const unsigned char *)fargs[0], len,
+                         (size_t)width, fill, fill_len, 0);
+    out[n] = '\0';
+    return out;
+}
+
+/* edit(string, from, to) */
+char *co_edit_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 3) { out[0] = '\0'; return out; }
+    size_t n = co_edit((unsigned char *)out,
+                       (const unsigned char *)fargs[0], rv64_slen(fargs[0]),
+                       (const unsigned char *)fargs[1], rv64_slen(fargs[1]),
+                       (const unsigned char *)fargs[2], rv64_slen(fargs[2]));
+    out[n] = '\0';
+    return out;
+}
+
+/* splice(list, pos, word[, delim][, osep]) */
+char *co_splice_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 3) { out[0] = '\0'; return out; }
+    int pos = satoi(fargs[1]);
+    if (pos < 1) pos = 1;
+    unsigned char delim = ' ';
+    unsigned char osep = ' ';
+    if (nfargs >= 4 && fargs[3][0] != '\0') delim = (unsigned char)fargs[3][0];
+    if (nfargs >= 5 && fargs[4][0] != '\0') osep = (unsigned char)fargs[4][0];
+    size_t n = co_splice((unsigned char *)out,
+                         (const unsigned char *)fargs[0], rv64_slen(fargs[0]),
+                         (size_t)pos, 1,
+                         (const unsigned char *)fargs[2], rv64_slen(fargs[2]),
+                         delim, osep);
+    out[n] = '\0';
+    return out;
+}
+
+/* totitle(string) — title case */
+char *co_totitle_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1 || fargs[0][0] == '\0') { out[0] = '\0'; return out; }
+    size_t n = co_totitle((unsigned char *)out,
+                          (const unsigned char *)fargs[0],
+                          rv64_slen(fargs[0]));
+    out[n] = '\0';
+    return out;
+}
+
+/* stripansi(string) — remove ANSI/PUA color */
+char *co_stripansi_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1 || fargs[0][0] == '\0') { out[0] = '\0'; return out; }
+    size_t n = co_strip_color((unsigned char *)out,
+                              (const unsigned char *)fargs[0],
+                              rv64_slen(fargs[0]));
+    out[n] = '\0';
+    return out;
+}
+
+/* vislen(string) — visible character count */
+char *co_vislen_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1 || fargs[0][0] == '\0') {
+        out[0] = '0'; out[1] = '\0'; return out;
+    }
+    size_t count = co_visible_length((const unsigned char *)fargs[0],
+                                      rv64_slen(fargs[0]));
+    sitoa(out, (int)count);
+    return out;
+}
+
+/* ---------------------------------------------------------------
  * Helper: inline itoa, writes decimal to buf, returns length.
  * --------------------------------------------------------------- */
 

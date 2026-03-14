@@ -127,6 +127,15 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "COMPRESS",    "co_compress_wrap" },
     { "LPOS",        "co_lpos_wrap" },
 
+    // --- Batch 3: justify, edit, splice, totitle, stripansi, vislen ---
+    { "LJUST",       "co_ljust_wrap" },
+    { "RJUST",       "co_rjust_wrap" },
+    { "CENTER",      "co_center_wrap" },
+    { "EDIT",        "co_edit_wrap" },
+    { "SPLICE",      "co_splice_wrap" },
+    { "CAPSTR",      "co_totitle_wrap" },
+    { "STRIPANSI",   "co_stripansi_wrap" },
+
     { nullptr, nullptr }
 };
 
@@ -249,6 +258,11 @@ extern "C" {
     size_t co_right(unsigned char *, const unsigned char *, size_t, size_t);
     size_t co_compress(unsigned char *, const unsigned char *, size_t, unsigned char);
     size_t co_lpos(unsigned char *, const unsigned char *, size_t, unsigned char);
+
+    // Batch 3: totitle, strip_color, visible_length.
+    size_t co_totitle(unsigned char *, const unsigned char *, size_t);
+    size_t co_strip_color(unsigned char *, const unsigned char *, size_t);
+    size_t co_visible_length(const unsigned char *, size_t);
 }
 
 static void pretranslate_tier2(dbt_state_t *dbt) {
@@ -319,6 +333,13 @@ static void pretranslate_tier2(dbt_state_t *dbt) {
     reg_intrinsic(dbt, "co_right",    DBT_EMIT_CO_4PP, reinterpret_cast<void *>(co_right));
     reg_intrinsic(dbt, "co_compress", DBT_EMIT_CO_4PP, reinterpret_cast<void *>(co_compress));
     reg_intrinsic(dbt, "co_lpos",     DBT_EMIT_CO_4PP, reinterpret_cast<void *>(co_lpos));
+
+    // Batch 3: totitle, strip_color, visible_length.
+    // ljust/rjust/center/edit/splice need new emitter patterns (7+ args with
+    // complex pointer layouts) — registered as Tier 2 but not intrinsics yet.
+    reg_intrinsic(dbt, "co_totitle",         DBT_EMIT_CO_3PP, reinterpret_cast<void *>(co_totitle));
+    reg_intrinsic(dbt, "co_strip_color",     DBT_EMIT_CO_3PP, reinterpret_cast<void *>(co_strip_color));
+    reg_intrinsic(dbt, "co_visible_length",  DBT_EMIT_CO_2P,  reinterpret_cast<void *>(co_visible_length));
 
     // Pre-translate all intrinsic stubs into the cache BEFORE any
     // function pretranslation.  Intrinsics are leaf functions (strlen,

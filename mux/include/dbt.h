@@ -139,7 +139,7 @@ struct dbt_state_t {
     // Intrinsics: guest addresses the DBT replaces with native x86-64.
     // Data-driven table — each entry maps a guest address to an emitter.
     //
-    static constexpr int MAX_INTRINSICS = 32;
+    static constexpr int MAX_INTRINSICS = 48;
 
     struct intrinsic_slot_t {
         uint64_t guest_addr;                       // 0 = empty slot
