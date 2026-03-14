@@ -1378,6 +1378,7 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         return;
     }
 
+
     // Missing closing ')' — the function is NOT dispatched.  Output
     // the function name and '(' literally, then evaluate the argument
     // children (%-substitutions must be resolved, matching the classic
@@ -2037,27 +2038,10 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
         && !alarm_clock.alarmed
         && jit_can_handle())
     {
-        // Log BEFORE jit_eval to capture the expression that causes a crash.
-        static int jit_attempt = 0;
-        if (jit_attempt < 500) {
-            fprintf(stderr, "[jit-try] #%d len=%zu expr=%.60s\n",
-                    ++jit_attempt, nLen,
-                    reinterpret_cast<const char *>(pStr));
-        }
-
-        UTF8 *bufc_before = *bufc;
         if (jit_eval(pStr, nLen, buff, bufc,
                      executor, caller, enactor,
-                     cargs, ncargs))
+                     eval, cargs, ncargs))
         {
-            // DIAGNOSTIC: log JIT-handled expressions and their output.
-            static int jit_log = 0;
-            if (jit_log < 500) {
-                size_t out_len = static_cast<size_t>(*bufc - bufc_before);
-                fprintf(stderr, "[jit] #%d len=%zu out=%zu expr=%.50s\n",
-                        ++jit_log, nLen, out_len,
-                        reinterpret_cast<const char *>(pStr));
-            }
             return;
         }
     }

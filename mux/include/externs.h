@@ -1688,6 +1688,7 @@ void init_sql(void);
 bool jit_eval(const UTF8 *expr, size_t nLen,
               UTF8 *buff, UTF8 **bufc,
               dbref executor, dbref caller, dbref enactor,
+              int eval,
               const UTF8 *cargs[], int ncargs);
 #endif // TINYMUX_JIT
 

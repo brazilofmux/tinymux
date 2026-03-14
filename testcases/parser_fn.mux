@@ -241,21 +241,27 @@
 # Test Case #10 - Nested braces.
 #
 &tr.tc010 test_parser_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [eval(if(1,{outer {inner} text}))]
-          )
+  @if cand(
+        strmatch(
+          setr(0,sha1(
+              [eval(if(1,{outer {inner} text}))]
+            )
+          ),
+          84523E0A869449C01525577B22DD2B5CBA57138B
         ),
-        setr(1,sha1(
-            [if(1,{outer {inner} text})]
-          )
+        strmatch(
+          setr(1,sha1(
+              [if(1,{outer {inner} text})]
+            )
+          ),
+          84523E0A869449C01525577B22DD2B5CBA57138B
         )
       )=
   {
     @log smoke=TC010: parser nested braces. Succeeded.
   },
   {
-    @log smoke=TC010: parser nested braces. Failed (%q0 vs %q1).
+    @log smoke=TC010: parser nested braces. Failed (eval=%q0 direct=%q1 expected=84523E0A869449C01525577B22DD2B5CBA57138B).
   }
 -
 #
@@ -561,7 +567,7 @@
             [eval({prefix [add(1,2)] %q<oops suffix})]
           )
         ),
-        5BC915E1A1836B6B2A5D86314A1DD90848D1F581
+        1B3EB8C217AE9D88AC879D127840E4CF66393851
       )=
   {
     @log smoke=TC024: edge malformed mixed context. Succeeded.

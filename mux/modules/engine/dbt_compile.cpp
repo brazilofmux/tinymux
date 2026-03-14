@@ -1403,6 +1403,37 @@ static void qreg_init() {
     qreg_used = false;
 }
 
+// Compile-time eval flag tracking.
+//
+// s_compile_eval: the EV_* flags in effect for the current compilation.
+// s_fcheck_available: true if the next AST_FUNCCALL at sequence top-level
+//   should receive the EV_FCHECK function check.  Consumed after the
+//   first non-space child of a SEQUENCE (mirroring ast_eval_node).
+//
+static int  s_compile_eval;
+static bool s_fcheck_available;
+
+// Check whether a function name is known to the engine (builtin or ufunc).
+// Returns true if the function exists and would be dispatched as a call.
+//
+static bool is_known_function(const char *upper_name) {
+    // Check engine API table (indexed dispatch).
+    if (engine_api_lookup(upper_name) > 0) return true;
+
+    // Check builtin_functions map (string dispatch).
+    size_t nLen = strlen(upper_name);
+    std::vector<UTF8> key(reinterpret_cast<const UTF8 *>(upper_name),
+                          reinterpret_cast<const UTF8 *>(upper_name) + nLen);
+    if (mudstate.builtin_functions.find(key) != mudstate.builtin_functions.end())
+        return true;
+
+    // Check user-defined functions.
+    if (mudstate.ufunc_htab.find(key) != mudstate.ufunc_htab.end())
+        return true;
+
+    return false;
+}
+
 // Internal Q register indices for iter() loop state.
 // These are promoted to PHI nodes by SSA construction.
 //
@@ -1427,11 +1458,36 @@ static int hir_lower_sequence(hir_program &h, rv_compiler &rc,
         return hir_lower_node(h, rc, node->children[0].get());
     }
 
+    // EV_FCHECK without EV_FMAND: only the first effective (non-space)
+    // child gets the function check.  After lowering that child, clear
+    // s_fcheck_available so subsequent AST_FUNCCALL nodes in this
+    // sequence emit as literal text.
+    //
+    // In the classic parser, FCHECK is scoped to each mux_exec call.
+    // Function arguments are evaluated by recursive mux_exec calls,
+    // each with fresh EV_FCHECK.  A sequence maps to one such scope:
+    // FCHECK is consumed within it (siblings see it consumed), but
+    // the parent scope is restored when the sequence returns.
+    //
+    bool saved_fcheck = s_fcheck_available;
+    bool strip_fcheck = s_fcheck_available
+                     && (s_compile_eval & EV_FCHECK)
+                     && !(s_compile_eval & EV_FMAND);
+
     // Lower each child.
     std::vector<int> children;
     for (auto &child : node->children) {
         children.push_back(hir_lower_node(h, rc, child.get()));
+
+        // After the first non-space child, consume FCHECK for siblings.
+        if (strip_fcheck && child->type != AST_SPACE) {
+            s_fcheck_available = false;
+            strip_fcheck = false;
+        }
     }
+
+    // Restore parent scope — FCHECK consumption is local to this sequence.
+    s_fcheck_available = saved_fcheck;
 
     // Check if all constant.
     bool all_const = true;
@@ -1465,30 +1521,47 @@ static int hir_lower_sequence(hir_program &h, rv_compiler &rc,
 static int hir_lower_node(hir_program &h, rv_compiler &rc,
                            const ASTNode *node);
 
-// Lower a NOEVAL child, stripping leading/trailing spaces.
+// Lower a NOEVAL child, stripping leading/trailing spaces and braces.
 //
 // MUX NOEVAL functions (switch/case/if/iter) evaluate their arguments
-// with EV_STRIP_CURLY, which strips leading/trailing whitespace.
-// In the AST, the space after a comma becomes an AST_SPACE node at
-// the start of the argument's sequence.  This helper skips those.
+// with EV_STRIP_CURLY, which strips outer braces and leading/trailing
+// whitespace.  In the AST, the space after a comma becomes an AST_SPACE
+// node at the start of the argument's sequence.  This helper handles
+// both brace unwrapping and space trimming.
 //
 static int hir_lower_trimmed(hir_program &h, rv_compiler &rc,
                               const ASTNode *child) {
-    if (child->type == AST_SEQUENCE && !child->children.empty()) {
-        size_t first = 0, last = child->children.size();
-        while (first < last && child->children[first]->type == AST_SPACE) first++;
-        while (last > first && child->children[last-1]->type == AST_SPACE) last--;
+    // EV_STRIP_CURLY: unwrap outer brace group.
+    const ASTNode *inner = child;
+    if (inner->type == AST_BRACEGROUP && !inner->children.empty()) {
+        inner = inner->children[0].get();
+    }
+
+    if (inner->type == AST_SEQUENCE && !inner->children.empty()) {
+        size_t first = 0, last = inner->children.size();
+        while (first < last && inner->children[first]->type == AST_SPACE) first++;
+        while (last > first && inner->children[last-1]->type == AST_SPACE) last--;
         if (first == last) {
             uint64_t addr = rc.pool_str("");
             return h.emit_sconst(addr, "");
         }
-        if (first == 0 && last == child->children.size()) {
-            return hir_lower_node(h, rc, child);
+
+        // After trimming, if a single brace group remains, unwrap it.
+        // This handles: if(1, {text}) where leading space is trimmed.
+        if (last - first == 1
+            && inner->children[first]->type == AST_BRACEGROUP
+            && !inner->children[first]->children.empty()) {
+            return hir_lower_node(h, rc,
+                inner->children[first]->children[0].get());
+        }
+
+        if (first == 0 && last == inner->children.size()) {
+            return hir_lower_node(h, rc, inner);
         }
         // Lower only the trimmed children.
         std::vector<int> parts;
         for (size_t i = first; i < last; i++) {
-            parts.push_back(hir_lower_node(h, rc, child->children[i].get()));
+            parts.push_back(hir_lower_node(h, rc, inner->children[i].get()));
         }
         if (parts.size() == 1) return parts[0];
         // Concatenate: ensure all parts are strings.
@@ -1504,13 +1577,77 @@ static int hir_lower_trimmed(hir_program &h, rv_compiler &rc,
         h.needs_jit = true;
         return r;
     }
-    return hir_lower_node(h, rc, child);
+    return hir_lower_node(h, rc, inner);
 }
 
 // Lower a function call: try fold, try native arith, else ECALL.
 //
 static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                                const ASTNode *node) {
+    // ---------------------------------------------------------------
+    // EV_FCHECK gate: if FCHECK has been consumed (by hir_lower_sequence
+    // after the first child) and FMAND is not set, this function call
+    // is not at the start of the expression — emit as literal text.
+    // This matches the classic parser where only the first '(' is
+    // checked as a potential function call.
+    // ---------------------------------------------------------------
+
+    if (!s_fcheck_available && !(s_compile_eval & EV_FMAND)) {
+        // Reconstruct as literal: name(arg1,arg2,...).
+        // Arguments are still lowered (%-substitutions resolved).
+        std::vector<int> args;
+        for (auto &child : node->children) {
+            args.push_back(hir_lower_node(h, rc, child.get()));
+        }
+        int nargs = static_cast<int>(args.size());
+
+        // Try all-constant path first.
+        bool all_const = true;
+        for (int ai : args) {
+            if (!h.is_const(ai)) { all_const = false; break; }
+        }
+        if (all_const) {
+            std::string lit = node->text;
+            lit += '(';
+            for (int ai = 0; ai < nargs; ai++) {
+                if (ai > 0) lit += ',';
+                lit += h.const_str(args[ai]);
+            }
+            if (node->has_close_paren) lit += ')';
+            uint64_t addr = rc.pool_str(lit);
+            return h.emit_sconst(addr, lit);
+        }
+
+        // Runtime path: strcat pieces.
+        std::vector<int> parts;
+        std::string prefix = node->text;
+        prefix += '(';
+        uint64_t paddr = rc.pool_str(prefix);
+        parts.push_back(h.emit_sconst(paddr, prefix));
+        for (int ai = 0; ai < nargs; ai++) {
+            if (ai > 0) {
+                uint64_t caddr = rc.pool_str(",");
+                parts.push_back(h.emit_sconst(caddr, ","));
+            }
+            int arg = args[ai];
+            if (h.ty[arg] == TY_INT) {
+                arg = h.emit(HIR_ITOA, TY_STRING, arg);
+            }
+            parts.push_back(arg);
+        }
+        if (node->has_close_paren) {
+            uint64_t raddr = rc.pool_str(")");
+            parts.push_back(h.emit_sconst(raddr, ")"));
+        }
+        int strcat_idx = engine_api_lookup("STRCAT");
+        int r = h.emit_strcat(parts.data(),
+                               static_cast<int>(parts.size()));
+        if (r >= 0) h.func_idx[r] = strcat_idx;
+        h.ecalls++;
+        h.needs_jit = true;
+        return r;
+    }
+
     // ---------------------------------------------------------------
     // %q register operations (compile-time tracking for single block).
     // ---------------------------------------------------------------
@@ -1595,11 +1732,12 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         }
 
         // Constant condition: fold — only lower the selected branch.
+        // Use hir_lower_trimmed to strip braces (EV_STRIP_CURLY).
         if (h.kind[cond] == HIR_ICONST) {
             if (h.val[cond] != 0) {
-                return hir_lower_node(h, rc, node->children[1].get());
+                return hir_lower_trimmed(h, rc, node->children[1].get());
             } else if (has_else) {
-                return hir_lower_node(h, rc, node->children[2].get());
+                return hir_lower_trimmed(h, rc, node->children[2].get());
             } else {
                 uint64_t addr = rc.pool_str("");
                 return h.emit_sconst(addr, "");
@@ -1617,18 +1755,18 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         h.add_edge(entry_block, true_block);
         h.add_edge(entry_block, false_block);
 
-        // Lower true branch.
+        // Lower true branch (strip braces via hir_lower_trimmed).
         h.cur_block = true_block;
-        int true_val = hir_lower_node(h, rc, node->children[1].get());
+        int true_val = hir_lower_trimmed(h, rc, node->children[1].get());
         int true_exit = h.cur_block;  // might change with nested ifelse
         h.emit(HIR_BR, TY_VOID, -1, -1, merge_block);
         h.add_edge(true_exit, merge_block);
 
-        // Lower false branch.
+        // Lower false branch (strip braces via hir_lower_trimmed).
         h.cur_block = false_block;
         int false_val;
         if (has_else) {
-            false_val = hir_lower_node(h, rc, node->children[2].get());
+            false_val = hir_lower_trimmed(h, rc, node->children[2].get());
         } else {
             // if() with no else: false branch returns empty string.
             uint64_t addr = rc.pool_str("");
@@ -2406,6 +2544,90 @@ general_lowering:
 
     int fidx = engine_api_lookup(upper.c_str());
 
+    // ---------------------------------------------------------------
+    // Unknown function: resolve at compile time.
+    //
+    // The AST parser creates AST_FUNCCALL for any "name(" pattern,
+    // even if the function doesn't exist.  The AST evaluator checks
+    // eval flags to decide the result:
+    //
+    //   EV_FMAND (inside [...]): #-1 FUNCTION (NAME) NOT FOUND
+    //   EV_FCHECK (first in seq): literal reconstruction name(args)
+    //   Neither (non-first):      literal reconstruction name(args)
+    //
+    // The compiler resolves this at HIR time so the ECALL/RV64 layer
+    // never sees an unknown function.
+    // ---------------------------------------------------------------
+
+    if (fidx == 0 && !is_known_function(upper.c_str())) {
+        if (s_compile_eval & EV_FMAND) {
+            // Mandatory function context: produce error message.
+            std::string err = "#-1 FUNCTION (";
+            err += upper;
+            err += ") NOT FOUND";
+            uint64_t addr = rc.pool_str(err);
+            return h.emit_sconst(addr, err);
+        }
+
+        // Non-mandatory context: reconstruct as literal text.
+        // name(arg1,arg2,...) — arguments are still evaluated.
+        //
+        // If has_close_paren is false (unterminated call), omit ')'.
+        //
+        std::string lit = node->text;
+        lit += '(';
+        for (int ai = 0; ai < nargs; ai++) {
+            if (ai > 0) lit += ',';
+            if (h.is_const(ai < static_cast<int>(args.size()) ? args[ai] : -1)) {
+                lit += h.const_str(args[ai]);
+            } else {
+                // Non-constant arg: must build at runtime via STRCAT.
+                goto literal_strcat;
+            }
+        }
+        if (node->has_close_paren) lit += ')';
+        {
+            uint64_t addr = rc.pool_str(lit);
+            return h.emit_sconst(addr, lit);
+        }
+
+literal_strcat:
+        {
+            // Build literal reconstruction with runtime-evaluated args.
+            std::vector<int> parts;
+
+            std::string prefix = node->text;
+            prefix += '(';
+            uint64_t paddr = rc.pool_str(prefix);
+            parts.push_back(h.emit_sconst(paddr, prefix));
+
+            for (int ai = 0; ai < nargs; ai++) {
+                if (ai > 0) {
+                    uint64_t caddr = rc.pool_str(",");
+                    parts.push_back(h.emit_sconst(caddr, ","));
+                }
+                int arg = args[ai];
+                if (h.ty[arg] == TY_INT) {
+                    arg = h.emit(HIR_ITOA, TY_STRING, arg);
+                }
+                parts.push_back(arg);
+            }
+
+            if (node->has_close_paren) {
+                uint64_t raddr = rc.pool_str(")");
+                parts.push_back(h.emit_sconst(raddr, ")"));
+            }
+
+            int strcat_idx = engine_api_lookup("STRCAT");
+            int r = h.emit_strcat(parts.data(),
+                                   static_cast<int>(parts.size()));
+            if (r >= 0) h.func_idx[r] = strcat_idx;
+            h.ecalls++;
+            h.needs_jit = true;
+            return r;
+        }
+    }
+
     // Validate argument count at compile time.  If the function
     // requires more args than we have, return empty — don't emit
     // an ECALL that would crash the fun_* handler.
@@ -2455,7 +2677,13 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
 
     case AST_EVALBRACKET:
         if (node->children.size() == 1) {
-            return hir_lower_node(h, rc, node->children[0].get());
+            // Eval brackets are FMAND context — function calls inside
+            // [...] are always dispatched, never literal.
+            bool saved_fcheck = s_fcheck_available;
+            s_fcheck_available = true;
+            int r = hir_lower_node(h, rc, node->children[0].get());
+            s_fcheck_available = saved_fcheck;
+            return r;
         }
         {
             uint64_t addr = rc.pool_str("");
@@ -2508,6 +2736,38 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
         {
             uint64_t addr = rc.pool_str("");
             return h.emit_sconst(addr, "");
+        }
+
+    case AST_BRACEGROUP:
+        // General context (not inside NOEVAL handler): braces are literal.
+        // Output {content} with braces preserved.
+        if (node->children.empty()) {
+            uint64_t addr = rc.pool_str("{}");
+            return h.emit_sconst(addr, "{}");
+        }
+        {
+            // Lower content then wrap with literal braces.
+            int content = hir_lower_node(h, rc, node->children[0].get());
+            if (h.is_const(content)) {
+                std::string lit = "{" + h.const_str(content) + "}";
+                uint64_t addr = rc.pool_str(lit);
+                return h.emit_sconst(addr, lit);
+            }
+            // Runtime: strcat("{", content, "}").
+            uint64_t oaddr = rc.pool_str("{");
+            uint64_t caddr = rc.pool_str("}");
+            int open = h.emit_sconst(oaddr, "{");
+            int close = h.emit_sconst(caddr, "}");
+            if (h.ty[content] == TY_INT) {
+                content = h.emit(HIR_ITOA, TY_STRING, content);
+            }
+            int parts[3] = { open, content, close };
+            int strcat_idx = engine_api_lookup("STRCAT");
+            int r = h.emit_strcat(parts, 3);
+            if (r >= 0) h.func_idx[r] = strcat_idx;
+            h.ecalls++;
+            h.needs_jit = true;
+            return r;
         }
 
     default: {
@@ -3533,7 +3793,8 @@ static void tier2_lazy_init() {
     s_blob_version = "none";
 }
 
-static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
+static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
+                                            int eval = EV_FCHECK | EV_EVAL) {
     tier2_lazy_init();
 
     compiled_program prog;
@@ -3558,6 +3819,10 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen) {
 
     // Install Tier 2 blob into guest memory (if loaded).
     tier2_install(rc.memory, rv_compiler::BLOB_BASE);
+
+    // Set compile-time eval flags for unknown-function resolution.
+    s_compile_eval = eval;
+    s_fcheck_available = (eval & EV_FCHECK) != 0;
 
     hir_program h;
     h.init();
@@ -3772,8 +4037,15 @@ static void store_to_sqlite_cache(const UTF8 *expr, size_t nLen,
 // cached compiled_program (owned by the cache — do not free).
 // Returns nullptr on compilation failure.
 //
-static compiled_program *compile_cached(const UTF8 *expr, size_t nLen) {
+static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
+                                         int eval = EV_FCHECK | EV_EVAL) {
+    // Include eval flags that affect compilation in the cache key.
+    // Only EV_FCHECK and EV_FMAND matter for unknown-function resolution.
+    int eval_key = eval & (EV_FCHECK | EV_FMAND);
     std::string key(reinterpret_cast<const char *>(expr), nLen);
+    key += '\0';
+    key += static_cast<char>(eval_key & 0xFF);
+    key += static_cast<char>((eval_key >> 8) & 0xFF);
 
     auto it = s_compile_cache.find(key);
     if (it != s_compile_cache.end()) {
@@ -3802,7 +4074,7 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen) {
 
     if (!from_sqlite) {
         // Full cache miss — compile from scratch.
-        prog = compile_expression(expr, nLen);
+        prog = compile_expression(expr, nLen, eval);
         if (!prog.ok) return nullptr;
 
         // Persist to SQLite for future restarts.
@@ -4046,6 +4318,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
 bool jit_eval(const UTF8 *expr, size_t nLen,
               UTF8 *buff, UTF8 **bufc,
               dbref executor, dbref caller, dbref enactor,
+              int eval,
               const UTF8 *cargs[], int ncargs) {
     // Don't JIT until the Tier 2 blob is loaded and the persistent
     // DBT state is initialized.  compile_cached calls tier2_lazy_init,
@@ -4059,7 +4332,7 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
         if (!s_tier2.loaded) return false;
     }
 
-    compiled_program *prog = compile_cached(expr, nLen);
+    compiled_program *prog = compile_cached(expr, nLen, eval);
     if (!prog) return false;
 
     if (!prog->needs_jit) {
@@ -4095,7 +4368,9 @@ FUNCTION(fun_rveval)
     size_t nLen = strlen(reinterpret_cast<const char *>(expr));
 
     // Look up in compile cache (or compile on miss).
-    compiled_program *prog = compile_cached(expr, nLen);
+    // rveval explicitly evaluates the full expression — all function
+    // calls are dispatched (FMAND context, like eval brackets).
+    compiled_program *prog = compile_cached(expr, nLen, EV_FMAND | EV_EVAL);
     if (!prog) {
         safe_str(T("#-1 COMPILATION FAILED"), buff, bufc);
         return;
@@ -4270,7 +4545,7 @@ FUNCTION(fun_rvbench)
     }
     clock_gettime(CLOCK_MONOTONIC, &t0);
     for (int i = 0; i < iterations; i++) {
-        compiled_program *cp = compile_cached(expr, nLen);
+        compiled_program *cp = compile_cached(expr, nLen, EV_FMAND | EV_EVAL);
         if (cp) {
             UTF8 result[256];
             run_cached_program(cp, executor, caller, enactor,
