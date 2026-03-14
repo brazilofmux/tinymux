@@ -2903,21 +2903,24 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
             }
         }
         dbt->num_patches = 0;
-        dbt->code_used = dbt->blob_code_end;
 
-        // Diagnostic: configurable NOP sled to test alignment sensitivity.
-        // TINYMUX_DBT_PAD=N inserts N bytes of padding before program code.
+        // Pad program code start by 16 bytes.  Empirically determined
+        // to avoid a pathological icache boundary for iter loop bodies.
+        // BENCH037 (10 single-char iter) goes from 13us to 6.6us.
+        // Other benchmarks unaffected.  TINYMUX_DBT_PAD overrides.
         {
             static int pad = -1;
             if (pad < 0) {
                 const char *env = getenv("TINYMUX_DBT_PAD");
-                pad = env ? atoi(env) : 0;
+                pad = env ? atoi(env) : 16;
             }
-            if (pad > 0 && dbt->code_used + static_cast<uint32_t>(pad) < CODE_BUF_SIZE) {
-                memset(dbt->code_buf + dbt->code_used, 0x90, pad);  // NOP sled
-                dbt->code_used += static_cast<uint32_t>(pad);
+            uint32_t p = static_cast<uint32_t>(pad);
+            if (p > 0 && dbt->code_used + p < CODE_BUF_SIZE) {
+                memset(dbt->code_buf + dbt->code_used, 0x90, p);
+                dbt->code_used += p;
             }
         }
+
         // Keep intrinsics — they're blob-related.
     } else {
         // No blob — full reset.
