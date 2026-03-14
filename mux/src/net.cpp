@@ -17,6 +17,7 @@
 #include "driverstate.h"
 #include "driver_log.h"
 #include "driver_bridge.h"
+#include "ganl_adapter.h"
 using namespace std;
 
 NAMETAB default_charset_nametab[] =
@@ -2058,12 +2059,12 @@ static void do_logged_out_internal(DESC *d, int key, const UTF8 *arg)
     {
     case CMD_QUIT:
 
-        shutdownsock(d, R_QUIT);
+        ganl_close_connection(d, R_QUIT);
         break;
 
     case CMD_LOGOUT:
 
-        shutdownsock(d, R_LOGOUT);
+        ganl_close_connection(d, R_LOGOUT);
         break;
 
     case CMD_WHO:
