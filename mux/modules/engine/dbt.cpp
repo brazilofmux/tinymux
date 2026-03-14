@@ -1814,10 +1814,15 @@ no_addr_fusion:
 
             emit_load_next_pc(&e, X64_RCX);
 
-            // Exact return: JALR x0, x1, 0. Use RAS-predicted fast path.
-            if (insn.rs1 == 1 && insn.rd == 0 && insn.imm == 0) {
-                emit_ras_pop_and_probe(&e, dbt);
-            }
+            // NOTE: RAS pop_and_probe is DISABLED.  The probe JMPs to
+            // the predicted return block, bypassing exit_indirect's RET.
+            // When the callee was entered via inline CALL, the RET must
+            // go to the caller's continuation (on the x86 stack), not
+            // to the predicted block.  The RAS JMP steals the return
+            // address and causes inline CALL cold-exit failures.
+            //
+            // Future: re-enable RAS for non-inline contexts, or use a
+            // mechanism that preserves x86 stack discipline.
 
             emit_exit_indirect(&e, X64_RCX);
             goto done;
