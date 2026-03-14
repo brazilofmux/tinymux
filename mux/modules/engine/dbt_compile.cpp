@@ -136,6 +136,13 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "CAPSTR",      "co_totitle_wrap" },
     { "STRIPANSI",   "co_stripansi_wrap" },
 
+    // --- Batch 4: space, secure, squish, delete, elements ---
+    { "SPACE",       "rv64_space" },
+    { "SECURE",      "rv64_secure" },
+    { "SQUISH",      "rv64_squish" },
+    { "DELETE",      "rv64_delete" },
+    { "ELEMENTS",    "rv64_elements" },
+
     { nullptr, nullptr }
 };
 

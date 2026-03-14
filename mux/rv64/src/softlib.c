@@ -806,6 +806,139 @@ char *co_vislen_wrap(char *out, const char **fargs, int nfargs) {
 }
 
 /* ---------------------------------------------------------------
+ * Batch 4 wrappers: space, secure, squish, delete, elements.
+ * --------------------------------------------------------------- */
+
+/* space(n) — generate N spaces */
+char *rv64_space(char *out, const char **fargs, int nfargs) {
+    int n = 1;
+    if (nfargs >= 1 && fargs[0][0] != '\0') {
+        n = satoi(fargs[0]);
+    }
+    if (n < 0) n = 0;
+    if (n > 8000) n = 8000;
+    memset(out, ' ', (size_t)n);
+    out[n] = '\0';
+    return out;
+}
+
+/* secure(string) — escape special characters: %$\[]{}();, */
+char *rv64_secure(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '\0'; return out; }
+    const unsigned char *p = (const unsigned char *)fargs[0];
+    unsigned char *op = (unsigned char *)out;
+    unsigned char *end = op + 7999;
+    while (*p && op < end) {
+        unsigned char c = *p++;
+        if (c == '%' || c == '$' || c == '\\' || c == '[' || c == ']'
+            || c == '{' || c == '}' || c == '(' || c == ')' || c == ';'
+            || c == ',') {
+            if (op + 1 >= end) break;
+            *op++ = '\\';
+            *op++ = c;
+        } else {
+            *op++ = c;
+        }
+    }
+    *op = '\0';
+    return out;
+}
+
+/* squish(string[, delim]) — compress runs of delimiters to single */
+char *rv64_squish(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '\0'; return out; }
+    unsigned char delim = ' ';
+    if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
+    const unsigned char *p = (const unsigned char *)fargs[0];
+    unsigned char *op = (unsigned char *)out;
+    unsigned char *end = op + 7999;
+    /* Skip leading delimiters. */
+    while (*p == delim) p++;
+    while (*p && op < end) {
+        if (*p == delim) {
+            *op++ = delim;
+            p++;
+            while (*p == delim) p++;
+        } else {
+            *op++ = *p++;
+        }
+    }
+    /* Strip trailing delimiter. */
+    if (op > (unsigned char *)out && op[-1] == delim) op--;
+    *op = '\0';
+    return out;
+}
+
+/* delete(string, first, len) — delete characters by position */
+char *rv64_delete(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 3) {
+        if (nfargs >= 1) rv64_scopy(out, fargs[0]);
+        else out[0] = '\0';
+        return out;
+    }
+    int first = satoi(fargs[1]);
+    int dlen  = satoi(fargs[2]);
+    size_t slen = rv64_slen(fargs[0]);
+    if (first < 0) first = 0;
+    unsigned char *op = (unsigned char *)out;
+    const unsigned char *sp = (const unsigned char *)fargs[0];
+    /* Copy before deletion point. */
+    size_t before = ((size_t)first < slen) ? (size_t)first : slen;
+    memcpy(op, sp, before);
+    op += before;
+    /* Skip deleted range. */
+    size_t skip = (size_t)first + (size_t)(dlen > 0 ? dlen : 0);
+    if (skip < slen) {
+        size_t after = slen - skip;
+        memcpy(op, sp + skip, after);
+        op += after;
+    }
+    *op = '\0';
+    return out;
+}
+
+/* elements(list, positions[, delim][, osep]) — extract by position list */
+char *rv64_elements(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '\0'; return out; }
+    unsigned char delim = ' ';
+    unsigned char osep = ' ';
+    if (nfargs >= 3 && fargs[2][0] != '\0') delim = (unsigned char)fargs[2][0];
+    if (nfargs >= 4 && fargs[3][0] != '\0') osep = (unsigned char)fargs[3][0];
+    /* Parse position list. */
+    const unsigned char *pos_list = (const unsigned char *)fargs[1];
+    unsigned char *op = (unsigned char *)out;
+    unsigned char *end = op + 7999;
+    int first_output = 1;
+    while (*pos_list) {
+        /* Parse next number. */
+        while (*pos_list == ' ') pos_list++;
+        if (*pos_list == '\0') break;
+        int pos = 0;
+        while (*pos_list >= '0' && *pos_list <= '9') {
+            pos = pos * 10 + (*pos_list - '0');
+            pos_list++;
+        }
+        while (*pos_list == ' ') pos_list++;
+        /* Extract element at position. */
+        if (pos < 1) continue;
+        const unsigned char *p = (const unsigned char *)fargs[0];
+        int cur = 1;
+        /* Find element #pos. */
+        while (cur < pos && *p) {
+            while (*p && *p != delim) p++;
+            if (*p == delim) { p++; cur++; }
+        }
+        if (cur == pos && *p) {
+            if (!first_output && op < end) *op++ = osep;
+            first_output = 0;
+            while (*p && *p != delim && op < end) *op++ = *p++;
+        }
+    }
+    *op = '\0';
+    return out;
+}
+
+/* ---------------------------------------------------------------
  * Helper: inline itoa, writes decimal to buf, returns length.
  * --------------------------------------------------------------- */
 
