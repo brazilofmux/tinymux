@@ -567,13 +567,14 @@ int DCL_CDECL main(int argc, char *argv[])
     // local extensions.
     //
     pGameEngine->Shutdown();
+    drv_CacheClose();
     pGameEngine->Release();
     pGameEngine = nullptr;
+    g_pIGameEngine = nullptr;
 #if defined(STUB_SLAVE)
     final_stubslave();
 #endif // STUB_SLAVE
     final_modules();
-    drv_CacheClose();
 
 #if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
     g_GanlAdapter.shutdown_stubslave();
