@@ -761,8 +761,14 @@ public:
             HandleUnconnectedDescriptorClose(d);
         }
 
-        // Cleanup TinyMUX resources associated with the DESC
-        process_output(d, false);
+        // Cleanup TinyMUX resources associated with the DESC.
+        // Skip process_output during destructor-driven cleanup
+        // (ServerShutdown) — the socket is already closed, and calling
+        // send_data here acquires a shared_ptr to the connection being
+        // destroyed, causing a re-entrant destructor → pure virtual call.
+        if (reason != ganl::DisconnectReason::ServerShutdown) {
+            process_output(d, false);
+        }
         clearstrings(d);
         freeqs(d);
 
