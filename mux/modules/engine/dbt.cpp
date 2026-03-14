@@ -1702,13 +1702,11 @@ no_addr_fusion:
                 int rd = rc_write(&e, &rc, insn.rd);
                 emit_mov_r64_imm32(&e, rd, static_cast<int32_t>(pc + 4));
             }
-            // RAS push: if rd=x1 (ra), this is a function call.
-            if (insn.rd == 1) {
-                rc_flush(&e, &rc);
-                emit_ras_push(&e, static_cast<uint64_t>(pc + 4));
-            } else {
-                rc_flush(&e, &rc);
-            }
+            // Non-inline call: exit via chained JMP (no x86 CALL).
+            // Do NOT push RAS — the callee's RAS-predicted JMP would
+            // bypass the x86 CALL/RET stack discipline, stealing a
+            // return address from an outer inline CALL.
+            rc_flush(&e, &rc);
             emit_exit_chained(&e, dbt, target);
             goto done;
         }
@@ -2897,18 +2895,20 @@ void dbt_resolve_chains(dbt_state_t *dbt) {
     // touched again.
     //
     uint32_t resolved = 0;
+    uint32_t already_ok = 0;
+    uint32_t unresolvable = 0;
     for (uint32_t i = 0; i < dbt->num_patches; i++) {
         uint64_t target = dbt->patches[i].target_pc;
         if (target == 0) continue;
 
         // Check: is the JMP still pointing to the slow-path stub?
-        // Read the current JMP rel32 displacement.
         uint32_t jmp_off = dbt->patches[i].jmp_offset;
         int32_t cur_disp;
         memcpy(&cur_disp, dbt->code_buf + jmp_off, 4);
         uint32_t cur_target = jmp_off + 4 + static_cast<uint32_t>(cur_disp);
 
         if (cur_target != dbt->patches[i].stub_offset) {
+            already_ok++;
             continue;  // already resolved by backpatch_chains
         }
 
@@ -2917,11 +2917,17 @@ void dbt_resolve_chains(dbt_state_t *dbt) {
             backpatch_jmp(dbt->code_buf, jmp_off, be->native_code);
             dbt->chain_hits++;
             resolved++;
+        } else {
+            unresolvable++;
+            if (dbt->trace & DBT_TRACE_TRANSLATE) {
+                fprintf(stderr, "[dbt] unresolved chain: target=0x%llX\n",
+                        static_cast<unsigned long long>(target));
+            }
         }
     }
-    if ((dbt->trace & DBT_TRACE_TRANSLATE) && resolved) {
-        fprintf(stderr, "[dbt] resolve_chains: patched %u of %u pending\n",
-                resolved, dbt->num_patches);
+    if (dbt->trace & DBT_TRACE_TRANSLATE) {
+        fprintf(stderr, "[dbt] resolve_chains: %u resolved, %u already_ok, %u unresolvable of %u total\n",
+                resolved, already_ok, unresolvable, dbt->num_patches);
     }
 }
 
