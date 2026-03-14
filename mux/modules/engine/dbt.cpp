@@ -3010,12 +3010,20 @@ void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc) {
                     mark_visited(target);
                     dbt_pretranslate(dbt, target);
                 }
-                // Follow the jump/call target.
-                enqueue_pc(target);
-                if (si.rd != 0) {
-                    enqueue_pc(scan_pc + 4);
+                if (si.rd == 0) {
+                    // Unconditional jump: follow target, stop scanning.
+                    enqueue_pc(target);
+                    break;
                 }
-                break;
+                // Function call: enqueue both target and fall-through,
+                // then CONTINUE scanning.  The block may absorb this
+                // call via inline CALL and continue translating past
+                // it — subsequent calls in the same block must also
+                // be discovered and pretranslated.
+                enqueue_pc(target);
+                enqueue_pc(scan_pc + 4);
+                scan_pc += 4;
+                continue;
             }
             uint64_t target;
             uint64_t return_pc;
@@ -3029,11 +3037,17 @@ void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc) {
                     mark_visited(target);
                     dbt_pretranslate(dbt, target);
                 }
-                enqueue_pc(target);
-                if (next_si.rd != 0) {
-                    enqueue_pc(return_pc);
+                if (next_si.rd == 0) {
+                    // Unconditional indirect jump: follow, stop.
+                    enqueue_pc(target);
+                    break;
                 }
-                break;
+                // Direct call: enqueue and continue scanning past
+                // the 2-instruction pair (same rationale as JAL rd=1).
+                enqueue_pc(target);
+                enqueue_pc(return_pc);
+                scan_pc += 8;  // skip LUI/AUIPC + JALR
+                continue;
             }
             if (si.opcode == OP_JALR || si.opcode == OP_SYSTEM) {
                 break;
