@@ -142,6 +142,7 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "SQUISH",      "rv64_squish" },
     { "DELETE",      "rv64_delete" },
     { "ELEMENTS",    "rv64_elements" },
+    { "TRANSLATE",   "rv64_translate" },
 
     { nullptr, nullptr }
 };

@@ -938,6 +938,38 @@ char *rv64_elements(char *out, const char **fargs, int nfargs) {
     return out;
 }
 
+/* translate(string, from, to) — character-by-character mapping */
+char *rv64_translate(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 3) {
+        if (nfargs >= 1) rv64_scopy(out, fargs[0]);
+        else out[0] = '\0';
+        return out;
+    }
+    const unsigned char *from = (const unsigned char *)fargs[1];
+    const unsigned char *to   = (const unsigned char *)fargs[2];
+    size_t flen = rv64_slen(fargs[1]);
+    size_t tlen = rv64_slen(fargs[2]);
+    const unsigned char *sp = (const unsigned char *)fargs[0];
+    unsigned char *op = (unsigned char *)out;
+    unsigned char *end = op + 7999;
+    while (*sp && op < end) {
+        unsigned char c = *sp++;
+        /* Search for c in 'from'. */
+        int found = 0;
+        for (size_t i = 0; i < flen; i++) {
+            if (from[i] == c) {
+                /* Replace with corresponding 'to' char (or last if shorter). */
+                *op++ = (i < tlen) ? to[i] : to[tlen > 0 ? tlen - 1 : 0];
+                found = 1;
+                break;
+            }
+        }
+        if (!found) *op++ = c;
+    }
+    *op = '\0';
+    return out;
+}
+
 /* ---------------------------------------------------------------
  * Helper: inline itoa, writes decimal to buf, returns length.
  * --------------------------------------------------------------- */
