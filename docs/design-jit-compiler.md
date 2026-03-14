@@ -8,7 +8,7 @@ Predecessors: `docs/PARSER.md` (study), `docs/PARSER_REPLACE.md` (AST evaluator)
 
 External work: `~/riscv` (DBT runtime), `~/slow-32` (ISA design + toolchain history)
 
-**As of 2026-03-13**: 593 smoke tests, ~8,400 lines across 8 files
+**As of 2026-03-14**: 593 smoke tests, ~8,400 lines across 8 files
 (+ DBT runtime). Full SSA compiler pipeline operational:
 AST → HIR → SSA → optimize → linear-scan regalloc → RV64 → x86-64 JIT.
 Loop compilation (iter) with SSA back-edges and PHI nodes. Tier 2 blob
@@ -17,9 +17,13 @@ color_ops (full PUA color, Unicode 16, CJK width). 17 co_* intrinsics
 bypass RV64 translation to call host's native Ragel implementations.
 switch/case compilation via branch chains. SQLite code cache (Stage 5)
 persists compiled programs across restarts (schema v7).
-Native CALL continuation: Tier 2 function calls emit x86-64 CALL rel32
-to pre-translated code, keeping entire loop bodies in one translated block.
-Pre-translation, cache hash XOR spreading, RAS poisoning, cold exit stubs.
+
+Inline CALL pipeline: zero cold exits, constant disp=2 (entry + exit).
+4-way set-associative block cache (1024 sets × 4 ways = 4096 entries).
+Pre-translate intrinsic stubs before function pretranslation (leaves first).
+Callee-first recursive pretranslation with visited set.  Scan past JAL rd=1
+in worklist to discover all call targets within superblock-extended blocks.
+Entire iter loop body runs in one trampoline call — no per-element dispatch.
 
 ## Motivation
 
@@ -438,13 +442,15 @@ compiler.
  - Tier 2 blob: cat/strlen/strcat via JAL (no ECALL boundary crossing)
  - Softcode functions: rvcall(), rveval(), rvbench()
 
-**Benchmark results** (production cache path, 10K iterations):
- - Folded expressions: 0.03-0.06 us/call (10-20x faster than AST eval)
- - ECALL expressions: 0.41-0.52 us/call (at parity or faster than AST eval)
- - Tier 2 w/ native CALL: 0.49-0.63 us/call (native CALL inline, no block breaks)
- - iter(3 elems): 0.49 us/call (beats native 0.90us)
- - iter(5 elems, add): 0.79 us/call (beats native 1.92us)
- - Native arithmetic chains: 0.41-0.44 us/call (20% faster than AST eval)
+**Benchmark results** (production cache path, 10K iterations, ce=0, disp=2):
+ - Folded expressions: 0.03-0.06 us/call (10-19x faster than AST eval)
+ - ECALL expressions: 0.40-0.52 us/call (at parity or faster than AST eval)
+ - Tier 2 string ops: 0.49-0.80 us/call (parity with native co_* eval)
+ - iter(3 elems, X): 0.66 us/call vs 0.91us native (**1.4x faster**)
+ - iter(5 elems, add): 1.60 us/call vs 2.07us native (**1.3x faster**)
+ - iter(20 elems, X): 4.69 us/call vs 1.13us native (4.2x — per-element work)
+ - Cold exits: 0.  Dispatches: 2 (entry + ECALL exit).
+ - Native arithmetic chains: 0.40-0.44 us/call (20% faster than AST eval)
  - Native AST eval baseline: 0.3-1.0 us/call
 
 ### Stage 1: RV64IMD DBT Runtime ✅ (2 items remaining)
@@ -505,7 +511,9 @@ Optimization state:
 
 **1d. Block cache** — ✅ COMPLETE
 
-1024-entry direct-mapped hash table. O(1) lookup. Statistics tracked
+4-way set-associative cache (1024 sets × 4 ways = 4096 entries).
+Hash: `(pc >> 2) ^ ((pc >> 2) >> 10) & MASK`. O(1) lookup with
+4-way scan per set. FIFO eviction on way-full. Statistics tracked
 (cache_hits, cache_misses, blocks_translated, insns_translated).
 Persistent across runs via dbt_rerun() (callback update without
 cache invalidation).
@@ -525,26 +533,36 @@ compiled programs. Not used in the production softcode path.
 
 #### Stage 1 Remaining Work
 
-**1c-vi. Full superblock formation** — ✅ COMPLETE
+**1c-vi. Full superblock formation + inline CALL** — ✅ COMPLETE
 
 Self-loop detection, side exits, and **native CALL continuation**
-are all implemented. When a JAL-ra targets a pre-translated Tier 2
-function, the translator emits an x86-64 CALL rel32 instead of
-exiting the block. The callee's RET returns to the caller, and
-translation continues inline. Mechanism:
+are all implemented. When a JAL-ra (or fused LUI/AUIPC+JALR) targets
+a pre-translated function, the translator emits an x86-64 CALL rel32
+instead of exiting the block. The callee's RET returns to the caller,
+and translation continues inline. Mechanism:
 
- 1. `dbt_pretranslate()` — worklist-based pre-translation of all
-    Tier 2 entry points before the first `dbt_run()`.
- 2. `cache_hash()` XOR spreading — prevents Tier 2 (0x10000+) and
-    program code (0x0000+) from colliding in the direct-mapped cache.
- 3. At JAL rd=1: if `cache[hash(target)]` hits, emit:
-    - `rc_flush()` + store ra=pc+4 in ctx
+ 1. `dbt_pretranslate()` — worklist-based pre-translation with:
+    - **Intrinsics-first**: all intrinsic stubs cached before any
+      function pretranslation (leaves first, eliminates ordering races)
+    - **Callee-first**: recursive pretranslation of call targets before
+      translating callers (ensures cache residency for inline CALL)
+    - **Scan-past-JAL**: worklist scanner continues past JAL rd=1
+      (function calls) to discover ALL call targets in a block, not
+      just the first — critical for functions with multiple internal calls
+    - **Visited set**: 4096-entry hash prevents infinite loops during
+      recursive pretranslation across cached intermediate blocks
+ 2. 4-way set-associative cache — eliminates hash collisions that
+    previously prevented inline CALL decisions at translate time
+ 3. `try_emit_inline_call()` — shared inline CALL helper, callable
+    from JAL handler, LUI+JALR fusion, and AUIPC+JALR fusion:
+    - `rc_flush()` + store ra=return_pc in ctx
     - `emit_ras_push(1)` — poison RAS so callee's probe mismatches
     - `CALL rel32` to callee's native code
-    - `CMP [rbx+CTX_NEXT_PC], pc+4` — check callee returned normally
-    - `JNE cold_stub` → cold stub emits `RET` to dispatch loop
-    - `rc_invalidate()` — callee may have clobbered any register
- 4. The entire iter() loop body stays in one translated block.
+    - `CMP [rbx+CTX_NEXT_PC], return_pc` — check callee returned normally
+    - `JNE cold_stub` → cold stub stores diagnostics + `RET` to dispatch
+    - `rc_invalidate_reload()` — callee may have clobbered any register
+ 4. Result: zero cold exits, disp=2 (entry + exit only).
+    The entire iter() loop body runs in one trampoline call.
 
 **1c-vii. Native intrinsic stubs** — ✅ COMPLETE
 
@@ -756,34 +774,35 @@ Build toolchain:
  - `rv_emit_tier2_call()` — emits a0/a1/a2 setup + JAL ra,target
  - `pretranslate_tier2()` — registers intrinsics + pre-translates all entries
 
-Benchmark (BENCH030-042, cached path vs AST eval baseline):
- - cat(rand,rand): 0.50us (tier2=1, ecalls=2, ic=10K) vs 0.51us native
- - strlen(cat(rand,rand)): 0.52us (tier2=2, ic=30K) vs 0.61us native
- - strcat(rand,rand): 0.49us (tier2=1, ic=40K) vs 0.55us native
- - iter(3 elems, X): 0.49us vs 0.90us native (**beats native**)
- - iter(5 elems, X): 0.66us vs 0.38us native (1.7x)
- - iter(5 elems, add(##,1)): 0.79us vs 1.92us native (**beats native**)
- - iter(7 elems, X): 0.82us vs 0.48us native (1.7x)
- - iter(10 single-char, X): 5.47us vs 0.59us native (9.3x — residual jitter)
- - iter(10 two-char, X): 1.13us vs 0.64us native (1.8x)
- - iter(15 elems, X): 2.77us vs 0.79us native (3.5x)
- - iter(20 elems, X): 2.46us vs 1.02us native (2.4x)
+Benchmark (BENCH030-042, cached path vs AST eval baseline, ce=0, disp=2):
+ - cat(rand,rand): 0.52us (tier2=1) vs 0.50us native
+ - strlen(cat(rand,rand)): 0.64us (tier2=2) vs 0.61us native
+ - strcat(rand,rand): 0.51us (tier2=1) vs 0.53us native
+ - iter(3 elems, X): 0.66us vs 0.91us native (**1.4x faster**)
+ - iter(5 elems, X): 0.99us vs 0.39us native (2.5x)
+ - iter(5 elems, add(##,1)): 1.60us vs 2.07us native (**1.3x faster**)
+ - iter(7 elems, X): 1.34us vs 0.50us native (2.7x)
+ - iter(10 single-char, X): 9.25us vs 0.63us native (14.6x — anomalous)
+ - iter(10 two-char, X): 2.05us vs 0.64us native (3.2x)
+ - iter(15 elems, X): 4.45us vs 0.85us native (5.2x)
+ - iter(20 elems, X): 4.69us vs 1.13us native (4.2x)
 
-The 3-element iter and computation-in-loop cases **beat native eval**
-because native re-parses on every call while the JIT compiles once.
+Zero cold exits.  Dispatch count constant at 2 (entry + ECALL exit).
+The entire iter loop body runs inside one trampoline call — no
+per-element dispatch overhead.  Inline CALL pipeline ensures all
+blob function calls (SPLIT_TOKEN, WORDS, satoi, sitoa, intrinsics)
+use x86 CALL/RET discipline with correct stack pairing.
 
-Native CALL continuation (`ic=` column) keeps the entire loop body in
-one translated x86-64 block. Pre-translated Tier 2 functions are called
-via CALL rel32, and the callee's RET returns inline. The `ic` counter
-confirms inline calls fire per-iteration (ic grows linearly with
-iterations × Tier 2 calls per iteration).
+iter(3) and iter with computation **beat native eval** because native
+re-parses on every call while the JIT compiles once.
 
-**Residual alignment sensitivity**. BENCH037 (10 single-char elements)
-still shows variance (5-9x) between runs. The loop body is now one
-block (native CALL continuation works), but the translated RV64
-byte-loop code inside Tier 2 functions still has microarchitectural
-jitter. Intrinsic stubs (1c-vii) would eliminate this by replacing
-RV64 byte loops with native x86-64 sequences.
+**BENCH037 anomaly**. iter(10, single-char X) = 9.25us is non-monotonic
+— slower than iter(15) at 4.45us and iter(20) at 4.69us. The dispatch
+count is 2 (same as all iter variants), so this is not a dispatch
+overhead issue. The per-element work cost for single-char elements
+with exactly 10 elements hits some pathological case — possibly
+icache alignment, JIT code buffer address effects, or the
+SPLIT_TOKEN byte-loop hot path. Under investigation.
 
 EXTRACT and WORDS are wired directly into iter()'s internal element
 extraction and word counting, eliminating all ECALL overhead from
@@ -804,10 +823,19 @@ color or Unicode; it just needs to know the function exists in the
 blob.  This is the same pattern as Tier 1 native ops (add/sub/mul)
 but for string operations.
 
-Next candidates for intrinsic registration:
- - `co_extract`, `co_splice`, `co_insert_word` (already in blob,
-   need wrapper + signature pattern)
- - `co_setunion`, `co_setdiff`, `co_setinter` (set operations)
+Current intrinsic coverage (30 of 32 slots used):
+ - Block-level: rv64_slen, rv64_scopy, memcpy, memcmp, memset, memswap
+ - Batch 1 co_*: co_first, co_rest, co_last, co_repeat, co_words_count,
+   co_pos, co_mid, co_trim, co_member, co_delete, co_sort_words,
+   co_extract, co_setunion, co_setdiff, co_setinter
+ - Batch 2 co_*: co_cluster_count, co_tolower, co_toupper, co_reverse,
+   co_escape, co_left, co_right, co_compress, co_lpos
+
+Next candidates for Tier 2 wrappers + intrinsics:
+ - `edit()`, `match()`, `regmatch()` (regex-based — need Ragel or PCRE)
+ - `ljust()`/`rjust()`/`center()` (padding — straightforward co_*)
+ - `translate()`, `scramble()` (character mapping)
+ - `foreach()` (loop variant — compiler support needed)
 
 **ECALL (escape hatch)**: Only for operations needing host state —
 database access, network I/O, @pemit, object manipulation.
