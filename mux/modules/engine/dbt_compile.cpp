@@ -1352,69 +1352,10 @@ static bool try_fold(const std::string &func_name,
         return true;
     }
 
-    if (upper == "MID" && nargs == 3) {
-        const std::string &s = args[0];
-        long start = mux_atol(u8(args[1]));
-        long len = mux_atol(u8(args[2]));
-        if (start < 0 || len < 0 || static_cast<size_t>(start) >= s.size()) {
-            result = "";
-        } else {
-            result = s.substr(static_cast<size_t>(start), static_cast<size_t>(len));
-        }
-        return true;
-    }
-
-    // --- FIRST(s) / REST(s) / WORDS(s) — space-delimited ---
-    if (upper == "FIRST" && nargs >= 1) {
-        const std::string &s = args[0];
-        size_t pos = s.find(' ');
-        result = (pos == std::string::npos) ? s : s.substr(0, pos);
-        return true;
-    }
-    if (upper == "REST" && nargs >= 1) {
-        const std::string &s = args[0];
-        size_t pos = s.find(' ');
-        if (pos == std::string::npos) { result = ""; }
-        else {
-            // Skip leading spaces after first word.
-            size_t start = s.find_first_not_of(' ', pos);
-            result = (start == std::string::npos) ? "" : s.substr(start);
-        }
-        return true;
-    }
-    if (upper == "WORDS" && nargs >= 1) {
-        const std::string &s = args[0];
-        if (s.empty()) { result = "0"; return true; }
-        long count = 0;
-        bool in_word = false;
-        for (char c : s) {
-            if (c == ' ') { in_word = false; }
-            else if (!in_word) { in_word = true; count++; }
-        }
-        result = format_long(count);
-        return true;
-    }
-
-    // --- POS(pattern, string) ---
-    if (upper == "POS" && nargs == 2) {
-        size_t pos = args[1].find(args[0]);
-        result = (pos == std::string::npos) ? "0"
-                 : format_long(static_cast<long>(pos + 1));
-        return true;
-    }
-
-    // --- STRMATCH(s, pattern) — wildcard match ---
-    // Only fold exact equality (no wildcards in constant patterns).
-    if (upper == "STRMATCH" && nargs == 2) {
-        // If pattern has no wildcards, it's just string comparison.
-        if (args[1].find('*') == std::string::npos
-            && args[1].find('?') == std::string::npos) {
-            result = (args[0] == args[1]) ? "1" : "0";
-            return true;
-        }
-        // Don't fold wildcards — too complex for compile time.
-        return false;
-    }
+    // String functions (MID, FIRST, REST, WORDS, POS, STRMATCH) are
+    // NOT constant-folded — their edge-case behavior (negative indices,
+    // custom delimiters, Unicode graphemes, wildcard matching) is too
+    // complex to replicate here.  Let them go through ECALL.
 
     return false;
 }
@@ -4760,6 +4701,25 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
 
     *bufc = '\0';
     size_t result_len = static_cast<size_t>(bufc - buff);
+
+    // DIAGNOSTIC: log specific function results.
+    {
+        const char *fn = reinterpret_cast<const char *>(fp->name);
+        if (fn[0] == 'F' || fn[0] == 'M' || fn[0] == 'E' || fn[0] == 'L') {
+            static int fn_log = 0;
+            if (fn_log < 50) {
+                fprintf(stderr, "[fn #%d] %s(%d) => %.60s",
+                    ++fn_log, fn, nfargs,
+                    reinterpret_cast<const char *>(buff));
+                for (int di = 0; di < nfargs && di < 4; di++) {
+                    fprintf(stderr, "  a%d=%.30s", di,
+                        reinterpret_cast<const char *>(fargs[di]));
+                }
+                fprintf(stderr, "\n");
+            }
+        }
+    }
+
     if (result_len >= out_size) result_len = out_size - 1;
     memcpy(ec->memory + out_addr, buff, result_len);
     ec->memory[out_addr + result_len] = '\0';
