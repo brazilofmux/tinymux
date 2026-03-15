@@ -51,14 +51,35 @@ patches_bin/
 get_patch.bat
 get_xdelta3.bat
 
-# Test output
+# Build artifacts — compiled binaries and generated files
+mux/announce/announce
+mux/script/mux
+mux/src/tools/announce
+mux/src/tools/rv64strip
+mux/rv64/src/softlib.elf
+mux/modules/engine/*.d
+mux/lib/color_ops.c
+
+# Test output and runtime
 testcases/smoke.log
 testcases/smoke.conf
 testcases/alias.conf
 testcases/compat.conf
 testcases/netmux.pid
+testcases/netmux.log
+testcases/shutdown.status
+testcases/smoke.pid
+testcases/smoke.d/
+testcases/bin
+testcases/text/
+testcases/logs/
 testcases/SmokeMUX-*.log
 testcases/tools/smoke.conf
+testcases/*.bak
+
+# External project symlinks
+riscv
+slow-32
 
 # Claude Code
 .claude/
