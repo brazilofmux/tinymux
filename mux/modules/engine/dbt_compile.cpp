@@ -2848,6 +2848,29 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                 return h.emit_sconst(addr, "");
             }
 
+            // %s/%o/%p/%a — pronouns.  Emit ECALL to subj/obj/poss/aposs(%#).
+            if (c == 's' || c == 'S' || c == 'o' || c == 'O'
+                || c == 'p' || c == 'P' || c == 'a' || c == 'A') {
+                const char *fname;
+                switch (c) {
+                case 's': case 'S': fname = "SUBJ";  break;
+                case 'o': case 'O': fname = "OBJ";   break;
+                case 'p': case 'P': fname = "POSS";  break;
+                case 'a': case 'A': fname = "APOSS"; break;
+                default: fname = "SUBJ"; break;
+                }
+                // Argument is the enactor dbref from SUBST slot.
+                uint64_t enactor_addr = rv_compiler::SUBST_BASE
+                    + rv_compiler::SUBST_ENACTOR * rv_compiler::SUBST_SLOT;
+                int enactor_val = h.emit_sconst(enactor_addr, "");
+                int fidx = engine_api_lookup(fname);
+                int args[1] = { enactor_val };
+                int result = h.emit_call(TY_STRING, fidx, args, 1);
+                h.ecalls++;
+                h.needs_jit = true;
+                return result;
+            }
+
             // %= — attribute access.
             // %=<name> reads attribute from executor via ECALL xget(executor, name).
             // %=<0> through %=<9> are extended carg references.

@@ -2044,6 +2044,10 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
                     }
                     continue;
                 }
+                if (c == 's' || c == 'S') { i++; continue; }
+                if (c == 'o' || c == 'O') { i++; continue; }
+                if (c == 'p' || c == 'P') { i++; continue; }
+                if (c == 'a' || c == 'A') { i++; continue; }
                 if (c == '=') {
                     i++;
                     // Skip %=<...> form.
