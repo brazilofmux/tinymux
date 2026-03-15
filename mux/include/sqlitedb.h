@@ -234,9 +234,11 @@ public:
         int         tier2_calls;
         int         native_ops;
     };
-    bool CodeCacheGet(const char *source_hash, const char *blob_hash,
+    bool CodeCacheGet(const char *source_hash, int source_hash_len,
+                      const char *blob_hash, int blob_hash_len,
                       CodeCacheRecord &rec);
-    bool CodeCachePut(const char *source_hash, const char *blob_hash,
+    bool CodeCachePut(const char *source_hash, int source_hash_len,
+                      const char *blob_hash, int blob_hash_len,
                       const void *memory_blob, int memory_len,
                       int64_t out_addr, int needs_jit,
                       int folds, int ecalls, int tier2_calls, int native_ops);

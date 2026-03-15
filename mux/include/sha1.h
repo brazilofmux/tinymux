@@ -6,6 +6,11 @@
 #ifndef SHA1_H
 #define SHA1_H
 
+LIBMUX_API bool mux_sha1_digest(const UTF8 *data[], const size_t lens[], int count,
+                                uint8_t *out_digest, unsigned int *out_len);
+
+#ifndef UNIX_DIGEST
+
 typedef struct
 {
     uint64_t   nTotal;
@@ -19,5 +24,7 @@ typedef struct
 LIBMUX_API void MUX_SHA1_Init(MUX_SHA_CTX *p);
 LIBMUX_API void MUX_SHA1_Update(MUX_SHA_CTX *p, const UTF8 *buf, size_t n);
 LIBMUX_API void MUX_SHA1_Final(uint8_t md[MUX_SHA1_DIGEST_LENGTH], MUX_SHA_CTX *p);
+
+#endif
 
 #endif // SHA1_H

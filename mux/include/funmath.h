@@ -94,6 +94,4 @@ XFUNCTION(fun_crc32);
 XFUNCTION(fun_sha1);
 XFUNCTION(fun_digest);
 
-bool mux_digest_sha1(const UTF8 *data[], const size_t lens[], int count, uint8_t *out_digest, unsigned int *out_len);
-
 #endif // !FUNMATH_H

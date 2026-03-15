@@ -15,10 +15,6 @@
 #include "websocket.h"
 #include "sha1.h"
 
-#ifdef UNIX_DIGEST
-#include <openssl/sha.h>
-#endif
-
 #include <cstring>
 #include <algorithm>
 
@@ -254,26 +250,19 @@ bool ws_process_handshake(DESC *d, const char *data, size_t len)
     // Compute accept key: SHA1(client_key + GUID), then base64.
     //
     std::string acceptInput = wsKey + WS_GUID;
+    const UTF8 *parts[1] = {
+        reinterpret_cast<const UTF8 *>(acceptInput.c_str())
+    };
+    size_t lens[1] = { acceptInput.size() };
+    uint8_t digest[20];
+    unsigned int digest_len = 0;
+    if (!mux_sha1_digest(parts, lens, 1, digest, &digest_len) || digest_len != 20)
+    {
+        return false;
+    }
 
-#ifdef UNIX_DIGEST
-    uint8_t digest[SHA_DIGEST_LENGTH];
-    SHA1(reinterpret_cast<const unsigned char *>(acceptInput.c_str()),
-         acceptInput.size(), digest);
-
-    char acceptKey[29]; // ceil(SHA_DIGEST_LENGTH * 4/3) + 1 = 29
-    base64_encode(digest, SHA_DIGEST_LENGTH, acceptKey);
-#else
-    uint8_t digest[MUX_SHA1_DIGEST_LENGTH];
-    MUX_SHA_CTX sha;
-    MUX_SHA1_Init(&sha);
-    MUX_SHA1_Update(&sha,
-        reinterpret_cast<const UTF8 *>(acceptInput.c_str()),
-        acceptInput.size());
-    MUX_SHA1_Final(digest, &sha);
-
-    char acceptKey[29]; // ceil(MUX_SHA1_DIGEST_LENGTH * 4/3) + 1 = 29
-    base64_encode(digest, MUX_SHA1_DIGEST_LENGTH, acceptKey);
-#endif
+    char acceptKey[29]; // ceil(20 * 4/3) + 1 = 29
+    base64_encode(digest, digest_len, acceptKey);
 
     // Send 101 Switching Protocols.
     //

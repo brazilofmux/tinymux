@@ -1623,12 +1623,15 @@ bool CSQLiteDB::ConnlogByAddr(const UTF8 *ipaddr, int limit, ConnlogCallback cb)
 // Code cache operations
 // ---------------------------------------------------------------------------
 
-bool CSQLiteDB::CodeCacheGet(const char *source_hash, const char *blob_hash,
+bool CSQLiteDB::CodeCacheGet(const char *source_hash, int source_hash_len,
+                              const char *blob_hash, int blob_hash_len,
                               CodeCacheRecord &rec)
 {
     sqlite3_reset(m_stmtCodeCacheGet);
-    sqlite3_bind_text(m_stmtCodeCacheGet, 1, source_hash, -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(m_stmtCodeCacheGet, 2, blob_hash, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(m_stmtCodeCacheGet, 1, source_hash, source_hash_len,
+                      SQLITE_TRANSIENT);
+    sqlite3_bind_text(m_stmtCodeCacheGet, 2, blob_hash, blob_hash_len,
+                      SQLITE_TRANSIENT);
 
     int rc = sqlite3_step(m_stmtCodeCacheGet);
     if (SQLITE_ROW != rc)
@@ -1650,15 +1653,18 @@ bool CSQLiteDB::CodeCacheGet(const char *source_hash, const char *blob_hash,
     return true;
 }
 
-bool CSQLiteDB::CodeCachePut(const char *source_hash, const char *blob_hash,
+bool CSQLiteDB::CodeCachePut(const char *source_hash, int source_hash_len,
+                              const char *blob_hash, int blob_hash_len,
                               const void *memory_blob, int memory_len,
                               int64_t out_addr, int needs_jit,
                               int folds, int ecalls, int tier2_calls,
                               int native_ops)
 {
     sqlite3_reset(m_stmtCodeCachePut);
-    sqlite3_bind_text(m_stmtCodeCachePut, 1, source_hash, -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(m_stmtCodeCachePut, 2, blob_hash, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(m_stmtCodeCachePut, 1, source_hash, source_hash_len,
+                      SQLITE_TRANSIENT);
+    sqlite3_bind_text(m_stmtCodeCachePut, 2, blob_hash, blob_hash_len,
+                      SQLITE_TRANSIENT);
     sqlite3_bind_blob(m_stmtCodeCachePut, 3, memory_blob, memory_len, SQLITE_TRANSIENT);
     sqlite3_bind_int64(m_stmtCodeCachePut, 4, out_addr);
     sqlite3_bind_int(m_stmtCodeCachePut, 5, needs_jit);

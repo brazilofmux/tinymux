@@ -7,6 +7,80 @@
 #include "autoconf.h"
 #include "config.h"
 #include "core.h"
+#include "sha1.h"
+
+#ifdef UNIX_DIGEST
+#include <openssl/evp.h>
+#endif
+
+bool mux_sha1_digest(const UTF8 *data[], const size_t lens[], int count,
+                     uint8_t *out_digest, unsigned int *out_len)
+{
+#ifdef UNIX_DIGEST
+    EVP_MD_CTX *ctx =
+    #if HAVE_EVP_MD_CTX_NEW
+        EVP_MD_CTX_new();
+    #else
+        EVP_MD_CTX_create();
+    #endif
+
+    if (!ctx)
+    {
+        return false;
+    }
+
+    if (!EVP_DigestInit_ex(ctx, EVP_sha1(), NULL))
+    {
+    #if HAVE_EVP_MD_CTX_NEW
+        EVP_MD_CTX_free(ctx);
+    #else
+        EVP_MD_CTX_destroy(ctx);
+    #endif
+        return false;
+    }
+
+    for (int i = 0; i < count; ++i)
+    {
+        if (!EVP_DigestUpdate(ctx, data[i], lens[i]))
+        {
+        #if HAVE_EVP_MD_CTX_NEW
+            EVP_MD_CTX_free(ctx);
+        #else
+            EVP_MD_CTX_destroy(ctx);
+        #endif
+            return false;
+        }
+    }
+
+    if (!EVP_DigestFinal_ex(ctx, out_digest, out_len))
+    {
+    #if HAVE_EVP_MD_CTX_NEW
+        EVP_MD_CTX_free(ctx);
+    #else
+        EVP_MD_CTX_destroy(ctx);
+    #endif
+        return false;
+    }
+
+    #if HAVE_EVP_MD_CTX_NEW
+        EVP_MD_CTX_free(ctx);
+    #else
+        EVP_MD_CTX_destroy(ctx);
+    #endif
+
+#else
+    MUX_SHA_CTX shac;
+    MUX_SHA1_Init(&shac);
+    for (int i = 0; i < count; ++i)
+    {
+        MUX_SHA1_Update(&shac, data[i], lens[i]);
+    }
+    MUX_SHA1_Final(out_digest, &shac);
+    *out_len = MUX_SHA1_DIGEST_LENGTH;
+#endif
+
+    return true;
+}
 
 #ifndef UNIX_DIGEST
 

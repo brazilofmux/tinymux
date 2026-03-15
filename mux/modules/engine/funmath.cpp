@@ -7,6 +7,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "sha1.h"
 
 static const long nMaximums[10] =
 {
@@ -2983,55 +2984,6 @@ void safe_hex(uint8_t md[], size_t len, bool bUpper, UTF8 *buff, UTF8 **bufc)
     safe_str(buf.data(), buff, bufc);
 }
 
-bool mux_digest_sha1(const UTF8 *data[], const size_t lens[], int count, uint8_t *out_digest, unsigned int *out_len)
-{
-#ifdef UNIX_DIGEST
-    EVP_MD_CTX *ctx =
-    #if HAVE_EVP_MD_CTX_NEW
-        EVP_MD_CTX_new();
-    #else
-        EVP_MD_CTX_create();
-    #endif
-
-    if (!ctx)
-        return false;
-
-    if (!EVP_DigestInit_ex(ctx, EVP_sha1(), NULL)) {
-        EVP_MD_CTX_free(ctx);
-        return false;
-    }
-
-    for (int i = 0; i < count; ++i) {
-        if (!EVP_DigestUpdate(ctx, data[i], lens[i])) {
-            EVP_MD_CTX_free(ctx);
-            return false;
-        }
-    }
-
-    if (!EVP_DigestFinal_ex(ctx, out_digest, out_len)) {
-        EVP_MD_CTX_free(ctx);
-        return false;
-    }
-
-    #if HAVE_EVP_MD_CTX_NEW
-        EVP_MD_CTX_free(ctx);
-    #else
-        EVP_MD_CTX_destroy(ctx);
-    #endif
-
-#else
-    MUX_SHA_CTX shac;
-    MUX_SHA1_Init(&shac);
-    for (int i = 0; i < count; ++i) {
-        MUX_SHA1_Update(&shac, data[i], lens[i]);
-    }
-    MUX_SHA1_Final(out_digest, &shac);
-    *out_len = MUX_SHA1_DIGEST_LENGTH;
-#endif
-
-    return true;
-}
-
 void sha1_helper(int nfargs, UTF8 *fargs[], UTF8 *buff, UTF8 **bufc)
 {
 #ifdef UNIX_DIGEST
@@ -3045,7 +2997,7 @@ void sha1_helper(int nfargs, UTF8 *fargs[], UTF8 *buff, UTF8 **bufc)
     {
         lens[i] = strlen(reinterpret_cast<const char *>(fargs[i]));
     }
-    if (!mux_digest_sha1(const_cast<const UTF8 **>(fargs), lens.data(), nfargs, md, &len))
+    if (!mux_sha1_digest(const_cast<const UTF8 **>(fargs), lens.data(), nfargs, md, &len))
     {
         safe_str(T("#-1 UNSUPPORTED"), buff, bufc);
         return;

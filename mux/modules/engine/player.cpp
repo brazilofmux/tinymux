@@ -9,6 +9,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "sha1.h"
 
 #define NUM_GOOD    4   // # of successful logins to save data for.
 #define NUM_BAD     3   // # of failed logins to save data for.
@@ -457,7 +458,7 @@ const UTF8 *p6h_vaht_crypt(const UTF8 *szPassword, const UTF8 *szSetting)
         unsigned int len = 0;
         const UTF8 *parts[] = { szPassword };
         const size_t lens[] = { strlen(reinterpret_cast<const char *>(szPassword)) };
-        if (mux_digest_sha1(parts, lens, 1, md, &len))
+        if (mux_sha1_digest(parts, lens, 1, md, &len))
         {
             //          1         2         3         4         5         6
             // 123456789012345678901234567890123456789012345678901234567890123456
@@ -624,7 +625,7 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
     unsigned int len = 0;
     const UTF8 *parts[] = { pSaltField, szPassword };
     const size_t lens[] = { nSaltField, strlen(reinterpret_cast<const char *>(szPassword)) };
-    if (!mux_digest_sha1(parts, lens, 2, md, &len))
+    if (!mux_sha1_digest(parts, lens, 2, md, &len))
     {
         return szFail;
     }

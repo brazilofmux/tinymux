@@ -50,6 +50,7 @@
 #include "dbt_decoder.h"
 #include "engine_api.h"
 #include "hir.h"
+#include "sha1.h"
 
 #include "../../rv64/rv64blob.h"
 
@@ -80,6 +81,43 @@ static struct {
     std::map<std::string, tier2_entry> funcs;  // name → entry
     uint64_t guest_base;                 // where code is loaded in guest memory
 } s_tier2 = { false, {}, {}, {}, 0 };
+
+// Blob content hash for cache invalidation.
+static std::string s_blob_version = "none";
+
+static std::string sha1_hex_parts(const void *const *parts, const size_t *sizes,
+                                  int count) {
+    static constexpr unsigned int SHA1_DIGEST_LEN = 20;
+    std::vector<const UTF8 *> digest_parts;
+    std::vector<size_t> digest_sizes;
+    digest_parts.reserve(count);
+    digest_sizes.reserve(count);
+
+    for (int i = 0; i < count; i++) {
+        if (parts[i] && sizes[i] > 0) {
+            digest_parts.push_back(reinterpret_cast<const UTF8 *>(parts[i]));
+            digest_sizes.push_back(sizes[i]);
+        }
+    }
+
+    uint8_t digest[SHA1_DIGEST_LEN];
+    unsigned int digest_len = 0;
+    if (!mux_sha1_digest(digest_parts.data(), digest_sizes.data(),
+                         static_cast<int>(digest_parts.size()),
+                         digest, &digest_len)
+        || digest_len != SHA1_DIGEST_LEN) {
+        return "none";
+    }
+
+    static const char hex[] = "0123456789abcdef";
+    std::string out;
+    out.resize(SHA1_DIGEST_LEN * 2);
+    for (size_t i = 0; i < SHA1_DIGEST_LEN; i++) {
+        out[i * 2] = hex[digest[i] >> 4];
+        out[i * 2 + 1] = hex[digest[i] & 0x0F];
+    }
+    return out;
+}
 
 // Map MUX function names (uppercase) to Tier 2 blob entry names.
 // The blob uses rv64_ prefixed names; MUX uses plain uppercase.
@@ -238,6 +276,19 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
     }
 
     s_tier2.loaded = true;
+    const void *parts[] = {
+        &hdr,
+        s_tier2.code.data(),
+        s_tier2.rodata.empty() ? nullptr : s_tier2.rodata.data(),
+        entries.empty() ? nullptr : entries.data(),
+    };
+    const size_t sizes[] = {
+        sizeof(hdr),
+        s_tier2.code.size(),
+        s_tier2.rodata.size(),
+        entries.size() * sizeof(rv64_blob_entry),
+    };
+    s_blob_version = sha1_hex_parts(parts, sizes, 4);
     return true;
 }
 
@@ -422,23 +473,6 @@ static void tier2_install(std::vector<uint8_t> &memory, uint64_t guest_base) {
                    s_tier2.rodata.data(), s_tier2.rodata.size());
         }
     }
-}
-
-// ---------------------------------------------------------------
-// Blob version for cache invalidation
-// ---------------------------------------------------------------
-
-// Simple blob version: size + entry count.  If the blob changes
-// (new functions, recompiled at different offsets), this changes.
-//
-static std::string s_blob_version;
-
-static std::string compute_blob_version() {
-    if (!s_tier2.loaded || s_tier2.code.empty()) return "none";
-    char buf[64];
-    snprintf(buf, sizeof(buf), "%zu:%zu",
-             s_tier2.code.size(), s_tier2.funcs.size());
-    return buf;
 }
 
 // ---------------------------------------------------------------
@@ -4127,7 +4161,6 @@ static void tier2_lazy_init() {
     };
     for (int i = 0; paths[i]; i++) {
         if (tier2_load(paths[i], rv_compiler::BLOB_BASE)) {
-            s_blob_version = compute_blob_version();
             return;
         }
     }
@@ -4359,15 +4392,27 @@ static compiled_program reconstruct_from_cache(
     return prog;
 }
 
+static std::string compile_cache_key(const UTF8 *expr, size_t nLen, int eval) {
+    // Include every eval flag that changes compile-time semantics.
+    int eval_key = eval & (EV_FCHECK | EV_FMAND | EV_STRIP_CURLY);
+
+    std::string key(reinterpret_cast<const char *>(expr), nLen);
+    key += '\0';
+    key += static_cast<char>(eval_key & 0xFF);
+    key += static_cast<char>((eval_key >> 8) & 0xFF);
+    return key;
+}
+
 // Persist a compiled_program to the SQLite code cache.
 //
-static void store_to_sqlite_cache(const UTF8 *expr, size_t nLen,
+static void store_to_sqlite_cache(const std::string &key,
                                    const compiled_program &prog) {
     if (!g_pSQLiteBackend) return;
     CSQLiteDB &db = g_pSQLiteBackend->GetDB();
-    std::string src_key(reinterpret_cast<const char *>(expr), nLen);
     int persist_len = static_cast<int>(rv_compiler::FARGS_LIMIT);
-    db.CodeCachePut(src_key.c_str(), s_blob_version.c_str(),
+    db.CodeCachePut(key.data(), static_cast<int>(key.size()),
+                     s_blob_version.data(),
+                     static_cast<int>(s_blob_version.size()),
                      prog.memory.data(), persist_len,
                      static_cast<int64_t>(prog.out_addr),
                      prog.needs_jit ? 1 : 0,
@@ -4381,13 +4426,7 @@ static void store_to_sqlite_cache(const UTF8 *expr, size_t nLen,
 //
 static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
                                          int eval = EV_FCHECK | EV_EVAL) {
-    // Include eval flags that affect compilation in the cache key.
-    // Only EV_FCHECK and EV_FMAND matter for unknown-function resolution.
-    int eval_key = eval & (EV_FCHECK | EV_FMAND);
-    std::string key(reinterpret_cast<const char *>(expr), nLen);
-    key += '\0';
-    key += static_cast<char>(eval_key & 0xFF);
-    key += static_cast<char>((eval_key >> 8) & 0xFF);
+    std::string key = compile_cache_key(expr, nLen, eval);
 
     auto it = s_compile_cache.find(key);
     if (it != s_compile_cache.end()) {
@@ -4404,7 +4443,9 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
     if (g_pSQLiteBackend && nLen >= COMPILE_CACHE_MIN_LEN) {
         CSQLiteDB &db = g_pSQLiteBackend->GetDB();
         CSQLiteDB::CodeCacheRecord rec;
-        if (db.CodeCacheGet(key.c_str(), s_blob_version.c_str(), rec)) {
+        if (db.CodeCacheGet(key.data(), static_cast<int>(key.size()),
+                            s_blob_version.data(),
+                            static_cast<int>(s_blob_version.size()), rec)) {
             // rec.memory_blob points into SQLite statement memory.
             // reconstruct_from_cache copies it; then we must release
             // the statement to avoid holding a read lock.
@@ -4421,7 +4462,7 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
 
         // Persist to SQLite for future restarts.
         if (nLen >= COMPILE_CACHE_MIN_LEN) {
-            store_to_sqlite_cache(expr, nLen, prog);
+            store_to_sqlite_cache(key, prog);
         }
     }
 
@@ -4996,7 +5037,7 @@ FUNCTION(fun_rvbench)
     // Invalidate the compile cache entry for this expression first
     // so the first iteration is a genuine miss.
     {
-        std::string key(reinterpret_cast<const char *>(expr), nLen);
+        std::string key = compile_cache_key(expr, nLen, EV_FMAND | EV_EVAL);
         auto cit = s_compile_cache.find(key);
         if (cit != s_compile_cache.end()) {
             if (s_dbt_last_memory == cit->second.prog.memory.data()) {
