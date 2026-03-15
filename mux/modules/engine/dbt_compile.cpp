@@ -2698,13 +2698,27 @@ literal_strcat:
     }
 
     // Validate argument count at compile time.  If the function
-    // requires more args than we have, return empty — don't emit
-    // an ECALL that would crash the fun_* handler.
+    // requires more args than we have, return the same error string
+    // the AST evaluator would — not empty.
     if (fidx > 0 && fidx < ENGINE_API_MAX_FUNCS) {
         FUN *fp = engine_api_table[fidx];
         if (fp && nargs < fp->minArgs) {
-            uint64_t addr = rc.pool_str("");
-            return h.emit_sconst(addr, "");
+            char errbuf[256];
+            if (fp->minArgs == fp->maxArgs) {
+                snprintf(errbuf, sizeof(errbuf),
+                    "#-1 FUNCTION (%s) EXPECTS %d ARGUMENTS",
+                    upper.c_str(), fp->minArgs);
+            } else if (fp->minArgs + 1 == fp->maxArgs) {
+                snprintf(errbuf, sizeof(errbuf),
+                    "#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS",
+                    upper.c_str(), fp->minArgs, fp->maxArgs);
+            } else {
+                snprintf(errbuf, sizeof(errbuf),
+                    "#-1 FUNCTION (%s) EXPECTS BETWEEN %d AND %d ARGUMENTS",
+                    upper.c_str(), fp->minArgs, fp->maxArgs);
+            }
+            uint64_t addr = rc.pool_str(errbuf);
+            return h.emit_sconst(addr, errbuf);
         }
     }
 
@@ -2763,11 +2777,33 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
         // ## (itext), #@ (inum), #$ (switch token).
         // Resolved from iter/switch context set during lowering.
         if (node->text.size() >= 2 && node->text[0] == '#') {
-            if (node->text[1] == '#' && iter_itext_val >= 0) {
-                return iter_itext_val;
+            if (node->text[1] == '#') {
+                if (iter_itext_val >= 0) {
+                    return iter_itext_val;
+                }
+                // Not inside JIT iter — emit ECALL itext(0).
+                uint64_t d_addr = rc.pool_str("0");
+                int d_val = h.emit_sconst(d_addr, "0");
+                int itext_idx = engine_api_lookup("ITEXT");
+                int args[1] = { d_val };
+                int result = h.emit_call(TY_STRING, itext_idx, args, 1);
+                h.ecalls++;
+                h.needs_jit = true;
+                return result;
             }
-            if (node->text[1] == '@' && iter_inum1_val >= 0) {
-                return iter_inum1_val;
+            if (node->text[1] == '@') {
+                if (iter_inum1_val >= 0) {
+                    return iter_inum1_val;
+                }
+                // Not inside JIT iter — emit ECALL inum(0).
+                uint64_t d_addr = rc.pool_str("0");
+                int d_val = h.emit_sconst(d_addr, "0");
+                int inum_idx = engine_api_lookup("INUM");
+                int args[1] = { d_val };
+                int result = h.emit_call(TY_STRING, inum_idx, args, 1);
+                h.ecalls++;
+                h.needs_jit = true;
+                return result;
             }
         }
 
@@ -2783,7 +2819,8 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                 int idx = c - '0';
                 uint64_t carg_addr = rv_compiler::CARGS_BASE
                                    + static_cast<uint64_t>(idx) * rv_compiler::CARGS_SLOT;
-                return h.emit_sconst(carg_addr, "");
+                h.needs_jit = true;
+                return h.emit_sref(carg_addr);
             }
 
             // %b = space, %r = newline, %t = tab.
@@ -2805,7 +2842,7 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                 uint64_t addr = rv_compiler::SUBST_BASE
                     + rv_compiler::SUBST_ENACTOR * rv_compiler::SUBST_SLOT;
                 h.needs_jit = true;
-                return h.emit_sconst(addr, "");
+                return h.emit_sref(addr);
             }
 
             // %! = executor dbref.  Runtime value at SUBST slot 1.
@@ -2813,7 +2850,7 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                 uint64_t addr = rv_compiler::SUBST_BASE
                     + rv_compiler::SUBST_EXECUTOR * rv_compiler::SUBST_SLOT;
                 h.needs_jit = true;
-                return h.emit_sconst(addr, "");
+                return h.emit_sref(addr);
             }
 
             // %n/%N = enactor name.  Runtime value at SUBST slot 2.
@@ -2821,7 +2858,7 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                 uint64_t addr = rv_compiler::SUBST_BASE
                     + rv_compiler::SUBST_NAME * rv_compiler::SUBST_SLOT;
                 h.needs_jit = true;
-                return h.emit_sconst(addr, "");
+                return h.emit_sref(addr);
             }
 
             // %l/%L = enactor location.  Runtime value at SUBST slot 3.
@@ -2829,7 +2866,7 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                 uint64_t addr = rv_compiler::SUBST_BASE
                     + rv_compiler::SUBST_LOCATION * rv_compiler::SUBST_SLOT;
                 h.needs_jit = true;
-                return h.emit_sconst(addr, "");
+                return h.emit_sref(addr);
             }
 
             // %c/%x color codes — resolved at compile time.
@@ -2900,7 +2937,7 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
 
                     uint64_t exec_addr = rv_compiler::SUBST_BASE
                         + rv_compiler::SUBST_EXECUTOR * rv_compiler::SUBST_SLOT;
-                    int exec_val = h.emit_sconst(exec_addr, "");
+                    int exec_val = h.emit_sref(exec_addr);
                     uint64_t name_addr = rc.pool_str(attrname);
                     int name_val = h.emit_sconst(name_addr, attrname);
 
@@ -2927,7 +2964,7 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                 // Argument is the enactor dbref from SUBST slot.
                 uint64_t enactor_addr = rv_compiler::SUBST_BASE
                     + rv_compiler::SUBST_ENACTOR * rv_compiler::SUBST_SLOT;
-                int enactor_val = h.emit_sconst(enactor_addr, "");
+                int enactor_val = h.emit_sref(enactor_addr);
                 int fidx = engine_api_lookup(fname);
                 int args[1] = { enactor_val };
                 int result = h.emit_call(TY_STRING, fidx, args, 1);
@@ -2956,7 +2993,8 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                             if (idx < rv_compiler::MAX_CARGS) {
                                 uint64_t addr = rv_compiler::CARGS_BASE
                                     + static_cast<uint64_t>(idx) * rv_compiler::CARGS_SLOT;
-                                return h.emit_sconst(addr, "");
+                                h.needs_jit = true;
+                                return h.emit_sref(addr);
                             }
                             uint64_t addr = rc.pool_str("");
                             return h.emit_sconst(addr, "");
@@ -2965,7 +3003,7 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                         // Attribute access: emit ECALL xget(%!, name).
                         uint64_t exec_addr = rv_compiler::SUBST_BASE
                             + rv_compiler::SUBST_EXECUTOR * rv_compiler::SUBST_SLOT;
-                        int exec_val = h.emit_sconst(exec_addr, "");
+                        int exec_val = h.emit_sref(exec_addr);
                         uint64_t name_addr = rc.pool_str(name);
                         int name_val = h.emit_sconst(name_addr, name);
 
@@ -2992,7 +3030,7 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                         + (rv_compiler::SUBST_QREG0 + rn)
                           * rv_compiler::SUBST_SLOT;
                     h.needs_jit = true;
-                    return h.emit_sconst(addr, "");
+                    return h.emit_sref(addr);
                 }
                 if (r == '<') {
                     // Named register: %q<name>.
@@ -3027,7 +3065,7 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                 uint64_t addr = rv_compiler::SUBST_BASE
                     + rv_compiler::SUBST_LASTCMD * rv_compiler::SUBST_SLOT;
                 h.needs_jit = true;
-                return h.emit_sconst(addr, "");
+                return h.emit_sref(addr);
             }
 
             // %k — moniker.  Runtime value at SUBST slot.
@@ -3035,7 +3073,7 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                 uint64_t addr = rv_compiler::SUBST_BASE
                     + rv_compiler::SUBST_MONIKER * rv_compiler::SUBST_SLOT;
                 h.needs_jit = true;
-                return h.emit_sconst(addr, "");
+                return h.emit_sref(addr);
             }
 
             // %| — piped command output.  Runtime value at SUBST slot.
@@ -3043,7 +3081,7 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                 uint64_t addr = rv_compiler::SUBST_BASE
                     + rv_compiler::SUBST_POUT * rv_compiler::SUBST_SLOT;
                 h.needs_jit = true;
-                return h.emit_sconst(addr, "");
+                return h.emit_sref(addr);
             }
 
             // %+ — number of cargs.  Runtime value at SUBST slot.
@@ -3051,14 +3089,14 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                 uint64_t addr = rv_compiler::SUBST_BASE
                     + rv_compiler::SUBST_NCARGS * rv_compiler::SUBST_SLOT;
                 h.needs_jit = true;
-                return h.emit_sconst(addr, "");
+                return h.emit_sref(addr);
             }
 
             // %: — enactor objid.  Emit ECALL objid(%#).
             if (c == ':') {
                 uint64_t enactor_addr = rv_compiler::SUBST_BASE
                     + rv_compiler::SUBST_ENACTOR * rv_compiler::SUBST_SLOT;
-                int enactor_val = h.emit_sconst(enactor_addr, "");
+                int enactor_val = h.emit_sref(enactor_addr);
                 int objid_idx = engine_api_lookup("OBJID");
                 int args[1] = { enactor_val };
                 int result = h.emit_call(TY_STRING, objid_idx, args, 1);
@@ -4661,13 +4699,25 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
                             uint64_t fargs_addr, int nfargs,
                             uint64_t out_addr, uint64_t out_size) {
     // Validate argument count against function's declared limits.
-    // Prevents crashes from fun_* functions that don't tolerate
-    // wrong argument counts (e.g., accent() called with 0 args
-    // from literal text that the parser sees as a function call).
+    // Return the same error string the AST evaluator would.
     if (nfargs < fp->minArgs) {
-        // Too few arguments — return empty, don't call.
-        ec->memory[out_addr] = '\0';
-        ctx->x[10] = 0;
+        int n;
+        if (fp->minArgs == fp->maxArgs) {
+            n = snprintf(reinterpret_cast<char *>(ec->memory + out_addr),
+                out_size, "#-1 FUNCTION (%s) EXPECTS %d ARGUMENTS",
+                reinterpret_cast<const char *>(fp->name), fp->minArgs);
+        } else if (fp->minArgs + 1 == fp->maxArgs) {
+            n = snprintf(reinterpret_cast<char *>(ec->memory + out_addr),
+                out_size, "#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS",
+                reinterpret_cast<const char *>(fp->name), fp->minArgs, fp->maxArgs);
+        } else {
+            n = snprintf(reinterpret_cast<char *>(ec->memory + out_addr),
+                out_size, "#-1 FUNCTION (%s) EXPECTS BETWEEN %d AND %d ARGUMENTS",
+                reinterpret_cast<const char *>(fp->name), fp->minArgs, fp->maxArgs);
+        }
+        if (n < 0) n = 0;
+        if (static_cast<size_t>(n) >= out_size) n = static_cast<int>(out_size - 1);
+        ctx->x[10] = static_cast<uint64_t>(n);
         return -1;
     }
     if (fp->maxArgs >= 0 && nfargs > fp->maxArgs) {

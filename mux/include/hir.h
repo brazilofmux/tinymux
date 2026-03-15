@@ -123,6 +123,11 @@ struct hir_program {
     // parse as an integer (e.g., ECALL result from strlen/eq/gt).
     bool known_int[HIR_MAX_INSNS];
 
+    // Runtime-reference flag: true if an SCONST points to a
+    // runtime-populated address (CARGS_BASE, SUBST_BASE) rather
+    // than a true compile-time constant.  Prevents constant folding.
+    bool runtime_ref[HIR_MAX_INSNS];
+
     int n_insns;
 
     // Call arguments (flattened array).
@@ -234,6 +239,7 @@ struct hir_program {
         pnargs[i] = 0;
         sval[i].clear();
         known_int[i] = false;
+        runtime_ref[i] = false;
         return i;
     }
 
@@ -242,6 +248,14 @@ struct hir_program {
         int i = emit(HIR_SCONST, TY_STRING, -1, -1,
                      static_cast<int64_t>(addr));
         if (i >= 0) sval[i] = s;
+        return i;
+    }
+
+    // Emit a runtime string reference (CARGS/SUBST slot).
+    // Same as emit_sconst but marked as non-constant to prevent folding.
+    int emit_sref(uint64_t addr) {
+        int i = emit_sconst(addr, "");
+        if (i >= 0) runtime_ref[i] = true;
         return i;
     }
 
@@ -316,7 +330,8 @@ struct hir_program {
 
     // Is instruction i a compile-time constant?
     bool is_const(int i) const {
-        return i >= 0 && (kind[i] == HIR_ICONST || kind[i] == HIR_SCONST);
+        return i >= 0 && (kind[i] == HIR_ICONST || kind[i] == HIR_SCONST)
+               && !runtime_ref[i];
     }
 
     // Is instruction i provably integer-valued?
