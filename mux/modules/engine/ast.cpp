@@ -2044,6 +2044,15 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
                     }
                     continue;
                 }
+                if (c == '=') {
+                    i++;
+                    // Skip %=<...> form.
+                    if (i + 1 < nLen && pStr[i + 1] == '<') {
+                        i += 2;
+                        while (i < nLen && pStr[i] != '>') i++;
+                    }
+                    continue;
+                }
                 if ((c == 'q' || c == 'Q') && i + 2 < nLen) {
                     if (pStr[i + 2] >= '0' && pStr[i + 2] <= '9') {
                         i += 2;

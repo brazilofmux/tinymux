@@ -2848,6 +2848,52 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                 return h.emit_sconst(addr, "");
             }
 
+            // %= — attribute access.
+            // %=<name> reads attribute from executor via ECALL xget(executor, name).
+            // %=<0> through %=<9> are extended carg references.
+            if (c == '=') {
+                if (node->text.size() >= 4 && node->text[2] == '<') {
+                    size_t close = node->text.find('>', 3);
+                    if (close != std::string::npos) {
+                        std::string name = node->text.substr(3, close - 3);
+
+                        if (!name.empty() && name[0] >= '0' && name[0] <= '9') {
+                            // Numeric arg reference: %=<0> through %=<N>.
+                            // Parse the number and reference cargs.
+                            int idx = 0;
+                            for (char ch : name) {
+                                if (ch < '0' || ch > '9') { idx = MAX_ARG; break; }
+                                idx = idx * 10 + (ch - '0');
+                            }
+                            if (idx < rv_compiler::MAX_CARGS) {
+                                uint64_t addr = rv_compiler::CARGS_BASE
+                                    + static_cast<uint64_t>(idx) * rv_compiler::CARGS_SLOT;
+                                return h.emit_sconst(addr, "");
+                            }
+                            uint64_t addr = rc.pool_str("");
+                            return h.emit_sconst(addr, "");
+                        }
+
+                        // Attribute access: emit ECALL xget(%!, name).
+                        uint64_t exec_addr = rv_compiler::SUBST_BASE
+                            + rv_compiler::SUBST_EXECUTOR * rv_compiler::SUBST_SLOT;
+                        int exec_val = h.emit_sconst(exec_addr, "");
+                        uint64_t name_addr = rc.pool_str(name);
+                        int name_val = h.emit_sconst(name_addr, name);
+
+                        int xget_idx = engine_api_lookup("XGET");
+                        int args[2] = { exec_val, name_val };
+                        int result = h.emit_call(TY_STRING, xget_idx, args, 2);
+                        h.ecalls++;
+                        h.needs_jit = true;
+                        return result;
+                    }
+                }
+                // Bare %= or malformed — emit empty.
+                uint64_t addr = rc.pool_str("");
+                return h.emit_sconst(addr, "");
+            }
+
             // %q0-%q9 = global register values.  Runtime values at SUBST slots 4-13.
             // %q<name> = named register.  Emits ECALL for r("name").
             if ((c == 'q' || c == 'Q') && node->text.size() >= 3) {
