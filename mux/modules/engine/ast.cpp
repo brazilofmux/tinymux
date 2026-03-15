@@ -2043,12 +2043,9 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
                 // Unsupported %-substitution.
                 return false;
             }
-            if (pStr[i] == '#' && i + 1 < nLen) {
-                unsigned char c = pStr[i + 1];
-                if (c == '#' || c == '@') { i++; continue; }
-                // Unsupported # reference (dbref literal, etc.).
-                return false;
-            }
+            // # is handled by the AST parser: ## and #@ produce AST_SUBST
+            // nodes (handled by the compiler); #123 dbref literals produce
+            // AST_LITERAL nodes (pass through as text).  No guard needed.
         }
         return true;
     };
