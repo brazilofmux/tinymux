@@ -85,6 +85,27 @@ static struct {
 // Blob content hash for cache invalidation.
 static std::string s_blob_version = "none";
 
+static bool tier2_allowed(const std::string &mux_name) {
+    static const char *const s_allowlist[] = {
+        "CAT",
+        "STRCAT",
+        "STRLEN",
+        "LCSTR",
+        "UCSTR",
+        "CAPSTR",
+        "REVERSE",
+        "ESCAPE",
+        "STRIPANSI",
+        nullptr
+    };
+    for (int i = 0; s_allowlist[i]; i++) {
+        if (mux_name == s_allowlist[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static std::string sha1_hex_parts(const void *const *parts, const size_t *sizes,
                                   int count) {
     static constexpr unsigned int SHA1_DIGEST_LEN = 20;
@@ -296,9 +317,8 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
 // Returns guest address, or 0 if not found.
 //
 static uint64_t tier2_lookup(const std::string &mux_name) {
-    // DIAGNOSTIC: Tier 2 blob disabled globally to measure ECALL-only baseline.
-    return 0;
     if (!s_tier2.loaded) return 0;
+    if (!tier2_allowed(mux_name)) return 0;
     auto it = s_tier2.funcs.find(mux_name);
     if (it != s_tier2.funcs.end()) return it->second.guest_addr;
     return 0;
@@ -1351,6 +1371,51 @@ static bool try_fold(const std::string &func_name,
         std::string merged;
         for (int i = 0; i < nargs; i++) merged += args[i];
         result = merged;
+        return true;
+    }
+
+    if (upper == "LCSTR" && nargs == 1) {
+        unsigned char out[LBUF_SIZE];
+        size_t n = co_tolower(out,
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size());
+        result.assign(reinterpret_cast<const char *>(out), n);
+        return true;
+    }
+
+    if (upper == "UCSTR" && nargs == 1) {
+        unsigned char out[LBUF_SIZE];
+        size_t n = co_toupper(out,
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size());
+        result.assign(reinterpret_cast<const char *>(out), n);
+        return true;
+    }
+
+    if (upper == "CAPSTR" && nargs == 1) {
+        unsigned char out[LBUF_SIZE];
+        size_t n = co_totitle(out,
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size());
+        result.assign(reinterpret_cast<const char *>(out), n);
+        return true;
+    }
+
+    if (upper == "REVERSE" && nargs == 1) {
+        unsigned char out[LBUF_SIZE];
+        size_t n = co_reverse(out,
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size());
+        result.assign(reinterpret_cast<const char *>(out), n);
+        return true;
+    }
+
+    if (upper == "ESCAPE" && nargs == 1) {
+        unsigned char out[LBUF_SIZE];
+        size_t n = co_escape(out,
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size());
+        result.assign(reinterpret_cast<const char *>(out), n);
         return true;
     }
 
