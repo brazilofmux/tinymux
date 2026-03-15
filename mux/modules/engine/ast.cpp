@@ -2022,61 +2022,10 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
         // setq/setr: now supported via ECALL_SETQ write-through
         // (writes to both SUBST slot and mudstate.global_regs).
 
-        // Scan for unsupported %-substitutions and # references.
-        // Supported: %0-%9, %b/%B, %r/%R, %t/%T, %#, %!, %n/%N,
-        //            %l/%L, %q0-%q9/%Q0-%Q9, ##, #@.
-        for (size_t i = 0; i < nLen; i++) {
-            if (pStr[i] == '%' && i + 1 < nLen) {
-                unsigned char c = pStr[i + 1];
-                if (c >= '0' && c <= '9') { i++; continue; }
-                if (c == 'b' || c == 'B') { i++; continue; }
-                if (c == 'r' || c == 'R') { i++; continue; }
-                if (c == 't' || c == 'T') { i++; continue; }
-                if (c == '#' || c == '!') { i++; continue; }
-                if (c == 'n' || c == 'N') { i++; continue; }
-                if (c == 'l' || c == 'L') { i++; continue; }
-                if (c == 'c' || c == 'C' || c == 'x' || c == 'X') {
-                    i++;
-                    // Skip extended form %x<...> — scan past the <...>.
-                    if (i + 1 < nLen && pStr[i + 1] == '<') {
-                        i += 2;
-                        while (i < nLen && pStr[i] != '>') i++;
-                    }
-                    continue;
-                }
-                if (c == 's' || c == 'S') { i++; continue; }
-                if (c == 'o' || c == 'O') { i++; continue; }
-                if (c == 'p' || c == 'P') { i++; continue; }
-                if (c == 'a' || c == 'A') { i++; continue; }
-                if ((c == 'v' || c == 'V') && i + 2 < nLen) { i += 2; continue; }
-                if (c == '=') {
-                    i++;
-                    // Skip %=<...> form.
-                    if (i + 1 < nLen && pStr[i + 1] == '<') {
-                        i += 2;
-                        while (i < nLen && pStr[i] != '>') i++;
-                    }
-                    continue;
-                }
-                if ((c == 'q' || c == 'Q') && i + 2 < nLen) {
-                    if (pStr[i + 2] >= '0' && pStr[i + 2] <= '9') {
-                        i += 2;
-                        continue;
-                    }
-                    if (pStr[i + 2] == '<') {
-                        // %q<name> — skip past the <...>.
-                        i += 3;
-                        while (i < nLen && pStr[i] != '>') i++;
-                        continue;
-                    }
-                }
-                // Unsupported %-substitution.
-                return false;
-            }
-            // # is handled by the AST parser: ## and #@ produce AST_SUBST
-            // nodes (handled by the compiler); #123 dbref literals produce
-            // AST_LITERAL nodes (pass through as text).  No guard needed.
-        }
+        // All standard %-substitutions and # references are now handled
+        // by the compiler.  No scanning needed — the AST parser creates
+        // the correct node types, and the compiler resolves each one
+        // at compile time or via ECALL/SUBST slots at runtime.
         return true;
     };
 

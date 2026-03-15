@@ -499,6 +499,12 @@ struct rv_compiler {
     static constexpr int      SUBST_NAME     = 2;   // %n — enactor name
     static constexpr int      SUBST_LOCATION = 3;   // %l — location dbref
     static constexpr int      SUBST_QREG0    = 4;   // %q0-%q9 — slots 4-13
+    static constexpr int      SUBST_LASTCMD  = 14;  // %m — last command
+    static constexpr int      SUBST_MONIKER  = 15;  // %k — moniker
+    static constexpr int      SUBST_POUT     = 16;  // %| — piped output
+    static constexpr int      SUBST_NCARGS   = 17;  // %+ — number of cargs
+    static constexpr int      SUBST_OBJID    = 18;  // %: — enactor objid
+    static constexpr int      SUBST_COUNT    = 19;  // total slots
 
     static constexpr uint64_t STACK_TOP  = 0x3FFF0;
     static constexpr uint64_t BLOB_LIMIT = 0x40000;  // 192KB for blob + rodata
@@ -2975,6 +2981,82 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                     return h.emit_sconst(addr, "");
                 }
             }
+
+            // %% — literal percent.
+            if (c == '%') {
+                uint64_t addr = rc.pool_str("%");
+                return h.emit_sconst(addr, "%");
+            }
+
+            // %m — last command.  Runtime value at SUBST slot.
+            if (c == 'm' || c == 'M') {
+                uint64_t addr = rv_compiler::SUBST_BASE
+                    + rv_compiler::SUBST_LASTCMD * rv_compiler::SUBST_SLOT;
+                h.needs_jit = true;
+                return h.emit_sconst(addr, "");
+            }
+
+            // %k — moniker.  Runtime value at SUBST slot.
+            if (c == 'k' || c == 'K') {
+                uint64_t addr = rv_compiler::SUBST_BASE
+                    + rv_compiler::SUBST_MONIKER * rv_compiler::SUBST_SLOT;
+                h.needs_jit = true;
+                return h.emit_sconst(addr, "");
+            }
+
+            // %| — piped command output.  Runtime value at SUBST slot.
+            if (c == '|') {
+                uint64_t addr = rv_compiler::SUBST_BASE
+                    + rv_compiler::SUBST_POUT * rv_compiler::SUBST_SLOT;
+                h.needs_jit = true;
+                return h.emit_sconst(addr, "");
+            }
+
+            // %+ — number of cargs.  Runtime value at SUBST slot.
+            if (c == '+') {
+                uint64_t addr = rv_compiler::SUBST_BASE
+                    + rv_compiler::SUBST_NCARGS * rv_compiler::SUBST_SLOT;
+                h.needs_jit = true;
+                return h.emit_sconst(addr, "");
+            }
+
+            // %: — enactor objid.  Emit ECALL objid(%#).
+            if (c == ':') {
+                uint64_t enactor_addr = rv_compiler::SUBST_BASE
+                    + rv_compiler::SUBST_ENACTOR * rv_compiler::SUBST_SLOT;
+                int enactor_val = h.emit_sconst(enactor_addr, "");
+                int objid_idx = engine_api_lookup("OBJID");
+                int args[1] = { enactor_val };
+                int result = h.emit_call(TY_STRING, objid_idx, args, 1);
+                h.ecalls++;
+                h.needs_jit = true;
+                return result;
+            }
+
+            // %i0-%i9 — itext at nesting depth.
+            // %i0 = current iter body (same as ##).
+            // %i1+ = outer iter levels — emit ECALL itext(N).
+            if ((c == 'i' || c == 'I') && node->text.size() >= 3) {
+                char d = node->text[2];
+                if (d >= '0' && d <= '9') {
+                    int depth = d - '0';
+                    if (depth == 0 && iter_itext_val >= 0) {
+                        // Innermost iter — use compile-time value.
+                        return iter_itext_val;
+                    }
+                    // Outer levels or no compile-time iter context:
+                    // emit ECALL itext(depth).
+                    std::string ds(1, d);
+                    uint64_t d_addr = rc.pool_str(ds);
+                    int d_val = h.emit_sconst(d_addr, ds);
+                    int itext_idx = engine_api_lookup("ITEXT");
+                    int args[1] = { d_val };
+                    int result = h.emit_call(TY_STRING, itext_idx, args, 1);
+                    h.ecalls++;
+                    h.needs_jit = true;
+                    return result;
+                }
+            }
         }
 
         // Unresolvable substitution — emit empty string.
@@ -4390,7 +4472,7 @@ static bool run_cached_program(compiled_program *prog,
     // Clear from above-blob to end of SUBST region (covers output range 2,
     // CARGS, and SUBST slots).
     uint64_t subst_end = rv_compiler::SUBST_BASE
-                       + (rv_compiler::SUBST_QREG0 + 10) * rv_compiler::SUBST_SLOT;
+                       + rv_compiler::SUBST_COUNT * rv_compiler::SUBST_SLOT;
     memset(prog->memory.data() + rv_compiler::OUT_GAP_HI, 0,
            subst_end - rv_compiler::OUT_GAP_HI);
 
@@ -4465,6 +4547,30 @@ static bool run_cached_program(compiled_program *prog,
             copy_subst(rv_compiler::SUBST_QREG0 + i, nullptr);
         }
     }
+
+    // %m — last command.
+    copy_subst(rv_compiler::SUBST_LASTCMD, mudstate.curr_cmd);
+
+    // %k — moniker (enactor name with color).
+    if (Good_obj(enactor)) {
+        copy_subst(rv_compiler::SUBST_MONIKER, Moniker(enactor));
+    } else {
+        copy_subst(rv_compiler::SUBST_MONIKER, nullptr);
+    }
+
+    // %| — piped command output.
+    copy_subst(rv_compiler::SUBST_POUT, mudstate.pout);
+
+    // %+ — number of cargs.
+    {
+        UTF8 ncbuf[32];
+        mux_sprintf(ncbuf, sizeof(ncbuf), T("%d"), ncargs);
+        copy_subst(rv_compiler::SUBST_NCARGS, ncbuf);
+    }
+
+    // %: — enactor objid.  Populated via ECALL at runtime (needs
+    // creation_seconds which isn't available here).  Leave slot empty;
+    // the compiler emits ECALL objid(%#) instead of using the slot.
 
     eval_ctx ec;
     ec.memory = prog->memory.data();
