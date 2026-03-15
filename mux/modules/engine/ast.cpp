@@ -2035,6 +2035,15 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
                 if (c == '#' || c == '!') { i++; continue; }
                 if (c == 'n' || c == 'N') { i++; continue; }
                 if (c == 'l' || c == 'L') { i++; continue; }
+                if (c == 'c' || c == 'C' || c == 'x' || c == 'X') {
+                    i++;
+                    // Skip extended form %x<...> — scan past the <...>.
+                    if (i + 1 < nLen && pStr[i + 1] == '<') {
+                        i += 2;
+                        while (i < nLen && pStr[i] != '>') i++;
+                    }
+                    continue;
+                }
                 if ((c == 'q' || c == 'Q') && i + 2 < nLen
                     && pStr[i + 2] >= '0' && pStr[i + 2] <= '9') {
                     i += 2;

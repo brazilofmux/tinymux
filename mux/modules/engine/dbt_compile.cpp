@@ -2792,6 +2792,62 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                 return h.emit_sconst(addr, "");
             }
 
+            // %c/%x color codes — resolved at compile time.
+            // Simple: %xh, %cn, %xr etc. → ColorTable lookup → aColors[].pUTF.
+            // Extended: %x<rgb> → parse_rgb + palette lookup.
+            if (c == 'c' || c == 'C' || c == 'x' || c == 'X') {
+                if (node->text.size() >= 3) {
+                    bool bBackground = (c == 'C' || c == 'X');
+
+                    if (node->text[2] == '<') {
+                        // Extended color: %x<rgb>, %c<name>.
+                        size_t close = node->text.find('>', 3);
+                        if (close != std::string::npos) {
+                            size_t nColor = close - 3;
+                            const UTF8 *pColor = reinterpret_cast<const UTF8 *>(
+                                node->text.c_str() + 3);
+                            RGB rgb;
+                            if (parse_rgb(nColor, pColor, rgb)) {
+                                int iColor = FindNearestPaletteEntry(rgb, true);
+                                int ci = bBackground ? (iColor + COLOR_INDEX_BG)
+                                                     : (iColor + COLOR_INDEX_FG);
+                                const UTF8 *pUTF = aColors[ci].pUTF;
+                                // For exact palette match, just emit the color.
+                                // PUA refinement for non-exact matches is complex;
+                                // fall through to ECALL for those.
+                                if (pUTF && pUTF[0]) {
+                                    std::string cs(reinterpret_cast<const char *>(pUTF));
+                                    uint64_t addr = rc.pool_str(cs);
+                                    return h.emit_sconst(addr, cs);
+                                }
+                            }
+                        }
+                        // Extended parse failed — emit empty.
+                        uint64_t addr = rc.pool_str("");
+                        return h.emit_sconst(addr, "");
+                    } else {
+                        // Simple color: %xh, %cn, etc.
+                        unsigned int iColor = ColorTable[
+                            static_cast<unsigned char>(node->text[2])];
+                        if (iColor) {
+                            const UTF8 *pUTF = aColors[iColor].pUTF;
+                            if (pUTF && pUTF[0]) {
+                                std::string cs(reinterpret_cast<const char *>(pUTF));
+                                uint64_t addr = rc.pool_str(cs);
+                                return h.emit_sconst(addr, cs);
+                            }
+                        }
+                        // Unknown color letter — output it literally.
+                        std::string lit(1, node->text[2]);
+                        uint64_t addr = rc.pool_str(lit);
+                        return h.emit_sconst(addr, lit);
+                    }
+                }
+                // Malformed %c/%x — emit empty.
+                uint64_t addr = rc.pool_str("");
+                return h.emit_sconst(addr, "");
+            }
+
             // %q0-%q9 = global register values.  Runtime values at SUBST slots 4-13.
             if ((c == 'q' || c == 'Q') && node->text.size() >= 3) {
                 char r = node->text[2];
