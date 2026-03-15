@@ -2048,6 +2048,7 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
                 if (c == 'o' || c == 'O') { i++; continue; }
                 if (c == 'p' || c == 'P') { i++; continue; }
                 if (c == 'a' || c == 'A') { i++; continue; }
+                if ((c == 'v' || c == 'V') && i + 2 < nLen) { i += 2; continue; }
                 if (c == '=') {
                     i++;
                     // Skip %=<...> form.

@@ -2848,6 +2848,31 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                 return h.emit_sconst(addr, "");
             }
 
+            // %va-%vz — variable attributes.  Emit ECALL xget(%!, "VA").
+            if ((c == 'v' || c == 'V') && node->text.size() >= 3) {
+                char letter = node->text[2];
+                if ((letter >= 'a' && letter <= 'z')
+                    || (letter >= 'A' && letter <= 'Z')) {
+                    char upper = static_cast<char>(toupper(
+                        static_cast<unsigned char>(letter)));
+                    std::string attrname = "V";
+                    attrname += upper;
+
+                    uint64_t exec_addr = rv_compiler::SUBST_BASE
+                        + rv_compiler::SUBST_EXECUTOR * rv_compiler::SUBST_SLOT;
+                    int exec_val = h.emit_sconst(exec_addr, "");
+                    uint64_t name_addr = rc.pool_str(attrname);
+                    int name_val = h.emit_sconst(name_addr, attrname);
+
+                    int xget_idx = engine_api_lookup("XGET");
+                    int args[2] = { exec_val, name_val };
+                    int result = h.emit_call(TY_STRING, xget_idx, args, 2);
+                    h.ecalls++;
+                    h.needs_jit = true;
+                    return result;
+                }
+            }
+
             // %s/%o/%p/%a — pronouns.  Emit ECALL to subj/obj/poss/aposs(%#).
             if (c == 's' || c == 'S' || c == 'o' || c == 'O'
                 || c == 'p' || c == 'P' || c == 'a' || c == 'A') {
