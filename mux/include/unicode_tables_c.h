@@ -49,28 +49,28 @@ extern const co_string_desc tr_tolower_ott[144];
 /* --- tr_toupper DFA tables --- */
 
 #define TR_TOUPPER_START_STATE (0)
-#define TR_TOUPPER_ACCEPTING_STATES_START (67)
+#define TR_TOUPPER_ACCEPTING_STATES_START (68)
 extern const unsigned char tr_toupper_itt[256];
-extern const unsigned short tr_toupper_sot[67];
-extern const unsigned char tr_toupper_sbt[1820];
+extern const unsigned short tr_toupper_sot[68];
+extern const unsigned short tr_toupper_sbt[1925];
 
 #define TR_TOUPPER_DEFAULT (0)
 #define TR_TOUPPER_LITERAL_START (1)
-#define TR_TOUPPER_XOR_START (33)
-extern const co_string_desc tr_toupper_ott[158];
+#define TR_TOUPPER_XOR_START (97)
+extern const co_string_desc tr_toupper_ott[230];
 
 /* --- tr_totitle DFA tables --- */
 
 #define TR_TOTITLE_START_STATE (0)
-#define TR_TOTITLE_ACCEPTING_STATES_START (67)
+#define TR_TOTITLE_ACCEPTING_STATES_START (68)
 extern const unsigned char tr_totitle_itt[256];
-extern const unsigned short tr_totitle_sot[67];
-extern const unsigned char tr_totitle_sbt[1821];
+extern const unsigned short tr_totitle_sot[68];
+extern const unsigned short tr_totitle_sbt[1880];
 
 #define TR_TOTITLE_DEFAULT (0)
 #define TR_TOTITLE_LITERAL_START (1)
-#define TR_TOTITLE_XOR_START (33)
-extern const co_string_desc tr_totitle_ott[156];
+#define TR_TOTITLE_XOR_START (70)
+extern const co_string_desc tr_totitle_ott[201];
 
 /*
  * co_dfa_toupper — Run the toupper DFA on a single code point.
@@ -83,7 +83,7 @@ extern const co_string_desc tr_totitle_ott[156];
  */
 static inline const co_string_desc *co_dfa_toupper(const unsigned char *p, int *bXor)
 {
-    unsigned char iState = TR_TOUPPER_START_STATE;
+    unsigned short iState = TR_TOUPPER_START_STATE;
     do
     {
         unsigned char ch = *p++;
@@ -191,7 +191,7 @@ static inline const co_string_desc *co_dfa_tolower(const unsigned char *p, int *
 
 static inline const co_string_desc *co_dfa_totitle(const unsigned char *p, int *bXor)
 {
-    unsigned char iState = TR_TOTITLE_START_STATE;
+    unsigned short iState = TR_TOTITLE_START_STATE;
     do
     {
         unsigned char ch = *p++;

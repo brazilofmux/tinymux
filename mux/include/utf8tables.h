@@ -233,35 +233,35 @@ extern LIBMUX_API const string_desc tr_tolower_ott[144];
 
 // utf/tr_toupper.txt
 //
-// 1477 code points.
-// 67 states, 90 columns, 2210 bytes
+// 1552 code points.
+// 68 states, 90 columns, 4242 bytes
 //
 #define TR_TOUPPER_START_STATE (0)
-#define TR_TOUPPER_ACCEPTING_STATES_START (67)
+#define TR_TOUPPER_ACCEPTING_STATES_START (68)
 extern LIBMUX_API const unsigned char tr_toupper_itt[256];
-extern LIBMUX_API const unsigned short tr_toupper_sot[67];
-extern LIBMUX_API const unsigned char tr_toupper_sbt[1820];
+extern LIBMUX_API const unsigned short tr_toupper_sot[68];
+extern LIBMUX_API const unsigned short tr_toupper_sbt[1925];
 
 #define TR_TOUPPER_DEFAULT (0)
 #define TR_TOUPPER_LITERAL_START (1)
-#define TR_TOUPPER_XOR_START (33)
-extern LIBMUX_API const string_desc tr_toupper_ott[158];
+#define TR_TOUPPER_XOR_START (97)
+extern LIBMUX_API const string_desc tr_toupper_ott[230];
 
 // utf/tr_totitle.txt
 //
-// 1481 code points.
-// 67 states, 90 columns, 2211 bytes
+// 1529 code points.
+// 68 states, 90 columns, 4152 bytes
 //
 #define TR_TOTITLE_START_STATE (0)
-#define TR_TOTITLE_ACCEPTING_STATES_START (67)
+#define TR_TOTITLE_ACCEPTING_STATES_START (68)
 extern LIBMUX_API const unsigned char tr_totitle_itt[256];
-extern LIBMUX_API const unsigned short tr_totitle_sot[67];
-extern LIBMUX_API const unsigned char tr_totitle_sbt[1821];
+extern LIBMUX_API const unsigned short tr_totitle_sot[68];
+extern LIBMUX_API const unsigned short tr_totitle_sbt[1880];
 
 #define TR_TOTITLE_DEFAULT (0)
 #define TR_TOTITLE_LITERAL_START (1)
-#define TR_TOTITLE_XOR_START (33)
-extern LIBMUX_API const string_desc tr_totitle_ott[156];
+#define TR_TOTITLE_XOR_START (70)
+extern LIBMUX_API const string_desc tr_totitle_ott[201];
 
 // utf/tr_foldmatch.txt
 //

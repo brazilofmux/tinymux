@@ -421,6 +421,15 @@ public:
     UTF32 GetSimpleLowercaseMapping(void) { return m_SimpleLowercaseMapping; };
     UTF32 GetSimpleTitlecaseMapping(void) { return m_SimpleTitlecaseMapping; };
 
+    // Full case mappings from SpecialCasing.txt (1-to-many code points).
+    //
+    void SetFullUppercaseMapping(int n, UTF32 pts[]);
+    int  GetFullUppercaseMapping(UTF32 pts[]);
+    void SetFullLowercaseMapping(int n, UTF32 pts[]);
+    int  GetFullLowercaseMapping(UTF32 pts[]);
+    void SetFullTitlecaseMapping(int n, UTF32 pts[]);
+    int  GetFullTitlecaseMapping(UTF32 pts[]);
+
     void SetProhibited(void) { m_bProhibited = true; };
     bool IsProhibited(void) { return m_bProhibited; };
 
@@ -453,6 +462,16 @@ private:
     UTF32 m_SimpleUppercaseMapping;
     UTF32 m_SimpleLowercaseMapping;
     UTF32 m_SimpleTitlecaseMapping;
+
+    // Full case mappings from SpecialCasing.txt.
+    //
+    int   m_nFullUppercase;
+    UTF32 m_aFullUppercase[4];
+    int   m_nFullLowercase;
+    UTF32 m_aFullLowercase[4];
+    int   m_nFullTitlecase;
+    UTF32 m_aFullTitlecase[4];
+
     bool  m_bHaveWidthType;
     int   m_nWidthType;
 
@@ -554,6 +573,9 @@ CodePoint::CodePoint()
     m_SimpleUppercaseMapping = UNI_EOF;
     m_SimpleLowercaseMapping = UNI_EOF;
     m_SimpleTitlecaseMapping = UNI_EOF;
+    m_nFullUppercase = 0;
+    m_nFullLowercase = 0;
+    m_nFullTitlecase = 0;
     m_bProhibited = false;
     m_bHaveWidthType = false;
 
@@ -610,6 +632,60 @@ void CodePoint::SetISOComment(const char *p)
     memcpy(m_pISOComment, p, n+1);
 }
 
+void CodePoint::SetFullUppercaseMapping(int n, UTF32 pts[])
+{
+    m_nFullUppercase = n;
+    for (int i = 0; i < n && i < 4; i++)
+    {
+        m_aFullUppercase[i] = pts[i];
+    }
+}
+
+int CodePoint::GetFullUppercaseMapping(UTF32 pts[])
+{
+    for (int i = 0; i < m_nFullUppercase; i++)
+    {
+        pts[i] = m_aFullUppercase[i];
+    }
+    return m_nFullUppercase;
+}
+
+void CodePoint::SetFullLowercaseMapping(int n, UTF32 pts[])
+{
+    m_nFullLowercase = n;
+    for (int i = 0; i < n && i < 4; i++)
+    {
+        m_aFullLowercase[i] = pts[i];
+    }
+}
+
+int CodePoint::GetFullLowercaseMapping(UTF32 pts[])
+{
+    for (int i = 0; i < m_nFullLowercase; i++)
+    {
+        pts[i] = m_aFullLowercase[i];
+    }
+    return m_nFullLowercase;
+}
+
+void CodePoint::SetFullTitlecaseMapping(int n, UTF32 pts[])
+{
+    m_nFullTitlecase = n;
+    for (int i = 0; i < n && i < 4; i++)
+    {
+        m_aFullTitlecase[i] = pts[i];
+    }
+}
+
+int CodePoint::GetFullTitlecaseMapping(UTF32 pts[])
+{
+    for (int i = 0; i < m_nFullTitlecase; i++)
+    {
+        pts[i] = m_aFullTitlecase[i];
+    }
+    return m_nFullTitlecase;
+}
+
 class UniData
 {
 public:
@@ -620,6 +696,7 @@ public:
     void LoadUnicodeDataLine(UTF32 codepoint, int nFields, char *aFields[]);
     void LoadUnicodeHanFile(void);
     void LoadEastAsianWidth(void);
+    void LoadSpecialCasingFile(void);
 
 #ifdef HAVE_ICONV_H
     void LoadMappings(void);
@@ -693,6 +770,7 @@ int main(int argc, char *argv[])
     g_UniData->LoadUnicodeDataFile();
     g_UniData->LoadUnicodeHanFile();
     g_UniData->LoadEastAsianWidth();
+    g_UniData->LoadSpecialCasingFile();
 
 #ifdef HAVE_ICONV_H
     g_UniData->LoadMappings();
@@ -1159,6 +1237,108 @@ void UniData::LoadEastAsianWidth(void)
     }
 }
 
+// LoadSpecialCasingFile — Parse SpecialCasing.txt for unconditional
+// full case mappings (1-to-many code point expansions).
+//
+// Format: <code>; <lower>; <title>; <upper>; (<condition>;)? # <comment>
+//
+// We only load unconditional entries (no condition in field 5).
+// These override the simple 1-to-1 mappings from UnicodeData.txt
+// when the full mapping has more than one code point.
+//
+void UniData::LoadSpecialCasingFile(void)
+{
+    FILE *fp = fopen("SpecialCasing.txt", "r");
+    if (nullptr == fp)
+    {
+        // Not fatal — SpecialCasing.txt is optional.
+        //
+        printf("Note: SpecialCasing.txt not found, using simple case mappings only.\n");
+        return;
+    }
+
+    int nLoaded = 0;
+    char buffer[1024];
+    while (nullptr != ReadLine(fp, buffer, sizeof(buffer)))
+    {
+        // ParseFields splits on semicolons.
+        //
+        int   nFields;
+        char *aFields[6];
+        ParseFields(buffer, 6, nFields, aFields);
+
+        // We need at least 4 fields: code, lower, title, upper.
+        //
+        if (nFields < 4)
+        {
+            continue;
+        }
+
+        // If field 5 exists and is non-empty, this is a conditional
+        // mapping (locale-dependent or context-dependent).  Skip it.
+        //
+        if (5 <= nFields && aFields[4][0] != '\0')
+        {
+            continue;
+        }
+
+        UTF32 codepoint = DecodeCodePoint(aFields[0]);
+        if (codepoint > codepoints || !cp[codepoint].IsDefined())
+        {
+            continue;
+        }
+
+        // Parse the lowercase field (field 1).
+        //
+        int nLower;
+        const char *aLowerPoints[4];
+        ParsePoints(aFields[1], 4, nLower, aLowerPoints);
+        if (nLower > 1)
+        {
+            UTF32 pts[4];
+            for (int i = 0; i < nLower; i++)
+            {
+                pts[i] = DecodeCodePoint(aLowerPoints[i]);
+            }
+            cp[codepoint].SetFullLowercaseMapping(nLower, pts);
+        }
+
+        // Parse the titlecase field (field 2).
+        //
+        int nTitle;
+        const char *aTitlePoints[4];
+        ParsePoints(aFields[2], 4, nTitle, aTitlePoints);
+        if (nTitle > 1)
+        {
+            UTF32 pts[4];
+            for (int i = 0; i < nTitle; i++)
+            {
+                pts[i] = DecodeCodePoint(aTitlePoints[i]);
+            }
+            cp[codepoint].SetFullTitlecaseMapping(nTitle, pts);
+        }
+
+        // Parse the uppercase field (field 3).
+        //
+        int nUpper;
+        const char *aUpperPoints[4];
+        ParsePoints(aFields[3], 4, nUpper, aUpperPoints);
+        if (nUpper > 1)
+        {
+            UTF32 pts[4];
+            for (int i = 0; i < nUpper; i++)
+            {
+                pts[i] = DecodeCodePoint(aUpperPoints[i]);
+            }
+            cp[codepoint].SetFullUppercaseMapping(nUpper, pts);
+        }
+
+        nLoaded++;
+    }
+    fclose(fp);
+    printf("Loaded %d unconditional entries from SpecialCasing.txt.\n", nLoaded);
+}
+
 #ifdef HAVE_ICONV_H
 void UniData::LoadMappings(void)
 {
@@ -1460,14 +1640,33 @@ void UniData::SaveTranslateToUpper(void)
         if (  cp[pt].IsDefined()
            && !cp[pt].IsProhibited())
         {
-            UTF32 ptUpper = cp[pt].GetSimpleUppercaseMapping();
-            if (  UNI_EOF != ptUpper
-               && cp[ptUpper].IsDefined()
-               && !cp[ptUpper].IsProhibited())
+            // Prefer full mapping from SpecialCasing.txt over simple.
+            //
+            UTF32 aFull[4];
+            int nFull = cp[pt].GetFullUppercaseMapping(aFull);
+            if (nFull > 1)
             {
                 char *p = cp[pt].GetUnicode1Name();
-                fprintf(fp, "%04X;%04X;%s;%s\n", static_cast<unsigned int>(pt), static_cast<unsigned int>(ptUpper),
+                fprintf(fp, "%04X;", static_cast<unsigned int>(pt));
+                for (int i = 0; i < nFull; i++)
+                {
+                    if (i > 0) fprintf(fp, " ");
+                    fprintf(fp, "%04X", static_cast<unsigned int>(aFull[i]));
+                }
+                fprintf(fp, ";%s;%s\n",
                     cp[pt].GetDescription(), (nullptr == p) ? "" : p);
+            }
+            else
+            {
+                UTF32 ptUpper = cp[pt].GetSimpleUppercaseMapping();
+                if (  UNI_EOF != ptUpper
+                   && cp[ptUpper].IsDefined()
+                   && !cp[ptUpper].IsProhibited())
+                {
+                    char *p = cp[pt].GetUnicode1Name();
+                    fprintf(fp, "%04X;%04X;%s;%s\n", static_cast<unsigned int>(pt), static_cast<unsigned int>(ptUpper),
+                        cp[pt].GetDescription(), (nullptr == p) ? "" : p);
+                }
             }
         }
     }
@@ -1487,14 +1686,33 @@ void UniData::SaveTranslateToLower(void)
         if (  cp[pt].IsDefined()
            && !cp[pt].IsProhibited())
         {
-            UTF32 ptLower = cp[pt].GetSimpleLowercaseMapping();
-            if (  UNI_EOF != ptLower
-               && cp[ptLower].IsDefined()
-               && !cp[ptLower].IsProhibited())
+            // Prefer full mapping from SpecialCasing.txt over simple.
+            //
+            UTF32 aFull[4];
+            int nFull = cp[pt].GetFullLowercaseMapping(aFull);
+            if (nFull > 1)
             {
                 char *p = cp[pt].GetUnicode1Name();
-                fprintf(fp, "%04X;%04X;%s;%s\n", static_cast<unsigned int>(pt), static_cast<unsigned int>(ptLower),
+                fprintf(fp, "%04X;", static_cast<unsigned int>(pt));
+                for (int i = 0; i < nFull; i++)
+                {
+                    if (i > 0) fprintf(fp, " ");
+                    fprintf(fp, "%04X", static_cast<unsigned int>(aFull[i]));
+                }
+                fprintf(fp, ";%s;%s\n",
                     cp[pt].GetDescription(), (nullptr == p) ? "" : p);
+            }
+            else
+            {
+                UTF32 ptLower = cp[pt].GetSimpleLowercaseMapping();
+                if (  UNI_EOF != ptLower
+                   && cp[ptLower].IsDefined()
+                   && !cp[ptLower].IsProhibited())
+                {
+                    char *p = cp[pt].GetUnicode1Name();
+                    fprintf(fp, "%04X;%04X;%s;%s\n", static_cast<unsigned int>(pt), static_cast<unsigned int>(ptLower),
+                        cp[pt].GetDescription(), (nullptr == p) ? "" : p);
+                }
             }
         }
     }
@@ -1514,14 +1732,33 @@ void UniData::SaveTranslateToTitle(void)
         if (  cp[pt].IsDefined()
            && !cp[pt].IsProhibited())
         {
-            UTF32 ptTitle = cp[pt].GetSimpleTitlecaseMapping();
-            if (  UNI_EOF != ptTitle
-               && cp[ptTitle].IsDefined()
-               && !cp[ptTitle].IsProhibited())
+            // Prefer full mapping from SpecialCasing.txt over simple.
+            //
+            UTF32 aFull[4];
+            int nFull = cp[pt].GetFullTitlecaseMapping(aFull);
+            if (nFull > 1)
             {
                 char *p = cp[pt].GetUnicode1Name();
-                fprintf(fp, "%04X;%04X;%s;%s\n", static_cast<unsigned int>(pt), static_cast<unsigned int>(ptTitle),
+                fprintf(fp, "%04X;", static_cast<unsigned int>(pt));
+                for (int i = 0; i < nFull; i++)
+                {
+                    if (i > 0) fprintf(fp, " ");
+                    fprintf(fp, "%04X", static_cast<unsigned int>(aFull[i]));
+                }
+                fprintf(fp, ";%s;%s\n",
                     cp[pt].GetDescription(), (nullptr == p) ? "" : p);
+            }
+            else
+            {
+                UTF32 ptTitle = cp[pt].GetSimpleTitlecaseMapping();
+                if (  UNI_EOF != ptTitle
+                   && cp[ptTitle].IsDefined()
+                   && !cp[ptTitle].IsProhibited())
+                {
+                    char *p = cp[pt].GetUnicode1Name();
+                    fprintf(fp, "%04X;%04X;%s;%s\n", static_cast<unsigned int>(pt), static_cast<unsigned int>(ptTitle),
+                        cp[pt].GetDescription(), (nullptr == p) ? "" : p);
+                }
             }
         }
     }

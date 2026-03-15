@@ -964,7 +964,7 @@ inline const string_desc *mux_tolower(const unsigned char *p, bool &bXor)
 //
 inline const string_desc *mux_toupper(const unsigned char *p, bool &bXor)
 {
-    unsigned char iState = TR_TOUPPER_START_STATE;
+    unsigned short iState = TR_TOUPPER_START_STATE;
     do
     {
         unsigned char ch = *p++;
@@ -1023,7 +1023,7 @@ inline const string_desc *mux_toupper(const unsigned char *p, bool &bXor)
 //
 inline const string_desc *mux_totitle(const unsigned char *p, bool &bXor)
 {
-    unsigned char iState = TR_TOTITLE_START_STATE;
+    unsigned short iState = TR_TOTITLE_START_STATE;
     do
     {
         unsigned char ch = *p++;
