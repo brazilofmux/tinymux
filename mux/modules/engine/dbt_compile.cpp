@@ -1691,6 +1691,15 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 int val = hir_lower_node(h, rc, node->children[1].get());
                 qreg[rn] = val;
                 qreg_used = true;
+
+                // Emit write-through: sync to SUBST slot + mudstate.
+                int sval = val;
+                if (h.ty[sval] == TY_INT) {
+                    sval = h.emit(HIR_ITOA, TY_STRING, sval);
+                }
+                h.emit(HIR_SETQ_SYNC, TY_VOID, sval, -1, rn);
+                h.needs_jit = true;
+
                 // setq() returns empty string.
                 uint64_t addr = rc.pool_str("");
                 return h.emit_sconst(addr, "");
@@ -1707,6 +1716,15 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 int val = hir_lower_node(h, rc, node->children[1].get());
                 qreg[rn] = val;
                 qreg_used = true;
+
+                // Emit write-through: sync to SUBST slot + mudstate.
+                int sval = val;
+                if (h.ty[sval] == TY_INT) {
+                    sval = h.emit(HIR_ITOA, TY_STRING, sval);
+                }
+                h.emit(HIR_SETQ_SYNC, TY_VOID, sval, -1, rn);
+                h.needs_jit = true;
+
                 return val;
             }
         }
@@ -3754,6 +3772,21 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                 rv_emit_exit(rc.code);
                 break;
 
+            case HIR_SETQ_SYNC: {
+                // Emit ECALL_SETQ: a0 = register number, a1 = value addr.
+                int regnum = static_cast<int>(h.val[i]);
+                int val_idx = h.src1[i];
+                rc.code.push_back(rv_ADDI(17, 0, 0x102));  // a7 = ECALL_SETQ
+                rv_load_val(rc.code, 10, static_cast<uint64_t>(regnum));  // a0 = regnum
+                if (val_idx >= 0) {
+                    rv_load_val(rc.code, 11, loc[val_idx].addr);  // a1 = value addr
+                } else {
+                    rv_load_val(rc.code, 11, 0);
+                }
+                rc.code.push_back(rv_ECALL());
+                break;
+            }
+
             case HIR_NOP:
             case HIR_STORE_Q:  // consumed by SSA construction
             case HIR_LOAD_Q:   // should be COPY after SSA; harmless NOP
@@ -4414,6 +4447,42 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
 
         return ecall_invoke_fun(it->second, ec, ctx, fargs_addr, nfargs,
                                 out_addr, out_size);
+    }
+
+    case ECALL_SETQ: {
+        // Q-register write-through: a0 = register number (0-9),
+        // a1 = value address in guest memory.
+        // Writes to both the SUBST slot (for JIT reads) and
+        // mudstate.global_regs (for ECALL reads).
+        int regnum = static_cast<int>(ctx->x[10]);
+        uint64_t val_addr = ctx->x[11];
+
+        if (regnum < 0 || regnum >= MAX_GLOBAL_REGS ||
+            val_addr >= ec->memory_size) {
+            ctx->x[10] = 0;
+            return -1;
+        }
+
+        const UTF8 *value = ec->memory + val_addr;
+        size_t vlen = strlen(reinterpret_cast<const char *>(value));
+
+        // Write to SUBST slot in guest memory.
+        uint64_t slot = rv_compiler::SUBST_BASE
+            + (rv_compiler::SUBST_QREG0 + regnum)
+              * rv_compiler::SUBST_SLOT;
+        if (slot + rv_compiler::SUBST_SLOT <= ec->memory_size) {
+            size_t cplen = vlen;
+            if (cplen >= static_cast<size_t>(rv_compiler::SUBST_SLOT))
+                cplen = rv_compiler::SUBST_SLOT - 1;
+            memcpy(ec->memory + slot, value, cplen);
+            ec->memory[slot + cplen] = 0;
+        }
+
+        // Write to mudstate.global_regs via RegAssign.
+        RegAssign(&mudstate.global_regs[regnum], vlen, value);
+
+        ctx->x[10] = static_cast<uint64_t>(vlen);
+        return -1;
     }
 
     default:

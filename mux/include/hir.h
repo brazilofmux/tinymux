@@ -75,6 +75,9 @@ enum hir_kind {
     HIR_LOAD_Q,     // load %q register: val = register number
     HIR_STORE_Q,    // store %q register: val = register number, src1 = value
 
+    // Q-register sync: write to both SUBST slot and mudstate.
+    HIR_SETQ_SYNC,  // val = register number (0-9), src1 = value (string addr)
+
     // Control flow (M2+)
     HIR_BR,         // unconditional branch: val = target block
     HIR_BRC,        // conditional branch: src1 = cond, val = true block, src2 = false block

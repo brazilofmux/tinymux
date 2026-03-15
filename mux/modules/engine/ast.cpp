@@ -2019,14 +2019,8 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
         if (ast_ptr->type == AST_LITERAL || ast_ptr->type == AST_SPACE)
             return false;
 
-        // Reject expressions with setq/setr — the JIT's q-register
-        // writes don't sync back to mudstate.global_regs.
-        {
-            const char *s = reinterpret_cast<const char *>(pStr);
-            if (strstr(s, "setq(") || strstr(s, "setr(")
-                || strstr(s, "SETQ(") || strstr(s, "SETR("))
-                return false;
-        }
+        // setq/setr: now supported via ECALL_SETQ write-through
+        // (writes to both SUBST slot and mudstate.global_regs).
 
         // Scan for unsupported %-substitutions and # references.
         // Supported: %0-%9, %b/%B, %r/%R, %t/%T, %#, %!, %n/%N,
