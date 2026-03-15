@@ -2019,9 +2019,6 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
         if (ast_ptr->type == AST_LITERAL || ast_ptr->type == AST_SPACE)
             return false;
 
-        for (size_t i = 0; i < nLen; i++) {
-            if (pStr[i] == '%' || pStr[i] == '#') return false;
-        }
         // Reject expressions with setq/setr — the JIT's q-register
         // writes don't sync back to mudstate.global_regs.
         {
@@ -2029,6 +2026,35 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
             if (strstr(s, "setq(") || strstr(s, "setr(")
                 || strstr(s, "SETQ(") || strstr(s, "SETR("))
                 return false;
+        }
+
+        // Scan for unsupported %-substitutions and # references.
+        // Supported: %0-%9, %b/%B, %r/%R, %t/%T, %#, %!, %n/%N,
+        //            %l/%L, %q0-%q9/%Q0-%Q9, ##, #@.
+        for (size_t i = 0; i < nLen; i++) {
+            if (pStr[i] == '%' && i + 1 < nLen) {
+                unsigned char c = pStr[i + 1];
+                if (c >= '0' && c <= '9') { i++; continue; }
+                if (c == 'b' || c == 'B') { i++; continue; }
+                if (c == 'r' || c == 'R') { i++; continue; }
+                if (c == 't' || c == 'T') { i++; continue; }
+                if (c == '#' || c == '!') { i++; continue; }
+                if (c == 'n' || c == 'N') { i++; continue; }
+                if (c == 'l' || c == 'L') { i++; continue; }
+                if ((c == 'q' || c == 'Q') && i + 2 < nLen
+                    && pStr[i + 2] >= '0' && pStr[i + 2] <= '9') {
+                    i += 2;
+                    continue;
+                }
+                // Unsupported %-substitution.
+                return false;
+            }
+            if (pStr[i] == '#' && i + 1 < nLen) {
+                unsigned char c = pStr[i + 1];
+                if (c == '#' || c == '@') { i++; continue; }
+                // Unsupported # reference (dbref literal, etc.).
+                return false;
+            }
         }
         return true;
     };

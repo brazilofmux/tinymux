@@ -489,6 +489,17 @@ struct rv_compiler {
     static constexpr int      CARGS_SLOT = 256;
     static constexpr int      MAX_CARGS  = 10;
 
+    // %-substitution region: runtime values copied before each execution.
+    // Slots 0-3: dbrefs/names (32 or 256 bytes).
+    // Slots 4-13: %q0-%q9 register values (256 bytes each).
+    static constexpr uint64_t SUBST_BASE = 0x3CA00;
+    static constexpr int      SUBST_SLOT = 256;
+    static constexpr int      SUBST_ENACTOR  = 0;   // %# — dbref string
+    static constexpr int      SUBST_EXECUTOR = 1;   // %! — dbref string
+    static constexpr int      SUBST_NAME     = 2;   // %n — enactor name
+    static constexpr int      SUBST_LOCATION = 3;   // %l — location dbref
+    static constexpr int      SUBST_QREG0    = 4;   // %q0-%q9 — slots 4-13
+
     static constexpr uint64_t STACK_TOP  = 0x3FFF0;
     static constexpr uint64_t BLOB_LIMIT = 0x40000;  // 192KB for blob + rodata
 
@@ -2730,9 +2741,54 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                 uint64_t addr = rc.pool_str("\t");
                 return h.emit_sconst(addr, "\t");
             }
+
+            // %# = enactor dbref.  Runtime value at SUBST slot 0.
+            if (c == '#') {
+                uint64_t addr = rv_compiler::SUBST_BASE
+                    + rv_compiler::SUBST_ENACTOR * rv_compiler::SUBST_SLOT;
+                h.needs_jit = true;
+                return h.emit_sconst(addr, "");
+            }
+
+            // %! = executor dbref.  Runtime value at SUBST slot 1.
+            if (c == '!') {
+                uint64_t addr = rv_compiler::SUBST_BASE
+                    + rv_compiler::SUBST_EXECUTOR * rv_compiler::SUBST_SLOT;
+                h.needs_jit = true;
+                return h.emit_sconst(addr, "");
+            }
+
+            // %n/%N = enactor name.  Runtime value at SUBST slot 2.
+            if (c == 'n' || c == 'N') {
+                uint64_t addr = rv_compiler::SUBST_BASE
+                    + rv_compiler::SUBST_NAME * rv_compiler::SUBST_SLOT;
+                h.needs_jit = true;
+                return h.emit_sconst(addr, "");
+            }
+
+            // %l/%L = enactor location.  Runtime value at SUBST slot 3.
+            if (c == 'l' || c == 'L') {
+                uint64_t addr = rv_compiler::SUBST_BASE
+                    + rv_compiler::SUBST_LOCATION * rv_compiler::SUBST_SLOT;
+                h.needs_jit = true;
+                return h.emit_sconst(addr, "");
+            }
+
+            // %q0-%q9 = global register values.  Runtime values at SUBST slots 4-13.
+            if ((c == 'q' || c == 'Q') && node->text.size() >= 3) {
+                char r = node->text[2];
+                if (r >= '0' && r <= '9') {
+                    int rn = r - '0';
+                    uint64_t addr = rv_compiler::SUBST_BASE
+                        + (rv_compiler::SUBST_QREG0 + rn)
+                          * rv_compiler::SUBST_SLOT;
+                    h.needs_jit = true;
+                    return h.emit_sconst(addr, "");
+                }
+            }
         }
 
-        // Unresolvable substitution.
+        // Unresolvable substitution — emit empty string.
         {
             uint64_t addr = rc.pool_str("");
             return h.emit_sconst(addr, "");
@@ -4127,9 +4183,12 @@ static bool run_cached_program(compiled_program *prog,
     // Do NOT zero the blob region (0x10000-0x2FFFF)!
     memset(prog->memory.data() + rv_compiler::OUT_BASE, 0,
            rv_compiler::OUT_GAP_LO - rv_compiler::OUT_BASE);
+    // Clear from above-blob to end of SUBST region (covers output range 2,
+    // CARGS, and SUBST slots).
+    uint64_t subst_end = rv_compiler::SUBST_BASE
+                       + (rv_compiler::SUBST_QREG0 + 10) * rv_compiler::SUBST_SLOT;
     memset(prog->memory.data() + rv_compiler::OUT_GAP_HI, 0,
-           rv_compiler::CARGS_BASE + rv_compiler::MAX_CARGS * rv_compiler::CARGS_SLOT
-           - rv_compiler::OUT_GAP_HI);
+           subst_end - rv_compiler::OUT_GAP_HI);
 
     // Copy %0-%9 cargs into fixed guest memory slots.
     // Each carg gets a 256-byte slot at CARGS_BASE + idx * 256.
@@ -4142,6 +4201,64 @@ static bool run_cached_program(compiled_program *prog,
                           + static_cast<uint64_t>(i) * rv_compiler::CARGS_SLOT;
             memcpy(prog->memory.data() + slot, cargs[i], len);
             prog->memory[slot + len] = 0;
+        }
+    }
+
+    // Copy %-substitution runtime values into SUBST slots.
+    // These are populated before each execution so the RV64 code
+    // can reference them as constant addresses.
+    auto copy_subst = [&](int slot_idx, const UTF8 *value) {
+        uint64_t slot = rv_compiler::SUBST_BASE
+                      + static_cast<uint64_t>(slot_idx) * rv_compiler::SUBST_SLOT;
+        if (value && value[0]) {
+            size_t len = strlen(reinterpret_cast<const char *>(value));
+            if (len >= static_cast<size_t>(rv_compiler::SUBST_SLOT))
+                len = rv_compiler::SUBST_SLOT - 1;
+            memcpy(prog->memory.data() + slot, value, len);
+            prog->memory[slot + len] = 0;
+        } else {
+            prog->memory[slot] = 0;
+        }
+    };
+
+    // %# — enactor dbref as string.
+    {
+        UTF8 dbref_buf[32];
+        mux_sprintf(dbref_buf, sizeof(dbref_buf), T("#%d"), enactor);
+        copy_subst(rv_compiler::SUBST_ENACTOR, dbref_buf);
+    }
+
+    // %! — executor dbref as string.
+    {
+        UTF8 dbref_buf[32];
+        mux_sprintf(dbref_buf, sizeof(dbref_buf), T("#%d"), executor);
+        copy_subst(rv_compiler::SUBST_EXECUTOR, dbref_buf);
+    }
+
+    // %n — enactor name.
+    if (Good_obj(enactor)) {
+        copy_subst(rv_compiler::SUBST_NAME, Name(enactor));
+    } else {
+        copy_subst(rv_compiler::SUBST_NAME, nullptr);
+    }
+
+    // %l — enactor location.
+    if (Good_obj(enactor)) {
+        dbref loc = Location(enactor);
+        UTF8 dbref_buf[32];
+        mux_sprintf(dbref_buf, sizeof(dbref_buf), T("#%d"), loc);
+        copy_subst(rv_compiler::SUBST_LOCATION, dbref_buf);
+    } else {
+        copy_subst(rv_compiler::SUBST_LOCATION, nullptr);
+    }
+
+    // %q0-%q9 — global registers.
+    for (int i = 0; i < 10; i++) {
+        if (mudstate.global_regs[i] && mudstate.global_regs[i]->reg_ptr) {
+            copy_subst(rv_compiler::SUBST_QREG0 + i,
+                       mudstate.global_regs[i]->reg_ptr);
+        } else {
+            copy_subst(rv_compiler::SUBST_QREG0 + i, nullptr);
         }
     }
 
