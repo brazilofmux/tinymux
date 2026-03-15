@@ -2717,6 +2717,12 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
     //
     g_alloc_notify_fn = engine_alloc_notify;
 
+    // Initialize engine-owned pools.  These depend on engine types
+    // (BOOLEXP, BQUE) that the driver/script binary can't see.
+    //
+    pool_init(POOL_BOOL, sizeof(BOOLEXP));
+    pool_init(POOL_QENTRY, sizeof(BQUE));
+
     // Initialize engine subsystems.
     //
     tcache_init();

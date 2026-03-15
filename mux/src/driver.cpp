@@ -413,13 +413,12 @@ int DCL_CDECL main(int argc, char *argv[])
     //
     CLinearTimeAbsolute ltaStartup;
     ltaStartup.GetUTC();
+    // Driver-owned pools (libmux types + DESC).
+    // POOL_BOOL and POOL_QENTRY moved to engine.so LoadGame().
     pool_init(POOL_LBUF, LBUF_SIZE);
     pool_init(POOL_MBUF, MBUF_SIZE);
     pool_init(POOL_SBUF, SBUF_SIZE);
-    pool_init(POOL_BOOL, sizeof(struct boolexp));
-
     pool_init(POOL_DESC, sizeof(DESC));
-    pool_init(POOL_QENTRY, sizeof(BQUE));
     pool_init(POOL_LBUFREF, sizeof(lbuf_ref));
     pool_init(POOL_REGREF, sizeof(reg_ref));
 

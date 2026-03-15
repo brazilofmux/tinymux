@@ -164,14 +164,14 @@ int main(int argc, char *argv[])
     // Struct sizes are approximated since engine types aren't available
     // here.  Over-sizing wastes memory but is safe.
     SeedRandomNumberGenerator();
+    // Driver-level pools (libmux types).  POOL_BOOL and POOL_QENTRY
+    // are initialized by engine.so during LoadGame().
+    // POOL_DESC intentionally skipped — no network descriptors.
     pool_init(POOL_LBUF, LBUF_SIZE);
     pool_init(POOL_MBUF, MBUF_SIZE);
     pool_init(POOL_SBUF, SBUF_SIZE);
-    pool_init(POOL_BOOL, 256);     // struct boolexp (~100 bytes)
-    pool_init(POOL_QENTRY, 512);   // BQUE (~200 bytes)
-    pool_init(POOL_LBUFREF, 64);   // lbuf_ref (~32 bytes)
-    pool_init(POOL_REGREF, 64);    // reg_ref (~32 bytes)
-    // POOL_DESC (4) intentionally skipped — no network descriptors.
+    pool_init(POOL_LBUFREF, sizeof(lbuf_ref));
+    pool_init(POOL_REGREF, sizeof(reg_ref));
 
     // Initialize COM and load engine.so.
     MUX_RESULT mr = init_com();
