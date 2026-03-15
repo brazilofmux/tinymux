@@ -581,6 +581,9 @@ struct rv_compiler {
     }
 
     // Allocate output buffer slot, return guest addr.
+    // Returns 0 and sets out_exhausted on overflow.
+    bool out_exhausted = false;
+
     uint64_t alloc_output() {
         uint64_t addr = out_pool;
         // Skip the blob gap (0x10000-0x2FFFF).
@@ -588,7 +591,10 @@ struct rv_compiler {
             addr = OUT_GAP_HI;
             out_pool = addr;
         }
-        if (addr + OUT_SLOT > OUT_LIMIT) return 0;
+        if (addr + OUT_SLOT > OUT_LIMIT) {
+            out_exhausted = true;
+            return 0;
+        }
         out_pool = addr + OUT_SLOT;
         return addr;
     }
@@ -4258,6 +4264,13 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     // Copy code to guest memory.
     for (size_t i = 0; i < rc.code.size() && i * 4 < rv_compiler::CODE_LIMIT; i++) {
         memcpy(rc.memory.data() + i * 4, &rc.code[i], 4);
+    }
+
+    // If output slots were exhausted during codegen, the generated
+    // code references address 0 and would corrupt guest memory.
+    // Bail out — the AST evaluator will handle this expression.
+    if (rc.out_exhausted) {
+        return prog;  // prog.ok is still false
     }
 
     prog.memory = std::move(rc.memory);

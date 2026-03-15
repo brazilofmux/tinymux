@@ -405,6 +405,7 @@ void hir_copy_prop(hir_program &h) {
 
 static bool has_side_effects(hir_kind k) {
     return k == HIR_CALL || k == HIR_STRCAT || k == HIR_STORE_Q
+        || k == HIR_SETQ_SYNC
         || k == HIR_RET || k == HIR_BR || k == HIR_BRC;
 }
 
