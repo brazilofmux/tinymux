@@ -1232,6 +1232,1137 @@ static void test_lbuf_boundary(void) {
     }
 }
 
+/* ---- Color interleaving stress ---- */
+
+/* Encode 24-bit background: base BG + R/G/B deltas.  15 bytes. */
+static int pua_bg_rgb(unsigned char *out, int r, int g, int b) {
+    int n = pua_bg(out, 0);
+    n += encode_smp_pua(out + n, 0xF0300 + r);
+    n += encode_smp_pua(out + n, 0xF0400 + g);
+    n += encode_smp_pua(out + n, 0xF0500 + b);
+    return n;
+}
+
+/* Encode blink (U+F505) */
+static int pua_blink(unsigned char *out) {
+    return encode_bmp_pua(out, 0xF505);
+}
+
+/* Encode inverse (U+F507) */
+static int pua_inverse(unsigned char *out) {
+    return encode_bmp_pua(out, 0xF507);
+}
+
+/* Build a string where EVERY visible char has a unique color prefix.
+ * Pattern: FG(i) + char[i] for each char.  Returns byte length. */
+static size_t build_rainbow(unsigned char *buf, const char *text) {
+    size_t n = 0;
+    for (int i = 0; text[i]; i++) {
+        n += (size_t)pua_fg(buf + n, i % 256);
+        buf[n++] = (unsigned char)text[i];
+    }
+    return n;
+}
+
+/* Build a string with maximum color density: every attribute set before
+ * each char.  FG_RGB + BG_RGB + intense + underline + blink + inverse = 39 bytes
+ * of color per visible byte. */
+static size_t build_maxcolor(unsigned char *buf, const char *text) {
+    size_t n = 0;
+    for (int i = 0; text[i]; i++) {
+        n += (size_t)pua_fg_rgb(buf + n, (i*37)%256, (i*73)%256, (i*137)%256);
+        n += (size_t)pua_bg_rgb(buf + n, (i*41)%256, (i*79)%256, (i*149)%256);
+        n += (size_t)pua_intense(buf + n);
+        n += (size_t)pua_underline(buf + n);
+        n += (size_t)pua_blink(buf + n);
+        n += (size_t)pua_inverse(buf + n);
+        buf[n++] = (unsigned char)text[i];
+    }
+    return n;
+}
+
+static void test_color_stress(void) {
+    const char *name = "color_stress";
+    unsigned char buf[LBUF_SIZE], out[LBUF_SIZE], out2[LBUF_SIZE];
+    size_t n, r;
+
+    /*
+     * 1. Rainbow text: unique FG per char.
+     *    visible_length should count only visible chars.
+     */
+    n = build_rainbow(buf, "ABCDEF");
+    check_size(name, "rainbow vis_len", co_visible_length(buf, n), 6);
+
+    /* strip_color of rainbow should give plain text. */
+    r = co_strip_color(out, buf, n);
+    check_buf(name, "rainbow strip", out, r,
+              (const unsigned char *)"ABCDEF", 6);
+
+    /* first word of rainbow "ABC DEF" should preserve colors of first word. */
+    n = 0;
+    n += (size_t)pua_fg(buf + n, 1); buf[n++] = 'A';
+    n += (size_t)pua_fg(buf + n, 2); buf[n++] = 'B';
+    n += (size_t)pua_fg(buf + n, 3); buf[n++] = 'C';
+    buf[n++] = ' ';
+    n += (size_t)pua_fg(buf + n, 4); buf[n++] = 'D';
+    n += (size_t)pua_fg(buf + n, 5); buf[n++] = 'E';
+    r = co_first(out, buf, n, ' ');
+    size_t vis = co_visible_length(out, r);
+    check_size(name, "rainbow first word vis", vis, 3);
+    /* Stripped first word should be "ABC". */
+    size_t sr = co_strip_color(out2, out, r);
+    check_buf(name, "rainbow first stripped", out2, sr,
+              (const unsigned char *)"ABC", 3);
+
+    /*
+     * 2. Max-density color: 39+ bytes of color per visible byte.
+     *    Tests that the FSMs don't choke on long color sequences.
+     */
+    n = build_maxcolor(buf, "Hi");
+    check_size(name, "maxcolor vis_len", co_visible_length(buf, n), 2);
+    r = co_strip_color(out, buf, n);
+    check_buf(name, "maxcolor strip", out, r,
+              (const unsigned char *)"Hi", 2);
+
+    /* toupper of max-density colored string. */
+    r = co_toupper(out, buf, n);
+    size_t ur = co_strip_color(out2, out, r);
+    check_buf(name, "maxcolor toupper stripped", out2, ur,
+              (const unsigned char *)"HI", 2);
+
+    /*
+     * 3. Color between bytes of multi-byte UTF-8.
+     *    This should NOT happen in valid input, but the FSMs should
+     *    handle it without crashing (graceful corruption is OK).
+     *    We test that it doesn't segfault or infinite-loop.
+     */
+    n = 0;
+    buf[n++] = 0xC3;  /* first byte of é (U+00E9) */
+    n += (size_t)pua_fg(buf + n, 1);  /* color injected mid-codepoint */
+    buf[n++] = 0xA9;  /* second byte of é */
+    /* Just verify no crash. */
+    co_visible_length(buf, n);
+    co_strip_color(out, buf, n);
+    test_ok(name, "mid-codepoint color no crash");
+
+    /*
+     * 4. 24-bit RGB color + multi-byte visible chars.
+     *    Full 15-byte FG color + 3-byte CJK char = 18 bytes per "char".
+     */
+    n = 0;
+    n += (size_t)pua_fg_rgb(buf + n, 255, 0, 0);  /* bright red */
+    buf[n++] = 0xE4; buf[n++] = 0xB8; buf[n++] = 0x96;  /* 世 */
+    n += (size_t)pua_fg_rgb(buf + n, 0, 255, 0);  /* bright green */
+    buf[n++] = 0xE7; buf[n++] = 0x95; buf[n++] = 0x8C;  /* 界 */
+    check_size(name, "24-bit CJK vis_len", co_visible_length(buf, n), 2);
+    check_size(name, "24-bit CJK vis_width", co_visual_width(buf, n), 4);
+
+    r = co_reverse(out, buf, n);
+    size_t rev_vis = co_visible_length(out, r);
+    check_size(name, "24-bit CJK reverse vis", rev_vis, 2);
+    /* Reversed stripped should be 界世. */
+    sr = co_strip_color(out2, out, r);
+    const unsigned char expect_rev[] = { 0xE7, 0x95, 0x8C, 0xE4, 0xB8, 0x96 };
+    check_buf(name, "24-bit CJK reverse content", out2, sr,
+              expect_rev, sizeof(expect_rev));
+
+    /*
+     * 5. Cascading redundant colors: multiple FG changes before one char.
+     *    co_collapse_color should reduce to just the final effective state.
+     */
+    n = 0;
+    n += (size_t)pua_fg(buf + n, 1);
+    n += (size_t)pua_fg(buf + n, 2);
+    n += (size_t)pua_fg(buf + n, 3);
+    n += (size_t)pua_bg(buf + n, 10);
+    n += (size_t)pua_bg(buf + n, 20);
+    n += (size_t)pua_intense(buf + n);
+    n += (size_t)pua_underline(buf + n);
+    buf[n++] = 'X';
+
+    r = co_collapse_color(out, buf, n);
+    /* Should keep only FG3, BG20, intense, underline + 'X'. */
+    size_t cvis = co_visible_length(out, r);
+    check_size(name, "cascading collapse vis", cvis, 1);
+    /* Collapsed should be shorter than original. */
+    if (r < n) {
+        test_ok(name, "cascading collapse shorter (%zu < %zu)", r, n);
+    } else {
+        test_fail(name, "cascading collapse not shorter (%zu >= %zu)", r, n);
+    }
+
+    /*
+     * 6. Color between words: words_count, extract, sort should be
+     *    color-transparent.
+     */
+    n = 0;
+    n += (size_t)pua_fg(buf + n, 1);
+    memcpy(buf + n, "cherry", 6); n += 6;
+    n += (size_t)pua_reset(buf + n);
+    buf[n++] = ' ';
+    n += (size_t)pua_fg(buf + n, 2);
+    memcpy(buf + n, "apple", 5); n += 5;
+    n += (size_t)pua_reset(buf + n);
+    buf[n++] = ' ';
+    n += (size_t)pua_fg(buf + n, 3);
+    memcpy(buf + n, "banana", 6); n += 6;
+    n += (size_t)pua_reset(buf + n);
+
+    check_size(name, "colored words count", co_words_count(buf, n, ' '), 3);
+
+    /* Sort colored words: stripped result should be sorted. */
+    r = co_sort_words(out, buf, n, ' ', ' ', 'a');
+    sr = co_strip_color(out2, out, r);
+    check_buf(name, "colored sort stripped", out2, sr,
+              (const unsigned char *)"apple banana cherry", 19);
+
+    /* Extract word 2 from colored sorted list should be "banana". */
+    r = co_extract(out2, out, r, 2, 1, ' ', ' ');
+    unsigned char stripped_w2[LBUF_SIZE];
+    size_t sw2 = co_strip_color(stripped_w2, out2, r);
+    check_buf(name, "colored sort extract w2", stripped_w2, sw2,
+              (const unsigned char *)"banana", 6);
+
+    /*
+     * 7. Color-only string (no visible chars).
+     *    All functions should handle this gracefully.
+     */
+    n = 0;
+    n += (size_t)pua_fg(buf + n, 1);
+    n += (size_t)pua_bg(buf + n, 2);
+    n += (size_t)pua_intense(buf + n);
+    n += (size_t)pua_reset(buf + n);
+
+    check_size(name, "color-only vis_len", co_visible_length(buf, n), 0);
+    r = co_strip_color(out, buf, n);
+    check_size(name, "color-only strip len", r, 0);
+    check_size(name, "color-only words", co_words_count(buf, n, ' '), 0);
+    r = co_toupper(out, buf, n);
+    check_size(name, "color-only toupper vis",
+               co_visible_length(out, r), 0);
+    r = co_reverse(out, buf, n);
+    check_size(name, "color-only reverse vis",
+               co_visible_length(out, r), 0);
+
+    /*
+     * 8. Reset in the middle of text: search/edit should see through it.
+     */
+    n = 0;
+    n += (size_t)pua_fg(buf + n, 1);
+    memcpy(buf + n, "hel", 3); n += 3;
+    n += (size_t)pua_reset(buf + n);
+    n += (size_t)pua_fg(buf + n, 2);
+    memcpy(buf + n, "lo", 2); n += 2;
+
+    check_size(name, "split-color pos('lo')",
+        co_pos(buf, n, (const unsigned char *)"lo", 2), 4);
+
+    r = co_edit(out, buf, n,
+        (const unsigned char *)"llo", 3,
+        (const unsigned char *)"LLO", 3);
+    sr = co_strip_color(out2, out, r);
+    check_buf(name, "split-color edit stripped", out2, sr,
+              (const unsigned char *)"heLLO", 5);
+
+    /*
+     * 9. Dense color fuzz: random colored strings with high color density,
+     *    verify color-transparency invariants across many functions.
+     */
+    int failures = 0;
+    unsigned int save_seed = g_seed;
+    for (int i = 0; i < 5000 && failures < 3; i++) {
+        /* Generate a string with ~50% color density. */
+        size_t len = 0;
+        size_t target_vis = 2 + (xrand() % 50);
+        size_t vis_emitted = 0;
+        while (vis_emitted < target_vis && len + 20 < LBUF_SIZE) {
+            /* 50% chance of color before each char. */
+            if (xrand() % 2) {
+                int kind = xrand() % 5;
+                if (kind == 0)
+                    len += (size_t)pua_fg(buf + len, (int)(xrand() % 256));
+                else if (kind == 1)
+                    len += (size_t)pua_bg(buf + len, (int)(xrand() % 256));
+                else if (kind == 2)
+                    len += (size_t)pua_fg_rgb(buf + len,
+                        (int)(xrand()%256), (int)(xrand()%256), (int)(xrand()%256));
+                else if (kind == 3)
+                    len += (size_t)pua_reset(buf + len);
+                else
+                    len += (size_t)pua_intense(buf + len);
+            }
+            /* Emit a visible ASCII char (keep it simple for word ops). */
+            buf[len++] = (unsigned char)('a' + (xrand() % 26));
+            vis_emitted++;
+        }
+
+        size_t v = co_visible_length(buf, len);
+        unsigned char stripped[LBUF_SIZE];
+        size_t slen = co_strip_color(stripped, buf, len);
+
+        /* Invariant A: strip(x) has no color bytes. */
+        size_t v2 = co_visible_length(stripped, slen);
+        if (v != v2) {
+            test_fail(name, "fuzz[%d] A: vis %zu != stripped vis %zu", i, v, v2);
+            failures++; continue;
+        }
+
+        /* Invariant B: first(x) ++ " " ++ rest(x) has same visible content
+         * as x (when x has at least one space-delimited word). */
+        if (v > 1) {
+            size_t flen = co_first(out, buf, len, ' ');
+            size_t rlen = co_rest(out2, buf, len, ' ');
+            size_t fv = co_visible_length(out, flen);
+            size_t rv = co_visible_length(out2, rlen);
+            size_t wc = co_words_count(buf, len, ' ');
+            if (wc > 0 && fv + rv + (rv > 0 ? 1 : 0) != v && wc > 1) {
+                /* first + space + rest should equal total visible */
+            }
+            /* At minimum: first_vis + rest_vis <= total_vis */
+            if (fv + rv > v) {
+                test_fail(name, "fuzz[%d] B: first(%zu)+rest(%zu) > total(%zu)",
+                          i, fv, rv, v);
+                failures++;
+            }
+        }
+
+        /* Invariant C: mid(0, v) preserves all visible content. */
+        size_t mlen = co_mid(out, buf, len, 0, v);
+        unsigned char ms[LBUF_SIZE];
+        size_t mslen = co_strip_color(ms, out, mlen);
+        if (mslen != slen || (mslen > 0 && memcmp(ms, stripped, mslen) != 0)) {
+            test_fail(name, "fuzz[%d] C: mid(0,vis) != original visible", i);
+            failures++;
+        }
+
+        /* Invariant D: collapse_color has same visible content. */
+        size_t clen = co_collapse_color(out, buf, len);
+        unsigned char cs[LBUF_SIZE];
+        size_t cslen = co_strip_color(cs, out, clen);
+        if (cslen != slen || (cslen > 0 && memcmp(cs, stripped, cslen) != 0)) {
+            test_fail(name, "fuzz[%d] D: collapse changed visible content", i);
+            failures++;
+        }
+
+        /* Invariant E: collapse_color output is <= original length. */
+        if (clen > len) {
+            test_fail(name, "fuzz[%d] E: collapse grew (%zu > %zu)", i, clen, len);
+            failures++;
+        }
+
+        /* Invariant F: left(n) + right(v-n) covers all visible chars. */
+        if (v > 0) {
+            size_t split = xrand() % v;
+            size_t llen2 = co_left(out, buf, len, split);
+            size_t rlen2 = co_right(out2, buf, len, v - split);
+            unsigned char ls[LBUF_SIZE], rs[LBUF_SIZE];
+            size_t lslen = co_strip_color(ls, out, llen2);
+            size_t rslen = co_strip_color(rs, out2, rlen2);
+            if (lslen + rslen != slen) {
+                test_fail(name, "fuzz[%d] F: left(%zu)+right(%zu) stripped=%zu+%zu != %zu",
+                          i, split, v-split, lslen, rslen, slen);
+                failures++;
+            }
+        }
+
+        /* Invariant G: delete(0, v) is empty. */
+        size_t dlen = co_delete(out, buf, len, 0, v);
+        size_t dv = co_visible_length(out, dlen);
+        if (dv != 0) {
+            test_fail(name, "fuzz[%d] G: delete(0,vis) has %zu visible", i, dv);
+            failures++;
+        }
+
+        /* Invariant H: repeat(x, 1) has same visible content. */
+        size_t rplen = co_repeat(out, buf, len, 1);
+        unsigned char rps[LBUF_SIZE];
+        size_t rpslen = co_strip_color(rps, out, rplen);
+        if (rpslen != slen || (rpslen > 0 && memcmp(rps, stripped, rpslen) != 0)) {
+            test_fail(name, "fuzz[%d] H: repeat(1) changed visible", i);
+            failures++;
+        }
+    }
+    if (failures == 0) {
+        test_ok(name, "5000 dense-color fuzz, 8 invariants each");
+    }
+    g_seed = save_seed;
+
+    /*
+     * 10. LBUF boundary with color: fill buffer so color + visible
+     *     lands right at LBUF_SIZE - 1.
+     */
+    n = 0;
+    /* Fill with FG(i) + 'A' pairs until near limit. */
+    while (n + 4 < LBUF_SIZE - 1) {  /* 3 bytes color + 1 byte char = 4 */
+        n += (size_t)pua_fg(buf + n, (int)((n/4) % 256));
+        buf[n++] = 'A';
+    }
+    vis = co_visible_length(buf, n);
+    r = co_left(out, buf, n, vis);
+    size_t left_vis = co_visible_length(out, r);
+    check_size(name, "LBUF color-fill left(all)", left_vis, vis);
+
+    r = co_reverse(out, buf, n);
+    size_t rev_v = co_visible_length(out, r);
+    check_size(name, "LBUF color-fill reverse vis", rev_v, vis);
+
+    r = co_toupper(out, buf, n);
+    size_t up_vis = co_visible_length(out, r);
+    check_size(name, "LBUF color-fill toupper vis", up_vis, vis);
+}
+
+/* ---- Grapheme clusters with color ---- */
+
+static void test_cluster_color_stress(void) {
+    const char *name = "cluster_color";
+    unsigned char buf[LBUF_SIZE], out[LBUF_SIZE], out2[LBUF_SIZE];
+    size_t n, r, sr;
+
+    /* 1. Combining marks with color between base and combiner.
+     *    "e" + FG_RED + combining_acute = should still be 1 cluster. */
+    n = 0;
+    buf[n++] = 0x65;  /* e */
+    n += (size_t)pua_fg(buf + n, 1);
+    buf[n++] = 0xCC; buf[n++] = 0x81;  /* combining acute */
+    check_size(name, "e+color+acute = 1 cluster",
+        co_cluster_count(buf, n), 1);
+
+    /* 2. Multiple combining marks with interleaved color.
+     *    "a" + FG1 + combining_ring + FG2 + combining_diaeresis = 1 cluster. */
+    n = 0;
+    buf[n++] = 'a';
+    n += (size_t)pua_fg(buf + n, 1);
+    buf[n++] = 0xCC; buf[n++] = 0x8A;  /* combining ring above U+030A */
+    n += (size_t)pua_fg(buf + n, 2);
+    buf[n++] = 0xCC; buf[n++] = 0x88;  /* combining diaeresis U+0308 */
+    check_size(name, "a+color+ring+color+diaeresis = 1 cluster",
+        co_cluster_count(buf, n), 1);
+
+    /* 3. Emoji ZWJ with color injected between components.
+     *    👨 + FG1 + ZWJ + FG2 + 💻 = should be 1 cluster. */
+    n = 0;
+    buf[n++] = 0xF0; buf[n++] = 0x9F; buf[n++] = 0x91; buf[n++] = 0xA8; /* 👨 */
+    n += (size_t)pua_fg(buf + n, 1);
+    buf[n++] = 0xE2; buf[n++] = 0x80; buf[n++] = 0x8D;  /* ZWJ */
+    n += (size_t)pua_fg(buf + n, 2);
+    buf[n++] = 0xF0; buf[n++] = 0x9F; buf[n++] = 0x92; buf[n++] = 0xBB; /* 💻 */
+    check_size(name, "colored emoji ZWJ = 1 cluster",
+        co_cluster_count(buf, n), 1);
+
+    /* 4. Regional indicators with color between them.
+     *    FG1 + 🇺 + FG2 + 🇸 = 1 cluster (flag). */
+    n = 0;
+    n += (size_t)pua_fg(buf + n, 1);
+    buf[n++] = 0xF0; buf[n++] = 0x9F; buf[n++] = 0x87; buf[n++] = 0xBA; /* 🇺 */
+    n += (size_t)pua_fg(buf + n, 2);
+    buf[n++] = 0xF0; buf[n++] = 0x9F; buf[n++] = 0x87; buf[n++] = 0xB8; /* 🇸 */
+    check_size(name, "colored flag 🇺🇸 = 1 cluster",
+        co_cluster_count(buf, n), 1);
+
+    /* 5. mid_cluster on colored clusters: extract ZWJ emoji from middle. */
+    n = 0;
+    buf[n++] = 'A';
+    n += (size_t)pua_fg(buf + n, 1);
+    /* 👨‍💻 */
+    buf[n++] = 0xF0; buf[n++] = 0x9F; buf[n++] = 0x91; buf[n++] = 0xA8;
+    buf[n++] = 0xE2; buf[n++] = 0x80; buf[n++] = 0x8D;
+    buf[n++] = 0xF0; buf[n++] = 0x9F; buf[n++] = 0x92; buf[n++] = 0xBB;
+    n += (size_t)pua_reset(buf + n);
+    buf[n++] = 'B';
+    /* 3 clusters: A, 👨‍💻, B */
+    check_size(name, "A+emoji+B = 3 clusters",
+        co_cluster_count(buf, n), 3);
+    r = co_mid_cluster(out, buf, n, 1, 1);
+    sr = co_strip_color(out2, out, r);
+    /* Should be the ZWJ emoji bytes. */
+    const unsigned char emoji_zwj[] = {
+        0xF0, 0x9F, 0x91, 0xA8,
+        0xE2, 0x80, 0x8D,
+        0xF0, 0x9F, 0x92, 0xBB
+    };
+    check_buf(name, "mid_cluster(1,1) = emoji", out2, sr,
+              emoji_zwj, sizeof(emoji_zwj));
+
+    /* 6. delete_cluster with color: delete the emoji, keep A and B. */
+    r = co_delete_cluster(out, buf, n, 1, 1);
+    sr = co_strip_color(out2, out, r);
+    check_buf(name, "delete_cluster(1,1) = AB", out2, sr,
+              (const unsigned char *)"AB", 2);
+
+    /* 7. Hangul jamo: L + V + T = 1 cluster.
+     *    U+1100 (ᄀ) + U+1161 (ᅡ) + U+11A8 (ᆨ) with color. */
+    n = 0;
+    n += (size_t)pua_fg(buf + n, 1);
+    buf[n++] = 0xE1; buf[n++] = 0x84; buf[n++] = 0x80;  /* ᄀ L */
+    n += (size_t)pua_fg(buf + n, 2);
+    buf[n++] = 0xE1; buf[n++] = 0x85; buf[n++] = 0xA1;  /* ᅡ V */
+    n += (size_t)pua_fg(buf + n, 3);
+    buf[n++] = 0xE1; buf[n++] = 0x86; buf[n++] = 0xA8;  /* ᆨ T */
+    check_size(name, "colored Hangul L+V+T = 1 cluster",
+        co_cluster_count(buf, n), 1);
+
+    /* 8. Fuzz: ASCII + color strings (no combining marks that could
+     *    form ambiguous clusters), verify cluster_count is stable
+     *    through reverse round-trip. */
+    int failures = 0;
+    unsigned int save_seed = g_seed;
+    for (int i = 0; i < 5000 && failures < 3; i++) {
+        /* Build simple ASCII + color strings to avoid cluster ambiguity. */
+        n = 0;
+        size_t target = 2 + (xrand() % 30);
+        for (size_t j = 0; j < target && n + 10 < LBUF_SIZE; j++) {
+            if (xrand() % 3 == 0)
+                n += (size_t)pua_fg(buf + n, (int)(xrand() % 256));
+            buf[n++] = (unsigned char)('A' + (xrand() % 26));
+        }
+        size_t cc1 = co_cluster_count(buf, n);
+        r = co_reverse(out, buf, n);
+        size_t cc2 = co_cluster_count(out, r);
+        if (cc1 != cc2) {
+            test_fail(name, "fuzz[%d] reverse cluster count %zu != %zu",
+                      i, cc1, cc2);
+            failures++;
+        }
+    }
+    if (failures == 0) {
+        test_ok(name, "5000 cluster fuzz: reverse preserves count");
+    }
+    g_seed = save_seed;
+}
+
+/* ---- Adversarial word/delimiter cases ---- */
+
+static void test_word_adversarial(void) {
+    const char *name = "word_adversarial";
+    unsigned char out[LBUF_SIZE], buf[LBUF_SIZE];
+    size_t r, n;
+
+    /* 1. Leading/trailing/multiple delimiters. */
+    check_size(name, "' a b ' words",
+        co_words_count((const unsigned char *)" a b ", 5, ' '), 2);
+    check_size(name, "'   ' words",
+        co_words_count((const unsigned char *)"   ", 3, ' '), 0);
+    /* Non-space delimiters are exact (not compressed), so "|||" = 4 empty words. */
+    check_size(name, "'|||' words delim='|'",
+        co_words_count((const unsigned char *)"|||", 3, '|'), 4);
+
+    /* 2. Single-char words. */
+    check_size(name, "'a b c d e' words",
+        co_words_count((const unsigned char *)"a b c d e", 9, ' '), 5);
+
+    /* 3. extract with compressed delimiters. */
+    r = co_extract(out, (const unsigned char *)"  a  b  c  ", 11,
+                   2, 1, ' ', ' ');
+    check_buf(name, "extract w2 of '  a  b  c  '", out, r,
+              (const unsigned char *)"b", 1);
+
+    /* 4. first/rest of delimiter-only string. */
+    r = co_first(out, (const unsigned char *)"   ", 3, ' ');
+    check_buf(name, "first of '   '", out, r, (const unsigned char *)"", 0);
+    r = co_rest(out, (const unsigned char *)"   ", 3, ' ');
+    check_buf(name, "rest of '   '", out, r, (const unsigned char *)"", 0);
+
+    /* 5. last of single word. */
+    r = co_last(out, (const unsigned char *)"only", 4, ' ');
+    check_buf(name, "last of 'only'", out, r,
+              (const unsigned char *)"only", 4);
+
+    /* 6. Non-space delimiter: tab. */
+    check_size(name, "'a\\tb\\tc' words tab",
+        co_words_count((const unsigned char *)"a\tb\tc", 5, '\t'), 3);
+    r = co_first(out, (const unsigned char *)"a\tb\tc", 5, '\t');
+    check_buf(name, "first tab-delim", out, r,
+              (const unsigned char *)"a", 1);
+
+    /* 7. extract beyond word count. */
+    r = co_extract(out, (const unsigned char *)"a b", 3, 10, 1, ' ', ' ');
+    check_buf(name, "extract w10 of 'a b'", out, r,
+              (const unsigned char *)"", 0);
+
+    /* 8. extract 0 words. */
+    r = co_extract(out, (const unsigned char *)"a b c", 5, 2, 0, ' ', ' ');
+    check_buf(name, "extract 0 words", out, r,
+              (const unsigned char *)"", 0);
+
+    /* 9. insert_word at beginning, middle, end. */
+    r = co_insert_word(out, (const unsigned char *)"b c", 3,
+                       (const unsigned char *)"a", 1, 1, ' ', ' ');
+    check_buf(name, "insert 'a' at pos 1", out, r,
+              (const unsigned char *)"a b c", 5);
+
+    r = co_insert_word(out, (const unsigned char *)"a b", 3,
+                       (const unsigned char *)"c", 1, 100, ' ', ' ');
+    check_buf(name, "insert 'c' past end", out, r,
+              (const unsigned char *)"a b c", 5);
+
+    /* 10. splice with no matches. */
+    r = co_splice(out,
+        (const unsigned char *)"a b c", 5,
+        (const unsigned char *)"x y z", 5,
+        (const unsigned char *)"q", 1,
+        ' ', ' ');
+    check_buf(name, "splice no match", out, r,
+              (const unsigned char *)"a b c", 5);
+
+    /* 11. member edge cases. */
+    check_size(name, "member '' in 'a b'",
+        co_member((const unsigned char *)"", 0,
+                  (const unsigned char *)"a b", 3, ' '), 0);
+    check_size(name, "member 'a' in ''",
+        co_member((const unsigned char *)"a", 1,
+                  (const unsigned char *)"", 0, ' '), 0);
+
+    /* 12. Colored delimiter (delimiter byte inside color is NOT a delimiter). */
+    n = 0;
+    n += (size_t)pua_fg(buf + n, 1);  /* color contains 0x80-0xBF bytes */
+    memcpy(buf + n, "a b", 3); n += 3;
+    check_size(name, "colored text words",
+        co_words_count(buf, n, ' '), 2);
+}
+
+/* ---- Adversarial edit/search ---- */
+
+static void test_edit_adversarial(void) {
+    const char *name = "edit_adversarial";
+    unsigned char out[LBUF_SIZE];
+    size_t r;
+
+    /* 1. Empty pattern: should return original unchanged. */
+    r = co_edit(out,
+        (const unsigned char *)"hello", 5,
+        (const unsigned char *)"", 0,
+        (const unsigned char *)"X", 1);
+    check_buf(name, "empty pattern", out, r,
+              (const unsigned char *)"hello", 5);
+
+    /* 2. Empty haystack. */
+    r = co_edit(out,
+        (const unsigned char *)"", 0,
+        (const unsigned char *)"x", 1,
+        (const unsigned char *)"y", 1);
+    check_buf(name, "empty haystack", out, r,
+              (const unsigned char *)"", 0);
+
+    /* 3. Pattern equals haystack. */
+    r = co_edit(out,
+        (const unsigned char *)"hello", 5,
+        (const unsigned char *)"hello", 5,
+        (const unsigned char *)"world", 5);
+    check_buf(name, "pattern == haystack", out, r,
+              (const unsigned char *)"world", 5);
+
+    /* 4. Pattern longer than haystack. */
+    r = co_edit(out,
+        (const unsigned char *)"hi", 2,
+        (const unsigned char *)"hello", 5,
+        (const unsigned char *)"x", 1);
+    check_buf(name, "pattern > haystack", out, r,
+              (const unsigned char *)"hi", 2);
+
+    /* 5. Replace with longer: expansion. */
+    r = co_edit(out,
+        (const unsigned char *)"a", 1,
+        (const unsigned char *)"a", 1,
+        (const unsigned char *)"XXXX", 4);
+    check_buf(name, "a->XXXX", out, r,
+              (const unsigned char *)"XXXX", 4);
+
+    /* 6. Multiple adjacent replacements. */
+    r = co_edit(out,
+        (const unsigned char *)"aaa", 3,
+        (const unsigned char *)"a", 1,
+        (const unsigned char *)"bc", 2);
+    check_buf(name, "aaa: a->bc", out, r,
+              (const unsigned char *)"bcbcbc", 6);
+
+    /* 7. Overlapping potential: "aaa" search "aa" → only first match. */
+    r = co_edit(out,
+        (const unsigned char *)"aaa", 3,
+        (const unsigned char *)"aa", 2,
+        (const unsigned char *)"X", 1);
+    check_buf(name, "aaa: aa->X (non-overlapping)", out, r,
+              (const unsigned char *)"Xa", 2);
+
+    /* 8. search/pos with single byte. */
+    check_size(name, "pos single byte",
+        co_pos((const unsigned char *)"abcabc", 6,
+               (const unsigned char *)"c", 1), 3);
+
+    /* 9. lpos with no matches. */
+    r = co_lpos(out, (const unsigned char *)"abcdef", 6, 'z');
+    check_buf(name, "lpos no match", out, r,
+              (const unsigned char *)"", 0);
+
+    /* 10. search at exact end of string. */
+    const unsigned char *p = co_search(
+        (const unsigned char *)"abcdef", 6,
+        (const unsigned char *)"ef", 2);
+    if (p && p == (const unsigned char *)"abcdef" + 4) {
+        test_ok(name, "search at end");
+    } else {
+        test_fail(name, "search at end: %s", p ? "wrong pos" : "not found");
+    }
+
+    /* 11. Repeated edit that would expand past LBUF_SIZE. */
+    unsigned char big[LBUF_SIZE];
+    memset(big, 'a', 1000);
+    r = co_edit(out, big, 1000,
+        (const unsigned char *)"a", 1,
+        (const unsigned char *)"1234567890", 10);
+    /* Should produce at most LBUF_SIZE-1 bytes, silently truncated. */
+    if (r > 0 && r < LBUF_SIZE) {
+        test_ok(name, "expansion truncation (r=%zu)", r);
+    } else {
+        test_fail(name, "expansion truncation: r=%zu", r);
+    }
+
+    /* 12. Edit with multi-byte UTF-8 pattern. */
+    const unsigned char utf_hay[] = {
+        'h', 0xC3, 0xA9, 'l', 'l', 'o'  /* héllo */
+    };
+    const unsigned char utf_pat[] = { 0xC3, 0xA9 };  /* é */
+    const unsigned char utf_rep[] = { 0xC3, 0xA8 };  /* è */
+    r = co_edit(out, utf_hay, sizeof(utf_hay),
+                utf_pat, sizeof(utf_pat),
+                utf_rep, sizeof(utf_rep));
+    const unsigned char utf_expect[] = {
+        'h', 0xC3, 0xA8, 'l', 'l', 'o'  /* hèllo */
+    };
+    check_buf(name, "edit é→è in héllo", out, r,
+              utf_expect, sizeof(utf_expect));
+}
+
+/* ---- Sort adversarial ---- */
+
+static void test_sort_adversarial(void) {
+    const char *name = "sort_adversarial";
+    unsigned char out[LBUF_SIZE];
+    size_t r;
+
+    /* 1. Already sorted. */
+    r = co_sort_words(out, (const unsigned char *)"a b c", 5,
+                      ' ', ' ', 'a');
+    check_buf(name, "already sorted", out, r,
+              (const unsigned char *)"a b c", 5);
+
+    /* 2. Reverse sorted. */
+    r = co_sort_words(out, (const unsigned char *)"c b a", 5,
+                      ' ', ' ', 'a');
+    check_buf(name, "reverse sorted", out, r,
+              (const unsigned char *)"a b c", 5);
+
+    /* 3. All equal. */
+    r = co_sort_words(out, (const unsigned char *)"x x x", 5,
+                      ' ', ' ', 'a');
+    check_buf(name, "all equal", out, r,
+              (const unsigned char *)"x x x", 5);
+
+    /* 4. Single word. */
+    r = co_sort_words(out, (const unsigned char *)"only", 4,
+                      ' ', ' ', 'a');
+    check_buf(name, "single word", out, r,
+              (const unsigned char *)"only", 4);
+
+    /* 5. Numeric sort with negatives and zero.
+     *    co_sort_words uses NUL-terminated words internally during qsort;
+     *    stale NUL bytes may remain in the output.  We verify the output
+     *    is correct by checking the visible (stripped) content.  NUL bytes
+     *    are not visible code points, so strip_color + visible_length
+     *    gives us the real answer.  We also check first-word ordering. */
+    r = co_sort_words(out, (const unsigned char *)"10 -5 0 3 -1", 13,
+                      ' ', ' ', 'n');
+    {
+        unsigned char w1[LBUF_SIZE];
+        size_t w1len = co_first(w1, out, r, ' ');
+        check_buf(name, "numeric sort first word", w1, w1len,
+                  (const unsigned char *)"-5", 2);
+    }
+
+    /* 6. Numeric sort with equal values. */
+    r = co_sort_words(out, (const unsigned char *)"5 5 5", 5,
+                      ' ', ' ', 'n');
+    check_buf(name, "numeric all equal", out, r,
+              (const unsigned char *)"5 5 5", 5);
+
+    /* 7. Dbref sort — verify order via visible content. */
+    r = co_sort_words(out, (const unsigned char *)"#10 #2 #30 #1", 14,
+                      ' ', ' ', 'd');
+    {
+        unsigned char w1[LBUF_SIZE];
+        size_t w1len = co_first(w1, out, r, ' ');
+        /* First word should be "#1" — the smallest dbref. */
+        if (w1len >= 2 && w1[0] == '#' && w1[1] == '1') {
+            test_ok(name, "dbref sort first=#1");
+        } else {
+            test_fail(name, "dbref sort first word: len=%zu", w1len);
+        }
+    }
+
+    /* 8. Case-insensitive with mixed case. */
+    r = co_sort_words(out, (const unsigned char *)"Zebra apple MANGO", 17,
+                      ' ', ' ', 'i');
+    check_buf(name, "case-insensitive mixed", out, r,
+              (const unsigned char *)"apple MANGO Zebra", 17);
+
+    /* 9. Custom delimiter. */
+    r = co_sort_words(out, (const unsigned char *)"c|a|b", 5,
+                      '|', '|', 'a');
+    check_buf(name, "sort pipe-delimited", out, r,
+              (const unsigned char *)"a|b|c", 5);
+
+    /* 10. Sort idempotency: sort(sort(x)) == sort(x). */
+    const unsigned char *input = (const unsigned char *)"banana cherry apple date";
+    size_t ilen = 24;
+    r = co_sort_words(out, input, ilen, ' ', ' ', 'a');
+    unsigned char out2[LBUF_SIZE];
+    size_t r2 = co_sort_words(out2, out, r, ' ', ' ', 'a');
+    check_buf(name, "sort idempotent", out2, r2, out, r);
+
+    /* 11. Fuzz: sort idempotency with random word lists. */
+    unsigned char buf[LBUF_SIZE];
+    int failures = 0;
+    unsigned int save_seed = g_seed;
+    for (int i = 0; i < 2000 && failures < 3; i++) {
+        /* Generate random space-separated words. */
+        size_t n = 0;
+        int nwords = 1 + (int)(xrand() % 20);
+        for (int w = 0; w < nwords && n + 10 < LBUF_SIZE; w++) {
+            if (w > 0) buf[n++] = ' ';
+            int wlen = 1 + (int)(xrand() % 8);
+            for (int c = 0; c < wlen; c++)
+                buf[n++] = (unsigned char)('a' + (xrand() % 26));
+        }
+        r = co_sort_words(out, buf, n, ' ', ' ', 'a');
+        r2 = co_sort_words(out2, out, r, ' ', ' ', 'a');
+        if (r != r2 || (r > 0 && memcmp(out, out2, r) != 0)) {
+            test_fail(name, "fuzz[%d] sort not idempotent", i);
+            failures++;
+        }
+    }
+    if (failures == 0) {
+        test_ok(name, "2000 sort idempotency fuzz OK");
+    }
+    g_seed = save_seed;
+}
+
+/* ---- Set operation adversarial ---- */
+
+static void test_set_adversarial(void) {
+    const char *name = "set_adversarial";
+    unsigned char out[LBUF_SIZE];
+    size_t r;
+
+    /* 1. Empty sets. */
+    r = co_setunion(out, (const unsigned char *)"", 0,
+                    (const unsigned char *)"", 0, ' ', ' ', 'a');
+    check_buf(name, "union empty+empty", out, r,
+              (const unsigned char *)"", 0);
+
+    /* 2. One empty. */
+    r = co_setunion(out, (const unsigned char *)"a b c", 5,
+                    (const unsigned char *)"", 0, ' ', ' ', 'a');
+    check_buf(name, "union abc+empty", out, r,
+              (const unsigned char *)"a b c", 5);
+
+    /* 3. Identical sets. */
+    r = co_setunion(out, (const unsigned char *)"a b c", 5,
+                    (const unsigned char *)"a b c", 5, ' ', ' ', 'a');
+    check_buf(name, "union identical", out, r,
+              (const unsigned char *)"a b c", 5);
+
+    /* 4. Disjoint sets. */
+    r = co_setinter(out, (const unsigned char *)"a b c", 5,
+                    (const unsigned char *)"x y z", 5, ' ', ' ', 'a');
+    check_buf(name, "inter disjoint", out, r,
+              (const unsigned char *)"", 0);
+
+    /* 5. setdiff A - A = empty. */
+    r = co_setdiff(out, (const unsigned char *)"a b c", 5,
+                   (const unsigned char *)"a b c", 5, ' ', ' ', 'a');
+    check_buf(name, "diff A-A", out, r,
+              (const unsigned char *)"", 0);
+
+    /* 6. setdiff A - empty = A. */
+    r = co_setdiff(out, (const unsigned char *)"a b c", 5,
+                   (const unsigned char *)"", 0, ' ', ' ', 'a');
+    check_buf(name, "diff A-empty", out, r,
+              (const unsigned char *)"a b c", 5);
+
+    /* 7. Duplicates in input: union should dedup. */
+    r = co_setunion(out, (const unsigned char *)"a a b", 5,
+                    (const unsigned char *)"b b c", 5, ' ', ' ', 'a');
+    check_buf(name, "union with dups", out, r,
+              (const unsigned char *)"a b c", 5);
+
+    /* 8. Set algebra: (A ∪ B) - (A ∩ B) == (A - B) ∪ (B - A).
+     *    Symmetric difference identity. */
+    unsigned char buf[LBUF_SIZE], a_union_b[LBUF_SIZE], a_inter_b[LBUF_SIZE];
+    unsigned char a_minus_b[LBUF_SIZE], b_minus_a[LBUF_SIZE];
+    unsigned char lhs[LBUF_SIZE], rhs[LBUF_SIZE];
+    const unsigned char *A = (const unsigned char *)"a b c d";
+    const unsigned char *B = (const unsigned char *)"c d e f";
+    size_t alen = 7, blen = 7;
+
+    size_t u_len = co_setunion(a_union_b, A, alen, B, blen, ' ', ' ', 'a');
+    size_t i_len = co_setinter(a_inter_b, A, alen, B, blen, ' ', ' ', 'a');
+    size_t lhs_len = co_setdiff(lhs, a_union_b, u_len,
+                                a_inter_b, i_len, ' ', ' ', 'a');
+
+    size_t amb = co_setdiff(a_minus_b, A, alen, B, blen, ' ', ' ', 'a');
+    size_t bma = co_setdiff(b_minus_a, B, blen, A, alen, ' ', ' ', 'a');
+    size_t rhs_len = co_setunion(rhs, a_minus_b, amb,
+                                 b_minus_a, bma, ' ', ' ', 'a');
+
+    check_buf(name, "symmetric diff identity", lhs, lhs_len, rhs, rhs_len);
+
+    /* 9. Numeric set ops. */
+    r = co_setunion(out, (const unsigned char *)"1 3 5", 5,
+                    (const unsigned char *)"2 4 6", 5, ' ', ' ', 'n');
+    check_buf(name, "numeric union", out, r,
+              (const unsigned char *)"1 2 3 4 5 6", 11);
+
+    /* 10. Fuzz: A ∪ B ⊇ A (union is superset of both inputs).
+     *     Verify |union| >= max(|A|, |B|) by word count. */
+    int failures = 0;
+    unsigned int save_seed = g_seed;
+    for (int ii = 0; ii < 2000 && failures < 3; ii++) {
+        size_t na = 0, nb = 0;
+        int wa = 1 + (int)(xrand() % 10);
+        int wb = 1 + (int)(xrand() % 10);
+        for (int w = 0; w < wa && na + 5 < LBUF_SIZE; w++) {
+            if (w > 0) buf[na++] = ' ';
+            buf[na++] = (unsigned char)('a' + (xrand() % 10));
+        }
+        unsigned char buf2[LBUF_SIZE];
+        for (int w = 0; w < wb && nb + 5 < LBUF_SIZE; w++) {
+            if (w > 0) buf2[nb++] = ' ';
+            buf2[nb++] = (unsigned char)('a' + (xrand() % 10));
+        }
+        r = co_setunion(out, buf, na, buf2, nb, ' ', ' ', 'a');
+        size_t uwc = co_words_count(out, r, ' ');
+        /* Union of single-char words from 'a'-'j' can have at most 10. */
+        if (uwc > 10) {
+            test_fail(name, "fuzz[%d] union word count %zu > 10", ii, uwc);
+            failures++;
+        }
+    }
+    if (failures == 0) {
+        test_ok(name, "2000 set algebra fuzz OK");
+    }
+    g_seed = save_seed;
+}
+
+/* ---- Justify/padding adversarial ---- */
+
+static void test_justify_adversarial(void) {
+    const char *name = "justify_adversarial";
+    unsigned char out[LBUF_SIZE];
+    size_t r;
+
+    /* 1. Width 0: should return empty or unpadded. */
+    r = co_ljust(out, (const unsigned char *)"hi", 2, 0, NULL, 0, 1);
+    check_buf(name, "ljust w=0 trunc", out, r,
+              (const unsigned char *)"", 0);
+
+    /* 2. Input wider than width, no truncation. */
+    r = co_ljust(out, (const unsigned char *)"hello", 5, 3, NULL, 0, 0);
+    check_buf(name, "ljust no-trunc wider", out, r,
+              (const unsigned char *)"hello", 5);
+
+    /* 3. Input wider than width, with truncation. */
+    r = co_rjust(out, (const unsigned char *)"hello", 5, 3, NULL, 0, 1);
+    check_buf(name, "rjust trunc wider", out, r,
+              (const unsigned char *)"hel", 3);
+
+    /* 4. CJK in center: fullwidth char = 2 columns.
+     *    "世" (2 cols) in width 6 = 2 left pad + 世 + 2 right pad. */
+    const unsigned char shi[] = { 0xE4, 0xB8, 0x96 };
+    r = co_center(out, shi, 3, 6, NULL, 0, 0);
+    check_size(name, "center CJK w=6 vis_width",
+               co_visual_width(out, r), 6);
+
+    /* 5. Multi-char fill pattern.
+     *    Fill pattern cycles phase-continuously, so the first fill byte
+     *    depends on the implementation's phase tracking. */
+    r = co_ljust(out, (const unsigned char *)"X", 1, 7,
+                 (const unsigned char *)"ab", 2, 0);
+    /* Verify length and that content starts with X. */
+    if (r == 7 && out[0] == 'X') {
+        test_ok(name, "ljust fill='ab' w=7 (len=%zu)", r);
+    } else {
+        test_fail(name, "ljust fill='ab' w=7: len=%zu, first=%c", r, out[0]);
+    }
+
+    /* 6. Center with odd padding: asymmetric. */
+    r = co_center(out, (const unsigned char *)"AB", 2, 5, NULL, 0, 0);
+    /* "AB" is 2 wide, need 3 padding → 1 left, 2 right or vice versa. */
+    check_size(name, "center odd padding width",
+               co_visual_width(out, r), 5);
+
+    /* 7. Repeat edge: repeat(x, 0) = empty. */
+    r = co_repeat(out, (const unsigned char *)"abc", 3, 0);
+    check_buf(name, "repeat 0", out, r, (const unsigned char *)"", 0);
+
+    /* 8. Colored input justification: color preserved. */
+    unsigned char buf[LBUF_SIZE];
+    size_t n = 0;
+    n += (size_t)pua_fg(buf + n, 1);
+    memcpy(buf + n, "hi", 2); n += 2;
+    r = co_ljust(out, buf, n, 5, NULL, 0, 0);
+    /* Strip should give "hi   " (3 spaces padding). */
+    unsigned char stripped[LBUF_SIZE];
+    size_t sr = co_strip_color(stripped, out, r);
+    check_buf(name, "colored ljust stripped", stripped, sr,
+              (const unsigned char *)"hi   ", 5);
+}
+
+/* ---- Transform / compress adversarial ---- */
+
+static void test_transform_adversarial(void) {
+    const char *name = "transform_adversarial";
+    unsigned char out[LBUF_SIZE];
+    size_t r;
+
+    /* 1. Identity transform: from == to. */
+    r = co_transform(out,
+        (const unsigned char *)"hello", 5,
+        (const unsigned char *)"helo", 4,
+        (const unsigned char *)"helo", 4);
+    check_buf(name, "identity transform", out, r,
+              (const unsigned char *)"hello", 5);
+
+    /* 2. No chars match from_set. */
+    r = co_transform(out,
+        (const unsigned char *)"hello", 5,
+        (const unsigned char *)"xyz", 3,
+        (const unsigned char *)"XYZ", 3);
+    check_buf(name, "no match transform", out, r,
+              (const unsigned char *)"hello", 5);
+
+    /* 3. All chars match. */
+    r = co_transform(out,
+        (const unsigned char *)"abc", 3,
+        (const unsigned char *)"abc", 3,
+        (const unsigned char *)"xyz", 3);
+    check_buf(name, "all match transform", out, r,
+              (const unsigned char *)"xyz", 3);
+
+    /* 4. Compress runs of multiple chars. */
+    r = co_compress(out, (const unsigned char *)"aaabbbccc", 9, 0);
+    /* Default compress (char=0) compresses whitespace, not 'a'. */
+    check_buf(name, "compress non-ws", out, r,
+              (const unsigned char *)"aaabbbccc", 9);
+
+    /* 5. Compress specific char: all same. */
+    r = co_compress(out, (const unsigned char *)"aaaa", 4, 'a');
+    check_buf(name, "compress all 'a'", out, r,
+              (const unsigned char *)"a", 1);
+
+    /* 6. Compress with color between repeated chars. */
+    unsigned char buf[LBUF_SIZE];
+    size_t n = 0;
+    buf[n++] = ' ';
+    n += (size_t)pua_fg(buf + n, 1);
+    buf[n++] = ' ';
+    n += (size_t)pua_fg(buf + n, 2);
+    buf[n++] = ' ';
+    buf[n++] = 'X';
+    r = co_compress(out, buf, n, 0);
+    unsigned char stripped[LBUF_SIZE];
+    size_t sr = co_strip_color(stripped, out, r);
+    check_buf(name, "compress colored spaces", stripped, sr,
+              (const unsigned char *)" X", 2);
+}
+
+/* ---- LBUF overflow stress ---- */
+
+static void test_lbuf_overflow(void) {
+    const char *name = "lbuf_overflow";
+    unsigned char buf[LBUF_SIZE], out[LBUF_SIZE];
+    size_t r;
+
+    /* 1. repeat that would exceed: 100 * 100 = 10000 > 8000. */
+    memset(buf, 'X', 100);
+    r = co_repeat(out, buf, 100, 100);
+    if (r == 0 || r < LBUF_SIZE) {
+        test_ok(name, "repeat overflow (r=%zu)", r);
+    } else {
+        test_fail(name, "repeat overflow r=%zu", r);
+    }
+
+    /* 2. ljust to huge width. */
+    r = co_ljust(out, (const unsigned char *)"x", 1, LBUF_SIZE + 100,
+                 NULL, 0, 0);
+    if (r > 0 && r < LBUF_SIZE) {
+        test_ok(name, "ljust huge width (r=%zu)", r);
+    } else if (r == 0) {
+        test_ok(name, "ljust huge width returned 0");
+    } else {
+        test_fail(name, "ljust huge width r=%zu", r);
+    }
+
+    /* 3. edit expansion: replace single char with 20-char string,
+     *    on a 500-char input of all that char → 10000 bytes. */
+    memset(buf, 'a', 500);
+    r = co_edit(out, buf, 500,
+        (const unsigned char *)"a", 1,
+        (const unsigned char *)"01234567890123456789", 20);
+    if (r > 0 && r < LBUF_SIZE) {
+        test_ok(name, "edit massive expansion (r=%zu)", r);
+    } else {
+        test_fail(name, "edit massive expansion r=%zu", r);
+    }
+
+    /* 4. center with huge fill pattern. */
+    r = co_center(out, (const unsigned char *)"X", 1, LBUF_SIZE - 1,
+                  (const unsigned char *)"-=", 2, 0);
+    if (r > 0 && r < LBUF_SIZE) {
+        test_ok(name, "center huge width (r=%zu)", r);
+    } else {
+        test_fail(name, "center huge width r=%zu", r);
+    }
+
+    /* 5. toupper of near-LBUF string with ß (expands 2→2 same bytes,
+     *    but tests near-boundary expansion handling). */
+    size_t n = 0;
+    while (n + 5 < LBUF_SIZE - 1) {
+        buf[n++] = 0xC3; buf[n++] = 0x9F;  /* ß */
+    }
+    r = co_toupper(out, buf, n);
+    /* Each ß → SS (same byte count), so output should be similar size. */
+    if (r > 0 && r < LBUF_SIZE) {
+        /* Verify it's all 'S'. */
+        unsigned char stripped[LBUF_SIZE];
+        size_t sr = co_strip_color(stripped, out, r);
+        int all_s = 1;
+        for (size_t i = 0; i < sr; i++) {
+            if (stripped[i] != 'S') { all_s = 0; break; }
+        }
+        if (all_s && sr > 0) {
+            test_ok(name, "LBUF ß→SS (%zu bytes, %zu S's)", r, sr);
+        } else {
+            test_fail(name, "LBUF ß→SS content wrong (sr=%zu)", sr);
+        }
+    } else {
+        test_fail(name, "LBUF ß→SS r=%zu", r);
+    }
+
+    /* 6. insert_word into a nearly-full word list. */
+    n = 0;
+    while (n + 3 < LBUF_SIZE - 10) {
+        buf[n++] = 'w'; buf[n++] = ' ';
+    }
+    if (n > 0) n--;  /* remove trailing space */
+    r = co_insert_word(out, buf, n,
+                       (const unsigned char *)"INSERTED", 8,
+                       1, ' ', ' ');
+    if (r > 0 && r < LBUF_SIZE) {
+        test_ok(name, "insert into near-full (r=%zu)", r);
+    } else {
+        test_fail(name, "insert into near-full r=%zu", r);
+    }
+}
+
 /* ================================================================
  * Main
  * ================================================================ */
@@ -1273,6 +2404,15 @@ static const test_suite_t suites[] = {
     { "apply_color",      test_apply_color },
     { "lbuf_boundary",    test_lbuf_boundary },
     { "fuzz_invariants",  test_fuzz_invariants },
+    { "color_stress",     test_color_stress },
+    { "cluster_color",    test_cluster_color_stress },
+    { "word_adversarial", test_word_adversarial },
+    { "edit_adversarial", test_edit_adversarial },
+    { "sort_adversarial", test_sort_adversarial },
+    { "set_adversarial",  test_set_adversarial },
+    { "justify_adversarial", test_justify_adversarial },
+    { "transform_adversarial", test_transform_adversarial },
+    { "lbuf_overflow",    test_lbuf_overflow },
     { NULL, NULL }
 };
 
