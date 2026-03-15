@@ -527,20 +527,20 @@ struct rv_compiler {
 
     // %-substitution region: runtime values copied before each execution.
     // Slots 0-3: dbrefs/names (32 or 256 bytes).
-    // Slots 4-13: %q0-%q9 register values (256 bytes each).
+    // Slots 4..(4+MAX_GLOBAL_REGS-1): %q global register values.
     static constexpr uint64_t SUBST_BASE = 0x3CA00;
     static constexpr int      SUBST_SLOT = 256;
     static constexpr int      SUBST_ENACTOR  = 0;   // %# — dbref string
     static constexpr int      SUBST_EXECUTOR = 1;   // %! — dbref string
     static constexpr int      SUBST_NAME     = 2;   // %n — enactor name
     static constexpr int      SUBST_LOCATION = 3;   // %l — location dbref
-    static constexpr int      SUBST_QREG0    = 4;   // %q0-%q9 — slots 4-13
-    static constexpr int      SUBST_LASTCMD  = 14;  // %m — last command
-    static constexpr int      SUBST_MONIKER  = 15;  // %k — moniker
-    static constexpr int      SUBST_POUT     = 16;  // %| — piped output
-    static constexpr int      SUBST_NCARGS   = 17;  // %+ — number of cargs
-    static constexpr int      SUBST_OBJID    = 18;  // %: — enactor objid
-    static constexpr int      SUBST_COUNT    = 19;  // total slots
+    static constexpr int      SUBST_QREG0    = 4;   // %q registers start here
+    static constexpr int      SUBST_LASTCMD  = SUBST_QREG0 + MAX_GLOBAL_REGS;
+    static constexpr int      SUBST_MONIKER  = SUBST_LASTCMD + 1;
+    static constexpr int      SUBST_POUT     = SUBST_MONIKER + 1;
+    static constexpr int      SUBST_NCARGS   = SUBST_POUT + 1;
+    static constexpr int      SUBST_OBJID    = SUBST_NCARGS + 1;
+    static constexpr int      SUBST_COUNT    = SUBST_OBJID + 1;
 
     static constexpr uint64_t STACK_TOP  = 0x3FFF0;
     static constexpr uint64_t BLOB_LIMIT = 0x40000;  // 192KB for blob + rodata
@@ -2741,6 +2741,18 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
             return h.emit_sconst(addr, "");
         }
 
+    case AST_ESCAPE:
+        // Output the escaped character literally, skipping the backslash.
+        if (node->text.size() > 1) {
+            std::string lit(1, node->text[1]);
+            uint64_t addr = rc.pool_str(lit);
+            return h.emit_sconst(addr, lit);
+        }
+        {
+            uint64_t addr = rc.pool_str("");
+            return h.emit_sconst(addr, "");
+        }
+
     case AST_SUBST:
         // ## (itext), #@ (inum), #$ (switch token).
         // Resolved from iter/switch context set during lowering.
@@ -3102,7 +3114,17 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                     h.needs_jit = true;
                     return result;
                 }
+                // %i followed by non-digit — output the char literally.
+                std::string lit(1, d);
+                uint64_t addr = rc.pool_str(lit);
+                return h.emit_sconst(addr, lit);
             }
+
+            // Unknown %-substitution — output the character literally
+            // to match the classic mux_exec behavior.
+            std::string lit(1, c);
+            uint64_t addr = rc.pool_str(lit);
+            return h.emit_sconst(addr, lit);
         }
 
         // Unresolvable substitution — emit empty string.
@@ -4604,8 +4626,8 @@ static bool run_cached_program(compiled_program *prog,
         copy_subst(rv_compiler::SUBST_LOCATION, nullptr);
     }
 
-    // %q0-%q9 — global registers.
-    for (int i = 0; i < 10; i++) {
+    // %q global registers.
+    for (int i = 0; i < MAX_GLOBAL_REGS; i++) {
         if (mudstate.global_regs[i] && mudstate.global_regs[i]->reg_ptr) {
             copy_subst(rv_compiler::SUBST_QREG0 + i,
                        mudstate.global_regs[i]->reg_ptr);
@@ -4825,7 +4847,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
     }
 
     case ECALL_SETQ: {
-        // Q-register write-through: a0 = register number (0-9),
+        // Q-register write-through: a0 = register number,
         // a1 = value address in guest memory.
         // Writes to both the SUBST slot (for JIT reads) and
         // mudstate.global_regs (for ECALL reads).

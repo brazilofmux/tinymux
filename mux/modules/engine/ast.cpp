@@ -1896,6 +1896,34 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     }
 }
 
+void ast_exec(const UTF8 *pStr, size_t nStr,
+               UTF8 *buff, UTF8 **bufc,
+               dbref executor, dbref caller, dbref enactor,
+               int eval, const UTF8 *cargs[], int ncargs)
+{
+    if (  nullptr == pStr
+       || '\0' == pStr[0]
+       || alarm_clock.alarmed)
+    {
+        return;
+    }
+
+    size_t nLen = strlen(reinterpret_cast<const char *>(pStr));
+    if (nLen > nStr)
+    {
+        nLen = nStr;
+    }
+
+    auto ast = ast_parse_string(pStr, nLen);
+    if (!ast)
+    {
+        return;
+    }
+
+    ast_eval_node(ast.get(), buff, bufc,
+        executor, caller, enactor, eval, cargs, ncargs);
+}
+
 // ---------------------------------------------------------------
 // AST parse cache
 // ---------------------------------------------------------------
@@ -2018,6 +2046,44 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
         // (plain text), the JIT adds no value.
         if (ast_ptr->type == AST_LITERAL || ast_ptr->type == AST_SPACE)
             return false;
+
+        // Conservative parser-parity guard:
+        // - eval brackets have subtle re-evaluation behavior
+        // - unterminated calls must match legacy literal/parsing behavior
+        //
+        // Keep these on the classic evaluator until JIT semantics match
+        // exactly.
+        std::vector<const ASTNode *> work;
+        work.push_back(ast_ptr);
+        while (!work.empty()) {
+            const ASTNode *node = work.back();
+            work.pop_back();
+
+            if (node->type == AST_EVALBRACKET) {
+                return false;
+            }
+            if (node->type == AST_FUNCCALL) {
+                if (!node->has_close_paren) {
+                    return false;
+                }
+
+                std::string upper = node->text;
+                for (auto &ch : upper) {
+                    ch = static_cast<char>(toupper(
+                        static_cast<unsigned char>(ch)));
+                }
+
+                // Keep these on the classic evaluator for now.
+                if (upper == "ESCAPE" || upper == "SECURE") {
+                    return false;
+                }
+            }
+            for (const auto &child : node->children) {
+                if (child) {
+                    work.push_back(child.get());
+                }
+            }
+        }
 
         // setq/setr: now supported via ECALL_SETQ write-through
         // (writes to both SUBST slot and mudstate.global_regs).

@@ -116,4 +116,11 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
                dbref executor, dbref caller, dbref enactor,
                int eval, const UTF8 *cargs[], int ncargs);
 
+// Parse + evaluate via the AST evaluator only, bypassing JIT.
+//
+void ast_exec(const UTF8 *pStr, size_t nStr,
+              UTF8 *buff, UTF8 **bufc,
+              dbref executor, dbref caller, dbref enactor,
+              int eval, const UTF8 *cargs[], int ncargs);
+
 #endif // AST_H

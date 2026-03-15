@@ -9097,7 +9097,7 @@ static FUNCTION(fun_sortkey)
         mux_strncpy(tbuf, atext, LBUF_SIZE-1);
 
         const UTF8 *elems[1] = { ptrs[i] };
-        mux_exec(tbuf, LBUF_SIZE-1, keys[i], &bp, thing, executor,
+        ast_exec(tbuf, LBUF_SIZE-1, keys[i], &bp, thing, executor,
             enactor, AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL),
             elems, 1);
         *bp = '\0';
@@ -9161,6 +9161,57 @@ static FUNCTION(fun_sortkey)
     {
         pairs[i].key  = keys[i];
         pairs[i].elem = ptrs[i];
+    }
+
+    // Numeric-like key sorts are simpler and safer if we sort the
+    // (key, elem) pairs directly instead of sorting keys first and
+    // then remapping by pointer identity.
+    if (  sort_type == NUMERIC_LIST
+       || sort_type == DBREF_LIST
+       || sort_type == FLOAT_LIST)
+    {
+        switch (sort_type)
+        {
+        case NUMERIC_LIST:
+            std::sort(pairs, pairs + nitems,
+                [](const sk_pair &a, const sk_pair &b) {
+                    return mux_atoi64(strip_color(a.key))
+                         < mux_atoi64(strip_color(b.key));
+                });
+            break;
+
+        case DBREF_LIST:
+            std::sort(pairs, pairs + nitems,
+                [](const sk_pair &a, const sk_pair &b) {
+                    return dbnum(strip_color(a.key))
+                         < dbnum(strip_color(b.key));
+                });
+            break;
+
+        case FLOAT_LIST:
+            std::sort(pairs, pairs + nitems,
+                [](const sk_pair &a, const sk_pair &b) {
+                    return mux_atof(strip_color(a.key), false)
+                         < mux_atof(strip_color(b.key), false);
+                });
+            break;
+        }
+
+        UTF8 *sorted[LBUF_SIZE / 2];
+        for (int i = 0; i < nitems; i++)
+        {
+            sorted[i] = pairs[i].elem;
+        }
+
+        arr2list(sorted, nitems, buff, bufc, osep);
+
+        for (int i = 0; i < nitems; i++)
+        {
+            free_lbuf(pairs[i].key);
+        }
+        free_lbuf(list);
+        free_lbuf(atext);
+        return;
     }
 
     SortContext sc;
