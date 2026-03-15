@@ -2849,6 +2849,7 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
             }
 
             // %q0-%q9 = global register values.  Runtime values at SUBST slots 4-13.
+            // %q<name> = named register.  Emits ECALL for r("name").
             if ((c == 'q' || c == 'Q') && node->text.size() >= 3) {
                 char r = node->text[2];
                 if (r >= '0' && r <= '9') {
@@ -2857,6 +2858,26 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                         + (rv_compiler::SUBST_QREG0 + rn)
                           * rv_compiler::SUBST_SLOT;
                     h.needs_jit = true;
+                    return h.emit_sconst(addr, "");
+                }
+                if (r == '<') {
+                    // Named register: %q<name>.
+                    // Extract name between < and >.
+                    size_t close = node->text.find('>', 3);
+                    if (close != std::string::npos) {
+                        std::string regname = node->text.substr(3, close - 3);
+                        // Emit ECALL for r("name").
+                        uint64_t name_addr = rc.pool_str(regname);
+                        int name_val = h.emit_sconst(name_addr, regname);
+                        int r_idx = engine_api_lookup("R");
+                        int args[1] = { name_val };
+                        int result = h.emit_call(TY_STRING, r_idx, args, 1);
+                        h.ecalls++;
+                        h.needs_jit = true;
+                        return result;
+                    }
+                    // Malformed %q<... no > — emit empty.
+                    uint64_t addr = rc.pool_str("");
                     return h.emit_sconst(addr, "");
                 }
             }

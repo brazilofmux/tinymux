@@ -2044,10 +2044,17 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
                     }
                     continue;
                 }
-                if ((c == 'q' || c == 'Q') && i + 2 < nLen
-                    && pStr[i + 2] >= '0' && pStr[i + 2] <= '9') {
-                    i += 2;
-                    continue;
+                if ((c == 'q' || c == 'Q') && i + 2 < nLen) {
+                    if (pStr[i + 2] >= '0' && pStr[i + 2] <= '9') {
+                        i += 2;
+                        continue;
+                    }
+                    if (pStr[i + 2] == '<') {
+                        // %q<name> — skip past the <...>.
+                        i += 3;
+                        while (i < nLen && pStr[i] != '>') i++;
+                        continue;
+                    }
                 }
                 // Unsupported %-substitution.
                 return false;
