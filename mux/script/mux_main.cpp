@@ -216,13 +216,16 @@ int main(int argc, char *argv[])
 
     // Runtime initialization.
     SeedRandomNumberGenerator();
+    // Caller-owned pools (libmux types).
+    // Engine-owned pools (BOOL, QENTRY, PCACHE) are initialized
+    // by engine.so during LoadGame().
+    // POOL_DESC intentionally skipped — no network descriptors.
+    //
     pool_init(POOL_LBUF, LBUF_SIZE);
     pool_init(POOL_MBUF, MBUF_SIZE);
     pool_init(POOL_SBUF, SBUF_SIZE);
     pool_init(POOL_LBUFREF, sizeof(lbuf_ref));
     pool_init(POOL_REGREF, sizeof(reg_ref));
-    // POOL_BOOL, POOL_QENTRY: initialized by engine.so in LoadGame().
-    // POOL_DESC: intentionally skipped — no network descriptors.
 
     // Initialize COM and load engine.so.
     MUX_RESULT mr = init_com();

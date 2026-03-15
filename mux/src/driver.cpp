@@ -413,8 +413,10 @@ int DCL_CDECL main(int argc, char *argv[])
     //
     CLinearTimeAbsolute ltaStartup;
     ltaStartup.GetUTC();
-    // Driver-owned pools (libmux types + DESC).
-    // POOL_BOOL and POOL_QENTRY moved to engine.so LoadGame().
+    // Caller-owned pools (libmux types + driver-specific DESC).
+    // Engine-owned pools (BOOL, QENTRY, PCACHE) are initialized
+    // by engine.so during LoadGame().
+    //
     pool_init(POOL_LBUF, LBUF_SIZE);
     pool_init(POOL_MBUF, MBUF_SIZE);
     pool_init(POOL_SBUF, SBUF_SIZE);
