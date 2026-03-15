@@ -51,6 +51,9 @@ patches_bin/
 get_patch.bat
 get_xdelta3.bat
 
+# Stale build artifacts from old src/ build system
+mux/src/config.log
+
 # Build artifacts — compiled binaries and generated files
 mux/announce/announce
 mux/script/mux
