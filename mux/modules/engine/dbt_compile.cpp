@@ -2696,7 +2696,8 @@ literal_strcat:
     // function is known to return integers (strlen, eq, etc.),
     // mark known_int so downstream ops can ATOI and use natively.
     int i = h.emit_call(TY_STRING, fidx,
-                         args.data(), nargs);
+                         args.data(), nargs,
+                         fidx == 0 ? &upper : nullptr);
     if (t2addr) {
         h.tier2_addr[i] = t2addr;
         h.tier2_calls++;
@@ -2987,12 +2988,18 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                 return h.emit_sconst(addr, "");
             }
 
-            // %q0-%q9 = global register values.  Runtime values at SUBST slots 4-13.
+            // %q0-%q9 and %qa-%qz = global register values.
+            // Runtime values at SUBST slots 4-13.
             // %q<name> = named register.  Emits ECALL for r("name").
             if ((c == 'q' || c == 'Q') && node->text.size() >= 3) {
                 char r = node->text[2];
+                int rn = -1;
                 if (r >= '0' && r <= '9') {
-                    int rn = r - '0';
+                    rn = r - '0';
+                } else {
+                    rn = mux_RegisterSet[static_cast<unsigned char>(r)];
+                }
+                if (rn >= 0 && rn < MAX_GLOBAL_REGS) {
                     uint64_t addr = rv_compiler::SUBST_BASE
                         + (rv_compiler::SUBST_QREG0 + rn)
                           * rv_compiler::SUBST_SLOT;
@@ -3965,7 +3972,11 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                 } else {
                     // ECALL to engine function.
                     int fidx = h.func_idx[i];
-                    rv_emit_call(rc.code, 0, fargs_addr, na,
+                    uint64_t name_addr = 0;
+                    if (fidx == 0 && !h.call_name[i].empty()) {
+                        name_addr = rc.pool_str(h.call_name[i]);
+                    }
+                    rv_emit_call(rc.code, name_addr, fargs_addr, na,
                                   out_addr, rv_compiler::OUT_SLOT, fidx);
                 }
                 loc[i].addr = out_addr;

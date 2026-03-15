@@ -118,6 +118,7 @@ struct hir_program {
     // String values for SCONST (compile-time known strings).
     // Indexed by instruction index.  Empty for non-SCONST insns.
     std::string sval[HIR_MAX_INSNS];
+    std::string call_name[HIR_MAX_INSNS];
 
     // Known-integer flag: true if a TY_STRING result is known to
     // parse as an integer (e.g., ECALL result from strlen/eq/gt).
@@ -238,6 +239,7 @@ struct hir_program {
         pbase[i] = 0;
         pnargs[i] = 0;
         sval[i].clear();
+        call_name[i].clear();
         known_int[i] = false;
         runtime_ref[i] = false;
         return i;
@@ -266,11 +268,15 @@ struct hir_program {
 
     // Emit a function call with arguments.
     int emit_call(hir_type ret_ty, int fidx,
-                  const int *args, int nargs) {
+                  const int *args, int nargs,
+                  const std::string *fallback_name = nullptr) {
         int i = emit(HIR_CALL, ret_ty);
         if (i < 0) return -1;
         if (n_cargs + nargs > HIR_MAX_CARGS) return -1;
         func_idx[i] = fidx;
+        if (fallback_name && fidx == 0) {
+            call_name[i] = *fallback_name;
+        }
         cbase[i] = n_cargs;
         cnargs[i] = nargs;
         for (int j = 0; j < nargs; j++) {
