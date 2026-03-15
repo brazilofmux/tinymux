@@ -4383,6 +4383,7 @@ struct eval_ctx {
     dbref    executor;
     dbref    caller;
     dbref    enactor;
+    int      eval;
     const UTF8 **cargs;
     int        ncargs;
 };
@@ -4543,7 +4544,8 @@ static bool run_cached_program(compiled_program *prog,
                                 dbref enactor,
                                 UTF8 *out, size_t out_size,
                                 const UTF8 *cargs[] = nullptr,
-                                int ncargs = 0) {
+                                int ncargs = 0,
+                                int eval = EV_FCHECK | EV_EVAL) {
     if (!prog->needs_jit) {
         const char *r = reinterpret_cast<const char *>(
             prog->memory.data() + prog->out_addr);
@@ -4670,6 +4672,7 @@ static bool run_cached_program(compiled_program *prog,
     ec.executor = executor;
     ec.caller = caller_db;
     ec.enactor = enactor;
+    ec.eval = eval;
     ec.cargs = cargs;
     ec.ncargs = ncargs;
 
@@ -4753,7 +4756,7 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
     UTF8 *bufc = buff;
 
     fp->fun(fp, buff, &bufc, ec->executor, ec->caller, ec->enactor,
-            0, fargs, nfargs, nullptr, 0);
+            ec->eval, fargs, nfargs, ec->cargs, ec->ncargs);
 
     *bufc = '\0';
     size_t result_len = static_cast<size_t>(bufc - buff);
@@ -4912,7 +4915,7 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
     UTF8 result[LBUF_SIZE];
     if (!run_cached_program(prog, executor, caller, enactor,
                              result, sizeof(result),
-                             cargs, ncargs)) {
+                             cargs, ncargs, eval)) {
         return false;  // JIT execution error — fall back to AST.
     }
     safe_str(result, buff, bufc);
@@ -5010,6 +5013,9 @@ static bool run_compiled(compiled_program &prog,
     ec.executor = executor;
     ec.caller = caller_db;
     ec.enactor = enactor;
+    ec.eval = EV_FCHECK | EV_EVAL;
+    ec.cargs = nullptr;
+    ec.ncargs = 0;
 
     dbt_state_t *dbt;
     if (reuse_dbt && s_dbt_ready) {
