@@ -380,6 +380,63 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
     int eval, const UTF8 *cargs[], int ncargs);
 
+static bool ast_is_malformed_qsubst(const ASTNode *node)
+{
+    if (  !node
+       || node->type != AST_SUBST)
+    {
+        return false;
+    }
+
+    const std::string &txt = node->text;
+    return txt.size() >= 3
+        && txt[0] == '%'
+        && (txt[1] == 'q' || txt[1] == 'Q')
+        && txt[2] == '<'
+        && txt.find('>', 3) == std::string::npos;
+}
+
+// Evaluate a function argument with the same top-level space trimming
+// that parse_arglist()/parse_to() applies around comma-separated args.
+static void ast_eval_argument(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
+    dbref executor, dbref caller, dbref enactor,
+    int eval, const UTF8 *cargs[], int ncargs)
+{
+    if (!node)
+    {
+        return;
+    }
+
+    if (  node->type == AST_SEQUENCE
+       && !node->children.empty()
+       && mudconf.space_compress
+       && !(eval & EV_NO_COMPRESS))
+    {
+        size_t first = 0;
+        size_t last = node->children.size();
+        while (  first < last
+              && node->children[first]->type == AST_SPACE)
+        {
+            first++;
+        }
+        while (  last > first
+              && node->children[last - 1]->type == AST_SPACE)
+        {
+            last--;
+        }
+
+        for (size_t i = first; i < last; i++)
+        {
+            ast_eval_node(node->children[i].get(), buff, bufc,
+                executor, caller, enactor, eval, cargs, ncargs);
+        }
+        return;
+    }
+
+    ast_eval_node(node, buff, bufc, executor, caller, enactor,
+        eval, cargs, ncargs);
+}
+
 // ---------------------------------------------------------------
 // Native %-substitution handler
 // ---------------------------------------------------------------
@@ -514,6 +571,10 @@ static void ast_eval_subst(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
                             safe_copy_buf(rr->reg_ptr, rr->reg_len, buff, bufc);
                         }
                     }
+                }
+                else
+                {
+                    // Malformed %q<name with no closing > — emit empty.
                 }
             }
             else
@@ -1631,7 +1692,7 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 
                     if (i < nfargs - 1 || nParsed <= nfargs)
                     {
-                        ast_eval_node(node->children[i].get(), fargs[i], &bp,
+                        ast_eval_argument(node->children[i].get(), fargs[i], &bp,
                             executor, caller, enactor,
                             feval | EV_FCHECK | EV_EVAL, cargs, ncargs);
                     }
@@ -1642,7 +1703,7 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
                         for (int j = i; j < nParsed; j++)
                         {
                             if (j > i) safe_chr(',', fargs[i], &bp);
-                            ast_eval_node(node->children[j].get(), fargs[i], &bp,
+                            ast_eval_argument(node->children[j].get(), fargs[i], &bp,
                                 executor, caller, enactor,
                                 feval | EV_FCHECK | EV_EVAL, cargs, ncargs);
                         }
@@ -1846,6 +1907,11 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         if (  mudconf.space_compress
            && !(eval & EV_NO_COMPRESS))
         {
+            while (  last > first
+                  && ast_is_malformed_qsubst(node->children[last - 1].get()))
+            {
+                last--;
+            }
             // Skip leading and trailing AST_SPACE children.
             // This matches mux_exec's at_space=1 (suppress leading)
             // and trailing-space strip behavior, without touching

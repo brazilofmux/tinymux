@@ -1413,6 +1413,16 @@ static void qreg_init() {
 static int  s_compile_eval;
 static bool s_fcheck_available;
 
+static bool hir_is_malformed_qsubst(const ASTNode *node) {
+    if (!node || node->type != AST_SUBST) return false;
+    const std::string &txt = node->text;
+    return txt.size() >= 3
+        && txt[0] == '%'
+        && (txt[1] == 'q' || txt[1] == 'Q')
+        && txt[2] == '<'
+        && txt.find('>', 3) == std::string::npos;
+}
+
 // Check whether a function name is known to the engine (builtin or ufunc).
 // Returns true if the function exists and would be dispatched as a call.
 //
@@ -1458,6 +1468,24 @@ static int hir_lower_sequence(hir_program &h, rv_compiler &rc,
         return hir_lower_node(h, rc, node->children[0].get());
     }
 
+    size_t first = 0;
+    size_t last = node->children.size();
+    if (mudconf.space_compress && !(s_compile_eval & EV_NO_COMPRESS)) {
+        while (last > first && hir_is_malformed_qsubst(node->children[last - 1].get())) {
+            last--;
+        }
+        while (last > first && node->children[last - 1]->type == AST_SPACE) {
+            last--;
+        }
+    }
+    if (first == last) {
+        uint64_t addr = rc.pool_str("");
+        return h.emit_sconst(addr, "");
+    }
+    if (last - first == 1) {
+        return hir_lower_node(h, rc, node->children[first].get());
+    }
+
     // EV_FCHECK without EV_FMAND: only the first effective (non-space)
     // child gets the function check.  After lowering that child, clear
     // s_fcheck_available so subsequent AST_FUNCCALL nodes in this
@@ -1476,7 +1504,8 @@ static int hir_lower_sequence(hir_program &h, rv_compiler &rc,
 
     // Lower each child.
     std::vector<int> children;
-    for (auto &child : node->children) {
+    for (size_t idx = first; idx < last; idx++) {
+        auto &child = node->children[idx];
         children.push_back(hir_lower_node(h, rc, child.get()));
 
         // After the first non-space child, consume FCHECK for siblings.
@@ -1580,6 +1609,44 @@ static int hir_lower_trimmed(hir_program &h, rv_compiler &rc,
     return hir_lower_node(h, rc, inner);
 }
 
+// Lower a normal function argument, trimming only top-level surrounding
+// spaces to match parse_arglist()/parse_to() comma argument handling.
+static int hir_lower_argument(hir_program &h, rv_compiler &rc,
+                              const ASTNode *child) {
+    if (  child->type == AST_SEQUENCE
+       && !child->children.empty()
+       && mudconf.space_compress
+       && !(s_compile_eval & EV_NO_COMPRESS)) {
+        size_t first = 0, last = child->children.size();
+        while (first < last && child->children[first]->type == AST_SPACE) first++;
+        while (last > first && child->children[last-1]->type == AST_SPACE) last--;
+        if (first == last) {
+            uint64_t addr = rc.pool_str("");
+            return h.emit_sconst(addr, "");
+        }
+        if (first == 0 && last == child->children.size()) {
+            return hir_lower_node(h, rc, child);
+        }
+        std::vector<int> parts;
+        for (size_t i = first; i < last; i++) {
+            parts.push_back(hir_lower_node(h, rc, child->children[i].get()));
+        }
+        if (parts.size() == 1) return parts[0];
+        for (auto &p : parts) {
+            if (h.ty[p] == TY_INT) {
+                p = h.emit(HIR_ITOA, TY_STRING, p);
+            }
+        }
+        int strcat_idx = engine_api_lookup("STRCAT");
+        int r = h.emit_strcat(parts.data(), static_cast<int>(parts.size()));
+        if (r >= 0) h.func_idx[r] = strcat_idx;
+        h.ecalls++;
+        h.needs_jit = true;
+        return r;
+    }
+    return hir_lower_node(h, rc, child);
+}
+
 // Lower a function call: try fold, try native arith, else ECALL.
 //
 static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
@@ -1677,7 +1744,7 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         if (arg0->type == AST_LITERAL && !arg0->text.empty()) {
             int rn = arg0->text[0] - '0';
             if (rn >= 0 && rn < HIR_NUM_QREGS) {
-                int val = hir_lower_node(h, rc, node->children[1].get());
+                int val = hir_lower_argument(h, rc, node->children[1].get());
                 qreg[rn] = val;
                 qreg_used = true;
 
@@ -1702,7 +1769,7 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         if (arg0->type == AST_LITERAL && !arg0->text.empty()) {
             int rn = arg0->text[0] - '0';
             if (rn >= 0 && rn < HIR_NUM_QREGS) {
-                int val = hir_lower_node(h, rc, node->children[1].get());
+                int val = hir_lower_argument(h, rc, node->children[1].get());
                 qreg[rn] = val;
                 qreg_used = true;
 
@@ -2377,7 +2444,7 @@ general_lowering:
     // Lower arguments.
     std::vector<int> args;
     for (auto &child : node->children) {
-        args.push_back(hir_lower_node(h, rc, child.get()));
+        args.push_back(hir_lower_argument(h, rc, child.get()));
     }
     int nargs = static_cast<int>(args.size());
 
@@ -3034,7 +3101,7 @@ static int hir_lower_node(hir_program &h, rv_compiler &rc,
                         h.needs_jit = true;
                         return result;
                     }
-                    // Malformed %q<... no > — emit empty.
+                    // Malformed %q<name with no closing > — emit empty.
                     uint64_t addr = rc.pool_str("");
                     return h.emit_sconst(addr, "");
                 }
