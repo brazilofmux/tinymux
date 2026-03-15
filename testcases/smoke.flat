@@ -4162,7 +4162,7 @@
 >288
 "@if strmatch(setr(0,sha1([eval({A%x?B})][eval({A%c?B})])),setr(1,sha1(A%x?BA%c?B)))={@log smoke=TC023: edge unknown color fallback parity. Succeeded (possibly fixed).;},{@log smoke=TC023: edge unknown color fallback divergence observed (%q0 vs %q1).;}"
 >289
-"@if strmatch(setr(0,sha1([eval({prefix [add(1,2)] %q<oops suffix})])),1B3EB8C217AE9D88AC879D127840E4CF66393851)={@log smoke=TC024: edge malformed mixed context. Succeeded.},{@log smoke=TC024: edge malformed mixed context. Failed (%q0).}"
+"@if strmatch(setr(0,sha1([eval({prefix [add(1,2)] %q<oops suffix})])),5BC915E1A1836B6B2A5D86314A1DD90848D1F581)={@log smoke=TC024: edge malformed mixed context. Succeeded.},{@log smoke=TC024: edge malformed mixed context. Failed (%q0).}"
 >290
 "@if strmatch(setr(0,sha1([eval({notafunc([add(1,2)]})])),320AFE3C83E91C94CA68B8FC478F95DD8F59ED81)={@log smoke=TC025: edge unterminated call + bracket eval parity. Succeeded.},{@log smoke=TC025: edge unterminated call + bracket eval parity. Failed (%q0).}"
 >291

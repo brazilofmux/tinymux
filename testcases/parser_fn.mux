@@ -567,7 +567,7 @@
             [eval({prefix [add(1,2)] %q<oops suffix})]
           )
         ),
-        1B3EB8C217AE9D88AC879D127840E4CF66393851
+        5BC915E1A1836B6B2A5D86314A1DD90848D1F581
       )=
   {
     @log smoke=TC024: edge malformed mixed context. Succeeded.
