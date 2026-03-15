@@ -12673,6 +12673,7 @@ static FUN builtin_function_list[] =
     {T("ASIN"),        fun_asin,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("ATAN"),        fun_atan,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("ATAN2"),       fun_atan2,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {T("ASTBENCH"),    fun_astbench,   MAX_ARG, 2,       2, FN_NOEVAL, CA_WIZARD},
     {T("ASTEVAL"),     fun_asteval,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ATTRCNT"),     fun_attrcnt,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ATTRIB_SET"), fun_attrib_set, MAX_ARG, 1,       2,         0, CA_PUBLIC},

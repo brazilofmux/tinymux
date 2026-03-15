@@ -2079,3 +2079,87 @@ FUNCTION(fun_asteval)
         executor, caller, enactor,
         eval | EV_FCHECK | EV_EVAL, cargs, ncargs);
 }
+
+// ---------------------------------------------------------------
+// astbench(): head-to-head AST vs JIT benchmark.
+//
+// astbench(<expr>, <iterations>)
+//
+// Runs the expression through both the AST evaluator and the JIT,
+// reports microseconds per call for each.  Output format:
+//   ast=X.XXus jit=Y.YYus ratio=Z.Zx result=<value>
+// ---------------------------------------------------------------
+
+FUNCTION(fun_astbench)
+{
+    UNUSED_PARAMETER(fp);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (nfargs < 2) {
+        safe_str(T("#-1 TOO FEW ARGUMENTS"), buff, bufc);
+        return;
+    }
+
+    const UTF8 *expr = fargs[0];
+    size_t nLen = strlen(reinterpret_cast<const char *>(expr));
+    int iterations = mux_atol(fargs[1]);
+    if (nLen == 0 || iterations < 1) return;
+    if (iterations > 100000) iterations = 100000;
+
+    // Parse once (shared by both paths).
+    auto ast = ast_parse_string(expr, nLen);
+    if (!ast) {
+        safe_str(T("#-1 PARSE FAILED"), buff, bufc);
+        return;
+    }
+
+    // --- AST benchmark ---
+    struct timespec t0, t1;
+    clock_gettime(CLOCK_MONOTONIC, &t0);
+    for (int i = 0; i < iterations; i++) {
+        UTF8 temp[LBUF_SIZE];
+        UTF8 *tp = temp;
+        ast_eval_node(ast.get(), temp, &tp,
+            executor, caller, enactor,
+            eval | EV_FCHECK | EV_EVAL, nullptr, 0);
+        *tp = '\0';
+    }
+    clock_gettime(CLOCK_MONOTONIC, &t1);
+    double ast_us = ((t1.tv_sec - t0.tv_sec) * 1e6
+                   + (t1.tv_nsec - t0.tv_nsec) / 1e3) / iterations;
+
+    // --- JIT benchmark ---
+#if defined(TINYMUX_JIT)
+    // Warm the compile cache.
+    jit_eval(expr, nLen, buff, bufc, executor, caller, enactor,
+             eval | EV_FMAND | EV_EVAL, nullptr, 0);
+    *bufc = buff;  // reset output
+
+    clock_gettime(CLOCK_MONOTONIC, &t0);
+    for (int i = 0; i < iterations; i++) {
+        UTF8 temp[LBUF_SIZE];
+        UTF8 *tp = temp;
+        jit_eval(expr, nLen, temp, &tp, executor, caller, enactor,
+                 eval | EV_FMAND | EV_EVAL, nullptr, 0);
+    }
+    clock_gettime(CLOCK_MONOTONIC, &t1);
+    double jit_us = ((t1.tv_sec - t0.tv_sec) * 1e6
+                   + (t1.tv_nsec - t0.tv_nsec) / 1e3) / iterations;
+#else
+    double jit_us = 0.0;
+#endif
+
+    // Get the result value.
+    UTF8 result[LBUF_SIZE];
+    UTF8 *rp = result;
+    ast_eval_node(ast.get(), result, &rp,
+        executor, caller, enactor,
+        eval | EV_FCHECK | EV_EVAL, nullptr, 0);
+    *rp = '\0';
+
+    double ratio = (jit_us > 0.001) ? ast_us / jit_us : 0.0;
+    safe_tprintf_str(buff, bufc,
+        T("ast=%.2fus jit=%.2fus ratio=%.1fx result=%s"),
+        ast_us, jit_us, ratio, result);
+}

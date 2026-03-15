@@ -113,6 +113,7 @@ void functions_add(FUN funlist[]);
 
 // In ast.cpp
 XFUNCTION(fun_asteval);
+XFUNCTION(fun_astbench);
 // In dbt_harness.cpp / dbt_compile.cpp (deprecated — JIT is default now)
 XFUNCTION(fun_rvcall);
 XFUNCTION(fun_rveval);
