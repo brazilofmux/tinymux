@@ -2356,6 +2356,24 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     // ---------------------------------------------------------------
 general_lowering:
 
+    // FN_NOEVAL functions (citer, letq, list, localize, etc.) receive
+    // their arguments unevaluated.  The JIT's general ECALL path
+    // evaluates all arguments before the call, which is wrong for
+    // NOEVAL.  The JIT has native handlers for if/switch/iter/cand/cor
+    // (handled above); for any other NOEVAL function, mark the
+    // compilation as failed so the AST evaluator handles it.
+    {
+        int chk_fidx = engine_api_lookup(fname.c_str());
+        if (chk_fidx > 0 && chk_fidx < ENGINE_API_MAX_FUNCS) {
+            FUN *chk_fp = engine_api_table[chk_fidx];
+            if (chk_fp && (chk_fp->flags & FN_NOEVAL)) {
+                rc.out_exhausted = true;  // force compilation failure
+                uint64_t addr = rc.pool_str("");
+                return h.emit_sconst(addr, "");
+            }
+        }
+    }
+
     // Lower arguments.
     std::vector<int> args;
     for (auto &child : node->children) {
