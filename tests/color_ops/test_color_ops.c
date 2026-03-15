@@ -2363,6 +2363,535 @@ static void test_lbuf_overflow(void) {
     }
 }
 
+/* ---- Low-level navigation: skip_color, find_delim, visible_advance, copy_visible ---- */
+
+static void test_navigation(void) {
+    const char *name = "navigation";
+    unsigned char buf[LBUF_SIZE], out[LBUF_SIZE];
+    size_t n;
+
+    /* co_skip_color: skip past color at start. */
+    n = 0;
+    n += (size_t)pua_fg(buf + n, 1);
+    n += (size_t)pua_bg(buf + n, 2);
+    buf[n++] = 'X';
+    const unsigned char *p = co_skip_color(buf, buf + n);
+    if (p == buf + n - 1 && *p == 'X') {
+        test_ok(name, "skip_color past FG+BG");
+    } else {
+        test_fail(name, "skip_color: off by %td", p - buf);
+    }
+
+    /* co_skip_color: no color at start. */
+    p = co_skip_color((const unsigned char *)"ABC", (const unsigned char *)"ABC" + 3);
+    if (p == (const unsigned char *)"ABC") {
+        test_ok(name, "skip_color no color");
+    } else {
+        test_fail(name, "skip_color advanced when no color");
+    }
+
+    /* co_skip_color: 24-bit RGB color (15 bytes). */
+    n = 0;
+    n += (size_t)pua_fg_rgb(buf + n, 100, 200, 50);
+    buf[n++] = 'Y';
+    p = co_skip_color(buf, buf + n);
+    if (p == buf + n - 1 && *p == 'Y') {
+        test_ok(name, "skip_color past 24-bit RGB");
+    } else {
+        test_fail(name, "skip_color 24-bit: off by %td", p - buf);
+    }
+
+    /* co_find_delim: find space skipping color. */
+    n = 0;
+    n += (size_t)pua_fg(buf + n, 1);
+    buf[n++] = 'A';
+    n += (size_t)pua_fg(buf + n, 2);
+    buf[n++] = ' ';
+    buf[n++] = 'B';
+    p = co_find_delim(buf, buf + n, ' ');
+    if (p && *p == ' ') {
+        test_ok(name, "find_delim space in colored");
+    } else {
+        test_fail(name, "find_delim: %s", p ? "wrong pos" : "NULL");
+    }
+
+    /* co_find_delim: no delimiter present. */
+    p = co_find_delim((const unsigned char *)"ABC", (const unsigned char *)"ABC" + 3, ' ');
+    check_ptr_null(name, "find_delim no space", p);
+
+    /* co_find_delim: delimiter byte inside color PUA should not match.
+     * PUA bytes are 0xEF 0x94-0x9F 0x80-0xBF — none are ASCII. */
+    n = 0;
+    n += (size_t)pua_fg(buf + n, 1);
+    buf[n++] = 'X';
+    p = co_find_delim(buf, buf + n, 0x80);  /* 0x80 appears in PUA encoding */
+    check_ptr_null(name, "find_delim 0x80 in color", p);
+
+    /* co_visible_advance: advance past 2 visible chars with color. */
+    n = 0;
+    n += (size_t)pua_fg(buf + n, 1);
+    buf[n++] = 'A';
+    n += (size_t)pua_fg(buf + n, 2);
+    buf[n++] = 'B';
+    n += (size_t)pua_fg(buf + n, 3);
+    buf[n++] = 'C';
+    size_t count = 0;
+    p = co_visible_advance(buf, buf + n, 2, &count);
+    check_size(name, "visible_advance count", count, 2);
+    /* p should point to the FG3 color before 'C'. */
+    if (p && p < buf + n) {
+        test_ok(name, "visible_advance past 2 (offset %td)", p - buf);
+    } else {
+        test_fail(name, "visible_advance returned end");
+    }
+
+    /* co_visible_advance: advance past all. */
+    count = 0;
+    p = co_visible_advance(buf, buf + n, 100, &count);
+    check_size(name, "visible_advance past-all count", count, 3);
+
+    /* co_visible_advance: advance 0. */
+    count = 99;
+    p = co_visible_advance(buf, buf + n, 0, &count);
+    check_size(name, "visible_advance 0 count", count, 0);
+
+    /* co_copy_visible: copy 2 visible from colored string. */
+    n = 0;
+    n += (size_t)pua_fg(buf + n, 1);
+    buf[n++] = 'A';
+    n += (size_t)pua_fg(buf + n, 2);
+    buf[n++] = 'B';
+    buf[n++] = 'C';
+    size_t r = co_copy_visible(out, buf, buf + n, 2);
+    size_t vis = co_visible_length(out, r);
+    check_size(name, "copy_visible 2 vis", vis, 2);
+    unsigned char stripped[LBUF_SIZE];
+    size_t sr = co_strip_color(stripped, out, r);
+    check_buf(name, "copy_visible 2 content", stripped, sr,
+              (const unsigned char *)"AB", 2);
+
+    /* co_copy_visible: copy 0. */
+    r = co_copy_visible(out, buf, buf + n, 0);
+    check_size(name, "copy_visible 0", co_visible_length(out, r), 0);
+}
+
+/* ---- co_copy_columns ---- */
+
+static void test_copy_columns(void) {
+    const char *name = "copy_columns";
+    unsigned char out[LBUF_SIZE];
+    size_t r;
+
+    /* ASCII: 1 column per char. */
+    r = co_copy_columns(out, (const unsigned char *)"abcdef",
+                        (const unsigned char *)"abcdef" + 6, 3);
+    check_buf(name, "ASCII 3 cols", out, r,
+              (const unsigned char *)"abc", 3);
+
+    /* CJK fullwidth: 2 columns per char.
+     * "世界" = 4 columns.  copy_columns(3) should give just "世" (2 cols)
+     * because adding 界 would make 4, exceeding 3. */
+    const unsigned char sekai[] = {
+        0xE4, 0xB8, 0x96,  /* 世 */
+        0xE7, 0x95, 0x8C   /* 界 */
+    };
+    r = co_copy_columns(out, sekai, sekai + 6, 3);
+    check_buf(name, "CJK 3 cols = 世 only", out, r,
+              sekai, 3);  /* just 世 */
+
+    /* CJK: exactly 4 columns. */
+    r = co_copy_columns(out, sekai, sekai + 6, 4);
+    check_buf(name, "CJK 4 cols = 世界", out, r,
+              sekai, 6);
+
+    /* Mix: "A世B" = 4 columns.  copy_columns(3) should give "A世" (3 cols). */
+    const unsigned char mix[] = { 'A', 0xE4, 0xB8, 0x96, 'B' };
+    r = co_copy_columns(out, mix, mix + 5, 3);
+    check_buf(name, "A世B 3 cols", out, r, mix, 4);  /* "A世" = 4 bytes */
+
+    /* copy_columns(1) of "世" — can't fit (2 cols), should return 0. */
+    r = co_copy_columns(out, sekai, sekai + 3, 1);
+    check_size(name, "CJK 1 col (too narrow)", r, 0);
+
+    /* With color: FG + "世" + FG + "界", copy 3 cols. */
+    unsigned char buf[LBUF_SIZE];
+    size_t n = 0;
+    n += (size_t)pua_fg(buf + n, 1);
+    memcpy(buf + n, sekai, 3); n += 3;
+    n += (size_t)pua_fg(buf + n, 2);
+    memcpy(buf + n, sekai + 3, 3); n += 3;
+    r = co_copy_columns(out, buf, buf + n, 3);
+    size_t vis_w = co_visual_width(out, r);
+    check_size(name, "colored CJK 3 cols width", vis_w, 2);  /* just 世 */
+
+    /* copy_columns(0). */
+    r = co_copy_columns(out, (const unsigned char *)"hello",
+                        (const unsigned char *)"hello" + 5, 0);
+    check_size(name, "0 cols", r, 0);
+
+    /* Combining mark: "e" + combining acute = 1 column (not 2). */
+    const unsigned char e_acute[] = { 0x65, 0xCC, 0x81 };
+    r = co_copy_columns(out, e_acute, e_acute + 3, 1);
+    check_buf(name, "combining 1 col", out, r, e_acute, 3);
+
+    /* Large: copy exact LBUF_SIZE-1 columns of ASCII. */
+    unsigned char big[LBUF_SIZE];
+    memset(big, 'X', LBUF_SIZE - 1);
+    r = co_copy_columns(out, big, big + LBUF_SIZE - 1, LBUF_SIZE - 1);
+    check_size(name, "LBUF-1 cols", r, LBUF_SIZE - 1);
+}
+
+/* ---- co_split_words ---- */
+
+static void test_split_words(void) {
+    const char *name = "split_words";
+    size_t starts[100], ends[100];
+    size_t nw;
+
+    /* Basic space-delimited. */
+    nw = co_split_words((const unsigned char *)"one two three", 13,
+                        (const unsigned char *)" ", 1,
+                        starts, ends, 100);
+    check_size(name, "'one two three' count", nw, 3);
+    if (nw == 3) {
+        /* Check first word boundaries. */
+        if (starts[0] == 0 && ends[0] == 3 &&
+            starts[1] == 4 && ends[1] == 7 &&
+            starts[2] == 8 && ends[2] == 13) {
+            test_ok(name, "word boundaries correct");
+        } else {
+            test_fail(name, "word boundaries: [%zu-%zu] [%zu-%zu] [%zu-%zu]",
+                      starts[0], ends[0], starts[1], ends[1], starts[2], ends[2]);
+        }
+    }
+
+    /* Space-compress semantics: multiple spaces = one delimiter. */
+    nw = co_split_words((const unsigned char *)"  a  b  ", 8,
+                        (const unsigned char *)" ", 1,
+                        starts, ends, 100);
+    check_size(name, "'  a  b  ' space-compress", nw, 2);
+
+    /* Non-space delimiter: exact (no compression). */
+    nw = co_split_words((const unsigned char *)"a||b||c", 7,
+                        (const unsigned char *)"||", 2,
+                        starts, ends, 100);
+    check_size(name, "'a||b||c' delim='||'", nw, 3);
+
+    /* Multi-byte delimiter. */
+    nw = co_split_words((const unsigned char *)"hello<>world<>!", 15,
+                        (const unsigned char *)"<>", 2,
+                        starts, ends, 100);
+    check_size(name, "'hello<>world<>!' delim='<>'", nw, 3);
+
+    /* Empty string. */
+    nw = co_split_words((const unsigned char *)"", 0,
+                        (const unsigned char *)" ", 1,
+                        starts, ends, 100);
+    check_size(name, "empty string", nw, 0);
+
+    /* No delimiter found: whole string is one word. */
+    nw = co_split_words((const unsigned char *)"single", 6,
+                        (const unsigned char *)"|", 1,
+                        starts, ends, 100);
+    check_size(name, "'single' no match", nw, 1);
+
+    /* max_words limit. */
+    nw = co_split_words((const unsigned char *)"a b c d e", 9,
+                        (const unsigned char *)" ", 1,
+                        starts, ends, 3);
+    check_size(name, "max_words=3", nw, 3);
+
+    /* With color: color bytes should not affect word boundaries. */
+    unsigned char buf[LBUF_SIZE];
+    size_t n = 0;
+    n += (size_t)pua_fg(buf + n, 1);
+    buf[n++] = 'A';
+    buf[n++] = ' ';
+    n += (size_t)pua_fg(buf + n, 2);
+    buf[n++] = 'B';
+    nw = co_split_words(buf, n, (const unsigned char *)" ", 1,
+                        starts, ends, 100);
+    check_size(name, "colored 'A B' count", nw, 2);
+}
+
+/* ---- co_trim_pattern ---- */
+
+static void test_trim_pattern(void) {
+    const char *name = "trim_pattern";
+    unsigned char out[LBUF_SIZE];
+    size_t r;
+
+    /* Single-byte pattern. */
+    r = co_trim_pattern(out,
+        (const unsigned char *)"xxxhelloxxx", 11,
+        (const unsigned char *)"x", 1, 3);
+    check_buf(name, "trim 'x' both", out, r,
+              (const unsigned char *)"hello", 5);
+
+    /* Multi-byte pattern: trim "ab" from "ababXYabab". */
+    r = co_trim_pattern(out,
+        (const unsigned char *)"ababXYabab", 10,
+        (const unsigned char *)"ab", 2, 3);
+    check_buf(name, "trim 'ab' both", out, r,
+              (const unsigned char *)"XY", 2);
+
+    /* Cyclic pattern matching: "abcXabc" trim "abc" both. */
+    r = co_trim_pattern(out,
+        (const unsigned char *)"abcXabc", 7,
+        (const unsigned char *)"abc", 3, 3);
+    check_buf(name, "trim 'abc' both", out, r,
+              (const unsigned char *)"X", 1);
+
+    /* Left only. */
+    r = co_trim_pattern(out,
+        (const unsigned char *)"xxhello", 7,
+        (const unsigned char *)"x", 1, 1);
+    check_buf(name, "trim 'x' left", out, r,
+              (const unsigned char *)"hello", 5);
+
+    /* Right only. */
+    r = co_trim_pattern(out,
+        (const unsigned char *)"helloxx", 7,
+        (const unsigned char *)"x", 1, 2);
+    check_buf(name, "trim 'x' right", out, r,
+              (const unsigned char *)"hello", 5);
+
+    /* Nothing to trim. */
+    r = co_trim_pattern(out,
+        (const unsigned char *)"hello", 5,
+        (const unsigned char *)"x", 1, 3);
+    check_buf(name, "nothing to trim", out, r,
+              (const unsigned char *)"hello", 5);
+
+    /* All trimmed. */
+    r = co_trim_pattern(out,
+        (const unsigned char *)"ababab", 6,
+        (const unsigned char *)"ab", 2, 3);
+    check_buf(name, "all trimmed", out, r,
+              (const unsigned char *)"", 0);
+
+    /* Empty pattern: should return original. */
+    r = co_trim_pattern(out,
+        (const unsigned char *)"hello", 5,
+        (const unsigned char *)"", 0, 3);
+    check_buf(name, "empty pattern", out, r,
+              (const unsigned char *)"hello", 5);
+}
+
+/* ---- co_compress_str ---- */
+
+static void test_compress_str(void) {
+    const char *name = "compress_str";
+    unsigned char out[LBUF_SIZE];
+    size_t r;
+
+    /* Single-char separator. */
+    r = co_compress_str(out,
+        (const unsigned char *)"a  b   c", 8,
+        (const unsigned char *)" ", 1);
+    check_buf(name, "compress ' ' in 'a  b   c'", out, r,
+              (const unsigned char *)"a b c", 5);
+
+    /* Multi-char separator: "||" → single "||". */
+    r = co_compress_str(out,
+        (const unsigned char *)"a||||b||||||c", 13,
+        (const unsigned char *)"||", 2);
+    check_buf(name, "compress '||'", out, r,
+              (const unsigned char *)"a||b||c", 7);
+
+    /* No runs to compress. */
+    r = co_compress_str(out,
+        (const unsigned char *)"a|b|c", 5,
+        (const unsigned char *)"||", 2);
+    check_buf(name, "no compression needed", out, r,
+              (const unsigned char *)"a|b|c", 5);
+
+    /* Separator at start and end. */
+    r = co_compress_str(out,
+        (const unsigned char *)"  hello  ", 9,
+        (const unsigned char *)" ", 1);
+    check_buf(name, "compress edges", out, r,
+              (const unsigned char *)" hello ", 7);
+
+    /* Empty string. */
+    r = co_compress_str(out,
+        (const unsigned char *)"", 0,
+        (const unsigned char *)" ", 1);
+    check_buf(name, "empty", out, r, (const unsigned char *)"", 0);
+
+    /* All separators. */
+    r = co_compress_str(out,
+        (const unsigned char *)"    ", 4,
+        (const unsigned char *)" ", 1);
+    check_buf(name, "all spaces", out, r,
+              (const unsigned char *)" ", 1);
+}
+
+/* ---- co_cluster_advance ---- */
+
+static void test_cluster_advance(void) {
+    const char *name = "cluster_advance";
+
+    /* ASCII: each char is one cluster. */
+    const unsigned char *data = (const unsigned char *)"ABCDE";
+    size_t count = 0;
+    const unsigned char *p = co_cluster_advance(data, data + 5, 3, &count);
+    check_size(name, "ASCII advance 3", count, 3);
+    if (p == data + 3) {
+        test_ok(name, "ASCII advance 3 offset");
+    } else {
+        test_fail(name, "ASCII advance 3: offset %td", p - data);
+    }
+
+    /* Advance past all. */
+    count = 0;
+    p = co_cluster_advance(data, data + 5, 100, &count);
+    check_size(name, "ASCII advance past-all", count, 5);
+
+    /* Advance 0. */
+    count = 99;
+    p = co_cluster_advance(data, data + 5, 0, &count);
+    check_size(name, "advance 0", count, 0);
+    if (p == data) {
+        test_ok(name, "advance 0 stays at start");
+    } else {
+        test_fail(name, "advance 0: offset %td", p - data);
+    }
+
+    /* Combining marks: "e" + combining_acute + "X" = 2 clusters.
+     * Advance 1 should skip the whole "ë" cluster. */
+    const unsigned char combined[] = { 0x65, 0xCC, 0x81, 'X' };
+    count = 0;
+    p = co_cluster_advance(combined, combined + 4, 1, &count);
+    check_size(name, "combining advance 1", count, 1);
+    if (p == combined + 3 && *p == 'X') {
+        test_ok(name, "combining advance lands on X");
+    } else {
+        test_fail(name, "combining advance: offset %td", p - combined);
+    }
+
+    /* With color: FG + "A" + FG + combining + "B" = 2 clusters.
+     * Advance 1 should skip A + its combining mark. */
+    unsigned char buf[LBUF_SIZE];
+    size_t n = 0;
+    n += (size_t)pua_fg(buf + n, 1);
+    buf[n++] = 'A';
+    n += (size_t)pua_fg(buf + n, 2);
+    buf[n++] = 0xCC; buf[n++] = 0x81;  /* combining acute on A */
+    buf[n++] = 'B';
+    count = 0;
+    p = co_cluster_advance(buf, buf + n, 1, &count);
+    check_size(name, "colored combining advance 1", count, 1);
+
+    /* Emoji ZWJ: advance 1 should skip the whole ZWJ sequence. */
+    const unsigned char emoji[] = {
+        0xF0, 0x9F, 0x91, 0xA8,  /* 👨 */
+        0xE2, 0x80, 0x8D,        /* ZWJ */
+        0xF0, 0x9F, 0x92, 0xBB,  /* 💻 */
+        'X'
+    };
+    count = 0;
+    p = co_cluster_advance(emoji, emoji + sizeof(emoji), 1, &count);
+    check_size(name, "emoji ZWJ advance 1", count, 1);
+    if (p && *p == 'X') {
+        test_ok(name, "emoji ZWJ advance lands on X");
+    } else {
+        test_fail(name, "emoji ZWJ advance: offset %td", p - emoji);
+    }
+}
+
+/* ---- co_console_width (direct tests) ---- */
+
+static void test_console_width(void) {
+    const char *name = "console_width";
+
+    /* ASCII: width 1. */
+    check_size(name, "ASCII 'A'",
+        (size_t)co_console_width((const unsigned char *)"A"), 1);
+
+    /* CJK fullwidth: width 2. */
+    const unsigned char shi[] = { 0xE4, 0xB8, 0x96 };  /* 世 */
+    check_size(name, "CJK 世", (size_t)co_console_width(shi), 2);
+
+    /* Combining mark: width 0. */
+    const unsigned char combining[] = { 0xCC, 0x81 };  /* combining acute */
+    check_size(name, "combining acute", (size_t)co_console_width(combining), 0);
+
+    /* Emoji: width 2. */
+    const unsigned char emoji[] = { 0xF0, 0x9F, 0x98, 0x80 };  /* 😀 */
+    check_size(name, "emoji 😀", (size_t)co_console_width(emoji), 2);
+
+    /* Latin letter: width 1. */
+    const unsigned char e_acute[] = { 0xC3, 0xA9 };  /* é */
+    check_size(name, "é width", (size_t)co_console_width(e_acute), 1);
+
+    /* Hangul syllable: width 2. */
+    const unsigned char hangul[] = { 0xEA, 0xB0, 0x80 };  /* 가 U+AC00 */
+    check_size(name, "Hangul 가", (size_t)co_console_width(hangul), 2);
+
+    /* Zero-width joiner: width 0. */
+    const unsigned char zwj[] = { 0xE2, 0x80, 0x8D };  /* ZWJ */
+    check_size(name, "ZWJ width", (size_t)co_console_width(zwj), 0);
+}
+
+/* ---- co_cs_bg, co_cs_equal ---- */
+
+static void test_colorstate_helpers(void) {
+    const char *name = "colorstate_helpers";
+
+    /* co_cs_fg. */
+    co_ColorState red = co_cs_fg(1);
+    if (red.fg == 1 && red.bg == -1 && red.intense == 0) {
+        test_ok(name, "cs_fg(1)");
+    } else {
+        test_fail(name, "cs_fg(1): fg=%d bg=%d", red.fg, red.bg);
+    }
+
+    /* co_cs_bg. */
+    co_ColorState bg5 = co_cs_bg(5);
+    if (bg5.bg == 5 && bg5.fg == -1) {
+        test_ok(name, "cs_bg(5)");
+    } else {
+        test_fail(name, "cs_bg(5): fg=%d bg=%d", bg5.fg, bg5.bg);
+    }
+
+    /* co_cs_equal: same. */
+    co_ColorState a = co_cs_fg(3);
+    co_ColorState b = co_cs_fg(3);
+    if (co_cs_equal(&a, &b)) {
+        test_ok(name, "cs_equal same");
+    } else {
+        test_fail(name, "cs_equal same: returned false");
+    }
+
+    /* co_cs_equal: different. */
+    co_ColorState c = co_cs_fg(4);
+    if (!co_cs_equal(&a, &c)) {
+        test_ok(name, "cs_equal different");
+    } else {
+        test_fail(name, "cs_equal different: returned true");
+    }
+
+    /* co_cs_equal: NORMAL == NORMAL. */
+    co_ColorState n1 = CO_CS_NORMAL;
+    co_ColorState n2 = CO_CS_NORMAL;
+    if (co_cs_equal(&n1, &n2)) {
+        test_ok(name, "cs_equal NORMAL==NORMAL");
+    } else {
+        test_fail(name, "cs_equal NORMAL: returned false");
+    }
+
+    /* Attributes differ. */
+    co_ColorState i1 = CO_CS_NORMAL;
+    i1.intense = 1;
+    co_ColorState i2 = CO_CS_NORMAL;
+    if (!co_cs_equal(&i1, &i2)) {
+        test_ok(name, "cs_equal intense differs");
+    } else {
+        test_fail(name, "cs_equal intense: returned true");
+    }
+}
+
 /* ================================================================
  * Main
  * ================================================================ */
@@ -2413,6 +2942,14 @@ static const test_suite_t suites[] = {
     { "justify_adversarial", test_justify_adversarial },
     { "transform_adversarial", test_transform_adversarial },
     { "lbuf_overflow",    test_lbuf_overflow },
+    { "navigation",       test_navigation },
+    { "copy_columns",     test_copy_columns },
+    { "split_words",      test_split_words },
+    { "trim_pattern",     test_trim_pattern },
+    { "compress_str",     test_compress_str },
+    { "cluster_advance",  test_cluster_advance },
+    { "console_width",    test_console_width },
+    { "colorstate_helpers", test_colorstate_helpers },
     { NULL, NULL }
 };
 
