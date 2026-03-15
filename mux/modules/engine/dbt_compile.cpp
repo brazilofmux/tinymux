@@ -296,6 +296,8 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
 // Returns guest address, or 0 if not found.
 //
 static uint64_t tier2_lookup(const std::string &mux_name) {
+    // DIAGNOSTIC: Tier 2 blob disabled globally to measure ECALL-only baseline.
+    return 0;
     if (!s_tier2.loaded) return 0;
     auto it = s_tier2.funcs.find(mux_name);
     if (it != s_tier2.funcs.end()) return it->second.guest_addr;
