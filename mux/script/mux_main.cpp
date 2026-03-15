@@ -6,9 +6,17 @@
  * Same engine, different front-end.
  *
  * Usage:
- *   mux -c config.conf < script.mux
- *   mux -c config.conf -e 'think add(2,3)'
- *   echo 'think sha1(hello)' | mux -c config.conf
+ *   mux -g /path/to/game -c netmux.conf < script.mux
+ *   mux -e 'think add(2,3)'
+ *   echo 'think sha1(hello)' | mux
+ *
+ * Game directory resolution (in priority order):
+ *   1. -g <dir> command-line flag
+ *   2. MUX_HOME environment variable
+ *   3. Current working directory
+ *
+ * engine.so is loaded from <gamedir>/bin/engine.so.
+ * The config file path is relative to <gamedir>.
  */
 
 #include "copyright.h"
@@ -26,10 +34,47 @@
 #include <unistd.h>
 
 // ---------------------------------------------------------------------------
-// COM initialization: load engine.so, acquire IGameEngine.
+// Game directory resolution and engine loading.
 // ---------------------------------------------------------------------------
 
 static mux_IGameEngine *g_pEngine = nullptr;
+static char g_gamedir[4096];
+
+static bool resolve_gamedir(const char *flag_dir)
+{
+    const char *dir = flag_dir;
+
+    // Priority 1: -g flag.
+    // Priority 2: MUX_HOME env var.
+    // Priority 3: current directory.
+    if (!dir)
+    {
+        dir = getenv("MUX_HOME");
+    }
+    if (!dir)
+    {
+        dir = ".";
+    }
+
+    // Resolve to absolute path.
+    if (!realpath(dir, g_gamedir))
+    {
+        fprintf(stderr, "mux: cannot resolve game directory '%s': %s\n",
+                dir, strerror(errno));
+        return false;
+    }
+
+    // Verify engine.so exists.
+    char engine_path[4096 + 64];
+    snprintf(engine_path, sizeof(engine_path), "%s/bin/engine.so", g_gamedir);
+    if (access(engine_path, R_OK) != 0)
+    {
+        fprintf(stderr, "mux: engine.so not found at '%s'\n", engine_path);
+        return false;
+    }
+
+    return true;
+}
 
 static MUX_RESULT init_com(void)
 {
@@ -40,11 +85,15 @@ static MUX_RESULT init_com(void)
         return mr;
     }
 
-    // Load engine.so.
-    mr = mux_AddModule(T("engine"), T("./bin/engine.so"));
+    // Build engine.so path relative to game directory.
+    char engine_path[4096 + 64];
+    snprintf(engine_path, sizeof(engine_path), "%s/bin/engine.so", g_gamedir);
+
+    mr = mux_AddModule(T("engine"),
+                        reinterpret_cast<const UTF8 *>(engine_path));
     if (MUX_FAILED(mr))
     {
-        fprintf(stderr, "mux: cannot load engine.so (%d)\n", mr);
+        fprintf(stderr, "mux: cannot load '%s' (%d)\n", engine_path, mr);
         return mr;
     }
 
@@ -61,21 +110,8 @@ static MUX_RESULT init_com(void)
 }
 
 // ---------------------------------------------------------------------------
-// Script loop: read lines, process as commands, drain queue.
+// Script loop: read lines, process as commands.
 // ---------------------------------------------------------------------------
-
-// Forward declaration — implemented in engine.so, resolved at link time
-// via libmux.so's module system.  We call it through the COM interface
-// indirectly by having the engine process commands via RunTasks.
-//
-// For now, the script loop feeds lines to the engine via a simple
-// mechanism: write the line to a well-known attribute, then trigger
-// processing.  But the real approach is to call process_command
-// directly — which requires the engine to expose it via COM or a
-// simpler function export.
-//
-// TEMPORARY: use IGameEngine::RunTasks as the only interface.
-// A proper ICommandProcessor COM interface is needed for Phase 2.
 
 static void script_loop(FILE *input)
 {
@@ -110,27 +146,38 @@ static void usage(void)
 {
     fprintf(stderr,
         "Usage: mux [options]\n"
-        "  -c <config>   Configuration file (required)\n"
+        "  -g <dir>      Game directory (default: $MUX_HOME or cwd)\n"
+        "  -c <config>   Configuration file (default: netmux.conf)\n"
         "  -e <expr>     Evaluate single expression\n"
         "  --readonly    Don't save database on exit\n"
         "  --help        Show this help\n"
         "\n"
         "Reads softcode commands from stdin (or -e) and writes output to stdout.\n"
-        "Loads engine.so via COM — no networking, no telnet, no descriptors.\n"
+        "Loads engine.so from <gamedir>/bin/engine.so.\n"
+        "\n"
+        "Game directory resolution:\n"
+        "  1. -g <dir> flag\n"
+        "  2. MUX_HOME environment variable\n"
+        "  3. Current working directory\n"
     );
 }
 
 int main(int argc, char *argv[])
 {
-    const UTF8 *conffile = nullptr;
+    const char *conffile = "netmux.conf";
+    const char *gamedir_flag = nullptr;
     const char *eval_expr = nullptr;
     bool readonly = false;
 
     for (int i = 1; i < argc; i++)
     {
-        if (strcmp(argv[i], "-c") == 0 && i + 1 < argc)
+        if (strcmp(argv[i], "-g") == 0 && i + 1 < argc)
         {
-            conffile = reinterpret_cast<const UTF8 *>(argv[++i]);
+            gamedir_flag = argv[++i];
+        }
+        else if (strcmp(argv[i], "-c") == 0 && i + 1 < argc)
+        {
+            conffile = argv[++i];
         }
         else if (strcmp(argv[i], "-e") == 0 && i + 1 < argc)
         {
@@ -153,25 +200,29 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (!conffile)
+    // Resolve game directory.
+    if (!resolve_gamedir(gamedir_flag))
     {
-        fprintf(stderr, "mux: -c <config> is required\n");
-        usage();
         return 1;
     }
 
-    // Runtime initialization — same pools as driver.cpp.
-    // Struct sizes are approximated since engine types aren't available
-    // here.  Over-sizing wastes memory but is safe.
+    // chdir to game directory so config file paths resolve correctly.
+    if (chdir(g_gamedir) != 0)
+    {
+        fprintf(stderr, "mux: cannot chdir to '%s': %s\n",
+                g_gamedir, strerror(errno));
+        return 1;
+    }
+
+    // Runtime initialization.
     SeedRandomNumberGenerator();
-    // Driver-level pools (libmux types).  POOL_BOOL and POOL_QENTRY
-    // are initialized by engine.so during LoadGame().
-    // POOL_DESC intentionally skipped — no network descriptors.
     pool_init(POOL_LBUF, LBUF_SIZE);
     pool_init(POOL_MBUF, MBUF_SIZE);
     pool_init(POOL_SBUF, SBUF_SIZE);
     pool_init(POOL_LBUFREF, sizeof(lbuf_ref));
     pool_init(POOL_REGREF, sizeof(reg_ref));
+    // POOL_BOOL, POOL_QENTRY: initialized by engine.so in LoadGame().
+    // POOL_DESC: intentionally skipped — no network descriptors.
 
     // Initialize COM and load engine.so.
     MUX_RESULT mr = init_com();
@@ -181,7 +232,8 @@ int main(int argc, char *argv[])
     }
 
     // Load game database.
-    mr = g_pEngine->LoadGame(conffile, nullptr, false);
+    mr = g_pEngine->LoadGame(reinterpret_cast<const UTF8 *>(conffile),
+                              nullptr, false);
     if (MUX_FAILED(mr))
     {
         fprintf(stderr, "mux: LoadGame failed (%d)\n", mr);
@@ -206,13 +258,15 @@ int main(int argc, char *argv[])
         return 2;
     }
 
+    fprintf(stderr, "mux: loaded game from %s\n", g_gamedir);
+
     // Run script.
     if (eval_expr)
     {
         // Single expression mode.
+        // TODO: process_command via COM.
         fprintf(stdout, "CMD: %s\n", eval_expr);
         fflush(stdout);
-        // TODO: process_command via COM.
     }
     else
     {
