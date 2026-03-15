@@ -111,7 +111,9 @@ void functions_add(FUN funlist[]);
 // Function definitions from funceval.cpp
 //
 
-// In dbt_harness.cpp / dbt_compile.cpp
+// In ast.cpp
+XFUNCTION(fun_asteval);
+// In dbt_harness.cpp / dbt_compile.cpp (deprecated — JIT is default now)
 XFUNCTION(fun_rvcall);
 XFUNCTION(fun_rveval);
 XFUNCTION(fun_rvbench);

@@ -12673,6 +12673,7 @@ static FUN builtin_function_list[] =
     {T("ASIN"),        fun_asin,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("ATAN"),        fun_atan,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("ATAN2"),       fun_atan2,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {T("ASTEVAL"),     fun_asteval,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ATTRCNT"),     fun_attrcnt,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ATTRIB_SET"), fun_attrib_set, MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("BAND"),        fun_band,       MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
@@ -12980,9 +12981,9 @@ static FUN builtin_function_list[] =
 #ifdef REALITY_LVLS
     {T("RXLEVEL"),     fun_rxlevel,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
 #endif // REALITY_LVLS
-    {T("RVBENCH"),     fun_rvbench,    MAX_ARG, 2,       2, FN_NOEVAL, CA_WIZARD},
-    {T("RVCALL"),      fun_rvcall,     MAX_ARG, 2, MAX_ARG,         0, CA_WIZARD},
-    {T("RVEVAL"),      fun_rveval,           1, 1,       1, FN_NOEVAL, CA_WIZARD},
+    {T("RVBENCH"),     fun_rvbench,    MAX_ARG, 2,       2, FN_NOEVAL, CA_WIZARD},  // deprecated: JIT is default
+    {T("RVCALL"),      fun_rvcall,     MAX_ARG, 2, MAX_ARG,         0, CA_WIZARD},  // deprecated: JIT is default
+    {T("RVEVAL"),      fun_rveval,           1, 1,       1, FN_NOEVAL, CA_WIZARD},  // deprecated: JIT is default
     {T("S"),           fun_s,                1, 1,       1,         0, CA_PUBLIC},
     {T("SCRAMBLE"),    fun_scramble,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("SEARCH"),      fun_search,           1, 0,       1,         0, CA_PUBLIC},

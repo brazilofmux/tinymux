@@ -2045,3 +2045,37 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
     ast_eval_node(ast_ptr, buff, bufc,
         executor, caller, enactor, eval, cargs, ncargs);
 }
+
+// ---------------------------------------------------------------
+// asteval(): softcode function — evaluate via AST evaluator only.
+//
+// Bypasses the JIT entirely.  Useful for:
+//   - Benchmarking AST vs JIT performance
+//   - Fallback if users find a JIT parity bug
+//   - Verifying parser correctness
+//
+// Usage: think asteval(add(1,2))  → 3
+// ---------------------------------------------------------------
+
+FUNCTION(fun_asteval)
+{
+    UNUSED_PARAMETER(fp);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (nfargs < 1) {
+        safe_str(T("#-1 TOO FEW ARGUMENTS"), buff, bufc);
+        return;
+    }
+
+    const UTF8 *expr = fargs[0];
+    size_t nLen = strlen(reinterpret_cast<const char *>(expr));
+    if (nLen == 0) return;
+
+    auto ast = ast_parse_string(expr, nLen);
+    if (!ast) return;
+
+    ast_eval_node(ast.get(), buff, bufc,
+        executor, caller, enactor,
+        eval | EV_FCHECK | EV_EVAL, cargs, ncargs);
+}
