@@ -33,13 +33,13 @@ color_ops.o: ../../mux/lib/color_ops.c ../../mux/include/color_ops.h ../../mux/i
 unicode_tables.o: ../../ragel/unicode_tables.c ../../ragel/unicode_tables.h
 	$(CC) $(CFLAGS) -I../../ragel -c ../../ragel/unicode_tables.c -o unicode_tables.o
 
-# Extract GCB, ExtPict, and width tables from rv64 source (lines 19-720).
+# Extract width, GCB, and ExtPict tables from rv64 source.
 # These arrays are not in ragel/unicode_tables.c.
 tables_extra.c: ../../mux/rv64/src/unicode_tables.c
 	@echo "/* Auto-extracted GCB/width/extpict tables from rv64/src/unicode_tables.c */" > $@
 	@echo "#include <stddef.h>" >> $@
 	@echo "#include \"unicode_tables_c.h\"" >> $@
-	sed -n '19,720p' ../../mux/rv64/src/unicode_tables.c >> $@
+	sed -n '/^const.*tr_widths_itt/,$$p' ../../mux/rv64/src/unicode_tables.c >> $@
 
 tables_extra.o: tables_extra.c ../../mux/include/unicode_tables_c.h
 	$(CC) $(CFLAGS) -I../../mux/include -c tables_extra.c

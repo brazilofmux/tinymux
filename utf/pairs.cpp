@@ -265,6 +265,9 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
+    const char *pBodyFile = "utf8tables.cpp.txt";
+    const char *pIncludeFile = "utf8tables.h.txt";
+
     int j;
     for (j = 1; j < argc; j++)
     {
@@ -276,6 +279,14 @@ int main(int argc, char *argv[])
                 j++;
                 g_iDefaultState = atoi(argv[j]);
             }
+        }
+        else if (0 == strcmp(argv[j], "-o") && j + 1 < argc)
+        {
+            pBodyFile = argv[++j];
+        }
+        else if (0 == strcmp(argv[j], "-i") && j + 1 < argc)
+        {
+            pIncludeFile = argv[++j];
         }
         else
         {
@@ -291,13 +302,13 @@ int main(int argc, char *argv[])
     }
 
     FILE *fp = fopen(pFilename, "rb");
-    FILE *fpBody = fopen("utf8tables.cpp.txt", "a");
-    FILE *fpInclude = fopen("utf8tables.h.txt", "a");
+    FILE *fpBody = fopen(pBodyFile, "a");
+    FILE *fpInclude = fopen(pIncludeFile, "a");
     if (  nullptr == fp
        || nullptr == fpBody
        || nullptr == fpInclude)
     {
-        fprintf(stderr, "Cannot open %s, utf8tables.cpp.txt, or utf8tables.h.txt\n", pFilename);
+        fprintf(stderr, "Cannot open %s, %s, or %s\n", pFilename, pBodyFile, pIncludeFile);
         exit(0);
     }
 

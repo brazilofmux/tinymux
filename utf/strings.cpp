@@ -534,6 +534,8 @@ void LoadStrings(FILE *fp, FILE *fpBody, FILE *fpInclude)
     fprintf(stderr, "%d states, %d columns, %d bytes\n", os.nStates, os.nColumns, os.SizeOfMachine);
 }
 
+extern bool g_bCMode;  // -c: emit co_string_desc instead of string_desc
+
 void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPrefix, char *LowerPrefix)
 {
     BuildOutputTable(fp);
@@ -604,9 +606,13 @@ void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPre
     fprintf(fpInclude, "\n");
 #endif
 
+    const char *pDescType = g_bCMode ? "co_string_desc" : "string_desc";
+    const char *pCastOpen = g_bCMode ? "(const unsigned char *)\"" : "T(\"";
+    const char *pCastClose = g_bCMode ? "\"" : "\")";
+
     int nTotalSize = nLiteralTable + nXorTable;
-    fprintf(fpInclude, "extern const string_desc %s_ott[%d];\n", LowerPrefix, nTotalSize);
-    fprintf(fpBody, "const string_desc %s_ott[%d] =\n", LowerPrefix, nTotalSize);
+    fprintf(fpInclude, "extern const %s %s_ott[%d];\n", pDescType, LowerPrefix, nTotalSize);
+    fprintf(fpBody, "const %s %s_ott[%d] =\n", pDescType, LowerPrefix, nTotalSize);
     fprintf(fpBody, "{\n");
     int i;
     for (i = 0; i < nLiteralTable; i++)
@@ -614,7 +620,7 @@ void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPre
         UTF8 *p = aLiteralTable[i].p;
         fprintf(fpBody, "    { %2ld, %2ld, ", aLiteralTable[i].n_bytes, aLiteralTable[i].n_points);
 
-        fprintf(fpBody, "T(\"");
+        fprintf(fpBody, "%s", pCastOpen);
         size_t n = aLiteralTable[i].n_bytes;
         while (n--)
         {
@@ -624,11 +630,11 @@ void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPre
 
         if (i != nTotalSize - 1)
         {
-            fprintf(fpBody, "\") },");
+            fprintf(fpBody, "%s },", pCastClose);
         }
         else
         {
-            fprintf(fpBody, "\") }");
+            fprintf(fpBody, "%s }", pCastClose);
         }
         fprintf(fpBody, " // %d references\n", aLiteralTable[i].n_refs);
 
@@ -642,7 +648,7 @@ void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPre
         UTF8 *p = aXorTable[i].p;
         fprintf(fpBody, "    { %2ld, %2ld, ", aXorTable[i].n_bytes, aXorTable[i].n_points);
 
-        fprintf(fpBody, "T(\"");
+        fprintf(fpBody, "%s", pCastOpen);
         size_t n = aXorTable[i].n_bytes;
         while (n--)
         {
@@ -652,11 +658,11 @@ void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPre
 
         if (i != nXorTable - 1)
         {
-            fprintf(fpBody, "\") },");
+            fprintf(fpBody, "%s },", pCastClose);
         }
         else
         {
-            fprintf(fpBody, "\") }");
+            fprintf(fpBody, "%s }", pCastClose);
         }
         fprintf(fpBody, " // %d references\n", aXorTable[i].n_refs);
 
@@ -667,22 +673,21 @@ void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPre
     fprintf(fpBody, "};\n");
 }
 
+bool g_bCMode = false;
+
 int main(int argc, char *argv[])
 {
     const char *pPrefix = nullptr;
     const char *pFilename = nullptr;
+    const char *pBodyFile = "utf8tables.cpp.txt";
+    const char *pIncludeFile = "utf8tables.h.txt";
 
     if (argc < 3)
     {
-#if 0
-        fprintf(stderr, "Usage: %s [-d] prefix unicodedata.txt\n", argv[0]);
-        exit(0);
-#else
         pFilename = "NumericDecimal.txt";
         pPrefix   = "digit";
         g_bDefault = false;
         g_iDefaultState = 0;
-#endif
     }
     else
     {
@@ -693,6 +698,18 @@ int main(int argc, char *argv[])
             {
                 g_bDefault = true;
                 g_iDefaultState = 0;
+            }
+            else if (0 == strcmp(argv[j], "-c"))
+            {
+                g_bCMode = true;
+            }
+            else if (0 == strcmp(argv[j], "-o") && j + 1 < argc)
+            {
+                pBodyFile = argv[++j];
+            }
+            else if (0 == strcmp(argv[j], "-i") && j + 1 < argc)
+            {
+                pIncludeFile = argv[++j];
             }
             else
             {
@@ -709,13 +726,13 @@ int main(int argc, char *argv[])
     }
 
     FILE *fp = fopen(pFilename, "rb");
-    FILE *fpBody = fopen("utf8tables.cpp.txt", "a");
-    FILE *fpInclude = fopen("utf8tables.h.txt", "a");
+    FILE *fpBody = fopen(pBodyFile, "a");
+    FILE *fpInclude = fopen(pIncludeFile, "a");
     if (  nullptr == fp
        || nullptr == fpBody
        || nullptr == fpInclude)
     {
-        fprintf(stderr, "Cannot open %s, utf8tables.cpp.txt, and utf8tables.h.txt.\n", pFilename);
+        fprintf(stderr, "Cannot open %s, %s, or %s.\n", pFilename, pBodyFile, pIncludeFile);
         exit(0);
     }
 
