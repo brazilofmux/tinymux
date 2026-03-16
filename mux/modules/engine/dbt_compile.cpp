@@ -96,6 +96,8 @@ static bool tier2_allowed(const std::string &mux_name) {
         "REVERSE",
         "ESCAPE",
         "STRIPANSI",
+        "SPACE",
+        "COMPRESS",
         nullptr
     };
     for (int i = 0; s_allowlist[i]; i++) {
