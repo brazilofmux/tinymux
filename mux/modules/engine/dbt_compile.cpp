@@ -2549,6 +2549,32 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     }
 
     // ---------------------------------------------------------------
+    // @@(expr) — null function.  Discard argument, return empty.
+    // ---------------------------------------------------------------
+
+    if (fname == "@@" && node->children.size() == 1) {
+        uint64_t addr = rc.pool_str("");
+        return h.emit_sconst(addr, "");
+    }
+
+    // ---------------------------------------------------------------
+    // lit(expr) — return argument text unevaluated.
+    // The AST node's child is a literal text node; just emit it as-is.
+    // ---------------------------------------------------------------
+
+    if (fname == "LIT" && node->children.size() == 1) {
+        auto &child = node->children[0];
+        if (child->type == AST_LITERAL) {
+            std::string text(reinterpret_cast<const char *>(child->text.data()),
+                             child->text.size());
+            uint64_t addr = rc.pool_str(text);
+            return h.emit_sconst(addr, text);
+        }
+        // Non-literal child (e.g., nested function call) — emit its
+        // raw text representation.  For now, fall through to ECALL.
+    }
+
+    // ---------------------------------------------------------------
     // General function call lowering.
     // ---------------------------------------------------------------
 general_lowering:
@@ -4951,24 +4977,6 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
 
     *bufc = '\0';
     size_t result_len = static_cast<size_t>(bufc - buff);
-
-    // DIAGNOSTIC: log specific function results.
-    {
-        const char *fn = reinterpret_cast<const char *>(fp->name);
-        if (fn[0] == 'F' || fn[0] == 'M' || fn[0] == 'E' || fn[0] == 'L') {
-            static int fn_log = 0;
-            if (fn_log < 50) {
-                fprintf(stderr, "[fn #%d] %s(%d) => %.60s",
-                    ++fn_log, fn, nfargs,
-                    reinterpret_cast<const char *>(buff));
-                for (int di = 0; di < nfargs && di < 4; di++) {
-                    fprintf(stderr, "  a%d=%.30s", di,
-                        reinterpret_cast<const char *>(fargs[di]));
-                }
-                fprintf(stderr, "\n");
-            }
-        }
-    }
 
     if (result_len >= out_size) result_len = out_size - 1;
     memcpy(ec->memory + out_addr, buff, result_len);
