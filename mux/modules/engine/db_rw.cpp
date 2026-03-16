@@ -12,6 +12,102 @@ static int g_version;
 static int g_format;
 static int g_flags;
 
+// Migrate V4 PUA 24-bit color encoding to V5.
+//
+// Old format: F3 B0 (80-97) xx — per-channel deltas (6 blocks of 256)
+// New format: F3 (B0-B3) xx xx — 2-code-point per layer (4 blocks of 4096)
+//
+// Returns true if the attribute was modified.
+//
+static bool MigrateColorV4toV5(const UTF8 *pOld, UTF8 *pNew, size_t *pnNew)
+{
+    const UTF8 *p = pOld;
+    UTF8 *q = pNew;
+    bool bChanged = false;
+
+    while ('\0' != *p)
+    {
+        // Check for old SMP PUA: F3 B0 (80-97) xx
+        //
+        if (  0xF3 == p[0]
+           && 0xB0 == p[1]
+           && p[2] >= 0x80 && p[2] <= 0x97
+           && p[3] >= 0x80 && p[3] <= 0xBF)
+        {
+            // Decode old format: 6 channels × 256 values
+            //
+            unsigned int offset = ((unsigned int)(p[2] - 0x80) << 6)
+                                | (unsigned int)(p[3] - 0x80);
+            unsigned int channel = offset / 256;
+            uint8_t value = (uint8_t)(offset % 256);
+
+            // Accumulate R, G, B values for FG (channels 0-2) or BG (3-5).
+            // Old encoding emits up to 3 consecutive channel codes.
+            //
+            uint8_t r = 0, g = 0, b = 0;
+            bool bFG = (channel < 3);
+            bool got_r = false, got_g = false, got_b = false;
+
+            // Process the first channel code.
+            //
+            unsigned int ch_offset = bFG ? channel : channel - 3;
+            if (0 == ch_offset) { r = value; got_r = true; }
+            else if (1 == ch_offset) { g = value; got_g = true; }
+            else { b = value; got_b = true; }
+            p += 4;
+
+            // Look ahead for more channel codes in the same layer.
+            //
+            while (  0xF3 == p[0]
+                  && 0xB0 == p[1]
+                  && p[2] >= 0x80 && p[2] <= 0x97
+                  && p[3] >= 0x80 && p[3] <= 0xBF)
+            {
+                unsigned int next_offset = ((unsigned int)(p[2] - 0x80) << 6)
+                                         | (unsigned int)(p[3] - 0x80);
+                unsigned int next_channel = next_offset / 256;
+                uint8_t next_value = (uint8_t)(next_offset % 256);
+                bool next_fg = (next_channel < 3);
+
+                if (next_fg != bFG) break;
+
+                unsigned int next_ch_offset = bFG ? next_channel : next_channel - 3;
+                if (0 == next_ch_offset) { r = next_value; got_r = true; }
+                else if (1 == next_ch_offset) { g = next_value; got_g = true; }
+                else { b = next_value; got_b = true; }
+                p += 4;
+            }
+
+            // Emit new 2-code-point encoding.
+            //
+            unsigned int base_block = bFG ? 0 : 2;
+            unsigned int cp1_payload = ((unsigned int)(r >> 4) << 8) | g;
+            unsigned int cp2_payload = ((unsigned int)(r & 0xF) << 8) | b;
+
+            q[0] = 0xF3;
+            q[1] = (UTF8)(0xB0 + base_block);
+            q[2] = (UTF8)(0x80 | ((cp1_payload >> 6) & 0x3F));
+            q[3] = (UTF8)(0x80 | (cp1_payload & 0x3F));
+            q += 4;
+
+            q[0] = 0xF3;
+            q[1] = (UTF8)(0xB0 + base_block + 1);
+            q[2] = (UTF8)(0x80 | ((cp2_payload >> 6) & 0x3F));
+            q[3] = (UTF8)(0x80 | (cp2_payload & 0x3F));
+            q += 4;
+
+            bChanged = true;
+        }
+        else
+        {
+            *q++ = *p++;
+        }
+    }
+    *q = '\0';
+    *pnNew = (size_t)(q - pNew);
+    return bChanged;
+}
+
 // The following mux_AttrNameInitialSet_latin1 is only used for converting
 // A_LOCK.
 //
@@ -501,7 +597,9 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                               || (  3 == g_version
                                  && (g_flags & MANDFLAGS_V3) == MANDFLAGS_V3)
                               || (  4 == g_version
-                                 && (g_flags & MANDFLAGS_V4) == MANDFLAGS_V4));
+                                 && (g_flags & MANDFLAGS_V4) == MANDFLAGS_V4)
+                              || (  5 == g_version
+                                 && (g_flags & MANDFLAGS_V5) == MANDFLAGS_V5));
 
                     // Otherwise extract feature flags
                     //
@@ -760,6 +858,40 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                         }
                     }
                     atr_pop();
+                }
+
+                // Migrate V4 PUA color encoding to V5 if needed.
+                //
+                if (g_version <= 4)
+                {
+                    Log.WriteString(T("Migrating V4 24-bit color encoding to V5 " ENDLINE));
+                    Log.Flush();
+
+                    UTF8 *pMigBuf = alloc_lbuf("MigrateColorV4toV5");
+                    dbref iObject;
+                    atr_push();
+                    DO_WHOLE_DB(iObject)
+                    {
+                        unsigned char *as;
+                        for (int iAttr = atr_head(iObject, &as); iAttr; iAttr = atr_next(&as))
+                        {
+                            if (  0 < iAttr
+                               && iAttr <= anum_alc_top)
+                            {
+                                const UTF8 *pRaw = atr_get_raw(iObject, iAttr);
+                                if (nullptr != pRaw)
+                                {
+                                    size_t nNew;
+                                    if (MigrateColorV4toV5(pRaw, pMigBuf, &nNew))
+                                    {
+                                        atr_add_raw_LEN(iObject, iAttr, pMigBuf, nNew);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    atr_pop();
+                    free_lbuf(pMigBuf);
                 }
 
                 *db_version = g_version;

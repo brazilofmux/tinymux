@@ -135,24 +135,24 @@ static int pua_underline(unsigned char *out) {
 }
 
 /*
- * Encode SMP PUA (U+F0000-F05FF) as 4-byte UTF-8.
+ * Encode SMP PUA (U+F0000-F3FFF) as 4-byte UTF-8.
+ * block: 0-3, payload: 12-bit value.
  * Returns 4.
  */
-static int encode_smp_pua(unsigned char *out, unsigned int cp) {
+static int encode_smp_pua(unsigned char *out, unsigned int block, unsigned int payload) {
     out[0] = 0xF3;
-    out[1] = (unsigned char)(0x80 | ((cp >> 12) & 0x3F));
-    out[2] = (unsigned char)(0x80 | ((cp >> 6) & 0x3F));
-    out[3] = (unsigned char)(0x80 | (cp & 0x3F));
+    out[1] = (unsigned char)(0xB0 + block);
+    out[2] = (unsigned char)(0x80 | ((payload >> 6) & 0x3F));
+    out[3] = (unsigned char)(0x80 | (payload & 0x3F));
     return 4;
 }
 
-/* Encode 24-bit foreground: base FG + R/G/B deltas.
- * Returns total bytes written (3 + up to 12). */
+/* Encode 24-bit foreground: base FG + 2 SMP code points.
+ * Returns total bytes written (3 + 8 = 11). */
 static int pua_fg_rgb(unsigned char *out, int r, int g, int b) {
     int n = pua_fg(out, 0);  /* base FG indexed 0 */
-    n += encode_smp_pua(out + n, 0xF0000 + r);  /* red FG delta */
-    n += encode_smp_pua(out + n, 0xF0100 + g);  /* green FG delta */
-    n += encode_smp_pua(out + n, 0xF0200 + b);  /* blue FG delta */
+    n += encode_smp_pua(out + n, 0, ((unsigned)(r >> 4) << 8) | (unsigned)g);   /* FG CP1 */
+    n += encode_smp_pua(out + n, 1, ((unsigned)(r & 0xF) << 8) | (unsigned)b);  /* FG CP2 */
     return n;
 }
 
@@ -220,7 +220,7 @@ static size_t gen_random_colored(unsigned char *buf, size_t max_visible) {
         } else {
             /* 4-byte UTF-8 (U+10000-10FFFF, avoid SMP PUA) */
             unsigned int cp = 0x10000 + (xrand() % 0x100000);
-            if (cp >= 0xF0000 && cp <= 0xF05FF) cp = 0x1F600; /* avoid our PUA */
+            if (cp >= 0xF0000 && cp <= 0xF3FFF) cp = 0x1F600; /* avoid our PUA */
             buf[pos++] = (unsigned char)(0xF0 | (cp >> 18));
             buf[pos++] = (unsigned char)(0x80 | ((cp >> 12) & 0x3F));
             buf[pos++] = (unsigned char)(0x80 | ((cp >> 6) & 0x3F));
@@ -1234,12 +1234,11 @@ static void test_lbuf_boundary(void) {
 
 /* ---- Color interleaving stress ---- */
 
-/* Encode 24-bit background: base BG + R/G/B deltas.  15 bytes. */
+/* Encode 24-bit background: base BG + 2 SMP code points.  11 bytes. */
 static int pua_bg_rgb(unsigned char *out, int r, int g, int b) {
     int n = pua_bg(out, 0);
-    n += encode_smp_pua(out + n, 0xF0300 + r);
-    n += encode_smp_pua(out + n, 0xF0400 + g);
-    n += encode_smp_pua(out + n, 0xF0500 + b);
+    n += encode_smp_pua(out + n, 2, ((unsigned)(r >> 4) << 8) | (unsigned)g);   /* BG CP1 */
+    n += encode_smp_pua(out + n, 3, ((unsigned)(r & 0xF) << 8) | (unsigned)b);  /* BG CP2 */
     return n;
 }
 
@@ -1265,7 +1264,7 @@ static size_t build_rainbow(unsigned char *buf, const char *text) {
 }
 
 /* Build a string with maximum color density: every attribute set before
- * each char.  FG_RGB + BG_RGB + intense + underline + blink + inverse = 39 bytes
+ * each char.  FG_RGB + BG_RGB + intense + underline + blink + inverse = 34 bytes
  * of color per visible byte. */
 static size_t build_maxcolor(unsigned char *buf, const char *text) {
     size_t n = 0;
@@ -1347,7 +1346,7 @@ static void test_color_stress(void) {
 
     /*
      * 4. 24-bit RGB color + multi-byte visible chars.
-     *    Full 15-byte FG color + 3-byte CJK char = 18 bytes per "char".
+     *    Full 11-byte FG color + 3-byte CJK char = 14 bytes per "char".
      */
     n = 0;
     n += (size_t)pua_fg_rgb(buf + n, 255, 0, 0);  /* bright red */
@@ -2390,7 +2389,7 @@ static void test_navigation(void) {
         test_fail(name, "skip_color advanced when no color");
     }
 
-    /* co_skip_color: 24-bit RGB color (15 bytes). */
+    /* co_skip_color: 24-bit RGB color (11 bytes). */
     n = 0;
     n += (size_t)pua_fg_rgb(buf + n, 100, 200, 50);
     buf[n++] = 'Y';

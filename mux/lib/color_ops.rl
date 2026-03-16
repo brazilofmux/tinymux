@@ -9,15 +9,13 @@
  *   BMP PUA U+F500-F7FF (attributes + FG + BG indexed):
  *     EF 94..9F 80..BF    (3 bytes)
  *
- *   SMP PUA U+F0000-F05FF (RGB deltas):
- *     F3 B0 80 80..BF     (U+F0000-F003F)   red FG low
- *     F3 B0 81 80..BF     (U+F0040-F007F)   red FG mid
- *     F3 B0 82 80..BF     (U+F0080-F00BF)   red FG high
- *     F3 B0 83 80..BF     (U+F00C0-F00FF)   red FG top
- *     ...through...
- *     F3 B0 97 80..BF     (U+F05C0-F05FF)   blue BG top
+ *   SMP PUA U+F0000-F3FFF (24-bit RGB, 4 blocks of 4096):
+ *     F3 B0 (80-BF) (80-BF)   Block 0: FG CP1 (R high nibble + G)
+ *     F3 B1 (80-BF) (80-BF)   Block 1: FG CP2 (R low nibble + B)
+ *     F3 B2 (80-BF) (80-BF)   Block 2: BG CP1 (R high nibble + G)
+ *     F3 B3 (80-BF) (80-BF)   Block 3: BG CP2 (R low nibble + B)
  *
- *   So SMP color = F3 B0 (80..97) (80..BF)
+ *   So SMP color = F3 (B0..B3) (80..BF) (80..BF)
  */
 
 #include "color_ops.h"
@@ -232,8 +230,8 @@ static inline size_t wp_safe_copy(unsigned char *wp, const unsigned char *wp_end
     color_bmp = 0xEF (0x94..0x9F) (0x80..0xBF);
 
     # SMP PUA color: U+F0000-F05FF (RGB deltas)
-    # UTF-8: F3 B0 (80-97) (80-BF)
-    color_smp = 0xF3 0xB0 (0x80..0x97) (0x80..0xBF);
+    # UTF-8: F3 (B0-B3) (80-BF) (80-BF)
+    color_smp = 0xF3 (0xB0..0xB3) (0x80..0xBF) (0x80..0xBF);
 
     # Any color code point.
     color = color_bmp | color_smp;
@@ -259,18 +257,16 @@ static inline size_t wp_safe_copy(unsigned char *wp, const unsigned char *wp_end
     vis_3_ef = 0xEF (0x80..0x93 | 0xA0..0xBF) (0x80..0xBF);
     vis_3 = vis_3_e0 | vis_3_e1_ec | vis_3_ed | vis_3_ee | vis_3_ef;
 
-    # 4-byte UTF-8 — excluding the F3 B0 prefix that overlaps color_smp.
+    # 4-byte UTF-8 — excluding the F3 (B0-B3) prefix that overlaps color_smp.
     # F0: F0 (90-BF) (80-BF) (80-BF)
     # F1-F2: (F1-F2) (80-BF) (80-BF) (80-BF)
-    # F3 with non-color second byte: F3 (80-AF|B1-BF) (80-BF) (80-BF)
-    # F3 B0 with non-color third byte: F3 B0 (98-BF) (80-BF)
+    # F3 with non-color second byte: F3 (80-AF|B4-BF) (80-BF) (80-BF)
     # F4: F4 (80-8F) (80-BF) (80-BF)
     vis_4_f0 = 0xF0 (0x90..0xBF) (0x80..0xBF) (0x80..0xBF);
     vis_4_f1_f2 = (0xF1..0xF2) (0x80..0xBF) (0x80..0xBF) (0x80..0xBF);
-    vis_4_f3_other = 0xF3 (0x80..0xAF | 0xB1..0xBF) (0x80..0xBF) (0x80..0xBF);
-    vis_4_f3_b0 = 0xF3 0xB0 (0x98..0xBF) (0x80..0xBF);
+    vis_4_f3_other = 0xF3 (0x80..0xAF | 0xB4..0xBF) (0x80..0xBF) (0x80..0xBF);
     vis_4_f4 = 0xF4 (0x80..0x8F) (0x80..0xBF) (0x80..0xBF);
-    vis_4 = vis_4_f0 | vis_4_f1_f2 | vis_4_f3_other | vis_4_f3_b0 | vis_4_f4;
+    vis_4 = vis_4_f0 | vis_4_f1_f2 | vis_4_f3_other | vis_4_f4;
 
     visible = vis_1 | vis_2 | vis_3 | vis_4;
 }%%
@@ -313,10 +309,9 @@ const unsigned char *co_skip_color(const unsigned char *p,
             p += 3;
             continue;
         }
-        /* SMP PUA color: F3 B0 (80-97) xx */
+        /* SMP PUA color: F3 (B0-B3) xx xx */
         if (p[0] == 0xF3 && (p + 3) < pe
-            && p[1] == 0xB0
-            && p[2] >= 0x80 && p[2] <= 0x97) {
+            && p[1] >= 0xB0 && p[1] <= 0xB3) {
             p += 4;
             continue;
         }
@@ -1690,8 +1685,7 @@ size_t co_visual_width(const unsigned char *p, size_t len)
             continue;
         }
         if (p[0] == 0xF3 && (p + 3) < pe
-            && p[1] == 0xB0
-            && p[2] >= 0x80 && p[2] <= 0x97) {
+            && p[1] >= 0xB0 && p[1] <= 0xB3) {
             p += 4;
             continue;
         }
@@ -1731,8 +1725,7 @@ size_t co_copy_columns(unsigned char *out, const unsigned char *p,
             continue;
         }
         if (p[0] == 0xF3 && (p + 3) < pe
-            && p[1] == 0xB0
-            && p[2] >= 0x80 && p[2] <= 0x97) {
+            && p[1] >= 0xB0 && p[1] <= 0xB3) {
             if (wp + 4 <= wp_end) {
                 wp[0] = p[0]; wp[1] = p[1]; wp[2] = p[2]; wp[3] = p[3];
                 wp += 4;
@@ -1825,8 +1818,7 @@ static size_t parse_fill_chars(fill_char_t *chars, size_t max_chars,
             continue;
         }
         if (p[0] == 0xF3 && (p + 3) < pe
-            && p[1] == 0xB0
-            && p[2] >= 0x80 && p[2] <= 0x97) {
+            && p[1] >= 0xB0 && p[1] <= 0xB3) {
             parse_smp_color(p, &cs);
             p += 4;
             continue;
@@ -1931,8 +1923,7 @@ static size_t emit_data_with_tracking(unsigned char *wp, const unsigned char *wp
             continue;
         }
         if (p[0] == 0xF3 && (p + 3) < pe
-            && p[1] == 0xB0
-            && p[2] >= 0x80 && p[2] <= 0x97) {
+            && p[1] >= 0xB0 && p[1] <= 0xB3) {
             parse_smp_color(p, &cs);
             p += 4;
             continue;
@@ -2748,43 +2739,39 @@ static int parse_bmp_color(const unsigned char *p, co_ColorState *cs)
 }
 
 /*
- * Parse an SMP PUA color sequence (4 bytes starting with F3 B0).
+ * Parse an SMP PUA color sequence (4 bytes starting with F3 (B0-B3)).
  * Updates cs in place.  Returns 1 if parsed, 0 if not color.
  */
 static int parse_smp_color(const unsigned char *p, co_ColorState *cs)
 {
-    /* F3 B0 (80-97) (80-BF) */
-    if (p[2] > 0x97) return 0;
+    if (p[1] < 0xB0 || p[1] > 0xB3) return 0;
 
-    unsigned int offset = ((unsigned int)(p[2] - 0x80) << 6)
-                        | (unsigned int)(p[3] - 0x80);
-    unsigned int channel = offset / 256;
-    uint8_t value = (uint8_t)(offset % 256);
+    unsigned int block = (unsigned int)(p[1] - 0xB0);
+    unsigned int payload = ((unsigned int)(p[2] - 0x80) << 6)
+                         | (unsigned int)(p[3] - 0x80);
+    unsigned int hi = payload >> 8;
+    unsigned int lo = payload & 0xFF;
 
-    switch (channel) {
-        case 0: /* red FG delta */
+    switch (block) {
+        case 0: /* FG CP1: R high nibble + G */
             if (cs->fg >= 0 && cs->fg <= 255) cs->fg = -2;
-            cs->fg_r = value;
+            cs->fg_r = (uint8_t)(hi << 4);
+            cs->fg_g = (uint8_t)lo;
             break;
-        case 1: /* green FG delta */
+        case 1: /* FG CP2: R low nibble + B */
             if (cs->fg >= 0 && cs->fg <= 255) cs->fg = -2;
-            cs->fg_g = value;
+            cs->fg_r = (uint8_t)((cs->fg_r & 0xF0) | hi);
+            cs->fg_b = (uint8_t)lo;
             break;
-        case 2: /* blue FG delta */
-            if (cs->fg >= 0 && cs->fg <= 255) cs->fg = -2;
-            cs->fg_b = value;
-            break;
-        case 3: /* red BG delta */
+        case 2: /* BG CP1: R high nibble + G */
             if (cs->bg >= 0 && cs->bg <= 255) cs->bg = -2;
-            cs->bg_r = value;
+            cs->bg_r = (uint8_t)(hi << 4);
+            cs->bg_g = (uint8_t)lo;
             break;
-        case 4: /* green BG delta */
+        case 3: /* BG CP2: R low nibble + B */
             if (cs->bg >= 0 && cs->bg <= 255) cs->bg = -2;
-            cs->bg_g = value;
-            break;
-        case 5: /* blue BG delta */
-            if (cs->bg >= 0 && cs->bg <= 255) cs->bg = -2;
-            cs->bg_b = value;
+            cs->bg_r = (uint8_t)((cs->bg_r & 0xF0) | hi);
+            cs->bg_b = (uint8_t)lo;
             break;
     }
     return 1;
@@ -2824,15 +2811,13 @@ static size_t emit_pua_bmp(unsigned char *wp, const unsigned char *wp_end,
 }
 
 static size_t emit_pua_smp(unsigned char *wp, const unsigned char *wp_end,
-                           unsigned int channel, uint8_t value)
+                           unsigned int block, unsigned int payload)
 {
-    /* U+F0000 + channel*256 + value → 4-byte UTF-8 */
     if (wp + 4 > wp_end) return 0;
-    unsigned int cp = 0xF0000 + channel * 256 + value;
     wp[0] = 0xF3;
-    wp[1] = 0xB0;
-    wp[2] = (unsigned char)(0x80 | ((cp >> 6) & 0x3F));
-    wp[3] = (unsigned char)(0x80 | (cp & 0x3F));
+    wp[1] = (unsigned char)(0xB0 + block);
+    wp[2] = (unsigned char)(0x80 | ((payload >> 6) & 0x3F));
+    wp[3] = (unsigned char)(0x80 | (payload & 0x3F));
     return 4;
 }
 
@@ -2891,16 +2876,18 @@ static size_t emit_transition(unsigned char *wp,
             /* Indexed FG: emit palette code. */
             wp += emit_pua_bmp(wp, wp_end, 0xF600 + (unsigned int)new_cs->fg);
         } else if (new_cs->fg == -2) {
-            /* RGB FG: find nearest palette, emit base + deltas. */
+            /* RGB FG: nearest palette base + 2-code-point encoding. */
             int idx = find_nearest_palette(new_cs->fg_r, new_cs->fg_g,
                                            new_cs->fg_b);
             wp += emit_pua_bmp(wp, wp_end, 0xF600 + (unsigned int)idx);
-            if (new_cs->fg_r != xterm_palette[idx].r)
-                wp += emit_pua_smp(wp, wp_end, 0, new_cs->fg_r);
-            if (new_cs->fg_g != xterm_palette[idx].g)
-                wp += emit_pua_smp(wp, wp_end, 1, new_cs->fg_g);
-            if (new_cs->fg_b != xterm_palette[idx].b)
-                wp += emit_pua_smp(wp, wp_end, 2, new_cs->fg_b);
+            if (  new_cs->fg_r != xterm_palette[idx].r
+               || new_cs->fg_g != xterm_palette[idx].g
+               || new_cs->fg_b != xterm_palette[idx].b) {
+                wp += emit_pua_smp(wp, wp_end, 0,
+                    ((unsigned int)(new_cs->fg_r >> 4) << 8) | new_cs->fg_g);
+                wp += emit_pua_smp(wp, wp_end, 1,
+                    ((unsigned int)(new_cs->fg_r & 0xF) << 8) | new_cs->fg_b);
+            }
         }
     }
 
@@ -2916,12 +2903,14 @@ static size_t emit_transition(unsigned char *wp,
             int idx = find_nearest_palette(new_cs->bg_r, new_cs->bg_g,
                                            new_cs->bg_b);
             wp += emit_pua_bmp(wp, wp_end, 0xF700 + (unsigned int)idx);
-            if (new_cs->bg_r != xterm_palette[idx].r)
-                wp += emit_pua_smp(wp, wp_end, 3, new_cs->bg_r);
-            if (new_cs->bg_g != xterm_palette[idx].g)
-                wp += emit_pua_smp(wp, wp_end, 4, new_cs->bg_g);
-            if (new_cs->bg_b != xterm_palette[idx].b)
-                wp += emit_pua_smp(wp, wp_end, 5, new_cs->bg_b);
+            if (  new_cs->bg_r != xterm_palette[idx].r
+               || new_cs->bg_g != xterm_palette[idx].g
+               || new_cs->bg_b != xterm_palette[idx].b) {
+                wp += emit_pua_smp(wp, wp_end, 2,
+                    ((unsigned int)(new_cs->bg_r >> 4) << 8) | new_cs->bg_g);
+                wp += emit_pua_smp(wp, wp_end, 3,
+                    ((unsigned int)(new_cs->bg_r & 0xF) << 8) | new_cs->bg_b);
+            }
         }
     }
 
@@ -2950,10 +2939,9 @@ size_t co_collapse_color(unsigned char *out,
             continue;
         }
 
-        /* SMP PUA color: F3 B0 (80-97) xx */
+        /* SMP PUA color: F3 (B0-B3) xx xx */
         if (p[0] == 0xF3 && (p + 3) < pe
-            && p[1] == 0xB0
-            && p[2] >= 0x80 && p[2] <= 0x97) {
+            && p[1] >= 0xB0 && p[1] <= 0xB3) {
             parse_smp_color(p, &pending);
             p += 4;
             continue;
@@ -3020,8 +3008,7 @@ static const unsigned char *consume_pua(const unsigned char **pp,
             continue;
         }
         if (p[0] == 0xF3 && (p + 3) < pe
-            && p[1] == 0xB0
-            && p[2] >= 0x80 && p[2] <= 0x97) {
+            && p[1] >= 0xB0 && p[1] <= 0xB3) {
             parse_smp_color(p, cs);
             p += 4;
             continue;

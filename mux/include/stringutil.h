@@ -1139,8 +1139,30 @@ inline const string_desc *mux_foldmatch(const unsigned char *p, bool &bXor)
 
 // utf/tr_Color.txt
 //
+// SMP PUA 24-bit color: U+F0000-F3FFF (4 blocks of 4096)
+// UTF-8: F3 (B0-B3) (80-BF) (80-BF)
+// Block 0 (B0): FG CP1 — R high nibble + G
+// Block 1 (B1): FG CP2 — R low nibble + B
+// Block 2 (B2): BG CP1 — R high nibble + G
+// Block 3 (B3): BG CP2 — R low nibble + B
+//
+// These are handled by a prefix check before the DFA, returning
+// 518..521 (COLOR_INDEX_FG_24_CP1..COLOR_INDEX_BG_24_CP2).
+//
+// The constant 518 = NUM_OTHER + NUM_ATTR + NUM_FG + NUM_BG = 2+4+256+256.
+// It must match COLOR_INDEX_FG_24_CP1 defined below.
+//
 inline int mux_color(const unsigned char *p)
 {
+    // SMP PUA 24-bit color prefix check (avoids 16K-entry DFA).
+    //
+    if (  0xF3 == p[0]
+       && 0xB0 <= p[1]
+       && p[1] <= 0xB3)
+    {
+        return 518 + (p[1] - 0xB0);
+    }
+
     unsigned short iState = TR_COLOR_START_STATE;
     do
     {
@@ -1184,6 +1206,15 @@ inline int mux_color(const unsigned char *p)
         }
     } while (iState < TR_COLOR_ACCEPTING_STATES_START);
     return iState - TR_COLOR_ACCEPTING_STATES_START;
+}
+
+// Extract 12-bit payload from a 4-byte SMP PUA code point.
+// p must point to F3 Bx xx xx where x is B0-B3.
+//
+inline unsigned int mux_color_smp_payload(const unsigned char *p)
+{
+    return (static_cast<unsigned int>(p[2] - 0x80) << 6)
+         | static_cast<unsigned int>(p[3] - 0x80);
 }
 
 #define mux_haswidth(x) mux_isprint(x)
@@ -1238,15 +1269,11 @@ typedef uint64_t ColorState;
 #define COLOR_INDEX_ATTR        (NUM_OTHER)
 #define COLOR_INDEX_FG          (COLOR_INDEX_ATTR + NUM_ATTR)
 #define COLOR_INDEX_BG          (COLOR_INDEX_FG + NUM_FG)
-#define COLOR_INDEX_FG_24       (COLOR_INDEX_BG + NUM_BG)
-#define COLOR_INDEX_FG_24_RED   (COLOR_INDEX_FG_24)
-#define COLOR_INDEX_FG_24_GREEN (COLOR_INDEX_FG_24_RED   + 256)
-#define COLOR_INDEX_FG_24_BLUE  (COLOR_INDEX_FG_24_GREEN + 256)
-#define COLOR_INDEX_BG_24       (COLOR_INDEX_FG_24_BLUE  + 256)
-#define COLOR_INDEX_BG_24_RED   (COLOR_INDEX_BG_24)
-#define COLOR_INDEX_BG_24_GREEN (COLOR_INDEX_BG_24_RED   + 256)
-#define COLOR_INDEX_BG_24_BLUE  (COLOR_INDEX_BG_24_GREEN + 256)
-#define COLOR_INDEX_LAST        (COLOR_INDEX_BG_24_BLUE  + 256 - 1)
+#define COLOR_INDEX_FG_24_CP1   (COLOR_INDEX_BG + NUM_BG)
+#define COLOR_INDEX_FG_24_CP2   (COLOR_INDEX_FG_24_CP1 + 1)
+#define COLOR_INDEX_BG_24_CP1   (COLOR_INDEX_FG_24_CP2 + 1)
+#define COLOR_INDEX_BG_24_CP2   (COLOR_INDEX_BG_24_CP1 + 1)
+#define COLOR_INDEX_LAST        COLOR_INDEX_BG_24_CP2
 
 #define COLOR_INDEX_RESET       1
 #define COLOR_INDEX_INTENSE     (COLOR_INDEX_ATTR + 0)

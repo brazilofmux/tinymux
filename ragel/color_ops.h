@@ -14,16 +14,14 @@
  *     U+F700-F7FF    256 background XTERM indexed colors
  *
  *   Supplementary PUA (4-byte UTF-8, Plane 15):
- *     U+F0000-F00FF  red FG delta
- *     U+F0100-F01FF  green FG delta
- *     U+F0200-F02FF  blue FG delta
- *     U+F0300-F03FF  red BG delta
- *     U+F0400-F04FF  green BG delta
- *     U+F0500-F05FF  blue BG delta
+ *     U+F0000-F0FFF  FG CP1: (R high nibble << 8) | G
+ *     U+F1000-F1FFF  FG CP2: (R low nibble << 8) | B
+ *     U+F2000-F2FFF  BG CP1: (R high nibble << 8) | G
+ *     U+F3000-F3FFF  BG CP2: (R low nibble << 8) | B
  *
- * A color annotation is 1-4 code points: a base (3 bytes BMP PUA),
- * optionally followed by up to 3 RGB delta code points (4 bytes SMP PUA).
- * 24-bit color = base + up to 3 deltas = up to 15 bytes.
+ * A color annotation is 1-3 code points: a base (3 bytes BMP PUA),
+ * optionally followed by exactly 2 SMP code points (4 bytes each).
+ * 24-bit color = base + 2 SMP = always 11 bytes per layer.
  *
  * These routines operate directly on the PUA-inline UTF-8 representation,
  * in a single pass, without stripping/re-inserting color metadata.
@@ -35,6 +33,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* LBUF_SIZE matches TinyMUX. */
 #define LBUF_SIZE 8000
 
@@ -42,7 +44,7 @@
  * co_visible_length — Count visible code points (skipping color PUA).
  *
  * Returns the number of non-color Unicode code points in the string.
- * This is equivalent to mux_string::length_point() after import.
+ * This counts code points in a null-terminated UTF-8 string.
  */
 size_t co_visible_length(const unsigned char *p, size_t len);
 
@@ -182,6 +184,39 @@ size_t co_trim(unsigned char *out,
 const unsigned char *co_search(const unsigned char *haystack, size_t hlen,
                                const unsigned char *needle, size_t nlen);
 
+/*
+ * co_split_words — Split PUA-encoded string by multi-char delimiter.
+ *
+ * Populates word_starts[] and word_ends[] with byte offsets into data.
+ * Space delimiter uses compress semantics; non-space is exact.
+ * Returns number of words found.
+ */
+size_t co_split_words(const unsigned char *data, size_t len,
+                      const unsigned char *sep, size_t sep_len,
+                      size_t *word_starts, size_t *word_ends,
+                      size_t max_words);
+
+/*
+ * co_trim_pattern — Trim repeating multi-byte pattern from edges.
+ *
+ * Pattern is matched cyclically at the raw byte level.
+ * trim_flags: 1 = left, 2 = right, 3 = both.
+ * Returns bytes written to out.
+ */
+size_t co_trim_pattern(unsigned char *out,
+                       const unsigned char *data, size_t len,
+                       const unsigned char *pattern, size_t plen,
+                       int trim_flags);
+
+/*
+ * co_compress_str — Compress runs of a multi-char separator into one.
+ *
+ * Returns bytes written to out.
+ */
+size_t co_compress_str(unsigned char *out,
+                       const unsigned char *data, size_t len,
+                       const unsigned char *sep, size_t sep_len);
+
 /* ---- Stage 2: Transforms, edit, reverse ---- */
 
 /*
@@ -315,38 +350,70 @@ size_t co_member(const unsigned char *target, size_t tlen,
                  unsigned char delim);
 
 /*
+ * co_console_width — Column width of a single visible code point.
+ *
+ * Returns 0 for combining marks, 2 for fullwidth/CJK, 1 otherwise.
+ * Wraps ConsoleWidth() from stringutil.cpp with C linkage.
+ */
+int co_console_width(const unsigned char *pCodePoint);
+
+/*
+ * co_visual_width — Total display column width of a PUA-colored string.
+ *
+ * Skips color PUA codes, sums co_console_width() for visible chars.
+ * Accounts for fullwidth (2 columns) and zero-width (0 columns).
+ */
+size_t co_visual_width(const unsigned char *p, size_t len);
+
+/*
+ * co_copy_columns — Copy up to n display columns, preserving color.
+ *
+ * Like co_copy_visible but counts display columns instead of code points.
+ * A fullwidth character counts as 2 columns.  Stops before emitting a
+ * character that would exceed the column limit.
+ * Returns bytes written to out.
+ */
+size_t co_copy_columns(unsigned char *out, const unsigned char *p,
+                       const unsigned char *pe, size_t ncols);
+
+/*
  * co_center — Center string with padding, preserving color.
  *
- * Pads string to exactly width visible code points, centered.
- * fill/fill_len is the fill pattern (cycled if multi-character).
- * If fill_len is 0, uses space.  Truncates if string is wider.
+ * Pads string to exactly 'width' display columns, centered.
+ * fill/fill_len is the fill pattern (cycled, phase-continuous).
+ * If fill_len is 0, uses space.  bTrunc: truncate if wider.
  *
  * Returns bytes written to out.
  */
 size_t co_center(unsigned char *out,
                  const unsigned char *p, size_t len,
                  size_t width,
-                 const unsigned char *fill, size_t fill_len);
+                 const unsigned char *fill, size_t fill_len,
+                 int bTrunc);
 
 /*
- * co_ljust — Left-justify (right-pad) to width, preserving color.
+ * co_ljust — Left-justify (right-pad) to width columns, preserving color.
  *
+ * bTrunc: if true, truncate input to width if wider.
  * Returns bytes written to out.
  */
 size_t co_ljust(unsigned char *out,
                 const unsigned char *p, size_t len,
                 size_t width,
-                const unsigned char *fill, size_t fill_len);
+                const unsigned char *fill, size_t fill_len,
+                int bTrunc);
 
 /*
- * co_rjust — Right-justify (left-pad) to width, preserving color.
+ * co_rjust — Right-justify (left-pad) to width columns, preserving color.
  *
+ * bTrunc: if true, truncate input to width if wider.
  * Returns bytes written to out.
  */
 size_t co_rjust(unsigned char *out,
                 const unsigned char *p, size_t len,
                 size_t width,
-                const unsigned char *fill, size_t fill_len);
+                const unsigned char *fill, size_t fill_len,
+                int bTrunc);
 
 /*
  * co_repeat — Repeat string n times, preserving color.
@@ -511,5 +578,79 @@ size_t co_collapse_color(unsigned char *out,
 size_t co_apply_color(unsigned char *out,
                       const unsigned char *p, size_t len,
                       co_ColorState cs);
+
+/*
+ * co_merge — Positional character merge with color tracking.
+ *
+ * MUX merge() semantics: for each position, if strA's visible code point
+ * matches search, replace with strB's code point and color.
+ * Tracks absolute color state for both strings and emits correct
+ * PUA transitions in the output.
+ *
+ * Returns bytes written to out, or 0 if visible lengths differ.
+ */
+size_t co_merge(unsigned char *out,
+                const unsigned char *strA, size_t lenA,
+                const unsigned char *strB, size_t lenB,
+                const unsigned char *search, size_t slen);
+
+/*
+ * co_escape — Insert backslash before escape characters, preserving color.
+ *
+ * MUX escape() semantics: prepends '\' before the first visible character
+ * and before any character in the set: $%(),;[\]^{}.
+ * Color PUA codes are passed through unchanged.
+ *
+ * Returns bytes written to out.
+ */
+size_t co_escape(unsigned char *out,
+                 const unsigned char *data, size_t len);
+
+/* ---- Grapheme cluster operations ---- */
+
+/*
+ * co_cluster_count — Count Extended Grapheme Clusters in PUA-encoded string.
+ *
+ * Full UAX #29 grapheme segmentation (Unicode 16.0): handles combining
+ * marks, Hangul jamo, emoji ZWJ sequences, regional indicators.
+ * Color PUA code points are skipped (not counted as clusters).
+ */
+size_t co_cluster_count(const unsigned char *data, size_t len);
+
+/*
+ * co_cluster_advance — Advance past n grapheme clusters in PUA-encoded string.
+ *
+ * Returns pointer past the nth cluster (including any trailing color).
+ * If out_count is non-NULL, stores the actual number of clusters advanced.
+ */
+const unsigned char *co_cluster_advance(const unsigned char *data,
+                                        const unsigned char *pe,
+                                        size_t n, size_t *out_count);
+
+/*
+ * co_mid_cluster — Substring by grapheme cluster position, preserving color.
+ *
+ * iStart is 0-based cluster index, nCount is number of clusters to extract.
+ * Color interleaved in the extracted range is preserved.
+ *
+ * Returns bytes written to out.
+ */
+size_t co_mid_cluster(unsigned char *out,
+                      const unsigned char *data, size_t len,
+                      size_t iStart, size_t nCount);
+
+/*
+ * co_delete_cluster — Delete grapheme clusters by position, preserving color.
+ *
+ * iStart is 0-based cluster index, nCount is number of clusters to delete.
+ * Returns bytes written to out.
+ */
+size_t co_delete_cluster(unsigned char *out,
+                         const unsigned char *data, size_t len,
+                         size_t iStart, size_t nCount);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* COLOR_OPS_H */

@@ -14,16 +14,14 @@
  *     U+F700-F7FF    256 background XTERM indexed colors
  *
  *   Supplementary PUA (4-byte UTF-8, Plane 15):
- *     U+F0000-F00FF  red FG delta
- *     U+F0100-F01FF  green FG delta
- *     U+F0200-F02FF  blue FG delta
- *     U+F0300-F03FF  red BG delta
- *     U+F0400-F04FF  green BG delta
- *     U+F0500-F05FF  blue BG delta
+ *     U+F0000-F0FFF  FG CP1: (R high nibble << 8) | G
+ *     U+F1000-F1FFF  FG CP2: (R low nibble << 8) | B
+ *     U+F2000-F2FFF  BG CP1: (R high nibble << 8) | G
+ *     U+F3000-F3FFF  BG CP2: (R low nibble << 8) | B
  *
- * A color annotation is 1-4 code points: a base (3 bytes BMP PUA),
- * optionally followed by up to 3 RGB delta code points (4 bytes SMP PUA).
- * 24-bit color = base + up to 3 deltas = up to 15 bytes.
+ * A color annotation is 1-3 code points: a base (3 bytes BMP PUA),
+ * optionally followed by exactly 2 SMP code points (4 bytes each).
+ * 24-bit color = base + 2 SMP = always 11 bytes per layer.
  *
  * These routines operate directly on the PUA-inline UTF-8 representation,
  * in a single pass, without stripping/re-inserting color metadata.

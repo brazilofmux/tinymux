@@ -3561,7 +3561,9 @@ static void dbconvert_info(int fmt, int flags, int ver)
             || (  3 == ver
                && (flags & MANDFLAGS_V3) != MANDFLAGS_V3)
             || (  4 == ver
-               && (flags & MANDFLAGS_V4) != MANDFLAGS_V4))
+               && (flags & MANDFLAGS_V4) != MANDFLAGS_V4)
+            || (  5 == ver
+               && (flags & MANDFLAGS_V5) != MANDFLAGS_V5))
     {
         mux_fprintf(stderr, T(" Unsupported flags"));
         exit(1);

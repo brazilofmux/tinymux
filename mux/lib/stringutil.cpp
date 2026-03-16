@@ -2372,53 +2372,63 @@ inline void ValidateColorState(ColorState cs)
     mux_assert((CS_BACKGROUND & cs) <= CS_BG_DEFAULT);
 }
 
-inline ColorState UpdateColorState(ColorState cs, int iColorCode)
+inline ColorState UpdateColorState(ColorState cs, int iColorCode, const UTF8 *pRaw = nullptr)
 {
     mux_assert(0 <= iColorCode &&  iColorCode <= COLOR_INDEX_LAST);
-    if (COLOR_INDEX_FG_24 <= iColorCode)
+    if (COLOR_INDEX_FG_24_CP1 <= iColorCode)
     {
-        // In order to apply an RGB 24-bit modification, we need to translate
-        // any indexed color to a value color.
+        // 24-bit color: 2-code-point encoding.
+        // CP1 carries R high nibble + G, CP2 carries R low nibble + B.
+        // pRaw points to the 4-byte UTF-8 sequence: F3 Bx xx xx.
         //
-        if (iColorCode < COLOR_INDEX_BG_24)
+        mux_assert(pRaw != nullptr);
+        unsigned int payload = mux_color_smp_payload(pRaw);
+        unsigned int hi = payload >> 8;   // 4-bit nibble (CP1) or nibble (CP2)
+        unsigned int lo = payload & 0xFF; // G (CP1) or B (CP2)
+
+        switch (iColorCode)
         {
+        case COLOR_INDEX_FG_24_CP1:
             if (CS_FG_INDEXED & cs)
             {
                 cs = (cs & ~CS_FOREGROUND) | rgb2cs(&palette[CS_FG_FIELD_INDEXED(cs)].rgb);
             }
+            cs = (cs & ~CS_FOREGROUND_RED) | (static_cast<ColorState>(hi << 4) << 16);
+            cs = (cs & ~CS_FOREGROUND_GREEN) | (static_cast<ColorState>(lo) << 8);
+            break;
 
-            if (iColorCode < COLOR_INDEX_FG_24_GREEN)
+        case COLOR_INDEX_FG_24_CP2:
+            if (CS_FG_INDEXED & cs)
             {
-                cs = (cs & ~CS_FOREGROUND_RED) | (static_cast<ColorState>(iColorCode - COLOR_INDEX_FG_24_RED) << 16);
+                cs = (cs & ~CS_FOREGROUND) | rgb2cs(&palette[CS_FG_FIELD_INDEXED(cs)].rgb);
             }
-            else if (iColorCode < COLOR_INDEX_FG_24_BLUE)
             {
-                cs = (cs & ~CS_FOREGROUND_GREEN) | (static_cast<ColorState>(iColorCode - COLOR_INDEX_FG_24_GREEN) << 8);
+                ColorState red = (cs >> 16) & 0xF0;
+                cs = (cs & ~CS_FOREGROUND_RED) | ((red | hi) << 16);
             }
-            else
-            {
-                cs = (cs & ~CS_FOREGROUND_BLUE) | static_cast<ColorState>(iColorCode - COLOR_INDEX_FG_24_BLUE);
-            }
-        }
-        else
-        {
+            cs = (cs & ~CS_FOREGROUND_BLUE) | static_cast<ColorState>(lo);
+            break;
+
+        case COLOR_INDEX_BG_24_CP1:
             if (CS_BG_INDEXED & cs)
             {
                 cs = (cs & ~CS_BACKGROUND) | (rgb2cs(&palette[CS_BG_FIELD_INDEXED(cs)].rgb) << 32);
             }
+            cs = (cs & ~CS_BACKGROUND_RED) | (static_cast<ColorState>(hi << 4) << 48);
+            cs = (cs & ~CS_BACKGROUND_GREEN) | (static_cast<ColorState>(lo) << 40);
+            break;
 
-            if (iColorCode < COLOR_INDEX_BG_24_GREEN)
+        case COLOR_INDEX_BG_24_CP2:
+            if (CS_BG_INDEXED & cs)
             {
-                cs = (cs & ~CS_BACKGROUND_RED) | (static_cast<ColorState>(iColorCode - COLOR_INDEX_BG_24_RED) << 48);
+                cs = (cs & ~CS_BACKGROUND) | (rgb2cs(&palette[CS_BG_FIELD_INDEXED(cs)].rgb) << 32);
             }
-            else if (iColorCode < COLOR_INDEX_BG_24_BLUE)
             {
-                cs = (cs & ~CS_BACKGROUND_GREEN) | (static_cast<ColorState>(iColorCode - COLOR_INDEX_BG_24_GREEN) << 40);
+                ColorState red = (cs >> 48) & 0xF0;
+                cs = (cs & ~CS_BACKGROUND_RED) | ((red | hi) << 48);
             }
-            else
-            {
-                cs = (cs & ~CS_BACKGROUND_BLUE) | (static_cast<ColorState>(iColorCode - COLOR_INDEX_BG_24_BLUE) << 32);
-            }
+            cs = (cs & ~CS_BACKGROUND_BLUE) | (static_cast<ColorState>(lo) << 32);
+            break;
         }
         mux_assert((cs & ~CS_ALLBITS) == 0);
         return cs;
@@ -2437,9 +2447,22 @@ inline ColorState UpdateColorState(ColorState cs, int iColorCode)
 // + COLOR_FG_RED     "\xEF\x98\x81"
 // + COLOR_BG_WHITE   "\xEF\x9C\x87"
 //
-// Each of the seven codes is 3 bytes or 21 bytes total. Plus six 24-bit modifiers (each 4 bytes).
+// Each of the seven codes is 3 bytes or 21 bytes total. Plus two 24-bit
+// SMP code points per layer (4 bytes each), for FG and BG = 4 code points.
 //
-#define COLOR_MAXIMUM_BINARY_TRANSITION_LENGTH (21+4*6)
+#define COLOR_MAXIMUM_BINARY_TRANSITION_LENGTH (21+4*4)
+
+// Emit a 4-byte SMP PUA color code point.
+// block: 0=FG CP1, 1=FG CP2, 2=BG CP1, 3=BG CP2
+// payload: 12-bit value ((nibble << 8) | channel_byte)
+//
+static inline void EmitSMPColor(UTF8 *buf, unsigned int block, unsigned int payload)
+{
+    buf[0] = 0xF3;
+    buf[1] = static_cast<UTF8>(0xB0 + block);
+    buf[2] = static_cast<UTF8>(0x80 | ((payload >> 6) & 0x3F));
+    buf[3] = static_cast<UTF8>(0x80 | (payload & 0x3F));
+}
 
 // Generate the minimal color sequence that will transition from one color state
 // to another.
@@ -2514,21 +2537,12 @@ static UTF8 *ColorTransitionBinary
             i += aColors[COLOR_INDEX_FG + iColor].nUTF;
             if (!fExact)
             {
-                if (palette[iColor].rgb.r != rgb.r)
-                {
-                    memcpy(Buffer + i, ConvertToUTF8(rgb.r + 0xF0000), 4);
-                    i += 4;
-                }
-                if (palette[iColor].rgb.g != rgb.g)
-                {
-                    memcpy(Buffer + i, ConvertToUTF8(rgb.g + 0xF0100), 4);
-                    i += 4;
-                }
-                if (palette[iColor].rgb.b != rgb.b)
-                {
-                    memcpy(Buffer + i, ConvertToUTF8(rgb.b + 0xF0200), 4);
-                    i += 4;
-                }
+                // 2-code-point FG encoding: CP1 (block 0) + CP2 (block 1)
+                //
+                EmitSMPColor(Buffer + i, 0, ((rgb.r >> 4) << 8) | rgb.g);
+                i += 4;
+                EmitSMPColor(Buffer + i, 1, ((rgb.r & 0xF) << 8) | rgb.b);
+                i += 4;
             }
         }
     }
@@ -2555,21 +2569,12 @@ static UTF8 *ColorTransitionBinary
             i += aColors[COLOR_INDEX_BG + iColor].nUTF;
             if (!fExact)
             {
-                if (palette[iColor].rgb.r != rgb.r)
-                {
-                    memcpy(Buffer + i, ConvertToUTF8(rgb.r + 0xF0300), 4);
-                    i += 4;
-                }
-                if (palette[iColor].rgb.g != rgb.g)
-                {
-                    memcpy(Buffer + i, ConvertToUTF8(rgb.g + 0xF0400), 4);
-                    i += 4;
-                }
-                if (palette[iColor].rgb.b != rgb.b)
-                {
-                    memcpy(Buffer + i, ConvertToUTF8(rgb.b + 0xF0500), 4);
-                    i += 4;
-                }
+                // 2-code-point BG encoding: CP1 (block 2) + CP2 (block 3)
+                //
+                EmitSMPColor(Buffer + i, 2, ((rgb.r >> 4) << 8) | rgb.g);
+                i += 4;
+                EmitSMPColor(Buffer + i, 3, ((rgb.r & 0xF) << 8) | rgb.b);
+                i += 4;
             }
         }
     }
@@ -3268,7 +3273,7 @@ UTF8 *convert_to_html(const UTF8 *pString)
         while (  '\0' != pString[i]
               && COLOR_NOTCOLOR != iCode)
         {
-            csNext = UpdateColorState(csNext, iCode);
+            csNext = UpdateColorState(csNext, iCode, pString + i);
             i += utf8_advance_nul(pString + i);
             iCode = mux_color(pString + i);
         }
@@ -3479,7 +3484,7 @@ UTF8 *convert_color(const UTF8 *pString, bool fNoBleed, bool fColor256)
         while (  '\0' != pString[i]
               && COLOR_NOTCOLOR != iCode)
         {
-            csNext = UpdateColorState(csNext, iCode);
+            csNext = UpdateColorState(csNext, iCode, pString + i);
             i += utf8_advance_nul(pString + i);
             iCode = mux_color(pString + i);
         }
@@ -3658,7 +3663,7 @@ UTF8 *translate_string(const UTF8 *pString, bool bConvert)
         }
         else
         {
-            csCurrent = UpdateColorState(csCurrent, iCode);
+            csCurrent = UpdateColorState(csCurrent, iCode, pString);
         }
         pString += utf8_advance_nul(pString);
     }
@@ -4972,7 +4977,7 @@ mux_field StripTabsAndTruncate
         mux_cursor curPoint(static_cast<LBUF_OFFSET>(nPointBytes), 1);
         if (COLOR_NOTCOLOR != iCode)
         {
-            csNext = UpdateColorState(csNext, iCode);
+            csNext = UpdateColorState(csNext, iCode, pString + curPos.m_byte);
         }
         else if (nullptr == strchr("\r\n\t", pString[curPos.m_byte]))
         {
@@ -5098,7 +5103,7 @@ size_t TruncateToBuffer
                  || UTF8_SIZE4 == utf8_FirstByte[p[0]])
               && COLOR_NOTCOLOR != (iCode = mux_color(p)))
         {
-            csCurrent = UpdateColorState(csCurrent, iCode);
+            csCurrent = UpdateColorState(csCurrent, iCode, p);
             size_t nAdvance = utf8_advance_nul(p);
             if (0 == nAdvance)
             {
