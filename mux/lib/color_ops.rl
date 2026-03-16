@@ -1990,7 +1990,7 @@ size_t co_center(unsigned char *out,
         fchars[0].bytes[0] = ' ';
         fchars[0].len = 1;
         fchars[0].width = 1;
-        fchars[0].color = (co_ColorState)CO_CS_NORMAL;
+        fchars[0].color = CO_CS_NORMAL;
         nfchars = 1;
         fill_width = 1;
     }
@@ -2064,7 +2064,7 @@ size_t co_ljust(unsigned char *out,
         fchars[0].bytes[0] = ' ';
         fchars[0].len = 1;
         fchars[0].width = 1;
-        fchars[0].color = (co_ColorState)CO_CS_NORMAL;
+        fchars[0].color = CO_CS_NORMAL;
         nfchars = 1;
         fill_width = 1;
     }
@@ -2130,7 +2130,7 @@ size_t co_rjust(unsigned char *out,
         fchars[0].bytes[0] = ' ';
         fchars[0].len = 1;
         fchars[0].width = 1;
-        fchars[0].color = (co_ColorState)CO_CS_NORMAL;
+        fchars[0].color = CO_CS_NORMAL;
         nfchars = 1;
         fill_width = 1;
     }

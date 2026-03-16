@@ -1,4 +1,8 @@
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
 /* In C++ mode, the OTT arrays are string_desc (from utf8tables.h) but these
  * functions return co_string_desc*.  The types are ABI-identical, so a cast
  * is safe.  In C mode, both sides are co_string_desc and no cast is needed.

@@ -47,6 +47,11 @@ typedef struct {
 #define CO_UTF8_SIZE4     4
 #define CO_UTF8_CONTINUE  5
 #define CO_UTF8_ILLEGAL   6
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern const unsigned char utf8_FirstByte[256];
 
 // utf/tr_tolower.txt
@@ -113,6 +118,10 @@ extern LIBMUX_API const unsigned char tr_foldmatch_sbt[47];
 #define TR_FOLDMATCH_XOR_START (3)
 extern LIBMUX_API const co_string_desc tr_foldmatch_ott[3];
 
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 /* In C++ mode, the OTT arrays are string_desc (from utf8tables.h) but these
  * functions return co_string_desc*.  The types are ABI-identical, so a cast

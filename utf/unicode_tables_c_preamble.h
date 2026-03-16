@@ -47,5 +47,10 @@ typedef struct {
 #define CO_UTF8_SIZE4     4
 #define CO_UTF8_CONTINUE  5
 #define CO_UTF8_ILLEGAL   6
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern const unsigned char utf8_FirstByte[256];
 
