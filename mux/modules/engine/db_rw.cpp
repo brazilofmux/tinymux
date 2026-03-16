@@ -21,7 +21,11 @@ static int g_flags;
 // base. Omitted channels must be filled from the preceding BMP palette entry,
 // not zero.
 //
-// Returns true if the attribute was modified.
+// Returns true if the attribute was modified and the output buffer
+// contains the complete migrated value.  Returns false if no old SMP
+// codes were found OR if the migrated output would exceed the buffer
+// (in which case the attribute is left untouched — the indexed base
+// color survives; only the 24-bit refinement is lost).
 //
 static bool MigrateColorV4toV5(const UTF8 *pOld, UTF8 *pNew, size_t nBufSize, size_t *pnNew)
 {
@@ -40,7 +44,11 @@ static bool MigrateColorV4toV5(const UTF8 *pOld, UTF8 *pNew, size_t nBufSize, si
     {
         if (q >= qEnd)
         {
-            break;
+            // Migration would exceed buffer.  Abort entirely — leave
+            // the attribute in its original V4 form rather than store
+            // a truncated value.
+            //
+            return false;
         }
 
         // Track BMP PUA FG/BG indexed codes as they pass through.
