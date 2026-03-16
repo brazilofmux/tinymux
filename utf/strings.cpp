@@ -611,15 +611,7 @@ void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPre
     const char *pCastClose = g_bCMode ? "\"" : "\")";
 
     int nTotalSize = nLiteralTable + nXorTable;
-    if (g_bCMode)
-    {
-        fprintf(fpInclude, "#ifndef __cplusplus\n");
-    }
     fprintf(fpInclude, "extern LIBMUX_API const %s %s_ott[%d];\n", pDescType, LowerPrefix, nTotalSize);
-    if (g_bCMode)
-    {
-        fprintf(fpInclude, "#endif\n");
-    }
     fprintf(fpBody, "const %s %s_ott[%d] =\n", pDescType, LowerPrefix, nTotalSize);
     fprintf(fpBody, "{\n");
     int i;

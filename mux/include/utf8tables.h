@@ -221,70 +221,6 @@ extern LIBMUX_API const unsigned char tr_widths_itt[256];
 extern LIBMUX_API const unsigned short tr_widths_sot[373];
 extern LIBMUX_API const unsigned short tr_widths_sbt[5707];
 
-// utf/tr_tolower.txt
-//
-// 1460 code points.
-// 62 states, 87 columns, 2080 bytes
-//
-#define TR_TOLOWER_START_STATE (0)
-#define TR_TOLOWER_ACCEPTING_STATES_START (62)
-extern LIBMUX_API const unsigned char tr_tolower_itt[256];
-extern LIBMUX_API const unsigned short tr_tolower_sot[62];
-extern LIBMUX_API const unsigned char tr_tolower_sbt[1700];
-
-#define TR_TOLOWER_DEFAULT (0)
-#define TR_TOLOWER_LITERAL_START (1)
-#define TR_TOLOWER_XOR_START (28)
-extern LIBMUX_API const string_desc tr_tolower_ott[144];
-
-// utf/tr_toupper.txt
-//
-// 1552 code points.
-// 68 states, 90 columns, 4242 bytes
-//
-#define TR_TOUPPER_START_STATE (0)
-#define TR_TOUPPER_ACCEPTING_STATES_START (68)
-extern LIBMUX_API const unsigned char tr_toupper_itt[256];
-extern LIBMUX_API const unsigned short tr_toupper_sot[68];
-extern LIBMUX_API const unsigned short tr_toupper_sbt[1925];
-
-#define TR_TOUPPER_DEFAULT (0)
-#define TR_TOUPPER_LITERAL_START (1)
-#define TR_TOUPPER_XOR_START (97)
-extern LIBMUX_API const string_desc tr_toupper_ott[230];
-
-// utf/tr_totitle.txt
-//
-// 1529 code points.
-// 68 states, 90 columns, 4152 bytes
-//
-#define TR_TOTITLE_START_STATE (0)
-#define TR_TOTITLE_ACCEPTING_STATES_START (68)
-extern LIBMUX_API const unsigned char tr_totitle_itt[256];
-extern LIBMUX_API const unsigned short tr_totitle_sot[68];
-extern LIBMUX_API const unsigned short tr_totitle_sbt[1880];
-
-#define TR_TOTITLE_DEFAULT (0)
-#define TR_TOTITLE_LITERAL_START (1)
-#define TR_TOTITLE_XOR_START (70)
-extern LIBMUX_API const string_desc tr_totitle_ott[201];
-
-// utf/tr_foldmatch.txt
-//
-// 14 code points.
-// 7 states, 11 columns, 310 bytes
-//
-#define TR_FOLDMATCH_START_STATE (0)
-#define TR_FOLDMATCH_ACCEPTING_STATES_START (7)
-extern LIBMUX_API const unsigned char tr_foldmatch_itt[256];
-extern LIBMUX_API const unsigned char tr_foldmatch_sot[7];
-extern LIBMUX_API const unsigned char tr_foldmatch_sbt[47];
-
-#define TR_FOLDMATCH_DEFAULT (0)
-#define TR_FOLDMATCH_LITERAL_START (1)
-#define TR_FOLDMATCH_XOR_START (3)
-extern LIBMUX_API const string_desc tr_foldmatch_ott[3];
-
 // utf/tr_Color.txt
 //
 // 517 code points.
@@ -392,6 +328,7 @@ extern LIBMUX_API const unsigned short tr_ducet_contract_sot[27];
 extern LIBMUX_API const unsigned short tr_ducet_contract_sbt[1464];
 #define TR_DUCET_CONTRACT_NFC_COMPOSE_RESULTS (953)
 extern LIBMUX_API const UTF32 tr_ducet_contract_nfc_compose_result[954];
+
 
 #ifdef __cplusplus
 }

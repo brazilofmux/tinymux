@@ -10949,4 +10949,6 @@ const UTF32 tr_ducet_contract_nfc_compose_result[954] =
     0x0065A8  // index 953
 };
 
+
+
 } // extern "C"
