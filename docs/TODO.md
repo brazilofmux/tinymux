@@ -19,8 +19,8 @@
 - [ ] **HIR Dump**: Add `--dump-hir` / `--dump-blocks` debug output to the JIT compiler. Should print the block structure (block_first/block_last, idom[], successors), HIR instructions per block, and dominator tree shape. This makes degenerate block structures (e.g., deep linear idom chains that cause GVN to hang) diagnosable from a dump rather than requiring a debugger. Any LLM should be able to read the dump and spot the problem.
 - [ ] **JIT Stats Granularity**: Expose per-expression compile time and instruction counts through `jitstats()` so optimizer regressions are visible from softcode.
 
-## 4. Architecture & Cleanup
-- [ ] **LBUF Phase 1**: Implement Arena-based allocation (Tier B) for long-lived values.
+## 3. Architecture & Cleanup
+- [x] **LBUF Phase 1**: Implement Arena-based allocation (Tier B) for long-lived values.
 - [ ] **LBUF Phase 2**: Implement DMA windows for large value transfers (Phase 2).
 - [x] **Code Quality**: Refactor `dbt_compile.cpp` (214KB) into smaller modules (hir_lower, hir_codegen, jit_compiler).
 - [ ] **muxescape**: Move from `mux/src/` to its own `mux/muxescape/` subdir (like `mux/announce/`). Standalone tool — should NOT install to `mux/game/bin/`. Needs own Makefile.am, configure.ac SUBDIRS entry. Source lives in `mux/src/tools/muxescape.rl`; generated `.cpp` and binary stay in `mux/muxescape/`.

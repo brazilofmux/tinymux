@@ -28,6 +28,9 @@ static constexpr uint64_t ECALL_ARENA_ALLOC   = 0x110; // a0=size -> a0=arena_id
 static constexpr uint64_t ECALL_ARENA_REF     = 0x111; // a0=arena_id
 static constexpr uint64_t ECALL_ARENA_RELEASE = 0x112; // a0=arena_id
 
+static constexpr uint64_t ECALL_DMA_SUBMIT    = 0x120; // a0=window, a1=length, a2=op
+static constexpr uint64_t ECALL_DMA_ACK       = 0x121; // -> a0=window (next free)
+
 // Maximum number of indexed functions.
 static constexpr int ENGINE_API_MAX_FUNCS = 512;
 

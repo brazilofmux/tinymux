@@ -151,7 +151,7 @@ struct rv_compiler {
     int native_ops;         // number of native arithmetic ops
     bool needs_jit;         // true if any runtime code was emitted
 
-    static constexpr size_t MEM_SIZE     = 512 * 1024;
+    static constexpr size_t MEM_SIZE     = 1024 * 1024;
     static constexpr uint64_t CODE_BASE  = 0x0000;
     static constexpr uint64_t CODE_LIMIT = 0x1000;
     static constexpr uint64_t STR_BASE   = 0x1000;
@@ -185,7 +185,14 @@ struct rv_compiler {
     static constexpr int      SUBST_OBJID    = SUBST_NCARGS + 1;
     static constexpr int      SUBST_COUNT    = SUBST_OBJID + 1;
 
-    static constexpr uint64_t STACK_TOP  = 0x3FFF0;
+    // DMA windows (Tier C): zero-copy host interaction.
+    // 4 windows of 16KB each at 0x70000-0x7FFFF.
+    static constexpr uint64_t DMA_BASE         = 0x70000;
+    static constexpr int      DMA_WINDOW_SIZE  = 16 * 1024;
+    static constexpr int      DMA_WINDOW_COUNT = 4;
+    static constexpr uint64_t DMA_DESC_BASE    = 0x80000; // descriptor rings (4KB)
+
+    static constexpr uint64_t STACK_TOP  = 0xFFFF0;
     static constexpr uint64_t BLOB_LIMIT = 0x40000;
 
     rv_compiler() : memory(MEM_SIZE, 0),

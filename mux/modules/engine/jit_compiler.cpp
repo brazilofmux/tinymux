@@ -1140,6 +1140,55 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
     return -1;
 }
 
+// ---------------------------------------------------------------
+// JIT DMA Controller (Tier C)
+// ---------------------------------------------------------------
+
+class jit_dma_controller {
+public:
+    static constexpr int MAX_WINDOWS = rv_compiler::DMA_WINDOW_COUNT;
+
+    static void submit(int window, size_t length, int op, eval_ctx *ec) {
+        if (window < 0 || window >= MAX_WINDOWS) return;
+
+        uint64_t addr = rv_compiler::DMA_BASE + window * rv_compiler::DMA_WINDOW_SIZE;
+        if (addr + length > ec->memory_size) return;
+
+        const UTF8 *data = ec->memory + addr;
+
+        // Implementation of ops (FINALIZE, etc.)
+        // For now, simple registration into an arena.
+        if (op == 1) { // DMA_OP_FINALIZE
+            auto *a = JITArena::Alloc(length + 1);
+            if (a) {
+                size_t off = a->used - (length + 1);
+                memcpy(a->lr->lbuf_ptr + off, data, length);
+                a->lr->lbuf_ptr[off + length] = '\0';
+                // Success: queue for ACK.
+                s_ack_queue.push_back(window);
+                s_window_busy |= (1 << window);
+            }
+        }
+    }
+
+    static int get_next_ack() {
+        if (s_ack_queue.empty()) return -1;
+        int window = s_ack_queue.front();
+        s_ack_queue.pop_front();
+        s_window_busy &= ~(1 << window);
+        return window;
+    }
+
+    static void reset() {
+        s_window_busy = 0;
+        s_ack_queue.clear();
+    }
+
+private:
+    static inline uint32_t s_window_busy = 0;
+    static inline std::list<int> s_ack_queue;
+};
+
 static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
     eval_ctx *ec = static_cast<eval_ctx *>(user_data);
     uint64_t syscall_num = ctx->x[17];
@@ -1309,6 +1358,20 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         JITArena::Release(static_cast<uint32_t>(ctx->x[10]));
         return -1;
 
+    case ECALL_DMA_SUBMIT: {
+        // a0=window, a1=length, a2=op
+        jit_dma_controller::submit(static_cast<int>(ctx->x[10]),
+                                   static_cast<size_t>(ctx->x[11]),
+                                   static_cast<int>(ctx->x[12]),
+                                   ec);
+        return -1;
+    }
+
+    case ECALL_DMA_ACK: {
+        ctx->x[10] = static_cast<uint64_t>(jit_dma_controller::get_next_ack());
+        return -1;
+    }
+
     default:
         ctx->x[10] = 0;
         return -1;
@@ -1330,6 +1393,7 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
               dbref executor, dbref caller, dbref enactor,
               int eval,
               const UTF8 *cargs[], int ncargs) {
+    jit_dma_controller::reset();
     // Don't JIT until the Tier 2 blob is loaded and the persistent
     // DBT state is initialized.  compile_cached calls tier2_lazy_init,
     // but the DBT infrastructure (mmap, block cache) may not be safe
