@@ -42,7 +42,14 @@ if [ -r "$PIDFILE" ]; then
         fi
     fi
 fi
-perl ./tools/unformat.pl *.mux > $TMP
+#
+#	Build unformat tool if needed.
+#
+if [ ! -x ./tools/unformat ] || [ ./tools/unformat.rl -nt ./tools/unformat ]; then
+    ragel -G2 -o ./tools/unformat.c ./tools/unformat.rl
+    cc -O2 -o ./tools/unformat ./tools/unformat.c
+fi
+./tools/unformat *.mux > $TMP
 #
 #	Create necessary environment.
 #
