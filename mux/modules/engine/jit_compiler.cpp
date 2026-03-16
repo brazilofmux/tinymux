@@ -1530,6 +1530,8 @@ FUNCTION(fun_rveval)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    JITArena::gc();
+
     if (nfargs < 1) {
         safe_str(T("#-1 TOO FEW ARGUMENTS"), buff, bufc);
         return;
@@ -1651,6 +1653,8 @@ FUNCTION(fun_rvbench)
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
+
+    JITArena::gc();
 
     if (nfargs < 2) {
         safe_str(T("#-1 TOO FEW ARGUMENTS"), buff, bufc);
