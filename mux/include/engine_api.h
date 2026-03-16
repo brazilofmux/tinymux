@@ -22,6 +22,7 @@ static constexpr uint64_t ECALL_EXIT       = 93;
 static constexpr uint64_t ECALL_CALL_FUNC  = 0x100;  // string-based dispatch
 static constexpr uint64_t ECALL_CALL_INDEX = 0x101;  // index-based dispatch
 static constexpr uint64_t ECALL_SETQ       = 0x102;  // q-register write-through
+static constexpr uint64_t ECALL_SETQ_PACK  = 0x130;  // efficient register sync
 
 // Maximum number of indexed functions.
 static constexpr int ENGINE_API_MAX_FUNCS = 512;

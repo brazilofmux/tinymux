@@ -4361,16 +4361,18 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                 break;
 
             case HIR_SETQ_SYNC: {
-                // Emit ECALL_SETQ: a0 = register number, a1 = value addr.
+                // Emit ECALL_SETQ_PACK: a0 = reg_num, a1 = value_addr, a2 = length.
+                // We pass 0 for length to tell the host to use strlen() for now.
                 int regnum = static_cast<int>(h.val[i]);
                 int val_idx = h.src1[i];
-                rc.code.push_back(rv_ADDI(17, 0, 0x102));  // a7 = ECALL_SETQ
+                rc.code.push_back(rv_ADDI(17, 0, 0x130));  // a7 = ECALL_SETQ_PACK
                 rv_load_val(rc.code, 10, static_cast<uint64_t>(regnum));  // a0 = regnum
                 if (val_idx >= 0) {
                     rv_load_val(rc.code, 11, loc[val_idx].addr);  // a1 = value addr
                 } else {
                     rv_load_val(rc.code, 11, 0);
                 }
+                rv_load_val(rc.code, 12, 0);  // a2 = 0 (use strlen)
                 rc.code.push_back(rv_ECALL());
                 break;
             }
@@ -5109,22 +5111,38 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                                 out_addr, out_size);
     }
 
-    case ECALL_SETQ: {
-        // Q-register write-through: a0 = register number,
-        // a1 = value address in guest memory.
+    case ECALL_SETQ:
+    case ECALL_SETQ_PACK: {
+        // Q-register write-through:
+        // ECALL_SETQ:      a0 = reg_num, a1 = value_addr (null-terminated)
+        // ECALL_SETQ_PACK: a0 = reg_num, a1 = value_addr, a2 = length
+        //
         // Writes to both the SUBST slot (for JIT reads) and
         // mudstate.global_regs (for ECALL reads).
         int regnum = static_cast<int>(ctx->x[10]);
         uint64_t val_addr = ctx->x[11];
+        size_t vlen;
+
+        if (syscall_num == ECALL_SETQ_PACK) {
+            vlen = static_cast<size_t>(ctx->x[12]);
+            if (0 == vlen && val_addr < ec->memory_size) {
+                vlen = strlen(reinterpret_cast<const char *>(ec->memory + val_addr));
+            }
+        } else {
+            if (val_addr >= ec->memory_size) {
+                ctx->x[10] = 0;
+                return -1;
+            }
+            vlen = strlen(reinterpret_cast<const char *>(ec->memory + val_addr));
+        }
 
         if (regnum < 0 || regnum >= MAX_GLOBAL_REGS ||
-            val_addr >= ec->memory_size) {
+            val_addr + vlen > ec->memory_size) {
             ctx->x[10] = 0;
             return -1;
         }
 
         const UTF8 *value = ec->memory + val_addr;
-        size_t vlen = strlen(reinterpret_cast<const char *>(value));
 
         // Write to SUBST slot in guest memory.
         uint64_t slot = rv_compiler::SUBST_BASE
