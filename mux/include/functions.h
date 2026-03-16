@@ -115,8 +115,10 @@ void functions_add(FUN funlist[]);
 XFUNCTION(fun_asteval);
 XFUNCTION(fun_astbench);
 // In jit_compiler.cpp
+#if defined(TINYMUX_JIT)
 XFUNCTION(fun_rvbench);
 XFUNCTION(fun_jitstats);
+#endif
 // In comsys.cpp
 XFUNCTION(fun_channels);
 XFUNCTION(fun_comalias);

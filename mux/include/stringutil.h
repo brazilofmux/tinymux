@@ -42,7 +42,7 @@ extern LIBMUX_API const UTF8 TableATOI[16][10];
 #define UTF8_SIZE4     4
 #define UTF8_CONTINUE  5
 #define UTF8_ILLEGAL   6
-extern LIBMUX_API const unsigned char utf8_FirstByte[256];
+extern "C" LIBMUX_API const unsigned char utf8_FirstByte[256];
 extern LIBMUX_API const UTF8 *cp437_utf8[256];
 #define cp437_utf8(x) (reinterpret_cast<const UTF8 *>(cp437_utf8[static_cast<unsigned char>(x)]))
 extern LIBMUX_API const UTF8 *latin1_utf8[256];

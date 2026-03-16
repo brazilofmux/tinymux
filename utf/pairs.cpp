@@ -200,7 +200,7 @@ void OutputResultTable(FILE *fpBody, FILE *fpInclude, char *UpperPrefix, char *L
     // Index 0 is unused (means "no composition"); indices are 1-based.
     //
     fprintf(fpInclude, "#define %s_NFC_COMPOSE_RESULTS (%d)\n", UpperPrefix, g_nResults);
-    fprintf(fpInclude, "extern const UTF32 %s_nfc_compose_result[%d];\n",
+    fprintf(fpInclude, "extern LIBMUX_API const UTF32 %s_nfc_compose_result[%d];\n",
             LowerPrefix, g_nResults + 1);
 
     fprintf(fpBody, "const UTF32 %s_nfc_compose_result[%d] =\n{\n", LowerPrefix, g_nResults + 1);

@@ -87,8 +87,8 @@ COMMON_DEPS = classify integers strings pairs cl_Printable.txt cl_Alpha.txt cl_D
 
 $(CPP_H) $(CPP_CPP): $(COMMON_DEPS)
 	-rm -f $(CPP_CPP) $(CPP_H)
-	printf '/*! \\file utf8tables.h\n * \\brief Static tables with UTF-8 state machines.\n *\n */\n\n#ifndef UTF8TABLES_H\n#define UTF8TABLES_H\n\n' > $(CPP_H)
-	printf '/*! \\file utf8tables.cpp\n * \\brief Static tables with UTF-8 state machines.\n *\n */\n\n#include "copyright.h"\n#include "autoconf.h"\n#include "config.h"\n#include "externs.h"\n\n' > $(CPP_CPP)
+	printf '/*! \\file utf8tables.h\n * \\brief Static tables with UTF-8 state machines.\n *\n */\n\n#ifndef UTF8TABLES_H\n#define UTF8TABLES_H\n\n#include "config.h"\n\n#ifdef __cplusplus\nextern "C" {\n#endif\n\n' > $(CPP_H)
+	printf '/*! \\file utf8tables.cpp\n * \\brief Static tables with UTF-8 state machines.\n *\n */\n\n#include "copyright.h"\n#include "autoconf.h"\n#include "config.h"\n#include "externs.h"\n\nextern "C" {\n\n' > $(CPP_CPP)
 	./classify -o $(CPP_CPP) -i $(CPP_H) cl_print cl_Printable.txt
 	./classify -o $(CPP_CPP) -i $(CPP_H) cl_alpha cl_Alpha.txt
 	./classify -o $(CPP_CPP) -i $(CPP_H) cl_digit cl_Digit.txt
@@ -119,7 +119,8 @@ $(CPP_H) $(CPP_CPP): $(COMMON_DEPS)
 	./classify -o $(CPP_CPP) -i $(CPP_H) cl_extpict cl_ExtPict.txt
 	./integers -o $(CPP_CPP) -i $(CPP_H) -d 0 tr_ducet tr_ducet.txt
 	./pairs    -o $(CPP_CPP) -i $(CPP_H) tr_ducet_contract tr_ducet_contract.txt
-	printf '\n#endif // UTF8TABLES_H\n' >> $(CPP_H)
+	printf '\n} // extern "C"\n' >> $(CPP_CPP)
+	printf '\n#ifdef __cplusplus\n}\n#endif\n\n#endif // UTF8TABLES_H\n' >> $(CPP_H)
 
 # --- C case mapping tables (shared intermediate) ---
 #

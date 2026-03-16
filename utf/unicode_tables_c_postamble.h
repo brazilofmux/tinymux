@@ -1,4 +1,14 @@
 
+/* In C++ mode, the OTT arrays are string_desc (from utf8tables.h) but these
+ * functions return co_string_desc*.  The types are ABI-identical, so a cast
+ * is safe.  In C mode, both sides are co_string_desc and no cast is needed.
+ */
+#ifdef __cplusplus
+#define CO_OTT_CAST(x) reinterpret_cast<const co_string_desc *>(x)
+#else
+#define CO_OTT_CAST(x) (x)
+#endif
+
 /*
  * co_dfa_toupper — Run the toupper DFA on a single code point.
  *
@@ -59,7 +69,7 @@ static inline const co_string_desc *co_dfa_toupper(const unsigned char *p, int *
     else
     {
         *bXor = (TR_TOUPPER_XOR_START <= iState - TR_TOUPPER_ACCEPTING_STATES_START);
-        return tr_toupper_ott + iState - TR_TOUPPER_ACCEPTING_STATES_START - 1;
+        return CO_OTT_CAST(tr_toupper_ott + iState - TR_TOUPPER_ACCEPTING_STATES_START - 1);
     }
 }
 
@@ -112,7 +122,7 @@ static inline const co_string_desc *co_dfa_tolower(const unsigned char *p, int *
     else
     {
         *bXor = (TR_TOLOWER_XOR_START <= iState - TR_TOLOWER_ACCEPTING_STATES_START);
-        return tr_tolower_ott + iState - TR_TOLOWER_ACCEPTING_STATES_START - 1;
+        return CO_OTT_CAST(tr_tolower_ott + iState - TR_TOLOWER_ACCEPTING_STATES_START - 1);
     }
 }
 
@@ -165,7 +175,7 @@ static inline const co_string_desc *co_dfa_totitle(const unsigned char *p, int *
     else
     {
         *bXor = (TR_TOTITLE_XOR_START <= iState - TR_TOTITLE_ACCEPTING_STATES_START);
-        return tr_totitle_ott + iState - TR_TOTITLE_ACCEPTING_STATES_START - 1;
+        return CO_OTT_CAST(tr_totitle_ott + iState - TR_TOTITLE_ACCEPTING_STATES_START - 1);
     }
 }
 
@@ -218,7 +228,7 @@ static inline const co_string_desc *co_dfa_foldmatch(const unsigned char *p, int
     else
     {
         *bXor = (TR_FOLDMATCH_XOR_START <= iState - TR_FOLDMATCH_ACCEPTING_STATES_START);
-        return tr_foldmatch_ott + iState - TR_FOLDMATCH_ACCEPTING_STATES_START - 1;
+        return CO_OTT_CAST(tr_foldmatch_ott + iState - TR_FOLDMATCH_ACCEPTING_STATES_START - 1);
     }
 }
 

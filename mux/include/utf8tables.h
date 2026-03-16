@@ -6,6 +6,12 @@
 #ifndef UTF8TABLES_H
 #define UTF8TABLES_H
 
+#include "config.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // utf/cl_Printable.txt
 //
 // 155134 included, 958978 excluded, 0 errors.
@@ -13,9 +19,9 @@
 //
 #define CL_PRINT_START_STATE (0)
 #define CL_PRINT_ACCEPTING_STATES_START (314)
-extern const unsigned char cl_print_itt[256];
-extern const unsigned short cl_print_sot[314];
-extern const unsigned short cl_print_sbt[4597];
+extern LIBMUX_API const unsigned char cl_print_itt[256];
+extern LIBMUX_API const unsigned short cl_print_sot[314];
+extern LIBMUX_API const unsigned short cl_print_sbt[4597];
 
 // utf/cl_Alpha.txt
 //
@@ -24,9 +30,9 @@ extern const unsigned short cl_print_sbt[4597];
 //
 #define CL_ALPHA_START_STATE (0)
 #define CL_ALPHA_ACCEPTING_STATES_START (298)
-extern const unsigned char cl_alpha_itt[256];
-extern const unsigned short cl_alpha_sot[298];
-extern const unsigned short cl_alpha_sbt[3995];
+extern LIBMUX_API const unsigned char cl_alpha_itt[256];
+extern LIBMUX_API const unsigned short cl_alpha_sot[298];
+extern LIBMUX_API const unsigned short cl_alpha_sbt[3995];
 
 // utf/cl_Digit.txt
 //
@@ -35,9 +41,9 @@ extern const unsigned short cl_alpha_sbt[3995];
 //
 #define CL_DIGIT_START_STATE (0)
 #define CL_DIGIT_ACCEPTING_STATES_START (25)
-extern const unsigned char cl_digit_itt[256];
-extern const unsigned short cl_digit_sot[25];
-extern const unsigned char cl_digit_sbt[318];
+extern LIBMUX_API const unsigned char cl_digit_itt[256];
+extern LIBMUX_API const unsigned short cl_digit_sot[25];
+extern LIBMUX_API const unsigned char cl_digit_sbt[318];
 
 // utf/cl_Alnum.txt
 //
@@ -46,9 +52,9 @@ extern const unsigned char cl_digit_sbt[318];
 //
 #define CL_ALNUM_START_STATE (0)
 #define CL_ALNUM_ACCEPTING_STATES_START (314)
-extern const unsigned char cl_alnum_itt[256];
-extern const unsigned short cl_alnum_sot[314];
-extern const unsigned short cl_alnum_sbt[4278];
+extern LIBMUX_API const unsigned char cl_alnum_itt[256];
+extern LIBMUX_API const unsigned short cl_alnum_sot[314];
+extern LIBMUX_API const unsigned short cl_alnum_sbt[4278];
 
 // utf/cl_AttrNameInitial.txt
 //
@@ -57,9 +63,9 @@ extern const unsigned short cl_alnum_sbt[4278];
 //
 #define CL_ATTRNAMEINITIAL_START_STATE (0)
 #define CL_ATTRNAMEINITIAL_ACCEPTING_STATES_START (6)
-extern const unsigned char cl_attrnameinitial_itt[256];
-extern const unsigned char cl_attrnameinitial_sot[6];
-extern const unsigned char cl_attrnameinitial_sbt[50];
+extern LIBMUX_API const unsigned char cl_attrnameinitial_itt[256];
+extern LIBMUX_API const unsigned char cl_attrnameinitial_sot[6];
+extern LIBMUX_API const unsigned char cl_attrnameinitial_sbt[50];
 
 // utf/cl_AttrName.txt
 //
@@ -68,9 +74,9 @@ extern const unsigned char cl_attrnameinitial_sbt[50];
 //
 #define CL_ATTRNAME_START_STATE (0)
 #define CL_ATTRNAME_ACCEPTING_STATES_START (6)
-extern const unsigned char cl_attrname_itt[256];
-extern const unsigned char cl_attrname_sot[6];
-extern const unsigned char cl_attrname_sbt[50];
+extern LIBMUX_API const unsigned char cl_attrname_itt[256];
+extern LIBMUX_API const unsigned char cl_attrname_sot[6];
+extern LIBMUX_API const unsigned char cl_attrname_sbt[50];
 
 // utf/cl_ObjectName.txt
 //
@@ -79,9 +85,9 @@ extern const unsigned char cl_attrname_sbt[50];
 //
 #define CL_OBJECTNAME_START_STATE (0)
 #define CL_OBJECTNAME_ACCEPTING_STATES_START (32)
-extern const unsigned char cl_objectname_itt[256];
-extern const unsigned short cl_objectname_sot[32];
-extern const unsigned char cl_objectname_sbt[323];
+extern LIBMUX_API const unsigned char cl_objectname_itt[256];
+extern LIBMUX_API const unsigned short cl_objectname_sot[32];
+extern LIBMUX_API const unsigned char cl_objectname_sbt[323];
 
 // utf/cl_PlayerName.txt
 //
@@ -90,9 +96,9 @@ extern const unsigned char cl_objectname_sbt[323];
 //
 #define CL_PLAYERNAME_START_STATE (0)
 #define CL_PLAYERNAME_ACCEPTING_STATES_START (31)
-extern const unsigned char cl_playername_itt[256];
-extern const unsigned short cl_playername_sot[31];
-extern const unsigned char cl_playername_sbt[308];
+extern LIBMUX_API const unsigned char cl_playername_itt[256];
+extern LIBMUX_API const unsigned short cl_playername_sot[31];
+extern LIBMUX_API const unsigned char cl_playername_sbt[308];
 
 // utf/cl_8859_1.txt
 //
@@ -101,9 +107,9 @@ extern const unsigned char cl_playername_sbt[308];
 //
 #define CL_8859_1_START_STATE (0)
 #define CL_8859_1_ACCEPTING_STATES_START (3)
-extern const unsigned char cl_8859_1_itt[256];
-extern const unsigned char cl_8859_1_sot[3];
-extern const unsigned char cl_8859_1_sbt[20];
+extern LIBMUX_API const unsigned char cl_8859_1_itt[256];
+extern LIBMUX_API const unsigned char cl_8859_1_sot[3];
+extern LIBMUX_API const unsigned char cl_8859_1_sbt[20];
 
 // utf/cl_8859_2.txt
 //
@@ -112,9 +118,9 @@ extern const unsigned char cl_8859_1_sbt[20];
 //
 #define CL_8859_2_START_STATE (0)
 #define CL_8859_2_ACCEPTING_STATES_START (6)
-extern const unsigned char cl_8859_2_itt[256];
-extern const unsigned char cl_8859_2_sot[6];
-extern const unsigned char cl_8859_2_sbt[73];
+extern LIBMUX_API const unsigned char cl_8859_2_itt[256];
+extern LIBMUX_API const unsigned char cl_8859_2_sot[6];
+extern LIBMUX_API const unsigned char cl_8859_2_sbt[73];
 
 // utf/cl_hangul.txt
 //
@@ -123,9 +129,9 @@ extern const unsigned char cl_8859_2_sbt[73];
 //
 #define CL_HANGUL_START_STATE (0)
 #define CL_HANGUL_ACCEPTING_STATES_START (6)
-extern const unsigned char cl_hangul_itt[256];
-extern const unsigned char cl_hangul_sot[6];
-extern const unsigned char cl_hangul_sbt[36];
+extern LIBMUX_API const unsigned char cl_hangul_itt[256];
+extern LIBMUX_API const unsigned char cl_hangul_sot[6];
+extern LIBMUX_API const unsigned char cl_hangul_sbt[36];
 
 // utf/cl_hiragana.txt
 //
@@ -134,9 +140,9 @@ extern const unsigned char cl_hangul_sbt[36];
 //
 #define CL_HIRAGANA_START_STATE (0)
 #define CL_HIRAGANA_ACCEPTING_STATES_START (8)
-extern const unsigned char cl_hiragana_itt[256];
-extern const unsigned char cl_hiragana_sot[8];
-extern const unsigned char cl_hiragana_sbt[51];
+extern LIBMUX_API const unsigned char cl_hiragana_itt[256];
+extern LIBMUX_API const unsigned char cl_hiragana_sot[8];
+extern LIBMUX_API const unsigned char cl_hiragana_sbt[51];
 
 // utf/cl_kanji.txt
 //
@@ -145,9 +151,9 @@ extern const unsigned char cl_hiragana_sbt[51];
 //
 #define CL_KANJI_START_STATE (0)
 #define CL_KANJI_ACCEPTING_STATES_START (18)
-extern const unsigned char cl_kanji_itt[256];
-extern const unsigned char cl_kanji_sot[18];
-extern const unsigned char cl_kanji_sbt[143];
+extern LIBMUX_API const unsigned char cl_kanji_itt[256];
+extern LIBMUX_API const unsigned char cl_kanji_sot[18];
+extern LIBMUX_API const unsigned char cl_kanji_sbt[143];
 
 // utf/cl_katakana.txt
 //
@@ -156,9 +162,9 @@ extern const unsigned char cl_kanji_sbt[143];
 //
 #define CL_KATAKANA_START_STATE (0)
 #define CL_KATAKANA_ACCEPTING_STATES_START (8)
-extern const unsigned char cl_katakana_itt[256];
-extern const unsigned char cl_katakana_sot[8];
-extern const unsigned char cl_katakana_sbt[51];
+extern LIBMUX_API const unsigned char cl_katakana_itt[256];
+extern LIBMUX_API const unsigned char cl_katakana_sot[8];
+extern LIBMUX_API const unsigned char cl_katakana_sbt[51];
 
 // utf/tr_utf8_ascii.txt
 //
@@ -167,9 +173,9 @@ extern const unsigned char cl_katakana_sbt[51];
 //
 #define TR_ASCII_START_STATE (0)
 #define TR_ASCII_ACCEPTING_STATES_START (99)
-extern const unsigned char tr_ascii_itt[256];
-extern const unsigned short tr_ascii_sot[99];
-extern const unsigned char tr_ascii_sbt[3431];
+extern LIBMUX_API const unsigned char tr_ascii_itt[256];
+extern LIBMUX_API const unsigned short tr_ascii_sot[99];
+extern LIBMUX_API const unsigned char tr_ascii_sbt[3431];
 
 // utf/tr_utf8_cp437.txt
 //
@@ -178,9 +184,9 @@ extern const unsigned char tr_ascii_sbt[3431];
 //
 #define TR_CP437_START_STATE (0)
 #define TR_CP437_ACCEPTING_STATES_START (114)
-extern const unsigned char tr_cp437_itt[256];
-extern const unsigned short tr_cp437_sot[114];
-extern const unsigned short tr_cp437_sbt[4065];
+extern LIBMUX_API const unsigned char tr_cp437_itt[256];
+extern LIBMUX_API const unsigned short tr_cp437_sot[114];
+extern LIBMUX_API const unsigned short tr_cp437_sbt[4065];
 
 // utf/tr_utf8_latin1.txt
 //
@@ -189,9 +195,9 @@ extern const unsigned short tr_cp437_sbt[4065];
 //
 #define TR_LATIN1_START_STATE (0)
 #define TR_LATIN1_ACCEPTING_STATES_START (101)
-extern const unsigned char tr_latin1_itt[256];
-extern const unsigned short tr_latin1_sot[101];
-extern const unsigned short tr_latin1_sbt[3488];
+extern LIBMUX_API const unsigned char tr_latin1_itt[256];
+extern LIBMUX_API const unsigned short tr_latin1_sot[101];
+extern LIBMUX_API const unsigned short tr_latin1_sbt[3488];
 
 // utf/tr_utf8_latin2.txt
 //
@@ -200,9 +206,9 @@ extern const unsigned short tr_latin1_sbt[3488];
 //
 #define TR_LATIN2_START_STATE (0)
 #define TR_LATIN2_ACCEPTING_STATES_START (99)
-extern const unsigned char tr_latin2_itt[256];
-extern const unsigned short tr_latin2_sot[99];
-extern const unsigned short tr_latin2_sbt[3460];
+extern LIBMUX_API const unsigned char tr_latin2_itt[256];
+extern LIBMUX_API const unsigned short tr_latin2_sot[99];
+extern LIBMUX_API const unsigned short tr_latin2_sbt[3460];
 
 // utf/tr_widths.txt
 //
@@ -211,9 +217,73 @@ extern const unsigned short tr_latin2_sbt[3460];
 //
 #define TR_WIDTHS_START_STATE (0)
 #define TR_WIDTHS_ACCEPTING_STATES_START (373)
-extern const unsigned char tr_widths_itt[256];
-extern const unsigned short tr_widths_sot[373];
-extern const unsigned short tr_widths_sbt[5707];
+extern LIBMUX_API const unsigned char tr_widths_itt[256];
+extern LIBMUX_API const unsigned short tr_widths_sot[373];
+extern LIBMUX_API const unsigned short tr_widths_sbt[5707];
+
+// utf/tr_tolower.txt
+//
+// 1460 code points.
+// 62 states, 87 columns, 2080 bytes
+//
+#define TR_TOLOWER_START_STATE (0)
+#define TR_TOLOWER_ACCEPTING_STATES_START (62)
+extern LIBMUX_API const unsigned char tr_tolower_itt[256];
+extern LIBMUX_API const unsigned short tr_tolower_sot[62];
+extern LIBMUX_API const unsigned char tr_tolower_sbt[1700];
+
+#define TR_TOLOWER_DEFAULT (0)
+#define TR_TOLOWER_LITERAL_START (1)
+#define TR_TOLOWER_XOR_START (28)
+extern LIBMUX_API const string_desc tr_tolower_ott[144];
+
+// utf/tr_toupper.txt
+//
+// 1552 code points.
+// 68 states, 90 columns, 4242 bytes
+//
+#define TR_TOUPPER_START_STATE (0)
+#define TR_TOUPPER_ACCEPTING_STATES_START (68)
+extern LIBMUX_API const unsigned char tr_toupper_itt[256];
+extern LIBMUX_API const unsigned short tr_toupper_sot[68];
+extern LIBMUX_API const unsigned short tr_toupper_sbt[1925];
+
+#define TR_TOUPPER_DEFAULT (0)
+#define TR_TOUPPER_LITERAL_START (1)
+#define TR_TOUPPER_XOR_START (97)
+extern LIBMUX_API const string_desc tr_toupper_ott[230];
+
+// utf/tr_totitle.txt
+//
+// 1529 code points.
+// 68 states, 90 columns, 4152 bytes
+//
+#define TR_TOTITLE_START_STATE (0)
+#define TR_TOTITLE_ACCEPTING_STATES_START (68)
+extern LIBMUX_API const unsigned char tr_totitle_itt[256];
+extern LIBMUX_API const unsigned short tr_totitle_sot[68];
+extern LIBMUX_API const unsigned short tr_totitle_sbt[1880];
+
+#define TR_TOTITLE_DEFAULT (0)
+#define TR_TOTITLE_LITERAL_START (1)
+#define TR_TOTITLE_XOR_START (70)
+extern LIBMUX_API const string_desc tr_totitle_ott[201];
+
+// utf/tr_foldmatch.txt
+//
+// 14 code points.
+// 7 states, 11 columns, 310 bytes
+//
+#define TR_FOLDMATCH_START_STATE (0)
+#define TR_FOLDMATCH_ACCEPTING_STATES_START (7)
+extern LIBMUX_API const unsigned char tr_foldmatch_itt[256];
+extern LIBMUX_API const unsigned char tr_foldmatch_sot[7];
+extern LIBMUX_API const unsigned char tr_foldmatch_sbt[47];
+
+#define TR_FOLDMATCH_DEFAULT (0)
+#define TR_FOLDMATCH_LITERAL_START (1)
+#define TR_FOLDMATCH_XOR_START (3)
+extern LIBMUX_API const string_desc tr_foldmatch_ott[3];
 
 // utf/tr_Color.txt
 //
@@ -222,9 +292,9 @@ extern const unsigned short tr_widths_sbt[5707];
 //
 #define TR_COLOR_START_STATE (0)
 #define TR_COLOR_ACCEPTING_STATES_START (11)
-extern const unsigned char tr_color_itt[256];
-extern const unsigned short tr_color_sot[11];
-extern const unsigned short tr_color_sbt[570];
+extern LIBMUX_API const unsigned char tr_color_itt[256];
+extern LIBMUX_API const unsigned short tr_color_sot[11];
+extern LIBMUX_API const unsigned short tr_color_sbt[570];
 
 // utf/tr_ccc.txt
 //
@@ -233,9 +303,9 @@ extern const unsigned short tr_color_sbt[570];
 //
 #define TR_CCC_START_STATE (0)
 #define TR_CCC_ACCEPTING_STATES_START (132)
-extern const unsigned char tr_ccc_itt[256];
-extern const unsigned short tr_ccc_sot[132];
-extern const unsigned short tr_ccc_sbt[1591];
+extern LIBMUX_API const unsigned char tr_ccc_itt[256];
+extern LIBMUX_API const unsigned short tr_ccc_sot[132];
+extern LIBMUX_API const unsigned short tr_ccc_sbt[1591];
 
 // utf/tr_nfcqc.txt
 //
@@ -244,9 +314,9 @@ extern const unsigned short tr_ccc_sbt[1591];
 //
 #define TR_NFCQC_START_STATE (0)
 #define TR_NFCQC_ACCEPTING_STATES_START (60)
-extern const unsigned char tr_nfcqc_itt[256];
-extern const unsigned short tr_nfcqc_sot[60];
-extern const unsigned char tr_nfcqc_sbt[714];
+extern LIBMUX_API const unsigned char tr_nfcqc_itt[256];
+extern LIBMUX_API const unsigned short tr_nfcqc_sot[60];
+extern LIBMUX_API const unsigned char tr_nfcqc_sbt[714];
 
 // utf/tr_nfd.txt
 //
@@ -255,14 +325,14 @@ extern const unsigned char tr_nfcqc_sbt[714];
 //
 #define TR_NFD_START_STATE (0)
 #define TR_NFD_ACCEPTING_STATES_START (97)
-extern const unsigned char tr_nfd_itt[256];
-extern const unsigned short tr_nfd_sot[97];
-extern const unsigned short tr_nfd_sbt[3046];
+extern LIBMUX_API const unsigned char tr_nfd_itt[256];
+extern LIBMUX_API const unsigned short tr_nfd_sot[97];
+extern LIBMUX_API const unsigned short tr_nfd_sbt[3046];
 
 #define TR_NFD_DEFAULT (0)
 #define TR_NFD_LITERAL_START (1)
 #define TR_NFD_XOR_START (1332)
-extern const string_desc tr_nfd_ott[2045];
+extern LIBMUX_API const string_desc tr_nfd_ott[2045];
 
 // utf/tr_compose.txt
 //
@@ -271,11 +341,11 @@ extern const string_desc tr_nfd_ott[2045];
 //
 #define TR_NFC_COMPOSE_START_STATE (0)
 #define TR_NFC_COMPOSE_ACCEPTING_STATES_START (129)
-extern const unsigned char tr_nfc_compose_itt[256];
-extern const unsigned short tr_nfc_compose_sot[129];
-extern const unsigned short tr_nfc_compose_sbt[3539];
+extern LIBMUX_API const unsigned char tr_nfc_compose_itt[256];
+extern LIBMUX_API const unsigned short tr_nfc_compose_sot[129];
+extern LIBMUX_API const unsigned short tr_nfc_compose_sbt[3539];
 #define TR_NFC_COMPOSE_NFC_COMPOSE_RESULTS (964)
-extern const UTF32 tr_nfc_compose_nfc_compose_result[965];
+extern LIBMUX_API const UTF32 tr_nfc_compose_nfc_compose_result[965];
 
 // utf/tr_gcb.txt
 //
@@ -284,9 +354,9 @@ extern const UTF32 tr_nfc_compose_nfc_compose_result[965];
 //
 #define TR_GCB_START_STATE (0)
 #define TR_GCB_ACCEPTING_STATES_START (208)
-extern const unsigned char tr_gcb_itt[256];
-extern const unsigned short tr_gcb_sot[208];
-extern const unsigned char tr_gcb_sbt[2922];
+extern LIBMUX_API const unsigned char tr_gcb_itt[256];
+extern LIBMUX_API const unsigned short tr_gcb_sot[208];
+extern LIBMUX_API const unsigned char tr_gcb_sbt[2922];
 
 // utf/cl_ExtPict.txt
 //
@@ -295,9 +365,9 @@ extern const unsigned char tr_gcb_sbt[2922];
 //
 #define CL_EXTPICT_START_STATE (0)
 #define CL_EXTPICT_ACCEPTING_STATES_START (44)
-extern const unsigned char cl_extpict_itt[256];
-extern const unsigned short cl_extpict_sot[44];
-extern const unsigned char cl_extpict_sbt[510];
+extern LIBMUX_API const unsigned char cl_extpict_itt[256];
+extern LIBMUX_API const unsigned short cl_extpict_sot[44];
+extern LIBMUX_API const unsigned char cl_extpict_sbt[510];
 
 // utf/tr_ducet.txt
 //
@@ -306,9 +376,9 @@ extern const unsigned char cl_extpict_sbt[510];
 //
 #define TR_DUCET_START_STATE (0)
 #define TR_DUCET_ACCEPTING_STATES_START (702)
-extern const unsigned char tr_ducet_itt[256];
-extern const unsigned short tr_ducet_sot[702];
-extern const unsigned short tr_ducet_sbt[43141];
+extern LIBMUX_API const unsigned char tr_ducet_itt[256];
+extern LIBMUX_API const unsigned short tr_ducet_sot[702];
+extern LIBMUX_API const unsigned short tr_ducet_sbt[43141];
 
 // utf/tr_ducet_contract.txt
 //
@@ -317,11 +387,14 @@ extern const unsigned short tr_ducet_sbt[43141];
 //
 #define TR_DUCET_CONTRACT_START_STATE (0)
 #define TR_DUCET_CONTRACT_ACCEPTING_STATES_START (27)
-extern const unsigned char tr_ducet_contract_itt[256];
-extern const unsigned short tr_ducet_contract_sot[27];
-extern const unsigned short tr_ducet_contract_sbt[1464];
+extern LIBMUX_API const unsigned char tr_ducet_contract_itt[256];
+extern LIBMUX_API const unsigned short tr_ducet_contract_sot[27];
+extern LIBMUX_API const unsigned short tr_ducet_contract_sbt[1464];
 #define TR_DUCET_CONTRACT_NFC_COMPOSE_RESULTS (953)
-extern const UTF32 tr_ducet_contract_nfc_compose_result[954];
+extern LIBMUX_API const UTF32 tr_ducet_contract_nfc_compose_result[954];
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif // UTF8TABLES_H

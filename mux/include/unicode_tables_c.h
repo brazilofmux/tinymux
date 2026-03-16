@@ -20,6 +20,19 @@
 
 #include <stddef.h>
 
+/* Default LIBMUX_API when not provided by config.h. */
+#ifndef LIBMUX_API
+#if defined(_WIN32) || defined(WIN32)
+#ifdef BUILDING_LIBMUX
+#define LIBMUX_API __declspec(dllexport)
+#else
+#define LIBMUX_API __declspec(dllimport)
+#endif
+#else
+#define LIBMUX_API
+#endif
+#endif
+
 /* Equivalent to MUX's string_desc — holds a UTF-8 replacement string. */
 typedef struct {
     size_t n_bytes;
@@ -34,72 +47,68 @@ typedef struct {
 #define CO_UTF8_SIZE4     4
 #define CO_UTF8_CONTINUE  5
 #define CO_UTF8_ILLEGAL   6
-extern const unsigned char utf8_FirstByte[256];
 
-// utf/tr_tolower.txt
-//
-// 1460 code points.
-// 62 states, 87 columns, 2080 bytes
-//
+/* In C++ mode, utf8tables.h provides all extern declarations with
+ * LIBMUX_API and the correct C++ types.  Only emit them in C mode.
+ */
+#ifndef __cplusplus
+extern LIBMUX_API const unsigned char utf8_FirstByte[256];
+
+extern LIBMUX_API const unsigned char tr_tolower_itt[256];
+extern LIBMUX_API const unsigned short tr_tolower_sot[62];
+extern LIBMUX_API const unsigned char tr_tolower_sbt[1700];
+extern LIBMUX_API const co_string_desc tr_tolower_ott[144];
+
+extern LIBMUX_API const unsigned char tr_toupper_itt[256];
+extern LIBMUX_API const unsigned short tr_toupper_sot[68];
+extern LIBMUX_API const unsigned short tr_toupper_sbt[1925];
+extern LIBMUX_API const co_string_desc tr_toupper_ott[230];
+
+extern LIBMUX_API const unsigned char tr_totitle_itt[256];
+extern LIBMUX_API const unsigned short tr_totitle_sot[68];
+extern LIBMUX_API const unsigned short tr_totitle_sbt[1880];
+extern LIBMUX_API const co_string_desc tr_totitle_ott[201];
+
+extern LIBMUX_API const unsigned char tr_foldmatch_itt[256];
+extern LIBMUX_API const unsigned char tr_foldmatch_sot[7];
+extern LIBMUX_API const unsigned char tr_foldmatch_sbt[47];
+extern LIBMUX_API const co_string_desc tr_foldmatch_ott[3];
+#endif
+
 #define TR_TOLOWER_START_STATE (0)
 #define TR_TOLOWER_ACCEPTING_STATES_START (62)
-extern const unsigned char tr_tolower_itt[256];
-extern const unsigned short tr_tolower_sot[62];
-extern const unsigned char tr_tolower_sbt[1700];
-
 #define TR_TOLOWER_DEFAULT (0)
 #define TR_TOLOWER_LITERAL_START (1)
 #define TR_TOLOWER_XOR_START (28)
-extern const co_string_desc tr_tolower_ott[144];
 
-// utf/tr_toupper.txt
-//
-// 1552 code points.
-// 68 states, 90 columns, 4242 bytes
-//
 #define TR_TOUPPER_START_STATE (0)
 #define TR_TOUPPER_ACCEPTING_STATES_START (68)
-extern const unsigned char tr_toupper_itt[256];
-extern const unsigned short tr_toupper_sot[68];
-extern const unsigned short tr_toupper_sbt[1925];
-
 #define TR_TOUPPER_DEFAULT (0)
 #define TR_TOUPPER_LITERAL_START (1)
 #define TR_TOUPPER_XOR_START (97)
-extern const co_string_desc tr_toupper_ott[230];
 
-// utf/tr_totitle.txt
-//
-// 1529 code points.
-// 68 states, 90 columns, 4152 bytes
-//
 #define TR_TOTITLE_START_STATE (0)
 #define TR_TOTITLE_ACCEPTING_STATES_START (68)
-extern const unsigned char tr_totitle_itt[256];
-extern const unsigned short tr_totitle_sot[68];
-extern const unsigned short tr_totitle_sbt[1880];
-
 #define TR_TOTITLE_DEFAULT (0)
 #define TR_TOTITLE_LITERAL_START (1)
 #define TR_TOTITLE_XOR_START (70)
-extern const co_string_desc tr_totitle_ott[201];
 
-// utf/tr_foldmatch.txt
-//
-// 14 code points.
-// 7 states, 11 columns, 310 bytes
-//
 #define TR_FOLDMATCH_START_STATE (0)
 #define TR_FOLDMATCH_ACCEPTING_STATES_START (7)
-extern const unsigned char tr_foldmatch_itt[256];
-extern const unsigned char tr_foldmatch_sot[7];
-extern const unsigned char tr_foldmatch_sbt[47];
-
 #define TR_FOLDMATCH_DEFAULT (0)
 #define TR_FOLDMATCH_LITERAL_START (1)
 #define TR_FOLDMATCH_XOR_START (3)
-extern const co_string_desc tr_foldmatch_ott[3];
 
+
+/* In C++ mode, the OTT arrays are string_desc (from utf8tables.h) but these
+ * functions return co_string_desc*.  The types are ABI-identical, so a cast
+ * is safe.  In C mode, both sides are co_string_desc and no cast is needed.
+ */
+#ifdef __cplusplus
+#define CO_OTT_CAST(x) reinterpret_cast<const co_string_desc *>(x)
+#else
+#define CO_OTT_CAST(x) (x)
+#endif
 
 /*
  * co_dfa_toupper — Run the toupper DFA on a single code point.
@@ -161,7 +170,7 @@ static inline const co_string_desc *co_dfa_toupper(const unsigned char *p, int *
     else
     {
         *bXor = (TR_TOUPPER_XOR_START <= iState - TR_TOUPPER_ACCEPTING_STATES_START);
-        return tr_toupper_ott + iState - TR_TOUPPER_ACCEPTING_STATES_START - 1;
+        return CO_OTT_CAST(tr_toupper_ott + iState - TR_TOUPPER_ACCEPTING_STATES_START - 1);
     }
 }
 
@@ -214,7 +223,7 @@ static inline const co_string_desc *co_dfa_tolower(const unsigned char *p, int *
     else
     {
         *bXor = (TR_TOLOWER_XOR_START <= iState - TR_TOLOWER_ACCEPTING_STATES_START);
-        return tr_tolower_ott + iState - TR_TOLOWER_ACCEPTING_STATES_START - 1;
+        return CO_OTT_CAST(tr_tolower_ott + iState - TR_TOLOWER_ACCEPTING_STATES_START - 1);
     }
 }
 
@@ -267,7 +276,7 @@ static inline const co_string_desc *co_dfa_totitle(const unsigned char *p, int *
     else
     {
         *bXor = (TR_TOTITLE_XOR_START <= iState - TR_TOTITLE_ACCEPTING_STATES_START);
-        return tr_totitle_ott + iState - TR_TOTITLE_ACCEPTING_STATES_START - 1;
+        return CO_OTT_CAST(tr_totitle_ott + iState - TR_TOTITLE_ACCEPTING_STATES_START - 1);
     }
 }
 
@@ -320,7 +329,7 @@ static inline const co_string_desc *co_dfa_foldmatch(const unsigned char *p, int
     else
     {
         *bXor = (TR_FOLDMATCH_XOR_START <= iState - TR_FOLDMATCH_ACCEPTING_STATES_START);
-        return tr_foldmatch_ott + iState - TR_FOLDMATCH_ACCEPTING_STATES_START - 1;
+        return CO_OTT_CAST(tr_foldmatch_ott + iState - TR_FOLDMATCH_ACCEPTING_STATES_START - 1);
     }
 }
 

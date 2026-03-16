@@ -20,6 +20,19 @@
 
 #include <stddef.h>
 
+/* Default LIBMUX_API when not provided by config.h. */
+#ifndef LIBMUX_API
+#if defined(_WIN32) || defined(WIN32)
+#ifdef BUILDING_LIBMUX
+#define LIBMUX_API __declspec(dllexport)
+#else
+#define LIBMUX_API __declspec(dllimport)
+#endif
+#else
+#define LIBMUX_API
+#endif
+#endif
+
 /* Equivalent to MUX's string_desc — holds a UTF-8 replacement string. */
 typedef struct {
     size_t n_bytes;

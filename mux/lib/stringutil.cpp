@@ -449,7 +449,7 @@ const unsigned char mux_tolower_ascii[UCHAR_MAX+1] =
 // Bytes in the middle of a sequence map to UTF8_CONTINUE.  Bytes which should
 // not appear map to UTF8_ILLEGAL.
 //
-const unsigned char utf8_FirstByte[256] =
+extern "C" const unsigned char utf8_FirstByte[256] =
 {
 //  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
 //
@@ -1130,7 +1130,7 @@ int ConsoleWidth(const UTF8 *pCodePoint)
 
 // C-callable wrapper for use from color_ops.c (libmux.so internal).
 //
-extern "C" int co_console_width(const unsigned char *pCodePoint)
+extern "C" LIBMUX_API int co_console_width(const unsigned char *pCodePoint)
 {
     return ConsoleWidth(pCodePoint);
 }

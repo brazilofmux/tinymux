@@ -2268,8 +2268,14 @@ FUNCTION(fun_astbench)
     }
 
     // --- AST benchmark ---
+#ifdef WIN32
+    LARGE_INTEGER freq, pc0, pc1;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&pc0);
+#else
     struct timespec t0, t1;
     clock_gettime(CLOCK_MONOTONIC, &t0);
+#endif
     for (int i = 0; i < iterations; i++) {
         UTF8 temp[LBUF_SIZE];
         UTF8 *tp = temp;
@@ -2278,9 +2284,15 @@ FUNCTION(fun_astbench)
             eval | EV_FCHECK | EV_EVAL, nullptr, 0);
         *tp = '\0';
     }
+#ifdef WIN32
+    QueryPerformanceCounter(&pc1);
+    double ast_us = (double)(pc1.QuadPart - pc0.QuadPart) * 1e6
+                  / ((double)freq.QuadPart * iterations);
+#else
     clock_gettime(CLOCK_MONOTONIC, &t1);
     double ast_us = ((t1.tv_sec - t0.tv_sec) * 1e6
                    + (t1.tv_nsec - t0.tv_nsec) / 1e3) / iterations;
+#endif
 
     // --- JIT benchmark ---
 #if defined(TINYMUX_JIT)
@@ -2289,16 +2301,26 @@ FUNCTION(fun_astbench)
              eval | EV_FMAND | EV_EVAL, nullptr, 0);
     *bufc = buff;  // reset output
 
+#ifdef WIN32
+    QueryPerformanceCounter(&pc0);
+#else
     clock_gettime(CLOCK_MONOTONIC, &t0);
+#endif
     for (int i = 0; i < iterations; i++) {
         UTF8 temp[LBUF_SIZE];
         UTF8 *tp = temp;
         jit_eval(expr, nLen, temp, &tp, executor, caller, enactor,
                  eval | EV_FMAND | EV_EVAL, nullptr, 0);
     }
+#ifdef WIN32
+    QueryPerformanceCounter(&pc1);
+    double jit_us = (double)(pc1.QuadPart - pc0.QuadPart) * 1e6
+                  / ((double)freq.QuadPart * iterations);
+#else
     clock_gettime(CLOCK_MONOTONIC, &t1);
     double jit_us = ((t1.tv_sec - t0.tv_sec) * 1e6
                    + (t1.tv_nsec - t0.tv_nsec) / 1e3) / iterations;
+#endif
 #else
     double jit_us = 0.0;
 #endif

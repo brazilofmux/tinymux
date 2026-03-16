@@ -3092,11 +3092,15 @@ MUX_RESULT CGameEngine::DumpDatabase(void)
     return MUX_S_OK;
 }
 
+#if defined(TINYMUX_JIT)
 extern void dbt_compile_cleanup(void);
+#endif
 
 MUX_RESULT CGameEngine::Shutdown(void)
 {
+#if defined(TINYMUX_JIT)
     dbt_compile_cleanup();
+#endif
     conn_bridge_final();
     local_shutdown();
 

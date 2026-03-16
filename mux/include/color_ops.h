@@ -33,6 +33,19 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* Portable LIBMUX_API for DLL export/import on Windows. */
+#ifndef LIBMUX_API
+#if defined(_WIN32) || defined(WIN32)
+#ifdef BUILDING_LIBMUX
+#define LIBMUX_API __declspec(dllexport)
+#else
+#define LIBMUX_API __declspec(dllimport)
+#endif
+#else
+#define LIBMUX_API
+#endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -46,7 +59,7 @@ extern "C" {
  * Returns the number of non-color Unicode code points in the string.
  * This counts code points in a null-terminated UTF-8 string.
  */
-size_t co_visible_length(const unsigned char *p, size_t len);
+LIBMUX_API size_t co_visible_length(const unsigned char *p, size_t len);
 
 /*
  * co_skip_color — Advance past any color PUA code points at current position.
@@ -54,7 +67,7 @@ size_t co_visible_length(const unsigned char *p, size_t len);
  * Returns pointer to the first non-color byte at or after p.
  * Does not advance past the end (p + len).
  */
-const unsigned char *co_skip_color(const unsigned char *p,
+LIBMUX_API const unsigned char *co_skip_color(const unsigned char *p,
                                    const unsigned char *pe);
 
 /*
@@ -64,7 +77,7 @@ const unsigned char *co_skip_color(const unsigned char *p,
  * after the nth visible code point (or pe if fewer than n remain).
  * If out_count is non-NULL, stores the actual number advanced.
  */
-const unsigned char *co_visible_advance(const unsigned char *p,
+LIBMUX_API const unsigned char *co_visible_advance(const unsigned char *p,
                                         const unsigned char *pe,
                                         size_t n,
                                         size_t *out_count);
@@ -77,7 +90,7 @@ const unsigned char *co_visible_advance(const unsigned char *p,
  * Returns the number of bytes written to out.
  * out must have room for at least LBUF_SIZE bytes.
  */
-size_t co_copy_visible(unsigned char *out, const unsigned char *p,
+LIBMUX_API size_t co_copy_visible(unsigned char *out, const unsigned char *p,
                        const unsigned char *pe, size_t n);
 
 /*
@@ -87,7 +100,7 @@ size_t co_copy_visible(unsigned char *out, const unsigned char *p,
  * Returns pointer to the delimiter byte, or NULL if not found.
  * Only matches against visible bytes (never inside color sequences).
  */
-const unsigned char *co_find_delim(const unsigned char *p,
+LIBMUX_API const unsigned char *co_find_delim(const unsigned char *p,
                                    const unsigned char *pe,
                                    unsigned char delim);
 
@@ -98,7 +111,7 @@ const unsigned char *co_find_delim(const unsigned char *p,
  *
  * Returns bytes written to out (visible content only).
  */
-size_t co_strip_color(unsigned char *out, const unsigned char *p, size_t len);
+LIBMUX_API size_t co_strip_color(unsigned char *out, const unsigned char *p, size_t len);
 
 /*
  * co_words_count — Count words separated by delimiter, skipping color.
@@ -106,7 +119,7 @@ size_t co_strip_color(unsigned char *out, const unsigned char *p, size_t len);
  * Matches MUX words() behavior: consecutive delimiters do NOT create
  * empty words (they are compressed).
  */
-size_t co_words_count(const unsigned char *p, size_t len,
+LIBMUX_API size_t co_words_count(const unsigned char *p, size_t len,
                       unsigned char delim);
 
 /*
@@ -115,7 +128,7 @@ size_t co_words_count(const unsigned char *p, size_t len,
  * Copies all bytes (including color) up to but not including the first
  * delimiter occurrence.  Returns bytes written to out.
  */
-size_t co_first(unsigned char *out, const unsigned char *p, size_t len,
+LIBMUX_API size_t co_first(unsigned char *out, const unsigned char *p, size_t len,
                 unsigned char delim);
 
 /*
@@ -124,7 +137,7 @@ size_t co_first(unsigned char *out, const unsigned char *p, size_t len,
  * Skips past the first delimiter and copies the remainder.
  * Returns bytes written to out.
  */
-size_t co_rest(unsigned char *out, const unsigned char *p, size_t len,
+LIBMUX_API size_t co_rest(unsigned char *out, const unsigned char *p, size_t len,
                unsigned char delim);
 
 /*
@@ -132,7 +145,7 @@ size_t co_rest(unsigned char *out, const unsigned char *p, size_t len,
  *
  * Returns bytes written to out.
  */
-size_t co_last(unsigned char *out, const unsigned char *p, size_t len,
+LIBMUX_API size_t co_last(unsigned char *out, const unsigned char *p, size_t len,
                unsigned char delim);
 
 /*
@@ -142,7 +155,7 @@ size_t co_last(unsigned char *out, const unsigned char *p, size_t len,
  * Copies the extracted words (with their original color) separated by
  * the output delimiter.  Returns bytes written to out.
  */
-size_t co_extract(unsigned char *out,
+LIBMUX_API size_t co_extract(unsigned char *out,
                   const unsigned char *p, size_t len,
                   size_t iFirst, size_t nWords,
                   unsigned char delim, unsigned char osep);
@@ -152,7 +165,7 @@ size_t co_extract(unsigned char *out,
  *
  * Returns bytes written to out.
  */
-size_t co_left(unsigned char *out,
+LIBMUX_API size_t co_left(unsigned char *out,
                const unsigned char *p, size_t len, size_t n);
 
 /*
@@ -160,7 +173,7 @@ size_t co_left(unsigned char *out,
  *
  * Returns bytes written to out.
  */
-size_t co_right(unsigned char *out,
+LIBMUX_API size_t co_right(unsigned char *out,
                 const unsigned char *p, size_t len, size_t n);
 
 /*
@@ -170,7 +183,7 @@ size_t co_right(unsigned char *out,
  * Trims any visible code point whose first byte matches trim_char.
  * If trim_char is 0, trims ASCII whitespace (0x20, 0x09).
  */
-size_t co_trim(unsigned char *out,
+LIBMUX_API size_t co_trim(unsigned char *out,
                const unsigned char *p, size_t len,
                unsigned char trim_char, int trim_flags);
 
@@ -181,7 +194,7 @@ size_t co_trim(unsigned char *out,
  * Returns pointer into haystack where the match begins (at a visible
  * code point), or NULL if not found.  Only compares visible bytes.
  */
-const unsigned char *co_search(const unsigned char *haystack, size_t hlen,
+LIBMUX_API const unsigned char *co_search(const unsigned char *haystack, size_t hlen,
                                const unsigned char *needle, size_t nlen);
 
 /*
@@ -191,7 +204,7 @@ const unsigned char *co_search(const unsigned char *haystack, size_t hlen,
  * Space delimiter uses compress semantics; non-space is exact.
  * Returns number of words found.
  */
-size_t co_split_words(const unsigned char *data, size_t len,
+LIBMUX_API size_t co_split_words(const unsigned char *data, size_t len,
                       const unsigned char *sep, size_t sep_len,
                       size_t *word_starts, size_t *word_ends,
                       size_t max_words);
@@ -203,7 +216,7 @@ size_t co_split_words(const unsigned char *data, size_t len,
  * trim_flags: 1 = left, 2 = right, 3 = both.
  * Returns bytes written to out.
  */
-size_t co_trim_pattern(unsigned char *out,
+LIBMUX_API size_t co_trim_pattern(unsigned char *out,
                        const unsigned char *data, size_t len,
                        const unsigned char *pattern, size_t plen,
                        int trim_flags);
@@ -213,7 +226,7 @@ size_t co_trim_pattern(unsigned char *out,
  *
  * Returns bytes written to out.
  */
-size_t co_compress_str(unsigned char *out,
+LIBMUX_API size_t co_compress_str(unsigned char *out,
                        const unsigned char *data, size_t len,
                        const unsigned char *sep, size_t sep_len);
 
@@ -228,7 +241,7 @@ size_t co_compress_str(unsigned char *out,
  *
  * Returns bytes written to out.
  */
-size_t co_toupper(unsigned char *out, const unsigned char *p, size_t len);
+LIBMUX_API size_t co_toupper(unsigned char *out, const unsigned char *p, size_t len);
 
 /*
  * co_tolower — Convert visible code points to lowercase, preserving color.
@@ -236,7 +249,7 @@ size_t co_toupper(unsigned char *out, const unsigned char *p, size_t len);
  * Full Unicode case mapping via DFA tables (~1460 code points).
  * Returns bytes written to out.
  */
-size_t co_tolower(unsigned char *out, const unsigned char *p, size_t len);
+LIBMUX_API size_t co_tolower(unsigned char *out, const unsigned char *p, size_t len);
 
 /*
  * co_totitle — Title-case first visible code point, preserving color.
@@ -244,7 +257,7 @@ size_t co_tolower(unsigned char *out, const unsigned char *p, size_t len);
  * Full Unicode title-case mapping via DFA tables (~1481 code points).
  * Returns bytes written to out.
  */
-size_t co_totitle(unsigned char *out, const unsigned char *p, size_t len);
+LIBMUX_API size_t co_totitle(unsigned char *out, const unsigned char *p, size_t len);
 
 /*
  * co_reverse — Reverse visible code points, preserving color attachment.
@@ -255,7 +268,7 @@ size_t co_totitle(unsigned char *out, const unsigned char *p, size_t len);
  *
  * Returns bytes written to out.
  */
-size_t co_reverse(unsigned char *out, const unsigned char *p, size_t len);
+LIBMUX_API size_t co_reverse(unsigned char *out, const unsigned char *p, size_t len);
 
 /*
  * co_edit — Find-and-replace, color-aware.
@@ -267,7 +280,7 @@ size_t co_reverse(unsigned char *out, const unsigned char *p, size_t len);
  *
  * Returns bytes written to out.
  */
-size_t co_edit(unsigned char *out,
+LIBMUX_API size_t co_edit(unsigned char *out,
                const unsigned char *str, size_t slen,
                const unsigned char *from, size_t flen,
                const unsigned char *to, size_t tlen);
@@ -283,7 +296,7 @@ size_t co_edit(unsigned char *out,
  * ASCII fast path: if both sets are pure ASCII, uses 256-byte lookup.
  * Returns bytes written to out.
  */
-size_t co_transform(unsigned char *out,
+LIBMUX_API size_t co_transform(unsigned char *out,
                     const unsigned char *str, size_t slen,
                     const unsigned char *from_set, size_t flen,
                     const unsigned char *to_set, size_t tlen);
@@ -297,7 +310,7 @@ size_t co_transform(unsigned char *out,
  *
  * Returns bytes written to out.
  */
-size_t co_compress(unsigned char *out,
+LIBMUX_API size_t co_compress(unsigned char *out,
                    const unsigned char *p, size_t len,
                    unsigned char compress_char);
 
@@ -313,7 +326,7 @@ size_t co_compress(unsigned char *out,
  *
  * Returns bytes written to out.
  */
-size_t co_mid(unsigned char *out,
+LIBMUX_API size_t co_mid(unsigned char *out,
               const unsigned char *p, size_t len,
               size_t iStart, size_t nCount);
 
@@ -324,7 +337,7 @@ size_t co_mid(unsigned char *out,
  * where needle first appears in haystack.  Returns 0 if not found.
  * Color is skipped in both haystack and needle during matching.
  */
-size_t co_pos(const unsigned char *haystack, size_t hlen,
+LIBMUX_API size_t co_pos(const unsigned char *haystack, size_t hlen,
               const unsigned char *needle, size_t nlen);
 
 /*
@@ -334,7 +347,7 @@ size_t co_pos(const unsigned char *haystack, size_t hlen,
  * positions of every occurrence of the pattern byte.
  * Returns bytes written to out.
  */
-size_t co_lpos(unsigned char *out,
+LIBMUX_API size_t co_lpos(unsigned char *out,
                const unsigned char *haystack, size_t hlen,
                unsigned char pattern);
 
@@ -345,7 +358,7 @@ size_t co_lpos(unsigned char *out,
  * exact match of target.  Returns the 1-based word index, or 0 if
  * not found.  Comparison is on visible content (color stripped).
  */
-size_t co_member(const unsigned char *target, size_t tlen,
+LIBMUX_API size_t co_member(const unsigned char *target, size_t tlen,
                  const unsigned char *list, size_t llen,
                  unsigned char delim);
 
@@ -355,7 +368,7 @@ size_t co_member(const unsigned char *target, size_t tlen,
  * Returns 0 for combining marks, 2 for fullwidth/CJK, 1 otherwise.
  * Wraps ConsoleWidth() from stringutil.cpp with C linkage.
  */
-int co_console_width(const unsigned char *pCodePoint);
+LIBMUX_API int co_console_width(const unsigned char *pCodePoint);
 
 /*
  * co_visual_width — Total display column width of a PUA-colored string.
@@ -363,7 +376,7 @@ int co_console_width(const unsigned char *pCodePoint);
  * Skips color PUA codes, sums co_console_width() for visible chars.
  * Accounts for fullwidth (2 columns) and zero-width (0 columns).
  */
-size_t co_visual_width(const unsigned char *p, size_t len);
+LIBMUX_API size_t co_visual_width(const unsigned char *p, size_t len);
 
 /*
  * co_copy_columns — Copy up to n display columns, preserving color.
@@ -373,7 +386,7 @@ size_t co_visual_width(const unsigned char *p, size_t len);
  * character that would exceed the column limit.
  * Returns bytes written to out.
  */
-size_t co_copy_columns(unsigned char *out, const unsigned char *p,
+LIBMUX_API size_t co_copy_columns(unsigned char *out, const unsigned char *p,
                        const unsigned char *pe, size_t ncols);
 
 /*
@@ -385,7 +398,7 @@ size_t co_copy_columns(unsigned char *out, const unsigned char *p,
  *
  * Returns bytes written to out.
  */
-size_t co_center(unsigned char *out,
+LIBMUX_API size_t co_center(unsigned char *out,
                  const unsigned char *p, size_t len,
                  size_t width,
                  const unsigned char *fill, size_t fill_len,
@@ -397,7 +410,7 @@ size_t co_center(unsigned char *out,
  * bTrunc: if true, truncate input to width if wider.
  * Returns bytes written to out.
  */
-size_t co_ljust(unsigned char *out,
+LIBMUX_API size_t co_ljust(unsigned char *out,
                 const unsigned char *p, size_t len,
                 size_t width,
                 const unsigned char *fill, size_t fill_len,
@@ -409,7 +422,7 @@ size_t co_ljust(unsigned char *out,
  * bTrunc: if true, truncate input to width if wider.
  * Returns bytes written to out.
  */
-size_t co_rjust(unsigned char *out,
+LIBMUX_API size_t co_rjust(unsigned char *out,
                 const unsigned char *p, size_t len,
                 size_t width,
                 const unsigned char *fill, size_t fill_len,
@@ -420,7 +433,7 @@ size_t co_rjust(unsigned char *out,
  *
  * Returns bytes written to out, or 0 if result would exceed LBUF_SIZE.
  */
-size_t co_repeat(unsigned char *out,
+LIBMUX_API size_t co_repeat(unsigned char *out,
                  const unsigned char *p, size_t len,
                  size_t count);
 
@@ -435,7 +448,7 @@ size_t co_repeat(unsigned char *out,
  *
  * Returns bytes written to out.
  */
-size_t co_delete(unsigned char *out,
+LIBMUX_API size_t co_delete(unsigned char *out,
                  const unsigned char *p, size_t len,
                  size_t iStart, size_t nCount);
 
@@ -447,7 +460,7 @@ size_t co_delete(unsigned char *out,
  * list1 and list2 must have the same number of words.
  * Returns bytes written to out, or 0 on error (mismatched lengths).
  */
-size_t co_splice(unsigned char *out,
+LIBMUX_API size_t co_splice(unsigned char *out,
                  const unsigned char *list1, size_t len1,
                  const unsigned char *list2, size_t len2,
                  const unsigned char *search, size_t slen,
@@ -462,7 +475,7 @@ size_t co_splice(unsigned char *out,
  * If iPos > number of words, appends at the end.
  * Returns bytes written to out.
  */
-size_t co_insert_word(unsigned char *out,
+LIBMUX_API size_t co_insert_word(unsigned char *out,
                       const unsigned char *list, size_t llen,
                       const unsigned char *word, size_t wlen,
                       size_t iPos,
@@ -475,7 +488,7 @@ size_t co_insert_word(unsigned char *out,
  *            'n' = numeric, 'd' = dbref.
  * Returns bytes written to out.
  */
-size_t co_sort_words(unsigned char *out,
+LIBMUX_API size_t co_sort_words(unsigned char *out,
                      const unsigned char *list, size_t llen,
                      unsigned char delim, unsigned char osep,
                      char sort_type);
@@ -485,7 +498,7 @@ size_t co_sort_words(unsigned char *out,
  *
  * Returns bytes written to out.
  */
-size_t co_setunion(unsigned char *out,
+LIBMUX_API size_t co_setunion(unsigned char *out,
                    const unsigned char *list1, size_t len1,
                    const unsigned char *list2, size_t len2,
                    unsigned char delim, unsigned char osep,
@@ -496,7 +509,7 @@ size_t co_setunion(unsigned char *out,
  *
  * Returns bytes written to out.
  */
-size_t co_setdiff(unsigned char *out,
+LIBMUX_API size_t co_setdiff(unsigned char *out,
                   const unsigned char *list1, size_t len1,
                   const unsigned char *list2, size_t len2,
                   unsigned char delim, unsigned char osep,
@@ -507,7 +520,7 @@ size_t co_setdiff(unsigned char *out,
  *
  * Returns bytes written to out.
  */
-size_t co_setinter(unsigned char *out,
+LIBMUX_API size_t co_setinter(unsigned char *out,
                    const unsigned char *list1, size_t len1,
                    const unsigned char *list2, size_t len2,
                    unsigned char delim, unsigned char osep,
@@ -531,7 +544,16 @@ typedef struct {
 } co_ColorState;
 
 /* The default (reset) state. */
+#ifdef _MSC_VER
+static inline co_ColorState co_cs_normal_init_(void) {
+    co_ColorState cs = {0};
+    cs.fg = -1; cs.bg = -1;
+    return cs;
+}
+#define CO_CS_NORMAL co_cs_normal_init_()
+#else
 #define CO_CS_NORMAL  ((co_ColorState){ -1, -1, 0,0,0, 0,0,0, 0,0,0,0 })
+#endif
 
 /* Convenience constructors for common states. */
 static inline co_ColorState co_cs_fg(int idx) {
@@ -565,7 +587,7 @@ static inline int co_cs_equal(const co_ColorState *a, const co_ColorState *b) {
  *
  * Returns bytes written to out.
  */
-size_t co_collapse_color(unsigned char *out,
+LIBMUX_API size_t co_collapse_color(unsigned char *out,
                          const unsigned char *p, size_t len);
 
 /*
@@ -575,7 +597,7 @@ size_t co_collapse_color(unsigned char *out,
  * to the given state, then copies the string.
  * Returns bytes written to out.
  */
-size_t co_apply_color(unsigned char *out,
+LIBMUX_API size_t co_apply_color(unsigned char *out,
                       const unsigned char *p, size_t len,
                       co_ColorState cs);
 
@@ -589,7 +611,7 @@ size_t co_apply_color(unsigned char *out,
  *
  * Returns bytes written to out, or 0 if visible lengths differ.
  */
-size_t co_merge(unsigned char *out,
+LIBMUX_API size_t co_merge(unsigned char *out,
                 const unsigned char *strA, size_t lenA,
                 const unsigned char *strB, size_t lenB,
                 const unsigned char *search, size_t slen);
@@ -603,7 +625,7 @@ size_t co_merge(unsigned char *out,
  *
  * Returns bytes written to out.
  */
-size_t co_escape(unsigned char *out,
+LIBMUX_API size_t co_escape(unsigned char *out,
                  const unsigned char *data, size_t len);
 
 /* ---- Grapheme cluster operations ---- */
@@ -615,7 +637,7 @@ size_t co_escape(unsigned char *out,
  * marks, Hangul jamo, emoji ZWJ sequences, regional indicators.
  * Color PUA code points are skipped (not counted as clusters).
  */
-size_t co_cluster_count(const unsigned char *data, size_t len);
+LIBMUX_API size_t co_cluster_count(const unsigned char *data, size_t len);
 
 /*
  * co_cluster_advance — Advance past n grapheme clusters in PUA-encoded string.
@@ -623,7 +645,7 @@ size_t co_cluster_count(const unsigned char *data, size_t len);
  * Returns pointer past the nth cluster (including any trailing color).
  * If out_count is non-NULL, stores the actual number of clusters advanced.
  */
-const unsigned char *co_cluster_advance(const unsigned char *data,
+LIBMUX_API const unsigned char *co_cluster_advance(const unsigned char *data,
                                         const unsigned char *pe,
                                         size_t n, size_t *out_count);
 
@@ -635,7 +657,7 @@ const unsigned char *co_cluster_advance(const unsigned char *data,
  *
  * Returns bytes written to out.
  */
-size_t co_mid_cluster(unsigned char *out,
+LIBMUX_API size_t co_mid_cluster(unsigned char *out,
                       const unsigned char *data, size_t len,
                       size_t iStart, size_t nCount);
 
@@ -645,7 +667,7 @@ size_t co_mid_cluster(unsigned char *out,
  * iStart is 0-based cluster index, nCount is number of clusters to delete.
  * Returns bytes written to out.
  */
-size_t co_delete_cluster(unsigned char *out,
+LIBMUX_API size_t co_delete_cluster(unsigned char *out,
                          const unsigned char *data, size_t len,
                          size_t iStart, size_t nCount);
 
