@@ -560,6 +560,16 @@ void hir_cse(hir_program &h) {
         if (!is_cse_candidate(h.kind[i])) continue;
 
         ValueKey key = { h.kind[i], h.ty[i], h.src1[i], h.src2[i], h.val[i] };
+
+        // Normalize commutative operations: src1 <= src2.
+        if (h.kind[i] == HIR_ADD || h.kind[i] == HIR_MUL ||
+            h.kind[i] == HIR_AND || h.kind[i] == HIR_OR || h.kind[i] == HIR_XOR ||
+            h.kind[i] == HIR_EQ || h.kind[i] == HIR_NE) {
+            if (key.src1 > key.src2) {
+                std::swap(key.src1, key.src2);
+            }
+        }
+
         auto it = value_table.find(key);
 
         if (it != value_table.end()) {

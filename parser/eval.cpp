@@ -757,6 +757,32 @@ private:
             }
             return result;
         };
+
+        m_noeval_funcs["IF"] = [this](const std::vector<std::unique_ptr<ASTNode>> &c) -> std::string {
+            if (c.empty()) return "";
+            std::string cond_str = evalWithFlags(c[0].get(), (m_ctx.evalFlags & ~EV_TOP) | EV_EVAL | EV_FCHECK);
+            bool cond = !cond_str.empty() && cond_str != "0";
+            if (cond) {
+                if (c.size() > 1) {
+                    return evalWithFlags(c[1].get(), (m_ctx.evalFlags & ~EV_TOP) | EV_EVAL | EV_FCHECK | EV_STRIP_CURLY);
+                }
+                return "";
+            } else {
+                if (c.size() > 2) {
+                    return evalWithFlags(c[2].get(), (m_ctx.evalFlags & ~EV_TOP) | EV_EVAL | EV_FCHECK | EV_STRIP_CURLY);
+                }
+                return "";
+            }
+        };
+
+        m_noeval_funcs["EVAL"] = [this](const std::vector<std::unique_ptr<ASTNode>> &c) -> std::string {
+            if (c.empty()) return "";
+            std::string text = evalWithFlags(c[0].get(), (m_ctx.evalFlags & ~EV_TOP) | EV_EVAL | EV_FCHECK);
+            auto tokens = tokenize(text.c_str());
+            Parser parser(tokens);
+            auto ast = parser.parse();
+            return evalWithFlags(ast.get(), (m_ctx.evalFlags & ~EV_TOP) | EV_EVAL | EV_FCHECK);
+        };
     }
 };
 
