@@ -7,7 +7,8 @@ Two Ragel -G2 tools for working with MUX softcode (`.mux` files):
 - **`reformat`** -- the inverse: takes single-line commands and
   re-introduces indentation based on brace structure.
 
-Together they provide a near-perfect round-trip:
+Together they provide a useful mostly-round-trip workflow for ordinary
+softcode:
 
 ```
 unformat *.mux | reformat > readable.mux   # flatten then re-indent
@@ -267,6 +268,9 @@ cat flat.txt | ./reformat | ./unformat /dev/stdin 2>/dev/null | head -1
 # Output: @if 1={a;b},{c}
 ```
 
-The round-trip is exact for all command content.  Only blank-line
-spacing between commands may differ (unformat's "extraspace" vs
-reformat's single-line `-` terminators).
+The round-trip is exact for many common command shapes, but `reformat`
+is still a structural pretty-printer rather than a full softcode
+parser. Content with literal top-level braces or semicolons may be
+re-indented differently. Blank-line spacing between commands may also
+differ (`unformat`'s "extraspace" vs `reformat`'s single-line `-`
+terminators).

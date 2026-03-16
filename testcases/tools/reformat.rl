@@ -1,8 +1,8 @@
 /*
  * reformat.rl -- Ragel -G2 MUX softcode reformatter
  *
- * The inverse of unreformat: takes single-line MUX commands (e.g., the
- * output of unreformat) and re-introduces indentation based on brace
+ * The inverse of unformat: takes single-line MUX commands (e.g., the
+ * output of unformat) and re-introduces indentation based on brace
  * structure, producing human-readable .mux files.
  *
  * Break rules (only when paren_depth == 0 AND bracket_depth == 0):
@@ -13,7 +13,7 @@
  *   - '{}' kept together (empty braces, no break)
  *
  * All continuation lines start with whitespace (4 + depth*4 spaces)
- * so the output is a valid .mux file that unreformat can read back.
+ * so the output is a valid .mux file that unformat can read back.
  *
  * Usage: reformat [file ...]   (reads stdin if no files given)
  *        Output goes to stdout.
@@ -183,7 +183,7 @@ static void process_stream(FILE *fp)
         while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r'))
             len--;
 
-        /* Skip blank lines (unreformat inserts these between commands). */
+        /* Skip blank lines (unformat inserts these between commands). */
         if (len == 0) continue;
 
         reformat_line(line, (size_t)len);
