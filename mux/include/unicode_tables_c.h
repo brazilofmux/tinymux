@@ -52,7 +52,7 @@ typedef struct {
 extern "C" {
 #endif
 
-extern const unsigned char utf8_FirstByte[256];
+extern LIBMUX_API const unsigned char utf8_FirstByte[256];
 
 // utf/tr_tolower.txt
 //
