@@ -87,6 +87,7 @@ static std::string s_blob_version = "none";
 
 static bool tier2_allowed(const std::string &mux_name) {
     static const char *const s_allowlist[] = {
+        // Batch 0: baseline safe ops
         "CAT",
         "STRCAT",
         "STRLEN",
@@ -98,6 +99,68 @@ static bool tier2_allowed(const std::string &mux_name) {
         "STRIPANSI",
         "SPACE",
         "COMPRESS",
+
+        // Batch 1: simple byte-level, no color
+        "BEFORE",
+        "AFTER",
+        "LNUM",
+        "ISNUM",
+        "ISINT",
+        "CHR",
+        "ORD",
+        "DEC2HEX",
+        "HEX2DEC",
+        "ISDBREF",
+        "LADD",
+        "LMAX",
+        "LMIN",
+        "LAND",
+        "LOR",
+
+        // Batch 2: color-aware co_* string ops
+        "FIRST",
+        "REST",
+        "LAST",
+        "WORDS",
+        "MID",
+        "POS",
+        "REPEAT",
+        "TRIM",
+        "MEMBER",
+        "EXTRACT",
+        "LEFT",
+        "RIGHT",
+        "LPOS",
+
+        // Batch 3: set, justify, edit, splice
+        // "SORT",  -- Tier 2 Shellsort diverges from server sort
+        "SETUNION",
+        "SETDIFF",
+        "SETINTER",
+        "LDELETE",
+        "REPLACE",
+        "INSERT",
+        "LJUST",
+        "RJUST",
+        "CENTER",
+        "EDIT",
+        "SPLICE",
+
+        // Batch 4: wildcard, misc string ops
+        "SECURE",
+        "SQUISH",
+        "DELETE",
+        "ELEMENTS",
+        "TRANSLATE",
+        "STRMATCH",
+        "MATCH",
+        "GRAB",
+        "GRABALL",
+        "WORDPOS",
+        "REMOVE",
+        "REVWORDS",
+        "FLIP",
+
         nullptr
     };
     for (int i = 0; s_allowlist[i]; i++) {
