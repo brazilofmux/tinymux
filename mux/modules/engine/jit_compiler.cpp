@@ -87,6 +87,24 @@ public:
         return (it != s_arenas.end()) ? it->second : nullptr;
     }
 
+    // Release arenas that have no external references (refcount == 1
+    // means only the arena's self-ownership remains).  Called between
+    // evaluations to bound arena lifetime.
+    static void gc() {
+        s_current = nullptr;
+        auto it = s_arenas.begin();
+        while (it != s_arenas.end()) {
+            Arena *a = it->second;
+            if (a->lr->refcount <= 1) {
+                BufRelease(a->lr);
+                delete a;
+                it = s_arenas.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
 private:
     static Arena *Create() {
         Arena *a = new Arena;
@@ -1393,6 +1411,7 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
               dbref executor, dbref caller, dbref enactor,
               int eval,
               const UTF8 *cargs[], int ncargs) {
+    JITArena::gc();
     jit_dma_controller::reset();
     // Don't JIT until the Tier 2 blob is loaded and the persistent
     // DBT state is initialized.  compile_cached calls tier2_lazy_init,
