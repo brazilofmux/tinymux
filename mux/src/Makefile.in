@@ -94,7 +94,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = netmux$(EXEEXT) slave$(EXEEXT) $(am__EXEEXT_1)
+bin_PROGRAMS = netmux$(EXEEXT) slave$(EXEEXT) muxescape$(EXEEXT) $(am__EXEEXT_1)
 @STUBSLAVE_ENABLED_TRUE@am__append_1 = stubslave
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -130,6 +130,9 @@ netmux_LINK = $(CXXLD) $(netmux_CXXFLAGS) $(CXXFLAGS) \
 am_slave_OBJECTS = slave.$(OBJEXT)
 slave_OBJECTS = $(am_slave_OBJECTS)
 slave_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am_muxescape_OBJECTS = muxescape.$(OBJEXT)
+muxescape_OBJECTS = $(am_muxescape_OBJECTS)
+muxescape_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_stubslave_OBJECTS = stubslave.$(OBJEXT)
 stubslave_OBJECTS = $(am_stubslave_OBJECTS)
 stubslave_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -158,7 +161,7 @@ am__depfiles_remade = ./$(DEPDIR)/netmux-_build.Po \
 	./$(DEPDIR)/netmux-net.Po ./$(DEPDIR)/netmux-netaddr.Po \
 	./$(DEPDIR)/netmux-signals.Po ./$(DEPDIR)/netmux-sitemon.Po \
 	./$(DEPDIR)/netmux-telnet.Po ./$(DEPDIR)/netmux-version.Po \
-	./$(DEPDIR)/netmux-websocket.Po ./$(DEPDIR)/slave.Po \
+	./$(DEPDIR)/netmux-websocket.Po ./$(DEPDIR)/muxescape.Po ./$(DEPDIR)/slave.Po \
 	./$(DEPDIR)/stubslave.Po
 am__mv = mv -f
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -178,8 +181,8 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(netmux_SOURCES) $(slave_SOURCES) $(stubslave_SOURCES)
-DIST_SOURCES = $(netmux_SOURCES) $(slave_SOURCES) $(stubslave_SOURCES)
+SOURCES = $(netmux_SOURCES) $(slave_SOURCES) $(muxescape_SOURCES) $(stubslave_SOURCES)
+DIST_SOURCES = $(netmux_SOURCES) $(slave_SOURCES) $(muxescape_SOURCES) $(stubslave_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -357,6 +360,10 @@ netmux_LDADD = -lmux $(top_builddir)/ganl/libganl.a \
 slave_SOURCES = slave.cpp
 slave_LDADD = $(LIBS)
 
+# muxescape utility
+muxescape_SOURCES = muxescape.cpp
+muxescape_LDADD = $(LIBS)
+
 # stubslave program
 stubslave_SOURCES = stubslave.cpp
 stubslave_LDFLAGS = -L$(top_builddir)/lib -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(abs_top_builddir)/lib
@@ -445,6 +452,10 @@ slave$(EXEEXT): $(slave_OBJECTS) $(slave_DEPENDENCIES) $(EXTRA_slave_DEPENDENCIE
 	@rm -f slave$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(slave_OBJECTS) $(slave_LDADD) $(LIBS)
 
+muxescape$(EXEEXT): $(muxescape_OBJECTS) $(muxescape_DEPENDENCIES) $(EXTRA_muxescape_DEPENDENCIES) 
+	@rm -f muxescape$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(muxescape_OBJECTS) $(muxescape_LDADD) $(LIBS)
+
 stubslave$(EXEEXT): $(stubslave_OBJECTS) $(stubslave_DEPENDENCIES) $(EXTRA_stubslave_DEPENDENCIES) 
 	@rm -f stubslave$(EXEEXT)
 	$(AM_V_CXXLD)$(stubslave_LINK) $(stubslave_OBJECTS) $(stubslave_LDADD) $(LIBS)
@@ -469,6 +480,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-telnet.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-version.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-websocket.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/muxescape.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slave.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stubslave.Po@am__quote@ # am--include-marker
 

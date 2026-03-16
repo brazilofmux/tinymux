@@ -13,7 +13,7 @@ DRIVER_SRC = _build.cpp bsd.cpp driver.cpp driver_bridge.cpp \
     signals.cpp sitemon.cpp telnet.cpp websocket.cpp
 
 # Build executables
-bin_PROGRAMS = netmux slave
+bin_PROGRAMS = netmux slave muxescape
 
 if STUBSLAVE_ENABLED
 bin_PROGRAMS += stubslave
@@ -31,6 +31,10 @@ netmux_LDADD = -lmux $(top_builddir)/ganl/libganl.a \
 # slave program
 slave_SOURCES = slave.cpp
 slave_LDADD = $(LIBS)
+
+# muxescape utility
+muxescape_SOURCES = muxescape.cpp
+muxescape_LDADD = $(LIBS)
 
 # stubslave program
 stubslave_SOURCES = stubslave.cpp
