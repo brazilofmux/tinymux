@@ -288,6 +288,7 @@ extern bool s_fcheck_available;
 
 // HIR codegen (hir_codegen.cpp).
 void hir_codegen(hir_program &h, rv_compiler &rc);
+void hir_dump(const hir_program &h);
 
 // JIT compiler (jit_compiler.cpp).
 void dbt_compile_cleanup(void);

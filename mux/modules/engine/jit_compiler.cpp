@@ -524,15 +524,32 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     qreg_init();
     h.result = hir_lower_node(h, rc, ast.get());
 
+    const char *dump_env = getenv("TINYMUX_DUMP_HIR");
+    bool bDump = (dump_env && *dump_env != '0');
+
+    if (bDump) {
+        printf("\n--- JIT Compilation: %.*s ---\n", static_cast<int>(nLen), expr);
+        printf("Phase 1: HIR Lowering\n");
+        hir_dump(h);
+    }
+
     // Phase 2: SSA construction (for multi-block programs, M4+).
     // For single-block programs this is a no-op but builds the CFG.
     hir_build_cfg(h);
     if (h.n_blocks > 1) {
         hir_ssa_construct(h);
+        if (bDump) {
+            printf("Phase 2: SSA Construction\n");
+            hir_dump(h);
+        }
     }
 
     // Phase 3: SSA optimization (constant fold, copy prop, DCE).
     hir_optimize(h);
+    if (bDump) {
+        printf("Phase 3: SSA Optimization\n");
+        hir_dump(h);
+    }
 
     // Phase 4: Codegen HIR → RV64.
     hir_codegen(h, rc);

@@ -1431,3 +1431,109 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
     // Emit exit.
     rv_emit_exit(rc.code);
 }
+
+const char *hir_kind_name(hir_kind k) {
+    switch (k) {
+    case HIR_NOP:        return "NOP";
+    case HIR_ICONST:     return "ICONST";
+    case HIR_SCONST:     return "SCONST";
+    case HIR_ADD:        return "ADD";
+    case HIR_SUB:        return "SUB";
+    case HIR_MUL:        return "MUL";
+    case HIR_DIV:        return "DIV";
+    case HIR_REM:        return "REM";
+    case HIR_NEG:        return "NEG";
+    case HIR_ABS:        return "ABS";
+    case HIR_SIGN:       return "SIGN";
+    case HIR_MAX:        return "MAX";
+    case HIR_MIN:        return "MIN";
+    case HIR_EQ:         return "EQ";
+    case HIR_NE:         return "NE";
+    case HIR_LT:         return "LT";
+    case HIR_LE:         return "LE";
+    case HIR_GT:         return "GT";
+    case HIR_GE:         return "GE";
+    case HIR_NOT:        return "NOT";
+    case HIR_BOOL:       return "BOOL";
+    case HIR_INC:        return "INC";
+    case HIR_DEC:        return "DEC";
+    case HIR_ATOI:       return "ATOI";
+    case HIR_ITOA:       return "ITOA";
+    case HIR_CALL:       return "CALL";
+    case HIR_STRCAT:     return "STRCAT";
+    case HIR_RET:        return "RET";
+    case HIR_COPY:       return "COPY";
+    case HIR_PHI:        return "PHI";
+    case HIR_LOAD_Q:     return "LOAD_Q";
+    case HIR_STORE_Q:    return "STORE_Q";
+    case HIR_SETQ_SYNC:  return "SETQ_SYNC";
+    case HIR_BR:         return "BR";
+    case HIR_BRC:        return "BRC";
+    default:             return "UNKNOWN";
+    }
+}
+
+static const char *hir_type_name(hir_type t) {
+    switch (t) {
+    case TY_VOID:   return "void";
+    case TY_INT:    return "int";
+    case TY_STRING: return "str";
+    default:        return "???";
+    }
+}
+
+void hir_dump(const hir_program &h) {
+    printf("HIR Program: %d instructions, %d blocks\n", h.n_insns, h.n_blocks);
+    printf("Result: v%d\n", h.result);
+
+    for (int b = 0; b < h.n_blocks; b++) {
+        printf("\nBLOCK %d:\n", b);
+        printf("  Range: [%d, %d]\n", h.block_first[b], h.block_last[b]);
+        printf("  Preds: ");
+        for (int i = 0; i < h.n_pred[b]; i++) {
+            printf("%d ", h.pblk[h.pred_base[b] + i]);
+        }
+        printf("\n  Succs: ");
+        for (int i = 0; i < h.block_nsucc[b]; i++) {
+            printf("%d ", h.block_succ[b][i]);
+        }
+        printf("\n  IDom:  %d\n", h.idom[b]);
+
+        if (h.block_first[b] <= h.block_last[b]) {
+            for (int i = h.block_first[b]; i <= h.block_last[b]; i++) {
+                if (h.blk[i] != b) continue;
+                printf("  v%-3d = %-10s %-4s", i, hir_kind_name(h.kind[i]), hir_type_name(h.ty[i]));
+
+                if (h.kind[i] == HIR_ICONST) {
+                    printf(" %lld", (long long)h.val[i]);
+                } else if (h.kind[i] == HIR_SCONST) {
+                    printf(" \"%s\" (0x%llX)", h.sval[i].c_str(), (unsigned long long)h.val[i]);
+                } else if (h.kind[i] == HIR_BR) {
+                    printf(" -> BLOCK %d", (int)h.val[i]);
+                } else if (h.kind[i] == HIR_BRC) {
+                    printf(" v%d ? -> BLOCK %d : BLOCK %d", h.src1[i], (int)h.val[i], h.src2[i]);
+                } else if (h.kind[i] == HIR_PHI) {
+                    printf(" Q%d { ", (int)h.val[i]);
+                    for (int j = 0; j < h.pnargs[i]; j++) {
+                        printf("B%d:v%d ", h.pblk[h.pbase[i] + j], h.pval[h.pbase[i] + j]);
+                    }
+                    printf("}");
+                } else if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
+                    if (!h.call_name[i].empty()) printf(" %s", h.call_name[i].c_str());
+                    printf(" ( ");
+                    for (int j = 0; j < h.cnargs[i]; j++) {
+                        printf("v%d ", h.carg[h.cbase[i] + j]);
+                    }
+                    printf(")");
+                    if (h.tier2_addr[i]) printf(" [T2:0x%llX]", (unsigned long long)h.tier2_addr[i]);
+                } else {
+                    if (h.src1[i] >= 0) printf(" v%d", h.src1[i]);
+                    if (h.src2[i] >= 0) printf(", v%d", h.src2[i]);
+                    if (h.val[i] != 0 && h.kind[i] != HIR_COPY) printf(" imm:%lld", (long long)h.val[i]);
+                }
+                printf("\n");
+            }
+        }
+    }
+    printf("--- end dump ---\n");
+}
