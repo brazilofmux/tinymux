@@ -4240,11 +4240,11 @@
 >293
 "@if strmatch(setr(0,sha1([eval({%q<>})][eval({%q<0>})][eval({%q<name>>})])),091385BE99B45F459A231582D583EC9F3FA3D194)={@log smoke=TC028: edge malformed pct-q angle forms. Succeeded.},{@log smoke=TC028: edge malformed pct-q angle forms. Failed (%q0).}"
 >294
-"@if strmatch(setr(0,sha1([eval({A%xB})][eval({A%x<})][eval({A%x<noend})][eval({A%c?B})])),68F4E3E995DA3BD32BC4084581F81DD513E1C358)={@log smoke=TC029: edge malformed color escapes. Succeeded.},{@log smoke=TC029: edge malformed color escapes. Failed (%q0).}"
+"@if strmatch(setr(0,sha1([eval({A%xB})][eval({A%x<})][eval({A%x<noend})][eval({A%c?B})])),4B5B9D582B89B83AC6A2A16FFA2A39956275C328)={@log smoke=TC029: edge malformed color escapes. Succeeded.},{@log smoke=TC029: edge malformed color escapes. Failed (%q0).}"
 >295
 "@if strmatch(setr(0,sha1([eval({%=})][eval({%=<})][eval({%=<0})][eval({%=<9999>})][eval({%=<bad attr>})])),setr(1,sha1(%=%=<>%=<0%=<9999>%=<bad attr>)))={@log smoke=TC030: edge malformed %= forms parity. Succeeded (possibly fixed).;},{@log smoke=TC030: edge malformed %= forms divergence observed (%q0 vs %q1).;}"
 >296
-"@if strmatch(setr(0,sha1([setr(3,MIX)][eval({%q<bad notafunc(%q3 [add(2,2)]})])),5F08604B6375DED60CA9001612314F5301C0A80A)={@log smoke=TC031: edge mixed malformed sequence parity. Succeeded.},{@log smoke=TC031: edge mixed malformed sequence parity. Failed (%q0).}"
+"@if strmatch(setr(0,sha1([setr(3,MIX)][eval({%q<bad notafunc(%q3 [add(2,2)]})])),9D9AFFAEDBF792FD38E2F2C2383FA31C9C387AFA)={@log smoke=TC031: edge mixed malformed sequence parity. Succeeded.},{@log smoke=TC031: edge mixed malformed sequence parity. Failed (%q0).}"
 >297
 "@if strmatch(setr(0,sha1([eval({{foo(bar},baz)})])),setr(1,sha1({foo(bar},baz))))={@log smoke=TC032: edge deep brace/paren mismatch parity. Succeeded (possibly fixed).;},{@log smoke=TC032: edge deep brace/paren mismatch divergence observed (%q0 vs %q1).;}"
 >298
@@ -4439,7 +4439,7 @@
 >258
 "@log smoke=End printf() test cases.;@notify smoke"
 >259
-"@if strmatch(setr(0,sha1([printf(|%-10s|, Left)][printf(|%10s|, Right)][printf(|%=10s|, Mid)])),9855C2DCCF320FEC10106841E2CDA13CEA00E8E8)={@log smoke=TC002: printf alignment. Succeeded.},{@log smoke=TC002: printf alignment. Failed (%q0).}"
+"@if strmatch(setr(0,sha1([printf(|%-10s|, Left)][printf(|%10s|, Right)][printf(|%^10s|, Mid)])),C0DD1D494614AAFD0F339CBE437A9D0BABC9A4B7)={@log smoke=TC002: printf alignment. Succeeded.},{@log smoke=TC002: printf alignment. Failed (%q0).}"
 >260
 "@if strmatch(setr(0,sha1([printf(|%.3s|, Hello)][printf(|%-10.5s|, Hello World)][printf(|%10d|, 42)][printf(|%-10d|, 42)])),0C54D493347FBEAE62A3D22B328CDA0B578477CB)={@log smoke=TC003: printf precision and width. Succeeded.},{@log smoke=TC003: printf precision and width. Failed (%q0).}"
 >261
@@ -5622,7 +5622,7 @@
 >363
 "abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn and_fn andbool_fn asin_fn atan_fn atan2_fn attrib_set_fn band_fn baseconv_fn before_fn bnand_fn bor_fn bxor_fn cand_fn candbool_fn capstr_fn case_fn cat_fn ceil_fn center_fn choose_fn chr_fn citer_fn clone_fn cmd_say columns_fn comp_fn convtime_fn connlog_fn cor_fn corbool_fn cos_fn cpad_fn crc32_fn cron_fn ctu_fn dec_fn delete_fn digest_fn digittime_fn dist2d_fn dist3d_fn dynhelp_fn e_fn edit_fn elements_fn encode64_fn eq_fn escape_fn exp3_fn exp_fn exptime_fn extract_fn fdiv_fn first_fn floor_fn floordiv_fn fmod_fn grab_fn graball_fn gt_fn gte_fn hmac_fn iadd_fn iabs_fn idiv_fn imul_fn inc_fn index_fn insert_fn isalpha_fn isdbref_fn isign_fn isint_fn isjson_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn json_fn letq_fn"
 >364
-"ladd_fn land_fn last_fn lcstr_fn ldelete_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn lockencode_fn log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn mailsend_fn match_fn matchall_fn max_fn member_fn merge_fn mid_fn min_fn mod_fn mul_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn printf_fn reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn rpad_fn rvcall_fn rveval_fn rvbench_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn sign_fn sin_fn singletime_fn sort_fn sortkey_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn strcat_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strdistance_fn strtrunc_fn sub_fn switch_fn t_fn table_fn tan_fn tr_fn translate_fn trim_fn trunc_fn ucstr_fn url_escape_fn vadd_fn vcross_fn vdot_fn vmag_fn vmul_fn vsub_fn vunit_fn visual_width_fn wordpos_fn words_fn wrap_fn xor_fn jitstats_fn shutdown"
+"ladd_fn land_fn last_fn lcstr_fn ldelete_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn lockencode_fn log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn mailsend_fn match_fn matchall_fn max_fn member_fn merge_fn mid_fn min_fn mod_fn mul_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn printf_fn reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn rpad_fn rvcall_fn rveval_fn rvbench_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn sign_fn sin_fn singletime_fn sort_fn sortkey_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn strcat_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strdistance_fn strtrunc_fn sub_fn switch_fn t_fn table_fn tan_fn tr_fn translate_fn trim_fn trunc_fn ucstr_fn url_escape_fn vadd_fn vcross_fn vdot_fn vmag_fn vmul_fn vsub_fn vunit_fn visual_width_fn wordpos_fn words_fn wrap_fn xor_fn jit_parity_fn jitstats_fn shutdown"
 >365
 "@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
 <

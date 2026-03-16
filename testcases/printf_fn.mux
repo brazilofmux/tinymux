@@ -41,10 +41,10 @@
         setr(0,sha1(
             [printf(|%-10s|, Left)]
             [printf(|%10s|, Right)]
-            [printf(|%=10s|, Mid)]
+            [printf(|%^10s|, Mid)]
           )
         ),
-        9855C2DCCF320FEC10106841E2CDA13CEA00E8E8
+        C0DD1D494614AAFD0F339CBE437A9D0BABC9A4B7
       )=
   {
     @log smoke=TC002: printf alignment. Succeeded.

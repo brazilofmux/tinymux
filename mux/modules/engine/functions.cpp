@@ -9865,7 +9865,7 @@ static FUNCTION(fun_printf)
             switch (*fmt)
             {
             case '-': bLeft = true;   fmt++; break;
-            case '=': bCenter = true; fmt++; break;
+            case '^': bCenter = true; fmt++; break;
             case '0': bZero = true;   fmt++; break;
             default:  bParsing = false;      break;
             }

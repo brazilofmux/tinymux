@@ -12135,7 +12135,7 @@ PRINTF()
 
   Modifiers (between % and the type letter):
     -    Left-justify within the field width.
-    =    Center within the field width (MUX extension).
+    ^    Center within the field width (MUX extension).
     0    Zero-pad (numeric types only).
     N    Minimum field width in visible columns.
     .N   Precision: max columns for %s, decimal places for %f.
@@ -12145,7 +12145,7 @@ PRINTF()
     You say, "Hello World!"
     > say printf(|%-10s|%5d|, Apples, 42)
     You say, "|Apples    |   42|"
-    > say printf(|%=10s|, Mid)
+    > say printf(|%^10s|, Mid)
     You say, "|   Mid    |"
     > say printf(%05d, 7)
     You say, "00007"

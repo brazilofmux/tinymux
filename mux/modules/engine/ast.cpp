@@ -574,7 +574,9 @@ static void ast_eval_subst(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
                 }
                 else
                 {
-                    // Malformed %q<name with no closing > — emit empty.
+                    // Malformed %q<name with no closing > — output literally.
+                    //
+                    safe_str(reinterpret_cast<const UTF8 *>(txt.c_str()), buff, bufc);
                 }
             }
             else
@@ -834,6 +836,12 @@ static void ast_eval_subst(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
                     }
                 }
             }
+            else
+            {
+                // Malformed %=<name with no closing > — output literally.
+                //
+                safe_str(reinterpret_cast<const UTF8 *>(txt.c_str()), buff, bufc);
+            }
         }
         break;
 
@@ -894,6 +902,12 @@ static void ast_eval_subst(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
                             }
                         }
                     }
+                }
+                else
+                {
+                    // Malformed %c< color with no closing > — output literally.
+                    //
+                    safe_str(reinterpret_cast<const UTF8 *>(txt.c_str()), buff, bufc);
                 }
             }
             else
@@ -1933,26 +1947,37 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         // EV_FCHECK; subsequent children get it stripped so their
         // FUNCALL nodes output as literal text.
         //
-        bool bStripFCheck = (eval & EV_FCHECK) != 0
-                         && (eval & EV_FMAND) == 0;
+        bool bFCheckPending = (eval & EV_FCHECK) != 0
+                           && (eval & EV_FMAND) == 0;
 
         for (size_t i = first; i < last; i++)
         {
             int childEval = eval;
-            if (bStripFCheck)
+            if (bFCheckPending)
             {
-                if (i > first)
+                if (node->children[i]->type != AST_FUNCCALL)
                 {
-                    childEval = eval & ~EV_FCHECK;
-                }
-                else if (node->children[i]->type != AST_FUNCCALL)
-                {
-                    // First child is not a function call — strip
-                    // EV_FCHECK immediately (matches mux_exec where
-                    // the text before '(' includes non-function text).
+                    // If it's not a function call, it consumes the
+                    // FCHECK opportunity without dispatching.
                     //
                     childEval = eval & ~EV_FCHECK;
                 }
+
+                // Any non-space child (even if it's a FUNCCALL that
+                // dispatches) consumes the FCHECK opportunity.
+                //
+                if (node->children[i]->type != AST_SPACE)
+                {
+                    bFCheckPending = false;
+                }
+            }
+            else if (  (eval & EV_FCHECK) != 0
+                    && (eval & EV_FMAND) == 0)
+            {
+                // FCHECK opportunity already consumed by an earlier
+                // non-space child in this sequence.
+                //
+                childEval = eval & ~EV_FCHECK;
             }
             ast_eval_node(node->children[i].get(), buff, bufc,
                 executor, caller, enactor, childEval, cargs, ncargs);

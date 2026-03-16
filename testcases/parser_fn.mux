@@ -662,7 +662,7 @@
             [eval({A%c?B})]
           )
         ),
-        68F4E3E995DA3BD32BC4084581F81DD513E1C358
+        4B5B9D582B89B83AC6A2A16FFA2A39956275C328
       )=
   {
     @log smoke=TC029: edge malformed color escapes. Succeeded.
@@ -710,7 +710,7 @@
             [eval({%q<bad notafunc(%q3 [add(2,2)]})]
           )
         ),
-        5F08604B6375DED60CA9001612314F5301C0A80A
+        9D9AFFAEDBF792FD38E2F2C2383FA31C9C387AFA
       )=
   {
     @log smoke=TC031: edge mixed malformed sequence parity. Succeeded.
