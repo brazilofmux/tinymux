@@ -24,6 +24,10 @@ static constexpr uint64_t ECALL_CALL_INDEX = 0x101;  // index-based dispatch
 static constexpr uint64_t ECALL_SETQ       = 0x102;  // q-register write-through
 static constexpr uint64_t ECALL_SETQ_PACK  = 0x130;  // efficient register sync
 
+static constexpr uint64_t ECALL_ARENA_ALLOC   = 0x110; // a0=size -> a0=arena_id, a1=offset
+static constexpr uint64_t ECALL_ARENA_REF     = 0x111; // a0=arena_id
+static constexpr uint64_t ECALL_ARENA_RELEASE = 0x112; // a0=arena_id
+
 // Maximum number of indexed functions.
 static constexpr int ENGINE_API_MAX_FUNCS = 512;
 

@@ -36,6 +36,75 @@
 jit_stats_t s_jit_stats = {};
 
 // ---------------------------------------------------------------
+// JIT Arena Management (Tier B)
+//
+// Unifies with the engine's lbuf_ref/reg_ref packing system.
+// ---------------------------------------------------------------
+
+class JITArena {
+public:
+    struct Arena {
+        lbuf_ref *lr;
+        size_t    used;
+        uint32_t  id;
+    };
+
+    static Arena *Alloc(size_t n) {
+        if (n > LBUF_SIZE) return nullptr;
+
+        if (!s_current || s_current->used + n > LBUF_SIZE) {
+            s_current = Create();
+        }
+
+        s_current->used += n;
+        return s_current;
+    }
+
+    static void AddRef(uint32_t id) {
+        auto it = s_arenas.find(id);
+        if (it != s_arenas.end()) {
+            it->second->lr->refcount++;
+        }
+    }
+
+    static void Release(uint32_t id) {
+        auto it = s_arenas.find(id);
+        if (it != s_arenas.end()) {
+            Arena *a = it->second;
+            // Check refcount before BufRelease potentially frees lr.
+            bool last_ref = (a->lr->refcount <= 1);
+            BufRelease(a->lr);
+            if (last_ref) {
+                if (s_current && s_current->id == id) s_current = nullptr;
+                delete a;
+                s_arenas.erase(it);
+            }
+        }
+    }
+
+    static Arena *Get(uint32_t id) {
+        auto it = s_arenas.find(id);
+        return (it != s_arenas.end()) ? it->second : nullptr;
+    }
+
+private:
+    static Arena *Create() {
+        Arena *a = new Arena;
+        a->lr = alloc_lbufref("JITArena");
+        a->lr->lbuf_ptr = alloc_lbuf("JITArena");
+        a->lr->refcount = 1;
+        a->used = 0;
+        a->id = ++s_next_id;
+        s_arenas[a->id] = a;
+        return a;
+    }
+
+    static inline uint32_t s_next_id = 0;
+    static inline Arena *s_current = nullptr;
+    static inline std::unordered_map<uint32_t, Arena *> s_arenas;
+};
+
+// ---------------------------------------------------------------
 // Tier 2: pre-compiled RV64 library blob
 // ---------------------------------------------------------------
 
@@ -1134,57 +1203,111 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                                 out_addr, out_size);
     }
 
-    case ECALL_SETQ:
-    case ECALL_SETQ_PACK: {
-        // Q-register write-through:
-        // ECALL_SETQ:      a0 = reg_num, a1 = value_addr (null-terminated)
-        // ECALL_SETQ_PACK: a0 = reg_num, a1 = value_addr, a2 = length
-        //
-        // Writes to both the SUBST slot (for JIT reads) and
+    case ECALL_SETQ: {
+        // Traditional write-through: a0=reg, a1=addr
+        // Writes to both SUBST slot (for JIT %q reads) and
         // mudstate.global_regs (for ECALL reads).
         int regnum = static_cast<int>(ctx->x[10]);
         uint64_t val_addr = ctx->x[11];
-        size_t vlen;
+        if (regnum >= 0 && regnum < MAX_GLOBAL_REGS && val_addr < ec->memory_size) {
+            const UTF8 *value = ec->memory + val_addr;
+            size_t vlen = strlen(reinterpret_cast<const char *>(value));
 
-        if (syscall_num == ECALL_SETQ_PACK) {
-            vlen = static_cast<size_t>(ctx->x[12]);
-            if (0 == vlen && val_addr < ec->memory_size) {
-                vlen = strlen(reinterpret_cast<const char *>(ec->memory + val_addr));
+            // Write to SUBST slot in guest memory.
+            uint64_t slot = rv_compiler::SUBST_BASE
+                + (rv_compiler::SUBST_QREG0 + regnum)
+                  * rv_compiler::SUBST_SLOT;
+            if (slot + rv_compiler::SUBST_SLOT <= ec->memory_size) {
+                size_t cplen = vlen;
+                if (cplen >= static_cast<size_t>(rv_compiler::SUBST_SLOT))
+                    cplen = rv_compiler::SUBST_SLOT - 1;
+                memcpy(ec->memory + slot, value, cplen);
+                ec->memory[slot + cplen] = 0;
             }
+
+            RegAssign(&mudstate.global_regs[regnum], vlen, value);
+            ctx->x[10] = vlen;
         } else {
-            if (val_addr >= ec->memory_size) {
-                ctx->x[10] = 0;
-                return -1;
-            }
+            ctx->x[10] = 0;
+        }
+        return -1;
+    }
+
+    case ECALL_SETQ_PACK: {
+        // Fast path: a0=reg, a1=addr, a2=len.
+        // Packs into a JIT Arena.
+        int regnum = static_cast<int>(ctx->x[10]);
+        uint64_t val_addr = ctx->x[11];
+        size_t vlen = static_cast<size_t>(ctx->x[12]);
+
+        if (0 == vlen && val_addr < ec->memory_size) {
             vlen = strlen(reinterpret_cast<const char *>(ec->memory + val_addr));
         }
 
-        if (regnum < 0 || regnum >= MAX_GLOBAL_REGS ||
-            val_addr + vlen > ec->memory_size) {
+        if (regnum >= 0 && regnum < MAX_GLOBAL_REGS && val_addr + vlen <= ec->memory_size) {
+            const UTF8 *value = ec->memory + val_addr;
+
+            // Write to SUBST slot in guest memory (for JIT %q reads).
+            uint64_t slot = rv_compiler::SUBST_BASE
+                + (rv_compiler::SUBST_QREG0 + regnum)
+                  * rv_compiler::SUBST_SLOT;
+            if (slot + rv_compiler::SUBST_SLOT <= ec->memory_size) {
+                size_t cplen = vlen;
+                if (cplen >= static_cast<size_t>(rv_compiler::SUBST_SLOT))
+                    cplen = rv_compiler::SUBST_SLOT - 1;
+                memcpy(ec->memory + slot, value, cplen);
+                ec->memory[slot + cplen] = 0;
+            }
+
+            // Allocate from Arena (Tier B).
+            auto *a = JITArena::Alloc(vlen + 1);
+            if (a) {
+                size_t off = a->used - (vlen + 1);
+                memcpy(a->lr->lbuf_ptr + off, value, vlen);
+                a->lr->lbuf_ptr[off + vlen] = '\0';
+
+                // Bind to register.
+                if (mudstate.global_regs[regnum]) {
+                    RegRelease(mudstate.global_regs[regnum]);
+                }
+                reg_ref *rr = alloc_regref("JITArena.pack");
+                rr->refcount = 1;
+                rr->lbuf = a->lr;
+                a->lr->refcount++;
+                rr->reg_ptr = a->lr->lbuf_ptr + off;
+                rr->reg_len = vlen;
+                mudstate.global_regs[regnum] = rr;
+                ctx->x[10] = vlen;
+            } else {
+                // Fallback if arena alloc fails (shouldn't happen for < 8KB).
+                RegAssign(&mudstate.global_regs[regnum], vlen, value);
+                ctx->x[10] = vlen;
+            }
+        } else {
             ctx->x[10] = 0;
-            return -1;
         }
-
-        const UTF8 *value = ec->memory + val_addr;
-
-        // Write to SUBST slot in guest memory.
-        uint64_t slot = rv_compiler::SUBST_BASE
-            + (rv_compiler::SUBST_QREG0 + regnum)
-              * rv_compiler::SUBST_SLOT;
-        if (slot + rv_compiler::SUBST_SLOT <= ec->memory_size) {
-            size_t cplen = vlen;
-            if (cplen >= static_cast<size_t>(rv_compiler::SUBST_SLOT))
-                cplen = rv_compiler::SUBST_SLOT - 1;
-            memcpy(ec->memory + slot, value, cplen);
-            ec->memory[slot + cplen] = 0;
-        }
-
-        // Write to mudstate.global_regs via RegAssign.
-        RegAssign(&mudstate.global_regs[regnum], vlen, value);
-
-        ctx->x[10] = static_cast<uint64_t>(vlen);
         return -1;
     }
+
+    case ECALL_ARENA_ALLOC: {
+        size_t size = static_cast<size_t>(ctx->x[10]);
+        auto *a = JITArena::Alloc(size);
+        if (a) {
+            ctx->x[10] = a->id;
+            ctx->x[11] = a->used - size;
+        } else {
+            ctx->x[10] = 0;
+        }
+        return -1;
+    }
+
+    case ECALL_ARENA_REF:
+        JITArena::AddRef(static_cast<uint32_t>(ctx->x[10]));
+        return -1;
+
+    case ECALL_ARENA_RELEASE:
+        JITArena::Release(static_cast<uint32_t>(ctx->x[10]));
+        return -1;
 
     default:
         ctx->x[10] = 0;
