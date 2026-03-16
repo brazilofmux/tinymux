@@ -1810,19 +1810,18 @@ typedef struct
 
 typedef struct
 {
-    int y;
-    int u;
-    int v;
-    int y2;
-} YUV;
+    int L;    // L* scaled by 100
+    int a;    // a* scaled by 100
+    int b;    // b* scaled by 100
+} LABi;
 
 typedef struct
 {
-    RGB  rgb;
-    YUV  yuv;
-    int  child[2];
-    int  color8;
-    int  color16;
+    RGB   rgb;
+    LABi  labi;
+    int   child[2];
+    int   color8;
+    int   color16;
 } PALETTE_ENTRY;
 extern LIBMUX_API PALETTE_ENTRY palette[];
 extern LIBMUX_API const unsigned int ColorTable[256];
