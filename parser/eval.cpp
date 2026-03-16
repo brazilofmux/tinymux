@@ -225,8 +225,22 @@ private:
 
     std::string evalSequence(const ASTNode *node) {
         std::string result;
+        int flags = m_ctx.evalFlags;
+        bool bFCheckPending = (flags & EV_FCHECK) != 0 && (flags & EV_FMAND) == 0;
+
         for (const auto &child : node->children) {
-            result += eval(child.get());
+            int childFlags = flags;
+            if (bFCheckPending) {
+                if (child->type != NODE_FUNCCALL) {
+                    childFlags &= ~EV_FCHECK;
+                }
+                if (child->type != NODE_SPACE) {
+                    bFCheckPending = false;
+                }
+            } else if ((flags & EV_FCHECK) != 0 && (flags & EV_FMAND) == 0) {
+                childFlags &= ~EV_FCHECK;
+            }
+            result += evalWithFlags(child.get(), childFlags);
         }
         return result;
     }
@@ -298,8 +312,9 @@ private:
         }
 
         std::vector<std::string> args;
+        int flags = (m_ctx.evalFlags & ~(EV_TOP | EV_FMAND)) | EV_EVAL | EV_FCHECK;
         for (const auto &child : node->children) {
-            args.push_back(eval(child.get()));
+            args.push_back(evalWithFlags(child.get(), flags));
         }
         return it->second(args);
     }
@@ -307,8 +322,8 @@ private:
     std::string evalEvalBracket(const ASTNode *node) {
         if (node->children.empty()) return "";
         // Inside [...], functions are checked and mandatory.
-        // This matches mux_exec: eval | EV_FCHECK | EV_FMAND
-        int flags = m_ctx.evalFlags | EV_EVAL | EV_FCHECK | EV_FMAND;
+        // This matches mux_exec: eval | EV_FCHECK | EV_FMAND | EV_EVAL
+        int flags = (m_ctx.evalFlags & ~EV_TOP) | EV_EVAL | EV_FCHECK | EV_FMAND;
         return evalWithFlags(node->children[0].get(), flags);
     }
 

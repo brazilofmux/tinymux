@@ -619,7 +619,7 @@ struct rv_compiler {
     int native_ops;         // number of native arithmetic ops
     bool needs_jit;         // true if any runtime code was emitted
 
-    static constexpr size_t MEM_SIZE     = 256 * 1024;
+    static constexpr size_t MEM_SIZE     = 512 * 1024;
     static constexpr uint64_t CODE_BASE  = 0x0000;
     static constexpr uint64_t CODE_LIMIT = 0x1000;
     static constexpr uint64_t STR_BASE   = 0x1000;
@@ -633,24 +633,24 @@ struct rv_compiler {
 
     // Output region: split across two ranges to avoid the blob.
     // Range 1: 0x8000-0xFFFF (32KB, below blob) — 4 slots
-    // Range 2: 0x30000-0x3BFFF (48KB, above blob) — 6 slots
-    // Total: 10 slots of 8000 bytes each.
+    // Range 2: 0x30000-0x67FFF (224KB, above blob) — 28 slots
+    // Total: 32 slots of 8000 bytes each.
     // alloc_output uses the combined range seamlessly.
     static constexpr uint64_t OUT_BASE   = 0x8000;
     static constexpr uint64_t OUT_GAP_LO = 0x10000;  // blob starts here
     static constexpr uint64_t OUT_GAP_HI = 0x30000;  // blob ends here
-    static constexpr uint64_t OUT_LIMIT  = 0x3C000;  // final output limit
+    static constexpr uint64_t OUT_LIMIT  = 0x68000;  // final output limit
     static constexpr int      OUT_SLOT   = 8000;     // LBUF_SIZE per slot
 
     // %0-%9 cargs region: 10 × 256-byte slots.
-    static constexpr uint64_t CARGS_BASE = 0x3C000;
+    static constexpr uint64_t CARGS_BASE = 0x68000;
     static constexpr int      CARGS_SLOT = 256;
     static constexpr int      MAX_CARGS  = 10;
 
     // %-substitution region: runtime values copied before each execution.
     // Slots 0-3: dbrefs/names (32 or 256 bytes).
     // Slots 4..(4+MAX_GLOBAL_REGS-1): %q global register values.
-    static constexpr uint64_t SUBST_BASE = 0x3CA00;
+    static constexpr uint64_t SUBST_BASE = 0x68A00;
     static constexpr int      SUBST_SLOT = 256;
     static constexpr int      SUBST_ENACTOR  = 0;   // %# — dbref string
     static constexpr int      SUBST_EXECUTOR = 1;   // %! — dbref string
@@ -4609,6 +4609,15 @@ static void dbt_configure_trace_from_env(dbt_state_t *dbt) {
 
     dbt->trace_guest_pc = static_cast<uint64_t>(value);
     dbt->trace_guest_pc_filter = true;
+}
+
+// Release the persistent DBT state on shutdown.
+//
+void dbt_compile_cleanup(void) {
+    if (s_dbt_ready) {
+        dbt_cleanup(&s_persistent_dbt);
+        s_dbt_ready = false;
+    }
 }
 
 // Get a reset DBT state, initializing on first use.

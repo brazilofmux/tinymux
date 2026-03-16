@@ -3092,8 +3092,11 @@ MUX_RESULT CGameEngine::DumpDatabase(void)
     return MUX_S_OK;
 }
 
+extern void dbt_compile_cleanup(void);
+
 MUX_RESULT CGameEngine::Shutdown(void)
 {
+    dbt_compile_cleanup();
     conn_bridge_final();
     local_shutdown();
 

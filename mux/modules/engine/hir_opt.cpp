@@ -27,6 +27,35 @@
 
 #include <cstring>
 #include <cstdlib>
+#include <unordered_map>
+
+// ---------------------------------------------------------------
+// Value Numbering Key for CSE
+// ---------------------------------------------------------------
+
+struct ValueKey {
+    hir_kind kind;
+    hir_type ty;
+    int      src1;
+    int      src2;
+    int64_t  val;
+
+    bool operator==(const ValueKey &other) const {
+        return kind == other.kind && ty == other.ty && src1 == other.src1
+            && src2 == other.src2 && val == other.val;
+    }
+};
+
+struct ValueKeyHash {
+    size_t operator()(const ValueKey &k) const {
+        size_t h = std::hash<int>{}(static_cast<int>(k.kind));
+        h ^= std::hash<int>{}(static_cast<int>(k.ty)) + 0x9e3779b9 + (h << 6) + (h >> 2);
+        h ^= std::hash<int>{}(k.src1) + 0x9e3779b9 + (h << 6) + (h >> 2);
+        h ^= std::hash<int>{}(k.src2) + 0x9e3779b9 + (h << 6) + (h >> 2);
+        h ^= std::hash<int64_t>{}(k.val) + 0x9e3779b9 + (h << 6) + (h >> 2);
+        return h;
+    }
+};
 
 // ---------------------------------------------------------------
 // Helper: parse string as int64 (mirrors mux_atol for consistency)
@@ -519,29 +548,42 @@ static bool dominates(const hir_program &h, int blk_d, int blk_b) {
 }
 
 void hir_cse(hir_program &h) {
-    // Simple value table: brute-force scan for matches among earlier insns.
-    // Sufficient for programs of our size (< 4096 insns).
+    // Value table: maps an instruction tuple to a list of instruction indices
+    // that produce that value.  We use a list because multiple identical
+    // instructions might exist in different basic blocks, and we need to find
+    // one that dominates our current position.
+    //
+    std::unordered_map<ValueKey, std::vector<int>, ValueKeyHash> value_table;
+
     for (int i = 0; i < h.n_insns; i++) {
         if (h.kind[i] == HIR_NOP) continue;
         if (!is_cse_candidate(h.kind[i])) continue;
 
-        // Search earlier instructions for a match.
-        for (int j = 0; j < i; j++) {
-            if (h.kind[j] != h.kind[i]) continue;
-            if (h.ty[j] != h.ty[i]) continue;
-            if (h.src1[j] != h.src1[i]) continue;
-            if (h.src2[j] != h.src2[i]) continue;
-            if (h.val[j] != h.val[i]) continue;
+        ValueKey key = { h.kind[i], h.ty[i], h.src1[i], h.src2[i], h.val[i] };
+        auto it = value_table.find(key);
 
-            // Same instruction.  Check dominance.
-            if (dominates(h, h.blk[j], h.blk[i])) {
-                // Replace i with COPY of j.
-                h.kind[i] = HIR_COPY;
-                h.src1[i] = j;
-                h.src2[i] = -1;
-                h.val[i] = 0;
-                break;
+        if (it != value_table.end()) {
+            // Potential matches found.  Find the first one that dominates i.
+            bool found = false;
+            for (int j : it->second) {
+                if (dominates(h, h.blk[j], h.blk[i])) {
+                    // Replace i with COPY of j.
+                    h.kind[i] = HIR_COPY;
+                    h.src1[i] = j;
+                    h.src2[i] = -1;
+                    h.val[i] = 0;
+                    found = true;
+                    break;
+                }
             }
+            if (!found) {
+                // None of the existing instructions dominate i.  Add i as a
+                // new producer of this value.
+                it->second.push_back(i);
+            }
+        } else {
+            // First time we've seen this value.
+            value_table[key].push_back(i);
         }
     }
 }
