@@ -2164,10 +2164,6 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
                         static_cast<unsigned char>(ch)));
                 }
 
-                // Keep these on the classic evaluator for now.
-                if (upper == "ESCAPE" || upper == "SECURE") {
-                    return false;
-                }
             }
             for (const auto &child : node->children) {
                 if (child) {
