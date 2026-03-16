@@ -80,7 +80,6 @@ mux/src/tools/announce
 mux/src/tools/rv64strip
 mux/rv64/src/softlib.elf
 mux/modules/engine/*.d
-mux/lib/color_ops.c
 
 # Test output and runtime
 testcases/smoke.log

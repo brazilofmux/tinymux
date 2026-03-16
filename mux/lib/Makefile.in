@@ -271,8 +271,8 @@ LIBMUX_C_SRC = color_ops.c
 LIBMUX_CXX_OBJS = $(LIBMUX_SRC:.cpp=.lo)
 LIBMUX_C_OBJS = $(LIBMUX_C_SRC:.c=.lo)
 LIBMUX_OBJS = $(LIBMUX_CXX_OBJS) $(LIBMUX_C_OBJS)
-BUILT_SOURCES = color_ops.c
-CLEANFILES = libmux.so *.lo color_ops.c
+BUILT_SOURCES =
+CLEANFILES = libmux.so *.lo
 EXTRA_DIST = $(LIBMUX_SRC) $(LIBMUX_C_SRC) color_ops.rl
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am
@@ -477,9 +477,14 @@ all-local: libmux.so
 %.lo: %.c
 	$(CC) $(AM_CFLAGS) -I$(top_srcdir)/include $(DYNAMICLIB_CXXFLAGS) -c -o $@ $<
 
-# Ragel .rl -> .c
+# Ragel .rl -> .c (optional: only regenerate if ragel is installed)
 color_ops.c: color_ops.rl $(top_srcdir)/include/color_ops.h
-	ragel -G2 -C -o $@ $<
+	@if command -v ragel >/dev/null 2>&1; then \
+	    echo "ragel -G2 -C -o $@ $<"; \
+	    ragel -G2 -C -o $@ $<; \
+	else \
+	    echo "ragel not found; using pre-generated $@"; \
+	fi
 
 libmux.so: $(LIBMUX_OBJS)
 	$(CXX) $(CXXFLAGS) $(DYNAMICLIB_CXXFLAGS) -Wl,-soname,libmux.so -o $@ $(LIBMUX_OBJS) $(LIBS) $(DL_LIB) $(SQL_LIBS)
