@@ -1,0 +1,130 @@
+#
+# jit_parity_fn.mux - JIT/Tier 2 parity checks against AST evaluation.
+#
+# These tests compare normal evaluation under --enable-jit against
+# asteval({ ... }), which forces the AST evaluator. They are intended to
+# expose semantic mismatches in Tier 2 wrappers and JIT lowering.
+#
+@create test_jit_parity_fn
+-
+@set test_jit_parity_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_jit_parity_fn=
+  @log smoke=Beginning JIT parity test cases.
+-
+#
+# Test Case #1 - before() with default separator trims leading spaces.
+#
+&tr.tc001 test_jit_parity_fn=
+  @if strmatch(
+        setr(0,sha1([before(%b%bfoo bar,)])),
+        setr(1,sha1([asteval({before(%b%bfoo bar,)})]))
+      )=
+  {
+    @log smoke=TC001: before() default-space parity. Succeeded.
+  },
+  {
+    @log smoke=TC001: before() default-space parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #2 - after() with default separator trims leading spaces.
+#
+&tr.tc002 test_jit_parity_fn=
+  @if strmatch(
+        setr(0,sha1([after(%b%bfoo bar,)])),
+        setr(1,sha1([asteval({after(%b%bfoo bar,)})]))
+      )=
+  {
+    @log smoke=TC002: after() default-space parity. Succeeded.
+  },
+  {
+    @log smoke=TC002: after() default-space parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #3 - isnum() should match AST handling of exponent notation.
+#
+&tr.tc003 test_jit_parity_fn=
+  @if strmatch(
+        setr(0,[isnum(1e3)]),
+        setr(1,[asteval({isnum(1e3)})])
+      )=
+  {
+    @log smoke=TC003: isnum() exponent parity. Succeeded.
+  },
+  {
+    @log smoke=TC003: isnum() exponent parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #4 - chr() must handle non-ASCII Unicode code points.
+#
+&tr.tc004 test_jit_parity_fn=
+  @if strmatch(
+        setr(0,sha1([chr(233)])),
+        setr(1,sha1([asteval({chr(233)})]))
+      )=
+  {
+    @log smoke=TC004: chr() Unicode parity. Succeeded.
+  },
+  {
+    @log smoke=TC004: chr() Unicode parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #5 - chr() must handle multi-codepoint grapheme input.
+#
+&tr.tc005 test_jit_parity_fn=
+  @if strmatch(
+        setr(0,sha1([chr(101 769)])),
+        setr(1,sha1([asteval({chr(101 769)})]))
+      )=
+  {
+    @log smoke=TC005: chr() grapheme parity. Succeeded.
+  },
+  {
+    @log smoke=TC005: chr() grapheme parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #6 - ord(chr(...)) should preserve Unicode code points.
+#
+&tr.tc006 test_jit_parity_fn=
+  @if strmatch(
+        setr(0,[ord(chr(233))]),
+        setr(1,[asteval({ord(chr(233))})])
+      )=
+  {
+    @log smoke=TC006: ord(chr()) Unicode parity. Succeeded.
+  },
+  {
+    @log smoke=TC006: ord(chr()) Unicode parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #7 - ord(chr(...)) should preserve combining sequences.
+#
+&tr.tc007 test_jit_parity_fn=
+  @if strmatch(
+        setr(0,[ord(chr(101 769))]),
+        setr(1,[asteval({ord(chr(101 769))})])
+      )=
+  {
+    @log smoke=TC007: ord(chr()) grapheme parity. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC007: ord(chr()) grapheme parity. Failed (%q0 vs %q1).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_jit_parity_fn=
+  @log smoke=End JIT parity test cases.;
+  @notify smoke
+-
+drop test_jit_parity_fn
+-

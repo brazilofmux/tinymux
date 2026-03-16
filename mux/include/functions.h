@@ -118,6 +118,7 @@ XFUNCTION(fun_astbench);
 XFUNCTION(fun_rvcall);
 XFUNCTION(fun_rveval);
 XFUNCTION(fun_rvbench);
+XFUNCTION(fun_jitstats);
 // In comsys.cpp
 XFUNCTION(fun_channels);
 XFUNCTION(fun_comalias);

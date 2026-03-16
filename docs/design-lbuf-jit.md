@@ -22,10 +22,17 @@ eliminates fixed slot limits and respects three key realities:
    - *Queued* — attached to a command queue entry, may not execute for
      seconds or hours.  Heap-like.
 
-3. **The goal is to eliminate fixed limits.**  No LBUF_SIZE.  No
-   invocation depth limit.  No recursion limit.  The only constraints
+3. **The long-term goal is to eliminate fixed limits.**  No LBUF_SIZE.
+   No invocation depth limit.  No recursion limit.  The only constraints
    are memory and time budgets.  If a user's expression can complete
    within budget, it should work.
+
+   Note: these limits are currently enforced throughout the engine
+   (function recursion/invocation limits in ast.cpp, fixed LBUF_SIZE
+   scratch buffers in the evaluator and JIT paths, mudconf settings).
+   Removing them requires changes far beyond the guest buffer layout.
+   This document focuses on the guest-side buffer architecture; the
+   engine-wide limit removal is a separate, later effort.
 
 ## Current State
 
@@ -93,14 +100,24 @@ and discarded.
 - When the caller consumes the result, the space is logically freed.
 - No per-buffer metadata.  No refcount.  No free list.  Just a pointer.
 
-The ring works because ephemeral buffers follow strict stack discipline:
-inner calls produce results that outer calls consume before producing
-their own results.  The ring pointer advances monotonically during
-compilation; at runtime, the same addresses are reused across calls.
+**Caveat:** Not all buffers follow strict stack (LIFO) discipline.
+The current HIR already breaks pure stack ordering:
 
-If a compiled expression would exceed the ring, compilation fails and
-falls back to AST — same as today, but the threshold is 256 KB instead
-of 80 KB, allowing ~30 concurrent buffers instead of 10.
+- String PHI nodes preallocate persistent output locations that
+  survive across CFG block boundaries.
+- Loop accumulators (iter) hold values across back-edges.
+
+A simple bump-pointer ring is therefore not sufficient by itself.
+The viable MVP is a larger scratch space with **liveness-based
+address assignment** at compile time: the compiler already knows
+which buffers are live at each program point (from SSA), so it can
+assign non-overlapping addresses within the scratch region and
+reuse dead addresses.  This is closer to a compile-time register
+allocator for output buffers than a runtime ring.
+
+If a compiled expression would exceed the scratch region, compilation
+fails and falls back to AST — same as today, but the threshold is
+256 KB instead of 80 KB, allowing ~30 concurrent buffers instead of 10.
 
 This is the **minimum viable change** that unblocks deeper expressions.
 

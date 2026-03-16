@@ -66,6 +66,62 @@
 #include <map>
 
 // ---------------------------------------------------------------
+// JIT statistics — lightweight counters for profiling real workloads.
+// Accessible via jit_stats() softcode function.
+// ---------------------------------------------------------------
+
+struct jit_stats_t {
+    uint64_t eval_attempts;       // jit_eval() called
+    uint64_t eval_handled;        // JIT produced a result
+    uint64_t eval_bailout;        // JIT returned false → AST fallback
+
+    uint64_t cache_hit_mem;       // memory LRU cache hit
+    uint64_t cache_hit_sqlite;    // SQLite persistent cache hit
+    uint64_t cache_miss;          // full compilation needed
+
+    uint64_t compile_ok;          // compile_expression succeeded
+    uint64_t compile_fail;        // compile_expression failed
+
+    uint64_t bail_noeval;         // NOEVAL function forced bailout
+    uint64_t bail_slots;          // output slot exhaustion
+
+    uint64_t folded_total;        // constant-folded results (no JIT needed)
+    uint64_t ecall_total;         // ECALL invocations at runtime
+    uint64_t tier2_total;         // Tier 2 blob calls at runtime
+
+    // Top NOEVAL bailout functions — fixed-size table, overflow into [OTHER].
+    static constexpr int NOEVAL_TRACK_MAX = 16;
+    struct { char name[32]; uint64_t count; } noeval_top[NOEVAL_TRACK_MAX];
+    int noeval_top_used;
+
+    void record_noeval_bail(const char *fname) {
+        bail_noeval++;
+        for (int i = 0; i < noeval_top_used; i++) {
+            if (strcmp(noeval_top[i].name, fname) == 0) {
+                noeval_top[i].count++;
+                return;
+            }
+        }
+        if (noeval_top_used < NOEVAL_TRACK_MAX) {
+            snprintf(noeval_top[noeval_top_used].name, 32, "%s", fname);
+            noeval_top[noeval_top_used].count = 1;
+            noeval_top_used++;
+        } else {
+            // Overflow: increment the least-frequent slot.
+            int min_i = 0;
+            for (int i = 1; i < NOEVAL_TRACK_MAX; i++) {
+                if (noeval_top[i].count < noeval_top[min_i].count)
+                    min_i = i;
+            }
+            snprintf(noeval_top[min_i].name, 32, "%s", fname);
+            noeval_top[min_i].count = 1;
+        }
+    }
+};
+
+static jit_stats_t s_jit_stats = {};
+
+// ---------------------------------------------------------------
 // Tier 2: pre-compiled RV64 library blob
 // ---------------------------------------------------------------
 
@@ -87,9 +143,9 @@ static std::string s_blob_version = "none";
 
 static bool tier2_allowed(const std::string &mux_name) {
     static const char *const s_allowlist[] = {
-        // Batch 0: baseline safe ops
-        "CAT",
-        "STRCAT",
+        // co_* wrappers: cross-compiled from the same Ragel color_ops
+        // source the server uses.  Semantics-matched by construction.
+        //
         "STRLEN",
         "LCSTR",
         "UCSTR",
@@ -97,27 +153,7 @@ static bool tier2_allowed(const std::string &mux_name) {
         "REVERSE",
         "ESCAPE",
         "STRIPANSI",
-        "SPACE",
         "COMPRESS",
-
-        // Batch 1: simple byte-level, no color
-        "BEFORE",
-        "AFTER",
-        "LNUM",
-        "ISNUM",
-        "ISINT",
-        "CHR",
-        "ORD",
-        "DEC2HEX",
-        "HEX2DEC",
-        "ISDBREF",
-        "LADD",
-        "LMAX",
-        "LMIN",
-        "LAND",
-        "LOR",
-
-        // Batch 2: color-aware co_* string ops
         "FIRST",
         "REST",
         "LAST",
@@ -131,12 +167,6 @@ static bool tier2_allowed(const std::string &mux_name) {
         "LEFT",
         "RIGHT",
         "LPOS",
-
-        // Batch 3: set, justify, edit, splice
-        // "SORT",  -- Tier 2 Shellsort diverges from server sort
-        "SETUNION",
-        "SETDIFF",
-        "SETINTER",
         "LDELETE",
         "REPLACE",
         "INSERT",
@@ -145,21 +175,28 @@ static bool tier2_allowed(const std::string &mux_name) {
         "CENTER",
         "EDIT",
         "SPLICE",
+        "SETUNION",
+        "SETDIFF",
+        "SETINTER",
 
-        // Batch 4: wildcard, misc string ops
-        "SECURE",
-        "SQUISH",
-        "DELETE",
-        "ELEMENTS",
-        "TRANSLATE",
-        "STRMATCH",
-        "MATCH",
-        "GRAB",
-        "GRABALL",
-        "WORDPOS",
-        "REMOVE",
-        "REVWORDS",
-        "FLIP",
+        // rv64_* hand-written: only trivial ops where the blob
+        // implementation is demonstrably equivalent to the server.
+        //
+        "CAT",
+        "STRCAT",
+        "SPACE",
+
+        // Blocked — rv64_* diverges from server:
+        //   SORT       Shellsort vs DUCET collation
+        //   BEFORE/AFTER  byte match vs color-aware search
+        //   ISNUM/ISINT   hand parser vs is_real()/is_integer()
+        //   CHR/ORD       ASCII-only vs Unicode/grapheme-aware
+        //   SECURE/SQUISH/TRANSLATE  byte-level vs Unicode
+        //   STRMATCH/MATCH/GRAB/GRABALL  may diverge on Unicode
+        //   DELETE/ELEMENTS/WORDPOS/REMOVE/REVWORDS/FLIP  untested
+        //   LNUM/DEC2HEX/HEX2DEC/ISDBREF  untested
+        //   LADD/LMAX/LMIN/LAND/LOR  untested
+        // These need parity tests in testcases/ before re-enabling.
 
         nullptr
     };
@@ -670,6 +707,7 @@ struct rv_compiler {
     // Allocate output buffer slot, return guest addr.
     // Returns 0 and sets out_exhausted on overflow.
     bool out_exhausted = false;
+    bool bail_was_noeval = false;   // true if out_exhausted was caused by NOEVAL
 
     uint64_t alloc_output() {
         uint64_t addr = out_pool;
@@ -2590,7 +2628,9 @@ general_lowering:
         if (chk_fidx > 0 && chk_fidx < ENGINE_API_MAX_FUNCS) {
             FUN *chk_fp = engine_api_table[chk_fidx];
             if (chk_fp && (chk_fp->flags & FN_NOEVAL)) {
+                s_jit_stats.record_noeval_bail(fname.c_str());
                 rc.out_exhausted = true;  // force compilation failure
+                rc.bail_was_noeval = true;
                 uint64_t addr = rc.pool_str("");
                 return h.emit_sconst(addr, "");
             }
@@ -4445,6 +4485,7 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     // Parse the expression.
     auto ast = ast_parse_string(expr, nLen);
     if (!ast) {
+        s_jit_stats.compile_fail++;
         return prog;
     }
 
@@ -4487,6 +4528,10 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     // code references address 0 and would corrupt guest memory.
     // Bail out — the AST evaluator will handle this expression.
     if (rc.out_exhausted) {
+        s_jit_stats.compile_fail++;
+        if (!rc.bail_was_noeval) {
+            s_jit_stats.bail_slots++;
+        }
         return prog;  // prog.ok is still false
     }
 
@@ -4495,6 +4540,7 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     prog.out_addr = rc.final_out;
     prog.out_used = rc.out_pool - rv_compiler::OUT_BASE;
     prog.ok = true;
+    s_jit_stats.compile_ok++;
     prog.folds = h.folds;
     prog.ecalls = h.ecalls;
     prog.tier2_calls = h.tier2_calls;
@@ -4702,6 +4748,7 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
         // Memory cache hit — move to front of LRU.
         s_compile_lru.splice(s_compile_lru.begin(), s_compile_lru,
                              it->second.lru_it);
+        s_jit_stats.cache_hit_mem++;
         return &it->second.prog;
     }
 
@@ -4721,11 +4768,13 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
             prog = reconstruct_from_cache(rec);
             db.CodeCacheReset();
             from_sqlite = true;
+            s_jit_stats.cache_hit_sqlite++;
         }
     }
 
     if (!from_sqlite) {
         // Full cache miss — compile from scratch.
+        s_jit_stats.cache_miss++;
         prog = compile_expression(expr, nLen, eval);
         if (!prog.ok) return nullptr;
 
@@ -5120,11 +5169,18 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
         if (!s_tier2.loaded) return false;
     }
 
+    s_jit_stats.eval_attempts++;
+
     compiled_program *prog = compile_cached(expr, nLen, eval);
-    if (!prog) return false;
+    if (!prog) {
+        s_jit_stats.eval_bailout++;
+        return false;
+    }
 
     if (!prog->needs_jit) {
         // Constant-folded — result is in the string pool.
+        s_jit_stats.folded_total++;
+        s_jit_stats.eval_handled++;
         const UTF8 *result = prog->memory.data() + prog->out_addr;
         safe_str(result, buff, bufc);
         return true;
@@ -5134,10 +5190,81 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
     if (!run_cached_program(prog, executor, caller, enactor,
                              result, sizeof(result),
                              cargs, ncargs, eval)) {
+        s_jit_stats.eval_bailout++;
         return false;  // JIT execution error — fall back to AST.
     }
+    s_jit_stats.eval_handled++;
+    s_jit_stats.ecall_total += prog->ecalls;
+    s_jit_stats.tier2_total += prog->tier2_calls;
     safe_str(result, buff, bufc);
     return true;
+}
+
+// ---------------------------------------------------------------
+// jitstats() — wizard-only function returning JIT profiling counters.
+//
+// Returns a space-separated key=value list suitable for parsing.
+// With argument "reset", clears all counters.
+// ---------------------------------------------------------------
+
+FUNCTION(fun_jitstats)
+{
+    UNUSED_PARAMETER(fp);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (!Wizard(executor)) {
+        safe_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+        return;
+    }
+
+    if (nfargs >= 1 && strcmp(reinterpret_cast<const char *>(fargs[0]), "reset") == 0) {
+        memset(&s_jit_stats, 0, sizeof(s_jit_stats));
+        safe_str(T("OK"), buff, bufc);
+        return;
+    }
+
+    // Format: key=value pairs, newline-separated for readability.
+    char tmp[LBUF_SIZE];
+    int n = snprintf(tmp, sizeof(tmp),
+        "eval_attempts=%llu "
+        "eval_handled=%llu "
+        "eval_bailout=%llu "
+        "cache_hit_mem=%llu "
+        "cache_hit_sqlite=%llu "
+        "cache_miss=%llu "
+        "compile_ok=%llu "
+        "compile_fail=%llu "
+        "bail_noeval=%llu "
+        "bail_slots=%llu "
+        "folded=%llu "
+        "ecalls=%llu "
+        "tier2=%llu",
+        (unsigned long long)s_jit_stats.eval_attempts,
+        (unsigned long long)s_jit_stats.eval_handled,
+        (unsigned long long)s_jit_stats.eval_bailout,
+        (unsigned long long)s_jit_stats.cache_hit_mem,
+        (unsigned long long)s_jit_stats.cache_hit_sqlite,
+        (unsigned long long)s_jit_stats.cache_miss,
+        (unsigned long long)s_jit_stats.compile_ok,
+        (unsigned long long)s_jit_stats.compile_fail,
+        (unsigned long long)s_jit_stats.bail_noeval,
+        (unsigned long long)s_jit_stats.bail_slots,
+        (unsigned long long)s_jit_stats.folded_total,
+        (unsigned long long)s_jit_stats.ecall_total,
+        (unsigned long long)s_jit_stats.tier2_total);
+
+    // Append NOEVAL breakdown.
+    for (int i = 0; i < s_jit_stats.noeval_top_used && n < static_cast<int>(sizeof(tmp)) - 64; i++) {
+        n += snprintf(tmp + n, sizeof(tmp) - n, " noeval_%s=%llu",
+            s_jit_stats.noeval_top[i].name,
+            (unsigned long long)s_jit_stats.noeval_top[i].count);
+    }
+
+    safe_str(reinterpret_cast<UTF8 *>(tmp), buff, bufc);
 }
 
 FUNCTION(fun_rveval)

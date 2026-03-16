@@ -1,0 +1,50 @@
+# jitstats_fn.mux - Test Cases for jitstats().
+#
+@create test_jitstats_fn
+-
+@set test_jitstats_fn=INHERIT QUIET
+-
+&tr.tc001 test_jitstats_fn=
+  @if strmatch(
+        setr(0,jitstats()),
+        *eval_attempts=*eval_handled=*
+      )=
+  {
+    @log smoke=TC001: jitstats returns counters. Succeeded.
+  },
+  {
+    @log smoke=TC001: jitstats returns counters. Failed (%q0).
+  }
+-
+&tr.tc002 test_jitstats_fn=
+  @if strmatch(
+        setr(0,jitstats()),
+        *bail_noeval=*bail_slots=*
+      )=
+  {
+    @log smoke=TC002: jitstats has bailout counters. Succeeded.
+  },
+  {
+    @log smoke=TC002: jitstats has bailout counters. Failed (%q0).
+  }
+-
+&tr.tc003 test_jitstats_fn=
+  @if strmatch(
+        setr(0,jitstats(reset)),
+        OK
+      )=
+  {
+    @log smoke=TC003: jitstats reset. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: jitstats reset. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_jitstats_fn=
+  @log smoke=End jitstats() test cases.;
+  @notify smoke
+-
+drop test_jitstats_fn
+-
