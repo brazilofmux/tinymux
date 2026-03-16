@@ -1155,10 +1155,13 @@ inline const string_desc *mux_foldmatch(const unsigned char *p, bool &bXor)
 inline int mux_color(const unsigned char *p)
 {
     // SMP PUA 24-bit color prefix check (avoids 16K-entry DFA).
+    // Validate full 4-byte UTF-8 form to avoid misclassifying malformed data.
     //
     if (  0xF3 == p[0]
        && 0xB0 <= p[1]
-       && p[1] <= 0xB3)
+       && p[1] <= 0xB3
+       && 0x80 <= p[2] && p[2] <= 0xBF
+       && 0x80 <= p[3] && p[3] <= 0xBF)
     {
         return 518 + (p[1] - 0xB0);
     }

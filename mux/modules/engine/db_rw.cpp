@@ -14,19 +14,57 @@ static int g_flags;
 
 // Migrate V4 PUA 24-bit color encoding to V5.
 //
-// Old format: F3 B0 (80-97) xx — per-channel deltas (6 blocks of 256)
-// New format: F3 (B0-B3) xx xx — 2-code-point per layer (4 blocks of 4096)
+// Old format: BMP base (EF 98-9F xx) + per-channel deltas F3 B0 (80-97) xx
+// New format: BMP base + F3 (B0-B3) xx xx (2-code-point per layer)
+//
+// V4 only emitted deltas for channels that differed from the indexed palette
+// base. Omitted channels must be filled from the preceding BMP palette entry,
+// not zero.
 //
 // Returns true if the attribute was modified.
 //
-static bool MigrateColorV4toV5(const UTF8 *pOld, UTF8 *pNew, size_t *pnNew)
+static bool MigrateColorV4toV5(const UTF8 *pOld, UTF8 *pNew, size_t nBufSize, size_t *pnNew)
 {
     const UTF8 *p = pOld;
     UTF8 *q = pNew;
+    const UTF8 *qEnd = pNew + nBufSize - 9; // room for 8 bytes + NUL
     bool bChanged = false;
+
+    // Track the last FG and BG palette index seen, so we can seed
+    // omitted channels from the palette base.
+    //
+    int lastFGIdx = -1;
+    int lastBGIdx = -1;
 
     while ('\0' != *p)
     {
+        if (q >= qEnd)
+        {
+            break;
+        }
+
+        // Track BMP PUA FG/BG indexed codes as they pass through.
+        // FG: EF (98-9B) (80-BF) → index = ((byte1 - 0x98) << 6) | (byte2 - 0x80)
+        // BG: EF (9C-9F) (80-BF) → index = ((byte1 - 0x9C) << 6) | (byte2 - 0x80)
+        //
+        if (  0xEF == p[0]
+           && p[1] >= 0x98 && p[1] <= 0x9F
+           && p[2] >= 0x80 && p[2] <= 0xBF)
+        {
+            if (p[1] <= 0x9B)
+            {
+                lastFGIdx = ((int)(p[1] - 0x98) << 6) | (int)(p[2] - 0x80);
+            }
+            else
+            {
+                lastBGIdx = ((int)(p[1] - 0x9C) << 6) | (int)(p[2] - 0x80);
+            }
+            *q++ = *p++;
+            *q++ = *p++;
+            *q++ = *p++;
+            continue;
+        }
+
         // Check for old SMP PUA: F3 B0 (80-97) xx
         //
         if (  0xF3 == p[0]
@@ -40,20 +78,29 @@ static bool MigrateColorV4toV5(const UTF8 *pOld, UTF8 *pNew, size_t *pnNew)
                                 | (unsigned int)(p[3] - 0x80);
             unsigned int channel = offset / 256;
             uint8_t value = (uint8_t)(offset % 256);
-
-            // Accumulate R, G, B values for FG (channels 0-2) or BG (3-5).
-            // Old encoding emits up to 3 consecutive channel codes.
-            //
-            uint8_t r = 0, g = 0, b = 0;
             bool bFG = (channel < 3);
-            bool got_r = false, got_g = false, got_b = false;
 
-            // Process the first channel code.
+            // Seed R, G, B from the preceding palette base.
+            //
+            int palIdx = bFG ? lastFGIdx : lastBGIdx;
+            uint8_t r, g, b;
+            if (0 <= palIdx && palIdx < 256)
+            {
+                r = palette[palIdx].rgb.r;
+                g = palette[palIdx].rgb.g;
+                b = palette[palIdx].rgb.b;
+            }
+            else
+            {
+                r = 0; g = 0; b = 0;
+            }
+
+            // Apply the first channel delta.
             //
             unsigned int ch_offset = bFG ? channel : channel - 3;
-            if (0 == ch_offset) { r = value; got_r = true; }
-            else if (1 == ch_offset) { g = value; got_g = true; }
-            else { b = value; got_b = true; }
+            if (0 == ch_offset) { r = value; }
+            else if (1 == ch_offset) { g = value; }
+            else { b = value; }
             p += 4;
 
             // Look ahead for more channel codes in the same layer.
@@ -72,13 +119,15 @@ static bool MigrateColorV4toV5(const UTF8 *pOld, UTF8 *pNew, size_t *pnNew)
                 if (next_fg != bFG) break;
 
                 unsigned int next_ch_offset = bFG ? next_channel : next_channel - 3;
-                if (0 == next_ch_offset) { r = next_value; got_r = true; }
-                else if (1 == next_ch_offset) { g = next_value; got_g = true; }
-                else { b = next_value; got_b = true; }
+                if (0 == next_ch_offset) { r = next_value; }
+                else if (1 == next_ch_offset) { g = next_value; }
+                else { b = next_value; }
                 p += 4;
             }
 
-            // Emit new 2-code-point encoding.
+            // Emit new 2-code-point encoding (8 bytes).
+            // The output can be larger than input (1 delta = 4 bytes → 8 bytes),
+            // but we checked capacity above.
             //
             unsigned int base_block = bFG ? 0 : 2;
             unsigned int cp1_payload = ((unsigned int)(r >> 4) << 8) | g;
@@ -882,7 +931,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                                 if (nullptr != pRaw)
                                 {
                                     size_t nNew;
-                                    if (MigrateColorV4toV5(pRaw, pMigBuf, &nNew))
+                                    if (MigrateColorV4toV5(pRaw, pMigBuf, LBUF_SIZE, &nNew))
                                     {
                                         atr_add_raw_LEN(iObject, iAttr, pMigBuf, nNew);
                                     }

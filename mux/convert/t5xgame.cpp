@@ -5147,11 +5147,13 @@ inline unsigned int mux_color_smp_payload(const unsigned char *p)
 
 inline int mux_color(const unsigned char *p)
 {
-    // SMP PUA 24-bit color prefix check.
+    // SMP PUA 24-bit color prefix check — validate full 4-byte form.
     //
     if (  0xF3 == p[0]
        && 0xB0 <= p[1]
-       && p[1] <= 0xB3)
+       && p[1] <= 0xB3
+       && 0x80 <= p[2] && p[2] <= 0xBF
+       && 0x80 <= p[3] && p[3] <= 0xBF)
     {
         return COLOR_INDEX_FG_24_CP1 + (p[1] - 0xB0);
     }
