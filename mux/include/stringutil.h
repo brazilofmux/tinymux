@@ -901,240 +901,42 @@ LIBMUX_API size_t mux_collate_sortkey(const UTF8 *src, size_t nSrc, UTF8 *key, s
 LIBMUX_API int mux_collate_cmp_ci(const UTF8 *a, size_t nA, const UTF8 *b, size_t nB);
 LIBMUX_API size_t mux_collate_sortkey_ci(const UTF8 *src, size_t nSrc, UTF8 *key, size_t nKeyMax);
 
-// utf/tr_tolower.txt
+// Case mapping and fold-match: thin wrappers around the co_dfa_* functions
+// from unicode_tables_c.h.  string_desc and co_string_desc are ABI-identical
+// (UTF8 is unsigned char), so the reinterpret_cast is safe.
 //
+#include "unicode_tables_c.h"
+
 inline const string_desc *mux_tolower(const unsigned char *p, bool &bXor)
 {
-    unsigned char iState = TR_TOLOWER_START_STATE;
-    do
-    {
-        unsigned char ch = *p++;
-        unsigned char iColumn = tr_tolower_itt[static_cast<unsigned char>(ch)];
-        unsigned short iOffset = tr_tolower_sot[iState];
-        for (;;)
-        {
-            int y = tr_tolower_sbt[iOffset];
-            if (y < 128)
-            {
-                // RUN phrase.
-                //
-                if (iColumn < y)
-                {
-                    iState = tr_tolower_sbt[iOffset+1];
-                    break;
-                }
-                else
-                {
-                    iColumn = static_cast<unsigned char>(iColumn - y);
-                    iOffset += 2;
-                }
-            }
-            else
-            {
-                // COPY phrase.
-                //
-                y = 256-y;
-                if (iColumn < y)
-                {
-                    iState = tr_tolower_sbt[iOffset+iColumn+1];
-                    break;
-                }
-                else
-                {
-                    iColumn = static_cast<unsigned char>(iColumn - y);
-                    iOffset = static_cast<unsigned short>(iOffset + y + 1);
-                }
-            }
-        }
-    } while (iState < TR_TOLOWER_ACCEPTING_STATES_START);
-
-    if (TR_TOLOWER_DEFAULT == iState - TR_TOLOWER_ACCEPTING_STATES_START)
-    {
-        bXor = false;
-        return nullptr;
-    }
-    else
-    {
-        bXor = (TR_TOLOWER_XOR_START <= iState - TR_TOLOWER_ACCEPTING_STATES_START);
-        return tr_tolower_ott + iState - TR_TOLOWER_ACCEPTING_STATES_START - 1;
-    }
+    int iXor;
+    const co_string_desc *r = co_dfa_tolower(p, &iXor);
+    bXor = (iXor != 0);
+    return reinterpret_cast<const string_desc *>(r);
 }
 
-// utf/tr_toupper.txt
-//
 inline const string_desc *mux_toupper(const unsigned char *p, bool &bXor)
 {
-    unsigned short iState = TR_TOUPPER_START_STATE;
-    do
-    {
-        unsigned char ch = *p++;
-        unsigned char iColumn = tr_toupper_itt[static_cast<unsigned char>(ch)];
-        unsigned short iOffset = tr_toupper_sot[iState];
-        for (;;)
-        {
-            int y = tr_toupper_sbt[iOffset];
-            if (y < 128)
-            {
-                // RUN phrase.
-                //
-                if (iColumn < y)
-                {
-                    iState = tr_toupper_sbt[iOffset+1];
-                    break;
-                }
-                else
-                {
-                    iColumn = static_cast<unsigned char>(iColumn - y);
-                    iOffset += 2;
-                }
-            }
-            else
-            {
-                // COPY phrase.
-                //
-                y = 256-y;
-                if (iColumn < y)
-                {
-                    iState = tr_toupper_sbt[iOffset+iColumn+1];
-                    break;
-                }
-                else
-                {
-                    iColumn = static_cast<unsigned char>(iColumn - y);
-                    iOffset = static_cast<unsigned short>(iOffset + y + 1);
-                }
-            }
-        }
-    } while (iState < TR_TOUPPER_ACCEPTING_STATES_START);
-
-    if (TR_TOUPPER_DEFAULT == iState - TR_TOUPPER_ACCEPTING_STATES_START)
-    {
-        bXor = false;
-        return nullptr;
-    }
-    else
-    {
-        bXor = (TR_TOUPPER_XOR_START <= iState - TR_TOUPPER_ACCEPTING_STATES_START);
-        return tr_toupper_ott + iState - TR_TOUPPER_ACCEPTING_STATES_START - 1;
-    }
+    int iXor;
+    const co_string_desc *r = co_dfa_toupper(p, &iXor);
+    bXor = (iXor != 0);
+    return reinterpret_cast<const string_desc *>(r);
 }
 
-// utf/tr_totitle.txt
-//
 inline const string_desc *mux_totitle(const unsigned char *p, bool &bXor)
 {
-    unsigned short iState = TR_TOTITLE_START_STATE;
-    do
-    {
-        unsigned char ch = *p++;
-        unsigned char iColumn = tr_totitle_itt[static_cast<unsigned char>(ch)];
-        unsigned short iOffset = tr_totitle_sot[iState];
-        for (;;)
-        {
-            int y = tr_totitle_sbt[iOffset];
-            if (y < 128)
-            {
-                // RUN phrase.
-                //
-                if (iColumn < y)
-                {
-                    iState = tr_totitle_sbt[iOffset+1];
-                    break;
-                }
-                else
-                {
-                    iColumn = static_cast<unsigned char>(iColumn - y);
-                    iOffset += 2;
-                }
-            }
-            else
-            {
-                // COPY phrase.
-                //
-                y = 256-y;
-                if (iColumn < y)
-                {
-                    iState = tr_totitle_sbt[iOffset+iColumn+1];
-                    break;
-                }
-                else
-                {
-                    iColumn = static_cast<unsigned char>(iColumn - y);
-                    iOffset = static_cast<unsigned short>(iOffset + y + 1);
-                }
-            }
-        }
-    } while (iState < TR_TOTITLE_ACCEPTING_STATES_START);
-
-    if (TR_TOTITLE_DEFAULT == iState - TR_TOTITLE_ACCEPTING_STATES_START)
-    {
-        bXor = false;
-        return nullptr;
-    }
-    else
-    {
-        bXor = (TR_TOTITLE_XOR_START <= iState - TR_TOTITLE_ACCEPTING_STATES_START);
-        return tr_totitle_ott + iState - TR_TOTITLE_ACCEPTING_STATES_START - 1;
-    }
+    int iXor;
+    const co_string_desc *r = co_dfa_totitle(p, &iXor);
+    bXor = (iXor != 0);
+    return reinterpret_cast<const string_desc *>(r);
 }
 
-// utf/tr_foldpunc.txt
-//
 inline const string_desc *mux_foldmatch(const unsigned char *p, bool &bXor)
 {
-    int iState = TR_FOLDMATCH_START_STATE;
-    do
-    {
-        unsigned char ch = *p++;
-        unsigned char iColumn = tr_foldmatch_itt[static_cast<unsigned char>(ch)];
-        unsigned short iOffset = tr_foldmatch_sot[iState];
-        for (;;)
-        {
-            int y = tr_foldmatch_sbt[iOffset];
-            if (y < 128)
-            {
-                // RUN phrase.
-                //
-                if (iColumn < y)
-                {
-                    iState = tr_foldmatch_sbt[iOffset+1];
-                    break;
-                }
-                else
-                {
-                    iColumn = static_cast<unsigned char>(iColumn - y);
-                    iOffset += 2;
-                }
-            }
-            else
-            {
-                // COPY phrase.
-                //
-                y = 256-y;
-                if (iColumn < y)
-                {
-                    iState = tr_foldmatch_sbt[iOffset+iColumn+1];
-                    break;
-                }
-                else
-                {
-                    iColumn = static_cast<unsigned char>(iColumn - y);
-                    iOffset = static_cast<unsigned short>(iOffset + y + 1);
-                }
-            }
-        }
-    } while (iState < TR_FOLDMATCH_ACCEPTING_STATES_START);
-
-    if (TR_FOLDMATCH_DEFAULT == iState - TR_FOLDMATCH_ACCEPTING_STATES_START)
-    {
-        bXor = false;
-        return nullptr;
-    }
-    else
-    {
-        bXor = (TR_FOLDMATCH_XOR_START <= iState - TR_FOLDMATCH_ACCEPTING_STATES_START);
-        return tr_foldmatch_ott + iState - TR_FOLDMATCH_ACCEPTING_STATES_START - 1;
-    }
+    int iXor;
+    const co_string_desc *r = co_dfa_foldmatch(p, &iXor);
+    bXor = (iXor != 0);
+    return reinterpret_cast<const string_desc *>(r);
 }
 
 // utf/tr_Color.txt

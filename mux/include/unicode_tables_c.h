@@ -84,6 +84,22 @@ extern const unsigned short tr_totitle_sbt[1880];
 #define TR_TOTITLE_XOR_START (70)
 extern const co_string_desc tr_totitle_ott[201];
 
+// utf/tr_foldmatch.txt
+//
+// 14 code points.
+// 7 states, 11 columns, 310 bytes
+//
+#define TR_FOLDMATCH_START_STATE (0)
+#define TR_FOLDMATCH_ACCEPTING_STATES_START (7)
+extern const unsigned char tr_foldmatch_itt[256];
+extern const unsigned char tr_foldmatch_sot[7];
+extern const unsigned char tr_foldmatch_sbt[47];
+
+#define TR_FOLDMATCH_DEFAULT (0)
+#define TR_FOLDMATCH_LITERAL_START (1)
+#define TR_FOLDMATCH_XOR_START (3)
+extern const co_string_desc tr_foldmatch_ott[3];
+
 
 /*
  * co_dfa_toupper — Run the toupper DFA on a single code point.
@@ -252,6 +268,59 @@ static inline const co_string_desc *co_dfa_totitle(const unsigned char *p, int *
     {
         *bXor = (TR_TOTITLE_XOR_START <= iState - TR_TOTITLE_ACCEPTING_STATES_START);
         return tr_totitle_ott + iState - TR_TOTITLE_ACCEPTING_STATES_START - 1;
+    }
+}
+
+static inline const co_string_desc *co_dfa_foldmatch(const unsigned char *p, int *bXor)
+{
+    int iState = TR_FOLDMATCH_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        unsigned char iColumn = tr_foldmatch_itt[ch];
+        unsigned short iOffset = tr_foldmatch_sot[iState];
+        for (;;)
+        {
+            int y = tr_foldmatch_sbt[iOffset];
+            if (y < 128)
+            {
+                if (iColumn < y)
+                {
+                    iState = tr_foldmatch_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = (unsigned char)(iColumn - y);
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                y = 256 - y;
+                if (iColumn < y)
+                {
+                    iState = tr_foldmatch_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = (unsigned char)(iColumn - y);
+                    iOffset = (unsigned short)(iOffset + y + 1);
+                }
+            }
+        }
+    } while (iState < TR_FOLDMATCH_ACCEPTING_STATES_START);
+
+    if (TR_FOLDMATCH_DEFAULT == iState - TR_FOLDMATCH_ACCEPTING_STATES_START)
+    {
+        *bXor = 0;
+        return (const co_string_desc *)0;
+    }
+    else
+    {
+        *bXor = (TR_FOLDMATCH_XOR_START <= iState - TR_FOLDMATCH_ACCEPTING_STATES_START);
+        return tr_foldmatch_ott + iState - TR_FOLDMATCH_ACCEPTING_STATES_START - 1;
     }
 }
 

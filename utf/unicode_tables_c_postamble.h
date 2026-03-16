@@ -169,4 +169,57 @@ static inline const co_string_desc *co_dfa_totitle(const unsigned char *p, int *
     }
 }
 
+static inline const co_string_desc *co_dfa_foldmatch(const unsigned char *p, int *bXor)
+{
+    int iState = TR_FOLDMATCH_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        unsigned char iColumn = tr_foldmatch_itt[ch];
+        unsigned short iOffset = tr_foldmatch_sot[iState];
+        for (;;)
+        {
+            int y = tr_foldmatch_sbt[iOffset];
+            if (y < 128)
+            {
+                if (iColumn < y)
+                {
+                    iState = tr_foldmatch_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = (unsigned char)(iColumn - y);
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                y = 256 - y;
+                if (iColumn < y)
+                {
+                    iState = tr_foldmatch_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = (unsigned char)(iColumn - y);
+                    iOffset = (unsigned short)(iOffset + y + 1);
+                }
+            }
+        }
+    } while (iState < TR_FOLDMATCH_ACCEPTING_STATES_START);
+
+    if (TR_FOLDMATCH_DEFAULT == iState - TR_FOLDMATCH_ACCEPTING_STATES_START)
+    {
+        *bXor = 0;
+        return (const co_string_desc *)0;
+    }
+    else
+    {
+        *bXor = (TR_FOLDMATCH_XOR_START <= iState - TR_FOLDMATCH_ACCEPTING_STATES_START);
+        return tr_foldmatch_ott + iState - TR_FOLDMATCH_ACCEPTING_STATES_START - 1;
+    }
+}
+
 #endif /* UNICODE_TABLES_C_H */
