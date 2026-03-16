@@ -3490,6 +3490,72 @@ struct reg_alloc_result {
     int     n_spill_slots;             // total spill slots used
 };
 
+static bool needs_output_buffer(hir_program &h, int i) {
+    if (h.ty[i] != TY_STRING) return false;
+    switch (h.kind[i]) {
+    case HIR_CALL:
+    case HIR_STRCAT:
+    case HIR_ITOA:
+    case HIR_PHI:
+    case HIR_COPY:
+        return true;
+    default:
+        return false;
+    }
+}
+
+struct output_alloc_result {
+    uint64_t addr[HIR_MAX_INSNS];
+};
+
+static output_alloc_result allocate_output_buffers(rv_compiler &rc,
+                                                   std::vector<live_interval> &intervals) {
+    output_alloc_result result;
+    memset(result.addr, 0, sizeof(result.addr));
+
+    if (intervals.empty()) return result;
+
+    std::sort(intervals.begin(), intervals.end(),
+              [](const live_interval &a, const live_interval &b) {
+                  return a.start < b.start;
+              });
+
+    struct active_entry {
+        int end;
+        int value;
+        uint64_t addr;
+    };
+    std::vector<active_entry> active;
+    std::vector<uint64_t> free_pool;
+
+    for (auto &iv : intervals) {
+        size_t j = 0;
+        while (j < active.size()) {
+            if (active[j].end >= iv.start) break;
+            free_pool.push_back(active[j].addr);
+            active.erase(active.begin() + j);
+        }
+
+        uint64_t addr;
+        if (!free_pool.empty()) {
+            addr = free_pool.back();
+            free_pool.pop_back();
+        } else {
+            addr = rc.alloc_output();
+            if (addr == 0) break;
+        }
+
+        result.addr[iv.value] = addr;
+        active_entry ae = {iv.end, iv.value, addr};
+        auto pos = std::lower_bound(active.begin(), active.end(), ae,
+            [](const active_entry &a, const active_entry &b) {
+                return a.end < b.end;
+            });
+        active.insert(pos, ae);
+    }
+    return result;
+}
+
 // Returns true if HIR instruction i produces an integer that needs
 // a register.
 //
@@ -3514,10 +3580,11 @@ static bool needs_int_reg(hir_program &h, int i) {
     }
 }
 
-// Compute live intervals for all integer-typed SSA values.
+// Compute live intervals for values passing the filter.
 //
 static void compute_live_ranges(hir_program &h,
-                                 std::vector<live_interval> &intervals) {
+                                 std::vector<live_interval> &intervals,
+                                 bool (*filter)(hir_program &, int)) {
     // Assign program points in codegen order (blocks in layout order,
     // instructions within each block in order).
     int prog_point[HIR_MAX_INSNS];
@@ -3633,22 +3700,14 @@ static void compute_live_ranges(hir_program &h,
     }
 
     // The final result must survive to the end of the program.
-    if (h.result >= 0 && h.result < h.n_insns && needs_int_reg(h, h.result)) {
+    if (h.result >= 0 && h.result < h.n_insns && filter(h, h.result)) {
         last_use[h.result] = max_pp - 1;
     }
 
-    // Build intervals for integer-typed values.
-    //
-    // For PHI nodes, the live range must start at the earliest
-    // block_end_pp of the PHI's predecessor blocks (where the PHI
-    // copy writes to the PHI's register), not at the PHI instruction's
-    // program point.  Without this, the allocator may assign a PHI the
-    // same register as a value that is still live across the block
-    // boundary, causing the PHI copy to clobber it.
-    //
+    // Build intervals for values passing the filter.
     intervals.clear();
     for (int i = 0; i < h.n_insns; i++) {
-        if (!needs_int_reg(h, i)) continue;
+        if (!filter(h, i)) continue;
         if (prog_point[i] < 0) continue;  // unreachable
 
         int def = prog_point[i];
@@ -3879,31 +3938,26 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
     memset(block_offset, 0, sizeof(block_offset));
     std::vector<branch_patch> patches;
 
-    // Run linear scan register allocation.
-    std::vector<live_interval> intervals;
-    compute_live_ranges(h, intervals);
-    reg_alloc_result alloc = linear_scan(intervals);
+    // 1. Run register allocation for integers.
+    std::vector<live_interval> int_intervals;
+    compute_live_ranges(h, int_intervals, needs_int_reg);
+    reg_alloc_result int_alloc = linear_scan(int_intervals);
 
-    // Pre-allocate PHI locations before codegen starts.
+    // 2. Run liveness-based allocation for output buffers.
+    std::vector<live_interval> str_intervals;
+    compute_live_ranges(h, str_intervals, needs_output_buffer);
+    output_alloc_result str_alloc = allocate_output_buffers(rc, str_intervals);
+
+    // Pre-populate loc map from allocation results.
     for (int i = 0; i < h.n_insns; i++) {
-        if (h.kind[i] == HIR_PHI) {
-            if (h.ty[i] == TY_INT) {
-                uint8_t reg = alloc.reg[i];
-                if (reg) {
-                    loc[i].reg = reg;
-                    loc[i].in_reg = true;
-                    loc[i].spill_slot = -1;
-                } else if (alloc.spill_slot[i] >= 0) {
-                    loc[i].reg = 0;
-                    loc[i].in_reg = false;
-                    loc[i].spill_slot = alloc.spill_slot[i];
-                }
-            } else {
-                uint64_t out = rc.alloc_output();
-                loc[i].addr = out;
-                loc[i].in_reg = false;
-                loc[i].spill_slot = -1;
-            }
+        if (needs_int_reg(h, i)) {
+            loc[i].reg = int_alloc.reg[i];
+            loc[i].in_reg = (loc[i].reg != 0);
+            loc[i].spill_slot = int_alloc.spill_slot[i];
+        }
+        if (needs_output_buffer(h, i)) {
+            loc[i].addr = str_alloc.addr[i];
+            loc[i].in_reg = false;
         }
     }
 
@@ -3922,19 +3976,19 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                 break;
 
             case HIR_ICONST: {
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rv_load_i64(rc.code, dest, h.val[i]);
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
 
             case HIR_ATOI: {
                 int s1 = h.src1[i];
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 if (h.kind[s1] == HIR_SCONST) {
@@ -3945,18 +3999,16 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                     rv_load_val(rc.code, 10, loc[s1].addr);
                     rv_emit_atoi(rc.code, 10, dest);
                 }
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
 
             case HIR_ITOA: {
                 int s1 = h.src1[i];
                 uint8_t s1r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
-                uint64_t out_addr = rc.alloc_output();
+                uint64_t out_addr = loc[i].addr;
                 rv_load_val(rc.code, 10, out_addr);
                 rv_emit_itoa(rc.code, s1r, 10);
-                loc[i].addr = out_addr;
-                loc[i].in_reg = false;
                 break;
             }
 
@@ -3964,60 +4016,60 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                 int s1 = h.src1[i], s2 = h.src2[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rc.code.push_back(rv_ADD(dest, r1, r2));
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
             case HIR_SUB: {
                 int s1 = h.src1[i], s2 = h.src2[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rc.code.push_back(rv_SUB(dest, r1, r2));
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
             case HIR_MUL: {
                 int s1 = h.src1[i], s2 = h.src2[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rc.code.push_back(rv_MUL(dest, r1, r2));
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
             case HIR_REM: {
                 int s1 = h.src1[i], s2 = h.src2[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rc.code.push_back(rv_REM(dest, r1, r2));
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
             case HIR_DIV: {
                 int s1 = h.src1[i], s2 = h.src2[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rc.code.push_back(rv_DIV(dest, r1, r2));
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
 
@@ -4028,8 +4080,8 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
             case HIR_ABS: {
                 int s1 = h.src1[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 constexpr uint8_t t0 = 5;  // scratch for sign mask
@@ -4040,7 +4092,7 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                 rc.code.push_back(rv_r_type(OP_REG, dest, ALU_XOR, r1, t0, 0));
                 // SUB dest, dest, t0
                 rc.code.push_back(rv_SUB(dest, dest, t0));
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
 
@@ -4051,15 +4103,15 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
             case HIR_SIGN: {
                 int s1 = h.src1[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 constexpr uint8_t t0 = 5;
                 rc.code.push_back(rv_r_type(OP_REG, t0, ALU_SLT, r1, 0, 0));
                 rc.code.push_back(rv_r_type(OP_REG, dest, ALU_SLT, 0, r1, 0));
                 rc.code.push_back(rv_SUB(dest, dest, t0));
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
 
@@ -4078,8 +4130,8 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                 int s1 = h.src1[i], s2 = h.src2[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 // BGE r1, r2, +12 (skip to dest=r1 case when r1 >= r2)
@@ -4089,7 +4141,7 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                 rc.code.push_back(rv_JAL(0, 8));          // skip next
                 // r1 >= r2: dest = r1
                 rc.code.push_back(rv_ADD(dest, r1, 0));  // MV dest, r1
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
 
@@ -4098,8 +4150,8 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                 int s1 = h.src1[i], s2 = h.src2[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 // BLT r1, r2, +12 (skip to dest=r1 case when r1 < r2)
@@ -4109,7 +4161,7 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                 rc.code.push_back(rv_JAL(0, 8));          // skip next
                 // r1 < r2: dest = r1
                 rc.code.push_back(rv_ADD(dest, r1, 0));  // MV dest, r1
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
 
@@ -4117,88 +4169,88 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                 int s1 = h.src1[i], s2 = h.src2[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rc.code.push_back(rv_SUB(5, r1, r2));
                 rc.code.push_back(rv_i_type(OP_IMM, dest, ALU_SLTIU, 5, 1));
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
             case HIR_NE: {
                 int s1 = h.src1[i], s2 = h.src2[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rc.code.push_back(rv_SUB(5, r1, r2));
                 rc.code.push_back(rv_r_type(OP_REG, dest, ALU_SLTU, 0, 5, 0));
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
             case HIR_GT: {
                 int s1 = h.src1[i], s2 = h.src2[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rc.code.push_back(rv_r_type(OP_REG, dest, ALU_SLT, r2, r1, 0));
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
             case HIR_LT: {
                 int s1 = h.src1[i], s2 = h.src2[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rc.code.push_back(rv_r_type(OP_REG, dest, ALU_SLT, r1, r2, 0));
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
             case HIR_GE: {
                 int s1 = h.src1[i], s2 = h.src2[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rc.code.push_back(rv_r_type(OP_REG, dest, ALU_SLT, r1, r2, 0));
                 rc.code.push_back(rv_i_type(OP_IMM, dest, ALU_XORI, dest, 1));
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
             case HIR_LE: {
                 int s1 = h.src1[i], s2 = h.src2[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rc.code.push_back(rv_r_type(OP_REG, dest, ALU_SLT, r2, r1, 0));
                 rc.code.push_back(rv_i_type(OP_IMM, dest, ALU_XORI, dest, 1));
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
 
             case HIR_NOT: {
                 int s1 = h.src1[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rc.code.push_back(rv_i_type(OP_IMM, dest, ALU_SLTIU, r1, 1));
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
 
@@ -4207,40 +4259,40 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
             case HIR_BOOL: {
                 int s1 = h.src1[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rc.code.push_back(rv_r_type(OP_REG, dest, ALU_SLTU, 0, r1, 0));
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
 
             case HIR_INC: {
                 int s1 = h.src1[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rc.code.push_back(rv_ADDI(dest, r1, 1));
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
             case HIR_DEC: {
                 int s1 = h.src1[i];
                 uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
-                uint8_t reg = alloc.reg[i];
-                bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rc.code.push_back(rv_ADDI(dest, r1, -1));
-                ra_set_loc(rc, loc, alloc, i, dest);
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
 
             case HIR_CALL: {
-                uint64_t out_addr = rc.alloc_output();
+                uint64_t out_addr = loc[i].addr;
                 int na = h.cnargs[i];
                 int base = h.cbase[i];
                 std::vector<uint64_t> farg_addrs;
@@ -4264,13 +4316,11 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                     rv_emit_call(rc.code, name_addr, fargs_addr, na,
                                   out_addr, rv_compiler::OUT_SLOT, fidx);
                 }
-                loc[i].addr = out_addr;
-                loc[i].in_reg = false;
                 break;
             }
 
             case HIR_STRCAT: {
-                uint64_t out_addr = rc.alloc_output();
+                uint64_t out_addr = loc[i].addr;
                 int na = h.cnargs[i];
                 int base = h.cbase[i];
                 std::vector<uint64_t> farg_addrs;
@@ -4289,8 +4339,6 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                     rv_emit_call(rc.code, name_addr, fargs_addr, na,
                                   out_addr, rv_compiler::OUT_SLOT, fidx);
                 }
-                loc[i].addr = out_addr;
-                loc[i].in_reg = false;
                 break;
             }
 
@@ -4299,12 +4347,12 @@ static void hir_codegen(hir_program &h, rv_compiler &rc) {
                 if (s1 < 0) break;
                 if (needs_int_reg(h, i)) {
                     uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH2);
-                    uint8_t reg = alloc.reg[i];
-                    bool spilled = (reg == 0 && alloc.spill_slot[i] >= 0);
+                    uint8_t reg = int_alloc.reg[i];
+                    bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                     uint8_t dest = spilled ? RA_SCRATCH : reg;
                     if (!dest) { loc[i] = loc[s1]; break; }
                     rc.code.push_back(rv_ADD(dest, r1, 0));
-                    ra_set_loc(rc, loc, alloc, i, dest);
+                    ra_set_loc(rc, loc, int_alloc, i, dest);
                 } else {
                     loc[i] = loc[s1];
                 }
