@@ -563,7 +563,6 @@ void hir_cse(hir_program &h) {
 
         // Normalize commutative operations: src1 <= src2.
         if (h.kind[i] == HIR_ADD || h.kind[i] == HIR_MUL ||
-            h.kind[i] == HIR_AND || h.kind[i] == HIR_OR || h.kind[i] == HIR_XOR ||
             h.kind[i] == HIR_EQ || h.kind[i] == HIR_NE) {
             if (key.src1 > key.src2) {
                 std::swap(key.src1, key.src2);

@@ -23,6 +23,8 @@ Makefile
 
 # Built tools
 tools/announce
+src/muxescape
+game/bin/muxescape
 
 # Editor/autotool backup files
 *~
