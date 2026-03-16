@@ -1523,53 +1523,8 @@ FUNCTION(fun_jitstats)
     safe_str(reinterpret_cast<UTF8 *>(tmp), buff, bufc);
 }
 
-FUNCTION(fun_rveval)
-{
-    UNUSED_PARAMETER(fp);
-    UNUSED_PARAMETER(eval);
-    UNUSED_PARAMETER(cargs);
-    UNUSED_PARAMETER(ncargs);
-
-    JITArena::gc();
-
-    if (nfargs < 1) {
-        safe_str(T("#-1 TOO FEW ARGUMENTS"), buff, bufc);
-        return;
-    }
-
-    const UTF8 *expr = fargs[0];
-    size_t nLen = strlen(reinterpret_cast<const char *>(expr));
-
-    // Look up in compile cache (or compile on miss).
-    // rveval explicitly evaluates the full expression — all function
-    // calls are dispatched (FMAND context, like eval brackets).
-    compiled_program *prog = compile_cached(expr, nLen, EV_FMAND | EV_EVAL);
-    if (!prog) {
-        safe_str(T("#-1 COMPILATION FAILED"), buff, bufc);
-        return;
-    }
-
-    // If everything was constant-folded, the result is already
-    // in the string pool — no need to run the JIT at all.
-    if (!prog->needs_jit) {
-        const UTF8 *result = prog->memory.data() + prog->out_addr;
-        safe_str(result, buff, bufc);
-        return;
-    }
-
-    // Run through the JIT with compile+block cache.
-    UTF8 result[LBUF_SIZE];
-    if (!run_cached_program(prog, executor, caller, enactor,
-                             result, sizeof(result))) {
-        safe_str(T("#-1 DBT EXECUTION ERROR"), buff, bufc);
-        return;
-    }
-
-    safe_str(result, buff, bufc);
-}
-
 // ---------------------------------------------------------------
-// fun_rvbench: benchmark rveval vs native mux_exec.
+// fun_rvbench: benchmark JIT vs native mux_exec.
 //
 // rvbench(<expression>, <iterations>)
 //

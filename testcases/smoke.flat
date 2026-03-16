@@ -1,6 +1,6 @@
 +X996100
-+S204
-+N369
++S202
++N333
 -R1
 +A256
 "1:TR.TC000"
@@ -145,94 +145,22 @@
 +A326
 "1:TR.TC055"
 +A327
-"1:TR.TC056"
-+A328
-"1:TR.TC057"
-+A329
-"1:TR.TC058"
-+A330
-"1:TR.TC059"
-+A331
-"1:TR.TC060"
-+A332
-"1:TR.TC061"
-+A333
-"1:TR.TC062"
-+A334
-"1:TR.TC063"
-+A335
-"1:TR.TC064"
-+A336
-"1:TR.TC065"
-+A337
-"1:TR.TC066"
-+A338
-"1:TR.TC067"
-+A339
-"1:TR.TC068"
-+A340
-"1:TR.TC069"
-+A341
-"1:TR.TC070"
-+A342
-"1:TR.TC071"
-+A343
-"1:TR.TC072"
-+A344
-"1:TR.TC073"
-+A345
-"1:TR.TC074"
-+A346
-"1:TR.TC075"
-+A347
-"1:TR.TC076"
-+A348
-"1:TR.TC077"
-+A349
-"1:TR.TC078"
-+A350
-"1:TR.TC079"
-+A351
-"1:TR.TC080"
-+A352
-"1:TR.TC081"
-+A353
-"1:TR.TC082"
-+A354
-"1:TR.TC083"
-+A355
-"1:TR.TC084"
-+A356
-"1:TR.TC085"
-+A357
-"1:TR.TC086"
-+A358
-"1:TR.TC087"
-+A359
-"1:TR.TC088"
-+A360
-"1:TR.TC089"
-+A361
-"1:TR.TC090"
-+A362
-"1:TR.TC091"
-+A363
 "1:SUITE.LIST.1"
-+A364
++A328
 "1:SUITE.LIST.2"
-+A365
++A329
 "1:SUITE.TR"
-+A366
++A330
 "1:FN_STRLEN"
-+A367
++A331
 "1:FN_NEG"
-+A368
++A332
 "1:FN_IDENT"
 !0
 "Limbo"
 -1
 -1
-203
+201
 -1
 -1
 -1
@@ -276,7 +204,7 @@
 >144
 "127.0.0.1"
 >213
-"-1 203 -1 -1 203"
+"-1 201 -1 -1 201"
 >218
 "Fri Jan 01 00:00:00 2010"
 >219
@@ -5000,261 +4928,13 @@
 "@log smoke=BENCH055:[rvbench(iter(a|1 b|2 c|3 d|4 e|5, before(##\\,|)),10000)];@trig me/tr.done"
 <
 !151
-"test_rvcall_fn"
-0
--1
--1
--1
-0
-150
-1
--1
-1
-33556481
-0
-0
-0
-0
->218
-"Fri Jan 01 00:00:00 2010"
->219
-"Fri Jan 01 00:00:00 2010"
->256
-"@log smoke=Beginning rvcall() test cases."
->257
-"@if strmatch(setr(0, rvcall(add, 1, 2)),3)={@log smoke=TC001: rvcall add(1,2)=3. Succeeded.},{@log smoke=TC001: rvcall add(1,2)=3. Failed (%q0).}"
->258
-"@log smoke=End rvcall() test cases.;@notify smoke"
->259
-"@if strmatch(setr(0, rvcall(add, 1.5, 2.5)),4)={@log smoke=TC002: rvcall add(1.5,2.5)=4. Succeeded.},{@log smoke=TC002: rvcall add(1.5,2.5)=4. Failed (%q0).}"
->260
-"@if strmatch(setr(0, rvcall(add, 1, 2, 3, 4, 5)),15)={@log smoke=TC003: rvcall add(1,2,3,4,5)=15. Succeeded.},{@log smoke=TC003: rvcall add(1,2,3,4,5)=15. Failed (%q0).}"
->261
-"@if strmatch(setr(0, rvcall(mul, 6, 7)),42)={@log smoke=TC004: rvcall mul(6,7)=42. Succeeded.},{@log smoke=TC004: rvcall mul(6,7)=42. Failed (%q0).}"
->262
-"@if strmatch(setr(0, rvcall(sub, 100, 58)),42)={@log smoke=TC005: rvcall sub(100,58)=42. Succeeded.},{@log smoke=TC005: rvcall sub(100,58)=42. Failed (%q0).}"
->263
-"@if strmatch(setr(0, rvcall(ADD, 10, 20)),30)={@log smoke=TC006: rvcall ADD(10,20)=30. Succeeded.},{@log smoke=TC006: rvcall ADD(10,20)=30. Failed (%q0).}"
->264
-"@if strmatch(setr(0, rvcall(add, 999999999, 1)),1000000000)={@log smoke=TC007: rvcall add(999999999,1)=1000000000. Succeeded.},{@log smoke=TC007: rvcall add(999999999,1)=1000000000. Failed (%q0).}"
->265
-"@if strmatch(setr(0, rvcall(sub, 10, 100)),-90)={@log smoke=TC008: rvcall sub(10,100)=-90. Succeeded.;@trig me/tr.done},{@log smoke=TC008: rvcall sub(10,100)=-90. Failed (%q0).;@trig me/tr.done}"
-<
-!152
-"test_rveval_fn"
-0
--1
--1
--1
-0
-151
-1
--1
-1
-33556481
-0
-0
-0
-0
->218
-"Fri Jan 01 00:00:00 2010"
->219
-"Fri Jan 01 00:00:00 2010"
->256
-"@log smoke=Beginning rveval() test cases."
->257
-"@if strmatch(setr(0, rveval(add(1,2))),3)={@log smoke=TC001: rveval add(1,2)=3. Succeeded.},{@log smoke=TC001: rveval add(1,2)=3. Failed (%q0).}"
->258
-"@log smoke=End rveval() test cases.;@notify smoke"
->259
-"@if strmatch(setr(0, rveval(add(1.5,2.5))),4)={@log smoke=TC002: rveval add(1.5,2.5)=4. Succeeded.},{@log smoke=TC002: rveval add(1.5,2.5)=4. Failed (%q0).}"
->260
-"@if strmatch(setr(0, rveval(mul(6,7))),42)={@log smoke=TC003: rveval mul(6,7)=42. Succeeded.},{@log smoke=TC003: rveval mul(6,7)=42. Failed (%q0).}"
->261
-"@if strmatch(setr(0, rveval(add(mul(3,4),5))),17)={@log smoke=TC004: rveval add(mul(3,4),5)=17. Succeeded.},{@log smoke=TC004: rveval add(mul(3,4),5)=17. Failed (%q0).}"
->262
-"@if strmatch(setr(0, rveval(sub(100,58))),42)={@log smoke=TC005: rveval sub(100,58)=42. Succeeded.},{@log smoke=TC005: rveval sub(100,58)=42. Failed (%q0).}"
->263
-"@if strmatch(setr(0, rveval(add(mul(2,3),mul(4,5)))),26)={@log smoke=TC006: rveval add(mul(2,3),mul(4,5))=26. Succeeded.},{@log smoke=TC006: rveval add(mul(2,3),mul(4,5))=26. Failed (%q0).}"
->264
-"@if strmatch(setr(0, rveval(strlen(hello))),5)={@log smoke=TC007: rveval strlen(hello)=5. Succeeded.},{@log smoke=TC007: rveval strlen(hello)=5. Failed (%q0).}"
->265
-"@if strmatch(setr(0, rveval(cat(hello,world))),hello world)={@log smoke=TC008: rveval cat(hello,world)=hello world. Succeeded.},{@log smoke=TC008: rveval cat(hello,world)=hello world. Failed (%q0).}"
->274
-"@if strmatch(setr(0, rveval(strcat(abc,def))),abcdef)={@log smoke=TC009: rveval strcat(abc,def)=abcdef. Succeeded.},{@log smoke=TC009: rveval strcat(abc,def)=abcdef. Failed (%q0).}"
->275
-"@if strmatch(setr(0, rveval(mid(abcdef,2,3))),cde)={@log smoke=TC010: rveval mid(abcdef,2,3)=cde. Succeeded.},{@log smoke=TC010: rveval mid(abcdef,2,3)=cde. Failed (%q0).}"
->276
-"@if strmatch(setr(0, rveval(hello)),hello)={@log smoke=TC011: rveval literal hello. Succeeded.},{@log smoke=TC011: rveval literal hello. Failed (%q0).}"
->277
-"@if strmatch(setr(0, rveval(add(1,2)add(3,4))),37)={@log smoke=TC012: rveval add(1,2)add(3,4)=37. Succeeded.},{@log smoke=TC012: rveval add(1,2)add(3,4)=37. Failed (%q0).}"
->278
-"@if strmatch(setr(0, rveval(strlen(cat(ab,cd)))),5)={@log smoke=TC013: rveval strlen(cat(ab,cd))=5. Succeeded.},{@log smoke=TC013: rveval strlen(cat(ab,cd))=5. Failed (%q0).}"
->279
-"@if strmatch(setr(0, rveval(strcat(Result:,add(21,21)))),Result:42)={@log smoke=TC014: rveval strcat(Result:,add(21,21))=Result:42. Succeeded.},{@log smoke=TC014: rveval strcat(Result:,add(21,21))=Result:42. Failed (%q0).}"
->280
-"@if strmatch(setr(0, rveval(eq(42,42))),1)={@log smoke=TC015: rveval eq(42,42)=1. Succeeded.},{@log smoke=TC015: rveval eq(42,42)=1. Failed (%q0).}"
->281
-"@if strmatch(setr(0, rveval(gt(5,3))),1)={@log smoke=TC016: rveval gt(5,3)=1. Succeeded.},{@log smoke=TC016: rveval gt(5,3)=1. Failed (%q0).}"
->282
-"@if strmatch(setr(0, rveval(not(0))),1)={@log smoke=TC017: rveval not(0)=1. Succeeded.},{@log smoke=TC017: rveval not(0)=1. Failed (%q0).}"
->283
-"@if strmatch(setr(0, rveval(not(eq(mod(42,5),0)))),1)={@log smoke=TC018: rveval not(eq(mod(42,5),0))=1. Succeeded.},{@log smoke=TC018: rveval not(eq(mod(42,5),0))=1. Failed (%q0).}"
->284
-"@if strmatch(setr(0, rveval(eq(inc(41),dec(43)))),1)={@log smoke=TC019: rveval eq(inc(41),dec(43))=1. Succeeded.},{@log smoke=TC019: rveval eq(inc(41),dec(43))=1. Failed (%q0).}"
->285
-"@if strmatch(setr(0, rveval(sub(max(3,7,1),min(3,7,1)))),6)={@log smoke=TC020: rveval sub(max(3,7,1),min(3,7,1))=6. Succeeded.},{@log smoke=TC020: rveval sub(max(3,7,1),min(3,7,1))=6. Failed (%q0).}"
->286
-"@if strmatch(setr(0, rveval(add(abs(-5),sign(-5)))),4)={@log smoke=TC021: rveval add(abs(-5),sign(-5))=4. Succeeded.},{@log smoke=TC021: rveval add(abs(-5),sign(-5))=4. Failed (%q0).}"
->287
-"@if strmatch(setr(0, rveval(add(floor(3.7),ceil(3.2)))),7)={@log smoke=TC022: rveval add(floor(3.7),ceil(3.2))=7. Succeeded.},{@log smoke=TC022: rveval add(floor(3.7),ceil(3.2))=7. Failed (%q0).}"
->288
-"@if strmatch(setr(0, rveval(words(the quick brown fox))),4)={@log smoke=TC023: rveval words(the quick brown fox)=4. Succeeded.},{@log smoke=TC023: rveval words(the quick brown fox)=4. Failed (%q0).}"
->289
-"@if strmatch(setr(0, rveval(first(hello world))),hello)={@log smoke=TC024: rveval first(hello world)=hello. Succeeded.},{@log smoke=TC024: rveval first(hello world)=hello. Failed (%q0).}"
->290
-"@if strmatch(setr(0, rveval(pos(cd,abcdef))),3)={@log smoke=TC025: rveval pos(cd,abcdef)=3. Succeeded.},{@log smoke=TC025: rveval pos(cd,abcdef)=3. Failed (%q0).}"
->291
-"@if strmatch(setr(0, rveval(comp(abc,def))),-1)={@log smoke=TC026: rveval comp(abc,def)=-1. Succeeded.},{@log smoke=TC026: rveval comp(abc,def)=-1. Failed (%q0).}"
->292
-"@if strmatch(setr(0, rveval(gt(fdiv(10,3),3.33))),1)={@log smoke=TC027: rveval fdiv(10,3)>3.33. Succeeded.},{@log smoke=TC027: rveval fdiv(10,3)>3.33. Failed (%q0).}"
->293
-"@if strmatch(setr(0, rveval(mul(rand(1),0))),0)={@log smoke=TC028: rveval native mul(rand(1),0)=0. Succeeded.},{@log smoke=TC028: rveval native mul(rand(1),0)=0. Failed (%q0).}"
->294
-"@if strmatch(setr(0, rveval(mod(add(rand(1),10),5))),0)={@log smoke=TC029: rveval native mod(add(rand(1),10),5)=0. Succeeded.},{@log smoke=TC029: rveval native mod(add(rand(1),10),5)=0. Failed (%q0).}"
->295
-"@if strmatch(setr(0, rveval(eq(add(rand(1),5),5))),1)={@log smoke=TC030: rveval native eq(add(rand(1),5),5)=1. Succeeded.},{@log smoke=TC030: rveval native eq(add(rand(1),5),5)=1. Failed (%q0).}"
->296
-"@if strmatch(setr(0, rveval(gt(add(rand(1),10),5))),1)={@log smoke=TC031: rveval native gt(add(rand(1),10),5)=1. Succeeded.},{@log smoke=TC031: rveval native gt(add(rand(1),10),5)=1. Failed (%q0).}"
->297
-"@if strmatch(setr(0, rveval(not(rand(1)))),1)={@log smoke=TC032: rveval native not(rand(1))=1. Succeeded.},{@log smoke=TC032: rveval native not(rand(1))=1. Failed (%q0).}"
->298
-"@if strmatch(setr(0, rveval(not(eq(mod(add(rand(1),42),5),0)))),1)={@log smoke=TC033: rveval native chain not(eq(mod(add(rand(1),42),5),0))=1. Succeeded.},{@log smoke=TC033: rveval native chain not(eq(mod(add(rand(1),42),5),0))=1. Failed (%q0).}"
->299
-"@if strmatch(setr(0, rveval(setr(0,add(1,2)))),3)={@log smoke=TC034: rveval setr(0,add(1,2))=3. Succeeded.},{@log smoke=TC034: rveval setr(0,add(1,2))=3. Failed (%q0).}"
->300
-"@if strmatch(setr(0, rveval(strcat(setq(0,42),r(0)))),42)={@log smoke=TC035: rveval setq(0,42)+r(0)=42. Succeeded.},{@log smoke=TC035: rveval setq(0,42)+r(0)=42. Failed (%q0).}"
->301
-"@if strmatch(setr(0, rveval(strcat(setr(0,add(10,20)),r(0)))),3030)={@log smoke=TC036: rveval setr(0,add(10,20))r(0)=3030. Succeeded.},{@log smoke=TC036: rveval setr(0,add(10,20))r(0)=3030. Failed (%q0).}"
->302
-"@if strmatch(setr(0, rveval(strcat(setq(0,10),setq(1,20),add(r(0),r(1))))),30)={@log smoke=TC037: rveval multi-qreg add(r(0),r(1))=30. Succeeded.},{@log smoke=TC037: rveval multi-qreg add(r(0),r(1))=30. Failed (%q0).}"
->303
-"@if strmatch(setr(0, rveval(strcat(setr(0,mul(3,4)),add(r(0),r(0))))),1224)={@log smoke=TC038: rveval setr(0,mul(3,4))+add(r(0),r(0))=1224. Succeeded.},{@log smoke=TC038: rveval setr(0,mul(3,4))+add(r(0),r(0))=1224. Failed (%q0).}"
->304
-"@if strmatch(setr(0, rveval(ifelse(1,yes,no))),yes)={@log smoke=TC039: rveval ifelse(1,yes,no)=yes. Succeeded.},{@log smoke=TC039: rveval ifelse(1,yes,no)=yes. Failed (%q0).}"
->305
-"@if strmatch(setr(0, rveval(ifelse(0,yes,no))),no)={@log smoke=TC040: rveval ifelse(0,yes,no)=no. Succeeded.},{@log smoke=TC040: rveval ifelse(0,yes,no)=no. Failed (%q0).}"
->306
-"@if strmatch(setr(0, rveval(ifelse(gt(5,3),yes,no))),yes)={@log smoke=TC041: rveval ifelse(gt(5,3),yes,no)=yes. Succeeded.},{@log smoke=TC041: rveval ifelse(gt(5,3),yes,no)=yes. Failed (%q0).}"
->307
-"@if strmatch(setr(0, rveval(ifelse(rand(1),yes,no))),no)={@log smoke=TC042: rveval ifelse(rand(1),yes,no)=no. Succeeded.},{@log smoke=TC042: rveval ifelse(rand(1),yes,no)=no. Failed (%q0).}"
->308
-"@if strmatch(setr(0, rveval(if(1,hello))),hello)={@log smoke=TC043: rveval if(1,hello)=hello. Succeeded.},{@log smoke=TC043: rveval if(1,hello)=hello. Failed (%q0).}"
->309
-"@if strmatch(setr(0, rveval(if(0,hello))),)={@log smoke=TC044: rveval if(0,hello)=empty. Succeeded.},{@log smoke=TC044: rveval if(0,hello)=empty. Failed (%q0).}"
->310
-"@if strmatch(setr(0, rveval(ifelse(not(rand(1)),10,20))),10)={@log smoke=TC045: rveval ifelse(not(rand(1)),10,20)=10. Succeeded.},{@log smoke=TC045: rveval ifelse(not(rand(1)),10,20)=10. Failed (%q0).}"
->311
-"@if strmatch(setr(0, rveval(add(ifelse(gt(5,3),10,20),5))),15)={@log smoke=TC046: rveval add(ifelse(gt(5,3),10,20),5)=15. Succeeded.},{@log smoke=TC046: rveval add(ifelse(gt(5,3),10,20),5)=15. Failed (%q0).}"
->312
-"@if strmatch(setr(0, rveval(cand(1,1,1))),1)={@log smoke=TC047: rveval cand(1,1,1)=1. Succeeded.},{@log smoke=TC047: rveval cand(1,1,1)=1. Failed (%q0).}"
->313
-"@if strmatch(setr(0, rveval(cand(1,0,1))),0)={@log smoke=TC048: rveval cand(1,0,1)=0. Succeeded.},{@log smoke=TC048: rveval cand(1,0,1)=0. Failed (%q0).}"
->314
-"@if strmatch(setr(0, rveval(cor(0,0,0))),0)={@log smoke=TC049: rveval cor(0,0,0)=0. Succeeded.},{@log smoke=TC049: rveval cor(0,0,0)=0. Failed (%q0).}"
->315
-"@if strmatch(setr(0, rveval(cor(0,1,0))),1)={@log smoke=TC050: rveval cor(0,1,0)=1. Succeeded.},{@log smoke=TC050: rveval cor(0,1,0)=1. Failed (%q0).}"
->316
-"@if strmatch(setr(0, rveval(cand(gt(1,rand(1)),1))),1)={@log smoke=TC051: rveval cand(gt(1,rand(1)),1)=1. Succeeded.},{@log smoke=TC051: rveval cand(gt(1,rand(1)),1)=1. Failed (%q0).}"
->317
-"@if strmatch(setr(0, rveval(cand(1,rand(1)))),0)={@log smoke=TC052: rveval cand(1,rand(1))=0. Succeeded.},{@log smoke=TC052: rveval cand(1,rand(1))=0. Failed (%q0).}"
->324
-"@if strmatch(setr(0, rveval(cor(gt(5,3),rand(1)))),1)={@log smoke=TC053: rveval cor(gt(5,3),rand(1))=1. Succeeded.},{@log smoke=TC053: rveval cor(gt(5,3),rand(1))=1. Failed (%q0).}"
->325
-"@if strmatch(setr(0, rveval(cor(rand(1),0))),0)={@log smoke=TC054: rveval cor(rand(1),0)=0. Succeeded.},{@log smoke=TC054: rveval cor(rand(1),0)=0. Failed (%q0).}"
->326
-"@if strmatch(setr(0, rveval(t(add(2,3)))),1)={@log smoke=TC055: rveval t(add(2,3))=1. Succeeded.},{@log smoke=TC055: rveval t(add(2,3))=1. Failed (%q0).}"
->327
-"@if strmatch(setr(0, rveval(t(sub(3,3)))),0)={@log smoke=TC056: rveval t(sub(3,3))=0. Succeeded.},{@log smoke=TC056: rveval t(sub(3,3))=0. Failed (%q0).}"
->328
-"@if strmatch(setr(0, rveval(abs(sub(3,10)))),7)={@log smoke=TC057: rveval abs(sub(3,10))=7. Succeeded.},{@log smoke=TC057: rveval abs(sub(3,10))=7. Failed (%q0).}"
->329
-"@if strmatch(setr(0, rveval(abs(add(2,3)))),5)={@log smoke=TC058: rveval abs(add(2,3))=5. Succeeded.},{@log smoke=TC058: rveval abs(add(2,3))=5. Failed (%q0).}"
->330
-"@if strmatch(setr(0, rveval(sign(sub(3,8)))),-1)={@log smoke=TC059: rveval sign(sub(3,8))=-1. Succeeded.},{@log smoke=TC059: rveval sign(sub(3,8))=-1. Failed (%q0).}"
->331
-"@if strmatch(setr(0, rveval(sign(sub(5,5)))),0)={@log smoke=TC060: rveval sign(sub(5,5))=0. Succeeded.},{@log smoke=TC060: rveval sign(sub(5,5))=0. Failed (%q0).}"
->332
-"@if strmatch(setr(0, rveval(sign(add(3,4)))),1)={@log smoke=TC061: rveval sign(add(3,4))=1. Succeeded.},{@log smoke=TC061: rveval sign(add(3,4))=1. Failed (%q0).}"
->333
-"@if strmatch(setr(0, rveval(max(add(1,2),add(3,4)))),7)={@log smoke=TC062: rveval max(add(1,2),add(3,4))=7. Succeeded.},{@log smoke=TC062: rveval max(add(1,2),add(3,4))=7. Failed (%q0).}"
->334
-"@if strmatch(setr(0, rveval(min(add(1,2),add(3,4)))),3)={@log smoke=TC063: rveval min(add(1,2),add(3,4))=3. Succeeded.},{@log smoke=TC063: rveval min(add(1,2),add(3,4))=3. Failed (%q0).}"
->335
-"@if strmatch(setr(0, rveval(max(sub(0,3),add(1,1)))),2)={@log smoke=TC064: rveval max(sub(0,3),add(1,1))=2. Succeeded.},{@log smoke=TC064: rveval max(sub(0,3),add(1,1))=2. Failed (%q0).}"
->336
-"@if strmatch(setr(0, rveval(min(sub(0,3),add(1,1)))),-3)={@log smoke=TC065: rveval min(sub(0,3),add(1,1))=-3. Succeeded.},{@log smoke=TC065: rveval min(sub(0,3),add(1,1))=-3. Failed (%q0).}"
->337
-"@if strmatch(setr(0, rveval(idiv(add(10,7),add(2,3)))),3)={@log smoke=TC066: rveval idiv(add(10,7),add(2,3))=3. Succeeded.},{@log smoke=TC066: rveval idiv(add(10,7),add(2,3))=3. Failed (%q0).}"
->338
-"@if strmatch(setr(0, rveval(idiv(sub(0,7),add(1,1)))),-3)={@log smoke=TC067: rveval idiv(sub(0,7),add(1,1))=-3. Succeeded.},{@log smoke=TC067: rveval idiv(sub(0,7),add(1,1))=-3. Failed (%q0).}"
->339
-"@if strmatch(setr(0, rveval(bound(add(2,3),add(0,1),add(5,5)))),5)={@log smoke=TC068: rveval bound(5,1,10)=5. Succeeded.},{@log smoke=TC068: rveval bound(5,1,10)=5. Failed (%q0).}"
->340
-"@if strmatch(setr(0, rveval(bound(add(10,5),add(0,1),add(5,5)))),10)={@log smoke=TC069: rveval bound(15,1,10)=10. Succeeded.},{@log smoke=TC069: rveval bound(15,1,10)=10. Failed (%q0).}"
->341
-"@if strmatch(setr(0, rveval(bound(sub(0,5),add(0,1),add(5,5)))),1)={@log smoke=TC070: rveval bound(-5,1,10)=1. Succeeded.},{@log smoke=TC070: rveval bound(-5,1,10)=1. Failed (%q0).}"
->342
-"@if strmatch(setr(0, rveval(abs(sign(sub(3,10))))),1)={@log smoke=TC071: rveval abs(sign(sub(3,10)))=1. Succeeded.},{@log smoke=TC071: rveval abs(sign(sub(3,10)))=1. Failed (%q0).}"
->343
-"@if strmatch(setr(0, rveval(cat(rand(1),hello))),0 hello)={@log smoke=TC072: rveval Tier2 cat(rand(1),hello)=0 hello. Succeeded.},{@log smoke=TC072: rveval Tier2 cat(rand(1),hello)=0 hello. Failed (%q0).}"
->344
-"@if strmatch(setr(0, rveval(strlen(cat(rand(1),hello)))),7)={@log smoke=TC073: rveval Tier2 strlen(cat(rand(1),hello))=7. Succeeded.},{@log smoke=TC073: rveval Tier2 strlen(cat(rand(1),hello))=7. Failed (%q0).}"
->345
-"@if strmatch(setr(0, rveval(strcat(rand(1),hello))),0hello)={@log smoke=TC074: rveval Tier2 strcat(rand(1),hello)=0hello. Succeeded.},{@log smoke=TC074: rveval Tier2 strcat(rand(1),hello)=0hello. Failed (%q0).}"
->346
-"@if strmatch(setr(0, rveval(strlen(strcat(rand(1),hello)))),6)={@log smoke=TC075: rveval Tier2 strlen(strcat(rand(1),hello))=6. Succeeded.},{@log smoke=TC075: rveval Tier2 strlen(strcat(rand(1),hello))=6. Failed (%q0).}"
->347
-"@if strmatch(setr(0, rveval(case(foo, foo, MATCHED, bar, WRONG, DEFAULT))),MATCHED)={@log smoke=TC076: rveval case(foo,foo,MATCHED) first match. Succeeded.},{@log smoke=TC076: rveval case(foo,foo,MATCHED) first match. Failed (%q0).}"
->348
-"@if strmatch(setr(0, rveval(case(bar, foo, WRONG, bar, MATCHED, DEFAULT))),MATCHED)={@log smoke=TC077: rveval case(bar,...,bar,MATCHED) second match. Succeeded.},{@log smoke=TC077: rveval case(bar,...,bar,MATCHED) second match. Failed (%q0).}"
->349
-"@if strmatch(setr(0, rveval(case(baz, foo, WRONG, bar, WRONG2, DEFAULT))),DEFAULT)={@log smoke=TC078: rveval case(baz,...) default. Succeeded.},{@log smoke=TC078: rveval case(baz,...) default. Failed (%q0).}"
->350
-"@if strmatch(setr(0, rveval(case(baz, foo, WRONG, bar, WRONG2))),)={@log smoke=TC079: rveval case(baz,...) no default=empty. Succeeded.},{@log smoke=TC079: rveval case(baz,...) no default=empty. Failed (%q0).}"
->351
-"@if strmatch(setr(0, rveval(switch(foobar, foo*, MATCHED, bar*, WRONG, DEFAULT))),MATCHED)={@log smoke=TC080: rveval switch(foobar,foo*,MATCHED) wildcard. Succeeded.},{@log smoke=TC080: rveval switch(foobar,foo*,MATCHED) wildcard. Failed (%q0).}"
->352
-"@if strmatch(setr(0, rveval(switch(foobar, *baz, WRONG, *bar, MATCHED, DEFAULT))),MATCHED)={@log smoke=TC081: rveval switch(foobar,*bar,MATCHED) leading wild. Succeeded.},{@log smoke=TC081: rveval switch(foobar,*bar,MATCHED) leading wild. Failed (%q0).}"
->353
-"@if strmatch(setr(0, rveval(switch(xyz, foo*, WRONG, bar*, WRONG2, NONE))),NONE)={@log smoke=TC082: rveval switch(xyz,...) default=NONE. Succeeded.},{@log smoke=TC082: rveval switch(xyz,...) default=NONE. Failed (%q0).}"
->354
-"@if strmatch(setr(0, rveval(add(case(b, a, 10, b, 20, 30), 5))),25)={@log smoke=TC083: rveval add(case(b,a,10,b,20,30),5)=25. Succeeded.},{@log smoke=TC083: rveval add(case(b,a,10,b,20,30),5)=25. Failed (%q0).}"
->355
-"@if strmatch(setr(0, rveval(iter(a b c, X))),X X X)={@log smoke=TC084: rveval iter(a b c, X)=X X X. Succeeded.},{@log smoke=TC084: rveval iter(a b c, X)=X X X. Failed (%q0).}"
->356
-"@if strmatch(setr(0, rveval(iter(10 20 30, add(##,1)))),11 21 31)={@log smoke=TC085: rveval iter ## subst=11 21 31. Succeeded.},{@log smoke=TC085: rveval iter ## subst=11 21 31. Failed (%q0).}"
->357
-"@if strmatch(setr(0, rveval(iter(a b c, #@))),1 2 3)={@log smoke=TC086: rveval iter #@ inum=1 2 3. Succeeded.},{@log smoke=TC086: rveval iter #@ inum=1 2 3. Failed (%q0).}"
->358
-"@if strmatch(setr(0, rveval(iter(hello, ##))),hello)={@log smoke=TC087: rveval iter single elem=hello. Succeeded.},{@log smoke=TC087: rveval iter single elem=hello. Failed (%q0).}"
->359
-"@if strmatch(setr(0, rveval(iter(, X))),)={@log smoke=TC088: rveval iter empty list=empty. Succeeded.},{@log smoke=TC088: rveval iter empty list=empty. Failed (%q0).}"
->360
-"@if strmatch(setr(0, rveval(iter(a|b|c, ##, |, -))),a-b-c)={@log smoke=TC089: rveval iter osep=a-b-c. Succeeded.},{@log smoke=TC089: rveval iter osep=a-b-c. Failed (%q0).}"
->361
-"@if strmatch(setr(0, rveval(strlen(iter(a b c, X)))),5)={@log smoke=TC090: rveval strlen(iter)=5. Succeeded.},{@log smoke=TC090: rveval strlen(iter)=5. Failed (%q0).}"
->362
-"@if strmatch(setr(0, rveval(iter(2 3 4, mul(##,##)))),4 9 16)={@log smoke=TC091: rveval iter mul(##,##)=4 9 16. Succeeded.;@trig me/tr.done},{@log smoke=TC091: rveval iter mul(##,##)=4 9 16. Failed (%q0).;@trig me/tr.done}"
-<
-!153
 "test_secure_fn"
 0
 -1
 -1
 -1
 0
-152
+150
 1
 -1
 1
@@ -5280,14 +4960,14 @@
 >261
 "@if chr(256)={@va me=%xg[chr(256)]%xr%[%xg[chr(256)]%xr%]%xg[chr(256)]%xr%(%xg[chr(256)]%xr%)%xg[chr(256)]%xr%{%xg[chr(256)]%xr%}%xg[chr(256)]%xr%;%xg[chr(256)]%xr%%%xg[chr(256)]%xr%\\%xg[chr(256)]%xr%$%xg[chr(256)]%xr%,%xg[chr(256)];@vb me=%xg[chr(10010)]%xr%[%xg[chr(10010)]%xr%]%xg[chr(10010)]%xr%(%xg[chr(10010)]%xr%)%xg[chr(10010)]%xr%{%xg[chr(10010)]%xr%}%xg[chr(10010)]%xr%;%xg[chr(10010)]%xr%%%xg[chr(10010)]%xr%\\%xg[chr(10010)]%xr%$%xg[chr(10010)]%xr%,%xg[chr(10010)];@if strmatch(setr(0,sha1(translate(secure(%va),p)[translate(secure(%vb),p)])),B3B9A8C6CEC34774EC4666057CD5CF5088CC91CD)={@log smoke=TC004: Unicode-color mix. Succeeded.;@trig me/tr.done},{@log smoke=TC004: Unicode-color mix. Failed (%q0).;@trig me/tr.done};},{@log smoke=TC004: Unicode is not supported on this version. Okay.;@trig me/tr.done}"
 <
-!154
+!152
 "test_setdiff_fn"
 0
 -1
 -1
 -1
 0
-153
+151
 1
 -1
 1
@@ -5307,14 +4987,14 @@
 >258
 "@log smoke=End setdiff() test cases.;@notify smoke"
 <
-!155
+!153
 "test_setinter_fn"
 0
 -1
 -1
 -1
 0
-154
+152
 1
 -1
 1
@@ -5334,14 +5014,14 @@
 >258
 "@log smoke=End setinter() test cases.;@notify smoke"
 <
-!156
+!154
 "test_setunion_fn"
 0
 -1
 -1
 -1
 0
-155
+153
 1
 -1
 1
@@ -5361,14 +5041,14 @@
 >258
 "@log smoke=End setunion() test cases.;@notify smoke"
 <
-!157
+!155
 "test_sha1_fn"
 0
 -1
 -1
 -1
 0
-156
+154
 1
 -1
 1
@@ -5392,14 +5072,14 @@
 >260
 "@if strmatch(setr(0,sha1(sha1()[sha1(abc,def)])),4551A9972114A4E299759843141C00FEF391C9B9)={@log smoke=TC003: Parser-related tests. Succeeded.;@trig me/tr.done},{@log smoke=TC003: Parser-related tests. Failed (%q0).;@trig me/tr.done}"
 <
-!158
+!156
 "test_shl_fn"
 0
 -1
 -1
 -1
 0
-157
+155
 1
 -1
 1
@@ -5423,14 +5103,14 @@
 >260
 "@if strmatch([shl(1,-1)],*SECOND ARGUMENT MUST BE A POSITIVE NUMBER)={@log smoke=TC003: shl doesn't allow a negative shift. Succeeded.;@trig me/tr.done},{@log smoke=TC003: shl allows negative shift. Legacy behavior.;@trig me/tr.done}"
 <
-!159
+!157
 "test_shr_fn"
 0
 -1
 -1
 -1
 0
-158
+156
 1
 -1
 1
@@ -5450,14 +5130,14 @@
 >258
 "@log smoke=End shr() test cases.;@notify smoke"
 <
-!160
+!158
 "test_shuffle_fn"
 0
 -1
 -1
 -1
 0
-159
+157
 1
 -1
 1
@@ -5493,14 +5173,14 @@
 >274
 "@if strmatch(setr(0,sha1([sort(shuffle(a-b-c-d-e-f-g-h,-),a,-)][sort(shuffle(-a-b-c-d-e-f-g-h,-),a,-)][sort(shuffle(a--b-c-d-e-f-g-h,-),a,-)][sort(shuffle(a-b--c-d-e-f-g-h,-),a,-)][sort(shuffle(a-b-c--d-e-f-g-h,-),a,-)][sort(shuffle(a-b-c-d--e-f-g-h,-),a,-)][sort(shuffle(a-b-c-d-e--f-g-h,-),a,-)][sort(shuffle(a-b-c-d-e-f--g-h,-),a,-)][sort(shuffle(a-b-c-d-e-f-g--h,-),a,-)][sort(shuffle(a-b-c-d-e-f-g-h-,-),a,-)][sort(shuffle(--a-b-c-d-e-f-g-h,-),a,-)][sort(shuffle(a---b-c-d-e-f-g-h,-),a,-)][sort(shuffle(a-b---c-d-e-f-g-h,-),a,-)][sort(shuffle(a-b-c---d-e-f-g-h,-),a,-)][sort(shuffle(a-b-c-d---e-f-g-h,-),a,-)][sort(shuffle(a-b-c-d-e---f-g-h,-),a,-)][sort(shuffle(a-b-c-d-e-f---g-h,-),a,-)][sort(shuffle(a-b-c-d-e-f-g---h,-),a,-)][sort(shuffle(a-b-c-d-e-f-g-h--,-),a,-)])),4E248BE30EA69551056C53F958E81F5E35269C53)={@log smoke=TC009: shuffle walk single-hypens through elements. Succeeded.;@trig me/tr.done},{@log smoke=TC009: shuffle walk single-hypens through elements. Failed (%q0).;@trig me/tr.done}"
 <
-!161
+!159
 "test_shutdown"
 0
 -1
 -1
 -1
 0
-160
+158
 1
 -1
 1
@@ -5516,14 +5196,14 @@
 >256
 "@log smoke=Ending SmokeMUX;@notify smoke;@shutdown"
 <
-!162
+!160
 "test_sign_fn"
 0
 -1
 -1
 -1
 0
-161
+159
 1
 -1
 1
@@ -5543,14 +5223,14 @@
 >258
 "@log smoke=End sign() test cases.;@notify smoke"
 <
-!163
+!161
 "test_sin_fn"
 0
 -1
 -1
 -1
 0
-162
+160
 1
 -1
 1
@@ -5570,14 +5250,14 @@
 >258
 "@log smoke=End sin() test cases.;@notify smoke"
 <
-!164
+!162
 "test_singletime_fn"
 0
 -1
 -1
 -1
 0
-163
+161
 1
 -1
 1
@@ -5597,14 +5277,14 @@
 >258
 "@log smoke=End singletime() test cases.;@notify smoke"
 <
-!165
+!163
 "smoke"
 0
 -1
 -1
 -1
 0
-164
+162
 1
 -1
 1
@@ -5619,21 +5299,21 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->363
+>327
 "abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn and_fn andbool_fn asin_fn atan_fn atan2_fn attrib_set_fn band_fn baseconv_fn before_fn bnand_fn bor_fn bxor_fn cand_fn candbool_fn capstr_fn case_fn cat_fn ceil_fn center_fn choose_fn chr_fn citer_fn clone_fn cmd_say columns_fn comp_fn convtime_fn connlog_fn cor_fn corbool_fn cos_fn cpad_fn crc32_fn cron_fn ctu_fn dec_fn delete_fn digest_fn digittime_fn dist2d_fn dist3d_fn dynhelp_fn e_fn edit_fn elements_fn encode64_fn eq_fn escape_fn exp3_fn exp_fn exptime_fn extract_fn fdiv_fn first_fn floor_fn floordiv_fn fmod_fn grab_fn graball_fn gt_fn gte_fn hmac_fn iadd_fn iabs_fn idiv_fn imul_fn inc_fn index_fn insert_fn isalpha_fn isdbref_fn isign_fn isint_fn isjson_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn json_fn letq_fn"
->364
-"ladd_fn land_fn last_fn lcstr_fn ldelete_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn lockencode_fn log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn mailsend_fn match_fn matchall_fn max_fn member_fn merge_fn mid_fn min_fn mod_fn mul_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn printf_fn reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn rpad_fn rvcall_fn rveval_fn rvbench_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn sign_fn sin_fn singletime_fn sort_fn sortkey_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn strcat_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strdistance_fn strtrunc_fn sub_fn switch_fn t_fn table_fn tan_fn tr_fn translate_fn trim_fn trunc_fn ucstr_fn url_escape_fn vadd_fn vcross_fn vdot_fn vmag_fn vmul_fn vsub_fn vunit_fn visual_width_fn wordpos_fn words_fn wrap_fn xor_fn jit_parity_fn jitstats_fn shutdown"
->365
+>328
+"ladd_fn land_fn last_fn lcstr_fn ldelete_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn lockencode_fn log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn mailsend_fn match_fn matchall_fn max_fn member_fn merge_fn mid_fn min_fn mod_fn mul_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn printf_fn reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn rpad_fn rvbench_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn sign_fn sin_fn singletime_fn sort_fn sortkey_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn strcat_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strdistance_fn strtrunc_fn sub_fn switch_fn t_fn table_fn tan_fn tr_fn translate_fn trim_fn trunc_fn ucstr_fn url_escape_fn vadd_fn vcross_fn vdot_fn vmag_fn vmul_fn vsub_fn vunit_fn visual_width_fn wordpos_fn words_fn wrap_fn xor_fn jit_parity_fn jitstats_fn shutdown"
+>329
 "@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
 <
-!166
+!164
 "test_sort_fn"
 0
 -1
 -1
 -1
 0
-165
+163
 1
 -1
 1
@@ -5659,14 +5339,14 @@
 >261
 "@if strmatch(setr(0,sha1([sort([chr(65298)] [chr(65296)] [chr(65300)] [chr(65297)] [chr(65299)])])),73FF5FDF8DAE86FC0DB756FA38C021BC87501FD3)={@log smoke=TC004: sort fullwidth digits. Succeeded.;@trig me/tr.done},{@log smoke=TC004: sort fullwidth digits. Failed (%q0).;@trig me/tr.done}"
 <
-!167
+!165
 "test_sortkey_fn"
 0
 -1
 -1
 -1
 0
-166
+164
 1
 -1
 1
@@ -5695,21 +5375,21 @@
 "@if strmatch(setr(0,eq(strlen(sortkey(me/fn_ident,)),0)),1)={@log smoke=TC005: sortkey empty list. Succeeded.},{@log smoke=TC005: sortkey empty list. Failed (%q0).}"
 >263
 "@if strmatch(setr(0,sortkey(me/fn_ident,only)),only)={@log smoke=TC006: sortkey single element. Succeeded.;@trig me/tr.done},{@log smoke=TC006: sortkey single element. Failed (%q0).;@trig me/tr.done}"
->366
+>330
 "strlen(%0)"
->367
+>331
 "mul(%0,-1)"
->368
+>332
 "%0"
 <
-!168
+!166
 "test_space_fn"
 0
 -1
 -1
 -1
 0
-167
+165
 1
 -1
 1
@@ -5729,14 +5409,14 @@
 >258
 "@log smoke=End space() test cases.;@notify smoke"
 <
-!169
+!167
 "test_spellnum_fn"
 0
 -1
 -1
 -1
 0
-168
+166
 1
 -1
 1
@@ -5756,14 +5436,14 @@
 >258
 "@log smoke=End spellnum() test cases.;@notify smoke"
 <
-!170
+!168
 "test_splice_fn"
 0
 -1
 -1
 -1
 0
-169
+167
 1
 -1
 1
@@ -5783,14 +5463,14 @@
 >258
 "@log smoke=End splice() test cases.;@notify smoke"
 <
-!171
+!169
 "test_sqrt_fn"
 0
 -1
 -1
 -1
 0
-170
+168
 1
 -1
 1
@@ -5810,14 +5490,14 @@
 >258
 "@log smoke=End sqrt() test cases.;@notify smoke"
 <
-!172
+!170
 "test_squish_fn"
 0
 -1
 -1
 -1
 0
-171
+169
 1
 -1
 1
@@ -5839,14 +5519,14 @@
 >259
 "@if strmatch(setr(0,sha1(squish(ABABCCAB,AB)[squish(%r%rFoo%r%rBar%r%r,%r)])),8805A4353CA2A79E245FC5A754A55075BA3EAC8E)={@log smoke=TC002: Two-character separators. Succeeded.;@trig me/tr.done},{@log smoke=TC002: Two-character separators. Failed (%q0).;@trig me/tr.done}"
 <
-!173
+!171
 "test_strcat_fn"
 0
 -1
 -1
 -1
 0
-172
+170
 1
 -1
 1
@@ -5866,14 +5546,14 @@
 >258
 "@log smoke=End strcat() test cases.;@notify smoke"
 <
-!174
+!172
 "test_strdistance_fn"
 0
 -1
 -1
 -1
 0
-173
+171
 1
 -1
 1
@@ -5895,14 +5575,14 @@
 >259
 "@if strmatch(setr(0,sha1([strdistance(a, b)][strdistance(ab, a)][strdistance(a, ab)][strdistance(,)])),533958A2148AA8A3466FA3A8340D51E28294F41D)={@log smoke=TC002: strdistance single ops. Succeeded.;@trig me/tr.done},{@log smoke=TC002: strdistance single ops. Failed (%q0).;@trig me/tr.done}"
 <
-!175
+!173
 "test_strip_fn"
 0
 -1
 -1
 -1
 0
-174
+172
 1
 -1
 1
@@ -5922,14 +5602,14 @@
 >258
 "@log smoke=End strip() test cases.;@notify smoke"
 <
-!176
+!174
 "test_stripansi_fn"
 0
 -1
 -1
 -1
 0
-175
+173
 1
 -1
 1
@@ -5949,14 +5629,14 @@
 >258
 "@log smoke=End stripansi() test cases.;@notify smoke"
 <
-!177
+!175
 "test_strlen_fn"
 0
 -1
 -1
 -1
 0
-176
+174
 1
 -1
 1
@@ -5980,14 +5660,14 @@
 >260
 "@if strmatch(setr(0,sha1([strlen(chr(101 769))][strlen(A[chr(101 769)]B)])),BD307A3EC329E10A2CFF8FB87480823DA114F8F4)={@log smoke=TC003: strlen combining cluster. Succeeded.;@trig me/tr.done},{@log smoke=TC003: strlen combining cluster. Failed (%q0).;@trig me/tr.done}"
 <
-!178
+!176
 "test_strmatch_fn"
 0
 -1
 -1
 -1
 0
-177
+175
 1
 -1
 1
@@ -6007,14 +5687,14 @@
 >258
 "@log smoke=End strmatch() test cases.;@notify smoke"
 <
-!179
+!177
 "test_strmem_fn"
 0
 -1
 -1
 -1
 0
-178
+176
 1
 -1
 1
@@ -6034,14 +5714,14 @@
 >258
 "@log smoke=End strmem() test cases.;@notify smoke"
 <
-!180
+!178
 "test_strtrunc_fn"
 0
 -1
 -1
 -1
 0
-179
+177
 1
 -1
 1
@@ -6063,14 +5743,14 @@
 >259
 "@if strmatch(setr(0,sha1([strtrunc(A[chr(233)]B[chr(65296)]C,3)][strtrunc(A[chr(233)]B[chr(65296)]C,6)][strtrunc(A[chr(233)]B[chr(65296)]C,20)])),304AB80FCDD5A44BDD7F3233FFE566A2A8A1CF09)={@log smoke=TC002: strtrunc multi-byte Unicode. Succeeded.;@trig me/tr.done},{@log smoke=TC002: strtrunc multi-byte Unicode. Failed (%q0).;@trig me/tr.done}"
 <
-!181
+!179
 "test_sub_fn"
 0
 -1
 -1
 -1
 0
-180
+178
 1
 -1
 1
@@ -6090,14 +5770,14 @@
 >258
 "@log smoke=End sub() test cases.;@notify smoke"
 <
-!182
+!180
 "test_switch_fn"
 0
 -1
 -1
 -1
 0
-181
+179
 1
 -1
 1
@@ -6117,14 +5797,14 @@
 >258
 "@log smoke=End switch() test cases.;@notify smoke"
 <
-!183
+!181
 "test_t_fn"
 0
 -1
 -1
 -1
 0
-182
+180
 1
 -1
 1
@@ -6144,14 +5824,14 @@
 >258
 "@log smoke=End t() test cases.;@notify smoke"
 <
-!184
+!182
 "test_table_fn"
 0
 -1
 -1
 -1
 0
-183
+181
 1
 -1
 1
@@ -6171,14 +5851,14 @@
 >258
 "@log smoke=End table() test cases.;@notify smoke"
 <
-!185
+!183
 "test_tan_fn"
 0
 -1
 -1
 -1
 0
-184
+182
 1
 -1
 1
@@ -6198,14 +5878,14 @@
 >258
 "@log smoke=End tan() test cases.;@notify smoke"
 <
-!186
+!184
 "test_tr_fn"
 0
 -1
 -1
 -1
 0
-185
+183
 1
 -1
 1
@@ -6225,14 +5905,14 @@
 >258
 "@log smoke=End tr() test cases.;@notify smoke"
 <
-!187
+!185
 "test_translate_fn"
 0
 -1
 -1
 -1
 0
-186
+184
 1
 -1
 1
@@ -6252,14 +5932,14 @@
 >258
 "@log smoke=End translate() test cases.;@notify smoke"
 <
-!188
+!186
 "test_trim_fn"
 0
 -1
 -1
 -1
 0
-187
+185
 1
 -1
 1
@@ -6279,14 +5959,14 @@
 >258
 "@log smoke=End trim() test cases.;@notify smoke"
 <
-!189
+!187
 "test_trunc_fn"
 0
 -1
 -1
 -1
 0
-188
+186
 1
 -1
 1
@@ -6306,14 +5986,14 @@
 >258
 "@log smoke=End trunc() test cases.;@notify smoke"
 <
-!190
+!188
 "test_ucstr_fn"
 0
 -1
 -1
 -1
 0
-189
+187
 1
 -1
 1
@@ -6335,14 +6015,14 @@
 >259
 "@if strmatch(setr(0,sha1([ord(ucstr(chr(233)))][ord(ucstr(chr(252)))][ucstr(a[chr(233)]b[chr(252)]c)])),8E612C464984F26EE01756199F8D0EB28D719A04)={@log smoke=TC002: ucstr Unicode. Succeeded.;@trig me/tr.done},{@log smoke=TC002: ucstr Unicode. Failed (%q0).;@trig me/tr.done}"
 <
-!191
+!189
 "test_url_escape_fn"
 0
 -1
 -1
 -1
 0
-190
+188
 1
 -1
 1
@@ -6366,14 +6046,14 @@
 >260
 "@if strmatch(setr(0,sha1([url_escape(/path/to/resource)][url_escape(key=value&other=thing)][url_unescape(%41%42%43)][url_unescape(no%percent)])),7E2BF96C2EC94A61B9BB4055F3BE22BD59107760)={@log smoke=TC003: url special chars. Succeeded.;@trig me/tr.done},{@log smoke=TC003: url special chars. Failed (%q0).;@trig me/tr.done}"
 <
-!192
+!190
 "test_vadd_fn"
 0
 -1
 -1
 -1
 0
-191
+189
 1
 -1
 1
@@ -6393,14 +6073,14 @@
 >258
 "@log smoke=End vadd() test cases.;@notify smoke"
 <
-!193
+!191
 "test_vcross_fn"
 0
 -1
 -1
 -1
 0
-192
+190
 1
 -1
 1
@@ -6420,14 +6100,14 @@
 >258
 "@log smoke=End vcross() test cases.;@notify smoke"
 <
-!194
+!192
 "test_vdot_fn"
 0
 -1
 -1
 -1
 0
-193
+191
 1
 -1
 1
@@ -6447,14 +6127,14 @@
 >258
 "@log smoke=End vdot() test cases.;@notify smoke"
 <
-!195
+!193
 "test_visual_width_fn"
 0
 -1
 -1
 -1
 0
-194
+192
 1
 -1
 1
@@ -6480,14 +6160,14 @@
 >261
 "@if cand(eq(strlen(rjust(chr(20013),6,-)),5),eq(strlen(rjust([chr(20013)][chr(19990)][chr(30028)],10,-)),7))={@log smoke=TC004: rjust CJK visual width. Succeeded.;@trig me/tr.done},{@log smoke=TC004: rjust CJK visual width. Failed.;@trig me/tr.done}"
 <
-!196
+!194
 "test_vmag_fn"
 0
 -1
 -1
 -1
 0
-195
+193
 1
 -1
 1
@@ -6507,14 +6187,14 @@
 >258
 "@log smoke=End vmag() test cases.;@notify smoke"
 <
-!197
+!195
 "test_vmul_fn"
 0
 -1
 -1
 -1
 0
-196
+194
 1
 -1
 1
@@ -6534,14 +6214,14 @@
 >258
 "@log smoke=End vmul() test cases.;@notify smoke"
 <
-!198
+!196
 "test_vsub_fn"
 0
 -1
 -1
 -1
 0
-197
+195
 1
 -1
 1
@@ -6561,14 +6241,14 @@
 >258
 "@log smoke=End vsub() test cases.;@notify smoke"
 <
-!199
+!197
 "test_vunit_fn"
 0
 -1
 -1
 -1
 0
-198
+196
 1
 -1
 1
@@ -6588,14 +6268,14 @@
 >258
 "@log smoke=End vunit() test cases.;@notify smoke"
 <
-!200
+!198
 "test_wordpos_fn"
 0
 -1
 -1
 -1
 0
-199
+197
 1
 -1
 1
@@ -6615,14 +6295,14 @@
 >258
 "@log smoke=End wordpos() test cases.;@notify smoke"
 <
-!201
+!199
 "test_words_fn"
 0
 -1
 -1
 -1
 0
-200
+198
 1
 -1
 1
@@ -6642,14 +6322,14 @@
 >258
 "@log smoke=End words() test cases.;@notify smoke"
 <
-!202
+!200
 "test_wrap_fn"
 0
 -1
 -1
 -1
 0
-201
+199
 1
 -1
 1
@@ -6671,14 +6351,14 @@
 >259
 "@if strmatch(setr(0,sha1([wrap(Test%rTest,10,c,>,<)][wrap(Test1%r%rTest2,11,c)][wrap(This is some test text to demonstrate the leading space issue that is occurring,69)][wrap(%rth,10,left,|,|,2)])),859B45C2E5BBDE3E6F35F4564F1EA9ABA55F7BDA)={@log smoke=TC002: Regressions. Succeeded.;@trig me/tr.done},{@log smoke=TC002: Regressions. Failed (%q0).;@trig me/tr.done}"
 <
-!203
+!201
 "test_xor_fn"
 0
 -1
 -1
 -1
 0
-202
+200
 1
 -1
 1
