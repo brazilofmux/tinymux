@@ -1450,7 +1450,7 @@ static bool noisy_check_whisper_target(dbref executor, dbref target, int key)
           || PEMIT_PEMIT != key))
     {
         notify(executor,
-                tprintf(T("Sorry, you are to far away to contact %s."),
+                tprintf(T("Sorry, you are too far away to contact %s."),
                     Moniker(target)));
         return false;
     }
@@ -1486,6 +1486,7 @@ void do_pemit_whisper
     {
         if ('\0' == recipient[0])
         {
+            notify(executor, T("No one to whisper to."));
             return;
         }
         message = recipient;
@@ -1645,7 +1646,7 @@ void do_pemit_whisper
     }
 
     if (  bModified
-       && '\0' != recipient[0])
+       && 0 < nPlayers)
     {
         // Our aPlayers could be different than the one encoded on A_LASTWHISPER
         // Update the database.
