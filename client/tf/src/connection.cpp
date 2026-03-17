@@ -233,7 +233,7 @@ void Connection::disconnect() {
 bool Connection::send_line(const std::string& line) {
     if (fd_ < 0) return false;
     std::string data;
-    data.reserve(line.size() + 2);
+    data.reserve(line.size() * 2 + 2);
     for (unsigned char ch : line) {
         data.push_back((char)ch);
         if (ch == TEL_IAC) data.push_back((char)TEL_IAC);
@@ -273,13 +273,6 @@ std::vector<std::string> Connection::read_lines() {
             }
             return lines;
         }
-    }
-
-    if (n <= 0) {
-        if (n == 0 || (errno != EAGAIN && errno != EWOULDBLOCK)) {
-            disconnect();
-        }
-        return lines;
     }
 
     // Process through telnet state machine, accumulate lines
@@ -435,7 +428,7 @@ size_t Connection::process_data(const unsigned char* buf, size_t len) {
                     char sep = sb_buf_[1];
                     size_t start = 2;
                     bool accepted = false;
-                    while (start <= sb_buf_.size()) {
+                    while (start < sb_buf_.size()) {
                         size_t end = sb_buf_.find(sep, start);
                         if (end == std::string::npos) end = sb_buf_.size();
                         std::string candidate = sb_buf_.substr(start, end - start);
@@ -496,13 +489,26 @@ void Connection::send_subneg_charset(bool accepted, const std::string& charset) 
 }
 
 void Connection::send_subneg_naws(uint16_t width, uint16_t height) {
-    uint8_t buf[9] = {
-        TEL_IAC, TEL_SB, TELOPT_NAWS,
+    // RFC 1073: IAC (0xFF) bytes inside SB..SE must be doubled.
+    //
+    uint8_t buf[13];
+    size_t pos = 0;
+    buf[pos++] = TEL_IAC;
+    buf[pos++] = TEL_SB;
+    buf[pos++] = TELOPT_NAWS;
+
+    uint8_t data[4] = {
         (uint8_t)(width >> 8), (uint8_t)(width & 0xFF),
-        (uint8_t)(height >> 8), (uint8_t)(height & 0xFF),
-        TEL_IAC, TEL_SE
+        (uint8_t)(height >> 8), (uint8_t)(height & 0xFF)
     };
-    if (fd_ >= 0) write_all(buf, sizeof(buf));
+    for (int i = 0; i < 4; i++) {
+        buf[pos++] = data[i];
+        if (data[i] == TEL_IAC) buf[pos++] = TEL_IAC;
+    }
+
+    buf[pos++] = TEL_IAC;
+    buf[pos++] = TEL_SE;
+    if (fd_ >= 0) write_all(buf, pos);
 }
 
 void Connection::send_naws(uint16_t width, uint16_t height) {
