@@ -211,7 +211,13 @@ void Connection::disconnect() {
 
 bool Connection::send_line(const std::string& line) {
     if (fd_ < 0) return false;
-    std::string data = line + "\r\n";
+    std::string data;
+    data.reserve(line.size() + 2);
+    for (unsigned char ch : line) {
+        data.push_back((char)ch);
+        if (ch == TEL_IAC) data.push_back((char)TEL_IAC);
+    }
+    data += "\r\n";
     if (!write_all(data.data(), data.size())) return false;
     last_send_time_ = std::chrono::steady_clock::now();
     return true;

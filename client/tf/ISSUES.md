@@ -30,12 +30,6 @@ imported issue list was stale and no longer matched the implementation.
 
 ## Telnet Protocol Issues
 
-- **Missing IAC escaping on output**  
-  `Connection::send_line` sends data directly to the socket without escaping
-  the `IAC` (255) byte. If a user types a character that encodes to 255, it
-  will be misinterpreted by the server as a Telnet command.  
-  Refs: `client/tf/src/connection.cpp:197`
-
 - **Hardcoded Terminal Type (TTYPE)**  
   The terminal type is hardcoded to `xterm-256color` during negotiation,
   ignoring the user's `$TERM` environment variable or TF settings.  
