@@ -9,8 +9,9 @@ imported issue list was stale and no longer matched the implementation.
 - **Status bar support is still only a lightweight subset of original TF**  
   `status_fields()` and the `/status_*` commands now support dynamic fields such
   as `@world`, `@more`, `@clock`, widths, spacer fields, insertion/reset
-  options, a single variable-width field per row, and multi-row layout, but
-  this still lacks classic TF's richer attribute handling.  
+  options, a single variable-width field per row, multi-row layout, and simple
+  per-field attributes, but this still lacks classic TF's variable-driven
+  `status_attr_*` / `status_int_*` formatting model.  
   Comparison: `/home/sdennis/tinyfugue/src/output.c`
 
 ## Telnet Protocol Issues

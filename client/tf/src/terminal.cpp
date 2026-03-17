@@ -688,6 +688,14 @@ int Terminal::status_field_width(const std::string& field, bool* explicit_width)
     return std::atoi(width_part.c_str());
 }
 
+std::string Terminal::status_field_attrs(const std::string& field) {
+    size_t first = field.find(':');
+    if (first == std::string::npos) return {};
+    size_t second = field.find(':', first + 1);
+    if (second == std::string::npos || second + 1 >= field.size()) return {};
+    return field.substr(second + 1);
+}
+
 std::string Terminal::expand_status_field(const std::string& field) const {
     size_t first = field.find(':');
     std::string name = (first == std::string::npos) ? field : field.substr(0, first);
@@ -723,6 +731,46 @@ std::string Terminal::expand_status_field(const std::string& field) const {
         }
     }
     return text;
+}
+
+std::string Terminal::style_status_field(const std::string& field, const std::string& text) {
+    std::string attrs = status_field_attrs(field);
+    if (attrs.empty() || text.empty()) return text;
+
+    bool bold = false;
+    bool underline = false;
+    bool reverse = false;
+
+    std::string token;
+    auto flush = [&]() {
+        if (token == "bold" || token == "b") bold = true;
+        else if (token == "underline" || token == "u") underline = true;
+        else if (token == "reverse" || token == "rev" || token == "r") reverse = true;
+        token.clear();
+    };
+
+    for (char ch : attrs) {
+        if (ch == ',' || ch == '+' || ch == '|' || ch == ' ') {
+            if (!token.empty()) flush();
+        } else {
+            token += static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+        }
+    }
+    if (!token.empty()) flush();
+
+    std::string prefix = "\033[";
+    bool first = true;
+    auto append_code = [&](const char* code) {
+        if (!first) prefix += ';';
+        prefix += code;
+        first = false;
+    };
+    if (bold) append_code("1");
+    if (underline) append_code("4");
+    if (reverse) append_code("7");
+    if (first) return text;
+    prefix += 'm';
+    return prefix + text + "\033[0m";
 }
 
 void Terminal::status_add_field(const std::string& field) {
@@ -1100,7 +1148,7 @@ void Terminal::redraw_status() {
                     if (flex_index < 0) flex_index = (int)i;
                     continue;
                 }
-                fixed_width += display_width_ansi(expand_status_field(fields[i]));
+                fixed_width += display_width_ansi(style_status_field(fields[i], expand_status_field(fields[i])));
             }
 
             int prefix_width = display_width_ansi(text);
@@ -1116,9 +1164,9 @@ void Terminal::redraw_status() {
                         ? field + ":" + std::to_string(remaining)
                         : field.substr(0, first + 1) + std::to_string(remaining)
                             + (second == std::string::npos ? "" : field.substr(second));
-                    text += expand_status_field(rebuilt);
+                    text += style_status_field(rebuilt, expand_status_field(rebuilt));
                 } else {
-                    text += expand_status_field(fields[i]);
+                    text += style_status_field(fields[i], expand_status_field(fields[i]));
                 }
             }
         }

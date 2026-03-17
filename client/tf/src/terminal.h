@@ -103,7 +103,9 @@ private:
     size_t normalize_cursor_pos(size_t pos) const;
     static std::string status_field_name(const std::string& field);
     static int status_field_width(const std::string& field, bool* explicit_width = nullptr);
+    static std::string status_field_attrs(const std::string& field);
     std::string expand_status_field(const std::string& field) const;
+    static std::string style_status_field(const std::string& field, const std::string& text);
     struct OutputScreen {
         std::deque<std::string> lines;
         int scroll_offset = 0;
