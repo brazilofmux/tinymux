@@ -153,6 +153,7 @@ void cmd_connect(App& app, const std::string& args) {
     auto it = app.connections.find(name);
     if (it != app.connections.end() && it->second->is_connected()) {
         app.fg = it->second.get();
+        app.terminal.set_history_context(app.fg->world_name());
         if (std::string prompt = app.fg->current_prompt(); !prompt.empty()) {
             app.terminal.set_prompt(prompt);
         } else {
@@ -179,18 +180,19 @@ void cmd_connect(App& app, const std::string& args) {
         return;
     }
 
+    Connection* raw = conn.get();
+    app.connections[w->name] = std::move(conn);
+    app.fg = raw;
+    app.terminal.set_history_context(app.fg->world_name());
+    app.terminal.set_output_context(app.fg->world_name());
     app.terminal.print_system("Connected to " + w->name);
 
     // Auto-login if credentials present
     if (!w->character.empty()) {
-        if (app_send_line(app, conn.get(), "connect " + w->character + " " + w->password, false)) {
+        if (app_send_line(app, app.fg, "connect " + w->character + " " + w->password, false)) {
             fire_hook(app, Hook::LOGIN, w->name);
         }
     }
-
-    Connection* raw = conn.get();
-    app.connections[w->name] = std::move(conn);
-    app.fg = raw;
 
     fire_hook(app, Hook::CONNECT, w->name);
 }
@@ -224,12 +226,17 @@ void cmd_dc(App& app, const std::string& args) {
         app.fg = nullptr;
         if (!app.connections.empty()) {
             app.fg = app.connections.begin()->second.get();
+            app.terminal.set_history_context(app.fg->world_name());
+            app.terminal.set_output_context(app.fg->world_name());
             if (std::string prompt = app.fg->current_prompt(); !prompt.empty()) {
                 app.terminal.set_prompt(prompt);
             } else {
                 app.terminal.clear_prompt();
             }
             app.terminal.print_system("Foreground: " + app.fg->world_name());
+        } else {
+            app.terminal.set_history_context("");
+            app.terminal.set_output_context("");
         }
     }
 }
@@ -252,6 +259,8 @@ void cmd_fg(App& app, const std::string& args) {
             std::equal(wname.begin(), wname.end(), name.begin(),
                        [](char a, char b) { return tolower(a) == tolower(b); })) {
             app.fg = conn.get();
+            app.terminal.set_history_context(app.fg->world_name());
+            app.terminal.set_output_context(app.fg->world_name());
             if (std::string prompt = app.fg->current_prompt(); !prompt.empty()) {
                 app.terminal.set_prompt(prompt);
             } else {
@@ -997,6 +1006,8 @@ void cmd_dokey(App& app, const std::string& args) {
                 auto it = app.connections.find(*pos);
                 if (it != app.connections.end()) {
                     app.fg = it->second.get();
+                    app.terminal.set_history_context(app.fg->world_name());
+                    app.terminal.set_output_context(app.fg->world_name());
                     app.terminal.print_system("% Foreground: " + app.fg->world_name());
                     app.terminal.scroll_to_bottom();
                 }
@@ -1193,15 +1204,18 @@ void cmd_limit(App& app, const std::string& args) {
     std::string pattern = trim_copy(args);
     if (pattern.empty()) {
         app.vars.erase("_limit_pattern");
+        app_rerender_foreground(app);
         app.terminal.print_system("% Output filter cleared");
     } else {
         app.vars["_limit_pattern"] = pattern;
+        app_rerender_foreground(app);
         app.terminal.print_system("% Output filtered to: " + pattern);
     }
 }
 
 void cmd_unlimit(App& app, const std::string& /*args*/) {
     app.vars.erase("_limit_pattern");
+    app_rerender_foreground(app);
     app.terminal.print_system("% Output filter cleared");
 }
 
@@ -1213,8 +1227,10 @@ void cmd_relimit(App& app, const std::string& args) {
     // /relimit — reapply current limit filter (refresh display)
     auto lim = app.vars.find("_limit_pattern");
     if (lim != app.vars.end() && !lim->second.empty()) {
+        app_rerender_foreground(app);
         app.terminal.print_system("% Output filter active: " + lim->second);
     } else {
+        app_rerender_foreground(app);
         app.terminal.print_system("% No output filter active");
     }
 }

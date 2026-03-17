@@ -4,31 +4,6 @@ This file was rebuilt from the current `client/tf` code after reviewing the
 import in commit `191a98a17473187009b9c886773957730641bceb`. The original
 imported issue list was stale and no longer matched the implementation.
 
-## High-Risk Correctness Bugs
-
-- **The display model is still one shared output buffer, not per-world screens**  
-  Background worlds are prefixed and dumped into the same `Terminal::output_lines_`
-  buffer, and `/fg` only changes `app.fg` plus scroll position. It does not
-  restore that world's own view. This is a major behavioral gap from classic
-  TinyFugue's per-screen model.  
-  Refs: `client/tf/src/main.cpp:269`, `client/tf/src/command.cpp:213`,
-  `client/tf/src/terminal.cpp:448`  
-  Comparison: `/home/sdennis/tinyfugue/src/tfio.h`, `/home/sdennis/tinyfugue/src/output.c`
-
-## Broken Or Misleading Commands
-
-- **`/limit` and `/relimit` only affect new lines**  
-  Filtering is applied in the live receive path only. `/relimit` does not
-  re-render from stored scrollback; it just prints a status line.  
-  Refs: `client/tf/src/main.cpp:260`, `client/tf/src/command.cpp:1142`,
-  `client/tf/src/command.cpp:1166`
-
-- **Input history is global, not per-world**  
-  There is a single `Terminal::input_history_`, so switching worlds shares one
-  recall ring across all sessions. The old imported issue was still correct on
-  this point.  
-  Refs: `client/tf/src/terminal.h:100`, `client/tf/src/terminal.cpp:287`
-
 ## Stubbed Or Partially Implemented Interfaces
 
 - **Pager and more-related APIs are placeholders**  

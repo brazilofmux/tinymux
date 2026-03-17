@@ -28,6 +28,7 @@ public:
 
     // Output to the main output pane
     void print_line(const std::string& line);
+    void print_line_to(const std::string& context, const std::string& line);
     void print_system(const std::string& msg);
     void set_prompt(const std::string& prompt);
     void clear_prompt();
@@ -66,12 +67,15 @@ public:
     void scroll_to_bottom();
 
     // Input history
+    void set_history_context(const std::string& key);
     void history_up();
     void history_down();
 
     int max_output_lines() const;
     int get_cols() const { return cols_; }
     int get_rows() const { return rows_; }
+    void set_output_context(const std::string& key);
+    const std::string& output_context() const { return output_key_; }
 
 private:
     void create_windows();
@@ -86,6 +90,12 @@ private:
     static int rgb_to_xterm(int r, int g, int b);
     size_t normalize_cursor_pos(size_t pos) const;
     static std::string status_field_name(const std::string& field);
+    struct OutputScreen {
+        std::deque<std::string> lines;
+        int scroll_offset = 0;
+    };
+    OutputScreen& current_output();
+    const OutputScreen& current_output() const;
 
     // UTF-8 / grapheme cluster navigation for input buffer
     static size_t utf8_char_len(unsigned char lead);
@@ -110,16 +120,17 @@ private:
     int cols_ = 0;
 
     // Output scrollback
-    std::deque<std::string> output_lines_;
+    std::unordered_map<std::string, OutputScreen> output_screens_;
+    std::string output_key_;
     static constexpr size_t MAX_SCROLLBACK = 10000;
-    int scroll_offset_ = 0;
 
     // Input line editing
     std::string input_buf_;
     size_t cursor_pos_ = 0;
 
     // Input history
-    std::deque<std::string> input_history_;
+    std::unordered_map<std::string, std::deque<std::string>> input_histories_;
+    std::string history_key_;
     static constexpr size_t MAX_HISTORY = 500;
     int history_pos_ = -1;
     std::string saved_input_;

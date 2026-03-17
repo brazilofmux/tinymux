@@ -386,6 +386,7 @@ bool Terminal::handle_key(const InputEvent& ev, std::string& out_line) {
         case Key::ENTER:
             out_line = input_buf_;
             if (!input_buf_.empty()) {
+                auto& input_history_ = input_histories_[history_key_];
                 input_history_.push_front(input_buf_);
                 if (input_history_.size() > MAX_HISTORY)
                     input_history_.pop_back();
@@ -568,20 +569,40 @@ int Terminal::display_width_ansi(const std::string& line) {
     return col;
 }
 
+Terminal::OutputScreen& Terminal::current_output() {
+    return output_screens_[output_key_];
+}
+
+const Terminal::OutputScreen& Terminal::current_output() const {
+    auto it = output_screens_.find(output_key_);
+    static const OutputScreen empty{};
+    if (it == output_screens_.end()) return empty;
+    return it->second;
+}
+
 void Terminal::print_line(const std::string& line) {
+    print_line_to(output_key_, line);
+}
+
+void Terminal::print_line_to(const std::string& context, const std::string& line) {
     // Wrap long lines into multiple visual lines
+    auto& screen = output_screens_[context];
     auto wrapped = wrap_line(line, cols_);
     for (auto& wl : wrapped) {
-        output_lines_.push_back(std::move(wl));
-        if (output_lines_.size() > MAX_SCROLLBACK)
-            output_lines_.pop_front();
+        screen.lines.push_back(std::move(wl));
+        if (screen.lines.size() > MAX_SCROLLBACK)
+            screen.lines.pop_front();
     }
 
     // If at bottom, stay at bottom
-    if (scroll_offset_ == 0) {
-        redraw_output();
+    if (context == output_key_) {
+        if (screen.scroll_offset == 0) {
+            redraw_output();
+        } else {
+            screen.scroll_offset += (int)wrapped.size();
+        }
     } else {
-        scroll_offset_ += (int)wrapped.size();
+        if (screen.scroll_offset > 0) screen.scroll_offset += (int)wrapped.size();
     }
 }
 
@@ -590,19 +611,26 @@ void Terminal::print_system(const std::string& msg) {
 }
 
 void Terminal::replace_last_output_line(const std::string& line) {
-    if (!output_lines_.empty()) output_lines_.pop_back();
+    auto& screen = current_output();
+    if (!screen.lines.empty()) screen.lines.pop_back();
     auto wrapped = wrap_line(line, cols_);
     for (auto& wl : wrapped) {
-        output_lines_.push_back(std::move(wl));
-        if (output_lines_.size() > MAX_SCROLLBACK)
-            output_lines_.pop_front();
+        screen.lines.push_back(std::move(wl));
+        if (screen.lines.size() > MAX_SCROLLBACK)
+            screen.lines.pop_front();
     }
     redraw_output();
 }
 
 void Terminal::clear_output() {
-    output_lines_.clear();
-    scroll_offset_ = 0;
+    auto& screen = current_output();
+    screen.lines.clear();
+    screen.scroll_offset = 0;
+    redraw_output();
+}
+
+void Terminal::set_output_context(const std::string& key) {
+    output_key_ = key;
     redraw_output();
 }
 
@@ -622,6 +650,12 @@ void Terminal::set_input_text(const std::string& text) {
     cursor_pos_ = input_buf_.size();
     history_pos_ = -1;
     redraw_input();
+}
+
+void Terminal::set_history_context(const std::string& key) {
+    history_key_ = key;
+    history_pos_ = -1;
+    saved_input_.clear();
 }
 
 void Terminal::set_status(const std::string& text) {
@@ -677,14 +711,16 @@ void Terminal::refresh() {
 }
 
 void Terminal::scroll_up(int lines) {
-    int max_off = (int)output_lines_.size() - max_output_lines();
+    auto& screen = current_output();
+    int max_off = (int)screen.lines.size() - max_output_lines();
     if (max_off < 0) max_off = 0;
-    scroll_offset_ = std::min(scroll_offset_ + lines, max_off);
+    screen.scroll_offset = std::min(screen.scroll_offset + lines, max_off);
     redraw_output();
 }
 
 void Terminal::scroll_down(int lines) {
-    scroll_offset_ = std::max(scroll_offset_ - lines, 0);
+    auto& screen = current_output();
+    screen.scroll_offset = std::max(screen.scroll_offset - lines, 0);
     redraw_output();
 }
 
@@ -697,11 +733,12 @@ void Terminal::scroll_page_down() {
 }
 
 void Terminal::scroll_to_bottom() {
-    scroll_offset_ = 0;
+    current_output().scroll_offset = 0;
     redraw_output();
 }
 
 void Terminal::history_up() {
+    auto& input_history_ = input_histories_[history_key_];
     if (input_history_.empty()) return;
     if (history_pos_ == -1) {
         saved_input_ = input_buf_;
@@ -717,6 +754,7 @@ void Terminal::history_up() {
 }
 
 void Terminal::history_down() {
+    auto& input_history_ = input_histories_[history_key_];
     if (history_pos_ < 0) return;
     history_pos_--;
     if (history_pos_ < 0) {
@@ -836,17 +874,18 @@ void Terminal::render_ansi_line(WINDOW* win, const std::string& line, int row) {
 void Terminal::redraw_output() {
     if (!win_output_) return;
     int out_h = max_output_lines();
+    const auto& screen = current_output();
 
     werase(win_output_);
 
-    int total = (int)output_lines_.size();
-    int start = total - out_h - scroll_offset_;
+    int total = (int)screen.lines.size();
+    int start = total - out_h - screen.scroll_offset;
     if (start < 0) start = 0;
     int end = start + out_h;
     if (end > total) end = total;
 
     for (int i = start; i < end; i++) {
-        render_ansi_line(win_output_, output_lines_[i], i - start);
+        render_ansi_line(win_output_, screen.lines[i], i - start);
     }
 }
 

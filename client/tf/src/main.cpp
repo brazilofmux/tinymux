@@ -31,7 +31,7 @@ bool app_send_line(App& app, Connection* conn, const std::string& line,
         bool local_echo = (it != app.vars.end() && it->second == "on");
         if (local_echo) {
             if (conn == app.fg) app.terminal.print_line(line);
-            else app.terminal.print_line("[" + conn->world_name() + "] " + line);
+            else app.terminal.print_line_to(conn->world_name(), line);
         }
     }
 
@@ -61,7 +61,7 @@ void app_receive_line(App& app, Connection* conn, const std::string& world_name,
             app.terminal.clear_prompt();
             app.terminal.print_line(display_line);
         } else {
-            app.terminal.print_line("[" + world_name + "] " + display_line);
+            app.terminal.print_line_to(world_name, display_line);
         }
     }
 
@@ -69,6 +69,21 @@ void app_receive_line(App& app, Connection* conn, const std::string& world_name,
     if (log_it != app.vars.end() && !log_it->second.empty()) {
         FILE* lf = fopen(log_it->second.c_str(), "a");
         if (lf) { fprintf(lf, "%s\n", line.c_str()); fclose(lf); }
+    }
+}
+
+void app_rerender_foreground(App& app) {
+    app.terminal.clear_output();
+
+    if (!app.fg) return;
+
+    auto lim = app.vars.find("_limit_pattern");
+    const std::string* pattern =
+        (lim != app.vars.end() && !lim->second.empty()) ? &lim->second : nullptr;
+
+    for (const auto& line : app.fg->scrollback()) {
+        if (pattern && fnmatch(pattern->c_str(), line.c_str(), 0) != 0) continue;
+        app.terminal.print_line(line);
     }
 }
 
@@ -313,6 +328,8 @@ static void run(App& app) {
                     if (app.fg == conn.get()) {
                         app.terminal.clear_prompt();
                         app.fg = nullptr;
+                        app.terminal.set_history_context("");
+                        app.terminal.set_output_context("");
                     }
                     app.connections.erase(name);
                 }
@@ -340,6 +357,8 @@ static void run(App& app) {
             if (app.fg && app.fg->world_name() == name) {
                 app.terminal.clear_prompt();
                 app.fg = nullptr;
+                app.terminal.set_history_context("");
+                app.terminal.set_output_context("");
             }
             app.connections.erase(name);
         }
