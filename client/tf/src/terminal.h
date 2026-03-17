@@ -32,9 +32,25 @@ public:
     void set_prompt(const std::string& prompt);
     void clear_prompt();
     void set_input_text(const std::string& text);
+    const std::string& input_text() const { return input_buf_; }
+    size_t cursor_pos() const { return cursor_pos_; }
+    std::string input_head() const;
+    std::string input_tail() const;
+    void set_cursor_pos(size_t pos);
+    void delete_at_cursor(size_t count = 1);
+    size_t word_left_pos(size_t pos) const;
+    size_t word_right_pos(size_t pos) const;
+    int match_bracket(int start = -1) const;
+    void replace_last_output_line(const std::string& line);
+    void clear_output();
 
     // Status bar
     void set_status(const std::string& text);
+    const std::string& status_text() const { return status_text_; }
+    void status_add_field(const std::string& field);
+    bool status_edit_field(const std::string& field);
+    bool status_remove_field(const std::string& name);
+    std::string status_fields() const;
 
     // Refresh all windows (single doupdate per loop iteration)
     void refresh();
@@ -68,6 +84,8 @@ private:
     int get_color_pair(int fg, int bg);
     int normalize_color(int color) const;
     static int rgb_to_xterm(int r, int g, int b);
+    size_t normalize_cursor_pos(size_t pos) const;
+    static std::string status_field_name(const std::string& field);
 
     // UTF-8 / grapheme cluster navigation for input buffer
     static size_t utf8_char_len(unsigned char lead);
@@ -107,6 +125,7 @@ private:
     std::string saved_input_;
 
     std::string status_text_;
+    std::vector<std::string> status_fields_;
     std::string prompt_text_;
     std::unordered_map<uint32_t, int> color_pairs_;
     int next_pair_ = 1;

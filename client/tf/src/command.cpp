@@ -1300,17 +1300,39 @@ void cmd_restrict(App& app, const std::string& args) {
 }
 
 void cmd_status_add(App& app, const std::string& args) {
-    // /status_add <column> <text> — add a field to the status bar
-    // Stub — status bar is currently a single string
-    app.terminal.print_system("% /status_add: " + args + " (status bar customization planned)");
+    std::string field = trim_copy(args);
+    if (field.empty()) {
+        app.terminal.print_system("Usage: /status_add <field>");
+        return;
+    }
+    app.terminal.status_add_field(field);
+    app.terminal.set_status(app.fg ? " [" + app.fg->world_name() + "]" : " [no connection]");
 }
 
 void cmd_status_edit(App& app, const std::string& args) {
-    app.terminal.print_system("% /status_edit: " + args + " (status bar customization planned)");
+    std::string field = trim_copy(args);
+    if (field.empty()) {
+        app.terminal.print_system("Usage: /status_edit <field>");
+        return;
+    }
+    if (app.terminal.status_edit_field(field)) {
+        app.terminal.set_status(app.fg ? " [" + app.fg->world_name() + "]" : " [no connection]");
+    } else {
+        app.terminal.print_system("% No such status field");
+    }
 }
 
 void cmd_status_rm(App& app, const std::string& args) {
-    app.terminal.print_system("% /status_rm: " + args + " (status bar customization planned)");
+    std::string name = trim_copy(args);
+    if (name.empty()) {
+        app.terminal.print_system("Usage: /status_rm <name>");
+        return;
+    }
+    if (app.terminal.status_remove_field(name)) {
+        app.terminal.set_status(app.fg ? " [" + app.fg->world_name() + "]" : " [no connection]");
+    } else {
+        app.terminal.print_system("% No such status field");
+    }
 }
 
 void cmd_trigpc(App& app, const std::string& args) {

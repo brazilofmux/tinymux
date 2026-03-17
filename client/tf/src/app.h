@@ -33,5 +33,7 @@ struct App {
 
 bool app_send_line(App& app, Connection* conn, const std::string& line,
                    bool allow_local_echo = true);
+void app_receive_line(App& app, Connection* conn, const std::string& world_name,
+                      const std::string& line);
 
 #endif // APP_H

@@ -908,40 +908,54 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
         // These expose the input line editing buffer to scripts.
 
         {"kblen", {0, 0, [](ScriptEnv& env, const std::vector<Value>&) -> Value {
-            // Length of current input buffer
-            // Stub — needs Terminal API exposure
+            if (App* app = env.app()) return Value::make_int((int64_t)app->terminal.input_text().size());
             return Value::make_int(0);
         }}},
         {"kbpoint", {0, 0, [](ScriptEnv& env, const std::vector<Value>&) -> Value {
-            // Current cursor position in input buffer
+            if (App* app = env.app()) return Value::make_int((int64_t)app->terminal.cursor_pos());
             return Value::make_int(0);
         }}},
         {"kbhead", {0, 0, [](ScriptEnv& env, const std::vector<Value>&) -> Value {
-            // Text before cursor
+            if (App* app = env.app()) return Value::make_str(app->terminal.input_head());
             return Value::make_str("");
         }}},
         {"kbtail", {0, 0, [](ScriptEnv& env, const std::vector<Value>&) -> Value {
-            // Text after cursor
+            if (App* app = env.app()) return Value::make_str(app->terminal.input_tail());
             return Value::make_str("");
         }}},
         {"kbgoto", {1, 1, [](ScriptEnv& env, const std::vector<Value>& a) -> Value {
-            // Move cursor to position
+            if (App* app = env.app()) {
+                app->terminal.set_cursor_pos((size_t)std::max<int64_t>(0, a[0].as_int()));
+                return Value::make_int((int64_t)app->terminal.cursor_pos());
+            }
             return Value::make_int(0);
         }}},
         {"kbdel", {1, 1, [](ScriptEnv& env, const std::vector<Value>& a) -> Value {
-            // Delete n characters at cursor
+            if (App* app = env.app()) {
+                app->terminal.delete_at_cursor((size_t)std::max<int64_t>(0, a[0].as_int()));
+                return Value::make_int(1);
+            }
             return Value::make_int(0);
         }}},
         {"kbmatch", {0, 1, [](ScriptEnv& env, const std::vector<Value>& a) -> Value {
-            // Find matching bracket/paren
+            if (App* app = env.app()) {
+                int start = a.empty() ? -1 : (int)a[0].as_int();
+                return Value::make_int(app->terminal.match_bracket(start));
+            }
             return Value::make_int(-1);
         }}},
         {"kbwordleft", {0, 1, [](ScriptEnv& env, const std::vector<Value>& a) -> Value {
-            // Position of start of word to the left
+            if (App* app = env.app()) {
+                size_t pos = a.empty() ? app->terminal.cursor_pos() : (size_t)std::max<int64_t>(0, a[0].as_int());
+                return Value::make_int((int64_t)app->terminal.word_left_pos(pos));
+            }
             return Value::make_int(0);
         }}},
         {"kbwordright", {0, 1, [](ScriptEnv& env, const std::vector<Value>& a) -> Value {
-            // Position of end of word to the right
+            if (App* app = env.app()) {
+                size_t pos = a.empty() ? app->terminal.cursor_pos() : (size_t)std::max<int64_t>(0, a[0].as_int());
+                return Value::make_int((int64_t)app->terminal.word_right_pos(pos));
+            }
             return Value::make_int(0);
         }}},
         {"keycode", {1, 1, [](ScriptEnv&, const std::vector<Value>& a) -> Value {
@@ -966,7 +980,8 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
 
         // ---- Status bar functions ----
 
-        {"status_fields", {0, 1, [](ScriptEnv&, const std::vector<Value>&) -> Value {
+        {"status_fields", {0, 1, [](ScriptEnv& env, const std::vector<Value>&) -> Value {
+            if (App* app = env.app()) return Value::make_str(app->terminal.status_fields());
             return Value::make_str("");
         }}},
         {"status_width", {1, 1, [](ScriptEnv& env, const std::vector<Value>&) -> Value {
@@ -981,8 +996,9 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
             return eval_expr(a[0].as_str(), env);
         }}},
         {"substitute", {1, 1, [](ScriptEnv& env, const std::vector<Value>& a) -> Value {
-            // substitute(text) — replace current line in output (stub)
-            // Would need output buffer manipulation
+            if (App* app = env.app()) {
+                app->terminal.replace_last_output_line(a[0].as_str());
+            }
             return Value::make_int(1);
         }}},
         {"prompt", {1, 1, [](ScriptEnv& env, const std::vector<Value>& a) -> Value {
@@ -996,10 +1012,14 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
             // fake_recv(text [, world, attrs]) — inject text as if received from MUD
             if (App* app = env.app()) {
                 std::string text = a[0].as_str();
-                app->terminal.print_line(text);
-                if (app->fg) app->fg->add_to_scrollback(text);
-                // Run triggers against it
-                check_triggers(*app, text);
+                Connection* target = app->fg;
+                std::string world_name;
+                if (a.size() >= 2 && !a[1].as_str().empty()) {
+                    auto it = app->connections.find(a[1].as_str());
+                    if (it != app->connections.end()) target = it->second.get();
+                }
+                if (target) world_name = target->world_name();
+                app_receive_line(*app, target, world_name, text);
             }
             return Value::make_int(1);
         }}},

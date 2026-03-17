@@ -205,6 +205,105 @@ int Terminal::cursor_display_col() const {
     return display_width_of(0, cursor_pos_);
 }
 
+size_t Terminal::normalize_cursor_pos(size_t pos) const {
+    if (pos >= input_buf_.size()) return input_buf_.size();
+    size_t cur = 0;
+    while (cur < input_buf_.size()) {
+        size_t next = cluster_end(cur);
+        if (pos <= cur) return cur;
+        if (pos < next) return cur;
+        cur = next;
+    }
+    return input_buf_.size();
+}
+
+std::string Terminal::input_head() const {
+    return input_buf_.substr(0, cursor_pos_);
+}
+
+std::string Terminal::input_tail() const {
+    return input_buf_.substr(cursor_pos_);
+}
+
+void Terminal::set_cursor_pos(size_t pos) {
+    cursor_pos_ = normalize_cursor_pos(pos);
+    redraw_input();
+}
+
+void Terminal::delete_at_cursor(size_t count) {
+    while (count-- > 0 && cursor_pos_ < input_buf_.size()) {
+        size_t end = cluster_end(cursor_pos_);
+        input_buf_.erase(cursor_pos_, end - cursor_pos_);
+    }
+    redraw_input();
+}
+
+size_t Terminal::word_left_pos(size_t pos) const {
+    size_t cur = normalize_cursor_pos(pos);
+    while (cur > 0) {
+        size_t prev = cluster_start(cur);
+        if (prev < cur && input_buf_[prev] == ' ') cur = prev;
+        else break;
+    }
+    while (cur > 0) {
+        size_t prev = cluster_start(cur);
+        if (prev < cur && input_buf_[prev] != ' ') cur = prev;
+        else break;
+    }
+    return cur;
+}
+
+size_t Terminal::word_right_pos(size_t pos) const {
+    size_t cur = normalize_cursor_pos(pos);
+    while (cur < input_buf_.size() && input_buf_[cur] != ' ')
+        cur = cluster_end(cur);
+    while (cur < input_buf_.size() && input_buf_[cur] == ' ')
+        cur = cluster_end(cur);
+    return cur;
+}
+
+int Terminal::match_bracket(int start) const {
+    int pos = (start >= 0) ? std::max(0, start) : (int)cursor_pos_;
+    if (pos > (int)input_buf_.size()) pos = (int)input_buf_.size();
+
+    auto match_for = [](char c) -> char {
+        switch (c) {
+            case '(': return ')';
+            case '[': return ']';
+            case '{': return '}';
+            case ')': return '(';
+            case ']': return '[';
+            case '}': return '{';
+            default: return '\0';
+        }
+    };
+
+    int idx = pos;
+    if (idx == (int)input_buf_.size() && idx > 0) idx--;
+    if (idx < 0 || idx >= (int)input_buf_.size()) return -1;
+
+    char c = input_buf_[idx];
+    char target = match_for(c);
+    if (!target && idx > 0) {
+        idx--;
+        c = input_buf_[idx];
+        target = match_for(c);
+    }
+    if (!target) return -1;
+
+    int dir = (c == '(' || c == '[' || c == '{') ? 1 : -1;
+    int depth = 0;
+    for (int i = idx; i >= 0 && i < (int)input_buf_.size(); i += dir) {
+        char cur = input_buf_[i];
+        if (cur == c) depth++;
+        else if (cur == target) {
+            depth--;
+            if (depth == 0) return i;
+        }
+    }
+    return -1;
+}
+
 int Terminal::get_color_pair(int fg, int bg) {
     fg = normalize_color(fg);
     bg = normalize_color(bg);
@@ -490,6 +589,23 @@ void Terminal::print_system(const std::string& msg) {
     print_line("% " + msg);
 }
 
+void Terminal::replace_last_output_line(const std::string& line) {
+    if (!output_lines_.empty()) output_lines_.pop_back();
+    auto wrapped = wrap_line(line, cols_);
+    for (auto& wl : wrapped) {
+        output_lines_.push_back(std::move(wl));
+        if (output_lines_.size() > MAX_SCROLLBACK)
+            output_lines_.pop_front();
+    }
+    redraw_output();
+}
+
+void Terminal::clear_output() {
+    output_lines_.clear();
+    scroll_offset_ = 0;
+    redraw_output();
+}
+
 void Terminal::set_prompt(const std::string& prompt) {
     prompt_text_ = prompt;
     redraw_input();
@@ -511,6 +627,45 @@ void Terminal::set_input_text(const std::string& text) {
 void Terminal::set_status(const std::string& text) {
     status_text_ = text;
     redraw_status();
+}
+
+std::string Terminal::status_field_name(const std::string& field) {
+    size_t end = field.find(':');
+    return field.substr(0, end);
+}
+
+void Terminal::status_add_field(const std::string& field) {
+    if (field.empty()) return;
+    status_fields_.push_back(field);
+}
+
+bool Terminal::status_edit_field(const std::string& field) {
+    std::string name = status_field_name(field);
+    if (name.empty()) return false;
+    for (auto& existing : status_fields_) {
+        if (status_field_name(existing) == name) {
+            existing = field;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Terminal::status_remove_field(const std::string& name) {
+    auto it = std::find_if(status_fields_.begin(), status_fields_.end(),
+        [&](const std::string& field) { return status_field_name(field) == name; });
+    if (it == status_fields_.end()) return false;
+    status_fields_.erase(it);
+    return true;
+}
+
+std::string Terminal::status_fields() const {
+    std::string out;
+    for (size_t i = 0; i < status_fields_.size(); i++) {
+        if (i) out += ' ';
+        out += status_fields_[i];
+    }
+    return out;
 }
 
 void Terminal::refresh() {
@@ -709,5 +864,11 @@ void Terminal::redraw_input() {
 void Terminal::redraw_status() {
     if (!win_status_) return;
     werase(win_status_);
-    mvwaddnstr(win_status_, 0, 0, status_text_.c_str(), cols_ - 1);
+    std::string text = status_text_;
+    std::string fields = status_fields();
+    if (!fields.empty()) {
+        if (!text.empty()) text += "  ";
+        text += fields;
+    }
+    mvwaddnstr(win_status_, 0, 0, text.c_str(), cols_ - 1);
 }

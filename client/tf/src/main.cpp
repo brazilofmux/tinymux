@@ -38,6 +38,40 @@ bool app_send_line(App& app, Connection* conn, const std::string& line,
     return conn->send_line(line);
 }
 
+void app_receive_line(App& app, Connection* conn, const std::string& world_name,
+                      const std::string& line) {
+    if (!conn) return;
+
+    conn->add_to_scrollback(line);
+
+    std::string display_line = line;
+    TriggerResult tr = check_triggers(app, display_line);
+
+    bool show = !tr.gagged;
+    if (show) {
+        auto lim = app.vars.find("_limit_pattern");
+        if (lim != app.vars.end() && !lim->second.empty()) {
+            if (fnmatch(lim->second.c_str(), display_line.c_str(), 0) != 0)
+                show = false;
+        }
+    }
+
+    if (show) {
+        if (conn == app.fg) {
+            app.terminal.clear_prompt();
+            app.terminal.print_line(display_line);
+        } else {
+            app.terminal.print_line("[" + world_name + "] " + display_line);
+        }
+    }
+
+    auto log_it = app.vars.find("_log_file");
+    if (log_it != app.vars.end() && !log_it->second.empty()) {
+        FILE* lf = fopen(log_it->second.c_str(), "a");
+        if (lf) { fprintf(lf, "%s\n", line.c_str()); fclose(lf); }
+    }
+}
+
 static void update_status(App& app) {
     std::string status;
     if (app.fg) {
@@ -270,37 +304,7 @@ static void run(App& app) {
 
                 bool was_connected = conn->is_connected();
                 for (auto& line : lines) {
-                    conn->add_to_scrollback(line);
-
-                    // Check triggers FIRST — may gag or hilite the line.
-                    // `line` is mutable: hilite triggers modify it in place.
-                    std::string display_line = line;
-                    TriggerResult tr = check_triggers(app, display_line);
-
-                    // Display (unless gagged or filtered by /limit)
-                    bool show = !tr.gagged;
-                    if (show) {
-                        auto lim = app.vars.find("_limit_pattern");
-                        if (lim != app.vars.end() && !lim->second.empty()) {
-                            if (fnmatch(lim->second.c_str(), display_line.c_str(), 0) != 0)
-                                show = false;
-                        }
-                    }
-                    if (show) {
-                        if (conn.get() == app.fg) {
-                            app.terminal.clear_prompt();
-                            app.terminal.print_line(display_line);
-                        } else {
-                            app.terminal.print_line("[" + name + "] " + display_line);
-                        }
-                    }
-
-                    // Log to file (always, even if gagged — TF behavior)
-                    auto log_it = app.vars.find("_log_file");
-                    if (log_it != app.vars.end() && !log_it->second.empty()) {
-                        FILE* lf = fopen(log_it->second.c_str(), "a");
-                        if (lf) { fprintf(lf, "%s\n", line.c_str()); fclose(lf); }
-                    }
+                    app_receive_line(app, conn.get(), name, line);
                 }
 
                 if (!conn->is_connected() && was_connected) {
