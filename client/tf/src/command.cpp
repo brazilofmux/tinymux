@@ -30,6 +30,17 @@ static std::string trim_copy(std::string s) {
     return s;
 }
 
+static std::string quote_world_arg(const std::string& s) {
+    std::string out = "\"";
+    out.reserve(s.size() + 2);
+    for (char ch : s) {
+        if (ch == '"' || ch == '\\') out += '\\';
+        out += ch;
+    }
+    out += '"';
+    return out;
+}
+
 CommandDispatcher::CommandDispatcher() {
     register_commands();
 }
@@ -142,6 +153,11 @@ void cmd_connect(App& app, const std::string& args) {
     auto it = app.connections.find(name);
     if (it != app.connections.end() && it->second->is_connected()) {
         app.fg = it->second.get();
+        if (std::string prompt = app.fg->current_prompt(); !prompt.empty()) {
+            app.terminal.set_prompt(prompt);
+        } else {
+            app.terminal.clear_prompt();
+        }
         app.terminal.print_system("Switched to " + name);
         return;
     }
@@ -167,7 +183,9 @@ void cmd_connect(App& app, const std::string& args) {
 
     // Auto-login if credentials present
     if (!w->character.empty()) {
-        conn->send_line("connect " + w->character + " " + w->password);
+        if (app_send_line(app, conn.get(), "connect " + w->character + " " + w->password, false)) {
+            fire_hook(app, Hook::LOGIN, w->name);
+        }
     }
 
     Connection* raw = conn.get();
@@ -202,9 +220,15 @@ void cmd_dc(App& app, const std::string& args) {
 
     // Update foreground
     if (app.fg == target || app.fg == nullptr) {
+        app.terminal.clear_prompt();
         app.fg = nullptr;
         if (!app.connections.empty()) {
             app.fg = app.connections.begin()->second.get();
+            if (std::string prompt = app.fg->current_prompt(); !prompt.empty()) {
+                app.terminal.set_prompt(prompt);
+            } else {
+                app.terminal.clear_prompt();
+            }
             app.terminal.print_system("Foreground: " + app.fg->world_name());
         }
     }
@@ -228,6 +252,11 @@ void cmd_fg(App& app, const std::string& args) {
             std::equal(wname.begin(), wname.end(), name.begin(),
                        [](char a, char b) { return tolower(a) == tolower(b); })) {
             app.fg = conn.get();
+            if (std::string prompt = app.fg->current_prompt(); !prompt.empty()) {
+                app.terminal.set_prompt(prompt);
+            } else {
+                app.terminal.clear_prompt();
+            }
             app.terminal.print_system("Foreground: " + wname);
 
             // Replay scrollback to output
@@ -622,7 +651,7 @@ void cmd_quote(App& app, const std::string& args) {
                     if (it != app.connections.end()) target = it->second.get();
                 }
                 if (target && target->is_connected()) {
-                    target->send_line(line);
+                    app_send_line(app, target, line);
                 }
             }
         }
@@ -634,7 +663,7 @@ void cmd_quote(App& app, const std::string& args) {
         // Default: send lines to MUD
         Connection* target = app.fg;
         if (target && target->is_connected()) {
-            target->send_line(s);
+            app_send_line(app, target, s);
         }
     }
 }
@@ -752,7 +781,22 @@ void cmd_trigger(App& app, const std::string& args) {
         }
         return;
     }
-    cmd_def(app, "-t'" + args + "'");
+    auto eq = args.find('=');
+    if (eq == std::string::npos) {
+        app.terminal.print_system("Usage: /trigger <pattern> = <body>");
+        return;
+    }
+
+    std::string pattern = trim_copy(args.substr(0, eq));
+    std::string body = trim_copy(args.substr(eq + 1));
+    if (pattern.empty() || body.empty()) {
+        app.terminal.print_system("Usage: /trigger <pattern> = <body>");
+        return;
+    }
+
+    static int trigger_id = 0;
+    std::string name = "_trigger_" + std::to_string(++trigger_id);
+    cmd_def(app, "-t'" + pattern + "' " + name + " = " + body);
 }
 
 void cmd_purge(App& app, const std::string& args) {
@@ -1099,11 +1143,15 @@ void cmd_saveworld(App& app, const std::string& args) {
     }
     int count = 0;
     for (auto& w : app.worlddb.worlds()) {
-        f << "/test addworld(\"" << w.name << "\", \"" << w.type
-          << "\", \"" << w.host << "\", \"" << w.port
-          << "\", \"" << w.character << "\", \"" << w.password
-          << "\", " << (w.mfile.empty() ? "foo" : w.mfile)
-          << ", \"" << w.flags << "\")\n";
+        f << "/test addworld("
+          << quote_world_arg(w.name) << ", "
+          << quote_world_arg(w.type) << ", "
+          << quote_world_arg(w.host) << ", "
+          << quote_world_arg(w.port) << ", "
+          << quote_world_arg(w.character) << ", "
+          << quote_world_arg(w.password) << ", "
+          << quote_world_arg(w.mfile) << ", "
+          << quote_world_arg(w.flags) << ")\n";
         count++;
     }
     f.close();
@@ -1158,9 +1206,7 @@ void cmd_unlimit(App& app, const std::string& /*args*/) {
 }
 
 void cmd_input(App& app, const std::string& args) {
-    // /input text — pre-fill the input line (user can edit before sending)
-    // Stub — would need Terminal API to set input buffer
-    app.terminal.print_system("% /input: " + args);
+    app.terminal.set_input_text(args);
 }
 
 void cmd_relimit(App& app, const std::string& args) {
@@ -1296,7 +1342,7 @@ void cmd_unset(App& app, const std::string& args) {
 }
 
 void cmd_watchdog(App& app, const std::string& args) {
-    // /watchdog [-t'pattern'] <command> — run command when pattern seen after idle
+    // Simplified: /watchdog <pattern> = <command>
     std::string s = trim_copy(args);
     if (s.empty()) {
         // List watchdogs
@@ -1307,16 +1353,29 @@ void cmd_watchdog(App& app, const std::string& args) {
         }
         return;
     }
-    // Create as a trigger macro
+
+    auto eq = s.find('=');
+    if (eq == std::string::npos) {
+        app.terminal.print_system("Usage: /watchdog <pattern> = <command>");
+        return;
+    }
+
+    std::string pattern = trim_copy(s.substr(0, eq));
+    std::string body = trim_copy(s.substr(eq + 1));
+    if (pattern.empty() || body.empty()) {
+        app.terminal.print_system("Usage: /watchdog <pattern> = <command>");
+        return;
+    }
+
     static int wd_id = 0;
     Macro m;
     m.name = "_watchdog_" + std::to_string(++wd_id);
-    m.trigger = s;
+    m.trigger = pattern;
     m.match_type = "glob";
-    m.body = "";
+    m.body = body;
     m.quiet = true;
     app.macros.define(std::move(m));
-    app.terminal.print_system("% Watchdog set: " + s);
+    app.terminal.print_system("% Watchdog set: " + pattern);
 }
 
 void cmd_watchname(App& app, const std::string& args) {

@@ -31,4 +31,7 @@ struct App {
     }
 };
 
+bool app_send_line(App& app, Connection* conn, const std::string& line,
+                   bool allow_local_echo = true);
+
 #endif // APP_H

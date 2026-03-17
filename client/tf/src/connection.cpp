@@ -66,6 +66,16 @@ static bool wait_for_fd(int fd, short events, int timeout_ms) {
     }
 }
 
+static bool ssl_wait_writable(SSL* ssl, int ret, int fd, int timeout_ms) {
+    for (;;) {
+        int err = SSL_get_error(ssl, ret);
+        if (err == SSL_ERROR_WANT_READ) return wait_for_fd(fd, POLLIN, timeout_ms);
+        if (err == SSL_ERROR_WANT_WRITE) return wait_for_fd(fd, POLLOUT, timeout_ms);
+        if (err == SSL_ERROR_SYSCALL && errno == EINTR) continue;
+        return false;
+    }
+}
+
 Connection::Connection(const std::string& world_name, const std::string& host,
                        const std::string& port, bool use_ssl)
     : world_name_(world_name), host_(host), port_(port), use_ssl_(use_ssl)
@@ -158,6 +168,39 @@ bool Connection::ssl_connect() {
     return false;
 }
 
+bool Connection::write_all(const void* data, size_t len) {
+    const unsigned char* p = static_cast<const unsigned char*>(data);
+    size_t remaining = len;
+
+    while (remaining > 0) {
+        if (ssl_) {
+            int n = SSL_write(ssl_, p, (int)remaining);
+            if (n > 0) {
+                p += n;
+                remaining -= (size_t)n;
+                continue;
+            }
+            if (!ssl_wait_writable(ssl_, n, fd_, 5000)) return false;
+            continue;
+        }
+
+        ssize_t n = write(fd_, p, remaining);
+        if (n > 0) {
+            p += n;
+            remaining -= (size_t)n;
+            continue;
+        }
+        if (n < 0 && errno == EINTR) continue;
+        if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+            if (!wait_for_fd(fd_, POLLOUT, 5000)) return false;
+            continue;
+        }
+        return false;
+    }
+
+    return true;
+}
+
 void Connection::disconnect() {
     if (ssl_) { SSL_shutdown(ssl_); SSL_free(ssl_); ssl_ = nullptr; }
     if (ssl_ctx_) { SSL_CTX_free(ssl_ctx_); ssl_ctx_ = nullptr; }
@@ -169,20 +212,7 @@ void Connection::disconnect() {
 bool Connection::send_line(const std::string& line) {
     if (fd_ < 0) return false;
     std::string data = line + "\r\n";
-    const char* p = data.c_str();
-    size_t remaining = data.size();
-
-    while (remaining > 0) {
-        ssize_t n;
-        if (ssl_) {
-            n = SSL_write(ssl_, p, (int)remaining);
-        } else {
-            n = write(fd_, p, remaining);
-        }
-        if (n <= 0) return false;
-        p += n;
-        remaining -= n;
-    }
+    if (!write_all(data.data(), data.size())) return false;
     last_send_time_ = std::chrono::steady_clock::now();
     return true;
 }
@@ -196,8 +226,26 @@ std::vector<std::string> Connection::read_lines() {
 
     if (ssl_) {
         n = SSL_read(ssl_, buf, sizeof(buf));
+        if (n <= 0) {
+            int err = SSL_get_error(ssl_, (int)n);
+            if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
+                return lines;
+            }
+            if (err == SSL_ERROR_ZERO_RETURN) {
+                disconnect();
+            } else {
+                disconnect();
+            }
+            return lines;
+        }
     } else {
         n = read(fd_, buf, sizeof(buf));
+        if (n <= 0) {
+            if (n == 0 || (errno != EAGAIN && errno != EWOULDBLOCK)) {
+                disconnect();
+            }
+            return lines;
+        }
     }
 
     if (n <= 0) {
@@ -367,11 +415,7 @@ size_t Connection::process_data(const unsigned char* buf, size_t len) {
 
 void Connection::send_telnet(uint8_t cmd, uint8_t opt) {
     uint8_t buf[3] = { TEL_IAC, cmd, opt };
-    if (ssl_) {
-        SSL_write(ssl_, buf, 3);
-    } else if (fd_ >= 0) {
-        write(fd_, buf, 3);
-    }
+    if (fd_ >= 0) write_all(buf, sizeof(buf));
 }
 
 void Connection::send_subneg_ttype() {
@@ -385,11 +429,7 @@ void Connection::send_subneg_ttype() {
     for (size_t i = 0; i < tlen; i++) buf.push_back(ttype[i]);
     buf.push_back(TEL_IAC);
     buf.push_back(TEL_SE);
-    if (ssl_) {
-        SSL_write(ssl_, buf.data(), (int)buf.size());
-    } else if (fd_ >= 0) {
-        write(fd_, buf.data(), buf.size());
-    }
+    if (fd_ >= 0) write_all(buf.data(), buf.size());
 }
 
 void Connection::send_subneg_naws(uint16_t width, uint16_t height) {
@@ -399,11 +439,7 @@ void Connection::send_subneg_naws(uint16_t width, uint16_t height) {
         (uint8_t)(height >> 8), (uint8_t)(height & 0xFF),
         TEL_IAC, TEL_SE
     };
-    if (ssl_) {
-        SSL_write(ssl_, buf, 9);
-    } else if (fd_ >= 0) {
-        write(fd_, buf, 9);
-    }
+    if (fd_ >= 0) write_all(buf, sizeof(buf));
 }
 
 void Connection::send_naws(uint16_t width, uint16_t height) {
@@ -427,6 +463,13 @@ std::string Connection::check_prompt(std::chrono::milliseconds timeout) {
     if (prompt == last_prompt_) return {};
 
     last_prompt_ = prompt;
+    return prompt;
+}
+
+std::string Connection::current_prompt() const {
+    if (line_buf_.empty() || fd_ < 0) return {};
+    std::string prompt = line_buf_;
+    if (!prompt.empty() && prompt.back() == '\r') prompt.pop_back();
     return prompt;
 }
 

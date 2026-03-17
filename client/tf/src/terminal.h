@@ -29,6 +29,9 @@ public:
     // Output to the main output pane
     void print_line(const std::string& line);
     void print_system(const std::string& msg);
+    void set_prompt(const std::string& prompt);
+    void clear_prompt();
+    void set_input_text(const std::string& text);
 
     // Status bar
     void set_status(const std::string& text);
@@ -61,6 +64,7 @@ private:
     void redraw_input();
     void redraw_status();
     void render_ansi_line(WINDOW* win, const std::string& line, int row);
+    static int display_width_ansi(const std::string& line);
     int get_color_pair(int fg, int bg);
     int normalize_color(int color) const;
     static int rgb_to_xterm(int r, int g, int b);
@@ -103,6 +107,7 @@ private:
     std::string saved_input_;
 
     std::string status_text_;
+    std::string prompt_text_;
     std::unordered_map<uint32_t, int> color_pairs_;
     int next_pair_ = 1;
     bool initialized_ = false;

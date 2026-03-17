@@ -22,6 +22,22 @@ static void sigterm_handler(int) {
     got_sigterm = 1;
 }
 
+bool app_send_line(App& app, Connection* conn, const std::string& line,
+                   bool allow_local_echo) {
+    if (!conn || !conn->is_connected()) return false;
+
+    if (allow_local_echo) {
+        auto it = app.vars.find("localecho");
+        bool local_echo = (it != app.vars.end() && it->second == "on");
+        if (local_echo) {
+            if (conn == app.fg) app.terminal.print_line(line);
+            else app.terminal.print_line("[" + conn->world_name() + "] " + line);
+        }
+    }
+
+    return conn->send_line(line);
+}
+
 static void update_status(App& app) {
     std::string status;
     if (app.fg) {
@@ -110,7 +126,10 @@ static void handle_input_line(App& app, const std::string& line) {
         ScriptEnv env(app.vars, &app);
         std::string expanded = expand_subs(line, env);
         if (app.fg && app.fg->is_connected()) {
-            app.fg->send_line(expanded);
+            app.terminal.clear_prompt();
+            if (!app_send_line(app, app.fg, expanded)) {
+                app.terminal.print_system("Send failed on " + app.fg->world_name());
+            }
         } else {
             app.terminal.print_system("No active connection. Use /connect <world>");
         }
@@ -141,6 +160,7 @@ static void run(App& app) {
             for (auto& [name, conn] : app.connections) {
                 conn->send_naws((uint16_t)cols, (uint16_t)rows);
             }
+            fire_hook(app, Hook::RESIZE, std::to_string(cols) + "x" + std::to_string(rows));
         }
 
         // Build fd_set: STDIN + all connected sockets
@@ -268,6 +288,7 @@ static void run(App& app) {
                     }
                     if (show) {
                         if (conn.get() == app.fg) {
+                            app.terminal.clear_prompt();
                             app.terminal.print_line(display_line);
                         } else {
                             app.terminal.print_line("[" + name + "] " + display_line);
@@ -286,6 +307,7 @@ static void run(App& app) {
                     app.terminal.print_system("Connection to " + name + " closed");
                     fire_hook(app, Hook::DISCONNECT, name);
                     if (app.fg == conn.get()) {
+                        app.terminal.clear_prompt();
                         app.fg = nullptr;
                     }
                     app.connections.erase(name);
@@ -299,8 +321,7 @@ static void run(App& app) {
             std::string prompt = conn->check_prompt(std::chrono::milliseconds(250));
             if (!prompt.empty()) {
                 if (conn.get() == app.fg) {
-                    // Display prompt inline (no newline — it's a partial line)
-                    app.terminal.print_line(prompt);
+                    app.terminal.set_prompt(prompt);
                 }
                 fire_hook(app, Hook::PROMPT, prompt);
             }
@@ -313,6 +334,7 @@ static void run(App& app) {
         }
         for (auto& name : dead) {
             if (app.fg && app.fg->world_name() == name) {
+                app.terminal.clear_prompt();
                 app.fg = nullptr;
             }
             app.connections.erase(name);

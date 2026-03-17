@@ -445,6 +445,30 @@ static std::vector<std::string> wrap_line(const std::string& line, int cols) {
     return result;
 }
 
+int Terminal::display_width_ansi(const std::string& line) {
+    int col = 0;
+    size_t i = 0;
+    while (i < line.size()) {
+        if (line[i] == '\033' && i + 1 < line.size() && line[i + 1] == '[') {
+            i += 2;
+            while (i < line.size() && line[i] != 'm' && !(line[i] >= 0x40 && line[i] <= 0x7E))
+                i++;
+            if (i < line.size()) i++;
+            continue;
+        }
+
+        unsigned char c = static_cast<unsigned char>(line[i]);
+        size_t clen = utf8_char_len(c);
+        if (i + clen > line.size()) break;
+
+        int w = co_console_width(reinterpret_cast<const unsigned char*>(&line[i]));
+        if (w < 0) w = 1;
+        col += w;
+        i += clen;
+    }
+    return col;
+}
+
 void Terminal::print_line(const std::string& line) {
     // Wrap long lines into multiple visual lines
     auto wrapped = wrap_line(line, cols_);
@@ -464,6 +488,24 @@ void Terminal::print_line(const std::string& line) {
 
 void Terminal::print_system(const std::string& msg) {
     print_line("% " + msg);
+}
+
+void Terminal::set_prompt(const std::string& prompt) {
+    prompt_text_ = prompt;
+    redraw_input();
+}
+
+void Terminal::clear_prompt() {
+    if (prompt_text_.empty()) return;
+    prompt_text_.clear();
+    redraw_input();
+}
+
+void Terminal::set_input_text(const std::string& text) {
+    input_buf_ = text;
+    cursor_pos_ = input_buf_.size();
+    history_pos_ = -1;
+    redraw_input();
 }
 
 void Terminal::set_status(const std::string& text) {
@@ -656,30 +698,10 @@ void Terminal::redraw_output() {
 void Terminal::redraw_input() {
     if (!win_input_) return;
     werase(win_input_);
-
-    // Render input buffer character by character with correct column tracking.
-    wmove(win_input_, 0, 0);
-    size_t i = 0;
-    int col = 0;
-    while (i < input_buf_.size() && col < cols_) {
-        unsigned char c = static_cast<unsigned char>(input_buf_[i]);
-        size_t clen = utf8_char_len(c);
-        if (i + clen > input_buf_.size()) break;
-
-        int w = 1;
-        if (clen > 1) {
-            w = co_console_width(reinterpret_cast<const unsigned char*>(&input_buf_[i]));
-            if (w <= 0) { i += clen; continue; } // skip zero-width (combining marks rendered by ncurses)
-        }
-        if (col + w > cols_) break;
-
-        waddnstr(win_input_, &input_buf_[i], (int)clen);
-        col += w;
-        i += clen;
-    }
+    render_ansi_line(win_input_, prompt_text_ + input_buf_, 0);
 
     // Position cursor at correct display column
-    int cur_col = cursor_display_col();
+    int cur_col = display_width_ansi(prompt_text_) + cursor_display_col();
     if (cur_col >= cols_) cur_col = cols_ - 1;
     wmove(win_input_, 0, cur_col);
 }

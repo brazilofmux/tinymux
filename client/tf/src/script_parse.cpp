@@ -605,7 +605,8 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
                 target = app->fg;
             }
             if (target && target->is_connected()) {
-                target->send_line(a[0].as_str());
+                app->terminal.clear_prompt();
+                app_send_line(*app, target, a[0].as_str());
                 return Value::make_int(1);
             }
             return Value::make_int(0);
@@ -987,7 +988,7 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
         {"prompt", {1, 1, [](ScriptEnv& env, const std::vector<Value>& a) -> Value {
             // prompt(text) — set the prompt display
             if (App* app = env.app()) {
-                app->terminal.print_line(a[0].as_str());
+                app->terminal.set_prompt(a[0].as_str());
             }
             return Value::make_int(1);
         }}},

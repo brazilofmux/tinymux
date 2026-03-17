@@ -34,6 +34,7 @@ public:
     const std::string& host() const { return host_; }
     const std::string& port() const { return port_; }
     bool uses_ssl() const { return use_ssl_; }
+    bool remote_echo() const { return remote_echo_; }
 
     // Notify the MUD of terminal size change
     void send_naws(uint16_t width, uint16_t height);
@@ -42,6 +43,7 @@ public:
     // the timeout.  If so, return it as a prompt and clear the buffer.
     // Returns empty string if no prompt is pending.
     std::string check_prompt(std::chrono::milliseconds timeout);
+    std::string current_prompt() const;
 
     // True if there's unflushed partial data in line_buf_
     bool has_partial_line() const { return !line_buf_.empty(); }
@@ -59,6 +61,7 @@ private:
     size_t process_data(const unsigned char* buf, size_t len);
 
     bool ssl_connect();
+    bool write_all(const void* data, size_t len);
 
     std::string world_name_;
     std::string host_;

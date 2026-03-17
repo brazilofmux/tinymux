@@ -229,6 +229,35 @@ static std::string first_word(const std::string& s) {
     return s.substr(start, i - start);
 }
 
+static void shift_env_positional(ScriptEnv& env, int count = 1) {
+    if (count <= 0) return;
+    while (count-- > 0) {
+        int n = 0;
+        while (env.vars().count(std::to_string(n + 1))) n++;
+        if (n <= 0) return;
+
+        for (int i = 1; i < n; i++) {
+            env.vars()[std::to_string(i)] = env.vars()[std::to_string(i + 1)];
+        }
+        env.vars().erase(std::to_string(n));
+
+        auto it_count = env.vars().find("#");
+        if (it_count != env.vars().end()) {
+            int argc = std::atoi(it_count->second.c_str());
+            if (argc > 0) it_count->second = std::to_string(argc - 1);
+        }
+
+        std::string all;
+        for (int i = 1;; i++) {
+            auto it = env.vars().find(std::to_string(i));
+            if (it == env.vars().end()) break;
+            if (!all.empty()) all += ' ';
+            all += it->second;
+        }
+        env.vars()["*"] = all;
+    }
+}
+
 // Execute a single statement.
 static void exec_one(App& app, const std::string& stmt, ScriptEnv& env);
 
@@ -402,6 +431,15 @@ static void exec_one(App& app, const std::string& stmt, ScriptEnv& env) {
         std::string cmd = (sp != std::string::npos) ? stmt.substr(1, sp - 1) : stmt.substr(1);
         std::string args = (sp != std::string::npos) ? stmt.substr(sp + 1) : "";
 
+        if (cmd == "shift") {
+            int count = 1;
+            if (!args.empty()) {
+                count = std::max(1, std::atoi(args.c_str()));
+            }
+            shift_env_positional(env, count);
+            return;
+        }
+
         Macro* m = app.macros.find(cmd);
         if (m) {
             // Copy what we need before exec_body — it may invalidate m
@@ -423,7 +461,8 @@ static void exec_one(App& app, const std::string& stmt, ScriptEnv& env) {
     } else {
         // Text — send to foreground
         if (app.fg && app.fg->is_connected()) {
-            app.fg->send_line(stmt);
+            app.terminal.clear_prompt();
+            app_send_line(app, app.fg, stmt);
         }
     }
 }
