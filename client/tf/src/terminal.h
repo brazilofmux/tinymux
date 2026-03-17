@@ -65,6 +65,9 @@ public:
     void scroll_page_up();
     void scroll_page_down();
     void scroll_to_bottom();
+    bool more_paused() const;
+    int more_size() const;
+    int more_scroll(int lines);
 
     // Input history
     void set_history_context(const std::string& key);

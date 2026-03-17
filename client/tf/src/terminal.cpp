@@ -737,6 +737,23 @@ void Terminal::scroll_to_bottom() {
     redraw_output();
 }
 
+bool Terminal::more_paused() const {
+    return current_output().scroll_offset > 0;
+}
+
+int Terminal::more_size() const {
+    return current_output().scroll_offset;
+}
+
+int Terminal::more_scroll(int lines) {
+    if (lines > 0) {
+        scroll_up(lines);
+    } else if (lines < 0) {
+        scroll_down(-lines);
+    }
+    return more_size();
+}
+
 void Terminal::history_up() {
     auto& input_history_ = input_histories_[history_key_];
     if (input_history_.empty()) return;

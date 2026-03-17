@@ -6,12 +6,6 @@ imported issue list was stale and no longer matched the implementation.
 
 ## Stubbed Or Partially Implemented Interfaces
 
-- **Pager and more-related APIs are placeholders**  
-  `morepaused`, `morescroll`, and `moresize` are stubs, while the old client has
-  a substantial pager/more implementation.  
-  Refs: `client/tf/src/script_parse.cpp:953`  
-  Comparison: `/home/sdennis/tinyfugue/src/output.c`
-
 - **Status bar support is still only a lightweight subset of original TF**  
   `status_fields()` and the `/status_*` commands now work, but this is still a
   much simpler token list than classic TF's multi-row status layout and option

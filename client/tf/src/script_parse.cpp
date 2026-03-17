@@ -965,16 +965,16 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
 
         // ---- More/pager functions ----
 
-        {"morepaused", {0, 1, [](ScriptEnv&, const std::vector<Value>&) -> Value {
-            // Whether the pager is paused — we don't have a pager
+        {"morepaused", {0, 1, [](ScriptEnv& env, const std::vector<Value>&) -> Value {
+            if (App* app = env.app()) return Value::make_int(app->terminal.more_paused() ? 1 : 0);
             return Value::make_int(0);
         }}},
-        {"morescroll", {1, 1, [](ScriptEnv&, const std::vector<Value>& a) -> Value {
-            // Scroll the pager — stub
+        {"morescroll", {1, 1, [](ScriptEnv& env, const std::vector<Value>& a) -> Value {
+            if (App* app = env.app()) return Value::make_int(app->terminal.more_scroll((int)a[0].as_int()));
             return Value::make_int(0);
         }}},
         {"moresize", {0, 2, [](ScriptEnv& env, const std::vector<Value>&) -> Value {
-            // Number of lines in the more buffer
+            if (App* app = env.app()) return Value::make_int(app->terminal.more_size());
             return Value::make_int(0);
         }}},
 
