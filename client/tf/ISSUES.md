@@ -14,11 +14,12 @@ code review of commits `6ceb3ecf..HEAD` (2026-03-17).
   `@active` and `@log` are functional. `@read` needs background
   unread line tracking. `@mail` needs a mail indicator source.
 
-- **Format variables evaluated as literal text, not expressions**
-  `status_int_*` and `status_var_*` variables are looked up and used
-  as literal replacement text. Classic TF compiles and evaluates them
-  as TF expressions (e.g., `status_int_more` could be set to
-  `"--More(%{more_count})--"` and would evaluate dynamically).
+- **Format variable evaluation does not cache compiled expressions**
+  `status_int_*` and `status_var_*` variables are now evaluated via
+  `expand_subs()` (supporting `%{var}` and `$[expr]` substitutions),
+  but the expression is re-parsed on every status bar redraw. Classic
+  TF caches the compiled program. This is unlikely to matter in
+  practice since redraws are infrequent.
 
 - **Status bar attributes limited to bold/underline/reverse**
   Classic TF allows arbitrary color/attribute combinations. Consider

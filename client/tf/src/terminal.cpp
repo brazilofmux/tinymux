@@ -1,5 +1,7 @@
 #define _XOPEN_SOURCE_EXTENDED
 #include "terminal.h"
+#include "app.h"
+#include "script.h"
 #include <cstring>
 #include <algorithm>
 #include <locale.h>
@@ -11,6 +13,11 @@ extern "C" {
 }
 
 Terminal::Terminal() {}
+
+void Terminal::set_app(struct App* app) {
+    app_ = app;
+    if (app) vars_ = &app->vars;
+}
 
 Terminal::~Terminal() {
     shutdown();
@@ -762,12 +769,12 @@ std::string Terminal::expand_status_field(const std::string& field) const {
         fmt_var = lookup_var("status_var_" + name);
     }
 
-    // If a format variable is set, use it as the display text.
-    // (Full expression evaluation would go here; for now, treat as
-    // literal replacement text.)
+    // If a format variable is set, evaluate it as a TF expression
+    // (expanding %{var} and $[expr] substitutions) and use the result.
     //
-    if (!fmt_var.empty()) {
-        text = fmt_var;
+    if (!fmt_var.empty() && app_) {
+        ScriptEnv env(app_->vars, app_);
+        text = expand_subs(fmt_var, env);
     }
 
     // Apply width: positive = left-justify, negative = right-justify.

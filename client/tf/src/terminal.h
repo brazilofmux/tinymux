@@ -162,10 +162,13 @@ private:
     int next_pair_ = 1;
     bool initialized_ = false;
 
-    // Pointer to app.vars for status bar variable-driven fields.
+    // Pointer to app for status bar variable-driven fields and
+    // format variable evaluation.
     const std::unordered_map<std::string, std::string>* vars_ = nullptr;
+    struct App* app_ = nullptr;
 
 public:
+    void set_app(struct App* app);
     void set_vars(const std::unordered_map<std::string, std::string>* vars) { vars_ = vars; }
 
     // Count of connections with unread background activity.
