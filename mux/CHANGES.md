@@ -69,6 +69,14 @@ author:
 
 # Bug Fixes:
 
+ - Fix @restart hang and connection drop in the GANL adapter — the
+   descriptor handoff across exec now correctly preserves all active
+   connections.
+ - Fix GANL pure virtual call on connection teardown during shutdown —
+   the socket object could be destroyed while an async callback was
+   still pending.
+ - Fix GANL QUIT double-free — route disconnect through
+   ganl_close_connection instead of destroying the socket directly.
  - @npemit now refers to @pemit/noeval.
  - pose now documents /noeval switch.
  - Don't notify permission denied with @edit when QUIET.
