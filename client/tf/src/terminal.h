@@ -65,6 +65,9 @@ public:
     // Refresh all windows (single doupdate per loop iteration)
     void refresh();
 
+    // Repaint and refresh the status bar (e.g., after variable change).
+    void update_status();
+
     // Handle SIGWINCH
     void handle_resize();
 
@@ -105,7 +108,8 @@ private:
     static int status_field_width(const std::string& field, bool* explicit_width = nullptr);
     static std::string status_field_attrs(const std::string& field);
     std::string expand_status_field(const std::string& field) const;
-    static std::string style_status_field(const std::string& field, const std::string& text);
+    std::string style_status_field(const std::string& field, const std::string& text);
+    std::string lookup_var(const std::string& name) const;
     struct OutputScreen {
         std::deque<std::string> lines;
         int scroll_offset = 0;
@@ -157,6 +161,18 @@ private:
     std::unordered_map<uint32_t, int> color_pairs_;
     int next_pair_ = 1;
     bool initialized_ = false;
+
+    // Pointer to app.vars for status bar variable-driven fields.
+    const std::unordered_map<std::string, std::string>* vars_ = nullptr;
+
+public:
+    void set_vars(const std::unordered_map<std::string, std::string>* vars) { vars_ = vars; }
+
+    // Count of connections with unread background activity.
+    int status_active_count = 0;
+
+    // True if any connection is logging.
+    bool status_logging = false;
 
     static constexpr int MAX_STATUS_ROWS = 6;
 };

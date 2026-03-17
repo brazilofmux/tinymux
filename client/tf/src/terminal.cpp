@@ -696,6 +696,14 @@ std::string Terminal::status_field_attrs(const std::string& field) {
     return field.substr(second + 1);
 }
 
+// Look up a variable by name, returning empty string if not found.
+//
+std::string Terminal::lookup_var(const std::string& name) const {
+    if (!vars_) return {};
+    auto it = vars_->find(name);
+    return (it != vars_->end()) ? it->second : std::string{};
+}
+
 std::string Terminal::expand_status_field(const std::string& field) const {
     size_t first = field.find(':');
     std::string name = (first == std::string::npos) ? field : field.substr(0, first);
@@ -704,38 +712,88 @@ std::string Terminal::expand_status_field(const std::string& field) const {
 
     std::string text;
     if (name.empty()) {
-        int spaces = width > 0 ? width : 1;
-        text.assign((size_t)spaces, ' ');
+        int abs_w = width > 0 ? width : (width < 0 ? -width : 1);
+        text.assign((size_t)abs_w, ' ');
         return text;
     }
-    if (name == "@world") {
-        text = output_key_.empty() ? "no connection" : output_key_;
-    } else if (name == "@more") {
-        if (more_paused()) text = "--More--";
-    } else if (name == "@clock") {
-        std::time_t now = std::time(nullptr);
-        struct tm tm{};
-        localtime_r(&now, &tm);
-        char buf[16];
-        std::snprintf(buf, sizeof(buf), "%02d:%02d", tm.tm_hour, tm.tm_min);
-        text = buf;
+
+    // Internal fields (prefixed with @).
+    //
+    bool is_internal = (!name.empty() && name[0] == '@');
+    std::string fmt_var;
+
+    if (is_internal) {
+        std::string iname = name.substr(1);
+
+        if (iname == "world") {
+            text = output_key_.empty() ? "no connection" : output_key_;
+        } else if (iname == "more") {
+            if (more_paused()) text = "--More--";
+        } else if (iname == "clock") {
+            std::time_t now = std::time(nullptr);
+            struct tm* tp = std::localtime(&now);
+            if (tp) {
+                char buf[16];
+                std::snprintf(buf, sizeof(buf), "%02d:%02d", tp->tm_hour, tp->tm_min);
+                text = buf;
+            }
+        } else if (iname == "active") {
+            if (status_active_count > 0) {
+                text = std::to_string(status_active_count) + " Active";
+            }
+        } else if (iname == "log") {
+            if (status_logging) text = "Log";
+        } else if (iname == "read") {
+            // Stub — needs background unread line tracking.
+        } else if (iname == "mail") {
+            // Stub — classic TF checks strstr.
+        }
+
+        // Check for format variable: status_int_<iname>
+        //
+        fmt_var = lookup_var("status_int_" + iname);
     } else {
-        text = name;
+        // Variable field — display the variable's live value.
+        //
+        text = lookup_var(name);
+
+        // Check for format variable: status_var_<name>
+        //
+        fmt_var = lookup_var("status_var_" + name);
     }
 
-    if (explicit_width && width > 0) {
-        if ((int)text.size() > width) {
-            text.resize((size_t)width);
-        } else if ((int)text.size() < width) {
-            text.append((size_t)(width - text.size()), ' ');
+    // If a format variable is set, use it as the display text.
+    // (Full expression evaluation would go here; for now, treat as
+    // literal replacement text.)
+    //
+    if (!fmt_var.empty()) {
+        text = fmt_var;
+    }
+
+    // Apply width: positive = left-justify, negative = right-justify.
+    //
+    if (explicit_width && width != 0) {
+        int abs_w = width > 0 ? width : -width;
+        if ((int)text.size() > abs_w) {
+            text.resize((size_t)abs_w);
+        } else if ((int)text.size() < abs_w) {
+            size_t pad = (size_t)(abs_w - (int)text.size());
+            if (width < 0) {
+                // Right-justify: pad on the left.
+                text.insert(0, pad, ' ');
+            } else {
+                // Left-justify: pad on the right.
+                text.append(pad, ' ');
+            }
         }
     }
     return text;
 }
 
-std::string Terminal::style_status_field(const std::string& field, const std::string& text) {
-    std::string attrs = status_field_attrs(field);
-    if (attrs.empty() || text.empty()) return text;
+// Parse an attribute string into ANSI SGR codes.
+//
+static std::string attrs_to_sgr(const std::string& attrs) {
+    if (attrs.empty()) return {};
 
     bool bold = false;
     bool underline = false;
@@ -768,9 +826,43 @@ std::string Terminal::style_status_field(const std::string& field, const std::st
     if (bold) append_code("1");
     if (underline) append_code("4");
     if (reverse) append_code("7");
-    if (first) return text;
+    if (first) return {};
     prefix += 'm';
-    return prefix + text + "\033[0m";
+    return prefix;
+}
+
+std::string Terminal::style_status_field(const std::string& field, const std::string& text) {
+    if (text.empty()) return text;
+
+    // Merge field-spec attrs with dynamic attribute variable.
+    //
+    std::string attrs = status_field_attrs(field);
+
+    // Look up the dynamic attribute variable.
+    //
+    std::string name = status_field_name(field);
+    std::string dyn_attrs;
+    if (vars_ && !name.empty()) {
+        if (!name.empty() && name[0] == '@') {
+            auto it = vars_->find("status_attr_int_" + name.substr(1));
+            if (it != vars_->end()) dyn_attrs = it->second;
+        } else {
+            auto it = vars_->find("status_attr_var_" + name);
+            if (it != vars_->end()) dyn_attrs = it->second;
+        }
+    }
+
+    // Combine: field-spec attrs first, then dynamic attrs.
+    //
+    std::string combined = attrs;
+    if (!dyn_attrs.empty()) {
+        if (!combined.empty()) combined += ',';
+        combined += dyn_attrs;
+    }
+
+    std::string sgr = attrs_to_sgr(combined);
+    if (sgr.empty()) return text;
+    return sgr + text + "\033[0m";
 }
 
 void Terminal::status_add_field(const std::string& field) {
@@ -918,6 +1010,11 @@ void Terminal::refresh() {
     for (auto* w : win_status_) wnoutrefresh(w);
     wnoutrefresh(win_input_);
     doupdate();
+}
+
+void Terminal::update_status() {
+    redraw_status();
+    refresh();
 }
 
 void Terminal::scroll_up(int lines) {

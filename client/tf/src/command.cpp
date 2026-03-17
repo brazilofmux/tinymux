@@ -323,6 +323,11 @@ void cmd_set(App& app, const std::string& args) {
     std::string val  = args.substr(eq + 1);
     app.vars[name] = val;
     app.terminal.print_system(name + "=" + val);
+
+    // Reactive status bar update — redraw if this variable could
+    // affect any status field (direct display, format, or attribute).
+    //
+    app.terminal.update_status();
 }
 
 void cmd_load(App& app, const std::string& args) {

@@ -551,6 +551,8 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    app.terminal.set_vars(&app.vars);
+
     if (!app.terminal.init()) {
         fprintf(stderr, "Failed to initialize terminal\n");
         return 1;
