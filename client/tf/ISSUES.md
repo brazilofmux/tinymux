@@ -7,9 +7,9 @@ imported issue list was stale and no longer matched the implementation.
 ## Stubbed Or Partially Implemented Interfaces
 
 - **Status bar support is still only a lightweight subset of original TF**  
-  `status_fields()` and the `/status_*` commands now work, but this is still a
-  much simpler token list than classic TF's multi-row status layout and option
-  parsing.  
+  `status_fields()` and the `/status_*` commands now support dynamic fields such
+  as `@world`, `@more`, `@clock`, widths, and spacer fields, but this still
+  lacks classic TF's richer option parsing, attributes, and multi-row layout.  
   Comparison: `/home/sdennis/tinyfugue/src/output.c`
 
 ## Unicode and Internationalization

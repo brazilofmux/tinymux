@@ -1316,12 +1316,17 @@ void cmd_restrict(App& app, const std::string& args) {
 }
 
 void cmd_status_add(App& app, const std::string& args) {
-    std::string field = trim_copy(args);
-    if (field.empty()) {
-        app.terminal.print_system("Usage: /status_add <field>");
+    std::string s = trim_copy(args);
+    if (s.empty()) {
+        app.terminal.print_system("Usage: /status_add <field> [field...]");
         return;
     }
-    app.terminal.status_add_field(field);
+
+    std::istringstream iss(s);
+    std::string field;
+    while (iss >> field) {
+        app.terminal.status_add_field(field);
+    }
     app.terminal.set_status(app.fg ? " [" + app.fg->world_name() + "]" : " [no connection]");
 }
 
@@ -1339,15 +1344,20 @@ void cmd_status_edit(App& app, const std::string& args) {
 }
 
 void cmd_status_rm(App& app, const std::string& args) {
-    std::string name = trim_copy(args);
-    if (name.empty()) {
-        app.terminal.print_system("Usage: /status_rm <name>");
+    std::string s = trim_copy(args);
+    if (s.empty()) {
+        app.terminal.print_system("Usage: /status_rm <name> [name...]");
         return;
     }
-    if (app.terminal.status_remove_field(name)) {
+
+    bool removed_any = false;
+    std::istringstream iss(s);
+    std::string name;
+    while (iss >> name) {
+        if (app.terminal.status_remove_field(name)) removed_any = true;
+    }
+    if (removed_any) {
         app.terminal.set_status(app.fg ? " [" + app.fg->world_name() + "]" : " [no connection]");
-    } else {
-        app.terminal.print_system("% No such status field");
     }
 }
 

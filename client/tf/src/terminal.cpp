@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <locale.h>
 #include <cmath>
+#include <cstdio>
 
 extern "C" {
 #include <color_ops.h>
@@ -668,9 +669,55 @@ std::string Terminal::status_field_name(const std::string& field) {
     return field.substr(0, end);
 }
 
+std::string Terminal::expand_status_field(const std::string& field) const {
+    size_t first = field.find(':');
+    std::string name = (first == std::string::npos) ? field : field.substr(0, first);
+    std::string width_part;
+    if (first != std::string::npos) {
+        size_t second = field.find(':', first + 1);
+        width_part = field.substr(first + 1, second == std::string::npos ? std::string::npos : second - first - 1);
+    }
+
+    int width = 0;
+    if (!width_part.empty()) {
+        width = std::atoi(width_part.c_str());
+    }
+
+    std::string text;
+    if (name.empty()) {
+        int spaces = width > 0 ? width : 1;
+        text.assign((size_t)spaces, ' ');
+        return text;
+    }
+    if (name == "@world") {
+        text = output_key_.empty() ? "no connection" : output_key_;
+    } else if (name == "@more") {
+        if (more_paused()) text = "--More--";
+    } else if (name == "@clock") {
+        std::time_t now = std::time(nullptr);
+        struct tm tm{};
+        localtime_r(&now, &tm);
+        char buf[16];
+        std::snprintf(buf, sizeof(buf), "%02d:%02d", tm.tm_hour, tm.tm_min);
+        text = buf;
+    } else {
+        text = name;
+    }
+
+    if (width > 0) {
+        if ((int)text.size() > width) {
+            text.resize((size_t)width);
+        } else if ((int)text.size() < width) {
+            text.append((size_t)(width - text.size()), ' ');
+        }
+    }
+    return text;
+}
+
 void Terminal::status_add_field(const std::string& field) {
     if (field.empty()) return;
     status_fields_.push_back(field);
+    redraw_status();
 }
 
 bool Terminal::status_edit_field(const std::string& field) {
@@ -679,6 +726,7 @@ bool Terminal::status_edit_field(const std::string& field) {
     for (auto& existing : status_fields_) {
         if (status_field_name(existing) == name) {
             existing = field;
+            redraw_status();
             return true;
         }
     }
@@ -690,6 +738,7 @@ bool Terminal::status_remove_field(const std::string& name) {
         [&](const std::string& field) { return status_field_name(field) == name; });
     if (it == status_fields_.end()) return false;
     status_fields_.erase(it);
+    redraw_status();
     return true;
 }
 
@@ -921,10 +970,11 @@ void Terminal::redraw_status() {
     if (!win_status_) return;
     werase(win_status_);
     std::string text = status_text_;
-    std::string fields = status_fields();
-    if (!fields.empty()) {
+    if (!status_fields_.empty()) {
         if (!text.empty()) text += "  ";
-        text += fields;
+        for (const auto& field : status_fields_) {
+            text += expand_status_field(field);
+        }
     }
     mvwaddnstr(win_status_, 0, 0, text.c_str(), cols_ - 1);
 }

@@ -7,6 +7,7 @@
 #include <vector>
 #include <unordered_map>
 #include <cstdint>
+#include <ctime>
 
 #include "input.h"
 
@@ -93,6 +94,7 @@ private:
     static int rgb_to_xterm(int r, int g, int b);
     size_t normalize_cursor_pos(size_t pos) const;
     static std::string status_field_name(const std::string& field);
+    std::string expand_status_field(const std::string& field) const;
     struct OutputScreen {
         std::deque<std::string> lines;
         int scroll_offset = 0;
