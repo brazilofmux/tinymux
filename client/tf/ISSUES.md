@@ -30,11 +30,6 @@ imported issue list was stale and no longer matched the implementation.
 
 ## Telnet Protocol Issues
 
-- **Hardcoded Terminal Type (TTYPE)**  
-  The terminal type is hardcoded to `xterm-256color` during negotiation,
-  ignoring the user's `$TERM` environment variable or TF settings.  
-  Refs: `client/tf/src/connection.cpp:337`
-
 - **Limited Telnet Option Support**  
   Advanced features like MCCP (compression), CHARSET negotiation, and
   proper subnegotiation of window size (NAWS is implemented, but basic)

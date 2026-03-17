@@ -4,6 +4,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <cstdlib>
 #include <cerrno>
 #include <cstring>
 #include <vector>
@@ -52,6 +53,12 @@ static constexpr uint8_t TELOPT_NAWS    = 31;
 // Subnegotiation
 static constexpr uint8_t TELQUAL_IS   = 0;
 static constexpr uint8_t TELQUAL_SEND = 1;
+
+static const char* negotiated_ttype() {
+    const char* term = std::getenv("TERM");
+    if (term != nullptr && *term != '\0') return term;
+    return "xterm-256color";
+}
 
 static bool wait_for_fd(int fd, short events, int timeout_ms) {
     struct pollfd pfd{};
@@ -425,7 +432,7 @@ void Connection::send_telnet(uint8_t cmd, uint8_t opt) {
 }
 
 void Connection::send_subneg_ttype() {
-    const char* ttype = "xterm-256color";
+    const char* ttype = negotiated_ttype();
     size_t tlen = strlen(ttype);
     std::vector<uint8_t> buf;
     buf.push_back(TEL_IAC);
