@@ -1430,25 +1430,55 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 case TELNET_GMCP:
                 {
                     // GMCP subnegotiation: payload is "package[.sub] [json]"
-                    // Queue a synthetic command for the engine to process.
-                    // Format: "\x01GMCP package json"
                     //
                     if (  2 <= m
                        && d->gmcp_enabled)
                     {
+                        const auto pPayload = &d->aOption[1];
+                        const auto nPayload2 = m - 1;
+
+                        // Core.Ping — reply immediately from the driver.
+                        //
+                        if (  nPayload2 >= 9
+                           && memcmp(pPayload, "Core.Ping", 9) == 0
+                           && (9 == nPayload2 || ' ' == pPayload[9]))
+                        {
+                            const unsigned char reply[] = "Core.Ping";
+                            UTF8 frame[20];
+                            frame[0] = NVT_IAC;
+                            frame[1] = NVT_SB;
+                            frame[2] = TELNET_GMCP;
+                            memcpy(&frame[3], reply, 9);
+                            frame[12] = NVT_IAC;
+                            frame[13] = NVT_SE;
+                            queue_write_LEN(d, frame, 14);
+                            break;
+                        }
+
+                        // Core.KeepAlive — reset the idle timer.
+                        //
+                        if (  14 == nPayload2
+                           && memcmp(pPayload, "Core.KeepAlive", 14) == 0)
+                        {
+                            d->last_time.GetUTC();
+                            break;
+                        }
+
+                        // Everything else: queue for the engine.
+                        // Format: "\x01GMCP package json"
+                        //
                         UTF8 cmd[LBUF_SIZE];
                         auto cp2 = cmd;
                         *(cp2++) = '\x01';
                         memcpy(cp2, "GMCP ", 5);
                         cp2 += 5;
 
-                        const auto nPayload2 = m - 1;
                         size_t nCopy2 = nPayload2;
                         if (nCopy2 > LBUF_SIZE - 7)
                         {
                             nCopy2 = LBUF_SIZE - 7;
                         }
-                        memcpy(cp2, &d->aOption[1], nCopy2);
+                        memcpy(cp2, pPayload, nCopy2);
                         cp2 += nCopy2;
 
                         save_command(d, cmd, static_cast<size_t>(cp2 - cmd));
