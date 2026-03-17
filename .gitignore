@@ -104,3 +104,4 @@ slow-32
 
 # Claude Code
 .claude/
+client/tf/build/
