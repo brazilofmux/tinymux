@@ -1300,14 +1300,58 @@ void cmd_restrict(App& app, const std::string& args) {
 void cmd_status_add(App& app, const std::string& args) {
     std::string s = trim_copy(args);
     if (s.empty()) {
-        app.terminal.print_system("Usage: /status_add <field> [field...]");
+        app.terminal.print_system("Usage: /status_add [-A field|-B field] [-s n] [-x] [-c] <field> [field...]");
         return;
+    }
+
+    std::string before_name;
+    std::string after_name;
+    int spacer = 0;
+    bool nodup = false;
+    bool reset = false;
+
+    while (!s.empty() && s[0] == '-') {
+        if (s.rfind("-x", 0) == 0) {
+            nodup = true;
+            s = trim_copy(s.substr(2));
+        } else if (s.rfind("-c", 0) == 0) {
+            reset = true;
+            s = trim_copy(s.substr(2));
+        } else if (s.rfind("-s", 0) == 0) {
+            size_t consumed = 2;
+            while (consumed < s.size() && s[consumed] == ' ') consumed++;
+            size_t end = consumed;
+            while (end < s.size() && s[end] != ' ') end++;
+            spacer = std::atoi(s.substr(consumed, end - consumed).c_str());
+            s = trim_copy(s.substr(end));
+        } else if (s.rfind("-A", 0) == 0 || s.rfind("-B", 0) == 0) {
+            bool before = (s[1] == 'B');
+            size_t consumed = 2;
+            while (consumed < s.size() && s[consumed] == ' ') consumed++;
+            size_t end = consumed;
+            while (end < s.size() && s[end] != ' ') end++;
+            std::string target = s.substr(consumed, end - consumed);
+            if (before) before_name = target;
+            else after_name = target;
+            s = trim_copy(s.substr(end));
+        } else {
+            break;
+        }
     }
 
     std::istringstream iss(s);
     std::string field;
+    std::vector<std::string> fields;
     while (iss >> field) {
-        app.terminal.status_add_field(field);
+        fields.push_back(field);
+    }
+    if (fields.empty()) {
+        app.terminal.print_system("% /status_add: no fields specified");
+        return;
+    }
+    if (!app.terminal.status_insert_fields(fields, before_name, after_name, spacer, reset, nodup)) {
+        app.terminal.print_system("% /status_add: invalid placement or duplicate variable-width field");
+        return;
     }
     app.terminal.set_status(app.fg ? " [" + app.fg->world_name() + "]" : " [no connection]");
 }

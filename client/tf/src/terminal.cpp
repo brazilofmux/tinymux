@@ -669,19 +669,24 @@ std::string Terminal::status_field_name(const std::string& field) {
     return field.substr(0, end);
 }
 
+int Terminal::status_field_width(const std::string& field, bool* explicit_width) {
+    size_t first = field.find(':');
+    if (explicit_width) *explicit_width = false;
+    if (first == std::string::npos) return 0;
+
+    size_t second = field.find(':', first + 1);
+    std::string width_part = field.substr(first + 1,
+        second == std::string::npos ? std::string::npos : second - first - 1);
+    if (width_part.empty()) return 0;
+    if (explicit_width) *explicit_width = true;
+    return std::atoi(width_part.c_str());
+}
+
 std::string Terminal::expand_status_field(const std::string& field) const {
     size_t first = field.find(':');
     std::string name = (first == std::string::npos) ? field : field.substr(0, first);
-    std::string width_part;
-    if (first != std::string::npos) {
-        size_t second = field.find(':', first + 1);
-        width_part = field.substr(first + 1, second == std::string::npos ? std::string::npos : second - first - 1);
-    }
-
-    int width = 0;
-    if (!width_part.empty()) {
-        width = std::atoi(width_part.c_str());
-    }
+    bool explicit_width = false;
+    int width = status_field_width(field, &explicit_width);
 
     std::string text;
     if (name.empty()) {
@@ -704,7 +709,7 @@ std::string Terminal::expand_status_field(const std::string& field) const {
         text = name;
     }
 
-    if (width > 0) {
+    if (explicit_width && width > 0) {
         if ((int)text.size() > width) {
             text.resize((size_t)width);
         } else if ((int)text.size() < width) {
@@ -718,6 +723,66 @@ void Terminal::status_add_field(const std::string& field) {
     if (field.empty()) return;
     status_fields_.push_back(field);
     redraw_status();
+}
+
+bool Terminal::status_insert_fields(const std::vector<std::string>& fields,
+                                    const std::string& before_name,
+                                    const std::string& after_name,
+                                    int spacer,
+                                    bool reset,
+                                    bool nodup) {
+    std::vector<std::string> additions;
+    additions.reserve(fields.size() + (spacer != 0 ? 1 : 0));
+
+    int variable_widths = 0;
+    auto count_variable = [&](const std::vector<std::string>& source) {
+        for (const auto& field : source) {
+            bool explicit_width = false;
+            int width = status_field_width(field, &explicit_width);
+            if (explicit_width && width == 0 && !status_field_name(field).empty()) {
+                variable_widths++;
+            }
+        }
+    };
+
+    if (!reset) count_variable(status_fields_);
+    for (const auto& field : fields) {
+        if (field.empty()) continue;
+        if (nodup) {
+            std::string name = status_field_name(field);
+            auto duplicate = std::find_if(status_fields_.begin(), status_fields_.end(),
+                [&](const std::string& existing) { return status_field_name(existing) == name; });
+            if (duplicate != status_fields_.end()) continue;
+        }
+        additions.push_back(field);
+    }
+
+    if (spacer != 0 && !additions.empty()) {
+        std::string spacer_field = ":" + std::to_string(std::abs(spacer));
+        if (spacer < 0) additions.insert(additions.begin(), spacer_field);
+        else additions.push_back(spacer_field);
+    }
+
+    count_variable(additions);
+    if (variable_widths > 1) return false;
+
+    if (reset) status_fields_.clear();
+
+    if (!before_name.empty() || !after_name.empty()) {
+        auto it = before_name.empty()
+            ? std::find_if(status_fields_.begin(), status_fields_.end(),
+                  [&](const std::string& existing) { return status_field_name(existing) == after_name; })
+            : std::find_if(status_fields_.begin(), status_fields_.end(),
+                  [&](const std::string& existing) { return status_field_name(existing) == before_name; });
+        if (it == status_fields_.end()) return false;
+        if (before_name.empty()) ++it;
+        status_fields_.insert(it, additions.begin(), additions.end());
+    } else {
+        status_fields_.insert(status_fields_.end(), additions.begin(), additions.end());
+    }
+
+    redraw_status();
+    return true;
 }
 
 bool Terminal::status_edit_field(const std::string& field) {
@@ -972,8 +1037,35 @@ void Terminal::redraw_status() {
     std::string text = status_text_;
     if (!status_fields_.empty()) {
         if (!text.empty()) text += "  ";
-        for (const auto& field : status_fields_) {
-            text += expand_status_field(field);
+        int flex_index = -1;
+        int fixed_width = 0;
+        for (size_t i = 0; i < status_fields_.size(); ++i) {
+            bool explicit_width = false;
+            int width = status_field_width(status_fields_[i], &explicit_width);
+            if (explicit_width && width == 0 && !status_field_name(status_fields_[i]).empty()) {
+                if (flex_index < 0) flex_index = (int)i;
+                continue;
+            }
+            fixed_width += display_width_ansi(expand_status_field(status_fields_[i]));
+        }
+
+        int prefix_width = display_width_ansi(text);
+        int remaining = cols_ - 1 - prefix_width - fixed_width;
+        if (remaining < 0) remaining = 0;
+
+        for (size_t i = 0; i < status_fields_.size(); ++i) {
+            if ((int)i == flex_index) {
+                std::string field = status_fields_[i];
+                size_t first = field.find(':');
+                size_t second = field.find(':', first == std::string::npos ? 0 : first + 1);
+                std::string rebuilt = (first == std::string::npos)
+                    ? field + ":" + std::to_string(remaining)
+                    : field.substr(0, first + 1) + std::to_string(remaining)
+                        + (second == std::string::npos ? "" : field.substr(second));
+                text += expand_status_field(rebuilt);
+            } else {
+                text += expand_status_field(status_fields_[i]);
+            }
         }
     }
     mvwaddnstr(win_status_, 0, 0, text.c_str(), cols_ - 1);

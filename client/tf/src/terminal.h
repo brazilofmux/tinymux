@@ -50,6 +50,12 @@ public:
     void set_status(const std::string& text);
     const std::string& status_text() const { return status_text_; }
     void status_add_field(const std::string& field);
+    bool status_insert_fields(const std::vector<std::string>& fields,
+                              const std::string& before_name = "",
+                              const std::string& after_name = "",
+                              int spacer = 0,
+                              bool reset = false,
+                              bool nodup = false);
     bool status_edit_field(const std::string& field);
     bool status_remove_field(const std::string& name);
     std::string status_fields() const;
@@ -94,6 +100,7 @@ private:
     static int rgb_to_xterm(int r, int g, int b);
     size_t normalize_cursor_pos(size_t pos) const;
     static std::string status_field_name(const std::string& field);
+    static int status_field_width(const std::string& field, bool* explicit_width = nullptr);
     std::string expand_status_field(const std::string& field) const;
     struct OutputScreen {
         std::deque<std::string> lines;
