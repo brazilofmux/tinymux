@@ -10884,7 +10884,7 @@ printf "%s\n" "#define HAVE_DEV_URANDOM /**/" >>confdefs.h
 
 fi
 
-ac_config_files="$ac_config_files Makefile lib/Makefile src/Makefile modules/Makefile modules/engine/Makefile sqlite/Makefile announce/Makefile ganl/Makefile"
+ac_config_files="$ac_config_files Makefile lib/Makefile src/Makefile modules/Makefile modules/engine/Makefile sqlite/Makefile announce/Makefile muxescape/Makefile ganl/Makefile"
 
 
 
@@ -11850,6 +11850,7 @@ do
     "modules/engine/Makefile") CONFIG_FILES="$CONFIG_FILES modules/engine/Makefile" ;;
     "sqlite/Makefile") CONFIG_FILES="$CONFIG_FILES sqlite/Makefile" ;;
     "announce/Makefile") CONFIG_FILES="$CONFIG_FILES announce/Makefile" ;;
+    "muxescape/Makefile") CONFIG_FILES="$CONFIG_FILES muxescape/Makefile" ;;
     "ganl/Makefile") CONFIG_FILES="$CONFIG_FILES ganl/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;

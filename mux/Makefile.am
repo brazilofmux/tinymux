@@ -6,9 +6,10 @@
 #   lib      — libmux.so (core utilities)
 #   src      — netmux driver (links libmux.so + libganl.a)
 #   modules  — engine.so + external modules (link libmux.so)
-#   announce — standalone announce tool
+#   announce   — standalone announce tool
+#   muxescape — standalone text escaping tool
 
-SUBDIRS = ganl sqlite lib src modules announce
+SUBDIRS = ganl sqlite lib src modules announce muxescape
 
 # Shared build flags available to all subdirectories.
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdir)/sqlite \
