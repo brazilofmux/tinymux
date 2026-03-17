@@ -1316,6 +1316,7 @@ void badname_list(dbref player, const UTF8 *prefix)
 //
 bool protectname_check(const UTF8 *name, dbref player)
 {
+    SEP sepPipe = { 1, { '|' } };
     dbref i;
     DO_WHOLE_DB(i)
     {
@@ -1332,7 +1333,7 @@ bool protectname_check(const UTF8 *name, dbref player)
         {
             UTF8 *bp = pProtect;
             UTF8 *token;
-            while (nullptr != (token = split_token(&bp, sepSpace)))
+            while (nullptr != (token = split_token(&bp, sepPipe)))
             {
                 if (0 == string_compare(token, name))
                 {
@@ -1377,6 +1378,11 @@ void do_protect
         return;
     }
 
+    // Names are stored pipe-delimited so that names containing spaces
+    // (allowed when player_name_spaces is on) are handled correctly.
+    //
+    SEP sepPipe = { 1, { '|' } };
+
     dbref aowner;
     int aflags;
 
@@ -1402,7 +1408,23 @@ void do_protect
         }
         else
         {
-            notify(executor, tprintf(T("Protected names for %s: %s"), Name(target), pProtect));
+            // Display pipe-delimited list as space-separated for readability.
+            //
+            UTF8 *display = alloc_lbuf("do_protect.list");
+            UTF8 *dp = display;
+            UTF8 *bp = pProtect;
+            UTF8 *token;
+            while (nullptr != (token = split_token(&bp, sepPipe)))
+            {
+                if (dp != display)
+                {
+                    safe_str(T(", "), display, &dp);
+                }
+                safe_str(token, display, &dp);
+            }
+            *dp = '\0';
+            notify(executor, tprintf(T("Protected names for %s: %s"), Name(target), display));
+            free_lbuf(display);
         }
         free_lbuf(pProtect);
         return;
@@ -1433,7 +1455,7 @@ void do_protect
 
         UTF8 *bp = pProtect;
         UTF8 *token;
-        while (nullptr != (token = split_token(&bp, sepSpace)))
+        while (nullptr != (token = split_token(&bp, sepPipe)))
         {
             if (!found && 0 == string_compare(token, arg1))
             {
@@ -1442,7 +1464,7 @@ void do_protect
             }
             if (np != newlist)
             {
-                safe_chr(' ', newlist, &np);
+                safe_chr('|', newlist, &np);
             }
             safe_str(token, newlist, &np);
         }
@@ -1484,7 +1506,7 @@ void do_protect
     {
         UTF8 *bp = pProtect;
         UTF8 *token;
-        while (nullptr != (token = split_token(&bp, sepSpace)))
+        while (nullptr != (token = split_token(&bp, sepPipe)))
         {
             if (0 == string_compare(token, arg1))
             {
@@ -1519,7 +1541,7 @@ void do_protect
     if ('\0' != pProtect[0])
     {
         safe_str(pProtect, newlist, &np);
-        safe_chr(' ', newlist, &np);
+        safe_chr('|', newlist, &np);
     }
     safe_str(arg1, newlist, &np);
     *np = '\0';

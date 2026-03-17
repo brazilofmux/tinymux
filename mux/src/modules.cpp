@@ -355,7 +355,13 @@ MUX_RESULT CConnectionManager::SendGmcp(dbref target, const UTF8 *pkg, const UTF
     size_t nPkg = strlen(reinterpret_cast<const char *>(pkg));
     size_t nJson = strlen(reinterpret_cast<const char *>(json));
 
-    // Build IAC SB GMCP <payload> IAC SE (no IAC doubling needed per GMCP spec)
+    // Frame: IAC SB GMCP <pkg> [' ' <json>] IAC SE
+    size_t nFrame = 3 + nPkg + (nJson > 0 ? 1 + nJson : 0) + 2;
+    if (nFrame > LBUF_SIZE)
+    {
+        return MUX_E_INVALIDARG;
+    }
+
     unsigned char frame[LBUF_SIZE];
     auto p = frame;
     *(p++) = NVT_IAC;
@@ -371,8 +377,6 @@ MUX_RESULT CConnectionManager::SendGmcp(dbref target, const UTF8 *pkg, const UTF
     }
     *(p++) = NVT_IAC;
     *(p++) = NVT_SE;
-
-    size_t nFrame = static_cast<size_t>(p - frame);
 
     // Send to all GMCP-enabled descriptors for this player.
     auto range = g_dbref_to_descriptors_map.equal_range(target);
