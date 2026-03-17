@@ -18,6 +18,10 @@
 #include "script.h"
 #include "app.h"
 #include "regex_utils.h"
+#include "copyright.h"
+#include "autoconf.h"
+#include "config.h"
+#include "core.h"
 #include <cmath>
 #include <ctime>
 #include <unistd.h>
@@ -35,6 +39,88 @@ struct FuncDef {
 
 // Forward declarations
 static const std::unordered_map<std::string, FuncDef>& builtin_funcs();
+
+static size_t utf8_codepoint_bytes(const unsigned char* p, size_t remaining) {
+    if (remaining == 0) return 0;
+
+    size_t n = utf8_FirstByte[*p];
+    if (n >= UTF8_CONTINUE || n == 0 || n > remaining) return 1;
+
+    for (size_t i = 1; i < n; ++i) {
+        if (utf8_FirstByte[p[i]] != UTF8_CONTINUE) return 1;
+    }
+
+    UTF32 cp = utf8_decode_raw(p, n);
+    if (!utf8_is_valid_scalar(cp, n)) return 1;
+    return n;
+}
+
+static std::vector<size_t> grapheme_offsets(const std::string& s) {
+    std::vector<size_t> offsets;
+    offsets.push_back(0);
+
+    size_t pos = 0;
+    while (pos < s.size()) {
+        mux_cursor next = utf8_next_grapheme(reinterpret_cast<const UTF8*>(s.data() + pos), s.size() - pos);
+        size_t advance = next.m_byte > 0 ? static_cast<size_t>(next.m_byte) : 1;
+        pos += advance;
+        if (pos > s.size()) pos = s.size();
+        offsets.push_back(pos);
+    }
+
+    return offsets;
+}
+
+static size_t byte_to_grapheme_index(const std::string& s, size_t byte_pos) {
+    if (byte_pos == std::string::npos) return static_cast<size_t>(-1);
+
+    auto offsets = grapheme_offsets(s);
+    auto it = std::upper_bound(offsets.begin(), offsets.end(), byte_pos);
+    if (it == offsets.begin()) return 0;
+    return static_cast<size_t>((it - offsets.begin()) - 1);
+}
+
+static std::string utf8_substr_graphemes(const std::string& s, int64_t start, int64_t len = -1) {
+    if (start < 0) start = 0;
+
+    auto offsets = grapheme_offsets(s);
+    size_t count = offsets.empty() ? 0 : offsets.size() - 1;
+    if (static_cast<size_t>(start) >= count) return {};
+
+    size_t begin = offsets[static_cast<size_t>(start)];
+    if (len < 0) return s.substr(begin);
+
+    size_t end_index = static_cast<size_t>(start) + static_cast<size_t>(len);
+    if (end_index > count) end_index = count;
+    size_t end = offsets[end_index];
+    return s.substr(begin, end - begin);
+}
+
+static std::string utf8_map_case(const std::string& s, bool upper) {
+    std::string out;
+    out.reserve(s.size());
+
+    const unsigned char* p = reinterpret_cast<const unsigned char*>(s.data());
+    size_t remaining = s.size();
+    while (remaining > 0) {
+        size_t src = utf8_codepoint_bytes(p, remaining);
+        bool bXor = false;
+        const string_desc* desc = upper ? mux_toupper(p, bXor) : mux_tolower(p, bXor);
+        if (desc == nullptr || (bXor && desc->n_bytes != src)) {
+            out.append(reinterpret_cast<const char*>(p), src);
+        } else if (bXor) {
+            for (size_t i = 0; i < src; ++i) {
+                out.push_back(static_cast<char>(p[i] ^ desc->p[i]));
+            }
+        } else {
+            out.append(reinterpret_cast<const char*>(desc->p), desc->n_bytes);
+        }
+        p += src;
+        remaining -= src;
+    }
+
+    return out;
+}
 
 // ---- Parser state ----
 
@@ -383,7 +469,9 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
         // ---- String functions ----
 
         {"strlen", {1, 1, [](ScriptEnv&, const std::vector<Value>& a) -> Value {
-            return Value::make_int((int64_t)a[0].as_str().size());
+            std::string s = a[0].as_str();
+            return Value::make_int((int64_t)utf8_cluster_count(
+                reinterpret_cast<const UTF8*>(s.data()), s.size()));
         }}},
         {"strcat", {1, -1, [](ScriptEnv&, const std::vector<Value>& a) -> Value {
             std::string r;
@@ -393,13 +481,12 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
         {"substr", {2, 3, [](ScriptEnv&, const std::vector<Value>& a) -> Value {
             std::string s = a[0].as_str();
             int64_t start = a[1].as_int();
-            if (start < 0) start = 0;
-            if ((size_t)start >= s.size()) return Value::make_str("");
             if (a.size() >= 3) {
                 int64_t len = a[2].as_int();
-                return Value::make_str(s.substr(start, len));
+                if (len <= 0) return Value::make_str("");
+                return Value::make_str(utf8_substr_graphemes(s, start, len));
             }
-            return Value::make_str(s.substr(start));
+            return Value::make_str(utf8_substr_graphemes(s, start));
         }}},
         {"strcmp", {2, 2, [](ScriptEnv&, const std::vector<Value>& a) -> Value {
             int c = a[0].as_str().compare(a[1].as_str());
@@ -411,25 +498,24 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
         }}},
         {"strchr", {2, 2, [](ScriptEnv&, const std::vector<Value>& a) -> Value {
             auto pos = a[0].as_str().find(a[1].as_str());
-            return Value::make_int(pos != std::string::npos ? (int64_t)pos : -1);
+            return Value::make_int(pos != std::string::npos
+                ? (int64_t)byte_to_grapheme_index(a[0].as_str(), pos) : -1);
         }}},
         {"strrchr", {2, 2, [](ScriptEnv&, const std::vector<Value>& a) -> Value {
             auto pos = a[0].as_str().rfind(a[1].as_str());
-            return Value::make_int(pos != std::string::npos ? (int64_t)pos : -1);
+            return Value::make_int(pos != std::string::npos
+                ? (int64_t)byte_to_grapheme_index(a[0].as_str(), pos) : -1);
         }}},
         {"strstr", {2, 2, [](ScriptEnv&, const std::vector<Value>& a) -> Value {
             auto pos = a[0].as_str().find(a[1].as_str());
-            return Value::make_int(pos != std::string::npos ? (int64_t)pos : -1);
+            return Value::make_int(pos != std::string::npos
+                ? (int64_t)byte_to_grapheme_index(a[0].as_str(), pos) : -1);
         }}},
         {"tolower", {1, 1, [](ScriptEnv&, const std::vector<Value>& a) -> Value {
-            std::string s = a[0].as_str();
-            std::transform(s.begin(), s.end(), s.begin(), ::tolower);
-            return Value::make_str(s);
+            return Value::make_str(utf8_map_case(a[0].as_str(), false));
         }}},
         {"toupper", {1, 1, [](ScriptEnv&, const std::vector<Value>& a) -> Value {
-            std::string s = a[0].as_str();
-            std::transform(s.begin(), s.end(), s.begin(), ::toupper);
-            return Value::make_str(s);
+            return Value::make_str(utf8_map_case(a[0].as_str(), true));
         }}},
         {"replace", {3, 3, [](ScriptEnv&, const std::vector<Value>& a) -> Value {
             std::string s = a[0].as_str();

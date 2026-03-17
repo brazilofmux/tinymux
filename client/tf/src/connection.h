@@ -57,6 +57,7 @@ private:
     void process_telnet(const unsigned char* data, size_t len);
     void send_telnet(uint8_t cmd, uint8_t opt);
     void send_subneg_ttype();
+    void send_subneg_charset(bool accepted, const std::string& charset = "");
     void send_subneg_naws(uint16_t width, uint16_t height);
     size_t process_data(const unsigned char* buf, size_t len);
 

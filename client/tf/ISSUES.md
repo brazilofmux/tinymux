@@ -12,22 +12,12 @@ imported issue list was stale and no longer matched the implementation.
   lacks classic TF's richer option parsing, attributes, and multi-row layout.  
   Comparison: `/home/sdennis/tinyfugue/src/output.c`
 
-## Unicode and Internationalization
-
-- **Scripting functions are not Unicode-aware**  
-  Functions like `strlen()`, `substr()`, `strchr()`, `tolower()`, and `toupper()`
-  operate on raw bytes. `strlen()` returns byte count instead of character or
-  grapheme count, and `substr()` can split multi-byte UTF-8 sequences, creating
-  invalid strings. These should be updated to use the `./utf` and
-  `./ragel/color_ops.h` (libmux) machinery already available in the project.  
-  Refs: `client/tf/src/script_parse.cpp:446` (Built-in functions)
-
 ## Telnet Protocol Issues
 
 - **Limited Telnet Option Support**  
-  Advanced features like MCCP (compression), CHARSET negotiation, and
-  proper subnegotiation of window size (NAWS is implemented, but basic)
-   are missing compared to classic TinyFugue.
+  The client now handles `TTYPE`, basic `NAWS`, `BINARY`, and UTF-8
+  `CHARSET` negotiation, but advanced features like MCCP compression and
+  richer charset handling are still missing compared to classic TinyFugue.
 
 ## Performance and Responsiveness
 

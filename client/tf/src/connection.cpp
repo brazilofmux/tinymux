@@ -9,6 +9,8 @@
 #include <cstring>
 #include <vector>
 #include <poll.h>
+#include <algorithm>
+#include <cctype>
 
 // Return the number of trailing bytes that form an incomplete UTF-8 sequence.
 // If the string ends with a valid complete sequence, returns 0.
@@ -47,17 +49,29 @@ static constexpr uint8_t TEL_SE   = 240;
 // Telnet options
 static constexpr uint8_t TELOPT_ECHO    = 1;
 static constexpr uint8_t TELOPT_SGA     = 3;
+static constexpr uint8_t TELOPT_BINARY  = 0;
 static constexpr uint8_t TELOPT_TTYPE   = 24;
 static constexpr uint8_t TELOPT_NAWS    = 31;
+static constexpr uint8_t TELOPT_CHARSET = 42;
 
 // Subnegotiation
 static constexpr uint8_t TELQUAL_IS   = 0;
 static constexpr uint8_t TELQUAL_SEND = 1;
+static constexpr uint8_t CHARSET_REQUEST = 1;
+static constexpr uint8_t CHARSET_ACCEPTED = 2;
+static constexpr uint8_t CHARSET_REJECTED = 3;
 
 static const char* negotiated_ttype() {
     const char* term = std::getenv("TERM");
     if (term != nullptr && *term != '\0') return term;
     return "xterm-256color";
+}
+
+static bool charset_is_utf8(const std::string& name) {
+    std::string upper = name;
+    std::transform(upper.begin(), upper.end(), upper.begin(),
+        [](unsigned char ch) { return static_cast<char>(std::toupper(ch)); });
+    return upper == "UTF-8" || upper == "UTF8";
 }
 
 static bool wait_for_fd(int fd, short events, int timeout_ms) {
@@ -361,6 +375,8 @@ size_t Connection::process_data(const unsigned char* buf, size_t len) {
             if (b == TELOPT_ECHO) {
                 remote_echo_ = true;
                 send_telnet(TEL_DO, b);
+            } else if (b == TELOPT_BINARY || b == TELOPT_CHARSET) {
+                send_telnet(TEL_DO, b);
             } else if (b == TELOPT_SGA) {
                 send_telnet(TEL_DO, b);
             } else {
@@ -377,6 +393,8 @@ size_t Connection::process_data(const unsigned char* buf, size_t len) {
 
         case TelState::DO:
             if (b == TELOPT_TTYPE) {
+                send_telnet(TEL_WILL, b);
+            } else if (b == TELOPT_BINARY) {
                 send_telnet(TEL_WILL, b);
             } else if (b == TELOPT_NAWS) {
                 send_telnet(TEL_WILL, b);
@@ -412,6 +430,24 @@ size_t Connection::process_data(const unsigned char* buf, size_t len) {
                 // Process subnegotiation
                 if (sb_option_ == TELOPT_TTYPE && !sb_buf_.empty() && (uint8_t)sb_buf_[0] == TELQUAL_SEND) {
                     send_subneg_ttype();
+                } else if (sb_option_ == TELOPT_CHARSET && sb_buf_.size() >= 2 &&
+                           (uint8_t)sb_buf_[0] == CHARSET_REQUEST) {
+                    char sep = sb_buf_[1];
+                    size_t start = 2;
+                    bool accepted = false;
+                    while (start <= sb_buf_.size()) {
+                        size_t end = sb_buf_.find(sep, start);
+                        if (end == std::string::npos) end = sb_buf_.size();
+                        std::string candidate = sb_buf_.substr(start, end - start);
+                        if (charset_is_utf8(candidate)) {
+                            send_subneg_charset(true, "UTF-8");
+                            accepted = true;
+                            break;
+                        }
+                        if (end == sb_buf_.size()) break;
+                        start = end + 1;
+                    }
+                    if (!accepted) send_subneg_charset(false);
                 }
                 tel_state_ = TelState::DATA;
             } else if (b == TEL_IAC) {
@@ -440,6 +476,20 @@ void Connection::send_subneg_ttype() {
     buf.push_back(TELOPT_TTYPE);
     buf.push_back(TELQUAL_IS);
     for (size_t i = 0; i < tlen; i++) buf.push_back(ttype[i]);
+    buf.push_back(TEL_IAC);
+    buf.push_back(TEL_SE);
+    if (fd_ >= 0) write_all(buf.data(), buf.size());
+}
+
+void Connection::send_subneg_charset(bool accepted, const std::string& charset) {
+    std::vector<uint8_t> buf;
+    buf.push_back(TEL_IAC);
+    buf.push_back(TEL_SB);
+    buf.push_back(TELOPT_CHARSET);
+    buf.push_back(accepted ? CHARSET_ACCEPTED : CHARSET_REJECTED);
+    if (accepted) {
+        for (char ch : charset) buf.push_back(static_cast<uint8_t>(ch));
+    }
     buf.push_back(TEL_IAC);
     buf.push_back(TEL_SE);
     if (fd_ >= 0) write_all(buf.data(), buf.size());
