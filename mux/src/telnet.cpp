@@ -1437,6 +1437,62 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         const auto pPayload = &d->aOption[1];
                         const auto nPayload2 = m - 1;
 
+                        // Core.Hello — extract client name, set ttype.
+                        // Payload: Core.Hello {"client":"Mudlet","version":"4.17"}
+                        //
+                        if (  nPayload2 >= 10
+                           && memcmp(pPayload, "Core.Hello", 10) == 0
+                           && (10 == nPayload2 || ' ' == pPayload[10]))
+                        {
+                            // Find "client" key and extract its string value.
+                            //
+                            const char *json = reinterpret_cast<const char *>(pPayload + 10);
+                            const char *jend = reinterpret_cast<const char *>(pPayload + nPayload2);
+                            const char *key = "\"client\"";
+                            const size_t klen = 8;
+                            const char *found = nullptr;
+                            for (const char *s = json; s + klen <= jend; s++)
+                            {
+                                if (memcmp(s, key, klen) == 0)
+                                {
+                                    found = s + klen;
+                                    break;
+                                }
+                            }
+
+                            if (found)
+                            {
+                                // Skip colon and whitespace, find opening quote.
+                                //
+                                while (found < jend && (*found == ':' || *found == ' '))
+                                {
+                                    found++;
+                                }
+                                if (found < jend && *found == '"')
+                                {
+                                    found++;
+                                    const char *vend = found;
+                                    while (vend < jend && *vend != '"')
+                                    {
+                                        vend++;
+                                    }
+                                    size_t nClient = static_cast<size_t>(vend - found);
+                                    if (nClient > 0 && nClient < SBUF_SIZE)
+                                    {
+                                        if (nullptr != d->ttype)
+                                        {
+                                            MEMFREE(d->ttype);
+                                            d->ttype = nullptr;
+                                        }
+                                        d->ttype = static_cast<UTF8 *>(MEMALLOC(nClient + 1));
+                                        memcpy(d->ttype, found, nClient);
+                                        d->ttype[nClient] = '\0';
+                                    }
+                                }
+                            }
+                            break;
+                        }
+
                         // Core.Ping — reply immediately from the driver.
                         //
                         if (  nPayload2 >= 9
