@@ -3,7 +3,7 @@
 #include "script.h"
 #include "macro.h"
 #include <sstream>
-#include <sys/select.h>
+#include <poll.h>
 #include <signal.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -305,32 +305,31 @@ static void run(App& app) {
             fire_hook(app, Hook::RESIZE, std::to_string(cols) + "x" + std::to_string(rows));
         }
 
-        // Build fd_set: STDIN + all connected sockets
-        fd_set rfds;
-        FD_ZERO(&rfds);
-        FD_SET(STDIN_FILENO, &rfds);
-        int maxfd = STDIN_FILENO;
+        // Build pollfd set: STDIN + all connected sockets + shell pipes
+        std::vector<struct pollfd> pollfds;
+        pollfds.push_back({STDIN_FILENO, POLLIN, 0});
+        std::vector<Connection*> polled_conns;
+        polled_conns.reserve(app.connections.size());
+        std::vector<ShellProcess*> polled_shells;
+        polled_shells.reserve(app.shell_processes.size());
 
         for (auto& [name, conn] : app.connections) {
             if (conn->is_connected()) {
-                int fd = conn->fd();
-                FD_SET(fd, &rfds);
-                if (fd > maxfd) maxfd = fd;
+                pollfds.push_back({conn->fd(), POLLIN, 0});
+                polled_conns.push_back(conn.get());
             }
         }
         for (auto& proc : app.shell_processes) {
             if (proc.fd >= 0) {
-                FD_SET(proc.fd, &rfds);
-                if (proc.fd > maxfd) maxfd = proc.fd;
+                pollfds.push_back({proc.fd, POLLIN, 0});
+                polled_shells.push_back(&proc);
             }
         }
 
-        // Compute select() timeout:
+        // Compute poll() timeout:
         //   - 25ms if pending ESC disambiguation
         //   - ms_until_next timer, if any timers active
         //   - otherwise block indefinitely (zero CPU)
-        struct timeval tv;
-        struct timeval* tvp = nullptr;
         int timeout_ms = -1;
 
         if (lexer.has_pending_esc()) {
@@ -353,16 +352,10 @@ static void run(App& app) {
             }
         }
 
-        if (timeout_ms >= 0) {
-            tv.tv_sec = timeout_ms / 1000;
-            tv.tv_usec = (timeout_ms % 1000) * 1000;
-            tvp = &tv;
-        }
-
-        int ready = select(maxfd + 1, &rfds, nullptr, nullptr, tvp);
+        int ready = poll(pollfds.data(), pollfds.size(), timeout_ms);
 
         // --- stdin input ---
-        if (ready > 0 && FD_ISSET(STDIN_FILENO, &rfds)) {
+        if (ready > 0 && !pollfds.empty() && (pollfds[0].revents & POLLIN)) {
             unsigned char buf[4096];
             ssize_t n = read(STDIN_FILENO, buf, sizeof(buf));
             if (n > 0) {
@@ -412,7 +405,15 @@ static void run(App& app) {
                 auto& conn = it->second;
 
                 if (!conn->is_connected()) continue;
-                if (!FD_ISSET(conn->fd(), &rfds)) continue;
+                bool readable = false;
+                for (size_t i = 0; i < polled_conns.size(); ++i) {
+                    if (polled_conns[i] == conn.get()) {
+                        short revents = pollfds[i + 1].revents;
+                        readable = (revents & (POLLIN | POLLERR | POLLHUP)) != 0;
+                        break;
+                    }
+                }
+                if (!readable) continue;
 
                 auto lines = conn->read_lines();
 
@@ -437,8 +438,11 @@ static void run(App& app) {
 
         // --- Shell processes ---
         if (ready > 0) {
-            for (auto& proc : app.shell_processes) {
-                if (proc.fd < 0 || !FD_ISSET(proc.fd, &rfds)) continue;
+            size_t shell_base = 1 + polled_conns.size();
+            for (size_t i = 0; i < polled_shells.size(); ++i) {
+                ShellProcess& proc = *polled_shells[i];
+                short revents = pollfds[shell_base + i].revents;
+                if (proc.fd < 0 || (revents & (POLLIN | POLLERR | POLLHUP)) == 0) continue;
 
                 char buf[4096];
                 for (;;) {

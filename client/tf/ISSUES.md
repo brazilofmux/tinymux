@@ -20,13 +20,6 @@ imported issue list was stale and no longer matched the implementation.
   `CHARSET` negotiation, but advanced features like MCCP compression and
   richer charset handling are still missing compared to classic TinyFugue.
 
-## Performance and Responsiveness
-
-- **Select() is used instead of Epoll/Poll**  
-  While acceptable for a few connections, `select()` is less efficient than
-  `poll()` or `epoll()` for modern high-concurrency or long-running clients.
-  (Minor, given the typical connection count).
-
 ## Opportunities for Improvement
 
 - **TrueColor (24-bit) support**  
