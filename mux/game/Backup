@@ -84,9 +84,30 @@ if [ ! -r "$GAMENAME.conf" ]; then
     exit 1
 fi
 
+# Game-specific text files to back up.  Distribution help files
+# (help.txt, wizhelp.txt, connect_help.txt) are deliberately excluded
+# — they ship with TinyMUX and are restored by reinstalling.
+#
+TEXT_FILES="\
+ $TEXT/badsite.txt\
+ $TEXT/connect.txt\
+ $TEXT/create_reg.txt\
+ $TEXT/down.txt\
+ $TEXT/full.txt\
+ $TEXT/guest.txt\
+ $TEXT/motd.txt\
+ $TEXT/news.txt\
+ $TEXT/newuser.txt\
+ $TEXT/plushelp.txt\
+ $TEXT/quit.txt\
+ $TEXT/register.txt\
+ $TEXT/staffhelp.txt\
+ $TEXT/wizmotd.txt\
+ $TEXT/wiznews.txt"
+
 set -- "$BACKUP_DB" "mux.config" "$GAMENAME.conf"
 TEXT_COUNT=0
-for f in "$TEXT"/*.txt; do
+for f in $TEXT_FILES; do
     if [ -r "$f" ]; then
         set -- "$@" "$f"
         TEXT_COUNT=$((TEXT_COUNT + 1))
