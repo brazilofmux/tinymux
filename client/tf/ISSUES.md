@@ -22,12 +22,6 @@ imported issue list was stale and no longer matched the implementation.
   `./ragel/color_ops.h` (libmux) machinery already available in the project.  
   Refs: `client/tf/src/script_parse.cpp:446` (Built-in functions)
 
-- **`std::regex` used instead of PCRE2**  
-  Triggers and `regmatch()` use `std::regex`, which has poor UTF-8 support and
-  is generally slower than PCRE2. TinyMUX already includes PCRE2, which should
-  be utilized here.  
-  Refs: `client/tf/src/script_parse.cpp:525`, `client/tf/src/main.cpp:255`
-
 ## Telnet Protocol Issues
 
 - **Limited Telnet Option Support**  
@@ -37,23 +31,10 @@ imported issue list was stale and no longer matched the implementation.
 
 ## Performance and Responsiveness
 
-- **Synchronous shell execution blocks the UI**  
-  `/sh`, `/sys`, and `/quote !` use `popen()`, which is synchronous. The
-  entire client will hang and stop responding to network data or user input
-  until the external command completes.  
-  Refs: `client/tf/src/command.cpp:557`, `client/tf/src/command.cpp:613`
-
 - **Select() is used instead of Epoll/Poll**  
   While acceptable for a few connections, `select()` is less efficient than
   `poll()` or `epoll()` for modern high-concurrency or long-running clients.
   (Minor, given the typical connection count).
-
-- **No support for local variables**  
-  `/let` always modifies global variables in `app.vars`, even when used inside
-  a macro. Classic TinyFugue's `/let` creates a local variable that shadows
-  globals and is destroyed when the macro exits. The current implementation
-  lacks a scope stack.  
-  Refs: `client/tf/src/command.cpp:468`, `client/tf/src/script.h:182`
 
 ## Opportunities for Improvement
 

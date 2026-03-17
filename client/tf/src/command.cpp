@@ -41,6 +41,10 @@ static std::string quote_world_arg(const std::string& s) {
     return out;
 }
 
+static ScriptEnv& active_script_env(App& app, ScriptEnv& fallback) {
+    return app.current_env ? *app.current_env : fallback;
+}
+
 CommandDispatcher::CommandDispatcher() {
     register_commands();
 }
@@ -397,21 +401,24 @@ void cmd_help(App& app, const std::string& /*args*/) {
 
 void cmd_test(App& app, const std::string& args) {
     // /test expression — evaluate and print result (TF: sets user_result)
-    ScriptEnv env(app.vars, &app);
+    ScriptEnv fallback(app.vars, &app);
+    ScriptEnv& env = active_script_env(app, fallback);
     Value v = eval_expr(args, env);
     app.terminal.print_system(v.as_str());
 }
 
 void cmd_expr(App& app, const std::string& args) {
     // /expr — same as /test, evaluate expression
-    ScriptEnv env(app.vars, &app);
+    ScriptEnv fallback(app.vars, &app);
+    ScriptEnv& env = active_script_env(app, fallback);
     Value v = eval_expr(args, env);
     app.terminal.print_system(v.as_str());
 }
 
 void cmd_echo(App& app, const std::string& args) {
     // /echo text — print with substitution expansion
-    ScriptEnv env(app.vars, &app);
+    ScriptEnv fallback(app.vars, &app);
+    ScriptEnv& env = active_script_env(app, fallback);
     std::string expanded = expand_subs(args, env);
     app.terminal.print_line(expanded);
 }
@@ -425,7 +432,8 @@ void cmd_let(App& app, const std::string& args) {
     std::string name = trim_copy(args.substr(0, eq));
     std::string expr = args.substr(eq + 1);
 
-    ScriptEnv env(app.vars, &app);
+    ScriptEnv fallback(app.vars, &app);
+    ScriptEnv& env = active_script_env(app, fallback);
     Value v = eval_expr(expr, env);
     env.set(name, v);
     app.terminal.print_system(name + "=" + v.as_str());
@@ -478,7 +486,8 @@ void cmd_list(App& app, const std::string& /*args*/) {
 void cmd_if(App& app, const std::string& args) {
     // Inline /if: evaluate condition and run the rest as a single command
     // For multi-statement /if, use exec_body which handles /if.../endif
-    ScriptEnv env(app.vars, &app);
+    ScriptEnv fallback(app.vars, &app);
+    ScriptEnv& env = active_script_env(app, fallback);
 
     // Parse: /if (condition) command
     std::string s = args;
@@ -504,13 +513,14 @@ void cmd_if(App& app, const std::string& args) {
     Value v = eval_expr(cond, env);
     if (v.as_bool() && !cmd.empty()) {
         // Route through exec_body so user macros are found too
-        exec_body(app, cmd);
+        exec_body_in_env(app, cmd, env);
     }
 }
 
 void cmd_while_cmd(App& app, const std::string& args) {
     // Inline /while: /while (condition) command
-    ScriptEnv env(app.vars, &app);
+    ScriptEnv fallback(app.vars, &app);
+    ScriptEnv& env = active_script_env(app, fallback);
     std::string s = trim_copy(args);
     std::string cond, cmd;
 
@@ -534,7 +544,7 @@ void cmd_while_cmd(App& app, const std::string& args) {
         Value v = eval_expr(cond, env);
         if (!v.as_bool()) break;
         if (!cmd.empty()) {
-            exec_body(app, cmd);
+            exec_body_in_env(app, cmd, env);
         }
     }
 }
@@ -641,33 +651,14 @@ void cmd_quote(App& app, const std::string& args) {
     if (s[0] == '!' || s[0] == '`') {
         // Shell command: pipe output
         std::string shell_cmd = s.substr(1);
-        FILE* fp = popen(shell_cmd.c_str(), "r");
-        if (!fp) {
+        if (!app_spawn_shell(app, shell_cmd,
+                as_cmd ? ShellDisposition::Exec : ShellDisposition::Send, world)) {
             app.terminal.print_system("% /quote: failed to run: " + shell_cmd);
-            return;
         }
-        char buf[4096];
-        while (fgets(buf, sizeof(buf), fp)) {
-            std::string line(buf);
-            if (!line.empty() && line.back() == '\n') line.pop_back();
-            if (!line.empty() && line.back() == '\r') line.pop_back();
-            if (as_cmd) {
-                exec_body(app, line);
-            } else {
-                Connection* target = app.fg;
-                if (!world.empty()) {
-                    auto it = app.connections.find(world);
-                    if (it != app.connections.end()) target = it->second.get();
-                }
-                if (target && target->is_connected()) {
-                    app_send_line(app, target, line);
-                }
-            }
-        }
-        pclose(fp);
     } else if (s[0] == '\'') {
         // TF command as prefix: run it
-        exec_body(app, s.substr(1));
+        if (app.current_env) exec_body_in_env(app, s.substr(1), *app.current_env);
+        else exec_body(app, s.substr(1));
     } else {
         // Default: send lines to MUD
         Connection* target = app.fg;
@@ -684,19 +675,9 @@ void cmd_sh(App& app, const std::string& args) {
         app.terminal.print_system("Usage: /sh <command>");
         return;
     }
-    FILE* fp = popen(cmd.c_str(), "r");
-    if (!fp) {
+    if (!app_spawn_shell(app, cmd, ShellDisposition::Echo)) {
         app.terminal.print_system("% /sh: failed to run: " + cmd);
-        return;
     }
-    char buf[4096];
-    while (fgets(buf, sizeof(buf), fp)) {
-        std::string line(buf);
-        if (!line.empty() && line.back() == '\n') line.pop_back();
-        if (!line.empty() && line.back() == '\r') line.pop_back();
-        app.terminal.print_line(line);
-    }
-    pclose(fp);
 }
 
 void cmd_sys(App& app, const std::string& args) {
@@ -878,9 +859,10 @@ void cmd_log(App& app, const std::string& args) {
 
 void cmd_eval(App& app, const std::string& args) {
     // /eval text — expand substitutions and execute result as a command
-    ScriptEnv env(app.vars, &app);
+    ScriptEnv fallback(app.vars, &app);
+    ScriptEnv& env = active_script_env(app, fallback);
     std::string expanded = expand_subs(args, env);
-    exec_body(app, expanded);
+    exec_body_in_env(app, expanded, env);
 }
 
 void cmd_unworld(App& app, const std::string& args) {

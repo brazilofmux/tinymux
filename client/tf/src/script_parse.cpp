@@ -17,9 +17,9 @@
 
 #include "script.h"
 #include "app.h"
+#include "regex_utils.h"
 #include <cmath>
 #include <ctime>
-#include <regex>
 #include <unistd.h>
 #include <algorithm>
 #include <functional>
@@ -187,17 +187,11 @@ private:
                     case Tok::STREQ:  result = (v.as_str() == rhs.as_str()); break;
                     case Tok::STRNE:  result = (v.as_str() != rhs.as_str()); break;
                     case Tok::MATCH: {
-                        try {
-                            std::regex re(rhs.as_str());
-                            result = std::regex_search(v.as_str(), re) ? 1 : 0;
-                        } catch (...) { result = 0; }
+                        result = regex_search_pattern(v.as_str(), rhs.as_str()) ? 1 : 0;
                         break;
                     }
                     case Tok::NMATCH: {
-                        try {
-                            std::regex re(rhs.as_str());
-                            result = std::regex_search(v.as_str(), re) ? 0 : 1;
-                        } catch (...) { result = 1; }
+                        result = regex_search_pattern(v.as_str(), rhs.as_str()) ? 0 : 1;
                         break;
                     }
                     default: break;
@@ -476,17 +470,13 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
         }}},
         {"regmatch", {2, 2, [](ScriptEnv& env, const std::vector<Value>& a) -> Value {
             // regmatch(string, pattern) — returns 1 if match, sets P0..Pn
-            try {
-                std::regex re(a[1].as_str());
-                std::smatch m;
-                std::string s = a[0].as_str();
-                if (std::regex_search(s, m, re)) {
-                    for (size_t i = 0; i < m.size() && i < 10; i++) {
-                        env.set("P" + std::to_string(i), Value::make_str(m[i].str()));
-                    }
-                    return Value::make_int(1);
+            std::vector<std::string> captures;
+            if (regex_search_pattern(a[0].as_str(), a[1].as_str(), captures)) {
+                for (size_t i = 0; i < captures.size() && i < 10; i++) {
+                    env.set("P" + std::to_string(i), Value::make_str(captures[i]));
                 }
-            } catch (...) {}
+                return Value::make_int(1);
+            }
             return Value::make_int(0);
         }}},
         {"strip_attr", {1, 1, [](ScriptEnv&, const std::vector<Value>& a) -> Value {
@@ -868,8 +858,7 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
             App* app = env.app();
             std::string name = a[0].as_str();
             if (app && app->macros.find(name)) return Value::make_str("macro");
-            auto it = env.vars().find(name);
-            if (it != env.vars().end()) return Value::make_str("variable");
+            if (env.has(name)) return Value::make_str("variable");
             auto& funcs = builtin_funcs();
             if (funcs.count(name)) return Value::make_str("builtin");
             return Value::make_str("");

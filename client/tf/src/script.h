@@ -161,24 +161,39 @@ using VarMap = std::unordered_map<std::string, std::string>;
 
 class ScriptEnv {
 public:
-    explicit ScriptEnv(VarMap& vars, App* app = nullptr)
-        : vars_(vars), app_(app) {}
+    explicit ScriptEnv(VarMap& vars, App* app = nullptr, VarMap* local_vars = nullptr)
+        : vars_(vars), local_vars_(local_vars), app_(app) {}
 
     Value get(const std::string& name) const {
+        if (local_vars_) {
+            auto local_it = local_vars_->find(name);
+            if (local_it != local_vars_->end()) return Value::make_str(local_it->second);
+        }
         auto it = vars_.find(name);
         if (it != vars_.end()) return Value::make_str(it->second);
         return Value::make_int(0);
     }
 
     void set(const std::string& name, const Value& v) {
-        vars_[name] = v.as_str();
+        if (local_vars_) {
+            (*local_vars_)[name] = v.as_str();
+        } else {
+            vars_[name] = v.as_str();
+        }
     }
 
-    VarMap& vars() { return vars_; }
+    bool has(const std::string& name) const {
+        if (local_vars_ && local_vars_->count(name)) return true;
+        return vars_.count(name) != 0;
+    }
+
+    VarMap& vars() { return local_vars_ ? *local_vars_ : vars_; }
+    const VarMap& globals() const { return vars_; }
     App* app() const { return app_; }
 
 private:
     VarMap& vars_;
+    VarMap* local_vars_ = nullptr;
     App* app_;
 };
 

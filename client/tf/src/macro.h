@@ -3,9 +3,10 @@
 
 #include <string>
 #include <vector>
-#include <regex>
+#include "regex_utils.h"
 
 struct App;
+class ScriptEnv;
 
 // A single macro definition.
 struct Macro {
@@ -22,7 +23,7 @@ struct Macro {
     bool        hilite = false;       // highlight matched text in output
 
     // Compiled trigger regex (built from trigger + match_type)
-    std::regex  trigger_re;
+    RegexPattern trigger_re;
     bool        trigger_compiled = false;
 
     void compile_trigger();
@@ -58,6 +59,7 @@ namespace Hook {
 // Execute a macro body.  Statements separated by %;
 void exec_body(App& app, const std::string& body,
                const std::vector<std::string>& args = {});
+void exec_body_in_env(App& app, const std::string& body, ScriptEnv& env);
 
 // Fire all hook macros of a given type.
 void fire_hook(App& app, const char* hook_type, const std::string& arg = "");

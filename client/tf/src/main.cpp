@@ -5,6 +5,7 @@
 #include <sstream>
 #include <sys/select.h>
 #include <signal.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <cstring>
@@ -20,6 +21,63 @@ static void sigwinch_handler(int) {
 
 static void sigterm_handler(int) {
     got_sigterm = 1;
+}
+
+static void handle_shell_line(App& app, const ShellProcess& proc, const std::string& line) {
+    switch (proc.disposition) {
+        case ShellDisposition::Echo:
+            app.terminal.print_line(line);
+            break;
+
+        case ShellDisposition::Exec:
+            exec_body(app, line);
+            break;
+
+        case ShellDisposition::Send: {
+            Connection* target = app.fg;
+            if (!proc.world_name.empty()) {
+                auto it = app.connections.find(proc.world_name);
+                if (it != app.connections.end()) target = it->second.get();
+            }
+            if (target && target->is_connected()) {
+                app_send_line(app, target, line);
+            }
+            break;
+        }
+    }
+}
+
+static void drain_shell_buffer(App& app, ShellProcess& proc, bool flush_partial) {
+    size_t start = 0;
+    while (start < proc.buffer.size()) {
+        size_t newline = proc.buffer.find('\n', start);
+        if (newline == std::string::npos) break;
+
+        std::string line = proc.buffer.substr(start, newline - start);
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        handle_shell_line(app, proc, line);
+        start = newline + 1;
+    }
+
+    proc.buffer.erase(0, start);
+    if (flush_partial && !proc.buffer.empty()) {
+        std::string line = proc.buffer;
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        handle_shell_line(app, proc, line);
+        proc.buffer.clear();
+    }
+}
+
+static void close_shell_process(ShellProcess& proc) {
+    if (proc.fd >= 0) {
+        close(proc.fd);
+        proc.fd = -1;
+    }
+    if (proc.pid > 0) {
+        int status = 0;
+        (void)waitpid(proc.pid, &status, 0);
+        proc.pid = -1;
+    }
 }
 
 bool app_send_line(App& app, Connection* conn, const std::string& line,
@@ -70,6 +128,40 @@ void app_receive_line(App& app, Connection* conn, const std::string& world_name,
         FILE* lf = fopen(log_it->second.c_str(), "a");
         if (lf) { fprintf(lf, "%s\n", line.c_str()); fclose(lf); }
     }
+}
+
+bool app_spawn_shell(App& app, const std::string& command, ShellDisposition disposition,
+                     const std::string& world_name) {
+    int pipefd[2];
+    if (pipe(pipefd) != 0) return false;
+
+    pid_t pid = fork();
+    if (pid < 0) {
+        close(pipefd[0]);
+        close(pipefd[1]);
+        return false;
+    }
+    if (pid == 0) {
+        close(pipefd[0]);
+        if (dup2(pipefd[1], STDOUT_FILENO) < 0) _exit(127);
+        close(pipefd[1]);
+        execl("/bin/sh", "sh", "-c", command.c_str(), nullptr);
+        _exit(127);
+    }
+
+    close(pipefd[1]);
+    int flags = fcntl(pipefd[0], F_GETFL, 0);
+    if (flags >= 0) {
+        fcntl(pipefd[0], F_SETFL, flags | O_NONBLOCK);
+    }
+
+    ShellProcess proc;
+    proc.pid = pid;
+    proc.fd = pipefd[0];
+    proc.disposition = disposition;
+    proc.world_name = world_name;
+    app.shell_processes.push_back(std::move(proc));
+    return true;
 }
 
 void app_rerender_foreground(App& app) {
@@ -172,7 +264,8 @@ static void handle_input_line(App& app, const std::string& line) {
         }
     } else {
         // Expand substitutions in outbound text
-        ScriptEnv env(app.vars, &app);
+        ScriptEnv fallback(app.vars, &app);
+        ScriptEnv& env = app.current_env ? *app.current_env : fallback;
         std::string expanded = expand_subs(line, env);
         if (app.fg && app.fg->is_connected()) {
             app.terminal.clear_prompt();
@@ -223,6 +316,12 @@ static void run(App& app) {
                 int fd = conn->fd();
                 FD_SET(fd, &rfds);
                 if (fd > maxfd) maxfd = fd;
+            }
+        }
+        for (auto& proc : app.shell_processes) {
+            if (proc.fd >= 0) {
+                FD_SET(proc.fd, &rfds);
+                if (proc.fd > maxfd) maxfd = proc.fd;
             }
         }
 
@@ -336,6 +435,32 @@ static void run(App& app) {
             }
         }
 
+        // --- Shell processes ---
+        if (ready > 0) {
+            for (auto& proc : app.shell_processes) {
+                if (proc.fd < 0 || !FD_ISSET(proc.fd, &rfds)) continue;
+
+                char buf[4096];
+                for (;;) {
+                    ssize_t n = read(proc.fd, buf, sizeof(buf));
+                    if (n > 0) {
+                        proc.buffer.append(buf, static_cast<size_t>(n));
+                        drain_shell_buffer(app, proc, false);
+                        continue;
+                    }
+                    if (n == 0) {
+                        drain_shell_buffer(app, proc, true);
+                        close_shell_process(proc);
+                    }
+                    break;
+                }
+            }
+            app.shell_processes.erase(
+                std::remove_if(app.shell_processes.begin(), app.shell_processes.end(),
+                    [](const ShellProcess& proc) { return proc.fd < 0; }),
+                app.shell_processes.end());
+        }
+
         // --- Prompt detection ---
         // Flush partial lines that have been sitting > 250ms as prompts.
         for (auto& [name, conn] : app.connections) {
@@ -365,6 +490,10 @@ static void run(App& app) {
 
         update_status(app);
         app.terminal.refresh();
+    }
+
+    for (auto& proc : app.shell_processes) {
+        close_shell_process(proc);
     }
 
     // Restore stdin flags

@@ -25,22 +25,16 @@ static std::string glob_to_regex(const std::string& glob) {
 
 void Macro::compile_trigger() {
     if (trigger.empty()) { trigger_compiled = false; return; }
-    try {
-        std::string pattern;
-        if (match_type == "regexp") {
-            pattern = trigger;
-        } else if (match_type == "substr") {
-            pattern = std::regex_replace(trigger,
-                std::regex(R"([.^$|()\\{}\[\]+*?])"), R"(\$&)");
-        } else {
-            // Default: glob
-            pattern = glob_to_regex(trigger);
-        }
-        trigger_re = std::regex(pattern, std::regex::ECMAScript);
-        trigger_compiled = true;
-    } catch (...) {
-        trigger_compiled = false;
+    std::string pattern;
+    if (match_type == "regexp") {
+        pattern = trigger;
+    } else if (match_type == "substr") {
+        pattern = regex_escape(trigger);
+    } else {
+        // Default: glob
+        pattern = glob_to_regex(trigger);
     }
+    trigger_compiled = trigger_re.compile(pattern);
 }
 
 // ---- MacroDB ----
@@ -79,7 +73,7 @@ std::vector<Macro*> MacroDB::match_triggers(const std::string& text) {
     std::vector<Macro*> result;
     for (auto& m : macros_) {
         if (!m.trigger_compiled || m.shots == 0) continue;
-        if (std::regex_search(text, m.trigger_re)) {
+        if (m.trigger_re.search(text)) {
             result.push_back(&m);
         }
     }
@@ -457,7 +451,10 @@ static void exec_one(App& app, const std::string& stmt, ScriptEnv& env) {
         }
 
         // Built-in command
+        ScriptEnv* previous_env = app.current_env;
+        app.current_env = &env;
         app.commands.dispatch(app, stmt);
+        app.current_env = previous_env;
     } else {
         // Text — send to foreground
         if (app.fg && app.fg->is_connected()) {
@@ -469,12 +466,24 @@ static void exec_one(App& app, const std::string& stmt, ScriptEnv& env) {
 
 // ---- Public API ----
 
+void exec_body_in_env(App& app, const std::string& body, ScriptEnv& env) {
+    auto stmts = split_body(body);
+    if (stmts.empty()) return;
+
+    ScriptEnv* previous_env = app.current_env;
+    app.current_env = &env;
+    size_t pos = 0;
+    exec_stmts(app, stmts, pos, env);
+    app.current_env = previous_env;
+}
+
 void exec_body(App& app, const std::string& body,
                const std::vector<std::string>& args) {
     auto stmts = split_body(body);
     if (stmts.empty()) return;
 
-    ScriptEnv env(app.vars, &app);
+    VarMap local_vars;
+    ScriptEnv env(app.vars, &app, &local_vars);
 
     // Set positional parameters
     for (size_t i = 0; i < args.size(); i++) {
@@ -490,8 +499,11 @@ void exec_body(App& app, const std::string& body,
     }()));
     env.set("#", Value::make_int((int64_t)args.size()));
 
+    ScriptEnv* previous_env = app.current_env;
+    app.current_env = &env;
     size_t pos = 0;
     exec_stmts(app, stmts, pos, env);
+    app.current_env = previous_env;
 }
 
 void fire_hook(App& app, const char* hook_type, const std::string& arg) {
@@ -528,11 +540,11 @@ TriggerResult check_triggers(App& app, std::string& text) {
 
         // Extract regex captures as positional args
         std::vector<std::string> args;
-        std::smatch sm;
+        std::vector<std::string> captures;
         if (compiled) {
-            if (std::regex_search(text, sm, m->trigger_re)) {
-                for (size_t i = 0; i < sm.size(); i++) {
-                    args.push_back(sm[i].str());
+            if (m->trigger_re.search(text, captures)) {
+                for (const auto& capture : captures) {
+                    args.push_back(capture);
                 }
             }
         }
@@ -543,11 +555,14 @@ TriggerResult check_triggers(App& app, std::string& text) {
         }
 
         // Hilite: wrap the matched portion in bold ANSI
-        if (is_hilite && compiled && !sm.empty() && sm[0].length() > 0) {
-            std::string before = sm.prefix().str();
-            std::string match  = sm[0].str();
-            std::string after  = sm.suffix().str();
-            text = before + "\033[1m" + match + "\033[0m" + after;
+        if (is_hilite && compiled && !captures.empty() && !captures[0].empty()) {
+            std::string::size_type match_pos = text.find(captures[0]);
+            if (match_pos != std::string::npos) {
+                std::string before = text.substr(0, match_pos);
+                std::string match = captures[0];
+                std::string after = text.substr(match_pos + match.size());
+                text = before + "\033[1m" + match + "\033[0m" + after;
+            }
         }
 
         // Execute body if non-empty

@@ -11,6 +11,24 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include <vector>
+#include <sys/types.h>
+
+class ScriptEnv;
+
+enum class ShellDisposition {
+    Echo,
+    Send,
+    Exec,
+};
+
+struct ShellProcess {
+    pid_t       pid = -1;
+    int         fd = -1;
+    ShellDisposition disposition = ShellDisposition::Echo;
+    std::string world_name;
+    std::string buffer;
+};
 
 struct App {
     WorldDB                                        worlddb;
@@ -23,8 +41,10 @@ struct App {
     KeyBindings                                    keybindings;
     std::unordered_map<std::string, std::string>   vars;
     std::unordered_map<std::string, FILE*>         open_files;  // tfopen handles
+    std::vector<ShellProcess>                      shell_processes;
     int                                            next_file_id = 1;
     bool                                           running = true;
+    ScriptEnv*                                     current_env = nullptr;
 
     ~App() {
         for (auto& [h, fp] : open_files) if (fp) fclose(fp);
@@ -36,5 +56,7 @@ bool app_send_line(App& app, Connection* conn, const std::string& line,
 void app_receive_line(App& app, Connection* conn, const std::string& world_name,
                       const std::string& line);
 void app_rerender_foreground(App& app);
+bool app_spawn_shell(App& app, const std::string& command, ShellDisposition disposition,
+                     const std::string& world_name = "");
 
 #endif // APP_H
