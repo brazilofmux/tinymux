@@ -563,7 +563,7 @@ int boot_off(const dbref player, const UTF8 *message)
             queue_string(d, message);
             queue_write_LEN(d, T("\r\n"), 2);
         }
-        shutdownsock(d, R_BOOT);
+        ganl_close_connection(d, R_BOOT);
         count++;
     }
     return count;
@@ -589,7 +589,7 @@ int boot_by_port(SOCKET port, bool bGod, const UTF8 *message)
                     queue_string(d, message);
                     queue_write_LEN(d, T("\r\n"), 2);
                 }
-                shutdownsock(d, R_BOOT);
+                ganl_close_connection(d, R_BOOT);
                 count++;
             }
         }
@@ -1207,7 +1207,7 @@ void check_idle(void)
             else if (ltdIdle.ReturnSeconds() > d->timeout)
             {
                 queue_write(d, T("*** Inactivity Timeout ***\r\n"));
-                shutdownsock(d, R_TIMEOUT);
+                ganl_close_connection(d, R_TIMEOUT);
             }
         }
         else if (0 < g_dc.conn_timeout)
@@ -1216,7 +1216,7 @@ void check_idle(void)
             if (ltdIdle.ReturnSeconds() > g_dc.conn_timeout)
             {
                 queue_write(d, T("*** Login Timeout ***\r\n"));
-                shutdownsock(d, R_TIMEOUT);
+                ganl_close_connection(d, R_TIMEOUT);
             }
         }
     }
@@ -1692,7 +1692,7 @@ static void failconn(const UTF8 *logcode, const UTF8 *logtype, const UTF8 *logre
     free_lbuf(command);
     free_lbuf(user);
     free_lbuf(password);
-    shutdownsock(d, disconnect_reason);
+    ganl_close_connection(d, disconnect_reason);
     g_debug_cmd = cmdsave;
     return;
 }
@@ -1816,7 +1816,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 free_lbuf(command);
                 free_lbuf(user);
                 free_lbuf(password);
-                shutdownsock(d, R_BADLOGIN);
+                ganl_close_connection(d, R_BADLOGIN);
                 g_debug_cmd = cmdsave;
                 return false;
             }
