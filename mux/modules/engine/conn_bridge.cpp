@@ -111,6 +111,11 @@ void send_keepalive_nops(void)
     if (g_pConnMgr) g_pConnMgr->SendKeepaliveNops();
 }
 
+void send_gmcp(dbref target, const UTF8 *pkg, const UTF8 *json)
+{
+    if (g_pConnMgr) g_pConnMgr->SendGmcp(target, pkg, json);
+}
+
 // --- Queries by dbref ---
 
 int get_total_connections(void)

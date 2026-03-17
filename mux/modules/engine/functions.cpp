@@ -12698,6 +12698,86 @@ static FUNCTION(fun_tr)
     }
 }
 
+// gmcp(<player>, <package>, <json>) - Send a GMCP message to a player.
+// Requires Wizard or control over the target player.
+//
+static FUNCTION(fun_gmcp)
+{
+    UNUSED_PARAMETER(fp);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    dbref target = lookup_player(executor, fargs[0], true);
+    if (NOTHING == target)
+    {
+        safe_str(T("#-1 PLAYER NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    if (  executor != target
+       && !Wizard(executor)
+       && !Controls(executor, target))
+    {
+        safe_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+        return;
+    }
+
+    send_gmcp(target, fargs[1], (nfargs >= 3) ? fargs[2] : T(""));
+}
+
+// benchmark(<expression>, <iterations>) - Time expression evaluation.
+// Evaluates the expression N times and returns elapsed seconds.
+//
+static FUNCTION(fun_benchmark)
+{
+    UNUSED_PARAMETER(fp);
+    UNUSED_PARAMETER(caller);
+
+    int iterations = mux_atol(fargs[1]);
+    if (iterations < 1)
+    {
+        safe_str(T("#-1 ITERATIONS MUST BE POSITIVE"), buff, bufc);
+        return;
+    }
+    if (iterations > 10000) iterations = 10000;
+
+    const UTF8 *expr = fargs[0];
+    size_t nLen = strlen(reinterpret_cast<const char *>(expr));
+
+#ifdef WIN32
+    LARGE_INTEGER freq, pc0, pc1;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&pc0);
+#else
+    struct timespec t0, t1;
+    clock_gettime(CLOCK_MONOTONIC, &t0);
+#endif
+
+    for (int i = 0; i < iterations; i++)
+    {
+        UTF8 temp[LBUF_SIZE];
+        UTF8 *tp = temp;
+        mux_exec(expr, nLen, temp, &tp, executor, caller, enactor,
+                 eval | EV_STRIP_CURLY | EV_FCHECK | EV_EVAL,
+                 cargs, ncargs);
+        *tp = '\0';
+    }
+
+#ifdef WIN32
+    QueryPerformanceCounter(&pc1);
+    double elapsed = static_cast<double>(pc1.QuadPart - pc0.QuadPart)
+                   / static_cast<double>(freq.QuadPart);
+#else
+    clock_gettime(CLOCK_MONOTONIC, &t1);
+    double elapsed = (t1.tv_sec - t0.tv_sec)
+                   + (t1.tv_nsec - t0.tv_nsec) / 1e9;
+#endif
+
+    fval(buff, bufc, elapsed);
+}
+
 // ----------------------------------------------------------------------------
 // flist: List of existing functions in alphabetical order.
 //
@@ -12732,6 +12812,7 @@ static FUN builtin_function_list[] =
     {T("BASECONV"),    fun_baseconv,   MAX_ARG, 3,       3,         0, CA_PUBLIC},
     {T("BEEP"),        fun_beep,       MAX_ARG, 0,       0,         0, CA_WIZARD},
     {T("BEFORE"),      fun_before,     MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {T("BENCHMARK"),   fun_benchmark,  MAX_ARG, 2,       2, FN_NOEVAL, CA_PUBLIC},
     {T("BITTYPE"),     fun_bittype,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("BNAND"),       fun_bnand,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("BOR"),         fun_bor,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
@@ -12832,6 +12913,7 @@ static FUN builtin_function_list[] =
     {T("FULLNAME"),    fun_fullname,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("GET"),         fun_get,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("GET_EVAL"),    fun_get_eval,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("GMCP"),        fun_gmcp,       MAX_ARG, 2,       3,         0, CA_WIZARD},
     {T("GRAB"),        fun_grab,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("GRABALL"),     fun_graball,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {T("GREP"),        fun_grep,       MAX_ARG, 3,       3,         0, CA_PUBLIC},

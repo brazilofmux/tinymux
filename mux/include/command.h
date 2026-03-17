@@ -104,6 +104,7 @@ CMD_TWO_ARG(do_page);           /* Send message to faraway player */
 CMD_TWO_ARG(do_parent);         /* Set parent field */
 CMD_TWO_ARG(do_password);       /* Change my password */
 CMD_TWO_ARG(do_pcreate);        /* Create new characters */
+CMD_TWO_ARG(do_protect);        /* Protect player names */
 CMD_TWO_ARG(do_pemit);          /* Messages to specific player */
 CMD_ONE_ARG(do_poor);           /* Reduce wealth of all players */
 CMD_TWO_ARG(do_power);          /* Sets powers */

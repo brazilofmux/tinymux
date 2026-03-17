@@ -682,6 +682,7 @@ struct DRIVER_CONFIG
     int64_t max_cmdsecs;
     int64_t rpt_cmdsecs;
     int64_t timeslice;
+    int64_t start_time_utc;     // Server start time (UTC seconds since epoch)
 
     // Behavior flags and limits.
     //
@@ -1075,6 +1076,11 @@ public:
         unsigned char chOption, int *pState) = 0;
     virtual MUX_RESULT DescSocketState(const DESC *d,
         SocketState *pState) = 0;
+
+    // Send a GMCP message to all GMCP-enabled descriptors for a player.
+    // Builds IAC SB GMCP <payload> IAC SE and sends to each.
+    //
+    virtual MUX_RESULT SendGmcp(dbref target, const UTF8 *pkg, const UTF8 *json) = 0;
 
     // --- Iteration ---
 

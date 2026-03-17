@@ -94,7 +94,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = netmux$(EXEEXT) slave$(EXEEXT) muxescape$(EXEEXT) $(am__EXEEXT_1)
+bin_PROGRAMS = netmux$(EXEEXT) slave$(EXEEXT) muxescape$(EXEEXT) \
+	$(am__EXEEXT_1)
 @STUBSLAVE_ENABLED_TRUE@am__append_1 = stubslave
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -112,6 +113,10 @@ CONFIG_CLEAN_VPATH_FILES =
 @STUBSLAVE_ENABLED_TRUE@am__EXEEXT_1 = stubslave$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
+am_muxescape_OBJECTS = muxescape.$(OBJEXT)
+muxescape_OBJECTS = $(am_muxescape_OBJECTS)
+am__DEPENDENCIES_1 =
+muxescape_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_1 = netmux-_build.$(OBJEXT) netmux-bsd.$(OBJEXT) \
 	netmux-driver.$(OBJEXT) netmux-driver_bridge.$(OBJEXT) \
 	netmux-ganl_adapter.$(OBJEXT) netmux-modules.$(OBJEXT) \
@@ -121,7 +126,6 @@ am__objects_1 = netmux-_build.$(OBJEXT) netmux-bsd.$(OBJEXT) \
 	netmux-websocket.$(OBJEXT)
 am_netmux_OBJECTS = $(am__objects_1) netmux-version.$(OBJEXT)
 netmux_OBJECTS = $(am_netmux_OBJECTS)
-am__DEPENDENCIES_1 =
 netmux_DEPENDENCIES = $(top_builddir)/ganl/libganl.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
@@ -130,9 +134,6 @@ netmux_LINK = $(CXXLD) $(netmux_CXXFLAGS) $(CXXFLAGS) \
 am_slave_OBJECTS = slave.$(OBJEXT)
 slave_OBJECTS = $(am_slave_OBJECTS)
 slave_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_muxescape_OBJECTS = muxescape.$(OBJEXT)
-muxescape_OBJECTS = $(am_muxescape_OBJECTS)
-muxescape_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_stubslave_OBJECTS = stubslave.$(OBJEXT)
 stubslave_OBJECTS = $(am_stubslave_OBJECTS)
 stubslave_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -153,15 +154,16 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include -I$(top_builddir)/modules -I$(top_builddir)/announce
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/netmux-_build.Po \
-	./$(DEPDIR)/netmux-bsd.Po ./$(DEPDIR)/netmux-driver.Po \
+am__depfiles_remade = ./$(DEPDIR)/muxescape.Po \
+	./$(DEPDIR)/netmux-_build.Po ./$(DEPDIR)/netmux-bsd.Po \
+	./$(DEPDIR)/netmux-driver.Po \
 	./$(DEPDIR)/netmux-driver_bridge.Po \
 	./$(DEPDIR)/netmux-ganl_adapter.Po \
 	./$(DEPDIR)/netmux-modules.Po ./$(DEPDIR)/netmux-muxcli.Po \
 	./$(DEPDIR)/netmux-net.Po ./$(DEPDIR)/netmux-netaddr.Po \
 	./$(DEPDIR)/netmux-signals.Po ./$(DEPDIR)/netmux-sitemon.Po \
 	./$(DEPDIR)/netmux-telnet.Po ./$(DEPDIR)/netmux-version.Po \
-	./$(DEPDIR)/netmux-websocket.Po ./$(DEPDIR)/muxescape.Po ./$(DEPDIR)/slave.Po \
+	./$(DEPDIR)/netmux-websocket.Po ./$(DEPDIR)/slave.Po \
 	./$(DEPDIR)/stubslave.Po
 am__mv = mv -f
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -181,8 +183,10 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(netmux_SOURCES) $(slave_SOURCES) $(muxescape_SOURCES) $(stubslave_SOURCES)
-DIST_SOURCES = $(netmux_SOURCES) $(slave_SOURCES) $(muxescape_SOURCES) $(stubslave_SOURCES)
+SOURCES = $(muxescape_SOURCES) $(netmux_SOURCES) $(slave_SOURCES) \
+	$(stubslave_SOURCES)
+DIST_SOURCES = $(muxescape_SOURCES) $(netmux_SOURCES) $(slave_SOURCES) \
+	$(stubslave_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -444,6 +448,10 @@ uninstall-binPROGRAMS:
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
 
+muxescape$(EXEEXT): $(muxescape_OBJECTS) $(muxescape_DEPENDENCIES) $(EXTRA_muxescape_DEPENDENCIES) 
+	@rm -f muxescape$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(muxescape_OBJECTS) $(muxescape_LDADD) $(LIBS)
+
 netmux$(EXEEXT): $(netmux_OBJECTS) $(netmux_DEPENDENCIES) $(EXTRA_netmux_DEPENDENCIES) 
 	@rm -f netmux$(EXEEXT)
 	$(AM_V_CXXLD)$(netmux_LINK) $(netmux_OBJECTS) $(netmux_LDADD) $(LIBS)
@@ -451,10 +459,6 @@ netmux$(EXEEXT): $(netmux_OBJECTS) $(netmux_DEPENDENCIES) $(EXTRA_netmux_DEPENDE
 slave$(EXEEXT): $(slave_OBJECTS) $(slave_DEPENDENCIES) $(EXTRA_slave_DEPENDENCIES) 
 	@rm -f slave$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(slave_OBJECTS) $(slave_LDADD) $(LIBS)
-
-muxescape$(EXEEXT): $(muxescape_OBJECTS) $(muxescape_DEPENDENCIES) $(EXTRA_muxescape_DEPENDENCIES) 
-	@rm -f muxescape$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(muxescape_OBJECTS) $(muxescape_LDADD) $(LIBS)
 
 stubslave$(EXEEXT): $(stubslave_OBJECTS) $(stubslave_DEPENDENCIES) $(EXTRA_stubslave_DEPENDENCIES) 
 	@rm -f stubslave$(EXEEXT)
@@ -466,6 +470,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/muxescape.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-_build.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-bsd.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-driver.Po@am__quote@ # am--include-marker
@@ -480,7 +485,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-telnet.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-version.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-websocket.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/muxescape.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slave.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stubslave.Po@am__quote@ # am--include-marker
 
@@ -828,7 +832,8 @@ clean: clean-am
 clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/netmux-_build.Po
+		-rm -f ./$(DEPDIR)/muxescape.Po
+	-rm -f ./$(DEPDIR)/netmux-_build.Po
 	-rm -f ./$(DEPDIR)/netmux-bsd.Po
 	-rm -f ./$(DEPDIR)/netmux-driver.Po
 	-rm -f ./$(DEPDIR)/netmux-driver_bridge.Po
@@ -890,7 +895,8 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/netmux-_build.Po
+		-rm -f ./$(DEPDIR)/muxescape.Po
+	-rm -f ./$(DEPDIR)/netmux-_build.Po
 	-rm -f ./$(DEPDIR)/netmux-bsd.Po
 	-rm -f ./$(DEPDIR)/netmux-driver.Po
 	-rm -f ./$(DEPDIR)/netmux-driver_bridge.Po

@@ -140,6 +140,13 @@ constexpr unsigned char TELNET_TTYPE    = 0x18;
 constexpr unsigned char TELNET_OLDENV   = 0x24;
 constexpr unsigned char TELNET_ENV      = 0x27;
 constexpr unsigned char TELNET_CHARSET  = 0x2A;
+constexpr unsigned char TELNET_MSSP    = 0x46;  // MUD Server Status Protocol
+constexpr unsigned char TELNET_GMCP    = 0xC9;  // Generic MUD Communication Protocol
+
+// MSSP subnegotiation markers
+//
+constexpr unsigned char MSSP_VAR = 1;
+constexpr unsigned char MSSP_VAL = 2;
 
 // Telnet option negotiation states
 //
@@ -276,6 +283,7 @@ extern void set_player_program(dbref target, program_data *program);
 extern void send_prog_prompt(dbref target);
 extern void send_text_to_player(dbref target, const UTF8 *text);
 extern void send_raw_to_player(dbref target, const UTF8 *data, size_t len);
+extern void send_gmcp(dbref target, const UTF8 *pkg, const UTF8 *json);
 extern int count_player_descs(dbref target);
 extern int sum_player_command_count(dbref target);
 extern void set_doing_all(dbref target, const UTF8 *doing, size_t len);
@@ -690,6 +698,7 @@ void badname_add(UTF8 *);
 void badname_remove(UTF8 *);
 bool badname_check(const UTF8 *);
 void badname_list(dbref, const UTF8 *);
+bool protectname_check(const UTF8 *name, dbref player);
 void ChangePassword(dbref player, const UTF8 *szPassword);
 const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSalt, int *piType);
 int  QueueMax(dbref);
@@ -1084,6 +1093,9 @@ extern int anum_alc_top;
 //#define QUOTA_EXIT      64  /* Exit quota set */
 //#define QUOTA_THING     128 /* Thing quota set */
 //#define QUOTA_PLAYER    256 /* Player quota set */
+#define PROTECT_ADD     0   /* @protect/add (default) */
+#define PROTECT_DEL     1   /* @protect/del */
+#define PROTECT_LIST    2   /* @protect/list */
 #define REFERENCE_LIST  1   /* List @references */
 #define SAY_SAY         1   /* say in current room */
 #define SAY_NOSPACE     1   /* OR with xx_EMIT to get nospace form */

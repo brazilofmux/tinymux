@@ -490,6 +490,14 @@ static NAMETAB quota_sw[] =
     {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
+static NAMETAB protect_sw[] =
+{
+    {T("add"),             1,  CA_PUBLIC,  PROTECT_ADD},
+    {T("del"),             1,  CA_PUBLIC,  PROTECT_DEL},
+    {T("list"),            1,  CA_PUBLIC,  PROTECT_LIST},
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
+};
+
 static NAMETAB reference_sw[] =
 {
     {T("list"),            1,  CA_PUBLIC,  REFERENCE_LIST},
@@ -766,6 +774,7 @@ static CMDENT_TWO_ARG command_table_two_arg[] =
     {T("@pcreate"),     nullptr,    CA_WIZARD|CA_GBL_BUILD,                           PCRE_PLAYER, CS_TWO_ARG,           0, do_pcreate},
     {T("@pemit"),       pemit_sw,   CA_NO_GUEST|CA_NO_SLAVE,                          PEMIT_PEMIT, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
     {T("@power"),       nullptr,    CA_PUBLIC,                                        0,           CS_TWO_ARG,           0, do_power},
+    {T("@protect"),     protect_sw, CA_NO_GUEST|CA_NO_SLAVE,                          PROTECT_ADD, CS_TWO_ARG|CS_INTERP, 0, do_protect},
     {T("@program"),     nullptr,    CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_prog},
     {T("@query"),       query_sw,   CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP|CS_CMDARG, 0, do_query},
     {T("@quota"),       quota_sw,   CA_PUBLIC,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_quota},
@@ -1811,6 +1820,56 @@ static int zonecmdtest(dbref player, const UTF8 *cmd)
 }
 
 // ---------------------------------------------------------------------------
+// handle_gmcp: Process an inbound GMCP message.
+//
+// The payload is "package[.sub] [json]".  We fire the A_GMCP attribute
+// on the player with %0 = package, %1 = json data.
+//
+static void handle_gmcp(dbref player, const UTF8 *payload)
+{
+    if (!Good_obj(player) || !isPlayer(player))
+    {
+        return;
+    }
+
+    // Split payload into package and JSON at the first space.
+    //
+    const UTF8 *pSpace = payload;
+    while (*pSpace && *pSpace != ' ')
+    {
+        pSpace++;
+    }
+
+    UTF8 pkg[SBUF_SIZE];
+    size_t nPkg = static_cast<size_t>(pSpace - payload);
+    if (nPkg >= SBUF_SIZE) nPkg = SBUF_SIZE - 1;
+    memcpy(pkg, payload, nPkg);
+    pkg[nPkg] = '\0';
+
+    const UTF8 *json = (*pSpace == ' ') ? pSpace + 1 : T("");
+
+    dbref aowner;
+    int aflags;
+    UTF8 *pGmcpAttr = atr_pget(player, A_GMCP, &aowner, &aflags);
+    if (pGmcpAttr[0] != '\0')
+    {
+        const UTF8 *gmcp_args[2];
+        gmcp_args[0] = pkg;
+        gmcp_args[1] = json;
+
+        UTF8 *lbuf = alloc_lbuf("handle_gmcp");
+        UTF8 *lp = lbuf;
+        mux_exec(pGmcpAttr, strlen(reinterpret_cast<const char *>(pGmcpAttr)),
+                 lbuf, &lp, player, player, player,
+                 EV_FCHECK | EV_EVAL | EV_TOP,
+                 gmcp_args, 2);
+        *lp = '\0';
+        free_lbuf(lbuf);
+    }
+    free_lbuf(pGmcpAttr);
+}
+
+// ---------------------------------------------------------------------------
 // process_command: Execute a command.
 //
 UTF8 *process_command
@@ -1860,6 +1919,18 @@ UTF8 *process_command
         g_debug_cmd = cmdsave;
         return pOriginalCommand;
     }
+    // Intercept internal GMCP messages from the telnet layer.
+    // Format: "\x01GMCP package [json]"
+    //
+    if (  '\x01' == pOriginalCommand[0]
+       && memcmp(pOriginalCommand + 1, "GMCP ", 5) == 0
+       && interactive)
+    {
+        handle_gmcp(executor, pOriginalCommand + 6);
+        g_debug_cmd = cmdsave;
+        return pOriginalCommand;
+    }
+
     if (  Suspect(executor)
        && (mudconf.log_options & LOG_SUSPECTCMDS))
     {

@@ -207,6 +207,7 @@ public:
     virtual MUX_RESULT BroadcastAndFlush(int inflags, const UTF8 *text);
     virtual MUX_RESULT SendProgPrompt(dbref target);
     virtual MUX_RESULT SendKeepaliveNops(void);
+    virtual MUX_RESULT SendGmcp(dbref target, const UTF8 *pkg, const UTF8 *json);
 
     // Queries by dbref
     virtual MUX_RESULT GetTotalConnections(int *pCount);
@@ -342,6 +343,47 @@ MUX_RESULT CConnectionManager::SendText(dbref target, const UTF8 *text)
 MUX_RESULT CConnectionManager::SendRaw(dbref target, const UTF8 *data, size_t len)
 {
     send_raw_to_player(target, data, len);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CConnectionManager::SendGmcp(dbref target, const UTF8 *pkg, const UTF8 *json)
+{
+    if (nullptr == pkg) return MUX_E_INVALIDARG;
+    if (nullptr == json) json = reinterpret_cast<const UTF8 *>("");
+
+    // Build GMCP payload: "package json" (or just "package" if json is empty)
+    size_t nPkg = strlen(reinterpret_cast<const char *>(pkg));
+    size_t nJson = strlen(reinterpret_cast<const char *>(json));
+
+    // Build IAC SB GMCP <payload> IAC SE (no IAC doubling needed per GMCP spec)
+    unsigned char frame[LBUF_SIZE];
+    auto p = frame;
+    *(p++) = NVT_IAC;
+    *(p++) = NVT_SB;
+    *(p++) = TELNET_GMCP;
+    memcpy(p, pkg, nPkg);
+    p += nPkg;
+    if (nJson > 0)
+    {
+        *(p++) = ' ';
+        memcpy(p, json, nJson);
+        p += nJson;
+    }
+    *(p++) = NVT_IAC;
+    *(p++) = NVT_SE;
+
+    size_t nFrame = static_cast<size_t>(p - frame);
+
+    // Send to all GMCP-enabled descriptors for this player.
+    auto range = g_dbref_to_descriptors_map.equal_range(target);
+    for (auto it = range.first; it != range.second; ++it)
+    {
+        DESC *d = it->second;
+        if (d->gmcp_enabled)
+        {
+            queue_write_LEN(d, frame, nFrame);
+        }
+    }
     return MUX_S_OK;
 }
 

@@ -126,6 +126,7 @@ void cf_init(void)
     mudconf.have_zones = true;
     mudconf.paranoid_alloc = false;
     mudconf.sig_action = SA_DFLT;
+    mudconf.max_name_protect = 5;
     mudconf.max_players = -1;
     mudconf.dump_interval = 3600;
     mudconf.check_interval = 600;
@@ -1942,6 +1943,7 @@ static CONFPARM conftable[] =
     {T("master_room"),               cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.master_room,            nullptr,            0},
     {T("match_own_commands"),        cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.match_mine),      nullptr,            0},
     {T("max_cache_size"),            cf_int,         CA_GOD,    CA_GOD,      reinterpret_cast<int *>(&mudconf.max_cache_size),  nullptr,            0},
+    {T("max_name_protect"),          cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.max_name_protect,       nullptr,            0},
     {T("max_players"),               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.max_players,            nullptr,            0},
     {T("min_guests"),                cf_int,         CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.min_guests),      nullptr,            0},
     {T("money_name_plural"),         cf_string,      CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(mudconf.many_coins),       nullptr,           32},

@@ -3202,6 +3202,7 @@ MUX_RESULT CGameEngine::GetConfig(DRIVER_CONFIG *pConfig)
     pConfig->max_cmdsecs        = mudconf.max_cmdsecs.Return100ns();
     pConfig->rpt_cmdsecs        = mudconf.rpt_cmdsecs.Return100ns();
     pConfig->timeslice          = mudconf.timeslice.Return100ns();
+    pConfig->start_time_utc     = mudstate.start_time.ReturnSeconds();
 
     // Behavior flags and limits.
     //

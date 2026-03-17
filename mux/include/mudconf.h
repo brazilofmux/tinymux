@@ -144,6 +144,7 @@ struct confdata
     int     mail_per_hour;      // Maximum sent @mail per hour per object.
     int     mail_max_per_player; // Maximum stored messages per player mailbox.
     int     email_per_hour;     // Maximum sent @email per hour per object.
+    int     max_name_protect;   /* Max protected names per player */
     int     max_players;        /* Max # of connected players */
     int     min_guests;         // The # we should start nuking at.
     int     nStackLimit;        // Current stack limit.

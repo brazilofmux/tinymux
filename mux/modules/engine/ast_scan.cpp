@@ -12,7 +12,7 @@
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
-#include "core.h"
+#include "externs.h"
 
 #include "ast.h"
 

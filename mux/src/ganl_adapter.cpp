@@ -214,6 +214,8 @@ namespace
 //        enable_him(d, TELNET_OLDENV);
         enable_us(d, TELNET_CHARSET);
         enable_him(d, TELNET_CHARSET);
+        enable_us(d, TELNET_MSSP);
+        enable_us(d, TELNET_GMCP);
         // STARTTLS is not offered under GANL.  The in-band upgrade
         // path in process_input_helper() drives SSL_new/SSL_set_fd
         // directly on the socket fd, which conflicts with GANL's

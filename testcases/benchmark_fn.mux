@@ -1,0 +1,54 @@
+#
+# benchmark_fn.mux - Test Cases for benchmark().
+#
+@create test_benchmark_fn
+-
+@set test_benchmark_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_benchmark_fn=
+  @log smoke=Beginning benchmark() test cases.
+-
+#
+# Test Case #1 - Basic benchmark returns a positive number.
+#
+&tr.tc001 test_benchmark_fn=
+  @if gt(
+        setr(0,benchmark(add(1,2), 100)),
+        0
+      )=
+  {
+    @log smoke=TC001: benchmark returns positive. Succeeded.
+  },
+  {
+    @log smoke=TC001: benchmark returns positive. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - More iterations take more time.
+#
+&tr.tc002 test_benchmark_fn=
+  @if gte(
+        setr(0,benchmark(add(1,2), 1000)),
+        setr(1,benchmark(add(1,2), 1))
+      )=
+  {
+    @log smoke=TC002: more iterations take more time. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: more iterations >= single. Failed (%q0 vs %q1).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_benchmark_fn=
+  @log smoke=End benchmark() test cases.;
+  @notify smoke
+-
+drop test_benchmark_fn
+-
+#
+# End of Test Cases
+#

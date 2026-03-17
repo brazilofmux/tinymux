@@ -219,8 +219,10 @@ constexpr int A_ACREATE   = 230;  // @acreate attribute
 constexpr int A_LVISIBLE  = 231;  // Visibility Lock Storage Attribute
 
 constexpr int A_PRONOUN   = 232; /* Pronoun group name for %s/%o/%p/%a */
+constexpr int A_GMCP      = 233; // GMCP handler attribute
+constexpr int A_PROTECTNAME = 234; // Protected player names
 
-// 233 - 239 unused
+// 235 - 239 unused
 
 constexpr int A_IDLETMOUT  = 240; /* Idle message timeout */
 constexpr int A_EXITFORMAT = 241;

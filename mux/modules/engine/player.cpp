@@ -9,6 +9,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "functions.h"
 #include "sha1.h"
 
 #define NUM_GOOD    4   // # of successful logins to save data for.
@@ -824,6 +825,15 @@ dbref create_player
         return NOTHING;
     }
 
+    // Check if the name is protected by another player.
+    //
+    if (!protectname_check(name, NOTHING))
+    {
+        *pmsg = T("That name is protected by another player.");
+        free_lbuf(pbuf);
+        return NOTHING;
+    }
+
     // If so, go create him.
     //
     dbref player = create_obj(creator, TYPE_PLAYER, name, isrobot);
@@ -1298,4 +1308,225 @@ void badname_list(dbref player, const UTF8 *prefix)
     //
     notify(player, buff);
     free_lbuf(buff);
+}
+
+// ---------------------------------------------------------------------------
+// protectname_check: Check if a name is protected by another player.
+// Returns true if the name is available (not protected by someone else).
+//
+bool protectname_check(const UTF8 *name, dbref player)
+{
+    dbref i;
+    DO_WHOLE_DB(i)
+    {
+        if (  !isPlayer(i)
+           || i == player)
+        {
+            continue;
+        }
+
+        dbref aowner;
+        int aflags;
+        UTF8 *pProtect = atr_pget(i, A_PROTECTNAME, &aowner, &aflags);
+        if ('\0' != pProtect[0])
+        {
+            UTF8 *bp = pProtect;
+            UTF8 *token;
+            while (nullptr != (token = split_token(&bp, sepSpace)))
+            {
+                if (0 == string_compare(token, name))
+                {
+                    free_lbuf(pProtect);
+                    return false;
+                }
+            }
+        }
+        free_lbuf(pProtect);
+    }
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// do_protect: @protect command - reserve player names.
+//
+void do_protect
+(
+    dbref executor,
+    dbref caller,
+    dbref enactor,
+    int   eval,
+    int   key,
+    int   nargs,
+    UTF8 *arg1,
+    UTF8 *arg2,
+    const UTF8 *cargs[],
+    int   ncargs
+)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nargs);
+    UNUSED_PARAMETER(arg2);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (!isPlayer(executor))
+    {
+        notify(executor, T("Only players may use @protect."));
+        return;
+    }
+
+    dbref aowner;
+    int aflags;
+
+    if (key & PROTECT_LIST)
+    {
+        dbref target = executor;
+        if (  nullptr != arg1
+           && '\0' != arg1[0]
+           && Wizard(executor))
+        {
+            target = lookup_player(executor, arg1, true);
+            if (NOTHING == target)
+            {
+                notify(executor, T("No such player."));
+                return;
+            }
+        }
+
+        UTF8 *pProtect = atr_pget(target, A_PROTECTNAME, &aowner, &aflags);
+        if ('\0' == pProtect[0])
+        {
+            notify(executor, T("No protected names."));
+        }
+        else
+        {
+            notify(executor, tprintf(T("Protected names for %s: %s"), Name(target), pProtect));
+        }
+        free_lbuf(pProtect);
+        return;
+    }
+
+    if (  nullptr == arg1
+       || '\0' == arg1[0])
+    {
+        notify(executor, T("Protect what name?"));
+        return;
+    }
+
+    if (key & PROTECT_DEL)
+    {
+        // Remove a protected name.
+        //
+        UTF8 *pProtect = atr_pget(executor, A_PROTECTNAME, &aowner, &aflags);
+        if ('\0' == pProtect[0])
+        {
+            notify(executor, T("You have no protected names."));
+            free_lbuf(pProtect);
+            return;
+        }
+
+        UTF8 *newlist = alloc_lbuf("do_protect.del");
+        UTF8 *np = newlist;
+        bool found = false;
+
+        UTF8 *bp = pProtect;
+        UTF8 *token;
+        while (nullptr != (token = split_token(&bp, sepSpace)))
+        {
+            if (!found && 0 == string_compare(token, arg1))
+            {
+                found = true;
+                continue;
+            }
+            if (np != newlist)
+            {
+                safe_chr(' ', newlist, &np);
+            }
+            safe_str(token, newlist, &np);
+        }
+        *np = '\0';
+
+        if (!found)
+        {
+            notify(executor, T("That name is not in your protected list."));
+        }
+        else
+        {
+            atr_add_raw(executor, A_PROTECTNAME, newlist);
+            notify(executor, tprintf(T("Name \xE2\x80\x98%s\xE2\x80\x99 removed from protected list."), arg1));
+        }
+        free_lbuf(newlist);
+        free_lbuf(pProtect);
+        return;
+    }
+
+    // Default: /add
+    //
+    if (!ValidatePlayerName(arg1))
+    {
+        notify(executor, T("That is not a valid player name."));
+        return;
+    }
+
+    if (!badname_check(arg1))
+    {
+        notify(executor, T("That name is not allowed."));
+        return;
+    }
+
+    // Check the per-player limit.
+    //
+    UTF8 *pProtect = atr_pget(executor, A_PROTECTNAME, &aowner, &aflags);
+    int count = 0;
+    if ('\0' != pProtect[0])
+    {
+        UTF8 *bp = pProtect;
+        UTF8 *token;
+        while (nullptr != (token = split_token(&bp, sepSpace)))
+        {
+            if (0 == string_compare(token, arg1))
+            {
+                notify(executor, T("That name is already in your protected list."));
+                free_lbuf(pProtect);
+                return;
+            }
+            count++;
+        }
+    }
+
+    if (count >= mudconf.max_name_protect)
+    {
+        notify(executor, tprintf(T("You may only protect %d names."), mudconf.max_name_protect));
+        free_lbuf(pProtect);
+        return;
+    }
+
+    // Check if name is protected by someone else.
+    //
+    if (!protectname_check(arg1, executor))
+    {
+        notify(executor, T("That name is already protected by another player."));
+        free_lbuf(pProtect);
+        return;
+    }
+
+    // Add the name.
+    //
+    UTF8 *newlist = alloc_lbuf("do_protect.add");
+    UTF8 *np = newlist;
+    if ('\0' != pProtect[0])
+    {
+        safe_str(pProtect, newlist, &np);
+        safe_chr(' ', newlist, &np);
+    }
+    safe_str(arg1, newlist, &np);
+    *np = '\0';
+
+    atr_add_raw(executor, A_PROTECTNAME, newlist);
+    notify(executor, tprintf(T("Name \xE2\x80\x98%s\xE2\x80\x99 added to protected list."), arg1));
+
+    free_lbuf(newlist);
+    free_lbuf(pProtect);
 }

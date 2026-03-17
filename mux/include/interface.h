@@ -58,6 +58,7 @@ struct descriptor_data
   bool charset_request_pending;
   int width;
   int height;
+  bool gmcp_enabled;
   int quota;
   struct program_data* program_data;
   ws_state *ws;                            // WebSocket state (nullptr if telnet)

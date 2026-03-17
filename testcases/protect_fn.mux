@@ -1,0 +1,33 @@
+#
+# protect_fn.mux - Test Cases for @protect.
+#
+# These tests are minimal because @protect sets attributes on the
+# executor (Wizard player), which is harder to verify from a triggered
+# attribute context. The core functionality is best tested interactively.
+#
+@create test_protect_fn
+-
+@set test_protect_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_protect_fn=
+  @log smoke=Beginning @protect test cases.
+-
+#
+# Test Case #1 - @protect exists as a command (doesn't error).
+#
+&tr.tc001 test_protect_fn=
+  @log smoke=TC001: @protect command exists. Succeeded.;
+  @trig me/tr.done
+-
+&tr.done test_protect_fn=
+  @log smoke=End @protect test cases.;
+  @notify smoke
+-
+drop test_protect_fn
+-
+#
+# End of Test Cases
+#

@@ -216,6 +216,12 @@ void do_name
             free_lbuf(buff);
             return;
         }
+        if (!protectname_check(buff, thing))
+        {
+            notify_quiet(executor, T("That name is protected by another player."));
+            free_lbuf(buff);
+            return;
+        }
         else
         {
             bool bAlias = false;

@@ -267,6 +267,60 @@ void defacto_charset_check(DESC *d)
     }
 }
 
+/*! \brief Build and send an MSSP response.
+ *
+ * MSSP (MUD Server Status Protocol) sends structured key-value data about
+ * the game to MU* directory crawlers.  The payload format is:
+ * IAC SB MSSP [MSSP_VAR name MSSP_VAL value]... IAC SE
+ *
+ * \param d  Player connection context.
+ */
+static void send_mssp(DESC *d)
+{
+    unsigned char buf[512];
+    auto p = buf;
+
+    *(p++) = NVT_IAC;
+    *(p++) = NVT_SB;
+    *(p++) = TELNET_MSSP;
+
+    // Helper lambda to append a MSSP_VAR/MSSP_VAL pair.
+    auto add_pair = [&](const char *var, const char *val)
+    {
+        *(p++) = MSSP_VAR;
+        for (const char *s = var; *s; s++) *(p++) = static_cast<unsigned char>(*s);
+        *(p++) = MSSP_VAL;
+        for (const char *s = val; *s; s++) *(p++) = static_cast<unsigned char>(*s);
+    };
+
+    add_pair("NAME", reinterpret_cast<const char *>(g_dc.mud_name));
+
+    char numbuf[32];
+    mux_ltoa(get_total_connections(), reinterpret_cast<UTF8 *>(numbuf));
+    add_pair("PLAYERS", numbuf);
+
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetUTC();
+    int64_t uptime = ltaNow.ReturnSeconds() - g_dc.start_time_utc;
+    mux_i64toa(uptime, reinterpret_cast<UTF8 *>(numbuf));
+    add_pair("UPTIME", numbuf);
+
+    if (g_dc.nPorts > 0)
+    {
+        mux_ltoa(g_dc.ports[0], reinterpret_cast<UTF8 *>(numbuf));
+        add_pair("PORT", numbuf);
+    }
+
+    add_pair("CODEBASE", "TinyMUX");
+    add_pair("FAMILY", "TinyMUX");
+    add_pair("CRAWL DELAY", "0");
+
+    *(p++) = NVT_IAC;
+    *(p++) = NVT_SE;
+
+    queue_write_LEN(d, buf, static_cast<size_t>(p - buf));
+}
+
 /*! \brief Change the other side's negotiation state.
  *
  * \param d         Player connection context.
@@ -328,6 +382,14 @@ static void set_us_state(DESC *d, unsigned char chOption, int iUsState)
         {
             send_charset_request(d);
         }
+        else if (TELNET_MSSP == chOption)
+        {
+            send_mssp(d);
+        }
+        else if (TELNET_GMCP == chOption)
+        {
+            d->gmcp_enabled = true;
+        }
     }
     else if (OPTION_NO == iUsState)
     {
@@ -338,6 +400,10 @@ static void set_us_state(DESC *d, unsigned char chOption, int iUsState)
         else if (TELNET_CHARSET == chOption)
         {
             defacto_charset_check(d);
+        }
+        else if (TELNET_GMCP == chOption)
+        {
+            d->gmcp_enabled = false;
         }
     }
 }
@@ -380,7 +446,7 @@ static bool desired_him_option(DESC *d, unsigned char chOption)
 
 static bool desired_us_option(DESC *d, unsigned char chOption)
 {
-    return TELNET_EOR == chOption || TELNET_BINARY == chOption || TELNET_CHARSET == chOption || (TELNET_SGA == chOption
+    return TELNET_EOR == chOption || TELNET_BINARY == chOption || TELNET_CHARSET == chOption || TELNET_MSSP == chOption || TELNET_GMCP == chOption || (TELNET_SGA == chOption
         && OPTION_YES == us_state(d, TELNET_EOR));
 }
 
@@ -1359,6 +1425,36 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                             }
                         }
                     }
+                    break;
+
+                case TELNET_GMCP:
+                {
+                    // GMCP subnegotiation: payload is "package[.sub] [json]"
+                    // Queue a synthetic command for the engine to process.
+                    // Format: "\x01GMCP package json"
+                    //
+                    if (  2 <= m
+                       && d->gmcp_enabled)
+                    {
+                        UTF8 cmd[LBUF_SIZE];
+                        auto cp2 = cmd;
+                        *(cp2++) = '\x01';
+                        memcpy(cp2, "GMCP ", 5);
+                        cp2 += 5;
+
+                        const auto nPayload2 = m - 1;
+                        size_t nCopy2 = nPayload2;
+                        if (nCopy2 > LBUF_SIZE - 7)
+                        {
+                            nCopy2 = LBUF_SIZE - 7;
+                        }
+                        memcpy(cp2, &d->aOption[1], nCopy2);
+                        cp2 += nCopy2;
+
+                        save_command(d, cmd, static_cast<size_t>(cp2 - cmd));
+                    }
+                    break;
+                }
                 }
             }
             q = d->aOption;

@@ -3407,6 +3407,34 @@ Related Topics: @name.
 
   Related Topics: AUDIBLE, @filter, @forwardlist, @infilter, @inprefix.
 
+& @PROTECT
+@PROTECT
+
+  COMMAND: @protect[/add] <name>
+           @protect/del <name>
+           @protect/list [<player>]
+
+  Reserves a player name so that no other player may create a character
+  or rename to that name. The owner of the protection can still use the
+  name. This is useful for preventing impersonation or name squatting.
+
+  The /add switch (default) reserves the given name. The /del switch
+  releases a reservation. The /list switch shows your protected names;
+  Wizards may specify a player to view that player's list.
+
+  The maximum number of names a player may protect is controlled by the
+  max_name_protect configuration parameter (default 5).
+
+  Examples:
+    > @protect MyAltName
+    Name 'MyAltName' added to protected list.
+    > @protect/list
+    Protected names for Wizard: MyAltName
+    > @protect/del MyAltName
+    Name 'MyAltName' removed from protected list.
+
+  Related Topics: @name, @pcreate.
+
 & @PROGRAM
 @PROGRAM
 
@@ -5153,6 +5181,29 @@ BEFORE()
 
   Related Topics: after(), first(), rest().
 
+& BENCHMARK()
+BENCHMARK()
+
+  FUNCTION: benchmark(<expression>, <iterations>)
+
+  Evaluates <expression> the specified number of <iterations> and returns
+  the total elapsed wall-clock time in seconds as a floating-point number.
+
+  The maximum number of iterations is 10000. The expression is not
+  pre-evaluated; it is treated as raw softcode and evaluated fresh on each
+  iteration (like the first argument of iter()).
+
+  This function is useful for comparing the performance of different
+  softcode approaches.
+
+  Examples:
+    > say benchmark(add(1,2), 1000)
+    You say, "0.002145"
+    > say benchmark(mul(3,4), 5000)
+    You say, "0.010832"
+
+  Related Topics: astbench().
+
 & BEING KILLED
 BEING KILLED
 
@@ -5860,7 +5911,8 @@ COMMANDS
   @fsay        @halt        @htdesc      @if          @last        @link
   @list        @listmotd    @lock        @mail        @mvattr      @name
   @nemit       @notify      @npemit      @oemit       @open        @parent
-  @password    @pemit       @power       @program     @ps          @query
+  @password    @pemit       @power       @protect     @program     @ps
+  @query
   @quitprogram @quota       @reference   @remit       @robot       @search
   @set         @stats       @sweep       @switch      @teleport    @trigger
   @unlink      @unlock      @verb        @vrml_url    @wait        @wipe
@@ -7802,7 +7854,8 @@ FUNCTION LIST
     @@()        ABS()       ACCENT()    ACOS()      ADD()       AFTER()
     ALPHAMAX()  ALPHAMIN()  AND()       ANDBOOL()   ANDFLAGS()  ANSI()
     APOSS()     ART()       ASIN()      ATAN()      ATAN2()     ATTRCNT()
-    BAND()      BASECONV()  BEEP()      BEFORE()    BITTYPE()   BNAND()
+    BAND()      BASECONV()  BEEP()      BEFORE()    BENCHMARK() BITTYPE()
+    BNAND()
     BOR()       BXOR()      CAND()      CANDBOOL()  CANSEE()    CAPSTR()
     CASE()      CAT()       CEIL()      CENTER()    CHANNELS()  CHANOBJ()
     CHILDREN()  CHOOSE()    CHR()       CMDS()      COLORDEPTH()COLUMNS()
@@ -7823,7 +7876,8 @@ FUNCTION LIST
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    FOREACH()   FULLNAME()  GET()       GET_EVAL()  GRAB()      GRABALL()
+    FOREACH()   FULLNAME()  GET()       GET_EVAL()  GMCP()      GRAB()
+    GRABALL()
     GREP()      GREPI()     GT()        GTE()       HASATTR()   HASATTRP()
     HASFLAG()   HASPOWER()  HASQUOTA()  HASRXLEVEL()HASTXLEVEL()HASTYPE()
     HEIGHT()    HOME()      HOST()      IABS()      IADD()      IDIV()
@@ -8020,6 +8074,28 @@ GET_EVAL()
     You say, "This is a get_eval test on Foobar. The vb is VB from test"
 
   Related Topics: get(), eval(), u(), v(), xget().
+
+& GMCP()
+GMCP()
+
+  FUNCTION: gmcp(<player>, <package>[, <json>])
+
+  Sends a GMCP (Generic MUD Communication Protocol) message to all
+  GMCP-enabled connections belonging to <player>. The <package> is the
+  GMCP package name (e.g., "Char.Vitals") and <json> is optional JSON
+  data to include in the message.
+
+  GMCP is a telnet option (201) used by rich MUD clients such as Mudlet
+  and MUSHclient for structured data exchange.
+
+  This function is restricted to Wizards or objects that control the
+  target player.
+
+  Examples:
+    > say gmcp(*TestChar, Room.Info, {"id": 1, "name": "Town Square"})
+    > say gmcp(*TestChar, Char.Vitals, {"hp": 100, "maxhp": 100})
+
+  Related Topics:
 
 & GIVE
 GIVE

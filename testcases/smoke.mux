@@ -8,7 +8,7 @@
 &suite.list.1 smoke=
   abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn 
   and_fn andbool_fn asin_fn atan_fn atan2_fn attrib_set_fn 
-  band_fn baseconv_fn before_fn bnand_fn bor_fn bxor_fn 
+  band_fn baseconv_fn before_fn benchmark_fn bnand_fn bor_fn bxor_fn 
   cand_fn candbool_fn capstr_fn case_fn cat_fn ceil_fn center_fn 
   choose_fn chr_fn citer_fn clone_fn cmd_say columns_fn comp_fn convtime_fn 
   connlog_fn cor_fn corbool_fn cos_fn cpad_fn crc32_fn cron_fn ctu_fn 
@@ -24,7 +24,7 @@
   ln_fn lnum_fn locate_poss lock_fn lockencode_fn log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn 
   mailsend_fn match_fn matchall_fn max_fn member_fn merge_fn mid_fn min_fn mod_fn mul_fn 
   neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn 
-  parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn printf_fn 
+  parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn printf_fn protect_fn 
   reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn 
   right_fn rjust_fn roman_fn round_fn rpad_fn rvbench_fn 
   secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn 
