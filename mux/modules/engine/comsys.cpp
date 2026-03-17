@@ -4388,6 +4388,12 @@ bool sqlite_sync_comsys(void)
         {
             for (int j = 0; j < c->numchannels; j++)
             {
+                // Skip orphaned aliases for channels that no longer exist.
+                //
+                if (nullptr == select_channel(c->channels[j]))
+                {
+                    continue;
+                }
                 if (!sqldb.SyncPlayerChannel(c->who,
                     c->alias + j * ALIAS_SIZE,
                     c->channels[j]))
