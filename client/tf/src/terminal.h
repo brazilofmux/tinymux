@@ -54,11 +54,13 @@ public:
                               const std::string& before_name = "",
                               const std::string& after_name = "",
                               int spacer = 0,
+                              int row = 0,
                               bool reset = false,
                               bool nodup = false);
-    bool status_edit_field(const std::string& field);
-    bool status_remove_field(const std::string& name);
+    bool status_edit_field(const std::string& field, int row = -1);
+    bool status_remove_field(const std::string& name, int row = -1);
     std::string status_fields() const;
+    int status_rows() const;
 
     // Refresh all windows (single doupdate per loop iteration)
     void refresh();
@@ -125,7 +127,7 @@ private:
     void delete_cluster_at();
 
     WINDOW* win_output_ = nullptr;
-    WINDOW* win_status_ = nullptr;
+    std::vector<WINDOW*> win_status_;
     WINDOW* win_input_  = nullptr;
 
     int rows_ = 0;
@@ -148,11 +150,13 @@ private:
     std::string saved_input_;
 
     std::string status_text_;
-    std::vector<std::string> status_fields_;
+    std::vector<std::vector<std::string>> status_fields_by_row_;
     std::string prompt_text_;
     std::unordered_map<uint32_t, int> color_pairs_;
     int next_pair_ = 1;
     bool initialized_ = false;
+
+    static constexpr int MAX_STATUS_ROWS = 6;
 };
 
 #endif // TERMINAL_H

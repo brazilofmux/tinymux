@@ -51,22 +51,27 @@ void Terminal::shutdown() {
 }
 
 void Terminal::create_windows() {
-    // Layout: output (top, rows-2 lines), status (1 line), input (1 line)
-    int out_h = rows_ - 2;
+    // Layout: output, status rows, input.
+    int status_h = status_rows();
+    if (status_h < 1) status_h = 1;
+    int out_h = rows_ - (status_h + 1);
     if (out_h < 1) out_h = 1;
 
     win_output_ = newwin(out_h, cols_, 0, 0);
-    win_status_ = newwin(1, cols_, out_h, 0);
-    win_input_  = newwin(1, cols_, out_h + 1, 0);
+    win_status_.clear();
+    for (int row = 0; row < status_h; ++row) {
+        win_status_.push_back(newwin(1, cols_, out_h + row, 0));
+    }
+    win_input_  = newwin(1, cols_, out_h + status_h, 0);
 
     scrollok(win_output_, FALSE);
     leaveok(win_output_, TRUE);   // don't position cursor here
-    leaveok(win_status_, TRUE);   // don't position cursor here
+    for (auto* w : win_status_) leaveok(w, TRUE);   // don't position cursor here
     leaveok(win_input_, FALSE);   // cursor lives in input window
     // No keypad/nodelay — we don't use ncurses for input
 
     // Status bar appearance
-    wbkgd(win_status_, A_REVERSE);
+    for (auto* w : win_status_) wbkgd(w, A_REVERSE);
 
     redraw_output();
     redraw_status();
@@ -75,12 +80,13 @@ void Terminal::create_windows() {
 
 void Terminal::destroy_windows() {
     if (win_output_) { delwin(win_output_); win_output_ = nullptr; }
-    if (win_status_) { delwin(win_status_); win_status_ = nullptr; }
+    for (auto* w : win_status_) if (w) delwin(w);
+    win_status_.clear();
     if (win_input_)  { delwin(win_input_);  win_input_  = nullptr; }
 }
 
 int Terminal::max_output_lines() const {
-    return rows_ - 2;
+    return rows_ - (status_rows() + 1);
 }
 
 void Terminal::handle_resize() {
@@ -721,7 +727,8 @@ std::string Terminal::expand_status_field(const std::string& field) const {
 
 void Terminal::status_add_field(const std::string& field) {
     if (field.empty()) return;
-    status_fields_.push_back(field);
+    if (status_fields_by_row_.empty()) status_fields_by_row_.resize(1);
+    status_fields_by_row_[0].push_back(field);
     redraw_status();
 }
 
@@ -729,8 +736,12 @@ bool Terminal::status_insert_fields(const std::vector<std::string>& fields,
                                     const std::string& before_name,
                                     const std::string& after_name,
                                     int spacer,
+                                    int row,
                                     bool reset,
                                     bool nodup) {
+    if (row < 0 || row >= MAX_STATUS_ROWS) return false;
+    if ((int)status_fields_by_row_.size() <= row) status_fields_by_row_.resize(row + 1);
+    auto& row_fields = status_fields_by_row_[row];
     std::vector<std::string> additions;
     additions.reserve(fields.size() + (spacer != 0 ? 1 : 0));
 
@@ -745,14 +756,14 @@ bool Terminal::status_insert_fields(const std::vector<std::string>& fields,
         }
     };
 
-    if (!reset) count_variable(status_fields_);
+    if (!reset) count_variable(row_fields);
     for (const auto& field : fields) {
         if (field.empty()) continue;
         if (nodup) {
             std::string name = status_field_name(field);
-            auto duplicate = std::find_if(status_fields_.begin(), status_fields_.end(),
+            auto duplicate = std::find_if(row_fields.begin(), row_fields.end(),
                 [&](const std::string& existing) { return status_field_name(existing) == name; });
-            if (duplicate != status_fields_.end()) continue;
+            if (duplicate != row_fields.end()) continue;
         }
         additions.push_back(field);
     }
@@ -766,60 +777,97 @@ bool Terminal::status_insert_fields(const std::vector<std::string>& fields,
     count_variable(additions);
     if (variable_widths > 1) return false;
 
-    if (reset) status_fields_.clear();
+    int old_rows = status_rows();
+    if (reset) row_fields.clear();
 
     if (!before_name.empty() || !after_name.empty()) {
         auto it = before_name.empty()
-            ? std::find_if(status_fields_.begin(), status_fields_.end(),
+            ? std::find_if(row_fields.begin(), row_fields.end(),
                   [&](const std::string& existing) { return status_field_name(existing) == after_name; })
-            : std::find_if(status_fields_.begin(), status_fields_.end(),
+            : std::find_if(row_fields.begin(), row_fields.end(),
                   [&](const std::string& existing) { return status_field_name(existing) == before_name; });
-        if (it == status_fields_.end()) return false;
+        if (it == row_fields.end()) return false;
         if (before_name.empty()) ++it;
-        status_fields_.insert(it, additions.begin(), additions.end());
+        row_fields.insert(it, additions.begin(), additions.end());
     } else {
-        status_fields_.insert(status_fields_.end(), additions.begin(), additions.end());
+        row_fields.insert(row_fields.end(), additions.begin(), additions.end());
+    }
+
+    if (initialized_ && status_rows() != old_rows) {
+        destroy_windows();
+        create_windows();
+        return true;
     }
 
     redraw_status();
     return true;
 }
 
-bool Terminal::status_edit_field(const std::string& field) {
+bool Terminal::status_edit_field(const std::string& field, int row) {
     std::string name = status_field_name(field);
     if (name.empty()) return false;
-    for (auto& existing : status_fields_) {
-        if (status_field_name(existing) == name) {
-            existing = field;
-            redraw_status();
-            return true;
+    int start = row < 0 ? 0 : row;
+    int end = row < 0 ? (int)status_fields_by_row_.size() : row + 1;
+    for (int r = start; r < end; ++r) {
+        if (r < 0 || r >= (int)status_fields_by_row_.size()) continue;
+        for (auto& existing : status_fields_by_row_[r]) {
+            if (status_field_name(existing) == name) {
+                existing = field;
+                redraw_status();
+                return true;
+            }
         }
     }
     return false;
 }
 
-bool Terminal::status_remove_field(const std::string& name) {
-    auto it = std::find_if(status_fields_.begin(), status_fields_.end(),
-        [&](const std::string& field) { return status_field_name(field) == name; });
-    if (it == status_fields_.end()) return false;
-    status_fields_.erase(it);
-    redraw_status();
-    return true;
+bool Terminal::status_remove_field(const std::string& name, int row) {
+    int old_rows = status_rows();
+    int start = row < 0 ? 0 : row;
+    int end = row < 0 ? (int)status_fields_by_row_.size() : row + 1;
+    for (int r = start; r < end; ++r) {
+        if (r < 0 || r >= (int)status_fields_by_row_.size()) continue;
+        auto& row_fields = status_fields_by_row_[r];
+        auto it = std::find_if(row_fields.begin(), row_fields.end(),
+            [&](const std::string& field) { return status_field_name(field) == name; });
+        if (it == row_fields.end()) continue;
+        row_fields.erase(it);
+        if (initialized_ && status_rows() != old_rows) {
+            destroy_windows();
+            create_windows();
+        } else {
+            redraw_status();
+        }
+        return true;
+    }
+    return false;
 }
 
 std::string Terminal::status_fields() const {
     std::string out;
-    for (size_t i = 0; i < status_fields_.size(); i++) {
-        if (i) out += ' ';
-        out += status_fields_[i];
+    for (size_t row = 0; row < status_fields_by_row_.size(); ++row) {
+        if (status_fields_by_row_[row].empty()) continue;
+        if (!out.empty()) out += " | ";
+        for (size_t i = 0; i < status_fields_by_row_[row].size(); i++) {
+            if (i) out += ' ';
+            out += status_fields_by_row_[row][i];
+        }
     }
     return out;
+}
+
+int Terminal::status_rows() const {
+    int rows = 1;
+    for (size_t i = 0; i < status_fields_by_row_.size(); ++i) {
+        if (!status_fields_by_row_[i].empty()) rows = std::max(rows, (int)i + 1);
+    }
+    return rows;
 }
 
 void Terminal::refresh() {
     if (!initialized_) return;
     wnoutrefresh(win_output_);
-    wnoutrefresh(win_status_);
+    for (auto* w : win_status_) wnoutrefresh(w);
     wnoutrefresh(win_input_);
     doupdate();
 }
@@ -1032,41 +1080,48 @@ void Terminal::redraw_input() {
 }
 
 void Terminal::redraw_status() {
-    if (!win_status_) return;
-    werase(win_status_);
-    std::string text = status_text_;
-    if (!status_fields_.empty()) {
-        if (!text.empty()) text += "  ";
-        int flex_index = -1;
-        int fixed_width = 0;
-        for (size_t i = 0; i < status_fields_.size(); ++i) {
-            bool explicit_width = false;
-            int width = status_field_width(status_fields_[i], &explicit_width);
-            if (explicit_width && width == 0 && !status_field_name(status_fields_[i]).empty()) {
-                if (flex_index < 0) flex_index = (int)i;
-                continue;
-            }
-            fixed_width += display_width_ansi(expand_status_field(status_fields_[i]));
-        }
+    if (win_status_.empty()) return;
+    for (size_t row = 0; row < win_status_.size(); ++row) {
+        WINDOW* w = win_status_[row];
+        werase(w);
 
-        int prefix_width = display_width_ansi(text);
-        int remaining = cols_ - 1 - prefix_width - fixed_width;
-        if (remaining < 0) remaining = 0;
+        std::string text = (row == 0) ? status_text_ : "";
+        const std::vector<std::string> empty;
+        const auto& fields = row < status_fields_by_row_.size() ? status_fields_by_row_[row] : empty;
 
-        for (size_t i = 0; i < status_fields_.size(); ++i) {
-            if ((int)i == flex_index) {
-                std::string field = status_fields_[i];
-                size_t first = field.find(':');
-                size_t second = field.find(':', first == std::string::npos ? 0 : first + 1);
-                std::string rebuilt = (first == std::string::npos)
-                    ? field + ":" + std::to_string(remaining)
-                    : field.substr(0, first + 1) + std::to_string(remaining)
-                        + (second == std::string::npos ? "" : field.substr(second));
-                text += expand_status_field(rebuilt);
-            } else {
-                text += expand_status_field(status_fields_[i]);
+        if (!fields.empty()) {
+            if (!text.empty()) text += "  ";
+            int flex_index = -1;
+            int fixed_width = 0;
+            for (size_t i = 0; i < fields.size(); ++i) {
+                bool explicit_width = false;
+                int width = status_field_width(fields[i], &explicit_width);
+                if (explicit_width && width == 0 && !status_field_name(fields[i]).empty()) {
+                    if (flex_index < 0) flex_index = (int)i;
+                    continue;
+                }
+                fixed_width += display_width_ansi(expand_status_field(fields[i]));
+            }
+
+            int prefix_width = display_width_ansi(text);
+            int remaining = cols_ - 1 - prefix_width - fixed_width;
+            if (remaining < 0) remaining = 0;
+
+            for (size_t i = 0; i < fields.size(); ++i) {
+                if ((int)i == flex_index) {
+                    std::string field = fields[i];
+                    size_t first = field.find(':');
+                    size_t second = field.find(':', first == std::string::npos ? 0 : first + 1);
+                    std::string rebuilt = (first == std::string::npos)
+                        ? field + ":" + std::to_string(remaining)
+                        : field.substr(0, first + 1) + std::to_string(remaining)
+                            + (second == std::string::npos ? "" : field.substr(second));
+                    text += expand_status_field(rebuilt);
+                } else {
+                    text += expand_status_field(fields[i]);
+                }
             }
         }
+        mvwaddnstr(w, 0, 0, text.c_str(), cols_ - 1);
     }
-    mvwaddnstr(win_status_, 0, 0, text.c_str(), cols_ - 1);
 }

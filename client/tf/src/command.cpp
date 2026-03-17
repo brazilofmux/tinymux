@@ -1300,13 +1300,14 @@ void cmd_restrict(App& app, const std::string& args) {
 void cmd_status_add(App& app, const std::string& args) {
     std::string s = trim_copy(args);
     if (s.empty()) {
-        app.terminal.print_system("Usage: /status_add [-A field|-B field] [-s n] [-x] [-c] <field> [field...]");
+        app.terminal.print_system("Usage: /status_add [-r row] [-A field|-B field] [-s n] [-x] [-c] <field> [field...]");
         return;
     }
 
     std::string before_name;
     std::string after_name;
     int spacer = 0;
+    int row = 0;
     bool nodup = false;
     bool reset = false;
 
@@ -1323,6 +1324,13 @@ void cmd_status_add(App& app, const std::string& args) {
             size_t end = consumed;
             while (end < s.size() && s[end] != ' ') end++;
             spacer = std::atoi(s.substr(consumed, end - consumed).c_str());
+            s = trim_copy(s.substr(end));
+        } else if (s.rfind("-r", 0) == 0) {
+            size_t consumed = 2;
+            while (consumed < s.size() && s[consumed] == ' ') consumed++;
+            size_t end = consumed;
+            while (end < s.size() && s[end] != ' ') end++;
+            row = std::atoi(s.substr(consumed, end - consumed).c_str());
             s = trim_copy(s.substr(end));
         } else if (s.rfind("-A", 0) == 0 || s.rfind("-B", 0) == 0) {
             bool before = (s[1] == 'B');
@@ -1349,7 +1357,7 @@ void cmd_status_add(App& app, const std::string& args) {
         app.terminal.print_system("% /status_add: no fields specified");
         return;
     }
-    if (!app.terminal.status_insert_fields(fields, before_name, after_name, spacer, reset, nodup)) {
+    if (!app.terminal.status_insert_fields(fields, before_name, after_name, spacer, row, reset, nodup)) {
         app.terminal.print_system("% /status_add: invalid placement or duplicate variable-width field");
         return;
     }
@@ -1357,12 +1365,22 @@ void cmd_status_add(App& app, const std::string& args) {
 }
 
 void cmd_status_edit(App& app, const std::string& args) {
-    std::string field = trim_copy(args);
+    std::string s = trim_copy(args);
+    int row = -1;
+    while (!s.empty() && s.rfind("-r", 0) == 0) {
+        size_t consumed = 2;
+        while (consumed < s.size() && s[consumed] == ' ') consumed++;
+        size_t end = consumed;
+        while (end < s.size() && s[end] != ' ') end++;
+        row = std::atoi(s.substr(consumed, end - consumed).c_str());
+        s = trim_copy(s.substr(end));
+    }
+    std::string field = s;
     if (field.empty()) {
-        app.terminal.print_system("Usage: /status_edit <field>");
+        app.terminal.print_system("Usage: /status_edit [-r row] <field>");
         return;
     }
-    if (app.terminal.status_edit_field(field)) {
+    if (app.terminal.status_edit_field(field, row)) {
         app.terminal.set_status(app.fg ? " [" + app.fg->world_name() + "]" : " [no connection]");
     } else {
         app.terminal.print_system("% No such status field");
@@ -1372,15 +1390,25 @@ void cmd_status_edit(App& app, const std::string& args) {
 void cmd_status_rm(App& app, const std::string& args) {
     std::string s = trim_copy(args);
     if (s.empty()) {
-        app.terminal.print_system("Usage: /status_rm <name> [name...]");
+        app.terminal.print_system("Usage: /status_rm [-r row] <name> [name...]");
         return;
+    }
+
+    int row = -1;
+    while (!s.empty() && s.rfind("-r", 0) == 0) {
+        size_t consumed = 2;
+        while (consumed < s.size() && s[consumed] == ' ') consumed++;
+        size_t end = consumed;
+        while (end < s.size() && s[end] != ' ') end++;
+        row = std::atoi(s.substr(consumed, end - consumed).c_str());
+        s = trim_copy(s.substr(end));
     }
 
     bool removed_any = false;
     std::istringstream iss(s);
     std::string name;
     while (iss >> name) {
-        if (app.terminal.status_remove_field(name)) removed_any = true;
+        if (app.terminal.status_remove_field(name, row)) removed_any = true;
     }
     if (removed_any) {
         app.terminal.set_status(app.fg ? " [" + app.fg->world_name() + "]" : " [no connection]");
