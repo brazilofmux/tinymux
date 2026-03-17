@@ -1386,6 +1386,52 @@ void do_protect
     dbref aowner;
     int aflags;
 
+    if (key & PROTECT_ALL)
+    {
+        if (!Wizard(executor))
+        {
+            notify(executor, NOPERM_MESSAGE);
+            return;
+        }
+
+        bool found_any = false;
+        dbref i;
+        DO_WHOLE_DB(i)
+        {
+            if (!isPlayer(i))
+            {
+                continue;
+            }
+
+            UTF8 *pProtect = atr_pget(i, A_PROTECTNAME, &aowner, &aflags);
+            if ('\0' != pProtect[0])
+            {
+                UTF8 *display = alloc_lbuf("do_protect.all");
+                UTF8 *dp = display;
+                UTF8 *bp = pProtect;
+                UTF8 *token;
+                while (nullptr != (token = split_token(&bp, sepPipe)))
+                {
+                    if (dp != display)
+                    {
+                        safe_str(T(", "), display, &dp);
+                    }
+                    safe_str(token, display, &dp);
+                }
+                *dp = '\0';
+                notify(executor, tprintf(T("%s: %s"), Name(i), display));
+                free_lbuf(display);
+                found_any = true;
+            }
+            free_lbuf(pProtect);
+        }
+        if (!found_any)
+        {
+            notify(executor, T("No protected names in the database."));
+        }
+        return;
+    }
+
     if (key & PROTECT_LIST)
     {
         dbref target = executor;
@@ -1408,7 +1454,7 @@ void do_protect
         }
         else
         {
-            // Display pipe-delimited list as space-separated for readability.
+            // Display pipe-delimited list as comma-separated for readability.
             //
             UTF8 *display = alloc_lbuf("do_protect.list");
             UTF8 *dp = display;
@@ -1434,6 +1480,95 @@ void do_protect
        || '\0' == arg1[0])
     {
         notify(executor, T("Protect what name?"));
+        return;
+    }
+
+    if (key & PROTECT_ALIAS)
+    {
+        // Set a protected name as this player's alias.
+        // The name must be in the player's protected list.
+        //
+        UTF8 *pProtect = atr_pget(executor, A_PROTECTNAME, &aowner, &aflags);
+        bool found = false;
+        if ('\0' != pProtect[0])
+        {
+            UTF8 *bp = pProtect;
+            UTF8 *token;
+            while (nullptr != (token = split_token(&bp, sepPipe)))
+            {
+                if (0 == string_compare(token, arg1))
+                {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        free_lbuf(pProtect);
+
+        if (!found)
+        {
+            notify(executor, T("That name is not in your protected list."));
+            return;
+        }
+
+        // Check the name isn't already in use by someone else.
+        //
+        bool bAlias = false;
+        dbref nPlayer = lookup_player_name(arg1, bAlias);
+        if (  NOTHING != nPlayer
+           && (  nPlayer != executor
+              || !bAlias))
+        {
+            notify(executor, T("That name is already in use."));
+            return;
+        }
+
+        // Remove old alias if any, set new one.
+        //
+        UTF8 *oldalias = atr_pget(executor, A_ALIAS, &aowner, &aflags);
+        if ('\0' != oldalias[0])
+        {
+            delete_player_name(executor, oldalias, true);
+        }
+        free_lbuf(oldalias);
+
+        atr_add(executor, A_ALIAS, arg1, Owner(executor), aflags);
+        if (add_player_name(executor, arg1, true))
+        {
+            notify(executor, tprintf(T("Alias set to \xE2\x80\x98%s\xE2\x80\x99."), arg1));
+        }
+        else
+        {
+            notify(executor, T("That name is already in use or is illegal, alias cleared."));
+            atr_clr(executor, A_ALIAS);
+        }
+        return;
+    }
+
+    if (key & PROTECT_UNALIAS)
+    {
+        // Remove the player's alias, but only if it matches a protected name.
+        //
+        UTF8 *oldalias = atr_pget(executor, A_ALIAS, &aowner, &aflags);
+        if ('\0' == oldalias[0])
+        {
+            notify(executor, T("You have no alias set."));
+            free_lbuf(oldalias);
+            return;
+        }
+
+        if (0 != string_compare(oldalias, arg1))
+        {
+            notify(executor, tprintf(T("Your alias is \xE2\x80\x98%s\xE2\x80\x99, not \xE2\x80\x98%s\xE2\x80\x99."),
+                oldalias, arg1));
+            free_lbuf(oldalias);
+            return;
+        }
+
+        delete_player_name(executor, oldalias, true);
+        atr_clr(executor, A_ALIAS);
+        notify(executor, tprintf(T("Alias \xE2\x80\x98%s\xE2\x80\x99 removed."), oldalias));
+        free_lbuf(oldalias);
         return;
     }
 

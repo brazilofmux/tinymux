@@ -1096,6 +1096,9 @@ extern int anum_alc_top;
 #define PROTECT_ADD     0   /* @protect/add (default) */
 #define PROTECT_DEL     1   /* @protect/del */
 #define PROTECT_LIST    2   /* @protect/list */
+#define PROTECT_ALIAS   4   /* @protect/alias */
+#define PROTECT_UNALIAS 8   /* @protect/unalias */
+#define PROTECT_ALL     16  /* @protect/all (wizard) */
 #define REFERENCE_LIST  1   /* List @references */
 #define SAY_SAY         1   /* say in current room */
 #define SAY_NOSPACE     1   /* OR with xx_EMIT to get nospace form */

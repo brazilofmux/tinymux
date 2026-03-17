@@ -492,9 +492,12 @@ static NAMETAB quota_sw[] =
 
 static NAMETAB protect_sw[] =
 {
-    {T("add"),             1,  CA_PUBLIC,  PROTECT_ADD},
+    {T("add"),             2,  CA_PUBLIC,  PROTECT_ADD},
+    {T("alias"),           2,  CA_PUBLIC,  PROTECT_ALIAS},
+    {T("all"),             3,  CA_WIZARD,  PROTECT_ALL},
     {T("del"),             1,  CA_PUBLIC,  PROTECT_DEL},
     {T("list"),            1,  CA_PUBLIC,  PROTECT_LIST},
+    {T("unalias"),         1,  CA_PUBLIC,  PROTECT_UNALIAS},
     {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
