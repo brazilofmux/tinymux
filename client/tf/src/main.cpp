@@ -769,7 +769,8 @@ int main(int argc, char* argv[]) {
     }
 
     if (world_files.empty() && command_files.empty()) {
-        app.terminal.print_system("Use /load tiny.world then /load tiny.connect to get started.");
+        app.terminal.print_system("Use /world to define worlds, /connect <world> to connect.");
+        app.terminal.print_system("Use -w <file> to load world definitions at startup.");
     }
 
     for (const auto& path : world_files) {
