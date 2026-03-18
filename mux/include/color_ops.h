@@ -776,6 +776,55 @@ LIBMUX_API int co_nearest_xterm256(const unsigned char *rgb);
  */
 LIBMUX_API int co_nearest_xterm16(const unsigned char *rgb);
 
+/*
+ * co_color_attr — Per-byte color and style attributes for GUI rendering.
+ *
+ * Used by GUI rendering paths (Win32 GDI, Direct2D) that need structured
+ * color data instead of ANSI escape sequences.
+ *
+ * fg/bg:       0x00RRGGBB for truecolor or indexed (resolved to RGB).
+ * fg_type/bg_type: 0 = default (use client's configured color),
+ *                  1 = indexed (0-255, resolved to xterm palette RGB),
+ *                  2 = 24-bit RGB.
+ */
+typedef struct {
+    uint32_t fg;        /* 0x00RRGGBB */
+    uint32_t bg;        /* 0x00RRGGBB */
+    uint8_t  bold;      /* 1 = bold/intense */
+    uint8_t  underline; /* 1 = underline */
+    uint8_t  blink;     /* 1 = blink */
+    uint8_t  inverse;   /* 1 = fg/bg swapped */
+    uint8_t  fg_type;   /* 0 = default, 1 = indexed, 2 = RGB */
+    uint8_t  bg_type;   /* 0 = default, 1 = indexed, 2 = RGB */
+    uint8_t  pad[2];    /* Alignment padding */
+} co_color_attr;
+
+/*
+ * co_render_attrs — Strip PUA color from UTF-8, emit text + parallel attrs.
+ *
+ * Walks PUA-encoded input, strips all color code points, writes visible
+ * UTF-8 bytes to out_text, and writes one co_color_attr per output byte
+ * to out_attrs.  All bytes within a single visible code point share the
+ * same attribute entry.
+ *
+ * Indexed colors (0-255) are resolved to RGB via the xterm-256 palette
+ * so that fg/bg always contain valid 0x00RRGGBB when fg_type/bg_type != 0.
+ * The caller can override indexed entries at paint time by checking
+ * fg_type/bg_type == 1 and using a custom palette instead.
+ *
+ * out_attrs:  Must have room for at least LBUF_SIZE entries.
+ * out_text:   Must have room for at least LBUF_SIZE bytes.
+ * data:       PUA-encoded UTF-8 input.
+ * len:        Length of data in bytes.
+ * bNoBleed:   If nonzero, reset color state to default at end of line.
+ *
+ * Returns bytes written to out_text.  out_attrs[0..return-1] is valid.
+ */
+LIBMUX_API size_t co_render_attrs(co_color_attr *out_attrs,
+                                  unsigned char *out_text,
+                                  const unsigned char *data, size_t len,
+                                  int bNoBleed);
+
 #ifdef __cplusplus
 }
 #endif

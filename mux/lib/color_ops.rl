@@ -4162,3 +4162,113 @@ size_t co_render_html(unsigned char *out,
     *wp = '\0';
     return (size_t)(wp - out);
 }
+
+/* ---- co_render_attrs ---- */
+
+/*
+ * Build a co_color_attr from the current co_ColorState.
+ *
+ * Indexed colors are resolved to RGB via the xterm palette so that
+ * fg/bg always contain a valid 0x00RRGGBB when the type is nonzero.
+ */
+static co_color_attr cs_to_attr(const co_ColorState *cs)
+{
+    co_color_attr a;
+    memset(&a, 0, sizeof(a));
+
+    a.bold      = cs->intense;
+    a.underline = cs->underline;
+    a.blink     = cs->blink;
+    a.inverse   = cs->inverse;
+
+    if (cs->fg == -1) {
+        /* Default foreground. */
+        a.fg_type = 0;
+        a.fg      = 0;
+    } else if (cs->fg == -2) {
+        /* 24-bit RGB foreground. */
+        a.fg_type = 2;
+        a.fg      = ((uint32_t)cs->fg_r << 16)
+                   | ((uint32_t)cs->fg_g << 8)
+                   |  (uint32_t)cs->fg_b;
+    } else {
+        /* Indexed foreground (0-255). */
+        a.fg_type = 1;
+        a.fg      = ((uint32_t)cs->fg_r << 16)
+                   | ((uint32_t)cs->fg_g << 8)
+                   |  (uint32_t)cs->fg_b;
+    }
+
+    if (cs->bg == -1) {
+        a.bg_type = 0;
+        a.bg      = 0;
+    } else if (cs->bg == -2) {
+        a.bg_type = 2;
+        a.bg      = ((uint32_t)cs->bg_r << 16)
+                   | ((uint32_t)cs->bg_g << 8)
+                   |  (uint32_t)cs->bg_b;
+    } else {
+        a.bg_type = 1;
+        a.bg      = ((uint32_t)cs->bg_r << 16)
+                   | ((uint32_t)cs->bg_g << 8)
+                   |  (uint32_t)cs->bg_b;
+    }
+
+    return a;
+}
+
+size_t co_render_attrs(co_color_attr *out_attrs,
+                       unsigned char *out_text,
+                       const unsigned char *data, size_t len,
+                       int bNoBleed)
+{
+    unsigned char *wp = out_text;
+    const unsigned char *wp_end = out_text + LBUF_SIZE - 1;
+    const unsigned char *p = data;
+    const unsigned char *pe = data + len;
+
+    co_ColorState cs = CO_CS_NORMAL;
+    size_t n = 0;  /* bytes written */
+
+    while (p < pe && wp < wp_end) {
+        /* BMP PUA color (3-byte: EF 94..9F xx). */
+        if (p[0] == 0xEF && (p + 2) < pe
+            && p[1] >= 0x94 && p[1] <= 0x9F) {
+            parse_bmp_color(p, &cs);
+            p += 3;
+            continue;
+        }
+        /* SMP PUA color (4-byte: F3 B0..B3 xx xx). */
+        if (p[0] == 0xF3 && (p + 3) < pe
+            && p[1] >= 0xB0 && p[1] <= 0xB3) {
+            parse_smp_color(p, &cs);
+            p += 4;
+            continue;
+        }
+
+        /* Visible code point — determine its byte length. */
+        size_t cplen;
+        if (*p < 0x80)      cplen = 1;
+        else if (*p < 0xE0) cplen = 2;
+        else if (*p < 0xF0) cplen = 3;
+        else                cplen = 4;
+
+        if (p + cplen > pe) break;
+        if (wp + cplen > wp_end) break;
+
+        /* Build the attribute for this code point. */
+        co_color_attr a = cs_to_attr(&cs);
+
+        /* Copy visible bytes and stamp the same attr on each byte. */
+        for (size_t i = 0; i < cplen; i++) {
+            *wp++ = p[i];
+            out_attrs[n++] = a;
+        }
+        p += cplen;
+    }
+
+    *wp = '\0';
+
+    (void)bNoBleed;  /* Reserved for future use (line-level reset). */
+    return n;
+}
