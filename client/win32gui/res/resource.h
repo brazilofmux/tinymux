@@ -37,6 +37,7 @@
 #define IDS_APP_CLASS           2002
 
 // Internal commands (not in menus)
+#define IDM_FILE_WORLDS         1007
 #define IDM_TAB_NEXT            1501
 #define IDM_TAB_PREV            1502
 

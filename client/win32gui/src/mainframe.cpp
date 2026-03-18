@@ -539,6 +539,167 @@ static INT_PTR CALLBACK SettingsDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPAR
     return FALSE;
 }
 
+// World Editor sub-dialog — Add or Edit a single world.
+static WorldDef g_world_edit;
+static bool g_world_edit_ok;
+
+static INT_PTR CALLBACK WorldEditDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM) {
+    switch (msg) {
+    case WM_INITDIALOG: {
+        SetWindowTextW(hDlg, g_world_edit.name.empty() ? L"Add World" : L"Edit World");
+        wchar_t buf[128];
+        int y = 10;
+        auto label = [&](const wchar_t* t, int x, int w) {
+            CreateWindowExW(0, L"STATIC", t, WS_CHILD|WS_VISIBLE, x, y+2, w, 20, hDlg, nullptr, nullptr, nullptr);
+        };
+        auto edit = [&](int id, const char* val, int x, int w) {
+            MultiByteToWideChar(CP_UTF8, 0, val, -1, buf, 128);
+            CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", buf, WS_CHILD|WS_VISIBLE|WS_TABSTOP|ES_AUTOHSCROLL, x, y, w, 22, hDlg, (HMENU)(INT_PTR)id, nullptr, nullptr);
+        };
+
+        label(L"Name:", 10, 50); edit(301, g_world_edit.name.c_str(), 65, 190); y += 28;
+        label(L"Host:", 10, 50); edit(302, g_world_edit.host.c_str(), 65, 190); y += 28;
+        label(L"Port:", 10, 50); edit(303, g_world_edit.port.c_str(), 65, 80); y += 28;
+        label(L"Char:", 10, 50); edit(304, g_world_edit.character.c_str(), 65, 190); y += 28;
+
+        HWND hSSL = CreateWindowExW(0, L"BUTTON", L"SSL/TLS", WS_CHILD|WS_VISIBLE|BS_AUTOCHECKBOX|WS_TABSTOP, 65, y, 80, 20, hDlg, (HMENU)305, nullptr, nullptr);
+        if (g_world_edit.ssl) SendMessageW(hSSL, BM_SETCHECK, BST_CHECKED, 0);
+        HWND hAuto = CreateWindowExW(0, L"BUTTON", L"Auto-connect", WS_CHILD|WS_VISIBLE|BS_AUTOCHECKBOX|WS_TABSTOP, 155, y, 110, 20, hDlg, (HMENU)306, nullptr, nullptr);
+        if (g_world_edit.auto_connect) SendMessageW(hAuto, BM_SETCHECK, BST_CHECKED, 0);
+        y += 30;
+
+        CreateWindowExW(0, L"BUTTON", L"OK", WS_CHILD|WS_VISIBLE|BS_DEFPUSHBUTTON|WS_TABSTOP, 65, y, 80, 26, hDlg, (HMENU)IDOK, nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", L"Cancel", WS_CHILD|WS_VISIBLE|WS_TABSTOP, 155, y, 80, 26, hDlg, (HMENU)IDCANCEL, nullptr, nullptr);
+
+        HFONT hFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
+        EnumChildWindows(hDlg, [](HWND hw, LPARAM lp) -> BOOL { SendMessageW(hw, WM_SETFONT, lp, TRUE); return TRUE; }, (LPARAM)hFont);
+        SetFocus(GetDlgItem(hDlg, 301));
+        return FALSE;
+    }
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK) {
+            wchar_t buf[256]; char u8[256];
+            GetDlgItemTextW(hDlg, 301, buf, 256); WideCharToMultiByte(CP_UTF8,0,buf,-1,u8,256,0,0); g_world_edit.name = u8;
+            GetDlgItemTextW(hDlg, 302, buf, 256); WideCharToMultiByte(CP_UTF8,0,buf,-1,u8,256,0,0); g_world_edit.host = u8;
+            GetDlgItemTextW(hDlg, 303, buf, 256); WideCharToMultiByte(CP_UTF8,0,buf,-1,u8,256,0,0); g_world_edit.port = u8;
+            GetDlgItemTextW(hDlg, 304, buf, 256); WideCharToMultiByte(CP_UTF8,0,buf,-1,u8,256,0,0); g_world_edit.character = u8;
+            g_world_edit.ssl = (SendDlgItemMessageW(hDlg, 305, BM_GETCHECK, 0, 0) == BST_CHECKED);
+            g_world_edit.auto_connect = (SendDlgItemMessageW(hDlg, 306, BM_GETCHECK, 0, 0) == BST_CHECKED);
+            g_world_edit_ok = true;
+            EndDialog(hDlg, IDOK);
+        } else if (LOWORD(wParam) == IDCANCEL) {
+            g_world_edit_ok = false;
+            EndDialog(hDlg, IDCANCEL);
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+
+// World Manager dialog.
+static Settings* g_wm_settings;
+static CMainFrame* g_wm_frame;
+
+static void WorldMgr_Refresh(HWND hList) {
+    SendMessageW(hList, LB_RESETCONTENT, 0, 0);
+    for (auto& w : g_wm_settings->worlds) {
+        std::string entry = w.name + "  " + w.host + ":" + w.port;
+        if (w.ssl) entry += " ssl";
+        if (w.auto_connect) entry += " [auto]";
+        wchar_t wbuf[256];
+        MultiByteToWideChar(CP_UTF8, 0, entry.c_str(), -1, wbuf, 256);
+        SendMessageW(hList, LB_ADDSTRING, 0, (LPARAM)wbuf);
+    }
+}
+
+static bool WorldMgr_EditWorld(HWND hParent, HINSTANCE hInst) {
+    g_world_edit_ok = false;
+    #pragma pack(push, 4)
+    struct { DWORD style; DWORD exStyle; WORD cdit; short x, y, cx, cy;
+             WORD menu; WORD cls; WORD title; } tmpl = {
+        DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU,
+        0, 0, 0, 0, 280, 200, 0, 0, 0
+    };
+    #pragma pack(pop)
+    DialogBoxIndirectParamW(hInst, (LPCDLGTEMPLATEW)&tmpl, hParent, WorldEditDlgProc, 0);
+    return g_world_edit_ok;
+}
+
+static INT_PTR CALLBACK WorldMgrDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+    case WM_INITDIALOG: {
+        SetWindowTextW(hDlg, L"World Manager");
+        CreateWindowExW(WS_EX_CLIENTEDGE, L"LISTBOX", nullptr,
+            WS_CHILD|WS_VISIBLE|WS_TABSTOP|WS_VSCROLL|LBS_NOTIFY,
+            10, 10, 260, 180, hDlg, (HMENU)401, nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", L"Add",     WS_CHILD|WS_VISIBLE|WS_TABSTOP, 280,10,70,26,  hDlg, (HMENU)402, nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", L"Edit",    WS_CHILD|WS_VISIBLE|WS_TABSTOP, 280,42,70,26,  hDlg, (HMENU)403, nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", L"Delete",  WS_CHILD|WS_VISIBLE|WS_TABSTOP, 280,74,70,26,  hDlg, (HMENU)404, nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", L"Connect", WS_CHILD|WS_VISIBLE|BS_DEFPUSHBUTTON|WS_TABSTOP, 280,120,70,26, hDlg, (HMENU)405, nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", L"Close",   WS_CHILD|WS_VISIBLE|WS_TABSTOP, 280,152,70,26, hDlg, (HMENU)IDCANCEL, nullptr, nullptr);
+
+        HFONT hFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
+        EnumChildWindows(hDlg, [](HWND hw, LPARAM lp) -> BOOL { SendMessageW(hw, WM_SETFONT, lp, TRUE); return TRUE; }, (LPARAM)hFont);
+
+        WorldMgr_Refresh(GetDlgItem(hDlg, 401));
+        return TRUE;
+    }
+    case WM_COMMAND: {
+        HWND hList = GetDlgItem(hDlg, 401);
+        int sel = (int)SendMessageW(hList, LB_GETCURSEL, 0, 0);
+
+        switch (LOWORD(wParam)) {
+        case 402: { // Add
+            g_world_edit = WorldDef();
+            g_world_edit.port = "4201";
+            if (WorldMgr_EditWorld(hDlg, (HINSTANCE)GetWindowLongPtrW(hDlg, GWLP_HINSTANCE))) {
+                if (!g_world_edit.name.empty() && !g_world_edit.host.empty()) {
+                    g_wm_settings->worlds.push_back(g_world_edit);
+                    WorldMgr_Refresh(hList);
+                }
+            }
+            break;
+        }
+        case 403: { // Edit
+            if (sel >= 0 && sel < (int)g_wm_settings->worlds.size()) {
+                g_world_edit = g_wm_settings->worlds[sel];
+                if (WorldMgr_EditWorld(hDlg, (HINSTANCE)GetWindowLongPtrW(hDlg, GWLP_HINSTANCE))) {
+                    g_wm_settings->worlds[sel] = g_world_edit;
+                    WorldMgr_Refresh(hList);
+                }
+            }
+            break;
+        }
+        case 404: { // Delete
+            if (sel >= 0 && sel < (int)g_wm_settings->worlds.size()) {
+                g_wm_settings->worlds.erase(g_wm_settings->worlds.begin() + sel);
+                WorldMgr_Refresh(hList);
+            }
+            break;
+        }
+        case 405: { // Connect
+            if (sel >= 0 && sel < (int)g_wm_settings->worlds.size()) {
+                auto& w = g_wm_settings->worlds[sel];
+                g_wm_frame->ConnectWorld(w.name, w.host, w.port, w.ssl);
+                EndDialog(hDlg, IDOK);
+            }
+            break;
+        }
+        case 401: // Listbox double-click = Connect
+            if (HIWORD(wParam) == LBN_DBLCLK) {
+                SendMessageW(hDlg, WM_COMMAND, 405, 0);
+            }
+            break;
+        case IDCANCEL:
+            EndDialog(hDlg, IDCANCEL);
+            break;
+        }
+        return TRUE;
+    }
+    }
+    return FALSE;
+}
+
 // Find dialog state.
 static wchar_t g_find_text[256];
 static bool g_find_ok, g_find_up;
@@ -615,6 +776,21 @@ void CMainFrame::OnCommand(int id) {
     case IDM_FILE_EXIT:
         DestroyWindow(m_hwnd);
         break;
+
+    case IDM_FILE_WORLDS: {
+        g_wm_settings = &settings;
+        g_wm_frame = this;
+        #pragma pack(push, 4)
+        struct { DWORD style; DWORD exStyle; WORD cdit; short x, y, cx, cy;
+                 WORD menu; WORD cls; WORD title; } tmpl = {
+            DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU,
+            0, 0, 0, 0, 370, 210, 0, 0, 0
+        };
+        #pragma pack(pop)
+        DialogBoxIndirectParamW(hInst_, (LPCDLGTEMPLATEW)&tmpl,
+                                m_hwnd, WorldMgrDlgProc, 0);
+        break;
+    }
 
     case IDM_FILE_CONNECT: {
         g_conn_ok = false;

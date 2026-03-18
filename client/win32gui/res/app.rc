@@ -29,6 +29,7 @@ BEGIN
     POPUP "&File"
     BEGIN
         MENUITEM "&Connect...\tCtrl+N",         IDM_FILE_CONNECT
+        MENUITEM "&Worlds...",                  IDM_FILE_WORLDS
         MENUITEM "&Disconnect\tCtrl+D",         IDM_FILE_DISCONNECT
         MENUITEM SEPARATOR
         MENUITEM "&Log to File...\tCtrl+L",     IDM_FILE_LOG
