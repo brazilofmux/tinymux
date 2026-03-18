@@ -76,10 +76,11 @@ void Terminal::shutdown() {
 }
 
 void Terminal::create_windows() {
-    // Layout: output, status rows, input.
+    // Layout: output, status rows, input (1..MAX_INPUT_ROWS).
     int status_h = status_rows();
     if (status_h < 1) status_h = 1;
-    int out_h = rows_ - (status_h + 1);
+    int input_h = input_rows_;
+    int out_h = rows_ - (status_h + input_h);
     if (out_h < 1) out_h = 1;
 
     win_output_ = newwin(out_h, cols_, 0, 0);
@@ -87,7 +88,7 @@ void Terminal::create_windows() {
     for (int row = 0; row < status_h; ++row) {
         win_status_.push_back(newwin(1, cols_, out_h + row, 0));
     }
-    win_input_  = newwin(1, cols_, out_h + status_h, 0);
+    win_input_  = newwin(input_h, cols_, out_h + status_h, 0);
 
     scrollok(win_output_, FALSE);
     leaveok(win_output_, TRUE);   // don't position cursor here
@@ -111,15 +112,61 @@ void Terminal::destroy_windows() {
 }
 
 int Terminal::max_output_lines() const {
-    return rows_ - (status_rows() + 1);
+    return rows_ - (status_rows() + input_rows_);
 }
 
 void Terminal::handle_resize() {
     endwin();
     refresh();
     getmaxyx(stdscr, rows_, cols_);
+    input_rows_ = calc_input_rows();
     destroy_windows();
     create_windows();
+}
+
+int Terminal::calc_input_rows() const {
+    int total_width = display_width_ansi(prompt_text_)
+                    + (int)co_visual_width(
+                          reinterpret_cast<const unsigned char*>(input_buf_.data()),
+                          input_buf_.size());
+    if (total_width <= 0) return 1;
+    int needed = (total_width + cols_ - 1) / cols_;  // ceiling division
+    if (needed < 1) needed = 1;
+    if (needed > MAX_INPUT_ROWS) needed = MAX_INPUT_ROWS;
+    // Don't starve the output window.
+    int max_possible = rows_ - status_rows() - 1;
+    if (max_possible < 1) max_possible = 1;
+    if (needed > max_possible) needed = max_possible;
+    return needed;
+}
+
+void Terminal::resize_input_area(int new_rows) {
+    if (new_rows == input_rows_) return;
+    if (new_rows < 1) new_rows = 1;
+    if (new_rows > MAX_INPUT_ROWS) new_rows = MAX_INPUT_ROWS;
+
+    int status_h = status_rows();
+    if (status_h < 1) status_h = 1;
+    int new_out_h = rows_ - (status_h + new_rows);
+    if (new_out_h < 1) new_out_h = 1;
+
+    input_rows_ = new_rows;
+
+    // Resize output window (stays at row 0).
+    wresize(win_output_, new_out_h, cols_);
+
+    // Reposition status windows.
+    for (int i = 0; i < (int)win_status_.size(); ++i) {
+        mvwin(win_status_[i], new_out_h + i, 0);
+    }
+
+    // Resize and reposition input window.
+    wresize(win_input_, new_rows, cols_);
+    mvwin(win_input_, new_out_h + status_h, 0);
+
+    redraw_output();
+    redraw_status();
+    // Caller handles redraw_input().
 }
 
 int Terminal::normalize_color(int color) const {
@@ -1487,13 +1534,48 @@ void Terminal::redraw_output() {
 
 void Terminal::redraw_input() {
     if (!win_input_) return;
-    werase(win_input_);
-    render_ansi_line(win_input_, prompt_text_ + input_buf_, 0);
 
-    // Position cursor at correct display column
-    int cur_col = display_width_ansi(prompt_text_) + cursor_display_col();
-    if (cur_col >= cols_) cur_col = cols_ - 1;
-    wmove(win_input_, 0, cur_col);
+    // Grow or shrink the input area as needed.
+    int needed = calc_input_rows();
+    if (needed != input_rows_) {
+        resize_input_area(needed);
+    }
+
+    werase(win_input_);
+
+    // Wrap the full prompt + input into visual lines.
+    std::string full = prompt_text_ + input_buf_;
+    auto lines = wrap_line(full, cols_);
+    int total_lines = (int)lines.size();
+
+    // Determine which wrapped line the cursor is on.
+    int prompt_w = display_width_ansi(prompt_text_);
+    int cursor_w = prompt_w + cursor_display_col();
+    int cursor_line = (cols_ > 0) ? cursor_w / cols_ : 0;
+    int cursor_col  = (cols_ > 0) ? cursor_w % cols_ : 0;
+
+    // Choose the view window so the cursor line is always visible.
+    int view_start = 0;
+    if (cursor_line >= input_rows_) {
+        view_start = cursor_line - input_rows_ + 1;
+    }
+    if (view_start + input_rows_ > total_lines) {
+        view_start = total_lines - input_rows_;
+    }
+    if (view_start < 0) view_start = 0;
+
+    // Render visible lines.
+    for (int r = 0; r < input_rows_ && (view_start + r) < total_lines; ++r) {
+        render_ansi_line(win_input_, lines[view_start + r], r);
+    }
+
+    // Position the cursor.
+    int cur_row = cursor_line - view_start;
+    if (cur_row < 0) cur_row = 0;
+    if (cur_row >= input_rows_) cur_row = input_rows_ - 1;
+    if (cursor_col >= cols_) cursor_col = cols_ - 1;
+    if (cursor_col < 0) cursor_col = 0;
+    wmove(win_input_, cur_row, cursor_col);
 }
 
 void Terminal::redraw_status() {

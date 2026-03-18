@@ -152,6 +152,11 @@ private:
     // Input line editing
     std::string input_buf_;
     size_t cursor_pos_ = 0;
+    int input_rows_ = 1;                   // current height of input window (1..MAX_INPUT_ROWS)
+    static constexpr int MAX_INPUT_ROWS = 3;
+
+    int calc_input_rows() const;
+    void resize_input_area(int new_rows);
 
     // Input history
     std::unordered_map<std::string, std::deque<std::string>> input_histories_;
