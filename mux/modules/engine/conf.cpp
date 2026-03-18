@@ -267,6 +267,8 @@ void cf_init(void)
     mudconf.markdata[5] = 0x20;
     mudconf.markdata[6] = 0x40;
     mudconf.markdata[7] = 0x80;
+    mudconf.lua_instruction_limit = 100000;
+    mudconf.lua_memory_limit = 1048576;
     mudconf.func_nest_lim = 500;
     mudconf.func_invk_lim = 25000;
     mudconf.wild_invk_lim = 100000;
@@ -1948,6 +1950,8 @@ static CONFPARM conftable[] =
     {T("logout_cmd_access"),         cf_ntab_access, CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(logout_cmdtable),          access_nametab,     0},
     {T("logout_cmd_alias"),          cf_alias,       CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.logout_cmd_htab),nullptr,            0},
     {T("look_obey_terse"),           cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.terse_look),      nullptr,            0},
+    {T("lua_instruction_limit"),     cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.lua_instruction_limit,  nullptr,            0},
+    {T("lua_memory_limit"),          cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.lua_memory_limit,       nullptr,            0},
     {T("machine_command_cost"),      cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.machinecost,            nullptr,            0},
     {T("mail_database"),             cf_string_dyn,  CA_GOD,    CA_GOD,      reinterpret_cast<int *>(&mudconf.mail_db),         nullptr, SIZEOF_PATHNAME},
     {T("mail_expiration"),           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.mail_expiration,        nullptr,            0},

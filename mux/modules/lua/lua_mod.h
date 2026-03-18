@@ -104,6 +104,8 @@ public:
         size_t *pnInsnLimitHits, size_t *pnMemLimitHits,
         size_t *pnBytesUsed) override;
 
+    MUX_RESULT SetLimits(int nInsnLimit, int nMemLimit) override;
+
     // mux_IServerEventsSink
     //
     void startup(void) override;

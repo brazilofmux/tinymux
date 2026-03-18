@@ -1208,6 +1208,10 @@ public:
     virtual MUX_RESULT GetStats(size_t *pnCalls, size_t *pnErrors,
         size_t *pnInsnLimitHits, size_t *pnMemLimitHits,
         size_t *pnBytesUsed) = 0;
+
+    // Configure resource limits (called after module discovery).
+    //
+    virtual MUX_RESULT SetLimits(int nInsnLimit, int nMemLimit) = 0;
 };
 
 #endif // MODULES_H

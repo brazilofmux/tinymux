@@ -140,6 +140,8 @@ struct confdata
     int     log_info;           /* Info that goes into log entries */
     int     log_options;        /* What gets logged */
     int     machinecost;        /* One in mc+1 cmds costs 1 penny (POW2-1) */
+    int     lua_instruction_limit; // Max Lua VM instructions per call.
+    int     lua_memory_limit;   // Max Lua memory per execution (bytes).
     int     mail_expiration;    /* Number of days to wait to delete mail */
     int     mail_per_hour;      // Maximum sent @mail per hour per object.
     int     mail_max_per_player; // Maximum stored messages per player mailbox.

@@ -1136,6 +1136,19 @@ MUX_RESULT CLuaMod::GetStats(size_t *pnCalls, size_t *pnErrors,
     return MUX_S_OK;
 }
 
+MUX_RESULT CLuaMod::SetLimits(int nInsnLimit, int nMemLimit)
+{
+    if (nInsnLimit > 0)
+    {
+        m_nInsnLimit = nInsnLimit;
+    }
+    if (nMemLimit > 0)
+    {
+        m_nMemLimit = nMemLimit;
+    }
+    return MUX_S_OK;
+}
+
 // =========================================================================
 // mux_IServerEventsSink stubs.
 // =========================================================================

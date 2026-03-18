@@ -2826,6 +2826,10 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
                             reinterpret_cast<void **>(&mudstate.pILuaControl));
     if (MUX_SUCCEEDED(mr))
     {
+        mudstate.pILuaControl->SetLimits(
+            mudconf.lua_instruction_limit,
+            mudconf.lua_memory_limit);
+
         STARTLOG(LOG_ALWAYS, "INI", "MOD");
         log_text(T("Lua scripting module discovered."));
         ENDLOG;
