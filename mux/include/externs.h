@@ -804,8 +804,8 @@ bool check_access(dbref player, int mask);
 void cache_prefix_cmds(void);
 UTF8 *process_command(dbref executor, dbref caller, dbref enactor, int, bool,
     UTF8 *, const UTF8 *[], int);
-size_t LeftJustifyString(UTF8 *field, size_t nWidth, const UTF8 *value);
-size_t RightJustifyNumber(UTF8 *field, size_t nWidth, int64_t value, UTF8 chFill);
+// LeftJustifyString and RightJustifyNumber are declared in stringutil.h
+// with LIBMUX_API linkage.  Do not redeclare here.
 
 #define Protect(f) (cmdp->perms & f)
 

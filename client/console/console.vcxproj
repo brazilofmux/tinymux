@@ -63,6 +63,10 @@
       <AdditionalDependencies>ws2_32.lib;libmux.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\mux\bin_release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>copy /Y "$(ProjectDir)..\..\mux\bin_release\libmux.dll" "$(OutDir)"</Command>
+      <Message>Copying libmux.dll to output directory</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -81,6 +85,10 @@
       <AdditionalDependencies>ws2_32.lib;libmux.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\mux\bin_release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>copy /Y "$(ProjectDir)..\..\mux\bin_release\libmux.dll" "$(OutDir)"</Command>
+      <Message>Copying libmux.dll to output directory</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />

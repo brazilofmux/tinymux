@@ -78,7 +78,7 @@ LIBMUX_API bool is_real(const UTF8 *str);
 extern LIBMUX_API const UTF8 *mux_FPStrings[8];
 extern LIBMUX_API const UTF8 Digits16U[17];
 extern LIBMUX_API const UTF8 Digits16L[17];
-LIBMUX_API void safe_hex(uint8_t md[], size_t len, bool bUpper, UTF8 *buff, UTF8 **bufc);
+void safe_hex(uint8_t md[], size_t len, bool bUpper, UTF8 *buff, UTF8 **bufc);
 
 // IEEE special-value construction codes (used by MakeSpecialFloat).
 //
