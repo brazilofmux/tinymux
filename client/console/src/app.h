@@ -6,6 +6,9 @@
 #include "connection.h"
 #include "terminal.h"
 #include "command.h"
+#include "macro.h"
+#include "keybind.h"
+#include "timer.h"
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -17,6 +20,9 @@ struct App {
     Connection*                                    fg = nullptr;
     Terminal                                       terminal;
     CommandDispatcher                              commands;
+    MacroDB                                        macros;
+    KeyBindings                                    keybindings;
+    TimerDB                                        timers;
     std::unordered_map<std::string, std::string>   vars;
     std::unordered_set<std::string>                active_worlds;
     HANDLE                                         iocp = INVALID_HANDLE_VALUE;

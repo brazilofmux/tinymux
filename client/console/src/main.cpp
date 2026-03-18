@@ -121,15 +121,26 @@ int main(int argc, char* argv[]) {
             delete rec;
 
             if (ev.type != InputEvent::None) {
-                std::string line;
-                if (app.terminal.handle_key(ev, line)) {
-                    // User pressed Enter
-                    if (!line.empty() && line[0] == '/') {
-                        app.commands.dispatch(app, line);
+                // Check keybindings first
+                BindKey bk = event_to_bindkey(ev);
+                const std::string* bound_cmd = app.keybindings.find(bk);
+                if (bound_cmd) {
+                    if ((*bound_cmd)[0] == '/') {
+                        app.commands.dispatch(app, *bound_cmd);
                     } else if (app.fg) {
-                        app_send_line(app, app.fg, line);
-                    } else if (!line.empty()) {
-                        app.terminal.print_system("Not connected. Use /connect.");
+                        app_send_line(app, app.fg, *bound_cmd);
+                    }
+                } else {
+                    std::string line;
+                    if (app.terminal.handle_key(ev, line)) {
+                        // User pressed Enter
+                        if (!line.empty() && line[0] == '/') {
+                            app.commands.dispatch(app, line);
+                        } else if (app.fg) {
+                            app_send_line(app, app.fg, line);
+                        } else if (!line.empty()) {
+                            app.terminal.print_system("Not connected. Use /connect.");
+                        }
                     }
                 }
             }
@@ -171,6 +182,16 @@ int main(int argc, char* argv[]) {
             std::string prompt = conn->check_prompt(500);
             if (!prompt.empty()) {
                 app_receive_line(app, conn.get(), name, prompt);
+            }
+        }
+
+        // Fire timers
+        auto timer_cmds = app.timers.check_and_fire();
+        for (auto& cmd : timer_cmds) {
+            if (!cmd.empty() && cmd[0] == '/') {
+                app.commands.dispatch(app, cmd);
+            } else if (app.fg) {
+                app_send_line(app, app.fg, cmd);
             }
         }
 

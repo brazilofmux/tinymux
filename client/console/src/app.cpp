@@ -10,7 +10,15 @@ bool app_send_line(App& app, Connection* conn, const std::string& line) {
 void app_receive_line(App& app, Connection* conn, const std::string& world_name,
                       const std::string& line) {
     conn->add_to_scrollback(line);
-    app.terminal.print_line_to(world_name, line);
+
+    // Check triggers
+    std::string text = line;
+    TriggerResult tr = check_triggers(app, text);
+
+    // Display unless gagged
+    if (!tr.gagged) {
+        app.terminal.print_line_to(world_name, text);
+    }
 
     // Mark background activity if not foreground
     if (app.fg != conn) {

@@ -90,11 +90,17 @@
     <ClCompile Include="src\command.cpp" />
     <ClCompile Include="src\world.cpp" />
     <ClCompile Include="src\schannel_tls.cpp" />
+    <ClCompile Include="src\macro.cpp" />
+    <ClCompile Include="src\keybind.cpp" />
+    <ClCompile Include="src\timer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\app.h" />
     <ClInclude Include="src\connection.h" />
     <ClInclude Include="src\schannel_tls.h" />
+    <ClInclude Include="src\macro.h" />
+    <ClInclude Include="src\keybind.h" />
+    <ClInclude Include="src\timer.h" />
     <ClInclude Include="src\terminal.h" />
     <ClInclude Include="src\telnet.h" />
     <ClInclude Include="src\command.h" />

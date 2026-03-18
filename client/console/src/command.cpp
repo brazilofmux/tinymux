@@ -281,6 +281,170 @@ static void cmd_mssp(App& app, const std::vector<std::string>&) {
     }
 }
 
+static void cmd_def(App& app, const std::vector<std::string>& args) {
+    if (args.size() < 2) {
+        app.terminal.print_system("Usage: /def [name] -t'pattern' [-p pri] [-n shots] [-g] body");
+        return;
+    }
+    // Reconstruct the argument string after "/def "
+    std::string rest;
+    for (size_t i = 1; i < args.size(); i++) {
+        if (i > 1) rest += " ";
+        rest += args[i];
+    }
+    Macro m;
+    std::string err;
+    if (!parse_def(rest, m, err)) {
+        app.terminal.print_system("Error: " + err);
+        return;
+    }
+    app.macros.define(std::move(m));
+    app.terminal.print_system("Defined: " + rest);
+}
+
+static void cmd_undef(App& app, const std::vector<std::string>& args) {
+    if (args.size() < 2) {
+        app.terminal.print_system("Usage: /undef <name>");
+        return;
+    }
+    if (app.macros.undef(args[1])) {
+        app.terminal.print_system("Removed: " + args[1]);
+    } else {
+        app.terminal.print_system("No macro: " + args[1]);
+    }
+}
+
+static void cmd_list(App& app, const std::vector<std::string>&) {
+    auto& all = app.macros.all();
+    if (all.empty()) {
+        app.terminal.print_system("No macros defined.");
+        return;
+    }
+    for (auto& m : all) {
+        std::string desc = "  " + m.name;
+        if (!m.trigger.empty()) desc += " -t'" + m.trigger + "'";
+        if (m.gag) desc += " -g";
+        if (m.priority != 0) desc += " -p" + std::to_string(m.priority);
+        if (m.shots >= 0) desc += " -n" + std::to_string(m.shots);
+        if (!m.body.empty()) desc += " = " + m.body;
+        app.terminal.print_system(desc);
+    }
+}
+
+static void cmd_bind(App& app, const std::vector<std::string>& args) {
+    if (args.size() < 3) {
+        // List all bindings
+        auto& all = app.keybindings.all();
+        if (all.empty()) {
+            app.terminal.print_system("No key bindings.");
+        } else {
+            for (auto& [key, cmd] : all) {
+                app.terminal.print_system("  " + format_key_name(key) + " = " + cmd);
+            }
+        }
+        return;
+    }
+    BindKey bk = parse_key_name(args[1]);
+    // Rest of args is the command
+    std::string cmd;
+    for (size_t i = 2; i < args.size(); i++) {
+        if (i > 2) cmd += " ";
+        cmd += args[i];
+    }
+    app.keybindings.bind(bk, cmd);
+    app.terminal.print_system("Bound " + format_key_name(bk) + " = " + cmd);
+}
+
+static void cmd_unbind(App& app, const std::vector<std::string>& args) {
+    if (args.size() < 2) {
+        app.terminal.print_system("Usage: /unbind <key>");
+        return;
+    }
+    BindKey bk = parse_key_name(args[1]);
+    if (app.keybindings.unbind(bk)) {
+        app.terminal.print_system("Unbound " + format_key_name(bk));
+    } else {
+        app.terminal.print_system("Not bound: " + args[1]);
+    }
+}
+
+static void cmd_repeat(App& app, const std::vector<std::string>& args) {
+    // /repeat <name> <interval_sec> [-n shots] <command>
+    if (args.size() < 4) {
+        app.terminal.print_system("Usage: /repeat <name> <seconds> [-n shots] <command>");
+        return;
+    }
+    std::string name = args[1];
+    int interval_ms = 0;
+    try { interval_ms = (int)(std::stod(args[2]) * 1000); } catch (...) {}
+    if (interval_ms <= 0) {
+        app.terminal.print_system("Invalid interval.");
+        return;
+    }
+    int shots = -1;
+    size_t cmd_start = 3;
+    if (args.size() > 4 && args[3] == "-n") {
+        try { shots = std::stoi(args[4]); } catch (...) {}
+        cmd_start = 5;
+    }
+    std::string cmd;
+    for (size_t i = cmd_start; i < args.size(); i++) {
+        if (i > cmd_start) cmd += " ";
+        cmd += args[i];
+    }
+    if (cmd.empty()) {
+        app.terminal.print_system("No command specified.");
+        return;
+    }
+    app.timers.add(name, cmd, interval_ms, shots);
+    app.terminal.print_system("Timer " + name + ": every " + args[2] + "s");
+}
+
+static void cmd_killtimer(App& app, const std::vector<std::string>& args) {
+    if (args.size() < 2) {
+        app.terminal.print_system("Usage: /killtimer <name>");
+        return;
+    }
+    if (app.timers.remove(args[1])) {
+        app.terminal.print_system("Removed timer: " + args[1]);
+    } else {
+        app.terminal.print_system("No timer: " + args[1]);
+    }
+}
+
+static void cmd_listtimers(App& app, const std::vector<std::string>&) {
+    auto& all = app.timers.all();
+    if (all.empty()) {
+        app.terminal.print_system("No timers.");
+        return;
+    }
+    for (auto& t : all) {
+        std::string desc = "  " + t.name + " every " +
+                           std::to_string(t.interval_ms / 1000) + "s";
+        if (t.shots >= 0) desc += " (" + std::to_string(t.shots) + " left)";
+        desc += " = " + t.command;
+        app.terminal.print_system(desc);
+    }
+}
+
+static void cmd_save(App& app, const std::vector<std::string>& args) {
+    std::string path = args.size() >= 2 ? args[1] : "worlds.txt";
+    if (app.worlddb.save(path)) {
+        app.terminal.print_system("Saved to " + path);
+    } else {
+        app.terminal.print_system("Failed to save: " + path);
+    }
+}
+
+static void cmd_load(App& app, const std::vector<std::string>& args) {
+    std::string path = args.size() >= 2 ? args[1] : "worlds.txt";
+    if (app.worlddb.load(path)) {
+        app.terminal.print_system("Loaded " + path);
+    } else {
+        app.terminal.print_system("Failed to load: " + path);
+    }
+}
+
 static void cmd_help(App& app, const std::vector<std::string>&) {
     app.terminal.print_system("Commands:");
     auto list = app.commands.help_list();
@@ -302,5 +466,15 @@ void register_builtin_commands(App& app) {
     app.commands.register_cmd("recall",      cmd_recall,      "Search scrollback [pattern] [count]");
     app.commands.register_cmd("gmcp",        cmd_gmcp,        "Show GMCP data [package]");
     app.commands.register_cmd("mssp",        cmd_mssp,        "Show MSSP server data");
+    app.commands.register_cmd("def",         cmd_def,         "Define a trigger/macro");
+    app.commands.register_cmd("undef",       cmd_undef,       "Remove a macro by name");
+    app.commands.register_cmd("list",        cmd_list,        "List all macros/triggers");
+    app.commands.register_cmd("bind",        cmd_bind,        "Bind a key [key command]");
+    app.commands.register_cmd("unbind",      cmd_unbind,      "Unbind a key");
+    app.commands.register_cmd("repeat",      cmd_repeat,      "Set a timer: name secs [-n N] cmd");
+    app.commands.register_cmd("killtimer",   cmd_killtimer,   "Remove a timer");
+    app.commands.register_cmd("listtimers",  cmd_listtimers,  "List all timers");
+    app.commands.register_cmd("save",        cmd_save,        "Save worlds [file]");
+    app.commands.register_cmd("load",        cmd_load,        "Load worlds [file]");
     app.commands.register_cmd("help",        cmd_help,        "Show this help");
 }

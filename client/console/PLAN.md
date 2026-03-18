@@ -78,7 +78,7 @@ All Unicode functionality from libmux.dll — no reimplementation:
 - `/recall` (scrollback search)
 - Input history per-world
 
-### Phase 5: Triggers + Keybindings
+### Phase 5: Triggers + Keybindings — DONE
 
 - Basic triggers: `/def -t'pattern' command`, `/gag`, `/hilite`
 - Keybind customization: port TF's binding trie for multi-key sequences
