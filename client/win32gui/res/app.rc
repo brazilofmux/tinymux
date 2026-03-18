@@ -1,0 +1,72 @@
+#include <windows.h>
+#include "resource.h"
+
+// String table
+STRINGTABLE
+BEGIN
+    IDS_APP_TITLE   "TinyMUX Client"
+    IDS_APP_CLASS   "TinyMUXClientWnd"
+END
+
+// Accelerator table
+IDR_ACCEL ACCELERATORS
+BEGIN
+    "N",    IDM_FILE_CONNECT,       VIRTKEY, CONTROL
+    "D",    IDM_FILE_DISCONNECT,    VIRTKEY, CONTROL
+    "L",    IDM_FILE_LOG,           VIRTKEY, CONTROL
+    "C",    IDM_EDIT_COPY,          VIRTKEY, CONTROL
+    "V",    IDM_EDIT_PASTE,         VIRTKEY, CONTROL
+    "A",    IDM_EDIT_SELECTALL,     VIRTKEY, CONTROL
+    "F",    IDM_EDIT_FIND,          VIRTKEY, CONTROL
+    VK_END, IDM_VIEW_SCROLL_BOTTOM, VIRTKEY, CONTROL
+    VK_TAB, 0,                      VIRTKEY, CONTROL
+END
+
+// Menu
+IDR_MAINMENU MENU
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&Connect...\tCtrl+N",         IDM_FILE_CONNECT
+        MENUITEM "&Disconnect\tCtrl+D",         IDM_FILE_DISCONNECT
+        MENUITEM SEPARATOR
+        MENUITEM "&Log to File...\tCtrl+L",     IDM_FILE_LOG
+        MENUITEM "Stop Lo&gging",               IDM_FILE_LOG_STOP
+        MENUITEM SEPARATOR
+        MENUITEM "&Settings...",                IDM_FILE_SETTINGS
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit\tAlt+F4",              IDM_FILE_EXIT
+    END
+    POPUP "&Edit"
+    BEGIN
+        MENUITEM "&Copy\tCtrl+C",              IDM_EDIT_COPY
+        MENUITEM "&Paste\tCtrl+V",             IDM_EDIT_PASTE
+        MENUITEM "Select &All\tCtrl+A",        IDM_EDIT_SELECTALL
+        MENUITEM SEPARATOR
+        MENUITEM "&Find...\tCtrl+F",           IDM_EDIT_FIND
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "Scroll to &Bottom\tCtrl+End", IDM_VIEW_SCROLL_BOTTOM
+        MENUITEM "&Clear Output",               IDM_VIEW_CLEAR
+        MENUITEM SEPARATOR
+        MENUITEM "&Font...",                    IDM_VIEW_FONT
+        MENUITEM SEPARATOR
+        MENUITEM "&Status Bar",                 IDM_VIEW_STATUSBAR
+    END
+    POPUP "&World"
+    BEGIN
+        MENUITEM "&Reconnect",                  IDM_WORLD_RECONNECT
+        MENUITEM SEPARATOR
+        MENUITEM "&Triggers...",                IDM_WORLD_TRIGGERS
+        MENUITEM "Ti&mers...",                  IDM_WORLD_TIMERS
+        MENUITEM "&Key Bindings...",            IDM_WORLD_KEYBINDINGS
+        MENUITEM SEPARATOR
+        MENUITEM "&GMCP Data",                  IDM_WORLD_GMCP
+        MENUITEM "M&SSP Data",                  IDM_WORLD_MSSP
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About",                      IDM_HELP_ABOUT
+    END
+END
