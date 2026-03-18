@@ -11,9 +11,9 @@ std::string Terminal::render_line(const std::string& line) {
     size_t len = line.size();
     size_t n;
     if (vt_enabled_) {
-        n = co_render_truecolor(out, data, len);
+        n = co_render_truecolor(out, data, len, 0);
     } else {
-        n = co_render_ansi16(out, data, len);
+        n = co_render_ansi16(out, data, len, 0);
     }
     return std::string((const char*)out, n);
 }
