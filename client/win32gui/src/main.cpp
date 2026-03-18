@@ -19,6 +19,9 @@
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "ws2_32.lib")
 
+// Timer ID for periodic IOCP polling / prompt checks / status updates.
+#define IDT_POLL 1
+
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow) {
     // Initialize Winsock
     WSADATA wsa;
@@ -47,46 +50,24 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow) {
         return 1;
     }
 
+    // Start a 50ms timer for IOCP polling and periodic tasks.
+    SetTimer(frame.hwnd(), IDT_POLL, 50, nullptr);
+
     // Load accelerator table
     HACCEL hAccel = LoadAcceleratorsW(hInstance, MAKEINTRESOURCEW(IDR_ACCEL));
 
-    // Event loop: interleave IOCP completions with Windows messages.
-    bool running = true;
-    while (running) {
-        // Wait for either IOCP or Windows messages, with 100ms timeout
-        // for prompt detection and status bar updates.
-        DWORD result = MsgWaitForMultipleObjectsEx(
-            1, &frame.iocp,
-            100,
-            QS_ALLINPUT,
-            MWMO_INPUTAVAILABLE
-        );
-
-        if (result == WAIT_OBJECT_0) {
-            // IOCP has completions
-            frame.DrainIOCP();
-        }
-
-        // Always pump Windows messages (they may have arrived too)
-        MSG msg;
-        while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
-            if (msg.message == WM_QUIT) {
-                running = false;
-                break;
-            }
-            if (hAccel && TranslateAcceleratorW(frame.hwnd(), hAccel, &msg)) continue;
-            TranslateMessage(&msg);
-            DispatchMessageW(&msg);
-        }
-
-        // Periodic tasks
-        frame.CheckPrompts();
-        frame.UpdateStatusBar();
+    // Standard message loop — IOCP is polled via WM_TIMER.
+    MSG msg;
+    while (GetMessageW(&msg, nullptr, 0, 0)) {
+        if (hAccel && TranslateAcceleratorW(frame.hwnd(), hAccel, &msg)) continue;
+        TranslateMessage(&msg);
+        DispatchMessageW(&msg);
     }
 
     // Cleanup
+    KillTimer(frame.hwnd(), IDT_POLL);
     if (frame.iocp) CloseHandle(frame.iocp);
     RemoveCBTHook();
     WSACleanup();
-    return 0;
+    return (int)msg.wParam;
 }

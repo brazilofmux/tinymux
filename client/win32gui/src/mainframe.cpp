@@ -190,16 +190,21 @@ void CMainFrame::OnInputSubmitted(const std::string& line) {
 void CMainFrame::DrainIOCP() {
     if (iocp == INVALID_HANDLE_VALUE) return;
 
-    DWORD bytes = 0;
-    ULONG_PTR key = 0;
-    LPOVERLAPPED overlapped = nullptr;
+    for (;;) {
+        DWORD bytes = 0;
+        ULONG_PTR key = 0;
+        LPOVERLAPPED overlapped = nullptr;
 
-    // Drain all pending completions (non-blocking)
-    while (GetQueuedCompletionStatus(iocp, &bytes, &key, &overlapped, 0)) {
+        BOOL ok = GetQueuedCompletionStatus(iocp, &bytes, &key, &overlapped, 0);
+
+        if (!ok && !overlapped) break;  // No more completions pending
+
         if (!overlapped) continue;
+
         Connection* conn = (Connection*)key;
         IoContext* ctx = CONTAINING_RECORD(overlapped, IoContext, overlapped);
-        auto lines = conn->on_completion(ctx, bytes, 0);
+        DWORD error = ok ? 0 : GetLastError();
+        auto lines = conn->on_completion(ctx, bytes, error);
 
         // Find the tab that owns this connection
         for (int i = 0; i < (int)tab_states.size(); i++) {
@@ -212,13 +217,11 @@ void CMainFrame::DrainIOCP() {
                 if (!conn->is_connected()) {
                     tab_states[i]->buffer.append("% Connection lost.");
                     tab_states[i]->conn.reset();
-                    // Update tab appearance
                     TabInfo ti;
                     ti.name = tab_states[i]->name;
                     ti.connected = false;
                     tabbar.UpdateTab(i, ti);
                 } else if (i != active_tab) {
-                    // Background activity
                     TabInfo ti;
                     ti.name = tab_states[i]->name;
                     ti.active = true;
@@ -232,9 +235,6 @@ void CMainFrame::DrainIOCP() {
             }
         }
     }
-
-    // Also check for failed I/O
-    if (!overlapped) return;  // GetQueuedCompletionStatus returned FALSE with no overlapped — timeout
 }
 
 void CMainFrame::CheckPrompts() {
@@ -287,6 +287,13 @@ LRESULT CMainFrame::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
 
     case WM_COMMAND:
         OnCommand(LOWORD(wParam));
+        return 0;
+
+    case WM_TIMER:
+        // Periodic: drain IOCP, check prompts, update status
+        DrainIOCP();
+        CheckPrompts();
+        UpdateStatusBar();
         return 0;
 
     case WM_DESTROY:

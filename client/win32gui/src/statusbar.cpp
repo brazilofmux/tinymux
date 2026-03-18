@@ -27,6 +27,7 @@ bool CStatusBar::Create(HWND hParent, HINSTANCE hInst, int x, int y, int cx, int
 }
 
 void CStatusBar::SetText(const std::string& text) {
+    if (text_ == text) return;  // No change — skip repaint
     text_ = text;
     Invalidate();
 }
