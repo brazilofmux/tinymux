@@ -1237,12 +1237,19 @@ static size_t emit_fill(unsigned char *wp, const unsigned char *wp_end,
 size_t co_center(unsigned char *out,
                  const unsigned char *data, size_t len,
                  size_t width,
-                 const unsigned char *fill, size_t fill_len)
+                 const unsigned char *fill, size_t fill_len,
+                 int bTrunc)
 {
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
     size_t str_vis = co_visible_length(data, len);
 
     if (str_vis >= width) {
+        if (!bTrunc) {
+            size_t cb = len < LBUF_SIZE - 1 ? len : LBUF_SIZE - 1;
+            memcpy(out, data, cb);
+            out[cb] = '\0';
+            return cb;
+        }
         /* Truncate to width. */
         return co_copy_visible(out, data, data + len, width);
     }
@@ -1271,12 +1278,19 @@ size_t co_center(unsigned char *out,
 size_t co_ljust(unsigned char *out,
                 const unsigned char *data, size_t len,
                 size_t width,
-                const unsigned char *fill, size_t fill_len)
+                const unsigned char *fill, size_t fill_len,
+                int bTrunc)
 {
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
     size_t str_vis = co_visible_length(data, len);
 
     if (str_vis >= width) {
+        if (!bTrunc) {
+            size_t cb = len < LBUF_SIZE - 1 ? len : LBUF_SIZE - 1;
+            memcpy(out, data, cb);
+            out[cb] = '\0';
+            return cb;
+        }
         return co_copy_visible(out, data, data + len, width);
     }
 
@@ -1297,12 +1311,19 @@ size_t co_ljust(unsigned char *out,
 size_t co_rjust(unsigned char *out,
                 const unsigned char *data, size_t len,
                 size_t width,
-                const unsigned char *fill, size_t fill_len)
+                const unsigned char *fill, size_t fill_len,
+                int bTrunc)
 {
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
     size_t str_vis = co_visible_length(data, len);
 
     if (str_vis >= width) {
+        if (!bTrunc) {
+            size_t cb = len < LBUF_SIZE - 1 ? len : LBUF_SIZE - 1;
+            memcpy(out, data, cb);
+            out[cb] = '\0';
+            return cb;
+        }
         return co_copy_visible(out, data, data + len, width);
     }
 
@@ -2151,6 +2172,111 @@ size_t co_apply_color(unsigned char *out,
     if (len > 0) {
         wp += wp_safe_copy(wp, wp_end, data, len);
     }
+
+    *wp = '\0';
+    return (size_t)(wp - out);
+}
+
+/* ================================================================
+ * Stage 6: Rendering — PUA to client output.
+ * ================================================================ */
+
+/* ASCII approximation DFA tables from utf8tables.h.
+ * Declared here directly to avoid pulling in the C++ config.h chain.
+ */
+#define TR_ASCII_START_STATE (0)
+#define TR_ASCII_ACCEPTING_STATES_START (99)
+extern const unsigned char tr_ascii_itt[256];
+extern const unsigned short tr_ascii_sot[99];
+extern const unsigned char tr_ascii_sbt[3431];
+
+/*
+ * co_dfa_ascii — Run the ASCII approximation DFA on a single UTF-8 code point.
+ *
+ * The accepting state value IS the output byte (ASCII approximation).
+ * Returns '?' if no approximation exists.
+ */
+static unsigned char co_dfa_ascii(const unsigned char *p)
+{
+    int iState = TR_ASCII_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        unsigned char iColumn = tr_ascii_itt[ch];
+        unsigned short iOffset = tr_ascii_sot[iState];
+        for (;;)
+        {
+            int y = tr_ascii_sbt[iOffset];
+            if (y < 128)
+            {
+                if (iColumn < y)
+                {
+                    iState = tr_ascii_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = (unsigned char)(iColumn - y);
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                y = 256 - y;
+                if (iColumn < y)
+                {
+                    iState = tr_ascii_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = (unsigned char)(iColumn - y);
+                    iOffset = (unsigned short)(iOffset + y + 1);
+                }
+            }
+        }
+    } while (iState < TR_ASCII_ACCEPTING_STATES_START);
+
+    unsigned char result = (unsigned char)(iState - TR_ASCII_ACCEPTING_STATES_START);
+    return (result > 0 && result < 0x80) ? result : '?';
+}
+
+/* ---- co_render_ascii ---- */
+
+%%{
+    machine render_ascii;
+    include color_scan;
+
+    action mark { mark = p; }
+    action emit_ascii {
+        /* Run visible code point through tr_ascii DFA for approximation. */
+        if (*mark < 0x80) {
+            /* Pure ASCII — pass through. */
+            WP_SAFE(wp, wp_end, *mark);
+        } else {
+            /* Multi-byte UTF-8 — approximate to ASCII. */
+            unsigned char ch = co_dfa_ascii(mark);
+            WP_SAFE(wp, wp_end, ch);
+        }
+    }
+
+    main := ( color | visible >mark @emit_ascii )*;
+
+    write data noerror nofinal;
+}%%
+
+size_t co_render_ascii(unsigned char *out,
+                       const unsigned char *data, size_t len)
+{
+    int cs;
+    const unsigned char *p = data;
+    const unsigned char *pe = data + len;
+    const unsigned char *mark = data;
+    unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+
+    %% write init;
+    %% write exec;
 
     *wp = '\0';
     return (size_t)(wp - out);
