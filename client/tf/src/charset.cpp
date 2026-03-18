@@ -109,10 +109,11 @@ Charset charset_from_name(const std::string& name) {
     if (norm == "ANSIX3.41968") return Charset::ASCII;
     if (norm == "ISO88591")    return Charset::Latin1;
     if (norm == "LATIN1")      return Charset::Latin1;
-    if (norm == "ISO885915")   return Charset::Latin1;  // Latin-9, close enough
+    // ISO-8859-15 (Latin-9) and CP850 are NOT Latin-1 — they differ
+    // in 0x80-0x9F.  Don't alias them to avoid silent corruption.
     if (norm == "CP437")       return Charset::CP437;
     if (norm == "IBM437")      return Charset::CP437;
-    if (norm == "CP850")       return Charset::Latin1;  // Western European, close to Latin-1
+    // CP850 is NOT Latin-1 — many codepoints differ above 0x7F.
     if (norm == "WINDOWS1252") return Charset::Win1252;
     if (norm == "CP1252")      return Charset::Win1252;
     if (norm == "WIN1252")     return Charset::Win1252;
@@ -141,8 +142,8 @@ bool charset_supported(const std::string& name) {
         if (ch != '-' && ch != '_') norm += ch;
     }
     return norm == "UTF8" || norm == "USASCII" || norm == "ASCII"
-        || norm == "ISO88591" || norm == "LATIN1" || norm == "ISO885915"
-        || norm == "CP437" || norm == "IBM437" || norm == "CP850"
+        || norm == "ISO88591" || norm == "LATIN1"
+        || norm == "CP437" || norm == "IBM437"
         || norm == "WINDOWS1252" || norm == "CP1252" || norm == "WIN1252"
         || norm == "KOI8R" || norm == "KOI8U";
 }

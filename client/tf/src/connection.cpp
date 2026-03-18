@@ -657,17 +657,15 @@ std::string Connection::check_prompt(std::chrono::milliseconds timeout) {
     if (elapsed < timeout) return {};
 
     // Partial line has been sitting long enough — treat it as a prompt.
-    // Strip trailing \r if present.
+    // Strip trailing \r if present, then convert to UTF-8.
     std::string prompt = line_buf_;
     if (!prompt.empty() && prompt.back() == '\r') prompt.pop_back();
-
-    // Only return if it's different from what we last displayed
-    if (prompt == last_prompt_) return {};
-
-    // Convert from server charset to UTF-8.
     if (charset_ != Charset::UTF8) {
         prompt = charset_to_utf8(prompt, charset_);
     }
+
+    // Only return if it's different from what we last displayed.
+    if (prompt == last_prompt_) return {};
 
     last_prompt_ = prompt;
     return prompt;
@@ -677,6 +675,9 @@ std::string Connection::current_prompt() const {
     if (line_buf_.empty() || fd_ < 0) return {};
     std::string prompt = line_buf_;
     if (!prompt.empty() && prompt.back() == '\r') prompt.pop_back();
+    if (charset_ != Charset::UTF8) {
+        prompt = charset_to_utf8(prompt, charset_);
+    }
     return prompt;
 }
 
