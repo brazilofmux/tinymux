@@ -74,15 +74,15 @@ fun TitanApp() {
 
         val conn = MudConnection(name, host, port, ssl)
         tab.connection = conn
-        conn.onLine = { line -> scope.launch { appendLine(tabIndex, line) } }
-        conn.onConnect = { scope.launch {
+        conn.onLine = { line -> appendLine(tabIndex, line) }
+        conn.onConnect = {
             appendLine(tabIndex, "% Connected to $host:$port")
             tab.disconnected = false
-        }}
-        conn.onDisconnect = { scope.launch {
+        }
+        conn.onDisconnect = {
             appendLine(tabIndex, "% Connection lost.")
             tab.disconnected = true
-        }}
+        }
         appendLine(tabIndex, "% Connecting to $host:$port${if (ssl) " (ssl)" else ""}...")
         conn.connect(scope)
     }
@@ -130,6 +130,8 @@ fun TitanApp() {
     Column(modifier = Modifier
         .fillMaxSize()
         .background(Color.Black)
+        .statusBarsPadding()
+        .navigationBarsPadding()
         .imePadding()
     ) {
         // Toolbar — compact in landscape
@@ -156,39 +158,42 @@ fun TitanApp() {
         }
 
         // Tab bar
-        ScrollableTabRow(
-            selectedTabIndex = activeTab,
-            modifier = Modifier.fillMaxWidth(),
-            containerColor = Color(0xFF303030),
-            contentColor = Color.White,
-            edgePadding = 0.dp,
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .background(Color(0xFF303030))
+                .height(36.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             tabs.forEachIndexed { index, tab ->
-                Tab(
-                    selected = index == activeTab,
-                    onClick = {
-                        activeTab = index
-                        tab.hasActivity = false
-                    },
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (tab.hasActivity && index != activeTab) {
-                                Box(Modifier
-                                    .size(6.dp)
-                                    .padding(end = 4.dp)
-                                    .background(Color(0xFFFFC800), shape = androidx.compose.foundation.shape.CircleShape))
-                                Spacer(Modifier.width(4.dp))
-                            }
-                            Text(
-                                tab.name,
-                                fontSize = 12.sp,
-                                color = if (tab.disconnected) Color(0xFF806060)
-                                        else if (index == activeTab) Color.White
-                                        else Color(0xFFA0A0A0)
-                            )
+                val isActive = index == activeTab
+                Row(
+                    modifier = Modifier
+                        .clickable {
+                            activeTab = index
+                            tab.hasActivity = false
                         }
+                        .background(if (isActive) Color.Black else Color.Transparent)
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (tab.hasActivity && !isActive) {
+                        Box(Modifier
+                            .size(6.dp)
+                            .background(Color(0xFFFFC800), shape = androidx.compose.foundation.shape.CircleShape))
+                        Spacer(Modifier.width(6.dp))
                     }
-                )
+                    Text(
+                        tab.name,
+                        fontSize = 12.sp,
+                        color = if (tab.disconnected) Color(0xFF806060)
+                                else if (isActive) Color.White
+                                else Color(0xFFA0A0A0)
+                    )
+                }
+                // Separator
+                Box(Modifier.width(1.dp).height(20.dp).background(Color(0xFF505050)))
             }
         }
 
@@ -284,7 +289,7 @@ fun ToolbarButton(text: String, onClick: () -> Unit) {
 @Composable
 fun ConnectDialog(onConnect: (String, Int, Boolean) -> Unit, onDismiss: () -> Unit) {
     var host by remember { mutableStateOf("") }
-    var port by remember { mutableStateOf("4201") }
+    var port by remember { mutableStateOf("") }
     var ssl by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -295,8 +300,12 @@ fun ConnectDialog(onConnect: (String, Int, Boolean) -> Unit, onDismiss: () -> Un
                 OutlinedTextField(value = host, onValueChange = { host = it },
                     label = { Text("Host") }, singleLine = true,
                     modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = port, onValueChange = { port = it },
-                    label = { Text("Port") }, singleLine = true,
+                OutlinedTextField(value = port,
+                    onValueChange = { port = it.filter { c -> c.isDigit() } },
+                    label = { Text("Port") },
+                    placeholder = { Text("4201") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth())
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = ssl, onCheckedChange = { ssl = it })

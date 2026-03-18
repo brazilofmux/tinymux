@@ -5,7 +5,12 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
+import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 class MudConnection(
     val name: String,
@@ -27,13 +32,33 @@ class MudConnection(
     var onDisconnect: (() -> Unit)? = null
 
     fun connect(scope: CoroutineScope) {
+        val mainDispatcher = Dispatchers.Main
+
+        telnet.onLine = { line ->
+            addScrollback(line)
+            scope.launch(mainDispatcher) { onLine?.invoke(line) }
+        }
+        telnet.onPrompt = { prompt ->
+            addScrollback(prompt)
+            scope.launch(mainDispatcher) { onLine?.invoke(prompt) }
+        }
+
         scope.launch(Dispatchers.IO) {
             try {
                 val raw = Socket()
                 raw.connect(InetSocketAddress(host, port), 10000)
 
                 socket = if (useSsl) {
-                    val factory = SSLSocketFactory.getDefault() as SSLSocketFactory
+                    // Trust all certificates for MUD servers (many use self-signed).
+                    // TODO: Replace with trust-on-first-use (TOFU) pinning.
+                    val trustAll = arrayOf<TrustManager>(object : X509TrustManager {
+                        override fun checkClientTrusted(chain: Array<X509Certificate>?, type: String?) {}
+                        override fun checkServerTrusted(chain: Array<X509Certificate>?, type: String?) {}
+                        override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+                    })
+                    val sslContext = SSLContext.getInstance("TLS")
+                    sslContext.init(null, trustAll, SecureRandom())
+                    val factory = sslContext.socketFactory
                     factory.createSocket(raw, host, port, true)
                 } else raw
 
@@ -47,7 +72,7 @@ class MudConnection(
                 sendRaw(byteArrayOf(0xFF.toByte(), 0xFD.toByte(), 3))  // DO SGA
                 sendRaw(byteArrayOf(0xFF.toByte(), 0xFD.toByte(), 1))  // DO ECHO
 
-                withContext(Dispatchers.Main) { onConnect?.invoke() }
+                launch(mainDispatcher) { onConnect?.invoke() }
 
                 // Read loop
                 val buf = ByteArray(8192)
@@ -57,24 +82,15 @@ class MudConnection(
                     if (n <= 0) break
                     telnet.process(buf, 0, n)
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Connection failed or lost
             } finally {
                 connected = false
                 try { socket?.close() } catch (_: Exception) {}
                 socket = null; output = null
-                withContext(Dispatchers.Main) { onDisconnect?.invoke() }
+                try { launch(mainDispatcher) { onDisconnect?.invoke() } } catch (_: Exception) {}
             }
         }.also { readJob = it }
-
-        telnet.onLine = { line ->
-            addScrollback(line)
-            onLine?.invoke(line)
-        }
-        telnet.onPrompt = { prompt ->
-            addScrollback(prompt)
-            onLine?.invoke(prompt)
-        }
     }
 
     fun disconnect() {
