@@ -3113,6 +3113,125 @@ static void test_render_ansi16(void) {
     g_seed = save_seed;
 }
 
+/* ---- co_render_ansi256 ---- */
+
+static void test_render_ansi256(void) {
+    const char *name = "co_render_ansi256";
+    unsigned char buf[LBUF_SIZE], out[LBUF_SIZE];
+    size_t r, n;
+
+    /* Empty. */
+    r = co_render_ansi256(out, (const unsigned char *)"", 0);
+    check_buf(name, "empty", out, r, (const unsigned char *)"", 0);
+
+    /* No color. */
+    r = co_render_ansi256(out, (const unsigned char *)"Hello", 5);
+    check_buf(name, "no color", out, r, (const unsigned char *)"Hello", 5);
+
+    /* FG index 196 (bright red in 256 palette). */
+    n = 0;
+    n += (size_t)pua_fg(buf, 196);
+    buf[n++] = 'R';
+    n += (size_t)pua_reset(buf + n);
+    r = co_render_ansi256(out, buf, n);
+    /* Should contain "38;5;196" in the SGR. */
+    {
+        char *s = strstr((char *)out, "38;5;196");
+        if (s) {
+            test_ok(name, "FG 196 → 38;5;196");
+        } else {
+            test_fail(name, "FG 196: expected '38;5;196' in output");
+        }
+    }
+
+    /* BG index 21 (blue). */
+    n = 0;
+    n += (size_t)pua_bg(buf, 21);
+    buf[n++] = 'B';
+    n += (size_t)pua_reset(buf + n);
+    r = co_render_ansi256(out, buf, n);
+    {
+        char *s = strstr((char *)out, "48;5;21");
+        if (s) {
+            test_ok(name, "BG 21 → 48;5;21");
+        } else {
+            test_fail(name, "BG 21: expected '48;5;21' in output");
+        }
+    }
+
+    /* Text preserved (strip SGR, check visible). */
+    n = 0;
+    n += (size_t)pua_fg(buf, 82);
+    buf[n++] = 'A'; buf[n++] = 'B';
+    n += (size_t)pua_reset(buf + n);
+    r = co_render_ansi256(out, buf, n);
+    {
+        char text[LBUF_SIZE];
+        int ti = 0;
+        for (size_t i = 0; i < r; i++) {
+            if (out[i] == 0x1B) { while (i < r && out[i] != 'm') i++; }
+            else text[ti++] = (char)out[i];
+        }
+        text[ti] = '\0';
+        if (strcmp(text, "AB") == 0) {
+            test_ok(name, "text preserved: AB");
+        } else {
+            test_fail(name, "text preserved: got '%s'", text);
+        }
+    }
+
+    /* Unicode passes through. */
+    n = 0;
+    buf[n++] = 0xC3; buf[n++] = 0xA9;  /* e-acute */
+    r = co_render_ansi256(out, buf, n);
+    if (r >= 2 && out[0] == 0xC3 && out[1] == 0xA9) {
+        test_ok(name, "unicode passthrough");
+    } else {
+        test_fail(name, "unicode: e-acute not preserved");
+    }
+
+    /* 24-bit RGB → 256-color index. */
+    n = 0;
+    n += (size_t)pua_fg_rgb(buf, 0, 255, 0);  /* pure green */
+    buf[n++] = 'G';
+    n += (size_t)pua_reset(buf + n);
+    r = co_render_ansi256(out, buf, n);
+    {
+        char *s = strstr((char *)out, "38;5;");
+        if (s) {
+            test_ok(name, "RGB green → 38;5;N");
+        } else {
+            test_fail(name, "RGB green: expected '38;5;' in output");
+        }
+    }
+
+    /* All color, no visible. */
+    n = 0;
+    n += (size_t)pua_fg(buf, 100);
+    n += (size_t)pua_reset(buf + n);
+    r = co_render_ansi256(out, buf, n);
+    check_buf(name, "all color", out, r, (const unsigned char *)"", 0);
+
+    /* Fuzz: no PUA leaks. */
+    unsigned int save_seed = g_seed;
+    for (int i = 0; i < 5000; i++) {
+        size_t len = gen_random_colored(buf, 1 + (xrand() % 200));
+        r = co_render_ansi256(out, buf, len);
+        int has_pua = 0;
+        for (size_t j = 0; j + 2 < r; j++) {
+            if (out[j] == 0xEF && out[j+1] >= 0x94 && out[j+1] <= 0x9F) { has_pua = 1; break; }
+            if (out[j] == 0xF3 && j + 3 < r && out[j+1] >= 0xB0 && out[j+1] <= 0xB3) { has_pua = 1; break; }
+        }
+        if (has_pua) {
+            test_fail(name, "fuzz[%d]: PUA leaked", i);
+            g_seed = save_seed;
+            return;
+        }
+    }
+    test_ok(name, "5000 fuzz: no PUA leaks");
+    g_seed = save_seed;
+}
+
 /* ================================================================
  * Main
  * ================================================================ */
@@ -3173,6 +3292,7 @@ static const test_suite_t suites[] = {
     { "colorstate_helpers", test_colorstate_helpers },
     { "render_ascii",     test_render_ascii },
     { "render_ansi16",   test_render_ansi16 },
+    { "render_ansi256",  test_render_ansi256 },
     { NULL, NULL }
 };
 

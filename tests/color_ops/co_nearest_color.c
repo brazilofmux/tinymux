@@ -37,6 +37,12 @@ int co_nearest_xterm16(const unsigned char *rgb)
 
 int co_nearest_xterm256(const unsigned char *rgb)
 {
-    /* Not needed for ansi16 tests, but provide stub to satisfy linker. */
-    return co_nearest_xterm16(rgb);
+    /* Simple 6x6x6 cube approximation for test harness. */
+    int r = (rgb[0] + 25) / 51;
+    int g = (rgb[1] + 25) / 51;
+    int b = (rgb[2] + 25) / 51;
+    if (r > 5) r = 5;
+    if (g > 5) g = 5;
+    if (b > 5) b = 5;
+    return 16 + 36 * r + 6 * g + b;
 }
