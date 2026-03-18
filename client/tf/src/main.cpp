@@ -607,6 +607,7 @@ static void run(App& app) {
                         app.terminal.set_output_context("");
                     }
                     app.connections.erase(name);
+                    app.active_worlds.erase(name);
                 }
             }
         }
@@ -754,13 +755,26 @@ int main(int argc, char* argv[]) {
 
     app.terminal.print_system("TinyFugue (C++ rebuild) - Type /help for commands, /quit to exit");
 
-    // Load stdlib.tf — search next to executable, then ../tf-lib/, then ~/.tf/.
+    // Load stdlib.tf — search TFDIR, next to executable, ../tf-lib/, ~/.tf/.
     //
     {
         std::vector<std::string> search_paths;
+
+        // TFDIR environment variable (explicit override).
+        const char* tfdir = std::getenv("TFDIR");
+        if (tfdir && *tfdir) {
+            search_paths.push_back(std::string(tfdir) + "/stdlib.tf");
+        }
+
         // Next to the executable (build tree or installed).
+        // Try /proc/self/exe (Linux), /proc/curproc/file (FreeBSD).
         char exe_path[4096];
-        ssize_t exe_len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+        ssize_t exe_len = -1;
+#if defined(__linux__)
+        exe_len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+#elif defined(__FreeBSD__)
+        exe_len = readlink("/proc/curproc/file", exe_path, sizeof(exe_path) - 1);
+#endif
         if (exe_len > 0) {
             exe_path[exe_len] = '\0';
             std::string dir(exe_path);
@@ -769,6 +783,7 @@ int main(int argc, char* argv[]) {
             search_paths.push_back(dir + "/tf-lib/stdlib.tf");
             search_paths.push_back(dir + "/../tf-lib/stdlib.tf");
         }
+
         // Home directory.
         const char* home = std::getenv("HOME");
         if (home) {

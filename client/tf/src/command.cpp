@@ -235,8 +235,9 @@ void cmd_dc(App& app, const std::string& args) {
     target->disconnect();
     app.terminal.print_system("Disconnected from " + wname);
 
-    // Remove from connections
+    // Remove from connections and clear any stale activity.
     app.connections.erase(wname);
+    app.active_worlds.erase(wname);
 
     // Update foreground
     if (app.fg == target || app.fg == nullptr) {
