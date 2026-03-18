@@ -24,6 +24,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cctype>
+#include <cmath>
 #include <vector>
 #include <string>
 
@@ -61,6 +62,7 @@ const char *lua_bc_reject_name(lua_bc_reject reason) {
     case LUA_BC_HAS_TAILCALL:      return "contains OP_TAILCALL";
     case LUA_BC_HAS_NESTED_PROTOS: return "has nested protos";
     case LUA_BC_UNSUPPORTED_OP:    return "unsupported opcode";
+    case LUA_BC_HAS_NON_INT_CONST: return "non-integer float constant";
     }
     return "unknown";
 }
@@ -91,6 +93,22 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
     // Nested protos mean OP_CLOSURE will appear.  Reject early without
     // scanning — the bytecode can't reference protos that don't exist.
     if (!proto->protos.empty()) return LUA_BC_HAS_NESTED_PROTOS;
+
+    // --- Constant pool type guard ---
+    //
+    // Our JIT only handles integer arithmetic.  Float constants that
+    // are not integer-valued (e.g. 3.14) would produce wrong results.
+    // Integer-valued floats (e.g. 2.0) are safe — we emit them as
+    // ICONST with the truncated integer value.
+    //
+    for (size_t i = 0; i < proto->constants.size(); i++) {
+        if (proto->constants[i].type == LUA_BC_TFLOAT) {
+            double v = proto->constants[i].fval;
+            if (v != floor(v) || v < -9.22e18 || v > 9.22e18) {
+                return LUA_BC_HAS_NON_INT_CONST;
+            }
+        }
+    }
 
     // --- Opcode scan ---
     //
@@ -281,10 +299,14 @@ static int emit_lua_constant(hir_program &h, rv_compiler &rc,
     case LUA_BC_TINT:
         return h.emit_iconst(k.ival);
     case LUA_BC_TFLOAT: {
-        char buf[64];
-        snprintf(buf, sizeof(buf), "%g", k.fval);
-        uint64_t addr = rc.pool_str(buf, strlen(buf));
-        return h.emit_sconst(addr, std::string(buf));
+        // Integer-valued floats (e.g. 2.0) → emit as ICONST.
+        // The eligibility filter already rejected non-integer floats,
+        // but guard here too for defense in depth.
+        double v = k.fval;
+        if (v == floor(v) && v >= -9.22e18 && v <= 9.22e18) {
+            return h.emit_iconst(static_cast<int64_t>(v));
+        }
+        return -1;  // Non-integer float — reject.
     }
     case LUA_BC_TSHRSTR:
     case LUA_BC_TLNGSTR: {
@@ -435,6 +457,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int rb = lua_reg[insn.B()]; \
             int rc_val = lua_reg[insn.C()]; \
             if (rb < 0 || rc_val < 0) return -1; \
+            if (h.ty[rb] != TY_INT || h.ty[rc_val] != TY_INT) return -1; \
             lua_reg[A] = h.emit(HIR_OP, TY_INT, rb, rc_val); \
             if (lua_reg[A] < 0) return -1; \
             h.native_ops++; \
@@ -452,6 +475,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_UNM: {
             int rb = lua_reg[insn.B()];
             if (rb < 0) return -1;
+            if (h.ty[rb] != TY_INT) return -1;
             lua_reg[A] = h.emit(HIR_NEG, TY_INT, rb);
             if (lua_reg[A] < 0) return -1;
             h.native_ops++;
@@ -465,6 +489,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_ADDI: {
             int rb = lua_reg[insn.B()];
             if (rb < 0) return -1;
+            if (h.ty[rb] != TY_INT) return -1;
             int imm_val = h.emit_iconst(insn.sC());
             if (imm_val < 0) return -1;
             lua_reg[A] = h.emit(HIR_ADD, TY_INT, rb, imm_val);
@@ -481,11 +506,13 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         { \
             int rb = lua_reg[insn.B()]; \
             if (rb < 0) return -1; \
+            if (h.ty[rb] != TY_INT) return -1; \
             int kidx = insn.C(); \
             if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size())) \
                 return -1; \
             int kval = emit_lua_constant(h, rc, proto->constants[kidx]); \
             if (kval < 0) return -1; \
+            if (h.ty[kval] != TY_INT) return -1; \
             lua_reg[A] = h.emit(HIR_OP, TY_INT, rb, kval); \
             if (lua_reg[A] < 0) return -1; \
             h.native_ops++; \
@@ -507,6 +534,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int rb = lua_reg[A]; \
             int rc_val = lua_reg[insn.B()]; \
             if (rb < 0 || rc_val < 0) return -1; \
+            if (h.ty[rb] != TY_INT || h.ty[rc_val] != TY_INT) return -1; \
             int cmp = h.emit(HIR_OP, TY_INT, rb, rc_val); \
             h.native_ops++; \
             if (!multi_block) return -1; \
@@ -520,6 +548,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         { \
             int rb = lua_reg[A]; \
             if (rb < 0) return -1; \
+            if (h.ty[rb] != TY_INT) return -1; \
             int imm_val = h.emit_iconst(insn.sB()); \
             if (imm_val < 0) return -1; \
             int cmp = h.emit(HIR_OP, TY_INT, rb, imm_val); \
