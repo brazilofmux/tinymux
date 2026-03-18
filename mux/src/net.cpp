@@ -18,6 +18,10 @@
 #include "driver_log.h"
 #include "driver_bridge.h"
 #include "ganl_adapter.h"
+
+extern "C" {
+#include "color_ops.h"
+}
 using namespace std;
 
 NAMETAB default_charset_nametab[] =
@@ -243,6 +247,8 @@ static const UTF8 *encode_iac(const UTF8 *szString)
 
 void queue_string(DESC *d, const UTF8 *s)
 {
+    static UTF8 co_buf[2*LBUF_SIZE];
+
     const UTF8 *p;
     if (  (d->flags & DS_CONNECTED)
        && (drv_Flags(d->player, FLAG_WORD2) & ANSI))
@@ -251,10 +257,20 @@ void queue_string(DESC *d, const UTF8 *s)
         {
             p = convert_to_html(s);
         }
+        else if (drv_Flags(d->player, FLAG_WORD2) & TRUECOLOR)
+        {
+            co_render_truecolor(co_buf, s, strlen(reinterpret_cast<const char *>(s)));
+            p = co_buf;
+        }
+        else if (drv_Flags(d->player, FLAG_WORD2) & COLOR256)
+        {
+            co_render_ansi256(co_buf, s, strlen(reinterpret_cast<const char *>(s)));
+            p = co_buf;
+        }
         else
         {
-            p = convert_color(s, (drv_Flags(d->player, FLAG_WORD2) & NOBLEED) != 0,
-                              (drv_Flags(d->player, FLAG_WORD2) & COLOR256) != 0);
+            co_render_ansi16(co_buf, s, strlen(reinterpret_cast<const char *>(s)));
+            p = co_buf;
         }
     }
     else

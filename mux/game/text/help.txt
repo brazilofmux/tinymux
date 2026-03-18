@@ -5758,7 +5758,23 @@ COLOR256
   set but COLOR256 is not, TinyMUX attempts to re-map from the 256-color
   palette to the 16-color palette.
 
-  Related Topics: ansi(), ANSI CODES, ANSI SUBSTITUTION, NOBLEED.
+  Related Topics: ansi(), ANSI CODES, ANSI SUBSTITUTION, NOBLEED,
+  TRUECOLOR.
+
+& TRUECOLOR
+TRUECOLOR
+
+  FLAG: TRUECOLOR
+
+  When set on a player, enables 24-bit TrueColor output.  Colors are
+  sent as ESC[38;2;R;G;Bm (foreground) and ESC[48;2;R;G;Bm (background)
+  at full fidelity.  Indexed colors (0-255) still use ESC[38;5;Nm.
+
+  TRUECOLOR implies COLOR256 capability.  If TRUECOLOR is set, COLOR256
+  is not needed separately.  Most modern terminal emulators (xterm,
+  iTerm2, gnome-terminal, Windows Terminal) support TrueColor.
+
+  Related Topics: ansi(), ANSI CODES, COLOR256, NOBLEED.
 
 & COLORDEPTH()
 COLORDEPTH()

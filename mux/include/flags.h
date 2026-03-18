@@ -77,6 +77,7 @@ constexpr unsigned int GAGGED       = 0x00040000;
 constexpr unsigned int OPEN_OK      = 0x00080000;  // You can open exits from here if you pass the openlock.
 constexpr unsigned int COLOR256     = 0x00100000;  // Enable XTERM 256-color codes.
 constexpr unsigned int TALKMODE     = 0x00200000;  // Talk mode: unprefix'd input becomes say.
+constexpr unsigned int TRUECOLOR    = 0x00400000;  // Enable 24-bit TrueColor (ESC[38;2;R;G;Bm).
 constexpr unsigned int VACATION     = 0x01000000;
 constexpr unsigned int PLAYER_MAILS = 0x02000000;
 constexpr unsigned int HTML         = 0x04000000;  /* Player supports HTML */
@@ -270,6 +271,7 @@ UTF8 *MakeCanonicalFlagName
 #define Uninspected(x)      ((Flags2(x) & UNINSPECTED) != 0)
 #define Ansi(x)             ((Flags2(x) & ANSI) != 0)
 #define Color256(x)         ((Flags2(x) & COLOR256) != 0)
+#define Truecolor(x)        ((Flags2(x) & TRUECOLOR) != 0)
 #define Ascii(x)            ((Flags2(x) & ASCII) != 0)
 #define No_Command(x)       ((Flags2(x) & NO_COMMAND) != 0)
 #define NoBleed(x)          ((Flags2(x) & NOBLEED) != 0)

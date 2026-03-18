@@ -326,6 +326,7 @@ static FLAGBITENT fbeAuditorium     = { AUDITORIUM,   'b',    FLAG_WORD2, 0,    
 static FLAGBITENT fbeBlind          = { BLIND,        'B',    FLAG_WORD2, 0,                    fh_wiz};
 static FLAGBITENT fbeChownOk        = { CHOWN_OK,     'C',    FLAG_WORD1, 0,                    fh_any};
 static FLAGBITENT fbeColor256       = { COLOR256,     ' ',    FLAG_WORD2, 0,                    fh_any};
+static FLAGBITENT fbeTruecolor      = { TRUECOLOR,    ' ',    FLAG_WORD2, 0,                    fh_any};
 static FLAGBITENT fbeConnected      = { CONNECTED,    'c',    FLAG_WORD2, CA_NO_DECOMP,         fh_god};
 static FLAGBITENT fbeDark           = { DARK,         'D',    FLAG_WORD1, 0,                    fh_dark_bit};
 static FLAGBITENT fbeDestroyOk      = { DESTROY_OK,   'd',    FLAG_WORD1, 0,                    fh_any};
@@ -496,6 +497,7 @@ FLAGNAMEENT gen_flag_names[] =
     {T("TERSE"),           true, &fbeTerse          },
     {T("TRACE"),           true, &fbeTrace          },
     {T("TRANSPARENT"),     true, &fbeTransparent    },
+    {T("TRUECOLOR"),       true, &fbeTruecolor      },
     {T("UNFINDABLE"),      true, &fbeUnfindable     },
     {T("UNICODE"),         true, &fbeUnicode        },
     {T("UNINSPECTED"),     true, &fbeUninspected    },
