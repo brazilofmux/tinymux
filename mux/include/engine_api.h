@@ -31,6 +31,9 @@ static constexpr uint64_t ECALL_ARENA_RELEASE = 0x112; // a0=arena_id
 static constexpr uint64_t ECALL_DMA_SUBMIT    = 0x120; // a0=window, a1=length, a2=op
 static constexpr uint64_t ECALL_DMA_ACK       = 0x121; // -> a0=window (next free)
 
+// Float/double conversion ECALLs.
+static constexpr uint64_t ECALL_FTOA          = 0x140; // a0=double bits, a1=output addr
+
 // Lua bridge ECALLs — reserved range for mux.* function dispatch.
 static constexpr uint64_t ECALL_LUA_BRIDGE    = 0x380; // base for Lua bridge calls
 static constexpr uint64_t ECALL_LUA_NAME      = 0x380; // mux.name(dbref)

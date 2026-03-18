@@ -161,6 +161,76 @@ static uint32_t rv_REM(uint8_t rd, uint8_t rs1, uint8_t rs2) {
     return rv_r_type(OP_REG, rd, 6, rs1, rs2, 0x01);
 }
 
+// D extension: double-precision floating point.
+// RV64D uses R-type with opcode=OP_FP, funct7 encodes the operation,
+// and rm (funct3) = 0 (RNE) or 7 (dynamic) for arithmetic.
+// FLD/FSD use I/S-type with opcode OP_FP_LOAD/OP_FP_STORE, funct3=3.
+//
+static uint32_t rv_FADD_D(uint8_t fd, uint8_t fs1, uint8_t fs2) {
+    return rv_r_type(OP_FP, fd, 7, fs1, fs2, 0x01);  // funct7=0000001
+}
+static uint32_t rv_FSUB_D(uint8_t fd, uint8_t fs1, uint8_t fs2) {
+    return rv_r_type(OP_FP, fd, 7, fs1, fs2, 0x05);  // funct7=0000101
+}
+static uint32_t rv_FMUL_D(uint8_t fd, uint8_t fs1, uint8_t fs2) {
+    return rv_r_type(OP_FP, fd, 7, fs1, fs2, 0x09);  // funct7=0001001
+}
+static uint32_t rv_FDIV_D(uint8_t fd, uint8_t fs1, uint8_t fs2) {
+    return rv_r_type(OP_FP, fd, 7, fs1, fs2, 0x0D);  // funct7=0001101
+}
+static uint32_t rv_FSQRT_D(uint8_t fd, uint8_t fs1) {
+    return rv_r_type(OP_FP, fd, 7, fs1, 0, 0x2D);    // funct7=0101101, rs2=0
+}
+static uint32_t rv_FSGNJN_D(uint8_t fd, uint8_t fs1, uint8_t fs2) {
+    return rv_r_type(OP_FP, fd, 1, fs1, fs2, 0x11);  // funct7=0010001, funct3=1 (FSGNJN)
+}
+// FNEG.D is a pseudo: FSGNJN.D fd, fs, fs
+static uint32_t rv_FNEG_D(uint8_t fd, uint8_t fs) {
+    return rv_FSGNJN_D(fd, fs, fs);
+}
+// FCVT.D.L: int64 → double (rs2=2 for L)
+static uint32_t rv_FCVT_D_L(uint8_t fd, uint8_t rs1) {
+    return rv_r_type(OP_FP, fd, 7, rs1, 2, 0x69);    // funct7=1101001
+}
+// FCVT.L.D: double → int64 (rs2=0 for L, rm=1 for RTZ)
+static uint32_t rv_FCVT_L_D(uint8_t rd, uint8_t fs1) {
+    return rv_r_type(OP_FP, rd, 1, fs1, 2, 0x61);    // funct7=1100001, rm=RTZ
+}
+// FMV.X.D: move FP bits to integer register
+static uint32_t rv_FMV_X_D(uint8_t rd, uint8_t fs1) {
+    return rv_r_type(OP_FP, rd, 0, fs1, 0, 0x71);    // funct7=1110001
+}
+// FMV.D.X: move integer bits to FP register
+static uint32_t rv_FMV_D_X(uint8_t fd, uint8_t rs1) {
+    return rv_r_type(OP_FP, fd, 0, rs1, 0, 0x79);    // funct7=1111001
+}
+// FEQ.D: float equality → integer rd
+static uint32_t rv_FEQ_D(uint8_t rd, uint8_t fs1, uint8_t fs2) {
+    return rv_r_type(OP_FP, rd, 2, fs1, fs2, 0x51);  // funct7=1010001, funct3=2
+}
+// FLT.D: float less-than → integer rd
+static uint32_t rv_FLT_D(uint8_t rd, uint8_t fs1, uint8_t fs2) {
+    return rv_r_type(OP_FP, rd, 1, fs1, fs2, 0x51);  // funct7=1010001, funct3=1
+}
+// FLE.D: float less-or-equal → integer rd
+static uint32_t rv_FLE_D(uint8_t rd, uint8_t fs1, uint8_t fs2) {
+    return rv_r_type(OP_FP, rd, 0, fs1, fs2, 0x51);  // funct7=1010001, funct3=0
+}
+// FLD: load double from memory
+static uint32_t rv_FLD(uint8_t fd, uint8_t base, int32_t off) {
+    return rv_i_type(OP_FP_LOAD, fd, 3, base, off);
+}
+// FSD: store double to memory
+static uint32_t rv_FSD(uint8_t base, uint8_t fs, int32_t off) {
+    // S-type encoding, same as rv_SD but with OP_FP_STORE
+    return OP_FP_STORE
+         | ((off & 0x1F) << 7)
+         | (3 << 12)
+         | (base << 15)
+         | (fs << 20)
+         | (((off >> 5) & 0x7F) << 25);
+}
+
 // ---------------------------------------------------------------
 // Inline RISC-V atoi: parse decimal string → signed integer.
 //
@@ -447,6 +517,7 @@ static bool needs_output_buffer(hir_program &h, int i) {
     case HIR_CALL:
     case HIR_STRCAT:
     case HIR_ITOA:
+    case HIR_FTOA:
     case HIR_PHI:
     case HIR_COPY:
         return true;
@@ -521,11 +592,32 @@ static bool needs_int_reg(hir_program &h, int i) {
     case HIR_GE:  case HIR_LE:
     case HIR_NOT: case HIR_BOOL:
     case HIR_INC: case HIR_DEC:
+    case HIR_FTOI:              // float → int produces integer
+    case HIR_FEQ: case HIR_FLT: case HIR_FLE:  // float cmp → int 0/1
         return true;
     case HIR_PHI:
         return h.ty[i] == TY_INT;
     case HIR_COPY:
         return h.ty[i] == TY_INT;
+    default:
+        return false;
+    }
+}
+
+// Returns true if HIR instruction i produces a float that needs
+// an FP register (spilled to guest memory).
+//
+static bool needs_fp_reg(hir_program &h, int i) {
+    switch (h.kind[i]) {
+    case HIR_FCONST:
+    case HIR_FADD: case HIR_FSUB: case HIR_FMUL: case HIR_FDIV:
+    case HIR_FNEG: case HIR_FSQRT:
+    case HIR_ITOF:
+        return true;
+    case HIR_PHI:
+        return h.ty[i] == TY_FLOAT;
+    case HIR_COPY:
+        return h.ty[i] == TY_FLOAT;
     default:
         return false;
     }
@@ -899,6 +991,22 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
     compute_live_ranges(h, str_intervals, needs_output_buffer);
     output_alloc_result str_alloc = allocate_output_buffers(rc, str_intervals);
 
+    // 3. Allocate 8-byte guest memory slots for FP values.
+    //    Simple bump allocation — no register caching for FP in HIR.
+    //    Each FP value gets a slot; operations load/store via FLD/FSD.
+    //    The DBT's x86-64 translator will optimize these into XMM regs.
+    uint64_t fp_pool = (rc.str_pool + 7) & ~7ULL;  // align to 8
+    for (int i = 0; i < h.n_insns; i++) {
+        if (needs_fp_reg(h, i)) {
+            if (fp_pool + 8 > rv_compiler::STR_LIMIT) break;
+            loc[i].addr = fp_pool;
+            loc[i].in_reg = false;
+            loc[i].spill_slot = -1;
+            fp_pool += 8;
+        }
+    }
+    rc.str_pool = fp_pool;
+
     // Pre-populate loc map from allocation results.
     for (int i = 0; i < h.n_insns; i++) {
         if (needs_int_reg(h, i)) {
@@ -1242,6 +1350,126 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 break;
             }
 
+            // ---- Float arithmetic (RV64D) ----
+            //
+            // FP values are spilled to guest memory (8-byte aligned).
+            // We load into f0/f1, compute into f0, store result.
+            // The DBT's x86-64 translator handles the rest.
+
+            case HIR_FCONST: {
+                // Write the double constant into guest memory at the
+                // allocated FP slot, then no codegen needed — the value
+                // is already there for subsequent FLD instructions.
+                uint64_t addr = loc[i].addr;
+                double v = h.fval[i];
+                memcpy(rc.memory.data() + addr, &v, 8);
+                break;
+            }
+
+#define FP_BINOP(RV_INSN) \
+            { \
+                uint64_t a1 = loc[h.src1[i]].addr; \
+                uint64_t a2 = loc[h.src2[i]].addr; \
+                uint64_t dst = loc[i].addr; \
+                rv_load_val(rc.code, RA_SCRATCH, a1); \
+                rc.code.push_back(rv_FLD(0, RA_SCRATCH, 0)); \
+                rv_load_val(rc.code, RA_SCRATCH, a2); \
+                rc.code.push_back(rv_FLD(1, RA_SCRATCH, 0)); \
+                rc.code.push_back(RV_INSN(0, 0, 1)); \
+                rv_load_val(rc.code, RA_SCRATCH, dst); \
+                rc.code.push_back(rv_FSD(RA_SCRATCH, 0, 0)); \
+                break; \
+            }
+
+            case HIR_FADD: FP_BINOP(rv_FADD_D)
+            case HIR_FSUB: FP_BINOP(rv_FSUB_D)
+            case HIR_FMUL: FP_BINOP(rv_FMUL_D)
+            case HIR_FDIV: FP_BINOP(rv_FDIV_D)
+#undef FP_BINOP
+
+            case HIR_FNEG: {
+                uint64_t a1 = loc[h.src1[i]].addr;
+                uint64_t dst = loc[i].addr;
+                rv_load_val(rc.code, RA_SCRATCH, a1);
+                rc.code.push_back(rv_FLD(0, RA_SCRATCH, 0));
+                rc.code.push_back(rv_FNEG_D(0, 0));
+                rv_load_val(rc.code, RA_SCRATCH, dst);
+                rc.code.push_back(rv_FSD(RA_SCRATCH, 0, 0));
+                break;
+            }
+
+            case HIR_FSQRT: {
+                uint64_t a1 = loc[h.src1[i]].addr;
+                uint64_t dst = loc[i].addr;
+                rv_load_val(rc.code, RA_SCRATCH, a1);
+                rc.code.push_back(rv_FLD(0, RA_SCRATCH, 0));
+                rc.code.push_back(rv_FSQRT_D(0, 0));
+                rv_load_val(rc.code, RA_SCRATCH, dst);
+                rc.code.push_back(rv_FSD(RA_SCRATCH, 0, 0));
+                break;
+            }
+
+            // ITOF: int64 → double.  Load int reg, FCVT.D.L, store to FP slot.
+            case HIR_ITOF: {
+                uint8_t r1 = ra_get_reg(rc, loc, h.src1[i], RA_SCRATCH);
+                uint64_t dst = loc[i].addr;
+                rc.code.push_back(rv_FCVT_D_L(0, r1));
+                rv_load_val(rc.code, RA_SCRATCH, dst);
+                rc.code.push_back(rv_FSD(RA_SCRATCH, 0, 0));
+                break;
+            }
+
+            // FTOI: double → int64 (truncate toward zero).
+            case HIR_FTOI: {
+                uint64_t a1 = loc[h.src1[i]].addr;
+                rv_load_val(rc.code, RA_SCRATCH, a1);
+                rc.code.push_back(rv_FLD(0, RA_SCRATCH, 0));
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_FCVT_L_D(dest, 0));
+                ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            // FTOA: double → string.  Use ECALL to format.
+            case HIR_FTOA: {
+                uint64_t a1 = loc[h.src1[i]].addr;
+                uint64_t out_addr = loc[i].addr;
+                // Load double bits into a0 via FMV.X.D.
+                rv_load_val(rc.code, RA_SCRATCH, a1);
+                rc.code.push_back(rv_FLD(0, RA_SCRATCH, 0));
+                rc.code.push_back(rv_FMV_X_D(10, 0));  // a0 = double bits
+                rv_load_val(rc.code, 11, out_addr);     // a1 = output buffer
+                rv_load_val(rc.code, 17, 0x140);        // a7 = ECALL_FTOA
+                rc.code.push_back(rv_ECALL());
+                break;
+            }
+
+            // Float comparisons: result is integer 0/1.
+#define FP_CMP(RV_INSN) \
+            { \
+                uint64_t a1 = loc[h.src1[i]].addr; \
+                uint64_t a2 = loc[h.src2[i]].addr; \
+                rv_load_val(rc.code, RA_SCRATCH, a1); \
+                rc.code.push_back(rv_FLD(0, RA_SCRATCH, 0)); \
+                rv_load_val(rc.code, RA_SCRATCH, a2); \
+                rc.code.push_back(rv_FLD(1, RA_SCRATCH, 0)); \
+                uint8_t reg = int_alloc.reg[i]; \
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0); \
+                uint8_t dest = spilled ? RA_SCRATCH : reg; \
+                if (!dest) break; \
+                rc.code.push_back(RV_INSN(dest, 0, 1)); \
+                ra_set_loc(rc, loc, int_alloc, i, dest); \
+                break; \
+            }
+
+            case HIR_FEQ: FP_CMP(rv_FEQ_D)
+            case HIR_FLT: FP_CMP(rv_FLT_D)
+            case HIR_FLE: FP_CMP(rv_FLE_D)
+#undef FP_CMP
+
             case HIR_CALL: {
                 uint64_t out_addr = loc[i].addr;
                 int na = h.cnargs[i];
@@ -1459,6 +1687,20 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_DEC:        return "DEC";
     case HIR_ATOI:       return "ATOI";
     case HIR_ITOA:       return "ITOA";
+    case HIR_ITOF:       return "ITOF";
+    case HIR_FTOI:       return "FTOI";
+    case HIR_FTOA:       return "FTOA";
+    case HIR_ATOF:       return "ATOF";
+    case HIR_FCONST:     return "FCONST";
+    case HIR_FADD:       return "FADD";
+    case HIR_FSUB:       return "FSUB";
+    case HIR_FMUL:       return "FMUL";
+    case HIR_FDIV:       return "FDIV";
+    case HIR_FNEG:       return "FNEG";
+    case HIR_FSQRT:      return "FSQRT";
+    case HIR_FEQ:        return "FEQ";
+    case HIR_FLT:        return "FLT";
+    case HIR_FLE:        return "FLE";
     case HIR_CALL:       return "CALL";
     case HIR_STRCAT:     return "STRCAT";
     case HIR_RET:        return "RET";

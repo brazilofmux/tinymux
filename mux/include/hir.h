@@ -27,8 +27,9 @@ enum hir_kind {
     // Constants
     HIR_ICONST,     // integer constant: val = value
     HIR_SCONST,     // string constant: val = guest address, sval = string
+    HIR_FCONST,     // float constant: fval = value
 
-    // Arithmetic (native RV64)
+    // Integer arithmetic (native RV64I/M)
     HIR_ADD,        // src1 + src2
     HIR_SUB,        // src1 - src2
     HIR_MUL,        // src1 * src2
@@ -40,13 +41,26 @@ enum hir_kind {
     HIR_MAX,        // max(src1, src2)
     HIR_MIN,        // min(src1, src2)
 
-    // Comparison (native RV64, result is int 0/1)
+    // Float arithmetic (native RV64D)
+    HIR_FADD,       // src1 + src2 (double)
+    HIR_FSUB,       // src1 - src2 (double)
+    HIR_FMUL,       // src1 * src2 (double)
+    HIR_FDIV,       // src1 / src2 (double)
+    HIR_FNEG,       // -src1 (double)
+    HIR_FSQRT,      // sqrt(src1) (double)
+
+    // Integer comparison (native RV64, result is int 0/1)
     HIR_EQ,         // src1 == src2
     HIR_NE,         // src1 != src2
     HIR_LT,         // src1 < src2
     HIR_LE,         // src1 <= src2
     HIR_GT,         // src1 > src2
     HIR_GE,         // src1 >= src2
+
+    // Float comparison (native RV64D, result is int 0/1)
+    HIR_FEQ,        // src1 == src2 (double)
+    HIR_FLT,        // src1 < src2 (double)
+    HIR_FLE,        // src1 <= src2 (double)
 
     // Logic
     HIR_NOT,        // !src1 (int → int)
@@ -59,6 +73,10 @@ enum hir_kind {
     // Type conversion
     HIR_ATOI,       // string → int (inline RV64 atoi)
     HIR_ITOA,       // int → string (inline RV64 itoa)
+    HIR_ITOF,       // int → float (FCVT.D.L)
+    HIR_FTOI,       // float → int (FCVT.L.D, truncate toward zero)
+    HIR_FTOA,       // float → string (ECALL-based)
+    HIR_ATOF,       // string → float (ECALL-based)
 
     // Function calls
     HIR_CALL,       // ECALL to engine function
@@ -93,7 +111,8 @@ const char *hir_kind_name(hir_kind k);
 
 enum hir_type {
     TY_VOID,
-    TY_INT,         // 64-bit integer (in RV64 register)
+    TY_INT,         // 64-bit integer (in RV64 integer register)
+    TY_FLOAT,       // 64-bit double (in RV64 FP register)
     TY_STRING,      // string (guest memory address)
 };
 
@@ -130,6 +149,9 @@ struct hir_program {
     // runtime-populated address (CARGS_BASE, SUBST_BASE) rather
     // than a true compile-time constant.  Prevents constant folding.
     bool runtime_ref[HIR_MAX_INSNS];
+
+    // Float values for FCONST (compile-time known doubles).
+    double fval[HIR_MAX_INSNS];
 
     int n_insns;
 
@@ -244,6 +266,14 @@ struct hir_program {
         call_name[i].clear();
         known_int[i] = false;
         runtime_ref[i] = false;
+        fval[i] = 0.0;
+        return i;
+    }
+
+    // Emit a float constant.
+    int emit_fconst(double v) {
+        int i = emit(HIR_FCONST, TY_FLOAT);
+        if (i >= 0) fval[i] = v;
         return i;
     }
 

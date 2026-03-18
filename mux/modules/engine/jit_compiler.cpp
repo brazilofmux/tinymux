@@ -1390,6 +1390,26 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         return -1;
     }
 
+    case ECALL_FTOA: {
+        // a0 = double bits (via FMV.X.D), a1 = output guest address.
+        double val;
+        uint64_t bits = ctx->x[10];
+        memcpy(&val, &bits, 8);
+        uint64_t out_addr = ctx->x[11];
+        if (out_addr < ec->memory_size - 64) {
+            char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+            UTF8 buf[LBUF_SIZE];
+            UTF8 *bufc = buf;
+            fval(buf, &bufc, val);
+            *bufc = '\0';
+            size_t len = bufc - buf;
+            if (len > 63) len = 63;
+            memcpy(out, buf, len);
+            out[len] = '\0';
+        }
+        return -1;
+    }
+
     default:
         ctx->x[10] = 0;
         return -1;
