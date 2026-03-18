@@ -1,8 +1,6 @@
-# TinyFugue C++ Client Review Issues
+# TitanFugue C++ Client — Open Issues
 
-This file was rebuilt from the current `client/tf` code after reviewing the
-import in commit `191a98a17473187009b9c886773957730641bceb`. Updated after
-code review of commits `6ceb3ecf..HEAD` (2026-03-17).
+Updated: 2026-03-17 (commit 3916f46f7)
 
 ## Bugs
 
@@ -17,11 +15,11 @@ code review of commits `6ceb3ecf..HEAD` (2026-03-17).
   would need a `/read` command or equivalent to make `@read` useful.
 
 - **Format variable evaluation does not cache compiled expressions**
-  `status_int_*` and `status_var_*` variables are now evaluated via
+  `status_int_*` and `status_var_*` variables are evaluated via
   `expand_subs()` (supporting `%{var}` and `$[expr]` substitutions),
   but the expression is re-parsed on every status bar redraw. Classic
-  TF caches the compiled program. This is unlikely to matter in
-  practice since redraws are infrequent.
+  TF caches the compiled program. Unlikely to matter in practice
+  since redraws are infrequent.
 
 - **Classic TF attribute codes: `E`, `W`, `I` meta-attrs not implemented**
   Both word-token format (`bold,red,bg_blue`) and classic TF single-char
@@ -29,41 +27,43 @@ code review of commits `6ceb3ecf..HEAD` (2026-03-17).
   (warning), and `I` (info) meta-attribute codes are not implemented as
   they reference TF's configurable error/warning/info style variables.
 
-## Telnet Protocol Issues
+## Charset Support
 
-- **Charset conversion limited to Latin-1 / CP437 / ASCII**
-  The client now negotiates and converts UTF-8, ISO-8859-1 (Latin-1),
-  CP437 (FANSI box-drawing), and US-ASCII via telnet CHARSET (option 42).
-  Additional charsets (e.g., ISO-8859-15, Windows-1252, KOI8-R) could
-  be added to charset.cpp. The `./utf` pipeline machinery could generate
-  conversion tables for broader coverage.
+Supported charsets (bidirectional, negotiated via telnet CHARSET option 42):
+
+| Charset | Aliases | Use case |
+|---------|---------|----------|
+| UTF-8 | utf8 | Modern MUDs |
+| US-ASCII | ascii | 7-bit only |
+| ISO-8859-1 | latin1 | Western European MUDs |
+| CP437 | ibm437 | FANSI art, DOS-era MUDs |
+| Windows-1252 | cp1252, win1252 | Smart quotes, web text |
+| KOI8-R | | Russian Cyrillic MUDs |
+
+Not supported (rejected during negotiation): ISO-8859-15 (Latin-9),
+CP850, KOI8-U. These differ from their near-neighbors in enough
+codepoints to cause silent corruption. Proper tables could be added
+to `charset.cpp` if demand arises.
 
 ## Opportunities for Improvement
 
-- **TrueColor fallback now uses CIE97 perceptual distance**
-  When TrueColor is not available, `ESC[38;2;R;G;Bm` falls back to the
-  nearest xterm-256 color via libmux's `co_nearest_xterm256()` which
-  uses CIE97 perceptual distance with K-d tree search. The old
-  Euclidean-in-RGB `rgb_to_xterm()` is retained as a static utility
-  but no longer used for rendering.
-
 - **Shell process read loop doesn't distinguish EAGAIN from errors**
-  (main.cpp:448-460) When `read()` returns -1, the loop breaks without
+  (main.cpp) When `read()` returns -1, the loop breaks without
   checking `errno`. EAGAIN is handled implicitly (poll retries next
   iteration) but an actual error leaves the fd open. Consider closing
   on non-EAGAIN errors.
 
 ## Notes
 
-- The codebase now implements far more than the original imported issue list
-  claimed: `/def`, hooks, triggers, `/repeat`, `/bind`, many expression
-  builtins, `/log`, `/save`, `/saveworld`, `/limit`, `/eval`, `/quote`, and
-  more all exist in some form.
-- The main gaps are no longer "feature absent" so much as "feature present
-  but semantics incomplete, placeholder, or unlike TinyFugue."
-- Status bar now supports: variable-driven fields (any `/set` variable
-  displayed live), all classic internal fields (`@world`, `@more`,
-  `@clock`, `@active`, `@log`, `@read`, `@mail`), format variables
-  (`status_int_*`, `status_var_*`), dynamic attribute variables
-  (`status_attr_int_*`, `status_attr_var_*`), right-justification
-  (negative widths), and reactive redraw on `/set`.
+- Status bar is at parity with classic TF 5.0: variable-driven fields,
+  all 7 internal fields (`@world`, `@more`, `@clock`, `@active`, `@log`,
+  `@read`, `@mail`), format variables (`status_int_*`, `status_var_*`),
+  attribute variables (`status_attr_int_*`, `status_attr_var_*`),
+  right-justification (negative widths), reactive redraw, both word-token
+  and classic single-char attribute syntax.
+- TrueColor (24-bit) rendering via ncurses `init_extended_color()` with
+  CIE97 perceptual-distance fallback to xterm-256 via libmux's
+  `co_nearest_xterm256()`.
+- MCCP v2 (telnet option 86) zlib decompression.
+- Full telnet: ECHO, SGA, TTYPE, NAWS (with IAC escaping), BINARY,
+  CHARSET negotiation.
