@@ -195,9 +195,10 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
         case OP_LUA_RETURN1:
             break;
 
-        // Table access: mux.* bridge pattern — handled.
+        // Table/global access and function calls — handled.
         case OP_LUA_GETTABUP:
-        case OP_LUA_GETFIELD:
+        case OP_LUA_SETTABUP:
+        case OP_LUA_SELF:
         case OP_LUA_CALL:
             break;
 
@@ -1373,20 +1374,80 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             break;
         }
 
-        // ---- Table access: mux.* bridge pattern ----
+        // ---- Global access, method calls, and function calls ----
 
         case OP_LUA_GETTABUP: {
-            if (insn.B() != 0) return -1;  // Only _ENV.
+            if (insn.B() != 0) return -1;  // Only _ENV (upvalue 0).
             int kidx = insn.C();
             if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
                 return -1;
             const lua_bc_constant &k = proto->constants[kidx];
             if (k.type != LUA_BC_TSHRSTR && k.type != LUA_BC_TLNGSTR)
                 return -1;
-            if (k.sval != "mux") return -1;
-            uint64_t addr = rc.pool_str("mux", 3);
-            lua_reg[A] = h.emit_sconst(addr, "mux");
+
+            if (k.sval == "mux") {
+                // mux.* bridge pattern — sentinel for GETFIELD+CALL.
+                uint64_t addr = rc.pool_str("mux", 3);
+                lua_reg[A] = h.emit_sconst(addr, "mux");
+            } else {
+                // Non-mux globals — reject for now.
+                // Generic global access + generic CALL need Lua stack
+                // management that is not yet stable.
+                return -1;
+            }
+            break;
+        }
+
+        // SETTABUP: set _ENV[key] = value.
+        case OP_LUA_SETTABUP: {
+            if (insn.A() != 0) return -1;  // Only _ENV.
+            int kidx = insn.B();
+            if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
+                return -1;
+            const lua_bc_constant &k = proto->constants[kidx];
+            if (k.type != LUA_BC_TSHRSTR && k.type != LUA_BC_TLNGSTR)
+                return -1;
+            int val = lua_reg[insn.C()];
+            if (val < 0) return -1;
+            if (h.ty[val] == TY_INT) {
+                val = h.emit(HIR_ITOA, TY_STRING, val);
+                if (val < 0) return -1;
+            } else if (h.ty[val] == TY_FLOAT) {
+                val = h.emit(HIR_FTOA, TY_STRING, val);
+                if (val < 0) return -1;
+            }
+            uint64_t key_addr = rc.pool_str(k.sval.c_str(), k.sval.size());
+            int key_val = h.emit_sconst(key_addr, k.sval);
+            if (key_val < 0) return -1;
+            std::string name("__lua_setglobal");
+            int args[] = { key_val, val };
+            h.emit_call(TY_STRING, 0, args, 2, &name);
+            h.ecalls++;
+            break;
+        }
+
+        // SELF: A = dest, B = table register, C = method key constant.
+        // R(A+1) := R(B); R(A) := R(B)[K(C)]
+        case OP_LUA_SELF: {
+            int tbl = lua_reg[insn.B()];
+            if (tbl < 0) return -1;
+            // Copy table to R(A+1) for method call.
+            lua_reg[A + 1] = tbl;
+            // Load method: t[key].
+            int kidx = insn.C();
+            if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
+                return -1;
+            const lua_bc_constant &k = proto->constants[kidx];
+            if (k.type != LUA_BC_TSHRSTR && k.type != LUA_BC_TLNGSTR)
+                return -1;
+            uint64_t key_addr = rc.pool_str(k.sval.c_str(), k.sval.size());
+            int key_val = h.emit_sconst(key_addr, k.sval);
+            if (key_val < 0) return -1;
+            std::string name("__lua_getfield");
+            int args[] = { tbl, key_val };
+            lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
             if (lua_reg[A] < 0) return -1;
+            h.ecalls++;
             break;
         }
 
@@ -1397,6 +1458,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int nargs = insn.B() - 1;
             int nresults = insn.C() - 1;
 
+            // Only handle mux.* bridge calls for now.
             if (h.kind[func_reg] != HIR_SCONST) return -1;
             const std::string &fname = h.sval[func_reg];
             if (fname.substr(0, 4) != "mux.") return -1;
@@ -1404,7 +1466,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             std::string bridge_name = fname.substr(4);
             std::string upper_name;
             for (char c : bridge_name) {
-                upper_name += static_cast<char>(toupper(static_cast<unsigned char>(c)));
+                upper_name += static_cast<char>(toupper(
+                    static_cast<unsigned char>(c)));
             }
 
             std::vector<int> args;
@@ -1414,12 +1477,14 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 if (h.ty[areg] == TY_INT) {
                     areg = h.emit(HIR_ITOA, TY_STRING, areg);
                     if (areg < 0) return -1;
+                } else if (h.ty[areg] == TY_FLOAT) {
+                    areg = h.emit(HIR_FTOA, TY_STRING, areg);
+                    if (areg < 0) return -1;
                 }
                 args.push_back(areg);
             }
 
             int fidx = engine_api_lookup(upper_name.c_str());
-
             int call_val;
             if (fidx > 0) {
                 call_val = h.emit_call(TY_STRING, fidx,

@@ -1453,6 +1453,190 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 return -1;
             }
 
+            if (strcmp(fn, "__LUA_GETGLOBAL") == 0) {
+                // fargs[0]=name.  Push _ENV[name] onto Lua stack.
+                const char *gname = "";
+                if (nfargs >= 1) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr, 8);
+                    gname = reinterpret_cast<const char *>(ec->memory + p);
+                }
+                int ty = lua_getglobal(L, gname);
+                int idx = lua_gettop(L);
+                char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+
+                if (ty == LUA_TTABLE || ty == LUA_TFUNCTION ||
+                    ty == LUA_TUSERDATA) {
+                    // Return Lua stack index as string — GETFIELD/CALL
+                    // will use this to reference the object.
+                    int n = snprintf(out, out_size, "%d", idx);
+                    ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
+                } else if (ty == LUA_TNUMBER) {
+                    if (lua_isinteger(L, -1)) {
+                        int n = snprintf(out, out_size, "%lld",
+                            static_cast<long long>(lua_tointeger(L, -1)));
+                        ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
+                    } else {
+                        UTF8 buf[LBUF_SIZE]; UTF8 *bufc = buf;
+                        fval(buf, &bufc, lua_tonumber(L, -1));
+                        *bufc = '\0';
+                        size_t len = bufc - buf;
+                        if (len >= out_size) len = out_size - 1;
+                        memcpy(out, buf, len);
+                        out[len] = '\0';
+                        ctx->x[10] = static_cast<uint64_t>(len);
+                    }
+                    lua_pop(L, 1);
+                } else if (ty == LUA_TSTRING) {
+                    size_t slen;
+                    const char *s = lua_tolstring(L, -1, &slen);
+                    if (slen >= out_size) slen = out_size - 1;
+                    memcpy(out, s, slen);
+                    out[slen] = '\0';
+                    ctx->x[10] = static_cast<uint64_t>(slen);
+                    lua_pop(L, 1);
+                } else {
+                    out[0] = '\0';
+                    ctx->x[10] = 0;
+                    lua_pop(L, 1);
+                }
+                return -1;
+            }
+
+            if (strcmp(fn, "__LUA_SETGLOBAL") == 0) {
+                // fargs[0]=name, fargs[1]=value.
+                const char *gname = "";
+                const char *val = "";
+                if (nfargs >= 1) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr, 8);
+                    gname = reinterpret_cast<const char *>(ec->memory + p);
+                }
+                if (nfargs >= 2) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr + 8, 8);
+                    val = reinterpret_cast<const char *>(ec->memory + p);
+                    char *end;
+                    long long iv = strtoll(val, &end, 10);
+                    if (*end == '\0' && end != val) {
+                        lua_pushinteger(L, static_cast<lua_Integer>(iv));
+                    } else {
+                        double dv = strtod(val, &end);
+                        if (*end == '\0' && end != val) {
+                            lua_pushnumber(L, dv);
+                        } else {
+                            lua_pushstring(L, val);
+                        }
+                    }
+                }
+                lua_setglobal(L, gname);
+                char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+                out[0] = '\0';
+                ctx->x[10] = 0;
+                return -1;
+            }
+
+            if (strcmp(fn, "__LUA_CALL") == 0) {
+                // fargs[0]=func_ref (stack idx as string or global name),
+                // fargs[1..n]=arguments as strings.
+                // Returns: result as string.
+                if (nfargs < 1) {
+                    char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+                    out[0] = '\0';
+                    ctx->x[10] = 0;
+                    return -1;
+                }
+
+                // Get the function reference.
+                uint64_t p;
+                memcpy(&p, ec->memory + fargs_addr, 8);
+                const char *func_ref = reinterpret_cast<const char *>(
+                    ec->memory + p);
+
+                // Try as stack index first (from __lua_getglobal/getfield).
+                char *end;
+                int stk_idx = static_cast<int>(strtol(func_ref, &end, 10));
+                if (*end == '\0' && end != func_ref && stk_idx > 0
+                    && stk_idx <= lua_gettop(L)) {
+                    lua_pushvalue(L, stk_idx);  // copy function to top
+                } else {
+                    // Try as global function name.
+                    lua_getglobal(L, func_ref);
+                }
+
+                if (!lua_isfunction(L, -1)) {
+                    lua_pop(L, 1);
+                    char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+                    out[0] = '\0';
+                    ctx->x[10] = 0;
+                    return -1;
+                }
+
+                // Push arguments.
+                int lua_nargs = nfargs - 1;
+                for (int j = 0; j < lua_nargs; j++) {
+                    memcpy(&p, ec->memory + fargs_addr + (j + 1) * 8, 8);
+                    const char *arg = reinterpret_cast<const char *>(
+                        ec->memory + p);
+                    // Push as number if parseable, else string.
+                    char *aend;
+                    long long iv = strtoll(arg, &aend, 10);
+                    if (*aend == '\0' && aend != arg) {
+                        lua_pushinteger(L, static_cast<lua_Integer>(iv));
+                    } else {
+                        double dv = strtod(arg, &aend);
+                        if (*aend == '\0' && aend != arg) {
+                            lua_pushnumber(L, dv);
+                        } else {
+                            lua_pushstring(L, arg);
+                        }
+                    }
+                }
+
+                // Call.
+                int status = lua_pcall(L, lua_nargs, 1, 0);
+                char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+                if (status != LUA_OK) {
+                    lua_pop(L, 1);  // pop error
+                    out[0] = '\0';
+                    ctx->x[10] = 0;
+                    return -1;
+                }
+
+                // Marshal result.
+                if (lua_isinteger(L, -1)) {
+                    int n = snprintf(out, out_size, "%lld",
+                        static_cast<long long>(lua_tointeger(L, -1)));
+                    ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
+                } else if (lua_isnumber(L, -1)) {
+                    UTF8 buf[LBUF_SIZE]; UTF8 *bufc = buf;
+                    fval(buf, &bufc, lua_tonumber(L, -1));
+                    *bufc = '\0';
+                    size_t len = bufc - buf;
+                    if (len >= out_size) len = out_size - 1;
+                    memcpy(out, buf, len);
+                    out[len] = '\0';
+                    ctx->x[10] = static_cast<uint64_t>(len);
+                } else if (lua_isstring(L, -1)) {
+                    size_t slen;
+                    const char *s = lua_tolstring(L, -1, &slen);
+                    if (slen >= out_size) slen = out_size - 1;
+                    memcpy(out, s, slen);
+                    out[slen] = '\0';
+                    ctx->x[10] = static_cast<uint64_t>(slen);
+                } else if (lua_isboolean(L, -1)) {
+                    const char *bv = lua_toboolean(L, -1) ? "1" : "0";
+                    memcpy(out, bv, 1);
+                    out[1] = '\0';
+                    ctx->x[10] = 1;
+                } else {
+                    out[0] = '\0';
+                    ctx->x[10] = 0;
+                }
+                lua_pop(L, 1);
+                return -1;
+            }
+
             if (strcmp(fn, "__LUA_POW") == 0) {
                 // fargs[0]=base (as string), fargs[1]=exponent (as string).
                 double base_v = 0, exp_v = 0;
