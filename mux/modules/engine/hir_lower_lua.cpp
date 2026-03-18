@@ -1390,10 +1390,18 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 uint64_t addr = rc.pool_str("mux", 3);
                 lua_reg[A] = h.emit_sconst(addr, "mux");
             } else {
-                // Non-mux globals — reject for now.
-                // Generic global access + generic CALL need Lua stack
-                // management that is not yet stable.
-                return -1;
+                // General global access: _ENV[key] via ECALL.
+                // Pushes table/function onto Lua stack, returns stack
+                // index as string.  Lua stack cleanup is handled by
+                // TryJIT's save/restore around RunCompiled.
+                uint64_t key_addr = rc.pool_str(k.sval.c_str(), k.sval.size());
+                int key_val = h.emit_sconst(key_addr, k.sval);
+                if (key_val < 0) return -1;
+                std::string name("__lua_getglobal");
+                int args[] = { key_val };
+                lua_reg[A] = h.emit_call(TY_STRING, 0, args, 1, &name);
+                if (lua_reg[A] < 0) return -1;
+                h.ecalls++;
             }
             break;
         }
@@ -1457,19 +1465,15 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
 
             int nargs = insn.B() - 1;
             int nresults = insn.C() - 1;
+            if (nargs < 0) return -1;  // Variable args not supported.
 
-            // Only handle mux.* bridge calls for now.
-            if (h.kind[func_reg] != HIR_SCONST) return -1;
-            const std::string &fname = h.sval[func_reg];
-            if (fname.substr(0, 4) != "mux.") return -1;
+            // Check for mux.* bridge call pattern.
+            bool is_bridge = (func_reg >= 0
+                && h.kind[func_reg] == HIR_SCONST
+                && h.sval[func_reg].size() >= 4
+                && h.sval[func_reg].substr(0, 4) == "mux.");
 
-            std::string bridge_name = fname.substr(4);
-            std::string upper_name;
-            for (char c : bridge_name) {
-                upper_name += static_cast<char>(toupper(
-                    static_cast<unsigned char>(c)));
-            }
-
+            // Convert arguments to strings.
             std::vector<int> args;
             for (int i = 0; i < nargs; i++) {
                 int areg = lua_reg[A + 1 + i];
@@ -1484,15 +1488,36 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 args.push_back(areg);
             }
 
-            int fidx = engine_api_lookup(upper_name.c_str());
             int call_val;
-            if (fidx > 0) {
-                call_val = h.emit_call(TY_STRING, fidx,
-                    args.data(), static_cast<int>(args.size()));
+            if (is_bridge) {
+                // mux.* bridge → engine API or softcode function.
+                std::string bridge_name = h.sval[func_reg].substr(4);
+                std::string upper_name;
+                for (char c : bridge_name) {
+                    upper_name += static_cast<char>(toupper(
+                        static_cast<unsigned char>(c)));
+                }
+                int fidx = engine_api_lookup(upper_name.c_str());
+                if (fidx > 0) {
+                    call_val = h.emit_call(TY_STRING, fidx,
+                        args.data(), static_cast<int>(args.size()));
+                } else {
+                    call_val = h.emit_call(TY_STRING, 0,
+                        args.data(), static_cast<int>(args.size()),
+                        &upper_name);
+                }
             } else {
+                // General Lua function call via __lua_call ECALL.
+                // func_reg holds the function reference (Lua stack index
+                // as string, from __lua_getglobal/__lua_getfield).
+                std::vector<int> call_args;
+                call_args.push_back(func_reg);
+                for (auto &a : args) call_args.push_back(a);
+                std::string name("__lua_call");
                 call_val = h.emit_call(TY_STRING, 0,
-                    args.data(), static_cast<int>(args.size()),
-                    &upper_name);
+                    call_args.data(),
+                    static_cast<int>(call_args.size()),
+                    &name);
             }
             if (call_val < 0) return -1;
             h.ecalls++;

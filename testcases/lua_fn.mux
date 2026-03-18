@@ -688,7 +688,72 @@
     @trig me/tr.done
   },
   {
-    @log smoke=TC042: lua table string concat. Failed (%q0).;
+    @log smoke=TC042: lua table string concat. Failed (%q0).
+  }
+-
+#
+# Test 43: math.floor via generic global+field+call.
+#
+&LUA_MATHFLOOR test_lua_fn=return math.floor(3.7)
+-
+&tr.tc043 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_MATHFLOOR)),
+    3)=
+  {
+    @log smoke=TC043: lua math.floor. Succeeded.
+  },
+  {
+    @log smoke=TC043: lua math.floor. Failed (%q0).
+  }
+-
+#
+# Test 44: string.upper via generic call.
+#
+&LUA_STRUPPER test_lua_fn=return string.upper("hello")
+-
+&tr.tc044 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_STRUPPER)),
+    HELLO)=
+  {
+    @log smoke=TC044: lua string.upper. Succeeded.
+  },
+  {
+    @log smoke=TC044: lua string.upper. Failed (%q0).
+  }
+-
+#
+# Test 45: tostring() via generic global call.
+#
+&LUA_TOSTR test_lua_fn=return tostring(42)
+-
+&tr.tc045 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_TOSTR)),
+    42)=
+  {
+    @log smoke=TC045: lua tostring. Succeeded.
+  },
+  {
+    @log smoke=TC045: lua tostring. Failed (%q0).
+  }
+-
+#
+# Test 46: math.sqrt via generic call with float.
+#
+&LUA_MATHSQRT test_lua_fn=return math.sqrt(144)
+-
+&tr.tc046 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_MATHSQRT)),
+    12*)=
+  {
+    @log smoke=TC046: lua math.sqrt. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC046: lua math.sqrt. Failed (%q0).;
     @trig me/tr.done
   }
 -

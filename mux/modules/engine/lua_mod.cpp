@@ -1074,9 +1074,12 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
     if (entry.jit_eligible) {
         // Already have a compiled key? Run it.
         if (entry.jit_key != 0) {
+            // Save Lua stack — ECALL handlers may push tables/functions.
+            int saved_top = lua_gettop(m_L);
             MUX_RESULT mr = m_pIJITCompile->RunCompiled(entry.jit_key,
                 executor, caller, enactor, pArgs, nArgs,
                 pResult, nResultMax, pnResultLen, m_L);
+            lua_settop(m_L, saved_top);  // restore stack
             return MUX_SUCCEEDED(mr);
         }
         return false;  // Previously failed to compile.
@@ -1108,8 +1111,13 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
     entry.jit_key = key;
 
     // Run the compiled program.
+    // Save/restore Lua stack — ECALL handlers for table ops, getglobal,
+    // and generic calls push values onto the Lua stack that must be
+    // cleaned up after JIT execution completes.
+    int saved_top = lua_gettop(m_L);
     mr = m_pIJITCompile->RunCompiled(key, executor, caller, enactor,
         pArgs, nArgs, pResult, nResultMax, pnResultLen, m_L);
+    lua_settop(m_L, saved_top);  // restore stack
     return MUX_SUCCEEDED(mr);
 }
 
