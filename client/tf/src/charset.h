@@ -11,6 +11,8 @@ enum class Charset {
     ASCII,      // 7-bit only; bytes > 127 replaced with '?'
     Latin1,     // ISO-8859-1: bytes 0x80-0xFF → U+0080-U+00FF
     CP437,      // IBM Code Page 437: DOS box-drawing, ANSI art
+    Win1252,    // Windows-1252: Latin-1 superset with smart quotes
+    KOI8R,      // KOI8-R: Russian Cyrillic
 };
 
 // Parse a charset name (case-insensitive) into a Charset enum.

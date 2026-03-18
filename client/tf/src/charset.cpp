@@ -24,6 +24,49 @@ static const uint16_t cp437_to_unicode[128] = {
     0x00B0, 0x2219, 0x00B7, 0x221A, 0x207F, 0x00B2, 0x25A0, 0x00A0, // F8-FF
 };
 
+// Windows-1252 high-byte (0x80-0xFF) to Unicode mapping.
+// Identical to Latin-1 except 0x80-0x9F which have smart quotes, dashes, etc.
+//
+static const uint16_t win1252_to_unicode[128] = {
+    0x20AC, 0x0081, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021, // 80-87
+    0x02C6, 0x2030, 0x0160, 0x2039, 0x0152, 0x008D, 0x017D, 0x008F, // 88-8F
+    0x0090, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014, // 90-97
+    0x02DC, 0x2122, 0x0161, 0x203A, 0x0153, 0x009D, 0x017E, 0x0178, // 98-9F
+    0x00A0, 0x00A1, 0x00A2, 0x00A3, 0x00A4, 0x00A5, 0x00A6, 0x00A7, // A0-A7
+    0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x00AD, 0x00AE, 0x00AF, // A8-AF
+    0x00B0, 0x00B1, 0x00B2, 0x00B3, 0x00B4, 0x00B5, 0x00B6, 0x00B7, // B0-B7
+    0x00B8, 0x00B9, 0x00BA, 0x00BB, 0x00BC, 0x00BD, 0x00BE, 0x00BF, // B8-BF
+    0x00C0, 0x00C1, 0x00C2, 0x00C3, 0x00C4, 0x00C5, 0x00C6, 0x00C7, // C0-C7
+    0x00C8, 0x00C9, 0x00CA, 0x00CB, 0x00CC, 0x00CD, 0x00CE, 0x00CF, // C8-CF
+    0x00D0, 0x00D1, 0x00D2, 0x00D3, 0x00D4, 0x00D5, 0x00D6, 0x00D7, // D0-D7
+    0x00D8, 0x00D9, 0x00DA, 0x00DB, 0x00DC, 0x00DD, 0x00DE, 0x00DF, // D8-DF
+    0x00E0, 0x00E1, 0x00E2, 0x00E3, 0x00E4, 0x00E5, 0x00E6, 0x00E7, // E0-E7
+    0x00E8, 0x00E9, 0x00EA, 0x00EB, 0x00EC, 0x00ED, 0x00EE, 0x00EF, // E8-EF
+    0x00F0, 0x00F1, 0x00F2, 0x00F3, 0x00F4, 0x00F5, 0x00F6, 0x00F7, // F0-F7
+    0x00F8, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x00FD, 0x00FE, 0x00FF, // F8-FF
+};
+
+// KOI8-R high-byte (0x80-0xFF) to Unicode mapping.
+//
+static const uint16_t koi8r_to_unicode[128] = {
+    0x2500, 0x2502, 0x250C, 0x2510, 0x2514, 0x2518, 0x251C, 0x2524, // 80-87
+    0x252C, 0x2534, 0x253C, 0x2580, 0x2584, 0x2588, 0x258C, 0x2590, // 88-8F
+    0x2591, 0x2592, 0x2593, 0x2320, 0x25A0, 0x2219, 0x221A, 0x2248, // 90-97
+    0x2264, 0x2265, 0x00A0, 0x2321, 0x00B0, 0x00B2, 0x00B7, 0x00F7, // 98-9F
+    0x2550, 0x2551, 0x2552, 0x0451, 0x2553, 0x2554, 0x2555, 0x2556, // A0-A7
+    0x2557, 0x2558, 0x2559, 0x255A, 0x255B, 0x255C, 0x255D, 0x255E, // A8-AF
+    0x255F, 0x2560, 0x2561, 0x0401, 0x2562, 0x2563, 0x2564, 0x2565, // B0-B7
+    0x2566, 0x2567, 0x2568, 0x2569, 0x256A, 0x256B, 0x256C, 0x00A9, // B8-BF
+    0x044E, 0x0430, 0x0431, 0x0446, 0x0434, 0x0435, 0x0444, 0x0433, // C0-C7
+    0x0445, 0x0438, 0x0439, 0x043A, 0x043B, 0x043C, 0x043D, 0x043E, // C8-CF
+    0x043F, 0x044F, 0x0440, 0x0441, 0x0442, 0x0443, 0x0436, 0x0432, // D0-D7
+    0x044C, 0x044B, 0x0437, 0x0448, 0x044D, 0x0449, 0x0447, 0x044A, // D8-DF
+    0x042E, 0x0410, 0x0411, 0x0426, 0x0414, 0x0415, 0x0424, 0x0413, // E0-E7
+    0x0425, 0x0418, 0x0419, 0x041A, 0x041B, 0x041C, 0x041D, 0x041E, // E8-EF
+    0x041F, 0x042F, 0x0420, 0x0421, 0x0422, 0x0423, 0x0416, 0x0412, // F0-F7
+    0x042C, 0x042B, 0x0417, 0x0428, 0x042D, 0x0429, 0x0427, 0x042A, // F8-FF
+};
+
 // Encode a Unicode code point as UTF-8, appending to out.
 //
 static void utf8_encode(std::string& out, uint32_t cp) {
@@ -70,16 +113,23 @@ Charset charset_from_name(const std::string& name) {
     if (norm == "CP437")       return Charset::CP437;
     if (norm == "IBM437")      return Charset::CP437;
     if (norm == "CP850")       return Charset::Latin1;  // Western European, close to Latin-1
+    if (norm == "WINDOWS1252") return Charset::Win1252;
+    if (norm == "CP1252")      return Charset::Win1252;
+    if (norm == "WIN1252")     return Charset::Win1252;
+    if (norm == "KOI8R")       return Charset::KOI8R;
+    if (norm == "KOI8U")       return Charset::KOI8R;  // Ukrainian variant, close enough
 
     return Charset::UTF8;  // Unknown — assume UTF-8
 }
 
 const char* charset_name(Charset cs) {
     switch (cs) {
-    case Charset::UTF8:   return "UTF-8";
-    case Charset::ASCII:  return "US-ASCII";
-    case Charset::Latin1: return "ISO-8859-1";
-    case Charset::CP437:  return "CP437";
+    case Charset::UTF8:    return "UTF-8";
+    case Charset::ASCII:   return "US-ASCII";
+    case Charset::Latin1:  return "ISO-8859-1";
+    case Charset::CP437:   return "CP437";
+    case Charset::Win1252: return "WINDOWS-1252";
+    case Charset::KOI8R:   return "KOI8-R";
     }
     return "UTF-8";
 }
@@ -92,7 +142,9 @@ bool charset_supported(const std::string& name) {
     }
     return norm == "UTF8" || norm == "USASCII" || norm == "ASCII"
         || norm == "ISO88591" || norm == "LATIN1" || norm == "ISO885915"
-        || norm == "CP437" || norm == "IBM437" || norm == "CP850";
+        || norm == "CP437" || norm == "IBM437" || norm == "CP850"
+        || norm == "WINDOWS1252" || norm == "CP1252" || norm == "WIN1252"
+        || norm == "KOI8R" || norm == "KOI8U";
 }
 
 std::string charset_to_utf8(const std::string& input, Charset from) {
@@ -119,6 +171,14 @@ std::string charset_to_utf8(const std::string& input, Charset from) {
 
         case Charset::CP437:
             utf8_encode(out, cp437_to_unicode[ch - 0x80]);
+            break;
+
+        case Charset::Win1252:
+            utf8_encode(out, win1252_to_unicode[ch - 0x80]);
+            break;
+
+        case Charset::KOI8R:
+            utf8_encode(out, koi8r_to_unicode[ch - 0x80]);
             break;
 
         default:
@@ -165,6 +225,18 @@ std::string utf8_to_charset(const std::string& input, Charset to) {
             continue;
         }
 
+        // Reverse-lookup helper for 128-entry tables.
+        //
+        auto reverse_lookup = [&](const uint16_t* table) -> bool {
+            for (int k = 0; k < 128; k++) {
+                if (table[k] == cp) {
+                    out += static_cast<char>(0x80 + k);
+                    return true;
+                }
+            }
+            return false;
+        };
+
         switch (to) {
         case Charset::ASCII:
             out += '?';
@@ -179,18 +251,15 @@ std::string utf8_to_charset(const std::string& input, Charset to) {
             break;
 
         case Charset::CP437:
-            {
-                // Reverse lookup in cp437 table.
-                bool found = false;
-                for (int k = 0; k < 128; k++) {
-                    if (cp437_to_unicode[k] == cp) {
-                        out += static_cast<char>(0x80 + k);
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) out += '?';
-            }
+            if (!reverse_lookup(cp437_to_unicode)) out += '?';
+            break;
+
+        case Charset::Win1252:
+            if (!reverse_lookup(win1252_to_unicode)) out += '?';
+            break;
+
+        case Charset::KOI8R:
+            if (!reverse_lookup(koi8r_to_unicode)) out += '?';
             break;
 
         default:
