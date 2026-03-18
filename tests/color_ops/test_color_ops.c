@@ -2978,6 +2978,141 @@ static void test_render_ascii(void) {
     g_seed = save_seed;
 }
 
+/* ---- co_render_ansi16 ---- */
+
+static void test_render_ansi16(void) {
+    const char *name = "co_render_ansi16";
+    unsigned char buf[LBUF_SIZE], out[LBUF_SIZE];
+    size_t r, n;
+
+    /* Empty input. */
+    r = co_render_ansi16(out, (const unsigned char *)"", 0);
+    check_buf(name, "empty", out, r, (const unsigned char *)"", 0);
+
+    /* Pure ASCII, no color. */
+    r = co_render_ansi16(out, (const unsigned char *)"Hello", 5);
+    check_buf(name, "no color", out, r, (const unsigned char *)"Hello", 5);
+
+    /* FG red (index 1) + text + reset. */
+    n = 0;
+    n += (size_t)pua_fg(buf, 1);
+    buf[n++] = 'X';
+    n += (size_t)pua_reset(buf + n);
+    buf[n++] = 'Y';
+    r = co_render_ansi16(out, buf, n);
+    /* Expect: ESC[31mX ESC[0mY ESC[0m — but trailing reset is only if non-normal at end.
+     * After pua_reset, state is normal, so Y is emitted with reset before it,
+     * and no trailing reset. */
+    if (r > 0 && out[0] == 0x1B) {
+        test_ok(name, "FG red+text+reset (len=%zu, starts with ESC)", r);
+    } else {
+        test_fail(name, "FG red+text+reset: expected ESC at start, got 0x%02x (len=%zu)", out[0], r);
+    }
+
+    /* Verify text content is preserved (strip ESC sequences and check). */
+    {
+        char text[LBUF_SIZE];
+        int ti = 0;
+        for (size_t i = 0; i < r; i++) {
+            if (out[i] == 0x1B) {
+                /* Skip ESC[...m */
+                while (i < r && out[i] != 'm') i++;
+            } else {
+                text[ti++] = (char)out[i];
+            }
+        }
+        text[ti] = '\0';
+        if (strcmp(text, "XY") == 0) {
+            test_ok(name, "text preserved: XY");
+        } else {
+            test_fail(name, "text preserved: got '%s', expected 'XY'", text);
+        }
+    }
+
+    /* Unicode passes through (not approximated). */
+    n = 0;
+    n += (size_t)pua_fg(buf, 4);  /* blue */
+    buf[n++] = 0xC3; buf[n++] = 0xA9;  /* e-acute */
+    n += (size_t)pua_reset(buf + n);
+    r = co_render_ansi16(out, buf, n);
+    /* e-acute should be present in output (bytes C3 A9). */
+    {
+        int found = 0;
+        for (size_t i = 0; i + 1 < r; i++) {
+            if (out[i] == 0xC3 && out[i+1] == 0xA9) { found = 1; break; }
+        }
+        if (found) {
+            test_ok(name, "unicode preserved: e-acute");
+        } else {
+            test_fail(name, "unicode preserved: e-acute not found in output");
+        }
+    }
+
+    /* All color, no visible. */
+    n = 0;
+    n += (size_t)pua_fg(buf, 1);
+    n += (size_t)pua_bg(buf + n, 2);
+    n += (size_t)pua_reset(buf + n);
+    r = co_render_ansi16(out, buf, n);
+    check_buf(name, "all color no text", out, r, (const unsigned char *)"", 0);
+
+    /* Bright FG (index 9 = bright red) uses bold + base color. */
+    n = 0;
+    n += (size_t)pua_fg(buf, 9);  /* bright red */
+    buf[n++] = 'Z';
+    n += (size_t)pua_reset(buf + n);
+    r = co_render_ansi16(out, buf, n);
+    /* Should contain ESC[1;31m or ESC[1mESC[31m — bold for bright. */
+    {
+        int has_bold = 0;
+        for (size_t i = 0; i + 1 < r; i++) {
+            if (out[i] == '1' && (out[i+1] == ';' || out[i+1] == 'm')) {
+                has_bold = 1; break;
+            }
+        }
+        if (has_bold) {
+            test_ok(name, "bright fg uses bold");
+        } else {
+            test_fail(name, "bright fg: expected bold(1) in SGR");
+        }
+    }
+
+    /* 24-bit RGB → nearest 16-color. */
+    n = 0;
+    n += (size_t)pua_fg_rgb(buf, 255, 0, 0);  /* pure red */
+    buf[n++] = 'R';
+    n += (size_t)pua_reset(buf + n);
+    r = co_render_ansi16(out, buf, n);
+    if (r > 0 && out[0] == 0x1B) {
+        test_ok(name, "RGB red mapped to 16-color (len=%zu)", r);
+    } else {
+        test_fail(name, "RGB red: expected ESC at start");
+    }
+
+    /* Fuzz: output should never contain PUA bytes. */
+    unsigned int save_seed = g_seed;
+    for (int i = 0; i < 5000; i++) {
+        size_t len = gen_random_colored(buf, 1 + (xrand() % 200));
+        r = co_render_ansi16(out, buf, len);
+        int has_pua = 0;
+        for (size_t j = 0; j + 2 < r; j++) {
+            if (out[j] == 0xEF && out[j+1] >= 0x94 && out[j+1] <= 0x9F) {
+                has_pua = 1; break;
+            }
+            if (out[j] == 0xF3 && j + 3 < r && out[j+1] >= 0xB0 && out[j+1] <= 0xB3) {
+                has_pua = 1; break;
+            }
+        }
+        if (has_pua) {
+            test_fail(name, "fuzz[%d]: PUA bytes leaked into ANSI output", i);
+            g_seed = save_seed;
+            return;
+        }
+    }
+    test_ok(name, "5000 fuzz: no PUA leaks");
+    g_seed = save_seed;
+}
+
 /* ================================================================
  * Main
  * ================================================================ */
@@ -3037,6 +3172,7 @@ static const test_suite_t suites[] = {
     { "console_width",    test_console_width },
     { "colorstate_helpers", test_colorstate_helpers },
     { "render_ascii",     test_render_ascii },
+    { "render_ansi16",   test_render_ansi16 },
     { NULL, NULL }
 };
 

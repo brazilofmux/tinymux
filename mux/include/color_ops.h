@@ -697,6 +697,21 @@ LIBMUX_API size_t co_render_ascii(unsigned char *out,
                        const unsigned char *data, size_t len);
 
 /*
+ * co_render_ansi16 — Render PUA-colored UTF-8 to ANSI 16-color output.
+ *
+ * Converts PUA color codes to ANSI SGR escape sequences using the
+ * basic 16-color palette (30-37/40-47 with bold for bright).
+ * Indexed colors > 15 and 24-bit RGB are mapped to the nearest
+ * 16-color entry via CIE97 perceptual distance.
+ * Visible UTF-8 text passes through unchanged.
+ *
+ * Appends ESC[0m at end if color state is not normal.
+ * Returns bytes written to out.
+ */
+LIBMUX_API size_t co_render_ansi16(unsigned char *out,
+                        const unsigned char *data, size_t len);
+
+/*
  * co_nearest_xterm256 — Find nearest xterm-256 palette entry for an RGB color.
  *
  * Uses CIE97 perceptual distance with K-d tree search through the

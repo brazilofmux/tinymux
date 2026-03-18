@@ -17,7 +17,7 @@ INCLUDES = -I../../mux/include -I../../ragel
 TARGET   = test_color_ops
 
 # Object files
-OBJS = test_color_ops.o color_ops.o unicode_tables.o tables_extra.o tables_ascii.o co_console_width.o
+OBJS = test_color_ops.o color_ops.o unicode_tables.o tables_extra.o tables_ascii.o co_console_width.o co_nearest_color.o
 
 all: $(TARGET)
 
@@ -56,6 +56,9 @@ tables_ascii.o: tables_ascii.c
 
 co_console_width.o: co_console_width.c
 	$(CC) $(CFLAGS) -c co_console_width.c
+
+co_nearest_color.o: co_nearest_color.c ../../mux/include/color_ops.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c co_nearest_color.c
 
 test: $(TARGET)
 	./$(TARGET)
