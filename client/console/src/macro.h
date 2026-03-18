@@ -6,18 +6,25 @@
 #include <vector>
 #include <regex>
 
+extern "C" {
+#include "trigger_match.h"
+}
+
 struct App;
 
 struct Macro {
     std::string name;
     std::string body;           // command(s) to execute
-    std::string trigger;        // -t pattern (regex)
+    std::string trigger;        // -t pattern (glob/literal or regex)
     int         priority = 0;   // -p (higher fires first)
     int         shots = -1;     // -n (negative = unlimited, 0 = dead)
     bool        gag = false;    // suppress matched line from display
     bool        hilite = false; // highlight matched text
 
-    // Compiled regex (from trigger)
+    int         trigger_id = -1;       // Index in trigger_set (-1 if regex fallback)
+    bool        regex_fallback = false; // True if pattern needs std::regex
+
+    // std::regex fallback for complex patterns.
     std::regex  trigger_re;
     bool        compiled = false;
 
@@ -26,6 +33,9 @@ struct Macro {
 
 class MacroDB {
 public:
+    MacroDB();
+    ~MacroDB();
+
     void define(Macro m);
     bool undef(const std::string& name);
     Macro* find(const std::string& name);
@@ -36,6 +46,11 @@ public:
 
 private:
     std::vector<Macro> macros_;
+    trigger_set*       ts_ = nullptr;
+    int                next_trigger_id_ = 0;
+    bool               ts_dirty_ = true;
+
+    void rebuild_trigger_set();
 };
 
 // Result of checking triggers against a line.
