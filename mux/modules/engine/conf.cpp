@@ -368,9 +368,6 @@ void cf_init(void)
     mudstate.aHelpDesc = nullptr;
     mudstate.mHelpDesc = 0;
     mudstate.nHelpDesc = 0;
-#if defined(STUB_SLAVE)
-    mudstate.pISlaveControl = nullptr;
-#endif // STUB_SLAVE
     mudstate.pIQueryControl = nullptr;
     mudstate.pIComsysControl = nullptr;
     mudstate.pIMailControl = nullptr;
@@ -1538,18 +1535,26 @@ static CF_HAND(cf_module)
         return -1;
     }
 
-#if defined(STUB_SLAVE)
-    if (  nullptr == mudstate.pISlaveControl
-       && eLocal == eType)
-    {
-        cf_log_syntax(player, cmd, T("No StubSlave management interface available."));
-        return -1;
-    }
-#else // STUB_SLAVE
+#if !defined(STUB_SLAVE)
     if (eLocal == eType)
     {
         cf_log_syntax(player, cmd, T("StubSlave is not enabled."));
         return -1;
+    }
+#endif // !STUB_SLAVE
+
+#if defined(STUB_SLAVE)
+    mux_ISlaveControl *pISlaveControl = nullptr;
+    if (eLocal == eType)
+    {
+        MUX_RESULT mrSlave = mux_CreateInstance(CID_StubSlave, nullptr,
+            UseSlaveProcess, IID_ISlaveControl,
+            (void **)&pISlaveControl);
+        if (MUX_FAILED(mrSlave) || nullptr == pISlaveControl)
+        {
+            cf_log_syntax(player, cmd, T("No StubSlave management interface available."));
+            return -1;
+        }
     }
 #endif // STUB_SLAVE
 
@@ -1563,7 +1568,7 @@ static CF_HAND(cf_module)
 #if defined(STUB_SLAVE)
         else
         {
-            mr = mudstate.pISlaveControl->RemoveModule(str+1);
+            mr = pISlaveControl->RemoveModule(str+1);
         }
 #endif // STUB_SLAVE
     }
@@ -1592,11 +1597,19 @@ static CF_HAND(cf_module)
 #if defined(STUB_SLAVE)
         else if (bHaveFilename)
         {
-            mr = mudstate.pISlaveControl->AddModule(str, filename);
+            mr = pISlaveControl->AddModule(str, filename);
         }
 #endif // STUB_SLAVE
         free_lbuf(buffer);
     }
+
+#if defined(STUB_SLAVE)
+    if (nullptr != pISlaveControl)
+    {
+        pISlaveControl->Release();
+        pISlaveControl = nullptr;
+    }
+#endif // STUB_SLAVE
 
     if (MUX_FAILED(mr))
     {

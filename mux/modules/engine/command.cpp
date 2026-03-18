@@ -4020,19 +4020,26 @@ static void list_modules(dbref executor)
     }
 
 #ifdef STUB_SLAVE
-    if (nullptr != mudstate.pISlaveControl)
     {
-        for (i = 0; ; i++)
+        mux_ISlaveControl *pISlaveControl = nullptr;
+        MUX_RESULT mr = mux_CreateInstance(CID_StubSlave, nullptr,
+            UseSlaveProcess, IID_ISlaveControl,
+            (void **)&pISlaveControl);
+        if (MUX_SUCCEEDED(mr) && nullptr != pISlaveControl)
         {
-            MUX_MODULE_INFO ModuleInfo;
-            MUX_RESULT mr = mudstate.pISlaveControl->ModuleInfo(i, &ModuleInfo);
-            if (  MUX_FAILED(mr)
-               || MUX_S_FALSE == mr)
+            for (i = 0; ; i++)
             {
-                break;
-            }
+                MUX_MODULE_INFO ModuleInfo;
+                mr = pISlaveControl->ModuleInfo(i, &ModuleInfo);
+                if (  MUX_FAILED(mr)
+                   || MUX_S_FALSE == mr)
+                {
+                    break;
+                }
 
-            raw_notify(executor, tprintf(T("%s (%s) by stubslave"), ModuleInfo.pName, ModuleInfo.bLoaded ? T("loaded") : T("unloaded")));
+                raw_notify(executor, tprintf(T("%s (%s) by stubslave"), ModuleInfo.pName, ModuleInfo.bLoaded ? T("loaded") : T("unloaded")));
+            }
+            pISlaveControl->Release();
         }
     }
 #endif

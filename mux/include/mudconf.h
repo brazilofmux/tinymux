@@ -543,7 +543,6 @@ struct statedata
     ATTRPERM *attrperm_list;    /* Wildcarded attribute permissions list */
 
 #if defined(STUB_SLAVE)
-    mux_ISlaveControl *pISlaveControl;  // Management interface for StubSlave process.
     CResultsSet *pResultsSet;           // ResultsSet from @query.
     int iRow;                           // Current Row.
 #endif // STUB_SLAVE

@@ -2264,9 +2264,16 @@ void do_dbck(dbref executor, dbref caller, dbref enactor, int eval, int key)
     scheduler.Shrink();
     mux_ModuleMaintenance();
 #if defined(STUB_SLAVE)
-    if (nullptr != mudstate.pISlaveControl)
     {
-        mudstate.pISlaveControl->ModuleMaintenance();
+        mux_ISlaveControl *pISlaveControl = nullptr;
+        MUX_RESULT mr = mux_CreateInstance(CID_StubSlave, nullptr,
+            UseSlaveProcess, IID_ISlaveControl,
+            (void **)&pISlaveControl);
+        if (MUX_SUCCEEDED(mr) && nullptr != pISlaveControl)
+        {
+            pISlaveControl->ModuleMaintenance();
+            pISlaveControl->Release();
+        }
     }
 #endif // STUB_SLAVE
 

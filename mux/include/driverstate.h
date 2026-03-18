@@ -48,10 +48,20 @@ class mux_IGameEngine;
 class mux_IPlayerSession;
 class mux_INotify;
 class mux_IObjectInfo;
+class mux_ISlaveControl;
 extern mux_IGameEngine  *g_pIGameEngine;
 extern mux_IPlayerSession *g_pIPlayerSession;
 extern mux_INotify        *g_pINotify;
 extern mux_IObjectInfo    *g_pIObjectInfo;
+
+#if defined(STUB_SLAVE)
+// StubSlave lifetime management.  The driver creates this proxy via
+// mux_CreateInstance(CID_StubSlave, UseSlaveProcess) and uses it to
+// start up and shut down the stubslave process.  Engine-side code that
+// needs mux_ISlaveControl obtains its own proxy through libmux.
+//
+extern mux_ISlaveControl *g_pISlaveControl;
+#endif // STUB_SLAVE
 
 // CLI mode flag — true when running as dbconvert.  The engine has its
 // own copy (mudstate.bStandAlone) set in CGameEngine::DbConvert().

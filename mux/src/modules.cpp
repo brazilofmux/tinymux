@@ -108,6 +108,7 @@ MUX_RESULT init_modules(void)
 #ifdef STUB_SLAVE
 QUEUE_INFO Queue_In;
 QUEUE_INFO Queue_Out;
+mux_ISlaveControl *g_pISlaveControl = nullptr;
 
 MUX_RESULT init_stubslave(void)
 {
@@ -115,13 +116,13 @@ MUX_RESULT init_stubslave(void)
     Pipe_InitializeQueueInfo(&Queue_Out);
     MUX_RESULT mr = mux_InitModuleLibraryPump(pipepump, &Queue_In, &Queue_Out);
 
-    if (nullptr != mudstate.pISlaveControl)
+    if (nullptr != g_pISlaveControl)
     {
-        mudstate.pISlaveControl->Release();
-        mudstate.pISlaveControl = nullptr;
+        g_pISlaveControl->Release();
+        g_pISlaveControl = nullptr;
     }
 
-    mr = mux_CreateInstance(CID_StubSlave, nullptr, UseSlaveProcess, IID_ISlaveControl, (void **)&mudstate.pISlaveControl);
+    mr = mux_CreateInstance(CID_StubSlave, nullptr, UseSlaveProcess, IID_ISlaveControl, (void **)&g_pISlaveControl);
     if (MUX_SUCCEEDED(mr))
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
@@ -141,9 +142,9 @@ void final_stubslave(void)
 {
     MUX_RESULT mr = MUX_S_OK;
 
-    if (nullptr != mudstate.pISlaveControl)
+    if (nullptr != g_pISlaveControl)
     {
-        mr = mudstate.pISlaveControl->ShutdownSlave();
+        mr = g_pISlaveControl->ShutdownSlave();
         if (MUX_FAILED(mr))
         {
             STARTLOG(LOG_ALWAYS, "INI", "LOAD");
@@ -151,8 +152,8 @@ void final_stubslave(void)
             ENDLOG;
         }
 
-        mudstate.pISlaveControl->Release();
-        mudstate.pISlaveControl = nullptr;
+        g_pISlaveControl->Release();
+        g_pISlaveControl = nullptr;
     }
 }
 #endif // STUB_SLAVE
