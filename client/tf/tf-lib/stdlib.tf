@@ -49,6 +49,8 @@
 /bind ^Xk = /dc
 
 ;;; ---- Help ----
+;;; Classic TF bound ^H^H and ^H? but ^H maps to Backspace in
+;;; modern terminals, making rapid backspace trigger /help.
+;;; Use F1 instead.
 
-/bind ^H^H = /help
-/bind ^H? = /help
+/bind F1 = /help

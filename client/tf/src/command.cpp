@@ -1012,6 +1012,10 @@ void cmd_bind(App& app, const std::string& args) {
     } else {
         app.keybindings.bind_seq(seq, command);
     }
+    if (app.debug_keys_fp) {
+        fprintf(app.debug_keys_fp, "BIND: \"%s\" (%zu keys) -> %s\n",
+                format_key_sequence(seq).c_str(), seq.size(), command.c_str());
+    }
     app.terminal.print_system("% Bound " + format_key_sequence(seq) + " = " + command);
 }
 

@@ -47,9 +47,11 @@ struct App {
     bool                                           running = true;
     ScriptEnv*                                     current_env = nullptr;
     std::unordered_set<std::string>                active_worlds;  // worlds with unread bg activity
+    FILE*                                          debug_keys_fp = nullptr;  // --debug-keys log
 
     ~App() {
         for (auto& [h, fp] : open_files) if (fp) fclose(fp);
+        if (debug_keys_fp) fclose(debug_keys_fp);
     }
 };
 

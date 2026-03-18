@@ -13,6 +13,19 @@
 #include <vector>
 #include <fnmatch.h>
 
+// Debug-keys helper: format a BindKey for log output.
+static std::string dbg_key_name(const BindKey& bk) {
+    if (bk.key == Key::CHAR) {
+        if (bk.cp >= 32 && bk.cp < 127)
+            return std::string("CHAR('") + (char)bk.cp + "')";
+        char buf[32];
+        snprintf(buf, sizeof(buf), "CHAR(U+%04X)", bk.cp);
+        return buf;
+    }
+    const char* n = key_to_name(bk.key);
+    return n ? n : "UNKNOWN";
+}
+
 static volatile sig_atomic_t got_sigwinch = 0;
 static volatile sig_atomic_t got_sigterm = 0;
 static volatile sig_atomic_t got_sigint = 0;
@@ -305,10 +318,15 @@ static bool load_world_file(App& app, const std::string& path, bool quiet = fals
 }
 
 static bool load_command_file(App& app, const std::string& path, bool quiet = false) {
-    if (!app.commands.dispatch(app, "/load " + path)) {
+    // Check that the file exists before dispatching /load — dispatch
+    // returns true when the *command* is found, not when the file loads
+    // successfully, which would short-circuit the search-path loop.
+    struct stat st;
+    if (stat(path.c_str(), &st) != 0) {
         if (!quiet) app.terminal.print_system("Cannot load file: " + path);
         return false;
     }
+    app.commands.dispatch(app, "/load " + path);
     return true;
 }
 
@@ -462,11 +480,19 @@ static void run(App& app) {
             unsigned char buf[4096];
             ssize_t n = read(STDIN_FILENO, buf, sizeof(buf));
             if (n > 0) {
+                if (app.debug_keys_fp) {
+                    fprintf(app.debug_keys_fp, "READ %zd bytes:", n);
+                    for (ssize_t j = 0; j < n; j++)
+                        fprintf(app.debug_keys_fp, " %02X", buf[j]);
+                    fprintf(app.debug_keys_fp, "\n");
+                }
                 lexer.feed(buf, (size_t)n);
                 stdin_had_data = true;
             }
         } else if (ready == 0 && lexer.has_pending_esc()) {
             // Timeout with no new data — bare ESC
+            if (app.debug_keys_fp)
+                fprintf(app.debug_keys_fp, "TIMEOUT: flushing pending ESC\n");
             lexer.flush_pending_esc();
         }
 
@@ -492,16 +518,23 @@ static void run(App& app) {
             bk.key = ev.key;
             bk.cp  = ev.cp;
 
+            if (app.debug_keys_fp)
+                fprintf(app.debug_keys_fp, "EVENT: %s\n", dbg_key_name(bk).c_str());
+
             // Try advancing the multi-key sequence trie.
             //
             std::string seq_cmd;
             auto sr = app.keybindings.seq_advance(bk, seq_cmd);
 
             if (sr == KeyBindings::SeqResult::MATCH) {
+                if (app.debug_keys_fp)
+                    fprintf(app.debug_keys_fp, "  SEQ MATCH -> %s\n", seq_cmd.c_str());
                 exec_body(app, seq_cmd);
                 continue;
             }
             if (sr == KeyBindings::SeqResult::PREFIX) {
+                if (app.debug_keys_fp)
+                    fprintf(app.debug_keys_fp, "  SEQ PREFIX (waiting for more keys)\n");
                 // Partial match — hold this key and wait for more.
                 continue;
             }
@@ -511,6 +544,8 @@ static void run(App& app) {
             //
             auto buffered = app.keybindings.seq_buffered();
             app.keybindings.seq_reset();
+            if (app.debug_keys_fp)
+                fprintf(app.debug_keys_fp, "  SEQ NONE (buffered=%zu)\n", buffered.size());
             if (!buffered.empty()) {
                 // The buffered keys plus current key didn't form a
                 // sequence.  Replay the buffered keys (they were already
@@ -534,9 +569,13 @@ static void run(App& app) {
             // Now process the current key normally.
             const std::string* bound_cmd = app.keybindings.find(bk);
             if (bound_cmd) {
+                if (app.debug_keys_fp)
+                    fprintf(app.debug_keys_fp, "  SINGLE BIND -> %s\n", bound_cmd->c_str());
                 exec_body(app, *bound_cmd);
                 continue;
             }
+            if (app.debug_keys_fp)
+                fprintf(app.debug_keys_fp, "  DEFAULT (no binding)\n");
 
             // Default key handling.
             std::string line;
@@ -552,6 +591,12 @@ static void run(App& app) {
         //
         if (app.keybindings.seq_pending() && !stdin_had_data) {
             auto buffered = app.keybindings.seq_buffered();
+            if (app.debug_keys_fp) {
+                fprintf(app.debug_keys_fp, "SEQ TIMEOUT: flushing %zu buffered keys:", buffered.size());
+                for (const auto& b : buffered)
+                    fprintf(app.debug_keys_fp, " %s", dbg_key_name(b).c_str());
+                fprintf(app.debug_keys_fp, "\n");
+            }
             app.keybindings.seq_reset();
             for (const auto& replay_bk : buffered) {
                 const std::string* cmd = app.keybindings.find(replay_bk);
@@ -727,10 +772,23 @@ int main(int argc, char* argv[]) {
                 return 1;
             }
             command_files.push_back(argv[++i]);
+        } else if (arg == "--debug-keys") {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "Missing argument for %s\n", arg.c_str());
+                return 1;
+            }
+            const char* path = argv[++i];
+            app.debug_keys_fp = fopen(path, "w");
+            if (!app.debug_keys_fp) {
+                fprintf(stderr, "Cannot open debug-keys log: %s\n", path);
+                return 1;
+            }
+            setlinebuf(app.debug_keys_fp);
         } else if (arg == "-?" || arg == "--help") {
-            fprintf(stderr, "Usage: %s [-w worldfile] [-f cmdfile]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-w worldfile] [-f cmdfile] [--debug-keys FILE]\n", argv[0]);
             fprintf(stderr, "  -w, --world-file PATH  load TinyFugue world definitions at startup\n");
             fprintf(stderr, "  -f, --file PATH        load a startup command file at startup\n");
+            fprintf(stderr, "  --debug-keys FILE      log input events and key binding decisions\n");
             return 0;
         } else {
             fprintf(stderr, "Unknown option: %s\n", arg.c_str());

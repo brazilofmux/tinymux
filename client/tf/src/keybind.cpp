@@ -84,6 +84,12 @@ Key name_to_key(const std::string& name) {
         if (str_lower(key_names[i].name) == lower) return key_names[i].key;
     }
 
+    // Ctrl-letter aliases that don't have their own CTRL_x enum entries
+    // because they map to editing keys (^H=BS, ^I=Tab, ^J=^M=Enter).
+    if (lower == "^h") return Key::BACKSPACE;
+    if (lower == "^i") return Key::TAB;
+    if (lower == "^j" || lower == "^m") return Key::ENTER;
+
     // TF aliases
     if (lower == "enter") return Key::ENTER;
     if (lower == "ret" || lower == "cr") return Key::ENTER;
