@@ -10,6 +10,7 @@
 #include "keybind.h"
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <memory>
 #include <vector>
 #include <sys/types.h>
@@ -45,6 +46,7 @@ struct App {
     int                                            next_file_id = 1;
     bool                                           running = true;
     ScriptEnv*                                     current_env = nullptr;
+    std::unordered_set<std::string>                active_worlds;  // worlds with unread bg activity
 
     ~App() {
         for (auto& [h, fp] : open_files) if (fp) fclose(fp);
@@ -56,6 +58,11 @@ bool app_send_line(App& app, Connection* conn, const std::string& line,
 void app_receive_line(App& app, Connection* conn, const std::string& world_name,
                       const std::string& line);
 void app_rerender_foreground(App& app);
+
+// Clear background activity flag for the foreground world.
+inline void app_clear_fg_activity(App& app) {
+    if (app.fg) app.active_worlds.erase(app.fg->world_name());
+}
 bool app_spawn_shell(App& app, const std::string& command, ShellDisposition disposition,
                      const std::string& world_name = "");
 

@@ -169,6 +169,7 @@ void cmd_connect(App& app, const std::string& args) {
     auto it = app.connections.find(name);
     if (it != app.connections.end() && it->second->is_connected()) {
         app.fg = it->second.get();
+        app_clear_fg_activity(app);
         app.terminal.set_history_context(app.fg->world_name());
         if (std::string prompt = app.fg->current_prompt(); !prompt.empty()) {
             app.terminal.set_prompt(prompt);
@@ -199,6 +200,7 @@ void cmd_connect(App& app, const std::string& args) {
     Connection* raw = conn.get();
     app.connections[w->name] = std::move(conn);
     app.fg = raw;
+    app_clear_fg_activity(app);
     app.terminal.set_history_context(app.fg->world_name());
     app.terminal.set_output_context(app.fg->world_name());
     app.terminal.print_system("Connected to " + w->name);
@@ -242,6 +244,7 @@ void cmd_dc(App& app, const std::string& args) {
         app.fg = nullptr;
         if (!app.connections.empty()) {
             app.fg = app.connections.begin()->second.get();
+            app_clear_fg_activity(app);
             app.terminal.set_history_context(app.fg->world_name());
             app.terminal.set_output_context(app.fg->world_name());
             if (std::string prompt = app.fg->current_prompt(); !prompt.empty()) {
@@ -275,6 +278,7 @@ void cmd_fg(App& app, const std::string& args) {
             std::equal(wname.begin(), wname.end(), name.begin(),
                        [](char a, char b) { return tolower(a) == tolower(b); })) {
             app.fg = conn.get();
+            app_clear_fg_activity(app);
             app.terminal.set_history_context(app.fg->world_name());
             app.terminal.set_output_context(app.fg->world_name());
             if (std::string prompt = app.fg->current_prompt(); !prompt.empty()) {
@@ -317,6 +321,7 @@ static void fg_cycle(App& app, int direction) {
     if (it == app.connections.end()) return;
 
     app.fg = it->second.get();
+    app_clear_fg_activity(app);
     app.terminal.set_history_context(app.fg->world_name());
     app.terminal.set_output_context(app.fg->world_name());
     if (std::string prompt = app.fg->current_prompt(); !prompt.empty()) {

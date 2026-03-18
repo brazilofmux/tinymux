@@ -131,6 +131,8 @@ void app_receive_line(App& app, Connection* conn, const std::string& world_name,
             app.terminal.print_line(display_line);
         } else {
             app.terminal.print_line_to(world_name, display_line);
+            // Mark background activity.
+            app.active_worlds.insert(world_name);
         }
     }
 
@@ -263,9 +265,16 @@ static void update_status(App& app) {
         status += "  +" + std::to_string(other) + " bg";
     }
 
+    // Show activity indicator for background worlds with unread lines.
+    //
+    int active = (int)app.active_worlds.size();
+    if (active > 0) {
+        status += "  (" + std::to_string(active) + " active)";
+    }
+
     // Populate @active and @log backing state for status bar fields.
     //
-    app.terminal.status_active_count = other;
+    app.terminal.status_active_count = active;
     auto log_it = app.vars.find("_log_file");
     app.terminal.status_logging = (log_it != app.vars.end() && !log_it->second.empty());
 
