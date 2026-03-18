@@ -219,19 +219,32 @@ direct calls, queued calls, triggers, and future event hooks.
 
 ### 17. DBT needs floating-point (RV64D) support for Lua JIT
 
-**Status**: Future work.
+**Status**: DBT layer complete.  HIR `TY_FLOAT` + Lua float lowering remain.
 **Affects**: Lua JIT coverage — `OP_DIV`, `OP_POW`, `math.*` calls, mixed
 int/float arithmetic all require FP.
-**Background**: The DBT currently implements RV64IM (integer + multiply).
-Softcode is all strings so there was no justification for FP.  Lua 5.4 has
-a proper integer/float type distinction, and the hot numeric paths the JIT
-targets (combat math, `math.sqrt`, division, exponentiation) use floats.
-RV64D gives `FADD.D`/`FSUB.D`/`FMUL.D`/`FDIV.D`/`FSQRT.D` and
-`FCVT.D.L`/`FCVT.L.D` (int↔float conversion).  The DBT translator needs
-x86-64 SSE2 emission (`ADDSD`/`MULSD`/`CVTSI2SD`/`CVTTSD2SI`/`UCOMISD`)
-for the `f0-f31` register file.
-**Scope**: Bounded — ~15 new RV64 opcodes, register cache extension for
-XMM registers, and HIR `TY_FLOAT` type.  No architectural changes.
+**Background**: The DBT currently implements RV64IMD (integer + multiply +
+double-precision FP).  The RV64D translation was added as part of the Lua
+JIT pipeline work.  `dbt.cpp` now translates:
+- FLD/FSD (double load/store via guest memory)
+- FADD.D/FSUB.D/FMUL.D/FDIV.D/FSQRT.D (→ SSE2 addsd/subsd/mulsd/divsd/sqrtsd)
+- FMIN.D/FMAX.D (→ SSE2 minsd/maxsd)
+- FEQ.D/FLT.D/FLE.D (→ ucomisd + setcc)
+- FSGNJ.D/FSGNJN.D/FSGNJX.D (fmv.d/fneg.d/fabs.d idioms + general case)
+- FCVT.W.D/FCVT.D.W/FCVT.L.D/FCVT.D.L (→ cvttsd2si/cvtsi2sd)
+- FMV.X.D/FMV.D.X (→ movq between GPR and XMM)
+- FMADD/FMSUB/FNMSUB/FNMADD (emulated as mul+add/sub + sign flip)
+- FCLASS.D falls back to interpreter
+
+`rv64_ctx_t` has `double f[32]` at offset 528.  Guest FP registers are
+spilled/loaded from context via `emit_load_fp_d`/`emit_store_fp_d` (no
+XMM register cache — always load/store, which is fine for the current
+workload).
+
+**Remaining work**: The HIR has only `TY_INT` and `TY_STRING`.  Adding
+`TY_FLOAT` and float-specialized Lua→HIR lowering (Phase 3 in
+design-lua-jit.md) would let the HIR emit native FP code instead of
+routing float operations through ECALLs.  The DBT is ready — the gap
+is in the HIR type system and the Lua lowering pass.
 
 ### 18. Lua cache/versioning story is incomplete
 
