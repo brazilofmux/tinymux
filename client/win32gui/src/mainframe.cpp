@@ -67,6 +67,10 @@ bool CMainFrame::Create(HINSTANCE hInst, int nCmdShow) {
 
     LayoutChildren();
 
+    // Start the IOCP thread.
+    iocp_shutdown = false;
+    iocp_thread = CreateThread(nullptr, 0, IocpThreadProc, this, 0, nullptr);
+
     // Create a system tab so input always has somewhere to go.
     AddWorld("(System)");
 
@@ -187,54 +191,70 @@ void CMainFrame::OnInputSubmitted(const std::string& line) {
     output.ScrollToBottom();
 }
 
-void CMainFrame::DrainIOCP() {
-    if (iocp == INVALID_HANDLE_VALUE) return;
+// IOCP thread — blocks on GetQueuedCompletionStatus, posts to UI thread.
+DWORD WINAPI CMainFrame::IocpThreadProc(LPVOID param) {
+    CMainFrame* self = (CMainFrame*)param;
 
     for (;;) {
         DWORD bytes = 0;
         ULONG_PTR key = 0;
         LPOVERLAPPED overlapped = nullptr;
 
-        BOOL ok = GetQueuedCompletionStatus(iocp, &bytes, &key, &overlapped, 0);
+        BOOL ok = GetQueuedCompletionStatus(self->iocp, &bytes, &key, &overlapped, INFINITE);
 
-        if (!ok && !overlapped) break;  // No more completions pending
+        if (self->iocp_shutdown) break;
 
         if (!overlapped) continue;
 
-        Connection* conn = (Connection*)key;
-        IoContext* ctx = CONTAINING_RECORD(overlapped, IoContext, overlapped);
-        DWORD error = ok ? 0 : GetLastError();
-        auto lines = conn->on_completion(ctx, bytes, error);
+        // Package the completion and post to the UI thread.
+        auto* msg = new IocpMsg();
+        msg->conn = (Connection*)key;
+        msg->ctx = CONTAINING_RECORD(overlapped, IoContext, overlapped);
+        msg->bytes = bytes;
+        msg->error = ok ? 0 : GetLastError();
 
-        // Find the tab that owns this connection
-        for (int i = 0; i < (int)tab_states.size(); i++) {
-            if (tab_states[i]->conn.get() == conn) {
-                for (auto& line : lines) {
-                    conn->add_to_scrollback(line);
-                    tab_states[i]->buffer.append(line);
-                }
+        PostMessageW(self->m_hwnd, WM_APP_IOCP, 0, (LPARAM)msg);
+    }
+    return 0;
+}
 
-                if (!conn->is_connected()) {
-                    tab_states[i]->buffer.append("% Connection lost.");
-                    tab_states[i]->conn.reset();
-                    TabInfo ti;
-                    ti.name = tab_states[i]->name;
-                    ti.connected = false;
-                    tabbar.UpdateTab(i, ti);
-                } else if (i != active_tab) {
-                    TabInfo ti;
-                    ti.name = tab_states[i]->name;
-                    ti.active = true;
-                    ti.connected = true;
-                    ti.ssl = conn->uses_ssl();
-                    tabbar.UpdateTab(i, ti);
-                }
+// Called on the UI thread when WM_APP_IOCP arrives.
+void CMainFrame::OnIocpCompletion(IocpMsg* msg) {
+    auto lines = msg->conn->on_completion(msg->ctx, msg->bytes, msg->error);
 
-                if (i == active_tab) output.Invalidate();
-                break;
+    // Find the tab that owns this connection
+    for (int i = 0; i < (int)tab_states.size(); i++) {
+        if (tab_states[i]->conn.get() == msg->conn) {
+            for (auto& line : lines) {
+                msg->conn->add_to_scrollback(line);
+                tab_states[i]->buffer.append(line);
             }
+
+            if (!msg->conn->is_connected()) {
+                tab_states[i]->buffer.append("% Connection lost.");
+                tab_states[i]->conn.reset();
+                TabInfo ti;
+                ti.name = tab_states[i]->name;
+                ti.connected = false;
+                tabbar.UpdateTab(i, ti);
+            } else if (i != active_tab) {
+                TabInfo ti;
+                ti.name = tab_states[i]->name;
+                ti.active = true;
+                ti.connected = true;
+                ti.ssl = msg->conn->uses_ssl();
+                tabbar.UpdateTab(i, ti);
+            }
+
+            if (i == active_tab) {
+                output.ScrollToBottom();
+                output.Invalidate();
+            }
+            break;
         }
     }
+
+    delete msg;
 }
 
 void CMainFrame::CheckPrompts() {
@@ -290,13 +310,30 @@ LRESULT CMainFrame::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         return 0;
 
     case WM_TIMER:
-        // Periodic: drain IOCP, check prompts, update status
-        DrainIOCP();
+        // Periodic: prompt detection and status bar update only.
+        // IOCP completions arrive via WM_APP_IOCP from the IOCP thread.
         CheckPrompts();
         UpdateStatusBar();
         return 0;
 
+    case WM_APP_IOCP:
+        OnIocpCompletion((IocpMsg*)lParam);
+        return 0;
+
     case WM_DESTROY:
+        // Shut down the IOCP thread.
+        iocp_shutdown = true;
+        if (iocp != INVALID_HANDLE_VALUE) {
+            // Post a dummy completion to unblock GetQueuedCompletionStatus.
+            PostQueuedCompletionStatus(iocp, 0, 0, nullptr);
+        }
+        if (iocp_thread) {
+            WaitForSingleObject(iocp_thread, 2000);
+            CloseHandle(iocp_thread);
+            iocp_thread = nullptr;
+        }
+        // Disconnect all before destroying.
+        tab_states.clear();
         if (font_) { DeleteObject(font_); font_ = nullptr; }
         PostQuitMessage(0);
         return 0;

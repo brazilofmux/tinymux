@@ -47,10 +47,25 @@ public:
     void SwitchToTab(int index);
     void OnInputSubmitted(const std::string& line);
 
-    // Networking
-    void DrainIOCP();
+    // Networking — IOCP thread posts WM_APP_IOCP to the UI thread.
+    static constexpr UINT WM_APP_IOCP = WM_APP + 10;
+
+    // Payload posted from the IOCP thread to the UI thread.
+    struct IocpMsg {
+        Connection* conn;
+        IoContext*  ctx;
+        DWORD       bytes;
+        DWORD       error;
+    };
+
+    void OnIocpCompletion(IocpMsg* msg);
     void CheckPrompts();
     void UpdateStatusBar();
+
+    // IOCP thread management
+    HANDLE iocp_thread = nullptr;
+    volatile bool iocp_shutdown = false;
+    static DWORD WINAPI IocpThreadProc(LPVOID param);
 
     HFONT font() const { return font_; }
 

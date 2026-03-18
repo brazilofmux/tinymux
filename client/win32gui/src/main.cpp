@@ -50,8 +50,9 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow) {
         return 1;
     }
 
-    // Start a 50ms timer for IOCP polling and periodic tasks.
-    SetTimer(frame.hwnd(), IDT_POLL, 50, nullptr);
+    // Timer for prompt detection and status bar updates.
+    // Network I/O arrives via WM_APP_IOCP from the IOCP thread.
+    SetTimer(frame.hwnd(), IDT_POLL, 500, nullptr);
 
     // Load accelerator table
     HACCEL hAccel = LoadAcceleratorsW(hInstance, MAKEINTRESOURCEW(IDR_ACCEL));
