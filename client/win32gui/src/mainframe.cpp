@@ -1,6 +1,9 @@
 // mainframe.cpp -- Top-level frame window.
 #include "mainframe.h"
 #include "../res/resource.h"
+#include <winsock2.h>
+
+#pragma comment(lib, "ws2_32.lib")
 
 static const wchar_t MAIN_CLASS[] = L"TitanClientWnd";
 
@@ -124,6 +127,24 @@ int CMainFrame::AddWorld(const std::string& name) {
     return idx;
 }
 
+int CMainFrame::ConnectWorld(const std::string& name, const std::string& host,
+                             const std::string& port, bool ssl) {
+    int idx = AddWorld(name);
+    auto& ts = tab_states[idx];
+
+    ts->conn = std::make_unique<Connection>(name, host, port, ssl, iocp);
+    if (!ts->conn->begin_connect()) {
+        ts->buffer.append("% Failed to connect to " + host + ":" + port);
+        ts->conn.reset();
+    } else {
+        ts->buffer.append("% Connecting to " + host + ":" + port +
+                          (ssl ? " (ssl)" : "") + "...");
+    }
+    output.Invalidate();
+    SwitchToTab(idx);
+    return idx;
+}
+
 void CMainFrame::RemoveWorld(int index) {
     if (index < 0 || index >= (int)tab_states.size()) return;
     tab_states.erase(tab_states.begin() + index);
@@ -147,6 +168,109 @@ void CMainFrame::SwitchToTab(int index) {
     output.ScrollToBottom();
     status.SetText(tab_states[index]->name);
     SetFocus(input.hwnd());
+}
+
+void CMainFrame::OnInputSubmitted(const std::string& line) {
+    if (active_tab < 0 || active_tab >= (int)tab_states.size()) return;
+    auto& ts = tab_states[active_tab];
+
+    if (ts->conn && ts->conn->is_connected()) {
+        ts->conn->send_line(line);
+        // If no remote echo, echo locally
+        if (!ts->conn->remote_echo()) {
+            ts->buffer.append("> " + line);
+        }
+    } else {
+        ts->buffer.append("> " + line);
+    }
+    output.Invalidate();
+    output.ScrollToBottom();
+}
+
+void CMainFrame::DrainIOCP() {
+    if (iocp == INVALID_HANDLE_VALUE) return;
+
+    DWORD bytes = 0;
+    ULONG_PTR key = 0;
+    LPOVERLAPPED overlapped = nullptr;
+
+    // Drain all pending completions (non-blocking)
+    while (GetQueuedCompletionStatus(iocp, &bytes, &key, &overlapped, 0)) {
+        if (!overlapped) continue;
+        Connection* conn = (Connection*)key;
+        IoContext* ctx = CONTAINING_RECORD(overlapped, IoContext, overlapped);
+        auto lines = conn->on_completion(ctx, bytes, 0);
+
+        // Find the tab that owns this connection
+        for (int i = 0; i < (int)tab_states.size(); i++) {
+            if (tab_states[i]->conn.get() == conn) {
+                for (auto& line : lines) {
+                    conn->add_to_scrollback(line);
+                    tab_states[i]->buffer.append(line);
+                }
+
+                if (!conn->is_connected()) {
+                    tab_states[i]->buffer.append("% Connection lost.");
+                    tab_states[i]->conn.reset();
+                    // Update tab appearance
+                    TabInfo ti;
+                    ti.name = tab_states[i]->name;
+                    ti.connected = false;
+                    tabbar.UpdateTab(i, ti);
+                } else if (i != active_tab) {
+                    // Background activity
+                    TabInfo ti;
+                    ti.name = tab_states[i]->name;
+                    ti.active = true;
+                    ti.connected = true;
+                    ti.ssl = conn->uses_ssl();
+                    tabbar.UpdateTab(i, ti);
+                }
+
+                if (i == active_tab) output.Invalidate();
+                break;
+            }
+        }
+    }
+
+    // Also check for failed I/O
+    if (!overlapped) return;  // GetQueuedCompletionStatus returned FALSE with no overlapped — timeout
+}
+
+void CMainFrame::CheckPrompts() {
+    for (int i = 0; i < (int)tab_states.size(); i++) {
+        auto& ts = tab_states[i];
+        if (!ts->conn) continue;
+        std::string prompt = ts->conn->check_prompt(500);
+        if (!prompt.empty()) {
+            ts->conn->add_to_scrollback(prompt);
+            ts->buffer.append(prompt);
+            if (i == active_tab) output.Invalidate();
+        }
+    }
+}
+
+void CMainFrame::UpdateStatusBar() {
+    if (active_tab < 0 || active_tab >= (int)tab_states.size()) {
+        status.SetText("(no connection)");
+        return;
+    }
+    auto& ts = tab_states[active_tab];
+    std::string s = ts->name;
+    if (ts->conn) {
+        if (ts->conn->uses_ssl()) s += " [ssl]";
+        if (ts->conn->is_connected()) {
+            int idle = ts->conn->idle_secs();
+            if (idle > 0) s += "  idle:" + std::to_string(idle) + "s";
+        } else {
+            s += " (disconnected)";
+        }
+        if (ts->conn->is_logging()) s += "  [LOG]";
+    }
+    int nconn = 0;
+    for (auto& t : tab_states) if (t->conn && t->conn->is_connected()) nconn++;
+    if (nconn > 1) s += "  [" + std::to_string(nconn) + " conn]";
+    status.SetText(s);
 }
 
 LRESULT CALLBACK CMainFrame::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -178,13 +302,8 @@ LRESULT CMainFrame::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
     // Custom messages from child panes
     case WM_APP + 1: {
         // Input line submitted (lParam = UTF-8 string)
-        // For now, echo to output as a demo
         const char* line = (const char*)lParam;
-        if (active_tab >= 0 && active_tab < (int)tab_states.size()) {
-            tab_states[active_tab]->buffer.append(std::string("> ") + line);
-            output.Invalidate();
-            output.ScrollToBottom();
-        }
+        if (line) OnInputSubmitted(line);
         return 0;
     }
 
@@ -234,16 +353,70 @@ void CMainFrame::LayoutChildren() {
         MoveWindow(status.hwnd(), 0, tab_h + output_h + input_h, cx, status_h, TRUE);
 }
 
+// Connect dialog state (file-scope for lambda access).
+static wchar_t g_conn_host[128], g_conn_port[32];
+static bool g_conn_ssl, g_conn_ok;
+
+static INT_PTR CALLBACK ConnDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM) {
+    switch (msg) {
+    case WM_INITDIALOG: {
+        SetWindowTextW(hDlg, L"Connect");
+        CreateWindowExW(0, L"STATIC", L"Host:", WS_CHILD|WS_VISIBLE, 10,12,40,20, hDlg, nullptr, nullptr, nullptr);
+        CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD|WS_VISIBLE|WS_TABSTOP|ES_AUTOHSCROLL, 55,10,200,22, hDlg, (HMENU)101, nullptr, nullptr);
+        CreateWindowExW(0, L"STATIC", L"Port:", WS_CHILD|WS_VISIBLE, 10,42,40,20, hDlg, nullptr, nullptr, nullptr);
+        CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"4201", WS_CHILD|WS_VISIBLE|WS_TABSTOP|ES_AUTOHSCROLL, 55,40,80,22, hDlg, (HMENU)102, nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", L"SSL", WS_CHILD|WS_VISIBLE|BS_AUTOCHECKBOX|WS_TABSTOP, 145,42,50,20, hDlg, (HMENU)103, nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", L"Connect", WS_CHILD|WS_VISIBLE|BS_DEFPUSHBUTTON|WS_TABSTOP, 55,75,80,26, hDlg, (HMENU)IDOK, nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", L"Cancel", WS_CHILD|WS_VISIBLE|WS_TABSTOP, 145,75,80,26, hDlg, (HMENU)IDCANCEL, nullptr, nullptr);
+        HFONT hFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
+        EnumChildWindows(hDlg, [](HWND hw, LPARAM lp) -> BOOL { SendMessageW(hw, WM_SETFONT, lp, TRUE); return TRUE; }, (LPARAM)hFont);
+        SetFocus(GetDlgItem(hDlg, 101));
+        return FALSE;
+    }
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK) {
+            GetDlgItemTextW(hDlg, 101, g_conn_host, 128);
+            GetDlgItemTextW(hDlg, 102, g_conn_port, 32);
+            g_conn_ssl = (SendDlgItemMessageW(hDlg, 103, BM_GETCHECK, 0, 0) == BST_CHECKED);
+            g_conn_ok = true;
+            EndDialog(hDlg, IDOK);
+        } else if (LOWORD(wParam) == IDCANCEL) {
+            g_conn_ok = false;
+            EndDialog(hDlg, IDCANCEL);
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+
 void CMainFrame::OnCommand(int id) {
     switch (id) {
     case IDM_FILE_EXIT:
         DestroyWindow(m_hwnd);
         break;
 
-    case IDM_FILE_CONNECT:
-        // Demo: add a test world
-        AddWorld("TestWorld");
+    case IDM_FILE_CONNECT: {
+        g_conn_ok = false;
+        #pragma pack(push, 4)
+        struct { DWORD style; DWORD exStyle; WORD cdit; short x, y, cx, cy;
+                 WORD menu; WORD cls; WORD title; } tmpl = {
+            DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU,
+            0, 0, 0, 0, 270, 110, 0, 0, 0
+        };
+        #pragma pack(pop)
+        DialogBoxIndirectParamW(hInst_, (LPCDLGTEMPLATEW)&tmpl,
+                                m_hwnd, ConnDlgProc, 0);
+        if (g_conn_ok && g_conn_host[0]) {
+            char host8[256], port8[64];
+            WideCharToMultiByte(CP_UTF8, 0, g_conn_host, -1,
+                                host8, (int)sizeof(host8), nullptr, nullptr);
+            WideCharToMultiByte(CP_UTF8, 0, g_conn_port, -1,
+                                port8, (int)sizeof(port8), nullptr, nullptr);
+            std::string name = std::string(host8) + ":" + port8;
+            ConnectWorld(name, host8, port8, g_conn_ssl);
+        }
         break;
+    }
 
     case IDM_FILE_DISCONNECT:
         if (active_tab >= 0) RemoveWorld(active_tab);

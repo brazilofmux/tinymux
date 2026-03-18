@@ -8,9 +8,12 @@
 #include "inputpane.h"
 #include "statusbar.h"
 #include "outputbuffer.h"
+#include "connection.h"
+#include "world.h"
 #include <memory>
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 class CMainFrame : public CWindow {
 public:
@@ -23,18 +26,31 @@ public:
     CInputPane   input;
     CStatusBar   status;
 
-    // Per-tab output buffers
+    // Per-tab state
     struct TabState {
         std::string name;
         OutputBuffer buffer;
+        std::unique_ptr<Connection> conn;   // null for system tab
     };
     std::vector<std::unique_ptr<TabState>> tab_states;
     int active_tab = -1;
 
-    // Add a tab and create its output buffer.
+    // IOCP for networking
+    HANDLE iocp = INVALID_HANDLE_VALUE;
+    WorldDB worlddb;
+
+    // Tab management
     int AddWorld(const std::string& name);
+    int ConnectWorld(const std::string& name, const std::string& host,
+                     const std::string& port, bool ssl);
     void RemoveWorld(int index);
     void SwitchToTab(int index);
+    void OnInputSubmitted(const std::string& line);
+
+    // Networking
+    void DrainIOCP();
+    void CheckPrompts();
+    void UpdateStatusBar();
 
     HFONT font() const { return font_; }
 
