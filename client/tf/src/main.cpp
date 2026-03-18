@@ -196,6 +196,12 @@ static void update_status(App& app) {
         status += "  +" + std::to_string(other) + " bg";
     }
 
+    // Populate @active and @log backing state for status bar fields.
+    //
+    app.terminal.status_active_count = other;
+    auto log_it = app.vars.find("_log_file");
+    app.terminal.status_logging = (log_it != app.vars.end() && !log_it->second.empty());
+
     app.terminal.set_status(status);
 }
 

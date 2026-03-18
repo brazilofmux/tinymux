@@ -761,8 +761,20 @@ std::string Terminal::expand_status_field(const std::string& field) const {
         fmt_var = lookup_var("status_int_" + iname);
     } else {
         // Variable field — display the variable's live value.
+        // If no variable exists with this name, treat as literal text
+        // (classic TF also supports quoted literals, but bare names
+        // that don't match a variable render as-is).
         //
-        text = lookup_var(name);
+        if (vars_) {
+            auto it = vars_->find(name);
+            if (it != vars_->end()) {
+                text = it->second;
+            } else {
+                text = name;
+            }
+        } else {
+            text = name;
+        }
 
         // Check for format variable: status_var_<name>
         //
