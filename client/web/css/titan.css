@@ -116,6 +116,23 @@ html, body {
     opacity: 1;
 }
 
+.tab.disconnected {
+    color: #806060;
+    font-style: italic;
+}
+
+.tab .reconnect-btn {
+    font-size: 14px;
+    cursor: pointer;
+    opacity: 0.6;
+    margin-left: 2px;
+}
+
+.tab .reconnect-btn:hover {
+    opacity: 1;
+    color: #55ff55;
+}
+
 /* Output pane */
 #output {
     flex: 1;

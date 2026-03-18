@@ -3,12 +3,19 @@
 
 const app = {
     connections: {},    // name -> Connection
-    tabs: [],           // [{name, conn, active}]
+    tabs: [],           // [{name, conn, active, disconnected}]
     activeTab: null,    // name
     history: {},        // name -> [lines]
     historyPos: {},     // name -> int
     savedInput: {},     // name -> string
+    triggerDB: new TriggerDB(),
 };
+
+// Built-in commands for auto-complete
+const COMMANDS = [
+    '/connect', '/disconnect', '/worlds', '/find', '/clear',
+    '/triggers', '/def', '/undef', '/list', '/help', '/quit',
+];
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
@@ -52,18 +59,63 @@ function renderTabs() {
     for (const tab of app.tabs) {
         const el = document.createElement('div');
         el.className = 'tab' + (tab.name === app.activeTab ? ' active' : '') +
-                       (tab.active ? ' has-activity' : '');
-        el.innerHTML = `<span class="activity-dot"></span>${escapeHtml(tab.name)}` +
-                       (tab.name !== '(System)' ? `<span class="close-btn">\u00d7</span>` : '');
+                       (tab.active ? ' has-activity' : '') +
+                       (tab.disconnected ? ' disconnected' : '');
+
+        let html = `<span class="activity-dot"></span>${escapeHtml(tab.name)}`;
+        if (tab.disconnected) {
+            html += `<span class="reconnect-btn" title="Reconnect">\u21bb</span>`;
+        }
+        if (tab.name !== '(System)') {
+            html += `<span class="close-btn">\u00d7</span>`;
+        }
+        el.innerHTML = html;
+
         el.addEventListener('click', (e) => {
-            if (e.target.classList.contains('close-btn')) removeTab(tab.name);
-            else switchTab(tab.name);
+            if (e.target.classList.contains('close-btn')) {
+                removeTab(tab.name);
+            } else if (e.target.classList.contains('reconnect-btn')) {
+                reconnectTab(tab.name);
+            } else {
+                switchTab(tab.name);
+            }
         });
         el.addEventListener('auxclick', (e) => {
             if (e.button === 1) removeTab(tab.name);
         });
         bar.appendChild(el);
     }
+}
+
+function reconnectTab(name) {
+    const conn = app.connections[name];
+    if (!conn) return;
+    // Recreate the connection with the same parameters
+    const newConn = new Connection(name, conn.host, conn.port, conn.ssl);
+    app.connections[name] = newConn;
+    const tab = app.tabs.find(t => t.name === name);
+
+    newConn.onLine = (line) => {
+        const tr = app.triggerDB.check(line);
+        for (const cmd of tr.commands) handleInput(cmd);
+        if (!tr.gagged) appendLine(name, line);
+    };
+    newConn.onPrompt = (prompt) => appendLine(name, prompt);
+    newConn.onConnect = () => {
+        if (tab) tab.disconnected = false;
+        appendLine(name, '% Reconnected.');
+        updateStatus();
+        renderTabs();
+    };
+    newConn.onDisconnect = () => {
+        if (tab) tab.disconnected = true;
+        appendLine(name, '% Connection lost.');
+        updateStatus();
+        renderTabs();
+    };
+
+    appendLine(name, '% Reconnecting...');
+    newConn.connect();
 }
 
 // -- Output Rendering --
@@ -133,15 +185,24 @@ function connectWorld(name, host, port, ssl) {
     const conn = new Connection(name, host, port, ssl);
     app.connections[name] = conn;
 
-    conn.onLine = (line) => appendLine(name, line);
+    const tab = app.tabs.find(t => t.name === name);
+    conn.onLine = (line) => {
+        const tr = app.triggerDB.check(line);
+        for (const cmd of tr.commands) handleInput(cmd);
+        if (!tr.gagged) appendLine(name, line);
+    };
     conn.onPrompt = (prompt) => appendLine(name, prompt);
     conn.onConnect = () => {
+        if (tab) tab.disconnected = false;
         appendLine(name, '% Connected to ' + host + ':' + port);
         updateStatus();
+        renderTabs();
     };
     conn.onDisconnect = () => {
+        if (tab) tab.disconnected = true;
         appendLine(name, '% Connection lost.');
         updateStatus();
+        renderTabs();
     };
 
     if (!conn.connect()) {
@@ -165,6 +226,62 @@ function handleInput(text) {
     if (hist.length > 500) hist.pop();
     app.history[app.activeTab] = hist;
     app.historyPos[app.activeTab] = -1;
+
+    // Handle local /commands
+    if (text.startsWith('/')) {
+        const parts = text.split(/\s+/);
+        const cmd = parts[0].toLowerCase();
+        switch (cmd) {
+        case '/connect':
+            showConnectDialog();
+            return;
+        case '/worlds':
+            showWorldsDialog();
+            return;
+        case '/disconnect':
+            if (app.activeTab && app.activeTab !== '(System)') removeTab(app.activeTab);
+            return;
+        case '/triggers':
+            showTriggersDialog();
+            return;
+        case '/find':
+            showFindDialog();
+            return;
+        case '/clear':
+            $('#btn-clear').click();
+            return;
+        case '/def': {
+            // /def name -t'pattern' body
+            // Quick parse: /def name pattern body
+            if (parts.length >= 4) {
+                app.triggerDB.add({ name: parts[1], pattern: parts[2], body: parts.slice(3).join(' ') });
+                Settings.set('triggers', app.triggerDB.toJSON());
+                appendLine(app.activeTab, '% Trigger defined: ' + parts[1]);
+            } else {
+                appendLine(app.activeTab, '% Usage: /def <name> <pattern> <action>');
+            }
+            return;
+        }
+        case '/undef':
+            if (parts[1]) {
+                app.triggerDB.remove(parts[1]);
+                Settings.set('triggers', app.triggerDB.toJSON());
+                appendLine(app.activeTab, '% Removed: ' + parts[1]);
+            }
+            return;
+        case '/list':
+            for (const t of app.triggerDB.list()) {
+                appendLine(app.activeTab, `%   ${t.name}  /${t.pattern}/ → ${t.body}${t.gag ? ' [gag]' : ''}`);
+            }
+            if (app.triggerDB.list().length === 0) appendLine(app.activeTab, '% No triggers defined.');
+            return;
+        case '/help':
+            appendLine(app.activeTab, '% Commands: /connect /disconnect /worlds /triggers /find /clear /def /undef /list /help');
+            return;
+        }
+        // Unknown /command — don't send to server, show error
+        // Actually, some MUDs use / commands, so send it through
+    }
 
     const conn = app.connections[app.activeTab];
     if (conn && conn.connected) {
@@ -216,6 +333,36 @@ function showWorldEditDialog(world) {
     return new Promise((resolve) => {
         dlg._resolve = resolve;
     });
+}
+
+function showTriggersDialog() {
+    refreshTriggersList();
+    $('#triggers-dialog').showModal();
+}
+
+function refreshTriggersList() {
+    const sel = $('#triggers-list');
+    sel.innerHTML = '';
+    for (const t of app.triggerDB.list()) {
+        const opt = document.createElement('option');
+        opt.value = t.name;
+        let desc = t.name + '  /' + t.pattern + '/';
+        if (t.gag) desc += ' [gag]';
+        if (t.body) desc += ' → ' + t.body;
+        opt.textContent = desc;
+        sel.appendChild(opt);
+    }
+}
+
+function showTrigEditDialog(trig) {
+    $('#trig-edit-title').textContent = trig ? 'Edit Trigger' : 'Add Trigger';
+    $('#te-name').value = trig ? trig.name : '';
+    $('#te-pattern').value = trig ? trig.pattern : '';
+    $('#te-body').value = trig ? trig.body : '';
+    $('#te-priority').value = trig ? trig.priority : 0;
+    $('#te-shots').value = trig ? trig.shots : -1;
+    $('#te-gag').checked = trig ? trig.gag : false;
+    $('#trig-edit-dialog').showModal();
 }
 
 function showFindDialog() {
@@ -393,6 +540,10 @@ function init() {
     });
     $('#find-close').addEventListener('click', () => $('#find-dialog').close());
 
+    // Load triggers from settings
+    const savedTriggers = Settings.get('triggers') || [];
+    app.triggerDB.loadFrom(savedTriggers);
+
     // Toolbar buttons
     $('#btn-connect').addEventListener('click', showConnectDialog);
     $('#btn-worlds').addEventListener('click', showWorldsDialog);
@@ -408,6 +559,68 @@ function init() {
         } else {
             const conn = app.connections[app.activeTab];
             if (conn) conn.scrollback = [];
+        }
+    });
+
+    // Triggers toolbar button
+    $('#btn-triggers').addEventListener('click', showTriggersDialog);
+
+    // Trigger manager dialog
+    $('#trig-add').addEventListener('click', () => {
+        showTrigEditDialog(null);
+    });
+    $('#trig-edit').addEventListener('click', () => {
+        const sel = $('#triggers-list');
+        if (sel.selectedIndex >= 0) {
+            const trigs = app.triggerDB.list();
+            showTrigEditDialog(trigs[sel.selectedIndex]);
+        }
+    });
+    $('#trig-del').addEventListener('click', () => {
+        const sel = $('#triggers-list');
+        if (sel.selectedIndex >= 0) {
+            const trigs = app.triggerDB.list();
+            app.triggerDB.remove(trigs[sel.selectedIndex].name);
+            Settings.set('triggers', app.triggerDB.toJSON());
+            refreshTriggersList();
+        }
+    });
+    $('#trig-close').addEventListener('click', () => $('#triggers-dialog').close());
+
+    // Trigger edit dialog
+    $('#te-ok').addEventListener('click', () => {
+        const def = {
+            name: $('#te-name').value.trim(),
+            pattern: $('#te-pattern').value.trim(),
+            body: $('#te-body').value.trim(),
+            priority: parseInt($('#te-priority').value) || 0,
+            shots: parseInt($('#te-shots').value),
+            gag: $('#te-gag').checked,
+        };
+        if (isNaN(def.shots)) def.shots = -1;
+        if (def.pattern) {
+            app.triggerDB.add(def);
+            Settings.set('triggers', app.triggerDB.toJSON());
+            refreshTriggersList();
+        }
+        $('#trig-edit-dialog').close();
+    });
+    $('#te-cancel').addEventListener('click', () => $('#trig-edit-dialog').close());
+
+    // Input auto-complete: Tab key completes /commands
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const val = input.value;
+            if (val.startsWith('/') && !val.includes(' ')) {
+                const prefix = val.toLowerCase();
+                const matches = COMMANDS.filter(c => c.startsWith(prefix));
+                if (matches.length === 1) {
+                    input.value = matches[0] + ' ';
+                } else if (matches.length > 1) {
+                    appendLine(app.activeTab, '% ' + matches.join('  '));
+                }
+            }
         }
     });
 

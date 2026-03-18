@@ -13,6 +13,8 @@
             <button id="btn-worlds" title="Manage saved worlds">Worlds</button>
             <button id="btn-disconnect" title="Disconnect active tab">Disconnect</button>
             <span class="toolbar-sep"></span>
+            <button id="btn-triggers" title="Manage triggers">Triggers</button>
+            <span class="toolbar-sep"></span>
             <button id="btn-find" title="Find in scrollback">Find</button>
             <button id="btn-clear" title="Clear output">Clear</button>
         </div>
@@ -66,6 +68,35 @@
         </div>
     </dialog>
 
+    <!-- Trigger Manager dialog -->
+    <dialog id="triggers-dialog">
+        <h3>Triggers</h3>
+        <select id="triggers-list" size="8"></select>
+        <div class="dialog-buttons-side">
+            <button id="trig-add">Add</button>
+            <button id="trig-edit">Edit</button>
+            <button id="trig-del">Delete</button>
+        </div>
+        <div class="dialog-buttons">
+            <button id="trig-close">Close</button>
+        </div>
+    </dialog>
+
+    <!-- Trigger Edit dialog -->
+    <dialog id="trig-edit-dialog">
+        <h3 id="trig-edit-title">Add Trigger</h3>
+        <label>Name <input type="text" id="te-name"></label>
+        <label>Pattern <input type="text" id="te-pattern" placeholder="regex"></label>
+        <label>Action <input type="text" id="te-body" placeholder="command to execute"></label>
+        <label>Priority <input type="text" id="te-priority" value="0" style="width:60px"></label>
+        <label>Shots <input type="text" id="te-shots" value="-1" style="width:60px"> (-1 = unlimited)</label>
+        <label><input type="checkbox" id="te-gag"> Gag (suppress matched line)</label>
+        <div class="dialog-buttons">
+            <button id="te-ok">OK</button>
+            <button id="te-cancel">Cancel</button>
+        </div>
+    </dialog>
+
     <!-- Find dialog -->
     <dialog id="find-dialog">
         <h3>Find in Scrollback</h3>
@@ -77,6 +108,7 @@
         </div>
     </dialog>
 
+    <script src="js/triggers.js"></script>
     <script src="js/telnet.js"></script>
     <script src="js/connection.js"></script>
     <script src="js/terminal.js"></script>
