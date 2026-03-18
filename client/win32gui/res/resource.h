@@ -36,6 +36,10 @@
 #define IDS_APP_TITLE           2001
 #define IDS_APP_CLASS           2002
 
+// Internal commands (not in menus)
+#define IDM_TAB_NEXT            1501
+#define IDM_TAB_PREV            1502
+
 // Accelerator table
 #define IDR_ACCEL               3001
 

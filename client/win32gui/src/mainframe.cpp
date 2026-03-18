@@ -170,7 +170,17 @@ void CMainFrame::SwitchToTab(int index) {
     tabbar.SetCurrentTab(index);
     output.SetBuffer(&tab_states[index]->buffer);
     output.ScrollToBottom();
-    status.SetText(tab_states[index]->name);
+    output.ClearSelection();
+    input.SetHistoryContext(tab_states[index]->name);
+
+    // Clear activity indicator on the tab we're switching to.
+    TabInfo ti;
+    ti.name = tab_states[index]->name;
+    ti.active = false;
+    ti.connected = tab_states[index]->conn && tab_states[index]->conn->is_connected();
+    ti.ssl = tab_states[index]->conn && tab_states[index]->conn->uses_ssl();
+    tabbar.UpdateTab(index, ti);
+
     SetFocus(input.hwnd());
 }
 
@@ -373,6 +383,18 @@ LRESULT CMainFrame::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
 
 void CMainFrame::OnSize(int cx, int cy) {
     LayoutChildren();
+
+    // Send NAWS to all connected worlds.
+    RECT rc;
+    if (output.hwnd() && GetClientRect(output.hwnd(), &rc)) {
+        int cols = rc.right / (output.hwnd() ? 8 : 8);  // approximate
+        int rows = rc.bottom / 16;
+        for (auto& ts : tab_states) {
+            if (ts->conn && ts->conn->is_connected()) {
+                ts->conn->send_naws((uint16_t)cols, (uint16_t)rows);
+            }
+        }
+    }
 }
 
 void CMainFrame::LayoutChildren() {
@@ -463,7 +485,42 @@ void CMainFrame::OnCommand(int id) {
     }
 
     case IDM_FILE_DISCONNECT:
-        if (active_tab >= 0) RemoveWorld(active_tab);
+        if (active_tab > 0) RemoveWorld(active_tab);  // Don't close system tab (0)
+        break;
+
+    case IDM_WORLD_RECONNECT:
+        if (active_tab >= 0 && active_tab < (int)tab_states.size()) {
+            auto& ts = tab_states[active_tab];
+            if (ts->conn && !ts->conn->is_connected()) {
+                // Reconnect using saved host/port
+                std::string host = ts->conn->host();
+                std::string port = ts->conn->port();
+                bool ssl = ts->conn->uses_ssl();
+                ts->conn.reset();
+                ts->conn = std::make_unique<Connection>(ts->name, host, port, ssl, iocp);
+                if (ts->conn->begin_connect()) {
+                    ts->buffer.append("% Reconnecting...");
+                } else {
+                    ts->buffer.append("% Reconnect failed.");
+                    ts->conn.reset();
+                }
+                output.Invalidate();
+            }
+        }
+        break;
+
+    case IDM_TAB_NEXT:
+        if (tab_states.size() > 1) {
+            int next = (active_tab + 1) % (int)tab_states.size();
+            SwitchToTab(next);
+        }
+        break;
+
+    case IDM_TAB_PREV:
+        if (tab_states.size() > 1) {
+            int prev = (active_tab - 1 + (int)tab_states.size()) % (int)tab_states.size();
+            SwitchToTab(prev);
+        }
         break;
 
     case IDM_EDIT_COPY: {
