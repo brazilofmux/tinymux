@@ -13,6 +13,9 @@
 #include <unordered_map>
 #include <cstdint>
 
+// libmux color/Unicode API
+#include "color_ops.h"
+
 struct InputEvent {
     enum Type {
         None,
@@ -91,6 +94,16 @@ private:
     void redraw_status();
     void write_at(int row, int col, const std::string& text, WORD attr = 0);
     void clear_row(int row, WORD attr = 0);
+
+    // Render a PUA-colored line to ANSI for console output.
+    std::string render_line(const std::string& line);
+
+    // Display column width of input buffer up to byte position pos.
+    int cursor_display_col() const;
+
+    // Grapheme-cluster-aware navigation
+    size_t cluster_next(size_t pos) const;
+    size_t cluster_prev(size_t pos) const;
 
     // Input line editing helpers
     void insert_char(uint32_t cp);

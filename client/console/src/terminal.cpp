@@ -3,6 +3,52 @@
 #include <cstring>
 #include <algorithm>
 
+// Render a PUA-colored string to ANSI escape sequences for console output.
+std::string Terminal::render_line(const std::string& line) {
+    if (line.empty()) return line;
+    unsigned char out[LBUF_SIZE * 4];
+    const unsigned char* data = (const unsigned char*)line.data();
+    size_t len = line.size();
+    size_t n;
+    if (vt_enabled_) {
+        n = co_render_truecolor(out, data, len);
+    } else {
+        n = co_render_ansi16(out, data, len);
+    }
+    return std::string((const char*)out, n);
+}
+
+// Display column of cursor within input_buf_ (up to cursor_pos_ bytes).
+int Terminal::cursor_display_col() const {
+    if (cursor_pos_ == 0) return 0;
+    return (int)co_visual_width((const unsigned char*)input_buf_.data(), cursor_pos_);
+}
+
+// Advance past one grapheme cluster starting at byte position pos.
+size_t Terminal::cluster_next(size_t pos) const {
+    if (pos >= input_buf_.size()) return input_buf_.size();
+    const unsigned char* data = (const unsigned char*)input_buf_.data();
+    const unsigned char* pe = data + input_buf_.size();
+    const unsigned char* p = data + pos;
+    const unsigned char* next = co_cluster_advance(p, pe, 1, nullptr);
+    return (size_t)(next - data);
+}
+
+// Move backward one grapheme cluster ending at byte position pos.
+size_t Terminal::cluster_prev(size_t pos) const {
+    if (pos == 0) return 0;
+    // Walk forward cluster by cluster until we find the one that ends at or past pos
+    const unsigned char* data = (const unsigned char*)input_buf_.data();
+    const unsigned char* pe = data + input_buf_.size();
+    const unsigned char* p = data;
+    const unsigned char* prev = data;
+    while (p < data + pos) {
+        prev = p;
+        p = co_cluster_advance(p, pe, 1, nullptr);
+    }
+    return (size_t)(prev - data);
+}
+
 Terminal::Terminal() {}
 Terminal::~Terminal() { shutdown(); }
 
@@ -308,12 +354,12 @@ void Terminal::redraw_output() {
         clear_row(i);
         int idx = start + i;
         if (idx >= 0 && idx < total) {
-            write_at(i, 0, screen.lines[idx]);
+            write_at(i, 0, render_line(screen.lines[idx]));
         }
     }
 
     // Restore cursor to input line
-    COORD pos = { (SHORT)cursor_pos_, (SHORT)input_row() };
+    COORD pos = { (SHORT)cursor_display_col(), (SHORT)input_row() };
     SetConsoleCursorPosition(hOut_, pos);
 }
 
@@ -331,7 +377,7 @@ void Terminal::redraw_status() {
                       &written, nullptr);
     }
     // Restore cursor
-    COORD pos = { (SHORT)cursor_pos_, (SHORT)input_row() };
+    COORD pos = { (SHORT)cursor_display_col(), (SHORT)input_row() };
     SetConsoleCursorPosition(hOut_, pos);
 }
 
@@ -340,7 +386,7 @@ void Terminal::redraw_input() {
     if (!input_buf_.empty()) {
         write_at(input_row(), 0, input_buf_);
     }
-    COORD pos = { (SHORT)cursor_pos_, (SHORT)input_row() };
+    COORD pos = { (SHORT)cursor_display_col(), (SHORT)input_row() };
     SetConsoleCursorPosition(hOut_, pos);
 }
 
@@ -376,9 +422,7 @@ void Terminal::insert_char(uint32_t cp) {
 
 void Terminal::delete_backward() {
     if (cursor_pos_ == 0) return;
-    // Find start of previous UTF-8 character
-    size_t prev = cursor_pos_ - 1;
-    while (prev > 0 && ((unsigned char)input_buf_[prev] & 0xC0) == 0x80) prev--;
+    size_t prev = cluster_prev(cursor_pos_);
     input_buf_.erase(prev, cursor_pos_ - prev);
     cursor_pos_ = prev;
     redraw_input();
@@ -386,32 +430,20 @@ void Terminal::delete_backward() {
 
 void Terminal::delete_forward() {
     if (cursor_pos_ >= input_buf_.size()) return;
-    unsigned char lead = (unsigned char)input_buf_[cursor_pos_];
-    size_t clen = 1;
-    if ((lead & 0xE0) == 0xC0) clen = 2;
-    else if ((lead & 0xF0) == 0xE0) clen = 3;
-    else if ((lead & 0xF8) == 0xF0) clen = 4;
-    if (cursor_pos_ + clen > input_buf_.size()) clen = input_buf_.size() - cursor_pos_;
-    input_buf_.erase(cursor_pos_, clen);
+    size_t next = cluster_next(cursor_pos_);
+    input_buf_.erase(cursor_pos_, next - cursor_pos_);
     redraw_input();
 }
 
 void Terminal::move_cursor_left() {
     if (cursor_pos_ == 0) return;
-    cursor_pos_--;
-    while (cursor_pos_ > 0 && ((unsigned char)input_buf_[cursor_pos_] & 0xC0) == 0x80)
-        cursor_pos_--;
+    cursor_pos_ = cluster_prev(cursor_pos_);
     redraw_input();
 }
 
 void Terminal::move_cursor_right() {
     if (cursor_pos_ >= input_buf_.size()) return;
-    unsigned char lead = (unsigned char)input_buf_[cursor_pos_];
-    size_t clen = 1;
-    if ((lead & 0xE0) == 0xC0) clen = 2;
-    else if ((lead & 0xF0) == 0xE0) clen = 3;
-    else if ((lead & 0xF8) == 0xF0) clen = 4;
-    cursor_pos_ = std::min(cursor_pos_ + clen, input_buf_.size());
+    cursor_pos_ = cluster_next(cursor_pos_);
     redraw_input();
 }
 

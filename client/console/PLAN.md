@@ -53,7 +53,7 @@ Client-side Schannel implementation (simpler than GANL's server-side):
   before starting telnet negotiation
 - Reference: `mux/ganl/src/schannel_transport.cpp` (adapt for client mode)
 
-### Phase 3: Unicode 16 + libmux Color Rendering
+### Phase 3: Unicode 16 + libmux Color Rendering — DONE
 
 All Unicode functionality from libmux.dll — no reimplementation:
 
