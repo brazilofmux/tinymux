@@ -32,6 +32,38 @@ html, body {
     height: 100vh;
 }
 
+/* Toolbar */
+#toolbar {
+    display: flex;
+    align-items: center;
+    background: #252525;
+    padding: 2px 4px;
+    gap: 2px;
+    border-bottom: 1px solid #404040;
+}
+
+#toolbar button {
+    background: #3a3a3a;
+    color: #d0d0d0;
+    border: 1px solid #505050;
+    padding: 3px 10px;
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 12px;
+    border-radius: 2px;
+}
+
+#toolbar button:hover {
+    background: #4a4a4a;
+}
+
+.toolbar-sep {
+    width: 1px;
+    height: 18px;
+    background: #505050;
+    margin: 0 4px;
+}
+
 /* Tab bar */
 #tabbar {
     display: flex;

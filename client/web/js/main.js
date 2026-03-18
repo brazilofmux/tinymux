@@ -256,8 +256,10 @@ function findInScrollback(pattern, searchUp) {
 
 function handleKeyDown(e) {
     const input = $('#inputline');
-    if (e.ctrlKey && e.key === 'n') { e.preventDefault(); showConnectDialog(); }
-    else if (e.ctrlKey && e.key === 'f') { e.preventDefault(); showFindDialog(); }
+    // Avoid Ctrl+N (new window), Ctrl+F (browser find) — don't override.
+    // Use Ctrl+Shift+N for connect, Ctrl+Shift+F for find instead.
+    if (e.ctrlKey && e.shiftKey && e.key === 'N') { e.preventDefault(); showConnectDialog(); }
+    else if (e.ctrlKey && e.shiftKey && e.key === 'F') { e.preventDefault(); showFindDialog(); }
     else if (e.ctrlKey && e.key === 'Tab') {
         e.preventDefault();
         const idx = app.tabs.findIndex(t => t.name === app.activeTab);
@@ -306,7 +308,7 @@ function init() {
     // System tab
     addTab('(System)');
     appendLine('(System)', 'Titan for Web');
-    appendLine('(System)', 'Press Ctrl+N to connect, or File > Worlds to manage worlds.');
+    appendLine('(System)', 'Click Connect to connect to a world, or Worlds to manage saved worlds.');
 
     // Input handler
     const input = $('#inputline');
@@ -390,6 +392,24 @@ function init() {
         findInScrollback($('#find-text').value, false);
     });
     $('#find-close').addEventListener('click', () => $('#find-dialog').close());
+
+    // Toolbar buttons
+    $('#btn-connect').addEventListener('click', showConnectDialog);
+    $('#btn-worlds').addEventListener('click', showWorldsDialog);
+    $('#btn-disconnect').addEventListener('click', () => {
+        if (app.activeTab && app.activeTab !== '(System)') removeTab(app.activeTab);
+    });
+    $('#btn-find').addEventListener('click', showFindDialog);
+    $('#btn-clear').addEventListener('click', () => {
+        const output = $('#output');
+        output.innerHTML = '';
+        if (app.activeTab === '(System)') {
+            app._systemLines = [];
+        } else {
+            const conn = app.connections[app.activeTab];
+            if (conn) conn.scrollback = [];
+        }
+    });
 
     // Periodic status update
     setInterval(updateStatus, 2000);
