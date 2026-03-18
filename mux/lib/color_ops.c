@@ -5567,3 +5567,205 @@ size_t co_render_truecolor(unsigned char *out,
     *wp = '\0';
     return (size_t)(wp - out);
 }
+
+/* ---- co_render_html ---- */
+
+/*
+ * Emit HTML tag transitions from old_cs to new_cs.
+ *
+ * Format matches TinyMUX convention:
+ *   <B>/<U>/<I>/<S> for bold/underline/blink/inverse
+ *   <COLOR #RRGGBB> for fg, <COLOR #RRGGBB #RRGGBB> for fg+bg,
+ *   <COLOR BACK=#RRGGBB> for bg only.
+ *   Closing: </B>, </U>, </I>, </S>, </COLOR>
+ *
+ * Returns bytes written.
+ */
+static size_t emit_html(unsigned char *wp, const unsigned char *wp_end,
+                        const co_ColorState *old_cs,
+                        const co_ColorState *new_cs)
+{
+    if (co_cs_equal(old_cs, new_cs)) return 0;
+
+    unsigned char *start = wp;
+    char tag[256];
+    int tlen;
+
+    /* Close tags that are being turned off (reverse order for nesting). */
+    if (old_cs->inverse && !new_cs->inverse) {
+        tlen = snprintf(tag, sizeof(tag), "</S>");
+        if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+    }
+    if (old_cs->blink && !new_cs->blink) {
+        tlen = snprintf(tag, sizeof(tag), "</I>");
+        if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+    }
+    if (old_cs->underline && !new_cs->underline) {
+        tlen = snprintf(tag, sizeof(tag), "</U>");
+        if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+    }
+    if (old_cs->intense && !new_cs->intense) {
+        tlen = snprintf(tag, sizeof(tag), "</B>");
+        if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+    }
+
+    /* Close color if fg or bg changed. */
+    int old_has_color = (old_cs->fg != -1 || old_cs->bg != -1);
+    int new_has_color = (new_cs->fg != -1 || new_cs->bg != -1);
+    int color_changed = (old_cs->fg != new_cs->fg || old_cs->bg != new_cs->bg
+        || old_cs->fg_r != new_cs->fg_r || old_cs->fg_g != new_cs->fg_g
+        || old_cs->fg_b != new_cs->fg_b
+        || old_cs->bg_r != new_cs->bg_r || old_cs->bg_g != new_cs->bg_g
+        || old_cs->bg_b != new_cs->bg_b);
+
+    if (old_has_color && color_changed) {
+        tlen = snprintf(tag, sizeof(tag), "</COLOR>");
+        if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+    }
+
+    /* Open color tag if needed. */
+    if (new_has_color && color_changed) {
+        /* Resolve fg/bg to RGB. */
+        int fg_r = -1, fg_g = -1, fg_b = -1;
+        int bg_r = -1, bg_g = -1, bg_b = -1;
+
+        if (new_cs->fg >= 0 && new_cs->fg <= 255) {
+            fg_r = xterm_palette[new_cs->fg].r;
+            fg_g = xterm_palette[new_cs->fg].g;
+            fg_b = xterm_palette[new_cs->fg].b;
+        } else if (new_cs->fg == -2) {
+            fg_r = new_cs->fg_r; fg_g = new_cs->fg_g; fg_b = new_cs->fg_b;
+        }
+
+        /* Bright fg when intense is set (0-7 → 8-15). */
+        if (new_cs->intense && new_cs->fg >= 0 && new_cs->fg <= 7) {
+            int bright = new_cs->fg + 8;
+            fg_r = xterm_palette[bright].r;
+            fg_g = xterm_palette[bright].g;
+            fg_b = xterm_palette[bright].b;
+        }
+
+        if (new_cs->bg >= 0 && new_cs->bg <= 255) {
+            bg_r = xterm_palette[new_cs->bg].r;
+            bg_g = xterm_palette[new_cs->bg].g;
+            bg_b = xterm_palette[new_cs->bg].b;
+        } else if (new_cs->bg == -2) {
+            bg_r = new_cs->bg_r; bg_g = new_cs->bg_g; bg_b = new_cs->bg_b;
+        }
+
+        if (fg_r >= 0 && bg_r >= 0) {
+            tlen = snprintf(tag, sizeof(tag), "<COLOR #%02X%02X%02X #%02X%02X%02X>",
+                fg_r, fg_g, fg_b, bg_r, bg_g, bg_b);
+        } else if (fg_r >= 0) {
+            tlen = snprintf(tag, sizeof(tag), "<COLOR #%02X%02X%02X>",
+                fg_r, fg_g, fg_b);
+        } else if (bg_r >= 0) {
+            tlen = snprintf(tag, sizeof(tag), "<COLOR BACK=#%02X%02X%02X>",
+                bg_r, bg_g, bg_b);
+        } else {
+            tlen = 0;
+        }
+        if (tlen > 0 && wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+    }
+
+    /* Open attribute tags. */
+    if (new_cs->intense && !old_cs->intense) {
+        tlen = snprintf(tag, sizeof(tag), "<B>");
+        if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+    }
+    if (new_cs->underline && !old_cs->underline) {
+        tlen = snprintf(tag, sizeof(tag), "<U>");
+        if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+    }
+    if (new_cs->blink && !old_cs->blink) {
+        tlen = snprintf(tag, sizeof(tag), "<I>");
+        if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+    }
+    if (new_cs->inverse && !old_cs->inverse) {
+        tlen = snprintf(tag, sizeof(tag), "<S>");
+        if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+    }
+
+    return (size_t)(wp - start);
+}
+
+size_t co_render_html(unsigned char *out,
+                      const unsigned char *data, size_t len)
+{
+    unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+    const unsigned char *p = data;
+    const unsigned char *pe = data + len;
+
+    co_ColorState cs = CO_CS_NORMAL;
+    co_ColorState emitted = CO_CS_NORMAL;
+
+    while (p < pe && wp < wp_end) {
+        if (p[0] == 0xEF && (p + 2) < pe
+            && p[1] >= 0x94 && p[1] <= 0x9F) {
+            parse_bmp_color(p, &cs);
+            p += 3;
+            continue;
+        }
+        if (p[0] == 0xF3 && (p + 3) < pe
+            && p[1] >= 0xB0 && p[1] <= 0xB3) {
+            parse_smp_color(p, &cs);
+            p += 4;
+            continue;
+        }
+
+        /* HTML-escape special characters. */
+        if (*p == '<') {
+            wp += emit_html(wp, wp_end, &emitted, &cs);
+            emitted = cs;
+            if (wp + 4 <= wp_end) { memcpy(wp, "&lt;", 4); wp += 4; }
+            p++;
+            continue;
+        }
+        if (*p == '>') {
+            wp += emit_html(wp, wp_end, &emitted, &cs);
+            emitted = cs;
+            if (wp + 4 <= wp_end) { memcpy(wp, "&gt;", 4); wp += 4; }
+            p++;
+            continue;
+        }
+        if (*p == '&') {
+            wp += emit_html(wp, wp_end, &emitted, &cs);
+            emitted = cs;
+            if (wp + 5 <= wp_end) { memcpy(wp, "&amp;", 5); wp += 5; }
+            p++;
+            continue;
+        }
+        if (*p == '"') {
+            wp += emit_html(wp, wp_end, &emitted, &cs);
+            emitted = cs;
+            if (wp + 6 <= wp_end) { memcpy(wp, "&quot;", 6); wp += 6; }
+            p++;
+            continue;
+        }
+
+        wp += emit_html(wp, wp_end, &emitted, &cs);
+        emitted = cs;
+
+        size_t cplen;
+        if (*p < 0x80)      cplen = 1;
+        else if (*p < 0xE0) cplen = 2;
+        else if (*p < 0xF0) cplen = 3;
+        else                cplen = 4;
+
+        if (p + cplen > pe) break;
+        if (wp + cplen > wp_end) break;
+        for (size_t i = 0; i < cplen; i++)
+            *wp++ = p[i];
+        p += cplen;
+    }
+
+    /* Close any open tags. */
+    co_ColorState normal = CO_CS_NORMAL;
+    if (!co_cs_equal(&emitted, &normal)) {
+        wp += emit_html(wp, wp_end, &emitted, &normal);
+    }
+
+    *wp = '\0';
+    return (size_t)(wp - out);
+}

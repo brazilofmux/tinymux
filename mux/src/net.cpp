@@ -255,7 +255,8 @@ void queue_string(DESC *d, const UTF8 *s)
     {
         if (drv_Flags(d->player, FLAG_WORD2) & HTML)
         {
-            p = convert_to_html(s);
+            co_render_html(co_buf, s, strlen(reinterpret_cast<const char *>(s)));
+            p = co_buf;
         }
         else if (drv_Flags(d->player, FLAG_WORD2) & TRUECOLOR)
         {

@@ -738,6 +738,21 @@ LIBMUX_API size_t co_render_truecolor(unsigned char *out,
                            const unsigned char *data, size_t len);
 
 /*
+ * co_render_html — Render PUA-colored UTF-8 to HTML.
+ *
+ * Converts PUA color codes to TinyMUX HTML tags:
+ *   <B>/<U>/<I>/<S> for bold/underline/blink/inverse
+ *   <COLOR #RRGGBB> for fg, <COLOR #RRGGBB #RRGGBB> for fg+bg
+ *   <COLOR BACK=#RRGGBB> for bg only
+ * HTML-escapes <, >, &, " in visible text.
+ * Visible UTF-8 passes through unchanged.
+ *
+ * Returns bytes written to out.
+ */
+LIBMUX_API size_t co_render_html(unsigned char *out,
+                      const unsigned char *data, size_t len);
+
+/*
  * co_nearest_xterm256 — Find nearest xterm-256 palette entry for an RGB color.
  *
  * Uses CIE97 perceptual distance with K-d tree search through the

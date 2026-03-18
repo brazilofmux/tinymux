@@ -3337,6 +3337,101 @@ static void test_render_truecolor(void) {
     g_seed = save_seed;
 }
 
+/* ---- co_render_html ---- */
+
+static void test_render_html(void) {
+    const char *name = "co_render_html";
+    unsigned char buf[LBUF_SIZE], out[LBUF_SIZE];
+    size_t r, n;
+
+    /* Empty. */
+    r = co_render_html(out, (const unsigned char *)"", 0);
+    check_buf(name, "empty", out, r, (const unsigned char *)"", 0);
+
+    /* No color. */
+    r = co_render_html(out, (const unsigned char *)"Hi", 2);
+    check_buf(name, "no color", out, r, (const unsigned char *)"Hi", 2);
+
+    /* FG red + text → <COLOR #RRGGBB>text</COLOR>. */
+    n = 0;
+    n += (size_t)pua_fg(buf, 1);  /* red = palette[1] */
+    buf[n++] = 'X';
+    n += (size_t)pua_reset(buf + n);
+    r = co_render_html(out, buf, n);
+    {
+        char *s = strstr((char *)out, "<COLOR #");
+        char *e = strstr((char *)out, "</COLOR>");
+        if (s && e && e > s) test_ok(name, "FG red → COLOR tag");
+        else test_fail(name, "FG red: expected <COLOR>...</COLOR> (len=%zu)", r);
+    }
+
+    /* Bold + text → <B>text</B>. */
+    n = 0;
+    n += (size_t)pua_intense(buf);
+    buf[n++] = 'Y';
+    n += (size_t)pua_reset(buf + n);
+    r = co_render_html(out, buf, n);
+    {
+        char *s = strstr((char *)out, "<B>");
+        char *e = strstr((char *)out, "</B>");
+        if (s && e) test_ok(name, "bold → <B>...</B>");
+        else test_fail(name, "bold: expected <B>...</B>");
+    }
+
+    /* HTML escaping: < > & " in visible text. */
+    r = co_render_html(out, (const unsigned char *)"a<b>&\"c", 7);
+    {
+        char *lt = strstr((char *)out, "&lt;");
+        char *gt = strstr((char *)out, "&gt;");
+        char *amp = strstr((char *)out, "&amp;");
+        char *quot = strstr((char *)out, "&quot;");
+        if (lt && gt && amp && quot)
+            test_ok(name, "HTML escaping: < > & \"");
+        else
+            test_fail(name, "HTML escaping incomplete");
+    }
+
+    /* Unicode passes through. */
+    n = 0;
+    buf[n++] = 0xC3; buf[n++] = 0xA9;
+    r = co_render_html(out, buf, n);
+    if (r >= 2 && out[0] == 0xC3 && out[1] == 0xA9)
+        test_ok(name, "unicode passthrough");
+    else
+        test_fail(name, "unicode not preserved");
+
+    /* 24-bit RGB → COLOR tag with exact hex. */
+    n = 0;
+    n += (size_t)pua_fg_rgb(buf, 0xAB, 0xCD, 0xEF);
+    buf[n++] = 'Z';
+    n += (size_t)pua_reset(buf + n);
+    r = co_render_html(out, buf, n);
+    {
+        char *s = strstr((char *)out, "ABCDEF");
+        if (s) test_ok(name, "RGB → COLOR #ABCDEF");
+        else test_fail(name, "RGB: expected ABCDEF in output");
+    }
+
+    /* Fuzz: no PUA leaks. */
+    unsigned int save_seed = g_seed;
+    for (int i = 0; i < 5000; i++) {
+        size_t len = gen_random_colored(buf, 1 + (xrand() % 200));
+        r = co_render_html(out, buf, len);
+        int has_pua = 0;
+        for (size_t j = 0; j + 2 < r; j++) {
+            if (out[j] == 0xEF && out[j+1] >= 0x94 && out[j+1] <= 0x9F) { has_pua = 1; break; }
+            if (out[j] == 0xF3 && j + 3 < r && out[j+1] >= 0xB0 && out[j+1] <= 0xB3) { has_pua = 1; break; }
+        }
+        if (has_pua) {
+            test_fail(name, "fuzz[%d]: PUA leaked", i);
+            g_seed = save_seed;
+            return;
+        }
+    }
+    test_ok(name, "5000 fuzz: no PUA leaks");
+    g_seed = save_seed;
+}
+
 /* ================================================================
  * Main
  * ================================================================ */
@@ -3399,6 +3494,7 @@ static const test_suite_t suites[] = {
     { "render_ansi16",   test_render_ansi16 },
     { "render_ansi256",  test_render_ansi256 },
     { "render_truecolor", test_render_truecolor },
+    { "render_html",     test_render_html },
     { NULL, NULL }
 };
 
