@@ -325,11 +325,211 @@
     setr(0,lua(me/LUA_NARGS,a,b,c,d,e)),
     5)=
   {
-    @log smoke=TC020: lua arg count. Succeeded.;
+    @log smoke=TC020: lua arg count. Succeeded.
+  },
+  {
+    @log smoke=TC020: lua arg count. Failed (%q0).
+  }
+-
+#
+# Test 21: Pure integer subtraction (JIT-eligible: LOADI+SUB+RETURN1).
+#
+&LUA_SUB test_lua_fn=return 100 - 37
+-
+&tr.tc021 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_SUB)),
+    63)=
+  {
+    @log smoke=TC021: lua integer subtract. Succeeded.
+  },
+  {
+    @log smoke=TC021: lua integer subtract. Failed (%q0).
+  }
+-
+#
+# Test 22: Multiplication chain (JIT-eligible: multiple arithmetic ops).
+#
+&LUA_MULCHAIN test_lua_fn=return 3 * 4 * 5
+-
+&tr.tc022 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_MULCHAIN)),
+    60)=
+  {
+    @log smoke=TC022: lua multiply chain. Succeeded.
+  },
+  {
+    @log smoke=TC022: lua multiply chain. Failed (%q0).
+  }
+-
+#
+# Test 23: Integer division and modulo (JIT-eligible: IDIV+MOD).
+#
+&LUA_DIVMOD test_lua_fn=return (17 // 5) * 10 + (17 % 5)
+-
+&tr.tc023 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_DIVMOD)),
+    32)=
+  {
+    @log smoke=TC023: lua idiv and mod. Succeeded.
+  },
+  {
+    @log smoke=TC023: lua idiv and mod. Failed (%q0).
+  }
+-
+#
+# Test 24: Unary minus (JIT-eligible: UNM).
+#
+&LUA_NEGATE test_lua_fn=return -(42)
+-
+&tr.tc024 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_NEGATE)),
+    -42)=
+  {
+    @log smoke=TC024: lua unary minus. Succeeded.
+  },
+  {
+    @log smoke=TC024: lua unary minus. Failed (%q0).
+  }
+-
+#
+# Test 25: Arithmetic with mux.args (JIT-eligible: args + ADD).
+#
+&LUA_ARITH_ARGS test_lua_fn=return mux.args[1] * mux.args[2] + mux.args[3]
+-
+&tr.tc025 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_ARITH_ARGS,6,7,8)),
+    50)=
+  {
+    @log smoke=TC025: lua args arithmetic. Succeeded.
+  },
+  {
+    @log smoke=TC025: lua args arithmetic. Failed (%q0).
+  }
+-
+#
+# Test 26: Numeric for loop — sum 1..100 = 5050.
+# Same as TC019 but exercises the STORE_Q/LOAD_Q PHI path.
+# Repeated here to verify JIT for-loop parity.
+#
+&LUA_SUM100 test_lua_fn=local s=0 for i=1,100 do s=s+i end return s
+-
+&tr.tc026 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_SUM100)),
+    5050)=
+  {
+    @log smoke=TC026: lua for-loop sum 1..100. Succeeded.
+  },
+  {
+    @log smoke=TC026: lua for-loop sum 1..100. Failed (%q0).
+  }
+-
+#
+# Test 27: Numeric for loop with step — sum of odds 1..99.
+# for i=1,99,2 do s=s+i end → 2500
+#
+&LUA_ODDS test_lua_fn=local s=0 for i=1,99,2 do s=s+i end return s
+-
+&tr.tc027 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_ODDS)),
+    2500)=
+  {
+    @log smoke=TC027: lua for-loop step=2 (odds). Succeeded.
+  },
+  {
+    @log smoke=TC027: lua for-loop step=2 (odds). Failed (%q0).
+  }
+-
+#
+# Test 28: Nested arithmetic — Fibonacci-style computation.
+# a=1, b=1, for i=1,10 do c=a+b, a=b, b=c end, return b → 144
+#
+&LUA_FIB test_lua_fn=local a,b=1,1 for i=1,10 do local c=a+b a=b b=c end return b
+-
+&tr.tc028 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_FIB)),
+    144)=
+  {
+    @log smoke=TC028: lua fibonacci loop. Succeeded.
+  },
+  {
+    @log smoke=TC028: lua fibonacci loop. Failed (%q0).
+  }
+-
+#
+# Test 29: Conditional — if/else returns different values.
+# This exercises TEST/JMP multi-block paths.
+#
+&LUA_COND test_lua_fn=if mux.args[1] + 0 > 10 then return "big" else return "small" end
+-
+&tr.tc029 test_lua_fn=
+  @if cand(
+    strmatch(setr(0,lua(me/LUA_COND,20)),big),
+    strmatch(setr(1,lua(me/LUA_COND,5)),small))=
+  {
+    @log smoke=TC029: lua if/else conditional. Succeeded.
+  },
+  {
+    @log smoke=TC029: lua if/else conditional. Failed (%q0 %q1).
+  }
+-
+#
+# Test 30: String-heavy script falls back to VM gracefully.
+# String concat uses OP_CONCAT which is not JIT-eligible.
+# Should produce the correct result via Lua VM fallback.
+#
+&LUA_STRFALL test_lua_fn=return string.rep("ab", 3)
+-
+&tr.tc030 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_STRFALL)),
+    ababab)=
+  {
+    @log smoke=TC030: lua VM fallback for strings. Succeeded.
+  },
+  {
+    @log smoke=TC030: lua VM fallback for strings. Failed (%q0).
+  }
+-
+#
+# Test 31: Table operations fall back to VM gracefully.
+#
+&LUA_TBLFALL test_lua_fn=local t={10,20,30} return t[1]+t[2]+t[3]
+-
+&tr.tc031 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_TBLFALL)),
+    60)=
+  {
+    @log smoke=TC031: lua VM fallback for tables. Succeeded.
+  },
+  {
+    @log smoke=TC031: lua VM fallback for tables. Failed (%q0).
+  }
+-
+#
+# Test 32: Large loop — sum 1..10000 = 50005000.
+# Verifies JIT handles larger iteration counts.
+#
+&LUA_BIGLOOP test_lua_fn=local s=0 for i=1,10000 do s=s+i end return s
+-
+&tr.tc032 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_BIGLOOP)),
+    50005000)=
+  {
+    @log smoke=TC032: lua large for-loop. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC020: lua arg count. Failed (%q0).;
+    @log smoke=TC032: lua large for-loop. Failed (%q0).;
     @trig me/tr.done
   }
 -
