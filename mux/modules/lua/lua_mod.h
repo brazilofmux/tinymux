@@ -17,9 +17,11 @@
 #ifndef LUA_MOD_H
 #define LUA_MOD_H
 
+extern "C" {
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
+}
 
 // Default resource limits.
 //

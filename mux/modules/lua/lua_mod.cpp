@@ -54,6 +54,16 @@ extern "C" MUX_RESULT DCL_API mux_Unregister(void)
     return mux_RevokeClassObjects(NUM_CLASSES, lua_classes);
 }
 
+extern "C" MUX_RESULT DCL_API mux_CanUnloadNow(void)
+{
+    if (  0 == g_cComponents
+       && 0 == g_cServerLocks)
+    {
+        return MUX_S_OK;
+    }
+    return MUX_S_FALSE;
+}
+
 extern "C" MUX_RESULT DCL_API mux_GetClassObject(MUX_CID cid, MUX_IID iid,
     void **ppv)
 {

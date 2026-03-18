@@ -88,6 +88,7 @@ raw_helpfile help text/smokehelp
 module exp3
 module comsys_mod
 module mail_mod
+module lua_mod
 _EOF
 
 #
