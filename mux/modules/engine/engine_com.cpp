@@ -2818,6 +2818,19 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
         }
     }
 
+    // Try to discover the Lua scripting module.
+    //
+    mudstate.pILuaControl = nullptr;
+    mr = mux_CreateInstance(CID_LuaMod, nullptr, UseSameProcess,
+                            IID_ILuaControl,
+                            reinterpret_cast<void **>(&mudstate.pILuaControl));
+    if (MUX_SUCCEEDED(mr))
+    {
+        STARTLOG(LOG_ALWAYS, "INI", "MOD");
+        log_text(T("Lua scripting module discovered."));
+        ENDLOG;
+    }
+
     mr = mux_CreateInstance(CID_QueryServer, nullptr, UseSlaveProcess,
                             IID_IQueryControl,
                             (void **)&mudstate.pIQueryControl);

@@ -549,6 +549,7 @@ struct statedata
     mux_IQueryControl *pIQueryControl;
     mux_IComsysControl *pIComsysControl;
     mux_IMailControl *pIMailControl;
+    mux_ILuaControl *pILuaControl;
     mux_IGameEngine *pIGameEngine;
     mux_IPlayerSession *pIPlayerSession;
 

@@ -12727,6 +12727,79 @@ static FUNCTION(fun_gmcp)
     send_gmcp(target, fargs[1], (nfargs >= 3) ? fargs[2] : T(""));
 }
 
+// lua(<object>/<attr>[, <arg1>, <arg2>, ...]) - Execute a Lua script.
+// The script is read from the named attribute, compiled, and executed
+// in a sandboxed Lua 5.4 environment.  Arguments are passed via mux.args.
+// Returns the Lua return value as a string, or #-1 LUA ERROR: <msg>.
+//
+static FUNCTION(fun_lua)
+{
+    UNUSED_PARAMETER(fp);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (nullptr == mudstate.pILuaControl)
+    {
+        safe_str(T("#-1 LUA MODULE NOT LOADED"), buff, bufc);
+        return;
+    }
+
+    // Parse obj/attr from first argument.
+    //
+    UTF8 *pSlash = (UTF8 *)strchr((const char *)fargs[0], '/');
+    if (nullptr == pSlash)
+    {
+        safe_str(T("#-1 NO ATTRIBUTE SPECIFIED"), buff, bufc);
+        return;
+    }
+    *pSlash = '\0';
+    UTF8 *pAttrName = pSlash + 1;
+
+    // Resolve the object.
+    //
+    dbref obj = lookup_player(executor, fargs[0], true);
+    if (NOTHING == obj)
+    {
+        init_match(executor, fargs[0], NOTYPE);
+        match_everything(MAT_EXIT_PARENTS);
+        obj = match_result();
+    }
+    if (!Good_obj(obj))
+    {
+        safe_str(T("#-1 NO SUCH OBJECT"), buff, bufc);
+        return;
+    }
+
+    // Build argument array (args 2..N).
+    //
+    const UTF8 *luaArgs[MAX_ARG];
+    int nLuaArgs = nfargs - 1;
+    if (nLuaArgs > MAX_ARG) nLuaArgs = MAX_ARG;
+    for (int i = 0; i < nLuaArgs; i++)
+    {
+        luaArgs[i] = fargs[i + 1];
+    }
+
+    // Dispatch through the Lua module.
+    //
+    UTF8 result[8000];
+    size_t nResult = 0;
+    MUX_RESULT mr = mudstate.pILuaControl->CallAttr(
+        executor, caller, enactor,
+        obj, pAttrName, luaArgs, nLuaArgs,
+        result, sizeof(result), &nResult);
+
+    if (MUX_SUCCEEDED(mr))
+    {
+        safe_copy_buf(result, nResult, buff, bufc);
+    }
+    else
+    {
+        safe_str(T("#-1 LUA ERROR"), buff, bufc);
+    }
+}
+
 // benchmark(<expression>, <iterations>) - Time expression evaluation.
 // Evaluates the expression N times and returns elapsed seconds.
 //
@@ -13012,6 +13085,7 @@ static FUN builtin_function_list[] =
     {T("LROOMS"),      fun_lrooms,     MAX_ARG, 1,       3,         0, CA_PUBLIC},
     {T("LT"),          fun_lt,         MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("LTE"),         fun_lte,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("LUA"),         fun_lua,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {T("LWHO"),        fun_lwho,       MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("MAIL"),        fun_mail,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("MAILFROM"),    fun_mailfrom,   MAX_ARG, 1,       2,         0, CA_PUBLIC},

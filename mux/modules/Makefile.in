@@ -322,7 +322,8 @@ CLEANFILES = *.so *.so~
 EXTRA_DIST = sqlproxy/sqlproxy.cpp sqlslave/sqlslave.cpp \
     exp3/exp3.cpp exp3/exp3.h \
     comsys/comsys_mod.cpp comsys/comsys_mod.h \
-    mail/mail_mod.cpp mail/mail_mod.h
+    mail/mail_mod.cpp mail/mail_mod.h \
+    lua/lua_mod.cpp lua/lua_mod.h
 
 all: autoconf.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
@@ -646,7 +647,7 @@ uninstall-am:
 
 
 # External modules — each is a single .cpp → .so
-all-local: sqlproxy.so sqlslave.so exp3.so comsys_mod.so mail_mod.so
+all-local: sqlproxy.so sqlslave.so exp3.so comsys_mod.so mail_mod.so lua_mod.so
 
 sqlproxy.so: sqlproxy/sqlproxy.cpp
 	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(PCRE2_LIBS)
@@ -660,6 +661,9 @@ comsys_mod.so: comsys/comsys_mod.cpp comsys/comsys_mod.h
 mail_mod.so: mail/mail_mod.cpp mail/mail_mod.h
 	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(PCRE2_LIBS)
 
+lua_mod.so: lua/lua_mod.cpp lua/lua_mod.h
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) `pkg-config --cflags lua5.4 2>/dev/null || echo -I/usr/include/lua5.4` -o $@ $< `pkg-config --libs lua5.4 2>/dev/null || echo -llua5.4` $(PCRE2_LIBS)
+
 # SQL slave needs special treatment for SQL libraries
 sqlslave.so: sqlslave/sqlslave.cpp
 	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(SQL_INCLUDE) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(SQL_LIBPATH) $(SQL_LIBS) $(PCRE2_LIBS)
@@ -672,6 +676,7 @@ install-exec-local:
 	cd $(abs_top_srcdir)/game/bin && rm -f exp3.so && $(LN_S) $(abs_builddir)/exp3.so .
 	cd $(abs_top_srcdir)/game/bin && rm -f comsys_mod.so && $(LN_S) $(abs_builddir)/comsys_mod.so .
 	cd $(abs_top_srcdir)/game/bin && rm -f mail_mod.so && $(LN_S) $(abs_builddir)/mail_mod.so .
+	cd $(abs_top_srcdir)/game/bin && rm -f lua_mod.so && $(LN_S) $(abs_builddir)/lua_mod.so .
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

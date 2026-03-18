@@ -1180,4 +1180,34 @@ public:
         UTF8 *buff, UTF8 **bufc) = 0;
 };
 
+// Lua scripting module — server-side Lua 5.4 integration.
+//
+const MUX_CID CID_LuaMod                = UINT64_C(0x00000002E1A3B5C7);
+const MUX_IID IID_ILuaControl           = UINT64_C(0x00000002F2B4C6D8);
+
+interface mux_ILuaControl : public mux_IUnknown
+{
+public:
+    // Execute a Lua chunk stored on an object attribute.
+    // Resolves obj/attrnum, reads source, compiles (with cache), executes
+    // in a sandboxed environment with the given arguments.
+    //
+    virtual MUX_RESULT CallAttr(dbref executor, dbref caller, dbref enactor,
+        dbref obj, const UTF8 *pAttrName,
+        const UTF8 *pArgs[], int nArgs,
+        UTF8 *pResult, size_t nResultMax, size_t *pnResultLen) = 0;
+
+    // Execute inline Lua source (wizard-only).
+    //
+    virtual MUX_RESULT Eval(dbref executor, dbref caller, dbref enactor,
+        const UTF8 *pSource, size_t nSource,
+        UTF8 *pResult, size_t nResultMax, size_t *pnResultLen) = 0;
+
+    // Resource statistics for @list lua.
+    //
+    virtual MUX_RESULT GetStats(size_t *pnCalls, size_t *pnErrors,
+        size_t *pnInsnLimitHits, size_t *pnMemLimitHits,
+        size_t *pnBytesUsed) = 0;
+};
+
 #endif // MODULES_H
