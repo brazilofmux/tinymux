@@ -797,20 +797,112 @@ std::string Terminal::expand_status_field(const std::string& field) const {
     return text;
 }
 
+// Map a color name to an SGR color index (0-7), or -1 if not recognized.
+//
+static int color_name_to_index(const std::string& name) {
+    if (name == "black")   return 0;
+    if (name == "red")     return 1;
+    if (name == "green")   return 2;
+    if (name == "yellow")  return 3;
+    if (name == "blue")    return 4;
+    if (name == "magenta") return 5;
+    if (name == "cyan")    return 6;
+    if (name == "white")   return 7;
+    return -1;
+}
+
 // Parse an attribute string into ANSI SGR codes.
+//
+// Supported tokens (case-insensitive, separated by , + | or space):
+//   Text:   bold/B, dim, underline/u, blink/flash, reverse/rev/r
+//   FG:     black, red, green, yellow, blue, magenta, cyan, white
+//   Bright: bright_red, brightred, etc.  (or gray for bright black)
+//   BG:     bg_black, bgblack, bg_red, bgred, etc.
+//   Bright BG: bgbright_red, bgbrightred, etc.
+//   xterm-256: color0..color255 (fg), bg_color0..bg_color255 (bg)
 //
 static std::string attrs_to_sgr(const std::string& attrs) {
     if (attrs.empty()) return {};
 
-    bool bold = false;
-    bool underline = false;
-    bool reverse = false;
+    std::vector<std::string> codes;
 
     std::string token;
     auto flush = [&]() {
-        if (token == "bold" || token == "b") bold = true;
-        else if (token == "underline" || token == "u") underline = true;
-        else if (token == "reverse" || token == "rev" || token == "r") reverse = true;
+        if (token.empty()) return;
+
+        // Text attributes.
+        //
+        if (token == "bold" || token == "b") { codes.push_back("1"); }
+        else if (token == "dim")             { codes.push_back("2"); }
+        else if (token == "underline" || token == "u") { codes.push_back("4"); }
+        else if (token == "blink" || token == "flash") { codes.push_back("5"); }
+        else if (token == "reverse" || token == "rev" || token == "r") { codes.push_back("7"); }
+
+        // Background colors: bg_<color>, bg<color>, bgbright_<color>, bgbright<color>.
+        //
+        else if (token.substr(0, 2) == "bg") {
+            std::string rest = token.substr(2);
+            if (!rest.empty() && rest[0] == '_') rest = rest.substr(1);
+
+            // bgbright<color>
+            bool bright = false;
+            if (rest.substr(0, 6) == "bright") {
+                bright = true;
+                rest = rest.substr(6);
+                if (!rest.empty() && rest[0] == '_') rest = rest.substr(1);
+            }
+
+            // bg_color<N> (xterm-256)
+            if (rest.size() > 5 && rest.substr(0, 5) == "color") {
+                int n = std::atoi(rest.substr(5).c_str());
+                if (n >= 0 && n <= 255) {
+                    codes.push_back("48;5;" + std::to_string(n));
+                }
+            } else if (rest == "gray" || rest == "grey") {
+                codes.push_back("100");
+            } else {
+                int idx = color_name_to_index(rest);
+                if (idx >= 0) {
+                    codes.push_back(std::to_string(bright ? 100 + idx : 40 + idx));
+                }
+            }
+        }
+
+        // gray/grey = bright black foreground.
+        //
+        else if (token == "gray" || token == "grey") {
+            codes.push_back("90");
+        }
+
+        // Bright foreground: bright_<color>, bright<color>.
+        //
+        else if (token.substr(0, 6) == "bright") {
+            std::string rest = token.substr(6);
+            if (!rest.empty() && rest[0] == '_') rest = rest.substr(1);
+            int idx = color_name_to_index(rest);
+            if (idx >= 0) {
+                codes.push_back(std::to_string(90 + idx));
+            }
+        }
+
+        // color<N> (xterm-256 foreground).
+        //
+        else if (token.size() > 5 && token.substr(0, 5) == "color") {
+            int n = std::atoi(token.substr(5).c_str());
+            if (n >= 0 && n <= 255) {
+                codes.push_back("38;5;" + std::to_string(n));
+            }
+        }
+
+        // Plain foreground color name.
+        //
+        else {
+            int idx = color_name_to_index(token);
+            if (idx >= 0) {
+                codes.push_back(std::to_string(30 + idx));
+            }
+        }
+
         token.clear();
     };
 
@@ -823,19 +915,15 @@ static std::string attrs_to_sgr(const std::string& attrs) {
     }
     if (!token.empty()) flush();
 
-    std::string prefix = "\033[";
-    bool first = true;
-    auto append_code = [&](const char* code) {
-        if (!first) prefix += ';';
-        prefix += code;
-        first = false;
-    };
-    if (bold) append_code("1");
-    if (underline) append_code("4");
-    if (reverse) append_code("7");
-    if (first) return {};
-    prefix += 'm';
-    return prefix;
+    if (codes.empty()) return {};
+
+    std::string sgr = "\033[";
+    for (size_t i = 0; i < codes.size(); ++i) {
+        if (i > 0) sgr += ';';
+        sgr += codes[i];
+    }
+    sgr += 'm';
+    return sgr;
 }
 
 std::string Terminal::style_status_field(const std::string& field, const std::string& text) {

@@ -21,9 +21,12 @@ code review of commits `6ceb3ecf..HEAD` (2026-03-17).
   TF caches the compiled program. This is unlikely to matter in
   practice since redraws are infrequent.
 
-- **Status bar attributes limited to bold/underline/reverse**
-  Classic TF allows arbitrary color/attribute combinations. Consider
-  extending to support fg/bg color names or numeric ANSI codes.
+- **Status bar attributes: classic TF's single-char syntax not supported**
+  The full word-based attribute syntax is supported (bold, dim,
+  underline, blink, reverse, all 8 color names, bright variants,
+  bg variants, xterm-256 via color0..color255 / bg_color0..bg_color255).
+  Classic TF's single-character codes (`B`=bold, `Cred`=fg red, etc.)
+  are not recognized — only the long-form names work.
 
 ## Telnet Protocol Issues
 
