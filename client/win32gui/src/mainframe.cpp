@@ -66,8 +66,42 @@ bool CMainFrame::Create(HINSTANCE hInst, int nCmdShow) {
 
     // Create a system tab so input always has somewhere to go.
     AddWorld("(System)");
-    tab_states[0]->buffer.append("Titan for Windows");
-    tab_states[0]->buffer.append("Type /help for commands, File > Connect to connect.");
+
+    // PUA color encoding helpers:
+    //   U+F500 = reset:         EF 94 80
+    //   U+F501 = bold:          EF 94 81
+    //   U+F600+n = FG color n:  EF (98+n/64) (80+n%64)
+    //   U+F700+n = BG color n:  EF (9C+n/64) (80+n%64)
+    // ANSI colors: 0=black,1=red,2=green,3=yellow,4=blue,5=magenta,6=cyan,7=white
+    auto pua_fg = [](int color) -> std::string {
+        unsigned char buf[3];
+        buf[0] = 0xEF;
+        buf[1] = (unsigned char)(0x98 + color / 64);
+        buf[2] = (unsigned char)(0x80 + color % 64);
+        return std::string((char*)buf, 3);
+    };
+    auto pua_bold = []() -> std::string {
+        return std::string("\xEF\x94\x81", 3);
+    };
+    auto pua_reset = []() -> std::string {
+        return std::string("\xEF\x94\x80", 3);
+    };
+
+    // Welcome text with color
+    tab_states[0]->buffer.append(
+        pua_bold() + pua_fg(6) + "Titan" + pua_reset() + " for Windows");
+    tab_states[0]->buffer.append(
+        "Type " + pua_fg(3) + "/help" + pua_reset() +
+        " for commands, " + pua_fg(2) + "File > Connect" + pua_reset() +
+        " to connect.");
+    tab_states[0]->buffer.append("");
+    tab_states[0]->buffer.append(
+        pua_fg(1) + "Red " + pua_fg(2) + "Green " + pua_fg(3) + "Yellow " +
+        pua_fg(4) + "Blue " + pua_fg(5) + "Magenta " + pua_fg(6) + "Cyan " +
+        pua_fg(7) + "White" + pua_reset());
+    tab_states[0]->buffer.append(
+        pua_bold() + pua_fg(1) + "Bold Red " + pua_fg(2) + "Bold Green " +
+        pua_fg(4) + "Bold Blue" + pua_reset());
 
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
@@ -214,6 +248,46 @@ void CMainFrame::OnCommand(int id) {
     case IDM_FILE_DISCONNECT:
         if (active_tab >= 0) RemoveWorld(active_tab);
         break;
+
+    case IDM_EDIT_COPY: {
+        std::string sel = output.GetSelectedText();
+        if (!sel.empty()) {
+            int wlen = MultiByteToWideChar(CP_UTF8, 0, sel.c_str(), (int)sel.size(), nullptr, 0);
+            if (wlen > 0 && OpenClipboard(m_hwnd)) {
+                EmptyClipboard();
+                HGLOBAL hg = GlobalAlloc(GMEM_MOVEABLE, (wlen + 1) * sizeof(wchar_t));
+                if (hg) {
+                    wchar_t* p = (wchar_t*)GlobalLock(hg);
+                    MultiByteToWideChar(CP_UTF8, 0, sel.c_str(), (int)sel.size(), p, wlen);
+                    p[wlen] = 0;
+                    GlobalUnlock(hg);
+                    SetClipboardData(CF_UNICODETEXT, hg);
+                }
+                CloseClipboard();
+            }
+        }
+        break;
+    }
+
+    case IDM_EDIT_PASTE: {
+        if (OpenClipboard(m_hwnd)) {
+            HGLOBAL hg = GetClipboardData(CF_UNICODETEXT);
+            if (hg) {
+                wchar_t* p = (wchar_t*)GlobalLock(hg);
+                if (p) {
+                    int len = WideCharToMultiByte(CP_UTF8, 0, p, -1, nullptr, 0, nullptr, nullptr);
+                    if (len > 0) {
+                        std::string utf8(len - 1, '\0');
+                        WideCharToMultiByte(CP_UTF8, 0, p, -1, utf8.data(), len, nullptr, nullptr);
+                        input.SetText(input.text() + utf8);
+                    }
+                    GlobalUnlock(hg);
+                }
+            }
+            CloseClipboard();
+        }
+        break;
+    }
 
     case IDM_VIEW_SCROLL_BOTTOM:
         output.ScrollToBottom();
