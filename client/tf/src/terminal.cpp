@@ -915,10 +915,11 @@ static std::string attrs_to_sgr_classic(const std::string& attrs) {
         case 'g': break;  // gag — no visual attribute
         case 'x': break;  // exclusive — no visual attribute
         case 'C': {
-            // Read color name until end or next single-char code.
+            // Read color name: all lowercase letters are part of the name.
+            // Stop at comma, uppercase code letter, or end of string.
             size_t start = i;
             while (i < attrs.size() && attrs[i] != ',' &&
-                   std::string("nxGLAgurfdbBhEWIC").find(attrs[i]) == std::string::npos) {
+                   !(attrs[i] >= 'A' && attrs[i] <= 'Z')) {
                 i++;
             }
             std::string cname = attrs.substr(start, i - start);

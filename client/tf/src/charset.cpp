@@ -118,7 +118,8 @@ Charset charset_from_name(const std::string& name) {
     if (norm == "CP1252")      return Charset::Win1252;
     if (norm == "WIN1252")     return Charset::Win1252;
     if (norm == "KOI8R")       return Charset::KOI8R;
-    if (norm == "KOI8U")       return Charset::KOI8R;  // Ukrainian variant, close enough
+    // KOI8-U differs from KOI8-R in 8 codepoints (Ukrainian letters).
+    // Don't alias to avoid silent corruption.
 
     return Charset::UTF8;  // Unknown — assume UTF-8
 }
@@ -145,7 +146,7 @@ bool charset_supported(const std::string& name) {
         || norm == "ISO88591" || norm == "LATIN1"
         || norm == "CP437" || norm == "IBM437"
         || norm == "WINDOWS1252" || norm == "CP1252" || norm == "WIN1252"
-        || norm == "KOI8R" || norm == "KOI8U";
+        || norm == "KOI8R";
 }
 
 std::string charset_to_utf8(const std::string& input, Charset from) {
