@@ -8,6 +8,7 @@
 #include <chrono>
 #include <openssl/ssl.h>
 #include <zlib.h>
+#include "charset.h"
 
 class Connection {
 public:
@@ -36,6 +37,7 @@ public:
     const std::string& port() const { return port_; }
     bool uses_ssl() const { return use_ssl_; }
     bool remote_echo() const { return remote_echo_; }
+    Charset charset() const { return charset_; }
 
     // Notify the MUD of terminal size change
     void send_naws(uint16_t width, uint16_t height);
@@ -91,6 +93,10 @@ private:
 
     // Whether remote has requested echo suppression
     bool remote_echo_ = false;
+
+    // Character set negotiated with the server.  Defaults to UTF-8.
+    // If the server sends CHARSET and we accept, this is updated.
+    Charset charset_ = Charset::UTF8;
 
     // Idle tracking
     std::chrono::steady_clock::time_point last_recv_time_;

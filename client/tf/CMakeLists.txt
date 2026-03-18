@@ -29,7 +29,7 @@ foreach(RL_NAME input_lex script_lex)
 endforeach()
 
 add_executable(tf
-    src/main.cpp src/terminal.cpp src/connection.cpp
+    src/main.cpp src/terminal.cpp src/connection.cpp src/charset.cpp
     src/world.cpp src/command.cpp src/macro.cpp src/timer.cpp src/keybind.cpp
     src/input_lex.cpp src/script_lex.cpp src/script_parse.cpp src/regex_utils.cpp)
 

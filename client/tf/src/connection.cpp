@@ -234,9 +234,15 @@ void Connection::disconnect() {
 
 bool Connection::send_line(const std::string& line) {
     if (fd_ < 0) return false;
+
+    // Convert from UTF-8 to server charset if needed.
+    //
+    std::string encoded = (charset_ != Charset::UTF8)
+        ? utf8_to_charset(line, charset_) : line;
+
     std::string data;
-    data.reserve(line.size() * 2 + 2);
-    for (unsigned char ch : line) {
+    data.reserve(encoded.size() * 2 + 2);
+    for (unsigned char ch : encoded) {
         data.push_back((char)ch);
         if (ch == TEL_IAC) data.push_back((char)TEL_IAC);
     }
@@ -342,6 +348,10 @@ std::vector<std::string> Connection::read_lines() {
             std::string line = line_buf_.substr(start, i - start);
             // Strip trailing \r
             if (!line.empty() && line.back() == '\r') line.pop_back();
+            // Convert from server charset to UTF-8.
+            if (charset_ != Charset::UTF8) {
+                line = charset_to_utf8(line, charset_);
+            }
             lines.push_back(std::move(line));
             start = i + 1;
         }
@@ -466,17 +476,38 @@ size_t Connection::process_data(const unsigned char* buf, size_t len) {
                     char sep = sb_buf_[1];
                     size_t start = 2;
                     bool accepted = false;
-                    while (start < sb_buf_.size()) {
-                        size_t end = sb_buf_.find(sep, start);
-                        if (end == std::string::npos) end = sb_buf_.size();
-                        std::string candidate = sb_buf_.substr(start, end - start);
-                        if (charset_is_utf8(candidate)) {
-                            send_subneg_charset(true, "UTF-8");
-                            accepted = true;
-                            break;
+                    // Two passes: prefer UTF-8 first, then accept
+                    // any charset we can convert.
+                    //
+                    std::string best_name;
+                    Charset best_cs = Charset::UTF8;
+                    bool found_utf8 = false;
+
+                    for (size_t pass = 0; pass < 2 && !accepted; ++pass) {
+                        size_t s = 2;
+                        while (s < sb_buf_.size()) {
+                            size_t e = sb_buf_.find(sep, s);
+                            if (e == std::string::npos) e = sb_buf_.size();
+                            std::string candidate = sb_buf_.substr(s, e - s);
+                            if (pass == 0) {
+                                if (charset_is_utf8(candidate)) {
+                                    send_subneg_charset(true, "UTF-8");
+                                    charset_ = Charset::UTF8;
+                                    accepted = true;
+                                    break;
+                                }
+                            } else {
+                                if (charset_supported(candidate)) {
+                                    Charset cs = charset_from_name(candidate);
+                                    send_subneg_charset(true, candidate);
+                                    charset_ = cs;
+                                    accepted = true;
+                                    break;
+                                }
+                            }
+                            if (e == sb_buf_.size()) break;
+                            s = e + 1;
                         }
-                        if (end == sb_buf_.size()) break;
-                        start = end + 1;
                     }
                     if (!accepted) send_subneg_charset(false);
                 } else if (sb_option_ == TELOPT_MCCP2 && sb_buf_.empty()) {
@@ -632,6 +663,11 @@ std::string Connection::check_prompt(std::chrono::milliseconds timeout) {
 
     // Only return if it's different from what we last displayed
     if (prompt == last_prompt_) return {};
+
+    // Convert from server charset to UTF-8.
+    if (charset_ != Charset::UTF8) {
+        prompt = charset_to_utf8(prompt, charset_);
+    }
 
     last_prompt_ = prompt;
     return prompt;

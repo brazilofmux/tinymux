@@ -30,10 +30,12 @@ code review of commits `6ceb3ecf..HEAD` (2026-03-17).
 
 ## Telnet Protocol Issues
 
-- **Richer charset handling**
-  The client negotiates UTF-8 via `CHARSET` (telnet option 42) but
-  does not handle other charsets (e.g., ISO-8859-1 → UTF-8 conversion).
-  The `./utf` pipeline machinery could potentially be leveraged for this.
+- **Charset conversion limited to Latin-1 / CP437 / ASCII**
+  The client now negotiates and converts UTF-8, ISO-8859-1 (Latin-1),
+  CP437 (FANSI box-drawing), and US-ASCII via telnet CHARSET (option 42).
+  Additional charsets (e.g., ISO-8859-15, Windows-1252, KOI8-R) could
+  be added to charset.cpp. The `./utf` pipeline machinery could generate
+  conversion tables for broader coverage.
 
 ## Opportunities for Improvement
 
