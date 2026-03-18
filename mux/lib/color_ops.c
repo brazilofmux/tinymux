@@ -4787,3 +4787,323 @@ size_t co_delete_cluster(unsigned char *out,
     *wp = '\0';
     return (size_t)(wp - out);
 }
+
+/* ================================================================
+ * Stage 6: Rendering — PUA to client output.
+ * ================================================================ */
+
+/* ASCII approximation DFA tables from utf8tables.
+ * Declared here directly to avoid pulling in the C++ config.h chain.
+ */
+#define TR_ASCII_START_STATE (0)
+#define TR_ASCII_ACCEPTING_STATES_START (99)
+extern const unsigned char tr_ascii_itt[256];
+extern const unsigned short tr_ascii_sot[99];
+extern const unsigned char tr_ascii_sbt[3431];
+
+/*
+ * co_dfa_ascii — Run the ASCII approximation DFA on a single UTF-8 code point.
+ *
+ * The accepting state value IS the output byte (ASCII approximation).
+ * Returns '?' if no approximation exists.
+ */
+unsigned char co_dfa_ascii(const unsigned char *p)
+{
+    int iState = TR_ASCII_START_STATE;
+    do
+    {
+        unsigned char ch = *p++;
+        unsigned char iColumn = tr_ascii_itt[ch];
+        unsigned short iOffset = tr_ascii_sot[iState];
+        for (;;)
+        {
+            int y = tr_ascii_sbt[iOffset];
+            if (y < 128)
+            {
+                if (iColumn < y)
+                {
+                    iState = tr_ascii_sbt[iOffset+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = (unsigned char)(iColumn - y);
+                    iOffset += 2;
+                }
+            }
+            else
+            {
+                y = 256 - y;
+                if (iColumn < y)
+                {
+                    iState = tr_ascii_sbt[iOffset+iColumn+1];
+                    break;
+                }
+                else
+                {
+                    iColumn = (unsigned char)(iColumn - y);
+                    iOffset = (unsigned short)(iOffset + y + 1);
+                }
+            }
+        }
+    } while (iState < TR_ASCII_ACCEPTING_STATES_START);
+
+    unsigned char result = (unsigned char)(iState - TR_ASCII_ACCEPTING_STATES_START);
+    return (result > 0 && result < 0x80) ? result : '?';
+}
+
+/* ---- co_render_ascii ---- */
+
+
+#line 4648 "color_ops.c"
+static const int render_ascii_start = 12;
+
+static const int render_ascii_en_main = 12;
+
+
+#line 3388 "color_ops.rl"
+
+
+size_t co_render_ascii(unsigned char *out,
+                       const unsigned char *data, size_t len)
+{
+    int cs;
+    const unsigned char *p = data;
+    const unsigned char *pe = data + len;
+    const unsigned char *mark = data;
+    unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+
+    
+#line 4664 "color_ops.c"
+	{
+	cs = render_ascii_start;
+	}
+
+#line 3401 "color_ops.rl"
+    
+#line 4667 "color_ops.c"
+	{
+	if ( p == pe )
+		goto _test_eof;
+	switch ( cs )
+	{
+tr0:
+#line 3373 "color_ops.rl"
+	{
+        /* Run visible code point through tr_ascii DFA for approximation. */
+        if (*mark < 0x80) {
+            /* Pure ASCII — pass through. */
+            WP_SAFE(wp, wp_end, *mark);
+        } else {
+            /* Multi-byte UTF-8 — approximate to ASCII. */
+            unsigned char ch = co_dfa_ascii(mark);
+            WP_SAFE(wp, wp_end, ch);
+        }
+    }
+	goto st12;
+tr7:
+#line 3372 "color_ops.rl"
+	{ mark = p; }
+#line 3373 "color_ops.rl"
+	{
+        /* Run visible code point through tr_ascii DFA for approximation. */
+        if (*mark < 0x80) {
+            /* Pure ASCII — pass through. */
+            WP_SAFE(wp, wp_end, *mark);
+        } else {
+            /* Multi-byte UTF-8 — approximate to ASCII. */
+            unsigned char ch = co_dfa_ascii(mark);
+            WP_SAFE(wp, wp_end, ch);
+        }
+    }
+	goto st12;
+st12:
+	if ( ++p == pe )
+		goto _test_eof12;
+case 12:
+#line 4703 "color_ops.c"
+	switch( (*p) ) {
+		case 0u: goto st0;
+		case 224u: goto tr9;
+		case 237u: goto tr11;
+		case 239u: goto tr12;
+		case 240u: goto tr13;
+		case 243u: goto tr15;
+		case 244u: goto tr16;
+	}
+	if ( (*p) < 225u ) {
+		if ( (*p) > 193u ) {
+			if ( 194u <= (*p) && (*p) <= 223u )
+				goto tr8;
+		} else if ( (*p) >= 128u )
+			goto st0;
+	} else if ( (*p) > 238u ) {
+		if ( (*p) > 242u ) {
+			if ( 245u <= (*p) )
+				goto st0;
+		} else if ( (*p) >= 241u )
+			goto tr14;
+	} else
+		goto tr10;
+	goto tr7;
+st0:
+cs = 0;
+	goto _out;
+tr8:
+#line 3372 "color_ops.rl"
+	{ mark = p; }
+	goto st1;
+st1:
+	if ( ++p == pe )
+		goto _test_eof1;
+case 1:
+#line 4737 "color_ops.c"
+	if ( 128u <= (*p) && (*p) <= 191u )
+		goto tr0;
+	goto st0;
+tr9:
+#line 3372 "color_ops.rl"
+	{ mark = p; }
+	goto st2;
+st2:
+	if ( ++p == pe )
+		goto _test_eof2;
+case 2:
+#line 4747 "color_ops.c"
+	if ( 160u <= (*p) && (*p) <= 191u )
+		goto st1;
+	goto st0;
+tr10:
+#line 3372 "color_ops.rl"
+	{ mark = p; }
+	goto st3;
+st3:
+	if ( ++p == pe )
+		goto _test_eof3;
+case 3:
+#line 4757 "color_ops.c"
+	if ( 128u <= (*p) && (*p) <= 191u )
+		goto st1;
+	goto st0;
+tr11:
+#line 3372 "color_ops.rl"
+	{ mark = p; }
+	goto st4;
+st4:
+	if ( ++p == pe )
+		goto _test_eof4;
+case 4:
+#line 4767 "color_ops.c"
+	if ( 128u <= (*p) && (*p) <= 159u )
+		goto st1;
+	goto st0;
+tr12:
+#line 3372 "color_ops.rl"
+	{ mark = p; }
+	goto st5;
+st5:
+	if ( ++p == pe )
+		goto _test_eof5;
+case 5:
+#line 4777 "color_ops.c"
+	if ( (*p) < 148u ) {
+		if ( 128u <= (*p) && (*p) <= 147u )
+			goto st1;
+	} else if ( (*p) > 159u ) {
+		if ( 160u <= (*p) && (*p) <= 191u )
+			goto st1;
+	} else
+		goto st6;
+	goto st0;
+st6:
+	if ( ++p == pe )
+		goto _test_eof6;
+case 6:
+	if ( 128u <= (*p) && (*p) <= 191u )
+		goto st12;
+	goto st0;
+tr13:
+#line 3372 "color_ops.rl"
+	{ mark = p; }
+	goto st7;
+st7:
+	if ( ++p == pe )
+		goto _test_eof7;
+case 7:
+#line 4800 "color_ops.c"
+	if ( 144u <= (*p) && (*p) <= 191u )
+		goto st3;
+	goto st0;
+tr14:
+#line 3372 "color_ops.rl"
+	{ mark = p; }
+	goto st8;
+st8:
+	if ( ++p == pe )
+		goto _test_eof8;
+case 8:
+#line 4810 "color_ops.c"
+	if ( 128u <= (*p) && (*p) <= 191u )
+		goto st3;
+	goto st0;
+tr15:
+#line 3372 "color_ops.rl"
+	{ mark = p; }
+	goto st9;
+st9:
+	if ( ++p == pe )
+		goto _test_eof9;
+case 9:
+#line 4820 "color_ops.c"
+	if ( (*p) < 176u ) {
+		if ( 128u <= (*p) && (*p) <= 175u )
+			goto st3;
+	} else if ( (*p) > 179u ) {
+		if ( 180u <= (*p) && (*p) <= 191u )
+			goto st3;
+	} else
+		goto st10;
+	goto st0;
+st10:
+	if ( ++p == pe )
+		goto _test_eof10;
+case 10:
+	if ( 128u <= (*p) && (*p) <= 191u )
+		goto st6;
+	goto st0;
+tr16:
+#line 3372 "color_ops.rl"
+	{ mark = p; }
+	goto st11;
+st11:
+	if ( ++p == pe )
+		goto _test_eof11;
+case 11:
+#line 4843 "color_ops.c"
+	if ( 128u <= (*p) && (*p) <= 143u )
+		goto st3;
+	goto st0;
+	}
+	_test_eof12: cs = 12; goto _test_eof; 
+	_test_eof1: cs = 1; goto _test_eof; 
+	_test_eof2: cs = 2; goto _test_eof; 
+	_test_eof3: cs = 3; goto _test_eof; 
+	_test_eof4: cs = 4; goto _test_eof; 
+	_test_eof5: cs = 5; goto _test_eof; 
+	_test_eof6: cs = 6; goto _test_eof; 
+	_test_eof7: cs = 7; goto _test_eof; 
+	_test_eof8: cs = 8; goto _test_eof; 
+	_test_eof9: cs = 9; goto _test_eof; 
+	_test_eof10: cs = 10; goto _test_eof; 
+	_test_eof11: cs = 11; goto _test_eof; 
+
+	_test_eof: {}
+	_out: {}
+	}
+
+#line 3402 "color_ops.rl"
+
+    *wp = '\0';
+    return (size_t)(wp - out);
+}

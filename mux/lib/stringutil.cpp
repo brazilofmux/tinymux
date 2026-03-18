@@ -8,6 +8,10 @@
 #include "config.h"
 #include "core.h"
 
+extern "C" {
+#include "color_ops.h"
+}
+
 #include <math.h>
 
 bool g_no_flash = false;
@@ -832,50 +836,7 @@ const UTF8 *ConvertToAscii(const UTF8 *pString)
 
     while ('\0' != *pString)
     {
-        const UTF8 *p = pString;
-        int iState = TR_ASCII_START_STATE;
-        do
-        {
-            unsigned char ch = *p++;
-            unsigned char iColumn = tr_ascii_itt[static_cast<unsigned char>(ch)];
-            unsigned short iOffset = tr_ascii_sot[iState];
-            for (;;)
-            {
-                int y = tr_ascii_sbt[iOffset];
-                if (y < 128)
-                {
-                    // RUN phrase.
-                    //
-                    if (iColumn < y)
-                    {
-                        iState = tr_ascii_sbt[iOffset+1];
-                        break;
-                    }
-                    else
-                    {
-                        iColumn = static_cast<unsigned char>(iColumn - y);
-                        iOffset += 2;
-                    }
-                }
-                else
-                {
-                    // COPY phrase.
-                    //
-                    y = 256-y;
-                    if (iColumn < y)
-                    {
-                        iState = tr_ascii_sbt[iOffset+iColumn+1];
-                        break;
-                    }
-                    else
-                    {
-                        iColumn = static_cast<unsigned char>(iColumn - y);
-                        iOffset = static_cast<unsigned short>(iOffset + y + 1);
-                    }
-                }
-            }
-        } while (iState < TR_ASCII_ACCEPTING_STATES_START);
-        *q++ = static_cast<char>(iState - TR_ASCII_ACCEPTING_STATES_START);
+        *q++ = static_cast<UTF8>(co_dfa_ascii(pString));
         pString += utf8_advance_nul(pString);
     }
     *q = '\0';

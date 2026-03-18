@@ -17,7 +17,7 @@ INCLUDES = -I../../mux/include -I../../ragel
 TARGET   = test_color_ops
 
 # Object files
-OBJS = test_color_ops.o color_ops.o unicode_tables.o tables_extra.o co_console_width.o
+OBJS = test_color_ops.o color_ops.o unicode_tables.o tables_extra.o tables_ascii.o co_console_width.o
 
 all: $(TARGET)
 
@@ -44,6 +44,16 @@ tables_extra.c: ../../mux/rv64/src/unicode_tables.c
 tables_extra.o: tables_extra.c ../../mux/include/unicode_tables_c.h
 	$(CC) $(CFLAGS) -I../../mux/include -c tables_extra.c
 
+# Extract tr_ascii_* DFA tables from utf8tables.cpp (C-compatible arrays).
+tables_ascii.c: ../../mux/lib/utf8tables.cpp
+	@echo "/* Auto-extracted tr_ascii DFA tables from utf8tables.cpp */" > $@
+	sed -n '/^const.*tr_ascii_itt/,/^};/p' ../../mux/lib/utf8tables.cpp >> $@
+	sed -n '/^const.*tr_ascii_sot/,/^};/p' ../../mux/lib/utf8tables.cpp >> $@
+	sed -n '/^const.*tr_ascii_sbt/,/^};/p' ../../mux/lib/utf8tables.cpp >> $@
+
+tables_ascii.o: tables_ascii.c
+	$(CC) $(CFLAGS) -c tables_ascii.c
+
 co_console_width.o: co_console_width.c
 	$(CC) $(CFLAGS) -c co_console_width.c
 
@@ -54,6 +64,6 @@ verbose: $(TARGET)
 	./$(TARGET) -v
 
 clean:
-	rm -f $(OBJS) $(TARGET) tables_extra.c
+	rm -f $(OBJS) $(TARGET) tables_extra.c tables_ascii.c
 
 .PHONY: all test verbose clean

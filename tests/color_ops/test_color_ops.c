@@ -2891,6 +2891,93 @@ static void test_colorstate_helpers(void) {
     }
 }
 
+/* ---- co_render_ascii ---- */
+
+static void test_render_ascii(void) {
+    const char *name = "co_render_ascii";
+    unsigned char buf[LBUF_SIZE], out[LBUF_SIZE];
+    size_t r, n;
+
+    /* Empty input. */
+    r = co_render_ascii(out, (const unsigned char *)"", 0);
+    check_buf(name, "empty", out, r, (const unsigned char *)"", 0);
+
+    /* Pure ASCII, no color. */
+    r = co_render_ascii(out, (const unsigned char *)"Hello World", 11);
+    check_buf(name, "pure ASCII", out, r, (const unsigned char *)"Hello World", 11);
+
+    /* ASCII with color — color stripped, text preserved. */
+    n = 0;
+    n += (size_t)pua_fg(buf, 1);
+    buf[n++] = 'H'; buf[n++] = 'i';
+    n += (size_t)pua_reset(buf + n);
+    r = co_render_ascii(out, buf, n);
+    check_buf(name, "ASCII+color", out, r, (const unsigned char *)"Hi", 2);
+
+    /* Unicode e-acute (U+00E9, UTF-8: C3 A9) → 'e'. */
+    r = co_render_ascii(out, (const unsigned char *)"\xC3\xA9", 2);
+    check_buf(name, "e-acute", out, r, (const unsigned char *)"e", 1);
+
+    /* Unicode n-tilde (U+00F1, UTF-8: C3 B1) → 'n'. */
+    r = co_render_ascii(out, (const unsigned char *)"\xC3\xB1", 2);
+    check_buf(name, "n-tilde", out, r, (const unsigned char *)"n", 1);
+
+    /* Unicode u-umlaut (U+00FC, UTF-8: C3 BC) → 'u'. */
+    r = co_render_ascii(out, (const unsigned char *)"\xC3\xBC", 2);
+    check_buf(name, "u-umlaut", out, r, (const unsigned char *)"u", 1);
+
+    /* Unicode c-cedilla (U+00E7, UTF-8: C3 A7) → 'c'. */
+    r = co_render_ascii(out, (const unsigned char *)"\xC3\xA7", 2);
+    check_buf(name, "c-cedilla", out, r, (const unsigned char *)"c", 1);
+
+    /* Mixed ASCII + Unicode accented + color. */
+    n = 0;
+    n += (size_t)pua_fg(buf, 4);  /* blue */
+    buf[n++] = 'c'; buf[n++] = 'a'; buf[n++] = 'f';
+    /* e-acute */
+    buf[n++] = 0xC3; buf[n++] = 0xA9;
+    n += (size_t)pua_reset(buf + n);
+    r = co_render_ascii(out, buf, n);
+    check_buf(name, "cafe+color", out, r, (const unsigned char *)"cafe", 4);
+
+    /* 24-bit RGB color + text. */
+    n = 0;
+    n += (size_t)pua_fg_rgb(buf, 255, 128, 0);
+    buf[n++] = 'X';
+    n += (size_t)pua_reset(buf + n);
+    r = co_render_ascii(out, buf, n);
+    check_buf(name, "RGB color+X", out, r, (const unsigned char *)"X", 1);
+
+    /* All color, no visible content. */
+    n = 0;
+    n += (size_t)pua_fg(buf, 1);
+    n += (size_t)pua_bg(buf + n, 2);
+    n += (size_t)pua_reset(buf + n);
+    r = co_render_ascii(out, buf, n);
+    check_buf(name, "all color", out, r, (const unsigned char *)"", 0);
+
+    /* Stress: verify co_render_ascii output is pure 7-bit ASCII. */
+    unsigned int save_seed = g_seed;
+    for (int i = 0; i < 5000; i++) {
+        size_t len = gen_random_colored(buf, 1 + (xrand() % 200));
+        r = co_render_ascii(out, buf, len);
+        int all_ascii = 1;
+        for (size_t j = 0; j < r; j++) {
+            if (out[j] >= 0x80) {
+                all_ascii = 0;
+                test_fail(name, "fuzz[%d]: byte %zu = 0x%02x (not ASCII)", i, j, out[j]);
+                break;
+            }
+        }
+        if (!all_ascii) {
+            g_seed = save_seed;
+            return;
+        }
+    }
+    test_ok(name, "5000 fuzz: all output is 7-bit ASCII");
+    g_seed = save_seed;
+}
+
 /* ================================================================
  * Main
  * ================================================================ */
@@ -2949,6 +3036,7 @@ static const test_suite_t suites[] = {
     { "cluster_advance",  test_cluster_advance },
     { "console_width",    test_console_width },
     { "colorstate_helpers", test_colorstate_helpers },
+    { "render_ascii",     test_render_ascii },
     { NULL, NULL }
 };
 
