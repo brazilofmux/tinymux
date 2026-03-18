@@ -457,11 +457,13 @@ static void run(App& app) {
         int ready = poll(pollfds.data(), pollfds.size(), timeout_ms);
 
         // --- stdin input ---
+        bool stdin_had_data = false;
         if (ready > 0 && !pollfds.empty() && (pollfds[0].revents & POLLIN)) {
             unsigned char buf[4096];
             ssize_t n = read(STDIN_FILENO, buf, sizeof(buf));
             if (n > 0) {
                 lexer.feed(buf, (size_t)n);
+                stdin_had_data = true;
             }
         } else if (ready == 0 && lexer.has_pending_esc()) {
             // Timeout with no new data — bare ESC
@@ -544,10 +546,11 @@ static void run(App& app) {
         }
         lexer.clear_events();
 
-        // If a partial sequence is pending and no new input arrived,
-        // flush it (the poll timeout acts as the sequence timeout).
+        // If a partial sequence is pending and no new stdin input arrived
+        // in this poll iteration, flush it (the poll timeout acts as the
+        // sequence timeout).
         //
-        if (app.keybindings.seq_pending() && lexer.events().empty()) {
+        if (app.keybindings.seq_pending() && !stdin_had_data) {
             auto buffered = app.keybindings.seq_buffered();
             app.keybindings.seq_reset();
             for (const auto& replay_bk : buffered) {
