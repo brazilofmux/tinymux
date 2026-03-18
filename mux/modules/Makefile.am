@@ -23,8 +23,10 @@ comsys_mod.so: comsys/comsys_mod.cpp comsys/comsys_mod.h
 mail_mod.so: mail/mail_mod.cpp mail/mail_mod.h
 	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(PCRE2_LIBS)
 
-lua_mod.so: lua/lua_mod.cpp lua/lua_mod.h
-	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) `pkg-config --cflags lua5.4 2>/dev/null || echo -I/usr/include/lua5.4` -o $@ $< `pkg-config --libs lua5.4 2>/dev/null || echo -llua5.4` $(PCRE2_LIBS)
+lua_mod.so: lua/lua_mod.cpp lua/lua_mod.h $(top_builddir)/lua54/liblua54.a
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) \
+	    -I$(top_srcdir)/lua54 -o $@ $< \
+	    $(top_builddir)/lua54/liblua54.a -lm $(PCRE2_LIBS)
 
 # SQL slave needs special treatment for SQL libraries
 sqlslave.so: sqlslave/sqlslave.cpp

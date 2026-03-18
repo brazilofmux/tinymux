@@ -620,6 +620,7 @@ AC_CONFIG_FILES([
     modules/Makefile
     modules/engine/Makefile
     sqlite/Makefile
+    lua54/Makefile
     announce/Makefile
     muxescape/Makefile
     ganl/Makefile

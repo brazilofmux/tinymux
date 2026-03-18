@@ -3,13 +3,14 @@
 # Build root.  Subdirectories are built in dependency order:
 #   ganl     — networking library (static, no deps)
 #   sqlite   — SQLite amalgamation (static, no deps)
+#   lua54    — Lua 5.4.7 (static, no deps)
 #   lib      — libmux.so (core utilities)
 #   src      — netmux driver (links libmux.so + libganl.a)
 #   modules  — engine.so + external modules (link libmux.so)
 #   announce   — standalone announce tool
 #   muxescape — standalone text escaping tool
 
-SUBDIRS = ganl sqlite lib src modules announce muxescape
+SUBDIRS = ganl sqlite lua54 lib src modules announce muxescape
 
 # Shared build flags available to all subdirectories.
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdir)/sqlite \
