@@ -171,10 +171,11 @@ bool Terminal::handle_key(const InputEvent& ev, std::string& out_line) {
     switch (ev.type) {
     case InputEvent::Key_Enter:
         out_line = input_buf_;
-        // Save to history
+        // Save to per-world history
         if (!input_buf_.empty()) {
-            history_.push_front(input_buf_);
-            if (history_.size() > MAX_HISTORY) history_.pop_back();
+            auto& hist = current_history();
+            hist.push_front(input_buf_);
+            if (hist.size() > MAX_HISTORY) hist.pop_back();
         }
         input_buf_.clear();
         cursor_pos_ = 0;
@@ -288,19 +289,29 @@ void Terminal::scroll_to_bottom() {
     redraw_output();
 }
 
-// -- History --
+// -- History (per-world) --
+
+std::deque<std::string>& Terminal::current_history() {
+    return histories_[history_key_];
+}
+
+void Terminal::set_history_context(const std::string& key) {
+    history_key_ = key;
+    history_pos_ = -1;
+}
 
 void Terminal::history_up() {
-    if (history_.empty()) return;
+    auto& hist = current_history();
+    if (hist.empty()) return;
     if (history_pos_ < 0) {
         saved_input_ = input_buf_;
         history_pos_ = 0;
-    } else if (history_pos_ < (int)history_.size() - 1) {
+    } else if (history_pos_ < (int)hist.size() - 1) {
         history_pos_++;
     } else {
         return;
     }
-    input_buf_ = history_[history_pos_];
+    input_buf_ = hist[history_pos_];
     cursor_pos_ = input_buf_.size();
     redraw_input();
 }
@@ -311,10 +322,26 @@ void Terminal::history_down() {
     if (history_pos_ < 0) {
         input_buf_ = saved_input_;
     } else {
-        input_buf_ = history_[history_pos_];
+        input_buf_ = current_history()[history_pos_];
     }
     cursor_pos_ = input_buf_.size();
     redraw_input();
+}
+
+// -- Scrollback search --
+
+std::vector<std::string> Terminal::recall(const std::string& pattern, int max_lines) const {
+    std::vector<std::string> results;
+    auto it = output_screens_.find(output_key_);
+    if (it == output_screens_.end()) return results;
+    auto& lines = it->second.lines;
+    // Search backward
+    for (int i = (int)lines.size() - 1; i >= 0 && (int)results.size() < max_lines; i--) {
+        if (pattern.empty() || lines[i].find(pattern) != std::string::npos) {
+            results.push_back(lines[i]);
+        }
+    }
+    return results;
 }
 
 // -- Drawing --

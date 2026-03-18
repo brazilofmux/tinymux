@@ -67,7 +67,7 @@ All Unicode functionality from libmux.dll — no reimplementation:
   renderer based on console VT capability
 - **NFC normalization**: normalize incoming server text and user input
 
-### Phase 4: GMCP/MSSP + Status Bar + Polish
+### Phase 4: GMCP/MSSP + Status Bar + Polish — DONE
 
 - GMCP (telnet option 201): parse JSON payloads, store per-connection state
 - MSSP (telnet option 70): key-value pairs from server

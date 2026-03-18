@@ -14,7 +14,9 @@
 #include <deque>
 #include <vector>
 #include <memory>
+#include <unordered_map>
 #include <cstdint>
+#include <cstdio>
 #include <chrono>
 #include "telnet.h"
 #include "schannel_tls.h"
@@ -71,6 +73,26 @@ public:
     const std::deque<std::string>& scrollback() const { return scrollback_; }
     void add_to_scrollback(const std::string& line);
 
+    // GMCP
+    const std::unordered_map<std::string, std::string>& gmcp_data() const { return gmcp_; }
+    const std::string& gmcp_get(const std::string& pkg) const;
+
+    // MSSP
+    const std::unordered_map<std::string, std::string>& mssp_data() const { return mssp_; }
+
+    // Idle tracking
+    int idle_secs() const;
+    int send_idle_secs() const;
+
+    // Prompt
+    const std::string& current_prompt() const { return last_prompt_; }
+
+    // Logging
+    bool start_log(const std::string& path);
+    void stop_log();
+    bool is_logging() const { return log_fp_ != nullptr; }
+    void log_line(const std::string& line);
+
     SOCKET socket() const { return socket_; }
 
 private:
@@ -122,6 +144,27 @@ private:
 
     // TLS
     std::unique_ptr<SchannelSession> tls_;
+
+    // GMCP data (package -> last JSON payload)
+    std::unordered_map<std::string, std::string> gmcp_;
+    static const std::string empty_string_;
+
+    // MSSP data (key -> value)
+    std::unordered_map<std::string, std::string> mssp_;
+
+    // Subneg handlers
+    void handle_gmcp_subneg(const std::string& data);
+    void handle_mssp_subneg(const std::string& data);
+
+    // Idle tracking
+    std::chrono::steady_clock::time_point last_recv_time_;
+    std::chrono::steady_clock::time_point last_send_time_;
+
+    // Prompt
+    std::string last_prompt_;
+
+    // Logging
+    FILE* log_fp_ = nullptr;
 
     // ConnectEx function pointer (loaded once per socket)
     static LPFN_CONNECTEX ConnectEx_;

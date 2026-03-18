@@ -3,6 +3,7 @@
 #include <cstring>
 
 LPFN_CONNECTEX Connection::ConnectEx_ = nullptr;
+const std::string Connection::empty_string_;
 
 bool Connection::LoadConnectEx(SOCKET s) {
     if (ConnectEx_) return true;
@@ -26,6 +27,10 @@ Connection::Connection(const std::string& world_name, const std::string& host,
 
     memset(&connect_ctx_, 0, sizeof(connect_ctx_));
     connect_ctx_.op = IoOp::Connect;
+
+    auto now = std::chrono::steady_clock::now();
+    last_recv_time_ = now;
+    last_send_time_ = now;
 }
 
 Connection::~Connection() {
@@ -155,6 +160,7 @@ std::vector<std::string> Connection::on_completion(IoContext* ctx, DWORD bytes, 
             return lines;
         }
         line_buf_time_ = std::chrono::steady_clock::now();
+        last_recv_time_ = line_buf_time_;
 
         if (tls_) {
             // Decrypt through TLS
@@ -190,6 +196,7 @@ std::vector<std::string> Connection::on_completion(IoContext* ctx, DWORD bytes, 
 }
 
 void Connection::disconnect() {
+    stop_log();
     if (tls_ && socket_ != INVALID_SOCKET) {
         tls_->shutdown(socket_);
         tls_.reset();
@@ -204,7 +211,9 @@ void Connection::disconnect() {
 bool Connection::send_line(const std::string& line) {
     if (!connected_) return false;
     std::string data = line + "\r\n";
-    return send_raw(data.data(), data.size()), true;
+    send_raw(data.data(), data.size());
+    last_send_time_ = std::chrono::steady_clock::now();
+    return true;
 }
 
 void Connection::send_raw(const void* data, size_t len) {
@@ -399,6 +408,10 @@ void Connection::process_telnet(const unsigned char* data, size_t len,
                         }
                     }
                     send_subneg_charset(found_utf8, found_utf8 ? "UTF-8" : "");
+                } else if (sb_option_ == TELOPT_GMCP) {
+                    handle_gmcp_subneg(sb_buf_);
+                } else if (sb_option_ == TELOPT_MSSP) {
+                    handle_mssp_subneg(sb_buf_);
                 }
                 tel_state_ = TelState::DATA;
             } else if (c == TEL_IAC) {
@@ -436,9 +449,9 @@ std::string Connection::check_prompt(int timeout_ms) {
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
         now - line_buf_time_).count();
     if (elapsed >= timeout_ms) {
-        std::string prompt = line_buf_;
+        last_prompt_ = line_buf_;
         line_buf_.clear();
-        return prompt;
+        return last_prompt_;
     }
     return "";
 }
@@ -448,4 +461,93 @@ void Connection::add_to_scrollback(const std::string& line) {
     while (scrollback_.size() > MAX_SCROLLBACK) {
         scrollback_.pop_front();
     }
+    log_line(line);
+}
+
+// -- GMCP --
+
+const std::string& Connection::gmcp_get(const std::string& pkg) const {
+    auto it = gmcp_.find(pkg);
+    return it != gmcp_.end() ? it->second : empty_string_;
+}
+
+void Connection::handle_gmcp_subneg(const std::string& data) {
+    // GMCP format: "Package.Name <JSON payload>"
+    // Split at first space
+    size_t sp = data.find(' ');
+    if (sp == std::string::npos) {
+        gmcp_[data] = "";
+    } else {
+        std::string pkg = data.substr(0, sp);
+        std::string payload = data.substr(sp + 1);
+        gmcp_[pkg] = payload;
+    }
+}
+
+// -- MSSP --
+
+void Connection::handle_mssp_subneg(const std::string& data) {
+    // MSSP format: VAR <name> VAL <value> [VAR <name> VAL <value> ...]
+    // VAR = 1, VAL = 2
+    constexpr char MSSP_VAR = 1;
+    constexpr char MSSP_VAL = 2;
+
+    std::string key, val;
+    enum { NONE, IN_VAR, IN_VAL } state = NONE;
+
+    for (size_t i = 0; i < data.size(); i++) {
+        char c = data[i];
+        if (c == MSSP_VAR) {
+            if (state == IN_VAL && !key.empty()) {
+                mssp_[key] = val;
+            }
+            key.clear();
+            val.clear();
+            state = IN_VAR;
+        } else if (c == MSSP_VAL) {
+            state = IN_VAL;
+        } else if (state == IN_VAR) {
+            key.push_back(c);
+        } else if (state == IN_VAL) {
+            val.push_back(c);
+        }
+    }
+    if (state == IN_VAL && !key.empty()) {
+        mssp_[key] = val;
+    }
+}
+
+// -- Idle tracking --
+
+int Connection::idle_secs() const {
+    auto now = std::chrono::steady_clock::now();
+    return (int)std::chrono::duration_cast<std::chrono::seconds>(
+        now - last_recv_time_).count();
+}
+
+int Connection::send_idle_secs() const {
+    auto now = std::chrono::steady_clock::now();
+    return (int)std::chrono::duration_cast<std::chrono::seconds>(
+        now - last_send_time_).count();
+}
+
+// -- Logging --
+
+bool Connection::start_log(const std::string& path) {
+    stop_log();
+    log_fp_ = fopen(path.c_str(), "a");
+    return log_fp_ != nullptr;
+}
+
+void Connection::stop_log() {
+    if (log_fp_) {
+        fclose(log_fp_);
+        log_fp_ = nullptr;
+    }
+}
+
+void Connection::log_line(const std::string& line) {
+    if (!log_fp_) return;
+    fprintf(log_fp_, "%s\n", line.c_str());
+    fflush(log_fp_);
 }

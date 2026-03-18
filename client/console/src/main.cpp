@@ -8,9 +8,40 @@
 
 #include "app.h"
 #include <cstdio>
+#include <string>
 #include <vector>
 
 #pragma comment(lib, "ws2_32.lib")
+
+// Build a status bar string from current app state.
+static void update_status_bar(App& app) {
+    std::string status;
+    if (app.fg) {
+        status = app.fg->world_name();
+        if (app.fg->uses_ssl()) status += " [ssl]";
+        if (!app.fg->is_connected()) {
+            status += " (disconnected)";
+        } else {
+            int idle = app.fg->idle_secs();
+            if (idle > 0) {
+                status += "  idle:" + std::to_string(idle) + "s";
+            }
+        }
+        if (app.fg->is_logging()) status += "  [LOG]";
+    } else {
+        status = "(no connection)";
+    }
+    int nconn = (int)app.connections.size();
+    int nactive = (int)app.active_worlds.size();
+    if (nconn > 1) {
+        status += "  [" + std::to_string(nconn) + " conn";
+        if (nactive > 0) status += ", " + std::to_string(nactive) + " active";
+        status += "]";
+    } else if (nactive > 0) {
+        status += "  [" + std::to_string(nactive) + " active]";
+    }
+    app.terminal.set_status(status);
+}
 
 // Console input reader thread.  Reads INPUT_RECORDs and posts them to the IOCP.
 struct ConsoleThreadData {
@@ -118,7 +149,7 @@ int main(int argc, char* argv[]) {
                 if (!app.fg && !app.connections.empty()) {
                     app.fg = app.connections.begin()->second.get();
                     app.terminal.set_output_context(app.fg->world_name());
-                    app.terminal.set_status(app.fg->world_name());
+                    app.terminal.set_history_context(app.fg->world_name());
                 }
             }
         } else if (!ok && overlapped) {
@@ -142,6 +173,9 @@ int main(int argc, char* argv[]) {
                 app_receive_line(app, conn.get(), name, prompt);
             }
         }
+
+        // Update status bar
+        update_status_bar(app);
     }
 
     // Cleanup

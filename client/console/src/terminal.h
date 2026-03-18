@@ -77,9 +77,13 @@ public:
     void scroll_page_down();
     void scroll_to_bottom();
 
-    // Input history
+    // Input history (per-world)
+    void set_history_context(const std::string& key);
     void history_up();
     void history_down();
+
+    // Scrollback search
+    std::vector<std::string> recall(const std::string& pattern, int max_lines = 20) const;
 
     int get_cols() const { return cols_; }
     int get_rows() const { return rows_; }
@@ -146,11 +150,13 @@ private:
     std::string input_buf_;
     size_t cursor_pos_ = 0;
 
-    // Input history
-    std::deque<std::string> history_;
+    // Per-world input history
+    std::unordered_map<std::string, std::deque<std::string>> histories_;
+    std::string history_key_;
     int history_pos_ = -1;
     std::string saved_input_;
     static constexpr size_t MAX_HISTORY = 500;
+    std::deque<std::string>& current_history();
 
     std::string status_text_;
     bool initialized_ = false;

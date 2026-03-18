@@ -100,7 +100,7 @@ static void cmd_connect(App& app, const std::vector<std::string>& args) {
     if (!app.fg) {
         app.fg = raw;
         app.terminal.set_output_context(name);
-        app.terminal.set_status(name);
+        app.terminal.set_history_context(name);
     }
 }
 
@@ -154,7 +154,7 @@ static void cmd_fg(App& app, const std::vector<std::string>& args) {
 
     app.fg = it->second.get();
     app.terminal.set_output_context(args[1]);
-    app.terminal.set_status(args[1]);
+    app.terminal.set_history_context(args[1]);
     app.terminal.scroll_to_bottom();
     app_clear_fg_activity(app);
     app.terminal.print_system("Foreground: " + args[1]);
@@ -203,6 +203,84 @@ static void cmd_world(App& app, const std::vector<std::string>& args) {
     app.terminal.print_system("World defined: " + w.name);
 }
 
+static void cmd_log(App& app, const std::vector<std::string>& args) {
+    if (!app.fg) {
+        app.terminal.print_system("Not connected.");
+        return;
+    }
+    if (args.size() < 2) {
+        if (app.fg->is_logging()) {
+            app.fg->stop_log();
+            app.terminal.print_system("Logging stopped.");
+        } else {
+            app.terminal.print_system("Usage: /log <filename> | /log (to stop)");
+        }
+        return;
+    }
+    if (app.fg->start_log(args[1])) {
+        app.terminal.print_system("Logging to " + args[1]);
+    } else {
+        app.terminal.print_system("Failed to open log file: " + args[1]);
+    }
+}
+
+static void cmd_recall(App& app, const std::vector<std::string>& args) {
+    std::string pattern;
+    int max_lines = 20;
+    if (args.size() >= 2) pattern = args[1];
+    if (args.size() >= 3) {
+        try { max_lines = std::stoi(args[2]); } catch (...) {}
+    }
+    auto results = app.terminal.recall(pattern, max_lines);
+    if (results.empty()) {
+        app.terminal.print_system("No matches.");
+        return;
+    }
+    // Print in chronological order (results are newest-first)
+    for (int i = (int)results.size() - 1; i >= 0; i--) {
+        app.terminal.print_system(results[i]);
+    }
+}
+
+static void cmd_gmcp(App& app, const std::vector<std::string>& args) {
+    if (!app.fg) {
+        app.terminal.print_system("Not connected.");
+        return;
+    }
+    auto& data = app.fg->gmcp_data();
+    if (args.size() >= 2) {
+        auto& val = app.fg->gmcp_get(args[1]);
+        if (val.empty()) {
+            app.terminal.print_system("No GMCP data for: " + args[1]);
+        } else {
+            app.terminal.print_system(args[1] + " " + val);
+        }
+    } else {
+        if (data.empty()) {
+            app.terminal.print_system("No GMCP data received.");
+        } else {
+            for (auto& [pkg, payload] : data) {
+                app.terminal.print_system("  " + pkg + " " + payload);
+            }
+        }
+    }
+}
+
+static void cmd_mssp(App& app, const std::vector<std::string>&) {
+    if (!app.fg) {
+        app.terminal.print_system("Not connected.");
+        return;
+    }
+    auto& data = app.fg->mssp_data();
+    if (data.empty()) {
+        app.terminal.print_system("No MSSP data received.");
+        return;
+    }
+    for (auto& [key, val] : data) {
+        app.terminal.print_system("  " + key + ": " + val);
+    }
+}
+
 static void cmd_help(App& app, const std::vector<std::string>&) {
     app.terminal.print_system("Commands:");
     auto list = app.commands.help_list();
@@ -220,5 +298,9 @@ void register_builtin_commands(App& app) {
     app.commands.register_cmd("listsockets", cmd_listsockets, "List active connections");
     app.commands.register_cmd("listworlds",  cmd_listworlds,  "List defined worlds");
     app.commands.register_cmd("world",       cmd_world,       "Define a world");
+    app.commands.register_cmd("log",         cmd_log,         "Start/stop logging to file");
+    app.commands.register_cmd("recall",      cmd_recall,      "Search scrollback [pattern] [count]");
+    app.commands.register_cmd("gmcp",        cmd_gmcp,        "Show GMCP data [package]");
+    app.commands.register_cmd("mssp",        cmd_mssp,        "Show MSSP server data");
     app.commands.register_cmd("help",        cmd_help,        "Show this help");
 }
