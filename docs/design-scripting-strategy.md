@@ -85,6 +85,18 @@ Server-side Lua comes first because:
 No scripting beyond basic triggers. Proves the client architecture without
 the complexity of an embedded scripting runtime.
 
+Requirements (no compromises):
+
+- **IOCP** for async I/O — proper overlapped sockets, not select/poll.
+- **Unicode 16.0** — full grapheme cluster segmentation, NFC normalization,
+  using libmux's existing `co_*` functions and DFA tables.
+- **Schannel** for TLS — native Windows crypto, no OpenSSL dependency.
+- **Telnet** protocol — NAWS, CHARSET, GMCP/MSSP negotiation.
+- **Win32 Console API** — direct console buffer manipulation, not a POSIX
+  compatibility layer. Input line, scrollback, status bar.
+- Reuses libmux (or equivalent code) for color ops, string handling, and
+  Unicode support rather than reimplementing.
+
 ### Phase 3: Lua in the ncurses Client
 
 Retrofit Lua into the ncurses client, informed by server-side experience.
@@ -94,6 +106,25 @@ The API contract and sandbox patterns are already proven by this point.
 
 Every subsequent client gets Lua from day one, using the proven API contract
 and embedding patterns.
+
+## Reference Client Roadmap
+
+The full vision is a series of reference clients:
+
+1. **ncurses** (TitanFugue) — DONE.
+2. **Win32 Console** — Phase 2 above. IOCP, Schannel, Unicode 16, Win32 API.
+3. **Win32 GUI** — Raw Win32 API (not MFC). Rich edit output, tabbed
+   connections, proper font rendering. The MUSHClient replacement without
+   the bloat.
+4. **HTML5/WebSocket** — xterm.js + WebSocket proxy. Covers Linux desktop,
+   Chromebook, and casual mobile in one app. Highest reach-to-effort ratio.
+5. **iOS/macOS (Swift)** — Spiritual successor to Atlantis (Rachel Blackman's
+   Objective-C client). SwiftUI native.
+6. **Android (Kotlin)** — Native mobile.
+
+The HTML5 client may make dedicated Linux desktop and casual mobile apps
+unnecessary for 80% of users. Mobile screens are awkward for text games;
+a decent mobile browser hitting the HTML5 client may be good enough.
 
 ## Rationale for Sequencing
 
