@@ -725,6 +725,19 @@ LIBMUX_API size_t co_render_ansi256(unsigned char *out,
                          const unsigned char *data, size_t len);
 
 /*
+ * co_render_truecolor — Render PUA-colored UTF-8 to TrueColor (24-bit) output.
+ *
+ * Indexed colors (0-255) use ESC[38;5;Nm / ESC[48;5;Nm (terminal knows
+ * the palette).  24-bit RGB colors use ESC[38;2;R;G;Bm / ESC[48;2;R;G;Bm
+ * at full fidelity — no palette approximation.
+ * Visible UTF-8 text passes through unchanged.
+ *
+ * Returns bytes written to out.
+ */
+LIBMUX_API size_t co_render_truecolor(unsigned char *out,
+                           const unsigned char *data, size_t len);
+
+/*
  * co_nearest_xterm256 — Find nearest xterm-256 palette entry for an RGB color.
  *
  * Uses CIE97 perceptual distance with K-d tree search through the

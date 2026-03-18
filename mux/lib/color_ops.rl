@@ -3719,3 +3719,147 @@ size_t co_render_ansi256(unsigned char *out,
     *wp = '\0';
     return (size_t)(wp - out);
 }
+
+/* ---- TrueColor (24-bit) SGR transition helper ---- */
+
+static size_t emit_truecolor(unsigned char *wp, const unsigned char *wp_end,
+                              const co_ColorState *old_cs,
+                              const co_ColorState *new_cs)
+{
+    if (co_cs_equal(old_cs, new_cs)) return 0;
+
+    unsigned char *start = wp;
+
+    int need_reset = 0;
+    if ((old_cs->intense && !new_cs->intense) ||
+        (old_cs->underline && !new_cs->underline) ||
+        (old_cs->blink && !new_cs->blink) ||
+        (old_cs->inverse && !new_cs->inverse))
+        need_reset = 1;
+    if (old_cs->fg != -1 && new_cs->fg == -1) need_reset = 1;
+    if (old_cs->bg != -1 && new_cs->bg == -1) need_reset = 1;
+
+    if (need_reset) {
+        if (wp + 4 <= wp_end) {
+            wp[0] = 0x1B; wp[1] = '['; wp[2] = '0'; wp[3] = 'm';
+            wp += 4;
+        }
+    }
+
+    char params[128];
+    int plen = 0;
+
+    if (new_cs->intense && (need_reset || !old_cs->intense))
+        plen += snprintf(params + plen, (size_t)(128 - plen), "%s1", plen ? ";" : "");
+    if (new_cs->underline && (need_reset || !old_cs->underline))
+        plen += snprintf(params + plen, (size_t)(128 - plen), "%s4", plen ? ";" : "");
+    if (new_cs->blink && (need_reset || !old_cs->blink))
+        plen += snprintf(params + plen, (size_t)(128 - plen), "%s5", plen ? ";" : "");
+    if (new_cs->inverse && (need_reset || !old_cs->inverse))
+        plen += snprintf(params + plen, (size_t)(128 - plen), "%s7", plen ? ";" : "");
+
+    /* FG: indexed → 38;5;N, RGB → 38;2;R;G;B */
+    {
+        int fg_changed = need_reset
+            || old_cs->fg != new_cs->fg
+            || old_cs->fg_r != new_cs->fg_r
+            || old_cs->fg_g != new_cs->fg_g
+            || old_cs->fg_b != new_cs->fg_b;
+
+        if (fg_changed && new_cs->fg != -1) {
+            if (new_cs->fg == -2) {
+                plen += snprintf(params + plen, (size_t)(128 - plen),
+                    "%s38;2;%d;%d;%d", plen ? ";" : "",
+                    new_cs->fg_r, new_cs->fg_g, new_cs->fg_b);
+            } else {
+                plen += snprintf(params + plen, (size_t)(128 - plen),
+                    "%s38;5;%d", plen ? ";" : "", new_cs->fg);
+            }
+        }
+    }
+
+    /* BG: indexed → 48;5;N, RGB → 48;2;R;G;B */
+    {
+        int bg_changed = need_reset
+            || old_cs->bg != new_cs->bg
+            || old_cs->bg_r != new_cs->bg_r
+            || old_cs->bg_g != new_cs->bg_g
+            || old_cs->bg_b != new_cs->bg_b;
+
+        if (bg_changed && new_cs->bg != -1) {
+            if (new_cs->bg == -2) {
+                plen += snprintf(params + plen, (size_t)(128 - plen),
+                    "%s48;2;%d;%d;%d", plen ? ";" : "",
+                    new_cs->bg_r, new_cs->bg_g, new_cs->bg_b);
+            } else {
+                plen += snprintf(params + plen, (size_t)(128 - plen),
+                    "%s48;5;%d", plen ? ";" : "", new_cs->bg);
+            }
+        }
+    }
+
+    if (plen > 0 && wp + 2 + plen + 1 <= wp_end) {
+        *wp++ = 0x1B;
+        *wp++ = '[';
+        memcpy(wp, params, (size_t)plen);
+        wp += plen;
+        *wp++ = 'm';
+    }
+
+    return (size_t)(wp - start);
+}
+
+/* ---- co_render_truecolor ---- */
+
+size_t co_render_truecolor(unsigned char *out,
+                           const unsigned char *data, size_t len)
+{
+    unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+    const unsigned char *p = data;
+    const unsigned char *pe = data + len;
+
+    co_ColorState cs = CO_CS_NORMAL;
+    co_ColorState emitted = CO_CS_NORMAL;
+
+    while (p < pe && wp < wp_end) {
+        if (p[0] == 0xEF && (p + 2) < pe
+            && p[1] >= 0x94 && p[1] <= 0x9F) {
+            parse_bmp_color(p, &cs);
+            p += 3;
+            continue;
+        }
+        if (p[0] == 0xF3 && (p + 3) < pe
+            && p[1] >= 0xB0 && p[1] <= 0xB3) {
+            parse_smp_color(p, &cs);
+            p += 4;
+            continue;
+        }
+
+        wp += emit_truecolor(wp, wp_end, &emitted, &cs);
+        emitted = cs;
+
+        size_t cplen;
+        if (*p < 0x80)      cplen = 1;
+        else if (*p < 0xE0) cplen = 2;
+        else if (*p < 0xF0) cplen = 3;
+        else                cplen = 4;
+
+        if (p + cplen > pe) break;
+        if (wp + cplen > wp_end) break;
+        for (size_t i = 0; i < cplen; i++)
+            *wp++ = p[i];
+        p += cplen;
+    }
+
+    co_ColorState normal = CO_CS_NORMAL;
+    if (!co_cs_equal(&emitted, &normal)) {
+        if (wp + 4 <= wp_end) {
+            wp[0] = 0x1B; wp[1] = '['; wp[2] = '0'; wp[3] = 'm';
+            wp += 4;
+        }
+    }
+
+    *wp = '\0';
+    return (size_t)(wp - out);
+}
