@@ -217,7 +217,23 @@ Lua is embedded in multiple invocation paths.
 **Needed design work**: Define one authority model and apply it uniformly to
 direct calls, queued calls, triggers, and future event hooks.
 
-### 17. Lua cache/versioning story is incomplete
+### 17. DBT needs floating-point (RV64D) support for Lua JIT
+
+**Status**: Future work.
+**Affects**: Lua JIT coverage — `OP_DIV`, `OP_POW`, `math.*` calls, mixed
+int/float arithmetic all require FP.
+**Background**: The DBT currently implements RV64IM (integer + multiply).
+Softcode is all strings so there was no justification for FP.  Lua 5.4 has
+a proper integer/float type distinction, and the hot numeric paths the JIT
+targets (combat math, `math.sqrt`, division, exponentiation) use floats.
+RV64D gives `FADD.D`/`FSUB.D`/`FMUL.D`/`FDIV.D`/`FSQRT.D` and
+`FCVT.D.L`/`FCVT.L.D` (int↔float conversion).  The DBT translator needs
+x86-64 SSE2 emission (`ADDSD`/`MULSD`/`CVTSI2SD`/`CVTTSD2SI`/`UCOMISD`)
+for the `f0-f31` register file.
+**Scope**: Bounded — ~15 new RV64 opcodes, register cache extension for
+XMM registers, and HIR `TY_FLOAT` type.  No architectural changes.
+
+### 18. Lua cache/versioning story is incomplete
 
 **Status**: Design gap.
 **Affects**: `lua_cache` and future `code_cache` integration.
