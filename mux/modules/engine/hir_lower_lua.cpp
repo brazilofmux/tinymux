@@ -112,6 +112,7 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
         case OP_LUA_LOADI:
         case OP_LUA_LOADF:
         case OP_LUA_LOADK:
+        case OP_LUA_LOADKX:
         case OP_LUA_LOADFALSE:
         case OP_LUA_LFALSESKIP:
         case OP_LUA_LOADTRUE:
@@ -147,6 +148,8 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
         case OP_LUA_BANDK:
         case OP_LUA_BORK:
         case OP_LUA_BXORK:
+        case OP_LUA_POW:
+        case OP_LUA_POWK:
             break;
 
         // Metamethod companions — skipped as no-ops.
@@ -157,8 +160,12 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
 
         // Table operations — handled via ECALL back to Lua VM.
         case OP_LUA_NEWTABLE:
+        case OP_LUA_GETTABLE:
         case OP_LUA_GETTABI:
+        case OP_LUA_GETFIELD:
+        case OP_LUA_SETTABLE:
         case OP_LUA_SETTABI:
+        case OP_LUA_SETFIELD:
         case OP_LUA_SETLIST:
             break;
 
@@ -463,6 +470,18 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             break;
         }
 
+        case OP_LUA_LOADKX: {
+            // Extended constant: index is in the following EXTRAARG instruction.
+            if (pc + 1 >= n) return -1;
+            int kidx = proto->code[pc + 1].Ax();
+            if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
+                return -1;
+            lua_reg[A] = emit_lua_constant(h, rc, proto->constants[kidx]);
+            if (lua_reg[A] < 0) return -1;
+            pc++;  // skip EXTRAARG
+            break;
+        }
+
         case OP_LUA_LOADFALSE:
         case OP_LUA_LFALSESKIP:
             lua_reg[A] = h.emit_iconst(0);
@@ -523,6 +542,25 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             lua_reg[A] = h.emit(HIR_FDIV, TY_FLOAT, rb, rc_val);
             if (lua_reg[A] < 0) return -1;
             h.native_ops++;
+            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBIN)
+                pc++;
+            break;
+        }
+
+        // Lua `^` (OP_POW) always produces a float.  Uses ECALL to pow().
+        case OP_LUA_POW: {
+            int rb = lua_reg[insn.B()];
+            int rc_val = lua_reg[insn.C()];
+            if (rb < 0 || rc_val < 0) return -1;
+            rb = promote_to_float(h, rb);
+            rc_val = promote_to_float(h, rc_val);
+            if (rb < 0 || rc_val < 0) return -1;
+            // Emit as a CALL to __lua_pow (ECALL-based).
+            std::string name("__LUA_POW");
+            int args[] = { rb, rc_val };
+            lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
+            if (lua_reg[A] < 0) return -1;
+            h.ecalls++;
             if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBIN)
                 pc++;
             break;
@@ -823,6 +861,113 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             break;
         }
 
+        // GETTABLE: A = dest, B = table register, C = key register.
+        case OP_LUA_GETTABLE: {
+            int tbl = lua_reg[insn.B()];
+            int key = lua_reg[insn.C()];
+            if (tbl < 0 || key < 0) return -1;
+            // Convert key to string if needed.
+            if (h.ty[key] == TY_INT) {
+                key = h.emit(HIR_ITOA, TY_STRING, key);
+                if (key < 0) return -1;
+            } else if (h.ty[key] == TY_FLOAT) {
+                key = h.emit(HIR_FTOA, TY_STRING, key);
+                if (key < 0) return -1;
+            }
+            std::string name("__lua_geti");
+            int args[] = { tbl, key };
+            lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
+            if (lua_reg[A] < 0) return -1;
+            h.ecalls++;
+            break;
+        }
+
+        // GETFIELD: A = dest, B = table register, C = key constant index.
+        // (General case — not the mux.* bridge pattern, which is handled
+        // separately via GETTABUP+GETFIELD.)
+        case OP_LUA_GETFIELD: {
+            int table_reg = lua_reg[insn.B()];
+            if (table_reg < 0) return -1;
+            int kidx = insn.C();
+            if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
+                return -1;
+            const lua_bc_constant &k = proto->constants[kidx];
+            if (k.type != LUA_BC_TSHRSTR && k.type != LUA_BC_TLNGSTR)
+                return -1;
+
+            // Check for mux.* bridge pattern (already handled above).
+            if (table_reg >= 0 && h.kind[table_reg] == HIR_SCONST
+                && h.sval[table_reg] == "mux") {
+                std::string name = "mux." + k.sval;
+                uint64_t addr = rc.pool_str(name.c_str(), name.size());
+                lua_reg[A] = h.emit_sconst(addr, name);
+                if (lua_reg[A] < 0) return -1;
+            } else {
+                // General table field access via ECALL.
+                uint64_t key_addr = rc.pool_str(k.sval.c_str(), k.sval.size());
+                int key_val = h.emit_sconst(key_addr, k.sval);
+                if (key_val < 0) return -1;
+                std::string name("__lua_getfield");
+                int args[] = { table_reg, key_val };
+                lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
+                if (lua_reg[A] < 0) return -1;
+                h.ecalls++;
+            }
+            break;
+        }
+
+        // SETTABLE: A = table register, B = key register, C = value register.
+        case OP_LUA_SETTABLE: {
+            int tbl = lua_reg[A];
+            int key = lua_reg[insn.B()];
+            int val = lua_reg[insn.C()];
+            if (tbl < 0 || key < 0 || val < 0) return -1;
+            if (h.ty[key] == TY_INT) {
+                key = h.emit(HIR_ITOA, TY_STRING, key);
+                if (key < 0) return -1;
+            }
+            if (h.ty[val] == TY_INT) {
+                val = h.emit(HIR_ITOA, TY_STRING, val);
+                if (val < 0) return -1;
+            } else if (h.ty[val] == TY_FLOAT) {
+                val = h.emit(HIR_FTOA, TY_STRING, val);
+                if (val < 0) return -1;
+            }
+            std::string name("__lua_seti");
+            int args[] = { tbl, key, val };
+            h.emit_call(TY_STRING, 0, args, 3, &name);
+            h.ecalls++;
+            break;
+        }
+
+        // SETFIELD: A = table register, B = key constant index, C = value register.
+        case OP_LUA_SETFIELD: {
+            int tbl = lua_reg[A];
+            int val = lua_reg[insn.C()];
+            if (tbl < 0 || val < 0) return -1;
+            int kidx = insn.B();
+            if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
+                return -1;
+            const lua_bc_constant &k = proto->constants[kidx];
+            if (k.type != LUA_BC_TSHRSTR && k.type != LUA_BC_TLNGSTR)
+                return -1;
+            if (h.ty[val] == TY_INT) {
+                val = h.emit(HIR_ITOA, TY_STRING, val);
+                if (val < 0) return -1;
+            } else if (h.ty[val] == TY_FLOAT) {
+                val = h.emit(HIR_FTOA, TY_STRING, val);
+                if (val < 0) return -1;
+            }
+            uint64_t key_addr = rc.pool_str(k.sval.c_str(), k.sval.size());
+            int key_val = h.emit_sconst(key_addr, k.sval);
+            if (key_val < 0) return -1;
+            std::string name("__lua_setfield");
+            int args[] = { tbl, key_val, val };
+            h.emit_call(TY_STRING, 0, args, 3, &name);
+            h.ecalls++;
+            break;
+        }
+
         // ---- Immediate arithmetic ----
 
         case OP_LUA_ADDI: {
@@ -896,6 +1041,28 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             lua_reg[A] = h.emit(HIR_FDIV, TY_FLOAT, rb, kval);
             if (lua_reg[A] < 0) return -1;
             h.native_ops++;
+            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBINK)
+                pc++;
+            break;
+        }
+
+        // POWK: exponentiation with constant — always float, ECALL.
+        case OP_LUA_POWK: {
+            int rb = lua_reg[insn.B()];
+            if (rb < 0) return -1;
+            int kidx = insn.C();
+            if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
+                return -1;
+            int kval = emit_lua_constant(h, rc, proto->constants[kidx]);
+            if (kval < 0) return -1;
+            rb = promote_to_float(h, rb);
+            kval = promote_to_float(h, kval);
+            if (rb < 0 || kval < 0) return -1;
+            std::string name("__LUA_POW");
+            int args[] = { rb, kval };
+            lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
+            if (lua_reg[A] < 0) return -1;
+            h.ecalls++;
             if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBINK)
                 pc++;
             break;
@@ -1220,27 +1387,6 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             uint64_t addr = rc.pool_str("mux", 3);
             lua_reg[A] = h.emit_sconst(addr, "mux");
             if (lua_reg[A] < 0) return -1;
-            break;
-        }
-
-        case OP_LUA_GETFIELD: {
-            int table_reg = lua_reg[insn.B()];
-            if (table_reg < 0) return -1;
-            int kidx = insn.C();
-            if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
-                return -1;
-            const lua_bc_constant &k = proto->constants[kidx];
-            if (k.type != LUA_BC_TSHRSTR && k.type != LUA_BC_TLNGSTR)
-                return -1;
-            if (table_reg >= 0 && h.kind[table_reg] == HIR_SCONST
-                && h.sval[table_reg] == "mux") {
-                std::string name = "mux." + k.sval;
-                uint64_t addr = rc.pool_str(name.c_str(), name.size());
-                lua_reg[A] = h.emit_sconst(addr, name);
-                if (lua_reg[A] < 0) return -1;
-            } else {
-                return -1;
-            }
             break;
         }
 

@@ -29,6 +29,7 @@ extern "C" {
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include <cmath>
 #include <cerrno>
 #include <ctime>
 #include <algorithm>
@@ -1367,6 +1368,114 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 char *out = reinterpret_cast<char *>(ec->memory + out_addr);
                 out[0] = '\0';
                 ctx->x[10] = 0;
+                return -1;
+            }
+
+            if (strcmp(fn, "__LUA_GETFIELD") == 0) {
+                // fargs[0]=table_stk_idx, fargs[1]=field_name.
+                int tbl_idx = 0;
+                const char *field = "";
+                if (nfargs >= 1) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr, 8);
+                    tbl_idx = atoi(reinterpret_cast<const char *>(ec->memory + p));
+                }
+                if (nfargs >= 2) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr + 8, 8);
+                    field = reinterpret_cast<const char *>(ec->memory + p);
+                }
+                lua_getfield(L, tbl_idx, field);
+                char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+                if (lua_isinteger(L, -1)) {
+                    int n = snprintf(out, out_size, "%lld",
+                        static_cast<long long>(lua_tointeger(L, -1)));
+                    ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
+                } else if (lua_isnumber(L, -1)) {
+                    UTF8 buf[LBUF_SIZE]; UTF8 *bufc = buf;
+                    fval(buf, &bufc, lua_tonumber(L, -1));
+                    *bufc = '\0';
+                    size_t len = bufc - buf;
+                    if (len >= out_size) len = out_size - 1;
+                    memcpy(out, buf, len);
+                    out[len] = '\0';
+                    ctx->x[10] = static_cast<uint64_t>(len);
+                } else if (lua_isstring(L, -1)) {
+                    size_t slen;
+                    const char *s = lua_tolstring(L, -1, &slen);
+                    if (slen >= out_size) slen = out_size - 1;
+                    memcpy(out, s, slen);
+                    out[slen] = '\0';
+                    ctx->x[10] = static_cast<uint64_t>(slen);
+                } else {
+                    out[0] = '\0';
+                    ctx->x[10] = 0;
+                }
+                lua_pop(L, 1);
+                return -1;
+            }
+
+            if (strcmp(fn, "__LUA_SETFIELD") == 0) {
+                // fargs[0]=table_stk_idx, fargs[1]=field_name, fargs[2]=value.
+                int tbl_idx = 0;
+                const char *field = "";
+                if (nfargs >= 1) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr, 8);
+                    tbl_idx = atoi(reinterpret_cast<const char *>(ec->memory + p));
+                }
+                if (nfargs >= 2) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr + 8, 8);
+                    field = reinterpret_cast<const char *>(ec->memory + p);
+                }
+                if (nfargs >= 3) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr + 16, 8);
+                    const char *val = reinterpret_cast<const char *>(ec->memory + p);
+                    char *end;
+                    long long iv = strtoll(val, &end, 10);
+                    if (*end == '\0' && end != val) {
+                        lua_pushinteger(L, static_cast<lua_Integer>(iv));
+                    } else {
+                        double dv = strtod(val, &end);
+                        if (*end == '\0' && end != val) {
+                            lua_pushnumber(L, dv);
+                        } else {
+                            lua_pushstring(L, val);
+                        }
+                    }
+                }
+                lua_setfield(L, tbl_idx, field);
+                char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+                out[0] = '\0';
+                ctx->x[10] = 0;
+                return -1;
+            }
+
+            if (strcmp(fn, "__LUA_POW") == 0) {
+                // fargs[0]=base (as string), fargs[1]=exponent (as string).
+                double base_v = 0, exp_v = 0;
+                if (nfargs >= 1) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr, 8);
+                    base_v = atof(reinterpret_cast<const char *>(ec->memory + p));
+                }
+                if (nfargs >= 2) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr + 8, 8);
+                    exp_v = atof(reinterpret_cast<const char *>(ec->memory + p));
+                }
+                double result = pow(base_v, exp_v);
+                char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+                UTF8 buf[LBUF_SIZE]; UTF8 *bufc = buf;
+                fval(buf, &bufc, result);
+                *bufc = '\0';
+                size_t len = bufc - buf;
+                if (len >= out_size) len = out_size - 1;
+                memcpy(out, buf, len);
+                out[len] = '\0';
+                ctx->x[10] = static_cast<uint64_t>(len);
                 return -1;
             }
         }
