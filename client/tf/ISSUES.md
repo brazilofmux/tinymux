@@ -37,9 +37,12 @@ code review of commits `6ceb3ecf..HEAD` (2026-03-17).
 
 ## Opportunities for Improvement
 
-- **TrueColor (24-bit) support**
-  The current renderer converts RGB to xterm-256. Modern terminals support
-  24-bit color, and the engine should support `ESC[38;2;R;G;Bm` sequences.
+- **TrueColor fallback uses Euclidean-in-RGB**
+  When TrueColor is not available, `ESC[38;2;R;G;Bm` falls back to the
+  nearest xterm-256 color via Euclidean distance in RGB space. This could
+  be improved by using CIE97 perceptual distance with the K-d tree from
+  libmux's `FindNearestPaletteEntry()` (would need a C linkage wrapper
+  in color_ops.h).
 
 - **Shell process read loop doesn't distinguish EAGAIN from errors**
   (main.cpp:448-460) When `read()` returns -1, the loop breaks without

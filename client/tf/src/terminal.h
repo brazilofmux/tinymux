@@ -103,6 +103,10 @@ private:
     int get_color_pair(int fg, int bg);
     int normalize_color(int color) const;
     static int rgb_to_xterm(int r, int g, int b);
+    int alloc_rgb_color(int r, int g, int b);
+    bool truecolor_ = false;
+    int next_color_ = 256;
+    std::unordered_map<uint32_t, int> rgb_colors_;
     size_t normalize_cursor_pos(size_t pos) const;
     static std::string status_field_name(const std::string& field);
     static int status_field_width(const std::string& field, bool* explicit_width = nullptr);

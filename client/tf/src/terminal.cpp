@@ -42,6 +42,24 @@ bool Terminal::init() {
 
     color_pairs_.clear();
     next_pair_ = 1;
+    rgb_colors_.clear();
+    next_color_ = 256;
+
+    // Detect TrueColor support: if the terminal advertises enough
+    // colors and can_change_color(), we can define custom RGB colors.
+    //
+    truecolor_ = (COLORS > 256 && can_change_color());
+    if (!truecolor_) {
+        // Also check COLORTERM environment variable — many modern
+        // terminals set this to "truecolor" or "24bit".
+        //
+        const char* ct = getenv("COLORTERM");
+        if (ct && (strcmp(ct, "truecolor") == 0 || strcmp(ct, "24bit") == 0)) {
+            if (can_change_color()) {
+                truecolor_ = true;
+            }
+        }
+    }
 
     getmaxyx(stdscr, rows_, cols_);
     create_windows();
@@ -148,6 +166,42 @@ int Terminal::rgb_to_xterm(int r, int g, int b) {
     int gray_index = 232 + gray_slot;
 
     return (gray_dist < cube_dist) ? gray_index : cube_index;
+}
+
+// Allocate an ncurses color slot with exact RGB values.  Returns a
+// color index suitable for get_color_pair().  Falls back to the
+// nearest xterm-256 index if TrueColor is not available.
+//
+int Terminal::alloc_rgb_color(int r, int g, int b) {
+    if (!truecolor_) {
+        return rgb_to_xterm(r, g, b);
+    }
+
+    // Pack RGB into a 24-bit key for caching.
+    //
+    uint32_t key = (static_cast<uint32_t>(r & 0xFF) << 16) |
+                   (static_cast<uint32_t>(g & 0xFF) << 8) |
+                   static_cast<uint32_t>(b & 0xFF);
+    auto it = rgb_colors_.find(key);
+    if (it != rgb_colors_.end()) return it->second;
+
+    if (next_color_ >= COLORS) {
+        return rgb_to_xterm(r, g, b);
+    }
+
+    // ncurses uses 0-1000 range for RGB components.
+    //
+    int nr = r * 1000 / 255;
+    int ng = g * 1000 / 255;
+    int nb = b * 1000 / 255;
+
+    if (init_extended_color(next_color_, nr, ng, nb) == ERR) {
+        return rgb_to_xterm(r, g, b);
+    }
+
+    int idx = next_color_++;
+    rgb_colors_[key] = idx;
+    return idx;
 }
 
 // ---- UTF-8 / grapheme cluster helpers for input editing ----
@@ -1258,7 +1312,7 @@ void Terminal::render_ansi_line(WINDOW* win, const std::string& line, int row) {
                                 if (params[p + 1] == 5 && p + 2 < params.size()) {
                                     fg = params[p + 2]; p += 2;
                                 } else if (params[p + 1] == 2 && p + 4 < params.size()) {
-                                    fg = rgb_to_xterm(params[p + 2], params[p + 3], params[p + 4]);
+                                    fg = alloc_rgb_color(params[p + 2], params[p + 3], params[p + 4]);
                                     p += 4;
                                 }
                             }
@@ -1266,7 +1320,7 @@ void Terminal::render_ansi_line(WINDOW* win, const std::string& line, int row) {
                                 if (params[p + 1] == 5 && p + 2 < params.size()) {
                                     bg = params[p + 2]; p += 2;
                                 } else if (params[p + 1] == 2 && p + 4 < params.size()) {
-                                    bg = rgb_to_xterm(params[p + 2], params[p + 3], params[p + 4]);
+                                    bg = alloc_rgb_color(params[p + 2], params[p + 3], params[p + 4]);
                                     p += 4;
                                 }
                             }
