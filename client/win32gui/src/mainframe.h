@@ -10,6 +10,7 @@
 #include "outputbuffer.h"
 #include "connection.h"
 #include "world.h"
+#include "settings.h"
 #include <memory>
 #include <vector>
 #include <string>
@@ -38,6 +39,8 @@ public:
     // IOCP for networking
     HANDLE iocp = INVALID_HANDLE_VALUE;
     WorldDB worlddb;
+    Settings settings;
+    std::string settings_dir;
 
     // Tab management
     int AddWorld(const std::string& name);

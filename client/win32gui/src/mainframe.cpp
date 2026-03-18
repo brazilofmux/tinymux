@@ -2,6 +2,9 @@
 #include "mainframe.h"
 #include "../res/resource.h"
 #include <winsock2.h>
+#include <commdlg.h>
+
+#pragma comment(lib, "comdlg32.lib")
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -27,10 +30,16 @@ bool CMainFrame::Register(HINSTANCE hInst) {
 bool CMainFrame::Create(HINSTANCE hInst, int nCmdShow) {
     hInst_ = hInst;
 
-    // Create the default font
-    font_ = CreateFontW(-14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+    // Load settings
+    settings_dir = Settings::GetSettingsDir();
+    settings.Load(settings_dir);
+
+    // Create font from settings
+    wchar_t wfont[64];
+    MultiByteToWideChar(CP_UTF8, 0, settings.font_name.c_str(), -1, wfont, 64);
+    font_ = CreateFontW(-settings.font_size, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
         DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-        CLEARTYPE_QUALITY, FIXED_PITCH | FF_MODERN, L"Consolas");
+        CLEARTYPE_QUALITY, FIXED_PITCH | FF_MODERN, wfont);
 
     int xSize = GetSystemMetrics(SM_CXSCREEN);
     int ySize = GetSystemMetrics(SM_CYSCREEN);
@@ -331,6 +340,9 @@ LRESULT CMainFrame::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         return 0;
 
     case WM_DESTROY:
+        // Save settings before exit.
+        settings.Save(settings_dir);
+
         // Shut down the IOCP thread.
         iocp_shutdown = true;
         if (iocp != INVALID_HANDLE_VALUE) {
@@ -480,6 +492,20 @@ void CMainFrame::OnCommand(int id) {
                                 port8, (int)sizeof(port8), nullptr, nullptr);
             std::string name = std::string(host8) + ":" + port8;
             ConnectWorld(name, host8, port8, g_conn_ssl);
+
+            // Save to worlds list if not already present
+            bool found = false;
+            for (auto& w : settings.worlds) {
+                if (w.host == host8 && w.port == port8) { found = true; break; }
+            }
+            if (!found) {
+                WorldDef wd;
+                wd.name = name;
+                wd.host = host8;
+                wd.port = port8;
+                wd.ssl = g_conn_ssl;
+                settings.worlds.push_back(wd);
+            }
         }
         break;
     }
@@ -566,6 +592,31 @@ void CMainFrame::OnCommand(int id) {
     case IDM_VIEW_SCROLL_BOTTOM:
         output.ScrollToBottom();
         break;
+
+    case IDM_VIEW_FONT: {
+        CHOOSEFONTW cf = {};
+        LOGFONTW lf = {};
+        if (font_) GetObjectW(font_, sizeof(lf), &lf);
+        cf.lStructSize = sizeof(cf);
+        cf.hwndOwner = m_hwnd;
+        cf.lpLogFont = &lf;
+        cf.Flags = CF_SCREENFONTS | CF_FIXEDPITCHONLY | CF_INITTOLOGFONTSTRUCT;
+        if (ChooseFontW(&cf)) {
+            if (font_) DeleteObject(font_);
+            font_ = CreateFontIndirectW(&lf);
+            tabbar.SetFont(font_);
+            output.SetFont(font_);
+            input.SetFont(font_);
+            status.SetFont(font_);
+            // Save to settings
+            char name8[64];
+            WideCharToMultiByte(CP_UTF8, 0, lf.lfFaceName, -1, name8, 64, nullptr, nullptr);
+            settings.font_name = name8;
+            settings.font_size = -lf.lfHeight;
+            LayoutChildren();
+        }
+        break;
+    }
 
     case IDM_VIEW_CLEAR:
         if (active_tab >= 0 && active_tab < (int)tab_states.size()) {

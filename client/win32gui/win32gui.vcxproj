@@ -99,6 +99,8 @@
     <ClCompile Include="src\inputpane.cpp" />
     <ClCompile Include="src\tabbar.cpp" />
     <ClCompile Include="src\statusbar.cpp" />
+    <ClCompile Include="src\settings.cpp" />
+    <ClCompile Include="src\json_mini.cpp" />
     <ClCompile Include="..\console\src\connection.cpp" />
     <ClCompile Include="..\console\src\schannel_tls.cpp" />
     <ClCompile Include="..\console\src\world.cpp" />
@@ -114,6 +116,8 @@
     <ClInclude Include="src\inputpane.h" />
     <ClInclude Include="src\tabbar.h" />
     <ClInclude Include="src\statusbar.h" />
+    <ClInclude Include="src\settings.h" />
+    <ClInclude Include="src\json_mini.h" />
     <ClInclude Include="res\resource.h" />
   </ItemGroup>
   <ItemGroup>
