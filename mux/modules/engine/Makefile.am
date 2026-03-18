@@ -8,6 +8,7 @@
 # Only COM front-door functions are exported (mux_Register, etc.).
 
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdir)/sqlite \
+    -I$(top_srcdir)/lua54 \
     $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(TINYMUX_JIT) \
     $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(OPENSSL_CFLAGS)
 
@@ -20,7 +21,7 @@ ENGINE_CXX_SRC = ast.cpp ast_scan.cpp attrcache.cpp boolexp.cpp \
     plusemail.cpp powers.cpp quota.cpp rob.cpp set.cpp \
     dbt.cpp hir_lower.cpp hir_codegen.cpp jit_compiler.cpp dbt_interp.cpp dbt_elf64.cpp \
     hir_ssa.cpp hir_opt.cpp lua_bytecode.cpp hir_lower_lua.cpp jit_lua.cpp \
-    session.cpp speech.cpp timer.cpp \
+    lua_mod.cpp session.cpp speech.cpp timer.cpp \
     unparse.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp
 
 # Add reality levels if enabled
@@ -39,12 +40,13 @@ all-local: engine.so
 %.eo: %.cpp
 	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -fvisibility=hidden -c -o $@ $<
 
-engine.so: $(ENGINE_CXX_OBJS) $(top_builddir)/sqlite/libsqlite3.a $(top_builddir)/lib/libmux.so
+engine.so: $(ENGINE_CXX_OBJS) $(top_builddir)/sqlite/libsqlite3.a $(top_builddir)/lua54/liblua54.a $(top_builddir)/lib/libmux.so
 	$(CXX) $(CXXFLAGS) $(DYNAMICLIB_CXXFLAGS) -Wl,--no-undefined \
 	    -Wl,-soname,engine.so \
 	    -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(abs_top_builddir)/lib \
 	    -o $@ $(ENGINE_CXX_OBJS) \
 	    $(top_builddir)/sqlite/libsqlite3.a \
+	    $(top_builddir)/lua54/liblua54.a \
 	    -L$(top_builddir)/lib -lmux \
 	    $(LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
 

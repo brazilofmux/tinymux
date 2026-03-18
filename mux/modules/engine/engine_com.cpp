@@ -81,6 +81,10 @@ extern MUX_RESULT jit_compile_create_instance(MUX_IID iid, void **ppv);
 DEFINE_ENGINE_FACTORY(CJITCompileFactory)
 #endif
 
+// Lua module factory — implementation delegates to lua_mod.cpp.
+extern MUX_RESULT lua_mod_create_instance(MUX_IID iid, void **ppv);
+DEFINE_ENGINE_FACTORY(CLuaModFactory)
+
 // CServerEventsSource component which is not directly accessible.
 //
 class CServerEventsSource : public mux_IServerEventsControl
@@ -5126,6 +5130,53 @@ MUX_RESULT CJITCompileFactory::LockServer(bool bLock)
 }
 #endif // TINYMUX_JIT
 
+// ---------------------------------------------------------------------------
+// CLuaModFactory — Lua 5.4 scripting (embedded in engine.so).
+// ---------------------------------------------------------------------------
+
+CLuaModFactory::CLuaModFactory(void) : m_cRef(1) {}
+CLuaModFactory::~CLuaModFactory() {}
+
+MUX_RESULT CLuaModFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IUnknown *>(static_cast<mux_IClassFactory *>(this));
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CLuaModFactory::AddRef(void)  { m_cRef++; return m_cRef; }
+uint32_t CLuaModFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef) { delete this; return 0; }
+    return m_cRef;
+}
+
+MUX_RESULT CLuaModFactory::CreateInstance(mux_IUnknown *pUnknownOuter,
+    MUX_IID iid, void **ppv)
+{
+    if (nullptr != pUnknownOuter) return MUX_E_NOAGGREGATION;
+    return lua_mod_create_instance(iid, ppv);
+}
+
+MUX_RESULT CLuaModFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
 // ===========================================================================
 // COM Front-Door — engine.so exports only these 4 functions.
 // ===========================================================================
@@ -5151,6 +5202,7 @@ static MUX_CLASS_INFO engine_classes[] =
 #if defined(TINYMUX_JIT)
     { CID_JITCompile         },
 #endif
+    { CID_LuaMod             },
 };
 #define NUM_ENGINE_CLASSES (sizeof(engine_classes)/sizeof(engine_classes[0]))
 
@@ -5188,6 +5240,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetClassObject(MUX_CID cid_arg, MUX
 #if defined(TINYMUX_JIT)
     MAKE_FACTORY(CJITCompileFactory,        CID_JITCompile)
 #endif
+    MAKE_FACTORY(CLuaModFactory,            CID_LuaMod)
 
     return mr;
 }
