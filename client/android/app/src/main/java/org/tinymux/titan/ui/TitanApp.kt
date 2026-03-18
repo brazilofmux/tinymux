@@ -27,10 +27,12 @@ import kotlinx.coroutines.launch
 import org.tinymux.titan.net.AnsiParser
 import org.tinymux.titan.net.MudConnection
 
-data class WorldTab(
+import androidx.compose.runtime.snapshots.SnapshotStateList
+
+class WorldTab(
     val name: String,
     var connection: MudConnection? = null,
-    val lines: MutableList<AnnotatedString> = mutableListOf(),
+    val lines: SnapshotStateList<AnnotatedString> = mutableStateListOf(),
     val history: MutableList<String> = mutableListOf(),
     var hasActivity: Boolean = false,
     var disconnected: Boolean = false,
