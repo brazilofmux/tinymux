@@ -1033,6 +1033,7 @@ extern int anum_alc_top;
 #define MAIL_REPLYALL   29  /* Replies to all recipients of msg */
 #define MAIL_BCC        30  // Blind Carbon Copy. Don't show the recipient list to these.
 #define MAIL_NEXT       31  // Read next unread message.
+#define MAIL_UNSAFE     32  /* Removes the safe marker from a piece of mail. */
 #define MAIL_QUOTE      0x100   /* Quote back original in the reply? */
 
 #define MALIAS_DESC     1   /* Describes a mail alias */

@@ -10568,6 +10568,10 @@ MAIL-OTHER (continued)
         This command marks a message as being safe from mail expiration. It
         should be used sparingly and only for very important messages.
 
+  @mail/unsafe [<msg-list> | all>]
+        This command removes the safe marker from a message so it can expire
+        normally.
+
 & MAIL-READING
 MAIL-READING
 
@@ -16116,4 +16120,3 @@ ZWHO()
     A chill falls over the room.
 
   Related Topics: @emit, @oemit, NOSPOOF.
-

@@ -375,6 +375,7 @@ static NAMETAB mail_sw[] =
     {T("stats"),           2,  CA_PUBLIC,  MAIL_STATS},
     {T("tag"),             1,  CA_PUBLIC,  MAIL_TAG},
     {T("unclear"),         3,  CA_PUBLIC,  MAIL_UNCLEAR},
+    {T("unsafe"),          3,  CA_PUBLIC,  MAIL_UNSAFE},
     {T("untag"),           3,  CA_PUBLIC,  MAIL_UNTAG},
     {T("urgent"),          2,  CA_PUBLIC,  MAIL_URGENT},
     {static_cast<UTF8*>(nullptr),     0,          0,  0}

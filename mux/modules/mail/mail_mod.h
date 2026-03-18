@@ -84,6 +84,7 @@ const MUX_CID CID_MailMod = UINT64_C(0x00000002D7A3E1B5);
 #define MAIL_REPLYALL   29
 #define MAIL_BCC        30
 #define MAIL_NEXT       31
+#define MAIL_UNSAFE     32
 #define MAIL_QUOTE      0x100
 
 // @malias switch keys.

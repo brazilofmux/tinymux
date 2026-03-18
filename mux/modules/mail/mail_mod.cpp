@@ -4735,7 +4735,8 @@ void CMailMod::do_mail_flags(dbref player, const UTF8 *msglist,
 
                 case M_SAFE:
                     snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                             "MAIL: Msg #%d marked safe.", i);
+                             "MAIL: Msg #%d %s.", i,
+                             negate ? "marked unsafe" : "marked safe");
                     break;
 
                 default:
@@ -5302,6 +5303,10 @@ MUX_RESULT CMailMod::MailCommand(dbref executor, int key,
 
     case MAIL_SAFE:
         do_mail_flags(executor, pArg1, M_SAFE, false);
+        return MUX_S_OK;
+
+    case MAIL_UNSAFE:
+        do_mail_flags(executor, pArg1, M_SAFE, true);
         return MUX_S_OK;
 
     case MAIL_PURGE:

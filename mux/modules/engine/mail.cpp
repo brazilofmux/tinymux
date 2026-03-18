@@ -1288,7 +1288,8 @@ static void do_mail_flags(dbref player, UTF8 *msglist, mail_flag flag, bool nega
                     break;
 
                 case M_SAFE:
-                    raw_notify(player, tprintf(T("MAIL: Msg #%d marked safe."), i));
+                    raw_notify(player, tprintf(T("MAIL: Msg #%d %s."), i,
+                        negate ? "marked unsafe" : "marked safe"));
                     break;
                 }
             }
@@ -1311,6 +1312,11 @@ static void do_mail_tag(dbref player, UTF8 *msglist)
 static void do_mail_safe(dbref player, UTF8 *msglist)
 {
     do_mail_flags(player, msglist, M_SAFE, false);
+}
+
+static void do_mail_unsafe(dbref player, UTF8 *msglist)
+{
+    do_mail_flags(player, msglist, M_SAFE, true);
 }
 
 void do_mail_clear(dbref player, UTF8 *msglist)
@@ -5491,6 +5497,9 @@ void do_mail
         break;
     case MAIL_SAFE:
         do_mail_safe(executor, arg1);
+        break;
+    case MAIL_UNSAFE:
+        do_mail_unsafe(executor, arg1);
         break;
     case MAIL_BCC:
         do_mail_cc(executor, arg1, true);
