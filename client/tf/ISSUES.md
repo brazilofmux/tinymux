@@ -30,10 +30,10 @@ code review of commits `6ceb3ecf..HEAD` (2026-03-17).
 
 ## Telnet Protocol Issues
 
-- **Limited Telnet Option Support**
-  The client now handles `TTYPE`, basic `NAWS`, `BINARY`, and UTF-8
-  `CHARSET` negotiation, but advanced features like MCCP compression and
-  richer charset handling are still missing compared to classic TinyFugue.
+- **Richer charset handling**
+  The client negotiates UTF-8 via `CHARSET` (telnet option 42) but
+  does not handle other charsets (e.g., ISO-8859-1 → UTF-8 conversion).
+  The `./utf` pipeline machinery could potentially be leveraged for this.
 
 ## Opportunities for Improvement
 

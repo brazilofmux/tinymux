@@ -9,6 +9,7 @@ find_program(RAGEL ragel REQUIRED)
 find_library(NCURSESW_LIB ncursesw REQUIRED)
 find_library(PCRE2_LIB pcre2-8 REQUIRED)
 find_package(OpenSSL REQUIRED)
+find_package(ZLIB REQUIRED)
 
 add_library(mux SHARED IMPORTED)
 set_target_properties(mux PROPERTIES
@@ -35,7 +36,7 @@ add_executable(tf
 target_include_directories(tf PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${TINYMUX_DIR}/mux/include)
-target_link_libraries(tf PRIVATE mux ${NCURSESW_LIB} ${PCRE2_LIB} OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(tf PRIVATE mux ${NCURSESW_LIB} ${PCRE2_LIB} OpenSSL::SSL OpenSSL::Crypto ZLIB::ZLIB)
 set_target_properties(tf PROPERTIES
     BUILD_RPATH "${TINYMUX_DIR}/mux/lib"
     INSTALL_RPATH "${TINYMUX_DIR}/mux/lib")

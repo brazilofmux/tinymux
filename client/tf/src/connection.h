@@ -7,6 +7,7 @@
 #include <vector>
 #include <chrono>
 #include <openssl/ssl.h>
+#include <zlib.h>
 
 class Connection {
 public:
@@ -109,6 +110,17 @@ private:
     uint16_t naws_width_ = 80;
     uint16_t naws_height_ = 24;
     bool naws_agreed_ = false;  // true if MUD sent DO NAWS
+
+    // MCCP v2 (telnet option 86) — zlib decompression
+    static constexpr uint8_t TELOPT_MCCP2 = 86;
+    bool mccp_active_ = false;
+    z_stream mccp_zstream_{};
+    bool mccp_zstream_init_ = false;
+    void mccp_start();
+    void mccp_end();
+    // Decompress raw bytes into output buffer. Returns false on error.
+    bool mccp_inflate(const unsigned char* in, size_t inlen,
+                      std::vector<unsigned char>& out);
 };
 
 #endif // CONNECTION_H

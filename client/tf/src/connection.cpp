@@ -53,6 +53,7 @@ static constexpr uint8_t TELOPT_BINARY  = 0;
 static constexpr uint8_t TELOPT_TTYPE   = 24;
 static constexpr uint8_t TELOPT_NAWS    = 31;
 static constexpr uint8_t TELOPT_CHARSET = 42;
+static constexpr uint8_t TELOPT_MCCP2   = 86;
 
 // Subnegotiation
 static constexpr uint8_t TELQUAL_IS   = 0;
@@ -223,6 +224,7 @@ bool Connection::write_all(const void* data, size_t len) {
 }
 
 void Connection::disconnect() {
+    mccp_end();
     if (ssl_) { SSL_shutdown(ssl_); SSL_free(ssl_); ssl_ = nullptr; }
     if (ssl_ctx_) { SSL_CTX_free(ssl_ctx_); ssl_ctx_ = nullptr; }
     if (fd_ >= 0) { close(fd_); fd_ = -1; }
@@ -275,11 +277,45 @@ std::vector<std::string> Connection::read_lines() {
         }
     }
 
-    // Process through telnet state machine, accumulate lines
+    // Decompress if MCCP is active, then process through telnet
+    // state machine.  Note: MCCP can start mid-stream (process_data
+    // returns early when it sees SB MCCP2 SE), so we loop and check
+    // mccp_active_ after each process_data call.
+    //
+    const unsigned char* data = buf;
+    size_t datalen = (size_t)n;
+    std::vector<unsigned char> inflated;
+
+    if (mccp_active_) {
+        if (!mccp_inflate(data, datalen, inflated)) {
+            disconnect();
+            return lines;
+        }
+        data = inflated.data();
+        datalen = inflated.size();
+    }
+
     size_t pos = 0;
     size_t buf_before = line_buf_.size();
-    while (pos < (size_t)n) {
-        pos += process_data(buf + pos, n - pos);
+    while (pos < datalen) {
+        size_t consumed = process_data(data + pos, datalen - pos);
+        pos += consumed;
+
+        // If MCCP just started (process_data returned early after
+        // SB MCCP2 SE), the remaining bytes are compressed.
+        //
+        if (mccp_active_ && pos < datalen) {
+            std::vector<unsigned char> rest;
+            if (!mccp_inflate(data + pos, datalen - pos, rest)) {
+                disconnect();
+                return lines;
+            }
+            // Replace data/datalen with inflated output and restart.
+            inflated = std::move(rest);
+            data = inflated.data();
+            datalen = inflated.size();
+            pos = 0;
+        }
     }
 
     // If new data arrived in line_buf_, record timestamps
@@ -372,6 +408,8 @@ size_t Connection::process_data(const unsigned char* buf, size_t len) {
                 send_telnet(TEL_DO, b);
             } else if (b == TELOPT_SGA) {
                 send_telnet(TEL_DO, b);
+            } else if (b == TELOPT_MCCP2) {
+                send_telnet(TEL_DO, b);
             } else {
                 send_telnet(TEL_DONT, b);
             }
@@ -441,6 +479,13 @@ size_t Connection::process_data(const unsigned char* buf, size_t len) {
                         start = end + 1;
                     }
                     if (!accepted) send_subneg_charset(false);
+                } else if (sb_option_ == TELOPT_MCCP2 && sb_buf_.empty()) {
+                    // MCCP v2: everything after IAC SE is zlib-compressed.
+                    mccp_start();
+                    tel_state_ = TelState::DATA;
+                    // Return now — remaining bytes in buf are compressed
+                    // and must go through inflate before telnet processing.
+                    return consumed;
                 }
                 tel_state_ = TelState::DATA;
             } else if (b == TEL_IAC) {
@@ -515,6 +560,63 @@ void Connection::send_naws(uint16_t width, uint16_t height) {
     naws_width_ = width;
     naws_height_ = height;
     if (fd_ >= 0 && naws_agreed_) send_subneg_naws(width, height);
+}
+
+// ---- MCCP v2 (telnet option 86) ----
+
+void Connection::mccp_start() {
+    if (mccp_active_) return;
+    mccp_zstream_ = {};
+    mccp_zstream_.zalloc = Z_NULL;
+    mccp_zstream_.zfree = Z_NULL;
+    mccp_zstream_.opaque = Z_NULL;
+    mccp_zstream_.avail_in = 0;
+    mccp_zstream_.next_in = Z_NULL;
+    if (inflateInit(&mccp_zstream_) == Z_OK) {
+        mccp_active_ = true;
+        mccp_zstream_init_ = true;
+    }
+}
+
+void Connection::mccp_end() {
+    if (mccp_zstream_init_) {
+        inflateEnd(&mccp_zstream_);
+        mccp_zstream_init_ = false;
+    }
+    mccp_active_ = false;
+}
+
+bool Connection::mccp_inflate(const unsigned char* in, size_t inlen,
+                              std::vector<unsigned char>& out) {
+    mccp_zstream_.next_in = const_cast<unsigned char*>(in);
+    mccp_zstream_.avail_in = static_cast<uInt>(inlen);
+
+    unsigned char chunk[8192];
+    while (mccp_zstream_.avail_in > 0) {
+        mccp_zstream_.next_out = chunk;
+        mccp_zstream_.avail_out = sizeof(chunk);
+
+        int ret = inflate(&mccp_zstream_, Z_SYNC_FLUSH);
+        size_t have = sizeof(chunk) - mccp_zstream_.avail_out;
+        out.insert(out.end(), chunk, chunk + have);
+
+        if (ret == Z_STREAM_END) {
+            // Server ended compression. Any remaining bytes in
+            // avail_in are uncompressed data.
+            if (mccp_zstream_.avail_in > 0) {
+                out.insert(out.end(),
+                    mccp_zstream_.next_in,
+                    mccp_zstream_.next_in + mccp_zstream_.avail_in);
+            }
+            mccp_end();
+            return true;
+        }
+        if (ret != Z_OK && ret != Z_BUF_ERROR) {
+            mccp_end();
+            return false;
+        }
+    }
+    return true;
 }
 
 std::string Connection::check_prompt(std::chrono::milliseconds timeout) {
