@@ -1784,6 +1784,26 @@ int FindNearestPalette8Entry(RGB &rgb)
     return iNearest;
 }
 
+// C-callable wrappers for CIE97 + K-d tree nearest-color search.
+//
+extern "C" LIBMUX_API int co_nearest_xterm256(const unsigned char *rgb)
+{
+    RGB c;
+    c.r = rgb[0];
+    c.g = rgb[1];
+    c.b = rgb[2];
+    return FindNearestPaletteEntry(c, true);
+}
+
+extern "C" LIBMUX_API int co_nearest_xterm16(const unsigned char *rgb)
+{
+    RGB c;
+    c.r = rgb[0];
+    c.g = rgb[1];
+    c.b = rgb[2];
+    return FindNearestPaletteEntry(c, false);
+}
+
 #define CS_FOREGROUND UINT64_C(0x0000000001FFFFFF)
 #define CS_FOREGROUND_RED     UINT64_C(0x0000000000FF0000)
 #define CS_FOREGROUND_GREEN   UINT64_C(0x000000000000FF00)

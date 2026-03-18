@@ -172,9 +172,18 @@ int Terminal::rgb_to_xterm(int r, int g, int b) {
 // color index suitable for get_color_pair().  Falls back to the
 // nearest xterm-256 index if TrueColor is not available.
 //
+static int nearest_xterm256(int r, int g, int b) {
+    unsigned char rgb[3] = {
+        static_cast<unsigned char>(r),
+        static_cast<unsigned char>(g),
+        static_cast<unsigned char>(b)
+    };
+    return co_nearest_xterm256(rgb);
+}
+
 int Terminal::alloc_rgb_color(int r, int g, int b) {
     if (!truecolor_) {
-        return rgb_to_xterm(r, g, b);
+        return nearest_xterm256(r, g, b);
     }
 
     // Pack RGB into a 24-bit key for caching.
@@ -186,7 +195,7 @@ int Terminal::alloc_rgb_color(int r, int g, int b) {
     if (it != rgb_colors_.end()) return it->second;
 
     if (next_color_ >= COLORS) {
-        return rgb_to_xterm(r, g, b);
+        return nearest_xterm256(r, g, b);
     }
 
     // ncurses uses 0-1000 range for RGB components.
@@ -196,7 +205,7 @@ int Terminal::alloc_rgb_color(int r, int g, int b) {
     int nb = b * 1000 / 255;
 
     if (init_extended_color(next_color_, nr, ng, nb) == ERR) {
-        return rgb_to_xterm(r, g, b);
+        return nearest_xterm256(r, g, b);
     }
 
     int idx = next_color_++;

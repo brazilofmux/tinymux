@@ -671,6 +671,27 @@ LIBMUX_API size_t co_delete_cluster(unsigned char *out,
                          const unsigned char *data, size_t len,
                          size_t iStart, size_t nCount);
 
+/*
+ * co_nearest_xterm256 — Find nearest xterm-256 palette entry for an RGB color.
+ *
+ * Uses CIE97 perceptual distance with K-d tree search through the
+ * 256-entry xterm palette.  Much more accurate than Euclidean distance
+ * in RGB space.
+ *
+ * rgb must point to 3 bytes: [R, G, B], each 0-255.
+ * Returns the xterm-256 palette index (0-255).
+ */
+LIBMUX_API int co_nearest_xterm256(const unsigned char *rgb);
+
+/*
+ * co_nearest_xterm16 — Find nearest xterm-16 (ANSI) palette entry.
+ *
+ * Same algorithm as co_nearest_xterm256 but searches only the first
+ * 16 palette entries.
+ * Returns the palette index (0-15).
+ */
+LIBMUX_API int co_nearest_xterm16(const unsigned char *rgb);
+
 #ifdef __cplusplus
 }
 #endif
