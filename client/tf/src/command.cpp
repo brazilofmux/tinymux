@@ -137,6 +137,16 @@ bool CommandDispatcher::dispatch(App& app, const std::string& line) {
         it->second(app, args);
         return true;
     }
+
+    // Classic TF compatibility: /dokey_FOO → /dokey FOO
+    //
+    if (cmd_lower.substr(0, 7) == "/dokey_") {
+        std::string dokey_arg = cmd_lower.substr(7);
+        if (!args.empty()) dokey_arg += " " + args;
+        cmd_dokey(app, dokey_arg);
+        return true;
+    }
+
     return false;
 }
 
@@ -1020,53 +1030,61 @@ void cmd_unbind(App& app, const std::string& args) {
 }
 
 void cmd_dokey(App& app, const std::string& args) {
-    // /dokey <function> — execute a named key function
+    // /dokey <function> — execute a named key function.
+    // Maps classic TF dokey names to InputEvents or direct actions.
+    //
     std::string func = trim_copy(args);
-    std::transform(func.begin(), func.end(), func.begin(), ::toupper);
+    std::transform(func.begin(), func.end(), func.begin(), ::tolower);
 
-    // Map TF dokey names to our actions
-    if (func == "RECALLB" || func == "UP") {
-        app.terminal.history_up();
-    } else if (func == "RECALLF" || func == "DOWN") {
-        app.terminal.history_down();
-    } else if (func == "PGUP" || func == "PAGE_UP" || func == "SCROLLBACK") {
-        app.terminal.scroll_page_up();
-    } else if (func == "PGDN" || func == "PAGE_DOWN" || func == "SCROLLFORWARD") {
-        app.terminal.scroll_page_down();
-    } else if (func == "HOME") {
-        // Input cursor to start — not directly accessible, but we can note it
-        app.terminal.print_system("% Use ^A for home");
-    } else if (func == "END") {
-        app.terminal.print_system("% Use ^E for end");
-    } else if (func == "SOCKETB" || func == "SOCKETF") {
-        // Cycle through connections
-        if (app.connections.size() > 1 && app.fg) {
-            // Collect names in order
-            std::vector<std::string> names;
-            for (auto& [n, c] : app.connections) names.push_back(n);
-            std::string cur = app.fg->world_name();
-            auto pos = std::find(names.begin(), names.end(), cur);
-            if (pos != names.end()) {
-                if (func == "SOCKETF") {
-                    ++pos;
-                    if (pos == names.end()) pos = names.begin();
-                } else {
-                    if (pos == names.begin()) pos = names.end();
-                    --pos;
-                }
-                auto it = app.connections.find(*pos);
-                if (it != app.connections.end()) {
-                    app.fg = it->second.get();
-                    app.terminal.set_history_context(app.fg->world_name());
-                    app.terminal.set_output_context(app.fg->world_name());
-                    app.terminal.print_system("% Foreground: " + app.fg->world_name());
-                    app.terminal.scroll_to_bottom();
-                }
-            }
+    // Helper: synthesize an InputEvent and pass through handle_key.
+    auto synth = [&](Key k) {
+        InputEvent ev;
+        ev.key = k;
+        ev.cp = 0;
+        std::string line;
+        if (app.terminal.handle_key(ev, line)) {
+            // Submitted a line — but dokey shouldn't really trigger this.
         }
-    } else if (func == "REDRAW" || func == "LNEXT") {
-        app.terminal.handle_resize();
-    } else {
+    };
+
+    // Editing operations — dispatch through handle_key.
+    if (func == "home")      { synth(Key::HOME); }
+    else if (func == "end")  { synth(Key::END); }
+    else if (func == "left") { synth(Key::LEFT); }
+    else if (func == "right"){ synth(Key::RIGHT); }
+    else if (func == "dch")  { synth(Key::DELETE_KEY); }
+    else if (func == "bspc") { synth(Key::BACKSPACE); }
+    else if (func == "up")   { synth(Key::UP); }
+    else if (func == "down") { synth(Key::DOWN); }
+    else if (func == "wleft")  { synth(Key::CTRL_LEFT); }
+    else if (func == "wright") { synth(Key::CTRL_RIGHT); }
+    else if (func == "deol") { synth(Key::CTRL_K); }
+
+    // History
+    else if (func == "recallb") { app.terminal.history_up(); }
+    else if (func == "recallf") { app.terminal.history_down(); }
+
+    // Scrollback / paging
+    else if (func == "page" || func == "scrollforward") { app.terminal.scroll_page_down(); }
+    else if (func == "pageback" || func == "scrollback") { app.terminal.scroll_page_up(); }
+    else if (func == "flush")  { app.terminal.scroll_to_bottom(); }
+
+    // Socket cycling
+    else if (func == "socketf") { cmd_fg_next(app, ""); }
+    else if (func == "socketb") { cmd_fg_prev(app, ""); }
+
+    // Display
+    else if (func == "redraw" || func == "refresh") { app.terminal.handle_resize(); }
+    else if (func == "clear")  { app.terminal.clear_output(); app.terminal.handle_resize(); }
+    else if (func == "newline") {
+        InputEvent ev;
+        ev.key = Key::ENTER;
+        ev.cp = 0;
+        std::string line;
+        app.terminal.handle_key(ev, line);
+    }
+
+    else {
         app.terminal.print_system("% Unknown dokey function: " + func);
     }
 }

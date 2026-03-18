@@ -358,11 +358,6 @@ static void run(App& app) {
     int stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
     fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK);
 
-    // Default multi-key bindings (classic TF).
-    //
-    app.keybindings.bind_seq(parse_key_sequence("Esc Left"),  "/fg_prev");
-    app.keybindings.bind_seq(parse_key_sequence("Esc Right"), "/fg_next");
-
     check_mail(app);
     update_status(app);
     app.terminal.refresh();
@@ -746,6 +741,33 @@ int main(int argc, char* argv[]) {
     }
 
     app.terminal.print_system("TinyFugue (C++ rebuild) - Type /help for commands, /quit to exit");
+
+    // Load stdlib.tf — search next to executable, then ../tf-lib/, then ~/.tf/.
+    //
+    {
+        std::vector<std::string> search_paths;
+        // Next to the executable (build tree or installed).
+        char exe_path[4096];
+        ssize_t exe_len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+        if (exe_len > 0) {
+            exe_path[exe_len] = '\0';
+            std::string dir(exe_path);
+            auto slash = dir.rfind('/');
+            if (slash != std::string::npos) dir.resize(slash);
+            search_paths.push_back(dir + "/tf-lib/stdlib.tf");
+            search_paths.push_back(dir + "/../tf-lib/stdlib.tf");
+        }
+        // Home directory.
+        const char* home = std::getenv("HOME");
+        if (home) {
+            search_paths.push_back(std::string(home) + "/.tf/stdlib.tf");
+        }
+
+        for (const auto& sp : search_paths) {
+            if (load_command_file(app, sp, true)) break;
+        }
+    }
+
     if (world_files.empty() && command_files.empty()) {
         app.terminal.print_system("Use /load tiny.world then /load tiny.connect to get started.");
     }
