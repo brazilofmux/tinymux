@@ -5,6 +5,7 @@
 #include <sstream>
 #include <poll.h>
 #include <signal.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -179,6 +180,62 @@ void app_rerender_foreground(App& app) {
     }
 }
 
+// ---- Unix mailbox monitoring (classic TF @mail) ----
+//
+// Checks $MAIL (or /set MAIL=path) for unread mail by comparing
+// mtime vs atime.  Multiple paths can be space-separated in TFMAILPATH.
+// Default check interval: 60 seconds (classic TF maildelay).
+//
+static std::chrono::steady_clock::time_point next_mail_check{};
+
+static void check_mail(App& app) {
+    auto now = std::chrono::steady_clock::now();
+    if (now < next_mail_check) return;
+
+    // Default 60-second interval; configurable via /set maildelay=N.
+    int delay = 60;
+    auto delay_it = app.vars.find("maildelay");
+    if (delay_it != app.vars.end()) {
+        int d = std::atoi(delay_it->second.c_str());
+        if (d > 0) delay = d;
+    }
+    next_mail_check = now + std::chrono::seconds(delay);
+
+    // Collect mail file paths from TFMAILPATH or MAIL.
+    //
+    std::vector<std::string> paths;
+    auto tfmp = app.vars.find("TFMAILPATH");
+    if (tfmp != app.vars.end() && !tfmp->second.empty()) {
+        std::istringstream ss(tfmp->second);
+        std::string p;
+        while (ss >> p) paths.push_back(p);
+    } else {
+        auto mp = app.vars.find("MAIL");
+        if (mp != app.vars.end() && !mp->second.empty()) {
+            paths.push_back(mp->second);
+        } else {
+            // Try environment.
+            const char* env_mail = std::getenv("MAIL");
+            if (env_mail && *env_mail) paths.push_back(env_mail);
+        }
+    }
+
+    if (paths.empty()) {
+        app.terminal.status_mail_count = 0;
+        return;
+    }
+
+    int count = 0;
+    for (const auto& path : paths) {
+        struct stat st;
+        if (stat(path.c_str(), &st) != 0) continue;
+        if (st.st_size == 0) continue;
+        // Unread mail: mtime > atime (modified more recently than read).
+        if (st.st_mtime > st.st_atime) count++;
+    }
+    app.terminal.status_mail_count = count;
+}
+
 static void update_status(App& app) {
     std::string status;
     if (app.fg) {
@@ -291,6 +348,7 @@ static void run(App& app) {
     int stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
     fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK);
 
+    check_mail(app);
     update_status(app);
     app.terminal.refresh();
 
@@ -498,6 +556,7 @@ static void run(App& app) {
             app.connections.erase(name);
         }
 
+        check_mail(app);
         update_status(app);
         app.terminal.refresh();
     }
@@ -558,6 +617,13 @@ int main(int argc, char* argv[]) {
     }
 
     app.terminal.set_app(&app);
+
+    // Import mail-related environment variables (classic TF behavior).
+    //
+    const char* env_mail = std::getenv("MAIL");
+    if (env_mail && *env_mail) app.vars["MAIL"] = env_mail;
+    const char* env_tfmailpath = std::getenv("TFMAILPATH");
+    if (env_tfmailpath && *env_tfmailpath) app.vars["TFMAILPATH"] = env_tfmailpath;
 
     if (!app.terminal.init()) {
         fprintf(stderr, "Failed to initialize terminal\n");

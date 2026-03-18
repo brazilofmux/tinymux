@@ -814,9 +814,13 @@ std::string Terminal::expand_status_field(const std::string& field) const {
         } else if (iname == "log") {
             if (status_logging) text = "Log";
         } else if (iname == "read") {
-            // Stub — needs background unread line tracking.
+            if (status_read_depth > 0) {
+                text = std::to_string(status_read_depth);
+            }
         } else if (iname == "mail") {
-            // Stub — classic TF checks strstr.
+            if (status_mail_count > 0) {
+                text = std::to_string(status_mail_count);
+            }
         }
 
         // Check for format variable: status_int_<iname>

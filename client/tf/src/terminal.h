@@ -181,6 +181,12 @@ public:
     // True if any connection is logging.
     bool status_logging = false;
 
+    // Nesting depth of keyboard reads (macro waiting for input).
+    int status_read_depth = 0;
+
+    // Count of mailbox files with unread mail.
+    int status_mail_count = 0;
+
     static constexpr int MAX_STATUS_ROWS = 6;
 };
 

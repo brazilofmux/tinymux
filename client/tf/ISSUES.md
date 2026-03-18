@@ -10,9 +10,11 @@ code review of commits `6ceb3ecf..HEAD` (2026-03-17).
 
 ## Stubbed Or Partially Implemented Interfaces
 
-- **`@read` and `@mail` internal status fields are stubs**
-  `@active` and `@log` are functional. `@read` needs background
-  unread line tracking. `@mail` needs a mail indicator source.
+- **`@read` depth counter only incremented by future `/read` command**
+  The `status_read_depth` backing field is wired into the status bar
+  but no command currently increments it. Classic TF increments it
+  when a macro calls `tfread()` (nested keyboard read). TitanFugue
+  would need a `/read` command or equivalent to make `@read` useful.
 
 - **Format variable evaluation does not cache compiled expressions**
   `status_int_*` and `status_var_*` variables are now evaluated via
