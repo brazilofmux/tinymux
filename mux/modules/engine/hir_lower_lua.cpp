@@ -204,6 +204,12 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
         case OP_LUA_CALL:
             break;
 
+        // Generic for-loop — handled via ECALL.
+        case OP_LUA_TFORPREP:
+        case OP_LUA_TFORCALL:
+        case OP_LUA_TFORLOOP:
+            break;
+
         // Harmless no-ops.
         case OP_LUA_VARARGPREP:
         case OP_LUA_EXTRAARG:
@@ -261,6 +267,18 @@ static void find_block_starts(const lua_bc_proto *proto,
             break;
         }
         case OP_LUA_FORPREP: {
+            int target = pc + 1 + insn.sBx();
+            if (target >= 0 && target < n) is_leader[target] = true;
+            if (pc + 1 < n) is_leader[pc + 1] = true;
+            break;
+        }
+        case OP_LUA_TFORPREP: {
+            int target = pc + 1 + insn.sBx();
+            if (target >= 0 && target < n) is_leader[target] = true;
+            if (pc + 1 < n) is_leader[pc + 1] = true;
+            break;
+        }
+        case OP_LUA_TFORLOOP: {
             int target = pc + 1 + insn.sBx();
             if (target >= 0 && target < n) is_leader[target] = true;
             if (pc + 1 < n) is_leader[pc + 1] = true;
@@ -1555,6 +1573,132 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (nresults >= 1) {
                 lua_reg[A] = call_val;
             }
+
+            // Multi-return: for nresults > 1, fetch additional results
+            // from the Lua stack via __lua_get_result.
+            if (!is_bridge && nresults > 1) {
+                for (int r = 1; r < nresults; r++) {
+                    int ridx = h.emit_iconst(r + 1);
+                    if (ridx < 0) return -1;
+                    std::string rname("__lua_get_result");
+                    int rargs[] = { ridx };
+                    lua_reg[A + r] = h.emit_call(TY_STRING, 0,
+                        rargs, 1, &rname);
+                    if (lua_reg[A + r] < 0) return -1;
+                    h.ecalls++;
+                }
+            }
+            break;
+        }
+
+        // ---- Generic for-loop (TFOR) ----
+        //
+        // R(A) = iterator function (Lua stack ref)
+        // R(A+1) = invariant state (Lua stack ref)
+        // R(A+2) = control variable
+        // R(A+3) = to-be-closed (not used without TBC)
+        // R(A+4)... = iterator results (key, value, ...)
+
+        case OP_LUA_TFORPREP: {
+            // Jump forward to TFORLOOP for initial nil check.
+            if (!multi_block) return -1;
+            int target = pc + 1 + insn.sBx();
+            int target_blk = (target >= 0 && target < n) ? pc_to_block[target] : -1;
+            if (target_blk < 0) return -1;
+            h.emit(HIR_BR, TY_VOID, -1, -1, target_blk);
+            h.add_edge(cur_hir_block, target_blk);
+            break;
+        }
+
+        case OP_LUA_TFORCALL: {
+            // Call iterator: R(A+4),...,R(A+3+C) = R(A)(R(A+1), R(A+2))
+            int iter_func = lua_reg[A];
+            int iter_state = lua_reg[A + 1];
+            int iter_control = lua_reg[A + 2];
+            if (iter_func < 0 || iter_state < 0) return -1;
+
+            // Control variable might be nil (empty string) on first call.
+            if (iter_control < 0) {
+                iter_control = h.emit_sconst(rc.pool_str("", 0), "");
+                if (iter_control < 0) return -1;
+            }
+
+            // Convert control to string if needed.
+            if (h.ty[iter_control] == TY_INT) {
+                iter_control = h.emit(HIR_ITOA, TY_STRING, iter_control);
+                if (iter_control < 0) return -1;
+            }
+
+            // Call via __lua_tfor_call: func, state, control → results.
+            int nresults_c = insn.C();
+            std::string name("__lua_tfor_call");
+            std::vector<int> call_args;
+            call_args.push_back(iter_func);
+            call_args.push_back(iter_state);
+            call_args.push_back(iter_control);
+            int nr_val = h.emit_iconst(nresults_c);
+            call_args.push_back(nr_val);
+
+            // First result goes in R(A+4).
+            lua_reg[A + 4] = h.emit_call(TY_STRING, 0,
+                call_args.data(), static_cast<int>(call_args.size()),
+                &name);
+            if (lua_reg[A + 4] < 0) return -1;
+            h.ecalls++;
+
+            // Fetch additional results.
+            for (int r = 1; r < nresults_c; r++) {
+                int ridx = h.emit_iconst(r + 1);
+                if (ridx < 0) return -1;
+                std::string rname("__lua_get_result");
+                int rargs[] = { ridx };
+                lua_reg[A + 4 + r] = h.emit_call(TY_STRING, 0,
+                    rargs, 1, &rname);
+                if (lua_reg[A + 4 + r] < 0) return -1;
+                h.ecalls++;
+            }
+            break;
+        }
+
+        case OP_LUA_TFORLOOP: {
+            // if R(A+4) ~= nil then R(A+2) = R(A+4); jump back
+            if (!multi_block) return -1;
+            int first_result = lua_reg[A + 4];
+            if (first_result < 0) return -1;
+
+            // Check if first result is empty (nil in string form).
+            // Use STRLEN-like check: if the string is empty, done.
+            int fidx = engine_api_lookup("STRLEN");
+            int len_val;
+            if (fidx > 0) {
+                int args[] = { first_result };
+                len_val = h.emit_call(TY_STRING, fidx, args, 1);
+                if (len_val < 0) return -1;
+                h.known_int[len_val] = true;
+            } else {
+                return -1;
+            }
+
+            // ATOI the length, check if > 0.
+            int len_int = h.emit(HIR_ATOI, TY_INT, len_val);
+            if (len_int < 0) return -1;
+            int zero = h.emit_iconst(0);
+            int cmp = h.emit(HIR_GT, TY_INT, len_int, zero);
+            if (cmp < 0) return -1;
+
+            // If non-nil: set control = first_result, loop back.
+            int loop_target = pc + 1 + insn.sBx();
+            int exit_target = pc + 1;
+            int loop_blk = (loop_target >= 0 && loop_target < n) ? pc_to_block[loop_target] : -1;
+            int exit_blk = (exit_target >= 0 && exit_target < n) ? pc_to_block[exit_target] : -1;
+            if (loop_blk < 0 || exit_blk < 0) return -1;
+
+            // Update control variable.
+            lua_reg[A + 2] = first_result;
+
+            h.emit(HIR_BRC, TY_VOID, cmp, exit_blk, loop_blk);
+            h.add_edge(cur_hir_block, loop_blk);
+            h.add_edge(cur_hir_block, exit_blk);
             break;
         }
 

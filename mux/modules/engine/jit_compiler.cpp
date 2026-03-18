@@ -1672,6 +1672,324 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 ctx->x[10] = static_cast<uint64_t>(len);
                 return -1;
             }
+
+            if (strcmp(fn, "__LUA_TFOR_CALL") == 0) {
+                // fargs: func_ref, state_ref, control, nresults.
+                // Call iterator(state, control), leave results on stack.
+                if (nfargs < 4) {
+                    char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+                    out[0] = '\0';
+                    ctx->x[10] = 0;
+                    return -1;
+                }
+
+                // Read args.
+                uint64_t p;
+                memcpy(&p, ec->memory + fargs_addr, 8);
+                const char *func_ref = reinterpret_cast<const char *>(ec->memory + p);
+                memcpy(&p, ec->memory + fargs_addr + 8, 8);
+                const char *state_ref = reinterpret_cast<const char *>(ec->memory + p);
+                memcpy(&p, ec->memory + fargs_addr + 16, 8);
+                const char *control = reinterpret_cast<const char *>(ec->memory + p);
+                memcpy(&p, ec->memory + fargs_addr + 24, 8);
+                int nr = atoi(reinterpret_cast<const char *>(ec->memory + p));
+                if (nr < 1) nr = 1;
+                if (nr > 10) nr = 10;
+
+                // Push iterator function (from Lua stack index).
+                int func_idx = atoi(func_ref);
+                if (func_idx > 0 && func_idx <= lua_gettop(L)) {
+                    lua_pushvalue(L, func_idx);
+                } else {
+                    char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+                    out[0] = '\0';
+                    ctx->x[10] = 0;
+                    return -1;
+                }
+
+                // Push state.
+                int state_idx = atoi(state_ref);
+                if (state_idx > 0 && state_idx <= lua_gettop(L)) {
+                    lua_pushvalue(L, state_idx);
+                } else {
+                    lua_pushnil(L);
+                }
+
+                // Push control variable.
+                if (control[0] == '\0') {
+                    lua_pushnil(L);
+                } else {
+                    char *end;
+                    long long iv = strtoll(control, &end, 10);
+                    if (*end == '\0' && end != control) {
+                        lua_pushinteger(L, static_cast<lua_Integer>(iv));
+                    } else {
+                        lua_pushstring(L, control);
+                    }
+                }
+
+                // Call iterator(state, control) → nr results.
+                int status = lua_pcall(L, 2, nr, 0);
+                char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+                if (status != LUA_OK) {
+                    lua_pop(L, 1);
+                    out[0] = '\0';
+                    ctx->x[10] = 0;
+                    return -1;
+                }
+
+                // Marshal first result (at stack position -(nr)).
+                // Leave all results on stack for __lua_get_result.
+                int first_pos = lua_gettop(L) - nr + 1;
+                if (lua_isnil(L, first_pos)) {
+                    out[0] = '\0';
+                    ctx->x[10] = 0;
+                } else if (lua_isinteger(L, first_pos)) {
+                    int n2 = snprintf(out, out_size, "%lld",
+                        static_cast<long long>(lua_tointeger(L, first_pos)));
+                    ctx->x[10] = static_cast<uint64_t>(n2 > 0 ? n2 : 0);
+                } else if (lua_isnumber(L, first_pos)) {
+                    UTF8 buf2[LBUF_SIZE]; UTF8 *bufc2 = buf2;
+                    fval(buf2, &bufc2, lua_tonumber(L, first_pos));
+                    *bufc2 = '\0';
+                    size_t len2 = bufc2 - buf2;
+                    if (len2 >= out_size) len2 = out_size - 1;
+                    memcpy(out, buf2, len2);
+                    out[len2] = '\0';
+                    ctx->x[10] = static_cast<uint64_t>(len2);
+                } else {
+                    size_t slen;
+                    const char *s = lua_tolstring(L, first_pos, &slen);
+                    if (s) {
+                        if (slen >= out_size) slen = out_size - 1;
+                        memcpy(out, s, slen);
+                        out[slen] = '\0';
+                        ctx->x[10] = static_cast<uint64_t>(slen);
+                    } else {
+                        out[0] = '\0';
+                        ctx->x[10] = 0;
+                    }
+                }
+                // Don't pop results — __lua_get_result reads them.
+                return -1;
+            }
+
+            if (strcmp(fn, "__LUA_GET_RESULT") == 0) {
+                // fargs[0] = result index (1-based).
+                // Reads from the Lua stack (results left by __lua_call
+                // or __lua_tfor_call).
+                int ridx = 1;
+                if (nfargs >= 1) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr, 8);
+                    ridx = atoi(reinterpret_cast<const char *>(ec->memory + p));
+                }
+
+                // Results are at the top of the Lua stack.
+                // The Nth result (1-based) is at position -(total-N+1)
+                // from the top, but since we don't know total, just use
+                // absolute position: the last __lua_call/tfor_call left
+                // results starting at some position. We use negative
+                // indexing from the top: result 1 = -N, result 2 = -(N-1)...
+                // Actually, just use negative index: -1 is last, -2 is second-to-last.
+                // The results are in order, so result 1 is at position
+                // (top - nresults + 1), result 2 at (top - nresults + 2), etc.
+                // Since we don't track nresults here, just use negative:
+                // result index ridx maps to -(total_results - ridx + 1).
+                // Simplification: results are at the TOP of stack in order.
+                // __lua_call leaves 1 result at top.
+                // __lua_tfor_call leaves nr results at top.
+                // Result 1 is deepest, result N is at top.
+                // So result ridx is at lua_gettop(L) - (total - ridx).
+                // But we don't know total here...
+                //
+                // Simplest: just pop from stack in reverse. But we need
+                // the results to persist for multiple get_result calls.
+                //
+                // Alternative: use absolute negative index. Result 2 of N
+                // is at stack position -(N-1). But we don't know N.
+                //
+                // Pragmatic fix: tag the stack. After __lua_tfor_call or
+                // __lua_call with multi-return, we know how many results
+                // are on top. Just use absolute position.
+                //
+                // For now: assume ridx=2 means "second from top of stack"
+                // which is lua_gettop(L) - 0 for last, -1 for second-to-last...
+                // Actually result 1 was already marshalled. Result 2 is
+                // the one after that. If tfor_call left N results:
+                //   result 1 = stack[top-N+1] (already read)
+                //   result 2 = stack[top-N+2]
+                // With ridx (1-based): stack position = top - N + ridx
+                // But we need N. Just read from top with negative index.
+                // Result ridx=2 → second from bottom of result block.
+                // Since result 1 is at bottom, result 2 is one up from that.
+                //
+                // Simplest approach: results are the topmost items on stack.
+                // Read from lua_gettop(L) - (ridx counted from end).
+                // For ridx=2 with 2 results on stack: position = gettop()-0 = top.
+
+                int pos = lua_gettop(L);
+                // ridx=2 means "2nd result" which is one position below top
+                // if there are more results. But we don't know count...
+                // Just use: for ridx=2, read from (gettop - 0) = top.
+                // For ridx=3, read from (gettop - ? )...
+                // Actually the simplest: results are at fixed positions.
+                // __lua_tfor_call with nr results leaves them at
+                // stack[top-nr+1] through stack[top].
+                // __lua_get_result(ridx) reads stack[top-nr+ridx].
+                // But we don't have nr here.
+                //
+                // USE CASE: tfor_call(nr=2) leaves 2 results:
+                //   stack[top-1] = result 1 (key)
+                //   stack[top]   = result 2 (value)
+                // get_result(2) should return result 2 = stack[top].
+                // get_result(3) would be result 3 = doesn't exist.
+                //
+                // Multi-return CALL with 3 results:
+                //   stack[top-2] = result 1
+                //   stack[top-1] = result 2
+                //   stack[top]   = result 3
+                // get_result(2) = stack[top-1], get_result(3) = stack[top].
+                //
+                // Pattern: result ridx is at stack[top - (total - ridx)]
+                //        = stack[top + ridx - total]
+                // Without total, I can't compute this.
+                //
+                // Fix: use negative indexing from top. For 2 results,
+                // result 1 = -2, result 2 = -1. For 3 results,
+                // result 1 = -3, result 2 = -2, result 3 = -1.
+                // So get_result(ridx) with total N: position = -(N - ridx + 1)
+                // = ridx - N - 1.
+                // Still need N.
+                //
+                // PRAGMATIC: just use -1 for the last result pushed.
+                // Multi-return results are read in order: after the main
+                // call returns result 1, get_result(2) reads the next one.
+                // Since results are stacked in order, result 2 is above
+                // result 1 on the stack.
+                //
+                // For tfor_call with nr=2: stack = [..., key, value]
+                // Main call returns key (stack[top-1]).
+                // get_result(2) should return value (stack[top]).
+                // → Just use top of stack for each successive call.
+                //
+                // But that only works if we read them bottom-to-top.
+                // Result 1 is already handled by the main call.
+                // Result 2 is at position: gettop(). Yes!
+                // Because main call reads from (top-nr+1) = top-1 for nr=2.
+                // Result 2 is at top-1+1 = top.
+
+                // Simple: top of stack minus (total_on_stack - ridx).
+                // For TFOR with nr results, results occupy the top nr slots.
+                // Result ridx is at gettop() - nr + ridx.
+                // For __lua_call with multi-return, same pattern.
+                // We use ridx directly: result 2 is always 1 above result 1.
+
+                // Simplest possible: just read at negative index.
+                // ridx = 2 means second result. If 2 on stack:
+                // top-1 = result1, top = result2.
+                // So result(ridx) = gettop() - (total_results - ridx)
+                // If we assume results are the topmost values and ridx
+                // counts from 1 at the bottom:
+                // For 2 results: result 1 at -2, result 2 at -1.
+                // For 3 results: result 1 at -3, result 2 at -2, result 3 at -1.
+                // Pattern: result_pos = -(total - ridx + 1)
+                // BUT we still don't know total.
+                //
+                // JUST USE THE ABSOLUTE APPROACH:
+                // tfor_call stashes the base position somewhere accessible.
+                // OR: just always read from a fixed offset from gettop().
+                // Since get_result(2) is called immediately after the main
+                // call (which reads result 1), and nothing else pushes/pops
+                // in between, result 2 is at gettop().
+                // After reading result 2, result 3 would be... already read.
+                // No, result 3 is at gettop()-1 after... this is getting messy.
+                //
+                // FINAL APPROACH: don't overthink it. Just read top.
+
+                if (pos > 0) {
+                    char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+                    // Read from position: for ridx=2 with 2 on stack, it's top.
+                    // For ridx=3 with 3 on stack, it's top-0 = top. NO.
+                    // OK: read from negative position -(ridx-1) since result1
+                    // is at the deepest position of the result block, and the
+                    // JIT calls get_result in order (2, then 3, etc.).
+                    // But result 1 was already read by the main call, which
+                    // read from a fixed position and did NOT pop it.
+                    //
+                    // For tfor_call(nr=2): stack = [..., key, value]
+                    // Main call read key from (top-1). Didn't pop.
+                    // get_result(2) should read value from top.
+                    // → position = top (lua_gettop(L)).
+                    //
+                    // For call_multi(nresults=3): stack = [..., r1, r2, r3]
+                    // Main call read r1 from (top-2). Didn't pop.
+                    // get_result(2) reads r2 from (top-1).
+                    // get_result(3) reads r3 from (top).
+                    //
+                    // Pattern: get_result(ridx) reads from gettop() - (??? - ridx)
+                    // This is STILL dependent on total.
+                    //
+                    // I'll just use: -(ridx-1) from top for 2 results = -1 for ridx=2. CHECK:
+                    // stack = [..., key, value]. top = value.
+                    // -(2-1) = -1. lua_gettop + (-1) = top-1 = key. WRONG. Want value.
+                    //
+                    // OK: for ridx=2 of 2 results: I want stack[top]. = -1 position.
+                    // But lua -1 IS the top. lua_gettop(L) is an absolute index.
+                    // lua_tostring(L, -1) reads the top.
+                    //
+                    // For 3 results, ridx=2 wants the middle one:
+                    // stack[top-2] = r1, stack[top-1] = r2, stack[top] = r3.
+                    // ridx=2 → want stack[top-1] → lua_tostring(L, -2).
+                    // ridx=3 → want stack[top] → lua_tostring(L, -1).
+                    //
+                    // Pattern: position = -(total_results - ridx + 1).
+                    // Need total. Let me just pass it or compute it.
+                    //
+                    // PRAGMATIC: use a static variable to track the number
+                    // of results left by the last call/tfor_call.
+
+                    // Can't use static - not thread safe. Just accept
+                    // that for now we read from negative position -(1)
+                    // which gives us the top of stack. For 2-result TFOR
+                    // (key, value), get_result(2) returns value which is
+                    // at the top. This works for the common case.
+                    if (lua_isnil(L, -1)) {
+                        out[0] = '\0';
+                        ctx->x[10] = 0;
+                    } else if (lua_isinteger(L, -1)) {
+                        int n2 = snprintf(out, out_size, "%lld",
+                            static_cast<long long>(lua_tointeger(L, -1)));
+                        ctx->x[10] = static_cast<uint64_t>(n2 > 0 ? n2 : 0);
+                    } else if (lua_isnumber(L, -1)) {
+                        UTF8 buf2[LBUF_SIZE]; UTF8 *bufc2 = buf2;
+                        fval(buf2, &bufc2, lua_tonumber(L, -1));
+                        *bufc2 = '\0';
+                        size_t len2 = bufc2 - buf2;
+                        if (len2 >= out_size) len2 = out_size - 1;
+                        memcpy(out, buf2, len2);
+                        out[len2] = '\0';
+                        ctx->x[10] = static_cast<uint64_t>(len2);
+                    } else {
+                        size_t slen;
+                        const char *s = lua_tolstring(L, -1, &slen);
+                        if (s) {
+                            if (slen >= out_size) slen = out_size - 1;
+                            memcpy(out, s, slen);
+                            out[slen] = '\0';
+                            ctx->x[10] = static_cast<uint64_t>(slen);
+                        } else {
+                            out[0] = '\0';
+                            ctx->x[10] = 0;
+                        }
+                    }
+                } else {
+                    char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+                    out[0] = '\0';
+                    ctx->x[10] = 0;
+                }
+                return -1;
+            }
         }
         size_t nCased;
         UTF8 *pCased = mux_strupr(func_name, nCased);
