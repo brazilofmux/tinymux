@@ -1207,7 +1207,9 @@ public:
     //
     virtual MUX_RESULT GetStats(size_t *pnCalls, size_t *pnErrors,
         size_t *pnInsnLimitHits, size_t *pnMemLimitHits,
-        size_t *pnBytesUsed) = 0;
+        size_t *pnBytesUsed,
+        size_t *pnCacheHits, size_t *pnCacheMisses,
+        size_t *pnCacheEntries) = 0;
 
     // Configure resource limits (called after module discovery).
     //

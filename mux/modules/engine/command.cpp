@@ -646,11 +646,15 @@ static void do_lua(dbref executor, dbref caller, dbref enactor, int eval,
     if (LUA_STATS == key)
     {
         size_t nCalls, nErrors, nInsnHits, nMemHits, nBytes;
+        size_t nCacheHits, nCacheMisses, nCacheEntries;
         mudstate.pILuaControl->GetStats(&nCalls, &nErrors,
-            &nInsnHits, &nMemHits, &nBytes);
+            &nInsnHits, &nMemHits, &nBytes,
+            &nCacheHits, &nCacheMisses, &nCacheEntries);
         notify(executor, tprintf(T("Lua stats: %zu calls, %zu errors, "
             "%zu insn-limit hits, %zu mem-limit hits, %zu bytes used"),
             nCalls, nErrors, nInsnHits, nMemHits, nBytes));
+        notify(executor, tprintf(T("Cache: %zu entries, %zu hits, %zu misses"),
+            nCacheEntries, nCacheHits, nCacheMisses));
         return;
     }
 
@@ -4327,14 +4331,19 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, const int ke
         if (nullptr != mudstate.pILuaControl)
         {
             size_t nCalls, nErrors, nInsnHits, nMemHits, nBytes;
+            size_t nCacheHits, nCacheMisses, nCacheEntries;
             mudstate.pILuaControl->GetStats(&nCalls, &nErrors,
-                &nInsnHits, &nMemHits, &nBytes);
+                &nInsnHits, &nMemHits, &nBytes,
+                &nCacheHits, &nCacheMisses, &nCacheEntries);
             notify(executor, tprintf(T("Lua module loaded (Lua 5.4).")));
             notify(executor, tprintf(T("  Calls:            %zu"), nCalls));
             notify(executor, tprintf(T("  Errors:           %zu"), nErrors));
             notify(executor, tprintf(T("  Insn limit hits:  %zu"), nInsnHits));
             notify(executor, tprintf(T("  Mem limit hits:   %zu"), nMemHits));
             notify(executor, tprintf(T("  Memory in use:    %zu bytes"), nBytes));
+            notify(executor, tprintf(T("  Cache entries:    %zu"), nCacheEntries));
+            notify(executor, tprintf(T("  Cache hits:       %zu"), nCacheHits));
+            notify(executor, tprintf(T("  Cache misses:     %zu"), nCacheMisses));
         }
         else
         {

@@ -805,7 +805,8 @@ CLuaMod::CLuaMod(void) : m_cRef(1),
     m_nMemLimit(LUA_DEFAULT_MEM_LIMIT),
     m_nMemUsed(0),
     m_nMemPeak(0),
-    m_bMemExceeded(false)
+    m_bMemExceeded(false),
+    m_nCacheMaxSize(LUA_DEFAULT_CACHE_SIZE)
 {
     memset(&m_stats, 0, sizeof(m_stats));
     g_cComponents++;
@@ -895,6 +896,7 @@ MUX_RESULT CLuaMod::FinalConstruct(void)
 
 CLuaMod::~CLuaMod()
 {
+    CacheClear();
     DestroyLuaState();
 
     if (nullptr != m_pILog)
@@ -994,6 +996,99 @@ uint32_t CLuaMod::Release(void)
 }
 
 // =========================================================================
+// Bytecode cache — LRU keyed by source text.
+// =========================================================================
+
+// LoadCached: try the cache first, compile on miss.
+// On success, the compiled chunk is on top of the Lua stack.
+// Returns true on success, false on compile error (error string on stack).
+//
+bool CLuaMod::LoadCached(const char *source, size_t nSource,
+    const char *chunkname)
+{
+    std::string key(source, nSource);
+
+    auto it = m_cache.find(key);
+    if (it != m_cache.end())
+    {
+        // Cache hit — push the cached chunk.
+        //
+        m_stats.cache_hits++;
+        lua_rawgeti(m_L, LUA_REGISTRYINDEX, it->second.lua_ref);
+
+        // Move to front of LRU.
+        //
+        m_cache_lru.erase(it->second.lru_it);
+        m_cache_lru.push_front(key);
+        it->second.lru_it = m_cache_lru.begin();
+        return true;
+    }
+
+    // Cache miss — compile.
+    //
+    m_stats.cache_misses++;
+    int status = luaL_loadbufferx(m_L, source, nSource, chunkname, "t");
+    if (status != LUA_OK)
+    {
+        return false;  // Error string is on top of stack.
+    }
+
+    // Store in cache: push a copy, get a registry reference.
+    //
+    lua_pushvalue(m_L, -1);  // duplicate the chunk
+    int ref = luaL_ref(m_L, LUA_REGISTRYINDEX);
+
+    // Evict if full.
+    //
+    if (static_cast<int>(m_cache.size()) >= m_nCacheMaxSize)
+    {
+        CacheEvict();
+    }
+
+    // Insert.
+    //
+    m_cache_lru.push_front(key);
+    cache_entry entry;
+    entry.lua_ref = ref;
+    entry.lru_it = m_cache_lru.begin();
+    m_cache[key] = entry;
+
+    return true;
+}
+
+void CLuaMod::CacheEvict(void)
+{
+    if (m_cache_lru.empty())
+    {
+        return;
+    }
+
+    // Remove the least recently used entry (back of list).
+    //
+    const std::string &oldest = m_cache_lru.back();
+    auto it = m_cache.find(oldest);
+    if (it != m_cache.end())
+    {
+        luaL_unref(m_L, LUA_REGISTRYINDEX, it->second.lua_ref);
+        m_cache.erase(it);
+    }
+    m_cache_lru.pop_back();
+}
+
+void CLuaMod::CacheClear(void)
+{
+    for (auto &pair : m_cache)
+    {
+        if (nullptr != m_L)
+        {
+            luaL_unref(m_L, LUA_REGISTRYINDEX, pair.second.lua_ref);
+        }
+    }
+    m_cache.clear();
+    m_cache_lru.clear();
+}
+
+// =========================================================================
 // mux_ILuaControl implementation.
 // =========================================================================
 
@@ -1038,18 +1133,15 @@ MUX_RESULT CLuaMod::CallAttr(dbref executor, dbref caller, dbref enactor,
 
     m_stats.calls++;
 
-    // Compile the Lua source.
+    // Compile (or load from cache).
     //
     char chunkname[128];
     snprintf(chunkname, sizeof(chunkname), "@#%d/%s",
         static_cast<int>(obj),
         reinterpret_cast<const char *>(pAttrName));
 
-    int status = luaL_loadbufferx(m_L,
-        reinterpret_cast<const char *>(source), nSource,
-        chunkname, "t");
-
-    if (status != LUA_OK)
+    if (!LoadCached(reinterpret_cast<const char *>(source), nSource,
+                    chunkname))
     {
         const char *errmsg = lua_tostring(m_L, -1);
         if (nullptr == errmsg) errmsg = "compile error";
@@ -1100,11 +1192,8 @@ MUX_RESULT CLuaMod::Eval(dbref executor, dbref caller, dbref enactor,
 
     m_stats.calls++;
 
-    int status = luaL_loadbufferx(m_L,
-        reinterpret_cast<const char *>(pSource), nSource,
-        "@inline", "t");
-
-    if (status != LUA_OK)
+    if (!LoadCached(reinterpret_cast<const char *>(pSource), nSource,
+                    "@inline"))
     {
         const char *errmsg = lua_tostring(m_L, -1);
         if (nullptr == errmsg) errmsg = "compile error";
@@ -1126,13 +1215,18 @@ MUX_RESULT CLuaMod::Eval(dbref executor, dbref caller, dbref enactor,
 
 MUX_RESULT CLuaMod::GetStats(size_t *pnCalls, size_t *pnErrors,
     size_t *pnInsnLimitHits, size_t *pnMemLimitHits,
-    size_t *pnBytesUsed)
+    size_t *pnBytesUsed,
+    size_t *pnCacheHits, size_t *pnCacheMisses,
+    size_t *pnCacheEntries)
 {
     *pnCalls = m_stats.calls;
     *pnErrors = m_stats.errors;
     *pnInsnLimitHits = m_stats.insn_limit_hits;
     *pnMemLimitHits = m_stats.mem_limit_hits;
     *pnBytesUsed = m_nMemUsed;
+    *pnCacheHits = m_stats.cache_hits;
+    *pnCacheMisses = m_stats.cache_misses;
+    *pnCacheEntries = m_cache.size();
     return MUX_S_OK;
 }
 
@@ -1158,7 +1252,7 @@ void CLuaMod::presync_database(void) { }
 void CLuaMod::presync_database_sigsegv(void) { }
 void CLuaMod::dump_database(int dump_type) { (void)dump_type; }
 void CLuaMod::dump_complete_signal(void) { }
-void CLuaMod::shutdown(void) { DestroyLuaState(); }
+void CLuaMod::shutdown(void) { CacheClear(); DestroyLuaState(); }
 void CLuaMod::dbck(void) { }
 void CLuaMod::connect(dbref player, int isnew, int num) { (void)player; (void)isnew; (void)num; }
 void CLuaMod::disconnect(dbref player, int num) { (void)player; (void)num; }

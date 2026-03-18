@@ -17,6 +17,10 @@
 #ifndef LUA_MOD_H
 #define LUA_MOD_H
 
+#include <unordered_map>
+#include <list>
+#include <string>
+
 extern "C" {
 #include <lua.h>
 #include <lauxlib.h>
@@ -27,6 +31,7 @@ extern "C" {
 //
 #define LUA_DEFAULT_INSN_LIMIT   100000
 #define LUA_DEFAULT_MEM_LIMIT    1048576   // 1 MB
+#define LUA_DEFAULT_CACHE_SIZE   256
 
 // Statistics.
 //
@@ -37,6 +42,8 @@ struct lua_mod_stats
     size_t insn_limit_hits;
     size_t mem_limit_hits;
     size_t peak_mem_bytes;
+    size_t cache_hits;
+    size_t cache_misses;
 };
 
 class CLuaMod : public mux_ILuaControl, public mux_IServerEventsSink
@@ -69,12 +76,27 @@ private:
     //
     lua_mod_stats m_stats;
 
+    // Bytecode cache — LRU keyed by source text.
+    // Values are Lua registry references to compiled chunks.
+    //
+    struct cache_entry
+    {
+        int lua_ref;                         // LUA_REGISTRYINDEX ref
+        std::list<std::string>::iterator lru_it;  // Position in LRU list
+    };
+    std::unordered_map<std::string, cache_entry> m_cache;
+    std::list<std::string> m_cache_lru;      // Front = most recent
+    int m_nCacheMaxSize;
+
     // Internal helpers.
     //
     bool CreateLuaState(void);
     void DestroyLuaState(void);
     void RegisterBridgeFunctions(void);
     bool SetupSandbox(lua_State *L);
+    bool LoadCached(const char *source, size_t nSource, const char *chunkname);
+    void CacheEvict(void);
+    void CacheClear(void);
     bool ExecuteChunk(lua_State *L, dbref executor, dbref caller,
         dbref enactor, const UTF8 *pArgs[], int nArgs,
         UTF8 *pResult, size_t nResultMax, size_t *pnResultLen);
@@ -102,7 +124,9 @@ public:
 
     MUX_RESULT GetStats(size_t *pnCalls, size_t *pnErrors,
         size_t *pnInsnLimitHits, size_t *pnMemLimitHits,
-        size_t *pnBytesUsed) override;
+        size_t *pnBytesUsed,
+        size_t *pnCacheHits, size_t *pnCacheMisses,
+        size_t *pnCacheEntries) override;
 
     MUX_RESULT SetLimits(int nInsnLimit, int nMemLimit) override;
 
