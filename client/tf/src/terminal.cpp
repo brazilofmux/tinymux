@@ -670,6 +670,7 @@ void Terminal::print_line_to(const std::string& context, const std::string& line
         if (screen.lines.size() > MAX_SCROLLBACK)
             screen.lines.pop_front();
     }
+    screen.last_logical_line_count = (int)wrapped.size();
 
     // If at bottom, stay at bottom
     if (context == output_key_) {
@@ -689,13 +690,19 @@ void Terminal::print_system(const std::string& msg) {
 
 void Terminal::replace_last_output_line(const std::string& line) {
     auto& screen = current_output();
-    if (!screen.lines.empty()) screen.lines.pop_back();
+    // Pop all visual lines that the last logical line produced.
+    int to_pop = std::max(screen.last_logical_line_count, 1);
+    while (to_pop > 0 && !screen.lines.empty()) {
+        screen.lines.pop_back();
+        --to_pop;
+    }
     auto wrapped = wrap_line(line, cols_);
     for (auto& wl : wrapped) {
         screen.lines.push_back(std::move(wl));
         if (screen.lines.size() > MAX_SCROLLBACK)
             screen.lines.pop_front();
     }
+    screen.last_logical_line_count = (int)wrapped.size();
     redraw_output();
 }
 

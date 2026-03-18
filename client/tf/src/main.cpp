@@ -15,6 +15,8 @@
 
 static volatile sig_atomic_t got_sigwinch = 0;
 static volatile sig_atomic_t got_sigterm = 0;
+static volatile sig_atomic_t got_sigint = 0;
+static volatile sig_atomic_t got_sigtstp = 0;
 
 static void sigwinch_handler(int) {
     got_sigwinch = 1;
@@ -22,6 +24,14 @@ static void sigwinch_handler(int) {
 
 static void sigterm_handler(int) {
     got_sigterm = 1;
+}
+
+static void sigint_handler(int) {
+    got_sigint = 1;
+}
+
+static void sigtstp_handler(int) {
+    got_sigtstp = 1;
 }
 
 static void handle_shell_line(App& app, const ShellProcess& proc, const std::string& line) {
@@ -358,6 +368,10 @@ static void run(App& app) {
             app.running = false;
             break;
         }
+        if (got_sigint) {
+            got_sigint = 0;
+            app.terminal.print_system("Interrupt: /quit to exit");
+        }
         if (got_sigwinch) {
             got_sigwinch = 0;
             app.terminal.handle_resize();
@@ -367,6 +381,21 @@ static void run(App& app) {
                 conn->send_naws((uint16_t)cols, (uint16_t)rows);
             }
             fire_hook(app, Hook::RESIZE, std::to_string(cols) + "x" + std::to_string(rows));
+        }
+        if (got_sigtstp) {
+            got_sigtstp = 0;
+            // Suspend: restore terminal, send SIGTSTP, reinit on resume.
+            app.terminal.shutdown();
+            signal(SIGTSTP, SIG_DFL);
+            raise(SIGTSTP);
+            // Resumed — reinstall handler and reinitialize.
+            struct sigaction sa_tstp{};
+            sa_tstp.sa_handler = sigtstp_handler;
+            sigemptyset(&sa_tstp.sa_mask);
+            sa_tstp.sa_flags = 0;
+            sigaction(SIGTSTP, &sa_tstp, nullptr);
+            app.terminal.init();
+            app.terminal.handle_resize();
         }
 
         // Build pollfd set: STDIN + all connected sockets + shell pipes
@@ -580,8 +609,19 @@ int main(int argc, char* argv[]) {
     sa2.sa_handler = sigterm_handler;
     sigemptyset(&sa2.sa_mask);
     sa2.sa_flags = 0;
-    sigaction(SIGINT, &sa2, nullptr);
     sigaction(SIGTERM, &sa2, nullptr);
+
+    struct sigaction sa3{};
+    sa3.sa_handler = sigint_handler;
+    sigemptyset(&sa3.sa_mask);
+    sa3.sa_flags = 0;
+    sigaction(SIGINT, &sa3, nullptr);
+
+    struct sigaction sa4{};
+    sa4.sa_handler = sigtstp_handler;
+    sigemptyset(&sa4.sa_mask);
+    sa4.sa_flags = 0;
+    sigaction(SIGTSTP, &sa4, nullptr);
 
     signal(SIGPIPE, SIG_IGN);
 

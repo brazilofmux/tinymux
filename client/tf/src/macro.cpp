@@ -28,7 +28,7 @@ void Macro::compile_trigger() {
     std::string pattern;
     if (match_type == "regexp") {
         pattern = trigger;
-    } else if (match_type == "substr") {
+    } else if (match_type == "simple" || match_type == "substr") {
         pattern = regex_escape(trigger);
     } else {
         // Default: glob

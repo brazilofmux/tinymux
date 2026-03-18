@@ -117,6 +117,7 @@ private:
     struct OutputScreen {
         std::deque<std::string> lines;
         int scroll_offset = 0;
+        int last_logical_line_count = 0;
     };
     OutputScreen& current_output();
     const OutputScreen& current_output() const;
