@@ -1,0 +1,217 @@
+/* Titan web client stylesheet */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #000000;
+    --fg: #c0c0c0;
+    --tab-bg: #303030;
+    --tab-active: #000000;
+    --tab-text: #a0a0a0;
+    --tab-active-text: #ffffff;
+    --status-bg: #000080;
+    --status-fg: #ffffff;
+    --input-bg: #202020;
+    --input-fg: #ffffff;
+    --accent: #ffc800;
+    --font: 'Consolas', 'Courier New', monospace;
+    --font-size: 14px;
+}
+
+html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    font-size: var(--font-size);
+    overflow: hidden;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Tab bar */
+#tabbar {
+    display: flex;
+    background: var(--tab-bg);
+    min-height: 28px;
+    overflow-x: auto;
+    user-select: none;
+}
+
+.tab {
+    padding: 4px 16px;
+    cursor: pointer;
+    color: var(--tab-text);
+    border-right: 1px solid #505050;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tab.active {
+    background: var(--tab-active);
+    color: var(--tab-active-text);
+}
+
+.tab .activity-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: none;
+}
+
+.tab.has-activity .activity-dot {
+    display: inline-block;
+}
+
+.tab .close-btn {
+    font-size: 12px;
+    opacity: 0;
+    cursor: pointer;
+    margin-left: 4px;
+}
+
+.tab:hover .close-btn {
+    opacity: 0.6;
+}
+
+.tab .close-btn:hover {
+    opacity: 1;
+}
+
+/* Output pane */
+#output {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2px 4px;
+    font-family: var(--font);
+    font-size: var(--font-size);
+    line-height: 1.3;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    background: var(--bg);
+    color: var(--fg);
+}
+
+#output .line {
+    min-height: 1.3em;
+}
+
+#output .line.find-highlight {
+    background: #282850;
+}
+
+/* Input area */
+#inputarea {
+    background: var(--input-bg);
+    padding: 2px 4px;
+}
+
+#inputline {
+    width: 100%;
+    background: var(--input-bg);
+    color: var(--input-fg);
+    border: none;
+    outline: none;
+    font-family: var(--font);
+    font-size: var(--font-size);
+    padding: 4px 2px;
+}
+
+/* Status bar */
+#statusbar {
+    background: var(--status-bg);
+    color: var(--status-fg);
+    padding: 2px 8px;
+    font-size: 12px;
+    min-height: 22px;
+    user-select: none;
+}
+
+/* Dialogs */
+dialog {
+    background: #2a2a2a;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 16px;
+    min-width: 300px;
+    font-family: var(--font);
+    font-size: 13px;
+}
+
+dialog::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+dialog h3 {
+    margin-bottom: 12px;
+    font-size: 15px;
+}
+
+dialog label {
+    display: block;
+    margin-bottom: 8px;
+}
+
+dialog input[type="text"] {
+    background: #1a1a1a;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    padding: 4px 6px;
+    font-family: var(--font);
+    font-size: 13px;
+    width: 200px;
+    margin-left: 8px;
+}
+
+dialog input[type="checkbox"] {
+    margin-right: 6px;
+}
+
+dialog select {
+    background: #1a1a1a;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    width: 100%;
+    font-family: var(--font);
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+dialog button {
+    background: #404040;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    padding: 4px 16px;
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 13px;
+    margin-right: 4px;
+}
+
+dialog button:hover {
+    background: #505050;
+}
+
+.dialog-buttons {
+    margin-top: 12px;
+}
+
+.dialog-buttons-side {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+/* ANSI color classes */
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+.ansi-blink { animation: blink 1s step-end infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.ansi-inverse { filter: invert(1); }

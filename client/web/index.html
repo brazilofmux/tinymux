@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Titan</title>
+    <link rel="stylesheet" href="css/titan.css">
+</head>
+<body>
+    <div id="app">
+        <div id="tabbar"></div>
+        <div id="output"></div>
+        <div id="inputarea">
+            <input type="text" id="inputline" autocomplete="off" autofocus
+                   placeholder="Type here...">
+        </div>
+        <div id="statusbar">(no connection)</div>
+    </div>
+
+    <!-- Connect dialog -->
+    <dialog id="connect-dialog">
+        <h3>Connect</h3>
+        <label>Host <input type="text" id="conn-host" placeholder="mux.example.com"></label>
+        <label>Port <input type="text" id="conn-port" value="4201"></label>
+        <label><input type="checkbox" id="conn-ssl"> SSL/TLS</label>
+        <div class="dialog-buttons">
+            <button id="conn-ok">Connect</button>
+            <button id="conn-cancel">Cancel</button>
+        </div>
+    </dialog>
+
+    <!-- World Manager dialog -->
+    <dialog id="worlds-dialog">
+        <h3>World Manager</h3>
+        <select id="worlds-list" size="8"></select>
+        <div class="dialog-buttons-side">
+            <button id="worlds-add">Add</button>
+            <button id="worlds-edit">Edit</button>
+            <button id="worlds-del">Delete</button>
+            <button id="worlds-connect">Connect</button>
+        </div>
+        <div class="dialog-buttons">
+            <button id="worlds-close">Close</button>
+        </div>
+    </dialog>
+
+    <!-- World Edit dialog -->
+    <dialog id="world-edit-dialog">
+        <h3 id="world-edit-title">Add World</h3>
+        <label>Name <input type="text" id="we-name"></label>
+        <label>Host <input type="text" id="we-host"></label>
+        <label>Port <input type="text" id="we-port" value="4201"></label>
+        <label>Character <input type="text" id="we-char"></label>
+        <label><input type="checkbox" id="we-ssl"> SSL/TLS</label>
+        <div class="dialog-buttons">
+            <button id="we-ok">OK</button>
+            <button id="we-cancel">Cancel</button>
+        </div>
+    </dialog>
+
+    <!-- Find dialog -->
+    <dialog id="find-dialog">
+        <h3>Find in Scrollback</h3>
+        <label>Find <input type="text" id="find-text"></label>
+        <div class="dialog-buttons">
+            <button id="find-up">Search Up</button>
+            <button id="find-down">Search Down</button>
+            <button id="find-close">Close</button>
+        </div>
+    </dialog>
+
+    <script src="js/telnet.js"></script>
+    <script src="js/connection.js"></script>
+    <script src="js/terminal.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
