@@ -152,8 +152,14 @@ void InputLexer::dispatch_csi(const unsigned char* start, const unsigned char* f
     }
     if (has && nparam < 8) params[nparam++] = cur;
 
-    // Modifier in params[1]: 2=Shift, 3=Alt, 5=Ctrl, 6=Ctrl+Shift
-    bool ctrl = (nparam >= 2 && (params[1] == 5 || params[1] == 6));
+    // Modifier in params[1]: 2=Shift, 3=Alt, 4=Alt+Shift, 5=Ctrl, 6=Ctrl+Shift
+    int modifier = (nparam >= 2) ? params[1] : 0;
+    bool ctrl = (modifier == 5 || modifier == 6);
+    bool alt  = (modifier == 3 || modifier == 4);
+
+    // Alt/Meta modifier: emit ESCAPE prefix so multi-key bindings
+    // like "Esc Left" match when the terminal sends CSI 1;3 D.
+    if (alt) emit(Key::ESCAPE);
 
     switch (final_byte) {
         case 'A': emit(Key::UP);    break;
