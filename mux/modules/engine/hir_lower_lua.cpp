@@ -94,22 +94,6 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
     // scanning — the bytecode can't reference protos that don't exist.
     if (!proto->protos.empty()) return LUA_BC_HAS_NESTED_PROTOS;
 
-    // --- Constant pool type guard ---
-    //
-    // Our JIT only handles integer arithmetic.  Float constants that
-    // are not integer-valued (e.g. 3.14) would produce wrong results.
-    // Integer-valued floats (e.g. 2.0) are safe — we emit them as
-    // ICONST with the truncated integer value.
-    //
-    for (size_t i = 0; i < proto->constants.size(); i++) {
-        if (proto->constants[i].type == LUA_BC_TFLOAT) {
-            double v = proto->constants[i].fval;
-            if (v != floor(v) || v < -9.22e18 || v > 9.22e18) {
-                return LUA_BC_HAS_NON_INT_CONST;
-            }
-        }
-    }
-
     // --- Opcode scan ---
     //
     // We maintain a whitelist of opcodes the lowering handles.
@@ -134,10 +118,11 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
         case OP_LUA_LOADNIL:
             break;
 
-        // Integer arithmetic — handled.
+        // Arithmetic — handled (integer and float).
         case OP_LUA_ADD:
         case OP_LUA_SUB:
         case OP_LUA_MUL:
+        case OP_LUA_DIV:
         case OP_LUA_IDIV:
         case OP_LUA_MOD:
         case OP_LUA_UNM:
@@ -299,14 +284,14 @@ static int emit_lua_constant(hir_program &h, rv_compiler &rc,
     case LUA_BC_TINT:
         return h.emit_iconst(k.ival);
     case LUA_BC_TFLOAT: {
-        // Integer-valued floats (e.g. 2.0) → emit as ICONST.
-        // The eligibility filter already rejected non-integer floats,
-        // but guard here too for defense in depth.
+        // Integer-valued floats (e.g. 2.0) → emit as ICONST for
+        // compatibility with integer arithmetic.  Non-integer floats
+        // (e.g. 3.14) → emit as FCONST.
         double v = k.fval;
         if (v == floor(v) && v >= -9.22e18 && v <= 9.22e18) {
             return h.emit_iconst(static_cast<int64_t>(v));
         }
-        return -1;  // Non-integer float — reject.
+        return h.emit_fconst(v);
     }
     case LUA_BC_TSHRSTR:
     case LUA_BC_TLNGSTR: {
@@ -316,6 +301,27 @@ static int emit_lua_constant(hir_program &h, rv_compiler &rc,
     default:
         return -1;
     }
+}
+
+// ---------------------------------------------------------------
+// Helper: promote an operand to TY_FLOAT if needed.
+// Returns the (possibly new) HIR value index, or -1 on error.
+// ---------------------------------------------------------------
+
+static int promote_to_float(hir_program &h, int v) {
+    if (v < 0) return -1;
+    if (h.ty[v] == TY_FLOAT) return v;
+    if (h.ty[v] == TY_INT) {
+        return h.emit(HIR_ITOF, TY_FLOAT, v);
+    }
+    return -1;  // TY_STRING cannot be promoted.
+}
+
+// Returns true if either operand is TY_FLOAT (i.e., need float arithmetic).
+//
+static bool either_float(hir_program &h, int a, int b) {
+    return (a >= 0 && h.ty[a] == TY_FLOAT)
+        || (b >= 0 && h.ty[b] == TY_FLOAT);
 }
 
 // ---------------------------------------------------------------
@@ -452,31 +458,60 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
 
         // ---- Integer arithmetic ----
 
-#define ARITH_RR(HIR_OP, MMOP) \
+#define ARITH_RR(HIR_INT_OP, HIR_FP_OP, MMOP) \
         { \
             int rb = lua_reg[insn.B()]; \
             int rc_val = lua_reg[insn.C()]; \
             if (rb < 0 || rc_val < 0) return -1; \
-            if (h.ty[rb] != TY_INT || h.ty[rc_val] != TY_INT) return -1; \
-            lua_reg[A] = h.emit(HIR_OP, TY_INT, rb, rc_val); \
+            if (either_float(h, rb, rc_val)) { \
+                rb = promote_to_float(h, rb); \
+                rc_val = promote_to_float(h, rc_val); \
+                if (rb < 0 || rc_val < 0) return -1; \
+                lua_reg[A] = h.emit(HIR_FP_OP, TY_FLOAT, rb, rc_val); \
+            } else if (h.ty[rb] == TY_INT && h.ty[rc_val] == TY_INT) { \
+                lua_reg[A] = h.emit(HIR_INT_OP, TY_INT, rb, rc_val); \
+            } else { \
+                return -1; \
+            } \
             if (lua_reg[A] < 0) return -1; \
             h.native_ops++; \
             if (pc + 1 < n && proto->code[pc + 1].opcode() == MMOP) pc++; \
             break; \
         }
 
-        case OP_LUA_ADD:  ARITH_RR(HIR_ADD, OP_LUA_MMBIN)
-        case OP_LUA_SUB:  ARITH_RR(HIR_SUB, OP_LUA_MMBIN)
-        case OP_LUA_MUL:  ARITH_RR(HIR_MUL, OP_LUA_MMBIN)
-        case OP_LUA_IDIV: ARITH_RR(HIR_DIV, OP_LUA_MMBIN)
-        case OP_LUA_MOD:  ARITH_RR(HIR_REM, OP_LUA_MMBIN)
+        case OP_LUA_ADD:  ARITH_RR(HIR_ADD, HIR_FADD, OP_LUA_MMBIN)
+        case OP_LUA_SUB:  ARITH_RR(HIR_SUB, HIR_FSUB, OP_LUA_MMBIN)
+        case OP_LUA_MUL:  ARITH_RR(HIR_MUL, HIR_FMUL, OP_LUA_MMBIN)
+        case OP_LUA_IDIV: ARITH_RR(HIR_DIV, HIR_DIV, OP_LUA_MMBIN)  // IDIV always integer
+        case OP_LUA_MOD:  ARITH_RR(HIR_REM, HIR_REM, OP_LUA_MMBIN)  // MOD always integer
 #undef ARITH_RR
+
+        // Lua `/` (OP_DIV) always produces a float result.
+        case OP_LUA_DIV: {
+            int rb = lua_reg[insn.B()];
+            int rc_val = lua_reg[insn.C()];
+            if (rb < 0 || rc_val < 0) return -1;
+            rb = promote_to_float(h, rb);
+            rc_val = promote_to_float(h, rc_val);
+            if (rb < 0 || rc_val < 0) return -1;
+            lua_reg[A] = h.emit(HIR_FDIV, TY_FLOAT, rb, rc_val);
+            if (lua_reg[A] < 0) return -1;
+            h.native_ops++;
+            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBIN)
+                pc++;
+            break;
+        }
 
         case OP_LUA_UNM: {
             int rb = lua_reg[insn.B()];
             if (rb < 0) return -1;
-            if (h.ty[rb] != TY_INT) return -1;
-            lua_reg[A] = h.emit(HIR_NEG, TY_INT, rb);
+            if (h.ty[rb] == TY_FLOAT) {
+                lua_reg[A] = h.emit(HIR_FNEG, TY_FLOAT, rb);
+            } else if (h.ty[rb] == TY_INT) {
+                lua_reg[A] = h.emit(HIR_NEG, TY_INT, rb);
+            } else {
+                return -1;
+            }
             if (lua_reg[A] < 0) return -1;
             h.native_ops++;
             if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBIN)
@@ -489,10 +524,17 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_ADDI: {
             int rb = lua_reg[insn.B()];
             if (rb < 0) return -1;
-            if (h.ty[rb] != TY_INT) return -1;
-            int imm_val = h.emit_iconst(insn.sC());
-            if (imm_val < 0) return -1;
-            lua_reg[A] = h.emit(HIR_ADD, TY_INT, rb, imm_val);
+            if (h.ty[rb] == TY_FLOAT) {
+                int imm_val = h.emit_fconst(static_cast<double>(insn.sC()));
+                if (imm_val < 0) return -1;
+                lua_reg[A] = h.emit(HIR_FADD, TY_FLOAT, rb, imm_val);
+            } else if (h.ty[rb] == TY_INT) {
+                int imm_val = h.emit_iconst(insn.sC());
+                if (imm_val < 0) return -1;
+                lua_reg[A] = h.emit(HIR_ADD, TY_INT, rb, imm_val);
+            } else {
+                return -1;
+            }
             if (lua_reg[A] < 0) return -1;
             h.native_ops++;
             if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBINI)
@@ -502,18 +544,25 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
 
         // ---- Constant arithmetic ----
 
-#define ARITH_RK(HIR_OP) \
+#define ARITH_RK(HIR_INT_OP, HIR_FP_OP) \
         { \
             int rb = lua_reg[insn.B()]; \
             if (rb < 0) return -1; \
-            if (h.ty[rb] != TY_INT) return -1; \
             int kidx = insn.C(); \
             if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size())) \
                 return -1; \
             int kval = emit_lua_constant(h, rc, proto->constants[kidx]); \
             if (kval < 0) return -1; \
-            if (h.ty[kval] != TY_INT) return -1; \
-            lua_reg[A] = h.emit(HIR_OP, TY_INT, rb, kval); \
+            if (either_float(h, rb, kval)) { \
+                rb = promote_to_float(h, rb); \
+                kval = promote_to_float(h, kval); \
+                if (rb < 0 || kval < 0) return -1; \
+                lua_reg[A] = h.emit(HIR_FP_OP, TY_FLOAT, rb, kval); \
+            } else if (h.ty[rb] == TY_INT && h.ty[kval] == TY_INT) { \
+                lua_reg[A] = h.emit(HIR_INT_OP, TY_INT, rb, kval); \
+            } else { \
+                return -1; \
+            } \
             if (lua_reg[A] < 0) return -1; \
             h.native_ops++; \
             if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBINK) \
@@ -521,21 +570,30 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             break; \
         }
 
-        case OP_LUA_ADDK: ARITH_RK(HIR_ADD)
-        case OP_LUA_SUBK: ARITH_RK(HIR_SUB)
-        case OP_LUA_MULK: ARITH_RK(HIR_MUL)
+        case OP_LUA_ADDK: ARITH_RK(HIR_ADD, HIR_FADD)
+        case OP_LUA_SUBK: ARITH_RK(HIR_SUB, HIR_FSUB)
+        case OP_LUA_MULK: ARITH_RK(HIR_MUL, HIR_FMUL)
 #undef ARITH_RK
 
         // ---- Comparisons ----
         // All share: compare → optional negate → JMP → BRC
 
-#define CMP_RR(HIR_OP) \
+#define CMP_RR(HIR_INT_OP, HIR_FP_OP) \
         { \
             int rb = lua_reg[A]; \
             int rc_val = lua_reg[insn.B()]; \
             if (rb < 0 || rc_val < 0) return -1; \
-            if (h.ty[rb] != TY_INT || h.ty[rc_val] != TY_INT) return -1; \
-            int cmp = h.emit(HIR_OP, TY_INT, rb, rc_val); \
+            int cmp; \
+            if (either_float(h, rb, rc_val)) { \
+                rb = promote_to_float(h, rb); \
+                rc_val = promote_to_float(h, rc_val); \
+                if (rb < 0 || rc_val < 0) return -1; \
+                cmp = h.emit(HIR_FP_OP, TY_INT, rb, rc_val); \
+            } else if (h.ty[rb] == TY_INT && h.ty[rc_val] == TY_INT) { \
+                cmp = h.emit(HIR_INT_OP, TY_INT, rb, rc_val); \
+            } else { \
+                return -1; \
+            } \
             h.native_ops++; \
             if (!multi_block) return -1; \
             if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block, \
@@ -544,14 +602,22 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             break; \
         }
 
-#define CMP_RI(HIR_OP) \
+#define CMP_RI(HIR_INT_OP, HIR_FP_OP) \
         { \
             int rb = lua_reg[A]; \
             if (rb < 0) return -1; \
-            if (h.ty[rb] != TY_INT) return -1; \
-            int imm_val = h.emit_iconst(insn.sB()); \
-            if (imm_val < 0) return -1; \
-            int cmp = h.emit(HIR_OP, TY_INT, rb, imm_val); \
+            int cmp; \
+            if (h.ty[rb] == TY_FLOAT) { \
+                int fimm = h.emit_fconst(static_cast<double>(insn.sB())); \
+                if (fimm < 0) return -1; \
+                cmp = h.emit(HIR_FP_OP, TY_INT, rb, fimm); \
+            } else if (h.ty[rb] == TY_INT) { \
+                int imm_val = h.emit_iconst(insn.sB()); \
+                if (imm_val < 0) return -1; \
+                cmp = h.emit(HIR_INT_OP, TY_INT, rb, imm_val); \
+            } else { \
+                return -1; \
+            } \
             h.native_ops++; \
             if (!multi_block) return -1; \
             if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block, \
@@ -560,14 +626,59 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             break; \
         }
 
-        case OP_LUA_EQ:  CMP_RR(HIR_EQ)
-        case OP_LUA_LT:  CMP_RR(HIR_LT)
-        case OP_LUA_LE:  CMP_RR(HIR_LE)
-        case OP_LUA_EQI: CMP_RI(HIR_EQ)
-        case OP_LUA_LTI: CMP_RI(HIR_LT)
-        case OP_LUA_LEI: CMP_RI(HIR_LE)
-        case OP_LUA_GTI: CMP_RI(HIR_GT)
-        case OP_LUA_GEI: CMP_RI(HIR_GE)
+        case OP_LUA_EQ:  CMP_RR(HIR_EQ, HIR_FEQ)
+        case OP_LUA_LT:  CMP_RR(HIR_LT, HIR_FLT)
+        case OP_LUA_LE:  CMP_RR(HIR_LE, HIR_FLE)
+        case OP_LUA_EQI: CMP_RI(HIR_EQ, HIR_FEQ)
+        case OP_LUA_LTI: CMP_RI(HIR_LT, HIR_FLT)
+        case OP_LUA_LEI: CMP_RI(HIR_LE, HIR_FLE)
+
+        // For GT/GE with floats, we only have FLT/FLE.
+        // GT(a, b) = FLT(b, a), GE(a, b) = FLE(b, a) — swap operands.
+        case OP_LUA_GTI: {
+            int rb = lua_reg[A];
+            if (rb < 0) return -1;
+            int cmp;
+            if (h.ty[rb] == TY_FLOAT) {
+                int fimm = h.emit_fconst(static_cast<double>(insn.sB()));
+                if (fimm < 0) return -1;
+                cmp = h.emit(HIR_FLT, TY_INT, fimm, rb);  // swapped
+            } else if (h.ty[rb] == TY_INT) {
+                int imm_val = h.emit_iconst(insn.sB());
+                if (imm_val < 0) return -1;
+                cmp = h.emit(HIR_GT, TY_INT, rb, imm_val);
+            } else {
+                return -1;
+            }
+            h.native_ops++;
+            if (!multi_block) return -1;
+            if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block,
+                                cur_hir_block, n) < 0) return -1;
+            pc++;
+            break;
+        }
+        case OP_LUA_GEI: {
+            int rb = lua_reg[A];
+            if (rb < 0) return -1;
+            int cmp;
+            if (h.ty[rb] == TY_FLOAT) {
+                int fimm = h.emit_fconst(static_cast<double>(insn.sB()));
+                if (fimm < 0) return -1;
+                cmp = h.emit(HIR_FLE, TY_INT, fimm, rb);  // swapped
+            } else if (h.ty[rb] == TY_INT) {
+                int imm_val = h.emit_iconst(insn.sB());
+                if (imm_val < 0) return -1;
+                cmp = h.emit(HIR_GE, TY_INT, rb, imm_val);
+            } else {
+                return -1;
+            }
+            h.native_ops++;
+            if (!multi_block) return -1;
+            if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block,
+                                cur_hir_block, n) < 0) return -1;
+            pc++;
+            break;
+        }
 #undef CMP_RR
 #undef CMP_RI
 
@@ -698,6 +809,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (h.ty[rv] == TY_INT) {
                 rv = h.emit(HIR_ITOA, TY_STRING, rv);
                 if (rv < 0) return -1;
+            } else if (h.ty[rv] == TY_FLOAT) {
+                rv = h.emit(HIR_FTOA, TY_STRING, rv);
+                if (rv < 0) return -1;
             }
             result_val = rv;
             h.emit(HIR_RET, TY_VOID, result_val);
@@ -715,6 +829,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 if (rv < 0) return -1;
                 if (h.ty[rv] == TY_INT) {
                     rv = h.emit(HIR_ITOA, TY_STRING, rv);
+                    if (rv < 0) return -1;
+                } else if (h.ty[rv] == TY_FLOAT) {
+                    rv = h.emit(HIR_FTOA, TY_STRING, rv);
                     if (rv < 0) return -1;
                 }
                 result_val = rv;

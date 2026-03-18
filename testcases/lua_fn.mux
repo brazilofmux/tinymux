@@ -5,10 +5,6 @@
 -
 @set test_lua_fn=INHERIT QUIET
 -
-&tr.done test_lua_fn=
-  @log smoke=End lua() test cases.;
-  @notify smoke
--
 #
 # Beginning of Test Cases
 #
@@ -525,13 +521,81 @@
     setr(0,lua(me/LUA_BIGLOOP)),
     50005000)=
   {
-    @log smoke=TC032: lua large for-loop. Succeeded.;
+    @log smoke=TC032: lua large for-loop. Succeeded.
+  },
+  {
+    @log smoke=TC032: lua large for-loop. Failed (%q0).
+  }
+-
+#
+# Test 33: Float division — Lua `/` always produces float.
+#
+&LUA_FDIV test_lua_fn=return 10 / 3
+-
+&tr.tc033 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_FDIV)),
+    3.333333*)=
+  {
+    @log smoke=TC033: lua float division. Succeeded.
+  },
+  {
+    @log smoke=TC033: lua float division. Failed (%q0).
+  }
+-
+#
+# Test 34: Float constant arithmetic.
+#
+&LUA_FCONST test_lua_fn=return 1.5 + 2.5
+-
+&tr.tc034 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_FCONST)),
+    4*)=
+  {
+    @log smoke=TC034: lua float constant add. Succeeded.
+  },
+  {
+    @log smoke=TC034: lua float constant add. Failed (%q0).
+  }
+-
+#
+# Test 35: Mixed int/float arithmetic — promotion.
+#
+&LUA_MIXED test_lua_fn=return 3 + 1.5
+-
+&tr.tc035 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_MIXED)),
+    4.5)=
+  {
+    @log smoke=TC035: lua mixed int+float. Succeeded.
+  },
+  {
+    @log smoke=TC035: lua mixed int+float. Failed (%q0).
+  }
+-
+#
+# Test 36: Float negation.
+#
+&LUA_FNEG test_lua_fn=return -(3.14)
+-
+&tr.tc036 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_FNEG)),
+    -3.14)=
+  {
+    @log smoke=TC036: lua float negation. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC032: lua large for-loop. Failed (%q0).;
+    @log smoke=TC036: lua float negation. Failed (%q0).;
     @trig me/tr.done
   }
+-
+&tr.done test_lua_fn=
+  @log smoke=End lua() test cases.;
+  @notify smoke
 -
 drop test_lua_fn
 -
