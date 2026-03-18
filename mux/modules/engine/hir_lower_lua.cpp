@@ -127,12 +127,26 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
         case OP_LUA_MOD:
         case OP_LUA_UNM:
         case OP_LUA_NOT:
+        case OP_LUA_BNOT:
         case OP_LUA_LEN:
         case OP_LUA_CONCAT:
         case OP_LUA_ADDI:
         case OP_LUA_ADDK:
         case OP_LUA_SUBK:
         case OP_LUA_MULK:
+        case OP_LUA_DIVK:
+        case OP_LUA_IDIVK:
+        case OP_LUA_MODK:
+        case OP_LUA_BAND:
+        case OP_LUA_BOR:
+        case OP_LUA_BXOR:
+        case OP_LUA_SHL:
+        case OP_LUA_SHR:
+        case OP_LUA_SHRI:
+        case OP_LUA_SHLI:
+        case OP_LUA_BANDK:
+        case OP_LUA_BORK:
+        case OP_LUA_BXORK:
             break;
 
         // Metamethod companions — skipped as no-ops.
@@ -149,6 +163,7 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
             break;
 
         // Comparisons — handled.
+        case OP_LUA_EQK:
         case OP_LUA_EQ:
         case OP_LUA_LT:
         case OP_LUA_LE:
@@ -530,6 +545,90 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             break;
         }
 
+        // ---- Bitwise operations ----
+
+#define BITOP_RR(HIR_OP) \
+        { \
+            int rb = lua_reg[insn.B()]; \
+            int rc_val = lua_reg[insn.C()]; \
+            if (rb < 0 || rc_val < 0) return -1; \
+            if (h.ty[rb] != TY_INT || h.ty[rc_val] != TY_INT) return -1; \
+            lua_reg[A] = h.emit(HIR_OP, TY_INT, rb, rc_val); \
+            if (lua_reg[A] < 0) return -1; \
+            h.native_ops++; \
+            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBIN) pc++; \
+            break; \
+        }
+
+        case OP_LUA_BAND: BITOP_RR(HIR_BAND)
+        case OP_LUA_BOR:  BITOP_RR(HIR_BOR)
+        case OP_LUA_BXOR: BITOP_RR(HIR_BXOR)
+        case OP_LUA_SHL:  BITOP_RR(HIR_SHL)
+        case OP_LUA_SHR:  BITOP_RR(HIR_SHR)
+#undef BITOP_RR
+
+        case OP_LUA_BNOT: {
+            int rb = lua_reg[insn.B()];
+            if (rb < 0) return -1;
+            if (h.ty[rb] != TY_INT) return -1;
+            lua_reg[A] = h.emit(HIR_BNOT, TY_INT, rb);
+            if (lua_reg[A] < 0) return -1;
+            h.native_ops++;
+            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBIN)
+                pc++;
+            break;
+        }
+
+        // SHRI/SHLI: shift by immediate (sC field).
+        case OP_LUA_SHRI: {
+            int rb = lua_reg[insn.B()];
+            if (rb < 0 || h.ty[rb] != TY_INT) return -1;
+            int imm = h.emit_iconst(insn.sC());
+            if (imm < 0) return -1;
+            lua_reg[A] = h.emit(HIR_SHR, TY_INT, rb, imm);
+            if (lua_reg[A] < 0) return -1;
+            h.native_ops++;
+            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBINI)
+                pc++;
+            break;
+        }
+
+        case OP_LUA_SHLI: {
+            int rb = lua_reg[insn.B()];
+            if (rb < 0 || h.ty[rb] != TY_INT) return -1;
+            int imm = h.emit_iconst(insn.sC());
+            if (imm < 0) return -1;
+            lua_reg[A] = h.emit(HIR_SHL, TY_INT, rb, imm);
+            if (lua_reg[A] < 0) return -1;
+            h.native_ops++;
+            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBINI)
+                pc++;
+            break;
+        }
+
+        // Bitwise with constant (BANDK/BORK/BXORK).
+#define BITOP_RK(HIR_OP) \
+        { \
+            int rb = lua_reg[insn.B()]; \
+            if (rb < 0 || h.ty[rb] != TY_INT) return -1; \
+            int kidx = insn.C(); \
+            if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size())) \
+                return -1; \
+            int kval = emit_lua_constant(h, rc, proto->constants[kidx]); \
+            if (kval < 0 || h.ty[kval] != TY_INT) return -1; \
+            lua_reg[A] = h.emit(HIR_OP, TY_INT, rb, kval); \
+            if (lua_reg[A] < 0) return -1; \
+            h.native_ops++; \
+            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBINK) \
+                pc++; \
+            break; \
+        }
+
+        case OP_LUA_BANDK: BITOP_RK(HIR_BAND)
+        case OP_LUA_BORK:  BITOP_RK(HIR_BOR)
+        case OP_LUA_BXORK: BITOP_RK(HIR_BXOR)
+#undef BITOP_RK
+
         // ---- Logical NOT ----
 
         case OP_LUA_NOT: {
@@ -775,10 +874,32 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             break; \
         }
 
-        case OP_LUA_ADDK: ARITH_RK(HIR_ADD, HIR_FADD)
-        case OP_LUA_SUBK: ARITH_RK(HIR_SUB, HIR_FSUB)
-        case OP_LUA_MULK: ARITH_RK(HIR_MUL, HIR_FMUL)
+        case OP_LUA_ADDK:  ARITH_RK(HIR_ADD, HIR_FADD)
+        case OP_LUA_SUBK:  ARITH_RK(HIR_SUB, HIR_FSUB)
+        case OP_LUA_MULK:  ARITH_RK(HIR_MUL, HIR_FMUL)
+        case OP_LUA_IDIVK: ARITH_RK(HIR_DIV, HIR_DIV)
+        case OP_LUA_MODK:  ARITH_RK(HIR_REM, HIR_REM)
 #undef ARITH_RK
+
+        // DIVK: Lua `/` with constant — always float.
+        case OP_LUA_DIVK: {
+            int rb = lua_reg[insn.B()];
+            if (rb < 0) return -1;
+            int kidx = insn.C();
+            if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
+                return -1;
+            int kval = emit_lua_constant(h, rc, proto->constants[kidx]);
+            if (kval < 0) return -1;
+            rb = promote_to_float(h, rb);
+            kval = promote_to_float(h, kval);
+            if (rb < 0 || kval < 0) return -1;
+            lua_reg[A] = h.emit(HIR_FDIV, TY_FLOAT, rb, kval);
+            if (lua_reg[A] < 0) return -1;
+            h.native_ops++;
+            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBINK)
+                pc++;
+            break;
+        }
 
         // ---- Comparisons ----
         // All share: compare → optional negate → JMP → BRC
@@ -834,6 +955,46 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_EQ:  CMP_RR(HIR_EQ, HIR_FEQ)
         case OP_LUA_LT:  CMP_RR(HIR_LT, HIR_FLT)
         case OP_LUA_LE:  CMP_RR(HIR_LE, HIR_FLE)
+
+        // EQK: equality with constant from pool.
+        case OP_LUA_EQK: {
+            int rb = lua_reg[A];
+            if (rb < 0) return -1;
+            int kidx = insn.B();
+            if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
+                return -1;
+            int kval = emit_lua_constant(h, rc, proto->constants[kidx]);
+            if (kval < 0) return -1;
+            int cmp;
+            if (either_float(h, rb, kval)) {
+                rb = promote_to_float(h, rb);
+                kval = promote_to_float(h, kval);
+                if (rb < 0 || kval < 0) return -1;
+                cmp = h.emit(HIR_FEQ, TY_INT, rb, kval);
+            } else if (h.ty[rb] == TY_INT && h.ty[kval] == TY_INT) {
+                cmp = h.emit(HIR_EQ, TY_INT, rb, kval);
+            } else {
+                return -1;
+            }
+            h.native_ops++;
+            if (insn.k()) {
+                cmp = h.emit(HIR_NOT, TY_INT, cmp);
+                if (cmp < 0) return -1;
+            }
+            // EQK is NOT followed by JMP — it just skips the next instruction.
+            if (pc + 1 >= n) return -1;
+            if (!multi_block) return -1;
+            int true_target = pc + 2;  // skip next insn
+            int false_target = pc + 1; // execute next insn
+            int true_blk = (true_target < n) ? pc_to_block[true_target] : -1;
+            int false_blk = pc_to_block[false_target];
+            if (true_blk < 0 || false_blk < 0) return -1;
+            h.emit(HIR_BRC, TY_VOID, cmp, false_blk, true_blk);
+            h.add_edge(cur_hir_block, true_blk);
+            h.add_edge(cur_hir_block, false_blk);
+            break;
+        }
+
         case OP_LUA_EQI: CMP_RI(HIR_EQ, HIR_FEQ)
         case OP_LUA_LTI: CMP_RI(HIR_LT, HIR_FLT)
         case OP_LUA_LEI: CMP_RI(HIR_LE, HIR_FLE)

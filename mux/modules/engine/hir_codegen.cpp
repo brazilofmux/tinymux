@@ -161,6 +161,24 @@ static uint32_t rv_REM(uint8_t rd, uint8_t rs1, uint8_t rs2) {
     return rv_r_type(OP_REG, rd, 6, rs1, rs2, 0x01);
 }
 
+// Bitwise operations.
+//
+static uint32_t rv_AND(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return rv_r_type(OP_REG, rd, ALU_AND, rs1, rs2, 0x00);
+}
+static uint32_t rv_OR(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return rv_r_type(OP_REG, rd, ALU_OR, rs1, rs2, 0x00);
+}
+static uint32_t rv_XOR(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return rv_r_type(OP_REG, rd, ALU_XOR, rs1, rs2, 0x00);
+}
+static uint32_t rv_SLL(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return rv_r_type(OP_REG, rd, ALU_SLL, rs1, rs2, 0x00);
+}
+static uint32_t rv_SRL(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return rv_r_type(OP_REG, rd, ALU_SRL, rs1, rs2, 0x00);
+}
+
 // D extension: double-precision floating point.
 // RV64D uses R-type with opcode=OP_FP, funct7 encodes the operation,
 // and rm (funct3) = 0 (RNE) or 7 (dynamic) for arithmetic.
@@ -592,6 +610,8 @@ static bool needs_int_reg(hir_program &h, int i) {
     case HIR_GE:  case HIR_LE:
     case HIR_NOT: case HIR_BOOL:
     case HIR_INC: case HIR_DEC:
+    case HIR_BAND: case HIR_BOR: case HIR_BXOR: case HIR_BNOT:
+    case HIR_SHL: case HIR_SHR:
     case HIR_FTOI:              // float → int produces integer
     case HIR_FEQ: case HIR_FLT: case HIR_FLE:  // float cmp → int 0/1
         return true;
@@ -1128,6 +1148,40 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 rc.code.push_back(rv_DIV(dest, r1, r2));
+                ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            // Bitwise operations.
+#define BITOP_RR(RV_INSN) \
+            { \
+                int s1 = h.src1[i], s2 = h.src2[i]; \
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH); \
+                uint8_t r2 = ra_get_reg(rc, loc, s2, RA_SCRATCH2); \
+                uint8_t reg = int_alloc.reg[i]; \
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0); \
+                uint8_t dest = spilled ? RA_SCRATCH : reg; \
+                if (!dest) break; \
+                rc.code.push_back(RV_INSN(dest, r1, r2)); \
+                ra_set_loc(rc, loc, int_alloc, i, dest); \
+                break; \
+            }
+            case HIR_BAND: BITOP_RR(rv_AND)
+            case HIR_BOR:  BITOP_RR(rv_OR)
+            case HIR_BXOR: BITOP_RR(rv_XOR)
+            case HIR_SHL:  BITOP_RR(rv_SLL)
+            case HIR_SHR:  BITOP_RR(rv_SRL)
+#undef BITOP_RR
+
+            case HIR_BNOT: {
+                int s1 = h.src1[i];
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                // XORI rd, rs, -1 (all-ones immediate = bitwise NOT)
+                rc.code.push_back(rv_i_type(OP_IMM, dest, ALU_XORI, r1, -1));
                 ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
@@ -1675,6 +1729,12 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_SIGN:       return "SIGN";
     case HIR_MAX:        return "MAX";
     case HIR_MIN:        return "MIN";
+    case HIR_BAND:       return "BAND";
+    case HIR_BOR:        return "BOR";
+    case HIR_BXOR:       return "BXOR";
+    case HIR_BNOT:       return "BNOT";
+    case HIR_SHL:        return "SHL";
+    case HIR_SHR:        return "SHR";
     case HIR_EQ:         return "EQ";
     case HIR_NE:         return "NE";
     case HIR_LT:         return "LT";
@@ -1719,6 +1779,7 @@ static const char *hir_type_name(hir_type t) {
     switch (t) {
     case TY_VOID:   return "void";
     case TY_INT:    return "int";
+    case TY_FLOAT:  return "flt";
     case TY_STRING: return "str";
     default:        return "???";
     }

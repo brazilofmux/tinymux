@@ -41,6 +41,14 @@ enum hir_kind {
     HIR_MAX,        // max(src1, src2)
     HIR_MIN,        // min(src1, src2)
 
+    // Bitwise (native RV64)
+    HIR_BAND,       // src1 & src2
+    HIR_BOR,        // src1 | src2
+    HIR_BXOR,       // src1 ^ src2
+    HIR_BNOT,       // ~src1
+    HIR_SHL,        // src1 << src2
+    HIR_SHR,        // src1 >> src2 (logical)
+
     // Float arithmetic (native RV64D)
     HIR_FADD,       // src1 + src2 (double)
     HIR_FSUB,       // src1 - src2 (double)
