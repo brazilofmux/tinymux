@@ -23,6 +23,7 @@
 #include "modules.h"
 #include "mail_mod.h"
 
+#include <algorithm>
 #include <cstring>
 #include <cstdlib>
 #include <cctype>
@@ -712,7 +713,7 @@ void CMailMod::sqlite_wt_sync_all_aliases(void)
         //
         char members_buf[MOD_LBUF_SIZE];
         char *bp = members_buf;
-        for (int j = 0; j < m->numrecep; j++)
+        for (size_t j = 0; j < m->list.size(); j++)
         {
             if (j > 0)
             {
@@ -838,7 +839,7 @@ bool CMailMod::LoadMailAliases(void)
 
             // Parse space-separated member list.
             //
-            m->numrecep = 0;
+            m->list.clear();
             const char *pMembers = reinterpret_cast<const char *>(members);
             if (nullptr != pMembers && pMembers[0] != '\0')
             {
@@ -846,11 +847,11 @@ bool CMailMod::LoadMailAliases(void)
                 strncpy(buf, pMembers, MOD_LBUF_SIZE - 1);
                 buf[MOD_LBUF_SIZE - 1] = '\0';
                 char *p = buf;
-                while (*p && m->numrecep < MAX_MALIAS_MEMBERSHIP)
+                while (*p)
                 {
                     while (*p == ' ') p++;
                     if (*p == '\0') break;
-                    m->list[m->numrecep++] = atoi(p);
+                    m->list.push_back(atoi(p));
                     while (*p && *p != ' ') p++;
                 }
             }
@@ -2183,7 +2184,7 @@ void CMailMod::do_mail_retract(dbref player, const UTF8 *name,
         }
         if (nResult == GMA_FOUND)
         {
-            for (int k = 0; k < m->numrecep; k++)
+            for (size_t k = 0; k < m->list.size(); k++)
             {
                 UTF8 dbrefbuf[32];
                 snprintf(reinterpret_cast<char *>(dbrefbuf),
@@ -2587,7 +2588,7 @@ UTF8 *CMailMod::make_numlist(dbref player, const UTF8 *arg, bool bBlind)
                 }
                 return nullptr;
             }
-            for (int i = 0; i < m->numrecep && nRecip < 4000; i++)
+            for (size_t i = 0; i < m->list.size() && nRecip < 4000; i++)
             {
                 aRecip[nRecip++] = m->list[i];
             }
@@ -2941,7 +2942,7 @@ void CMailMod::mail_to_list(dbref player, UTF8 *list, const UTF8 *subject,
             malias_t *m = get_malias(player, head, &nResult);
             if (nResult == GMA_FOUND && nullptr != m)
             {
-                for (int i = 0; i < m->numrecep; i++)
+                for (size_t i = 0; i < m->list.size(); i++)
                 {
                     bool bTargetIsPlayer = false;
                     if (nullptr != m_pIObjectInfo)
@@ -4050,7 +4051,7 @@ void CMailMod::do_malias_create(dbref player, const UTF8 *alias,
     char *head = reinterpret_cast<char *>(head_buf);
     int count = 0;
 
-    while (*head && count < (MAX_MALIAS_MEMBERSHIP - 1))
+    while (*head)
     {
         while (*head == ' ')
         {
@@ -4121,7 +4122,7 @@ void CMailMod::do_malias_create(dbref player, const UTF8 *alias,
                      reinterpret_cast<const char *>(szName),
                      reinterpret_cast<const char *>(alias));
             m_pINotify->RawNotify(player, addmsg);
-            pt->list[count] = target;
+            pt->list.push_back(target);
             count++;
         }
 
@@ -4142,10 +4143,8 @@ void CMailMod::do_malias_create(dbref player, const UTF8 *alias,
         return;
     }
 
-    pt->list[count] = NOTHING;
     pt->name = reinterpret_cast<UTF8 *>(strdup(
         reinterpret_cast<const char *>(canonical)));
-    pt->numrecep = count;
     pt->owner = player;
     pt->desc = reinterpret_cast<UTF8 *>(strdup(
         reinterpret_cast<const char *>(canonical)));
@@ -4194,7 +4193,7 @@ void CMailMod::do_malias_list(dbref player, const UTF8 *alias)
     bp += snprintf(bp, sizeof(buf), "MAIL: Alias *%s: ",
                    reinterpret_cast<const char *>(m->name));
 
-    for (int i = m->numrecep - 1; i >= 0; i--)
+    for (int i = static_cast<int>(m->list.size()) - 1; i >= 0; i--)
     {
         UTF8 szName[64];
         get_player_name(m->list[i], szName, sizeof(szName));
@@ -4437,7 +4436,7 @@ void CMailMod::do_malias_add(dbref player, const UTF8 *alias,
         return;
     }
 
-    for (int i = 0; i < m->numrecep; i++)
+    for (size_t i = 0; i < m->list.size(); i++)
     {
         if (m->list[i] == thing)
         {
@@ -4446,14 +4445,8 @@ void CMailMod::do_malias_add(dbref player, const UTF8 *alias,
             return;
         }
     }
-    if (m->numrecep >= (MAX_MALIAS_MEMBERSHIP - 1))
-    {
-        m_pINotify->RawNotify(player, T("MAIL: The list is full."));
-        return;
-    }
 
-    m->list[m->numrecep] = thing;
-    m->numrecep++;
+    m->list.push_back(thing);
     sqlite_wt_sync_all_aliases();
 
     UTF8 szName[64];
@@ -4514,23 +4507,12 @@ void CMailMod::do_malias_remove(dbref player, const UTF8 *alias,
         return;
     }
 
-    bool found = false;
-    for (int i = 0; i < m->numrecep; i++)
-    {
-        if (found)
-        {
-            m->list[i] = m->list[i + 1];
-        }
-        else if (m->list[i] == thing)
-        {
-            m->list[i] = m->list[i + 1];
-            found = true;
-        }
-    }
+    auto it = std::find(m->list.begin(), m->list.end(), thing);
+    bool found = (it != m->list.end());
 
     if (found)
     {
-        m->numrecep--;
+        m->list.erase(it);
         sqlite_wt_sync_all_aliases();
 
         UTF8 szName[64];
@@ -5589,16 +5571,10 @@ MUX_RESULT CMailMod::DestroyPlayerMail(dbref player)
     {
         if (nullptr != m_malias[i])
         {
-            for (int j = 0; j < m_malias[i]->numrecep; j++)
-            {
-                if (m_malias[i]->list[j] == player)
-                {
-                    m_malias[i]->list[j] =
-                        m_malias[i]->list[m_malias[i]->numrecep - 1];
-                    m_malias[i]->numrecep--;
-                    j--;
-                }
-            }
+            m_malias[i]->list.erase(
+                std::remove(m_malias[i]->list.begin(),
+                            m_malias[i]->list.end(), player),
+                m_malias[i]->list.end());
         }
     }
     sqlite_wt_sync_all_aliases();

@@ -131,7 +131,6 @@ struct mail_body
 
 // Mail alias.
 //
-#define MAX_MALIAS_MEMBERSHIP 100
 #define MA_INC  3
 
 #define GMA_NOTFOUND    1
@@ -143,11 +142,10 @@ struct mail_body
 typedef struct malias
 {
     int   owner;
-    int   numrecep;
     UTF8 *name;
     UTF8 *desc;
     size_t desc_width;
-    dbref list[MAX_MALIAS_MEMBERSHIP];
+    std::vector<dbref> list;
 } malias_t;
 
 // Mail selector for list/read operations.

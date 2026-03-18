@@ -11,6 +11,9 @@
 #include "config.h"
 #include "externs.h"
 
+#include <algorithm>
+#include <vector>
+
 extern "C" {
 #include "color_ops.h"
 }
@@ -57,15 +60,13 @@ const char *FOLDER_LINE =
 #define WIDTHOF_MALIASDESC 40
 #define SIZEOF_MALIASDESC (WIDTHOF_MALIASDESC*2)
 
-#define MAX_MALIAS_MEMBERSHIP 100
 typedef struct malias
 {
     int  owner;
-    int  numrecep;
     UTF8 *name;
     UTF8 *desc;
     size_t desc_width; // The visual width of the Mail Alias Description.
-    dbref list[MAX_MALIAS_MEMBERSHIP];
+    std::vector<dbref> list;
 } malias_t;
 
 static int ma_size = 0;
@@ -164,7 +165,7 @@ static void sqlite_wt_sync_all_aliases(void)
 
         UTF8 members_buf[LBUF_SIZE];
         UTF8 *bp = members_buf;
-        for (int j = 0; j < m->numrecep; j++)
+        for (size_t j = 0; j < m->list.size(); j++)
         {
             if (j > 0)
             {
@@ -2232,7 +2233,7 @@ static UTF8 *make_numlist(dbref player, UTF8 *arg, bool bBlind)
                         tprintf(T("MAIL: \xE2\x80\x98%s\xE2\x80\x99 is a badly-formed alias."), head));
                 return nullptr;
             }
-            for (int i = 0; i < m->numrecep; i++)
+            for (size_t i = 0; i < m->list.size(); i++)
             {
                  aRecip[nRecip++] = m->list[i];
             }
@@ -3386,10 +3387,10 @@ static void malias_write(FILE *fp)
     for (i = 0; i < ma_top; i++)
     {
         m = malias[i];
-        mux_fprintf(fp, T("%d %d\n"), m->owner, m->numrecep);
+        mux_fprintf(fp, T("%d %d\n"), m->owner, static_cast<int>(m->list.size()));
         mux_fprintf(fp, T("N:%s\n"), m->name);
         mux_fprintf(fp, T("D:%s\n"), m->desc);
-        for (j = 0; j < m->numrecep; j++)
+        for (size_t j = 0; j < m->list.size(); j++)
         {
             putref(fp, m->list[j]);
         }
@@ -3718,11 +3719,12 @@ static void malias_read(FILE *fp, bool bConvert)
         malias[i] = m;
 
         UTF8 *p = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(buffer), ' '));
-        m->owner = m->numrecep = 0;
+        m->owner = 0;
+        int numrecep = 0;
         if (p)
         {
             m->owner = mux_atol(buffer);
-            m->numrecep = mux_atol(p+1);
+            numrecep = mux_atol(p+1);
         }
 
         // The format of @malias name is "N:<name>\n".
@@ -3786,20 +3788,14 @@ static void malias_read(FILE *fp, bool bConvert)
             m->desc_width = 12;
         }
 
-        if (m->numrecep > 0)
+        if (numrecep > 0)
         {
-            for (j = 0; j < m->numrecep; j++)
+            m->list.reserve(numrecep);
+            for (j = 0; j < numrecep; j++)
             {
                 int k = getref(fp);
-                if (j < MAX_MALIAS_MEMBERSHIP)
-                {
-                    m->list[j] = k;
-                }
+                m->list.push_back(k);
             }
-        }
-        else
-        {
-            m->list[0] = 0;
         }
     }
 }
@@ -3975,7 +3971,7 @@ static void do_malias_send
     //
     dbref vic;
     int k;
-    for (k = 0; k < m->numrecep; k++)
+    for (k = 0; k < static_cast<int>(m->list.size()); k++)
     {
         vic = m->list[k];
 
@@ -4093,7 +4089,7 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
     i = 0;
     while (  head
           && *head
-          && i < (MAX_MALIAS_MEMBERSHIP - 1))
+         )
     {
         while (*head == ' ')
         {
@@ -4151,7 +4147,7 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
             buff = unparse_object(player, target, false);
             raw_notify(player,
                     tprintf(T("MAIL: %s added to alias %s"), buff, alias));
-            malias[ma_top]->list[i] = target;
+            malias[ma_top]->list.push_back(target);
             i++;
             free_lbuf(buff);
         }
@@ -4187,9 +4183,7 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
     UTF8 *pValidMailAliasDesc = pValidMailAlias;
     size_t nValidMailAliasDesc = nValidMailAlias;
 
-    malias[ma_top]->list[i] = NOTHING;
     malias[ma_top]->name = StringCloneLen(pValidMailAlias, nValidMailAlias);
-    malias[ma_top]->numrecep = i;
     malias[ma_top]->owner = player;
     malias[ma_top]->desc = StringCloneLen(pValidMailAliasDesc, nValidMailAliasDesc);
     malias[ma_top]->desc_width = nValidMailAliasDesc;
@@ -4221,7 +4215,7 @@ static void do_malias_list(dbref player, UTF8 *alias)
     UTF8 *bp = buff;
 
     safe_tprintf_str(buff, &bp, T("MAIL: Alias *%s: "), m->name);
-    for (int i = m->numrecep - 1; i > -1; i--)
+    for (int i = static_cast<int>(m->list.size()) - 1; i > -1; i--)
     {
         const UTF8 *p = Moniker(m->list[i]);
         if (strchr(reinterpret_cast<const char *>(p), ' '))
@@ -4950,8 +4944,7 @@ static void do_malias_add(dbref player, UTF8 *alias, UTF8 *person)
         raw_notify(player, T("MAIL: Permission denied."));
         return;
     }
-    int i;
-    for (i = 0; i < m->numrecep; i++)
+    for (size_t i = 0; i < m->list.size(); i++)
     {
         if (m->list[i] == thing)
         {
@@ -4960,14 +4953,7 @@ static void do_malias_add(dbref player, UTF8 *alias, UTF8 *person)
         }
     }
 
-    if (i >= (MAX_MALIAS_MEMBERSHIP - 1))
-    {
-        raw_notify(player, T("MAIL: The list is full."));
-        return;
-    }
-
-    m->list[m->numrecep] = thing;
-    m->numrecep = m->numrecep + 1;
+    m->list.push_back(thing);
     sqlite_wt_sync_all_aliases();
     raw_notify(player, tprintf(T("MAIL: %s added to %s"), Moniker(thing), m->name));
 }
@@ -5006,23 +4992,12 @@ static void do_malias_remove(dbref player, UTF8 *alias, UTF8 *person)
         return;
     }
 
-    bool ok = false;
-    for (int i = 0; i < m->numrecep; i++)
-    {
-        if (ok)
-        {
-            m->list[i] = m->list[i + 1];
-        }
-        else if (m->list[i] == thing)
-        {
-            m->list[i] = m->list[i + 1];
-            ok = true;
-        }
-    }
+    auto it = std::find(m->list.begin(), m->list.end(), thing);
+    bool ok = (it != m->list.end());
 
     if (ok)
     {
-        m->numrecep--;
+        m->list.erase(it);
         sqlite_wt_sync_all_aliases();
         raw_notify(player, tprintf(T("MAIL: %s removed from alias %s."),
                    Moniker(thing), alias));
@@ -5214,22 +5189,10 @@ XFUNCTION(fun_malias)
 
 static void malias_cleanup1(malias_t *m, dbref target)
 {
-    int count = 0;
-    dbref j;
-    for (int i = 0; i < m->numrecep; i++)
-    {
-         j = m->list[i];
-         if (  !Good_obj(j)
-            || j == target)
-         {
-            count++;
-         }
-         if (count)
-         {
-            m->list[i] = m->list[i + count];
-         }
-    }
-    m->numrecep -= count;
+    m->list.erase(
+        std::remove_if(m->list.begin(), m->list.end(),
+            [target](dbref j) { return !Good_obj(j) || j == target; }),
+        m->list.end());
 }
 
 void malias_cleanup(dbref player)
@@ -5323,7 +5286,7 @@ static void do_mail_retract(dbref player, UTF8 *name, UTF8 *msglist)
         }
         if (pnResult == GMA_FOUND)
         {
-            for (int i = 0; i < m->numrecep; i++)
+            for (size_t i = 0; i < m->list.size(); i++)
             {
                 do_mail_retract1(player, tprintf(T("#%d"), m->list[i]), msglist);
             }
@@ -5924,7 +5887,7 @@ bool sqlite_sync_mail(void)
         //
         UTF8 members_buf[LBUF_SIZE];
         UTF8 *bp = members_buf;
-        for (int j = 0; j < m->numrecep; j++)
+        for (size_t j = 0; j < m->list.size(); j++)
         {
             if (j > 0)
             {
@@ -6078,17 +6041,17 @@ int sqlite_load_mail(void)
 
         // Parse space-separated member list.
         //
-        m->numrecep = 0;
+        m->list.clear();
         if (members && members[0] != '\0')
         {
             UTF8 buf[LBUF_SIZE];
             mux_strncpy(buf, members, LBUF_SIZE - 1);
             UTF8 *p = buf;
-            while (*p && m->numrecep < MAX_MALIAS_MEMBERSHIP)
+            while (*p)
             {
                 while (*p == ' ') p++;
                 if (*p == '\0') break;
-                m->list[m->numrecep++] = mux_atol(p);
+                m->list.push_back(mux_atol(p));
                 while (*p && *p != ' ') p++;
             }
         }
