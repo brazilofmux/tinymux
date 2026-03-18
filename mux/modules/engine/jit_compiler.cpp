@@ -1453,6 +1453,16 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 return -1;
             }
 
+            if (strcmp(fn, "__LUA_GETENV") == 0) {
+                // Push _ENV (global table) onto Lua stack, return idx.
+                lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
+                int idx = lua_gettop(L);
+                char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+                int n = snprintf(out, out_size, "%d", idx);
+                ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
+                return -1;
+            }
+
             if (strcmp(fn, "__LUA_GETGLOBAL") == 0) {
                 // fargs[0]=name.  Push _ENV[name] onto Lua stack.
                 const char *gname = "";

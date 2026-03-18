@@ -198,6 +198,8 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
         // Table/global access and function calls — handled.
         case OP_LUA_GETTABUP:
         case OP_LUA_SETTABUP:
+        case OP_LUA_GETUPVAL:
+        case OP_LUA_SETUPVAL:
         case OP_LUA_SELF:
         case OP_LUA_CALL:
             break;
@@ -205,6 +207,7 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
         // Harmless no-ops.
         case OP_LUA_VARARGPREP:
         case OP_LUA_EXTRAARG:
+        case OP_LUA_CLOSE:     // no open upvalues without closures
             break;
 
         // --- Hard rejects ---
@@ -1374,6 +1377,33 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             break;
         }
 
+        // ---- Upvalue access ----
+        // We reject nested protos, so the only upvalue is _ENV (index 0).
+
+        case OP_LUA_GETUPVAL: {
+            // A = dest, B = upvalue index.
+            // For the main chunk, upvalue 0 = _ENV (global table).
+            if (insn.B() != 0) return -1;  // Non-_ENV upvalue.
+            // Push _ENV onto Lua stack via __lua_getglobal equivalent.
+            // Actually, just reject — GETUPVAL on _ENV is rare; scripts
+            // use GETTABUP for _ENV[key] access which is already handled.
+            // If someone does `local g = _ENV`, they get GETUPVAL.
+            std::string name("__lua_getenv");
+            int args[1];
+            int dummy = h.emit_iconst(0);
+            args[0] = dummy;
+            lua_reg[A] = h.emit_call(TY_STRING, 0, args, 1, &name);
+            if (lua_reg[A] < 0) return -1;
+            h.ecalls++;
+            break;
+        }
+
+        case OP_LUA_SETUPVAL: {
+            // A = source register, B = upvalue index.
+            // Setting _ENV is unusual and dangerous. Reject.
+            return -1;
+        }
+
         // ---- Global access, method calls, and function calls ----
 
         case OP_LUA_GETTABUP: {
@@ -1529,6 +1559,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         }
 
         // ---- No-op instructions ----
+        case OP_LUA_CLOSE:     // No open upvalues without closures.
         case OP_LUA_VARARGPREP:
         case OP_LUA_EXTRAARG:
         case OP_LUA_MMBIN:
