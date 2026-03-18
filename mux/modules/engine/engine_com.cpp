@@ -75,9 +75,11 @@ DEFINE_ENGINE_FACTORY(CPlayerSessionFactory)
 DEFINE_ENGINE_FACTORY(CComsysStorageFactory)
 DEFINE_ENGINE_FACTORY(CMailStorageFactory)
 
+#if defined(TINYMUX_JIT)
 // JIT Compile factory — implementation delegates to jit_lua.cpp.
 extern MUX_RESULT jit_compile_create_instance(MUX_IID iid, void **ppv);
 DEFINE_ENGINE_FACTORY(CJITCompileFactory)
+#endif
 
 // CServerEventsSource component which is not directly accessible.
 //
@@ -5079,6 +5081,7 @@ MUX_RESULT CMailStorageFactory::LockServer(bool bLock)
 // CJITCompileFactory — Lua bytecode → native JIT compilation.
 // ---------------------------------------------------------------------------
 
+#if defined(TINYMUX_JIT)
 CJITCompileFactory::CJITCompileFactory(void) : m_cRef(1) {}
 CJITCompileFactory::~CJITCompileFactory() {}
 
@@ -5121,6 +5124,7 @@ MUX_RESULT CJITCompileFactory::LockServer(bool bLock)
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;
 }
+#endif // TINYMUX_JIT
 
 // ===========================================================================
 // COM Front-Door — engine.so exports only these 4 functions.
@@ -5144,7 +5148,9 @@ static MUX_CLASS_INFO engine_classes[] =
     { CID_PlayerSession      },
     { CID_ComsysStorage      },
     { CID_MailStorage        },
+#if defined(TINYMUX_JIT)
     { CID_JITCompile         },
+#endif
 };
 #define NUM_ENGINE_CLASSES (sizeof(engine_classes)/sizeof(engine_classes[0]))
 
@@ -5179,7 +5185,9 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetClassObject(MUX_CID cid_arg, MUX
     MAKE_FACTORY(CPlayerSessionFactory,      CID_PlayerSession)
     MAKE_FACTORY(CComsysStorageFactory,      CID_ComsysStorage)
     MAKE_FACTORY(CMailStorageFactory,         CID_MailStorage)
+#if defined(TINYMUX_JIT)
     MAKE_FACTORY(CJITCompileFactory,        CID_JITCompile)
+#endif
 
     return mr;
 }
