@@ -56,7 +56,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader />
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>src;..\..\mux\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;..\..\mux\include;..\..\ragel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -71,7 +71,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader />
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>src;..\..\mux\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;..\..\mux\include;..\..\ragel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
@@ -91,6 +91,9 @@
     <ClCompile Include="src\world.cpp" />
     <ClCompile Include="src\schannel_tls.cpp" />
     <ClCompile Include="src\macro.cpp" />
+    <ClCompile Include="..\..\ragel\trigger_match.c">
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
     <ClCompile Include="src\keybind.cpp" />
     <ClCompile Include="src\timer.cpp" />
   </ItemGroup>
@@ -99,6 +102,7 @@
     <ClInclude Include="src\connection.h" />
     <ClInclude Include="src\schannel_tls.h" />
     <ClInclude Include="src\macro.h" />
+    <ClInclude Include="..\..\ragel\trigger_match.h" />
     <ClInclude Include="src\keybind.h" />
     <ClInclude Include="src\timer.h" />
     <ClInclude Include="src\terminal.h" />
