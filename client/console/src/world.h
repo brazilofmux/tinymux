@@ -1,0 +1,32 @@
+// world.h -- World (MUD server) definitions.
+#ifndef WORLD_H
+#define WORLD_H
+
+#include <string>
+#include <vector>
+#include <unordered_map>
+
+struct World {
+    std::string name;
+    std::string host;
+    std::string port;
+    bool        use_ssl = false;
+    std::string character;
+    std::string password;
+};
+
+class WorldDB {
+public:
+    bool load(const std::string& path);
+    bool save(const std::string& path) const;
+
+    const World* find(const std::string& name) const;
+    void add(const World& w);
+    void remove(const std::string& name);
+    std::vector<std::string> names() const;
+
+private:
+    std::unordered_map<std::string, World> worlds_;
+};
+
+#endif // WORLD_H
