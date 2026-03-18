@@ -932,7 +932,8 @@ bool run_cached_program(compiled_program *prog,
                         UTF8 *out, size_t out_size,
                         const UTF8 *cargs[],
                         int ncargs,
-                        int eval) {
+                        int eval,
+                        void *lua_state) {
     if (!prog->needs_jit) {
         const char *r = reinterpret_cast<const char *>(
             prog->memory.data() + prog->out_addr);
@@ -1062,6 +1063,7 @@ bool run_cached_program(compiled_program *prog,
     ec.eval = eval;
     ec.cargs = cargs;
     ec.ncargs = ncargs;
+    ec.lua_state = lua_state;
 
     dbt_state_t *dbt;
     if (s_dbt_ready && s_dbt_last_memory == prog->memory.data()) {
@@ -1594,6 +1596,7 @@ static bool run_compiled(compiled_program &prog,
     ec.eval = EV_FCHECK | EV_EVAL;
     ec.cargs = nullptr;
     ec.ncargs = 0;
+    ec.lua_state = nullptr;
 
     dbt_state_t *dbt;
     if (reuse_dbt && s_dbt_ready) {

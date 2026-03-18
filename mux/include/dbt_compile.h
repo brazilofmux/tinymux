@@ -277,6 +277,12 @@ struct eval_ctx {
     int      eval;
     const UTF8 **cargs;
     int        ncargs;
+
+    // Lua JIT: opaque pointer to lua_State.
+    // Non-null when running a JIT-compiled Lua program — allows ECALL
+    // handlers to call back into the Lua VM for unsupported operations.
+    // nullptr for softcode JIT.
+    void    *lua_state;
 };
 
 // ---------------------------------------------------------------
@@ -305,7 +311,8 @@ bool run_cached_program(compiled_program *prog,
                         UTF8 *out, size_t out_size,
                         const UTF8 *cargs[] = nullptr,
                         int ncargs = 0,
-                        int eval = EV_FCHECK | EV_EVAL);
+                        int eval = EV_FCHECK | EV_EVAL,
+                        void *lua_state = nullptr);
 
 // Helper used by both hir_lower and hir_codegen.
 static inline const UTF8 *u8(const std::string &s) {

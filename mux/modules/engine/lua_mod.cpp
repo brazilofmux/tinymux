@@ -1076,7 +1076,7 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
         if (entry.jit_key != 0) {
             MUX_RESULT mr = m_pIJITCompile->RunCompiled(entry.jit_key,
                 executor, caller, enactor, pArgs, nArgs,
-                pResult, nResultMax, pnResultLen);
+                pResult, nResultMax, pnResultLen, m_L);
             return MUX_SUCCEEDED(mr);
         }
         return false;  // Previously failed to compile.
@@ -1109,7 +1109,7 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
 
     // Run the compiled program.
     mr = m_pIJITCompile->RunCompiled(key, executor, caller, enactor,
-        pArgs, nArgs, pResult, nResultMax, pnResultLen);
+        pArgs, nArgs, pResult, nResultMax, pnResultLen, m_L);
     return MUX_SUCCEEDED(mr);
 }
 

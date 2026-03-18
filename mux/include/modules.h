@@ -1197,11 +1197,13 @@ public:
     // Run a previously compiled program.
     // executor/caller/enactor provide the softcode context.
     // pArgs/nArgs are the Lua mux.args[].
+    // pLuaState is the opaque lua_State* for ECALL-back-to-VM (may be nullptr).
     //
     virtual MUX_RESULT RunCompiled(uint64_t key,
         dbref executor, dbref caller, dbref enactor,
         const UTF8 *pArgs[], int nArgs,
-        UTF8 *pResult, size_t nResultMax, size_t *pnResultLen) = 0;
+        UTF8 *pResult, size_t nResultMax, size_t *pnResultLen,
+        void *pLuaState = nullptr) = 0;
 
     // Check if a key has a compiled program.
     //

@@ -157,7 +157,8 @@ public:
     MUX_RESULT RunCompiled(uint64_t key,
         dbref executor, dbref caller, dbref enactor,
         const UTF8 *pArgs[], int nArgs,
-        UTF8 *pResult, size_t nResultMax, size_t *pnResultLen) override
+        UTF8 *pResult, size_t nResultMax, size_t *pnResultLen,
+        void *pLuaState) override
     {
         auto it = s_lua_cache.find(key);
         if (it == s_lua_cache.end()) return MUX_E_NOTFOUND;
@@ -165,7 +166,8 @@ public:
         s_lua_jit_stats.cache_hits++;
 
         bool ok = run_cached_program(&it->second, executor, caller, enactor,
-            pResult, nResultMax, pArgs, nArgs);
+            pResult, nResultMax, pArgs, nArgs,
+            EV_FCHECK | EV_EVAL, pLuaState);
         if (!ok) {
             s_lua_jit_stats.run_fail++;
             return MUX_E_FAIL;
