@@ -87,10 +87,12 @@
     <ClCompile Include="src\terminal.cpp" />
     <ClCompile Include="src\command.cpp" />
     <ClCompile Include="src\world.cpp" />
+    <ClCompile Include="src\schannel_tls.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\app.h" />
     <ClInclude Include="src\connection.h" />
+    <ClInclude Include="src\schannel_tls.h" />
     <ClInclude Include="src\terminal.h" />
     <ClInclude Include="src\telnet.h" />
     <ClInclude Include="src\command.h" />

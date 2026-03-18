@@ -125,6 +125,17 @@ std::vector<std::string> Connection::on_completion(IoContext* ctx, DWORD bytes, 
         setsockopt(socket_, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, nullptr, 0);
         connected_ = true;
 
+        // Perform TLS handshake if SSL requested
+        if (use_ssl_) {
+            tls_ = std::make_unique<SchannelSession>();
+            if (!tls_->handshake(socket_, host_)) {
+                // Handshake failed
+                tls_.reset();
+                disconnect();
+                return lines;
+            }
+        }
+
         // Send initial telnet negotiations
         send_telnet(TEL_WILL, TELOPT_NAWS);
         send_telnet(TEL_WILL, TELOPT_TTYPE);
@@ -144,7 +155,32 @@ std::vector<std::string> Connection::on_completion(IoContext* ctx, DWORD bytes, 
             return lines;
         }
         line_buf_time_ = std::chrono::steady_clock::now();
-        process_telnet((const unsigned char*)ctx->buffer, bytes, lines);
+
+        if (tls_) {
+            // Decrypt through TLS
+            std::vector<char> plaintext;
+            int rc = tls_->decrypt(ctx->buffer, bytes, plaintext);
+            if (rc < 0) {
+                connected_ = false;
+                return lines;
+            }
+            if (!plaintext.empty()) {
+                process_telnet((const unsigned char*)plaintext.data(),
+                              plaintext.size(), lines);
+            }
+            // There may be more complete records in the pending buffer
+            while (rc == 1) {
+                plaintext.clear();
+                rc = tls_->decrypt(nullptr, 0, plaintext);
+                if (!plaintext.empty()) {
+                    process_telnet((const unsigned char*)plaintext.data(),
+                                  plaintext.size(), lines);
+                }
+                if (rc <= 0) break;
+            }
+        } else {
+            process_telnet((const unsigned char*)ctx->buffer, bytes, lines);
+        }
 
         // Continue reading
         begin_read();
@@ -154,6 +190,10 @@ std::vector<std::string> Connection::on_completion(IoContext* ctx, DWORD bytes, 
 }
 
 void Connection::disconnect() {
+    if (tls_ && socket_ != INVALID_SOCKET) {
+        tls_->shutdown(socket_);
+        tls_.reset();
+    }
     if (socket_ != INVALID_SOCKET) {
         closesocket(socket_);
         socket_ = INVALID_SOCKET;
@@ -169,14 +209,28 @@ bool Connection::send_line(const std::string& line) {
 
 void Connection::send_raw(const void* data, size_t len) {
     if (socket_ == INVALID_SOCKET || !connected_) return;
-    // Synchronous send for Phase 1 simplicity
-    const char* p = (const char*)data;
-    size_t remaining = len;
-    while (remaining > 0) {
-        int sent = ::send(socket_, p, (int)remaining, 0);
-        if (sent <= 0) break;
-        p += sent;
-        remaining -= sent;
+
+    if (tls_) {
+        // Encrypt through TLS then send
+        std::vector<char> encrypted;
+        if (!tls_->encrypt(data, len, encrypted)) return;
+        const char* p = encrypted.data();
+        size_t remaining = encrypted.size();
+        while (remaining > 0) {
+            int sent = ::send(socket_, p, (int)remaining, 0);
+            if (sent <= 0) break;
+            p += sent;
+            remaining -= sent;
+        }
+    } else {
+        const char* p = (const char*)data;
+        size_t remaining = len;
+        while (remaining > 0) {
+            int sent = ::send(socket_, p, (int)remaining, 0);
+            if (sent <= 0) break;
+            p += sent;
+            remaining -= sent;
+        }
     }
 }
 

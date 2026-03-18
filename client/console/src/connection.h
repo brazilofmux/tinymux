@@ -13,9 +13,11 @@
 #include <string>
 #include <deque>
 #include <vector>
+#include <memory>
 #include <cstdint>
 #include <chrono>
 #include "telnet.h"
+#include "schannel_tls.h"
 
 // Completion key sentinel — overlapped completions use the Connection pointer
 // as the key; this sentinel identifies console input events posted to the IOCP.
@@ -117,6 +119,9 @@ private:
     uint16_t naws_width_ = 80;
     uint16_t naws_height_ = 24;
     bool naws_agreed_ = false;
+
+    // TLS
+    std::unique_ptr<SchannelSession> tls_;
 
     // ConnectEx function pointer (loaded once per socket)
     static LPFN_CONNECTEX ConnectEx_;
