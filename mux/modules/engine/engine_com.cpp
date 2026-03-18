@@ -75,6 +75,10 @@ DEFINE_ENGINE_FACTORY(CPlayerSessionFactory)
 DEFINE_ENGINE_FACTORY(CComsysStorageFactory)
 DEFINE_ENGINE_FACTORY(CMailStorageFactory)
 
+// JIT Compile factory — implementation delegates to jit_lua.cpp.
+extern MUX_RESULT jit_compile_create_instance(MUX_IID iid, void **ppv);
+DEFINE_ENGINE_FACTORY(CJITCompileFactory)
+
 // CServerEventsSource component which is not directly accessible.
 //
 class CServerEventsSource : public mux_IServerEventsControl
@@ -5071,6 +5075,53 @@ MUX_RESULT CMailStorageFactory::LockServer(bool bLock)
     return MUX_S_OK;
 }
 
+// ---------------------------------------------------------------------------
+// CJITCompileFactory — Lua bytecode → native JIT compilation.
+// ---------------------------------------------------------------------------
+
+CJITCompileFactory::CJITCompileFactory(void) : m_cRef(1) {}
+CJITCompileFactory::~CJITCompileFactory() {}
+
+MUX_RESULT CJITCompileFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IUnknown *>(static_cast<mux_IClassFactory *>(this));
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CJITCompileFactory::AddRef(void)  { m_cRef++; return m_cRef; }
+uint32_t CJITCompileFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef) { delete this; return 0; }
+    return m_cRef;
+}
+
+MUX_RESULT CJITCompileFactory::CreateInstance(mux_IUnknown *pUnknownOuter,
+    MUX_IID iid, void **ppv)
+{
+    if (nullptr != pUnknownOuter) return MUX_E_NOAGGREGATION;
+    return jit_compile_create_instance(iid, ppv);
+}
+
+MUX_RESULT CJITCompileFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
 // ===========================================================================
 // COM Front-Door — engine.so exports only these 4 functions.
 // ===========================================================================
@@ -5093,6 +5144,7 @@ static MUX_CLASS_INFO engine_classes[] =
     { CID_PlayerSession      },
     { CID_ComsysStorage      },
     { CID_MailStorage        },
+    { CID_JITCompile         },
 };
 #define NUM_ENGINE_CLASSES (sizeof(engine_classes)/sizeof(engine_classes[0]))
 
@@ -5127,6 +5179,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetClassObject(MUX_CID cid_arg, MUX
     MAKE_FACTORY(CPlayerSessionFactory,      CID_PlayerSession)
     MAKE_FACTORY(CComsysStorageFactory,      CID_ComsysStorage)
     MAKE_FACTORY(CMailStorageFactory,         CID_MailStorage)
+    MAKE_FACTORY(CJITCompileFactory,        CID_JITCompile)
 
     return mr;
 }

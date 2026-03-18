@@ -31,6 +31,17 @@ static constexpr uint64_t ECALL_ARENA_RELEASE = 0x112; // a0=arena_id
 static constexpr uint64_t ECALL_DMA_SUBMIT    = 0x120; // a0=window, a1=length, a2=op
 static constexpr uint64_t ECALL_DMA_ACK       = 0x121; // -> a0=window (next free)
 
+// Lua bridge ECALLs — reserved range for mux.* function dispatch.
+static constexpr uint64_t ECALL_LUA_BRIDGE    = 0x380; // base for Lua bridge calls
+static constexpr uint64_t ECALL_LUA_NAME      = 0x380; // mux.name(dbref)
+static constexpr uint64_t ECALL_LUA_OWNER     = 0x381; // mux.owner(dbref)
+static constexpr uint64_t ECALL_LUA_LOCATION  = 0x382; // mux.location(dbref)
+static constexpr uint64_t ECALL_LUA_GET       = 0x383; // mux.get(dbref, attr)
+static constexpr uint64_t ECALL_LUA_SET       = 0x384; // mux.set(dbref, attr, val)
+static constexpr uint64_t ECALL_LUA_NOTIFY    = 0x385; // mux.notify(dbref, msg)
+static constexpr uint64_t ECALL_LUA_EVAL      = 0x386; // mux.eval(expr)
+static constexpr uint64_t ECALL_LUA_BRIDGE_MAX= 0x38F;
+
 // Maximum number of indexed functions.
 static constexpr int ENGINE_API_MAX_FUNCS = 512;
 

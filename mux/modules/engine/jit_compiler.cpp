@@ -926,13 +926,13 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
 // Run a cached program.  Uses dbt_rerun if the DBT already has
 // translated blocks for this program, otherwise dbt_reset.
 //
-static bool run_cached_program(compiled_program *prog,
-                                dbref executor, dbref caller_db,
-                                dbref enactor,
-                                UTF8 *out, size_t out_size,
-                                const UTF8 *cargs[] = nullptr,
-                                int ncargs = 0,
-                                int eval = EV_FCHECK | EV_EVAL) {
+bool run_cached_program(compiled_program *prog,
+                        dbref executor, dbref caller_db,
+                        dbref enactor,
+                        UTF8 *out, size_t out_size,
+                        const UTF8 *cargs[],
+                        int ncargs,
+                        int eval) {
     if (!prog->needs_jit) {
         const char *r = reinterpret_cast<const char *>(
             prog->memory.data() + prog->out_addr);

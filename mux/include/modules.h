@@ -1180,6 +1180,38 @@ public:
         UTF8 *buff, UTF8 **bufc) = 0;
 };
 
+// Lua JIT compilation — engine-side bytecode → native compilation.
+//
+const MUX_CID CID_JITCompile            = UINT64_C(0x00000002A8C3D4E5);
+const MUX_IID IID_IJITCompile           = UINT64_C(0x00000002B9D4E5F6);
+
+interface mux_IJITCompile : public mux_IUnknown
+{
+public:
+    // Compile a Lua 5.4 bytecode blob (output of lua_dump).
+    // On success, stores compiled program and returns key in *pKey.
+    //
+    virtual MUX_RESULT CompileLuaBytecode(const uint8_t *pData, size_t nData,
+        uint64_t *pKey) = 0;
+
+    // Run a previously compiled program.
+    // executor/caller/enactor provide the softcode context.
+    // pArgs/nArgs are the Lua mux.args[].
+    //
+    virtual MUX_RESULT RunCompiled(uint64_t key,
+        dbref executor, dbref caller, dbref enactor,
+        const UTF8 *pArgs[], int nArgs,
+        UTF8 *pResult, size_t nResultMax, size_t *pnResultLen) = 0;
+
+    // Check if a key has a compiled program.
+    //
+    virtual MUX_RESULT IsCompiled(uint64_t key, bool *pCompiled) = 0;
+
+    // Invalidate a compiled program (e.g., source changed).
+    //
+    virtual MUX_RESULT Invalidate(uint64_t key) = 0;
+};
+
 // Lua scripting module — server-side Lua 5.4 integration.
 //
 const MUX_CID CID_LuaMod                = UINT64_C(0x00000002E1A3B5C7);

@@ -299,6 +299,13 @@ void hir_dump(const hir_program &h);
 
 // JIT compiler (jit_compiler.cpp).
 void dbt_compile_cleanup(void);
+bool run_cached_program(compiled_program *prog,
+                        dbref executor, dbref caller_db,
+                        dbref enactor,
+                        UTF8 *out, size_t out_size,
+                        const UTF8 *cargs[] = nullptr,
+                        int ncargs = 0,
+                        int eval = EV_FCHECK | EV_EVAL);
 
 // Helper used by both hir_lower and hir_codegen.
 static inline const UTF8 *u8(const std::string &s) {

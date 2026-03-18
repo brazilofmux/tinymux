@@ -18,6 +18,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <vector>
 
 // Module bookkeeping.
 //
@@ -800,6 +801,7 @@ CLuaMod::CLuaMod(void) : m_cRef(1),
     m_pIAttributeAccess(nullptr),
     m_pIEvaluator(nullptr),
     m_pIPermissions(nullptr),
+    m_pIJITCompile(nullptr),
     m_L(nullptr),
     m_nInsnLimit(LUA_DEFAULT_INSN_LIMIT),
     m_nMemLimit(LUA_DEFAULT_MEM_LIMIT),
@@ -860,6 +862,10 @@ MUX_RESULT CLuaMod::FinalConstruct(void)
 
     mux_CreateInstance(CID_Permissions, nullptr, UseSameProcess,
         IID_IPermissions, reinterpret_cast<void **>(&m_pIPermissions));
+
+    // Acquire JIT compile interface (optional — graceful degradation).
+    mux_CreateInstance(CID_JITCompile, nullptr, UseSameProcess,
+        IID_IJITCompile, reinterpret_cast<void **>(&m_pIJITCompile));
 
     // Create the Lua state.
     //
@@ -946,6 +952,12 @@ CLuaMod::~CLuaMod()
     {
         m_pIPermissions->Release();
         m_pIPermissions = nullptr;
+    }
+
+    if (nullptr != m_pIJITCompile)
+    {
+        m_pIJITCompile->Release();
+        m_pIJITCompile = nullptr;
     }
 
     if (g_pLuaMod == this)
@@ -1051,6 +1063,8 @@ bool CLuaMod::LoadCached(const char *source, size_t nSource,
     cache_entry entry;
     entry.lua_ref = ref;
     entry.lru_it = m_cache_lru.begin();
+    entry.jit_key = 0;
+    entry.jit_eligible = false;
     m_cache[key] = entry;
 
     return true;
@@ -1070,6 +1084,10 @@ void CLuaMod::CacheEvict(void)
     if (it != m_cache.end())
     {
         luaL_unref(m_L, LUA_REGISTRYINDEX, it->second.lua_ref);
+        if (it->second.jit_key != 0 && nullptr != m_pIJITCompile)
+        {
+            m_pIJITCompile->Invalidate(it->second.jit_key);
+        }
         m_cache.erase(it);
     }
     m_cache_lru.pop_back();
@@ -1083,9 +1101,86 @@ void CLuaMod::CacheClear(void)
         {
             luaL_unref(m_L, LUA_REGISTRYINDEX, pair.second.lua_ref);
         }
+        if (pair.second.jit_key != 0 && nullptr != m_pIJITCompile)
+        {
+            m_pIJITCompile->Invalidate(pair.second.jit_key);
+        }
     }
     m_cache.clear();
     m_cache_lru.clear();
+}
+
+// =========================================================================
+// lua_dump writer callback — accumulates bytecode into a vector.
+// =========================================================================
+
+struct dump_buffer {
+    std::vector<uint8_t> data;
+};
+
+static int dump_writer(lua_State *L, const void *p, size_t sz, void *ud) {
+    (void)L;
+    dump_buffer *buf = static_cast<dump_buffer *>(ud);
+    const uint8_t *bytes = static_cast<const uint8_t *>(p);
+    buf->data.insert(buf->data.end(), bytes, bytes + sz);
+    return 0;
+}
+
+// =========================================================================
+// TryJIT: attempt to JIT-compile a cached chunk.
+// The chunk must be on top of the Lua stack.
+// Returns true if JIT succeeded and result is in pResult.
+// Returns false on JIT failure (caller should fall through to lua_pcall).
+// Does NOT pop the chunk from the stack.
+// =========================================================================
+
+bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
+    dbref enactor, const UTF8 *pArgs[], int nArgs,
+    UTF8 *pResult, size_t nResultMax, size_t *pnResultLen)
+{
+    if (nullptr == m_pIJITCompile) return false;
+
+    // Already tried and failed?
+    if (entry.jit_eligible) {
+        // Already have a compiled key? Run it.
+        if (entry.jit_key != 0) {
+            MUX_RESULT mr = m_pIJITCompile->RunCompiled(entry.jit_key,
+                executor, caller, enactor, pArgs, nArgs,
+                pResult, nResultMax, pnResultLen);
+            return MUX_SUCCEEDED(mr);
+        }
+        return false;  // Previously failed to compile.
+    }
+
+    // First attempt: dump the chunk to bytecode and try JIT compilation.
+    entry.jit_eligible = true;
+
+    // lua_dump expects the function on top of stack.  We have it there
+    // from LoadCached.  Push a copy so we don't consume it.
+    lua_pushvalue(m_L, -1);
+
+    dump_buffer buf;
+    int dump_status = lua_dump(m_L, dump_writer, &buf, 0);
+    lua_pop(m_L, 1);  // pop the copy
+
+    if (dump_status != 0 || buf.data.empty()) {
+        return false;
+    }
+
+    // Try to compile.
+    uint64_t key = 0;
+    MUX_RESULT mr = m_pIJITCompile->CompileLuaBytecode(
+        buf.data.data(), buf.data.size(), &key);
+    if (MUX_FAILED(mr) || key == 0) {
+        return false;  // JIT doesn't support this bytecode; fall through.
+    }
+
+    entry.jit_key = key;
+
+    // Run the compiled program.
+    mr = m_pIJITCompile->RunCompiled(key, executor, caller, enactor,
+        pArgs, nArgs, pResult, nResultMax, pnResultLen);
+    return MUX_SUCCEEDED(mr);
 }
 
 // =========================================================================
@@ -1156,7 +1251,22 @@ MUX_RESULT CLuaMod::CallAttr(dbref executor, dbref caller, dbref enactor,
         return MUX_S_OK;
     }
 
-    // Execute.
+    // Try JIT execution.  The compiled chunk is on top of the Lua stack.
+    // If JIT succeeds, pop the chunk and return.
+    //
+    std::string cache_key(reinterpret_cast<const char *>(source), nSource);
+    auto cache_it = m_cache.find(cache_key);
+    if (cache_it != m_cache.end())
+    {
+        if (TryJIT(cache_it->second, executor, caller, enactor,
+                   pArgs, nArgs, pResult, nResultMax, pnResultLen))
+        {
+            lua_pop(m_L, 1);  // pop the chunk
+            return MUX_S_OK;
+        }
+    }
+
+    // Fall through to Lua VM execution.
     //
     ExecuteChunk(m_L, executor, caller, enactor, pArgs, nArgs,
         pResult, nResultMax, pnResultLen);
@@ -1208,6 +1318,22 @@ MUX_RESULT CLuaMod::Eval(dbref executor, dbref caller, dbref enactor,
         return MUX_S_OK;
     }
 
+    // Try JIT execution.
+    //
+    std::string cache_key(reinterpret_cast<const char *>(pSource), nSource);
+    auto cache_it = m_cache.find(cache_key);
+    if (cache_it != m_cache.end())
+    {
+        if (TryJIT(cache_it->second, executor, caller, enactor,
+                   nullptr, 0, pResult, nResultMax, pnResultLen))
+        {
+            lua_pop(m_L, 1);  // pop the chunk
+            return MUX_S_OK;
+        }
+    }
+
+    // Fall through to Lua VM execution.
+    //
     ExecuteChunk(m_L, executor, caller, enactor, nullptr, 0,
         pResult, nResultMax, pnResultLen);
     return MUX_S_OK;

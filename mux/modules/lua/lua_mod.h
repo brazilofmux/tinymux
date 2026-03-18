@@ -56,6 +56,7 @@ private:
     mux_IAttributeAccess      *m_pIAttributeAccess;
     mux_IEvaluator            *m_pIEvaluator;
     mux_IPermissions          *m_pIPermissions;
+    mux_IJITCompile           *m_pIJITCompile;
 
     // Lua state - global, shared across all executions.
     //
@@ -83,6 +84,8 @@ private:
     {
         int lua_ref;                         // LUA_REGISTRYINDEX ref
         std::list<std::string>::iterator lru_it;  // Position in LRU list
+        uint64_t jit_key;                    // JIT compiled program key (0 = not compiled)
+        bool jit_eligible;                   // true if JIT compilation was attempted
     };
     std::unordered_map<std::string, cache_entry> m_cache;
     std::list<std::string> m_cache_lru;      // Front = most recent
@@ -97,6 +100,9 @@ private:
     bool LoadCached(const char *source, size_t nSource, const char *chunkname);
     void CacheEvict(void);
     void CacheClear(void);
+    bool TryJIT(cache_entry &entry, dbref executor, dbref caller,
+        dbref enactor, const UTF8 *pArgs[], int nArgs,
+        UTF8 *pResult, size_t nResultMax, size_t *pnResultLen);
     bool ExecuteChunk(lua_State *L, dbref executor, dbref caller,
         dbref enactor, const UTF8 *pArgs[], int nArgs,
         UTF8 *pResult, size_t nResultMax, size_t *pnResultLen);
