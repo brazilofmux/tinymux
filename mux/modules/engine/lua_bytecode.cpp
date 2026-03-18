@@ -107,10 +107,10 @@ struct bc_reader {
 static bool load_proto(bc_reader &r, lua_bc_proto *p, const std::string &parent_source);
 
 static bool load_constants(bc_reader &r, lua_bc_proto *p) {
-    int n = static_cast<int>(r.read_size());
-    if (!r.ok) return false;
+    size_t n = r.read_size();
+    if (!r.ok || n > 1000000) return false;
     p->constants.resize(n);
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         uint8_t t = r.read_byte();
         if (!r.ok) return false;
         lua_bc_constant &k = p->constants[i];
@@ -141,10 +141,10 @@ static bool load_constants(bc_reader &r, lua_bc_proto *p) {
 }
 
 static bool load_upvalues(bc_reader &r, lua_bc_proto *p) {
-    int n = static_cast<int>(r.read_size());
-    if (!r.ok) return false;
+    size_t n = r.read_size();
+    if (!r.ok || n > 1000000) return false;
     p->upvalues.resize(n);
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         p->upvalues[i].instack = r.read_byte();
         p->upvalues[i].idx = r.read_byte();
         p->upvalues[i].kind = r.read_byte();
@@ -155,10 +155,10 @@ static bool load_upvalues(bc_reader &r, lua_bc_proto *p) {
 
 static bool load_protos(bc_reader &r, lua_bc_proto *p,
                          const std::string &parent_source) {
-    int n = static_cast<int>(r.read_size());
-    if (!r.ok) return false;
+    size_t n = r.read_size();
+    if (!r.ok || n > 1000000) return false;
     p->protos.resize(n);
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         if (!load_proto(r, &p->protos[i], parent_source))
             return false;
     }
@@ -167,26 +167,26 @@ static bool load_protos(bc_reader &r, lua_bc_proto *p,
 
 static bool skip_debug(bc_reader &r, lua_bc_proto *p) {
     // Line info.
-    int n = static_cast<int>(r.read_size());
-    if (!r.ok) return false;
-    for (int i = 0; i < n; i++) {
+    size_t n = r.read_size();
+    if (!r.ok || n > 1000000) return false;
+    for (size_t i = 0; i < n; i++) {
         r.read_byte();
         if (!r.ok) return false;
     }
 
     // Abs line info.
-    n = static_cast<int>(r.read_size());
-    if (!r.ok) return false;
-    for (int i = 0; i < n; i++) {
+    n = r.read_size();
+    if (!r.ok || n > 1000000) return false;
+    for (size_t i = 0; i < n; i++) {
         r.read_int();  // pc
         r.read_int();  // line
         if (!r.ok) return false;
     }
 
     // Local variables.
-    n = static_cast<int>(r.read_size());
-    if (!r.ok) return false;
-    for (int i = 0; i < n; i++) {
+    n = r.read_size();
+    if (!r.ok || n > 1000000) return false;
+    for (size_t i = 0; i < n; i++) {
         r.read_string();  // varname
         r.read_int();     // startpc
         r.read_int();     // endpc
@@ -194,9 +194,9 @@ static bool skip_debug(bc_reader &r, lua_bc_proto *p) {
     }
 
     // Upvalue names.
-    n = static_cast<int>(r.read_size());
-    if (!r.ok) return false;
-    for (int i = 0; i < n; i++) {
+    n = r.read_size();
+    if (!r.ok || n > 1000000) return false;
+    for (size_t i = 0; i < n; i++) {
         r.read_string();
         if (!r.ok) return false;
     }
@@ -220,10 +220,10 @@ static bool load_proto(bc_reader &r, lua_bc_proto *p,
     if (!r.ok) return false;
 
     // Instructions.
-    int ncode = static_cast<int>(r.read_size());
-    if (!r.ok) return false;
+    size_t ncode = r.read_size();
+    if (!r.ok || ncode > 1000000) return false;
     p->code.resize(ncode);
-    for (int i = 0; i < ncode; i++) {
+    for (size_t i = 0; i < ncode; i++) {
         uint32_t w = 0;
         r.read_bytes(&w, 4);
         if (!r.ok) return false;
