@@ -992,6 +992,12 @@ static void test_justify(void) {
     check_buf("co_center", "'hello' w=11", out, r,
               (const unsigned char *)"   hello   ", 11);
 
+    /* Multi-char fill keeps phase across the content width. */
+    r = co_center(out, (const unsigned char *)"hi", 2, 8,
+                  (const unsigned char *)"=-", 2, 1);
+    check_buf("co_center", "'hi' w=8 fill='=-' phase-continuing", out, r,
+              (const unsigned char *)"=-=hi-=-", 8);
+
     /* Custom fill char. */
     r = co_ljust(out, (const unsigned char *)"hi", 2, 6,
                  (const unsigned char *)"-", 1, 0);

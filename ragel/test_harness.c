@@ -1121,8 +1121,8 @@ static void test_center(void)
     nb = co_center(out, (const unsigned char *)"hi", 2,
                    8, (const unsigned char *)"=-", 2, 1);
     TEST("center(\"hi\", 8, \"=-\") -> cyclic fill");
-    /* 3 left, 3 right: "=-=" + "hi" + "=-=" = 8 vis */
-    if (nb == 8 && memcmp(out, "=-=hi=-=", 8) == 0) { PASS(); }
+    /* Trailing fill keeps phase with the left padding + content width. */
+    if (nb == 8 && memcmp(out, "=-=hi-=-", 8) == 0) { PASS(); }
     else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
 
     /* Truncation: string wider than width. */
