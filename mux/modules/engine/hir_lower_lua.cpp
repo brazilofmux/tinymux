@@ -30,6 +30,163 @@
 // Maximum Lua registers we track.
 static constexpr int MAX_LUA_REGS = 256;
 
+// Maximum code size we attempt to JIT (prevents runaway compile time).
+static constexpr int MAX_LUA_CODE_SIZE = 1024;
+
+// Maximum Lua stack size (register pressure bound).
+static constexpr int MAX_LUA_STACK = 64;
+
+// Maximum parameters.
+static constexpr int MAX_LUA_PARAMS = 8;
+
+// ---------------------------------------------------------------
+// Rejection reason names (for diagnostics).
+// ---------------------------------------------------------------
+
+const char *lua_bc_reject_name(lua_bc_reject reason) {
+    switch (reason) {
+    case LUA_BC_ELIGIBLE:          return "eligible";
+    case LUA_BC_EMPTY:             return "empty proto";
+    case LUA_BC_TOO_LARGE:         return "code or stack too large";
+    case LUA_BC_TOO_MANY_PARAMS:   return "too many parameters";
+    case LUA_BC_HAS_CLOSURE:       return "contains OP_CLOSURE";
+    case LUA_BC_HAS_VARARG:        return "contains OP_VARARG";
+    case LUA_BC_HAS_TBC:           return "contains OP_TBC";
+    case LUA_BC_HAS_TAILCALL:      return "contains OP_TAILCALL";
+    case LUA_BC_HAS_NESTED_PROTOS: return "has nested protos";
+    case LUA_BC_UNSUPPORTED_OP:    return "unsupported opcode";
+    }
+    return "unknown";
+}
+
+// ---------------------------------------------------------------
+// Eligibility pre-filter.
+//
+// This is a fast O(n) scan over the proto's instruction stream
+// that rejects protos we know we cannot compile.  It runs before
+// any HIR allocation so the reject path is cheap.
+//
+// The supported opcode set must exactly match what
+// hir_lower_lua_proto() handles in its switch statement.
+// ---------------------------------------------------------------
+
+lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
+    if (nullptr == proto) return LUA_BC_EMPTY;
+
+    int n = static_cast<int>(proto->code.size());
+    if (n == 0) return LUA_BC_EMPTY;
+
+    // --- Header checks ---
+
+    if (n > MAX_LUA_CODE_SIZE) return LUA_BC_TOO_LARGE;
+    if (proto->maxstacksize > MAX_LUA_STACK) return LUA_BC_TOO_LARGE;
+    if (proto->numparams > MAX_LUA_PARAMS) return LUA_BC_TOO_MANY_PARAMS;
+
+    // Nested protos mean OP_CLOSURE will appear.  Reject early without
+    // scanning — the bytecode can't reference protos that don't exist.
+    if (!proto->protos.empty()) return LUA_BC_HAS_NESTED_PROTOS;
+
+    // --- Opcode scan ---
+    //
+    // We maintain a whitelist of opcodes the lowering handles.
+    // Anything outside the whitelist → reject.
+    //
+    // Note: VARARGPREP is harmless (adjusts stack for main chunks)
+    // and is treated as a no-op.  OP_VARARG is the actual vararg
+    // access instruction and is rejected.
+
+    for (int pc = 0; pc < n; pc++) {
+        int op = proto->code[pc].opcode();
+        switch (op) {
+
+        // Data movement — handled.
+        case OP_LUA_MOVE:
+        case OP_LUA_LOADI:
+        case OP_LUA_LOADF:
+        case OP_LUA_LOADK:
+        case OP_LUA_LOADFALSE:
+        case OP_LUA_LFALSESKIP:
+        case OP_LUA_LOADTRUE:
+        case OP_LUA_LOADNIL:
+            break;
+
+        // Integer arithmetic — handled.
+        case OP_LUA_ADD:
+        case OP_LUA_SUB:
+        case OP_LUA_MUL:
+        case OP_LUA_IDIV:
+        case OP_LUA_MOD:
+        case OP_LUA_UNM:
+        case OP_LUA_ADDI:
+        case OP_LUA_ADDK:
+        case OP_LUA_SUBK:
+        case OP_LUA_MULK:
+            break;
+
+        // Metamethod companions — skipped as no-ops.
+        case OP_LUA_MMBIN:
+        case OP_LUA_MMBINI:
+        case OP_LUA_MMBINK:
+            break;
+
+        // Comparisons — handled.
+        case OP_LUA_EQ:
+        case OP_LUA_LT:
+        case OP_LUA_LE:
+        case OP_LUA_EQI:
+        case OP_LUA_LTI:
+        case OP_LUA_LEI:
+        case OP_LUA_GTI:
+        case OP_LUA_GEI:
+        case OP_LUA_TEST:
+        case OP_LUA_TESTSET:
+            break;
+
+        // Control flow — handled.
+        case OP_LUA_JMP:
+        case OP_LUA_FORPREP:
+        case OP_LUA_FORLOOP:
+            break;
+
+        // Return — handled.
+        case OP_LUA_RETURN:
+        case OP_LUA_RETURN0:
+        case OP_LUA_RETURN1:
+            break;
+
+        // Table access: mux.* bridge pattern — handled.
+        case OP_LUA_GETTABUP:
+        case OP_LUA_GETFIELD:
+        case OP_LUA_CALL:
+            break;
+
+        // Harmless no-op (main chunk vararg prep).
+        case OP_LUA_VARARGPREP:
+            break;
+
+        // --- Hard rejects ---
+
+        case OP_LUA_CLOSURE:
+            return LUA_BC_HAS_CLOSURE;
+
+        case OP_LUA_VARARG:
+            return LUA_BC_HAS_VARARG;
+
+        case OP_LUA_TBC:
+            return LUA_BC_HAS_TBC;
+
+        case OP_LUA_TAILCALL:
+            return LUA_BC_HAS_TAILCALL;
+
+        // --- Everything else is unsupported ---
+        default:
+            return LUA_BC_UNSUPPORTED_OP;
+        }
+    }
+
+    return LUA_BC_ELIGIBLE;
+}
+
 // ---------------------------------------------------------------
 // Pass 1: find basic block boundaries
 // ---------------------------------------------------------------

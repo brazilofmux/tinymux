@@ -55,6 +55,12 @@ static bool compile_lua_bytecode(const uint8_t *data, size_t len,
         return false;
     }
 
+    // Fast eligibility check — reject before allocating HIR/RV64 state.
+    lua_bc_reject reason = lua_bc_eligible(&chunk.main);
+    if (reason != LUA_BC_ELIGIBLE) {
+        return false;
+    }
+
     // Create HIR program and RV64 compiler state.
     hir_program *h = new hir_program;
     h->init();
