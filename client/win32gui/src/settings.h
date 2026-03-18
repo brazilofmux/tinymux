@@ -28,6 +28,13 @@ struct TriggerDef {
 };
 
 struct Settings {
+    // Window position (0 = default / unset)
+    int         win_x = 0;
+    int         win_y = 0;
+    int         win_cx = 0;
+    int         win_cy = 0;
+    bool        win_maximized = false;
+
     // Global
     std::string font_name = "Consolas";
     int         font_size = 12;

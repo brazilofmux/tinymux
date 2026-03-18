@@ -38,6 +38,11 @@ bool Settings::Load(const std::string& dir) {
     // Load client.json
     JObject cfg;
     if (json_parse_file(dir + "\\client.json", cfg)) {
+        win_x = (int)jint(cfg, "win_x", 0);
+        win_y = (int)jint(cfg, "win_y", 0);
+        win_cx = (int)jint(cfg, "win_cx", 0);
+        win_cy = (int)jint(cfg, "win_cy", 0);
+        win_maximized = jbool(cfg, "win_maximized", false);
         font_name = jstr(cfg, "font_name", font_name);
         font_size = (int)jint(cfg, "font_size", font_size);
         std::string fg_str = jstr(cfg, "default_fg", "");
@@ -104,6 +109,11 @@ bool Settings::Load(const std::string& dir) {
 bool Settings::Save(const std::string& dir) const {
     // Save client.json
     JObject cfg;
+    cfg.push_back({"win_x", JValue((int64_t)win_x)});
+    cfg.push_back({"win_y", JValue((int64_t)win_y)});
+    cfg.push_back({"win_cx", JValue((int64_t)win_cx)});
+    cfg.push_back({"win_cy", JValue((int64_t)win_cy)});
+    cfg.push_back({"win_maximized", JValue(win_maximized)});
     cfg.push_back({"font_name", JValue(font_name)});
     cfg.push_back({"font_size", JValue((int64_t)font_size)});
     cfg.push_back({"default_fg", JValue(format_color(default_fg))});

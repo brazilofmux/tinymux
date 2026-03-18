@@ -27,6 +27,14 @@ public:
     void ClearSelection();
 
     void SetFont(HFONT font);
+    void SetWordWrap(bool enable);
+    bool word_wrap() const { return word_wrap_; }
+
+    // Find — highlights and scrolls to the matching line.
+    bool SearchText(const std::string& pattern, bool search_up = true);
+
+    int char_w() const { return char_width_; }
+    int char_h() const { return char_height_; }
 
 private:
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -55,6 +63,16 @@ private:
     int  sel_start_col_ = 0;
     int  sel_end_line_ = 0;
     int  sel_end_col_ = 0;
+
+    bool word_wrap_ = true;
+
+    // Word-wrapped line mapping: for a given buffer line, how many
+    // screen rows does it occupy?  Computed lazily during paint.
+    int wrap_line_rows(const OutputLine& line) const;
+
+    // Find state
+    int find_line_ = -1;
+    std::string find_pattern_;
 };
 
 #endif // OUTPUTPANE_H

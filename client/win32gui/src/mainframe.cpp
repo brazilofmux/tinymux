@@ -41,12 +41,21 @@ bool CMainFrame::Create(HINSTANCE hInst, int nCmdShow) {
         DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
         CLEARTYPE_QUALITY, FIXED_PITCH | FF_MODERN, wfont);
 
-    int xSize = GetSystemMetrics(SM_CXSCREEN);
-    int ySize = GetSystemMetrics(SM_CYSCREEN);
-    int cx = (9 * xSize) / 10;
-    int cy = (9 * ySize) / 10;
-    int x = (xSize - cx) / 2;
-    int y = (ySize - cy) / 2;
+    // Restore window position from settings, or default to 90% of screen.
+    int x, y, cx, cy;
+    if (settings.win_cx > 100 && settings.win_cy > 100) {
+        x = settings.win_x;
+        y = settings.win_y;
+        cx = settings.win_cx;
+        cy = settings.win_cy;
+    } else {
+        int xSize = GetSystemMetrics(SM_CXSCREEN);
+        int ySize = GetSystemMetrics(SM_CYSCREEN);
+        cx = (9 * xSize) / 10;
+        cy = (9 * ySize) / 10;
+        x = (xSize - cx) / 2;
+        y = (ySize - cy) / 2;
+    }
 
     SetPendingWindow(this);
     HWND hwnd = CreateWindowExW(0, MAIN_CLASS, L"Titan",
@@ -119,7 +128,7 @@ bool CMainFrame::Create(HINSTANCE hInst, int nCmdShow) {
         pua_bold() + pua_fg(1) + "Bold Red " + pua_fg(2) + "Bold Green " +
         pua_fg(4) + "Bold Blue" + pua_reset());
 
-    ShowWindow(hwnd, nCmdShow);
+    ShowWindow(hwnd, settings.win_maximized ? SW_SHOWMAXIMIZED : nCmdShow);
     UpdateWindow(hwnd);
     SetFocus(input.hwnd());
 
@@ -339,7 +348,16 @@ LRESULT CMainFrame::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         OnIocpCompletion((IocpMsg*)lParam);
         return 0;
 
-    case WM_DESTROY:
+    case WM_DESTROY: {
+        // Save window position.
+        WINDOWPLACEMENT wp = { sizeof(wp) };
+        GetWindowPlacement(m_hwnd, &wp);
+        settings.win_x = wp.rcNormalPosition.left;
+        settings.win_y = wp.rcNormalPosition.top;
+        settings.win_cx = wp.rcNormalPosition.right - wp.rcNormalPosition.left;
+        settings.win_cy = wp.rcNormalPosition.bottom - wp.rcNormalPosition.top;
+        settings.win_maximized = (wp.showCmd == SW_SHOWMAXIMIZED);
+
         // Save settings before exit.
         settings.Save(settings_dir);
 
@@ -359,6 +377,7 @@ LRESULT CMainFrame::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         if (font_) { DeleteObject(font_); font_ = nullptr; }
         PostQuitMessage(0);
         return 0;
+    }
 
     case WM_SETFOCUS:
         // Always redirect focus to input pane
@@ -429,6 +448,41 @@ void CMainFrame::LayoutChildren() {
         MoveWindow(input.hwnd(), 0, tab_h + output_h, cx, input_h, TRUE);
     if (status.hwnd())
         MoveWindow(status.hwnd(), 0, tab_h + output_h + input_h, cx, status_h, TRUE);
+}
+
+// Find dialog state.
+static wchar_t g_find_text[256];
+static bool g_find_ok, g_find_up;
+
+static INT_PTR CALLBACK FindDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM) {
+    switch (msg) {
+    case WM_INITDIALOG: {
+        SetWindowTextW(hDlg, L"Find in Scrollback");
+        CreateWindowExW(0, L"STATIC", L"Find:", WS_CHILD|WS_VISIBLE, 10,12,40,20, hDlg, nullptr, nullptr, nullptr);
+        CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", g_find_text, WS_CHILD|WS_VISIBLE|WS_TABSTOP|ES_AUTOHSCROLL, 55,10,200,22, hDlg, (HMENU)101, nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", L"Search Up", WS_CHILD|WS_VISIBLE|BS_AUTORADIOBUTTON|WS_TABSTOP, 55,40,90,20, hDlg, (HMENU)102, nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", L"Search Down", WS_CHILD|WS_VISIBLE|BS_AUTORADIOBUTTON, 150,40,100,20, hDlg, (HMENU)103, nullptr, nullptr);
+        SendDlgItemMessageW(hDlg, 102, BM_SETCHECK, BST_CHECKED, 0);
+        CreateWindowExW(0, L"BUTTON", L"Find", WS_CHILD|WS_VISIBLE|BS_DEFPUSHBUTTON|WS_TABSTOP, 55,70,80,26, hDlg, (HMENU)IDOK, nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", L"Close", WS_CHILD|WS_VISIBLE|WS_TABSTOP, 145,70,80,26, hDlg, (HMENU)IDCANCEL, nullptr, nullptr);
+        HFONT hFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
+        EnumChildWindows(hDlg, [](HWND hw, LPARAM lp) -> BOOL { SendMessageW(hw, WM_SETFONT, lp, TRUE); return TRUE; }, (LPARAM)hFont);
+        SetFocus(GetDlgItem(hDlg, 101));
+        return FALSE;
+    }
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK) {
+            GetDlgItemTextW(hDlg, 101, g_find_text, 256);
+            g_find_up = (SendDlgItemMessageW(hDlg, 102, BM_GETCHECK, 0, 0) == BST_CHECKED);
+            g_find_ok = true;
+            EndDialog(hDlg, IDOK);
+        } else if (LOWORD(wParam) == IDCANCEL) {
+            g_find_ok = false;
+            EndDialog(hDlg, IDCANCEL);
+        }
+        return TRUE;
+    }
+    return FALSE;
 }
 
 // Connect dialog state (file-scope for lambda access).
@@ -624,6 +678,32 @@ void CMainFrame::OnCommand(int id) {
             output.Invalidate();
         }
         break;
+
+    case IDM_EDIT_FIND: {
+        g_find_ok = false;
+        #pragma pack(push, 4)
+        struct { DWORD style; DWORD exStyle; WORD cdit; short x, y, cx, cy;
+                 WORD menu; WORD cls; WORD title; } tmpl = {
+            DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU,
+            0, 0, 0, 0, 270, 105, 0, 0, 0
+        };
+        #pragma pack(pop)
+        DialogBoxIndirectParamW(hInst_, (LPCDLGTEMPLATEW)&tmpl,
+                                m_hwnd, FindDlgProc, 0);
+        if (g_find_ok && g_find_text[0]) {
+            char pat8[512];
+            WideCharToMultiByte(CP_UTF8, 0, g_find_text, -1,
+                                pat8, (int)sizeof(pat8), nullptr, nullptr);
+            if (!output.SearchText(pat8, g_find_up)) {
+                // Wrap search or show "not found"
+                if (active_tab >= 0 && active_tab < (int)tab_states.size()) {
+                    tab_states[active_tab]->buffer.append("% Not found: " + std::string(pat8));
+                    output.Invalidate();
+                }
+            }
+        }
+        break;
+    }
 
     case IDM_HELP_ABOUT:
         MessageBoxW(m_hwnd, L"Titan for Windows\nWin32 GUI MU* Client\n\nPart of the TinyMUX project",

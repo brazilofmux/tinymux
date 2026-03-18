@@ -73,6 +73,51 @@ LRESULT COutputPane::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
     return DefProc(msg, wParam, lParam);
 }
 
+void COutputPane::SetWordWrap(bool enable) {
+    word_wrap_ = enable;
+    Invalidate();
+}
+
+int COutputPane::wrap_line_rows(const OutputLine& line) const {
+    if (!word_wrap_ || visible_cols_ <= 0 || line.display_width <= visible_cols_)
+        return 1;
+    return (line.display_width + visible_cols_ - 1) / visible_cols_;
+}
+
+bool COutputPane::SearchText(const std::string& pattern, bool search_up) {
+    if (!buf_ || pattern.empty()) return false;
+    find_pattern_ = pattern;
+    auto& lines = buf_->lines();
+    int total = (int)lines.size();
+    int start = (find_line_ >= 0 && find_line_ < total) ? find_line_ : total - 1;
+
+    if (search_up) {
+        for (int i = start - 1; i >= 0; i--) {
+            if (lines[i].text.find(pattern) != std::string::npos) {
+                find_line_ = i;
+                // Scroll to show this line
+                int from_bottom = total - 1 - i;
+                buf_->scroll_offset = std::max(from_bottom - visible_rows_ / 2, 0);
+                UpdateScrollBar();
+                Invalidate();
+                return true;
+            }
+        }
+    } else {
+        for (int i = start + 1; i < total; i++) {
+            if (lines[i].text.find(pattern) != std::string::npos) {
+                find_line_ = i;
+                int from_bottom = total - 1 - i;
+                buf_->scroll_offset = std::max(from_bottom - visible_rows_ / 2, 0);
+                UpdateScrollBar();
+                Invalidate();
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void COutputPane::OnSize(int cx, int cy) {
     if (char_height_ > 0) visible_rows_ = cy / char_height_;
     if (char_width_ > 0) visible_cols_ = cx / char_width_;
@@ -111,10 +156,17 @@ void COutputPane::OnPaint() {
         int y = row * char_height_;
 
         if (idx < 0 || idx >= total) {
-            // Empty row
             RECT row_rc = { 0, y, rc.right, y + char_height_ };
             FillRect(hdc, &row_rc, (HBRUSH)GetStockObject(BLACK_BRUSH));
             continue;
+        }
+
+        // Highlight find match line
+        if (idx == find_line_ && !find_pattern_.empty()) {
+            RECT hl_rc = { 0, y, rc.right, y + char_height_ };
+            HBRUSH hl = CreateSolidBrush(RGB(40, 40, 80));
+            FillRect(hdc, &hl_rc, hl);
+            DeleteObject(hl);
         }
 
         auto& line = lines[idx];
