@@ -41,20 +41,27 @@ Softcode                 Lua
 
 ## 3. Module Structure
 
-Follow the established COM module pattern (comsys_mod, mail_mod).
+**Update (2026-03-18):** Lua was folded from a separate `lua_mod.so` into
+`engine.so`.  This eliminates the .so boundary between the Lua VM and the
+JIT compiler, enabling ECALL-back-to-VM for table ops, generic function
+calls, and global access.
 
 ### 3.1 Files
 
 ```
-mux/modules/lua/
-    lua_mod.h           — CID/IID constants, CLuaMod class declaration
-    lua_mod.cpp         — Module implementation
-    lua_sandbox.cpp     — Sandboxed Lua state factory
-    Makefile.in         — Build rules, links -llua
+mux/modules/engine/
+    lua_mod.h           — CLuaMod class declaration
+    lua_mod.cpp         — Lua VM, sandbox, bridge functions, JIT integration
+    lua_bytecode.h/cpp  — Lua 5.4 bytecode deserializer (standalone)
+    hir_lower_lua.h/cpp — Lua bytecode → HIR lowering (73/83 opcodes)
+    jit_lua.cpp         — CJITCompile COM class, compile cache
+
+mux/lua54/
+    *.c, *.h            — Bundled Lua 5.4.7 source → liblua54.a
 ```
 
-The module compiles to `lua_mod.so` and loads via `module lua_mod` in the
-config file.
+Lua is registered as CID_LuaMod in engine.so's COM front-door.  No
+separate `module lua_mod` config line needed.
 
 ### 3.2 COM Interfaces
 

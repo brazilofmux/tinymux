@@ -187,21 +187,19 @@ pass.
 
 ## Lua / JIT Design Questions
 
-### 15. Mixed Lua VM and JIT state model is underspecified
+### 15. Mixed Lua VM and JIT state model — largely resolved
 
-**Status**: Design gap.
-**Affects**: `docs/design-lua-server.md` Phase 2, any future Lua-to-HIR work.
-**Problem**: The current design says Lua bytecode lowers into HIR and falls
-back to ECALLs for unsupported features, but it does not specify how Lua VM
-state remains coherent across native JIT execution and interpreter fallback.
-This is the hard architectural issue for closures, varargs, tables,
-metatables, generic calls, and upvalues.
-**Risk**: Without a precise state model, the JIT path may violate the
-sandbox contract's requirement for identical output, side-effect ordering,
-and visibility relative to interpreted execution.
-**Needed design work**: Define a canonical ownership model for registers,
-stack, upvalues, tables, and resumable control flow when execution bounces
-between compiled HIR and the stock Lua VM.
+**Status**: Resolved for the implemented scope.  Future work needed for
+closures and coroutines only.
+**Resolution**: The JIT executes in guest memory (RV64/DBT) and calls back
+to the Lua VM via ECALL handlers that use `lua_State *L` from `eval_ctx`.
+Table operations, global access, and function calls marshal through the Lua
+C API (`lua_geti`, `lua_getglobal`, `lua_pcall`).  Lua stack is saved/restored
+via `lua_settop()` around each JIT execution in `TryJIT()`.  73/83 opcodes
+handled; closures, varargs, and coroutines are permanently rejected.
+**Remaining gap**: Non-_ENV upvalues (GETUPVAL/SETUPVAL) and generic
+for-loops (TFORPREP/TFORCALL/TFORLOOP) need the Lua call frame, which the
+JIT doesn't have.  These are deferred, not architecturally blocked.
 
 ### 16. Lua privilege model needs sharper definition before implementation
 
@@ -217,34 +215,17 @@ Lua is embedded in multiple invocation paths.
 **Needed design work**: Define one authority model and apply it uniformly to
 direct calls, queued calls, triggers, and future event hooks.
 
-### 17. DBT needs floating-point (RV64D) support for Lua JIT
+### 17. DBT floating-point (RV64D) — COMPLETE
 
-**Status**: DBT layer complete.  HIR `TY_FLOAT` + Lua float lowering remain.
-**Affects**: Lua JIT coverage — `OP_DIV`, `OP_POW`, `math.*` calls, mixed
-int/float arithmetic all require FP.
-**Background**: The DBT currently implements RV64IMD (integer + multiply +
-double-precision FP).  The RV64D translation was added as part of the Lua
-JIT pipeline work.  `dbt.cpp` now translates:
-- FLD/FSD (double load/store via guest memory)
-- FADD.D/FSUB.D/FMUL.D/FDIV.D/FSQRT.D (→ SSE2 addsd/subsd/mulsd/divsd/sqrtsd)
-- FMIN.D/FMAX.D (→ SSE2 minsd/maxsd)
-- FEQ.D/FLT.D/FLE.D (→ ucomisd + setcc)
-- FSGNJ.D/FSGNJN.D/FSGNJX.D (fmv.d/fneg.d/fabs.d idioms + general case)
-- FCVT.W.D/FCVT.D.W/FCVT.L.D/FCVT.D.L (→ cvttsd2si/cvtsi2sd)
-- FMV.X.D/FMV.D.X (→ movq between GPR and XMM)
-- FMADD/FMSUB/FNMSUB/FNMADD (emulated as mul+add/sub + sign flip)
-- FCLASS.D falls back to interpreter
-
-`rv64_ctx_t` has `double f[32]` at offset 528.  Guest FP registers are
-spilled/loaded from context via `emit_load_fp_d`/`emit_store_fp_d` (no
-XMM register cache — always load/store, which is fine for the current
-workload).
-
-**Remaining work**: The HIR has only `TY_INT` and `TY_STRING`.  Adding
-`TY_FLOAT` and float-specialized Lua→HIR lowering (Phase 3 in
-design-lua-jit.md) would let the HIR emit native FP code instead of
-routing float operations through ECALLs.  The DBT is ready — the gap
-is in the HIR type system and the Lua lowering pass.
+**Status**: Complete.  DBT, HIR, and Lua lowering all have float support.
+**What was done** (2026-03-18):
+- DBT: full RV64D translation (FADD.D through FCLASS.D)
+- HIR: `TY_FLOAT` type, 16 float instructions (FCONST/FADD/FSUB/FMUL/
+  FDIV/FNEG/FSQRT/FEQ/FLT/FLE/ITOF/FTOI/FTOA/ATOF)
+- Lua lowering: OP_DIV/DIVK (always float), OP_POW/POWK (via ECALL pow()),
+  float constants, mixed int/float auto-promotion, float comparisons
+- Codegen: RV64D encoders, FP spill-everywhere with f0/f1 scratch
+- ECALL_FTOA: formats doubles via fval() for string output
 
 ### 18. Lua cache/versioning story is incomplete
 

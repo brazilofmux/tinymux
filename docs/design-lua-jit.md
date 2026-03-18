@@ -582,17 +582,39 @@ The highest-value target is **combat systems** — tight numeric loops with
 stat lookups, random rolls, and comparison chains. These are exactly the
 functions that players complain are slow in softcode today.
 
-## 14. Implementation Order
+## 14. Implementation Status (as of 2026-03-18)
 
-1. **lua_eval_ctx struct** — extend eval_ctx with Lua state pointers
-2. **ECALL handlers** (0x300-0x3FF) — in jit_compiler.cpp
-3. **lua_to_hir.cpp** — Proto → HIR lowering (integer-only first pass)
-4. **Numeric for loop** — M2 multi-block with PHI nodes
-5. **Type guards** — entry guards + ECALL reload guards
-6. **Dirty register tracking** — bitmask flush/reload
-7. **Integration with compile cache** — lua: prefix keys
-8. **Smoke tests** — numeric loop benchmark, guard failure test, ECALL
-   roundtrip test
+| Step | Status | Notes |
+|------|--------|-------|
+| 1. eval_ctx + lua_State | ✅ Done | `void *lua_state` in eval_ctx, threaded through RunCompiled |
+| 2. ECALL handlers | ✅ Done | __lua_newtable/geti/seti/getfield/setfield/getglobal/setglobal/call/pow |
+| 3. Lua→HIR lowering | ✅ Done | 73/83 opcodes in hir_lower_lua.cpp |
+| 4. Numeric for loop | ✅ Done | STORE_Q/LOAD_Q → PHI via hir_ssa_construct |
+| 5. Type guards | ✅ Done | Compile-time: operand type checks, float constant validation |
+| 6. Dirty register tracking | Skipped | Not needed — simplified architecture without dual register file |
+| 7. Compile cache | ✅ Done | Sequential key in CJITCompile, LRU in CLuaMod |
+| 8. Smoke tests | ✅ Done | 46 lua tests (TC001-TC046) |
 
-Each step is independently testable. Step 3 alone (with all ECALLs) gives
-a working but slow JIT. Steps 4-6 are where the performance appears.
+**Additional completed work beyond original plan:**
+- TY_FLOAT in HIR + RV64D codegen (16 float instructions)
+- Lua folded into engine.so (not a separate module)
+- Generic function calls: GETTABUP generalized, __lua_call via lua_pcall
+- Lua stack save/restore around JIT execution
+- Bitwise ops (6 HIR instructions)
+- Table ops via Lua VM ECALL (NEWTABLE/GETTABI/SETTABI/etc.)
+- Eligibility pre-filter with rejection diagnostics
+- Bundled Lua 5.4.7 source (liblua54.a, no system package needed)
+
+## 15. Remaining Work
+
+**Phase 2 completion (incremental):**
+- GETUPVAL/SETUPVAL — non-_ENV upvalue access (needs Lua call frame)
+- TFORPREP/TFORCALL/TFORLOOP — generic for-loop via iterator ECALL
+- CLOSE — close upvalues
+
+**Phase 3 (future):**
+- Runtime type guards (tag checks at function entry, bailout to VM)
+- XMM register cache in DBT for FP values (currently spill-everywhere)
+- String interning in guest memory (avoid ECALL for string comparisons)
+- Array optimization for integer-indexed loops (pin table, native access)
+- Cache key: sha1(bytecode) + Lua version for persistent cache

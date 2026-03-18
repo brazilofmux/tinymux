@@ -585,8 +585,7 @@
     setr(0,lua(me/LUA_FNEG)),
     -3.14)=
   {
-    @log smoke=TC036: lua float negation. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC036: lua float negation. Succeeded.
   },
   {
     @log smoke=TC036: lua float negation. Failed (%q0).
@@ -650,8 +649,7 @@
     setr(0,lua(me/LUA_NOT)),
     yes)=
   {
-    @log smoke=TC040: lua logical not. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC040: lua logical not. Succeeded.
   },
   {
     @log smoke=TC040: lua logical not. Failed (%q0).
@@ -684,8 +682,7 @@
     setr(0,lua(me/LUA_TBLSTR)),
     hello world)=
   {
-    @log smoke=TC042: lua table string concat. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC042: lua table string concat. Succeeded.
   },
   {
     @log smoke=TC042: lua table string concat. Failed (%q0).
