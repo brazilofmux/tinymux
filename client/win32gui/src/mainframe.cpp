@@ -450,6 +450,95 @@ void CMainFrame::LayoutChildren() {
         MoveWindow(status.hwnd(), 0, tab_h + output_h + input_h, cx, status_h, TRUE);
 }
 
+// Settings dialog state.
+static Settings* g_settings_ptr;
+
+static INT_PTR CALLBACK SettingsDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM) {
+    switch (msg) {
+    case WM_INITDIALOG: {
+        SetWindowTextW(hDlg, L"Settings");
+        int y = 10;
+        auto label = [&](const wchar_t* text, int x, int w) {
+            CreateWindowExW(0, L"STATIC", text, WS_CHILD|WS_VISIBLE, x, y+2, w, 20, hDlg, nullptr, nullptr, nullptr);
+        };
+        auto edit = [&](int id, const wchar_t* val, int x, int w) -> HWND {
+            HWND h = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", val, WS_CHILD|WS_VISIBLE|WS_TABSTOP|ES_AUTOHSCROLL, x, y, w, 22, hDlg, (HMENU)(INT_PTR)id, nullptr, nullptr);
+            return h;
+        };
+
+        wchar_t buf[64];
+
+        label(L"Font:", 10, 80);
+        MultiByteToWideChar(CP_UTF8, 0, g_settings_ptr->font_name.c_str(), -1, buf, 64);
+        edit(201, buf, 95, 150);
+        y += 28;
+
+        label(L"Font size:", 10, 80);
+        wsprintfW(buf, L"%d", g_settings_ptr->font_size);
+        edit(202, buf, 95, 60);
+        y += 28;
+
+        label(L"FG color:", 10, 80);
+        wsprintfW(buf, L"#%06X", g_settings_ptr->default_fg);
+        edit(203, buf, 95, 80);
+        y += 28;
+
+        label(L"BG color:", 10, 80);
+        wsprintfW(buf, L"#%06X", g_settings_ptr->default_bg);
+        edit(204, buf, 95, 80);
+        y += 28;
+
+        label(L"Scrollback:", 10, 80);
+        wsprintfW(buf, L"%d", g_settings_ptr->scrollback_lines);
+        edit(205, buf, 95, 80);
+        y += 28;
+
+        label(L"Prompt ms:", 10, 80);
+        wsprintfW(buf, L"%d", g_settings_ptr->prompt_timeout_ms);
+        edit(206, buf, 95, 80);
+        y += 34;
+
+        CreateWindowExW(0, L"BUTTON", L"OK", WS_CHILD|WS_VISIBLE|BS_DEFPUSHBUTTON|WS_TABSTOP, 55, y, 80, 26, hDlg, (HMENU)IDOK, nullptr, nullptr);
+        CreateWindowExW(0, L"BUTTON", L"Cancel", WS_CHILD|WS_VISIBLE|WS_TABSTOP, 145, y, 80, 26, hDlg, (HMENU)IDCANCEL, nullptr, nullptr);
+
+        HFONT hFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
+        EnumChildWindows(hDlg, [](HWND hw, LPARAM lp) -> BOOL { SendMessageW(hw, WM_SETFONT, lp, TRUE); return TRUE; }, (LPARAM)hFont);
+        SetFocus(GetDlgItem(hDlg, 201));
+        return FALSE;
+    }
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK) {
+            wchar_t buf[128];
+            GetDlgItemTextW(hDlg, 201, buf, 128);
+            char utf8[128];
+            WideCharToMultiByte(CP_UTF8, 0, buf, -1, utf8, 128, nullptr, nullptr);
+            g_settings_ptr->font_name = utf8;
+
+            g_settings_ptr->font_size = GetDlgItemInt(hDlg, 202, nullptr, FALSE);
+
+            GetDlgItemTextW(hDlg, 203, buf, 128);
+            char hex8[32];
+            WideCharToMultiByte(CP_UTF8, 0, buf, -1, hex8, 32, nullptr, nullptr);
+            const char* p = hex8; if (*p == '#') p++;
+            g_settings_ptr->default_fg = (uint32_t)strtoul(p, nullptr, 16);
+
+            GetDlgItemTextW(hDlg, 204, buf, 128);
+            WideCharToMultiByte(CP_UTF8, 0, buf, -1, hex8, 32, nullptr, nullptr);
+            p = hex8; if (*p == '#') p++;
+            g_settings_ptr->default_bg = (uint32_t)strtoul(p, nullptr, 16);
+
+            g_settings_ptr->scrollback_lines = GetDlgItemInt(hDlg, 205, nullptr, FALSE);
+            g_settings_ptr->prompt_timeout_ms = GetDlgItemInt(hDlg, 206, nullptr, FALSE);
+
+            EndDialog(hDlg, IDOK);
+        } else if (LOWORD(wParam) == IDCANCEL) {
+            EndDialog(hDlg, IDCANCEL);
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+
 // Find dialog state.
 static wchar_t g_find_text[256];
 static bool g_find_ok, g_find_up;
@@ -678,6 +767,35 @@ void CMainFrame::OnCommand(int id) {
             output.Invalidate();
         }
         break;
+
+    case IDM_FILE_SETTINGS: {
+        g_settings_ptr = &settings;
+        #pragma pack(push, 4)
+        struct { DWORD style; DWORD exStyle; WORD cdit; short x, y, cx, cy;
+                 WORD menu; WORD cls; WORD title; } tmpl = {
+            DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU,
+            0, 0, 0, 0, 270, 220, 0, 0, 0
+        };
+        #pragma pack(pop)
+        INT_PTR result = DialogBoxIndirectParamW(hInst_, (LPCDLGTEMPLATEW)&tmpl,
+                                                 m_hwnd, SettingsDlgProc, 0);
+        if (result == IDOK) {
+            // Rebuild font from updated settings
+            if (font_) DeleteObject(font_);
+            wchar_t wfont[64];
+            MultiByteToWideChar(CP_UTF8, 0, settings.font_name.c_str(), -1, wfont, 64);
+            font_ = CreateFontW(-settings.font_size, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+                DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                CLEARTYPE_QUALITY, FIXED_PITCH | FF_MODERN, wfont);
+            tabbar.SetFont(font_);
+            output.SetFont(font_);
+            input.SetFont(font_);
+            status.SetFont(font_);
+            LayoutChildren();
+            output.Invalidate();
+        }
+        break;
+    }
 
     case IDM_EDIT_FIND: {
         g_find_ok = false;
