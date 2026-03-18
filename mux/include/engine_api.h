@@ -34,6 +34,10 @@ static constexpr uint64_t ECALL_DMA_ACK       = 0x121; // -> a0=window (next fre
 // Float/double conversion ECALLs.
 static constexpr uint64_t ECALL_FTOA          = 0x140; // a0=double bits, a1=output addr
 
+// Lua VM ECALLs — operations that call back into the Lua interpreter.
+// Require eval_ctx.lua_state != nullptr.
+static constexpr uint64_t ECALL_LUA_LEN       = 0x300; // a0=src_addr → a0=length (integer)
+
 // Lua bridge ECALLs — reserved range for mux.* function dispatch.
 static constexpr uint64_t ECALL_LUA_BRIDGE    = 0x380; // base for Lua bridge calls
 static constexpr uint64_t ECALL_LUA_NAME      = 0x380; // mux.name(dbref)

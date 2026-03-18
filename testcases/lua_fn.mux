@@ -589,7 +589,72 @@
     @trig me/tr.done
   },
   {
-    @log smoke=TC036: lua float negation. Failed (%q0).;
+    @log smoke=TC036: lua float negation. Failed (%q0).
+  }
+-
+#
+# Test 37: String concatenation via .. operator.
+#
+&LUA_CONCAT test_lua_fn=return "hello" .. " " .. "world"
+-
+&tr.tc037 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_CONCAT)),
+    hello world)=
+  {
+    @log smoke=TC037: lua string concat op. Succeeded.
+  },
+  {
+    @log smoke=TC037: lua string concat op. Failed (%q0).
+  }
+-
+#
+# Test 38: Concat with integer coercion.
+#
+&LUA_CONCATI test_lua_fn=return "count: " .. 42
+-
+&tr.tc038 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_CONCATI)),
+    count: 42)=
+  {
+    @log smoke=TC038: lua concat int coercion. Succeeded.
+  },
+  {
+    @log smoke=TC038: lua concat int coercion. Failed (%q0).
+  }
+-
+#
+# Test 39: String length via # operator.
+#
+&LUA_SLEN test_lua_fn=return #"hello"
+-
+&tr.tc039 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_SLEN)),
+    5)=
+  {
+    @log smoke=TC039: lua string length. Succeeded.
+  },
+  {
+    @log smoke=TC039: lua string length. Failed (%q0).
+  }
+-
+#
+# Test 40: Logical NOT operator.
+#
+&LUA_NOT test_lua_fn=if not false then return "yes" else return "no" end
+-
+&tr.tc040 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_NOT)),
+    yes)=
+  {
+    @log smoke=TC040: lua logical not. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC040: lua logical not. Failed (%q0).;
     @trig me/tr.done
   }
 -

@@ -126,6 +126,9 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
         case OP_LUA_IDIV:
         case OP_LUA_MOD:
         case OP_LUA_UNM:
+        case OP_LUA_NOT:
+        case OP_LUA_LEN:
+        case OP_LUA_CONCAT:
         case OP_LUA_ADDI:
         case OP_LUA_ADDK:
         case OP_LUA_SUBK:
@@ -516,6 +519,94 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             h.native_ops++;
             if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBIN)
                 pc++;
+            break;
+        }
+
+        // ---- Logical NOT ----
+
+        case OP_LUA_NOT: {
+            int rb = lua_reg[insn.B()];
+            if (rb < 0) return -1;
+            // NOT in Lua: false and nil → true (1), everything else → false (0).
+            // For TY_INT: 0 → 1, nonzero → 0 (same as HIR_NOT).
+            // For TY_FLOAT: can't be nil/false, so always 0.
+            if (h.ty[rb] == TY_INT) {
+                lua_reg[A] = h.emit(HIR_NOT, TY_INT, rb);
+            } else if (h.ty[rb] == TY_FLOAT) {
+                // Float is always truthy (never nil/false), so NOT = 0.
+                // But 0.0 should be truthy in Lua (only nil/false are falsy).
+                lua_reg[A] = h.emit_iconst(0);
+            } else {
+                // TY_STRING: non-nil, always truthy → 0.
+                lua_reg[A] = h.emit_iconst(0);
+            }
+            if (lua_reg[A] < 0) return -1;
+            break;
+        }
+
+        // ---- String length (ECALL back to Lua VM) ----
+
+        case OP_LUA_LEN: {
+            int rb = lua_reg[insn.B()];
+            if (rb < 0) return -1;
+            // For TY_STRING: emit strlen-like ECALL.
+            // For other types: would need lua_State to call __len metamethod.
+            if (h.ty[rb] == TY_STRING) {
+                // Use engine API STRLEN function if available.
+                int fidx = engine_api_lookup("STRLEN");
+                if (fidx > 0) {
+                    int args[] = { rb };
+                    lua_reg[A] = h.emit_call(TY_STRING, fidx, args, 1);
+                    if (lua_reg[A] < 0) return -1;
+                    h.known_int[lua_reg[A]] = true;
+                    h.ecalls++;
+                } else {
+                    return -1;
+                }
+            } else {
+                return -1;  // Table/userdata length needs lua_State.
+            }
+            break;
+        }
+
+        // ---- String concatenation ----
+
+        case OP_LUA_CONCAT: {
+            // OP_CONCAT A B: concatenate B values starting at R(A),
+            // result in R(A).
+            int nvals = insn.B();
+            if (nvals < 1) return -1;
+            if (nvals == 1) {
+                // Single value — no-op (just ensure it's a string).
+                int rv = lua_reg[A];
+                if (rv < 0) return -1;
+                if (h.ty[rv] == TY_INT) {
+                    lua_reg[A] = h.emit(HIR_ITOA, TY_STRING, rv);
+                } else if (h.ty[rv] == TY_FLOAT) {
+                    lua_reg[A] = h.emit(HIR_FTOA, TY_STRING, rv);
+                }
+                break;
+            }
+
+            // Convert all operands to strings, then emit HIR_STRCAT.
+            std::vector<int> str_args;
+            for (int j = 0; j < nvals; j++) {
+                int rv = lua_reg[A + j];
+                if (rv < 0) return -1;
+                if (h.ty[rv] == TY_INT) {
+                    rv = h.emit(HIR_ITOA, TY_STRING, rv);
+                    if (rv < 0) return -1;
+                } else if (h.ty[rv] == TY_FLOAT) {
+                    rv = h.emit(HIR_FTOA, TY_STRING, rv);
+                    if (rv < 0) return -1;
+                }
+                str_args.push_back(rv);
+            }
+
+            lua_reg[A] = h.emit_strcat(str_args.data(),
+                static_cast<int>(str_args.size()));
+            if (lua_reg[A] < 0) return -1;
+            h.ecalls++;
             break;
         }
 
