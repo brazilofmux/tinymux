@@ -153,6 +153,15 @@ std::vector<std::string> Connection::on_completion(IoContext* ctx, DWORD bytes, 
         return lines;
     }
 
+    if (ctx->op == IoOp::Write) {
+        // Async write completed — free the dynamically allocated context.
+        if (error != 0) {
+            connected_ = false;
+        }
+        delete ctx;
+        return lines;
+    }
+
     if (ctx->op == IoOp::Read) {
         if (error != 0 || bytes == 0) {
             // Connection closed or error
@@ -219,27 +228,39 @@ bool Connection::send_line(const std::string& line) {
 void Connection::send_raw(const void* data, size_t len) {
     if (socket_ == INVALID_SOCKET || !connected_) return;
 
+    const char* sendbuf;
+    size_t sendlen;
+    std::vector<char> encrypted;
+
     if (tls_) {
-        // Encrypt through TLS then send
-        std::vector<char> encrypted;
         if (!tls_->encrypt(data, len, encrypted)) return;
-        const char* p = encrypted.data();
-        size_t remaining = encrypted.size();
-        while (remaining > 0) {
-            int sent = ::send(socket_, p, (int)remaining, 0);
-            if (sent <= 0) break;
-            p += sent;
-            remaining -= sent;
-        }
+        sendbuf = encrypted.data();
+        sendlen = encrypted.size();
     } else {
-        const char* p = (const char*)data;
-        size_t remaining = len;
-        while (remaining > 0) {
-            int sent = ::send(socket_, p, (int)remaining, 0);
-            if (sent <= 0) break;
-            p += sent;
-            remaining -= sent;
+        sendbuf = (const char*)data;
+        sendlen = len;
+    }
+
+    // Async send via WSASend with overlapped I/O.
+    // Allocate a write context that persists until completion.
+    while (sendlen > 0) {
+        size_t chunk = sendlen > sizeof(IoContext::buffer) ? sizeof(IoContext::buffer) : sendlen;
+        auto* ctx = new IoContext();
+        memset(ctx, 0, sizeof(*ctx));
+        ctx->op = IoOp::Write;
+        memcpy(ctx->buffer, sendbuf, chunk);
+        ctx->wsabuf.buf = ctx->buffer;
+        ctx->wsabuf.len = (ULONG)chunk;
+
+        DWORD sent = 0;
+        int rc = WSASend(socket_, &ctx->wsabuf, 1, &sent, 0,
+                         &ctx->overlapped, nullptr);
+        if (rc == SOCKET_ERROR && WSAGetLastError() != WSA_IO_PENDING) {
+            delete ctx;
+            break;
         }
+        sendbuf += chunk;
+        sendlen -= chunk;
     }
 }
 

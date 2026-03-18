@@ -355,18 +355,34 @@ void Terminal::clear_row(int row, WORD attr) {
     }
 }
 
+// Strip ANSI escape sequences from a string for non-VT consoles.
+static std::string strip_ansi(const std::string& text) {
+    std::string out;
+    out.reserve(text.size());
+    size_t i = 0;
+    while (i < text.size()) {
+        if (text[i] == '\x1b' && i + 1 < text.size() && text[i + 1] == '[') {
+            // Skip ESC [ ... (final byte 0x40-0x7E)
+            i += 2;
+            while (i < text.size() && (unsigned char)text[i] < 0x40) i++;
+            if (i < text.size()) i++;  // skip final byte
+        } else {
+            out.push_back(text[i]);
+            i++;
+        }
+    }
+    return out;
+}
+
 void Terminal::write_at(int row, int col, const std::string& text, WORD attr) {
-    // Use WriteConsoleOutputCharacterA with UTF-8 -- or WriteConsoleA with cursor pos
     COORD pos = { (SHORT)col, (SHORT)row };
     SetConsoleCursorPosition(hOut_, pos);
+    DWORD written;
     if (vt_enabled_) {
-        // VT mode: just write the string (may contain ANSI sequences)
-        DWORD written;
         WriteConsoleA(hOut_, text.c_str(), (DWORD)text.size(), &written, nullptr);
     } else {
-        // Non-VT fallback: strip any ANSI sequences
-        DWORD written;
-        WriteConsoleA(hOut_, text.c_str(), (DWORD)text.size(), &written, nullptr);
+        std::string clean = strip_ansi(text);
+        WriteConsoleA(hOut_, clean.c_str(), (DWORD)clean.size(), &written, nullptr);
     }
 }
 
