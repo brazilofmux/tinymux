@@ -4,8 +4,8 @@
 // String table
 STRINGTABLE
 BEGIN
-    IDS_APP_TITLE   "TinyMUX Client"
-    IDS_APP_CLASS   "TinyMUXClientWnd"
+    IDS_APP_TITLE   "Titan"
+    IDS_APP_CLASS   "TitanClientWnd"
 END
 
 // Accelerator table

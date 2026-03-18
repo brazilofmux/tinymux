@@ -2,6 +2,9 @@
 #ifndef RESOURCE_H
 #define RESOURCE_H
 
+// Menu resource
+#define IDR_MAINMENU            1
+
 // Menu commands
 #define IDM_FILE_CONNECT        1001
 #define IDM_FILE_DISCONNECT     1002

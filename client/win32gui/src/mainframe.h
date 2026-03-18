@@ -12,9 +12,6 @@
 #include <vector>
 #include <string>
 
-// Menu resource ID (matches res/app.rc)
-#define IDR_MAINMENU 1
-
 class CMainFrame : public CWindow {
 public:
     static const wchar_t* ClassName();

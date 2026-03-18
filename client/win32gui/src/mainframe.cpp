@@ -2,7 +2,7 @@
 #include "mainframe.h"
 #include "../res/resource.h"
 
-static const wchar_t MAIN_CLASS[] = L"TinyMUXClientWnd";
+static const wchar_t MAIN_CLASS[] = L"TitanClientWnd";
 
 const wchar_t* CMainFrame::ClassName() { return MAIN_CLASS; }
 
@@ -37,7 +37,7 @@ bool CMainFrame::Create(HINSTANCE hInst, int nCmdShow) {
     int y = (ySize - cy) / 2;
 
     SetPendingWindow(this);
-    HWND hwnd = CreateWindowExW(0, MAIN_CLASS, L"TinyMUX Client",
+    HWND hwnd = CreateWindowExW(0, MAIN_CLASS, L"Titan",
         WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
         x, y, cx, cy, nullptr, nullptr, hInst, nullptr);
 
@@ -63,6 +63,11 @@ bool CMainFrame::Create(HINSTANCE hInst, int nCmdShow) {
     status.SetText("(no connection)");
 
     LayoutChildren();
+
+    // Create a system tab so input always has somewhere to go.
+    AddWorld("(System)");
+    tab_states[0]->buffer.append("Titan for Windows");
+    tab_states[0]->buffer.append("Type /help for commands, File > Connect to connect.");
 
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
@@ -222,8 +227,8 @@ void CMainFrame::OnCommand(int id) {
         break;
 
     case IDM_HELP_ABOUT:
-        MessageBoxW(m_hwnd, L"TinyMUX Client\nWin32 GUI Reference Implementation",
-                    L"About", MB_OK | MB_ICONINFORMATION);
+        MessageBoxW(m_hwnd, L"Titan for Windows\nWin32 GUI MU* Client\n\nPart of the TinyMUX project",
+                    L"About Titan", MB_OK | MB_ICONINFORMATION);
         break;
     }
 }
