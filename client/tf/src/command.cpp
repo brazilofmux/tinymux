@@ -897,18 +897,23 @@ void cmd_version(App& app, const std::string& /*args*/) {
 }
 
 void cmd_bind(App& app, const std::string& args) {
-    // /bind <key> = <command>
-    // /bind           — list all bindings
+    // /bind <keyspec> = <command>
+    // /bind                — list all bindings
+    // Supports multi-key sequences: ^X^F, Esc-a, Meta-a, M-a
     std::string s = trim_copy(args);
 
     if (s.empty()) {
         auto& all = app.keybindings.all();
-        if (all.empty()) {
+        auto seqs = app.keybindings.all_sequences();
+        if (all.empty() && seqs.empty()) {
             app.terminal.print_system("No key bindings");
             return;
         }
         for (auto& [bk, cmd] : all) {
             app.terminal.print_system("  /bind " + format_key_name(bk) + " = " + cmd);
+        }
+        for (auto& sb : seqs) {
+            app.terminal.print_system("  /bind " + format_key_sequence(sb.keys) + " = " + sb.command);
         }
         return;
     }
@@ -918,12 +923,16 @@ void cmd_bind(App& app, const std::string& args) {
     if (eq == std::string::npos) {
         // Show binding for this key
         std::string keyname = trim_copy(s);
-        BindKey bk = parse_key_name(keyname);
-        const std::string* cmd = app.keybindings.find(bk);
-        if (cmd) {
-            app.terminal.print_system("  " + keyname + " = " + *cmd);
+        auto seq = parse_key_sequence(keyname);
+        if (seq.size() == 1) {
+            const std::string* cmd = app.keybindings.find(seq[0]);
+            if (cmd) {
+                app.terminal.print_system("  " + keyname + " = " + *cmd);
+            } else {
+                app.terminal.print_system("  " + keyname + " is not bound");
+            }
         } else {
-            app.terminal.print_system("  " + keyname + " is not bound");
+            app.terminal.print_system("  " + keyname + " (sequence lookup not supported in query mode)");
         }
         return;
     }
@@ -931,14 +940,18 @@ void cmd_bind(App& app, const std::string& args) {
     std::string keyname = trim_copy(s.substr(0, eq));
     std::string command = trim_copy(s.substr(eq + 1));
 
-    BindKey bk = parse_key_name(keyname);
-    if (bk.key == Key::UNKNOWN) {
+    auto seq = parse_key_sequence(keyname);
+    if (seq.empty() || (seq.size() == 1 && seq[0].key == Key::UNKNOWN)) {
         app.terminal.print_system("% Unknown key: " + keyname);
         return;
     }
 
-    app.keybindings.bind(bk, command);
-    app.terminal.print_system("% Bound " + format_key_name(bk) + " = " + command);
+    if (seq.size() == 1) {
+        app.keybindings.bind(seq[0], command);
+    } else {
+        app.keybindings.bind_seq(seq, command);
+    }
+    app.terminal.print_system("% Bound " + format_key_sequence(seq) + " = " + command);
 }
 
 void cmd_unbind(App& app, const std::string& args) {
@@ -947,9 +960,15 @@ void cmd_unbind(App& app, const std::string& args) {
         app.terminal.print_system("Usage: /unbind <key>");
         return;
     }
-    BindKey bk = parse_key_name(keyname);
-    if (app.keybindings.unbind(bk)) {
-        app.terminal.print_system("% Unbound " + format_key_name(bk));
+    auto seq = parse_key_sequence(keyname);
+    bool ok;
+    if (seq.size() == 1) {
+        ok = app.keybindings.unbind(seq[0]);
+    } else {
+        ok = app.keybindings.unbind_seq(seq);
+    }
+    if (ok) {
+        app.terminal.print_system("% Unbound " + format_key_sequence(seq));
     } else {
         app.terminal.print_system("% Not bound: " + keyname);
     }

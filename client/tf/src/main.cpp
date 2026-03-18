@@ -467,25 +467,95 @@ static void run(App& app) {
             }
         }
 
-        // Process input events from the lexer
+        // Process input events from the lexer.
+        //
+        // Multi-key sequence matching: when a keystroke is a prefix of
+        // a bound sequence, buffer it and wait for the next key.  If
+        // no continuation arrives within the poll timeout (handled
+        // implicitly — the next iteration will see no new keys and
+        // flush the buffer), replay the buffered keys as individual
+        // keystrokes.
+        //
         for (auto& ev : lexer.events()) {
-            // Check key bindings first
             BindKey bk;
             bk.key = ev.key;
             bk.cp  = ev.cp;
+
+            // Try advancing the multi-key sequence trie.
+            //
+            std::string seq_cmd;
+            auto sr = app.keybindings.seq_advance(bk, seq_cmd);
+
+            if (sr == KeyBindings::SeqResult::MATCH) {
+                exec_body(app, seq_cmd);
+                continue;
+            }
+            if (sr == KeyBindings::SeqResult::PREFIX) {
+                // Partial match — hold this key and wait for more.
+                continue;
+            }
+
+            // SeqResult::NONE — no sequence match.  If we had buffered
+            // keys from a partial sequence, replay them now.
+            //
+            auto buffered = app.keybindings.seq_buffered();
+            app.keybindings.seq_reset();
+            if (!buffered.empty()) {
+                // The buffered keys plus current key didn't form a
+                // sequence.  Replay the buffered keys (they were already
+                // consumed from the event stream), then process current.
+                for (const auto& replay_bk : buffered) {
+                    const std::string* cmd = app.keybindings.find(replay_bk);
+                    if (cmd) {
+                        exec_body(app, *cmd);
+                    } else {
+                        InputEvent replay_ev;
+                        replay_ev.key = replay_bk.key;
+                        replay_ev.cp = replay_bk.cp;
+                        std::string line;
+                        if (app.terminal.handle_key(replay_ev, line)) {
+                            handle_input_line(app, line);
+                        }
+                    }
+                }
+            }
+
+            // Now process the current key normally.
             const std::string* bound_cmd = app.keybindings.find(bk);
             if (bound_cmd) {
                 exec_body(app, *bound_cmd);
                 continue;
             }
 
-            // Default key handling
+            // Default key handling.
             std::string line;
             if (app.terminal.handle_key(ev, line)) {
                 handle_input_line(app, line);
             }
         }
         lexer.clear_events();
+
+        // If a partial sequence is pending and no new input arrived,
+        // flush it (the poll timeout acts as the sequence timeout).
+        //
+        if (app.keybindings.seq_pending() && lexer.events().empty()) {
+            auto buffered = app.keybindings.seq_buffered();
+            app.keybindings.seq_reset();
+            for (const auto& replay_bk : buffered) {
+                const std::string* cmd = app.keybindings.find(replay_bk);
+                if (cmd) {
+                    exec_body(app, *cmd);
+                } else {
+                    InputEvent replay_ev;
+                    replay_ev.key = replay_bk.key;
+                    replay_ev.cp = replay_bk.cp;
+                    std::string line;
+                    if (app.terminal.handle_key(replay_ev, line)) {
+                        handle_input_line(app, line);
+                    }
+                }
+            }
+        }
 
         // --- Network sockets ---
         if (ready > 0) {
