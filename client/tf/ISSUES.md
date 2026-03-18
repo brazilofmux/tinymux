@@ -23,12 +23,11 @@ code review of commits `6ceb3ecf..HEAD` (2026-03-17).
   TF caches the compiled program. This is unlikely to matter in
   practice since redraws are infrequent.
 
-- **Status bar attributes: classic TF's single-char syntax not supported**
-  The full word-based attribute syntax is supported (bold, dim,
-  underline, blink, reverse, all 8 color names, bright variants,
-  bg variants, xterm-256 via color0..color255 / bg_color0..bg_color255).
-  Classic TF's single-character codes (`B`=bold, `Cred`=fg red, etc.)
-  are not recognized — only the long-form names work.
+- **Classic TF attribute codes: `E`, `W`, `I` meta-attrs not implemented**
+  Both word-token format (`bold,red,bg_blue`) and classic TF single-char
+  format (`BuCred`, `rCbgblue`) are supported. The `E` (error), `W`
+  (warning), and `I` (info) meta-attribute codes are not implemented as
+  they reference TF's configurable error/warning/info style variables.
 
 ## Telnet Protocol Issues
 

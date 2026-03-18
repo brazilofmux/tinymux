@@ -890,9 +890,92 @@ static int color_name_to_index(const std::string& name) {
     return -1;
 }
 
+// Classic TF single-char attribute parser.
+//
+// Format: concatenated single-char codes with C<colorname> for colors.
+//   B=bold, u=underline, r=reverse, f=flash, d=dim, h=hilite(bold),
+//   b=bell(ignored), g=gag(ignored), n=none(reset).
+//   Cred=fg red, Cbgblue=bg blue, Cbgbrightcyan=bright bg cyan.
+//
+static std::string attrs_to_sgr_classic(const std::string& attrs) {
+    std::vector<std::string> codes;
+    size_t i = 0;
+
+    while (i < attrs.size()) {
+        char ch = attrs[i++];
+        switch (ch) {
+        case ',': break;  // skip
+        case 'n': codes.clear(); break;  // reset
+        case 'B': case 'h': codes.push_back("1"); break;  // bold/hilite
+        case 'd': codes.push_back("2"); break;  // dim
+        case 'u': codes.push_back("4"); break;  // underline
+        case 'f': codes.push_back("5"); break;  // flash/blink
+        case 'r': codes.push_back("7"); break;  // reverse
+        case 'b': break;  // bell — no visual attribute
+        case 'g': break;  // gag — no visual attribute
+        case 'x': break;  // exclusive — no visual attribute
+        case 'C': {
+            // Read color name until end or next single-char code.
+            size_t start = i;
+            while (i < attrs.size() && attrs[i] != ',' &&
+                   std::string("nxGLAgurfdbBhEWIC").find(attrs[i]) == std::string::npos) {
+                i++;
+            }
+            std::string cname = attrs.substr(start, i - start);
+            // Lowercase for matching.
+            std::string lower;
+            for (char c : cname)
+                lower += static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+
+            bool is_bg = (lower.substr(0, 2) == "bg");
+            if (is_bg) lower = lower.substr(2);
+
+            bool bright = false;
+            if (lower.substr(0, 6) == "bright") {
+                bright = true;
+                lower = lower.substr(6);
+            }
+
+            int idx = color_name_to_index(lower);
+            if (idx >= 0) {
+                if (is_bg) {
+                    codes.push_back(std::to_string(bright ? 100 + idx : 40 + idx));
+                } else {
+                    codes.push_back(std::to_string(bright ? 90 + idx : 30 + idx));
+                }
+            } else if (lower == "gray" || lower == "grey") {
+                codes.push_back(is_bg ? "100" : "90");
+            }
+            break;
+        }
+        default: break;  // unknown — skip
+        }
+    }
+
+    if (codes.empty()) return {};
+    std::string sgr = "\033[";
+    for (size_t j = 0; j < codes.size(); ++j) {
+        if (j > 0) sgr += ';';
+        sgr += codes[j];
+    }
+    sgr += 'm';
+    return sgr;
+}
+
+// Detect whether an attribute string uses classic TF single-char format
+// or the word-token format.  If it contains any word delimiters
+// (, + | space), use word mode.  Otherwise, classic TF mode.
+//
+static bool is_word_format(const std::string& attrs) {
+    for (char ch : attrs) {
+        if (ch == ',' || ch == '+' || ch == '|' || ch == ' ') return true;
+    }
+    return false;
+}
+
 // Parse an attribute string into ANSI SGR codes.
 //
-// Supported tokens (case-insensitive, separated by , + | or space):
+// Word-token format (separated by , + | or space):
 //   Text:   bold/B, dim, underline/u, blink/flash, reverse/rev/r
 //   FG:     black, red, green, yellow, blue, magenta, cyan, white
 //   Bright: bright_red, brightred, etc.  (or gray for bright black)
@@ -900,8 +983,15 @@ static int color_name_to_index(const std::string& name) {
 //   Bright BG: bgbright_red, bgbrightred, etc.
 //   xterm-256: color0..color255 (fg), bg_color0..bg_color255 (bg)
 //
+// Classic TF format (no delimiters):
+//   B=bold, u=underline, r=reverse, f=flash, d=dim, h=hilite
+//   Cred=fg red, Cbgblue=bg blue, etc.
+//
 static std::string attrs_to_sgr(const std::string& attrs) {
     if (attrs.empty()) return {};
+
+    // Classic TF single-char mode if no word delimiters present.
+    if (!is_word_format(attrs)) return attrs_to_sgr_classic(attrs);
 
     std::vector<std::string> codes;
 
