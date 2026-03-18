@@ -529,6 +529,28 @@ This is optional and depends on user demand.
 **Unit tests** for the HIR lowering (Phase 2) can use the existing
 `compiled_program` test harness.
 
+## 10.1 Phase 2 Design Constraint
+
+Before implementing Lua bytecode → HIR lowering, the mixed execution model
+needs a tighter specification than this document currently gives.
+
+The current text assumes unsupported Lua opcodes can simply fall back to
+ECALLs into the stock VM while hot paths run through HIR/RV64/DBT. That is
+plausible for arithmetic-heavy code, but it is not enough to guarantee the
+sandbox contract already established for the softcode JIT. In particular,
+the design does not yet define the canonical ownership and synchronization
+rules for:
+
+- Lua register state versus guest JIT temporaries
+- upvalues and closure capture
+- table identity and mutation visibility
+- generic function calls and varargs
+- coroutine / resumable control flow
+
+Until that state model is explicit, Phase 2 should be treated as exploratory.
+The fallback boundary is the main architectural risk in the Lua-to-JIT path,
+not opcode coverage.
+
 ## 11. Open Questions
 
 1. **`FN_NOEVAL` vs `FN_EVAL` for lua():** NOEVAL gives scripts control over
@@ -550,3 +572,20 @@ This is optional and depends on user demand.
 5. **IDLE event hooks:** Should Lua scripts be triggerable on a timer (like
    `@daily`)? This would need a `LUA_DAILY` or `LUA_IDLE` attribute
    convention plus integration with the timer system.
+
+6. **Mixed VM/JIT coherence:** What is the exact state handoff model when
+   compiled Lua executes natively for some bytecode regions and falls back to
+   the stock Lua VM for closures, varargs, metatables, table-heavy code, or
+   generic calls? This needs a precise answer before Phase 2 can be treated
+   as an implementation plan rather than a direction.
+
+7. **Authority model:** The document says bridge calls run as the triggering
+   player unless special semantics apply, but it does not yet define how that
+   rule composes with queued execution, future trigger routing, or any
+   `FN_PRIV`-like behavior. This needs to be nailed down before the API is
+   exposed.
+
+8. **Cache compatibility key:** Source hashes alone are not enough for Lua
+   bytecode/native cache reuse across Lua upgrades or build changes. The
+   design should define explicit VM/codegen compatibility metadata for both
+   `lua_cache` and `code_cache`.

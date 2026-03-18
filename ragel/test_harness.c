@@ -1104,14 +1104,14 @@ static void test_center(void)
     size_t nb;
 
     nb = co_center(out, (const unsigned char *)"hi", 2,
-                   10, NULL, 0);
+                   10, NULL, 0, 1);
     TEST("center(\"hi\", 10) -> \"    hi    \"");
     if (nb == 10 && memcmp(out, "    hi    ", 10) == 0) { PASS(); }
     else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
 
     /* Odd padding: extra goes to right. */
     nb = co_center(out, (const unsigned char *)"hi", 2,
-                   9, NULL, 0);
+                   9, NULL, 0, 1);
     TEST("center(\"hi\", 9) -> odd padding");
     /* 7 pad total: 3 left, 4 right */
     if (nb == 9 && memcmp(out, "   hi    ", 9) == 0) { PASS(); }
@@ -1119,7 +1119,7 @@ static void test_center(void)
 
     /* Custom fill. */
     nb = co_center(out, (const unsigned char *)"hi", 2,
-                   8, (const unsigned char *)"=-", 2);
+                   8, (const unsigned char *)"=-", 2, 1);
     TEST("center(\"hi\", 8, \"=-\") -> cyclic fill");
     /* 3 left, 3 right: "=-=" + "hi" + "=-=" = 8 vis */
     if (nb == 8 && memcmp(out, "=-=hi=-=", 8) == 0) { PASS(); }
@@ -1127,16 +1127,23 @@ static void test_center(void)
 
     /* Truncation: string wider than width. */
     nb = co_center(out, (const unsigned char *)"hello world", 11,
-                   5, NULL, 0);
+                   5, NULL, 0, 1);
     TEST("center(\"hello world\", 5) -> truncate");
     if (nb == 5 && memcmp(out, "hello", 5) == 0) { PASS(); }
     else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
 
     /* Exact fit. */
     nb = co_center(out, (const unsigned char *)"abc", 3,
-                   3, NULL, 0);
+                   3, NULL, 0, 1);
     TEST("center(\"abc\", 3) -> exact fit");
     if (nb == 3 && memcmp(out, "abc", 3) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
+
+    /* Non-truncating mode returns the full string unchanged. */
+    nb = co_center(out, (const unsigned char *)"hello world", 11,
+                   5, NULL, 0, 0);
+    TEST("center(\"hello world\", 5, no-trunc) -> full string");
+    if (nb == 11 && memcmp(out, "hello world", 11) == 0) { PASS(); }
     else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
 }
 
@@ -1147,33 +1154,33 @@ static void test_ljust_rjust(void)
     size_t nb;
 
     nb = co_ljust(out, (const unsigned char *)"hi", 2,
-                  8, NULL, 0);
+                  8, NULL, 0, 1);
     TEST("ljust(\"hi\", 8) -> \"hi      \"");
     if (nb == 8 && memcmp(out, "hi      ", 8) == 0) { PASS(); }
     else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
 
     nb = co_rjust(out, (const unsigned char *)"hi", 2,
-                  8, NULL, 0);
+                  8, NULL, 0, 1);
     TEST("rjust(\"hi\", 8) -> \"      hi\"");
     if (nb == 8 && memcmp(out, "      hi", 8) == 0) { PASS(); }
     else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
 
     /* Custom fill. */
     nb = co_ljust(out, (const unsigned char *)"x", 1,
-                  5, (const unsigned char *)".", 1);
+                  5, (const unsigned char *)".", 1, 1);
     TEST("ljust(\"x\", 5, \".\") -> \"x....\"");
     if (nb == 5 && memcmp(out, "x....", 5) == 0) { PASS(); }
     else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
 
     nb = co_rjust(out, (const unsigned char *)"x", 1,
-                  5, (const unsigned char *)".", 1);
+                  5, (const unsigned char *)".", 1, 1);
     TEST("rjust(\"x\", 5, \".\") -> \"....x\"");
     if (nb == 5 && memcmp(out, "....x", 5) == 0) { PASS(); }
     else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
 
     /* Truncation. */
     nb = co_ljust(out, (const unsigned char *)"hello", 5,
-                  3, NULL, 0);
+                  3, NULL, 0, 1);
     TEST("ljust(\"hello\", 3) -> truncate to \"hel\"");
     if (nb == 3 && memcmp(out, "hel", 3) == 0) { PASS(); }
     else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
@@ -1186,12 +1193,18 @@ static void test_ljust_rjust(void)
     pos = append(buf, pos, COLOR_RESET, 3);
     buf[pos] = '\0';
 
-    nb = co_ljust(out, buf, pos, 6, NULL, 0);
+    nb = co_ljust(out, buf, pos, 6, NULL, 0, 1);
     TEST("ljust(RED\"AB\"RESET, 6) preserves color");
     /* RED(3) + "AB" + RESET(3) + 4 spaces = 12 bytes, 6 visible */
     size_t vis = co_visible_length(out, nb);
     if (vis == 6 && memcmp(out, COLOR_FG_RED, 3) == 0) { PASS(); }
     else { FAIL("got %zu vis, %zu bytes", vis, nb); }
+
+    nb = co_rjust(out, (const unsigned char *)"hello", 5,
+                  3, NULL, 0, 0);
+    TEST("rjust(\"hello\", 3, no-trunc) -> full string");
+    if (nb == 5 && memcmp(out, "hello", 5) == 0) { PASS(); }
+    else { FAIL("got \"%.*s\" (%zu)", (int)nb, out, nb); }
 }
 
 static void test_repeat(void)
@@ -1801,7 +1814,7 @@ static void test_lbuf_limits(void)
 
     /* co_center on large width. */
     nb = co_center(out, (const unsigned char *)"X", 1, LBUF_SIZE - 1,
-                   NULL, 0);
+                   NULL, 0, 1);
     TEST("center to LBUF_SIZE-1 width");
     if (nb == LBUF_SIZE - 1) { PASS(); }
     else { FAIL("got %zu", nb); }

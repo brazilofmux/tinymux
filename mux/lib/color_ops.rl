@@ -3452,8 +3452,15 @@ static int resolve_bg16(const co_ColorState *cs)
  */
 static size_t emit_ansi16(unsigned char *wp, const unsigned char *wp_end,
                           const co_ColorState *old_cs,
-                          const co_ColorState *new_cs)
+                          const co_ColorState *new_cs,
+                          int bNoBleed)
 {
+    co_ColorState adjusted = *new_cs;
+    if (bNoBleed && adjusted.fg == -1) {
+        adjusted.fg = 7;
+    }
+    new_cs = &adjusted;
+
     if (co_cs_equal(old_cs, new_cs)) return 0;
 
     unsigned char *start = wp;
@@ -3524,7 +3531,8 @@ static size_t emit_ansi16(unsigned char *wp, const unsigned char *wp_end,
 /* ---- co_render_ansi16 ---- */
 
 size_t co_render_ansi16(unsigned char *out,
-                        const unsigned char *data, size_t len)
+                        const unsigned char *data, size_t len,
+                        int bNoBleed)
 {
     unsigned char *wp = out;
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
@@ -3533,6 +3541,15 @@ size_t co_render_ansi16(unsigned char *out,
 
     co_ColorState cs = CO_CS_NORMAL;
     co_ColorState emitted = CO_CS_NORMAL;
+    co_ColorState client_normal = CO_CS_NORMAL;
+
+    if (bNoBleed) {
+        client_normal.fg = 7;
+        client_normal.fg_r = xterm_palette[7].r;
+        client_normal.fg_g = xterm_palette[7].g;
+        client_normal.fg_b = xterm_palette[7].b;
+        emitted = client_normal;
+    }
 
     while (p < pe && wp < wp_end) {
         /* Consume PUA color codes. */
@@ -3550,8 +3567,11 @@ size_t co_render_ansi16(unsigned char *out,
         }
 
         /* Visible code point — emit ANSI transition if needed. */
-        wp += emit_ansi16(wp, wp_end, &emitted, &cs);
+        wp += emit_ansi16(wp, wp_end, &emitted, &cs, bNoBleed);
         emitted = cs;
+        if (bNoBleed && emitted.fg == -1) {
+            emitted = client_normal;
+        }
 
         /* Copy visible UTF-8 bytes through. */
         size_t cplen;
@@ -3568,9 +3588,14 @@ size_t co_render_ansi16(unsigned char *out,
     }
 
     /* Return to normal at end if needed. */
-    co_ColorState normal = CO_CS_NORMAL;
-    if (!co_cs_equal(&emitted, &normal)) {
-        if (wp + 4 <= wp_end) {
+    if (!co_cs_equal(&emitted, &client_normal)) {
+        if (bNoBleed) {
+            if (wp + 9 <= wp_end) {
+                wp[0] = 0x1B; wp[1] = '['; wp[2] = '0'; wp[3] = 'm';
+                wp[4] = 0x1B; wp[5] = '['; wp[6] = '3'; wp[7] = '7'; wp[8] = 'm';
+                wp += 9;
+            }
+        } else if (wp + 4 <= wp_end) {
             wp[0] = 0x1B; wp[1] = '['; wp[2] = '0'; wp[3] = 'm';
             wp += 4;
         }
@@ -3606,8 +3631,15 @@ static int resolve_bg256(const co_ColorState *cs)
 
 static size_t emit_ansi256(unsigned char *wp, const unsigned char *wp_end,
                            const co_ColorState *old_cs,
-                           const co_ColorState *new_cs)
+                           const co_ColorState *new_cs,
+                           int bNoBleed)
 {
+    co_ColorState adjusted = *new_cs;
+    if (bNoBleed && adjusted.fg == -1) {
+        adjusted.fg = 7;
+    }
+    new_cs = &adjusted;
+
     if (co_cs_equal(old_cs, new_cs)) return 0;
 
     unsigned char *start = wp;
@@ -3668,7 +3700,8 @@ static size_t emit_ansi256(unsigned char *wp, const unsigned char *wp_end,
 /* ---- co_render_ansi256 ---- */
 
 size_t co_render_ansi256(unsigned char *out,
-                         const unsigned char *data, size_t len)
+                         const unsigned char *data, size_t len,
+                         int bNoBleed)
 {
     unsigned char *wp = out;
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
@@ -3677,6 +3710,15 @@ size_t co_render_ansi256(unsigned char *out,
 
     co_ColorState cs = CO_CS_NORMAL;
     co_ColorState emitted = CO_CS_NORMAL;
+    co_ColorState client_normal = CO_CS_NORMAL;
+
+    if (bNoBleed) {
+        client_normal.fg = 7;
+        client_normal.fg_r = xterm_palette[7].r;
+        client_normal.fg_g = xterm_palette[7].g;
+        client_normal.fg_b = xterm_palette[7].b;
+        emitted = client_normal;
+    }
 
     while (p < pe && wp < wp_end) {
         if (p[0] == 0xEF && (p + 2) < pe
@@ -3692,8 +3734,11 @@ size_t co_render_ansi256(unsigned char *out,
             continue;
         }
 
-        wp += emit_ansi256(wp, wp_end, &emitted, &cs);
+        wp += emit_ansi256(wp, wp_end, &emitted, &cs, bNoBleed);
         emitted = cs;
+        if (bNoBleed && emitted.fg == -1) {
+            emitted = client_normal;
+        }
 
         size_t cplen;
         if (*p < 0x80)      cplen = 1;
@@ -3708,9 +3753,15 @@ size_t co_render_ansi256(unsigned char *out,
         p += cplen;
     }
 
-    co_ColorState normal = CO_CS_NORMAL;
-    if (!co_cs_equal(&emitted, &normal)) {
-        if (wp + 4 <= wp_end) {
+    if (!co_cs_equal(&emitted, &client_normal)) {
+        if (bNoBleed) {
+            const char suffix[] = "\x1B[0m\x1B[38;5;7m";
+            size_t slen = sizeof(suffix) - 1;
+            if (wp + slen <= wp_end) {
+                memcpy(wp, suffix, slen);
+                wp += slen;
+            }
+        } else if (wp + 4 <= wp_end) {
             wp[0] = 0x1B; wp[1] = '['; wp[2] = '0'; wp[3] = 'm';
             wp += 4;
         }
@@ -3724,8 +3775,15 @@ size_t co_render_ansi256(unsigned char *out,
 
 static size_t emit_truecolor(unsigned char *wp, const unsigned char *wp_end,
                               const co_ColorState *old_cs,
-                              const co_ColorState *new_cs)
+                              const co_ColorState *new_cs,
+                              int bNoBleed)
 {
+    co_ColorState adjusted = *new_cs;
+    if (bNoBleed && adjusted.fg == -1) {
+        adjusted.fg = 7;
+    }
+    new_cs = &adjusted;
+
     if (co_cs_equal(old_cs, new_cs)) return 0;
 
     unsigned char *start = wp;
@@ -3812,7 +3870,8 @@ static size_t emit_truecolor(unsigned char *wp, const unsigned char *wp_end,
 /* ---- co_render_truecolor ---- */
 
 size_t co_render_truecolor(unsigned char *out,
-                           const unsigned char *data, size_t len)
+                           const unsigned char *data, size_t len,
+                           int bNoBleed)
 {
     unsigned char *wp = out;
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
@@ -3821,6 +3880,15 @@ size_t co_render_truecolor(unsigned char *out,
 
     co_ColorState cs = CO_CS_NORMAL;
     co_ColorState emitted = CO_CS_NORMAL;
+    co_ColorState client_normal = CO_CS_NORMAL;
+
+    if (bNoBleed) {
+        client_normal.fg = 7;
+        client_normal.fg_r = xterm_palette[7].r;
+        client_normal.fg_g = xterm_palette[7].g;
+        client_normal.fg_b = xterm_palette[7].b;
+        emitted = client_normal;
+    }
 
     while (p < pe && wp < wp_end) {
         if (p[0] == 0xEF && (p + 2) < pe
@@ -3836,8 +3904,11 @@ size_t co_render_truecolor(unsigned char *out,
             continue;
         }
 
-        wp += emit_truecolor(wp, wp_end, &emitted, &cs);
+        wp += emit_truecolor(wp, wp_end, &emitted, &cs, bNoBleed);
         emitted = cs;
+        if (bNoBleed && emitted.fg == -1) {
+            emitted = client_normal;
+        }
 
         size_t cplen;
         if (*p < 0x80)      cplen = 1;
@@ -3852,9 +3923,15 @@ size_t co_render_truecolor(unsigned char *out,
         p += cplen;
     }
 
-    co_ColorState normal = CO_CS_NORMAL;
-    if (!co_cs_equal(&emitted, &normal)) {
-        if (wp + 4 <= wp_end) {
+    if (!co_cs_equal(&emitted, &client_normal)) {
+        if (bNoBleed) {
+            const char suffix[] = "\x1B[0m\x1B[38;5;7m";
+            size_t slen = sizeof(suffix) - 1;
+            if (wp + slen <= wp_end) {
+                memcpy(wp, suffix, slen);
+                wp += slen;
+            }
+        } else if (wp + 4 <= wp_end) {
             wp[0] = 0x1B; wp[1] = '['; wp[2] = '0'; wp[3] = 'm';
             wp += 4;
         }
@@ -3887,25 +3964,6 @@ static size_t emit_html(unsigned char *wp, const unsigned char *wp_end,
     char tag[256];
     int tlen;
 
-    /* Close tags that are being turned off (reverse order for nesting). */
-    if (old_cs->inverse && !new_cs->inverse) {
-        tlen = snprintf(tag, sizeof(tag), "</S>");
-        if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
-    }
-    if (old_cs->blink && !new_cs->blink) {
-        tlen = snprintf(tag, sizeof(tag), "</I>");
-        if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
-    }
-    if (old_cs->underline && !new_cs->underline) {
-        tlen = snprintf(tag, sizeof(tag), "</U>");
-        if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
-    }
-    if (old_cs->intense && !new_cs->intense) {
-        tlen = snprintf(tag, sizeof(tag), "</B>");
-        if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
-    }
-
-    /* Close color if fg or bg changed. */
     int old_has_color = (old_cs->fg != -1 || old_cs->bg != -1);
     int new_has_color = (new_cs->fg != -1 || new_cs->bg != -1);
     int color_changed = (old_cs->fg != new_cs->fg || old_cs->bg != new_cs->bg
@@ -3913,6 +3971,45 @@ static size_t emit_html(unsigned char *wp, const unsigned char *wp_end,
         || old_cs->fg_b != new_cs->fg_b
         || old_cs->bg_r != new_cs->bg_r || old_cs->bg_g != new_cs->bg_g
         || old_cs->bg_b != new_cs->bg_b);
+
+    /* COLOR is the outer wrapper. Any color boundary must first close the
+     * inner style tags so the resulting HTML remains properly nested. */
+    if (color_changed) {
+        if (old_cs->inverse) {
+            tlen = snprintf(tag, sizeof(tag), "</S>");
+            if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+        }
+        if (old_cs->blink) {
+            tlen = snprintf(tag, sizeof(tag), "</I>");
+            if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+        }
+        if (old_cs->underline) {
+            tlen = snprintf(tag, sizeof(tag), "</U>");
+            if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+        }
+        if (old_cs->intense) {
+            tlen = snprintf(tag, sizeof(tag), "</B>");
+            if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+        }
+    } else {
+        /* Close tags that are being turned off (reverse order for nesting). */
+        if (old_cs->inverse && !new_cs->inverse) {
+            tlen = snprintf(tag, sizeof(tag), "</S>");
+            if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+        }
+        if (old_cs->blink && !new_cs->blink) {
+            tlen = snprintf(tag, sizeof(tag), "</I>");
+            if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+        }
+        if (old_cs->underline && !new_cs->underline) {
+            tlen = snprintf(tag, sizeof(tag), "</U>");
+            if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+        }
+        if (old_cs->intense && !new_cs->intense) {
+            tlen = snprintf(tag, sizeof(tag), "</B>");
+            if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
+        }
+    }
 
     if (old_has_color && color_changed) {
         tlen = snprintf(tag, sizeof(tag), "</COLOR>");
@@ -3965,19 +4062,19 @@ static size_t emit_html(unsigned char *wp, const unsigned char *wp_end,
     }
 
     /* Open attribute tags. */
-    if (new_cs->intense && !old_cs->intense) {
+    if (new_cs->intense && (color_changed || !old_cs->intense)) {
         tlen = snprintf(tag, sizeof(tag), "<B>");
         if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
     }
-    if (new_cs->underline && !old_cs->underline) {
+    if (new_cs->underline && (color_changed || !old_cs->underline)) {
         tlen = snprintf(tag, sizeof(tag), "<U>");
         if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
     }
-    if (new_cs->blink && !old_cs->blink) {
+    if (new_cs->blink && (color_changed || !old_cs->blink)) {
         tlen = snprintf(tag, sizeof(tag), "<I>");
         if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
     }
-    if (new_cs->inverse && !old_cs->inverse) {
+    if (new_cs->inverse && (color_changed || !old_cs->inverse)) {
         tlen = snprintf(tag, sizeof(tag), "<S>");
         if (wp + tlen <= wp_end) { memcpy(wp, tag, tlen); wp += tlen; }
     }

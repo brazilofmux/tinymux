@@ -10,7 +10,7 @@ RFLAGS  = -G2 -C
 
 SRCS_RL = color_ops.rl
 SRCS_C  = color_ops.c unicode_tables.c test_harness.c
-OBJS    = color_ops.o unicode_tables.o test_harness.o
+OBJS    = color_ops.o unicode_tables.o test_harness.o tables_ascii.o
 
 .PHONY: all clean test
 
@@ -25,6 +25,9 @@ test_harness: $(OBJS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+tables_ascii.o: ../tests/color_ops/tables_ascii.c
+	$(CC) $(CFLAGS) -c -o $@ ../tests/color_ops/tables_ascii.c
 
 test_harness.o: test_harness.c color_ops.h
 color_ops.o: color_ops.c color_ops.h unicode_tables.h

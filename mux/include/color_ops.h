@@ -709,7 +709,8 @@ LIBMUX_API size_t co_render_ascii(unsigned char *out,
  * Returns bytes written to out.
  */
 LIBMUX_API size_t co_render_ansi16(unsigned char *out,
-                        const unsigned char *data, size_t len);
+                        const unsigned char *data, size_t len,
+                        int bNoBleed);
 
 /*
  * co_render_ansi256 — Render PUA-colored UTF-8 to ANSI 256-color output.
@@ -722,7 +723,8 @@ LIBMUX_API size_t co_render_ansi16(unsigned char *out,
  * Returns bytes written to out.
  */
 LIBMUX_API size_t co_render_ansi256(unsigned char *out,
-                         const unsigned char *data, size_t len);
+                         const unsigned char *data, size_t len,
+                         int bNoBleed);
 
 /*
  * co_render_truecolor — Render PUA-colored UTF-8 to TrueColor (24-bit) output.
@@ -735,7 +737,8 @@ LIBMUX_API size_t co_render_ansi256(unsigned char *out,
  * Returns bytes written to out.
  */
 LIBMUX_API size_t co_render_truecolor(unsigned char *out,
-                           const unsigned char *data, size_t len);
+                           const unsigned char *data, size_t len,
+                           int bNoBleed);
 
 /*
  * co_render_html — Render PUA-colored UTF-8 to HTML.

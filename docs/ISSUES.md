@@ -108,3 +108,124 @@ investigation — likely quadratic behavior in HIR lowering or codegen.
 
 **Status**: Seen intermittently during smoke tests with JIT enabled.
 **Needs**: Reproduction and stack trace.
+
+---
+
+## Recent Review Findings (2026-03-18)
+
+### 11. `NOBLEED` regression in Stage 6 output pipeline
+
+**Status**: Fixed on brazil (2026-03-18).
+**Affects**: ANSI player output path after Stage 6 renderer switchover.
+**Commit area**: `aaa5ac63e` / `92723905a`.
+**Problem**: `queue_string()` now routes ANSI output through
+`co_render_truecolor()`, `co_render_ansi256()`, `co_render_ansi16()`, and
+`co_render_html()`, but no longer threads the player's `NOBLEED` flag into
+the renderer selection/transition logic.
+**Evidence**:
+- `mux/src/net.cpp` now selects Stage 6 renderers directly.
+- Legacy `convert_color()` accepted `fNoBleed` and adjusted the client-normal
+  transition accordingly.
+**Behavioral risk**: ANSI users with `NOBLEED` can observe different reset
+semantics at line boundaries than before the migration.
+**Fix**: Added explicit `bNoBleed` handling to the ANSI16 / ANSI256 /
+TRUECOLOR Stage 6 renderers, restored the white-baseline client model, and
+wired `queue_string()` to pass the player's `NOBLEED` flag through.
+**Coverage**: Added focused `tests/color_ops` cases for mid-string reset to
+white and trailing restore-to-white behavior.
+
+### 12. `co_render_html()` can emit invalidly nested tags
+
+**Status**: Fixed on brazil (2026-03-18).
+**Affects**: HTML output when color changes inside an active style span
+(`B`, `U`, `I`, `S`).
+**Commit area**: `92723905a`.
+**Problem**: The new one-pass HTML renderer closes `</COLOR>` while style
+tags remain open, then opens a new `<COLOR ...>` tag without temporarily
+closing and reopening the active style tags. This can create crossing tag
+boundaries.
+**Example shape**: Bold red text followed by bold blue text can become
+`<COLOR ...><B>X</COLOR><COLOR ...>Y</B>`, which is structurally invalid.
+**Prior behavior**: The old `convert_to_html()` implementation used a
+two-pass stack/list approach specifically to compute valid nesting.
+**Fix**: `emit_html()` now closes active style tags around any color boundary,
+closes/reopens the color wrapper, then reopens still-active styles so the
+resulting HTML remains well-nested.
+**Coverage**: Added targeted `tests/color_ops` cases for color change inside
+bold text and entering color while bold is already active.
+
+### 13. HTML renderer tests miss the nesting regression
+
+**Status**: Fixed on brazil (2026-03-18).
+**Affects**: `tests/color_ops/test_color_ops.c`.
+**Problem**: New tests validate tag presence, escaping, RGB formatting, and
+PUA stripping, but do not assert correct nesting across mixed style+color
+transitions.
+**Fix**: Added focused cases for:
+- color change while `intense` remains active
+- color change while underline/blink/inverse remain active
+- adjacent open/close transitions that would cross if emitted in one pass
+
+### 14. Ragel standalone test harness broken by justify API change
+
+**Status**: Fixed on brazil (2026-03-18).
+**Affects**: `ragel/Makefile` target `test_harness`.
+**Commit area**: `0e101690e`.
+**Problem**: `co_center()`, `co_ljust()`, and `co_rjust()` gained the
+`bTrunc` parameter, but `ragel/test_harness.c` still calls the old
+signatures.
+**Verification**: `make -C ragel test_harness` fails with “too few arguments
+to function” for all three helpers.
+**Fix**: Updated the harness call sites to pass `bTrunc`, added explicit
+coverage for the new non-truncating behavior, and linked the standalone
+target against the extracted ASCII transliteration tables required by the
+new `co_render_ascii()` implementation.
+**Verification**: `make -C ragel test_harness` and `ragel/test_harness` now
+pass.
+
+---
+
+## Lua / JIT Design Questions
+
+### 15. Mixed Lua VM and JIT state model is underspecified
+
+**Status**: Design gap.
+**Affects**: `docs/design-lua-server.md` Phase 2, any future Lua-to-HIR work.
+**Problem**: The current design says Lua bytecode lowers into HIR and falls
+back to ECALLs for unsupported features, but it does not specify how Lua VM
+state remains coherent across native JIT execution and interpreter fallback.
+This is the hard architectural issue for closures, varargs, tables,
+metatables, generic calls, and upvalues.
+**Risk**: Without a precise state model, the JIT path may violate the
+sandbox contract's requirement for identical output, side-effect ordering,
+and visibility relative to interpreted execution.
+**Needed design work**: Define a canonical ownership model for registers,
+stack, upvalues, tables, and resumable control flow when execution bounces
+between compiled HIR and the stock Lua VM.
+
+### 16. Lua privilege model needs sharper definition before implementation
+
+**Status**: Design gap.
+**Affects**: `lua()`, `@lua`, future `@trigger` integration, queued execution.
+**Problem**: The design says scripts live on object attributes, but bridge
+operations run with the triggering player as executor unless special function
+semantics apply. That is directionally correct, but the design does not yet
+pin down how object ownership, `FN_PRIV`-like behavior, queued execution, and
+trigger routing should compose.
+**Risk**: Privilege semantics can drift into inconsistent special cases once
+Lua is embedded in multiple invocation paths.
+**Needed design work**: Define one authority model and apply it uniformly to
+direct calls, queued calls, triggers, and future event hooks.
+
+### 17. Lua cache/versioning story is incomplete
+
+**Status**: Design gap.
+**Affects**: `lua_cache` and future `code_cache` integration.
+**Problem**: The design keys cached bytecode and native code by source hash,
+object, attr, and blob hash, but does not include an explicit compatibility
+key for the Lua VM version/build details that determine bytecode and `Proto`
+layout stability.
+**Risk**: Cache reuse across Lua upgrades or build changes can become
+silently invalid.
+**Needed design work**: Add explicit cache-version metadata covering Lua
+major/minor/build compatibility and codegen assumptions.
