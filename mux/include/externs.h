@@ -1099,6 +1099,9 @@ extern int anum_alc_top;
 #define PROTECT_ALIAS   4   /* @protect/alias */
 #define PROTECT_UNALIAS 8   /* @protect/unalias */
 #define PROTECT_ALL     16  /* @protect/all (wizard) */
+#define LUA_EXEC        0   /* @lua obj/attr (default) */
+#define LUA_INLINE      1   /* @lua/inline code */
+#define LUA_STATS       2   /* @lua/stats */
 #define REFERENCE_LIST  1   /* List @references */
 #define SAY_SAY         1   /* say in current room */
 #define SAY_NOSPACE     1   /* OR with xx_EMIT to get nospace form */

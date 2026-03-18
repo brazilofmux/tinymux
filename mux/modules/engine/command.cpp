@@ -621,6 +621,88 @@ static NAMETAB warp_sw[] =
 };
 
 
+static NAMETAB lua_sw[] =
+{
+    {T("inline"),          1,  CA_WIZARD,  LUA_INLINE},
+    {T("stats"),           1,  CA_PUBLIC,  LUA_STATS},
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
+};
+
+// @lua handler — execute Lua scripts or show stats.
+//
+static void do_lua(dbref executor, dbref caller, dbref enactor, int eval,
+    int key, UTF8 *arg1, const UTF8 *cargs[], int ncargs)
+{
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (nullptr == mudstate.pILuaControl)
+    {
+        notify(executor, T("Lua module is not loaded."));
+        return;
+    }
+
+    if (LUA_STATS == key)
+    {
+        size_t nCalls, nErrors, nInsnHits, nMemHits, nBytes;
+        mudstate.pILuaControl->GetStats(&nCalls, &nErrors,
+            &nInsnHits, &nMemHits, &nBytes);
+        notify(executor, tprintf(T("Lua stats: %zu calls, %zu errors, "
+            "%zu insn-limit hits, %zu mem-limit hits, %zu bytes used"),
+            nCalls, nErrors, nInsnHits, nMemHits, nBytes));
+        return;
+    }
+
+    if (LUA_INLINE == key)
+    {
+        if (!Wizard(executor))
+        {
+            notify(executor, T("Permission denied."));
+            return;
+        }
+        UTF8 result[8000];
+        size_t nResult = 0;
+        mudstate.pILuaControl->Eval(executor, caller, enactor,
+            arg1, strlen(reinterpret_cast<const char *>(arg1)),
+            result, sizeof(result), &nResult);
+        notify(executor, result);
+        return;
+    }
+
+    // Default: @lua obj/attr — execute a Lua script on an object.
+    //
+    UTF8 *pSlash = reinterpret_cast<UTF8 *>(
+        const_cast<char *>(strchr(reinterpret_cast<const char *>(arg1), '/')));
+    if (nullptr == pSlash)
+    {
+        notify(executor, T("Usage: @lua <object>/<attribute>"));
+        return;
+    }
+    *pSlash = '\0';
+    UTF8 *pAttrName = pSlash + 1;
+
+    dbref obj = lookup_player(executor, arg1, true);
+    if (NOTHING == obj)
+    {
+        init_match(executor, arg1, NOTYPE);
+        match_everything(MAT_EXIT_PARENTS);
+        obj = match_result();
+    }
+    if (!Good_obj(obj))
+    {
+        notify(executor, T("No such object."));
+        return;
+    }
+
+    UTF8 result[8000];
+    size_t nResult = 0;
+    mudstate.pILuaControl->CallAttr(executor, caller, enactor,
+        obj, pAttrName, nullptr, 0,
+        result, sizeof(result), &nResult);
+    notify(executor, result);
+}
+
 /* ---------------------------------------------------------------------------
  * Command table: Definitions for builtin commands, used to build the command
  * hash table.
@@ -677,6 +759,7 @@ static CMDENT_ONE_ARG command_table_one_arg[] =
     {T("@kick"),         nullptr,    CA_WIZARD,         QUEUE_KICK,  CS_ONE_ARG|CS_INTERP, 0, do_queue},
     {T("@last"),         nullptr,    CA_NO_GUEST,                0,  CS_ONE_ARG|CS_INTERP, 0, do_last},
     {T("@list"),         nullptr,    CA_PUBLIC,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_list},
+    {T("@lua"),          lua_sw,     CA_NO_SLAVE|CA_NO_GUEST,    0,  CS_ONE_ARG|CS_INTERP, 0, do_lua},
     {T("@list_file"),    nullptr,    CA_WIZARD,                  0,  CS_ONE_ARG|CS_INTERP, 0, do_list_file},
     {T("@listcommands"), nullptr,    CA_GOD,                     0,  CS_ONE_ARG,           0, do_listcommands},
     {T("@listmotd"),     listmotd_sw,CA_PUBLIC,          MOTD_LIST,  CS_ONE_ARG,           0, do_motd},
@@ -4092,8 +4175,9 @@ static void list_rlevels(dbref player)
 #define LIST_GUESTS     24
 #define LIST_MODULES    25
 #define LIST_CACHE      26
+#define LIST_LUA        27
 #ifdef REALITY_LVLS
-#define LIST_RLEVELS    27
+#define LIST_RLEVELS    28
 #endif
 
 NAMETAB list_names[] =
@@ -4114,6 +4198,7 @@ NAMETAB list_names[] =
     {T("globals"),            2,  CA_WIZARD,  LIST_GLOBALS},
     {T("hashstats"),          1,  CA_WIZARD,  LIST_HASHSTATS},
     {T("logging"),            1,  CA_GOD,     LIST_LOGGING},
+    {T("lua"),                2,  CA_PUBLIC,  LIST_LUA},
     {T("modules"),            1,  CA_WIZARD,  LIST_MODULES},
     {T("options"),            1,  CA_PUBLIC,  LIST_OPTIONS},
     {T("permissions"),        2,  CA_WIZARD,  LIST_PERMS},
@@ -4237,6 +4322,24 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, const int ke
         break;
     case LIST_CACHE:
         list_cache_stats(executor);
+        break;
+    case LIST_LUA:
+        if (nullptr != mudstate.pILuaControl)
+        {
+            size_t nCalls, nErrors, nInsnHits, nMemHits, nBytes;
+            mudstate.pILuaControl->GetStats(&nCalls, &nErrors,
+                &nInsnHits, &nMemHits, &nBytes);
+            notify(executor, tprintf(T("Lua module loaded (Lua 5.4).")));
+            notify(executor, tprintf(T("  Calls:            %zu"), nCalls));
+            notify(executor, tprintf(T("  Errors:           %zu"), nErrors));
+            notify(executor, tprintf(T("  Insn limit hits:  %zu"), nInsnHits));
+            notify(executor, tprintf(T("  Mem limit hits:   %zu"), nMemHits));
+            notify(executor, tprintf(T("  Memory in use:    %zu bytes"), nBytes));
+        }
+        else
+        {
+            notify(executor, T("Lua module is not loaded."));
+        }
         break;
 #ifdef REALITY_LVLS
     case LIST_RLEVELS:

@@ -319,6 +319,142 @@ static int bridge_eval(lua_State *L)
     return 1;
 }
 
+// mux.type(dbref) — return object type string.
+//
+static int bridge_type(lua_State *L)
+{
+    int obj = static_cast<int>(luaL_checkinteger(L, 1));
+
+    mux_IObjectInfo *pOI = nullptr;
+    MUX_RESULT mr = mux_CreateInstance(CID_ObjectInfo, nullptr,
+        UseSameProcess, IID_IObjectInfo,
+        reinterpret_cast<void **>(&pOI));
+    if (MUX_SUCCEEDED(mr) && nullptr != pOI)
+    {
+        int type = -1;
+        mr = pOI->GetType(static_cast<dbref>(obj), &type);
+        pOI->Release();
+        if (MUX_SUCCEEDED(mr))
+        {
+            // Type constants: 0=ROOM, 1=THING, 2=EXIT, 3=PLAYER
+            static const char *types[] = {"ROOM", "THING", "EXIT", "PLAYER"};
+            if (type >= 0 && type <= 3)
+            {
+                lua_pushstring(L, types[type]);
+            }
+            else
+            {
+                lua_pushstring(L, "UNKNOWN");
+            }
+            return 1;
+        }
+    }
+    lua_pushnil(L);
+    return 1;
+}
+
+// mux.flags(dbref) — return flag string.
+//
+static int bridge_flags(lua_State *L)
+{
+    lua_exec_ctx *ctx = get_exec_ctx(L);
+    int obj = static_cast<int>(luaL_checkinteger(L, 1));
+
+    mux_IObjectInfo *pOI = nullptr;
+    MUX_RESULT mr = mux_CreateInstance(CID_ObjectInfo, nullptr,
+        UseSameProcess, IID_IObjectInfo,
+        reinterpret_cast<void **>(&pOI));
+    if (MUX_SUCCEEDED(mr) && nullptr != pOI)
+    {
+        UTF8 *pFlags = nullptr;
+        dbref looker = (ctx != nullptr) ? ctx->executor : static_cast<dbref>(1);
+        mr = pOI->DecodeFlags(looker, static_cast<dbref>(obj), &pFlags);
+        pOI->Release();
+        if (MUX_SUCCEEDED(mr) && nullptr != pFlags)
+        {
+            lua_pushstring(L, reinterpret_cast<const char *>(pFlags));
+            return 1;
+        }
+    }
+    lua_pushnil(L);
+    return 1;
+}
+
+// mux.isplayer(dbref) — check if object is a player.
+//
+static int bridge_isplayer(lua_State *L)
+{
+    int obj = static_cast<int>(luaL_checkinteger(L, 1));
+
+    mux_IObjectInfo *pOI = nullptr;
+    MUX_RESULT mr = mux_CreateInstance(CID_ObjectInfo, nullptr,
+        UseSameProcess, IID_IObjectInfo,
+        reinterpret_cast<void **>(&pOI));
+    if (MUX_SUCCEEDED(mr) && nullptr != pOI)
+    {
+        bool bPlayer = false;
+        mr = pOI->IsPlayer(static_cast<dbref>(obj), &bPlayer);
+        pOI->Release();
+        if (MUX_SUCCEEDED(mr))
+        {
+            lua_pushboolean(L, bPlayer ? 1 : 0);
+            return 1;
+        }
+    }
+    lua_pushboolean(L, 0);
+    return 1;
+}
+
+// mux.isconnected(dbref) — check if player is connected.
+//
+static int bridge_isconnected(lua_State *L)
+{
+    int obj = static_cast<int>(luaL_checkinteger(L, 1));
+
+    mux_IObjectInfo *pOI = nullptr;
+    MUX_RESULT mr = mux_CreateInstance(CID_ObjectInfo, nullptr,
+        UseSameProcess, IID_IObjectInfo,
+        reinterpret_cast<void **>(&pOI));
+    if (MUX_SUCCEEDED(mr) && nullptr != pOI)
+    {
+        bool bConn = false;
+        mr = pOI->IsConnected(static_cast<dbref>(obj), &bConn);
+        pOI->Release();
+        if (MUX_SUCCEEDED(mr))
+        {
+            lua_pushboolean(L, bConn ? 1 : 0);
+            return 1;
+        }
+    }
+    lua_pushboolean(L, 0);
+    return 1;
+}
+
+// mux.pennies(dbref) — return object pennies.
+//
+static int bridge_pennies(lua_State *L)
+{
+    int obj = static_cast<int>(luaL_checkinteger(L, 1));
+
+    mux_IObjectInfo *pOI = nullptr;
+    MUX_RESULT mr = mux_CreateInstance(CID_ObjectInfo, nullptr,
+        UseSameProcess, IID_IObjectInfo,
+        reinterpret_cast<void **>(&pOI));
+    if (MUX_SUCCEEDED(mr) && nullptr != pOI)
+    {
+        int pennies = 0;
+        mr = pOI->GetPennies(static_cast<dbref>(obj), &pennies);
+        pOI->Release();
+        if (MUX_SUCCEEDED(mr))
+        {
+            lua_pushinteger(L, pennies);
+            return 1;
+        }
+    }
+    lua_pushnil(L);
+    return 1;
+}
+
 // mux.iswizard(dbref) — check if object is a wizard.
 //
 static int bridge_iswizard(lua_State *L)
@@ -374,16 +510,22 @@ static int bridge_controls(lua_State *L)
 // Bridge function table.
 //
 static const luaL_Reg bridge_funcs[] = {
-    {"notify",   bridge_notify},
-    {"name",     bridge_name},
-    {"owner",    bridge_owner},
-    {"location", bridge_location},
-    {"get",      bridge_get},
-    {"set",      bridge_set},
-    {"eval",     bridge_eval},
-    {"iswizard", bridge_iswizard},
-    {"controls", bridge_controls},
-    {nullptr,    nullptr}
+    {"notify",      bridge_notify},
+    {"pemit",       bridge_notify},
+    {"name",        bridge_name},
+    {"owner",       bridge_owner},
+    {"location",    bridge_location},
+    {"type",        bridge_type},
+    {"flags",       bridge_flags},
+    {"isplayer",    bridge_isplayer},
+    {"isconnected", bridge_isconnected},
+    {"pennies",     bridge_pennies},
+    {"get",         bridge_get},
+    {"set",         bridge_set},
+    {"eval",        bridge_eval},
+    {"iswizard",    bridge_iswizard},
+    {"controls",    bridge_controls},
+    {nullptr,       nullptr}
 };
 
 // =========================================================================
