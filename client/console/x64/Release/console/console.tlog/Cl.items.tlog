@@ -1,7 +1,0 @@
-C:\tinymux\client\console\src\main.cpp;C:\tinymux\client\console\x64\Release\console\main.obj
-C:\tinymux\client\console\src\app.cpp;C:\tinymux\client\console\x64\Release\console\app.obj
-C:\tinymux\client\console\src\connection.cpp;C:\tinymux\client\console\x64\Release\console\connection.obj
-C:\tinymux\client\console\src\terminal.cpp;C:\tinymux\client\console\x64\Release\console\terminal.obj
-C:\tinymux\client\console\src\command.cpp;C:\tinymux\client\console\x64\Release\console\command.obj
-C:\tinymux\client\console\src\world.cpp;C:\tinymux\client\console\x64\Release\console\world.obj
-C:\tinymux\client\console\src\schannel_tls.cpp;C:\tinymux\client\console\x64\Release\console\schannel_tls.obj

@@ -1,8 +1,0 @@
-﻿  main.cpp
-  app.cpp
-  connection.cpp
-  terminal.cpp
-  command.cpp
-  world.cpp
-  Generating Code...
-  console.vcxproj -> C:\tinymux\client\console\bin\Release\console.exe
