@@ -654,7 +654,41 @@
     @trig me/tr.done
   },
   {
-    @log smoke=TC040: lua logical not. Failed (%q0).;
+    @log smoke=TC040: lua logical not. Failed (%q0).
+  }
+-
+#
+# Test 41: Table construction and integer access.
+# {10,20,30} → NEWTABLE + SETLIST, t[1] → GETTABI.
+#
+&LUA_TBLSUM test_lua_fn=local t={10,20,30} return t[1]+t[2]+t[3]
+-
+&tr.tc041 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_TBLSUM)),
+    60)=
+  {
+    @log smoke=TC041: lua table construct+access. Succeeded.
+  },
+  {
+    @log smoke=TC041: lua table construct+access. Failed (%q0).
+  }
+-
+#
+# Test 42: Table with string values and concatenation.
+#
+&LUA_TBLSTR test_lua_fn=local t={"hello","world"} return t[1] .. " " .. t[2]
+-
+&tr.tc042 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_TBLSTR)),
+    hello world)=
+  {
+    @log smoke=TC042: lua table string concat. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC042: lua table string concat. Failed (%q0).;
     @trig me/tr.done
   }
 -

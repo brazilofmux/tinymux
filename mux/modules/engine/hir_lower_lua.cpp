@@ -141,6 +141,13 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
         case OP_LUA_MMBINK:
             break;
 
+        // Table operations — handled via ECALL back to Lua VM.
+        case OP_LUA_NEWTABLE:
+        case OP_LUA_GETTABI:
+        case OP_LUA_SETTABI:
+        case OP_LUA_SETLIST:
+            break;
+
         // Comparisons — handled.
         case OP_LUA_EQ:
         case OP_LUA_LT:
@@ -172,8 +179,9 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
         case OP_LUA_CALL:
             break;
 
-        // Harmless no-op (main chunk vararg prep).
+        // Harmless no-ops.
         case OP_LUA_VARARGPREP:
+        case OP_LUA_EXTRAARG:
             break;
 
         // --- Hard rejects ---
@@ -610,6 +618,112 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             break;
         }
 
+        // ---- Table operations (ECALL back to Lua VM) ----
+        //
+        // Tables live on the Lua stack, referenced by stack index.
+        // NEWTABLE creates a table and returns its stack index (TY_INT).
+        // GETI/SETI/GETFIELD/SETFIELD operate via ECALL, marshalling
+        // values between guest memory and the Lua stack.
+
+        case OP_LUA_NEWTABLE: {
+            // A = dest register, B = array hint, C = hash hint.
+            // Extra size info may be in a following EXTRAARG instruction.
+            int narr = insn.B();
+            int nrec = insn.C();
+            // Emit ECALL_LUA_NEWTABLE: a0=narr, a1=nrec → a0=stack_idx.
+            int v_narr = h.emit_iconst(narr);
+            int v_nrec = h.emit_iconst(nrec);
+            if (v_narr < 0 || v_nrec < 0) return -1;
+
+            // Use a raw ECALL sequence: load args, set a7, ecall.
+            // The result (stack index) comes back in a0.
+            // We model this as an HIR_CALL to a special function.
+            std::string name("__lua_newtable");
+            int args[] = { v_narr, v_nrec };
+            lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
+            if (lua_reg[A] < 0) return -1;
+            // Mark this as known-integer (it's a stack index).
+            h.known_int[lua_reg[A]] = true;
+            h.ecalls++;
+            break;
+        }
+
+        case OP_LUA_GETTABI: {
+            // A = dest, B = table register, C = integer key.
+            int tbl = lua_reg[insn.B()];
+            if (tbl < 0) return -1;
+            int key = h.emit_iconst(insn.C());
+            if (key < 0) return -1;
+
+            std::string name("__lua_geti");
+            int args[] = { tbl, key };
+            lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
+            if (lua_reg[A] < 0) return -1;
+            h.ecalls++;
+            break;
+        }
+
+        case OP_LUA_SETTABI: {
+            // A = table register, B = integer key, C = value register.
+            int tbl = lua_reg[A];
+            int val = lua_reg[insn.C()];
+            if (tbl < 0 || val < 0) return -1;
+
+            // Convert value to string if needed.
+            if (h.ty[val] == TY_INT) {
+                val = h.emit(HIR_ITOA, TY_STRING, val);
+                if (val < 0) return -1;
+            } else if (h.ty[val] == TY_FLOAT) {
+                val = h.emit(HIR_FTOA, TY_STRING, val);
+                if (val < 0) return -1;
+            }
+
+            int key = h.emit_iconst(insn.B());
+            if (key < 0) return -1;
+
+            std::string name("__lua_seti");
+            int args[] = { tbl, key, val };
+            h.emit_call(TY_STRING, 0, args, 3, &name);
+            h.ecalls++;
+            break;
+        }
+
+        case OP_LUA_SETLIST: {
+            // A = table register, B = number of values, k+C = offset.
+            // Values are in R(A+1)..R(A+B).
+            int tbl = lua_reg[A];
+            if (tbl < 0) return -1;
+            int nvals = insn.B();
+            int offset = insn.C();
+            // k flag indicates extra offset from following EXTRAARG.
+            if (insn.k() && pc + 1 < n) {
+                offset += proto->code[pc + 1].Ax() * (1 << 8);
+                // Don't skip EXTRAARG here — it will be skipped as
+                // unsupported if we don't handle it, but SETLIST
+                // consumed the info.
+            }
+
+            for (int j = 1; j <= nvals; j++) {
+                int val = lua_reg[A + j];
+                if (val < 0) return -1;
+                if (h.ty[val] == TY_INT) {
+                    val = h.emit(HIR_ITOA, TY_STRING, val);
+                    if (val < 0) return -1;
+                } else if (h.ty[val] == TY_FLOAT) {
+                    val = h.emit(HIR_FTOA, TY_STRING, val);
+                    if (val < 0) return -1;
+                }
+                int key = h.emit_iconst(offset + j);
+                if (key < 0) return -1;
+
+                std::string name("__lua_seti");
+                int args[] = { tbl, key, val };
+                h.emit_call(TY_STRING, 0, args, 3, &name);
+                h.ecalls++;
+            }
+            break;
+        }
+
         // ---- Immediate arithmetic ----
 
         case OP_LUA_ADDI: {
@@ -1019,6 +1133,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
 
         // ---- No-op instructions ----
         case OP_LUA_VARARGPREP:
+        case OP_LUA_EXTRAARG:
         case OP_LUA_MMBIN:
         case OP_LUA_MMBINI:
         case OP_LUA_MMBINK:

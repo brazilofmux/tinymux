@@ -36,7 +36,17 @@ static constexpr uint64_t ECALL_FTOA          = 0x140; // a0=double bits, a1=out
 
 // Lua VM ECALLs — operations that call back into the Lua interpreter.
 // Require eval_ctx.lua_state != nullptr.
+//
+// Convention: a0-a3 carry operand guest addresses or values.
+// Results written to guest memory; a0 returns status or integer result.
+//
 static constexpr uint64_t ECALL_LUA_LEN       = 0x300; // a0=src_addr → a0=length (integer)
+static constexpr uint64_t ECALL_LUA_NEWTABLE  = 0x301; // a0=narr, a1=nrec → a0=stack_idx
+static constexpr uint64_t ECALL_LUA_GETI      = 0x302; // a0=table_stk_idx, a1=int_key, a2=out_addr
+static constexpr uint64_t ECALL_LUA_SETI      = 0x303; // a0=table_stk_idx, a1=int_key, a2=val_addr
+static constexpr uint64_t ECALL_LUA_GETFIELD  = 0x304; // a0=table_stk_idx, a1=key_addr, a2=out_addr
+static constexpr uint64_t ECALL_LUA_SETFIELD  = 0x305; // a0=table_stk_idx, a1=key_addr, a2=val_addr
+static constexpr uint64_t ECALL_LUA_POPTABLE  = 0x306; // a0=table_stk_idx (cleanup)
 
 // Lua bridge ECALLs — reserved range for mux.* function dispatch.
 static constexpr uint64_t ECALL_LUA_BRIDGE    = 0x380; // base for Lua bridge calls

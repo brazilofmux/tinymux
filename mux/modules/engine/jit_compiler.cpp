@@ -21,6 +21,11 @@
 
 #include "../../rv64/rv64blob.h"
 
+extern "C" {
+#include <lua.h>
+#include <lauxlib.h>
+}
+
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -1254,6 +1259,117 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         }
 
         const UTF8 *func_name = ec->memory + name_addr;
+
+        // Intercept __lua_* internal functions for Lua VM table ops.
+        if (ec->lua_state && func_name[0] == '_' && func_name[1] == '_') {
+            const char *fn = reinterpret_cast<const char *>(func_name);
+            lua_State *L = static_cast<lua_State *>(ec->lua_state);
+
+            if (strcmp(fn, "__LUA_NEWTABLE") == 0) {
+                // fargs[0]=narr, fargs[1]=nrec as strings.
+                int narr = 0, nrec = 0;
+                if (nfargs >= 1) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr, 8);
+                    narr = atoi(reinterpret_cast<const char *>(ec->memory + p));
+                }
+                if (nfargs >= 2) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr + 8, 8);
+                    nrec = atoi(reinterpret_cast<const char *>(ec->memory + p));
+                }
+                lua_createtable(L, narr, nrec);
+                int idx = lua_gettop(L);
+                // Write stack index as result string.
+                char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+                int n = snprintf(out, out_size, "%d", idx);
+                ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
+                return -1;
+            }
+
+            if (strcmp(fn, "__LUA_GETI") == 0) {
+                // fargs[0]=table_stk_idx, fargs[1]=int_key as strings.
+                int tbl_idx = 0;
+                lua_Integer key = 0;
+                if (nfargs >= 1) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr, 8);
+                    tbl_idx = atoi(reinterpret_cast<const char *>(ec->memory + p));
+                }
+                if (nfargs >= 2) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr + 8, 8);
+                    key = atoll(reinterpret_cast<const char *>(ec->memory + p));
+                }
+                lua_geti(L, tbl_idx, key);
+                char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+                if (lua_isinteger(L, -1)) {
+                    int n = snprintf(out, out_size, "%lld",
+                        static_cast<long long>(lua_tointeger(L, -1)));
+                    ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
+                } else if (lua_isnumber(L, -1)) {
+                    UTF8 buf[LBUF_SIZE]; UTF8 *bufc = buf;
+                    fval(buf, &bufc, lua_tonumber(L, -1));
+                    *bufc = '\0';
+                    size_t len = bufc - buf;
+                    if (len >= out_size) len = out_size - 1;
+                    memcpy(out, buf, len);
+                    out[len] = '\0';
+                    ctx->x[10] = static_cast<uint64_t>(len);
+                } else if (lua_isstring(L, -1)) {
+                    size_t slen;
+                    const char *s = lua_tolstring(L, -1, &slen);
+                    if (slen >= out_size) slen = out_size - 1;
+                    memcpy(out, s, slen);
+                    out[slen] = '\0';
+                    ctx->x[10] = static_cast<uint64_t>(slen);
+                } else {
+                    out[0] = '\0';
+                    ctx->x[10] = 0;
+                }
+                lua_pop(L, 1);
+                return -1;
+            }
+
+            if (strcmp(fn, "__LUA_SETI") == 0) {
+                // fargs[0]=table_stk_idx, fargs[1]=int_key, fargs[2]=value.
+                int tbl_idx = 0;
+                lua_Integer key = 0;
+                if (nfargs >= 1) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr, 8);
+                    tbl_idx = atoi(reinterpret_cast<const char *>(ec->memory + p));
+                }
+                if (nfargs >= 2) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr + 8, 8);
+                    key = atoll(reinterpret_cast<const char *>(ec->memory + p));
+                }
+                if (nfargs >= 3) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr + 16, 8);
+                    const char *val = reinterpret_cast<const char *>(ec->memory + p);
+                    // Try to push as number first, fall back to string.
+                    char *end;
+                    long long iv = strtoll(val, &end, 10);
+                    if (*end == '\0' && end != val) {
+                        lua_pushinteger(L, static_cast<lua_Integer>(iv));
+                    } else {
+                        double dv = strtod(val, &end);
+                        if (*end == '\0' && end != val) {
+                            lua_pushnumber(L, dv);
+                        } else {
+                            lua_pushstring(L, val);
+                        }
+                    }
+                }
+                lua_seti(L, tbl_idx, key);
+                char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+                out[0] = '\0';
+                ctx->x[10] = 0;
+                return -1;
+            }
+        }
         size_t nCased;
         UTF8 *pCased = mux_strupr(func_name, nCased);
         std::vector<UTF8> key(pCased, pCased + nCased);
@@ -1408,6 +1524,147 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             if (len > 63) len = 63;
             memcpy(out, buf, len);
             out[len] = '\0';
+        }
+        return -1;
+    }
+
+    // ---- Lua VM ECALLs ----
+    // These call back into the Lua interpreter via lua_State *L.
+    // They handle table operations that the JIT can't do natively.
+
+    case ECALL_LUA_NEWTABLE: {
+        if (!ec->lua_state) { ctx->x[10] = 0; return -1; }
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int narr = static_cast<int>(ctx->x[10]);
+        int nrec = static_cast<int>(ctx->x[11]);
+        lua_createtable(L, narr, nrec);
+        // Return the absolute stack index of the new table.
+        ctx->x[10] = static_cast<uint64_t>(lua_gettop(L));
+        return -1;
+    }
+
+    case ECALL_LUA_GETI: {
+        if (!ec->lua_state) { ctx->x[10] = 0; return -1; }
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int tbl_idx = static_cast<int>(ctx->x[10]);
+        lua_Integer key = static_cast<lua_Integer>(ctx->x[11]);
+        uint64_t out_addr = ctx->x[12];
+
+        lua_geti(L, tbl_idx, key);
+
+        // Convert the result to a string and write to guest memory.
+        if (out_addr && out_addr < ec->memory_size - 256) {
+            char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+            if (lua_isinteger(L, -1)) {
+                lua_Integer v = lua_tointeger(L, -1);
+                int n = snprintf(out, 256, "%lld",
+                    static_cast<long long>(v));
+                if (n < 0) n = 0;
+                out[n] = '\0';
+            } else if (lua_isnumber(L, -1)) {
+                double v = lua_tonumber(L, -1);
+                UTF8 buf[LBUF_SIZE];
+                UTF8 *bufc = buf;
+                fval(buf, &bufc, v);
+                *bufc = '\0';
+                size_t len = bufc - buf;
+                if (len > 255) len = 255;
+                memcpy(out, buf, len);
+                out[len] = '\0';
+            } else if (lua_isstring(L, -1)) {
+                size_t slen;
+                const char *s = lua_tolstring(L, -1, &slen);
+                if (slen > 255) slen = 255;
+                memcpy(out, s, slen);
+                out[slen] = '\0';
+            } else {
+                out[0] = '\0';
+            }
+        }
+        lua_pop(L, 1);
+        return -1;
+    }
+
+    case ECALL_LUA_SETI: {
+        if (!ec->lua_state) return -1;
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int tbl_idx = static_cast<int>(ctx->x[10]);
+        lua_Integer key = static_cast<lua_Integer>(ctx->x[11]);
+        uint64_t val_addr = ctx->x[12];
+
+        // Push the value as a string, then convert to number if possible.
+        const char *val = reinterpret_cast<const char *>(
+            ec->memory + val_addr);
+        lua_pushstring(L, val);
+        lua_seti(L, tbl_idx, key);
+        return -1;
+    }
+
+    case ECALL_LUA_GETFIELD: {
+        if (!ec->lua_state) { ctx->x[10] = 0; return -1; }
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int tbl_idx = static_cast<int>(ctx->x[10]);
+        uint64_t key_addr = ctx->x[11];
+        uint64_t out_addr = ctx->x[12];
+
+        const char *key = reinterpret_cast<const char *>(
+            ec->memory + key_addr);
+        lua_getfield(L, tbl_idx, key);
+
+        // Convert result to string in guest memory.
+        if (out_addr && out_addr < ec->memory_size - 256) {
+            char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+            if (lua_isinteger(L, -1)) {
+                int n = snprintf(out, 256, "%lld",
+                    static_cast<long long>(lua_tointeger(L, -1)));
+                if (n < 0) n = 0;
+                out[n] = '\0';
+            } else if (lua_isnumber(L, -1)) {
+                UTF8 buf[LBUF_SIZE];
+                UTF8 *bufc = buf;
+                fval(buf, &bufc, lua_tonumber(L, -1));
+                *bufc = '\0';
+                size_t len = bufc - buf;
+                if (len > 255) len = 255;
+                memcpy(out, buf, len);
+                out[len] = '\0';
+            } else if (lua_isstring(L, -1)) {
+                size_t slen;
+                const char *s = lua_tolstring(L, -1, &slen);
+                if (slen > 255) slen = 255;
+                memcpy(out, s, slen);
+                out[slen] = '\0';
+            } else {
+                out[0] = '\0';
+            }
+        }
+        lua_pop(L, 1);
+        return -1;
+    }
+
+    case ECALL_LUA_SETFIELD: {
+        if (!ec->lua_state) return -1;
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int tbl_idx = static_cast<int>(ctx->x[10]);
+        uint64_t key_addr = ctx->x[11];
+        uint64_t val_addr = ctx->x[12];
+
+        const char *key = reinterpret_cast<const char *>(
+            ec->memory + key_addr);
+        const char *val = reinterpret_cast<const char *>(
+            ec->memory + val_addr);
+        lua_pushstring(L, val);
+        lua_setfield(L, tbl_idx, key);
+        return -1;
+    }
+
+    case ECALL_LUA_POPTABLE: {
+        if (!ec->lua_state) return -1;
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int tbl_idx = static_cast<int>(ctx->x[10]);
+        int top = lua_gettop(L);
+        if (tbl_idx > 0 && tbl_idx <= top) {
+            lua_remove(L, tbl_idx);
         }
         return -1;
     }
