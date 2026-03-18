@@ -358,6 +358,11 @@ static void run(App& app) {
     int stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
     fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK);
 
+    // Default multi-key bindings (classic TF).
+    //
+    app.keybindings.bind_seq(parse_key_sequence("Esc Left"),  "/fg_prev");
+    app.keybindings.bind_seq(parse_key_sequence("Esc Right"), "/fg_next");
+
     check_mail(app);
     update_status(app);
     app.terminal.refresh();

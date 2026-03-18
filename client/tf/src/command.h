@@ -28,6 +28,8 @@ void cmd_quit(App& app, const std::string& args);
 void cmd_connect(App& app, const std::string& args);
 void cmd_dc(App& app, const std::string& args);
 void cmd_fg(App& app, const std::string& args);
+void cmd_fg_next(App& app, const std::string& args);
+void cmd_fg_prev(App& app, const std::string& args);
 void cmd_world(App& app, const std::string& args);
 void cmd_set(App& app, const std::string& args);
 void cmd_load(App& app, const std::string& args);

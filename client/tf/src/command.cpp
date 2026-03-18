@@ -54,6 +54,8 @@ void CommandDispatcher::register_commands() {
     commands_["/connect"] = cmd_connect;
     commands_["/dc"]      = cmd_dc;
     commands_["/fg"]      = cmd_fg;
+    commands_["/fg_next"] = cmd_fg_next;
+    commands_["/fg_prev"] = cmd_fg_prev;
     commands_["/world"]   = cmd_world;
     commands_["/set"]     = cmd_set;
     commands_["/load"]    = cmd_load;
@@ -279,6 +281,49 @@ void cmd_fg(App& app, const std::string& args) {
     }
 
     app.terminal.print_system("No connection to: " + name);
+}
+
+// Cycle to the next/previous connection (Esc-Right / Esc-Left in classic TF).
+//
+static void fg_cycle(App& app, int direction) {
+    if (app.connections.size() < 2) return;
+
+    // Build ordered name list.
+    std::vector<std::string> names;
+    for (auto& [name, conn] : app.connections) names.push_back(name);
+    std::sort(names.begin(), names.end());
+
+    // Find current position.
+    std::string cur = app.fg ? app.fg->world_name() : "";
+    int pos = 0;
+    for (int i = 0; i < (int)names.size(); i++) {
+        if (names[i] == cur) { pos = i; break; }
+    }
+
+    pos = (pos + direction + (int)names.size()) % (int)names.size();
+    std::string target = names[pos];
+
+    auto it = app.connections.find(target);
+    if (it == app.connections.end()) return;
+
+    app.fg = it->second.get();
+    app.terminal.set_history_context(app.fg->world_name());
+    app.terminal.set_output_context(app.fg->world_name());
+    if (std::string prompt = app.fg->current_prompt(); !prompt.empty()) {
+        app.terminal.set_prompt(prompt);
+    } else {
+        app.terminal.clear_prompt();
+    }
+    app.terminal.print_system("Foreground: " + target);
+    app.terminal.scroll_to_bottom();
+}
+
+void cmd_fg_next(App& app, const std::string& /*args*/) {
+    fg_cycle(app, 1);
+}
+
+void cmd_fg_prev(App& app, const std::string& /*args*/) {
+    fg_cycle(app, -1);
 }
 
 void cmd_world(App& app, const std::string& /*args*/) {
