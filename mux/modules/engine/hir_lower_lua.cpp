@@ -30,6 +30,12 @@
 // Maximum Lua registers we track.
 static constexpr int MAX_LUA_REGS = 256;
 
+// Q-register slots for Lua for-loop variables.
+// Reuses compiler-internal slots 10-12 (same as softcode iter()).
+// Safe because Lua lowering never calls the softcode iter() path.
+//
+static constexpr int QREG_LUA_IDX = 10;   // loop index variable
+
 // Maximum code size we attempt to JIT (prevents runaway compile time).
 static constexpr int MAX_LUA_CODE_SIZE = 1024;
 
@@ -572,12 +578,36 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         }
 
         // ---- Numeric for loop ----
+        //
+        // Lua 5.4 for-loop registers:
+        //   R(A)   = internal counter
+        //   R(A+1) = limit
+        //   R(A+2) = step
+        //   R(A+3) = exposed index (visible in body)
+        //
+        // FORPREP subtracts step from init, then jumps to FORLOOP.
+        // FORLOOP adds step, checks idx <= limit, branches back.
+        //
+        // We use STORE_Q/LOAD_Q for the loop index so that
+        // hir_ssa_construct() inserts proper PHI nodes at the
+        // loop header.  This matches the iter() pattern.
+        //
 
         case OP_LUA_FORPREP: {
             if (!multi_block) return -1;
             if (lua_reg[A] < 0 || lua_reg[A + 1] < 0 || lua_reg[A + 2] < 0)
                 return -1;
-            lua_reg[A + 3] = lua_reg[A];
+
+            // Lua 5.4 FORPREP: R(A) -= step, then jump to FORLOOP.
+            // The first FORLOOP iteration will add step back, giving
+            // the original init value.  We store init - step so the
+            // first ADD in FORLOOP produces init.
+            int init_sub = h.emit(HIR_SUB, TY_INT, lua_reg[A], lua_reg[A + 2]);
+            if (init_sub < 0) return -1;
+
+            // Store the initial index into a q-register.
+            h.emit(HIR_STORE_Q, TY_VOID, init_sub, -1, QREG_LUA_IDX);
+
             int target = pc + 1 + insn.sBx();
             int target_blk = (target >= 0 && target < n) ? pc_to_block[target] : -1;
             if (target_blk < 0) return -1;
@@ -588,21 +618,32 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
 
         case OP_LUA_FORLOOP: {
             if (!multi_block) return -1;
-            int idx = lua_reg[A + 3];
             int step = lua_reg[A + 2];
             int limit = lua_reg[A + 1];
-            if (idx < 0 || step < 0 || limit < 0) return -1;
+            if (step < 0 || limit < 0) return -1;
 
+            // Load current index from q-register (becomes PHI after SSA).
+            int idx = h.emit(HIR_LOAD_Q, TY_INT, -1, -1, QREG_LUA_IDX);
+            if (idx < 0) return -1;
+
+            // Increment: index = index + step.
             int new_idx = h.emit(HIR_ADD, TY_INT, idx, step);
             if (new_idx < 0) return -1;
-            lua_reg[A + 3] = new_idx;
-            lua_reg[A] = new_idx;
             h.native_ops++;
 
+            // Store updated index back to q-register.
+            h.emit(HIR_STORE_Q, TY_VOID, new_idx, -1, QREG_LUA_IDX);
+
+            // Expose the new index to subsequent instructions.
+            lua_reg[A + 3] = new_idx;
+            lua_reg[A] = new_idx;
+
+            // Compare: index <= limit.
             int cmp = h.emit(HIR_LE, TY_INT, new_idx, limit);
             if (cmp < 0) return -1;
             h.native_ops++;
 
+            // Branch: if true, loop back; else fall through.
             int loop_target = pc + 1 + insn.sBx();
             int exit_target = pc + 1;
             int loop_blk = (loop_target >= 0 && loop_target < n) ? pc_to_block[loop_target] : -1;
