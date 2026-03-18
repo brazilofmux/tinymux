@@ -20,6 +20,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sqlslave", "modules\sqlslav
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ganl", "ganl\ganl.vcxproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lua54", "lua54\lua54.vcxproj", "{C4D5E6F7-A8B9-0123-CDEF-456789ABCDEF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -62,6 +64,10 @@ Global
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|x64.Build.0 = Debug|x64
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|x64.ActiveCfg = Release|x64
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|x64.Build.0 = Release|x64
+		{C4D5E6F7-A8B9-0123-CDEF-456789ABCDEF}.Debug|x64.ActiveCfg = Debug|x64
+		{C4D5E6F7-A8B9-0123-CDEF-456789ABCDEF}.Debug|x64.Build.0 = Debug|x64
+		{C4D5E6F7-A8B9-0123-CDEF-456789ABCDEF}.Release|x64.ActiveCfg = Release|x64
+		{C4D5E6F7-A8B9-0123-CDEF-456789ABCDEF}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
