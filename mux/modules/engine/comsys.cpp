@@ -1549,6 +1549,17 @@ void SendChannelMessage
     ch->num_messages++;
     sqlite_wt_channel(ch);
 
+    // Look up the CHATFORMAT attribute number once (lazy init).
+    //
+    static int s_chatformat_atr = 0;
+    static bool s_chatformat_init = false;
+    if (!s_chatformat_init)
+    {
+        ATTR *pattr = atr_str(T("CHATFORMAT"));
+        s_chatformat_atr = pattr ? pattr->number : 0;
+        s_chatformat_init = true;
+    }
+
     for (auto &kv : ch->users)
     {
         comuser &user = kv.second;
@@ -1560,16 +1571,48 @@ void SendChannelMessage
             && user.bUserIsOn
             && test_receive_access(user.who, ch))
         {
+            const UTF8 *pMsg;
             if (user.ComTitleStatus
                 || bSpoof
                 || msgNoComtitle == nullptr)
             {
-                notify_comsys(user.who, executor, msgNormal);
+                pMsg = msgNormal;
             }
             else
             {
-                notify_comsys(user.who, executor, msgNoComtitle);
+                pMsg = msgNoComtitle;
             }
+
+            // Check if the receiver has a CHATFORMAT attribute.
+            // If so, evaluate it with %0=channel, %1=message,
+            // %2=sender dbref.
+            //
+            if (0 < s_chatformat_atr)
+            {
+                dbref aowner;
+                int aflags;
+                UTF8 *chatfmt = atr_pget(user.who, s_chatformat_atr,
+                    &aowner, &aflags);
+                if ('\0' != chatfmt[0])
+                {
+                    UTF8 *fmtbuf = alloc_lbuf("chatformat");
+                    UTF8 *bp = fmtbuf;
+                    UTF8 sdrBuf[32];
+                    mux_sprintf(sdrBuf, sizeof(sdrBuf), T("#%d"), executor);
+                    const UTF8 *cfa[3] = { ch->name, pMsg, sdrBuf };
+                    mux_exec(chatfmt, LBUF_SIZE-1, fmtbuf, &bp,
+                        user.who, user.who, executor,
+                        AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
+                        cfa, 3);
+                    *bp = '\0';
+                    notify_comsys(user.who, executor, fmtbuf);
+                    free_lbuf(fmtbuf);
+                    free_lbuf(chatfmt);
+                    continue;
+                }
+                free_lbuf(chatfmt);
+            }
+            notify_comsys(user.who, executor, pMsg);
         }
     }
 

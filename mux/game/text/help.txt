@@ -5943,6 +5943,38 @@ CHANOBJ()
 
   Related Topics: comalias(), comtitle(), cwho(), CHANNEL OBJECT, @cset
 
+& CHATFORMAT
+CHATFORMAT
+
+  ATTRIBUTE: CHATFORMAT
+
+  If set on a player, this attribute controls how channel messages appear
+  to that player.  When a channel message is delivered, the system checks
+  if the receiving player has a CHATFORMAT attribute.  If present, it is
+  evaluated with the following substitutions:
+
+    %0 = Channel name
+    %1 = Default formatted message (as it would normally appear)
+    %2 = Sender's dbref (e.g., #123)
+
+  The output of the CHATFORMAT attribute replaces the default message.
+
+  Example:
+    &CHATFORMAT me=[ansi(hw,%0)] %1
+
+  This would show the channel name in highlighted white before each
+  message, using the default formatted message for the rest.
+
+  Example:
+    &CHATFORMAT me=\[[ansi(hc,%0)]\] %1
+
+  This wraps the channel name in brackets with highlighted cyan.
+
+  To remove custom formatting:
+    &CHATFORMAT me
+
+  Related Topics: addcom, comtitle, @cset.
+
 & CHILDREN()
 CHILDREN()
 
