@@ -16,6 +16,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -26,13 +27,17 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CompletableDeferred
+import org.tinymux.titan.data.SessionLogger
 import org.tinymux.titan.data.Trigger
 import org.tinymux.titan.data.TriggerEngine
 import org.tinymux.titan.data.TriggerRepository
 import org.tinymux.titan.data.World
 import org.tinymux.titan.data.WorldRepository
 import org.tinymux.titan.net.AnsiParser
+import org.tinymux.titan.net.CertInfo
 import org.tinymux.titan.net.MudConnection
+import org.tinymux.titan.net.TofuCertStore
 
 import androidx.compose.runtime.snapshots.SnapshotStateList
 
@@ -51,6 +56,10 @@ fun TitanApp() {
     val worldRepo = remember { WorldRepository(context) }
     val triggerRepo = remember { TriggerRepository(context) }
     val triggerEngine = remember { TriggerEngine() }
+    val sessionLogger = remember { SessionLogger(context) }
+    var logActive by remember { mutableStateOf(false) }
+    val certStore = remember { TofuCertStore(context) }
+    var pendingCert by remember { mutableStateOf<Pair<CertInfo, CompletableDeferred<Boolean>>?>(null) }
 
     // Load triggers on startup and whenever they change
     var triggerVersion by remember { mutableIntStateOf(0) }
@@ -69,6 +78,10 @@ fun TitanApp() {
     var showConnectDialog by remember { mutableStateOf(false) }
     var showWorldManager by remember { mutableStateOf(false) }
     var showTriggerManager by remember { mutableStateOf(false) }
+    var showFindBar by remember { mutableStateOf(false) }
+    var findQuery by remember { mutableStateOf("") }
+    var findMatches by remember { mutableStateOf(listOf<Int>()) }
+    var findPos by remember { mutableIntStateOf(-1) }
 
     val config = LocalConfiguration.current
     val isLandscape = config.screenWidthDp > config.screenHeightDp
@@ -83,6 +96,9 @@ fun TitanApp() {
             tab.lines.add(parsed)
             while (tab.lines.size > 20000) tab.lines.removeAt(0)
             if (tabIndex != activeTab) tab.hasActivity = true
+        }
+        if (sessionLogger.active && tabIndex == activeTab) {
+            sessionLogger.writeLine(AnsiParser.stripAnsi(line))
         }
     }
 
@@ -105,8 +121,13 @@ fun TitanApp() {
         val tabIndex = tabs.size - 1
         activeTab = tabIndex
 
-        val conn = MudConnection(name, host, port, ssl)
+        val conn = MudConnection(name, host, port, ssl, certStore)
         tab.connection = conn
+        conn.onCertVerify = { certInfo ->
+            val deferred = CompletableDeferred<Boolean>()
+            pendingCert = certInfo to deferred
+            deferred.await()
+        }
         conn.onLine = { line -> processServerLine(tabIndex, line) }
         conn.onConnect = {
             appendLine(tabIndex, "% Connected to $host:$port")
@@ -120,6 +141,109 @@ fun TitanApp() {
         conn.connect(scope)
     }
 
+    fun handleCommand(cmd: String, args: String): Boolean {
+        val tab = currentTab()
+        val idx = activeTab
+        when (cmd) {
+            "connect" -> {
+                // /connect host [port] [ssl]
+                val parts = args.split("\\s+".toRegex())
+                if (parts.isEmpty() || parts[0].isBlank()) {
+                    showConnectDialog = true
+                } else {
+                    val host = parts[0]
+                    val port = parts.getOrNull(1)?.toIntOrNull() ?: 4201
+                    val ssl = parts.any { it.equals("ssl", ignoreCase = true) || it.equals("tls", ignoreCase = true) }
+                    connectWorld("$host:$port", host, port, ssl)
+                }
+            }
+            "dc", "disconnect" -> {
+                if (activeTab > 0) {
+                    tabs.getOrNull(activeTab)?.connection?.disconnect()
+                    tabs.removeAt(activeTab)
+                    activeTab = (activeTab - 1).coerceAtLeast(0)
+                } else {
+                    appendLine(idx, "% No active connection.")
+                }
+            }
+            "worlds" -> showWorldManager = true
+            "triggers", "trig" -> showTriggerManager = true
+            "def" -> {
+                // /def name pattern = body
+                val eqPos = args.indexOf('=')
+                if (eqPos < 0) {
+                    appendLine(idx, "% Usage: /def <name> <pattern> = <action>")
+                } else {
+                    val before = args.substring(0, eqPos).trim().split("\\s+".toRegex(), limit = 2)
+                    val body = args.substring(eqPos + 1).trim()
+                    if (before.size < 2 || before[0].isBlank()) {
+                        appendLine(idx, "% Usage: /def <name> <pattern> = <action>")
+                    } else {
+                        val name = before[0]
+                        val pattern = before[1]
+                        try {
+                            Regex(pattern)
+                            triggerRepo.add(Trigger(name = name, pattern = pattern, body = body))
+                            triggerVersion++
+                            appendLine(idx, "% Trigger '$name' defined: /$pattern/")
+                        } catch (e: Exception) {
+                            appendLine(idx, "% Bad pattern: ${e.message}")
+                        }
+                    }
+                }
+            }
+            "undef" -> {
+                val name = args.trim()
+                if (name.isBlank()) {
+                    appendLine(idx, "% Usage: /undef <name>")
+                } else {
+                    triggerRepo.remove(name)
+                    triggerVersion++
+                    appendLine(idx, "% Trigger '$name' removed.")
+                }
+            }
+            "find" -> {
+                showFindBar = true
+                val query = args.trim()
+                if (query.isNotBlank()) findQuery = query
+            }
+            "log" -> {
+                if (sessionLogger.active) {
+                    val file = sessionLogger.currentFile()
+                    sessionLogger.stop()
+                    logActive = false
+                    appendLine(idx, "% Logging stopped. File: ${file?.name}")
+                } else {
+                    val worldName = tab?.name ?: "system"
+                    val filename = args.trim().ifBlank { null }
+                    val file = sessionLogger.start(worldName, filename)
+                    logActive = true
+                    appendLine(idx, "% Logging to: ${file.name}")
+                    appendLine(idx, "% Log directory: ${sessionLogger.logDir.absolutePath}")
+                }
+            }
+            "clear" -> tab?.lines?.clear()
+            "help" -> {
+                appendLine(idx, "% Commands:")
+                appendLine(idx, "%   /connect <host> [port] [ssl]  - Connect to a world")
+                appendLine(idx, "%   /disconnect, /dc              - Close current connection")
+                appendLine(idx, "%   /worlds                       - Open World Manager")
+                appendLine(idx, "%   /triggers                     - Open Trigger Manager")
+                appendLine(idx, "%   /def <name> <pattern> = <cmd> - Define a trigger")
+                appendLine(idx, "%   /undef <name>                 - Remove a trigger")
+                appendLine(idx, "%   /find <text>                  - Search scrollback")
+                appendLine(idx, "%   /log [filename]               - Toggle session logging")
+                appendLine(idx, "%   /clear                        - Clear scrollback")
+                appendLine(idx, "%   /help                         - Show this help")
+            }
+            else -> {
+                appendLine(idx, "% Unknown command: /$cmd  (try /help)")
+                return false
+            }
+        }
+        return true
+    }
+
     fun handleInput(text: String) {
         if (text.isBlank()) return
         val tab = currentTab() ?: return
@@ -128,6 +252,17 @@ fun TitanApp() {
         tab.history.add(0, text)
         if (tab.history.size > 500) tab.history.removeLast()
         historyPos = -1
+
+        // Slash commands
+        if (text.startsWith("/")) {
+            val trimmed = text.substring(1)
+            val spacePos = trimmed.indexOf(' ')
+            val cmd = if (spacePos < 0) trimmed else trimmed.substring(0, spacePos)
+            val args = if (spacePos < 0) "" else trimmed.substring(spacePos + 1)
+            handleCommand(cmd.lowercase(), args)
+            inputText = ""
+            return
+        }
 
         val conn = tab.connection
         if (conn != null && conn.connected) {
@@ -179,6 +314,7 @@ fun TitanApp() {
             ToolbarButton("Connect") { showConnectDialog = true }
             ToolbarButton("Worlds") { showWorldManager = true }
             ToolbarButton("Trig") { showTriggerManager = true }
+            ToolbarButton("Find") { showFindBar = !showFindBar }
             ToolbarButton("DC") {
                 if (activeTab > 0) {
                     tabs.getOrNull(activeTab)?.connection?.disconnect()
@@ -232,6 +368,70 @@ fun TitanApp() {
             }
         }
 
+        // Find bar
+        if (showFindBar) {
+            val findFocusRequester = remember { FocusRequester() }
+
+            fun updateMatches(query: String) {
+                if (query.isBlank()) {
+                    findMatches = emptyList(); findPos = -1; return
+                }
+                val lines = currentTab()?.lines ?: emptyList()
+                val matches = mutableListOf<Int>()
+                for (i in lines.indices) {
+                    if (lines[i].text.contains(query, ignoreCase = true)) matches.add(i)
+                }
+                findMatches = matches
+                findPos = if (matches.isNotEmpty()) matches.size - 1 else -1
+                if (findPos >= 0) scope.launch { listState.animateScrollToItem(matches[findPos]) }
+            }
+
+            LaunchedEffect(Unit) { findFocusRequester.requestFocus() }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF1A1A2E))
+                    .padding(horizontal = 4.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                BasicTextField(
+                    value = findQuery,
+                    onValueChange = { findQuery = it; updateMatches(it) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .focusRequester(findFocusRequester),
+                    textStyle = monoStyle.copy(color = Color.White, fontSize = 12.sp),
+                    cursorBrush = SolidColor(Color.White),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { updateMatches(findQuery) }),
+                )
+                Text(
+                    if (findMatches.isEmpty() && findQuery.isNotBlank()) "0/0"
+                    else if (findMatches.isNotEmpty()) "${findPos + 1}/${findMatches.size}"
+                    else "",
+                    fontSize = 11.sp, color = Color(0xFFA0A0A0),
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                )
+                ToolbarButton("\u25B2") {
+                    if (findMatches.isNotEmpty()) {
+                        findPos = if (findPos > 0) findPos - 1 else findMatches.size - 1
+                        scope.launch { listState.animateScrollToItem(findMatches[findPos]) }
+                    }
+                }
+                ToolbarButton("\u25BC") {
+                    if (findMatches.isNotEmpty()) {
+                        findPos = if (findPos < findMatches.size - 1) findPos + 1 else 0
+                        scope.launch { listState.animateScrollToItem(findMatches[findPos]) }
+                    }
+                }
+                ToolbarButton("\u2715") {
+                    showFindBar = false; findQuery = ""; findMatches = emptyList(); findPos = -1
+                }
+            }
+        }
+
         // Output pane
         LazyColumn(
             state = listState,
@@ -263,7 +463,70 @@ fun TitanApp() {
                 onValueChange = { inputText = it },
                 modifier = Modifier
                     .weight(1f)
-                    .focusRequester(focusRequester),
+                    .focusRequester(focusRequester)
+                    .onPreviewKeyEvent { event ->
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                        val tab = currentTab()
+                        when {
+                            // Up arrow — history back
+                            event.key == Key.DirectionUp -> {
+                                val hist = tab?.history ?: return@onPreviewKeyEvent true
+                                if (hist.isNotEmpty()) {
+                                    if (historyPos < 0) savedInput = inputText
+                                    val next = (historyPos + 1).coerceAtMost(hist.size - 1)
+                                    historyPos = next
+                                    inputText = hist[next]
+                                }
+                                true
+                            }
+                            // Down arrow — history forward
+                            event.key == Key.DirectionDown -> {
+                                val hist = tab?.history ?: return@onPreviewKeyEvent true
+                                if (historyPos > 0) {
+                                    historyPos--
+                                    inputText = hist[historyPos]
+                                } else if (historyPos == 0) {
+                                    historyPos = -1
+                                    inputText = savedInput
+                                }
+                                true
+                            }
+                            // Ctrl+F — find
+                            event.isCtrlPressed && event.key == Key.F -> {
+                                showFindBar = !showFindBar; true
+                            }
+                            // Ctrl+L — clear
+                            event.isCtrlPressed && event.key == Key.L -> {
+                                tab?.lines?.clear(); true
+                            }
+                            // Escape — close find bar
+                            event.key == Key.Escape -> {
+                                if (showFindBar) {
+                                    showFindBar = false; findQuery = ""
+                                    findMatches = emptyList(); findPos = -1
+                                    true
+                                } else false
+                            }
+                            // Page Up — scroll back
+                            event.key == Key.PageUp -> {
+                                scope.launch {
+                                    val first = listState.firstVisibleItemIndex
+                                    listState.animateScrollToItem((first - 20).coerceAtLeast(0))
+                                }
+                                true
+                            }
+                            // Page Down — scroll forward
+                            event.key == Key.PageDown -> {
+                                scope.launch {
+                                    val first = listState.firstVisibleItemIndex
+                                    val max = (tab?.lines?.size ?: 1) - 1
+                                    listState.animateScrollToItem((first + 20).coerceAtMost(max))
+                                }
+                                true
+                            }
+                            else -> false
+                        }
+                    },
                 textStyle = monoStyle.copy(color = Color.White),
                 cursorBrush = SolidColor(Color.White),
                 singleLine = true,
@@ -283,6 +546,7 @@ fun TitanApp() {
                     if (conn.useSsl) append(" [ssl]")
                     if (!conn.connected) append(" (disconnected)")
                 }
+                if (logActive) append(" [log]")
             }
             Text(
                 text = status,
@@ -333,6 +597,15 @@ fun TitanApp() {
             onDismiss = { showTriggerManager = false }
         )
     }
+
+    // TLS Certificate verification dialog
+    pendingCert?.let { (info, deferred) ->
+        CertVerifyDialog(
+            certInfo = info,
+            onAccept = { pendingCert = null; deferred.complete(true) },
+            onReject = { pendingCert = null; deferred.complete(false) },
+        )
+    }
 }
 
 @Composable
@@ -345,6 +618,52 @@ fun ToolbarButton(text: String, onClick: () -> Unit) {
     ) {
         Text(text, fontSize = 12.sp)
     }
+}
+
+@Composable
+fun CertVerifyDialog(
+    certInfo: CertInfo,
+    onAccept: () -> Unit,
+    onReject: () -> Unit,
+) {
+    val isChanged = certInfo.savedFingerprint != null
+    AlertDialog(
+        onDismissRequest = onReject,
+        title = { Text(if (isChanged) "Certificate Changed!" else "Unknown Certificate") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
+                if (isChanged) {
+                    Text(
+                        "WARNING: The certificate for ${certInfo.host}:${certInfo.port} " +
+                        "has changed since last connection. This could indicate a " +
+                        "man-in-the-middle attack.",
+                        color = Color(0xFFFF6666),
+                    )
+                } else {
+                    Text("First connection to ${certInfo.host}:${certInfo.port} via SSL.")
+                }
+                Text("Subject: ${certInfo.subject}", fontSize = 12.sp, color = Color.Gray)
+                Text("Issuer: ${certInfo.issuer}", fontSize = 12.sp, color = Color.Gray)
+                Text("SHA-256:", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(certInfo.fingerprint, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
+                if (isChanged && certInfo.savedFingerprint != null) {
+                    Text("Previous fingerprint:", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(certInfo.savedFingerprint, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onAccept) {
+                Text(if (isChanged) "Accept Anyway" else "Trust")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onReject) { Text("Reject") }
+        }
+    )
 }
 
 @Composable

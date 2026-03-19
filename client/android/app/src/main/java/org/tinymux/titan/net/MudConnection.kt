@@ -6,17 +6,27 @@ import java.io.OutputStream
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.security.SecureRandom
+import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
 import javax.net.ssl.SSLContext
-import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
+
+data class CertInfo(
+    val host: String,
+    val port: Int,
+    val fingerprint: String,
+    val subject: String,
+    val issuer: String,
+    val savedFingerprint: String?,
+)
 
 class MudConnection(
     val name: String,
     val host: String,
     val port: Int,
-    val useSsl: Boolean
+    val useSsl: Boolean,
+    private val certStore: TofuCertStore? = null,
 ) {
     private var socket: Socket? = null
     private var output: OutputStream? = null
@@ -30,6 +40,11 @@ class MudConnection(
     var onLine: ((String) -> Unit)? = null
     var onConnect: (() -> Unit)? = null
     var onDisconnect: (() -> Unit)? = null
+
+    // TOFU callback: called on IO thread with cert info.
+    // Must return true to accept, false to reject.
+    // The callback should suspend (e.g. show a dialog and wait for user response).
+    var onCertVerify: (suspend (CertInfo) -> Boolean)? = null
 
     fun connect(scope: CoroutineScope) {
         val mainDispatcher = Dispatchers.Main
@@ -49,17 +64,47 @@ class MudConnection(
                 raw.connect(InetSocketAddress(host, port), 10000)
 
                 socket = if (useSsl) {
-                    // Trust all certificates for MUD servers (many use self-signed).
-                    // TODO: Replace with trust-on-first-use (TOFU) pinning.
-                    val trustAll = arrayOf<TrustManager>(object : X509TrustManager {
+                    val tofuTrust = arrayOf<TrustManager>(object : X509TrustManager {
                         override fun checkClientTrusted(chain: Array<X509Certificate>?, type: String?) {}
-                        override fun checkServerTrusted(chain: Array<X509Certificate>?, type: String?) {}
+                        override fun checkServerTrusted(chain: Array<X509Certificate>?, type: String?) {
+                            // Accept all during handshake; we verify after.
+                        }
                         override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
                     })
                     val sslContext = SSLContext.getInstance("TLS")
-                    sslContext.init(null, trustAll, SecureRandom())
-                    val factory = sslContext.socketFactory
-                    factory.createSocket(raw, host, port, true)
+                    sslContext.init(null, tofuTrust, SecureRandom())
+                    val sslSocket = sslContext.socketFactory.createSocket(raw, host, port, true)
+                            as javax.net.ssl.SSLSocket
+                    sslSocket.startHandshake()
+
+                    // TOFU verification after handshake
+                    val peerCerts = sslSocket.session.peerCertificates
+                    if (peerCerts.isNotEmpty() && peerCerts[0] is X509Certificate) {
+                        val cert = peerCerts[0] as X509Certificate
+                        val fp = TofuCertStore.fingerprint(cert)
+                        val saved = certStore?.getFingerprint(host, port)
+
+                        if (saved != null && saved == fp) {
+                            // Known cert, matches — proceed
+                        } else {
+                            // Unknown or changed cert — ask user
+                            val info = CertInfo(
+                                host = host, port = port,
+                                fingerprint = fp,
+                                subject = cert.subjectX500Principal.name,
+                                issuer = cert.issuerX500Principal.name,
+                                savedFingerprint = saved,
+                            )
+                            val accepted = onCertVerify?.invoke(info) ?: true
+                            if (accepted) {
+                                certStore?.saveFingerprint(host, port, fp)
+                            } else {
+                                sslSocket.close()
+                                throw CertificateException("Certificate rejected by user")
+                            }
+                        }
+                    }
+                    sslSocket
                 } else raw
 
                 output = socket!!.getOutputStream()
