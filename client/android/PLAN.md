@@ -111,20 +111,27 @@ Quality-of-life improvements for daily use.
 - [ ] Tab reordering via long-press drag (future)
 - [ ] Landscape layout improvements (future)
 
-## Phase 11: Foreground Service
+## Phase 11: Foreground Service — DONE
 Keep connections alive when the app is backgrounded.
 
-- [ ] Android foreground service with persistent notification
-- [ ] Reconnect logic on network change
-- [ ] Activity indicator in notification for background tabs
-- [ ] Permissions already declared in AndroidManifest.xml
+- [x] `service/ConnectionService.kt` — foreground service with persistent notification
+- [x] Notification channel "Titan Connections" (low importance, silent)
+- [x] Shows active connection count, tap returns to app
+- [x] Service starts on first connect, stops when all connections close
+- [x] All disconnect paths (DC button, tab close, /disconnect, server drop) update service
+- [x] Registered in AndroidManifest.xml with foregroundServiceType="dataSync"
+- [ ] Reconnect on network change (future)
 
-## Phase 12: Settings Screen
+## Phase 12: Settings Screen — DONE
 User-configurable preferences.
 
-- [ ] Font size slider
-- [ ] Scrollback limit
-- [ ] Theme (dark/light/OLED black)
-- [ ] Log directory picker
-- [ ] Default port / SSL toggle
-- [ ] Export/import worlds and triggers
+- [x] `data/Settings.kt` — AppSettings with SharedPreferences persistence
+- [x] "Cfg" toolbar button opens Settings dialog
+- [x] Font size (portrait + landscape, 8-32 range)
+- [x] Scrollback limit (1K-100K range)
+- [x] Default port and SSL toggle for new connections
+- [x] Keep screen on toggle (FLAG_KEEP_SCREEN_ON)
+- [x] Settings apply immediately on save (settingsVersion trigger)
+- [x] ConnectDialog uses default port/ssl from settings
+- [ ] Theme (dark/light/OLED black) — future
+- [ ] Export/import worlds and triggers — future

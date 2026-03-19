@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CompletableDeferred
+import org.tinymux.titan.data.AppSettings
 import org.tinymux.titan.data.Hook
 import org.tinymux.titan.data.HookRepository
 import org.tinymux.titan.data.SessionLogger
@@ -42,10 +43,12 @@ import org.tinymux.titan.data.TriggerEngine
 import org.tinymux.titan.data.TriggerRepository
 import org.tinymux.titan.data.World
 import org.tinymux.titan.data.WorldRepository
+import android.content.Intent
 import org.tinymux.titan.net.AnsiParser
 import org.tinymux.titan.net.CertInfo
 import org.tinymux.titan.net.MudConnection
 import org.tinymux.titan.net.TofuCertStore
+import org.tinymux.titan.service.ConnectionService
 
 import androidx.compose.runtime.snapshots.SnapshotStateList
 
@@ -67,6 +70,7 @@ fun TitanApp() {
     val triggerEngine = remember { TriggerEngine() }
     val sessionLogger = remember { SessionLogger(context) }
     var logActive by remember { mutableStateOf(false) }
+    val appSettings = remember { AppSettings(context) }
     val certStore = remember { TofuCertStore(context) }
     var pendingCert by remember { mutableStateOf<Pair<CertInfo, CompletableDeferred<Boolean>>?>(null) }
 
@@ -90,6 +94,7 @@ fun TitanApp() {
     var showConnectDialog by remember { mutableStateOf(false) }
     var showWorldManager by remember { mutableStateOf(false) }
     var showTriggerManager by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
     var showFindBar by remember { mutableStateOf(false) }
     var findQuery by remember { mutableStateOf("") }
     var findMatches by remember { mutableStateOf(listOf<Int>()) }
@@ -97,10 +102,28 @@ fun TitanApp() {
 
     val config = LocalConfiguration.current
     val isLandscape = config.screenWidthDp > config.screenHeightDp
-    val fontSize = if (isLandscape) 12.sp else 14.sp
+    var settingsVersion by remember { mutableIntStateOf(0) }
+    val fontSize = if (isLandscape) appSettings.fontSizeLandscape.sp else appSettings.fontSize.sp
     val monoStyle = TextStyle(fontFamily = FontFamily.Monospace, fontSize = fontSize, color = Color(0xFFC0C0C0))
+    val scrollbackLimit = appSettings.scrollbackLines
 
     fun currentTab() = tabs.getOrNull(activeTab)
+
+    fun updateService() {
+        val count = tabs.count { it.connection?.connected == true }
+        if (count > 0) {
+            val intent = Intent(context, ConnectionService::class.java).apply {
+                action = ConnectionService.ACTION_UPDATE
+                putExtra(ConnectionService.EXTRA_COUNT, count)
+            }
+            context.startForegroundService(intent)
+        } else {
+            val intent = Intent(context, ConnectionService::class.java).apply {
+                action = ConnectionService.ACTION_STOP
+            }
+            try { context.startService(intent) } catch (_: Exception) {}
+        }
+    }
 
     // Wire timer fire callback — sends command to active tab's connection
     timerEngine.onFire = { name, command ->
@@ -115,7 +138,7 @@ fun TitanApp() {
         val parsed = AnsiParser.parse(line)
         tabs.getOrNull(tabIndex)?.let { tab ->
             tab.lines.add(parsed)
-            while (tab.lines.size > 20000) tab.lines.removeAt(0)
+            while (tab.lines.size > scrollbackLimit) tab.lines.removeAt(0)
             if (tabIndex != activeTab) {
                 if (!tab.hasActivity) {
                     // First activity on background tab — fire ACTIVITY hooks
@@ -160,6 +183,7 @@ fun TitanApp() {
             appendLine(tabIndex, "% Connected to $host:$port")
             tab.disconnected = false
             for (cmd in hookRepo.fireEvent("CONNECT")) conn.sendLine(cmd)
+            updateService()
         }
         conn.onDisconnect = {
             appendLine(tabIndex, "% Connection lost.")
@@ -168,8 +192,14 @@ fun TitanApp() {
             hookRepo.fireEvent("DISCONNECT").forEach { cmd ->
                 appendLine(tabIndex, "% [hook] $cmd")
             }
+            updateService()
         }
         appendLine(tabIndex, "% Connecting to $host:$port${if (ssl) " (ssl)" else ""}...")
+        // Start foreground service before connecting
+        val startIntent = Intent(context, ConnectionService::class.java).apply {
+            action = ConnectionService.ACTION_START
+        }
+        context.startForegroundService(startIntent)
         conn.connect(scope)
     }
 
@@ -194,6 +224,7 @@ fun TitanApp() {
                     tabs.getOrNull(activeTab)?.connection?.disconnect()
                     tabs.removeAt(activeTab)
                     activeTab = (activeTab - 1).coerceAtLeast(0)
+                    updateService()
                 } else {
                     appendLine(idx, "% No active connection.")
                 }
@@ -410,6 +441,19 @@ fun TitanApp() {
         focusRequester.requestFocus()
     }
 
+    // Keep screen on setting
+    val activity = context as? android.app.Activity
+    DisposableEffect(appSettings.keepScreenOn) {
+        if (appSettings.keepScreenOn) {
+            activity?.window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            activity?.window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+        onDispose {
+            activity?.window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
     // Auto-scroll when new lines arrive
     val lineCount = currentTab()?.lines?.size ?: 0
     LaunchedEffect(lineCount) {
@@ -436,11 +480,13 @@ fun TitanApp() {
             ToolbarButton("Worlds") { showWorldManager = true }
             ToolbarButton("Trig") { showTriggerManager = true }
             ToolbarButton("Find") { showFindBar = !showFindBar }
+            ToolbarButton("Cfg") { showSettings = true }
             ToolbarButton("DC") {
                 if (activeTab > 0) {
                     tabs.getOrNull(activeTab)?.connection?.disconnect()
                     tabs.removeAt(activeTab)
                     activeTab = (activeTab - 1).coerceAtLeast(0)
+                    updateService()
                 }
             }
             if (!isLandscape) {
@@ -495,6 +541,7 @@ fun TitanApp() {
                                 tabs.removeAt(index)
                                 if (activeTab >= tabs.size) activeTab = tabs.size - 1
                                 else if (activeTab > index) activeTab--
+                                updateService()
                             }
                         )
                     }
@@ -712,6 +759,7 @@ fun TitanApp() {
     if (showConnectDialog) {
         ConnectDialog(
             worldRepo = worldRepo,
+            settings = appSettings,
             onConnect = { host, port, ssl, saveName ->
                 showConnectDialog = false
                 val name = saveName.ifBlank { "$host:$port" }
@@ -751,6 +799,17 @@ fun TitanApp() {
             certInfo = info,
             onAccept = { pendingCert = null; deferred.complete(true) },
             onReject = { pendingCert = null; deferred.complete(false) },
+        )
+    }
+
+    // Settings dialog
+    if (showSettings) {
+        SettingsDialog(
+            settings = appSettings,
+            onDismiss = {
+                showSettings = false
+                settingsVersion++
+            }
         )
     }
 }
@@ -816,12 +875,13 @@ fun CertVerifyDialog(
 @Composable
 fun ConnectDialog(
     worldRepo: WorldRepository,
+    settings: AppSettings,
     onConnect: (host: String, port: Int, ssl: Boolean, saveName: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var host by remember { mutableStateOf("") }
     var port by remember { mutableStateOf("") }
-    var ssl by remember { mutableStateOf(false) }
+    var ssl by remember { mutableStateOf(settings.defaultSsl) }
     var saveName by remember { mutableStateOf("") }
 
     AlertDialog(
@@ -859,7 +919,7 @@ fun ConnectDialog(
         },
         confirmButton = {
             TextButton(onClick = {
-                if (host.isNotBlank()) onConnect(host.trim(), port.trim().toIntOrNull() ?: 4201, ssl, saveName.trim())
+                if (host.isNotBlank()) onConnect(host.trim(), port.trim().toIntOrNull() ?: settings.defaultPort, ssl, saveName.trim())
             }) { Text("Connect") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
@@ -1343,6 +1403,98 @@ fun EditTriggerDialog(
                         hilite = hilite,
                     ))
                 }
+            }) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+
+@Composable
+fun SettingsDialog(
+    settings: AppSettings,
+    onDismiss: () -> Unit,
+) {
+    var fontSize by remember { mutableStateOf(settings.fontSize.toString()) }
+    var fontSizeLand by remember { mutableStateOf(settings.fontSizeLandscape.toString()) }
+    var scrollback by remember { mutableStateOf(settings.scrollbackLines.toString()) }
+    var defaultPort by remember { mutableStateOf(settings.defaultPort.toString()) }
+    var defaultSsl by remember { mutableStateOf(settings.defaultSsl) }
+    var keepScreenOn by remember { mutableStateOf(settings.keepScreenOn) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Settings") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(value = fontSize,
+                        onValueChange = { fontSize = it.filter { c -> c.isDigit() } },
+                        label = { Text("Font size") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                        modifier = Modifier.weight(1f))
+                    OutlinedTextField(value = fontSizeLand,
+                        onValueChange = { fontSizeLand = it.filter { c -> c.isDigit() } },
+                        label = { Text("Font (land)") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                        modifier = Modifier.weight(1f))
+                }
+                OutlinedTextField(value = scrollback,
+                    onValueChange = { scrollback = it.filter { c -> c.isDigit() } },
+                    label = { Text("Scrollback lines") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = defaultPort,
+                    onValueChange = { defaultPort = it.filter { c -> c.isDigit() } },
+                    label = { Text("Default port") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth())
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .clickable { defaultSsl = !defaultSsl }
+                ) {
+                    Switch(checked = defaultSsl, onCheckedChange = { defaultSsl = it })
+                    Spacer(Modifier.width(8.dp))
+                    Text("Default SSL/TLS", style = MaterialTheme.typography.bodyLarge)
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .clickable { keepScreenOn = !keepScreenOn }
+                ) {
+                    Switch(checked = keepScreenOn, onCheckedChange = { keepScreenOn = it })
+                    Spacer(Modifier.width(8.dp))
+                    Text("Keep screen on", style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                settings.fontSize = fontSize.toIntOrNull()?.coerceIn(8, 32) ?: 14
+                settings.fontSizeLandscape = fontSizeLand.toIntOrNull()?.coerceIn(8, 32) ?: 12
+                settings.scrollbackLines = scrollback.toIntOrNull()?.coerceIn(1000, 100000) ?: 20000
+                settings.defaultPort = defaultPort.toIntOrNull()?.coerceIn(1, 65535) ?: 4201
+                settings.defaultSsl = defaultSsl
+                settings.keepScreenOn = keepScreenOn
+                onDismiss()
             }) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
