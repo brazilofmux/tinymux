@@ -39,6 +39,23 @@ ALONE
   suppresses all inter-player notification propagation.
 
   Related Topics: BLIND, AUDITORIUM, @set.
+
+& ASTBENCH()
+ASTBENCH()
+
+  FUNCTION: astbench(<expression>, <iterations>)
+
+  Wizard-only benchmarking tool that compares the AST interpreter and the
+  JIT compiler.  The expression is parsed once, then run through both engines
+  for <iterations> loops (clamped to 100000).  The function returns a
+  formatted string such as:
+
+    ast=0.12us jit=0.03us ratio=4.0x result=42
+
+  Use this when investigating parser/JIT parity or validating recent
+  optimizations.
+
+  Related Topics: jitstats(), rvbench().
 & NOEXAMINE
 NOEXAMINE
 
@@ -3148,6 +3165,18 @@ IDLE_WIZ_DARK
   dark by this action will have a 'd' instead of a 'D' by their idle time
   in the privileged WHO listing.
 
+& JITSTATS()
+JITSTATS()
+
+  FUNCTION: jitstats([reset])
+
+  Returns internal counters from the softcode JIT compiler, including cache
+  hits/misses, bailout reasons, and total compile/compile failures.  Use the
+  literal argument `reset` to clear all counters and return `OK`.  Useful for
+  monitoring rveval health or measuring benchmark runs.
+
+  Related Topics: astbench(), rvbench().
+
 & INCLUDE
 INCLUDE
 
@@ -4516,6 +4545,19 @@ REFERENCES_PER_HOUR
 
   Related Topics: pcreate_per_hour, user_attr_per_hour, mail_per_hour
 
+& RVBENCH()
+RVBENCH()
+
+  FUNCTION: rvbench(<expression>, <iterations>)
+
+  Wizard-only benchmark that runs <expression> through three paths—native
+  mux_exec, compile-per-call rveval, and compile-once rveval—and reports the
+  timing for each in microseconds.  Use this to gauge overall JIT speedups or
+  to check for regressions when changing compiler settings.  Expressions are
+  validated to ensure both paths return the same value.
+
+  Related Topics: astbench(), jitstats().
+
 & REGISTER_CREATE_FILE
 REGISTER_CREATE_FILE
 
@@ -5357,6 +5399,7 @@ TOPICS
   Help available on the following Topics:
 
   @DESTROYER         @MAILCURF         @MAILFLAGS        @MAILFOLDERS
+  ASTBENCH()         JITSTATS()        RVBENCH()
   CAUTIONS           CONFIG PARAMETERS  DEBUG FEATURES     FILES
   FLAGS              INHERITANCE        LOGGING            MASTER ROOM
   PERMISSIONS        SEARCH CRITERIA    SIGNALS            SITE LIST
@@ -5531,4 +5574,3 @@ ZONE_RECURSION_LIMIT
 
   This directive specifies how far back to check a zone tree for control and
   commands.
-

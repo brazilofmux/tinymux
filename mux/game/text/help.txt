@@ -5137,20 +5137,7 @@ ASTEVAL()
   useful when diagnosing parity issues or when you want to benchmark AST/JIT
   performance independently.
 
-  Related Topics: astbench(), eval(), rvbench().
-
-& ASTBENCH()
-ASTBENCH()
-
-  FUNCTION: astbench(<expression>, <iterations>)
-
-  Wizard-only benchmarking tool.  The expression is parsed once and then run
-  through both the AST interpreter and the JIT for <iterations> loops
-  (clamped to 100000).  The function returns a formatted string such as:
-    ast=0.12us jit=0.03us ratio=4.0x result=42
-  so you can compare per-call timings.
-
-  Related Topics: asteval(), benchmark(), jitstats(), rvbench().
+  Related Topics: eval().
 
 & ATAN()
 & ATAN2()
@@ -5462,7 +5449,7 @@ BENCHMARK()
     > say benchmark(mul(3,4), 5000)
     You say, "0.010832"
 
-  Related Topics: astbench().
+  Related Topics: eval().
 
 & BEING KILLED
 BEING KILLED
@@ -9653,18 +9640,6 @@ ITEXT()
 
   Related Topics: iter(), inum(), ilev().
 
-& JITSTATS()
-JITSTATS()
-
-  FUNCTION: jitstats([reset])
-
-  Wizard-only diagnostic.  Without arguments it returns a space-separated
-  list of key=value counters describing how often the softcode JIT compiler
-  handled expressions, hit cache entries, bailed out, and so on.  Supplying
-  the literal argument 'reset' clears all counters and returns 'OK'.
-
-  Related Topics: astbench(), benchmark(), rvbench().
-
 & JSON()
 JSON()
 
@@ -13163,19 +13138,6 @@ RAND()
     You say, "0"
 
   Related Topics: die(), lrand(), pickrand(), shuffle()
-
-& RVBENCH()
-RVBENCH()
-
-  FUNCTION: rvbench(<expression>, <iterations>)
-
-  Wizard-only benchmark that compares native softcode evaluation with the new
-  rveval JIT.  It compiles <expression>, runs it <iterations> times through
-  three paths (mux_exec, compile-per-call, and compile-once), and returns a
-  multi-line report with timings in microseconds.  Use this when tuning the
-  JIT or diagnosing slow expressions.
-
-  Related Topics: astbench(), benchmark(), jitstats().
 
 & READ
 READ
