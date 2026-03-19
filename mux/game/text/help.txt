@@ -1956,6 +1956,24 @@ Related Topics: @name.
 
   Related Topics: give, @agfail, @ogfail, @lock.
 
+& @GMCP
+@GMCP
+
+  ATTRIBUTE: Gmcp
+
+  GMCP-capable Telnet clients send out-of-band messages using the Generic MUD
+  Communication Protocol.  Whenever a package arrives for a player, TinyMUX
+  runs that player's Gmcp attribute with %0 set to the package name (for
+  example `Char.Vitals`) and %1 set to the JSON payload.  The attribute runs
+  as the player, so you can respond with `gmcp()` or other softcode to update
+  the client UI.
+
+  Use this hook to translate client-side meters, trigger automation, or gate
+  access to restricted GMCP packages.  If the attribute is empty, inbound
+  messages are ignored.
+
+  Related Topics: GMCP(), PUEBLO.
+
 & @HALT
 @HALT
 
@@ -2629,6 +2647,28 @@ Related Topics: @name.
     Neither TinyJerk nor any of his objects may page you.
 
   Related Topics: @lock normal.
+
+& @LUA
+@LUA
+
+  COMMAND: @lua[/stats|/inline] <object>/<attribute>
+
+  Executes the Lua script stored on <object>/<attribute> using the embedded
+  Lua 5.4 interpreter and displays the returned string.  This is the quickest
+  way to test Lua utilities stored on objects without writing softcode
+  wrappers.  Scripts run as the invoking player and have access to the usual
+  `mux` helper table provided by the Lua module.
+
+  Switches:
+    /stats   — Show aggregate Lua call/error/memory counters instead of
+               running a script.
+    /inline  — (Wizard only) Treat the rest of the command as a Lua chunk
+               and execute it without fetching from an attribute.
+
+  The Lua module is optional at build time; if the server was compiled
+  without it, @lua reports an error.
+
+  Related Topics: lua().
 
 & @MAIL
 @MAIL
@@ -4215,6 +4255,131 @@ Related Topics: @name.
 
   Related Topics: &, ARBITRARY COMMANDS, ATTRIBUTE OWNERSHIP.
 
+& @VB
+@VB
+
+  See '@va-@vz'.
+
+& @VC
+@VC
+
+  See '@va-@vz'.
+
+& @VD
+@VD
+
+  See '@va-@vz'.
+
+& @VE
+@VE
+
+  See '@va-@vz'.
+
+& @VF
+@VF
+
+  See '@va-@vz'.
+
+& @VG
+@VG
+
+  See '@va-@vz'.
+
+& @VH
+@VH
+
+  See '@va-@vz'.
+
+& @VI
+@VI
+
+  See '@va-@vz'.
+
+& @VJ
+@VJ
+
+  See '@va-@vz'.
+
+& @VK
+@VK
+
+  See '@va-@vz'.
+
+& @VL
+@VL
+
+  See '@va-@vz'.
+
+& @VM
+@VM
+
+  See '@va-@vz'.
+
+& @VN
+@VN
+
+  See '@va-@vz'.
+
+& @VO
+@VO
+
+  See '@va-@vz'.
+
+& @VP
+@VP
+
+  See '@va-@vz'.
+
+& @VQ
+@VQ
+
+  See '@va-@vz'.
+
+& @VR
+@VR
+
+  See '@va-@vz'.
+
+& @VS
+@VS
+
+  See '@va-@vz'.
+
+& @VT
+@VT
+
+  See '@va-@vz'.
+
+& @VU
+@VU
+
+  See '@va-@vz'.
+
+& @VV
+@VV
+
+  See '@va-@vz'.
+
+& @VW
+@VW
+
+  See '@va-@vz'.
+
+& @VX
+@VX
+
+  See '@va-@vz'.
+
+& @VY
+@VY
+
+  See '@va-@vz'.
+
+& @VZ
+@VZ
+
+  See '@va-@vz'.
+
 & @VERB
 @VERB
 
@@ -4962,6 +5127,31 @@ ASIN()
 
   Related Topics: acos(), atan(), ctu(), cos(), pi(), sin(), tan().
 
+& ASTEVAL()
+ASTEVAL()
+
+  FUNCTION: asteval(<expression>)
+
+  Evaluates <expression> using the AST interpreter and bypasses the JIT.
+  The returned value is identical to eval(), but forcing the AST path is
+  useful when diagnosing parity issues or when you want to benchmark AST/JIT
+  performance independently.
+
+  Related Topics: astbench(), eval(), rvbench().
+
+& ASTBENCH()
+ASTBENCH()
+
+  FUNCTION: astbench(<expression>, <iterations>)
+
+  Wizard-only benchmarking tool.  The expression is parsed once and then run
+  through both the AST interpreter and the JIT for <iterations> loops
+  (clamped to 100000).  The function returns a formatted string such as:
+    ast=0.12us jit=0.03us ratio=4.0x result=42
+  so you can compare per-call timings.
+
+  Related Topics: asteval(), benchmark(), jitstats(), rvbench().
+
 & ATAN()
 & ATAN2()
 ATAN()
@@ -5431,6 +5621,24 @@ BOR()
   The result may be expressed as 39B in base 16 or 923 in base 10.
 
   Related Topics: shl(), shr(), band(), bnand(), bxor().
+
+& BOUND()
+BOUND()
+
+  FUNCTION: bound(<value>, <minimum>[, <maximum>])
+
+  Clamps <value> to stay within the provided range.  If <value> is less than
+  <minimum>, the minimum is returned.  If <maximum> is supplied, values above
+  it are reduced to <maximum>; otherwise only the lower bound is enforced.
+  All arguments may be floating-point numbers.
+
+  Examples:
+    > think bound(-3,0,10)
+    0
+    > think bound(12,0,10)
+    10
+
+  Related Topics: max(), min().
 
 & BXOR()
 BXOR()
@@ -9445,6 +9653,18 @@ ITEXT()
 
   Related Topics: iter(), inum(), ilev().
 
+& JITSTATS()
+JITSTATS()
+
+  FUNCTION: jitstats([reset])
+
+  Wizard-only diagnostic.  Without arguments it returns a space-separated
+  list of key=value counters describing how often the softcode JIT compiler
+  handled expressions, hit cache entries, bailed out, and so on.  Supplying
+  the literal argument 'reset' clears all counters and returns 'OK'.
+
+  Related Topics: astbench(), benchmark(), rvbench().
+
 & JSON()
 JSON()
 
@@ -9808,6 +10028,24 @@ LDELETE()
 
   Related Topics: delete(), extract(), insert(), remove(), replace().
 
+& LINSERT()
+LINSERT()
+
+  FUNCTION: linsert(<list>, <position>, <item>[, <delim>])
+
+  Inserts <item> into <list> at the zero-based <position>.  Positions less
+  than zero are treated as zero, and positions beyond the end of the list
+  append the item.  <delim> is the optional input/output separator and
+  defaults to a space.
+
+  Examples:
+    > say linsert(red blue green, 1, yellow)
+    You say, "red yellow blue green"
+    > say linsert(a|b|c, 5, z, |)
+    You say, "a|b|c|z"
+
+  Related Topics: ldelete(), lreplace().
+
 & LEAVE
 LEAVE
 
@@ -9995,6 +10233,18 @@ LIST()
   the buffer limit.
 
   Related Topics: iter(), @dolist.
+
+& LISTQ()
+LISTQ()
+
+  FUNCTION: listq()
+
+  Returns a space-separated list of q-register names that currently hold
+  values.  Numeric registers 0–9 are reported as digits and registers 10–35
+  are reported as uppercase letters A–Z.  Use this to see which registers are
+  safe to reuse or to build debugging tools for complex softcode.
+
+  Related Topics: setq(), unsetq().
 
 & LISTENING
 LISTENING
@@ -10252,6 +10502,40 @@ LOC()
     You say, "#367"
 
   Related Topics: rloc(), room(), where().
+
+& LPLAYERS()
+LPLAYERS()
+
+  FUNCTION: lplayers(<location>)
+
+  Returns a space-separated list of dbrefs for connected players currently in
+  <location>.  You must control the room, be standing in it, or otherwise
+  have examination rights; otherwise '#-1 PERMISSION DENIED' is returned.
+
+  Related Topics: nplayers(), lthings(), lcon().
+
+& LTHINGS()
+LTHINGS()
+
+  FUNCTION: lthings(<location>)
+
+  Returns a space-separated list of dbrefs for things (non-player objects) in
+  <location>.  Permission requirements match lplayers().
+
+  Related Topics: nthings(), lplayers(), lcon().
+
+& LUA()
+LUA()
+
+  FUNCTION: lua(<object>/<attribute>[,<arg1>[,<argN>...]])
+
+  Executes the Lua script stored on <object>/<attribute> using the embedded
+  Lua interpreter and returns the script's output.  Additional arguments are
+  passed to the script via `mux.args` so you can write reusable helpers.  If
+  the Lua module is not loaded or if the script raises an error, the function
+  returns `#-1 LUA ERROR`.
+
+  Related Topics: @lua, gmcp().
 
 & LOCALIZE()
 LOCALIZE()
@@ -10624,6 +10908,23 @@ LREST()
     You say ""
 
   Related Topics: first(), last(), rest()
+
+& LREPLACE()
+LREPLACE()
+
+  FUNCTION: lreplace(<list>, <position>, <value>[, <delim>])
+
+  Replaces the element at zero-based <position> in <list> with <value>.
+  Positions outside the list yield '#-1 POSITION OUT OF RANGE'.  <delim>
+  controls the input/output separator and defaults to a space.
+
+  Examples:
+    > say lreplace(alpha beta gamma, 1, BETA)
+    You say, "alpha BETA gamma"
+    > say lreplace(one|two|three, 0, start, |)
+    You say, "start|two|three"
+
+  Related Topics: ldelete(), linsert().
 
 & LROOMS()
 LROOMS()
@@ -11275,6 +11576,28 @@ MEMBER()
 
   Related Topics: LISTS, match(), strmatch().
 
+& MEAN()
+MEAN()
+
+  FUNCTION: mean(<number>[,<numberN>...])
+
+  Returns the arithmetic average of the supplied numbers.  Accepts floating
+  point arguments and returns a floating point result.  At least one argument
+  is required.
+
+  Related Topics: median(), stddev(), add(), lmath().
+
+& MEDIAN()
+MEDIAN()
+
+  FUNCTION: median(<number>[,<numberN>...])
+
+  Returns the median of the supplied numbers.  The arguments are sorted and
+  the middle value (or the average of the two middle values) is returned.  At
+  least one argument is required.
+
+  Related Topics: mean(), stddev(), lmath().
+
 & MERGE()
 MERGE()
 
@@ -11685,15 +12008,43 @@ NAME()
 & NCON()
 NCON()
 
-  FUNCTION: ncon(<object>)
+  FUNCTION: ncon(<location>)
 
-  Returns the count of all objects in the contents of <object>. Requires
-  permission to examine the object.
+  Returns the number of objects contained in <location>.  You must either
+  control the room, be in it, or otherwise be able to examine it; otherwise
+  '#-1 PERMISSION DENIED' is returned.
 
-  Examples:
-    > say ncon(here)
+  Related Topics: lcon(), nplayers(), nthings().
 
-  Related Topics: nexits(), nplayers(), nthings(), lcon().
+& NEXITS()
+NEXITS()
+
+  FUNCTION: nexits(<location>)
+
+  Returns the number of exits owned by <location>.  Permission rules match
+  ncon().
+
+  Related Topics: lexits(), ncon().
+
+& NPLAYERS()
+NPLAYERS()
+
+  FUNCTION: nplayers(<location>)
+
+  Returns the number of connected players currently inside <location>.
+  Examinable/ownership requirements match ncon().
+
+  Related Topics: lplayers(), ncon().
+
+& NTHINGS()
+NTHINGS()
+
+  FUNCTION: nthings(<location>)
+
+  Returns the number of non-player things in <location>.  Permission rules
+  match ncon().
+
+  Related Topics: lthings(), ncon().
 
 & NEARBY()
 NEARBY()
@@ -12812,6 +13163,19 @@ RAND()
     You say, "0"
 
   Related Topics: die(), lrand(), pickrand(), shuffle()
+
+& RVBENCH()
+RVBENCH()
+
+  FUNCTION: rvbench(<expression>, <iterations>)
+
+  Wizard-only benchmark that compares native softcode evaluation with the new
+  rveval JIT.  It compiles <expression>, runs it <iterations> times through
+  three paths (mux_exec, compile-per-call, and compile-once), and returns a
+  multi-line report with timings in microseconds.  Use this when tuning the
+  JIT or diagnosing slow expressions.
+
+  Related Topics: astbench(), benchmark(), jitstats().
 
 & READ
 READ
@@ -14627,16 +14991,13 @@ STATS()
 & STDDEV()
 STDDEV()
 
-  FUNCTION: stddev(<number>, <number>[, <number>, ...])
+  FUNCTION: stddev(<number>[,<numberN>...])
 
-  Returns the sample standard deviation of all arguments. Requires at
-  least 2 arguments. Uses Welford's online algorithm.
+  Returns the sample standard deviation of the supplied numbers using
+  Welford's numerically stable algorithm.  At least two arguments are
+  required; otherwise the function returns 0.  Results are floating point.
 
-  Examples:
-    > say stddev(2,4,4,4,5,5,7,9)
-    You say, "2"
-
-  Related Topics: mean(), median().
+  Related Topics: mean(), median(), lmath().
 
 & STEP()
 STEP()
@@ -14723,32 +15084,34 @@ STRDELETE()
 
   FUNCTION: strdelete(<string>, <start>, <count>)
 
-  Deletes <count> characters from <string> starting at 0-based position
-  <start>.
-
-  Examples:
-    > say strdelete(abcdef,2,3)
-    You say, "abf"
-    > say strdelete(hello,0,1)
-    You say, "ello"
+  Deletes <count> visual characters (grapheme clusters) from <string>
+  beginning at zero-based position <start>.  If <start> is past the end of
+  the string or <count> is zero, the original string is returned unchanged.
 
   Related Topics: strinsert(), strreplace(), mid().
 
 & STRINSERT()
 STRINSERT()
 
-  FUNCTION: strinsert(<string>, <position>, <insertion>)
+  FUNCTION: strinsert(<string>, <position>, <text>)
 
-  Inserts <insertion> into <string> at 0-based character position.
-
-  Examples:
-    > say strinsert(abcdef,3,XY)
-    You say, "abcXYdef"
-    > say strinsert(hello,0,say )
-    You say, "say hello"
+  Inserts <text> into <string> before the character at zero-based <position>.
+  If <position> is past the end of the string, the text is appended.  All
+  indexing is performed on grapheme clusters, so combining marks stay with
+  their base characters.
 
   Related Topics: strdelete(), strreplace().
 
+& STRREPLACE()
+STRREPLACE()
+
+  FUNCTION: strreplace(<string>, <start>, <count>, <replacement>)
+
+  Replaces <count> grapheme clusters in <string> starting at <start> with the
+  supplied <replacement>.  If <start> points past the end of the string, the
+  replacement text is appended.
+
+  Related Topics: strdelete(), strinsert(), mid().
 & STRIP()
 STRIP()
 
@@ -15435,13 +15798,13 @@ TOPICS
   Help available on the following Topics:
 
   $-COMMANDS               ARBITRARY COMMANDS       ATTRIBUTE OWNERSHIP
-  -                        ~
-  BEING KILLED             BOGUS COMMANDS           BOOLEAN VALUES
-  COMMAND EVALUATION       COMSYS                   CONTROL
-  COSTS                    CREDITS                  DROP-TO
-  ENACTOR                  EXITS                    FAILURE
-  FLAG LIST                FLAGS                    FUNCTION LIST
-  FUNCTIONS                GENDER                   GOALS
+  -                        ~                        BEING KILLED
+  BOGUS COMMANDS           BOOLEAN VALUES           COMMAND EVALUATION
+  COMSYS                   CONTROL                  COSTS
+  CREDITS                  DROP-TO                  ENACTOR
+  EXITS                    FAILURE                  FLAG LIST
+  FLAGS                    FUNCTION LIST            FUNCTIONS
+  GENDER                   GMCP                     GOALS
   HERE                     HOMES                    LINKING
   LISTENING                LISTS                    LOOPING
   ME                       MONEY                    MOVING
@@ -15451,7 +15814,8 @@ TOPICS
   SEARCH CLASSES           SEMAPHORES               SPOOFING
   STACK                    SUBSTITUTIONS            SUCCESS
   SWITCHES                 USER-DEFINED COMMANDS    VERBS
-  WIZARDS                  @VA-@VZ                  ZONES
+  WIZARDS                  @LUA                     @VA-@VZ
+  ZONES
 
 & TRACE
 TRACE
@@ -15825,18 +16189,14 @@ UNINSPECTED
 & UNIQUE()
 UNIQUE()
 
-  FUNCTION: unique(<list>[, <sorttype>[, <sep>[, <osep>]]])
+  FUNCTION: unique(<list>[,<sorttype>[,<sep>[,<osep>]]])
 
-  Returns <list> with duplicate elements removed, keeping the first
-  occurrence of each.
+  Removes duplicate elements from <list>, preserving the first occurrence of
+  each value.  Elements are compared literally (no wildcarding).  The optional
+  <sep> specifies the input delimiter, defaulting to a space, and <osep>
+  controls the output delimiter (defaulting to <sep>).
 
-  Examples:
-    > say unique(a b a c b d)
-    You say, "a b c d"
-    > say unique(3 1 2 1 3)
-    You say, "3 1 2"
-
-  Related Topics: setunion(), setdiff(), setinter().
+  Related Topics: ldelete(), sort(), squash().
 
 & UNPACK()
 UNPACK()
@@ -15867,16 +16227,13 @@ UNPACK()
 & UNSETQ()
 UNSETQ()
 
-  FUNCTION: unsetq([<register>[, <register>, ...]])
+  FUNCTION: unsetq([<register>[,<registerN>...]])
 
-  Clears the specified q-registers. If no arguments are given, clears all
-  q-registers (0-9, a-z).
+  Clears the specified q-registers.  Registers may be given as digits 0–9 or
+  letters A–Z.  When called with no arguments, all global q-registers are
+  cleared.  Use listq() to see which registers currently contain data.
 
-  Examples:
-    > think setq(0,hello)[unsetq(0)][r(0)]
-    (empty)
-
-  Related Topics: listq(), setq(), setr(), r().
+  Related Topics: setq(), listq(), ulocal().
 
 & USE
 USE
