@@ -77,3 +77,53 @@ Replace trust-all with TOFU (trust-on-first-use) pinning.
 - [x] First connection: "Unknown Certificate" dialog with Trust/Reject
 - [x] Changed cert: "Certificate Changed!" warning with previous fingerprint
 - [x] Accepted certs auto-saved; subsequent connections proceed silently
+
+## Phase 8: Timers — DONE
+Repeating commands on an interval, useful for keepalive and auto-actions.
+
+- [x] `data/TimerEngine.kt` — coroutine-based timer with name/command/interval/shots
+- [x] `/repeat <name> <seconds> <command>` — create a named repeating timer
+- [x] `/killtimer <name>`, `/cancel <name>` — cancel a timer
+- [x] `/timers`, `/listtimers` — list active timers with interval and shots
+- [x] Timer fires send command to active tab's connection
+- [x] All timers auto-cancel on disconnect
+
+## Phase 9: Hooks — DONE
+Fire commands on connection events, not just text patterns.
+
+- [x] `data/Hook.kt` — Hook data class + HookRepository with persistence
+- [x] Hook events: CONNECT, DISCONNECT, ACTIVITY
+- [x] `/hook <name> <event> = <command>` — define a hook
+- [x] `/unhook <name>` — remove a hook
+- [x] `/hooks` — list all hooks
+- [x] CONNECT hooks fire after connection established (send to server)
+- [x] DISCONNECT hooks fire on connection lost (logged to output)
+- [x] ACTIVITY hooks fire once when background tab first receives text
+
+## Phase 10: UX Polish — IN PROGRESS
+Quality-of-life improvements for daily use.
+
+- [x] URL detection — clickable links in output (blue, underlined)
+- [x] URLs open in browser via `LocalUriHandler`
+- [ ] Word wrap in output pane (currently clips long lines)
+- [ ] Tab reordering via long-press drag
+- [ ] Landscape layout: side-by-side tabs + output
+- [ ] Double-tap to select/copy text from output
+
+## Phase 11: Foreground Service
+Keep connections alive when the app is backgrounded.
+
+- [ ] Android foreground service with persistent notification
+- [ ] Reconnect logic on network change
+- [ ] Activity indicator in notification for background tabs
+- [ ] Permissions already declared in AndroidManifest.xml
+
+## Phase 12: Settings Screen
+User-configurable preferences.
+
+- [ ] Font size slider
+- [ ] Scrollback limit
+- [ ] Theme (dark/light/OLED black)
+- [ ] Log directory picker
+- [ ] Default port / SSL toggle
+- [ ] Export/import worlds and triggers

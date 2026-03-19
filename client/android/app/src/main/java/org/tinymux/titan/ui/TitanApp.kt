@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -19,6 +20,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -28,7 +30,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CompletableDeferred
+import org.tinymux.titan.data.Hook
+import org.tinymux.titan.data.HookRepository
 import org.tinymux.titan.data.SessionLogger
+import org.tinymux.titan.data.TimerEngine
 import org.tinymux.titan.data.Trigger
 import org.tinymux.titan.data.TriggerEngine
 import org.tinymux.titan.data.TriggerRepository
@@ -55,11 +60,15 @@ fun TitanApp() {
     val context = LocalContext.current
     val worldRepo = remember { WorldRepository(context) }
     val triggerRepo = remember { TriggerRepository(context) }
+    val hookRepo = remember { HookRepository(context) }
     val triggerEngine = remember { TriggerEngine() }
     val sessionLogger = remember { SessionLogger(context) }
     var logActive by remember { mutableStateOf(false) }
     val certStore = remember { TofuCertStore(context) }
     var pendingCert by remember { mutableStateOf<Pair<CertInfo, CompletableDeferred<Boolean>>?>(null) }
+
+    val scope = rememberCoroutineScope()
+    val timerEngine = remember { TimerEngine(scope) }
 
     // Load triggers on startup and whenever they change
     var triggerVersion by remember { mutableIntStateOf(0) }
@@ -68,11 +77,11 @@ fun TitanApp() {
     }
 
     val tabs = remember { mutableStateListOf(WorldTab("(System)")) }
+
     var activeTab by remember { mutableIntStateOf(0) }
     var inputText by remember { mutableStateOf("") }
     var historyPos by remember { mutableIntStateOf(-1) }
     var savedInput by remember { mutableStateOf("") }
-    val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val focusRequester = remember { FocusRequester() }
     var showConnectDialog by remember { mutableStateOf(false) }
@@ -90,12 +99,27 @@ fun TitanApp() {
 
     fun currentTab() = tabs.getOrNull(activeTab)
 
+    // Wire timer fire callback — sends command to active tab's connection
+    timerEngine.onFire = { name, command ->
+        val tab = tabs.getOrNull(activeTab)
+        val conn = tab?.connection
+        if (conn != null && conn.connected) {
+            conn.sendLine(command)
+        }
+    }
+
     fun appendLine(tabIndex: Int, line: String) {
         val parsed = AnsiParser.parse(line)
         tabs.getOrNull(tabIndex)?.let { tab ->
             tab.lines.add(parsed)
             while (tab.lines.size > 20000) tab.lines.removeAt(0)
-            if (tabIndex != activeTab) tab.hasActivity = true
+            if (tabIndex != activeTab) {
+                if (!tab.hasActivity) {
+                    // First activity on background tab — fire ACTIVITY hooks
+                    hookRepo.fireEvent("ACTIVITY")
+                }
+                tab.hasActivity = true
+            }
         }
         if (sessionLogger.active && tabIndex == activeTab) {
             sessionLogger.writeLine(AnsiParser.stripAnsi(line))
@@ -132,10 +156,15 @@ fun TitanApp() {
         conn.onConnect = {
             appendLine(tabIndex, "% Connected to $host:$port")
             tab.disconnected = false
+            for (cmd in hookRepo.fireEvent("CONNECT")) conn.sendLine(cmd)
         }
         conn.onDisconnect = {
             appendLine(tabIndex, "% Connection lost.")
             tab.disconnected = true
+            timerEngine.cancelAll()
+            hookRepo.fireEvent("DISCONNECT").forEach { cmd ->
+                appendLine(tabIndex, "% [hook] $cmd")
+            }
         }
         appendLine(tabIndex, "% Connecting to $host:$port${if (ssl) " (ssl)" else ""}...")
         conn.connect(scope)
@@ -222,6 +251,89 @@ fun TitanApp() {
                     appendLine(idx, "% Log directory: ${sessionLogger.logDir.absolutePath}")
                 }
             }
+            "repeat" -> {
+                // /repeat <name> <seconds> [-n shots] <command>
+                val parts = args.trim().split("\\s+".toRegex(), limit = 4)
+                if (parts.size < 3) {
+                    appendLine(idx, "% Usage: /repeat <name> <seconds> <command>")
+                } else {
+                    val tName = parts[0]
+                    val seconds = parts[1].toDoubleOrNull()
+                    if (seconds == null || seconds <= 0) {
+                        appendLine(idx, "% Invalid interval: ${parts[1]}")
+                    } else {
+                        val command = parts.drop(2).joinToString(" ")
+                        timerEngine.add(tName, command, (seconds * 1000).toLong())
+                        appendLine(idx, "% Timer '$tName' set: every ${seconds}s -> $command")
+                    }
+                }
+            }
+            "killtimer", "cancel" -> {
+                val tName = args.trim()
+                if (tName.isBlank()) {
+                    appendLine(idx, "% Usage: /killtimer <name>")
+                } else if (timerEngine.remove(tName)) {
+                    appendLine(idx, "% Timer '$tName' cancelled.")
+                } else {
+                    appendLine(idx, "% No timer named '$tName'.")
+                }
+            }
+            "timers", "listtimers" -> {
+                val list = timerEngine.list()
+                if (list.isEmpty()) {
+                    appendLine(idx, "% No active timers.")
+                } else {
+                    appendLine(idx, "% Active timers:")
+                    list.forEach { t ->
+                        val shots = if (t.shotsRemaining < 0) "inf" else "${t.shotsRemaining}"
+                        appendLine(idx, "%   ${t.name}: every ${t.intervalMs / 1000.0}s, shots=$shots -> ${t.command}")
+                    }
+                }
+            }
+            "hook" -> {
+                // /hook <name> <event> = <command>
+                val eqPos = args.indexOf('=')
+                if (eqPos < 0) {
+                    appendLine(idx, "% Usage: /hook <name> <event> = <command>")
+                    appendLine(idx, "% Events: ${Hook.EVENTS.joinToString(", ")}")
+                } else {
+                    val before = args.substring(0, eqPos).trim().split("\\s+".toRegex(), limit = 2)
+                    val body = args.substring(eqPos + 1).trim()
+                    if (before.size < 2 || before[0].isBlank()) {
+                        appendLine(idx, "% Usage: /hook <name> <event> = <command>")
+                    } else {
+                        val hName = before[0]
+                        val event = before[1].uppercase()
+                        if (event !in Hook.EVENTS) {
+                            appendLine(idx, "% Unknown event '$event'. Valid: ${Hook.EVENTS.joinToString(", ")}")
+                        } else {
+                            hookRepo.add(Hook(name = hName, event = event, body = body))
+                            appendLine(idx, "% Hook '$hName' on $event -> $body")
+                        }
+                    }
+                }
+            }
+            "unhook" -> {
+                val hName = args.trim()
+                if (hName.isBlank()) {
+                    appendLine(idx, "% Usage: /unhook <name>")
+                } else {
+                    hookRepo.remove(hName)
+                    appendLine(idx, "% Hook '$hName' removed.")
+                }
+            }
+            "hooks", "listhooks" -> {
+                val list = hookRepo.load()
+                if (list.isEmpty()) {
+                    appendLine(idx, "% No hooks defined.")
+                } else {
+                    appendLine(idx, "% Hooks:")
+                    list.forEach { h ->
+                        val state = if (h.enabled) "on" else "off"
+                        appendLine(idx, "%   ${h.name}: ${h.event} [$state] -> ${h.body}")
+                    }
+                }
+            }
             "clear" -> tab?.lines?.clear()
             "help" -> {
                 appendLine(idx, "% Commands:")
@@ -233,6 +345,12 @@ fun TitanApp() {
                 appendLine(idx, "%   /undef <name>                 - Remove a trigger")
                 appendLine(idx, "%   /find <text>                  - Search scrollback")
                 appendLine(idx, "%   /log [filename]               - Toggle session logging")
+                appendLine(idx, "%   /repeat <name> <sec> <cmd>   - Create repeating timer")
+                appendLine(idx, "%   /killtimer <name>             - Cancel a timer")
+                appendLine(idx, "%   /timers                       - List active timers")
+                appendLine(idx, "%   /hook <name> <event> = <cmd>  - Define event hook")
+                appendLine(idx, "%   /unhook <name>                - Remove a hook")
+                appendLine(idx, "%   /hooks                        - List hooks")
                 appendLine(idx, "%   /clear                        - Clear scrollback")
                 appendLine(idx, "%   /help                         - Show this help")
             }
@@ -433,6 +551,7 @@ fun TitanApp() {
         }
 
         // Output pane
+        val uriHandler = LocalUriHandler.current
         LazyColumn(
             state = listState,
             modifier = Modifier
@@ -442,10 +561,16 @@ fun TitanApp() {
         ) {
             val lines = currentTab()?.lines ?: emptyList()
             items(lines) { line ->
-                Text(
+                @Suppress("DEPRECATION")
+                ClickableText(
                     text = line,
                     style = monoStyle,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { offset ->
+                        line.getStringAnnotations("URL", offset, offset).firstOrNull()?.let {
+                            try { uriHandler.openUri(it.item) } catch (_: Exception) {}
+                        }
+                    }
                 )
             }
         }

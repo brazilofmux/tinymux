@@ -8,6 +8,7 @@ import androidx.compose.ui.text.style.TextDecoration
 
 object AnsiParser {
     private val ANSI_RE = Regex("\u001b\\[[0-9;]*[A-Za-z]")
+    private val URL_RE = Regex("https?://[^\\s<>\"']+", RegexOption.IGNORE_CASE)
 
     fun stripAnsi(text: String): String = ANSI_RE.replace(text, "")
 
@@ -91,7 +92,22 @@ object AnsiParser {
             }
         }
         if (styleOpen) builder.pop()
-        return builder.toAnnotatedString()
+
+        // Add URL annotations for clickable links
+        val result = builder.toAnnotatedString()
+        val plainText = result.text
+        val urlMatches = URL_RE.findAll(plainText).toList()
+        if (urlMatches.isEmpty()) return result
+
+        val annotated = AnnotatedString.Builder(result)
+        for (match in urlMatches) {
+            annotated.addStyle(
+                SpanStyle(color = Color(0xFF6699FF), textDecoration = TextDecoration.Underline),
+                match.range.first, match.range.last + 1
+            )
+            annotated.addStringAnnotation("URL", match.value, match.range.first, match.range.last + 1)
+        }
+        return annotated.toAnnotatedString()
     }
 
     private fun xterm256(idx: Int): Color {
