@@ -1,9 +1,7 @@
 /*! \file _build.cpp
  * \brief Build-identifying declarations.
  *
- * Ignore the contents of this file, use macros in _build.h instead.
- * These declarations are usually overridden by VER_FLG in the Makefile.
+ * Version and release date are defined in _build.h.
+ * This file is retained for compatibility but no longer
+ * provides build-specific overrides.
  */
-
-char szBuildDate[] = __DATE__ " " __TIME__;
-char szBuildNum[] = "1";

@@ -17,5 +17,4 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdi
     $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) \
     $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(OPENSSL_CFLAGS)
 
-# Version number routines — buildnum.sh lives here at the build root.
-EXTRA_DIST = buildnum.sh
+EXTRA_DIST =
