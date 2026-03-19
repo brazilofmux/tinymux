@@ -3,6 +3,7 @@
 #include "script.h"
 #include <algorithm>
 #include <sstream>
+#include <regex>
 #include <fnmatch.h>
 
 // ---- Macro trigger compilation ----
@@ -146,6 +147,19 @@ bool parse_def(const std::string& args, Macro& out, std::string& error) {
                 }
                 break;
             }
+            case 's': {
+                // -s'find/replace' — substitution
+                std::string val = read_arg();
+                auto slash = val.find('/');
+                if (slash != std::string::npos) {
+                    out.substitute_find = val.substr(0, slash);
+                    out.substitute_replace = val.substr(slash + 1);
+                } else {
+                    out.substitute_find = val;
+                }
+                break;
+            }
+            case 'c': out.line_class = read_arg(); break;
             default: break; // ignore unknown flags
         }
     }
@@ -563,6 +577,16 @@ TriggerResult check_triggers(App& app, std::string& text) {
                 std::string after = text.substr(match_pos + match.size());
                 text = before + "\033[1m" + match + "\033[0m" + after;
             }
+        }
+
+        // Substitution: regex find/replace on display text
+        std::string sub_find = m->substitute_find;
+        std::string sub_replace = m->substitute_replace;
+        if (!sub_find.empty() && !is_gag) {
+            try {
+                std::regex sub_re(sub_find, std::regex::ECMAScript | std::regex::icase);
+                text = std::regex_replace(text, sub_re, sub_replace);
+            } catch (...) {}
         }
 
         // Execute body if non-empty

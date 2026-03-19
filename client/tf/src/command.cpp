@@ -6,6 +6,7 @@
 #include "macro.h"
 #include "timer.h"
 #include "keybind.h"
+#include "spawn.h"
 #include "restart.h"
 #include <sstream>
 #include <fstream>
@@ -126,6 +127,7 @@ void CommandDispatcher::register_commands() {
     commands_["/restart"] = cmd_restart;
     commands_["/update"]  = cmd_update;
     commands_["/exit"]    = cmd_quit;  // alias
+    commands_["/spawn"]   = cmd_spawn;
 }
 
 bool CommandDispatcher::dispatch(App& app, const std::string& line) {
@@ -1722,4 +1724,53 @@ void cmd_update(App& app, const std::string& args) {
 
     app.terminal.print_system("% Binary updated, restarting...");
     perform_restart(app, app_original_argv());
+}
+
+// /spawn [add|remove|list] ...
+static void cmd_spawn(App& app, const std::string& args) {
+    std::istringstream ss(args);
+    std::string sub;
+    ss >> sub;
+    std::transform(sub.begin(), sub.end(), sub.begin(), ::tolower);
+
+    if (sub == "add") {
+        std::string name, pattern;
+        ss >> name >> pattern;
+        if (name.empty() || pattern.empty()) {
+            app.terminal.print_system("% Usage: /spawn add <name> <pattern>");
+            return;
+        }
+        SpawnConfig sc;
+        sc.name = name;
+        sc.path = name;
+        std::transform(sc.path.begin(), sc.path.end(), sc.path.begin(), ::tolower);
+        sc.patterns.push_back(pattern);
+        app.spawns.add(std::move(sc));
+        app.terminal.print_system("% Spawn '" + name + "' added: /" + pattern + "/");
+    } else if (sub == "remove" || sub == "del") {
+        std::string name;
+        ss >> name;
+        if (name.empty()) {
+            app.terminal.print_system("% Usage: /spawn remove <name>");
+            return;
+        }
+        std::string path = name;
+        std::transform(path.begin(), path.end(), path.begin(), ::tolower);
+        if (app.spawns.remove(path))
+            app.terminal.print_system("% Spawn '" + name + "' removed.");
+        else
+            app.terminal.print_system("% No spawn: " + name);
+    } else {
+        // Default: list
+        auto& all = app.spawns.all();
+        if (all.empty()) {
+            app.terminal.print_system("% No spawns defined. Use /spawn add <name> <pattern>");
+            return;
+        }
+        for (auto& s : all) {
+            std::string d = "  " + s.name + " (" + s.path + "):";
+            for (auto& p : s.patterns) d += " /" + p + "/";
+            app.terminal.print_system(d);
+        }
+    }
 }

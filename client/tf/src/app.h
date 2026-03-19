@@ -8,6 +8,7 @@
 #include "macro.h"
 #include "timer.h"
 #include "keybind.h"
+#include "spawn.h"
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -41,6 +42,8 @@ struct App {
     TimerDB                                        timers;
     KeyBindings                                    keybindings;
     std::unordered_map<std::string, std::string>   vars;
+    SpawnDB                                        spawns;
+    std::unordered_map<std::string, SpawnLines>    spawn_lines;
     std::unordered_map<std::string, FILE*>         open_files;  // tfopen handles
     std::vector<ShellProcess>                      shell_processes;
     int                                            next_file_id = 1;

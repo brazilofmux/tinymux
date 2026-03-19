@@ -21,6 +21,9 @@ struct Macro {
     bool        quiet = false;        // -q
     bool        gag = false;          // suppress matched line from display
     bool        hilite = false;       // highlight matched text in output
+    std::string substitute_find;     // regex find pattern for substitution
+    std::string substitute_replace;  // replacement string
+    std::string line_class;          // classification tag
 
     // Compiled trigger regex (built from trigger + match_type)
     RegexPattern trigger_re;

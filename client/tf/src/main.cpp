@@ -155,6 +155,14 @@ void app_receive_line(App& app, Connection* conn, const std::string& world_name,
             // Mark background activity.
             app.active_worlds.insert(world_name);
         }
+
+        // Route to matching spawns
+        auto matched = app.spawns.match(display_line);
+        for (auto& path : matched) {
+            auto& sl = app.spawn_lines[world_name][path];
+            sl.push_back(display_line);
+            while (sl.size() > 20000) sl.pop_front();
+        }
     }
 
     auto log_it = app.vars.find("_log_file");
