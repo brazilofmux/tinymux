@@ -306,19 +306,50 @@ static int atr_match1
         }
         *s++ = '\0';
         unescape_pattern_colons(buff + 1);
+        // For ^-listens, normalize the pattern so ASCII quotes match
+        // fancy quotes.  Match against a normalized copy of the message
+        // text, but re-capture from the original so %0 retains fancy
+        // quotes for display.
+        //
+        UTF8 *match_str = (aflags & AF_NOPARSE) ? raw_str : str;
+        UTF8 *strNorm = nullptr;
         if (AMATCH_LISTEN == type)
         {
             strip_fancy_quotes(buff + 1);
+            strNorm = alloc_lbuf("atr_match1.norm");
+            mux_strncpy(strNorm, match_str, LBUF_SIZE - 1);
+            strip_fancy_quotes(strNorm);
         }
+        UTF8 *match_subject = strNorm ? strNorm : match_str;
 
         UTF8 *args[NUM_ENV_VARS];
         if (  (  0 != (aflags & AF_REGEXP)
-            && regexp_match(buff + 1, (aflags & AF_NOPARSE) ? raw_str : str,
+            && regexp_match(buff + 1, match_subject,
                 ((aflags & AF_CASE) ? PCRE2_CASELESS : 0), args, NUM_ENV_VARS))
            || (  0 == (aflags & AF_REGEXP)
-              && wild(buff + 1, (aflags & AF_NOPARSE) ? raw_str : str,
+              && wild(buff + 1, match_subject,
                 args, NUM_ENV_VARS)))
         {
+            // If we matched on normalized text, re-capture from the
+            // original so %0 etc. contain fancy quotes.
+            //
+            if (strNorm)
+            {
+                for (int j = 0; j < NUM_ENV_VARS; j++)
+                {
+                    if (args[j]) { free_lbuf(args[j]); args[j] = nullptr; }
+                }
+                if (0 != (aflags & AF_REGEXP))
+                {
+                    regexp_match(buff + 1, match_str,
+                        ((aflags & AF_CASE) ? PCRE2_CASELESS : 0), args, NUM_ENV_VARS);
+                }
+                else
+                {
+                    wild(buff + 1, match_str, args, NUM_ENV_VARS);
+                }
+            }
+
             match = 1;
             CLinearTimeAbsolute lta;
             wait_que(thing, player, player, AttrTrace(aflags, 0), false, lta,
@@ -334,6 +365,10 @@ static int atr_match1
                     free_lbuf(args[i]);
                 }
             }
+        }
+        if (strNorm)
+        {
+            free_lbuf(strNorm);
         }
     }
     atr_pop();
@@ -845,7 +880,14 @@ void notify_check(dbref target, dbref sender, const UTF8 *msg, int key)
         co_strip_color(reinterpret_cast<unsigned char *>(msgPlain),
                        reinterpret_cast<const unsigned char *>(msg),
                        mux_strlen(msg));
-        strip_fancy_quotes(msgPlain);
+
+        // Normalized copy for pattern matching — ASCII quotes only.
+        // msgPlain retains fancy quotes for %0 capture and display.
+        //
+        UTF8 *msgNorm = alloc_lbuf("notify_check.norm");
+        mux_strncpy(msgNorm, msgPlain, LBUF_SIZE - 1);
+        strip_fancy_quotes(msgNorm);
+
         bool pass_listen = false;
         UTF8 *args[NUM_ENV_VARS];
         nargs = 0;
@@ -855,8 +897,15 @@ void notify_check(dbref target, dbref sender, const UTF8 *msg, int key)
         {
             tp = atr_get("notify_check.790", target, A_LISTEN, &aowner, &aflags);
             strip_fancy_quotes(tp);
-            if (*tp && wild(tp, msgPlain, args, NUM_ENV_VARS))
+            if (*tp && wild(tp, msgNorm, args, NUM_ENV_VARS))
             {
+                // Re-capture from original text so %0 has fancy quotes.
+                //
+                for (int j = 0; j < NUM_ENV_VARS; j++)
+                {
+                    if (args[j]) { free_lbuf(args[j]); args[j] = nullptr; }
+                }
+                wild(tp, msgPlain, args, NUM_ENV_VARS);
                 for (nargs = NUM_ENV_VARS; nargs && (!args[nargs - 1] || !(*args[nargs - 1])); nargs--)
                 {
                     ; // Nothing
@@ -1121,6 +1170,7 @@ void notify_check(dbref target, dbref sender, const UTF8 *msg, int key)
             notify_check(targetloc, sender, msgFinal,
                 MSG_ME | MSG_F_UP | MSG_S_INSIDE | (key & (MSG_SRC_MASK | MSG_SAYPOSE | MSG_OOC)));
         }
+        free_lbuf(msgNorm);
         free_lbuf(msgPlain);
     }
     free_lbuf(msgFinal);
