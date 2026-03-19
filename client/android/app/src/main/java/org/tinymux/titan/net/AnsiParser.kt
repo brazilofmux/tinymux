@@ -7,6 +7,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 
 object AnsiParser {
+    private val ANSI_RE = Regex("\u001b\\[[0-9;]*[A-Za-z]")
+
+    fun stripAnsi(text: String): String = ANSI_RE.replace(text, "")
+
     private val COLORS_16 = arrayOf(
         Color(0xFF000000), Color(0xFFAA0000), Color(0xFF00AA00), Color(0xFFAA5500),
         Color(0xFF0000AA), Color(0xFFAA00AA), Color(0xFF00AAAA), Color(0xFFAAAAAA),

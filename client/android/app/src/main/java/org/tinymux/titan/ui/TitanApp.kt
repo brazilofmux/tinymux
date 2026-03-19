@@ -26,6 +26,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import org.tinymux.titan.data.Trigger
+import org.tinymux.titan.data.TriggerEngine
+import org.tinymux.titan.data.TriggerRepository
 import org.tinymux.titan.data.World
 import org.tinymux.titan.data.WorldRepository
 import org.tinymux.titan.net.AnsiParser
@@ -46,6 +49,14 @@ class WorldTab(
 fun TitanApp() {
     val context = LocalContext.current
     val worldRepo = remember { WorldRepository(context) }
+    val triggerRepo = remember { TriggerRepository(context) }
+    val triggerEngine = remember { TriggerEngine() }
+
+    // Load triggers on startup and whenever they change
+    var triggerVersion by remember { mutableIntStateOf(0) }
+    LaunchedEffect(triggerVersion) {
+        triggerEngine.load(triggerRepo.load())
+    }
 
     val tabs = remember { mutableStateListOf(WorldTab("(System)")) }
     var activeTab by remember { mutableIntStateOf(0) }
@@ -57,6 +68,7 @@ fun TitanApp() {
     val focusRequester = remember { FocusRequester() }
     var showConnectDialog by remember { mutableStateOf(false) }
     var showWorldManager by remember { mutableStateOf(false) }
+    var showTriggerManager by remember { mutableStateOf(false) }
 
     val config = LocalConfiguration.current
     val isLandscape = config.screenWidthDp > config.screenHeightDp
@@ -74,6 +86,19 @@ fun TitanApp() {
         }
     }
 
+    fun processServerLine(tabIndex: Int, line: String) {
+        val result = triggerEngine.check(AnsiParser.stripAnsi(line))
+        if (result.gagged) return
+        val display = result.hiliteLine ?: line
+        appendLine(tabIndex, display)
+        // Execute trigger commands
+        val tab = tabs.getOrNull(tabIndex) ?: return
+        val conn = tab.connection
+        if (conn != null && conn.connected) {
+            for (cmd in result.commands) conn.sendLine(cmd)
+        }
+    }
+
     fun connectWorld(name: String, host: String, port: Int, ssl: Boolean) {
         val tab = WorldTab(name)
         tabs.add(tab)
@@ -82,7 +107,7 @@ fun TitanApp() {
 
         val conn = MudConnection(name, host, port, ssl)
         tab.connection = conn
-        conn.onLine = { line -> appendLine(tabIndex, line) }
+        conn.onLine = { line -> processServerLine(tabIndex, line) }
         conn.onConnect = {
             appendLine(tabIndex, "% Connected to $host:$port")
             tab.disconnected = false
@@ -153,6 +178,7 @@ fun TitanApp() {
         ) {
             ToolbarButton("Connect") { showConnectDialog = true }
             ToolbarButton("Worlds") { showWorldManager = true }
+            ToolbarButton("Trig") { showTriggerManager = true }
             ToolbarButton("DC") {
                 if (activeTab > 0) {
                     tabs.getOrNull(activeTab)?.connection?.disconnect()
@@ -296,6 +322,15 @@ fun TitanApp() {
                 connectWorld(world.name, world.host, world.port, world.ssl)
             },
             onDismiss = { showWorldManager = false }
+        )
+    }
+
+    // Trigger Manager dialog
+    if (showTriggerManager) {
+        TriggerManagerDialog(
+            triggerRepo = triggerRepo,
+            onChanged = { triggerVersion++ },
+            onDismiss = { showTriggerManager = false }
         )
     }
 }
@@ -575,6 +610,271 @@ fun EditWorldDialog(
                         ssl = ssl,
                         character = character.trim(),
                         notes = notes.trim(),
+                    ))
+                }
+            }) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+// ---------------------------------------------------------------------------
+// Trigger Manager
+// ---------------------------------------------------------------------------
+
+@Composable
+fun TriggerManagerDialog(
+    triggerRepo: TriggerRepository,
+    onChanged: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var triggers by remember { mutableStateOf(triggerRepo.load()) }
+    var editingTrigger by remember { mutableStateOf<Trigger?>(null) }
+    var showAdd by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf<Trigger?>(null) }
+
+    fun refresh() {
+        triggers = triggerRepo.load()
+        onChanged()
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Triggers") },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                if (triggers.isEmpty()) {
+                    Text(
+                        "No triggers defined yet.",
+                        color = Color.Gray,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 320.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        triggers.forEach { trigger ->
+                            TriggerRow(
+                                trigger = trigger,
+                                onToggle = {
+                                    triggerRepo.add(trigger.copy(enabled = !trigger.enabled))
+                                    refresh()
+                                },
+                                onEdit = { editingTrigger = trigger },
+                                onDelete = { confirmDelete = trigger },
+                            )
+                            HorizontalDivider(color = Color(0xFF404040))
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { showAdd = true }) { Text("Add") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        }
+    )
+
+    // Add trigger
+    if (showAdd) {
+        EditTriggerDialog(
+            title = "Add Trigger",
+            initial = null,
+            onSave = { trigger ->
+                triggerRepo.add(trigger)
+                refresh()
+                showAdd = false
+            },
+            onDismiss = { showAdd = false }
+        )
+    }
+
+    // Edit trigger
+    editingTrigger?.let { trigger ->
+        EditTriggerDialog(
+            title = "Edit Trigger",
+            initial = trigger,
+            onSave = { updated ->
+                if (updated.name != trigger.name) triggerRepo.remove(trigger.name)
+                triggerRepo.add(updated)
+                refresh()
+                editingTrigger = null
+            },
+            onDismiss = { editingTrigger = null }
+        )
+    }
+
+    // Confirm delete
+    confirmDelete?.let { trigger ->
+        AlertDialog(
+            onDismissRequest = { confirmDelete = null },
+            title = { Text("Delete Trigger") },
+            text = { Text("Remove \"${trigger.name}\"?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    triggerRepo.remove(trigger.name)
+                    refresh()
+                    confirmDelete = null
+                }) { Text("Delete", color = Color(0xFFFF6666)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = null }) { Text("Cancel") }
+            }
+        )
+    }
+}
+
+@Composable
+private fun TriggerRow(
+    trigger: Trigger,
+    onToggle: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                trigger.name,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                color = if (trigger.enabled) Color.Unspecified else Color.Gray,
+            )
+            Text(
+                buildString {
+                    append("/${trigger.pattern}/")
+                    val flags = mutableListOf<String>()
+                    if (trigger.gag) flags.add("gag")
+                    if (trigger.hilite) flags.add("hilite")
+                    if (trigger.body.isNotBlank()) flags.add("cmd")
+                    if (trigger.shots >= 0) flags.add("${trigger.shots} shots")
+                    if (flags.isNotEmpty()) append(" [${flags.joinToString(", ")}]")
+                },
+                fontSize = 11.sp,
+                color = Color.Gray,
+            )
+        }
+        TextButton(onClick = onToggle, contentPadding = PaddingValues(horizontal = 4.dp)) {
+            Text(if (trigger.enabled) "On" else "Off", fontSize = 11.sp,
+                color = if (trigger.enabled) Color(0xFF66FF66) else Color.Gray)
+        }
+        TextButton(onClick = onEdit, contentPadding = PaddingValues(horizontal = 4.dp)) {
+            Text("Edit", fontSize = 11.sp)
+        }
+        TextButton(onClick = onDelete, contentPadding = PaddingValues(horizontal = 4.dp)) {
+            Text("Del", fontSize = 11.sp, color = Color(0xFFFF6666))
+        }
+    }
+}
+
+@Composable
+fun EditTriggerDialog(
+    title: String,
+    initial: Trigger?,
+    onSave: (Trigger) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember { mutableStateOf(initial?.name ?: "") }
+    var pattern by remember { mutableStateOf(initial?.pattern ?: "") }
+    var body by remember { mutableStateOf(initial?.body ?: "") }
+    var priority by remember { mutableStateOf(initial?.priority?.toString() ?: "0") }
+    var shots by remember { mutableStateOf(initial?.shots?.toString() ?: "-1") }
+    var gag by remember { mutableStateOf(initial?.gag ?: false) }
+    var hilite by remember { mutableStateOf(initial?.hilite ?: false) }
+    var patternError by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
+                OutlinedTextField(value = name, onValueChange = { name = it },
+                    label = { Text("Name") }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = pattern,
+                    onValueChange = {
+                        pattern = it
+                        patternError = try { Regex(it); null }
+                        catch (e: Exception) { e.message }
+                    },
+                    label = { Text("Pattern (regex)") },
+                    placeholder = { Text("e.g. tells you .*") },
+                    singleLine = true,
+                    isError = patternError != null,
+                    supportingText = patternError?.let { { Text(it, color = Color(0xFFFF6666), fontSize = 10.sp) } },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(value = body, onValueChange = { body = it },
+                    label = { Text("Action (command to send)") },
+                    placeholder = { Text("e.g. say Hello!") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth())
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(value = priority,
+                        onValueChange = { priority = it.filter { c -> c.isDigit() || c == '-' } },
+                        label = { Text("Priority") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                        modifier = Modifier.weight(1f))
+                    OutlinedTextField(value = shots,
+                        onValueChange = { shots = it.filter { c -> c.isDigit() || c == '-' } },
+                        label = { Text("Shots") },
+                        placeholder = { Text("-1=inf") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                        modifier = Modifier.weight(1f))
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .clickable { gag = !gag }
+                ) {
+                    Switch(checked = gag, onCheckedChange = { gag = it })
+                    Spacer(Modifier.width(8.dp))
+                    Text("Gag (suppress line)", style = MaterialTheme.typography.bodyLarge)
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .clickable { hilite = !hilite }
+                ) {
+                    Switch(checked = hilite, onCheckedChange = { hilite = it })
+                    Spacer(Modifier.width(8.dp))
+                    Text("Highlight match", style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                if (name.isNotBlank() && pattern.isNotBlank() && patternError == null) {
+                    onSave(Trigger(
+                        name = name.trim(),
+                        pattern = pattern.trim(),
+                        body = body.trim(),
+                        priority = priority.trim().toIntOrNull() ?: 0,
+                        shots = shots.trim().toIntOrNull() ?: -1,
+                        gag = gag,
+                        hilite = hilite,
                     ))
                 }
             }) { Text("Save") }
