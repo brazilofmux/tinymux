@@ -116,11 +116,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\autoconf-win32.h" />
-    <ClInclude Include="..\autoconf-win32.h" />
-    <ClInclude Include="..\config.h" />
-    <ClInclude Include="..\libmux.h" />
-    <ClInclude Include="..\modules.h" />
+    <ClInclude Include="..\..\include\config.h" />
+    <ClInclude Include="..\..\include\libmux.h" />
+    <ClInclude Include="..\..\include\modules.h" />
     <ClInclude Include="comsys_mod.h" />
   </ItemGroup>
   <ItemGroup>

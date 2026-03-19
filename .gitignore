@@ -56,6 +56,8 @@ mux/src/config.log
 mux/src/config.status
 mux/src/autoconf.h
 mux/src/autoconf.h.in~
+mux/include/autoconf.h
+mux/modules/autoconf.h
 mux/src/stamp-h1
 mux/src/Makefile
 mux/src/buildnum.data
