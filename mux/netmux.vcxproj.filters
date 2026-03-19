@@ -9,330 +9,95 @@
       <UniqueIdentifier>{cd6551c6-86e9-4e39-a824-de23ccb6c5af}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{c8d7ccb3-1e34-4708-901e-36db73d27ec8}</UniqueIdentifier>
-      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="_build.cpp">
+    <ClCompile Include="src\_build.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="alarm.cpp">
+    <ClCompile Include="src\bsd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="alloc.cpp">
+    <ClCompile Include="src\driver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="attrcache.cpp">
+    <ClCompile Include="src\driver_bridge.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="boolexp.cpp">
+    <ClCompile Include="src\ganl_adapter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="bsd.cpp">
+    <ClCompile Include="src\modules.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="command.cpp">
+    <ClCompile Include="src\muxcli.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="comsys.cpp">
+    <ClCompile Include="src\net.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="conf.cpp">
+    <ClCompile Include="src\netaddr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cque.cpp">
+    <ClCompile Include="src\signals.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="create.cpp">
+    <ClCompile Include="src\sitemon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="db.cpp">
+    <ClCompile Include="src\telnet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="db_rw.cpp">
+    <ClCompile Include="src\version.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="eval.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="file_c.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="flags.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="funceval.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="funceval2.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="functions.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="funmath.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="game.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="help.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="htab.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="levels.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="local.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="log.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="look.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="mail.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="match.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="mathutil.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="mguests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="modules.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="move.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="muxcli.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="netaddr.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="netcommon.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="object.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="player.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="player_c.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="plusemail.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="powers.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="predicates.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="quota.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="rob.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="set.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="sha1.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="signals.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="sitemon.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="speech.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="stringutil.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="strtod.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="svdhash.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="svdrand.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="telnet.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="timeabsolute.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="timedelta.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="timeparser.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="timer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="timeutil.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="timezone.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="unparse.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="utf8tables.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vattr.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="version.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="walkdb.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="wild.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="wiz.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ganl_adapter.cpp">
+    <ClCompile Include="src\websocket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="_build.h">
+    <ClInclude Include="include\_build.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="alloc.h">
+    <ClInclude Include="include\config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ansi.h">
+    <ClInclude Include="include\copyright.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="attrcache.h">
+    <ClInclude Include="include\driver_log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="attrs.h">
+    <ClInclude Include="include\externs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="autoconf.h">
+    <ClInclude Include="include\driverstate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="command.h">
+    <ClInclude Include="include\driver_bridge.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="comsys.h">
+    <ClInclude Include="include\ganl_adapter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="config.h">
+    <ClInclude Include="include\ganl_stub.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="copyright.h">
+    <ClInclude Include="include\interface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="db.h">
+    <ClInclude Include="include\libmux.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="externs.h">
+    <ClInclude Include="include\modules.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="file_c.h">
+    <ClInclude Include="include\muxcli.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="flags.h">
+    <ClInclude Include="include\svdrand.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="functions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="funmath.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="help.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="htab.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="interface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="levels.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="libmux.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="mail.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="match.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="mathutil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="mguests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="misc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="modules.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="mudconf.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="muxcli.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="powers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="sha1.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="slave.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="stringutil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="svdhash.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="svdrand.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="timeutil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vattr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ganl_adapter.h">
+    <ClInclude Include="include\timeutil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

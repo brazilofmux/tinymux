@@ -279,7 +279,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\autoconf-win32.h" />
     <ClInclude Include="include\color_ops.h" />
     <ClInclude Include="include\config.h" />
     <ClInclude Include="include\libmux.h" />

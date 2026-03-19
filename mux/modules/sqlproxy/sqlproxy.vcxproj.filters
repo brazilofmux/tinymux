@@ -9,10 +9,6 @@
       <UniqueIdentifier>{086d4a0a-0752-40b1-834a-477056aa490e}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{0adcbd85-fbd2-47df-84ed-a84ac2080d05}</UniqueIdentifier>
-      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sqlproxy.cpp">
@@ -20,19 +16,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="autoconf.h">
+    <ClInclude Include="..\..\include\sql.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="sql.h">
+    <ClInclude Include="..\..\include\config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\config.h">
+    <ClInclude Include="..\..\include\libmux.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\libmux.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\modules.h">
+    <ClInclude Include="..\..\include\modules.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

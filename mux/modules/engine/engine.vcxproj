@@ -547,10 +547,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\autoconf-win32.h" />
-    <ClInclude Include="..\..\modules\autoconf-win32.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\libmux.vcxproj">
       <Project>{FEA073C1-4F18-42A1-AC39-1A2EC0A65E92}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

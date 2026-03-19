@@ -1,9 +1,16 @@
-# Visual Studio build intermediates
+# Visual Studio build intermediates (master branch paths)
 mux/src/bin_debug/
 mux/src/bin_release/
 mux/src/x64/
 mux/src/ganl/x64/
 mux/src/modules/x64/
+
+# Visual Studio build intermediates (brazil branch paths)
+mux/bin_debug/
+mux/bin_release/
+mux/x64/
+mux/ganl/x64/
+mux/modules/*/x64/
 
 # Visual Studio user settings
 *.vcxproj.user

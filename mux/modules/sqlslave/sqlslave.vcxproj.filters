@@ -9,10 +9,6 @@
       <UniqueIdentifier>{db4f05f8-d8f2-48b5-9cb0-fa7c3306d26b}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{ebfca871-c801-454e-9db3-70880775b53e}</UniqueIdentifier>
-      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sqlslave.cpp">
@@ -20,19 +16,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="autoconf.h">
+    <ClInclude Include="..\..\include\config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="sql.h">
+    <ClInclude Include="..\..\include\libmux.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\config.h">
+    <ClInclude Include="..\..\include\modules.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\libmux.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\modules.h">
+    <ClInclude Include="..\..\include\sql.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
