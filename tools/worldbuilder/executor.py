@@ -137,27 +137,34 @@ class MuxConnection:
 # ---------------------------------------------------------------------------
 
 class StateFile:
-    """Tracks spec ID → dbref mappings."""
+    """Tracks spec ID → dbref mappings and object content."""
 
     def __init__(self, path):
         self.path = Path(path)
-        self.objects = {}    # spec_id -> {dbref, type, name}
+        self.objects = {}    # spec_id -> {dbref, type, name, description, flags, attrs}
         self.zone = None
         self.last_applied = None
+        self.version = 2     # Default to v2 if not specified
         if self.path.exists():
             self._load()
 
     def _load(self):
-        with open(self.path, 'r') as f:
-            data = yaml.safe_load(f)
-        if data:
-            self.objects = data.get('objects', {})
-            self.zone = data.get('zone')
-            self.last_applied = data.get('last_applied')
+        try:
+            with open(self.path, 'r') as f:
+                data = yaml.safe_load(f)
+            if data:
+                self.objects = data.get('objects', {})
+                self.zone = data.get('zone')
+                self.last_applied = data.get('last_applied')
+                self.version = data.get('state_version', 2)
+        except Exception as e:
+            print(f"Warning: Could not load state file {self.path}: {e}")
+            self.objects = {}
 
     def save(self):
         self.path.parent.mkdir(parents=True, exist_ok=True)
         data = {
+            'state_version': 3,
             'zone': self.zone,
             'last_applied': time.strftime('%Y-%m-%dT%H:%M:%SZ'),
             'objects': self.objects,
@@ -165,14 +172,17 @@ class StateFile:
         with open(self.path, 'w') as f:
             yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
-    def set_room(self, spec_id, dbref, name, content_hash=None):
-        self.objects[spec_id] = {'dbref': dbref, 'type': 'room', 'name': name}
-        if content_hash:
-            self.objects[spec_id]['content_hash'] = content_hash
-
-    def get_content_hash(self, spec_id):
-        obj = self.objects.get(spec_id)
-        return obj.get('content_hash') if obj else None
+    def set_room(self, spec_id, dbref, room):
+        """Store room details in state."""
+        self.objects[spec_id] = {
+            'dbref': dbref,
+            'type': 'room',
+            'name': room.name,
+            'description': room.description,
+            'flags': sorted(room.flags),
+            'attrs': room.attrs,
+            'content_hash': content_hash(room)
+        }
 
     def set_exit(self, spec_id, dbref, name):
         self.objects[spec_id] = {'dbref': dbref, 'type': 'exit', 'name': name}
@@ -243,7 +253,7 @@ def execute(spec, conn, state, dry_run=False, log_file=None):
     state.zone = spec.zone.name
 
     # Phase 1: Create rooms and capture dbrefs
-    log(f'\n=== Phase 1: Creating {len(spec.rooms)} rooms ===')
+    log(f'\n=== Phase 1: Creating/Updating {len(spec.rooms)} rooms ===')
 
     for room_id, room in spec.rooms.items():
         existing = state.get_dbref(room_id)
@@ -252,6 +262,8 @@ def execute(spec, conn, state, dry_run=False, log_file=None):
             # Teleport to existing room and update
             do_cmd(f'@teleport me={existing}')
             time.sleep(0.2)
+            if not dry_run:
+                state.set_room(room_id, existing, room)
         else:
             log(f'\n--- Room: {room.name} ({room_id}) — creating ---')
             resp = do_cmd(f'@dig/teleport {room.name}')
@@ -265,12 +277,22 @@ def execute(spec, conn, state, dry_run=False, log_file=None):
                     # Fallback: try parsing @dig output
                     dbref = extract_dbref(resp)
                 if dbref:
-                    state.set_room(room_id, dbref, room.name, content_hash(room))
+                    state.set_room(room_id, dbref, room)
                     log(f'  [state] {room_id} = {dbref}')
                 else:
                     log(f'  [WARNING] Could not capture dbref for {room_id}')
             else:
-                state.set_room(room_id, f'#DRY_{room_id}', room.name)
+                # In dry run, we still want to store the object in state so Phase 2 can find it
+                # We use a dummy object for dry-run
+                state.objects[room_id] = {
+                    'dbref': f'#DRY_{room_id}',
+                    'type': 'room',
+                    'name': room.name,
+                    'description': room.description,
+                    'flags': sorted(room.flags),
+                    'attrs': room.attrs,
+                    'content_hash': content_hash(room)
+                }
 
         # Set description
         desc = room.description.rstrip().replace('\n', '%r')

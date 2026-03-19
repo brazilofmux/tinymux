@@ -814,10 +814,46 @@ def diff_spec(spec, state_path):
             # Check for modifications
             old = state[room_id]
             details = []
+
+            # 1. Name
             if old.get('name', '') != room.name:
                 details.append(('name', old.get('name', ''), room.name))
-            # We'd need to store desc/attrs/flags in state for full diff.
-            # For now, mark as potentially modified.
+
+            # 2. Description
+            old_desc = old.get('description', '').strip()
+            new_desc = room.description.strip()
+            if old_desc != new_desc:
+                # Truncate for display if very long
+                old_disp = (old_desc[:30] + '...') if len(old_desc) > 33 else old_desc
+                new_disp = (new_desc[:30] + '...') if len(new_desc) > 33 else new_desc
+                details.append(('description', old_disp, new_disp))
+
+            # 3. Flags
+            old_flags = set(old.get('flags', []))
+            new_flags = set(room.flags)
+            if old_flags != new_flags:
+                added = new_flags - old_flags
+                removed = old_flags - new_flags
+                if added:
+                    details.append(('flags+', '', ', '.join(sorted(added))))
+                if removed:
+                    details.append(('flags-', ', '.join(sorted(removed)), ''))
+
+            # 4. Attributes
+            old_attrs = old.get('attrs', {})
+            new_attrs = room.attrs
+            all_attr_names = set(old_attrs.keys()) | set(new_attrs.keys())
+            for attr in sorted(all_attr_names):
+                old_val = old_attrs.get(attr)
+                new_val = new_attrs.get(attr)
+                if old_val != new_val:
+                    if old_val is None:
+                        details.append((f'attr:{attr}+', '', new_val))
+                    elif new_val is None:
+                        details.append((f'attr:{attr}-', old_val, '(removed)'))
+                    else:
+                        details.append((f'attr:{attr}', old_val, new_val))
+
             if details:
                 changes.append(Change(Change.MODIFY, 'room', room_id, room.name, details))
 
@@ -870,23 +906,64 @@ def compile_incremental(spec, state_path):
                 cmd(f"Set flag {flag}", f'@set here={flag}')
             for attr_name, attr_value in room.attrs.items():
                 cmd(f"Set {attr_name}", f'&{attr_name} here={attr_value}')
+            cmd("Set zone", f'@chzone here=%{{zone:{spec.zone.name}}}')
         else:
             # Existing room — update in place
-            dbref = state[room_id].get('dbref', '')
+            old = state[room_id]
+            dbref = old.get('dbref', '')
             if not dbref:
                 continue
-            cmd(f"--- UPDATE room: {room.name} ({room_id}) at {dbref} ---", "")
-            cmd("Teleport to room", f'@teleport me={dbref}')
-            desc = room.description.rstrip().replace('\n', '%r')
-            cmd("Update description", f'@desc here={desc}')
-            # Re-set name in case it changed
-            cmd("Update name", f'@name here={room.name}')
-            for flag in room.flags:
-                cmd(f"Set flag {flag}", f'@set here={flag}')
-            for attr_name, attr_value in room.attrs.items():
-                cmd(f"Set {attr_name}", f'&{attr_name} here={attr_value}')
+
+            # Compute actual changes
+            name_changed = old.get('name') != room.name
+            desc_changed = old.get('description', '').strip() != room.description.strip()
+            
+            old_flags = set(old.get('flags', []))
+            new_flags = set(room.flags)
+            flags_added = new_flags - old_flags
+            flags_removed = old_flags - new_flags
+
+            old_attrs = old.get('attrs', {})
+            new_attrs = room.attrs
+            attrs_to_set = {k: v for k, v in new_attrs.items() if old_attrs.get(k) != v}
+            attrs_to_unset = set(old_attrs.keys()) - set(new_attrs.keys())
+
+            if any([name_changed, desc_changed, flags_added, flags_removed, attrs_to_set, attrs_to_unset]):
+                cmd(f"--- UPDATE room: {room.name} ({room_id}) at {dbref} ---", "")
+                cmd("Teleport to room", f'@teleport me={dbref}')
+
+                if name_changed:
+                    cmd("Update name", f'@name here={room.name}')
+                
+                if desc_changed:
+                    desc = room.description.rstrip().replace('\n', '%r')
+                    cmd("Update description", f'@desc here={desc}')
+
+                for flag in sorted(flags_added):
+                    cmd(f"Set flag {flag}", f'@set here={flag}')
+                for flag in sorted(flags_removed):
+                    cmd(f"Clear flag {flag}", f'@set here=!{flag}')
+
+                for attr_name in sorted(attrs_to_set):
+                    cmd(f"Update {attr_name}", f'&{attr_name} here={attrs_to_set[attr_name]}')
+                for attr_name in sorted(attrs_to_unset):
+                    cmd(f"Remove {attr_name}", f'&{attr_name} here=')
+
+    # Deletions: objects in state but NOT in spec
+    deletions = []
+    for obj_id, obj in state.items():
+        if obj.get('type') == 'room' and obj_id not in spec.rooms:
+            deletions.append((obj_id, obj))
+    
+    if deletions:
+        cmd("=== DESTROY removed rooms ===", "")
+        for obj_id, obj in deletions:
+            dbref = obj.get('dbref', '')
+            if dbref:
+                cmd(f"Destroy room: {obj.get('name')} ({obj_id})", f'@destroy/override {dbref}')
 
     # Exits: only new ones (modifying exits is rare — delete + recreate)
+    # TODO: Implement incremental exit updates (locks, descs)
     for ex in spec.exits:
         key = f'exit_{ex.from_room}_{ex.to_room}'
         if key not in state:
