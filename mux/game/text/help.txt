@@ -12138,6 +12138,63 @@ NOSPOOF
 
   Related Topics: @emit, @femit, @oemit, @pemit.
 
+& NSEMIT()
+NSEMIT()
+
+  FUNCTION: nsemit(<text>)
+
+  Emits <text> to all objects in the caller's room, always prepending a
+  nospoof header [Name(#dbref)] to the message regardless of whether the
+  recipients have the NOSPOOF flag set.
+
+  Example:
+    > say nsemit(Watch out!)
+    [Wizard(#1)] Watch out!
+
+  Related Topics: emit(), nspemit(), nsoemit(), nsremit().
+
+& NSOEMIT()
+NSOEMIT()
+
+  FUNCTION: nsoemit(<object>, <text>)
+
+  Emits <text> to all objects in the caller's room except <object>, always
+  prepending a nospoof header [Name(#dbref)] to the message regardless of
+  whether the recipients have the NOSPOOF flag set.
+
+  Example:
+    > say nsoemit(#5, Watch out!)
+
+  Related Topics: oemit(), nsemit(), nspemit(), nsremit().
+
+& NSPEMIT()
+NSPEMIT()
+
+  FUNCTION: nspemit(<target>, <text>)
+
+  Sends <text> to <target> only, always prepending a nospoof header
+  [Name(#dbref)] to the message regardless of whether the target has the
+  NOSPOOF flag set.
+
+  Example:
+    > say nspemit(#5, Secret message)
+
+  Related Topics: pemit(), nsemit(), nsoemit(), nsremit().
+
+& NSREMIT()
+NSREMIT()
+
+  FUNCTION: nsremit(<room>, <text>)
+
+  Emits <text> to all objects in <room>, always prepending a nospoof header
+  [Name(#dbref)] to the message regardless of whether the recipients have
+  the NOSPOOF flag set.
+
+  Example:
+    > say nsremit(#0, Attention everyone!)
+
+  Related Topics: remit(), nsemit(), nsoemit(), nspemit().
+
 & NOT()
 NOT()
 

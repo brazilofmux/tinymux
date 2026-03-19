@@ -562,6 +562,76 @@ FUNCTION(fun_cemit)
     do_cemit(executor, caller, enactor, eval, 0, nfargs, fargs[0], fargs[1], nullptr, 0);
 }
 
+// ---------------------------------------------------------------------------
+// Nospoof emit functions — always prepend [Name(#dbref)] header.
+// PennMUSH-compatible.
+// ---------------------------------------------------------------------------
+
+static void build_nospoof_msg(dbref executor, const UTF8 *msg,
+    UTF8 *nsbuf, size_t nsbuf_size)
+{
+    mux_sprintf(nsbuf, nsbuf_size, T("[%s(#%d)] %s"),
+        Moniker(executor), executor, msg);
+}
+
+FUNCTION(fun_nspemit)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (check_command(executor, T("@pemit"), buff, bufc)) return;
+    UTF8 nsbuf[LBUF_SIZE];
+    build_nospoof_msg(executor, fargs[1], nsbuf, sizeof(nsbuf));
+    do_pemit_list(executor, PEMIT_PEMIT, false, 0, fargs[0], 0, nsbuf);
+}
+
+FUNCTION(fun_nsemit)
+{
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (check_command(executor, T("@emit"), buff, bufc)) return;
+    UTF8 nsbuf[LBUF_SIZE];
+    build_nospoof_msg(executor, fargs[0], nsbuf, sizeof(nsbuf));
+    do_say(executor, caller, enactor, 0, SAY_EMIT, nsbuf, nullptr, 0);
+}
+
+FUNCTION(fun_nsoemit)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (check_command(executor, T("@oemit"), buff, bufc)) return;
+    UTF8 nsbuf[LBUF_SIZE];
+    build_nospoof_msg(executor, fargs[1], nsbuf, sizeof(nsbuf));
+    do_pemit_list(executor, PEMIT_OEMIT, false, 0, fargs[0], 0, nsbuf);
+}
+
+FUNCTION(fun_nsremit)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (check_command(executor, T("@pemit"), buff, bufc)) return;
+    UTF8 nsbuf[LBUF_SIZE];
+    build_nospoof_msg(executor, fargs[1], nsbuf, sizeof(nsbuf));
+    do_pemit_single(executor, PEMIT_PEMIT, true, 0, fargs[0], 0, nsbuf);
+}
+
 FUNCTION(fun_verb)
 {
     UNUSED_PARAMETER(cargs);
