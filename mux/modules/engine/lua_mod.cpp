@@ -4,13 +4,14 @@
  * Embeds a sandboxed Lua 5.4 interpreter.  Scripts live as LUA_* attributes
  * on objects.  The lua() softcode function dispatches through this module.
  *
- * All server access goes through COM interfaces — this code never touches
- * db[] or networking internals directly.
+ * Bridge functions use engine-internal APIs (externs.h) for permission
+ * checks and COM interfaces for cross-layer operations.
  */
 
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
+#include "externs.h"
 #include "libmux.h"
 #include "modules.h"
 #include "lua_mod.h"
@@ -61,6 +62,11 @@ static CLuaMod *get_lua_mod(lua_State *L)
 
 // mux.notify(dbref, message) — send text to a player.
 //
+// Permission model matches @pemit: executor must be nearby, have
+// Long_Fingers, or control the target.  If pemit_players is on and
+// the target is a connected player, page-lock is checked.  If
+// pemit_any is on, any @pemit to a player is allowed.
+//
 static int bridge_notify(lua_State *L)
 {
     CLuaMod *mod = get_lua_mod(L);
@@ -69,41 +75,104 @@ static int bridge_notify(lua_State *L)
     lua_exec_ctx *ctx = get_exec_ctx(L);
     if (nullptr == ctx) return 0;
 
-    int target = static_cast<int>(luaL_checkinteger(L, 1));
+    dbref target = static_cast<dbref>(luaL_checkinteger(L, 1));
     const char *msg = luaL_checkstring(L, 2);
+    dbref executor = ctx->executor;
+
+    if (!Good_obj(target))
+    {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+
+    // Enforce locality constraints (matches do_pemit_single).
+    //
+    bool ok = nearby(executor, target)
+           || Long_Fingers(executor)
+           || Controls(executor, target);
+
+    if (  !ok
+       && isPlayer(target)
+       && mudconf.pemit_players)
+    {
+        // Check page-lock without side effects.
+        //
+        ok = Connected(target)
+          && could_doit(executor, target, A_LPAGE)
+          && could_doit(target, executor, A_LPAGE);
+    }
+
+    if (!ok && mudconf.pemit_any)
+    {
+        ok = true;
+    }
+
+    if (!ok)
+    {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
 
     mux_INotify *pNotify = nullptr;
     MUX_RESULT mr = mux_CreateInstance(CID_Notify, nullptr, UseSameProcess,
         IID_INotify, reinterpret_cast<void **>(&pNotify));
     if (MUX_SUCCEEDED(mr) && nullptr != pNotify)
     {
-        pNotify->Notify(static_cast<dbref>(target),
+        pNotify->Notify(target,
             reinterpret_cast<const UTF8 *>(msg));
         pNotify->Release();
     }
-    return 0;
+    lua_pushboolean(L, 1);
+    return 1;
 }
 
 // mux.name(dbref) — return object name.
 //
+// Permission model matches name(): if read_rem_name is off, requires
+// nearby_or_control, isPlayer, or Long_Fingers.
+//
 static int bridge_name(lua_State *L)
 {
-    int obj = static_cast<int>(luaL_checkinteger(L, 1));
+    lua_exec_ctx *ctx = get_exec_ctx(L);
+    if (nullptr == ctx) { lua_pushnil(L); return 1; }
 
-    mux_IObjectInfo *pOI = nullptr;
-    MUX_RESULT mr = mux_CreateInstance(CID_ObjectInfo, nullptr,
-        UseSameProcess, IID_IObjectInfo,
-        reinterpret_cast<void **>(&pOI));
-    if (MUX_SUCCEEDED(mr) && nullptr != pOI)
+    dbref obj = static_cast<dbref>(luaL_checkinteger(L, 1));
+
+    if (!Good_obj(obj))
     {
-        const UTF8 *pName = nullptr;
-        mr = pOI->GetName(static_cast<dbref>(obj), &pName);
-        pOI->Release();
-        if (MUX_SUCCEEDED(mr) && nullptr != pName)
+        lua_pushnil(L);
+        return 1;
+    }
+
+    if (!mudconf.read_rem_name)
+    {
+        if (  !Controls(ctx->executor, obj)
+           && !nearby(ctx->executor, obj)
+           && !isPlayer(obj)
+           && !Long_Fingers(ctx->executor))
         {
-            lua_pushstring(L, reinterpret_cast<const char *>(pName));
+            lua_pushnil(L);
             return 1;
         }
+    }
+
+    const UTF8 *pName = Name(obj);
+    if (nullptr != pName)
+    {
+        // For exits, return only the name before the first semicolon.
+        //
+        if (isExit(obj))
+        {
+            const char *semi = strchr(reinterpret_cast<const char *>(pName), ';');
+            if (semi)
+            {
+                lua_pushlstring(L, reinterpret_cast<const char *>(pName),
+                    semi - reinterpret_cast<const char *>(pName));
+                return 1;
+            }
+        }
+        lua_pushstring(L, reinterpret_cast<const char *>(pName));
+        return 1;
     }
     lua_pushnil(L);
     return 1;
@@ -136,26 +205,29 @@ static int bridge_owner(lua_State *L)
 
 // mux.location(dbref) — return location dbref.
 //
+// Permission model matches loc(): requires locatable(executor, obj,
+// enactor), which respects UNFINDABLE, nearby, see_all.
+//
 static int bridge_location(lua_State *L)
 {
-    int obj = static_cast<int>(luaL_checkinteger(L, 1));
+    lua_exec_ctx *ctx = get_exec_ctx(L);
+    if (nullptr == ctx) { lua_pushnil(L); return 1; }
 
-    mux_IObjectInfo *pOI = nullptr;
-    MUX_RESULT mr = mux_CreateInstance(CID_ObjectInfo, nullptr,
-        UseSameProcess, IID_IObjectInfo,
-        reinterpret_cast<void **>(&pOI));
-    if (MUX_SUCCEEDED(mr) && nullptr != pOI)
+    dbref obj = static_cast<dbref>(luaL_checkinteger(L, 1));
+
+    if (!Good_obj(obj))
     {
-        dbref loc;
-        mr = pOI->GetLocation(static_cast<dbref>(obj), &loc);
-        pOI->Release();
-        if (MUX_SUCCEEDED(mr))
-        {
-            lua_pushinteger(L, loc);
-            return 1;
-        }
+        lua_pushnil(L);
+        return 1;
     }
-    lua_pushnil(L);
+
+    if (!locatable(ctx->executor, obj, ctx->enactor))
+    {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    lua_pushinteger(L, Location(obj));
     return 1;
 }
 
@@ -415,28 +487,35 @@ static int bridge_iswizard(lua_State *L)
 
 // mux.controls(who, what) — check if who controls what.
 //
+// Permission model: executor can only query control relationships
+// where 'who' is themselves or an object they control.  This
+// prevents scripts from probing wizard control relationships.
+//
 static int bridge_controls(lua_State *L)
 {
-    int who = static_cast<int>(luaL_checkinteger(L, 1));
-    int what = static_cast<int>(luaL_checkinteger(L, 2));
+    lua_exec_ctx *ctx = get_exec_ctx(L);
+    if (nullptr == ctx) { lua_pushboolean(L, 0); return 1; }
 
-    mux_IPermissions *pPerms = nullptr;
-    MUX_RESULT mr = mux_CreateInstance(CID_Permissions, nullptr,
-        UseSameProcess, IID_IPermissions,
-        reinterpret_cast<void **>(&pPerms));
-    if (MUX_SUCCEEDED(mr) && nullptr != pPerms)
+    dbref who = static_cast<dbref>(luaL_checkinteger(L, 1));
+    dbref what = static_cast<dbref>(luaL_checkinteger(L, 2));
+
+    if (  !Good_obj(who)
+       || !Good_obj(what))
     {
-        bool bControls = false;
-        mr = pPerms->HasControl(static_cast<dbref>(who),
-            static_cast<dbref>(what), &bControls);
-        pPerms->Release();
-        if (MUX_SUCCEEDED(mr))
-        {
-            lua_pushboolean(L, bControls ? 1 : 0);
-            return 1;
-        }
+        lua_pushboolean(L, 0);
+        return 1;
     }
-    lua_pushboolean(L, 0);
+
+    // Restrict: executor must be 'who' or must control 'who'.
+    //
+    if (  who != ctx->executor
+       && !Controls(ctx->executor, who))
+    {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+
+    lua_pushboolean(L, Controls(who, what) ? 1 : 0);
     return 1;
 }
 

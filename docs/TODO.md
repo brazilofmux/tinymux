@@ -18,5 +18,3 @@
 ## Observability
 - [ ] **JIT Stats**: Expose per-expression compile time and instruction counts through `jitstats()`.
 
-## Architecture
-- [ ] **muxescape**: Move to its own `mux/muxescape/` subdir with separate Makefile.am.
