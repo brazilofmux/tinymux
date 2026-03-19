@@ -17,13 +17,17 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import org.tinymux.titan.data.World
+import org.tinymux.titan.data.WorldRepository
 import org.tinymux.titan.net.AnsiParser
 import org.tinymux.titan.net.MudConnection
 
@@ -40,6 +44,9 @@ class WorldTab(
 
 @Composable
 fun TitanApp() {
+    val context = LocalContext.current
+    val worldRepo = remember { WorldRepository(context) }
+
     val tabs = remember { mutableStateListOf(WorldTab("(System)")) }
     var activeTab by remember { mutableIntStateOf(0) }
     var inputText by remember { mutableStateOf("") }
@@ -49,6 +56,7 @@ fun TitanApp() {
     val listState = rememberLazyListState()
     val focusRequester = remember { FocusRequester() }
     var showConnectDialog by remember { mutableStateOf(false) }
+    var showWorldManager by remember { mutableStateOf(false) }
 
     val config = LocalConfiguration.current
     val isLandscape = config.screenWidthDp > config.screenHeightDp
@@ -117,7 +125,7 @@ fun TitanApp() {
     // Add welcome text to system tab
     LaunchedEffect(Unit) {
         appendLine(0, "Titan for Android")
-        appendLine(0, "Tap Connect to connect to a world.")
+        appendLine(0, "Tap Connect or Worlds to get started.")
         focusRequester.requestFocus()
     }
 
@@ -144,6 +152,7 @@ fun TitanApp() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             ToolbarButton("Connect") { showConnectDialog = true }
+            ToolbarButton("Worlds") { showWorldManager = true }
             ToolbarButton("DC") {
                 if (activeTab > 0) {
                     tabs.getOrNull(activeTab)?.connection?.disconnect()
@@ -265,11 +274,28 @@ fun TitanApp() {
     // Connect dialog
     if (showConnectDialog) {
         ConnectDialog(
-            onConnect = { host, port, ssl ->
+            worldRepo = worldRepo,
+            onConnect = { host, port, ssl, saveName ->
                 showConnectDialog = false
-                connectWorld("$host:$port", host, port, ssl)
+                val name = saveName.ifBlank { "$host:$port" }
+                if (saveName.isNotBlank()) {
+                    worldRepo.add(World(name = saveName, host = host, port = port, ssl = ssl))
+                }
+                connectWorld(name, host, port, ssl)
             },
             onDismiss = { showConnectDialog = false }
+        )
+    }
+
+    // World Manager dialog
+    if (showWorldManager) {
+        WorldManagerDialog(
+            worldRepo = worldRepo,
+            onConnect = { world ->
+                showWorldManager = false
+                connectWorld(world.name, world.host, world.port, world.ssl)
+            },
+            onDismiss = { showWorldManager = false }
         )
     }
 }
@@ -287,10 +313,15 @@ fun ToolbarButton(text: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun ConnectDialog(onConnect: (String, Int, Boolean) -> Unit, onDismiss: () -> Unit) {
+fun ConnectDialog(
+    worldRepo: WorldRepository,
+    onConnect: (host: String, port: Int, ssl: Boolean, saveName: String) -> Unit,
+    onDismiss: () -> Unit,
+) {
     var host by remember { mutableStateOf("") }
     var port by remember { mutableStateOf("") }
     var ssl by remember { mutableStateOf(false) }
+    var saveName by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -307,16 +338,246 @@ fun ConnectDialog(onConnect: (String, Int, Boolean) -> Unit, onDismiss: () -> Un
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth())
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = ssl, onCheckedChange = { ssl = it })
-                    Text("SSL/TLS")
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .clickable { ssl = !ssl }
+                ) {
+                    Switch(checked = ssl, onCheckedChange = { ssl = it })
+                    Spacer(Modifier.width(8.dp))
+                    Text("SSL/TLS", style = MaterialTheme.typography.bodyLarge)
                 }
+                OutlinedTextField(value = saveName, onValueChange = { saveName = it },
+                    label = { Text("Save as (optional)") },
+                    placeholder = { Text("e.g. MyMUD") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth())
             }
         },
         confirmButton = {
             TextButton(onClick = {
-                if (host.isNotBlank()) onConnect(host.trim(), port.trim().toIntOrNull() ?: 4201, ssl)
+                if (host.isNotBlank()) onConnect(host.trim(), port.trim().toIntOrNull() ?: 4201, ssl, saveName.trim())
             }) { Text("Connect") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+// ---------------------------------------------------------------------------
+// World Manager
+// ---------------------------------------------------------------------------
+
+@Composable
+fun WorldManagerDialog(
+    worldRepo: WorldRepository,
+    onConnect: (World) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var worlds by remember { mutableStateOf(worldRepo.load()) }
+    var editingWorld by remember { mutableStateOf<World?>(null) }
+    var showAdd by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf<World?>(null) }
+
+    fun refresh() { worlds = worldRepo.load() }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Worlds") },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                if (worlds.isEmpty()) {
+                    Text(
+                        "No saved worlds yet.",
+                        color = Color.Gray,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 320.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        worlds.forEach { world ->
+                            WorldRow(
+                                world = world,
+                                onConnect = { onConnect(world) },
+                                onEdit = { editingWorld = world },
+                                onDelete = { confirmDelete = world },
+                            )
+                            HorizontalDivider(color = Color(0xFF404040))
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { showAdd = true }) { Text("Add") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        }
+    )
+
+    // Add world
+    if (showAdd) {
+        EditWorldDialog(
+            title = "Add World",
+            initial = null,
+            onSave = { world ->
+                worldRepo.add(world)
+                refresh()
+                showAdd = false
+            },
+            onDismiss = { showAdd = false }
+        )
+    }
+
+    // Edit world
+    editingWorld?.let { world ->
+        EditWorldDialog(
+            title = "Edit World",
+            initial = world,
+            onSave = { updated ->
+                // If name changed, remove old entry
+                if (updated.name != world.name) worldRepo.remove(world.name)
+                worldRepo.add(updated)
+                refresh()
+                editingWorld = null
+            },
+            onDismiss = { editingWorld = null }
+        )
+    }
+
+    // Confirm delete
+    confirmDelete?.let { world ->
+        AlertDialog(
+            onDismissRequest = { confirmDelete = null },
+            title = { Text("Delete World") },
+            text = { Text("Remove \"${world.name}\"?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    worldRepo.remove(world.name)
+                    refresh()
+                    confirmDelete = null
+                }) { Text("Delete", color = Color(0xFFFF6666)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = null }) { Text("Cancel") }
+            }
+        )
+    }
+}
+
+@Composable
+private fun WorldRow(
+    world: World,
+    onConnect: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onConnect)
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                world.name,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+            )
+            Text(
+                buildString {
+                    append("${world.host}:${world.port}")
+                    if (world.ssl) append(" (ssl)")
+                    if (world.character.isNotBlank()) append(" - ${world.character}")
+                },
+                fontSize = 12.sp,
+                color = Color.Gray,
+            )
+        }
+        TextButton(onClick = onEdit, contentPadding = PaddingValues(horizontal = 8.dp)) {
+            Text("Edit", fontSize = 12.sp)
+        }
+        TextButton(onClick = onDelete, contentPadding = PaddingValues(horizontal = 8.dp)) {
+            Text("Del", fontSize = 12.sp, color = Color(0xFFFF6666))
+        }
+    }
+}
+
+@Composable
+fun EditWorldDialog(
+    title: String,
+    initial: World?,
+    onSave: (World) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember { mutableStateOf(initial?.name ?: "") }
+    var host by remember { mutableStateOf(initial?.host ?: "") }
+    var port by remember { mutableStateOf(initial?.port?.toString() ?: "") }
+    var ssl by remember { mutableStateOf(initial?.ssl ?: false) }
+    var character by remember { mutableStateOf(initial?.character ?: "") }
+    var notes by remember { mutableStateOf(initial?.notes ?: "") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
+                OutlinedTextField(value = name, onValueChange = { name = it },
+                    label = { Text("Name") }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = host, onValueChange = { host = it },
+                    label = { Text("Host") }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = port,
+                    onValueChange = { port = it.filter { c -> c.isDigit() } },
+                    label = { Text("Port") },
+                    placeholder = { Text("4201") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth())
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .clickable { ssl = !ssl }
+                ) {
+                    Switch(checked = ssl, onCheckedChange = { ssl = it })
+                    Spacer(Modifier.width(8.dp))
+                    Text("SSL/TLS", style = MaterialTheme.typography.bodyLarge)
+                }
+                OutlinedTextField(value = character, onValueChange = { character = it },
+                    label = { Text("Character (optional)") }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = notes, onValueChange = { notes = it },
+                    label = { Text("Notes (optional)") },
+                    maxLines = 3,
+                    modifier = Modifier.fillMaxWidth())
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                if (name.isNotBlank() && host.isNotBlank()) {
+                    onSave(World(
+                        name = name.trim(),
+                        host = host.trim(),
+                        port = port.trim().toIntOrNull() ?: 4201,
+                        ssl = ssl,
+                        character = character.trim(),
+                        notes = notes.trim(),
+                    ))
+                }
+            }) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
