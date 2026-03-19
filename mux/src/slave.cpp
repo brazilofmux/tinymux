@@ -207,6 +207,19 @@ int main(int argc, char *argv[])
         }
         arg[len] = '\0';
 
+        // Strip trailing whitespace (the GANL adapter sends a newline
+        // delimiter after the IP address).
+        //
+        while (len > 0 && (arg[len-1] == '\n' || arg[len-1] == '\r' || arg[len-1] == ' '))
+        {
+            arg[--len] = '\0';
+        }
+
+        if (len == 0)
+        {
+            continue;
+        }
+
         child = fork();
         switch (child)
         {
