@@ -44,6 +44,8 @@ import org.tinymux.titan.data.TriggerRepository
 import org.tinymux.titan.data.World
 import org.tinymux.titan.data.WorldRepository
 import android.content.Intent
+import org.tinymux.titan.data.SpawnConfig
+import org.tinymux.titan.data.SpawnRepository
 import org.tinymux.titan.net.AnsiParser
 import org.tinymux.titan.net.CertInfo
 import org.tinymux.titan.net.MudConnection
@@ -59,6 +61,8 @@ class WorldTab(
     val history: MutableList<String> = mutableListOf(),
     var hasActivity: Boolean = false,
     var disconnected: Boolean = false,
+    val spawnLines: MutableMap<String, SnapshotStateList<AnnotatedString>> = mutableMapOf(),
+    var activeSpawn: String = "",  // "" = main, otherwise spawn path
 )
 
 @Composable
@@ -66,6 +70,7 @@ fun TitanApp() {
     val context = LocalContext.current
     val worldRepo = remember { WorldRepository(context) }
     val triggerRepo = remember { TriggerRepository(context) }
+    val spawnRepo = remember { SpawnRepository(context) }
     val hookRepo = remember { HookRepository(context) }
     val triggerEngine = remember { TriggerEngine() }
     val sessionLogger = remember { SessionLogger(context) }
@@ -109,6 +114,12 @@ fun TitanApp() {
 
     fun currentTab() = tabs.getOrNull(activeTab)
 
+    fun activeLines(): List<AnnotatedString> {
+        val tab = currentTab() ?: return emptyList()
+        return if (tab.activeSpawn.isEmpty()) tab.lines
+        else tab.spawnLines[tab.activeSpawn] ?: emptyList()
+    }
+
     fun updateService() {
         val count = tabs.count { it.connection?.connected == true }
         if (count > 0) {
@@ -137,8 +148,22 @@ fun TitanApp() {
     fun appendLine(tabIndex: Int, line: String) {
         val parsed = AnsiParser.parse(line)
         tabs.getOrNull(tabIndex)?.let { tab ->
+            // Main spawn always gets the line
             tab.lines.add(parsed)
             while (tab.lines.size > scrollbackLimit) tab.lines.removeAt(0)
+
+            // Route to matching spawns
+            val plain = AnsiParser.stripAnsi(line)
+            for (spawn in spawnRepo.load()) {
+                if (spawn.matches(plain)) {
+                    val spawnBuf = tab.spawnLines.getOrPut(spawn.path) { mutableStateListOf() }
+                    val display = if (spawn.prefix.isNotBlank()) {
+                        AnsiParser.parse("${spawn.prefix}$line")
+                    } else parsed
+                    spawnBuf.add(display)
+                    while (spawnBuf.size > spawn.maxLines) spawnBuf.removeAt(0)
+                }
+            }
             if (tabIndex != activeTab) {
                 if (!tab.hasActivity) {
                     // First activity on background tab — fire ACTIVITY hooks
@@ -369,6 +394,55 @@ fun TitanApp() {
                     }
                 }
             }
+            "spawn" -> {
+                val parts = args.trim().split("\\s+".toRegex(), limit = 3)
+                when (parts.getOrNull(0)?.lowercase()) {
+                    "add" -> {
+                        if (parts.size < 3) {
+                            appendLine(idx, "% Usage: /spawn add <name> <pattern>")
+                        } else {
+                            val sName = parts[1]
+                            val pattern = parts[2]
+                            try {
+                                Regex(pattern)
+                                spawnRepo.add(SpawnConfig(name = sName, path = sName.lowercase(), patterns = listOf(pattern)))
+                                appendLine(idx, "% Spawn '$sName' added: /$pattern/")
+                            } catch (e: Exception) {
+                                appendLine(idx, "% Bad pattern: ${e.message}")
+                            }
+                        }
+                    }
+                    "remove", "del" -> {
+                        val sName = parts.getOrNull(1) ?: ""
+                        if (sName.isBlank()) {
+                            appendLine(idx, "% Usage: /spawn remove <name>")
+                        } else {
+                            spawnRepo.remove(sName.lowercase())
+                            appendLine(idx, "% Spawn '$sName' removed.")
+                        }
+                    }
+                    "list", null -> {
+                        val list = spawnRepo.load()
+                        if (list.isEmpty()) {
+                            appendLine(idx, "% No spawns defined. Use /spawn add <name> <pattern>")
+                        } else {
+                            appendLine(idx, "% Spawns:")
+                            list.forEach { s ->
+                                appendLine(idx, "%   ${s.name} (${s.path}): ${s.patterns.joinToString(", ") { "/$it/" }}")
+                            }
+                        }
+                    }
+                    "focus", "fg" -> {
+                        val sName = parts.getOrNull(1) ?: ""
+                        if (sName.isBlank() || sName.equals("main", ignoreCase = true)) {
+                            tab?.activeSpawn = ""
+                        } else {
+                            tab?.activeSpawn = sName.lowercase()
+                        }
+                    }
+                    else -> appendLine(idx, "% Usage: /spawn [add|remove|list|focus] ...")
+                }
+            }
             "clear" -> tab?.lines?.clear()
             "help" -> {
                 appendLine(idx, "% Commands:")
@@ -386,6 +460,10 @@ fun TitanApp() {
                 appendLine(idx, "%   /hook <name> <event> = <cmd>  - Define event hook")
                 appendLine(idx, "%   /unhook <name>                - Remove a hook")
                 appendLine(idx, "%   /hooks                        - List hooks")
+                appendLine(idx, "%   /spawn add <name> <pattern>  - Add output spawn")
+                appendLine(idx, "%   /spawn remove <name>          - Remove spawn")
+                appendLine(idx, "%   /spawn list                   - List spawns")
+                appendLine(idx, "%   /spawn focus <name|main>      - Switch spawn view")
                 appendLine(idx, "%   /clear                        - Clear scrollback")
                 appendLine(idx, "%   /help                         - Show this help")
             }
@@ -552,6 +630,47 @@ fun TitanApp() {
             }
         }
 
+        // Spawn selector bar (only when spawns are configured)
+        val spawns = spawnRepo.load()
+        if (spawns.isNotEmpty() && activeTab > 0) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .background(Color(0xFF1A2A1A))
+                    .height(28.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val tab = currentTab()
+                // Main button
+                val isMain = tab?.activeSpawn?.isEmpty() == true
+                Text(
+                    "Main",
+                    fontSize = 11.sp,
+                    color = if (isMain) Color.White else Color(0xFF80A080),
+                    modifier = Modifier
+                        .clickable { tab?.activeSpawn = "" }
+                        .background(if (isMain) Color(0xFF2A4A2A) else Color.Transparent)
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                )
+                spawns.forEach { spawn ->
+                    val isActive = tab?.activeSpawn == spawn.path
+                    val hasContent = tab?.spawnLines?.get(spawn.path)?.isNotEmpty() == true
+                    Text(
+                        spawn.name,
+                        fontSize = 11.sp,
+                        color = if (isActive) Color.White
+                                else if (hasContent) Color(0xFFA0C0A0)
+                                else Color(0xFF607060),
+                        modifier = Modifier
+                            .clickable { tab?.activeSpawn = spawn.path }
+                            .background(if (isActive) Color(0xFF2A4A2A) else Color.Transparent)
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
+        }
+
         // Find bar
         if (showFindBar) {
             val findFocusRequester = remember { FocusRequester() }
@@ -627,7 +746,7 @@ fun TitanApp() {
                     .fillMaxWidth()
                     .padding(horizontal = 4.dp),
             ) {
-                val lines = currentTab()?.lines ?: emptyList()
+                val lines = activeLines()
                 items(lines) { line ->
                     @Suppress("DEPRECATION")
                     ClickableText(
