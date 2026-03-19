@@ -53,19 +53,6 @@ slave_LDADD = $(LIBS)
 stubslave_SOURCES = stubslave.cpp
 stubslave_LDADD = libmux.so $(LIBS) $(STUBLIBS)
 
-# Version number routines
-# The DEBIAN_BUILD environment variable can be set to create deterministic builds
-# Example: DEBIAN_BUILD=1 ./configure && make
-version.o: version.cpp FORCE
-	if [ "x$(DEBIAN_BUILD)" = "x1" ]; then \
-		$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) -DMUX_BUILD_DATE="\"(Debian build)\"" -DMUX_BUILD_NUM="\"0\"" -c -o $@ $<; \
-	else \
-		$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) -DMUX_BUILD_DATE="\"`date`\"" -DMUX_BUILD_NUM="\"`sh ./buildnum.sh`\"" -c -o $@ $<; \
-	fi
-
-.PHONY: FORCE
-FORCE:
-
 # Installation
 bindir = $(abs_top_srcdir)/../game/bin
 
@@ -77,5 +64,4 @@ install-exec-hook:
 # Clean up additional files
 CLEANFILES = libmux.so
 
-# Additional distributions
-EXTRA_DIST = buildnum.sh
+EXTRA_DIST =
