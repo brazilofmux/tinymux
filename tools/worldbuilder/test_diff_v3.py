@@ -20,11 +20,12 @@ def test_attribute_level_diff():
     state_path = state_dir / "test_diff.state.yaml"
     
     state_data = {
-        'state_version': 3,
+        'state_version': 4,
         'zone': 'Test Zone',
         'objects': {
             'room1': {
                 'dbref': '#100',
+                'objid': '#100:1678901234',
                 'type': 'room',
                 'name': 'Old Name',
                 'description': 'Old description.',

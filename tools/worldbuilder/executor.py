@@ -137,11 +137,11 @@ class MuxConnection:
 # ---------------------------------------------------------------------------
 
 class StateFile:
-    """Tracks spec ID → dbref mappings and object content."""
+    """Tracks spec ID → dbref/objid mappings and object content."""
 
     def __init__(self, path):
         self.path = Path(path)
-        self.objects = {}    # spec_id -> {dbref, type, name, description, flags, attrs}
+        self.objects = {}    # spec_id -> {dbref, objid, type, name, description, flags, attrs}
         self.zone = None
         self.last_applied = None
         self.version = 2     # Default to v2 if not specified
@@ -164,7 +164,7 @@ class StateFile:
     def save(self):
         self.path.parent.mkdir(parents=True, exist_ok=True)
         data = {
-            'state_version': 3,
+            'state_version': 4,
             'zone': self.zone,
             'last_applied': time.strftime('%Y-%m-%dT%H:%M:%SZ'),
             'objects': self.objects,
@@ -172,10 +172,11 @@ class StateFile:
         with open(self.path, 'w') as f:
             yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
-    def set_room(self, spec_id, dbref, room):
+    def set_room(self, spec_id, dbref, room, objid=None):
         """Store room details in state."""
         self.objects[spec_id] = {
             'dbref': dbref,
+            'objid': objid,
             'type': 'room',
             'name': room.name,
             'description': room.description,
@@ -184,8 +185,8 @@ class StateFile:
             'content_hash': content_hash(room)
         }
 
-    def set_exit(self, spec_id, dbref, name):
-        self.objects[spec_id] = {'dbref': dbref, 'type': 'exit', 'name': name}
+    def set_exit(self, spec_id, dbref, name, objid=None):
+        self.objects[spec_id] = {'dbref': dbref, 'objid': objid, 'type': 'exit', 'name': name}
 
     def get_dbref(self, spec_id):
         obj = self.objects.get(spec_id)
@@ -263,7 +264,10 @@ def execute(spec, conn, state, dry_run=False, log_file=None):
             do_cmd(f'@teleport me={existing}')
             time.sleep(0.2)
             if not dry_run:
-                state.set_room(room_id, existing, room)
+                # Query objid for identity tracking
+                objid_resp = do_cmd(f'think [objid({existing})]')
+                objid = objid_resp.strip() if objid_resp else None
+                state.set_room(room_id, existing, room, objid=objid)
         else:
             log(f'\n--- Room: {room.name} ({room_id}) — creating ---')
             resp = do_cmd(f'@dig/teleport {room.name}')
@@ -277,8 +281,11 @@ def execute(spec, conn, state, dry_run=False, log_file=None):
                     # Fallback: try parsing @dig output
                     dbref = extract_dbref(resp)
                 if dbref:
-                    state.set_room(room_id, dbref, room)
-                    log(f'  [state] {room_id} = {dbref}')
+                    # Query objid for identity tracking
+                    objid_resp = do_cmd(f'think [objid({dbref})]')
+                    objid = objid_resp.strip() if objid_resp else None
+                    state.set_room(room_id, dbref, room, objid=objid)
+                    log(f'  [state] {room_id} = {dbref} (objid: {objid})')
                 else:
                     log(f'  [WARNING] Could not capture dbref for {room_id}')
             else:
@@ -335,8 +342,10 @@ def execute(spec, conn, state, dry_run=False, log_file=None):
         if not dry_run:
             dbref = extract_dbref(resp)
             if dbref:
+                objid_resp = do_cmd(f'think [objid({dbref})]')
+                objid = objid_resp.strip() if objid_resp else None
                 exit_id = f'exit_{ex.from_room}_{ex.to_room}'
-                state.set_exit(exit_id, dbref, forward_name)
+                state.set_exit(exit_id, dbref, forward_name, objid=objid)
 
         # Create back exit
         if ex.back_name:
@@ -350,8 +359,10 @@ def execute(spec, conn, state, dry_run=False, log_file=None):
             if not dry_run:
                 dbref = extract_dbref(resp)
                 if dbref:
+                    objid_resp = do_cmd(f'think [objid({dbref})]')
+                    objid = objid_resp.strip() if objid_resp else None
                     exit_id = f'exit_{ex.to_room}_{ex.from_room}'
-                    state.set_exit(exit_id, dbref, back_name)
+                    state.set_exit(exit_id, dbref, back_name, objid=objid)
 
     # Save state
     state.save()
@@ -390,6 +401,17 @@ def verify(spec, conn, state, log_file=None):
         if not dbref:
             issues.append(f"Room '{room_id}' ({room.name}): not in state file (never applied?)")
             continue
+
+        # Validate objid — detect dbref recycling
+        stored_objid = state.objects.get(room_id, {}).get('objid')
+        if stored_objid:
+            live_objid = query_one(f'think [objid({dbref})]')
+            if live_objid and live_objid != stored_objid:
+                issues.append(f"Room '{room_id}' ({dbref}): objid mismatch — stored=\"{stored_objid}\" live=\"{live_objid}\" (dbref was recycled!)")
+                continue
+            if not live_objid or live_objid.startswith('#-1'):
+                issues.append(f"Room '{room_id}' ({dbref}): object no longer exists")
+                continue
 
         # Check name
         live_name = query_one(f'think [name({dbref})]')
@@ -462,14 +484,15 @@ def rollback(spec, conn, state, dry_run=False, log_file=None):
     # Collect all dbrefs from state, exits first then rooms
     exits_to_destroy = []
     rooms_to_destroy = []
+    skipped = []
     for spec_id, obj in state.objects.items():
         dbref = obj.get('dbref', '')
         if not dbref or dbref.startswith('#DRY'):
             continue
         if obj.get('type') == 'exit':
-            exits_to_destroy.append((spec_id, dbref, obj.get('name', '')))
+            exits_to_destroy.append((spec_id, dbref, obj.get('name', ''), obj.get('objid')))
         elif obj.get('type') == 'room':
-            rooms_to_destroy.append((spec_id, dbref, obj.get('name', '')))
+            rooms_to_destroy.append((spec_id, dbref, obj.get('name', ''), obj.get('objid')))
 
     if not exits_to_destroy and not rooms_to_destroy:
         log("Nothing to rollback — state is empty.")
@@ -477,13 +500,31 @@ def rollback(spec, conn, state, dry_run=False, log_file=None):
 
     log(f"Rolling back: {len(exits_to_destroy)} exits + {len(rooms_to_destroy)} rooms")
 
+    def verify_objid(dbref, stored_objid, spec_id, name):
+        """Verify objid before destroying. Returns True if safe to destroy."""
+        if not stored_objid:
+            return True  # No objid stored (legacy state), proceed on dbref alone
+        if dry_run:
+            return True
+        live_objid = do_cmd(f'think [objid({dbref})]')
+        live_objid = live_objid.strip() if live_objid else ''
+        if live_objid and live_objid != stored_objid:
+            log(f"  [SKIP] {name} ({dbref}): objid mismatch — stored={stored_objid} live={live_objid} (dbref recycled, not ours!)")
+            skipped.append(spec_id)
+            return False
+        return True
+
     # Destroy exits first
-    for spec_id, dbref, name in exits_to_destroy:
+    for spec_id, dbref, name, objid in exits_to_destroy:
+        if not verify_objid(dbref, objid, spec_id, name):
+            continue
         log(f"\n--- Destroy exit: {name} ({dbref}) ---")
         do_cmd(f'@destroy {dbref}')
 
     # Then rooms
-    for spec_id, dbref, name in rooms_to_destroy:
+    for spec_id, dbref, name, objid in rooms_to_destroy:
+        if not verify_objid(dbref, objid, spec_id, name):
+            continue
         log(f"\n--- Destroy room: {name} ({dbref}) ---")
         do_cmd(f'@destroy/override {dbref}')
 

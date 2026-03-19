@@ -77,6 +77,11 @@ def get_exit_name(conn, exit_dbref):
     return query_one(conn, f'think [name({exit_dbref})]')
 
 
+def get_objid(conn, dbref):
+    """Get the objid (dbref:creation_timestamp) of an object."""
+    return query_one(conn, f'think [objid({dbref})]')
+
+
 def get_attrs(conn, dbref, skip=None, use_decomp=True):
     """Get user-settable attributes on an object.
 
@@ -158,12 +163,14 @@ def walk_zone(conn, start_dbref, max_depth=20):
         desc = get_desc(conn, dbref)
         flags = get_flags(conn, dbref)
         attrs = get_attrs(conn, dbref)
+        objid = get_objid(conn, dbref)
 
         rooms[dbref] = {
             'name': name,
             'description': desc,
             'flags': flags,
             'attrs': attrs,
+            'objid': objid,
         }
         print(f"  [{len(rooms)}] {dbref} {name}")
 
@@ -273,6 +280,7 @@ def generate_state(dbref_to_id, rooms):
         info = rooms.get(dbref, {})
         objects[spec_id] = {
             'dbref': dbref,
+            'objid': info.get('objid'),
             'type': 'room',
             'name': info.get('name', ''),
             'description': info.get('description', ''),
@@ -280,7 +288,7 @@ def generate_state(dbref_to_id, rooms):
             'attrs': info.get('attrs', {}),
         }
     return {
-        'state_version': 3,
+        'state_version': 4,
         'zone': None,
         'last_applied': time.strftime('%Y-%m-%dT%H:%M:%SZ'),
         'objects': objects,

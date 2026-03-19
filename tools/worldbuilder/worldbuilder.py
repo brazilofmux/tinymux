@@ -792,7 +792,7 @@ class Change:
 
 
 def load_state(state_path):
-    """Load a saved state file. Returns dict of spec_id -> {dbref, type, name, desc, attrs, flags}."""
+    """Load a saved state file. Returns dict of spec_id -> {dbref, objid, type, name, desc, attrs, flags}."""
     path = Path(state_path)
     if not path.exists():
         return {}
