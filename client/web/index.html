@@ -97,6 +97,16 @@
         </div>
     </dialog>
 
+    <!-- MCP Editor dialog -->
+    <dialog id="mcp-editor-dialog">
+        <h3 id="mcp-edit-title">Edit</h3>
+        <textarea id="mcp-edit-text" rows="15" cols="60" style="font-family:monospace;font-size:13px;"></textarea>
+        <div class="dialog-buttons">
+            <button id="mcp-edit-save">Save</button>
+            <button id="mcp-edit-cancel">Cancel</button>
+        </div>
+    </dialog>
+
     <!-- Find dialog -->
     <dialog id="find-dialog">
         <h3>Find in Scrollback</h3>
@@ -109,6 +119,11 @@
     </dialog>
 
     <script src="js/triggers.js"></script>
+    <script src="js/timers.js"></script>
+    <script src="js/hooks.js"></script>
+    <script src="js/spawns.js"></script>
+    <script src="js/variables.js"></script>
+    <script src="js/mcp.js"></script>
     <script src="js/telnet.js"></script>
     <script src="js/connection.js"></script>
     <script src="js/terminal.js"></script>

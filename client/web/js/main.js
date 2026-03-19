@@ -9,12 +9,25 @@ const app = {
     historyPos: {},     // name -> int
     savedInput: {},     // name -> string
     triggerDB: new TriggerDB(),
+    timerDB: new TimerDB(),
+    hookDB: new HookDB(),
+    spawnDB: new SpawnDB(),
+    variables: new VariableStore(),
+    mcpParsers: {},     // name -> McpParser
+    spawnLines: {},     // tabName -> {spawnPath -> [lines]}
+    activeSpawn: {},    // tabName -> spawnPath ('' = main)
+    logActive: false,
+    logLines: [],
 };
 
 // Built-in commands for auto-complete
 const COMMANDS = [
     '/connect', '/disconnect', '/worlds', '/find', '/clear',
-    '/triggers', '/def', '/undef', '/list', '/help', '/quit',
+    '/triggers', '/def', '/undef', '/list', '/help',
+    '/repeat', '/killtimer', '/timers',
+    '/hook', '/unhook', '/hooks',
+    '/spawn', '/log', '/speak',
+    '/set', '/unset', '/vars',
 ];
 
 const $ = (sel) => document.querySelector(sel);
@@ -95,10 +108,29 @@ function reconnectTab(name) {
     app.connections[name] = newConn;
     const tab = app.tabs.find(t => t.name === name);
 
+    // Re-wire MCP
+    const mcp = new McpParser();
+    app.mcpParsers[name] = mcp;
+    mcp.sendRaw = (raw) => newConn.sendLine(raw);
+    mcp.onEditRequest = (ref, editName, type, content) => showMcpEditor(name, ref, editName, type, content);
+
     newConn.onLine = (line) => {
+        if (mcp.processLine(line)) return;
         const tr = app.triggerDB.check(line);
         for (const cmd of tr.commands) handleInput(cmd);
-        if (!tr.gagged) appendLine(name, line);
+        if (tr.speakText && window.speechSynthesis) {
+            speechSynthesis.speak(new SpeechSynthesisUtterance(tr.speakText));
+        }
+        if (!tr.gagged) {
+            const display = tr.displayLine || line;
+            appendLine(name, display);
+            const plain = stripAnsi(display);
+            for (const path of app.spawnDB.match(plain)) {
+                if (!app.spawnLines[name][path]) app.spawnLines[name][path] = [];
+                app.spawnLines[name][path].push(display);
+            }
+        }
+        if (app.logActive) app.logLines.push(stripAnsi(line));
     };
     newConn.onPrompt = (prompt) => appendLine(name, prompt);
     newConn.onConnect = () => {
@@ -106,10 +138,13 @@ function reconnectTab(name) {
         appendLine(name, '% Reconnected.');
         updateStatus();
         renderTabs();
+        for (const cmd of app.hookDB.fireEvent('CONNECT')) newConn.sendLine(cmd);
     };
     newConn.onDisconnect = () => {
         if (tab) tab.disconnected = true;
         appendLine(name, '% Connection lost.');
+        app.timerDB.cancelAll();
+        for (const cmd of app.hookDB.fireEvent('DISCONNECT')) appendLine(name, '% [hook] ' + cmd);
         updateStatus();
         renderTabs();
     };
@@ -175,21 +210,53 @@ function updateStatus() {
     }
     const nconn = Object.values(app.connections).filter(c => c.connected).length;
     if (nconn > 1) s += `  [${nconn} conn]`;
+    if (app.logActive) s += ' [log]';
     bar.textContent = s;
 }
 
 // -- Connection --
 
-function connectWorld(name, host, port, ssl) {
+function connectWorld(name, host, port, ssl, loginCommands = []) {
     addTab(name);
     const conn = new Connection(name, host, port, ssl);
     app.connections[name] = conn;
+    app.spawnLines[name] = {};
+    app.activeSpawn[name] = '';
+
+    // MCP parser per connection
+    const mcp = new McpParser();
+    app.mcpParsers[name] = mcp;
+    mcp.sendRaw = (raw) => conn.sendLine(raw);
+    mcp.onEditRequest = (ref, editName, type, content) => {
+        showMcpEditor(name, ref, editName, type, content);
+    };
 
     const tab = app.tabs.find(t => t.name === name);
     conn.onLine = (line) => {
+        // MCP intercept
+        if (mcp.processLine(line)) return;
+
         const tr = app.triggerDB.check(line);
         for (const cmd of tr.commands) handleInput(cmd);
-        if (!tr.gagged) appendLine(name, line);
+        if (tr.speakText && window.speechSynthesis) {
+            const utter = new SpeechSynthesisUtterance(tr.speakText);
+            speechSynthesis.speak(utter);
+        }
+        if (!tr.gagged) {
+            const display = tr.displayLine || line;
+            appendLine(name, display);
+            // Route to spawns
+            const plain = stripAnsi(display);
+            const matched = app.spawnDB.match(plain);
+            for (const path of matched) {
+                if (!app.spawnLines[name][path]) app.spawnLines[name][path] = [];
+                app.spawnLines[name][path].push(display);
+                while (app.spawnLines[name][path].length > 20000) app.spawnLines[name][path].shift();
+            }
+        }
+        if (app.logActive) {
+            app.logLines.push(stripAnsi(line));
+        }
     };
     conn.onPrompt = (prompt) => appendLine(name, prompt);
     conn.onConnect = () => {
@@ -197,10 +264,16 @@ function connectWorld(name, host, port, ssl) {
         appendLine(name, '% Connected to ' + host + ':' + port);
         updateStatus();
         renderTabs();
+        for (const cmd of app.hookDB.fireEvent('CONNECT')) conn.sendLine(cmd);
+        for (const cmd of loginCommands) conn.sendLine(cmd);
     };
     conn.onDisconnect = () => {
         if (tab) tab.disconnected = true;
         appendLine(name, '% Connection lost.');
+        app.timerDB.cancelAll();
+        for (const cmd of app.hookDB.fireEvent('DISCONNECT')) {
+            appendLine(name, '% [hook] ' + cmd);
+        }
         updateStatus();
         renderTabs();
     };
@@ -275,8 +348,204 @@ function handleInput(text) {
             }
             if (app.triggerDB.list().length === 0) appendLine(app.activeTab, '% No triggers defined.');
             return;
+        case '/repeat': {
+            // /repeat name seconds command
+            if (parts.length >= 4) {
+                const sec = parseFloat(parts[2]);
+                if (sec > 0) {
+                    app.timerDB.add(parts[1], parts.slice(3).join(' '), sec * 1000);
+                    appendLine(app.activeTab, `% Timer '${parts[1]}' set: every ${sec}s`);
+                } else {
+                    appendLine(app.activeTab, '% Invalid interval.');
+                }
+            } else {
+                appendLine(app.activeTab, '% Usage: /repeat <name> <seconds> <command>');
+            }
+            return;
+        }
+        case '/killtimer':
+        case '/cancel':
+            if (parts[1]) {
+                if (app.timerDB.remove(parts[1])) appendLine(app.activeTab, `% Timer '${parts[1]}' cancelled.`);
+                else appendLine(app.activeTab, `% No timer named '${parts[1]}'.`);
+            } else {
+                appendLine(app.activeTab, '% Usage: /killtimer <name>');
+            }
+            return;
+        case '/timers': {
+            const tl = app.timerDB.list();
+            if (!tl.length) { appendLine(app.activeTab, '% No active timers.'); }
+            else {
+                appendLine(app.activeTab, '% Active timers:');
+                for (const t of tl) {
+                    const shots = t.shotsRemaining < 0 ? 'inf' : t.shotsRemaining;
+                    appendLine(app.activeTab, `%   ${t.name}: every ${t.intervalMs/1000}s, shots=${shots} -> ${t.command}`);
+                }
+            }
+            return;
+        }
+        case '/hook': {
+            // /hook name event = command
+            const hArgs = text.slice(6);
+            const eq = hArgs.indexOf('=');
+            if (eq < 0) {
+                appendLine(app.activeTab, '% Usage: /hook <name> <event> = <command>');
+                appendLine(app.activeTab, '% Events: ' + HookDB.EVENTS.join(', '));
+            } else {
+                const before = hArgs.slice(0, eq).trim().split(/\s+/);
+                const body = hArgs.slice(eq + 1).trim();
+                if (before.length >= 2) {
+                    const event = before[1].toUpperCase();
+                    if (HookDB.EVENTS.includes(event)) {
+                        app.hookDB.add({ name: before[0], event, body });
+                        Settings.set('hooks', app.hookDB.toJSON());
+                        appendLine(app.activeTab, `% Hook '${before[0]}' on ${event} -> ${body}`);
+                    } else {
+                        appendLine(app.activeTab, `% Unknown event '${event}'.`);
+                    }
+                } else {
+                    appendLine(app.activeTab, '% Usage: /hook <name> <event> = <command>');
+                }
+            }
+            return;
+        }
+        case '/unhook':
+            if (parts[1]) {
+                app.hookDB.remove(parts[1]);
+                Settings.set('hooks', app.hookDB.toJSON());
+                appendLine(app.activeTab, `% Hook '${parts[1]}' removed.`);
+            } else {
+                appendLine(app.activeTab, '% Usage: /unhook <name>');
+            }
+            return;
+        case '/hooks': {
+            const hl = app.hookDB.list();
+            if (!hl.length) appendLine(app.activeTab, '% No hooks defined.');
+            else {
+                appendLine(app.activeTab, '% Hooks:');
+                for (const h of hl) appendLine(app.activeTab, `%   ${h.name}: ${h.event} -> ${h.body}`);
+            }
+            return;
+        }
+        case '/spawn': {
+            const sub = (parts[1] || '').toLowerCase();
+            if (sub === 'add' && parts.length >= 4) {
+                try {
+                    new RegExp(parts[3]);
+                    app.spawnDB.add({ name: parts[2], patterns: [parts[3]] });
+                    Settings.set('spawns', app.spawnDB.toJSON());
+                    appendLine(app.activeTab, `% Spawn '${parts[2]}' added: /${parts[3]}/`);
+                } catch (e) {
+                    appendLine(app.activeTab, '% Bad pattern: ' + e.message);
+                }
+            } else if ((sub === 'remove' || sub === 'del') && parts[2]) {
+                app.spawnDB.remove(parts[2].toLowerCase());
+                Settings.set('spawns', app.spawnDB.toJSON());
+                appendLine(app.activeTab, `% Spawn '${parts[2]}' removed.`);
+            } else if (sub === 'list' || !sub) {
+                const sl = app.spawnDB.list();
+                if (!sl.length) appendLine(app.activeTab, '% No spawns defined.');
+                else {
+                    appendLine(app.activeTab, '% Spawns:');
+                    for (const s of sl) appendLine(app.activeTab, `%   ${s.name} (${s.path}): ${s.patterns.map(p => '/' + p + '/').join(', ')}`);
+                }
+            } else if ((sub === 'focus' || sub === 'fg') && parts[2]) {
+                const sp = parts[2].toLowerCase() === 'main' ? '' : parts[2].toLowerCase();
+                app.activeSpawn[app.activeTab] = sp;
+                renderOutput();
+            } else {
+                appendLine(app.activeTab, '% Usage: /spawn [add|remove|list|focus] ...');
+            }
+            return;
+        }
+        case '/log':
+            if (app.logActive) {
+                app.logActive = false;
+                // Download log
+                const blob = new Blob([app.logLines.join('\n')], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `titan_${new Date().toISOString().replace(/[:.]/g, '-')}.log`;
+                a.click();
+                URL.revokeObjectURL(url);
+                appendLine(app.activeTab, '% Logging stopped. File downloaded.');
+                app.logLines = [];
+            } else {
+                app.logActive = true;
+                app.logLines = [];
+                appendLine(app.activeTab, '% Logging started. Use /log again to stop and download.');
+            }
+            updateStatus();
+            return;
+        case '/speak':
+            if (parts.length > 1 && window.speechSynthesis) {
+                const utter = new SpeechSynthesisUtterance(parts.slice(1).join(' '));
+                speechSynthesis.speak(utter);
+            } else {
+                appendLine(app.activeTab, '% Usage: /speak <text>');
+            }
+            return;
+        case '/set': {
+            if (parts.length >= 3) {
+                const k = parts[1], v = parts.slice(2).join(' ');
+                if (k.startsWith('temp.')) app.variables.temp[k.slice(5)] = v;
+                else if (k.startsWith('worldtemp.')) app.variables.worldTemp[k.slice(10)] = v;
+                else app.variables.temp[k] = v;
+                appendLine(app.activeTab, `% Set ${k} = ${v}`);
+            } else {
+                appendLine(app.activeTab, '% Usage: /set <var> <value>');
+            }
+            return;
+        }
+        case '/unset':
+            if (parts[1]) {
+                const k = parts[1];
+                delete app.variables.temp[k.replace(/^temp\./, '')];
+                delete app.variables.worldTemp[k.replace(/^worldtemp\./, '')];
+                appendLine(app.activeTab, `% Unset ${k}`);
+            } else {
+                appendLine(app.activeTab, '% Usage: /unset <var>');
+            }
+            return;
+        case '/vars': {
+            const t = Object.entries(app.variables.temp);
+            const wt = Object.entries(app.variables.worldTemp);
+            if (!t.length && !wt.length) appendLine(app.activeTab, '% No user variables set.');
+            else {
+                appendLine(app.activeTab, '% Variables:');
+                for (const [k,v] of t) appendLine(app.activeTab, `%   temp.${k} = ${v}`);
+                for (const [k,v] of wt) appendLine(app.activeTab, `%   worldtemp.${k} = ${v}`);
+            }
+            return;
+        }
         case '/help':
-            appendLine(app.activeTab, '% Commands: /connect /disconnect /worlds /triggers /find /clear /def /undef /list /help');
+            appendLine(app.activeTab, '% Commands:');
+            appendLine(app.activeTab, '%   /connect                       - Connect dialog');
+            appendLine(app.activeTab, '%   /disconnect                    - Close connection');
+            appendLine(app.activeTab, '%   /worlds                        - World Manager');
+            appendLine(app.activeTab, '%   /triggers                      - Trigger Manager');
+            appendLine(app.activeTab, '%   /def <name> <pattern> <action> - Define trigger');
+            appendLine(app.activeTab, '%   /undef <name>                  - Remove trigger');
+            appendLine(app.activeTab, '%   /list                          - List triggers');
+            appendLine(app.activeTab, '%   /find                          - Find in scrollback');
+            appendLine(app.activeTab, '%   /log                           - Toggle logging');
+            appendLine(app.activeTab, '%   /repeat <name> <sec> <cmd>     - Create timer');
+            appendLine(app.activeTab, '%   /killtimer <name>              - Cancel timer');
+            appendLine(app.activeTab, '%   /timers                        - List timers');
+            appendLine(app.activeTab, '%   /hook <name> <event> = <cmd>   - Define hook');
+            appendLine(app.activeTab, '%   /unhook <name>                 - Remove hook');
+            appendLine(app.activeTab, '%   /hooks                         - List hooks');
+            appendLine(app.activeTab, '%   /spawn add <name> <pattern>    - Add spawn');
+            appendLine(app.activeTab, '%   /spawn remove <name>           - Remove spawn');
+            appendLine(app.activeTab, '%   /spawn list                    - List spawns');
+            appendLine(app.activeTab, '%   /spawn focus <name|main>       - Switch view');
+            appendLine(app.activeTab, '%   /set <var> <value>             - Set variable');
+            appendLine(app.activeTab, '%   /unset <var>                   - Remove variable');
+            appendLine(app.activeTab, '%   /vars                          - List variables');
+            appendLine(app.activeTab, '%   /speak <text>                  - Text-to-speech');
+            appendLine(app.activeTab, '%   /clear                         - Clear output');
+            appendLine(app.activeTab, '%   /help                          - This help');
             return;
         }
         // Unknown /command — don't send to server, show error
@@ -446,6 +715,23 @@ function handleKeyDown(e) {
     }
 }
 
+// -- Helpers --
+
+function stripAnsi(text) {
+    return text.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '');
+}
+
+function showMcpEditor(tabName, reference, name, type, content) {
+    const dlg = $('#mcp-editor-dialog');
+    if (!dlg) return; // dialog not in HTML yet
+    $('#mcp-edit-title').textContent = 'Edit: ' + name;
+    $('#mcp-edit-text').value = content;
+    dlg._tabName = tabName;
+    dlg._reference = reference;
+    dlg._type = type;
+    dlg.showModal();
+}
+
 // -- Init --
 
 function init() {
@@ -540,9 +826,19 @@ function init() {
     });
     $('#find-close').addEventListener('click', () => $('#find-dialog').close());
 
-    // Load triggers from settings
+    // Load triggers, hooks, spawns from settings
     const savedTriggers = Settings.get('triggers') || [];
     app.triggerDB.loadFrom(savedTriggers);
+    const savedHooks = Settings.get('hooks') || [];
+    app.hookDB.loadFrom(savedHooks);
+    const savedSpawns = Settings.get('spawns') || [];
+    app.spawnDB.loadFrom(savedSpawns);
+
+    // Timer fire callback
+    app.timerDB.onFire = (name, command) => {
+        const conn = app.connections[app.activeTab];
+        if (conn && conn.connected) conn.sendLine(command);
+    };
 
     // Toolbar buttons
     $('#btn-connect').addEventListener('click', showConnectDialog);
@@ -623,6 +919,24 @@ function init() {
             }
         }
     });
+
+    // MCP editor dialog
+    const mcpSave = $('#mcp-edit-save');
+    const mcpCancel = $('#mcp-edit-cancel');
+    if (mcpSave) {
+        mcpSave.addEventListener('click', () => {
+            const dlg = $('#mcp-editor-dialog');
+            const mcp = app.mcpParsers[dlg._tabName];
+            if (mcp) {
+                mcp.sendEditSet(dlg._reference, dlg._type, $('#mcp-edit-text').value);
+                appendLine(dlg._tabName, '% MCP edit saved: ' + dlg._reference);
+            }
+            dlg.close();
+        });
+    }
+    if (mcpCancel) {
+        mcpCancel.addEventListener('click', () => $('#mcp-editor-dialog').close());
+    }
 
     // Periodic status update
     setInterval(updateStatus, 2000);
