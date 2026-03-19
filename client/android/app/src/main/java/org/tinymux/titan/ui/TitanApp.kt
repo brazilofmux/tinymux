@@ -114,6 +114,7 @@ fun TitanApp() {
     var showWorldManager by remember { mutableStateOf(false) }
     var showTriggerManager by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
+    var showDpad by remember { mutableStateOf(false) }
     var mcpEditState by remember { mutableStateOf<McpEditState?>(null) }
     var showFindBar by remember { mutableStateOf(false) }
     var findQuery by remember { mutableStateOf("") }
@@ -639,6 +640,7 @@ fun TitanApp() {
             ToolbarButton("Worlds") { showWorldManager = true }
             ToolbarButton("Trig") { showTriggerManager = true }
             ToolbarButton("Find") { showFindBar = !showFindBar }
+            ToolbarButton("Move") { showDpad = !showDpad }
             ToolbarButton("Cfg") { showSettings = true }
             ToolbarButton("DC") {
                 if (activeTab > 0) {
@@ -931,6 +933,60 @@ fun TitanApp() {
             ToolbarButton("Send") { handleInput(inputText) }
         }
 
+        // Directional movement pad
+        if (showDpad) {
+            val dpadSend = { dir: String ->
+                val conn = currentTab()?.connection
+                if (conn != null && conn.connected) {
+                    conn.sendLine(dir)
+                    if (!conn.telnet.remoteEcho) {
+                        appendLine(activeTab, "> $dir")
+                    }
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF1A1A1A))
+                    .padding(vertical = 4.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // Top row: Up + North
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        DpadButton("U", Color(0xFF606080)) { dpadSend("u") }
+                        DpadButton("N", Color(0xFF80A080)) { dpadSend("n") }
+                        DpadButton("NE", Color(0xFF607060)) { dpadSend("ne") }
+                    }
+                    // Middle row: West + Look + East
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(vertical = 2.dp),
+                    ) {
+                        DpadButton("NW", Color(0xFF607060)) { dpadSend("nw") }
+                        DpadButton("W", Color(0xFF80A080)) { dpadSend("w") }
+                        DpadButton("\u2316", Color(0xFF909090)) { dpadSend("look") }
+                        DpadButton("E", Color(0xFF80A080)) { dpadSend("e") }
+                        DpadButton("SE", Color(0xFF607060)) { dpadSend("se") }
+                    }
+                    // Bottom row: Down + South
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        DpadButton("SW", Color(0xFF607060)) { dpadSend("sw") }
+                        DpadButton("S", Color(0xFF80A080)) { dpadSend("s") }
+                        DpadButton("D", Color(0xFF606080)) { dpadSend("d") }
+                    }
+                }
+            }
+        }
+
         // Status bar — hidden in landscape when keyboard is up to save space
         if (!isLandscape || lineCount > 0) {
             val tab = currentTab()
@@ -1038,6 +1094,32 @@ fun ToolbarButton(text: String, onClick: () -> Unit) {
         modifier = Modifier.height(28.dp)
     ) {
         Text(text, fontSize = 12.sp)
+    }
+}
+
+@Composable
+fun DpadButton(label: String, color: Color, onClick: () -> Unit) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(44.dp)
+            .background(
+                color = color.copy(alpha = 0.3f),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+            )
+            .border(
+                width = 1.dp,
+                color = color.copy(alpha = 0.6f),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+            )
+            .clickable(onClick = onClick),
+    ) {
+        Text(
+            label,
+            fontSize = if (label.length > 1) 10.sp else 13.sp,
+            fontWeight = FontWeight.Bold,
+            color = color,
+        )
     }
 }
 
