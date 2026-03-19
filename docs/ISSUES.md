@@ -8,14 +8,9 @@ Tracking backport items and design gaps on the brazil branch.
 
 ### 1. strip_fancy_quotes — smart quotes in %0
 
-**Status**: Open.
-**Commit**: 7eb138de (Normalize smart quotes for @listen/^-listen/@filter
-pattern matching).
-**Problem**: The normalization strips smart quotes from `%0` in @aahear
-triggers, not just from the pattern matching comparison.
-**Desired behavior**: Smart quotes shown in output AND in `%0`, but ASCII
-`"` in @listen patterns still matches smart quotes.
-**Fix needed**: Both brazil and master/2.13.
+**Status**: Fixed on brazil (aa40a46c3).  Needs backport to master.
+**Fix**: Match on normalized copy, re-capture from original so %0
+retains fancy quotes.
 
 ---
 

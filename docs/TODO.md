@@ -1,7 +1,7 @@
 # TinyMUX 2.14 — Open Work Items
 
 ## Stability & Bug Fixes
-- [ ] **ISSUES #1**: Fix strip_fancy_quotes leaking into `%0` (backport to master).
+- [ ] **ISSUES #1**: Backport strip_fancy_quotes %0 fix to master.
 
 ## Performance
 - [ ] **SSA Optimizations**: Global Value Numbering (GVN). Postponed — hangs on deep linear idom chains. Needs HIR dump diagnostics first.
