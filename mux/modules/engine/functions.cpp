@@ -14011,6 +14011,8 @@ static FUN builtin_function_list[] =
     {T("R"),           fun_r,          MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("RAND"),        fun_rand,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("REGMATCH"),    fun_regmatch,   MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {T("REGREP"),      fun_regrep,     MAX_ARG, 3,       3,         0, CA_PUBLIC},
+    {T("REGREPI"),     fun_regrepi,    MAX_ARG, 3,       3,         0, CA_PUBLIC},
     {T("REGMATCHI"),   fun_regmatchi,  MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("REGRAB"),      fun_regrab,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("REGRABALL"),   fun_regraball,  MAX_ARG, 2,       3,         0, CA_PUBLIC},

@@ -1784,6 +1784,122 @@ FUNCTION(fun_grepi)
     grep_handler(buff, bufc, executor, fargs, true);
 }
 
+// regrep()/regrepi() — regex-based attribute value searching.
+// Like grep()/grepi() but uses PCRE2 regular expressions instead of
+// wildcard patterns.
+//
+static UTF8 *regrep_util(dbref player, dbref thing, const UTF8 *pattern,
+    const UTF8 *lookfor, bool insensitive)
+{
+    olist_push();
+    find_wild_attrs(player, thing, pattern, false, false, false);
+
+    // Compile the regex.
+    //
+    int errcode;
+    PCRE2_SIZE erroffset;
+    uint32_t options = PCRE2_UTF;
+    if (insensitive) options |= PCRE2_CASELESS;
+    pcre2_code *re = pcre2_compile_8(lookfor, PCRE2_ZERO_TERMINATED,
+        options, &errcode, &erroffset, nullptr);
+    if (!re)
+    {
+        olist_pop();
+        UTF8 *tbuf1 = alloc_lbuf("regrep_util");
+        mux_strncpy(tbuf1, T("#-1 REGEXP ERROR"), LBUF_SIZE-1);
+        return tbuf1;
+    }
+    pcre2_match_data *match_data =
+        pcre2_match_data_create_from_pattern(re, nullptr);
+
+    UTF8 *tbuf1 = alloc_lbuf("regrep_util");
+    UTF8 *bp = tbuf1;
+
+    dbref aowner;
+    int aflags;
+    for (int ca = olist_first(); ca != NOTHING && !alarm_clock.alarmed;
+         ca = olist_next())
+    {
+        size_t nText;
+        UTF8 *attrib = atr_get_LEN(thing, ca, &aowner, &aflags, &nText);
+        int matches = pcre2_match(re, attrib, nText, 0, 0,
+            match_data, nullptr);
+        if (matches >= 0)
+        {
+            if (bp != tbuf1) safe_chr(' ', tbuf1, &bp);
+            ATTR *ap = atr_num(ca);
+            const UTF8 *pName = T("(WARNING: Bad Attribute Number)");
+            if (ap)
+            {
+                pName = ap->name;
+            }
+            safe_str(pName, tbuf1, &bp);
+        }
+        free_lbuf(attrib);
+    }
+    *bp = '\0';
+
+    pcre2_match_data_free(match_data);
+    pcre2_code_free(re);
+    olist_pop();
+    return tbuf1;
+}
+
+static void regrep_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
+    UTF8 *fargs[], bool bCaseInsens)
+{
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(it))
+    {
+        safe_match_result(it, buff, bufc);
+        return;
+    }
+
+    if (!Examinable(executor, it))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    if (!fargs[1] || !*fargs[1])
+    {
+        safe_str(T("#-1 NO SUCH ATTRIBUTE"), buff, bufc);
+        return;
+    }
+    if (!fargs[2] || !*fargs[2])
+    {
+        safe_str(T("#-1 INVALID GREP PATTERN"), buff, bufc);
+        return;
+    }
+    UTF8 *tp = regrep_util(executor, it, fargs[1], fargs[2], bCaseInsens);
+    safe_str(tp, buff, bufc);
+    free_lbuf(tp);
+}
+
+FUNCTION(fun_regrep)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    regrep_handler(buff, bufc, executor, fargs, false);
+}
+
+FUNCTION(fun_regrepi)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    regrep_handler(buff, bufc, executor, fargs, true);
+}
+
 // Borrowed from PennMUSH 1.50
 //
 FUNCTION(fun_alphamax)

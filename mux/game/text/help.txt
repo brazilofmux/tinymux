@@ -13391,6 +13391,41 @@ REGRABALL()
 
   Related Topics: regrab(), regrabi(), regraballi(), regexp syntax.
 
+& REGREP()
+REGREP()
+
+  FUNCTION: regrep(<object>, <attribute pattern>, <regexp>)
+
+  This function searches the attributes on <object> whose names match
+  <attribute pattern> (which may contain wildcards) for values that
+  contain a match for the PCRE regular expression <regexp>.  It returns
+  a space-separated list of the names of matching attributes.
+
+  The regular expression match is case-sensitive.  Use regrepi() for a
+  case-insensitive version.
+
+  You must be able to examine the object to use this function.
+
+  Examples:
+    > say regrep(me,*,^Hello)
+    DESC GREET
+
+  Related Topics: regrepi(), grep(), grepi(), regexp syntax.
+
+& REGREPI()
+REGREPI()
+
+  FUNCTION: regrepi(<object>, <attribute pattern>, <regexp>)
+
+  This function is identical to regrep(), except the regular expression
+  match is case-insensitive.
+
+  Examples:
+    > say regrepi(me,CMD_*,\bfoo\b)
+    CMD_FOO CMD_FOOBAR
+
+  Related Topics: regrep(), grep(), grepi(), regexp syntax.
+
 & REGEDIT()
 REGEDIT()
 

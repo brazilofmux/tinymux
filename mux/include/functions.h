@@ -162,6 +162,8 @@ XFUNCTION(fun_grab);
 XFUNCTION(fun_graball);
 XFUNCTION(fun_grep);
 XFUNCTION(fun_grepi);
+XFUNCTION(fun_regrep);
+XFUNCTION(fun_regrepi);
 XFUNCTION(fun_hasattr);
 XFUNCTION(fun_hasattrp);
 XFUNCTION(fun_hastype);
