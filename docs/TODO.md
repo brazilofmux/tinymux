@@ -2,14 +2,13 @@
 
 ## Stability & Bug Fixes
 - [ ] **ISSUES #2**: Investigate lost `AST_BRACEGROUP` nodes during re-parse/evaluation.
-- [ ] **ISSUES #3**: Fix `%q<` malformed angle substitution fallback regression (backport to master).
-- [ ] **ISSUES #4**: Fix strip_fancy_quotes leaking into `%0` (backport to master).
-- [ ] **ISSUES #5-6**: Backport GANL fixes (pure virtual, double-free) to master.
+- [ ] **ISSUES #3**: Fix strip_fancy_quotes leaking into `%0` (backport to master).
+- [ ] **ISSUES #4-5**: Backport GANL fixes (pure virtual, double-free) to master.
 
 ## JIT Parity
-- [ ] **ISSUES #7**: ECALL-based sync for setq/setr q-registers (currently guarded out).
-- [ ] **ISSUES #8**: Investigate compiler hang on expressions > ~1200 bytes.
-- [ ] **ISSUES #9**: Reproduce and debug intermittent SIGABRT on shutdown with JIT.
+- [ ] **ISSUES #6**: ECALL-based sync for setq/setr q-registers (currently guarded out).
+- [ ] **ISSUES #7**: Investigate compiler hang on expressions > ~1200 bytes.
+- [ ] **ISSUES #8**: Reproduce and debug intermittent SIGABRT on shutdown with JIT.
 
 ## Performance
 - [ ] **SSA Optimizations**: Global Value Numbering (GVN). Postponed — hangs on deep linear idom chains. Needs HIR dump diagnostics first.
@@ -23,5 +22,5 @@
 - [ ] **muxescape**: Move from `mux/src/` to its own `mux/muxescape/` subdir with separate Makefile.am.
 
 ## Design Gaps
-- [ ] **ISSUES #10**: Define Lua privilege model (ownership, FN_PRIV, queued execution).
-- [ ] **ISSUES #11**: Add cache-version metadata for Lua VM compatibility.
+- [ ] **ISSUES #9**: Define Lua privilege model (ownership, FN_PRIV, queued execution).
+- [ ] **ISSUES #10**: Add cache-version metadata for Lua VM compatibility.

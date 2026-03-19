@@ -31,22 +31,11 @@ the Ragel scanner may not create AST_BRACEGROUP nodes during re-parse,
 or the evaluator drops them.
 **Expected hash**: 84523E0A869449C01525577B22DD2B5CBA57138B.
 
-### 3. Malformed %q< angle substitution fallback regression
-
-**Status**: Open.  Backport needed to master/2.13.
-**Affects**: TC024 (parser_fn.mux), classic parser (2.13.0.10+), AST parser.
-**Bisected**: c4ae95f7 (Implement named global registers #351).
-**Symptom**: `%q<oops` — after named registers, `%q<` starts angle-bracket
-parse, gives up, leaves `<` in output.  Pre-named-registers behavior
-consumed the `<` as an invalid register.
-**Expected hash**: A3B1B656C920B0E8A672358310E8AFC072B21E1C.
-**AST parser hash**: 1B3EB8C217AE9D88AC879D127840E4CF66393851.
-
 ---
 
 ## Backport Items (master / 2.13)
 
-### 4. strip_fancy_quotes — smart quotes in %0
+### 3. strip_fancy_quotes — smart quotes in %0
 
 **Status**: Open.
 **Commit**: 7eb138de (Normalize smart quotes for @listen/^-listen/@filter
@@ -57,13 +46,13 @@ triggers, not just from the pattern matching comparison.
 `"` in @listen patterns still matches smart quotes.
 **Fix needed**: Both brazil and master/2.13.
 
-### 5. GANL pure virtual on shutdown
+### 4. GANL pure virtual on shutdown
 
 **Status**: Fixed on brazil.  Needs backport to master.
 **Fix**: Skip process_output when reason==ServerShutdown in
 onConnectionClose.
 
-### 6. GANL double-free on QUIT
+### 5. GANL double-free on QUIT
 
 **Status**: Fixed on brazil.  Needs backport to master.
 **Fix**: Route QUIT through ganl_close_connection instead of
@@ -73,19 +62,19 @@ shutdownsock in bsd.cpp.
 
 ## JIT Parity (--enable-jit)
 
-### 7. setq/setr q-register sync
+### 6. setq/setr q-register sync
 
 **Status**: Guarded out (jit_can_handle rejects expressions with setq/setr).
 **Problem**: JIT's setr() stores to internal q-registers, not
 mudstate.global_regs.  Need ECALL-based sync or direct write-through.
 
-### 8. Expression length limit
+### 7. Expression length limit
 
 **Status**: Workaround (nLen < 256 guard).
 **Problem**: Compiler hangs on expressions > ~1200 bytes.  Likely
 quadratic behavior in HIR lowering or codegen.
 
-### 9. SIGABRT on shutdown (intermittent)
+### 8. SIGABRT on shutdown (intermittent)
 
 **Status**: Seen intermittently during smoke tests with JIT enabled.
 **Needs**: Reproduction and stack trace.
@@ -94,7 +83,7 @@ quadratic behavior in HIR lowering or codegen.
 
 ## Design Gaps
 
-### 10. Lua privilege model
+### 9. Lua privilege model
 
 **Status**: Design gap.
 **Affects**: `lua()`, `@lua`, future `@trigger` integration, queued execution.
@@ -105,7 +94,7 @@ trigger routing should compose.
 **Risk**: Privilege semantics can drift into inconsistent special cases
 once Lua is embedded in multiple invocation paths.
 
-### 11. Lua cache/versioning
+### 10. Lua cache/versioning
 
 **Status**: Design gap.
 **Affects**: `lua_cache` and future `code_cache` integration.
