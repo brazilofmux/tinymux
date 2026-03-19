@@ -1,19 +1,12 @@
-# ISSUES.md — Open items
+# ISSUES.md
 
-No open bugs. Remaining items are future work.
+No open bugs.
 
 ---
 
-## Future Work
+## Notes
 
-### 1. Lua bridge error consistency
-
-`mux.get()` returns `nil` on permission failure (silent).
-`mux.set()` throws a Lua error (loud).  These should be consistent.
-Recommendation: return `nil, "permission denied"` (two-value return)
-for both, matching Lua conventions.
-
-### 2. Lua bridge — new functions need audit
+### Lua bridge — new functions need audit
 
 Any new `mux.*` bridge function must be audited against its softcode
 equivalent before release.  The audit template is in git history
