@@ -82,7 +82,7 @@ happened, roughly in order:
 ## The Compiler Stack
 
 The Lua JIT didn't appear from nowhere. It sits on top of a stack that
-took years to build:
+took seven month to build:
 
 **SLOW-32** (`~/slow-32`): A custom 32-bit RISC CPU with a complete
 LLVM backend. Custom assembler, linker, simulator, debugger. The
@@ -113,7 +113,7 @@ promotion and VM interop.
 
 ## The MUSH Standard
 
-Running parallel to all of this is the MUSH Standard (`~/mush`)—a
+Running parallel to all of this is the MUSH Standard (`github.com/brazilofmux/mush`)—a
 formal specification of how MUSH servers should behave. 66 markdown
 files covering objects, attributes, flags, commands, expression
 evaluation, substitution, functions, building, communication,
