@@ -940,7 +940,7 @@ def format_diff(changes):
 def main():
     parser = argparse.ArgumentParser(
         description='WorldBuilder — MUX game content management tool')
-    parser.add_argument('action', choices=['plan', 'compile', 'check', 'diff'],
+    parser.add_argument('action', choices=['plan', 'compile', 'check', 'diff', 'lint'],
                         help='Action to perform')
     parser.add_argument('spec', help='Path to YAML spec file')
     parser.add_argument('--state', help='State file for diff/incremental compile')
@@ -976,6 +976,18 @@ def main():
             for warn in drc.warnings:
                 print(f"WARN:  {warn}")
         sys.exit(0 if drc.ok else 1)
+
+    elif args.action == 'lint':
+        from softcode_lint import lint_spec
+        lint_result = lint_spec(spec)
+        if lint_result.ok and not lint_result.warnings:
+            print("Softcode lint: All checks passed.")
+        else:
+            for loc, msg in lint_result.errors:
+                print(f"ERROR [{loc}]: {msg}")
+            for loc, msg in lint_result.warnings:
+                print(f"WARN  [{loc}]: {msg}")
+        sys.exit(0 if lint_result.ok else 1)
 
     elif args.action == 'plan':
         print(format_plan(spec, drc))

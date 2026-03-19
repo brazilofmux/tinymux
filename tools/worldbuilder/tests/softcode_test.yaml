@@ -1,0 +1,24 @@
+zone:
+  name: Softcode Test
+
+rooms:
+  good_room:
+    name: Good Room
+    description: |
+      A room with properly written softcode attributes.
+    attrs:
+      ACONNECT: "@pemit %#=Welcome to the room!"
+      SMELL: "[if(gt(secs(),0),You smell flowers.,Nothing.)]"
+      LOOK_CMD: "$look *:@pemit %#=[get(%!/DESC)]"
+
+  bad_room:
+    name: Bad Room
+    description: |
+      A room with softcode problems for the linter to catch.
+    attrs:
+      BROKEN_BRACKETS: "[pemit(%#,Hello"
+      BROKEN_PARENS: "@pemit %#=[add(1,2]"
+      BROKEN_BRACES: "@switch 1=1,{@pemit %#=Hi"
+      UNKNOWN_FUNC: "[bogusfunction(1,2,3)]"
+      DANGEROUS: "@force %#=DROP ALL"
+      BAD_SUB: "Hello %z invalid sub"
