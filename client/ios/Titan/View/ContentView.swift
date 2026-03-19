@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 struct ContentView: View {
     @Bindable var state: AppState
@@ -17,6 +18,7 @@ struct ContentView: View {
     @State private var triggerEngine = TriggerEngine()
     @State private var timerEngine = TimerEngine()
     @State private var sessionLogger = SessionLogger()
+    private let speechSynth = AVSpeechSynthesizer()
     @State private var pendingCert: (CertInfo, CheckedContinuation<Bool, Never>)? = nil
     @State private var mcpEditState: McpEditState? = nil
 
@@ -317,6 +319,11 @@ struct ContentView: View {
         if sessionLogger.active && tabIndex == state.activeTabIndex {
             sessionLogger.writeLine(AnsiParser.stripAnsi(line))
         }
+        // Text-to-speech
+        if let speakText = result.speakText {
+            let utterance = AVSpeechUtterance(string: speakText)
+            speechSynth.speak(utterance)
+        }
     }
 
     // MARK: - Connect
@@ -573,6 +580,11 @@ struct ContentView: View {
             default:
                 state.appendLine(idx, "% Usage: /spawn [add|remove|list|focus] ...")
             }
+        case "speak":
+            let speakText = args.trimmingCharacters(in: .whitespaces)
+            guard !speakText.isEmpty else { state.appendLine(idx, "% Usage: /speak <text>"); break }
+            let utterance = AVSpeechUtterance(string: speakText)
+            speechSynth.speak(utterance)
         case "set":
             let setParts = args.split(separator: " ", maxSplits: 1).map(String.init)
             guard setParts.count >= 2, !setParts[0].isEmpty else {

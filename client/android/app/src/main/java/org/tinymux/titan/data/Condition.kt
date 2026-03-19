@@ -88,6 +88,20 @@ sealed class TriggerCondition {
         }
     }
 
+    // Line has a specific class assigned by a prior trigger
+    data class LineClass(val className: String, val negate: Boolean = false) : TriggerCondition() {
+        override fun evaluate(line: String, context: ConditionContext): Boolean {
+            val has = context.lineClasses.contains(className)
+            return if (negate) !has else has
+        }
+
+        override fun toJson() = JSONObject().apply {
+            put("type", "lineClass")
+            put("className", className)
+            put("negate", negate)
+        }
+    }
+
     companion object {
         fun fromJson(obj: JSONObject): TriggerCondition? {
             return when (obj.optString("type")) {
@@ -100,6 +114,10 @@ sealed class TriggerCondition {
                 )
                 "worldIdle" -> WorldIdle(
                     seconds = obj.optInt("seconds", 60),
+                    negate = obj.optBoolean("negate", false),
+                )
+                "lineClass" -> LineClass(
+                    className = obj.optString("className", ""),
                     negate = obj.optBoolean("negate", false),
                 )
                 "group" -> {
@@ -124,4 +142,5 @@ sealed class TriggerCondition {
 data class ConditionContext(
     val isConnected: Boolean = false,
     val idleSeconds: Long = 0,
+    val lineClasses: MutableSet<String> = mutableSetOf(),
 )

@@ -5,6 +5,8 @@ data class TriggerResult(
     val gagged: Boolean,
     val commands: List<String>,
     val displayLine: String?,
+    val lineClasses: Set<String> = emptySet(),
+    val speakText: String? = null,
 )
 
 class TriggerEngine {
@@ -30,6 +32,8 @@ class TriggerEngine {
         val commands = mutableListOf<String>()
         var displayLine: String? = null
         var matched = false
+        val lineClasses = mutableSetOf<String>()
+        var speakText: String? = null
 
         for ((trigger, regex) in compiled) {
             if (regex == null || trigger.shots == 0) continue
@@ -73,6 +77,17 @@ class TriggerEngine {
                 } catch (_: Exception) {}
             }
 
+            // Text-to-speech
+            if (trigger.speak && !gagged) {
+                speakText = line
+            }
+
+            // Line classification
+            if (trigger.lineClass.isNotBlank()) {
+                lineClasses.add(trigger.lineClass)
+                context.lineClasses.add(trigger.lineClass)
+            }
+
             if (trigger.body.isNotBlank()) {
                 var cmd = trigger.body
                 match.groupValues.forEachIndexed { i, v ->
@@ -87,6 +102,8 @@ class TriggerEngine {
             gagged = gagged,
             commands = commands,
             displayLine = displayLine,
+            lineClasses = lineClasses,
+            speakText = speakText,
         )
     }
 }

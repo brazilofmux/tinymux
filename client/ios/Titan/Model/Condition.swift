@@ -5,6 +5,7 @@ import Foundation
 struct ConditionContext {
     var isConnected: Bool = false
     var idleSeconds: Int = 0
+    var lineClasses: Set<String> = []
 }
 
 // MARK: - Trigger Condition
@@ -13,6 +14,7 @@ enum TriggerCondition: Codable {
     case stringMatch(pattern: String, negate: Bool = false)
     case worldConnected(negate: Bool = false)
     case worldIdle(seconds: Int, negate: Bool = false)
+    case lineClass(className: String, negate: Bool = false)
     case group(conditions: [TriggerCondition], anded: Bool = true)
     case negated(condition: Box<TriggerCondition>)
 
@@ -28,6 +30,10 @@ enum TriggerCondition: Codable {
         case .worldIdle(let seconds, let negate):
             let idle = context.idleSeconds >= seconds
             return negate ? !idle : idle
+
+        case .lineClass(let className, let negate):
+            let has = context.lineClasses.contains(className)
+            return negate ? !has : has
 
         case .group(let conditions, let anded):
             if anded {

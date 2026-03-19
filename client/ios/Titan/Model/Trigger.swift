@@ -14,6 +14,8 @@ struct Trigger: Codable, Identifiable {
     var enabled: Bool = true
     var substituteFind: String = ""
     var substituteReplace: String = ""
+    var lineClass: String = ""
+    var speak: Bool = false
     var conditions: [TriggerCondition] = []
     var conditionsAnded: Bool = true
 }
@@ -56,6 +58,8 @@ struct TriggerResult {
     var gagged = false
     var commands: [String] = []
     var displayLine: String? = nil
+    var lineClasses: Set<String> = []
+    var speakText: String? = nil
 }
 
 class TriggerEngine {
@@ -106,6 +110,16 @@ class TriggerEngine {
                 if let subRe = try? Regex(trigger.substituteFind).ignoresCase() {
                     result.displayLine = target.replacing(subRe, with: trigger.substituteReplace)
                 }
+            }
+
+            // Text-to-speech
+            if trigger.speak && !result.gagged {
+                result.speakText = line
+            }
+
+            // Line classification
+            if !trigger.lineClass.isEmpty {
+                result.lineClasses.insert(trigger.lineClass)
             }
 
             if !trigger.body.isEmpty {

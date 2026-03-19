@@ -81,6 +81,7 @@ class WorldTab(
 @Composable
 fun TitanApp() {
     val context = LocalContext.current
+    val tts = remember { android.speech.tts.TextToSpeech(context, null) }
     val worldRepo = remember { WorldRepository(context) }
     val triggerRepo = remember { TriggerRepository(context) }
     val spawnRepo = remember { SpawnRepository(context) }
@@ -208,6 +209,10 @@ fun TitanApp() {
         val conn = tab.connection
         if (conn != null && conn.connected) {
             for (cmd in result.commands) conn.sendLine(cmd)
+        }
+        // Text-to-speech
+        result.speakText?.let { text ->
+            tts.speak(text, android.speech.tts.TextToSpeech.QUEUE_ADD, null, null)
         }
     }
 
@@ -468,6 +473,14 @@ fun TitanApp() {
                         }
                     }
                     else -> appendLine(idx, "% Usage: /spawn [add|remove|list|focus] ...")
+                }
+            }
+            "speak" -> {
+                val text = args.trim()
+                if (text.isBlank()) {
+                    appendLine(idx, "% Usage: /speak <text>")
+                } else {
+                    tts.speak(text, android.speech.tts.TextToSpeech.QUEUE_ADD, null, null)
                 }
             }
             "set" -> {
