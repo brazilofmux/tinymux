@@ -17,7 +17,7 @@ import json
 import yaml
 import argparse
 from pathlib import Path
-from worldbuilder import parse_spec, check_drc, compile_spec
+from worldbuilder import parse_spec, check_drc, compile_spec, mux_escape
 
 
 # ---------------------------------------------------------------------------
@@ -165,8 +165,14 @@ class StateFile:
         with open(self.path, 'w') as f:
             yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
-    def set_room(self, spec_id, dbref, name):
+    def set_room(self, spec_id, dbref, name, content_hash=None):
         self.objects[spec_id] = {'dbref': dbref, 'type': 'room', 'name': name}
+        if content_hash:
+            self.objects[spec_id]['content_hash'] = content_hash
+
+    def get_content_hash(self, spec_id):
+        obj = self.objects.get(spec_id)
+        return obj.get('content_hash') if obj else None
 
     def set_exit(self, spec_id, dbref, name):
         self.objects[spec_id] = {'dbref': dbref, 'type': 'exit', 'name': name}
@@ -187,7 +193,21 @@ class StateFile:
 # Executor
 # ---------------------------------------------------------------------------
 
+import hashlib as _hashlib
+
 DBREF_PATTERN = re.compile(r'#(\d+)')
+
+
+def content_hash(room):
+    """Compute a hash of a room's content for change detection."""
+    h = _hashlib.sha256()
+    h.update(room.name.encode('utf-8'))
+    h.update(room.description.encode('utf-8'))
+    for k in sorted(room.attrs.keys()):
+        h.update(f'{k}={room.attrs[k]}'.encode('utf-8'))
+    for f in sorted(room.flags):
+        h.update(f.encode('utf-8'))
+    return h.hexdigest()[:16]
 
 
 def extract_dbref(text):
@@ -237,20 +257,18 @@ def execute(spec, conn, state, dry_run=False, log_file=None):
             resp = do_cmd(f'@dig/teleport {room.name}')
 
             if not dry_run:
-                # Extract dbref from @dig output
-                dbref = extract_dbref(resp)
+                # Always use think %L — most reliable across MUX versions
+                time.sleep(0.2)
+                resp2 = do_cmd('think %L')
+                dbref = extract_dbref(resp2)
+                if not dbref:
+                    # Fallback: try parsing @dig output
+                    dbref = extract_dbref(resp)
                 if dbref:
-                    state.set_room(room_id, dbref, room.name)
+                    state.set_room(room_id, dbref, room.name, content_hash(room))
                     log(f'  [state] {room_id} = {dbref}')
                 else:
-                    # Try to get current location
-                    resp2 = do_cmd('think %L')
-                    dbref = extract_dbref(resp2)
-                    if dbref:
-                        state.set_room(room_id, dbref, room.name)
-                        log(f'  [state] {room_id} = {dbref} (from %L)')
-                    else:
-                        log(f'  [WARNING] Could not capture dbref for {room_id}')
+                    log(f'  [WARNING] Could not capture dbref for {room_id}')
             else:
                 state.set_room(room_id, f'#DRY_{room_id}', room.name)
 

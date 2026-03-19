@@ -77,15 +77,45 @@ def get_exit_name(conn, exit_dbref):
     return query_one(conn, f'think [name({exit_dbref})]')
 
 
-def get_attrs(conn, dbref, skip=None):
-    """Get user-settable attributes on an object."""
+def get_attrs(conn, dbref, skip=None, use_decomp=True):
+    """Get user-settable attributes on an object.
+
+    If use_decomp is True, tries @decomp/tf first (one command, all attrs).
+    Falls back to lattr+get if @decomp is not available.
+    """
     skip = skip or {'DESCRIBE', 'DESC', 'IDESC', 'LAST', 'LASTSITE',
-                    'LASTIP', 'LASTPAGE', 'MAILCURF', 'MAILFLAGS'}
+                    'LASTIP', 'LASTPAGE', 'MAILCURF', 'MAILFLAGS',
+                    'STARTUP', 'CREATED', 'MODIFIED'}
+    attrs = {}
+
+    if use_decomp:
+        # @decomp/tf outputs: &ATTR #dbref=value (one per line)
+        lines = query(conn, f'@decomp/tf {dbref}')
+        for line in lines:
+            # Parse &ATTR #NNN=value
+            if line.startswith('&') and '=' in line:
+                # &ATTRNAME #1234=value
+                eq_pos = line.index('=')
+                left = line[1:eq_pos]  # ATTRNAME #1234
+                value = line[eq_pos + 1:]
+                # Split off the dbref from the attr name
+                parts = left.rsplit(' ', 1)
+                if len(parts) == 2:
+                    attr_name = parts[0]
+                    if attr_name.upper() not in skip:
+                        attrs[attr_name] = value
+            # Also catch @desc, @succ, etc.
+            elif line.startswith('@desc ') and '=' in line:
+                pass  # Description handled separately
+        if attrs:
+            return attrs
+        # If @decomp returned nothing useful, fall through to lattr
+
+    # Fallback: lattr + get (N queries)
     raw = query_one(conn, f'think [lattr({dbref})]')
     if not raw or raw.startswith('#-1'):
         return {}
     attr_names = [a.strip() for a in raw.split() if a.strip()]
-    attrs = {}
     for attr in attr_names:
         if attr.upper() in skip:
             continue

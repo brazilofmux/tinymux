@@ -18,6 +18,47 @@ from string import Template
 
 
 # ---------------------------------------------------------------------------
+# MUX Text Escaping
+# ---------------------------------------------------------------------------
+
+def mux_escape(text):
+    """Escape a multi-line string for MUX attribute/description setting.
+
+    Handles:
+    - Literal % in text → %% (prevent substitution)
+    - \\n → %r (MUX linebreak)
+    - \\t → %t (MUX tab)
+    - Trailing whitespace stripped per line
+    - Leading/trailing blank lines stripped
+    """
+    # Strip leading/trailing blank lines
+    lines = text.rstrip().split('\n')
+    while lines and not lines[0].strip():
+        lines.pop(0)
+
+    # Process each line
+    processed = []
+    for line in lines:
+        line = line.rstrip()
+        # Escape literal % (but not our own %r/%t insertions)
+        line = line.replace('%', '%%')
+        processed.append(line)
+
+    # Join with %r
+    result = '%r'.join(processed)
+    return result
+
+
+def mux_unescape(text):
+    """Reverse MUX escaping back to plain text (for import)."""
+    text = text.replace('%r', '\n')
+    text = text.replace('%t', '\t')
+    text = text.replace('%b', ' ')
+    text = text.replace('%%', '%')
+    return text
+
+
+# ---------------------------------------------------------------------------
 # Model
 # ---------------------------------------------------------------------------
 
@@ -43,11 +84,23 @@ class Thing:
 
 
 class Exit:
-    def __init__(self, from_room, to_room, name, back_name=None):
+    def __init__(self, from_room, to_room, name, back_name=None,
+                 lock=None, desc=None, succ=None, osucc=None,
+                 fail=None, ofail=None, drop=None, odrop=None,
+                 flags=None):
         self.from_room = from_room
         self.to_room = to_room
         self.name = name
         self.back_name = back_name
+        self.lock = lock
+        self.desc = desc
+        self.succ = succ
+        self.osucc = osucc
+        self.fail = fail
+        self.ofail = ofail
+        self.drop = drop
+        self.odrop = odrop
+        self.flags = flags or []
 
 
 class Zone:
@@ -126,6 +179,15 @@ def parse_spec(path):
             to_room=exit_data['to'],
             name=exit_data['name'],
             back_name=exit_data.get('back'),
+            lock=exit_data.get('lock'),
+            desc=exit_data.get('desc'),
+            succ=exit_data.get('succ'),
+            osucc=exit_data.get('osucc'),
+            fail=exit_data.get('fail'),
+            ofail=exit_data.get('ofail'),
+            drop=exit_data.get('drop'),
+            odrop=exit_data.get('odrop'),
+            flags=exit_data.get('flags', []),
         )
         spec.exits.append(ex)
 
@@ -146,7 +208,8 @@ def parse_spec(path):
             continue
         inst_id = inst_data.get('id', comp_name)
         params = {**{k: v.get('default', '') for k, v in comp.params.items()},
-                  **inst_data.get('params', {})}
+                  **inst_data.get('params', {}),
+                  '_instance_id': inst_id}
         expand_component(spec, comp, inst_id, params,
                          inst_data.get('connect', {}))
 
@@ -536,16 +599,40 @@ def compile_spec(spec):
     # Create exits
     cmd("=== Exits ===", "")
 
+    def emit_exit_props(ex, exit_ref):
+        """Emit property commands for an exit. exit_ref is the name or dbref."""
+        if ex.lock:
+            cmd("Lock", f'@lock {exit_ref}={ex.lock}')
+        if ex.desc:
+            cmd("Desc", f'@desc {exit_ref}={mux_escape(ex.desc)}')
+        if ex.succ:
+            cmd("Succ", f'@succ {exit_ref}={ex.succ}')
+        if ex.osucc:
+            cmd("Osucc", f'@osucc {exit_ref}={ex.osucc}')
+        if ex.fail:
+            cmd("Fail", f'@fail {exit_ref}={ex.fail}')
+        if ex.ofail:
+            cmd("Ofail", f'@ofail {exit_ref}={ex.ofail}')
+        if ex.drop:
+            cmd("Drop", f'@drop {exit_ref}={ex.drop}')
+        if ex.odrop:
+            cmd("Odrop", f'@odrop {exit_ref}={ex.odrop}')
+        for flag in ex.flags:
+            cmd(f"Flag {flag}", f'@set {exit_ref}={flag}')
+
     for ex in spec.exits:
         # Forward exit
-        cmd(f"Exit: {ex.name.split(';')[0]} ({ex.from_room} -> {ex.to_room})",
+        fwd_name = ex.name.split(';')[0]
+        cmd(f"Exit: {fwd_name} ({ex.from_room} -> {ex.to_room})",
             f'@open {ex.name}=%{{room:{ex.to_room}}}')
-        # Note: %{room:xxx} is a placeholder the executor resolves to the actual dbref
+        emit_exit_props(ex, fwd_name)
 
         # Back exit
         if ex.back_name:
-            cmd(f"Back exit: {ex.back_name.split(';')[0]} ({ex.to_room} -> {ex.from_room})",
+            back_name = ex.back_name.split(';')[0]
+            cmd(f"Back exit: {back_name} ({ex.to_room} -> {ex.from_room})",
                 f'@open {ex.back_name}=%{{room:{ex.from_room}}}')
+            # Back exits don't inherit forward exit's props
 
     # Create things
     if spec.things:
@@ -646,18 +733,45 @@ def format_plan(spec, drc_result):
     return '\n'.join(lines)
 
 
-def format_commands(commands):
-    """Format compiled commands for output."""
+def format_commands(commands, fmt='default'):
+    """Format compiled commands for output.
+
+    fmt='default' — comments + commands, one per line
+    fmt='upload'  — unformat-compatible .mux format (formatted softcode)
+    fmt='raw'     — commands only, no comments (for piping to telnet)
+    """
     lines = []
-    for comment, command in commands:
-        if comment and not command:
-            lines.append(f"\n{comment}")
-        elif comment:
-            lines.append(f"# {comment}")
-            lines.append(command)
-        else:
-            lines.append(command)
-    return '\n'.join(lines)
+
+    if fmt == 'upload':
+        # Emit as formatted softcode compatible with unformat.pl
+        # Each command gets a comment line and a '-' terminator
+        for comment, command in commands:
+            if comment and not command:
+                lines.append(f"# {comment}")
+            elif command:
+                if comment:
+                    lines.append(f"# {comment}")
+                lines.append(command)
+                lines.append("-")
+                lines.append("")
+        return '\n'.join(lines)
+
+    elif fmt == 'raw':
+        for _, command in commands:
+            if command:
+                lines.append(command)
+        return '\n'.join(lines)
+
+    else:  # default
+        for comment, command in commands:
+            if comment and not command:
+                lines.append(f"\n{comment}")
+            elif comment:
+                lines.append(f"# {comment}")
+                lines.append(command)
+            else:
+                lines.append(command)
+        return '\n'.join(lines)
 
 
 # ---------------------------------------------------------------------------
@@ -830,6 +944,8 @@ def main():
                         help='Action to perform')
     parser.add_argument('spec', help='Path to YAML spec file')
     parser.add_argument('--state', help='State file for diff/incremental compile')
+    parser.add_argument('--format', choices=['default', 'upload', 'raw'],
+                        default='default', help='Output format for compile')
 
     args = parser.parse_args()
     spec_path = Path(args.spec)
@@ -889,17 +1005,20 @@ def main():
             for warn in drc.warnings:
                 print(f"# WARN: {warn}", file=sys.stderr)
 
+        out_fmt = args.format
+
         # Use incremental compile if state exists
         if Path(state_path).exists():
             commands = compile_incremental(spec, state_path)
             if not commands:
                 print("# No changes to apply (spec matches state).")
             else:
-                print(f"# Incremental compile against {state_path}")
-                print(format_commands(commands))
+                if out_fmt == 'default':
+                    print(f"# Incremental compile against {state_path}")
+                print(format_commands(commands, out_fmt))
         else:
             commands = compile_spec(spec)
-            print(format_commands(commands))
+            print(format_commands(commands, out_fmt))
 
 
 if __name__ == '__main__':
