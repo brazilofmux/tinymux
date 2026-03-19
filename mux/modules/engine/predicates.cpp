@@ -953,17 +953,16 @@ void do_addcommand
     CMDENT *old = (it_old != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_old->second) : nullptr;
 
     CMDENT *cmd;
-    ADDENT *add, *nextp;
 
     if (  old
        && (old->callseq & CS_ADDED))
     {
         // Don't allow the same (thing,atr) in the list.
         //
-        for (nextp = old->addent; nextp != nullptr; nextp = nextp->next)
+        for (auto &entry : *old->addent)
         {
-            if (  nextp->thing == thing
-               && nextp->atr == pattr->number)
+            if (  entry.thing == thing
+               && entry.atr == pattr->number)
             {
                 notify(player, tprintf(T("%s already added."), pName));
                 return;
@@ -972,13 +971,11 @@ void do_addcommand
 
         // Otherwise, add another (thing,atr) to the list.
         //
-        add = static_cast<ADDENT *>(MEMALLOC(sizeof(ADDENT)));
-        ISOUTOFMEMORY(add);
-        add->thing = thing;
-        add->atr = pattr->number;
-        add->name = StringClone(pName);
-        add->next = old->addent;
-        old->addent = add;
+        old->addent->push_back(ADDENT{});
+        ADDENT &add = old->addent->back();
+        add.thing = thing;
+        add.atr = pattr->number;
+        add.name = reinterpret_cast<const char *>(pName);
         if (bNoEval)
         {
             old->callseq |= CS_NOINTERP;
@@ -1022,13 +1019,12 @@ void do_addcommand
             cmd->callseq |= CS_NOINTERP;
         }
         cmd->flags = CEF_ALLOC;
-        add = static_cast<ADDENT *>(MEMALLOC(sizeof(ADDENT)));
-        ISOUTOFMEMORY(add);
-        add->thing = thing;
-        add->atr = pattr->number;
-        add->name = StringClone(pName);
-        add->next = nullptr;
-        cmd->addent = add;
+        cmd->addent = new std::vector<ADDENT>();
+        cmd->addent->push_back(ADDENT{});
+        ADDENT &add = cmd->addent->back();
+        add.thing = thing;
+        add.atr = pattr->number;
+        add.name = reinterpret_cast<const char *>(pName);
 
         mudstate.command_htab.emplace(std::vector<UTF8>(pName, pName + nName), cmd);
 
@@ -1064,7 +1060,6 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
     UNUSED_PARAMETER(ncargs);
 
     CMDENT *old;
-    ADDENT *nextp;
     bool didit = false;
 
     // Let's make this case insensitive...
@@ -1085,15 +1080,15 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
             // If it's already found in the hash table, and it's being added
             // using the same object and attribute...
             //
-            for (nextp = old->addent; nextp != nullptr; nextp = nextp->next)
+            for (auto &entry : *old->addent)
             {
-                ATTR *ap = reinterpret_cast<ATTR *>(atr_num(nextp->atr));
+                ATTR *ap = reinterpret_cast<ATTR *>(atr_num(entry.atr));
                 const UTF8 *pName = T("(WARNING: Bad Attribute Number)");
                 if (ap)
                 {
                     pName = ap->name;
                 }
-                notify(player, tprintf(T("%s: #%d/%s"), nextp->name, nextp->thing, pName));
+                notify(player, tprintf(T("%s: #%d/%s"), reinterpret_cast<const UTF8 *>(entry.name.c_str()), entry.thing, pName));
             }
         }
         else
@@ -1111,21 +1106,21 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
             {
                 const UTF8 *pKeyName = key.data();
                 int nKeyName = static_cast<int>(key.size());
-                for (nextp = old->addent; nextp != nullptr; nextp = nextp->next)
+                for (auto &entry : *old->addent)
                 {
-                    if (  static_cast<size_t>(nKeyName) != strlen(reinterpret_cast<char *>(nextp->name))
-                       || memcmp(pKeyName, nextp->name, nKeyName) != 0)
+                    if (  static_cast<size_t>(nKeyName) != entry.name.size()
+                       || memcmp(pKeyName, entry.name.c_str(), nKeyName) != 0)
                     {
                         continue;
                     }
-                    ATTR *ap = reinterpret_cast<ATTR *>(atr_num(nextp->atr));
+                    ATTR *ap = reinterpret_cast<ATTR *>(atr_num(entry.atr));
                     const UTF8 *pName = T("(WARNING: Bad Attribute Number)");
                     if (ap)
                     {
                         pName = ap->name;
                     }
-                    notify(player, tprintf(T("%s: #%d/%s"), nextp->name,
-                        nextp->thing, pName));
+                    notify(player, tprintf(T("%s: #%d/%s"), reinterpret_cast<const UTF8 *>(entry.name.c_str()),
+                        entry.thing, pName));
                     didit = true;
                 }
             }
@@ -1191,7 +1186,6 @@ void do_delcommand
     UTF8  *pCased = mux_strlwr(name, nCased);
 
     CMDENT *old, *cmd;
-    ADDENT *prev = nullptr, *nextp;
     {
         auto it = mudstate.command_htab.find(std::vector<UTF8>(pCased, pCased + nCased));
         old = (it != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it->second) : nullptr;
@@ -1207,14 +1201,8 @@ void do_delcommand
         {
             // Delete all @addcommand'ed associations with the given name.
             //
-            for (prev = old->addent; prev != nullptr; prev = nextp)
-            {
-                nextp = prev->next;
-                MEMFREE(prev->name);
-                prev->name = nullptr;
-                MEMFREE(prev);
-                prev = nullptr;
-            }
+            delete old->addent;
+            old->addent = nullptr;
             mudstate.command_htab.erase(std::vector<UTF8>(pCased, pCased + nCased));
             {
                 auto it_cmd = mudstate.command_htab.find(std::vector<UTF8>(p__Name, p__Name + n__Name));
@@ -1249,61 +1237,46 @@ void do_delcommand
         {
             // Remove only the (name,thing,atr) association.
             //
-            for (nextp = old->addent; nextp != nullptr; nextp = nextp->next)
+            for (auto it = old->addent->begin(); it != old->addent->end(); ++it)
             {
-                if (  nextp->thing == thing
-                   && nextp->atr == atr)
+                if (  it->thing == thing
+                   && it->atr == atr)
                 {
-                    MEMFREE(nextp->name);
-                    nextp->name = nullptr;
-                    if (!prev)
+                    old->addent->erase(it);
+                    if (old->addent->empty())
                     {
-                        if (!nextp->next)
+                        delete old->addent;
+                        old->addent = nullptr;
+                        mudstate.command_htab.erase(std::vector<UTF8>(pCased, pCased + nCased));
                         {
-                            mudstate.command_htab.erase(std::vector<UTF8>(pCased, pCased + nCased));
+                            auto it_cmd2 = mudstate.command_htab.find(std::vector<UTF8>(p__Name, p__Name + n__Name));
+                            cmd = (it_cmd2 != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_cmd2->second) : nullptr;
+                        }
+                        if (cmd)
+                        {
+                            size_t nCmdName = strlen(reinterpret_cast<char *>(cmd->cmdname));
+                            mudstate.command_htab.emplace(std::vector<UTF8>(cmd->cmdname, cmd->cmdname + nCmdName),
+                                cmd);
+                            if (strcmp(reinterpret_cast<char *>(pCased), reinterpret_cast<char *>(cmd->cmdname)) != 0)
                             {
-                                auto it_cmd2 = mudstate.command_htab.find(std::vector<UTF8>(p__Name, p__Name + n__Name));
-                                cmd = (it_cmd2 != mudstate.command_htab.end()) ? static_cast<CMDENT*>(it_cmd2->second) : nullptr;
-                            }
-                            if (cmd)
-                            {
-                                size_t nCmdName = strlen(reinterpret_cast<char *>(cmd->cmdname));
-                                mudstate.command_htab.emplace(std::vector<UTF8>(cmd->cmdname, cmd->cmdname + nCmdName),
+                                mudstate.command_htab.emplace(std::vector<UTF8>(pCased, pCased + nCased),
                                     cmd);
-                                if (strcmp(reinterpret_cast<char *>(pCased), reinterpret_cast<char *>(cmd->cmdname)) != 0)
-                                {
-                                    mudstate.command_htab.emplace(std::vector<UTF8>(pCased, pCased + nCased),
-                                        cmd);
-                                }
+                            }
 
-                                mudstate.command_htab.erase(std::vector<UTF8>(p__Name, p__Name + n__Name));
-                                mudstate.command_htab.emplace(std::vector<UTF8>(p__Name, p__Name + n__Name),
-                                    cmd);
-                                for (auto &[k, v] : mudstate.command_htab) { if (v == old) v = cmd; }
-                            }
-                            MEMFREE(old->cmdname);
-                            old->cmdname = nullptr;
-                            MEMFREE(old);
-                            old = nullptr;
+                            mudstate.command_htab.erase(std::vector<UTF8>(p__Name, p__Name + n__Name));
+                            mudstate.command_htab.emplace(std::vector<UTF8>(p__Name, p__Name + n__Name),
+                                cmd);
+                            for (auto &[k, v] : mudstate.command_htab) { if (v == old) v = cmd; }
                         }
-                        else
-                        {
-                            old->addent = nextp->next;
-                            MEMFREE(nextp);
-                            nextp = nullptr;
-                        }
-                    }
-                    else
-                    {
-                        prev->next = nextp->next;
-                        MEMFREE(nextp);
-                        nextp = nullptr;
+                        MEMFREE(old->cmdname);
+                        old->cmdname = nullptr;
+                        MEMFREE(old);
+                        old = nullptr;
                     }
                     cache_prefix_cmds();
                     notify(player, T("Done."));
                     return;
                 }
-                prev = nextp;
             }
             notify(player, T("Command not found in command table."));
         }

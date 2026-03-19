@@ -1068,17 +1068,7 @@ void finish_cmdtab()
         cmdp = static_cast<CMDENT*>(htval);
         if (cmdp->callseq & CS_ADDED)
         {
-            ADDENT *nextp = cmdp->addent;
-            while (nullptr != nextp)
-            {
-                ADDENT *add = nextp;
-                nextp = nextp->next;
-
-                MEMFREE(add->name);
-                add->name = nullptr;
-                MEMFREE(add);
-                add = nullptr;
-            }
+            delete cmdp->addent;
             cmdp->addent = nullptr;
         }
 
@@ -1621,9 +1611,9 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
         //
         if (cmdp->callseq & CS_ADDED)
         {
-            for (add = cmdp->addent; add != nullptr; add = add->next)
+            for (auto &addent : *cmdp->addent)
             {
-                buff = atr_get("process_cmdent.1347", add->thing, add->atr, &aowner, &aflags);
+                buff = atr_get("process_cmdent.1347", addent.thing, addent.atr, &aowner, &aflags);
 
                 // Attribute should contain at least two characters and first
                 // character is '$'.
@@ -1709,7 +1699,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
                       && wild(buff + 1, new0, aargs, NUM_ENV_VARS)))
                 {
                     CLinearTimeAbsolute lta;
-                    wait_que(add->thing, caller, executor,
+                    wait_que(addent.thing, caller, executor,
                         AttrTrace(aflags, 0), false, lta, NOTHING, 0,
                         buff + iBuff,
                         NUM_ENV_VARS, (const UTF8 **)aargs,

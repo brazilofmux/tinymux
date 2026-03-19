@@ -75,43 +75,19 @@ Net: −863 lines, +563 lines. All 551 smoke tests pass.
 
 ---
 
-## Pending — Medium Priority
+### UFUN Chain, ADDENT Chain, qsort→std::sort
+**Commit**: (2026-03-19, brazil)
 
-## Pending — Medium Priority
+| Old Pattern | New Pattern |
+|-------------|-------------|
+| `UFUN *next` intrusive linked list + `ufun_head` | `std::list<UFUN> ufun_list` |
+| `UTF8 *name` in UFUN (StringClone/delete) | `std::string name` |
+| `ADDENT *next` intrusive linked list | `std::vector<ADDENT> *` per CMDENT |
+| `UTF8 *name` in ADDENT (MEMALLOC/MEMFREE) | `std::string name` |
+| `qsort()` with C comparator in mail.cpp | `std::sort()` with typed comparator |
+| Files: functions.h/.cpp, command.h/.cpp, predicates.cpp, mail.cpp |
 
-### 3. UFUN Chain (`mux/include/functions.h` + `mux/modules/engine/functions.cpp`)
-
-| Pattern | Location | Replacement |
-|---------|----------|-------------|
-| `UFUN *next` intrusive singly-linked list | functions.h:30 | Eliminate; use container |
-| `UFUN *ufun_head` global list head | functions.cpp:44 | `std::list<UFUN>` or `std::vector<UFUN>` |
-| Linear scan for name lookup | functions.cpp:13444, 13636 | Already have `ufunc_htab`; list is for ordered iteration |
-
-**Notes**: The `ufun_head` chain is walked for `@list functions` and cleanup.
-Name lookup already goes through a hash table (`ufunc_htab`). Converting the
-chain to `std::list<UFUN>` would simplify insertion/deletion/cleanup. Low risk.
-
-### 4. ADDENT Chain (`mux/include/command.h` + `mux/modules/engine/command.cpp`)
-
-| Pattern | Location | Replacement |
-|---------|----------|-------------|
-| `ADDENT *next` intrusive singly-linked list | command.h:211 | Eliminate |
-| `CMDENT.addent` chain head | command.h:227 | `std::vector<ADDENT>` |
-| Manual walk in cleanup | command.cpp:1071–1075 | Automatic destruction |
-
-**Notes**: Each `@addcommand` name can have multiple definitions chained
-via `->next`. Small chains (typically 1–3 entries). Converting to
-`std::vector<ADDENT>` would simplify cleanup. Low risk, small scope.
-
-### 5. qsort → std::sort (`mux/modules/engine/functions.cpp`)
-
-| Pattern | Location | Replacement |
-|---------|----------|-------------|
-| `qsort()` with C comparison functions | functions.cpp:8742–8800 | `std::sort()` with lambda/comparator |
-| `qsort_record` union for sort keys | functions.cpp:8742 | Type-safe comparators |
-
-**Notes**: Several `sortby()`/`sort()` softcode functions use C `qsort()`.
-Mechanical conversion to `std::sort()` with typed comparators.
+Net: −171 lines, +105 lines. All 551 smoke tests pass.
 
 ---
 

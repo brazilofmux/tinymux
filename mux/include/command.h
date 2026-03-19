@@ -6,6 +6,9 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
+#include <string>
+#include <vector>
+
 #define CMD_NO_ARG(name)       extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key)
 #define CMD_ONE_ARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, const UTF8 *cargs[], int ncargs)
 #define CMD_TWO_ARG(name)      extern void name(dbref executor, dbref caller, dbref enactor, int eval, int key, int nargs, UTF8 *arg1, UTF8 *arg2, const UTF8 *cargs[], int ncargs)
@@ -202,13 +205,13 @@ typedef struct
     void    (*handler)(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *arg1, UTF8 *args[], int nargs, const UTF8 *cargs[], int ncargs);
 } CMDENT_TWO_ARG_ARGV;
 
-typedef struct addedentry ADDENT;
-struct addedentry
+struct ADDENT
 {
-    dbref   thing;
-    int     atr;
-    UTF8    *name;
-    struct addedentry *next;
+    dbref       thing;
+    int         atr;
+    std::string name;
+
+    ADDENT() : thing(-1), atr(0) {}
 };
 
 typedef struct
@@ -222,7 +225,7 @@ typedef struct
     union
     {
         void (*handler)(void);
-        ADDENT *addent;
+        std::vector<ADDENT> *addent;
     };
 } CMDENT;
 

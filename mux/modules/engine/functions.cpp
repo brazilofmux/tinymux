@@ -41,7 +41,7 @@ private:
 extern MYSQL *mush_database;
 #endif // INLINESQL
 
-UFUN *ufun_head;
+std::list<UFUN> ufun_list;
 
 SEP sepSpace = { 1, " " };
 
@@ -13336,7 +13336,7 @@ void functions_add(FUN funlist[])
 void init_functab(void)
 {
     functions_add(builtin_function_list);
-    ufun_head = nullptr;
+    ufun_list.clear();
     engine_api_init();
 }
 
@@ -13427,7 +13427,7 @@ void do_function
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UFUN *ufp, *ufp2;
+    UFUN *ufp;
     ATTR *ap;
 
     if (  (key & FN_LIST)
@@ -13441,18 +13441,19 @@ void do_function
             "------------------------------", "--- "));
 
         int count = 0;
-        for (ufp2 = ufun_head; ufp2; ufp2 = ufp2->next)
+        for (auto &ufn : ufun_list)
         {
             const UTF8 *pName = T("(WARNING: Bad Attribute Number)");
-            ap = atr_num(ufp2->atr);
+            ap = atr_num(ufn.atr);
             if (ap)
             {
                 pName = ap->name;
             }
             notify(executor, tprintf(T("%-28.28s   #%-7d  %-30.30s  %c%c%c"),
-                ufp2->name, ufp2->obj, pName, ((ufp2->flags & FN_PRIV) ? 'W' : '-'),
-                ((ufp2->flags & FN_PRES) ? 'p' : '-'),
-                ((ufp2->flags & FN_RESTRICT) ? 'R' : '-')));
+                reinterpret_cast<const UTF8 *>(ufn.name.c_str()), ufn.obj,
+                pName, ((ufn.flags & FN_PRIV) ? 'W' : '-'),
+                ((ufn.flags & FN_PRES) ? 'p' : '-'),
+                ((ufn.flags & FN_RESTRICT) ? 'R' : '-')));
             count++;
         }
 
@@ -13502,23 +13503,15 @@ void do_function
         }
         else
         {
-            if (ufp == ufun_head)
+            mudstate.ufunc_htab.erase(std::vector<UTF8>(pName, pName + nLen));
+            for (auto it = ufun_list.begin(); it != ufun_list.end(); ++it)
             {
-                ufun_head = ufun_head->next;
-            }
-            else
-            {
-                for (ufp2 = ufun_head; ufp2->next; ufp2 = ufp2->next)
+                if (&*it == ufp)
                 {
-                    if (ufp2->next == ufp)
-                    {
-                        ufp2->next = ufp->next;
-                        break;
-                    }
+                    ufun_list.erase(it);
+                    break;
                 }
             }
-            mudstate.ufunc_htab.erase(std::vector<UTF8>(pName, pName + nLen));
-            delete ufp;
             notify_quiet(executor, tprintf(T("Function %s deleted."), pName));
         }
         return;
@@ -13563,39 +13556,13 @@ void do_function
 
     if (!ufp)
     {
-        ufp = nullptr;
-        try
-        {
-            ufp = new UFUN;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == ufp)
-        {
-            return;
-        }
-
-        ufp->name = StringCloneLen(pName, nLen);
-        ufp->obj = obj;
-        ufp->atr = pattr->number;
-        ufp->perms = CA_PUBLIC;
-        ufp->next = nullptr;
-        if (!ufun_head)
-        {
-            ufun_head = ufp;
-        }
-        else
-        {
-            for (ufp2 = ufun_head; ufp2->next; ufp2 = ufp2->next)
-            {
-                // Nothing
-                ;
-            }
-            ufp2->next = ufp;
-        }
+        UFUN newufun;
+        newufun.name.assign(reinterpret_cast<const char *>(pName), nLen);
+        newufun.obj = obj;
+        newufun.atr = pattr->number;
+        newufun.perms = CA_PUBLIC;
+        ufun_list.push_back(std::move(newufun));
+        ufp = &ufun_list.back();
         mudstate.ufunc_htab.emplace(std::vector<UTF8>(pName, pName + nLen), ufp);
     }
     ufp->obj = obj;
@@ -13632,13 +13599,13 @@ void list_functable(dbref player)
     bp = buff;
     safe_str(T("User-Functions:"), buff, &bp);
 
-    UFUN *ufp;
-    for (ufp = ufun_head; ufp && bp < buff + (LBUF_SIZE-1); ufp = ufp->next)
+    for (auto &ufn : ufun_list)
     {
-        if (check_access(player, ufp->perms))
+        if (bp >= buff + (LBUF_SIZE-1)) break;
+        if (check_access(player, ufn.perms))
         {
             safe_chr(' ', buff, &bp);
-            safe_str(ufp->name, buff, &bp);
+            safe_str(reinterpret_cast<const UTF8 *>(ufn.name.c_str()), buff, &bp);
         }
     }
     *bp = '\0';

@@ -8,6 +8,9 @@
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 
+#include <list>
+#include <string>
+
 typedef struct tagFun
 {
     const UTF8 *name;     // function name
@@ -22,12 +25,13 @@ typedef struct tagFun
 } FUN;
 
 typedef struct ufun {
-    UTF8 *name;     /* function name */
-    dbref obj;      /* Object ID */
-    int atr;        /* Attribute ID */
-    int flags;      /* Function flags */
-    int perms;      /* Access to function */
-    struct ufun *next;  /* Next ufun in chain */
+    std::string name;   /* function name */
+    dbref obj;          /* Object ID */
+    int atr;            /* Attribute ID */
+    int flags;          /* Function flags */
+    int perms;          /* Access to function */
+
+    ufun() : obj(-1), atr(0), flags(0), perms(0) {}
 } UFUN;
 
 #define FN_NOEVAL   2   // Don't evaluate args to function.
@@ -44,7 +48,7 @@ typedef struct ufun {
 
 void init_functab(void);
 void list_functable(dbref);
-extern UFUN *ufun_head;
+extern std::list<UFUN> ufun_list;
 
 /* Special handling of separators. */
 

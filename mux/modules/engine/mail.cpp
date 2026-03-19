@@ -4256,12 +4256,9 @@ static const UTF8 *Spaces(size_t n)
     }
 }
 
-static int DCL_CDECL malias_compare(const void *first, const void *second)
+static bool malias_compare(const malias_t &a, const malias_t &b)
 {
-    const malias_t* alias1 = (const malias_t*)first;
-    const malias_t* alias2 = (const malias_t*)second;
-
-    return mux_stricmp(alias1->name, alias2->name);
+    return mux_stricmp(a.name, b.name) < 0;
 }
 
 static void do_malias_list_all(dbref player)
@@ -4297,7 +4294,7 @@ static void do_malias_list_all(dbref player)
             ++actual_entries;
         }
     }
-    qsort(alias_array, actual_entries, sizeof(malias_t), malias_compare);
+    std::sort(alias_array, alias_array + actual_entries, malias_compare);
 
     bool notified = false;
     for (i = 0; i < actual_entries; i++)
