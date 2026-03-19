@@ -11407,6 +11407,25 @@ MAP()
 
   Related Topics: filter(), fold(), ilev(), iter(), itext(), inum(), u().
 
+& MAPSQL()
+MAPSQL()
+
+  FUNCTION: mapsql(<obj>/<attr>, <query>[, <osep>])
+
+  Runs the SQL <query> and calls <obj>/<attr> for each result row.  The
+  attribute is evaluated with %0 set to the row number (starting at 1)
+  and %1 through %N set to the column values.  Results from each call
+  are concatenated, separated by <osep> (default space).
+
+  Requires Wizard permission and INLINESQL support.
+
+  Examples:
+    > &FORMAT_ROW me=[%1]=[%2]
+    > say mapsql(me/FORMAT_ROW, SELECT name\, value FROM config)
+    You say, "[name1]=[value1] [name2]=[value2]"
+
+  Related Topics: sql(), map().
+
 & MATCH()
 MATCH()
 

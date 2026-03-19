@@ -7748,6 +7748,134 @@ FUNCTION(fun_sql)
     }
 }
 
+// mapsql(obj/attr, query[, osep]) — for each SQL result row, call
+// obj/attr with %0 = row number, %1..%N = column values.
+//
+FUNCTION(fun_mapsql)
+{
+    if (!mush_database)
+    {
+        safe_str(T("#-1 NO DATABASE"), buff, bufc);
+        return;
+    }
+
+    SEP osep;
+    if (!OPTIONAL_DELIM(3, osep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    // Parse obj/attr.
+    //
+    UTF8 *atext;
+    dbref thing;
+    dbref aowner;
+    int   aflags;
+    if (!parse_and_get_attrib(executor, fargs, &atext, &thing, &aowner,
+            &aflags, buff, bufc))
+    {
+        return;
+    }
+
+    // Evaluate the query argument.
+    //
+    UTF8 *qbuf = alloc_lbuf("fun_mapsql");
+    UTF8 *qp = qbuf;
+    mux_exec(fargs[1], LBUF_SIZE-1, qbuf, &qp, executor, caller, enactor,
+        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+    *qp = '\0';
+
+    UTF8 *cp = trim_space_sep(qbuf, sepSpace);
+    if (!*cp)
+    {
+        free_lbuf(qbuf);
+        free_lbuf(atext);
+        return;
+    }
+
+    if (mysql_ping(mush_database))
+    {
+        free_lbuf(qbuf);
+        free_lbuf(atext);
+        safe_str(T("#-1 SQL UNAVAILABLE"), buff, bufc);
+        return;
+    }
+
+    if (mysql_real_query(mush_database, reinterpret_cast<char *>(cp),
+            strlen(reinterpret_cast<char *>(cp))))
+    {
+        free_lbuf(qbuf);
+        free_lbuf(atext);
+        safe_str(T("#-1 QUERY ERROR"), buff, bufc);
+        return;
+    }
+
+    MYSQL_RES *result = mysql_store_result(mush_database);
+    if (!result)
+    {
+        while (mysql_next_result(mush_database) == 0)
+        {
+            MYSQL_RES *extra = mysql_store_result(mush_database);
+            if (extra) mysql_free_result(extra);
+        }
+        free_lbuf(qbuf);
+        free_lbuf(atext);
+        return;
+    }
+
+    int num_fields = mysql_num_fields(result);
+    if (num_fields > NUM_ENV_VARS - 1)
+    {
+        num_fields = NUM_ENV_VARS - 1;
+    }
+
+    // For each row, call the attribute with %0=rownum, %1..%N=columns.
+    //
+    const UTF8 *map_args[NUM_ENV_VARS];
+    MYSQL_ROW row = mysql_fetch_row(result);
+    bool first = true;
+    int rownum = 0;
+
+    while (  row
+          && mudstate.func_invk_ctr < mudconf.func_invk_lim
+          && !alarm_clock.alarmed)
+    {
+        if (!first)
+        {
+            print_sep(osep, buff, bufc);
+        }
+        first = false;
+        rownum++;
+
+        UTF8 rownumbuf[32];
+        mux_ltoa(rownum, rownumbuf);
+        map_args[0] = rownumbuf;
+
+        for (int i = 0; i < num_fields; i++)
+        {
+            map_args[i + 1] = row[i]
+                ? reinterpret_cast<UTF8 *>(row[i])
+                : T("");
+        }
+
+        mux_exec(atext, LBUF_SIZE-1, buff, bufc, thing, executor, enactor,
+            AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL),
+            map_args, num_fields + 1);
+
+        row = mysql_fetch_row(result);
+    }
+
+    mysql_free_result(result);
+    while (mysql_next_result(mush_database) == 0)
+    {
+        MYSQL_RES *extra = mysql_store_result(mush_database);
+        if (extra) mysql_free_result(extra);
+    }
+
+    free_lbuf(qbuf);
+    free_lbuf(atext);
+}
+
 #endif // INLINESQL
 
 /* ---------------------------------------------------------------------------
@@ -13951,6 +14079,9 @@ static FUN builtin_function_list[] =
     {T("MAILSUBJ"),    fun_mailsubj,   MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("MALIAS"),      fun_malias,     MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("MAP"),         fun_map,        MAX_ARG, 2,      13,         0, CA_PUBLIC},
+#if defined(INLINESQL)
+    {T("MAPSQL"),      fun_mapsql,     MAX_ARG, 2,       3,         0, CA_WIZARD},
+#endif // INLINESQL
     {T("MATCH"),       fun_match,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("MATCHALL"),    fun_matchall,   MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("MAX"),         fun_max,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
