@@ -467,6 +467,7 @@ struct statedata
     bool bCanRestart;           // are we ready to even attempt a restart.
     bool bReadingConfiguration; // are we reading the config file at startup?
     bool bStackLimitReached;    // Was stack slammed?
+    bool bSandboxActive;        // sandbox() active — force AST-only eval.
     bool bStandAlone;           // Are we running in dbconvert mode.
     bool bSQLiteLoading;        // Suppress write-through during bulk load.
     bool panicking;             // are we in the middle of dying horribly?

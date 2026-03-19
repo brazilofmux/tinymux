@@ -1,0 +1,214 @@
+#
+# lambda_fn.mux - Test Cases for #lambda and #apply.
+#
+@create test_lambda_fn
+-
+@set test_lambda_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_lambda_fn=
+  @log smoke=Beginning lambda test cases.
+-
+#
+# Test Case #1 - map with #lambda.
+# map(#lambda/add(\%0,1), 1 2 3 4 5) => 2 3 4 5 6
+#
+&tr.tc001 test_lambda_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [map(#lambda/add(\%0,1), 1 2 3 4 5)]
+          )
+        ),
+        0B5997B45E4E6DC526F6D97B1F6B8DB511C9845A
+      )=
+  {
+    @log smoke=TC001: map with lambda. Succeeded.
+  },
+  {
+    @log smoke=TC001: map with lambda. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - filter with #lambda.
+# filter(#lambda/gt(\%0,3), 1 2 3 4 5) => 4 5
+#
+&tr.tc002 test_lambda_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [filter(#lambda/gt(\%0,3), 1 2 3 4 5)]
+          )
+        ),
+        3F05851FF78D92913A4ECD2BA44C4EC5AB245BDF
+      )=
+  {
+    @log smoke=TC002: filter with lambda. Succeeded.
+  },
+  {
+    @log smoke=TC002: filter with lambda. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - fold with #lambda.
+# fold(#lambda/add(\%0,\%1), 1 2 3 4 5) => 15
+#
+&tr.tc003 test_lambda_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [fold(#lambda/add(\%0,\%1), 1 2 3 4 5)]
+          )
+        ),
+        F1ABD670358E036C31296E66B3B66C382AC00812
+      )=
+  {
+    @log smoke=TC003: fold with lambda. Succeeded.
+  },
+  {
+    @log smoke=TC003: fold with lambda. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - u with #lambda.
+# u(#lambda/mul(\%0,\%1), 6, 7) => 42
+#
+&tr.tc004 test_lambda_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [u(#lambda/mul(\%0,\%1), 6, 7)]
+          )
+        ),
+        92CFCEB39D57D914ED8B14D0E37643DE0797AE56
+      )=
+  {
+    @log smoke=TC004: u with lambda. Succeeded.
+  },
+  {
+    @log smoke=TC004: u with lambda. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - #apply/funcname (single arg).
+# map(#apply/strlen, foo bar quux) => 3 3 4
+#
+&tr.tc005 test_lambda_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [map(#apply/strlen, foo bar quux)]
+          )
+        ),
+        79DDCB27BAA52105DCE6A602159525DA092D5E07
+      )=
+  {
+    @log smoke=TC005: apply with map. Succeeded.
+  },
+  {
+    @log smoke=TC005: apply with map. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - #apply2/funcname (two args).
+# mix(#apply2/add, 1 2 3, 4 5 6) => 5 7 9
+#
+&tr.tc006 test_lambda_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [mix(#apply2/add, 1 2 3, 4 5 6)]
+          )
+        ),
+        8624F757FF1E0A8D0E74163D35A15824F72BDD9C
+      )=
+  {
+    @log smoke=TC006: apply2 with mix. Succeeded.
+  },
+  {
+    @log smoke=TC006: apply2 with mix. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - Case insensitivity.
+# map(#LAMBDA/add(\%0,10), 1 2 3) => 11 12 13
+#
+&tr.tc007 test_lambda_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [map(#LAMBDA/add(\%0,10), 1 2 3)]
+          )
+        ),
+        E7D0B89EC7E026A0E45A11F67E5783D9E83B93C9
+      )=
+  {
+    @log smoke=TC007: lambda case insensitivity. Succeeded.
+  },
+  {
+    @log smoke=TC007: lambda case insensitivity. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - sortby with #lambda.
+# sortby(#lambda/sub(\%1,\%0), 5 3 1 4 2) => 1 2 3 4 5
+#
+&tr.tc008 test_lambda_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sortby(#lambda/sub(\%1,\%0), 5 3 1 4 2)]
+          )
+        ),
+        5B88DE9CB8CD4D2EA8AC027B11C9DCCDFFA4AC19
+      )=
+  {
+    @log smoke=TC008: sortby with lambda. Succeeded.
+  },
+  {
+    @log smoke=TC008: sortby with lambda. Failed (%q0).
+  }
+-
+#
+# Test Case #9 - #apply with no digit defaults to 1 arg.
+# u(#apply/inc, 41) => 42
+#
+&tr.tc009 test_lambda_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [u(#apply/inc, 41)]
+          )
+        ),
+        92CFCEB39D57D914ED8B14D0E37643DE0797AE56
+      )=
+  {
+    @log smoke=TC009: apply with u. Succeeded.
+  },
+  {
+    @log smoke=TC009: apply with u. Failed (%q0).
+  }
+-
+#
+# Test Case #10 - #lambda with empty body.
+# u(#lambda/, 5) => (empty)
+#
+&tr.tc010 test_lambda_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [u(#lambda/, 5)]
+          )
+        ),
+        DA39A3EE5E6B4B0D3255BFEF95601890AFD80709
+      )=
+  {
+    @log smoke=TC010: lambda empty body. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC010: lambda empty body. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_lambda_fn=
+  @log smoke=End lambda test cases.;
+  @notify smoke
+-
+drop test_lambda_fn
+-
+#
+# End of Test Cases
+#

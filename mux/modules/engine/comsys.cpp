@@ -1247,6 +1247,57 @@ void save_comsystem(FILE* fp)
     }
 }
 
+// ---------------------------------------------------------------------------
+// call_mogrifier: Evaluate a MOGRIFY`<suffix> attribute on the channel
+// object.  Returns an alloc_lbuf'd result (caller must free_lbuf) or
+// nullptr if the attribute doesn't exist or is empty.
+//
+// Args passed as %0..%N-1.
+//
+static UTF8 *call_mogrifier
+(
+    const dbref chan_obj,
+    const dbref executor,
+    const UTF8 *suffix,
+    const UTF8 *args[],
+    int nargs
+)
+{
+    if (!Good_obj(chan_obj))
+    {
+        return nullptr;
+    }
+
+    // Build attribute name: MOGRIFY`<suffix>
+    //
+    UTF8 aname[SBUF_SIZE];
+    mux_sprintf(aname, sizeof(aname), T("MOGRIFY`%s"), suffix);
+
+    ATTR *pattr = atr_str(aname);
+    if (!pattr)
+    {
+        return nullptr;
+    }
+
+    dbref aowner;
+    int aflags;
+    UTF8 *atext = atr_pget(chan_obj, pattr->number, &aowner, &aflags);
+    if (!*atext)
+    {
+        free_lbuf(atext);
+        return nullptr;
+    }
+
+    UTF8 *result = alloc_lbuf("call_mogrifier");
+    UTF8 *bp = result;
+    mux_exec(atext, LBUF_SIZE-1, result, &bp, chan_obj, chan_obj, executor,
+        AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
+        args, nargs);
+    *bp = '\0';
+    free_lbuf(atext);
+    return result;
+}
+
 static void BuildChannelMessage
 (
     const bool bSpoof,
@@ -1515,6 +1566,34 @@ static void do_processcom(dbref player, UTF8* arg1, UTF8* arg2)
         sqlite_wt_channel(ch);
         giveto(ch->charge_who, ch->charge);
 
+        // Check MOGRIFY`BLOCK on the channel object.  If it returns a
+        // non-empty string, send that string to the speaker and suppress
+        // the message entirely.
+        //
+        if (Good_obj(ch->chan_obj))
+        {
+            UTF8 chattype[2];
+            chattype[0] = (arg2[0] == ':' || arg2[0] == ';') ? arg2[0] : '"';
+            chattype[1] = '\0';
+            UTF8 sdrBuf[32];
+            mux_sprintf(sdrBuf, sizeof(sdrBuf), T("#%d"), player);
+            const UTF8 *block_args[5] = {
+                chattype, ch->name, arg2, (const UTF8 *)Name(player), sdrBuf
+            };
+            UTF8 *block_result = call_mogrifier(ch->chan_obj, player,
+                T("BLOCK"), block_args, 5);
+            if (block_result)
+            {
+                if (*block_result)
+                {
+                    raw_notify(player, block_result);
+                    free_lbuf(block_result);
+                    return;
+                }
+                free_lbuf(block_result);
+            }
+        }
+
         // BuildChannelMessage allocates messNormal and messNoComtitle,
         // SendChannelMessage frees them.
         //
@@ -1560,6 +1639,68 @@ void SendChannelMessage
         s_chatformat_init = true;
     }
 
+    // Evaluate mogrifier attributes on the channel object, if present.
+    // These run once per message, not per listener.
+    //
+    // MOGRIFY`MESSAGE — transform the composed message text.
+    // MOGRIFY`FORMAT  — channel-wide format (like per-player CHATFORMAT).
+    // MOGRIFY`OVERRIDE — if true, skip per-player CHATFORMAT.
+    // MOGRIFY`NOBUFFER — if true, skip recall buffer logging.
+    //
+    UTF8 *mogMsg = nullptr;
+    UTF8 *mogFmt = nullptr;
+    bool bMogOverride = false;
+    bool bMogNobuffer = false;
+
+    if (  Good_obj(ch->chan_obj)
+       && !bJoinLeaveMsg)
+    {
+        UTF8 sdrBuf[32];
+        mux_sprintf(sdrBuf, sizeof(sdrBuf), T("#%d"), executor);
+        const UTF8 *mog_args[3] = { ch->name, msgNormal, sdrBuf };
+
+        // MOGRIFY`MESSAGE: if non-empty, replaces the message text.
+        //
+        mogMsg = call_mogrifier(ch->chan_obj, executor,
+            T("MESSAGE"), mog_args, 3);
+
+        // MOGRIFY`OVERRIDE: if true (non-zero), skip per-player CHATFORMAT.
+        //
+        UTF8 *mogOvr = call_mogrifier(ch->chan_obj, executor,
+            T("OVERRIDE"), mog_args, 3);
+        if (mogOvr)
+        {
+            bMogOverride = xlate(mogOvr);
+            free_lbuf(mogOvr);
+        }
+
+        // MOGRIFY`NOBUFFER: if true (non-zero), skip recall buffer.
+        //
+        UTF8 *mogNB = call_mogrifier(ch->chan_obj, executor,
+            T("NOBUFFER"), mog_args, 3);
+        if (mogNB)
+        {
+            bMogNobuffer = xlate(mogNB);
+            free_lbuf(mogNB);
+        }
+
+        // Update message args if MOGRIFY`MESSAGE replaced the text.
+        //
+        const UTF8 *fmt_msg = (mogMsg && *mogMsg) ? mogMsg : msgNormal;
+        const UTF8 *fmt_args[3] = { ch->name, fmt_msg, sdrBuf };
+
+        // MOGRIFY`FORMAT: channel-wide format applied to the
+        // (possibly mogrified) message.
+        //
+        mogFmt = call_mogrifier(ch->chan_obj, executor,
+            T("FORMAT"), fmt_args, 3);
+    }
+
+    // Determine effective message after mogrification.
+    //
+    const UTF8 *effMsgNormal = (mogMsg && *mogMsg) ? mogMsg : msgNormal;
+    const UTF8 *effMsgNoComtitle = (mogMsg && *mogMsg) ? mogMsg : msgNoComtitle;
+
     for (auto &kv : ch->users)
     {
         comuser &user = kv.second;
@@ -1571,23 +1712,34 @@ void SendChannelMessage
             && user.bUserIsOn
             && test_receive_access(user.who, ch))
         {
+            // If MOGRIFY`FORMAT produced output, use it (channel-wide
+            // formatting takes priority over per-player CHATFORMAT,
+            // unless the player has their own CHATFORMAT and OVERRIDE
+            // is not set).
+            //
+            if (mogFmt && *mogFmt && bMogOverride)
+            {
+                notify_comsys(user.who, executor, mogFmt);
+                continue;
+            }
+
             const UTF8 *pMsg;
             if (user.ComTitleStatus
                 || bSpoof
-                || msgNoComtitle == nullptr)
+                || effMsgNoComtitle == nullptr)
             {
-                pMsg = msgNormal;
+                pMsg = effMsgNormal;
             }
             else
             {
-                pMsg = msgNoComtitle;
+                pMsg = effMsgNoComtitle;
             }
 
-            // Check if the receiver has a CHATFORMAT attribute.
-            // If so, evaluate it with %0=channel, %1=message,
-            // %2=sender dbref.
+            // Check if the receiver has a CHATFORMAT attribute
+            // (unless MOGRIFY`OVERRIDE suppresses it).
             //
-            if (0 < s_chatformat_atr)
+            if (  0 < s_chatformat_atr
+               && !bMogOverride)
             {
                 dbref aowner;
                 int aflags;
@@ -1612,14 +1764,25 @@ void SendChannelMessage
                 }
                 free_lbuf(chatfmt);
             }
-            notify_comsys(user.who, executor, pMsg);
+
+            // Use MOGRIFY`FORMAT if available, otherwise the raw message.
+            //
+            if (mogFmt && *mogFmt)
+            {
+                notify_comsys(user.who, executor, mogFmt);
+            }
+            else
+            {
+                notify_comsys(user.who, executor, pMsg);
+            }
         }
     }
 
-    // Handle logging.
+    // Handle logging (skip if MOGRIFY`NOBUFFER).
     //
     const dbref obj = ch->chan_obj;
-    if (Good_obj(obj))
+    if (  Good_obj(obj)
+       && !bMogNobuffer)
     {
         dbref aowner;
         int aflags;
@@ -1671,6 +1834,17 @@ void SendChannelMessage
     else if (ch->chan_obj != NOTHING)
     {
         ch->chan_obj = NOTHING;
+    }
+
+    // Free mogrifier results.
+    //
+    if (mogMsg)
+    {
+        free_lbuf(mogMsg);
+    }
+    if (mogFmt)
+    {
+        free_lbuf(mogFmt);
     }
 
     // Since msgNormal and msgNoComTitle are no longer needed, free them here.
@@ -3973,6 +4147,44 @@ FUNCTION(fun_cowner)
     }
 
     safe_tprintf_str(buff, bufc, T("#%d"), ch->charge_who);
+}
+
+// cmogrifier(<channel>) — Returns the dbref of the channel object (which
+// is also the mogrifier object in TinyMUX).  Returns #-1 if no channel
+// object is set.  PennMUSH compatibility.
+//
+FUNCTION(fun_cmogrifier)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    struct channel *ch = select_channel(fargs[0]);
+    if (nullptr == ch)
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    if (  !(ch->type & CHANNEL_PUBLIC)
+       && !Comm_All(executor)
+       && !Controls(executor, ch->charge_who))
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    if (Good_obj(ch->chan_obj))
+    {
+        safe_tprintf_str(buff, bufc, T("#%d"), ch->chan_obj);
+    }
+    else
+    {
+        safe_str(T("#-1"), buff, bufc);
+    }
 }
 
 FUNCTION(fun_cusers)

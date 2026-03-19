@@ -1136,6 +1136,9 @@ extern int anum_alc_top;
 #define TRIG_QUIET      1   /* Don't display 'Triggered.' message. */
 #define TRIG_NOTIFY     2   /* Send a @notify after the @trigger is completed. */
 #define TRIG_NOW        4   /* Execute triggered attribute inline instead of enqueuing */
+#define INCLUDE_NOBREAK   1   /* @break in included attr does not propagate to parent */
+#define INCLUDE_LOCALIZE  2   /* Save/restore %q-registers around included attr */
+#define INCLUDE_CLEARREGS 4   /* Clear %q-registers before executing included attr */
 #define TWARP_QUEUE     1   /* Warp the wait and sem queues */
 #define TWARP_DUMP      2   /* Warp the dump interval */
 #define TWARP_CLEAN     4   /* Warp the cleaning interval */

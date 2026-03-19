@@ -2225,6 +2225,163 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
 }
 
+// ---------------------------------------------------------------------------
+// do_include: Inline-expand the contents of an attribute into the current
+// action list.  Unlike @trigger, this does not create a new queue entry --
+// the included commands execute immediately in the caller's context, and
+// @break/@assert propagate to the parent action list (unless /nobreak).
+//
+// Syntax: @include[/nobreak][/localize][/clearregs] obj/attr[=arg0,arg1,...]
+//
+// Without arguments, the parent's %0-%9 pass through unchanged.
+// With arguments, %0-%9 are replaced for the duration of the include.
+//
+void do_include(dbref executor, dbref caller, dbref enactor, int eval, int key,
+                UTF8 *object, UTF8 *argv[], int nargs, const UTF8 *cargs[], int ncargs)
+{
+    dbref thing;
+    ATTR *pattr;
+
+    if (!( parse_attrib(executor, object, &thing, &pattr)
+        && pattr))
+    {
+        notify_quiet(executor, T("No match."));
+        return;
+    }
+
+    // @include requires read access, not control.
+    //
+    if (!See_attr(executor, thing, pattr))
+    {
+        notify_quiet(executor, NOPERM_MESSAGE);
+        return;
+    }
+
+    dbref aowner;
+    int aflags;
+    UTF8 *act = atr_pget(thing, pattr->number, &aowner, &aflags);
+    if (!*act)
+    {
+        free_lbuf(act);
+        return;
+    }
+
+    if ((aflags & AF_NOEVAL) || NoEval(thing))
+    {
+        // NOEVAL content is data, not code -- skip execution.
+        //
+        free_lbuf(act);
+        return;
+    }
+
+    // Strip $command: or ^listen: prefix if present, so that the same
+    // attribute that serves as a $-command can be @included as a
+    // subroutine.
+    //
+    UTF8 *body = act;
+    if (  '$' == act[0]
+       || '^' == act[0])
+    {
+        UTF8 *colon = (UTF8 *)strchr((char *)act, ':');
+        if (colon)
+        {
+            body = colon + 1;
+        }
+    }
+
+    // Determine effective environment: if caller supplies args, use them;
+    // otherwise pass through the parent's environment.
+    //
+    const UTF8 **env;
+    int nenv;
+    if (  nargs > 0
+       && argv[0]
+       && argv[0][0] != '\0')
+    {
+        env = (const UTF8 **)argv;
+        nenv = nargs;
+    }
+    else
+    {
+        env = cargs;
+        nenv = ncargs;
+    }
+
+    // Save/clear %q-registers if requested.
+    //
+    reg_ref *preserve[MAX_GLOBAL_REGS];
+    bool bLocalize = (key & INCLUDE_LOCALIZE) != 0;
+    if (bLocalize)
+    {
+        for (int i = 0; i < MAX_GLOBAL_REGS; i++)
+        {
+            preserve[i] = mudstate.global_regs[i];
+            if (preserve[i])
+            {
+                RegAddRef(preserve[i]);
+            }
+        }
+    }
+    if (key & INCLUDE_CLEARREGS)
+    {
+        for (int i = 0; i < MAX_GLOBAL_REGS; i++)
+        {
+            if (mudstate.global_regs[i])
+            {
+                RegRelease(mudstate.global_regs[i]);
+                mudstate.global_regs[i] = nullptr;
+            }
+        }
+    }
+
+    // Save break state so /nobreak can isolate it.
+    //
+    bool save_break = break_called;
+    if (key & INCLUDE_NOBREAK)
+    {
+        break_called = false;
+    }
+
+    // Walk the included text, splitting on semicolons and executing
+    // each command inline.
+    //
+    UTF8 *command = body;
+    while (  command
+          && !break_called)
+    {
+        UTF8 *cp = parse_to(&command, ';', EV_STRIP_AROUND);
+        if (  cp
+           && *cp)
+        {
+            process_command(thing, caller, enactor,
+                AttrTrace(aflags, 0), false, cp, env, nenv);
+        }
+    }
+
+    // Restore break state for /nobreak.
+    //
+    if (key & INCLUDE_NOBREAK)
+    {
+        break_called = save_break;
+    }
+
+    // Restore %q-registers if /localize.
+    //
+    if (bLocalize)
+    {
+        for (int i = 0; i < MAX_GLOBAL_REGS; i++)
+        {
+            if (mudstate.global_regs[i])
+            {
+                RegRelease(mudstate.global_regs[i]);
+            }
+            mudstate.global_regs[i] = preserve[i];
+        }
+    }
+
+    free_lbuf(act);
+}
+
 void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *object, const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);

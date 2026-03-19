@@ -1,0 +1,75 @@
+#
+# sandbox_fn.mux - Test Cases for sandbox().
+#
+@create test_sandbox_fn
+-
+@set test_sandbox_fn=INHERIT QUIET
+-
+&tr.tc000 test_sandbox_fn=
+  @log smoke=Beginning sandbox() test cases.
+-
+#
+# Test Case #1 - sandbox blocks a named function.
+# add() is blocked, so sandbox(add(1,2),add) should return #-1 PERMISSION DENIED.
+#
+&tr.tc001 test_sandbox_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sandbox(add(1\,2),add)]
+          )
+        ),
+        DEAAD7EB64E524CD4E669611428AF99F4663FC98
+      )=
+  {
+    @log smoke=TC001: sandbox blocks function. Succeeded.
+  },
+  {
+    @log smoke=TC001: sandbox blocks function. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - sandbox does not affect unblocked functions.
+# mul() is blocked but add() is not.
+#
+&tr.tc002 test_sandbox_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sandbox(add(1\,2),mul)]
+          )
+        ),
+        B6589FC6AB0DC82CF12099D1C2D40AB994E8410C
+      )=
+  {
+    @log smoke=TC002: sandbox allows other functions. Succeeded.
+  },
+  {
+    @log smoke=TC002: sandbox allows other functions. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - sandbox reverse mode: only listed functions are allowed.
+# Allow only add(), try mul() — should fail.
+#
+&tr.tc003 test_sandbox_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sandbox(mul(2\,3),add,1)]
+          )
+        ),
+        DEAAD7EB64E524CD4E669611428AF99F4663FC98
+      )=
+  {
+    @log smoke=TC003: sandbox reverse blocks unlisted. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: sandbox reverse blocks unlisted. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_sandbox_fn=
+  @log smoke=End sandbox() test cases.;
+  @notify smoke
+-
+drop test_sandbox_fn
+-

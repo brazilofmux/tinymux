@@ -1,0 +1,103 @@
+#
+# cmogrifier_fn.mux - Test Cases for channel mogrifiers.
+#
+@create test_cmogrifier_fn
+-
+@set test_cmogrifier_fn=INHERIT QUIET
+-
+#
+# Create a channel object for mogrifier testing.
+#
+@create mogobj
+-
+@set mogobj=QUIET
+-
+#
+# Create the test channel and set it up.
+#
+@ccreate mogtest
+-
+@cset/public mogtest=on
+-
+@cset/object mogtest=mogobj
+-
+#
+# Create a second test channel (no object).
+#
+@ccreate mogtest2
+-
+@cset/public mogtest2=on
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_cmogrifier_fn=
+  @log smoke=Beginning cmogrifier test cases.
+-
+#
+# Test Case #1 - cmogrifier() returns the channel object dbref.
+#
+&tr.tc001 test_cmogrifier_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isdbref(cmogrifier(mogtest))]
+          )
+        ),
+        B6589FC6AB0DC82CF12099D1C2D40AB994E8410C
+      )=
+  {
+    @log smoke=TC001: cmogrifier returns dbref. Succeeded.
+  },
+  {
+    @log smoke=TC001: cmogrifier returns dbref. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - cmogrifier() returns #-1 for channel without object.
+#
+&tr.tc002 test_cmogrifier_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [cmogrifier(mogtest2)]
+          )
+        ),
+        770632F3C8D766298FD8123A49357D082D5A4672
+      )=
+  {
+    @log smoke=TC002: cmogrifier no object. Succeeded.
+  },
+  {
+    @log smoke=TC002: cmogrifier no object. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - cmogrifier() matches the chan_obj.
+#
+&tr.tc003 test_cmogrifier_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strmatch(cmogrifier(mogtest),num(mogobj))]
+          )
+        ),
+        B6589FC6AB0DC82CF12099D1C2D40AB994E8410C
+      )=
+  {
+    @log smoke=TC003: cmogrifier matches chan_obj. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: cmogrifier matches chan_obj. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_cmogrifier_fn=
+  @log smoke=End cmogrifier test cases.;
+  @notify smoke
+-
+drop test_cmogrifier_fn
+-
+drop mogobj
+-
+#
+# End of Test Cases
+#

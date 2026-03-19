@@ -1,0 +1,248 @@
+#
+# include_fn.mux - Test Cases for @include.
+#
+@create test_include_fn
+-
+@set test_include_fn=INHERIT QUIET
+-
+#
+# Helper attributes for testing.
+#
+&fn_add1 test_include_fn=
+  @eval setq(0,add(%0,1))
+-
+&fn_multi test_include_fn=
+  @eval setq(0,hello); @eval setq(1,world)
+-
+&fn_setq test_include_fn=
+  @eval setq(5,included)
+-
+&fn_passthru test_include_fn=
+  @eval setq(0,%0-%1)
+-
+&fn_cmdprefix test_include_fn=
+  $testcmd *:@eval setq(0,body_%0)
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_include_fn=
+  @log smoke=Beginning include test cases.
+-
+#
+# Test Case #1 - Basic @include with arguments.
+# @include sets %q0 to add(%0,1) where %0=5 => %q0=6.
+#
+&tr.tc001 test_include_fn=
+  @eval setq(0,UNSET);
+  @include me/fn_add1=5;
+  @if strmatch(
+        setr(9,sha1(
+            %q0
+          )
+        ),
+        C1DFD96EEA8CC2B62785275BCA38AC261256E278
+      )=
+  {
+    @log smoke=TC001: basic include with args. Succeeded.
+  },
+  {
+    @log smoke=TC001: basic include with args. Failed (%q9).
+  }
+-
+#
+# Test Case #2 - @include with multiple semicolons in attribute.
+# fn_multi sets %q0=hello and %q1=world.
+#
+&tr.tc002 test_include_fn=
+  @eval setq(0,UNSET);
+  @eval setq(1,UNSET);
+  @include me/fn_multi;
+  @if strmatch(
+        setr(9,sha1(
+            %q0 %q1
+          )
+        ),
+        2AAE6C35C94FCFB415DBE95F408B9CE91EE846ED
+      )=
+  {
+    @log smoke=TC002: multi-command include. Succeeded.
+  },
+  {
+    @log smoke=TC002: multi-command include. Failed (%q9).
+  }
+-
+#
+# Test Case #3 - @break propagation from included attr.
+# @include of an attr that calls @break should stop parent action list.
+# We verify by checking that the command after @include did NOT run:
+# set %q0=before, @include (which breaks), try to set %q0=after.
+# If @break propagated, %q0 stays "before".
+# We use @include/nobreak wrapper to verify in-line.
+#
+&fn_tc003_inner test_include_fn=
+  @eval setq(0,before);
+  @include me/fn_tc003_break;
+  @eval setq(0,after)
+-
+&fn_tc003_break test_include_fn=
+  @break 1
+-
+&tr.tc003 test_include_fn=
+  @include/nobreak me/fn_tc003_inner;
+  @if strmatch(
+        setr(9,sha1(
+            %q0
+          )
+        ),
+        51DE2B835BD35A67EB32DBCD3D77D4B96E5AA39D
+      )=
+  {
+    @log smoke=TC003: break propagation. Succeeded.
+  },
+  {
+    @log smoke=TC003: break propagation. Failed (%q9).
+  }
+-
+#
+# Test Case #4 - @include/nobreak isolates @break.
+# The @eval after @include/nobreak SHOULD run.
+#
+&fn_tc004_break test_include_fn=
+  @break 1; @eval setq(0,should_not_reach)
+-
+&tr.tc004 test_include_fn=
+  @eval setq(0,before);
+  @include/nobreak me/fn_tc004_break;
+  @eval setq(0,after_nobreak);
+  @if strmatch(
+        setr(9,sha1(
+            %q0
+          )
+        ),
+        2208FE2F3E8DF235E8EC24735B03F0A17FBEACD3
+      )=
+  {
+    @log smoke=TC004: nobreak switch. Succeeded.
+  },
+  {
+    @log smoke=TC004: nobreak switch. Failed (%q9).
+  }
+-
+#
+# Test Case #5 - @include/localize saves/restores %q-registers.
+# fn_setq sets %q5=included, but /localize should restore the original.
+#
+&tr.tc005 test_include_fn=
+  @eval setq(5,original);
+  @include/localize me/fn_setq;
+  @if strmatch(
+        setr(9,sha1(
+            %q5
+          )
+        ),
+        D73EF92426F2B11DFC4AED4D4BFC41C49EE1087C
+      )=
+  {
+    @log smoke=TC005: localize switch. Succeeded.
+  },
+  {
+    @log smoke=TC005: localize switch. Failed (%q9).
+  }
+-
+#
+# Test Case #6 - @include without /localize leaks %q-registers.
+# fn_setq sets %q5=included, and without /localize it should persist.
+#
+&tr.tc006 test_include_fn=
+  @eval setq(5,original);
+  @include me/fn_setq;
+  @if strmatch(
+        setr(9,sha1(
+            %q5
+          )
+        ),
+        00F554D678F26112AAD9D51D7A8D2D590EB74801
+      )=
+  {
+    @log smoke=TC006: register leakage without localize. Succeeded.
+  },
+  {
+    @log smoke=TC006: register leakage without localize. Failed (%q9).
+  }
+-
+#
+# Test Case #7 - @include passes parent env when no args given.
+# fn_passthru sets %q0 to %0-%1.
+#
+&tr.tc007 test_include_fn=
+  @eval setq(0,UNSET);
+  @include me/fn_passthru=aaa,bbb;
+  @if strmatch(
+        setr(9,sha1(
+            %q0
+          )
+        ),
+        196BD4CF38EFB68D07681953A3A62BF7FF13A19E
+      )=
+  {
+    @log smoke=TC007: include with explicit args. Succeeded.
+  },
+  {
+    @log smoke=TC007: include with explicit args. Failed (%q9).
+  }
+-
+#
+# Test Case #8 - @include strips $command: prefix.
+# fn_cmdprefix has "$testcmd *:" prefix, @include should strip it.
+#
+&tr.tc008 test_include_fn=
+  @eval setq(0,UNSET);
+  @include me/fn_cmdprefix=hello;
+  @if strmatch(
+        setr(9,sha1(
+            %q0
+          )
+        ),
+        228D6DDD54EA9EB59E222D5DD3FA6D3221BE892A
+      )=
+  {
+    @log smoke=TC008: strip command prefix. Succeeded.
+  },
+  {
+    @log smoke=TC008: strip command prefix. Failed (%q9).
+  }
+-
+#
+# Test Case #9 - @include/clearregs clears registers.
+# After clearregs + fn_setq, %q5 should be "included" (clearregs wiped
+# the old value, fn_setq set the new one).
+#
+&tr.tc009 test_include_fn=
+  @eval setq(5,before_clear);
+  @include/clearregs me/fn_setq;
+  @if strmatch(
+        setr(9,sha1(
+            %q5
+          )
+        ),
+        00F554D678F26112AAD9D51D7A8D2D590EB74801
+      )=
+  {
+    @log smoke=TC009: clearregs switch. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC009: clearregs switch. Failed (%q9).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_include_fn=
+  @log smoke=End include test cases.;
+  @notify smoke
+-
+drop test_include_fn
+-
+#
+# End of Test Cases
+#

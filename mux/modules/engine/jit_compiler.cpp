@@ -2302,6 +2302,14 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
               dbref executor, dbref caller, dbref enactor,
               int eval,
               const UTF8 *cargs[], int ncargs) {
+    // sandbox() sets bSandboxActive to force AST-only evaluation,
+    // which checks fp->perms (CA_DISABLED) before each function call.
+    //
+    if (mudstate.bSandboxActive)
+    {
+        return false;
+    }
+
     JITArena::gc();
     jit_dma_controller::reset();
     // Don't JIT until the Tier 2 blob is loaded and the persistent

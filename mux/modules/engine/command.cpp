@@ -581,6 +581,14 @@ static NAMETAB toad_sw[] =
     {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
+static NAMETAB include_sw[] =
+{
+    {T("nobreak"),         1,  CA_PUBLIC,  INCLUDE_NOBREAK},
+    {T("localize"),        1,  CA_PUBLIC,  INCLUDE_LOCALIZE|SW_MULTIPLE},
+    {T("clearregs"),       1,  CA_PUBLIC,  INCLUDE_CLEARREGS|SW_MULTIPLE},
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
+};
+
 static NAMETAB trig_sw[] =
 {
     {T("quiet"),           1,  CA_PUBLIC,  TRIG_QUIET},
@@ -899,6 +907,7 @@ static CMDENT_TWO_ARG_ARGV command_table_two_arg_argv[] =
     {T("@edit"),       nullptr,    CA_NO_SLAVE|CA_NO_GUEST,              0,  CS_TWO_ARG|CS_ARGV|CS_STRIP_AROUND, 0, do_edit},
     {T("@icmd"),       icmd_sw,    CA_GOD,                               0,  CS_TWO_ARG|CS_ARGV|CS_INTERP,   0, do_icmd},
     {T("@if"),         nullptr,    CA_GBL_INTERP,                        0,  CS_TWO_ARG|CS_ARGV|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_if},
+    {T("@include"),    include_sw, CA_GBL_INTERP,                       0,  CS_TWO_ARG|CS_ARGV,             0, do_include},
     {T("@mvattr"),     nullptr,    CA_NO_SLAVE|CA_NO_GUEST|CA_GBL_BUILD, 0,  CS_TWO_ARG|CS_ARGV,             0, do_mvattr},
     {T("@open"),       open_sw,    CA_NO_SLAVE|CA_GBL_BUILD|CA_NO_GUEST, 0,  CS_TWO_ARG|CS_ARGV|CS_INTERP,   0, do_open},
     {T("@switch"),     switch_sw,  CA_GBL_INTERP,                        0,  CS_TWO_ARG|CS_ARGV|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_switch},

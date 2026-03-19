@@ -37,6 +37,57 @@ bool parse_and_get_attrib
     UTF8  **bufc
 )
 {
+    // Check for #lambda/body -- inline anonymous softcode.
+    //
+    if (string_prefix(fargs[0], T("#lambda/")) > 0)
+    {
+        *atext = alloc_lbuf("lambda");
+        mux_strncpy(*atext, fargs[0] + 8, LBUF_SIZE - 1);
+        *thing = executor;
+        *paowner = executor;
+        *paflags = 0;
+        return true;
+    }
+
+    // Check for #apply[N]/funcname -- synthesize funcname(%0,...,%N-1).
+    //
+    if (string_prefix(fargs[0], T("#apply")) > 0)
+    {
+        const UTF8 *p = fargs[0] + 6;
+        int nargs = 1;
+        if (mux_isdigit(*p))
+        {
+            nargs = mux_atol(p);
+            while (mux_isdigit(*p)) p++;
+            if (nargs < 1)  nargs = 1;
+            if (nargs > 10) nargs = 10;
+        }
+        if ('/' != *p)
+        {
+            return false;
+        }
+        p++;
+
+        // Synthesize: funcname(%0,%1,...,%N-1)
+        //
+        *atext = alloc_lbuf("apply");
+        UTF8 *bp = *atext;
+        safe_str(p, *atext, &bp);
+        safe_chr('(', *atext, &bp);
+        for (int i = 0; i < nargs; i++)
+        {
+            if (i > 0) safe_chr(',', *atext, &bp);
+            safe_chr('%', *atext, &bp);
+            safe_chr('0' + i, *atext, &bp);
+        }
+        safe_chr(')', *atext, &bp);
+        *bp = '\0';
+        *thing = executor;
+        *paowner = executor;
+        *paflags = 0;
+        return true;
+    }
+
     ATTR *ap;
 
     // Two possibilities for the first arg: <obj>/<attr> and <attr>.
@@ -3191,5 +3242,953 @@ FUNCTION(fun_elements)
             }
         } while (s);
         **bufc = '\0';
+    }
+}
+
+// ---------------------------------------------------------------------------
+// fun_between: Boolean range test.
+//   between(low, high, value) — exclusive (strict less/greater)
+//   between(low, high, value, 1) — inclusive (<=, >=)
+//
+FUNCTION(fun_between)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    double lo  = mux_atof(fargs[0], false);
+    double hi  = mux_atof(fargs[1], false);
+    double val = mux_atof(fargs[2], false);
+
+    bool bInclusive = (nfargs >= 4 && xlate(fargs[3]));
+    bool bResult;
+    if (bInclusive)
+    {
+        bResult = (lo <= val && val <= hi);
+    }
+    else
+    {
+        bResult = (lo < val && val < hi);
+    }
+    safe_bool(bResult, buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// fun_delextract: Delete a range of elements from a list.
+//   delextract(list, first, count[, sep])
+//
+FUNCTION(fun_delextract)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+    UNUSED_PARAMETER(executor);
+
+    SEP sep;
+    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    int iFirst = mux_atol(fargs[1]);
+    int nCount = mux_atol(fargs[2]);
+    if (iFirst < 1) iFirst = 1;
+    if (nCount < 1)
+    {
+        // Nothing to delete — return entire list.
+        //
+        safe_str(fargs[0], buff, bufc);
+        return;
+    }
+    int iLast = iFirst + nCount - 1;
+
+    UTF8 *bp = trim_space_sep(fargs[0], sep);
+    bool bFirst = true;
+    int pos = 1;
+    while (bp)
+    {
+        UTF8 *tok = split_token(&bp, sep);
+        if (pos < iFirst || pos > iLast)
+        {
+            if (!bFirst)
+            {
+                print_sep(sep, buff, bufc);
+            }
+            else
+            {
+                bFirst = false;
+            }
+            safe_str(tok, buff, bufc);
+        }
+        pos++;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// fun_garble: Garble text at a configurable percentage.
+//   garble(string, percent)
+//   percent is 0-100, the chance each character is garbled.
+//   Garbled characters are replaced with random printable ASCII.
+//   Spaces are preserved.
+//
+FUNCTION(fun_garble)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    int pct = mux_atol(fargs[1]);
+    if (pct < 0)   pct = 0;
+    if (pct > 100)  pct = 100;
+
+    const UTF8 *p = fargs[0];
+    while (*p)
+    {
+        if (*p == ' ')
+        {
+            safe_chr(' ', buff, bufc);
+        }
+        else if (RandomINT32(0, 99) < pct)
+        {
+            // Replace with random printable ASCII (33-126).
+            //
+            safe_chr(static_cast<UTF8>(33 + RandomINT32(0, 93)), buff, bufc);
+        }
+        else
+        {
+            safe_chr(*p, buff, bufc);
+        }
+        p++;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// fun_moon: Return moon phase information.
+//   moon() or moon(secs) — descriptive string
+//   moon(secs, 1) — numeric percentage (positive=waxing, negative=waning)
+//
+// Algorithm: simplified lunation cycle. Average synodic month = 29.53059 days.
+//
+FUNCTION(fun_moon)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    // Get timestamp.
+    //
+    double secs;
+    if (nfargs >= 1 && fargs[0][0] != '\0')
+    {
+        secs = mux_atof(fargs[0], false);
+    }
+    else
+    {
+        CLinearTimeAbsolute ltaNow;
+        ltaNow.GetUTC();
+        secs = static_cast<double>(ltaNow.ReturnSeconds());
+    }
+
+    // Known new moon: Jan 6, 2000 18:14 UTC = 947182440
+    //
+    const double NEW_MOON_EPOCH = 947182440.0;
+    const double SYNODIC_MONTH  = 29.53059 * 86400.0;  // in seconds
+
+    double phase = fmod(secs - NEW_MOON_EPOCH, SYNODIC_MONTH);
+    if (phase < 0) phase += SYNODIC_MONTH;
+
+    // Phase as fraction of cycle (0.0 = new, 0.5 = full, 1.0 = new again).
+    //
+    double frac = phase / SYNODIC_MONTH;
+
+    // Illumination: 0% at new (0.0), 100% at full (0.5), 0% at new (1.0).
+    // Uses cosine curve: illumination = (1 - cos(2*pi*frac)) / 2 * 100
+    //
+    double illum = (1.0 - cos(2.0 * 3.14159265358979323846 * frac)) / 2.0 * 100.0;
+    int pct = static_cast<int>(illum + 0.5);
+    bool bWaxing = (frac < 0.5);
+
+    int numeric = (nfargs >= 2 && xlate(fargs[1]));
+    if (numeric)
+    {
+        // Return signed percentage: positive = waxing, negative = waning.
+        //
+        safe_ltoa(bWaxing ? pct : -pct, buff, bufc);
+    }
+    else
+    {
+        // Descriptive string.
+        //
+        if (pct >= 100)
+        {
+            safe_str(T("The Moon is Full"), buff, bufc);
+        }
+        else if (pct <= 0)
+        {
+            safe_str(T("The Moon is New"), buff, bufc);
+        }
+        else if (49 <= pct && pct <= 51)
+        {
+            safe_tprintf_str(buff, bufc, T("The Moon is %s Half (%d%% of Full)"),
+                bWaxing ? T("Waxing") : T("Waning"), pct);
+        }
+        else if (pct > 50)
+        {
+            safe_tprintf_str(buff, bufc, T("The Moon is %s Gibbous (%d%% of Full)"),
+                bWaxing ? T("Waxing") : T("Waning"), pct);
+        }
+        else
+        {
+            safe_tprintf_str(buff, bufc, T("The Moon is %s Crescent (%d%% of Full)"),
+                bWaxing ? T("Waxing") : T("Waning"), pct);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// fun_soundex: Return Soundex encoding of a word.
+//   soundex(word)
+//
+static void compute_soundex(const UTF8 *word, UTF8 result[5])
+{
+    // Soundex mapping: BFPV=1, CGJKQSXZ=2, DT=3, L=4, MN=5, R=6
+    // AEIOUHWY=0 (not coded)
+    //
+    static const char sdx[] = {
+        '0','1','2','3','0','1','2','0','0','2','2','4','5','5','0','1','2','6','2','3','0','1','0','2','0','2'
+    };
+
+    result[0] = '\0';
+    if (!word || !*word || !mux_isalpha(*word))
+    {
+        return;
+    }
+
+    // Capitalize first letter.
+    //
+    result[0] = static_cast<UTF8>(mux_toupper_ascii(*word));
+    int idx = 1;
+    int ci0 = mux_isupper_ascii(*word) ? (*word - 'A') : (*word - 'a');
+    char last = (ci0 >= 0 && ci0 < 26) ? sdx[ci0] : '0';
+
+    word++;
+    while (*word && idx < 4)
+    {
+        if (mux_isalpha(*word))
+        {
+            int ci = mux_isupper_ascii(*word) ? (*word - 'A') : (*word - 'a');
+            if (ci >= 0 && ci < 26)
+            {
+                char code = sdx[ci];
+                if (code != '0' && code != last)
+                {
+                    result[idx++] = static_cast<UTF8>(code);
+                }
+                last = code;
+            }
+        }
+        word++;
+    }
+    while (idx < 4) result[idx++] = '0';
+    result[4] = '\0';
+}
+
+FUNCTION(fun_soundex)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+    UNUSED_PARAMETER(nfargs);
+
+    // Validate: single word, starts with alpha.
+    //
+    if (  !fargs[0][0]
+       || !mux_isalpha(fargs[0][0])
+       || strchr(reinterpret_cast<const char*>(fargs[0]), ' '))
+    {
+        safe_str(T("#-1 FUNCTION (SOUNDEX) REQUIRES A SINGLE WORD ARGUMENT"), buff, bufc);
+        return;
+    }
+
+    UTF8 result[5];
+    compute_soundex(fargs[0], result);
+    safe_str(result, buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// fun_soundlike: Compare Soundex encodings of two words.
+//   soundlike(word1, word2)
+//
+FUNCTION(fun_soundlike)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+    UNUSED_PARAMETER(nfargs);
+
+    if (  !fargs[0][0] || !mux_isalpha(fargs[0][0])
+       || strchr(reinterpret_cast<const char*>(fargs[0]), ' ')
+       || !fargs[1][0] || !mux_isalpha(fargs[1][0])
+       || strchr(reinterpret_cast<const char*>(fargs[1]), ' '))
+    {
+        safe_str(T("#-1 FUNCTION (SOUNDLIKE) REQUIRES SINGLE WORD ARGUMENTS"), buff, bufc);
+        return;
+    }
+
+    UTF8 s1[5], s2[5];
+    compute_soundex(fargs[0], s1);
+    compute_soundex(fargs[1], s2);
+    safe_bool(strcmp(reinterpret_cast<const char*>(s1),
+                     reinterpret_cast<const char*>(s2)) == 0, buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// fun_caplist: Title-case a list of words with intelligent article handling.
+//   caplist(list[, sep, osep])
+//   Capitalizes the first letter of each word.  The words "a", "an", "the",
+//   "and", "or", "but", "for", "nor", "of", "in", "on", "at", "to", "by",
+//   "is" are kept lowercase unless they are the first or last word.
+//
+FUNCTION(fun_caplist)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    SEP sep;
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(3, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT|DELIM_STRING))
+    {
+        return;
+    }
+
+    // Articles and short conjunctions/prepositions that stay lowercase
+    // in title case (unless first or last word).
+    //
+    static const char *smalls[] = {
+        "a", "an", "the", "and", "or", "but", "for", "nor",
+        "of", "in", "on", "at", "to", "by", "is", "as", "if",
+        "it", "so", "vs", "via", nullptr
+    };
+
+    // First pass: collect words to determine first/last.
+    //
+    UTF8 *words[LBUF_SIZE / 2];
+    int nWords = 0;
+    UTF8 *bp = trim_space_sep(fargs[0], sep);
+    while (bp)
+    {
+        words[nWords++] = split_token(&bp, sep);
+        if (nWords >= static_cast<int>(sizeof(words)/sizeof(words[0])))
+        {
+            break;
+        }
+    }
+
+    for (int i = 0; i < nWords; i++)
+    {
+        if (i > 0)
+        {
+            print_sep(osep, buff, bufc);
+        }
+
+        UTF8 *w = words[i];
+        bool bSmall = false;
+        if (i > 0 && i < nWords - 1)
+        {
+            for (const char **sp = smalls; *sp; sp++)
+            {
+                if (mux_stricmp(w, reinterpret_cast<const UTF8*>(*sp)) == 0)
+                {
+                    bSmall = true;
+                    break;
+                }
+            }
+        }
+
+        if (bSmall)
+        {
+            // Output lowercase.
+            //
+            for (const UTF8 *p = w; *p; p++)
+            {
+                safe_chr(static_cast<UTF8>(mux_tolower_ascii(*p)), buff, bufc);
+            }
+        }
+        else
+        {
+            // Capitalize first letter, pass through rest.
+            //
+            if (*w && mux_isalpha(*w))
+            {
+                safe_chr(static_cast<UTF8>(mux_toupper_ascii(*w)), buff, bufc);
+                w++;
+            }
+            safe_str(w, buff, bufc);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// fun_while: Iterate over a list while a condition is met.
+//   while(eval-attr, cond-attr, list, compval[, isep, osep])
+//
+// For each element in list:
+//   1. Evaluate eval-attr with element as %0, append result to output.
+//   2. Evaluate cond-attr with element as %0.
+//   3. If cond result equals compval (string match), stop.
+//
+FUNCTION(fun_while)
+{
+    SEP sep;
+    if (!OPTIONAL_DELIM(5, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(6, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT|DELIM_STRING))
+    {
+        return;
+    }
+
+    // Get the eval attribute (fargs[0]).
+    //
+    UTF8 *eval_atext;
+    dbref eval_thing;
+    dbref eval_aowner;
+    int   eval_aflags;
+    if (!parse_and_get_attrib(executor, fargs, &eval_atext,
+            &eval_thing, &eval_aowner, &eval_aflags, buff, bufc))
+    {
+        return;
+    }
+
+    // Get the cond attribute (fargs[1]).  Temporarily swap fargs[0].
+    //
+    UTF8 *save_farg0 = fargs[0];
+    fargs[0] = fargs[1];
+
+    UTF8 *cond_atext;
+    dbref cond_thing;
+    dbref cond_aowner;
+    int   cond_aflags;
+    bool  bHaveCond = parse_and_get_attrib(executor, fargs, &cond_atext,
+            &cond_thing, &cond_aowner, &cond_aflags, buff, bufc);
+    fargs[0] = save_farg0;
+
+    if (!bHaveCond)
+    {
+        free_lbuf(eval_atext);
+        return;
+    }
+
+    // Are eval and cond the same attribute?
+    //
+    bool bSameAttr = (strcmp(reinterpret_cast<const char*>(eval_atext),
+                            reinterpret_cast<const char*>(cond_atext)) == 0);
+
+    // Iterate over the list.
+    //
+    UTF8 *cp = trim_space_sep(fargs[2], sep);
+    bool bFirst = true;
+    while (  cp
+          && mudstate.func_invk_ctr < mudconf.func_invk_lim
+          && !alarm_clock.alarmed)
+    {
+        UTF8 *element = split_token(&cp, sep);
+
+        if (!bFirst)
+        {
+            print_sep(osep, buff, bufc);
+        }
+        bFirst = false;
+
+        // Evaluate the eval attribute.
+        //
+        const UTF8 *eval_args[1] = { element };
+        UTF8 *eval_result = alloc_lbuf("fun_while.eval");
+        UTF8 *erp = eval_result;
+        mux_exec(eval_atext, LBUF_SIZE-1, eval_result, &erp,
+            eval_thing, executor, enactor,
+            AttrTrace(eval_aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL),
+            eval_args, 1);
+        *erp = '\0';
+
+        // Append eval result to output.
+        //
+        safe_str(eval_result, buff, bufc);
+
+        // Check stop condition.
+        //
+        bool bStop;
+        if (bSameAttr)
+        {
+            // Optimization: compare eval result directly.
+            //
+            bStop = (strcmp(reinterpret_cast<const char*>(eval_result),
+                           reinterpret_cast<const char*>(fargs[3])) == 0);
+        }
+        else
+        {
+            // Evaluate the cond attribute separately.
+            //
+            UTF8 *cond_result = alloc_lbuf("fun_while.cond");
+            UTF8 *crp = cond_result;
+            const UTF8 *cond_args[1] = { element };
+            mux_exec(cond_atext, LBUF_SIZE-1, cond_result, &crp,
+                cond_thing, executor, enactor,
+                AttrTrace(cond_aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL),
+                cond_args, 1);
+            *crp = '\0';
+            bStop = (strcmp(reinterpret_cast<const char*>(cond_result),
+                           reinterpret_cast<const char*>(fargs[3])) == 0);
+            free_lbuf(cond_result);
+        }
+        free_lbuf(eval_result);
+
+        if (bStop)
+        {
+            break;
+        }
+    }
+
+    free_lbuf(eval_atext);
+    free_lbuf(cond_atext);
+}
+
+// ---------------------------------------------------------------------------
+// fun_crc32obj: CRC32 checksum across all visible attributes on an object.
+//   crc32obj(object)
+//   Returns the cumulative CRC32 of all attribute values the executor
+//   can see on the object.  Useful for integrity checking, detecting
+//   attribute changes, and softcoded version control.
+//
+FUNCTION(fun_crc32obj)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+    UNUSED_PARAMETER(nfargs);
+
+    dbref thing = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(thing))
+    {
+        safe_match_result(thing, buff, bufc);
+        return;
+    }
+    if (!Examinable(executor, thing))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    uint32_t ulCRC32 = 0;
+    atr_push();
+    unsigned char *as;
+    for (int ca = atr_head(thing, &as); ca; ca = atr_next(&as))
+    {
+        ATTR *pa = atr_num(ca);
+        if (!pa || !See_attr(executor, thing, pa))
+        {
+            continue;
+        }
+        dbref aowner;
+        int aflags;
+        UTF8 *aval = atr_get("crc32obj", thing, ca, &aowner, &aflags);
+        if (*aval)
+        {
+            size_t n = strlen(reinterpret_cast<const char*>(aval));
+            ulCRC32 = CRC32_ProcessBuffer(ulCRC32, aval, n);
+        }
+        free_lbuf(aval);
+    }
+    atr_pop();
+    safe_i64toa(ulCRC32, buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// fun_subnetmatch: Test whether an IP address is within a subnet.
+//   subnetmatch(ip, network/bits)   — CIDR notation
+//   subnetmatch(ip, network, mask)  — explicit netmask
+//   IPv4 only.  Returns 1 if ip is within the subnet, 0 otherwise.
+//
+FUNCTION(fun_subnetmatch)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    struct in_addr addr, net, mask;
+
+    // Parse the test IP address.
+    //
+    if (inet_pton(AF_INET, reinterpret_cast<const char*>(fargs[0]), &addr) != 1)
+    {
+        safe_str(T("#-1 INVALID IP ADDRESS"), buff, bufc);
+        return;
+    }
+
+    if (nfargs == 2)
+    {
+        // CIDR form: network/bits
+        //
+        UTF8 *slash = (UTF8*)strchr(reinterpret_cast<char*>(fargs[1]), '/');
+        if (!slash)
+        {
+            safe_str(T("#-1 INVALID CIDR NOTATION"), buff, bufc);
+            return;
+        }
+        *slash = '\0';
+        if (inet_pton(AF_INET, reinterpret_cast<const char*>(fargs[1]), &net) != 1)
+        {
+            safe_str(T("#-1 INVALID NETWORK ADDRESS"), buff, bufc);
+            return;
+        }
+        int bits = mux_atol(slash + 1);
+        if (bits < 0 || bits > 32)
+        {
+            safe_str(T("#-1 INVALID PREFIX LENGTH"), buff, bufc);
+            return;
+        }
+        if (bits == 0)
+        {
+            mask.s_addr = 0;
+        }
+        else
+        {
+            mask.s_addr = htonl(0xFFFFFFFFU << (32 - bits));
+        }
+    }
+    else
+    {
+        // Explicit mask form: network, mask
+        //
+        if (inet_pton(AF_INET, reinterpret_cast<const char*>(fargs[1]), &net) != 1)
+        {
+            safe_str(T("#-1 INVALID NETWORK ADDRESS"), buff, bufc);
+            return;
+        }
+        if (inet_pton(AF_INET, reinterpret_cast<const char*>(fargs[2]), &mask) != 1)
+        {
+            safe_str(T("#-1 INVALID NETMASK"), buff, bufc);
+            return;
+        }
+    }
+
+    bool bMatch = ((addr.s_addr & mask.s_addr) == (net.s_addr & mask.s_addr));
+    safe_bool(bMatch, buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// fun_wrapcolumns: Multi-column text formatting with word wrap.
+//   wrapcolumns(text, width, ncols[, just, lborder, mborder, rborder, order])
+//
+//   just: L(eft)/R(ight)/C(enter) — default L
+//   lborder/mborder/rborder: strings placed at left/between/right of columns
+//   order: 0 = down-then-over (newspaper), 1 = over-then-down (row fill)
+//
+FUNCTION(fun_wrapcolumns)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+    UNUSED_PARAMETER(executor);
+
+    int colWidth = mux_atol(fargs[1]);
+    int nCols    = mux_atol(fargs[2]);
+    if (colWidth < 1) colWidth = 1;
+    if (nCols < 1)    nCols = 1;
+
+    // Parse optional args.
+    //
+    UTF8 cJust = 'L';
+    if (nfargs >= 4 && fargs[3][0])
+    {
+        cJust = static_cast<UTF8>(mux_toupper_ascii(fargs[3][0]));
+    }
+    const UTF8 *lBorder = (nfargs >= 5) ? fargs[4] : T("");
+    const UTF8 *mBorder = (nfargs >= 6) ? fargs[5] : T("");
+    const UTF8 *rBorder = (nfargs >= 7) ? fargs[6] : T("");
+    int order = (nfargs >= 8) ? mux_atol(fargs[7]) : 0;
+
+    // Word-wrap the input text into lines of at most colWidth chars.
+    //
+    UTF8 *lines[LBUF_SIZE / 2];
+    int nLines = 0;
+
+    UTF8 *src = fargs[0];
+    while (*src && nLines < static_cast<int>(sizeof(lines)/sizeof(lines[0])))
+    {
+        // Find next line break point.
+        //
+        int len = strlen(reinterpret_cast<const char*>(src));
+        if (len <= colWidth)
+        {
+            lines[nLines++] = src;
+            break;
+        }
+
+        // Look for a space within colWidth chars to break at.
+        //
+        int brk = colWidth;
+        while (brk > 0 && src[brk] != ' ')
+        {
+            brk--;
+        }
+        if (brk == 0)
+        {
+            // No space found — hard break at colWidth.
+            //
+            brk = colWidth;
+        }
+
+        // Null-terminate this line segment.
+        //
+        lines[nLines++] = src;
+        src[brk] = '\0';
+        src += brk + 1;
+
+        // Skip leading spaces on next line.
+        //
+        while (*src == ' ') src++;
+    }
+
+    // Compute grid dimensions.
+    //
+    int nRows;
+    if (order == 0)
+    {
+        // Down-then-over: fill columns top to bottom.
+        //
+        nRows = (nLines + nCols - 1) / nCols;
+    }
+    else
+    {
+        // Over-then-down: fill rows left to right.
+        //
+        nRows = (nLines + nCols - 1) / nCols;
+    }
+
+    // Output grid.
+    //
+    for (int r = 0; r < nRows; r++)
+    {
+        if (r > 0)
+        {
+            safe_str(T("\r\n"), buff, bufc);
+        }
+        safe_str(lBorder, buff, bufc);
+
+        for (int c = 0; c < nCols; c++)
+        {
+            if (c > 0)
+            {
+                safe_str(mBorder, buff, bufc);
+            }
+
+            // Determine which line goes in this cell.
+            //
+            int idx;
+            if (order == 0)
+            {
+                idx = c * nRows + r;  // column-major
+            }
+            else
+            {
+                idx = r * nCols + c;  // row-major
+            }
+
+            const UTF8 *cell = (idx < nLines) ? lines[idx] : T("");
+            int cellLen = strlen(reinterpret_cast<const char*>(cell));
+            int pad = colWidth - cellLen;
+            if (pad < 0) pad = 0;
+
+            switch (cJust)
+            {
+            case 'R':
+                for (int p = 0; p < pad; p++) safe_chr(' ', buff, bufc);
+                safe_str(cell, buff, bufc);
+                break;
+
+            case 'C':
+                {
+                    int lpad = pad / 2;
+                    int rpad = pad - lpad;
+                    for (int p = 0; p < lpad; p++) safe_chr(' ', buff, bufc);
+                    safe_str(cell, buff, bufc);
+                    for (int p = 0; p < rpad; p++) safe_chr(' ', buff, bufc);
+                }
+                break;
+
+            default: // 'L'
+                safe_str(cell, buff, bufc);
+                for (int p = 0; p < pad; p++) safe_chr(' ', buff, bufc);
+                break;
+            }
+        }
+        safe_str(rBorder, buff, bufc);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// fun_sandbox: Evaluate an expression with a restricted set of functions.
+//   sandbox(expression, funclist[, reverse])
+//
+//   expression: the softcode to evaluate (NOEVAL — sandbox evaluates it)
+//   funclist: space-separated list of function names
+//   reverse: if 0 (default), funclist names are BLOCKED
+//            if 1, funclist names are the ONLY ones ALLOWED
+//
+//   Blocked functions return #-1 PERMISSION DENIED during evaluation.
+//
+FUNCTION(fun_sandbox)
+{
+    // sandbox() is FN_NOEVAL — we evaluate args ourselves.
+    //
+    // First, evaluate arg1 (the function list) to get the names.
+    //
+    UTF8 *funclist_buf = alloc_lbuf("sandbox.funclist");
+    UTF8 *flp = funclist_buf;
+    mux_exec(fargs[1], LBUF_SIZE-1, funclist_buf, &flp, executor, caller, enactor,
+        EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+    *flp = '\0';
+
+    bool bReverse = false;
+    if (nfargs >= 3)
+    {
+        UTF8 *rev_buf = alloc_lbuf("sandbox.reverse");
+        UTF8 *rp = rev_buf;
+        mux_exec(fargs[2], LBUF_SIZE-1, rev_buf, &rp, executor, caller, enactor,
+            EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        *rp = '\0';
+        bReverse = xlate(rev_buf);
+        free_lbuf(rev_buf);
+    }
+
+    // Collect the FUN pointers we need to modify, and save their original
+    // perms so we can restore them after evaluation.
+    //
+    struct sandbox_entry {
+        FUN *fp;
+        int  saved_perms;
+    };
+    sandbox_entry entries[512];
+    int nEntries = 0;
+
+    // Parse the function name list.
+    //
+    FUN *listed[512];
+    int nListed = 0;
+    {
+        SEP sepSpace;
+        sepSpace.n = 1;
+        sepSpace.str[0] = ' ';
+        UTF8 *wp = funclist_buf;
+        while (wp)
+        {
+            UTF8 *tok = split_token(&wp, sepSpace);
+            if (tok && *tok)
+            {
+                size_t nCased;
+                UTF8 *pCased = mux_strupr(tok, nCased);
+                std::vector<UTF8> name(pCased, pCased + nCased);
+                auto it = mudstate.builtin_functions.find(name);
+                if (  it != mudstate.builtin_functions.end()
+                   && nListed < static_cast<int>(sizeof(listed)/sizeof(listed[0])))
+                {
+                    listed[nListed++] = static_cast<FUN*>(it->second);
+                }
+            }
+        }
+    }
+
+    if (bReverse)
+    {
+        // Reverse mode: block ALL functions except those listed.
+        // Disable everything, then re-enable the listed ones.
+        //
+        for (auto &kv : mudstate.builtin_functions)
+        {
+            FUN *fp = static_cast<FUN*>(kv.second);
+            if (nEntries < static_cast<int>(sizeof(entries)/sizeof(entries[0])))
+            {
+                entries[nEntries].fp = fp;
+                entries[nEntries].saved_perms = fp->perms;
+                nEntries++;
+                fp->perms |= CA_DISABLED;
+            }
+        }
+        // Re-enable the allowed functions.
+        //
+        for (int i = 0; i < nListed; i++)
+        {
+            listed[i]->perms &= ~CA_DISABLED;
+        }
+    }
+    else
+    {
+        // Normal mode: block only the listed functions.
+        //
+        for (int i = 0; i < nListed; i++)
+        {
+            if (nEntries < static_cast<int>(sizeof(entries)/sizeof(entries[0])))
+            {
+                entries[nEntries].fp = listed[i];
+                entries[nEntries].saved_perms = listed[i]->perms;
+                nEntries++;
+                listed[i]->perms |= CA_DISABLED;
+            }
+        }
+    }
+    free_lbuf(funclist_buf);
+
+    // Force AST-only evaluation so that the permission checks in the
+    // AST evaluator (check_access on fp->perms) are respected.  The JIT
+    // compiles functions to native intrinsics that bypass fp->perms.
+    //
+    bool bSavedSandbox = mudstate.bSandboxActive;
+    mudstate.bSandboxActive = true;
+
+    mux_exec(fargs[0], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+        EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+
+    mudstate.bSandboxActive = bSavedSandbox;
+
+    // Restore original permissions.
+    //
+    for (int i = 0; i < nEntries; i++)
+    {
+        entries[i].fp->perms = entries[i].saved_perms;
     }
 }

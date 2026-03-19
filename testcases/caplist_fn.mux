@@ -1,0 +1,35 @@
+#
+# caplist_fn.mux - Test Cases for caplist().
+#
+@create test_caplist_fn
+-
+@set test_caplist_fn=INHERIT QUIET
+-
+&tr.tc000 test_caplist_fn=
+  @log smoke=Beginning caplist() test cases.
+-
+&tr.tc001 test_caplist_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [caplist(the lord of the rings)]
+            [caplist(a tale of two cities)]
+            [caplist(war and peace)]
+          )
+        ),
+        46FBCF732D2397441A674D8F633E62F50553F273
+      )=
+  {
+    @log smoke=TC001: caplist title case. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: caplist title case. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_caplist_fn=
+  @log smoke=End caplist() test cases.;
+  @notify smoke
+-
+drop test_caplist_fn
+-

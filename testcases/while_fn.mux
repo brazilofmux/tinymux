@@ -1,0 +1,96 @@
+#
+# while_fn.mux - Test Cases for while().
+#
+@create test_while_fn
+-
+@set test_while_fn=INHERIT QUIET
+-
+#
+# Helper attributes.
+#
+&fn_double test_while_fn=
+  mul(%0,2)
+-
+&fn_gt10 test_while_fn=
+  gt(%0,10)
+-
+&fn_identity test_while_fn=
+  %0
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_while_fn=
+  @log smoke=Beginning while() test cases.
+-
+#
+# Test Case #1 - while() iterates and stops on condition.
+# Double each element, stop when element > 10.
+# List: 1 2 3 4 5 6 7 8 9 10 11 12
+# Doubles: 2 4 6 8 10 12 14 16 18 20 — stops at 11 (gt(11,10)=1).
+# Output should be: 2 4 6 8 10 12 14 16 18 20 22
+#
+&tr.tc001 test_while_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [while(me/fn_double,me/fn_gt10,1 2 3 4 5 6 7 8 9 10 11 12,1)]
+          )
+        ),
+        321583D7E759089A50729F2A510F1241FD209C12
+      )=
+  {
+    @log smoke=TC001: while stops on condition. Succeeded.
+  },
+  {
+    @log smoke=TC001: while stops on condition. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - while() processes all elements when condition never matches.
+# Identity function, condition never returns "STOP".
+#
+&tr.tc002 test_while_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [while(me/fn_identity,me/fn_identity,a b c,STOP)]
+          )
+        ),
+        6B3F339C67BB03D57A7195CF43ED86B12BFDD347
+      )=
+  {
+    @log smoke=TC002: while processes all. Succeeded.
+  },
+  {
+    @log smoke=TC002: while processes all. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - while() with same eval and cond attr (optimization path).
+# Identity: stops when element equals "c".
+#
+&tr.tc003 test_while_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [while(me/fn_identity,me/fn_identity,a b c d e,c)]
+          )
+        ),
+        6B3F339C67BB03D57A7195CF43ED86B12BFDD347
+      )=
+  {
+    @log smoke=TC003: while same-attr optimization. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: while same-attr optimization. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_while_fn=
+  @log smoke=End while() test cases.;
+  @notify smoke
+-
+drop test_while_fn
+-
+#
+# End of Test Cases
+#

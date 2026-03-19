@@ -1,0 +1,36 @@
+#
+# wrapcolumns_fn.mux - Test Cases for wrapcolumns().
+#
+@create test_wrapcolumns_fn
+-
+@set test_wrapcolumns_fn=INHERIT QUIET
+-
+&tr.tc000 test_wrapcolumns_fn=
+  @log smoke=Beginning wrapcolumns() test cases.
+-
+#
+# Test Case #1 - Basic multi-column wrapping.
+#
+&tr.tc001 test_wrapcolumns_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [wrapcolumns(alpha bravo charlie delta echo foxtrot,10,2)]
+          )
+        ),
+        F699BE5078EB0465BF41EF5EA19F87645FF89CBD
+      )=
+  {
+    @log smoke=TC001: wrapcolumns basic. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: wrapcolumns basic. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_wrapcolumns_fn=
+  @log smoke=End wrapcolumns() test cases.;
+  @notify smoke
+-
+drop test_wrapcolumns_fn
+-

@@ -1,0 +1,57 @@
+#
+# moon_fn.mux - Test Cases for moon().
+#
+@create test_moon_fn
+-
+@set test_moon_fn=INHERIT QUIET
+-
+&tr.tc000 test_moon_fn=
+  @log smoke=Beginning moon() test cases.
+-
+#
+# Test Case #1 - Known new moon epoch returns "New".
+# Jan 6, 2000 18:14 UTC = 947182440
+#
+&tr.tc001 test_moon_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [moon(947182440)]
+            [moon(947182440,1)]
+          )
+        ),
+        1D28DF3D171F54DFE190806B0C3BCA504205E566
+      )=
+  {
+    @log smoke=TC001: moon at new epoch. Succeeded.
+  },
+  {
+    @log smoke=TC001: moon at new epoch. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Half synodic month later should be full moon.
+# 947182440 + 29.53059*86400/2 = 947182440 + 1276524 = 948458964
+#
+&tr.tc002 test_moon_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [moon(948458964)]
+          )
+        ),
+        CC73BB6DBB55CCD83AEFF2A5EFC5EAEA1C0C142B
+      )=
+  {
+    @log smoke=TC002: moon at full. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: moon at full. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_moon_fn=
+  @log smoke=End moon() test cases.;
+  @notify smoke
+-
+drop test_moon_fn
+-

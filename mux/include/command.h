@@ -135,6 +135,7 @@ CMD_NO_ARG(do_timecheck);       /* Check time used by objects */
 CMD_ONE_ARG(do_timewarp);       /* Warp various timers */
 CMD_TWO_ARG(do_toad);           /* Turn a tinyjerk into a tinytoad */
 CMD_TWO_ARG_ARGV(do_trigger);   /* Trigger an attribute */
+CMD_TWO_ARG_ARGV(do_include);   /* Inline-expand an attribute */
 CMD_ONE_ARG(do_unlock);         /* Remove a lock from an object */
 CMD_ONE_ARG(do_unlink);         /* Unlink exit or remove dropto */
 CMD_ONE_ARG(do_use);            /* Use object */

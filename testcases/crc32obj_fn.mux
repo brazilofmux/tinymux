@@ -1,0 +1,70 @@
+#
+# crc32obj_fn.mux - Test Cases for crc32obj().
+#
+@create test_crc32obj_fn
+-
+@set test_crc32obj_fn=INHERIT QUIET
+-
+#
+# Create a test object with known attributes.
+#
+@create crctest
+-
+@set crctest=QUIET
+-
+&testattr1 crctest=hello
+-
+&testattr2 crctest=world
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_crc32obj_fn=
+  @log smoke=Beginning crc32obj() test cases.
+-
+#
+# Test Case #1 - crc32obj returns a non-zero integer for object with attrs.
+#
+&tr.tc001 test_crc32obj_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [gt(crc32obj(crctest),0)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC001: crc32obj returns nonzero. Succeeded.
+  },
+  {
+    @log smoke=TC001: crc32obj returns nonzero. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - crc32obj is deterministic (same object = same result).
+#
+&tr.tc002 test_crc32obj_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eq(crc32obj(crctest),crc32obj(crctest))]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC002: crc32obj deterministic. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: crc32obj deterministic. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_crc32obj_fn=
+  @log smoke=End crc32obj() test cases.;
+  @notify smoke
+-
+drop test_crc32obj_fn
+-
+drop crctest
+-

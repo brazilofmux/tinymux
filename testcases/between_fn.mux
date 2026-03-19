@@ -1,0 +1,40 @@
+#
+# between_fn.mux - Test Cases for between().
+#
+@create test_between_fn
+-
+@set test_between_fn=INHERIT QUIET
+-
+&tr.tc000 test_between_fn=
+  @log smoke=Beginning between() test cases.
+-
+&tr.tc001 test_between_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [between(1,10,5)]
+            [between(1,10,1)]
+            [between(1,10,10)]
+            [between(1,10,0)]
+            [between(1,10,11)]
+            [between(1,10,5,1)]
+            [between(1,10,1,1)]
+            [between(1,10,10,1)]
+          )
+        ),
+        EB3677E0E8567799B4A09B9BC3F74FD9E257A0B9
+      )=
+  {
+    @log smoke=TC001: between range tests. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: between range tests. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_between_fn=
+  @log smoke=End between() test cases.;
+  @notify smoke
+-
+drop test_between_fn
+-
