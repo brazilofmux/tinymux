@@ -3,6 +3,8 @@
 #include "../res/resource.h"
 #include <winsock2.h>
 #include <commdlg.h>
+#include <sstream>
+#include <algorithm>
 
 #pragma comment(lib, "comdlg32.lib")
 
@@ -206,9 +208,16 @@ void CMainFrame::OnInputSubmitted(const std::string& line) {
     if (active_tab < 0 || active_tab >= (int)tab_states.size()) return;
     auto& ts = tab_states[active_tab];
 
+    // Slash commands
+    if (!line.empty() && line[0] == '/') {
+        HandleSlashCommand(line);
+        output.Invalidate();
+        output.ScrollToBottom();
+        return;
+    }
+
     if (ts->conn && ts->conn->is_connected()) {
         ts->conn->send_line(line);
-        // If no remote echo, echo locally
         if (!ts->conn->remote_echo()) {
             ts->buffer.append("> " + line);
         }
@@ -217,6 +226,115 @@ void CMainFrame::OnInputSubmitted(const std::string& line) {
     }
     output.Invalidate();
     output.ScrollToBottom();
+}
+
+void CMainFrame::HandleSlashCommand(const std::string& input) {
+    // Tokenize
+    std::istringstream ss(input);
+    std::vector<std::string> args;
+    std::string tok;
+    while (ss >> tok) args.push_back(tok);
+    if (args.empty()) return;
+
+    std::string cmd = args[0].substr(1); // strip /
+    std::transform(cmd.begin(), cmd.end(), cmd.begin(), ::tolower);
+
+    auto& ts = tab_states[active_tab];
+    auto sys = [&](const std::string& msg) {
+        ts->buffer.append(msg);
+    };
+
+    if (cmd == "hook") {
+        // /hook name event = command
+        std::string rest = input.substr(input.find(' ') + 1);
+        auto eq = rest.find('=');
+        if (eq == std::string::npos) {
+            sys("% Usage: /hook <name> <event> = <command>");
+            return;
+        }
+        std::string before = rest.substr(0, eq);
+        std::string body = rest.substr(eq + 1);
+        while (!before.empty() && before.back() == ' ') before.pop_back();
+        while (!body.empty() && body.front() == ' ') body = body.substr(1);
+        std::istringstream bs(before);
+        std::string hname, event;
+        bs >> hname >> event;
+        std::transform(event.begin(), event.end(), event.begin(), ::toupper);
+        Hook h; h.name = hname; h.event = event; h.body = body;
+        hooks.add(std::move(h));
+        sys("% Hook '" + hname + "' on " + event + " -> " + body);
+    } else if (cmd == "unhook") {
+        if (args.size() >= 2 && hooks.remove(args[1]))
+            sys("% Hook '" + args[1] + "' removed.");
+        else sys("% No hook: " + (args.size() >= 2 ? args[1] : ""));
+    } else if (cmd == "hooks") {
+        if (hooks.all().empty()) { sys("% No hooks."); return; }
+        for (auto& h : hooks.all())
+            sys("  " + h.name + ": " + h.event + " -> " + h.body);
+    } else if (cmd == "spawn") {
+        if (args.size() < 2) {
+            if (spawns.all().empty()) { sys("% No spawns."); return; }
+            for (auto& s : spawns.all()) {
+                std::string d = "  " + s.name + " (" + s.path + "):";
+                for (auto& p : s.patterns) d += " /" + p + "/";
+                sys(d);
+            }
+        } else {
+            std::string sub = args[1];
+            std::transform(sub.begin(), sub.end(), sub.begin(), ::tolower);
+            if (sub == "add" && args.size() >= 4) {
+                SpawnConfig sc;
+                sc.name = args[2];
+                sc.path = args[2];
+                std::transform(sc.path.begin(), sc.path.end(), sc.path.begin(), ::tolower);
+                sc.patterns.push_back(args[3]);
+                spawns.add(std::move(sc));
+                sys("% Spawn '" + args[2] + "' added.");
+            } else if ((sub == "remove" || sub == "del") && args.size() >= 3) {
+                std::string p = args[2];
+                std::transform(p.begin(), p.end(), p.begin(), ::tolower);
+                spawns.remove(p);
+                sys("% Spawn removed.");
+            } else {
+                sys("% Usage: /spawn [add|remove|list] ...");
+            }
+        }
+    } else if (cmd == "set") {
+        if (args.size() >= 3) {
+            std::string val;
+            for (size_t i = 2; i < args.size(); i++) {
+                if (i > 2) val += " ";
+                val += args[i];
+            }
+            vars[args[1]] = val;
+            sys("% Set " + args[1] + " = " + val);
+        } else sys("% Usage: /set <name> <value>");
+    } else if (cmd == "unset") {
+        if (args.size() >= 2) { vars.erase(args[1]); sys("% Unset " + args[1]); }
+        else sys("% Usage: /unset <name>");
+    } else if (cmd == "vars") {
+        if (vars.empty()) { sys("% No variables."); return; }
+        for (auto& [k, v] : vars) sys("  " + k + " = " + v);
+    } else if (cmd == "help") {
+        sys("% Commands:");
+        sys("%   /hook <name> <event> = <cmd>   - Define hook");
+        sys("%   /unhook <name>                 - Remove hook");
+        sys("%   /hooks                         - List hooks");
+        sys("%   /spawn [add|remove|list]       - Output routing");
+        sys("%   /set <var> <value>             - Set variable");
+        sys("%   /unset <var>                   - Remove variable");
+        sys("%   /vars                          - List variables");
+        sys("%   /help                          - This help");
+        sys("% Also: File > Connect, File > Worlds, Edit > Find");
+    } else {
+        // Not a local command — send to server (some MUDs use / commands)
+        if (ts->conn && ts->conn->is_connected()) {
+            ts->conn->send_line(input);
+            if (!ts->conn->remote_echo()) ts->buffer.append("> " + input);
+        } else {
+            sys("% Unknown command: /" + cmd);
+        }
+    }
 }
 
 // IOCP thread — blocks on GetQueuedCompletionStatus, posts to UI thread.
@@ -256,10 +374,22 @@ void CMainFrame::OnIocpCompletion(IocpMsg* msg) {
             for (auto& line : lines) {
                 msg->conn->add_to_scrollback(line);
                 tab_states[i]->buffer.append(line);
+
+                // Route to matching spawns
+                auto matched = spawns.match(line);
+                for (auto& path : matched) {
+                    auto& sl = spawn_lines[tab_states[i]->name][path];
+                    sl.push_back(line);
+                    while (sl.size() > 20000) sl.pop_front();
+                }
             }
 
             if (!msg->conn->is_connected()) {
                 tab_states[i]->buffer.append("% Connection lost.");
+                // Fire DISCONNECT hooks
+                for (auto& cmd : hooks.fire_event("DISCONNECT")) {
+                    tab_states[i]->buffer.append("% [hook] " + cmd);
+                }
                 tab_states[i]->conn.reset();
                 TabInfo ti;
                 ti.name = tab_states[i]->name;

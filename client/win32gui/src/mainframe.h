@@ -11,6 +11,8 @@
 #include "connection.h"
 #include "world.h"
 #include "settings.h"
+#include "hook.h"
+#include "spawn.h"
 #include <memory>
 #include <vector>
 #include <string>
@@ -42,6 +44,12 @@ public:
     Settings settings;
     std::string settings_dir;
 
+    // Subsystems
+    HookDB   hooks;
+    SpawnDB  spawns;
+    std::unordered_map<std::string, SpawnLines> spawn_lines;
+    std::unordered_map<std::string, std::string> vars;
+
     // Tab management
     int AddWorld(const std::string& name);
     int ConnectWorld(const std::string& name, const std::string& host,
@@ -49,6 +57,7 @@ public:
     void RemoveWorld(int index);
     void SwitchToTab(int index);
     void OnInputSubmitted(const std::string& line);
+    void HandleSlashCommand(const std::string& input);
 
     // Networking — IOCP thread posts WM_APP_IOCP to the UI thread.
     static constexpr UINT WM_APP_IOCP = WM_APP + 10;
