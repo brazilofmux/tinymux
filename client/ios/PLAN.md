@@ -116,12 +116,21 @@ All features from Android Phases 1-12 ported in one pass.
 - [x] Text selection in output
 - [x] Keep screen on (isIdleTimerDisabled)
 
-### Remaining Phases
+### TOFU Certificate Verification — DONE
+- [x] `TofuCertStore` — Keychain-backed SHA-256 fingerprint storage
+- [x] `MudConnection` — TOFU verify block in sec_protocol_options
+- [x] `CertVerifySheet` — shows subject, fingerprint, warns on changes
+- [x] First connection: "Unknown Certificate" with Trust/Reject
+- [x] Changed cert: warning banner with previous fingerprint
 
-### Phase 6: Background + Notifications
-- [ ] Background URLSession or BGTaskScheduler for connection keep-alive
-- [ ] Local notifications for activity on background tabs
-- [ ] App badge for unread activity count
+### Phase 6: Background + Notifications — DONE
+- [x] `BackgroundService` — singleton for lifecycle management
+- [x] BGAppRefreshTask registration for periodic wake
+- [x] Schedule refresh on app background
+- [x] Local notifications for background tab activity
+- [x] App badge count for tabs with unread activity
+- [x] Badge cleared on app foreground
+- [x] Notification permission request on first launch
 
 ## Atlantis-Inspired Features (Future)
 

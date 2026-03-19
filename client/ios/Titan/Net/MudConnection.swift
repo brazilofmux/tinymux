@@ -1,5 +1,6 @@
 import Foundation
 import Network
+import Security
 
 // MARK: - Certificate Info (for TOFU)
 
@@ -20,6 +21,7 @@ class MudConnection: ObservableObject {
     let host: String
     let port: Int
     let useSsl: Bool
+    let certStore: TofuCertStore?
 
     @Published var connected = false
     var telnet: TelnetParser
@@ -32,37 +34,65 @@ class MudConnection: ObservableObject {
     private var connection: NWConnection?
     private var readTask: Task<Void, Never>?
 
-    init(name: String, host: String, port: Int, useSsl: Bool) {
+    init(name: String, host: String, port: Int, useSsl: Bool, certStore: TofuCertStore? = nil) {
         self.name = name
         self.host = host
         self.port = port
         self.useSsl = useSsl
+        self.certStore = certStore
         self.telnet = TelnetParser()
     }
 
     func connect() {
-        let params = NWParameters.tcp
-        if useSsl {
-            let tlsOptions = NWProtocolTLS.Options()
-            // Trust all for now — TOFU verification done post-handshake
-            sec_protocol_options_set_verify_block(
-                tlsOptions.securityProtocolOptions,
-                { _, _, completion in completion(true) },
-                DispatchQueue.global()
-            )
-            params.defaultProtocolStack.applicationProtocols.insert(
-                NWProtocolTLS.Options() as! NWProtocolFramer.Options, at: 0
-            )
-            // Actually — use the params initializer for TLS
-        }
-
         let tlsParams: NWParameters
         if useSsl {
+            let host = self.host
+            let port = self.port
+            let certStore = self.certStore
+            let onCertVerify = self.onCertVerify
+
             tlsParams = NWParameters(tls: {
                 let options = NWProtocolTLS.Options()
                 sec_protocol_options_set_verify_block(
                     options.securityProtocolOptions,
-                    { _, _, completion in completion(true) },
+                    { metadata, trust, completion in
+                        // Extract certificate for TOFU
+                        let secTrust = sec_trust_copy_ref(trust).takeRetainedValue()
+                        guard let certChain = SecTrustCopyCertificateChain(secTrust) as? [SecCertificate],
+                              let cert = certChain.first else {
+                            completion(true) // No cert — allow (non-TLS fallback)
+                            return
+                        }
+
+                        let certData = SecCertificateCopyData(cert) as Data
+                        let fingerprint = TofuCertStore.fingerprint(certData)
+                        let saved = certStore?.getFingerprint(host: host, port: port)
+
+                        if let saved, saved == fingerprint {
+                            // Known cert, matches — proceed silently
+                            completion(true)
+                            return
+                        }
+
+                        // Unknown or changed cert — ask user
+                        let subject = SecCertificateCopySubjectSummary(cert) as String? ?? "Unknown"
+                        // Issuer not easily extractable from SecCertificate; use subject as fallback
+                        let info = CertInfo(
+                            host: host, port: port,
+                            fingerprint: fingerprint,
+                            subject: subject,
+                            issuer: subject,
+                            savedFingerprint: saved
+                        )
+
+                        Task { @MainActor in
+                            let accepted = await onCertVerify?(info) ?? true
+                            if accepted {
+                                certStore?.saveFingerprint(host: host, port: port, fingerprint: fingerprint)
+                            }
+                            completion(accepted)
+                        }
+                    },
                     DispatchQueue.global()
                 )
                 return options

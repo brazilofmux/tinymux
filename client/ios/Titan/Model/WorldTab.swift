@@ -48,7 +48,20 @@ class AppState {
             tabs[tabIndex].lines.removeFirst()
         }
         if tabIndex != activeTabIndex {
+            let wasActive = tabs[tabIndex].hasActivity
             tabs[tabIndex].hasActivity = true
+            // Post notification if app is backgrounded and this is first activity
+            if !wasActive {
+                #if os(iOS)
+                if UIApplication.shared.applicationState != .active {
+                    let worldName = tabs[tabIndex].name
+                    let plainLine = AnsiParser.stripAnsi(line)
+                    BackgroundService.shared.postActivityNotification(worldName: worldName, line: plainLine)
+                    let totalActivity = tabs.filter(\.hasActivity).count
+                    BackgroundService.shared.updateBadge(count: totalActivity)
+                }
+                #endif
+            }
         }
     }
 }

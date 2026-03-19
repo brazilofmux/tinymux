@@ -9,12 +9,15 @@ struct ContentView: View {
 
     // Subsystems
     let worldRepo = WorldRepository()
+    let worldRepo = WorldRepository()
     let triggerRepo = TriggerRepository()
     let hookRepo = HookRepository()
     let settings = AppSettings()
+    let certStore = TofuCertStore()
     @State private var triggerEngine = TriggerEngine()
     @State private var timerEngine = TimerEngine()
     @State private var sessionLogger = SessionLogger()
+    @State private var pendingCert: (CertInfo, CheckedContinuation<Bool, Never>)? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -55,6 +58,20 @@ struct ContentView: View {
         }
         .sheet(isPresented: $state.showSettings) {
             SettingsView(settings: settings)
+        }
+        .sheet(item: Binding(
+            get: { pendingCert.map { CertSheetItem(info: $0.0) } },
+            set: { if $0 == nil, let (_, cont) = pendingCert { pendingCert = nil; cont.resume(returning: false) } }
+        )) { item in
+            CertVerifySheet(
+                certInfo: item.info,
+                onAccept: {
+                    if let (_, cont) = pendingCert { pendingCert = nil; cont.resume(returning: true) }
+                },
+                onReject: {
+                    if let (_, cont) = pendingCert { pendingCert = nil; cont.resume(returning: false) }
+                }
+            )
         }
         .onChange(of: settings.keepScreenOn) { _, newValue in
             #if os(iOS)
@@ -245,8 +262,13 @@ struct ContentView: View {
         let tabIndex = state.tabs.count - 1
         state.activeTabIndex = tabIndex
 
-        let conn = MudConnection(name: name, host: host, port: port, useSsl: ssl)
+        let conn = MudConnection(name: name, host: host, port: port, useSsl: ssl, certStore: certStore)
         tab.connection = conn
+        conn.onCertVerify = { certInfo in
+            await withCheckedContinuation { continuation in
+                pendingCert = (certInfo, continuation)
+            }
+        }
         conn.onLine = { line in processServerLine(tabIndex, line) }
         conn.onConnect = {
             state.appendLine(tabIndex, "% Connected to \(host):\(port)")
@@ -523,6 +545,12 @@ extension Array {
     subscript(safe index: Index) -> Element? {
         indices.contains(index) ? self[index] : nil
     }
+}
+
+// Identifiable wrapper for cert sheet binding
+struct CertSheetItem: Identifiable {
+    let id = UUID()
+    let info: CertInfo
 }
 
 // MARK: - Connect Sheet
