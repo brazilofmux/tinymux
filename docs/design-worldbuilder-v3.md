@@ -183,6 +183,35 @@ against the declared builder profile.
 
 ---
 
+## Conceptual Challenges: The "Squishy" Problem
+
+WorldBuilder aims for "Terraform for MUX," but MUX is an organic, live system. Unlike cloud infrastructure, builders "live" in their creations and make real-time, iterative tweaks. This creates a fundamental friction between the **Declarative Spec** and the **Living Game**.
+
+### 1. Identity Decoupling (The Dbref Trap)
+Currently, we rely on `dbrefs` as the primary link in the state file. If a database is wiped, restored, or objects are moved via `@import/@export`, `dbrefs` shift and the state file breaks.
+
+**Refinement:** Implement **Virtual IDs**. 
+Every object created by WorldBuilder should receive a hidden attribute (e.g., `&WB_ID here=room_123`). The reconciler and executor should use this ID as the primary key, making the connection between Spec and Game unbreakable even if the underlying `dbref` changes.
+
+### 2. Pivot: From "Push-Only" to "Bi-directional Sync"
+We currently assume the Spec is the sole source of truth. However, for many builders, the Game is the primary editor. If we only "Apply," we risk overwriting organic improvements.
+
+**Refinement:** Elevate `reconcile` to a first-class citizen. 
+WorldBuilder should behave more like `git` than `terraform`. The workflow should support "Pulling" changes from the game back into the YAML spec. This protects builder creativity and makes WorldBuilder a collaborative partner rather than a mechanical enforcer.
+
+### 3. Softcode Bundles
+YAML is excellent for data (rooms, exits) but "squishy" for logic (complex functions). Hardcoding large MUX functions inside YAML attributes is brittle and loses editor features (linting, syntax highlighting).
+
+**Refinement:** Support **File-Linked Attributes**.
+Allow the spec to point to external `.mux` scripts:
+```yaml
+attrs:
+  ACONNECT: file://scripts/welcome_handler.mux
+```
+This separates **World Data** (YAML) from **Game Logic** (Softcode), allowing the use of proper MUX engineering tools for the latter.
+
+---
+
 ## Architectural Decisions
 
 ### Python Stays for Tooling
