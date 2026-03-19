@@ -1,0 +1,19 @@
+-
+@create test_firstof_fn
+-
+@set test_firstof_fn=INHERIT QUIET
+-
+&tr.tc000 test_firstof_fn=@log smoke=Beginning firstof()/allof() test cases.
+-
+&tr.tc001 test_firstof_fn=@if strmatch( setr(0,sha1( [firstof(0,0,3,5)][firstof(0,0,0)][firstof(1)][firstof(,hello,world)])), 49824D16BBFE1632455CB98DB19D82E5EB125FCA)={@log smoke=TC001: firstof basic operations. Succeeded.},{@log smoke=TC001: firstof basic operations. Failed (%q0).}
+-
+&tr.tc002 test_firstof_fn=@if strmatch( setr(0,sha1( [strfirstof(,,hello,world)][strfirstof(a)][strfirstof(,,)])), 254C83B354A04B5C06BCB18671F2DCB340CE3165)={@log smoke=TC002: strfirstof basic operations. Succeeded.},{@log smoke=TC002: strfirstof basic operations. Failed (%q0).}
+-
+&tr.tc003 test_firstof_fn=@if strmatch( setr(0,sha1( [allof(0,1,0,2,0,3)][allof(0,0,0)][allof(1,2,3,|)])), 86B13D3FD9EC598A51FD2505CB50888A9CCE0288)={@log smoke=TC003: allof basic operations. Succeeded.},{@log smoke=TC003: allof basic operations. Failed (%q0).}
+-
+&tr.tc004 test_firstof_fn=@if strmatch( setr(0,sha1( [strallof(,a,,b,,c)][strallof(,,)][strallof(x,y,z,|)])), 3F01737302EBFC57D6F2984AEAEF116D69807065)={@log smoke=TC004: strallof basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC004: strallof basic operations. Failed (%q0).;@trig me/tr.done}
+-
+&tr.done test_firstof_fn=@log smoke=End firstof()/allof() test cases.;@notify smoke
+-
+drop test_firstof_fn
+-

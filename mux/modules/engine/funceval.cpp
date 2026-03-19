@@ -323,6 +323,38 @@ FUNCTION(fun_tel)
     do_teleport(executor, caller, enactor, eval, key, 2, fargs[0], fargs[1], nullptr, 0);
 }
 
+FUNCTION(fun_prompt)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    dbref target = match_thing(executor, fargs[0]);
+    if (!Good_obj(target))
+    {
+        safe_str(T("#-1 NO MATCH"), buff, bufc);
+        return;
+    }
+    if (!Controls(executor, target) && !nearby(executor, target))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+    if (!Connected(target))
+    {
+        return;
+    }
+
+    // Send text without trailing newline, then send telnet GA.
+    //
+    send_text_to_player(target, fargs[1]);
+    const UTF8 aGoAhead[2] = { NVT_IAC, NVT_GA };
+    send_raw_to_player(target, aGoAhead, sizeof(aGoAhead));
+}
+
 FUNCTION(fun_pemit)
 {
     UNUSED_PARAMETER(caller);

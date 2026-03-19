@@ -226,6 +226,7 @@ XFUNCTION(fun_link);
 XFUNCTION(fun_pose);
 XFUNCTION(fun_oemit);
 XFUNCTION(fun_pemit);
+XFUNCTION(fun_prompt);
 XFUNCTION(fun_remit);
 XFUNCTION(fun_cemit);
 XFUNCTION(fun_set);

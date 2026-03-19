@@ -2278,6 +2278,160 @@ FUNCTION(fun_cor)
     safe_bool(val, buff, bufc);
 }
 
+// firstof(arg1, arg2, ...) — return the first true (non-zero) argument.
+// Evaluates left-to-right, stops at first true.  If none are true,
+// returns the last evaluated value.
+//
+FUNCTION(fun_firstof)
+{
+    if (0 == nfargs)
+    {
+        return;
+    }
+
+    UTF8 *temp = alloc_lbuf("fun_firstof");
+    for (int i = 0; i < nfargs && !alarm_clock.alarmed; i++)
+    {
+        UTF8 *bp = temp;
+        mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        *bp = '\0';
+
+        if (isTRUE(mux_atol(temp)) || i == nfargs - 1)
+        {
+            safe_str(temp, buff, bufc);
+            free_lbuf(temp);
+            return;
+        }
+    }
+    free_lbuf(temp);
+}
+
+// strfirstof(arg1, arg2, ...) — return the first non-empty string argument.
+// Evaluates left-to-right, stops at first non-empty.  If all are empty,
+// returns empty string.
+//
+FUNCTION(fun_strfirstof)
+{
+    if (0 == nfargs)
+    {
+        return;
+    }
+
+    UTF8 *temp = alloc_lbuf("fun_strfirstof");
+    for (int i = 0; i < nfargs && !alarm_clock.alarmed; i++)
+    {
+        UTF8 *bp = temp;
+        mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        *bp = '\0';
+
+        if ('\0' != temp[0] || i == nfargs - 1)
+        {
+            safe_str(temp, buff, bufc);
+            free_lbuf(temp);
+            return;
+        }
+    }
+    free_lbuf(temp);
+}
+
+// allof(arg1, arg2, ...[, osep]) — return all true (non-zero) arguments,
+// separated by osep.  Last arg is the output separator if nfargs >= 2.
+//
+FUNCTION(fun_allof)
+{
+    if (0 == nfargs)
+    {
+        return;
+    }
+
+    // Last argument is the output separator.
+    //
+    int nArgs = nfargs;
+    UTF8 osep[LBUF_SIZE];
+    osep[0] = ' ';
+    osep[1] = '\0';
+    size_t nOsep = 1;
+    if (nfargs >= 2)
+    {
+        UTF8 *sp = osep;
+        mux_exec(fargs[nfargs - 1], LBUF_SIZE-1, osep, &sp, executor, caller,
+            enactor, eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        *sp = '\0';
+        nOsep = sp - osep;
+        nArgs = nfargs - 1;
+    }
+
+    bool bFirst = true;
+    UTF8 *temp = alloc_lbuf("fun_allof");
+    for (int i = 0; i < nArgs && !alarm_clock.alarmed; i++)
+    {
+        UTF8 *bp = temp;
+        mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        *bp = '\0';
+
+        if (isTRUE(mux_atol(temp)))
+        {
+            if (!bFirst)
+            {
+                safe_copy_buf(osep, nOsep, buff, bufc);
+            }
+            safe_str(temp, buff, bufc);
+            bFirst = false;
+        }
+    }
+    free_lbuf(temp);
+}
+
+// strallof(arg1, arg2, ...[, osep]) — return all non-empty string arguments,
+// separated by osep.  Last arg is the output separator if nfargs >= 2.
+//
+FUNCTION(fun_strallof)
+{
+    if (0 == nfargs)
+    {
+        return;
+    }
+
+    int nArgs = nfargs;
+    UTF8 osep[LBUF_SIZE];
+    osep[0] = ' ';
+    osep[1] = '\0';
+    size_t nOsep = 1;
+    if (nfargs >= 2)
+    {
+        UTF8 *sp = osep;
+        mux_exec(fargs[nfargs - 1], LBUF_SIZE-1, osep, &sp, executor, caller,
+            enactor, eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        *sp = '\0';
+        nOsep = sp - osep;
+        nArgs = nfargs - 1;
+    }
+
+    bool bFirst = true;
+    UTF8 *temp = alloc_lbuf("fun_strallof");
+    for (int i = 0; i < nArgs && !alarm_clock.alarmed; i++)
+    {
+        UTF8 *bp = temp;
+        mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        *bp = '\0';
+
+        if ('\0' != temp[0])
+        {
+            if (!bFirst)
+            {
+                safe_copy_buf(osep, nOsep, buff, bufc);
+            }
+            safe_str(temp, buff, bufc);
+            bFirst = false;
+        }
+    }
+    free_lbuf(temp);
+}
+
 FUNCTION(fun_candbool)
 {
     bool val = true;
