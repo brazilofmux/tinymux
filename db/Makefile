@@ -3,23 +3,24 @@ CC = gcc
 CXXFLAGS = -std=c++17 -g -O2 -Wall -Wextra -DTINYMUX_TYPES_DEFINED
 CFLAGS = -g -O2 -DSQLITE_THREADSAFE=1
 SRCDIR = ../mux/src
+SQLITEDIR = ../mux/sqlite
 
 all: test_sqlitedb test_backend
 
-sqlite3.o: $(SRCDIR)/sqlite/sqlite3.c $(SRCDIR)/sqlite/sqlite3.h
-	$(CC) $(CFLAGS) -I$(SRCDIR)/sqlite -c -o $@ $<
+sqlite3.o: $(SQLITEDIR)/sqlite3.c $(SQLITEDIR)/sqlite3.h
+	$(CC) $(CFLAGS) -I$(SQLITEDIR) -c -o $@ $<
 
-sqlitedb.o: $(SRCDIR)/sqlitedb.cpp $(SRCDIR)/sqlitedb.h
-	$(CXX) $(CXXFLAGS) -I$(SRCDIR) -c -o $@ $<
+sqlitedb.o: $(SRCDIR)/sqlitedb.cpp $(SRCDIR)/sqlitedb.h $(SQLITEDIR)/sqlite3.h
+	$(CXX) $(CXXFLAGS) -I$(SRCDIR) -I$(SQLITEDIR) -c -o $@ $<
 
 sqlite_backend.o: $(SRCDIR)/sqlite_backend.cpp $(SRCDIR)/sqlite_backend.h $(SRCDIR)/storage_backend.h $(SRCDIR)/sqlitedb.h
-	$(CXX) $(CXXFLAGS) -I$(SRCDIR) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -I$(SRCDIR) -I$(SQLITEDIR) -c -o $@ $<
 
 test_sqlitedb.o: test_sqlitedb.cpp $(SRCDIR)/sqlitedb.h
-	$(CXX) $(CXXFLAGS) -I$(SRCDIR) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -I$(SRCDIR) -I$(SQLITEDIR) -c -o $@ $<
 
 test_backend.o: test_backend.cpp $(SRCDIR)/storage_backend.h $(SRCDIR)/sqlite_backend.h $(SRCDIR)/sqlitedb.h
-	$(CXX) $(CXXFLAGS) -I$(SRCDIR) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -I$(SRCDIR) -I$(SQLITEDIR) -c -o $@ $<
 
 test_sqlitedb: test_sqlitedb.o sqlitedb.o sqlite3.o
 	$(CXX) $(CXXFLAGS) -o $@ $^

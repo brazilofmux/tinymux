@@ -25,12 +25,16 @@ LIBMUX_OBJS = $(LIBMUX_CXX_OBJS) $(LIBMUX_C_OBJS)
 all-local: libmux.so
 
 # Compile C++ with -fPIC (default visibility).
+# -MMD -MF generates per-object dependency files for header tracking.
 %.lo: %.cpp
-	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -MMD -MF $(@:.lo=.d) -c -o $@ $<
 
 # Compile C (Ragel-generated color_ops, unicode tables) with -fPIC.
 %.lo: %.c
-	$(CC) $(AM_CFLAGS) -I$(top_srcdir)/include $(DYNAMICLIB_CXXFLAGS) -c -o $@ $<
+	$(CC) $(AM_CFLAGS) -I$(top_srcdir)/include $(DYNAMICLIB_CXXFLAGS) -MMD -MF $(@:.lo=.d) -c -o $@ $<
+
+-include $(LIBMUX_CXX_OBJS:.lo=.d)
+-include $(LIBMUX_C_OBJS:.lo=.d)
 
 # Ragel .rl -> .c
 color_ops.c: color_ops.rl $(top_srcdir)/include/color_ops.h
@@ -41,6 +45,6 @@ libmux.so: $(LIBMUX_OBJS)
 
 BUILT_SOURCES = color_ops.c
 
-CLEANFILES = libmux.so *.lo color_ops.c
+CLEANFILES = libmux.so *.lo *.d color_ops.c
 
 EXTRA_DIST = $(LIBMUX_SRC) $(LIBMUX_C_SRC) color_ops.rl

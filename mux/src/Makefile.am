@@ -38,12 +38,13 @@ stubslave_LDFLAGS = -L$(top_builddir)/lib -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(abs
 stubslave_LDADD = -lmux $(LIBS) $(STUBLIBS)
 
 # Version number routines
-# The DEBIAN_BUILD environment variable can be set to create deterministic builds
-version.o: version.cpp FORCE
+# Automake builds version.cpp as netmux-version.o (per-program prefix).
+# The DEBIAN_BUILD environment variable can be set to create deterministic builds.
+netmux-version.o: version.cpp FORCE
 	if [ "x$(DEBIAN_BUILD)" = "x1" ]; then \
-		$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) -DMUX_BUILD_DATE="\"(Debian build)\"" -DMUX_BUILD_NUM="\"0\"" -c -o $@ $<; \
+		$(CXX) $(netmux_CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) -DMUX_BUILD_DATE="\"(Debian build)\"" -DMUX_BUILD_NUM="\"0\"" -c -o $@ $<; \
 	else \
-		$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) -DMUX_BUILD_DATE="\"`date`\"" -DMUX_BUILD_NUM="\"`sh $(top_srcdir)/buildnum.sh`\"" -c -o $@ $<; \
+		$(CXX) $(netmux_CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) -DMUX_BUILD_DATE="\"`date`\"" -DMUX_BUILD_NUM="\"`sh $(top_srcdir)/buildnum.sh`\"" -c -o $@ $<; \
 	fi
 
 .PHONY: FORCE

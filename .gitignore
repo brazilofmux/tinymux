@@ -79,6 +79,7 @@ mux/script/mux
 mux/src/tools/announce
 mux/src/tools/rv64strip
 mux/rv64/src/softlib.elf
+mux/lib/*.d
 mux/modules/engine/*.d
 
 # Test output and runtime

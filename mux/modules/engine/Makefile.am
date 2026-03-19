@@ -37,8 +37,11 @@ ENGINE_CXX_OBJS = $(ENGINE_CXX_SRC:.cpp=.eo)
 all-local: engine.so
 
 # Engine uses .eo suffix to distinguish from libmux's .lo objects.
+# -MMD -MF generates per-object dependency files for header tracking.
 %.eo: %.cpp
-	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -fvisibility=hidden -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -fvisibility=hidden -MMD -MF $(@:.eo=.d) -c -o $@ $<
+
+-include $(ENGINE_CXX_OBJS:.eo=.d)
 
 engine.so: $(ENGINE_CXX_OBJS) $(top_builddir)/sqlite/libsqlite3.a $(top_builddir)/lua54/liblua54.a $(top_builddir)/lib/libmux.so
 	$(CXX) $(CXXFLAGS) $(DYNAMICLIB_CXXFLAGS) -Wl,--no-undefined \
@@ -56,6 +59,6 @@ ast_scan.cpp: ast_scan.rl $(top_srcdir)/include/ast.h
 
 BUILT_SOURCES = ast_scan.cpp
 
-CLEANFILES = engine.so *.eo
+CLEANFILES = engine.so *.eo *.d
 
 EXTRA_DIST = ast_scan.rl $(ENGINE_CXX_SRC)
