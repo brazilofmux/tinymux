@@ -1,4 +1,7 @@
-# WorldBuilder v2 — Design & Roadmap
+# WorldBuilder v2 — Design & Roadmap (COMPLETE)
+
+**Status: All phases complete. See [design-worldbuilder-v3.md](design-worldbuilder-v3.md)
+for the next engineering roadmap.**
 
 Supersedes the original design-worldbuilder.md with lessons learned
 from the working prototype.
