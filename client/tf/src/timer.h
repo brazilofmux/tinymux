@@ -40,6 +40,11 @@ public:
     const std::vector<Timer>& all() const { return timers_; }
     bool empty() const { return timers_.empty(); }
 
+    // Accessors for restart serialization/restoration
+    int next_id() const { return next_id_; }
+    void set_next_id(int id) { next_id_ = id; }
+    void add_raw(Timer t) { timers_.push_back(std::move(t)); }
+
 private:
     std::vector<Timer> timers_;
     int next_id_ = 1;

@@ -68,4 +68,7 @@ inline void app_clear_fg_activity(App& app) {
 bool app_spawn_shell(App& app, const std::string& command, ShellDisposition disposition,
                      const std::string& world_name = "");
 
+// Access the stored original argv (for restart support).
+const std::vector<std::string>& app_original_argv();
+
 #endif // APP_H

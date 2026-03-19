@@ -6,6 +6,7 @@
 #include "macro.h"
 #include "timer.h"
 #include "keybind.h"
+#include "restart.h"
 #include <sstream>
 #include <fstream>
 #include <algorithm>
@@ -13,8 +14,11 @@
 #include <cstdlib>
 #include <csignal>
 #include <unistd.h>
+#include <fcntl.h>
 #include <fnmatch.h>
 #include <sys/resource.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 
 // Forward declaration of App (defined in main.cpp)
 struct App;
@@ -119,6 +123,8 @@ void CommandDispatcher::register_commands() {
     commands_["/unset"]   = cmd_unset;
     commands_["/watchdog"]= cmd_watchdog;
     commands_["/watchname"] = cmd_watchname;
+    commands_["/restart"] = cmd_restart;
+    commands_["/update"]  = cmd_update;
     commands_["/exit"]    = cmd_quit;  // alias
 }
 
@@ -1598,4 +1604,122 @@ void cmd_watchname(App& app, const std::string& args) {
     m.quiet = true;
     app.macros.define(std::move(m));
     app.terminal.print_system("% Watching for: " + s);
+}
+
+void cmd_restart(App& app, const std::string& args) {
+    (void)args;
+    perform_restart(app, app_original_argv());
+}
+
+void cmd_update(App& app, const std::string& args) {
+    // /update [branch] — git pull, rebuild, then restart with new binary
+    std::string branch = trim_copy(args);
+
+    // Resolve git repo root by walking up from the executable
+    char exe_buf[4096];
+    ssize_t exe_len = readlink("/proc/self/exe", exe_buf, sizeof(exe_buf) - 1);
+    if (exe_len <= 0) {
+        app.terminal.print_system("% Cannot resolve executable path");
+        return;
+    }
+    exe_buf[exe_len] = '\0';
+    std::string exe_path(exe_buf, (size_t)exe_len);
+
+    // Walk up looking for .git/
+    std::string dir = exe_path;
+    std::string repo_root;
+    for (;;) {
+        auto slash = dir.rfind('/');
+        if (slash == std::string::npos || slash == 0) break;
+        dir.resize(slash);
+        struct stat st;
+        std::string git_dir = dir + "/.git";
+        if (stat(git_dir.c_str(), &st) == 0) {
+            repo_root = dir;
+            break;
+        }
+    }
+    if (repo_root.empty()) {
+        app.terminal.print_system("% Cannot find git repository root");
+        return;
+    }
+
+    // Determine the build directory (client/tf/build relative to repo root)
+    std::string build_dir = repo_root + "/client/tf/build";
+    std::string src_dir = repo_root + "/client/tf";
+
+    // Build the shell command
+    std::string pull_cmd = "cd " + repo_root + " && git pull";
+    if (!branch.empty()) pull_cmd += " origin " + branch;
+    std::string build_cmd = pull_cmd + " && cd " + src_dir +
+        " && cmake --build build --target tf 2>&1";
+
+    app.terminal.print_system("% Updating: " + build_cmd);
+
+    // Fork and exec the build
+    int pipefd[2];
+    if (pipe(pipefd) != 0) {
+        app.terminal.print_system("% pipe() failed");
+        return;
+    }
+
+    pid_t pid = fork();
+    if (pid < 0) {
+        close(pipefd[0]);
+        close(pipefd[1]);
+        app.terminal.print_system("% fork() failed");
+        return;
+    }
+    if (pid == 0) {
+        close(pipefd[0]);
+        dup2(pipefd[1], STDOUT_FILENO);
+        dup2(pipefd[1], STDERR_FILENO);
+        close(pipefd[1]);
+        execl("/bin/sh", "sh", "-c", build_cmd.c_str(), nullptr);
+        _exit(127);
+    }
+
+    close(pipefd[1]);
+
+    // Read build output
+    char buf[4096];
+    std::string output;
+    for (;;) {
+        ssize_t n = read(pipefd[0], buf, sizeof(buf));
+        if (n <= 0) break;
+        output.append(buf, (size_t)n);
+    }
+    close(pipefd[0]);
+
+    int status = 0;
+    waitpid(pid, &status, 0);
+
+    // Show build output
+    std::istringstream iss(output);
+    std::string line;
+    while (std::getline(iss, line)) {
+        app.terminal.print_system("  " + line);
+    }
+
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+        app.terminal.print_system("% Update failed (exit " +
+            std::to_string(WIFEXITED(status) ? WEXITSTATUS(status) : -1) + ")");
+        return;
+    }
+
+    // Replace running binary: rename build output over current exe
+    std::string new_binary = build_dir + "/tf";
+    struct stat st;
+    if (stat(new_binary.c_str(), &st) != 0) {
+        app.terminal.print_system("% Built binary not found: " + new_binary);
+        return;
+    }
+
+    if (rename(new_binary.c_str(), exe_path.c_str()) != 0) {
+        app.terminal.print_system("% Cannot replace binary: " + std::string(strerror(errno)));
+        return;
+    }
+
+    app.terminal.print_system("% Binary updated, restarting...");
+    perform_restart(app, app_original_argv());
 }

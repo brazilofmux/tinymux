@@ -31,7 +31,8 @@ endforeach()
 add_executable(tf
     src/main.cpp src/terminal.cpp src/connection.cpp src/charset.cpp
     src/world.cpp src/command.cpp src/macro.cpp src/timer.cpp src/keybind.cpp
-    src/input_lex.cpp src/script_lex.cpp src/script_parse.cpp src/regex_utils.cpp)
+    src/input_lex.cpp src/script_lex.cpp src/script_parse.cpp src/regex_utils.cpp
+    src/restart.cpp)
 
 target_include_directories(tf PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src

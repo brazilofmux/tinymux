@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <vector>
 #include <chrono>
+#include <memory>
 #include <openssl/ssl.h>
 #include <zlib.h>
 #include "charset.h"
@@ -38,6 +39,24 @@ public:
     bool uses_ssl() const { return use_ssl_; }
     bool remote_echo() const { return remote_echo_; }
     Charset charset() const { return charset_; }
+
+    // Accessors for restart serialization
+    int tel_state_int() const { return static_cast<int>(tel_state_); }
+    bool naws_agreed() const { return naws_agreed_; }
+    uint16_t naws_width() const { return naws_width_; }
+    uint16_t naws_height() const { return naws_height_; }
+    bool mccp_active() const { return mccp_active_; }
+    const std::string& line_buf() const { return line_buf_; }
+    const std::string& last_prompt() const { return last_prompt_; }
+
+    // Adopt an existing fd (for restart restoration).
+    // Creates a Connection without calling connect().
+    static std::unique_ptr<Connection> adopt_fd(
+        const std::string& world_name, const std::string& host,
+        const std::string& port, int fd, bool use_ssl,
+        int tel_state, bool remote_echo, Charset charset,
+        bool naws_agreed, uint16_t naws_width, uint16_t naws_height,
+        const std::string& line_buf, const std::string& last_prompt);
 
     // Notify the MUD of terminal size change
     void send_naws(uint16_t width, uint16_t height);

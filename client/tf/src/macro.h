@@ -54,6 +54,7 @@ namespace Hook {
     constexpr const char* BGTEXT     = "BGTEXT";
     constexpr const char* RESIZE     = "RESIZE";
     constexpr const char* PROMPT     = "PROMPT";
+    constexpr const char* RESTART    = "RESTART";
 }
 
 // Execute a macro body.  Statements separated by %;

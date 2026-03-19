@@ -2,6 +2,7 @@
 #include "input.h"
 #include "script.h"
 #include "macro.h"
+#include "restart.h"
 #include <sstream>
 #include <poll.h>
 #include <signal.h>
@@ -12,6 +13,13 @@
 #include <cstring>
 #include <vector>
 #include <fnmatch.h>
+
+// Stored original argv for restart support.
+static std::vector<std::string> g_original_argv;
+
+const std::vector<std::string>& app_original_argv() {
+    return g_original_argv;
+}
 
 // Debug-keys helper: format a BindKey for log output.
 static std::string dbg_key_name(const BindKey& bk) {
@@ -753,14 +761,24 @@ int main(int argc, char* argv[]) {
 
     signal(SIGPIPE, SIG_IGN);
 
+    // Store original argv for restart (excluding --restart itself).
+    for (int i = 0; i < argc; ++i) {
+        if (std::string(argv[i]) != "--restart") {
+            g_original_argv.push_back(argv[i]);
+        }
+    }
+
     App app;
+    bool restart_mode = false;
     std::vector<std::string> world_files;
     std::vector<std::string> command_files;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
 
-        if (arg == "-w" || arg == "--world-file") {
+        if (arg == "--restart") {
+            restart_mode = true;
+        } else if (arg == "-w" || arg == "--world-file") {
             if (i + 1 >= argc) {
                 fprintf(stderr, "Missing argument for %s\n", arg.c_str());
                 return 1;
@@ -785,10 +803,11 @@ int main(int argc, char* argv[]) {
             }
             setlinebuf(app.debug_keys_fp);
         } else if (arg == "-?" || arg == "--help") {
-            fprintf(stderr, "Usage: %s [-w worldfile] [-f cmdfile] [--debug-keys FILE]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-w worldfile] [-f cmdfile] [--debug-keys FILE] [--restart]\n", argv[0]);
             fprintf(stderr, "  -w, --world-file PATH  load TinyFugue world definitions at startup\n");
             fprintf(stderr, "  -f, --file PATH        load a startup command file at startup\n");
             fprintf(stderr, "  --debug-keys FILE      log input events and key binding decisions\n");
+            fprintf(stderr, "  --restart              restore state from a previous /restart\n");
             return 0;
         } else {
             fprintf(stderr, "Unknown option: %s\n", arg.c_str());
@@ -811,63 +830,105 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    app.terminal.print_system("TinyFugue (C++ rebuild) - Type /help for commands, /quit to exit");
-
-    // Load stdlib.tf — search TFDIR, next to executable, ../tf-lib/, ~/.tf/.
-    //
-    {
-        std::vector<std::string> search_paths;
-
-        // TFDIR environment variable (explicit override).
-        const char* tfdir = std::getenv("TFDIR");
-        if (tfdir && *tfdir) {
-            search_paths.push_back(std::string(tfdir) + "/stdlib.tf");
+    if (restart_mode) {
+        // Restart mode: restore state from restart file, then enter event loop.
+        std::string rpath = restart_file_path();
+        if (!restore_restart(app, rpath)) {
+            app.terminal.print_system("TinyFugue (C++ rebuild) - Type /help for commands, /quit to exit");
         }
 
-        // Next to the executable (build tree or installed).
-        // Try /proc/self/exe (Linux), /proc/curproc/file (FreeBSD).
-        char exe_path[4096];
-        ssize_t exe_len = -1;
+        // Load stdlib and config files even in restart mode so macros/hooks
+        // are available.
+        {
+            std::vector<std::string> search_paths;
+            const char* tfdir = std::getenv("TFDIR");
+            if (tfdir && *tfdir) search_paths.push_back(std::string(tfdir) + "/stdlib.tf");
+            char exe_path[4096];
+            ssize_t exe_len = -1;
 #if defined(__linux__)
-        exe_len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+            exe_len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
 #elif defined(__FreeBSD__)
-        exe_len = readlink("/proc/curproc/file", exe_path, sizeof(exe_path) - 1);
+            exe_len = readlink("/proc/curproc/file", exe_path, sizeof(exe_path) - 1);
 #endif
-        if (exe_len > 0) {
-            exe_path[exe_len] = '\0';
-            std::string dir(exe_path);
-            auto slash = dir.rfind('/');
-            if (slash != std::string::npos) dir.resize(slash);
-            search_paths.push_back(dir + "/tf-lib/stdlib.tf");
-            search_paths.push_back(dir + "/../tf-lib/stdlib.tf");
+            if (exe_len > 0) {
+                exe_path[exe_len] = '\0';
+                std::string dir(exe_path);
+                auto slash = dir.rfind('/');
+                if (slash != std::string::npos) dir.resize(slash);
+                search_paths.push_back(dir + "/tf-lib/stdlib.tf");
+                search_paths.push_back(dir + "/../tf-lib/stdlib.tf");
+            }
+            const char* home = std::getenv("HOME");
+            if (home) search_paths.push_back(std::string(home) + "/.tf/stdlib.tf");
+            for (const auto& sp : search_paths) {
+                if (load_command_file(app, sp, true)) break;
+            }
+        }
+        for (const auto& path : world_files) load_world_file(app, path, true);
+        for (const auto& path : command_files) load_command_file(app, path, true);
+
+        app.terminal.refresh();
+        run(app);
+    } else {
+        // Normal startup
+        app.terminal.print_system("TinyFugue (C++ rebuild) - Type /help for commands, /quit to exit");
+
+        // Load stdlib.tf — search TFDIR, next to executable, ../tf-lib/, ~/.tf/.
+        //
+        {
+            std::vector<std::string> search_paths;
+
+            // TFDIR environment variable (explicit override).
+            const char* tfdir = std::getenv("TFDIR");
+            if (tfdir && *tfdir) {
+                search_paths.push_back(std::string(tfdir) + "/stdlib.tf");
+            }
+
+            // Next to the executable (build tree or installed).
+            // Try /proc/self/exe (Linux), /proc/curproc/file (FreeBSD).
+            char exe_path[4096];
+            ssize_t exe_len = -1;
+#if defined(__linux__)
+            exe_len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+#elif defined(__FreeBSD__)
+            exe_len = readlink("/proc/curproc/file", exe_path, sizeof(exe_path) - 1);
+#endif
+            if (exe_len > 0) {
+                exe_path[exe_len] = '\0';
+                std::string dir(exe_path);
+                auto slash = dir.rfind('/');
+                if (slash != std::string::npos) dir.resize(slash);
+                search_paths.push_back(dir + "/tf-lib/stdlib.tf");
+                search_paths.push_back(dir + "/../tf-lib/stdlib.tf");
+            }
+
+            // Home directory.
+            const char* home = std::getenv("HOME");
+            if (home) {
+                search_paths.push_back(std::string(home) + "/.tf/stdlib.tf");
+            }
+
+            for (const auto& sp : search_paths) {
+                if (load_command_file(app, sp, true)) break;
+            }
         }
 
-        // Home directory.
-        const char* home = std::getenv("HOME");
-        if (home) {
-            search_paths.push_back(std::string(home) + "/.tf/stdlib.tf");
+        if (world_files.empty() && command_files.empty()) {
+            app.terminal.print_system("Use /world to define worlds, /connect <world> to connect.");
+            app.terminal.print_system("Use -w <file> to load world definitions at startup.");
         }
 
-        for (const auto& sp : search_paths) {
-            if (load_command_file(app, sp, true)) break;
+        for (const auto& path : world_files) {
+            load_world_file(app, path);
         }
-    }
+        for (const auto& path : command_files) {
+            load_command_file(app, path);
+        }
 
-    if (world_files.empty() && command_files.empty()) {
-        app.terminal.print_system("Use /world to define worlds, /connect <world> to connect.");
-        app.terminal.print_system("Use -w <file> to load world definitions at startup.");
-    }
+        app.terminal.refresh();
 
-    for (const auto& path : world_files) {
-        load_world_file(app, path);
+        run(app);
     }
-    for (const auto& path : command_files) {
-        load_command_file(app, path);
-    }
-
-    app.terminal.refresh();
-
-    run(app);
 
     app.terminal.shutdown();
     return 0;

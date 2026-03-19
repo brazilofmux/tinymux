@@ -93,5 +93,7 @@ void cmd_undefn(App& app, const std::string& args);
 void cmd_unset(App& app, const std::string& args);
 void cmd_watchdog(App& app, const std::string& args);
 void cmd_watchname(App& app, const std::string& args);
+void cmd_restart(App& app, const std::string& args);
+void cmd_update(App& app, const std::string& args);
 
 #endif // TF_COMMAND_H

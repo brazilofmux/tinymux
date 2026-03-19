@@ -681,6 +681,31 @@ std::string Connection::current_prompt() const {
     return prompt;
 }
 
+std::unique_ptr<Connection> Connection::adopt_fd(
+    const std::string& world_name, const std::string& host,
+    const std::string& port, int fd, bool use_ssl,
+    int tel_state, bool remote_echo, Charset charset,
+    bool naws_agreed, uint16_t naws_width, uint16_t naws_height,
+    const std::string& line_buf, const std::string& last_prompt)
+{
+    auto conn = std::make_unique<Connection>(world_name, host, port, use_ssl);
+    conn->fd_ = fd;
+    conn->tel_state_ = static_cast<TelState>(tel_state);
+    conn->remote_echo_ = remote_echo;
+    conn->charset_ = charset;
+    conn->naws_agreed_ = naws_agreed;
+    conn->naws_width_ = naws_width;
+    conn->naws_height_ = naws_height;
+    conn->line_buf_ = line_buf;
+    conn->line_buf_time_ = std::chrono::steady_clock::now();
+    conn->last_prompt_ = last_prompt;
+    auto now = std::chrono::steady_clock::now();
+    conn->last_recv_time_ = now;
+    conn->last_send_time_ = now;
+    // SSL/MCCP not restored — those connections go to reconnect list
+    return conn;
+}
+
 void Connection::add_to_scrollback(const std::string& line) {
     scrollback_.push_back(line);
     if (scrollback_.size() > MAX_SCROLLBACK)

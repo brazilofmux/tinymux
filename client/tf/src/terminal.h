@@ -179,6 +179,16 @@ private:
 
 public:
     void set_app(struct App* app);
+
+    // Accessors for restart serialization/restoration
+    const auto& input_histories() const { return input_histories_; }
+    const auto& output_screens() const { return output_screens_; }
+    void set_input_history(const std::string& key, std::deque<std::string> hist) {
+        input_histories_[key] = std::move(hist);
+    }
+    void set_output_lines(const std::string& key, std::deque<std::string> lines) {
+        output_screens_[key].lines = std::move(lines);
+    }
     void set_vars(const std::unordered_map<std::string, std::string>* vars) { vars_ = vars; }
 
     // Count of connections with unread background activity.
