@@ -1,0 +1,12 @@
+# Migration: Create the park entrance
+zone:
+  name: Emerald Park
+
+rooms:
+  park_entrance:
+    name: Park Entrance
+    description: |
+      A wrought-iron gate opens onto a gravel path that winds between
+      ancient oak trees.
+
+exits: []

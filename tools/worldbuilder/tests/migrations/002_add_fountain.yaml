@@ -1,0 +1,21 @@
+# Migration: Add the fountain plaza and connect to entrance
+zone:
+  name: Emerald Park
+
+rooms:
+  park_entrance:
+    name: Park Entrance
+    description: |
+      A wrought-iron gate opens onto a gravel path that winds between
+      ancient oak trees.
+  fountain_plaza:
+    name: Fountain Plaza
+    description: |
+      A marble fountain dominates the center of a circular plaza.
+      Water arcs from the mouths of four stone fish.
+
+exits:
+  - from: park_entrance
+    to: fountain_plaza
+    name: "North;north;n"
+    back: "South;south;s"
