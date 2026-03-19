@@ -1,5 +1,4 @@
 # TinyMUX 2.14 — Open Work Items
 
-## Performance
-- [ ] **Intrinsics**: Map additional `co_*` functions as DBT intrinsics.
-- [ ] **Tier 2 gaps**: `ISNUM` float support, `SORT` DUCET collation.
+No open items. Performance tuning (intrinsics, Tier 2 gaps) deferred
+until profiling data justifies the work.
