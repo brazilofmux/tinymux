@@ -3,8 +3,11 @@
  *
  * The functions here manage pools of often-used buffers of fixed-size.  It
  * adds value by greatly reducing the number and strength of calls to the
- * underlying platform's memory management. It also adds headers and footer to
- * detect misuse of buffers by its callers.
+ * underlying platform's memory management.  Headers and footers detect
+ * misuse of buffers by callers.
+ *
+ * Buffer tracking and freelists use std::vector instead of intrusive
+ * linked lists, eliminating the next/nxtfree pointers from POOLHDR.
  */
 
 #include "copyright.h"
@@ -12,6 +15,10 @@
 #include "config.h"
 #include "core.h"
 #include "modules.h"
+
+#include <algorithm>
+#include <unordered_set>
+#include <vector>
 
 // libmux.so cannot access mudconf directly (it lives in engine.so).
 // This flag mirrors g_paranoid_alloc; the engine sets it after
@@ -26,26 +33,23 @@ ALLOC_NOTIFY_FN g_alloc_notify_fn = nullptr;
 
 /*! \brief Per-buffer header to manage and organize client allocation.
  *
- * The POOLHDR structure preceeds a client area which must be properly
+ * The POOLHDR structure precedes a client area which must be properly
  * aligned to avoid faults when the client accesses structure members within
- * in the client area.  64-bit alignment should be sufficient.
+ * the client area.  64-bit alignment should be sufficient.
  *
- * The magicnum and pool_size are chosen when the pool it initialized. next
- * and nxtfree are managed as buffers are allocated and freed. buf_tag comes
- * from the client so that buffers can be associated with the places that
- * allocated them.
+ * The magicnum and pool_size are chosen when the pool is initialized.
+ * buf_tag comes from the client so that buffers can be associated with the
+ * places that allocated them.
  */
 
 typedef struct pool_header
 {
-    unsigned int        magicnum;   // For consistency check
-    size_t              pool_size;  // For consistency check
-    struct pool_header *next;       // Next pool header in chain
-    struct pool_header *nxtfree;    // Next pool header in freelist
+    unsigned int    magicnum;       // For consistency check
+    size_t          pool_size;      // For consistency check
     union
     {
-        const UTF8     *buf_tag;    // Debugging/trace tag
-        uint64_t align;               // Not used.
+        const UTF8 *buf_tag;        // Debugging/trace tag
+        uint64_t    align;          // Alignment padding
     } u;
 } POOLHDR;
 
@@ -60,9 +64,10 @@ typedef struct pool_footer
     unsigned int magicnum;          // For consistency check
 } POOLFTR;
 
-/*! \brief Per-pool structure containing statistics and list heads.
+/*! \brief Per-pool structure containing statistics and vector-based lists.
  *
- * The head of the free list and in-use list are contained here.
+ * The freelist is a stack (vector) of raw allocation pointers.
+ * all_buffers tracks every allocation for diagnostics and cleanup.
  */
 
 typedef struct pooldata
@@ -70,12 +75,12 @@ typedef struct pooldata
     size_t pool_client_size;        // Size in bytes of a buffer as seen by client.
     size_t pool_alloc_size;         // Size as allocated from system.
     unsigned int poolmagic;         // Magic number specific to this pool
-    POOLHDR *free_head;             // Buffer freelist head
-    POOLHDR *chain_head;            // Buffer chain head
-    uint64_t tot_alloc;               // Total buffers allocated
-    uint64_t num_alloc;               // Number of buffers currently allocated
-    uint64_t max_alloc;               // Max # buffers allocated at one time
-    uint64_t num_lost;                // Buffers lost due to corruption
+    std::vector<char *> free_stack; // Free buffers (stack — push/pop from back)
+    std::vector<char *> all_buffers;// All allocated raw blocks (for diagnostics)
+    uint64_t tot_alloc;             // Total buffers allocated
+    uint64_t num_alloc;             // Number of buffers currently allocated
+    uint64_t max_alloc;             // Max # buffers allocated at one time
+    uint64_t num_lost;              // Buffers lost due to corruption
 } POOL;
 
 static POOL pools[NUM_POOLS];
@@ -96,8 +101,7 @@ static const UTF8 *poolnames[] =
 /*! \brief Initialize a buffer pool.
  *
  * This is done once. The client size, magic, and allocation size are chosen
- * at this time, and the free list and in-use list are initialized to empty.
- * After this initialization, allocations can be done.
+ * at this time.  After this initialization, allocations can be done.
  *
  * \param poolnum  An integer uniquely indicating which pool.
  * \param poolsize The size of the client area this pool supports.
@@ -108,8 +112,8 @@ void pool_init(int poolnum, int poolsize)
     pools[poolnum].pool_alloc_size  = poolsize + sizeof(POOLHDR) + sizeof(POOLFTR);
     mux_assert(pools[poolnum].pool_client_size < pools[poolnum].pool_alloc_size);
     pools[poolnum].poolmagic = CRC32_ProcessInteger2(poolnum, poolsize);
-    pools[poolnum].free_head = nullptr;
-    pools[poolnum].chain_head = nullptr;
+    pools[poolnum].free_stack.clear();
+    pools[poolnum].all_buffers.clear();
     pools[poolnum].tot_alloc = 0;
     pools[poolnum].num_alloc = 0;
     pools[poolnum].max_alloc = 0;
@@ -117,19 +121,6 @@ void pool_init(int poolnum, int poolsize)
 }
 
 /*! \brief Helper function for logging pool errors.
- *
- * Rather than have similar code spread throughout the pool manager, this
- * helper function glosses over access to the logging functions.
- *
- * \param logsys   Primary logging tag.
- * \param logflag  Event class.
- * \param poolnum  Which pool.
- * \param tag      Client tag of problem buffer.
- * \param ph       Pool header address.
- * \param action   Action that discovered the problem.
- * \param reason   prose to explain.
- * \param file     File name of caller.
- * \param line     Line number of caller.
  */
 static void pool_err
 (
@@ -146,25 +137,16 @@ static void pool_err
 {
     UNUSED_PARAMETER(logflag);
 
-    // alloc.cpp is in libmux.so and cannot call engine-side logging.
-    // Use stderr for pool error diagnostics.
-    //
     mux_fprintf(stderr, T("%s %s[%d] (tag %s) %s in %s line %d at %p." ENDLINE),
         logsys, action, pools[poolnum].pool_client_size, tag, reason,
         file, line, ph);
 }
 
-/*! \brief Validates the buffers in the in-use list.
+/*! \brief Validates the buffers in the all_buffers list.
  *
- * This walks the in-use list, validates that all the buffers in the list go
- * with the pool in which they appear and that all the magic is correct.  If
- * a buffer is found to be compromised, part of the list is intentionally
- * leaked rather than risk a crash.
- *
- * \param poolnum  Which pool.
- * \param tag      Client tag of problem buffer.
- * \param file     File name of caller.
- * \param line     Line number of caller.
+ * Walks all allocated buffers and checks that magic numbers are correct.
+ * Reports errors but does not unlink or leak buffers — that strategy was
+ * a relic of the intrusive-list era.
  */
 static void pool_vfy
 (
@@ -174,37 +156,18 @@ static void pool_vfy
     const int line
 )
 {
-    POOLHDR *lastph = nullptr;
     const size_t psize = pools[poolnum].pool_client_size;
-    for (POOLHDR *ph = pools[poolnum].chain_head; nullptr != ph; lastph = ph, ph = ph->next)
+    for (char *raw : pools[poolnum].all_buffers)
     {
-	    auto h = reinterpret_cast<UTF8*>(ph);
-        h += sizeof(POOLHDR);
-        h += pools[poolnum].pool_client_size;
-	    const auto pf = reinterpret_cast<POOLFTR*>(h);
+        auto ph = reinterpret_cast<POOLHDR *>(raw);
+        auto h = raw + sizeof(POOLHDR);
+        auto pf = reinterpret_cast<POOLFTR *>(h + pools[poolnum].pool_client_size);
 
         if (ph->magicnum != pools[poolnum].poolmagic)
         {
             pool_err(T("BUG"), LOG_ALWAYS, poolnum, tag, ph, T("Verify"),
-                     T("header corrupted (clearing freelist)"), file, line);
-
-            // Break the header chain at this point so we don't
-            // generate an error for EVERY alloc and free, also we
-            // can't continue the scan because the next pointer might
-            // be trash too.
-            //
-            if (nullptr != lastph)
-            {
-                lastph->next = nullptr;
-            }
-            else
-            {
-                pools[poolnum].chain_head = nullptr;
-            }
-
-            // It's not safe to continue.
-            //
-            return;
+                     T("header corrupted"), file, line);
+            continue;
         }
 
         if (pf->magicnum != pools[poolnum].poolmagic)
@@ -224,7 +187,7 @@ static void pool_vfy
 
 static void pool_check(const UTF8 *tag, const UTF8 *file, const int line)
 {
-	for (int i = 0; i < NUM_POOLS; i++)
+    for (int i = 0; i < NUM_POOLS; i++)
     {
         pool_vfy(i, tag, file, line);
     }
@@ -238,86 +201,89 @@ UTF8 *pool_alloc(int poolnum, const UTF8 *tag, const UTF8 *file, const int line)
     }
 
     UTF8 *p;
+    POOLHDR *ph;
     POOLFTR *pf;
-    auto ph = reinterpret_cast<POOLHDR *>(pools[poolnum].free_head);
-    if (  ph
-       && ph->magicnum == pools[poolnum].poolmagic)
-    {
-        p = reinterpret_cast<UTF8*>(ph + 1);
-        pf = reinterpret_cast<POOLFTR*>(p + pools[poolnum].pool_client_size);
-        pools[poolnum].free_head = ph->nxtfree;
 
-        // Check for corrupted footer, just report and fix it.
-        //
-        if (pf->magicnum != pools[poolnum].poolmagic)
+    if (!pools[poolnum].free_stack.empty())
+    {
+        char *raw = pools[poolnum].free_stack.back();
+        pools[poolnum].free_stack.pop_back();
+        ph = reinterpret_cast<POOLHDR *>(raw);
+        p = reinterpret_cast<UTF8 *>(raw + sizeof(POOLHDR));
+        pf = reinterpret_cast<POOLFTR *>(p + pools[poolnum].pool_client_size);
+
+        if (ph->magicnum != pools[poolnum].poolmagic)
         {
             pool_err(T("BUG"), LOG_ALWAYS, poolnum, tag, ph, T("Alloc"),
-                T("corrupted buffer footer"), file, line);
-            pf->magicnum = pools[poolnum].poolmagic;
-        }
-    }
-    else
-    {
-        if (ph)
-        {
-            // Header is corrupt. Throw away the freelist and start a new
-            // one.
-            pool_err(T("BUG"), LOG_ALWAYS, poolnum, tag, ph, T("Alloc"),
-                T("corrupted buffer header"), file, line);
+                T("corrupted buffer header on freelist"), file, line);
 
-            // Start a new free list and record stats.
+            // Discard the corrupted freelist and fall through to allocate new.
             //
-            pools[poolnum].free_head = nullptr;
-            pools[poolnum].num_lost += (pools[poolnum].tot_alloc
-                                     -  pools[poolnum].num_alloc);
-            pools[poolnum].tot_alloc = pools[poolnum].num_alloc;
+            pools[poolnum].num_lost += pools[poolnum].free_stack.size() + 1;
+            pools[poolnum].free_stack.clear();
         }
-
-        ph = nullptr;
-        try
+        else
         {
-            ph = reinterpret_cast<POOLHDR *>(new char[pools[poolnum].pool_alloc_size]);
-        }
-        catch (...)
-        {
-        }
+            // Check for corrupted footer, just report and fix it.
+            //
+            if (pf->magicnum != pools[poolnum].poolmagic)
+            {
+                pool_err(T("BUG"), LOG_ALWAYS, poolnum, tag, ph, T("Alloc"),
+                    T("corrupted buffer footer"), file, line);
+                pf->magicnum = pools[poolnum].poolmagic;
+            }
 
-        if (nullptr == ph)
-        {
-            ISOUTOFMEMORY(ph)
-            return nullptr;
+            ph->u.buf_tag = tag;
+            pools[poolnum].tot_alloc++;
+            pools[poolnum].num_alloc++;
+
+            // If the buffer was modified after it was last freed, log it.
+            //
+            auto pui = reinterpret_cast<unsigned *>(p);
+            if (*pui != pools[poolnum].poolmagic)
+            {
+                pool_err(T("BUG"), LOG_PROBLEMS, poolnum, tag, ph, T("Alloc"),
+                    T("buffer modified after free"), file, line);
+            }
+            *pui = 0;
+            return p;
         }
-
-        p = reinterpret_cast<UTF8*>(ph + 1);
-        pf = reinterpret_cast<POOLFTR*>(p + pools[poolnum].pool_client_size);
-
-        // Initialize.
-        //
-        ph->next = pools[poolnum].chain_head;
-        ph->nxtfree = nullptr;
-        ph->magicnum = pools[poolnum].poolmagic;
-        ph->pool_size = pools[poolnum].pool_client_size;
-        pf->magicnum = pools[poolnum].poolmagic;
-        *reinterpret_cast<unsigned*>(p) = pools[poolnum].poolmagic;
-        pools[poolnum].chain_head = ph;
-        pools[poolnum].max_alloc++;
     }
+
+    // Allocate a new buffer from the system.
+    //
+    char *raw = nullptr;
+    try
+    {
+        raw = new char[pools[poolnum].pool_alloc_size];
+    }
+    catch (...)
+    {
+    }
+
+    if (nullptr == raw)
+    {
+        ISOUTOFMEMORY(raw)
+        return nullptr;
+    }
+
+    pools[poolnum].all_buffers.push_back(raw);
+
+    ph = reinterpret_cast<POOLHDR *>(raw);
+    p = reinterpret_cast<UTF8 *>(raw + sizeof(POOLHDR));
+    pf = reinterpret_cast<POOLFTR *>(p + pools[poolnum].pool_client_size);
+
+    ph->magicnum = pools[poolnum].poolmagic;
+    ph->pool_size = pools[poolnum].pool_client_size;
+    pf->magicnum = pools[poolnum].poolmagic;
+    *reinterpret_cast<unsigned *>(p) = pools[poolnum].poolmagic;
+    pools[poolnum].max_alloc++;
 
     ph->u.buf_tag = tag;
     pools[poolnum].tot_alloc++;
     pools[poolnum].num_alloc++;
 
-    // Alloc tracing — libmux.so uses stderr, not engine logging.
-    //
-
-    // If the buffer was modified after it was last freed, log it.
-    //
-    const auto pui = reinterpret_cast<unsigned*>(p);
-    if (*pui != pools[poolnum].poolmagic)
-    {
-        pool_err(T("BUG"), LOG_PROBLEMS, poolnum, tag, ph, T("Alloc"),
-            T("buffer modified after free"), file, line);
-    }
+    auto pui = reinterpret_cast<unsigned *>(p);
     *pui = 0;
     return p;
 }
@@ -330,86 +296,81 @@ UTF8 *pool_alloc_lbuf(const UTF8 *tag, const UTF8 *file, const int line)
     }
 
     UTF8 *p;
+    POOLHDR *ph;
     POOLFTR *pf;
-    auto ph = reinterpret_cast<POOLHDR *>(pools[POOL_LBUF].free_head);
-    if (  ph
-       && ph->magicnum == pools[POOL_LBUF].poolmagic)
-    {
-        p = reinterpret_cast<UTF8*>(ph + 1);
-        pf = reinterpret_cast<POOLFTR*>(p + LBUF_SIZE);
-        pools[POOL_LBUF].free_head = ph->nxtfree;
 
-        // Check for corrupted footer, just report and fix it.
-        //
-        if (pf->magicnum != pools[POOL_LBUF].poolmagic)
+    if (!pools[POOL_LBUF].free_stack.empty())
+    {
+        char *raw = pools[POOL_LBUF].free_stack.back();
+        pools[POOL_LBUF].free_stack.pop_back();
+        ph = reinterpret_cast<POOLHDR *>(raw);
+        p = reinterpret_cast<UTF8 *>(raw + sizeof(POOLHDR));
+        pf = reinterpret_cast<POOLFTR *>(p + LBUF_SIZE);
+
+        if (ph->magicnum != pools[POOL_LBUF].poolmagic)
         {
             pool_err(T("BUG"), LOG_ALWAYS, POOL_LBUF, tag, ph, T("Alloc"),
-                T("corrupted buffer footer"), file, line);
-            pf->magicnum = pools[POOL_LBUF].poolmagic;
+                T("corrupted buffer header on freelist"), file, line);
+
+            pools[POOL_LBUF].num_lost += pools[POOL_LBUF].free_stack.size() + 1;
+            pools[POOL_LBUF].free_stack.clear();
+        }
+        else
+        {
+            if (pf->magicnum != pools[POOL_LBUF].poolmagic)
+            {
+                pool_err(T("BUG"), LOG_ALWAYS, POOL_LBUF, tag, ph, T("Alloc"),
+                    T("corrupted buffer footer"), file, line);
+                pf->magicnum = pools[POOL_LBUF].poolmagic;
+            }
+
+            ph->u.buf_tag = tag;
+            pools[POOL_LBUF].tot_alloc++;
+            pools[POOL_LBUF].num_alloc++;
+
+            auto pui = reinterpret_cast<unsigned *>(p);
+            if (*pui != pools[POOL_LBUF].poolmagic)
+            {
+                pool_err(T("BUG"), LOG_PROBLEMS, POOL_LBUF, tag, ph, T("Alloc"),
+                    T("buffer modified after free"), file, line);
+            }
+            *pui = 0;
+            return p;
         }
     }
-    else
+
+    char *raw = nullptr;
+    try
     {
-        if (ph)
-        {
-            // Header is corrupt. Throw away the freelist and start a new
-            // one.
-            pool_err(T("BUG"), LOG_ALWAYS, POOL_LBUF, tag, ph, T("Alloc"),
-                T("corrupted buffer header"), file, line);
-
-            // Start a new free list and record stats.
-            //
-            pools[POOL_LBUF].free_head = nullptr;
-            pools[POOL_LBUF].num_lost += (pools[POOL_LBUF].tot_alloc
-                                     -  pools[POOL_LBUF].num_alloc);
-            pools[POOL_LBUF].tot_alloc = pools[POOL_LBUF].num_alloc;
-        }
-
-        ph = nullptr;
-        try
-        {
-            ph = reinterpret_cast<POOLHDR *>(new char[LBUF_SIZE + sizeof(POOLHDR) + sizeof(POOLFTR)]);
-        }
-        catch (...)
-        {
-        }
-
-        if (nullptr == ph)
-        {
-            ISOUTOFMEMORY(ph)
-            return nullptr;
-        }
-
-        p = reinterpret_cast<UTF8*>(ph + 1);
-        pf = reinterpret_cast<POOLFTR*>(p + LBUF_SIZE);
-
-        // Initialize.
-        //
-        ph->next = pools[POOL_LBUF].chain_head;
-        ph->nxtfree = nullptr;
-        ph->magicnum = pools[POOL_LBUF].poolmagic;
-        ph->pool_size = LBUF_SIZE;
-        pf->magicnum = pools[POOL_LBUF].poolmagic;
-        *reinterpret_cast<unsigned*>(p) = pools[POOL_LBUF].poolmagic;
-        pools[POOL_LBUF].chain_head = ph;
-        pools[POOL_LBUF].max_alloc++;
+        raw = new char[LBUF_SIZE + sizeof(POOLHDR) + sizeof(POOLFTR)];
     }
+    catch (...)
+    {
+    }
+
+    if (nullptr == raw)
+    {
+        ISOUTOFMEMORY(raw)
+        return nullptr;
+    }
+
+    pools[POOL_LBUF].all_buffers.push_back(raw);
+
+    ph = reinterpret_cast<POOLHDR *>(raw);
+    p = reinterpret_cast<UTF8 *>(raw + sizeof(POOLHDR));
+    pf = reinterpret_cast<POOLFTR *>(p + LBUF_SIZE);
+
+    ph->magicnum = pools[POOL_LBUF].poolmagic;
+    ph->pool_size = LBUF_SIZE;
+    pf->magicnum = pools[POOL_LBUF].poolmagic;
+    *reinterpret_cast<unsigned *>(p) = pools[POOL_LBUF].poolmagic;
+    pools[POOL_LBUF].max_alloc++;
 
     ph->u.buf_tag = tag;
     pools[POOL_LBUF].tot_alloc++;
     pools[POOL_LBUF].num_alloc++;
 
-    // Alloc tracing — libmux.so uses stderr, not engine logging.
-    //
-
-    // If the buffer was modified after it was last freed, log it.
-    //
-    const auto pui = reinterpret_cast<unsigned*>(p);
-    if (*pui != pools[POOL_LBUF].poolmagic)
-    {
-        pool_err(T("BUG"), LOG_PROBLEMS, POOL_LBUF, tag, ph, T("Alloc"),
-            T("buffer modified after free"), file, line);
-    }
+    auto pui = reinterpret_cast<unsigned *>(p);
     *pui = 0;
     return p;
 }
@@ -421,9 +382,11 @@ void pool_free(int poolnum, UTF8* buf, const UTF8* file, const int line)
         mux_fprintf(stderr, T("BUG ALLOC: Attempt to free null pointer in %s line %d." ENDLINE), file, line);
         return;
     }
-    POOLHDR *ph = reinterpret_cast<POOLHDR*>(buf) - 1;
-    const auto pf = reinterpret_cast<POOLFTR*>(buf + pools[poolnum].pool_client_size);
-    const auto pui = reinterpret_cast<unsigned*>(buf);
+
+    char *raw = reinterpret_cast<char *>(buf) - sizeof(POOLHDR);
+    POOLHDR *ph = reinterpret_cast<POOLHDR *>(raw);
+    const auto pf = reinterpret_cast<POOLFTR *>(buf + pools[poolnum].pool_client_size);
+    const auto pui = reinterpret_cast<unsigned *>(buf);
 
     if (g_paranoid_alloc)
     {
@@ -461,9 +424,6 @@ void pool_free(int poolnum, UTF8* buf, const UTF8* file, const int line)
         return;
     }
 
-    // Free tracing — libmux.so uses stderr, not engine logging.
-    //
-
     // Make sure we aren't freeing an already free buffer.  If we are, log an
     // error, otherwise update the pool header and stats.
     //
@@ -475,8 +435,7 @@ void pool_free(int poolnum, UTF8* buf, const UTF8* file, const int line)
     else
     {
         *pui = pools[poolnum].poolmagic;
-        ph->nxtfree = pools[poolnum].free_head;
-        pools[poolnum].free_head = ph;
+        pools[poolnum].free_stack.push_back(raw);
         pools[poolnum].num_alloc--;
     }
 }
@@ -488,9 +447,11 @@ void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
         mux_fprintf(stderr, T("BUG ALLOC: Attempt to free_lbuf null pointer in %s line %d." ENDLINE), file, line);
         return;
     }
-    POOLHDR *ph = reinterpret_cast<POOLHDR*>(buf) - 1;
-    const auto pf = reinterpret_cast<POOLFTR*>(buf + LBUF_SIZE);
-    const auto pui = reinterpret_cast<unsigned*>(buf);
+
+    char *raw = reinterpret_cast<char *>(buf) - sizeof(POOLHDR);
+    POOLHDR *ph = reinterpret_cast<POOLHDR *>(raw);
+    const auto pf = reinterpret_cast<POOLFTR *>(buf + LBUF_SIZE);
+    const auto pui = reinterpret_cast<unsigned *>(buf);
 
     if (g_paranoid_alloc)
     {
@@ -504,9 +465,6 @@ void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
     {
         if (ph->magicnum != pools[POOL_LBUF].poolmagic)
         {
-            // The buffer header is damaged. Log the error and throw away the
-            // buffer.
-            //
             pool_err(T("BUG"), LOG_ALWAYS, POOL_LBUF, ph->u.buf_tag, ph, T("Free"),
                      T("corrupted buffer header"), file, line);
             pools[POOL_LBUF].num_lost++;
@@ -516,23 +474,17 @@ void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
         }
         else if (pf->magicnum != pools[POOL_LBUF].poolmagic)
         {
-            // The buffer footer is damaged.  Don't unlink, just repair.
-            //
             pool_err(T("BUG"), LOG_ALWAYS, POOL_LBUF, ph->u.buf_tag, ph, T("Free"),
                 T("corrupted buffer footer"), file, line);
             pf->magicnum = pools[POOL_LBUF].poolmagic;
         }
         else if (ph->pool_size != LBUF_SIZE)
         {
-            // We are trying to free someone else's buffer.
-            //
             pool_err(T("BUG"), LOG_ALWAYS, POOL_LBUF, ph->u.buf_tag, ph, T("Free"),
                 T("Attempt to free into a different pool."), file, line);
             return;
         }
 
-        // If we are freeing a buffer that was already free, report an error.
-        //
         if (*pui == pools[POOL_LBUF].poolmagic)
         {
             pool_err(T("BUG"), LOG_BUGS, POOL_LBUF, ph->u.buf_tag, ph, T("Free"),
@@ -541,14 +493,8 @@ void pool_free_lbuf(UTF8 *buf, const UTF8 *file, const int line)
         }
     }
 
-    // Free tracing — libmux.so uses stderr, not engine logging.
-    //
-
-    // Update the pool header and stats.
-    //
     *pui = pools[POOL_LBUF].poolmagic;
-    ph->nxtfree = pools[POOL_LBUF].free_head;
-    pools[POOL_LBUF].free_head = ph;
+    pools[POOL_LBUF].free_stack.push_back(raw);
     pools[POOL_LBUF].num_alloc--;
 }
 
@@ -562,10 +508,11 @@ static inline void alloc_notify(dbref player, const UTF8 *msg)
 
 static void pool_trace(const dbref player, const int poolnum, const UTF8 *text)
 {
-	int numfree = 0;
+    int numfree = 0;
     alloc_notify(player, tprintf(T("----- %s -----"), text));
-    for (POOLHDR* ph = pools[poolnum].chain_head; ph != nullptr; ph = ph->next)
+    for (char *raw : pools[poolnum].all_buffers)
     {
+        auto ph = reinterpret_cast<POOLHDR *>(raw);
         if (ph->magicnum != pools[poolnum].poolmagic)
         {
             alloc_notify(player, T("*** CORRUPTED BUFFER HEADER, ABORTING SCAN ***"));
@@ -573,9 +520,7 @@ static void pool_trace(const dbref player, const int poolnum, const UTF8 *text)
                        numfree, text));
             return;
         }
-        auto h = reinterpret_cast<char*>(ph);
-        h += sizeof(POOLHDR);
-        const auto ibuf = reinterpret_cast<unsigned*>(h);
+        auto ibuf = reinterpret_cast<unsigned *>(raw + sizeof(POOLHDR));
         if (*ibuf != pools[poolnum].poolmagic)
         {
             alloc_notify(player, ph->u.buf_tag);
@@ -608,7 +553,7 @@ void list_bufstats(dbref player)
 
 void list_buftrace(dbref player)
 {
-	for (int i = 0; i < NUM_POOLS; i++)
+    for (int i = 0; i < NUM_POOLS; i++)
     {
         pool_trace(player, i, poolnames[i]);
     }
@@ -616,31 +561,28 @@ void list_buftrace(dbref player)
 
 void pool_reset(void)
 {
-	for (auto& pool : pools)
-	{
-        POOLHDR *newchain = nullptr;
-        POOLHDR *phnext;
-        for (POOLHDR* ph = pool.chain_head; ph != nullptr; ph = phnext)
-        {
-	        auto h = reinterpret_cast<char*>(ph);
-            phnext = ph->next;
-            h += sizeof(POOLHDR);
-	        const auto* ibuf = reinterpret_cast<unsigned*>(h);
-            if (*ibuf == pool.poolmagic)
+    for (auto &pool : pools)
+    {
+        // Build a set of free buffer pointers for fast lookup.
+        //
+        std::unordered_set<char *> free_set(
+            pool.free_stack.begin(), pool.free_stack.end());
+        pool.free_stack.clear();
+
+        // Walk all_buffers: delete free ones, keep in-use ones.
+        //
+        auto new_end = std::remove_if(pool.all_buffers.begin(),
+            pool.all_buffers.end(),
+            [&free_set](char *raw) -> bool
             {
-	            const auto p = reinterpret_cast<char *>(ph);
-                delete [] p;
-                ph = nullptr;
-            }
-            else
-            {
-                ph->next = newchain;
-                newchain = ph;
-                ph->nxtfree = nullptr;
-            }
-        }
-        pool.chain_head = newchain;
-        pool.free_head = nullptr;
+                if (free_set.count(raw))
+                {
+                    delete[] raw;
+                    return true;
+                }
+                return false;
+            });
+        pool.all_buffers.erase(new_end, pool.all_buffers.end());
         pool.max_alloc = pool.num_alloc;
     }
 }

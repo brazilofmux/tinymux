@@ -91,22 +91,21 @@ Net: −171 lines, +105 lines. All 551 smoke tests pass.
 
 ---
 
-## Pending — Low Priority / Defer
+### Pool Allocator (`mux/lib/alloc.cpp`)
+**Commit**: (2026-03-19, brazil)
 
-### 6. Pool Allocator (`mux/lib/alloc.cpp`)
+| Old Pattern | New Pattern |
+|-------------|-------------|
+| `POOLHDR *next` intrusive chain (all buffers) | `std::vector<char*> all_buffers` |
+| `POOLHDR *nxtfree` intrusive freelist | `std::vector<char*> free_stack` (push/pop back) |
+| `POOL::free_head` / `chain_head` pointers | Eliminated |
+| `pool_vfy`: corrupt → silently truncate chain (leak memory) | corrupt → report and continue |
+| `pool_reset`: walk intrusive chain rebuilding | `unordered_set` of free ptrs + `remove_if` |
 
-| Pattern | Location | Replacement |
-|---------|----------|-------------|
-| `POOLHDR *next` / `*nxtfree` intrusive linked lists | alloc.cpp:39–50 | — |
-| 9 pool types with chain_head/free_head | alloc.h:9–18 | — |
+Public API (`alloc.h`) unchanged — zero callers affected. POOLHDR shrinks by
+16 bytes (removed `next`/`nxtfree` pointers). Sentinel/magic diagnostics preserved.
 
-**Rationale for deferral**: This is the core memory allocator used by the
-entire codebase for LBUF/SBUF/MBUF buffers. It is performance-critical and
-tightly coupled to the buffer lifecycle (`alloc_lbuf`/`free_lbuf` appear in
-thousands of call sites). Converting it would require touching nearly every
-file. The intrusive list design is intentional here — it avoids allocating
-list nodes, which matters for an allocator. **Defer until profiling shows
-the allocator is a bottleneck.**
+Net: rewrite of alloc.cpp internals. All 551 smoke tests pass.
 
 ### 7. Object Block Lists (`mux/modules/engine/walkdb.cpp`)
 
