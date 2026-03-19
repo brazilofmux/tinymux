@@ -1,0 +1,37 @@
+zone:
+  name: Emerald Park
+
+rooms:
+  park_entrance:
+    name: Park Entrance
+    description: |
+      A wrought-iron gate opens onto a gravel path that winds between
+      ancient oak trees. Benches line the walkway, and the sound of a
+      fountain carries from deeper within the park.
+
+  fountain_plaza:
+    name: Fountain Plaza
+    description: |
+      A marble fountain dominates the center of a circular plaza. Water
+      arcs from the mouths of four stone fish, catching the light as it
+      falls into the basin below.
+    attrs:
+      SMELL: "The mist from the fountain carries a fresh, clean scent."
+
+  rose_garden:
+    name: The Rose Garden
+    description: |
+      Rows of carefully tended rose bushes form a maze of color and
+      fragrance. A small wooden sign reads 'Maintained by the Garden
+      Society.'
+
+exits:
+  - from: park_entrance
+    to: fountain_plaza
+    name: "North Path;np;north;n"
+    back: "South Path;sp;south;s"
+
+  - from: fountain_plaza
+    to: rose_garden
+    name: "Garden;garden;east;e"
+    back: "Plaza;plaza;west;w"

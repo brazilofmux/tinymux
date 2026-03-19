@@ -1,0 +1,27 @@
+zone:
+  name: Bad Park
+
+rooms:
+  entrance:
+    name: Entrance
+    description: ""
+
+  orphan_room:
+    name: Orphan Room
+    description: "This room has no exits leading to it."
+
+  danger_room:
+    name: Danger Room
+    description: "TBD — placeholder for now"
+    flags: [WIZARD, FLOATING]
+    attrs:
+      ADESTROY: "bad stuff"
+
+exits:
+  - from: entrance
+    to: nonexistent_room
+    name: "North;n"
+
+  - from: entrance
+    to: entrance
+    name: "Loop;n"
