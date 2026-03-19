@@ -54,45 +54,28 @@ Net: −927 lines, +443 lines. All 551 smoke tests pass.
 
 ---
 
-## Pending — High Priority
+### Mail Module — Full Conversion (`mux/modules/mail/`)
+**Commit**: (2026-03-19, brazil)
 
-### 2. Mail Module — Remaining Conversions (`mux/modules/mail/`)
+| Old Pattern | New Pattern |
+|-------------|-------------|
+| `struct mail { *next; *prev; }` doubly-linked list | `std::list<mail>` per player |
+| `unordered_map<dbref, mail *>` head pointers | `unordered_map<dbref, std::list<mail>>` |
+| `MailListFirst`/`MailListNext`/`MailListAppend`/`MailListRemove` | `MailList()` + range-for / iterator-erase |
+| `UTF8 *time`, `*subject`, `*tolist` (strdup/free) | `std::string` |
+| `mail_body *m_mail_list` (calloc/realloc/free) | `std::vector<mail_body>` |
+| `UTF8 *m_pMessage` + `m_nMessage` (malloc/free) | `std::string m_pMessage` |
+| `m_mail_db_top` / `m_mail_db_size` counters | `.size()` |
+| `malias_t **m_malias` (calloc/free array) | `std::vector<std::unique_ptr<malias_t>>` |
+| `UTF8 *name`, `*desc` in malias_t (strdup/free) | `std::string` |
+| `m_ma_top` / `m_ma_size` counters | `.size()` |
+| `make_numlist`/`make_namelist` returning `strdup()` | Return `std::string` |
 
-Already partially modernized (`unordered_map` for htab, `vector<dbref>` for
-alias members). Three subsystems remain.
-
-#### 2a. Mail Body Storage
-
-| Pattern | Location | Replacement |
-|---------|----------|-------------|
-| `mail_body *m_mail_list` (calloc/realloc/free) | mail_mod.h:189, mail_mod.cpp:419–430 | `std::vector<mail_body>` |
-| `m_mail_db_top` / `m_mail_db_size` counters | mail_mod.h:190–191 | `.size()` / `.capacity()` |
-| `mail_db_grow()` manual resize | mail_mod.cpp:418 | Eliminated (vector auto-grows) |
-
-#### 2b. Mail Message Linked List
-
-| Pattern | Location | Replacement |
-|---------|----------|-------------|
-| `struct mail { mail *next; mail *prev; }` doubly-linked circular list | mail_mod.h:110–122 | `std::list<mail>` or `std::deque<mail>` per player |
-| Manual `MailListAppend` / `MailListRemove` pointer surgery | mail_mod.cpp:5577–5620 | STL `.push_back()` / `.erase()` |
-| Per-player head pointer in `m_mail_htab` | mail_mod.h:188 | `unordered_map<dbref, std::list<mail>>` |
-
-#### 2c. Mail String Fields
-
-| Pattern | Location | Replacement |
-|---------|----------|-------------|
-| `UTF8 *time`, `*subject`, `*tolist` (strdup/free) | mail_mod.h:113–115 | `std::string` |
-| Manual free in ~6 cleanup sites | mail_mod.cpp:299–307, 620–641, 2476–2478 | Automatic destruction |
-
-#### 2d. Alias Array
-
-| Pattern | Location | Replacement |
-|---------|----------|-------------|
-| `malias_t **m_malias` (new[]/delete[]) | mail_mod.h:195 | `std::vector<std::unique_ptr<malias_t>>` |
-| `m_ma_top` / `m_ma_size` counters | mail_mod.h:196–197 | `.size()` / `.capacity()` |
-| `UTF8 *name`, `*desc` in malias_t (strdup/free) | mail_mod.h:143–144 | `std::string` |
+Net: −863 lines, +563 lines. All 551 smoke tests pass.
 
 ---
+
+## Pending — Medium Priority
 
 ## Pending — Medium Priority
 

@@ -8,7 +8,10 @@
 #ifndef MAIL_MOD_H
 #define MAIL_MOD_H
 
+#include <list>
 #include <map>
+#include <memory>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -109,45 +112,47 @@ const MUX_CID CID_MailMod = UINT64_C(0x00000002D7A3E1B5);
 //
 struct mail
 {
-    struct mail *next;
-    struct mail *prev;
     dbref        to;
     dbref        from;
     int          number;
-    UTF8        *time;
-    UTF8        *subject;
-    UTF8        *tolist;
+    std::string  time;
+    std::string  subject;
+    std::string  tolist;
     int          read;
     int64_t      sqlite_id;
+
+    mail() : to(NOTHING), from(NOTHING), number(0),
+        read(0), sqlite_id(0) {}
 };
 
 // Message body storage (reference-counted deduplication).
 //
 struct mail_body
 {
-    size_t m_nMessage;
-    UTF8  *m_pMessage;
-    int    m_nRefs;
+    std::string m_pMessage;
+    int         m_nRefs;
+
+    mail_body() : m_nRefs(0) {}
 };
 
 // Mail alias.
 //
-#define MA_INC  3
-
 #define GMA_NOTFOUND    1
 #define GMA_FOUND       2
 #define GMA_INVALIDFORM 3
 
 #define SIZEOF_MALIAS   64
 
-typedef struct malias
+struct malias_t
 {
     int   owner;
-    UTF8 *name;
-    UTF8 *desc;
+    std::string name;
+    std::string desc;
     size_t desc_width;
     std::vector<dbref> list;
-} malias_t;
+
+    malias_t() : owner(NOTHING), desc_width(0) {}
+};
 
 // Mail selector for list/read operations.
 //
@@ -185,16 +190,12 @@ private:
 
     // Mail data — owned by the module.
     //
-    std::unordered_map<dbref, struct mail *> m_mail_htab;
-    struct mail_body *m_mail_list;
-    int m_mail_db_top;
-    int m_mail_db_size;
+    std::unordered_map<dbref, std::list<mail>> m_mail_htab;
+    std::vector<mail_body> m_mail_list;
 
     // Alias data.
     //
-    malias_t **m_malias;
-    int m_ma_size;
-    int m_ma_top;
+    std::vector<std::unique_ptr<malias_t>> m_malias;
 
     // Internal helpers.
     //
@@ -262,8 +263,8 @@ private:
         const UTF8 *subject, int number, mail_flag flags, bool silent);
     void mail_to_list(dbref player, UTF8 *list, const UTF8 *subject,
         const UTF8 *message, mail_flag flags, bool silent);
-    UTF8 *make_numlist(dbref player, const UTF8 *arg, bool bBlind);
-    UTF8 *make_namelist(dbref player, const UTF8 *arg);
+    std::string make_numlist(dbref player, const UTF8 *arg, bool bBlind);
+    std::string make_namelist(dbref player, const UTF8 *arg);
     struct mail *mail_fetch(dbref player, int num);
     int  add_mail_message(dbref player, const UTF8 *message);
 
@@ -315,10 +316,7 @@ private:
 
     // Mail list management.
     //
-    struct mail *MailListFirst(dbref player);
-    struct mail *MailListNext(struct mail *mp, dbref player);
-    void MailListAppend(dbref player, struct mail *mp);
-    void MailListRemove(dbref player, struct mail *mp);
+    std::list<mail> *MailList(dbref player);
     void MailListRemoveAll(dbref player);
 
     // SQLite write-through.
