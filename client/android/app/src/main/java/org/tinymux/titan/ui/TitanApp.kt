@@ -165,7 +165,7 @@ fun TitanApp() {
         }
     }
 
-    fun connectWorld(name: String, host: String, port: Int, ssl: Boolean) {
+    fun connectWorld(name: String, host: String, port: Int, ssl: Boolean, loginCommands: List<String> = emptyList()) {
         val tab = WorldTab(name)
         tabs.add(tab)
         val tabIndex = tabs.size - 1
@@ -183,6 +183,7 @@ fun TitanApp() {
             appendLine(tabIndex, "% Connected to $host:$port")
             tab.disconnected = false
             for (cmd in hookRepo.fireEvent("CONNECT")) conn.sendLine(cmd)
+            for (cmd in loginCommands) conn.sendLine(cmd)
             updateService()
         }
         conn.onDisconnect = {
@@ -778,7 +779,7 @@ fun TitanApp() {
             worldRepo = worldRepo,
             onConnect = { world ->
                 showWorldManager = false
-                connectWorld(world.name, world.host, world.port, world.ssl)
+                connectWorld(world.name, world.host, world.port, world.ssl, world.loginCommands)
             },
             onDismiss = { showWorldManager = false }
         )
@@ -1057,6 +1058,7 @@ private fun WorldRow(
                     append("${world.host}:${world.port}")
                     if (world.ssl) append(" (ssl)")
                     if (world.character.isNotBlank()) append(" - ${world.character}")
+                    if (world.loginCommands.isNotEmpty()) append(" [auto-login]")
                 },
                 fontSize = 12.sp,
                 color = Color.Gray,
@@ -1084,6 +1086,7 @@ fun EditWorldDialog(
     var ssl by remember { mutableStateOf(initial?.ssl ?: false) }
     var character by remember { mutableStateOf(initial?.character ?: "") }
     var notes by remember { mutableStateOf(initial?.notes ?: "") }
+    var loginCmds by remember { mutableStateOf(initial?.loginCommands?.joinToString("\n") ?: "") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1124,6 +1127,11 @@ fun EditWorldDialog(
                     label = { Text("Notes (optional)") },
                     maxLines = 3,
                     modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = loginCmds, onValueChange = { loginCmds = it },
+                    label = { Text("Login commands (one per line)") },
+                    placeholder = { Text("e.g. connect Player pass") },
+                    maxLines = 5,
+                    modifier = Modifier.fillMaxWidth())
             }
         },
         confirmButton = {
@@ -1136,6 +1144,7 @@ fun EditWorldDialog(
                         ssl = ssl,
                         character = character.trim(),
                         notes = notes.trim(),
+                        loginCommands = loginCmds.lines().map { it.trim() }.filter { it.isNotBlank() },
                     ))
                 }
             }) { Text("Save") }

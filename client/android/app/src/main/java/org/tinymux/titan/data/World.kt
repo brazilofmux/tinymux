@@ -1,6 +1,9 @@
 package org.tinymux.titan.data
 
 import android.content.Context
+import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -11,6 +14,7 @@ data class World(
     val ssl: Boolean = false,
     val character: String = "",
     val notes: String = "",
+    val loginCommands: List<String> = emptyList(),
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("name", name)
@@ -19,6 +23,7 @@ data class World(
         put("ssl", ssl)
         put("character", character)
         put("notes", notes)
+        put("loginCommands", JSONArray(loginCommands))
     }
 
     companion object {
@@ -29,13 +34,41 @@ data class World(
             ssl = obj.optBoolean("ssl", false),
             character = obj.optString("character", ""),
             notes = obj.optString("notes", ""),
+            loginCommands = obj.optJSONArray("loginCommands")?.let { arr ->
+                (0 until arr.length()).map { arr.optString(it, "") }.filter { it.isNotBlank() }
+            } ?: emptyList(),
         )
     }
 }
 
 class WorldRepository(context: Context) {
-    private val prefs = context.getSharedPreferences("titan_worlds", Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences = try {
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        EncryptedSharedPreferences.create(
+            context,
+            "titan_worlds_encrypted",
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+        )
+    } catch (_: Exception) {
+        // Fallback to unencrypted if Keystore unavailable (e.g. emulator)
+        context.getSharedPreferences("titan_worlds", Context.MODE_PRIVATE)
+    }
+
     private val key = "worlds_json"
+
+    // Migrate from old unencrypted prefs on first run
+    init {
+        val oldPrefs = context.getSharedPreferences("titan_worlds", Context.MODE_PRIVATE)
+        val oldData = oldPrefs.getString(key, null)
+        if (oldData != null && prefs.getString(key, null) == null) {
+            prefs.edit().putString(key, oldData).apply()
+            oldPrefs.edit().remove(key).apply()
+        }
+    }
 
     fun load(): List<World> {
         val raw = prefs.getString(key, null) ?: return emptyList()

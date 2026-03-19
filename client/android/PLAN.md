@@ -7,10 +7,17 @@ TF, and Web clients.
 Save/load/edit/delete server profiles so users don't re-enter host/port
 each session.
 
-- `data/World.kt` — World data class + WorldRepository (SharedPreferences/JSON)
+- `data/World.kt` — World data class + WorldRepository (EncryptedSharedPreferences)
 - World Manager dialog — list, add, edit, delete, quick-connect
 - Connect dialog — optional "Save as" field
 - "Worlds" toolbar button
+
+### Auto-Login (added later)
+- [x] `loginCommands` field on World — one command per line, sent after connect
+- [x] Edit World dialog has multi-line "Login commands" field
+- [x] WorldRepository uses EncryptedSharedPreferences (AES-256-GCM via Android Keystore)
+- [x] Auto-migration from old unencrypted prefs on first run
+- [x] Fallback to unencrypted if Keystore unavailable (emulator)
 
 ## Phase 2: Trigger System — DONE
 Pattern-match incoming text with highlight, gag, and command actions.
