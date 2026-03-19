@@ -1,0 +1,158 @@
+#!/bin/sh
+#
+#   SlaveDNS - Verify the reverse DNS slave binary works correctly.
+#
+#   Tests the slave binary's protocol: write an IP address, read back
+#   "<ip> <hostname>\n".  Uses both with-newline and without-newline
+#   inputs to match the GANL adapter's actual wire format.
+#
+#   Exit 0 on success, 1 on failure.
+#
+
+BIN=../mux/game/bin
+SLAVE=$BIN/slave
+PASS=0
+FAIL=0
+TOTAL=0
+
+passed() {
+    PASS=$((PASS + 1))
+    TOTAL=$((TOTAL + 1))
+    echo "  PASS: $1"
+}
+
+failed() {
+    FAIL=$((FAIL + 1))
+    TOTAL=$((TOTAL + 1))
+    echo "  FAIL: $1"
+}
+
+echo "=== Reverse DNS Slave Tests ==="
+echo ""
+
+# ------------------------------------------------------------------
+# Test 0: Binary exists and is executable
+# ------------------------------------------------------------------
+if [ -x "$SLAVE" ]; then
+    passed "slave binary exists and is executable"
+else
+    failed "slave binary missing or not executable ($SLAVE)"
+    echo ""
+    echo "Result: FAIL (slave binary not found)"
+    exit 1
+fi
+
+# ------------------------------------------------------------------
+# Test 1: Loopback without trailing newline (bare IP)
+# ------------------------------------------------------------------
+RESULT=$(printf "127.0.0.1" | timeout 10 "$SLAVE" 2>/dev/null)
+if echo "$RESULT" | grep -q "^127\.0\.0\.1 "; then
+    passed "127.0.0.1 (no newline) resolves (got: $(echo "$RESULT" | tr -d '\n'))"
+else
+    failed "127.0.0.1 (no newline) unexpected output (got: '$RESULT')"
+fi
+
+# ------------------------------------------------------------------
+# Test 2: Loopback WITH trailing newline (GANL wire format)
+#
+# The GANL adapter appends '\n' after the IP.  The slave must strip
+# the newline before passing it to getaddrinfo().
+# ------------------------------------------------------------------
+RESULT_NL=$(printf "127.0.0.1\n" | timeout 10 "$SLAVE" 2>/dev/null)
+if echo "$RESULT_NL" | grep -q "^127\.0\.0\.1 "; then
+    passed "127.0.0.1 (with newline) resolves (got: $(echo "$RESULT_NL" | tr -d '\n'))"
+else
+    failed "127.0.0.1 (with newline) unexpected output (got: '$RESULT_NL')"
+fi
+
+# ------------------------------------------------------------------
+# Test 3: Response format — at least two space-separated fields
+# ------------------------------------------------------------------
+NFIELDS=$(echo "$RESULT" | head -1 | awk '{print NF}')
+if [ "$NFIELDS" -ge 2 ] 2>/dev/null; then
+    passed "response has >= 2 fields (ip + hostname)"
+else
+    failed "response field count unexpected (got $NFIELDS fields)"
+fi
+
+# ------------------------------------------------------------------
+# Test 4: IP field in response matches input
+# ------------------------------------------------------------------
+RESP_IP=$(echo "$RESULT" | head -1 | awk '{print $1}')
+if [ "$RESP_IP" = "127.0.0.1" ]; then
+    passed "response IP matches input (127.0.0.1)"
+else
+    failed "response IP mismatch (expected 127.0.0.1, got '$RESP_IP')"
+fi
+
+# ------------------------------------------------------------------
+# Test 5: With-newline and without-newline produce the same result
+# ------------------------------------------------------------------
+CLEAN1=$(echo "$RESULT" | head -1 | tr -s ' ')
+CLEAN2=$(echo "$RESULT_NL" | head -1 | tr -s ' ')
+if [ "$CLEAN1" = "$CLEAN2" ]; then
+    passed "newline/no-newline produce identical output"
+else
+    failed "newline/no-newline differ ('$CLEAN1' vs '$CLEAN2')"
+fi
+
+# ------------------------------------------------------------------
+# Test 6: RFC 5737 documentation address (192.0.2.1) — no PTR
+# ------------------------------------------------------------------
+RESULT2=$(printf "192.0.2.1\n" | timeout 10 "$SLAVE" 2>/dev/null)
+RESP2_IP=$(echo "$RESULT2" | head -1 | awk '{print $1}')
+RESP2_HOST=$(echo "$RESULT2" | head -1 | awk '{print $2}')
+if [ "$RESP2_IP" = "192.0.2.1" ]; then
+    passed "192.0.2.1 echoes back IP field correctly"
+else
+    failed "192.0.2.1 IP field mismatch (got '$RESP2_IP')"
+fi
+
+if [ -n "$RESP2_HOST" ]; then
+    passed "192.0.2.1 returned a hostname field ('$RESP2_HOST')"
+else
+    failed "192.0.2.1 returned empty hostname"
+fi
+
+# ------------------------------------------------------------------
+# Test 7: Multiple lookups in a single session
+# ------------------------------------------------------------------
+RESULT3=$(printf "127.0.0.1\n192.0.2.1\n" | timeout 15 "$SLAVE" 2>/dev/null)
+NLINES=$(echo "$RESULT3" | grep -c '.')
+if [ "$NLINES" -ge 2 ] 2>/dev/null; then
+    passed "multiple lookups returned $NLINES results"
+else
+    failed "multiple lookups returned $NLINES results (expected >= 2)"
+fi
+
+# ------------------------------------------------------------------
+# Test 8: Slave exits cleanly when stdin closes (EOF)
+# ------------------------------------------------------------------
+printf "" | timeout 5 "$SLAVE" >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+    passed "slave exits cleanly on EOF"
+else
+    failed "slave did not exit cleanly on EOF (exit code $?)"
+fi
+
+# ------------------------------------------------------------------
+# Test 9: Empty/whitespace-only input is ignored (no crash)
+# ------------------------------------------------------------------
+RESULT4=$(printf "\n\n  \n" | timeout 5 "$SLAVE" 2>/dev/null)
+EXIT_CODE=$?
+if [ $EXIT_CODE -eq 0 ]; then
+    passed "whitespace-only input handled gracefully"
+else
+    failed "whitespace-only input caused exit code $EXIT_CODE"
+fi
+
+# ------------------------------------------------------------------
+# Summary
+# ------------------------------------------------------------------
+echo ""
+echo "=== DNS Slave: $PASS/$TOTAL passed, $FAIL failed ==="
+
+if [ "$FAIL" -gt 0 ]; then
+    exit 1
+fi
+exit 0
