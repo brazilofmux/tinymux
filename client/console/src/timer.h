@@ -24,6 +24,9 @@ public:
     // Check for expired timers. Returns commands to execute.
     std::vector<std::string> check_and_fire();
 
+    // Cancel all timers.
+    void cancel_all() { timers_.clear(); }
+
     // Milliseconds until next timer fires, or -1 if none.
     int ms_until_next() const;
 

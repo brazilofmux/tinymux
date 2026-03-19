@@ -149,6 +149,15 @@ TriggerResult check_triggers(App& app, std::string& text) {
         result.matched = true;
         if (m->gag) result.gagged = true;
 
+        // Substitution: regex find/replace on display text
+        if (!m->substitute_find.empty() && !result.gagged) {
+            try {
+                std::regex sub_re(m->substitute_find,
+                                  std::regex::ECMAScript | std::regex::icase);
+                text = std::regex_replace(text, sub_re, m->substitute_replace);
+            } catch (...) {}
+        }
+
         // Execute the macro body as a command.
         if (!m->body.empty()) {
             if (m->body[0] == '/') {
@@ -221,6 +230,32 @@ bool parse_def(const std::string& args, Macro& out, std::string& error) {
             case 'h':
                 out.hilite = true;
                 break;
+            case 's': {
+                // -s'find/replace'
+                std::string val;
+                if (token.size() > 2) val = token.substr(2);
+                else ss >> val;
+                // Strip quotes
+                if (!val.empty() && (val[0] == '\'' || val[0] == '"')) {
+                    val = val.substr(1);
+                    if (!val.empty() && (val.back() == '\'' || val.back() == '"'))
+                        val.pop_back();
+                }
+                auto slash = val.find('/');
+                if (slash != std::string::npos) {
+                    out.substitute_find = val.substr(0, slash);
+                    out.substitute_replace = val.substr(slash + 1);
+                } else {
+                    out.substitute_find = val;
+                }
+                break;
+            }
+            case 'c': {
+                // -c classname
+                if (token.size() > 2) out.line_class = token.substr(2);
+                else ss >> out.line_class;
+                break;
+            }
             default:
                 error = "Unknown flag: -" + std::string(1, flag);
                 return false;

@@ -445,6 +445,179 @@ static void cmd_load(App& app, const std::vector<std::string>& args) {
     }
 }
 
+// -- Hooks --
+
+static void cmd_hook(App& app, const std::vector<std::string>& args) {
+    // /hook <name> <event> = <command>
+    if (args.size() < 2) {
+        app.terminal.print_system("Usage: /hook <name> <event> = <command>");
+        app.terminal.print_system("Events: CONNECT, DISCONNECT, ACTIVITY");
+        return;
+    }
+    // Reconstruct args after /hook
+    std::string rest;
+    for (size_t i = 1; i < args.size(); i++) {
+        if (i > 1) rest += " ";
+        rest += args[i];
+    }
+    auto eq = rest.find('=');
+    if (eq == std::string::npos) {
+        app.terminal.print_system("Usage: /hook <name> <event> = <command>");
+        return;
+    }
+    std::string before = rest.substr(0, eq);
+    std::string body = rest.substr(eq + 1);
+    // Trim
+    while (!before.empty() && before.back() == ' ') before.pop_back();
+    while (!body.empty() && body.front() == ' ') body = body.substr(1);
+
+    std::istringstream ss(before);
+    std::string hname, event;
+    ss >> hname >> event;
+    if (hname.empty() || event.empty()) {
+        app.terminal.print_system("Usage: /hook <name> <event> = <command>");
+        return;
+    }
+    std::transform(event.begin(), event.end(), event.begin(), ::toupper);
+    if (event != "CONNECT" && event != "DISCONNECT" && event != "ACTIVITY") {
+        app.terminal.print_system("Unknown event: " + event);
+        return;
+    }
+    Hook h;
+    h.name = hname;
+    h.event = event;
+    h.body = body;
+    app.hooks.add(std::move(h));
+    app.terminal.print_system("Hook '" + hname + "' on " + event + " -> " + body);
+}
+
+static void cmd_unhook(App& app, const std::vector<std::string>& args) {
+    if (args.size() < 2) {
+        app.terminal.print_system("Usage: /unhook <name>");
+        return;
+    }
+    if (app.hooks.remove(args[1])) {
+        app.terminal.print_system("Hook '" + args[1] + "' removed.");
+    } else {
+        app.terminal.print_system("No hook: " + args[1]);
+    }
+}
+
+static void cmd_hooks(App& app, const std::vector<std::string>&) {
+    auto& all = app.hooks.all();
+    if (all.empty()) {
+        app.terminal.print_system("No hooks defined.");
+        return;
+    }
+    for (auto& h : all) {
+        app.terminal.print_system("  " + h.name + ": " + h.event +
+                                  (h.enabled ? "" : " [off]") + " -> " + h.body);
+    }
+}
+
+// -- Spawns --
+
+static void cmd_spawn(App& app, const std::vector<std::string>& args) {
+    if (args.size() < 2) {
+        // List spawns
+        auto& all = app.spawns.all();
+        if (all.empty()) {
+            app.terminal.print_system("No spawns defined. Use /spawn add <name> <pattern>");
+        } else {
+            for (auto& s : all) {
+                std::string desc = "  " + s.name + " (" + s.path + "):";
+                for (auto& p : s.patterns) desc += " /" + p + "/";
+                app.terminal.print_system(desc);
+            }
+        }
+        return;
+    }
+    std::string sub = args[1];
+    std::transform(sub.begin(), sub.end(), sub.begin(), ::tolower);
+
+    if (sub == "add" && args.size() >= 4) {
+        try {
+            std::regex(args[3], std::regex::ECMAScript);
+        } catch (const std::exception& e) {
+            app.terminal.print_system(std::string("Bad pattern: ") + e.what());
+            return;
+        }
+        SpawnConfig s;
+        s.name = args[2];
+        s.path = args[2];
+        std::transform(s.path.begin(), s.path.end(), s.path.begin(), ::tolower);
+        s.patterns.push_back(args[3]);
+        app.spawns.add(std::move(s));
+        app.terminal.print_system("Spawn '" + args[2] + "' added: /" + args[3] + "/");
+    } else if ((sub == "remove" || sub == "del") && args.size() >= 3) {
+        std::string path = args[2];
+        std::transform(path.begin(), path.end(), path.begin(), ::tolower);
+        if (app.spawns.remove(path)) {
+            app.terminal.print_system("Spawn '" + args[2] + "' removed.");
+        } else {
+            app.terminal.print_system("No spawn: " + args[2]);
+        }
+    } else if (sub == "list") {
+        cmd_spawn(app, std::vector<std::string>{args[0]}); // recurse with no sub
+    } else {
+        app.terminal.print_system("Usage: /spawn [add|remove|list] ...");
+    }
+}
+
+// -- Variables --
+
+static void cmd_set(App& app, const std::vector<std::string>& args) {
+    if (args.size() < 3) {
+        app.terminal.print_system("Usage: /set <name> <value>");
+        return;
+    }
+    std::string val;
+    for (size_t i = 2; i < args.size(); i++) {
+        if (i > 2) val += " ";
+        val += args[i];
+    }
+    app.vars[args[1]] = val;
+    app.terminal.print_system("Set " + args[1] + " = " + val);
+}
+
+static void cmd_unset(App& app, const std::vector<std::string>& args) {
+    if (args.size() < 2) {
+        app.terminal.print_system("Usage: /unset <name>");
+        return;
+    }
+    app.vars.erase(args[1]);
+    app.terminal.print_system("Unset " + args[1]);
+}
+
+static void cmd_vars(App& app, const std::vector<std::string>&) {
+    if (app.vars.empty()) {
+        app.terminal.print_system("No variables set.");
+        return;
+    }
+    for (auto& [k, v] : app.vars) {
+        app.terminal.print_system("  " + k + " = " + v);
+    }
+}
+
+// -- TTS --
+
+static void cmd_speak(App& app, const std::vector<std::string>& args) {
+    if (args.size() < 2) {
+        app.terminal.print_system("Usage: /speak <text>");
+        return;
+    }
+    std::string text;
+    for (size_t i = 1; i < args.size(); i++) {
+        if (i > 1) text += " ";
+        text += args[i];
+    }
+    // Windows SAPI text-to-speech
+    // Note: Requires COM initialization and ISpVoice.
+    // For now, use simple Beep as placeholder — full SAPI needs sapi.h.
+    app.terminal.print_system("[speak] " + text);
+    // TODO: Integrate ISpVoice for actual TTS
+}
+
 static void cmd_help(App& app, const std::vector<std::string>&) {
     app.terminal.print_system("Commands:");
     auto list = app.commands.help_list();
@@ -476,5 +649,13 @@ void register_builtin_commands(App& app) {
     app.commands.register_cmd("listtimers",  cmd_listtimers,  "List all timers");
     app.commands.register_cmd("save",        cmd_save,        "Save worlds [file]");
     app.commands.register_cmd("load",        cmd_load,        "Load worlds [file]");
+    app.commands.register_cmd("hook",        cmd_hook,        "Define event hook: name event = cmd");
+    app.commands.register_cmd("unhook",      cmd_unhook,      "Remove a hook by name");
+    app.commands.register_cmd("hooks",       cmd_hooks,       "List all hooks");
+    app.commands.register_cmd("spawn",       cmd_spawn,       "Manage output spawns");
+    app.commands.register_cmd("set",         cmd_set,         "Set a variable");
+    app.commands.register_cmd("unset",       cmd_unset,       "Remove a variable");
+    app.commands.register_cmd("vars",        cmd_vars,        "List variables");
+    app.commands.register_cmd("speak",       cmd_speak,       "Text-to-speech");
     app.commands.register_cmd("help",        cmd_help,        "Show this help");
 }

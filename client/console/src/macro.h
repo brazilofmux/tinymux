@@ -20,6 +20,9 @@ struct Macro {
     int         shots = -1;     // -n (negative = unlimited, 0 = dead)
     bool        gag = false;    // suppress matched line from display
     bool        hilite = false; // highlight matched text
+    std::string substitute_find;    // regex find pattern for substitution
+    std::string substitute_replace; // replacement string
+    std::string line_class;         // classification tag
 
     int         trigger_id = -1;       // Index in trigger_set (-1 if regex fallback)
     bool        regex_fallback = false; // True if pattern needs std::regex
