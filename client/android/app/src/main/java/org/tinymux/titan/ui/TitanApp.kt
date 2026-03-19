@@ -5,10 +5,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +20,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.*
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
@@ -464,7 +467,7 @@ fun TitanApp() {
                             tab.hasActivity = false
                         }
                         .background(if (isActive) Color.Black else Color.Transparent)
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                        .padding(start = 12.dp, end = if (index > 0) 4.dp else 12.dp, top = 6.dp, bottom = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (tab.hasActivity && !isActive) {
@@ -480,6 +483,21 @@ fun TitanApp() {
                                 else if (isActive) Color.White
                                 else Color(0xFFA0A0A0)
                     )
+                    // Close button (not on System tab)
+                    if (index > 0) {
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            "\u2715",
+                            fontSize = 10.sp,
+                            color = Color(0xFF808080),
+                            modifier = Modifier.clickable {
+                                tab.connection?.disconnect()
+                                tabs.removeAt(index)
+                                if (activeTab >= tabs.size) activeTab = tabs.size - 1
+                                else if (activeTab > index) activeTab--
+                            }
+                        )
+                    }
                 }
                 // Separator
                 Box(Modifier.width(1.dp).height(20.dp).background(Color(0xFF505050)))
@@ -552,26 +570,30 @@ fun TitanApp() {
 
         // Output pane
         val uriHandler = LocalUriHandler.current
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp),
-        ) {
-            val lines = currentTab()?.lines ?: emptyList()
-            items(lines) { line ->
-                @Suppress("DEPRECATION")
-                ClickableText(
-                    text = line,
-                    style = monoStyle,
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { offset ->
-                        line.getStringAnnotations("URL", offset, offset).firstOrNull()?.let {
-                            try { uriHandler.openUri(it.item) } catch (_: Exception) {}
+        val clipboardManager = LocalClipboardManager.current
+        SelectionContainer {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+            ) {
+                val lines = currentTab()?.lines ?: emptyList()
+                items(lines) { line ->
+                    @Suppress("DEPRECATION")
+                    ClickableText(
+                        text = line,
+                        style = monoStyle,
+                        softWrap = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { offset ->
+                            line.getStringAnnotations("URL", offset, offset).firstOrNull()?.let {
+                                try { uriHandler.openUri(it.item) } catch (_: Exception) {}
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
 

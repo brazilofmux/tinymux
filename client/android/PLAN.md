@@ -100,15 +100,16 @@ Fire commands on connection events, not just text patterns.
 - [x] DISCONNECT hooks fire on connection lost (logged to output)
 - [x] ACTIVITY hooks fire once when background tab first receives text
 
-## Phase 10: UX Polish — IN PROGRESS
+## Phase 10: UX Polish — DONE
 Quality-of-life improvements for daily use.
 
 - [x] URL detection — clickable links in output (blue, underlined)
 - [x] URLs open in browser via `LocalUriHandler`
-- [ ] Word wrap in output pane (currently clips long lines)
-- [ ] Tab reordering via long-press drag
-- [ ] Landscape layout: side-by-side tabs + output
-- [ ] Double-tap to select/copy text from output
+- [x] Word wrap — explicit `softWrap = true` on output text
+- [x] Text selection — output wrapped in `SelectionContainer`
+- [x] Tab close buttons — X on each tab (except System) for quick close
+- [ ] Tab reordering via long-press drag (future)
+- [ ] Landscape layout improvements (future)
 
 ## Phase 11: Foreground Service
 Keep connections alive when the app is backgrounded.
