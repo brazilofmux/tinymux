@@ -4,7 +4,7 @@ data class TriggerResult(
     val matched: Boolean,
     val gagged: Boolean,
     val commands: List<String>,
-    val hiliteLine: String?,
+    val displayLine: String?,
 )
 
 class TriggerEngine {
@@ -28,7 +28,7 @@ class TriggerEngine {
     fun check(line: String): TriggerResult {
         var gagged = false
         val commands = mutableListOf<String>()
-        var hiliteLine: String? = null
+        var displayLine: String? = null
         var matched = false
 
         for ((trigger, regex) in compiled) {
@@ -40,19 +40,29 @@ class TriggerEngine {
             if (trigger.gag) gagged = true
 
             if (trigger.hilite && !gagged) {
-                // Wrap matched portion in bold ANSI escape
-                val hl = buildString {
-                    append(line.substring(0, match.range.first))
-                    append("\u001b[1m")
-                    append(match.value)
-                    append("\u001b[22m")
-                    append(line.substring(match.range.last + 1))
+                val target = displayLine ?: line
+                val m = regex.find(target)
+                if (m != null) {
+                    displayLine = buildString {
+                        append(target.substring(0, m.range.first))
+                        append("\u001b[1m")
+                        append(m.value)
+                        append("\u001b[22m")
+                        append(target.substring(m.range.last + 1))
+                    }
                 }
-                hiliteLine = hl
+            }
+
+            // Substitution: regex find/replace on display text
+            if (trigger.substituteFind.isNotBlank() && !gagged) {
+                val target = displayLine ?: line
+                try {
+                    val subRe = Regex(trigger.substituteFind, RegexOption.IGNORE_CASE)
+                    displayLine = subRe.replace(target, trigger.substituteReplace)
+                } catch (_: Exception) {}
             }
 
             if (trigger.body.isNotBlank()) {
-                // Substitute capture groups: $0, $1, $2, ...
                 var cmd = trigger.body
                 match.groupValues.forEachIndexed { i, v ->
                     cmd = cmd.replace("\$$i", v)
@@ -65,7 +75,7 @@ class TriggerEngine {
             matched = matched,
             gagged = gagged,
             commands = commands,
-            hiliteLine = hiliteLine,
+            displayLine = displayLine,
         )
     }
 }

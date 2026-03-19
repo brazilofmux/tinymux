@@ -13,9 +13,16 @@ class WorldTab: Identifiable {
     var history: [String] = []
     var hasActivity = false
     var disconnected = false
+    var spawnLines: [String: [AttributedString]] = [:]
+    var activeSpawn: String = ""  // "" = main, otherwise spawn path
 
     init(name: String) {
         self.name = name
+    }
+
+    var activeLines: [AttributedString] {
+        if activeSpawn.isEmpty { return lines }
+        return spawnLines[activeSpawn] ?? []
     }
 }
 
@@ -39,18 +46,36 @@ class AppState {
     var activeTab: WorldTab? { tabs.indices.contains(activeTabIndex) ? tabs[activeTabIndex] : nil }
 
     let scrollbackLimit = 20000
+    var spawnRepo = SpawnRepository()
 
     func appendLine(_ tabIndex: Int, _ line: String) {
         guard tabs.indices.contains(tabIndex) else { return }
         let parsed = AnsiParser.parse(line)
+
+        // Main spawn always gets the line
         tabs[tabIndex].lines.append(parsed)
         while tabs[tabIndex].lines.count > scrollbackLimit {
             tabs[tabIndex].lines.removeFirst()
         }
+
+        // Route to matching spawns
+        let plain = AnsiParser.stripAnsi(line)
+        for spawn in spawnRepo.load() {
+            if spawn.matches(plain) {
+                let display = spawn.prefix.isEmpty ? parsed : AnsiParser.parse("\(spawn.prefix)\(line)")
+                if tabs[tabIndex].spawnLines[spawn.path] == nil {
+                    tabs[tabIndex].spawnLines[spawn.path] = []
+                }
+                tabs[tabIndex].spawnLines[spawn.path]!.append(display)
+                while tabs[tabIndex].spawnLines[spawn.path]!.count > spawn.maxLines {
+                    tabs[tabIndex].spawnLines[spawn.path]!.removeFirst()
+                }
+            }
+        }
+
         if tabIndex != activeTabIndex {
             let wasActive = tabs[tabIndex].hasActivity
             tabs[tabIndex].hasActivity = true
-            // Post notification if app is backgrounded and this is first activity
             if !wasActive {
                 #if os(iOS)
                 if UIApplication.shared.applicationState != .active {

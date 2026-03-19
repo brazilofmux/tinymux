@@ -23,6 +23,7 @@ struct ContentView: View {
         VStack(spacing: 0) {
             toolbar
             tabBar
+            spawnBar
             if state.showFindBar { findBar }
             outputPane
             inputBar
@@ -165,13 +166,58 @@ struct ContentView: View {
         .background(Color(red: 0.1, green: 0.1, blue: 0.18))
     }
 
+    // MARK: - Spawn Selector
+
+    private var spawnBar: some View {
+        let spawns = state.spawnRepo.load()
+        return Group {
+            if !spawns.isEmpty && state.activeTabIndex > 0 {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 0) {
+                        let tab = state.activeTab
+                        let isMain = tab?.activeSpawn.isEmpty == true
+                        Button { tab?.activeSpawn = "" } label: {
+                            Text("Main")
+                                .font(.system(size: 11))
+                                .foregroundColor(isMain ? .white : Color(red: 0.5, green: 0.63, blue: 0.5))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(isMain ? Color(red: 0.16, green: 0.29, blue: 0.16) : .clear)
+                        }
+                        .buttonStyle(.plain)
+
+                        ForEach(spawns) { spawn in
+                            let isActive = tab?.activeSpawn == spawn.path
+                            let hasContent = !(tab?.spawnLines[spawn.path]?.isEmpty ?? true)
+                            Button { tab?.activeSpawn = spawn.path } label: {
+                                Text(spawn.name)
+                                    .font(.system(size: 11))
+                                    .foregroundColor(
+                                        isActive ? .white :
+                                        hasContent ? Color(red: 0.63, green: 0.75, blue: 0.63) :
+                                        Color(red: 0.38, green: 0.44, blue: 0.38)
+                                    )
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(isActive ? Color(red: 0.16, green: 0.29, blue: 0.16) : .clear)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .frame(height: 28)
+                .background(Color(red: 0.1, green: 0.17, blue: 0.1))
+            }
+        }
+    }
+
     // MARK: - Output Pane
 
     private var outputPane: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    let lines = state.activeTab?.lines ?? []
+                    let lines = state.activeTab?.activeLines ?? []
                     ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
                         Text(line)
                             .font(.system(size: CGFloat(settings.fontSize), design: .monospaced))
@@ -183,7 +229,7 @@ struct ContentView: View {
                 .padding(.horizontal, 4)
             }
             .textSelection(.enabled)
-            .onChange(of: state.activeTab?.lines.count) { _, newCount in
+            .onChange(of: state.activeTab?.activeLines.count) { _, newCount in
                 if let count = newCount, count > 0 {
                     withAnimation { proxy.scrollTo(count - 1, anchor: .bottom) }
                 }
@@ -244,7 +290,7 @@ struct ContentView: View {
     private func processServerLine(_ tabIndex: Int, _ line: String) {
         let result = triggerEngine.check(AnsiParser.stripAnsi(line))
         if result.gagged { return }
-        let display = result.hiliteLine ?? line
+        let display = result.displayLine ?? line
         state.appendLine(tabIndex, display)
         if let conn = state.tabs[safe: tabIndex]?.connection, conn.connected {
             for cmd in result.commands { conn.sendLine(cmd) }
@@ -460,6 +506,47 @@ struct ContentView: View {
                     state.appendLine(idx, "%   \(h.name): \(h.event) [\(h.enabled ? "on" : "off")] -> \(h.body)")
                 }
             }
+        case "spawn":
+            let parts = args.split(separator: " ", maxSplits: 2).map(String.init)
+            switch parts.first?.lowercased() {
+            case "add":
+                guard parts.count >= 3 else {
+                    state.appendLine(idx, "% Usage: /spawn add <name> <pattern>"); break
+                }
+                let sName = parts[1], pattern = parts[2]
+                do {
+                    _ = try Regex(pattern)
+                    state.spawnRepo.add(SpawnConfig(name: sName, path: sName.lowercased(), patterns: [pattern]))
+                    state.appendLine(idx, "% Spawn '\(sName)' added: /\(pattern)/")
+                } catch {
+                    state.appendLine(idx, "% Bad pattern: \(error.localizedDescription)")
+                }
+            case "remove", "del":
+                guard let sName = parts[safe: 1], !sName.isEmpty else {
+                    state.appendLine(idx, "% Usage: /spawn remove <name>"); break
+                }
+                state.spawnRepo.remove(sName.lowercased())
+                state.appendLine(idx, "% Spawn '\(sName)' removed.")
+            case "list", .none:
+                let list = state.spawnRepo.load()
+                if list.isEmpty {
+                    state.appendLine(idx, "% No spawns defined. Use /spawn add <name> <pattern>")
+                } else {
+                    state.appendLine(idx, "% Spawns:")
+                    for s in list {
+                        state.appendLine(idx, "%   \(s.name) (\(s.path)): \(s.patterns.map { "/\($0)/" }.joined(separator: ", "))")
+                    }
+                }
+            case "focus", "fg":
+                let sName = parts[safe: 1] ?? ""
+                if sName.isEmpty || sName.lowercased() == "main" {
+                    state.activeTab?.activeSpawn = ""
+                } else {
+                    state.activeTab?.activeSpawn = sName.lowercased()
+                }
+            default:
+                state.appendLine(idx, "% Usage: /spawn [add|remove|list|focus] ...")
+            }
         case "clear":
             state.activeTab?.lines.removeAll()
         case "help":
@@ -478,6 +565,10 @@ struct ContentView: View {
             state.appendLine(idx, "%   /hook <name> <event> = <cmd>  - Define event hook")
             state.appendLine(idx, "%   /unhook <name>                - Remove a hook")
             state.appendLine(idx, "%   /hooks                        - List hooks")
+            state.appendLine(idx, "%   /spawn add <name> <pattern>  - Add output spawn")
+            state.appendLine(idx, "%   /spawn remove <name>          - Remove spawn")
+            state.appendLine(idx, "%   /spawn list                   - List spawns")
+            state.appendLine(idx, "%   /spawn focus <name|main>      - Switch spawn view")
             state.appendLine(idx, "%   /clear                        - Clear scrollback")
             state.appendLine(idx, "%   /help                         - Show this help")
         default:

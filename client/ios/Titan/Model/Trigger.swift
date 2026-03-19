@@ -12,6 +12,8 @@ struct Trigger: Codable, Identifiable {
     var gag: Bool = false
     var hilite: Bool = false
     var enabled: Bool = true
+    var substituteFind: String = ""
+    var substituteReplace: String = ""
 }
 
 // MARK: - Trigger Repository
@@ -51,7 +53,7 @@ struct TriggerResult {
     var matched = false
     var gagged = false
     var commands: [String] = []
-    var hiliteLine: String? = nil
+    var displayLine: String? = nil
 }
 
 class TriggerEngine {
@@ -79,16 +81,25 @@ class TriggerEngine {
             if trigger.gag { result.gagged = true }
 
             if trigger.hilite && !result.gagged {
-                let range = match.range
-                let before = line[line.startIndex..<range.lowerBound]
-                let matched = line[range]
-                let after = line[range.upperBound..<line.endIndex]
-                result.hiliteLine = "\(before)\u{1b}[1m\(matched)\u{1b}[22m\(after)"
+                let target = result.displayLine ?? line
+                if let m = try? regex.firstMatch(in: target) {
+                    let before = target[target.startIndex..<m.range.lowerBound]
+                    let matched = target[m.range]
+                    let after = target[m.range.upperBound..<target.endIndex]
+                    result.displayLine = "\(before)\u{1b}[1m\(matched)\u{1b}[22m\(after)"
+                }
+            }
+
+            // Substitution: regex find/replace on display text
+            if !trigger.substituteFind.isEmpty && !result.gagged {
+                let target = result.displayLine ?? line
+                if let subRe = try? Regex(trigger.substituteFind).ignoresCase() {
+                    result.displayLine = target.replacing(subRe, with: trigger.substituteReplace)
+                }
             }
 
             if !trigger.body.isEmpty {
                 var cmd = trigger.body
-                // Substitute $0 with full match
                 cmd = cmd.replacingOccurrences(of: "$0", with: String(match.output[0].substring ?? ""))
                 result.commands.append(cmd)
             }

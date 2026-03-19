@@ -180,7 +180,7 @@ fun TitanApp() {
     fun processServerLine(tabIndex: Int, line: String) {
         val result = triggerEngine.check(AnsiParser.stripAnsi(line))
         if (result.gagged) return
-        val display = result.hiliteLine ?: line
+        val display = result.displayLine ?: line
         appendLine(tabIndex, display)
         // Execute trigger commands
         val tab = tabs.getOrNull(tabIndex) ?: return

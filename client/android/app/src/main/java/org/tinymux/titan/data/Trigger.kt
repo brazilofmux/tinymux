@@ -13,6 +13,8 @@ data class Trigger(
     val gag: Boolean = false,
     val hilite: Boolean = false,
     val enabled: Boolean = true,
+    val substituteFind: String = "",
+    val substituteReplace: String = "",
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("name", name)
@@ -23,6 +25,8 @@ data class Trigger(
         put("gag", gag)
         put("hilite", hilite)
         put("enabled", enabled)
+        put("substituteFind", substituteFind)
+        put("substituteReplace", substituteReplace)
     }
 
     companion object {
@@ -35,6 +39,8 @@ data class Trigger(
             gag = obj.optBoolean("gag", false),
             hilite = obj.optBoolean("hilite", false),
             enabled = obj.optBoolean("enabled", true),
+            substituteFind = obj.optString("substituteFind", ""),
+            substituteReplace = obj.optString("substituteReplace", ""),
         )
     }
 }
