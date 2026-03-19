@@ -16,6 +16,7 @@ class WorldTab: Identifiable {
     var spawnLines: [String: [AttributedString]] = [:]
     var activeSpawn: String = ""  // "" = main, otherwise spawn path
     let mcpParser = McpParser()
+    let variables = VariableStore()
 
     init(name: String) {
         self.name = name

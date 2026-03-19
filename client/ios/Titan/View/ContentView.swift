@@ -573,6 +573,35 @@ struct ContentView: View {
             default:
                 state.appendLine(idx, "% Usage: /spawn [add|remove|list|focus] ...")
             }
+        case "set":
+            let setParts = args.split(separator: " ", maxSplits: 1).map(String.init)
+            guard setParts.count >= 2, !setParts[0].isEmpty else {
+                state.appendLine(idx, "% Usage: /set <var.name> <value>"); break
+            }
+            let setKey = setParts[0], setValue = setParts[1]
+            if setKey.hasPrefix("temp.") {
+                state.activeTab?.variables.temp[String(setKey.dropFirst(5))] = setValue
+            } else if setKey.hasPrefix("worldtemp.") {
+                state.activeTab?.variables.worldTemp[String(setKey.dropFirst(10))] = setValue
+            } else {
+                state.activeTab?.variables.temp[setKey] = setValue
+            }
+            state.appendLine(idx, "% Set \(setKey) = \(setValue)")
+        case "unset":
+            let unsetKey = args.trimmingCharacters(in: .whitespaces)
+            guard !unsetKey.isEmpty else { state.appendLine(idx, "% Usage: /unset <var.name>"); break }
+            state.activeTab?.variables.temp.removeValue(forKey: unsetKey.replacingOccurrences(of: "temp.", with: ""))
+            state.activeTab?.variables.worldTemp.removeValue(forKey: unsetKey.replacingOccurrences(of: "worldtemp.", with: ""))
+            state.appendLine(idx, "% Unset \(unsetKey)")
+        case "vars":
+            let vars = state.activeTab?.variables
+            if (vars?.temp.isEmpty ?? true) && (vars?.worldTemp.isEmpty ?? true) {
+                state.appendLine(idx, "% No user variables set.")
+            } else {
+                state.appendLine(idx, "% Variables:")
+                vars?.temp.forEach { k, v in state.appendLine(idx, "%   temp.\(k) = \(v)") }
+                vars?.worldTemp.forEach { k, v in state.appendLine(idx, "%   worldtemp.\(k) = \(v)") }
+            }
         case "clear":
             state.activeTab?.lines.removeAll()
         case "help":
@@ -595,6 +624,9 @@ struct ContentView: View {
             state.appendLine(idx, "%   /spawn remove <name>          - Remove spawn")
             state.appendLine(idx, "%   /spawn list                   - List spawns")
             state.appendLine(idx, "%   /spawn focus <name|main>      - Switch spawn view")
+            state.appendLine(idx, "%   /set <var> <value>            - Set a variable")
+            state.appendLine(idx, "%   /unset <var>                  - Remove a variable")
+            state.appendLine(idx, "%   /vars                         - List variables")
             state.appendLine(idx, "%   /clear                        - Clear scrollback")
             state.appendLine(idx, "%   /help                         - Show this help")
         default:

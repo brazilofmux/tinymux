@@ -36,6 +36,7 @@ import kotlinx.coroutines.CompletableDeferred
 import org.tinymux.titan.data.AppSettings
 import org.tinymux.titan.data.ConditionContext
 import org.tinymux.titan.data.Hook
+import org.tinymux.titan.data.VariableStore
 import org.tinymux.titan.data.HookRepository
 import org.tinymux.titan.data.McpParser
 import org.tinymux.titan.data.SessionLogger
@@ -74,6 +75,7 @@ class WorldTab(
     val spawnLines: MutableMap<String, SnapshotStateList<AnnotatedString>> = mutableMapOf(),
     var activeSpawn: String = "",  // "" = main, otherwise spawn path
     val mcpParser: McpParser = McpParser(),
+    val variables: VariableStore = VariableStore(),
 )
 
 @Composable
@@ -468,6 +470,43 @@ fun TitanApp() {
                     else -> appendLine(idx, "% Usage: /spawn [add|remove|list|focus] ...")
                 }
             }
+            "set" -> {
+                val parts = args.trim().split("\\s+".toRegex(), limit = 2)
+                if (parts.size < 2 || parts[0].isBlank()) {
+                    appendLine(idx, "% Usage: /set <var.name> <value>")
+                } else {
+                    val key = parts[0]
+                    val value = parts[1]
+                    if (key.startsWith("temp.")) {
+                        tab?.variables?.temp?.set(key.removePrefix("temp."), value)
+                    } else if (key.startsWith("worldtemp.")) {
+                        tab?.variables?.worldTemp?.set(key.removePrefix("worldtemp."), value)
+                    } else {
+                        tab?.variables?.temp?.set(key, value)
+                    }
+                    appendLine(idx, "% Set $key = $value")
+                }
+            }
+            "unset" -> {
+                val key = args.trim()
+                if (key.isBlank()) {
+                    appendLine(idx, "% Usage: /unset <var.name>")
+                } else {
+                    tab?.variables?.temp?.remove(key.removePrefix("temp."))
+                    tab?.variables?.worldTemp?.remove(key.removePrefix("worldtemp."))
+                    appendLine(idx, "% Unset $key")
+                }
+            }
+            "vars" -> {
+                val vars = tab?.variables
+                if (vars == null || (vars.temp.isEmpty() && vars.worldTemp.isEmpty())) {
+                    appendLine(idx, "% No user variables set.")
+                } else {
+                    appendLine(idx, "% Variables:")
+                    vars.temp.forEach { (k, v) -> appendLine(idx, "%   temp.$k = $v") }
+                    vars.worldTemp.forEach { (k, v) -> appendLine(idx, "%   worldtemp.$k = $v") }
+                }
+            }
             "clear" -> tab?.lines?.clear()
             "help" -> {
                 appendLine(idx, "% Commands:")
@@ -489,6 +528,9 @@ fun TitanApp() {
                 appendLine(idx, "%   /spawn remove <name>          - Remove spawn")
                 appendLine(idx, "%   /spawn list                   - List spawns")
                 appendLine(idx, "%   /spawn focus <name|main>      - Switch spawn view")
+                appendLine(idx, "%   /set <var> <value>            - Set a variable")
+                appendLine(idx, "%   /unset <var>                  - Remove a variable")
+                appendLine(idx, "%   /vars                         - List variables")
                 appendLine(idx, "%   /clear                        - Clear scrollback")
                 appendLine(idx, "%   /help                         - Show this help")
             }
