@@ -92,10 +92,7 @@ static const UTF8 *poolnames[] =
     T("Bools"),
     T("Descs"),
     T("Qentries"),
-    T("Pcaches"),
-    T("Lbufrefs"),
-    T("Regrefs"),
-    T("Strings")
+    T("Pcaches")
 };
 
 /*! \brief Initialize a buffer pool.

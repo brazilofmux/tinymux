@@ -44,13 +44,14 @@ jit_stats_t s_jit_stats = {};
 // ---------------------------------------------------------------
 // JIT Arena Management (Tier B)
 //
-// Unifies with the engine's lbuf_ref/reg_ref packing system.
+// Uses shared_ptr<RegBuffer> for buffer lifecycle — unified with the
+// engine's register packing system.
 // ---------------------------------------------------------------
 
 class JITArena {
 public:
     struct Arena {
-        lbuf_ref *lr;
+        std::shared_ptr<RegBuffer> buf;
         size_t    used;
         uint32_t  id;
     };
@@ -67,20 +68,16 @@ public:
     }
 
     static void AddRef(uint32_t id) {
-        auto it = s_arenas.find(id);
-        if (it != s_arenas.end()) {
-            it->second->lr->refcount++;
-        }
+        // No-op: shared_ptr refcount is managed via reg_ref copies.
+        UNUSED_PARAMETER(id);
     }
 
     static void Release(uint32_t id) {
         auto it = s_arenas.find(id);
         if (it != s_arenas.end()) {
             Arena *a = it->second;
-            // Check refcount before BufRelease potentially frees lr.
-            bool last_ref = (a->lr->refcount <= 1);
-            BufRelease(a->lr);
-            if (last_ref) {
+            // If only the arena itself holds a reference, clean up.
+            if (a->buf.use_count() <= 1) {
                 if (s_current && s_current->id == id) s_current = nullptr;
                 delete a;
                 s_arenas.erase(it);
@@ -93,16 +90,13 @@ public:
         return (it != s_arenas.end()) ? it->second : nullptr;
     }
 
-    // Release arenas that have no external references (refcount == 1
-    // means only the arena's self-ownership remains).  Called between
-    // evaluations to bound arena lifetime.
+    // Release arenas that have no external references.
     static void gc() {
         s_current = nullptr;
         auto it = s_arenas.begin();
         while (it != s_arenas.end()) {
             Arena *a = it->second;
-            if (a->lr->refcount <= 1) {
-                BufRelease(a->lr);
+            if (a->buf.use_count() <= 1) {
                 delete a;
                 it = s_arenas.erase(it);
             } else {
@@ -114,9 +108,7 @@ public:
 private:
     static Arena *Create() {
         Arena *a = new Arena;
-        a->lr = alloc_lbufref("JITArena");
-        a->lr->lbuf_ptr = alloc_lbuf("JITArena");
-        a->lr->refcount = 1;
+        a->buf = std::make_shared<RegBuffer>();
         a->used = 0;
         a->id = ++s_next_id;
         s_arenas[a->id] = a;
@@ -1188,8 +1180,8 @@ public:
             auto *a = JITArena::Alloc(length + 1);
             if (a) {
                 size_t off = a->used - (length + 1);
-                memcpy(a->lr->lbuf_ptr + off, data, length);
-                a->lr->lbuf_ptr[off + length] = '\0';
+                memcpy(a->buf->data + off, data, length);
+                a->buf->data[off + length] = '\0';
                 // Success: queue for ACK.
                 s_ack_queue.push_back(window);
                 s_window_busy |= (1 << window);
@@ -2069,18 +2061,17 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             auto *a = JITArena::Alloc(vlen + 1);
             if (a) {
                 size_t off = a->used - (vlen + 1);
-                memcpy(a->lr->lbuf_ptr + off, value, vlen);
-                a->lr->lbuf_ptr[off + vlen] = '\0';
+                memcpy(a->buf->data + off, value, vlen);
+                a->buf->data[off + vlen] = '\0';
 
                 // Bind to register.
                 if (mudstate.global_regs[regnum]) {
                     RegRelease(mudstate.global_regs[regnum]);
                 }
-                reg_ref *rr = alloc_regref("JITArena.pack");
+                reg_ref *rr = new reg_ref();
                 rr->refcount = 1;
-                rr->lbuf = a->lr;
-                a->lr->refcount++;
-                rr->reg_ptr = a->lr->lbuf_ptr + off;
+                rr->buf = a->buf;
+                rr->reg_ptr = a->buf->data + off;
                 rr->reg_len = vlen;
                 mudstate.global_regs[regnum] = rr;
                 ctx->x[10] = vlen;

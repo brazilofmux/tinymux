@@ -750,9 +750,7 @@ void restore_global_regs
     }
 }
 
-static lbuf_ref *last_lbufref = nullptr;
-static size_t    last_left    = 0;
-static UTF8     *last_ptr     = nullptr;
+static std::shared_ptr<RegBuffer> last_regbuf;
 
 void RegAssign(reg_ref **regref, size_t nLength, const UTF8 *ptr)
 {
@@ -771,49 +769,35 @@ void RegAssign(reg_ref **regref, size_t nLength, const UTF8 *ptr)
         *regref = nullptr;
     }
 
-    // Let go of the last lbuf if we can't use it.
+    // Let go of the last buffer if we can't use it.
     //
     size_t nSize = nLength + 1;
-    if (  nullptr != last_lbufref
-       && last_left < nSize)
+    if (last_regbuf && last_regbuf->used + nSize > LBUF_SIZE)
     {
-        BufRelease(last_lbufref);
-        last_lbufref = nullptr;
-        last_left    = 0;
-        last_ptr     = nullptr;
+        last_regbuf.reset();
     }
 
-    // Grab a new, fresh lbuf if we don't have one.
+    // Grab a new, fresh buffer if we don't have one.
     //
-    if (nullptr == last_lbufref)
+    if (!last_regbuf)
     {
-        last_ptr = alloc_lbuf("RegAssign");
-        last_left = LBUF_SIZE;
-
-        // Fill in new lbufref.
-        //
-        last_lbufref = alloc_lbufref("RegAssign");
-        last_lbufref->refcount = 1;
-        last_lbufref->lbuf_ptr = last_ptr;
+        last_regbuf = std::make_shared<RegBuffer>();
     }
 
-    // Use last lbuf.
+    // Pack value into the buffer.
     //
-    UTF8 *p = last_ptr;
-    memcpy(last_ptr, ptr, nSize);
-    last_ptr[nLength] = '\0';
-    last_ptr  += nSize;
-    last_left -= nSize;
+    UTF8 *p = last_regbuf->data + last_regbuf->used;
+    memcpy(p, ptr, nLength);
+    p[nLength] = '\0';
+    last_regbuf->used += nSize;
 
     // Fill in new regref.
     //
-    *regref = alloc_regref("RegAssign");
+    *regref = new reg_ref();
     (*regref)->refcount = 1;
-    (*regref)->lbuf     = last_lbufref;
+    (*regref)->buf      = last_regbuf;
     (*regref)->reg_len  = nLength;
     (*regref)->reg_ptr  = p;
-
-    BufAddRef(last_lbufref);
 }
 
 // ---------------------------------------------------------------------------

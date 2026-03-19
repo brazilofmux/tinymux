@@ -421,8 +421,6 @@ int DCL_CDECL main(int argc, char *argv[])
     pool_init(POOL_MBUF, MBUF_SIZE);
     pool_init(POOL_SBUF, SBUF_SIZE);
     pool_init(POOL_DESC, sizeof(DESC));
-    pool_init(POOL_LBUFREF, sizeof(lbuf_ref));
-    pool_init(POOL_REGREF, sizeof(reg_ref));
 
 #if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
     init_rlimit();

@@ -13,9 +13,7 @@ constexpr int POOL_BOOL    = 3;
 constexpr int POOL_DESC    = 4;
 constexpr int POOL_QENTRY  = 5;
 constexpr int POOL_PCACHE  = 6;
-constexpr int POOL_LBUFREF = 7;
-constexpr int POOL_REGREF  = 8;
-constexpr int NUM_POOLS    = 9;
+constexpr int NUM_POOLS    = 7;
 
 #define LBUF_SIZE   8000    // Large (must remain #define for preprocessor conditionals)
 constexpr int GBUF_SIZE   = 1024;    // Generic
@@ -51,10 +49,6 @@ LIBMUX_API void pool_reset(void);
 #define free_qentry(b)   pool_free(POOL_QENTRY, reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
 #define alloc_pcache(s)  reinterpret_cast<PCACHE *>(pool_alloc(POOL_PCACHE, T(s), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__))
 #define free_pcache(b)   pool_free(POOL_PCACHE, reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
-#define alloc_lbufref(s) reinterpret_cast<lbuf_ref *>(pool_alloc(POOL_LBUFREF, T(s), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__))
-#define free_lbufref(b)  pool_free(POOL_LBUFREF, reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
-#define alloc_regref(s)  reinterpret_cast<reg_ref *>(pool_alloc(POOL_REGREF, T(s), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__))
-#define free_regref(b)   pool_free(POOL_REGREF, reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
 
 #define safe_copy_chr_ascii(src, buff, bufp, nSizeOfBuffer) \
 { \
@@ -81,22 +75,32 @@ LIBMUX_API void pool_reset(void);
 #define safe_mb_chr safe_mb_chr_ascii
 #define safe_chr safe_chr_ascii
 
-//! \struct lbuf_ref
-// Tracks references to an lbuf. See LBUF_SIZE.
-struct lbuf_ref
+#include <memory>
+
+//! \struct RegBuffer
+// Shared buffer that packs multiple register values into a single
+// LBUF_SIZE block.  Reference-counted via std::shared_ptr.
+struct RegBuffer
 {
-    int      refcount;
-    UTF8    *lbuf_ptr;
+    UTF8   data[LBUF_SIZE];
+    size_t used;
+
+    RegBuffer() : used(0) { memset(data, 0, sizeof(data)); }
 };
 
 //! \struct reg_ref
-// Tracks references to a register.
+// A register value — a view into a shared RegBuffer.
+// Allocated with new/delete (not pool-allocated).
+// The refcount tracks how many pointers reference this reg_ref.
+// The shared_ptr<RegBuffer> automatically manages the underlying buffer.
 struct reg_ref
 {
     int      refcount;
-    lbuf_ref *lbuf;
+    std::shared_ptr<RegBuffer> buf;
     size_t   reg_len;
     UTF8    *reg_ptr;
+
+    reg_ref() : refcount(0), reg_len(0), reg_ptr(nullptr) {}
 };
 
 #endif //!ALLOC_H

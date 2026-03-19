@@ -452,28 +452,6 @@ const PRONOUN_SET *get_pronoun_set(dbref);
 void mux_exec(const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref executor,
                dbref caller, dbref enactor, int eval, const UTF8 *cargs[], int ncargs);
 
-inline void BufAddRef(lbuf_ref *lbufref)
-{
-    if (nullptr != lbufref)
-    {
-        lbufref->refcount++;
-    }
-}
-
-inline void BufRelease(lbuf_ref *lbufref)
-{
-    if (nullptr != lbufref)
-    {
-        lbufref->refcount--;
-        if (0 == lbufref->refcount)
-        {
-            free_lbuf(lbufref->lbuf_ptr);
-            lbufref->lbuf_ptr = nullptr;
-            free_lbufref(lbufref);
-        }
-    }
-}
-
 inline void RegAddRef(reg_ref *regref)
 {
     if (nullptr != regref)
@@ -489,11 +467,7 @@ inline void RegRelease(reg_ref *regref)
         regref->refcount--;
         if (0 == regref->refcount)
         {
-            BufRelease(regref->lbuf);
-            regref->lbuf    = nullptr;
-            regref->reg_ptr = nullptr;
-            regref->reg_len = 0;
-            free_regref(regref);
+            delete regref;
         }
     }
 }
