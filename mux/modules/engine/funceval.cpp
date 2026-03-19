@@ -118,17 +118,16 @@ FUNCTION(fun_cwho)
     }
 
     ITL list_context;
-    struct comuser *user;
     ItemToList_Init(&list_context, buff, bufc, '#');
     if (CWHO_ALL == match_type)
     {
-        for (int j = 0; j < ch->num_users; j++)
+        for (auto &kv : ch->users)
         {
-            user = ch->users[j];
-            if (  (  !Hidden(user->who)
+            const comuser &user = kv.second;
+            if (  (  !Hidden(user.who)
                   || Wizard_Who(executor)
                   || See_Hidden(executor))
-               && !ItemToList_AddInteger(&list_context, user->who))
+               && !ItemToList_AddInteger(&list_context, user.who))
             {
                 break;
             }
@@ -136,12 +135,14 @@ FUNCTION(fun_cwho)
     }
     else
     {
-        for (user = ch->on_users; user; user = user->on_next)
+        for (auto &kv : ch->users)
         {
-            if (  (Connected(user->who) || isThing(user->who))
-               && (  (match_type == CWHO_ON && user->bUserIsOn)
-                  || (match_type == CWHO_OFF && !user->bUserIsOn))
-               && !ItemToList_AddInteger(&list_context, user->who))
+            const comuser &user = kv.second;
+            if (  user.bConnected
+               && (Connected(user.who) || isThing(user.who))
+               && (  (match_type == CWHO_ON && user.bUserIsOn)
+                  || (match_type == CWHO_OFF && !user.bUserIsOn))
+               && !ItemToList_AddInteger(&list_context, user.who))
             {
                 break;
             }

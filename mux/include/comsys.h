@@ -6,7 +6,13 @@
 #ifndef COMSYS_H
 #define COMSYS_H
 
-#define NUM_COMSYS 500
+#include <map>
+#include <string>
+#include <vector>
+
+#ifndef NOTHING
+#define NOTHING (-1)
+#endif
 
 //! \def MAX_USERS_PER_CHANNEL
 // Maximum Users Per Channel
@@ -28,13 +34,17 @@
 // Maximum length for an alias to a channel
 #define MAX_ALIAS_LEN   15
 
-//! \def ALIAS_SIZE
-// Actual size of a channel alias
-#define ALIAS_SIZE      (MAX_ALIAS_LEN+1)
-
 //! \def MAX_COST
 // Maximum cost to use for a channel
 #define MAX_COST        32767
+
+//! \struct com_alias
+// Per-player alias entry — pairs an alias string with its channel name.
+struct com_alias
+{
+    std::string alias;
+    std::string channel;
+};
 
 //! \struct comuser
 // Comsys user data
@@ -45,13 +55,16 @@ struct comuser
     //! Is the user on the channel
     bool bUserIsOn;
     //! Per channel display name
-    UTF8 *title;
+    std::string title;
     //! Status of the title
     bool ComTitleStatus;
     //! Whether join/leave messages are suppressed for this user
     bool bGagJoinLeave;
-    //! Pointer to the next user on the channel
-    struct comuser *on_next;
+    //! Whether the player is currently connected to the MUD
+    bool bConnected;
+
+    comuser() : who(NOTHING), bUserIsOn(false),
+        ComTitleStatus(true), bGagJoinLeave(false), bConnected(false) {}
 };
 
 //! \struct channel
@@ -71,36 +84,34 @@ struct channel
     //! Person to charge for usage
     dbref charge_who;
     int amount_col;
-    //! Users on the channel
-    int num_users;
-    //! Maximum users allowed
-    int max_users;
     //! Channel object if set
     dbref chan_obj;
-    //! Linked list of user data for all players on the channel
-    struct comuser **users;
-    //! Linked list of user data for connected players
-    struct comuser *on_users;
+    //! Users on the channel, keyed by dbref
+    std::map<dbref, comuser> users;
     //! Number of messages sent on the channel
     int num_messages;
+
+    channel() : type(0), temp1(0), temp2(0), charge(0),
+        charge_who(NOTHING), amount_col(0), chan_obj(NOTHING),
+        num_messages(0)
+    {
+        memset(name, 0, sizeof(name));
+        memset(header, 0, sizeof(header));
+    }
 };
 
-//! \struct tagComsys
+//! \struct comsys_t
 // Data for storing user information for players on channels
-typedef struct tagComsys
+struct comsys_t
 {
     //! DBREF of the user
     dbref who;
 
-    //! Number of channels
-    int numchannels;
-    int maxchannels;
-    //! Alias for this channel
-    UTF8 *alias;
-    UTF8 **channels;
+    //! Alias/channel pairs for this player
+    std::vector<com_alias> aliases;
 
-    struct tagComsys *next;
-} comsys_t;
+    comsys_t() : who(NOTHING) {}
+};
 
 //! \brief Save communication system data to disk
 //! \param filename - file to use for for writing data
@@ -119,14 +130,6 @@ void load_comsys(UTF8 *filename);
 
 //! \brief Delete comsystem information for the given dbref
 void del_comsys(dbref who);
-
-//! \brief Deallocates previously allocated memory for all fields of comsys_t
-//! \param c - comsys_t pointer to deallocate
-void destroy_comsys(comsys_t *c);
-
-//! \brief Inserts the given comsys_t pointer into the comsys_table
-//! \param c - comsys_t pointer to insert into the table
-void add_comsys(comsys_t *c);
 
 //! \brief Add player as an active member of the given channel
 //! \param player - dbref of player to add
@@ -150,7 +153,7 @@ void do_comconnect(dbref player);
 void purge_comsystem(void);
 
 //! Sort aliases for the given comsys_t data
-void sort_com_aliases(comsys_t *c);
+void sort_com_aliases(comsys_t &c);
 
 //! \brief Xmit messages to the listening objects on channel & log data
 //! \param player - dbref of executor
@@ -214,17 +217,9 @@ struct comuser *select_user(struct channel *ch, dbref player);
 UTF8 *MakeCanonicalComAlias(const UTF8 *pAlias, size_t *nValidAlias,
         bool *bValidAlias);
 
-//! \brief Allocate and initialize a new comsys_t structure
-//! \return initialized memory or nullptr if allocation failed
-comsys_t *create_new_comsys();
-
 //! \brief Purge channels owned by player. Internal cleanup called from db.c
 //! \param player - dbref of cleanup target
 void do_channelnuke(dbref player);
-
-//! \brief Sort users on channel into dbref order
-//! \param ch - channel to process
-void sort_users(const struct channel *ch);
 
 //! \brief Process comsys related commands 'alias <cmd>' (from command.cpp)
 //! \param who - enactor

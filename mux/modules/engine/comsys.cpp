@@ -10,10 +10,12 @@
 #include "config.h"
 #include "externs.h"
 
+#include <algorithm>
+#include <unordered_map>
+
 using namespace std;
 
-static int num_channels;
-static comsys_t* comsys_table[NUM_COMSYS];
+static unordered_map<dbref, comsys_t> comsys_table;
 
 #define DFLT_MAX_LOG        0
 #define MIN_RECALL_REQUEST  1
@@ -58,7 +60,7 @@ static void sqlite_wt_channel_user(const UTF8 *channel_name, struct comuser *use
     if (!sqldb.SyncChannelUser(channel_name, user->who,
         user->bUserIsOn, user->ComTitleStatus,
         user->bGagJoinLeave,
-        user->title ? user->title : T("")))
+        reinterpret_cast<const UTF8 *>(user->title.c_str())))
     {
         Log.tinyprintf(T("comsys sqlite_wt_channel_user failed for %s/#%d" ENDLINE),
             channel_name, user->who);
@@ -136,12 +138,7 @@ static void do_setnewtitle(const dbref player, struct channel* ch, const UTF8* p
 
     if (ch && user)
     {
-        if (user->title)
-        {
-            MEMFREE(user->title);
-            user->title = nullptr;
-        }
-        user->title = StringClone(pValidatedTitle);
+        user->title.assign(reinterpret_cast<const char *>(pValidatedTitle));
         sqlite_wt_channel_user(ch->name, user);
     }
 }
@@ -172,7 +169,7 @@ void save_comsys(UTF8* filename)
     ReplaceFile(buffer, filename);
 }
 
-// Aliases must be between 1 and ALIAS_SIZE characters. No spaces. No ANSI.
+// Aliases must be between 1 and MAX_ALIAS_LEN characters. No spaces. No ANSI.
 //
 UTF8* MakeCanonicalComAlias
 (
@@ -181,7 +178,7 @@ UTF8* MakeCanonicalComAlias
     bool* bValidAlias
 )
 {
-    static UTF8 Buffer[ALIAS_SIZE];
+    static UTF8 Buffer[MAX_ALIAS_LEN + 1];
     *nValidAlias = 0;
     *bValidAlias = false;
 
@@ -233,7 +230,7 @@ static bool ParseChannelLine(UTF8* pBuffer, UTF8* pAlias5, UTF8** ppChannelName)
     {
         return false;
     }
-    mux_strncpy(pAlias5, pValidAlias, ALIAS_SIZE - 1);
+    mux_strncpy(pAlias5, pValidAlias, MAX_ALIAS_LEN);
 
     // Skip any leading space before the channel name.
     //
@@ -302,26 +299,27 @@ void purge_comsystem(void)
     return;
 #endif // ABORT_PURGE_COMSYS
 
-    for (auto c : comsys_table)
+    for (auto it = comsys_table.begin(); it != comsys_table.end(); )
     {
-        while (c)
+        const comsys_t &c = it->second;
+        if (c.aliases.empty())
         {
-            const comsys_t* d = c;
-            c = c->next;
-            if (d->numchannels == 0)
-            {
-                del_comsys(d->who);
-                continue;
-            }
-            if (isPlayer(d->who))
-            {
-                continue;
-            }
-            if (God(Owner(d->who))
-                && Going(d->who))
-            {
-                del_comsys(d->who);
-            }
+            it = comsys_table.erase(it);
+            continue;
+        }
+        if (isPlayer(c.who))
+        {
+            ++it;
+            continue;
+        }
+        if (God(Owner(c.who))
+            && Going(c.who))
+        {
+            it = comsys_table.erase(it);
+        }
+        else
+        {
+            ++it;
         }
     }
 }
@@ -332,60 +330,25 @@ void save_channels(FILE* fp)
 {
     purge_comsystem();
 
-    comsys_t* c;
-    int i, j;
-    int np = 0;
-    for (i = 0; i < NUM_COMSYS; i++)
-    {
-        c = comsys_table[i];
-
-        while (c)
-        {
-            np++;
-            c = c->next;
-        }
-    }
+    int np = static_cast<int>(comsys_table.size());
 
     mux_fprintf(fp, T("%d\n"), np);
-    for (i = 0; i < NUM_COMSYS; i++)
+    for (auto &kv : comsys_table)
     {
-        c = comsys_table[i];
+        const comsys_t &c = kv.second;
 
-        while (c)
+        // Write user dbref and # of channels.
+        //
+        mux_fprintf(fp, T("%d %d\n"), c.who, static_cast<int>(c.aliases.size()));
+        for (size_t j = 0; j < c.aliases.size(); j++)
         {
-            // Write user dbref and # of channels.
+            // Write channel alias and channel name.
             //
-            mux_fprintf(fp, T("%d %d\n"), c->who, c->numchannels);
-            for (j = 0; j < c->numchannels; j++)
-            {
-                // Write channel alias and channel name.
-                //
-                mux_fprintf(fp, T("%s %s\n"), c->alias + j * ALIAS_SIZE, c->channels[j]);
-            }
-            c = c->next;
+            mux_fprintf(fp, T("%s %s\n"),
+                reinterpret_cast<const UTF8 *>(c.aliases[j].alias.c_str()),
+                reinterpret_cast<const UTF8 *>(c.aliases[j].channel.c_str()));
         }
     }
-}
-
-// Allocate and initialize new comsys_t struct.
-//
-comsys_t* create_new_comsys(void)
-{
-    auto c = static_cast<comsys_t*>(MEMALLOC(sizeof(comsys_t)));
-    if (nullptr != c)
-    {
-        c->who = NOTHING;
-        c->numchannels = 0;
-        c->maxchannels = 0;
-        c->alias = nullptr;
-        c->channels = nullptr;
-        c->next = nullptr;
-    }
-    else
-    {
-        ISOUTOFMEMORY(c);
-    }
-    return c;
 }
 
 static comsys_t* get_comsys(const dbref which)
@@ -395,126 +358,22 @@ static comsys_t* get_comsys(const dbref which)
         return nullptr;
     }
 
-    comsys_t* c = comsys_table[which % NUM_COMSYS];
-
-    while (c && (c->who != which))
-    {
-        c = c->next;
-    }
-
-    if (!c)
-    {
-        c = create_new_comsys();
-        c->who = which;
-        add_comsys(c);
-    }
-
-    return c;
+    comsys_t &c = comsys_table[which];
+    c.who = which;
+    return &c;
 }
 
-// Insert comsys_t structure into the comsys_table.
-//
-void add_comsys(comsys_t* c)
-{
-    if (c->who < 0 || c->who >= mudstate.db_top)
-    {
-        Log.tinyprintf(T("add_comsys: dbref %d out of range [0, %d)" ENDLINE),
-                       c->who, mudstate.db_top);
-        return;
-    }
-
-    c->next = comsys_table[c->who % NUM_COMSYS];
-    comsys_table[c->who % NUM_COMSYS] = c;
-}
-
-// Purge data for the given dbref from within the system.
-//
 void del_comsys(const dbref who)
 {
-    if (who < 0 || who >= mudstate.db_top)
-    {
-        Log.tinyprintf(T("del_comsys: dbref %d out of range [0, %d)" ENDLINE),
-                       who, mudstate.db_top);
-        return;
-    }
-
-    comsys_t* c = comsys_table[who % NUM_COMSYS];
-
-    if (c == nullptr)
-    {
-        return;
-    }
-
-    if (c->who == who)
-    {
-        comsys_table[who % NUM_COMSYS] = c->next;
-        destroy_comsys(c);
-        return;
-    }
-
-    comsys_t* last = c;
-    c = c->next;
-    while (c)
-    {
-        if (c->who == who)
-        {
-            last->next = c->next;
-            destroy_comsys(c);
-            return;
-        }
-        last = c;
-        c = c->next;
-    }
-}
-
-// Deallocate memory for a particular comsys_t entry.
-//
-void destroy_comsys(comsys_t* c)
-{
-    if (c->alias)
-    {
-        MEMFREE(c->alias);
-        c->alias = nullptr;
-    }
-    for (int i = 0; i < c->numchannels; i++)
-    {
-        MEMFREE(c->channels[i]);
-        c->channels[i] = nullptr;
-    }
-    if (c->channels)
-    {
-        MEMFREE(c->channels);
-        c->channels = nullptr;
-    }
-    MEMFREE(c);
-    c = nullptr;
+    comsys_table.erase(who);
 }
 
 // Sort aliases.
 //
-void sort_com_aliases(comsys_t* c)
+void sort_com_aliases(comsys_t &c)
 {
-    bool cont = true;
-
-    while (cont)
-    {
-        cont = false;
-        for (int i = 0; i < c->numchannels - 1; i++)
-        {
-            if (strcmp(reinterpret_cast<char*>(c->alias) + i * ALIAS_SIZE,
-                       reinterpret_cast<char*>(c->alias) + (i + 1) * ALIAS_SIZE) > 0)
-            {
-                UTF8 buffer[10];
-                mux_strncpy(buffer, c->alias + i * ALIAS_SIZE, sizeof(buffer) - 1);
-                mux_strncpy(c->alias + i * ALIAS_SIZE, c->alias + (i + 1) * ALIAS_SIZE, ALIAS_SIZE - 1);
-                mux_strncpy(c->alias + (i + 1) * ALIAS_SIZE, buffer, ALIAS_SIZE - 1);
-                UTF8* s = c->channels[i];
-                c->channels[i] = c->channels[i + 1];
-                c->channels[i + 1] = s;
-                cont = true;
-            }
-        }
-    }
+    std::sort(c.aliases.begin(), c.aliases.end(),
+        [](const com_alias &a, const com_alias &b) { return a.alias < b.alias; });
 }
 
 // Lookup player's comsys data and find the channel associated with
@@ -522,27 +381,18 @@ void sort_com_aliases(comsys_t* c)
 //
 static const UTF8* get_channel_from_alias(dbref player, UTF8* alias)
 {
-    int first;
-
-    const comsys_t* c = get_comsys(player);
-
-    int current = first = 0;
-    int last = c->numchannels - 1;
-    int dir = 1;
-
-    while (dir && (first <= last))
+    auto it = comsys_table.find(player);
+    if (it == comsys_table.end())
     {
-        current = (first + last) / 2;
-        dir = strcmp(reinterpret_cast<char*>(alias), reinterpret_cast<char*>(c->alias) + ALIAS_SIZE * current);
-        if (dir < 0)
-            last = current - 1;
-        else
-            first = current + 1;
+        return T("");
     }
-
-    if (!dir)
+    const comsys_t &c = it->second;
+    for (const auto &ca : c.aliases)
     {
-        return c->channels[current];
+        if (ca.alias == reinterpret_cast<const char *>(alias))
+        {
+            return reinterpret_cast<const UTF8 *>(ca.channel.c_str());
+        }
     }
     return T("");
 }
@@ -555,8 +405,6 @@ void load_comsystem_V5(FILE* fp)
 {
     UTF8 temp[LBUF_SIZE];
 
-    num_channels = 0;
-
     int nc = 0;
     if (nullptr == fgets(reinterpret_cast<char*>(temp), sizeof(temp), fp))
     {
@@ -564,14 +412,11 @@ void load_comsystem_V5(FILE* fp)
     }
     nc = mux_atol(temp);
 
-    num_channels = nc;
-
     for (int i = 0; i < nc; i++)
     {
         int anum[10];
 
-        auto ch = static_cast<channel*>(MEMALLOC(sizeof(struct channel)));
-        ISOUTOFMEMORY(ch);
+        auto ch = new channel();
 
         size_t nChannel = GetLineTrunc(temp, sizeof(temp), fp);
         if (nChannel > MAX_CHANNEL_LEN)
@@ -599,8 +444,6 @@ void load_comsystem_V5(FILE* fp)
         memcpy(ch->header, temp, nHeader);
         ch->header[nHeader] = '\0';
 
-        ch->on_users = nullptr;
-
         vector<UTF8> channel_name_vector(ch->name, ch->name+nChannel);
         mudstate.channel_names.insert(make_pair(channel_name_vector, ch));
 
@@ -623,18 +466,13 @@ void load_comsystem_V5(FILE* fp)
         ch->num_messages = anum[6];
         ch->chan_obj = anum[7];
 
-        ch->num_users = 0;
-        mux_assert(ReadListOfNumbers(fp, 1, &(ch->num_users)));
-        ch->max_users = ch->num_users;
-        if (ch->num_users > 0)
+        int num_users_to_read = 0;
+        mux_assert(ReadListOfNumbers(fp, 1, &num_users_to_read));
+        if (num_users_to_read > 0)
         {
-            ch->users = static_cast<comuser**>(calloc(ch->max_users, sizeof(struct comuser*)));
-            ISOUTOFMEMORY(ch->users);
-
-            int jAdded = 0;
-            for (int j = 0; j < ch->num_users; j++)
+            for (int j = 0; j < num_users_to_read; j++)
             {
-                struct comuser t_user = {};
+                comuser t_user;
 
                 t_user.who = NOTHING;
                 t_user.bUserIsOn = false;
@@ -685,29 +523,20 @@ void load_comsystem_V5(FILE* fp)
                         nTitle = 0;
                     }
 
-                    auto* user = static_cast<comuser*>(MEMALLOC(sizeof(struct comuser)));
-                    ISOUTOFMEMORY(user);
-                    memcpy(user, &t_user, sizeof(struct comuser));
+                    t_user.title.assign(reinterpret_cast<const char *>(pTitle), nTitle);
 
-                    user->title = StringCloneLen(pTitle, nTitle);
-                    ch->users[jAdded++] = user;
+                    auto result = ch->users.emplace(t_user.who, std::move(t_user));
+                    comuser &user = result.first->second;
 
-                    if (!(isPlayer(user->who))
-                        && !(Going(user->who)
-                            && (God(Owner(user->who)))))
+                    if (!(isPlayer(user.who))
+                        && !(Going(user.who)
+                            && (God(Owner(user.who)))))
                     {
-                        do_joinchannel(user->who, ch);
+                        do_joinchannel(user.who, ch);
                     }
-                    user->on_next = ch->on_users;
-                    ch->on_users = user;
+                    user.bConnected = true;
                 }
             }
-            ch->num_users = jAdded;
-            sort_users(ch);
-        }
-        else
-        {
-            ch->users = nullptr;
         }
     }
 }
@@ -722,8 +551,6 @@ void load_comsystem_V4(FILE* fp)
 {
     UTF8 temp[LBUF_SIZE];
 
-    num_channels = 0;
-
     int nc = 0;
     if (nullptr == fgets(reinterpret_cast<char*>(temp), sizeof(temp), fp))
     {
@@ -731,14 +558,11 @@ void load_comsystem_V4(FILE* fp)
     }
     nc = mux_atol(temp);
 
-    num_channels = nc;
-
     for (int i = 0; i < nc; i++)
     {
         int anum[10];
 
-        auto ch = static_cast<channel*>(MEMALLOC(sizeof(struct channel)));
-        ISOUTOFMEMORY(ch);
+        auto ch = new channel();
 
         size_t nChannel = GetLineTrunc(temp, sizeof(temp), fp);
         if (nChannel > MAX_CHANNEL_LEN)
@@ -766,8 +590,6 @@ void load_comsystem_V4(FILE* fp)
         memcpy(ch->header, temp, nHeader);
         ch->header[nHeader] = '\0';
 
-        ch->on_users = nullptr;
-
         vector<UTF8> channel_name_vector(ch->name, ch->name+nChannel);
         mudstate.channel_names.insert(make_pair(channel_name_vector, ch));
 
@@ -790,18 +612,13 @@ void load_comsystem_V4(FILE* fp)
         ch->num_messages = anum[6];
         ch->chan_obj = anum[7];
 
-        ch->num_users = 0;
-        mux_assert(ReadListOfNumbers(fp, 1, &(ch->num_users)));
-        ch->max_users = ch->num_users;
-        if (ch->num_users > 0)
+        int num_users_to_read = 0;
+        mux_assert(ReadListOfNumbers(fp, 1, &num_users_to_read));
+        if (num_users_to_read > 0)
         {
-            ch->users = static_cast<comuser**>(calloc(ch->max_users, sizeof(struct comuser*)));
-            ISOUTOFMEMORY(ch->users);
-
-            int jAdded = 0;
-            for (int j = 0; j < ch->num_users; j++)
+            for (int j = 0; j < num_users_to_read; j++)
             {
-                struct comuser t_user = {};
+                comuser t_user;
 
                 t_user.who = NOTHING;
                 t_user.bUserIsOn = false;
@@ -851,29 +668,20 @@ void load_comsystem_V4(FILE* fp)
                         nTitle = 0;
                     }
 
-                    auto* user = static_cast<comuser*>(MEMALLOC(sizeof(struct comuser)));
-                    ISOUTOFMEMORY(user);
-                    memcpy(user, &t_user, sizeof(struct comuser));
+                    t_user.title.assign(reinterpret_cast<const char *>(pTitle), nTitle);
 
-                    user->title = StringCloneLen(pTitle, nTitle);
-                    ch->users[jAdded++] = user;
+                    auto result = ch->users.emplace(t_user.who, std::move(t_user));
+                    comuser &user = result.first->second;
 
-                    if (!(isPlayer(user->who))
-                        && !(Going(user->who)
-                            && (God(Owner(user->who)))))
+                    if (!(isPlayer(user.who))
+                        && !(Going(user.who)
+                            && (God(Owner(user.who)))))
                     {
-                        do_joinchannel(user->who, ch);
+                        do_joinchannel(user.who, ch);
                     }
-                    user->on_next = ch->on_users;
-                    ch->on_users = user;
+                    user.bConnected = true;
                 }
             }
-            ch->num_users = jAdded;
-            sort_users(ch);
-        }
-        else
-        {
-            ch->users = nullptr;
         }
     }
 }
@@ -885,8 +693,6 @@ void load_comsystem_V0123(FILE* fp)
 {
     int ver = 0;
     UTF8 temp[LBUF_SIZE];
-
-    num_channels = 0;
 
     int nc = 0;
     if (nullptr == fgets(reinterpret_cast<char *>(temp), sizeof(temp), fp))
@@ -910,14 +716,11 @@ void load_comsystem_V0123(FILE* fp)
         nc = mux_atol(temp);
     }
 
-    num_channels = nc;
-
     for (int i = 0; i < nc; i++)
     {
         int anum[10];
 
-        auto ch = static_cast<channel*>(MEMALLOC(sizeof(struct channel)));
-        ISOUTOFMEMORY(ch);
+        auto ch = new channel();
 
         size_t nChannel = GetLineTrunc(temp, sizeof(temp), fp);
         if (temp[nChannel - 1] == '\n')
@@ -969,8 +772,6 @@ void load_comsystem_V0123(FILE* fp)
             memcpy(ch->header, pBufferUnicode, nHeader);
             ch->header[nHeader] = '\0';
         }
-
-        ch->on_users = nullptr;
 
         vector<UTF8> channel_name_vector(ch->name, ch->name + nChannel);
         mudstate.channel_names.insert(make_pair(channel_name_vector, ch));
@@ -1029,18 +830,13 @@ void load_comsystem_V0123(FILE* fp)
             StripTabsAndTruncate(temp, ch->header, MAX_HEADER_LEN, MAX_HEADER_LEN);
         }
 
-        ch->num_users = 0;
-        mux_assert(ReadListOfNumbers(fp, 1, &(ch->num_users)));
-        ch->max_users = ch->num_users;
-        if (ch->num_users > 0)
+        int num_users_to_read = 0;
+        mux_assert(ReadListOfNumbers(fp, 1, &num_users_to_read));
+        if (num_users_to_read > 0)
         {
-            ch->users = static_cast<comuser**>(calloc(ch->max_users, sizeof(struct comuser*)));
-            ISOUTOFMEMORY(ch->users);
-
-            int jAdded = 0;
-            for (int j = 0; j < ch->num_users; j++)
+            for (int j = 0; j < num_users_to_read; j++)
             {
-                struct comuser t_user = {};
+                comuser t_user;
 
                 t_user.who = NOTHING;
                 t_user.bUserIsOn = false;
@@ -1116,29 +912,20 @@ void load_comsystem_V0123(FILE* fp)
                         nTitle = 0;
                     }
 
-                    const auto user = static_cast<comuser*>(MEMALLOC(sizeof(struct comuser)));
-                    ISOUTOFMEMORY(user);
-                    memcpy(user, &t_user, sizeof(struct comuser));
+                    t_user.title.assign(reinterpret_cast<const char *>(pTitle), nTitle);
 
-                    user->title = StringCloneLen(pTitle, nTitle);
-                    ch->users[jAdded++] = user;
+                    auto result = ch->users.emplace(t_user.who, std::move(t_user));
+                    comuser &user = result.first->second;
 
-                    if (!(isPlayer(user->who))
-                        && !(Going(user->who)
-                            && (God(Owner(user->who)))))
+                    if (!(isPlayer(user.who))
+                        && !(Going(user.who)
+                            && (God(Owner(user.who)))))
                     {
-                        do_joinchannel(user->who, ch);
+                        do_joinchannel(user.who, ch);
                     }
-                    user->on_next = ch->on_users;
-                    ch->on_users = user;
+                    user.bConnected = true;
                 }
             }
-            ch->num_users = jAdded;
-            sort_users(ch);
-        }
-        else
-        {
-            ch->users = nullptr;
         }
     }
 }
@@ -1152,21 +939,18 @@ void load_channels_V4(FILE* fp)
     for (int i = 0; i < np; i++)
     {
         int anum[2];
-        comsys_t* c = create_new_comsys();
-        c->who = 0;
-        c->numchannels = 0;
+        int who = 0;
+        int numchannels = 0;
         mux_assert(ReadListOfNumbers(fp, 2, anum));
-        c->who = anum[0];
-        c->numchannels = anum[1];
-        c->maxchannels = c->numchannels;
-        if (c->maxchannels > 0)
-        {
-            c->alias = static_cast<UTF8*>(MEMALLOC(c->maxchannels * ALIAS_SIZE));
-            ISOUTOFMEMORY(c->alias);
-            c->channels = static_cast<UTF8**>(MEMALLOC(sizeof(UTF8 *) * c->maxchannels));
-            ISOUTOFMEMORY(c->channels);
+        who = anum[0];
+        numchannels = anum[1];
 
-            for (int j = 0; j < c->numchannels; j++)
+        comsys_t c;
+        c.who = who;
+
+        if (numchannels > 0)
+        {
+            for (int j = 0; j < numchannels; j++)
             {
                 size_t n = GetLineTrunc(buffer, sizeof(buffer), fp);
                 if (buffer[n - 1] == '\n')
@@ -1176,26 +960,26 @@ void load_channels_V4(FILE* fp)
                     n--;
                     buffer[n] = '\0';
                 }
-                if (!ParseChannelLine(buffer, c->alias + j * ALIAS_SIZE, c->channels + j))
+                UTF8 aliasBuf[MAX_ALIAS_LEN + 1];
+                UTF8 *channelName = nullptr;
+                if (ParseChannelLine(buffer, aliasBuf, &channelName))
                 {
-                    c->numchannels--;
-                    j--;
+                    com_alias ca;
+                    ca.alias.assign(reinterpret_cast<const char *>(aliasBuf));
+                    ca.channel.assign(reinterpret_cast<const char *>(channelName));
+                    c.aliases.push_back(std::move(ca));
+                    MEMFREE(channelName);
                 }
             }
             sort_com_aliases(c);
         }
-        else
+        if (Good_obj(c.who))
         {
-            c->alias = nullptr;
-            c->channels = nullptr;
-        }
-        if (Good_obj(c->who))
-        {
-            add_comsys(c);
+            comsys_table[c.who] = std::move(c);
         }
         else
         {
-            Log.tinyprintf(T("Invalid dbref %d." ENDLINE), c->who);
+            Log.tinyprintf(T("Invalid dbref %d." ENDLINE), who);
         }
         purge_comsystem();
     }
@@ -1210,21 +994,18 @@ void load_channels_V0123(FILE* fp)
     for (int i = 0; i < np; i++)
     {
         int anum[2];
-        comsys_t* c = create_new_comsys();
-        c->who = 0;
-        c->numchannels = 0;
+        int who = 0;
+        int numchannels = 0;
         mux_assert(ReadListOfNumbers(fp, 2, anum));
-        c->who = anum[0];
-        c->numchannels = anum[1];
-        c->maxchannels = c->numchannels;
-        if (c->maxchannels > 0)
-        {
-            c->alias = static_cast<UTF8*>(MEMALLOC(c->maxchannels * ALIAS_SIZE));
-            ISOUTOFMEMORY(c->alias);
-            c->channels = static_cast<UTF8**>(MEMALLOC(sizeof(UTF8 *) * c->maxchannels));
-            ISOUTOFMEMORY(c->channels);
+        who = anum[0];
+        numchannels = anum[1];
 
-            for (int j = 0; j < c->numchannels; j++)
+        comsys_t c;
+        c.who = who;
+
+        if (numchannels > 0)
+        {
+            for (int j = 0; j < numchannels; j++)
             {
                 size_t n = GetLineTrunc(reinterpret_cast<UTF8*>(buffer), sizeof(buffer), fp);
                 if (buffer[n - 1] == '\n')
@@ -1240,26 +1021,26 @@ void load_channels_V0123(FILE* fp)
                 //
                 size_t nBufferUnicode;
                 UTF8* pBufferUnicode = ConvertToUTF8(buffer, &nBufferUnicode);
-                if (!ParseChannelLine(pBufferUnicode, c->alias + j * ALIAS_SIZE, c->channels + j))
+                UTF8 aliasBuf[MAX_ALIAS_LEN + 1];
+                UTF8 *channelName = nullptr;
+                if (ParseChannelLine(pBufferUnicode, aliasBuf, &channelName))
                 {
-                    c->numchannels--;
-                    j--;
+                    com_alias ca;
+                    ca.alias.assign(reinterpret_cast<const char *>(aliasBuf));
+                    ca.channel.assign(reinterpret_cast<const char *>(channelName));
+                    c.aliases.push_back(std::move(ca));
+                    MEMFREE(channelName);
                 }
             }
             sort_com_aliases(c);
         }
-        else
+        if (Good_obj(c.who))
         {
-            c->alias = nullptr;
-            c->channels = nullptr;
-        }
-        if (Good_obj(c->who))
-        {
-            add_comsys(c);
+            comsys_table[c.who] = std::move(c);
         }
         else
         {
-            Log.tinyprintf(T("Invalid dbref %d." ENDLINE), c->who);
+            Log.tinyprintf(T("Invalid dbref %d." ENDLINE), who);
         }
         purge_comsystem();
     }
@@ -1346,10 +1127,7 @@ void load_comsys_V0123(FILE* fp)
 //
 void load_comsys(UTF8* filename)
 {
-    for (int i = 0; i < NUM_COMSYS; i++)
-    {
-        comsys_table[i] = nullptr;
-    }
+    comsys_table.clear();
 
     FILE* fp;
     if (!mux_fopen(&fp, filename, T("rb")))
@@ -1411,12 +1189,9 @@ void load_comsys(UTF8* filename)
 //
 void save_comsystem(FILE* fp)
 {
-    struct comuser* user;
-    int j;
-
     // Number of channels.
     //
-    mux_fprintf(fp, T("%d\n"), num_channels);
+    mux_fprintf(fp, T("%d\n"), static_cast<int>(mudstate.channel_names.size()));
     for (auto it = mudstate.channel_names.begin(); it != mudstate.channel_names.end(); ++it)
     {
         const auto ch = it->second;
@@ -1436,10 +1211,10 @@ void save_comsystem(FILE* fp)
         // Count the number of 'valid' users to dump.
         //
         int number_of_valid_users = 0;
-        for (j = 0; j < ch->num_users; j++)
+        for (auto &kv : ch->users)
         {
-            user = ch->users[j];
-            if (user->who >= 0 && user->who < mudstate.db_top)
+            const comuser &user = kv.second;
+            if (user.who >= 0 && user.who < mudstate.db_top)
             {
                 number_of_valid_users++;
             }
@@ -1448,22 +1223,20 @@ void save_comsystem(FILE* fp)
         // Number of users on this channel.
         //
         mux_fprintf(fp, T("%d\n"), number_of_valid_users);
-        for (j = 0; j < ch->num_users; j++)
+        for (auto &kv : ch->users)
         {
-            user = ch->users[j];
-            if (user->who >= 0 && user->who < mudstate.db_top)
+            const comuser &user = kv.second;
+            if (user.who >= 0 && user.who < mudstate.db_top)
             {
-                user = ch->users[j];
-
                 // Write user state: dbref, on flag, comtitle status, and gag status.
                 //
-                mux_fprintf(fp, T("%d %d %d %d\n"), user->who, user->bUserIsOn, user->ComTitleStatus, user->bGagJoinLeave);
+                mux_fprintf(fp, T("%d %d %d %d\n"), user.who, user.bUserIsOn, user.ComTitleStatus, user.bGagJoinLeave);
 
                 // Write user title data.
                 //
-                if (user->title[0] != '\0')
+                if (!user.title.empty())
                 {
-                    mux_fprintf(fp, T("t:%s\n"), user->title);
+                    mux_fprintf(fp, T("t:%s\n"), reinterpret_cast<const UTF8 *>(user.title.c_str()));
                 }
                 else
                 {
@@ -1496,7 +1269,7 @@ static void BuildChannelMessage
 
     // Comtitle Check.
     //
-    const bool hasComTitle = (user->title[0] != '\0');
+    const bool hasComTitle = !user->title.empty();
 
     UTF8* mnptr = *messNormal; // Message without comtitle removal.
     UTF8* mncptr = *messNoComtitle; // Message with comtitle removal.
@@ -1520,13 +1293,13 @@ static void BuildChannelMessage
             // Evaluate the comtitle as code.
             //
             UTF8 TempToEval[LBUF_SIZE];
-            mux_strncpy(TempToEval, user->title, sizeof(TempToEval) - 1);
+            mux_strncpy(TempToEval, reinterpret_cast<const UTF8 *>(user->title.c_str()), sizeof(TempToEval) - 1);
             mux_exec(TempToEval, LBUF_SIZE - 1, *messNormal, &mnptr, user->who, user->who, user->who,
                      EV_FCHECK | EV_EVAL | EV_TOP, nullptr, 0);
         }
         else
         {
-            safe_str(user->title, *messNormal, &mnptr);
+            safe_str(reinterpret_cast<const UTF8 *>(user->title.c_str()), *messNormal, &mnptr);
         }
         if (!bSpoof)
         {
@@ -1776,24 +1549,26 @@ void SendChannelMessage
     ch->num_messages++;
     sqlite_wt_channel(ch);
 
-    for (struct comuser* user = ch->on_users; user; user = user->on_next)
+    for (auto &kv : ch->users)
     {
-        if (bJoinLeaveMsg && user->bGagJoinLeave)
+        comuser &user = kv.second;
+        if (bJoinLeaveMsg && user.bGagJoinLeave)
         {
             continue;
         }
-        if (user->bUserIsOn
-            && test_receive_access(user->who, ch))
+        if (user.bConnected
+            && user.bUserIsOn
+            && test_receive_access(user.who, ch))
         {
-            if (user->ComTitleStatus
+            if (user.ComTitleStatus
                 || bSpoof
                 || msgNoComtitle == nullptr)
             {
-                notify_comsys(user->who, executor, msgNormal);
+                notify_comsys(user.who, executor, msgNormal);
             }
             else
             {
-                notify_comsys(user->who, executor, msgNoComtitle);
+                notify_comsys(user.who, executor, msgNoComtitle);
             }
         }
     }
@@ -1903,55 +1678,28 @@ void do_joinchannel(const dbref player, struct channel* ch)
 
     if (!user)
     {
-        int i;
-        if (ch->num_users >= MAX_USERS_PER_CHANNEL)
+        if (static_cast<int>(ch->users.size()) >= MAX_USERS_PER_CHANNEL)
         {
             raw_notify(player, tprintf(T("Too many people on channel %s already."),
                                        ch->name));
             return;
         }
 
-        user = static_cast<comuser*>(MEMALLOC(sizeof(struct comuser)));
-        if (nullptr == user)
-        {
-            raw_notify(player, OUT_OF_MEMORY);
-            return;
-        }
-
-        ch->num_users++;
-        if (ch->num_users >= ch->max_users)
-        {
-            struct comuser** cu;
-            ch->max_users = ch->num_users + 10;
-            cu = static_cast<comuser**>(MEMALLOC(sizeof(struct comuser *) * ch->max_users));
-            ISOUTOFMEMORY(cu);
-
-            for (i = 0; i < (ch->num_users - 1); i++)
-            {
-                cu[i] = ch->users[i];
-            }
-            MEMFREE(ch->users);
-            ch->users = cu;
-        }
-
-        for (i = ch->num_users - 1; 0 < i && player < ch->users[i - 1]->who; --i)
-        {
-            ch->users[i] = ch->users[i - 1];
-        }
-        ch->users[i] = user;
-
-        user->who = player;
-        user->bUserIsOn = true;
-        user->ComTitleStatus = true;
-        user->title = StringClone(T(""));
+        comuser cu;
+        cu.who = player;
+        cu.bUserIsOn = true;
+        cu.ComTitleStatus = true;
 
         // if (Connected(player))&&(isPlayer(player))
         //
         if (UNDEAD(player))
         {
-            user->on_next = ch->on_users;
-            ch->on_users = user;
+            cu.bConnected = true;
         }
+
+        auto result = ch->users.emplace(player, std::move(cu));
+        user = &result.first->second;
+
         sqlite_wt_channel_user(ch->name, user);
         attr = A_COMJOIN;
     }
@@ -2011,7 +1759,7 @@ static void do_comwho_line
     UTF8* msg;
     UTF8* buff = nullptr;
 
-    if (user->title[0] != '\0')
+    if (!user->title.empty())
     {
         // There is a comtitle.
         //
@@ -2020,23 +1768,23 @@ static void do_comwho_line
             buff = unparse_object(player, user->who, false);
             if (ch->type & CHANNEL_SPOOF)
             {
-                msg = tprintf(T("%s as %s"), buff, user->title);
+                msg = tprintf(T("%s as %s"), buff, reinterpret_cast<const UTF8 *>(user->title.c_str()));
             }
             else
             {
-                msg = tprintf(T("%s as %s %s"), buff, user->title, buff);
+                msg = tprintf(T("%s as %s %s"), buff, reinterpret_cast<const UTF8 *>(user->title.c_str()), buff);
             }
         }
         else
         {
             if (ch->type & CHANNEL_SPOOF)
             {
-                msg = user->title;
+                msg = const_cast<UTF8 *>(reinterpret_cast<const UTF8 *>(user->title.c_str()));
             }
             else
             {
                 buff = unparse_object(player, user->who, false);
-                msg = tprintf(T("%s %s"), user->title, buff);
+                msg = tprintf(T("%s %s"), reinterpret_cast<const UTF8 *>(user->title.c_str()), buff);
             }
         }
     }
@@ -2055,42 +1803,42 @@ static void do_comwho_line
 
 void do_comwho(dbref player, struct channel* ch)
 {
-    struct comuser* user;
-
     raw_notify(player, T("-- Players --"));
-    for (user = ch->on_users; user; user = user->on_next)
+    for (auto &kv : ch->users)
     {
-        if (isPlayer(user->who))
+        comuser &user = kv.second;
+        if (isPlayer(user.who))
         {
-            if (Connected(user->who)
-                && (!Hidden(user->who)
+            if (Connected(user.who)
+                && (!Hidden(user.who)
                     || Wizard_Who(player)
                     || See_Hidden(player)))
             {
-                if (user->bUserIsOn)
+                if (user.bUserIsOn)
                 {
-                    do_comwho_line(player, ch, user);
+                    do_comwho_line(player, ch, &user);
                 }
             }
-            else if (!Hidden(user->who))
+            else if (!Hidden(user.who))
             {
-                do_comdisconnectchannel(user->who, ch->name);
+                do_comdisconnectchannel(user.who, ch->name);
             }
         }
     }
     raw_notify(player, T("-- Objects --"));
-    for (user = ch->on_users; user; user = user->on_next)
+    for (auto &kv : ch->users)
     {
-        if (!isPlayer(user->who))
+        comuser &user = kv.second;
+        if (!isPlayer(user.who))
         {
-            if (Going(user->who)
-                && God(Owner(user->who)))
+            if (Going(user.who)
+                && God(Owner(user.who)))
             {
-                do_comdisconnectchannel(user->who, ch->name);
+                do_comdisconnectchannel(user.who, ch->name);
             }
-            else if (user->bUserIsOn)
+            else if (user.bUserIsOn)
             {
-                do_comwho_line(player, ch, user);
+                do_comwho_line(player, ch, &user);
             }
         }
     }
@@ -2305,38 +2053,10 @@ struct comuser* select_user(struct channel* ch, const dbref player)
         return nullptr;
     }
 
-    int first = 0;
-    int last = ch->num_users - 1;
-    int dir = 1;
-    int current = 0;
-
-    while (dir && (first <= last))
+    auto it = ch->users.find(player);
+    if (it != ch->users.end())
     {
-        current = (first + last) / 2;
-        if (ch->users[current] == nullptr)
-        {
-            last--;
-            continue;
-        }
-        if (ch->users[current]->who == player)
-        {
-            dir = 0;
-        }
-        else if (ch->users[current]->who < player)
-        {
-            dir = 1;
-            first = current + 1;
-        }
-        else
-        {
-            dir = -1;
-            last = current - 1;
-        }
-    }
-
-    if (!dir)
-    {
-        return ch->users[current];
+        return &it->second;
     }
     return nullptr;
 }
@@ -2395,7 +2115,6 @@ void do_addcom
         return;
     }
 
-    int i, j;
     struct channel* ch = select_channel(channel);
     if (!ch)
     {
@@ -2410,60 +2129,31 @@ void do_addcom
         return;
     }
     comsys_t* c = get_comsys(executor);
-    if (c->numchannels >= MAX_ALIASES_PER_PLAYER)
+    if (static_cast<int>(c->aliases.size()) >= MAX_ALIASES_PER_PLAYER)
     {
         raw_notify(executor, tprintf(T("Sorry, but you have reached the maximum number of aliases allowed.")));
         return;
     }
-    for (j = 0; j < c->numchannels && (strcmp(reinterpret_cast<char*>(pValidAlias),
-                                              reinterpret_cast<char*>(c->alias) + j * ALIAS_SIZE) > 0); j++)
-    {
-    }
-    if (j < c->numchannels && !strcmp(reinterpret_cast<char*>(pValidAlias),
-                                      reinterpret_cast<char*>(c->alias) + j * ALIAS_SIZE))
-    {
-        const UTF8* p = tprintf(T("That alias is already in use for channel %s."), c->channels[j]);
-        raw_notify(executor, p);
-        return;
-    }
-    if (c->numchannels >= c->maxchannels)
-    {
-        c->maxchannels = c->numchannels + 10;
 
-        const auto na = static_cast<UTF8*>(MEMALLOC(ALIAS_SIZE * c->maxchannels));
-        ISOUTOFMEMORY(na);
-        const auto nc = static_cast<UTF8**>(MEMALLOC(sizeof(UTF8 *) * c->maxchannels));
-        ISOUTOFMEMORY(nc);
-
-        for (i = 0; i < c->numchannels; i++)
-        {
-            mux_strncpy(na + i * ALIAS_SIZE, c->alias + i * ALIAS_SIZE, ALIAS_SIZE - 1);
-            nc[i] = c->channels[i];
-        }
-        if (c->alias)
-        {
-            MEMFREE(c->alias);
-            c->alias = nullptr;
-        }
-        if (c->channels)
-        {
-            MEMFREE(c->channels);
-            c->channels = nullptr;
-        }
-        c->alias = na;
-        c->channels = nc;
-    }
-    int where = c->numchannels++;
-    for (i = where; i > j; i--)
+    // Check if alias already exists.
+    //
+    string sAlias(reinterpret_cast<const char *>(pValidAlias));
+    for (const auto &ca : c->aliases)
     {
-        mux_strncpy(c->alias + i * ALIAS_SIZE, c->alias + (i - 1) * ALIAS_SIZE, ALIAS_SIZE - 1);
-        c->channels[i] = c->channels[i - 1];
+        if (ca.alias == sAlias)
+        {
+            const UTF8* p = tprintf(T("That alias is already in use for channel %s."),
+                reinterpret_cast<const UTF8 *>(ca.channel.c_str()));
+            raw_notify(executor, p);
+            return;
+        }
     }
 
-    where = j;
-    memcpy(c->alias + where * ALIAS_SIZE, pValidAlias, nValidAlias);
-    *(c->alias + where * ALIAS_SIZE + nValidAlias) = '\0';
-    c->channels[where] = StringClone(channel);
+    com_alias newAlias;
+    newAlias.alias = sAlias;
+    newAlias.channel.assign(reinterpret_cast<const char *>(channel));
+    c->aliases.push_back(std::move(newAlias));
+    sort_com_aliases(*c);
 
     sqlite_wt_player_channel(executor, pValidAlias, channel);
 
@@ -2498,14 +2188,17 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
     }
     comsys_t* c = get_comsys(executor);
 
-    for (int i = 0; i < c->numchannels; i++)
+    string sArg(reinterpret_cast<const char *>(arg1));
+    for (auto it = c->aliases.begin(); it != c->aliases.end(); ++it)
     {
-        if (!strcmp(reinterpret_cast<char*>(arg1), reinterpret_cast<char*>(c->alias) + i * ALIAS_SIZE))
+        if (it->alias == sArg)
         {
+            // Count how many aliases map to the same channel.
+            //
             int found = 0;
-            for (int itmp = 0; itmp < c->numchannels; itmp++)
+            for (const auto &ca : c->aliases)
             {
-                if (!strcmp(reinterpret_cast<char*>(c->channels[itmp]), reinterpret_cast<char*>(c->channels[i])))
+                if (ca.channel == it->channel)
                 {
                     found++;
                 }
@@ -2515,26 +2208,22 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
             //
             if (found <= 1)
             {
-                do_delcomchannel(executor, c->channels[i], false);
+                do_delcomchannel(executor,
+                    const_cast<UTF8 *>(reinterpret_cast<const UTF8 *>(it->channel.c_str())),
+                    false);
                 raw_notify(executor, tprintf(T("Alias %s for channel %s deleted."),
-                                             arg1, c->channels[i]));
-                MEMFREE(c->channels[i]);
+                                             arg1,
+                                             reinterpret_cast<const UTF8 *>(it->channel.c_str())));
             }
             else
             {
                 raw_notify(executor, tprintf(T("Alias %s for channel %s deleted."),
-                                             arg1, c->channels[i]));
+                                             arg1,
+                                             reinterpret_cast<const UTF8 *>(it->channel.c_str())));
             }
 
             sqlite_wt_delete_player_channel(executor, arg1);
-            c->channels[i] = nullptr;
-            c->numchannels--;
-
-            for (; i < c->numchannels; i++)
-            {
-                mux_strncpy(c->alias + i * ALIAS_SIZE, c->alias + (i + 1) * ALIAS_SIZE, ALIAS_SIZE - 1);
-                c->channels[i] = c->channels[i + 1];
-            }
+            c->aliases.erase(it);
             return;
         }
     }
@@ -2552,51 +2241,31 @@ void do_delcomchannel(dbref player, UTF8* channel, bool bQuiet)
     }
     else
     {
-        int i;
-        int j = 0;
-        for (i = 0; i < ch->num_users && !j; i++)
+        auto it = ch->users.find(player);
+        if (it != ch->users.end())
         {
-            struct comuser* user = ch->users[i];
-            if (user->who == player)
+            comuser &user = it->second;
+            do_comdisconnectchannel(player, channel);
+            if (!bQuiet)
             {
-                do_comdisconnectchannel(player, channel);
-                if (!bQuiet)
+                if (user.bUserIsOn
+                    && !Hidden(player))
                 {
-                    if (user->bUserIsOn
-                        && !Hidden(player))
-                    {
-                        UTF8 *messNormal, *messNoComtitle;
-                        BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
-                                            ch->header, user, ch->chan_obj,
-                                            T(":has left this channel."), &messNormal,
-                                            &messNoComtitle);
-                        SendChannelMessage(player, ch, messNormal, messNoComtitle, true);
-                    }
-                    raw_notify(player, tprintf(T("You have left channel %s."),
-                                               channel));
+                    UTF8 *messNormal, *messNoComtitle;
+                    BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
+                                        ch->header, &user, ch->chan_obj,
+                                        T(":has left this channel."), &messNormal,
+                                        &messNoComtitle);
+                    SendChannelMessage(player, ch, messNormal, messNoComtitle, true);
                 }
-
-                ChannelMOTD(ch->chan_obj, user->who, A_COMLEAVE);
-                sqlite_wt_delete_channel_user(ch->name, player);
-
-                if (user->title)
-                {
-                    MEMFREE(user->title);
-                    user->title = nullptr;
-                }
-                MEMFREE(user);
-                user = nullptr;
-                j = 1;
+                raw_notify(player, tprintf(T("You have left channel %s."),
+                                           channel));
             }
-        }
 
-        if (j)
-        {
-            ch->num_users--;
-            for (i--; i < ch->num_users; i++)
-            {
-                ch->users[i] = ch->users[i + 1];
-            }
+            ChannelMOTD(ch->chan_obj, user.who, A_COMLEAVE);
+            sqlite_wt_delete_channel_user(ch->name, player);
+
+            ch->users.erase(it);
         }
     }
 }
@@ -2629,12 +2298,7 @@ void do_createchannel(const dbref executor, const dbref caller, dbref enactor, c
         return;
     }
 
-    auto newchannel = static_cast<::channel*>(MEMALLOC(sizeof(struct channel)));
-    if (nullptr == newchannel)
-    {
-        raw_notify(executor, T("Out of memory."));
-        return;
-    }
+    auto newchannel = new ::channel();
 
     size_t nNameNoANSI;
     UTF8* pNameNoANSI;
@@ -2683,7 +2347,7 @@ void do_createchannel(const dbref executor, const dbref caller, dbref enactor, c
     if (select_channel(newchannel->name))
     {
         raw_notify(executor, tprintf(T("Channel %s already exists."), newchannel->name));
-        MEMFREE(newchannel);
+        delete newchannel;
         return;
     }
 
@@ -2693,14 +2357,8 @@ void do_createchannel(const dbref executor, const dbref caller, dbref enactor, c
     newchannel->charge = 0;
     newchannel->charge_who = executor;
     newchannel->amount_col = 0;
-    newchannel->num_users = 0;
-    newchannel->max_users = 0;
-    newchannel->users = nullptr;
-    newchannel->on_users = nullptr;
     newchannel->chan_obj = NOTHING;
     newchannel->num_messages = 0;
-
-    num_channels++;
 
     const vector<UTF8> channel_name(newchannel->name, newchannel->name + nNameNoANSI);
     mudstate.channel_names.insert(make_pair(channel_name, newchannel));
@@ -2754,17 +2412,9 @@ void do_destroychannel
         raw_notify(executor, NOPERM_MESSAGE);
         return;
     }
-    num_channels--;
     sqlite_wt_delete_channel(ch->name);
 
-    for (int j = 0; j < ch->num_users; j++)
-    {
-        MEMFREE(ch->users[j]);
-        ch->users[j] = nullptr;
-    }
-    MEMFREE(ch->users);
-    ch->users = nullptr;
-    MEMFREE(ch);
+    delete ch;
     ch = nullptr;
     mudstate.channel_names.erase(it);
     raw_notify(executor, tprintf(T("Channel %s destroyed."), channel_name));
@@ -2818,7 +2468,7 @@ static void do_listchannels(dbref player, UTF8* pattern)
                             (ch->type & CHANNEL_OBJECT_RECEIVE) ? 'r' : '-',
                             (ch->chan_obj != NOTHING) ? ch->chan_obj : -1,
                             ch->charge_who, ch->charge, ch->amount_col,
-                            ch->num_users, ch->num_messages);
+                            static_cast<int>(ch->users.size()), ch->num_messages);
                 raw_notify(player, temp);
             }
         }
@@ -2953,29 +2603,32 @@ void do_comlist
     raw_notify(executor, T("Alias           Channel            Status   Title"));
 
     const comsys_t* c = get_comsys(executor);
-    for (int i = 0; i < c->numchannels; i++)
+    for (size_t i = 0; i < c->aliases.size(); i++)
     {
-        struct comuser* user = select_user(select_channel(c->channels[i]), executor);
+        const UTF8 *chanName = reinterpret_cast<const UTF8 *>(c->aliases[i].channel.c_str());
+        struct comuser* user = select_user(select_channel(const_cast<UTF8 *>(chanName)), executor);
         if (user)
         {
             if (!bWild
-                || quick_wild(pattern, c->channels[i]))
+                || quick_wild(pattern, chanName))
             {
                 UTF8* p =
                     tprintf(T("%-15.15s %-18.18s %s %s%s %s"),
-                            c->alias + i * ALIAS_SIZE,
-                            c->channels[i],
+                            reinterpret_cast<const UTF8 *>(c->aliases[i].alias.c_str()),
+                            chanName,
                             (user->bUserIsOn ? "on " : "off"),
                             (user->ComTitleStatus ? "con " : "coff"),
                             (user->bGagJoinLeave ? " gag" : ""),
-                            user->title);
+                            reinterpret_cast<const UTF8 *>(user->title.c_str()));
                 raw_notify(executor, p);
             }
         }
         else
         {
             raw_notify(executor, tprintf(
-                           T("Bad Comsys Alias: %s for Channel: %s"), c->alias + i * ALIAS_SIZE, c->channels[i]));
+                           T("Bad Comsys Alias: %s for Channel: %s"),
+                           reinterpret_cast<const UTF8 *>(c->aliases[i].alias.c_str()),
+                           chanName));
         }
     }
     raw_notify(executor, T("-- End of comlist --"));
@@ -3000,20 +2653,9 @@ void do_channelnuke(const dbref player)
 
             if (player == ch->charge_who)
             {
-                num_channels--;
                 sqlite_wt_delete_channel(ch->name);
 
-                if (nullptr != ch->users)
-                {
-                    for (int j = 0; j < ch->num_users; j++)
-                    {
-                        MEMFREE(ch->users[j]);
-                        ch->users[j] = nullptr;
-                    }
-                    MEMFREE(ch->users);
-                    ch->users = nullptr;
-                }
-                MEMFREE(ch);
+                delete ch;
                 ch = nullptr;
 
                 // Removing an element invalidates the iterator, so the search much be restarted.
@@ -3039,9 +2681,11 @@ void do_clearcom(const dbref executor, const dbref caller, const dbref enactor, 
 
     const comsys_t* c = get_comsys(executor);
 
-    for (int i = (c->numchannels) - 1; i > -1; --i)
+    for (int i = static_cast<int>(c->aliases.size()) - 1; i > -1; --i)
     {
-        do_delcom(executor, caller, enactor, 0, 0, c->alias + i * ALIAS_SIZE, nullptr, 0);
+        do_delcom(executor, caller, enactor, 0, 0,
+            const_cast<UTF8 *>(reinterpret_cast<const UTF8 *>(c->aliases[i].alias.c_str())),
+            nullptr, 0);
     }
 }
 
@@ -3070,33 +2714,14 @@ void do_allcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
     }
 
     const comsys_t* c = get_comsys(executor);
-    for (int i = 0; i < c->numchannels; i++)
+    for (size_t i = 0; i < c->aliases.size(); i++)
     {
-        do_processcom(executor, c->channels[i], arg1);
+        do_processcom(executor,
+            const_cast<UTF8 *>(reinterpret_cast<const UTF8 *>(c->aliases[i].channel.c_str())),
+            arg1);
         if (strcmp(reinterpret_cast<char*>(arg1), "who") == 0)
         {
             raw_notify(executor, T(""));
-        }
-    }
-}
-
-void sort_users(const struct channel* ch)
-{
-    bool done = false;
-    const int nu = ch->num_users;
-
-    while (!done)
-    {
-        done = true;
-        for (int i = 0; i < (nu - 1); i++)
-        {
-            if (ch->users[i]->who > ch->users[i + 1]->who)
-            {
-                struct comuser* user = ch->users[i];
-                ch->users[i] = ch->users[i + 1];
-                ch->users[i + 1] = user;
-                done = false;
-            }
         }
     }
 }
@@ -3154,20 +2779,20 @@ void do_channelwho(const dbref executor, const dbref caller, dbref enactor, cons
 
     raw_notify(executor, tprintf(T("-- %s --"), ch->name));
     raw_notify(executor, tprintf(T("%-29.29s %-6.6s %-6.6s"), "Name", "Status", "Player"));
-    for (int j = 0; j < ch->num_users; j++)
+    for (auto &kv : ch->users)
     {
-        const struct comuser* user = ch->users[j];
+        const comuser &user = kv.second;
         if ((bAll
-                || UNDEAD(user->who))
-            && (!Hidden(user->who)
+                || UNDEAD(user.who))
+            && (!Hidden(user.who)
                 || Wizard_Who(executor)
                 || See_Hidden(executor)))
         {
             static UTF8 temp[SBUF_SIZE];
-            UTF8* buff = unparse_object(executor, user->who, false);
+            UTF8* buff = unparse_object(executor, user.who, false);
             mux_sprintf(temp, sizeof(temp), T("%-29.29s %-6.6s %-6.6s"), strip_color(buff),
-                        user->bUserIsOn ? "on " : "off",
-                        isPlayer(user->who) ? "yes" : "no ");
+                        user.bUserIsOn ? "on " : "off",
+                        isPlayer(user.who) ? "yes" : "no ");
             raw_notify(executor, temp);
             free_lbuf(buff);
         }
@@ -3220,45 +2845,34 @@ static void do_comconnectraw_notify(const dbref player, UTF8* chan)
     }
 }
 
-// Insert player into the 'on_users' list for the channel.
+// Set player as connected on the channel.
 //
-static void do_comconnectchannel(dbref player, UTF8* channel, UTF8* alias, int i)
+static void do_comconnectchannel(dbref player, UTF8* channel, const string &alias)
 {
     struct channel* ch = select_channel(channel);
     if (ch)
     {
-        struct comuser* user;
-        for (user = ch->on_users; user && user->who != player;
-             user = user->on_next)
+        struct comuser* user = select_user(ch, player);
+        if (user)
         {
+            user->bConnected = true;
         }
-
-        if (!user)
+        else
         {
-            user = select_user(ch, player);
-            if (user)
-            {
-                user->on_next = ch->on_users;
-                ch->on_users = user;
-            }
-            else
-            {
-                raw_notify(player,
-                           tprintf(T("Bad Comsys Alias: %s for Channel: %s"),
-                                   alias + i * ALIAS_SIZE, channel));
-            }
+            raw_notify(player,
+                       tprintf(T("Bad Comsys Alias: %s for Channel: %s"),
+                               reinterpret_cast<const UTF8 *>(alias.c_str()), channel));
         }
     }
     else
     {
         raw_notify(player, tprintf(T("Bad Comsys Alias: %s for Channel: %s"),
-                                   alias + i * ALIAS_SIZE, channel));
+                                   reinterpret_cast<const UTF8 *>(alias.c_str()), channel));
     }
 }
 
-// Check player for any active channels.  If found, remove the player from
-// the 'on_user' list of the channels.  Transmit disconnection messages
-// as needed.
+// Check player for any active channels.  If found, mark the player as
+// disconnected.  Transmit disconnection messages as needed.
 //
 void do_comdisconnect(const dbref player)
 {
@@ -3267,16 +2881,20 @@ void do_comdisconnect(const dbref player)
         return;  // Module handles via IServerEventsSink::disconnect.
     }
 
-    const comsys_t* c = get_comsys(player);
-
-    for (int i = 0; i < c->numchannels; i++)
+    auto it = comsys_table.find(player);
+    if (it == comsys_table.end())
     {
-        UTF8* CurrentChannel = c->channels[i];
-        bool bFound = false;
+        return;
+    }
+    const comsys_t &c = it->second;
 
-        for (int j = 0; j < i; j++)
+    vector<string> seen;
+    for (const auto &ca : c.aliases)
+    {
+        bool bFound = false;
+        for (const auto &s : seen)
         {
-            if (strcmp(reinterpret_cast<char*>(c->channels[j]), reinterpret_cast<char*>(CurrentChannel)) == 0)
+            if (s == ca.channel)
             {
                 bFound = true;
                 break;
@@ -3285,20 +2903,22 @@ void do_comdisconnect(const dbref player)
 
         if (!bFound)
         {
+            seen.push_back(ca.channel);
+            UTF8 *chanName = const_cast<UTF8 *>(reinterpret_cast<const UTF8 *>(ca.channel.c_str()));
+
             // Process channel removals.
             //
-            do_comdisconnectchannel(player, CurrentChannel);
+            do_comdisconnectchannel(player, chanName);
 
             // Send disconnection messages if necessary.
             //
-            do_comdisconnectraw_notify(player, CurrentChannel);
+            do_comdisconnectraw_notify(player, chanName);
         }
     }
 }
 
-// Locate all active channels for the given player; add the player to the
-// 'on_user' list of the channel and send connect notifications as
-// appropriate.
+// Locate all active channels for the given player; mark the player as
+// connected and send connect notifications as appropriate.
 //
 void do_comconnect(const dbref player)
 {
@@ -3307,17 +2927,20 @@ void do_comconnect(const dbref player)
         return;  // Module handles via IServerEventsSink::connect.
     }
 
-    const comsys_t* c = get_comsys(player);
-
-    for (int i = 0; i < c->numchannels; i++)
+    auto it = comsys_table.find(player);
+    if (it == comsys_table.end())
     {
-        UTF8* CurrentChannel = c->channels[i];
-        bool bFound = false;
-        int j;
+        return;
+    }
+    const comsys_t &c = it->second;
 
-        for (j = 0; j < i; j++)
+    vector<string> seen;
+    for (const auto &ca : c.aliases)
+    {
+        bool bFound = false;
+        for (const auto &s : seen)
         {
-            if (strcmp(reinterpret_cast<char*>(c->channels[j]), reinterpret_cast<char*>(CurrentChannel)) == 0)
+            if (s == ca.channel)
             {
                 bFound = true;
                 break;
@@ -3326,14 +2949,16 @@ void do_comconnect(const dbref player)
 
         if (!bFound)
         {
-            do_comconnectchannel(player, CurrentChannel, c->alias, i);
-            do_comconnectraw_notify(player, CurrentChannel);
+            seen.push_back(ca.channel);
+            UTF8 *chanName = const_cast<UTF8 *>(reinterpret_cast<const UTF8 *>(ca.channel.c_str()));
+            do_comconnectchannel(player, chanName, ca.alias);
+            do_comconnectraw_notify(player, chanName);
         }
     }
 }
 
 
-// Remove the given player from the list of active players for channel.
+// Mark the given player as disconnected on the channel.
 //
 void do_comdisconnectchannel(const dbref player, UTF8* channel)
 {
@@ -3343,23 +2968,10 @@ void do_comdisconnectchannel(const dbref player, UTF8* channel)
         return;
     }
 
-    struct comuser* prevuser = nullptr;
-    for (struct comuser* user = ch->on_users; user;)
+    struct comuser* user = select_user(ch, player);
+    if (user)
     {
-        if (user->who == player)
-        {
-            if (prevuser)
-            {
-                prevuser->on_next = user->on_next;
-            }
-            else
-            {
-                ch->on_users = user->on_next;
-            }
-            return;
-        }
-        prevuser = user;
-        user = user->on_next;
+        user->bConnected = false;
     }
 }
 
@@ -3596,7 +3208,7 @@ bool do_comsystem(const dbref who, UTF8* cmd)
         return true;
     }
 
-    UTF8 alias[ALIAS_SIZE];
+    UTF8 alias[MAX_ALIAS_LEN + 1];
     memcpy(alias, cmd, t - cmd);
     alias[t - cmd] = '\0';
 
@@ -4125,7 +3737,6 @@ FUNCTION(fun_comtitle)
     comsys_t* c = get_comsys(executor);
     struct comuser* user;
 
-    int i;
     bool onchannel = false;
     if (Wizard(executor))
     {
@@ -4133,14 +3744,10 @@ FUNCTION(fun_comtitle)
     }
     else
     {
-        for (i = 0; i < c->numchannels; i++)
+        user = select_user(chn, executor);
+        if (user)
         {
-            user = select_user(chn, executor);
-            if (user)
-            {
-                onchannel = true;
-                break;
-            }
+            onchannel = true;
         }
     }
 
@@ -4150,14 +3757,11 @@ FUNCTION(fun_comtitle)
         return;
     }
 
-    for (i = 0; i < c->numchannels; i++)
+    user = select_user(chn, victim);
+    if (user)
     {
-        user = select_user(chn, victim);
-        if (user)
-        {
-            safe_str(user->title, buff, bufc);
-            return;
-        }
+        safe_str(reinterpret_cast<const UTF8 *>(user->title.c_str()), buff, bufc);
+        return;
     }
     safe_str(T("#-1 OBJECT NOT ON THAT CHANNEL"), buff, bufc);
 }
@@ -4205,13 +3809,17 @@ FUNCTION(fun_comalias)
         return;
     }
 
-    const comsys_t* cc = get_comsys(victim);
-    for (int i = 0; i < cc->numchannels; i++)
+    auto it = comsys_table.find(victim);
+    if (it != comsys_table.end())
     {
-        if (!strcmp(reinterpret_cast<char*>(fargs[1]), reinterpret_cast<char*>(cc->channels[i])))
+        const comsys_t &cc = it->second;
+        for (const auto &ca : cc.aliases)
         {
-            safe_str(cc->alias + i * ALIAS_SIZE, buff, bufc);
-            return;
+            if (ca.channel == reinterpret_cast<const char *>(fargs[1]))
+            {
+                safe_str(reinterpret_cast<const UTF8 *>(ca.alias.c_str()), buff, bufc);
+                return;
+            }
         }
     }
     safe_str(T("#-1 OBJECT NOT ON THAT CHANNEL"), buff, bufc);
@@ -4302,37 +3910,11 @@ static void clear_runtime_comsys_data(void)
     for (auto it = mudstate.channel_names.begin(); it != mudstate.channel_names.end(); ++it)
     {
         channel *ch = it->second;
-        if (nullptr != ch->users)
-        {
-            for (int j = 0; j < ch->num_users; j++)
-            {
-                if (ch->users[j] && ch->users[j]->title)
-                {
-                    MEMFREE(ch->users[j]->title);
-                    ch->users[j]->title = nullptr;
-                }
-                MEMFREE(ch->users[j]);
-                ch->users[j] = nullptr;
-            }
-            MEMFREE(ch->users);
-            ch->users = nullptr;
-        }
-        MEMFREE(ch);
+        delete ch;
     }
     mudstate.channel_names.clear();
 
-    for (int i = 0; i < NUM_COMSYS; i++)
-    {
-        comsys_t *c = comsys_table[i];
-        while (c)
-        {
-            comsys_t *next = c->next;
-            destroy_comsys(c);
-            c = next;
-        }
-        comsys_table[i] = nullptr;
-    }
-    num_channels = 0;
+    comsys_table.clear();
 }
 
 bool sqlite_sync_comsys(void)
@@ -4362,15 +3944,15 @@ bool sqlite_sync_comsys(void)
             return false;
         }
 
-        for (int j = 0; j < ch->num_users; j++)
+        for (auto &kv : ch->users)
         {
-            struct comuser *user = ch->users[j];
-            if (user->who >= 0 && user->who < mudstate.db_top)
+            comuser &user = kv.second;
+            if (user.who >= 0 && user.who < mudstate.db_top)
             {
-                if (!sqldb.SyncChannelUser(ch->name, user->who,
-                    user->bUserIsOn, user->ComTitleStatus,
-                    user->bGagJoinLeave,
-                    user->title ? user->title : T("")))
+                if (!sqldb.SyncChannelUser(ch->name, user.who,
+                    user.bUserIsOn, user.ComTitleStatus,
+                    user.bGagJoinLeave,
+                    reinterpret_cast<const UTF8 *>(user.title.c_str())))
                 {
                     sqldb.Rollback();
                     return false;
@@ -4381,28 +3963,25 @@ bool sqlite_sync_comsys(void)
 
     // Sync player channel aliases.
     //
-    for (int i = 0; i < NUM_COMSYS; i++)
+    for (auto &kv : comsys_table)
     {
-        comsys_t *c = comsys_table[i];
-        while (c)
+        const comsys_t &c = kv.second;
+        for (const auto &ca : c.aliases)
         {
-            for (int j = 0; j < c->numchannels; j++)
+            // Skip orphaned aliases for channels that no longer exist.
+            //
+            if (nullptr == select_channel(
+                const_cast<UTF8 *>(reinterpret_cast<const UTF8 *>(ca.channel.c_str()))))
             {
-                // Skip orphaned aliases for channels that no longer exist.
-                //
-                if (nullptr == select_channel(c->channels[j]))
-                {
-                    continue;
-                }
-                if (!sqldb.SyncPlayerChannel(c->who,
-                    c->alias + j * ALIAS_SIZE,
-                    c->channels[j]))
-                {
-                    sqldb.Rollback();
-                    return false;
-                }
+                continue;
             }
-            c = c->next;
+            if (!sqldb.SyncPlayerChannel(c.who,
+                reinterpret_cast<const UTF8 *>(ca.alias.c_str()),
+                reinterpret_cast<const UTF8 *>(ca.channel.c_str())))
+            {
+                sqldb.Rollback();
+                return false;
+            }
         }
     }
 
@@ -4447,8 +4026,7 @@ int sqlite_load_comsys(void)
         int type, int temp1, int temp2, int charge, int charge_who,
         int amount_col, int num_messages, int chan_obj)
     {
-        auto ch = static_cast<struct channel *>(MEMALLOC(sizeof(struct channel)));
-        ISOUTOFMEMORY(ch);
+        auto ch = new channel();
 
         mux_strncpy(ch->name, name, MAX_CHANNEL_LEN);
         mux_strncpy(ch->header, header, MAX_HEADER_LEN);
@@ -4460,15 +4038,10 @@ int sqlite_load_comsys(void)
         ch->amount_col = amount_col;
         ch->num_messages = num_messages;
         ch->chan_obj = chan_obj;
-        ch->num_users = 0;
-        ch->max_users = 0;
-        ch->users = nullptr;
-        ch->on_users = nullptr;
 
         size_t nName = strlen(reinterpret_cast<const char *>(ch->name));
         vector<UTF8> channel_name_vector(ch->name, ch->name + nName);
         mudstate.channel_names.insert(make_pair(channel_name_vector, ch));
-        num_channels++;
     }))
     {
         clear_runtime_comsys_data();
@@ -4494,54 +4067,28 @@ int sqlite_load_comsys(void)
             return;
         }
 
-        // Grow user array if needed.
-        //
-        if (ch->num_users >= ch->max_users)
+        comuser cu;
+        cu.who = who;
+        cu.bUserIsOn = is_on;
+        cu.ComTitleStatus = comtitle_status;
+        cu.bGagJoinLeave = gag_join_leave;
+        cu.title.assign(reinterpret_cast<const char *>(title));
+
+        auto result = ch->users.emplace(who, std::move(cu));
+        comuser &user = result.first->second;
+
+        if (!(isPlayer(user.who))
+            && !(Going(user.who)
+                && (God(Owner(user.who)))))
         {
-            int newmax = ch->max_users + 10;
-            auto newusers = static_cast<comuser **>(calloc(newmax, sizeof(struct comuser *)));
-            ISOUTOFMEMORY(newusers);
-            if (ch->users)
-            {
-                memcpy(newusers, ch->users, ch->num_users * sizeof(struct comuser *));
-                free(ch->users);
-            }
-            ch->users = newusers;
-            ch->max_users = newmax;
+            do_joinchannel(user.who, ch);
         }
-
-        auto *user = static_cast<struct comuser *>(MEMALLOC(sizeof(struct comuser)));
-        ISOUTOFMEMORY(user);
-
-        user->who = who;
-        user->bUserIsOn = is_on;
-        user->ComTitleStatus = comtitle_status;
-        user->bGagJoinLeave = gag_join_leave;
-        user->title = StringClone(title);
-        user->on_next = nullptr;
-
-        ch->users[ch->num_users++] = user;
-
-        if (!(isPlayer(user->who))
-            && !(Going(user->who)
-                && (God(Owner(user->who)))))
-        {
-            do_joinchannel(user->who, ch);
-        }
-        user->on_next = ch->on_users;
-        ch->on_users = user;
+        user.bConnected = true;
     }))
     {
         clear_runtime_comsys_data();
         mudstate.bSQLiteLoading = false;
         return -1;
-    }
-
-    // Sort users on each channel.
-    //
-    for (auto it = mudstate.channel_names.begin(); it != mudstate.channel_names.end(); ++it)
-    {
-        sort_users(it->second);
     }
 
     // Load player channel aliases.
@@ -4551,36 +4098,21 @@ int sqlite_load_comsys(void)
     //
     struct PlayerAliasEntry
     {
-        UTF8 alias[ALIAS_SIZE];
-        UTF8 *channel_name;
+        string alias;
+        string channel_name;
     };
     std::map<int, std::vector<PlayerAliasEntry>> player_aliases;
-    auto free_player_aliases = [&player_aliases]()
-    {
-        for (auto &pa : player_aliases)
-        {
-            for (auto &e : pa.second)
-            {
-                if (e.channel_name)
-                {
-                    MEMFREE(e.channel_name);
-                    e.channel_name = nullptr;
-                }
-            }
-        }
-        player_aliases.clear();
-    };
 
     if (!sqldb.LoadAllPlayerChannels([&player_aliases](int who, const UTF8 *alias,
         const UTF8 *channel_name)
     {
         PlayerAliasEntry entry;
-        mux_strncpy(entry.alias, alias, ALIAS_SIZE - 1);
-        entry.channel_name = StringClone(channel_name);
-        player_aliases[who].push_back(entry);
+        entry.alias.assign(reinterpret_cast<const char *>(alias));
+        entry.channel_name.assign(reinterpret_cast<const char *>(channel_name));
+        player_aliases[who].push_back(std::move(entry));
     }))
     {
-        free_player_aliases();
+        player_aliases.clear();
         clear_runtime_comsys_data();
         mudstate.bSQLiteLoading = false;
         return -1;
@@ -4593,33 +4125,21 @@ int sqlite_load_comsys(void)
 
         if (!Good_obj(who))
         {
-            for (auto &e : entries)
-            {
-                MEMFREE(e.channel_name);
-            }
             continue;
         }
 
-        comsys_t *c = create_new_comsys();
-        c->who = who;
-        c->numchannels = static_cast<int>(entries.size());
-        c->maxchannels = c->numchannels;
+        comsys_t c;
+        c.who = who;
 
-        if (c->maxchannels > 0)
+        for (auto &e : entries)
         {
-            c->alias = static_cast<UTF8 *>(MEMALLOC(c->maxchannels * ALIAS_SIZE));
-            ISOUTOFMEMORY(c->alias);
-            c->channels = static_cast<UTF8 **>(MEMALLOC(sizeof(UTF8 *) * c->maxchannels));
-            ISOUTOFMEMORY(c->channels);
-
-            for (int j = 0; j < c->numchannels; j++)
-            {
-                mux_strncpy(c->alias + j * ALIAS_SIZE, entries[j].alias, ALIAS_SIZE - 1);
-                c->channels[j] = entries[j].channel_name;
-            }
-            sort_com_aliases(c);
+            com_alias ca;
+            ca.alias = std::move(e.alias);
+            ca.channel = std::move(e.channel_name);
+            c.aliases.push_back(std::move(ca));
         }
-        add_comsys(c);
+        sort_com_aliases(c);
+        comsys_table[who] = std::move(c);
     }
 
     mudstate.bSQLiteLoading = false;
