@@ -5377,6 +5377,25 @@ BXOR()
 
   Related Topics: shl(), shr(), band(), bnand(), bor().
 
+& BOUND()
+BOUND()
+
+  FUNCTION: bound(<value>, <min>[, <max>])
+
+  Clamps a value to a range. If <value> is less than <min>, returns <min>.
+  If <max> is given and <value> is greater than <max>, returns <max>.
+  Otherwise returns <value>.
+
+  Examples:
+    > say bound(5,1,10)
+    You say, "5"
+    > say bound(-3,0,100)
+    You say, "0"
+    > say bound(50,0,10)
+    You say, "10"
+
+  Related Topics: min(), max().
+
 & CAND()
 CAND()
 
@@ -9735,6 +9754,22 @@ LINK_OK
 
   Related Topics: @link, LINKING
 
+& LINSERT()
+LINSERT()
+
+  FUNCTION: linsert(<list>, <position>, <item>[, <sep>])
+
+  Inserts <item> at the 0-based <position> in <list>. If <position> is
+  greater than the length of the list, <item> is appended at the end.
+
+  Examples:
+    > say linsert(a b c,1,X)
+    You say, "a X b c"
+    > say linsert(a b c,0,X)
+    You say, "X a b c"
+
+  Related Topics: lreplace(), insert(), replace().
+
 & LIST()
 LIST()
 
@@ -9782,6 +9817,20 @@ LISTENING
     test says "I got a foo with bar!."
 
   Related Topics: @ahear, @listen, @set.
+
+& LISTQ()
+LISTQ()
+
+  FUNCTION: listq()
+
+  Returns a space-separated list of all currently set q-registers (0-9,
+  A-Z). Only registers that have non-empty values are listed.
+
+  Examples:
+    > think setq(0,hello)[setq(1,world)][listq()]
+    0 1
+
+  Related Topics: unsetq(), setr(), setq(), r().
 
 & LISTRLEVELS()
 LISTRLEVELS()
@@ -10312,6 +10361,19 @@ LPOS()
     > say lpos(a-bc-def-g,-)
     You say, "1 4 8"
 
+& LPLAYERS()
+LPLAYERS()
+
+  FUNCTION: lplayers(<object>)
+
+  Returns a space-separated list of dbref numbers of all connected players
+  in the contents of <object>.
+
+  Examples:
+    > say lplayers(here)
+
+  Related Topics: lthings(), nplayers(), lcon().
+
 & LRAND()
 LRAND()
 
@@ -10325,6 +10387,19 @@ LRAND()
   in the range 3 - 6 (i.e., 3, 4, 5, or 6), such as '4 6 3 5 6'.
 
   Related Topics: die(), lnum(), pickrand(), rand(), shuffle()
+
+& LREPLACE()
+LREPLACE()
+
+  FUNCTION: lreplace(<list>, <position>, <newvalue>[, <sep>])
+
+  Replaces the element at 0-based <position> in <list> with <newvalue>.
+
+  Examples:
+    > say lreplace(a b c,1,X)
+    You say, "a X c"
+
+  Related Topics: linsert(), replace().
 
 & LREST()
 LREST()
@@ -10416,6 +10491,19 @@ LTE()
     You say, "1"
 
   Related Topics: BOOLEAN VALUES, lt(), gte(), gt(), eq(), neq().
+
+& LTHINGS()
+LTHINGS()
+
+  FUNCTION: lthings(<object>)
+
+  Returns a space-separated list of dbref numbers of all things in the
+  contents of <object>.
+
+  Examples:
+    > say lthings(here)
+
+  Related Topics: lplayers(), nthings(), lcon().
 
 & LWHO()
 LWHO()
@@ -10909,6 +10997,37 @@ MAX()
 
   Related Topics: lmax(), lmax(), min()
 
+& MEAN()
+MEAN()
+
+  FUNCTION: mean(<number>[, <number>, ...])
+
+  Returns the arithmetic mean (average) of all arguments.
+
+  Examples:
+    > say mean(1,2,3)
+    You say, "2"
+    > say mean(10,20)
+    You say, "15"
+
+  Related Topics: median(), stddev().
+
+& MEDIAN()
+MEDIAN()
+
+  FUNCTION: median(<number>[, <number>, ...])
+
+  Returns the median of all arguments. For an odd count, returns the middle
+  value. For an even count, returns the average of the two middle values.
+
+  Examples:
+    > say median(1,3,5)
+    You say, "3"
+    > say median(1,2,3,4)
+    You say, "2.5"
+
+  Related Topics: mean(), stddev().
+
 & ME
 ME
 
@@ -11358,6 +11477,19 @@ NAME()
 
   Related Topics: fullname().
 
+& NCON()
+NCON()
+
+  FUNCTION: ncon(<object>)
+
+  Returns the count of all objects in the contents of <object>. Requires
+  permission to examine the object.
+
+  Examples:
+    > say ncon(here)
+
+  Related Topics: nexits(), nplayers(), nthings(), lcon().
+
 & NEARBY()
 NEARBY()
 
@@ -11397,6 +11529,18 @@ NEWS
   COMMAND: news [<topic>]
 
   Shows you the current news for the MUX.
+
+& NEXITS()
+NEXITS()
+
+  FUNCTION: nexits(<object>)
+
+  Returns the count of exits from <object>.
+
+  Examples:
+    > say nexits(here)
+
+  Related Topics: ncon(), nplayers(), nthings(), lexits().
 
 & NEXT()
 NEXT()
@@ -11488,6 +11632,30 @@ NO_COMMAND
   be set NO_COMMAND.
 
   Related Topics:
+
+& NPLAYERS()
+NPLAYERS()
+
+  FUNCTION: nplayers(<object>)
+
+  Returns the count of connected players in the contents of <object>.
+
+  Examples:
+    > say nplayers(here)
+
+  Related Topics: ncon(), nexits(), nthings(), lplayers().
+
+& NTHINGS()
+NTHINGS()
+
+  FUNCTION: nthings(<object>)
+
+  Returns the count of things in the contents of <object>.
+
+  Examples:
+    > say nthings(here)
+
+  Related Topics: ncon(), nexits(), nplayers(), lthings().
 
 & NULL()
 NULL()
@@ -14221,6 +14389,20 @@ STATS()
 
   Related Topics: garbage, @stats.
 
+& STDDEV()
+STDDEV()
+
+  FUNCTION: stddev(<number>, <number>[, <number>, ...])
+
+  Returns the sample standard deviation of all arguments. Requires at
+  least 2 arguments. Uses Welford's online algorithm.
+
+  Examples:
+    > say stddev(2,4,4,4,5,5,7,9)
+    You say, "2"
+
+  Related Topics: mean(), median().
+
 & STEP()
 STEP()
 
@@ -14270,6 +14452,37 @@ STRCAT()
   "foobarbazblech".
 
   Related Topics:
+
+& STRDELETE()
+STRDELETE()
+
+  FUNCTION: strdelete(<string>, <start>, <count>)
+
+  Deletes <count> characters from <string> starting at 0-based position
+  <start>.
+
+  Examples:
+    > say strdelete(abcdef,2,3)
+    You say, "abf"
+    > say strdelete(hello,0,1)
+    You say, "ello"
+
+  Related Topics: strinsert(), strreplace(), mid().
+
+& STRINSERT()
+STRINSERT()
+
+  FUNCTION: strinsert(<string>, <position>, <insertion>)
+
+  Inserts <insertion> into <string> at 0-based character position.
+
+  Examples:
+    > say strinsert(abcdef,3,XY)
+    You say, "abcXYdef"
+    > say strinsert(hello,0,say )
+    You say, "say hello"
+
+  Related Topics: strdelete(), strreplace().
 
 & STRIP()
 STRIP()
@@ -14404,6 +14617,21 @@ STRMEM()
   but strlen() would return 1.
 
   Related Topics: strlen(), UNICODE.
+
+& STRREPLACE()
+STRREPLACE()
+
+  FUNCTION: strreplace(<string>, <start>, <count>, <replacement>)
+
+  Replaces <count> characters starting at 0-based <start> with
+  <replacement>. The replacement can be a different length than the
+  original substring.
+
+  Examples:
+    > say strreplace(abcdef,2,3,XY)
+    You say, "abXYf"
+
+  Related Topics: strdelete(), strinsert().
 
 & STRTRUNC()
 & LEFT()
@@ -15328,6 +15556,22 @@ UNINSPECTED
 
   Related Topics:
 
+& UNIQUE()
+UNIQUE()
+
+  FUNCTION: unique(<list>[, <sorttype>[, <sep>[, <osep>]]])
+
+  Returns <list> with duplicate elements removed, keeping the first
+  occurrence of each.
+
+  Examples:
+    > say unique(a b a c b d)
+    You say, "a b c d"
+    > say unique(3 1 2 1 3)
+    You say, "3 1 2"
+
+  Related Topics: setunion(), setdiff(), setinter().
+
 & UNPACK()
 UNPACK()
 
@@ -15353,6 +15597,20 @@ UNPACK()
     15
 
   Related Topics: baseconv(), pack().
+
+& UNSETQ()
+UNSETQ()
+
+  FUNCTION: unsetq([<register>[, <register>, ...]])
+
+  Clears the specified q-registers. If no arguments are given, clears all
+  q-registers (0-9, a-z).
+
+  Examples:
+    > think setq(0,hello)[unsetq(0)][r(0)]
+    (empty)
+
+  Related Topics: listq(), setq(), setr(), r().
 
 & USE
 USE
