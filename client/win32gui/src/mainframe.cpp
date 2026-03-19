@@ -5,6 +5,7 @@
 #include <commdlg.h>
 #include <sstream>
 #include <algorithm>
+#include <regex>
 
 #pragma comment(lib, "comdlg32.lib")
 
@@ -315,16 +316,100 @@ void CMainFrame::HandleSlashCommand(const std::string& input) {
     } else if (cmd == "vars") {
         if (vars.empty()) { sys("% No variables."); return; }
         for (auto& [k, v] : vars) sys("  " + k + " = " + v);
+    } else if (cmd == "def") {
+        // /def [name] -t'pattern' [-p pri] [-n shots] [-g] [-h] [-s'find/replace'] [-c class] body
+        std::string rest = input.substr(input.find(' ') + 1);
+        Macro m;
+        std::string err;
+        if (!parse_def(rest, m, err)) {
+            sys("% Error: " + err);
+        } else {
+            macros.define(std::move(m));
+            sys("% Defined: " + rest);
+        }
+    } else if (cmd == "undef") {
+        if (args.size() >= 2) {
+            if (macros.undef(args[1])) sys("% Removed: " + args[1]);
+            else sys("% No macro: " + args[1]);
+        } else sys("% Usage: /undef <name>");
+    } else if (cmd == "list") {
+        auto& all = macros.all();
+        if (all.empty()) { sys("% No macros."); return; }
+        for (auto& m : all) {
+            std::string d = "  " + m.name;
+            if (!m.trigger.empty()) d += " -t'" + m.trigger + "'";
+            if (m.gag) d += " -g";
+            if (m.hilite) d += " -h";
+            if (!m.substitute_find.empty()) d += " -s'" + m.substitute_find + "/" + m.substitute_replace + "'";
+            if (!m.line_class.empty()) d += " -c" + m.line_class;
+            if (m.priority) d += " -p" + std::to_string(m.priority);
+            if (m.shots >= 0) d += " -n" + std::to_string(m.shots);
+            if (!m.body.empty()) d += " = " + m.body;
+            sys(d);
+        }
+    } else if (cmd == "repeat") {
+        // /repeat name seconds command
+        if (args.size() < 4) {
+            sys("% Usage: /repeat <name> <seconds> <command>");
+            return;
+        }
+        int ms = 0;
+        try { ms = (int)(std::stod(args[2]) * 1000); } catch (...) {}
+        if (ms <= 0) { sys("% Invalid interval."); return; }
+        std::string tcmd;
+        for (size_t i = 3; i < args.size(); i++) {
+            if (i > 3) tcmd += " ";
+            tcmd += args[i];
+        }
+        timers.add(args[1], tcmd, ms);
+        sys("% Timer '" + args[1] + "': every " + args[2] + "s");
+    } else if (cmd == "killtimer") {
+        if (args.size() >= 2) {
+            if (timers.remove(args[1])) sys("% Timer '" + args[1] + "' removed.");
+            else sys("% No timer: " + args[1]);
+        } else sys("% Usage: /killtimer <name>");
+    } else if (cmd == "listtimers") {
+        auto& all = timers.all();
+        if (all.empty()) { sys("% No timers."); return; }
+        for (auto& t : all) {
+            std::string d = "  " + t.name + " every " +
+                std::to_string(t.interval_ms / 1000) + "s";
+            if (t.shots >= 0) d += " (" + std::to_string(t.shots) + " left)";
+            d += " = " + t.command;
+            sys(d);
+        }
+    } else if (cmd == "log") {
+        if (active_tab < 0) return;
+        auto& tc = tab_states[active_tab];
+        if (!tc->conn) { sys("% Not connected."); return; }
+        if (args.size() < 2) {
+            if (tc->conn->is_logging()) {
+                tc->conn->stop_log();
+                sys("% Logging stopped.");
+            } else {
+                sys("% Usage: /log <filename> | /log (to stop)");
+            }
+        } else {
+            if (tc->conn->start_log(args[1])) sys("% Logging to " + args[1]);
+            else sys("% Failed to open: " + args[1]);
+        }
     } else if (cmd == "help") {
         sys("% Commands:");
-        sys("%   /hook <name> <event> = <cmd>   - Define hook");
-        sys("%   /unhook <name>                 - Remove hook");
-        sys("%   /hooks                         - List hooks");
-        sys("%   /spawn [add|remove|list]       - Output routing");
-        sys("%   /set <var> <value>             - Set variable");
-        sys("%   /unset <var>                   - Remove variable");
-        sys("%   /vars                          - List variables");
-        sys("%   /help                          - This help");
+        sys("%   /def [name] -t'pat' [-g] [-h] [-s'f/r'] body - Define trigger");
+        sys("%   /undef <name>                 - Remove trigger");
+        sys("%   /list                         - List triggers");
+        sys("%   /repeat <name> <sec> <cmd>    - Create timer");
+        sys("%   /killtimer <name>             - Remove timer");
+        sys("%   /listtimers                   - List timers");
+        sys("%   /log [filename]               - Toggle logging");
+        sys("%   /hook <name> <event> = <cmd>  - Define hook");
+        sys("%   /unhook <name>                - Remove hook");
+        sys("%   /hooks                        - List hooks");
+        sys("%   /spawn [add|remove|list]      - Output routing");
+        sys("%   /set <var> <value>            - Set variable");
+        sys("%   /unset <var>                  - Remove variable");
+        sys("%   /vars                         - List variables");
+        sys("%   /help                         - This help");
         sys("% Also: File > Connect, File > Worlds, Edit > Find");
     } else {
         // Not a local command — send to server (some MUDs use / commands)
@@ -373,23 +458,33 @@ void CMainFrame::OnIocpCompletion(IocpMsg* msg) {
         if (tab_states[i]->conn.get() == msg->conn) {
             for (auto& line : lines) {
                 msg->conn->add_to_scrollback(line);
-                tab_states[i]->buffer.append(line);
 
-                // Route to matching spawns
-                auto matched = spawns.match(line);
-                for (auto& path : matched) {
-                    auto& sl = spawn_lines[tab_states[i]->name][path];
-                    sl.push_back(line);
-                    while (sl.size() > 20000) sl.pop_front();
+                // Check triggers
+                std::string display = line;
+                TriggerResult tr = CheckTriggers(display);
+
+                if (!tr.gagged) {
+                    tab_states[i]->buffer.append(display);
+                }
+
+                // Route to matching spawns (only if not gagged)
+                if (!tr.gagged) {
+                    auto matched = spawns.match(display);
+                    for (auto& path : matched) {
+                        auto& sl = spawn_lines[tab_states[i]->name][path];
+                        sl.push_back(display);
+                        while (sl.size() > 20000) sl.pop_front();
+                    }
                 }
             }
 
             if (!msg->conn->is_connected()) {
                 tab_states[i]->buffer.append("% Connection lost.");
-                // Fire DISCONNECT hooks
+                // Fire DISCONNECT hooks and cancel timers
                 for (auto& cmd : hooks.fire_event("DISCONNECT")) {
                     tab_states[i]->buffer.append("% [hook] " + cmd);
                 }
+                timers.cancel_all();
                 tab_states[i]->conn.reset();
                 TabInfo ti;
                 ti.name = tab_states[i]->name;
@@ -468,9 +563,9 @@ LRESULT CMainFrame::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         return 0;
 
     case WM_TIMER:
-        // Periodic: prompt detection and status bar update only.
-        // IOCP completions arrive via WM_APP_IOCP from the IOCP thread.
+        // Periodic: prompt detection, timer firing, and status bar update.
         CheckPrompts();
+        FireTimers();
         UpdateStatusBar();
         return 0;
 
@@ -899,6 +994,53 @@ static INT_PTR CALLBACK ConnDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM) 
         return TRUE;
     }
     return FALSE;
+}
+
+TriggerResult CMainFrame::CheckTriggers(std::string& text) {
+    TriggerResult result;
+    auto matches = macros.match_triggers(text);
+    for (auto* m : matches) {
+        result.matched = true;
+        if (m->gag) result.gagged = true;
+
+        // Substitution
+        if (!m->substitute_find.empty() && !result.gagged) {
+            try {
+                std::regex sub_re(m->substitute_find,
+                                  std::regex::ECMAScript | std::regex::icase);
+                text = std::regex_replace(text, sub_re, m->substitute_replace);
+            } catch (...) {}
+        }
+
+        // Execute body
+        if (!m->body.empty()) {
+            if (m->body[0] == '/') {
+                HandleSlashCommand(m->body);
+            } else if (active_tab >= 0 && active_tab < (int)tab_states.size()) {
+                auto& ts = tab_states[active_tab];
+                if (ts->conn && ts->conn->is_connected()) {
+                    ts->conn->send_line(m->body);
+                }
+            }
+        }
+
+        if (m->shots > 0) m->shots--;
+    }
+    return result;
+}
+
+void CMainFrame::FireTimers() {
+    auto commands = timers.check_and_fire();
+    for (auto& cmd : commands) {
+        if (cmd[0] == '/') {
+            HandleSlashCommand(cmd);
+        } else if (active_tab >= 0 && active_tab < (int)tab_states.size()) {
+            auto& ts = tab_states[active_tab];
+            if (ts->conn && ts->conn->is_connected()) {
+                ts->conn->send_line(cmd);
+            }
+        }
+    }
 }
 
 void CMainFrame::OnCommand(int id) {

@@ -13,6 +13,8 @@
 #include "settings.h"
 #include "hook.h"
 #include "spawn.h"
+#include "macro.h"
+#include "timer.h"
 #include <memory>
 #include <vector>
 #include <string>
@@ -47,6 +49,8 @@ public:
     // Subsystems
     HookDB   hooks;
     SpawnDB  spawns;
+    MacroDB  macros;
+    TimerDB  timers;
     std::unordered_map<std::string, SpawnLines> spawn_lines;
     std::unordered_map<std::string, std::string> vars;
 
@@ -58,6 +62,8 @@ public:
     void SwitchToTab(int index);
     void OnInputSubmitted(const std::string& line);
     void HandleSlashCommand(const std::string& input);
+    TriggerResult CheckTriggers(std::string& text);
+    void FireTimers();
 
     // Networking — IOCP thread posts WM_APP_IOCP to the UI thread.
     static constexpr UINT WM_APP_IOCP = WM_APP + 10;
