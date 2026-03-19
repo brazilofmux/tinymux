@@ -12,6 +12,3 @@
 - [ ] **Intrinsics**: Map additional `co_*` functions as DBT intrinsics.
 - [ ] **Tier 2 gaps**: `ISNUM` float support, `SORT` DUCET collation.
 
-## Observability
-- [ ] **JIT Stats**: Expose per-expression compile time and instruction counts through `jitstats()`.
-
