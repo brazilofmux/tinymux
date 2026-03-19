@@ -370,6 +370,27 @@ INDESTRUCTIBLE
   that a new player at the recycled dbref cannot access the old player's
   private correspondence.
 
+& @DESTROYER
+@DESTROYER
+
+  COMMAND: @destroyer <player> [=<dbref>]
+  ATTRIBUTE: Destroyer
+
+  TinyMUX sets this attribute on a player when a wizard begins destroying
+  the character.  Destroying players can take multiple passes because of
+  @locks, attribute counts, or other clean-up work, so the Destroyer
+  attribute records the dbref of the wizard who initiated the action.
+  The background sweep that finishes GOING players reads the attribute to
+  call destroy_player() on behalf of the recorded dbref.
+
+  Inspect it to learn who started a pending destruction or to determine why
+  a player is stuck GOING.  Clearing the attribute cancels the destruction
+  attempt (the GOING flag is dropped the next time the player is scanned),
+  so edit it only when you intentionally want to abort or force a rerun of
+  the process.
+
+  Related Topics: @destroy.
+
 & @DISABLE
 @DISABLE
 
@@ -1261,6 +1282,58 @@ INDESTRUCTIBLE
      /list           - Lists the current messages.
 
   Related Topics: @listmotd.
+
+& @MAILCURF
+@MAILCURF
+
+  COMMAND: @mailcurf <player> [=<folder-number>]
+  ATTRIBUTE: Mailcurf
+
+  Stores the numeric folder that @mail commands currently use for <player>.
+  The server automatically updates this attribute whenever the player runs
+  @mail/folder, @mail/list, or any command that implicitly changes the active
+  folder.  Wizards can inspect it to diagnose folder-selection issues; avoid
+  editing it except when you intentionally need to reset a corrupted folder
+  pointer (0 is the normal Inbox).
+
+  Related Topics: @mailfolders, MAIL_DATABASE.
+
+& @MAILFLAGS
+@MAILFLAGS
+
+  COMMAND: @mailflags <player> [=<mask>]
+  ATTRIBUTE: Mailflags
+
+  Tracks the state of the message that <player> is currently composing with
+  @mail.  The bitmask contains flags such as M_REPLY, M_FORWARD, and M_URGENT
+  so that the delivery code knows how to finalize the pending mail when the
+  player types '-'/'--', '@mail/send', or '@mail/urgent'.  Normally the
+  attribute is cleared as soon as the message is sent or aborted.
+
+  If a player becomes stuck in the "MAIL: Mail message already in progress."
+  state you can clear Mailflags (and the other composition attributes) to
+  return them to a clean state, but routine gameplay never requires manual
+  edits.
+
+  Related Topics: -, ~, MAIL_DATABASE.
+
+& @MAILFOLDERS
+@MAILFOLDERS
+
+  COMMAND: @mailfolders <player> [=<record-list>]
+  ATTRIBUTE: Mailfolders
+
+  Contains the whitespace-delimited records that describe the player's custom
+  folders.  Each record has the form '<number>:<NAME>:<number>' and the names
+  are stored in upper case.  The @mail/folder command creates, renames, and
+  deletes these records, and set_player_folder() relies on the data to map
+  folder numbers to display names.
+
+  Manually editing this attribute is rarely necessary; if you do, keep the
+  record syntax intact and remember that folder numbers range from 0 through
+  MAX_FOLDERS (15).
+
+  Related Topics: @mailcurf, MAIL_DATABASE.
 
 & @NEWPASSWORD
 @NEWPASSWORD
@@ -5283,6 +5356,7 @@ TOPICS
 
   Help available on the following Topics:
 
+  @DESTROYER         @MAILCURF         @MAILFLAGS        @MAILFOLDERS
   CAUTIONS           CONFIG PARAMETERS  DEBUG FEATURES     FILES
   FLAGS              INHERITANCE        LOGGING            MASTER ROOM
   PERMISSIONS        SEARCH CRITERIA    SIGNALS            SITE LIST
