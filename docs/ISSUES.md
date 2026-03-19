@@ -46,35 +46,23 @@ triggers, not just from the pattern matching comparison.
 `"` in @listen patterns still matches smart quotes.
 **Fix needed**: Both brazil and master/2.13.
 
-### 4. GANL pure virtual on shutdown
-
-**Status**: Fixed on brazil.  Needs backport to master.
-**Fix**: Skip process_output when reason==ServerShutdown in
-onConnectionClose.
-
-### 5. GANL double-free on QUIT
-
-**Status**: Fixed on brazil.  Needs backport to master.
-**Fix**: Route QUIT through ganl_close_connection instead of
-shutdownsock in bsd.cpp.
-
 ---
 
 ## JIT Parity (--enable-jit)
 
-### 6. setq/setr q-register sync
+### 4. setq/setr q-register sync
 
 **Status**: Guarded out (jit_can_handle rejects expressions with setq/setr).
 **Problem**: JIT's setr() stores to internal q-registers, not
 mudstate.global_regs.  Need ECALL-based sync or direct write-through.
 
-### 7. Expression length limit
+### 5. Expression length limit
 
 **Status**: Workaround (nLen < 256 guard).
 **Problem**: Compiler hangs on expressions > ~1200 bytes.  Likely
 quadratic behavior in HIR lowering or codegen.
 
-### 8. SIGABRT on shutdown (intermittent)
+### 6. SIGABRT on shutdown (intermittent)
 
 **Status**: Seen intermittently during smoke tests with JIT enabled.
 **Needs**: Reproduction and stack trace.
@@ -83,7 +71,7 @@ quadratic behavior in HIR lowering or codegen.
 
 ## Design Gaps
 
-### 9. Lua privilege model
+### 7. Lua privilege model
 
 **Status**: Design gap.
 **Affects**: `lua()`, `@lua`, future `@trigger` integration, queued execution.
@@ -94,7 +82,7 @@ trigger routing should compose.
 **Risk**: Privilege semantics can drift into inconsistent special cases
 once Lua is embedded in multiple invocation paths.
 
-### 10. Lua cache/versioning
+### 8. Lua cache/versioning
 
 **Status**: Design gap.
 **Affects**: `lua_cache` and future `code_cache` integration.
