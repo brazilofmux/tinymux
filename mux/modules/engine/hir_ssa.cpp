@@ -24,6 +24,7 @@
 
 #include "hir.h"
 
+#include <climits>
 #include <cstring>
 #include <vector>
 
@@ -80,6 +81,8 @@ void hir_build_cfg(hir_program &h) {
         h.rpo[0] = 0;
         h.rpo_pos[0] = 0;
         h.idom[0] = -1;
+        h.dom_in[0] = 0;
+        h.dom_out[0] = 1;
         return;
     }
 
@@ -202,6 +205,37 @@ static void hir_compute_idom(hir_program &h) {
             }
         }
     }
+}
+
+// ---------------------------------------------------------------
+// DFS timestamps on dominator tree for O(1) dominance queries
+//
+// dominates(a, b) iff dom_in[a] <= dom_in[b] && dom_out[b] <= dom_out[a]
+// ---------------------------------------------------------------
+
+static void dom_dfs(hir_program &h, int b, int &stamp) {
+    h.dom_in[b] = stamp++;
+    for (int c = 0; c < h.n_blocks; c++) {
+        if (h.idom[c] == b && c != b) {
+            dom_dfs(h, c, stamp);
+        }
+    }
+    h.dom_out[b] = stamp++;
+}
+
+static void hir_compute_dom_timestamps(hir_program &h) {
+    // Unreachable blocks get sentinel values that make
+    // hir_dominates() return false for any query involving them.
+    // dom_in = MAX, dom_out = -1 ensures:
+    //   dominates(reachable, unreachable) = false  (dom_in[r] <= MAX but -1 <= dom_out[r] fails)
+    //   dominates(unreachable, anything)  = false  (MAX <= dom_in[x] fails for reachable x)
+    //
+    for (int b = 0; b < h.n_blocks; b++) {
+        h.dom_in[b] = INT_MAX;
+        h.dom_out[b] = -1;
+    }
+    int stamp = 0;
+    dom_dfs(h, 0, stamp);
 }
 
 // ---------------------------------------------------------------
@@ -422,8 +456,9 @@ void hir_ssa_construct(hir_program &h) {
     // Step 1: Compute RPO.
     hir_compute_rpo(h);
 
-    // Step 2: Compute dominator tree.
+    // Step 2: Compute dominator tree + O(1) dominance timestamps.
     hir_compute_idom(h);
+    hir_compute_dom_timestamps(h);
 
     // Step 3: Compute dominance frontiers.
     dom_frontiers dfr;

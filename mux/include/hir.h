@@ -220,6 +220,11 @@ struct hir_program {
     // Dominator tree.
     int idom[HIR_MAX_BLOCKS];           // immediate dominator (-1 = none)
 
+    // DFS timestamps on the dominator tree for O(1) dominance queries.
+    // dominates(a, b) iff dom_in[a] <= dom_in[b] && dom_out[b] <= dom_out[a].
+    int dom_in[HIR_MAX_BLOCKS];
+    int dom_out[HIR_MAX_BLOCKS];
+
     // Final result instruction index.
     int result;
 
@@ -407,6 +412,13 @@ struct hir_program {
 // SSA construction (hir_ssa.cpp).
 void hir_build_cfg(hir_program &h);
 void hir_ssa_construct(hir_program &h);
+
+// O(1) dominance query using DFS timestamps on the dominator tree.
+// Returns true if block blk_d dominates block blk_b.
+inline bool hir_dominates(const hir_program &h, int blk_d, int blk_b) {
+    return h.dom_in[blk_d] <= h.dom_in[blk_b]
+        && h.dom_out[blk_b] <= h.dom_out[blk_d];
+}
 
 // SSA optimization (hir_opt.cpp).
 void hir_const_fold(hir_program &h);

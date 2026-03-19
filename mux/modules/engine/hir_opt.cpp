@@ -536,16 +536,7 @@ static bool is_cse_candidate(hir_kind k) {
     }
 }
 
-static bool dominates(const hir_program &h, int blk_d, int blk_b) {
-    // Does block blk_d dominate block blk_b?
-    if (blk_d == blk_b) return true;
-    int b = blk_b;
-    while (b >= 0) {
-        b = h.idom[b];
-        if (b == blk_d) return true;
-    }
-    return false;
-}
+// dominates() replaced by O(1) hir_dominates() in hir.h
 
 void hir_cse(hir_program &h) {
     // Value table: maps an instruction tuple to a list of instruction indices
@@ -575,7 +566,7 @@ void hir_cse(hir_program &h) {
             // Potential matches found.  Find the first one that dominates i.
             bool found = false;
             for (int j : it->second) {
-                if (dominates(h, h.blk[j], h.blk[i])) {
+                if (hir_dominates(h, h.blk[j], h.blk[i])) {
                     // Replace i with COPY of j.
                     h.kind[i] = HIR_COPY;
                     h.src1[i] = j;
