@@ -15,6 +15,8 @@ data class Trigger(
     val enabled: Boolean = true,
     val substituteFind: String = "",
     val substituteReplace: String = "",
+    val conditions: List<TriggerCondition> = emptyList(),
+    val conditionsAnded: Boolean = true,
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("name", name)
@@ -27,6 +29,12 @@ data class Trigger(
         put("enabled", enabled)
         put("substituteFind", substituteFind)
         put("substituteReplace", substituteReplace)
+        if (conditions.isNotEmpty()) {
+            put("conditions", JSONArray().apply {
+                conditions.forEach { put(it.toJson()) }
+            })
+            put("conditionsAnded", conditionsAnded)
+        }
     }
 
     companion object {
@@ -41,6 +49,10 @@ data class Trigger(
             enabled = obj.optBoolean("enabled", true),
             substituteFind = obj.optString("substituteFind", ""),
             substituteReplace = obj.optString("substituteReplace", ""),
+            conditions = obj.optJSONArray("conditions")?.let { arr ->
+                (0 until arr.length()).mapNotNull { TriggerCondition.fromJson(arr.getJSONObject(it)) }
+            } ?: emptyList(),
+            conditionsAnded = obj.optBoolean("conditionsAnded", true),
         )
     }
 }

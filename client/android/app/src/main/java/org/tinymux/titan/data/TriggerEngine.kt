@@ -25,7 +25,7 @@ class TriggerEngine {
         }
     }
 
-    fun check(line: String): TriggerResult {
+    fun check(line: String, context: ConditionContext = ConditionContext()): TriggerResult {
         var gagged = false
         val commands = mutableListOf<String>()
         var displayLine: String? = null
@@ -35,6 +35,17 @@ class TriggerEngine {
             if (regex == null || trigger.shots == 0) continue
 
             val match = regex.find(line) ?: continue
+
+            // Evaluate composite conditions if present
+            if (trigger.conditions.isNotEmpty()) {
+                val conditionsPassed = if (trigger.conditionsAnded) {
+                    trigger.conditions.all { it.evaluate(line, context) }
+                } else {
+                    trigger.conditions.any { it.evaluate(line, context) }
+                }
+                if (!conditionsPassed) continue
+            }
+
             matched = true
 
             if (trigger.gag) gagged = true

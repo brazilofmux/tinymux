@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CompletableDeferred
 import org.tinymux.titan.data.AppSettings
+import org.tinymux.titan.data.ConditionContext
 import org.tinymux.titan.data.Hook
 import org.tinymux.titan.data.HookRepository
 import org.tinymux.titan.data.McpParser
@@ -193,7 +194,11 @@ fun TitanApp() {
         val tab = tabs.getOrNull(tabIndex) ?: return
         if (tab.mcpParser.processLine(line)) return
 
-        val result = triggerEngine.check(AnsiParser.stripAnsi(line))
+        val context = ConditionContext(
+            isConnected = tab.connection?.connected == true,
+            idleSeconds = 0, // TODO: track idle time
+        )
+        val result = triggerEngine.check(AnsiParser.stripAnsi(line), context)
         if (result.gagged) return
         val display = result.displayLine ?: line
         appendLine(tabIndex, display)

@@ -300,9 +300,14 @@ struct ContentView: View {
 
     private func processServerLine(_ tabIndex: Int, _ line: String) {
         // MCP intercept
-        if let tab = state.tabs[safe: tabIndex], tab.mcpParser.processLine(line) { return }
+        let tab = state.tabs[safe: tabIndex]
+        if tab?.mcpParser.processLine(line) == true { return }
 
-        let result = triggerEngine.check(AnsiParser.stripAnsi(line))
+        let context = ConditionContext(
+            isConnected: tab?.connection?.connected ?? false,
+            idleSeconds: 0
+        )
+        let result = triggerEngine.check(AnsiParser.stripAnsi(line), context: context)
         if result.gagged { return }
         let display = result.displayLine ?? line
         state.appendLine(tabIndex, display)

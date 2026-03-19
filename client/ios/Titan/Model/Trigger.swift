@@ -14,6 +14,8 @@ struct Trigger: Codable, Identifiable {
     var enabled: Bool = true
     var substituteFind: String = ""
     var substituteReplace: String = ""
+    var conditions: [TriggerCondition] = []
+    var conditionsAnded: Bool = true
 }
 
 // MARK: - Trigger Repository
@@ -70,12 +72,20 @@ class TriggerEngine {
         }
     }
 
-    func check(_ line: String) -> TriggerResult {
+    func check(_ line: String, context: ConditionContext = ConditionContext()) -> TriggerResult {
         var result = TriggerResult()
 
         for (trigger, regex) in compiled {
             guard let regex, trigger.shots != 0 else { continue }
             guard let match = try? regex.firstMatch(in: line) else { continue }
+
+            // Evaluate composite conditions if present
+            if !trigger.conditions.isEmpty {
+                let passed = trigger.conditionsAnded
+                    ? trigger.conditions.allSatisfy { $0.evaluate(line: line, context: context) }
+                    : trigger.conditions.contains { $0.evaluate(line: line, context: context) }
+                if !passed { continue }
+            }
 
             result.matched = true
             if trigger.gag { result.gagged = true }
