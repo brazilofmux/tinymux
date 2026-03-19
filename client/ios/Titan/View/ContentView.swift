@@ -7,33 +7,59 @@ struct ContentView: View {
     @State private var historyPos = -1
     @State private var savedInput = ""
 
+    // Subsystems
+    let worldRepo = WorldRepository()
+    let triggerRepo = TriggerRepository()
+    let hookRepo = HookRepository()
+    let settings = AppSettings()
+    @State private var triggerEngine = TriggerEngine()
+    @State private var timerEngine = TimerEngine()
+    @State private var sessionLogger = SessionLogger()
+
     var body: some View {
         VStack(spacing: 0) {
-            // Toolbar
             toolbar
-
-            // Tab bar
             tabBar
-
-            // Find bar (conditional)
-            if state.showFindBar {
-                findBar
-            }
-
-            // Output pane
+            if state.showFindBar { findBar }
             outputPane
-
-            // Input bar
             inputBar
-
-            // Status bar
             statusBar
         }
         .background(Color.black)
         .onAppear {
             state.appendLine(0, "Titan for iOS")
             state.appendLine(0, "Tap Connect or Worlds to get started.")
+            triggerEngine.load(triggerRepo.load())
+            timerEngine.onFire = { _, command in
+                if let conn = state.activeTab?.connection, conn.connected {
+                    conn.sendLine(command)
+                }
+            }
             inputFocused = true
+        }
+        .sheet(isPresented: $state.showConnectSheet) {
+            ConnectSheet(isPresented: $state.showConnectSheet) { host, port, ssl in
+                connectWorld(name: "\(host):\(port)", host: host, port: port, ssl: ssl)
+            }
+        }
+        .sheet(isPresented: $state.showWorldManager) {
+            WorldManagerView(worldRepo: worldRepo) { world in
+                connectWorld(name: world.name, host: world.host, port: world.port,
+                             ssl: world.ssl, loginCommands: world.loginCommands)
+            }
+        }
+        .sheet(isPresented: $state.showTriggerManager) {
+            TriggerManagerView(triggerRepo: triggerRepo) {
+                triggerEngine.load(triggerRepo.load())
+            }
+        }
+        .sheet(isPresented: $state.showSettings) {
+            SettingsView(settings: settings)
+        }
+        .onChange(of: settings.keepScreenOn) { _, newValue in
+            #if os(iOS)
+            UIApplication.shared.isIdleTimerDisabled = newValue
+            #endif
         }
     }
 
@@ -65,9 +91,7 @@ struct ContentView: View {
                 ForEach(Array(state.tabs.enumerated()), id: \.element.id) { index, tab in
                     HStack(spacing: 4) {
                         if tab.hasActivity && index != state.activeTabIndex {
-                            Circle()
-                                .fill(Color.yellow)
-                                .frame(width: 6, height: 6)
+                            Circle().fill(Color.yellow).frame(width: 6, height: 6)
                         }
                         Text(tab.name)
                             .font(.system(size: 12))
@@ -76,7 +100,6 @@ struct ContentView: View {
                                 index == state.activeTabIndex ? .white :
                                 Color(white: 0.63)
                             )
-                        // Close button (not on System tab)
                         if index > 0 {
                             Text("\u{2715}")
                                 .font(.system(size: 10))
@@ -91,11 +114,7 @@ struct ContentView: View {
                         state.activeTabIndex = index
                         state.tabs[index].hasActivity = false
                     }
-
-                    // Separator
-                    Rectangle()
-                        .fill(Color(white: 0.3))
-                        .frame(width: 1, height: 20)
+                    Rectangle().fill(Color(white: 0.3)).frame(width: 1, height: 20)
                 }
             }
         }
@@ -112,28 +131,20 @@ struct ContentView: View {
                 .font(.system(size: 12, design: .monospaced))
                 .foregroundColor(.white)
                 .onSubmit { updateFindMatches() }
-
             if !state.findMatches.isEmpty {
                 Text("\(state.findPos + 1)/\(state.findMatches.count)")
-                    .font(.system(size: 11))
-                    .foregroundColor(Color(white: 0.63))
+                    .font(.system(size: 11)).foregroundColor(Color(white: 0.63))
             } else if !state.findQuery.isEmpty {
-                Text("0/0")
-                    .font(.system(size: 11))
-                    .foregroundColor(Color(white: 0.63))
+                Text("0/0").font(.system(size: 11)).foregroundColor(Color(white: 0.63))
             }
-
             toolbarButton("\u{25B2}") { findPrev() }
             toolbarButton("\u{25BC}") { findNext() }
             toolbarButton("\u{2715}") {
-                state.showFindBar = false
-                state.findQuery = ""
-                state.findMatches = []
-                state.findPos = -1
+                state.showFindBar = false; state.findQuery = ""
+                state.findMatches = []; state.findPos = -1
             }
         }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 2)
+        .padding(.horizontal, 4).padding(.vertical, 2)
         .background(Color(red: 0.1, green: 0.1, blue: 0.18))
     }
 
@@ -146,7 +157,7 @@ struct ContentView: View {
                     let lines = state.activeTab?.lines ?? []
                     ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
                         Text(line)
-                            .font(.system(size: 14, design: .monospaced))
+                            .font(.system(size: CGFloat(settings.fontSize), design: .monospaced))
                             .foregroundColor(Color(white: 0.75))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .id(index)
@@ -157,9 +168,7 @@ struct ContentView: View {
             .textSelection(.enabled)
             .onChange(of: state.activeTab?.lines.count) { _, newCount in
                 if let count = newCount, count > 0 {
-                    withAnimation {
-                        proxy.scrollTo(count - 1, anchor: .bottom)
-                    }
+                    withAnimation { proxy.scrollTo(count - 1, anchor: .bottom) }
                 }
             }
         }
@@ -171,13 +180,18 @@ struct ContentView: View {
         HStack(spacing: 4) {
             TextField("", text: $inputText)
                 .textFieldStyle(.plain)
-                .font(.system(size: 14, design: .monospaced))
+                .font(.system(size: CGFloat(settings.fontSize), design: .monospaced))
                 .foregroundColor(.white)
                 .focused($inputFocused)
                 .onSubmit { handleInput() }
                 .onKeyPress(.upArrow) { historyBack(); return .handled }
                 .onKeyPress(.downArrow) { historyForward(); return .handled }
-
+                .onKeyPress(characters: "f", modifiers: .command) {
+                    state.showFindBar.toggle(); return .handled
+                }
+                .onKeyPress(characters: "l", modifiers: .command) {
+                    state.activeTab?.lines.removeAll(); return .handled
+                }
             toolbarButton("Send") { handleInput() }
         }
         .padding(4)
@@ -193,8 +207,7 @@ struct ContentView: View {
                 .foregroundColor(.white)
             Spacer()
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 2)
+        .padding(.horizontal, 8).padding(.vertical, 2)
         .background(Color(red: 0, green: 0, blue: 0.5))
     }
 
@@ -209,78 +222,22 @@ struct ContentView: View {
         return s
     }
 
-    // MARK: - Actions
+    // MARK: - Server Line Processing (triggers)
 
-    private func handleInput() {
-        let text = inputText.trimmingCharacters(in: .whitespaces)
-        guard !text.isEmpty else { return }
-
-        if let tab = state.activeTab {
-            tab.history.insert(text, at: 0)
-            if tab.history.count > 500 { tab.history.removeLast() }
+    private func processServerLine(_ tabIndex: Int, _ line: String) {
+        let result = triggerEngine.check(AnsiParser.stripAnsi(line))
+        if result.gagged { return }
+        let display = result.hiliteLine ?? line
+        state.appendLine(tabIndex, display)
+        if let conn = state.tabs[safe: tabIndex]?.connection, conn.connected {
+            for cmd in result.commands { conn.sendLine(cmd) }
         }
-        historyPos = -1
-
-        // Slash commands
-        if text.hasPrefix("/") {
-            let trimmed = String(text.dropFirst())
-            let parts = trimmed.split(separator: " ", maxSplits: 1)
-            let cmd = String(parts.first ?? "").lowercased()
-            let args = parts.count > 1 ? String(parts[1]) : ""
-            handleCommand(cmd, args: args)
-            inputText = ""
-            return
-        }
-
-        // Normal input
-        if let conn = state.activeTab?.connection, conn.connected {
-            conn.sendLine(text)
-            if !conn.telnet.remoteEcho {
-                state.appendLine(state.activeTabIndex, "> \(text)")
-            }
-        } else {
-            state.appendLine(state.activeTabIndex, "> \(text)")
-        }
-        inputText = ""
-    }
-
-    private func handleCommand(_ cmd: String, args: String) {
-        let idx = state.activeTabIndex
-        switch cmd {
-        case "connect":
-            let parts = args.split(separator: " ")
-            if parts.isEmpty {
-                state.showConnectSheet = true
-            } else {
-                let host = String(parts[0])
-                let port = parts.count > 1 ? Int(parts[1]) ?? 4201 : 4201
-                let ssl = parts.contains(where: { $0.lowercased() == "ssl" || $0.lowercased() == "tls" })
-                connectWorld(name: "\(host):\(port)", host: host, port: port, ssl: ssl)
-            }
-        case "dc", "disconnect":
-            disconnectActive()
-        case "worlds":
-            state.showWorldManager = true
-        case "triggers", "trig":
-            state.showTriggerManager = true
-        case "find":
-            state.showFindBar = true
-            if !args.isEmpty { state.findQuery = args }
-        case "clear":
-            state.activeTab?.lines.removeAll()
-        case "help":
-            state.appendLine(idx, "% Commands:")
-            state.appendLine(idx, "%   /connect <host> [port] [ssl]  - Connect to a world")
-            state.appendLine(idx, "%   /disconnect, /dc              - Close current connection")
-            state.appendLine(idx, "%   /worlds                       - Open World Manager")
-            state.appendLine(idx, "%   /triggers                     - Open Trigger Manager")
-            state.appendLine(idx, "%   /find <text>                  - Search scrollback")
-            state.appendLine(idx, "%   /clear                        - Clear scrollback")
-            state.appendLine(idx, "%   /help                         - Show this help")
-        default:
-            state.appendLine(idx, "% Unknown command: /\(cmd)  (try /help)")
+        if sessionLogger.active && tabIndex == state.activeTabIndex {
+            sessionLogger.writeLine(AnsiParser.stripAnsi(line))
         }
     }
+
+    // MARK: - Connect
 
     func connectWorld(name: String, host: String, port: Int, ssl: Bool, loginCommands: [String] = []) {
         let tab = WorldTab(name: name)
@@ -290,17 +247,20 @@ struct ContentView: View {
 
         let conn = MudConnection(name: name, host: host, port: port, useSsl: ssl)
         tab.connection = conn
-        conn.onLine = { line in
-            state.appendLine(tabIndex, line)
-        }
+        conn.onLine = { line in processServerLine(tabIndex, line) }
         conn.onConnect = {
             state.appendLine(tabIndex, "% Connected to \(host):\(port)")
             tab.disconnected = false
+            for cmd in hookRepo.fireEvent("CONNECT") { conn.sendLine(cmd) }
             for cmd in loginCommands { conn.sendLine(cmd) }
         }
         conn.onDisconnect = {
             state.appendLine(tabIndex, "% Connection lost.")
             tab.disconnected = true
+            timerEngine.cancelAll()
+            for cmd in hookRepo.fireEvent("DISCONNECT") {
+                state.appendLine(tabIndex, "% [hook] \(cmd)")
+            }
         }
         state.appendLine(tabIndex, "% Connecting to \(host):\(port)\(ssl ? " (ssl)" : "")...")
         conn.connect()
@@ -324,14 +284,192 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Input Handling
+
+    private func handleInput() {
+        let text = inputText.trimmingCharacters(in: .whitespaces)
+        guard !text.isEmpty else { return }
+
+        if let tab = state.activeTab {
+            tab.history.insert(text, at: 0)
+            if tab.history.count > 500 { tab.history.removeLast() }
+        }
+        historyPos = -1
+
+        if text.hasPrefix("/") {
+            let trimmed = String(text.dropFirst())
+            let parts = trimmed.split(separator: " ", maxSplits: 1)
+            let cmd = String(parts.first ?? "").lowercased()
+            let args = parts.count > 1 ? String(parts[1]) : ""
+            handleCommand(cmd, args: args)
+            inputText = ""
+            return
+        }
+
+        if let conn = state.activeTab?.connection, conn.connected {
+            conn.sendLine(text)
+            if !conn.telnet.remoteEcho {
+                state.appendLine(state.activeTabIndex, "> \(text)")
+            }
+        } else {
+            state.appendLine(state.activeTabIndex, "> \(text)")
+        }
+        inputText = ""
+    }
+
+    // MARK: - Commands
+
+    private func handleCommand(_ cmd: String, args: String) {
+        let idx = state.activeTabIndex
+        switch cmd {
+        case "connect":
+            let parts = args.split(separator: " ")
+            if parts.isEmpty { state.showConnectSheet = true }
+            else {
+                let host = String(parts[0])
+                let port = parts.count > 1 ? Int(parts[1]) ?? settings.defaultPort : settings.defaultPort
+                let ssl = parts.contains { $0.lowercased() == "ssl" || $0.lowercased() == "tls" }
+                connectWorld(name: "\(host):\(port)", host: host, port: port, ssl: ssl)
+            }
+        case "dc", "disconnect":
+            disconnectActive()
+        case "worlds":
+            state.showWorldManager = true
+        case "triggers", "trig":
+            state.showTriggerManager = true
+        case "def":
+            let eqPos = args.firstIndex(of: "=")
+            guard let eqPos else {
+                state.appendLine(idx, "% Usage: /def <name> <pattern> = <action>"); return
+            }
+            let before = args[args.startIndex..<eqPos].trimmingCharacters(in: .whitespaces)
+                .split(separator: " ", maxSplits: 1)
+            let body = args[args.index(after: eqPos)...].trimmingCharacters(in: .whitespaces)
+            guard before.count >= 2 else {
+                state.appendLine(idx, "% Usage: /def <name> <pattern> = <action>"); return
+            }
+            let tName = String(before[0]), pattern = String(before[1])
+            do {
+                _ = try Regex(pattern)
+                triggerRepo.add(Trigger(name: tName, pattern: pattern, body: body))
+                triggerEngine.load(triggerRepo.load())
+                state.appendLine(idx, "% Trigger '\(tName)' defined: /\(pattern)/")
+            } catch {
+                state.appendLine(idx, "% Bad pattern: \(error.localizedDescription)")
+            }
+        case "undef":
+            let name = args.trimmingCharacters(in: .whitespaces)
+            guard !name.isEmpty else { state.appendLine(idx, "% Usage: /undef <name>"); return }
+            triggerRepo.remove(name)
+            triggerEngine.load(triggerRepo.load())
+            state.appendLine(idx, "% Trigger '\(name)' removed.")
+        case "find":
+            state.showFindBar = true
+            if !args.isEmpty { state.findQuery = args }
+        case "log":
+            if sessionLogger.active {
+                let file = sessionLogger.currentFile()
+                sessionLogger.stop()
+                state.logActive = false
+                state.appendLine(idx, "% Logging stopped. File: \(file?.lastPathComponent ?? "")")
+            } else {
+                let worldName = state.activeTab?.name ?? "system"
+                let filename = args.trimmingCharacters(in: .whitespaces)
+                let file = sessionLogger.start(worldName: worldName,
+                                               filename: filename.isEmpty ? nil : filename)
+                state.logActive = true
+                state.appendLine(idx, "% Logging to: \(file.lastPathComponent)")
+            }
+        case "repeat":
+            let parts = args.split(separator: " ", maxSplits: 2)
+            guard parts.count >= 3, let seconds = Double(parts[1]), seconds > 0 else {
+                state.appendLine(idx, "% Usage: /repeat <name> <seconds> <command>"); return
+            }
+            let tName = String(parts[0]), command = String(parts[2])
+            timerEngine.add(name: tName, command: command, intervalSeconds: seconds)
+            state.appendLine(idx, "% Timer '\(tName)' set: every \(seconds)s -> \(command)")
+        case "killtimer", "cancel":
+            let name = args.trimmingCharacters(in: .whitespaces)
+            guard !name.isEmpty else { state.appendLine(idx, "% Usage: /killtimer <name>"); return }
+            if timerEngine.remove(name) {
+                state.appendLine(idx, "% Timer '\(name)' cancelled.")
+            } else {
+                state.appendLine(idx, "% No timer named '\(name)'.")
+            }
+        case "timers", "listtimers":
+            let list = timerEngine.list()
+            if list.isEmpty { state.appendLine(idx, "% No active timers.") }
+            else {
+                state.appendLine(idx, "% Active timers:")
+                for t in list {
+                    let shots = t.shotsRemaining < 0 ? "inf" : "\(t.shotsRemaining)"
+                    state.appendLine(idx, "%   \(t.name): every \(t.intervalSeconds)s, shots=\(shots) -> \(t.command)")
+                }
+            }
+        case "hook":
+            let eqPos = args.firstIndex(of: "=")
+            guard let eqPos else {
+                state.appendLine(idx, "% Usage: /hook <name> <event> = <command>")
+                state.appendLine(idx, "% Events: \(Hook.events.joined(separator: ", "))"); return
+            }
+            let before = args[args.startIndex..<eqPos].trimmingCharacters(in: .whitespaces)
+                .split(separator: " ", maxSplits: 1)
+            let body = args[args.index(after: eqPos)...].trimmingCharacters(in: .whitespaces)
+            guard before.count >= 2 else {
+                state.appendLine(idx, "% Usage: /hook <name> <event> = <command>"); return
+            }
+            let hName = String(before[0]), event = String(before[1]).uppercased()
+            guard Hook.events.contains(event) else {
+                state.appendLine(idx, "% Unknown event '\(event)'. Valid: \(Hook.events.joined(separator: ", "))"); return
+            }
+            hookRepo.add(Hook(name: hName, event: event, body: body))
+            state.appendLine(idx, "% Hook '\(hName)' on \(event) -> \(body)")
+        case "unhook":
+            let name = args.trimmingCharacters(in: .whitespaces)
+            guard !name.isEmpty else { state.appendLine(idx, "% Usage: /unhook <name>"); return }
+            hookRepo.remove(name)
+            state.appendLine(idx, "% Hook '\(name)' removed.")
+        case "hooks", "listhooks":
+            let list = hookRepo.load()
+            if list.isEmpty { state.appendLine(idx, "% No hooks defined.") }
+            else {
+                state.appendLine(idx, "% Hooks:")
+                for h in list {
+                    state.appendLine(idx, "%   \(h.name): \(h.event) [\(h.enabled ? "on" : "off")] -> \(h.body)")
+                }
+            }
+        case "clear":
+            state.activeTab?.lines.removeAll()
+        case "help":
+            state.appendLine(idx, "% Commands:")
+            state.appendLine(idx, "%   /connect <host> [port] [ssl]  - Connect to a world")
+            state.appendLine(idx, "%   /disconnect, /dc              - Close current connection")
+            state.appendLine(idx, "%   /worlds                       - Open World Manager")
+            state.appendLine(idx, "%   /triggers                     - Open Trigger Manager")
+            state.appendLine(idx, "%   /def <name> <pattern> = <cmd> - Define a trigger")
+            state.appendLine(idx, "%   /undef <name>                 - Remove a trigger")
+            state.appendLine(idx, "%   /find <text>                  - Search scrollback")
+            state.appendLine(idx, "%   /log [filename]               - Toggle session logging")
+            state.appendLine(idx, "%   /repeat <name> <sec> <cmd>    - Create repeating timer")
+            state.appendLine(idx, "%   /killtimer <name>             - Cancel a timer")
+            state.appendLine(idx, "%   /timers                       - List active timers")
+            state.appendLine(idx, "%   /hook <name> <event> = <cmd>  - Define event hook")
+            state.appendLine(idx, "%   /unhook <name>                - Remove a hook")
+            state.appendLine(idx, "%   /hooks                        - List hooks")
+            state.appendLine(idx, "%   /clear                        - Clear scrollback")
+            state.appendLine(idx, "%   /help                         - Show this help")
+        default:
+            state.appendLine(idx, "% Unknown command: /\(cmd)  (try /help)")
+        }
+    }
+
     // MARK: - History
 
     private func historyBack() {
         guard let tab = state.activeTab, !tab.history.isEmpty else { return }
         if historyPos < 0 { savedInput = inputText }
-        let next = min(historyPos + 1, tab.history.count - 1)
-        historyPos = next
-        inputText = tab.history[next]
+        historyPos = min(historyPos + 1, tab.history.count - 1)
+        inputText = tab.history[historyPos]
     }
 
     private func historyForward() {
@@ -352,14 +490,10 @@ struct ContentView: View {
             state.findMatches = []; state.findPos = -1; return
         }
         let query = state.findQuery.lowercased()
-        var matches: [Int] = []
-        for (i, line) in lines.enumerated() {
-            if String(line.characters).lowercased().contains(query) {
-                matches.append(i)
-            }
+        state.findMatches = lines.enumerated().compactMap { i, line in
+            String(line.characters).lowercased().contains(query) ? i : nil
         }
-        state.findMatches = matches
-        state.findPos = matches.isEmpty ? -1 : matches.count - 1
+        state.findPos = state.findMatches.isEmpty ? -1 : state.findMatches.count - 1
     }
 
     private func findPrev() {
@@ -372,17 +506,22 @@ struct ContentView: View {
         state.findPos = state.findPos < state.findMatches.count - 1 ? state.findPos + 1 : 0
     }
 
-    // MARK: - Toolbar Button Helper
+    // MARK: - Helpers
 
     private func toolbarButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title)
-                .font(.system(size: 12))
-                .foregroundColor(Color(white: 0.82))
+            Text(title).font(.system(size: 12)).foregroundColor(Color(white: 0.82))
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 8)
         .frame(height: 28)
+    }
+}
+
+// Safe array subscript
+extension Array {
+    subscript(safe index: Index) -> Element? {
+        indices.contains(index) ? self[index] : nil
     }
 }
 

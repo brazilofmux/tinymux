@@ -77,46 +77,46 @@ client/ios/
 
 Mirrors Android phases but adapted to iOS/SwiftUI idioms.
 
-### Phase 1: Project Skeleton + Connection
+### Phase 1: Project Skeleton + Connection — DONE
 Minimum viable: connect to a MUD, see output, type input.
 
-- [ ] Xcode project with SwiftUI multiplatform target
-- [ ] `MudConnection` — NWConnection TCP, async read loop
-- [ ] `TelnetParser` — IAC state machine (port from Android)
-- [ ] `AnsiParser` — ANSI → AttributedString (port from Android)
-- [ ] `ContentView` — output scroll + input bar
-- [ ] Basic connect dialog (host/port/SSL)
+- [x] `MudConnection` — NWConnection TCP+TLS, async read loop
+- [x] `TelnetParser` — IAC state machine with NAWS, TTYPE, CHARSET, GMCP
+- [x] `AnsiParser` — ANSI → AttributedString, 16+256+RGB, URL detection
+- [x] `ContentView` — toolbar, tabs, output, input, status bar
+- [x] `ConnectSheet` — host/port/SSL connection dialog
+- [x] `WorldTab` + `AppState` — @Observable state management
+- [ ] Xcode project file (needs Mac to generate)
 
-### Phase 2: Multi-Tab + World Manager
-- [ ] `WorldTab` model — per-connection state
-- [ ] Tab bar with activity indicators
-- [ ] `World` model with Keychain persistence
-- [ ] World Manager view (list, add, edit, delete, connect)
-- [ ] Auto-login commands per world
-- [ ] TOFU certificate pinning via `sec_protocol_options`
+### Phase 2: World Manager + Triggers + Full Commands — DONE
+All features from Android Phases 1-12 ported in one pass.
 
-### Phase 3: Triggers + Commands
-- [ ] `Trigger` model + `TriggerEngine`
-- [ ] Gag, highlight, command execution
-- [ ] Trigger Manager view
-- [ ] Slash command dispatcher
-- [ ] All commands: /connect, /dc, /worlds, /triggers, /def, /undef,
-      /find, /log, /clear, /help, /repeat, /killtimer, /timers,
-      /hook, /unhook, /hooks
+- [x] `World` model with Keychain persistence (SecItemAdd/CopyMatching)
+- [x] `WorldManagerView` — list, add, edit, delete, swipe actions, connect
+- [x] `EditWorldView` — name, host, port, SSL, character, notes, login commands
+- [x] Auto-login commands per world, stored in Keychain
+- [x] `Trigger` model + `TriggerEngine` — regex, gag, hilite, command
+- [x] `TriggerManagerView` — list, add, edit, delete, enable/disable toggle
+- [x] `EditTriggerView` — pattern with live validation, priority, shots, flags
+- [x] `Hook` model + `HookRepository` — CONNECT, DISCONNECT, ACTIVITY
+- [x] `TimerEngine` — Task-based repeating timers
+- [x] `SessionLogger` — file logging to app documents
+- [x] `AppSettings` — UserDefaults persistence
+- [x] `SettingsView` — font size, scrollback, default port/SSL, keep screen on
+- [x] Full slash command set: /connect, /dc, /worlds, /triggers, /def, /undef,
+      /find, /log, /clear, /help, /repeat, /killtimer, /timers, /hook, /unhook,
+      /hooks
+- [x] Trigger pipeline wired into server line processing
+- [x] Hooks fire on connect/disconnect
+- [x] Find bar with match count + up/down navigation
+- [x] Command history (up/down arrows)
+- [x] Keyboard shortcuts: Cmd+F (find), Cmd+L (clear)
+- [x] Tab close buttons, activity indicators
+- [x] URL detection with clickable links
+- [x] Text selection in output
+- [x] Keep screen on (isIdleTimerDisabled)
 
-### Phase 4: Find, Logging, Timers, Hooks
-- [ ] Find bar with match count + navigation
-- [ ] `SessionLogger` — write to app documents
-- [ ] `TimerEngine` — Task-based repeating timers
-- [ ] `Hook` model + fire on CONNECT/DISCONNECT/ACTIVITY
-
-### Phase 5: Settings + Polish
-- [ ] Settings view (font size, scrollback, defaults)
-- [ ] URL detection + clickable links
-- [ ] Text selection in output
-- [ ] Tab close buttons
-- [ ] Keyboard shortcuts (Cmd+F find, arrow history, etc.)
-- [ ] Keep screen on (UIApplication.shared.isIdleTimerDisabled)
+### Remaining Phases
 
 ### Phase 6: Background + Notifications
 - [ ] Background URLSession or BGTaskScheduler for connection keep-alive

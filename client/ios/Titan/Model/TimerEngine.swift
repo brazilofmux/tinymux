@@ -1,0 +1,53 @@
+import Foundation
+
+// MARK: - Timer Engine
+
+struct MudTimer {
+    let name: String
+    let command: String
+    let intervalSeconds: Double
+    var shotsRemaining: Int
+}
+
+@MainActor
+class TimerEngine {
+    private var timers: [String: (MudTimer, Task<Void, Never>)] = [:]
+    var onFire: ((String, String) -> Void)?
+
+    func add(name: String, command: String, intervalSeconds: Double, shots: Int = -1) {
+        remove(name)
+        var timer = MudTimer(name: name, command: command,
+                             intervalSeconds: intervalSeconds, shotsRemaining: shots)
+        let task = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(intervalSeconds))
+                guard !Task.isCancelled else { break }
+                self?.onFire?(name, command)
+                if timer.shotsRemaining > 0 {
+                    timer.shotsRemaining -= 1
+                    if timer.shotsRemaining == 0 {
+                        self?.timers.removeValue(forKey: name)
+                        break
+                    }
+                }
+            }
+        }
+        timers[name] = (timer, task)
+    }
+
+    @discardableResult
+    func remove(_ name: String) -> Bool {
+        guard let entry = timers.removeValue(forKey: name) else { return false }
+        entry.1.cancel()
+        return true
+    }
+
+    func list() -> [MudTimer] {
+        timers.values.map(\.0)
+    }
+
+    func cancelAll() {
+        timers.values.forEach { $0.1.cancel() }
+        timers.removeAll()
+    }
+}
