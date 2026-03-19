@@ -1,0 +1,45 @@
+component:
+  name: street_grid
+  params:
+    width:
+      type: int
+      default: 3
+    height:
+      type: int
+      default: 3
+    street_name:
+      type: string
+      default: "Main Street"
+
+  generate: grid
+  grid:
+    room_name: "${street_name} [${x},${y}]"
+    descriptions:
+      - |
+        A cobblestone street stretches in both directions, lined with
+        shop fronts and townhouses. Lanterns hang from iron brackets,
+        casting pools of warm light on the pavement.
+      - |
+        The street widens here at a small intersection. A stone fountain
+        stands in the center, and merchants have set up carts nearby.
+      - |
+        Narrow buildings crowd close on both sides, their upper stories
+        leaning out over the street. Clotheslines stretch between windows.
+      - |
+        A broad avenue with well-maintained flagstones. Trees grow from
+        small squares of earth set into the pavement at regular intervals.
+      - |
+        The street passes through a small market square. Stalls and tents
+        crowd the edges, selling everything from produce to trinkets.
+    exits: cardinal
+    selection: seeded
+
+  ports:
+    edge_north:
+      edge: north
+    edge_south:
+      edge: south
+    edge_west:
+      edge: west
+    edge_east:
+      edge: east

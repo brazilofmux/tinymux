@@ -1,0 +1,50 @@
+component:
+  name: forest_area
+  params:
+    width:
+      type: int
+      default: 3
+    height:
+      type: int
+      default: 3
+    density:
+      type: float
+      default: 0.8
+
+  generate: grid
+  grid:
+    room_name: "Deep Forest [${x},${y}]"
+    descriptions:
+      - |
+        Tall pines tower overhead, their branches forming a dense canopy
+        that blocks most of the sunlight. Pine needles carpet the ground.
+      - |
+        Birch trees with peeling white bark cluster around a mossy boulder.
+        A faint animal trail winds between the trunks.
+      - |
+        A dense thicket of brambles makes passage difficult here. Thorny
+        vines tangle between the trees, catching at clothing and skin.
+      - |
+        Ferns carpet the forest floor beneath ancient oaks. The air is cool
+        and damp, and the canopy filters the light to a green twilight.
+      - |
+        Shafts of sunlight pierce the canopy, illuminating a small clearing.
+        Wildflowers bloom in the warm patch of light.
+      - |
+        Gnarled roots snake across the ground between massive tree trunks.
+        Mushrooms grow in clusters at the base of the oldest trees.
+      - |
+        A fallen log, thick with moss and lichen, blocks the most direct
+        path. The rich smell of decay mingles with the scent of wet earth.
+    exits: cardinal
+    selection: seeded
+
+  ports:
+    edge_north:
+      edge: north
+    edge_south:
+      edge: south
+    edge_west:
+      edge: west
+    edge_east:
+      edge: east

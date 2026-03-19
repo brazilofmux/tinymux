@@ -31,6 +31,17 @@ class Room:
         self.parent = parent
 
 
+class Thing:
+    def __init__(self, id, name, location, description='', flags=None, attrs=None, parent=None):
+        self.id = id
+        self.name = name
+        self.location = location  # room spec ID
+        self.description = description.rstrip() if description else ''
+        self.flags = flags or []
+        self.attrs = attrs or {}
+        self.parent = parent
+
+
 class Exit:
     def __init__(self, from_room, to_room, name, back_name=None):
         self.from_room = from_room
@@ -47,18 +58,23 @@ class Zone:
 
 class Component:
     """A reusable template with parameters, rooms, exits, and connection ports."""
-    def __init__(self, name, params=None, rooms=None, exits=None, ports=None):
+    def __init__(self, name, params=None, rooms=None, exits=None, ports=None,
+                 generate=None, grid=None, things=None):
         self.name = name
         self.params = params or {}    # name -> {type, default, required}
         self.rooms = rooms or {}      # id -> room data (pre-expansion)
         self.exits = exits or []      # exit data (pre-expansion)
         self.ports = ports or {}      # port_name -> {room, direction}
+        self.generate = generate      # None or 'grid'
+        self.grid = grid or {}        # grid generation config
+        self.things = things or {}    # id -> thing data (pre-expansion)
 
 
 class WorldSpec:
     def __init__(self):
         self.zone = None
         self.rooms = {}      # id -> Room
+        self.things = {}     # id -> Thing
         self.exits = []      # [Exit]
 
 
@@ -89,6 +105,18 @@ def parse_spec(path):
             flags=room_data.get('flags', []),
             attrs=room_data.get('attrs', {}),
             parent=room_data.get('parent'),
+        )
+
+    # Things (objects placed in rooms)
+    for thing_id, thing_data in data.get('things', {}).items():
+        spec.things[thing_id] = Thing(
+            id=thing_id,
+            name=thing_data.get('name', thing_id),
+            location=thing_data.get('location', ''),
+            description=thing_data.get('description', ''),
+            flags=thing_data.get('flags', []),
+            attrs=thing_data.get('attrs', {}),
+            parent=thing_data.get('parent'),
         )
 
     # Exits
@@ -137,6 +165,9 @@ def load_component(path):
         rooms=comp_data.get('rooms', {}),
         exits=comp_data.get('exits', []),
         ports=comp_data.get('ports', {}),
+        generate=comp_data.get('generate'),
+        grid=comp_data.get('grid', {}),
+        things=comp_data.get('things', {}),
     )
 
 
@@ -149,9 +180,115 @@ def expand_param(text, params):
     return text
 
 
+import hashlib
+
+def _seeded_pick(items, seed_str):
+    """Deterministically pick an item from a list based on a string seed."""
+    h = int(hashlib.md5(seed_str.encode()).hexdigest(), 16)
+    return items[h % len(items)]
+
+
+def _seeded_bool(seed_str, probability):
+    """Deterministically return True with given probability based on seed."""
+    h = int(hashlib.md5(seed_str.encode()).hexdigest()[:8], 16)
+    return (h / 0xFFFFFFFF) < probability
+
+
+def expand_grid(spec, comp, inst_id, params, connections):
+    """Expand a grid-type component into a WxH room grid with cardinal exits."""
+    prefix = inst_id + '_'
+    grid = comp.grid
+    width = int(params.get('width', grid.get('width', 3)))
+    height = int(params.get('height', grid.get('height', 3)))
+    density = float(params.get('density', grid.get('density', 0.8)))
+    descriptions = grid.get('descriptions', ['A nondescript room.'])
+    room_name_template = grid.get('room_name', 'Room [${x},${y}]')
+
+    # Create rooms
+    for y in range(height):
+        for x in range(width):
+            room_id = f"{prefix}{x}_{y}"
+            cell_params = {**params, 'x': str(x), 'y': str(y)}
+            name = expand_param(room_name_template, cell_params)
+            desc = _seeded_pick(descriptions, f"{inst_id}:{x}:{y}")
+
+            spec.rooms[room_id] = Room(
+                id=room_id,
+                name=name,
+                description=desc.rstrip(),
+            )
+
+    # Create exits between adjacent cells
+    directions = {
+        'north': (0, -1, 'North;north;n', 'South;south;s'),
+        'south': (0, 1, 'South;south;s', 'North;north;n'),
+        'east':  (1, 0, 'East;east;e', 'West;west;w'),
+        'west':  (-1, 0, 'West;west;w', 'East;east;e'),
+    }
+
+    created = set()  # avoid duplicate bidirectional exits
+    for y in range(height):
+        for x in range(width):
+            for dir_name, (dx, dy, fwd_name, back_name) in directions.items():
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < width and 0 <= ny < height:
+                    pair = tuple(sorted([(x, y), (nx, ny)]))
+                    if pair in created:
+                        continue
+
+                    # Density check — seeded for determinism
+                    seed = f"{inst_id}:{pair[0]}:{pair[1]}"
+                    if not _seeded_bool(seed, density):
+                        continue
+
+                    from_id = f"{prefix}{x}_{y}"
+                    to_id = f"{prefix}{nx}_{ny}"
+                    spec.exits.append(Exit(
+                        from_room=from_id,
+                        to_room=to_id,
+                        name=fwd_name,
+                        back_name=back_name,
+                    ))
+                    created.add(pair)
+
+    # Wire edge ports to external rooms
+    for port_name, conn_data in connections.items():
+        port = comp.ports.get(port_name, {})
+        edge = port.get('edge', '')
+        target = conn_data.get('to', '')
+        exit_name = conn_data.get('name', '')
+        back_name = conn_data.get('back', '') or None
+        if not edge or not target or not exit_name:
+            continue
+
+        # Pick the middle cell on the specified edge
+        if edge == 'north':
+            room_id = f"{prefix}{width // 2}_0"
+        elif edge == 'south':
+            room_id = f"{prefix}{width // 2}_{height - 1}"
+        elif edge == 'west':
+            room_id = f"{prefix}0_{height // 2}"
+        elif edge == 'east':
+            room_id = f"{prefix}{width - 1}_{height // 2}"
+        else:
+            continue
+
+        spec.exits.append(Exit(
+            from_room=room_id,
+            to_room=target,
+            name=exit_name,
+            back_name=back_name,
+        ))
+
+
 def expand_component(spec, comp, inst_id, params, connections):
     """Expand a component instance into rooms and exits in the spec."""
     prefix = inst_id + '_'
+
+    # Check for procedural generation
+    if hasattr(comp, 'generate') and comp.generate == 'grid':
+        expand_grid(spec, comp, inst_id, params, connections)
+        return
 
     # Create rooms
     for room_id, room_data in comp.rooms.items():
@@ -173,6 +310,19 @@ def expand_component(spec, comp, inst_id, params, connections):
             name=expand_param(exit_data['name'], params),
             back_name=expand_param(exit_data.get('back', ''), params) or None,
         ))
+
+    # Create things
+    for thing_id, thing_data in comp.things.items():
+        full_id = prefix + thing_id
+        spec.things[full_id] = Thing(
+            id=full_id,
+            name=expand_param(thing_data.get('name', thing_id), params),
+            location=prefix + thing_data.get('location', ''),
+            description=expand_param(thing_data.get('description', ''), params),
+            flags=thing_data.get('flags', []),
+            attrs={k: expand_param(v, params) for k, v in thing_data.get('attrs', {}).items()},
+            parent=thing_data.get('parent'),
+        )
 
     # Wire up ports to external rooms
     for port_name, conn_data in connections.items():
@@ -372,8 +522,15 @@ def compile_spec(spec):
             cmd(f"Set attribute {attr_name}",
                 f'&{attr_name} here={attr_value}')
 
-        # Return to a staging room after each room creation
-        # The executor will handle teleportation between rooms
+        # Parent
+        if room.parent:
+            cmd(f"Set parent",
+                f'@parent here={room.parent}')
+
+        # Zone — set all rooms to the zone object
+        cmd("Set zone",
+            f'@chzone here=%{{zone:{spec.zone.name}}}')
+
         cmd("", "")
 
     # Create exits
@@ -389,6 +546,30 @@ def compile_spec(spec):
         if ex.back_name:
             cmd(f"Back exit: {ex.back_name.split(';')[0]} ({ex.to_room} -> {ex.from_room})",
                 f'@open {ex.back_name}=%{{room:{ex.from_room}}}')
+
+    # Create things
+    if spec.things:
+        cmd("=== Things ===", "")
+        for thing_id, thing in spec.things.items():
+            cmd(f"--- Thing: {thing.name} ({thing_id}) in {thing.location} ---", "")
+            # Teleport to the room first
+            cmd("Go to room",
+                f'@teleport me=%{{room:{thing.location}}}')
+            cmd("Create object",
+                f'@create {thing.name}')
+            if thing.description:
+                desc = thing.description.rstrip().replace('\n', '%r')
+                cmd("Set description",
+                    f'@desc {thing.name}={desc}')
+            for flag in thing.flags:
+                cmd(f"Set flag {flag}",
+                    f'@set {thing.name}={flag}')
+            for attr_name, attr_value in thing.attrs.items():
+                cmd(f"Set {attr_name}",
+                    f'&{attr_name} {thing.name}={attr_value}')
+            if thing.parent:
+                cmd("Set parent",
+                    f'@parent {thing.name}={thing.parent}')
 
     return commands
 
@@ -424,6 +605,13 @@ def format_plan(spec, drc_result):
             lines.append(f"  + CREATE exit \"{back_name}\" from {ex.to_room} -> {ex.from_room}")
     lines.append("")
 
+    n_things = len(spec.things)
+    if n_things:
+        lines.append(f"Things ({n_things} new):")
+        for thing_id, thing in spec.things.items():
+            lines.append(f"  + CREATE thing \"{thing.name}\" ({thing_id}) in {thing.location}")
+        lines.append("")
+
     if n_attrs:
         lines.append(f"Attributes ({n_attrs}):")
         for room_id, room in spec.rooms.items():
@@ -449,8 +637,11 @@ def format_plan(spec, drc_result):
         lines.append(f"  WARN:  {warn}")
     lines.append("")
 
-    total = 1 + n_rooms + n_exits
-    lines.append(f"Total: {total} objects (1 zone + {n_rooms} rooms + {n_exits} exits)")
+    total = 1 + n_rooms + n_exits + n_things
+    parts = [f"1 zone", f"{n_rooms} rooms", f"{n_exits} exits"]
+    if n_things:
+        parts.append(f"{n_things} things")
+    lines.append(f"Total: {total} objects ({' + '.join(parts)})")
 
     return '\n'.join(lines)
 

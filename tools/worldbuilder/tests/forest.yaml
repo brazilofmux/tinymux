@@ -1,0 +1,26 @@
+zone:
+  name: Darkwood Forest
+
+imports:
+  - ../components/forest_area.yaml
+
+rooms:
+  forest_edge:
+    name: Edge of Darkwood Forest
+    description: |
+      The road ends here at the edge of a dense, ancient forest. Gnarled
+      trees press close together, their canopy blocking the sky. A narrow
+      trail disappears into the gloom.
+
+instances:
+  - component: forest_area
+    id: darkwood
+    params:
+      width: 4
+      height: 4
+      density: 0.75
+    connect:
+      edge_west:
+        to: forest_edge
+        name: "Trail;trail;west;w"
+        back: "Forest;forest;east;e"

@@ -1,0 +1,50 @@
+zone:
+  name: Millhaven
+
+imports:
+  - ../components/tavern.yaml
+  - ../components/street_grid.yaml
+
+rooms:
+  town_square:
+    name: Millhaven Town Square
+    description: |
+      The heart of Millhaven is a broad cobblestone square with a
+      weathered stone well at its center. Buildings of timber and
+      plaster crowd the edges, and the sounds of daily commerce fill
+      the air.
+
+things:
+  well:
+    name: Stone Well
+    location: town_square
+    description: |
+      An old stone well with a wooden bucket on a rope. The water
+      is clear and cold.
+    attrs:
+      DRINK: "You draw a bucket of cold, clear water and take a refreshing drink."
+
+exits:
+  - from: town_square
+    to: tavern_common_room
+    name: "Tavern;tavern;inn"
+    back: "Town Square;square;out"
+
+instances:
+  - component: tavern
+    id: tavern
+    params:
+      tavern_name: "The Golden Goose"
+      barkeeper_name: "Old Martha"
+
+  - component: street_grid
+    id: market
+    params:
+      width: 2
+      height: 2
+      street_name: "Market Row"
+    connect:
+      edge_west:
+        to: town_square
+        name: "Town Square;square;west;w"
+        back: "Market;market;east;e"

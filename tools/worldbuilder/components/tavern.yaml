@@ -1,0 +1,59 @@
+component:
+  name: tavern
+  params:
+    tavern_name:
+      type: string
+      default: "The Rusty Tankard"
+    barkeeper_name:
+      type: string
+      default: "Grim"
+
+  rooms:
+    common_room:
+      name: "${tavern_name} - Common Room"
+      description: |
+        A warm, noisy common room filled with the smell of roasting
+        meat and spilled ale. Rough wooden tables and benches fill the
+        space, and a long bar dominates one wall. A fireplace crackles
+        in the corner.
+      attrs:
+        SMELL: "Roasting meat, wood smoke, and spilled ale."
+        SOUND: "The clink of mugs, murmured conversation, and occasional laughter."
+
+    kitchen:
+      name: "${tavern_name} - Kitchen"
+      description: |
+        A hot, cramped kitchen with a massive iron stove and racks of
+        pots and pans. Barrels of flour and salt line one wall.
+
+    upstairs:
+      name: "${tavern_name} - Upstairs Landing"
+      description: |
+        A narrow hallway at the top of a creaky staircase. Numbered
+        doors line both sides, leading to rooms for rent.
+
+  things:
+    barkeeper:
+      name: "${barkeeper_name}"
+      location: common_room
+      description: |
+        A burly figure stands behind the bar, polishing a mug with a
+        stained rag. ${barkeeper_name} surveys the room with a watchful eye.
+      attrs:
+        NPC_TYPE: "shopkeeper"
+        INVENTORY: "ale:5|wine:10|bread:2|stew:3"
+
+  exits:
+    - from: common_room
+      to: kitchen
+      name: "Kitchen;kitchen"
+      back: "Common Room;out"
+    - from: common_room
+      to: upstairs
+      name: "Upstairs;up;stairs"
+      back: "Downstairs;down;stairs"
+
+  ports:
+    entrance:
+      room: common_room
+      direction: out
