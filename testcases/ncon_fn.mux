@@ -1,0 +1,79 @@
+#
+# ncon_fn.mux - Test Cases for ncon(), nexits(), nthings().
+#
+@create test_ncon_fn
+-
+@set test_ncon_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_ncon_fn=
+  @log smoke=Beginning ncon()/nexits()/nthings() test cases.
+-
+#
+# Test Case #1 - ncon counts contents.
+# We check that ncon(here) is a non-negative integer.
+#
+&tr.tc001 test_ncon_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [gte(ncon(here),0)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC001: ncon basic. Succeeded.
+  },
+  {
+    @log smoke=TC001: ncon basic. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - nexits counts exits.
+#
+&tr.tc002 test_ncon_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [gte(nexits(here),0)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC002: nexits basic. Succeeded.
+  },
+  {
+    @log smoke=TC002: nexits basic. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - nthings counts things.
+#
+&tr.tc003 test_ncon_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [gte(nthings(here),0)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC003: nthings basic. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: nthings basic. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_ncon_fn=
+  @log smoke=End ncon()/nexits()/nthings() test cases.;
+  @notify smoke
+-
+drop test_ncon_fn
+-
+#
+# End of Test Cases
+#

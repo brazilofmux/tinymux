@@ -1,0 +1,44 @@
+#
+# stddev_fn.mux - Test Cases for stddev().
+#
+@create test_stddev_fn
+-
+@set test_stddev_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_stddev_fn=
+  @log smoke=Beginning stddev() test cases.
+-
+#
+# Test Case #1 - Basic stddev operations.
+#
+&tr.tc001 test_stddev_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [stddev(2,4,4,4,5,5,7,9)]
+            [stddev(1)]
+            [stddev(10,10)]
+          )
+        ),
+        DDCA8BD0C71478715E36271C905F7CB43D45ACC2
+      )=
+  {
+    @log smoke=TC001: stddev basic. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: stddev basic. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_stddev_fn=
+  @log smoke=End stddev() test cases.;
+  @notify smoke
+-
+drop test_stddev_fn
+-
+#
+# End of Test Cases
+#

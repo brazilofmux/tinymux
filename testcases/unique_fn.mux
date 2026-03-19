@@ -1,0 +1,45 @@
+#
+# unique_fn.mux - Test Cases for unique().
+#
+@create test_unique_fn
+-
+@set test_unique_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_unique_fn=
+  @log smoke=Beginning unique() test cases.
+-
+#
+# Test Case #1 - Basic unique operations.
+#
+&tr.tc001 test_unique_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [unique(a b c b a)]
+            [unique(1|2|3|2|1,,|)]
+            [unique(x)]
+            [unique(a a a)]
+          )
+        ),
+        7248042252C1B38DF134982FA459D87C0F826778
+      )=
+  {
+    @log smoke=TC001: unique basic. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: unique basic. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_unique_fn=
+  @log smoke=End unique() test cases.;
+  @notify smoke
+-
+drop test_unique_fn
+-
+#
+# End of Test Cases
+#

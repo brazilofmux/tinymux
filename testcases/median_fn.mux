@@ -1,0 +1,45 @@
+#
+# median_fn.mux - Test Cases for median().
+#
+@create test_median_fn
+-
+@set test_median_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_median_fn=
+  @log smoke=Beginning median() test cases.
+-
+#
+# Test Case #1 - Basic median operations.
+#
+&tr.tc001 test_median_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [median(3,1,2)]
+            [median(1,2,3,4)]
+            [median(5)]
+            [median(10,20)]
+          )
+        ),
+        A35461AA9E3A0557970A207A8850C20E5F402703
+      )=
+  {
+    @log smoke=TC001: median basic. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: median basic. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_median_fn=
+  @log smoke=End median() test cases.;
+  @notify smoke
+-
+drop test_median_fn
+-
+#
+# End of Test Cases
+#

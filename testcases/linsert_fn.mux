@@ -1,0 +1,65 @@
+#
+# linsert_fn.mux - Test Cases for linsert() and lreplace().
+#
+@create test_linsert_fn
+-
+@set test_linsert_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_linsert_fn=
+  @log smoke=Beginning linsert()/lreplace() test cases.
+-
+#
+# Test Case #1 - linsert basic operations.
+#
+&tr.tc001 test_linsert_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [linsert(a b c,0,x)]
+            [linsert(a b c,1,x)]
+            [linsert(a b c,3,x)]
+            [linsert(a b c,10,x)]
+          )
+        ),
+        37A4DED068601A8D593EF364063343C27804FD83
+      )=
+  {
+    @log smoke=TC001: linsert basic. Succeeded.
+  },
+  {
+    @log smoke=TC001: linsert basic. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - lreplace basic operations.
+#
+&tr.tc002 test_linsert_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [lreplace(a b c,0,x)]
+            [lreplace(a b c,1,x)]
+            [lreplace(a b c,2,x)]
+          )
+        ),
+        B405304E735CF2E28DFD180892610F21B779D3DB
+      )=
+  {
+    @log smoke=TC002: lreplace basic. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: lreplace basic. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_linsert_fn=
+  @log smoke=End linsert()/lreplace() test cases.;
+  @notify smoke
+-
+drop test_linsert_fn
+-
+#
+# End of Test Cases
+#

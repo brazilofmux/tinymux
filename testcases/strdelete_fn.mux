@@ -1,0 +1,85 @@
+#
+# strdelete_fn.mux - Test Cases for strdelete(), strinsert(), strreplace().
+#
+@create test_strdelete_fn
+-
+@set test_strdelete_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_strdelete_fn=
+  @log smoke=Beginning strdelete()/strinsert()/strreplace() test cases.
+-
+#
+# Test Case #1 - strdelete basic operations.
+#
+&tr.tc001 test_strdelete_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strdelete(abcdef,2,2)]
+            [strdelete(abcdef,0,1)]
+            [strdelete(abcdef,5,1)]
+            [strdelete(abcdef,0,6)]
+          )
+        ),
+        279426230B40F89099304248C2C30C5A09609A44
+      )=
+  {
+    @log smoke=TC001: strdelete basic. Succeeded.
+  },
+  {
+    @log smoke=TC001: strdelete basic. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - strinsert basic operations.
+#
+&tr.tc002 test_strdelete_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strinsert(abcdef,0,X)]
+            [strinsert(abcdef,3,X)]
+            [strinsert(abcdef,6,X)]
+          )
+        ),
+        C9D17DA74849E756F81C0A9D6DF5BA864CD80E24
+      )=
+  {
+    @log smoke=TC002: strinsert basic. Succeeded.
+  },
+  {
+    @log smoke=TC002: strinsert basic. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - strreplace basic operations.
+#
+&tr.tc003 test_strdelete_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strreplace(abcdef,2,2,XY)]
+            [strreplace(abcdef,0,3,X)]
+            [strreplace(abcdef,5,1,XYZ)]
+          )
+        ),
+        6D3F27473B1F2F2584C2097934BEF6F1FF7AD91B
+      )=
+  {
+    @log smoke=TC003: strreplace basic. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: strreplace basic. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_strdelete_fn=
+  @log smoke=End strdelete()/strinsert()/strreplace() test cases.;
+  @notify smoke
+-
+drop test_strdelete_fn
+-
+#
+# End of Test Cases
+#

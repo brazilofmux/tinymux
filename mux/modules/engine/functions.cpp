@@ -12800,6 +12800,846 @@ static FUNCTION(fun_lua)
     }
 }
 
+// ---------------------------------------------------------------------------
+// fun_bound: Clamp a value between min and optional max.
+//   bound(value, min[, max])
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_bound)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    double val = mux_atof(fargs[0], false);
+    double lo  = mux_atof(fargs[1], false);
+
+    if (val < lo)
+    {
+        val = lo;
+    }
+
+    if (nfargs >= 3)
+    {
+        double hi = mux_atof(fargs[2], false);
+        if (val > hi)
+        {
+            val = hi;
+        }
+    }
+
+    fval(buff, bufc, val);
+}
+
+// ---------------------------------------------------------------------------
+// fun_mean: Arithmetic mean of arguments.
+//   mean(number, number, ...)
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_mean)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (nfargs < 1)
+    {
+        safe_str(T("#-1 TOO FEW ARGUMENTS"), buff, bufc);
+        return;
+    }
+
+    double sum = 0.0;
+    for (int i = 0; i < nfargs; i++)
+    {
+        sum += mux_atof(fargs[i], false);
+    }
+    fval(buff, bufc, sum / nfargs);
+}
+
+// ---------------------------------------------------------------------------
+// fun_median: Median of arguments.
+//   median(number, number, ...)
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_median)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (nfargs < 1)
+    {
+        safe_str(T("#-1 TOO FEW ARGUMENTS"), buff, bufc);
+        return;
+    }
+
+    double vals[MAX_ARG];
+    for (int i = 0; i < nfargs; i++)
+    {
+        vals[i] = mux_atof(fargs[i], false);
+    }
+
+    // Simple insertion sort.
+    //
+    for (int i = 1; i < nfargs; i++)
+    {
+        double key = vals[i];
+        int j = i - 1;
+        while (j >= 0 && vals[j] > key)
+        {
+            vals[j + 1] = vals[j];
+            j--;
+        }
+        vals[j + 1] = key;
+    }
+
+    double result;
+    if (nfargs % 2 == 1)
+    {
+        result = vals[nfargs / 2];
+    }
+    else
+    {
+        result = (vals[nfargs / 2 - 1] + vals[nfargs / 2]) / 2.0;
+    }
+    fval(buff, bufc, result);
+}
+
+// ---------------------------------------------------------------------------
+// fun_stddev: Sample standard deviation using Welford's online algorithm.
+//   stddev(number, number, ...)
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_stddev)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (nfargs < 2)
+    {
+        safe_str(T("0"), buff, bufc);
+        return;
+    }
+
+    double mean = 0.0;
+    double m2 = 0.0;
+    for (int i = 0; i < nfargs; i++)
+    {
+        double x = mux_atof(fargs[i], false);
+        double delta = x - mean;
+        mean += delta / (i + 1);
+        double delta2 = x - mean;
+        m2 += delta * delta2;
+    }
+
+    fval(buff, bufc, sqrt(m2 / (nfargs - 1)));
+}
+
+// ---------------------------------------------------------------------------
+// fun_unique: Remove duplicates from a list, keeping first occurrence.
+//   unique(list[, sorttype[, sep[, osep]]])
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_unique)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    SEP osep = sep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
+    {
+        return;
+    }
+
+    UTF8 *arr[LBUF_SIZE / 2];
+    int nWords = list2arr(arr, LBUF_SIZE / 2, fargs[0], sep);
+
+    // Track seen words with a simple linear scan (adequate for MUX lists).
+    //
+    bool bFirst = true;
+    UTF8 *seen[LBUF_SIZE / 2];
+    int nSeen = 0;
+
+    for (int i = 0; i < nWords; i++)
+    {
+        bool bDup = false;
+        for (int j = 0; j < nSeen; j++)
+        {
+            if (strcmp(reinterpret_cast<char *>(arr[i]),
+                       reinterpret_cast<char *>(seen[j])) == 0)
+            {
+                bDup = true;
+                break;
+            }
+        }
+        if (!bDup)
+        {
+            if (!bFirst)
+            {
+                print_sep(osep, buff, bufc);
+            }
+            safe_str(arr[i], buff, bufc);
+            bFirst = false;
+            seen[nSeen++] = arr[i];
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// fun_linsert: Insert an item at a position in a list.
+//   linsert(list, position, item[, sep])
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_linsert)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    SEP sep;
+    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    UTF8 *arr[LBUF_SIZE / 2];
+    int nWords = list2arr(arr, LBUF_SIZE / 2, fargs[0], sep);
+    int pos = mux_atol(fargs[1]);
+
+    if (pos < 0)
+    {
+        pos = 0;
+    }
+    if (pos > nWords)
+    {
+        pos = nWords;
+    }
+
+    bool bFirst = true;
+    for (int i = 0; i <= nWords; i++)
+    {
+        if (i == pos)
+        {
+            if (!bFirst)
+            {
+                print_sep(sep, buff, bufc);
+            }
+            safe_str(fargs[2], buff, bufc);
+            bFirst = false;
+        }
+        if (i < nWords)
+        {
+            if (!bFirst)
+            {
+                print_sep(sep, buff, bufc);
+            }
+            safe_str(arr[i], buff, bufc);
+            bFirst = false;
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// fun_strdelete: Delete count characters from string starting at start.
+//   strdelete(string, start, count)
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_strdelete)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    int iStart = mux_atol(fargs[1]);
+    int nDelete = mux_atol(fargs[2]);
+
+    if (iStart < 0)
+    {
+        iStart = 0;
+    }
+    if (nDelete < 0)
+    {
+        nDelete = 0;
+    }
+
+    const unsigned char *p = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t slen = strlen(reinterpret_cast<const char *>(p));
+
+    if (nDelete == 0 || static_cast<size_t>(iStart) >= slen)
+    {
+        safe_str(fargs[0], buff, bufc);
+        return;
+    }
+
+    unsigned char out[LBUF_SIZE];
+    size_t n = co_delete_cluster(out, p, slen,
+        static_cast<size_t>(iStart), static_cast<size_t>(nDelete));
+
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    if (n > nMax) n = nMax;
+    memcpy(*bufc, out, n);
+    *bufc += n;
+    **bufc = '\0';
+}
+
+// ---------------------------------------------------------------------------
+// fun_strinsert: Insert a string at a character position.
+//   strinsert(string, position, insertion)
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_strinsert)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    int iPos = mux_atol(fargs[1]);
+    if (iPos < 0)
+    {
+        iPos = 0;
+    }
+
+    const unsigned char *p = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t slen = strlen(reinterpret_cast<const char *>(p));
+    size_t nClusters = co_cluster_count(p, slen);
+
+    if (static_cast<size_t>(iPos) >= nClusters)
+    {
+        // Append.
+        //
+        safe_str(fargs[0], buff, bufc);
+        safe_str(fargs[2], buff, bufc);
+        return;
+    }
+
+    // Output: mid(str, 0, pos) + insertion + mid(str, pos, rest)
+    //
+    unsigned char left[LBUF_SIZE];
+    size_t nLeft = co_mid_cluster(left, p, slen, 0, static_cast<size_t>(iPos));
+
+    unsigned char right[LBUF_SIZE];
+    size_t nRight = co_mid_cluster(right, p, slen,
+        static_cast<size_t>(iPos), nClusters - static_cast<size_t>(iPos));
+
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    size_t n = nLeft;
+    if (n > nMax) n = nMax;
+    memcpy(*bufc, left, n);
+    *bufc += n;
+    **bufc = '\0';
+
+    safe_str(fargs[2], buff, bufc);
+
+    nMax = buff + (LBUF_SIZE-1) - *bufc;
+    n = nRight;
+    if (n > nMax) n = nMax;
+    memcpy(*bufc, right, n);
+    *bufc += n;
+    **bufc = '\0';
+}
+
+// ---------------------------------------------------------------------------
+// fun_strreplace: Replace count chars starting at start with replacement.
+//   strreplace(string, start, count, replacement)
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_strreplace)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    int iStart = mux_atol(fargs[1]);
+    int nCount = mux_atol(fargs[2]);
+
+    if (iStart < 0)
+    {
+        iStart = 0;
+    }
+    if (nCount < 0)
+    {
+        nCount = 0;
+    }
+
+    const unsigned char *p = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t slen = strlen(reinterpret_cast<const char *>(p));
+    size_t nClusters = co_cluster_count(p, slen);
+
+    if (static_cast<size_t>(iStart) >= nClusters)
+    {
+        // Start is past end — just append replacement.
+        //
+        safe_str(fargs[0], buff, bufc);
+        safe_str(fargs[3], buff, bufc);
+        return;
+    }
+
+    // Output: mid(str, 0, start) + replacement + mid(str, start+count, rest)
+    //
+    unsigned char left[LBUF_SIZE];
+    size_t nLeft = co_mid_cluster(left, p, slen, 0, static_cast<size_t>(iStart));
+
+    size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
+    size_t n = nLeft;
+    if (n > nMax) n = nMax;
+    memcpy(*bufc, left, n);
+    *bufc += n;
+    **bufc = '\0';
+
+    safe_str(fargs[3], buff, bufc);
+
+    size_t rightStart = static_cast<size_t>(iStart) + static_cast<size_t>(nCount);
+    if (rightStart < nClusters)
+    {
+        unsigned char right[LBUF_SIZE];
+        size_t nRight = co_mid_cluster(right, p, slen,
+            rightStart, nClusters - rightStart);
+
+        nMax = buff + (LBUF_SIZE-1) - *bufc;
+        n = nRight;
+        if (n > nMax) n = nMax;
+        memcpy(*bufc, right, n);
+        *bufc += n;
+        **bufc = '\0';
+    }
+}
+
+// ---------------------------------------------------------------------------
+// fun_unsetq: Clear specified q-registers, or all if no args.
+//   unsetq([register, register, ...])
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_unsetq)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (nfargs == 0)
+    {
+        // Clear all registers.
+        //
+        for (int i = 0; i < MAX_GLOBAL_REGS; i++)
+        {
+            if (mudstate.global_regs[i])
+            {
+                RegRelease(mudstate.global_regs[i]);
+                mudstate.global_regs[i] = nullptr;
+            }
+        }
+        return;
+    }
+
+    for (int i = 0; i < nfargs; i++)
+    {
+        int regnum;
+        if (IsSingleCharReg(fargs[i], regnum))
+        {
+            if (mudstate.global_regs[regnum])
+            {
+                RegRelease(mudstate.global_regs[regnum]);
+                mudstate.global_regs[regnum] = nullptr;
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// fun_listq: List all set q-registers.
+//   listq()
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_listq)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    bool bFirst = true;
+    // Registers 0-9 map to characters '0'-'9', 10-35 map to 'A'-'Z'.
+    //
+    for (int i = 0; i < MAX_GLOBAL_REGS; i++)
+    {
+        if (  mudstate.global_regs[i]
+           && mudstate.global_regs[i]->reg_len > 0)
+        {
+            if (!bFirst)
+            {
+                safe_chr(' ', buff, bufc);
+            }
+            if (i < 10)
+            {
+                safe_chr(static_cast<UTF8>('0' + i), buff, bufc);
+            }
+            else
+            {
+                safe_chr(static_cast<UTF8>('A' + i - 10), buff, bufc);
+            }
+            bFirst = false;
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// fun_ncon: Count of all contents in a location.
+//   ncon(object)
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_ncon)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(it))
+    {
+        safe_match_result(it, buff, bufc);
+        return;
+    }
+    if (!Has_contents(it))
+    {
+        safe_ltoa(0, buff, bufc);
+        return;
+    }
+    if (  !Examinable(executor, it)
+       && Location(executor) != it
+       && it != enactor)
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    int count = 0;
+    dbref thing;
+    DOLIST(thing, Contents(it))
+    {
+        count++;
+    }
+    safe_ltoa(count, buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// fun_nexits: Count of exits from a location.
+//   nexits(object)
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_nexits)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(it))
+    {
+        safe_match_result(it, buff, bufc);
+        return;
+    }
+    if (!Has_exits(it))
+    {
+        safe_ltoa(0, buff, bufc);
+        return;
+    }
+    if (  !Examinable(executor, it)
+       && Location(executor) != it
+       && it != enactor)
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    int count = 0;
+    dbref thing;
+    DOLIST(thing, Exits(it))
+    {
+        count++;
+    }
+    safe_ltoa(count, buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// fun_nplayers: Count of connected players in a location.
+//   nplayers(object)
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_nplayers)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(it))
+    {
+        safe_match_result(it, buff, bufc);
+        return;
+    }
+    if (!Has_contents(it))
+    {
+        safe_ltoa(0, buff, bufc);
+        return;
+    }
+    if (  !Examinable(executor, it)
+       && Location(executor) != it
+       && it != enactor)
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    int count = 0;
+    dbref thing;
+    DOLIST(thing, Contents(it))
+    {
+        if (isPlayer(thing) && Connected(thing))
+        {
+            count++;
+        }
+    }
+    safe_ltoa(count, buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// fun_nthings: Count of things in a location.
+//   nthings(object)
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_nthings)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(it))
+    {
+        safe_match_result(it, buff, bufc);
+        return;
+    }
+    if (!Has_contents(it))
+    {
+        safe_ltoa(0, buff, bufc);
+        return;
+    }
+    if (  !Examinable(executor, it)
+       && Location(executor) != it
+       && it != enactor)
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    int count = 0;
+    dbref thing;
+    DOLIST(thing, Contents(it))
+    {
+        if (isThing(thing))
+        {
+            count++;
+        }
+    }
+    safe_ltoa(count, buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// fun_lplayers: List dbrefs of connected players in a location.
+//   lplayers(object)
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_lplayers)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(it))
+    {
+        safe_match_result(it, buff, bufc);
+        return;
+    }
+    if (!Has_contents(it))
+    {
+        safe_nothing(buff, bufc);
+        return;
+    }
+    if (  !Examinable(executor, it)
+       && Location(executor) != it
+       && it != enactor)
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    dbref thing;
+    ITL pContext;
+    ItemToList_Init(&pContext, buff, bufc, '#');
+    DOLIST(thing, Contents(it))
+    {
+        if (isPlayer(thing) && Connected(thing))
+        {
+            if (!ItemToList_AddInteger(&pContext, thing))
+            {
+                break;
+            }
+        }
+    }
+    ItemToList_Final(&pContext);
+}
+
+// ---------------------------------------------------------------------------
+// fun_lthings: List dbrefs of things in a location.
+//   lthings(object)
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_lthings)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    dbref it = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(it))
+    {
+        safe_match_result(it, buff, bufc);
+        return;
+    }
+    if (!Has_contents(it))
+    {
+        safe_nothing(buff, bufc);
+        return;
+    }
+    if (  !Examinable(executor, it)
+       && Location(executor) != it
+       && it != enactor)
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    dbref thing;
+    ITL pContext;
+    ItemToList_Init(&pContext, buff, bufc, '#');
+    DOLIST(thing, Contents(it))
+    {
+        if (isThing(thing))
+        {
+            if (!ItemToList_AddInteger(&pContext, thing))
+            {
+                break;
+            }
+        }
+    }
+    ItemToList_Final(&pContext);
+}
+
+// ---------------------------------------------------------------------------
+// fun_lreplace: Replace element at a given position in a list.
+//   lreplace(list, position, newvalue[, sep])
+// ---------------------------------------------------------------------------
+
+static FUNCTION(fun_lreplace)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    SEP sep;
+    if (!OPTIONAL_DELIM(4, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    UTF8 *arr[LBUF_SIZE / 2];
+    int nWords = list2arr(arr, LBUF_SIZE / 2, fargs[0], sep);
+    int pos = mux_atol(fargs[1]);
+
+    if (pos < 0 || pos >= nWords)
+    {
+        safe_str(T("#-1 POSITION OUT OF RANGE"), buff, bufc);
+        return;
+    }
+
+    bool bFirst = true;
+    for (int i = 0; i < nWords; i++)
+    {
+        if (!bFirst)
+        {
+            print_sep(sep, buff, bufc);
+        }
+        if (i == pos)
+        {
+            safe_str(fargs[2], buff, bufc);
+        }
+        else
+        {
+            safe_str(arr[i], buff, bufc);
+        }
+        bFirst = false;
+    }
+}
+
 // benchmark(<expression>, <iterations>) - Time expression evaluation.
 // Evaluates the expression N times and returns elapsed seconds.
 //
@@ -12889,6 +13729,7 @@ static FUN builtin_function_list[] =
     {T("BITTYPE"),     fun_bittype,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("BNAND"),       fun_bnand,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("BOR"),         fun_bor,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {T("BOUND"),       fun_bound,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("BXOR"),        fun_bxor,       MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {T("CAND"),        fun_cand,       MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
     {T("CANDBOOL"),    fun_candbool,   MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
@@ -13060,7 +13901,9 @@ static FUN builtin_function_list[] =
     {T("LEXITS"),      fun_lexits,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("LFLAGS"),      fun_lflags,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("LINK"),        fun_link,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("LINSERT"),     fun_linsert,    MAX_ARG, 3,       4,         0, CA_PUBLIC},
     {T("LIST"),        fun_list,       MAX_ARG, 2,       3, FN_NOEVAL, CA_PUBLIC},
+    {T("LISTQ"),       fun_listq,      MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {T("LIT"),         fun_lit,              1, 1,       1, FN_NOEVAL, CA_PUBLIC},
     {T("LJUST"),       fun_ljust,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("LMAX"),        fun_lmax,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
@@ -13080,11 +13923,14 @@ static FUN builtin_function_list[] =
     {T("LPARENT"),     fun_lparent,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("LPORTS"),      fun_lports,     MAX_ARG, 0,       0,         0, CA_WIZARD},
     {T("LPOS"),        fun_lpos,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("LPLAYERS"),    fun_lplayers,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("LRAND"),       fun_lrand,      MAX_ARG, 3,       4,         0, CA_PUBLIC},
+    {T("LREPLACE"),    fun_lreplace,   MAX_ARG, 3,       4,         0, CA_PUBLIC},
     {T("LREST"),       fun_lrest,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("LROOMS"),      fun_lrooms,     MAX_ARG, 1,       3,         0, CA_PUBLIC},
     {T("LT"),          fun_lt,         MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("LTE"),         fun_lte,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("LTHINGS"),     fun_lthings,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("LUA"),         fun_lua,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {T("LWHO"),        fun_lwho,       MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("MAIL"),        fun_mail,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
@@ -13098,6 +13944,8 @@ static FUN builtin_function_list[] =
     {T("MATCH"),       fun_match,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("MATCHALL"),    fun_matchall,   MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("MAX"),         fun_max,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {T("MEAN"),        fun_mean,       MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {T("MEDIAN"),      fun_median,     MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {T("MEMBER"),      fun_member,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("MERGE"),       fun_merge,      MAX_ARG, 3,       3,         0, CA_PUBLIC},
     {T("MID"),         fun_mid,        MAX_ARG, 3,       3,         0, CA_PUBLIC},
@@ -13112,10 +13960,14 @@ static FUN builtin_function_list[] =
     {T("MUL"),         fun_mul,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {T("MUNGE"),       fun_munge,      MAX_ARG, 3,       4,         0, CA_PUBLIC},
     {T("NAME"),        fun_name,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {T("NCON"),        fun_ncon,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("NEARBY"),      fun_nearby,     MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("NEQ"),         fun_neq,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("NEXITS"),      fun_nexits,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("NEXT"),        fun_next,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("NOT"),         fun_not,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("NPLAYERS"),    fun_nplayers,   MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("NTHINGS"),     fun_nthings,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("NULL"),        fun_null,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("NUM"),         fun_num,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("OBJ"),         fun_obj,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
@@ -13228,15 +14080,19 @@ static FUN builtin_function_list[] =
     {T("STARTSECS"),   fun_startsecs,  MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {T("STARTTIME"),   fun_starttime,  MAX_ARG, 0,       0,         0, CA_PUBLIC},
     {T("STATS"),       fun_stats,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
+    {T("STDDEV"),      fun_stddev,     MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {T("STEP"),        fun_step,       MAX_ARG, 3,       5,         0, CA_PUBLIC},
     {T("STRCAT"),      fun_strcat,     MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
+    {T("STRDELETE"),   fun_strdelete,  MAX_ARG, 3,       3,         0, CA_PUBLIC},
     {T("STRIP"),       fun_strip,      MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("STRIPACCENTS"),fun_stripaccents, MAX_ARG, 1,     1,         0, CA_PUBLIC},
     {T("STRIPANSI"),   fun_stripansi,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("STRINSERT"),   fun_strinsert,  MAX_ARG, 3,       3,         0, CA_PUBLIC},
     {T("STRLEN"),      fun_strlen,           1, 0,       1,         0, CA_PUBLIC},
     {T("STRMATCH"),    fun_strmatch,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("STRMEM"),      fun_strmem,           1, 0,       1,         0, CA_PUBLIC},
     {T("STRDISTANCE"), fun_strdistance,MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("STRREPLACE"),  fun_strreplace, MAX_ARG, 4,       4,         0, CA_PUBLIC},
     {T("STRTRUNC"),    fun_strtrunc,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("SUB"),         fun_sub,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("SUBEVAL"),     fun_subeval,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
@@ -13266,7 +14122,9 @@ static FUN builtin_function_list[] =
     {T("UCSTR"),       fun_ucstr,            1, 1,       1,         0, CA_PUBLIC},
     {T("UDEFAULT"),    fun_udefault,   MAX_ARG, 2, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
     {T("ULOCAL"),      fun_ulocal,     MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {T("UNIQUE"),      fun_unique,     MAX_ARG, 1,       4,         0, CA_PUBLIC},
     {T("UNPACK"),      fun_unpack,     MAX_ARG, 1,       3,         0, CA_PUBLIC},
+    {T("UNSETQ"),      fun_unsetq,     MAX_ARG, 0, MAX_ARG,         0, CA_PUBLIC},
     {T("URL_ESCAPE"),  fun_url_escape, MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("URL_UNESCAPE"),fun_url_unescape,MAX_ARG,1,       1,         0, CA_PUBLIC},
     {T("V"),           fun_v,          MAX_ARG, 1,       1,         0, CA_PUBLIC},

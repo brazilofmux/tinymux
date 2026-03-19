@@ -1,0 +1,44 @@
+#
+# unsetq_fn.mux - Test Cases for unsetq() and listq().
+#
+@create test_unsetq_fn
+-
+@set test_unsetq_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_unsetq_fn=
+  @log smoke=Beginning unsetq()/listq() test cases.
+-
+#
+# Test Case #1 - unsetq and listq operations.
+#
+&tr.tc001 test_unsetq_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [setq(0,hello)][setq(1,world)][listq()]
+            [unsetq(0)][listq()]
+            [unsetq(1)][listq()]
+          )
+        ),
+        666981952B48C85620782CE538EC5DEF5F8C9794
+      )=
+  {
+    @log smoke=TC001: unsetq/listq. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: unsetq/listq. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_unsetq_fn=
+  @log smoke=End unsetq()/listq() test cases.;
+  @notify smoke
+-
+drop test_unsetq_fn
+-
+#
+# End of Test Cases
+#
