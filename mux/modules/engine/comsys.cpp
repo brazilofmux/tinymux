@@ -3900,6 +3900,389 @@ FUNCTION(fun_chanobj)
 }
 
 // ---------------------------------------------------------------------------
+// Channel query functions — PennMUSH-compatible.
+// ---------------------------------------------------------------------------
+
+FUNCTION(fun_cowner)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    struct channel *ch = select_channel(fargs[0]);
+    if (nullptr == ch)
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    // Visibility check.
+    //
+    if (  !(ch->type & CHANNEL_PUBLIC)
+       && !Comm_All(executor)
+       && !Controls(executor, ch->charge_who))
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    safe_tprintf_str(buff, bufc, T("#%d"), ch->charge_who);
+}
+
+FUNCTION(fun_cusers)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    struct channel *ch = select_channel(fargs[0]);
+    if (nullptr == ch)
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+    if (  !(ch->type & CHANNEL_PUBLIC)
+       && !Comm_All(executor)
+       && !Controls(executor, ch->charge_who))
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    safe_str(mux_ltoa_t(static_cast<int>(ch->users.size())), buff, bufc);
+}
+
+FUNCTION(fun_cmsgs)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    struct channel *ch = select_channel(fargs[0]);
+    if (nullptr == ch)
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+    if (  !(ch->type & CHANNEL_PUBLIC)
+       && !Comm_All(executor)
+       && !Controls(executor, ch->charge_who))
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    safe_str(mux_ltoa_t(ch->num_messages), buff, bufc);
+}
+
+FUNCTION(fun_cbuffer)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    struct channel *ch = select_channel(fargs[0]);
+    if (nullptr == ch)
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+    if (  !(ch->type & CHANNEL_PUBLIC)
+       && !Comm_All(executor)
+       && !Controls(executor, ch->charge_who))
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    // Buffer size is the MAX_LOG attribute on the channel object.
+    //
+    int logmax = 0;
+    if (Good_obj(ch->chan_obj))
+    {
+        ATTR *pattr = atr_str(T("MAX_LOG"));
+        if (pattr && pattr->number)
+        {
+            dbref aowner;
+            int aflags;
+            UTF8 *maxbuf = atr_get("fun_cbuffer", ch->chan_obj,
+                pattr->number, &aowner, &aflags);
+            logmax = mux_atol(maxbuf);
+            free_lbuf(maxbuf);
+        }
+    }
+    safe_str(mux_ltoa_t(logmax), buff, bufc);
+}
+
+FUNCTION(fun_cdesc)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    struct channel *ch = select_channel(fargs[0]);
+    if (nullptr == ch)
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+    if (  !(ch->type & CHANNEL_PUBLIC)
+       && !Comm_All(executor)
+       && !Controls(executor, ch->charge_who))
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    // Description is the DESC attribute on the channel object.
+    //
+    if (Good_obj(ch->chan_obj))
+    {
+        dbref aowner;
+        int aflags;
+        UTF8 *desc = atr_pget(ch->chan_obj, A_DESC, &aowner, &aflags);
+        if ('\0' != desc[0])
+        {
+            safe_str(desc, buff, bufc);
+        }
+        free_lbuf(desc);
+    }
+}
+
+FUNCTION(fun_cflags)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    struct channel *ch = select_channel(fargs[0]);
+    if (nullptr == ch)
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+    if (  !(ch->type & CHANNEL_PUBLIC)
+       && !Comm_All(executor)
+       && !Controls(executor, ch->charge_who))
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    if (nfargs >= 2)
+    {
+        // cflags(channel, player) — per-user flags.
+        //
+        dbref target = match_thing(executor, fargs[1]);
+        if (!Good_obj(target))
+        {
+            safe_str(T("#-1 NO MATCH"), buff, bufc);
+            return;
+        }
+        struct comuser *user = select_user(ch, target);
+        if (nullptr == user)
+        {
+            safe_str(T("#-1 NOT ON CHANNEL"), buff, bufc);
+            return;
+        }
+        // Return user flags: on/off, gag, comtitle status.
+        //
+        if (!user->bUserIsOn)
+        {
+            safe_chr('O', buff, bufc);
+        }
+        if (user->bGagJoinLeave)
+        {
+            safe_chr('G', buff, bufc);
+        }
+        if (!user->ComTitleStatus)
+        {
+            safe_chr('Q', buff, bufc);
+        }
+    }
+    else
+    {
+        // cflags(channel) — channel flags.
+        //
+        if (ch->type & CHANNEL_PUBLIC)    safe_chr('P', buff, bufc);
+        if (ch->type & CHANNEL_LOUD)     safe_chr('L', buff, bufc);
+        if (ch->type & CHANNEL_SPOOF)    safe_chr('S', buff, bufc);
+    }
+}
+
+FUNCTION(fun_cstatus)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    struct channel *ch = select_channel(fargs[0]);
+    if (nullptr == ch)
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+    if (  !(ch->type & CHANNEL_PUBLIC)
+       && !Comm_All(executor)
+       && !Controls(executor, ch->charge_who))
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    dbref target = match_thing(executor, fargs[1]);
+    if (!Good_obj(target))
+    {
+        safe_str(T("#-1 NO MATCH"), buff, bufc);
+        return;
+    }
+
+    struct comuser *user = select_user(ch, target);
+    if (nullptr == user)
+    {
+        safe_str(T("Off"), buff, bufc);
+        return;
+    }
+
+    if (!user->bUserIsOn)
+    {
+        safe_str(T("Off"), buff, bufc);
+    }
+    else if (user->bGagJoinLeave)
+    {
+        safe_str(T("Gag"), buff, bufc);
+    }
+    else
+    {
+        safe_str(T("On"), buff, bufc);
+    }
+}
+
+FUNCTION(fun_crecall)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    struct channel *ch = select_channel(fargs[0]);
+    if (nullptr == ch)
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+    if (  !(ch->type & CHANNEL_PUBLIC)
+       && !Comm_All(executor)
+       && !Controls(executor, ch->charge_who))
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    // Must be on the channel.
+    //
+    struct comuser *user = select_user(ch, executor);
+    if (nullptr == user || !user->bUserIsOn)
+    {
+        safe_str(T("#-1 NOT ON CHANNEL"), buff, bufc);
+        return;
+    }
+
+    // Get buffer depth from channel object.
+    //
+    if (!Good_obj(ch->chan_obj))
+    {
+        return;
+    }
+
+    ATTR *pattr = atr_str(T("MAX_LOG"));
+    int logmax = 0;
+    if (pattr && pattr->number)
+    {
+        dbref aowner;
+        int aflags;
+        UTF8 *maxbuf = atr_get("fun_crecall", ch->chan_obj,
+            pattr->number, &aowner, &aflags);
+        logmax = mux_atol(maxbuf);
+        free_lbuf(maxbuf);
+    }
+    if (logmax < 1)
+    {
+        return;
+    }
+
+    // Number of lines to recall (default 1, max logmax).
+    //
+    int nLines = 1;
+    if (nfargs >= 2 && fargs[1][0] != '\0')
+    {
+        nLines = mux_atol(fargs[1]);
+        if (nLines < 1) nLines = 1;
+        if (nLines > logmax) nLines = logmax;
+    }
+
+    // Output separator (default newline).
+    //
+    SEP sep;
+    sep.n = 1;
+    sep.str[0] = '\r';
+    sep.str[1] = '\0';
+    if (nfargs >= 3)
+    {
+        memcpy(sep.str, fargs[2], strlen(reinterpret_cast<char *>(fargs[2])) + 1);
+        sep.n = strlen(reinterpret_cast<char *>(fargs[2]));
+    }
+
+    int histnum = ch->num_messages - nLines;
+    bool bFirst = true;
+    for (int count = 0; count < nLines; count++)
+    {
+        histnum++;
+        const UTF8 *attrname = tprintf(T("HISTORY_%d"),
+            ((histnum % logmax) + logmax) % logmax);
+        int atr = mkattr(GOD, attrname);
+        if (0 < atr)
+        {
+            dbref aowner;
+            int aflags;
+            UTF8 *msg = atr_get("fun_crecall", ch->chan_obj,
+                atr, &aowner, &aflags);
+            if ('\0' != msg[0])
+            {
+                if (!bFirst)
+                {
+                    safe_copy_buf(sep.str, sep.n, buff, bufc);
+                }
+                safe_str(msg, buff, bufc);
+                bFirst = false;
+            }
+            free_lbuf(msg);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // SQLite comsys bulk sync and load.
 // ---------------------------------------------------------------------------
 

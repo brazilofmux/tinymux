@@ -5523,6 +5523,35 @@ CAT()
 
   Related Topics:
 
+& CBUFFER()
+CBUFFER()
+
+  FUNCTION: cbuffer(<channel>)
+
+  Returns the buffer size (maximum log depth) for <channel>. This is the
+  MAX_LOG attribute on the channel object. Returns 0 if no logging is
+  configured.
+
+  Example:
+    > say cbuffer(Public)
+    You say, "50"
+
+  Related Topics: crecall(), cmsgs(), chanobj().
+
+& CDESC()
+CDESC()
+
+  FUNCTION: cdesc(<channel>)
+
+  Returns the description of <channel>. This is the DESC attribute on the
+  channel object. Returns empty if no description is set.
+
+  Example:
+    > say cdesc(Public)
+    You say, "The public discussion channel."
+
+  Related Topics: cowner(), cflags().
+
 & CEIL()
 CEIL()
 
@@ -5584,6 +5613,23 @@ CENTER()
     --+--+--+--+--RGB+--+--+--+--+-
 
   Related Topics: cpad(), ljust(), lpad(), rjust(), rpad().
+
+& CFLAGS()
+CFLAGS()
+
+  FUNCTION: cflags(<channel>[, <player>])
+
+  With one argument, returns channel flags as letters: P (public), L (loud),
+  S (spoof). With two arguments, returns the player's per-channel flags:
+  O (off), G (gagging join/leave), Q (comtitle disabled).
+
+  Examples:
+    > say cflags(Public)
+    You say, "PL"
+    > say cflags(Public, me)
+    You say, ""
+
+  Related Topics: cstatus(), cowner().
 
 & CHANNEL OBJECT
 CHANNEL OBJECT
@@ -5785,6 +5831,19 @@ CMDS()
     You say, "101"
 
   Related Topics:
+
+& CMSGS()
+CMSGS()
+
+  FUNCTION: cmsgs(<channel>)
+
+  Returns the total number of messages sent on <channel>.
+
+  Example:
+    > say cmsgs(Public)
+    You say, "142"
+
+  Related Topics: cbuffer(), crecall().
 
 & COLOR256
 COLOR256
@@ -6497,6 +6556,19 @@ COSTS
 
   Related Topics: @list.
 
+& COWNER()
+COWNER()
+
+  FUNCTION: cowner(<channel>)
+
+  Returns the dbref of the owner of <channel>.
+
+  Example:
+    > say cowner(Public)
+    You say, "#1"
+
+  Related Topics: cflags(), cusers().
+
 & CPAD()
 CPAD()
 
@@ -6581,6 +6653,24 @@ CLONE()
 
   Related Topics: @clone, create(), destroy()
 
+& CRECALL()
+CRECALL()
+
+  FUNCTION: crecall(<channel>[, <lines>[, <separator>]])
+
+  Recalls the last <lines> messages from <channel>'s message buffer
+  (default 1). The caller must be on the channel. Messages are separated
+  by <separator> (default newline). The channel must have a channel object
+  with logging enabled (MAX_LOG set).
+
+  Example:
+    > say crecall(Public)
+    You say, "[Public] Bob says, "Hello everyone!""
+    > say crecall(Public, 2, |)
+    You say, "[Public] Alice says, "Hi"|[Public] Bob says, "Hello everyone!""
+
+  Related Topics: cbuffer(), cmsgs().
+
 & CREDITS
 
   Topic: CREDITS
@@ -6590,6 +6680,21 @@ Stephen Dennis (AKA Brazil). There is a more complete list of credits
 in the README files for the server itself.
 
 See http://www.tinymux.org for an on-line version of these README files.
+
+& CSTATUS()
+CSTATUS()
+
+  FUNCTION: cstatus(<channel>, <player>)
+
+  Returns the status of <player> on <channel>: "On" if actively listening,
+  "Off" if not on the channel or turned off, "Gag" if on but gagging
+  join/leave messages.
+
+  Example:
+    > say cstatus(Public, me)
+    You say, "On"
+
+  Related Topics: cflags(), cusers().
 
 & CTIME()
 CTIME()
@@ -6623,6 +6728,19 @@ CTU()
     You say, "3.141592653589793"
 
   Related Topics: sin(), cos(), tan(), asin(), acos(), atan(), pi()
+
+& CUSERS()
+CUSERS()
+
+  FUNCTION: cusers(<channel>)
+
+  Returns the number of users subscribed to <channel>.
+
+  Example:
+    > say cusers(Public)
+    You say, "5"
+
+  Related Topics: cowner(), cwho().
 
 & CWHO()
 CWHO()

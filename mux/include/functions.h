@@ -124,10 +124,18 @@ XFUNCTION(fun_rvbench);
 XFUNCTION(fun_jitstats);
 #endif
 // In comsys.cpp
+XFUNCTION(fun_cbuffer);
+XFUNCTION(fun_cdesc);
+XFUNCTION(fun_cflags);
 XFUNCTION(fun_channels);
+XFUNCTION(fun_cmsgs);
 XFUNCTION(fun_comalias);
 XFUNCTION(fun_comtitle);
 XFUNCTION(fun_chanobj);
+XFUNCTION(fun_cowner);
+XFUNCTION(fun_crecall);
+XFUNCTION(fun_cstatus);
+XFUNCTION(fun_cusers);
 // In funceval.cpp
 XFUNCTION(fun_alphamax);
 XFUNCTION(fun_alphamin);
