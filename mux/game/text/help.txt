@@ -4617,6 +4617,23 @@ ALPHAMIN()
 
   Related Topics: alphamax().
 
+& ALLOF()
+ALLOF()
+
+  FUNCTION: allof(<arg1>, <arg2>[, ..., <osep>])
+
+  Evaluates each argument from left to right and returns all arguments that
+  evaluate to a true (non-zero) value, separated by <osep> (default space).
+  The last argument is treated as the output separator.
+
+  Examples:
+    > think allof(0,cat,0,dog, )
+    cat dog
+    > think allof(1,2,3,|)
+    1|2|3
+
+  Related Topics: firstof(), strallof(), cand(), cor().
+
 & AND()
 AND()
 
@@ -7553,6 +7570,24 @@ FIRST()
     You say, "List"
 
   Related Topics: rest().
+
+& FIRSTOF()
+FIRSTOF()
+
+  FUNCTION: firstof(<arg1>, <arg2>[, ...])
+
+  Evaluates each argument from left to right and returns the first argument
+  that evaluates to a true (non-zero) value. Short-circuits -- remaining
+  arguments are not evaluated. If no argument is true, returns the last
+  evaluated value.
+
+  Examples:
+    > think firstof(0,0,42,99)
+    42
+    > think firstof(0,0,0)
+    0
+
+  Related Topics: allof(), strfirstof(), cand(), cor().
 
 & FIXED
 FIXED
@@ -12290,6 +12325,20 @@ POS()
 
   Related Topics:
 
+& PROMPT()
+PROMPT()
+
+  FUNCTION: prompt(<target>, <text>)
+
+  Sends <text> to <target> without a trailing newline, followed by a telnet
+  Go-Ahead (GA) signal. This allows MUD clients to display the text as an
+  input prompt. Requires control of or proximity to <target>.
+
+  Examples:
+    > prompt(%#,Enter choice>)
+
+  Related Topics: pemit().
+
 & POSE
 POSE
 
@@ -14441,6 +14490,36 @@ STICKY
   rooms.
 
   Related Topics:
+
+& STRALLOF()
+STRALLOF()
+
+  FUNCTION: strallof(<arg1>, <arg2>[, ..., <osep>])
+
+  Evaluates each argument from left to right and returns all arguments that
+  evaluate to a non-empty string, separated by <osep> (default space). The
+  last argument is treated as the output separator.
+
+  Examples:
+    > think strallof(,hello,,world, )
+    hello world
+
+  Related Topics: strfirstof(), allof(), cat().
+
+& STRFIRSTOF()
+STRFIRSTOF()
+
+  FUNCTION: strfirstof(<arg1>, <arg2>[, ...])
+
+  Evaluates each argument from left to right and returns the first argument
+  that evaluates to a non-empty string. Short-circuits -- remaining arguments
+  are not evaluated. If all arguments are empty, returns empty string.
+
+  Examples:
+    > think strfirstof(,,hello,world)
+    hello
+
+  Related Topics: strallof(), firstof().
 
 & STRCAT()
 STRCAT()
