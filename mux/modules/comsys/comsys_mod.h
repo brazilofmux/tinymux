@@ -9,7 +9,11 @@
 #ifndef COMSYS_MOD_H
 #define COMSYS_MOD_H
 
+#include <algorithm>
 #include <map>
+#include <memory>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #ifndef NOTHING
@@ -38,7 +42,6 @@ const MUX_CID CID_ComsysMod = UINT64_C(0x00000002C5A2F193);
 #define MAX_HEADER_LEN  100
 #define MAX_TITLE_LEN   200
 #define MAX_ALIAS_LEN    15
-#define ALIAS_SIZE       16
 #define MAX_ALIASES_PER_PLAYER 100
 
 // Command switch keys (mirrored from externs.h).
@@ -79,16 +82,27 @@ const MUX_CID CID_ComsysMod = UINT64_C(0x00000002C5A2F193);
 #define MAX_COST        32767
 #define MOD_LBUF_SIZE   8000
 
+// Per-player alias entry — pairs an alias string with its channel name.
+//
+struct com_alias
+{
+    std::string alias;
+    std::string channel;
+};
+
 // Per-user channel subscription record.
 //
 struct comuser
 {
     dbref who;
     bool  bUserIsOn;
-    UTF8 *title;
+    std::string title;
     bool  ComTitleStatus;
     bool  bGagJoinLeave;
-    struct comuser *on_next;
+    bool  bConnected;
+
+    comuser() : who(NOTHING), bUserIsOn(false),
+        ComTitleStatus(true), bGagJoinLeave(false), bConnected(false) {}
 };
 
 // Channel definition.
@@ -103,27 +117,28 @@ struct channel
     int  charge;
     dbref charge_who;
     int  amount_col;
-    int  num_users;
-    int  max_users;
     dbref chan_obj;
-    struct comuser **users;
-    struct comuser  *on_users;
+    std::map<dbref, comuser> users;
     int  num_messages;
+
+    channel() : type(0), temp1(0), temp2(0), charge(0),
+        charge_who(NOTHING), amount_col(0), chan_obj(NOTHING),
+        num_messages(0)
+    {
+        memset(name, 0, sizeof(name));
+        memset(header, 0, sizeof(header));
+    }
 };
 
 // Per-player alias tracking.
 //
-#define NUM_COMSYS 500
-
-typedef struct tagComsys
+struct comsys_t
 {
     dbref who;
-    int   numchannels;
-    int   maxchannels;
-    UTF8 *alias;
-    UTF8 **channels;
-    struct tagComsys *next;
-} comsys_t;
+    std::vector<com_alias> aliases;
+
+    comsys_t() : who(NOTHING) {}
+};
 
 class CComsysMod : public mux_IComsysControl, mux_IServerEventsSink
 {
@@ -142,9 +157,8 @@ private:
 
     // Channel data — owned by the module.
     //
-    std::map<std::vector<UTF8>, struct channel *> m_channels;
-    comsys_t *m_comsys_table[NUM_COMSYS];
-    int m_num_channels;
+    std::map<std::vector<UTF8>, std::unique_ptr<channel>> m_channels;
+    std::unordered_map<dbref, comsys_t> m_comsys;
 
     // Internal helpers.
     //
@@ -154,14 +168,13 @@ private:
 
     struct channel *select_channel(const UTF8 *name);
     struct comuser *select_user(struct channel *ch, dbref player);
-    comsys_t *get_comsys(dbref who);
-    void add_comsys(comsys_t *c);
-    comsys_t *create_new_comsys(void);
+    comsys_t &get_comsys(dbref who);
     const UTF8 *get_channel_from_alias(dbref player, const UTF8 *alias);
-    void do_comconnectchannel(dbref player, UTF8 *channel, UTF8 *alias, int i);
-    void do_comdisconnectchannel(dbref player, UTF8 *channel);
-    void do_comconnectraw_notify(dbref player, UTF8 *chan);
-    void do_comdisconnectraw_notify(dbref player, UTF8 *chan);
+    void do_comconnectchannel(dbref player, const UTF8 *channel,
+        const std::string &alias);
+    void do_comdisconnectchannel(dbref player, const UTF8 *channel);
+    void do_comconnectraw_notify(dbref player, const UTF8 *chan);
+    void do_comdisconnectraw_notify(dbref player, const UTF8 *chan);
 
     bool test_transmit_access(dbref player, struct channel *ch);
     bool test_receive_access(dbref player, struct channel *ch);
@@ -172,7 +185,8 @@ private:
     void do_leavechannel(dbref player, struct channel *ch);
     void do_comwho(dbref player, struct channel *ch);
 
-    void sqlite_wt_channel_user(const UTF8 *channel_name, struct comuser *user);
+    void sqlite_wt_channel_user(const UTF8 *channel_name,
+        const comuser &user);
     void sqlite_wt_channel(struct channel *ch);
     void sqlite_wt_player_channel(dbref who, const UTF8 *alias,
         const UTF8 *channel_name);
@@ -182,7 +196,7 @@ private:
     bool test_join_access(dbref player, struct channel *ch);
     void do_delcomchannel(dbref player, const UTF8 *channel, bool bQuiet);
     void do_comlast(dbref player, struct channel *ch, int arg);
-    void sort_com_aliases(comsys_t *c);
+    void sort_com_aliases(comsys_t &c);
 
 public:
     // mux_IUnknown

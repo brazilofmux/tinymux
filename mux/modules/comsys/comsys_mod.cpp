@@ -101,10 +101,8 @@ CComsysMod::CComsysMod(void) : m_cRef(1),
     m_pIAttributeAccess(nullptr),
     m_pIEvaluator(nullptr),
     m_pIPermissions(nullptr),
-    m_pIStorage(nullptr),
-    m_num_channels(0)
+    m_pIStorage(nullptr)
 {
-    memset(m_comsys_table, 0, sizeof(m_comsys_table));
     g_cComponents++;
 }
 
@@ -188,58 +186,10 @@ CComsysMod::~CComsysMod()
         m_pIStorage = nullptr;
     }
 
-    // Free channel data.
+    // STL containers clean up automatically.
     //
-    for (auto it = m_channels.begin(); it != m_channels.end(); ++it)
-    {
-        struct channel *ch = it->second;
-        if (nullptr != ch->users)
-        {
-            for (int j = 0; j < ch->num_users; j++)
-            {
-                if (nullptr != ch->users[j])
-                {
-                    if (nullptr != ch->users[j]->title)
-                    {
-                        free(ch->users[j]->title);
-                    }
-                    free(ch->users[j]);
-                }
-            }
-            free(ch->users);
-        }
-        free(ch);
-    }
     m_channels.clear();
-
-    // Free comsys_table entries.
-    //
-    for (int i = 0; i < NUM_COMSYS; i++)
-    {
-        comsys_t *c = m_comsys_table[i];
-        while (nullptr != c)
-        {
-            comsys_t *next = c->next;
-            if (nullptr != c->alias)
-            {
-                free(c->alias);
-            }
-            if (nullptr != c->channels)
-            {
-                for (int j = 0; j < c->numchannels; j++)
-                {
-                    if (nullptr != c->channels[j])
-                    {
-                        free(c->channels[j]);
-                    }
-                }
-                free(c->channels);
-            }
-            free(c);
-            c = next;
-        }
-        m_comsys_table[i] = nullptr;
-    }
+    m_comsys.clear();
 
     if (nullptr != m_pILog)
     {
@@ -352,9 +302,7 @@ bool CComsysMod::LoadChannels(void)
         {
             CComsysMod *self = static_cast<CComsysMod *>(ctx);
 
-            struct channel *ch = static_cast<struct channel *>(
-                calloc(1, sizeof(struct channel)));
-            if (nullptr == ch) return;
+            auto ch = std::make_unique<channel>();
 
             if (nullptr != name)
             {
@@ -377,15 +325,10 @@ bool CComsysMod::LoadChannels(void)
             ch->amount_col   = amount_col;
             ch->num_messages = num_messages;
             ch->chan_obj     = chan_obj;
-            ch->num_users    = 0;
-            ch->max_users    = 0;
-            ch->users        = nullptr;
-            ch->on_users     = nullptr;
 
             std::vector<UTF8> key(ch->name,
                 ch->name + strlen(reinterpret_cast<const char *>(ch->name)) + 1);
-            self->m_channels[key] = ch;
-            self->m_num_channels++;
+            self->m_channels[key] = std::move(ch);
         }, this);
 
     return MUX_SUCCEEDED(mr);
@@ -410,64 +353,20 @@ bool CComsysMod::LoadChannelUsers(void)
             struct channel *ch = self->select_channel(channel_name);
             if (nullptr == ch) return;
 
-            struct comuser *cu = static_cast<struct comuser *>(
-                calloc(1, sizeof(struct comuser)));
-            if (nullptr == cu) return;
-
-            cu->who            = who;
-            cu->bUserIsOn      = is_on;
-            cu->ComTitleStatus = comtitle_status;
-            cu->bGagJoinLeave  = gag_join_leave;
-            cu->on_next        = nullptr;
+            comuser cu;
+            cu.who            = who;
+            cu.bUserIsOn      = is_on;
+            cu.ComTitleStatus = comtitle_status;
+            cu.bGagJoinLeave  = gag_join_leave;
+            cu.bConnected     = false;
 
             if (nullptr != title && title[0] != '\0')
             {
-                cu->title = reinterpret_cast<UTF8 *>(
-                    strdup(reinterpret_cast<const char *>(title)));
-            }
-            else
-            {
-                cu->title = nullptr;
+                cu.title = reinterpret_cast<const char *>(title);
             }
 
-            if (ch->num_users >= ch->max_users)
-            {
-                int newmax = (ch->max_users == 0) ? 8 : ch->max_users * 2;
-                struct comuser **newusers = static_cast<struct comuser **>(
-                    realloc(ch->users, newmax * sizeof(struct comuser *)));
-                if (nullptr == newusers)
-                {
-                    free(cu->title);
-                    free(cu);
-                    return;
-                }
-                ch->users = newusers;
-                ch->max_users = newmax;
-            }
-            ch->users[ch->num_users] = cu;
-            ch->num_users++;
+            ch->users[who] = std::move(cu);
         }, this);
-
-    // Sort users arrays by dbref for binary search.
-    //
-    for (auto it = m_channels.begin(); it != m_channels.end(); ++it)
-    {
-        struct channel *ch = it->second;
-        if (ch->num_users > 1)
-        {
-            for (int i = 1; i < ch->num_users; i++)
-            {
-                struct comuser *key = ch->users[i];
-                int j = i - 1;
-                while (j >= 0 && ch->users[j]->who > key->who)
-                {
-                    ch->users[j + 1] = ch->users[j];
-                    j--;
-                }
-                ch->users[j + 1] = key;
-            }
-        }
-    }
 
     return MUX_SUCCEEDED(mr);
 }
@@ -479,72 +378,22 @@ bool CComsysMod::LoadPlayerChannels(void)
         return false;
     }
 
-    struct LoadState
-    {
-        CComsysMod *self;
-        dbref current_who;
-        comsys_t *c;
-    };
-
-    LoadState ls;
-    ls.self = this;
-    ls.current_who = NOTHING;
-    ls.c = nullptr;
-
     MUX_RESULT mr = m_pIStorage->LoadAllPlayerChannels(
         [](void *ctx, int who, const UTF8 *alias,
             const UTF8 *channel_name)
         {
-            LoadState *ls = static_cast<LoadState *>(ctx);
-            CComsysMod *self = ls->self;
+            CComsysMod *self = static_cast<CComsysMod *>(ctx);
 
             if (nullptr == alias || nullptr == channel_name) return;
 
-            if (who != ls->current_who)
-            {
-                if (nullptr != ls->c)
-                {
-                    self->add_comsys(ls->c);
-                }
-                ls->c = self->create_new_comsys();
-                ls->c->who = who;
-                ls->current_who = who;
-            }
+            comsys_t &c = self->m_comsys[who];
+            c.who = who;
 
-            comsys_t *c = ls->c;
-            if (c->numchannels >= c->maxchannels)
-            {
-                int newmax = (c->maxchannels == 0) ? 4 : c->maxchannels * 2;
-                UTF8 *newAlias = static_cast<UTF8 *>(
-                    realloc(c->alias, newmax * ALIAS_SIZE));
-                UTF8 **newChannels = static_cast<UTF8 **>(
-                    realloc(c->channels, newmax * sizeof(UTF8 *)));
-                if (nullptr == newAlias || nullptr == newChannels)
-                {
-                    if (nullptr != newAlias) c->alias = newAlias;
-                    if (nullptr != newChannels) c->channels = newChannels;
-                    return;
-                }
-                c->alias = newAlias;
-                c->channels = newChannels;
-                c->maxchannels = newmax;
-            }
-
-            UTF8 *pSlot = c->alias + c->numchannels * ALIAS_SIZE;
-            strncpy(reinterpret_cast<char *>(pSlot),
-                    reinterpret_cast<const char *>(alias), MAX_ALIAS_LEN);
-            pSlot[MAX_ALIAS_LEN] = '\0';
-
-            c->channels[c->numchannels] = reinterpret_cast<UTF8 *>(
-                strdup(reinterpret_cast<const char *>(channel_name)));
-
-            c->numchannels++;
-        }, &ls);
-
-    if (nullptr != ls.c)
-    {
-        add_comsys(ls.c);
-    }
+            com_alias ca;
+            ca.alias = reinterpret_cast<const char *>(alias);
+            ca.channel = reinterpret_cast<const char *>(channel_name);
+            c.aliases.push_back(std::move(ca));
+        }, this);
 
     return MUX_SUCCEEDED(mr);
 }
@@ -560,17 +409,17 @@ struct channel *CComsysMod::select_channel(const UTF8 *name)
     auto it = m_channels.find(key);
     if (it != m_channels.end())
     {
-        return it->second;
+        return it->second.get();
     }
 
     // Case-insensitive fallback.
     //
-    for (auto it2 = m_channels.begin(); it2 != m_channels.end(); ++it2)
+    for (auto &kv : m_channels)
     {
         if (0 == strcasecmp(reinterpret_cast<const char *>(name),
-                            reinterpret_cast<const char *>(it2->second->name)))
+                            reinterpret_cast<const char *>(kv.second->name)))
         {
-            return it2->second;
+            return kv.second.get();
         }
     }
     return nullptr;
@@ -578,71 +427,23 @@ struct channel *CComsysMod::select_channel(const UTF8 *name)
 
 struct comuser *CComsysMod::select_user(struct channel *ch, dbref player)
 {
-    if (nullptr == ch || nullptr == ch->users)
+    if (nullptr == ch)
     {
         return nullptr;
     }
 
-    // Binary search by dbref.
-    //
-    int lo = 0;
-    int hi = ch->num_users - 1;
-    while (lo <= hi)
+    auto it = ch->users.find(player);
+    if (it != ch->users.end())
     {
-        int mid = (lo + hi) / 2;
-        if (ch->users[mid]->who == player)
-        {
-            return ch->users[mid];
-        }
-        else if (ch->users[mid]->who < player)
-        {
-            lo = mid + 1;
-        }
-        else
-        {
-            hi = mid - 1;
-        }
+        return &it->second;
     }
     return nullptr;
 }
 
-comsys_t *CComsysMod::create_new_comsys(void)
+comsys_t &CComsysMod::get_comsys(dbref who)
 {
-    comsys_t *c = static_cast<comsys_t *>(calloc(1, sizeof(comsys_t)));
-    c->who = NOTHING;
-    return c;
-}
-
-void CComsysMod::add_comsys(comsys_t *c)
-{
-    if (c->who < 0)
-    {
-        return;
-    }
-    int bucket = c->who % NUM_COMSYS;
-    c->next = m_comsys_table[bucket];
-    m_comsys_table[bucket] = c;
-}
-
-comsys_t *CComsysMod::get_comsys(dbref who)
-{
-    if (who < 0)
-    {
-        return nullptr;
-    }
-
-    comsys_t *c = m_comsys_table[who % NUM_COMSYS];
-    while (nullptr != c && c->who != who)
-    {
-        c = c->next;
-    }
-
-    if (nullptr == c)
-    {
-        c = create_new_comsys();
-        c->who = who;
-        add_comsys(c);
-    }
+    comsys_t &c = m_comsys[who];
+    c.who = who;
     return c;
 }
 
@@ -650,20 +451,18 @@ const UTF8 *CComsysMod::get_channel_from_alias(dbref player, const UTF8 *alias)
 {
     static const UTF8 empty[] = { '\0' };
 
-    comsys_t *c = get_comsys(player);
-    if (nullptr == c || c->numchannels <= 0)
+    auto it = m_comsys.find(player);
+    if (it == m_comsys.end())
     {
         return empty;
     }
 
-    // Linear search through aliases.
-    //
-    for (int i = 0; i < c->numchannels; i++)
+    const comsys_t &c = it->second;
+    for (const auto &ca : c.aliases)
     {
-        if (0 == strcmp(reinterpret_cast<const char *>(c->alias + i * ALIAS_SIZE),
-                        reinterpret_cast<const char *>(alias)))
+        if (ca.alias == reinterpret_cast<const char *>(alias))
         {
-            return c->channels[i];
+            return reinterpret_cast<const UTF8 *>(ca.channel.c_str());
         }
     }
     return empty;
@@ -673,7 +472,7 @@ const UTF8 *CComsysMod::get_channel_from_alias(dbref player, const UTF8 *alias)
 // Connect/disconnect helpers.
 // ---------------------------------------------------------------------------
 
-void CComsysMod::do_comconnectraw_notify(dbref player, UTF8 *chan)
+void CComsysMod::do_comconnectraw_notify(dbref player, const UTF8 *chan)
 {
     struct channel *ch = select_channel(chan);
     if (nullptr == ch)
@@ -691,12 +490,6 @@ void CComsysMod::do_comconnectraw_notify(dbref player, UTF8 *chan)
     if (  (ch->type & CHANNEL_LOUD)
        && cu->bUserIsOn)
     {
-        // Check if player is hidden via object info.
-        // For now, send the notification unconditionally.
-        // TODO: Check Hidden(player) via COM interface.
-        //
-        // Build a simple connect message.
-        //
         UTF8 msg[MOD_LBUF_SIZE];
         const UTF8 *pName = nullptr;
         if (nullptr != m_pIObjectInfo)
@@ -713,22 +506,21 @@ void CComsysMod::do_comconnectraw_notify(dbref player, UTF8 *chan)
                  reinterpret_cast<const char *>(ch->header),
                  reinterpret_cast<const char *>(pName));
 
-        // Notify all on_users.
-        //
         if (nullptr != m_pINotify)
         {
-            for (struct comuser *u = ch->on_users; u; u = u->on_next)
+            for (auto &kv : ch->users)
             {
-                if (u->bUserIsOn && !u->bGagJoinLeave)
+                comuser &u = kv.second;
+                if (u.bConnected && u.bUserIsOn && !u.bGagJoinLeave)
                 {
-                    m_pINotify->RawNotify(u->who, msg);
+                    m_pINotify->RawNotify(u.who, msg);
                 }
             }
         }
     }
 }
 
-void CComsysMod::do_comdisconnectraw_notify(dbref player, UTF8 *chan)
+void CComsysMod::do_comdisconnectraw_notify(dbref player, const UTF8 *chan)
 {
     struct channel *ch = select_channel(chan);
     if (nullptr == ch)
@@ -762,48 +554,37 @@ void CComsysMod::do_comdisconnectraw_notify(dbref player, UTF8 *chan)
 
         if (nullptr != m_pINotify)
         {
-            for (struct comuser *u = ch->on_users; u; u = u->on_next)
+            for (auto &kv : ch->users)
             {
-                if (u->bUserIsOn && !u->bGagJoinLeave)
+                comuser &u = kv.second;
+                if (u.bConnected && u.bUserIsOn && !u.bGagJoinLeave)
                 {
-                    m_pINotify->RawNotify(u->who, msg);
+                    m_pINotify->RawNotify(u.who, msg);
                 }
             }
         }
     }
 }
 
-void CComsysMod::do_comconnectchannel(dbref player, UTF8 *channel,
-    UTF8 *alias, int i)
+void CComsysMod::do_comconnectchannel(dbref player, const UTF8 *channel,
+    const std::string &alias)
 {
     struct channel *ch = select_channel(channel);
     if (nullptr != ch)
     {
-        // Check if already on on_users list.
-        //
-        struct comuser *user;
-        for (user = ch->on_users; user && user->who != player;
-             user = user->on_next)
+        struct comuser *user = select_user(ch, player);
+        if (nullptr != user)
         {
+            user->bConnected = true;
         }
-
-        if (nullptr == user)
+        else if (nullptr != m_pINotify)
         {
-            user = select_user(ch, player);
-            if (nullptr != user)
-            {
-                user->on_next = ch->on_users;
-                ch->on_users = user;
-            }
-            else if (nullptr != m_pINotify)
-            {
-                UTF8 msg[256];
-                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                         "Bad Comsys Alias: %s for Channel: %s",
-                         reinterpret_cast<const char *>(alias + i * ALIAS_SIZE),
-                         reinterpret_cast<const char *>(channel));
-                m_pINotify->RawNotify(player, msg);
-            }
+            UTF8 msg[256];
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "Bad Comsys Alias: %s for Channel: %s",
+                     alias.c_str(),
+                     reinterpret_cast<const char *>(channel));
+            m_pINotify->RawNotify(player, msg);
         }
     }
     else if (nullptr != m_pINotify)
@@ -811,13 +592,13 @@ void CComsysMod::do_comconnectchannel(dbref player, UTF8 *channel,
         UTF8 msg[256];
         snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                  "Bad Comsys Alias: %s for Channel: %s",
-                 reinterpret_cast<const char *>(alias + i * ALIAS_SIZE),
+                 alias.c_str(),
                  reinterpret_cast<const char *>(channel));
         m_pINotify->RawNotify(player, msg);
     }
 }
 
-void CComsysMod::do_comdisconnectchannel(dbref player, UTF8 *channel)
+void CComsysMod::do_comdisconnectchannel(dbref player, const UTF8 *channel)
 {
     struct channel *ch = select_channel(channel);
     if (nullptr == ch)
@@ -825,23 +606,10 @@ void CComsysMod::do_comdisconnectchannel(dbref player, UTF8 *channel)
         return;
     }
 
-    struct comuser *prevuser = nullptr;
-    for (struct comuser *user = ch->on_users; user;)
+    struct comuser *user = select_user(ch, player);
+    if (nullptr != user)
     {
-        if (user->who == player)
-        {
-            if (nullptr != prevuser)
-            {
-                prevuser->on_next = user->on_next;
-            }
-            else
-            {
-                ch->on_users = user->on_next;
-            }
-            return;
-        }
-        prevuser = user;
-        user = user->on_next;
+        user->bConnected = false;
     }
 }
 
@@ -850,13 +618,12 @@ void CComsysMod::do_comdisconnectchannel(dbref player, UTF8 *channel)
 // ---------------------------------------------------------------------------
 
 void CComsysMod::sqlite_wt_channel_user(const UTF8 *channel_name,
-    struct comuser *user)
+    const comuser &user)
 {
     if (nullptr == m_pIStorage) return;
-    m_pIStorage->SyncChannelUser(channel_name, user->who,
-        user->bUserIsOn, user->ComTitleStatus, user->bGagJoinLeave,
-        (nullptr != user->title) ? user->title
-            : reinterpret_cast<const UTF8 *>(""));
+    m_pIStorage->SyncChannelUser(channel_name, user.who,
+        user.bUserIsOn, user.ComTitleStatus, user.bGagJoinLeave,
+        reinterpret_cast<const UTF8 *>(user.title.c_str()));
 }
 
 void CComsysMod::sqlite_wt_channel(struct channel *ch)
@@ -1012,62 +779,23 @@ void CComsysMod::do_delcomchannel(dbref player, const UTF8 *channel,
                      reinterpret_cast<const char *>(pName));
             SendChannelMessage(player, ch, msg, true);
         }
-
-        // Remove from on_users list.
-        //
-        do_comdisconnectchannel(player,
-            const_cast<UTF8 *>(channel));
     }
 
-    // Remove from users array.
-    //
-    for (int i = 0; i < ch->num_users; i++)
-    {
-        if (ch->users[i] == user)
-        {
-            if (nullptr != user->title)
-            {
-                free(user->title);
-            }
-            free(user);
-            ch->num_users--;
-            for (int j = i; j < ch->num_users; j++)
-            {
-                ch->users[j] = ch->users[j + 1];
-            }
-            break;
-        }
-    }
-
+    ch->users.erase(player);
     sqlite_wt_delete_channel_user(channel, player);
 }
 
 // ---------------------------------------------------------------------------
-// Sort aliases for binary search.
+// Sort aliases for display/lookup.
 // ---------------------------------------------------------------------------
 
-void CComsysMod::sort_com_aliases(comsys_t *c)
+void CComsysMod::sort_com_aliases(comsys_t &c)
 {
-    // Insertion sort by alias name.
-    //
-    for (int i = 1; i < c->numchannels; i++)
-    {
-        UTF8 tmpAlias[ALIAS_SIZE];
-        memcpy(tmpAlias, c->alias + i * ALIAS_SIZE, ALIAS_SIZE);
-        UTF8 *tmpChan = c->channels[i];
-
-        int j = i - 1;
-        while (j >= 0 && strcmp(reinterpret_cast<const char *>(c->alias + j * ALIAS_SIZE),
-                                reinterpret_cast<const char *>(tmpAlias)) > 0)
+    std::sort(c.aliases.begin(), c.aliases.end(),
+        [](const com_alias &a, const com_alias &b)
         {
-            memcpy(c->alias + (j + 1) * ALIAS_SIZE,
-                   c->alias + j * ALIAS_SIZE, ALIAS_SIZE);
-            c->channels[j + 1] = c->channels[j];
-            j--;
-        }
-        memcpy(c->alias + (j + 1) * ALIAS_SIZE, tmpAlias, ALIAS_SIZE);
-        c->channels[j + 1] = tmpChan;
-    }
+            return a.alias < b.alias;
+        });
 }
 
 // ---------------------------------------------------------------------------
@@ -1085,15 +813,17 @@ void CComsysMod::SendChannelMessage(dbref executor, struct channel *ch,
         return;
     }
 
-    for (struct comuser *user = ch->on_users; user; user = user->on_next)
+    for (auto &kv : ch->users)
     {
-        if (bJoinLeaveMsg && user->bGagJoinLeave)
+        comuser &user = kv.second;
+        if (bJoinLeaveMsg && user.bGagJoinLeave)
         {
             continue;
         }
-        if (user->bUserIsOn && test_receive_access(user->who, ch))
+        if (user.bConnected && user.bUserIsOn
+            && test_receive_access(user.who, ch))
         {
-            m_pINotify->RawNotify(user->who, msg);
+            m_pINotify->RawNotify(user.who, msg);
         }
     }
 }
@@ -1110,56 +840,22 @@ void CComsysMod::do_joinchannel(dbref player, struct channel *ch)
     {
         // Create new user on channel.
         //
-        user = static_cast<struct comuser *>(calloc(1, sizeof(struct comuser)));
-        if (nullptr == user)
-        {
-            if (nullptr != m_pINotify)
-            {
-                m_pINotify->RawNotify(player, T("Out of memory."));
-            }
-            return;
-        }
+        comuser cu;
+        cu.who = player;
+        cu.bUserIsOn = true;
+        cu.ComTitleStatus = true;
+        cu.bGagJoinLeave = false;
+        cu.bConnected = true;
 
-        ch->num_users++;
-        if (ch->num_users >= ch->max_users)
-        {
-            int newmax = ch->num_users + 10;
-            struct comuser **cu = static_cast<struct comuser **>(
-                realloc(ch->users, newmax * sizeof(struct comuser *)));
-            if (nullptr == cu)
-            {
-                free(user);
-                ch->num_users--;
-                return;
-            }
-            ch->users = cu;
-            ch->max_users = newmax;
-        }
+        auto result = ch->users.emplace(player, std::move(cu));
+        user = &result.first->second;
 
-        // Insert sorted by dbref.
-        //
-        int i;
-        for (i = ch->num_users - 1;
-             0 < i && player < ch->users[i - 1]->who; --i)
-        {
-            ch->users[i] = ch->users[i - 1];
-        }
-        ch->users[i] = user;
-
-        user->who = player;
-        user->bUserIsOn = true;
-        user->ComTitleStatus = true;
-        user->bGagJoinLeave = false;
-        user->title = reinterpret_cast<UTF8 *>(strdup(""));
-        user->on_next = ch->on_users;
-        ch->on_users = user;
-
-        sqlite_wt_channel_user(ch->name, user);
+        sqlite_wt_channel_user(ch->name, *user);
     }
     else if (!user->bUserIsOn)
     {
         user->bUserIsOn = true;
-        sqlite_wt_channel_user(ch->name, user);
+        sqlite_wt_channel_user(ch->name, *user);
     }
     else
     {
@@ -1233,7 +929,7 @@ void CComsysMod::do_leavechannel(dbref player, struct channel *ch)
         SendChannelMessage(player, ch, msg, true);
 
         user->bUserIsOn = false;
-        sqlite_wt_channel_user(ch->name, user);
+        sqlite_wt_channel_user(ch->name, *user);
     }
 }
 
@@ -1254,12 +950,13 @@ void CComsysMod::do_comwho(dbref player, struct channel *ch)
     m_pINotify->RawNotify(player, msg);
 
     int count = 0;
-    for (struct comuser *user = ch->on_users; user; user = user->on_next)
+    for (auto &kv : ch->users)
     {
-        if (user->bUserIsOn)
+        const comuser &user = kv.second;
+        if (user.bConnected && user.bUserIsOn)
         {
             const UTF8 *pName = nullptr;
-            m_pIObjectInfo->GetMoniker(user->who, &pName);
+            m_pIObjectInfo->GetMoniker(user.who, &pName);
             if (nullptr != pName)
             {
                 m_pINotify->RawNotify(player, pName);
@@ -1597,7 +1294,7 @@ MUX_RESULT CComsysMod::Initialize(mux_IComsysStorage *pStorage)
         if (fStarted)
         {
             m_pILog->log_text(T("Comsys module: loaded "));
-            m_pILog->log_number(m_num_channels);
+            m_pILog->log_number(static_cast<int>(m_channels.size()));
             m_pILog->log_text(T(" channels from SQLite."));
             m_pILog->end_log();
         }
@@ -1608,21 +1305,24 @@ MUX_RESULT CComsysMod::Initialize(mux_IComsysStorage *pStorage)
 
 MUX_RESULT CComsysMod::PlayerConnect(dbref player)
 {
-    comsys_t *c = get_comsys(player);
-    if (nullptr == c)
+    auto it = m_comsys.find(player);
+    if (it == m_comsys.end())
     {
         return MUX_S_OK;
     }
 
-    for (int i = 0; i < c->numchannels; i++)
-    {
-        UTF8 *CurrentChannel = c->channels[i];
-        bool bFound = false;
+    comsys_t &c = it->second;
 
-        for (int j = 0; j < i; j++)
+    // Track which channels we have already connected to (avoid duplicates).
+    //
+    std::vector<std::string> seen;
+
+    for (const auto &ca : c.aliases)
+    {
+        bool bFound = false;
+        for (const auto &s : seen)
         {
-            if (0 == strcmp(reinterpret_cast<char *>(c->channels[j]),
-                            reinterpret_cast<char *>(CurrentChannel)))
+            if (s == ca.channel)
             {
                 bFound = true;
                 break;
@@ -1631,8 +1331,12 @@ MUX_RESULT CComsysMod::PlayerConnect(dbref player)
 
         if (!bFound)
         {
-            do_comconnectchannel(player, CurrentChannel, c->alias, i);
-            do_comconnectraw_notify(player, CurrentChannel);
+            seen.push_back(ca.channel);
+            do_comconnectchannel(player,
+                reinterpret_cast<const UTF8 *>(ca.channel.c_str()),
+                ca.alias);
+            do_comconnectraw_notify(player,
+                reinterpret_cast<const UTF8 *>(ca.channel.c_str()));
         }
     }
 
@@ -1641,21 +1345,22 @@ MUX_RESULT CComsysMod::PlayerConnect(dbref player)
 
 MUX_RESULT CComsysMod::PlayerDisconnect(dbref player)
 {
-    comsys_t *c = get_comsys(player);
-    if (nullptr == c)
+    auto it = m_comsys.find(player);
+    if (it == m_comsys.end())
     {
         return MUX_S_OK;
     }
 
-    for (int i = 0; i < c->numchannels; i++)
-    {
-        UTF8 *CurrentChannel = c->channels[i];
-        bool bFound = false;
+    comsys_t &c = it->second;
 
-        for (int j = 0; j < i; j++)
+    std::vector<std::string> seen;
+
+    for (const auto &ca : c.aliases)
+    {
+        bool bFound = false;
+        for (const auto &s : seen)
         {
-            if (0 == strcmp(reinterpret_cast<char *>(c->channels[j]),
-                            reinterpret_cast<char *>(CurrentChannel)))
+            if (s == ca.channel)
             {
                 bFound = true;
                 break;
@@ -1664,8 +1369,11 @@ MUX_RESULT CComsysMod::PlayerDisconnect(dbref player)
 
         if (!bFound)
         {
-            do_comdisconnectchannel(player, CurrentChannel);
-            do_comdisconnectraw_notify(player, CurrentChannel);
+            seen.push_back(ca.channel);
+            do_comdisconnectchannel(player,
+                reinterpret_cast<const UTF8 *>(ca.channel.c_str()));
+            do_comdisconnectraw_notify(player,
+                reinterpret_cast<const UTF8 *>(ca.channel.c_str()));
         }
     }
 
@@ -1676,46 +1384,19 @@ MUX_RESULT CComsysMod::PlayerNuke(dbref player)
 {
     // Remove all channels owned by this player.
     //
-    bool found = true;
-    while (found)
+    for (auto it = m_channels.begin(); it != m_channels.end(); )
     {
-        found = false;
-        for (auto it = m_channels.begin(); it != m_channels.end(); ++it)
+        if (player == it->second->charge_who)
         {
-            struct channel *ch = it->second;
-            if (player == ch->charge_who)
+            if (nullptr != m_pIStorage)
             {
-                m_num_channels--;
-
-                // Delete from SQLite.
-                //
-                if (nullptr != m_pIStorage)
-                {
-                    m_pIStorage->DeleteChannel(ch->name);
-                }
-
-                // Free users.
-                //
-                if (nullptr != ch->users)
-                {
-                    for (int j = 0; j < ch->num_users; j++)
-                    {
-                        if (nullptr != ch->users[j])
-                        {
-                            if (nullptr != ch->users[j]->title)
-                            {
-                                free(ch->users[j]->title);
-                            }
-                            free(ch->users[j]);
-                        }
-                    }
-                    free(ch->users);
-                }
-                free(ch);
-                m_channels.erase(it);
-                found = true;
-                break;
+                m_pIStorage->DeleteChannel(it->second->name);
             }
+            it = m_channels.erase(it);
+        }
+        else
+        {
+            ++it;
         }
     }
 
@@ -1744,15 +1425,18 @@ MUX_RESULT CComsysMod::AllCom(dbref executor, const UTF8 *pAction)
         return MUX_E_INVALIDARG;
     }
 
-    comsys_t *c = get_comsys(executor);
-    if (nullptr == c)
+    auto it = m_comsys.find(executor);
+    if (it == m_comsys.end())
     {
         return MUX_S_OK;
     }
 
-    for (int i = 0; i < c->numchannels; i++)
+    comsys_t &c = it->second;
+
+    for (const auto &ca : c.aliases)
     {
-        do_processcom(executor, c->channels[i],
+        do_processcom(executor,
+            reinterpret_cast<const UTF8 *>(ca.channel.c_str()),
             const_cast<UTF8 *>(pAction));
         if (0 == strcmp(a, "who") && nullptr != m_pINotify)
         {
@@ -1776,28 +1460,26 @@ MUX_RESULT CComsysMod::ComList(dbref executor, const UTF8 *pPattern)
     m_pINotify->RawNotify(executor,
         T("Alias           Channel            Status   Title"));
 
-    comsys_t *c = get_comsys(executor);
-    if (nullptr == c)
+    auto it = m_comsys.find(executor);
+    if (it == m_comsys.end())
     {
         m_pINotify->RawNotify(executor, T("-- End of comlist --"));
         return MUX_S_OK;
     }
 
+    comsys_t &c = it->second;
     bool bWild = (nullptr != pPattern && '\0' != *pPattern);
 
-    for (int i = 0; i < c->numchannels; i++)
+    for (const auto &ca : c.aliases)
     {
-        struct channel *ch = select_channel(c->channels[i]);
+        struct channel *ch = select_channel(
+            reinterpret_cast<const UTF8 *>(ca.channel.c_str()));
         struct comuser *user = (nullptr != ch)
             ? select_user(ch, executor) : nullptr;
 
         if (nullptr != user)
         {
-            // Simple wildcard: if pattern provided, check if channel
-            // name contains it.
-            //
-            if (bWild && nullptr == strstr(
-                    reinterpret_cast<const char *>(c->channels[i]),
+            if (bWild && std::string::npos == ca.channel.find(
                     reinterpret_cast<const char *>(pPattern)))
             {
                 continue;
@@ -1806,13 +1488,12 @@ MUX_RESULT CComsysMod::ComList(dbref executor, const UTF8 *pPattern)
             UTF8 msg[256];
             snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                      "%-15.15s %-18.18s %s %s%s %s",
-                     reinterpret_cast<const char *>(c->alias + i * ALIAS_SIZE),
-                     reinterpret_cast<const char *>(c->channels[i]),
+                     ca.alias.c_str(),
+                     ca.channel.c_str(),
                      user->bUserIsOn ? "on " : "off",
                      user->ComTitleStatus ? "con " : "coff",
                      user->bGagJoinLeave ? " gag" : "",
-                     (nullptr != user->title)
-                         ? reinterpret_cast<const char *>(user->title) : "");
+                     user->title.c_str());
             m_pINotify->RawNotify(executor, msg);
         }
         else
@@ -1820,8 +1501,8 @@ MUX_RESULT CComsysMod::ComList(dbref executor, const UTF8 *pPattern)
             UTF8 msg[256];
             snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                      "Bad Comsys Alias: %s for Channel: %s",
-                     reinterpret_cast<const char *>(c->alias + i * ALIAS_SIZE),
-                     reinterpret_cast<const char *>(c->channels[i]));
+                     ca.alias.c_str(),
+                     ca.channel.c_str());
             m_pINotify->RawNotify(executor, msg);
         }
     }
@@ -1881,7 +1562,7 @@ MUX_RESULT CComsysMod::ComTitle(dbref executor, const UTF8 *pAlias,
         if (0 == (ch->type & CHANNEL_SPOOF))
         {
             user->ComTitleStatus = false;
-            sqlite_wt_channel_user(ch->name, user);
+            sqlite_wt_channel_user(ch->name, *user);
             snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                      "Comtitles are now off for channel %s",
                      reinterpret_cast<const char *>(ch->name));
@@ -1895,7 +1576,7 @@ MUX_RESULT CComsysMod::ComTitle(dbref executor, const UTF8 *pAlias,
 
     case COMTITLE_ON:
         user->ComTitleStatus = true;
-        sqlite_wt_channel_user(ch->name, user);
+        sqlite_wt_channel_user(ch->name, *user);
         snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                  "Comtitles are now on for channel %s",
                  reinterpret_cast<const char *>(ch->name));
@@ -1903,7 +1584,7 @@ MUX_RESULT CComsysMod::ComTitle(dbref executor, const UTF8 *pAlias,
 
     case COMTITLE_GAG:
         user->bGagJoinLeave = true;
-        sqlite_wt_channel_user(ch->name, user);
+        sqlite_wt_channel_user(ch->name, *user);
         snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                  "Join/leave messages are now gagged for channel %s",
                  reinterpret_cast<const char *>(ch->name));
@@ -1911,7 +1592,7 @@ MUX_RESULT CComsysMod::ComTitle(dbref executor, const UTF8 *pAlias,
 
     case COMTITLE_UNGAG:
         user->bGagJoinLeave = false;
-        sqlite_wt_channel_user(ch->name, user);
+        sqlite_wt_channel_user(ch->name, *user);
         snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                  "Join/leave messages are now ungagged for channel %s",
                  reinterpret_cast<const char *>(ch->name));
@@ -1920,29 +1601,19 @@ MUX_RESULT CComsysMod::ComTitle(dbref executor, const UTF8 *pAlias,
     default:
         // Set title.
         //
-        if (nullptr != user->title)
-        {
-            free(user->title);
-        }
         if (nullptr != pTitle && '\0' != *pTitle)
         {
-            // Truncate to MAX_TITLE_LEN.
-            //
-            char truncated[MAX_TITLE_LEN + 1];
-            strncpy(truncated,
-                    reinterpret_cast<const char *>(pTitle), MAX_TITLE_LEN);
-            truncated[MAX_TITLE_LEN] = '\0';
-            user->title = reinterpret_cast<UTF8 *>(strdup(truncated));
+            user->title.assign(reinterpret_cast<const char *>(pTitle),
+                0, MAX_TITLE_LEN);
         }
         else
         {
-            user->title = reinterpret_cast<UTF8 *>(strdup(""));
+            user->title.clear();
         }
-        sqlite_wt_channel_user(ch->name, user);
+        sqlite_wt_channel_user(ch->name, *user);
         snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                  "Title set to \xE2\x80\x98%s\xE2\x80\x99 on channel %s.",
-                 (nullptr != user->title)
-                     ? reinterpret_cast<const char *>(user->title) : "",
+                 user->title.c_str(),
                  reinterpret_cast<const char *>(ch->name));
         break;
     }
@@ -1979,9 +1650,9 @@ MUX_RESULT CComsysMod::ChanList(dbref executor, const UTF8 *pPattern,
 
     bool bWild = (nullptr != pPattern && '\0' != *pPattern);
 
-    for (auto it = m_channels.begin(); it != m_channels.end(); ++it)
+    for (auto &kv : m_channels)
     {
-        struct channel *ch = it->second;
+        struct channel *ch = kv.second.get();
 
         // Simple wildcard filter.
         //
@@ -2115,9 +1786,9 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
              "%-29.29s %-6.6s %-6.6s", "Name", "Status", "Player");
     m_pINotify->RawNotify(executor, msg);
 
-    for (int j = 0; j < ch->num_users; j++)
+    for (auto &kv : ch->users)
     {
-        struct comuser *user = ch->users[j];
+        comuser &user = kv.second;
 
         // If not showing all, only show connected users.
         //
@@ -2126,7 +1797,7 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
             bool bConnected = false;
             if (nullptr != m_pIObjectInfo)
             {
-                m_pIObjectInfo->IsConnected(user->who, &bConnected);
+                m_pIObjectInfo->IsConnected(user.who, &bConnected);
             }
             if (!bConnected)
             {
@@ -2137,7 +1808,7 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
         const UTF8 *pName = nullptr;
         if (nullptr != m_pIObjectInfo)
         {
-            m_pIObjectInfo->GetName(user->who, &pName);
+            m_pIObjectInfo->GetName(user.who, &pName);
         }
         if (nullptr == pName)
         {
@@ -2147,13 +1818,13 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
         bool bPlayer = false;
         if (nullptr != m_pIObjectInfo)
         {
-            m_pIObjectInfo->IsPlayer(user->who, &bPlayer);
+            m_pIObjectInfo->IsPlayer(user.who, &bPlayer);
         }
 
         snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                  "%-29.29s %-6.6s %-6.6s",
                  reinterpret_cast<const char *>(pName),
-                 user->bUserIsOn ? "on " : "off",
+                 user.bUserIsOn ? "on " : "off",
                  bPlayer ? "yes" : "no ");
         m_pINotify->RawNotify(executor, msg);
     }
@@ -2826,7 +2497,7 @@ MUX_RESULT CComsysMod::ProcessCommand(dbref executor, const UTF8 *pCmd,
 
     // Extract alias.
     //
-    UTF8 alias[ALIAS_SIZE];
+    UTF8 alias[MAX_ALIAS_LEN + 1];
     size_t nAlias = t - reinterpret_cast<const char *>(pCmd);
     memcpy(alias, pCmd, nAlias);
     alias[nAlias] = '\0';
@@ -2910,8 +2581,9 @@ MUX_RESULT CComsysMod::AddAlias(dbref executor, const UTF8 *pAlias,
         return MUX_E_PERMISSION;
     }
 
-    comsys_t *c = get_comsys(executor);
-    if (c->numchannels >= MAX_ALIASES_PER_PLAYER)
+    comsys_t &c = get_comsys(executor);
+
+    if (static_cast<int>(c.aliases.size()) >= MAX_ALIASES_PER_PLAYER)
     {
         if (nullptr != m_pINotify)
         {
@@ -2924,51 +2596,28 @@ MUX_RESULT CComsysMod::AddAlias(dbref executor, const UTF8 *pAlias,
 
     // Check for duplicate alias.
     //
-    for (int j = 0; j < c->numchannels; j++)
+    for (const auto &ca : c.aliases)
     {
-        if (0 == strcmp(reinterpret_cast<const char *>(pAlias),
-                        reinterpret_cast<const char *>(c->alias + j * ALIAS_SIZE)))
+        if (ca.alias == reinterpret_cast<const char *>(pAlias))
         {
             if (nullptr != m_pINotify)
             {
                 UTF8 msg[256];
                 snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                          "That alias is already in use for channel %s.",
-                         reinterpret_cast<const char *>(c->channels[j]));
+                         ca.channel.c_str());
                 m_pINotify->RawNotify(executor, msg);
             }
             return MUX_E_FAIL;
         }
     }
 
-    // Grow arrays if needed.
-    //
-    if (c->numchannels >= c->maxchannels)
-    {
-        int newmax = c->maxchannels + 10;
-        UTF8 *na = static_cast<UTF8 *>(
-            realloc(c->alias, ALIAS_SIZE * newmax));
-        UTF8 **nc = static_cast<UTF8 **>(
-            realloc(c->channels, sizeof(UTF8 *) * newmax));
-        if (nullptr == na || nullptr == nc)
-        {
-            if (nullptr != na) c->alias = na;
-            if (nullptr != nc) c->channels = nc;
-            return MUX_E_OUTOFMEMORY;
-        }
-        c->alias = na;
-        c->channels = nc;
-        c->maxchannels = newmax;
-    }
-
     // Append and sort.
     //
-    int where = c->numchannels;
-    memcpy(c->alias + where * ALIAS_SIZE, pAlias, nAlias);
-    *(c->alias + where * ALIAS_SIZE + nAlias) = '\0';
-    c->channels[where] = reinterpret_cast<UTF8 *>(
-        strdup(reinterpret_cast<const char *>(ch->name)));
-    c->numchannels++;
+    com_alias ca;
+    ca.alias = reinterpret_cast<const char *>(pAlias);
+    ca.channel = reinterpret_cast<const char *>(ch->name);
+    c.aliases.push_back(std::move(ca));
 
     sort_com_aliases(c);
     sqlite_wt_player_channel(executor, pAlias, ch->name);
@@ -3005,12 +2654,11 @@ MUX_RESULT CComsysMod::DelAlias(dbref executor, const UTF8 *pAlias)
         return MUX_E_INVALIDARG;
     }
 
-    comsys_t *c = get_comsys(executor);
+    comsys_t &c = get_comsys(executor);
 
-    for (int i = 0; i < c->numchannels; i++)
+    for (auto it = c.aliases.begin(); it != c.aliases.end(); ++it)
     {
-        if (0 != strcmp(reinterpret_cast<const char *>(pAlias),
-                        reinterpret_cast<const char *>(c->alias + i * ALIAS_SIZE)))
+        if (it->alias != reinterpret_cast<const char *>(pAlias))
         {
             continue;
         }
@@ -3018,10 +2666,9 @@ MUX_RESULT CComsysMod::DelAlias(dbref executor, const UTF8 *pAlias)
         // Count other aliases for same channel.
         //
         int found = 0;
-        for (int itmp = 0; itmp < c->numchannels; itmp++)
+        for (const auto &ca : c.aliases)
         {
-            if (0 == strcmp(reinterpret_cast<const char *>(c->channels[itmp]),
-                            reinterpret_cast<const char *>(c->channels[i])))
+            if (ca.channel == it->channel)
             {
                 found++;
             }
@@ -3031,41 +2678,23 @@ MUX_RESULT CComsysMod::DelAlias(dbref executor, const UTF8 *pAlias)
         //
         if (found <= 1)
         {
-            do_delcomchannel(executor, c->channels[i], false);
-            if (nullptr != m_pINotify)
-            {
-                UTF8 msg[256];
-                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                         "Alias %s for channel %s deleted.",
-                         reinterpret_cast<const char *>(pAlias),
-                         reinterpret_cast<const char *>(c->channels[i]));
-                m_pINotify->RawNotify(executor, msg);
-            }
-            free(c->channels[i]);
+            do_delcomchannel(executor,
+                reinterpret_cast<const UTF8 *>(it->channel.c_str()),
+                false);
         }
-        else
+
+        if (nullptr != m_pINotify)
         {
-            if (nullptr != m_pINotify)
-            {
-                UTF8 msg[256];
-                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                         "Alias %s for channel %s deleted.",
-                         reinterpret_cast<const char *>(pAlias),
-                         reinterpret_cast<const char *>(c->channels[i]));
-                m_pINotify->RawNotify(executor, msg);
-            }
+            UTF8 msg[256];
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "Alias %s for channel %s deleted.",
+                     reinterpret_cast<const char *>(pAlias),
+                     it->channel.c_str());
+            m_pINotify->RawNotify(executor, msg);
         }
 
         sqlite_wt_delete_player_channel(executor, pAlias);
-        c->channels[i] = nullptr;
-        c->numchannels--;
-
-        for (; i < c->numchannels; i++)
-        {
-            memcpy(c->alias + i * ALIAS_SIZE,
-                   c->alias + (i + 1) * ALIAS_SIZE, ALIAS_SIZE);
-            c->channels[i] = c->channels[i + 1];
-        }
+        c.aliases.erase(it);
         return MUX_S_OK;
     }
 
@@ -3078,18 +2707,20 @@ MUX_RESULT CComsysMod::DelAlias(dbref executor, const UTF8 *pAlias)
 
 MUX_RESULT CComsysMod::ClearAliases(dbref executor)
 {
-    comsys_t *c = get_comsys(executor);
-    if (nullptr == c)
+    auto it = m_comsys.find(executor);
+    if (it == m_comsys.end())
     {
         return MUX_S_OK;
     }
 
+    comsys_t &c = it->second;
+
     // Walk backwards to safely remove each alias.
     //
-    while (c->numchannels > 0)
+    while (!c.aliases.empty())
     {
-        const UTF8 *pAlias = c->alias + (c->numchannels - 1) * ALIAS_SIZE;
-        DelAlias(executor, pAlias);
+        std::string alias = c.aliases.back().alias;
+        DelAlias(executor, reinterpret_cast<const UTF8 *>(alias.c_str()));
     }
 
     return MUX_S_OK;
@@ -3142,12 +2773,7 @@ MUX_RESULT CComsysMod::CreateChannel(dbref executor, const UTF8 *pName)
 
     // Create the channel.
     //
-    struct channel *ch = static_cast<struct channel *>(
-        calloc(1, sizeof(struct channel)));
-    if (nullptr == ch)
-    {
-        return MUX_E_OUTOFMEMORY;
-    }
+    auto ch = std::make_unique<channel>();
 
     strncpy(reinterpret_cast<char *>(ch->name),
             reinterpret_cast<const char *>(pName), MAX_CHANNEL_LEN);
@@ -3160,19 +2786,20 @@ MUX_RESULT CComsysMod::CreateChannel(dbref executor, const UTF8 *pName)
     ch->charge_who = executor;
     ch->chan_obj = NOTHING;
 
+    channel *pCh = ch.get();
+
     std::vector<UTF8> key(ch->name,
         ch->name + strlen(reinterpret_cast<const char *>(ch->name)) + 1);
-    m_channels[key] = ch;
-    m_num_channels++;
+    m_channels[key] = std::move(ch);
 
-    sqlite_wt_channel(ch);
+    sqlite_wt_channel(pCh);
 
     if (nullptr != m_pINotify)
     {
         UTF8 msg[256];
         snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                  "Channel %s created.",
-                 reinterpret_cast<const char *>(ch->name));
+                 reinterpret_cast<const char *>(pCh->name));
         m_pINotify->RawNotify(executor, msg);
     }
 
@@ -3222,24 +2849,6 @@ MUX_RESULT CComsysMod::DestroyChannel(dbref executor, const UTF8 *pName)
         return MUX_E_PERMISSION;
     }
 
-    // Free all users.
-    //
-    if (nullptr != ch->users)
-    {
-        for (int j = 0; j < ch->num_users; j++)
-        {
-            if (nullptr != ch->users[j])
-            {
-                if (nullptr != ch->users[j]->title)
-                {
-                    free(ch->users[j]->title);
-                }
-                free(ch->users[j]);
-            }
-        }
-        free(ch->users);
-    }
-
     // Remove from SQLite.
     //
     if (nullptr != m_pIStorage)
@@ -3247,13 +2856,8 @@ MUX_RESULT CComsysMod::DestroyChannel(dbref executor, const UTF8 *pName)
         m_pIStorage->DeleteChannel(ch->name);
     }
 
-    // Remove from map.
+    // Notify before erasing (ch will be destroyed by unique_ptr).
     //
-    std::vector<UTF8> key(ch->name,
-        ch->name + strlen(reinterpret_cast<const char *>(ch->name)) + 1);
-    m_channels.erase(key);
-    m_num_channels--;
-
     if (nullptr != m_pINotify)
     {
         UTF8 msg[256];
@@ -3263,7 +2867,12 @@ MUX_RESULT CComsysMod::DestroyChannel(dbref executor, const UTF8 *pName)
         m_pINotify->RawNotify(executor, msg);
     }
 
-    free(ch);
+    // Remove from map — unique_ptr cleans up channel and all users.
+    //
+    std::vector<UTF8> key(ch->name,
+        ch->name + strlen(reinterpret_cast<const char *>(ch->name)) + 1);
+    m_channels.erase(key);
+
     return MUX_S_OK;
 }
 
