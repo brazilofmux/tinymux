@@ -33,9 +33,9 @@
 #include <sal.h>
 #endif
 
-// Targeting Windows 2000 or later.
+// Targeting Windows Vista or later (required for inet_pton, etc.)
 //
-#define _WIN32_WINNT 0x0500
+#define _WIN32_WINNT 0x0600
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <winsock2.h>
