@@ -1,0 +1,21 @@
+project:
+  name: Millhaven
+
+  zones:
+    - park.yaml
+    - apartments.yaml
+    - town.yaml
+    - forest.yaml
+
+  build_order:
+    - town.yaml
+    - park.yaml
+    - apartments.yaml
+    - forest.yaml
+
+  cross_references:
+    # Town square connects to park and apartments
+    downtown_square: town_square
+    apartment_lobby: lobby
+    park_gate: park_entrance
+    forest_trail: forest_edge
