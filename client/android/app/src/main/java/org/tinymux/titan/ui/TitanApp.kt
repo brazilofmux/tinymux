@@ -36,6 +36,7 @@ import kotlinx.coroutines.CompletableDeferred
 import org.tinymux.titan.data.AppSettings
 import org.tinymux.titan.data.Hook
 import org.tinymux.titan.data.HookRepository
+import org.tinymux.titan.data.McpParser
 import org.tinymux.titan.data.SessionLogger
 import org.tinymux.titan.data.TimerEngine
 import org.tinymux.titan.data.Trigger
@@ -54,6 +55,14 @@ import org.tinymux.titan.service.ConnectionService
 
 import androidx.compose.runtime.snapshots.SnapshotStateList
 
+data class McpEditState(
+    val reference: String,
+    val name: String,
+    val type: String,
+    val content: String,
+    val tabIndex: Int,
+)
+
 class WorldTab(
     val name: String,
     var connection: MudConnection? = null,
@@ -63,6 +72,7 @@ class WorldTab(
     var disconnected: Boolean = false,
     val spawnLines: MutableMap<String, SnapshotStateList<AnnotatedString>> = mutableMapOf(),
     var activeSpawn: String = "",  // "" = main, otherwise spawn path
+    val mcpParser: McpParser = McpParser(),
 )
 
 @Composable
@@ -100,6 +110,7 @@ fun TitanApp() {
     var showWorldManager by remember { mutableStateOf(false) }
     var showTriggerManager by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
+    var mcpEditState by remember { mutableStateOf<McpEditState?>(null) }
     var showFindBar by remember { mutableStateOf(false) }
     var findQuery by remember { mutableStateOf("") }
     var findMatches by remember { mutableStateOf(listOf<Int>()) }
@@ -178,12 +189,15 @@ fun TitanApp() {
     }
 
     fun processServerLine(tabIndex: Int, line: String) {
+        // MCP intercept — hide #$# lines from display
+        val tab = tabs.getOrNull(tabIndex) ?: return
+        if (tab.mcpParser.processLine(line)) return
+
         val result = triggerEngine.check(AnsiParser.stripAnsi(line))
         if (result.gagged) return
         val display = result.displayLine ?: line
         appendLine(tabIndex, display)
         // Execute trigger commands
-        val tab = tabs.getOrNull(tabIndex) ?: return
         val conn = tab.connection
         if (conn != null && conn.connected) {
             for (cmd in result.commands) conn.sendLine(cmd)
@@ -203,6 +217,12 @@ fun TitanApp() {
             pendingCert = certInfo to deferred
             deferred.await()
         }
+        // Wire MCP parser
+        tab.mcpParser.sendRaw = { raw -> conn.sendLine(raw) }
+        tab.mcpParser.onEditRequest = { reference, editName, type, content ->
+            mcpEditState = McpEditState(reference, editName, type, content, tabIndex)
+        }
+
         conn.onLine = { line -> processServerLine(tabIndex, line) }
         conn.onConnect = {
             appendLine(tabIndex, "% Connected to $host:$port")
@@ -932,6 +952,21 @@ fun TitanApp() {
             }
         )
     }
+
+    // MCP Editor dialog
+    mcpEditState?.let { edit ->
+        McpEditorDialog(
+            name = edit.name,
+            content = edit.content,
+            onSave = { newContent ->
+                val tab = tabs.getOrNull(edit.tabIndex)
+                tab?.mcpParser?.sendSimpleEditSet(edit.reference, edit.type, newContent)
+                appendLine(edit.tabIndex, "% MCP edit saved: ${edit.name}")
+                mcpEditState = null
+            },
+            onDismiss = { mcpEditState = null }
+        )
+    }
 }
 
 @Composable
@@ -1626,5 +1661,44 @@ fun SettingsDialog(
             }) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+// ---------------------------------------------------------------------------
+// MCP Editor
+// ---------------------------------------------------------------------------
+
+@Composable
+fun McpEditorDialog(
+    name: String,
+    content: String,
+    onSave: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var text by remember { mutableStateOf(content) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit: $name") },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 200.dp, max = 400.dp),
+                textStyle = TextStyle(
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 12.sp,
+                ),
+                maxLines = Int.MAX_VALUE,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(text) }) { Text("Save") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
     )
 }

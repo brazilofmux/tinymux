@@ -18,6 +18,7 @@ struct ContentView: View {
     @State private var timerEngine = TimerEngine()
     @State private var sessionLogger = SessionLogger()
     @State private var pendingCert: (CertInfo, CheckedContinuation<Bool, Never>)? = nil
+    @State private var mcpEditState: McpEditState? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -59,6 +60,16 @@ struct ContentView: View {
         }
         .sheet(isPresented: $state.showSettings) {
             SettingsView(settings: settings)
+        }
+        .sheet(item: $mcpEditState) { edit in
+            McpEditorSheet(name: edit.name, content: edit.content) { newContent in
+                state.tabs[safe: edit.tabIndex]?.mcpParser.sendSimpleEditSet(
+                    reference: edit.reference, type: edit.type, content: newContent)
+                state.appendLine(edit.tabIndex, "% MCP edit saved: \(edit.name)")
+                mcpEditState = nil
+            } onDismiss: {
+                mcpEditState = nil
+            }
         }
         .sheet(item: Binding(
             get: { pendingCert.map { CertSheetItem(info: $0.0) } },
@@ -288,6 +299,9 @@ struct ContentView: View {
     // MARK: - Server Line Processing (triggers)
 
     private func processServerLine(_ tabIndex: Int, _ line: String) {
+        // MCP intercept
+        if let tab = state.tabs[safe: tabIndex], tab.mcpParser.processLine(line) { return }
+
         let result = triggerEngine.check(AnsiParser.stripAnsi(line))
         if result.gagged { return }
         let display = result.displayLine ?? line
@@ -310,6 +324,13 @@ struct ContentView: View {
 
         let conn = MudConnection(name: name, host: host, port: port, useSsl: ssl, certStore: certStore)
         tab.connection = conn
+
+        // Wire MCP
+        tab.mcpParser.sendRaw = { raw in conn.sendLine(raw) }
+        tab.mcpParser.onEditRequest = { reference, editName, type, content in
+            mcpEditState = McpEditState(reference: reference, name: editName, type: type, content: content, tabIndex: tabIndex)
+        }
+
         conn.onCertVerify = { certInfo in
             await withCheckedContinuation { continuation in
                 pendingCert = (certInfo, continuation)
