@@ -1,0 +1,61 @@
+zone:
+  name: Riverside Apartments
+
+imports:
+  - ../components/apartment_unit.yaml
+
+rooms:
+  lobby:
+    name: Riverside Apartments - Lobby
+    description: |
+      A clean, well-lit lobby with a reception desk and a row of
+      mailboxes on the wall. A stairwell provides access to the
+      upper floors.
+
+  hallway_2f:
+    name: Second Floor Hallway
+    description: |
+      A carpeted hallway with numbered doors on each side. Soft
+      overhead lighting and framed prints on the walls give the
+      space a welcoming feel.
+
+exits:
+  - from: lobby
+    to: hallway_2f
+    name: "Stairs;stairs;up;u;2f"
+    back: "Lobby;lobby;down;d;1f"
+
+  # Hallway to apartment doors (unique per apartment)
+  - from: hallway_2f
+    to: apt_201_living_room
+    name: "Apartment 201;201"
+    back: "Hallway;hall;out"
+
+  - from: hallway_2f
+    to: apt_202_living_room
+    name: "Apartment 202;202"
+    back: "Hallway;hall;out"
+
+  - from: hallway_2f
+    to: apt_203_living_room
+    name: "Apartment 203;203"
+    back: "Hallway;hall;out"
+
+instances:
+  - component: apartment_unit
+    id: apt_201
+    params:
+      unit_number: "201"
+      monthly_rent: 150
+
+  - component: apartment_unit
+    id: apt_202
+    params:
+      unit_number: "202"
+      monthly_rent: 120
+
+  - component: apartment_unit
+    id: apt_203
+    params:
+      unit_number: "203"
+      monthly_rent: 120

@@ -1,0 +1,36 @@
+component:
+  name: apartment_unit
+  params:
+    unit_number:
+      type: string
+      required: true
+    monthly_rent:
+      type: int
+      default: 100
+
+  rooms:
+    living_room:
+      name: "Apartment ${unit_number} - Living Room"
+      description: |
+        A modest studio apartment with hardwood floors and tall windows.
+        A kitchenette lines one wall, and a door leads to the bathroom.
+      attrs:
+        RENT_AMOUNT: "${monthly_rent}"
+        APARTMENT_UNIT: "${unit_number}"
+
+    bathroom:
+      name: "Apartment ${unit_number} - Bathroom"
+      description: |
+        A small but clean bathroom with a shower stall, toilet, and
+        pedestal sink. A mirror hangs above the sink.
+
+  exits:
+    - from: living_room
+      to: bathroom
+      name: "Bathroom;bath"
+      back: "Living Room;out"
+
+  ports:
+    door:
+      room: living_room
+      direction: out

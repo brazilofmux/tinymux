@@ -2,15 +2,19 @@
 """WorldBuilder — MUX game content management tool.
 
 Usage:
-    worldbuilder.py plan <spec.yaml>        — validate and show execution plan
-    worldbuilder.py compile <spec.yaml>     — output MUX commands to stdout
-    worldbuilder.py check <spec.yaml>       — validate only (DRC checks)
+    worldbuilder.py plan <spec.yaml>              — validate and show plan
+    worldbuilder.py compile <spec.yaml>           — output MUX commands
+    worldbuilder.py check <spec.yaml>             — validate only (DRC)
+    worldbuilder.py diff <spec.yaml> --state <f>  — show incremental changes
 """
 
 import sys
 import yaml
 import argparse
+import copy
+import os
 from pathlib import Path
+from string import Template
 
 
 # ---------------------------------------------------------------------------
@@ -39,6 +43,16 @@ class Zone:
     def __init__(self, name, description=''):
         self.name = name
         self.description = description
+
+
+class Component:
+    """A reusable template with parameters, rooms, exits, and connection ports."""
+    def __init__(self, name, params=None, rooms=None, exits=None, ports=None):
+        self.name = name
+        self.params = params or {}    # name -> {type, default, required}
+        self.rooms = rooms or {}      # id -> room data (pre-expansion)
+        self.exits = exits or []      # exit data (pre-expansion)
+        self.ports = ports or {}      # port_name -> {room, direction}
 
 
 class WorldSpec:
@@ -87,7 +101,96 @@ def parse_spec(path):
         )
         spec.exits.append(ex)
 
+    # Load and expand component instances
+    spec_dir = Path(path).parent
+    components = {}
+    for imp in data.get('imports', []):
+        comp_path = spec_dir / imp
+        if comp_path.exists():
+            comp = load_component(comp_path)
+            if comp:
+                components[comp.name] = comp
+
+    for inst_data in data.get('instances', []):
+        comp_name = inst_data.get('component', '')
+        comp = components.get(comp_name)
+        if not comp:
+            continue
+        inst_id = inst_data.get('id', comp_name)
+        params = {**{k: v.get('default', '') for k, v in comp.params.items()},
+                  **inst_data.get('params', {})}
+        expand_component(spec, comp, inst_id, params,
+                         inst_data.get('connect', {}))
+
     return spec
+
+
+def load_component(path):
+    """Load a component definition from a YAML file."""
+    with open(path, 'r', encoding='utf-8') as f:
+        data = yaml.safe_load(f)
+
+    comp_data = data.get('component', {})
+    return Component(
+        name=comp_data.get('name', ''),
+        params=comp_data.get('params', {}),
+        rooms=comp_data.get('rooms', {}),
+        exits=comp_data.get('exits', []),
+        ports=comp_data.get('ports', {}),
+    )
+
+
+def expand_param(text, params):
+    """Expand ${param} references in a string."""
+    if not isinstance(text, str):
+        return text
+    for key, val in params.items():
+        text = text.replace('${' + key + '}', str(val))
+    return text
+
+
+def expand_component(spec, comp, inst_id, params, connections):
+    """Expand a component instance into rooms and exits in the spec."""
+    prefix = inst_id + '_'
+
+    # Create rooms
+    for room_id, room_data in comp.rooms.items():
+        full_id = prefix + room_id
+        spec.rooms[full_id] = Room(
+            id=full_id,
+            name=expand_param(room_data.get('name', room_id), params),
+            description=expand_param(room_data.get('description', ''), params),
+            flags=room_data.get('flags', []),
+            attrs={k: expand_param(v, params) for k, v in room_data.get('attrs', {}).items()},
+            parent=room_data.get('parent'),
+        )
+
+    # Create internal exits
+    for exit_data in comp.exits:
+        spec.exits.append(Exit(
+            from_room=prefix + exit_data['from'],
+            to_room=prefix + exit_data['to'],
+            name=expand_param(exit_data['name'], params),
+            back_name=expand_param(exit_data.get('back', ''), params) or None,
+        ))
+
+    # Wire up ports to external rooms
+    for port_name, conn_data in connections.items():
+        port = comp.ports.get(port_name)
+        if not port:
+            continue
+        port_room = prefix + port['room']
+        target_room = conn_data.get('to', '')
+        exit_name = expand_param(conn_data.get('name', ''), params)
+        back_name = expand_param(conn_data.get('back', ''), params) or None
+
+        if port_room and target_room and exit_name:
+            spec.exits.append(Exit(
+                from_room=port_room,
+                to_room=target_room,
+                name=exit_name,
+                back_name=back_name,
+            ))
 
 
 # ---------------------------------------------------------------------------
@@ -367,15 +470,175 @@ def format_commands(commands):
 
 
 # ---------------------------------------------------------------------------
+# Diff Engine — compare spec against saved state
+# ---------------------------------------------------------------------------
+
+class Change:
+    CREATE = 'create'
+    MODIFY = 'modify'
+    DELETE = 'delete'
+
+    def __init__(self, action, obj_type, obj_id, name='', details=None):
+        self.action = action
+        self.obj_type = obj_type
+        self.obj_id = obj_id
+        self.name = name
+        self.details = details or []  # list of (field, old, new) tuples
+
+
+def load_state(state_path):
+    """Load a saved state file. Returns dict of spec_id -> {dbref, type, name, desc, attrs, flags}."""
+    path = Path(state_path)
+    if not path.exists():
+        return {}
+    with open(path, 'r') as f:
+        data = yaml.safe_load(f)
+    return data.get('objects', {}) if data else {}
+
+
+def diff_spec(spec, state_path):
+    """Compare spec against saved state. Returns list of Changes."""
+    state = load_state(state_path)
+    changes = []
+
+    # Rooms: new and modified
+    for room_id, room in spec.rooms.items():
+        if room_id not in state:
+            changes.append(Change(Change.CREATE, 'room', room_id, room.name))
+        else:
+            # Check for modifications
+            old = state[room_id]
+            details = []
+            if old.get('name', '') != room.name:
+                details.append(('name', old.get('name', ''), room.name))
+            # We'd need to store desc/attrs/flags in state for full diff.
+            # For now, mark as potentially modified.
+            if details:
+                changes.append(Change(Change.MODIFY, 'room', room_id, room.name, details))
+
+    # Rooms: deleted (in state but not in spec)
+    for obj_id, obj in state.items():
+        if obj.get('type') == 'room' and obj_id not in spec.rooms:
+            changes.append(Change(Change.DELETE, 'room', obj_id, obj.get('name', '')))
+
+    # Exits: we track by exit_from_to key
+    spec_exit_keys = set()
+    for ex in spec.exits:
+        key = f'exit_{ex.from_room}_{ex.to_room}'
+        spec_exit_keys.add(key)
+        if key not in state:
+            changes.append(Change(Change.CREATE, 'exit', key,
+                                  ex.name.split(';')[0]))
+        if ex.back_name:
+            back_key = f'exit_{ex.to_room}_{ex.from_room}'
+            spec_exit_keys.add(back_key)
+            if back_key not in state:
+                changes.append(Change(Change.CREATE, 'exit', back_key,
+                                      ex.back_name.split(';')[0]))
+
+    # Exits: deleted
+    for obj_id, obj in state.items():
+        if obj.get('type') == 'exit' and obj_id not in spec_exit_keys:
+            changes.append(Change(Change.DELETE, 'exit', obj_id, obj.get('name', '')))
+
+    return changes
+
+
+def compile_incremental(spec, state_path):
+    """Compile only the changes between spec and state."""
+    state = load_state(state_path)
+    commands = []
+
+    def cmd(comment, command):
+        commands.append((comment, command))
+
+    # Rooms: only new or modified
+    for room_id, room in spec.rooms.items():
+        if room_id not in state:
+            # New room — full create
+            cmd(f"--- NEW room: {room.name} ({room_id}) ---", "")
+            cmd("Create room", f'@dig/teleport {room.name}')
+            cmd("Store dbref", f'think [setq(0, %L)] Room {room_id} = %q0')
+            desc = room.description.rstrip().replace('\n', '%r')
+            cmd("Set description", f'@desc here={desc}')
+            for flag in room.flags:
+                cmd(f"Set flag {flag}", f'@set here={flag}')
+            for attr_name, attr_value in room.attrs.items():
+                cmd(f"Set {attr_name}", f'&{attr_name} here={attr_value}')
+        else:
+            # Existing room — update in place
+            dbref = state[room_id].get('dbref', '')
+            if not dbref:
+                continue
+            cmd(f"--- UPDATE room: {room.name} ({room_id}) at {dbref} ---", "")
+            cmd("Teleport to room", f'@teleport me={dbref}')
+            desc = room.description.rstrip().replace('\n', '%r')
+            cmd("Update description", f'@desc here={desc}')
+            # Re-set name in case it changed
+            cmd("Update name", f'@name here={room.name}')
+            for flag in room.flags:
+                cmd(f"Set flag {flag}", f'@set here={flag}')
+            for attr_name, attr_value in room.attrs.items():
+                cmd(f"Set {attr_name}", f'&{attr_name} here={attr_value}')
+
+    # Exits: only new ones (modifying exits is rare — delete + recreate)
+    for ex in spec.exits:
+        key = f'exit_{ex.from_room}_{ex.to_room}'
+        if key not in state:
+            cmd(f"--- NEW exit: {ex.name.split(';')[0]} ---", "")
+            cmd("Forward exit",
+                f'@open {ex.name}=%{{room:{ex.to_room}}}')
+        if ex.back_name:
+            back_key = f'exit_{ex.to_room}_{ex.from_room}'
+            if back_key not in state:
+                cmd(f"--- NEW back exit: {ex.back_name.split(';')[0]} ---", "")
+                cmd("Back exit",
+                    f'@open {ex.back_name}=%{{room:{ex.from_room}}}')
+
+    return commands
+
+
+def format_diff(changes):
+    """Format changes for human display."""
+    if not changes:
+        return "No changes detected."
+
+    lines = []
+    symbols = {Change.CREATE: '+', Change.MODIFY: '~', Change.DELETE: '-'}
+    labels = {Change.CREATE: 'CREATE', Change.MODIFY: 'MODIFY', Change.DELETE: 'DELETE'}
+
+    for ch in changes:
+        sym = symbols[ch.action]
+        label = labels[ch.action]
+        lines.append(f"  {sym} {label} {ch.obj_type} \"{ch.name}\" ({ch.obj_id})")
+        for field, old, new in ch.details:
+            lines.append(f"      {field}: \"{old}\" -> \"{new}\"")
+
+    summary = {}
+    for ch in changes:
+        key = (ch.action, ch.obj_type)
+        summary[key] = summary.get(key, 0) + 1
+
+    lines.append("")
+    parts = []
+    for (action, obj_type), count in sorted(summary.items()):
+        parts.append(f"{count} {obj_type}(s) to {action}")
+    lines.append("Summary: " + ", ".join(parts))
+
+    return '\n'.join(lines)
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(
         description='WorldBuilder — MUX game content management tool')
-    parser.add_argument('action', choices=['plan', 'compile', 'check'],
+    parser.add_argument('action', choices=['plan', 'compile', 'check', 'diff'],
                         help='Action to perform')
     parser.add_argument('spec', help='Path to YAML spec file')
+    parser.add_argument('--state', help='State file for diff/incremental compile')
 
     args = parser.parse_args()
     spec_path = Path(args.spec)
@@ -394,6 +657,9 @@ def main():
     # DRC
     drc = check_drc(spec)
 
+    # Default state path
+    state_path = args.state or f'.worldbuilder/{spec.zone.name.lower().replace(" ", "_")}.state.yaml'
+
     if args.action == 'check':
         if drc.ok and not drc.warnings:
             print("DRC: All checks passed.")
@@ -408,6 +674,19 @@ def main():
         print(format_plan(spec, drc))
         sys.exit(0 if drc.ok else 1)
 
+    elif args.action == 'diff':
+        if not drc.ok:
+            print("DRC errors:", file=sys.stderr)
+            for err in drc.errors:
+                print(f"  ERROR: {err}", file=sys.stderr)
+            sys.exit(1)
+
+        changes = diff_spec(spec, state_path)
+        print(f"WorldBuilder Diff — {spec.zone.name}")
+        print(f"State file: {state_path}")
+        print()
+        print(format_diff(changes))
+
     elif args.action == 'compile':
         if not drc.ok:
             print("DRC errors — cannot compile:", file=sys.stderr)
@@ -419,8 +698,17 @@ def main():
             for warn in drc.warnings:
                 print(f"# WARN: {warn}", file=sys.stderr)
 
-        commands = compile_spec(spec)
-        print(format_commands(commands))
+        # Use incremental compile if state exists
+        if Path(state_path).exists():
+            commands = compile_incremental(spec, state_path)
+            if not commands:
+                print("# No changes to apply (spec matches state).")
+            else:
+                print(f"# Incremental compile against {state_path}")
+                print(format_commands(commands))
+        else:
+            commands = compile_spec(spec)
+            print(format_commands(commands))
 
 
 if __name__ == '__main__':
