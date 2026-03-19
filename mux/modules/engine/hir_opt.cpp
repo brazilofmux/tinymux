@@ -5,6 +5,8 @@
  *   - Constant folding: arithmetic/comparison/logic on ICONST → ICONST
  *   - ATOI of SCONST → ICONST (compile-time string→int)
  *   - Copy propagation: replace uses of COPY with source
+ *   - Global Value Numbering (GVN): dominator-tree walk with scoped
+ *     hash table — subsumes CSE, sees through COPYs
  *   - Dead code elimination: remove unused instructions
  *   - Algebraic simplification: x+0, x*1, x*0, etc.
  *
@@ -28,6 +30,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <unordered_map>
+#include <vector>
 
 // ---------------------------------------------------------------
 // Value Numbering Key for CSE
@@ -520,7 +523,7 @@ void hir_dce(hir_program &h) {
 // repeated calls, e.g., rand()).
 // ---------------------------------------------------------------
 
-static bool is_cse_candidate(hir_kind k) {
+static bool is_pure_op(hir_kind k) {
     switch (k) {
         case HIR_ADD: case HIR_SUB: case HIR_MUL: case HIR_DIV:
         case HIR_REM: case HIR_NEG: case HIR_ABS: case HIR_SIGN:
@@ -530,62 +533,134 @@ static bool is_cse_candidate(hir_kind k) {
         case HIR_NOT: case HIR_BOOL:
         case HIR_INC: case HIR_DEC:
         case HIR_ATOI: case HIR_ITOA:
+        case HIR_FADD: case HIR_FSUB: case HIR_FMUL: case HIR_FDIV:
+        case HIR_FNEG:
+        case HIR_FEQ: case HIR_FLT: case HIR_FLE:
+        case HIR_ITOF: case HIR_FTOI:
             return true;
         default:
             return false;
     }
 }
 
-// dominates() replaced by O(1) hir_dominates() in hir.h
+// Keep old name as alias for LICM and any other consumer.
+static bool is_cse_candidate(hir_kind k) { return is_pure_op(k); }
 
-void hir_cse(hir_program &h) {
-    // Value table: maps an instruction tuple to a list of instruction indices
-    // that produce that value.  We use a list because multiple identical
-    // instructions might exist in different basic blocks, and we need to find
-    // one that dominates our current position.
-    //
-    std::unordered_map<ValueKey, std::vector<int>, ValueKeyHash> value_table;
+// ---------------------------------------------------------------
+// Global Value Numbering (GVN)
+//
+// Dominator-tree walk with a scoped hash table.  Strictly more
+// powerful than the old CSE: uses value numbers of operands
+// (not raw instruction indices) so it sees through COPYs, and
+// the dominator-tree walk guarantees that only dominating values
+// are visible — no per-candidate dominance check needed.
+//
+// Subsumes the old hir_cse().
+// ---------------------------------------------------------------
 
+// Resolve an instruction to its value number: chase COPY chains.
+//
+static int vn_resolve(const hir_program &h, const int *vn, int i) {
+    if (i < 0) return i;
+    // Chase COPYs to their source's value number.
+    int limit = 64;
+    while (i >= 0 && i < h.n_insns && h.kind[i] == HIR_COPY && --limit > 0) {
+        i = h.src1[i];
+    }
+    if (i >= 0 && i < h.n_insns) return vn[i];
+    return i;
+}
+
+// Scoped value table: entries added in a dominator subtree are
+// removed when leaving.  Each scope records what to undo.
+//
+struct GVNScope {
+    // Keys inserted in this scope that need removal on exit.
+    std::vector<ValueKey> inserted;
+    // Keys that were overwritten — restore on exit.
+    std::vector<std::pair<ValueKey, int>> overwritten;
+};
+
+static void gvn_process_block(
+    hir_program &h,
+    int b,
+    int *vn,
+    std::unordered_map<ValueKey, int, ValueKeyHash> &table)
+{
+    GVNScope scope;
+
+    // Process all instructions in this block.
     for (int i = 0; i < h.n_insns; i++) {
+        if (h.blk[i] != b) continue;
         if (h.kind[i] == HIR_NOP) continue;
-        if (!is_cse_candidate(h.kind[i])) continue;
 
-        ValueKey key = { h.kind[i], h.ty[i], h.src1[i], h.src2[i], h.val[i] };
+        // Every instruction's value number defaults to itself.
+        vn[i] = i;
 
-        // Normalize commutative operations: src1 <= src2.
+        // COPYs just inherit their source's value number.
+        if (h.kind[i] == HIR_COPY) {
+            vn[i] = vn_resolve(h, vn, h.src1[i]);
+            continue;
+        }
+
+        // PHIs: value number is self (can't look through them here).
+        if (h.kind[i] == HIR_PHI) continue;
+
+        // Only pure operations participate in numbering.
+        if (!is_pure_op(h.kind[i])) continue;
+
+        // Build key using value-numbered operands.
+        int vn_src1 = vn_resolve(h, vn, h.src1[i]);
+        int vn_src2 = vn_resolve(h, vn, h.src2[i]);
+        ValueKey key = { h.kind[i], h.ty[i], vn_src1, vn_src2, h.val[i] };
+
+        // Normalize commutative operations.
         if (h.kind[i] == HIR_ADD || h.kind[i] == HIR_MUL ||
-            h.kind[i] == HIR_EQ || h.kind[i] == HIR_NE) {
+            h.kind[i] == HIR_EQ  || h.kind[i] == HIR_NE ||
+            h.kind[i] == HIR_FADD || h.kind[i] == HIR_FMUL) {
             if (key.src1 > key.src2) {
                 std::swap(key.src1, key.src2);
             }
         }
 
-        auto it = value_table.find(key);
-
-        if (it != value_table.end()) {
-            // Potential matches found.  Find the first one that dominates i.
-            bool found = false;
-            for (int j : it->second) {
-                if (hir_dominates(h, h.blk[j], h.blk[i])) {
-                    // Replace i with COPY of j.
-                    h.kind[i] = HIR_COPY;
-                    h.src1[i] = j;
-                    h.src2[i] = -1;
-                    h.val[i] = 0;
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                // None of the existing instructions dominate i.  Add i as a
-                // new producer of this value.
-                it->second.push_back(i);
-            }
+        auto it = table.find(key);
+        if (it != table.end()) {
+            // Value already computed by a dominating instruction.
+            // Replace this instruction with a COPY.
+            vn[i] = it->second;
+            h.kind[i] = HIR_COPY;
+            h.src1[i] = it->second;
+            h.src2[i] = -1;
+            h.val[i] = 0;
         } else {
-            // First time we've seen this value.
-            value_table[key].push_back(i);
+            // New value — add to table.
+            vn[i] = i;
+            table[key] = i;
+            scope.inserted.push_back(key);
         }
     }
+
+    // Recurse into dominated children.
+    for (int c = 0; c < h.n_blocks; c++) {
+        if (h.idom[c] == b && c != b) {
+            gvn_process_block(h, c, vn, table);
+        }
+    }
+
+    // Undo this scope: remove entries added in this block.
+    for (auto &key : scope.inserted) {
+        table.erase(key);
+    }
+}
+
+void hir_gvn(hir_program &h) {
+    int vn[HIR_MAX_INSNS];
+    for (int i = 0; i < h.n_insns; i++) {
+        vn[i] = i;
+    }
+
+    std::unordered_map<ValueKey, int, ValueKeyHash> table;
+    gvn_process_block(h, 0, vn, table);
 }
 
 // ---------------------------------------------------------------
@@ -676,7 +751,7 @@ void hir_optimize(hir_program &h) {
         int prev = h.n_insns;
         hir_const_fold(h);
         hir_copy_prop(h);
-        hir_cse(h);
+        hir_gvn(h);
         hir_dce(h);
 
         // Count remaining live instructions to detect convergence.
