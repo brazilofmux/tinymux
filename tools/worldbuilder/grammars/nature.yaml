@@ -1,0 +1,66 @@
+grammar:
+  adjective:
+    - massive
+    - ancient
+    - twisted
+    - towering
+    - gnarled
+    - moss-covered
+    - wind-bent
+
+  tree:
+    - oak
+    - pine
+    - birch
+    - willow
+    - elm
+    - cedar
+    - maple
+
+  ground:
+    - a carpet of fallen leaves
+    - thick moss
+    - tangled roots and ferns
+    - soft pine needles
+    - patches of wildflowers
+    - bare earth and stone
+
+  sky:
+    - The canopy blocks most of the sunlight
+    - Dappled light filters through the leaves
+    - The sky is barely visible through the dense branches
+    - Shafts of golden light pierce the canopy
+
+  sound:
+    - A bird calls from somewhere above
+    - The wind rustles through the leaves
+    - A stream babbles somewhere nearby
+    - Insects hum in the warm air
+    - Silence presses in from all sides
+
+  smell:
+    - The air smells of damp earth and decay
+    - A fresh, resinous scent fills the air
+    - The sweet smell of wildflowers drifts on the breeze
+    - Moss and loam give the air a rich, earthy quality
+
+  detail:
+    - "${sound}."
+    - "${smell}."
+    - "A fallen log lies across the path, thick with ${adjective} mushrooms."
+    - "Animal tracks cross the soft earth here."
+    - "A spider's web stretches between two ${tree} branches, glistening with dew."
+    - "The bark of ${adjective.a} ${tree} bears old claw marks."
+
+templates:
+  forest_room: |
+    ${adjective.cap} ${tree.s} surround you, their branches forming
+    ${sky.lower}. Underfoot, ${ground} stretches in every direction.
+    ${detail}
+  clearing: |
+    A small clearing opens here among the ${tree.s}. ${sky}.
+    ${ground.cap} covers the ground, and ${smell.lower}.
+    ${detail}
+  path: |
+    A narrow path winds between ${adjective} ${tree.s}. ${ground.cap}
+    muffles your footsteps. ${sound}, and ${smell.lower}.

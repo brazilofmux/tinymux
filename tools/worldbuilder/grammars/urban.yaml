@@ -1,0 +1,63 @@
+grammar:
+  building_type:
+    - townhouse
+    - shop
+    - warehouse
+    - tavern
+    - smithy
+    - bakery
+    - temple
+    - guild hall
+
+  building_material:
+    - timber and plaster
+    - weathered stone
+    - red brick
+    - rough-hewn logs
+    - whitewashed adobe
+
+  street_feature:
+    - A stone fountain stands at a crossroads
+    - An old well with a wooden cover sits nearby
+    - A notice board is nailed to a post
+    - Merchant carts crowd the edges of the road
+    - A shrine to a forgotten saint occupies a niche in the wall
+
+  street_surface:
+    - cobblestones
+    - packed earth
+    - worn flagstones
+    - uneven paving stones
+
+  lighting:
+    - Iron lanterns hang from brackets on the walls
+    - Torches gutter in sconces along the street
+    - The warm glow of windows lights the street
+    - Shadows gather in the alleys between buildings
+
+  crowd:
+    - Merchants call out their wares to passersby
+    - A few locals hurry about their business
+    - The street is nearly empty at this hour
+    - Children play between the market stalls
+    - A street musician plays a melancholy tune
+
+  smell:
+    - fresh bread
+    - wood smoke
+    - horse dung
+    - roasting meat
+    - spilled ale
+
+templates:
+  street: |
+    The street of ${street_surface} stretches between ${building_material}
+    ${building_type.s}. ${lighting}. ${street_feature}. ${crowd}.
+  market: |
+    A busy market square paved with ${street_surface}. Stalls and
+    tents crowd the space, and the smell of ${smell} hangs in the air.
+    ${crowd}. ${street_feature}.
+  alley: |
+    A narrow alley between ${building_material} walls. ${lighting.lower},
+    and the smell of ${smell} drifts from somewhere unseen. The
+    ${street_surface} underfoot are slick with damp.
