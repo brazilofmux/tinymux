@@ -251,6 +251,10 @@ m4/ax_cxx_compile_stdcxx.m4
 Makefile.am
 Makefile.in
 missing
+muxescape/Makefile.am
+muxescape/Makefile.in
+muxescape/muxescape.cpp
+muxescape/muxescape.rl
 modules/autoconf.h.in
 modules/comsys/comsys_mod.cpp
 modules/comsys/comsys_mod.h
