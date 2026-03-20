@@ -286,9 +286,10 @@ def generate_state(dbref_to_id, rooms):
             'description': info.get('description', ''),
             'flags': info.get('flags', '').split(),
             'attrs': info.get('attrs', {}),
+            'status': 'active',
         }
     return {
-        'state_version': 4,
+        'state_version': 1,
         'zone': None,
         'last_applied': time.strftime('%Y-%m-%dT%H:%M:%SZ'),
         'objects': objects,

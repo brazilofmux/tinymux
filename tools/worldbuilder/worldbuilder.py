@@ -15,6 +15,9 @@ import copy
 import os
 from pathlib import Path
 from string import Template
+from live_adapter import emit_mux_commands
+from reconciler import (build_spec_snapshot, load_snapshot,
+                        reconcile_snapshots, format_reconcile_report)
 
 
 # ---------------------------------------------------------------------------
@@ -129,6 +132,20 @@ class WorldSpec:
         self.rooms = {}      # id -> Room
         self.things = {}     # id -> Thing
         self.exits = []      # [Exit]
+
+
+class Operation:
+    """Semantic compiler operation.
+
+    These are the durable boundary between the deterministic planner and
+    backend-specific command emission.
+    """
+    def __init__(self, kind, obj_type, obj_id, name='', payload=None):
+        self.kind = kind
+        self.obj_type = obj_type
+        self.obj_id = obj_id
+        self.name = name
+        self.payload = payload or {}
 
 
 # ---------------------------------------------------------------------------
@@ -543,122 +560,42 @@ def check_drc(spec):
 
 
 # ---------------------------------------------------------------------------
-# Compiler — generate MUX commands
+# Compiler / Planner — semantic operations first, command emission second
 # ---------------------------------------------------------------------------
 
-def compile_spec(spec):
-    """Compile a spec into a list of MUX commands.
-
-    Returns a list of (comment, command) tuples.
-    Commands use placeholder variables like %{room:park_entrance} for
-    dbrefs that aren't known until execution time.
-    """
-    commands = []
-
-    def cmd(comment, command):
-        commands.append((comment, command))
-
-    # Create rooms first (we need dbrefs for exits)
-    cmd(f"=== Zone: {spec.zone.name} ===", "")
+def plan_spec_operations(spec):
+    """Compile a spec into semantic operations."""
+    operations = []
 
     for room_id, room in spec.rooms.items():
-        cmd(f"--- Room: {room.name} ({room_id}) ---", "")
-        cmd("Create room",
-            f'@dig/teleport {room.name}')
-        cmd("Store dbref",
-            f'think [setq(0, %L)] Room {room_id} = %q0')
-        # Use a register to note the dbref for later reference
-        # In practice, the executor captures this from the output
-
-        # Description
-        desc = room.description.rstrip().replace('\n', '%r')
-        cmd("Set description",
-            f'@desc here={desc}')
-
-        # Flags
-        for flag in room.flags:
-            cmd(f"Set flag {flag}",
-                f'@set here={flag}')
-
-        # Attributes
-        for attr_name, attr_value in room.attrs.items():
-            cmd(f"Set attribute {attr_name}",
-                f'&{attr_name} here={attr_value}')
-
-        # Parent
-        if room.parent:
-            cmd(f"Set parent",
-                f'@parent here={room.parent}')
-
-        # Zone — set all rooms to the zone object
-        cmd("Set zone",
-            f'@chzone here=%{{zone:{spec.zone.name}}}')
-
-        cmd("", "")
-
-    # Create exits
-    cmd("=== Exits ===", "")
-
-    def emit_exit_props(ex, exit_ref):
-        """Emit property commands for an exit. exit_ref is the name or dbref."""
-        if ex.lock:
-            cmd("Lock", f'@lock {exit_ref}={ex.lock}')
-        if ex.desc:
-            cmd("Desc", f'@desc {exit_ref}={mux_escape(ex.desc)}')
-        if ex.succ:
-            cmd("Succ", f'@succ {exit_ref}={ex.succ}')
-        if ex.osucc:
-            cmd("Osucc", f'@osucc {exit_ref}={ex.osucc}')
-        if ex.fail:
-            cmd("Fail", f'@fail {exit_ref}={ex.fail}')
-        if ex.ofail:
-            cmd("Ofail", f'@ofail {exit_ref}={ex.ofail}')
-        if ex.drop:
-            cmd("Drop", f'@drop {exit_ref}={ex.drop}')
-        if ex.odrop:
-            cmd("Odrop", f'@odrop {exit_ref}={ex.odrop}')
-        for flag in ex.flags:
-            cmd(f"Flag {flag}", f'@set {exit_ref}={flag}')
+        operations.append(Operation(
+            'create_room', 'room', room_id, room.name, {'room': room}
+        ))
 
     for ex in spec.exits:
-        # Forward exit
-        fwd_name = ex.name.split(';')[0]
-        cmd(f"Exit: {fwd_name} ({ex.from_room} -> {ex.to_room})",
-            f'@open {ex.name}=%{{room:{ex.to_room}}}')
-        emit_exit_props(ex, fwd_name)
-
-        # Back exit
+        operations.append(Operation(
+            'create_exit', 'exit', f'exit_{ex.from_room}_{ex.to_room}',
+            ex.name.split(';')[0],
+            {'exit': ex, 'direction': 'forward'}
+        ))
         if ex.back_name:
-            back_name = ex.back_name.split(';')[0]
-            cmd(f"Back exit: {back_name} ({ex.to_room} -> {ex.from_room})",
-                f'@open {ex.back_name}=%{{room:{ex.from_room}}}')
-            # Back exits don't inherit forward exit's props
+            operations.append(Operation(
+                'create_exit', 'exit', f'exit_{ex.to_room}_{ex.from_room}',
+                ex.back_name.split(';')[0],
+                {'exit': ex, 'direction': 'back'}
+            ))
 
-    # Create things
-    if spec.things:
-        cmd("=== Things ===", "")
-        for thing_id, thing in spec.things.items():
-            cmd(f"--- Thing: {thing.name} ({thing_id}) in {thing.location} ---", "")
-            # Teleport to the room first
-            cmd("Go to room",
-                f'@teleport me=%{{room:{thing.location}}}')
-            cmd("Create object",
-                f'@create {thing.name}')
-            if thing.description:
-                desc = thing.description.rstrip().replace('\n', '%r')
-                cmd("Set description",
-                    f'@desc {thing.name}={desc}')
-            for flag in thing.flags:
-                cmd(f"Set flag {flag}",
-                    f'@set {thing.name}={flag}')
-            for attr_name, attr_value in thing.attrs.items():
-                cmd(f"Set {attr_name}",
-                    f'&{attr_name} {thing.name}={attr_value}')
-            if thing.parent:
-                cmd("Set parent",
-                    f'@parent {thing.name}={thing.parent}')
+    for thing_id, thing in spec.things.items():
+        operations.append(Operation(
+            'create_thing', 'thing', thing_id, thing.name, {'thing': thing}
+        ))
 
-    return commands
+    return operations
+
+
+def compile_spec(spec):
+    """Compile a spec into raw MUX commands via semantic operations."""
+    return emit_mux_commands(spec, plan_spec_operations(spec))
 
 
 def format_plan(spec, drc_result):
@@ -885,39 +822,26 @@ def diff_spec(spec, state_path):
     return changes
 
 
-def compile_incremental(spec, state_path):
-    """Compile only the changes between spec and state."""
+def plan_incremental_operations(spec, state_path):
+    """Plan semantic operations between spec and saved state."""
     state = load_state(state_path)
-    commands = []
-
-    def cmd(comment, command):
-        commands.append((comment, command))
+    operations = []
 
     # Rooms: only new or modified
     for room_id, room in spec.rooms.items():
         if room_id not in state:
-            # New room — full create
-            cmd(f"--- NEW room: {room.name} ({room_id}) ---", "")
-            cmd("Create room", f'@dig/teleport {room.name}')
-            cmd("Store dbref", f'think [setq(0, %L)] Room {room_id} = %q0')
-            desc = room.description.rstrip().replace('\n', '%r')
-            cmd("Set description", f'@desc here={desc}')
-            for flag in room.flags:
-                cmd(f"Set flag {flag}", f'@set here={flag}')
-            for attr_name, attr_value in room.attrs.items():
-                cmd(f"Set {attr_name}", f'&{attr_name} here={attr_value}')
-            cmd("Set zone", f'@chzone here=%{{zone:{spec.zone.name}}}')
+            operations.append(Operation(
+                'create_room', 'room', room_id, room.name, {'room': room}
+            ))
         else:
-            # Existing room — update in place
             old = state[room_id]
             dbref = old.get('dbref', '')
             if not dbref:
                 continue
 
-            # Compute actual changes
             name_changed = old.get('name') != room.name
             desc_changed = old.get('description', '').strip() != room.description.strip()
-            
+
             old_flags = set(old.get('flags', []))
             new_flags = set(room.flags)
             flags_added = new_flags - old_flags
@@ -929,55 +853,62 @@ def compile_incremental(spec, state_path):
             attrs_to_unset = set(old_attrs.keys()) - set(new_attrs.keys())
 
             if any([name_changed, desc_changed, flags_added, flags_removed, attrs_to_set, attrs_to_unset]):
-                cmd(f"--- UPDATE room: {room.name} ({room_id}) at {dbref} ---", "")
-                cmd("Teleport to room", f'@teleport me={dbref}')
+                operations.append(Operation(
+                    'update_room', 'room', room_id, room.name,
+                    {
+                        'room': room,
+                        'dbref': dbref,
+                        'name_changed': name_changed,
+                        'desc_changed': desc_changed,
+                        'flags_added': flags_added,
+                        'flags_removed': flags_removed,
+                        'attrs_to_set': attrs_to_set,
+                        'attrs_to_unset': attrs_to_unset,
+                    }
+                ))
 
-                if name_changed:
-                    cmd("Update name", f'@name here={room.name}')
-                
-                if desc_changed:
-                    desc = room.description.rstrip().replace('\n', '%r')
-                    cmd("Update description", f'@desc here={desc}')
-
-                for flag in sorted(flags_added):
-                    cmd(f"Set flag {flag}", f'@set here={flag}')
-                for flag in sorted(flags_removed):
-                    cmd(f"Clear flag {flag}", f'@set here=!{flag}')
-
-                for attr_name in sorted(attrs_to_set):
-                    cmd(f"Update {attr_name}", f'&{attr_name} here={attrs_to_set[attr_name]}')
-                for attr_name in sorted(attrs_to_unset):
-                    cmd(f"Remove {attr_name}", f'&{attr_name} here=')
-
-    # Deletions: objects in state but NOT in spec
-    deletions = []
     for obj_id, obj in state.items():
         if obj.get('type') == 'room' and obj_id not in spec.rooms:
-            deletions.append((obj_id, obj))
-    
-    if deletions:
-        cmd("=== DESTROY removed rooms ===", "")
-        for obj_id, obj in deletions:
             dbref = obj.get('dbref', '')
             if dbref:
-                cmd(f"Destroy room: {obj.get('name')} ({obj_id})", f'@destroy/override {dbref}')
+                operations.append(Operation(
+                    'destroy_room', 'room', obj_id, obj.get('name', ''),
+                    {'dbref': dbref}
+                ))
 
-    # Exits: only new ones (modifying exits is rare — delete + recreate)
-    # TODO: Implement incremental exit updates (locks, descs)
+    spec_exit_keys = set()
     for ex in spec.exits:
         key = f'exit_{ex.from_room}_{ex.to_room}'
+        spec_exit_keys.add(key)
         if key not in state:
-            cmd(f"--- NEW exit: {ex.name.split(';')[0]} ---", "")
-            cmd("Forward exit",
-                f'@open {ex.name}=%{{room:{ex.to_room}}}')
+            operations.append(Operation(
+                'create_exit', 'exit', key, ex.name.split(';')[0],
+                {'exit': ex, 'direction': 'forward'}
+            ))
         if ex.back_name:
             back_key = f'exit_{ex.to_room}_{ex.from_room}'
+            spec_exit_keys.add(back_key)
             if back_key not in state:
-                cmd(f"--- NEW back exit: {ex.back_name.split(';')[0]} ---", "")
-                cmd("Back exit",
-                    f'@open {ex.back_name}=%{{room:{ex.from_room}}}')
+                operations.append(Operation(
+                    'create_exit', 'exit', back_key, ex.back_name.split(';')[0],
+                    {'exit': ex, 'direction': 'back'}
+                ))
 
-    return commands
+    for obj_id, obj in state.items():
+        if obj.get('type') == 'exit' and obj_id not in spec_exit_keys:
+            dbref = obj.get('dbref', '')
+            if dbref:
+                operations.append(Operation(
+                    'destroy_exit', 'exit', obj_id, obj.get('name', ''),
+                    {'dbref': dbref}
+                ))
+
+    return operations
+
+
+def compile_incremental(spec, state_path):
+    """Compile only the changes between spec and state."""
+    return emit_mux_commands(spec, plan_incremental_operations(spec, state_path))
 
 
 def format_diff(changes):
@@ -1017,10 +948,11 @@ def format_diff(changes):
 def main():
     parser = argparse.ArgumentParser(
         description='WorldBuilder — MUX game content management tool')
-    parser.add_argument('action', choices=['plan', 'compile', 'check', 'diff', 'lint'],
+    parser.add_argument('action', choices=['plan', 'compile', 'check', 'diff', 'lint', 'reconcile'],
                         help='Action to perform')
     parser.add_argument('spec', help='Path to YAML spec file')
     parser.add_argument('--state', help='State file for diff/incremental compile')
+    parser.add_argument('--live', help='Normalized live snapshot for reconcile')
     parser.add_argument('--format', choices=['default', 'upload', 'raw'],
                         default='default', help='Output format for compile')
 
@@ -1082,6 +1014,25 @@ def main():
         print(f"State file: {state_path}")
         print()
         print(format_diff(changes))
+
+    elif args.action == 'reconcile':
+        if not args.live:
+            print("Error: reconcile requires --live <snapshot.yaml>", file=sys.stderr)
+            sys.exit(1)
+        if not drc.ok:
+            print("DRC errors:", file=sys.stderr)
+            for err in drc.errors:
+                print(f"  ERROR: {err}", file=sys.stderr)
+            sys.exit(1)
+
+        state_objects = load_state(state_path)
+        live_objects = load_snapshot(args.live)
+        spec_objects = build_spec_snapshot(spec)
+        result = reconcile_snapshots(spec_objects, state_objects, live_objects)
+        print(format_reconcile_report(result))
+        if any(entry.status in {'conflict', 'missing_live', 'recycled_live'}
+               for entry in result.entries):
+            sys.exit(1)
 
     elif args.action == 'compile':
         if not drc.ok:

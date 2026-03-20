@@ -9,15 +9,13 @@ Handles:
 - Dry-run mode (log commands without executing)
 """
 
-import re
 import socket
 import ssl
 import time
-import json
-import yaml
 import argparse
 from pathlib import Path
-from worldbuilder import parse_spec, check_drc, compile_spec, mux_escape
+from worldbuilder import parse_spec, check_drc
+from live_adapter import StateFile, content_hash, extract_dbref
 
 
 # ---------------------------------------------------------------------------
@@ -133,98 +131,8 @@ class MuxConnection:
 
 
 # ---------------------------------------------------------------------------
-# State File
-# ---------------------------------------------------------------------------
-
-class StateFile:
-    """Tracks spec ID → dbref/objid mappings and object content."""
-
-    def __init__(self, path):
-        self.path = Path(path)
-        self.objects = {}    # spec_id -> {dbref, objid, type, name, description, flags, attrs}
-        self.zone = None
-        self.last_applied = None
-        self.version = 2     # Default to v2 if not specified
-        if self.path.exists():
-            self._load()
-
-    def _load(self):
-        try:
-            with open(self.path, 'r') as f:
-                data = yaml.safe_load(f)
-            if data:
-                self.objects = data.get('objects', {})
-                self.zone = data.get('zone')
-                self.last_applied = data.get('last_applied')
-                self.version = data.get('state_version', 2)
-        except Exception as e:
-            print(f"Warning: Could not load state file {self.path}: {e}")
-            self.objects = {}
-
-    def save(self):
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        data = {
-            'state_version': 4,
-            'zone': self.zone,
-            'last_applied': time.strftime('%Y-%m-%dT%H:%M:%SZ'),
-            'objects': self.objects,
-        }
-        with open(self.path, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, sort_keys=False)
-
-    def set_room(self, spec_id, dbref, room, objid=None):
-        """Store room details in state."""
-        self.objects[spec_id] = {
-            'dbref': dbref,
-            'objid': objid,
-            'type': 'room',
-            'name': room.name,
-            'description': room.description,
-            'flags': sorted(room.flags),
-            'attrs': room.attrs,
-            'content_hash': content_hash(room)
-        }
-
-    def set_exit(self, spec_id, dbref, name, objid=None):
-        self.objects[spec_id] = {'dbref': dbref, 'objid': objid, 'type': 'exit', 'name': name}
-
-    def get_dbref(self, spec_id):
-        obj = self.objects.get(spec_id)
-        return obj['dbref'] if obj else None
-
-    def resolve(self, placeholder):
-        """Resolve %{room:spec_id} to a dbref."""
-        m = re.match(r'%\{room:(\w+)\}', placeholder)
-        if m:
-            return self.get_dbref(m.group(1))
-        return None
-
-
-# ---------------------------------------------------------------------------
 # Executor
 # ---------------------------------------------------------------------------
-
-import hashlib as _hashlib
-
-DBREF_PATTERN = re.compile(r'#(\d+)')
-
-
-def content_hash(room):
-    """Compute a hash of a room's content for change detection."""
-    h = _hashlib.sha256()
-    h.update(room.name.encode('utf-8'))
-    h.update(room.description.encode('utf-8'))
-    for k in sorted(room.attrs.keys()):
-        h.update(f'{k}={room.attrs[k]}'.encode('utf-8'))
-    for f in sorted(room.flags):
-        h.update(f.encode('utf-8'))
-    return h.hexdigest()[:16]
-
-
-def extract_dbref(text):
-    """Extract the first dbref (#NNN) from MUX output."""
-    m = DBREF_PATTERN.search(text)
-    return m.group(0) if m else None
 
 
 def execute(spec, conn, state, dry_run=False, log_file=None):
@@ -472,7 +380,7 @@ def rollback(spec, conn, state, dry_run=False, log_file=None):
     def do_cmd(cmd):
         if dry_run:
             log(f"  [dry-run] {cmd}")
-            return
+            return ''
         log(f"  > {cmd}")
         conn.send(cmd)
         time.sleep(0.3)
@@ -480,6 +388,7 @@ def rollback(spec, conn, state, dry_run=False, log_file=None):
         if resp.strip():
             for line in resp.strip().split('\n'):
                 log(f"  < {line.rstrip()}")
+        return resp
 
     # Collect all dbrefs from state, exits first then rooms
     exits_to_destroy = []
@@ -528,13 +437,19 @@ def rollback(spec, conn, state, dry_run=False, log_file=None):
         log(f"\n--- Destroy room: {name} ({dbref}) ---")
         do_cmd(f'@destroy/override {dbref}')
 
-    # Clear state
+    # Destruction is deferred in TinyMUX, so keep entries and mark them
+    # pending_destroy until a later reconcile/verify confirms removal.
     if not dry_run:
-        state.objects.clear()
+        for spec_id, _, _, _ in exits_to_destroy:
+            if spec_id not in skipped:
+                state.mark_pending_destroy(spec_id)
+        for spec_id, _, _, _ in rooms_to_destroy:
+            if spec_id not in skipped:
+                state.mark_pending_destroy(spec_id)
         state.save()
-        log(f"\nState cleared. Saved to {state.path}")
+        log(f"\nState updated with pending_destroy markers. Saved to {state.path}")
     else:
-        log(f"\n[dry-run] State would be cleared.")
+        log(f"\n[dry-run] State would be updated with pending_destroy markers.")
 
 
 def main():

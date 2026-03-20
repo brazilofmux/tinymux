@@ -30,6 +30,7 @@ from worldbuilder import (parse_spec, check_drc, compile_spec, format_commands,
 from softcode_lint import lint_softcode, lint_spec
 from grammar import Grammar, SeededRandom
 from mapgen import extract_graph, layout_grid, render_ascii, render_dot
+from reconciler import build_spec_snapshot, reconcile_snapshots
 
 
 passed = 0
@@ -218,6 +219,28 @@ def test_exit_model():
     test("Exit flags empty", spec.exits[0].flags == [])
 
 
+def test_reconciliation():
+    section("Reconciliation")
+    spec = parse_spec("tests/park.yaml")
+    spec_objects = build_spec_snapshot(spec)
+    state_objects = build_spec_snapshot(spec)
+    for obj_id, obj in state_objects.items():
+        obj['dbref'] = f'#{1000 + len(obj_id)}'
+        obj['objid'] = f'{obj["dbref"]}:1'
+
+    live_objects = {}
+    for obj_id, obj in state_objects.items():
+        live_objects[obj_id] = dict(obj)
+
+    live_objects['park_entrance']['description'] = 'Hand edited live description.'
+    spec_objects['fountain_plaza']['attrs']['SOUND'] = 'Water splashes softly.'
+
+    result = reconcile_snapshots(spec_objects, state_objects, live_objects)
+    statuses = {entry.obj_id: entry.status for entry in result.entries}
+    test("Live modification detected", statuses['park_entrance'] == 'live_modified')
+    test("Spec modification detected", statuses['fountain_plaza'] == 'spec_modified')
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -238,6 +261,7 @@ def main():
     test_grammar()
     test_map_generation()
     test_exit_model()
+    test_reconciliation()
 
     print(f"\n{'=' * 40}")
     print(f"Results: {passed} passed, {failed} failed")
