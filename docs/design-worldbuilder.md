@@ -1,451 +1,479 @@
-# WorldBuilder — Game Content Management System
+# WorldBuilder — Unified Design
 
-## Design Document
+## Status
 
-A three-layer system for building and maintaining MUX game worlds,
-inspired by Terraform (infrastructure as code) and EDA schematic
-capture (reusable components, design rule checking).
+This document is the authoritative design for WorldBuilder.
 
-## The Problem
+It replaces the older phased notes in
+[design-worldbuilder-v2.md](design-worldbuilder-v2.md) and
+[design-worldbuilder-v3.md](design-worldbuilder-v3.md). Those documents
+remain only as historical pointers.
 
-Building a MUX game today:
-- Tedious: `@dig`, `@open`, `@desc`, `@set` one at a time, by hand
-- Error-prone: typos in exit destinations, dangling exits, missing descs
-- Not version-controlled: the flatfile is the only truth, and it's binary
-- Not reusable: every apartment building is hand-built from scratch
-- Not auditable: who changed what, when, why?
-- Not LLM-assistable: no safe way to use AI for content generation
+## Goal
 
-## The Three Layers
+WorldBuilder is a content engineering toolchain for TinyMUX worlds.
+Its purpose is to make world content:
 
-### Layer 1: Specification Language ("the schematic")
+- declarative
+- diffable
+- reviewable
+- importable from a live game or backup
+- safe to apply incrementally
+- resilient to hand-edits in the live world
 
-A declarative YAML-based language describing the game world. Human-readable,
-diffable, version-controllable, LLM-assistable.
+The original inspiration was "Terraform for MUX." That remains useful
+for the planning and state-comparison layer, but it is not the full
+model. TinyMUX is not a clean RPC API. The live boundary is a telnet
+conversation with server-specific output, latency, permissions, and
+organic builder edits.
 
-```yaml
-# worldspec.yaml — a small park area
+The architecture therefore narrows to three durable pieces:
 
-zone:
-  name: Emerald Park
-  description: A peaceful urban park in the downtown district.
-  parent: $zone_master
+1. Offline compiler/planner
+2. Live adapter
+3. Reconciler
 
-rooms:
-  park_entrance:
-    name: Park Entrance
-    description: |
-      A wrought-iron gate opens onto a gravel path that winds between
-      ancient oak trees. Benches line the walkway, and the sound of a
-      fountain carries from deeper within the park.
-    flags: [FLOATING]
-    attrs:
-      ACONNECT: "@pemit %#=You feel a cool breeze as you enter the park."
+Everything else is subordinate to those three pieces.
 
-  fountain_plaza:
-    name: Fountain Plaza
-    description: |
-      A marble fountain dominates the center of a circular plaza. Water
-      arcs from the mouths of four stone fish, catching the light as it
-      falls into the basin below.
-    attrs:
-      SMELL: "The mist from the fountain carries a fresh, clean scent."
+## Non-Goals
 
-  rose_garden:
-    name: The Rose Garden
-    description: |
-      Rows of carefully tended rose bushes form a maze of color and
-      fragrance. A small wooden sign reads 'Maintained by the Garden
-      Society.'
-    parent: $garden_parent
+WorldBuilder is not trying to:
 
-exits:
-  - from: park_entrance
-    to: fountain_plaza
-    name: North Path;np;north;n
-    back: South Path;sp;south;s
+- replace interactive building entirely
+- force YAML to be the only editing surface
+- pretend telnet output is a stable machine API
+- model every MUX subsystem before the core import/plan/reconcile/apply
+  loop is reliable
 
-  - from: fountain_plaza
-    to: rose_garden
-    name: Garden;garden;east;e
-    back: Plaza;plaza;west;w
+## Core Model
 
-  - from: park_entrance
-    to: $downtown_square    # external reference
-    name: Out;out;south;s
-    # no back — managed by the downtown zone spec
-```
+WorldBuilder manages three views of the world:
 
-### Layer 2: Compiler ("terraform plan" + DRC)
+- `spec`: the desired state, authored in YAML and related source files
+- `state`: the last known managed state recorded by WorldBuilder
+- `live`: the current state observed from the running game or from an
+  imported backup
 
-Deterministic software that:
+The essential operation is not a one-way push. It is comparison across
+those three views.
 
-1. **Parses** the spec into an internal representation
-2. **Validates** against design rules (the DRC)
-3. **Resolves** references ($variables, cross-zone links)
-4. **Plans** the changeset (what to create, modify, delete)
-5. **Outputs** a human-reviewable execution plan
+### Sources of Truth
 
-#### Design Rule Checks (DRC)
+No single source is sufficient on its own:
 
-| Rule | Category | Description |
-|------|----------|-------------|
-| Exit symmetry | Topology | Every `back:` creates a return exit |
-| No dangling exits | Topology | Every exit destination exists or is a valid $ref |
-| Reachability | Topology | All rooms reachable from at least one entry point |
-| Description required | Content | Every room has a non-empty description |
-| Description quality | Content | Min length, no placeholder text ("TBD", "TODO") |
-| Name uniqueness | Naming | No duplicate room IDs within a zone |
-| Attribute validation | Safety | No dangerous attrs (@destroy, @force, etc.) |
-| Flag validation | Safety | Only allowed flags (no WIZARD, GOD, etc.) |
-| Quota check | Resources | Total objects within specified quota |
-| Zone membership | Structure | All objects belong to the declared zone |
-| Parent validity | Structure | Referenced parents exist |
-| Exit alias conflicts | Naming | No two exits from same room share an alias |
+- The spec captures intent.
+- The state file preserves identity and the last applied snapshot.
+- The live game reflects reality, including hand-edits and drift.
 
-#### Plan Output
+This leads to one central rule:
 
-```
-$ worldbuilder plan emerald_park.yaml
+`apply` must never blindly assume that `state` still matches `live`.
 
-WorldBuilder Plan — Emerald Park
-================================
+## Architecture
 
-Zone: Emerald Park
-  + CREATE zone object "Emerald Park"
+### 1. Offline Compiler / Planner
 
-Rooms (3 new, 0 modified, 0 deleted):
-  + CREATE room "Park Entrance" (park_entrance)
-  + CREATE room "Fountain Plaza" (fountain_plaza)
-  + CREATE room "The Rose Garden" (rose_garden)
+The offline layer is deterministic. It does not talk to a running MUX.
+Its job is to parse source files, validate them, normalize them into an
+internal model, and plan changes.
 
-Exits (5 new):
-  + CREATE exit "North Path" from park_entrance → fountain_plaza
-  + CREATE exit "South Path" from fountain_plaza → park_entrance
-  + CREATE exit "Garden" from fountain_plaza → rose_garden
-  + CREATE exit "Plaza" from rose_garden → fountain_plaza
-  + CREATE exit "Out" from park_entrance → $downtown_square
+#### Responsibilities
 
-Attributes (3):
-  + SET park_entrance/ACONNECT
-  + SET fountain_plaza/SMELL
-  + SET park_entrance/FLOATING flag
+- Parse YAML specs, components, grammars, project files, and migrations.
+- Expand reusable components and generated topology.
+- Resolve internal references and declared external references.
+- Run design-rule checks.
+- Compute diffs between `spec` and `state`.
+- Produce a human-reviewable plan.
+- Compile intent into an execution program, without embedding telnet
+  session behavior into the compiler itself.
 
-DRC: 12 checks passed, 0 warnings, 0 errors.
-Total: 9 objects (1 zone + 3 rooms + 5 exits)
-```
+#### Inputs
 
-### Layer 3: Executor ("terraform apply")
+- zone spec files
+- multi-zone project files
+- component definitions
+- optional grammar files
+- optional softcode source files referenced by spec
+- state files written by prior imports/applies/reconciliations
 
-A bot that connects to the MUX and issues commands:
+#### Outputs
 
-```
-> @dig/teleport Park Entrance
-> @desc here=A wrought-iron gate...
-> @set here=FLOATING
-> &ACONNECT here=@pemit %#=You feel a cool breeze...
-> @open North Path;np;north;n=<dbref of fountain_plaza>
-> ...
-```
+- DRC results
+- plan output
+- diff output
+- an execution program made of semantic operations such as:
+  - create room
+  - update description
+  - set attribute
+  - remove attribute
+  - create exit
+  - mark object for destroy
 
-The executor:
-- Connects as a builder character
-- Executes commands in order
-- Captures dbrefs as they're created
-- Maps spec IDs to dbrefs (the "state file")
-- Logs all commands and results
-- Can do dry-run (just log, don't execute)
-- Idempotent: re-running updates only what changed
+The preferred abstraction is an operation graph or ordered operation
+list. Raw MUX command strings are a backend concern.
 
-## Reusable Components ("cells" / "modules")
+#### Required Properties
 
-### Component Definition
+- deterministic for a given input set
+- testable without a running game
+- explicit about creates, updates, removals, and destructive actions
+- able to diff at attribute level, not only at coarse object-hash level
+
+### 2. Live Adapter
+
+The live adapter is the ugly boundary layer. It knows how to talk to a
+real TinyMUX server or an import/export format. It is allowed to be
+messy because its job is to absorb the mess so the compiler and
+reconciler stay clean.
+
+#### Responsibilities
+
+- Connect and authenticate to a live game.
+- Send commands and read responses robustly.
+- Query object identity and content from the server.
+- Import live content into normalized records.
+- Execute compiled operations against the server.
+- Verify post-apply reality.
+- Support offline import/export paths where available.
+
+#### Backends
+
+The live adapter may have multiple backends:
+
+- telnet executor/query backend
+- live import backend using `@decomp/tf` where possible
+- flatfile import backend via `reformat`
+- flatfile export backend via `unformat` or another stable offline
+  format if that proves safer
+
+The telnet backend is not treated as a clean CLI. It is a conversational
+transport that must be normalized.
+
+#### Identity
+
+Stable identity is based on `objid()`, not dbref alone.
+
+State records must store at least:
 
 ```yaml
-# components/apartment_unit.yaml
-component:
-  name: apartment_unit
-  params:
-    unit_number: { type: string, required: true }
-    owner: { type: dbref, default: null }
-    monthly_rent: { type: int, default: 100 }
-    furnished: { type: bool, default: false }
-
-  rooms:
-    living_room:
-      name: "Apartment ${unit_number} - Living Room"
-      description: |
-        A modest studio apartment with hardwood floors and tall windows.
-        ${if furnished}The apartment is furnished with a couch, coffee
-        table, and bookshelf.${endif}
-      attrs:
-        RENT_AMOUNT: "${monthly_rent}"
-        RENT_OWNER: "${owner}"
-        APARTMENT_UNIT: "${unit_number}"
-        LOCK_USE: "owner:${owner}"
-
-    bathroom:
-      name: "Apartment ${unit_number} - Bathroom"
-      description: |
-        A small but clean bathroom with a shower stall, toilet, and
-        pedestal sink. A mirror hangs above the sink.
-
-  exits:
-    - from: living_room
-      to: bathroom
-      name: Bathroom;bath
-      back: Living Room;out
-
-  # External connection point — the caller wires this up
-  ports:
-    door:
-      room: living_room
-      direction: out
-```
-
-### Component Instantiation
-
-```yaml
-# zones/riverside_apartments.yaml
-zone:
-  name: Riverside Apartments
-  description: A three-story apartment building overlooking the river.
-
-imports:
-  - components/apartment_unit.yaml
-
-rooms:
-  lobby:
-    name: Riverside Apartments - Lobby
-    description: |
-      A clean, well-lit lobby with a reception desk and a row of
-      mailboxes on the wall. An elevator and stairwell provide access
-      to the upper floors.
-
-  hallway_2f:
-    name: Second Floor Hallway
-    description: |
-      A carpeted hallway with numbered doors on each side. Soft
-      overhead lighting and framed prints on the walls.
-
-instances:
-  - component: apartment_unit
-    id: apt_201
-    params:
-      unit_number: "201"
-      monthly_rent: 150
-      furnished: true
-    connect:
-      door:
-        to: hallway_2f
-        name: "Apartment 201;201"
-        back: "Hallway;out;hall"
-
-  - component: apartment_unit
-    id: apt_202
-    params:
-      unit_number: "202"
-      monthly_rent: 120
-    connect:
-      door:
-        to: hallway_2f
-        name: "Apartment 202;202"
-        back: "Hallway;out;hall"
-
-  - component: apartment_unit
-    id: apt_203
-    params:
-      unit_number: "203"
-      monthly_rent: 120
-    connect:
-      door:
-        to: hallway_2f
-        name: "Apartment 203;203"
-        back: "Hallway;out;hall"
-
-exits:
-  - from: lobby
-    to: hallway_2f
-    name: Stairs;stairs;up;u;2f
-    back: Lobby;lobby;down;d;1f
-  - from: lobby
-    to: $outside_street
-    name: Out;out;south;s
-```
-
-### Procedural Generation
-
-```yaml
-# components/forest_area.yaml
-component:
-  name: forest_area
-  params:
-    width: { type: int, default: 3 }
-    height: { type: int, default: 3 }
-    density: { type: float, default: 0.7 }
-
-  generate: grid
-  grid:
-    width: ${width}
-    height: ${height}
-    room_template:
-      name: "Deep Forest [${x},${y}]"
-      description:
-        pool:
-          - "Tall pines tower overhead, their branches forming a dense canopy."
-          - "Birch trees with peeling white bark cluster around a mossy boulder."
-          - "A dense thicket of brambles makes passage difficult here."
-          - "Ferns carpet the forest floor beneath ancient oaks."
-          - "Shafts of sunlight pierce the canopy, illuminating a small clearing."
-        selection: seeded_random  # deterministic from position
-    exits: cardinal  # auto-generate N/S/E/W between adjacent cells
-    connectivity: ${density}  # percentage of possible exits that exist
-
-  ports:
-    edge_north: { room: "[*,0]", direction: north }
-    edge_south: { room: "[*,${height-1}]", direction: south }
-    edge_west:  { room: "[0,*]", direction: west }
-    edge_east:  { room: "[${width-1},*]", direction: east }
-```
-
-## State Management
-
-### State File (terraform.tfstate equivalent)
-
-```yaml
-# .worldbuilder/state/emerald_park.state.yaml
-spec_version: "1.0"
-zone: emerald_park
-last_applied: "2026-03-19T15:30:00Z"
-builder_character: BuildBot
-
 objects:
   park_entrance:
     dbref: "#1234"
+    objid: "#1234:1678901234"
+```
+
+Rules:
+
+- dbref match and objid match: same object
+- dbref match and objid mismatch: recycled object, treat as not ours
+- objid missing because of legacy state: warn and operate cautiously
+
+#### Observed Snapshot Shape
+
+When the live adapter reads an object, it should normalize the result
+into a structure rich enough for reconciliation:
+
+```yaml
+park_entrance:
+  dbref: "#1234"
+  objid: "#1234:1678901234"
+  type: room
+  name: Park Entrance
+  description: |
+    A wrought-iron gate opens onto a gravel path.
+  flags: [FLOATING]
+  attrs:
+    ACONNECT: "@pemit %#=Welcome."
+```
+
+This is intentionally closer to the logical model than to raw telnet
+lines.
+
+#### Execution Semantics
+
+Execution is an adapter concern, not a compiler concern. The adapter is
+responsible for:
+
+- object creation sequencing
+- temporary dbref capture
+- retry or fallback query strategies
+- translating semantic operations into concrete MUX commands
+- recording what actually happened
+
+The adapter must preserve logs, because a conversational interface is
+not self-describing after the fact.
+
+### 3. Reconciler
+
+The reconciler is the center of the workflow.
+
+Its job is to compare `spec`, `state`, and `live`, then classify each
+managed object and field.
+
+#### Why This Is Central
+
+TinyMUX worlds are routinely hand-edited in-game. Builders live in the
+world and make small iterative changes. If WorldBuilder only supports
+"apply desired state," it will overwrite valid work and lose trust.
+
+The right model is therefore closer to `git merge` than to pure
+Terraform.
+
+#### Required Classifications
+
+For each managed object or field:
+
+- `unchanged`: spec, state, and live all agree
+- `spec_modified`: spec differs from state, live matches state
+- `live_modified`: live differs from state, spec matches state
+- `conflict`: spec and live both differ from state in different ways
+- `missing_live`: object recorded in state no longer exists live
+- `recycled_live`: dbref exists but objid does not match
+- `pending_destroy`: object was marked for destruction but may still
+  exist live
+
+#### Required Actions
+
+The reconciler must support:
+
+- refresh state from live when only live changed
+- generate apply operations when only spec changed
+- stop or require an explicit choice on conflicts
+- record reconciliation decisions
+- export a human-readable report
+
+The minimum user-facing command set should eventually include:
+
+- `import`
+- `plan`
+- `diff`
+- `reconcile`
+- `apply`
+- `verify`
+
+`reconcile` is not optional polish. It is the control point that keeps
+the other commands safe.
+
+## Desired Workflow
+
+### Primary Workflow
+
+1. Author or edit spec files offline.
+2. Run `check` and `lint`.
+3. Run `plan` or `diff`.
+4. Query live state and run `reconcile`.
+5. Review the reconciliation report.
+6. Apply only the approved semantic operations.
+7. Verify live results.
+8. Update state from what actually happened.
+
+### Import-First Workflow
+
+For existing worlds or hand-built areas:
+
+1. Import from live telnet queries or from a backup.
+2. Generate a normalized spec plus state.
+3. Clean up and modularize the spec offline.
+4. Use reconcile/diff/apply for subsequent changes.
+
+### Offline Round-Trip Workflow
+
+Where TinyMUX tooling allows it:
+
+1. `flatfile -> reformat -> import`
+2. edit spec offline
+3. `compile -> offline export format -> unformat`
+
+This is valuable, but still secondary to the core three-piece
+architecture.
+
+## Data Model
+
+### Spec
+
+The spec should remain declarative and readable. It may describe:
+
+- zone metadata
+- rooms
+- exits
+- things
+- flags
+- attributes
+- parents
+- components and instances
+- generated topology
+- project-level cross-zone references
+
+YAML remains appropriate for world data.
+
+### Softcode
+
+Large or logic-heavy softcode should not be forced inline when that
+hurts tooling. File-linked attributes are preferred for substantial
+logic:
+
+```yaml
+attrs:
+  ACONNECT: file://scripts/welcome_handler.mux
+```
+
+This keeps world data declarative while allowing proper editing and
+linting of softcode.
+
+### State
+
+The state file is the bridge between desired intent and live identity.
+It is not merely a dbref map.
+
+State must be versioned and store enough detail for field-level diffing
+and reconciliation.
+
+Minimum state content:
+
+```yaml
+state_version: 1
+zone: Emerald Park
+last_synced: 2026-03-19T00:00:00Z
+objects:
+  park_entrance:
+    dbref: "#1234"
+    objid: "#1234:1678901234"
     type: room
-    created: "2026-03-19T15:30:01Z"
-  fountain_plaza:
-    dbref: "#1235"
-    type: room
-    created: "2026-03-19T15:30:02Z"
-  rose_garden:
-    dbref: "#1236"
-    type: room
-    created: "2026-03-19T15:30:03Z"
-  exit_north_path:
-    dbref: "#1237"
-    type: exit
-    created: "2026-03-19T15:30:04Z"
-  # ...
+    name: Park Entrance
+    description: "..."
+    flags: [FLOATING]
+    attrs:
+      ACONNECT: "@pemit %#=Welcome."
+    status: active
 ```
 
-### Import ("terraform import")
+Useful object statuses include:
 
-Read existing game state back into a spec:
+- `active`
+- `pending_destroy`
+- `missing`
+- `conflict`
 
-```
-$ worldbuilder import --zone "Emerald Park" --host game.example.com --port 4201
-```
+## Planning and Diffing
 
-Connects to the game, walks the zone, reads dbrefs/attrs/exits, and
-generates a YAML spec + state file. This bootstraps WorldBuilder for
-existing game areas that were built by hand.
+Planning must distinguish clearly between:
 
-## Operations
+- create
+- modify
+- remove field
+- destroy object
 
-### Workflow
+Human review output should be specific. "Something changed" is not
+enough.
 
-```
-# 1. Write or edit the spec (human + LLM)
-$ vim emerald_park.yaml
+Example:
 
-# 2. Validate and plan (deterministic, safe)
-$ worldbuilder plan emerald_park.yaml
-# Review the plan output...
-
-# 3. Apply (bot executes against the game)
-$ worldbuilder apply emerald_park.yaml \
-    --host game.example.com --port 4201 \
-    --character BuildBot --password hunter2
-
-# 4. Check state matches spec
-$ worldbuilder verify emerald_park.yaml \
-    --host game.example.com --port 4201
-
-# 5. Diff two specs
-$ worldbuilder diff old_park.yaml new_park.yaml
+```text
+~ MODIFY room "Park Entrance" (#1234)
+    ~ description
+    + attr:ACONNECT
+    - attr:SOUND
 ```
 
-### Diff and Incremental Apply
+This plan should be produced from normalized logical state, not from raw
+telnet output.
 
-When a spec changes, the planner diffs against the state file:
+## Destructive Changes
 
-```
-$ worldbuilder plan emerald_park.yaml
+Destructive actions are real requirements, but TinyMUX destruction is
+deferred and non-atomic.
 
-WorldBuilder Plan — Emerald Park (incremental)
-===============================================
+Rules:
 
-Rooms (0 new, 1 modified, 0 deleted):
-  ~ MODIFY room "Fountain Plaza" (#1235):
-    ~ description: changed (diff available with --verbose)
-    + SET SOUND attribute
+- destroy exits before rooms
+- require explicit opt-in for destructive apply
+- do not immediately delete destroyed objects from state
+- mark them `pending_destroy`
+- verify later whether they are actually gone or were undestroyed
+- if a spec re-adds an object while the old one is still pending
+  destruction, prefer recovery or reuse over creating duplicates
 
-Exits (1 new):
-  + CREATE exit "Hidden Path" from fountain_plaza → rose_garden
+Attribute removal is also destructive in a smaller sense and must be
+represented explicitly.
 
-DRC: 12 checks passed, 0 warnings, 0 errors.
-```
+## Validation
 
-## Implementation Language
+The DRC layer remains important, but it should focus on stable checks:
 
-The compiler/planner/executor should be written in Python:
-- YAML parsing (PyYAML/ruamel.yaml)
-- Telnet client for executor (asyncio + telnetlib3)
-- Template expansion (Jinja2-like)
-- Graph analysis for topology checks (networkx or custom)
-- Rich CLI output (click + rich)
-- Cross-platform (builders use Windows, Linux, Mac)
+- dangling references
+- bidirectional exit integrity where declared
+- alias conflicts
+- description presence and quality
+- flag safety
+- attribute safety
+- quota expectations
+- parent and zone validity
+- builder permission modeling where statically knowable
 
-## LLM Integration Point
+Softcode linting is part of validation, but static lint is separate from
+the live adapter.
 
-The LLM helps at Layer 1 ONLY:
-- "Generate a 5x5 forest area with a river running through it"
-- "Write descriptions for these 10 rooms in a gothic style"
-- "Add a shop to the town square with these inventory items"
-- "Review this spec for consistency and suggest improvements"
+## Implementation Guidance
 
-The LLM's output is YAML that goes through the compiler. If the YAML
-has errors, the compiler catches them. If the descriptions are bad,
-a human reviews. At no point does the LLM execute commands against
-the game.
+The current codebase may continue using Python for the tool layer. The
+language is not the architectural issue. The important boundary is
+between:
 
-## Component Library (future)
+- pure planning logic
+- live transport/query logic
+- reconciliation logic
 
-Pre-built, tested components for common patterns:
+The code should move toward these separations:
 
-| Component | Description |
-|-----------|-------------|
-| apartment_unit | Single rentable apartment |
-| apartment_building | Multi-floor building with lobby |
-| shop | Retail store with inventory |
-| tavern | Bar with seating, barkeeper NPC |
-| street_grid | MxN city block layout |
-| forest_area | Procedural wilderness |
-| cave_system | Branching cavern network |
-| castle | Multi-room fortification |
-| ship | Vessel with cabins, deck, hold |
-| arena | PvP combat area with staging |
+### Compiler / Planner Module
 
-## Safety Guarantees
+- owns parsing, normalization, validation, diffing, and semantic
+  operation generation
+- contains no telnet sleeps, prompt parsing, or output scraping logic
 
-1. **No LLM executes commands** — spec → compiler → plan → human review → apply
-2. **All changes are planned first** — nothing happens without a plan
-3. **State tracking** — always know what exists and what changed
-4. **Rollback** — apply in reverse order to undo (within limits)
-5. **Quota enforcement** — never exceed builder's object quota
-6. **Attribute whitelist** — only safe attributes allowed in specs
-7. **Flag whitelist** — only safe flags (no WIZARD, IMMORTAL, etc.)
-8. **Exit validation** — no exits to rooms the builder can't access
-9. **Idempotent apply** — re-running is safe, only applies changes
-10. **Full audit log** — every command sent, every response received
+### Live Adapter Module
+
+- owns transport, query, import, apply, verify, and logging
+- exposes normalized object reads and operation execution results
+
+### Reconciler Module
+
+- owns three-way comparison and conflict classification
+- produces reports and approved operation sets
+
+## Command Surface
+
+The long-term command surface should map directly to the architecture:
+
+- `check`
+- `lint`
+- `import`
+- `plan`
+- `diff`
+- `reconcile`
+- `apply`
+- `verify`
+
+Supporting commands such as `map`, `migrate`, and project helpers are
+useful, but they should build on the same normalized model rather than
+create parallel behavior.
+
+## What To Do Next In Code
+
+The next implementation pass should focus on compliance with this design
+instead of feature expansion.
+
+Priority order:
+
+1. Separate semantic operation planning from raw MUX command emission.
+2. Extract a cleaner live adapter interface from the current executor
+   and importer.
+3. Implement first-class reconciliation on top of `spec`, `state`, and
+   normalized `live` snapshots.
+4. Make destructive state transitions explicit with `pending_destroy`.
+5. Ensure diff/apply/verify all operate on the same normalized object
+   model.
+
+If a feature does not strengthen one of those steps, it is not the
+current priority.
