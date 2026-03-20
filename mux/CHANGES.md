@@ -397,3 +397,13 @@ Changes since TinyMUX 2.12.0.12.
  - Help entries for all new commands and functions.
  - PennMUSH and RhostMUSH feature adoption documented in
    `docs/PENNMUSH-FEATURES.md` and `docs/RHOSTMUSH-FEATURES.md`.
+
+# Changes in 2.14.0.2 (2026-MAR-20):
+
+ - Fixed incomplete distribution TOC files: many source files were
+   missing from the unix and win32 distribution archives in 2.14.0.1.
+ - Switched Windows build from /MT (static CRT) to /MD (dynamic CRT)
+   and added `mux_fclose()` wrapper for cross-module FILE* handling.
+ - Added `Startmux.bat` to the win32 distribution.
+ - Added `softlib.rv64` to the win32 binary distribution.
+ - Removed stale `buildnum.sh` from unix distribution.
