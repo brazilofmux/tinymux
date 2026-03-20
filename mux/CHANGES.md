@@ -5,8 +5,30 @@ author:
  - Brazil
 ---
 
+Changes since TinyMUX 2.12.0.12.
+
 # Major changes that may affect performance and require softcode tweaks:
 
+ - The server is now split into three shared objects: `libmux.so`
+   (core types and utilities), `engine.so` (game engine loaded as a
+   COM module), and `netmux` (network driver). The engine communicates
+   with the driver exclusively through COM interfaces. This is the
+   foundation for future process isolation.
+ - The softcode expression evaluator has been replaced with an
+   AST-based parser. Expressions are tokenized by a Ragel-generated
+   scanner, parsed into an AST, and cached in an LRU cache. All
+   %-substitutions, `##`/`#@`/`#$` tokens, and NOEVAL constructs
+   (iter, switch, if/ifelse, cand/cor) are handled natively. The
+   classic parser has been deleted.
+ - Embedded Lua 5.4 scripting engine with sandboxed execution, bytecode
+   cache, and `mux.*` bridge API. `@lua` command, `lua()` and
+   `luacall()` softcode functions.
+ - JIT compiler for softcode expressions: AST → HIR → SSA → optimize →
+   RV64 codegen → x86-64 dynamic binary translation. Tier 2 blob with
+   50+ pre-compiled native intrinsics. Optional (`--enable-jit`).
+ - Lua JIT compiler: Lua bytecode compiled through the same HIR/SSA/DBT
+   pipeline. 83 opcodes supported including table operations, bitwise
+   ops, generic for-loops, upvalues, and ECALL back to Lua VM.
  - SQLite is now the always-on storage backend. All object metadata,
    attributes, comsys channels, and @mail are stored in a single SQLite
    database with write-through on every mutation. `@dump` performs a
@@ -42,21 +64,126 @@ author:
  - The `safer_iter` config option allows disabling `##` itext
    substitution in iter()/list() for games that use `##` in attribute
    contents (#688).
- - The server is now split into three shared objects: `libmux.so`
-   (core types and utilities), `engine.so` (game engine loaded as a
-   COM module), and `netmux` (network driver). The engine communicates
-   with the driver exclusively through COM interfaces. This is the
-   foundation for future process isolation.
- - The softcode expression evaluator has been replaced with an
-   AST-based parser. Expressions are tokenized by a Ragel-generated
-   scanner, parsed into an AST, and cached in an LRU cache. All
-   %-substitutions, `##`/`#@`/`#$` tokens, and NOEVAL constructs
-   (iter, switch, if/ifelse, cand/cor) are handled natively.
+ - `@listen` `%0` now retains Unicode typographic (fancy) quotes.
+   Pattern matching uses normalized ASCII quotes, but capture is from
+   the original text. Applies to both `@listen` and `^-listen`.
  - Replaced Mersenne Twister (std::mt19937) with PCG-XSL-RR-128/64
    (pcg64). 32 bytes of state replaces 2496 bytes. Seeded from
    /dev/urandom with unbiased rejection sampling for bounded output.
 
 # Feature Additions:
+
+## Protocols
+
+ - MSSP (Mud Server Status Protocol, telnet option 70). Structured
+   key-value data sent to MU* directory crawlers: NAME, PLAYERS,
+   UPTIME, PORT, CODEBASE, FAMILY.
+ - GMCP (Generic MUD Communication Protocol, telnet option 201). Full
+   protocol negotiation. Inbound GMCP packets fire the A_GMCP attribute
+   with %0=package, %1=json. `gmcp()` softcode function sends GMCP
+   frames to players.
+ - WebSocket support (RFC 6455) with same-port auto-detection and
+   `wss://` (WebSocket over TLS) via deferred protocol detection.
+ - Connection logging: SQLite `connlog` table records connect/
+   disconnect events with timestamps, IPs, and player dbrefs.
+   `connlog()` and `addrlog()` query functions.
+
+## Commands
+
+ - `@protect[/add]`, `@protect/del`, `@protect/list`, `@protect/alias`,
+   `@protect/unalias`, `@protect/all` — player name reservation system.
+   A_PROTECTNAME attribute, `max_name_protect` config parameter.
+ - `@cron`/`@crondel`/`@crontab` — scheduled attribute triggers using
+   5-field Unix cron syntax. Vixie-style computed next-fire-time
+   scheduling integrates with the scheduler — no polling loop. Supports
+   ranges, lists, steps, and month/day-of-week names. DOM/DOW
+   OR-semantics per Vixie cron. In-memory, not persisted (use
+   `@startup` to recreate entries across restarts).
+ - `@include` with `/nobreak`, `/localize`, `/clearregs` switches.
+   Include the contents of an attribute in the current command stream.
+ - `@lua` command for server-side Lua 5.4 scripting.
+ - `@chatformat` — per-player channel message formatting attribute.
+   Evaluated with %0=channel name, %1=formatted message, %2=sender
+   dbref. Zero overhead when not used.
+ - `@object/lockname` indirect lock syntax (#702).
+ - `@mail/unsafe`, `@mail/edit` switches.
+
+## Functions — New
+
+ - `benchmark(<expr>, <iterations>)` — benchmark expression evaluation
+   with monotonic clock. 10000 iteration cap.
+ - `lua()` and `luacall()` — evaluate Lua code from softcode.
+ - `gmcp(<dbref>, <package>, <json>)` — send GMCP frame to a player.
+ - `letq()` — scoped temporary registers.
+ - `sortkey()` — custom sort-key evaluation.
+ - `reglattr()` and `reglattrp()` — regex attribute matching.
+ - `regrep()` and `regrepi()` — regex attribute value search (PCRE2).
+ - `lockencode()` and `lockdecode()` — lock serialization.
+ - `dynhelp()` — dynamic help from object attributes.
+ - `mailsend()` — send mail from softcode.
+ - `strdistance()` — Levenshtein edit distance.
+ - `url_escape()` and `url_unescape()` — RFC 3986.
+ - `printf()` — formatted output with ANSI-aware field widths.
+ - `encode64()`, `decode64()`, `hmac()` — cryptographic functions.
+ - `isjson()`, `json()`, `json_query()`, `json_mod()` — JSON.
+ - `isalpha()`, `isdigit()`, `isupper()`, `islower()`, `ispunct()`,
+   `isspace()`, `isword()` — Unicode character classification.
+ - `nsemit()`, `nspemit()`, `nsoemit()`, `nsremit()` — nospoof emit
+   family (always prepend `[Name(#dbref)]` header).
+ - `prompt()` — send telnet GA-terminated prompt to a player.
+ - `asteval()` — evaluate an expression using the AST evaluator.
+ - `astbench()` — head-to-head AST vs JIT benchmarking.
+ - `jitstats()` — JIT compiler statistics.
+ - `sandbox(<function-list>, <expression>)` — evaluate with restricted
+   function set.
+
+## Functions — PennMUSH Feature Adoption
+
+ - `mean()`, `median()`, `stddev()` — statistical functions.
+ - `bound()` — clamp a value to a range.
+ - `unique()` — remove duplicates from a list.
+ - `linsert()`, `lreplace()` — list insert/replace by position.
+ - `strdelete()`, `strinsert()`, `strreplace()` — string surgery.
+ - `unsetq()` and `listq()` — register management.
+ - `ncon()`, `nexits()`, `nplayers()`, `nthings()` — content counts.
+ - `lplayers()`, `lthings()` — typed content lists.
+ - `firstof()`, `strfirstof()` — short-circuit first non-empty.
+ - `allof()`, `strallof()` — short-circuit collect all non-empty.
+ - `#lambda` anonymous inline attributes for filter/map operations.
+ - `cmogrifier()` — query channel mogrifier object.
+
+## Functions — RhostMUSH Feature Adoption
+
+ - `between()` — range testing.
+ - `delextract()` — delete range of elements from a list.
+ - `garble()` — garble text by percentage.
+ - `caplist()` — title-case with smart article/conjunction handling.
+ - `moon()` — moon phase / illumination percentage.
+ - `soundex()`, `soundlike()` — phonetic fuzzy name matching.
+ - `while()` — iterate while condition is true.
+ - `crc32obj()` — CRC32 checksum across all object attributes.
+ - `wrapcolumns()` — multi-column text wrapping.
+ - `subnetmatch()` — IP subnet membership test.
+ - `mapsql()` — map SQL result rows through softcode (wizard-only).
+
+## Functions — Channel Query (PennMUSH-Compatible)
+
+ - `cbuffer()` — channel buffer size.
+ - `cdesc()` — channel description.
+ - `cflags()` — channel flags or per-user flags.
+ - `cmsgs()` — total message count.
+ - `cowner()` — channel owner dbref.
+ - `crecall()` — recall message history.
+ - `cstatus()` — On/Off/Gag status for a player.
+ - `cusers()` — subscriber count.
+
+## Channel Mogrifiers
+
+ - `MOGRIFY`BLOCK`, `MOGRIFY`MESSAGE`, `MOGRIFY`FORMAT`,
+   `MOGRIFY`OVERRIDE`, `MOGRIFY`NOBUFFER` — per-channel message
+   transformation hooks on the mogrifier object.
+
+## Other Features
 
  - Update to Unicode 16.0.
  - `chr()` and `ord()` support the full Unicode range.
@@ -68,6 +195,7 @@ author:
  - `lrest()` function to return all but the last word (#580).
  - `lmath()` generic list-math function (#553).
  - `malias()` softcode function for querying mail aliases.
+ - Removed 99-member mail alias limit; uses `std::vector<dbref>`.
  - ALONE flag for rooms (#642).
  - TALKMODE flag for talk mode / dotty behaviour (#684).
  - `link_anywhere` power (#529).
@@ -75,38 +203,30 @@ author:
    membership (#517).
  - Support `#$` token substitution in `if()`/`ifelse()` (#560).
  - Optional delimiter argument to `channels()` (#678).
- - `@object/lockname` indirect lock syntax (#702).
  - Support `::` escape for literal `:` in `$-command` and `^-listen`
    patterns (#662).
  - Store full recipient list in sender's `@mail/bcc` copy.
- - `@cron`/`@crondel`/`@crontab` commands for scheduled attribute
-   triggers using 5-field Unix cron syntax. Vixie-style computed
-   next-fire-time scheduling integrates with the scheduler — no
-   polling loop. Supports ranges, lists, steps, and month/day-of-week
-   names. DOM/DOW OR-semantics per Vixie cron. In-memory, not
-   persisted (use `@startup` to recreate entries across restarts).
- - `letq()` function for scoped temporary registers.
- - `sortkey()` function for custom sort-key evaluation.
- - `reglattr()` and `reglattrp()` regex attribute matching functions.
- - `lockencode()` and `lockdecode()` functions for lock
-   serialization.
- - `dynhelp()` function for dynamic help from object attributes.
- - `mailsend()` function for sending mail from softcode.
- - `strdistance()` Levenshtein edit distance function.
- - `url_escape()` and `url_unescape()` functions (RFC 3986).
- - `printf()` formatted output function with ANSI-aware field widths.
- - `encode64()`, `decode64()`, `hmac()` cryptographic functions.
- - `isjson()`, `json()`, `json_query()`, `json_mod()` JSON functions.
- - `connlog()` and `addrlog()` connection logging query functions.
- - `isalpha()`, `isdigit()`, `isupper()`, `islower()`, `ispunct()`,
-   `isspace()`, `isword()` Unicode character classification functions.
- - WebSocket support (RFC 6455) with same-port auto-detection and
-   `wss://` (WebSocket over TLS) via deferred protocol detection.
- - Connection logging: SQLite `connlog` table records connect/
-   disconnect events with timestamps, IPs, and player dbrefs.
 
 # Bug Fixes:
 
+ - Fix SIGSEGV/SIGABRT on login timeout — `shutdownsock()` bypassed
+   GANL, leaving stale handle mappings that caused use-after-free when
+   GANL detected the dead fd.
+ - Fix reverse DNS slave: strip trailing newline from input before
+   calling `getaddrinfo()`. Latent since 2012; activated when GANL
+   switched to stream pipes.
+ - Fix whisper bugs: "to far" typo, `A_LASTWHISPER` not saved for
+   quoted names with spaces, bare `w` silently returning.
+ - Fix `sqlite_sync_comsys` failing on orphaned channel aliases.
+ - Fix Backup script excluding distribution help files.
+ - Fix @restart hang and connection drop in the GANL adapter — the
+   descriptor handoff across exec now correctly preserves all active
+   connections.
+ - Fix GANL pure virtual call on connection teardown during shutdown —
+   the socket object could be destroyed while an async callback was
+   still pending.
+ - Fix GANL QUIT double-free — route disconnect through
+   ganl_close_connection instead of destroying the socket directly.
  - @npemit now refers to @pemit/noeval.
  - pose now documents /noeval switch.
  - Don't notify permission denied with @edit when QUIET.
@@ -148,9 +268,27 @@ author:
  - Fix squish() with multi-character separators.
  - Fix bugs in Poor Man's COM: infinite loop, delete[] misuse.
  - Short options were being parsed oddly.
+ - Fix IPv6 subnet comparison: operator== compared array pointers
+   instead of contents (always false); operator< didn't early-exit
+   correctly. Also fix mux_sockaddr IPv6 memcmp using wrong size.
+ - Fix subnet tree remove/reset: reset() discarded return value so
+   @reset_site was a no-op; kContainedBy case deleted unrelated
+   siblings; kEqual case didn't detach children before deletion.
+ - Fix parse_to_lite reading past boundary when scanning for closing
+   ')' inside bounded mux_exec calls.
+ - Fix null handle crash in ModuleUnload when dlopen handle is NULL.
 
 # Performance Enhancements:
 
+ - JIT compiler for softcode: hot expressions are compiled to native
+   x86-64 machine code via an RV64 intermediate representation. Tier 2
+   blob provides 50+ pre-compiled native intrinsics for common string
+   and math operations.
+ - Lua JIT: Lua bytecode compiled through the same HIR/SSA/DBT
+   pipeline as softcode. Eligible functions execute as native code.
+ - AST parse cache (LRU, 1024 entries) eliminates re-parsing of
+   frequently evaluated expressions.
+ - Ragel-generated goto-driven scanner for expression tokenization.
  - Indexed @search via SQLite for owner, type, zone, parent, and flag
    queries.
  - Attribute cache preloading: built-in attributes (attrnum < 256) are
@@ -161,9 +299,6 @@ author:
  - Replaced CTaskHeap with std::vector + STL heap algorithms.
  - Eliminated A_LIST attribute enumeration; replaced with direct SQLite
    queries and STL iteration context.
- - AST parse cache (LRU, 1024 entries) eliminates re-parsing of
-   frequently evaluated expressions.
- - Ragel-generated goto-driven scanner for expression tokenization.
 
 # Cosmetic Changes:
 
@@ -178,50 +313,37 @@ author:
 
 # Miscellaneous:
 
+ - Three-layer build: libmux.so (core types/utilities), engine.so
+   (game engine as COM module), netmux (network driver).
+ - Source tree restructured: headers in `include/`, library sources in
+   `lib/`, engine sources in `modules/engine/`, driver sources in
+   `src/`, top-level autotools.
+ - 12 server-provided COM interfaces bridge engine and driver:
+   INotify, IObjectInfo, IAttributeAccess, IEvaluator, IPermissions,
+   IMailDelivery, IHelpSystem, IGameEngine, IConnectionManager,
+   IPlayerSession, ILog, IDriverControl.
+ - engine.so uses `-fvisibility=hidden`; only COM front-door functions
+   are exported.
+ - Comsys module extraction: `modules/comsys/comsys_mod.cpp` provides
+   channel management as a loadable COM module with its own SQLite
+   connection.
+ - Mail module extraction: `modules/mail/mail_mod.cpp` provides @mail
+   read, flag, purge, folder, and malias operations as a loadable COM
+   module.
+ - game.cpp split into driver.cpp (network lifecycle) and engine.cpp
+   (game logic). netcommon.cpp split into net.cpp (driver) and
+   session.cpp (engine). interface.h restricted to driver files only.
+ - Embedded Lua 5.4 with sandboxed execution environment and bytecode
+   cache. `mux.*` bridge API provides access to server objects,
+   attributes, and evaluation from Lua scripts.
  - Removed FiranMUX build.
- - Updated SAL annotations.
- - Fix ReSharper warnings and accept recommendations.
- - Updated to C++14 standard.
  - Updated to C++17 standard.
- - Replaced acache_htab, attr_name_htab, channel_htab, desc_htab, and
-   descriptor_list with STL equivalent.
- - Replaced flags_htab, func_htab, and fwdlist_htab with STL equivalents
-   (unordered_map).
- - Replaced 8 additional CHashTable instances with std::unordered_map.
- - Re-work the general case mux_string::tranform case to use STL map
-   instead of scratch_htab.
- - Update ax_cxx_compile_stdcxx.m4.
- - Update configure.in and configure.
+ - Replaced acache_htab, attr_name_htab, channel_htab, desc_htab,
+   descriptor_list, flags_htab, func_htab, fwdlist_htab, and 8
+   additional CHashTable instances with std::unordered_map.
  - Concentrate #include files into externs.h.
  - Updated to autoconf v2.71 and improved build dependencies to prevent
    race conditions.
- - Applied const-correctness improvements to functions handling name
-   formatting in the network user display.
- - Updated +help index in plushelp.txt to include +selfboot and mp.
- - Re-enabled timezone caching in timezone.cpp (a change in 2008 had
-   inadvertently disabled caching, affecting timezone-related
-   performance).
- - Improved safety of XOR operations in utf/strings.cpp by adding a
-   helper function that validates input lengths and buffer sizes. This
-   change does not affect the output.
- - Improved the emission of COPY and RUN phrases in utf/smutil.cpp to
-   support multiple consecutive phrases when necessary. This change is
-   developer-only and is a necessary precursor to handling certain data
-   sets correctly; output remains unchanged.
- - Name conflicts and deprecated openssl interfaces forced a
-   reorganization in SHA-1 and Digest.
- - Removed SAL annotations that were interfering with code clarity.
- - Refreshed muxcli.cpp and its header to modernize code style and clean
-   up legacy constructs.
- - Updated the mux_alarm class to improve clarity and maintainability.
- - Removed the unnecessary deleter for mux_alarm on Unix, simplifying
-   memory management.
- - Reordered operations to avoid a race condition, enhancing stability
-   in concurrent scenarios.
- - Resolved a naming conflict involving bind() to prevent build
-   ambiguities.
- - Refactored the time parser by replacing macro constants with
-   C++-style constants for better type safety and clarity.
  - Implemented GANL @restart support: detach/adopt file descriptors
    across exec.
  - Ported @email SMTP client from raw sockets to GANL event-driven I/O.
@@ -246,17 +368,8 @@ author:
  - Removed dead code: stale ifdefs, #if 0 blocks, unused declarations.
  - Returned to autoconf/automake build system.
  - Hardened Schannel TLS: EKU-aware cert selection, PEM support.
- - Added 141 new smoke tests expanding coverage from 32 to 173
-   functions (2.13.0.7).
- - Help entries for TALKMODE, citer(), player_channels, and
-   talk_mode_default.
- - Document Master Room in COMMAND EVALUATION help topic.
- - Document multi-character separator support in squish() and trim()
-   help.
- - Added help alias so 'help left()' displays strtrunc() topic.
- - Added prerequisites section and fixed step numbering in INSTALL.md.
  - SQLite 3.49.1 amalgamation bundled for both Unix and Windows builds.
- - SQLite schema versioning with automatic migration (currently v5).
+ - SQLite schema versioning with automatic migration (currently v7).
  - Comprehensive UTF-8 validation hardening across all string
    processing paths (decode, advance, truncate, collate, normalize).
  - NFC normalization pipeline: DFA-based Unicode property lookups,
@@ -269,34 +382,18 @@ author:
    P6H, R7H). Direct T5X-to-R7H path preserves full 24-bit color.
  - Removed CHashTable, CHashPage, CHashFile, IntArray, and legacy
    A_LIST machinery.
- - Replaced IntArray with std::vector<int>.
  - Removed dead MEMORY_BASED, SQLITE_STORAGE, USE_GANL preprocessor
    conditionals.
  - Removed deprecated stack subsystem.
  - Removed dead cache statistics counters.
  - Removed database compression feature.
- - Added 489 smoke test cases covering 184 test suites.
+ - Reproducible builds: removed build date/time/number injection.
+   Version strings use only MUX_VERSION and MUX_RELEASE_DATE.
  - `dbconvert` supports `-C` and `-m` flags for comsys and mail
    flatfile import/export.
- - Three-layer build: libmux.so (core types/utilities), engine.so
-   (game engine as COM module), netmux (network driver).
- - Source tree restructured: headers in `include/`, library sources in
-   `lib/`, engine sources in `modules/engine/`, driver sources in
-   `src/`, top-level autotools.
- - 12 server-provided COM interfaces bridge engine and driver:
-   INotify, IObjectInfo, IAttributeAccess, IEvaluator, IPermissions,
-   IMailDelivery, IHelpSystem, IGameEngine, IConnectionManager,
-   IPlayerSession, ILog, IDriverControl.
- - Comsys module extraction: `modules/comsys/comsys_mod.cpp` provides
-   channel management as a loadable COM module with its own SQLite
-   connection.
- - Mail module extraction: `modules/mail/mail_mod.cpp` provides @mail
-   read, flag, purge, folder, and malias operations as a loadable COM
-   module.
- - game.cpp split into driver.cpp (network lifecycle) and engine.cpp
-   (game logic). netcommon.cpp split into net.cpp (driver) and
-   session.cpp (engine). interface.h restricted to driver files only.
- - Help entries for @cron, @crondel, @crontab, dynhelp(), mailsend(),
-   lockencode(), lockdecode(), letq(), sortkey().
- - engine.so uses `-fvisibility=hidden`; only COM front-door functions
-   are exported.
+ - Remove SQLite calls from signal handlers. Write-through makes them
+   unnecessary and they risk WAL corruption.
+ - 537 smoke test cases across 184 test suites.
+ - Help entries for all new commands and functions.
+ - PennMUSH and RhostMUSH feature adoption documented in
+   `docs/PENNMUSH-FEATURES.md` and `docs/RHOSTMUSH-FEATURES.md`.
