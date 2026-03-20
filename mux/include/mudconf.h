@@ -286,7 +286,6 @@ struct confdata
     FLAGSET thing_flags;        /* Flags things start with */
     FLAGSET stripped_flags;     // Flags stripped by @chown, @chownall, and @clone.
 
-    ArtRuleset* art_rules;      /* Rulesets for defining exceptions. */
 };
 
 extern CONFDATA mudconf;

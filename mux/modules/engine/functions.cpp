@@ -8,6 +8,7 @@
 #include "config.h"
 #include "externs.h"
 #include "ast.h"
+#include "art_scan.h"
 #include "sqlite_backend.h"
 #include "engine_api.h"
 
@@ -11927,14 +11928,9 @@ static FUNCTION(fun_lflags)
 // ---------------------------------------------------------------------------
 // fun_art:
 //
-// Accepts a single argument. Based on the rules specified in the config
-// parameters article_regexp and article_exception it determines whether the
-// word should use 'an' or 'a' as its article.
-//
-// By default if a word matches the regexp specified in article_regexp then
-// this function will return 'an', otherwise it will return 'a'. If, however
-// the word also matches one of the specified article_exception regexp's
-// will return the given article.
+// Accepts a single argument and returns the correct English indefinite
+// article ("a" or "an") for the word.  The rules are hardcoded in
+// art_scan.rl (compiled by Ragel -G2).
 //
 
 static FUNCTION(fun_art)
@@ -11951,43 +11947,7 @@ static FUNCTION(fun_art)
     size_t nCased;
     UTF8 *pCased = mux_strlwr(fargs[0], nCased);
 
-    // Search for exceptions.
-    ArtRuleset *arRule = mudconf.art_rules;
-    while (arRule != nullptr)
-    {
-        pcre2_code* reRuleRegexp = reinterpret_cast<pcre2_code *>(arRule->m_pRegexp);
-
-        if (!alarm_clock.alarmed)
-        {
-            // Create match data block for this regexp
-            pcre2_match_data *match_data = pcre2_match_data_create_from_pattern(reRuleRegexp, nullptr);
-            if (match_data)
-            {
-                int rc = pcre2_match(
-                    reRuleRegexp,           // compiled pattern
-                    pCased,                 // subject string
-                    nCased,                 // length of subject string
-                    0,                      // start offset in subject
-                    0,                      // options
-                    match_data,             // block for storing the result
-                    nullptr                 // use default match context
-                );
-
-                pcre2_match_data_free(match_data);
-
-                if (rc > 0)
-                {
-                    safe_str(arRule->m_bUseAn ? T("an") : T("a"), buff, bufc);
-                    return;
-                }
-            }
-        }
-
-        arRule = arRule->m_pNextRule;
-    }
-
-    // Default to 'a'.
-    safe_str(T("a"), buff, bufc);
+    safe_str(art_should_use_an(pCased, nCased) ? T("an") : T("a"), buff, bufc);
 }
 
 // ---------------------------------------------------------------------------

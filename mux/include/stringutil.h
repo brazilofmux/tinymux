@@ -1735,14 +1735,6 @@ extern LIBMUX_API void BMH_PrepareI(BMH_State *bmhs, size_t nPat, const UTF8 *pP
 extern LIBMUX_API bool BMH_ExecuteI(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc);
 extern LIBMUX_API bool BMH_StringSearchI(size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t nSrc, const UTF8 *pSrc);
 
-struct ArtRuleset
-{
-    ArtRuleset* m_pNextRule;
-
-    void* m_pRegexp;
-    int m_bUseAn;
-};
-
 class mux_field
 {
 public:

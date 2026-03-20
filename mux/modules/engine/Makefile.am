@@ -12,7 +12,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdi
     $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(TINYMUX_JIT) \
     $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(OPENSSL_CFLAGS)
 
-ENGINE_CXX_SRC = ast.cpp ast_scan.cpp attrcache.cpp boolexp.cpp \
+ENGINE_CXX_SRC = art_scan.cpp ast.cpp ast_scan.cpp attrcache.cpp boolexp.cpp \
     command.cpp comsys.cpp conf.cpp conn_bridge.cpp cque.cpp create.cpp cron.cpp \
     db.cpp db_rw.cpp engine.cpp engine_com.cpp eval.cpp file_c.cpp flags.cpp \
     funceval.cpp funceval2.cpp functions.cpp funmath.cpp funcweb.cpp help.cpp htab.cpp \
@@ -54,11 +54,14 @@ engine.so: $(ENGINE_CXX_OBJS) $(top_builddir)/sqlite/libsqlite3.a $(top_builddir
 	    $(LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
 
 # Ragel scanner generation
+art_scan.cpp: art_scan.rl art_scan.h
+	ragel -G2 -o $@ $<
+
 ast_scan.cpp: ast_scan.rl $(top_srcdir)/include/ast.h
 	ragel -G2 -o $@ $<
 
-BUILT_SOURCES = ast_scan.cpp
+BUILT_SOURCES = art_scan.cpp ast_scan.cpp
 
 CLEANFILES = engine.so *.eo *.d
 
-EXTRA_DIST = ast_scan.rl $(ENGINE_CXX_SRC)
+EXTRA_DIST = art_scan.rl ast_scan.rl $(ENGINE_CXX_SRC)

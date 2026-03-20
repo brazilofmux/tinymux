@@ -245,6 +245,9 @@ modules/autoconf-win32.h
 modules/comsys/comsys_mod.cpp
 modules/comsys/comsys_mod.h
 modules/comsys/comsys.vcxproj
+modules/engine/art_scan.cpp
+modules/engine/art_scan.h
+modules/engine/art_scan.rl
 modules/engine/ast.cpp
 modules/engine/ast_scan.cpp
 modules/engine/ast_scan.rl

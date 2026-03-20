@@ -110,7 +110,6 @@ void cf_init(void)
     mudconf.mail_sendname[0]= '\0';
     mudconf.mail_subject[0] = '\0';
 
-    mudconf.art_rules = nullptr;
     mudconf.indent_desc = false;
     g_no_flash = false;
     mudconf.terse_nospoof = false;
@@ -1731,125 +1730,12 @@ static CF_HAND(cf_include)
 }
 
 // ---------------------------------------------------------------------------
-// cf_art_rule: Add an article rule to the ruleset.
-//
-static CF_HAND(cf_art_rule)
-{
-    UNUSED_PARAMETER(pExtra);
-    UNUSED_PARAMETER(nExtra);
-    UTF8 *pCurrent = str;
-    while (mux_isspace(*pCurrent))
-    {
-        pCurrent++;
-    }
-    UTF8 *pArticle = pCurrent;
-    while (  !mux_isspace(*pCurrent)
-          && *pCurrent != '\0')
-    {
-        pCurrent++;
-    }
-    if (*pCurrent == '\0')
-    {
-        cf_log_syntax(player, cmd, T("No article or regexp specified."));
-        return -1;
-    }
-    bool bUseAn = false;
-    bool bOkay = false;
-    if (pCurrent - pArticle <= 2)
-    {
-        if (  'a' == pArticle[0]
-           || 'A' == pArticle[0])
-        {
-            if (  'n' == pArticle[1]
-               || 'N' == pArticle[1])
-            {
-                bUseAn = true;
-                bOkay = true;
-            }
-            if (mux_isspace(pArticle[1]))
-            {
-                bOkay = true;
-            }
-        }
-    }
-    if (!bOkay)
-    {
-        *pCurrent = '\0';
-        cf_log_syntax(player, cmd, T("Invalid article \xE2\x80\x98%s\xE2\x80\x99."), pArticle);
-        return -1;
-    }
-    while (mux_isspace(*pCurrent))
-    {
-        pCurrent++;
-    }
-    if (*pCurrent == '\0')
-    {
-        cf_log_syntax(player, cmd, T("No regexp specified."));
-        return -1;
-    }
-
-    // PCRE2 compilation
-    PCRE2_SIZE erroffset;
-    int errcode;
-    pcre2_code *reNewRegexp = pcre2_compile_8(
-        pCurrent,                  // pattern string
-        PCRE2_ZERO_TERMINATED,     // pattern is zero-terminated
-        PCRE2_UTF,                 // options
-        &errcode,                  // for error code
-        &erroffset,                // for error offset
-        nullptr                    // use default compile context
-    );
-
-    if (!reNewRegexp)
-    {
-        // Get the error message
-        PCRE2_UCHAR errbuf[256];
-        pcre2_get_error_message(errcode, errbuf, sizeof(errbuf));
-
-        cf_log_syntax(player, cmd, T("Error processing regexp \xE2\x80\x98%s\xE2\x80\x99: %s"),
-              pCurrent, errbuf);
-        return -1;
-    }
-
-    // Optional JIT compilation (replaces pcre_study)
-    pcre2_jit_compile(reNewRegexp, PCRE2_JIT_COMPLETE);
-
-    ArtRuleset** arRules = (ArtRuleset **) vp;
-    ArtRuleset* arNewRule = nullptr;
-    try
-    {
-        arNewRule = new ArtRuleset;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr != arNewRule)
-    {
-        // Push new rule at head of list.
-        arNewRule->m_pNextRule = *arRules;
-        arNewRule->m_bUseAn = bUseAn;
-        arNewRule->m_pRegexp = reNewRegexp;
-        *arRules = arNewRule;
-    }
-    else
-    {
-        pcre2_code_free(reNewRegexp);
-        cf_log_syntax(player, cmd, T("Out of memory."));
-        return -1;
-    }
-    return 0;
-}
-
-// ---------------------------------------------------------------------------
 // conftable: Table for parsing the configuration file.
 
 static CONFPARM conftable[] =
 {
     {T("access"),                    cf_access,      CA_GOD,    CA_DISABLED, nullptr,                         access_nametab,     0},
     {T("alias"),                     cf_cmd_alias,   CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.command_htab),   0,                  0},
-    {T("article_rule"),              cf_art_rule,    CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudconf.art_rules),       nullptr,            0},
     {T("attr_access"),               cf_attr_access, CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.attrperm_list),  attraccess_nametab, 0},
     {T("attr_alias"),                cf_attr_name_alias,CA_GOD, CA_DISABLED, nullptr,                         nullptr,            0},
     {T("attr_cmd_access"),           cf_acmd_access, CA_GOD,    CA_DISABLED, nullptr,                         access_nametab,     0},
