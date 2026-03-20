@@ -7,7 +7,6 @@ announce/Makefile.in
 ATTACK.md
 autoconf.h.in
 BETA.md
-buildnum.sh
 CHANGES.md
 compile
 config.guess
