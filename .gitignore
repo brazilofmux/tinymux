@@ -29,6 +29,8 @@ mux/game/bin/mux
 mux/game/bin/netmux
 mux/game/bin/slave
 mux/game/bin/stubslave
+mux/game/bin/muxscript
+mux/game/bin/muxescape
 mux/game/*.dll
 mux/game/*.log
 mux/game/netmux.pid
@@ -90,6 +92,8 @@ mux/src/autom4te.cache/
 # Build artifacts — compiled binaries and generated files
 mux/announce/announce
 mux/script/mux
+mux/script/muxscript
+mux/script/Makefile
 mux/src/tools/announce
 mux/src/tools/rv64strip
 mux/rv64/src/softlib.elf
