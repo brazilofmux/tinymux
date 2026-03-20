@@ -19,6 +19,7 @@ game/bin/libmux.dll
 game/bin/mail.dll
 game/bin/netmux.exe
 game/bin/pcre2-8.dll
+game/bin/softlib.rv64
 game/bin/sqlproxy.dll
 game/bin/sqlslave.dll
 game/compat.conf
