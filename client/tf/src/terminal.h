@@ -10,6 +10,7 @@
 #include <ctime>
 
 #include "input.h"
+#include "input_editor.h"
 
 class Terminal {
 public:
@@ -34,8 +35,8 @@ public:
     void set_prompt(const std::string& prompt);
     void clear_prompt();
     void set_input_text(const std::string& text);
-    const std::string& input_text() const { return input_buf_; }
-    size_t cursor_pos() const { return cursor_pos_; }
+    const std::string& input_text() const { return editor_.text(); }
+    size_t cursor_pos() const { return editor_.cursor(); }
     std::string input_head() const;
     std::string input_tail() const;
     void set_cursor_pos(size_t pos);
@@ -43,6 +44,9 @@ public:
     size_t word_left_pos(size_t pos) const;
     size_t word_right_pos(size_t pos) const;
     int match_bracket(int start = -1) const;
+
+    // The shared input editor (public for script/command access).
+    InputEditor editor_;
     void replace_last_output_line(const std::string& line);
     void clear_output();
 
@@ -107,7 +111,6 @@ private:
     bool truecolor_ = false;
     int next_color_ = 256;
     std::unordered_map<uint32_t, int> rgb_colors_;
-    size_t normalize_cursor_pos(size_t pos) const;
     static std::string status_field_name(const std::string& field);
     static int status_field_width(const std::string& field, bool* explicit_width = nullptr);
     static std::string status_field_attrs(const std::string& field);
@@ -122,20 +125,8 @@ private:
     OutputScreen& current_output();
     const OutputScreen& current_output() const;
 
-    // UTF-8 / grapheme cluster navigation for input buffer
+    // UTF-8 character length (still needed for ANSI rendering).
     static size_t utf8_char_len(unsigned char lead);
-    static size_t utf8_prev_start(const std::string& s, size_t pos);
-    size_t cluster_end(size_t pos) const;
-    size_t cluster_start(size_t pos) const;
-    int display_width_of(size_t from, size_t to) const;
-    int cursor_display_col() const;
-
-    // Insert a Unicode code point (as UTF-8) at cursor_pos_
-    void insert_codepoint(uint32_t cp);
-    // Delete the grapheme cluster before cursor (backspace)
-    void delete_cluster_before();
-    // Delete the grapheme cluster at cursor (delete key)
-    void delete_cluster_at();
 
     WINDOW* win_output_ = nullptr;
     std::vector<WINDOW*> win_status_;
@@ -149,21 +140,11 @@ private:
     std::string output_key_;
     static constexpr size_t MAX_SCROLLBACK = 10000;
 
-    // Input line editing
-    std::string input_buf_;
-    size_t cursor_pos_ = 0;
+    // Input area sizing
     int input_rows_ = 1;                   // current height of input window (1..MAX_INPUT_ROWS)
     static constexpr int MAX_INPUT_ROWS = 3;
 
-    int calc_input_rows() const;
     void resize_input_area(int new_rows);
-
-    // Input history
-    std::unordered_map<std::string, std::deque<std::string>> input_histories_;
-    std::string history_key_;
-    static constexpr size_t MAX_HISTORY = 500;
-    int history_pos_ = -1;
-    std::string saved_input_;
 
     std::string status_text_;
     std::vector<std::vector<std::string>> status_fields_by_row_;
@@ -181,10 +162,10 @@ public:
     void set_app(struct App* app);
 
     // Accessors for restart serialization/restoration
-    const auto& input_histories() const { return input_histories_; }
+    const auto& input_histories() const { return editor_.histories(); }
     const auto& output_screens() const { return output_screens_; }
     void set_input_history(const std::string& key, std::deque<std::string> hist) {
-        input_histories_[key] = std::move(hist);
+        editor_.set_history(key, std::move(hist));
     }
     void set_output_lines(const std::string& key, std::deque<std::string> lines) {
         output_screens_[key].lines = std::move(lines);

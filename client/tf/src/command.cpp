@@ -24,6 +24,9 @@
 // Forward declaration of App (defined in main.cpp)
 struct App;
 
+// Forward declaration for commands defined after register_commands().
+static void cmd_spawn(App& app, const std::string& args);
+
 // We need the App definition from main.cpp. Since App is defined there
 // and we're compiled separately, we include a minimal definition here
 // that must match main.cpp exactly.

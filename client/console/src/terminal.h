@@ -15,6 +15,7 @@
 
 // libmux color/Unicode API
 #include "color_ops.h"
+#include "input_editor.h"
 
 struct InputEvent {
     enum Type {
@@ -102,25 +103,8 @@ private:
     // Render a PUA-colored line to ANSI for console output.
     std::string render_line(const std::string& line);
 
-    // Display column width of input buffer up to byte position pos.
-    int cursor_display_col() const;
-
-    // Grapheme-cluster-aware navigation
-    size_t cluster_next(size_t pos) const;
-    size_t cluster_prev(size_t pos) const;
-
-    // Input line editing helpers
-    void insert_char(uint32_t cp);
-    void delete_backward();
-    void delete_forward();
-    void move_cursor_left();
-    void move_cursor_right();
-    void move_cursor_home();
-    void move_cursor_end();
-    void move_word_left();
-    void move_word_right();
-    void kill_line();
-    void kill_to_end();
+    // Map console InputEvent to InputEditor key code.
+    static int event_to_editor_key(const InputEvent& ev);
 
     HANDLE hOut_ = INVALID_HANDLE_VALUE;
     HANDLE hIn_  = INVALID_HANDLE_VALUE;
@@ -146,17 +130,8 @@ private:
     OutputScreen& current_output();
     static constexpr size_t MAX_SCROLLBACK = 10000;
 
-    // Input line
-    std::string input_buf_;
-    size_t cursor_pos_ = 0;
-
-    // Per-world input history
-    std::unordered_map<std::string, std::deque<std::string>> histories_;
-    std::string history_key_;
-    int history_pos_ = -1;
-    std::string saved_input_;
-    static constexpr size_t MAX_HISTORY = 500;
-    std::deque<std::string>& current_history();
+    // Shared input editor (editing, reflow, history).
+    InputEditor editor_;
 
     std::string status_text_;
     bool initialized_ = false;

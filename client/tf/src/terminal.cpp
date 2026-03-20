@@ -12,6 +12,69 @@ extern "C" {
 #include <color_ops.h>
 }
 
+// Map tf Key enum to InputEditor::KeyCode.
+static int key_to_editor(Key k) {
+    switch (k) {
+    case Key::CHAR:       return InputEditor::K_CHAR;
+    case Key::UP:         return InputEditor::K_UP;
+    case Key::DOWN:       return InputEditor::K_DOWN;
+    case Key::LEFT:       return InputEditor::K_LEFT;
+    case Key::RIGHT:      return InputEditor::K_RIGHT;
+    case Key::HOME:       return InputEditor::K_HOME;
+    case Key::END:        return InputEditor::K_END;
+    case Key::PAGE_UP:    return InputEditor::K_PAGE_UP;
+    case Key::PAGE_DOWN:  return InputEditor::K_PAGE_DOWN;
+    case Key::CTRL_LEFT:  return InputEditor::K_CTRL_LEFT;
+    case Key::CTRL_RIGHT: return InputEditor::K_CTRL_RIGHT;
+    case Key::ENTER:      return InputEditor::K_ENTER;
+    case Key::BACKSPACE:  return InputEditor::K_BACKSPACE;
+    case Key::DELETE_KEY: return InputEditor::K_DELETE;
+    case Key::TAB:        return InputEditor::K_TAB;
+    case Key::ESCAPE:     return InputEditor::K_ESCAPE;
+    case Key::INSERT:     return InputEditor::K_INSERT;
+    case Key::CTRL_A:     return InputEditor::K_CTRL_A;
+    case Key::CTRL_B:     return InputEditor::K_CTRL_B;
+    case Key::CTRL_C:     return InputEditor::K_CTRL_C;
+    case Key::CTRL_D:     return InputEditor::K_CTRL_D;
+    case Key::CTRL_E:     return InputEditor::K_CTRL_E;
+    case Key::CTRL_F:     return InputEditor::K_CTRL_F;
+    case Key::CTRL_G:     return InputEditor::K_CTRL_G;
+    case Key::CTRL_K:     return InputEditor::K_CTRL_K;
+    case Key::CTRL_L:     return InputEditor::K_CTRL_L;
+    case Key::CTRL_N:     return InputEditor::K_CTRL_N;
+    case Key::CTRL_O:     return InputEditor::K_CTRL_O;
+    case Key::CTRL_P:     return InputEditor::K_CTRL_P;
+    case Key::CTRL_Q:     return InputEditor::K_CTRL_Q;
+    case Key::CTRL_R:     return InputEditor::K_CTRL_R;
+    case Key::CTRL_S:     return InputEditor::K_CTRL_S;
+    case Key::CTRL_T:     return InputEditor::K_CTRL_T;
+    case Key::CTRL_U:     return InputEditor::K_CTRL_U;
+    case Key::CTRL_V:     return InputEditor::K_CTRL_V;
+    case Key::CTRL_W:     return InputEditor::K_CTRL_W;
+    case Key::CTRL_X:     return InputEditor::K_CTRL_X;
+    case Key::CTRL_Y:     return InputEditor::K_CTRL_Y;
+    case Key::CTRL_Z:     return InputEditor::K_CTRL_Z;
+    case Key::F1:         return InputEditor::K_F1;
+    case Key::F2:         return InputEditor::K_F2;
+    case Key::F3:         return InputEditor::K_F3;
+    case Key::F4:         return InputEditor::K_F4;
+    case Key::F5:         return InputEditor::K_F5;
+    case Key::F6:         return InputEditor::K_F6;
+    case Key::F7:         return InputEditor::K_F7;
+    case Key::F8:         return InputEditor::K_F8;
+    case Key::F9:         return InputEditor::K_F9;
+    case Key::F10:        return InputEditor::K_F10;
+    case Key::F11:        return InputEditor::K_F11;
+    case Key::F12:        return InputEditor::K_F12;
+    case Key::CTRL_HOME:  return InputEditor::K_CTRL_HOME;
+    case Key::CTRL_END:   return InputEditor::K_CTRL_END;
+    case Key::CTRL_UP:    return InputEditor::K_CTRL_UP;
+    case Key::CTRL_DOWN:  return InputEditor::K_CTRL_DOWN;
+    case Key::UNKNOWN:    return InputEditor::K_UNKNOWN;
+    }
+    return InputEditor::K_UNKNOWN;
+}
+
 Terminal::Terminal() {}
 
 void Terminal::set_app(struct App* app) {
@@ -62,6 +125,8 @@ bool Terminal::init() {
     }
 
     getmaxyx(stdscr, rows_, cols_);
+    editor_.set_cols(cols_);
+    editor_.set_max_rows(MAX_INPUT_ROWS);
     create_windows();
 
     initialized_ = true;
@@ -119,26 +184,13 @@ void Terminal::handle_resize() {
     endwin();
     refresh();
     getmaxyx(stdscr, rows_, cols_);
-    input_rows_ = calc_input_rows();
+    editor_.set_cols(cols_);
+    input_rows_ = editor_.desired_rows();
     destroy_windows();
     create_windows();
 }
 
-int Terminal::calc_input_rows() const {
-    int total_width = display_width_ansi(prompt_text_)
-                    + (int)co_visual_width(
-                          reinterpret_cast<const unsigned char*>(input_buf_.data()),
-                          input_buf_.size());
-    if (total_width <= 0) return 1;
-    int needed = (total_width + cols_ - 1) / cols_;  // ceiling division
-    if (needed < 1) needed = 1;
-    if (needed > MAX_INPUT_ROWS) needed = MAX_INPUT_ROWS;
-    // Don't starve the output window.
-    int max_possible = rows_ - status_rows() - 1;
-    if (max_possible < 1) max_possible = 1;
-    if (needed > max_possible) needed = max_possible;
-    return needed;
-}
+// (calc_input_rows removed — now use editor_.desired_rows())
 
 void Terminal::resize_input_area(int new_rows) {
     if (new_rows == input_rows_) return;
@@ -260,135 +312,51 @@ int Terminal::alloc_rgb_color(int r, int g, int b) {
     return idx;
 }
 
-// ---- UTF-8 / grapheme cluster helpers for input editing ----
+// ---- UTF-8 helper (still needed for ANSI rendering) ----
 
-// Length of UTF-8 sequence given lead byte.
 size_t Terminal::utf8_char_len(unsigned char lead) {
     if (lead < 0x80) return 1;
-    if (lead < 0xC0) return 1;  // continuation — shouldn't be lead, treat as 1
+    if (lead < 0xC0) return 1;
     if (lead < 0xE0) return 2;
     if (lead < 0xF0) return 3;
     return 4;
 }
 
-// Find the start byte of the code point preceding pos.
-size_t Terminal::utf8_prev_start(const std::string& s, size_t pos) {
-    if (pos == 0) return 0;
-    size_t p = pos - 1;
-    // Walk back over continuation bytes (10xxxxxx)
-    while (p > 0 && (static_cast<unsigned char>(s[p]) & 0xC0) == 0x80)
-        p--;
-    return p;
-}
-
-// Advance past the grapheme cluster starting at pos.
-// Uses co_cluster_advance for correct UAX #29 segmentation.
-size_t Terminal::cluster_end(size_t pos) const {
-    if (pos >= input_buf_.size()) return input_buf_.size();
-    const auto* p  = reinterpret_cast<const unsigned char*>(input_buf_.data() + pos);
-    const auto* pe = reinterpret_cast<const unsigned char*>(input_buf_.data() + input_buf_.size());
-    size_t count = 0;
-    const auto* after = co_cluster_advance(p, pe, 1, &count);
-    return pos + (after - p);
-}
-
-// Find the start of the grapheme cluster ending at/before pos.
-// Walk back one code point at a time, then verify with co_cluster_advance.
-size_t Terminal::cluster_start(size_t pos) const {
-    if (pos == 0) return 0;
-    // Step back one code point as a first guess
-    size_t candidate = utf8_prev_start(input_buf_, pos);
-    // Verify: cluster_end(candidate) should reach pos.
-    // If not, we stepped into the middle of a cluster — keep going back.
-    while (candidate > 0 && cluster_end(candidate) < pos) {
-        candidate = utf8_prev_start(input_buf_, candidate);
-    }
-    // Could also have combining marks before this — keep going back while
-    // cluster_end(prev) still reaches the same position.
-    while (candidate > 0) {
-        size_t prev = utf8_prev_start(input_buf_, candidate);
-        if (cluster_end(prev) >= pos) {
-            candidate = prev;
-        } else {
-            break;
-        }
-    }
-    return candidate;
-}
-
-// Display width of input_buf_[from..to) in columns.
-int Terminal::display_width_of(size_t from, size_t to) const {
-    if (from >= to) return 0;
-    return (int)co_visual_width(
-        reinterpret_cast<const unsigned char*>(input_buf_.data() + from),
-        to - from);
-}
-
-// Display column where the cursor should be drawn.
-int Terminal::cursor_display_col() const {
-    return display_width_of(0, cursor_pos_);
-}
-
-size_t Terminal::normalize_cursor_pos(size_t pos) const {
-    if (pos >= input_buf_.size()) return input_buf_.size();
-    size_t cur = 0;
-    while (cur < input_buf_.size()) {
-        size_t next = cluster_end(cur);
-        if (pos <= cur) return cur;
-        if (pos < next) return cur;
-        cur = next;
-    }
-    return input_buf_.size();
-}
+// ---- Editor delegation for public API ----
 
 std::string Terminal::input_head() const {
-    return input_buf_.substr(0, cursor_pos_);
+    return editor_.head();
 }
 
 std::string Terminal::input_tail() const {
-    return input_buf_.substr(cursor_pos_);
+    return editor_.tail();
 }
 
 void Terminal::set_cursor_pos(size_t pos) {
-    cursor_pos_ = normalize_cursor_pos(pos);
+    editor_.set_cursor(pos);
     redraw_input();
 }
 
 void Terminal::delete_at_cursor(size_t count) {
-    while (count-- > 0 && cursor_pos_ < input_buf_.size()) {
-        size_t end = cluster_end(cursor_pos_);
-        input_buf_.erase(cursor_pos_, end - cursor_pos_);
+    // Delete count grapheme clusters at cursor via the editor.
+    while (count-- > 0 && editor_.cursor() < editor_.text().size()) {
+        editor_.handle_key(InputEditor::K_DELETE, 0);
     }
     redraw_input();
 }
 
 size_t Terminal::word_left_pos(size_t pos) const {
-    size_t cur = normalize_cursor_pos(pos);
-    while (cur > 0) {
-        size_t prev = cluster_start(cur);
-        if (prev < cur && input_buf_[prev] == ' ') cur = prev;
-        else break;
-    }
-    while (cur > 0) {
-        size_t prev = cluster_start(cur);
-        if (prev < cur && input_buf_[prev] != ' ') cur = prev;
-        else break;
-    }
-    return cur;
+    return editor_.word_left_pos(pos);
 }
 
 size_t Terminal::word_right_pos(size_t pos) const {
-    size_t cur = normalize_cursor_pos(pos);
-    while (cur < input_buf_.size() && input_buf_[cur] != ' ')
-        cur = cluster_end(cur);
-    while (cur < input_buf_.size() && input_buf_[cur] == ' ')
-        cur = cluster_end(cur);
-    return cur;
+    return editor_.word_right_pos(pos);
 }
 
 int Terminal::match_bracket(int start) const {
-    int pos = (start >= 0) ? std::max(0, start) : (int)cursor_pos_;
-    if (pos > (int)input_buf_.size()) pos = (int)input_buf_.size();
+    const auto& buf = editor_.text();
+    int pos = (start >= 0) ? std::max(0, start) : (int)editor_.cursor();
+    if (pos > (int)buf.size()) pos = (int)buf.size();
 
     auto match_for = [](char c) -> char {
         switch (c) {
@@ -403,22 +371,22 @@ int Terminal::match_bracket(int start) const {
     };
 
     int idx = pos;
-    if (idx == (int)input_buf_.size() && idx > 0) idx--;
-    if (idx < 0 || idx >= (int)input_buf_.size()) return -1;
+    if (idx == (int)buf.size() && idx > 0) idx--;
+    if (idx < 0 || idx >= (int)buf.size()) return -1;
 
-    char c = input_buf_[idx];
+    char c = buf[idx];
     char target = match_for(c);
     if (!target && idx > 0) {
         idx--;
-        c = input_buf_[idx];
+        c = buf[idx];
         target = match_for(c);
     }
     if (!target) return -1;
 
     int dir = (c == '(' || c == '[' || c == '{') ? 1 : -1;
     int depth = 0;
-    for (int i = idx; i >= 0 && i < (int)input_buf_.size(); i += dir) {
-        char cur = input_buf_[i];
+    for (int i = idx; i >= 0 && i < (int)buf.size(); i += dir) {
+        char cur = buf[i];
         if (cur == c) depth++;
         else if (cur == target) {
             depth--;
@@ -456,163 +424,46 @@ int Terminal::get_color_pair(int fg, int bg) {
 }
 
 // ---- Input editing driven by InputEvent from Ragel lexer ----
-
-void Terminal::insert_codepoint(uint32_t cp) {
-    // Encode code point as UTF-8 and insert at cursor
-    char mb[4];
-    int len;
-    if (cp < 0x80) {
-        mb[0] = (char)cp; len = 1;
-    } else if (cp < 0x800) {
-        mb[0] = (char)(0xC0 | (cp >> 6));
-        mb[1] = (char)(0x80 | (cp & 0x3F));
-        len = 2;
-    } else if (cp < 0x10000) {
-        mb[0] = (char)(0xE0 | (cp >> 12));
-        mb[1] = (char)(0x80 | ((cp >> 6) & 0x3F));
-        mb[2] = (char)(0x80 | (cp & 0x3F));
-        len = 3;
-    } else {
-        mb[0] = (char)(0xF0 | (cp >> 18));
-        mb[1] = (char)(0x80 | ((cp >> 12) & 0x3F));
-        mb[2] = (char)(0x80 | ((cp >> 6) & 0x3F));
-        mb[3] = (char)(0x80 | (cp & 0x3F));
-        len = 4;
-    }
-    input_buf_.insert(cursor_pos_, mb, len);
-    cursor_pos_ += len;
-    redraw_input();
-}
-
-void Terminal::delete_cluster_before() {
-    if (cursor_pos_ > 0) {
-        size_t prev = cluster_start(cursor_pos_);
-        input_buf_.erase(prev, cursor_pos_ - prev);
-        cursor_pos_ = prev;
-        redraw_input();
-    }
-}
-
-void Terminal::delete_cluster_at() {
-    if (cursor_pos_ < input_buf_.size()) {
-        size_t end = cluster_end(cursor_pos_);
-        input_buf_.erase(cursor_pos_, end - cursor_pos_);
-        redraw_input();
-    }
-}
+// Delegates to InputEditor for all editing, reflow, and history.
 
 bool Terminal::handle_key(const InputEvent& ev, std::string& out_line) {
+    int editor_key = key_to_editor(ev.key);
+
+    // Handle keys that the terminal manages directly (not the editor).
     switch (ev.key) {
-        case Key::CHAR:
-            insert_codepoint(ev.cp);
-            return false;
-
-        case Key::ENTER:
-            out_line = input_buf_;
-            if (!input_buf_.empty()) {
-                auto& input_history_ = input_histories_[history_key_];
-                input_history_.push_front(input_buf_);
-                if (input_history_.size() > MAX_HISTORY)
-                    input_history_.pop_back();
-            }
-            input_buf_.clear();
-            cursor_pos_ = 0;
-            history_pos_ = -1;
-            redraw_input();
-            return true;
-
-        case Key::BACKSPACE:    delete_cluster_before();   return false;
-        case Key::DELETE_KEY:   delete_cluster_at();       return false;
-
-        case Key::LEFT:
-            if (cursor_pos_ > 0) { cursor_pos_ = cluster_start(cursor_pos_); redraw_input(); }
-            return false;
-        case Key::RIGHT:
-            if (cursor_pos_ < input_buf_.size()) { cursor_pos_ = cluster_end(cursor_pos_); redraw_input(); }
-            return false;
-
-        case Key::CTRL_LEFT: {
-            // Word left: skip whitespace, then skip non-whitespace
-            while (cursor_pos_ > 0 && cursor_pos_ <= input_buf_.size()) {
-                size_t prev = cluster_start(cursor_pos_);
-                if (prev < cursor_pos_ && input_buf_[prev] == ' ') { cursor_pos_ = prev; } else break;
-            }
-            while (cursor_pos_ > 0) {
-                size_t prev = cluster_start(cursor_pos_);
-                if (prev < cursor_pos_ && input_buf_[prev] != ' ') { cursor_pos_ = prev; } else break;
-            }
-            redraw_input();
-            return false;
-        }
-        case Key::CTRL_RIGHT: {
-            // Word right: skip non-whitespace, then skip whitespace
-            while (cursor_pos_ < input_buf_.size() && input_buf_[cursor_pos_] != ' ')
-                cursor_pos_ = cluster_end(cursor_pos_);
-            while (cursor_pos_ < input_buf_.size() && input_buf_[cursor_pos_] == ' ')
-                cursor_pos_ = cluster_end(cursor_pos_);
-            redraw_input();
-            return false;
-        }
-
-        case Key::HOME:
-        case Key::CTRL_A:
-            cursor_pos_ = 0; redraw_input(); return false;
-
-        case Key::END:
-        case Key::CTRL_E:
-            cursor_pos_ = input_buf_.size(); redraw_input(); return false;
-
-        case Key::UP:       history_up();       return false;
-        case Key::DOWN:     history_down();     return false;
-        case Key::PAGE_UP:  scroll_page_up();   return false;
+        case Key::PAGE_UP:  scroll_page_up();  return false;
         case Key::PAGE_DOWN: scroll_page_down(); return false;
-
-        case Key::CTRL_U:   // Kill whole line
-            input_buf_.clear(); cursor_pos_ = 0; redraw_input(); return false;
-
-        case Key::CTRL_K:   // Kill to end of line
-            input_buf_.erase(cursor_pos_); redraw_input(); return false;
-
-        case Key::CTRL_W: { // Kill word backward
-            size_t end = cursor_pos_;
-            while (cursor_pos_ > 0 && input_buf_[cursor_pos_ - 1] == ' ')
-                cursor_pos_ = cluster_start(cursor_pos_);
-            while (cursor_pos_ > 0 && input_buf_[cursor_pos_ - 1] != ' ')
-                cursor_pos_ = cluster_start(cursor_pos_);
-            input_buf_.erase(cursor_pos_, end - cursor_pos_);
-            redraw_input();
-            return false;
-        }
-
-        case Key::CTRL_L:   // Redraw screen
+        case Key::CTRL_L:
             clearok(curscr, TRUE);
             handle_resize();
             return false;
-
-        case Key::TAB:       // Could be tab completion later
-            return false;
-
-        case Key::CTRL_D:    // EOF / quit if empty line
-            if (input_buf_.empty()) {
+        case Key::CTRL_D:
+            if (editor_.text().empty()) {
                 out_line = "/quit";
                 return true;
             }
-            delete_cluster_at();
-            return false;
-
-        case Key::CTRL_B:   // Back one char (emacs)
-            if (cursor_pos_ > 0) { cursor_pos_ = cluster_start(cursor_pos_); redraw_input(); }
-            return false;
-        case Key::CTRL_F:   // Forward one char (emacs)
-            if (cursor_pos_ < input_buf_.size()) { cursor_pos_ = cluster_end(cursor_pos_); redraw_input(); }
-            return false;
-
-        case Key::CTRL_P:   history_up();   return false;  // emacs prev
-        case Key::CTRL_N:   history_down(); return false;  // emacs next
-
+            break;  // fall through to editor
         default:
+            break;
+    }
+
+    auto result = editor_.handle_key(editor_key, ev.cp);
+    switch (result) {
+        case EditResult::SUBMIT:
+            out_line = editor_.take_line();
+            redraw_input();
+            return true;
+        case EditResult::RESIZE:
+            resize_input_area(editor_.desired_rows());
+            redraw_input();
+            return false;
+        case EditResult::REDRAW:
+            redraw_input();
+            return false;
+        case EditResult::NONE:
             return false;
     }
+    return false;
 }
 
 // Wrap a single logical line into display-width-limited visual lines.
@@ -767,26 +618,24 @@ void Terminal::set_output_context(const std::string& key) {
 
 void Terminal::set_prompt(const std::string& prompt) {
     prompt_text_ = prompt;
+    editor_.set_prompt_width(display_width_ansi(prompt_text_));
     redraw_input();
 }
 
 void Terminal::clear_prompt() {
     if (prompt_text_.empty()) return;
     prompt_text_.clear();
+    editor_.set_prompt_width(0);
     redraw_input();
 }
 
 void Terminal::set_input_text(const std::string& text) {
-    input_buf_ = text;
-    cursor_pos_ = input_buf_.size();
-    history_pos_ = -1;
+    editor_.set_text(text);
     redraw_input();
 }
 
 void Terminal::set_history_context(const std::string& key) {
-    history_key_ = key;
-    history_pos_ = -1;
-    saved_input_.clear();
+    editor_.set_history_context(key);
 }
 
 void Terminal::set_status(const std::string& text) {
@@ -1381,31 +1230,12 @@ int Terminal::more_scroll(int lines) {
 }
 
 void Terminal::history_up() {
-    auto& input_history_ = input_histories_[history_key_];
-    if (input_history_.empty()) return;
-    if (history_pos_ == -1) {
-        saved_input_ = input_buf_;
-        history_pos_ = 0;
-    } else if (history_pos_ < (int)input_history_.size() - 1) {
-        history_pos_++;
-    } else {
-        return;
-    }
-    input_buf_ = input_history_[history_pos_];
-    cursor_pos_ = input_buf_.size();
+    editor_.history_up();
     redraw_input();
 }
 
 void Terminal::history_down() {
-    auto& input_history_ = input_histories_[history_key_];
-    if (history_pos_ < 0) return;
-    history_pos_--;
-    if (history_pos_ < 0) {
-        input_buf_ = saved_input_;
-    } else {
-        input_buf_ = input_history_[history_pos_];
-    }
-    cursor_pos_ = input_buf_.size();
+    editor_.history_down();
     redraw_input();
 }
 
@@ -1536,23 +1366,31 @@ void Terminal::redraw_input() {
     if (!win_input_) return;
 
     // Grow or shrink the input area as needed.
-    int needed = calc_input_rows();
+    int needed = editor_.desired_rows();
     if (needed != input_rows_) {
         resize_input_area(needed);
     }
 
     werase(win_input_);
 
-    // Wrap the full prompt + input into visual lines.
-    std::string full = prompt_text_ + input_buf_;
-    auto lines = wrap_line(full, cols_);
-    int total_lines = (int)lines.size();
+    // Build visual lines from the editor's reflow data.
+    const auto& vlines = editor_.visual_lines();
+    const auto& buf = editor_.text();
+    int total_lines = (int)vlines.size();
 
-    // Determine which wrapped line the cursor is on.
-    int prompt_w = display_width_ansi(prompt_text_);
-    int cursor_w = prompt_w + cursor_display_col();
-    int cursor_line = (cols_ > 0) ? cursor_w / cols_ : 0;
-    int cursor_col  = (cols_ > 0) ? cursor_w % cols_ : 0;
+    // Assemble display strings for each visual line (prompt on first).
+    std::vector<std::string> display_lines;
+    display_lines.reserve(total_lines);
+    for (int i = 0; i < total_lines; ++i) {
+        std::string line;
+        if (i == 0) line = prompt_text_;
+        line.append(buf, vlines[i].byte_start,
+                    vlines[i].byte_end - vlines[i].byte_start);
+        display_lines.push_back(std::move(line));
+    }
+
+    int cursor_line = editor_.cursor_vrow();
+    int cursor_col  = editor_.cursor_vcol();
 
     // Choose the view window so the cursor line is always visible.
     int view_start = 0;
@@ -1566,7 +1404,7 @@ void Terminal::redraw_input() {
 
     // Render visible lines.
     for (int r = 0; r < input_rows_ && (view_start + r) < total_lines; ++r) {
-        render_ansi_line(win_input_, lines[view_start + r], r);
+        render_ansi_line(win_input_, display_lines[view_start + r], r);
     }
 
     // Position the cursor.

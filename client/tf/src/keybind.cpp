@@ -60,6 +60,10 @@ static const KeyNameEntry key_names[] = {
     { Key::F10,        "F10" },
     { Key::F11,        "F11" },
     { Key::F12,        "F12" },
+    { Key::CTRL_HOME,  "Ctrl-Home" },
+    { Key::CTRL_END,   "Ctrl-End" },
+    { Key::CTRL_UP,    "Ctrl-Up" },
+    { Key::CTRL_DOWN,  "Ctrl-Down" },
 };
 
 static constexpr int NUM_KEY_NAMES = sizeof(key_names) / sizeof(key_names[0]);

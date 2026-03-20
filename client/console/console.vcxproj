@@ -56,7 +56,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader />
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>src;..\..\mux\include;..\..\ragel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;..\shared;..\..\mux\include;..\..\ragel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -75,7 +75,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader />
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>src;..\..\mux\include;..\..\ragel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;..\shared;..\..\mux\include;..\..\ragel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
@@ -104,6 +104,7 @@
     </ClCompile>
     <ClCompile Include="src\keybind.cpp" />
     <ClCompile Include="src\timer.cpp" />
+    <ClCompile Include="..\shared\input_editor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\app.h" />
@@ -114,6 +115,7 @@
     <ClInclude Include="src\keybind.h" />
     <ClInclude Include="src\timer.h" />
     <ClInclude Include="src\terminal.h" />
+    <ClInclude Include="..\shared\input_editor.h" />
     <ClInclude Include="src\telnet.h" />
     <ClInclude Include="src\command.h" />
     <ClInclude Include="src\world.h" />

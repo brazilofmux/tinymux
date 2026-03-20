@@ -18,35 +18,71 @@ std::string Terminal::render_line(const std::string& line) {
     return std::string((const char*)out, n);
 }
 
-// Display column of cursor within input_buf_ (up to cursor_pos_ bytes).
-int Terminal::cursor_display_col() const {
-    if (cursor_pos_ == 0) return 0;
-    return (int)co_visual_width((const unsigned char*)input_buf_.data(), cursor_pos_);
-}
-
-// Advance past one grapheme cluster starting at byte position pos.
-size_t Terminal::cluster_next(size_t pos) const {
-    if (pos >= input_buf_.size()) return input_buf_.size();
-    const unsigned char* data = (const unsigned char*)input_buf_.data();
-    const unsigned char* pe = data + input_buf_.size();
-    const unsigned char* p = data + pos;
-    const unsigned char* next = co_cluster_advance(p, pe, 1, nullptr);
-    return (size_t)(next - data);
-}
-
-// Move backward one grapheme cluster ending at byte position pos.
-size_t Terminal::cluster_prev(size_t pos) const {
-    if (pos == 0) return 0;
-    // Walk forward cluster by cluster until we find the one that ends at or past pos
-    const unsigned char* data = (const unsigned char*)input_buf_.data();
-    const unsigned char* pe = data + input_buf_.size();
-    const unsigned char* p = data;
-    const unsigned char* prev = data;
-    while (p < data + pos) {
-        prev = p;
-        p = co_cluster_advance(p, pe, 1, nullptr);
+// Map console InputEvent to InputEditor key code.
+int Terminal::event_to_editor_key(const InputEvent& ev) {
+    switch (ev.type) {
+    case InputEvent::Char:
+        if (ev.ctrl) {
+            switch (ev.codepoint) {
+            case 1:  return InputEditor::K_CTRL_A;
+            case 2:  return InputEditor::K_CTRL_B;
+            case 3:  return InputEditor::K_CTRL_C;
+            case 4:  return InputEditor::K_CTRL_D;
+            case 5:  return InputEditor::K_CTRL_E;
+            case 6:  return InputEditor::K_CTRL_F;
+            case 7:  return InputEditor::K_CTRL_G;
+            case 11: return InputEditor::K_CTRL_K;
+            case 12: return InputEditor::K_CTRL_L;
+            case 14: return InputEditor::K_CTRL_N;
+            case 15: return InputEditor::K_CTRL_O;
+            case 16: return InputEditor::K_CTRL_P;
+            case 17: return InputEditor::K_CTRL_Q;
+            case 18: return InputEditor::K_CTRL_R;
+            case 19: return InputEditor::K_CTRL_S;
+            case 20: return InputEditor::K_CTRL_T;
+            case 21: return InputEditor::K_CTRL_U;
+            case 22: return InputEditor::K_CTRL_V;
+            case 23: return InputEditor::K_CTRL_W;
+            case 24: return InputEditor::K_CTRL_X;
+            case 25: return InputEditor::K_CTRL_Y;
+            case 26: return InputEditor::K_CTRL_Z;
+            default: return InputEditor::K_UNKNOWN;
+            }
+        }
+        return InputEditor::K_CHAR;
+    case InputEvent::Key_Enter:     return InputEditor::K_ENTER;
+    case InputEvent::Key_Backspace: return InputEditor::K_BACKSPACE;
+    case InputEvent::Key_Delete:    return InputEditor::K_DELETE;
+    case InputEvent::Key_Left:
+        return ev.ctrl ? InputEditor::K_CTRL_LEFT : InputEditor::K_LEFT;
+    case InputEvent::Key_Right:
+        return ev.ctrl ? InputEditor::K_CTRL_RIGHT : InputEditor::K_RIGHT;
+    case InputEvent::Key_Up:
+        return ev.ctrl ? InputEditor::K_CTRL_UP : InputEditor::K_UP;
+    case InputEvent::Key_Down:
+        return ev.ctrl ? InputEditor::K_CTRL_DOWN : InputEditor::K_DOWN;
+    case InputEvent::Key_Home:
+        return ev.ctrl ? InputEditor::K_CTRL_HOME : InputEditor::K_HOME;
+    case InputEvent::Key_End:
+        return ev.ctrl ? InputEditor::K_CTRL_END : InputEditor::K_END;
+    case InputEvent::Key_PageUp:    return InputEditor::K_PAGE_UP;
+    case InputEvent::Key_PageDown:  return InputEditor::K_PAGE_DOWN;
+    case InputEvent::Key_Tab:       return InputEditor::K_TAB;
+    case InputEvent::Key_Escape:    return InputEditor::K_ESCAPE;
+    case InputEvent::Key_F1:        return InputEditor::K_F1;
+    case InputEvent::Key_F2:        return InputEditor::K_F2;
+    case InputEvent::Key_F3:        return InputEditor::K_F3;
+    case InputEvent::Key_F4:        return InputEditor::K_F4;
+    case InputEvent::Key_F5:        return InputEditor::K_F5;
+    case InputEvent::Key_F6:        return InputEditor::K_F6;
+    case InputEvent::Key_F7:        return InputEditor::K_F7;
+    case InputEvent::Key_F8:        return InputEditor::K_F8;
+    case InputEvent::Key_F9:        return InputEditor::K_F9;
+    case InputEvent::Key_F10:       return InputEditor::K_F10;
+    case InputEvent::Key_F11:       return InputEditor::K_F11;
+    case InputEvent::Key_F12:       return InputEditor::K_F12;
+    default:                        return InputEditor::K_UNKNOWN;
     }
-    return (size_t)(prev - data);
 }
 
 Terminal::Terminal() {}
@@ -80,6 +116,8 @@ bool Terminal::init() {
     SetConsoleCP(CP_UTF8);
 
     update_size();
+    editor_.set_cols(cols_);
+    editor_.set_max_rows(1);  // console client: single-row input for now
     initialized_ = true;
 
     // Initial clear and draw
@@ -168,53 +206,32 @@ InputEvent Terminal::translate(const INPUT_RECORD& rec) {
 }
 
 bool Terminal::handle_key(const InputEvent& ev, std::string& out_line) {
+    // Handle keys that the terminal manages directly.
     switch (ev.type) {
-    case InputEvent::Key_Enter:
-        out_line = input_buf_;
-        // Save to per-world history
-        if (!input_buf_.empty()) {
-            auto& hist = current_history();
-            hist.push_front(input_buf_);
-            if (hist.size() > MAX_HISTORY) hist.pop_back();
-        }
-        input_buf_.clear();
-        cursor_pos_ = 0;
-        history_pos_ = -1;
+    case InputEvent::Key_PageUp:   scroll_page_up();  return false;
+    case InputEvent::Key_PageDown: scroll_page_down(); return false;
+    case InputEvent::Resize:       handle_resize();    return false;
+    default: break;
+    }
+
+    int editor_key = event_to_editor_key(ev);
+    uint32_t cp = (ev.type == InputEvent::Char && !ev.ctrl) ? ev.codepoint : 0;
+
+    auto result = editor_.handle_key(editor_key, cp);
+    switch (result) {
+    case EditResult::SUBMIT:
+        out_line = editor_.take_line();
         redraw_input();
         return true;
-
-    case InputEvent::Char:
-        if (ev.ctrl) {
-            // Ctrl+A = home, Ctrl+E = end, Ctrl+K = kill to end, Ctrl+U = kill line
-            switch (ev.codepoint) {
-            case 1: move_cursor_home(); break;  // Ctrl+A
-            case 5: move_cursor_end(); break;   // Ctrl+E
-            case 11: kill_to_end(); break;      // Ctrl+K
-            case 21: kill_line(); break;        // Ctrl+U
-            }
-        } else {
-            insert_char(ev.codepoint);
-        }
-        break;
-
-    case InputEvent::Key_Backspace: delete_backward(); break;
-    case InputEvent::Key_Delete:    delete_forward(); break;
-    case InputEvent::Key_Left:
-        if (ev.ctrl) move_word_left();
-        else move_cursor_left();
-        break;
-    case InputEvent::Key_Right:
-        if (ev.ctrl) move_word_right();
-        else move_cursor_right();
-        break;
-    case InputEvent::Key_Home:   move_cursor_home(); break;
-    case InputEvent::Key_End:    move_cursor_end(); break;
-    case InputEvent::Key_Up:     history_up(); break;
-    case InputEvent::Key_Down:   history_down(); break;
-    case InputEvent::Key_PageUp: scroll_page_up(); break;
-    case InputEvent::Key_PageDown: scroll_page_down(); break;
-    case InputEvent::Resize:     handle_resize(); break;
-    default: break;
+    case EditResult::RESIZE:
+        // Console client currently uses single-row input, so just redraw.
+        redraw_input();
+        return false;
+    case EditResult::REDRAW:
+        redraw_input();
+        return false;
+    case EditResult::NONE:
+        return false;
     }
     return false;
 }
@@ -241,7 +258,6 @@ void Terminal::print_line_to(const std::string& context, const std::string& line
         screen.lines.pop_front();
     }
     if (context == output_key_ && screen.scroll_offset == 0) {
-        // Fast path: just scroll the output region up one line and write the new line
         redraw_output();
     }
 }
@@ -261,6 +277,7 @@ void Terminal::refresh() {
 
 void Terminal::handle_resize() {
     update_size();
+    editor_.set_cols(cols_);
     redraw_output();
     redraw_status();
     redraw_input();
@@ -291,40 +308,17 @@ void Terminal::scroll_to_bottom() {
 
 // -- History (per-world) --
 
-std::deque<std::string>& Terminal::current_history() {
-    return histories_[history_key_];
-}
-
 void Terminal::set_history_context(const std::string& key) {
-    history_key_ = key;
-    history_pos_ = -1;
+    editor_.set_history_context(key);
 }
 
 void Terminal::history_up() {
-    auto& hist = current_history();
-    if (hist.empty()) return;
-    if (history_pos_ < 0) {
-        saved_input_ = input_buf_;
-        history_pos_ = 0;
-    } else if (history_pos_ < (int)hist.size() - 1) {
-        history_pos_++;
-    } else {
-        return;
-    }
-    input_buf_ = hist[history_pos_];
-    cursor_pos_ = input_buf_.size();
+    editor_.history_up();
     redraw_input();
 }
 
 void Terminal::history_down() {
-    if (history_pos_ < 0) return;
-    history_pos_--;
-    if (history_pos_ < 0) {
-        input_buf_ = saved_input_;
-    } else {
-        input_buf_ = current_history()[history_pos_];
-    }
-    cursor_pos_ = input_buf_.size();
+    editor_.history_down();
     redraw_input();
 }
 
@@ -402,7 +396,8 @@ void Terminal::redraw_output() {
     }
 
     // Restore cursor to input line
-    COORD pos = { (SHORT)cursor_display_col(), (SHORT)input_row() };
+    int cursor_col = editor_.cursor_vcol();
+    COORD pos = { (SHORT)cursor_col, (SHORT)input_row() };
     SetConsoleCursorPosition(hOut_, pos);
 }
 
@@ -413,115 +408,24 @@ void Terminal::redraw_status() {
     if (!status_text_.empty()) {
         COORD pos = { 0, (SHORT)status_row() };
         SetConsoleCursorPosition(hOut_, pos);
-        // Write with the status bar attribute
         DWORD written;
         WriteConsoleA(hOut_, status_text_.c_str(),
                       (DWORD)std::min(status_text_.size(), (size_t)cols_),
                       &written, nullptr);
     }
     // Restore cursor
-    COORD pos = { (SHORT)cursor_display_col(), (SHORT)input_row() };
+    int cursor_col = editor_.cursor_vcol();
+    COORD pos = { (SHORT)cursor_col, (SHORT)input_row() };
     SetConsoleCursorPosition(hOut_, pos);
 }
 
 void Terminal::redraw_input() {
     clear_row(input_row());
-    if (!input_buf_.empty()) {
-        write_at(input_row(), 0, input_buf_);
+    const auto& buf = editor_.text();
+    if (!buf.empty()) {
+        write_at(input_row(), 0, buf);
     }
-    COORD pos = { (SHORT)cursor_display_col(), (SHORT)input_row() };
+    int cursor_col = editor_.cursor_vcol();
+    COORD pos = { (SHORT)cursor_col, (SHORT)input_row() };
     SetConsoleCursorPosition(hOut_, pos);
-}
-
-// -- Input line editing --
-
-void Terminal::insert_char(uint32_t cp) {
-    // Encode as UTF-8
-    char buf[4];
-    int len = 0;
-    if (cp < 0x80) {
-        buf[0] = (char)cp;
-        len = 1;
-    } else if (cp < 0x800) {
-        buf[0] = (char)(0xC0 | (cp >> 6));
-        buf[1] = (char)(0x80 | (cp & 0x3F));
-        len = 2;
-    } else if (cp < 0x10000) {
-        buf[0] = (char)(0xE0 | (cp >> 12));
-        buf[1] = (char)(0x80 | ((cp >> 6) & 0x3F));
-        buf[2] = (char)(0x80 | (cp & 0x3F));
-        len = 3;
-    } else {
-        buf[0] = (char)(0xF0 | (cp >> 18));
-        buf[1] = (char)(0x80 | ((cp >> 12) & 0x3F));
-        buf[2] = (char)(0x80 | ((cp >> 6) & 0x3F));
-        buf[3] = (char)(0x80 | (cp & 0x3F));
-        len = 4;
-    }
-    input_buf_.insert(cursor_pos_, buf, len);
-    cursor_pos_ += len;
-    redraw_input();
-}
-
-void Terminal::delete_backward() {
-    if (cursor_pos_ == 0) return;
-    size_t prev = cluster_prev(cursor_pos_);
-    input_buf_.erase(prev, cursor_pos_ - prev);
-    cursor_pos_ = prev;
-    redraw_input();
-}
-
-void Terminal::delete_forward() {
-    if (cursor_pos_ >= input_buf_.size()) return;
-    size_t next = cluster_next(cursor_pos_);
-    input_buf_.erase(cursor_pos_, next - cursor_pos_);
-    redraw_input();
-}
-
-void Terminal::move_cursor_left() {
-    if (cursor_pos_ == 0) return;
-    cursor_pos_ = cluster_prev(cursor_pos_);
-    redraw_input();
-}
-
-void Terminal::move_cursor_right() {
-    if (cursor_pos_ >= input_buf_.size()) return;
-    cursor_pos_ = cluster_next(cursor_pos_);
-    redraw_input();
-}
-
-void Terminal::move_cursor_home() {
-    cursor_pos_ = 0;
-    redraw_input();
-}
-
-void Terminal::move_cursor_end() {
-    cursor_pos_ = input_buf_.size();
-    redraw_input();
-}
-
-void Terminal::move_word_left() {
-    if (cursor_pos_ == 0) return;
-    cursor_pos_--;
-    while (cursor_pos_ > 0 && input_buf_[cursor_pos_] == ' ') cursor_pos_--;
-    while (cursor_pos_ > 0 && input_buf_[cursor_pos_ - 1] != ' ') cursor_pos_--;
-    redraw_input();
-}
-
-void Terminal::move_word_right() {
-    size_t len = input_buf_.size();
-    while (cursor_pos_ < len && input_buf_[cursor_pos_] != ' ') cursor_pos_++;
-    while (cursor_pos_ < len && input_buf_[cursor_pos_] == ' ') cursor_pos_++;
-    redraw_input();
-}
-
-void Terminal::kill_line() {
-    input_buf_.clear();
-    cursor_pos_ = 0;
-    redraw_input();
-}
-
-void Terminal::kill_to_end() {
-    input_buf_.erase(cursor_pos_);
-    redraw_input();
 }

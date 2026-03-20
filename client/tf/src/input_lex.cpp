@@ -1,5 +1,5 @@
 
-#line 1 "src/input_lex.rl"
+#line 1 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 // input_lex.rl — Ragel -G2 terminal input scanner.
 //
 // Single-pass goto-driven DFA that tokenizes raw terminal bytes into
@@ -12,14 +12,14 @@
 #include <cstring>
 
 
-#line 13 "src/input_lex.cpp"
+#line 13 "/home/sdennis/tinymux/client/tf/src/input_lex.cpp"
 static const int input_lex_start = 6;
 static const int input_lex_error = -1;
 
 static const int input_lex_en_main = 6;
 
 
-#line 109 "src/input_lex.rl"
+#line 109 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 
 
 // --- C++ implementation ---
@@ -76,12 +76,12 @@ void InputLexer::dispatch_csi(const unsigned char* start, const unsigned char* f
     if (alt) emit(Key::ESCAPE);
 
     switch (final_byte) {
-        case 'A': emit(Key::UP);    break;
-        case 'B': emit(Key::DOWN);  break;
+        case 'A': emit(ctrl ? Key::CTRL_UP   : Key::UP);    break;
+        case 'B': emit(ctrl ? Key::CTRL_DOWN : Key::DOWN);  break;
         case 'C': emit(ctrl ? Key::CTRL_RIGHT : Key::RIGHT); break;
         case 'D': emit(ctrl ? Key::CTRL_LEFT  : Key::LEFT);  break;
-        case 'H': emit(Key::HOME);  break;
-        case 'F': emit(Key::END);   break;
+        case 'H': emit(ctrl ? Key::CTRL_HOME : Key::HOME);  break;
+        case 'F': emit(ctrl ? Key::CTRL_END  : Key::END);   break;
         case '~':
             switch (params[0]) {
                 case 1:  emit(Key::HOME);       break;
@@ -163,7 +163,7 @@ void InputLexer::feed(const unsigned char* data, size_t len) {
     int cs, act;
 
     
-#line 160 "src/input_lex.cpp"
+#line 160 "/home/sdennis/tinymux/client/tf/src/input_lex.cpp"
 	{
 	cs = input_lex_start;
 	ts = 0;
@@ -171,36 +171,36 @@ void InputLexer::feed(const unsigned char* data, size_t len) {
 	act = 0;
 	}
 
-#line 252 "src/input_lex.rl"
+#line 252 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
     
-#line 166 "src/input_lex.cpp"
+#line 166 "/home/sdennis/tinymux/client/tf/src/input_lex.cpp"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 103 "src/input_lex.rl"
+#line 103 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{{p = ((te))-1;}{ emit(Key::ESCAPE); }}
 	goto st6;
 tr1:
-#line 42 "src/input_lex.rl"
+#line 42 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{
             dispatch_ss3(*(te - 1));
         }}
 	goto st6;
 tr4:
-#line 37 "src/input_lex.rl"
+#line 37 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{
             dispatch_csi(ts + 2, te - 1);
         }}
 	goto st6;
 tr5:
-#line 106 "src/input_lex.rl"
+#line 106 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{{p = ((te))-1;}{ /* discard */ }}
 	goto st6;
 tr6:
-#line 52 "src/input_lex.rl"
+#line 52 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{
             uint32_t cp = ((uint32_t)(ts[0] & 0x0F) << 12)
                         | ((uint32_t)(ts[1] & 0x3F) << 6)
@@ -209,7 +209,7 @@ tr6:
         }}
 	goto st6;
 tr8:
-#line 58 "src/input_lex.rl"
+#line 58 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{
             uint32_t cp = ((uint32_t)(ts[0] & 0x07) << 18)
                         | ((uint32_t)(ts[1] & 0x3F) << 12)
@@ -219,133 +219,133 @@ tr8:
         }}
 	goto st6;
 tr9:
-#line 106 "src/input_lex.rl"
+#line 106 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ /* discard */ }}
 	goto st6;
 tr10:
-#line 79 "src/input_lex.rl"
+#line 79 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_A); }}
 	goto st6;
 tr11:
-#line 80 "src/input_lex.rl"
+#line 80 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_B); }}
 	goto st6;
 tr12:
-#line 81 "src/input_lex.rl"
+#line 81 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_C); }}
 	goto st6;
 tr13:
-#line 82 "src/input_lex.rl"
+#line 82 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_D); }}
 	goto st6;
 tr14:
-#line 83 "src/input_lex.rl"
+#line 83 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_E); }}
 	goto st6;
 tr15:
-#line 84 "src/input_lex.rl"
+#line 84 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_F); }}
 	goto st6;
 tr16:
-#line 85 "src/input_lex.rl"
+#line 85 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_G); }}
 	goto st6;
 tr17:
-#line 76 "src/input_lex.rl"
+#line 76 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::BACKSPACE); }}
 	goto st6;
 tr18:
-#line 74 "src/input_lex.rl"
+#line 74 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::TAB); }}
 	goto st6;
 tr19:
-#line 73 "src/input_lex.rl"
+#line 73 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::ENTER); }}
 	goto st6;
 tr20:
-#line 86 "src/input_lex.rl"
+#line 86 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_K); }}
 	goto st6;
 tr21:
-#line 87 "src/input_lex.rl"
+#line 87 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_L); }}
 	goto st6;
 tr22:
-#line 72 "src/input_lex.rl"
+#line 72 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::ENTER); }}
 	goto st6;
 tr23:
-#line 88 "src/input_lex.rl"
+#line 88 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_N); }}
 	goto st6;
 tr24:
-#line 89 "src/input_lex.rl"
+#line 89 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_O); }}
 	goto st6;
 tr25:
-#line 90 "src/input_lex.rl"
+#line 90 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_P); }}
 	goto st6;
 tr26:
-#line 91 "src/input_lex.rl"
+#line 91 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_Q); }}
 	goto st6;
 tr27:
-#line 92 "src/input_lex.rl"
+#line 92 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_R); }}
 	goto st6;
 tr28:
-#line 93 "src/input_lex.rl"
+#line 93 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_S); }}
 	goto st6;
 tr29:
-#line 94 "src/input_lex.rl"
+#line 94 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_T); }}
 	goto st6;
 tr30:
-#line 95 "src/input_lex.rl"
+#line 95 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_U); }}
 	goto st6;
 tr31:
-#line 96 "src/input_lex.rl"
+#line 96 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_V); }}
 	goto st6;
 tr32:
-#line 97 "src/input_lex.rl"
+#line 97 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_W); }}
 	goto st6;
 tr33:
-#line 98 "src/input_lex.rl"
+#line 98 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_X); }}
 	goto st6;
 tr34:
-#line 99 "src/input_lex.rl"
+#line 99 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_Y); }}
 	goto st6;
 tr35:
-#line 100 "src/input_lex.rl"
+#line 100 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::CTRL_Z); }}
 	goto st6;
 tr37:
-#line 67 "src/input_lex.rl"
+#line 67 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{
             emit_char((uint32_t)(*ts));
         }}
 	goto st6;
 tr38:
-#line 75 "src/input_lex.rl"
+#line 75 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{ emit(Key::BACKSPACE); }}
 	goto st6;
 tr46:
-#line 103 "src/input_lex.rl"
+#line 103 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p;p--;{ emit(Key::ESCAPE); }}
 	goto st6;
 tr48:
-#line 106 "src/input_lex.rl"
+#line 106 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p;p--;{ /* discard */ }}
 	goto st6;
 tr49:
-#line 47 "src/input_lex.rl"
+#line 47 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 	{te = p+1;{
             uint32_t cp = ((uint32_t)(ts[0] & 0x1F) << 6)
                         |  (uint32_t)(ts[1] & 0x3F);
@@ -360,7 +360,7 @@ st6:
 case 6:
 #line 1 "NONE"
 	{ts = p;}
-#line 312 "src/input_lex.cpp"
+#line 312 "/home/sdennis/tinymux/client/tf/src/input_lex.cpp"
 	switch( (*p) ) {
 		case 1u: goto tr10;
 		case 2u: goto tr11;
@@ -421,7 +421,7 @@ st7:
 	if ( ++p == pe )
 		goto _test_eof7;
 case 7:
-#line 371 "src/input_lex.cpp"
+#line 371 "/home/sdennis/tinymux/client/tf/src/input_lex.cpp"
 	switch( (*p) ) {
 		case 79u: goto st0;
 		case 91u: goto st1;
@@ -472,7 +472,7 @@ st9:
 	if ( ++p == pe )
 		goto _test_eof9;
 case 9:
-#line 420 "src/input_lex.cpp"
+#line 420 "/home/sdennis/tinymux/client/tf/src/input_lex.cpp"
 	if ( 160u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto tr48;
@@ -491,7 +491,7 @@ st10:
 	if ( ++p == pe )
 		goto _test_eof10;
 case 10:
-#line 437 "src/input_lex.cpp"
+#line 437 "/home/sdennis/tinymux/client/tf/src/input_lex.cpp"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto tr48;
@@ -503,7 +503,7 @@ st11:
 	if ( ++p == pe )
 		goto _test_eof11;
 case 11:
-#line 447 "src/input_lex.cpp"
+#line 447 "/home/sdennis/tinymux/client/tf/src/input_lex.cpp"
 	if ( 128u <= (*p) && (*p) <= 159u )
 		goto st3;
 	goto tr48;
@@ -515,7 +515,7 @@ st12:
 	if ( ++p == pe )
 		goto _test_eof12;
 case 12:
-#line 457 "src/input_lex.cpp"
+#line 457 "/home/sdennis/tinymux/client/tf/src/input_lex.cpp"
 	if ( 144u <= (*p) && (*p) <= 191u )
 		goto st4;
 	goto tr48;
@@ -541,7 +541,7 @@ st13:
 	if ( ++p == pe )
 		goto _test_eof13;
 case 13:
-#line 481 "src/input_lex.cpp"
+#line 481 "/home/sdennis/tinymux/client/tf/src/input_lex.cpp"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st4;
 	goto tr48;
@@ -553,7 +553,7 @@ st14:
 	if ( ++p == pe )
 		goto _test_eof14;
 case 14:
-#line 491 "src/input_lex.cpp"
+#line 491 "/home/sdennis/tinymux/client/tf/src/input_lex.cpp"
 	if ( 128u <= (*p) && (*p) <= 143u )
 		goto st4;
 	goto tr48;
@@ -597,5 +597,5 @@ case 14:
 
 	}
 
-#line 253 "src/input_lex.rl"
+#line 253 "/home/sdennis/tinymux/client/tf/src/input_lex.rl"
 }

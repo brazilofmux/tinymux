@@ -162,12 +162,12 @@ void InputLexer::dispatch_csi(const unsigned char* start, const unsigned char* f
     if (alt) emit(Key::ESCAPE);
 
     switch (final_byte) {
-        case 'A': emit(Key::UP);    break;
-        case 'B': emit(Key::DOWN);  break;
+        case 'A': emit(ctrl ? Key::CTRL_UP   : Key::UP);    break;
+        case 'B': emit(ctrl ? Key::CTRL_DOWN : Key::DOWN);  break;
         case 'C': emit(ctrl ? Key::CTRL_RIGHT : Key::RIGHT); break;
         case 'D': emit(ctrl ? Key::CTRL_LEFT  : Key::LEFT);  break;
-        case 'H': emit(Key::HOME);  break;
-        case 'F': emit(Key::END);   break;
+        case 'H': emit(ctrl ? Key::CTRL_HOME : Key::HOME);  break;
+        case 'F': emit(ctrl ? Key::CTRL_END  : Key::END);   break;
         case '~':
             switch (params[0]) {
                 case 1:  emit(Key::HOME);       break;

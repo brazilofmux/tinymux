@@ -34,6 +34,10 @@ enum class Key : uint16_t {
     // Function keys
     F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
 
+    // Ctrl+navigation (Home/End/Up/Down with Ctrl modifier)
+    CTRL_HOME, CTRL_END,
+    CTRL_UP, CTRL_DOWN,
+
     UNKNOWN,
 };
 

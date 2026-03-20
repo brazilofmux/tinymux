@@ -32,10 +32,12 @@ add_executable(tf
     src/main.cpp src/terminal.cpp src/connection.cpp src/charset.cpp
     src/world.cpp src/command.cpp src/macro.cpp src/timer.cpp src/keybind.cpp
     src/input_lex.cpp src/script_lex.cpp src/script_parse.cpp src/regex_utils.cpp
-    src/restart.cpp)
+    src/restart.cpp src/spawn.cpp
+    ../shared/input_editor.cpp)
 
 target_include_directories(tf PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared
     ${TINYMUX_DIR}/mux/include)
 target_link_libraries(tf PRIVATE mux ${NCURSESW_LIB} ${PCRE2_LIB} OpenSSL::SSL OpenSSL::Crypto ZLIB::ZLIB)
 set_target_properties(tf PROPERTIES
