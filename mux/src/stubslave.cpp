@@ -34,9 +34,40 @@ extern "C" MUX_RESULT DCL_API Stub_PipePump(void)
     while (  Pipe_GetBytes(&Queue_Out, &nWanted, arg)
           && 0 < nWanted)
     {
-        if (write(1, arg, nWanted) < 0)
+        // Write all dequeued bytes, handling short writes and EAGAIN.
+        // Bytes are already removed from Queue_Out, so we must not
+        // drop them.
+        //
+        size_t nWritten = 0;
+        while (nWritten < nWanted)
         {
-            return MUX_E_FAIL;
+            ssize_t n = write(1, arg + nWritten, nWanted - nWritten);
+            if (n > 0)
+            {
+                nWritten += (size_t)n;
+            }
+            else if (n < 0)
+            {
+                if (EAGAIN == errno || EWOULDBLOCK == errno)
+                {
+                    // Wait until writable, then retry.
+                    //
+                    struct pollfd pfd;
+                    pfd.fd = 1;
+                    pfd.events = POLLOUT;
+                    pfd.revents = 0;
+                    if (poll(&pfd, 1, -1) < 0 && EINTR != errno)
+                    {
+                        return MUX_E_FAIL;
+                    }
+                    continue;
+                }
+                return MUX_E_FAIL;
+            }
+            else
+            {
+                return MUX_E_FAIL;
+            }
         }
         nWanted = sizeof(arg);
     }
