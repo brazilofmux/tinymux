@@ -71,7 +71,7 @@ static void write_pidfile(const UTF8 *pFilename)
     if (mux_fopen(&fp, pFilename, T("wb")))
     {
         mux_fprintf(fp, T("%d" ENDLINE), game_pid);
-        fclose(fp);
+        mux_fclose(fp);
     }
     else
     {

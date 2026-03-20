@@ -58,7 +58,7 @@
     </Midl>
     <ClCompile>
       <PreprocessorDefinitions>_DEBUG;WIN32;_CONSOLE;UNICODE;WOD_REALMS;SQLITE_STORAGE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader />
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -87,7 +87,7 @@
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;UNICODE;WOD_REALMS;SQLITE_STORAGE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader />
       <CallingConvention>FastCall</CallingConvention>

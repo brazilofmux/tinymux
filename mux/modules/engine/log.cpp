@@ -375,14 +375,14 @@ void do_log
     FILE *hFile;
     if (mux_fopen(&hFile, pFullName, T("r")))
     {
-        fclose(hFile);
+        mux_fclose(hFile);
         if (mux_fopen(&hFile, pFullName, T("a")))
         {
             // Okay, at this point, the file exists.
             //
             free_lbuf(pFullName);
             mux_fprintf(hFile, T("%s" ENDLINE), pMessage);
-            fclose(hFile);
+            mux_fclose(hFile);
             return;
         }
     }

@@ -3048,12 +3048,7 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
                 load_mail(f);
                 Log.tinyprintf(T("LOADING: %s (done)" ENDLINE),
                                mudconf.mail_db);
-                if (fclose(f) != 0)
-                {
-                    STARTLOG(LOG_PROBLEMS, "DB", "FCLOSE");
-                    log_printf(T("fclose failed for %s"), mudconf.mail_db);
-                    ENDLOG;
-                }
+                mux_fclose(f);
             }
         }
     }
@@ -3719,7 +3714,7 @@ MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
         {
             sqldb.Rollback();
             mux_fprintf(stderr, T("SQLite attribute clear failed before flatfile import.\n"));
-            fclose(fpIn);
+            mux_fclose(fpIn);
             return MUX_E_FAIL;
         }
         mudstate.bSQLiteLoading = true;
@@ -3727,7 +3722,7 @@ MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
         {
             mudstate.bSQLiteLoading = false;
             sqldb.Rollback();
-            fclose(fpIn);
+            mux_fclose(fpIn);
             return MUX_E_FAIL;
         }
         mudstate.bSQLiteLoading = false;
@@ -3735,7 +3730,7 @@ MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
         {
             sqldb.Rollback();
             mux_fprintf(stderr, T("SQLite attribute import commit failed.\n"));
-            fclose(fpIn);
+            mux_fclose(fpIn);
             return MUX_E_FAIL;
         }
         if (!sqlite_sync_runtime())
@@ -3754,7 +3749,7 @@ MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
         {
             do_dbck(NOTHING, NOTHING, NOTHING, 0, DBCK_FULL);
         }
-        fclose(fpIn);
+        mux_fclose(fpIn);
     }
 
     // Import comsys from flatfile into SQLite.
@@ -3779,7 +3774,7 @@ MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
         {
             setvbuf(fpMail, nullptr, _IOFBF, 16384);
             load_mail(fpMail);
-            fclose(fpMail);
+            mux_fclose(fpMail);
             if (!sqlite_sync_mail())
             {
                 mux_fprintf(stderr, T("Import mail into SQLite failed.\n"));
@@ -3817,7 +3812,7 @@ MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
             if (mux_fopen(&fpMail, mail_file, T("wb")))
             {
                 dump_mail(fpMail);
-                fclose(fpMail);
+                mux_fclose(fpMail);
                 mux_fprintf(stderr, T("Exported mail from SQLite.\n"));
             }
         }
@@ -3849,7 +3844,7 @@ MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
         dbconvert_info(F_MUX, db_flags, db_ver);
         setvbuf(fpOut, nullptr, _IOFBF, 16384);
         db_write(fpOut, F_MUX, db_ver | db_flags);
-        fclose(fpOut);
+        mux_fclose(fpOut);
     }
     CLOSE;
 #ifdef SELFCHECK

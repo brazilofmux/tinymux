@@ -6640,6 +6640,14 @@ bool mux_fopen(FILE **pFile, const UTF8 *filename, const UTF8 *mode)
     return false;
 }
 
+void mux_fclose(FILE *fp)
+{
+    if (nullptr != fp)
+    {
+        fclose(fp);
+    }
+}
+
 bool mux_open(int *pfh, const UTF8 *filename, int oflag)
 {
     if (nullptr != pfh)

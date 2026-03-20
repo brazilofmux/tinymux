@@ -42,6 +42,7 @@ typedef struct
 //
 #define MUX_OPEN_INVALID_HANDLE_VALUE (-1)
 LIBMUX_API bool mux_fopen(FILE **pFile, const UTF8 *filename, const UTF8 *mode);
+LIBMUX_API void mux_fclose(FILE *fp);
 LIBMUX_API bool mux_open(int *pfh, const UTF8 *filename, int oflag);
 LIBMUX_API const UTF8 *mux_strerror(int errnum);
 

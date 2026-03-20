@@ -1576,7 +1576,7 @@ void dump_database_internal(int dump_type)
             {
                 setvbuf(f, nullptr, _IOFBF, 16384);
                 db_write(f, F_MUX, dp->fType);
-                fclose(f);
+                mux_fclose(f);
 
                 if (dp->bUseTemporary)
                 {
@@ -1923,7 +1923,7 @@ int load_game(int ccPageFile)
     if (!sqldb.Begin() || !sqldb.ClearAttributes())
     {
         sqldb.Rollback();
-        fclose(f);
+        mux_fclose(f);
         f = 0;
         STARTLOG(LOG_ALWAYS, "INI", "FATAL")
         log_text(T("Error clearing SQLite attributes before flatfile load."));
@@ -1938,7 +1938,7 @@ int load_game(int ccPageFile)
         sqldb.Rollback();
         // Everything is not ok.
         //
-        fclose(f);
+        mux_fclose(f);
         f = 0;
 
         STARTLOG(LOG_ALWAYS, "INI", "FATAL")
@@ -1951,7 +1951,7 @@ int load_game(int ccPageFile)
     if (!sqldb.Commit())
     {
         sqldb.Rollback();
-        fclose(f);
+        mux_fclose(f);
         f = 0;
         STARTLOG(LOG_ALWAYS, "INI", "FATAL")
         log_text(T("Error committing SQLite attributes after flatfile load."));
@@ -1961,7 +1961,7 @@ int load_game(int ccPageFile)
 
     // Everything is ok.
     //
-    fclose(f);
+    mux_fclose(f);
     f = 0;
 
     // Bulk-sync object and attribute-name metadata from db[] into SQLite.
@@ -2017,12 +2017,7 @@ int load_game(int ccPageFile)
         Log.tinyprintf(T("LOADING: %s" ENDLINE), mudconf.mail_db);
         load_mail(f);
         Log.tinyprintf(T("LOADING: %s (done)" ENDLINE), mudconf.mail_db);
-        if (fclose(f) != 0)
-        {
-            STARTLOG(LOG_PROBLEMS, "DB", "FCLOSE");
-            log_printf(T("fclose failed for %s"), mudconf.mail_db);
-            ENDLOG;
-        }
+        mux_fclose(f);
         f = 0;
     }
     STARTLOG(LOG_STARTUP, "INI", "LOAD");

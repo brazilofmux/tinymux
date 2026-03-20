@@ -3095,7 +3095,7 @@ void dump_restart_db(void)
     }
     putref(f, 0);
 
-    fclose(f);
+    mux_fclose(f);
 }
 
 void load_restart_db(void)
@@ -3384,7 +3384,7 @@ void load_restart_db(void)
         }
     }
 
-    fclose(f);
+    mux_fclose(f);
     remove("restart.db");
     raw_broadcast(0, T("GAME: Restart finished."));
 }

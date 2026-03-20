@@ -1726,7 +1726,7 @@ static CF_HAND(cf_include)
         }
     }
     free_lbuf(buf);
-    fclose(fp);
+    mux_fclose(fp);
     return 0;
 }
 

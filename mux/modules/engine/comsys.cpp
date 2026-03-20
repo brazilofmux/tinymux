@@ -164,7 +164,7 @@ void save_comsys(UTF8* filename)
     mux_fprintf(fp, T("*** Begin COMSYS ***\n"));
     save_comsystem(fp);
 
-    fclose(fp);
+    mux_fclose(fp);
 
     ReplaceFile(buffer, filename);
 }
@@ -1175,12 +1175,7 @@ void load_comsys(UTF8* filename)
             }
         }
 
-        if (fclose(fp) != 0)
-        {
-            STARTLOG(LOG_PROBLEMS, "DB", "FCLOSE");
-            log_printf(T("fclose failed for %s"), filename);
-            ENDLOG;
-        }
+        mux_fclose(fp);
         Log.tinyprintf(T("LOADING: %s (done)" ENDLINE), filename);
     }
 }

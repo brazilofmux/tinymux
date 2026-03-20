@@ -209,7 +209,7 @@ static void helpindex_read(int iHelpfile)
     }
     HelpIndex_End();
 
-    fclose(fp);
+    mux_fclose(fp);
 }
 
 void helpindex_load(dbref player)
@@ -313,7 +313,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
         log_text(line);
         free_lbuf(line);
         ENDLOG;
-        fclose(fp);
+        mux_fclose(fp);
         return false;
     }
     UTF8 *line = alloc_lbuf("ReportTopic");
@@ -380,7 +380,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     }
     *bp = '\0';
 
-    fclose(fp);
+    mux_fclose(fp);
     free_lbuf(line);
     return true;
 }

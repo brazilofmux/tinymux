@@ -17,11 +17,14 @@ game/bin/engine.dll
 game/bin/exp3.dll
 game/bin/libmux.dll
 game/bin/mail.dll
+game/bin/msvcp140.dll
 game/bin/netmux.exe
 game/bin/pcre2-8.dll
 game/bin/softlib.rv64
 game/bin/sqlproxy.dll
 game/bin/sqlslave.dll
+game/bin/vcruntime140.dll
+game/bin/vcruntime140_1.dll
 game/compat.conf
 game/data/db_load.bat
 game/data/db_unload.bat
