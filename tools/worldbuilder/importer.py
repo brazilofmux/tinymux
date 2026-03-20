@@ -16,6 +16,7 @@ import yaml
 import argparse
 from pathlib import Path
 from executor import MuxConnection
+from live_adapter import normalize_imported_room, normalize_imported_exit
 
 
 # ---------------------------------------------------------------------------
@@ -273,21 +274,34 @@ def generate_spec(rooms, exits, zone_name):
     return spec, dbref_to_id
 
 
-def generate_state(dbref_to_id, rooms):
-    """Generate a state file dict."""
+def generate_state(dbref_to_id, rooms, exits=None):
+    """Generate a state file dict using normalized snapshot format."""
     objects = {}
     for dbref, spec_id in dbref_to_id.items():
         info = rooms.get(dbref, {})
-        objects[spec_id] = {
-            'dbref': dbref,
-            'objid': info.get('objid'),
-            'type': 'room',
-            'name': info.get('name', ''),
-            'description': info.get('description', ''),
-            'flags': info.get('flags', '').split(),
-            'attrs': info.get('attrs', {}),
-            'status': 'active',
-        }
+        objects[spec_id] = normalize_imported_room(
+            dbref=dbref,
+            name=info.get('name', ''),
+            description=info.get('description', ''),
+            flags_str=info.get('flags', ''),
+            attrs=info.get('attrs', {}),
+            objid=info.get('objid'),
+        )
+
+    # Include exits if provided
+    if exits:
+        for ex in exits:
+            from_id = dbref_to_id.get(ex['from_dbref'])
+            to_id = dbref_to_id.get(ex['to_dbref'])
+            if from_id and to_id:
+                exit_key = f'exit_{from_id}_{to_id}'
+                objects[exit_key] = normalize_imported_exit(
+                    dbref=ex.get('exit_dbref', ''),
+                    name=ex.get('name', ''),
+                    from_dbref=ex['from_dbref'],
+                    to_dbref=ex['to_dbref'],
+                )
+
     return {
         'state_version': 1,
         'zone': None,
@@ -341,7 +355,7 @@ def main():
 
         # Write state
         state_path = args.state or f'.worldbuilder/{args.zone.lower().replace(" ", "_")}.state.yaml'
-        state_data = generate_state(dbref_to_id, rooms)
+        state_data = generate_state(dbref_to_id, rooms, exits)
         state_data['zone'] = args.zone
         Path(state_path).parent.mkdir(parents=True, exist_ok=True)
         with open(state_path, 'w') as f:

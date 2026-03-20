@@ -14,8 +14,9 @@ import ssl
 import time
 import argparse
 from pathlib import Path
-from worldbuilder import parse_spec, check_drc
-from live_adapter import StateFile, content_hash, extract_dbref
+from worldbuilder import parse_spec, check_drc, plan_spec_operations, plan_incremental_operations
+from live_adapter import (StateFile, content_hash, extract_dbref,
+                          query_live_snapshot, mux_escape)
 
 
 # ---------------------------------------------------------------------------
@@ -135,9 +136,10 @@ class MuxConnection:
 # ---------------------------------------------------------------------------
 
 
-def execute(spec, conn, state, dry_run=False, log_file=None):
-    """Execute a compiled spec against a live MUX connection.
+def execute(spec, conn, state, dry_run=False, log_file=None, operations=None):
+    """Execute semantic operations against a live MUX connection.
 
+    If operations is None, plans them from the spec and state.
     Returns True on success.
     """
     def log(msg):
@@ -145,7 +147,7 @@ def execute(spec, conn, state, dry_run=False, log_file=None):
         if log_file:
             log_file.write(msg + '\n')
 
-    def do_cmd(cmd, expect_dbref=False):
+    def do_cmd(cmd):
         """Send a command and return response. In dry-run, just log."""
         if dry_run:
             log(f'  [dry-run] {cmd}')
@@ -159,118 +161,185 @@ def execute(spec, conn, state, dry_run=False, log_file=None):
                 log(f'  < {line.rstrip()}')
         return resp
 
+    def capture_objid(dbref):
+        """Query objid for a dbref. Returns stripped string or None."""
+        if dry_run:
+            return None
+        resp = do_cmd(f'think [objid({dbref})]')
+        return resp.strip() if resp else None
+
     state.zone = spec.zone.name
 
-    # Phase 1: Create rooms and capture dbrefs
-    log(f'\n=== Phase 1: Creating/Updating {len(spec.rooms)} rooms ===')
-
-    for room_id, room in spec.rooms.items():
-        existing = state.get_dbref(room_id)
-        if existing:
-            log(f'\n--- Room: {room.name} ({room_id}) — exists as {existing}, updating ---')
-            # Teleport to existing room and update
-            do_cmd(f'@teleport me={existing}')
-            time.sleep(0.2)
-            if not dry_run:
-                # Query objid for identity tracking
-                objid_resp = do_cmd(f'think [objid({existing})]')
-                objid = objid_resp.strip() if objid_resp else None
-                state.set_room(room_id, existing, room, objid=objid)
+    # Plan operations if not provided
+    if operations is None:
+        state_path = state.path
+        if state_path.exists() and state.objects:
+            operations = plan_incremental_operations(spec, str(state_path))
         else:
-            log(f'\n--- Room: {room.name} ({room_id}) — creating ---')
-            resp = do_cmd(f'@dig/teleport {room.name}')
+            operations = plan_spec_operations(spec)
 
-            if not dry_run:
-                # Always use think %L — most reliable across MUX versions
-                time.sleep(0.2)
-                resp2 = do_cmd('think %L')
-                dbref = extract_dbref(resp2)
-                if not dbref:
-                    # Fallback: try parsing @dig output
-                    dbref = extract_dbref(resp)
-                if dbref:
-                    # Query objid for identity tracking
-                    objid_resp = do_cmd(f'think [objid({dbref})]')
-                    objid = objid_resp.strip() if objid_resp else None
-                    state.set_room(room_id, dbref, room, objid=objid)
-                    log(f'  [state] {room_id} = {dbref} (objid: {objid})')
-                else:
-                    log(f'  [WARNING] Could not capture dbref for {room_id}')
-            else:
-                # In dry run, we still want to store the object in state so Phase 2 can find it
-                # We use a dummy object for dry-run
-                state.objects[room_id] = {
-                    'dbref': f'#DRY_{room_id}',
-                    'type': 'room',
-                    'name': room.name,
-                    'description': room.description,
-                    'flags': sorted(room.flags),
-                    'attrs': room.attrs,
-                    'content_hash': content_hash(room)
-                }
+    # Separate into phases: rooms first, then exits/things, then destroys
+    room_creates = [op for op in operations if op.kind == 'create_room']
+    room_updates = [op for op in operations if op.kind == 'update_room']
+    exit_creates = [op for op in operations if op.kind == 'create_exit']
+    thing_creates = [op for op in operations if op.kind == 'create_thing']
+    destroy_exits = [op for op in operations if op.kind == 'destroy_exit']
+    destroy_rooms = [op for op in operations if op.kind == 'destroy_room']
 
-        # Set description
-        desc = room.description.rstrip().replace('\n', '%r')
-        do_cmd(f'@desc here={desc}')
+    # Phase 1: Create rooms and capture dbrefs
+    if room_creates or room_updates:
+        log(f'\n=== Phase 1: Rooms ({len(room_creates)} create, {len(room_updates)} update) ===')
 
-        # Set flags
-        for flag in room.flags:
-            do_cmd(f'@set here={flag}')
-
-        # Set attributes
-        for attr_name, attr_value in room.attrs.items():
-            do_cmd(f'&{attr_name} here={attr_value}')
-
-    # Phase 2: Create exits (now that all rooms have dbrefs)
-    log(f'\n=== Phase 2: Creating exits ===')
-
-    for ex in spec.exits:
-        from_dbref = state.get_dbref(ex.from_room)
-        to_dbref = state.get_dbref(ex.to_room)
-
-        if not from_dbref:
-            log(f'  [ERROR] No dbref for source room: {ex.from_room}')
-            continue
-        if not to_dbref:
-            if ex.to_room.startswith('$'):
-                log(f'  [SKIP] External reference: {ex.to_room}')
-                continue
-            log(f'  [ERROR] No dbref for destination room: {ex.to_room}')
-            continue
-
-        # Teleport to source room
-        do_cmd(f'@teleport me={from_dbref}')
-        time.sleep(0.2)
-
-        # Create forward exit
-        forward_name = ex.name.split(';')[0]
-        log(f'\n--- Exit: {forward_name} ({ex.from_room} -> {ex.to_room}) ---')
-        resp = do_cmd(f'@open {ex.name}={to_dbref}')
+    for op in room_creates:
+        room = op.payload['room']
+        log(f'\n--- Room: {room.name} ({op.obj_id}) — creating ---')
+        resp = do_cmd(f'@dig/teleport {room.name}')
 
         if not dry_run:
-            dbref = extract_dbref(resp)
-            if dbref:
-                objid_resp = do_cmd(f'think [objid({dbref})]')
-                objid = objid_resp.strip() if objid_resp else None
-                exit_id = f'exit_{ex.from_room}_{ex.to_room}'
-                state.set_exit(exit_id, dbref, forward_name, objid=objid)
-
-        # Create back exit
-        if ex.back_name:
-            do_cmd(f'@teleport me={to_dbref}')
             time.sleep(0.2)
+            resp2 = do_cmd('think %L')
+            dbref = extract_dbref(resp2)
+            if not dbref:
+                dbref = extract_dbref(resp)
+            if dbref:
+                objid = capture_objid(dbref)
+                state.set_room(op.obj_id, dbref, room, objid=objid)
+                log(f'  [state] {op.obj_id} = {dbref} (objid: {objid})')
+            else:
+                log(f'  [WARNING] Could not capture dbref for {op.obj_id}')
+        else:
+            state.objects[op.obj_id] = {
+                'dbref': f'#DRY_{op.obj_id}',
+                'type': 'room',
+                'name': room.name,
+                'description': room.description,
+                'flags': sorted(room.flags),
+                'attrs': room.attrs,
+                'content_hash': content_hash(room),
+            }
 
-            back_name = ex.back_name.split(';')[0]
-            log(f'--- Back exit: {back_name} ({ex.to_room} -> {ex.from_room}) ---')
-            resp = do_cmd(f'@open {ex.back_name}={from_dbref}')
+        do_cmd(f'@desc here={mux_escape(room.description)}')
+        for flag in room.flags:
+            do_cmd(f'@set here={flag}')
+        for attr_name, attr_value in room.attrs.items():
+            do_cmd(f'&{attr_name} here={attr_value}')
+        if room.parent:
+            do_cmd(f'@parent here={room.parent}')
+
+    for op in room_updates:
+        room = op.payload['room']
+        dbref = op.payload['dbref']
+        log(f'\n--- Room: {room.name} ({op.obj_id}) — updating at {dbref} ---')
+        do_cmd(f'@teleport me={dbref}')
+        time.sleep(0.2)
+
+        if op.payload.get('name_changed'):
+            do_cmd(f'@name here={room.name}')
+        if op.payload.get('desc_changed'):
+            do_cmd(f'@desc here={mux_escape(room.description)}')
+        for flag in sorted(op.payload.get('flags_added', set())):
+            do_cmd(f'@set here={flag}')
+        for flag in sorted(op.payload.get('flags_removed', set())):
+            do_cmd(f'@set here=!{flag}')
+        for attr_name in sorted(op.payload.get('attrs_to_set', {})):
+            do_cmd(f'&{attr_name} here={op.payload["attrs_to_set"][attr_name]}')
+        for attr_name in sorted(op.payload.get('attrs_to_unset', set())):
+            do_cmd(f'&{attr_name} here=')
+
+        if not dry_run:
+            objid = capture_objid(dbref)
+            state.set_room(op.obj_id, dbref, room, objid=objid)
+
+    # Phase 2: Create exits
+    if exit_creates:
+        log(f'\n=== Phase 2: Exits ({len(exit_creates)} create) ===')
+
+    for op in exit_creates:
+        ex = op.payload['exit']
+        direction = op.payload['direction']
+
+        if direction == 'forward':
+            from_dbref = state.get_dbref(ex.from_room)
+            to_dbref = state.get_dbref(ex.to_room)
+            if not from_dbref:
+                log(f'  [ERROR] No dbref for source room: {ex.from_room}')
+                continue
+            if not to_dbref:
+                if ex.to_room.startswith('$'):
+                    log(f'  [SKIP] External reference: {ex.to_room}')
+                    continue
+                log(f'  [ERROR] No dbref for destination room: {ex.to_room}')
+                continue
+
+            do_cmd(f'@teleport me={from_dbref}')
+            time.sleep(0.2)
+            log(f'\n--- Exit: {op.name} ({ex.from_room} -> {ex.to_room}) ---')
+            resp = do_cmd(f'@open {ex.name}={to_dbref}')
 
             if not dry_run:
                 dbref = extract_dbref(resp)
                 if dbref:
-                    objid_resp = do_cmd(f'think [objid({dbref})]')
-                    objid = objid_resp.strip() if objid_resp else None
-                    exit_id = f'exit_{ex.to_room}_{ex.from_room}'
-                    state.set_exit(exit_id, dbref, back_name, objid=objid)
+                    objid = capture_objid(dbref)
+                    state.set_exit(op.obj_id, dbref, op.name, objid=objid)
+        else:
+            # back exit
+            from_dbref = state.get_dbref(ex.to_room)
+            to_dbref = state.get_dbref(ex.from_room)
+            if not from_dbref or not to_dbref:
+                log(f'  [ERROR] Missing dbref for back exit: {ex.to_room} -> {ex.from_room}')
+                continue
+
+            do_cmd(f'@teleport me={from_dbref}')
+            time.sleep(0.2)
+            log(f'\n--- Back exit: {op.name} ({ex.to_room} -> {ex.from_room}) ---')
+            resp = do_cmd(f'@open {ex.back_name}={to_dbref}')
+
+            if not dry_run:
+                dbref = extract_dbref(resp)
+                if dbref:
+                    objid = capture_objid(dbref)
+                    state.set_exit(op.obj_id, dbref, op.name, objid=objid)
+
+    # Phase 3: Create things
+    if thing_creates:
+        log(f'\n=== Phase 3: Things ({len(thing_creates)} create) ===')
+
+    for op in thing_creates:
+        thing = op.payload['thing']
+        loc_dbref = state.get_dbref(thing.location)
+        if not loc_dbref:
+            log(f'  [ERROR] No dbref for location: {thing.location}')
+            continue
+
+        do_cmd(f'@teleport me={loc_dbref}')
+        time.sleep(0.2)
+        log(f'\n--- Thing: {thing.name} ({op.obj_id}) in {thing.location} ---')
+        do_cmd(f'@create {thing.name}')
+
+        if thing.description:
+            do_cmd(f'@desc {thing.name}={mux_escape(thing.description)}')
+        for flag in thing.flags:
+            do_cmd(f'@set {thing.name}={flag}')
+        for attr_name, attr_value in thing.attrs.items():
+            do_cmd(f'&{attr_name} {thing.name}={attr_value}')
+        if thing.parent:
+            do_cmd(f'@parent {thing.name}={thing.parent}')
+
+    # Phase 4: Destroy (exits before rooms)
+    if destroy_exits or destroy_rooms:
+        log(f'\n=== Phase 4: Destroy ({len(destroy_exits)} exits, {len(destroy_rooms)} rooms) ===')
+
+    for op in destroy_exits:
+        dbref = op.payload['dbref']
+        log(f'\n--- Destroy exit: {op.name} ({op.obj_id}) at {dbref} ---')
+        do_cmd(f'@destroy {dbref}')
+        state.mark_pending_destroy(op.obj_id)
+
+    for op in destroy_rooms:
+        dbref = op.payload['dbref']
+        log(f'\n--- Destroy room: {op.name} ({op.obj_id}) at {dbref} ---')
+        do_cmd(f'@destroy/override {dbref}')
+        state.mark_pending_destroy(op.obj_id)
 
     # Save state
     state.save()

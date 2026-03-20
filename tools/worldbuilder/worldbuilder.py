@@ -15,50 +15,9 @@ import copy
 import os
 from pathlib import Path
 from string import Template
-from live_adapter import emit_mux_commands
+from live_adapter import emit_mux_commands, mux_escape, mux_unescape
 from reconciler import (build_spec_snapshot, load_snapshot,
                         reconcile_snapshots, format_reconcile_report)
-
-
-# ---------------------------------------------------------------------------
-# MUX Text Escaping
-# ---------------------------------------------------------------------------
-
-def mux_escape(text):
-    """Escape a multi-line string for MUX attribute/description setting.
-
-    Handles:
-    - Literal % in text → %% (prevent substitution)
-    - \\n → %r (MUX linebreak)
-    - \\t → %t (MUX tab)
-    - Trailing whitespace stripped per line
-    - Leading/trailing blank lines stripped
-    """
-    # Strip leading/trailing blank lines
-    lines = text.rstrip().split('\n')
-    while lines and not lines[0].strip():
-        lines.pop(0)
-
-    # Process each line
-    processed = []
-    for line in lines:
-        line = line.rstrip()
-        # Escape literal % (but not our own %r/%t insertions)
-        line = line.replace('%', '%%')
-        processed.append(line)
-
-    # Join with %r
-    result = '%r'.join(processed)
-    return result
-
-
-def mux_unescape(text):
-    """Reverse MUX escaping back to plain text (for import)."""
-    text = text.replace('%r', '\n')
-    text = text.replace('%t', '\t')
-    text = text.replace('%b', ' ')
-    text = text.replace('%%', '%')
-    return text
 
 
 # ---------------------------------------------------------------------------

@@ -18,7 +18,15 @@ DBREF_PATTERN = re.compile(r'#(\d+)')
 
 
 def mux_escape(text):
-    """Escape multiline text for MUX command emission."""
+    """Escape a multi-line string for MUX attribute/description setting.
+
+    Handles:
+    - Literal % in text → %% (prevent substitution)
+    - \\n → %r (MUX linebreak)
+    - \\t → %t (MUX tab)
+    - Trailing whitespace stripped per line
+    - Leading/trailing blank lines stripped
+    """
     lines = text.rstrip().split('\n')
     while lines and not lines[0].strip():
         lines.pop(0)
@@ -27,6 +35,15 @@ def mux_escape(text):
     for line in lines:
         processed.append(line.rstrip().replace('%', '%%'))
     return '%r'.join(processed)
+
+
+def mux_unescape(text):
+    """Reverse MUX escaping back to plain text (for import)."""
+    text = text.replace('%r', '\n')
+    text = text.replace('%t', '\t')
+    text = text.replace('%b', ' ')
+    text = text.replace('%%', '%')
+    return text
 
 
 def content_hash(obj):
@@ -126,6 +143,129 @@ class StateFile:
     def mark_pending_destroy(self, spec_id):
         if spec_id in self.objects:
             self.objects[spec_id]['status'] = 'pending_destroy'
+
+
+# ---------------------------------------------------------------------------
+# Live Snapshot — query a running MUX to produce reconciler-compatible data
+# ---------------------------------------------------------------------------
+
+def query_live_object(conn, dbref, query_fn):
+    """Query a single live object and return a normalized snapshot dict.
+
+    conn: a MuxConnection (or any object with send/read_response)
+    dbref: the dbref string, e.g. '#1234'
+    query_fn: callable(conn, cmd) -> str  (send think command, return first line)
+
+    Returns a dict suitable for reconcile_snapshots() live_objects, or None
+    if the object doesn't exist.
+    """
+    objid = query_fn(conn, f'think [objid({dbref})]')
+    if not objid or objid.startswith('#-1'):
+        return None
+
+    name = query_fn(conn, f'think [name({dbref})]')
+    if not name:
+        return None
+
+    # Determine type
+    type_flags = query_fn(conn, f'think [type({dbref})]')
+    obj_type = (type_flags or '').strip().lower()
+    if obj_type not in ('room', 'exit', 'thing', 'player'):
+        obj_type = 'room'  # default fallback
+
+    result = {
+        'dbref': dbref,
+        'objid': objid.strip(),
+        'type': obj_type,
+        'name': name,
+        'status': 'active',
+    }
+
+    if obj_type in ('room', 'thing'):
+        # Description
+        desc = query_fn(conn, f'think [get({dbref}/DESCRIBE)]')
+        if not desc:
+            desc = query_fn(conn, f'think [get({dbref}/DESC)]')
+        result['description'] = (desc or '').strip()
+
+        # Flags — parse into sorted list
+        raw_flags = query_fn(conn, f'think [flags({dbref})]')
+        result['flags'] = sorted(raw_flags.split()) if raw_flags else []
+
+        # Attributes via lattr + get
+        raw_attrs = query_fn(conn, f'think [lattr({dbref})]')
+        skip = {'DESCRIBE', 'DESC', 'IDESC', 'LAST', 'LASTSITE',
+                'LASTIP', 'LASTPAGE', 'MAILCURF', 'MAILFLAGS',
+                'STARTUP', 'CREATED', 'MODIFIED'}
+        attrs = {}
+        if raw_attrs and not raw_attrs.startswith('#-1'):
+            for attr in raw_attrs.split():
+                attr = attr.strip()
+                if attr.upper() in skip:
+                    continue
+                val = query_fn(conn, f'think [get({dbref}/{attr})]')
+                if val:
+                    attrs[attr] = val
+        result['attrs'] = attrs
+
+    if obj_type == 'exit':
+        dest = query_fn(conn, f'think [home({dbref})]')
+        result['destination'] = dest or ''
+
+    return result
+
+
+def query_live_snapshot(conn, state, query_fn):
+    """Query the live game for all objects tracked in state.
+
+    Returns a dict of spec_id -> normalized object dict, suitable for
+    passing as live_objects to reconcile_snapshots().
+
+    conn: a MuxConnection
+    state: a StateFile instance (provides .objects with dbrefs)
+    query_fn: callable(conn, cmd) -> str
+    """
+    live_objects = {}
+    for spec_id, obj in state.objects.items():
+        dbref = obj.get('dbref')
+        if not dbref or dbref.startswith('#DRY'):
+            continue
+        if obj.get('status') == 'pending_destroy':
+            continue
+        live_obj = query_live_object(conn, dbref, query_fn)
+        if live_obj:
+            live_objects[spec_id] = live_obj
+    return live_objects
+
+
+def normalize_imported_room(dbref, name, description, flags_str, attrs, objid):
+    """Normalize raw importer data into a reconciler-compatible snapshot dict.
+
+    flags_str: raw string from MUX flags() — split into sorted list.
+    """
+    flag_list = sorted(flags_str.split()) if isinstance(flags_str, str) else sorted(flags_str or [])
+    return {
+        'dbref': dbref,
+        'objid': objid,
+        'type': 'room',
+        'name': name,
+        'description': (description or '').strip(),
+        'flags': flag_list,
+        'attrs': attrs or {},
+        'status': 'active',
+    }
+
+
+def normalize_imported_exit(dbref, name, from_dbref, to_dbref, objid=None):
+    """Normalize raw importer exit data into a reconciler-compatible snapshot dict."""
+    return {
+        'dbref': dbref,
+        'objid': objid,
+        'type': 'exit',
+        'name': name.split(';')[0] if name else '',
+        'destination': to_dbref or '',
+        'status': 'active',
+    }
 
 
 def emit_mux_commands(spec, operations):
