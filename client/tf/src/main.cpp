@@ -651,9 +651,8 @@ static void run(App& app) {
                 }
                 if (!readable) continue;
 
-                auto lines = conn->read_lines();
-
                 bool was_connected = conn->is_connected();
+                auto lines = conn->read_lines();
                 for (auto& line : lines) {
                     app_receive_line(app, conn.get(), name, line);
                 }
