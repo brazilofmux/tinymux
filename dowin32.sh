@@ -74,8 +74,8 @@ process_distribution() {
     
     # Special Windows configurations for source
     if [ "$dist_type" = "src" ]; then
-        cp $CHANGES_DIR/src/autoconf-win32.h ${NEW_DIR}_$dist_type/src/autoconf.h
-        cp $CHANGES_DIR/src/modules/autoconf-win32.h ${NEW_DIR}_$dist_type/src/modules/autoconf.h
+        cp $CHANGES_DIR/include/autoconf-win32.h ${NEW_DIR}_$dist_type/include/autoconf.h
+        cp $CHANGES_DIR/modules/autoconf-win32.h ${NEW_DIR}_$dist_type/modules/autoconf.h
     fi
     
     # Remove files
