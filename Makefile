@@ -14,9 +14,11 @@ all:
 
 install: all
 	$(MAKE) -C mux install
+	$(MAKE) -C mux/script install
 
 clean:
 	$(MAKE) -C mux clean
+	$(MAKE) -C mux/script clean
 	$(MAKE) -C testcases/tools clean
 
 realclean:
