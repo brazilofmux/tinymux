@@ -33,6 +33,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <unistd.h>
+#include <poll.h>
+#include <fcntl.h>
+#include <cerrno>
 
 // Script mode doesn't include externs.h or db.h, so we define the
 // constants we need directly.
@@ -1158,36 +1161,228 @@ static void execute_command(const UTF8 *line)
     g_pEngine->ProcessCommand(GOD, GOD, GOD, 0, false,
         const_cast<UTF8 *>(line), nullptr, 0, &pLogBuf);
     g_pEngine->FinishCommand();
+    fflush(stdout);
+}
 
-    // Drain any queued commands (@wait 0, @trigger, etc.).
+static void run_tasks_now(void)
+{
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetUTC();
     g_pEngine->RunTasks(ltaNow);
-
     fflush(stdout);
 }
 
 // ---------------------------------------------------------------------------
-// Script loop: read lines, process as commands.
+// Event loop: interleave stdin input with queue processing.
+//
+// Uses poll() on stdin so the engine can process queued commands
+// between input lines.  After EOF on stdin, continues draining the
+// queue until no tasks remain.
 // ---------------------------------------------------------------------------
 
 static void script_loop(FILE *input)
 {
-    UTF8 line[8192];
-    while (!g_script_shutdown
-        && fgets(reinterpret_cast<char *>(line), sizeof(line), input))
+    int fd = fileno(input);
+
+    // Set stdin to non-blocking so we can interleave input with
+    // queue processing.
+    //
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags >= 0)
     {
-        // Strip trailing newline.
-        size_t len = strlen(reinterpret_cast<const char *>(line));
-        if (len > 0 && line[len-1] == '\n') line[--len] = '\0';
-        if (len > 0 && line[len-1] == '\r') line[--len] = '\0';
+        fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    }
 
-        // Skip comments and blank lines.
-        if (line[0] == '\0') continue;
-        if (line[0] == '#' && (len < 2 || line[1] < '0' || line[1] > '9'))
-            continue;
+    bool eof_seen = false;
+    UTF8 linebuf[8192];
+    size_t linepos = 0;
 
-        execute_command(line);
+    while (!g_script_shutdown)
+    {
+        // Determine poll timeout from the scheduler.
+        // If no tasks are pending, use a short timeout when stdin
+        // is still open, or exit if stdin is EOF.
+        //
+        int timeout_ms = -1;
+        CLinearTimeAbsolute ltaNext;
+        if (MUX_SUCCEEDED(g_pEngine->WhenNext(&ltaNext)))
+        {
+            CLinearTimeAbsolute ltaNow;
+            ltaNow.GetUTC();
+            if (ltaNext <= ltaNow)
+            {
+                timeout_ms = 0;
+            }
+            else
+            {
+                long ms = (ltaNext - ltaNow).ReturnMilliseconds();
+                if (ms > 1000) ms = 1000;
+                timeout_ms = (int)ms;
+            }
+        }
+        else if (eof_seen)
+        {
+            // No pending tasks and stdin is closed — we're done.
+            //
+            break;
+        }
+        else
+        {
+            // No pending tasks but stdin is still open — wait for input.
+            //
+            timeout_ms = -1;
+        }
+
+        // After EOF, only drain currently-ready tasks.  Don't wait
+        // for future scheduled tasks (cron, timers) — those belong
+        // to a running game, not a script session.
+        //
+        if (eof_seen && timeout_ms > 0)
+        {
+            break;
+        }
+
+        // Poll for stdin readability.
+        //
+        if (!eof_seen)
+        {
+            struct pollfd pfd;
+            pfd.fd = fd;
+            pfd.events = POLLIN;
+            pfd.revents = 0;
+
+            int found = poll(&pfd, 1, timeout_ms);
+            if (found < 0 && EINTR != errno)
+            {
+                break;
+            }
+
+            // Read available bytes and process complete lines.
+            //
+            if (found > 0 && (pfd.revents & (POLLIN | POLLHUP)))
+            {
+                for (;;)
+                {
+                    int n = read(fd, linebuf + linepos,
+                                 sizeof(linebuf) - linepos - 1);
+                    if (n > 0)
+                    {
+                        linepos += (size_t)n;
+
+                        // Process complete lines.
+                        //
+                        size_t start = 0;
+                        for (size_t i = 0; i < linepos; i++)
+                        {
+                            if (linebuf[i] == '\n')
+                            {
+                                linebuf[i] = '\0';
+                                size_t len = i - start;
+                                if (len > 0 && linebuf[start + len - 1] == '\r')
+                                {
+                                    linebuf[start + len - 1] = '\0';
+                                    len--;
+                                }
+
+                                UTF8 *line = linebuf + start;
+                                // Skip comments and blank lines.
+                                //
+                                if (len > 0
+                                    && !(line[0] == '#'
+                                         && (len < 2 || line[1] < '0' || line[1] > '9')))
+                                {
+                                    execute_command(line);
+                                }
+                                start = i + 1;
+                            }
+                        }
+
+                        // Shift remaining partial line to front.
+                        //
+                        if (start > 0)
+                        {
+                            linepos -= start;
+                            if (linepos > 0)
+                            {
+                                memmove(linebuf, linebuf + start, linepos);
+                            }
+                        }
+
+                        // Protect against line overflow.
+                        //
+                        if (linepos >= sizeof(linebuf) - 1)
+                        {
+                            linebuf[linepos] = '\0';
+                            execute_command(linebuf);
+                            linepos = 0;
+                        }
+                    }
+                    else if (n == 0)
+                    {
+                        // EOF on stdin.
+                        //
+                        eof_seen = true;
+
+                        // Process any remaining partial line.
+                        //
+                        if (linepos > 0)
+                        {
+                            linebuf[linepos] = '\0';
+                            size_t len = linepos;
+                            if (len > 0 && linebuf[len - 1] == '\r')
+                            {
+                                linebuf[--len] = '\0';
+                            }
+                            if (len > 0
+                                && !(linebuf[0] == '#'
+                                     && (len < 2 || linebuf[1] < '0' || linebuf[1] > '9')))
+                            {
+                                execute_command(linebuf);
+                            }
+                            linepos = 0;
+                        }
+                        break;
+                    }
+                    else
+                    {
+                        // EAGAIN — no more data right now.
+                        //
+                        break;
+                    }
+                }
+            }
+        }
+        else
+        {
+            // stdin is EOF — just sleep until next task is due.
+            //
+            if (timeout_ms > 0)
+            {
+                poll(nullptr, 0, timeout_ms);
+            }
+        }
+
+        // Run ready tasks.  Loop until no more are immediately ready,
+        // since processing a task may queue additional tasks.
+        //
+        for (int i = 0; i < 100; i++)
+        {
+            run_tasks_now();
+
+            // Check if more tasks are immediately ready.
+            //
+            CLinearTimeAbsolute ltaCheck;
+            if (MUX_FAILED(g_pEngine->WhenNext(&ltaCheck)))
+            {
+                break;  // No more tasks.
+            }
+            CLinearTimeAbsolute ltaNow2;
+            ltaNow2.GetUTC();
+            if (ltaCheck > ltaNow2)
+            {
+                break;  // Next task is in the future.
+            }
+        }
     }
 }
 
@@ -1313,20 +1508,18 @@ int main(int argc, char *argv[])
     // The engine checks the CONNECTED flag before sending text to a player.
     // Use @set/quiet to suppress the "Set." confirmation message.
     execute_command(T("@set/quiet #1=CONNECTED"));
+    run_tasks_now();
 
     // Run script.
     if (eval_expr)
     {
         execute_command(reinterpret_cast<const UTF8 *>(eval_expr));
+        run_tasks_now();
     }
     else
     {
         script_loop(stdin);
     }
-
-    // Drain remaining queued commands.
-    ltaNow.GetUTC();
-    g_pEngine->RunTasks(ltaNow);
 
     // Save and shutdown.
     if (!readonly)
