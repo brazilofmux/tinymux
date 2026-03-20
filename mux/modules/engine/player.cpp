@@ -305,9 +305,15 @@ const UTF8 szP6HPrefix1SHA1[] = "$P6H$$1:sha1:";
 
 static const UTF8 *GenerateSalt(int iType)
 {
-    // The largest salt string is for SHA1 (6 + 28 bytes).
+    // Must be large enough for any supported format: prefix + salt + NUL.
+    //   DES:    0 + 2  + 1 =  3
+    //   MD5:    3 + 16 + 1 = 20
+    //   SHA1:   6 + 12 + 1 = 19
+    //   SHA256: 3 + 16 + 1 = 20
+    //   SHA512: 3 + 16 + 1 = 20
     //
-    static UTF8 szSalt[SHA1_PREFIX_LENGTH + SHA1_ENCODED_SALT_LENGTH + 1];
+    static constexpr size_t MAX_SALT_SIZE = 32;
+    static UTF8 szSalt[MAX_SALT_SIZE];
 
     szSalt[0] = '\0';
     if (CRYPT_SHA1 == iType)

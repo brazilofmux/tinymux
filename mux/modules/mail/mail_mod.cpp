@@ -2181,7 +2181,7 @@ void CMailMod::send_mail
                 UTF8 targetname[MOD_LBUF_SIZE];
                 get_player_name(target, targetname, sizeof(targetname));
 
-                UTF8 msg[MOD_LBUF_SIZE];
+                UTF8 msg[2 * MOD_LBUF_SIZE];
                 snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                     "MAIL: %s\xE2\x80\x99s mailbox is full (%d messages).",
                     targetname, total);
@@ -2303,7 +2303,7 @@ std::string CMailMod::make_numlist(dbref player, const UTF8 *arg, bool bBlind)
             malias_t *m = get_malias(player, head, &nResult);
             if (nResult == GMA_NOTFOUND)
             {
-                UTF8 msg[MOD_LBUF_SIZE];
+                UTF8 msg[2 * MOD_LBUF_SIZE];
                 snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                     "MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 does not exist.",
                     reinterpret_cast<const char *>(head));
@@ -2315,7 +2315,7 @@ std::string CMailMod::make_numlist(dbref player, const UTF8 *arg, bool bBlind)
             }
             else if (nResult == GMA_INVALIDFORM)
             {
-                UTF8 msg[MOD_LBUF_SIZE];
+                UTF8 msg[2 * MOD_LBUF_SIZE];
                 snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                     "MAIL: \xE2\x80\x98%s\xE2\x80\x99 is a badly-formed alias.",
                     reinterpret_cast<const char *>(head));
@@ -2334,7 +2334,7 @@ std::string CMailMod::make_numlist(dbref player, const UTF8 *arg, bool bBlind)
         {
             // Player lookup via IObjectInfo::MatchThing.
             //
-            UTF8 lookup[MOD_LBUF_SIZE];
+            UTF8 lookup[MOD_LBUF_SIZE + 1];
             if (*head != '*')
             {
                 snprintf(reinterpret_cast<char *>(lookup), sizeof(lookup),
@@ -2361,7 +2361,7 @@ std::string CMailMod::make_numlist(dbref player, const UTF8 *arg, bool bBlind)
             }
             else
             {
-                UTF8 msg[MOD_LBUF_SIZE];
+                UTF8 msg[2 * MOD_LBUF_SIZE];
                 snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                     "MAIL: \xE2\x80\x98%s\xE2\x80\x99 does not exist.",
                     reinterpret_cast<const char *>(head));
@@ -3192,7 +3192,7 @@ void CMailMod::do_mail_fwd(dbref player, const UTF8 *msg,
     //
     UTF8 fromname[MOD_LBUF_SIZE];
     get_player_name(mp->from, fromname, sizeof(fromname));
-    UTF8 subj[MOD_LBUF_SIZE];
+    UTF8 subj[2 * MOD_LBUF_SIZE];
     snprintf(reinterpret_cast<char *>(subj), sizeof(subj),
         "%s (fwd from %s)",
         mp->subject.c_str(),
@@ -3397,7 +3397,7 @@ void CMailMod::do_mail_reply(dbref player, const UTF8 *msg, bool all,
         const UTF8 *pMessage = MessageFetch(mp->number);
         const char *pTime = mp->time.c_str();
 
-        UTF8 body[MOD_LBUF_SIZE];
+        UTF8 body[4 * MOD_LBUF_SIZE];
         snprintf(reinterpret_cast<char *>(body), sizeof(body),
             "On %s, %s wrote:\r\n\r\n%s\r\n\r\n********** End of included message from %s\r\n",
             pTime,
@@ -3791,7 +3791,7 @@ void CMailMod::do_malias_create(dbref player, const UTF8 *alias,
         }
         else if (nullptr != m_pIObjectInfo)
         {
-            UTF8 namebuf[256];
+            UTF8 namebuf[MOD_LBUF_SIZE + 1];
             snprintf(reinterpret_cast<char *>(namebuf), sizeof(namebuf),
                      "*%s", head);
             m_pIObjectInfo->MatchThing(player, namebuf, &target);
