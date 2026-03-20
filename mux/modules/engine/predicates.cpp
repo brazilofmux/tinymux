@@ -785,16 +785,20 @@ void do_switch
                 {
                     // Preserve enclosing iter context (## from @dolist)
                     // so it survives into the queued @switch body.
+                    // Respect safer_iter — same guard as @dolist uses.
                     //
-                    int iLoop = mudstate.in_loop - 1;
                     const UTF8 *iter_tok = nullptr;
                     int iter_num = 0;
-                    if (  0 <= iLoop
-                       && iLoop < MAX_ITEXT
-                       && mudstate.itext[iLoop])
+                    if (!mudconf.safer_iter)
                     {
-                        iter_tok = mudstate.itext[iLoop];
-                        iter_num = mudstate.inum[iLoop];
+                        int iLoop = mudstate.in_loop - 1;
+                        if (  0 <= iLoop
+                           && iLoop < MAX_ITEXT
+                           && mudstate.itext[iLoop])
+                        {
+                            iter_tok = mudstate.itext[iLoop];
+                            iter_num = mudstate.inum[iLoop];
+                        }
                     }
                     wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
                         args[a+1],
@@ -824,15 +828,18 @@ void do_switch
         else
         {
             {
-                int iLoop = mudstate.in_loop - 1;
                 const UTF8 *iter_tok = nullptr;
                 int iter_num = 0;
-                if (  0 <= iLoop
-                   && iLoop < MAX_ITEXT
-                   && mudstate.itext[iLoop])
+                if (!mudconf.safer_iter)
                 {
-                    iter_tok = mudstate.itext[iLoop];
-                    iter_num = mudstate.inum[iLoop];
+                    int iLoop = mudstate.in_loop - 1;
+                    if (  0 <= iLoop
+                       && iLoop < MAX_ITEXT
+                       && mudstate.itext[iLoop])
+                    {
+                        iter_tok = mudstate.itext[iLoop];
+                        iter_num = mudstate.inum[iLoop];
+                    }
                 }
                 wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
                     args[a],

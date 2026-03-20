@@ -12,6 +12,7 @@
 
 #include <poll.h>
 #include <cerrno>
+#include <fcntl.h>
 
 QUEUE_INFO    Queue_In;
 QUEUE_INFO    Queue_Out;
@@ -136,6 +137,15 @@ int main(int argc, char *argv[])
 {
     Pipe_InitializeQueueInfo(&Queue_In);
     Pipe_InitializeQueueInfo(&Queue_Out);
+
+    // Set stdin to non-blocking so Stub_PipePump() doesn't block
+    // in read() when poll() wakes for POLLOUT without POLLIN.
+    //
+    int flags = fcntl(0, F_GETFL, 0);
+    if (flags >= 0)
+    {
+        fcntl(0, F_SETFL, flags | O_NONBLOCK);
+    }
 
     MUX_RESULT mr = MUX_S_OK;
     mr = mux_InitModuleLibrary(IsSlaveProcess);
