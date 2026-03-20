@@ -17,9 +17,11 @@ install: all
 
 clean:
 	$(MAKE) -C mux clean
+	$(MAKE) -C testcases/tools clean
 
 realclean:
 	$(MAKE) -C mux distclean
 
 test: install
+	$(MAKE) -C testcases/tools
 	cd testcases && ./tools/Makesmoke && ./tools/Smoke

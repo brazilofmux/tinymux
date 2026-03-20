@@ -43,12 +43,9 @@ if [ -r "$PIDFILE" ]; then
     fi
 fi
 #
-#	Build unformat tool if needed.
+#	Build unformat/reformat tools if needed.
 #
-if [ ! -x ./tools/unformat ] || [ ./tools/unformat.rl -nt ./tools/unformat ]; then
-    ragel -G2 -o ./tools/unformat.c ./tools/unformat.rl
-    cc -O2 -o ./tools/unformat ./tools/unformat.c
-fi
+${MAKE:-make} -C ./tools
 ./tools/unformat *.mux > $TMP
 #
 #	Create necessary environment.
