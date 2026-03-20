@@ -12,6 +12,9 @@ author:
    database with write-through on every mutation. `@dump` performs a
    WAL checkpoint only — no flatfile serialization, no fork. Crash
    durability is immediate; no data is lost between dump cycles.
+ - `@listen` `%0` now retains Unicode typographic (fancy) quotes.
+   Pattern matching uses normalized ASCII quotes, but capture is from
+   the original text. Applies to both `@listen` and `^-listen`.
  - `@search` for simple cases (owner, type, zone, parent, flags) routes
    to indexed SQL queries — O(log n) instead of linear scan.
  - Unicode updated from 10.0 to 16.0. All attribute values are
@@ -66,9 +69,24 @@ author:
  - Support `::` escape for literal `:` in `$-command` and `^-listen`
    patterns (#662).
  - Store full recipient list in sender's `@mail/bcc` copy.
+ - Removed 99-member mail alias limit; `malias_t` now uses
+   `std::vector<dbref>` instead of a fixed array.
 
 # Bug Fixes:
 
+ - Fix SIGSEGV/SIGABRT on login timeout — `shutdownsock()` bypassed
+   GANL, leaving stale handle mappings that caused use-after-free when
+   GANL detected the dead fd. All `shutdownsock()` calls in
+   `netcommon.cpp` replaced with `ganl_close_connection()`.
+ - Fix reverse DNS slave: strip trailing newline from input before
+   calling `getaddrinfo()`. Latent since 2012 when `inet_addr()` was
+   replaced; activated when GANL switched to stream pipes.
+ - Fix whisper bugs: "to far" typo, `A_LASTWHISPER` not saved for
+   quoted names with spaces, bare `w` with no arguments silently
+   returning instead of reporting an error.
+ - Fix `sqlite_sync_comsys` failing on orphaned channel aliases —
+   skip player aliases pointing to deleted channels during import.
+ - Fix Backup script excluding distribution help files.
  - Fix @restart hang and connection drop in the GANL adapter — the
    descriptor handoff across exec now correctly preserves all active
    connections.
@@ -265,3 +283,8 @@ author:
  - Added 175 new smoke test cases expanding coverage to 348 total.
  - `dbconvert` supports `-C` and `-m` flags for comsys and mail
    flatfile import/export.
+ - Reproducible builds: removed `MUX_BUILD_DATE`, `MUX_BUILD_NUM`,
+   and `buildnum.sh`. Version strings use only `MUX_VERSION` and
+   `MUX_RELEASE_DATE` from `_build.h`.
+ - Documented mail helper attributes and admin mail attributes in
+   help and wizhelp.
