@@ -1,4 +1,4 @@
-ALPHA.md
+BETA.md
 ATTACK.md
 CHANGES.md
 INSTALL.md
@@ -76,7 +76,6 @@ src/attrs.h
 src/autoconf.h.in
 src/boolexp.cpp
 src/bsd.cpp
-src/buildnum.sh
 src/command.cpp
 src/command.h
 src/comsys.cpp

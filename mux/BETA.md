@@ -5,7 +5,7 @@ author:
  - Brazil
 ---
 
-The beta period for TinyMUX 2.13 has concluded.
+TinyMUX 2.13 is currently in beta.
 
  - Make backups. Frequent and complete. It is important.
  - Store your backups off site. This was always prudent anyway.

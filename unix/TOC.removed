@@ -1,3 +1,4 @@
+ALPHA.md
 REALITY
 REALITY.SETUP
 SQL
@@ -14,3 +15,4 @@ docs/MEMORY
 docs/PATCHES
 docs/REALMS
 game/_backupflat.sh
+src/buildnum.sh
