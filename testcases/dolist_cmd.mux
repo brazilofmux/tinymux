@@ -1,0 +1,83 @@
+#
+# dolist_cmd.mux - Test Cases for @dolist command.
+#
+@create test_dolist_cmd
+-
+@set test_dolist_cmd=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_dolist_cmd=
+  @log smoke=Beginning @dolist command test cases.
+-
+#
+# Test Case #1 - ## inside @switch inside @dolist.
+#
+# @switch (without /inline) queues its body. The iter token (##)
+# from the enclosing @dolist must be preserved into the queued
+# @switch body. Without the fix, ## resolves to empty.
+#
+&tr.tc001 test_dolist_cmd=
+  &tc001_result me=;
+  @dolist alpha bravo charlie=
+  {
+    @switch 1=1,
+    {
+      &tc001_result me=[get(me/tc001_result)] ##
+    }
+  };
+  @wait 1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [trim(get(me/tc001_result))]
+            )
+          ),
+          76D63D69376D5B05ACC20970061C40762E5CA049
+        )=
+    {
+      @log smoke=TC001: dolist itext in queued switch body. Succeeded.
+    },
+    {
+      @log smoke=TC001: dolist itext in queued switch body. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #2 - ## inside @switch default case inside @dolist.
+#
+&tr.tc002 test_dolist_cmd=
+  &tc002_result me=;
+  @dolist X Y Z=
+  {
+    @switch ##=nomatch,{},{&tc002_result me=[get(me/tc002_result)] ##}
+  };
+  @wait 1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [trim(get(me/tc002_result))]
+            )
+          ),
+          118C356BCDC3DDACE50F4E53B5DA57A3DE365805
+        )=
+    {
+      @log smoke=TC002: dolist itext in queued switch default. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC002: dolist itext in queued switch default. Failed (%q0).;
+      @trig me/tr.done
+    }
+  }
+-
+&tr.done test_dolist_cmd=
+  @log smoke=End @dolist command test cases.;
+  @notify smoke
+-
+drop test_dolist_cmd
+-
+#
+# End of Test Cases
+#

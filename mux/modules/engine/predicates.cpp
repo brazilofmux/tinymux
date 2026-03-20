@@ -782,13 +782,28 @@ void do_switch
             }
             else
             {
-                wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
-                    args[a+1],
-                    ncargs, cargs,
-                    mudstate.global_regs,
-                    nullptr,    // named_sargs
-                    nullptr, 0, // iter context
-                    expr);      // switch_token
+                {
+                    // Preserve enclosing iter context (## from @dolist)
+                    // so it survives into the queued @switch body.
+                    //
+                    int iLoop = mudstate.in_loop - 1;
+                    const UTF8 *iter_tok = nullptr;
+                    int iter_num = 0;
+                    if (  0 <= iLoop
+                       && iLoop < MAX_ITEXT
+                       && mudstate.itext[iLoop])
+                    {
+                        iter_tok = mudstate.itext[iLoop];
+                        iter_num = mudstate.inum[iLoop];
+                    }
+                    wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
+                        args[a+1],
+                        ncargs, cargs,
+                        mudstate.global_regs,
+                        nullptr,          // named_sargs
+                        iter_tok, iter_num, // iter context
+                        expr);            // switch_token
+                }
             }
             mudstate.switch_token = save_switch;
             bAny = true;
@@ -808,13 +823,25 @@ void do_switch
         }
         else
         {
-            wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
-                args[a],
-                ncargs, cargs,
-                mudstate.global_regs,
-                nullptr,    // named_sargs
-                nullptr, 0, // iter context
-                expr);      // switch_token
+            {
+                int iLoop = mudstate.in_loop - 1;
+                const UTF8 *iter_tok = nullptr;
+                int iter_num = 0;
+                if (  0 <= iLoop
+                   && iLoop < MAX_ITEXT
+                   && mudstate.itext[iLoop])
+                {
+                    iter_tok = mudstate.itext[iLoop];
+                    iter_num = mudstate.inum[iLoop];
+                }
+                wait_que(executor, caller, enactor, eval, false, lta, NOTHING, 0,
+                    args[a],
+                    ncargs, cargs,
+                    mudstate.global_regs,
+                    nullptr,          // named_sargs
+                    iter_tok, iter_num, // iter context
+                    expr);            // switch_token
+            }
         }
         mudstate.switch_token = save_switch;
     }
