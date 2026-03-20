@@ -623,6 +623,7 @@ AC_CONFIG_FILES([
     lua54/Makefile
     announce/Makefile
     muxescape/Makefile
+    script/Makefile
     ganl/Makefile
 ])
 

@@ -2023,7 +2023,7 @@
 >256
 "@log smoke=Beginning @dolist command test cases."
 >257
-"&tc001_result me=;@dolist alpha bravo charlie={@switch 1=1,{&tc001_result me=[get(me/tc001_result)] ##}};@wait 1={@if strmatch(setr(0,sha1([trim(get(me/tc001_result))])),76D63D69376D5B05ACC20970061C40762E5CA049)={@log smoke=TC001: dolist itext in queued switch body. Succeeded.;@trig me/tr.done},{@log smoke=TC001: dolist itext in queued switch body. Failed (%q0).;@trig me/tr.done}}"
+"&tc001_result me=;@dolist alpha bravo charlie={@switch 1=1,{&tc001_result me=[get(me/tc001_result)] ##}};@wait 1={@if strmatch(setr(0,sha1([trim(get(me/tc001_result))])),76D63D69376D5B05ACC20970061C40762E5CA049)={@log smoke=TC001: dolist itext in queued switch body. Succeeded.},{@log smoke=TC001: dolist itext in queued switch body. Failed (%q0).}}"
 >258
 "@log smoke=End @dolist command test cases.;@notify smoke"
 >259
