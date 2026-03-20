@@ -55,6 +55,7 @@
 static mux_IGameEngine *g_pEngine = nullptr;
 static char g_gamedir[4096];
 static bool g_script_shutdown = false;
+static dbref g_player = GOD;      // Player identity for commands
 
 // ---------------------------------------------------------------------------
 // CScriptConnectionManager — stub mux_IConnectionManager for script mode.
@@ -1157,8 +1158,8 @@ static void execute_command(const UTF8 *line)
 {
     UTF8 *pLogBuf = nullptr;
 
-    g_pEngine->PrepareForCommand(GOD);
-    g_pEngine->ProcessCommand(GOD, GOD, GOD, 0, false,
+    g_pEngine->PrepareForCommand(g_player);
+    g_pEngine->ProcessCommand(g_player, g_player, g_player, 0, false,
         const_cast<UTF8 *>(line), nullptr, 0, &pLogBuf);
     g_pEngine->FinishCommand();
     fflush(stdout);
@@ -1397,6 +1398,7 @@ static void usage(void)
         "  -g <dir>      Game directory (default: $MUX_HOME or cwd)\n"
         "  -c <config>   Configuration file (default: netmux.conf)\n"
         "  -e <expr>     Evaluate single expression\n"
+        "  -p <player>   Run as player (dbref like #4 or number, default: #1)\n"
         "  --readonly    Don't save database on exit\n"
         "  --help        Show this help\n"
         "\n"
@@ -1415,6 +1417,7 @@ int main(int argc, char *argv[])
     const char *conffile = "netmux.conf";
     const char *gamedir_flag = nullptr;
     const char *eval_expr = nullptr;
+    const char *player_arg = nullptr;
     bool readonly = false;
 
     for (int i = 1; i < argc; i++)
@@ -1430,6 +1433,10 @@ int main(int argc, char *argv[])
         else if (strcmp(argv[i], "-e") == 0 && i + 1 < argc)
         {
             eval_expr = argv[++i];
+        }
+        else if (strcmp(argv[i], "-p") == 0 && i + 1 < argc)
+        {
+            player_arg = argv[++i];
         }
         else if (strcmp(argv[i], "--readonly") == 0)
         {
@@ -1502,13 +1509,42 @@ int main(int argc, char *argv[])
         return 2;
     }
 
-    fprintf(stderr, "muxscript: loaded game from %s\n", g_gamedir);
+    // Resolve -p player argument.
+    //
+    if (player_arg)
+    {
+        const char *p = player_arg;
+        if (*p == '#') p++;
+        char *end = nullptr;
+        long val = strtol(p, &end, 10);
+        if (end == p || *end != '\0' || val < 0)
+        {
+            fprintf(stderr, "muxscript: invalid player '%s' (use dbref like #4 or 4)\n",
+                    player_arg);
+            g_pEngine->Release();
+            return 1;
+        }
+        g_player = static_cast<dbref>(val);
+    }
 
-    // Mark GOD as connected so notify()/raw_notify() will deliver output.
-    // The engine checks the CONNECTED flag before sending text to a player.
-    // Use @set/quiet to suppress the "Set." confirmation message.
-    execute_command(T("@set/quiet #1=CONNECTED"));
-    run_tasks_now();
+    fprintf(stderr, "muxscript: loaded game from %s (player #%d)\n",
+            g_gamedir, g_player);
+
+    // Mark the player as connected so notify()/raw_notify() will
+    // deliver output.  The engine checks the CONNECTED flag before
+    // sending text to a player.  Run as GOD regardless of -p since
+    // only wizards can @set the CONNECTED flag.
+    //
+    {
+        UTF8 setcmd[64];
+        snprintf(reinterpret_cast<char *>(setcmd), sizeof(setcmd),
+                 "@set/quiet #%d=CONNECTED", g_player);
+        dbref save = g_player;
+        g_player = GOD;
+        execute_command(setcmd);
+        run_tasks_now();
+        g_player = save;
+    }
 
     // Run script.
     if (eval_expr)
