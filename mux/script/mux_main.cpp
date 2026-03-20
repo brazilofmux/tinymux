@@ -1530,21 +1530,9 @@ int main(int argc, char *argv[])
     fprintf(stderr, "muxscript: loaded game from %s (player #%d)\n",
             g_gamedir, g_player);
 
-    // Mark the player as connected so notify()/raw_notify() will
-    // deliver output.  The engine checks the CONNECTED flag before
-    // sending text to a player.  Run as GOD regardless of -p since
-    // only wizards can @set the CONNECTED flag.
+    // Mark the player as connected so raw_notify() delivers output.
     //
-    {
-        UTF8 setcmd[64];
-        snprintf(reinterpret_cast<char *>(setcmd), sizeof(setcmd),
-                 "@set/quiet #%d=CONNECTED", g_player);
-        dbref save = g_player;
-        g_player = GOD;
-        execute_command(setcmd);
-        run_tasks_now();
-        g_player = save;
-    }
+    g_pEngine->MarkConnected(g_player);
 
     // Run script.
     if (eval_expr)

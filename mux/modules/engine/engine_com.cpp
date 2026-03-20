@@ -2613,6 +2613,7 @@ public:
         const UTF8 *basename, bool bCheck, bool bLoad, bool bUnload,
         const UTF8 *comsys_file, const UTF8 *mail_file);
     virtual MUX_RESULT GetConfig(DRIVER_CONFIG *pConfig);
+    virtual MUX_RESULT MarkConnected(dbref player);
     virtual MUX_RESULT DumpChildExited(int child_pid);
     virtual MUX_RESULT SetStartTime(const CLinearTimeAbsolute &time);
     virtual MUX_RESULT GetStartTime(CLinearTimeAbsolute *pTime);
@@ -3251,6 +3252,17 @@ MUX_RESULT CGameEngine::GetConfig(DRIVER_CONFIG *pConfig)
     mux_strncpy(pConfig->mail_ehlo, mudconf.mail_ehlo, sizeof(pConfig->mail_ehlo) - 1);
 
     return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::MarkConnected(dbref player)
+{
+    if (  Good_obj(player)
+       && isPlayer(player))
+    {
+        s_Connected(player);
+        return MUX_S_OK;
+    }
+    return MUX_E_INVALIDARG;
 }
 
 MUX_RESULT CGameEngine::DumpChildExited(int child_pid)

@@ -771,6 +771,11 @@ public:
     //
     virtual MUX_RESULT GetConfig(DRIVER_CONFIG *pConfig) = 0;
 
+    // Mark a player as connected (set CONNECTED flag) without
+    // triggering login side effects.  Used by muxscript.
+    //
+    virtual MUX_RESULT MarkConnected(dbref player) = 0;
+
     // Notify the engine that a forked dump child process has exited.
     // Called from the driver's SIGCHLD handler.
     //
