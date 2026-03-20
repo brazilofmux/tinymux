@@ -255,6 +255,8 @@ muxescape/Makefile.am
 muxescape/Makefile.in
 muxescape/muxescape.cpp
 muxescape/muxescape.rl
+rv64/rv64blob.h
+rv64/softlib.rv64
 modules/autoconf.h.in
 modules/comsys/comsys_mod.cpp
 modules/comsys/comsys_mod.h

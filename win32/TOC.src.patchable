@@ -236,6 +236,8 @@ Makefile.am
 muxescape/Makefile.am
 muxescape/muxescape.cpp
 muxescape/muxescape.rl
+rv64/rv64blob.h
+rv64/softlib.rv64
 modules/autoconf.h.in
 modules/autoconf-win32.h
 modules/comsys/comsys_mod.cpp
