@@ -10,6 +10,9 @@
 #include "libmux.h"
 #include "modules.h"
 
+#include <poll.h>
+#include <cerrno>
+
 QUEUE_INFO    Queue_In;
 QUEUE_INFO    Queue_Out;
 
@@ -48,6 +51,16 @@ extern "C" MUX_RESULT DCL_API Stub_PipePump(void)
         }
         else if (len < 0)
         {
+            int err = errno;
+            if (EAGAIN != err && EWOULDBLOCK != err)
+            {
+                return MUX_E_FAIL;
+            }
+        }
+        else
+        {
+            // EOF — parent closed its end of the pipe.
+            //
             return MUX_E_FAIL;
         }
     }
@@ -63,6 +76,29 @@ void Stub_ShoveChars(void)
     while (  !bStubSlaveShutdown
           && MUX_SUCCEEDED(mr))
     {
+        struct pollfd pfds[2];
+        int nfds = 1;
+        pfds[0].fd = 0;       // stdin — read from parent
+        pfds[0].events = POLLIN;
+        pfds[0].revents = 0;
+        if (0 < Pipe_QueueLength(&Queue_Out))
+        {
+            pfds[1].fd = 1;   // stdout — write to parent
+            pfds[1].events = POLLOUT;
+            pfds[1].revents = 0;
+            nfds = 2;
+        }
+
+        int found = poll(pfds, nfds, -1);
+        if (found < 0)
+        {
+            if (EINTR == errno)
+            {
+                continue;
+            }
+            break;
+        }
+
         mr = Stub_PipePump();
         Pipe_DecodeFrames(CHANNEL_INVALID, &Queue_Frame);
     }
