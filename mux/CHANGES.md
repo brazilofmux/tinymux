@@ -407,3 +407,10 @@ Changes since TinyMUX 2.12.0.12.
  - Added `Startmux.bat` to the win32 distribution.
  - Added `softlib.rv64` to the win32 binary distribution.
  - Removed stale `buildnum.sh` from unix distribution.
+
+# Changes in 2.14.0.3 (2026-MAR-20):
+
+ - Added `muxescape/` directory to distribution TOCs (configure failed
+   without `muxescape/Makefile.in`).
+ - Added `rv64/rv64blob.h` and `rv64/softlib.rv64` to distribution TOCs
+   (build with `--enable-jit` failed without the RV64 blob header).
