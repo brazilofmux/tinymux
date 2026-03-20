@@ -18,6 +18,7 @@ GDBM_DB=$GAMENAME
 CRASH_DB=$GAMENAME.db.CRASH
 SAVE_DB=$GAMENAME.db.old
 TMP=`mktemp`
+SQLITE_BASE=$DATA/$GAMENAME
 #
 #	Verify that temporary game directory does not already exist.
 #
@@ -130,6 +131,8 @@ sleep 1
 #	a WAL checkpoint, not a flatfile).  In that case, we use dbconvert
 #	to load from the .pag/.dir (or .sqlite) and write a flatfile.
 #
+rm -f smoke.flat
+
 if [ -r "$DATA/$NEW_DB" ]; then
     $BIN/netmux -d "$DATA/$GAMENAME" -i "$DATA/$NEW_DB" -o smoke.flat -u
     if [ $? -ne 0 ]; then
@@ -140,7 +143,20 @@ else
     # SQLite backend: no flatfile was produced.  Use dbconvert to
     # load from the existing database and write a flatfile.
     #
-    $BIN/netmux -d "$DATA/$GAMENAME" -o smoke.flat -u
+    if [ ! -r "$SQLITE_BASE.sqlite" ]; then
+        set -- "$DATA"/*.sqlite
+        if [ "$1" = "$DATA/*.sqlite" ]; then
+            echo "No SQLite database found in $DATA."
+            exit 1
+        fi
+        if [ $# -ne 1 ]; then
+            echo "Expected exactly one SQLite database in $DATA, found $#."
+            exit 1
+        fi
+        SQLITE_BASE=${1%.sqlite}
+    fi
+
+    $BIN/netmux -d "$SQLITE_BASE" -o smoke.flat -u
     if [ $? -ne 0 ]; then
         echo "Export from database failed."
         exit 1
