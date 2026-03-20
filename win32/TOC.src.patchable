@@ -46,6 +46,7 @@ game/alias.conf
 game/compat.conf
 game/data/db_load.bat
 game/data/db_unload.bat
+game/Startmux.bat
 game/Startmux.wsf
 game/text/connect_help.txt
 game/text/help.txt
