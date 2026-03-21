@@ -16,6 +16,39 @@
 #include <vector>
 #include <memory>
 
+enum ParserProfile {
+    PROFILE_MUX214_AST,
+    PROFILE_MUX213_COMPAT,
+    PROFILE_PENN
+};
+
+static const char *profile_name(ParserProfile profile)
+{
+    switch (profile) {
+    case PROFILE_MUX214_AST:   return "mux214";
+    case PROFILE_MUX213_COMPAT:return "mux213";
+    case PROFILE_PENN:         return "penn";
+    }
+    return "unknown";
+}
+
+static bool parse_profile_string(const char *text, ParserProfile &profile)
+{
+    if (0 == strcmp(text, "mux214") || 0 == strcmp(text, "2.14") || 0 == strcmp(text, "ast")) {
+        profile = PROFILE_MUX214_AST;
+        return true;
+    }
+    if (0 == strcmp(text, "mux213") || 0 == strcmp(text, "2.13") || 0 == strcmp(text, "legacy")) {
+        profile = PROFILE_MUX213_COMPAT;
+        return true;
+    }
+    if (0 == strcmp(text, "penn") || 0 == strcmp(text, "pennmush")) {
+        profile = PROFILE_PENN;
+        return true;
+    }
+    return false;
+}
+
 // ---------------------------------------------------------------
 // Token types
 // ---------------------------------------------------------------
@@ -71,12 +104,17 @@ static const char *token_name(TokenType t)
 // in eval.cpp. On entry, p points to the character AFTER '%'.
 // On return, p points past the last consumed character.
 //
-static std::string gather_pct(const char *&p)
+static std::string gather_pct(const char *&p, ParserProfile profile)
 {
     std::string sub("%");
     char ch = *p;
 
     if (!ch) {
+        return sub;
+    }
+
+    if (profile == PROFILE_PENN && ch == ' ') {
+        sub += *p++;
         return sub;
     }
 
@@ -138,7 +176,8 @@ static std::string gather_pct(const char *&p)
     return sub;
 }
 
-static std::vector<Token> tokenize(const char *input)
+static std::vector<Token> tokenize(const char *input,
+                                   ParserProfile profile = PROFILE_MUX214_AST)
 {
     std::vector<Token> tokens;
     const char *p = input;
@@ -173,7 +212,7 @@ static std::vector<Token> tokenize(const char *input)
             p++;
         } else if (*p == '%') {
             p++;
-            tokens.push_back({TOK_PCT, gather_pct(p)});
+            tokens.push_back({TOK_PCT, gather_pct(p, profile)});
         } else if (*p == '\\') {
             std::string esc;
             esc += *p++;

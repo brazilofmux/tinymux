@@ -65,6 +65,9 @@ struct EvalContext {
 
     // Current eval flags
     int evalFlags = EV_DEFAULT;
+
+    // Parser/evaluator compatibility profile.
+    ParserProfile profile = PROFILE_MUX214_AST;
 };
 
 // ---------------------------------------------------------------
@@ -228,7 +231,8 @@ private:
         int flags = m_ctx.evalFlags;
         bool bFCheckPending = (flags & EV_FCHECK) != 0 && (flags & EV_FMAND) == 0;
 
-        for (const auto &child : node->children) {
+        for (size_t i = 0; i < node->children.size(); i++) {
+            const auto &child = node->children[i];
             int childFlags = flags;
             if (bFCheckPending) {
                 if (child->type != NODE_FUNCCALL) {
@@ -240,6 +244,22 @@ private:
             } else if ((flags & EV_FCHECK) != 0 && (flags & EV_FMAND) == 0) {
                 childFlags &= ~EV_FCHECK;
             }
+
+            if (  m_ctx.profile == PROFILE_MUX213_COMPAT
+               && (childFlags & EV_EVAL)
+               && child->type == NODE_ESCAPE
+               && child->text == "\\\\"
+               && i + 1 < node->children.size()
+               && node->children[i + 1]->type == NODE_SUBST) {
+                // Prototype of the 2.13 streaming-era coupling:
+                // a literal "\\" followed by a %-sequence is emitted
+                // as the raw %-sequence instead of two independent AST
+                // nodes ("\" + substituted tail).
+                result += node->children[i + 1]->text;
+                i++;
+                continue;
+            }
+
             result += evalWithFlags(child.get(), childFlags);
         }
         return result;
@@ -269,6 +289,7 @@ private:
         if (upper == 'B') return " ";
         if (upper == 'T') return "\t";
         if (ch == '%') return "%";
+        if (m_ctx.profile == PROFILE_PENN && ch == ' ') return "% ";
         if (ch == '#') return m_ctx.enactorDbref;
         if (ch == '!') return m_ctx.executorDbref;
         if (upper == 'N') {
@@ -286,7 +307,7 @@ private:
             }
             return "";
         }
-        return sub;
+        return std::string(1, ch);
     }
 
     std::string evalEscape(const ASTNode *node) {
@@ -793,13 +814,29 @@ private:
 int main(int argc, char *argv[])
 {
     bool showAST = false;
+    ParserProfile profile = PROFILE_MUX214_AST;
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-a") == 0 || strcmp(argv[i], "--ast") == 0) {
             showAST = true;
+        } else if (0 == strcmp(argv[i], "--profile")) {
+            if (i + 1 >= argc || !parse_profile_string(argv[i + 1], profile)) {
+                fprintf(stderr, "usage: %s [--ast] [--profile mux214|mux213|penn]\n", argv[0]);
+                return 2;
+            }
+            i++;
+        } else if (0 == strncmp(argv[i], "--profile=", 10)) {
+            if (!parse_profile_string(argv[i] + 10, profile)) {
+                fprintf(stderr, "usage: %s [--ast] [--profile mux214|mux213|penn]\n", argv[0]);
+                return 2;
+            }
+        } else {
+            fprintf(stderr, "usage: %s [--ast] [--profile mux214|mux213|penn]\n", argv[0]);
+            return 2;
         }
     }
 
     EvalContext ctx;
+    ctx.profile = profile;
     ctx.enactorName = "testplayer";
     ctx.enactorDbref = "#1234";
     ctx.executorDbref = "#1234";
@@ -815,12 +852,13 @@ int main(int argc, char *argv[])
             line[len - 1] = '\0';
         }
 
-        auto tokens = tokenize(line);
+        auto tokens = tokenize(line, profile);
         Parser parser(tokens);
         auto ast = parser.parse();
 
         if (showAST) {
             printf("INPUT: %s\n", line);
+            printf("PROFILE: %s\n", profile_name(profile));
             printf("AST:\n");
             ast_print(ast.get(), 2);
         }

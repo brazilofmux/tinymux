@@ -8,8 +8,9 @@ FAIL=0
 check() {
     local input="$1"
     local expected="$2"
+    local flags="${3:-}"
     local actual
-    actual=$(echo "$input" | ./eval 2>&1)
+    actual=$(printf '%s\n' "$input" | ./eval $flags 2>&1)
     if [ "$actual" = "$expected" ]; then
         PASS=$((PASS + 1))
     else
@@ -99,6 +100,10 @@ check '%%' '%'
 
 # Escapes
 check '\[not a bracket\]' '[not a bracket]'
+check '\% capacity' '% capacity'
+check '\\% capacity' '\ capacity'
+check '\\% capacity' '% capacity' '--profile mux213'
+check '% happy' '% happy' '--profile penn'
 
 # Nested evaluation
 check '[add(1,add(2,add(3,4)))]' '10'

@@ -1,7 +1,7 @@
 # MUX Parser Study
 
 Standalone tools for studying the TinyMUX expression parser.
-See `../docs/PARSER.md` for the full architecture analysis.
+See `../docs/design-parser-compatibility.md` for the compatibility analysis.
 
 ## Contents
 
@@ -17,6 +17,9 @@ make
 echo 'add(1,mul(2,3))' | ./tokenize
 echo '[setq(0,hello)]%q0 world' | ./parse
 ./parse < test_corpus.txt
+echo '\\% happy' | ./eval --profile mux214
+echo '\\\\% happy' | ./eval --profile mux213
+echo '% happy' | ./eval --profile penn
 ```
 
 ## Stages
@@ -52,3 +55,18 @@ echo '[setq(0,hello)]%q0 world' | ./parse
 This is an exploration tool, not production code. The goal is to
 understand the existing parser well enough to determine whether a
 Ragel scanner + recursive-descent parser can reproduce its behavior.
+
+## Compatibility Profiles
+
+The study tools now support `--profile mux214|mux213|penn`:
+
+- `mux214` models the current AST tokenizer/evaluator shape.
+- `mux213` prototypes one important legacy compatibility rule: a `\\`
+  token followed by a `%` token is emitted as a literal raw `%...`
+  sequence instead of being evaluated independently.
+- `penn` recognizes `% ` as an atomic substitution that expands to
+  literal `% `, matching PennMUSH's long-standing behavior.
+
+These profiles are intentionally incomplete. They are meant to help
+identify where parser behavior differs, not to claim full engine
+compatibility.
