@@ -123,8 +123,8 @@ differences:
 | `%=` | `=` | `=` | empty in tested context |
 | `%xg` | MUX color form | MUX color form | `thing` |
 | `%cg` | MUX color form | MUX color form | `@pemit me=%cgg` |
-| `[switch(1,1,{\\%b})]` | not yet collected | not yet collected | `%b` |
-| `[iter(a b,{\\%b})]` | not yet collected | not yet collected | `%b %b` |
+| `[switch(1,1,{\\%b})]` | `%b` | ` ` | `%b` |
+| `[iter(a b,{\\%b})]` | `%b %b` | `   ` | `%b %b` |
 
 This matrix matters because it separates three different causes:
 
@@ -133,6 +133,10 @@ This matrix matters because it separates three different causes:
 - substitution-table differences, especially Penn `% `
 - noeval branch/body behavior, where 2.13 diverges from both 2.14 and
   Penn on the tested `% capacity` cases
+
+Important: the `mux214` column here reflects the parser-study oracle in
+`parser/`, not a claim that production `mux/modules/engine/ast.cpp`
+already matches those rows.
 
 ## Compatibility Axes
 
