@@ -1,0 +1,99 @@
+#
+# chanusers_fn.mux - Test Cases for chanusers().
+#
+@create test_chanusers_fn
+-
+@set test_chanusers_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_chanusers_fn=
+  @log smoke=Beginning chanusers test cases.;
+  @ccreate cutest;
+  @cset/public cutest=on;
+  addcom cut=cutest
+-
+#
+# Test Case #1 - chanusers() returns at least one dbref.
+#
+&tr.tc001 test_chanusers_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isdbref(first(chanusers(cutest)))]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC001: chanusers returns dbrefs. Succeeded.
+  },
+  {
+    @log smoke=TC001: chanusers returns dbrefs. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - chanusers() has exactly one subscriber.
+#
+&tr.tc002 test_chanusers_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [words(chanusers(cutest))]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC002: chanusers one subscriber. Succeeded.
+  },
+  {
+    @log smoke=TC002: chanusers one subscriber. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - chanusers(bogus) returns #-1 CHANNEL NOT FOUND.
+#
+&tr.tc003 test_chanusers_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chanusers(nosuch)]
+          )
+        ),
+        770632F3C8D766298FD8123A49357D082D5A4672
+      )=
+  {
+    @log smoke=TC003: chanusers not found. Succeeded.
+  },
+  {
+    @log smoke=TC003: chanusers not found. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - chanusers() count matches chaninfo(users).
+#
+&tr.tc004 test_chanusers_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eq(words(chanusers(cutest)),chaninfo(cutest,users))]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC004: chanusers count matches chaninfo. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: chanusers count matches chaninfo. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_chanusers_fn=
+  @log smoke=End chanusers test cases.;
+  @notify smoke
+-
+drop test_chanusers_fn
+-
+#
+# End of Test Cases
+#

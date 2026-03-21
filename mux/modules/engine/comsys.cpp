@@ -4069,7 +4069,8 @@ FUNCTION(fun_channels)
 
         if (  (Comm_All(executor)
                 || (ch->type & CHANNEL_PUBLIC)
-                || Controls(executor, ch->charge_who))
+                || Controls(executor, ch->charge_who)
+                || nullptr != select_user(ch, executor))
             && (who == NOTHING
                 || Controls(who, ch->charge_who)))
         {
@@ -4529,6 +4530,324 @@ FUNCTION(fun_crecall)
             }
             free_lbuf(msg);
         }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// chaninfo(channel, field) — generic channel metadata accessor.
+// ---------------------------------------------------------------------------
+//
+// Visibility: PUBLIC, or subscriber, or Comm_All, or Controls(charge_who).
+// The "object" field additionally requires Wizard.
+//
+FUNCTION(fun_chaninfo)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    struct channel *ch = select_channel(fargs[0]);
+    if (nullptr == ch)
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    if (  !(ch->type & CHANNEL_PUBLIC)
+       && !Comm_All(executor)
+       && !Controls(executor, ch->charge_who)
+       && nullptr == select_user(ch, executor))
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    const UTF8 *field = fargs[1];
+
+    if (0 == mux_stricmp(field, T("name")))
+    {
+        safe_str(ch->name, buff, bufc);
+    }
+    else if (0 == mux_stricmp(field, T("header")))
+    {
+        safe_str(ch->header, buff, bufc);
+    }
+    else if (0 == mux_stricmp(field, T("owner")))
+    {
+        safe_tprintf_str(buff, bufc, T("#%d"), ch->charge_who);
+    }
+    else if (0 == mux_stricmp(field, T("object")))
+    {
+        if (!Wizard(executor))
+        {
+            safe_noperm(buff, bufc);
+            return;
+        }
+        if (Good_obj(ch->chan_obj))
+        {
+            safe_tprintf_str(buff, bufc, T("#%d"), ch->chan_obj);
+        }
+        else
+        {
+            safe_str(T("#-1"), buff, bufc);
+        }
+    }
+    else if (0 == mux_stricmp(field, T("type")))
+    {
+        safe_str(mux_ltoa_t(ch->type), buff, bufc);
+    }
+    else if (0 == mux_stricmp(field, T("flags")))
+    {
+        if (ch->type & CHANNEL_PUBLIC)  safe_chr('P', buff, bufc);
+        if (ch->type & CHANNEL_LOUD)    safe_chr('L', buff, bufc);
+        if (ch->type & CHANNEL_SPOOF)   safe_chr('S', buff, bufc);
+    }
+    else if (0 == mux_stricmp(field, T("charge")))
+    {
+        safe_str(mux_ltoa_t(ch->charge), buff, bufc);
+    }
+    else if (0 == mux_stricmp(field, T("users")))
+    {
+        safe_str(mux_ltoa_t(static_cast<int>(ch->users.size())), buff, bufc);
+    }
+    else if (0 == mux_stricmp(field, T("msgs")))
+    {
+        safe_str(mux_ltoa_t(ch->num_messages), buff, bufc);
+    }
+    else if (0 == mux_stricmp(field, T("desc")))
+    {
+        if (Good_obj(ch->chan_obj))
+        {
+            dbref aowner;
+            int aflags;
+            UTF8 *desc = atr_pget(ch->chan_obj, A_DESC, &aowner, &aflags);
+            if ('\0' != desc[0])
+            {
+                safe_str(desc, buff, bufc);
+            }
+            free_lbuf(desc);
+        }
+    }
+    else if (0 == mux_stricmp(field, T("buffer")))
+    {
+        int logmax = 0;
+        if (Good_obj(ch->chan_obj))
+        {
+            ATTR *pattr = atr_str(T("MAX_LOG"));
+            if (pattr && pattr->number)
+            {
+                dbref aowner;
+                int aflags;
+                UTF8 *maxbuf = atr_get("fun_chaninfo", ch->chan_obj,
+                    pattr->number, &aowner, &aflags);
+                logmax = mux_atol(maxbuf);
+                free_lbuf(maxbuf);
+            }
+        }
+        safe_str(mux_ltoa_t(logmax), buff, bufc);
+    }
+    else
+    {
+        safe_str(T("#-1 INVALID FIELD"), buff, bufc);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// chanusers(channel[, separator]) — list subscriber dbrefs.
+// ---------------------------------------------------------------------------
+//
+// Visibility: PUBLIC, or subscriber, or Comm_All, or Controls(charge_who).
+//
+FUNCTION(fun_chanusers)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+
+    SEP sep;
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    struct channel *ch = select_channel(fargs[0]);
+    if (nullptr == ch)
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    if (  !(ch->type & CHANNEL_PUBLIC)
+       && !Comm_All(executor)
+       && !Controls(executor, ch->charge_who)
+       && nullptr == select_user(ch, executor))
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    bool bFirst = true;
+    for (const auto &kv : ch->users)
+    {
+        if (!bFirst)
+        {
+            print_sep(sep, buff, bufc);
+        }
+        safe_tprintf_str(buff, bufc, T("#%d"), kv.first);
+        bFirst = false;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// chanuser(channel, player, field) — per-user channel data.
+// ---------------------------------------------------------------------------
+//
+// Per-field permissions:
+//   alias:    self, or Owner(executor)==victim && Inherits(executor), or Wizard
+//   title, status, flags, gagjoin, comtitles:
+//             self, or both executor and victim on channel, or Wizard
+//
+FUNCTION(fun_chanuser)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    struct channel *ch = select_channel(fargs[0]);
+    if (nullptr == ch)
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    // Channel visibility: subscriber-aware.
+    //
+    if (  !(ch->type & CHANNEL_PUBLIC)
+       && !Comm_All(executor)
+       && !Controls(executor, ch->charge_who)
+       && nullptr == select_user(ch, executor))
+    {
+        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        return;
+    }
+
+    // Resolve target player/object.
+    //
+    dbref victim = lookup_player(executor, fargs[1], true);
+    if (!Good_obj(victim))
+    {
+        init_match(executor, fargs[1], TYPE_THING);
+        match_everything(0);
+        victim = match_result();
+        if (!Good_obj(victim))
+        {
+            safe_str(T("#-1 PLAYER NOT FOUND"), buff, bufc);
+            return;
+        }
+    }
+
+    const UTF8 *field = fargs[2];
+
+    // The "alias" field has its own permission rule.
+    //
+    if (0 == mux_stricmp(field, T("alias")))
+    {
+        if (  !Wizard(executor)
+           && executor != victim
+           && (Owner(executor) != victim
+               || !Inherits(executor)))
+        {
+            safe_noperm(buff, bufc);
+            return;
+        }
+
+        auto it = comsys_table.find(victim);
+        if (it != comsys_table.end())
+        {
+            const comsys_t &cc = it->second;
+            for (const auto &ca : cc.aliases)
+            {
+                if (0 == mux_stricmp(
+                    reinterpret_cast<const UTF8 *>(ca.channel.c_str()),
+                    fargs[0]))
+                {
+                    safe_str(reinterpret_cast<const UTF8 *>(ca.alias.c_str()),
+                        buff, bufc);
+                    return;
+                }
+            }
+        }
+        safe_str(T("#-1 NOT ON CHANNEL"), buff, bufc);
+        return;
+    }
+
+    // All other fields: self, or co-member, or Wizard.
+    //
+    if (  !Wizard(executor)
+       && executor != victim)
+    {
+        struct comuser *executor_user = select_user(ch, executor);
+        if (nullptr == executor_user)
+        {
+            safe_noperm(buff, bufc);
+            return;
+        }
+    }
+
+    // Look up the target's user record on this channel.
+    //
+    struct comuser *user = select_user(ch, victim);
+    if (nullptr == user)
+    {
+        safe_str(T("#-1 NOT ON CHANNEL"), buff, bufc);
+        return;
+    }
+
+    if (0 == mux_stricmp(field, T("title")))
+    {
+        safe_str(reinterpret_cast<const UTF8 *>(user->title.c_str()),
+            buff, bufc);
+    }
+    else if (0 == mux_stricmp(field, T("status")))
+    {
+        if (user->bUserIsOn)
+        {
+            safe_str(T("On"), buff, bufc);
+        }
+        else
+        {
+            safe_str(T("Off"), buff, bufc);
+        }
+    }
+    else if (0 == mux_stricmp(field, T("flags")))
+    {
+        if (!user->bUserIsOn)
+        {
+            safe_chr('O', buff, bufc);
+        }
+        if (user->bGagJoinLeave)
+        {
+            safe_chr('G', buff, bufc);
+        }
+        if (!user->ComTitleStatus)
+        {
+            safe_chr('Q', buff, bufc);
+        }
+    }
+    else if (0 == mux_stricmp(field, T("gagjoin")))
+    {
+        safe_chr(user->bGagJoinLeave ? '1' : '0', buff, bufc);
+    }
+    else if (0 == mux_stricmp(field, T("comtitles")))
+    {
+        safe_chr(user->ComTitleStatus ? '1' : '0', buff, bufc);
+    }
+    else
+    {
+        safe_str(T("#-1 INVALID FIELD"), buff, bufc);
     }
 }
 

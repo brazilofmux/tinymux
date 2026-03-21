@@ -137,6 +137,9 @@ XFUNCTION(fun_cowner);
 XFUNCTION(fun_crecall);
 XFUNCTION(fun_cstatus);
 XFUNCTION(fun_cusers);
+XFUNCTION(fun_chaninfo);
+XFUNCTION(fun_chanusers);
+XFUNCTION(fun_chanuser);
 // In funceval.cpp
 XFUNCTION(fun_alphamax);
 XFUNCTION(fun_between);

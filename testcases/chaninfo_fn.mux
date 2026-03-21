@@ -1,0 +1,231 @@
+#
+# chaninfo_fn.mux - Test Cases for chaninfo().
+#
+@create test_chaninfo_fn
+-
+@set test_chaninfo_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+# TC000 creates channels dynamically since comsys data does not
+# survive the flatfile round-trip in the smoke test infrastructure.
+#
+&tr.tc000 test_chaninfo_fn=
+  @log smoke=Beginning chaninfo test cases.;
+  @ccreate citest;
+  @cset/public citest=on;
+  @cset/header citest=<CI>;
+  @ccreate cipriv;
+  addcom cit=citest;
+  addcom cip=cipriv
+-
+#
+# Test Case #1 - chaninfo(chan, name) returns channel name.
+#
+&tr.tc001 test_chaninfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chaninfo(citest,name)]
+          )
+        ),
+        9ADE11C4AAEE2535DE766CE2F62FC25585457BA5
+      )=
+  {
+    @log smoke=TC001: chaninfo name. Succeeded.
+  },
+  {
+    @log smoke=TC001: chaninfo name. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - chaninfo(chan, header) returns channel header.
+#
+&tr.tc002 test_chaninfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chaninfo(citest,header)]
+          )
+        ),
+        E5012BA9BFE508F51887FFD5C21FAC70AF87EEBB
+      )=
+  {
+    @log smoke=TC002: chaninfo header. Succeeded.
+  },
+  {
+    @log smoke=TC002: chaninfo header. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - chaninfo(chan, owner) returns a dbref.
+#
+&tr.tc003 test_chaninfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isdbref(chaninfo(citest,owner))]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC003: chaninfo owner. Succeeded.
+  },
+  {
+    @log smoke=TC003: chaninfo owner. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - chaninfo(chan, type) returns an integer.
+#
+&tr.tc004 test_chaninfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isint(chaninfo(citest,type))]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC004: chaninfo type. Succeeded.
+  },
+  {
+    @log smoke=TC004: chaninfo type. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - chaninfo(chan, flags) includes P for public channel.
+#
+&tr.tc005 test_chaninfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strmatch(chaninfo(citest,flags),*P*)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC005: chaninfo flags. Succeeded.
+  },
+  {
+    @log smoke=TC005: chaninfo flags. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - chaninfo(chan, charge) returns 0.
+#
+&tr.tc006 test_chaninfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chaninfo(citest,charge)]
+          )
+        ),
+        B6589FC6AB0DC82CF12099D1C2D40AB994E8410C
+      )=
+  {
+    @log smoke=TC006: chaninfo charge. Succeeded.
+  },
+  {
+    @log smoke=TC006: chaninfo charge. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - chaninfo(chan, users) returns at least 1.
+#
+&tr.tc007 test_chaninfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [gte(chaninfo(citest,users),1)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC007: chaninfo users. Succeeded.
+  },
+  {
+    @log smoke=TC007: chaninfo users. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - chaninfo(chan, msgs) returns an integer.
+#
+&tr.tc008 test_chaninfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isint(chaninfo(citest,msgs))]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC008: chaninfo msgs. Succeeded.
+  },
+  {
+    @log smoke=TC008: chaninfo msgs. Failed (%q0).
+  }
+-
+#
+# Test Case #9 - chaninfo(bogus, name) returns #-1 CHANNEL NOT FOUND.
+#
+&tr.tc009 test_chaninfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chaninfo(nosuch,name)]
+          )
+        ),
+        770632F3C8D766298FD8123A49357D082D5A4672
+      )=
+  {
+    @log smoke=TC009: chaninfo not found. Succeeded.
+  },
+  {
+    @log smoke=TC009: chaninfo not found. Failed (%q0).
+  }
+-
+#
+# Test Case #10 - chaninfo(chan, badfield) returns #-1 INVALID FIELD.
+#
+&tr.tc010 test_chaninfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strmatch(chaninfo(citest,badfield),#-1 INVALID FIELD)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC010: chaninfo invalid field. Succeeded.
+  },
+  {
+    @log smoke=TC010: chaninfo invalid field. Failed (%q0).
+  }
+-
+#
+# Test Case #11 - chaninfo on subscriber's private channel works.
+#
+&tr.tc011 test_chaninfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strmatch(chaninfo(cipriv,name),cipriv)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC011: chaninfo private subscriber. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC011: chaninfo private subscriber. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_chaninfo_fn=
+  @log smoke=End chaninfo test cases.;
+  @notify smoke
+-
+drop test_chaninfo_fn
+-
+#
+# End of Test Cases
+#

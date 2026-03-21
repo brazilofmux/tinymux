@@ -1,0 +1,161 @@
+#
+# chanuser_fn.mux - Test Cases for chanuser().
+#
+@create test_chanuser_fn
+-
+@set test_chanuser_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+# Note: addcom runs as the test object (INHERIT), so the subscriber
+# is the test object, not #1. We use first(chanusers()) to get the
+# actual subscriber dbref.
+#
+&tr.tc000 test_chanuser_fn=
+  @log smoke=Beginning chanuser test cases.;
+  @ccreate chutest;
+  @cset/public chutest=on;
+  addcom chu=chutest;
+  comtitle chu=Tester
+-
+#
+# Test Case #1 - chanuser(chan, player, alias) returns alias.
+#
+&tr.tc001 test_chanuser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chanuser(chutest,first(chanusers(chutest)),alias)]
+          )
+        ),
+        2D34AEBD561E246EC7786C4DE2C2D252D0156982
+      )=
+  {
+    @log smoke=TC001: chanuser alias. Succeeded.
+  },
+  {
+    @log smoke=TC001: chanuser alias. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - chanuser(chan, player, title) returns comtitle.
+#
+&tr.tc002 test_chanuser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chanuser(chutest,first(chanusers(chutest)),title)]
+          )
+        ),
+        9264A677DDFA1B311D09C5D2427B23A3A2A79015
+      )=
+  {
+    @log smoke=TC002: chanuser title. Succeeded.
+  },
+  {
+    @log smoke=TC002: chanuser title. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - chanuser(chan, player, status) returns On.
+#
+&tr.tc003 test_chanuser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chanuser(chutest,first(chanusers(chutest)),status)]
+          )
+        ),
+        E0049A66519CAE71159800BB77A35007BC2D76D3
+      )=
+  {
+    @log smoke=TC003: chanuser status. Succeeded.
+  },
+  {
+    @log smoke=TC003: chanuser status. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - chanuser(chan, player, gagjoin) returns 0.
+#
+&tr.tc004 test_chanuser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chanuser(chutest,first(chanusers(chutest)),gagjoin)]
+          )
+        ),
+        B6589FC6AB0DC82CF12099D1C2D40AB994E8410C
+      )=
+  {
+    @log smoke=TC004: chanuser gagjoin. Succeeded.
+  },
+  {
+    @log smoke=TC004: chanuser gagjoin. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - chanuser(chan, player, comtitles) returns 1.
+#
+&tr.tc005 test_chanuser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chanuser(chutest,first(chanusers(chutest)),comtitles)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC005: chanuser comtitles. Succeeded.
+  },
+  {
+    @log smoke=TC005: chanuser comtitles. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - chanuser(chan, badplayer, title) returns error.
+#
+&tr.tc006 test_chanuser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strmatch(chanuser(chutest,nosuch,title),#-1*)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC006: chanuser bad player. Succeeded.
+  },
+  {
+    @log smoke=TC006: chanuser bad player. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - chanuser(chan, player, badfield) returns #-1 INVALID FIELD.
+#
+&tr.tc007 test_chanuser_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strmatch(
+              chanuser(chutest,first(chanusers(chutest)),badfield),
+              #-1 INVALID FIELD
+            )]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC007: chanuser invalid field. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC007: chanuser invalid field. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_chanuser_fn=
+  @log smoke=End chanuser test cases.;
+  @notify smoke
+-
+drop test_chanuser_fn
+-
+#
+# End of Test Cases
+#

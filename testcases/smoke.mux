@@ -10,6 +10,7 @@
   and_fn andbool_fn asin_fn atan_fn atan2_fn attrib_set_fn \
   band_fn baseconv_fn before_fn benchmark_fn between_fn bnand_fn bor_fn bound_fn bxor_fn \
   cand_fn candbool_fn caplist_fn capstr_fn case_fn cat_fn ceil_fn center_fn \
+  chaninfo_fn chanuser_fn chanusers_fn \
   choose_fn chr_fn citer_fn clone_fn cmogrifier_fn cmd_say columns_fn comp_fn convtime_fn \
   connlog_fn cor_fn corbool_fn cos_fn cpad_fn crc32_fn crc32obj_fn cron_fn ctu_fn \
   dec_fn delete_fn delextract_fn digest_fn digittime_fn dist2d_fn dist3d_fn dolist_cmd dynhelp_fn \
