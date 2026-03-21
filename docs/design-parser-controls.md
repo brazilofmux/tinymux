@@ -58,8 +58,9 @@ Meaning:
 Implications:
 
 - noeval branch/body handling must match 2.13
-- `\\%` interactions in noeval contexts must be allowed to delete `%`
-  when 2.13 did
+- `\\%` interactions in noeval contexts must reproduce 2.13's
+  multi-pass replay, where one pass exposes a `%` sequence that a later
+  pass may consume
 - command-visible weirdness is acceptable if it is legacy-correct
 
 ### Option B: Penn-Inspired Cleanup
