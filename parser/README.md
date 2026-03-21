@@ -17,9 +17,9 @@ make
 echo 'add(1,mul(2,3))' | ./tokenize
 echo '[setq(0,hello)]%q0 world' | ./parse
 ./parse < test_corpus.txt
-echo '\\% happy' | ./eval --profile mux214
+echo '\\\\% capacity' | ./eval --profile mux214
 echo '[switch(1,1,{\\\\% capacity})]' | ./eval --profile mux213
-echo '% happy' | ./eval --profile penn
+echo '%xg' | ./eval --profile penn
 ```
 
 ## Stages
@@ -61,23 +61,23 @@ Ragel scanner + recursive-descent parser can reproduce its behavior.
 The study tools now support `--profile mux214|mux213|penn`:
 
 - `mux214` models the current AST tokenizer/evaluator shape.
-- `mux213` currently models the verified legacy noeval-brace behavior:
-  when a brace-group argument is selected by `if`, `switch`, or `case`,
-  one backslash layer is stripped before the text is reparsed.
-- `penn` recognizes Penn-only atomic `%` forms such as `% `, `%wa`,
-  and `%iL`.
+- `mux213` currently models the verified 2.13 noeval split from 2.14:
+  in tested `if`/`switch`/`case`/`iter` branch-body contexts,
+  `\\%...` loses the percent where 2.14 and Penn preserve it.
+- `penn` recognizes Penn-only `%` behavior where we have real-engine
+  data, including `% `, `%wa`, `%iL`, `%xg`, `%cg`, and `%=`.
 
 Focused examples:
 
 ```
 echo '\\\\% capacity' | ./eval --profile mux214
-# -> \ capacity
-
-echo '[switch(1,1,{\\\\% capacity})]' | ./eval --profile mux213
 # -> % capacity
 
-echo '[switch(1,1,{\\\\% capacity})]' | ./eval --profile penn
-# -> \% capacity
+echo '[switch(1,1,{\\\\% capacity})]' | ./eval --profile mux213
+# ->  capacity
+
+echo '%xg' | ./eval --profile penn
+# -> thing
 ```
 
 These profiles are intentionally incomplete. They are meant to help

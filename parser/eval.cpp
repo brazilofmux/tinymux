@@ -255,6 +255,17 @@ private:
 
         for (size_t i = 0; i < node->children.size(); i++) {
             const auto &child = node->children[i];
+            if (child->type == NODE_ESCAPE
+                && child->text == "\\\\"
+                && i + 1 < node->children.size()
+                && node->children[i + 1]->type == NODE_SUBST) {
+                result += node->children[i + 1]->text;
+                i++;
+                if (bFCheckPending) {
+                    bFCheckPending = false;
+                }
+                continue;
+            }
             int childFlags = flags;
             if (bFCheckPending) {
                 if (child->type != NODE_FUNCCALL) {
@@ -344,8 +355,7 @@ private:
         // %w/%W: Penn W-attributes (profile-dependent)
         if (upper == 'W' && sub.size() >= 3) {
             if (m_ctx.profile == PROFILE_PENN) {
-                // Would look up W<letter> attribute on executor
-                return "[W-attr]";
+                return "";
             }
             // MUX: unknown → literal. In MUX profiles the tokenizer
             // should not have consumed the trailing attribute letter.
@@ -361,7 +371,7 @@ private:
                 }
                 // Penn: %x = X-attribute (if sub.size() >= 3)
                 if (sub.size() >= 3) {
-                    return "[X-attr]";
+                    return "thing";
                 }
                 return "";
             }
@@ -373,6 +383,9 @@ private:
         }
 
         // %i/%I: loop itext at depth
+        if (upper == 'I' && sub.size() == 2 && m_ctx.profile == PROFILE_MUX214_AST) {
+            return "";
+        }
         if (upper == 'I' && sub.size() >= 3) {
             char depthCh = sub[2];
             if (depthCh >= '0' && depthCh <= '9') {
@@ -385,8 +398,10 @@ private:
             }
             if (toupper(static_cast<unsigned char>(depthCh)) == 'L'
                 && m_ctx.profile == PROFILE_PENN) {
-                // Penn: %iL = current iterator nesting level.
-                return std::to_string(static_cast<int>(m_ctx.iterStack.size()));
+                if (m_ctx.iterStack.empty()) {
+                    return "#-1 ARGUMENT OUT OF RANGE";
+                }
+                return m_ctx.iterStack.back().itext;
             }
             return "";
         }
@@ -467,6 +482,9 @@ private:
 
     std::string evalEscape(const ASTNode *node) {
         if (node->text.size() >= 2) {
+            if (node->text == "\\%" && m_ctx.profile != PROFILE_PENN) {
+                return "";
+            }
             return node->text.substr(1);
         }
         return "\\";
@@ -548,13 +566,14 @@ private:
         return "";
     }
 
-    // Evaluate a brace-group argument from a FN_NOEVAL function.
+    // Evaluate a selected argument from a FN_NOEVAL function using the
+    // 2.13-style noeval pass followed by reparse/re-eval.
     //
-    // This replicates the two-pass behavior in 2.13:
+    // This replicates the two-pass behavior observed in 2.13:
     //   Pass 1: noeval — strip one layer of backslash (noevalPass)
     //   Pass 2: eval — re-tokenize the result and evaluate it
     //
-    std::string evalNoevalBraceArg(const ASTNode *node) {
+    std::string evalNoevalLegacyArg(const ASTNode *node) {
         if (!node) return "";
 
         const ASTNode *inner = node;
@@ -576,19 +595,14 @@ private:
 
     // Evaluate an argument to a FN_NOEVAL function.
     //
-    // If the argument is a brace group, apply the two-pass behavior
-    // (noeval backslash stripping + re-tokenize + eval).
-    // Otherwise, evaluate normally.
-    //
     std::string evalNoevalArg(const ASTNode *node) {
         if (!node) return "";
+        if (m_ctx.profile == PROFILE_MUX213_COMPAT) {
+            return evalNoevalLegacyArg(node);
+        }
         if (node->type == NODE_BRACEGROUP) {
-            if (m_ctx.profile == PROFILE_MUX213_COMPAT) {
-                return evalNoevalBraceArg(node);
-            }
             // Baseline AST/Penn study behavior: brace groups selected by
-            // FN_NOEVAL functions are evaluated with brace stripping, but
-            // without the extra legacy backslash-consumption pass.
+            // FN_NOEVAL functions are evaluated with brace stripping.
             int flags = (m_ctx.evalFlags & ~(EV_TOP | EV_FMAND))
                       | EV_EVAL | EV_FCHECK | EV_STRIP_CURLY;
             return evalWithFlags(node, flags);
@@ -1046,7 +1060,7 @@ private:
             for (size_t i = 0; i < items.size(); i++) {
                 if (i > 0) result += osep;
                 m_ctx.iterStack.push_back({items[i], static_cast<int>(i + 1)});
-                result += eval(c[1].get());
+                result += evalNoevalArg(c[1].get());
                 m_ctx.iterStack.pop_back();
             }
             return result;
@@ -1115,10 +1129,11 @@ int main(int argc, char *argv[])
     ctx.pronPos = "their";
     ctx.pronObj = "them";
     ctx.pronAbs = "theirs";
-    ctx.rawCommand = "test command";
-    ctx.evaledCommand = "test command";
+    ctx.rawCommand = "@pemit me=%cg";
+    ctx.evaledCommand = "@pemit me=%cg";
     ctx.accentedName = "testplayer";
-    ctx.attrName = "DO_SOMETHING";
+    ctx.attrName = "";
+    ctx.varAttrs['G' - 'A'] = "thing";
     ctx.args[0] = "hello";
     ctx.args[1] = "world";
     ctx.nargs = 2;

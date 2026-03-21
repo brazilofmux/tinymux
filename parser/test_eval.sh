@@ -100,7 +100,9 @@ check '%%' '%'
 
 # Escapes — basic
 check '\[not a bracket\]' '[not a bracket]'
-check '\% capacity' '% capacity'
+check '\% capacity' ' capacity'
+check '\% capacity' ' capacity' '--profile mux213'
+check '\% capacity' '% capacity' '--profile penn'
 
 # ---------------------------------------------------------------
 # Cross-profile escape + percent interaction tests
@@ -108,40 +110,48 @@ check '\% capacity' '% capacity'
 
 # The critical divergence: \\% sequences
 #
-# Without braces, all profiles agree: \\% → \ then unknown-% → space
-check '\\% capacity' '\ capacity'
-check '\\% capacity' '\ capacity' '--profile mux213'
+# All three real engines fold \\ + %... into a literal raw % sequence
+# in ordinary evaluation.
+check '\\% capacity' '% capacity'
+check '\\% capacity' '% capacity' '--profile mux213'
+check '\\% capacity' '% capacity' '--profile penn'
 
 # With braces in FN_NOEVAL (the bboard case):
-# 2.13 two-pass: noeval strips \\ → \, then eval: \% → %
-# The evalNoevalArg mechanism replicates this.
-check '[switch(1,1,{\\% capacity})]' '\ capacity'
-check '[if(1,{\\% capacity})]' '\ capacity'
-check '[case(1,1,{\\% capacity})]' '\ capacity'
-check '[switch(1,1,{\\% capacity})]' '% capacity' '--profile mux213'
-check '[if(1,{\\% capacity})]' '% capacity' '--profile mux213'
-check '[case(1,1,{\\% capacity})]' '% capacity' '--profile mux213'
-# Penn keeps %<space> as an atomic substitution, so with brace stripping
-# but without the legacy 2.13 noeval pass this becomes "\% capacity".
-check '[switch(1,1,{\\% capacity})]' '\% capacity' '--profile penn'
+# 2.13 loses the percent in these noeval brace contexts.  2.14 and
+# Penn preserve the raw % sequence instead.
+check '[switch(1,1,{\\% capacity})]' '% capacity'
+check '[if(1,{\\% capacity})]' '% capacity'
+check '[case(1,1,{\\% capacity})]' '% capacity'
+check '[switch(1,1,{\\% capacity})]' ' capacity' '--profile mux213'
+check '[if(1,{\\% capacity})]' ' capacity' '--profile mux213'
+check '[case(1,1,{\\% capacity})]' ' capacity' '--profile mux213'
+check '[switch(1,1,{\\% capacity})]' '% capacity' '--profile penn'
 
-# Without braces in switch, no extra pass — same as bare
-check '[switch(1,1,\\% capacity)]' '\ capacity'
+# Without braces in switch, 2.13 still loses the percent while 2.14
+# and Penn preserve it.
+check '[switch(1,1,\\% capacity)]' '% capacity'
+check '[switch(1,1,\\% capacity)]' ' capacity' '--profile mux213'
+check '[switch(1,1,\\% capacity)]' '% capacity' '--profile penn'
 
 # Single backslash before percent: all engines agree
-check '\%b' '%b'
-check '\%b' '%b' '--profile mux213'
+check '\%b' 'b'
+check '\%b' 'b' '--profile mux213'
 check '\%b' '%b' '--profile penn'
 
-# Double backslash before known substitution (no braces = single pass)
-check '\\%b' '\ '
-check '\\%b' '\ ' '--profile mux213'
-check '\\%b' '\ ' '--profile penn'
+# Double backslash before known substitution produces a literal raw
+# % sequence in ordinary evaluation.
+check '\\%b' '%b'
+check '\\%b' '%b' '--profile mux213'
+check '\\%b' '%b' '--profile penn'
 
 # Triple backslash: ESC("\\") → "\", ESC("\%") → "%", LIT("b")
-check '\\\%b' '\%b'
-check '\\\%b' '\%b' '--profile mux213'
+check '\\\%b' '\b'
+check '\\\%b' '\b' '--profile mux213'
 check '\\\%b' '\%b' '--profile penn'
+
+# Penn preserves %b through these noeval brace/body contexts.
+check '[switch(1,1,{\\%b})]' '%b' '--profile penn'
+check '[iter(a b,{\\%b})]' '%b %b' '--profile penn'
 
 # Percent-space: Penn recognizes it as atomic "% ", MUX treats as
 # unknown-% fallback (emits the space char).  In both cases the
@@ -192,13 +202,25 @@ check '%g' 'g'
 check '%g' 'g' '--profile mux213'
 check '%g' 'g' '--profile penn'
 
-# Penn-specific: %= is attr name
+# Penn-specific substitutions
 check '%=' '=' '--profile mux214'
-check '%=' 'DO_SOMETHING' '--profile penn'
+check '%=' '=' '--profile mux213'
+check '%=' '' '--profile penn'
 check '%wa' 'wa' '--profile mux214'
-check '%wa' '[W-attr]' '--profile penn'
-check '%iL' 'iL' '--profile mux214'
-check '[iter(a b,%iL)]' '1 1' '--profile penn'
+check '%wa' 'wa' '--profile mux213'
+check '%wa' '' '--profile penn'
+check '%iL' 'L' '--profile mux214'
+check '%iL' 'iL' '--profile mux213'
+check '%iL' '#-1 ARGUMENT OUT OF RANGE' '--profile penn'
+check '[iter(a b,%iL)]' 'L L'
+check '[iter(a b,%iL)]' 'iL iL' '--profile mux213'
+check '[iter(a b,%iL)]' 'a b' '--profile penn'
+check '%xg' '[color:xg]'
+check '%xg' '[color:xg]' '--profile mux213'
+check '%xg' 'thing' '--profile penn'
+check '%cg' '[color:cg]'
+check '%cg' '[color:cg]' '--profile mux213'
+check '%cg' '@pemit me=%cgg' '--profile penn'
 
 # Nested evaluation
 check '[add(1,add(2,add(3,4)))]' '10'

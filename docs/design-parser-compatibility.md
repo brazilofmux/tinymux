@@ -15,9 +15,9 @@ boundaries, such as `]\\\\% capacity`.
 
 The study tool now has a verified minimal reproduction of that case:
 
-- `mux214`: `[switch(1,1,{\\% capacity})]` -> `\ capacity`
-- `mux213`: `[switch(1,1,{\\% capacity})]` -> `% capacity`
-- `penn`: `[switch(1,1,{\\% capacity})]` -> `\% capacity`
+- `mux214`: `[switch(1,1,{\\% capacity})]` -> `% capacity`
+- `mux213`: `[switch(1,1,{\\% capacity})]` -> ` capacity`
+- `penn`: `[switch(1,1,{\\% capacity})]` -> `% capacity`
 
 ## Key Finding
 
@@ -50,10 +50,9 @@ This means 2.13 behavior is shaped by the interaction of:
 - later `%` dispatch on the surviving character stream
 - possible multi-pass evaluation around brackets and function args
 
-The current study prototype models one important part of that last item:
-selected brace-group arguments to `FN_NOEVAL` functions (`if`, `switch`,
-`case`) get a noeval pass that strips one layer of backslashes before
-the result is parsed and evaluated again.
+The real-engine tests now show that 2.13 differs from 2.14/Penn most
+clearly in noeval branch/body contexts such as `if`, `switch`, `case`,
+and `iter`, where `%` can disappear from forms like `\\% capacity`.
 
 ### TinyMUX 2.14 AST
 
@@ -71,15 +70,13 @@ The AST evaluator then evaluates:
 Unknown `%` forms fall back to the following character only at
 [ast.cpp](/home/sdennis/tinymux/mux/modules/engine/ast.cpp#L932).
 
-This separation is exactly what breaks legacy couplings such as
-`Esc("\\\\") + Sub("% ")`.
+In the verified cases collected so far, 2.14 behaves like this:
 
-In the verified bboard-shaped case, 2.14-style behavior is:
-
-1. the brace-group argument is selected by a `FN_NOEVAL` function
-2. braces are stripped
-3. the remaining `Esc("\\\\") + Sub("% ")` are evaluated independently
-4. the result is `\ capacity`
+1. bare `\\% capacity` evaluates to `% capacity`
+2. noeval branch/body uses such as `[switch(1,1,{\\% capacity})]`
+   also evaluate to `% capacity`
+3. `%iL` is partially recognized and yields `L` / `L L` in the
+   tested contexts
 
 ### PennMUSH
 
@@ -98,9 +95,12 @@ PennMUSH's changelog calls this out directly:
 See [CHANGES.181](/tmp/pennmush/CHANGES.181#L332) and
 [CHANGES.182](/tmp/pennmush/CHANGES.182#L195).
 
-For the same bboard-shaped case, Penn behavior differs from both MUX
-profiles because `% ` is atomic. After brace stripping, `\\% ` becomes
-`Esc("\\\\") + Sub("% ")`, which evaluates to `\% `.
+Penn differs on two separate axes:
+
+- `% ` is atomic, so bare `\% capacity` and `% capacity` both preserve
+  the percent
+- Penn has a richer `%` grammar, including behaviors like `%wa`, `%xg`,
+  `%cg`, and iterator-sensitive `%iL`
 
 ## Working Matrix
 
@@ -109,18 +109,30 @@ differences:
 
 | Case | `mux214` | `mux213` | `penn` |
 | --- | --- | --- | --- |
-| `\\% capacity` | `\ capacity` | `\ capacity` | `\% capacity` |
-| `[switch(1,1,{\\% capacity})]` | `\ capacity` | `% capacity` | `\% capacity` |
-| `%wa` | `wa` | `wa` | Penn W-attribute |
-| `%iL` | `iL` | `iL` | current iterator level |
-| `% ` | unknown-subst fallback to space | unknown-subst fallback to space | literal `% ` |
+| `\\% capacity` | `% capacity` | `% capacity` | `% capacity` |
+| `\% capacity` | ` capacity` | ` capacity` | `% capacity` |
+| `% capacity` | ` capacity` | ` capacity` | `% capacity` |
+| `[switch(1,1,{\\% capacity})]` | `% capacity` | ` capacity` | `% capacity` |
+| `[if(1,{\\% capacity})]` | `% capacity` | ` capacity` | `% capacity` |
+| `[case(1,1,{\\% capacity})]` | `% capacity` | ` capacity` | `% capacity` |
+| `[switch(1,1,\\% capacity)]` | `% capacity` | ` capacity` | `% capacity` |
+| `[iter(a b,{\\% capacity})]` | `% capacity % capacity` | ` capacity  capacity` | `% capacity % capacity` |
+| `%wa` | `wa` | `wa` | empty in tested context |
+| `%iL` | `L` | `iL` | `#-1 ARGUMENT OUT OF RANGE` |
+| `[iter(a b,%iL)]` | `L L` | `iL iL` | `a b` |
+| `%=` | `=` | `=` | empty in tested context |
+| `%xg` | MUX color form | MUX color form | `thing` |
+| `%cg` | MUX color form | MUX color form | `@pemit me=%cgg` |
+| `[switch(1,1,{\\%b})]` | not yet collected | not yet collected | `%b` |
+| `[iter(a b,{\\%b})]` | not yet collected | not yet collected | `%b %b` |
 
 This matrix matters because it separates three different causes:
 
-- tokenizer grammar differences, such as Penn-only `%wa` and `%iL`
+- tokenizer grammar differences, such as Penn-only `%wa`, `%xg`, and
+  `%cg`
 - substitution-table differences, especially Penn `% `
-- multi-pass noeval behavior, which is the current best explanation for
-  the 2.13 bboard result
+- noeval branch/body behavior, where 2.13 diverges from both 2.14 and
+  Penn on the tested `% capacity` cases
 
 ## Compatibility Axes
 
@@ -128,11 +140,12 @@ Any production parser-profile design will need to decide at least:
 
 1. Which `%` forms are atomic substitutions.
 2. Whether `% ` is recognized explicitly.
-3. Whether `\\` may absorb or literalize a following `%` form.
-4. Whether compatibility is implemented:
+3. How `\%` and `\\%` interact with later substitution handling.
+4. Whether noeval branch/body contexts change `%` behavior.
+5. Whether compatibility is implemented:
    - during tokenization
    - during AST sequence evaluation
-   - or by a selective fallback to streaming evaluation
+   - or by a selective fallback to streaming/noeval evaluation
 
 ## Prototype in `parser/`
 
@@ -145,10 +158,10 @@ The study tools now expose:
 Current prototype scope:
 
 - `mux214` is the baseline token-first AST model.
-- `penn` adds Penn-only atomic `%` forms such as `% `, `%wa`, and `%iL`.
-- `mux213` currently models one legacy behavior that matters for real
-  softcode: brace-group arguments selected by `FN_NOEVAL` functions get
-  a noeval pass that strips one layer of backslashes before reparse.
+- `penn` adds Penn `%` grammar where we have real-engine data, including
+  `% `, `%wa`, `%iL`, `%xg`, `%cg`, and `%=`.
+- `mux213` differs most visibly in the tested noeval branch/body cases,
+  where `%` disappears from `\\%...` forms that 2.14 and Penn preserve.
 
 This prototype is intended to answer "where can the mode live?" rather
 than "is the production fix already done?"
@@ -169,7 +182,7 @@ Production-control candidates now look like:
 
 - scanner/tokenizer profile flags for Penn-only `%` forms
 - evaluator profile flags for `%` dispatch semantics
-- noeval-argument policy for brace-group reparsing
+- noeval branch/body policy for `if`/`switch`/`case`/`iter`
 
-The bboard case suggests the third category is the first one that must
-be controlled for TinyMUX 2.13 compatibility.
+The bboard case now suggests that TinyMUX 2.13 compatibility and Penn
+compatibility are separate controls, not one shared mode.
