@@ -2382,6 +2382,51 @@ FUNCTION(fun__restore_cargs)
         }
         s_current_ecall_ctx->ncargs = s_carg_save_stack[idx].ncargs;
         s_carg_save_stack[idx].in_use = false;
+
+        // Refresh the guest %+ substitution slot.
+        uint64_t nslot = rv_compiler::SUBST_BASE
+            + static_cast<uint64_t>(rv_compiler::SUBST_NCARGS)
+            * rv_compiler::SUBST_SLOT;
+        if (nslot + 4 <= s_current_ecall_ctx->memory_size)
+        {
+            char nbuf[16];
+            int len = snprintf(nbuf, sizeof(nbuf), "%d",
+                               s_carg_save_stack[idx].ncargs);
+            memcpy(s_current_ecall_ctx->memory + nslot, nbuf, len + 1);
+        }
+    }
+}
+
+// _SET_NCARGS(n_str): update the %+ substitution slot and ncargs.
+// Must be called after writing CARGS slots for inlined u() bodies
+// so that %+ in the body reflects the callee's argument count.
+//
+FUNCTION(fun__set_ncargs)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (!s_current_ecall_ctx || nfargs < 1) return;
+
+    int n = mux_atol(fargs[0]);
+    if (n < 0) n = 0;
+    if (n > 10) n = 10;
+
+    s_current_ecall_ctx->ncargs = n;
+
+    // Update the guest %+ substitution slot.
+    uint64_t slot = rv_compiler::SUBST_BASE
+        + static_cast<uint64_t>(rv_compiler::SUBST_NCARGS)
+        * rv_compiler::SUBST_SLOT;
+    if (slot + 4 <= s_current_ecall_ctx->memory_size)
+    {
+        char nbuf[16];
+        int len = snprintf(nbuf, sizeof(nbuf), "%d", n);
+        memcpy(s_current_ecall_ctx->memory + slot, nbuf, len + 1);
     }
 }
 

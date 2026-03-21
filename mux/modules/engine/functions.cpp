@@ -13911,13 +13911,15 @@ static FUNCTION(fun__restore_qregs)
     }
 }
 
-// _SAVE_CARGS, _RESTORE_CARGS, _WRITE_CARG: defined in jit_compiler.cpp
-// where s_current_ecall_ctx provides guest memory access.
+// _SAVE_CARGS, _RESTORE_CARGS, _WRITE_CARG, _SET_NCARGS:
+// defined in jit_compiler.cpp where s_current_ecall_ctx provides
+// guest memory access.
 //
 extern "C++" {
     FUNCTION(fun__save_cargs);
     FUNCTION(fun__restore_cargs);
     FUNCTION(fun__write_carg);
+    FUNCTION(fun__set_ncargs);
 }
 
 // flist: List of existing functions in alphabetical order.
@@ -13928,12 +13930,13 @@ extern "C++" {
 static FUN builtin_function_list[] =
 {
     {T("@@"),          fun_null,             1, 1,       1, FN_NOEVAL, CA_PUBLIC},
-    {T("_CHECK_U_PERM"),  fun__check_u_perm,  MAX_ARG, 2, 2, 0, CA_PUBLIC},
-    {T("_RESTORE_CARGS"), fun__restore_cargs, MAX_ARG, 1, 1, 0, CA_PUBLIC},
-    {T("_RESTORE_QREGS"), fun__restore_qregs, MAX_ARG, 1, 1, 0, CA_PUBLIC},
-    {T("_SAVE_CARGS"),    fun__save_cargs,    MAX_ARG, 0, 0, 0, CA_PUBLIC},
-    {T("_SAVE_QREGS"),    fun__save_qregs,    MAX_ARG, 0, 0, 0, CA_PUBLIC},
-    {T("_WRITE_CARG"),    fun__write_carg,    MAX_ARG, 2, 2, 0, CA_PUBLIC},
+    {T("_CHECK_U_PERM"),  fun__check_u_perm,  MAX_ARG, 2, 2, 0, CA_GOD},
+    {T("_RESTORE_CARGS"), fun__restore_cargs, MAX_ARG, 1, 1, 0, CA_GOD},
+    {T("_RESTORE_QREGS"), fun__restore_qregs, MAX_ARG, 1, 1, 0, CA_GOD},
+    {T("_SAVE_CARGS"),    fun__save_cargs,    MAX_ARG, 0, 0, 0, CA_GOD},
+    {T("_SAVE_QREGS"),    fun__save_qregs,    MAX_ARG, 0, 0, 0, CA_GOD},
+    {T("_SET_NCARGS"),    fun__set_ncargs,    MAX_ARG, 1, 1, 0, CA_GOD},
+    {T("_WRITE_CARG"),    fun__write_carg,    MAX_ARG, 2, 2, 0, CA_GOD},
     {T("ABS"),         fun_abs,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ACCENT"),      fun_accent,     MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("ACOS"),        fun_acos,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
