@@ -367,9 +367,21 @@ body text to compile.  The runtime check ensures that the executor
 actually has permission each time the code runs.  Cost: one ECALL
 per inlined u() call on the fast path.
 
-For `NoEval(thing)`: check at compile time.  If `aflags & AF_NOEVAL`
-or `NoEval(thing)`, don't inline — fall through to the ECALL path
-which handles NOEVAL correctly.
+The same ECALL must also check `NoEval(thing)` and `AF_NOEVAL` at
+runtime, not just at compile time.  `NoEval(thing)` is object-level
+state that can change via `@set` after compilation.  If the ECALL
+detects NOEVAL, it bails to host `fun_u` which returns the raw text
+without evaluation.  All three runtime checks — `See_attr()`,
+`NoEval(thing)`, `AF_NOEVAL` — live in the single permission ECALL:
+
+```
+ECALL_CHECK_U_PERM(executor, thing, attr_num)
+  → See_attr(executor, thing, pattr)?     [visibility]
+  → NoEval(thing)?                         [object flag]
+  → (aflags & AF_NOEVAL)?                  [attr flag]
+  → returns: 0 = ok to evaluate inlined body
+             1 = bail to host fun_u (handles NOEVAL/deny)
+```
 
 **Problem 3 — ULOCAL register leak (MEDIUM)**
 
