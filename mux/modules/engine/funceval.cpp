@@ -2804,6 +2804,333 @@ FUNCTION(fun_mailreview)
 }
 
 // ---------------------------------------------------------------------------
+// mailcount([player]) — total message count.
+// ---------------------------------------------------------------------------
+//
+// Permission: self always; Wizard for others.
+//
+FUNCTION(fun_mailcount)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    dbref playerask;
+    if (nfargs == 0 || !fargs[0] || !fargs[0][0])
+    {
+        playerask = executor;
+    }
+    else
+    {
+        playerask = lookup_player(executor, fargs[0], true);
+        if (!Good_obj(playerask) || !isPlayer(playerask))
+        {
+            safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+            return;
+        }
+    }
+
+    if (playerask != executor && !Wizard(executor))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    int rc, uc, cc;
+    count_mail(playerask, 0, &rc, &uc, &cc);
+    safe_ltoa(rc + uc, buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// mailstats([player]) — read/unread/cleared counts.
+// ---------------------------------------------------------------------------
+//
+// Permission: self always; Wizard for others.
+//
+FUNCTION(fun_mailstats)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    dbref playerask;
+    if (nfargs == 0 || !fargs[0] || !fargs[0][0])
+    {
+        playerask = executor;
+    }
+    else
+    {
+        playerask = lookup_player(executor, fargs[0], true);
+        if (!Good_obj(playerask) || !isPlayer(playerask))
+        {
+            safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+            return;
+        }
+    }
+
+    if (playerask != executor && !Wizard(executor))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    int rc, uc, cc;
+    count_mail(playerask, 0, &rc, &uc, &cc);
+    safe_tprintf_str(buff, bufc, T("%d %d %d"), rc, uc, cc);
+}
+
+// ---------------------------------------------------------------------------
+// maillist([player]) — space-separated list of valid message numbers.
+// ---------------------------------------------------------------------------
+//
+// Permission: self always; Wizard for others.
+//
+FUNCTION(fun_maillist)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    dbref playerask;
+    if (nfargs == 0 || !fargs[0] || !fargs[0][0])
+    {
+        playerask = executor;
+    }
+    else
+    {
+        playerask = lookup_player(executor, fargs[0], true);
+        if (!Good_obj(playerask) || !isPlayer(playerask))
+        {
+            safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+            return;
+        }
+    }
+
+    if (playerask != executor && !Wizard(executor))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    // Use count_mail to determine the total, then list 1..N.
+    // This matches what mail_fetch() considers valid indices.
+    //
+    int rc, uc, cc;
+    count_mail(playerask, 0, &rc, &uc, &cc);
+    int total = rc + uc;
+    for (int i = 1; i <= total; i++)
+    {
+        if (i > 1)
+        {
+            safe_chr(' ', buff, bufc);
+        }
+        safe_ltoa(i, buff, bufc);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// mailinfo(msg#, field[, player]) — generic per-message field accessor.
+// ---------------------------------------------------------------------------
+//
+// Per-field cross-player permissions:
+//   body:  self (with nObjEvalNest guard) or God
+//   all others: self or Wizard
+//
+FUNCTION(fun_mailinfo)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    int num = mux_atol(fargs[0]);
+    const UTF8 *field = fargs[1];
+
+    dbref playerask;
+    if (nfargs >= 3 && fargs[2][0] != '\0')
+    {
+        playerask = lookup_player(executor, fargs[2], true);
+        if (!Good_obj(playerask) || !isPlayer(playerask))
+        {
+            safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+            return;
+        }
+    }
+    else
+    {
+        playerask = executor;
+    }
+
+    // Permission check: body field uses God-only for cross-player,
+    // all other fields use Wizard.
+    //
+    bool bIsBody = (0 == mux_stricmp(field, T("body")));
+    if (playerask != executor)
+    {
+        if (bIsBody)
+        {
+            if (!God(executor))
+            {
+                safe_noperm(buff, bufc);
+                return;
+            }
+        }
+        else
+        {
+            if (!Wizard(executor))
+            {
+                safe_noperm(buff, bufc);
+                return;
+            }
+        }
+    }
+    else if (bIsBody && mudstate.nObjEvalNest)
+    {
+        // Self-access body check: nObjEvalNest guard.
+        //
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    if (num < 1 || !isPlayer(playerask))
+    {
+        safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+        return;
+    }
+
+    struct mail *mp = mail_fetch(playerask, num);
+    if (nullptr == mp)
+    {
+        safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+        return;
+    }
+
+    if (0 == mux_stricmp(field, T("from")))
+    {
+        safe_tprintf_str(buff, bufc, T("#%d"), mp->from);
+    }
+    else if (0 == mux_stricmp(field, T("to")))
+    {
+        safe_tprintf_str(buff, bufc, T("#%d"), mp->to);
+    }
+    else if (0 == mux_stricmp(field, T("tolist")))
+    {
+        if (mp->tolist)
+        {
+            safe_str(mp->tolist, buff, bufc);
+        }
+    }
+    else if (0 == mux_stricmp(field, T("subject")))
+    {
+        if (mp->subject)
+        {
+            safe_str(mp->subject, buff, bufc);
+        }
+    }
+    else if (0 == mux_stricmp(field, T("time")))
+    {
+        if (mp->time)
+        {
+            safe_str(mp->time, buff, bufc);
+        }
+    }
+    else if (bIsBody)
+    {
+        const UTF8 *msg = MessageFetch(mp->number);
+        if (msg)
+        {
+            safe_str(msg, buff, bufc);
+        }
+    }
+    else if (0 == mux_stricmp(field, T("size")))
+    {
+        safe_ltoa(static_cast<long>(MessageFetchSize(mp->number)), buff, bufc);
+    }
+    else if (0 == mux_stricmp(field, T("flags")))
+    {
+        if (Read(mp))     safe_chr('R', buff, bufc);
+        if (Urgent(mp))   safe_chr('U', buff, bufc);
+        if (Cleared(mp))  safe_chr('C', buff, bufc);
+        if (Tagged(mp))   safe_chr('T', buff, bufc);
+        if (Forward(mp))  safe_chr('F', buff, bufc);
+        if (mp->read & M_REPLY) safe_chr('P', buff, bufc);
+    }
+    else if (0 == mux_stricmp(field, T("read")))
+    {
+        safe_chr(Read(mp) ? '1' : '0', buff, bufc);
+    }
+    else
+    {
+        safe_str(T("#-1 INVALID FIELD"), buff, bufc);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// mailflags(msg#[, player]) — shorthand for mailinfo flags field.
+// ---------------------------------------------------------------------------
+//
+// Permission: self always; Wizard for cross-player.
+//
+FUNCTION(fun_mailflags)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    int num = mux_atol(fargs[0]);
+
+    dbref playerask;
+    if (nfargs >= 2 && fargs[1][0] != '\0')
+    {
+        playerask = lookup_player(executor, fargs[1], true);
+        if (!Good_obj(playerask) || !isPlayer(playerask))
+        {
+            safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+            return;
+        }
+    }
+    else
+    {
+        playerask = executor;
+    }
+
+    if (playerask != executor && !Wizard(executor))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
+    if (num < 1 || !isPlayer(playerask))
+    {
+        safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+        return;
+    }
+
+    struct mail *mp = mail_fetch(playerask, num);
+    if (nullptr == mp)
+    {
+        safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+        return;
+    }
+
+    if (Read(mp))     safe_chr('R', buff, bufc);
+    if (Urgent(mp))   safe_chr('U', buff, bufc);
+    if (Cleared(mp))  safe_chr('C', buff, bufc);
+    if (Tagged(mp))   safe_chr('T', buff, bufc);
+    if (Forward(mp))  safe_chr('F', buff, bufc);
+    if (mp->read & M_REPLY) safe_chr('P', buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
 // fun_hasattr: does object X have attribute Y.
 // Hasattr (and hasattrp, which is derived from hasattr) borrowed from
 // TinyMUSH 2.2.

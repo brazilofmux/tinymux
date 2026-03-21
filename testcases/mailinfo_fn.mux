@@ -1,0 +1,270 @@
+#
+# mailinfo_fn.mux - Test Cases for mailcount, mailstats, maillist,
+#                    mailinfo, and mailflags.
+#
+@create test_mailinfo_fn
+-
+@set test_mailinfo_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+# TC000 sends a test mail. The executor for INHERIT objects is the
+# object itself, but mailsend sends as the Owner (#1). We query #1's
+# mailbox explicitly throughout.
+#
+&tr.tc000 test_mailinfo_fn=
+  @log smoke=Beginning mailinfo test cases.;
+  @if t(mailsend(Wizard,MailInfo Test,This is a test body.))=
+  {
+    @log smoke=TC000: mailsend for testing. Sent.
+  },
+  {
+    @log smoke=TC000: mailsend for testing. FAILED to send.
+  }
+-
+#
+# Test Case #1 - mailcount(#1) returns at least 1.
+#
+&tr.tc001 test_mailinfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [gte(mailcount(#1),1)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC001: mailcount. Succeeded.
+  },
+  {
+    @log smoke=TC001: mailcount. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - mailstats(#1) returns three integers.
+#
+&tr.tc002 test_mailinfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eq(words(mailstats(#1)),3)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC002: mailstats. Succeeded.
+  },
+  {
+    @log smoke=TC002: mailstats. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - maillist(#1) returns at least one number.
+#
+&tr.tc003 test_mailinfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [gte(words(maillist(#1)),1)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC003: maillist. Succeeded.
+  },
+  {
+    @log smoke=TC003: maillist. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - mailcount(#1) equals words(maillist(#1)).
+#
+&tr.tc004 test_mailinfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eq(mailcount(#1),words(maillist(#1)))]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC004: mailcount matches maillist. Succeeded.
+  },
+  {
+    @log smoke=TC004: mailcount matches maillist. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - mailinfo(last msg, from) returns a dbref.
+#
+&tr.tc005 test_mailinfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isdbref(mailinfo(last(maillist(#1)),from,#1))]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC005: mailinfo from. Succeeded.
+  },
+  {
+    @log smoke=TC005: mailinfo from. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - mailinfo(last msg, subject) returns our subject.
+#
+&tr.tc006 test_mailinfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [mailinfo(last(maillist(#1)),subject,#1)]
+          )
+        ),
+        352B1213CAD09731F90C66FE64E914CE8DBD735A
+      )=
+  {
+    @log smoke=TC006: mailinfo subject. Succeeded.
+  },
+  {
+    @log smoke=TC006: mailinfo subject. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - mailinfo(last msg, time) returns non-empty.
+#
+&tr.tc007 test_mailinfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [t(strlen(mailinfo(last(maillist(#1)),time,#1)))]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC007: mailinfo time. Succeeded.
+  },
+  {
+    @log smoke=TC007: mailinfo time. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - mailinfo(last msg, size) returns positive integer.
+#
+&tr.tc008 test_mailinfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [gt(mailinfo(last(maillist(#1)),size,#1),0)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC008: mailinfo size. Succeeded.
+  },
+  {
+    @log smoke=TC008: mailinfo size. Failed (%q0).
+  }
+-
+#
+# Test Case #9 - mailinfo(last msg, read) returns 0 (unread).
+#
+&tr.tc009 test_mailinfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [mailinfo(last(maillist(#1)),read,#1)]
+          )
+        ),
+        B6589FC6AB0DC82CF12099D1C2D40AB994E8410C
+      )=
+  {
+    @log smoke=TC009: mailinfo read. Succeeded.
+  },
+  {
+    @log smoke=TC009: mailinfo read. Failed (%q0).
+  }
+-
+#
+# Test Case #10 - mailflags(last msg, #1) returns a string (no error).
+#
+&tr.tc010 test_mailinfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [not(strmatch(mailflags(last(maillist(#1)),#1),#-1*))]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC010: mailflags. Succeeded.
+  },
+  {
+    @log smoke=TC010: mailflags. Failed (%q0).
+  }
+-
+#
+# Test Case #11 - mailinfo(99999, from, #1) returns #-1 NO SUCH MESSAGE.
+#
+&tr.tc011 test_mailinfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [mailinfo(99999,from,#1)]
+          )
+        ),
+        F03CC4F0B40CA2E45C0846FEDC1BA910D4326C07
+      )=
+  {
+    @log smoke=TC011: mailinfo bad msg. Succeeded.
+  },
+  {
+    @log smoke=TC011: mailinfo bad msg. Failed (%q0).
+  }
+-
+#
+# Test Case #12 - mailinfo(msg, badfield, #1) returns #-1 INVALID FIELD.
+#
+&tr.tc012 test_mailinfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strmatch(mailinfo(last(maillist(#1)),badfield,#1),#-1 INVALID FIELD)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC012: mailinfo invalid field. Succeeded.
+  },
+  {
+    @log smoke=TC012: mailinfo invalid field. Failed (%q0).
+  }
+-
+#
+# Test Case #13 - mailinfo(last msg, tolist) returns non-empty.
+#
+&tr.tc013 test_mailinfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [t(strlen(mailinfo(last(maillist(#1)),tolist,#1)))]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC013: mailinfo tolist. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC013: mailinfo tolist. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_mailinfo_fn=
+  @log smoke=End mailinfo test cases.;
+  @notify smoke
+-
+drop test_mailinfo_fn
+-
+#
+# End of Test Cases
+#
