@@ -347,7 +347,8 @@ private:
                 // Would look up W<letter> attribute on executor
                 return "[W-attr]";
             }
-            // MUX: unknown → literal
+            // MUX: unknown → literal. In MUX profiles the tokenizer
+            // should not have consumed the trailing attribute letter.
             return std::string(1, ch);
         }
 
@@ -384,9 +385,8 @@ private:
             }
             if (toupper(static_cast<unsigned char>(depthCh)) == 'L'
                 && m_ctx.profile == PROFILE_PENN) {
-                // Penn: %iL = current level itext
-                int idx = static_cast<int>(m_ctx.iterStack.size()) - 1;
-                return (idx >= 0) ? m_ctx.iterStack[idx].itext : "";
+                // Penn: %iL = current iterator nesting level.
+                return std::to_string(static_cast<int>(m_ctx.iterStack.size()));
             }
             return "";
         }
@@ -583,7 +583,15 @@ private:
     std::string evalNoevalArg(const ASTNode *node) {
         if (!node) return "";
         if (node->type == NODE_BRACEGROUP) {
-            return evalNoevalBraceArg(node);
+            if (m_ctx.profile == PROFILE_MUX213_COMPAT) {
+                return evalNoevalBraceArg(node);
+            }
+            // Baseline AST/Penn study behavior: brace groups selected by
+            // FN_NOEVAL functions are evaluated with brace stripping, but
+            // without the extra legacy backslash-consumption pass.
+            int flags = (m_ctx.evalFlags & ~(EV_TOP | EV_FMAND))
+                      | EV_EVAL | EV_FCHECK | EV_STRIP_CURLY;
+            return evalWithFlags(node, flags);
         }
         return eval(node);
     }
@@ -981,12 +989,6 @@ private:
         // FN_NOEVAL functions — deferred evaluation
         // ---------------------------------------------------------------
 
-        // if(condition, true_branch [, false_branch])
-        m_noeval_funcs["IF"] = [this](const std::vector<std::unique_ptr<ASTNode>> &c) -> std::string {
-            if (c.size() < 2) return "";
-            return toBool(eval(c[0].get())) ? evalNoevalArg(c[1].get())
-                : (c.size() > 2 ? evalNoevalArg(c[2].get()) : "");
-        };
         m_noeval_funcs["IFELSE"] = [this](const std::vector<std::unique_ptr<ASTNode>> &c) -> std::string {
             if (c.size() < 3) return "";
             return toBool(eval(c[0].get())) ? evalNoevalArg(c[1].get()) : evalNoevalArg(c[2].get());
@@ -1064,7 +1066,7 @@ private:
         m_noeval_funcs["EVAL"] = [this](const std::vector<std::unique_ptr<ASTNode>> &c) -> std::string {
             if (c.empty()) return "";
             std::string text = evalWithFlags(c[0].get(), (m_ctx.evalFlags & ~EV_TOP) | EV_EVAL | EV_FCHECK);
-            auto tokens = tokenize(text.c_str());
+            auto tokens = tokenize(text.c_str(), m_ctx.profile);
             Parser parser(tokens);
             auto ast = parser.parse();
             return evalWithFlags(ast.get(), (m_ctx.evalFlags & ~EV_TOP) | EV_EVAL | EV_FCHECK);

@@ -152,23 +152,28 @@ static std::string gather_pct(const char *&p, ParserProfile profile)
         if (*p && isalpha(static_cast<unsigned char>(*p))) {
             sub += *p++;
         }
-    } else if (upper == 'W') {
-        // Penn: %wa–%wz (W-attributes). MUX: unknown → fallback.
-        // Tokenize the same way for all profiles so the evaluator
-        // can decide what to do with it.
+    } else if (upper == 'W' && profile == PROFILE_PENN) {
+        // Penn: %wa–%wz (W-attributes).
         sub += *p++;
         if (*p && isalpha(static_cast<unsigned char>(*p))) {
             sub += *p++;
         }
     } else if (upper == 'C' || upper == 'X') {
-        // MUX: %cx/%xx color codes, %c<rgb>/%x<rgb> extended.
-        // Penn: %c = raw command, %x = X-attribute.
-        // Tokenize the multi-char form for all profiles.
-        sub += *p++;
-        if (*p == '<') {
-            gather_angle(p, sub);
-        } else if (*p) {
+        if (profile == PROFILE_PENN) {
+            // Penn: %c is a single-character substitution (raw command).
+            // Penn: %x<letter> is an X-attribute lookup.
             sub += *p++;
+            if (upper == 'X' && *p && isalpha(static_cast<unsigned char>(*p))) {
+                sub += *p++;
+            }
+        } else {
+            // MUX: %cx/%xx color codes, %c<rgb>/%x<rgb> extended.
+            sub += *p++;
+            if (*p == '<') {
+                gather_angle(p, sub);
+            } else if (*p) {
+                sub += *p++;
+            }
         }
     } else if (ch == '=') {
         // %=, %=<attr>, %=<N>
@@ -180,13 +185,13 @@ static std::string gather_pct(const char *&p, ParserProfile profile)
         // %i0–%i9: loop itext at depth
         // Penn also has %iL for current level
         sub += *p++;
-        if (*p && ((*p >= '0' && *p <= '9') || upper == 'I')) {
+        if (*p && (*p >= '0' && *p <= '9')) {
             // Consume digit or 'L'
-            if (*p >= '0' && *p <= '9') {
-                sub += *p++;
-            } else if (toupper(static_cast<unsigned char>(*p)) == 'L') {
-                sub += *p++;
-            }
+            sub += *p++;
+        } else if (profile == PROFILE_PENN
+                && *p
+                && toupper(static_cast<unsigned char>(*p)) == 'L') {
+            sub += *p++;
         }
     } else if (ch == '$' && profile == PROFILE_PENN) {
         // Penn: %$0–%$9, %$L — stack variables

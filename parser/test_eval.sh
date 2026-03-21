@@ -115,9 +115,15 @@ check '\\% capacity' '\ capacity' '--profile mux213'
 # With braces in FN_NOEVAL (the bboard case):
 # 2.13 two-pass: noeval strips \\ → \, then eval: \% → %
 # The evalNoevalArg mechanism replicates this.
-check '[switch(1,1,{\\% capacity})]' '% capacity'
-check '[if(1,{\\% capacity})]' '% capacity'
-check '[case(1,1,{\\% capacity})]' '% capacity'
+check '[switch(1,1,{\\% capacity})]' '\ capacity'
+check '[if(1,{\\% capacity})]' '\ capacity'
+check '[case(1,1,{\\% capacity})]' '\ capacity'
+check '[switch(1,1,{\\% capacity})]' '% capacity' '--profile mux213'
+check '[if(1,{\\% capacity})]' '% capacity' '--profile mux213'
+check '[case(1,1,{\\% capacity})]' '% capacity' '--profile mux213'
+# Penn keeps %<space> as an atomic substitution, so with brace stripping
+# but without the legacy 2.13 noeval pass this becomes "\% capacity".
+check '[switch(1,1,{\\% capacity})]' '\% capacity' '--profile penn'
 
 # Without braces in switch, no extra pass — same as bare
 check '[switch(1,1,\\% capacity)]' '\ capacity'
@@ -189,6 +195,10 @@ check '%g' 'g' '--profile penn'
 # Penn-specific: %= is attr name
 check '%=' '=' '--profile mux214'
 check '%=' 'DO_SOMETHING' '--profile penn'
+check '%wa' 'wa' '--profile mux214'
+check '%wa' '[W-attr]' '--profile penn'
+check '%iL' 'iL' '--profile mux214'
+check '[iter(a b,%iL)]' '1 1' '--profile penn'
 
 # Nested evaluation
 check '[add(1,add(2,add(3,4)))]' '10'
