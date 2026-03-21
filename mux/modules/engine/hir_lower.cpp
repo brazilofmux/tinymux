@@ -1581,6 +1581,35 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
             && arg0_str[0] == '#'
             && mux_isdigit(arg0_str[1]);
 
+        // Helper: check if an AST contains control-flow functions
+        // (switch, if, iter, cand, cor, etc.) that produce multi-block
+        // HIR.  These interact badly with the permission BRC's CFG.
+        // TODO: fix SSA construction for nested multi-block CFGs.
+        //
+        std::function<bool(const ASTNode *)> has_control_flow;
+        has_control_flow = [&](const ASTNode *n) -> bool {
+            if (!n) return false;
+            if (n->type == AST_FUNCCALL) {
+                std::string fn = n->text;
+                for (auto &c : fn)
+                    c = static_cast<char>(toupper(static_cast<unsigned char>(c)));
+                if (fn == "SWITCH" || fn == "SWITCHALL"
+                    || fn == "IF" || fn == "IFELSE"
+                    || fn == "ITER" || fn == "PARSE"
+                    || fn == "CAND" || fn == "CANDBOOL"
+                    || fn == "COR" || fn == "CORBOOL"
+                    || fn == "CASE" || fn == "CASEALL"
+                    || fn == "WHILE")
+                {
+                    return true;
+                }
+            }
+            for (auto &child : n->children) {
+                if (has_control_flow(child.get())) return true;
+            }
+            return false;
+        };
+
         // Don't inline if too many extra args (>10) — the CARGS
         // helper layer only supports 10 slots.
         int nExtra_check = static_cast<int>(node->children.size()) - 1;
@@ -1590,10 +1619,14 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
             dbref thing;
             ATTR *pattr = nullptr;
 
-            if (parse_attrib(GOD,
+            if (!parse_attrib(GOD,
                     reinterpret_cast<const UTF8 *>(arg0_str.c_str()),
                     &thing, &pattr)
-                && pattr && Good_obj(thing))
+                || !pattr || !Good_obj(thing))
+            {
+                // Can't resolve — fall through to general lowering.
+            }
+            else
             {
                 dbref aowner;
                 int aflags;
@@ -1606,7 +1639,7 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                     auto body_ast = ast_parse_string(body, nBodyLen);
                     free_lbuf(body);
 
-                    if (body_ast)
+                    if (body_ast && !has_control_flow(body_ast.get()))
                     {
                         bool is_local = (fname == "ULOCAL");
                         int nExtra = static_cast<int>(
