@@ -669,6 +669,7 @@ static bool needs_int_reg(hir_program &h, int i) {
     case HIR_ICONST:
     case HIR_ATOI:
     case HIR_STRCMP:
+    case HIR_LUA_GETI:
     case HIR_ADD: case HIR_SUB: case HIR_MUL: case HIR_DIV: case HIR_REM:
     case HIR_NEG: case HIR_ABS: case HIR_SIGN:
     case HIR_MAX: case HIR_MIN:
@@ -1163,6 +1164,41 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                     rv_emit_strcmp(rc.code, 10, 11, dest);
                 }
                 ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            case HIR_LUA_GETI: {
+                // Dedicated ECALL: a0=tbl_idx, a1=key → a0=value (int64)
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                // s1 = table stack index (known_int), s2 = integer key
+                uint8_t tbl_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                rc.code.push_back(rv_ADDI(10, tbl_r, 0));  // a0 = tbl_idx
+                uint8_t key_r = ra_get_reg(rc, loc, s2, 28);  // t3 as scratch
+                rc.code.push_back(rv_ADDI(11, key_r, 0));  // a1 = key
+                rc.code.push_back(rv_ADDI(17, 0, static_cast<int32_t>(ECALL_LUA_GETI_INT)));
+                rc.code.push_back(rv_ECALL());
+                // Result in a0 (x10). Success flag in a1 (x11) — ignored for now.
+                rc.code.push_back(rv_ADDI(dest, 10, 0));   // dest = a0
+                ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            case HIR_LUA_SETI: {
+                // Dedicated ECALL: a0=tbl_idx, a1=key, a2=value
+                int s1 = h.src1[i], s2 = h.src2[i];
+                int s3 = static_cast<int>(h.val[i]); // 3rd operand stored in val
+                uint8_t tbl_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                rc.code.push_back(rv_ADDI(10, tbl_r, 0));  // a0 = tbl_idx
+                uint8_t key_r = ra_get_reg(rc, loc, s2, 28);
+                rc.code.push_back(rv_ADDI(11, key_r, 0));  // a1 = key
+                uint8_t val_r = ra_get_reg(rc, loc, s3, 29);
+                rc.code.push_back(rv_ADDI(12, val_r, 0));  // a2 = value
+                rc.code.push_back(rv_ADDI(17, 0, static_cast<int32_t>(ECALL_LUA_SETI_INT)));
+                rc.code.push_back(rv_ECALL());
                 break;
             }
 
@@ -1831,6 +1867,8 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_DEC:        return "DEC";
     case HIR_ATOI:       return "ATOI";
     case HIR_STRCMP:      return "STRCMP";
+    case HIR_LUA_GETI:   return "LUA_GETI";
+    case HIR_LUA_SETI:   return "LUA_SETI";
     case HIR_ITOA:       return "ITOA";
     case HIR_ITOF:       return "ITOF";
     case HIR_FTOI:       return "FTOI";

@@ -89,6 +89,10 @@ enum hir_kind {
     // String comparison
     HIR_STRCMP,      // strcmp(src1, src2): -1/0/1 (inline RV64 byte compare)
 
+    // Lua table access (dedicated ECALL, integer fast-path)
+    HIR_LUA_GETI,   // geti(tbl_idx, key): ECALL → TY_INT (no string marshal)
+    HIR_LUA_SETI,   // seti(tbl_idx, key, val): ECALL (no string marshal)
+
     // Function calls
     HIR_CALL,       // ECALL to engine function
     HIR_STRCAT,     // concatenate N strings via ECALL

@@ -848,9 +848,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int key = h.emit_iconst(insn.C());
             if (key < 0) return -1;
 
-            std::string name("__lua_geti");
-            int args[] = { tbl, key };
-            lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
+            // Use integer fast-path: returns TY_INT directly, no string.
+            lua_reg[A] = h.emit(HIR_LUA_GETI, TY_INT, tbl, key);
             if (lua_reg[A] < 0) return -1;
             h.ecalls++;
             break;
@@ -922,18 +921,22 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int tbl = lua_reg[insn.B()];
             int key = lua_reg[insn.C()];
             if (tbl < 0 || key < 0) return -1;
-            // Convert key to string if needed.
+
             if (h.ty[key] == TY_INT) {
-                key = h.emit(HIR_ITOA, TY_STRING, key);
-                if (key < 0) return -1;
-            } else if (h.ty[key] == TY_FLOAT) {
-                key = h.emit(HIR_FTOA, TY_STRING, key);
-                if (key < 0) return -1;
+                // Integer key: use fast-path ECALL, returns TY_INT.
+                lua_reg[A] = h.emit(HIR_LUA_GETI, TY_INT, tbl, key);
+                if (lua_reg[A] < 0) return -1;
+            } else {
+                // String/float key: use general ECALL path.
+                if (h.ty[key] == TY_FLOAT) {
+                    key = h.emit(HIR_FTOA, TY_STRING, key);
+                    if (key < 0) return -1;
+                }
+                std::string name("__lua_geti");
+                int args[] = { tbl, key };
+                lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
+                if (lua_reg[A] < 0) return -1;
             }
-            std::string name("__lua_geti");
-            int args[] = { tbl, key };
-            lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
-            if (lua_reg[A] < 0) return -1;
             h.ecalls++;
             break;
         }

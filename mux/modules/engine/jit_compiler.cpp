@@ -2352,6 +2352,81 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         return -1;
     }
 
+    case ECALL_LUA_GETI_INT: {
+        // Integer-optimized table get: returns value as int64, no string.
+        if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int tbl_idx = static_cast<int>(ctx->x[10]);
+        lua_Integer key = static_cast<lua_Integer>(ctx->x[11]);
+        lua_geti(L, tbl_idx, key);
+        if (lua_isinteger(L, -1)) {
+            ctx->x[10] = static_cast<uint64_t>(lua_tointeger(L, -1));
+            ctx->x[11] = 1;  // ok
+        } else {
+            ctx->x[10] = 0;
+            ctx->x[11] = 0;  // not integer
+        }
+        lua_pop(L, 1);
+        return -1;
+    }
+
+    case ECALL_LUA_SETI_INT: {
+        // Integer-optimized table set: writes int64 directly.
+        if (!ec->lua_state) return -1;
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int tbl_idx = static_cast<int>(ctx->x[10]);
+        lua_Integer key = static_cast<lua_Integer>(ctx->x[11]);
+        lua_Integer val = static_cast<lua_Integer>(ctx->x[12]);
+        lua_pushinteger(L, val);
+        lua_seti(L, tbl_idx, key);
+        return -1;
+    }
+
+    case ECALL_LUA_PIN_ARRAY: {
+        // Copy table's integer array part into guest memory.
+        if (!ec->lua_state) { ctx->x[10] = 0; return -1; }
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int tbl_idx = static_cast<int>(ctx->x[10]);
+        uint64_t dest_addr = ctx->x[11];
+        int max_elems = static_cast<int>(ctx->x[12]);
+
+        int len = static_cast<int>(lua_rawlen(L, tbl_idx));
+        if (len > max_elems) len = max_elems;
+        if (dest_addr + len * 8 > ec->memory_size) { ctx->x[10] = 0; return -1; }
+
+        int64_t *dest = reinterpret_cast<int64_t *>(ec->memory + dest_addr);
+        for (int i = 1; i <= len; i++) {
+            lua_geti(L, tbl_idx, i);
+            if (lua_isinteger(L, -1)) {
+                dest[i - 1] = lua_tointeger(L, -1);
+            } else {
+                lua_pop(L, 1);
+                ctx->x[10] = 0;  // not all-integer — bail
+                return -1;
+            }
+            lua_pop(L, 1);
+        }
+        ctx->x[10] = static_cast<uint64_t>(len);
+        return -1;
+    }
+
+    case ECALL_LUA_UNPIN: {
+        // Write back pinned array from guest memory to Lua table.
+        if (!ec->lua_state) return -1;
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int tbl_idx = static_cast<int>(ctx->x[10]);
+        uint64_t src_addr = ctx->x[11];
+        int len = static_cast<int>(ctx->x[12]);
+        if (src_addr + len * 8 > ec->memory_size) return -1;
+
+        int64_t *src = reinterpret_cast<int64_t *>(ec->memory + src_addr);
+        for (int i = 0; i < len; i++) {
+            lua_pushinteger(L, src[i]);
+            lua_seti(L, tbl_idx, i + 1);
+        }
+        return -1;
+    }
+
     default:
         ctx->x[10] = 0;
         return -1;

@@ -903,11 +903,73 @@
     setr(0,lua(me/LUA_STREQ_NUM,5)),
     str)=
   {
-    @log smoke=TC055: lua string equality numeric. Succeeded.;
+    @log smoke=TC055: lua string equality numeric. Succeeded.
+  },
+  {
+    @log smoke=TC055: lua string equality numeric. Failed (%q0).
+  }
+-
+#
+# Test 56: integer table access via HIR_LUA_GETI (no string marshal).
+#
+&LUA_TBLINT test_lua_fn= \
+  local t = {10, 20, 30} \
+  return t[1] + t[2] + t[3]
+-
+&tr.tc056 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_TBLINT)),
+    60)=
+  {
+    @log smoke=TC056: lua integer table sum. Succeeded.
+  },
+  {
+    @log smoke=TC056: lua integer table sum. Failed (%q0).
+  }
+-
+#
+# Test 57: for-loop over integer table.
+#
+&LUA_TBLLOOP test_lua_fn= \
+  local t = {10, 20, 30, 40, 50} \
+  local s = 0 \
+  for i = 1, 5 do \
+    s = s + t[i] \
+  end \
+  return s
+-
+&tr.tc057 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_TBLLOOP)),
+    150)=
+  {
+    @log smoke=TC057: lua for-loop table sum. Succeeded.
+  },
+  {
+    @log smoke=TC057: lua for-loop table sum. Failed (%q0).
+  }
+-
+#
+# Test 58: for-loop with index arithmetic on table.
+#
+&LUA_TBLIDX test_lua_fn= \
+  local t = {1, 2, 3, 4, 5} \
+  local s = 0 \
+  for i = 1, 5 do \
+    s = s + t[i] * i \
+  end \
+  return s
+-
+&tr.tc058 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_TBLIDX)),
+    55)=
+  {
+    @log smoke=TC058: lua for-loop table index arithmetic. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC055: lua string equality numeric. Failed (%q0).;
+    @log smoke=TC058: lua for-loop table index arithmetic. Failed (%q0).;
     @trig me/tr.done
   }
 -

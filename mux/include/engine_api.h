@@ -49,6 +49,10 @@ static constexpr uint64_t ECALL_LUA_SETI      = 0x303; // a0=table_stk_idx, a1=i
 static constexpr uint64_t ECALL_LUA_GETFIELD  = 0x304; // a0=table_stk_idx, a1=key_addr, a2=out_addr
 static constexpr uint64_t ECALL_LUA_SETFIELD  = 0x305; // a0=table_stk_idx, a1=key_addr, a2=val_addr
 static constexpr uint64_t ECALL_LUA_POPTABLE  = 0x306; // a0=table_stk_idx (cleanup)
+static constexpr uint64_t ECALL_LUA_GETI_INT = 0x308; // a0=tbl_idx, a1=key → a0=value, a1=ok
+static constexpr uint64_t ECALL_LUA_SETI_INT = 0x309; // a0=tbl_idx, a1=key, a2=value
+static constexpr uint64_t ECALL_LUA_PIN_ARRAY= 0x30A; // a0=tbl_idx, a1=dest, a2=max → a0=count
+static constexpr uint64_t ECALL_LUA_UNPIN    = 0x30B; // a0=tbl_idx, a1=src, a2=count (write-back)
 
 // Lua bridge ECALLs — reserved range for mux.* function dispatch.
 static constexpr uint64_t ECALL_LUA_BRIDGE    = 0x380; // base for Lua bridge calls
