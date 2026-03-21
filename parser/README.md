@@ -18,7 +18,7 @@ echo 'add(1,mul(2,3))' | ./tokenize
 echo '[setq(0,hello)]%q0 world' | ./parse
 ./parse < test_corpus.txt
 echo '\\% happy' | ./eval --profile mux214
-echo '\\\\% happy' | ./eval --profile mux213
+echo '[switch(1,1,{\\\\% capacity})]' | ./eval --profile mux213
 echo '% happy' | ./eval --profile penn
 ```
 
@@ -61,11 +61,24 @@ Ragel scanner + recursive-descent parser can reproduce its behavior.
 The study tools now support `--profile mux214|mux213|penn`:
 
 - `mux214` models the current AST tokenizer/evaluator shape.
-- `mux213` prototypes one important legacy compatibility rule: a `\\`
-  token followed by a `%` token is emitted as a literal raw `%...`
-  sequence instead of being evaluated independently.
-- `penn` recognizes `% ` as an atomic substitution that expands to
-  literal `% `, matching PennMUSH's long-standing behavior.
+- `mux213` currently models the verified legacy noeval-brace behavior:
+  when a brace-group argument is selected by `if`, `switch`, or `case`,
+  one backslash layer is stripped before the text is reparsed.
+- `penn` recognizes Penn-only atomic `%` forms such as `% `, `%wa`,
+  and `%iL`.
+
+Focused examples:
+
+```
+echo '\\\\% capacity' | ./eval --profile mux214
+# -> \ capacity
+
+echo '[switch(1,1,{\\\\% capacity})]' | ./eval --profile mux213
+# -> % capacity
+
+echo '[switch(1,1,{\\\\% capacity})]' | ./eval --profile penn
+# -> \% capacity
+```
 
 These profiles are intentionally incomplete. They are meant to help
 identify where parser behavior differs, not to claim full engine

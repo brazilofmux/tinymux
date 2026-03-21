@@ -13,6 +13,12 @@ The immediate trigger is real-world bboard softcode that depends on
 legacy handling of backslash-plus-percent sequences near expression
 boundaries, such as `]\\\\% capacity`.
 
+The study tool now has a verified minimal reproduction of that case:
+
+- `mux214`: `[switch(1,1,{\\% capacity})]` -> `\ capacity`
+- `mux213`: `[switch(1,1,{\\% capacity})]` -> `% capacity`
+- `penn`: `[switch(1,1,{\\% capacity})]` -> `\% capacity`
+
 ## Key Finding
 
 The primary fault line is not "recursive descent" versus "non-recursive
@@ -44,6 +50,11 @@ This means 2.13 behavior is shaped by the interaction of:
 - later `%` dispatch on the surviving character stream
 - possible multi-pass evaluation around brackets and function args
 
+The current study prototype models one important part of that last item:
+selected brace-group arguments to `FN_NOEVAL` functions (`if`, `switch`,
+`case`) get a noeval pass that strips one layer of backslashes before
+the result is parsed and evaluated again.
+
 ### TinyMUX 2.14 AST
 
 The AST scanner tokenizes `%` and `\\` separately. See
@@ -63,6 +74,13 @@ Unknown `%` forms fall back to the following character only at
 This separation is exactly what breaks legacy couplings such as
 `Esc("\\\\") + Sub("% ")`.
 
+In the verified bboard-shaped case, 2.14-style behavior is:
+
+1. the brace-group argument is selected by a `FN_NOEVAL` function
+2. braces are stripped
+3. the remaining `Esc("\\\\") + Sub("% ")` are evaluated independently
+4. the result is `\ capacity`
+
 ### PennMUSH
 
 PennMUSH's parser is recursive, but still streaming. Its `\\` handling
@@ -79,6 +97,30 @@ PennMUSH's changelog calls this out directly:
 
 See [CHANGES.181](/tmp/pennmush/CHANGES.181#L332) and
 [CHANGES.182](/tmp/pennmush/CHANGES.182#L195).
+
+For the same bboard-shaped case, Penn behavior differs from both MUX
+profiles because `% ` is atomic. After brace stripping, `\\% ` becomes
+`Esc("\\\\") + Sub("% ")`, which evaluates to `\% `.
+
+## Working Matrix
+
+The study tool currently documents and tests the following focused
+differences:
+
+| Case | `mux214` | `mux213` | `penn` |
+| --- | --- | --- | --- |
+| `\\% capacity` | `\ capacity` | `\ capacity` | `\% capacity` |
+| `[switch(1,1,{\\% capacity})]` | `\ capacity` | `% capacity` | `\% capacity` |
+| `%wa` | `wa` | `wa` | Penn W-attribute |
+| `%iL` | `iL` | `iL` | current iterator level |
+| `% ` | unknown-subst fallback to space | unknown-subst fallback to space | literal `% ` |
+
+This matrix matters because it separates three different causes:
+
+- tokenizer grammar differences, such as Penn-only `%wa` and `%iL`
+- substitution-table differences, especially Penn `% `
+- multi-pass noeval behavior, which is the current best explanation for
+  the 2.13 bboard result
 
 ## Compatibility Axes
 
@@ -102,10 +144,11 @@ The study tools now expose:
 
 Current prototype scope:
 
-- `penn` adds atomic `% ` support.
-- `mux213` adds a sequence-level fold for `Esc("\\\\") + Sub("%...")`,
-  emitting the raw `%...` text literally. This is a targeted experiment,
-  not a claim of full 2.13 emulation.
+- `mux214` is the baseline token-first AST model.
+- `penn` adds Penn-only atomic `%` forms such as `% `, `%wa`, and `%iL`.
+- `mux213` currently models one legacy behavior that matters for real
+  softcode: brace-group arguments selected by `FN_NOEVAL` functions get
+  a noeval pass that strips one layer of backslashes before reparse.
 
 This prototype is intended to answer "where can the mode live?" rather
 than "is the production fix already done?"
@@ -115,9 +158,18 @@ than "is the production fix already done?"
 Build a semantic matrix before touching production parsing:
 
 1. Enumerate all `%` forms in 2.13, 2.14, and Penn.
-2. Enumerate escape-folding rules in each engine.
+2. Enumerate backslash rules in each engine, including noeval paths.
 3. Classify each divergence as tokenization-time, evaluation-time, or
    multi-pass streaming behavior.
 4. Decide whether production needs:
    - one default profile plus a compatibility mode, or
    - explicit parser profiles such as `mux213`, `mux214`, and `penn`.
+
+Production-control candidates now look like:
+
+- scanner/tokenizer profile flags for Penn-only `%` forms
+- evaluator profile flags for `%` dispatch semantics
+- noeval-argument policy for brace-group reparsing
+
+The bboard case suggests the third category is the first one that must
+be controlled for TinyMUX 2.13 compatibility.
