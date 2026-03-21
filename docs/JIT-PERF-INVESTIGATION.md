@@ -337,8 +337,30 @@ or version stamp of every inlined attr body.  Two approaches:
      re-fetch and re-hash on every compile_cached lookup, which adds
      cost even on cache hits.
 
-  Approach A is preferred — the runtime check is a single integer
-  compare, and compilation only happens on cache miss.
+  **Decision: per-attr mod_count (Approach A).**
+
+  A global generation counter would invalidate every inlined u()
+  on any attr write anywhere in the game.  On a live game, every
+  +bbpost writes `&mess_lst`, `&hdr_*`, `&bdy_*`, `&bb_read` —
+  that would thrash the entire JIT cache even though the inlined
+  function bodies (`#21/bbtime`, `#21/valid_groups`) never changed.
+
+  Per-attr mod_count invalidates only callers that inlined the
+  specific changed attr.  Cost: one uint32_t per attr slot,
+  a small dependency vector per compiled_program (~2-3 entries
+  for typical u() inlining), and a short compare loop at runtime.
+
+  Implementation:
+  - Add `uint32_t mod_count` to the attr metadata (e.g., alongside
+    aflags in the SQLite attributes table, or a parallel in-memory
+    array indexed by `{dbref, attr_num}`).
+  - Increment on `atr_add()` / `atr_clr()`.
+  - At compile time, record `{dbref, attr_num, mod_count}` for
+    each inlined attr body.
+  - At runtime, check each dependency: if any `current_mod_count
+    != compiled_mod_count`, bail to AST (lazy recompile).
+  - Persist dependency list in the SQLite code_cache alongside
+    the compiled blob.
 
 **Problem 2 — Permission bypass (HIGH)**
 
@@ -460,18 +482,22 @@ new args and restore it after the body completes.
 
 #### Implementation order
 
-1. Register `_check_u_perm`, `_save_qregs`, `_restore_qregs`,
+1. Add per-attr `mod_count` to attr metadata.  Increment in
+   `atr_add()` / `atr_clr()`.  Persist in SQLite attributes table.
+2. Register `_check_u_perm`, `_save_qregs`, `_restore_qregs`,
    `_write_carg`, `_save_cargs`, `_restore_cargs` in engine_api.
-2. Implement the helpers as FUNCTION() handlers.
-3. Add `has_inlined_u` + `attr_gen` to compiled_program AND
-   the SQLite code_cache schema (persist through restarts).
-4. Add `g_attr_mod_gen` increment in atr_add/atr_clr.
-5. Add staleness check in compile_cached (evict stale entries).
-6. Re-implement the inlining in hir_lower_funccall using
-   emit_call to the registered helpers.
+3. Implement the helpers as FUNCTION() handlers.
+4. Add dependency vector to compiled_program.  Add corresponding
+   columns to the SQLite code_cache schema.  Update
+   `reconstruct_from_cache()` and `store_to_sqlite_cache()`.
+5. Add staleness check in `compile_cached()`: on memory cache hit,
+   verify each `{dbref, attr_num, mod_count}` dependency.  Evict
+   and recompile if any is stale.
+6. Re-implement the inlining in `hir_lower_funccall()` using
+   `emit_call()` to the registered helpers.
 7. Test: correctness (610/610 smoke), performance (muxscript
    benchmark on production DB), and staleness (modify attr,
-   verify recompilation).
+   verify only affected callers recompile).
 
 ### Level 4: Persistent/shared DBT context
 
