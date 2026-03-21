@@ -2310,6 +2310,24 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
         return false;
     }
 
+    // Prevent re-entrant JIT execution.  When JIT code ECALLs into
+    // a function like u() which calls mux_exec(), the nested
+    // mux_exec would re-enter jit_eval() and create another full
+    // DBT context.  The DBT setup/teardown overhead (~50ms) dwarfs
+    // the AST interpreter cost (~0.003ms) for the inner expression.
+    // Fall back to AST for nested evaluations.
+    //
+    static int s_jit_depth = 0;
+    if (s_jit_depth > 0)
+    {
+        return false;
+    }
+    s_jit_depth++;
+
+    struct jit_depth_guard {
+        ~jit_depth_guard() { s_jit_depth--; }
+    } depth_guard;
+
     JITArena::gc();
     jit_dma_controller::reset();
     // Don't JIT until the Tier 2 blob is loaded and the persistent
