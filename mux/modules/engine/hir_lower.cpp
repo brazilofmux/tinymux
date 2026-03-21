@@ -1569,7 +1569,23 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
             arg0_const = true;
         }
 
-        if (arg0_const && arg0_str.find('/') != std::string::npos)
+        // Only inline literal #dbref/attr references (e.g., "#21/bbtime").
+        // Name-based ("me/foo", "here/foo", "SomeName/foo") or relative
+        // references would resolve against GOD at compile time instead of
+        // the runtime executor, producing wrong results.
+        //
+        size_t slash_pos = arg0_str.find('/');
+        bool is_dbref_literal = arg0_const
+            && slash_pos != std::string::npos
+            && slash_pos > 1
+            && arg0_str[0] == '#'
+            && mux_isdigit(arg0_str[1]);
+
+        // Don't inline if too many extra args (>10) — the CARGS
+        // helper layer only supports 10 slots.
+        int nExtra_check = static_cast<int>(node->children.size()) - 1;
+
+        if (is_dbref_literal && nExtra_check <= 10)
         {
             dbref thing;
             ATTR *pattr = nullptr;
