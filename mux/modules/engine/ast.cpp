@@ -210,6 +210,10 @@ private:
         {
             advance();
         }
+        else
+        {
+            bracket->has_close_bracket = false;
+        }
         m_bracketDepth--;
         return bracket;
     }
@@ -226,6 +230,10 @@ private:
         if (!atEnd() && peek().type == ASTTOK_RBRACE)
         {
             advance();
+        }
+        else
+        {
+            group->has_close_brace = false;
         }
         m_braceDepth--;
         return group;
@@ -373,6 +381,162 @@ void ast_dump(const ASTNode *node, int indent)
 // receive raw text via ast_raw_text() — the handler calls mux_exec
 // internally as before.
 //
+
+// Replicate 2.13's noeval pass on an AST subtree.
+//
+// In 2.13, mux_exec with EV_EVAL off still processes backslash
+// escapes (the handler has no EV_EVAL guard).  Percent substitutions
+// are copied literally (guarded by EV_EVAL).
+//
+// This produces a string with one layer of backslash stripping,
+// which can then be re-tokenized and evaluated.
+//
+static std::string ast_noeval_pass(const ASTNode *node)
+{
+    if (!node)
+    {
+        return "";
+    }
+
+    switch (node->type)
+    {
+    case AST_LITERAL:
+    case AST_SPACE:
+    case AST_SEMICOLON:
+        return node->text;
+
+    case AST_SUBST:
+        // Percent handler IS guarded by EV_EVAL in 2.13.
+        // With EV_EVAL off, it copies % and following char literally.
+        //
+        return node->text;
+
+    case AST_ESCAPE:
+        // Backslash handler is NOT guarded by EV_EVAL in 2.13.
+        // It unconditionally consumes the backslash and emits the
+        // next character.
+        //
+        if (node->text.size() >= 2)
+        {
+            return node->text.substr(1);
+        }
+        return "\\";
+
+    case AST_FUNCCALL:
+        // In noeval, function calls are not dispatched.
+        // Copy the name and parens literally.
+        //
+        {
+            std::string r = node->text + "(";
+            for (size_t i = 0; i < node->children.size(); i++)
+            {
+                if (i > 0) r += ",";
+                r += ast_noeval_pass(node->children[i].get());
+            }
+            if (node->has_close_paren)
+            {
+                r += ")";
+            }
+            return r;
+        }
+
+    case AST_EVALBRACKET:
+        // In noeval, [...] is not evaluated.
+        // Copy brackets and contents literally.
+        //
+        {
+            std::string r = "[";
+            for (const auto &c : node->children)
+            {
+                r += ast_noeval_pass(c.get());
+            }
+            if (node->has_close_bracket)
+            {
+                r += "]";
+            }
+            return r;
+        }
+
+    case AST_BRACEGROUP:
+        // Nested brace groups: copy braces and recurse.
+        //
+        {
+            std::string r = "{";
+            for (const auto &c : node->children)
+            {
+                r += ast_noeval_pass(c.get());
+            }
+            if (node->has_close_brace)
+            {
+                r += "}";
+            }
+            return r;
+        }
+
+    case AST_SEQUENCE:
+        {
+            std::string r;
+            for (size_t i = 0; i < node->children.size(); i++)
+            {
+                const auto &c = node->children[i];
+
+                // In 2.13's noeval pass, backslash still consumes
+                // the next character.  For an AST split like
+                // Esc("\\") + Sub("%..."), that means the replay
+                // text should keep the raw %... sequence, not a
+                // literal backslash followed by the substitution.
+                //
+                if (  c->type == AST_ESCAPE
+                   && c->text == "\\\\"
+                   && i + 1 < node->children.size()
+                   && node->children[i + 1]->type == AST_SUBST)
+                {
+                    r += node->children[i + 1]->text;
+                    i++;
+                    continue;
+                }
+                r += ast_noeval_pass(c.get());
+            }
+            return r;
+        }
+    }
+    return "";
+}
+
+// Evaluate a selected argument from a FN_NOEVAL function using the
+// 2.13-style noeval pass followed by reparse/re-eval.
+//
+// This replicates the two-pass behavior observed in 2.13:
+//   Pass 1: noeval -- strip one layer of backslash (ast_noeval_pass)
+//   Pass 2: eval -- re-tokenize the result and evaluate it
+//
+static void ast_eval_noeval_legacy_arg(const ASTNode *node, UTF8 *buff,
+    UTF8 **bufc, dbref executor, dbref caller, dbref enactor,
+    int eval, const UTF8 *cargs[], int ncargs)
+{
+    if (!node)
+    {
+        return;
+    }
+
+    const ASTNode *inner = node;
+    if (node->type == AST_BRACEGROUP && !node->children.empty())
+    {
+        inner = node->children[0].get();
+    }
+
+    // Pass 1: produce text with one backslash layer stripped.
+    //
+    std::string text = ast_noeval_pass(inner);
+
+    // Pass 2: re-tokenize and evaluate.
+    //
+    mux_exec(reinterpret_cast<const UTF8 *>(text.c_str()), text.size(),
+        buff, bufc, executor, caller, enactor,
+        (eval & ~(EV_TOP | EV_FMAND | EV_STRIP_CURLY))
+            | EV_EVAL | EV_FCHECK,
+        cargs, ncargs);
+}
 
 // Forward declaration.
 //
@@ -964,9 +1128,8 @@ static void ast_eval_branch(const ASTNode *child, UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
     int eval, const UTF8 *cargs[], int ncargs)
 {
-    ast_eval_node(child, buff, bufc,
-        executor, caller, enactor,
-        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+    ast_eval_noeval_legacy_arg(child, buff, bufc,
+        executor, caller, enactor, eval, cargs, ncargs);
 }
 
 // Native cand/candbool: short-circuit AND.

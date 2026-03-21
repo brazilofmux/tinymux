@@ -44,9 +44,12 @@ struct ASTNode {
     std::string text;
     std::vector<std::unique_ptr<ASTNode>> children;
     bool has_close_paren;   // FUNCCALL: true if ')' was found
+    bool has_close_bracket; // EVALBRACKET: true if ']' was found
+    bool has_close_brace;   // BRACEGROUP: true if '}' was found
 
     ASTNode(ASTNodeType t, std::string_view s = "")
-        : type(t), text(s), has_close_paren(true) {}
+        : type(t), text(s), has_close_paren(true),
+          has_close_bracket(true), has_close_brace(true) {}
 
     void addChild(std::unique_ptr<ASTNode> child) {
         children.push_back(std::move(child));
