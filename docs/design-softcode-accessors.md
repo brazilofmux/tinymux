@@ -389,20 +389,21 @@ permission checks**.
 
 ## Checklist
 
-- [ ] Phase 1.1 — `channels()` subscriber visibility fix
-- [ ] Phase 1.2 — `chaninfo()` with per-field permissions
-- [ ] Phase 1.3 — `chanusers()`
-- [ ] Phase 1.4 — `chanuser()` with per-field permissions (including `flags` field)
-- [ ] Phase 1.5 — Comsys legacy wrappers (preserving old permissions)
-- [ ] Phase 1.6 — Keep `cflags(chan, player)` as own implementation
-- [ ] Phase 1.7 — Comsys smoke tests
-- [ ] Phase 2.1 — `mailcount()` and `mailstats()`
-- [ ] Phase 2.2 — `maillist()`
-- [ ] Phase 2.3 — `mailinfo()` with per-field permissions (body=God, rest=Wizard)
-- [ ] Phase 2.4 — `mailflags()`
-- [ ] Phase 2.5 — `mailalias()` (ExpMail cross-player, complements existing `malias()`)
-- [ ] Phase 2.6 — Mail legacy wrappers (preserving old permissions)
-- [ ] Phase 2.7 — Mail smoke tests
-- [ ] Phase 3.1 — Deprecation annotations
-- [ ] Phase 3.2 — Documentation
-- [ ] Phase 3.3 — Helptext
+- [x] Phase 1.1 — `channels()` subscriber visibility fix
+- [x] Phase 1.2 — `chaninfo()` with per-field permissions (14 fields incl. canjoin/cantransmit/canreceive)
+- [x] Phase 1.3 — `chanusers()` with bulk field output (8 modes)
+- [x] Phase 1.4 — `chanuser()` with per-field permissions (including `flags` field)
+- [x] Phase 1.5 — `chanfind()` reverse header→name lookup
+- [x] Phase 1.6 — `@clist/full` redesign (header, owner names, effective access)
+- [x] Phase 1.7 — `@clist` subscriber visibility fix
+- [x] Phase 1.8 — Comsys smoke tests (30 tests)
+- [x] Phase 2.1 — `mailcount()` and `mailstats()`
+- [x] Phase 2.2 — `maillist()`
+- [x] Phase 2.3 — `mailinfo()` with per-field permissions (body=God, rest=Wizard)
+- [x] Phase 2.4 — `mailflags()`
+- [ ] ~~Phase 2.5 — `mailalias()`~~ (deferred — existing `malias()` covers the need)
+- [ ] ~~Phase 2.6 — Mail legacy wrappers~~ (deferred — old functions kept as-is, no wrapper rewrite needed)
+- [x] Phase 2.7 — Mail smoke tests (13 tests)
+- [ ] ~~Phase 3.1 — Deprecation annotations~~ (deferred — no deprecation mechanism exists in `@list functions`)
+- [x] Phase 3.2 — Documentation (design doc kept current throughout)
+- [x] Phase 3.3 — Helptext (help.txt entries for all 9 new functions + FUNCTION CLASSES/LIST updates)

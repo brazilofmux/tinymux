@@ -5927,7 +5927,70 @@ CHANNELS()
     > say channels(all, |)
     You say, "Wizard|Staff|Guest|Public|Code"
 
-  Related Topics: comalias(), comtitle(), cwho()
+  Related Topics: chaninfo(), chanuser(), chanusers(), chanfind(),
+    comalias(), comtitle(), cwho()
+
+& CHANFIND()
+CHANFIND()
+
+  FUNCTION: chanfind(<header>)
+
+  Reverse-lookups a channel by its display header.  Given a channel header
+  string (e.g. "<PublicServices>"), returns the canonical channel name
+  (e.g. "PubServ").  Case-insensitive match.
+
+  This is useful when players see a header in channel output and need to
+  find the internal channel name for use with other channel functions.
+
+  Visibility: same subscriber-aware rules as chaninfo().
+
+  Example:
+    > say chanfind(<Public>)
+    You say, "Public"
+    > say chanfind(<Staff>)
+    You say, "StaffChat"
+
+  Related Topics: chaninfo(), channels(), @cset
+
+& CHANINFO()
+CHANINFO()
+
+  FUNCTION: chaninfo(<channel>, <field>)
+
+  Returns metadata about a channel.  The <field> argument selects which
+  piece of information to return:
+
+    name        - Channel name (string)
+    header      - Display header set via @cset/header (string)
+    owner       - Channel owner (#dbref)
+    object      - Channel object (#dbref, Wizard-only)
+    type        - Raw channel type flags (integer)
+    flags       - Channel flag letters: P (public), L (loud), S (spoof)
+    charge      - Usage charge (integer)
+    users       - Number of subscribers (integer)
+    msgs        - Total messages sent (integer)
+    desc        - Description from channel object (string)
+    buffer      - Recall buffer size from channel object (integer)
+    canjoin     - Whether you can join the channel (1/0)
+    cantransmit - Whether you can transmit on the channel (1/0)
+    canreceive  - Whether you can receive from the channel (1/0)
+
+  The canjoin/cantransmit/canreceive fields reflect both flag-based and
+  lock-based access control.
+
+  Visibility: you can query a channel if it is public, you are a
+  subscriber, you have Comm_All, or you control the channel owner.
+  The "object" field additionally requires Wizard.
+
+  Example:
+    > say chaninfo(Public, header)
+    You say, "<Public>"
+    > say chaninfo(Public, users)
+    You say, "15"
+    > say chaninfo(Public, canjoin)
+    You say, "1"
+
+  Related Topics: chanuser(), chanusers(), chanfind(), channels()
 
 & CHANOBJ()
 CHANOBJ()
@@ -5941,7 +6004,66 @@ CHANOBJ()
 
   By default, the chanobj() function is restricted to wizards.
 
-  Related Topics: comalias(), comtitle(), cwho(), CHANNEL OBJECT, @cset
+  See also chaninfo(<channel>, object) for the generic accessor equivalent.
+
+  Related Topics: chaninfo(), comalias(), comtitle(), cwho(),
+    CHANNEL OBJECT, @cset
+
+& CHANUSER()
+CHANUSER()
+
+  FUNCTION: chanuser(<channel>, <player>, <field>)
+
+  Returns per-user information for a player on a channel.  The <field>
+  argument selects which piece of information to return:
+
+    alias     - Player's alias for the channel (self/Owner+Inherits/Wizard)
+    title     - Player's comtitle (self, co-member, or Wizard)
+    status    - "On" or "Off" (self, co-member, or Wizard)
+    flags     - User flag letters: O (off), G (gag join/leave), Q (no titles)
+    gagjoin   - Whether join/leave messages are suppressed (0/1)
+    comtitles - Whether comtitles are enabled (0/1)
+
+  Permissions vary by field.  The "alias" field is restricted to self,
+  inheriting objects checking their owner, or Wizards.  Other fields
+  allow co-members (both executor and target on the channel) to query.
+
+  Example:
+    > say chanuser(Public, me, title)
+    You say, "Cherry"
+    > say chanuser(Public, me, alias)
+    You say, "pub"
+
+  Related Topics: chaninfo(), chanusers(), comalias(), comtitle()
+
+& CHANUSERS()
+CHANUSERS()
+
+  FUNCTION: chanusers(<channel>[, <delim>[, <field>]])
+
+  Returns a delimited list of subscriber data for a channel.  With no
+  <field> argument, returns dbrefs.  With a <field> argument, returns
+  that field's value for each subscriber:
+
+    title     - Comtitles
+    status    - "On" or "Off"
+    flags     - User flag letters (O/G/Q)
+    gagjoin   - 0/1 for each subscriber
+    comtitles - 0/1 for each subscriber
+    alias     - Aliases (Wizard-only)
+    name      - Player names
+
+  Visibility: same subscriber-aware rules as chaninfo().
+
+  Example:
+    > say chanusers(Public)
+    You say, "#1 #42 #87"
+    > say chanusers(Public, |, title)
+    You say, "Cherry|Trees|Muffin"
+    > say chanusers(Public, |, name)
+    You say, "Wizard|PlayerOne|PlayerTwo"
+
+  Related Topics: chaninfo(), chanuser(), channels()
 
 & CHATFORMAT
 CHATFORMAT
@@ -8226,11 +8348,13 @@ FUNCTION CLASSES
                              RAND REMAINDER SHA1 SHL SHR SIGN SUB SUCCESSES
                              SQRT UNPACK
 
-  Comsystem Information:     CHANNELS CHANOBJ COMALIAS COMTITLE CWHO
+  Comsystem Information:     CHANFIND CHANINFO CHANNELS CHANOBJ CHANUSER
+                             CHANUSERS COMALIAS COMTITLE CWHO
 
-  Database Information:      EXIT INZONE LOC LOCATE LROOMS MAIL MAILJ MAILFROM
-                             MAILREVIEW MAILSIZE MAILSUBJ NEARBY NEXT NUM RLOC
-                             ROOM
+  Database Information:      EXIT INZONE LOC LOCATE LROOMS MAIL MAILCOUNT
+                             MAILFLAGS MAILFROM MAILINFO MAILJ MAILLIST
+                             MAILREVIEW MAILSEND MAILSIZE MAILSTATS MAILSUBJ
+                             NEARBY NEXT NUM RLOC ROOM
                              SEARCH STATS VALID WHERE ZCHILDREN ZEXITS ZFUN
                              ZONE ZROOMS ZTHINGS ZWHO
 
@@ -8325,8 +8449,8 @@ FUNCTION LIST
     BAND()      BASECONV()  BEEP()      BEFORE()    BENCHMARK() BITTYPE()
     BNAND()
     BOR()       BXOR()      CAND()      CANDBOOL()  CANSEE()    CAPSTR()
-    CASE()      CAT()       CEIL()      CENTER()    CHANNELS()  CHANOBJ()
-    CHILDREN()  CHOOSE()    CHR()       CMDS()      COLORDEPTH()COLUMNS()
+    CASE()      CAT()       CEIL()      CENTER()    CHANFIND()  CHANINFO()
+    CHANNELS()  CHANOBJ()   CHANUSER()  CHANUSERS() CHILDREN()  CHOOSE()    CHR()       CMDS()      COLORDEPTH()COLUMNS()
     COMALIAS()  COMP()      COMTITLE()  CON()       CONFIG()    CONN()
     CONNLAST()  CONNLEFT()  CONNMAX()   CONNNUM()   CONNRECORD()CONNTOTAL()
     CONTROLS()  CONVSECS()  CONVTIME()  COR()       CORBOOL()   COS()
@@ -8358,8 +8482,9 @@ FUNCTION LIST (continued)
     LMAX()      LMIN()      LN()        LNUM()      LOC()       LOCALIZE()
     LOCATE()    LOCK()      LOG()       LOR()       LPAD()      LPARENT()
     LPORTS()    LPOS()      LRAND()     LROOMS()    LT()        LTE()
-    LWHO()      MAIL()      MAILFROM()  MAILJ()     MAILREVIEW()
-    MAILSIZE()  MAILSUBJ()
+    LWHO()      MAIL()      MAILCOUNT() MAILFLAGS() MAILFROM()  MAILINFO()
+    MAILJ()     MAILLIST()  MAILREVIEW()MAILSEND()  MAILSIZE()  MAILSTATS()
+    MAILSUBJ()
     MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()
     MID()       MIN()       MIX()       MOD()       MONEY()     MONIKER()
     MOTD()      MTIME()     MUDNAME()   MUL()       MUNGE()     NAME()
@@ -11321,6 +11446,45 @@ MAIL-SENDING (continued)
   outgoing @mail, the reply is finished and sent with '--' on a line
   by itself
 
+& MAILCOUNT()
+MAILCOUNT()
+
+  FUNCTION: mailcount([<player>])
+
+  Returns the total number of messages in the player's mailbox (current
+  folder).  With no argument, returns the count for the executor.  Wizards
+  may specify another player.
+
+  See also: mailstats() for a read/unread/cleared breakdown.
+
+  Example:
+    > say mailcount()
+    You say, "12"
+
+  Related Topics: mailstats(), maillist(), mailinfo(), mail().
+
+& MAILFLAGS()
+MAILFLAGS()
+
+  FUNCTION: mailflags(<msg #>[, <player>])
+
+  Returns the flag letters for the given mail message.  Wizards may
+  specify another player.
+
+  Flag letters:
+    R - Read           U - Urgent          C - Cleared
+    T - Tagged         F - Forwarded       P - Replied
+
+  A newly received, unread message returns an empty string (no flags set).
+
+  Example:
+    > say mailflags(1)
+    You say, "R"
+    > say mailflags(3)
+    You say, "RU"
+
+  Related Topics: mailinfo(), mail().
+
 & MAILFROM()
 MAILFROM()
 
@@ -11329,7 +11493,64 @@ MAILFROM()
   Returns the dbref # of the player who sent you <msg #>. Wizards may
   specify mailfrom(<player>,<msg #>).
 
-  Related Topics:
+  See also mailinfo(<msg #>, from) for the generic accessor equivalent.
+
+  Related Topics: mailinfo(), mail().
+
+& MAILINFO()
+MAILINFO()
+
+  FUNCTION: mailinfo(<msg #>, <field>[, <player>])
+
+  Returns per-message data for the given mail message.  The <field>
+  argument selects which piece of information to return:
+
+    from    - Sender (#dbref)
+    to      - Recipient (#dbref)
+    tolist  - Original recipient list as typed by sender (string)
+    subject - Subject line (string)
+    time    - Timestamp when mail was sent (datetime string)
+    body    - Message body text (string)
+    size    - Message body size in bytes (integer)
+    flags   - Flag letters: R (read), U (urgent), C (cleared),
+              T (tagged), F (forwarded), P (replied)
+    read    - Whether the message has been read (0/1)
+
+  The optional <player> argument lets an admin query another player's
+  mail.  Cross-player permissions vary by field:
+    - body: God only (most sensitive data)
+    - all other fields: Wizard
+
+  Example:
+    > say mailinfo(1, subject)
+    You say, "Meeting tomorrow"
+    > say mailinfo(1, from)
+    You say, "#42"
+    > say mailinfo(1, time)
+    You say, "2026-03-21T10:30:00-05:00"
+    > say mailinfo(1, flags)
+    You say, "R"
+
+  Related Topics: mailflags(), mailcount(), maillist(), mail().
+
+& MAILLIST()
+MAILLIST()
+
+  FUNCTION: maillist([<player>])
+
+  Returns a space-separated list of valid message numbers for the
+  player's current mail folder.  With no argument, returns the list for
+  the executor.  Wizards may specify another player.
+
+  This provides a way to enumerate messages without probing sequentially.
+
+  Example:
+    > say maillist()
+    You say, "1 2 3 4 5"
+    > say words(maillist())
+    You say, "5"
+
+  Related Topics: mailcount(), mailinfo(), mail().
 
 & MAILREVIEW()
 MAILREVIEW()
@@ -11353,7 +11574,25 @@ MAILSIZE()
 
   Returns the size of <player>'s mail bag in bytes.
 
-  Related Topics: mail(), mailsubj().
+  Related Topics: mail(), mailcount(), mailsubj().
+
+& MAILSTATS()
+MAILSTATS()
+
+  FUNCTION: mailstats([<player>])
+
+  Returns three space-separated integers: the number of read, unread,
+  and cleared messages in the player's mailbox.  With no argument,
+  returns stats for the executor.  Wizards may specify another player.
+
+  Equivalent to mail(<player>) but with a clearer name and no
+  overloading.
+
+  Example:
+    > say mailstats()
+    You say, "8 3 1"
+
+  Related Topics: mailcount(), maillist(), mail().
 
 & MAILSUBJ()
 MAILSUBJ()
