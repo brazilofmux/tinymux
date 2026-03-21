@@ -41,7 +41,24 @@ static uint64_t attr_mod_key(dbref obj, int attrnum)
 
 void attr_mod_count_inc(dbref obj, int attrnum)
 {
-    s_attr_mod_counts[attr_mod_key(obj, attrnum)]++;
+    uint64_t key = attr_mod_key(obj, attrnum);
+    auto it = s_attr_mod_counts.find(key);
+    if (it != s_attr_mod_counts.end())
+    {
+        it->second++;
+    }
+    else
+    {
+        // First in-memory access: seed from SQLite so we stay
+        // monotonic with the persisted counter.
+        uint32_t base = 0;
+        if (g_pSQLiteBackend)
+        {
+            CSQLiteDB &db = g_pSQLiteBackend->GetDB();
+            base = db.GetAttrModCount(obj, attrnum);
+        }
+        s_attr_mod_counts[key] = base + 1;
+    }
 }
 
 uint32_t attr_mod_count_get(dbref obj, int attrnum)
@@ -1976,6 +1993,11 @@ bool atr_clr(dbref thing, int atr)
 {
     Aname okey;
 
+    // Increment per-attr modification counter BEFORE deletion.
+    // The in-memory counter survives the SQLite row deletion, ensuring
+    // a subsequent recreate of the same attr gets a higher counter.
+    attr_mod_count_inc(thing, atr);
+
     makekey(thing, atr, &okey);
     if (!cache_del(&okey))
     {
@@ -1983,9 +2005,6 @@ bool atr_clr(dbref thing, int atr)
             thing, atr);
         return false;
     }
-
-    // Increment per-attr modification counter for JIT cache invalidation.
-    attr_mod_count_inc(thing, atr);
 
     switch (atr)
     {
@@ -2086,15 +2105,16 @@ bool atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
         clean_len = nNfc;
     }
 
+    // Increment per-attr modification counter BEFORE the SQLite write
+    // so the counter value can be passed to PutAttribute for persistence.
+    attr_mod_count_inc(thing, atr);
+
     if (!cache_put(&okey, clean, clean_len + 1, raw_owner, raw_flags))
     {
         Log.tinyprintf(T("atr_add_raw_LEN(#%d/%d): SQLite write failed, not applying side effects." ENDLINE),
             thing, atr);
         return false;
     }
-
-    // Increment per-attr modification counter for JIT cache invalidation.
-    attr_mod_count_inc(thing, atr);
 
     switch (atr)
     {

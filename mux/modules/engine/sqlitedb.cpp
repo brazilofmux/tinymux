@@ -11,6 +11,7 @@
 #endif
 
 #include "sqlitedb.h"
+#include "engine_api.h"
 #include <cstring>
 #include <cstdio>
 #include <string>
@@ -717,12 +718,12 @@ bool CSQLiteDB::PrepareStatements()
 
     if (!Prepare(m_db,
         "INSERT INTO attributes (object, attrnum, value, owner, flags, mod_count)"
-        " VALUES (?,?,?,?,?,1)"
+        " VALUES (?,?,?,?,?,?)"
         " ON CONFLICT(object, attrnum) DO UPDATE SET"
         "   value=excluded.value,"
         "   owner=excluded.owner,"
         "   flags=excluded.flags,"
-        "   mod_count=mod_count+1",
+        "   mod_count=MAX(excluded.mod_count, mod_count+1)",
         &m_stmtAttrPut))
     {
         return false;
@@ -1280,11 +1281,17 @@ bool CSQLiteDB::GetAttribute(dbref obj, int attrnum, UTF8 *buf, size_t buflen,
 bool CSQLiteDB::PutAttribute(dbref obj, int attrnum, const UTF8 *value, size_t len,
                              dbref owner, int flags)
 {
+    // The mod_count for new rows comes from the in-memory counter
+    // (already incremented by attr_mod_count_inc before this call).
+    // For existing rows, the upsert uses MAX(excluded, current+1).
+    uint32_t mc = attr_mod_count_get(obj, attrnum);
+
     sqlite3_bind_int(m_stmtAttrPut, 1, obj);
     sqlite3_bind_int(m_stmtAttrPut, 2, attrnum);
     sqlite3_bind_blob(m_stmtAttrPut, 3, value, static_cast<int>(len), SQLITE_STATIC);
     sqlite3_bind_int(m_stmtAttrPut, 4, owner);
     sqlite3_bind_int(m_stmtAttrPut, 5, flags);
+    sqlite3_bind_int(m_stmtAttrPut, 6, static_cast<int>(mc));
 
     int rc = sqlite3_step(m_stmtAttrPut);
     sqlite3_reset(m_stmtAttrPut);
