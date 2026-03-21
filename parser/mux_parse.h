@@ -104,6 +104,20 @@ static const char *token_name(TokenType t)
 // in eval.cpp. On entry, p points to the character AFTER '%'.
 // On return, p points past the last consumed character.
 //
+// Gather an angle-bracket delimited sequence: <...>
+// On entry, p points at '<'.  On return, p points past '>'.
+//
+static void gather_angle(const char *&p, std::string &out)
+{
+    out += *p++;  // '<'
+    while (*p && *p != '>') {
+        out += *p++;
+    }
+    if (*p == '>') {
+        out += *p++;
+    }
+}
+
 static std::string gather_pct(const char *&p, ParserProfile profile)
 {
     std::string sub("%");
@@ -113,6 +127,7 @@ static std::string gather_pct(const char *&p, ParserProfile profile)
         return sub;
     }
 
+    // Penn: %<space> is an atomic substitution → "% "
     if (profile == PROFILE_PENN && ch == ' ') {
         sub += *p++;
         return sub;
@@ -121,55 +136,68 @@ static std::string gather_pct(const char *&p, ParserProfile profile)
     char upper = static_cast<char>(toupper(static_cast<unsigned char>(ch)));
 
     if (ch >= '0' && ch <= '9') {
+        // %0–%9: command arguments
         sub += *p++;
     } else if (upper == 'Q') {
+        // %q0–%qz, %q<name>
         sub += *p++;
         if (*p == '<') {
-            sub += *p++;
-            while (*p && *p != '>') {
-                sub += *p++;
-            }
-            if (*p == '>') {
-                sub += *p++;
-            }
+            gather_angle(p, sub);
         } else if (*p) {
             sub += *p++;
         }
     } else if (upper == 'V') {
+        // %va–%vz: variable attributes
+        sub += *p++;
+        if (*p && isalpha(static_cast<unsigned char>(*p))) {
+            sub += *p++;
+        }
+    } else if (upper == 'W') {
+        // Penn: %wa–%wz (W-attributes). MUX: unknown → fallback.
+        // Tokenize the same way for all profiles so the evaluator
+        // can decide what to do with it.
         sub += *p++;
         if (*p && isalpha(static_cast<unsigned char>(*p))) {
             sub += *p++;
         }
     } else if (upper == 'C' || upper == 'X') {
+        // MUX: %cx/%xx color codes, %c<rgb>/%x<rgb> extended.
+        // Penn: %c = raw command, %x = X-attribute.
+        // Tokenize the multi-char form for all profiles.
         sub += *p++;
         if (*p == '<') {
-            sub += *p++;
-            while (*p && *p != '>') {
-                sub += *p++;
-            }
-            if (*p == '>') {
-                sub += *p++;
-            }
+            gather_angle(p, sub);
         } else if (*p) {
             sub += *p++;
         }
     } else if (ch == '=') {
+        // %=, %=<attr>, %=<N>
         sub += *p++;
         if (*p == '<') {
-            sub += *p++;
-            while (*p && *p != '>') {
+            gather_angle(p, sub);
+        }
+    } else if (upper == 'I') {
+        // %i0–%i9: loop itext at depth
+        // Penn also has %iL for current level
+        sub += *p++;
+        if (*p && ((*p >= '0' && *p <= '9') || upper == 'I')) {
+            // Consume digit or 'L'
+            if (*p >= '0' && *p <= '9') {
                 sub += *p++;
-            }
-            if (*p == '>') {
+            } else if (toupper(static_cast<unsigned char>(*p)) == 'L') {
                 sub += *p++;
             }
         }
-    } else if (upper == 'I') {
+    } else if (ch == '$' && profile == PROFILE_PENN) {
+        // Penn: %$0–%$9, %$L — stack variables
         sub += *p++;
-        if (*p && *p >= '0' && *p <= '9') {
+        if (*p && ((*p >= '0' && *p <= '9')
+                   || toupper(static_cast<unsigned char>(*p)) == 'L')) {
             sub += *p++;
         }
     } else {
+        // Single-character form: %%, %#, %!, %@, %r, %b, %t, %n,
+        // %s, %p, %o, %a, %k, %l, %m, %|, %+, %:, %~, %?, %u, etc.
         sub += *p++;
     }
 
@@ -210,6 +238,12 @@ static std::vector<Token> tokenize(const char *input,
         } else if (*p == ';') {
             tokens.push_back({TOK_SEMI, ";"});
             p++;
+        } else if (*p == '#' && (p[1] == '#' || p[1] == '@' || p[1] == '$')) {
+            // Hash forms: ##, #@, #$ (MUX-only loop/switch substitutions)
+            std::string hash;
+            hash += *p++;
+            hash += *p++;
+            tokens.push_back({TOK_PCT, hash});
         } else if (*p == '%') {
             p++;
             tokens.push_back({TOK_PCT, gather_pct(p, profile)});

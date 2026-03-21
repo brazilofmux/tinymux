@@ -50,6 +50,7 @@ struct EvalContext {
 
     // Command arguments %0-%9
     std::string args[10];
+    int nargs = 2;             // number of valid args
 
     // Iterator state for iter/list
     struct IterFrame {
@@ -62,6 +63,27 @@ struct EvalContext {
     std::string enactorName;   // %n
     std::string enactorDbref;  // %#
     std::string executorDbref; // %!
+    std::string callerDbref;   // %@
+    std::string enactorObjid;  // %:  (dbref:creation_time)
+    std::string lastCommand;   // %m
+    std::string moniker;       // %k
+    std::string pipedOutput;   // %|
+    std::string switchToken;   // #$
+
+    // Pronoun substitutions — subjective, possessive, objective, abs-possessive
+    std::string pronSub;       // %s  (he/she/they)
+    std::string pronPos;       // %p  (his/her/their)
+    std::string pronObj;       // %o  (him/her/them)
+    std::string pronAbs;       // %a  (his/hers/theirs)
+
+    // Variable attributes %va–%vz (26 slots)
+    std::string varAttrs[26];
+
+    // Penn-specific
+    std::string rawCommand;    // Penn %c — raw command line
+    std::string evaledCommand; // Penn %u — evaluated command line
+    std::string accentedName;  // Penn %~ — accented name
+    std::string attrName;      // Penn %= — current attribute name
 
     // Current eval flags
     int evalFlags = EV_DEFAULT;
@@ -245,36 +267,58 @@ private:
                 childFlags &= ~EV_FCHECK;
             }
 
-            if (  m_ctx.profile == PROFILE_MUX213_COMPAT
-               && (childFlags & EV_EVAL)
-               && child->type == NODE_ESCAPE
-               && child->text == "\\\\"
-               && i + 1 < node->children.size()
-               && node->children[i + 1]->type == NODE_SUBST) {
-                // Prototype of the 2.13 streaming-era coupling:
-                // a literal "\\" followed by a %-sequence is emitted
-                // as the raw %-sequence instead of two independent AST
-                // nodes ("\" + substituted tail).
-                result += node->children[i + 1]->text;
-                i++;
-                continue;
-            }
-
             result += evalWithFlags(child.get(), childFlags);
         }
         return result;
     }
 
+    // Apply first-character uppercasing when the substitution letter
+    // was uppercase (%N, %S, %P, %O, %A, %K, %M, %Q, %V).
+    //
+    static std::string maybeCapitalize(const std::string &s, char origLetter) {
+        if (s.empty()) return s;
+        if (isupper(static_cast<unsigned char>(origLetter))) {
+            std::string r = s;
+            r[0] = static_cast<char>(toupper(static_cast<unsigned char>(r[0])));
+            return r;
+        }
+        return s;
+    }
+
     std::string evalSubst(const ASTNode *node) {
         const std::string &sub = node->text;
+
+        // Hash forms: ##, #@, #$
+        if (sub.size() == 2 && sub[0] == '#') {
+            switch (sub[1]) {
+            case '#': {
+                // ## — same as %i0 (current loop item)
+                int idx = static_cast<int>(m_ctx.iterStack.size()) - 1;
+                return (idx >= 0) ? m_ctx.iterStack[idx].itext : "";
+            }
+            case '@': {
+                // #@ — same as inum(0) (current loop position)
+                int idx = static_cast<int>(m_ctx.iterStack.size()) - 1;
+                return (idx >= 0) ? std::to_string(m_ctx.iterStack[idx].inum) : "";
+            }
+            case '$':
+                // #$ — switch matched value
+                return m_ctx.switchToken;
+            }
+        }
+
         if (sub.size() < 2) return "%";
 
         char ch = sub[1];
         char upper = static_cast<char>(toupper(static_cast<unsigned char>(ch)));
 
+        // %0–%9: command arguments
         if (ch >= '0' && ch <= '9') {
-            return m_ctx.args[ch - '0'];
+            int idx = ch - '0';
+            return (idx < m_ctx.nargs) ? m_ctx.args[idx] : "";
         }
+
+        // %q/%Q: registers
         if (upper == 'Q') {
             std::string regname;
             if (sub.size() >= 4 && sub[2] == '<') {
@@ -283,30 +327,141 @@ private:
                 regname = std::string(1, sub[2]);
             }
             auto it = m_ctx.registers.find(regname);
-            return (it != m_ctx.registers.end()) ? it->second : "";
+            std::string val = (it != m_ctx.registers.end()) ? it->second : "";
+            return maybeCapitalize(val, ch);
         }
-        if (upper == 'R') return "\r\n";
-        if (upper == 'B') return " ";
-        if (upper == 'T') return "\t";
-        if (ch == '%') return "%";
-        if (m_ctx.profile == PROFILE_PENN && ch == ' ') return "% ";
-        if (ch == '#') return m_ctx.enactorDbref;
-        if (ch == '!') return m_ctx.executorDbref;
-        if (upper == 'N') {
-            std::string name = m_ctx.enactorName;
-            if (ch == 'N' && !name.empty()) {
-                name[0] = static_cast<char>(toupper(static_cast<unsigned char>(name[0])));
-            }
-            return name;
-        }
-        if (upper == 'I' && sub.size() >= 3) {
-            int depth = sub[2] - '0';
-            int idx = static_cast<int>(m_ctx.iterStack.size()) - 1 - depth;
-            if (idx >= 0 && idx < static_cast<int>(m_ctx.iterStack.size())) {
-                return m_ctx.iterStack[idx].itext;
+
+        // %v/%V: variable attributes A–Z
+        if (upper == 'V' && sub.size() >= 3) {
+            char attrCh = static_cast<char>(toupper(static_cast<unsigned char>(sub[2])));
+            if (attrCh >= 'A' && attrCh <= 'Z') {
+                std::string val = m_ctx.varAttrs[attrCh - 'A'];
+                return maybeCapitalize(val, ch);
             }
             return "";
         }
+
+        // %w/%W: Penn W-attributes (profile-dependent)
+        if (upper == 'W' && sub.size() >= 3) {
+            if (m_ctx.profile == PROFILE_PENN) {
+                // Would look up W<letter> attribute on executor
+                return "[W-attr]";
+            }
+            // MUX: unknown → literal
+            return std::string(1, ch);
+        }
+
+        // %c/%C, %x/%X: color codes (MUX) or command/X-attr (Penn)
+        if (upper == 'C' || upper == 'X') {
+            if (m_ctx.profile == PROFILE_PENN) {
+                if (upper == 'C') {
+                    // Penn: %c = raw command line
+                    return m_ctx.rawCommand;
+                }
+                // Penn: %x = X-attribute (if sub.size() >= 3)
+                if (sub.size() >= 3) {
+                    return "[X-attr]";
+                }
+                return "";
+            }
+            // MUX: color codes — simplified for study tool
+            if (sub.size() >= 3) {
+                return "[color:" + sub.substr(1) + "]";
+            }
+            return "";
+        }
+
+        // %i/%I: loop itext at depth
+        if (upper == 'I' && sub.size() >= 3) {
+            char depthCh = sub[2];
+            if (depthCh >= '0' && depthCh <= '9') {
+                int depth = depthCh - '0';
+                int idx = static_cast<int>(m_ctx.iterStack.size()) - 1 - depth;
+                if (idx >= 0 && idx < static_cast<int>(m_ctx.iterStack.size())) {
+                    return m_ctx.iterStack[idx].itext;
+                }
+                return "";
+            }
+            if (toupper(static_cast<unsigned char>(depthCh)) == 'L'
+                && m_ctx.profile == PROFILE_PENN) {
+                // Penn: %iL = current level itext
+                int idx = static_cast<int>(m_ctx.iterStack.size()) - 1;
+                return (idx >= 0) ? m_ctx.iterStack[idx].itext : "";
+            }
+            return "";
+        }
+
+        // %=: attribute name (Penn) or extended arg/attr lookup (MUX)
+        if (ch == '=') {
+            if (sub.size() == 2) {
+                // Bare %=
+                if (m_ctx.profile == PROFILE_PENN) {
+                    return m_ctx.attrName;
+                }
+                return "=";
+            }
+            // %=<...> — extended form (MUX only)
+            if (sub.size() >= 4 && sub[2] == '<') {
+                std::string inner = sub.substr(3, sub.size() - 4);
+                // Check if numeric → extended arg
+                bool isNum = !inner.empty();
+                for (char c : inner) {
+                    if (!isdigit(static_cast<unsigned char>(c))) {
+                        isNum = false;
+                        break;
+                    }
+                }
+                if (isNum) {
+                    int idx = atoi(inner.c_str());
+                    return (idx < m_ctx.nargs) ? m_ctx.args[idx] : "";
+                }
+                return "[attr:" + inner + "]";
+            }
+            return "=";
+        }
+
+        // %$: Penn stack variables
+        if (ch == '$' && m_ctx.profile == PROFILE_PENN) {
+            return "[stack]";
+        }
+
+        // Simple single-character forms
+        switch (upper) {
+        case 'R':
+            // MUX: \r\n.  Penn: \n only.
+            return (m_ctx.profile == PROFILE_PENN) ? "\n" : "\r\n";
+        case 'B': return " ";
+        case 'T': return "\t";
+        case 'N': return maybeCapitalize(m_ctx.enactorName, ch);
+        case 'S': return maybeCapitalize(m_ctx.pronSub, ch);
+        case 'P': return maybeCapitalize(m_ctx.pronPos, ch);
+        case 'O': return maybeCapitalize(m_ctx.pronObj, ch);
+        case 'A': return maybeCapitalize(m_ctx.pronAbs, ch);
+        case 'K': return maybeCapitalize(m_ctx.moniker, ch);
+        case 'M': return maybeCapitalize(m_ctx.lastCommand, ch);
+        case 'L': return "[location]";
+        }
+
+        switch (ch) {
+        case '%': return "%";
+        case '#': return m_ctx.enactorDbref;
+        case '!': return m_ctx.executorDbref;
+        case '@': return m_ctx.callerDbref;
+        case ':': return m_ctx.enactorObjid;
+        case '+': return std::to_string(m_ctx.nargs);
+        case '|': return m_ctx.pipedOutput;
+        }
+
+        // Penn-specific single-char forms
+        if (m_ctx.profile == PROFILE_PENN) {
+            if (ch == ' ') return "% ";
+            if (ch == '~') return m_ctx.accentedName;
+            if (ch == '?') return "[limits]";
+            if (upper == 'U') return m_ctx.evaledCommand;
+        }
+
+        // Unknown substitution — output the character literally
+        // (matches iCode == 0 fallback in all engines).
         return std::string(1, ch);
     }
 
@@ -315,6 +470,122 @@ private:
             return node->text.substr(1);
         }
         return "\\";
+    }
+
+    // Replicate 2.13's noeval pass on an AST subtree.
+    //
+    // In 2.13, mux_exec with EV_EVAL off still processes backslash
+    // escapes (the handler at line 2439 has no EV_EVAL guard).
+    // Percent substitutions are copied literally (guarded by EV_EVAL).
+    //
+    // This produces a string with one layer of backslash stripping,
+    // which can then be re-tokenized and evaluated.
+    //
+    std::string noevalPass(const ASTNode *node) {
+        if (!node) return "";
+
+        switch (node->type) {
+        case NODE_LITERAL:
+        case NODE_SPACE:
+        case NODE_SEMICOLON:
+            return node->text;
+
+        case NODE_SUBST:
+            // Percent handler IS guarded by EV_EVAL in 2.13.
+            // With EV_EVAL off, it copies % and following char literally.
+            return node->text;
+
+        case NODE_ESCAPE:
+            // Backslash handler is NOT guarded by EV_EVAL in 2.13.
+            // It unconditionally consumes the \ and emits the next char.
+            if (node->text.size() >= 2) {
+                return node->text.substr(1);
+            }
+            return "\\";
+
+        case NODE_FUNCCALL:
+            // In noeval, function calls aren't dispatched.
+            // Copy the name and parens literally.
+            {
+                std::string r = node->text + "(";
+                for (size_t i = 0; i < node->children.size(); i++) {
+                    if (i > 0) r += ",";
+                    r += noevalPass(node->children[i].get());
+                }
+                return r + ")";
+            }
+
+        case NODE_EVALBRACKET:
+            // In noeval with EV_NOFCHECK, [...] is not evaluated.
+            // Copy brackets and contents literally.
+            {
+                std::string r = "[";
+                for (const auto &c : node->children)
+                    r += noevalPass(c.get());
+                return r + "]";
+            }
+
+        case NODE_BRACEGROUP:
+            // Nested brace groups: copy braces and recurse.
+            {
+                std::string r = "{";
+                for (const auto &c : node->children)
+                    r += noevalPass(c.get());
+                return r + "}";
+            }
+
+        case NODE_SEQUENCE:
+            {
+                std::string r;
+                for (const auto &c : node->children)
+                    r += noevalPass(c.get());
+                return r;
+            }
+
+        case NODE_DYNCALL:
+            return "#-1 DYNAMIC";
+        }
+        return "";
+    }
+
+    // Evaluate a brace-group argument from a FN_NOEVAL function.
+    //
+    // This replicates the two-pass behavior in 2.13:
+    //   Pass 1: noeval — strip one layer of backslash (noevalPass)
+    //   Pass 2: eval — re-tokenize the result and evaluate it
+    //
+    std::string evalNoevalBraceArg(const ASTNode *node) {
+        if (!node) return "";
+
+        const ASTNode *inner = node;
+        if (node->type == NODE_BRACEGROUP && !node->children.empty()) {
+            inner = node->children[0].get();
+        }
+
+        // Pass 1: produce text with one backslash layer stripped.
+        std::string text = noevalPass(inner);
+
+        // Pass 2: re-tokenize and evaluate.
+        auto tokens = tokenize(text.c_str(), m_ctx.profile);
+        Parser parser(tokens);
+        auto ast = parser.parse();
+        int flags = (m_ctx.evalFlags & ~(EV_TOP | EV_FMAND))
+                  | EV_EVAL | EV_FCHECK;
+        return evalWithFlags(ast.get(), flags);
+    }
+
+    // Evaluate an argument to a FN_NOEVAL function.
+    //
+    // If the argument is a brace group, apply the two-pass behavior
+    // (noeval backslash stripping + re-tokenize + eval).
+    // Otherwise, evaluate normally.
+    //
+    std::string evalNoevalArg(const ASTNode *node) {
+        if (!node) return "";
+        if (node->type == NODE_BRACEGROUP) {
+            return evalNoevalBraceArg(node);
+        }
+        return eval(node);
     }
 
     std::string evalFuncCall(const ASTNode *node) {
@@ -713,12 +984,12 @@ private:
         // if(condition, true_branch [, false_branch])
         m_noeval_funcs["IF"] = [this](const std::vector<std::unique_ptr<ASTNode>> &c) -> std::string {
             if (c.size() < 2) return "";
-            return toBool(eval(c[0].get())) ? eval(c[1].get())
-                : (c.size() > 2 ? eval(c[2].get()) : "");
+            return toBool(eval(c[0].get())) ? evalNoevalArg(c[1].get())
+                : (c.size() > 2 ? evalNoevalArg(c[2].get()) : "");
         };
         m_noeval_funcs["IFELSE"] = [this](const std::vector<std::unique_ptr<ASTNode>> &c) -> std::string {
             if (c.size() < 3) return "";
-            return toBool(eval(c[0].get())) ? eval(c[1].get()) : eval(c[2].get());
+            return toBool(eval(c[0].get())) ? evalNoevalArg(c[1].get()) : evalNoevalArg(c[2].get());
         };
 
         // switch(val, pat1, result1, ..., default)
@@ -727,18 +998,18 @@ private:
             std::string val = eval(c[0].get());
             for (size_t i = 1; i + 1 < c.size(); i += 2) {
                 std::string pat = eval(c[i].get());
-                if (pat == val || pat == "*") return eval(c[i + 1].get());
+                if (pat == val || pat == "*") return evalNoevalArg(c[i + 1].get());
             }
-            if (c.size() % 2 == 0) return eval(c.back().get());
+            if (c.size() % 2 == 0) return evalNoevalArg(c.back().get());
             return "";
         };
         m_noeval_funcs["CASE"] = [this](const std::vector<std::unique_ptr<ASTNode>> &c) -> std::string {
             if (c.size() < 2) return "";
             std::string val = eval(c[0].get());
             for (size_t i = 1; i + 1 < c.size(); i += 2) {
-                if (eval(c[i].get()) == val) return eval(c[i + 1].get());
+                if (eval(c[i].get()) == val) return evalNoevalArg(c[i + 1].get());
             }
-            if (c.size() % 2 == 0) return eval(c.back().get());
+            if (c.size() % 2 == 0) return evalNoevalArg(c.back().get());
             return "";
         };
 
@@ -784,15 +1055,9 @@ private:
             std::string cond_str = evalWithFlags(c[0].get(), (m_ctx.evalFlags & ~EV_TOP) | EV_EVAL | EV_FCHECK);
             bool cond = !cond_str.empty() && cond_str != "0";
             if (cond) {
-                if (c.size() > 1) {
-                    return evalWithFlags(c[1].get(), (m_ctx.evalFlags & ~EV_TOP) | EV_EVAL | EV_FCHECK | EV_STRIP_CURLY);
-                }
-                return "";
+                return (c.size() > 1) ? evalNoevalArg(c[1].get()) : "";
             } else {
-                if (c.size() > 2) {
-                    return evalWithFlags(c[2].get(), (m_ctx.evalFlags & ~EV_TOP) | EV_EVAL | EV_FCHECK | EV_STRIP_CURLY);
-                }
-                return "";
+                return (c.size() > 2) ? evalNoevalArg(c[2].get()) : "";
             }
         };
 
@@ -840,8 +1105,21 @@ int main(int argc, char *argv[])
     ctx.enactorName = "testplayer";
     ctx.enactorDbref = "#1234";
     ctx.executorDbref = "#1234";
+    ctx.callerDbref = "#1234";
+    ctx.enactorObjid = "#1234:1700000000";
+    ctx.lastCommand = "test";
+    ctx.moniker = "TestPlayer";
+    ctx.pronSub = "they";
+    ctx.pronPos = "their";
+    ctx.pronObj = "them";
+    ctx.pronAbs = "theirs";
+    ctx.rawCommand = "test command";
+    ctx.evaledCommand = "test command";
+    ctx.accentedName = "testplayer";
+    ctx.attrName = "DO_SOMETHING";
     ctx.args[0] = "hello";
     ctx.args[1] = "world";
+    ctx.nargs = 2;
 
     Evaluator evaluator(ctx);
 

@@ -98,12 +98,97 @@ check '[setr(0,hello)]' 'hello'
 check '%0 and %1' 'hello and world'
 check '%%' '%'
 
-# Escapes
+# Escapes — basic
 check '\[not a bracket\]' '[not a bracket]'
 check '\% capacity' '% capacity'
+
+# ---------------------------------------------------------------
+# Cross-profile escape + percent interaction tests
+# ---------------------------------------------------------------
+
+# The critical divergence: \\% sequences
+#
+# Without braces, all profiles agree: \\% → \ then unknown-% → space
 check '\\% capacity' '\ capacity'
-check '\\% capacity' '% capacity' '--profile mux213'
-check '% happy' '% happy' '--profile penn'
+check '\\% capacity' '\ capacity' '--profile mux213'
+
+# With braces in FN_NOEVAL (the bboard case):
+# 2.13 two-pass: noeval strips \\ → \, then eval: \% → %
+# The evalNoevalArg mechanism replicates this.
+check '[switch(1,1,{\\% capacity})]' '% capacity'
+check '[if(1,{\\% capacity})]' '% capacity'
+check '[case(1,1,{\\% capacity})]' '% capacity'
+
+# Without braces in switch, no extra pass — same as bare
+check '[switch(1,1,\\% capacity)]' '\ capacity'
+
+# Single backslash before percent: all engines agree
+check '\%b' '%b'
+check '\%b' '%b' '--profile mux213'
+check '\%b' '%b' '--profile penn'
+
+# Double backslash before known substitution (no braces = single pass)
+check '\\%b' '\ '
+check '\\%b' '\ ' '--profile mux213'
+check '\\%b' '\ ' '--profile penn'
+
+# Triple backslash: ESC("\\") → "\", ESC("\%") → "%", LIT("b")
+check '\\\%b' '\%b'
+check '\\\%b' '\%b' '--profile mux213'
+check '\\\%b' '\%b' '--profile penn'
+
+# Percent-space: Penn recognizes it as atomic "% ", MUX treats as
+# unknown-% fallback (emits the space char).  In both cases the
+# tokenizer consumes % + space as one token, so only one space
+# appears between "50" and "happy".
+#
+# MUX: %<space> → " " (unknown fallback) → "50 happy"
+# Penn: %<space> → "% " (explicit subst) → "50% happy"
+check '50% happy' '50 happy'
+check '50% happy' '50 happy' '--profile mux213'
+check '50% happy' '50% happy' '--profile penn'
+
+# Percent-percent
+check '100%%' '100%'
+check '100%%' '100%' '--profile mux213'
+check '100%%' '100%' '--profile penn'
+
+# ---------------------------------------------------------------
+# New substitution forms
+# ---------------------------------------------------------------
+
+# Pronouns
+check '%s says hello' 'they says hello'
+check '%S says hello' 'They says hello'
+check '%p dog' 'their dog'
+check '%o saw' 'them saw'
+check '%a is' 'theirs is'
+
+# Caller/objid/arg count
+check '%@' '#1234'
+check '%:' '#1234:1700000000'
+check '%+' '2'
+
+# Moniker / last command
+check '%k' 'TestPlayer'
+check '%m' 'test'
+check '%M' 'Test'
+
+# Hash forms
+check '[iter(a b c,##)]' 'a b c'
+check '[iter(a b c,#@)]' '1 2 3'
+
+# Variable attributes (empty in study tool)
+check '%va' ''
+
+# Unknown % fallback — all profiles emit the character
+check '%g' 'g'
+check '%g' 'g' '--profile mux213'
+check '%g' 'g' '--profile penn'
+
+# Penn-specific: %= is attr name
+check '%=' '=' '--profile mux214'
+check '%=' 'DO_SOMETHING' '--profile penn'
 
 # Nested evaluation
 check '[add(1,add(2,add(3,4)))]' '10'
