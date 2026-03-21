@@ -418,9 +418,11 @@ Changes since TinyMUX 2.12.0.12.
    changes. Dependency vectors are stored alongside compiled programs in
    the SQLite code cache.
  - JIT re-entrancy guard: nested `u()` calls that would recursively
-   invoke the JIT compiler now fall back to the AST evaluator instead of
-   hanging. This is the foundation that allows the compiler to do more
-   work per compilation unit without risk of recursive re-entry.
+   invoke the JIT compiler now fall back to the AST evaluator.
+   Previously, each nested call spawned (and destroyed) a new DBT
+   environment — correct but unnecessarily slow. This allows the
+   compiler to do more work per compilation unit without risk of
+   recursive re-entry.
  - JIT/SSA compiler fixes: fixed CFG hang when allocating merge blocks
    after body lowering; fixed SSA hang when attempting to inline bodies
    containing control flow; restricted `u()` inlining to literal
