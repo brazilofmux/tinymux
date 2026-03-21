@@ -4106,6 +4106,25 @@ FUNCTION(fun_sandbox)
     sandbox_entry entries[512];
     int nEntries = 0;
 
+    auto record_entry = [&entries, &nEntries](FUN *fp) -> bool
+    {
+        for (int i = 0; i < nEntries; i++)
+        {
+            if (entries[i].fp == fp)
+            {
+                return false;
+            }
+        }
+        if (nEntries >= static_cast<int>(sizeof(entries)/sizeof(entries[0])))
+        {
+            return false;
+        }
+        entries[nEntries].fp = fp;
+        entries[nEntries].saved_perms = fp->perms;
+        nEntries++;
+        return true;
+    };
+
     // Parse the function name list.
     //
     FUN *listed[512];
@@ -4127,7 +4146,20 @@ FUNCTION(fun_sandbox)
                 if (  it != mudstate.builtin_functions.end()
                    && nListed < static_cast<int>(sizeof(listed)/sizeof(listed[0])))
                 {
-                    listed[nListed++] = static_cast<FUN*>(it->second);
+                    FUN *fp = static_cast<FUN*>(it->second);
+                    bool bSeen = false;
+                    for (int i = 0; i < nListed; i++)
+                    {
+                        if (listed[i] == fp)
+                        {
+                            bSeen = true;
+                            break;
+                        }
+                    }
+                    if (!bSeen)
+                    {
+                        listed[nListed++] = fp;
+                    }
                 }
             }
         }
@@ -4141,11 +4173,8 @@ FUNCTION(fun_sandbox)
         for (auto &kv : mudstate.builtin_functions)
         {
             FUN *fp = static_cast<FUN*>(kv.second);
-            if (nEntries < static_cast<int>(sizeof(entries)/sizeof(entries[0])))
+            if (record_entry(fp))
             {
-                entries[nEntries].fp = fp;
-                entries[nEntries].saved_perms = fp->perms;
-                nEntries++;
                 fp->perms |= CA_DISABLED;
             }
         }
@@ -4162,11 +4191,8 @@ FUNCTION(fun_sandbox)
         //
         for (int i = 0; i < nListed; i++)
         {
-            if (nEntries < static_cast<int>(sizeof(entries)/sizeof(entries[0])))
+            if (record_entry(listed[i]))
             {
-                entries[nEntries].fp = listed[i];
-                entries[nEntries].saved_perms = listed[i]->perms;
-                nEntries++;
                 listed[i]->perms |= CA_DISABLED;
             }
         }
