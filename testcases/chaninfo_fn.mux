@@ -266,11 +266,47 @@
         356A192B7913B04C54574D18C28D46E6395428AB
       )=
   {
-    @log smoke=TC014: chaninfo canreceive. Succeeded.;
+    @log smoke=TC014: chaninfo canreceive. Succeeded.
+  },
+  {
+    @log smoke=TC014: chaninfo canreceive. Failed (%q0).
+  }
+-
+#
+# Test Case #15 - chanfind(header) returns channel name.
+#
+&tr.tc015 test_chaninfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chanfind(<CI>)]
+          )
+        ),
+        9ADE11C4AAEE2535DE766CE2F62FC25585457BA5
+      )=
+  {
+    @log smoke=TC015: chanfind by header. Succeeded.
+  },
+  {
+    @log smoke=TC015: chanfind by header. Failed (%q0).
+  }
+-
+#
+# Test Case #16 - chanfind(bogus) returns #-1 CHANNEL NOT FOUND.
+#
+&tr.tc016 test_chaninfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chanfind(nosuchheader)]
+          )
+        ),
+        770632F3C8D766298FD8123A49357D082D5A4672
+      )=
+  {
+    @log smoke=TC016: chanfind not found. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC014: chaninfo canreceive. Failed (%q0).;
+    @log smoke=TC016: chanfind not found. Failed (%q0).;
     @trig me/tr.done
   }
 -

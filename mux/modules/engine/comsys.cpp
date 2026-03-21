@@ -4724,8 +4724,58 @@ FUNCTION(fun_chaninfo)
 }
 
 // ---------------------------------------------------------------------------
-// chanusers(channel[, separator]) — list subscriber dbrefs.
+// chanfind(header) — reverse-lookup channel name from header string.
 // ---------------------------------------------------------------------------
+//
+// Given a channel header (display name), returns the canonical channel name.
+// Useful when players see e.g. "<PublicServices>" in chat and need to find
+// the internal name "PubServ".  Case-insensitive match.
+//
+// Visibility: same subscriber-aware model as chaninfo.
+//
+FUNCTION(fun_chanfind)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    const UTF8 *target = fargs[0];
+
+    for (auto it = mudstate.channel_names.begin();
+         it != mudstate.channel_names.end(); ++it)
+    {
+        const auto ch = it->second;
+
+        if (0 == mux_stricmp(target, ch->header))
+        {
+            // Visibility check.
+            //
+            if (  (ch->type & CHANNEL_PUBLIC)
+               || Comm_All(executor)
+               || Controls(executor, ch->charge_who)
+               || nullptr != select_user(ch, executor))
+            {
+                safe_str(ch->name, buff, bufc);
+                return;
+            }
+        }
+    }
+    safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// chanusers(channel[, separator[, field]]) — list subscriber data.
+// ---------------------------------------------------------------------------
+//
+// With no field arg (or empty), returns delimited dbrefs.
+// With a field arg, returns that field for each subscriber:
+//   title, status, flags, gagjoin, comtitles, alias, name.
+//
+// "alias" requires Wizard (exposes other players' aliases).
+// Other fields follow the co-member rule (executor must be visible).
 //
 // Visibility: PUBLIC, or subscriber, or Comm_All, or Controls(charge_who).
 //
@@ -4756,6 +4806,55 @@ FUNCTION(fun_chanusers)
         return;
     }
 
+    // Determine output field (default: dbref).
+    //
+    enum FieldType { FT_DBREF, FT_TITLE, FT_STATUS, FT_FLAGS,
+                     FT_GAGJOIN, FT_COMTITLES, FT_ALIAS, FT_NAME };
+    FieldType ft = FT_DBREF;
+
+    if (nfargs >= 3 && fargs[2][0] != '\0')
+    {
+        const UTF8 *field = fargs[2];
+        if (0 == mux_stricmp(field, T("title")))
+        {
+            ft = FT_TITLE;
+        }
+        else if (0 == mux_stricmp(field, T("status")))
+        {
+            ft = FT_STATUS;
+        }
+        else if (0 == mux_stricmp(field, T("flags")))
+        {
+            ft = FT_FLAGS;
+        }
+        else if (0 == mux_stricmp(field, T("gagjoin")))
+        {
+            ft = FT_GAGJOIN;
+        }
+        else if (0 == mux_stricmp(field, T("comtitles")))
+        {
+            ft = FT_COMTITLES;
+        }
+        else if (0 == mux_stricmp(field, T("alias")))
+        {
+            if (!Wizard(executor))
+            {
+                safe_noperm(buff, bufc);
+                return;
+            }
+            ft = FT_ALIAS;
+        }
+        else if (0 == mux_stricmp(field, T("name")))
+        {
+            ft = FT_NAME;
+        }
+        else
+        {
+            safe_str(T("#-1 INVALID FIELD"), buff, bufc);
+            return;
+        }
+    }
+
     bool bFirst = true;
     for (const auto &kv : ch->users)
     {
@@ -4763,8 +4862,64 @@ FUNCTION(fun_chanusers)
         {
             print_sep(sep, buff, bufc);
         }
-        safe_tprintf_str(buff, bufc, T("#%d"), kv.first);
         bFirst = false;
+
+        const comuser &user = kv.second;
+
+        switch (ft)
+        {
+        case FT_DBREF:
+            safe_tprintf_str(buff, bufc, T("#%d"), kv.first);
+            break;
+
+        case FT_NAME:
+            safe_str(Moniker(kv.first), buff, bufc);
+            break;
+
+        case FT_TITLE:
+            safe_str(reinterpret_cast<const UTF8 *>(user.title.c_str()),
+                buff, bufc);
+            break;
+
+        case FT_STATUS:
+            safe_str(user.bUserIsOn ? T("On") : T("Off"), buff, bufc);
+            break;
+
+        case FT_FLAGS:
+            if (!user.bUserIsOn)     safe_chr('O', buff, bufc);
+            if (user.bGagJoinLeave)  safe_chr('G', buff, bufc);
+            if (!user.ComTitleStatus) safe_chr('Q', buff, bufc);
+            break;
+
+        case FT_GAGJOIN:
+            safe_chr(user.bGagJoinLeave ? '1' : '0', buff, bufc);
+            break;
+
+        case FT_COMTITLES:
+            safe_chr(user.ComTitleStatus ? '1' : '0', buff, bufc);
+            break;
+
+        case FT_ALIAS:
+            {
+                auto it = comsys_table.find(kv.first);
+                if (it != comsys_table.end())
+                {
+                    const comsys_t &cc = it->second;
+                    for (const auto &ca : cc.aliases)
+                    {
+                        if (0 == mux_stricmp(
+                            reinterpret_cast<const UTF8 *>(ca.channel.c_str()),
+                            ch->name))
+                        {
+                            safe_str(reinterpret_cast<const UTF8 *>(
+                                ca.alias.c_str()), buff, bufc);
+                            break;
+                        }
+                    }
+                }
+            }
+            break;
+        }
     }
 }
 

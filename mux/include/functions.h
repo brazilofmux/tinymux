@@ -137,6 +137,7 @@ XFUNCTION(fun_cowner);
 XFUNCTION(fun_crecall);
 XFUNCTION(fun_cstatus);
 XFUNCTION(fun_cusers);
+XFUNCTION(fun_chanfind);
 XFUNCTION(fun_chaninfo);
 XFUNCTION(fun_chanusers);
 XFUNCTION(fun_chanuser);

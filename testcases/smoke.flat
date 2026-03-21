@@ -43,77 +43,77 @@
 +A275
 "1:TR.TC014"
 +A276
-"1:TESTATTR"
-+A277
-"1:TESTATTR1"
-+A278
-"1:TESTATTR2"
-+A279
-"1:CRON_TARGET"
-+A280
-"1:HELP_COMMANDS"
-+A281
-"1:HELP_BUILDING"
-+A282
-"1:HELP_COMBAT"
-+A283
-"1:HELP_COMM"
-+A284
-"1:INFO_RULES"
-+A285
-"1:INFO_STAFF"
-+A286
-"1:FN_ADD1"
-+A287
-"1:FN_MULTI"
-+A288
-"1:FN_SETQ"
-+A289
-"1:FN_PASSTHRU"
-+A290
-"1:FN_CMDPREFIX"
-+A291
-"1:FN_TC003_INNER"
-+A292
-"1:FN_TC003_BREAK"
-+A293
-"1:FN_TC004_BREAK"
-+A294
-"1:LUA_ADD"
-+A295
-"1:LUA_HELLO"
-+A296
-"1:LUA_CAT"
-+A297
-"1:LUA_NIL"
-+A298
-"1:LUA_BOOL"
-+A299
-"1:LUA_OS"
-+A300
-"1:LUA_IO"
-+A301
-"1:LUA_LOAD"
-+A302
-"1:LUA_LOOP"
-+A303
-"1:LUA_MATH"
-+A304
-"1:LUA_STR"
-+A305
-"1:LUA_TBL"
-+A306
-"1:LUA_NAME"
-+A307
-"1:LUA_EVAL"
-+A308
-"1:LUA_BAD"
-+A309
 "1:TR.TC015"
-+A310
-"1:LUA_EMPTY"
-+A311
++A277
 "1:TR.TC016"
++A278
+"1:TESTATTR"
++A279
+"1:TESTATTR1"
++A280
+"1:TESTATTR2"
++A281
+"1:CRON_TARGET"
++A282
+"1:HELP_COMMANDS"
++A283
+"1:HELP_BUILDING"
++A284
+"1:HELP_COMBAT"
++A285
+"1:HELP_COMM"
++A286
+"1:INFO_RULES"
++A287
+"1:INFO_STAFF"
++A288
+"1:FN_ADD1"
++A289
+"1:FN_MULTI"
++A290
+"1:FN_SETQ"
++A291
+"1:FN_PASSTHRU"
++A292
+"1:FN_CMDPREFIX"
++A293
+"1:FN_TC003_INNER"
++A294
+"1:FN_TC003_BREAK"
++A295
+"1:FN_TC004_BREAK"
++A296
+"1:LUA_ADD"
++A297
+"1:LUA_HELLO"
++A298
+"1:LUA_CAT"
++A299
+"1:LUA_NIL"
++A300
+"1:LUA_BOOL"
++A301
+"1:LUA_OS"
++A302
+"1:LUA_IO"
++A303
+"1:LUA_LOAD"
++A304
+"1:LUA_LOOP"
++A305
+"1:LUA_MATH"
++A306
+"1:LUA_STR"
++A307
+"1:LUA_TBL"
++A308
+"1:LUA_NAME"
++A309
+"1:LUA_EVAL"
++A310
+"1:LUA_BAD"
++A311
+"1:LUA_EMPTY"
 +A312
 "1:TR.TC017"
 +A313
@@ -1246,7 +1246,11 @@
 >274
 "@if strmatch(setr(0,sha1([chaninfo(citest,cantransmit)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC013: chaninfo cantransmit. Succeeded.},{@log smoke=TC013: chaninfo cantransmit. Failed (%q0).}"
 >275
-"@if strmatch(setr(0,sha1([chaninfo(citest,canreceive)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC014: chaninfo canreceive. Succeeded.;@trig me/tr.done},{@log smoke=TC014: chaninfo canreceive. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([chaninfo(citest,canreceive)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC014: chaninfo canreceive. Succeeded.},{@log smoke=TC014: chaninfo canreceive. Failed (%q0).}"
+>276
+"@if strmatch(setr(0,sha1([chanfind(<CI>)])),9ADE11C4AAEE2535DE766CE2F62FC25585457BA5)={@log smoke=TC015: chanfind by header. Succeeded.},{@log smoke=TC015: chanfind by header. Failed (%q0).}"
+>277
+"@if strmatch(setr(0,sha1([chanfind(nosuchheader)])),770632F3C8D766298FD8123A49357D082D5A4672)={@log smoke=TC016: chanfind not found. Succeeded.;@trig me/tr.done},{@log smoke=TC016: chanfind not found. Failed (%q0).;@trig me/tr.done}"
 <
 !34
 "test_chanuser_fn"
@@ -1318,7 +1322,13 @@
 >260
 "@if strmatch(setr(0,sha1([chanusers(nosuch)])),770632F3C8D766298FD8123A49357D082D5A4672)={@log smoke=TC003: chanusers not found. Succeeded.},{@log smoke=TC003: chanusers not found. Failed (%q0).}"
 >265
-"@if strmatch(setr(0,sha1([eq(words(chanusers(cutest)),chaninfo(cutest,users))])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC004: chanusers count matches chaninfo. Succeeded.;@trig me/tr.done},{@log smoke=TC004: chanusers count matches chaninfo. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([eq(words(chanusers(cutest)),chaninfo(cutest,users))])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC004: chanusers count matches chaninfo. Succeeded.},{@log smoke=TC004: chanusers count matches chaninfo. Failed (%q0).}"
+>266
+"@if strmatch(setr(0,sha1([t(strlen(chanusers(cutest,%b,name)))])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC005: chanusers name field. Succeeded.},{@log smoke=TC005: chanusers name field. Failed (%q0).}"
+>267
+"@if strmatch(setr(0,sha1([strmatch(chanusers(cutest,%b,status),*On*)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC006: chanusers status field. Succeeded.},{@log smoke=TC006: chanusers status field. Failed (%q0).}"
+>268
+"@if strmatch(setr(0,sha1([strmatch(chanusers(cutest,%b,badfield),#-1 INVALID FIELD)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC007: chanusers invalid field. Succeeded.;@trig me/tr.done},{@log smoke=TC007: chanusers invalid field. Failed (%q0).;@trig me/tr.done}"
 <
 !36
 "test_choose_fn"
@@ -1447,7 +1457,7 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->276
+>278
 "hello"
 <
 !40
@@ -1894,9 +1904,9 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->277
+>279
 "hello"
->278
+>280
 "world"
 <
 !55
@@ -1935,7 +1945,7 @@
 "@crondel me/CRON_TARGET;@log smoke=TC005: @crondel specific. Succeeded."
 >267
 "@cron me/CRON_TARGET = 0 0 * * *;@crondel me;@log smoke=TC006: @crondel all. Succeeded.;@trig me/tr.done"
->279
+>281
 "think cron_target_fired"
 <
 !56
@@ -2231,17 +2241,17 @@
 "@if strmatch(setr(0,dynhelp(#-1,COMMANDS)),#-1*)={@log smoke=TC007: dynhelp bad object. Succeeded.},{@log smoke=TC007: dynhelp bad object. Failed (%q0).}"
 >269
 "@if strmatch(setr(0,dynhelp(me,COMM)),Communication channels)={@log smoke=TC008: dynhelp exact beats prefix. Succeeded.;@trig me/tr.done},{@log smoke=TC008: dynhelp exact beats prefix. Failed (%q0).;@trig me/tr.done}"
->280
-"List of commands: look, say, go"
->281
-"Building guide: @dig, @create, @open"
 >282
-"Combat system overview"
+"List of commands: look, say, go"
 >283
-"Communication channels"
+"Building guide: @dig, @create, @open"
 >284
-"Server rules and policies"
+"Combat system overview"
 >285
+"Communication channels"
+>286
+"Server rules and policies"
+>287
 "Staff listing"
 <
 !66
@@ -3084,21 +3094,21 @@
 "@eval setq(0,UNSET);@include me/fn_cmdprefix=hello;@if strmatch(setr(9,sha1(%q0)),228D6DDD54EA9EB59E222D5DD3FA6D3221BE892A)={@log smoke=TC008: strip command prefix. Succeeded.},{@log smoke=TC008: strip command prefix. Failed (%q9).}"
 >270
 "@eval setq(5,before_clear);@include/clearregs me/fn_setq;@if strmatch(setr(9,sha1(%q5)),00F554D678F26112AAD9D51D7A8D2D590EB74801)={@log smoke=TC009: clearregs switch. Succeeded.;@trig me/tr.done},{@log smoke=TC009: clearregs switch. Failed (%q9).;@trig me/tr.done}"
->286
-"@eval setq(0,add(%0,1))"
->287
-"@eval setq(0,hello); @eval setq(1,world)"
 >288
-"@eval setq(5,included)"
+"@eval setq(0,add(%0,1))"
 >289
-"@eval setq(0,%0-%1)"
+"@eval setq(0,hello); @eval setq(1,world)"
 >290
-"$testcmd *:@eval setq(0,body_%0)"
+"@eval setq(5,included)"
 >291
-"@eval setq(0,before);@include me/fn_tc003_break;@eval setq(0,after)"
+"@eval setq(0,%0-%1)"
 >292
-"@break 1"
+"$testcmd *:@eval setq(0,body_%0)"
 >293
+"@eval setq(0,before);@include me/fn_tc003_break;@eval setq(0,after)"
+>294
+"@break 1"
+>295
 "@break 1; @eval setq(0,should_not_reach)"
 <
 !93
@@ -4288,40 +4298,40 @@
 "@if strmatch(setr(0,lua(me/LUA_NAME)),Wizard)={@log smoke=TC013: lua mux.name bridge. Succeeded.},{@log smoke=TC013: lua mux.name bridge. Failed (%q0).}"
 >275
 "@if strmatch(setr(0,lua(me/LUA_EVAL)),30)={@log smoke=TC014: lua mux.eval bridge. Succeeded.},{@log smoke=TC014: lua mux.eval bridge. Failed (%q0).}"
->294
-"return mux.args[1] + mux.args[2]"
->295
-"return \"hello world\""
->296
-"return mux.args[1] .. \" \" .. mux.args[2]"
->297
-"return nil"
->298
-"return true"
->299
-"return os.execute(\"echo pwned\")"
->300
-"return io.open(\"/etc/passwd\")"
->301
-"return load(\"return 42\")()"
->302
-"while true do end"
->303
-"return math.floor(math.sqrt(144))"
->304
-"return string.upper(\"hello\")"
->305
-"local t = {3,1,2} table.sort(t) return t[1]..t[2]..t[3]"
->306
-"return mux.name(1)"
->307
-"return mux.eval(\"add(10,20)\")"
->308
-"this is not valid lua!!!!"
->309
+>276
 "@if strmatch(setr(0,lua(me/LUA_BAD)),#-1 LUA ERROR:*)={@log smoke=TC015: lua compile error. Succeeded.},{@log smoke=TC015: lua compile error. Failed (%q0).}"
->311
+>277
 "@if strmatch(setr(0,lua(me/LUA_EMPTY)),)={@log smoke=TC016: lua empty attr. Succeeded.},{@log smoke=TC016: lua empty attr. Failed (%q0).}"
+>296
+"return mux.args[1] + mux.args[2]"
+>297
+"return \"hello world\""
+>298
+"return mux.args[1] .. \" \" .. mux.args[2]"
+>299
+"return nil"
+>300
+"return true"
+>301
+"return os.execute(\"echo pwned\")"
+>302
+"return io.open(\"/etc/passwd\")"
+>303
+"return load(\"return 42\")()"
+>304
+"while true do end"
+>305
+"return math.floor(math.sqrt(144))"
+>306
+"return string.upper(\"hello\")"
+>307
+"local t = {3,1,2} table.sort(t) return t[1]..t[2]..t[3]"
+>308
+"return mux.name(1)"
+>309
+"return mux.eval(\"add(10,20)\")"
+>310
+"this is not valid lua!!!!"
 >312
 "@if strmatch(setr(0,lua(me/LUA_NOEXIST)),#-1 LUA ERROR:*)={@log smoke=TC017: lua missing attr error. Succeeded.},{@log smoke=TC017: lua missing attr error. Failed (%q0).}"
 >313
@@ -5172,9 +5182,9 @@
 "@if strmatch(setr(0,sha1([eval(add(1,add(2,add(3,add(4,5)))))][eval(strlen(ucstr(lcstr(mid(hello world,0,5)))))])),setr(1,sha1([add(1,add(2,add(3,add(4,5))))][strlen(ucstr(lcstr(mid(hello world,0,5))))])))={@log smoke=TC012: parser deep nesting. Succeeded.},{@log smoke=TC012: parser deep nesting. Failed (%q0 vs %q1).}"
 >275
 "@if strmatch(setr(0,sha1([eval(if(,yes,no))][eval(add(,1))][eval(strlen(cat(a,,b)))])),setr(1,sha1([if(,yes,no)][add(,1)][strlen(cat(a,,b))])))={@log smoke=TC014: parser empty args. Succeeded.},{@log smoke=TC014: parser empty args. Failed (%q0 vs %q1).}"
->309
+>276
 "@if strmatch(setr(0,sha1([eval(sha1(hello,world))][eval(sha1(a,b,c))])),setr(1,sha1([sha1(hello,world)][sha1(a,b,c)])))={@log smoke=TC015: parser maxArgsParsed. Succeeded.},{@log smoke=TC015: parser maxArgsParsed. Failed (%q0 vs %q1).}"
->311
+>277
 "@if strmatch(setr(0,sha1([eval(notafunc(x))][eval(xyzzy(1,2,3))])),setr(1,sha1(notafunc(x)xyzzy(1,2,3))))={@log smoke=TC016: parser unknown function. Succeeded.},{@log smoke=TC016: parser unknown function. Failed (%q0 vs %q1).}"
 >312
 "@if strmatch(setr(0,sha1([eval(if(1,{[add(1,2)]},{[mul(3,4)]}))][eval(switch(a,a,{[ucstr(hello)]},*,{none}))])),setr(1,sha1([if(1,{[add(1,2)]},{[mul(3,4)]})][switch(a,a,{[ucstr(hello)]},*,{none})])))={@log smoke=TC017: parser mixed nesting. Succeeded.},{@log smoke=TC017: parser mixed nesting. Failed (%q0 vs %q1).}"
@@ -5904,9 +5914,9 @@
 "@log smoke=BENCH013:[rvbench(mul(rand(100),rand(100)),10000)]"
 >275
 "@log smoke=BENCH014:[rvbench(not(eq(mod(add(rand(1),42),5),0)),10000)]"
->309
+>276
 "@log smoke=BENCH015:[rvbench(if(gt(5,3),yes),10000)]"
->311
+>277
 "@log smoke=BENCH016:[rvbench(ifelse(gt(rand(100),50),big,small),10000)]"
 >312
 "@log smoke=BENCH017:[rvbench(cand(1,1,1),10000)]"

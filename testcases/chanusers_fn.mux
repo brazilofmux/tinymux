@@ -80,11 +80,65 @@
         356A192B7913B04C54574D18C28D46E6395428AB
       )=
   {
-    @log smoke=TC004: chanusers count matches chaninfo. Succeeded.;
+    @log smoke=TC004: chanusers count matches chaninfo. Succeeded.
+  },
+  {
+    @log smoke=TC004: chanusers count matches chaninfo. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - chanusers(chan, |, name) returns player names.
+#
+&tr.tc005 test_chanusers_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [t(strlen(chanusers(cutest,%b,name)))]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC005: chanusers name field. Succeeded.
+  },
+  {
+    @log smoke=TC005: chanusers name field. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - chanusers(chan, |, status) returns On/Off.
+#
+&tr.tc006 test_chanusers_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strmatch(chanusers(cutest,%b,status),*On*)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC006: chanusers status field. Succeeded.
+  },
+  {
+    @log smoke=TC006: chanusers status field. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - chanusers(chan, |, badfield) returns #-1 INVALID FIELD.
+#
+&tr.tc007 test_chanusers_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strmatch(chanusers(cutest,%b,badfield),#-1 INVALID FIELD)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC007: chanusers invalid field. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC004: chanusers count matches chaninfo. Failed (%q0).;
+    @log smoke=TC007: chanusers invalid field. Failed (%q0).;
     @trig me/tr.done
   }
 -
