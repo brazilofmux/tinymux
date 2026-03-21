@@ -86,6 +86,9 @@ enum hir_kind {
     HIR_FTOA,       // float → string (ECALL-based)
     HIR_ATOF,       // string → float (ECALL-based)
 
+    // String comparison
+    HIR_STRCMP,      // strcmp(src1, src2): -1/0/1 (inline RV64 byte compare)
+
     // Function calls
     HIR_CALL,       // ECALL to engine function
     HIR_STRCAT,     // concatenate N strings via ECALL

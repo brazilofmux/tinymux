@@ -847,11 +847,67 @@
     setr(0,lua(me/LUA_MOD_ARGS,17,5)),
     2)=
   {
-    @log smoke=TC052: lua string-arg modulo. Succeeded.;
+    @log smoke=TC052: lua string-arg modulo. Succeeded.
+  },
+  {
+    @log smoke=TC052: lua string-arg modulo. Failed (%q0).
+  }
+-
+#
+# Test 53: string equality (native strcmp path).
+#
+&LUA_STREQ test_lua_fn= \
+  if mux.args[1] == "hello" then \
+    return "yes" \
+  else \
+    return "no" \
+  end
+-
+&tr.tc053 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_STREQ,hello)),
+    yes)=
+  {
+    @log smoke=TC053: lua string equality match. Succeeded.
+  },
+  {
+    @log smoke=TC053: lua string equality match. Failed (%q0).
+  }
+-
+#
+# Test 54: string inequality (strcmp returns nonzero).
+#
+&tr.tc054 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_STREQ,world)),
+    no)=
+  {
+    @log smoke=TC054: lua string inequality. Succeeded.
+  },
+  {
+    @log smoke=TC054: lua string inequality. Failed (%q0).
+  }
+-
+#
+# Test 55: string equality with numeric-looking string.
+#
+&LUA_STREQ_NUM test_lua_fn= \
+  if mux.args[1] == "5" then \
+    return "str" \
+  else \
+    return "other" \
+  end
+-
+&tr.tc055 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_STREQ_NUM,5)),
+    str)=
+  {
+    @log smoke=TC055: lua string equality numeric. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC052: lua string-arg modulo. Failed (%q0).;
+    @log smoke=TC055: lua string equality numeric. Failed (%q0).;
     @trig me/tr.done
   }
 -

@@ -172,6 +172,9 @@ static uint32_t rv_OR(uint8_t rd, uint8_t rs1, uint8_t rs2) {
 static uint32_t rv_XOR(uint8_t rd, uint8_t rs1, uint8_t rs2) {
     return rv_r_type(OP_REG, rd, ALU_XOR, rs1, rs2, 0x00);
 }
+static uint32_t rv_SLT(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return rv_r_type(OP_REG, rd, ALU_SLT, rs1, rs2, 0x00);
+}
 static uint32_t rv_SLL(uint8_t rd, uint8_t rs1, uint8_t rs2) {
     return rv_r_type(OP_REG, rd, ALU_SLL, rs1, rs2, 0x00);
 }
@@ -302,6 +305,68 @@ static void rv_emit_atoi(std::vector<uint32_t> &code,
         static_cast<int32_t>((skip_neg - beq_pos) * 4));
 
     code.push_back(rv_ADDI(out_reg, t1, 0));           // 18: mv out, acc
+}
+
+// ---------------------------------------------------------------
+// Inline RISC-V strcmp: compare two NUL-terminated strings.
+//
+// Input:  addr_a, addr_b = guest addresses of the two strings
+// Output: out_reg = -1 (a<b), 0 (a==b), 1 (a>b)
+// Clobbers: t0(x5), t1(x6), addr_a, addr_b
+// ---------------------------------------------------------------
+
+static void rv_emit_strcmp(std::vector<uint32_t> &code,
+                           uint8_t addr_a, uint8_t addr_b,
+                           uint8_t out_reg) {
+    constexpr uint8_t t0 = 5, t1 = 6;
+
+    // loop:
+    size_t loop = code.size();
+    code.push_back(rv_LBU(t0, addr_a, 0));              // t0 = *a
+    code.push_back(rv_LBU(t1, addr_b, 0));              // t1 = *b
+    size_t bne_differ = code.size();
+    code.push_back(0);                                    // BNE t0, t1 → differ (patch)
+    size_t beq_equal = code.size();
+    code.push_back(0);                                    // BEQ t0, x0 → equal (patch)
+    code.push_back(rv_ADDI(addr_a, addr_a, 1));          // a++
+    code.push_back(rv_ADDI(addr_b, addr_b, 1));          // b++
+    size_t j_loop = code.size();
+    code.push_back(rv_BEQ(0, 0,                          // j loop
+        static_cast<int32_t>((loop - j_loop) * 4)));
+
+    // differ:  t0 != t1
+    size_t differ = code.size();
+    code[bne_differ] = rv_BNE(t0, t1,
+        static_cast<int32_t>((differ - bne_differ) * 4));
+    code.push_back(rv_SLT(out_reg, t0, t1));             // out = (a < b) ? 1 : 0
+    size_t bne_done = code.size();
+    code.push_back(0);                                    // BNE out, x0 → neg (patch)
+    code.push_back(rv_ADDI(out_reg, 0, 1));              // out = 1 (a > b)
+    size_t j_done = code.size();
+    code.push_back(0);                                    // J → done (patch)
+
+    // neg:  a < b → out = -1
+    size_t neg = code.size();
+    code[bne_done] = rv_BNE(out_reg, 0,
+        static_cast<int32_t>((neg - bne_done) * 4));
+    code.push_back(rv_SUB(out_reg, 0, out_reg));          // out = -1 (negate the 1 from SLT... wait, SLT gave 1, so -1 is correct)
+    // Actually: SLT out, t0, t1 → out=1 if a<b.  We want -1 for a<b.
+    // SUB out, x0, out → out = -1.  Correct.
+    size_t j_done2 = code.size();
+    code.push_back(0);                                    // J → done (patch)
+
+    // equal:  both NUL
+    size_t equal = code.size();
+    code[beq_equal] = rv_BEQ(t0, 0,
+        static_cast<int32_t>((equal - beq_equal) * 4));
+    code.push_back(rv_ADDI(out_reg, 0, 0));              // out = 0
+
+    // done:
+    size_t done = code.size();
+    code[j_done] = rv_BEQ(0, 0,
+        static_cast<int32_t>((done - j_done) * 4));
+    code[j_done2] = rv_BEQ(0, 0,
+        static_cast<int32_t>((done - j_done2) * 4));
 }
 
 // ---------------------------------------------------------------
@@ -603,6 +668,7 @@ static bool needs_int_reg(hir_program &h, int i) {
     switch (h.kind[i]) {
     case HIR_ICONST:
     case HIR_ATOI:
+    case HIR_STRCMP:
     case HIR_ADD: case HIR_SUB: case HIR_MUL: case HIR_DIV: case HIR_REM:
     case HIR_NEG: case HIR_ABS: case HIR_SIGN:
     case HIR_MAX: case HIR_MIN:
@@ -1077,6 +1143,24 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 } else {
                     rv_load_val(rc.code, 10, loc[s1].addr);
                     rv_emit_atoi(rc.code, 10, dest);
+                }
+                ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            case HIR_STRCMP: {
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                if (h.kind[s1] == HIR_SCONST && h.kind[s2] == HIR_SCONST) {
+                    int r = strcmp(h.sval[s1].c_str(), h.sval[s2].c_str());
+                    rv_load_i64(rc.code, dest, r < 0 ? -1 : r > 0 ? 1 : 0);
+                } else {
+                    rv_load_val(rc.code, 10, loc[s1].addr);
+                    rv_load_val(rc.code, 11, loc[s2].addr);
+                    rv_emit_strcmp(rc.code, 10, 11, dest);
                 }
                 ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
@@ -1746,6 +1830,7 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_INC:        return "INC";
     case HIR_DEC:        return "DEC";
     case HIR_ATOI:       return "ATOI";
+    case HIR_STRCMP:      return "STRCMP";
     case HIR_ITOA:       return "ITOA";
     case HIR_ITOF:       return "ITOF";
     case HIR_FTOI:       return "FTOI";

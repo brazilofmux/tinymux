@@ -532,7 +532,7 @@ static bool is_pure_op(hir_kind k) {
         case HIR_GT: case HIR_GE:
         case HIR_NOT: case HIR_BOOL:
         case HIR_INC: case HIR_DEC:
-        case HIR_ATOI: case HIR_ITOA:
+        case HIR_ATOI: case HIR_ITOA: case HIR_STRCMP:
         case HIR_FADD: case HIR_FSUB: case HIR_FMUL: case HIR_FDIV:
         case HIR_FNEG:
         case HIR_FEQ: case HIR_FLT: case HIR_FLE:

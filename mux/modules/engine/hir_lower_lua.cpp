@@ -1149,6 +1149,11 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 cmp = h.emit(HIR_FP_OP, TY_INT, rb, rc_val); \
             } else if (h.ty[rb] == TY_INT && h.ty[rc_val] == TY_INT) { \
                 cmp = h.emit(HIR_INT_OP, TY_INT, rb, rc_val); \
+            } else if (h.ty[rb] == TY_STRING && h.ty[rc_val] == TY_STRING) { \
+                int sc = h.emit(HIR_STRCMP, TY_INT, rb, rc_val); \
+                if (sc < 0) return -1; \
+                int zero = h.emit_iconst(0); \
+                cmp = h.emit(HIR_INT_OP, TY_INT, sc, zero); \
             } else { \
                 rb = promote_to_int(h, rb); \
                 rc_val = promote_to_int(h, rc_val); \
@@ -1214,6 +1219,11 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 cmp = h.emit(HIR_FEQ, TY_INT, rb, kval);
             } else if (h.ty[rb] == TY_INT && h.ty[kval] == TY_INT) {
                 cmp = h.emit(HIR_EQ, TY_INT, rb, kval);
+            } else if (h.ty[rb] == TY_STRING && h.ty[kval] == TY_STRING) {
+                int sc = h.emit(HIR_STRCMP, TY_INT, rb, kval);
+                if (sc < 0) return -1;
+                int zero = h.emit_iconst(0);
+                cmp = h.emit(HIR_EQ, TY_INT, sc, zero);
             } else {
                 rb = promote_to_int(h, rb);
                 kval = promote_to_int(h, kval);

@@ -1,6 +1,6 @@
 +X996101
 +S235
-+N396
++N398
 -R1
 +A256
 "1:TR.TC000"
@@ -247,40 +247,44 @@
 +A377
 "1:TR.TC052"
 +A378
-"1:ALPHA"
+"1:LUA_STREQ"
 +A379
-"1:ALPHA_ONE"
-+A380
-"1:ALPHA_TWO"
-+A381
-"1:BETA"
-+A382
-"1:BETA_ONE"
-+A383
-"1:GAMMA"
-+A384
 "1:TR.TC053"
-+A385
++A380
 "1:TR.TC054"
-+A386
++A381
+"1:LUA_STREQ_NUM"
++A382
 "1:TR.TC055"
++A383
+"1:ALPHA"
++A384
+"1:ALPHA_ONE"
++A385
+"1:ALPHA_TWO"
++A386
+"1:BETA"
 +A387
-"1:SUITE.LIST.1"
+"1:BETA_ONE"
 +A388
-"1:SUITE.LIST.2"
+"1:GAMMA"
 +A389
-"1:SUITE.TR"
+"1:SUITE.LIST.1"
 +A390
-"1:FN_STRLEN"
+"1:SUITE.LIST.2"
 +A391
-"1:FN_NEG"
+"1:SUITE.TR"
 +A392
-"1:FN_IDENT"
+"1:FN_STRLEN"
 +A393
-"1:FN_DOUBLE"
+"1:FN_NEG"
 +A394
-"1:FN_GT10"
+"1:FN_IDENT"
 +A395
+"1:FN_DOUBLE"
++A396
+"1:FN_GT10"
++A397
 "1:FN_IDENTITY"
 !0
 "Limbo"
@@ -4446,7 +4450,17 @@
 >376
 "return mux.args[1] % mux.args[2]"
 >377
-"@if strmatch(setr(0,lua(me/LUA_MOD_ARGS,17,5)),2)={@log smoke=TC052: lua string-arg modulo. Succeeded.;@trig me/tr.done},{@log smoke=TC052: lua string-arg modulo. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,lua(me/LUA_MOD_ARGS,17,5)),2)={@log smoke=TC052: lua string-arg modulo. Succeeded.},{@log smoke=TC052: lua string-arg modulo. Failed (%q0).}"
+>378
+"if mux.args[1] == \"hello\" then return \"yes\" else return \"no\" end"
+>379
+"@if strmatch(setr(0,lua(me/LUA_STREQ,hello)),yes)={@log smoke=TC053: lua string equality match. Succeeded.},{@log smoke=TC053: lua string equality match. Failed (%q0).}"
+>380
+"@if strmatch(setr(0,lua(me/LUA_STREQ,world)),no)={@log smoke=TC054: lua string inequality. Succeeded.},{@log smoke=TC054: lua string inequality. Failed (%q0).}"
+>381
+"if mux.args[1] == \"5\" then return \"str\" else return \"other\" end"
+>382
+"@if strmatch(setr(0,lua(me/LUA_STREQ_NUM,5)),str)={@log smoke=TC055: lua string equality numeric. Succeeded.;@trig me/tr.done},{@log smoke=TC055: lua string equality numeric. Failed (%q0).;@trig me/tr.done}"
 <
 !130
 "test_mailinfo_fn"
@@ -5535,17 +5549,17 @@
 "@if strmatch(setr(0,reglattr(me,\\[invalid)),#-1 REGEXP ERROR*)={@log smoke=TC007: reglattr bad regex. Succeeded.},{@log smoke=TC007: reglattr bad regex. Failed (%q0).}"
 >265
 "@if strmatch(setr(0,sha1(sort(reglattr(me,_ONE$)))),0CA923E1C9FE9DE4138C1274783DCFD127997667)={@log smoke=TC008: reglattr _ONE suffix. Succeeded.;@trig me/tr.done},{@log smoke=TC008: reglattr _ONE suffix. Failed (%q0).;@trig me/tr.done}"
->378
-"1"
->379
-"2"
->380
-"3"
->381
-"4"
->382
-"5"
 >383
+"1"
+>384
+"2"
+>385
+"3"
+>386
+"4"
+>387
+"5"
+>388
 "6"
 <
 !162
@@ -6040,11 +6054,11 @@
 "@log smoke=BENCH051:[rvbench(ldelete(cat(rand(10),rand(10),rand(10),rand(10)),2),10000)]"
 >377
 "@log smoke=BENCH052:[rvbench(replace(cat(rand(10),rand(10),rand(10)),2,ZZZ),10000)]"
->384
+>379
 "@log smoke=BENCH053:[rvbench(insert(cat(rand(10),rand(10),rand(10)),2,ZZZ),10000)]"
->385
+>380
 "@log smoke=BENCH054:[rvbench(first(rest(cat(rand(10),rand(10),rand(10),rand(10)))),10000)]"
->386
+>382
 "@log smoke=BENCH055:[rvbench(iter(a|1 b|2 c|3 d|4 e|5, before(##\\,|)),10000)];@trig me/tr.done"
 <
 !175
@@ -6450,11 +6464,11 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->387
-"abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn and_fn andbool_fn asin_fn atan_fn atan2_fn attrib_set_fn band_fn baseconv_fn before_fn benchmark_fn between_fn bnand_fn bor_fn bound_fn bxor_fn cand_fn candbool_fn caplist_fn capstr_fn case_fn cat_fn ceil_fn center_fn chaninfo_fn chanuser_fn chanusers_fn choose_fn chr_fn citer_fn clone_fn cmogrifier_fn cmd_say columns_fn comp_fn convtime_fn connlog_fn cor_fn corbool_fn cos_fn cpad_fn crc32_fn crc32obj_fn cron_fn ctu_fn dec_fn delete_fn delextract_fn digest_fn digittime_fn dist2d_fn dist3d_fn dolist_cmd dynhelp_fn e_fn edit_fn elements_fn encode64_fn eq_fn escape_fn exp3_fn exp_fn exptime_fn extract_fn fdiv_fn first_fn firstof_fn floor_fn floordiv_fn fmod_fn grab_fn graball_fn gt_fn gte_fn hmac_fn iadd_fn iabs_fn idiv_fn imul_fn inc_fn index_fn insert_fn include_fn isalpha_fn isdbref_fn isign_fn isint_fn isjson_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn json_fn lambda_fn letq_fn"
->388
-"ladd_fn land_fn last_fn lcstr_fn ldelete_fn linsert_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn lockencode_fn log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn mailinfo_fn mailsend_fn match_fn matchall_fn max_fn mean_fn median_fn member_fn merge_fn mid_fn min_fn mod_fn moon_fn mul_fn ncon_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn printf_fn protect_fn reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn rpad_fn rvbench_fn sandbox_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn sign_fn sin_fn singletime_fn sort_fn sortkey_fn soundex_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn stddev_fn strcat_fn strdelete_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strdistance_fn strtrunc_fn sub_fn subnetmatch_fn switch_fn t_fn table_fn tan_fn tr_fn translate_fn trim_fn trunc_fn ucstr_fn unique_fn unsetq_fn url_escape_fn vadd_fn vcross_fn vdot_fn vmag_fn vmul_fn vsub_fn vunit_fn visual_width_fn while_fn wordpos_fn words_fn wrap_fn wrapcolumns_fn xor_fn jit_parity_fn jitstats_fn lua_fn shutdown"
 >389
+"abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn and_fn andbool_fn asin_fn atan_fn atan2_fn attrib_set_fn band_fn baseconv_fn before_fn benchmark_fn between_fn bnand_fn bor_fn bound_fn bxor_fn cand_fn candbool_fn caplist_fn capstr_fn case_fn cat_fn ceil_fn center_fn chaninfo_fn chanuser_fn chanusers_fn choose_fn chr_fn citer_fn clone_fn cmogrifier_fn cmd_say columns_fn comp_fn convtime_fn connlog_fn cor_fn corbool_fn cos_fn cpad_fn crc32_fn crc32obj_fn cron_fn ctu_fn dec_fn delete_fn delextract_fn digest_fn digittime_fn dist2d_fn dist3d_fn dolist_cmd dynhelp_fn e_fn edit_fn elements_fn encode64_fn eq_fn escape_fn exp3_fn exp_fn exptime_fn extract_fn fdiv_fn first_fn firstof_fn floor_fn floordiv_fn fmod_fn grab_fn graball_fn gt_fn gte_fn hmac_fn iadd_fn iabs_fn idiv_fn imul_fn inc_fn index_fn insert_fn include_fn isalpha_fn isdbref_fn isign_fn isint_fn isjson_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn json_fn lambda_fn letq_fn"
+>390
+"ladd_fn land_fn last_fn lcstr_fn ldelete_fn linsert_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn lockencode_fn log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn mailinfo_fn mailsend_fn match_fn matchall_fn max_fn mean_fn median_fn member_fn merge_fn mid_fn min_fn mod_fn moon_fn mul_fn ncon_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn printf_fn protect_fn reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn rpad_fn rvbench_fn sandbox_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn sign_fn sin_fn singletime_fn sort_fn sortkey_fn soundex_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn stddev_fn strcat_fn strdelete_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strdistance_fn strtrunc_fn sub_fn subnetmatch_fn switch_fn t_fn table_fn tan_fn tr_fn translate_fn trim_fn trunc_fn ucstr_fn unique_fn unsetq_fn url_escape_fn vadd_fn vcross_fn vdot_fn vmag_fn vmul_fn vsub_fn vunit_fn visual_width_fn while_fn wordpos_fn words_fn wrap_fn wrapcolumns_fn xor_fn jit_parity_fn jitstats_fn lua_fn shutdown"
+>391
 "@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
 <
 !189
@@ -6526,11 +6540,11 @@
 "@if strmatch(setr(0,eq(strlen(sortkey(me/fn_ident,)),0)),1)={@log smoke=TC005: sortkey empty list. Succeeded.},{@log smoke=TC005: sortkey empty list. Failed (%q0).}"
 >263
 "@if strmatch(setr(0,sortkey(me/fn_ident,only)),only)={@log smoke=TC006: sortkey single element. Succeeded.;@trig me/tr.done},{@log smoke=TC006: sortkey single element. Failed (%q0).;@trig me/tr.done}"
->390
-"strlen(%0)"
->391
-"mul(%0,-1)"
 >392
+"strlen(%0)"
+>393
+"mul(%0,-1)"
+>394
 "%0"
 <
 !191
@@ -7615,11 +7629,11 @@
 "@if strmatch(setr(0,sha1([while(me/fn_identity,me/fn_identity,a b c,STOP)])),6B3F339C67BB03D57A7195CF43ED86B12BFDD347)={@log smoke=TC002: while processes all. Succeeded.},{@log smoke=TC002: while processes all. Failed (%q0).}"
 >260
 "@if strmatch(setr(0,sha1([while(me/fn_identity,me/fn_identity,a b c d e,c)])),6B3F339C67BB03D57A7195CF43ED86B12BFDD347)={@log smoke=TC003: while same-attr optimization. Succeeded.;@trig me/tr.done},{@log smoke=TC003: while same-attr optimization. Failed (%q0).;@trig me/tr.done}"
->393
-"mul(%0,2)"
->394
-"gt(%0,10)"
 >395
+"mul(%0,2)"
+>396
+"gt(%0,10)"
+>397
 "%0"
 <
 !230
