@@ -1098,6 +1098,13 @@ bool run_cached_program(compiled_program *prog,
 // Common helper: call a FUN* with guest-memory arguments and write
 // result to guest output buffer.  Returns bytes written.
 //
+// Thread-local (single-threaded in practice) pointer to the current
+// ECALL execution context.  Set during ecall_invoke_fun so that
+// Tier 3 helper functions (_write_carg, _save_cargs, _restore_cargs)
+// can access JIT guest memory.
+//
+static eval_ctx *s_current_ecall_ctx = nullptr;
+
 static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
                             uint64_t fargs_addr, int nfargs,
                             uint64_t out_addr, uint64_t out_size) {
@@ -1142,9 +1149,13 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
     UTF8 *buff = alloc_lbuf("eval_ecall");
     UTF8 *bufc = buff;
 
+    eval_ctx *saved_ctx = s_current_ecall_ctx;
+    s_current_ecall_ctx = ec;
+
     fp->fun(fp, buff, &bufc, ec->executor, ec->caller, ec->enactor,
             ec->eval, fargs, nfargs, ec->cargs, ec->ncargs);
 
+    s_current_ecall_ctx = saved_ctx;
     *bufc = '\0';
     size_t result_len = static_cast<size_t>(bufc - buff);
 
@@ -2291,6 +2302,118 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
 // jit_eval: try to compile and execute an expression via the JIT.
 //
 // Returns true if the JIT handled it (result written to buff/bufc).
+// ---------------------------------------------------------------
+// Tier 3 helper functions: guest-memory CARGS operations.
+//
+// These are FUNCTION() handlers registered in the standard function
+// table.  They use s_current_ecall_ctx (set by ecall_invoke_fun)
+// to access JIT guest memory for CARGS slot operations.
+// ---------------------------------------------------------------
+
+static constexpr int MAX_CARG_SAVE_DEPTH = 16;
+static struct {
+    uint8_t data[10 * rv_compiler::CARGS_SLOT];
+    int ncargs;
+    bool in_use;
+} s_carg_save_stack[MAX_CARG_SAVE_DEPTH];
+
+// _SAVE_CARGS(): save the CARGS region of guest memory.
+// Returns a handle string (index into save stack).
+//
+FUNCTION(fun__save_cargs)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (!s_current_ecall_ctx)
+    {
+        safe_str(T("-1"), buff, bufc);
+        return;
+    }
+
+    for (int i = 0; i < MAX_CARG_SAVE_DEPTH; i++)
+    {
+        if (!s_carg_save_stack[i].in_use)
+        {
+            uint64_t base = rv_compiler::CARGS_BASE;
+            size_t region = 10 * rv_compiler::CARGS_SLOT;
+            if (base + region <= s_current_ecall_ctx->memory_size)
+            {
+                memcpy(s_carg_save_stack[i].data,
+                       s_current_ecall_ctx->memory + base, region);
+            }
+            s_carg_save_stack[i].ncargs = s_current_ecall_ctx->ncargs;
+            s_carg_save_stack[i].in_use = true;
+            safe_ltoa(i, buff, bufc);
+            return;
+        }
+    }
+    safe_str(T("-1"), buff, bufc);
+}
+
+// _RESTORE_CARGS(handle_str): restore saved CARGS region.
+//
+FUNCTION(fun__restore_cargs)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (!s_current_ecall_ctx || nfargs < 1) return;
+
+    int idx = mux_atol(fargs[0]);
+    if (idx >= 0 && idx < MAX_CARG_SAVE_DEPTH
+        && s_carg_save_stack[idx].in_use)
+    {
+        uint64_t base = rv_compiler::CARGS_BASE;
+        size_t region = 10 * rv_compiler::CARGS_SLOT;
+        if (base + region <= s_current_ecall_ctx->memory_size)
+        {
+            memcpy(s_current_ecall_ctx->memory + base,
+                   s_carg_save_stack[idx].data, region);
+        }
+        s_current_ecall_ctx->ncargs = s_carg_save_stack[idx].ncargs;
+        s_carg_save_stack[idx].in_use = false;
+    }
+}
+
+// _WRITE_CARG(idx_str, value_str): write value to a CARGS slot.
+//
+FUNCTION(fun__write_carg)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (!s_current_ecall_ctx || nfargs < 2) return;
+
+    int idx = mux_atol(fargs[0]);
+    if (idx < 0 || idx >= 10) return;
+
+    uint64_t dst = rv_compiler::CARGS_BASE
+                 + static_cast<uint64_t>(idx) * rv_compiler::CARGS_SLOT;
+    if (dst + rv_compiler::CARGS_SLOT > s_current_ecall_ctx->memory_size) return;
+
+    size_t len = strlen(reinterpret_cast<const char *>(fargs[1]));
+    if (len >= static_cast<size_t>(rv_compiler::CARGS_SLOT))
+        len = rv_compiler::CARGS_SLOT - 1;
+
+    memcpy(s_current_ecall_ctx->memory + dst, fargs[1], len);
+    s_current_ecall_ctx->memory[dst + len] = 0;
+}
+
+// ---------------------------------------------------------------
 // Returns false if compilation failed — caller should fall back to
 // the AST evaluator.
 //

@@ -13780,6 +13780,146 @@ static FUNCTION(fun_benchmark)
 }
 
 // ----------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Tier 3 u()-inlining helper functions.
+//
+// These are internal-only functions registered in the standard function
+// table so the JIT compiler can call them via ECALL_CALL_INDEX with
+// normal string marshaling.  No custom ECALL types or codegen changes.
+//
+// _CHECK_U_PERM(thing_dbref_str, attr_num_str)
+//   Runtime permission guard for inlined u() bodies.
+//   Returns "0" if the executor can read the attr and it's not NOEVAL.
+//   Returns "1" if denied (visibility, object NOEVAL, or AF_NOEVAL).
+//
+static FUNCTION(fun__check_u_perm)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (nfargs < 2)
+    {
+        safe_chr('1', buff, bufc);
+        return;
+    }
+
+    dbref thing = mux_atol(fargs[0]);
+    int attr_num = mux_atol(fargs[1]);
+
+    if (!Good_obj(thing))
+    {
+        safe_chr('1', buff, bufc);
+        return;
+    }
+
+    ATTR *ap = atr_num(attr_num);
+    if (!ap)
+    {
+        safe_chr('1', buff, bufc);
+        return;
+    }
+
+    // Visibility check.
+    if (!See_attr(executor, thing, ap))
+    {
+        safe_chr('1', buff, bufc);
+        return;
+    }
+
+    // NoEval check (object flag).
+    if (NoEval(thing))
+    {
+        safe_chr('1', buff, bufc);
+        return;
+    }
+
+    // AF_NOEVAL check (attr flag).
+    dbref aowner;
+    int aflags;
+    size_t nLen = 0;
+    UTF8 *atext = atr_pget_LEN(thing, attr_num, &aowner, &aflags, &nLen);
+    free_lbuf(atext);
+
+    if (aflags & AF_NOEVAL)
+    {
+        safe_chr('1', buff, bufc);
+        return;
+    }
+
+    safe_chr('0', buff, bufc);
+}
+
+// _SAVE_QREGS()
+//   Save global %q registers for ulocal() inlining.
+//   Returns a handle string (index into a static save stack).
+//
+static constexpr int MAX_QREG_SAVE_DEPTH = 16;
+static struct {
+    reg_ref **preserve;
+    bool in_use;
+} s_qreg_save_stack[MAX_QREG_SAVE_DEPTH];
+
+static FUNCTION(fun__save_qregs)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    for (int i = 0; i < MAX_QREG_SAVE_DEPTH; i++)
+    {
+        if (!s_qreg_save_stack[i].in_use)
+        {
+            s_qreg_save_stack[i].preserve = PushRegisters(MAX_GLOBAL_REGS);
+            save_global_regs(s_qreg_save_stack[i].preserve);
+            s_qreg_save_stack[i].in_use = true;
+            safe_ltoa(i, buff, bufc);
+            return;
+        }
+    }
+    // Stack full — return -1 (caller should fall back to ECALL fun_u).
+    safe_str(T("-1"), buff, bufc);
+}
+
+// _RESTORE_QREGS(handle_str)
+//   Restore global %q registers saved by _SAVE_QREGS.
+//
+static FUNCTION(fun__restore_qregs)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (nfargs < 1) return;
+
+    int idx = mux_atol(fargs[0]);
+    if (idx >= 0 && idx < MAX_QREG_SAVE_DEPTH
+        && s_qreg_save_stack[idx].in_use)
+    {
+        restore_global_regs(s_qreg_save_stack[idx].preserve);
+        PopRegisters(s_qreg_save_stack[idx].preserve, MAX_GLOBAL_REGS);
+        s_qreg_save_stack[idx].in_use = false;
+    }
+}
+
+// _SAVE_CARGS, _RESTORE_CARGS, _WRITE_CARG: defined in jit_compiler.cpp
+// where s_current_ecall_ctx provides guest memory access.
+//
+extern "C++" {
+    FUNCTION(fun__save_cargs);
+    FUNCTION(fun__restore_cargs);
+    FUNCTION(fun__write_carg);
+}
+
 // flist: List of existing functions in alphabetical order.
 //
 //   Name          Handler      # of args   min #    max #   flags  permissions
@@ -13788,6 +13928,12 @@ static FUNCTION(fun_benchmark)
 static FUN builtin_function_list[] =
 {
     {T("@@"),          fun_null,             1, 1,       1, FN_NOEVAL, CA_PUBLIC},
+    {T("_CHECK_U_PERM"),  fun__check_u_perm,  MAX_ARG, 2, 2, 0, CA_PUBLIC},
+    {T("_RESTORE_CARGS"), fun__restore_cargs, MAX_ARG, 1, 1, 0, CA_PUBLIC},
+    {T("_RESTORE_QREGS"), fun__restore_qregs, MAX_ARG, 1, 1, 0, CA_PUBLIC},
+    {T("_SAVE_CARGS"),    fun__save_cargs,    MAX_ARG, 0, 0, 0, CA_PUBLIC},
+    {T("_SAVE_QREGS"),    fun__save_qregs,    MAX_ARG, 0, 0, 0, CA_PUBLIC},
+    {T("_WRITE_CARG"),    fun__write_carg,    MAX_ARG, 2, 2, 0, CA_PUBLIC},
     {T("ABS"),         fun_abs,        MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ACCENT"),      fun_accent,     MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("ACOS"),        fun_acos,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
