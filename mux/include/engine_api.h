@@ -79,4 +79,11 @@ void engine_api_init();
 //
 int engine_api_lookup(const char *name);
 
+// Per-attribute modification counter for JIT cache invalidation.
+// Incremented on every atr_add/atr_clr.  The JIT records mod_count
+// at compile time and checks for staleness at runtime.
+//
+void     attr_mod_count_inc(dbref obj, int attrnum);
+uint32_t attr_mod_count_get(dbref obj, int attrnum);
+
 #endif // ENGINE_API_H

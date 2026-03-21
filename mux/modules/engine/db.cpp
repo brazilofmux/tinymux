@@ -20,10 +20,48 @@
 
 #include "sqlite_backend.h"
 
+#include "engine_api.h"
+
 #include <algorithm>
 #include <cstdint>
 #include <filesystem>
+#include <unordered_map>
 using namespace std;
+
+// Per-attribute modification counter for JIT cache invalidation.
+// Key: (dbref << 32) | attrnum.  Value: monotonic counter.
+//
+static std::unordered_map<uint64_t, uint32_t> s_attr_mod_counts;
+
+static uint64_t attr_mod_key(dbref obj, int attrnum)
+{
+    return (static_cast<uint64_t>(static_cast<uint32_t>(obj)) << 32)
+         | static_cast<uint32_t>(attrnum);
+}
+
+void attr_mod_count_inc(dbref obj, int attrnum)
+{
+    s_attr_mod_counts[attr_mod_key(obj, attrnum)]++;
+}
+
+uint32_t attr_mod_count_get(dbref obj, int attrnum)
+{
+    auto it = s_attr_mod_counts.find(attr_mod_key(obj, attrnum));
+    if (it != s_attr_mod_counts.end())
+    {
+        return it->second;
+    }
+
+    // Not in memory — check SQLite.
+    if (g_pSQLiteBackend)
+    {
+        CSQLiteDB &db = g_pSQLiteBackend->GetDB();
+        uint32_t mc = db.GetAttrModCount(obj, attrnum);
+        s_attr_mod_counts[attr_mod_key(obj, attrnum)] = mc;
+        return mc;
+    }
+    return 0;
+}
 
 #ifndef O_ACCMODE
 #define O_ACCMODE   (O_RDONLY|O_WRONLY|O_RDWR)
@@ -1946,6 +1984,9 @@ bool atr_clr(dbref thing, int atr)
         return false;
     }
 
+    // Increment per-attr modification counter for JIT cache invalidation.
+    attr_mod_count_inc(thing, atr);
+
     switch (atr)
     {
     case A_STARTUP:
@@ -2051,6 +2092,9 @@ bool atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
             thing, atr);
         return false;
     }
+
+    // Increment per-attr modification counter for JIT cache invalidation.
+    attr_mod_count_inc(thing, atr);
 
     switch (atr)
     {

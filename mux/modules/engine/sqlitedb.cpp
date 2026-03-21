@@ -38,6 +38,7 @@ CSQLiteDB::CSQLiteDB()
       m_stmtUpdatePowers(nullptr),
       m_stmtAttrGet(nullptr),
       m_stmtAttrPut(nullptr),
+      m_stmtAttrGetModCount(nullptr),
       m_stmtAttrDel(nullptr),
       m_stmtAttrDelObj(nullptr),
       m_stmtAttrGetObj(nullptr),
@@ -198,6 +199,7 @@ bool CSQLiteDB::CreateSchema()
         "    value       BLOB NOT NULL,"
         "    owner       INTEGER NOT NULL DEFAULT -1,"
         "    flags       INTEGER NOT NULL DEFAULT 0,"
+        "    mod_count   INTEGER NOT NULL DEFAULT 0,"
         "    PRIMARY KEY (object, attrnum)"
         ") WITHOUT ROWID;"
         "CREATE TABLE IF NOT EXISTS attrnames ("
@@ -354,7 +356,7 @@ static bool RunMigration(sqlite3 *db, const char *sql, int target_version)
 
 bool CSQLiteDB::MigrateSchema()
 {
-    static const int CURRENT_SCHEMA_VERSION = 6;
+    static const int CURRENT_SCHEMA_VERSION = 8;
 
     int version = 0;
     sqlite3_stmt *stmt = nullptr;
@@ -592,6 +594,24 @@ bool CSQLiteDB::MigrateSchema()
         version = 7;
     }
 
+    if (version < 8)
+    {
+        fprintf(stderr, "CSQLiteDB::MigrateSchema: upgraded to schema version 8.\n");
+
+        const char *migration_v8 =
+            "BEGIN;"
+            "ALTER TABLE attributes ADD COLUMN mod_count INTEGER NOT NULL DEFAULT 0;"
+            "INSERT OR REPLACE INTO metadata(key, value)"
+            "    VALUES('schema_version', 8);"
+            "COMMIT;";
+
+        if (!RunMigration(m_db, migration_v8, 8))
+        {
+            return false;
+        }
+        version = 8;
+    }
+
     // Log any FK violations (informational, not fatal).
     //
     if (SQLITE_OK == sqlite3_prepare_v2(m_db,
@@ -696,8 +716,21 @@ bool CSQLiteDB::PrepareStatements()
     }
 
     if (!Prepare(m_db,
-        "INSERT OR REPLACE INTO attributes (object, attrnum, value, owner, flags) VALUES (?,?,?,?,?)",
+        "INSERT INTO attributes (object, attrnum, value, owner, flags, mod_count)"
+        " VALUES (?,?,?,?,?,1)"
+        " ON CONFLICT(object, attrnum) DO UPDATE SET"
+        "   value=excluded.value,"
+        "   owner=excluded.owner,"
+        "   flags=excluded.flags,"
+        "   mod_count=mod_count+1",
         &m_stmtAttrPut))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "SELECT mod_count FROM attributes WHERE object=? AND attrnum=?",
+        &m_stmtAttrGetModCount))
     {
         return false;
     }
@@ -1264,6 +1297,21 @@ bool CSQLiteDB::PutAttribute(dbref obj, int attrnum, const UTF8 *value, size_t l
     fprintf(stderr, "CSQLiteDB::PutAttribute(#%d/%d): %s\n",
         obj, attrnum, sqlite3_errmsg(m_db));
     return false;
+}
+
+uint32_t CSQLiteDB::GetAttrModCount(dbref obj, int attrnum)
+{
+    sqlite3_bind_int(m_stmtAttrGetModCount, 1, obj);
+    sqlite3_bind_int(m_stmtAttrGetModCount, 2, attrnum);
+
+    uint32_t result = 0;
+    int rc = sqlite3_step(m_stmtAttrGetModCount);
+    if (SQLITE_ROW == rc)
+    {
+        result = static_cast<uint32_t>(sqlite3_column_int(m_stmtAttrGetModCount, 0));
+    }
+    sqlite3_reset(m_stmtAttrGetModCount);
+    return result;
 }
 
 bool CSQLiteDB::DelAttribute(dbref obj, int attrnum)

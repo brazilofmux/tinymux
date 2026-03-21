@@ -97,6 +97,7 @@ public:
     bool PutAttribute(dbref obj, int attrnum, const UTF8 *value, size_t len,
                       dbref owner, int flags);
     bool DelAttribute(dbref obj, int attrnum);
+    uint32_t GetAttrModCount(dbref obj, int attrnum);
     bool DelAllAttributes(dbref obj);
     bool ClearAttributes();
 
@@ -291,6 +292,7 @@ private:
     //
     sqlite3_stmt *m_stmtAttrGet;
     sqlite3_stmt *m_stmtAttrPut;
+    sqlite3_stmt *m_stmtAttrGetModCount;
     sqlite3_stmt *m_stmtAttrDel;
     sqlite3_stmt *m_stmtAttrDelObj;
     sqlite3_stmt *m_stmtAttrGetObj;
