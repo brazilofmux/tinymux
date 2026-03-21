@@ -262,6 +262,18 @@ struct compiled_program {
     int tier2_calls;
     int native_ops;
     bool needs_jit;         // true if JIT execution required
+
+    // Tier 3 u()-inlining dependency tracking.
+    // Each entry records an attr whose body was inlined at compile
+    // time, along with its mod_count at that moment.  At runtime,
+    // if any dep's current mod_count differs, the program is stale.
+    //
+    struct inline_dep {
+        int32_t  obj;
+        int32_t  attr_num;
+        uint32_t mod_count;
+    };
+    std::vector<inline_dep> deps;
 };
 
 // ---------------------------------------------------------------

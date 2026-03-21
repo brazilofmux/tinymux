@@ -357,7 +357,7 @@ static bool RunMigration(sqlite3 *db, const char *sql, int target_version)
 
 bool CSQLiteDB::MigrateSchema()
 {
-    static const int CURRENT_SCHEMA_VERSION = 8;
+    static const int CURRENT_SCHEMA_VERSION = 9;
 
     int version = 0;
     sqlite3_stmt *stmt = nullptr;
@@ -611,6 +611,24 @@ bool CSQLiteDB::MigrateSchema()
             return false;
         }
         version = 8;
+    }
+
+    if (version < 9)
+    {
+        fprintf(stderr, "CSQLiteDB::MigrateSchema: upgraded to schema version 9.\n");
+
+        const char *migration_v9 =
+            "BEGIN;"
+            "ALTER TABLE code_cache ADD COLUMN deps_blob BLOB NOT NULL DEFAULT x'';"
+            "INSERT OR REPLACE INTO metadata(key, value)"
+            "    VALUES('schema_version', 9);"
+            "COMMIT;";
+
+        if (!RunMigration(m_db, migration_v9, 9))
+        {
+            return false;
+        }
+        version = 9;
     }
 
     // Log any FK violations (informational, not fatal).
@@ -960,7 +978,7 @@ bool CSQLiteDB::PrepareStatements()
     // Code cache statements.
     //
     if (!Prepare(m_db,
-        "SELECT memory_blob, out_addr, needs_jit, folds, ecalls, tier2_calls, native_ops"
+        "SELECT memory_blob, out_addr, needs_jit, folds, ecalls, tier2_calls, native_ops, deps_blob"
         " FROM code_cache WHERE source_hash=? AND blob_hash=?",
         &m_stmtCodeCacheGet))
     {
@@ -970,8 +988,8 @@ bool CSQLiteDB::PrepareStatements()
     if (!Prepare(m_db,
         "INSERT OR REPLACE INTO code_cache"
         " (source_hash, blob_hash, memory_blob, out_addr, needs_jit,"
-        "  folds, ecalls, tier2_calls, native_ops, compile_time)"
-        " VALUES (?,?,?,?,?,?,?,?,?,?)",
+        "  folds, ecalls, tier2_calls, native_ops, compile_time, deps_blob)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?)",
         &m_stmtCodeCachePut))
     {
         return false;
@@ -1730,8 +1748,10 @@ bool CSQLiteDB::CodeCacheGet(const char *source_hash, int source_hash_len,
     rec.ecalls      = sqlite3_column_int(m_stmtCodeCacheGet, 4);
     rec.tier2_calls = sqlite3_column_int(m_stmtCodeCacheGet, 5);
     rec.native_ops  = sqlite3_column_int(m_stmtCodeCacheGet, 6);
-    // NOTE: memory_blob pointer is valid until next sqlite3_reset.
-    // Caller must copy the data before any further DB operations.
+    rec.deps_blob   = sqlite3_column_blob(m_stmtCodeCacheGet, 7);
+    rec.deps_len    = sqlite3_column_bytes(m_stmtCodeCacheGet, 7);
+    // NOTE: memory_blob and deps_blob pointers are valid until next
+    // sqlite3_reset.  Caller must copy before any further DB operations.
     return true;
 }
 
@@ -1740,7 +1760,8 @@ bool CSQLiteDB::CodeCachePut(const char *source_hash, int source_hash_len,
                               const void *memory_blob, int memory_len,
                               int64_t out_addr, int needs_jit,
                               int folds, int ecalls, int tier2_calls,
-                              int native_ops)
+                              int native_ops,
+                              const void *deps_blob, int deps_len)
 {
     sqlite3_reset(m_stmtCodeCachePut);
     sqlite3_bind_text(m_stmtCodeCachePut, 1, source_hash, source_hash_len,
@@ -1755,6 +1776,7 @@ bool CSQLiteDB::CodeCachePut(const char *source_hash, int source_hash_len,
     sqlite3_bind_int(m_stmtCodeCachePut, 8, tier2_calls);
     sqlite3_bind_int(m_stmtCodeCachePut, 9, native_ops);
     sqlite3_bind_int64(m_stmtCodeCachePut, 10, static_cast<int64_t>(time(nullptr)));
+    sqlite3_bind_blob(m_stmtCodeCachePut, 11, deps_blob, deps_len, SQLITE_TRANSIENT);
 
     if (SQLITE_DONE != sqlite3_step(m_stmtCodeCachePut))
     {

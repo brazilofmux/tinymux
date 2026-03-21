@@ -823,6 +823,18 @@ static compiled_program reconstruct_from_cache(
     prog.ecalls = rec.ecalls;
     prog.tier2_calls = rec.tier2_calls;
     prog.native_ops = rec.native_ops;
+
+    // Restore inline dependencies from BLOB.
+    // Format: packed array of {int32 obj, int32 attr_num, uint32 mod_count}.
+    if (rec.deps_blob && rec.deps_len > 0)
+    {
+        int ndeps = rec.deps_len / static_cast<int>(
+            sizeof(compiled_program::inline_dep));
+        prog.deps.resize(ndeps);
+        memcpy(prog.deps.data(), rec.deps_blob,
+               ndeps * sizeof(compiled_program::inline_dep));
+    }
+
     return prog;
 }
 
@@ -851,7 +863,10 @@ static void store_to_sqlite_cache(const std::string &key,
                      static_cast<int64_t>(prog.out_addr),
                      prog.needs_jit ? 1 : 0,
                      prog.folds, prog.ecalls,
-                     prog.tier2_calls, prog.native_ops);
+                     prog.tier2_calls, prog.native_ops,
+                     prog.deps.data(),
+                     static_cast<int>(prog.deps.size()
+                         * sizeof(compiled_program::inline_dep)));
 }
 
 // Look up or compile an expression.  Returns a pointer to the
