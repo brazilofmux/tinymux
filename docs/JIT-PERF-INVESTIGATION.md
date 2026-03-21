@@ -533,3 +533,69 @@ echo 'think result=[benchmark(u(#21/attr,args),N)]' \
 echo 'think [jitstats()]' \
 | ./bin/muxscript --readonly -g /tmp/realgame -c netmux.conf -p 1
 ```
+
+---
+
+## Concurrent Evaluation Design Notes
+
+The per-attr dependency infrastructure built for Tier 3 cache
+invalidation is the same foundation needed for concurrent softcode
+evaluation (multiple parser threads).  The core problem is identical:
+knowing when cached/in-progress work is stale because underlying
+data changed.
+
+### What maps directly
+
+| Tier 3 component | Concurrent eval equivalent |
+|---|---|
+| `attr_mod_count_get()` | Optimistic read validation: snapshot mod_count before reading attr, check after evaluation. If changed → retry or invalidate. |
+| `s_attr_mod_counts` map | Needs `std::atomic<uint32_t>` or reader-writer lock. Current `uint32_t` is single-threaded only. |
+| `s_compile_cache` | Needs concurrent hash map or RW lock. Compiled blobs are immutable after creation — reads are safe, only insertion and staleness eviction need sync. |
+| `deps_are_fresh()` | Per-thread validation before executing cached code. Same compare loop, just atomic reads. |
+| Two-phase collect/apply | Transaction isolation for bulk attr operations across threads. |
+
+### What needs thread-local storage (TLS)
+
+| Current static | TLS requirement |
+|---|---|
+| `s_current_ecall_ctx` | Already scoped per-call. Needs `thread_local`. |
+| `s_qreg_save_stack[]` | Per-thread save stack (16 slots each). |
+| `s_carg_save_stack[]` | Per-thread save stack (16 slots each). |
+| `s_jit_depth` | Per-thread re-entrancy counter. |
+| `s_compile_deps` | Per-thread during compilation. |
+| `s_inline_depth` | Per-thread during compilation. |
+| `s_fcheck_available` | Per-thread compilation state. |
+| `s_compile_eval` | Per-thread compilation state. |
+| `qreg[]` (HIR lowering) | Per-thread compilation state. |
+
+### What's already safe
+
+- **compiled_program blobs**: immutable after creation. Multiple
+  threads can read the same cached blob concurrently.
+- **Tier 2 RV64 blob**: read-only shared code loaded once at startup.
+- **SQLite**: thread-safe with WAL mode (concurrent readers, serial
+  writer). `attr_mod_count_get()` SQLite fallback works as-is.
+- **Permission checks** (`See_attr`, `NoEval`): read-only queries
+  against object flags and attr metadata. Safe for concurrent reads
+  as long as flag writes are atomic.
+
+### What needs serialization
+
+- **attr writes** (`atr_add`, `atr_clr`): must serialize to maintain
+  mod_count monotonicity. Current write-through to SQLite already
+  serializes via SQLite's writer lock.
+- **JIT cache insertion/eviction**: needs mutex or concurrent map.
+  The LRU list (`s_compile_lru`) is not thread-safe.
+- **Guest memory allocation** (`rv_compiler` pools): per-compilation,
+  so per-thread if compilations are thread-local.
+- **DBT state** (`dbt_run`, block cache): the x86-64 translation
+  cache needs either per-thread instances or a shared cache with
+  synchronization.
+
+### Migration path
+
+1. Convert static state to `thread_local` (mechanical).
+2. Add RW lock to `s_compile_cache` (or replace with `tbb::concurrent_hash_map`).
+3. Make `s_attr_mod_counts` use atomic counters.
+4. Per-thread DBT contexts (or lock the shared one).
+5. Test with 2 threads first (main game loop + background @search/@find).
