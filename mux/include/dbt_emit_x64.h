@@ -885,6 +885,11 @@ static inline void emit_sqrtsd(emit_t *e, int d, int s) { emit_sse_sd(e, 0x51, d
 static inline void emit_minsd(emit_t *e, int d, int s) { emit_sse_sd(e, 0x5D, d, s); }
 static inline void emit_maxsd(emit_t *e, int d, int s) { emit_sse_sd(e, 0x5F, d, s); }
 
+// movsd xmm, xmm — register-to-register move (no-op if same)
+static inline void emit_movsd_xmm(emit_t *e, int dst, int src) {
+    if (dst != src) emit_sse_sd(e, 0x10, dst, src);
+}
+
 // ucomisd xmm, xmm (66 0F 2E)
 static inline void emit_ucomisd(emit_t *e, int xmm1, int xmm2) {
     emit_byte(e, 0x66);
