@@ -869,6 +869,20 @@ static void store_to_sqlite_cache(const std::string &key,
                          * sizeof(compiled_program::inline_dep)));
 }
 
+// Check if a compiled program's inlined dependencies are still fresh.
+// Returns true if all deps match their current mod_counts (or no deps).
+//
+static bool deps_are_fresh(const compiled_program &prog) {
+    for (const auto &dep : prog.deps) {
+        uint32_t current = attr_mod_count_get(
+            static_cast<dbref>(dep.obj), dep.attr_num);
+        if (current != dep.mod_count) {
+            return false;
+        }
+    }
+    return true;
+}
+
 // Look up or compile an expression.  Returns a pointer to the
 // cached compiled_program (owned by the cache — do not free).
 // Returns nullptr on compilation failure.
@@ -879,11 +893,26 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
 
     auto it = s_compile_cache.find(key);
     if (it != s_compile_cache.end()) {
-        // Memory cache hit — move to front of LRU.
-        s_compile_lru.splice(s_compile_lru.begin(), s_compile_lru,
-                             it->second.lru_it);
-        s_jit_stats.cache_hit_mem++;
-        return &it->second.prog;
+        // Staleness check: if this entry has inlined deps and any
+        // attr has been modified since compilation, evict and recompile.
+        if (!it->second.prog.deps.empty()
+            && !deps_are_fresh(it->second.prog))
+        {
+            if (s_dbt_last_memory == it->second.prog.memory.data()) {
+                s_dbt_last_memory = nullptr;
+            }
+            s_compile_lru.erase(it->second.lru_it);
+            s_compile_cache.erase(it);
+            // Fall through to recompile below.
+        }
+        else
+        {
+            // Memory cache hit — move to front of LRU.
+            s_compile_lru.splice(s_compile_lru.begin(), s_compile_lru,
+                                 it->second.lru_it);
+            s_jit_stats.cache_hit_mem++;
+            return &it->second.prog;
+        }
     }
 
     // Memory cache miss — check SQLite persistent cache.
@@ -896,13 +925,20 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
         if (db.CodeCacheGet(key.data(), static_cast<int>(key.size()),
                             s_blob_version.data(),
                             static_cast<int>(s_blob_version.size()), rec)) {
-            // rec.memory_blob points into SQLite statement memory.
-            // reconstruct_from_cache copies it; then we must release
-            // the statement to avoid holding a read lock.
             prog = reconstruct_from_cache(rec);
             db.CodeCacheReset();
-            from_sqlite = true;
-            s_jit_stats.cache_hit_sqlite++;
+
+            // Check staleness of SQLite-cached entry too.
+            if (!prog.deps.empty() && !deps_are_fresh(prog))
+            {
+                // Stale — discard and recompile.
+                prog.ok = false;
+            }
+            else
+            {
+                from_sqlite = true;
+                s_jit_stats.cache_hit_sqlite++;
+            }
         }
     }
 
