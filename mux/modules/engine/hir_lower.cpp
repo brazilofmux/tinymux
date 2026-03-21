@@ -1639,7 +1639,7 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                     auto body_ast = ast_parse_string(body, nBodyLen);
                     free_lbuf(body);
 
-                    if (body_ast && !has_control_flow(body_ast.get()))
+                    if (body_ast)
                     {
                         bool is_local = (fname == "ULOCAL");
                         int nExtra = static_cast<int>(
@@ -1682,7 +1682,10 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                         int entry_block = h.cur_block;
                         int fallback_block = h.new_block();
                         int inline_block = h.new_block();
-                        int merge_block = h.new_block();
+                        // NOTE: merge_block allocated AFTER body lowering
+                        // to ensure it has the highest block number.
+                        // This prevents the inline→merge BR from being
+                        // a backward edge that triggers loop detection.
 
                         // BRC: if nonzero → fallback, else → inline.
                         h.emit(HIR_BRC, TY_VOID, perm_int,
@@ -1691,6 +1694,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                         h.add_edge(entry_block, inline_block);
 
                         // --- Fallback block: ECALL fun_u ---
+                        // The BR to merge_block uses a placeholder (-1)
+                        // that we patch after allocating merge_block.
                         h.cur_block = fallback_block;
                         int fidx_u = engine_api_lookup(fname.c_str());
                         int fb_result = h.emit_call(TY_STRING, fidx_u,
@@ -1698,8 +1703,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                             static_cast<int>(u_args.size()));
                         h.ecalls++;
                         int fb_exit = h.cur_block;
-                        h.emit(HIR_BR, TY_VOID, -1, -1, merge_block);
-                        h.add_edge(fb_exit, merge_block);
+                        int fb_br_idx = h.emit(HIR_BR, TY_VOID, -1, -1, -1);
+                        // Patched below after merge_block is allocated.
 
                         // --- Inline block ---
                         h.cur_block = inline_block;
@@ -1779,6 +1784,16 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                         }
 
                         int inline_exit = h.cur_block;
+
+                        // Allocate merge_block NOW — after the body
+                        // has been lowered, so it gets the highest
+                        // block number.  All edges to merge are forward.
+                        int merge_block = h.new_block();
+
+                        // Patch the fallback BR to target merge_block.
+                        h.val[fb_br_idx] = merge_block;
+                        h.add_edge(fb_exit, merge_block);
+
                         h.emit(HIR_BR, TY_VOID, -1, -1, merge_block);
                         h.add_edge(inline_exit, merge_block);
 
