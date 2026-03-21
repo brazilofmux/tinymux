@@ -746,11 +746,112 @@
     setr(0,lua(me/LUA_MATHSQRT)),
     12*)=
   {
-    @log smoke=TC046: lua math.sqrt. Succeeded.;
+    @log smoke=TC046: lua math.sqrt. Succeeded.
+  },
+  {
+    @log smoke=TC046: lua math.sqrt. Failed (%q0).
+  }
+-
+#
+# Test 47: string-arg subtraction (runtime type guard: ATOI on mux.args).
+#
+&LUA_SUB_ARGS test_lua_fn=return mux.args[1] - mux.args[2]
+-
+&tr.tc047 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_SUB_ARGS,10,3)),
+    7)=
+  {
+    @log smoke=TC047: lua string-arg subtraction. Succeeded.
+  },
+  {
+    @log smoke=TC047: lua string-arg subtraction. Failed (%q0).
+  }
+-
+#
+# Test 48: string-arg + immediate (ADDI path).
+#
+&LUA_ADD_IMM test_lua_fn=return mux.args[1] + 10
+-
+&tr.tc048 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_ADD_IMM,5)),
+    15)=
+  {
+    @log smoke=TC048: lua string-arg add immediate. Succeeded.
+  },
+  {
+    @log smoke=TC048: lua string-arg add immediate. Failed (%q0).
+  }
+-
+#
+# Test 49: string-arg negation (UNM path).
+#
+&LUA_NEG_ARG test_lua_fn=return -mux.args[1]
+-
+&tr.tc049 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_NEG_ARG,42)),
+    -42)=
+  {
+    @log smoke=TC049: lua string-arg negation. Succeeded.
+  },
+  {
+    @log smoke=TC049: lua string-arg negation. Failed (%q0).
+  }
+-
+#
+# Test 50: string-arg comparison (CMP_RR path).
+#
+&LUA_CMP_ARGS test_lua_fn= \
+  if mux.args[1] + 0 > mux.args[2] + 0 then \
+    return "yes" \
+  else \
+    return "no" \
+  end
+-
+&tr.tc050 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_CMP_ARGS,20,5)),
+    yes)=
+  {
+    @log smoke=TC050: lua string-arg comparison. Succeeded.
+  },
+  {
+    @log smoke=TC050: lua string-arg comparison. Failed (%q0).
+  }
+-
+#
+# Test 51: string-arg integer division (IDIV path).
+#
+&LUA_IDIV_ARGS test_lua_fn=return mux.args[1] // mux.args[2]
+-
+&tr.tc051 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_IDIV_ARGS,17,5)),
+    3)=
+  {
+    @log smoke=TC051: lua string-arg integer division. Succeeded.
+  },
+  {
+    @log smoke=TC051: lua string-arg integer division. Failed (%q0).
+  }
+-
+#
+# Test 52: string-arg modulo (MOD path).
+#
+&LUA_MOD_ARGS test_lua_fn=return mux.args[1] % mux.args[2]
+-
+&tr.tc052 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_MOD_ARGS,17,5)),
+    2)=
+  {
+    @log smoke=TC052: lua string-arg modulo. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC046: lua math.sqrt. Failed (%q0).;
+    @log smoke=TC052: lua string-arg modulo. Failed (%q0).;
     @trig me/tr.done
   }
 -
