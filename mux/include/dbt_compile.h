@@ -311,6 +311,10 @@ bool returns_int(const std::string &upper);
 extern int  s_compile_eval;
 extern bool s_fcheck_available;
 
+// Tier 3 compile-time state (defined in hir_lower.cpp).
+extern std::vector<compiled_program::inline_dep> *s_compile_deps;
+extern int s_inline_depth;
+
 // HIR codegen (hir_codegen.cpp).
 void hir_codegen(hir_program &h, rv_compiler &rc);
 void hir_dump(const hir_program &h);

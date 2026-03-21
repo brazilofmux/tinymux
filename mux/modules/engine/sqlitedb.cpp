@@ -312,8 +312,7 @@ bool CSQLiteDB::CreateSchema()
         "    ecalls       INTEGER NOT NULL DEFAULT 0,"
         "    tier2_calls  INTEGER NOT NULL DEFAULT 0,"
         "    native_ops   INTEGER NOT NULL DEFAULT 0,"
-        "    compile_time INTEGER NOT NULL DEFAULT 0,"
-        "    deps_blob    BLOB NOT NULL DEFAULT x''"
+        "    compile_time INTEGER NOT NULL DEFAULT 0"
         ");";
 
     char *errmsg = nullptr;
@@ -583,8 +582,7 @@ bool CSQLiteDB::MigrateSchema()
             "    ecalls       INTEGER NOT NULL DEFAULT 0,"
             "    tier2_calls  INTEGER NOT NULL DEFAULT 0,"
             "    native_ops   INTEGER NOT NULL DEFAULT 0,"
-            "    compile_time INTEGER NOT NULL DEFAULT 0,"
-            "    deps_blob    BLOB NOT NULL DEFAULT x''"
+            "    compile_time INTEGER NOT NULL DEFAULT 0"
             ");"
             "INSERT OR REPLACE INTO metadata(key, value)"
             "    VALUES('schema_version', 7);"

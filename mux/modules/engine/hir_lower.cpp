@@ -503,6 +503,13 @@ void qreg_init() {
 int  s_compile_eval;
 bool s_fcheck_available;
 
+// Tier 3 compile-time state: deps collector and inline depth.
+// Set by compile_expression() before calling hir_lower_node().
+//
+std::vector<compiled_program::inline_dep> *s_compile_deps = nullptr;
+int s_inline_depth = 0;
+static constexpr int MAX_INLINE_DEPTH = 3;
+
 static bool hir_is_malformed_qsubst(const ASTNode *node) {
     if (!node || node->type != AST_SUBST) return false;
     const std::string &txt = node->text;
@@ -1528,6 +1535,218 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         }
         // Non-literal child (e.g., nested function call) — emit its
         // raw text representation.  For now, fall through to ECALL.
+    }
+
+    // ---------------------------------------------------------------
+    // Tier 3: u()/ulocal() compile-time inlining.
+    //
+    // When the first argument is a constant obj/attr reference,
+    // resolve the attr at compile time and inline the body.  All
+    // correctness requirements handled via registered helpers:
+    //   - Permission guard: _CHECK_U_PERM → BRC fallback
+    //   - CARGS save/restore: _SAVE_CARGS / _RESTORE_CARGS
+    //   - CARGS writing: _WRITE_CARG + _SET_NCARGS
+    //   - ULOCAL qregs: _SAVE_QREGS / _RESTORE_QREGS
+    //   - Cache staleness: per-attr mod_count deps
+    // ---------------------------------------------------------------
+
+    if ((fname == "U" || fname == "ULOCAL")
+        && node->children.size() >= 1
+        && s_compile_deps != nullptr
+        && s_inline_depth < MAX_INLINE_DEPTH)
+    {
+        const ASTNode *arg0 = node->children[0].get();
+        std::string arg0_str;
+        bool arg0_const = false;
+
+        if (arg0->type == AST_LITERAL) {
+            arg0_str = arg0->text;
+            arg0_const = true;
+        } else if (arg0->type == AST_SEQUENCE
+                   && arg0->children.size() == 1
+                   && arg0->children[0]->type == AST_LITERAL) {
+            arg0_str = arg0->children[0]->text;
+            arg0_const = true;
+        }
+
+        if (arg0_const && arg0_str.find('/') != std::string::npos)
+        {
+            dbref thing;
+            ATTR *pattr = nullptr;
+
+            if (parse_attrib(GOD,
+                    reinterpret_cast<const UTF8 *>(arg0_str.c_str()),
+                    &thing, &pattr)
+                && pattr && Good_obj(thing))
+            {
+                dbref aowner;
+                int aflags;
+                size_t nBodyLen = 0;
+                UTF8 *body = atr_pget_LEN(thing, pattr->number,
+                                           &aowner, &aflags, &nBodyLen);
+
+                if (body && nBodyLen > 0)
+                {
+                    auto body_ast = ast_parse_string(body, nBodyLen);
+                    free_lbuf(body);
+
+                    if (body_ast)
+                    {
+                        bool is_local = (fname == "ULOCAL");
+                        int nExtra = static_cast<int>(
+                            node->children.size()) - 1;
+
+                        // Record dependency for cache staleness.
+                        uint32_t mc = attr_mod_count_get(thing,
+                            pattr->number);
+                        s_compile_deps->push_back({
+                            static_cast<int32_t>(thing),
+                            static_cast<int32_t>(pattr->number),
+                            mc
+                        });
+
+                        // Lower all u() arguments (including arg0).
+                        std::vector<int> u_args;
+                        for (auto &child : node->children) {
+                            u_args.push_back(
+                                hir_lower_argument(h, rc, child.get()));
+                        }
+
+                        // --- Permission check ---
+                        int perm_idx = engine_api_lookup("_CHECK_U_PERM");
+                        std::string thing_str = std::to_string(thing);
+                        std::string attr_str = std::to_string(pattr->number);
+                        uint64_t ta = rc.pool_str(thing_str);
+                        uint64_t aa = rc.pool_str(attr_str);
+                        int thing_c = h.emit_sconst(ta, thing_str);
+                        int attr_c = h.emit_sconst(aa, attr_str);
+                        int perm_args[2] = { thing_c, attr_c };
+                        int perm_result = h.emit_call(TY_STRING,
+                            perm_idx, perm_args, 2);
+                        h.ecalls++;
+                        h.needs_jit = true;
+                        h.known_int[perm_result] = true;
+
+                        // Branch: "0" = ok → inline, nonzero → fallback.
+                        int perm_int = h.emit(HIR_ATOI, TY_INT,
+                            perm_result);
+                        int entry_block = h.cur_block;
+                        int fallback_block = h.new_block();
+                        int inline_block = h.new_block();
+                        int merge_block = h.new_block();
+
+                        // BRC: if nonzero → fallback, else → inline.
+                        h.emit(HIR_BRC, TY_VOID, perm_int,
+                               fallback_block, inline_block);
+                        h.add_edge(entry_block, fallback_block);
+                        h.add_edge(entry_block, inline_block);
+
+                        // --- Fallback block: ECALL fun_u ---
+                        h.cur_block = fallback_block;
+                        int fidx_u = engine_api_lookup(fname.c_str());
+                        int fb_result = h.emit_call(TY_STRING, fidx_u,
+                            u_args.data(),
+                            static_cast<int>(u_args.size()));
+                        h.ecalls++;
+                        int fb_exit = h.cur_block;
+                        h.emit(HIR_BR, TY_VOID, -1, -1, merge_block);
+                        h.add_edge(fb_exit, merge_block);
+
+                        // --- Inline block ---
+                        h.cur_block = inline_block;
+
+                        // Save CARGS if there are extra args.
+                        int cargs_handle = -1;
+                        if (nExtra > 0)
+                        {
+                            int save_idx = engine_api_lookup("_SAVE_CARGS");
+                            cargs_handle = h.emit_call(TY_STRING,
+                                save_idx, nullptr, 0);
+                            h.ecalls++;
+
+                            // Write each extra arg to CARGS slots.
+                            int write_idx = engine_api_lookup("_WRITE_CARG");
+                            for (int ei = 0; ei < nExtra && ei < 10; ei++)
+                            {
+                                std::string idx_s = std::to_string(ei);
+                                uint64_t ia = rc.pool_str(idx_s);
+                                int idx_c = h.emit_sconst(ia, idx_s);
+                                int val = u_args[ei + 1];
+                                if (h.ty[val] == TY_INT) {
+                                    val = h.emit(HIR_ITOA, TY_STRING, val);
+                                }
+                                int wargs[2] = { idx_c, val };
+                                h.emit_call(TY_STRING, write_idx, wargs, 2);
+                                h.ecalls++;
+                            }
+
+                            // Set %+ to the callee's arg count.
+                            int ncargs_idx = engine_api_lookup("_SET_NCARGS");
+                            std::string nc_s = std::to_string(nExtra);
+                            uint64_t na = rc.pool_str(nc_s);
+                            int nc_c = h.emit_sconst(na, nc_s);
+                            int ncargs[1] = { nc_c };
+                            h.emit_call(TY_STRING, ncargs_idx, ncargs, 1);
+                            h.ecalls++;
+                        }
+
+                        // ULOCAL: save qregs.
+                        int qreg_handle = -1;
+                        if (is_local)
+                        {
+                            int save_q = engine_api_lookup("_SAVE_QREGS");
+                            qreg_handle = h.emit_call(TY_STRING,
+                                save_q, nullptr, 0);
+                            h.ecalls++;
+                        }
+
+                        // Inline the body AST.
+                        bool saved_fcheck = s_fcheck_available;
+                        s_fcheck_available = true;
+                        s_inline_depth++;
+                        int body_result = hir_lower_node(
+                            h, rc, body_ast.get());
+                        s_inline_depth--;
+                        s_fcheck_available = saved_fcheck;
+
+                        // ULOCAL: restore qregs.
+                        if (is_local && qreg_handle >= 0)
+                        {
+                            int restore_q = engine_api_lookup(
+                                "_RESTORE_QREGS");
+                            int rqargs[1] = { qreg_handle };
+                            h.emit_call(TY_STRING, restore_q, rqargs, 1);
+                            h.ecalls++;
+                        }
+
+                        // Restore CARGS.
+                        if (cargs_handle >= 0)
+                        {
+                            int restore_c = engine_api_lookup(
+                                "_RESTORE_CARGS");
+                            int rcargs[1] = { cargs_handle };
+                            h.emit_call(TY_STRING, restore_c, rcargs, 1);
+                            h.ecalls++;
+                        }
+
+                        int inline_exit = h.cur_block;
+                        h.emit(HIR_BR, TY_VOID, -1, -1, merge_block);
+                        h.add_edge(inline_exit, merge_block);
+
+                        // --- Merge block: PHI ---
+                        h.cur_block = merge_block;
+                        int blocks[2] = { fb_exit, inline_exit };
+                        int vals[2] = { fb_result, body_result };
+                        return h.emit_phi(TY_STRING, -1, blocks, vals, 2);
+                    }
+                }
+                else
+                {
+                    free_lbuf(body);
+                }
+            }
+        }
+        // Fall through if inlining wasn't possible.
     }
 
     // ---------------------------------------------------------------

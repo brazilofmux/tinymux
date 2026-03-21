@@ -607,7 +607,15 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     hir_program h;
     h.init();
     qreg_init();
+
+    // Set up Tier 3 compile-time deps collector.
+    std::vector<compiled_program::inline_dep> deps;
+    s_compile_deps = &deps;
+    s_inline_depth = 0;
+
     h.result = hir_lower_node(h, rc, ast.get());
+
+    s_compile_deps = nullptr;
 
     const char *dump_env = getenv("TINYMUX_DUMP_HIR");
     bool bDump = (dump_env && *dump_env != '0');
@@ -666,6 +674,7 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     prog.tier2_calls = h.tier2_calls;
     prog.native_ops = h.native_ops;
     prog.needs_jit = h.needs_jit;
+    prog.deps = std::move(deps);
     return prog;
 }
 
