@@ -422,13 +422,56 @@ Either:
   restored after the inlined body (the caller might have its own
   `%0-%9` from an outer `u()` call).
 
+#### ABI constraint (learned from second prototype attempt)
+
+The HIR_CALL codegen is string-oriented: arguments are marshaled
+as guest string pointers via `loc[ai].addr`, and results are written
+to a guest output buffer.  TY_INT calls don't get output buffers.
+Dedicated ECALLs that need integer arguments or integer results
+(permission guard, save/restore handles, CARGS indices) cannot be
+forced through this ABI without corruption.
+
+**Two failed approaches:**
+1. Dedicated ECALL types (ECALL_CHECK_U_PERM etc.) with custom
+   codegen — broke because the HIR_CALL path always marshals
+   args as string pointers.
+2. Register-based result passing (`loc[i].in_reg = true`) — broke
+   because BRC reads conditions from guest memory addresses, not
+   registers.
+
+**Correct approach: register helpers as softcode functions.**
+Add internal-only functions to the engine_api_table:
+```
+_check_u_perm(thing_str, attr_str) → "0" or "1"
+_save_qregs()                      → handle_str
+_restore_qregs(handle_str)         → ""
+_write_carg(idx_str, value_str)    → ""
+_save_cargs()                      → handle_str
+_restore_cargs(handle_str)         → ""
+```
+These go through ECALL_CALL_INDEX with standard string marshaling.
+No codegen changes needed.  The permission check result ("0"/"1")
+goes through ATOI → BRC via the existing known_int path.
+
+CARGS save/restore is required to avoid clobbering the caller's
+%0-%9.  The real fun_u scopes cargs to the nested mux_exec() call;
+the inlined path must save the CARGS_BASE region before writing
+new args and restore it after the body completes.
+
 #### Implementation order
 
-1. Fix Problem 4 (CARGS) and Problem 3 (ULOCAL) — mechanical fixes.
-2. Fix Problem 2 (permissions) — add `ECALL_CHECK_ATTR_PERM`.
-3. Fix Problem 1 (cache staleness) — add attr mod_count tracking.
-4. Re-enable the inlining with all fixes.
-5. Measure: confirm correctness (610/610 smoke) and performance.
+1. Register `_check_u_perm`, `_save_qregs`, `_restore_qregs`,
+   `_write_carg`, `_save_cargs`, `_restore_cargs` in engine_api.
+2. Implement the helpers as FUNCTION() handlers.
+3. Add `has_inlined_u` + `attr_gen` to compiled_program AND
+   the SQLite code_cache schema (persist through restarts).
+4. Add `g_attr_mod_gen` increment in atr_add/atr_clr.
+5. Add staleness check in compile_cached (evict stale entries).
+6. Re-implement the inlining in hir_lower_funccall using
+   emit_call to the registered helpers.
+7. Test: correctness (610/610 smoke), performance (muxscript
+   benchmark on production DB), and staleness (modify attr,
+   verify recompilation).
 
 ### Level 4: Persistent/shared DBT context
 
