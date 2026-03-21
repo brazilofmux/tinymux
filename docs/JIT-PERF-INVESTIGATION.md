@@ -275,22 +275,148 @@ calls.  The inner expression stays in guest code, no re-entry question.
 - `name()`, `owner()`, `flags()` — object metadata
 - `member()`, `words()`, `extract()` — list operations
 
-### Level 3: u() inlining at compile time
+### Level 3: u() inlining at compile time (PROTOTYPED, REVERTED)
 
-**Cost:** High — requires attr resolution at compile time + cache
-invalidation.  **Benefit:** Eliminates the ECALL for `u()` entirely.
+**Cost:** High — requires solving four correctness problems.
+**Benefit:** Eliminates the ECALL for `u()` entirely.
+**Status:** Prototype proved 2.8x over guard-only.  Reverted due to
+semantic regressions found in code review.  Re-implementation needed.
 
-When the JIT compiles `u(#21/bbtime)`, it can:
-1. Resolve `#21/bbtime` at compile time
-2. Fetch the body: `extract(time(), 1, 3)`
-3. Compile the body inline into the caller's RV64 code
-4. The `u()` call becomes a JAL into the inlined code
+#### Concept
 
-The hard part is cache invalidation: if `#21/bbtime` is modified
-after compilation, the cached blob is stale.  Solutions:
-- Version stamp per attr, checked at call site (cheap guard)
-- Invalidate cache entries that reference the modified attr
-- Accept staleness and rely on periodic cache flush
+When the JIT compiles `u(#21/bbtime)`, the compiler:
+1. Resolves `#21/bbtime` at compile time (Tier 1 knowledge)
+2. Fetches the body: `extract(time(), 1, 3)`
+3. Parses the body into an AST
+4. Lowers the body's AST inline into the caller's HIR
+5. The body's functions become direct Tier 2 / ECALL calls
+
+Three tiers cooperating:
+- **Tier 1 (AST)**: resolves the attr at compile time
+- **Tier 2 (guest blobs)**: body's pure functions run natively
+- **Tier 3 (compiler)**: orchestrates the inlining
+
+#### Prototype results (2026-03-20, reverted)
+
+| Function | Guard only | Guard+inline |
+|---|---|---|
+| `u(#21/bbtime)` | 0.028ms | 0.010ms |
+| `u(#21/valid_groups,...)` | 0.052ms | 0.044ms |
+
+The jitstats showed `tier2=5011` calls — inlined bodies used Tier 2
+guest code directly.  610/610 smoke tests passed.
+
+#### Four correctness problems (from code review)
+
+**Problem 1 — Cache staleness (HIGH)**
+
+The compile cache key is `(source_text, eval_flags)`.  When the
+compiler inlines `u(#21/bbtime)`, the cached blob embeds bbtime's
+body.  If `#21/bbtime` is later modified (`&bbtime #21=new_body`),
+callers containing `u(#21/bbtime)` keep running the old inlined body
+until the cache evicts.  The runtime `fun_u` path re-reads the attr
+on every call — inlining must preserve this semantic.
+
+*Location*: `compile_cached()` in `jit_compiler.cpp:830`.
+
+*Fix*: The cache key must include a dependency fingerprint — a hash
+or version stamp of every inlined attr body.  Two approaches:
+
+  A. **Attr modification counter**: Add a per-attr `mod_count` field
+     (incremented by `s_Name()`/`atr_add()`/`atr_clr()`).  At
+     compile time, record `{dbref, attr_num, mod_count}` for each
+     inlined attr.  At runtime, emit a lightweight ECALL at the
+     start of the compiled program that checks each dependency:
+     `if (current_mod_count != compiled_mod_count) return false;`
+     (bail to AST).  Fast path: one integer compare per inlined attr.
+
+  B. **Body hash in cache key**: Append a hash of each inlined body
+     text to the cache key string.  If bbtime's body changes, the
+     key no longer matches — cache miss → recompile with new body.
+     Pro: no runtime check.  Con: compile-time resolution must
+     re-fetch and re-hash on every compile_cached lookup, which adds
+     cost even on cache hits.
+
+  Approach A is preferred — the runtime check is a single integer
+  compare, and compilation only happens on cache miss.
+
+**Problem 2 — Permission bypass (HIGH)**
+
+The prototype used `parse_attrib(GOD, ...)` to resolve the attr at
+compile time, bypassing `See_attr(executor, thing, pattr)`.  This
+means:
+- A player who can't read `#21/secret` could still get a compiled
+  caller that contains its body.
+- `NoEval(thing)` is ignored — the body is compiled and executed
+  even if the object has NOEVAL set.
+
+*Locations*:
+- Compile-time: `hir_lower.cpp` (the new inlining code)
+- Runtime references: `See_attr()` in `funceval.cpp:108`,
+  `NoEval(thing)` in `functions.cpp:2419`
+
+*Fix*: Emit a runtime permission ECALL before the inlined body:
+```
+ECALL_CHECK_ATTR_PERM(executor, thing, attr_num)
+  → returns 0 (ok) or 1 (denied)
+if (denied) → ECALL_CALL_INDEX(fun_u)  // fall back to host u()
+else → execute inlined body
+```
+The compile-time resolution (using GOD) is fine for fetching the
+body text to compile.  The runtime check ensures that the executor
+actually has permission each time the code runs.  Cost: one ECALL
+per inlined u() call on the fast path.
+
+For `NoEval(thing)`: check at compile time.  If `aflags & AF_NOEVAL`
+or `NoEval(thing)`, don't inline — fall through to the ECALL path
+which handles NOEVAL correctly.
+
+**Problem 3 — ULOCAL register leak (MEDIUM)**
+
+`ulocal()` saves and restores `%q0-%q9` around the body evaluation.
+The prototype treated `U` and `ULOCAL` identically — no save/restore.
+Inlined bodies that mutate `%q*` leak changes to the caller.
+
+*Runtime reference*: `fun_ulocal` in `functions.cpp:2408` calls
+`PushRegisters()`/`save_global_regs()` before and
+`restore_global_regs()`/`PopRegisters()` after.
+
+*Fix*: For `ULOCAL`, emit register save/restore around the inlined
+body.  Two options:
+  A. **ECALL pair**: `ECALL_SAVE_QREGS` before, `ECALL_RESTORE_QREGS`
+     after.  Simple, delegates to existing save/restore code.
+  B. **HIR save/restore**: Emit `HIR_QREG_PUSH` / `HIR_QREG_POP`
+     that copies the 10 SUBST slots to a guest-side shadow array
+     and restores after.  Avoids ECALL overhead.
+
+  Option A is simpler for the prototype.  Option B is better long-term.
+
+**Problem 4 — CARGS slot mismatch (MEDIUM)**
+
+For `u(obj/attr, arg1, arg2, ...)`, the body's `%0-%9` resolve to
+fixed guest memory at `CARGS_BASE + idx * CARGS_SLOT`.  The prototype
+wrote args with `HIR_STORE_Q`, which targets `%q` registers (SSA
+tracking in `hir_ssa.cpp:292`), not the CARGS memory slots.
+
+*Fix*: Write args directly to guest memory at the CARGS addresses.
+Either:
+  A. **New HIR op** `HIR_STORE_CARG(val, idx)` that emits a store
+     to `CARGS_BASE + idx * CARGS_SLOT` in codegen.
+  B. **Emit as memory store**: Use the existing `HIR_DMA_WRITE` or
+     add a guest memory write that copies the string to the fixed
+     address.
+
+  Additionally, the original CARGS values must be saved before and
+  restored after the inlined body (the caller might have its own
+  `%0-%9` from an outer `u()` call).
+
+#### Implementation order
+
+1. Fix Problem 4 (CARGS) and Problem 3 (ULOCAL) — mechanical fixes.
+2. Fix Problem 2 (permissions) — add `ECALL_CHECK_ATTR_PERM`.
+3. Fix Problem 1 (cache staleness) — add attr mod_count tracking.
+4. Re-enable the inlining with all fixes.
+5. Measure: confirm correctness (610/610 smoke) and performance.
 
 ### Level 4: Persistent/shared DBT context
 
