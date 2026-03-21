@@ -9,6 +9,7 @@
 #include "externs.h"
 
 #include "sqlite_backend.h"
+#include "engine_api.h"
 
 #define IS_CLEAN(i) (isGarbage(i) && Going(i) && \
              ((i) >= 0) && ((i) < mudstate.db_top) && \
@@ -232,6 +233,7 @@ static void reconcile_failed_create_backend(dbref obj)
            && sqldb.PutMeta("db_top", mudstate.db_top)
            && sqldb.Commit())
         {
+            attr_mod_count_invalidate_object(obj);
             bCleaned = true;
         }
         else
@@ -247,6 +249,7 @@ static void reconcile_failed_create_backend(dbref obj)
         {
             if (sqldb.DelAllAttributes(obj) && sqldb.Commit())
             {
+                attr_mod_count_invalidate_object(obj);
                 bAttrsCleared = true;
             }
             else

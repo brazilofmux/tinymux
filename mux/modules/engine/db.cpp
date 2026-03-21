@@ -61,6 +61,28 @@ void attr_mod_count_inc(dbref obj, int attrnum)
     }
 }
 
+// Invalidate all in-memory mod_counts for a given object.
+// Used by bulk deletion paths (DelAllAttributes, object destroy).
+// Sets each known entry to UINT32_MAX so any compiled dependency
+// comparing against it will always detect staleness.
+//
+void attr_mod_count_invalidate_object(dbref obj)
+{
+    uint32_t obj_bits = static_cast<uint32_t>(obj);
+    for (auto &kv : s_attr_mod_counts)
+    {
+        if (static_cast<uint32_t>(kv.first >> 32) == obj_bits)
+        {
+            kv.second = UINT32_MAX;
+        }
+    }
+}
+
+void attr_mod_count_invalidate_all()
+{
+    s_attr_mod_counts.clear();
+}
+
 uint32_t attr_mod_count_get(dbref obj, int attrnum)
 {
     auto it = s_attr_mod_counts.find(attr_mod_key(obj, attrnum));
@@ -1993,11 +2015,6 @@ bool atr_clr(dbref thing, int atr)
 {
     Aname okey;
 
-    // Increment per-attr modification counter BEFORE deletion.
-    // The in-memory counter survives the SQLite row deletion, ensuring
-    // a subsequent recreate of the same attr gets a higher counter.
-    attr_mod_count_inc(thing, atr);
-
     makekey(thing, atr, &okey);
     if (!cache_del(&okey))
     {
@@ -2005,6 +2022,11 @@ bool atr_clr(dbref thing, int atr)
             thing, atr);
         return false;
     }
+
+    // Increment AFTER successful deletion.  The in-memory counter
+    // survives the SQLite row removal, so a subsequent recreate
+    // of the same attr gets a higher counter.
+    attr_mod_count_inc(thing, atr);
 
     switch (atr)
     {
@@ -2105,16 +2127,15 @@ bool atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
         clean_len = nNfc;
     }
 
-    // Increment per-attr modification counter BEFORE the SQLite write
-    // so the counter value can be passed to PutAttribute for persistence.
-    attr_mod_count_inc(thing, atr);
-
     if (!cache_put(&okey, clean, clean_len + 1, raw_owner, raw_flags))
     {
         Log.tinyprintf(T("atr_add_raw_LEN(#%d/%d): SQLite write failed, not applying side effects." ENDLINE),
             thing, atr);
         return false;
     }
+
+    // Increment AFTER successful write.
+    attr_mod_count_inc(thing, atr);
 
     switch (atr)
     {

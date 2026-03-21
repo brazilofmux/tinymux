@@ -85,5 +85,7 @@ int engine_api_lookup(const char *name);
 //
 void     attr_mod_count_inc(dbref obj, int attrnum);
 uint32_t attr_mod_count_get(dbref obj, int attrnum);
+void     attr_mod_count_invalidate_object(dbref obj);
+void     attr_mod_count_invalidate_all();
 
 #endif // ENGINE_API_H

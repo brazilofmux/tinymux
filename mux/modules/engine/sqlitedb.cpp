@@ -1281,10 +1281,12 @@ bool CSQLiteDB::GetAttribute(dbref obj, int attrnum, UTF8 *buf, size_t buflen,
 bool CSQLiteDB::PutAttribute(dbref obj, int attrnum, const UTF8 *value, size_t len,
                              dbref owner, int flags)
 {
-    // The mod_count for new rows comes from the in-memory counter
-    // (already incremented by attr_mod_count_inc before this call).
-    // For existing rows, the upsert uses MAX(excluded, current+1).
-    uint32_t mc = attr_mod_count_get(obj, attrnum);
+    // Read current in-memory mod_count and add 1 for this write.
+    // The SQL upsert uses MAX(excluded, current+1) to ensure
+    // monotonicity even if the SQLite row has a higher value.
+    // attr_mod_count_inc() in atr_add_raw_LEN runs AFTER this
+    // call succeeds, so we pre-compute the next value here.
+    uint32_t mc = attr_mod_count_get(obj, attrnum) + 1;
 
     sqlite3_bind_int(m_stmtAttrPut, 1, obj);
     sqlite3_bind_int(m_stmtAttrPut, 2, attrnum);
@@ -1354,7 +1356,12 @@ bool CSQLiteDB::DelAllAttributes(dbref obj)
 
 bool CSQLiteDB::ClearAttributes()
 {
-    return SQLITE_OK == sqlite3_exec(m_db, "DELETE FROM attributes;", nullptr, nullptr, nullptr);
+    bool ok = SQLITE_OK == sqlite3_exec(m_db, "DELETE FROM attributes;", nullptr, nullptr, nullptr);
+    if (ok)
+    {
+        attr_mod_count_invalidate_all();
+    }
+    return ok;
 }
 
 bool CSQLiteDB::GetAllAttributes(dbref obj, AttrCallback cb)
