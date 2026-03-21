@@ -2652,7 +2652,7 @@ static void do_listchannels(dbref player, UTF8* pattern)
         bWild = false;
     }
 
-    raw_notify(player, T("*** Channel      --Flags--    Obj     Own   Charge  Balance  Users   Messages"));
+    raw_notify(player, T("*** Channel       Header          Owner           Access  Users Msgs"));
 
     for (auto it = mudstate.channel_names.begin(); it != mudstate.channel_names.end(); ++it)
     {
@@ -2660,28 +2660,84 @@ static void do_listchannels(dbref player, UTF8* pattern)
 
         if (  perm
            || (ch->type & CHANNEL_PUBLIC)
-           || Controls(player, ch->charge_who))
+           || Controls(player, ch->charge_who)
+           || nullptr != select_user(ch, player))
         {
             if (  !bWild
                || quick_wild(pattern, ch->name))
             {
-                UTF8 temp[LBUF_SIZE];
-                mux_sprintf(temp, sizeof(temp),
-                            T("%c%c%c %-13.13s %c%c%c/%c%c%c %7d %7d %8d %8d %6d %10d"),
-                            (ch->type & CHANNEL_PUBLIC) ? 'P' : '-',
-                            (ch->type & CHANNEL_LOUD) ? 'L' : '-',
-                            (ch->type & CHANNEL_SPOOF) ? 'S' : '-',
-                            ch->name,
-                            (ch->type & CHANNEL_PLAYER_JOIN) ? 'J' : '-',
-                            (ch->type & CHANNEL_PLAYER_TRANSMIT) ? 'X' : '-',
-                            (ch->type & CHANNEL_PLAYER_RECEIVE) ? 'R' : '-',
-                            (ch->type & CHANNEL_OBJECT_JOIN) ? 'j' : '-',
-                            (ch->type & CHANNEL_OBJECT_TRANSMIT) ? 'x' : '-',
-                            (ch->type & CHANNEL_OBJECT_RECEIVE) ? 'r' : '-',
-                            (ch->chan_obj != NOTHING) ? ch->chan_obj : -1,
-                            ch->charge_who, ch->charge, ch->amount_col,
-                            static_cast<int>(ch->users.size()), ch->num_messages);
+                // Determine effective access for the querying player
+                // based on both flags and locks.
+                //
+                bool bCanJoin = test_join_access(player, ch);
+                bool bCanXmit = test_transmit_access(player, ch);
+                bool bCanRecv = test_receive_access(player, ch);
+
+                UTF8* temp = alloc_lbuf("do_listchannels");
+                UTF8* bp = temp;
+
+                // PLS flags.
+                //
+                safe_chr((ch->type & CHANNEL_PUBLIC) ? 'P' : '-', temp, &bp);
+                safe_chr((ch->type & CHANNEL_LOUD)   ? 'L' : '-', temp, &bp);
+                safe_chr((ch->type & CHANNEL_SPOOF)  ? 'S' : '-', temp, &bp);
+                safe_chr(' ', temp, &bp);
+
+                // Channel name (13 cols).
+                //
+                mux_field iPos(4, 4);
+                iPos += StripTabsAndTruncate(ch->name,
+                    temp + iPos.m_byte,
+                    (LBUF_SIZE - 1) - iPos.m_byte,
+                    13);
+                bp = temp + iPos.m_byte;
+                iPos = PadField(temp, LBUF_SIZE - 1, 18, iPos);
+                bp = temp + iPos.m_byte;
+
+                // Header (15 cols).
+                //
+                const UTF8 *pHeader = ch->header;
+                if ('\0' == pHeader[0])
+                {
+                    pHeader = T("-");
+                }
+                iPos += StripTabsAndTruncate(pHeader,
+                    temp + iPos.m_byte,
+                    (LBUF_SIZE - 1) - iPos.m_byte,
+                    15);
+                bp = temp + iPos.m_byte;
+                iPos = PadField(temp, LBUF_SIZE - 1, 34, iPos);
+                bp = temp + iPos.m_byte;
+
+                // Owner name (15 cols).
+                //
+                iPos += StripTabsAndTruncate(Moniker(ch->charge_who),
+                    temp + iPos.m_byte,
+                    (LBUF_SIZE - 1) - iPos.m_byte,
+                    15);
+                bp = temp + iPos.m_byte;
+                iPos = PadField(temp, LBUF_SIZE - 1, 50, iPos);
+                bp = temp + iPos.m_byte;
+
+                // Effective access JXR (3 cols + 2 spaces).
+                //
+                safe_chr(bCanJoin ? 'J' : '-', temp, &bp);
+                safe_chr(bCanXmit ? 'X' : '-', temp, &bp);
+                safe_chr(bCanRecv ? 'R' : '-', temp, &bp);
+                iPos = mux_field(
+                    static_cast<unsigned int>(bp - temp),
+                    static_cast<unsigned int>(bp - temp));
+                iPos = PadField(temp, LBUF_SIZE - 1, 56, iPos);
+                bp = temp + iPos.m_byte;
+
+                // Users and Messages.
+                //
+                mux_sprintf(bp, (LBUF_SIZE - 1) - (bp - temp),
+                    T("%5d %4d"),
+                    static_cast<int>(ch->users.size()),
+                    ch->num_messages);
                 raw_notify(player, temp);
+                free_lbuf(temp);
             }
         }
     }
@@ -3852,7 +3908,8 @@ void do_chanlist
             {
                 if (Comm_All(executor)
                     || (ch->type & CHANNEL_PUBLIC)
-                    || Controls(executor, ch->charge_who))
+                    || Controls(executor, ch->charge_who)
+                    || nullptr != select_user(ch, executor))
                 {
                     const UTF8* pBuffer = nullptr;
                     UTF8* atrstr = nullptr;
@@ -4647,6 +4704,18 @@ FUNCTION(fun_chaninfo)
             }
         }
         safe_str(mux_ltoa_t(logmax), buff, bufc);
+    }
+    else if (0 == mux_stricmp(field, T("canjoin")))
+    {
+        safe_chr(test_join_access(executor, ch) ? '1' : '0', buff, bufc);
+    }
+    else if (0 == mux_stricmp(field, T("cantransmit")))
+    {
+        safe_chr(test_transmit_access(executor, ch) ? '1' : '0', buff, bufc);
+    }
+    else if (0 == mux_stricmp(field, T("canreceive")))
+    {
+        safe_chr(test_receive_access(executor, ch) ? '1' : '0', buff, bufc);
     }
     else
     {

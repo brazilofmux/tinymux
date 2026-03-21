@@ -111,6 +111,9 @@ Returns the value of `field` for the named channel.
 | `msgs` | `channels.num_messages` | integer | Channel visible |
 | `desc` | DESC attr on chan_obj (or empty) | string | Channel visible |
 | `buffer` | MAX_LOG attr on chan_obj (or 0) | integer | Channel visible |
+| `canjoin` | `test_join_access(executor)` | 0 / 1 | Channel visible |
+| `cantransmit` | `test_transmit_access(executor)` | 0 / 1 | Channel visible |
+| `canreceive` | `test_receive_access(executor)` | 0 / 1 | Channel visible |
 
 **Note on `object` field:** `chanobj()` is currently CA_WIZARD.  The
 `chaninfo(chan, object)` field preserves this restriction.  Channel objects

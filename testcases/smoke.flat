@@ -37,75 +37,75 @@
 +A272
 "1:TR.TC011"
 +A273
-"1:TESTATTR"
-+A274
-"1:TESTATTR1"
-+A275
-"1:TESTATTR2"
-+A276
-"1:CRON_TARGET"
-+A277
-"1:HELP_COMMANDS"
-+A278
-"1:HELP_BUILDING"
-+A279
-"1:HELP_COMBAT"
-+A280
-"1:HELP_COMM"
-+A281
-"1:INFO_RULES"
-+A282
-"1:INFO_STAFF"
-+A283
 "1:TR.TC012"
-+A284
-"1:FN_ADD1"
-+A285
-"1:FN_MULTI"
-+A286
-"1:FN_SETQ"
-+A287
-"1:FN_PASSTHRU"
-+A288
-"1:FN_CMDPREFIX"
-+A289
-"1:FN_TC003_INNER"
-+A290
-"1:FN_TC003_BREAK"
-+A291
-"1:FN_TC004_BREAK"
-+A292
-"1:LUA_ADD"
-+A293
-"1:LUA_HELLO"
-+A294
-"1:LUA_CAT"
-+A295
-"1:LUA_NIL"
-+A296
-"1:LUA_BOOL"
-+A297
-"1:LUA_OS"
-+A298
-"1:LUA_IO"
-+A299
-"1:LUA_LOAD"
-+A300
-"1:LUA_LOOP"
-+A301
-"1:LUA_MATH"
-+A302
-"1:LUA_STR"
-+A303
-"1:LUA_TBL"
-+A304
-"1:LUA_NAME"
-+A305
++A274
 "1:TR.TC013"
-+A306
-"1:LUA_EVAL"
-+A307
++A275
 "1:TR.TC014"
++A276
+"1:TESTATTR"
++A277
+"1:TESTATTR1"
++A278
+"1:TESTATTR2"
++A279
+"1:CRON_TARGET"
++A280
+"1:HELP_COMMANDS"
++A281
+"1:HELP_BUILDING"
++A282
+"1:HELP_COMBAT"
++A283
+"1:HELP_COMM"
++A284
+"1:INFO_RULES"
++A285
+"1:INFO_STAFF"
++A286
+"1:FN_ADD1"
++A287
+"1:FN_MULTI"
++A288
+"1:FN_SETQ"
++A289
+"1:FN_PASSTHRU"
++A290
+"1:FN_CMDPREFIX"
++A291
+"1:FN_TC003_INNER"
++A292
+"1:FN_TC003_BREAK"
++A293
+"1:FN_TC004_BREAK"
++A294
+"1:LUA_ADD"
++A295
+"1:LUA_HELLO"
++A296
+"1:LUA_CAT"
++A297
+"1:LUA_NIL"
++A298
+"1:LUA_BOOL"
++A299
+"1:LUA_OS"
++A300
+"1:LUA_IO"
++A301
+"1:LUA_LOAD"
++A302
+"1:LUA_LOOP"
++A303
+"1:LUA_MATH"
++A304
+"1:LUA_STR"
++A305
+"1:LUA_TBL"
++A306
+"1:LUA_NAME"
++A307
+"1:LUA_EVAL"
 +A308
 "1:LUA_BAD"
 +A309
@@ -1240,7 +1240,13 @@
 >271
 "@if strmatch(setr(0,sha1([strmatch(chaninfo(citest,badfield),#-1 INVALID FIELD)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC010: chaninfo invalid field. Succeeded.},{@log smoke=TC010: chaninfo invalid field. Failed (%q0).}"
 >272
-"@if strmatch(setr(0,sha1([strmatch(chaninfo(cipriv,name),cipriv)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC011: chaninfo private subscriber. Succeeded.;@trig me/tr.done},{@log smoke=TC011: chaninfo private subscriber. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([strmatch(chaninfo(cipriv,name),cipriv)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC011: chaninfo private subscriber. Succeeded.},{@log smoke=TC011: chaninfo private subscriber. Failed (%q0).}"
+>273
+"@if strmatch(setr(0,sha1([chaninfo(citest,canjoin)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC012: chaninfo canjoin. Succeeded.},{@log smoke=TC012: chaninfo canjoin. Failed (%q0).}"
+>274
+"@if strmatch(setr(0,sha1([chaninfo(citest,cantransmit)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC013: chaninfo cantransmit. Succeeded.},{@log smoke=TC013: chaninfo cantransmit. Failed (%q0).}"
+>275
+"@if strmatch(setr(0,sha1([chaninfo(citest,canreceive)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC014: chaninfo canreceive. Succeeded.;@trig me/tr.done},{@log smoke=TC014: chaninfo canreceive. Failed (%q0).;@trig me/tr.done}"
 <
 !34
 "test_chanuser_fn"
@@ -1441,7 +1447,7 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->273
+>276
 "hello"
 <
 !40
@@ -1888,9 +1894,9 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->274
+>277
 "hello"
->275
+>278
 "world"
 <
 !55
@@ -1929,7 +1935,7 @@
 "@crondel me/CRON_TARGET;@log smoke=TC005: @crondel specific. Succeeded."
 >267
 "@cron me/CRON_TARGET = 0 0 * * *;@crondel me;@log smoke=TC006: @crondel all. Succeeded.;@trig me/tr.done"
->276
+>279
 "think cron_target_fired"
 <
 !56
@@ -2225,17 +2231,17 @@
 "@if strmatch(setr(0,dynhelp(#-1,COMMANDS)),#-1*)={@log smoke=TC007: dynhelp bad object. Succeeded.},{@log smoke=TC007: dynhelp bad object. Failed (%q0).}"
 >269
 "@if strmatch(setr(0,dynhelp(me,COMM)),Communication channels)={@log smoke=TC008: dynhelp exact beats prefix. Succeeded.;@trig me/tr.done},{@log smoke=TC008: dynhelp exact beats prefix. Failed (%q0).;@trig me/tr.done}"
->277
-"List of commands: look, say, go"
->278
-"Building guide: @dig, @create, @open"
->279
-"Combat system overview"
 >280
-"Communication channels"
+"List of commands: look, say, go"
 >281
-"Server rules and policies"
+"Building guide: @dig, @create, @open"
 >282
+"Combat system overview"
+>283
+"Communication channels"
+>284
+"Server rules and policies"
+>285
 "Staff listing"
 <
 !66
@@ -2482,7 +2488,7 @@
 "think [mset(#0/EXP3_EXPR,name(#0))];@if strmatch(setr(0,meval(#0,[mget(#0/EXP3_EXPR)])),Limbo)={@log smoke=TC010: meval roundtrip evaluation. Succeeded.},{@log smoke=TC010: meval roundtrip evaluation. Failed (%q0).}"
 >272
 "@if strmatch(setr(0,mhelp(test topic)),This is a test topic for mhelp*.)={@log smoke=TC011: mhelp topic lookup. Succeeded.},{@log smoke=TC011: mhelp topic lookup. Failed (%q0).}"
->283
+>273
 "@if strmatch(setr(0,mhelp(xyzzy_no_such_topic)),#-1 TOPIC DOES NOT EXIST)={@log smoke=TC012: mhelp nonexistent topic. Succeeded.},{@log smoke=TC012: mhelp nonexistent topic. Failed (%q0).};@trig me/tr.done"
 <
 !73
@@ -3078,21 +3084,21 @@
 "@eval setq(0,UNSET);@include me/fn_cmdprefix=hello;@if strmatch(setr(9,sha1(%q0)),228D6DDD54EA9EB59E222D5DD3FA6D3221BE892A)={@log smoke=TC008: strip command prefix. Succeeded.},{@log smoke=TC008: strip command prefix. Failed (%q9).}"
 >270
 "@eval setq(5,before_clear);@include/clearregs me/fn_setq;@if strmatch(setr(9,sha1(%q5)),00F554D678F26112AAD9D51D7A8D2D590EB74801)={@log smoke=TC009: clearregs switch. Succeeded.;@trig me/tr.done},{@log smoke=TC009: clearregs switch. Failed (%q9).;@trig me/tr.done}"
->284
-"@eval setq(0,add(%0,1))"
->285
-"@eval setq(0,hello); @eval setq(1,world)"
 >286
-"@eval setq(5,included)"
+"@eval setq(0,add(%0,1))"
 >287
-"@eval setq(0,%0-%1)"
+"@eval setq(0,hello); @eval setq(1,world)"
 >288
-"$testcmd *:@eval setq(0,body_%0)"
+"@eval setq(5,included)"
 >289
-"@eval setq(0,before);@include me/fn_tc003_break;@eval setq(0,after)"
+"@eval setq(0,%0-%1)"
 >290
-"@break 1"
+"$testcmd *:@eval setq(0,body_%0)"
 >291
+"@eval setq(0,before);@include me/fn_tc003_break;@eval setq(0,after)"
+>292
+"@break 1"
+>293
 "@break 1; @eval setq(0,should_not_reach)"
 <
 !93
@@ -4276,40 +4282,40 @@
 "@if strmatch(setr(0,lua(me/LUA_MATH)),12)={@log smoke=TC010: lua math library. Succeeded.},{@log smoke=TC010: lua math library. Failed (%q0).}"
 >272
 "@if strmatch(setr(0,lua(me/LUA_STR)),HELLO)={@log smoke=TC011: lua string library. Succeeded.},{@log smoke=TC011: lua string library. Failed (%q0).}"
->283
+>273
 "@if strmatch(setr(0,lua(me/LUA_TBL)),123)={@log smoke=TC012: lua table library. Succeeded.},{@log smoke=TC012: lua table library. Failed (%q0).}"
->292
-"return mux.args[1] + mux.args[2]"
->293
-"return \"hello world\""
->294
-"return mux.args[1] .. \" \" .. mux.args[2]"
->295
-"return nil"
->296
-"return true"
->297
-"return os.execute(\"echo pwned\")"
->298
-"return io.open(\"/etc/passwd\")"
->299
-"return load(\"return 42\")()"
->300
-"while true do end"
->301
-"return math.floor(math.sqrt(144))"
->302
-"return string.upper(\"hello\")"
->303
-"local t = {3,1,2} table.sort(t) return t[1]..t[2]..t[3]"
->304
-"return mux.name(1)"
->305
+>274
 "@if strmatch(setr(0,lua(me/LUA_NAME)),Wizard)={@log smoke=TC013: lua mux.name bridge. Succeeded.},{@log smoke=TC013: lua mux.name bridge. Failed (%q0).}"
->306
-"return mux.eval(\"add(10,20)\")"
->307
+>275
 "@if strmatch(setr(0,lua(me/LUA_EVAL)),30)={@log smoke=TC014: lua mux.eval bridge. Succeeded.},{@log smoke=TC014: lua mux.eval bridge. Failed (%q0).}"
+>294
+"return mux.args[1] + mux.args[2]"
+>295
+"return \"hello world\""
+>296
+"return mux.args[1] .. \" \" .. mux.args[2]"
+>297
+"return nil"
+>298
+"return true"
+>299
+"return os.execute(\"echo pwned\")"
+>300
+"return io.open(\"/etc/passwd\")"
+>301
+"return load(\"return 42\")()"
+>302
+"while true do end"
+>303
+"return math.floor(math.sqrt(144))"
+>304
+"return string.upper(\"hello\")"
+>305
+"local t = {3,1,2} table.sort(t) return t[1]..t[2]..t[3]"
+>306
+"return mux.name(1)"
+>307
+"return mux.eval(\"add(10,20)\")"
 >308
 "this is not valid lua!!!!"
 >309
@@ -4678,9 +4684,9 @@
 "@if chr(256)={@if strmatch(setr(0,sha1(merge([chr(65296)][chr(65297)][chr(65298)][chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])[merge([chr(65296)][chr(65296)][chr(65298)][chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])][merge([chr(65296)][chr(65296)][chr(65296)][chr(65299)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])][merge([chr(65296)][chr(65296)][chr(65296)][chr(65296)][chr(65300)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])][merge([chr(65296)][chr(65296)][chr(65296)][chr(65296)][chr(65296)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])][merge([chr(65297)][chr(65296)][chr(65296)][chr(65296)][chr(65296)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])][merge([chr(65297)][chr(65298)][chr(65296)][chr(65296)][chr(65296)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])][merge([chr(65297)][chr(65298)][chr(65299)][chr(65296)][chr(65296)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])][merge([chr(65297)][chr(65298)][chr(65299)][chr(65300)][chr(65296)],[chr(65345)][chr(65346)][chr(65347)][chr(65348)][chr(65349)],[chr(65296)])])),3104B719D0B03EA860E75AE911560B545AE742A6)={@log smoke=TC010: Vary length of run over 5 character Unicode string. Succeeded.},{@log smoke=TC010: Vary length of run over 5 character Unicode string. Failed (%q0).}},{@log smoke=TC010: Unicode is not supported on this version. Okay.}"
 >272
 "@if chr(256)={@if strmatch(setr(0,sha1(merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])[merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65297)])][merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65298)])][merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65299)])][merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65300)])][merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65301)])])),EE76EC447F7E80D4F2C2C67060F2106E879C6033)={@log smoke=TC011: Single Unicode substitution in each position with color. Succeeded.},{@log smoke=TC011: Single Unicode substitution in each position with color. Failed (%q0).}},{@log smoke=TC011: Unicode is not supported on this version. Okay.}"
->283
+>273
 "@if chr(256)={@if strmatch(setr(0,sha1(merge(%xr%b%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],%b)[merge(%xr%b%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],)][merge(%xr[chr(65296)]%xg%b%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],%b)][merge(%xr[chr(65296)]%xg%b%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],)][merge(%xr[chr(65296)]%xg[chr(65297)]%xb%b%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],%b)][merge(%xr[chr(65296)]%xg[chr(65297)]%xb%b%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],)][merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx%b%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],%b)][merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx%b%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],)][merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy%b,%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],%b)][merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy%b,%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],)])),C62F770B471B3BF5B34543328E86D5B109323D46)={@log smoke=TC012: Unicode with space/null substitution in each position with color. Succeeded.},{@log smoke=TC012: Unicode with space/null substitution in each position with color. Failed (%q0).}},{@log smoke=TC012: Unicode is not supported on this version with color. Okay.}"
->305
+>274
 "@if chr(256)={@if strmatch(setr(0,sha1(merge(%xr[chr(65296)]%xg[chr(65297)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])[merge(%xr[chr(65296)]%xg[chr(65296)]%xb[chr(65298)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])][merge(%xr[chr(65296)]%xg[chr(65296)]%xb[chr(65296)]%xx[chr(65299)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])][merge(%xr[chr(65296)]%xg[chr(65296)]%xb[chr(65296)]%xx[chr(65296)]%xy[chr(65300)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])][merge(%xr[chr(65296)]%xg[chr(65296)]%xb[chr(65296)]%xx[chr(65296)]%xy[chr(65296)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])][merge(%xr[chr(65297)]%xg[chr(65296)]%xb[chr(65296)]%xx[chr(65296)]%xy[chr(65296)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])][merge(%xr[chr(65297)]%xg[chr(65298)]%xb[chr(65296)]%xx[chr(65296)]%xy[chr(65296)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])][merge(%xr[chr(65297)]%xg[chr(65298)]%xb[chr(65299)]%xx[chr(65296)]%xy[chr(65296)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])][merge(%xr[chr(65297)]%xg[chr(65298)]%xb[chr(65299)]%xx[chr(65300)]%xy[chr(65296)],%xc[chr(65345)]%xm[chr(65346)]%xu[chr(65347)]%xw[chr(65348)]%xh[chr(65349)],[chr(65296)])])),0AEBF28EB7E6788821689B7FBFBE1B8DC57AA8FF)={@log smoke=TC013: Vary length of run over 5 character Unicode string with color. Succeeded.},{@log smoke=TC013: Vary length of run over 5 character Unicode string with color. Failed (%q0).};@trig me/tr.done},{@log smoke=TC013: Unicode is not supported on this version with color. Okay.;@trig me/tr.done}"
 <
 !139
@@ -5162,9 +5168,9 @@
 "@if cand(strmatch(setr(0,sha1([eval(if(1,{outer {inner} text}))])),84523E0A869449C01525577B22DD2B5CBA57138B),strmatch(setr(1,sha1([if(1,{outer {inner} text})])),84523E0A869449C01525577B22DD2B5CBA57138B))={@log smoke=TC010: parser nested braces. Succeeded.},{@log smoke=TC010: parser nested braces. Failed (eval=%q0 direct=%q1 expected=84523E0A869449C01525577B22DD2B5CBA57138B).}"
 >272
 "@if strmatch(setr(0,sha1([eval(add(1,2))][eval(add(1,mul(2,3)))][eval(pi())][eval(e())])),setr(1,sha1([add(1,2)][add(1,mul(2,3))][pi()][e()])))={@log smoke=TC011: parser function calls. Succeeded.},{@log smoke=TC011: parser function calls. Failed (%q0 vs %q1).}"
->283
+>273
 "@if strmatch(setr(0,sha1([eval(add(1,add(2,add(3,add(4,5)))))][eval(strlen(ucstr(lcstr(mid(hello world,0,5)))))])),setr(1,sha1([add(1,add(2,add(3,add(4,5))))][strlen(ucstr(lcstr(mid(hello world,0,5))))])))={@log smoke=TC012: parser deep nesting. Succeeded.},{@log smoke=TC012: parser deep nesting. Failed (%q0 vs %q1).}"
->307
+>275
 "@if strmatch(setr(0,sha1([eval(if(,yes,no))][eval(add(,1))][eval(strlen(cat(a,,b)))])),setr(1,sha1([if(,yes,no)][add(,1)][strlen(cat(a,,b))])))={@log smoke=TC014: parser empty args. Succeeded.},{@log smoke=TC014: parser empty args. Failed (%q0 vs %q1).}"
 >309
 "@if strmatch(setr(0,sha1([eval(sha1(hello,world))][eval(sha1(a,b,c))])),setr(1,sha1([sha1(hello,world)][sha1(a,b,c)])))={@log smoke=TC015: parser maxArgsParsed. Succeeded.},{@log smoke=TC015: parser maxArgsParsed. Failed (%q0 vs %q1).}"
@@ -5892,11 +5898,11 @@
 "@log smoke=BENCH010:[rvbench(words(the quick brown fox),10000)]"
 >272
 "@log smoke=BENCH011:[rvbench(add(rand(100),1),10000)]"
->283
+>273
 "@log smoke=BENCH012:[rvbench(lnum(add(2,3)),10000)]"
->305
+>274
 "@log smoke=BENCH013:[rvbench(mul(rand(100),rand(100)),10000)]"
->307
+>275
 "@log smoke=BENCH014:[rvbench(not(eq(mod(add(rand(1),42),5),0)),10000)]"
 >309
 "@log smoke=BENCH015:[rvbench(if(gt(5,3),yes),10000)]"

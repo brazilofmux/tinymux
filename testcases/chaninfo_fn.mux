@@ -212,11 +212,65 @@
         356A192B7913B04C54574D18C28D46E6395428AB
       )=
   {
-    @log smoke=TC011: chaninfo private subscriber. Succeeded.;
+    @log smoke=TC011: chaninfo private subscriber. Succeeded.
+  },
+  {
+    @log smoke=TC011: chaninfo private subscriber. Failed (%q0).
+  }
+-
+#
+# Test Case #12 - chaninfo(chan, canjoin) returns 1 for public channel.
+#
+&tr.tc012 test_chaninfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chaninfo(citest,canjoin)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC012: chaninfo canjoin. Succeeded.
+  },
+  {
+    @log smoke=TC012: chaninfo canjoin. Failed (%q0).
+  }
+-
+#
+# Test Case #13 - chaninfo(chan, cantransmit) returns 1.
+#
+&tr.tc013 test_chaninfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chaninfo(citest,cantransmit)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC013: chaninfo cantransmit. Succeeded.
+  },
+  {
+    @log smoke=TC013: chaninfo cantransmit. Failed (%q0).
+  }
+-
+#
+# Test Case #14 - chaninfo(chan, canreceive) returns 1.
+#
+&tr.tc014 test_chaninfo_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [chaninfo(citest,canreceive)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC014: chaninfo canreceive. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC011: chaninfo private subscriber. Failed (%q0).;
+    @log smoke=TC014: chaninfo canreceive. Failed (%q0).;
     @trig me/tr.done
   }
 -
