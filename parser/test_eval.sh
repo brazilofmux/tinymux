@@ -153,6 +153,11 @@ check '\\\%b' '\%b' '--profile penn'
 check '[switch(1,1,{\\%b})]' '%b' '--profile penn'
 check '[iter(a b,{\\%b})]' '%b %b' '--profile penn'
 
+# 2.13 confirmed live-engine behavior for known substitutions in
+# noeval brace/body contexts.
+check '[switch(1,1,{\\%b})]' ' ' '--profile mux213'
+check '[iter(a b,{\\%b})]' '   ' '--profile mux213'
+
 # Percent-space: Penn recognizes it as atomic "% ", MUX treats as
 # unknown-% fallback (emits the space char).  In both cases the
 # tokenizer consumes % + space as one token, so only one space

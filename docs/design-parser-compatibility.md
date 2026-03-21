@@ -166,23 +166,51 @@ Current prototype scope:
 This prototype is intended to answer "where can the mode live?" rather
 than "is the production fix already done?"
 
+## Evidence Layers
+
+The project now has two distinct evidence sources:
+
+- parser-level oracle:
+  [parser/escape_oracle_cases.txt](/home/sdennis/tinymux/parser/escape_oracle_cases.txt)
+  and [docs/parser-escape-oracle.md](/home/sdennis/tinymux/docs/parser-escape-oracle.md)
+- command-level oracle:
+  [docs/command-escape-oracle.txt](/home/sdennis/tinymux/docs/command-escape-oracle.txt)
+  and [docs/command-escape-oracle.md](/home/sdennis/tinymux/docs/command-escape-oracle.md)
+
+This split exists because traced command behavior can include quoting or
+command parsing effects before expression evaluation begins.
+
 ## Recommended Next Step
 
-Build a semantic matrix before touching production parsing:
+Do not keep exploring this as an open-ended parser survey.
 
-1. Enumerate all `%` forms in 2.13, 2.14, and Penn.
-2. Enumerate backslash rules in each engine, including noeval paths.
-3. Classify each divergence as tokenization-time, evaluation-time, or
-   multi-pass streaming behavior.
-4. Decide whether production needs:
-   - one default profile plus a compatibility mode, or
-   - explicit parser profiles such as `mux213`, `mux214`, and `penn`.
+The next phase should be driven by a narrow oracle corpus in
+[parser/escape_oracle_cases.txt](/home/sdennis/tinymux/parser/escape_oracle_cases.txt)
+and documented in
+[docs/parser-escape-oracle.md](/home/sdennis/tinymux/docs/parser-escape-oracle.md).
 
-Production-control candidates now look like:
+Real traced command observations should be recorded separately in
+[docs/command-escape-oracle.txt](/home/sdennis/tinymux/docs/command-escape-oracle.txt)
+so command-layer normalization is not confused with parser semantics.
+
+That gives a tighter loop:
+
+1. add only escape/percent cases that distinguish parser semantics
+2. mark cases `confirmed` only after a live-engine checksum
+3. patch production only for divergences that are pinned by the oracle
+
+When the parser oracle and command oracle disagree, resolve that
+explicitly instead of forcing one layer's evidence into the other.
+
+Production-control candidates still look like:
 
 - scanner/tokenizer profile flags for Penn-only `%` forms
 - evaluator profile flags for `%` dispatch semantics
 - noeval branch/body policy for `if`/`switch`/`case`/`iter`
 
-The bboard case now suggests that TinyMUX 2.13 compatibility and Penn
-compatibility are separate controls, not one shared mode.
+The important design constraint is now clearer:
+
+- TinyMUX 2.13 compatibility is one target
+- optional Penn-inspired backslash cleanup is a separate target
+
+They should not share a single undifferentiated compatibility mode.

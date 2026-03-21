@@ -1,13 +1,18 @@
 # MUX Parser Study
 
 Standalone tools for studying the TinyMUX expression parser.
-See `../docs/design-parser-compatibility.md` for the compatibility analysis.
+See `../docs/design-parser-compatibility.md` for the compatibility analysis
+and `../docs/parser-escape-oracle.md` for the focused escape oracle.
+For end-to-end traced command behavior, see
+`../docs/command-escape-oracle.md`.
 
 ## Contents
 
 - `tokenize.cpp` — Stage 1: tokenizer (flat token stream)
 - `parse.cpp` — Stage 2: recursive-descent parser (AST)
 - `test_corpus.txt` — Test expressions
+- `escape_oracle_cases.txt` — focused cross-profile escape corpus
+- `run_escape_oracle.sh` — runner for the focused escape corpus
 - `Makefile` — Build rules
 
 ## Usage
@@ -20,6 +25,7 @@ echo '[setq(0,hello)]%q0 world' | ./parse
 echo '\\\\% capacity' | ./eval --profile mux214
 echo '[switch(1,1,{\\\\% capacity})]' | ./eval --profile mux213
 echo '%xg' | ./eval --profile penn
+./run_escape_oracle.sh
 ```
 
 ## Stages
@@ -83,3 +89,27 @@ echo '%xg' | ./eval --profile penn
 These profiles are intentionally incomplete. They are meant to help
 identify where parser behavior differs, not to claim full engine
 compatibility.
+
+## Escape Oracle
+
+The general evaluator tests in `test_eval.sh` are still useful, but they
+mix parser behavior with ordinary function coverage. For the compatibility
+work, use the focused oracle:
+
+```
+./run_escape_oracle.sh
+```
+
+That runner:
+
+- checks the narrow escape/percent corpus across `mux214`, `mux213`, and
+  `penn`
+- prints which cases still need live-server verification
+- keeps the current effort centered on parser semantics instead of the
+  whole evaluator surface area
+
+The intended workflow is:
+
+1. keep adding only parser-semantic cases to `escape_oracle_cases.txt`
+2. mark cases `confirmed` only after a live engine check
+3. use the resulting matrix to drive AST-engine changes in `mux/`

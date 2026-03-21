@@ -1,0 +1,12 @@
+# id|command_family|observed_input|mux213|penn|notes
+plain_single_known|@pemit|\%b|%b|%b|Observed from traced command runs after command-layer normalization.
+plain_triple_known|@pemit|\%b|%b|%b|User-entered @pemit source was '\\\%b', but traced effective expression collapsed to '\%b' before eval.
+noeval_if_brace_unknown|@pemit|[if(1,{\% capacity})]| capacity|% capacity|Observed traced command-level result.
+noeval_case_brace_unknown|@pemit|[case(1,1,{\% capacity})]| capacity|% capacity|Observed traced command-level result.
+noeval_iter_brace_unknown|@pemit|[iter(a b,{\% capacity})]| capacity  capacity|% capacity % capacity|Observed traced command-level result.
+noeval_switch_nobrace_unknown|@pemit|[switch(1,1,\% capacity)]| capacity|% capacity|Observed traced command-level result.
+noeval_switch_brace_known|@pemit|[switch(1,1,{\%b})]| |%b|Observed traced command-level result.
+noeval_iter_brace_known|@pemit|[iter(a b,{\%b})]|   |%b %b|Observed traced command-level result.
+pct_space|@pemit|50% happy|50 happy|50% happy|Observed traced command-level result.
+pct_iL_plain|@pemit|%iL|iL|#-1 ARGUMENT OUT OF RANGE|Observed traced command-level result.
+pct_iL_iter|@pemit|[iter(a b,%iL)]|iL iL|a b|Observed traced command-level result.
