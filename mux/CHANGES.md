@@ -408,6 +408,43 @@ Changes since TinyMUX 2.12.0.12.
  - Added `softlib.rv64` to the win32 binary distribution.
  - Removed stale `buildnum.sh` from unix distribution.
 
+# Changes in 2.14.0.4 (2026-MAR-21):
+
+ - JIT Tier 3: cross-attribute `u()` inlining. The JIT compiler can now
+   inline the body of helper attributes called via `u()` directly into
+   the caller's compiled code, eliminating ECALL overhead for hot paths.
+   Per-attribute `mod_count` column (schema v8) tracks mutations so
+   compiled code is automatically invalidated when any inlined dependency
+   changes. Dependency vectors are stored alongside compiled programs in
+   the SQLite code cache.
+ - JIT re-entrancy guard: nested `u()` calls that would recursively
+   invoke the JIT compiler now fall back to the AST evaluator instead of
+   hanging. This is the foundation that allows the compiler to do more
+   work per compilation unit without risk of recursive re-entry.
+ - JIT/SSA compiler fixes: fixed CFG hang when allocating merge blocks
+   after body lowering; fixed SSA hang when attempting to inline bodies
+   containing control flow; restricted `u()` inlining to literal
+   `#dbref/attr` patterns and clamped extra arguments.
+ - Replaced configurable `article_rule` with a Ragel -G2 scanner for
+   `art()`. The new scanner is faster and handles edge cases (silent
+   vowels, acronyms) without configuration.
+ - Added `muxscript`: a headless script driver that boots the engine
+   via COM, loads the database, and executes softcode from the command
+   line or a script file. Supports `-p` flag for player identity
+   selection and poll-based event loop for queue drain. Integrated into
+   the autotools build system.
+ - Fixed `stubslave` write path for non-blocking sockets: added proper
+   `POLLOUT` handling to avoid deadlock; replaced busy-wait with
+   `poll()` to fix 100% CPU spin in the main loop.
+ - Fixed `@switch` dropping `iter()` context (`##`, `#@`, itext) from
+   an enclosing `@dolist`.
+ - Fixed `sandbox()` not restoring alias permissions on exit.
+ - Added JIT/DBT source files to the Windows build (`engine.vcxproj`)
+   and fixed POSIX portability issues (`mmap`/`mprotect` guards,
+   `uint8_t` qualification) so the JIT headers compile cleanly on both
+   platforms.
+ - Removed dead `has_control_flow` helper from the SSA optimizer.
+
 # Changes in 2.14.0.3 (2026-MAR-20):
 
  - Added `muxescape/` directory to distribution TOCs (configure failed
