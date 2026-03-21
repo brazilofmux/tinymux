@@ -12,6 +12,8 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <utility>
+#include <vector>
 
 // Forward declaration (full definition in functions.h).
 struct tagFun;
@@ -85,7 +87,15 @@ int engine_api_lookup(const char *name);
 //
 void     attr_mod_count_inc(dbref obj, int attrnum);
 uint32_t attr_mod_count_get(dbref obj, int attrnum);
-void     attr_mod_count_invalidate_object(dbref obj);
 void     attr_mod_count_invalidate_all();
+
+// Two-phase bulk invalidation for transactional object deletion.
+// Phase 1: collect attr list + current counters (before delete, no mutation).
+// Phase 2: apply increments (after commit only).
+//
+std::vector<std::pair<uint64_t, uint32_t>>
+         attr_mod_count_collect_object(dbref obj);
+void     attr_mod_count_apply_increments(
+             const std::vector<std::pair<uint64_t, uint32_t>> &collected);
 
 #endif // ENGINE_API_H

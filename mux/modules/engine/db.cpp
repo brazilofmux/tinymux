@@ -66,36 +66,60 @@ void attr_mod_count_inc(dbref obj, int attrnum)
 // Sets each known entry to UINT32_MAX so any compiled dependency
 // comparing against it will always detect staleness.
 //
-void attr_mod_count_invalidate_object(dbref obj)
+// Collect the attr list for an object from both in-memory and SQLite.
+// Does NOT mutate the in-memory map.  Returns the set of keys that
+// need incrementing, with their current values seeded from SQLite
+// for any not yet in memory.
+//
+std::vector<std::pair<uint64_t, uint32_t>>
+attr_mod_count_collect_object(dbref obj)
 {
-    // Bulk deletion: increment every known attr counter for this object
-    // so any compiled dependency detects staleness.  For attrs not yet
-    // in the in-memory map, seed from SQLite first so the increment is
-    // monotonic.  This runs BEFORE the SQLite rows are deleted.
-    //
+    std::vector<std::pair<uint64_t, uint32_t>> result;
+
+    // Collect from SQLite first (covers attrs not yet in memory).
     if (g_pSQLiteBackend)
     {
         CSQLiteDB &db = g_pSQLiteBackend->GetDB();
-        // Load all attr mod_counts for this object into memory.
-        // GetAllAttrModCounts populates the map for any we haven't seen.
         db.GetAllAttrModCounts(obj, [&](int attrnum, uint32_t mc) {
             uint64_t key = attr_mod_key(obj, attrnum);
             auto it = s_attr_mod_counts.find(key);
-            if (it == s_attr_mod_counts.end())
-            {
-                s_attr_mod_counts[key] = mc;
-            }
+            uint32_t current = (it != s_attr_mod_counts.end())
+                             ? it->second : mc;
+            result.push_back({key, current});
         });
     }
 
-    // Now increment every entry for this object.
+    // Also collect any in-memory entries for this object that might
+    // not be in SQLite (e.g., from a prior delete that already
+    // removed the row but left the in-memory counter).
     uint32_t obj_bits = static_cast<uint32_t>(obj);
     for (auto &kv : s_attr_mod_counts)
     {
         if (static_cast<uint32_t>(kv.first >> 32) == obj_bits)
         {
-            kv.second++;
+            bool found = false;
+            for (auto &r : result)
+            {
+                if (r.first == kv.first) { found = true; break; }
+            }
+            if (!found)
+            {
+                result.push_back({kv.first, kv.second});
+            }
         }
+    }
+    return result;
+}
+
+// Apply collected increments to the in-memory map.
+// Called only after the transactional delete has committed.
+//
+void attr_mod_count_apply_increments(
+    const std::vector<std::pair<uint64_t, uint32_t>> &collected)
+{
+    for (auto &[key, old_val] : collected)
+    {
+        s_attr_mod_counts[key] = old_val + 1;
     }
 }
 

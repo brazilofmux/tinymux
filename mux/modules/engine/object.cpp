@@ -227,8 +227,8 @@ static void reconcile_failed_create_backend(dbref obj)
         rec.powers1   = db[obj].powers;
         rec.powers2   = db[obj].powers2;
 
-        // Seed in-memory mod_counts BEFORE deleting SQLite rows.
-        attr_mod_count_invalidate_object(obj);
+        // Phase 1: collect attr counters before delete (no mutation).
+        auto collected = attr_mod_count_collect_object(obj);
 
         if (  sqldb.DeleteObject(obj)
            && sqldb.DelAllAttributes(obj)
@@ -236,11 +236,14 @@ static void reconcile_failed_create_backend(dbref obj)
            && sqldb.PutMeta("db_top", mudstate.db_top)
            && sqldb.Commit())
         {
+            // Phase 2: apply increments only after successful commit.
+            attr_mod_count_apply_increments(collected);
             bCleaned = true;
         }
         else
         {
             sqldb.Rollback();
+            // No in-memory mutation — rollback is clean.
         }
     }
 
@@ -249,11 +252,13 @@ static void reconcile_failed_create_backend(dbref obj)
         bool bAttrsCleared = false;
         if (sqldb.Begin())
         {
-            // Seed in-memory mod_counts BEFORE deleting SQLite rows.
-            attr_mod_count_invalidate_object(obj);
+            // Phase 1: collect before delete (no mutation).
+            auto collected2 = attr_mod_count_collect_object(obj);
 
             if (sqldb.DelAllAttributes(obj) && sqldb.Commit())
             {
+                // Phase 2: apply only after commit.
+                attr_mod_count_apply_increments(collected2);
                 bAttrsCleared = true;
             }
             else
