@@ -98,6 +98,7 @@ public:
                       dbref owner, int flags);
     bool DelAttribute(dbref obj, int attrnum);
     uint32_t GetAttrModCount(dbref obj, int attrnum);
+    void GetAllAttrModCounts(dbref obj, std::function<void(int attrnum, uint32_t mc)> cb);
     bool DelAllAttributes(dbref obj);
     bool ClearAttributes();
 

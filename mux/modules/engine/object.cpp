@@ -227,13 +227,15 @@ static void reconcile_failed_create_backend(dbref obj)
         rec.powers1   = db[obj].powers;
         rec.powers2   = db[obj].powers2;
 
+        // Seed in-memory mod_counts BEFORE deleting SQLite rows.
+        attr_mod_count_invalidate_object(obj);
+
         if (  sqldb.DeleteObject(obj)
            && sqldb.DelAllAttributes(obj)
            && sqldb.InsertObject(rec)
            && sqldb.PutMeta("db_top", mudstate.db_top)
            && sqldb.Commit())
         {
-            attr_mod_count_invalidate_object(obj);
             bCleaned = true;
         }
         else
@@ -247,9 +249,11 @@ static void reconcile_failed_create_backend(dbref obj)
         bool bAttrsCleared = false;
         if (sqldb.Begin())
         {
+            // Seed in-memory mod_counts BEFORE deleting SQLite rows.
+            attr_mod_count_invalidate_object(obj);
+
             if (sqldb.DelAllAttributes(obj) && sqldb.Commit())
             {
-                attr_mod_count_invalidate_object(obj);
                 bAttrsCleared = true;
             }
             else

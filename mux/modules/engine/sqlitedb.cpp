@@ -1323,6 +1323,26 @@ uint32_t CSQLiteDB::GetAttrModCount(dbref obj, int attrnum)
     return result;
 }
 
+void CSQLiteDB::GetAllAttrModCounts(dbref obj,
+    std::function<void(int attrnum, uint32_t mc)> cb)
+{
+    sqlite3_stmt *stmt = nullptr;
+    if (SQLITE_OK != sqlite3_prepare_v2(m_db,
+        "SELECT attrnum, mod_count FROM attributes WHERE object=?",
+        -1, &stmt, nullptr))
+    {
+        return;
+    }
+    sqlite3_bind_int(stmt, 1, obj);
+    while (SQLITE_ROW == sqlite3_step(stmt))
+    {
+        int attrnum = sqlite3_column_int(stmt, 0);
+        uint32_t mc = static_cast<uint32_t>(sqlite3_column_int(stmt, 1));
+        cb(attrnum, mc);
+    }
+    sqlite3_finalize(stmt);
+}
+
 bool CSQLiteDB::DelAttribute(dbref obj, int attrnum)
 {
     sqlite3_bind_int(m_stmtAttrDel, 1, obj);

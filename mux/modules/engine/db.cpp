@@ -68,18 +68,42 @@ void attr_mod_count_inc(dbref obj, int attrnum)
 //
 void attr_mod_count_invalidate_object(dbref obj)
 {
+    // Bulk deletion: increment every known attr counter for this object
+    // so any compiled dependency detects staleness.  For attrs not yet
+    // in the in-memory map, seed from SQLite first so the increment is
+    // monotonic.  This runs BEFORE the SQLite rows are deleted.
+    //
+    if (g_pSQLiteBackend)
+    {
+        CSQLiteDB &db = g_pSQLiteBackend->GetDB();
+        // Load all attr mod_counts for this object into memory.
+        // GetAllAttrModCounts populates the map for any we haven't seen.
+        db.GetAllAttrModCounts(obj, [&](int attrnum, uint32_t mc) {
+            uint64_t key = attr_mod_key(obj, attrnum);
+            auto it = s_attr_mod_counts.find(key);
+            if (it == s_attr_mod_counts.end())
+            {
+                s_attr_mod_counts[key] = mc;
+            }
+        });
+    }
+
+    // Now increment every entry for this object.
     uint32_t obj_bits = static_cast<uint32_t>(obj);
     for (auto &kv : s_attr_mod_counts)
     {
         if (static_cast<uint32_t>(kv.first >> 32) == obj_bits)
         {
-            kv.second = UINT32_MAX;
+            kv.second++;
         }
     }
 }
 
 void attr_mod_count_invalidate_all()
 {
+    // Full database clear: wipe the in-memory map.  All counters
+    // restart from 0 on next access, which is correct because the
+    // JIT code cache is also cleared on database reload.
     s_attr_mod_counts.clear();
 }
 
