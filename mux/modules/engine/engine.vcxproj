@@ -113,6 +113,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="art_scan.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
+      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BrowseInformation>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Full</Optimization>
+      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Neither</FavorSizeOrSpeed>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
+    </ClCompile>
     <ClCompile Include="ast.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
@@ -201,6 +209,30 @@
       <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Neither</FavorSizeOrSpeed>
       <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
     </ClCompile>
+    <ClCompile Include="dbt.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
+      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BrowseInformation>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Full</Optimization>
+      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Neither</FavorSizeOrSpeed>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
+    </ClCompile>
+    <ClCompile Include="dbt_elf64.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
+      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BrowseInformation>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Full</Optimization>
+      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Neither</FavorSizeOrSpeed>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
+    </ClCompile>
+    <ClCompile Include="dbt_interp.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
+      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BrowseInformation>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Full</Optimization>
+      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Neither</FavorSizeOrSpeed>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
+    </ClCompile>
     <ClCompile Include="db.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
@@ -218,6 +250,14 @@
       <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
     </ClCompile>
     <ClCompile Include="engine.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
+      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BrowseInformation>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Full</Optimization>
+      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Neither</FavorSizeOrSpeed>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
+    </ClCompile>
+    <ClCompile Include="lua_bytecode.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
       <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BrowseInformation>
@@ -313,7 +353,63 @@
       <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Neither</FavorSizeOrSpeed>
       <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
     </ClCompile>
+    <ClCompile Include="hir_codegen.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
+      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BrowseInformation>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Full</Optimization>
+      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Neither</FavorSizeOrSpeed>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
+    </ClCompile>
+    <ClCompile Include="hir_lower.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
+      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BrowseInformation>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Full</Optimization>
+      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Neither</FavorSizeOrSpeed>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
+    </ClCompile>
+    <ClCompile Include="hir_lower_lua.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
+      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BrowseInformation>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Full</Optimization>
+      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Neither</FavorSizeOrSpeed>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
+    </ClCompile>
+    <ClCompile Include="hir_opt.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
+      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BrowseInformation>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Full</Optimization>
+      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Neither</FavorSizeOrSpeed>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
+    </ClCompile>
+    <ClCompile Include="hir_ssa.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
+      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BrowseInformation>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Full</Optimization>
+      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Neither</FavorSizeOrSpeed>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
+    </ClCompile>
     <ClCompile Include="htab.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
+      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BrowseInformation>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Full</Optimization>
+      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Neither</FavorSizeOrSpeed>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
+    </ClCompile>
+    <ClCompile Include="jit_compiler.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
+      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BrowseInformation>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Full</Optimization>
+      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Neither</FavorSizeOrSpeed>
+      <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BrowseInformation>
+    </ClCompile>
+    <ClCompile Include="jit_lua.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
       <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BrowseInformation>

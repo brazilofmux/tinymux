@@ -2681,12 +2681,30 @@ FUNCTION(fun_jitstats)
 // Returns a multi-line report with timings in microseconds.
 // ---------------------------------------------------------------
 
+#ifdef WIN32
+static double elapsed_us(const LARGE_INTEGER &start,
+                          const LARGE_INTEGER &end) {
+    LARGE_INTEGER freq;
+    QueryPerformanceFrequency(&freq);
+    return static_cast<double>(end.QuadPart - start.QuadPart) * 1e6
+         / static_cast<double>(freq.QuadPart);
+}
+#else
 static double elapsed_us(const struct timespec &start,
                           const struct timespec &end) {
     double s = static_cast<double>(end.tv_sec - start.tv_sec);
     double ns = static_cast<double>(end.tv_nsec - start.tv_nsec);
     return (s * 1e6) + (ns / 1e3);
 }
+#endif
+
+#ifdef WIN32
+#define BENCH_TIMER LARGE_INTEGER
+#define BENCH_NOW(t) QueryPerformanceCounter(&(t))
+#else
+#define BENCH_TIMER struct timespec
+#define BENCH_NOW(t) clock_gettime(CLOCK_MONOTONIC, &(t))
+#endif
 
 // Run the compiled program through the JIT.  Returns the result
 // string (written into caller-provided buffer).
@@ -2776,10 +2794,10 @@ FUNCTION(fun_rvbench)
     }
 
     // --- Benchmark 1: Native mux_exec ---
-    struct timespec t0, t1;
+    BENCH_TIMER t0, t1;
     int eval_flags = EV_FCHECK | EV_EVAL;
 
-    clock_gettime(CLOCK_MONOTONIC, &t0);
+    BENCH_NOW(t0);
     for (int i = 0; i < iterations; i++) {
         UTF8 *tbuf = alloc_lbuf("rvbench.native");
         UTF8 *tbufc = tbuf;
@@ -2788,11 +2806,11 @@ FUNCTION(fun_rvbench)
         *tbufc = '\0';
         free_lbuf(tbuf);
     }
-    clock_gettime(CLOCK_MONOTONIC, &t1);
+    BENCH_NOW(t1);
     double native_us = elapsed_us(t0, t1);
 
     // --- Benchmark 2: rveval compile-every-time ---
-    clock_gettime(CLOCK_MONOTONIC, &t0);
+    BENCH_NOW(t0);
     for (int i = 0; i < iterations; i++) {
         compiled_program p = compile_expression(expr, nLen);
         if (p.ok) {
@@ -2800,7 +2818,7 @@ FUNCTION(fun_rvbench)
             run_compiled(p, executor, caller, enactor, result, sizeof(result));
         }
     }
-    clock_gettime(CLOCK_MONOTONIC, &t1);
+    BENCH_NOW(t1);
     double compile_each_us = elapsed_us(t0, t1);
 
     // --- Benchmark 3: production path (compile cache + block cache) ---
@@ -2822,7 +2840,7 @@ FUNCTION(fun_rvbench)
             s_compile_cache.erase(cit);
         }
     }
-    clock_gettime(CLOCK_MONOTONIC, &t0);
+    BENCH_NOW(t0);
     for (int i = 0; i < iterations; i++) {
         compiled_program *cp = compile_cached(expr, nLen, EV_FMAND | EV_EVAL);
         if (cp) {
@@ -2831,7 +2849,7 @@ FUNCTION(fun_rvbench)
                                result, sizeof(result));
         }
     }
-    clock_gettime(CLOCK_MONOTONIC, &t1);
+    BENCH_NOW(t1);
     double cached_us = elapsed_us(t0, t1);
 
     // Format report.

@@ -19,7 +19,11 @@
 #include <cstdlib>
 #include <cstdarg>
 #include <cstring>
+#ifdef WIN32
+#include <windows.h>
+#else
 #include <sys/mman.h>
+#endif
 
 // ---------------------------------------------------------------
 // Register cache — 8-slot LRU for guest registers in host registers
@@ -2867,11 +2871,18 @@ int dbt_init(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
     dbt->num_patches = 0;
 
     // Allocate JIT code buffer (RWX).
+#ifdef WIN32
+    dbt->code_buf = static_cast<uint8_t *>(
+        VirtualAlloc(nullptr, CODE_BUF_SIZE,
+                     MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+    if (dbt->code_buf == nullptr) {
+#else
     dbt->code_buf = static_cast<uint8_t *>(
         mmap(nullptr, CODE_BUF_SIZE,
              PROT_READ | PROT_WRITE | PROT_EXEC,
              MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
     if (dbt->code_buf == MAP_FAILED) {
+#endif
         fprintf(stderr, "dbt: cannot allocate JIT code buffer\n");
         free(dbt->cache);
         dbt->cache = nullptr;
@@ -3204,8 +3215,13 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
 }
 
 void dbt_cleanup(dbt_state_t *dbt) {
+#ifdef WIN32
+    if (dbt->code_buf) {
+        VirtualFree(dbt->code_buf, 0, MEM_RELEASE);
+#else
     if (dbt->code_buf && dbt->code_buf != MAP_FAILED) {
         munmap(dbt->code_buf, CODE_BUF_SIZE);
+#endif
         dbt->code_buf = nullptr;
     }
     free(dbt->cache);
