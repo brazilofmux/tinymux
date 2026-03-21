@@ -1466,8 +1466,13 @@ static void ast_noeval_iter(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         // Evaluate the body subtree directly. ## and #@ resolve
         // natively from mudstate.itext/inum.
         //
-        ast_eval_branch(node->children[1].get(), buff, bufc,
-            executor, caller, enactor, eval, cargs, ncargs);
+        // Note: iter() body is not a noeval branch — evaluate directly.
+        // ast_eval_branch would route through the two-pass noeval→eval
+        // path intended for switch/if branches.
+        //
+        ast_eval_node(node->children[1].get(), buff, bufc,
+            executor, caller, enactor,
+            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     }
 
     mudstate.in_loop--;
