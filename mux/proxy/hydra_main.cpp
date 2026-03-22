@@ -3,6 +3,10 @@
 #include "session_manager.h"
 #include "account_manager.h"
 
+#ifdef GRPC_ENABLED
+#include "grpc_server.h"
+#endif
+
 #include <network_engine.h>
 #include <network_engine_factory.h>
 #include <network_types.h>
@@ -198,6 +202,19 @@ int main(int argc, char* argv[]) {
                  game.host.c_str(), game.port);
     }
 
+    // Start gRPC server if configured and compiled in
+#ifdef GRPC_ENABLED
+    std::unique_ptr<GrpcServer> grpcServer;
+    if (!config.grpcListenAddr.empty()) {
+        grpcServer = std::make_unique<GrpcServer>(sessionMgr, accounts, config);
+        std::string grpcErr;
+        if (!grpcServer->start(config.grpcListenAddr, grpcErr)) {
+            LOG_WARN("gRPC: %s", grpcErr.c_str());
+            grpcServer.reset();
+        }
+    }
+#endif
+
     LOG_INFO("Hydra ready");
 
     // ---- Event loop ----
@@ -276,6 +293,9 @@ int main(int argc, char* argv[]) {
     }
 
     LOG_INFO("Hydra shutting down");
+#ifdef GRPC_ENABLED
+    if (grpcServer) grpcServer->shutdown();
+#endif
     sessionMgr.shutdownSessions();
     engine->shutdown();
     accounts.shutdown();

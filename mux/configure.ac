@@ -94,6 +94,42 @@ AC_ARG_ENABLE(
 AM_CONDITIONAL([JIT_ENABLED], [test "x$jit_enabled" = "xyes"])
 AC_SUBST(TINYMUX_JIT)
 
+AC_MSG_CHECKING(whether to enable gRPC support for Hydra proxy)
+AC_ARG_ENABLE(
+  [grpc],
+  AS_HELP_STRING([--enable-grpc],[enable gRPC front-door for Hydra proxy (default is NO)]),
+  [
+    if test "x$enableval" = "xno"; then
+      grpc_enabled=no
+      AC_MSG_RESULT(no)
+    else
+      grpc_enabled=yes
+      GRPC_ENABLED="-DGRPC_ENABLED"
+      AC_MSG_RESULT(yes)
+    fi
+  ],
+  [
+    grpc_enabled=no
+    AC_MSG_RESULT(no)
+  ])
+AM_CONDITIONAL([GRPC_ENABLED], [test "x$grpc_enabled" = "xyes"])
+AC_SUBST(GRPC_ENABLED)
+
+dnl Check for gRPC libraries if enabled.
+if test "x$grpc_enabled" = "xyes"; then
+  PKG_CHECK_MODULES([GRPC], [grpc++ protobuf], [],
+    [AC_MSG_ERROR([gRPC++ and protobuf development libraries not found. Install them or use --disable-grpc.])]
+  )
+  AC_SUBST([GRPC_CFLAGS])
+  AC_SUBST([GRPC_LIBS])
+
+  AC_CHECK_PROG([PROTOC], [protoc], [protoc])
+  AC_CHECK_PROG([GRPC_CPP_PLUGIN], [grpc_cpp_plugin], [grpc_cpp_plugin])
+  if test -z "$PROTOC" || test -z "$GRPC_CPP_PLUGIN"; then
+    AC_MSG_ERROR([protoc and grpc_cpp_plugin are required for --enable-grpc])
+  fi
+fi
+
 AC_MSG_CHECKING(whether to enable inline MySQL)
 AC_ARG_ENABLE(
   [inlinesql],

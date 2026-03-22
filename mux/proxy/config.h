@@ -67,6 +67,9 @@ struct HydraConfig {
     int                         failedLoginLockout{5};      // failures before lockout
     int                         failedLoginLockoutMinutes{5};
 
+    // gRPC (optional, requires --enable-grpc at configure time)
+    std::string                 grpcListenAddr;  // e.g. "0.0.0.0:4204"
+
     // Logging
     std::string                 logFile{"hydra.log"};
     std::string                 logLevel{"info"};

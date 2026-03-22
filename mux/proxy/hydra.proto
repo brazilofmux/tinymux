@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+package hydra;
+
+// Authentication
+message AuthRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message AuthResponse {
+    bool success = 1;
+    string session_id = 2;
+    string error = 3;
+}
+
+// Game operations
+message ConnectRequest {
+    string session_id = 1;
+    string game_name = 2;
+}
+
+message ConnectResponse {
+    bool success = 1;
+    int32 link_number = 2;
+    string error = 3;
+}
+
+message InputRequest {
+    string session_id = 1;
+    string line = 2;
+    int32 link_number = 3;  // 0 = active link
+}
+
+message InputResponse {
+    bool success = 1;
+}
+
+message SubscribeRequest {
+    string session_id = 1;
+}
+
+message GameOutput {
+    string text = 1;
+    string source = 2;  // game name
+    int64 timestamp = 3;
+    int32 link_number = 4;
+}
+
+message Empty {}
+
+message GameInfo {
+    string name = 1;
+    string host = 2;
+    uint32 port = 3;
+    string type = 4;  // "local" or "remote"
+}
+
+message GameList {
+    repeated GameInfo games = 1;
+}
+
+message LinkInfo {
+    int32 number = 1;
+    string game_name = 2;
+    string state = 3;
+    string character = 4;
+    bool active = 5;
+}
+
+message LinkList {
+    repeated LinkInfo links = 1;
+}
+
+message LinkListRequest {
+    string session_id = 1;
+}
+
+// The Hydra gRPC service.
+service HydraService {
+    // Authenticate and create a session.
+    rpc Authenticate(AuthRequest) returns (AuthResponse);
+
+    // List available games.
+    rpc ListGames(Empty) returns (GameList);
+
+    // Connect to a game (creates a new link).
+    rpc Connect(ConnectRequest) returns (ConnectResponse);
+
+    // Send input to the active link (or a specific link).
+    rpc SendInput(InputRequest) returns (InputResponse);
+
+    // Subscribe to game output (server-streaming).
+    rpc Subscribe(SubscribeRequest) returns (stream GameOutput);
+
+    // List active links for a session.
+    rpc ListLinks(LinkListRequest) returns (LinkList);
+}
