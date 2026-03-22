@@ -8,6 +8,7 @@
 - ~~OutputQueue Pre-rendering~~ — Fixed: stores PUA, renders per-subscriber (634ce31)
 - ~~Saved Session Timestamps Clobbered~~ — Fixed in both restore paths (621a80b, 96b73e2)
 - ~~Dead Links Drop activeLink~~ — Fixed: remapped on compaction (621a80b)
+- ~~Config Parser Ignores TLS Material~~ — Fixed: TLS listener infra wired into GANL (8237a3a)
 
 ## Bugs & Technical Debt
 
@@ -20,11 +21,6 @@
 - **Issue:** Telnet IAC SB GMCP frames are manually constructed in `grpc_server.cpp` and `session_manager.cpp`.
 - **Impact:** Duplicate logic, potential for incorrect IAC escaping.
 - **Opportunity:** Centralize in a protocol helper function.
-
-### Config Parser Ignores TLS Material For Front-Door Listeners
-- **Issue:** `parseListenLine()` accepts `cert=` and `key=` for TLS listeners, but `hydra_main.cpp` never uses those fields.
-- **Impact:** TLS listener configuration looks supported but doesn't actually enable TLS. Security gap.
-- **Opportunity:** Wire TLS material into GANL's listener or use post-accept TLS wrapping.
 
 ### Restored Detached Sessions Cannot Persist New Scrollback
 - **Issue:** Eagerly restored sessions have no `scrollbackKey` (requires player login). New game output received before login only lives in memory.
