@@ -304,8 +304,8 @@ bool serialize_restart(App& app, const std::string& path,
     for (auto& [name, conn] : app.connections) {
         if (!conn->is_connected()) continue;
 
-        // SSL/MCCP connections can't survive execv — add to reconnect list
-        if (conn->uses_ssl() || conn->mccp_active()) {
+        // SSL/MCCP/Hydra connections can't survive execv — reconnect after
+        if (conn->uses_ssl() || conn->mccp_active() || conn->is_hydra()) {
             reconnect_list.push_back(name);
             continue;
         }
@@ -672,9 +672,9 @@ void perform_restart(App& app, const std::vector<std::string>& original_argv) {
 
     std::string path = restart_file_path();
 
-    // Warn and disconnect SSL/MCCP connections
+    // Warn and disconnect SSL/MCCP/Hydra connections (can't survive execv)
     for (auto& [name, conn] : app.connections) {
-        if (conn->is_connected() && (conn->uses_ssl() || conn->mccp_active())) {
+        if (conn->is_connected() && (conn->uses_ssl() || conn->mccp_active() || conn->is_hydra())) {
             app.terminal.print_system("% " + name + ": SSL/MCCP connection will be disconnected and auto-reconnected");
         }
     }
