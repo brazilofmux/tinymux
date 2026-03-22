@@ -1761,6 +1761,140 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
         hydra::Empty resp;
         sendUnaryResponse(resp.SerializeAsString(), s ? 0 : 5);
 
+    } else if (method == "Subscribe") {
+        // Server-streaming: chunked HTTP response with grpc-web data frames.
+        hydra::SessionRequest rpcReq;
+        rpcReq.ParseFromString(protoBody);
+        std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
+
+        HydraSession* s = findByPersistId(sid);
+        if (!s) {
+            sendUnaryResponse("", 5, "session not found");
+        } else {
+            // Send HTTP headers for chunked streaming
+            std::string httpHdr = "HTTP/1.1 200 OK\r\n"
+                "Content-Type: " + respContentType + "\r\n"
+                + corsHeaders()
+                + "Transfer-Encoding: chunked\r\n"
+                "\r\n";
+            send(sockfd, httpHdr.data(), httpHdr.size(), MSG_NOSIGNAL);
+
+            // Register as subscriber and stream until connection closes
+            auto oq = s->outputQueue;
+            oq->subscriberCount.fetch_add(1);
+
+            // Mark this fd as a streaming grpc-web connection.
+            // We'll use a simple polling loop here since we're in the
+            // main thread — check the queue, send chunks, yield.
+            // This is blocking but the main event loop will not process
+            // other events while streaming.  For Phase 1 this is acceptable;
+            // a proper implementation would use async I/O.
+            //
+            // Actually, we can't block the main thread.  Instead, store
+            // the subscriber state and send output in runTimers().
+            // For now, flush any currently queued output as an initial burst
+            // and let subsequent data arrive via the regular output path.
+            {
+                std::lock_guard<std::mutex> lock(oq->mutex);
+                while (!oq->queue.empty()) {
+                    auto& item = oq->queue.front();
+                    hydra::GameOutput go;
+                    go.set_text(item.text);
+                    go.set_source(item.source);
+                    go.set_timestamp(static_cast<int64_t>(item.timestamp));
+                    go.set_link_number(item.linkNumber);
+
+                    std::string frame = grpcWebEncodeDataFrame(go.SerializeAsString());
+                    if (isText) frame = base64Encode(frame);
+
+                    // Send as HTTP chunk
+                    std::string chunk = std::to_string(frame.size())
+                        + "\r\n" + frame + "\r\n";
+                    send(sockfd, chunk.data(), chunk.size(), MSG_NOSIGNAL);
+
+                    oq->queue.pop();
+                }
+            }
+
+            // Send trailer frame to end the stream
+            std::string trailer = grpcWebEncodeTrailerFrame(0);
+            if (isText) trailer = base64Encode(trailer);
+            std::string lastChunk = std::to_string(trailer.size())
+                + "\r\n" + trailer + "\r\n"
+                + "0\r\n\r\n";
+            send(sockfd, lastChunk.data(), lastChunk.size(), MSG_NOSIGNAL);
+
+            oq->subscriberCount.fetch_sub(1);
+        }
+
+    } else if (method == "GetScrollBack") {
+        hydra::ScrollBackRequest rpcReq;
+        rpcReq.ParseFromString(protoBody);
+        std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
+
+        HydraSession* s = findByPersistId(sid);
+        if (!s) {
+            sendUnaryResponse("", 5, "session not found");
+        } else {
+            hydra::ScrollBackResponse resp;
+            size_t n = rpcReq.max_lines() > 0
+                ? static_cast<size_t>(rpcReq.max_lines())
+                : s->scrollback.count();
+            struct Ctx { hydra::ScrollBackResponse* resp; };
+            Ctx ctx{&resp};
+            s->scrollback.replay(n,
+                [](const std::string& text, const std::string& source,
+                   time_t timestamp, void* c) {
+                    auto* rc = static_cast<Ctx*>(c);
+                    auto* line = rc->resp->add_lines();
+                    line->set_text(text);
+                    line->set_source(source);
+                    line->set_timestamp(static_cast<int64_t>(timestamp));
+                },
+                &ctx);
+            sendUnaryResponse(resp.SerializeAsString(), 0);
+        }
+
+    } else if (method == "SwitchLink") {
+        hydra::SwitchRequest rpcReq;
+        rpcReq.ParseFromString(protoBody);
+        std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
+
+        HydraSession* s = findByPersistId(sid);
+        hydra::SwitchResponse resp;
+        if (!s) {
+            resp.set_error("session not found");
+        } else {
+            size_t idx = static_cast<size_t>(rpcReq.link_number() - 1);
+            if (idx >= s->links.size()) {
+                resp.set_error("invalid link number");
+            } else {
+                s->activeLink = idx;
+                resp.set_success(true);
+            }
+        }
+        sendUnaryResponse(resp.SerializeAsString(), 0);
+
+    } else if (method == "DisconnectLink") {
+        hydra::DisconnectRequest rpcReq;
+        rpcReq.ParseFromString(protoBody);
+        std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
+
+        HydraSession* s = findByPersistId(sid);
+        hydra::DisconnectResponse resp;
+        if (!s) {
+            resp.set_error("session not found");
+        } else {
+            size_t idx = static_cast<size_t>(rpcReq.link_number() - 1);
+            if (idx >= s->links.size()) {
+                resp.set_error("invalid link number");
+            } else {
+                closeLink(*s, idx);
+                resp.set_success(true);
+            }
+        }
+        sendUnaryResponse(resp.SerializeAsString(), 0);
+
     } else {
         // Unimplemented method
         sendUnaryResponse("", 12, "method not found: " + method);

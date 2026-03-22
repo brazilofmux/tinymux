@@ -2,21 +2,41 @@
 #
 # Copy to hydra.conf and edit for your deployment.
 
-# --- Network ---
+# --- Network listeners ---
 # listen <type> <host:port> [cert=<path> key=<path>]
+#
+# Types: telnet, telnet+tls, websocket, websocket+tls, grpc-web
 listen telnet       0.0.0.0:4201
-listen telnet+tls   0.0.0.0:4202 cert=hydra.pem key=hydra.key
+# listen telnet+tls   0.0.0.0:4202 cert=hydra.pem key=hydra.key
+# listen websocket    0.0.0.0:4203
+# listen grpc-web     0.0.0.0:4205
+
+# --- gRPC native (optional, requires --enable-grpc at build time) ---
+# grpc_listen 0.0.0.0:4204
 
 # --- Database ---
 database hydra.sqlite
 
 # --- Master key (for game credential encryption) ---
+# Generate with: dd if=/dev/urandom bs=32 count=1 of=master.key
+# Without this, auto-login and credential storage are disabled.
 # master_key /etc/hydra/master.key
 
 # --- Session defaults ---
-scrollback_lines    10000
-session_idle_timeout 86400
-# detached_session_timeout 86400
+scrollback_lines            10000
+session_idle_timeout        86400
+detached_session_timeout    86400
+link_reconnect_timeout      300
+
+# --- Resource limits ---
+max_sessions_per_account    1
+max_frontdoors_per_session  3
+max_links_per_session       5
+max_scrollback_memory_mb    64
+max_connections_per_ip      10
+connect_rate_limit          5
+failed_login_lockout        5
+failed_login_lockout_minutes 5
 
 # --- Logging ---
 log_file hydra.log

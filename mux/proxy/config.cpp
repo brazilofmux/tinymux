@@ -55,7 +55,10 @@ static bool parseListenLine(const std::string& value, ListenConfig& lc,
     rest = trim(rest);
 
     std::string lt = toLower(type);
-    lc.tls = (lt == "telnet+tls" || lt == "websocket" || lt == "grpc");
+    lc.tls = (lt == "telnet+tls");
+    lc.websocket = (lt == "websocket" || lt == "websocket+tls");
+    lc.grpcWeb = (lt == "grpc-web" || lt == "grpcweb");
+    if (lt == "websocket+tls") lc.tls = true;
 
     // Parse host:port
     size_t colon = hostport.rfind(':');
@@ -79,6 +82,8 @@ static bool parseListenLine(const std::string& value, ListenConfig& lc,
             return false;
         }
     }
+    // Non-TLS websocket/grpc-web may have optional params in rest
+    // (currently none, but future-proof)
     return true;
 }
 
@@ -210,6 +215,35 @@ bool loadConfig(const std::string& path, HydraConfig& config,
             catch (...) {}
         } else if (key == "detached_session_timeout") {
             try { config.detachedSessionTimeout = std::stoi(value); }
+            catch (...) {}
+        } else if (key == "link_reconnect_timeout") {
+            try { config.linkReconnectTimeout = std::stoi(value); }
+            catch (...) {}
+        } else if (key == "grpc_listen") {
+            config.grpcListenAddr = value;
+        } else if (key == "max_sessions_per_account") {
+            try { config.maxSessionsPerAccount = std::stoi(value); }
+            catch (...) {}
+        } else if (key == "max_frontdoors_per_session") {
+            try { config.maxFrontDoorsPerSession = std::stoi(value); }
+            catch (...) {}
+        } else if (key == "max_links_per_session") {
+            try { config.maxLinksPerSession = std::stoi(value); }
+            catch (...) {}
+        } else if (key == "max_scrollback_memory_mb") {
+            try { config.maxScrollbackMemoryMb = std::stoul(value); }
+            catch (...) {}
+        } else if (key == "max_connections_per_ip") {
+            try { config.maxConnectionsPerIp = std::stoi(value); }
+            catch (...) {}
+        } else if (key == "connect_rate_limit") {
+            try { config.connectRateLimit = std::stoi(value); }
+            catch (...) {}
+        } else if (key == "failed_login_lockout") {
+            try { config.failedLoginLockout = std::stoi(value); }
+            catch (...) {}
+        } else if (key == "failed_login_lockout_minutes") {
+            try { config.failedLoginLockoutMinutes = std::stoi(value); }
             catch (...) {}
         } else if (key == "log_file") {
             config.logFile = value;
