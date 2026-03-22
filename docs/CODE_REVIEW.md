@@ -9,8 +9,6 @@ TinyMUX is mid-transition from a C-style legacy codebase to modern C++17. While 
 
 ### 1.1 Manual Resource Management (The "Last Mile" of STL)
 
-- **`walkdb.cpp` (Object Block Lists):** Still uses `objlist_block` intrusive linked lists of `dbref` arrays for `@search` and `@find`. 
-    - *Opportunity:* Replace with `std::vector<dbref>` and `std::stack<std::vector<dbref>>`. This eliminates manual pointer arithmetic and improves safety during complex object scans.
 - **`dbt.cpp` (JIT Internals):** Relies on `calloc` for fixed-size arrays like `patches` and `cache` (e.g., `MAX_PATCH_SITES`).
     - *Opportunity:* Convert to `std::vector`. This allows the JIT to handle larger/more complex functions without hitting arbitrary hardcoded limits.
 
@@ -42,6 +40,6 @@ Softcode evaluation is currently single-threaded and relies heavily on global st
 
 | Category | Priority | Impact | Effort |
 |----------|----------|--------|--------|
-| STL Conversion (`walkdb`, `dbt`) | High | Stability | Low |
+| STL Conversion (`dbt`) | High | Stability | Low |
 | JIT Level 3 (Inlining) | High | 2-3x Performance | High |
 | Concurrent Evaluation | Low | Scalability | Very High |

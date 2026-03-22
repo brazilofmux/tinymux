@@ -6,10 +6,9 @@
 ## Phase 1: Stability & Foundation (Weeks 1-4)
 **Goal:** Eliminate the last major pieces of legacy C-style memory management.
 
-- **[ ] Complete STL Conversion:**
-    - Replace `objlist_block` / `objlist_stack` in `walkdb.cpp` with `std::vector<dbref>` and `std::stack`.
+- **[ ] Finish DBT STL conversion:**
     - Replace `calloc`/fixed arrays in `dbt.cpp` with `std::vector`.
-    - **Outcome:** -500 lines of code, improved safety, no more `MAX_PATCH_SITES` limit.
+    - **Outcome:** Improved safety and no more `MAX_PATCH_SITES` limit.
 
 ## Phase 2: High Performance (Weeks 5-12)
 **Goal:** Advance the JIT/DBT pipeline to its full potential.

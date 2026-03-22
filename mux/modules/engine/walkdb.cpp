@@ -1336,30 +1336,13 @@ void do_apply_marked( dbref executor, dbref caller, dbref enactor, int eval,
 //
 void olist_push(void)
 {
-    OLSTK *ol = nullptr;
     try
     {
-        ol = new OLSTK;
+        mudstate.olist.emplace();
     }
-    catch (...)
+    catch (const std::bad_alloc &)
     {
-        ; // Nothing.
-    }
-
-    if (nullptr != ol)
-    {
-        ol->next = mudstate.olist;
-        mudstate.olist = ol;
-
-        ol->head = nullptr;
-        ol->tail = nullptr;
-        ol->cblock = nullptr;
-        ol->count = 0;
-        ol->citm = 0;
-    }
-    else
-    {
-        ISOUTOFMEMORY(ol);
+        ISOUTOFMEMORY(0);
     }
 }
 
@@ -1367,81 +1350,52 @@ void olist_push(void)
 //
 void olist_pop(void)
 {
-    OLSTK *ol = mudstate.olist->next;
-    OBLOCK *op, *onext;
-    for (op = mudstate.olist->head; op != nullptr; op = onext)
+    if (!mudstate.olist.empty())
     {
-        onext = op->next;
-        free_lbuf(op);
+        mudstate.olist.pop();
     }
-    delete mudstate.olist;
-    mudstate.olist = ol;
 }
 
 // olist_add: Add an entry to the object list.
 //
 void olist_add(dbref item)
 {
-    OBLOCK *op;
-
-    if (!mudstate.olist->head)
+    if (mudstate.olist.empty())
     {
-        op = reinterpret_cast<OBLOCK *>(alloc_lbuf("olist_add.first"));
-        mudstate.olist->head = mudstate.olist->tail = op;
-        mudstate.olist->count = 0;
-        op->next = nullptr;
+        olist_push();
     }
-    else if (mudstate.olist->count >= OBLOCK_SIZE)
-    {
-        op = reinterpret_cast<OBLOCK *>(alloc_lbuf("olist_add.next"));
-        mudstate.olist->tail->next = op;
-        mudstate.olist->tail = op;
-        mudstate.olist->count = 0;
-        op->next = nullptr;
-    }
-    else
-    {
-        op = mudstate.olist->tail;
-    }
-    op->data[mudstate.olist->count++] = item;
+    mudstate.olist.top().entries.push_back(item);
 }
 
 // olist_first: Return the first entry in the object list.
 //
 dbref olist_first(void)
 {
-    if (!mudstate.olist->head)
+    if (mudstate.olist.empty())
     {
         return NOTHING;
     }
-    if (  (mudstate.olist->head == mudstate.olist->tail)
-       && (mudstate.olist->count == 0))
+    auto &current = mudstate.olist.top();
+    if (current.entries.empty())
     {
         return NOTHING;
     }
-    mudstate.olist->cblock = mudstate.olist->head;
-    mudstate.olist->citm = 0;
-    return mudstate.olist->cblock->data[mudstate.olist->citm++];
+    current.cursor = 0;
+    return current.entries[current.cursor++];
 }
 
 dbref olist_next(void)
 {
-    if (!mudstate.olist->cblock)
+    if (mudstate.olist.empty())
     {
         return NOTHING;
     }
-    if (  (mudstate.olist->cblock == mudstate.olist->tail)
-       && (mudstate.olist->citm >= mudstate.olist->count))
+    auto &current = mudstate.olist.top();
+    if (current.cursor >= current.entries.size())
     {
         return NOTHING;
     }
-    dbref thing = mudstate.olist->cblock->data[mudstate.olist->citm++];
-    if (mudstate.olist->citm >= OBLOCK_SIZE)
-    {
-        mudstate.olist->cblock = mudstate.olist->cblock->next;
-        mudstate.olist->citm = 0;
-    }
-    return thing;
+    return current.entries[current.cursor++];
 }
 
 #define HOURS_PER_PERIOD  4

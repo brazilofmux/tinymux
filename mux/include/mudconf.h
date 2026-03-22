@@ -7,6 +7,8 @@
 #define MUDCONF_H
 
 #include <set>
+#include <stack>
+#include <vector>
 
 struct PRONOUN_SET
 {
@@ -387,25 +389,13 @@ private:
     mux_subnet_node *joinlr(mux_subnet_node *a, mux_subnet_node *b);
 };
 
-typedef struct objlist_block OBLOCK;
-struct objlist_block
+struct ObjectListFrame
 {
-    struct objlist_block *next;
-    dbref   data[(LBUF_SIZE - sizeof(OBLOCK *)) / sizeof(dbref)];
+    std::vector<dbref> entries;
+    size_t cursor = 0;
 };
 
-#define OBLOCK_SIZE ((LBUF_SIZE - sizeof(OBLOCK *)) / sizeof(dbref))
-
-typedef struct objlist_stack OLSTK;
-struct objlist_stack
-{
-    struct objlist_stack *next; /* Next object list in stack */
-    OBLOCK  *head;              /* Head of object list */
-    OBLOCK  *tail;              /* Tail of object list */
-    OBLOCK  *cblock;            /* Current block for scan */
-    unsigned int count;         /* Number of objs in last obj list block */
-    unsigned int citm;          /* Current item for scan */
-};
+using ObjectListStack = std::stack<ObjectListFrame>;
 
 typedef struct markbuf MARKBUF;
 struct markbuf
@@ -539,7 +529,7 @@ struct statedata
     BADNAME *badname_head;      /* List of disallowed names */
     HELP_DESC *aHelpDesc;       // Table of help files hashes.
     MARKBUF *markbits;          /* temp storage for marking/unmarking */
-    OLSTK   *olist;             /* Stack of object lists for nested searches */
+    ObjectListStack olist;      /* Stack of object lists for nested searches */
     mux_subnets access_list;    /* Access/suspect attributes for subnets */
 
     ATTRPERM *attrperm_list;    /* Wildcarded attribute permissions list */

@@ -329,7 +329,7 @@ void cf_init(void)
     mudstate.attr_iter_ctx.attrs.clear();
     mudstate.attr_iter_ctx.pos = 0;
     mudstate.attr_iter_stack.clear();
-    mudstate.olist = nullptr;
+    mudstate.olist = ObjectListStack();
     mudstate.min_size = 0;
     mudstate.db_top = 0;
     mudstate.db_size = 0;

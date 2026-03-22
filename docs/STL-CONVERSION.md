@@ -107,18 +107,17 @@ Public API (`alloc.h`) unchanged—zero callers affected. POOLHDR shrinks by
 
 Net: rewrite of alloc.cpp internals. All 551 smoke tests pass.
 
-### 7. Object Block Lists (`mux/modules/engine/walkdb.cpp`)
+### Object List Stack (`mux/modules/engine/walkdb.cpp`)
+**Commit:** (2026-03-23, codex)
 
-| Pattern | Location | Replacement |
-|---------|----------|-------------|
-| `objlist_block *next` intrusive linked list of dbref arrays | mudconf.h:392–405 | `std::vector<dbref>` |
-| `objlist_stack *next` stack of block lists | mudconf.h:392 | `std::stack<std::vector<dbref>>` |
+| Old Pattern | New Pattern |
+|-------------|-------------|
+| `objlist_block *next` intrusive linked list of dbref arrays | `std::vector<dbref>` inside `ObjectListFrame` |
+| `objlist_stack` manual struct with `head`/`tail`/`cblock` pointers | `std::stack<ObjectListFrame>` with RAII-managed frames |
 
-**Rationale for deferral:** These are transient structures used only during
-`@search`/`@find` operations. Allocated and freed within a single function
-call. Small blast radius but also small benefit.
+`@search`/`@find` and other traversal helpers now rely on STL storage, eliminating bespoke `lbuf` block management and making nested scans exception-safe. No behavior changes were observed in smoke tests.
 
-### 8. DBT/JIT Fixed Arrays (`mux/modules/engine/dbt.cpp`)
+### 7. DBT/JIT Fixed Arrays (`mux/modules/engine/dbt.cpp`)
 
 | Pattern | Location | Replacement |
 |---------|----------|-------------|
