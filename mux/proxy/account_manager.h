@@ -58,6 +58,9 @@ public:
     // Delete a session and its scroll-back.
     bool deleteSession(const std::string& sessionId);
 
+    // Load all saved sessions (for eager restore on startup).
+    std::vector<SavedSession> loadAllSessions();
+
     // Access the database handle (for scroll-back flush/load).
     sqlite3* db() { return db_; }
 

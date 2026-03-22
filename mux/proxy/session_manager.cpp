@@ -1300,16 +1300,18 @@ void SessionManager::flushSession(HydraSession& session) {
     std::string created = std::to_string(session.created);
     std::string lastActive = std::to_string(session.lastActivity);
 
-    // Serialize links as JSON array
-    std::string linksJson = "[";
+    // Serialize links as JSON object with activeLink and link array
+    std::string linksJson = "{\"activeLink\":"
+        + std::to_string(session.activeLink) + ",\"links\":[";
     bool first = true;
     for (const auto& link : session.links) {
         if (link.state == LinkState::Dead) continue;
         if (!first) linksJson += ",";
-        linksJson += "{\"game\":\"" + link.gameName + "\"}";
+        linksJson += "{\"game\":\"" + link.gameName
+                   + "\",\"character\":\"" + link.character + "\"}";
         first = false;
     }
-    linksJson += "]";
+    linksJson += "]}";
 
     std::string errorMsg;
     if (!accounts_.saveSession(session.persistId, session.accountId,
@@ -1347,13 +1349,24 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
     int loaded = session.scrollback.loadFromDb(
         accounts_.db(), saved.id, accountId, sbKey);
 
+    // Restore links from JSON
+    std::vector<SavedLinkInfo> savedLinks;
+    size_t savedActiveLink = 0;
+    parseLinksJson(saved.linksJson, savedLinks, savedActiveLink);
+    session.activeLink = savedActiveLink;
+
     fd.sessionId = session.id;
-    sessions_[session.id] = std::move(session);
+    HydraSessionId sessId = session.id;
+    sessions_[sessId] = std::move(session);
     HydraSession& sess = sessions_[fd.sessionId];
 
-    LOG_INFO("Session %lu (%s) restored from SQLite for '%s' (%d lines)",
+    // Reconnect saved links
+    restoreSessionLinks(sess, savedLinks);
+
+    LOG_INFO("Session %lu (%s) restored from SQLite for '%s' (%d lines, %zu links)",
              (unsigned long)fd.sessionId, saved.id.c_str(),
-             fd.pendingUsername.c_str(), loaded > 0 ? loaded : 0);
+             fd.pendingUsername.c_str(), loaded > 0 ? loaded : 0,
+             savedLinks.size());
 
     sendToClient(fd.handle, "\r\nRestoring saved session...\r\n");
 
@@ -1389,6 +1402,11 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
 void SessionManager::shutdownSessions() {
     LOG_INFO("Flushing all sessions before shutdown");
     for (auto& [sid, session] : sessions_) {
+        // Notify connected clients
+        for (auto h : session.frontDoors) {
+            sendToClient(h, "\r\n[Hydra shutting down — reconnect to resume]\r\n");
+        }
+        // Flush session state and scroll-back to SQLite
         flushSession(session);
         // Wake any blocked gRPC subscribers so they can exit
         session.outputQueue->cv.notify_all();
@@ -1434,10 +1452,19 @@ std::string SessionManager::authenticateAndGetSession(
         session.scrollback.loadFromDb(
             accounts_.db(), saved.id, accountId, sbKey);
 
-        sessions_[session.id] = std::move(session);
-        LOG_INFO("Session %lu (%s) restored via gRPC for '%s'",
-                 (unsigned long)session.id, saved.id.c_str(),
-                 username.c_str());
+        // Restore links from JSON
+        std::vector<SavedLinkInfo> savedLinks;
+        size_t savedActiveLink = 0;
+        parseLinksJson(saved.linksJson, savedLinks, savedActiveLink);
+        session.activeLink = savedActiveLink;
+
+        HydraSessionId sessId = session.id;
+        sessions_[sessId] = std::move(session);
+        restoreSessionLinks(sessions_[sessId], savedLinks);
+
+        LOG_INFO("Session %lu (%s) restored via gRPC for '%s' (%zu links)",
+                 (unsigned long)sessId, saved.id.c_str(),
+                 username.c_str(), savedLinks.size());
         return saved.id;
     }
 
@@ -1458,4 +1485,115 @@ std::string SessionManager::authenticateAndGetSession(
              (unsigned long)(nextSessionId_ - 1), pid.c_str(),
              username.c_str());
     return pid;
+}
+
+// ---- Phase 4: Session serialization ----
+
+// Extract a JSON string value after a key like "game":"value"
+static std::string extractJsonString(const std::string& json,
+                                     const std::string& key, size_t startPos) {
+    std::string needle = "\"" + key + "\":\"";
+    size_t pos = json.find(needle, startPos);
+    if (pos == std::string::npos) return "";
+    pos += needle.size();
+    size_t end = json.find('"', pos);
+    if (end == std::string::npos) return "";
+    return json.substr(pos, end - pos);
+}
+
+bool SessionManager::parseLinksJson(const std::string& json,
+                                    std::vector<SavedLinkInfo>& links,
+                                    size_t& activeLink) {
+    links.clear();
+    activeLink = 0;
+
+    if (json.empty()) return false;
+
+    // Parse activeLink number
+    std::string alKey = "\"activeLink\":";
+    size_t alPos = json.find(alKey);
+    if (alPos != std::string::npos) {
+        activeLink = static_cast<size_t>(
+            std::atoi(json.c_str() + alPos + alKey.size()));
+    }
+
+    // Parse links array — find each {"game":"...","character":"..."}
+    size_t pos = 0;
+    while ((pos = json.find("{\"game\":", pos)) != std::string::npos) {
+        SavedLinkInfo li;
+        li.game = extractJsonString(json, "game", pos);
+        li.character = extractJsonString(json, "character", pos);
+        if (!li.game.empty()) {
+            links.push_back(std::move(li));
+        }
+        pos++;  // advance past this match
+    }
+
+    return !links.empty();
+}
+
+void SessionManager::restoreSessionLinks(HydraSession& session,
+                                         const std::vector<SavedLinkInfo>& savedLinks) {
+    for (const auto& sl : savedLinks) {
+        // Resolve game config by name
+        const GameConfig* game = nullptr;
+        for (const auto& g : config_.games) {
+            if (g.name == sl.game) { game = &g; break; }
+        }
+        if (!game) {
+            LOG_WARN("Session %s: saved link for unknown game '%s', skipping",
+                     session.persistId.c_str(), sl.game.c_str());
+            continue;
+        }
+
+        // Initiate connection via connectToGame (creates link + backDoorMap entry)
+        connectToGame(session, sl.game);
+
+        // Set the character name on the newly created link
+        if (!session.links.empty()) {
+            session.links.back().character = sl.character;
+        }
+    }
+
+    // Restore activeLink index (clamp to valid range)
+    if (session.activeLink >= session.links.size() && !session.links.empty()) {
+        session.activeLink = 0;
+    }
+}
+
+void SessionManager::restoreAllSessions() {
+    auto saved = accounts_.loadAllSessions();
+    if (saved.empty()) {
+        LOG_INFO("No saved sessions to restore");
+        return;
+    }
+
+    LOG_INFO("Restoring %zu saved sessions", saved.size());
+
+    for (const auto& s : saved) {
+        // Create in-memory session (detached — no front-door yet)
+        HydraSession session;
+        session.id = nextSessionId_++;
+        session.accountId = s.accountId;
+        session.created = time(nullptr);
+        session.lastActivity = session.created;
+        session.persistId = s.id;
+        session.state = SessionState::Detached;
+        // scrollbackKey is empty — can't decrypt scroll-back until player logs in
+        // Links can still reconnect though
+
+        std::vector<SavedLinkInfo> savedLinks;
+        size_t savedActiveLink = 0;
+        parseLinksJson(s.linksJson, savedLinks, savedActiveLink);
+        session.activeLink = savedActiveLink;
+
+        HydraSessionId sessId = session.id;
+        sessions_[sessId] = std::move(session);
+
+        // Reconnect saved links (back-door connections)
+        restoreSessionLinks(sessions_[sessId], savedLinks);
+
+        LOG_INFO("Restored session %s (account %u, %zu links)",
+                 s.id.c_str(), s.accountId, savedLinks.size());
+    }
 }

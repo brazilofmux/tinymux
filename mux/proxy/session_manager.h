@@ -140,6 +140,10 @@ public:
     std::string authenticateAndGetSession(const std::string& username,
                                           const std::string& password);
 
+    // Eagerly restore all saved sessions from SQLite on startup.
+    // Links are reconnected; scroll-back stays encrypted until client authenticates.
+    void restoreAllSessions();
+
     // Expose internals for gRPC work items (called from main thread only).
     const HydraConfig& config() const { return config_; }
     AccountManager& accounts() { return accounts_; }
@@ -165,6 +169,17 @@ private:
     void forwardToGame(HydraSession& session,
                        ganl::ConnectionHandle fdHandle,
                        const std::string& line);
+
+    // Parse links_json and reconstruct BackDoorLink objects + activeLink.
+    struct SavedLinkInfo {
+        std::string game;
+        std::string character;
+    };
+    static bool parseLinksJson(const std::string& json,
+                               std::vector<SavedLinkInfo>& links,
+                               size_t& activeLink);
+    void restoreSessionLinks(HydraSession& session,
+                             const std::vector<SavedLinkInfo>& savedLinks);
 
     // Look up session + link from a back-door handle.
     bool findByBackDoor(ganl::ConnectionHandle bdHandle,

@@ -387,6 +387,36 @@ bool AccountManager::deleteSession(const std::string& sessionId) {
     return rc == SQLITE_DONE;
 }
 
+std::vector<AccountManager::SavedSession>
+AccountManager::loadAllSessions() {
+    std::vector<SavedSession> result;
+    if (!db_) return result;
+
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql =
+        "SELECT id, account_id, created, last_active, links_json"
+        " FROM saved_sessions";
+    int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) return result;
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        SavedSession s;
+        const char* id = (const char*)sqlite3_column_text(stmt, 0);
+        s.id = id ? id : "";
+        s.accountId = static_cast<uint32_t>(sqlite3_column_int(stmt, 1));
+        const char* created = (const char*)sqlite3_column_text(stmt, 2);
+        const char* lastActive = (const char*)sqlite3_column_text(stmt, 3);
+        const char* links = (const char*)sqlite3_column_text(stmt, 4);
+        s.created = created ? created : "";
+        s.lastActive = lastActive ? lastActive : "";
+        s.linksJson = links ? links : "";
+        result.push_back(std::move(s));
+    }
+
+    sqlite3_finalize(stmt);
+    return result;
+}
+
 // ---- Master key and game credentials ----
 
 // Build AAD for credential encryption:

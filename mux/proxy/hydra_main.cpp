@@ -218,6 +218,9 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
+    // Restore saved sessions from SQLite (reconnect back-door links)
+    sessionMgr.restoreAllSessions();
+
     LOG_INFO("Hydra ready");
 
     // ---- Event loop ----
