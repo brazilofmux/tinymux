@@ -12,11 +12,13 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <string>
 #include <utility>
 #include <vector>
 
-// Forward declaration (full definition in functions.h).
+// Forward declarations.
 struct tagFun;
+struct compiled_program;
 typedef struct tagFun FUN;
 
 // ECALL numbers.
@@ -101,5 +103,12 @@ std::vector<std::pair<uint64_t, uint32_t>>
          attr_mod_count_collect_object(dbref obj);
 void     attr_mod_count_apply_increments(
              const std::vector<std::pair<uint64_t, uint32_t>> &collected);
+
+// SQLite code cache helpers (shared by softcode JIT and Lua JIT).
+//
+std::string jit_sha1_hex(const void *data, size_t len);
+extern std::string s_blob_version;
+void jit_store_to_sqlite(const std::string &key, const compiled_program &prog);
+bool jit_load_from_sqlite(const std::string &key, compiled_program &out);
 
 #endif // ENGINE_API_H

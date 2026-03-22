@@ -892,6 +892,33 @@ static bool deps_are_fresh(const compiled_program &prog) {
     return true;
 }
 
+// ---------------------------------------------------------------
+// Public wrappers for SQLite code cache (shared with Lua JIT).
+// ---------------------------------------------------------------
+
+std::string jit_sha1_hex(const void *data, size_t len) {
+    const void *parts[] = { data };
+    size_t sizes[] = { len };
+    return sha1_hex_parts(parts, sizes, 1);
+}
+
+void jit_store_to_sqlite(const std::string &key, const compiled_program &prog) {
+    store_to_sqlite_cache(key, prog);
+}
+
+bool jit_load_from_sqlite(const std::string &key, compiled_program &out) {
+    if (!g_pSQLiteBackend) return false;
+    CSQLiteDB &db = g_pSQLiteBackend->GetDB();
+    CSQLiteDB::CodeCacheRecord rec;
+    if (!db.CodeCacheGet(key.data(), static_cast<int>(key.size()),
+                         s_blob_version.data(),
+                         static_cast<int>(s_blob_version.size()), rec)) {
+        return false;
+    }
+    out = reconstruct_from_cache(rec);
+    return out.ok;
+}
+
 // Look up or compile an expression.  Returns a pointer to the
 // cached compiled_program (owned by the cache — do not free).
 // Returns nullptr on compilation failure.

@@ -140,11 +140,22 @@ public:
     {
         if (nullptr == pData || nullptr == pKey) return MUX_E_INVALIDARG;
 
+        // Persistent cache key: "lua:" + sha1(bytecodes).
+        std::string cache_key = "lua:" + jit_sha1_hex(pData, nData);
+
+        // Check SQLite cache first.
         compiled_program prog;
-        if (!compile_lua_bytecode(pData, nData, &prog)) {
-            s_lua_jit_stats.compile_fail++;
-            *pKey = 0;
-            return MUX_E_FAIL;
+        bool from_cache = jit_load_from_sqlite(cache_key, prog);
+
+        if (!from_cache) {
+            // Cache miss — compile from bytecodes.
+            if (!compile_lua_bytecode(pData, nData, &prog)) {
+                s_lua_jit_stats.compile_fail++;
+                *pKey = 0;
+                return MUX_E_FAIL;
+            }
+            // Persist to SQLite for next restart.
+            jit_store_to_sqlite(cache_key, prog);
         }
 
         uint64_t key = s_next_key++;
