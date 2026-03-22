@@ -119,6 +119,8 @@ struct tier2_state {
     bool loaded;
     std::vector<uint8_t> code;           // code section bytes
     std::vector<uint8_t> rodata;         // rodata section bytes
+    std::vector<uint8_t> data;           // initialized writable data
+    uint32_t bss_size;                   // zero-fill size after data
     std::map<std::string, tier2_entry> funcs;  // name → entry
     uint64_t guest_base;                 // where code is loaded in guest memory
 };
@@ -163,13 +165,13 @@ struct rv_compiler {
 
     static constexpr uint64_t OUT_BASE   = 0x8000;
     static constexpr uint64_t OUT_GAP_LO = 0x10000;
-    static constexpr uint64_t OUT_GAP_HI = 0x30000;
+    static constexpr uint64_t OUT_GAP_HI = 0x50000;  // blob grows: dtoa adds 60KB rodata
     static constexpr uint64_t OUT_LIMIT  = 0x68000;
     static constexpr int      OUT_SLOT   = 8000;
 
-    // Pinned Lua array region: 0x30000-0x40000 (64KB = 8192 int64 elements)
-    static constexpr uint64_t LUA_ARRAY_BASE  = 0x30000;
-    static constexpr uint64_t LUA_ARRAY_LIMIT = 0x40000;
+    // Pinned Lua array region: 0x50000-0x60000 (64KB = 8192 int64 elements)
+    static constexpr uint64_t LUA_ARRAY_BASE  = 0x50000;
+    static constexpr uint64_t LUA_ARRAY_LIMIT = 0x60000;
     static constexpr int      LUA_ARRAY_MAX   = 8192;
 
     static constexpr uint64_t CARGS_BASE = 0x68000;

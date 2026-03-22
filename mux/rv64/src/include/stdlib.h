@@ -7,6 +7,10 @@ void qsort(void *base, size_t nmemb, size_t size,
             int (*compar)(const void *, const void *));
 
 long atol(const char *s);
+double strtod(const char *s, char **endptr);
+
+void *malloc(size_t size);
+void  free(void *ptr);
 
 #ifndef NULL
 #define NULL ((void *)0)

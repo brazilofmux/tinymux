@@ -124,7 +124,7 @@ private:
 // Tier 2: pre-compiled RV64 library blob
 // ---------------------------------------------------------------
 
-tier2_state s_tier2 = { false, {}, {}, {}, 0 };
+tier2_state s_tier2 = { false, {}, {}, {}, 0, {}, 0 };
 
 // Blob content hash for cache invalidation.
 std::string s_blob_version = "none";
@@ -173,6 +173,16 @@ static bool tier2_allowed(const std::string &mux_name) {
         "CAT",
         "STRCAT",
         "SPACE",
+
+        // Blocked — rv64_f* math: infrastructure in place (dtoa.c in blob,
+        // v2 blob format with BSS), but semantic parity not yet validated.
+        // FDIV returns #-1 vs server's Inf, ROUND uses different algorithm,
+        // POWER returns "0" for non-integer exponents.
+        // Enable individually after parity testing.
+        //
+        // "ADD", "SUB", "MUL", "FDIV", "MOD", "ABS", "SIGN",
+        // "MIN", "MAX", "SQRT", "ROUND", "TRUNC", "CEIL", "FLOOR",
+        // "INC", "DEC", "POWER",
 
         // Blocked — rv64_* diverges from server:
         //   SORT       Shellsort vs DUCET collation
@@ -322,6 +332,25 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "FLIP",        "rv64_revwords" },   // alias
     { "ISDBREF",     "rv64_isdbref" },
 
+    // --- Batch 8: floating-point math (RV64D hardware instructions) ---
+    { "ADD",         "rv64_fadd" },
+    { "SUB",         "rv64_fsub" },
+    { "MUL",         "rv64_fmul" },
+    { "FDIV",        "rv64_fdiv" },
+    { "MOD",         "rv64_fmod" },
+    { "ABS",         "rv64_fabs" },
+    { "SIGN",        "rv64_fsign" },
+    { "MIN",         "rv64_fmin" },
+    { "MAX",         "rv64_fmax" },
+    { "SQRT",        "rv64_fsqrt" },
+    { "ROUND",       "rv64_fround" },
+    { "TRUNC",       "rv64_ftrunc" },
+    { "CEIL",        "rv64_fceil" },
+    { "FLOOR",       "rv64_ffloor" },
+    { "INC",         "rv64_finc" },
+    { "DEC",         "rv64_fdec" },
+    { "POWER",       "rv64_fpower" },
+
     { nullptr, nullptr }
 };
 
@@ -334,10 +363,20 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
     if (!f) return false;
 
     rv64_blob_header hdr;
-    if (fread(&hdr, sizeof(hdr), 1, f) != 1) { fclose(f); return false; }
-    if (hdr.magic != RV64_BLOB_MAGIC || hdr.version != RV64_BLOB_VERSION) {
+    memset(&hdr, 0, sizeof(hdr));
+    // Read at least the v1 header (32 bytes), then the v2 extension.
+    if (fread(&hdr, 32, 1, f) != 1) { fclose(f); return false; }
+    if (hdr.magic != RV64_BLOB_MAGIC
+        || (hdr.version != 1 && hdr.version != 2)) {
         fclose(f);
         return false;
+    }
+    if (hdr.version >= 2) {
+        // Read the v2 extension fields (bytes 32-47).
+        if (fread(&hdr.data_offset, sizeof(hdr) - 32, 1, f) != 1) {
+            fclose(f);
+            return false;
+        }
     }
 
     // Read code section.
@@ -348,15 +387,9 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
         return false;
     }
 
-    // Read rodata section (if present).
-    if (hdr.rodata_size > 0 && hdr.rodata_offset > 0) {
-        s_tier2.rodata.resize(hdr.rodata_size);
-        fseek(f, hdr.rodata_offset, SEEK_SET);
-        if (fread(s_tier2.rodata.data(), hdr.rodata_size, 1, f) != 1) {
-            fclose(f);
-            return false;
-        }
-    }
+    // v2: code_size is the full flat image (code + rodata + data).
+    // BSS size tells the loader how much to zero-fill after.
+    s_tier2.bss_size = (hdr.version >= 2) ? hdr.bss_size : 0;
 
     // Read entry table.
     std::vector<rv64_blob_entry> entries(hdr.entry_count);
@@ -390,16 +423,14 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
     const void *parts[] = {
         &hdr,
         s_tier2.code.data(),
-        s_tier2.rodata.empty() ? nullptr : s_tier2.rodata.data(),
         entries.empty() ? nullptr : entries.data(),
     };
     const size_t sizes[] = {
         sizeof(hdr),
         s_tier2.code.size(),
-        s_tier2.rodata.size(),
         entries.size() * sizeof(rv64_blob_entry),
     };
-    s_blob_version = sha1_hex_parts(parts, sizes, 4);
+    s_blob_version = sha1_hex_parts(parts, sizes, 3);
     return true;
 }
 
@@ -538,16 +569,21 @@ void pretranslate_tier2(dbt_state_t *dbt) {
 //
 void tier2_install(std::vector<uint8_t> &memory, uint64_t guest_base) {
     if (!s_tier2.loaded) return;
-    if (guest_base + s_tier2.code.size() > memory.size()) return;
+
+    // The flat image (code + rodata + initialized data) is copied as one
+    // contiguous block at guest_base.  BSS is zero-filled after it.
+    // This preserves the exact ELF virtual address layout.
+    uint64_t total = s_tier2.code.size() + s_tier2.bss_size;
+    if (guest_base + total > memory.size()) return;
+
+    // Copy the initialized portion (code + rodata + data).
     memcpy(memory.data() + guest_base,
            s_tier2.code.data(), s_tier2.code.size());
-    if (!s_tier2.rodata.empty()) {
-        uint64_t rodata_base = guest_base + s_tier2.code.size();
-        rodata_base = (rodata_base + 7) & ~7ULL;
-        if (rodata_base + s_tier2.rodata.size() <= memory.size()) {
-            memcpy(memory.data() + rodata_base,
-                   s_tier2.rodata.data(), s_tier2.rodata.size());
-        }
+
+    // Zero-fill BSS after the initialized data.
+    if (s_tier2.bss_size > 0) {
+        memset(memory.data() + guest_base + s_tier2.code.size(),
+               0, s_tier2.bss_size);
     }
 }
 
@@ -1030,10 +1066,29 @@ bool run_cached_program(compiled_program *prog,
     }
 
     // Clear output regions + cargs for clean re-run.
+    // Re-zero the blob's BSS on each execution.  The initialized portion
+    // (code + rodata + data) is preserved, but BSS (dtoa pools, heap, etc.)
+    // must be reset to zero for correct behavior across calls.
+    if (s_tier2.loaded && s_tier2.bss_size > 0) {
+        uint64_t bss_start = rv_compiler::BLOB_BASE + s_tier2.code.size();
+        if (bss_start + s_tier2.bss_size <= prog->memory_size) {
+            memset(prog->memory.data() + bss_start, 0, s_tier2.bss_size);
+        }
+    }
+
+    // Re-copy initialized writable data (sdata) on each execution.
+    // The flat image includes code + rodata + data, but only data changes.
+    // For now, just re-install the full image on each run to be safe.
+    // This is fast (~167KB memcpy) and ensures dtoa_divmax, pmem_next, etc.
+    // are reset to their initial values.
+    if (s_tier2.loaded) {
+        tier2_install(prog->memory, rv_compiler::BLOB_BASE);
+    }
+
     // Two output ranges around the blob gap:
     //   Range 1: OUT_BASE (0x8000) to OUT_GAP_LO (0x10000) — below blob
-    //   Range 2: OUT_GAP_HI (0x30000) to CARGS end — above blob
-    // Do NOT zero the blob region (0x10000-0x2FFFF)!
+    //   Range 2: OUT_GAP_HI to CARGS end — above blob
+    // Do NOT zero the blob region (0x10000-OUT_GAP_HI)!
     memset(prog->memory.data() + rv_compiler::OUT_BASE, 0,
            rv_compiler::OUT_GAP_LO - rv_compiler::OUT_BASE);
     // Clear from above-blob to end of SUBST region (covers output range 2,
