@@ -825,6 +825,32 @@ LIBMUX_API size_t co_render_attrs(co_color_attr *out_attrs,
                                   const unsigned char *data, size_t len,
                                   int bNoBleed);
 
+/*
+ * co_parse_ansi — Parse ANSI SGR escape sequences into PUA color codes.
+ *
+ * Scans a byte stream, identifies ANSI SGR sequences (ESC [ ... m),
+ * converts them to the corresponding PUA code points, and passes
+ * non-ANSI bytes through unchanged.  This is the reverse of
+ * co_render_ansi{16,256,truecolor}().
+ *
+ * Handles:
+ *   - 16-color SGR (30-37, 40-47, 90-97, 100-107)
+ *   - 256-color (38;5;N, 48;5;N)
+ *   - True color (38;2;R;G;B, 48;2;R;G;B)
+ *   - Attributes (0=reset, 1=bold, 4=underline, 5=blink, 7=inverse)
+ *   - Non-ANSI bytes pass through unchanged
+ *   - Non-SGR escape sequences (not ending in 'm') are stripped
+ *
+ * src:     Input byte stream (any encoding; ANSI escapes are ASCII).
+ * src_len: Length of input in bytes.
+ * dst:     Output buffer for PUA-encoded UTF-8.
+ * dst_cap: Capacity of output buffer in bytes.
+ *
+ * Returns bytes written to dst.
+ */
+LIBMUX_API size_t co_parse_ansi(const unsigned char *src, size_t src_len,
+                                unsigned char *dst, size_t dst_cap);
+
 #ifdef __cplusplus
 }
 #endif

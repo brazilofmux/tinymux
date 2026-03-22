@@ -4272,3 +4272,188 @@ size_t co_render_attrs(co_color_attr *out_attrs,
     (void)bNoBleed;  /* Reserved for future use (line-level reset). */
     return n;
 }
+
+/* ---- co_parse_ansi: ANSI SGR → PUA conversion ---- */
+
+/*
+ * Parse a semicolon-separated list of SGR parameters and emit
+ * corresponding PUA code points.  Returns bytes written.
+ */
+static size_t emit_sgr_as_pua(unsigned char *wp, const unsigned char *wp_end,
+                               const int *params, int nparams)
+{
+    unsigned char *start = wp;
+    int i = 0;
+
+    if (nparams == 0) {
+        /* ESC[m with no params is equivalent to ESC[0m (reset). */
+        wp += emit_pua_bmp(wp, wp_end, 0xF500);
+        return (size_t)(wp - start);
+    }
+
+    while (i < nparams) {
+        int p = params[i];
+
+        if (p == 0) {
+            /* Reset */
+            wp += emit_pua_bmp(wp, wp_end, 0xF500);
+        } else if (p == 1) {
+            /* Bold / intense */
+            wp += emit_pua_bmp(wp, wp_end, 0xF501);
+        } else if (p == 4) {
+            /* Underline */
+            wp += emit_pua_bmp(wp, wp_end, 0xF504);
+        } else if (p == 5) {
+            /* Blink */
+            wp += emit_pua_bmp(wp, wp_end, 0xF505);
+        } else if (p == 7) {
+            /* Inverse */
+            wp += emit_pua_bmp(wp, wp_end, 0xF507);
+        } else if (p >= 30 && p <= 37) {
+            /* FG standard color (0-7) */
+            wp += emit_pua_bmp(wp, wp_end, 0xF600 + (unsigned int)(p - 30));
+        } else if (p >= 40 && p <= 47) {
+            /* BG standard color (0-7) */
+            wp += emit_pua_bmp(wp, wp_end, 0xF700 + (unsigned int)(p - 40));
+        } else if (p >= 90 && p <= 97) {
+            /* FG bright color (8-15) */
+            wp += emit_pua_bmp(wp, wp_end, 0xF600 + 8 + (unsigned int)(p - 90));
+        } else if (p >= 100 && p <= 107) {
+            /* BG bright color (8-15) */
+            wp += emit_pua_bmp(wp, wp_end, 0xF700 + 8 + (unsigned int)(p - 100));
+        } else if (p == 39) {
+            /* FG default → reset (emit reset, which clears fg) */
+            wp += emit_pua_bmp(wp, wp_end, 0xF500);
+        } else if (p == 49) {
+            /* BG default → reset */
+            wp += emit_pua_bmp(wp, wp_end, 0xF500);
+        } else if ((p == 38 || p == 48) && i + 1 < nparams) {
+            /* Extended color: 38;5;N (256-color) or 38;2;R;G;B (truecolor) */
+            int layer = p;  /* 38 = FG, 48 = BG */
+            int mode = params[i + 1];
+
+            if (mode == 5 && i + 2 < nparams) {
+                /* 256-color: 38;5;N or 48;5;N */
+                int idx = params[i + 2];
+                if (idx < 0) idx = 0;
+                if (idx > 255) idx = 255;
+                if (layer == 38) {
+                    wp += emit_pua_bmp(wp, wp_end, 0xF600 + (unsigned int)idx);
+                } else {
+                    wp += emit_pua_bmp(wp, wp_end, 0xF700 + (unsigned int)idx);
+                }
+                i += 2; /* skip mode and index */
+            } else if (mode == 2 && i + 4 < nparams) {
+                /* Truecolor: 38;2;R;G;B or 48;2;R;G;B */
+                int r = params[i + 2]; if (r < 0) r = 0; if (r > 255) r = 255;
+                int g = params[i + 3]; if (g < 0) g = 0; if (g > 255) g = 255;
+                int b = params[i + 4]; if (b < 0) b = 0; if (b > 255) b = 255;
+
+                unsigned int block_base = (layer == 38) ? 0 : 2;
+                /* CP1: (R high nibble << 8) | G */
+                unsigned int cp1_payload = (unsigned int)(((r >> 4) & 0x0F) << 8) | (unsigned int)g;
+                /* CP2: (R low nibble << 8) | B */
+                unsigned int cp2_payload = (unsigned int)((r & 0x0F) << 8) | (unsigned int)b;
+
+                wp += emit_pua_smp(wp, wp_end, block_base, cp1_payload);
+                wp += emit_pua_smp(wp, wp_end, block_base + 1, cp2_payload);
+                i += 4; /* skip mode, R, G, B */
+            }
+            /* else: malformed extended color, skip just the 38/48 */
+        }
+        /* else: unhandled SGR code (2=dim, 3=italic, 8=hidden, 9=strikethrough,
+         * 22=normal intensity, 24=not underlined, 25=not blinking, 27=not inverse,
+         * etc.) — silently ignored for now. */
+
+        i++;
+    }
+
+    return (size_t)(wp - start);
+}
+
+size_t co_parse_ansi(const unsigned char *src, size_t src_len,
+                     unsigned char *dst, size_t dst_cap)
+{
+    const unsigned char *p = src;
+    const unsigned char *pe = src + src_len;
+    unsigned char *wp = dst;
+    const unsigned char *wp_end = dst + dst_cap - 1;
+
+    /*
+     * Simple state machine:
+     *   Normal: copy bytes; on ESC (0x1B) → GotEsc
+     *   GotEsc: on '[' → InCSI; anything else → Normal (discard ESC + byte)
+     *   InCSI:  collect digits and ';' into params; on 'm' → emit PUA + Normal;
+     *           on any other letter → discard sequence + Normal
+     */
+
+    enum { Normal, GotEsc, InCSI } state = Normal;
+
+    int params[16];
+    int nparams = 0;
+    int cur_param = -1;  /* -1 means no digit seen for current param */
+
+    while (p < pe && wp < wp_end) {
+        unsigned char ch = *p;
+
+        switch (state) {
+        case Normal:
+            if (ch == 0x1B) {
+                state = GotEsc;
+                p++;
+            } else {
+                /* Pass through non-ESC bytes (UTF-8 safe — we copy
+                 * continuation bytes in subsequent iterations). */
+                *wp++ = ch;
+                p++;
+            }
+            break;
+
+        case GotEsc:
+            if (ch == '[') {
+                state = InCSI;
+                nparams = 0;
+                cur_param = -1;
+                p++;
+            } else {
+                /* Non-CSI escape (e.g., ESC D, ESC M). Discard. */
+                state = Normal;
+                p++;
+            }
+            break;
+
+        case InCSI:
+            if (ch >= '0' && ch <= '9') {
+                if (cur_param < 0) cur_param = 0;
+                cur_param = cur_param * 10 + (ch - '0');
+                if (cur_param > 9999) cur_param = 9999; /* sanity clamp */
+                p++;
+            } else if (ch == ';') {
+                if (nparams < 16) {
+                    params[nparams++] = (cur_param < 0) ? 0 : cur_param;
+                }
+                cur_param = -1;
+                p++;
+            } else if (ch == 'm') {
+                /* SGR complete — emit PUA */
+                if (cur_param >= 0 && nparams < 16) {
+                    params[nparams++] = cur_param;
+                }
+                wp += emit_sgr_as_pua(wp, wp_end, params, nparams);
+                state = Normal;
+                p++;
+            } else if (ch >= 0x40 && ch <= 0x7E) {
+                /* Non-SGR CSI sequence (cursor movement, etc.). Discard. */
+                state = Normal;
+                p++;
+            } else {
+                /* Intermediate byte (0x20-0x3F range) — keep collecting. */
+                p++;
+            }
+            break;
+        }
+    }
+
+    *wp = '\0';
+    return (size_t)(wp - dst);
+}
