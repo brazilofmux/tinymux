@@ -998,6 +998,12 @@ void cmd_log(App& app, const std::string& args) {
         return;
     }
 
+    // Expand ~ to $HOME
+    if (!rest.empty() && rest[0] == '~') {
+        const char* home = std::getenv("HOME");
+        if (home) rest = std::string(home) + rest.substr(1);
+    }
+
     if (per_world) {
         auto it = app.connections.find(target_world);
         if (it == app.connections.end()) {
