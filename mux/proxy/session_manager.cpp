@@ -2,6 +2,7 @@
 #include "crypto.h"
 #include "hydra_log.h"
 #include <color_ops.h>
+#include <nlohmann/json.hpp>
 #include <sys/socket.h>
 #include <cstring>
 #include <algorithm>
@@ -1319,23 +1320,22 @@ std::string SessionManager::generatePersistId() {
 }
 
 void SessionManager::flushSession(HydraSession& session) {
-    if (session.persistId.empty() || session.scrollbackKey.empty()) return;
+    if (session.persistId.empty()) return;
 
     std::string created = std::to_string(session.created);
     std::string lastActive = std::to_string(session.lastActivity);
 
-    // Serialize links as JSON object with activeLink and link array
-    std::string linksJson = "{\"activeLink\":"
-        + std::to_string(session.activeLink) + ",\"links\":[";
-    bool first = true;
+    // Serialize links via nlohmann/json (handles escaping properly)
+    nlohmann::json linksArr = nlohmann::json::array();
     for (const auto& link : session.links) {
         if (link.state == LinkState::Dead) continue;
-        if (!first) linksJson += ",";
-        linksJson += "{\"game\":\"" + link.gameName
-                   + "\",\"character\":\"" + link.character + "\"}";
-        first = false;
+        linksArr.push_back({{"game", link.gameName},
+                            {"character", link.character}});
     }
-    linksJson += "]}";
+    nlohmann::json linksDoc;
+    linksDoc["activeLink"] = session.activeLink;
+    linksDoc["links"] = linksArr;
+    std::string linksJson = linksDoc.dump();
 
     std::string errorMsg;
     if (!accounts_.saveSession(session.persistId, session.accountId,
@@ -1345,12 +1345,15 @@ void SessionManager::flushSession(HydraSession& session) {
         return;
     }
 
-    int n = session.scrollback.flushToDb(
-        accounts_.db(), session.persistId,
-        session.accountId, session.scrollbackKey);
-    if (n < 0) {
-        LOG_ERROR("Scroll-back flush failed for session %s",
-                  session.persistId.c_str());
+    // Flush scroll-back only if we have the encryption key
+    if (!session.scrollbackKey.empty()) {
+        int n = session.scrollback.flushToDb(
+            accounts_.db(), session.persistId,
+            session.accountId, session.scrollbackKey);
+        if (n < 0) {
+            LOG_ERROR("Scroll-back flush failed for session %s",
+                      session.persistId.c_str());
+        }
     }
 }
 
@@ -1526,44 +1529,38 @@ std::string SessionManager::createAccountAndGetSession(
 
 // ---- Phase 4: Session serialization ----
 
-// Extract a JSON string value after a key like "game":"value"
-static std::string extractJsonString(const std::string& json,
-                                     const std::string& key, size_t startPos) {
-    std::string needle = "\"" + key + "\":\"";
-    size_t pos = json.find(needle, startPos);
-    if (pos == std::string::npos) return "";
-    pos += needle.size();
-    size_t end = json.find('"', pos);
-    if (end == std::string::npos) return "";
-    return json.substr(pos, end - pos);
-}
-
-bool SessionManager::parseLinksJson(const std::string& json,
+bool SessionManager::parseLinksJson(const std::string& jsonStr,
                                     std::vector<SavedLinkInfo>& links,
                                     size_t& activeLink) {
     links.clear();
     activeLink = 0;
 
-    if (json.empty()) return false;
+    if (jsonStr.empty()) return false;
 
-    // Parse activeLink number
-    std::string alKey = "\"activeLink\":";
-    size_t alPos = json.find(alKey);
-    if (alPos != std::string::npos) {
-        activeLink = static_cast<size_t>(
-            std::atoi(json.c_str() + alPos + alKey.size()));
-    }
+    try {
+        auto doc = nlohmann::json::parse(jsonStr);
 
-    // Parse links array — find each {"game":"...","character":"..."}
-    size_t pos = 0;
-    while ((pos = json.find("{\"game\":", pos)) != std::string::npos) {
-        SavedLinkInfo li;
-        li.game = extractJsonString(json, "game", pos);
-        li.character = extractJsonString(json, "character", pos);
-        if (!li.game.empty()) {
-            links.push_back(std::move(li));
+        if (doc.contains("activeLink") && doc["activeLink"].is_number()) {
+            activeLink = doc["activeLink"].get<size_t>();
         }
-        pos++;  // advance past this match
+
+        if (doc.contains("links") && doc["links"].is_array()) {
+            for (const auto& entry : doc["links"]) {
+                SavedLinkInfo li;
+                if (entry.contains("game") && entry["game"].is_string()) {
+                    li.game = entry["game"].get<std::string>();
+                }
+                if (entry.contains("character") && entry["character"].is_string()) {
+                    li.character = entry["character"].get<std::string>();
+                }
+                if (!li.game.empty()) {
+                    links.push_back(std::move(li));
+                }
+            }
+        }
+    } catch (const nlohmann::json::exception& e) {
+        LOG_WARN("Failed to parse links_json: %s", e.what());
+        return false;
     }
 
     return !links.empty();
@@ -1583,12 +1580,15 @@ void SessionManager::restoreSessionLinks(HydraSession& session,
             continue;
         }
 
-        // Initiate connection via connectToGame (creates link + backDoorMap entry)
+        // Track link count to verify connectToGame actually added one
+        size_t before = session.links.size();
         connectToGame(session, sl.game);
 
-        // Set the character name on the newly created link
-        if (!session.links.empty()) {
+        if (session.links.size() > before) {
             session.links.back().character = sl.character;
+        } else {
+            LOG_WARN("Session %s: connectToGame('%s') did not create a link",
+                     session.persistId.c_str(), sl.game.c_str());
         }
     }
 
@@ -1608,12 +1608,29 @@ void SessionManager::restoreAllSessions() {
     LOG_INFO("Restoring %zu saved sessions", saved.size());
 
     for (const auto& s : saved) {
+        // Deduplication: skip if this account already has an in-memory session
+        bool alreadyLoaded = false;
+        for (const auto& [id, sess] : sessions_) {
+            if (sess.accountId == s.accountId) {
+                alreadyLoaded = true;
+                break;
+            }
+        }
+        if (alreadyLoaded) {
+            LOG_INFO("Session %s (account %u) already in memory, skipping restore",
+                     s.id.c_str(), s.accountId);
+            continue;
+        }
+
         // Create in-memory session (detached — no front-door yet)
         HydraSession session;
         session.id = nextSessionId_++;
         session.accountId = s.accountId;
-        session.created = time(nullptr);
-        session.lastActivity = session.created;
+        // Preserve original timestamps from saved data
+        session.created = static_cast<time_t>(std::atol(s.created.c_str()));
+        session.lastActivity = static_cast<time_t>(std::atol(s.lastActive.c_str()));
+        if (session.created == 0) session.created = time(nullptr);
+        if (session.lastActivity == 0) session.lastActivity = session.created;
         session.persistId = s.id;
         session.state = SessionState::Detached;
         // scrollbackKey is empty — can't decrypt scroll-back until player logs in
