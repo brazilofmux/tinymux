@@ -14,38 +14,72 @@ enum ColorFormat {
     PLAIN          = 4;    // All color stripped
 }
 
+// State of a back-door link to a game server.
+enum LinkState {
+    LINK_UNKNOWN       = 0;
+    LINK_CONNECTING    = 1;
+    LINK_TLS           = 2;
+    LINK_NEGOTIATING   = 3;
+    LINK_LOGGING_IN    = 4;
+    LINK_ACTIVE        = 5;
+    LINK_RECONNECTING  = 6;
+    LINK_SUSPENDED     = 7;
+    LINK_DEAD          = 8;
+}
+
+// State of a Hydra session.
+enum SessionState {
+    SESSION_UNKNOWN  = 0;
+    SESSION_LOGIN    = 1;
+    SESSION_ACTIVE   = 2;
+    SESSION_DETACHED = 3;
+}
+
+// Game type (local process vs remote server).
+enum GameType {
+    GAME_REMOTE = 0;
+    GAME_LOCAL  = 1;
+}
+
+// Severity level for system notices.
+enum Severity {
+    SEVERITY_INFO  = 0;
+    SEVERITY_WARN  = 1;
+    SEVERITY_ERROR = 2;
+}
+
 // ---- Common types ----
 
 message Empty {}
 
 message GameInfo {
-    string name = 1;
-    string host = 2;
-    uint32 port = 3;
-    string type = 4;            // "local" or "remote"
-    bool   autostart = 5;
+    string   name = 1;
+    string   host = 2;
+    uint32   port = 3;
+    GameType type = 4;
+    bool     autostart = 5;
 }
 
 message LinkInfo {
-    int32  number = 1;          // 1-based
-    string game_name = 2;
-    string state = 3;           // "connecting", "active", "reconnecting", "dead", etc.
-    string character = 4;
-    bool   active = 5;          // is this the active link?
-    bool   gmcp_enabled = 6;
-    int32  retry_count = 7;
-    int64  next_retry = 8;      // unix timestamp, 0 if not reconnecting
+    int32     number = 1;          // 1-based
+    string    game_name = 2;
+    LinkState state = 3;
+    string    character = 4;
+    bool      active = 5;          // is this the active link?
+    bool      gmcp_enabled = 6;
+    int32     retry_count = 7;
+    int64     next_retry = 8;      // unix timestamp, 0 if not reconnecting
 }
 
 message SessionInfo {
-    string session_id = 1;
-    string username = 2;
+    string       session_id = 1;
+    string       username = 2;
     repeated LinkInfo links = 3;
-    int32  active_link = 4;     // 1-based, 0 if none
-    int32  scrollback_lines = 5;
-    string state = 6;           // "active", "detached"
-    int64  created = 7;         // unix timestamp
-    int64  last_activity = 8;
+    int32        active_link = 4;     // 1-based, 0 if none
+    int32        scrollback_lines = 5;
+    SessionState state = 6;
+    int64        created = 7;         // unix timestamp
+    int64        last_activity = 8;
 }
 
 // Game text output from a back-door link.
@@ -57,9 +91,13 @@ message GameOutput {
 }
 
 // A GMCP message (structured MUD protocol data).
+// The json field is intentionally a string — GMCP payloads are
+// game-defined JSON and vary by package.  Common packages like
+// Char.Vitals could get typed wrappers in a future .proto revision,
+// but the base representation must remain extensible.
 message GmcpMessage {
     string package = 1;         // e.g. "Char.Vitals", "Room.Info"
-    string json = 2;            // JSON payload
+    string json = 2;            // game-defined JSON payload
     int32  link_number = 3;     // 1-based, which link it came from
 }
 
@@ -189,8 +227,8 @@ message ServerMessage {
 }
 
 message SystemNotice {
-    string text = 1;                    // e.g. "[Shangrila: connected]"
-    string severity = 2;               // "info", "warn", "error"
+    string   text = 1;                  // e.g. "[Shangrila: connected]"
+    Severity severity = 2;
 }
 
 message PongMessage {
@@ -199,10 +237,10 @@ message PongMessage {
 }
 
 message LinkEvent {
-    int32  link_number = 1;
-    string game_name = 2;
-    string old_state = 3;
-    string new_state = 4;              // "connected", "disconnected", "reconnecting", etc.
+    int32     link_number = 1;
+    string    game_name = 2;
+    LinkState old_state = 3;
+    LinkState new_state = 4;
 }
 
 // ---- Legacy unary I/O (kept for simple clients) ----

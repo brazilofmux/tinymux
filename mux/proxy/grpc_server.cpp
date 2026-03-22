@@ -35,6 +35,31 @@ static std::string getSessionId(ServerContext* ctx, const std::string& msgField)
     return msgField;
 }
 
+// ---- Helper: map C++ LinkState to proto LinkState enum ----
+
+static hydra::LinkState toProtoLinkState(LinkState s) {
+    switch (s) {
+    case LinkState::Connecting:     return hydra::LINK_CONNECTING;
+    case LinkState::TlsHandshaking: return hydra::LINK_TLS;
+    case LinkState::Negotiating:    return hydra::LINK_NEGOTIATING;
+    case LinkState::AutoLoggingIn:  return hydra::LINK_LOGGING_IN;
+    case LinkState::Active:         return hydra::LINK_ACTIVE;
+    case LinkState::Reconnecting:   return hydra::LINK_RECONNECTING;
+    case LinkState::Suspended:      return hydra::LINK_SUSPENDED;
+    case LinkState::Dead:           return hydra::LINK_DEAD;
+    }
+    return hydra::LINK_UNKNOWN;
+}
+
+static hydra::SessionState toProtoSessionState(SessionState s) {
+    switch (s) {
+    case SessionState::Login:    return hydra::SESSION_LOGIN;
+    case SessionState::Active:   return hydra::SESSION_ACTIVE;
+    case SessionState::Detached: return hydra::SESSION_DETACHED;
+    }
+    return hydra::SESSION_UNKNOWN;
+}
+
 // ---- Helper: populate LinkInfo proto ----
 
 static void fillLinkInfo(hydra::LinkInfo* li, const BackDoorLink& link,
@@ -46,19 +71,7 @@ static void fillLinkInfo(hydra::LinkInfo* li, const BackDoorLink& link,
     li->set_gmcp_enabled(link.gmcpEnabled);
     li->set_retry_count(link.retryCount);
     li->set_next_retry(static_cast<int64_t>(link.nextRetry));
-
-    const char* stateName = "unknown";
-    switch (link.state) {
-    case LinkState::Connecting:     stateName = "connecting"; break;
-    case LinkState::TlsHandshaking: stateName = "tls"; break;
-    case LinkState::Negotiating:    stateName = "negotiating"; break;
-    case LinkState::AutoLoggingIn:  stateName = "logging-in"; break;
-    case LinkState::Active:         stateName = "active"; break;
-    case LinkState::Reconnecting:   stateName = "reconnecting"; break;
-    case LinkState::Suspended:      stateName = "suspended"; break;
-    case LinkState::Dead:           stateName = "dead"; break;
-    }
-    li->set_state(stateName);
+    li->set_state(toProtoLinkState(link.state));
 }
 
 class HydraServiceImpl final : public hydra::HydraService::Service {
@@ -125,7 +138,7 @@ public:
                 resp->set_active_link(s->links.empty() ? 0
                     : static_cast<int>(s->activeLink) + 1);
                 resp->set_scrollback_lines(static_cast<int>(s->scrollback.count()));
-                resp->set_state(s->state == SessionState::Active ? "active" : "detached");
+                resp->set_state(toProtoSessionState(s->state));
                 resp->set_created(static_cast<int64_t>(s->created));
                 resp->set_last_activity(static_cast<int64_t>(s->lastActivity));
                 for (size_t i = 0; i < s->links.size(); i++) {
@@ -179,7 +192,7 @@ public:
             gi->set_name(game.name);
             gi->set_host(game.host);
             gi->set_port(game.port);
-            gi->set_type(game.type == GameType::Local ? "local" : "remote");
+            gi->set_type(game.type == GameType::Local ? hydra::GAME_LOCAL : hydra::GAME_REMOTE);
             gi->set_autostart(game.autostart);
         }
         return Status::OK;
