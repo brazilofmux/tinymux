@@ -285,6 +285,8 @@ game "SomeLegacyMUD" {
     host        legacy.example.com
     port        4000
     type        remote
+    tls         yes             # back-door TLS for remote games
+    tls_verify  yes             # validate server certificate
     autostart   no
     reconnect   yes
     retry       10s, 30s, 60s
@@ -350,36 +352,16 @@ it's a future extension point.
 
 Hydra maintains its own user accounts in SQLite.
 
-**Schema (conceptual):**
+**Schema:** See `docs/design-hydra.md` for the authoritative schema.
+Key points:
 
-```sql
-CREATE TABLE accounts (
-    id          INTEGER PRIMARY KEY,
-    username    TEXT UNIQUE NOT NULL,
-    password    TEXT NOT NULL,       -- bcrypt or argon2
-    created     TEXT NOT NULL,
-    last_login  TEXT,
-    flags       INTEGER DEFAULT 0   -- admin, suspended, etc.
-);
-
-CREATE TABLE game_credentials (
-    id          INTEGER PRIMARY KEY,
-    account_id  INTEGER REFERENCES accounts(id),
-    game_name   TEXT NOT NULL,
-    character   TEXT NOT NULL,
-    credential  TEXT,               -- encrypted game password
-    auto_login  INTEGER DEFAULT 1,
-    UNIQUE(account_id, game_name, character)
-);
-
-CREATE TABLE sessions (
-    id          TEXT PRIMARY KEY,    -- session token
-    account_id  INTEGER REFERENCES accounts(id),
-    created     TEXT NOT NULL,
-    last_active TEXT NOT NULL,
-    state       TEXT                -- serialized session state
-);
-```
+- Account passwords: Argon2id hash (one-way, not recoverable)
+- Game credentials: structured fields (`login_verb`, `login_name`,
+  encrypted secret), AEAD-encrypted with the host master key
+- Scroll-back: AEAD-encrypted with a key derived from the player's
+  own Hydra password (not the master key — the box owner cannot
+  decrypt scroll-back without the player's password)
+- Saved sessions: link list for resume after Hydra restart
 
 Hydra stores whatever login material is needed to perform a normal game
 login on the user's behalf. Hydra does not manage in-game password
@@ -576,8 +558,9 @@ mux/
 - Telnet bridge with charset conversion and PUA color pipeline
   (ANSI→PUA on ingestion, PUA→ANSI on output; color depth
   translation uses existing libmux co_* renderers)
-- Scroll-back buffer (PUA-encoded UTF-8)
-- SQLite account storage
+- Scroll-back buffer (PUA-encoded UTF-8, persisted to SQLite,
+  encrypted with player-derived key)
+- SQLite account storage with encrypted game credentials
 - Connect to one game
 
 ### Phase 2: Multi-game and process management
@@ -585,7 +568,6 @@ mux/
 - Multiple game configurations
 - `/connect`, `/switch`, `/links` commands
 - Process manager (start/stop/restart games)
-- Game credential storage
 - Reconnect with backoff
 
 ### Phase 3: Protocol expansion
@@ -603,13 +585,11 @@ mux/
 ## Open Questions
 
 1. **Session token mechanism.** For client reconnection—cookie-based
-   token? TLS client certificate? Time-limited HMAC token?
+   token? TLS client certificate? Time-limited HMAC token? Note:
+   after Hydra restart, persisted scroll-back replay requires
+   password authentication regardless of token/cert support (see
+   design doc for details).
 
 2. **Multi-front-door output policy.** When two front-door connections
    are attached to the same session, do both get output? Does one
    become read-only? Is this user-configurable?
-
-3. **Scroll-back and charset.** The scroll-back buffer stores output.
-   In what encoding? If we store raw game bytes, we need the original
-   charset to replay correctly. If we normalize to UTF-8, replay is
-   simpler but we've lost the original bytes.

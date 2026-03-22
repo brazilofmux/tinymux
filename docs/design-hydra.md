@@ -468,6 +468,38 @@ A fast-resume token mechanism is a natural Phase 2 addition — the
 session manager already identifies sessions by account, so adding a
 second authentication path requires no architectural change.
 
+**Interaction with scroll-back encryption:**
+
+The scroll-back key is derived from the player's password (see
+Scroll-Back Encryption above). This creates a distinction between
+two resume scenarios:
+
+- **Resume while Hydra is still running** (normal case). The
+  player-derived scroll-back key is already in memory from the
+  original login. Token or cert authentication is sufficient — the
+  key is available without re-entering the password. In-memory
+  scroll-back is replayed immediately.
+
+- **Resume after Hydra restart** (rare case). The derived key was
+  lost when Hydra exited. Persisted scroll-back in SQLite cannot be
+  decrypted until the key is re-derived. Token and cert resume paths
+  identify the account but do not supply the password, so they
+  cannot unlock persisted scroll-back.
+
+  In this case, Hydra resumes the session (reconnects back-door
+  links, begins forwarding new output) but defers persisted
+  scroll-back replay. The player is prompted for their password to
+  unlock the scroll-back. If they decline, new output flows normally
+  but the old persisted buffer remains encrypted until a future
+  password authentication.
+
+This is an acceptable tradeoff: Hydra restarts are rare operational
+events, and asking for a password once after a restart to unlock
+historical scroll-back is reasonable. The alternative — wrapping
+per-session scroll-back keys so that tokens could unlock them — would
+add significant complexity and weaken the threat model by making the
+master key sufficient to decrypt scroll-back indirectly.
+
 ### Session Command Dispatch
 
 When a line arrives from a front-door connection:
@@ -1087,6 +1119,9 @@ game "LegacyMUD" {
     host        mud.example.com
     port        4000
     type        remote
+    tls         yes
+    tls_verify  yes
+    tls_ca      /etc/ssl/certs/ca-certificates.crt
     reconnect   yes
     retry       10s 30s 60s
     charset     latin-1
@@ -1112,6 +1147,11 @@ struct GameConfig {
     // Reconnect policy
     bool                reconnect;
     std::vector<int>    retrySchedule;  // seconds between retries
+
+    // Back-door TLS (for remote games that require it)
+    bool                tls;            // default: false
+    bool                tlsVerify;      // validate server certificate
+    std::string         tlsCaFile;      // CA bundle path (empty = system default)
 
     // Protocol
     ganl::EncodingType  charset;
