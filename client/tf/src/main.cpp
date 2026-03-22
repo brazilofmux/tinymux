@@ -165,6 +165,10 @@ void app_receive_line(App& app, Connection* conn, const std::string& world_name,
         }
     }
 
+    // Per-world logging (persists across /fg)
+    conn->log_line(line);
+
+    // Global logging (all worlds)
     auto log_it = app.vars.find("_log_file");
     if (log_it != app.vars.end() && !log_it->second.empty()) {
         FILE* lf = fopen(log_it->second.c_str(), "a");
@@ -305,7 +309,11 @@ static void update_status(App& app) {
     //
     app.terminal.status_active_count = active;
     auto log_it = app.vars.find("_log_file");
-    app.terminal.status_logging = (log_it != app.vars.end() && !log_it->second.empty());
+    bool logging = (log_it != app.vars.end() && !log_it->second.empty());
+    if (!logging && app.fg && app.fg->log_fp) {
+        logging = true;
+    }
+    app.terminal.status_logging = logging;
 
     app.terminal.set_status(status);
 }

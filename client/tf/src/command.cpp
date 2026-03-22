@@ -918,20 +918,103 @@ void cmd_save(App& app, const std::string& args) {
 }
 
 void cmd_log(App& app, const std::string& args) {
-    // /log [-w<world>] <filename> — toggle logging
-    // /log off — stop logging
-    std::string path = trim_copy(args);
-    if (path.empty() || path == "off") {
-        if (app.vars.count("_log_file") && !app.vars["_log_file"].empty()) {
-            app.terminal.print_system("% Logging stopped");
-            app.vars["_log_file"] = "";
+    // /log -w <filename>   — log current fg world (persists across /fg)
+    // /log -w<world> <filename> — log named world
+    // /log <filename>      — global log (all worlds)
+    // /log off              — stop all logging
+    // /log                  — show logging status
+    std::string rest = trim_copy(args);
+
+    // Determine target: per-world (-w) or global.
+    bool per_world = false;
+    std::string target_world;
+    if (rest.substr(0, 2) == "-w") {
+        per_world = true;
+        std::string after_w = rest.substr(2);
+        // -w<world> <file>  or  -w <file> (meaning fg world)
+        if (after_w.empty() || after_w[0] == ' ') {
+            // -w <file> — use foreground world
+            if (!app.fg) {
+                app.terminal.print_system("% No foreground world");
+                return;
+            }
+            target_world = app.fg->world_name();
+            rest = trim_copy(after_w);
         } else {
-            app.terminal.print_system("% Not logging");
+            // -w<world> <file>
+            auto sp = after_w.find(' ');
+            if (sp == std::string::npos) {
+                target_world = after_w;
+                rest.clear();
+            } else {
+                target_world = after_w.substr(0, sp);
+                rest = trim_copy(after_w.substr(sp + 1));
+            }
+        }
+    }
+
+    // /log off — stop logging
+    if (rest == "off" || (rest.empty() && per_world)) {
+        if (per_world) {
+            // Stop logging for the target world
+            auto it = app.connections.find(target_world);
+            if (it != app.connections.end() && !it->second->log_file.empty()) {
+                app.terminal.print_system("% Stopped logging " + target_world);
+                it->second->stop_log();
+            } else {
+                app.terminal.print_system("% " + target_world + " is not being logged");
+            }
+        } else if (rest == "off") {
+            // Stop global logging
+            if (app.vars.count("_log_file") && !app.vars["_log_file"].empty()) {
+                app.terminal.print_system("% Logging stopped");
+                app.vars["_log_file"] = "";
+            } else {
+                app.terminal.print_system("% Not logging");
+            }
+        } else {
+            // /log with no args — show status
+            bool any = false;
+            if (app.vars.count("_log_file") && !app.vars["_log_file"].empty()) {
+                app.terminal.print_system("% Global log: " + app.vars["_log_file"]);
+                any = true;
+            }
+            for (auto& [name, conn] : app.connections) {
+                if (!conn->log_file.empty()) {
+                    app.terminal.print_system("% " + name + ": " + conn->log_file);
+                    any = true;
+                }
+            }
+            if (!any) {
+                app.terminal.print_system("% Not logging");
+            }
         }
         return;
     }
-    app.vars["_log_file"] = path;
-    app.terminal.print_system("% Logging to " + path);
+
+    if (rest.empty()) {
+        // Shouldn't reach here, but just in case
+        app.terminal.print_system("% Usage: /log [-w [world]] <filename>");
+        return;
+    }
+
+    if (per_world) {
+        auto it = app.connections.find(target_world);
+        if (it == app.connections.end()) {
+            app.terminal.print_system("% No connection to " + target_world);
+            return;
+        }
+        it->second->start_log(rest);
+        if (it->second->log_fp) {
+            app.terminal.print_system("% Logging " + target_world + " to " + rest);
+        } else {
+            app.terminal.print_system("% Cannot open " + rest);
+        }
+    } else {
+        // Global logging (original behavior)
+        app.vars["_log_file"] = rest;
+        app.terminal.print_system("% Logging to " + rest);
+    }
 }
 
 void cmd_eval(App& app, const std::string& args) {

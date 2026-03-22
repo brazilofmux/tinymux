@@ -121,6 +121,14 @@ private:
     std::chrono::steady_clock::time_point last_recv_time_;
     std::chrono::steady_clock::time_point last_send_time_;
 public:
+    // Per-world logging
+    std::string log_file;
+    FILE* log_fp = nullptr;
+
+    void start_log(const std::string& path);
+    void stop_log();
+    void log_line(const std::string& line);
+
     int idle_secs() const {
         auto now = std::chrono::steady_clock::now();
         return (int)std::chrono::duration_cast<std::chrono::seconds>(now - last_recv_time_).count();

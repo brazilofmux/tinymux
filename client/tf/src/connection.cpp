@@ -224,6 +224,7 @@ bool Connection::write_all(const void* data, size_t len) {
 }
 
 void Connection::disconnect() {
+    stop_log();
     mccp_end();
     if (ssl_) { SSL_shutdown(ssl_); SSL_free(ssl_); ssl_ = nullptr; }
     if (ssl_ctx_) { SSL_CTX_free(ssl_ctx_); ssl_ctx_ = nullptr; }
@@ -710,4 +711,27 @@ void Connection::add_to_scrollback(const std::string& line) {
     scrollback_.push_back(line);
     if (scrollback_.size() > MAX_SCROLLBACK)
         scrollback_.pop_front();
+}
+
+void Connection::start_log(const std::string& path) {
+    stop_log();
+    log_fp = fopen(path.c_str(), "a");
+    if (log_fp) {
+        log_file = path;
+    }
+}
+
+void Connection::stop_log() {
+    if (log_fp) {
+        fclose(log_fp);
+        log_fp = nullptr;
+    }
+    log_file.clear();
+}
+
+void Connection::log_line(const std::string& line) {
+    if (log_fp) {
+        fprintf(log_fp, "%s\n", line.c_str());
+        fflush(log_fp);
+    }
 }
