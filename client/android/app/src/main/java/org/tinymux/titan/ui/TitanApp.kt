@@ -267,13 +267,14 @@ fun TitanApp() {
     }
 
     fun connectHydra(name: String, host: String, port: Int,
-                     hydraUser: String, hydraPass: String, hydraGame: String) {
+                     hydraUser: String, hydraPass: String, hydraGame: String,
+                     useTls: Boolean = true) {
         val tab = WorldTab(name)
         tabs.add(tab)
         val tabIndex = tabs.size - 1
         activeTab = tabIndex
 
-        val hconn = HydraConnection(name, host, port, hydraUser, hydraPass, hydraGame)
+        val hconn = HydraConnection(name, host, port, hydraUser, hydraPass, hydraGame, useTls)
         tab.hydraConnection = hconn
 
         hconn.onLine = { line -> processServerLine(tabIndex, line) }

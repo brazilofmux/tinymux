@@ -26,10 +26,11 @@ HydraConnection::HydraConnection(const std::string& world_name,
                                  const std::string& username,
                                  const std::string& password,
                                  const std::string& game_name,
-                                 HANDLE iocp)
+                                 HANDLE iocp,
+                                 bool use_tls)
     : worldName_(world_name), host_(host), port_(port),
       username_(username), password_(password), gameName_(game_name),
-      iocp_(iocp) {
+      iocp_(iocp), useTls_(use_tls) {
     lastRecvTime_ = std::chrono::steady_clock::now();
     lastSendTime_ = lastRecvTime_;
 }
@@ -43,10 +44,15 @@ bool HydraConnection::connect() {
 
     grpc_ = std::make_unique<GrpcState>();
 
-    // Create channel
+    // Create channel (TLS by default, plaintext only for local dev)
     std::string target = host_ + ":" + port_;
-    grpc_->channel = grpc::CreateChannel(target,
-        grpc::InsecureChannelCredentials());
+    if (useTls_) {
+        grpc_->channel = grpc::CreateChannel(target,
+            grpc::SslCredentials(grpc::SslCredentialsOptions()));
+    } else {
+        grpc_->channel = grpc::CreateChannel(target,
+            grpc::InsecureChannelCredentials());
+    }
     grpc_->stub = hydra::HydraService::NewStub(grpc_->channel);
 
     // Authenticate

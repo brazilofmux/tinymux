@@ -173,11 +173,12 @@ int CMainFrame::ConnectWorld(const std::string& name, const std::string& host,
 #ifdef HYDRA_GRPC
 int CMainFrame::ConnectHydra(const std::string& name, const std::string& host,
                               const std::string& port, const std::string& user,
-                              const std::string& pass, const std::string& game) {
+                              const std::string& pass, const std::string& game,
+                              bool use_tls) {
     int idx = AddWorld(name);
     auto& ts = tab_states[idx];
 
-    auto hconn = std::make_unique<HydraConnection>(name, host, port, user, pass, game, iocp);
+    auto hconn = std::make_unique<HydraConnection>(name, host, port, user, pass, game, iocp, use_tls);
     ts->buffer.append("% Connecting via Hydra to " + host + ":" + port + "...");
     ts->conn = std::move(hconn);
 

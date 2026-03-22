@@ -21,6 +21,7 @@ class HydraConnection(
     private val username: String,
     private val password: String,
     private val gameName: String,
+    private val useTls: Boolean = true,
 ) {
     var connected = false; private set
     val scrollback = mutableListOf<String>()
@@ -47,11 +48,10 @@ class HydraConnection(
 
         scope.launch(Dispatchers.IO) {
             try {
-                // Create gRPC channel
-                val ch = ManagedChannelBuilder
-                    .forAddress(host, port)
-                    .usePlaintext()
-                    .build()
+                // Create gRPC channel (TLS by default)
+                val builder = ManagedChannelBuilder.forAddress(host, port)
+                if (!useTls) builder.usePlaintext()
+                val ch = builder.build()
                 channel = ch
 
                 val stub = HydraServiceCoroutineStub(ch)

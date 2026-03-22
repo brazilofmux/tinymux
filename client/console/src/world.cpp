@@ -50,7 +50,12 @@ bool WorldDB::load(const std::string& path) {
         } else if (keyword == "hydra") {
             World w;
             w.use_hydra = true;
+            w.use_ssl = true;  // TLS by default for Hydra
             ss >> w.name >> w.host >> w.port >> w.hydra_user >> w.hydra_pass >> w.hydra_game;
+            std::string token;
+            while (ss >> token) {
+                if (token == "notls") w.use_ssl = false;
+            }
             if (!w.name.empty() && !w.host.empty() && !w.port.empty()
                 && !w.hydra_user.empty() && !w.hydra_pass.empty()) {
                 worlds_[w.name] = w;

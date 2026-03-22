@@ -65,7 +65,8 @@ public:
 #ifdef HYDRA_GRPC
     int ConnectHydra(const std::string& name, const std::string& host,
                      const std::string& port, const std::string& user,
-                     const std::string& pass, const std::string& game);
+                     const std::string& pass, const std::string& game,
+                     bool use_tls = true);
 #endif
     void RemoveWorld(int index);
     void SwitchToTab(int index);
