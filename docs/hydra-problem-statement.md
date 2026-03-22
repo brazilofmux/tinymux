@@ -219,6 +219,44 @@ manage databases, or run game logic. Its job is:
 It should be lightweight enough to run on the same host as the game
 with negligible overhead, or on a separate host as a dedicated proxy.
 
+### R12. Resource limits
+
+Hydra enforces configurable limits to prevent resource exhaustion:
+
+- Maximum concurrent sessions per account
+- Maximum front-door connections per session
+- Maximum back-door links per session
+- Maximum total scroll-back memory
+- Connection rate limiting (new connections per IP per interval)
+
+Defaults should be conservative. An operator can relax them for
+their deployment.
+
+### R13. Security posture
+
+Hydra is internet-facing infrastructure. It must:
+
+- Rate-limit and lock out failed login attempts
+- Not leak information about valid usernames on failed login
+- Protect stored game credentials at rest (see R7, design doc)
+- Support back-door TLS for connecting to remote games that require
+  it (front-door TLS is always terminated by Hydra; back-door TLS
+  is optional, per game configuration)
+- Log authentication events and connection lifecycle for audit
+
+### R14. Graceful error handling
+
+Hydra must handle failure cases without crashing or losing state:
+
+- Game rejects stored credentials → notify user, link enters a state
+  where the user can log in manually or update credentials
+- SQLite errors → log, degrade gracefully (e.g., disable account
+  creation but keep existing sessions alive)
+- Back-door unreachable at startup → defer connection, retry per
+  policy, do not block Hydra startup
+- Malformed client input → drop the input or the connection, never
+  crash
+
 ## Non-Requirements
 
 - **Game logic.** Hydra does not run softcode, manage objects, or

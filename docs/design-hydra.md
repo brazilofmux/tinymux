@@ -401,9 +401,14 @@ void onFrontDoorInput(FrontDoorConn* fd, const std::string& line) {
     }
 
     if (line.size() > 0 && line[0] == '/') {
-        // Hydra command
-        dispatchSessionCommand(fd->session, fd, line);
-        return;
+        if (line.size() > 1 && line[1] == '/') {
+            // Escaped: "//" → send "/" to game
+            // Fall through with leading '/' stripped
+        } else {
+            // Hydra command
+            dispatchSessionCommand(fd->session, fd, line);
+            return;
+        }
     }
 
     // Forward to active back-door link
@@ -965,6 +970,77 @@ hydra: libmux.so ganl/*.o hydra/*.o -lsqlite3 -lssl -lcrypto -lpthread
 
 No dependency on engine.so or any game module.
 
+## Signal Handling
+
+| Signal  | Action                                              |
+|---------|-----------------------------------------------------|
+| SIGTERM | Graceful shutdown: serialize sessions, close links, exit |
+| SIGHUP  | Reload configuration (game list, limits, log level) |
+| SIGUSR1 | Dump status to log (session count, link states)     |
+| SIGPIPE | Ignored (handled via write errors)                  |
+
+Hydra writes a PID file (`hydra.pid` in the working directory or
+a configured path) for use by init systems and admin scripts.
+
+## Error Handling
+
+Hydra does not crash on recoverable errors. Strategy by category:
+
+- **Game rejects credentials** — link state changes to a manual-login
+  pass-through where the player sees the game's login screen and can
+  type credentials directly. Hydra notifies the front door(s) that
+  auto-login failed.
+- **Back-door connection refused/unreachable** — link enters
+  Reconnecting state, follows retry schedule. Does not block Hydra
+  startup or other sessions.
+- **SQLite error** — log the error. For transient errors (busy,
+  locked), retry. For persistent errors (corrupt), degrade: existing
+  in-memory sessions continue, account creation and credential
+  storage are disabled until the problem is resolved.
+- **Malformed client input** — drop the line. If the telnet stream is
+  irrecoverably broken (bad IAC sequences), close the front-door
+  connection.
+- **Resource exhaustion** — enforce limits (see below) and reject new
+  connections or links with a clear error message rather than
+  accepting work that cannot be serviced.
+
+## Resource Limits
+
+All limits are configurable in `hydra.conf` with conservative
+defaults:
+
+| Limit                          | Default | Scope          |
+|--------------------------------|---------|----------------|
+| `max_sessions_per_account`     | 1       | Per account    |
+| `max_frontdoors_per_session`   | 3       | Per session    |
+| `max_links_per_session`        | 5       | Per session    |
+| `max_scrollback_memory_mb`     | 64      | Global         |
+| `max_connections_per_ip`       | 10      | Per source IP  |
+| `connect_rate_limit`           | 5/min   | Per source IP  |
+| `failed_login_lockout`         | 5 failures → 5min lockout | Per account |
+
+When a limit is hit, Hydra rejects the request with a message
+explaining why, rather than silently dropping it.
+
+## Testing Strategy
+
+`make hydra-test` runs:
+
+- **Unit tests** — telnet bridge (charset conversion, PUA
+  ingestion/rendering, color depth mapping), scroll-back (ring buffer
+  wrap, replay correctness), account manager (password hashing,
+  credential encrypt/decrypt), config parser.
+- **Integration tests** — start Hydra and a TinyMUX instance, connect
+  a scripted client through Hydra, verify: login, game output
+  forwarding, scroll-back replay after disconnect/reconnect, charset
+  conversion, game @restart survival (back-door fd preserved).
+- **Failure tests** — game unreachable at connect time, game crashes
+  mid-session, invalid credentials, resource limit enforcement.
+
+Integration tests use the same smoke-test infrastructure as TinyMUX
+(scripted expect-style sequences), adapted for the two-hop path
+(client → Hydra → game).
+
 ## Phase Boundaries
 
 ### Phase 1: Minimal Viable Proxy
@@ -976,7 +1052,7 @@ Deliverables:
 3. Front door: TLS telnet listener (one port)
 4. Back door: plain telnet or Unix socket to one configured game
 5. Session manager: login, resume, detach
-6. Telnet bridge: charset conversion (UTF-8 ↔ Latin-1 ↔ CP437)
+6. Telnet bridge: PUA color pipeline + charset conversion
 7. Scroll-back buffer with replay on reconnect
 8. SQLite accounts + structured game login material
 9. Config file parser
@@ -1018,7 +1094,6 @@ $ openssl s_client -connect hydra.example.com:4202
 - WebSocket front-door (GANL already has WebSocket in netmux)
 - gRPC front-door (requires protobuf dependency)
 - GMCP forwarding between sides
-- Color depth translation via `color_ops`
 
 ### Phase 4 Additions
 

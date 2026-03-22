@@ -152,6 +152,12 @@ Ports are configurable. Hydra can listen on as many ports as needed.
 7. If session has active links, output begins flowing
 8. If no links, Hydra presents a menu of configured games
 
+**Account creation:** Configurable policy — open self-registration,
+admin-only creation, or disabled. When self-registration is enabled,
+the login prompt accepts a `create <username> <password>` command.
+When disabled, accounts are created via `hydra --create-user` on the
+command line or by an admin using `/useradd` in-session.
+
 ### 2. Session Manager
 
 Manages session lifecycle. This is the heart of Hydra.
@@ -166,6 +172,17 @@ Manages session lifecycle. This is the heart of Hydra.
 - Route input from front-door to active link
 - Route output from all links to all attached front-door connections
 - Handle session idle timeout and cleanup
+
+**Detached session lifetime:** When all front-door connections
+disconnect, the session enters Detached state. Back-door links remain
+active — the game keeps sending output, and Hydra keeps buffering it
+in the scroll-back. A detached session with active back-door links is
+*not* idle (the game is still generating output). The session expires
+only after `session_idle_timeout` with no front-door activity *and*
+no active back-door links, or after a separate
+`detached_session_timeout` (configurable, default 24h) regardless of
+back-door activity. This prevents abandoned sessions from holding
+game connections open indefinitely.
 
 **Session table storage:** SQLite. The session table survives Hydra
 restarts (for the graceful self-upgrade case). Active session state
@@ -188,7 +205,9 @@ commands rather than forwarding to the game:
 | `/who`               | Show connected sessions (admin)                |
 
 Commands are prefixed with `/` to distinguish them from game input.
-The prefix is configurable.
+The prefix is configurable. To send a literal `/` as the first
+character of a line to the game, the player types `//` (the escape
+prefix is doubled). For example, `//who` sends `/who` to the game.
 
 ### 3. Telnet Bridge
 
@@ -410,19 +429,21 @@ Game output arrives on back-door
 Client                    Hydra                         Game
   │                        │                            │
   │── encrypted bytes ────►│                            │
-  │                        │── TLS decrypt ──►          │
-  │                        │── telnet parse ──►         │
-  │                        │── charset convert ──►      │
-  │                        │── telnet re-encode ──►     │
+  │                        │   TLS decrypt              │
+  │                        │   telnet parse             │
+  │                        │   charset decode to UTF-8  │
+  │                        │   charset encode to game   │
+  │                        │   telnet re-encode         │
   │                        │────── game bytes ─────────►│
   │                        │                            │
   │                        │◄───── game bytes ──────────│
-  │                        │◄── telnet parse ──         │
-  │                        │◄── charset convert ──      │
-  │                        │◄── color remap ──          │
-  │                        │◄── telnet re-encode ──     │
-  │                        │◄── scroll-back append ──   │
-  │                        │◄── TLS encrypt ──          │
+  │                        │   telnet parse             │
+  │                        │   charset decode to UTF-8  │
+  │                        │   ANSI→PUA ingestion       │
+  │                        │   scroll-back append (PUA) │
+  │                        │   PUA→ANSI rendering       │
+  │                        │   charset encode to client │
+  │                        │   TLS encrypt              │
   │◄── encrypted bytes ────│                            │
 ```
 
@@ -432,8 +453,9 @@ Client                    Hydra                         Game
                           Hydra                         Game
                             │                            │
                             │◄───── game bytes ──────────│
-                            │── parse, convert ──►       │
-                            │── scroll-back append ──►   │
+                            │   telnet parse             │
+                            │   ANSI→PUA ingestion       │
+                            │   scroll-back append (PUA) │
                             │   (no front-door to send)  │
                             │                            │
 
