@@ -505,6 +505,7 @@ class HydraConnection {
                 this._emit('%   /hstop <game>          - stop a local game');
                 this._emit('%   /hrestart <game>       - restart a local game');
                 this._emit('%   /hstatus [game]        - show process status');
+                this._emit('%   /hdetach               - detach Hydra session');
                 this._emit('%   /hhelp                 - this help');
             } else if (lower.startsWith('/haddcred ')) {
                 await this._cmdAddCred(text.substring(10).trim());
@@ -520,6 +521,13 @@ class HydraConnection {
                 await this._cmdProcess('RestartGame', text.substring(10).trim());
             } else if (lower.startsWith('/hstatus')) {
                 await this._cmdStatus(text.substring(8).trim());
+            } else if (lower === '/hdetach') {
+                try {
+                    const reqBytes = Proto.encode(
+                        {session_id: this.sessionId}, SessionRequestFields);
+                    await this._rpc('DetachSession', reqBytes, {});
+                    this._emit('% [Hydra] Session detached.');
+                } catch (e) { this._emit('% [Hydra] Detach error: ' + e.message); }
             } else {
                 // Unknown /h command — send as input
                 await this._sendInput(text);

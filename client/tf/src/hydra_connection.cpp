@@ -199,6 +199,16 @@ bool HydraConnection::send_line(const std::string& line) {
         } else if (lower.substr(0, 8) == "/hstatus") {
             cmdStatus(trim(line.substr(8)));
             return true;
+        } else if (lower == "/hdetach") {
+            if (!grpc_ || !grpc_->stub || sessionId_.empty()) return true;
+            ClientContext ctx;
+            ctx.AddMetadata("authorization", sessionId_);
+            hydra::SessionRequest req;
+            req.set_session_id(sessionId_);
+            hydra::Empty resp;
+            grpc_->stub->DetachSession(&ctx, req, &resp);
+            pushOutput("[Hydra] Session detached.");
+            return true;
         } else if (lower == "/hhelp") {
             pushOutput("[Hydra] Commands:");
             pushOutput("  /hconnect <game>       - connect to a game");
@@ -214,6 +224,7 @@ bool HydraConnection::send_line(const std::string& line) {
             pushOutput("  /hstop <game>          - stop a local game");
             pushOutput("  /hrestart <game>       - restart a local game");
             pushOutput("  /hstatus [game]        - show process status");
+            pushOutput("  /hdetach               - detach Hydra session");
             pushOutput("  /hhelp                 - this help");
             return true;
         }
