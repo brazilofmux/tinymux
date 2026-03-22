@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <cstring> // For strerror, memset
 #include <cerrno>  // For errno constants
+#include <sys/un.h> // For sockaddr_un (Unix domain sockets)
 #include <vector>  // For key iteration during shutdown
 #include <mutex>
 #include <netdb.h> // For getaddrinfo
@@ -284,6 +285,237 @@ ConnectionHandle EpollNetworkEngine::adoptConnection(int fd, void* connectionCon
     }
 
     GANL_EPOLL_DEBUG(fd, "Adopted external connection successfully.");
+    return static_cast<ConnectionHandle>(fd);
+}
+
+ConnectionHandle EpollNetworkEngine::initiateConnect(const std::string& host, uint16_t port,
+                                                     void* connectionContext, ErrorCode& error) {
+    error = 0;
+    GANL_EPOLL_DEBUG(0, "Initiating outbound connect to " << host << ":" << port);
+
+    if (epollFd_ == -1) {
+        error = EINVAL;
+        return InvalidConnectionHandle;
+    }
+
+    // Resolve hostname (blocking — adequate for Phase 1 localhost/LAN targets)
+    addrinfo hints{};
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+
+    std::string portStr = std::to_string(port);
+    addrinfo* results = nullptr;
+    int gaiResult = ::getaddrinfo(host.c_str(), portStr.c_str(), &hints, &results);
+    if (gaiResult != 0) {
+        error = (gaiResult == EAI_SYSTEM) ? errno : EINVAL;
+        GANL_EPOLL_DEBUG(0, "initiateConnect: getaddrinfo failed: " << ::gai_strerror(gaiResult));
+        return InvalidConnectionHandle;
+    }
+
+    int fd = -1;
+    int lastErr = 0;
+    bool connectInProgress = false;
+
+    for (addrinfo* ai = results; ai != nullptr; ai = ai->ai_next) {
+        int sockFlags = ai->ai_socktype;
+#ifdef SOCK_NONBLOCK
+        sockFlags |= SOCK_NONBLOCK;
+#endif
+#ifdef SOCK_CLOEXEC
+        sockFlags |= SOCK_CLOEXEC;
+#endif
+
+        fd = ::socket(ai->ai_family, sockFlags, ai->ai_protocol);
+        if (fd == -1) {
+            lastErr = errno;
+            continue;
+        }
+
+#ifndef SOCK_NONBLOCK
+        if (!setNonBlocking(fd, lastErr)) {
+            ::close(fd);
+            fd = -1;
+            continue;
+        }
+#endif
+
+        int rc = ::connect(fd, ai->ai_addr, static_cast<socklen_t>(ai->ai_addrlen));
+        if (rc == 0) {
+            // Immediate connect (common for localhost)
+            connectInProgress = false;
+            break;
+        } else if (errno == EINPROGRESS || errno == EWOULDBLOCK) {
+            // Normal for non-blocking connect
+            connectInProgress = true;
+            break;
+        } else {
+            lastErr = errno;
+            GANL_EPOLL_DEBUG(fd, "connect() failed: " << strerror(lastErr));
+            ::close(fd);
+            fd = -1;
+            continue;
+        }
+    }
+
+    ::freeaddrinfo(results);
+
+    if (fd == -1) {
+        error = lastErr != 0 ? lastErr : ECONNREFUSED;
+        return InvalidConnectionHandle;
+    }
+
+    // Register with epoll
+    SocketType sockType = connectInProgress
+        ? SocketType::OutboundConnecting
+        : SocketType::Connection;
+    uint32_t initialEvents = connectInProgress
+        ? (EPOLLOUT | EPOLLET)          // Wait for connect completion
+        : (EPOLLIN | EPOLLET);          // Already connected, ready for data
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        sockets_[fd] = SocketInfo{
+            sockType,
+            /*context=*/connectionContext,
+            /*events=*/initialEvents,
+            /*activeReadBuffer=*/nullptr,
+            /*writeUserContext=*/nullptr
+        };
+    }
+
+    epoll_event event;
+    memset(&event, 0, sizeof(event));
+    event.events = initialEvents;
+    event.data.fd = fd;
+
+    if (epoll_ctl(epollFd_, EPOLL_CTL_ADD, fd, &event) == -1) {
+        error = errno;
+        GANL_EPOLL_DEBUG(fd, "epoll_ctl(ADD) failed for outbound connect: " << strerror(error));
+        std::lock_guard<std::mutex> lock(mutex_);
+        sockets_.erase(fd);
+        ::close(fd);
+        return InvalidConnectionHandle;
+    }
+
+    GANL_EPOLL_DEBUG(fd, "Outbound connect initiated ("
+        << (connectInProgress ? "in progress" : "immediate") << ").");
+
+    // For immediate connects, keep the socket as OutboundConnecting with
+    // EPOLLOUT interest.  The next processEvents() will see EPOLLOUT, check
+    // SO_ERROR (which will be 0), and emit ConnectSuccess — consistent with
+    // the async path.  No special-casing needed by the caller.
+    if (!connectInProgress) {
+        GANL_EPOLL_DEBUG(fd, "Connect completed immediately, will emit ConnectSuccess on next poll.");
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = sockets_.find(fd);
+        if (it != sockets_.end()) {
+            it->second.type = SocketType::OutboundConnecting;
+            it->second.events = EPOLLOUT | EPOLLET;
+        }
+        // Events already registered as EPOLLOUT|EPOLLET above, so
+        // EPOLLOUT will fire on the next epoll_wait.
+    }
+
+    return static_cast<ConnectionHandle>(fd);
+}
+
+ConnectionHandle EpollNetworkEngine::initiateUnixConnect(const std::string& path,
+                                                         void* connectionContext, ErrorCode& error) {
+    error = 0;
+    GANL_EPOLL_DEBUG(0, "Initiating outbound Unix connect to " << path);
+
+    if (epollFd_ == -1) {
+        error = EINVAL;
+        return InvalidConnectionHandle;
+    }
+
+    int sockFlags = SOCK_STREAM;
+#ifdef SOCK_NONBLOCK
+    sockFlags |= SOCK_NONBLOCK;
+#endif
+#ifdef SOCK_CLOEXEC
+    sockFlags |= SOCK_CLOEXEC;
+#endif
+
+    int fd = ::socket(AF_UNIX, sockFlags, 0);
+    if (fd == -1) {
+        error = errno;
+        return InvalidConnectionHandle;
+    }
+
+#ifndef SOCK_NONBLOCK
+    if (!setNonBlocking(fd, error)) {
+        ::close(fd);
+        return InvalidConnectionHandle;
+    }
+#endif
+
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    if (path.size() >= sizeof(addr.sun_path)) {
+        error = ENAMETOOLONG;
+        ::close(fd);
+        return InvalidConnectionHandle;
+    }
+    strncpy(addr.sun_path, path.c_str(), sizeof(addr.sun_path) - 1);
+
+    bool connectInProgress = false;
+    int rc = ::connect(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr));
+    if (rc == 0) {
+        connectInProgress = false;
+    } else if (errno == EINPROGRESS || errno == EWOULDBLOCK) {
+        connectInProgress = true;
+    } else {
+        error = errno;
+        GANL_EPOLL_DEBUG(fd, "Unix connect() failed: " << strerror(error));
+        ::close(fd);
+        return InvalidConnectionHandle;
+    }
+
+    SocketType sockType = connectInProgress
+        ? SocketType::OutboundConnecting
+        : SocketType::Connection;
+    uint32_t initialEvents = connectInProgress
+        ? (EPOLLOUT | EPOLLET)
+        : (EPOLLIN | EPOLLET);
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        sockets_[fd] = SocketInfo{
+            sockType,
+            /*context=*/connectionContext,
+            /*events=*/initialEvents,
+            /*activeReadBuffer=*/nullptr,
+            /*writeUserContext=*/nullptr
+        };
+    }
+
+    epoll_event event;
+    memset(&event, 0, sizeof(event));
+    event.events = initialEvents;
+    event.data.fd = fd;
+
+    if (epoll_ctl(epollFd_, EPOLL_CTL_ADD, fd, &event) == -1) {
+        error = errno;
+        std::lock_guard<std::mutex> lock(mutex_);
+        sockets_.erase(fd);
+        ::close(fd);
+        return InvalidConnectionHandle;
+    }
+
+    if (!connectInProgress) {
+        GANL_EPOLL_DEBUG(fd, "Unix connect completed immediately.");
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = sockets_.find(fd);
+        if (it != sockets_.end()) {
+            it->second.type = SocketType::OutboundConnecting;
+            it->second.events = EPOLLOUT | EPOLLET;
+        }
+    }
+
+    GANL_EPOLL_DEBUG(fd, "Unix outbound connect initiated.");
     return static_cast<ConnectionHandle>(fd);
 }
 
@@ -653,6 +885,65 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
             continue; // Done processing listener event
         } // end if listener
 
+
+        // --- Handle Outbound Connecting Events ---
+        if (socketInfoCopy.type == SocketType::OutboundConnecting) {
+            ConnectionHandle connHandle = static_cast<ConnectionHandle>(fd);
+
+            if (revents & (EPOLLOUT | EPOLLERR | EPOLLHUP)) {
+                // Check if connect() succeeded via SO_ERROR
+                int sockerr = 0;
+                socklen_t errlen = sizeof(sockerr);
+                getsockopt(fd, SOL_SOCKET, SO_ERROR,
+                           reinterpret_cast<char*>(&sockerr), &errlen);
+
+                if (sockerr == 0) {
+                    // Connect succeeded — transition to Connection
+                    GANL_EPOLL_DEBUG(fd, "Outbound connect succeeded.");
+                    {
+                        std::lock_guard<std::mutex> lock(mutex_);
+                        auto sockIt = sockets_.find(fd);
+                        if (sockIt != sockets_.end()) {
+                            sockIt->second.type = SocketType::Connection;
+                        }
+                    }
+
+                    // Switch to read interest (normal connection mode)
+                    ErrorCode modError = 0;
+                    modifyEpollFlags(fd, EPOLLIN | EPOLLET, modError);
+
+                    if (eventCount < maxEvents) {
+                        IoEvent& ev = events[eventCount++];
+                        ev.type = IoEventType::ConnectSuccess;
+                        ev.connection = connHandle;
+                        ev.context = socketInfoCopy.context;
+                        ev.bytesTransferred = 0;
+                        ev.error = 0;
+                    }
+                } else {
+                    // Connect failed
+                    GANL_EPOLL_DEBUG(fd, "Outbound connect failed: " << strerror(sockerr));
+
+                    if (eventCount < maxEvents) {
+                        IoEvent& ev = events[eventCount++];
+                        ev.type = IoEventType::ConnectFail;
+                        ev.connection = connHandle;
+                        ev.context = socketInfoCopy.context;
+                        ev.bytesTransferred = 0;
+                        ev.error = sockerr;
+                    }
+
+                    // Clean up the failed socket
+                    epoll_ctl(epollFd_, EPOLL_CTL_DEL, fd, nullptr);
+                    ::close(fd);
+                    {
+                        std::lock_guard<std::mutex> lock(mutex_);
+                        sockets_.erase(fd);
+                    }
+                }
+            }
+            continue; // Done processing outbound connecting event
+        }
 
         // --- Handle Connection Events ---
         if (socketInfoCopy.type == SocketType::Connection) {

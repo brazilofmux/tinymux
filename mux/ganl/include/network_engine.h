@@ -101,6 +101,42 @@ public:
     }
 
     /**
+     * Initiate an asynchronous outbound TCP connection.
+     *
+     * Creates a non-blocking socket, resolves the host, initiates connect(),
+     * and registers the fd with the engine.  The caller receives a
+     * ConnectionHandle immediately.  When the connect completes, processEvents()
+     * will emit an IoEvent with type ConnectSuccess or ConnectFail.
+     *
+     * @param host Hostname or IP address to connect to
+     * @param port TCP port
+     * @param connectionContext Context pointer for the connection
+     * @param error Error code output variable
+     * @return Connection handle on success, InvalidConnectionHandle on failure
+     */
+    virtual ConnectionHandle initiateConnect(const std::string& host, uint16_t port,
+                                             void* connectionContext, ErrorCode& error) {
+        (void)host; (void)port; (void)connectionContext;
+        error = ENOTSUP;
+        return InvalidConnectionHandle;
+    }
+
+    /**
+     * Initiate an asynchronous outbound Unix domain socket connection.
+     *
+     * @param path Path to the Unix domain socket
+     * @param connectionContext Context pointer for the connection
+     * @param error Error code output variable
+     * @return Connection handle on success, InvalidConnectionHandle on failure
+     */
+    virtual ConnectionHandle initiateUnixConnect(const std::string& path,
+                                                 void* connectionContext, ErrorCode& error) {
+        (void)path; (void)connectionContext;
+        error = ENOTSUP;
+        return InvalidConnectionHandle;
+    }
+
+    /**
      * Start listening for connections
      *
      * @param listener Listener handle
