@@ -10,7 +10,7 @@
 #   announce   — standalone announce tool
 #   muxescape — standalone text escaping tool
 
-SUBDIRS = ganl sqlite lua54 lib src modules announce muxescape script
+SUBDIRS = ganl sqlite lua54 lib src modules announce muxescape script proxy
 
 # Shared build flags available to all subdirectories.
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdir)/sqlite \

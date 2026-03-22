@@ -117,6 +117,16 @@ testcases/SmokeMUX-*.log
 testcases/tools/smoke.conf
 testcases/*.bak
 
+# Hydra proxy build artifacts
+mux/proxy/hydra
+mux/proxy/.deps/
+mux/proxy/Makefile
+mux/proxy/*.o
+mux/proxy/hydra.conf
+mux/proxy/hydra.log
+mux/proxy/hydra.sqlite
+mux/game/bin/hydra
+
 # External project symlinks
 riscv
 slow-32

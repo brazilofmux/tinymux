@@ -625,6 +625,7 @@ AC_CONFIG_FILES([
     muxescape/Makefile
     script/Makefile
     ganl/Makefile
+    proxy/Makefile
 ])
 
 PKG_CHECK_MODULES([OPENSSL], [openssl], [],

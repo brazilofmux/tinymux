@@ -1,0 +1,49 @@
+# Hydra configuration example
+#
+# Copy to hydra.conf and edit for your deployment.
+
+# --- Network ---
+# listen <type> <host:port> [cert=<path> key=<path>]
+listen telnet       0.0.0.0:4201
+listen telnet+tls   0.0.0.0:4202 cert=hydra.pem key=hydra.key
+
+# --- Database ---
+database hydra.sqlite
+
+# --- Master key (for game credential encryption) ---
+# master_key /etc/hydra/master.key
+
+# --- Session defaults ---
+scrollback_lines    10000
+session_idle_timeout 86400
+# detached_session_timeout 86400
+
+# --- Logging ---
+log_file hydra.log
+log_level info
+
+# --- Games ---
+game "LocalMUX" {
+    host        localhost
+    port        2860
+    transport   tcp
+    type        local
+    binary      /home/user/tinymux/mux/game/bin/netmux
+    workdir     /home/user/tinymux/mux/game
+    autostart   no
+    reconnect   yes
+    retry       5s 10s 30s 60s
+    charset     utf-8
+}
+
+# game "RemoteMUD" {
+#     host        mud.example.com
+#     port        4000
+#     type        remote
+#     tls         yes
+#     tls_verify  yes
+#     # tls_ca    /etc/ssl/certs/ca-certificates.crt
+#     reconnect   yes
+#     retry       10s 30s 60s
+#     charset     latin-1
+# }
