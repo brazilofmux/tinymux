@@ -4,6 +4,14 @@
 #include <cstring>
 #include <algorithm>
 
+// Context for scroll-back replay callback — renders PUA through the bridge.
+struct ReplayContext {
+    ganl::ConnectionHandle handle;
+    ganl::EncodingType encoding;
+    ColorDepth colorDepth;
+    TelnetBridge* bridge;
+};
+
 SessionManager::SessionManager(ganl::NetworkEngine& engine,
                                AccountManager& accounts,
                                const HydraConfig& config)
@@ -129,7 +137,7 @@ void SessionManager::processLine(FrontDoorState& fd,
     if (!line.empty() && line[0] == '/') {
         if (line.size() > 1 && line[1] == '/') {
             // Escaped: "//" → send "/" to game
-            forwardToGame(session, line.substr(1));
+            forwardToGame(session, fd.handle, line.substr(1));
             return;
         }
         dispatchCommand(session, fd.handle, line);
@@ -137,7 +145,7 @@ void SessionManager::processLine(FrontDoorState& fd,
     }
 
     // Forward to game
-    forwardToGame(session, line);
+    forwardToGame(session, fd.handle, line);
 }
 
 void SessionManager::handleLogin(FrontDoorState& fd,
@@ -251,17 +259,22 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                     + std::to_string(existing->scrollback.count())
                     + " lines) --\r\n");
 
+                ReplayContext rctx{fd.handle, fd.encoding,
+                                   fd.colorDepth, &bridge_};
                 existing->scrollback.replay(
                     existing->scrollback.count(),
                     [](const std::string& text,
                        const std::string& source,
                        time_t timestamp, void* ctx) {
-                        auto* handle = static_cast<ganl::ConnectionHandle*>(ctx);
-                        int fd = static_cast<int>(*handle);
-                        std::string line = text + "\r\n";
-                        send(fd, line.data(), line.size(), MSG_NOSIGNAL);
+                        auto* rc = static_cast<ReplayContext*>(ctx);
+                        std::string rendered = rc->bridge->renderForClient(
+                            rc->encoding, rc->colorDepth, text);
+                        rendered += "\r\n";
+                        int fd = static_cast<int>(rc->handle);
+                        send(fd, rendered.data(), rendered.size(),
+                             MSG_NOSIGNAL);
                     },
-                    &fd.handle);
+                    &rctx);
 
                 sendToClient(fd.handle,
                     "-- End scroll-back --\r\n");
@@ -355,16 +368,27 @@ void SessionManager::dispatchCommand(HydraSession& session,
         } else {
             sendToClient(fdHandle,
                 "-- Last " + std::to_string(n) + " lines --\r\n");
+            auto fdIt = frontDoors_.find(fdHandle);
+            ganl::EncodingType enc = ganl::EncodingType::Utf8;
+            ColorDepth depth = ColorDepth::Ansi256;
+            if (fdIt != frontDoors_.end()) {
+                enc = fdIt->second.encoding;
+                depth = fdIt->second.colorDepth;
+            }
+            ReplayContext rctx{fdHandle, enc, depth, &bridge_};
             session.scrollback.replay(n,
                 [](const std::string& text,
                    const std::string& source,
                    time_t timestamp, void* ctx) {
-                    auto* handle = static_cast<ganl::ConnectionHandle*>(ctx);
-                    int fd = static_cast<int>(*handle);
-                    std::string line = text + "\r\n";
-                    send(fd, line.data(), line.size(), MSG_NOSIGNAL);
+                    auto* rc = static_cast<ReplayContext*>(ctx);
+                    std::string rendered = rc->bridge->renderForClient(
+                        rc->encoding, rc->colorDepth, text);
+                    rendered += "\r\n";
+                    int fd = static_cast<int>(rc->handle);
+                    send(fd, rendered.data(), rendered.size(),
+                         MSG_NOSIGNAL);
                 },
-                &fdHandle);
+                &rctx);
             sendToClient(fdHandle, "-- End --\r\n");
         }
     } else if (verb == "links") {
@@ -429,6 +453,7 @@ void SessionManager::connectToGame(HydraSession& session,
     session.backDoor = bdHandle;
     session.gameName = game->name;
     session.linkState = LinkState::Connecting;
+    session.gameProtoState.encoding = game->charset;
     backDoorMap_[bdHandle] = session.id;
 
     for (auto h : session.frontDoors) {
@@ -442,6 +467,7 @@ void SessionManager::connectToGame(HydraSession& session,
 }
 
 void SessionManager::forwardToGame(HydraSession& session,
+                                   ganl::ConnectionHandle fdHandle,
                                    const std::string& line) {
     if (session.backDoor == ganl::InvalidConnectionHandle ||
         session.linkState != LinkState::Active) {
@@ -452,9 +478,19 @@ void SessionManager::forwardToGame(HydraSession& session,
         return;
     }
 
-    std::string data = line + "\r\n";
+    // Charset-convert client input for the game
+    ganl::EncodingType clientEnc = ganl::EncodingType::Utf8;
+    auto fdIt = frontDoors_.find(fdHandle);
+    if (fdIt != frontDoors_.end()) {
+        clientEnc = fdIt->second.encoding;
+    }
+
+    std::string converted = bridge_.convertInput(
+        clientEnc, session.gameProtoState.encoding, line);
+    converted += "\r\n";
+
     int bdFd = static_cast<int>(session.backDoor);
-    send(bdFd, data.data(), data.size(), MSG_NOSIGNAL);
+    send(bdFd, converted.data(), converted.size(), MSG_NOSIGNAL);
 }
 
 // ---- Back-door lifecycle ----
@@ -514,13 +550,23 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
 
     HydraSession& session = sit->second;
 
-    // Append to scroll-back (raw for now — PUA conversion in Step 7)
-    std::string text(data, len);
-    session.scrollback.append(text, session.gameName);
+    // Ingest: charset-decode + ANSI→PUA
+    std::string puaText = bridge_.ingestGameOutput(
+        session.gameProtoState, data, len);
 
-    // Forward to all front-doors
+    // Append PUA-encoded UTF-8 to scroll-back
+    session.scrollback.append(puaText, session.gameName);
+
+    // Render at each front-door's color depth and send
     for (auto h : session.frontDoors) {
-        send(static_cast<int>(h), data, len, MSG_NOSIGNAL);
+        auto fdIt = frontDoors_.find(h);
+        if (fdIt == frontDoors_.end()) continue;
+        const FrontDoorState& fd = fdIt->second;
+
+        std::string rendered = bridge_.renderForClient(
+            fd.encoding, fd.colorDepth, puaText);
+        send(static_cast<int>(h), rendered.data(), rendered.size(),
+             MSG_NOSIGNAL);
     }
 }
 

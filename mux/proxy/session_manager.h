@@ -5,6 +5,7 @@
 #include "config.h"
 #include "scrollback.h"
 #include "account_manager.h"
+#include "telnet_bridge.h"
 #include <network_engine.h>
 #include <network_types.h>
 #include <map>
@@ -31,6 +32,9 @@ struct HydraSession {
     SessionState        state{SessionState::Active};
 
     std::vector<uint8_t> scrollbackKey;
+
+    // Game protocol state (charset from config; telnet negotiation in future)
+    ganl::ProtocolState gameProtoState;
 };
 
 // Per front-door connection state (before and after auth)
@@ -44,6 +48,10 @@ struct FrontDoorState {
 
     // Line assembly buffer (for telnet line-at-a-time)
     std::string lineBuf;
+
+    // Client capabilities (defaults for Phase 1; auto-detect in future)
+    ganl::EncodingType encoding{ganl::EncodingType::Utf8};
+    ColorDepth colorDepth{ColorDepth::Ansi256};
 };
 
 class SessionManager {
@@ -93,7 +101,9 @@ private:
     void showBanner(ganl::ConnectionHandle handle);
     void showGameMenu(HydraSession& session, ganl::ConnectionHandle fdHandle);
     void connectToGame(HydraSession& session, const std::string& gameName);
-    void forwardToGame(HydraSession& session, const std::string& line);
+    void forwardToGame(HydraSession& session,
+                       ganl::ConnectionHandle fdHandle,
+                       const std::string& line);
 
     HydraSession* findSessionByBackDoor(ganl::ConnectionHandle bdHandle);
 
@@ -107,6 +117,8 @@ private:
     std::map<ganl::ConnectionHandle, HydraSessionId> backDoorMap_;
 
     HydraSessionId nextSessionId_{1};
+
+    TelnetBridge bridge_;
 };
 
 #endif // HYDRA_SESSION_MANAGER_H

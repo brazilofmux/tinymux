@@ -51,4 +51,12 @@ enum class GameType {
     Remote,
 };
 
+// Client color depth capability
+enum class ColorDepth {
+    None,       // strip all color
+    Ansi16,     // basic 16-color SGR
+    Ansi256,    // xterm-256
+    TrueColor,  // 24-bit RGB
+};
+
 #endif // HYDRA_TYPES_H
