@@ -62,28 +62,85 @@ struct HydraSession {
     // Persistent session ID (random hex string for SQLite storage)
     std::string persistId;
 
-    // gRPC output queue for Subscribe streaming.
-    // Heap-allocated so HydraSession stays movable.
+    // gRPC output distribution for Subscribe/GameSession streaming.
+    // Each subscriber gets its own queue so multiple consumers on the
+    // same session each receive a full copy of all output.
     struct OutputItem {
         std::string text;       // ANSI TrueColor rendered
         std::string source;     // game name
         time_t timestamp;
         int linkNumber;         // 1-based
     };
-    // GMCP message queued for gRPC consumers.
     struct GmcpItem {
         std::string package;    // e.g. "Char.Vitals"
         std::string json;
         int linkNumber;         // 1-based
     };
 
+    // Per-subscriber queue — each subscriber holds a shared_ptr to one.
+    struct SubscriberQueue {
+        std::queue<OutputItem> output;
+        std::queue<GmcpItem> gmcp;
+        bool wantsOutput{true};
+        bool wantsGmcp{false};
+    };
+
     struct OutputQueue {
         std::mutex mutex;
         std::condition_variable cv;
-        std::queue<OutputItem> queue;
-        std::queue<GmcpItem> gmcpQueue;
-        std::atomic<int> subscriberCount{0};
-        std::atomic<int> gmcpSubscriberCount{0};
+
+        // Active subscriber queues, keyed by opaque subscriber ID.
+        int nextSubId{1};
+        std::map<int, std::shared_ptr<SubscriberQueue>> subscribers;
+
+        // Register a new subscriber. Returns its ID and queue.
+        std::pair<int, std::shared_ptr<SubscriberQueue>> addSubscriber(
+                bool wantsOutput, bool wantsGmcp) {
+            int id = nextSubId++;
+            auto sq = std::make_shared<SubscriberQueue>();
+            sq->wantsOutput = wantsOutput;
+            sq->wantsGmcp = wantsGmcp;
+            subscribers[id] = sq;
+            return {id, sq};
+        }
+
+        void removeSubscriber(int id) {
+            subscribers.erase(id);
+        }
+
+        // Push an output item to all subscribers that want output.
+        void pushOutput(OutputItem item) {
+            for (auto& [id, sq] : subscribers) {
+                if (sq->wantsOutput) {
+                    sq->output.push(item);
+                }
+            }
+            cv.notify_all();
+        }
+
+        // Push a GMCP item to all subscribers that want GMCP.
+        void pushGmcp(GmcpItem item) {
+            for (auto& [id, sq] : subscribers) {
+                if (sq->wantsGmcp) {
+                    sq->gmcp.push(item);
+                }
+            }
+            cv.notify_all();
+        }
+
+        bool hasSubscribers() const { return !subscribers.empty(); }
+        bool hasOutputSubscribers() const {
+            for (auto& [id, sq] : subscribers) {
+                if (sq->wantsOutput) return true;
+            }
+            return false;
+        }
+        bool hasGmcpSubscribers() const {
+            for (auto& [id, sq] : subscribers) {
+                if (sq->wantsGmcp) return true;
+            }
+            return false;
+        }
     };
     std::shared_ptr<OutputQueue> outputQueue{std::make_shared<OutputQueue>()};
 };

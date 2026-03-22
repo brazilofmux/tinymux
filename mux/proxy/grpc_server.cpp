@@ -317,8 +317,15 @@ public:
         oq = future.get();
         if (!oq) return Status(StatusCode::NOT_FOUND, "session not found");
 
-        oq->subscriberCount.fetch_add(1);
-        oq->gmcpSubscriberCount.fetch_add(1);
+        // Register as subscriber (wants both output and GMCP)
+        int subId;
+        std::shared_ptr<HydraSession::SubscriberQueue> sq;
+        {
+            std::lock_guard<std::mutex> lock(oq->mutex);
+            auto [id, q] = oq->addSubscriber(true, true);
+            subId = id;
+            sq = q;
+        }
 
         // Reader thread: process client input
         std::atomic<bool> done{false};
@@ -375,42 +382,44 @@ public:
             oq->cv.notify_all();
         });
 
-        // Writer loop: push output + GMCP to client
+        // Writer loop: drain this subscriber's own queues
         while (!done.load() && !ctx->IsCancelled()) {
             std::unique_lock<std::mutex> lock(oq->mutex);
             oq->cv.wait_for(lock, std::chrono::milliseconds(500),
-                [&oq, &done] { return !oq->queue.empty() || !oq->gmcpQueue.empty() || done.load(); });
+                [&sq, &done] { return !sq->output.empty() || !sq->gmcp.empty() || done.load(); });
 
-            while (!oq->queue.empty()) {
-                auto& item = oq->queue.front();
+            while (!sq->output.empty()) {
+                auto item = std::move(sq->output.front());
+                sq->output.pop();
+                lock.unlock();
                 hydra::ServerMessage msg;
                 auto* go = msg.mutable_game_output();
                 go->set_text(item.text);
                 go->set_source(item.source);
                 go->set_timestamp(static_cast<int64_t>(item.timestamp));
                 go->set_link_number(item.linkNumber);
-                oq->queue.pop();
-                lock.unlock();
                 if (!stream->Write(msg)) { done.store(true); break; }
                 lock.lock();
             }
 
-            while (!oq->gmcpQueue.empty()) {
-                auto& item = oq->gmcpQueue.front();
+            while (!sq->gmcp.empty()) {
+                auto item = std::move(sq->gmcp.front());
+                sq->gmcp.pop();
+                lock.unlock();
                 hydra::ServerMessage msg;
                 auto* gm = msg.mutable_gmcp();
                 gm->set_package(item.package);
                 gm->set_json(item.json);
                 gm->set_link_number(item.linkNumber);
-                oq->gmcpQueue.pop();
-                lock.unlock();
                 if (!stream->Write(msg)) { done.store(true); break; }
                 lock.lock();
             }
         }
 
-        oq->subscriberCount.fetch_sub(1);
-        oq->gmcpSubscriberCount.fetch_sub(1);
+        {
+            std::lock_guard<std::mutex> lock(oq->mutex);
+            oq->removeSubscriber(subId);
+        }
         reader.join();
         return Status::OK;
     }
@@ -454,31 +463,43 @@ public:
         oq = future.get();
         if (!oq) return Status(StatusCode::NOT_FOUND, "session not found");
 
-        oq->subscriberCount.fetch_add(1);
+        // Register as subscriber (output only, no GMCP)
+        int subId;
+        std::shared_ptr<HydraSession::SubscriberQueue> sq;
+        {
+            std::lock_guard<std::mutex> lock(oq->mutex);
+            auto [id, q] = oq->addSubscriber(true, false);
+            subId = id;
+            sq = q;
+        }
 
         while (!ctx->IsCancelled()) {
             std::unique_lock<std::mutex> lock(oq->mutex);
             oq->cv.wait_for(lock, std::chrono::milliseconds(500),
-                [&oq] { return !oq->queue.empty(); });
+                [&sq] { return !sq->output.empty(); });
 
-            while (!oq->queue.empty()) {
-                auto& item = oq->queue.front();
+            while (!sq->output.empty()) {
+                auto item = std::move(sq->output.front());
+                sq->output.pop();
+                lock.unlock();
                 hydra::GameOutput msg;
                 msg.set_text(item.text);
                 msg.set_source(item.source);
                 msg.set_timestamp(static_cast<int64_t>(item.timestamp));
                 msg.set_link_number(item.linkNumber);
-                oq->queue.pop();
-                lock.unlock();
                 if (!writer->Write(msg)) {
-                    oq->subscriberCount.fetch_sub(1);
+                    std::lock_guard<std::mutex> lk(oq->mutex);
+                    oq->removeSubscriber(subId);
                     return Status::OK;
                 }
                 lock.lock();
             }
         }
 
-        oq->subscriberCount.fetch_sub(1);
+        {
+            std::lock_guard<std::mutex> lock(oq->mutex);
+            oq->removeSubscriber(subId);
+        }
         return Status::OK;
     }
 
@@ -504,16 +525,24 @@ public:
             filters.push_back(req->packages(i));
         }
 
-        oq->gmcpSubscriberCount.fetch_add(1);
+        // Register as subscriber (GMCP only, no output)
+        int subId;
+        std::shared_ptr<HydraSession::SubscriberQueue> sq;
+        {
+            std::lock_guard<std::mutex> lock(oq->mutex);
+            auto [id, q] = oq->addSubscriber(false, true);
+            subId = id;
+            sq = q;
+        }
 
         while (!ctx->IsCancelled()) {
             std::unique_lock<std::mutex> lock(oq->mutex);
             oq->cv.wait_for(lock, std::chrono::milliseconds(500),
-                [&oq] { return !oq->gmcpQueue.empty(); });
+                [&sq] { return !sq->gmcp.empty(); });
 
-            while (!oq->gmcpQueue.empty()) {
-                auto item = oq->gmcpQueue.front();
-                oq->gmcpQueue.pop();
+            while (!sq->gmcp.empty()) {
+                auto item = std::move(sq->gmcp.front());
+                sq->gmcp.pop();
                 lock.unlock();
 
                 // Apply package filter if any
@@ -533,7 +562,8 @@ public:
                     msg.set_json(item.json);
                     msg.set_link_number(item.linkNumber);
                     if (!writer->Write(msg)) {
-                        oq->gmcpSubscriberCount.fetch_sub(1);
+                        std::lock_guard<std::mutex> lk(oq->mutex);
+                        oq->removeSubscriber(subId);
                         return Status::OK;
                     }
                 }
@@ -541,7 +571,10 @@ public:
             }
         }
 
-        oq->gmcpSubscriberCount.fetch_sub(1);
+        {
+            std::lock_guard<std::mutex> lock(oq->mutex);
+            oq->removeSubscriber(subId);
+        }
         return Status::OK;
     }
 

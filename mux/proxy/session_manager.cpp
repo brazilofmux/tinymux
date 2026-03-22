@@ -1192,28 +1192,27 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
                  MSG_NOSIGNAL);
         }
 
-        // Push to gRPC GMCP queue if any subscribers
-        if (session->outputQueue->gmcpSubscriberCount.load() > 0) {
-            // Parse GMCP payload: "Package.Name json_data"
-            std::string pkg, json;
-            size_t sp = gm.payload.find(' ');
-            if (sp != std::string::npos) {
-                pkg = gm.payload.substr(0, sp);
-                json = gm.payload.substr(sp + 1);
-            } else {
-                pkg = gm.payload;
-            }
+        // Push to gRPC GMCP queue — replicated to all subscribers
+        {
+            std::lock_guard<std::mutex> lock(session->outputQueue->mutex);
+            if (session->outputQueue->hasGmcpSubscribers()) {
+                // Parse GMCP payload: "Package.Name json_data"
+                std::string pkg, json;
+                size_t sp = gm.payload.find(' ');
+                if (sp != std::string::npos) {
+                    pkg = gm.payload.substr(0, sp);
+                    json = gm.payload.substr(sp + 1);
+                } else {
+                    pkg = gm.payload;
+                }
 
-            HydraSession::GmcpItem item;
-            item.package = pkg;
-            item.json = json;
-            item.linkNumber = static_cast<int>(linkIdx) + 1;
+                HydraSession::GmcpItem item;
+                item.package = pkg;
+                item.json = json;
+                item.linkNumber = static_cast<int>(linkIdx) + 1;
 
-            {
-                std::lock_guard<std::mutex> lock(session->outputQueue->mutex);
-                session->outputQueue->gmcpQueue.push(std::move(item));
+                session->outputQueue->pushGmcp(std::move(item));
             }
-            session->outputQueue->cv.notify_all();
         }
     }
 
@@ -1260,25 +1259,24 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
             }
         }
 
-        // Push to gRPC output queue if any subscribers
-        if (session->outputQueue->subscriberCount.load() > 0) {
-            // Render at TrueColor for gRPC consumers
-            unsigned char ansiBuf[8000];
-            size_t ansiLen = co_render_truecolor(ansiBuf,
-                reinterpret_cast<const unsigned char*>(puaText.data()),
-                puaText.size(), 0);
+        // Push to gRPC output queue — replicated to all subscribers
+        {
+            std::lock_guard<std::mutex> lock(session->outputQueue->mutex);
+            if (session->outputQueue->hasOutputSubscribers()) {
+                // Render at TrueColor for gRPC consumers
+                unsigned char ansiBuf[8000];
+                size_t ansiLen = co_render_truecolor(ansiBuf,
+                    reinterpret_cast<const unsigned char*>(puaText.data()),
+                    puaText.size(), 0);
 
-            HydraSession::OutputItem item;
-            item.text.assign(reinterpret_cast<char*>(ansiBuf), ansiLen);
-            item.source = link->gameName;
-            item.timestamp = time(nullptr);
-            item.linkNumber = static_cast<int>(linkIdx) + 1;
+                HydraSession::OutputItem item;
+                item.text.assign(reinterpret_cast<char*>(ansiBuf), ansiLen);
+                item.source = link->gameName;
+                item.timestamp = time(nullptr);
+                item.linkNumber = static_cast<int>(linkIdx) + 1;
 
-            {
-                std::lock_guard<std::mutex> lock(session->outputQueue->mutex);
-                session->outputQueue->queue.push(std::move(item));
+                session->outputQueue->pushOutput(std::move(item));
             }
-            session->outputQueue->cv.notify_all();
         }
     }
 }
