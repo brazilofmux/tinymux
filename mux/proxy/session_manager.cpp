@@ -1259,18 +1259,13 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
             }
         }
 
-        // Push to gRPC output queue — replicated to all subscribers
+        // Push PUA-encoded text to gRPC output queue — each subscriber
+        // renders at their preferred color format when reading.
         {
             std::lock_guard<std::mutex> lock(session->outputQueue->mutex);
             if (session->outputQueue->hasOutputSubscribers()) {
-                // Render at TrueColor for gRPC consumers
-                unsigned char ansiBuf[8000];
-                size_t ansiLen = co_render_truecolor(ansiBuf,
-                    reinterpret_cast<const unsigned char*>(puaText.data()),
-                    puaText.size(), 0);
-
                 HydraSession::OutputItem item;
-                item.text.assign(reinterpret_cast<char*>(ansiBuf), ansiLen);
+                item.puaText = puaText;
                 item.source = link->gameName;
                 item.timestamp = time(nullptr);
                 item.linkNumber = static_cast<int>(linkIdx) + 1;
@@ -1646,6 +1641,37 @@ std::string SessionManager::createAccountAndGetSession(
     }
     // Auto-login
     return authenticateAndGetSession(username, password);
+}
+
+// ---- OutputItem rendering ----
+
+std::string HydraSession::OutputItem::render(RenderFormat fmt) const {
+    if (puaText.empty()) return puaText;
+
+    const unsigned char* src =
+        reinterpret_cast<const unsigned char*>(puaText.data());
+    size_t srcLen = puaText.size();
+    unsigned char buf[8000];
+    size_t n = 0;
+
+    switch (fmt) {
+    case RenderFormat::TrueColor:
+        n = co_render_truecolor(buf, src, srcLen, 0);
+        break;
+    case RenderFormat::Ansi256:
+        n = co_render_ansi256(buf, src, srcLen, 0);
+        break;
+    case RenderFormat::Ansi16:
+        n = co_render_ansi16(buf, src, srcLen, 0);
+        break;
+    case RenderFormat::PuaUtf8:
+        return puaText;  // no rendering needed
+    case RenderFormat::Plain:
+        n = co_strip_color(buf, src, srcLen);
+        break;
+    }
+
+    return std::string(reinterpret_cast<char*>(buf), n);
 }
 
 // ---- gRPC-Web request handler ----

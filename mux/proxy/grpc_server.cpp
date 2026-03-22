@@ -394,7 +394,7 @@ public:
                 lock.unlock();
                 hydra::ServerMessage msg;
                 auto* go = msg.mutable_game_output();
-                go->set_text(item.text);
+                go->set_text(item.render(sq->renderFormat));
                 go->set_source(item.source);
                 go->set_timestamp(static_cast<int64_t>(item.timestamp));
                 go->set_link_number(item.linkNumber);
@@ -483,7 +483,7 @@ public:
                 sq->output.pop();
                 lock.unlock();
                 hydra::GameOutput msg;
-                msg.set_text(item.text);
+                msg.set_text(item.render(sq->renderFormat));
                 msg.set_source(item.source);
                 msg.set_timestamp(static_cast<int64_t>(item.timestamp));
                 msg.set_link_number(item.linkNumber);

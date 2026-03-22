@@ -62,14 +62,27 @@ struct HydraSession {
     // Persistent session ID (random hex string for SQLite storage)
     std::string persistId;
 
+    // Color rendering preference for gRPC subscribers.
+    // Values match hydra.proto ColorFormat enum.
+    enum class RenderFormat {
+        TrueColor = 0,
+        Ansi256   = 1,
+        Ansi16    = 2,
+        PuaUtf8   = 3,
+        Plain     = 4,
+    };
+
     // gRPC output distribution for Subscribe/GameSession streaming.
     // Each subscriber gets its own queue so multiple consumers on the
     // same session each receive a full copy of all output.
     struct OutputItem {
-        std::string text;       // ANSI TrueColor rendered
+        std::string puaText;    // PUA-encoded UTF-8 (internal format)
         std::string source;     // game name
         time_t timestamp;
         int linkNumber;         // 1-based
+
+        // Render puaText to the requested format.
+        std::string render(RenderFormat fmt) const;
     };
     struct GmcpItem {
         std::string package;    // e.g. "Char.Vitals"
@@ -83,6 +96,7 @@ struct HydraSession {
         std::queue<GmcpItem> gmcp;
         bool wantsOutput{true};
         bool wantsGmcp{false};
+        RenderFormat renderFormat{RenderFormat::TrueColor};
     };
 
     struct OutputQueue {
@@ -95,10 +109,12 @@ struct HydraSession {
 
         // Register a new subscriber. Returns its ID and queue.
         std::pair<int, std::shared_ptr<SubscriberQueue>> addSubscriber(
-                bool wantsOutput, bool wantsGmcp) {
+                bool wantsOutput, bool wantsGmcp,
+                RenderFormat fmt = RenderFormat::TrueColor) {
             int id = nextSubId++;
             auto sq = std::make_shared<SubscriberQueue>();
             sq->wantsOutput = wantsOutput;
+            sq->renderFormat = fmt;
             sq->wantsGmcp = wantsGmcp;
             subscribers[id] = sq;
             return {id, sq};
