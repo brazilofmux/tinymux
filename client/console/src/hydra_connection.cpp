@@ -128,8 +128,9 @@ bool HydraConnection::connect() {
 }
 
 void HydraConnection::disconnect() {
-    if (!connected_.load()) return;
-    connected_.store(false);
+    bool wasConnected = connected_.exchange(false);
+    reconnecting_.store(false);
+    if (!wasConnected) return;
 
     // Cancel the gRPC context to unblock the reader
     if (grpc_ && grpc_->sessionCtx) {
@@ -203,11 +204,18 @@ int HydraConnection::send_idle_secs() const {
         std::chrono::duration_cast<std::chrono::seconds>(now - lastSendTime_).count());
 }
 
-// ---- Reader thread ----
+// ---- Reader thread with reconnect ----
+
+void HydraConnection::pushOutput(const std::string& line) {
+    std::lock_guard<std::mutex> lock(outputMutex_);
+    outputQueue_.push(line);
+    signalOutput();
+}
 
 void HydraConnection::readerLoop() {
     hydra::ServerMessage msg;
-    while (connected_.load() && grpc_->stream->Read(&msg)) {
+    while (connected_.load() && grpc_ && grpc_->stream &&
+           grpc_->stream->Read(&msg)) {
         lastRecvTime_ = std::chrono::steady_clock::now();
 
         std::lock_guard<std::mutex> lock(outputMutex_);
@@ -225,24 +233,93 @@ void HydraConnection::readerLoop() {
                 + " (" + ev.game_name() + "): "
                 + hydra::LinkState_Name(ev.new_state()));
         } else if (msg.has_pong()) {
-            // Silently absorb pongs
             continue;
         }
 
         signalOutput();
     }
 
-    // Stream ended
-    if (connected_.load()) {
-        connected_.store(false);
-        std::lock_guard<std::mutex> lock(outputMutex_);
-        outputQueue_.push("[Hydra] Connection lost");
-        signalOutput();
+    // Stream ended — attempt reconnect if not intentional disconnect
+    if (connected_.load() && !reconnecting_.load()) {
+        attemptReconnect();
     }
 }
 
+void HydraConnection::attemptReconnect() {
+    if (reconnecting_.exchange(true)) return;
+
+    pushOutput("[Hydra] Stream lost, attempting reconnect...");
+
+    // Clean up old stream (we're still in the reader thread)
+    if (grpc_) {
+        grpc_->sessionCtx.reset();
+        grpc_->stream.reset();
+    }
+    connected_.store(false);
+
+    for (int attempt = 1; attempt <= MAX_RECONNECT_ATTEMPTS; attempt++) {
+        std::this_thread::sleep_for(
+            std::chrono::seconds(RECONNECT_DELAY_SECS));
+
+        if (!grpc_ || !grpc_->stub || sessionId_.empty()) break;
+
+        // Reopen bidi stream with same session token
+        grpc_->sessionCtx = std::make_unique<ClientContext>();
+        grpc_->sessionCtx->AddMetadata("authorization", sessionId_);
+        grpc_->stream = grpc_->stub->GameSession(grpc_->sessionCtx.get());
+
+        if (grpc_->stream) {
+            connected_.store(true);
+            reconnecting_.store(false);
+            pushOutput("[Hydra] Reconnected (attempt " + std::to_string(attempt) + ")");
+
+            // Re-enter read loop
+            hydra::ServerMessage msg;
+            while (connected_.load() && grpc_->stream->Read(&msg)) {
+                lastRecvTime_ = std::chrono::steady_clock::now();
+
+                std::lock_guard<std::mutex> lock(outputMutex_);
+
+                if (msg.has_game_output()) {
+                    outputQueue_.push(msg.game_output().text());
+                } else if (msg.has_gmcp()) {
+                    outputQueue_.push("[GMCP " + msg.gmcp().package() + "] "
+                                    + msg.gmcp().json());
+                } else if (msg.has_notice()) {
+                    outputQueue_.push("[Hydra] " + msg.notice().text());
+                } else if (msg.has_link_event()) {
+                    const auto& ev = msg.link_event();
+                    outputQueue_.push("[Hydra] Link " + std::to_string(ev.link_number())
+                        + " (" + ev.game_name() + "): "
+                        + hydra::LinkState_Name(ev.new_state()));
+                } else if (msg.has_pong()) {
+                    continue;
+                }
+
+                signalOutput();
+            }
+
+            // Stream broke again
+            if (connected_.load()) {
+                pushOutput("[Hydra] Stream lost again, retrying...");
+                grpc_->sessionCtx.reset();
+                grpc_->stream.reset();
+                connected_.store(false);
+                continue;
+            }
+            return;  // intentional disconnect
+        }
+
+        pushOutput("[Hydra] Reconnect attempt " + std::to_string(attempt)
+            + "/" + std::to_string(MAX_RECONNECT_ATTEMPTS) + " failed");
+    }
+
+    reconnecting_.store(false);
+    pushOutput("[Hydra] Reconnect failed after "
+        + std::to_string(MAX_RECONNECT_ATTEMPTS) + " attempts");
+}
+
 void HydraConnection::signalOutput() {
-    // Post to the IOCP to wake the main event loop.
     PostQueuedCompletionStatus(iocp_, 0, IOCP_KEY_HYDRA, nullptr);
 }
 

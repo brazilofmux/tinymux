@@ -75,6 +75,11 @@ public:
 private:
     void readerLoop();
     void signalOutput();
+    void pushOutput(const std::string& line);
+    void attemptReconnect();
+
+    static constexpr int MAX_RECONNECT_ATTEMPTS = 5;
+    static constexpr int RECONNECT_DELAY_SECS = 3;
 
     std::string worldName_;
     std::string host_;
@@ -94,6 +99,7 @@ private:
     std::mutex outputMutex_;
     std::queue<std::string> outputQueue_;
     std::atomic<bool> connected_{false};
+    std::atomic<bool> reconnecting_{false};
     std::thread readerThread_;
 
     // Scrollback

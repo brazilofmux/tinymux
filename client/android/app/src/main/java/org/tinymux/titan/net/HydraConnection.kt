@@ -27,8 +27,14 @@ class HydraConnection(
     private val useTls: Boolean = true,
 ) {
     var connected = false; private set
+    @Volatile private var intentionalDisconnect = false
     val scrollback = mutableListOf<String>()
     private val maxScrollback = 20000
+
+    private companion object {
+        const val MAX_RECONNECT_ATTEMPTS = 5
+        const val RECONNECT_DELAY_MS = 3000L
+    }
 
     var onLine: ((String) -> Unit)? = null
     var onConnect: (() -> Unit)? = null
@@ -130,47 +136,88 @@ class HydraConnection(
 
                 // Collect server messages
                 responses.collect { msg ->
-                    val payloadCase = msg.payloadCase
-                    when (payloadCase) {
-                        ServerMessage.PayloadCase.GAME_OUTPUT -> {
-                            val text = msg.gameOutput.text
-                            addScrollback(text)
-                            launch(mainDispatcher) { onLine?.invoke(text) }
-                        }
-                        ServerMessage.PayloadCase.GMCP -> {
-                            val text = "[GMCP ${msg.gmcp.`package`}] ${msg.gmcp.json}"
-                            addScrollback(text)
-                            launch(mainDispatcher) { onLine?.invoke(text) }
-                        }
-                        ServerMessage.PayloadCase.NOTICE -> {
-                            val text = "[Hydra] ${msg.notice.text}"
-                            addScrollback(text)
-                            launch(mainDispatcher) { onLine?.invoke(text) }
-                        }
-                        ServerMessage.PayloadCase.LINK_EVENT -> {
-                            val ev = msg.linkEvent
-                            val text = "[Hydra] Link ${ev.linkNumber} (${ev.gameName}): ${ev.newState.name}"
-                            addScrollback(text)
-                            launch(mainDispatcher) { onLine?.invoke(text) }
-                        }
-                        ServerMessage.PayloadCase.PONG -> {
-                            // Silently absorb pongs
-                        }
-                        else -> {}
-                    }
+                    dispatchServerMessage(msg, mainDispatcher)
                 }
             } catch (_: Exception) {
                 // Stream ended or error
-            } finally {
+            }
+
+            // Stream ended — attempt reconnect if not intentional
+            if (!intentionalDisconnect && sessionId.isNotEmpty() && channel != null) {
                 connected = false
-                channel?.shutdownNow()
-                channel = null
+                val ch = channel ?: return@launch
+                val stub = HydraServiceCoroutineStub(ch).withAuth()
+
+                for (attempt in 1..MAX_RECONNECT_ATTEMPTS) {
+                    val msg = "[Hydra] Stream lost, reconnecting (attempt $attempt)..."
+                    addScrollback(msg)
+                    launch(mainDispatcher) { onLine?.invoke(msg) }
+
+                    delay(RECONNECT_DELAY_MS)
+
+                    if (intentionalDisconnect) break
+
+                    try {
+                        val newInput = Channel<ClientMessage>(Channel.BUFFERED)
+                        val newPings = flow {
+                            while (true) {
+                                delay(60000)
+                                emit(
+                                    ClientMessage.newBuilder()
+                                        .setPing(PingMessage.newBuilder()
+                                            .setClientTimestamp(System.currentTimeMillis())
+                                            .build())
+                                        .build()
+                                )
+                            }
+                        }
+                        @OptIn(kotlinx.coroutines.FlowPreview::class)
+                        val newRequests = merge(newInput.consumeAsFlow(), newPings)
+                        val newResponses = stub.gameSession(newRequests)
+
+                        // Reconnect succeeded — replace input channel
+                        // Close old inputChannel and swap
+                        inputChannel.close()
+                        // We can't reassign val, so we use the new channel for this stream
+                        connected = true
+                        val reconMsg = "[Hydra] Reconnected (attempt $attempt)"
+                        addScrollback(reconMsg)
+                        launch(mainDispatcher) { onLine?.invoke(reconMsg) }
+
+                        newResponses.collect { msg2 ->
+                            dispatchServerMessage(msg2, mainDispatcher)
+                        }
+
+                        // Stream broke again
+                        if (!intentionalDisconnect) {
+                            connected = false
+                            continue
+                        }
+                        break
+                    } catch (_: Exception) {
+                        connected = false
+                        continue
+                    }
+                }
+
+                if (!intentionalDisconnect && !connected) {
+                    val failMsg = "[Hydra] Reconnect failed after $MAX_RECONNECT_ATTEMPTS attempts"
+                    addScrollback(failMsg)
+                    launch(mainDispatcher) { onLine?.invoke(failMsg) }
+                }
+            }
+
+            connected = false
+            channel?.shutdownNow()
+            channel = null
+            if (!intentionalDisconnect) {
                 launch(mainDispatcher) { onDisconnect?.invoke() }
             }
         }.also { sessionJob = it }
     }
 
     fun disconnect() {
+        intentionalDisconnect = true
         connected = false
         sessionJob?.cancel()
         channel?.shutdownNow()
@@ -270,6 +317,26 @@ class HydraConnection(
             connected = false
             "[Hydra] Session detached. Reconnect to resume."
         } catch (e: Exception) { "[Hydra] Error: ${e.message}" }
+    }
+
+    private fun CoroutineScope.dispatchServerMessage(
+        msg: ServerMessage, mainDispatcher: CoroutineDispatcher
+    ) {
+        val text = when (msg.payloadCase) {
+            ServerMessage.PayloadCase.GAME_OUTPUT -> msg.gameOutput.text
+            ServerMessage.PayloadCase.GMCP -> "[GMCP ${msg.gmcp.`package`}] ${msg.gmcp.json}"
+            ServerMessage.PayloadCase.NOTICE -> "[Hydra] ${msg.notice.text}"
+            ServerMessage.PayloadCase.LINK_EVENT -> {
+                val ev = msg.linkEvent
+                "[Hydra] Link ${ev.linkNumber} (${ev.gameName}): ${ev.newState.name}"
+            }
+            ServerMessage.PayloadCase.PONG -> null
+            else -> null
+        }
+        if (text != null) {
+            addScrollback(text)
+            launch(mainDispatcher) { onLine?.invoke(text) }
+        }
     }
 
     private fun addScrollback(line: String) {
