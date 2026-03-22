@@ -339,13 +339,7 @@ TLS handshake (if TLS listener)
 Telnet negotiation (server-side: WILL EOR, DO NAWS, DO TTYPE, etc.)
     │
     ▼
-Send Hydra banner + login prompt
-    │
-    ▼
-Read username + password
-    │
-    ▼
-Authenticate against SQLite accounts table
+Authenticate to Hydra (see below)
     │
     ├── Fail → send error, allow retry or disconnect
     │
@@ -370,6 +364,29 @@ Authenticate against SQLite accounts table
     If session has active links, begin forwarding
     If no links, show game menu
 ```
+
+**Authentication methods (Phase 1 and beyond):**
+
+Phase 1 supports username + password (interactive login prompt).
+The architecture supports adding faster resume paths later:
+
+- **Session token** — on successful login, Hydra issues a short-lived
+  opaque token. A reconnecting client can present the token instead
+  of username + password. This is the primary mechanism for mobile
+  roaming and transient disconnects: the client library stores the
+  token and re-presents it automatically on reconnect.
+- **TLS client certificate** — mutual TLS authentication, no
+  interactive prompt needed.
+
+The attach flow is the same regardless of authentication method.
+The difference is only how identity is established before the
+"Success" branch.
+
+Phase 1 always prompts for username + password. This is adequate for
+initial testing and for clients that do not implement token storage.
+A fast-resume token mechanism is a natural Phase 2 addition — the
+session manager already identifies sessions by account, so adding a
+second authentication path requires no architectural change.
 
 ### Session Command Dispatch
 
@@ -846,7 +863,7 @@ game "LegacyMUD" {
 ```cpp
 struct GameConfig {
     std::string         name;
-    enum { Tcp, Unix }  transport;
+    enum { Tcp, Unix }  transport;    // default: Tcp
     std::string         host;           // for Tcp
     uint16_t            port;           // for Tcp
     std::string         socketPath;     // for Unix

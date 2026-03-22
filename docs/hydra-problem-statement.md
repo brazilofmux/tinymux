@@ -105,7 +105,12 @@ A Hydra session survives:
 - Client network change (new TCP connection, same Hydra session)
 
 The player's experience is continuity—at most a brief pause, never a
-full disconnect/reconnect/re-authenticate cycle.
+full game disconnect/reconnect/re-authenticate cycle. The player does
+not have to re-enter game credentials or navigate the game's login
+screen. Hydra itself may require re-authentication on a new TCP
+connection (username + password, or a faster mechanism such as a
+session resume token), but the game-side session is preserved
+transparently.
 
 This requirement applies to game lifecycle events and client-side
 disconnects. It does not require Hydra itself to preserve TLS context

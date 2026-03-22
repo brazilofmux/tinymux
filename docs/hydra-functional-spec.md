@@ -546,8 +546,10 @@ mux/
 - Single front-door protocol (TLS telnet)
 - Single back-door protocol (plain telnet)
 - Session manager with login/resume
-- Telnet bridge with charset conversion
-- Scroll-back buffer
+- Telnet bridge with charset conversion and PUA color pipeline
+  (ANSI→PUA on ingestion, PUA→ANSI on output; color depth
+  translation uses existing libmux co_* renderers)
+- Scroll-back buffer (PUA-encoded UTF-8)
 - SQLite account storage
 - Connect to one game
 
@@ -564,7 +566,6 @@ mux/
 - WebSocket front-door
 - gRPC front-door
 - GMCP forwarding
-- Color depth translation
 
 ### Phase 4: Session-preserving Hydra replacement
 
