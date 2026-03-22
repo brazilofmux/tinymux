@@ -499,20 +499,48 @@ new args and restore it after the body completes.
    benchmark on production DB), and staleness (modify attr,
    verify only affected callers recompile).
 
-### Level 4: Persistent/shared DBT context
+### Level 4: Persistent/shared DBT context — DEFERRED
 
 **Cost:** Very high — architectural change to DBT lifecycle.
-**Benefit:** Makes re-entrant JIT execution cheap.
+**Benefit:** Marginal after Tier 2 coverage expansion and Tier 3 inlining.
+**Status:** Investigation complete (2026-03-21). Not worth pursuing.
 
-Instead of allocating a fresh 1MB guest memory + DBT state per
-`run_cached_program()` call, maintain a persistent DBT context
-that nested calls can reuse.  Guest stack frames would be pushed
-for each nested entry, similar to how native function calls work.
+#### Why the original analysis was wrong
 
-This would allow the re-entrancy guard to be lifted entirely —
-nested `jit_eval()` would be as fast as top-level.  But it
-requires rethinking guest memory layout, stack management, and
-the DBT block cache lifecycle.
+The original 50ms figure was the **first-time** cost of `mmap(1MB,
+PROT_EXEC)` in `dbt_init()`.  This happens exactly once per server
+lifetime.  Subsequent program switches use `dbt_reset()` (~1ms) or
+`dbt_rerun()` (<1µs for same program).
+
+For nested re-entrant execution, the actual cost would be ~2ms per
+nesting level (two `dbt_reset()` calls + block retranslation), vs
+~0.003ms for the AST fallback.  The re-entrancy guard is **600x
+faster** than switching DBT contexts for typical `u()` calls.
+
+#### When would it matter?
+
+Only when the inner expression is complex enough that AST evaluation
+takes >2ms — rare for typical `u()` bodies.  And Tier 3 u() inlining
+(Level 3, shipped) eliminates the nested call entirely for the hot
+path, making Level 4 redundant for the most common case.
+
+#### The right strategy
+
+Re-entrancy only occurs when the JIT exits to host code via ECALL.
+The better approach is to **eliminate ECALLs** rather than make nested
+JIT cheap:
+
+1. **Level 2 Tier 2 coverage** — move more builtins into pre-compiled
+   RV64 guest blobs (JAL, no ECALL, no host transition).  Every
+   builtin moved to Tier 2 is one fewer opportunity for re-entry.
+2. **Level 3 u() inlining** (DONE) — resolves the `u()` call at
+   compile time, inlines the body, no ECALL at all.
+3. **Lua JIT Phase 3** (DONE) — native string compare, integer table
+   fast-path, pinned array access, persistent cache.
+
+If both Level 2 and Level 3 are fully exploited, the remaining ECALLs
+are I/O-bound operations (attribute writes, player notification) where
+the ECALL overhead is negligible compared to the operation itself.
 
 ### Measurement methodology
 

@@ -607,14 +607,19 @@ functions that players complain are slow in softcode today.
 
 ## 15. Remaining Work
 
-**Phase 2 completion (incremental):**
-- GETUPVAL/SETUPVAL — non-_ENV upvalue access (needs Lua call frame)
-- TFORPREP/TFORCALL/TFORLOOP — generic for-loop via iterator ECALL
-- CLOSE — close upvalues
+**Phase 2 completion (DONE as of 2026-03-21):**
+- ✅ GETUPVAL/SETUPVAL — _ENV only (non-_ENV rejected)
+- ✅ TFORPREP/TFORCALL/TFORLOOP — generic for-loop via iterator ECALL
+- ✅ CLOSE — no-op (safe since closures are ineligible)
 
-**Phase 3 (future):**
-- Runtime type guards (tag checks at function entry, bailout to VM)
-- XMM register cache in DBT for FP values (currently spill-everywhere)
-- String interning in guest memory (avoid ECALL for string comparisons)
-- Array optimization for integer-indexed loops (pin table, native access)
-- Cache key: sha1(bytecode) + Lua version for persistent cache
+**Phase 3 (DONE as of 2026-03-21):**
+- ✅ Runtime type guards — string→numeric promotion at all arithmetic/comparison sites via HIR_ATOI/HIR_ATOF
+- ✅ XMM register cache — 6-slot LRU FP cache in DBT (XMM2-XMM7)
+- ✅ Native string comparison — HIR_STRCMP inline RV64 byte compare (no ECALL)
+- ✅ Array optimization — Phase A: HIR_LUA_GETI integer fast-path; Phase B: pin-and-copy with HIR_LUA_ALOAD native memory access in for-loops
+- ✅ Persistent cache — sha1(bytecodes) keyed SQLite cache via jit_store_to_sqlite/jit_load_from_sqlite
+
+**Phase 4 (future):**
+- Tier 2 coverage expansion — move more softcode builtins (time, secs, get, member, words, extract) into pre-compiled RV64 guest blobs to eliminate ECALLs
+- Closures — JIT-compile inner Protos, handle upvalue capture via ECALL
+- Float string parsing — proper HIR_ATOF codegen (currently uses ATOI+ITOF shortcut)
