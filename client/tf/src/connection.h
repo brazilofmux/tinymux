@@ -10,44 +10,45 @@
 #include <openssl/ssl.h>
 #include <zlib.h>
 #include "charset.h"
+#include "iconnection.h"
 
-class Connection {
+class Connection : public IConnection {
 public:
     Connection(const std::string& world_name, const std::string& host,
                const std::string& port, bool use_ssl);
-    ~Connection();
+    ~Connection() override;
 
     Connection(const Connection&) = delete;
     Connection& operator=(const Connection&) = delete;
 
     // Connect to the remote host. Returns true on success.
-    bool connect();
-    void disconnect();
-    bool is_connected() const { return fd_ >= 0; }
+    bool connect() override;
+    void disconnect() override;
+    bool is_connected() const override { return fd_ >= 0; }
 
     // Send a line (appends \r\n)
-    bool send_line(const std::string& line);
+    bool send_line(const std::string& line) override;
 
     // Read available data. Returns complete lines accumulated.
     // Call when select() indicates fd is readable.
-    std::vector<std::string> read_lines();
+    std::vector<std::string> read_lines() override;
 
-    int fd() const { return fd_; }
-    const std::string& world_name() const { return world_name_; }
-    const std::string& host() const { return host_; }
-    const std::string& port() const { return port_; }
-    bool uses_ssl() const { return use_ssl_; }
-    bool remote_echo() const { return remote_echo_; }
-    Charset charset() const { return charset_; }
+    int fd() const override { return fd_; }
+    const std::string& world_name() const override { return world_name_; }
+    const std::string& host() const override { return host_; }
+    const std::string& port() const override { return port_; }
+    bool uses_ssl() const override { return use_ssl_; }
+    bool remote_echo() const override { return remote_echo_; }
+    Charset charset() const override { return charset_; }
 
     // Accessors for restart serialization
-    int tel_state_int() const { return static_cast<int>(tel_state_); }
-    bool naws_agreed() const { return naws_agreed_; }
-    uint16_t naws_width() const { return naws_width_; }
-    uint16_t naws_height() const { return naws_height_; }
-    bool mccp_active() const { return mccp_active_; }
-    const std::string& line_buf() const { return line_buf_; }
-    const std::string& last_prompt() const { return last_prompt_; }
+    int tel_state_int() const override { return static_cast<int>(tel_state_); }
+    bool naws_agreed() const override { return naws_agreed_; }
+    uint16_t naws_width() const override { return naws_width_; }
+    uint16_t naws_height() const override { return naws_height_; }
+    bool mccp_active() const override { return mccp_active_; }
+    const std::string& line_buf() const override { return line_buf_; }
+    const std::string& last_prompt() const override { return last_prompt_; }
 
     // Adopt an existing fd (for restart restoration).
     // Creates a Connection without calling connect().
@@ -59,20 +60,20 @@ public:
         const std::string& line_buf, const std::string& last_prompt);
 
     // Notify the MUD of terminal size change
-    void send_naws(uint16_t width, uint16_t height);
+    void send_naws(uint16_t width, uint16_t height) override;
 
     // Prompt detection: check if line_buf_ has a partial line older than
     // the timeout.  If so, return it as a prompt and clear the buffer.
     // Returns empty string if no prompt is pending.
-    std::string check_prompt(std::chrono::milliseconds timeout);
-    std::string current_prompt() const;
+    std::string check_prompt(std::chrono::milliseconds timeout) override;
+    std::string current_prompt() const override;
 
     // True if there's unflushed partial data in line_buf_
-    bool has_partial_line() const { return !line_buf_.empty(); }
+    bool has_partial_line() const override { return !line_buf_.empty(); }
 
     // Scrollback
-    const std::deque<std::string>& scrollback() const { return scrollback_; }
-    void add_to_scrollback(const std::string& line);
+    const std::deque<std::string>& scrollback() const override { return scrollback_; }
+    void add_to_scrollback(const std::string& line) override;
 
 private:
     // Telnet negotiation
@@ -121,19 +122,15 @@ private:
     std::chrono::steady_clock::time_point last_recv_time_;
     std::chrono::steady_clock::time_point last_send_time_;
 public:
-    // Per-world logging
-    std::string log_file;
-    FILE* log_fp = nullptr;
+    void start_log(const std::string& path) override;
+    void stop_log() override;
+    void log_line(const std::string& line) override;
 
-    void start_log(const std::string& path);
-    void stop_log();
-    void log_line(const std::string& line);
-
-    int idle_secs() const {
+    int idle_secs() const override {
         auto now = std::chrono::steady_clock::now();
         return (int)std::chrono::duration_cast<std::chrono::seconds>(now - last_recv_time_).count();
     }
-    int sidle_secs() const {
+    int sidle_secs() const override {
         auto now = std::chrono::steady_clock::now();
         return (int)std::chrono::duration_cast<std::chrono::seconds>(now - last_send_time_).count();
     }

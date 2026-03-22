@@ -1,6 +1,9 @@
 #include "command.h"
 #include "world.h"
 #include "connection.h"
+#ifdef HYDRA_GRPC
+#include "hydra_connection.h"
+#endif
 #include "terminal.h"
 #include "script.h"
 #include "macro.h"
@@ -197,18 +200,33 @@ void cmd_connect(App& app, const std::string& args) {
         return;
     }
 
-    auto conn = std::make_unique<Connection>(w->name, w->host, w->port, w->ssl());
-    // Set initial terminal size for NAWS before connecting
-    conn->send_naws((uint16_t)app.terminal.get_cols(), (uint16_t)app.terminal.get_rows());
-    app.terminal.print_system("Connecting to " + w->name + " (" + w->host + ":" + w->port +
-                              (w->ssl() ? " SSL" : "") + ")...");
+    std::unique_ptr<IConnection> conn;
+
+#ifdef HYDRA_GRPC
+    if (w->type == "hydra") {
+        // gRPC connection to Hydra proxy
+        // For hydra worlds: host:port = gRPC endpoint, character = username,
+        // password = password, name of first game to connect comes from mfile field
+        std::string game = w->mfile;  // repurpose mfile as game name
+        conn = std::make_unique<HydraConnection>(
+            w->name, w->host, w->port, w->character, w->password, game);
+        app.terminal.print_system("Connecting to Hydra at " + w->host + ":" + w->port + "...");
+    } else
+#endif
+    {
+        auto telnet = std::make_unique<Connection>(w->name, w->host, w->port, w->ssl());
+        telnet->send_naws((uint16_t)app.terminal.get_cols(), (uint16_t)app.terminal.get_rows());
+        app.terminal.print_system("Connecting to " + w->name + " (" + w->host + ":" + w->port +
+                                  (w->ssl() ? " SSL" : "") + ")...");
+        conn = std::move(telnet);
+    }
 
     if (!conn->connect()) {
         app.terminal.print_system("Failed to connect to " + w->name);
         return;
     }
 
-    Connection* raw = conn.get();
+    IConnection* raw = conn.get();
     app.connections[w->name] = std::move(conn);
     app.fg = raw;
     app_clear_fg_activity(app);
@@ -216,8 +234,8 @@ void cmd_connect(App& app, const std::string& args) {
     app.terminal.set_output_context(app.fg->world_name());
     app.terminal.print_system("Connected to " + w->name);
 
-    // Auto-login if credentials present
-    if (!w->character.empty()) {
+    // Auto-login for telnet worlds (Hydra handles auth via gRPC)
+    if (!raw->is_hydra() && !w->character.empty()) {
         if (app_send_line(app, app.fg, "connect " + w->character + " " + w->password, false)) {
             fire_hook(app, Hook::LOGIN, w->name);
         }
@@ -229,7 +247,7 @@ void cmd_connect(App& app, const std::string& args) {
 void cmd_dc(App& app, const std::string& args) {
     std::string name = trim_copy(args);
 
-    Connection* target = nullptr;
+    IConnection* target = nullptr;
     if (name.empty()) {
         target = app.fg;
     } else {
@@ -738,7 +756,7 @@ void cmd_quote(App& app, const std::string& args) {
         else exec_body(app, s.substr(1));
     } else {
         // Default: send lines to MUD
-        Connection* target = app.fg;
+        IConnection* target = app.fg;
         if (target && target->is_connected()) {
             app_send_line(app, target, s);
         }

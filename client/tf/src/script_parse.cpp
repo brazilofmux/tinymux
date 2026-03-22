@@ -673,7 +673,7 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
             // send(text [, world_name])
             App* app = env.app();
             if (!app) return Value::make_int(0);
-            Connection* target = nullptr;
+            IConnection* target = nullptr;
             if (a.size() >= 2 && !a[1].as_str().empty()) {
                 auto it = app->connections.find(a[1].as_str());
                 if (it != app->connections.end()) target = it->second.get();
@@ -914,7 +914,7 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
             // idle([world]) — seconds since last received data
             App* app = env.app();
             if (!app) return Value::make_int(0);
-            Connection* target = nullptr;
+            IConnection* target = nullptr;
             if (!a.empty() && !a[0].as_str().empty()) {
                 auto it = app->connections.find(a[0].as_str());
                 if (it != app->connections.end()) target = it->second.get();
@@ -927,7 +927,7 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
             // sidle([world]) — seconds since last send
             App* app = env.app();
             if (!app) return Value::make_int(0);
-            Connection* target = nullptr;
+            IConnection* target = nullptr;
             if (!a.empty() && !a[0].as_str().empty()) {
                 auto it = app->connections.find(a[0].as_str());
                 if (it != app->connections.end()) target = it->second.get();
@@ -1087,7 +1087,7 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
             // fake_recv(text [, world, attrs]) — inject text as if received from MUD
             if (App* app = env.app()) {
                 std::string text = a[0].as_str();
-                Connection* target = app->fg;
+                IConnection* target = app->fg;
                 std::string world_name;
                 if (a.size() >= 2 && !a[1].as_str().empty()) {
                     auto it = app->connections.find(a[1].as_str());

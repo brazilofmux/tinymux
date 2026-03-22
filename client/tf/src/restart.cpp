@@ -1,5 +1,6 @@
 #include "restart.h"
 #include "app.h"
+#include "connection.h"
 #include "macro.h"
 #include <cstdio>
 #include <cstdlib>

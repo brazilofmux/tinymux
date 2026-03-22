@@ -66,7 +66,7 @@ static void handle_shell_line(App& app, const ShellProcess& proc, const std::str
             break;
 
         case ShellDisposition::Send: {
-            Connection* target = app.fg;
+            IConnection* target = app.fg;
             if (!proc.world_name.empty()) {
                 auto it = app.connections.find(proc.world_name);
                 if (it != app.connections.end()) target = it->second.get();
@@ -112,7 +112,7 @@ static void close_shell_process(ShellProcess& proc) {
     }
 }
 
-bool app_send_line(App& app, Connection* conn, const std::string& line,
+bool app_send_line(App& app, IConnection* conn, const std::string& line,
                    bool allow_local_echo) {
     if (!conn || !conn->is_connected()) return false;
 
@@ -128,7 +128,7 @@ bool app_send_line(App& app, Connection* conn, const std::string& line,
     return conn->send_line(line);
 }
 
-void app_receive_line(App& app, Connection* conn, const std::string& world_name,
+void app_receive_line(App& app, IConnection* conn, const std::string& world_name,
                       const std::string& line) {
     if (!conn) return;
 
@@ -452,7 +452,7 @@ static void run(App& app) {
         // Build pollfd set: STDIN + all connected sockets + shell pipes
         std::vector<struct pollfd> pollfds;
         pollfds.push_back({STDIN_FILENO, POLLIN, 0});
-        std::vector<Connection*> polled_conns;
+        std::vector<IConnection*> polled_conns;
         polled_conns.reserve(app.connections.size());
         std::vector<ShellProcess*> polled_shells;
         polled_shells.reserve(app.shell_processes.size());
