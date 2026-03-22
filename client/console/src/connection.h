@@ -18,13 +18,14 @@
 #include <cstdint>
 #include <cstdio>
 #include <chrono>
+#include "iconnection.h"
 #include "telnet.h"
 #include "schannel_tls.h"
 
-// Completion key sentinel — overlapped completions use the Connection pointer
-// as the key; this sentinel identifies console input events posted to the IOCP.
+// Completion key sentinels for the IOCP event loop.
 constexpr ULONG_PTR IOCP_KEY_CONSOLE = 0;
 constexpr ULONG_PTR IOCP_KEY_TIMER   = 1;
+constexpr ULONG_PTR IOCP_KEY_HYDRA   = 2;
 
 // Per-I/O data attached to OVERLAPPED operations.
 enum class IoOp { Read, Write, Connect };
@@ -35,11 +36,11 @@ struct IoContext {
     char        buffer[8192];
 };
 
-class Connection {
+class Connection : public IConnection {
 public:
     Connection(const std::string& world_name, const std::string& host,
                const std::string& port, bool use_ssl, HANDLE iocp);
-    ~Connection();
+    ~Connection() override;
 
     Connection(const Connection&) = delete;
     Connection& operator=(const Connection&) = delete;
@@ -51,27 +52,27 @@ public:
     // Returns lines received (may be empty).
     std::vector<std::string> on_completion(IoContext* ctx, DWORD bytes_transferred, DWORD error);
 
-    void disconnect();
-    bool is_connected() const { return socket_ != INVALID_SOCKET && connected_; }
+    // IConnection interface
+    void disconnect() override;
+    bool is_connected() const override { return socket_ != INVALID_SOCKET && connected_; }
+    bool send_line(const std::string& line) override;
 
-    // Send a line (appends \r\n). Synchronous send for simplicity in Phase 1.
-    bool send_line(const std::string& line);
+    const std::string& world_name() const override { return world_name_; }
+    const std::string& host() const override { return host_; }
+    const std::string& port() const override { return port_; }
+    bool uses_ssl() const override { return use_ssl_; }
+    bool remote_echo() const override { return remote_echo_; }
 
-    const std::string& world_name() const { return world_name_; }
-    const std::string& host() const { return host_; }
-    const std::string& port() const { return port_; }
-    bool uses_ssl() const { return use_ssl_; }
-    bool remote_echo() const { return remote_echo_; }
+    void send_naws(uint16_t width, uint16_t height) override;
 
-    void send_naws(uint16_t width, uint16_t height);
+    std::string check_prompt(int timeout_ms) override;
+    bool has_partial_line() const override { return !line_buf_.empty(); }
 
-    // Prompt detection
-    std::string check_prompt(int timeout_ms);
-    bool has_partial_line() const { return !line_buf_.empty(); }
+    const std::deque<std::string>& scrollback() const override { return scrollback_; }
+    void add_to_scrollback(const std::string& line) override;
 
-    // Scrollback
-    const std::deque<std::string>& scrollback() const { return scrollback_; }
-    void add_to_scrollback(const std::string& line);
+    int idle_secs() const override;
+    int send_idle_secs() const override;
 
     // GMCP
     const std::unordered_map<std::string, std::string>& gmcp_data() const { return gmcp_; }
@@ -80,19 +81,8 @@ public:
     // MSSP
     const std::unordered_map<std::string, std::string>& mssp_data() const { return mssp_; }
 
-    // Idle tracking
-    int idle_secs() const;
-    int send_idle_secs() const;
-
     // Prompt
     const std::string& current_prompt() const { return last_prompt_; }
-
-    // Logging
-    bool start_log(const std::string& path);
-    void stop_log();
-    bool is_logging() const { return log_fp_ != nullptr; }
-    void log_line(const std::string& line);
-    const std::string& log_file() const { return log_file_; }
 
     SOCKET socket() const { return socket_; }
 
@@ -163,10 +153,6 @@ private:
 
     // Prompt
     std::string last_prompt_;
-
-    // Logging
-    std::string log_file_;
-    FILE* log_fp_ = nullptr;
 
     // ConnectEx function pointer (loaded once per socket)
     static LPFN_CONNECTEX ConnectEx_;

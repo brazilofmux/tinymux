@@ -25,8 +25,9 @@ std::vector<std::string> WorldDB::names() const {
     return result;
 }
 
-// Simple world file format:
+// World file format:
 //   world <name> <host> <port> [ssl]
+//   hydra <name> <host> <port> <user> <pass> <game>
 bool WorldDB::load(const std::string& path) {
     std::ifstream f(path);
     if (!f) return false;
@@ -36,15 +37,24 @@ bool WorldDB::load(const std::string& path) {
         std::istringstream ss(line);
         std::string keyword;
         ss >> keyword;
-        if (keyword != "world") continue;
-        World w;
-        ss >> w.name >> w.host >> w.port;
-        std::string token;
-        while (ss >> token) {
-            if (token == "ssl") w.use_ssl = true;
-        }
-        if (!w.name.empty() && !w.host.empty() && !w.port.empty()) {
-            worlds_[w.name] = w;
+        if (keyword == "world") {
+            World w;
+            ss >> w.name >> w.host >> w.port;
+            std::string token;
+            while (ss >> token) {
+                if (token == "ssl") w.use_ssl = true;
+            }
+            if (!w.name.empty() && !w.host.empty() && !w.port.empty()) {
+                worlds_[w.name] = w;
+            }
+        } else if (keyword == "hydra") {
+            World w;
+            w.use_hydra = true;
+            ss >> w.name >> w.host >> w.port >> w.hydra_user >> w.hydra_pass >> w.hydra_game;
+            if (!w.name.empty() && !w.host.empty() && !w.port.empty()
+                && !w.hydra_user.empty() && !w.hydra_pass.empty()) {
+                worlds_[w.name] = w;
+            }
         }
     }
     return true;
@@ -55,9 +65,15 @@ bool WorldDB::save(const std::string& path) const {
     if (!f) return false;
     for (auto& name : names()) {
         auto& w = worlds_.at(name);
-        f << "world " << w.name << " " << w.host << " " << w.port;
-        if (w.use_ssl) f << " ssl";
-        f << "\n";
+        if (w.use_hydra) {
+            f << "hydra " << w.name << " " << w.host << " " << w.port
+              << " " << w.hydra_user << " " << w.hydra_pass
+              << " " << w.hydra_game << "\n";
+        } else {
+            f << "world " << w.name << " " << w.host << " " << w.port;
+            if (w.use_ssl) f << " ssl";
+            f << "\n";
+        }
     }
     return true;
 }

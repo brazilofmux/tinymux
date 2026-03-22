@@ -552,28 +552,4 @@ int Connection::send_idle_secs() const {
         now - last_send_time_).count();
 }
 
-// -- Logging --
-
-bool Connection::start_log(const std::string& path) {
-    stop_log();
-    log_fp_ = fopen(path.c_str(), "a");
-    if (log_fp_) {
-        log_file_ = path;
-        return true;
-    }
-    return false;
-}
-
-void Connection::stop_log() {
-    if (log_fp_) {
-        fclose(log_fp_);
-        log_fp_ = nullptr;
-    }
-    log_file_.clear();
-}
-
-void Connection::log_line(const std::string& line) {
-    if (!log_fp_) return;
-    fprintf(log_fp_, "%s\n", line.c_str());
-    fflush(log_fp_);
-}
+// Logging is inherited from IConnection.

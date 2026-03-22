@@ -13,6 +13,12 @@ struct World {
     bool        use_ssl = false;
     std::string character;
     std::string password;
+
+    // Hydra proxy fields
+    bool        use_hydra = false;
+    std::string hydra_user;     // Hydra account username
+    std::string hydra_pass;     // Hydra account password
+    std::string hydra_game;     // game name to /connect on Hydra
 };
 
 class WorldDB {

@@ -52,42 +52,46 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <PreprocessorDefinitions>WIN32;NDEBUG;UNICODE;_UNICODE;_CONSOLE;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>WIN32;NDEBUG;UNICODE;_UNICODE;_CONSOLE;NOMINMAX;HYDRA_GRPC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader />
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>src;..\shared;..\..\mux\include;..\..\ragel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;..\shared;..\..\mux\include;..\..\ragel;..\..\mux\vcpkg_installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <WarningLevel>Level1</WarningLevel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>ws2_32.lib;libmux.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\mux\bin_release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ws2_32.lib;libmux.lib;grpc++.lib;grpc.lib;gpr.lib;address_sorting.lib;libprotobuf.lib;abseil_dll.lib;absl_flags_commandlineflag.lib;absl_flags_commandlineflag_internal.lib;absl_flags_config.lib;absl_flags_internal.lib;absl_flags_marshalling.lib;absl_flags_parse.lib;absl_flags_private_handle_accessor.lib;absl_flags_program_name.lib;absl_flags_reflection.lib;absl_flags_usage.lib;absl_flags_usage_internal.lib;absl_log_flags.lib;re2.lib;cares.lib;zlib.lib;upb_base_lib.lib;upb_mem_lib.lib;upb_message_lib.lib;upb_mini_descriptor_lib.lib;upb_wire_lib.lib;upb_json_lib.lib;upb_textformat_lib.lib;utf8_range.lib;utf8_validity.lib;libssl.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\mux\bin_release;..\..\mux\vcpkg_installed\x64-windows\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(ProjectDir)..\..\mux\bin_release\libmux.dll" "$(OutDir)"</Command>
-      <Message>Copying libmux.dll to output directory</Message>
+      <Command>copy /Y "$(ProjectDir)..\..\mux\bin_release\libmux.dll" "$(OutDir)"
+for %%f in ("$(ProjectDir)..\..\mux\vcpkg_installed\x64-windows\bin\*.dll") do copy /Y "%%f" "$(OutDir)"</Command>
+      <Message>Copying DLLs to output directory</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;UNICODE;_UNICODE;_CONSOLE;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PreprocessorDefinitions>WIN32;_DEBUG;UNICODE;_UNICODE;_CONSOLE;NOMINMAX;HYDRA_GRPC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader />
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>src;..\shared;..\..\mux\include;..\..\ragel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;..\shared;..\..\mux\include;..\..\ragel;..\..\mux\vcpkg_installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <WarningLevel>Level1</WarningLevel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ws2_32.lib;libmux.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\mux\bin_release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ws2_32.lib;libmux.lib;grpc++.lib;grpc.lib;gpr.lib;address_sorting.lib;libprotobuf.lib;abseil_dll.lib;absl_flags_commandlineflag.lib;absl_flags_commandlineflag_internal.lib;absl_flags_config.lib;absl_flags_internal.lib;absl_flags_marshalling.lib;absl_flags_parse.lib;absl_flags_private_handle_accessor.lib;absl_flags_program_name.lib;absl_flags_reflection.lib;absl_flags_usage.lib;absl_flags_usage_internal.lib;absl_log_flags.lib;re2.lib;cares.lib;zlib.lib;upb_base_lib.lib;upb_mem_lib.lib;upb_message_lib.lib;upb_mini_descriptor_lib.lib;upb_wire_lib.lib;upb_json_lib.lib;upb_textformat_lib.lib;utf8_range.lib;utf8_validity.lib;libssl.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\mux\bin_release;..\..\mux\vcpkg_installed\x64-windows\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(ProjectDir)..\..\mux\bin_release\libmux.dll" "$(OutDir)"</Command>
-      <Message>Copying libmux.dll to output directory</Message>
+      <Command>copy /Y "$(ProjectDir)..\..\mux\bin_release\libmux.dll" "$(OutDir)"
+for %%f in ("$(ProjectDir)..\..\mux\vcpkg_installed\x64-windows\bin\*.dll") do copy /Y "%%f" "$(OutDir)"</Command>
+      <Message>Copying DLLs to output directory</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -107,10 +111,15 @@
     <ClCompile Include="src\hook.cpp" />
     <ClCompile Include="src\spawn.cpp" />
     <ClCompile Include="..\shared\input_editor.cpp" />
+    <ClCompile Include="src\hydra_connection.cpp" />
+    <ClCompile Include="src\hydra.pb.cc" />
+    <ClCompile Include="src\hydra.grpc.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\app.h" />
+    <ClInclude Include="src\iconnection.h" />
     <ClInclude Include="src\connection.h" />
+    <ClInclude Include="src\hydra_connection.h" />
     <ClInclude Include="src\schannel_tls.h" />
     <ClInclude Include="src\macro.h" />
     <ClInclude Include="..\..\ragel\trigger_match.h" />

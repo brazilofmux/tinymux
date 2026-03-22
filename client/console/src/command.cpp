@@ -1,6 +1,9 @@
 // command.cpp -- Built-in commands.
 #include "command.h"
 #include "app.h"
+#ifdef HYDRA_GRPC
+#include "hydra_connection.h"
+#endif
 #include <sstream>
 #include <algorithm>
 #include <cstdlib>
@@ -86,6 +89,39 @@ static void cmd_connect(App& app, const std::vector<std::string>& args) {
         return;
     }
 
+    // Check if this is a Hydra world
+    const World* world = app.worlddb.find(name);
+    if (world && world->use_hydra) {
+#ifdef HYDRA_GRPC
+        auto hconn = std::make_unique<HydraConnection>(
+            name, world->host, world->port,
+            world->hydra_user, world->hydra_pass,
+            world->hydra_game, app.iocp);
+        app.terminal.print_system("Connecting via Hydra to " + name + " (" +
+                                  world->host + ":" + world->port + ")...");
+        IConnection* raw = hconn.get();
+        app.connections[name] = std::move(hconn);
+        // connect() is synchronous for auth, then spawns reader thread
+        if (!static_cast<HydraConnection*>(raw)->connect()) {
+            // Error already queued as output; drain it
+            auto lines = static_cast<HydraConnection*>(raw)->drain_output();
+            for (auto& line : lines) {
+                app.terminal.print_system(line);
+            }
+            app.connections.erase(name);
+            return;
+        }
+        if (!app.fg) {
+            app.fg = raw;
+            app.terminal.set_output_context(name);
+            app.terminal.set_history_context(name);
+        }
+#else
+        app.terminal.print_system("Hydra/gRPC support not compiled in.");
+#endif
+        return;
+    }
+
     auto conn = std::make_unique<Connection>(name, host, port, use_ssl, app.iocp);
     if (!conn->begin_connect()) {
         app.terminal.print_system("Failed to connect to " + host + ":" + port);
@@ -94,7 +130,7 @@ static void cmd_connect(App& app, const std::vector<std::string>& args) {
 
     app.terminal.print_system("Connecting to " + name + " (" + host + ":" + port +
                               (use_ssl ? " ssl" : "") + ")...");
-    Connection* raw = conn.get();
+    IConnection* raw = conn.get();
     app.connections[name] = std::move(conn);
 
     // Make foreground if first connection
@@ -336,9 +372,14 @@ static void cmd_gmcp(App& app, const std::vector<std::string>& args) {
         app.terminal.print_system("Not connected.");
         return;
     }
-    auto& data = app.fg->gmcp_data();
+    auto* telnet = dynamic_cast<Connection*>(app.fg);
+    if (!telnet) {
+        app.terminal.print_system("GMCP data not available via Hydra (use bidi stream).");
+        return;
+    }
+    auto& data = telnet->gmcp_data();
     if (args.size() >= 2) {
-        auto& val = app.fg->gmcp_get(args[1]);
+        auto& val = telnet->gmcp_get(args[1]);
         if (val.empty()) {
             app.terminal.print_system("No GMCP data for: " + args[1]);
         } else {
@@ -360,7 +401,12 @@ static void cmd_mssp(App& app, const std::vector<std::string>&) {
         app.terminal.print_system("Not connected.");
         return;
     }
-    auto& data = app.fg->mssp_data();
+    auto* telnet = dynamic_cast<Connection*>(app.fg);
+    if (!telnet) {
+        app.terminal.print_system("MSSP not available via Hydra.");
+        return;
+    }
+    auto& data = telnet->mssp_data();
     if (data.empty()) {
         app.terminal.print_system("No MSSP data received.");
         return;

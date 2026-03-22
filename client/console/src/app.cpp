@@ -1,13 +1,13 @@
 // app.cpp -- Application-level logic.
 #include "app.h"
 
-bool app_send_line(App& app, Connection* conn, const std::string& line) {
+bool app_send_line(App& app, IConnection* conn, const std::string& line) {
     if (!conn || !conn->is_connected()) return false;
     conn->send_line(line);
     return true;
 }
 
-void app_on_connect(App& app, Connection* conn, const std::string& world_name) {
+void app_on_connect(App& app, IConnection* conn, const std::string& world_name) {
     // Fire CONNECT hooks
     for (auto& cmd : app.hooks.fire_event("CONNECT")) {
         if (cmd[0] == '/') {
@@ -27,7 +27,7 @@ void app_on_disconnect(App& app, const std::string& world_name) {
     app.timers.cancel_all();
 }
 
-void app_receive_line(App& app, Connection* conn, const std::string& world_name,
+void app_receive_line(App& app, IConnection* conn, const std::string& world_name,
                       const std::string& line) {
     conn->add_to_scrollback(line);
 

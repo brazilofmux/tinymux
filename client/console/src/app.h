@@ -3,6 +3,7 @@
 #define APP_H
 
 #include "world.h"
+#include "iconnection.h"
 #include "connection.h"
 #include "terminal.h"
 #include "command.h"
@@ -18,8 +19,8 @@
 
 struct App {
     WorldDB                                        worlddb;
-    std::unordered_map<std::string, std::unique_ptr<Connection>> connections;
-    Connection*                                    fg = nullptr;
+    std::unordered_map<std::string, std::unique_ptr<IConnection>> connections;
+    IConnection*                                   fg = nullptr;
     Terminal                                       terminal;
     CommandDispatcher                              commands;
     MacroDB                                        macros;
@@ -34,10 +35,10 @@ struct App {
     bool                                           running = true;
 };
 
-bool app_send_line(App& app, Connection* conn, const std::string& line);
-void app_receive_line(App& app, Connection* conn, const std::string& world_name,
+bool app_send_line(App& app, IConnection* conn, const std::string& line);
+void app_receive_line(App& app, IConnection* conn, const std::string& world_name,
                       const std::string& line);
-void app_on_connect(App& app, Connection* conn, const std::string& world_name);
+void app_on_connect(App& app, IConnection* conn, const std::string& world_name);
 void app_on_disconnect(App& app, const std::string& world_name);
 void app_rerender_foreground(App& app);
 

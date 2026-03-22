@@ -7,6 +7,9 @@
 #include <winsock2.h>
 
 #include "app.h"
+#ifdef HYDRA_GRPC
+#include "hydra_connection.h"
+#endif
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -162,9 +165,24 @@ int main(int argc, char* argv[]) {
                     }
                 }
             }
+        } else if (ok && key == IOCP_KEY_HYDRA) {
+#ifdef HYDRA_GRPC
+            // Hydra gRPC output ready — drain all Hydra connections
+            for (auto& [name, conn] : app.connections) {
+                auto* hydra = dynamic_cast<HydraConnection*>(conn.get());
+                if (!hydra) continue;
+                auto lines = hydra->drain_output();
+                for (auto& line : lines) {
+                    app_receive_line(app, hydra, name, line);
+                }
+                if (!hydra->is_connected()) {
+                    to_remove.push_back(name);
+                }
+            }
+#endif
         } else if (ok && overlapped) {
-            // Network I/O completion
-            Connection* conn = (Connection*)key;
+            // Telnet network I/O completion
+            Connection* conn = (Connection*)(void*)key;
             IoContext* ctx = CONTAINING_RECORD(overlapped, IoContext, overlapped);
             auto lines = conn->on_completion(ctx, bytes, 0);
             for (auto& line : lines) {
@@ -174,8 +192,8 @@ int main(int argc, char* argv[]) {
                 to_remove.push_back(conn->world_name());
             }
         } else if (!ok && overlapped) {
-            // Failed I/O
-            Connection* conn = (Connection*)key;
+            // Failed telnet I/O
+            Connection* conn = (Connection*)(void*)key;
             IoContext* ctx = CONTAINING_RECORD(overlapped, IoContext, overlapped);
             DWORD err = GetLastError();
             conn->on_completion(ctx, 0, err);
