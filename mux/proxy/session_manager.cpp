@@ -1440,15 +1440,20 @@ void SessionManager::flushSession(HydraSession& session) {
     std::string created = std::to_string(session.created);
     std::string lastActive = std::to_string(session.lastActivity);
 
-    // Serialize links via nlohmann/json (handles escaping properly)
+    // Serialize links via nlohmann/json (handles escaping properly).
+    // Dead links are compacted out — remap activeLink to match.
     nlohmann::json linksArr = nlohmann::json::array();
-    for (const auto& link : session.links) {
-        if (link.state == LinkState::Dead) continue;
-        linksArr.push_back({{"game", link.gameName},
-                            {"character", link.character}});
+    size_t remappedActive = 0;
+    size_t compactIdx = 0;
+    for (size_t i = 0; i < session.links.size(); i++) {
+        if (session.links[i].state == LinkState::Dead) continue;
+        if (i == session.activeLink) remappedActive = compactIdx;
+        linksArr.push_back({{"game", session.links[i].gameName},
+                            {"character", session.links[i].character}});
+        compactIdx++;
     }
     nlohmann::json linksDoc;
-    linksDoc["activeLink"] = session.activeLink;
+    linksDoc["activeLink"] = remappedActive;
     linksDoc["links"] = linksArr;
     std::string linksJson = linksDoc.dump();
 
@@ -1482,8 +1487,11 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
     session.id = nextSessionId_++;
     session.accountId = accountId;
     session.username = fd.pendingUsername;
-    session.created = time(nullptr);
-    session.lastActivity = session.created;
+    // Preserve original timestamps from saved data
+    session.created = static_cast<time_t>(std::atol(saved.created.c_str()));
+    session.lastActivity = static_cast<time_t>(std::atol(saved.lastActive.c_str()));
+    if (session.created == 0) session.created = time(nullptr);
+    if (session.lastActivity == 0) session.lastActivity = time(nullptr);
     session.scrollbackKey = sbKey;
     session.persistId = saved.id;
     session.frontDoors.push_back(fd.handle);
