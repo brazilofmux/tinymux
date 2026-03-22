@@ -389,7 +389,9 @@ class HydraConnection {
 
     // ---- Connect / Disconnect ----
 
-    // localStorage key for persisting session across page reloads
+    // sessionStorage key for persisting session within this tab only.
+    // sessionStorage is cleared on tab close and not shared across tabs,
+    // reducing exposure from XSS vs localStorage.
     get _storageKey() {
         return 'hydra_session_' + this.name;
     }
@@ -401,8 +403,8 @@ class HydraConnection {
                 return false;
             }
 
-            // Try to resume a saved session from localStorage
-            const savedId = localStorage.getItem(this._storageKey);
+            // Try to resume a saved session from sessionStorage
+            const savedId = sessionStorage.getItem(this._storageKey);
             if (savedId) {
                 this.sessionId = savedId;
                 // Verify it's still valid
@@ -425,7 +427,7 @@ class HydraConnection {
                 } catch (e) {
                     // Saved session invalid — fall through to fresh auth
                 }
-                localStorage.removeItem(this._storageKey);
+                sessionStorage.removeItem(this._storageKey);
                 this.sessionId = null;
             }
 
@@ -444,8 +446,8 @@ class HydraConnection {
             this.sessionId = auth.session_id;
             this.connected = true;
 
-            // Persist session for page reload resume
-            localStorage.setItem(this._storageKey, this.sessionId);
+            // Persist session for in-tab resume (survives reload, not tab close)
+            sessionStorage.setItem(this._storageKey, this.sessionId);
 
             if (this.onConnect) this.onConnect();
             this._startSubscribe();
@@ -466,7 +468,7 @@ class HydraConnection {
             this._subscribeAbort = null;
         }
         // Clear persisted session on intentional disconnect
-        localStorage.removeItem(this._storageKey);
+        sessionStorage.removeItem(this._storageKey);
         if (this.onDisconnect) this.onDisconnect();
     }
 
