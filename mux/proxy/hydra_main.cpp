@@ -107,6 +107,18 @@ int main(int argc, char* argv[]) {
     }
     LOG_INFO("Database opened: %s", config.databasePath.c_str());
 
+    // Load master key (optional — auto-login disabled without it)
+    if (!config.masterKeyPath.empty()) {
+        if (accounts.loadMasterKey(config.masterKeyPath, errorMsg)) {
+            LOG_INFO("Master key loaded from %s", config.masterKeyPath.c_str());
+        } else {
+            LOG_WARN("Master key not available: %s (auto-login disabled)",
+                     errorMsg.c_str());
+        }
+    } else {
+        LOG_INFO("No master key configured (auto-login disabled)");
+    }
+
     // Handle --create-admin
     if (!createAdmin.empty()) {
         char* pw = getpass("Password: ");

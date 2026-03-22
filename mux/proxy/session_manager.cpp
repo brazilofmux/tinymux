@@ -416,10 +416,72 @@ void SessionManager::dispatchCommand(HydraSession& session,
         } else {
             sendToClient(fdHandle, "  No active links.\r\n");
         }
+    } else if (verb == "addcred") {
+        // /addcred <game> <character> <verb> <name> <secret>
+        // Parse 5 space-separated args
+        std::vector<std::string> parts;
+        size_t pos = 0;
+        std::string tmp = args;
+        while (parts.size() < 4 && (pos = tmp.find(' ')) != std::string::npos) {
+            parts.push_back(tmp.substr(0, pos));
+            tmp = tmp.substr(pos + 1);
+        }
+        if (!tmp.empty()) parts.push_back(tmp);
+
+        if (parts.size() < 5) {
+            sendToClient(fdHandle,
+                "Usage: /addcred <game> <character> <verb> <name> <secret>\r\n"
+                "Example: /addcred mygame player1 connect player1 mypassword\r\n");
+            return;
+        }
+
+        std::string errorMsg;
+        if (accounts_.storeCredential(session.accountId,
+                                      parts[0], parts[1], parts[2],
+                                      parts[3], parts[4], errorMsg)) {
+            sendToClient(fdHandle,
+                "Credential stored for " + parts[0] + "/" + parts[1] + "\r\n");
+        } else {
+            sendToClient(fdHandle,
+                "Failed: " + errorMsg + "\r\n");
+        }
+    } else if (verb == "delcred") {
+        // /delcred <game> [character]
+        if (args.empty()) {
+            sendToClient(fdHandle,
+                "Usage: /delcred <game> [character]\r\n");
+            return;
+        }
+        std::string game = args;
+        std::string character;
+        size_t sp = args.find(' ');
+        if (sp != std::string::npos) {
+            game = args.substr(0, sp);
+            character = args.substr(sp + 1);
+        }
+        if (accounts_.deleteCredential(session.accountId, game, character)) {
+            sendToClient(fdHandle, "Credential(s) deleted.\r\n");
+        } else {
+            sendToClient(fdHandle, "Delete failed.\r\n");
+        }
+    } else if (verb == "creds") {
+        auto creds = accounts_.listCredentials(session.accountId);
+        if (creds.empty()) {
+            sendToClient(fdHandle, "No stored credentials.\r\n");
+        } else {
+            std::string out = "--- Stored Credentials ---\r\n";
+            for (const auto& c : creds) {
+                out += "  " + c.game + "/" + c.character
+                     + "  verb=" + c.verb + " name=" + c.name
+                     + (c.autoLogin ? " [auto]" : "") + "\r\n";
+            }
+            sendToClient(fdHandle, out);
+        }
     } else {
         sendToClient(fdHandle,
             "Unknown command: /" + verb + "\r\n"
-            "Commands: /games /connect /links /scroll /detach /quit\r\n");
+            "Commands: /games /connect /links /scroll /detach /quit\r\n"
+            "          /addcred /delcred /creds\r\n");
     }
 }
 
@@ -529,6 +591,23 @@ void SessionManager::onBackDoorConnect(ganl::ConnectionHandle bdHandle) {
     for (auto h : session.frontDoors) {
         sendToClient(h,
             "[" + session.gameName + ": connected]\r\n");
+    }
+
+    // Auto-login: if credentials exist for this game, send login command
+    std::string verb, loginName, secret;
+    if (accounts_.getLoginSecret(session.accountId, session.gameName,
+                                 verb, loginName, secret)) {
+        std::string loginCmd = verb + " " + loginName + " " + secret + "\r\n";
+        int bdFd = static_cast<int>(session.backDoor);
+        send(bdFd, loginCmd.data(), loginCmd.size(), MSG_NOSIGNAL);
+
+        LOG_INFO("Session %lu: auto-login sent for %s",
+                 (unsigned long)session.id, session.gameName.c_str());
+
+        for (auto h : session.frontDoors) {
+            sendToClient(h,
+                "[" + session.gameName + ": auto-login sent]\r\n");
+        }
     }
 }
 

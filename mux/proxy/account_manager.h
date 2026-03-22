@@ -61,10 +61,42 @@ public:
     // Access the database handle (for scroll-back flush/load).
     sqlite3* db() { return db_; }
 
+    // ---- Master key and game credentials ----
+
+    // Load the master key from a raw 32-byte binary file.
+    bool loadMasterKey(const std::string& path, std::string& errorMsg);
+    bool hasMasterKey() const { return masterKey_.size() >= 32; }
+
+    // Store a game credential (encrypts secret with master key).
+    bool storeCredential(uint32_t accountId, const std::string& game,
+                         const std::string& character, const std::string& verb,
+                         const std::string& name, const std::string& secret,
+                         std::string& errorMsg);
+
+    // Delete a credential.
+    bool deleteCredential(uint32_t accountId, const std::string& game,
+                          const std::string& character);
+
+    struct GameCredential {
+        std::string game, character, verb, name;
+        bool autoLogin;
+    };
+
+    // List all credentials for an account (never returns secrets).
+    std::vector<GameCredential> listCredentials(uint32_t accountId);
+
+    // Decrypt and return the login secret for auto-login.
+    // Returns true if a credential exists and decryption succeeds.
+    bool getLoginSecret(uint32_t accountId, const std::string& game,
+                        std::string& verb, std::string& name,
+                        std::string& secret);
+
 private:
     bool createSchema(std::string& errorMsg);
 
     sqlite3* db_{nullptr};
+    std::vector<uint8_t> masterKey_;
+    std::string masterKeyId_;
 };
 
 #endif // HYDRA_ACCOUNT_MANAGER_H

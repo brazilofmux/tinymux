@@ -1,8 +1,10 @@
 #include "account_manager.h"
+#include "crypto.h"
 #include "hydra_log.h"
 #include <sqlite3.h>
 #include <crypt.h>
 #include <cstring>
+#include <cstdio>
 #include <random>
 
 // Generate a random salt string for crypt(3) SHA-512.
@@ -383,6 +385,253 @@ bool AccountManager::deleteSession(const std::string& sessionId) {
     rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
     return rc == SQLITE_DONE;
+}
+
+// ---- Master key and game credentials ----
+
+// Build AAD for credential encryption:
+// account_id (4 bytes LE) || game_name || character
+static std::vector<uint8_t> buildCredentialAAD(uint32_t accountId,
+                                               const std::string& game,
+                                               const std::string& character) {
+    std::vector<uint8_t> aad;
+    aad.reserve(4 + game.size() + character.size());
+    aad.push_back(static_cast<uint8_t>(accountId));
+    aad.push_back(static_cast<uint8_t>(accountId >> 8));
+    aad.push_back(static_cast<uint8_t>(accountId >> 16));
+    aad.push_back(static_cast<uint8_t>(accountId >> 24));
+    aad.insert(aad.end(), game.begin(), game.end());
+    aad.insert(aad.end(), character.begin(), character.end());
+    return aad;
+}
+
+bool AccountManager::loadMasterKey(const std::string& path,
+                                   std::string& errorMsg) {
+    FILE* f = fopen(path.c_str(), "rb");
+    if (!f) {
+        errorMsg = "cannot open master key file: " + path;
+        return false;
+    }
+
+    masterKey_.resize(AEAD_KEY_LEN);
+    size_t n = fread(masterKey_.data(), 1, AEAD_KEY_LEN, f);
+    fclose(f);
+
+    if (n != AEAD_KEY_LEN) {
+        errorMsg = "master key file too short (need 32 bytes, got "
+                   + std::to_string(n) + ")";
+        masterKey_.clear();
+        return false;
+    }
+
+    masterKeyId_ = computeKeyId(masterKey_);
+    LOG_INFO("Master key loaded (key_id=%s)", masterKeyId_.c_str());
+    return true;
+}
+
+bool AccountManager::storeCredential(uint32_t accountId,
+                                     const std::string& game,
+                                     const std::string& character,
+                                     const std::string& verb,
+                                     const std::string& name,
+                                     const std::string& secret,
+                                     std::string& errorMsg) {
+    if (!hasMasterKey()) {
+        errorMsg = "no master key configured";
+        return false;
+    }
+    if (!db_) { errorMsg = "no database"; return false; }
+
+    // Encrypt the secret
+    uint8_t nonce[AEAD_NONCE_LEN];
+    randomBytes(nonce, AEAD_NONCE_LEN);
+
+    std::vector<uint8_t> aad = buildCredentialAAD(accountId, game, character);
+    std::vector<uint8_t> ciphertext;
+
+    if (!aeadEncrypt(masterKey_.data(), masterKey_.size(),
+                     nonce, AEAD_NONCE_LEN,
+                     aad.data(), aad.size(),
+                     reinterpret_cast<const uint8_t*>(secret.data()),
+                     secret.size(),
+                     ciphertext)) {
+        errorMsg = "encryption failed";
+        return false;
+    }
+
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql =
+        "INSERT OR REPLACE INTO game_credentials"
+        " (account_id, game_name, character, login_verb, login_name,"
+        "  secret_enc, secret_nonce, secret_key_id)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) {
+        errorMsg = sqlite3_errmsg(db_);
+        return false;
+    }
+
+    sqlite3_bind_int(stmt, 1, static_cast<int>(accountId));
+    sqlite3_bind_text(stmt, 2, game.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 3, character.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 4, verb.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 5, name.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_blob(stmt, 6, ciphertext.data(),
+                      static_cast<int>(ciphertext.size()), SQLITE_TRANSIENT);
+    sqlite3_bind_blob(stmt, 7, nonce, AEAD_NONCE_LEN, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 8, masterKeyId_.c_str(), -1, SQLITE_TRANSIENT);
+
+    rc = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+
+    if (rc != SQLITE_DONE) {
+        errorMsg = sqlite3_errmsg(db_);
+        return false;
+    }
+
+    LOG_INFO("Credential stored for account %u game '%s' character '%s'",
+             accountId, game.c_str(), character.c_str());
+    return true;
+}
+
+bool AccountManager::deleteCredential(uint32_t accountId,
+                                      const std::string& game,
+                                      const std::string& character) {
+    if (!db_) return false;
+
+    sqlite3_stmt* stmt = nullptr;
+    std::string sql;
+    if (character.empty()) {
+        sql = "DELETE FROM game_credentials"
+              " WHERE account_id = ? AND game_name = ?";
+    } else {
+        sql = "DELETE FROM game_credentials"
+              " WHERE account_id = ? AND game_name = ? AND character = ?";
+    }
+
+    int rc = sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) return false;
+
+    sqlite3_bind_int(stmt, 1, static_cast<int>(accountId));
+    sqlite3_bind_text(stmt, 2, game.c_str(), -1, SQLITE_TRANSIENT);
+    if (!character.empty()) {
+        sqlite3_bind_text(stmt, 3, character.c_str(), -1, SQLITE_TRANSIENT);
+    }
+
+    rc = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+    return rc == SQLITE_DONE;
+}
+
+std::vector<AccountManager::GameCredential>
+AccountManager::listCredentials(uint32_t accountId) {
+    std::vector<GameCredential> result;
+    if (!db_) return result;
+
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql =
+        "SELECT game_name, character, login_verb, login_name, auto_login"
+        " FROM game_credentials WHERE account_id = ? ORDER BY game_name, character";
+    int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) return result;
+
+    sqlite3_bind_int(stmt, 1, static_cast<int>(accountId));
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        GameCredential cred;
+        const char* g = (const char*)sqlite3_column_text(stmt, 0);
+        const char* c = (const char*)sqlite3_column_text(stmt, 1);
+        const char* v = (const char*)sqlite3_column_text(stmt, 2);
+        const char* n = (const char*)sqlite3_column_text(stmt, 3);
+        cred.game = g ? g : "";
+        cred.character = c ? c : "";
+        cred.verb = v ? v : "";
+        cred.name = n ? n : "";
+        cred.autoLogin = sqlite3_column_int(stmt, 4) != 0;
+        result.push_back(std::move(cred));
+    }
+
+    sqlite3_finalize(stmt);
+    return result;
+}
+
+bool AccountManager::getLoginSecret(uint32_t accountId,
+                                    const std::string& game,
+                                    std::string& verb,
+                                    std::string& name,
+                                    std::string& secret) {
+    if (!hasMasterKey() || !db_) return false;
+
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql =
+        "SELECT character, login_verb, login_name, secret_enc, secret_nonce,"
+        "       secret_key_id"
+        " FROM game_credentials"
+        " WHERE account_id = ? AND game_name = ? AND auto_login = 1"
+        " LIMIT 1";
+    int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) return false;
+
+    sqlite3_bind_int(stmt, 1, static_cast<int>(accountId));
+    sqlite3_bind_text(stmt, 2, game.c_str(), -1, SQLITE_TRANSIENT);
+
+    if (sqlite3_step(stmt) != SQLITE_ROW) {
+        sqlite3_finalize(stmt);
+        return false;
+    }
+
+    const char* character = (const char*)sqlite3_column_text(stmt, 0);
+    const char* dbVerb = (const char*)sqlite3_column_text(stmt, 1);
+    const char* dbName = (const char*)sqlite3_column_text(stmt, 2);
+    const void* ctBlob = sqlite3_column_blob(stmt, 3);
+    int ctLen = sqlite3_column_bytes(stmt, 3);
+    const void* nonceBlob = sqlite3_column_blob(stmt, 4);
+    int nonceLen = sqlite3_column_bytes(stmt, 4);
+    const char* keyId = (const char*)sqlite3_column_text(stmt, 5);
+
+    if (!character || !dbVerb || !dbName || !ctBlob || !nonceBlob || !keyId) {
+        sqlite3_finalize(stmt);
+        return false;
+    }
+
+    // Check key_id matches current master key
+    if (masterKeyId_ != keyId) {
+        LOG_WARN("Credential for game '%s' encrypted with stale key %s"
+                 " (current=%s)", game.c_str(), keyId, masterKeyId_.c_str());
+        sqlite3_finalize(stmt);
+        return false;
+    }
+
+    if (nonceLen != AEAD_NONCE_LEN) {
+        sqlite3_finalize(stmt);
+        return false;
+    }
+
+    // Build AAD and decrypt
+    std::string charStr(character);
+    std::vector<uint8_t> aad = buildCredentialAAD(accountId, game, charStr);
+
+    std::vector<uint8_t> plaintext;
+    bool ok = aeadDecrypt(masterKey_.data(), masterKey_.size(),
+                          static_cast<const uint8_t*>(nonceBlob),
+                          AEAD_NONCE_LEN,
+                          aad.data(), aad.size(),
+                          static_cast<const uint8_t*>(ctBlob),
+                          static_cast<size_t>(ctLen),
+                          plaintext);
+
+    sqlite3_finalize(stmt);
+
+    if (!ok) {
+        LOG_ERROR("Credential decryption failed for game '%s' (tampered?)",
+                  game.c_str());
+        return false;
+    }
+
+    verb = dbVerb;
+    name = dbName;
+    secret.assign(reinterpret_cast<char*>(plaintext.data()), plaintext.size());
+    return true;
 }
 
 bool AccountManager::isEmpty() {
