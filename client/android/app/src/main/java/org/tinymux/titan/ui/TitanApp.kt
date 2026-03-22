@@ -316,6 +316,20 @@ fun TitanApp() {
                     connectWorld("$host:$port", host, port, ssl)
                 }
             }
+            "hydra" -> {
+                // /hydra host port user pass game
+                val parts = args.split("\\s+".toRegex())
+                if (parts.size < 5 || parts[0].isBlank()) {
+                    appendLine(idx, "% Usage: /hydra <host> <port> <user> <pass> <game>")
+                } else {
+                    val hHost = parts[0]
+                    val hPort = parts[1].toIntOrNull() ?: 50051
+                    val hUser = parts[2]
+                    val hPass = parts[3]
+                    val hGame = parts.drop(4).joinToString(" ")
+                    connectHydra("$hHost:$hPort", hHost, hPort, hUser, hPass, hGame)
+                }
+            }
             "dc", "disconnect" -> {
                 if (activeTab > 0) {
                     tabs.getOrNull(activeTab)?.disconnectAll()
@@ -563,6 +577,7 @@ fun TitanApp() {
             "help" -> {
                 appendLine(idx, "% Commands:")
                 appendLine(idx, "%   /connect <host> [port] [ssl]  - Connect to a world")
+                appendLine(idx, "%   /hydra <host> <port> <u> <p> <game> - Connect via Hydra")
                 appendLine(idx, "%   /disconnect, /dc              - Close current connection")
                 appendLine(idx, "%   /worlds                       - Open World Manager")
                 appendLine(idx, "%   /triggers                     - Open Trigger Manager")
@@ -1398,7 +1413,8 @@ private fun WorldRow(
             Text(
                 buildString {
                     append("${world.host}:${world.port}")
-                    if (world.ssl) append(" (ssl)")
+                    if (world.useHydra) append(" [hydra]")
+                    else if (world.ssl) append(" (ssl)")
                     if (world.character.isNotBlank()) append(" - ${world.character}")
                     if (world.loginCommands.isNotEmpty()) append(" [auto-login]")
                 },
@@ -1429,6 +1445,10 @@ fun EditWorldDialog(
     var character by remember { mutableStateOf(initial?.character ?: "") }
     var notes by remember { mutableStateOf(initial?.notes ?: "") }
     var loginCmds by remember { mutableStateOf(initial?.loginCommands?.joinToString("\n") ?: "") }
+    var useHydra by remember { mutableStateOf(initial?.useHydra ?: false) }
+    var hydraUser by remember { mutableStateOf(initial?.hydraUser ?: "") }
+    var hydraPass by remember { mutableStateOf(initial?.hydraPass ?: "") }
+    var hydraGame by remember { mutableStateOf(initial?.hydraGame ?: "") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1462,6 +1482,29 @@ fun EditWorldDialog(
                     Spacer(Modifier.width(8.dp))
                     Text("SSL/TLS", style = MaterialTheme.typography.bodyLarge)
                 }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .clickable { useHydra = !useHydra }
+                ) {
+                    Switch(checked = useHydra, onCheckedChange = { useHydra = it })
+                    Spacer(Modifier.width(8.dp))
+                    Text("Connect via Hydra", style = MaterialTheme.typography.bodyLarge)
+                }
+                if (useHydra) {
+                    OutlinedTextField(value = hydraUser, onValueChange = { hydraUser = it },
+                        label = { Text("Hydra username") }, singleLine = true,
+                        modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = hydraPass, onValueChange = { hydraPass = it },
+                        label = { Text("Hydra password") }, singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation())
+                    OutlinedTextField(value = hydraGame, onValueChange = { hydraGame = it },
+                        label = { Text("Game name") }, singleLine = true,
+                        modifier = Modifier.fillMaxWidth())
+                }
                 OutlinedTextField(value = character, onValueChange = { character = it },
                     label = { Text("Character (optional)") }, singleLine = true,
                     modifier = Modifier.fillMaxWidth())
@@ -1482,11 +1525,15 @@ fun EditWorldDialog(
                     onSave(World(
                         name = name.trim(),
                         host = host.trim(),
-                        port = port.trim().toIntOrNull() ?: 4201,
+                        port = port.trim().toIntOrNull() ?: if (useHydra) 50051 else 4201,
                         ssl = ssl,
                         character = character.trim(),
                         notes = notes.trim(),
                         loginCommands = loginCmds.lines().map { it.trim() }.filter { it.isNotBlank() },
+                        useHydra = useHydra,
+                        hydraUser = hydraUser.trim(),
+                        hydraPass = hydraPass.trim(),
+                        hydraGame = hydraGame.trim(),
                     ))
                 }
             }) { Text("Save") }
