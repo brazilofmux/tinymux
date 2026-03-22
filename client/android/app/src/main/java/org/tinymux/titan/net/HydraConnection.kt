@@ -7,7 +7,10 @@ import io.grpc.stub.AbstractStub
 import hydra.HydraServiceGrpcKt.HydraServiceCoroutineStub
 import hydra.Hydra.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.merge
 
 /**
  * A connection to a game server via Hydra's gRPC GameSession bidi stream.
@@ -34,6 +37,8 @@ class HydraConnection(
     private var channel: ManagedChannel? = null
     private var sessionId: String = ""
     private var sessionJob: Job? = null
+    // Coroutine channel for sending input through the bidi stream
+    private val inputChannel = Channel<ClientMessage>(Channel.BUFFERED)
 
     /** Attach authorization metadata to a gRPC stub. */
     private fun <S : AbstractStub<S>> S.withAuth(): S {
@@ -101,10 +106,11 @@ class HydraConnection(
                     onConnect?.invoke()
                 }
 
-                // Open bidi GameSession stream
-                val requests = flow {
+                // Open bidi GameSession stream — input lines and pings
+                // are both sent through this stream.
+                val pings = flow {
                     while (connected) {
-                        delay(30000)
+                        delay(60000)
                         emit(
                             ClientMessage.newBuilder()
                                 .setPing(
@@ -116,6 +122,9 @@ class HydraConnection(
                         )
                     }
                 }
+                val userInput = inputChannel.consumeAsFlow()
+                @OptIn(kotlinx.coroutines.FlowPreview::class)
+                val requests = merge(userInput, pings)
 
                 val responses = authedStub.gameSession(requests)
 
@@ -170,18 +179,10 @@ class HydraConnection(
 
     fun sendLine(text: String) {
         if (!connected) return
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val ch = channel ?: return@launch
-                val stub = HydraServiceCoroutineStub(ch).withAuth()
-                stub.sendInput(
-                    InputRequest.newBuilder()
-                        .setSessionId(sessionId)
-                        .setLine(text)
-                        .build()
-                )
-            } catch (_: Exception) {}
-        }
+        val msg = ClientMessage.newBuilder()
+            .setInputLine(text)
+            .build()
+        inputChannel.trySend(msg)
     }
 
     // ---- Hydra session management RPCs ----
