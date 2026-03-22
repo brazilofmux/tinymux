@@ -6,6 +6,7 @@
 #include "scrollback.h"
 #include "account_manager.h"
 #include "telnet_bridge.h"
+#include "process_manager.h"
 #include <network_engine.h>
 #include <network_types.h>
 #include <map>
@@ -139,6 +140,7 @@ private:
     time_t lastFlush_{0};
 
     TelnetBridge bridge_;
+    ProcessManager procMgr_;
 };
 
 #endif // HYDRA_SESSION_MANAGER_H

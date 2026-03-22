@@ -543,11 +543,68 @@ void SessionManager::dispatchCommand(HydraSession& session,
             }
             sendToClient(fdHandle, out);
         }
+    } else if (verb == "start") {
+        if (args.empty()) {
+            sendToClient(fdHandle, "Usage: /start <game>\r\n");
+            return;
+        }
+        const GameConfig* game = nullptr;
+        for (const auto& g : config_.games) {
+            if (g.name == args) { game = &g; break; }
+        }
+        if (!game) {
+            sendToClient(fdHandle, "Unknown game: " + args + "\r\n");
+        } else if (game->type != GameType::Local) {
+            sendToClient(fdHandle, args + " is a remote game (cannot start).\r\n");
+        } else {
+            std::string errorMsg;
+            if (procMgr_.startGame(*game, errorMsg)) {
+                sendToClient(fdHandle,
+                    "Started " + args + " (pid "
+                    + std::to_string(procMgr_.getPid(args)) + ")\r\n");
+            } else {
+                sendToClient(fdHandle, "Start failed: " + errorMsg + "\r\n");
+            }
+        }
+    } else if (verb == "stop") {
+        if (args.empty()) {
+            sendToClient(fdHandle, "Usage: /stop <game>\r\n");
+            return;
+        }
+        if (procMgr_.stopGame(args)) {
+            sendToClient(fdHandle, "Stopping " + args + "...\r\n");
+        } else {
+            sendToClient(fdHandle, args + " is not running.\r\n");
+        }
+    } else if (verb == "restart") {
+        if (args.empty()) {
+            sendToClient(fdHandle, "Usage: /restart <game>\r\n");
+            return;
+        }
+        const GameConfig* game = nullptr;
+        for (const auto& g : config_.games) {
+            if (g.name == args) { game = &g; break; }
+        }
+        if (!game) {
+            sendToClient(fdHandle, "Unknown game: " + args + "\r\n");
+        } else if (game->type != GameType::Local) {
+            sendToClient(fdHandle, args + " is a remote game.\r\n");
+        } else {
+            std::string errorMsg;
+            if (procMgr_.restartGame(*game, errorMsg)) {
+                sendToClient(fdHandle,
+                    "Restarted " + args + " (pid "
+                    + std::to_string(procMgr_.getPid(args)) + ")\r\n");
+            } else {
+                sendToClient(fdHandle, "Restart failed: " + errorMsg + "\r\n");
+            }
+        }
     } else {
         sendToClient(fdHandle,
             "Unknown command: /" + verb + "\r\n"
             "Commands: /games /connect /switch /disconnect /links\r\n"
             "          /scroll /detach /quit\r\n"
+            "          /start /stop /restart\r\n"
             "          /addcred /delcred /creds\r\n");
     }
 }
@@ -577,6 +634,23 @@ void SessionManager::connectToGame(HydraSession& session,
                 + std::to_string(config_.maxLinksPerSession) + ").\r\n");
         }
         return;
+    }
+
+    // Autostart local game if configured and not running
+    if (game->type == GameType::Local && game->autostart &&
+        !procMgr_.isRunning(game->name)) {
+        std::string startErr;
+        if (procMgr_.startGame(*game, startErr)) {
+            LOG_INFO("Autostarted game '%s'", game->name.c_str());
+            for (auto h : session.frontDoors) {
+                sendToClient(h,
+                    "[" + game->name + ": autostarted (pid "
+                    + std::to_string(procMgr_.getPid(game->name)) + ")]\r\n");
+            }
+        } else {
+            LOG_WARN("Autostart failed for '%s': %s",
+                     game->name.c_str(), startErr.c_str());
+        }
     }
 
     ganl::ErrorCode err = 0;
@@ -825,6 +899,9 @@ void SessionManager::runTimers() {
             }
         }
     }
+
+    // Reap child processes
+    procMgr_.reapChildren();
 
     // Reconnect backoff
     for (auto& [sid, session] : sessions_) {
