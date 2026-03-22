@@ -263,7 +263,7 @@ struct BackDoorLink {
 
 ```cpp
 class ScrollBack {
-    // Ring buffer of lines, stored as PUA-encoded UTF-8.
+    // In-memory ring buffer of lines, stored as PUA-encoded UTF-8.
     // Color is represented as PUA code points (U+F500–F7FF,
     // U+F0000–F3FFF) — the same internal format TinyMUX uses.
     // On replay, Hydra renders to the front-door's color depth
@@ -280,9 +280,12 @@ class ScrollBack {
     size_t              head;       // next write position
     size_t              count;      // lines currently stored
     size_t              capacity;   // max lines (configurable)
+    size_t              dirtyCount; // lines not yet flushed to SQLite
 
     void append(const std::string& text, const std::string& source);
     void replay(FrontDoorConn* conn, size_t maxLines);
+    void flushToDb(uint64_t sessionId);
+    void loadFromDb(uint64_t sessionId);
 };
 ```
 
@@ -306,11 +309,44 @@ UTF-8 string, not as raw ANSI escape sequences. This means:
 - Color downgrading uses `co_nearest_xterm16()` and
   `co_nearest_xterm256()` with CIE97 perceptual distance
 
-**Persistence boundary:** In Phase 1, scroll-back is in-memory only.
-Replay is guaranteed for client reconnect while Hydra remains running.
-If Hydra itself is replaced, saved session metadata may be restored, but
-scroll-back is not guaranteed to survive unless a later phase adds
-explicit persistence.
+**Two-tier storage:** The in-memory ring buffer is the hot path —
+every line of game output is appended here first. SQLite is the
+persistence layer, flushed periodically so scroll-back survives
+Hydra crashes and restarts.
+
+Flush triggers:
+
+- Session detach (all front doors disconnected)
+- Periodic interval (configurable, default every 60 seconds)
+- Graceful shutdown (SIGTERM)
+- Dirty count exceeds threshold (e.g., 100 unflushed lines)
+
+On crash, at most the unflushed tail is lost. On normal operation,
+nothing is lost.
+
+On session resume after Hydra restart, `loadFromDb()` populates the
+in-memory ring buffer from SQLite before replay begins.
+
+**Scroll-back encryption:** Persisted scroll-back contains private
+game output (conversations, pages, mail, channel chatter). It is
+encrypted at rest using the same AEAD scheme as stored game
+credentials:
+
+- Each scroll-back row is encrypted with the account's key material
+  (derived from or wrapped by the local master key)
+- AAD includes the session ID and line sequence number to prevent
+  reordering or cross-session substitution
+- Without the master key, persisted scroll-back is unreadable
+- Different accounts' scroll-back is encrypted under different key
+  material — compromise of one account does not expose others
+
+The SQLite database alone is never sufficient to read any player's
+scroll-back.
+
+If no master key is configured, scroll-back is not persisted to
+SQLite. The in-memory ring buffer still works normally, but
+durability across Hydra restarts is not available. This is the same
+degraded-mode behavior as credential storage without a master key.
 
 ## Front Door Detail
 
@@ -697,6 +733,20 @@ CREATE TABLE saved_sessions (
     last_active TEXT NOT NULL,
     links_json  TEXT                     -- serialized link list
 );
+
+-- Persisted scroll-back (encrypted at rest)
+CREATE TABLE scrollback (
+    id          INTEGER PRIMARY KEY,
+    session_id  TEXT NOT NULL REFERENCES saved_sessions(id) ON DELETE CASCADE,
+    seq         INTEGER NOT NULL,       -- line sequence within session
+    source      TEXT NOT NULL,          -- game name
+    timestamp   TEXT NOT NULL,
+    ciphertext  BLOB NOT NULL,          -- AEAD-encrypted PUA-encoded UTF-8
+    nonce       BLOB NOT NULL,          -- per-row AEAD nonce
+    key_id      TEXT NOT NULL,          -- which master key encrypted it
+    UNIQUE(session_id, seq)
+);
+CREATE INDEX idx_scrollback_session ON scrollback(session_id, seq);
 ```
 
 ### Password Hashing
@@ -808,7 +858,7 @@ SELECT * FROM saved_sessions WHERE account_id = ?
     └── Saved session in SQLite (after Hydra restart)
         → Restore session from SQLite
         → Attach this front-door
-        → No guaranteed scroll-back replay in Phase 1
+        → Load persisted scroll-back from SQLite, decrypt, replay
         → Reconnect back-door links per saved link list
 ```
 

@@ -120,7 +120,10 @@ across its own upgrade or replacement.
 
 When a client is disconnected, Hydra buffers output from the game. On
 reconnect, the client receives the buffered output so nothing is lost.
-Buffer size is configurable with sensible defaults.
+Buffer size is configurable with sensible defaults. Scroll-back is
+persisted to durable storage so it survives Hydra crashes and
+restarts. Persisted scroll-back is encrypted at rest — the database
+alone is never sufficient to read any player's buffered output.
 
 ### R4. Multi-protocol front door
 

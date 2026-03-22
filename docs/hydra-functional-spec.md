@@ -394,8 +394,12 @@ connection is attached (or always, for `/scroll` support).
 **Parameters:**
 
 - Default size: 10,000 lines (configurable per-account or globally)
-- Storage: in-memory (fast), with optional SQLite persistence for
-  crash recovery
+- Hot path: in-memory ring buffer for speed
+- Persistence: periodically flushed to SQLite, encrypted at rest
+  using the same AEAD scheme as stored game credentials (per-account
+  key material, local master key). Without the master key, persisted
+  scroll-back is unreadable — the database alone is never sufficient
+  to read any player's scroll-back.
 - Replay: on front-door reconnect, Hydra sends buffered output to the
   new connection, respecting the new connection's charset and color
   capabilities
