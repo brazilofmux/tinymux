@@ -260,6 +260,27 @@ const ListCredentialsResponseDecode = {
     1: {name: 'credentials', type: 'message', fields: CredentialDecode, repeated: true},
 };
 
+// Process management RPCs
+const GameRequestFields = {
+    game_name: {num: 1, type: 'string'},
+};
+const GameResponseDecode = {
+    1: {name: 'success', type: 'bool'},
+    2: {name: 'error', type: 'string'},
+    3: {name: 'pid', type: 'int32'},
+};
+const GameStatusRequestFields = {
+    game_name: {num: 1, type: 'string'},
+};
+const ProcessInfoDecode = {
+    1: {name: 'game_name', type: 'string'},
+    2: {name: 'running', type: 'bool'},
+    3: {name: 'pid', type: 'int32'},
+};
+const GameStatusResponseDecode = {
+    1: {name: 'processes', type: 'message', fields: ProcessInfoDecode, repeated: true},
+};
+
 // ---- grpc-web frame codec ----
 
 function grpcWebEncodeRequest(protoBytes) {
@@ -480,6 +501,10 @@ class HydraConnection {
                 this._emit('%   /haddcred <g> <c> <v> <n> <s> - add credential');
                 this._emit('%   /hdelcred <game> [char]        - delete credential');
                 this._emit('%   /hcreds                - list stored credentials');
+                this._emit('%   /hstart <game>         - start a local game');
+                this._emit('%   /hstop <game>          - stop a local game');
+                this._emit('%   /hrestart <game>       - restart a local game');
+                this._emit('%   /hstatus [game]        - show process status');
                 this._emit('%   /hhelp                 - this help');
             } else if (lower.startsWith('/haddcred ')) {
                 await this._cmdAddCred(text.substring(10).trim());
@@ -487,6 +512,14 @@ class HydraConnection {
                 await this._cmdDelCred(text.substring(10).trim());
             } else if (lower === '/hcreds') {
                 await this._cmdCreds();
+            } else if (lower.startsWith('/hstart ')) {
+                await this._cmdProcess('StartGame', text.substring(8).trim());
+            } else if (lower.startsWith('/hstop ')) {
+                await this._cmdProcess('StopGame', text.substring(7).trim());
+            } else if (lower.startsWith('/hrestart ')) {
+                await this._cmdProcess('RestartGame', text.substring(10).trim());
+            } else if (lower.startsWith('/hstatus')) {
+                await this._cmdStatus(text.substring(8).trim());
             } else {
                 // Unknown /h command — send as input
                 await this._sendInput(text);
@@ -664,6 +697,48 @@ class HydraConnection {
                 this._emit(line);
             }
         } catch (e) { this._emit('% [Hydra] ListCredentials error: ' + e.message); }
+    }
+
+    // ---- Process management ----
+
+    async _cmdProcess(method, gameName) {
+        if (!gameName) {
+            this._emit('% [Hydra] Usage: /' + method.toLowerCase() + ' <game>');
+            return;
+        }
+        try {
+            const reqBytes = Proto.encode({game_name: gameName}, GameRequestFields);
+            const resp = await this._rpc(method, reqBytes, GameResponseDecode);
+            if (resp.success) {
+                const action = method === 'StartGame' ? 'Started'
+                    : method === 'StopGame' ? 'Stopping'
+                    : 'Restarted';
+                let msg = '% [Hydra] ' + action + ' ' + gameName;
+                if (resp.pid) msg += ' (pid ' + resp.pid + ')';
+                this._emit(msg);
+            } else {
+                this._emit('% [Hydra] ' + method + ' failed: ' + (resp.error || resp._error || 'unknown'));
+            }
+        } catch (e) { this._emit('% [Hydra] ' + method + ' error: ' + e.message); }
+    }
+
+    async _cmdStatus(gameName) {
+        try {
+            const reqBytes = Proto.encode(
+                {game_name: gameName || ''}, GameStatusRequestFields);
+            const resp = await this._rpc('GetGameStatus', reqBytes, GameStatusResponseDecode);
+            const procs = resp.processes || [];
+            if (procs.length === 0) {
+                this._emit('% [Hydra] No local games configured.');
+                return;
+            }
+            this._emit('% [Hydra] Game processes:');
+            for (const p of procs) {
+                let line = '  ' + p.game_name + ': ';
+                line += p.running ? 'running (pid ' + p.pid + ')' : 'stopped';
+                this._emit(line);
+            }
+        } catch (e) { this._emit('% [Hydra] GetGameStatus error: ' + e.message); }
     }
 
     // ---- Keepalive ----

@@ -88,6 +88,10 @@ private:
     void cmdAddCred(const std::string& args);
     void cmdDelCred(const std::string& args);
     void cmdCreds();
+    void cmdStart(const std::string& args);
+    void cmdStop(const std::string& args);
+    void cmdRestart(const std::string& args);
+    void cmdStatus(const std::string& args);
 
     // Keepalive
     void sendPing();

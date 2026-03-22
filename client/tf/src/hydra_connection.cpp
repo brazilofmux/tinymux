@@ -187,6 +187,18 @@ bool HydraConnection::send_line(const std::string& line) {
         } else if (lower == "/hcreds") {
             cmdCreds();
             return true;
+        } else if (lower.substr(0, 7) == "/hstart") {
+            cmdStart(trim(line.substr(7)));
+            return true;
+        } else if (lower.substr(0, 6) == "/hstop") {
+            cmdStop(trim(line.substr(6)));
+            return true;
+        } else if (lower.substr(0, 10) == "/hrestart ") {
+            cmdRestart(trim(line.substr(10)));
+            return true;
+        } else if (lower.substr(0, 8) == "/hstatus") {
+            cmdStatus(trim(line.substr(8)));
+            return true;
         } else if (lower == "/hhelp") {
             pushOutput("[Hydra] Commands:");
             pushOutput("  /hconnect <game>       - connect to a game");
@@ -198,6 +210,10 @@ bool HydraConnection::send_line(const std::string& line) {
             pushOutput("  /haddcred <g> <c> <v> <n> <s> - add credential");
             pushOutput("  /hdelcred <game> [char]        - delete credential");
             pushOutput("  /hcreds                - list stored credentials");
+            pushOutput("  /hstart <game>         - start a local game");
+            pushOutput("  /hstop <game>          - stop a local game");
+            pushOutput("  /hrestart <game>       - restart a local game");
+            pushOutput("  /hstatus [game]        - show process status");
             pushOutput("  /hhelp                 - this help");
             return true;
         }
@@ -556,6 +572,98 @@ void HydraConnection::cmdCreds() {
         std::string line = "  " + c.game() + "/" + c.character()
             + "  verb=" + c.verb() + " name=" + c.name();
         if (c.auto_login()) line += " [auto]";
+        pushOutput(line);
+    }
+}
+
+// ---- Process management ----
+
+void HydraConnection::cmdStart(const std::string& args) {
+    if (args.empty()) { pushOutput("[Hydra] Usage: /hstart <game>"); return; }
+    if (!grpc_ || !grpc_->stub) return;
+
+    ClientContext ctx;
+    if (!sessionId_.empty()) ctx.AddMetadata("authorization", sessionId_);
+    hydra::GameRequest req;
+    req.set_game_name(args);
+    hydra::GameResponse resp;
+
+    Status status = grpc_->stub->StartGame(&ctx, req, &resp);
+    if (status.ok() && resp.success()) {
+        pushOutput("[Hydra] Started " + args + " (pid " + std::to_string(resp.pid()) + ")");
+    } else {
+        pushOutput("[Hydra] Start failed: "
+            + (resp.error().empty() ? status.error_message() : resp.error()));
+    }
+}
+
+void HydraConnection::cmdStop(const std::string& args) {
+    if (args.empty()) { pushOutput("[Hydra] Usage: /hstop <game>"); return; }
+    if (!grpc_ || !grpc_->stub) return;
+
+    ClientContext ctx;
+    if (!sessionId_.empty()) ctx.AddMetadata("authorization", sessionId_);
+    hydra::GameRequest req;
+    req.set_game_name(args);
+    hydra::GameResponse resp;
+
+    Status status = grpc_->stub->StopGame(&ctx, req, &resp);
+    if (status.ok() && resp.success()) {
+        pushOutput("[Hydra] Stopping " + args);
+    } else {
+        pushOutput("[Hydra] Stop failed: "
+            + (resp.error().empty() ? status.error_message() : resp.error()));
+    }
+}
+
+void HydraConnection::cmdRestart(const std::string& args) {
+    if (args.empty()) { pushOutput("[Hydra] Usage: /hrestart <game>"); return; }
+    if (!grpc_ || !grpc_->stub) return;
+
+    ClientContext ctx;
+    if (!sessionId_.empty()) ctx.AddMetadata("authorization", sessionId_);
+    hydra::GameRequest req;
+    req.set_game_name(args);
+    hydra::GameResponse resp;
+
+    Status status = grpc_->stub->RestartGame(&ctx, req, &resp);
+    if (status.ok() && resp.success()) {
+        pushOutput("[Hydra] Restarted " + args + " (pid " + std::to_string(resp.pid()) + ")");
+    } else {
+        pushOutput("[Hydra] Restart failed: "
+            + (resp.error().empty() ? status.error_message() : resp.error()));
+    }
+}
+
+void HydraConnection::cmdStatus(const std::string& args) {
+    if (!grpc_ || !grpc_->stub) return;
+
+    ClientContext ctx;
+    if (!sessionId_.empty()) ctx.AddMetadata("authorization", sessionId_);
+    hydra::GameStatusRequest req;
+    if (!args.empty()) req.set_game_name(args);
+    hydra::GameStatusResponse resp;
+
+    Status status = grpc_->stub->GetGameStatus(&ctx, req, &resp);
+    if (!status.ok()) {
+        pushOutput("[Hydra] GetGameStatus failed: " + status.error_message());
+        return;
+    }
+
+    if (resp.processes_size() == 0) {
+        pushOutput("[Hydra] No local games configured.");
+        return;
+    }
+
+    pushOutput("[Hydra] Game processes:");
+    for (int i = 0; i < resp.processes_size(); i++) {
+        const auto& p = resp.processes(i);
+        std::string line = "  " + p.game_name() + ": ";
+        if (p.running()) {
+            line += "running (pid " + std::to_string(p.pid()) + ")";
+        } else {
+            line += "stopped";
+        }
         pushOutput(line);
     }
 }
