@@ -167,6 +167,11 @@ struct rv_compiler {
     static constexpr uint64_t OUT_LIMIT  = 0x68000;
     static constexpr int      OUT_SLOT   = 8000;
 
+    // Pinned Lua array region: 0x30000-0x40000 (64KB = 8192 int64 elements)
+    static constexpr uint64_t LUA_ARRAY_BASE  = 0x30000;
+    static constexpr uint64_t LUA_ARRAY_LIMIT = 0x40000;
+    static constexpr int      LUA_ARRAY_MAX   = 8192;
+
     static constexpr uint64_t CARGS_BASE = 0x68000;
     static constexpr int      CARGS_SLOT = 256;
     static constexpr int      MAX_CARGS  = 10;

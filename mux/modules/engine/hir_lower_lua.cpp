@@ -37,6 +37,9 @@ static constexpr int MAX_LUA_REGS = 256;
 //
 static constexpr int QREG_LUA_IDX = 10;   // loop index variable
 
+// Maximum inline depth for nested lowering.
+static constexpr int MAX_INLINE_DEPTH = 4;
+
 // Maximum code size we attempt to JIT (prevents runaway compile time).
 static constexpr int MAX_LUA_CODE_SIZE = 1024;
 
@@ -460,6 +463,12 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
     int cur_hir_block = 0;
     h.cur_block = 0;
     int result_val = -1;
+
+    // Pinned table tracking for array optimization.
+    // When a for-loop body accesses t[i] where i is the loop variable,
+    // we pin the table's array into guest memory before the loop.
+    int pinned_tbl_reg = -1;     // Lua register of pinned table (-1 = none)
+    int pinned_count_val = -1;   // HIR value holding element count
 
     for (int pc = 0; pc < n; pc++) {
         // Switch blocks if this PC is a leader.
@@ -922,7 +931,15 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int key = lua_reg[insn.C()];
             if (tbl < 0 || key < 0) return -1;
 
-            if (h.ty[key] == TY_INT) {
+            if (h.ty[key] == TY_INT && pinned_tbl_reg >= 0
+                && insn.B() == pinned_tbl_reg) {
+                // Pinned array: native memory load, no ECALL.
+                lua_reg[A] = h.emit(HIR_LUA_ALOAD, TY_INT, key, -1,
+                    static_cast<int64_t>(rv_compiler::LUA_ARRAY_BASE));
+                if (lua_reg[A] < 0) return -1;
+                h.native_ops++;
+                h.ecalls--;  // replaces an ECALL
+            } else if (h.ty[key] == TY_INT) {
                 // Integer key: use fast-path ECALL, returns TY_INT.
                 lua_reg[A] = h.emit(HIR_LUA_GETI, TY_INT, tbl, key);
                 if (lua_reg[A] < 0) return -1;
@@ -1372,6 +1389,52 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (!multi_block) return -1;
             if (lua_reg[A] < 0 || lua_reg[A + 1] < 0 || lua_reg[A + 2] < 0)
                 return -1;
+
+            // Pre-scan loop body for t[i] pattern where i = loop variable
+            // (register A+3).  If found, pin the table array before the loop.
+            int forloop_pc = pc + 1 + insn.sBx();
+            pinned_tbl_reg = -1;
+            pinned_count_val = -1;
+            for (int scan = pc + 1; scan < forloop_pc && scan < n; scan++) {
+                int scan_op = proto->code[scan].opcode();
+                if (scan_op == OP_LUA_GETTABLE) {
+                    int key_reg = proto->code[scan].C();
+                    int tbl_reg = proto->code[scan].B();
+                    // Key must be the loop external variable (A+3).
+                    if (key_reg == A + 3 && lua_reg[tbl_reg] >= 0) {
+                        pinned_tbl_reg = tbl_reg;
+                        break;
+                    }
+                }
+            }
+
+            // If a pinnable table was found, emit PIN_ARRAY ECALL.
+            if (pinned_tbl_reg >= 0 && lua_reg[pinned_tbl_reg] >= 0) {
+                int tbl_val = lua_reg[pinned_tbl_reg];
+                int base_addr = h.emit_iconst(
+                    static_cast<int64_t>(rv_compiler::LUA_ARRAY_BASE));
+                int max_val = h.emit_iconst(rv_compiler::LUA_ARRAY_MAX);
+                if (base_addr < 0 || max_val < 0) {
+                    pinned_tbl_reg = -1;
+                } else {
+                    // ECALL: a0=tbl_idx, a1=base_addr, a2=max → a0=count
+                    // We use the general __lua_pin_array via dedicated ECALL.
+                    // Encode as HIR_LUA_GETI-style dedicated ECALL.
+                    // Actually, emit raw RV64 for the pin ECALL since
+                    // HIR_LUA_GETI only handles 2 args.  Use HIR_CALL to
+                    // a helper function instead.
+                    std::string name("__lua_pin_array");
+                    int args[] = { tbl_val, base_addr, max_val };
+                    pinned_count_val = h.emit_call(TY_STRING, 0, args, 3,
+                                                    &name);
+                    if (pinned_count_val < 0) {
+                        pinned_tbl_reg = -1;
+                    } else {
+                        h.known_int[pinned_count_val] = true;
+                        h.ecalls++;
+                    }
+                }
+            }
 
             // Lua 5.4 FORPREP: R(A) -= step, then jump to FORLOOP.
             // The first FORLOOP iteration will add step back, giving

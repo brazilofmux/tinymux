@@ -40,6 +40,9 @@ static uint32_t rv_ADDI(uint8_t rd, uint8_t rs1, int32_t imm) {
 static uint32_t rv_LUI(uint8_t rd, int32_t imm) {
     return rv_u_type(OP_LUI, rd, imm);
 }
+static uint32_t rv_SLLI(uint8_t rd, uint8_t rs1, int32_t shamt) {
+    return rv_i_type(OP_IMM, rd, ALU_SLLI, rs1, shamt);
+}
 static uint32_t rv_ECALL() {
     return rv_i_type(OP_SYSTEM, 0, 0, 0, 0);
 }
@@ -670,6 +673,7 @@ static bool needs_int_reg(hir_program &h, int i) {
     case HIR_ATOI:
     case HIR_STRCMP:
     case HIR_LUA_GETI:
+    case HIR_LUA_ALOAD:
     case HIR_ADD: case HIR_SUB: case HIR_MUL: case HIR_DIV: case HIR_REM:
     case HIR_NEG: case HIR_ABS: case HIR_SIGN:
     case HIR_MAX: case HIR_MIN:
@@ -1199,6 +1203,31 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 rc.code.push_back(rv_ADDI(12, val_r, 0));  // a2 = value
                 rc.code.push_back(rv_ADDI(17, 0, static_cast<int32_t>(ECALL_LUA_SETI_INT)));
                 rc.code.push_back(rv_ECALL());
+                break;
+            }
+
+            case HIR_LUA_ALOAD: {
+                // Native array load: result = *(int64*)(base + (key-1)*8)
+                // src1 = key (TY_INT), val = guest base address
+                int s1 = h.src1[i];
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                uint8_t key_r = ra_get_reg(rc, loc, s1, RA_SCRATCH2);
+                uint64_t base_addr = static_cast<uint64_t>(h.val[i]);
+                // t0 = key - 1 (0-based index)
+                rc.code.push_back(rv_ADDI(5, key_r, -1));
+                // t0 = t0 << 3 (multiply by 8)
+                rc.code.push_back(rv_SLLI(5, 5, 3));
+                // Load base address into t1
+                rv_load_val(rc.code, 6, base_addr);
+                // t0 = base + offset
+                rc.code.push_back(rv_ADD(5, 5, 6));
+                // dest = *(int64*)t0
+                rc.code.push_back(rv_LD(dest, 5, 0));
+                ra_set_loc(rc, loc, int_alloc, i, dest);
+                h.native_ops++;
                 break;
             }
 
@@ -1869,6 +1898,7 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_STRCMP:      return "STRCMP";
     case HIR_LUA_GETI:   return "LUA_GETI";
     case HIR_LUA_SETI:   return "LUA_SETI";
+    case HIR_LUA_ALOAD:  return "LUA_ALOAD";
     case HIR_ITOA:       return "ITOA";
     case HIR_ITOF:       return "ITOF";
     case HIR_FTOI:       return "FTOI";

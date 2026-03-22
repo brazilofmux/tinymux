@@ -2053,6 +2053,59 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 }
                 return -1;
             }
+
+            if (strcmp(fn, "__LUA_PIN_ARRAY") == 0) {
+                // Pin table's integer array to guest memory.
+                // fargs[0]=table_stk_idx, fargs[1]=dest_addr, fargs[2]=max
+                int tbl_idx = 0;
+                uint64_t dest_addr = 0;
+                int max_elems = 0;
+                if (nfargs >= 1) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr, 8);
+                    tbl_idx = atoi(reinterpret_cast<const char *>(ec->memory + p));
+                }
+                if (nfargs >= 2) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr + 8, 8);
+                    dest_addr = static_cast<uint64_t>(
+                        atoll(reinterpret_cast<const char *>(ec->memory + p)));
+                }
+                if (nfargs >= 3) {
+                    uint64_t p;
+                    memcpy(&p, ec->memory + fargs_addr + 16, 8);
+                    max_elems = atoi(reinterpret_cast<const char *>(ec->memory + p));
+                }
+
+                int len = static_cast<int>(lua_rawlen(L, tbl_idx));
+                if (len > max_elems) len = max_elems;
+                if (dest_addr + len * 8 > ec->memory_size) len = 0;
+
+                int64_t *dest = reinterpret_cast<int64_t *>(
+                    ec->memory + dest_addr);
+                bool ok = true;
+                for (int ii = 1; ii <= len; ii++) {
+                    lua_geti(L, tbl_idx, ii);
+                    if (lua_isinteger(L, -1)) {
+                        dest[ii - 1] = lua_tointeger(L, -1);
+                    } else {
+                        ok = false;
+                        lua_pop(L, 1);
+                        break;
+                    }
+                    lua_pop(L, 1);
+                }
+
+                char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+                if (ok) {
+                    int n2 = snprintf(out, out_size, "%d", len);
+                    ctx->x[10] = static_cast<uint64_t>(n2 > 0 ? n2 : 0);
+                } else {
+                    out[0] = '0'; out[1] = '\0';
+                    ctx->x[10] = 1;
+                }
+                return -1;
+            }
         }
         size_t nCased;
         UTF8 *pCased = mux_strupr(func_name, nCased);

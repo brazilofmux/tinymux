@@ -92,6 +92,7 @@ enum hir_kind {
     // Lua table access (dedicated ECALL, integer fast-path)
     HIR_LUA_GETI,   // geti(tbl_idx, key): ECALL → TY_INT (no string marshal)
     HIR_LUA_SETI,   // seti(tbl_idx, key, val): ECALL (no string marshal)
+    HIR_LUA_ALOAD,  // native array load: val[key] from pinned array (no ECALL)
 
     // Function calls
     HIR_CALL,       // ECALL to engine function
