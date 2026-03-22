@@ -110,6 +110,9 @@ struct FrontDoorState {
     WsState wsState;        // only used if proto == WebSocket
     std::string httpBuf;    // only used if proto == GrpcWeb (HTTP request accumulation)
 
+    // Client IP address (for rate limiting)
+    std::string clientIp;
+
     // grpc-web Subscribe stream state — when set, this fd receives
     // chunked game output frames instead of processing HTTP requests.
     bool grpcWebSubscribed{false};
@@ -130,9 +133,9 @@ public:
                    const HydraConfig& config);
     ~SessionManager();
 
-    void onAccept(ganl::ConnectionHandle handle);
-    void onAcceptWebSocket(ganl::ConnectionHandle handle);
-    void onAcceptGrpcWeb(ganl::ConnectionHandle handle);
+    void onAccept(ganl::ConnectionHandle handle, const std::string& clientIp = "");
+    void onAcceptWebSocket(ganl::ConnectionHandle handle, const std::string& clientIp = "");
+    void onAcceptGrpcWeb(ganl::ConnectionHandle handle, const std::string& clientIp = "");
     void onFrontDoorData(ganl::ConnectionHandle handle,
                          const char* data, size_t len);
     void onFrontDoorClose(ganl::ConnectionHandle handle);
@@ -220,6 +223,23 @@ private:
 
     HydraSessionId nextSessionId_{1};
     time_t lastFlush_{0};
+
+    // ---- Rate limiting state ----
+    struct IpTracker {
+        int connectionCount{0};         // current live connections from this IP
+        std::vector<time_t> connectTimes;  // timestamps of recent connections (for rate)
+        int failedLogins{0};            // consecutive failed login attempts
+        time_t lockoutUntil{0};         // locked out until this time (0 = not locked)
+    };
+    std::map<std::string, IpTracker> ipTrackers_;
+
+    std::string getClientIp(ganl::ConnectionHandle handle) const;
+    bool checkConnectionLimits(const std::string& ip);
+    void recordConnect(const std::string& ip);
+    void recordDisconnect(const std::string& ip);
+    void recordLoginFailure(const std::string& ip);
+    void clearLoginFailures(const std::string& ip);
+    bool isLockedOut(const std::string& ip);
 
     TelnetBridge bridge_;
     ProcessManager procMgr_;

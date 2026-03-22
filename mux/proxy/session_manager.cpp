@@ -241,43 +241,66 @@ bool SessionManager::findByBackDoor(ganl::ConnectionHandle bdHandle,
 
 // ---- Front-door lifecycle ----
 
-void SessionManager::onAccept(ganl::ConnectionHandle handle) {
+void SessionManager::onAccept(ganl::ConnectionHandle handle,
+                              const std::string& clientIp) {
+    if (!checkConnectionLimits(clientIp)) {
+        engine_.closeConnection(handle);
+        return;
+    }
+    recordConnect(clientIp);
+
     FrontDoorState fd;
     fd.handle = handle;
     fd.loginPhase = FrontDoorState::AwaitUsername;
     fd.proto = FrontDoorProto::Telnet;
+    fd.clientIp = clientIp;
     frontDoors_[handle] = fd;
 
-    LOG_INFO("Session manager: new front-door %lu (telnet)", (unsigned long)handle);
+    LOG_INFO("Session manager: new front-door %lu (telnet) from %s",
+             (unsigned long)handle, clientIp.c_str());
     showBanner(handle);
 }
 
-void SessionManager::onAcceptWebSocket(ganl::ConnectionHandle handle) {
+void SessionManager::onAcceptWebSocket(ganl::ConnectionHandle handle,
+                                       const std::string& clientIp) {
+    if (!checkConnectionLimits(clientIp)) {
+        engine_.closeConnection(handle);
+        return;
+    }
+    recordConnect(clientIp);
+
     FrontDoorState fd;
     fd.handle = handle;
     fd.loginPhase = FrontDoorState::AwaitUsername;
     fd.proto = FrontDoorProto::WebSocket;
-    // WebSocket clients are always UTF-8 and typically support 256 colors
     fd.encoding = ganl::EncodingType::Utf8;
     fd.colorDepth = ColorDepth::Ansi256;
+    fd.clientIp = clientIp;
     frontDoors_[handle] = fd;
 
-    LOG_INFO("Session manager: new front-door %lu (websocket, awaiting handshake)",
-             (unsigned long)handle);
-    // Don't send banner yet — wait for WebSocket handshake to complete
+    LOG_INFO("Session manager: new front-door %lu (websocket) from %s",
+             (unsigned long)handle, clientIp.c_str());
 }
 
-void SessionManager::onAcceptGrpcWeb(ganl::ConnectionHandle handle) {
+void SessionManager::onAcceptGrpcWeb(ganl::ConnectionHandle handle,
+                                     const std::string& clientIp) {
+    if (!checkConnectionLimits(clientIp)) {
+        engine_.closeConnection(handle);
+        return;
+    }
+    recordConnect(clientIp);
+
     FrontDoorState fd;
     fd.handle = handle;
     fd.loginPhase = FrontDoorState::AwaitUsername;
     fd.proto = FrontDoorProto::GrpcWeb;
     fd.encoding = ganl::EncodingType::Utf8;
     fd.colorDepth = ColorDepth::Ansi256;
+    fd.clientIp = clientIp;
     frontDoors_[handle] = fd;
 
-    LOG_INFO("Session manager: new front-door %lu (grpc-web)",
-             (unsigned long)handle);
+    LOG_INFO("Session manager: new front-door %lu (grpc-web) from %s",
+             (unsigned long)handle, clientIp.c_str());
 }
 
 void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
@@ -441,8 +464,10 @@ void SessionManager::onFrontDoorClose(ganl::ConnectionHandle handle) {
 
     FrontDoorState& fd = it->second;
     HydraSessionId sid = fd.sessionId;
+    std::string ip = fd.clientIp;
 
     frontDoors_.erase(it);
+    recordDisconnect(ip);
 
     if (sid != InvalidHydraSessionId) {
         auto sit = sessions_.find(sid);
@@ -551,6 +576,13 @@ void SessionManager::handleLogin(FrontDoorState& fd,
     } break;
 
     case FrontDoorState::AwaitPassword: {
+        if (isLockedOut(fd.clientIp)) {
+            sendToClient(fd.handle,
+                "\r\nAccount temporarily locked. Try again later.\r\n");
+            engine_.closeConnection(fd.handle);
+            return;
+        }
+
         std::vector<uint8_t> sbKey;
         uint32_t accountId = accounts_.authenticate(
             fd.pendingUsername, line, sbKey);
@@ -559,12 +591,21 @@ void SessionManager::handleLogin(FrontDoorState& fd,
             LOG_INFO("Login failed for '%s' from fd %lu",
                      fd.pendingUsername.c_str(),
                      (unsigned long)fd.handle);
+            recordLoginFailure(fd.clientIp);
+            if (isLockedOut(fd.clientIp)) {
+                sendToClient(fd.handle,
+                    "\r\nToo many failed attempts. Try again later.\r\n");
+                engine_.closeConnection(fd.handle);
+                return;
+            }
             sendToClient(fd.handle,
                 "\r\nLogin failed.\r\n\r\nUsername: ");
             fd.loginPhase = FrontDoorState::AwaitUsername;
             fd.pendingUsername.clear();
             return;
         }
+
+        clearLoginFailures(fd.clientIp);
 
         fd.loginPhase = FrontDoorState::Authenticated;
 
@@ -578,6 +619,12 @@ void SessionManager::handleLogin(FrontDoorState& fd,
         }
 
         if (existing) {
+            if (static_cast<int>(existing->frontDoors.size()) >= config_.maxFrontDoorsPerSession) {
+                sendToClient(fd.handle,
+                    "\r\nMaximum connections to this session reached.\r\n");
+                engine_.closeConnection(fd.handle);
+                return;
+            }
             existing->frontDoors.push_back(fd.handle);
             existing->state = SessionState::Active;
             existing->lastActivity = time(nullptr);
@@ -1920,6 +1967,93 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
 #else
 void SessionManager::handleGrpcWebRequest(FrontDoorState&) {}
 #endif
+
+// ---- Rate limiting ----
+
+std::string SessionManager::getClientIp(ganl::ConnectionHandle) const {
+    return "";  // Placeholder — IP is passed via onAccept now
+}
+
+bool SessionManager::checkConnectionLimits(const std::string& ip) {
+    if (ip.empty()) return true;  // can't enforce without IP
+
+    auto& tracker = ipTrackers_[ip];
+
+    // Check per-IP connection limit
+    if (tracker.connectionCount >= config_.maxConnectionsPerIp) {
+        LOG_WARN("Rate limit: %s has %d connections (max %d)",
+                 ip.c_str(), tracker.connectionCount, config_.maxConnectionsPerIp);
+        return false;
+    }
+
+    // Check connection rate limit (per minute)
+    time_t now = time(nullptr);
+    time_t oneMinuteAgo = now - 60;
+
+    // Prune old timestamps
+    auto& times = tracker.connectTimes;
+    times.erase(
+        std::remove_if(times.begin(), times.end(),
+            [oneMinuteAgo](time_t t) { return t < oneMinuteAgo; }),
+        times.end());
+
+    if (static_cast<int>(times.size()) >= config_.connectRateLimit) {
+        LOG_WARN("Rate limit: %s exceeded %d connections/minute",
+                 ip.c_str(), config_.connectRateLimit);
+        return false;
+    }
+
+    return true;
+}
+
+void SessionManager::recordConnect(const std::string& ip) {
+    if (ip.empty()) return;
+    auto& tracker = ipTrackers_[ip];
+    tracker.connectionCount++;
+    tracker.connectTimes.push_back(time(nullptr));
+}
+
+void SessionManager::recordDisconnect(const std::string& ip) {
+    if (ip.empty()) return;
+    auto it = ipTrackers_.find(ip);
+    if (it != ipTrackers_.end() && it->second.connectionCount > 0) {
+        it->second.connectionCount--;
+    }
+}
+
+void SessionManager::recordLoginFailure(const std::string& ip) {
+    if (ip.empty()) return;
+    auto& tracker = ipTrackers_[ip];
+    tracker.failedLogins++;
+    if (tracker.failedLogins >= config_.failedLoginLockout) {
+        tracker.lockoutUntil = time(nullptr) + config_.failedLoginLockoutMinutes * 60;
+        LOG_WARN("Rate limit: %s locked out for %d minutes after %d failed logins",
+                 ip.c_str(), config_.failedLoginLockoutMinutes, tracker.failedLogins);
+    }
+}
+
+void SessionManager::clearLoginFailures(const std::string& ip) {
+    if (ip.empty()) return;
+    auto it = ipTrackers_.find(ip);
+    if (it != ipTrackers_.end()) {
+        it->second.failedLogins = 0;
+        it->second.lockoutUntil = 0;
+    }
+}
+
+bool SessionManager::isLockedOut(const std::string& ip) {
+    if (ip.empty()) return false;
+    auto it = ipTrackers_.find(ip);
+    if (it == ipTrackers_.end()) return false;
+    if (it->second.lockoutUntil == 0) return false;
+    if (time(nullptr) >= it->second.lockoutUntil) {
+        // Lockout expired
+        it->second.lockoutUntil = 0;
+        it->second.failedLogins = 0;
+        return false;
+    }
+    return true;
+}
 
 // ---- Phase 4: Session serialization ----
 

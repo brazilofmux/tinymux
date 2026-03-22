@@ -243,15 +243,17 @@ int main(int argc, char* argv[]) {
             const ganl::IoEvent& ev = events[i];
 
             switch (ev.type) {
-            case ganl::IoEventType::Accept:
+            case ganl::IoEventType::Accept: {
+                std::string clientIp = ev.remoteAddress.isValid()
+                    ? ev.remoteAddress.toString() : "";
                 if (ev.context == &tagWebSocket) {
-                    sessionMgr.onAcceptWebSocket(ev.connection);
+                    sessionMgr.onAcceptWebSocket(ev.connection, clientIp);
                 } else if (ev.context == &tagGrpcWeb) {
-                    sessionMgr.onAcceptGrpcWeb(ev.connection);
+                    sessionMgr.onAcceptGrpcWeb(ev.connection, clientIp);
                 } else {
-                    sessionMgr.onAccept(ev.connection);
+                    sessionMgr.onAccept(ev.connection, clientIp);
                 }
-                break;
+            } break;
 
             case ganl::IoEventType::ConnectSuccess:
                 sessionMgr.onBackDoorConnect(ev.connection);
