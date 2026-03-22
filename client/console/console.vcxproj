@@ -104,6 +104,8 @@
     </ClCompile>
     <ClCompile Include="src\keybind.cpp" />
     <ClCompile Include="src\timer.cpp" />
+    <ClCompile Include="src\hook.cpp" />
+    <ClCompile Include="src\spawn.cpp" />
     <ClCompile Include="..\shared\input_editor.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -119,6 +121,8 @@
     <ClInclude Include="src\telnet.h" />
     <ClInclude Include="src\command.h" />
     <ClInclude Include="src\world.h" />
+    <ClInclude Include="src\hook.h" />
+    <ClInclude Include="src\spawn.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

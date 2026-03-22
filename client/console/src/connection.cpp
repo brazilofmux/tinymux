@@ -557,7 +557,11 @@ int Connection::send_idle_secs() const {
 bool Connection::start_log(const std::string& path) {
     stop_log();
     log_fp_ = fopen(path.c_str(), "a");
-    return log_fp_ != nullptr;
+    if (log_fp_) {
+        log_file_ = path;
+        return true;
+    }
+    return false;
 }
 
 void Connection::stop_log() {
@@ -565,6 +569,7 @@ void Connection::stop_log() {
         fclose(log_fp_);
         log_fp_ = nullptr;
     }
+    log_file_.clear();
 }
 
 void Connection::log_line(const std::string& line) {

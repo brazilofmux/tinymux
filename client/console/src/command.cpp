@@ -3,6 +3,7 @@
 #include "app.h"
 #include <sstream>
 #include <algorithm>
+#include <cstdlib>
 
 // Split input into tokens, respecting the first word as the command.
 static std::vector<std::string> tokenize(const std::string& input) {
@@ -203,24 +204,112 @@ static void cmd_world(App& app, const std::vector<std::string>& args) {
     app.terminal.print_system("World defined: " + w.name);
 }
 
-static void cmd_log(App& app, const std::vector<std::string>& args) {
-    if (!app.fg) {
-        app.terminal.print_system("Not connected.");
-        return;
+static std::string expand_tilde(const std::string& path) {
+    if (!path.empty() && path[0] == '~') {
+        const char* home = std::getenv("USERPROFILE");
+        if (!home) home = std::getenv("HOME");
+        if (home) return std::string(home) + path.substr(1);
     }
+    return path;
+}
+
+static void cmd_log(App& app, const std::vector<std::string>& args) {
+    // /log -w <filename>       — log current fg world (persists across /fg)
+    // /log -w<world> <filename> — log named world
+    // /log <filename>          — global log (all worlds)
+    // /log off                 — stop all logging
+    // /log                     — show logging status
     if (args.size() < 2) {
-        if (app.fg->is_logging()) {
-            app.fg->stop_log();
-            app.terminal.print_system("Logging stopped.");
-        } else {
-            app.terminal.print_system("Usage: /log <filename> | /log (to stop)");
+        // Show status
+        bool any = false;
+        if (app.vars.count("_log_file") && !app.vars["_log_file"].empty()) {
+            app.terminal.print_system("Global log: " + app.vars["_log_file"]);
+            any = true;
+        }
+        for (auto& [name, conn] : app.connections) {
+            if (conn->is_logging()) {
+                app.terminal.print_system(name + ": " + conn->log_file());
+                any = true;
+            }
+        }
+        if (!any) {
+            app.terminal.print_system("Not logging. Usage: /log [-w [world]] <filename>");
         }
         return;
     }
-    if (app.fg->start_log(args[1])) {
-        app.terminal.print_system("Logging to " + args[1]);
+
+    // Parse -w flag
+    bool per_world = false;
+    std::string target_world;
+    size_t file_arg = 1;
+
+    if (args[1] == "-w" || args[1].substr(0, 2) == "-w") {
+        per_world = true;
+        if (args[1] == "-w") {
+            // -w <file> — use foreground world
+            if (!app.fg) {
+                app.terminal.print_system("No foreground world.");
+                return;
+            }
+            target_world = app.fg->world_name();
+            file_arg = 2;
+        } else {
+            // -w<world> <file>
+            target_world = args[1].substr(2);
+            file_arg = 2;
+        }
+    }
+
+    // /log off — stop logging
+    if (file_arg < args.size() && args[file_arg] == "off") {
+        if (per_world) {
+            auto it = app.connections.find(target_world);
+            if (it != app.connections.end() && it->second->is_logging()) {
+                it->second->stop_log();
+                app.terminal.print_system("Stopped logging " + target_world);
+            } else {
+                app.terminal.print_system(target_world + " is not being logged.");
+            }
+        } else {
+            app.vars["_log_file"] = "";
+            app.terminal.print_system("Logging stopped.");
+        }
+        return;
+    }
+
+    // /log -w (no file) — stop per-world logging
+    if (per_world && file_arg >= args.size()) {
+        auto it = app.connections.find(target_world);
+        if (it != app.connections.end() && it->second->is_logging()) {
+            it->second->stop_log();
+            app.terminal.print_system("Stopped logging " + target_world);
+        } else {
+            app.terminal.print_system(target_world + " is not being logged.");
+        }
+        return;
+    }
+
+    if (file_arg >= args.size()) {
+        app.terminal.print_system("Usage: /log [-w [world]] <filename>");
+        return;
+    }
+
+    std::string path = expand_tilde(args[file_arg]);
+
+    if (per_world) {
+        auto it = app.connections.find(target_world);
+        if (it == app.connections.end()) {
+            app.terminal.print_system("No connection to " + target_world);
+            return;
+        }
+        if (it->second->start_log(path)) {
+            app.terminal.print_system("Logging " + target_world + " to " + path);
+        } else {
+            app.terminal.print_system("Failed to open log file: " + path);
+        }
     } else {
-        app.terminal.print_system("Failed to open log file: " + args[1]);
+        app.vars["_log_file"] = path;
+        app.terminal.print_system("Logging to " + path);
     }
 }
 

@@ -92,6 +92,7 @@ public:
     void stop_log();
     bool is_logging() const { return log_fp_ != nullptr; }
     void log_line(const std::string& line);
+    const std::string& log_file() const { return log_file_; }
 
     SOCKET socket() const { return socket_; }
 
@@ -164,6 +165,7 @@ private:
     std::string last_prompt_;
 
     // Logging
+    std::string log_file_;
     FILE* log_fp_ = nullptr;
 
     // ConnectEx function pointer (loaded once per socket)
