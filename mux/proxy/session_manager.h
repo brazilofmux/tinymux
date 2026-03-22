@@ -10,6 +10,7 @@
 #include "websocket.h"
 #include <network_engine.h>
 #include <network_types.h>
+#include <secure_transport.h>
 #include <atomic>
 #include <condition_variable>
 #include <map>
@@ -186,6 +187,10 @@ struct FrontDoorState {
     // Client IP address (for rate limiting)
     std::string clientIp;
 
+    // TLS state (non-null if this front-door uses TLS)
+    ganl::SecureTransport* tlsTransport{nullptr};
+    bool tlsEstablished{false};
+
     // grpc-web Subscribe stream state — when set, this fd receives
     // chunked game output frames instead of processing HTTP requests.
     bool grpcWebSubscribed{false};
@@ -220,6 +225,10 @@ public:
     void onBackDoorClose(ganl::ConnectionHandle bdHandle);
 
     bool isBackDoor(ganl::ConnectionHandle handle) const;
+
+    // Mark a front-door connection as needing TLS.
+    void setFrontDoorTls(ganl::ConnectionHandle handle,
+                         ganl::SecureTransport* transport);
 
     void runTimers();
     void shutdownSessions();

@@ -7,14 +7,10 @@
 - ~~gRPC Subscribers Steal Messages~~ — Fixed server-side: per-subscriber queues (d0d5d05)
 - ~~OutputQueue Pre-rendering~~ — Fixed server-side: deferred per-subscriber rendering (634ce31)
 - ~~ColorFormat Negotiation~~ — Fixed: SetPreferences on GameSession stream (6853a2e)
-- ~~Auto-Reconnect Inconsistent~~ — In progress (Windows agent)
+- ~~Auto-Reconnect Inconsistent~~ — Fixed: all clients retry with backoff (c1b7264)
+- ~~Browser localStorage Session Tokens~~ — Fixed: moved to sessionStorage (bcdb9f8)
 
 ## Bugs & Security Risks
-
-### Browser Client Persists Bearer Session Tokens In `localStorage`
-- **Issue:** The web Hydra client stores resumable `sessionId` in `localStorage`.
-- **Impact:** XSS can exfiltrate long-lived session tokens. Shared-browser usage leaves sessions behind.
-- **Opportunity:** Move to `sessionStorage`, short-lived refreshable tokens, or HttpOnly cookies.
 
 ### HTML5 Protobuf Encoder Edge Cases
 - **Issue:** The hand-rolled browser protobuf encoder has been improved but may still have edge cases with zero-valued scalars that are semantically meaningful.

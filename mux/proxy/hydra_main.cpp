@@ -11,6 +11,8 @@
 #include <network_engine.h>
 #include <network_engine_factory.h>
 #include <network_types.h>
+#include <openssl_transport.h>
+#include <secure_transport.h>
 
 #include <csignal>
 #include <cstdio>
@@ -163,12 +165,42 @@ int main(int argc, char* argv[]) {
     SessionManager sessionMgr(*engine, accounts, config);
 
     // Create listeners — tag 1 = telnet, tag 2 = websocket, tag 3 = grpc-web
+    // Tags 4-6 are the TLS variants.
     static int tagTelnet = 1;
     static int tagWebSocket = 2;
     static int tagGrpcWeb = 3;
+    static int tagTelnetTls = 4;
+    static int tagWebSocketTls = 5;
+    static int tagGrpcWebTls = 6;
     bool anyListener = false;
 
+    // Initialize TLS transport if any listener needs it
+    std::unique_ptr<ganl::OpenSSLTransport> tlsTransport;
     for (const auto& lc : config.listeners) {
+        if (lc.tls && !lc.certFile.empty() && !lc.keyFile.empty()) {
+            tlsTransport = std::make_unique<ganl::OpenSSLTransport>();
+            ganl::TlsConfig tlsCfg;
+            tlsCfg.certificateFile = lc.certFile;
+            tlsCfg.keyFile = lc.keyFile;
+            if (!tlsTransport->initialize(tlsCfg)) {
+                LOG_ERROR("Failed to initialize TLS with cert=%s key=%s",
+                          lc.certFile.c_str(), lc.keyFile.c_str());
+                tlsTransport.reset();
+            } else {
+                LOG_INFO("TLS initialized: cert=%s key=%s",
+                         lc.certFile.c_str(), lc.keyFile.c_str());
+            }
+            break;  // one TLS context serves all TLS listeners
+        }
+    }
+
+    for (const auto& lc : config.listeners) {
+        if (lc.tls && !tlsTransport) {
+            LOG_WARN("Skipping TLS listener %s:%u — TLS not available",
+                     lc.host.c_str(), lc.port);
+            continue;
+        }
+
         ganl::ErrorCode err = 0;
         ganl::ListenerHandle lh = engine->createListener(
             lc.host, lc.port, err);
@@ -178,14 +210,17 @@ int main(int argc, char* argv[]) {
             continue;
         }
 
-        int* tag = &tagTelnet;
-        const char* protoName = "telnet";
+        int* tag;
+        const char* protoName;
         if (lc.websocket) {
-            tag = &tagWebSocket;
-            protoName = "websocket";
+            tag = lc.tls ? &tagWebSocketTls : &tagWebSocket;
+            protoName = lc.tls ? "websocket+tls" : "websocket";
         } else if (lc.grpcWeb) {
-            tag = &tagGrpcWeb;
-            protoName = "grpc-web";
+            tag = lc.tls ? &tagGrpcWebTls : &tagGrpcWeb;
+            protoName = lc.tls ? "grpc-web+tls" : "grpc-web";
+        } else {
+            tag = lc.tls ? &tagTelnetTls : &tagTelnet;
+            protoName = lc.tls ? "telnet+tls" : "telnet";
         }
 
         if (!engine->startListening(lh, tag, err)) {
@@ -246,9 +281,27 @@ int main(int argc, char* argv[]) {
             case ganl::IoEventType::Accept: {
                 std::string clientIp = ev.remoteAddress.isValid()
                     ? ev.remoteAddress.toString() : "";
-                if (ev.context == &tagWebSocket) {
+
+                // For TLS listeners, start the TLS handshake on the
+                // accepted connection before proceeding to the protocol.
+                bool isTls = (ev.context == &tagTelnetTls
+                           || ev.context == &tagWebSocketTls
+                           || ev.context == &tagGrpcWebTls);
+                if (isTls && tlsTransport) {
+                    if (!tlsTransport->createSessionContext(ev.connection, true)) {
+                        LOG_WARN("TLS session context failed for %s", clientIp.c_str());
+                        engine->closeConnection(ev.connection);
+                        break;
+                    }
+                    // Mark in session manager that this front-door needs TLS
+                    // The handshake will complete during subsequent Read events
+                    // via processIncoming before data reaches the protocol layer.
+                    sessionMgr.setFrontDoorTls(ev.connection, tlsTransport.get());
+                }
+
+                if (ev.context == &tagWebSocket || ev.context == &tagWebSocketTls) {
                     sessionMgr.onAcceptWebSocket(ev.connection, clientIp);
-                } else if (ev.context == &tagGrpcWeb) {
+                } else if (ev.context == &tagGrpcWeb || ev.context == &tagGrpcWebTls) {
                     sessionMgr.onAcceptGrpcWeb(ev.connection, clientIp);
                 } else {
                     sessionMgr.onAccept(ev.connection, clientIp);

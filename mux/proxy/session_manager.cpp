@@ -1330,6 +1330,15 @@ bool SessionManager::isBackDoor(ganl::ConnectionHandle handle) const {
     return backDoorMap_.find(handle) != backDoorMap_.end();
 }
 
+void SessionManager::setFrontDoorTls(ganl::ConnectionHandle handle,
+                                      ganl::SecureTransport* transport) {
+    auto it = frontDoors_.find(handle);
+    if (it != frontDoors_.end()) {
+        it->second.tlsTransport = transport;
+        it->second.tlsEstablished = false;
+    }
+}
+
 void SessionManager::runTimers() {
     time_t now = time(nullptr);
 
