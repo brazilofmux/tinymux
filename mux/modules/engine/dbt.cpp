@@ -1168,7 +1168,7 @@ static void backpatch_jmp(uint8_t *code_buf, uint32_t jmp_disp_offset,
 //
 static void backpatch_chains(dbt_state_t *dbt, uint64_t guest_pc,
                               uint8_t *native_code) {
-    for (uint32_t i = 0; i < dbt->patches.size(); i++) {
+    for (size_t i = 0; i < dbt->patches.size(); i++) {
         if (dbt->patches[i].target_pc == guest_pc) {
             backpatch_jmp(dbt->code_buf, dbt->patches[i].jmp_offset,
                           native_code);
@@ -3203,7 +3203,7 @@ void dbt_resolve_chains(dbt_state_t *dbt) {
     uint32_t resolved = 0;
     uint32_t already_ok = 0;
     uint32_t unresolvable = 0;
-    for (uint32_t i = 0; i < dbt->patches.size(); i++) {
+    for (size_t i = 0; i < dbt->patches.size(); i++) {
         uint64_t target = dbt->patches[i].target_pc;
         if (target == 0) continue;
 
@@ -3232,7 +3232,7 @@ void dbt_resolve_chains(dbt_state_t *dbt) {
     dbt_trace_translate(dbt,
                         "resolve_chains: %u resolved, %u already_ok, %u unresolvable of %u total",
                         resolved, already_ok, unresolvable,
-                        static_cast<uint32_t>(dbt->patches.size()));
+                        static_cast<unsigned>(dbt->patches.size()));
 }
 
 int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
