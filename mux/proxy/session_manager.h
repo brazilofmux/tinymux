@@ -12,6 +12,20 @@
 #include <string>
 #include <vector>
 
+// A single back-door connection to a game server.
+struct BackDoorLink {
+    ganl::ConnectionHandle handle{ganl::InvalidConnectionHandle};
+    std::string         gameName;
+    std::string         character;          // logged-in character name
+    LinkState           state{LinkState::Dead};
+    ganl::ProtocolState protoState;
+    const GameConfig*   gameConfig{nullptr};
+
+    // Reconnect backoff
+    int                 retryCount{0};
+    time_t              nextRetry{0};
+};
+
 struct HydraSession {
     HydraSessionId      id;
     uint32_t            accountId;
@@ -19,10 +33,15 @@ struct HydraSession {
 
     std::vector<ganl::ConnectionHandle> frontDoors;
 
-    // Back-door link (Phase 1: one link per session)
-    ganl::ConnectionHandle backDoor{ganl::InvalidConnectionHandle};
-    std::string         gameName;
-    LinkState           linkState{LinkState::Dead};
+    // Back-door links (Phase 2: multiple per session)
+    std::vector<BackDoorLink> links;
+    size_t              activeLink{0};      // index into links
+
+    // Active link helper (nullptr if no links or index out of range)
+    BackDoorLink* getActiveLink() {
+        if (activeLink < links.size()) return &links[activeLink];
+        return nullptr;
+    }
 
     ScrollBack          scrollback;
 
@@ -35,9 +54,6 @@ struct HydraSession {
 
     // Persistent session ID (random hex string for SQLite storage)
     std::string persistId;
-
-    // Game protocol state (charset from config; telnet negotiation in future)
-    ganl::ProtocolState gameProtoState;
 };
 
 // Per front-door connection state (before and after auth)
@@ -57,6 +73,12 @@ struct FrontDoorState {
     ColorDepth colorDepth{ColorDepth::Ansi256};
 };
 
+// Reverse map value: session ID + link index
+struct BackDoorMapEntry {
+    HydraSessionId sessionId;
+    size_t linkIndex;
+};
+
 class SessionManager {
 public:
     SessionManager(ganl::NetworkEngine& engine,
@@ -64,37 +86,20 @@ public:
                    const HydraConfig& config);
     ~SessionManager();
 
-    // Called when a new front-door connection is accepted.
     void onAccept(ganl::ConnectionHandle handle);
-
-    // Called when data is available on a front-door connection.
-    // raw data from recv() — may contain partial lines.
     void onFrontDoorData(ganl::ConnectionHandle handle,
                          const char* data, size_t len);
-
-    // Called when a front-door connection closes.
     void onFrontDoorClose(ganl::ConnectionHandle handle);
 
-    // Called when a back-door connect succeeds.
     void onBackDoorConnect(ganl::ConnectionHandle bdHandle);
-
-    // Called when a back-door connect fails.
     void onBackDoorConnectFail(ganl::ConnectionHandle bdHandle, int error);
-
-    // Called when data arrives from a back-door connection.
     void onBackDoorData(ganl::ConnectionHandle bdHandle,
                         const char* data, size_t len);
-
-    // Called when a back-door connection closes.
     void onBackDoorClose(ganl::ConnectionHandle bdHandle);
 
-    // Is this handle a known back-door connection?
     bool isBackDoor(ganl::ConnectionHandle handle) const;
 
-    // Run periodic timers.
     void runTimers();
-
-    // Flush all sessions and save state before shutdown.
     void shutdownSessions();
 
 private:
@@ -114,8 +119,12 @@ private:
     void forwardToGame(HydraSession& session,
                        ganl::ConnectionHandle fdHandle,
                        const std::string& line);
+    void closeLink(HydraSession& session, size_t linkIdx);
 
-    HydraSession* findSessionByBackDoor(ganl::ConnectionHandle bdHandle);
+    // Look up session + link from a back-door handle.
+    bool findByBackDoor(ganl::ConnectionHandle bdHandle,
+                        HydraSession*& session, BackDoorLink*& link,
+                        size_t& linkIdx);
 
     ganl::NetworkEngine& engine_;
     AccountManager& accounts_;
@@ -123,8 +132,8 @@ private:
 
     std::map<ganl::ConnectionHandle, FrontDoorState> frontDoors_;
     std::map<HydraSessionId, HydraSession> sessions_;
-    // Reverse map: back-door handle → session id
-    std::map<ganl::ConnectionHandle, HydraSessionId> backDoorMap_;
+    // Reverse map: back-door handle → (session id, link index)
+    std::map<ganl::ConnectionHandle, BackDoorMapEntry> backDoorMap_;
 
     HydraSessionId nextSessionId_{1};
     time_t lastFlush_{0};

@@ -13,6 +13,20 @@ struct ReplayContext {
     TelnetBridge* bridge;
 };
 
+static const char* linkStateName(LinkState s) {
+    switch (s) {
+    case LinkState::Connecting:     return "connecting";
+    case LinkState::TlsHandshaking: return "tls";
+    case LinkState::Negotiating:    return "negotiating";
+    case LinkState::AutoLoggingIn:  return "logging-in";
+    case LinkState::Active:         return "active";
+    case LinkState::Reconnecting:   return "reconnecting";
+    case LinkState::Suspended:      return "suspended";
+    case LinkState::Dead:           return "dead";
+    }
+    return "?";
+}
+
 SessionManager::SessionManager(ganl::NetworkEngine& engine,
                                AccountManager& accounts,
                                const HydraConfig& config)
@@ -30,7 +44,7 @@ void SessionManager::sendToClient(ganl::ConnectionHandle handle,
 
 void SessionManager::showBanner(ganl::ConnectionHandle handle) {
     bool bootstrap = accounts_.isEmpty();
-    std::string banner = "\r\nHydra v0.1\r\n";
+    std::string banner = "\r\nHydra v0.2\r\n";
     if (bootstrap) {
         banner += "First connection — create the admin account.\r\n";
         banner += "Or type 'create <username> <password>' to create an account.\r\n";
@@ -48,10 +62,32 @@ void SessionManager::showGameMenu(HydraSession& session,
               + std::to_string(config_.games[i].port) + ")\r\n";
     }
     menu += "\r\nUse /connect <game> to connect.\r\n";
-    if (session.backDoor != ganl::InvalidConnectionHandle) {
-        menu += "[Currently connected to " + session.gameName + "]\r\n";
+    if (!session.links.empty()) {
+        BackDoorLink* active = session.getActiveLink();
+        if (active && active->state == LinkState::Active) {
+            menu += "[Active link: " + active->gameName + "]\r\n";
+        }
     }
     sendToClient(fdHandle, menu);
+}
+
+// ---- Reverse map helper ----
+
+bool SessionManager::findByBackDoor(ganl::ConnectionHandle bdHandle,
+                                    HydraSession*& session,
+                                    BackDoorLink*& link,
+                                    size_t& linkIdx) {
+    auto it = backDoorMap_.find(bdHandle);
+    if (it == backDoorMap_.end()) return false;
+
+    auto sit = sessions_.find(it->second.sessionId);
+    if (sit == sessions_.end()) return false;
+
+    session = &sit->second;
+    linkIdx = it->second.linkIndex;
+    if (linkIdx >= session->links.size()) return false;
+    link = &session->links[linkIdx];
+    return true;
 }
 
 // ---- Front-door lifecycle ----
@@ -73,11 +109,9 @@ void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
 
     FrontDoorState& fd = it->second;
 
-    // Assemble lines from raw data (handle \r\n, \n, \r)
     for (size_t i = 0; i < len; i++) {
         char ch = data[i];
         if (ch == '\n') {
-            // Strip trailing \r if present
             if (!fd.lineBuf.empty() && fd.lineBuf.back() == '\r') {
                 fd.lineBuf.pop_back();
             }
@@ -112,9 +146,7 @@ void SessionManager::onFrontDoorClose(ganl::ConnectionHandle handle) {
                 LOG_INFO("Session %lu: all front-doors gone, detaching",
                          (unsigned long)sid);
                 session.state = SessionState::Detached;
-                // Flush scroll-back to SQLite before detach
                 flushSession(session);
-                // Back-door stays alive — session persists
             }
         }
     }
@@ -129,17 +161,14 @@ void SessionManager::processLine(FrontDoorState& fd,
         return;
     }
 
-    // Authenticated — route to session
     auto sit = sessions_.find(fd.sessionId);
     if (sit == sessions_.end()) return;
     HydraSession& session = sit->second;
 
     session.lastActivity = time(nullptr);
 
-    // Check for Hydra command prefix
     if (!line.empty() && line[0] == '/') {
         if (line.size() > 1 && line[1] == '/') {
-            // Escaped: "//" → send "/" to game
             forwardToGame(session, fd.handle, line.substr(1));
             return;
         }
@@ -147,7 +176,6 @@ void SessionManager::processLine(FrontDoorState& fd,
         return;
     }
 
-    // Forward to game
     forwardToGame(session, fd.handle, line);
 }
 
@@ -155,13 +183,12 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                                  const std::string& line) {
     switch (fd.loginPhase) {
     case FrontDoorState::AwaitUsername: {
-        // Check for "create <username> <password>" command
         if (line.substr(0, 7) == "create " && line.size() > 7) {
             size_t space = line.find(' ', 7);
             if (space != std::string::npos && space + 1 < line.size()) {
                 std::string username = line.substr(7, space - 7);
                 std::string password = line.substr(space + 1);
-                bool admin = accounts_.isEmpty();  // First account is admin
+                bool admin = accounts_.isEmpty();
 
                 uint32_t accountId = 0;
                 std::string errorMsg;
@@ -172,7 +199,6 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                         + (admin ? " (admin)" : "") + ".\r\n"
                         "Logging in...\r\n");
 
-                    // Auto-login after create
                     std::vector<uint8_t> sbKey;
                     uint32_t authId = accounts_.authenticate(
                         username, password, sbKey);
@@ -180,7 +206,6 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                         fd.pendingUsername = username;
                         fd.loginPhase = FrontDoorState::Authenticated;
 
-                        // Create session
                         HydraSession session;
                         session.id = nextSessionId_++;
                         session.accountId = authId;
@@ -212,7 +237,6 @@ void SessionManager::handleLogin(FrontDoorState& fd,
 
         fd.pendingUsername = line;
         fd.loginPhase = FrontDoorState::AwaitPassword;
-        // Don't echo password
         sendToClient(fd.handle, "Password: ");
     } break;
 
@@ -234,7 +258,7 @@ void SessionManager::handleLogin(FrontDoorState& fd,
 
         fd.loginPhase = FrontDoorState::Authenticated;
 
-        // Check for existing session to resume
+        // Check for existing in-memory session
         HydraSession* existing = nullptr;
         for (auto& [sid, sess] : sessions_) {
             if (sess.accountId == accountId) {
@@ -244,7 +268,6 @@ void SessionManager::handleLogin(FrontDoorState& fd,
         }
 
         if (existing) {
-            // Resume existing session
             existing->frontDoors.push_back(fd.handle);
             existing->state = SessionState::Active;
             existing->lastActivity = time(nullptr);
@@ -254,10 +277,8 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                      (unsigned long)existing->id,
                      fd.pendingUsername.c_str());
 
-            sendToClient(fd.handle,
-                "\r\nResuming session...\r\n");
+            sendToClient(fd.handle, "\r\nResuming session...\r\n");
 
-            // Replay scroll-back
             if (existing->scrollback.count() > 0) {
                 sendToClient(fd.handle,
                     "-- Scroll-back ("
@@ -281,25 +302,33 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                     },
                     &rctx);
 
-                sendToClient(fd.handle,
-                    "-- End scroll-back --\r\n");
+                sendToClient(fd.handle, "-- End scroll-back --\r\n");
             }
 
-            if (existing->backDoor != ganl::InvalidConnectionHandle) {
-                sendToClient(fd.handle,
-                    "[" + existing->gameName + ": connected]\r\n");
+            if (!existing->links.empty()) {
+                // Show link status
+                for (size_t i = 0; i < existing->links.size(); i++) {
+                    const auto& lnk = existing->links[i];
+                    if (lnk.state == LinkState::Active ||
+                        lnk.state == LinkState::Connecting) {
+                        std::string marker = (i == existing->activeLink) ? "*" : " ";
+                        sendToClient(fd.handle,
+                            "[" + marker + std::to_string(i + 1) + "] "
+                            + lnk.gameName + ": " + linkStateName(lnk.state)
+                            + "\r\n");
+                    }
+                }
             } else {
                 showGameMenu(*existing, fd.handle);
             }
         } else {
-            // Check for a saved session in SQLite (after Hydra restart)
+            // Check for saved session in SQLite (after restart)
             AccountManager::SavedSession saved;
             if (accounts_.loadSession(accountId, saved)) {
                 resumeSavedSession(fd, accountId, sbKey);
                 return;
             }
 
-            // New session
             HydraSession session;
             session.id = nextSessionId_++;
             session.accountId = accountId;
@@ -325,7 +354,6 @@ void SessionManager::handleLogin(FrontDoorState& fd,
     } break;
 
     case FrontDoorState::Authenticated:
-        // Should not reach here
         break;
     }
 }
@@ -335,14 +363,12 @@ void SessionManager::handleLogin(FrontDoorState& fd,
 void SessionManager::dispatchCommand(HydraSession& session,
                                      ganl::ConnectionHandle fdHandle,
                                      const std::string& line) {
-    // Parse command
-    std::string cmd = line.substr(1);  // strip leading /
+    std::string cmd = line.substr(1);
     size_t space = cmd.find(' ');
     std::string verb = cmd.substr(0, space);
     std::string args = (space != std::string::npos)
         ? cmd.substr(space + 1) : "";
 
-    // Lowercase the verb
     std::transform(verb.begin(), verb.end(), verb.begin(),
         [](unsigned char c) { return std::tolower(c); });
 
@@ -354,18 +380,46 @@ void SessionManager::dispatchCommand(HydraSession& session,
             return;
         }
         connectToGame(session, args);
+    } else if (verb == "switch") {
+        if (args.empty()) {
+            sendToClient(fdHandle, "Usage: /switch <link#>\r\n");
+            return;
+        }
+        size_t idx = 0;
+        try { idx = std::stoul(args); } catch (...) {}
+        if (idx < 1 || idx > session.links.size()) {
+            sendToClient(fdHandle, "Invalid link number. Use /links to see available links.\r\n");
+            return;
+        }
+        session.activeLink = idx - 1;
+        BackDoorLink& lnk = session.links[session.activeLink];
+        sendToClient(fdHandle,
+            "Switched to link " + std::to_string(idx) + " ("
+            + lnk.gameName + ": " + linkStateName(lnk.state) + ")\r\n");
+    } else if (verb == "disconnect") {
+        if (args.empty()) {
+            sendToClient(fdHandle, "Usage: /disconnect <link#>\r\n");
+            return;
+        }
+        size_t idx = 0;
+        try { idx = std::stoul(args); } catch (...) {}
+        if (idx < 1 || idx > session.links.size()) {
+            sendToClient(fdHandle, "Invalid link number.\r\n");
+            return;
+        }
+        size_t li = idx - 1;
+        closeLink(session, li);
+        sendToClient(fdHandle,
+            "Link " + std::to_string(idx) + " disconnected.\r\n");
     } else if (verb == "quit") {
-        // Close back-door if connected
-        if (session.backDoor != ganl::InvalidConnectionHandle) {
-            backDoorMap_.erase(session.backDoor);
-            engine_.closeConnection(session.backDoor);
-            session.backDoor = ganl::InvalidConnectionHandle;
+        // Close all links
+        for (size_t i = 0; i < session.links.size(); i++) {
+            closeLink(session, i);
         }
         // Delete persisted session and scroll-back
         if (!session.persistId.empty()) {
             accounts_.deleteSession(session.persistId);
         }
-        // Close all front-doors
         for (auto h : session.frontDoors) {
             sendToClient(h, "Session destroyed. Goodbye.\r\n");
             engine_.closeConnection(h);
@@ -375,7 +429,6 @@ void SessionManager::dispatchCommand(HydraSession& session,
     } else if (verb == "detach") {
         sendToClient(fdHandle, "Session detached. Reconnect to resume.\r\n");
         engine_.closeConnection(fdHandle);
-        // onFrontDoorClose will handle the rest
     } else if (verb == "scroll") {
         size_t n = 20;
         if (!args.empty()) {
@@ -410,15 +463,31 @@ void SessionManager::dispatchCommand(HydraSession& session,
             sendToClient(fdHandle, "-- End --\r\n");
         }
     } else if (verb == "links") {
-        if (session.backDoor != ganl::InvalidConnectionHandle) {
-            sendToClient(fdHandle,
-                "  [1] " + session.gameName + " (active)\r\n");
+        if (session.links.empty()) {
+            sendToClient(fdHandle, "  No links.\r\n");
         } else {
-            sendToClient(fdHandle, "  No active links.\r\n");
+            std::string out;
+            for (size_t i = 0; i < session.links.size(); i++) {
+                const BackDoorLink& lnk = session.links[i];
+                std::string marker = (i == session.activeLink) ? "*" : " ";
+                out += "  [" + marker + std::to_string(i + 1) + "] "
+                     + lnk.gameName;
+                if (!lnk.character.empty()) {
+                    out += " (" + lnk.character + ")";
+                }
+                out += " — " + std::string(linkStateName(lnk.state));
+                if (lnk.state == LinkState::Reconnecting) {
+                    time_t now = time(nullptr);
+                    if (lnk.nextRetry > now) {
+                        out += " (retry in "
+                             + std::to_string(lnk.nextRetry - now) + "s)";
+                    }
+                }
+                out += "\r\n";
+            }
+            sendToClient(fdHandle, out);
         }
     } else if (verb == "addcred") {
-        // /addcred <game> <character> <verb> <name> <secret>
-        // Parse 5 space-separated args
         std::vector<std::string> parts;
         size_t pos = 0;
         std::string tmp = args;
@@ -442,14 +511,11 @@ void SessionManager::dispatchCommand(HydraSession& session,
             sendToClient(fdHandle,
                 "Credential stored for " + parts[0] + "/" + parts[1] + "\r\n");
         } else {
-            sendToClient(fdHandle,
-                "Failed: " + errorMsg + "\r\n");
+            sendToClient(fdHandle, "Failed: " + errorMsg + "\r\n");
         }
     } else if (verb == "delcred") {
-        // /delcred <game> [character]
         if (args.empty()) {
-            sendToClient(fdHandle,
-                "Usage: /delcred <game> [character]\r\n");
+            sendToClient(fdHandle, "Usage: /delcred <game> [character]\r\n");
             return;
         }
         std::string game = args;
@@ -480,7 +546,8 @@ void SessionManager::dispatchCommand(HydraSession& session,
     } else {
         sendToClient(fdHandle,
             "Unknown command: /" + verb + "\r\n"
-            "Commands: /games /connect /links /scroll /detach /quit\r\n"
+            "Commands: /games /connect /switch /disconnect /links\r\n"
+            "          /scroll /detach /quit\r\n"
             "          /addcred /delcred /creds\r\n");
     }
 }
@@ -503,11 +570,13 @@ void SessionManager::connectToGame(HydraSession& session,
         return;
     }
 
-    // Close existing back-door if any
-    if (session.backDoor != ganl::InvalidConnectionHandle) {
-        backDoorMap_.erase(session.backDoor);
-        engine_.closeConnection(session.backDoor);
-        session.backDoor = ganl::InvalidConnectionHandle;
+    // Check max links limit
+    if (session.links.size() >= static_cast<size_t>(config_.maxLinksPerSession)) {
+        for (auto h : session.frontDoors) {
+            sendToClient(h, "Maximum links reached ("
+                + std::to_string(config_.maxLinksPerSession) + ").\r\n");
+        }
+        return;
     }
 
     ganl::ErrorCode err = 0;
@@ -530,27 +599,37 @@ void SessionManager::connectToGame(HydraSession& session,
         return;
     }
 
-    session.backDoor = bdHandle;
-    session.gameName = game->name;
-    session.linkState = LinkState::Connecting;
-    session.gameProtoState.encoding = game->charset;
-    backDoorMap_[bdHandle] = session.id;
+    // Create new link
+    BackDoorLink link;
+    link.handle = bdHandle;
+    link.gameName = game->name;
+    link.state = LinkState::Connecting;
+    link.protoState.encoding = game->charset;
+    link.gameConfig = game;
+
+    size_t linkIdx = session.links.size();
+    session.links.push_back(std::move(link));
+    session.activeLink = linkIdx;  // new link becomes active
+
+    backDoorMap_[bdHandle] = {session.id, linkIdx};
 
     for (auto h : session.frontDoors) {
         sendToClient(h,
-            "[" + game->name + ": connecting...]\r\n");
+            "[" + game->name + ": connecting... (link "
+            + std::to_string(linkIdx + 1) + ")]\r\n");
     }
 
-    LOG_INFO("Session %lu: connecting to %s (%s:%u)",
-             (unsigned long)session.id, game->name.c_str(),
-             game->host.c_str(), game->port);
+    LOG_INFO("Session %lu: connecting link %zu to %s (%s:%u)",
+             (unsigned long)session.id, linkIdx + 1,
+             game->name.c_str(), game->host.c_str(), game->port);
 }
 
 void SessionManager::forwardToGame(HydraSession& session,
                                    ganl::ConnectionHandle fdHandle,
                                    const std::string& line) {
-    if (session.backDoor == ganl::InvalidConnectionHandle ||
-        session.linkState != LinkState::Active) {
+    BackDoorLink* active = session.getActiveLink();
+    if (!active || active->handle == ganl::InvalidConnectionHandle ||
+        active->state != LinkState::Active) {
         for (auto h : session.frontDoors) {
             sendToClient(h,
                 "[No active game link. Use /connect <game>]\r\n");
@@ -558,7 +637,6 @@ void SessionManager::forwardToGame(HydraSession& session,
         return;
     }
 
-    // Charset-convert client input for the game
     ganl::EncodingType clientEnc = ganl::EncodingType::Utf8;
     auto fdIt = frontDoors_.find(fdHandle);
     if (fdIt != frontDoors_.end()) {
@@ -566,96 +644,110 @@ void SessionManager::forwardToGame(HydraSession& session,
     }
 
     std::string converted = bridge_.convertInput(
-        clientEnc, session.gameProtoState.encoding, line);
+        clientEnc, active->protoState.encoding, line);
     converted += "\r\n";
 
-    int bdFd = static_cast<int>(session.backDoor);
+    int bdFd = static_cast<int>(active->handle);
     send(bdFd, converted.data(), converted.size(), MSG_NOSIGNAL);
+}
+
+void SessionManager::closeLink(HydraSession& session, size_t linkIdx) {
+    if (linkIdx >= session.links.size()) return;
+    BackDoorLink& link = session.links[linkIdx];
+
+    if (link.handle != ganl::InvalidConnectionHandle) {
+        backDoorMap_.erase(link.handle);
+        engine_.closeConnection(link.handle);
+        link.handle = ganl::InvalidConnectionHandle;
+    }
+    link.state = LinkState::Dead;
+    link.retryCount = 0;
+    link.nextRetry = 0;
 }
 
 // ---- Back-door lifecycle ----
 
 void SessionManager::onBackDoorConnect(ganl::ConnectionHandle bdHandle) {
-    auto it = backDoorMap_.find(bdHandle);
-    if (it == backDoorMap_.end()) return;
+    HydraSession* session = nullptr;
+    BackDoorLink* link = nullptr;
+    size_t linkIdx = 0;
+    if (!findByBackDoor(bdHandle, session, link, linkIdx)) return;
 
-    auto sit = sessions_.find(it->second);
-    if (sit == sessions_.end()) return;
+    link->state = LinkState::Active;
+    link->retryCount = 0;
 
-    HydraSession& session = sit->second;
-    session.linkState = LinkState::Active;
+    LOG_INFO("Session %lu: link %zu connected to %s",
+             (unsigned long)session->id, linkIdx + 1,
+             link->gameName.c_str());
 
-    LOG_INFO("Session %lu: back-door connected to %s",
-             (unsigned long)session.id, session.gameName.c_str());
-
-    for (auto h : session.frontDoors) {
+    for (auto h : session->frontDoors) {
         sendToClient(h,
-            "[" + session.gameName + ": connected]\r\n");
+            "[" + link->gameName + " (link "
+            + std::to_string(linkIdx + 1) + "): connected]\r\n");
     }
 
-    // Auto-login: if credentials exist for this game, send login command
+    // Auto-login
     std::string verb, loginName, secret;
-    if (accounts_.getLoginSecret(session.accountId, session.gameName,
+    if (accounts_.getLoginSecret(session->accountId, link->gameName,
                                  verb, loginName, secret)) {
         std::string loginCmd = verb + " " + loginName + " " + secret + "\r\n";
-        int bdFd = static_cast<int>(session.backDoor);
+        int bdFd = static_cast<int>(link->handle);
         send(bdFd, loginCmd.data(), loginCmd.size(), MSG_NOSIGNAL);
 
-        LOG_INFO("Session %lu: auto-login sent for %s",
-                 (unsigned long)session.id, session.gameName.c_str());
+        link->character = loginName;
 
-        for (auto h : session.frontDoors) {
+        LOG_INFO("Session %lu: auto-login sent for link %zu (%s)",
+                 (unsigned long)session->id, linkIdx + 1,
+                 link->gameName.c_str());
+
+        for (auto h : session->frontDoors) {
             sendToClient(h,
-                "[" + session.gameName + ": auto-login sent]\r\n");
+                "[" + link->gameName + ": auto-login sent]\r\n");
         }
     }
 }
 
 void SessionManager::onBackDoorConnectFail(ganl::ConnectionHandle bdHandle,
                                            int error) {
-    auto it = backDoorMap_.find(bdHandle);
-    if (it == backDoorMap_.end()) return;
-
-    auto sit = sessions_.find(it->second);
-    if (sit == sessions_.end()) {
-        backDoorMap_.erase(it);
+    HydraSession* session = nullptr;
+    BackDoorLink* link = nullptr;
+    size_t linkIdx = 0;
+    if (!findByBackDoor(bdHandle, session, link, linkIdx)) {
+        backDoorMap_.erase(bdHandle);
         return;
     }
 
-    HydraSession& session = sit->second;
-    session.linkState = LinkState::Dead;
-    session.backDoor = ganl::InvalidConnectionHandle;
-    backDoorMap_.erase(it);
+    link->state = LinkState::Dead;
+    link->handle = ganl::InvalidConnectionHandle;
+    backDoorMap_.erase(bdHandle);
 
-    LOG_ERROR("Session %lu: back-door connect failed: %s",
-              (unsigned long)session.id, strerror(error));
+    LOG_ERROR("Session %lu: link %zu connect failed: %s",
+              (unsigned long)session->id, linkIdx + 1, strerror(error));
 
-    for (auto h : session.frontDoors) {
+    for (auto h : session->frontDoors) {
         sendToClient(h,
-            "[" + session.gameName + ": connection failed: "
+            "[" + link->gameName + " (link "
+            + std::to_string(linkIdx + 1) + "): connection failed: "
             + strerror(error) + "]\r\n");
     }
 }
 
 void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
                                     const char* data, size_t len) {
-    auto it = backDoorMap_.find(bdHandle);
-    if (it == backDoorMap_.end()) return;
-
-    auto sit = sessions_.find(it->second);
-    if (sit == sessions_.end()) return;
-
-    HydraSession& session = sit->second;
+    HydraSession* session = nullptr;
+    BackDoorLink* link = nullptr;
+    size_t linkIdx = 0;
+    if (!findByBackDoor(bdHandle, session, link, linkIdx)) return;
 
     // Ingest: charset-decode + ANSI→PUA
     std::string puaText = bridge_.ingestGameOutput(
-        session.gameProtoState, data, len);
+        link->protoState, data, len);
 
-    // Append PUA-encoded UTF-8 to scroll-back
-    session.scrollback.append(puaText, session.gameName);
+    // Append to shared scroll-back with game name as source
+    session->scrollback.append(puaText, link->gameName);
 
-    // Render at each front-door's color depth and send
-    for (auto h : session.frontDoors) {
+    // Render and send to all front-doors
+    for (auto h : session->frontDoors) {
         auto fdIt = frontDoors_.find(h);
         if (fdIt == frontDoors_.end()) continue;
         const FrontDoorState& fd = fdIt->second;
@@ -668,38 +760,57 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
 }
 
 void SessionManager::onBackDoorClose(ganl::ConnectionHandle bdHandle) {
-    auto it = backDoorMap_.find(bdHandle);
-    if (it == backDoorMap_.end()) return;
+    HydraSession* session = nullptr;
+    BackDoorLink* link = nullptr;
+    size_t linkIdx = 0;
+    if (!findByBackDoor(bdHandle, session, link, linkIdx)) {
+        backDoorMap_.erase(bdHandle);
+        return;
+    }
 
-    auto sit = sessions_.find(it->second);
-    if (sit != sessions_.end()) {
-        HydraSession& session = sit->second;
-        session.linkState = LinkState::Dead;
-        session.backDoor = ganl::InvalidConnectionHandle;
+    backDoorMap_.erase(bdHandle);
+    link->handle = ganl::InvalidConnectionHandle;
 
-        LOG_INFO("Session %lu: back-door lost (%s)",
-                 (unsigned long)session.id, session.gameName.c_str());
+    // Check for reconnect
+    if (link->gameConfig && link->gameConfig->reconnect &&
+        (link->state == LinkState::Active ||
+         link->state == LinkState::Reconnecting)) {
 
-        for (auto h : session.frontDoors) {
-            sendToClient(h,
-                "[" + session.gameName + ": disconnected]\r\n");
+        const auto& schedule = link->gameConfig->retrySchedule;
+        if (link->retryCount < static_cast<int>(schedule.size())) {
+            int delay = schedule[static_cast<size_t>(link->retryCount)];
+            link->state = LinkState::Reconnecting;
+            link->nextRetry = time(nullptr) + delay;
+            link->retryCount++;
+
+            LOG_INFO("Session %lu: link %zu (%s) lost, reconnecting in %ds",
+                     (unsigned long)session->id, linkIdx + 1,
+                     link->gameName.c_str(), delay);
+
+            for (auto h : session->frontDoors) {
+                sendToClient(h,
+                    "[" + link->gameName + ": disconnected, retrying in "
+                    + std::to_string(delay) + "s]\r\n");
+            }
+            return;
         }
     }
 
-    backDoorMap_.erase(it);
+    link->state = LinkState::Dead;
+
+    LOG_INFO("Session %lu: link %zu (%s) lost",
+             (unsigned long)session->id, linkIdx + 1,
+             link->gameName.c_str());
+
+    for (auto h : session->frontDoors) {
+        sendToClient(h,
+            "[" + link->gameName + " (link "
+            + std::to_string(linkIdx + 1) + "): disconnected]\r\n");
+    }
 }
 
 bool SessionManager::isBackDoor(ganl::ConnectionHandle handle) const {
     return backDoorMap_.find(handle) != backDoorMap_.end();
-}
-
-HydraSession* SessionManager::findSessionByBackDoor(
-    ganl::ConnectionHandle bdHandle) {
-    auto it = backDoorMap_.find(bdHandle);
-    if (it == backDoorMap_.end()) return nullptr;
-    auto sit = sessions_.find(it->second);
-    if (sit == sessions_.end()) return nullptr;
-    return &sit->second;
 }
 
 void SessionManager::runTimers() {
@@ -715,7 +826,70 @@ void SessionManager::runTimers() {
         }
     }
 
-    // TODO: idle timeouts, detached session cleanup, reconnect backoff
+    // Reconnect backoff
+    for (auto& [sid, session] : sessions_) {
+        for (size_t i = 0; i < session.links.size(); i++) {
+            BackDoorLink& link = session.links[i];
+            if (link.state != LinkState::Reconnecting) continue;
+            if (now < link.nextRetry) continue;
+
+            // Attempt reconnect
+            if (!link.gameConfig) {
+                link.state = LinkState::Dead;
+                continue;
+            }
+
+            const GameConfig* game = link.gameConfig;
+            ganl::ErrorCode err = 0;
+            ganl::ConnectionHandle bdHandle;
+
+            if (game->transport == GameTransport::Unix) {
+                bdHandle = engine_.initiateUnixConnect(
+                    game->socketPath, nullptr, err);
+            } else {
+                bdHandle = engine_.initiateConnect(
+                    game->host, game->port, nullptr, err);
+            }
+
+            if (bdHandle == ganl::InvalidConnectionHandle) {
+                // Schedule next retry or give up
+                const auto& schedule = game->retrySchedule;
+                if (link.retryCount < static_cast<int>(schedule.size())) {
+                    int delay = schedule[static_cast<size_t>(link.retryCount)];
+                    link.nextRetry = now + delay;
+                    link.retryCount++;
+
+                    LOG_INFO("Session %lu: link %zu reconnect failed, retry in %ds",
+                             (unsigned long)sid, i + 1, delay);
+                } else {
+                    link.state = LinkState::Dead;
+                    LOG_INFO("Session %lu: link %zu reconnect exhausted",
+                             (unsigned long)sid, i + 1);
+
+                    for (auto h : session.frontDoors) {
+                        sendToClient(h,
+                            "[" + link.gameName + " (link "
+                            + std::to_string(i + 1)
+                            + "): reconnect failed, giving up]\r\n");
+                    }
+                }
+                continue;
+            }
+
+            link.handle = bdHandle;
+            link.state = LinkState::Connecting;
+            backDoorMap_[bdHandle] = {sid, i};
+
+            LOG_INFO("Session %lu: link %zu reconnecting to %s",
+                     (unsigned long)sid, i + 1, link.gameName.c_str());
+
+            for (auto h : session.frontDoors) {
+                sendToClient(h,
+                    "[" + link.gameName + " (link "
+                    + std::to_string(i + 1) + "): reconnecting...]\r\n");
+            }
+        }
+    }
 }
 
 // ---- Persistence helpers ----
@@ -736,13 +910,19 @@ std::string SessionManager::generatePersistId() {
 void SessionManager::flushSession(HydraSession& session) {
     if (session.persistId.empty() || session.scrollbackKey.empty()) return;
 
-    // Save session record
     std::string created = std::to_string(session.created);
     std::string lastActive = std::to_string(session.lastActivity);
-    std::string linksJson;
-    if (session.backDoor != ganl::InvalidConnectionHandle) {
-        linksJson = "{\"game\":\"" + session.gameName + "\"}";
+
+    // Serialize links as JSON array
+    std::string linksJson = "[";
+    bool first = true;
+    for (const auto& link : session.links) {
+        if (link.state == LinkState::Dead) continue;
+        if (!first) linksJson += ",";
+        linksJson += "{\"game\":\"" + link.gameName + "\"}";
+        first = false;
     }
+    linksJson += "]";
 
     std::string errorMsg;
     if (!accounts_.saveSession(session.persistId, session.accountId,
@@ -752,7 +932,6 @@ void SessionManager::flushSession(HydraSession& session) {
         return;
     }
 
-    // Flush dirty scroll-back lines
     int n = session.scrollback.flushToDb(
         accounts_.db(), session.persistId,
         session.accountId, session.scrollbackKey);
@@ -768,7 +947,6 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
     AccountManager::SavedSession saved;
     if (!accounts_.loadSession(accountId, saved)) return;
 
-    // Create in-memory session from saved state
     HydraSession session;
     session.id = nextSessionId_++;
     session.accountId = accountId;
@@ -779,7 +957,6 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
     session.persistId = saved.id;
     session.frontDoors.push_back(fd.handle);
 
-    // Load persisted scroll-back
     int loaded = session.scrollback.loadFromDb(
         accounts_.db(), saved.id, accountId, sbKey);
 
@@ -791,10 +968,8 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
              (unsigned long)fd.sessionId, saved.id.c_str(),
              fd.pendingUsername.c_str(), loaded > 0 ? loaded : 0);
 
-    sendToClient(fd.handle,
-        "\r\nRestoring saved session...\r\n");
+    sendToClient(fd.handle, "\r\nRestoring saved session...\r\n");
 
-    // Replay scroll-back
     if (sess.scrollback.count() > 0) {
         sendToClient(fd.handle,
             "-- Scroll-back ("
@@ -818,8 +993,7 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
             },
             &rctx);
 
-        sendToClient(fd.handle,
-            "-- End scroll-back --\r\n");
+        sendToClient(fd.handle, "-- End scroll-back --\r\n");
     }
 
     showGameMenu(sess, fd.handle);
