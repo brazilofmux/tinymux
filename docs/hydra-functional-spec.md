@@ -147,7 +147,8 @@ Ports are configurable. Hydra can listen on as many ports as needed.
 2. TLS handshake (if applicable)
 3. Telnet negotiation (charset, NAWS, TTYPE, etc.)
 4. Hydra presents a login prompt (its own, not a game's)
-5. User authenticates to Hydra (username + password, or token)
+5. User authenticates to Hydra (Phase 1: username + password;
+   later phases may add token or TLS client cert resume)
 6. Session created or resumed
 7. If session has active links, output begins flowing
 8. If no links, Hydra presents a menu of configured games

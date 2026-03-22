@@ -73,8 +73,14 @@ This work benefits both Hydra and any future GANL client use case
               ┌────│ Connecting │  async connect()
               │     └─────┬──────┘
               │           │ socket writable (connect complete)
-     connect  │           ▼
-     failed   │     ┌────────────────────┐
+              │           ▼
+     connect  │     ┌────────────────────┐
+     failed   │     │ TlsHandshaking    │  if tls=yes in game config
+      or      │     │ (skipped if plain) │  GANL SecureTransport
+     TLS      │     └─────┬──────────────┘
+     failed   │           │ TLS established (or skipped)
+              │           ▼
+              │     ┌────────────────────┐
               │     │ TelnetNegotiating  │  exchange options
               │     └─────┬──────────────┘
               │           │ negotiation complete or timeout
@@ -93,6 +99,25 @@ This work benefits both Hydra and any future GANL client use case
         │ Resolving  │  (back to top)
         └────────────┘
 ```
+
+**Back-door TLS:** When `tls=yes` is configured for a game, the
+`OutboundConnection` performs a TLS handshake after TCP connect
+completes, using GANL's existing `SecureTransport`. If `tls_verify`
+is enabled, certificate verification is performed against the
+configured CA bundle (`tls_ca`) or the system default trust store.
+
+TLS failure paths:
+
+- Handshake failure (protocol error, timeout) → link enters
+  `Disconnected`, follows retry schedule.
+- Certificate verification failure (expired, wrong hostname,
+  untrusted CA) → link enters `Dead` immediately (no retry — a
+  cert problem won't fix itself). Hydra notifies the front door:
+  `[GameName: TLS certificate verification failed]`. The operator
+  must fix the game configuration or the remote game's certificate.
+
+For local games and games on trusted LANs, `tls` defaults to `no`
+and the `TlsHandshaking` state is skipped entirely.
 
 ### Client-Side Telnet Negotiation
 
@@ -247,7 +272,7 @@ struct BackDoorLink {
     ganl::EncodingType      encoding;
 
     // Link lifecycle
-    enum { Connecting, Negotiating, AutoLoggingIn,
+    enum { Connecting, TlsHandshaking, Negotiating, AutoLoggingIn,
            Active, Reconnecting, Suspended, Dead } state;
 
     // Reconnect state
@@ -576,7 +601,32 @@ void connectToGame(HydraSession* session, const GameConfig& game,
 ### Connect Completion
 
 ```cpp
-void onBackDoorConnected(BackDoorLink* link) {
+void onBackDoorConnected(BackDoorLink* link, const GameConfig& game) {
+    if (game.tls) {
+        // TLS handshake before telnet negotiation
+        link->state = TlsHandshaking;
+        startBackDoorTls(link, game);
+        return;
+    }
+
+    // Plain connection — proceed directly to telnet
+    beginTelnetNegotiation(link);
+}
+
+void onBackDoorTlsComplete(BackDoorLink* link, bool success,
+                           const std::string& error) {
+    if (!success) {
+        // Certificate verification or handshake failure
+        notifyFrontDoors(link->session,
+            "[" + link->gameName + ": TLS failed: " + error + "]\r\n");
+        link->state = Dead;  // cert problems don't self-heal
+        return;
+    }
+
+    beginTelnetNegotiation(link);
+}
+
+void beginTelnetNegotiation(BackDoorLink* link) {
     link->state = Negotiating;
 
     // Create GANL protocol context for client-side telnet
