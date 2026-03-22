@@ -19,6 +19,16 @@ namespace grpc { class Channel; class ClientContext; }
 // A connection to a game server via Hydra's gRPC GameSession bidi stream.
 // Presents the same IConnection interface as Connection (telnet) so the
 // main event loop can poll() on it alongside telnet connections.
+//
+// Hydra commands intercepted from user input:
+//   /hconnect <game>     — connect to a game via Hydra
+//   /hswitch <link#>     — switch active link
+//   /hdisconnect <link#> — disconnect a specific link
+//   /hlinks              — list active links
+//   /hgames              — list available games
+//   /hscroll [n]         — fetch scroll-back from server
+//
+// All other input is forwarded to the active game link.
 class HydraConnection : public IConnection {
 public:
     HydraConnection(const std::string& world_name,
@@ -63,6 +73,23 @@ public:
 private:
     void readerLoop();
     void signalOutput();
+    void pushOutput(const std::string& line);
+
+    // Open (or reopen) the bidi GameSession stream.
+    bool openStream();
+
+    // Hydra command handlers (called from send_line on main thread)
+    void cmdConnect(const std::string& gameName);
+    void cmdSwitch(const std::string& args);
+    void cmdDisconnect(const std::string& args);
+    void cmdLinks();
+    void cmdGames();
+    void cmdScroll(const std::string& args);
+
+    // Reconnect logic
+    void attemptReconnect();
+    static constexpr int MAX_RECONNECT_ATTEMPTS = 5;
+    static constexpr int RECONNECT_DELAY_SECS = 3;
 
     std::string worldName_;
     std::string host_;
@@ -83,6 +110,7 @@ private:
     std::mutex outputMutex_;
     std::queue<std::string> outputQueue_;
     std::atomic<bool> connected_{false};
+    std::atomic<bool> reconnecting_{false};
     std::thread readerThread_;
 
     // Scrollback
