@@ -107,7 +107,8 @@ struct FrontDoorState {
 
     // Protocol type
     FrontDoorProto proto{FrontDoorProto::Telnet};
-    WsState wsState;  // only used if proto == WebSocket
+    WsState wsState;        // only used if proto == WebSocket
+    std::string httpBuf;    // only used if proto == GrpcWeb (HTTP request accumulation)
 };
 
 // Reverse map value: session ID + link index
@@ -125,6 +126,7 @@ public:
 
     void onAccept(ganl::ConnectionHandle handle);
     void onAcceptWebSocket(ganl::ConnectionHandle handle);
+    void onAcceptGrpcWeb(ganl::ConnectionHandle handle);
     void onFrontDoorData(ganl::ConnectionHandle handle,
                          const char* data, size_t len);
     void onFrontDoorClose(ganl::ConnectionHandle handle);
@@ -183,6 +185,7 @@ private:
     void forwardToGame(HydraSession& session,
                        ganl::ConnectionHandle fdHandle,
                        const std::string& line);
+    void handleGrpcWebRequest(FrontDoorState& fd);
 
     // Parse links_json and reconstruct BackDoorLink objects + activeLink.
     struct SavedLinkInfo {

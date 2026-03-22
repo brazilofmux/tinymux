@@ -24,7 +24,7 @@ hydra_SOURCES = \
 
 # gRPC support (optional, requires --enable-grpc at configure time)
 if GRPC_ENABLED
-hydra_SOURCES += grpc_server.cpp
+hydra_SOURCES += grpc_server.cpp grpc_web.cpp
 
 BUILT_SOURCES = hydra.grpc.pb.cc hydra.grpc.pb.h hydra.pb.cc hydra.pb.h
 

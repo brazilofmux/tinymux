@@ -11,6 +11,7 @@ struct ListenConfig {
     uint16_t        port;       // listen port
     bool            tls;        // TLS-wrapped
     bool            websocket;  // WebSocket protocol (HTTP upgrade)
+    bool            grpcWeb;    // grpc-web protocol (HTTP/1.1 POST)
     std::string     certFile;   // TLS certificate path
     std::string     keyFile;    // TLS key path
 };

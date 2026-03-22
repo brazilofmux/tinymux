@@ -162,9 +162,10 @@ int main(int argc, char* argv[]) {
     // Create session manager
     SessionManager sessionMgr(*engine, accounts, config);
 
-    // Create listeners — tag 1 = telnet, tag 2 = websocket
+    // Create listeners — tag 1 = telnet, tag 2 = websocket, tag 3 = grpc-web
     static int tagTelnet = 1;
     static int tagWebSocket = 2;
+    static int tagGrpcWeb = 3;
     bool anyListener = false;
 
     for (const auto& lc : config.listeners) {
@@ -177,7 +178,16 @@ int main(int argc, char* argv[]) {
             continue;
         }
 
-        int* tag = lc.websocket ? &tagWebSocket : &tagTelnet;
+        int* tag = &tagTelnet;
+        const char* protoName = "telnet";
+        if (lc.websocket) {
+            tag = &tagWebSocket;
+            protoName = "websocket";
+        } else if (lc.grpcWeb) {
+            tag = &tagGrpcWeb;
+            protoName = "grpc-web";
+        }
+
         if (!engine->startListening(lh, tag, err)) {
             LOG_ERROR("Failed to start listening on %s:%u: %s",
                       lc.host.c_str(), lc.port, strerror(err));
@@ -185,8 +195,7 @@ int main(int argc, char* argv[]) {
         }
 
         LOG_INFO("Listening on %s:%u (%s)",
-                 lc.host.c_str(), lc.port,
-                 lc.websocket ? "websocket" : "telnet");
+                 lc.host.c_str(), lc.port, protoName);
         anyListener = true;
     }
 
@@ -237,6 +246,8 @@ int main(int argc, char* argv[]) {
             case ganl::IoEventType::Accept:
                 if (ev.context == &tagWebSocket) {
                     sessionMgr.onAcceptWebSocket(ev.connection);
+                } else if (ev.context == &tagGrpcWeb) {
+                    sessionMgr.onAcceptGrpcWeb(ev.connection);
                 } else {
                     sessionMgr.onAccept(ev.connection);
                 }
