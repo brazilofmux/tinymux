@@ -437,6 +437,47 @@ void CMainFrame::HandleSlashCommand(const std::string& input) {
         sys("%   /vars                         - List variables");
         sys("%   /help                         - This help");
         sys("% Also: File > Connect, File > Worlds, Edit > Find");
+#ifdef HYDRA_GRPC
+        sys("%   /hconnect <game>             - Connect to game via Hydra");
+        sys("%   /hswitch <link#>             - Switch active Hydra link");
+        sys("%   /hlinks                      - List Hydra links");
+        sys("%   /hdisconnect <link#>         - Disconnect a Hydra link");
+        sys("%   /hsession                    - Show Hydra session info");
+        sys("%   /hdetach                     - Detach from Hydra session");
+#endif
+#ifdef HYDRA_GRPC
+    } else if (cmd == "hconnect" || cmd == "hswitch" || cmd == "hlinks"
+            || cmd == "hdisconnect" || cmd == "hsession" || cmd == "hdetach") {
+        auto* h = dynamic_cast<HydraConnection*>(ts->conn.get());
+        if (!h) {
+            sys("% Not connected via Hydra.");
+        } else if (cmd == "hconnect") {
+            if (args.size() < 2) sys("% Usage: /hconnect <game>");
+            else sys(h->rpc_connect_game(args[1]));
+        } else if (cmd == "hswitch") {
+            if (args.size() < 2) sys("% Usage: /hswitch <link#>");
+            else {
+                int link = 0;
+                try { link = std::stoi(args[1]); } catch (...) {}
+                if (link <= 0) sys("% Invalid link number.");
+                else sys(h->rpc_switch_link(link));
+            }
+        } else if (cmd == "hlinks") {
+            for (auto& line : h->rpc_list_links()) sys(line);
+        } else if (cmd == "hdisconnect") {
+            if (args.size() < 2) sys("% Usage: /hdisconnect <link#>");
+            else {
+                int link = 0;
+                try { link = std::stoi(args[1]); } catch (...) {}
+                if (link <= 0) sys("% Invalid link number.");
+                else sys(h->rpc_disconnect_link(link));
+            }
+        } else if (cmd == "hsession") {
+            for (auto& line : h->rpc_get_session()) sys(line);
+        } else if (cmd == "hdetach") {
+            sys(h->rpc_detach_session());
+        }
+#endif
     } else {
         // Not a local command — send to server (some MUDs use / commands)
         if (ts->conn && ts->conn->is_connected()) {

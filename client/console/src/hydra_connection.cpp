@@ -240,4 +240,144 @@ void HydraConnection::signalOutput() {
     PostQueuedCompletionStatus(iocp_, 0, IOCP_KEY_HYDRA, nullptr);
 }
 
+// ---- Hydra session management RPCs ----
+
+std::string HydraConnection::rpc_connect_game(const std::string& game_name) {
+    if (!grpc_ || !grpc_->stub) return "[Hydra] Not connected.";
+    try {
+        ClientContext ctx;
+        ctx.AddMetadata("authorization", sessionId_);
+        hydra::ConnectRequest req;
+        req.set_session_id(sessionId_);
+        req.set_game_name(game_name);
+        hydra::ConnectResponse resp;
+        Status status = grpc_->stub->Connect(&ctx, req, &resp);
+        if (!status.ok())
+            return "[Hydra] RPC error: " + status.error_message();
+        if (resp.success())
+            return "[Hydra] Connected to " + game_name + " (link " + std::to_string(resp.link_number()) + ")";
+        return "[Hydra] Connect failed: " + resp.error();
+    } catch (const std::exception& e) {
+        return std::string("[Hydra] Error: ") + e.what();
+    }
+}
+
+std::string HydraConnection::rpc_switch_link(int link_number) {
+    if (!grpc_ || !grpc_->stub) return "[Hydra] Not connected.";
+    try {
+        ClientContext ctx;
+        ctx.AddMetadata("authorization", sessionId_);
+        hydra::SwitchRequest req;
+        req.set_session_id(sessionId_);
+        req.set_link_number(link_number);
+        hydra::SwitchResponse resp;
+        Status status = grpc_->stub->SwitchLink(&ctx, req, &resp);
+        if (!status.ok())
+            return "[Hydra] RPC error: " + status.error_message();
+        if (resp.success())
+            return "[Hydra] Switched to link " + std::to_string(link_number);
+        return "[Hydra] Switch failed: " + resp.error();
+    } catch (const std::exception& e) {
+        return std::string("[Hydra] Error: ") + e.what();
+    }
+}
+
+std::vector<std::string> HydraConnection::rpc_list_links() {
+    std::vector<std::string> result;
+    if (!grpc_ || !grpc_->stub) { result.push_back("[Hydra] Not connected."); return result; }
+    try {
+        ClientContext ctx;
+        ctx.AddMetadata("authorization", sessionId_);
+        hydra::SessionRequest req;
+        req.set_session_id(sessionId_);
+        hydra::LinkList resp;
+        Status status = grpc_->stub->ListLinks(&ctx, req, &resp);
+        if (!status.ok()) {
+            result.push_back("[Hydra] RPC error: " + status.error_message());
+            return result;
+        }
+        if (resp.links_size() == 0) {
+            result.push_back("[Hydra] No active links.");
+            return result;
+        }
+        result.push_back("[Hydra] Active links:");
+        for (int i = 0; i < resp.links_size(); i++) {
+            const auto& li = resp.links(i);
+            std::string line = "  Link " + std::to_string(li.number())
+                + ": " + li.game_name()
+                + " (" + hydra::LinkState_Name(li.state()) + ")";
+            if (li.active()) line += " [active]";
+            if (!li.character().empty()) line += " as " + li.character();
+            result.push_back(line);
+        }
+    } catch (const std::exception& e) {
+        result.push_back(std::string("[Hydra] Error: ") + e.what());
+    }
+    return result;
+}
+
+std::string HydraConnection::rpc_disconnect_link(int link_number) {
+    if (!grpc_ || !grpc_->stub) return "[Hydra] Not connected.";
+    try {
+        ClientContext ctx;
+        ctx.AddMetadata("authorization", sessionId_);
+        hydra::DisconnectRequest req;
+        req.set_session_id(sessionId_);
+        req.set_link_number(link_number);
+        hydra::DisconnectResponse resp;
+        Status status = grpc_->stub->DisconnectLink(&ctx, req, &resp);
+        if (!status.ok())
+            return "[Hydra] RPC error: " + status.error_message();
+        if (resp.success())
+            return "[Hydra] Disconnected link " + std::to_string(link_number);
+        return "[Hydra] Disconnect failed: " + resp.error();
+    } catch (const std::exception& e) {
+        return std::string("[Hydra] Error: ") + e.what();
+    }
+}
+
+std::vector<std::string> HydraConnection::rpc_get_session() {
+    std::vector<std::string> result;
+    if (!grpc_ || !grpc_->stub) { result.push_back("[Hydra] Not connected."); return result; }
+    try {
+        ClientContext ctx;
+        ctx.AddMetadata("authorization", sessionId_);
+        hydra::SessionRequest req;
+        req.set_session_id(sessionId_);
+        hydra::SessionInfo resp;
+        Status status = grpc_->stub->GetSession(&ctx, req, &resp);
+        if (!status.ok()) {
+            result.push_back("[Hydra] RPC error: " + status.error_message());
+            return result;
+        }
+        result.push_back("[Hydra] Session " + resp.session_id().substr(0, 8) + "...");
+        result.push_back("  User: " + resp.username());
+        result.push_back("  State: " + hydra::SessionState_Name(resp.state()));
+        result.push_back("  Active link: " + std::to_string(resp.active_link()));
+        result.push_back("  Links: " + std::to_string(resp.links_size()));
+        result.push_back("  Scrollback: " + std::to_string(resp.scrollback_lines()) + " lines");
+    } catch (const std::exception& e) {
+        result.push_back(std::string("[Hydra] Error: ") + e.what());
+    }
+    return result;
+}
+
+std::string HydraConnection::rpc_detach_session() {
+    if (!grpc_ || !grpc_->stub) return "[Hydra] Not connected.";
+    try {
+        ClientContext ctx;
+        ctx.AddMetadata("authorization", sessionId_);
+        hydra::SessionRequest req;
+        req.set_session_id(sessionId_);
+        hydra::Empty resp;
+        Status status = grpc_->stub->DetachSession(&ctx, req, &resp);
+        if (!status.ok())
+            return "[Hydra] RPC error: " + status.error_message();
+        connected_.store(false);
+        return "[Hydra] Session detached. Reconnect to resume.";
+    } catch (const std::exception& e) {
+        return std::string("[Hydra] Error: ") + e.what();
+    }
+}
+
 #endif // HYDRA_GRPC

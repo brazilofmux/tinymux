@@ -63,6 +63,14 @@ public:
     // Hydra session token
     const std::string& session_id() const { return sessionId_; }
 
+    // Hydra session management RPCs (unary, may block briefly)
+    std::string rpc_connect_game(const std::string& game_name);
+    std::string rpc_switch_link(int link_number);
+    std::vector<std::string> rpc_list_links();
+    std::string rpc_disconnect_link(int link_number);
+    std::vector<std::string> rpc_get_session();
+    std::string rpc_detach_session();
+
 private:
     void readerLoop();
     void signalOutput();

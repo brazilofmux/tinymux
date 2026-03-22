@@ -753,6 +753,90 @@ static void cmd_speak(App& app, const std::vector<std::string>& args) {
     // TODO: Integrate ISpVoice for actual TTS
 }
 
+#ifdef HYDRA_GRPC
+static void cmd_hconnect(App& app, const std::vector<std::string>& args) {
+    if (!app.fg || !app.fg->is_hydra()) {
+        app.terminal.print_system("Not connected via Hydra.");
+        return;
+    }
+    if (args.size() < 2) {
+        app.terminal.print_system("Usage: /hconnect <game>");
+        return;
+    }
+    auto* h = static_cast<HydraConnection*>(app.fg);
+    app.terminal.print_system(h->rpc_connect_game(args[1]));
+}
+
+static void cmd_hswitch(App& app, const std::vector<std::string>& args) {
+    if (!app.fg || !app.fg->is_hydra()) {
+        app.terminal.print_system("Not connected via Hydra.");
+        return;
+    }
+    if (args.size() < 2) {
+        app.terminal.print_system("Usage: /hswitch <link#>");
+        return;
+    }
+    int link = 0;
+    try { link = std::stoi(args[1]); } catch (...) {}
+    if (link <= 0) {
+        app.terminal.print_system("Invalid link number.");
+        return;
+    }
+    auto* h = static_cast<HydraConnection*>(app.fg);
+    app.terminal.print_system(h->rpc_switch_link(link));
+}
+
+static void cmd_hlinks(App& app, const std::vector<std::string>&) {
+    if (!app.fg || !app.fg->is_hydra()) {
+        app.terminal.print_system("Not connected via Hydra.");
+        return;
+    }
+    auto* h = static_cast<HydraConnection*>(app.fg);
+    for (auto& line : h->rpc_list_links()) {
+        app.terminal.print_system(line);
+    }
+}
+
+static void cmd_hdisconnect(App& app, const std::vector<std::string>& args) {
+    if (!app.fg || !app.fg->is_hydra()) {
+        app.terminal.print_system("Not connected via Hydra.");
+        return;
+    }
+    if (args.size() < 2) {
+        app.terminal.print_system("Usage: /hdisconnect <link#>");
+        return;
+    }
+    int link = 0;
+    try { link = std::stoi(args[1]); } catch (...) {}
+    if (link <= 0) {
+        app.terminal.print_system("Invalid link number.");
+        return;
+    }
+    auto* h = static_cast<HydraConnection*>(app.fg);
+    app.terminal.print_system(h->rpc_disconnect_link(link));
+}
+
+static void cmd_hsession(App& app, const std::vector<std::string>&) {
+    if (!app.fg || !app.fg->is_hydra()) {
+        app.terminal.print_system("Not connected via Hydra.");
+        return;
+    }
+    auto* h = static_cast<HydraConnection*>(app.fg);
+    for (auto& line : h->rpc_get_session()) {
+        app.terminal.print_system(line);
+    }
+}
+
+static void cmd_hdetach(App& app, const std::vector<std::string>&) {
+    if (!app.fg || !app.fg->is_hydra()) {
+        app.terminal.print_system("Not connected via Hydra.");
+        return;
+    }
+    auto* h = static_cast<HydraConnection*>(app.fg);
+    app.terminal.print_system(h->rpc_detach_session());
+}
+#endif // HYDRA_GRPC
+
 static void cmd_help(App& app, const std::vector<std::string>&) {
     app.terminal.print_system("Commands:");
     auto list = app.commands.help_list();
@@ -793,4 +877,12 @@ void register_builtin_commands(App& app) {
     app.commands.register_cmd("vars",        cmd_vars,        "List variables");
     app.commands.register_cmd("speak",       cmd_speak,       "Text-to-speech");
     app.commands.register_cmd("help",        cmd_help,        "Show this help");
+#ifdef HYDRA_GRPC
+    app.commands.register_cmd("hconnect",    cmd_hconnect,    "Connect to a game on Hydra");
+    app.commands.register_cmd("hswitch",     cmd_hswitch,     "Switch active Hydra link");
+    app.commands.register_cmd("hlinks",      cmd_hlinks,      "List active Hydra links");
+    app.commands.register_cmd("hdisconnect", cmd_hdisconnect, "Disconnect a Hydra link");
+    app.commands.register_cmd("hsession",    cmd_hsession,    "Show Hydra session info");
+    app.commands.register_cmd("hdetach",     cmd_hdetach,     "Detach from Hydra session");
+#endif
 }

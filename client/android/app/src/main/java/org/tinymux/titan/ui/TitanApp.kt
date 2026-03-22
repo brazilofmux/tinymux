@@ -330,6 +330,60 @@ fun TitanApp() {
                     connectHydra("$hHost:$hPort", hHost, hPort, hUser, hPass, hGame)
                 }
             }
+            "hconnect" -> {
+                val hconn = tab?.hydraConnection
+                if (hconn == null || !hconn.connected) {
+                    appendLine(idx, "% Not connected via Hydra.")
+                } else if (args.isBlank()) {
+                    appendLine(idx, "% Usage: /hconnect <game>")
+                } else {
+                    scope.launch { appendLine(idx, hconn.rpcConnectGame(args.trim())) }
+                }
+            }
+            "hswitch" -> {
+                val hconn = tab?.hydraConnection
+                if (hconn == null || !hconn.connected) {
+                    appendLine(idx, "% Not connected via Hydra.")
+                } else {
+                    val link = args.trim().toIntOrNull()
+                    if (link == null || link <= 0) appendLine(idx, "% Usage: /hswitch <link#>")
+                    else scope.launch { appendLine(idx, hconn.rpcSwitchLink(link)) }
+                }
+            }
+            "hlinks" -> {
+                val hconn = tab?.hydraConnection
+                if (hconn == null || !hconn.connected) {
+                    appendLine(idx, "% Not connected via Hydra.")
+                } else {
+                    scope.launch { hconn.rpcListLinks().forEach { appendLine(idx, it) } }
+                }
+            }
+            "hdisconnect" -> {
+                val hconn = tab?.hydraConnection
+                if (hconn == null || !hconn.connected) {
+                    appendLine(idx, "% Not connected via Hydra.")
+                } else {
+                    val link = args.trim().toIntOrNull()
+                    if (link == null || link <= 0) appendLine(idx, "% Usage: /hdisconnect <link#>")
+                    else scope.launch { appendLine(idx, hconn.rpcDisconnectLink(link)) }
+                }
+            }
+            "hsession" -> {
+                val hconn = tab?.hydraConnection
+                if (hconn == null || !hconn.connected) {
+                    appendLine(idx, "% Not connected via Hydra.")
+                } else {
+                    scope.launch { hconn.rpcGetSession().forEach { appendLine(idx, it) } }
+                }
+            }
+            "hdetach" -> {
+                val hconn = tab?.hydraConnection
+                if (hconn == null || !hconn.connected) {
+                    appendLine(idx, "% Not connected via Hydra.")
+                } else {
+                    scope.launch { appendLine(idx, hconn.rpcDetachSession()) }
+                }
+            }
             "dc", "disconnect" -> {
                 if (activeTab > 0) {
                     tabs.getOrNull(activeTab)?.disconnectAll()
@@ -578,6 +632,12 @@ fun TitanApp() {
                 appendLine(idx, "% Commands:")
                 appendLine(idx, "%   /connect <host> [port] [ssl]  - Connect to a world")
                 appendLine(idx, "%   /hydra <host> <port> <u> <p> <game> - Connect via Hydra")
+                appendLine(idx, "%   /hconnect <game>              - Connect to game on Hydra")
+                appendLine(idx, "%   /hswitch <link#>              - Switch active Hydra link")
+                appendLine(idx, "%   /hlinks                       - List Hydra links")
+                appendLine(idx, "%   /hdisconnect <link#>          - Disconnect Hydra link")
+                appendLine(idx, "%   /hsession                     - Show Hydra session info")
+                appendLine(idx, "%   /hdetach                      - Detach Hydra session")
                 appendLine(idx, "%   /disconnect, /dc              - Close current connection")
                 appendLine(idx, "%   /worlds                       - Open World Manager")
                 appendLine(idx, "%   /triggers                     - Open Trigger Manager")
