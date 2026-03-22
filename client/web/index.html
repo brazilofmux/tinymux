@@ -61,6 +61,12 @@
         <label>Host <input type="text" id="we-host"></label>
         <label>Port <input type="text" id="we-port" value="4201"></label>
         <label>Character <input type="text" id="we-char"></label>
+        <label>Password <input type="password" id="we-pass"></label>
+        <label>Transport <select id="we-transport">
+            <option value="websocket">WebSocket (telnet)</option>
+            <option value="hydra">Hydra (gRPC-Web)</option>
+        </select></label>
+        <label>Game <input type="text" id="we-game" placeholder="(Hydra: game to auto-connect)"></label>
         <label><input type="checkbox" id="we-ssl"> SSL/TLS</label>
         <div class="dialog-buttons">
             <button id="we-ok">OK</button>
@@ -126,6 +132,7 @@
     <script src="js/mcp.js"></script>
     <script src="js/telnet.js"></script>
     <script src="js/connection.js"></script>
+    <script src="js/hydra_connection.js"></script>
     <script src="js/terminal.js"></script>
     <script src="js/settings.js"></script>
     <script src="js/main.js"></script>

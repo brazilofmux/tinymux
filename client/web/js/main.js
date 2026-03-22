@@ -216,9 +216,17 @@ function updateStatus() {
 
 // -- Connection --
 
-function connectWorld(name, host, port, ssl, loginCommands = []) {
+function connectWorld(name, host, port, ssl, loginCommands = [], opts = {}) {
     addTab(name);
-    const conn = new Connection(name, host, port, ssl);
+    let conn;
+    if (opts.transport === 'hydra') {
+        conn = new HydraConnection(name, host, port, ssl);
+        conn.username = opts.character || '';
+        conn.password = opts.password || '';
+        conn.gameName = opts.game || '';
+    } else {
+        conn = new Connection(name, host, port, ssl);
+    }
     app.connections[name] = conn;
     app.spawnLines[name] = {};
     app.activeSpawn[name] = '';
@@ -266,6 +274,10 @@ function connectWorld(name, host, port, ssl, loginCommands = []) {
         renderTabs();
         for (const cmd of app.hookDB.fireEvent('CONNECT')) conn.sendLine(cmd);
         for (const cmd of loginCommands) conn.sendLine(cmd);
+        // Hydra: auto-connect to game after auth
+        if (conn instanceof HydraConnection && conn.gameName) {
+            conn.connectGame(conn.gameName);
+        }
     };
     conn.onDisconnect = () => {
         if (tab) tab.disconnected = true;
@@ -278,7 +290,16 @@ function connectWorld(name, host, port, ssl, loginCommands = []) {
         renderTabs();
     };
 
-    if (!conn.connect()) {
+    const result = conn.connect();
+    if (result instanceof Promise) {
+        // Async connect (HydraConnection)
+        appendLine(name, '% Connecting to Hydra at ' + host + ':' + port + '...');
+        result.then(ok => {
+            if (!ok) appendLine(name, '% Failed to connect to Hydra.');
+        }).catch(e => {
+            appendLine(name, '% Hydra error: ' + e.message);
+        });
+    } else if (!result) {
         appendLine(name, '% Failed to connect to ' + host + ':' + port);
     } else {
         appendLine(name, '% Connecting to ' + host + ':' + port + (ssl ? ' (ssl)' : '') + '...');
@@ -597,6 +618,9 @@ function showWorldEditDialog(world) {
     $('#we-host').value = world ? world.host : '';
     $('#we-port').value = world ? world.port : '4201';
     $('#we-char').value = world ? (world.character || '') : '';
+    $('#we-pass').value = world ? (world.password || '') : '';
+    $('#we-transport').value = world ? (world.transport || 'websocket') : 'websocket';
+    $('#we-game').value = world ? (world.game || '') : '';
     $('#we-ssl').checked = world ? world.ssl : false;
     dlg.showModal();
     return new Promise((resolve) => {
@@ -791,7 +815,14 @@ function init() {
         const sel = $('#worlds-list');
         if (sel.selectedIndex >= 0) {
             const w = Settings.getWorlds()[sel.selectedIndex];
-            connectWorld(w.name, w.host, w.port, w.ssl);
+            const loginCmds = (w.transport !== 'hydra' && w.character)
+                ? ['connect ' + w.character + ' ' + (w.password || '')] : [];
+            connectWorld(w.name, w.host, w.port, w.ssl, loginCmds, {
+                transport: w.transport || 'websocket',
+                character: w.character,
+                password: w.password,
+                game: w.game,
+            });
             $('#worlds-dialog').close();
         }
     });
@@ -807,6 +838,9 @@ function init() {
             host: $('#we-host').value.trim(),
             port: $('#we-port').value.trim() || '4201',
             character: $('#we-char').value.trim(),
+            password: $('#we-pass').value,
+            transport: $('#we-transport').value || 'websocket',
+            game: $('#we-game').value.trim(),
             ssl: $('#we-ssl').checked,
         };
         if (world.name && world.host) {
