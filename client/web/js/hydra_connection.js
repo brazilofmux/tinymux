@@ -335,6 +335,11 @@ class HydraConnection {
 
     // ---- Connect / Disconnect ----
 
+    // localStorage key for persisting session across page reloads
+    get _storageKey() {
+        return 'hydra_session_' + this.name;
+    }
+
     async connect() {
         try {
             if (!this.username || !this.password) {
@@ -342,6 +347,34 @@ class HydraConnection {
                 return false;
             }
 
+            // Try to resume a saved session from localStorage
+            const savedId = localStorage.getItem(this._storageKey);
+            if (savedId) {
+                this.sessionId = savedId;
+                // Verify it's still valid
+                try {
+                    const reqBytes = Proto.encode(
+                        {session_id: savedId}, SessionRequestFields);
+                    const sess = await this._rpc('GetSession', reqBytes, {
+                        1: {name: 'session_id', type: 'string'},
+                        2: {name: 'username', type: 'string'},
+                        6: {name: 'state', type: 'int32'},
+                    });
+                    if (sess.session_id && !sess._error) {
+                        this._emit('% [Hydra] Resuming session ' + savedId.substring(0, 8) + '...');
+                        this.connected = true;
+                        if (this.onConnect) this.onConnect();
+                        this._startSubscribe();
+                        return true;
+                    }
+                } catch (e) {
+                    // Saved session invalid — fall through to fresh auth
+                }
+                localStorage.removeItem(this._storageKey);
+                this.sessionId = null;
+            }
+
+            // Fresh authentication
             const authBytes = Proto.encode(
                 {username: this.username, password: this.password},
                 AuthRequestFields
@@ -355,6 +388,9 @@ class HydraConnection {
 
             this.sessionId = auth.session_id;
             this.connected = true;
+
+            // Persist session for page reload resume
+            localStorage.setItem(this._storageKey, this.sessionId);
 
             if (this.onConnect) this.onConnect();
             this._startSubscribe();
@@ -372,6 +408,8 @@ class HydraConnection {
             this._subscribeAbort.abort();
             this._subscribeAbort = null;
         }
+        // Clear persisted session on intentional disconnect
+        localStorage.removeItem(this._storageKey);
         if (this.onDisconnect) this.onDisconnect();
     }
 

@@ -159,17 +159,36 @@ SessionManager::~SessionManager() {
 
 void SessionManager::sendToClient(ganl::ConnectionHandle handle,
                                   const std::string& text) {
-    int fd = static_cast<int>(handle);
+    int sockfd = static_cast<int>(handle);
 
-    // Check if this is a WebSocket connection
     auto it = frontDoors_.find(handle);
-    if (it != frontDoors_.end() && it->second.proto == FrontDoorProto::WebSocket) {
-        std::string frame = wsEncodeFrame(text);
-        send(fd, frame.data(), frame.size(), MSG_NOSIGNAL);
-        return;
+    if (it != frontDoors_.end()) {
+        if (it->second.proto == FrontDoorProto::WebSocket) {
+            std::string frame = wsEncodeFrame(text);
+            send(sockfd, frame.data(), frame.size(), MSG_NOSIGNAL);
+            return;
+        }
+#ifdef GRPC_ENABLED
+        if (it->second.grpcWebSubscribed) {
+            // Send as a grpc-web data frame with the text as GameOutput
+            hydra::GameOutput go;
+            go.set_text(text);
+            go.set_source("hydra");
+            go.set_timestamp(static_cast<int64_t>(time(nullptr)));
+
+            std::string gwFrame = grpcWebEncodeDataFrame(
+                go.SerializeAsString());
+            if (it->second.grpcWebTextMode) gwFrame = base64Encode(gwFrame);
+
+            std::string chunk = std::to_string(gwFrame.size())
+                + "\r\n" + gwFrame + "\r\n";
+            send(sockfd, chunk.data(), chunk.size(), MSG_NOSIGNAL);
+            return;
+        }
+#endif
     }
 
-    send(fd, text.data(), text.size(), MSG_NOSIGNAL);
+    send(sockfd, text.data(), text.size(), MSG_NOSIGNAL);
 }
 
 void SessionManager::showBanner(ganl::ConnectionHandle handle) {
@@ -359,6 +378,11 @@ void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
     // ---- gRPC-Web path ----
 #ifdef GRPC_ENABLED
     if (fd.proto == FrontDoorProto::GrpcWeb) {
+        if (fd.grpcWebSubscribed) {
+            // This fd is a Subscribe stream — ignore incoming data.
+            // The client shouldn't be sending anything.
+            return;
+        }
         fd.httpBuf.append(data, len);
         handleGrpcWebRequest(fd);
         return;
@@ -1165,6 +1189,24 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
                 std::string frame = wsEncodeFrame(rendered);
                 send(static_cast<int>(h), frame.data(), frame.size(),
                      MSG_NOSIGNAL);
+#ifdef GRPC_ENABLED
+            } else if (fd.grpcWebSubscribed) {
+                // Send as chunked grpc-web data frame
+                hydra::GameOutput go;
+                go.set_text(rendered);
+                go.set_source(link->gameName);
+                go.set_timestamp(static_cast<int64_t>(time(nullptr)));
+                go.set_link_number(static_cast<int>(linkIdx) + 1);
+
+                std::string gwFrame = grpcWebEncodeDataFrame(
+                    go.SerializeAsString());
+                if (fd.grpcWebTextMode) gwFrame = base64Encode(gwFrame);
+
+                std::string chunk = std::to_string(gwFrame.size())
+                    + "\r\n" + gwFrame + "\r\n";
+                send(static_cast<int>(h), chunk.data(), chunk.size(),
+                     MSG_NOSIGNAL);
+#endif
             } else {
                 send(static_cast<int>(h), rendered.data(), rendered.size(),
                      MSG_NOSIGNAL);
@@ -1762,7 +1804,9 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
         sendUnaryResponse(resp.SerializeAsString(), s ? 0 : 5);
 
     } else if (method == "Subscribe") {
-        // Server-streaming: chunked HTTP response with grpc-web data frames.
+        // Server-streaming: register this connection as a live subscriber.
+        // It stays open and receives chunked grpc-web data frames as
+        // game output arrives in onBackDoorData().
         hydra::SessionRequest rpcReq;
         rpcReq.ParseFromString(protoBody);
         std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
@@ -1779,52 +1823,23 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
                 "\r\n";
             send(sockfd, httpHdr.data(), httpHdr.size(), MSG_NOSIGNAL);
 
-            // Register as subscriber and stream until connection closes
-            auto oq = s->outputQueue;
-            oq->subscriberCount.fetch_add(1);
+            // Mark this FrontDoorState as a live grpc-web subscriber.
+            // onBackDoorData() will send output to it as chunked frames.
+            fd.grpcWebSubscribed = true;
+            fd.grpcWebSessionId = s->persistId;
+            fd.grpcWebTextMode = isText;
+            fd.sessionId = s->id;
 
-            // Mark this fd as a streaming grpc-web connection.
-            // We'll use a simple polling loop here since we're in the
-            // main thread — check the queue, send chunks, yield.
-            // This is blocking but the main event loop will not process
-            // other events while streaming.  For Phase 1 this is acceptable;
-            // a proper implementation would use async I/O.
-            //
-            // Actually, we can't block the main thread.  Instead, store
-            // the subscriber state and send output in runTimers().
-            // For now, flush any currently queued output as an initial burst
-            // and let subsequent data arrive via the regular output path.
-            {
-                std::lock_guard<std::mutex> lock(oq->mutex);
-                while (!oq->queue.empty()) {
-                    auto& item = oq->queue.front();
-                    hydra::GameOutput go;
-                    go.set_text(item.text);
-                    go.set_source(item.source);
-                    go.set_timestamp(static_cast<int64_t>(item.timestamp));
-                    go.set_link_number(item.linkNumber);
+            // Add to session's front-door list so it receives output
+            s->frontDoors.push_back(fd.handle);
+            s->state = SessionState::Active;
 
-                    std::string frame = grpcWebEncodeDataFrame(go.SerializeAsString());
-                    if (isText) frame = base64Encode(frame);
+            LOG_INFO("grpc-web Subscribe: fd %lu subscribed to session %s",
+                     (unsigned long)fd.handle, s->persistId.c_str());
 
-                    // Send as HTTP chunk
-                    std::string chunk = std::to_string(frame.size())
-                        + "\r\n" + frame + "\r\n";
-                    send(sockfd, chunk.data(), chunk.size(), MSG_NOSIGNAL);
-
-                    oq->queue.pop();
-                }
-            }
-
-            // Send trailer frame to end the stream
-            std::string trailer = grpcWebEncodeTrailerFrame(0);
-            if (isText) trailer = base64Encode(trailer);
-            std::string lastChunk = std::to_string(trailer.size())
-                + "\r\n" + trailer + "\r\n"
-                + "0\r\n\r\n";
-            send(sockfd, lastChunk.data(), lastChunk.size(), MSG_NOSIGNAL);
-
-            oq->subscriberCount.fetch_sub(1);
+            // Don't clear httpBuf — we won't process further HTTP
+            // requests on this fd (it's now a streaming connection)
+            return;
         }
 
     } else if (method == "GetScrollBack") {

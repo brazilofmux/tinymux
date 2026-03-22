@@ -109,6 +109,12 @@ struct FrontDoorState {
     FrontDoorProto proto{FrontDoorProto::Telnet};
     WsState wsState;        // only used if proto == WebSocket
     std::string httpBuf;    // only used if proto == GrpcWeb (HTTP request accumulation)
+
+    // grpc-web Subscribe stream state — when set, this fd receives
+    // chunked game output frames instead of processing HTTP requests.
+    bool grpcWebSubscribed{false};
+    std::string grpcWebSessionId;   // which session we're subscribed to
+    bool grpcWebTextMode{false};    // base64 encoding
 };
 
 // Reverse map value: session ID + link index
