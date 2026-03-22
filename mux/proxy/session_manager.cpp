@@ -17,6 +17,7 @@ struct ReplayContext {
     ganl::EncodingType encoding;
     ColorDepth colorDepth;
     TelnetBridge* bridge;
+    ganl::NetworkEngine* engine;  // for safeWrite via postWrite
 };
 
 // Telnet constants for GMCP parsing
@@ -165,7 +166,7 @@ void SessionManager::sendToClient(ganl::ConnectionHandle handle,
     if (it != frontDoors_.end()) {
         if (it->second.proto == FrontDoorProto::WebSocket) {
             std::string frame = wsEncodeFrame(text);
-            send(sockfd, frame.data(), frame.size(), MSG_NOSIGNAL);
+            safeWrite(handle, frame);
             return;
         }
 #ifdef GRPC_ENABLED
@@ -182,13 +183,27 @@ void SessionManager::sendToClient(ganl::ConnectionHandle handle,
 
             std::string chunk = std::to_string(gwFrame.size())
                 + "\r\n" + gwFrame + "\r\n";
-            send(sockfd, chunk.data(), chunk.size(), MSG_NOSIGNAL);
+            safeWrite(handle, chunk);
             return;
         }
 #endif
     }
 
-    send(sockfd, text.data(), text.size(), MSG_NOSIGNAL);
+    safeWrite(handle, text);
+}
+
+void SessionManager::safeWrite(ganl::ConnectionHandle handle,
+                               const std::string& data) {
+    safeWrite(handle, data.data(), data.size());
+}
+
+void SessionManager::safeWrite(ganl::ConnectionHandle handle,
+                               const char* data, size_t len) {
+    ganl::ErrorCode err = 0;
+    if (!engine_.postWrite(handle, data, len, err)) {
+        LOG_DEBUG("safeWrite failed for fd %lu: %s",
+                  (unsigned long)handle, strerror(err));
+    }
 }
 
 void SessionManager::showBanner(ganl::ConnectionHandle handle) {
@@ -317,7 +332,7 @@ void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
             std::string response = wsProcessHandshake(fd.wsState, data, len);
             if (!response.empty()) {
                 int sockfd = static_cast<int>(handle);
-                send(sockfd, response.data(), response.size(), MSG_NOSIGNAL);
+                safeWrite(handle, response);
 
                 if (!fd.wsState.handshakeOk) {
                     // Handshake failed — close
@@ -337,8 +352,7 @@ void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
                     auto msgs = wsDecodeFrames(fd.wsState,
                         trailing.data(), trailing.size(), responses);
                     if (!responses.empty()) {
-                        send(static_cast<int>(handle), responses.data(),
-                             responses.size(), MSG_NOSIGNAL);
+                        safeWrite(handle, responses);
                     }
                     for (const auto& msg : msgs) {
                         if (msg.opcode == WS_OP_TEXT) {
@@ -369,8 +383,7 @@ void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
         std::string responses;
         auto msgs = wsDecodeFrames(fd.wsState, data, len, responses);
         if (!responses.empty()) {
-            send(static_cast<int>(handle), responses.data(),
-                 responses.size(), MSG_NOSIGNAL);
+            safeWrite(handle, responses);
         }
         for (const auto& msg : msgs) {
             if (msg.opcode == WS_OP_CLOSE) {
@@ -434,8 +447,7 @@ void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
                 active->gmcpEnabled) {
                 for (const auto& gm : gmcpMsgs) {
                     std::string frame = buildGmcpFrame(gm.payload);
-                    send(static_cast<int>(active->handle),
-                         frame.data(), frame.size(), MSG_NOSIGNAL);
+                    safeWrite(active->handle, frame);
                 }
             }
         }
@@ -642,8 +654,7 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                     + std::to_string(existing->scrollback.count())
                     + " lines) --\r\n");
 
-                ReplayContext rctx{fd.handle, fd.encoding,
-                                   fd.colorDepth, &bridge_};
+                ReplayContext rctx{fd.handle, fd.encoding, fd.colorDepth, &bridge_, &engine_};
                 existing->scrollback.replay(
                     existing->scrollback.count(),
                     [](const std::string& text,
@@ -653,9 +664,8 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                         std::string rendered = rc->bridge->renderForClient(
                             rc->encoding, rc->colorDepth, text);
                         rendered += "\r\n";
-                        int fd = static_cast<int>(rc->handle);
-                        send(fd, rendered.data(), rendered.size(),
-                             MSG_NOSIGNAL);
+                        ganl::ErrorCode werr = 0;
+                        rc->engine->postWrite(rc->handle, rendered.data(), rendered.size(), werr);
                     },
                     &rctx);
 
@@ -803,7 +813,7 @@ void SessionManager::dispatchCommand(HydraSession& session,
                 enc = fdIt->second.encoding;
                 depth = fdIt->second.colorDepth;
             }
-            ReplayContext rctx{fdHandle, enc, depth, &bridge_};
+            ReplayContext rctx{fdHandle, enc, depth, &bridge_, &engine_};
             session.scrollback.replay(n,
                 [](const std::string& text,
                    const std::string& source,
@@ -812,9 +822,8 @@ void SessionManager::dispatchCommand(HydraSession& session,
                     std::string rendered = rc->bridge->renderForClient(
                         rc->encoding, rc->colorDepth, text);
                     rendered += "\r\n";
-                    int fd = static_cast<int>(rc->handle);
-                    send(fd, rendered.data(), rendered.size(),
-                         MSG_NOSIGNAL);
+                    ganl::ErrorCode werr = 0;
+                        rc->engine->postWrite(rc->handle, rendered.data(), rendered.size(), werr);
                 },
                 &rctx);
             sendToClient(fdHandle, "-- End --\r\n");
@@ -1078,8 +1087,7 @@ void SessionManager::forwardToGame(HydraSession& session,
         clientEnc, active->protoState.encoding, line);
     converted += "\r\n";
 
-    int bdFd = static_cast<int>(active->handle);
-    send(bdFd, converted.data(), converted.size(), MSG_NOSIGNAL);
+    safeWrite(active->handle, converted);
 }
 
 void SessionManager::closeLink(HydraSession& session, size_t linkIdx) {
@@ -1122,8 +1130,7 @@ void SessionManager::onBackDoorConnect(ganl::ConnectionHandle bdHandle) {
     if (accounts_.getLoginSecret(session->accountId, link->gameName,
                                  verb, loginName, secret)) {
         std::string loginCmd = verb + " " + loginName + " " + secret + "\r\n";
-        int bdFd = static_cast<int>(link->handle);
-        send(bdFd, loginCmd.data(), loginCmd.size(), MSG_NOSIGNAL);
+        safeWrite(link->handle, loginCmd);
 
         link->character = loginName;
 
@@ -1188,8 +1195,7 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
             auto fdIt = frontDoors_.find(h);
             if (fdIt == frontDoors_.end()) continue;
             if (!fdIt->second.gmcpEnabled) continue;
-            send(static_cast<int>(h), frame.data(), frame.size(),
-                 MSG_NOSIGNAL);
+            safeWrite(h, frame);
         }
 
         // Push to gRPC GMCP queue — replicated to all subscribers
@@ -1233,8 +1239,7 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
 
             if (fd.proto == FrontDoorProto::WebSocket) {
                 std::string frame = wsEncodeFrame(rendered);
-                send(static_cast<int>(h), frame.data(), frame.size(),
-                     MSG_NOSIGNAL);
+                safeWrite(h, frame);
 #ifdef GRPC_ENABLED
             } else if (fd.grpcWebSubscribed) {
                 // Send as chunked grpc-web data frame
@@ -1250,12 +1255,10 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
 
                 std::string chunk = std::to_string(gwFrame.size())
                     + "\r\n" + gwFrame + "\r\n";
-                send(static_cast<int>(h), chunk.data(), chunk.size(),
-                     MSG_NOSIGNAL);
+                safeWrite(h, chunk);
 #endif
             } else {
-                send(static_cast<int>(h), rendered.data(), rendered.size(),
-                     MSG_NOSIGNAL);
+                safeWrite(h, rendered);
             }
         }
 
@@ -1528,8 +1531,7 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
             + std::to_string(sess.scrollback.count())
             + " lines) --\r\n");
 
-        ReplayContext rctx{fd.handle, fd.encoding,
-                           fd.colorDepth, &bridge_};
+        ReplayContext rctx{fd.handle, fd.encoding, fd.colorDepth, &bridge_, &engine_};
         sess.scrollback.replay(
             sess.scrollback.count(),
             [](const std::string& text,
@@ -1539,9 +1541,8 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
                 std::string rendered = rc->bridge->renderForClient(
                     rc->encoding, rc->colorDepth, text);
                 rendered += "\r\n";
-                int fd = static_cast<int>(rc->handle);
-                send(fd, rendered.data(), rendered.size(),
-                     MSG_NOSIGNAL);
+                ganl::ErrorCode werr = 0;
+                        rc->engine->postWrite(rc->handle, rendered.data(), rendered.size(), werr);
             },
             &rctx);
 
@@ -1695,7 +1696,7 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
     // CORS preflight
     if (req.method == "OPTIONS") {
         std::string resp = corsPreflightResponse();
-        send(sockfd, resp.data(), resp.size(), MSG_NOSIGNAL);
+        safeWrite(handle, resp);
         fd.httpBuf.clear();
         return;
     }
@@ -1703,7 +1704,7 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
     if (req.method != "POST") {
         std::string resp = "HTTP/1.1 405 Method Not Allowed\r\n"
                            "Content-Length: 0\r\n\r\n";
-        send(sockfd, resp.data(), resp.size(), MSG_NOSIGNAL);
+        safeWrite(handle, resp);
         fd.httpBuf.clear();
         return;
     }
@@ -1742,7 +1743,7 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
             + corsHeaders()
             + "Content-Length: " + std::to_string(body.size()) + "\r\n"
             "\r\n" + body;
-        send(sockfd, http.data(), http.size(), MSG_NOSIGNAL);
+        safeWrite(handle, http);
     };
 
     // ---- Dispatch RPCs ----
@@ -1830,8 +1831,7 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
             BackDoorLink* active = s->getActiveLink();
             if (active && active->state == LinkState::Active) {
                 std::string data = rpcReq.line() + "\r\n";
-                int bdFd = static_cast<int>(active->handle);
-                send(bdFd, data.data(), data.size(), MSG_NOSIGNAL);
+                safeWrite(active->handle, data);
                 resp.set_success(true);
             } else {
                 resp.set_error("no active link");
@@ -1909,7 +1909,7 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
                 + corsHeaders()
                 + "Transfer-Encoding: chunked\r\n"
                 "\r\n";
-            send(sockfd, httpHdr.data(), httpHdr.size(), MSG_NOSIGNAL);
+            safeWrite(handle, httpHdr);
 
             // Mark this FrontDoorState as a live grpc-web subscriber.
             // onBackDoorData() will send output to it as chunked frames.

@@ -260,6 +260,11 @@ public:
     void connectToGame(HydraSession& session, const std::string& gameName);
     void closeLink(HydraSession& session, size_t linkIdx);
 
+    // Safe write via GANL's write queue (handles buffering and partial writes).
+    // Public so gRPC work items can use it.
+    void safeWrite(ganl::ConnectionHandle handle, const std::string& data);
+    void safeWrite(ganl::ConnectionHandle handle, const char* data, size_t len);
+
 private:
     void flushSession(HydraSession& session);
     std::string generatePersistId();

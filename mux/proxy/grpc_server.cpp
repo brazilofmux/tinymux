@@ -341,8 +341,7 @@ public:
                             BackDoorLink* active = s->getActiveLink();
                             if (active && active->state == LinkState::Active) {
                                 std::string data = line + "\r\n";
-                                int bdFd = static_cast<int>(active->handle);
-                                send(bdFd, data.data(), data.size(), MSG_NOSIGNAL);
+                                sm.safeWrite(active->handle, data);
                             }
                         });
                 } else if (msg.has_ping()) {
@@ -379,8 +378,7 @@ public:
                                         static_cast<char>(height & 0xFF),
                                         static_cast<char>(255), static_cast<char>(240)
                                     };
-                                    int bdFd = static_cast<int>(active->handle);
-                                    send(bdFd, naws, sizeof(naws), MSG_NOSIGNAL);
+                                    sm.safeWrite(active->handle, naws, sizeof(naws));
                                 }
                             });
                     }
@@ -405,8 +403,7 @@ public:
                                 frame.append(payload);
                                 frame.push_back(static_cast<char>(255)); // IAC
                                 frame.push_back(static_cast<char>(240)); // SE
-                                int bdFd = static_cast<int>(active->handle);
-                                send(bdFd, frame.data(), frame.size(), MSG_NOSIGNAL);
+                                sm.safeWrite(active->handle, frame);
                             }
                         });
                 }
@@ -473,8 +470,7 @@ public:
                     return false;
                 }
                 std::string data = line + "\r\n";
-                int bdFd = static_cast<int>(active->handle);
-                send(bdFd, data.data(), data.size(), MSG_NOSIGNAL);
+                sm.safeWrite(active->handle, data);
                 resp->set_success(true);
                 return true;
             });
