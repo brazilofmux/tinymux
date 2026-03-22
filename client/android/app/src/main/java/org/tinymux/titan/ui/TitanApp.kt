@@ -1306,17 +1306,30 @@ fun ConnectDialog(
         onDismissRequest = onDismiss,
         title = { Text("Connect") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = host, onValueChange = { host = it },
-                    label = { Text("Host") }, singleLine = true,
-                    modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = port,
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
+                OutlinedTextField(
+                    value = host,
+                    onValueChange = { host = it },
+                    label = { Text("Host") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = port,
                     onValueChange = { port = it.filter { c -> c.isDigit() } },
                     label = { Text("Port") },
                     placeholder = { Text("4201") },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth())
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -1324,22 +1337,44 @@ fun ConnectDialog(
                         .height(48.dp)
                         .clickable { ssl = !ssl }
                 ) {
-                    Switch(checked = ssl, onCheckedChange = { ssl = it })
+                    Switch(
+                        checked = ssl,
+                        onCheckedChange = { ssl = it }
+                    )
                     Spacer(Modifier.width(8.dp))
                     Text("SSL/TLS", style = MaterialTheme.typography.bodyLarge)
                 }
-                OutlinedTextField(value = saveName, onValueChange = { saveName = it },
-                    placeholder = { Text("Save as world (optional)") },
+
+                OutlinedTextField(
+                    value = saveName,
+                    onValueChange = { saveName = it },
+                    label = { Text("Save as world (optional)") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth())
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                )
             }
         },
         confirmButton = {
             TextButton(onClick = {
-                if (host.isNotBlank()) onConnect(host.trim(), port.trim().toIntOrNull() ?: settings.defaultPort, ssl, saveName.trim())
-            }) { Text("Connect") }
+                if (host.isNotBlank()) {
+                    onConnect(
+                        host.trim(),
+                        port.trim().toIntOrNull() ?: settings.defaultPort,
+                        ssl,
+                        saveName.trim()
+                    )
+                }
+            }) {
+                Text("Connect")
+            }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
     )
 }
 
