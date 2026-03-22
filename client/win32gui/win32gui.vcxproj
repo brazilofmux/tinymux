@@ -52,42 +52,46 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <PreprocessorDefinitions>WIN32;NDEBUG;UNICODE;_UNICODE;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>WIN32;NDEBUG;UNICODE;_UNICODE;NOMINMAX;HYDRA_GRPC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader />
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>src;..\..\mux\include;..\console\src;..\..\ragel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;..\..\mux\include;..\console\src;..\shared;..\..\ragel;..\..\mux\vcpkg_installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <WarningLevel>Level1</WarningLevel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>libmux.lib;comctl32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\mux\bin_release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmux.lib;comctl32.lib;ws2_32.lib;grpc++.lib;grpc.lib;gpr.lib;address_sorting.lib;libprotobuf.lib;abseil_dll.lib;absl_flags_commandlineflag.lib;absl_flags_commandlineflag_internal.lib;absl_flags_config.lib;absl_flags_internal.lib;absl_flags_marshalling.lib;absl_flags_parse.lib;absl_flags_private_handle_accessor.lib;absl_flags_program_name.lib;absl_flags_reflection.lib;absl_flags_usage.lib;absl_flags_usage_internal.lib;absl_log_flags.lib;re2.lib;cares.lib;zlib.lib;upb_base_lib.lib;upb_mem_lib.lib;upb_message_lib.lib;upb_mini_descriptor_lib.lib;upb_wire_lib.lib;upb_json_lib.lib;upb_textformat_lib.lib;utf8_range.lib;utf8_validity.lib;libssl.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\mux\bin_release;..\..\mux\vcpkg_installed\x64-windows\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(ProjectDir)..\..\mux\bin_release\libmux.dll" "$(OutDir)"</Command>
-      <Message>Copying libmux.dll to output directory</Message>
+      <Command>copy /Y "$(ProjectDir)..\..\mux\bin_release\libmux.dll" "$(OutDir)"
+for %%f in ("$(ProjectDir)..\..\mux\vcpkg_installed\x64-windows\bin\*.dll") do copy /Y "%%f" "$(OutDir)"</Command>
+      <Message>Copying DLLs to output directory</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;UNICODE;_UNICODE;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PreprocessorDefinitions>WIN32;_DEBUG;UNICODE;_UNICODE;NOMINMAX;HYDRA_GRPC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader />
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>src;..\..\mux\include;..\console\src;..\..\ragel;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;..\..\mux\include;..\console\src;..\shared;..\..\ragel;..\..\mux\vcpkg_installed\x64-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <WarningLevel>Level1</WarningLevel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libmux.lib;comctl32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\mux\bin_release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmux.lib;comctl32.lib;ws2_32.lib;grpc++.lib;grpc.lib;gpr.lib;address_sorting.lib;libprotobuf.lib;abseil_dll.lib;absl_flags_commandlineflag.lib;absl_flags_commandlineflag_internal.lib;absl_flags_config.lib;absl_flags_internal.lib;absl_flags_marshalling.lib;absl_flags_parse.lib;absl_flags_private_handle_accessor.lib;absl_flags_program_name.lib;absl_flags_reflection.lib;absl_flags_usage.lib;absl_flags_usage_internal.lib;absl_log_flags.lib;re2.lib;cares.lib;zlib.lib;upb_base_lib.lib;upb_mem_lib.lib;upb_message_lib.lib;upb_mini_descriptor_lib.lib;upb_wire_lib.lib;upb_json_lib.lib;upb_textformat_lib.lib;utf8_range.lib;utf8_validity.lib;libssl.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\mux\bin_release;..\..\mux\vcpkg_installed\x64-windows\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(ProjectDir)..\..\mux\bin_release\libmux.dll" "$(OutDir)"</Command>
-      <Message>Copying libmux.dll to output directory</Message>
+      <Command>copy /Y "$(ProjectDir)..\..\mux\bin_release\libmux.dll" "$(OutDir)"
+for %%f in ("$(ProjectDir)..\..\mux\vcpkg_installed\x64-windows\bin\*.dll") do copy /Y "%%f" "$(OutDir)"</Command>
+      <Message>Copying DLLs to output directory</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -104,6 +108,14 @@
     <ClCompile Include="..\console\src\connection.cpp" />
     <ClCompile Include="..\console\src\schannel_tls.cpp" />
     <ClCompile Include="..\console\src\world.cpp" />
+    <ClCompile Include="..\console\src\hook.cpp" />
+    <ClCompile Include="..\console\src\spawn.cpp" />
+    <ClCompile Include="..\console\src\macro.cpp" />
+    <ClCompile Include="..\console\src\timer.cpp" />
+    <ClCompile Include="..\console\src\keybind.cpp" />
+    <ClCompile Include="..\console\src\hydra_connection.cpp" />
+    <ClCompile Include="src\hydra.pb.cc" />
+    <ClCompile Include="src\hydra.grpc.pb.cc" />
     <ClCompile Include="..\..\ragel\trigger_match.c">
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
@@ -118,6 +130,9 @@
     <ClInclude Include="src\statusbar.h" />
     <ClInclude Include="src\settings.h" />
     <ClInclude Include="src\json_mini.h" />
+    <ClInclude Include="..\console\src\iconnection.h" />
+    <ClInclude Include="..\console\src\connection.h" />
+    <ClInclude Include="..\console\src\hydra_connection.h" />
     <ClInclude Include="res\resource.h" />
   </ItemGroup>
   <ItemGroup>

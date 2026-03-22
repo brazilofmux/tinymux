@@ -1,6 +1,8 @@
 // macro.cpp -- Trigger and macro implementation.
 #include "macro.h"
+#ifdef _CONSOLE
 #include "app.h"
+#endif
 #include <algorithm>
 #include <sstream>
 
@@ -142,6 +144,7 @@ std::vector<Macro*> MacroDB::match_triggers(const std::string& text) {
     return result;
 }
 
+#ifdef _CONSOLE
 TriggerResult check_triggers(App& app, std::string& text) {
     TriggerResult result;
     auto matches = app.macros.match_triggers(text);
@@ -174,6 +177,7 @@ TriggerResult check_triggers(App& app, std::string& text) {
     }
     return result;
 }
+#endif // _CONSOLE
 
 // Parse /def flags:
 //   /def [name] -t'pattern' [-p priority] [-n shots] [-g] [-h] body

@@ -68,6 +68,10 @@ bool Settings::Load(const std::string& dir) {
             w.font_name = jstr(wobj, "font_name");
             w.font_size = (int)jint(wobj, "font_size", 0);
             w.auto_connect = jbool(wobj, "auto_connect", false);
+            w.use_hydra = jbool(wobj, "use_hydra", false);
+            w.hydra_user = jstr(wobj, "hydra_user");
+            w.hydra_pass = jstr(wobj, "hydra_pass");
+            w.hydra_game = jstr(wobj, "hydra_game");
             if (!w.name.empty() && !w.host.empty()) {
                 worlds.push_back(std::move(w));
             }
@@ -138,6 +142,12 @@ bool Settings::Save(const std::string& dir) const {
         if (w.font_size > 0)
             wobj.push_back({"font_size", JValue((int64_t)w.font_size)});
         wobj.push_back({"auto_connect", JValue(w.auto_connect)});
+        if (w.use_hydra) {
+            wobj.push_back({"use_hydra", JValue(true)});
+            wobj.push_back({"hydra_user", JValue(w.hydra_user)});
+            wobj.push_back({"hydra_pass", JValue(w.hydra_pass)});
+            wobj.push_back({"hydra_game", JValue(w.hydra_game)});
+        }
         warr.push_back(std::move(wobj));
     }
     json_write_array_file(dir + "\\worlds.json", warr);

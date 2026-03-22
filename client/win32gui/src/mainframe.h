@@ -8,7 +8,11 @@
 #include "inputpane.h"
 #include "statusbar.h"
 #include "outputbuffer.h"
+#include "iconnection.h"
 #include "connection.h"
+#ifdef HYDRA_GRPC
+#include "hydra_connection.h"
+#endif
 #include "world.h"
 #include "settings.h"
 #include "hook.h"
@@ -35,7 +39,7 @@ public:
     struct TabState {
         std::string name;
         OutputBuffer buffer;
-        std::unique_ptr<Connection> conn;   // null for system tab
+        std::unique_ptr<IConnection> conn;   // null for system tab
     };
     std::vector<std::unique_ptr<TabState>> tab_states;
     int active_tab = -1;
@@ -58,6 +62,11 @@ public:
     int AddWorld(const std::string& name);
     int ConnectWorld(const std::string& name, const std::string& host,
                      const std::string& port, bool ssl);
+#ifdef HYDRA_GRPC
+    int ConnectHydra(const std::string& name, const std::string& host,
+                     const std::string& port, const std::string& user,
+                     const std::string& pass, const std::string& game);
+#endif
     void RemoveWorld(int index);
     void SwitchToTab(int index);
     void OnInputSubmitted(const std::string& line);
@@ -66,7 +75,8 @@ public:
     void FireTimers();
 
     // Networking — IOCP thread posts WM_APP_IOCP to the UI thread.
-    static constexpr UINT WM_APP_IOCP = WM_APP + 10;
+    static constexpr UINT WM_APP_IOCP       = WM_APP + 10;
+    static constexpr UINT WM_APP_HYDRA_DATA = WM_APP + 11;
 
     // Payload posted from the IOCP thread to the UI thread.
     struct IocpMsg {

@@ -16,6 +16,12 @@ struct WorldDef {
     std::string font_name;      // empty = use global default
     int         font_size = 0;  // 0 = use global default
     bool        auto_connect = false;
+
+    // Hydra proxy fields
+    bool        use_hydra = false;
+    std::string hydra_user;
+    std::string hydra_pass;
+    std::string hydra_game;
 };
 
 struct TriggerDef {

@@ -157,18 +157,44 @@ int CMainFrame::ConnectWorld(const std::string& name, const std::string& host,
     int idx = AddWorld(name);
     auto& ts = tab_states[idx];
 
-    ts->conn = std::make_unique<Connection>(name, host, port, ssl, iocp);
-    if (!ts->conn->begin_connect()) {
+    auto telnet = std::make_unique<Connection>(name, host, port, ssl, iocp);
+    if (!telnet->begin_connect()) {
         ts->buffer.append("% Failed to connect to " + host + ":" + port);
-        ts->conn.reset();
     } else {
         ts->buffer.append("% Connecting to " + host + ":" + port +
                           (ssl ? " (ssl)" : "") + "...");
+        ts->conn = std::move(telnet);
     }
     output.Invalidate();
     SwitchToTab(idx);
     return idx;
 }
+
+#ifdef HYDRA_GRPC
+int CMainFrame::ConnectHydra(const std::string& name, const std::string& host,
+                              const std::string& port, const std::string& user,
+                              const std::string& pass, const std::string& game) {
+    int idx = AddWorld(name);
+    auto& ts = tab_states[idx];
+
+    auto hconn = std::make_unique<HydraConnection>(name, host, port, user, pass, game, iocp);
+    ts->buffer.append("% Connecting via Hydra to " + host + ":" + port + "...");
+    ts->conn = std::move(hconn);
+
+    auto* hydra = static_cast<HydraConnection*>(ts->conn.get());
+    if (!hydra->connect()) {
+        auto lines = hydra->drain_output();
+        for (auto& line : lines) {
+            ts->buffer.append(line);
+        }
+        ts->conn.reset();
+    }
+
+    output.Invalidate();
+    SwitchToTab(idx);
+    return idx;
+}
+#endif
 
 void CMainFrame::RemoveWorld(int index) {
     if (index < 0 || index >= (int)tab_states.size()) return;
@@ -435,11 +461,19 @@ DWORD WINAPI CMainFrame::IocpThreadProc(LPVOID param) {
 
         if (self->iocp_shutdown) break;
 
+#ifdef HYDRA_GRPC
+        if (key == IOCP_KEY_HYDRA) {
+            // Hydra gRPC output ready — notify the UI thread.
+            PostMessageW(self->m_hwnd, WM_APP_HYDRA_DATA, 0, 0);
+            continue;
+        }
+#endif
+
         if (!overlapped) continue;
 
         // Package the completion and post to the UI thread.
         auto* msg = new IocpMsg();
-        msg->conn = (Connection*)key;
+        msg->conn = (Connection*)(void*)key;
         msg->ctx = CONTAINING_RECORD(overlapped, IoContext, overlapped);
         msg->bytes = bytes;
         msg->error = ok ? 0 : GetLastError();
@@ -572,6 +606,41 @@ LRESULT CMainFrame::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_APP_IOCP:
         OnIocpCompletion((IocpMsg*)lParam);
         return 0;
+
+#ifdef HYDRA_GRPC
+    case WM_APP_HYDRA_DATA: {
+        // Drain all Hydra connections
+        for (int i = 0; i < (int)tab_states.size(); i++) {
+            auto* hydra = dynamic_cast<HydraConnection*>(tab_states[i]->conn.get());
+            if (!hydra) continue;
+            auto lines = hydra->drain_output();
+            for (auto& line : lines) {
+                hydra->add_to_scrollback(line);
+                std::string display = line;
+                TriggerResult tr = CheckTriggers(display);
+                if (!tr.gagged) {
+                    tab_states[i]->buffer.append(display);
+                    auto matched = spawns.match(display);
+                    for (auto& path : matched) {
+                        auto& sl = spawn_lines[tab_states[i]->name][path];
+                        sl.push_back(display);
+                        while (sl.size() > 20000) sl.pop_front();
+                    }
+                }
+            }
+            if (!hydra->is_connected()) {
+                tab_states[i]->buffer.append("% Hydra connection lost.");
+                tab_states[i]->conn.reset();
+                TabInfo ti;
+                ti.name = tab_states[i]->name;
+                ti.connected = false;
+                tabbar.UpdateTab(i, ti);
+            }
+        }
+        output.Invalidate();
+        return 0;
+    }
+#endif
 
     case WM_DESTROY: {
         // Save window position.
@@ -905,7 +974,15 @@ static INT_PTR CALLBACK WorldMgrDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPAR
         case 405: { // Connect
             if (sel >= 0 && sel < (int)g_wm_settings->worlds.size()) {
                 auto& w = g_wm_settings->worlds[sel];
-                g_wm_frame->ConnectWorld(w.name, w.host, w.port, w.ssl);
+#ifdef HYDRA_GRPC
+                if (w.use_hydra) {
+                    g_wm_frame->ConnectHydra(w.name, w.host, w.port,
+                                              w.hydra_user, w.hydra_pass, w.hydra_game);
+                } else
+#endif
+                {
+                    g_wm_frame->ConnectWorld(w.name, w.host, w.port, w.ssl);
+                }
                 EndDialog(hDlg, IDOK);
             }
             break;
@@ -1114,12 +1191,12 @@ void CMainFrame::OnCommand(int id) {
                 std::string port = ts->conn->port();
                 bool ssl = ts->conn->uses_ssl();
                 ts->conn.reset();
-                ts->conn = std::make_unique<Connection>(ts->name, host, port, ssl, iocp);
-                if (ts->conn->begin_connect()) {
+                auto reconn = std::make_unique<Connection>(ts->name, host, port, ssl, iocp);
+                if (reconn->begin_connect()) {
                     ts->buffer.append("% Reconnecting...");
+                    ts->conn = std::move(reconn);
                 } else {
                     ts->buffer.append("% Reconnect failed.");
-                    ts->conn.reset();
                 }
                 output.Invalidate();
             }
