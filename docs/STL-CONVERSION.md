@@ -117,15 +117,15 @@ Net: rewrite of alloc.cpp internals. All 551 smoke tests pass.
 
 `@search`/`@find` and other traversal helpers now rely on STL storage, eliminating bespoke `lbuf` block management and making nested scans exception-safe. No behavior changes were observed in smoke tests.
 
-### 7. DBT/JIT Fixed Arrays (`mux/modules/engine/dbt.cpp`)
+### DBT/JIT Fixed Arrays (`mux/modules/engine/dbt.cpp`)
+**Commit:** (2026-03-23, codex)
 
-| Pattern | Location | Replacement |
-|---------|----------|-------------|
-| `block_entry_t *cache` (calloc, fixed size) | dbt.cpp:2851 | `std::vector<block_entry_t>` |
-| `patch_site_t *patches` (calloc, fixed size) | dbt.cpp:2862 | `std::vector<patch_site_t>` |
+| Old Pattern | New Pattern |
+|-------------|-------------|
+| `block_entry_t *cache` (calloc, fixed size) | `std::vector<block_entry_t>` with `.data()` passed to the trampoline |
+| `patch_site_t *patches` + `MAX_PATCH_SITES` guard | `std::vector<patch_site_t>` that grows to match demand |
 
-**Rationale for deferral:** Fixed-size allocations for JIT compiler internals.
-The JIT compiler is still evolving; converting these now risks churn.
+The JIT block cache is still 4-way/1024-set but now managed by C++ containers, and block-chaining patch sites no longer hit a hard `MAX_PATCH_SITES` ceiling—`std::vector` grows as more exits queue for backpatching. This removes two manual `calloc`/`free` paths from the DBT runtime.
 
 ---
 

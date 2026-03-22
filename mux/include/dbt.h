@@ -12,8 +12,9 @@
 #ifndef DBT_H
 #define DBT_H
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
+#include <vector>
 
 // Return Address Stack for call/return prediction.
 //
@@ -83,8 +84,6 @@ struct patch_site_t {
     uint64_t target_pc;     // guest PC this exit wants to reach
 };
 
-static constexpr size_t MAX_PATCH_SITES = 8192;
-
 // Max guest instructions per translated block.
 //
 static constexpr int MAX_BLOCK_INSNS = 64;
@@ -101,7 +100,7 @@ struct dbt_state_t {
 
     // Block cache.
     //
-    block_entry_t *cache;
+    std::vector<block_entry_t> cache;
 
     // JIT code buffer (mmap'd RWX).
     //
@@ -111,8 +110,7 @@ struct dbt_state_t {
 
     // Block chaining patch sites.
     //
-    patch_site_t *patches;
-    uint32_t num_patches;
+    std::vector<patch_site_t> patches;
 
     // Statistics.
     //

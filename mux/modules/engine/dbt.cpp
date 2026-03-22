@@ -15,10 +15,11 @@
 #include "dbt_decoder.h"
 #include "dbt_emit_x64.h"
 
+#include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
-#include <cstdarg>
 #include <cstring>
+#include <new>
 #ifdef WIN32
 #include <windows.h>
 #else
@@ -1167,7 +1168,7 @@ static void backpatch_jmp(uint8_t *code_buf, uint32_t jmp_disp_offset,
 //
 static void backpatch_chains(dbt_state_t *dbt, uint64_t guest_pc,
                               uint8_t *native_code) {
-    for (uint32_t i = 0; i < dbt->num_patches; i++) {
+    for (uint32_t i = 0; i < dbt->patches.size(); i++) {
         if (dbt->patches[i].target_pc == guest_pc) {
             backpatch_jmp(dbt->code_buf, dbt->patches[i].jmp_offset,
                           native_code);
@@ -1213,13 +1214,9 @@ static void emit_exit_chained(emit_t *e, dbt_state_t *dbt,
         // Record patch site (after stub_pos is known).
         uint32_t stub_abs = static_cast<uint32_t>(
             e->buf - dbt->code_buf) + stub_pos;
-        if (dbt->num_patches < MAX_PATCH_SITES) {
-            dbt->patches[dbt->num_patches].jmp_offset = abs_offset;
-            dbt->patches[dbt->num_patches].stub_offset = stub_abs;
-            dbt->patches[dbt->num_patches].target_pc = target_pc;
-            dbt->num_patches++;
-            dbt->chain_misses++;
-        }
+        dbt->patches.push_back(
+            patch_site_t{abs_offset, stub_abs, target_pc});
+        dbt->chain_misses++;
         emit_exit_with_pc(e, target_pc);
     }
 }
@@ -2956,30 +2953,22 @@ static void emit_trampoline(dbt_state_t *dbt) {
 
 int dbt_init(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
              int (*ecall_fn)(rv64_ctx_t *, void *), void *ecall_user) {
-    memset(dbt, 0, sizeof(*dbt));
+    *dbt = dbt_state_t();
     dbt->memory = memory;
     dbt->memory_size = memory_size;
     dbt->ecall_fn = ecall_fn;
     dbt->ecall_user = ecall_user;
 
     // Allocate block cache.
-    dbt->cache = static_cast<block_entry_t *>(
-        calloc(BLOCK_CACHE_SIZE, sizeof(block_entry_t)));
-    if (!dbt->cache) {
+    try
+    {
+        dbt->cache.assign(BLOCK_CACHE_SIZE, block_entry_t{});
+    }
+    catch (const std::bad_alloc &)
+    {
         fprintf(stderr, "dbt: cannot allocate block cache\n");
         return -1;
     }
-
-    // Allocate patch sites for block chaining.
-    dbt->patches = static_cast<patch_site_t *>(
-        calloc(MAX_PATCH_SITES, sizeof(patch_site_t)));
-    if (!dbt->patches) {
-        fprintf(stderr, "dbt: cannot allocate patch sites\n");
-        free(dbt->cache);
-        dbt->cache = nullptr;
-        return -1;
-    }
-    dbt->num_patches = 0;
 
     // Allocate JIT code buffer (RWX).
 #ifdef WIN32
@@ -2995,8 +2984,7 @@ int dbt_init(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
     if (dbt->code_buf == MAP_FAILED) {
 #endif
         fprintf(stderr, "dbt: cannot allocate JIT code buffer\n");
-        free(dbt->cache);
-        dbt->cache = nullptr;
+        dbt->cache.clear();
         return -1;
     }
 
@@ -3024,7 +3012,7 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
                 dbt->cache[i].native_code = nullptr;
             }
         }
-        dbt->num_patches = 0;
+        dbt->patches.clear();
         dbt->code_used = dbt->blob_code_end;
 
         // Optional NOP sled for alignment experiments.
@@ -3045,8 +3033,10 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
         // Keep intrinsics — they're blob-related.
     } else {
         // No blob — full reset.
-        memset(dbt->cache, 0, BLOCK_CACHE_SIZE * sizeof(block_entry_t));
-        dbt->num_patches = 0;
+        for (auto &entry : dbt->cache) {
+            entry = {};
+        }
+        dbt->patches.clear();
         dbt->code_used = 0;
         emit_trampoline(dbt);
         dbt->num_intrinsics = 0;
@@ -3213,7 +3203,7 @@ void dbt_resolve_chains(dbt_state_t *dbt) {
     uint32_t resolved = 0;
     uint32_t already_ok = 0;
     uint32_t unresolvable = 0;
-    for (uint32_t i = 0; i < dbt->num_patches; i++) {
+    for (uint32_t i = 0; i < dbt->patches.size(); i++) {
         uint64_t target = dbt->patches[i].target_pc;
         if (target == 0) continue;
 
@@ -3241,7 +3231,8 @@ void dbt_resolve_chains(dbt_state_t *dbt) {
     }
     dbt_trace_translate(dbt,
                         "resolve_chains: %u resolved, %u already_ok, %u unresolvable of %u total",
-                        resolved, already_ok, unresolvable, dbt->num_patches);
+                        resolved, already_ok, unresolvable,
+                        static_cast<uint32_t>(dbt->patches.size()));
 }
 
 int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
@@ -3320,7 +3311,7 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
         }
 
         // Execute.
-        trampoline(&dbt->ctx, dbt->memory, code, dbt->cache);
+        trampoline(&dbt->ctx, dbt->memory, code, dbt->cache.data());
         dbt->ctx.x[0] = 0;
     }
 }
@@ -3335,8 +3326,8 @@ void dbt_cleanup(dbt_state_t *dbt) {
 #endif
         dbt->code_buf = nullptr;
     }
-    free(dbt->cache);
-    dbt->cache = nullptr;
-    free(dbt->patches);
-    dbt->patches = nullptr;
+    dbt->cache.clear();
+    dbt->cache.shrink_to_fit();
+    dbt->patches.clear();
+    dbt->patches.shrink_to_fit();
 }

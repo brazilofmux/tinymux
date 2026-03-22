@@ -6,7 +6,7 @@
 ## Phase 1: Stability & Foundation (Weeks 1-4)
 **Goal:** Eliminate the last major pieces of legacy C-style memory management.
 
-- **[ ] Finish DBT STL conversion:**
+- **[x] Finish DBT STL conversion:**
     - Replace `calloc`/fixed arrays in `dbt.cpp` with `std::vector`.
     - **Outcome:** Improved safety and no more `MAX_PATCH_SITES` limit.
 
