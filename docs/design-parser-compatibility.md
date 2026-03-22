@@ -22,7 +22,7 @@ The study tool now has a verified minimal reproduction of that case:
 ## Key Finding
 
 The primary fault line is not "recursive descent" versus "non-recursive
-descent". The real distinction is:
+descent." The real distinction is:
 
 - streaming parse/evaluate semantics, where escapes and substitutions can
   interact before the expression is split into independent units

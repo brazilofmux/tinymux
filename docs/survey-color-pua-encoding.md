@@ -104,6 +104,7 @@ actual RGB, and the indexed flag is clear.
 
 `UpdateColorState()` (`stringutil.cpp:2356`) applies a `COLOR_INDEX_*` value
 to a ColorState. For FG RGB channels:
+
 - If currently indexed, expand palette entry RGB into the channel bits first
 - Then overwrite the specific channel (Red, Green, or Blue)
 
@@ -114,6 +115,7 @@ correctly atop the base palette color.
 
 The `aColors[]` table (`stringutil.cpp:1816`) maps each `COLOR_INDEX_*` value
 to:
+
 - `cs`: ColorState value to OR in
 - `csMask`: ColorState bits to clear first
 - ANSI escape sequence (for terminal output)
@@ -138,7 +140,7 @@ character position for color alone. Strings are limited to 8000 characters
 
 The RGB channel code points encode absolute values (0-255) regardless of how
 close they are to the palette entry. Encoding `rgb(175, 135, 96)` against
-palette entry (175, 135, 95) still costs 4 bytes for the Blue channel — the
+palette entry (175, 135, 95) still costs 4 bytes for the Blue channel—the
 same as encoding `rgb(175, 135, 0)`.
 
 ### 3. Redundant Base Index
@@ -167,6 +169,7 @@ The SMP PUA range U+F0000–U+FFFFD has 65,534 code points. We use only 1,536
 
 Encode a 24-bit color (FG or BG) in fewer code points and bytes, while
 maintaining:
+
 - Color survives all string operations (no escape sequences)
 - Lossless round-trip through storage and retrieval
 - Backward compatibility pathway (flatfile version bump + migration)
@@ -177,8 +180,9 @@ maintaining:
 A 24-bit color (one of FG or BG) is 24 bits = 3 bytes of information.
 The current encoding uses 3-15 bytes. The minimum UTF-8 representation of
 24 bits requires either:
-- One 4-byte UTF-8 code point (21 usable bits — not quite enough)
-- Two 3-byte BMP code points (2 * ~12 usable bits = 24 bits — exactly right)
+
+- One 4-byte UTF-8 code point (21 usable bits—not quite enough)
+- Two 3-byte BMP code points (2 * ~12 usable bits = 24 bits—exactly right)
 - One 3-byte + one 4-byte code point (overkill but easy)
 
 ### Option A: Pack RGB into Two BMP PUA Code Points
@@ -190,7 +194,7 @@ FG color = U+E000 + (R << 4 | G >> 4),  U+E000 + ((G & 0xF) << 8 | B)
 BG color = U+F000 + same split
 ```
 
-Wait — we need to not collide with existing allocations. Let's pick ranges
+Wait—we need to not collide with existing allocations. Let's pick ranges
 more carefully.
 
 Available BMP PUA that we currently don't use: U+E000–U+F4FF and
@@ -217,6 +221,7 @@ has 6400. Not enough for this approach.
 
 SMP PUA code points U+F0000–U+FFFFD give us ~65K values. Each encodes in
 4 bytes UTF-8. We need to encode:
+
 - FG/BG flag (1 bit)
 - R (8 bits), G (8 bits), B (8 bits) = 24 bits
 
@@ -228,10 +233,11 @@ FG 24-bit: U+F0000 + (R << 16) + (G << 8) + B
 BG 24-bit: U+F0000 + (1 << 24) + (R << 16) + (G << 8) + B
 ```
 
-Wait — Plane 15 is U+F0000–U+FFFFF, which is only 2^20 = 1,048,576 code
+Wait—Plane 15 is U+F0000–U+FFFFF, which is only 2^20 = 1,048,576 code
 points. We need 2 * 2^24 = 33,554,432. Doesn't fit.
 
 Actually, all SMP PUA code points across planes 15 and 16:
+
 - Plane 15: U+F0000–U+FFFFD = 65,534 code points
 - Plane 16: U+100000–U+10FFFD = 65,534 code points
 
@@ -251,14 +257,14 @@ cp2 = U+F0000 + (FG_B << 8) + flags     // 16 bits: B and flags
 
 ### Option D: Repurpose the SMP RGB PUA Range (Recommended)
 
-Keep the current XTERM indexed BMP code points (U+F600-F7FF) — they're
+Keep the current XTERM indexed BMP code points (U+F600-F7FF)—they're
 already compact at 3 bytes for exact palette matches. Redesign only the
 24-bit extension.
 
-**Current**: 1 XTERM base (3 bytes) + up to 3 channel overrides (4 bytes each)
+**Current:** 1 XTERM base (3 bytes) + up to 3 channel overrides (4 bytes each)
 = 3-15 bytes.
 
-**Proposed**: When the color is NOT an exact palette match, encode it as:
+**Proposed:** When the color is NOT an exact palette match, encode it as:
 
 ```
 FG 24-bit: U+F0000 + (R * 256 + G)     // code point 1: R, G  (4 bytes)
@@ -268,7 +274,7 @@ FG 24-bit: U+F0000 + (R * 256 + G)     // code point 1: R, G  (4 bytes)
 
 But this wastes the low byte of the second code point. Better:
 
-**Proposed (two code points, no waste)**:
+**Proposed (two code points, no waste):**
 
 Allocate from SMP PUA Plane 15 (U+F0000–U+FFFFD, 65534 entries):
 
@@ -281,7 +287,7 @@ Actually, with only 65534 SMP PUA code points, we cannot pack 16 bits of
 payload into a single code point. The usable payload per SMP PUA code point
 is log2(65534) ≈ 16 bits, which gives us exactly R+G or a similar split.
 
-**Simplest correct design with two 4-byte code points**:
+**Simplest correct design with two 4-byte code points:**
 
 ```
 FG: U+F0000 + R*256 + G   (encodes R and G, needs R*256+G < 65534 ✓ max=65535)
@@ -315,7 +321,7 @@ than worst case (15 bytes). Not compelling.
 ### Option G: Hybrid (Recommended)
 
 Keep the current XTERM-indexed encoding for exact palette matches (1 code
-point, 3 bytes — this is already optimal). Replace the delta mechanism for
+point, 3 bytes—this is already optimal). Replace the delta mechanism for
 non-exact colors:
 
 **New SMP encoding using two code points from Plane 15:**
@@ -333,10 +339,11 @@ BG 24-bit color:
 ```
 
 Ranges used:
+
 - U+F0000–F3FFF: FG R*256+G (need 65536 values, but range has 16384... too small)
 
 Let me recalculate. Plane 15 has U+F0000–U+FFFFD = 65534 code points.
-R*256+G ranges from 0 to 65535. Off by one — doesn't fit.
+R*256+G ranges from 0 to 65535. Off by one—doesn't fit.
 
 **Revised partitioning:**
 
@@ -350,11 +357,12 @@ BG B: U+10FEE0 + B                                         → U+10FEE0–10FFDF
 ```
 
 Wait. R ranges 0-255, G ranges 0-255. R*256+G ranges 0-65535. Plane 15 has
-65534 entries (U+F0000–U+FFFFD). One short. We can sacrifice R=255,G=255
+65534 entries (U+F0000–U+FFFFD). One short. We can sacrifice R=255, G=255
 (pure white already has an exact XTERM match at index 231), or just use
 R*256+G for values 0-65533 and handle the edge case.
 
 Actually, the two planes together give us 131068 code points. We need:
+
 - FG: 65536 (R*256+G) + 256 (B) = 65792
 - BG: 65536 (R*256+G) + 256 (B) = 65792
 - Total: 131584
@@ -363,13 +371,13 @@ Just barely doesn't fit. But we can use a slightly different split:
 
 ### Option H: Practical Recommendation
 
-**Observation**: For 256 palette colors, we already have perfect 3-byte
+**Observation:** For 256 palette colors, we already have perfect 3-byte
 encoding. The 24-bit extension only needs to handle the remaining
 256^3 - 256 = 16,776,960 colors. In practice, the nearest palette entry is
 always close, so we could encode the *difference* to save bits. But variable-
 length delta coding is complex.
 
-**Simplest good option**: Two 4-byte SMP code points, one per FG/BG layer:
+**Simplest good option:** Two 4-byte SMP code points, one per FG/BG layer:
 
 Partition Plane 15 + 16 into four blocks of ~32K each:
 
@@ -387,11 +395,11 @@ points. We need to encode 2 colors * 3 channels * 256 values. With two code
 points per color, we need 4 distinct "block starts" and some of those blocks
 need 65536 entries.
 
-**The real constraint**: Plane 15 and 16 each have ~65K usable code points.
-One Plane 15 code point can distinguish 65534 values — almost but not quite
+**The real constraint:** Plane 15 and 16 each have ~65K usable code points.
+One Plane 15 code point can distinguish 65534 values—almost but not quite
 enough for R*256+G (65536 values).
 
-**Practical resolution**: Use both planes.
+**Practical resolution:** Use both planes.
 
 ```
 FG R*256+G: U+F0000  + min(R*256+G, 65533)     Plane 15: U+F0000–FFFFD
@@ -401,7 +409,7 @@ BG B:       U+10FFA0 + B                        Plane 16: U+10FFA0–10FF9F+255
 ```
 
 Hmm, Plane 16 only has U+100000–U+10FFFD = 65534 code points. After FG B
-takes 256 and BG B takes 256, we have 65022 left — not enough for 65536.
+takes 256 and BG B takes 256, we have 65022 left—not enough for 65536.
 
 This is getting fiddly. Let me just propose the pragmatic answer:
 
@@ -416,7 +424,7 @@ cannot be improved.
 
 ### Replace RGB Channel Deltas with a Single 4-Byte Code Point + Overflow
 
-**Key insight**: We don't actually need lossless 24-bit storage in the PUA
+**Key insight:** We don't actually need lossless 24-bit storage in the PUA
 encoding. The path is:
 
 1. User specifies `%x<#RRGGBB>` (24-bit color)
@@ -429,7 +437,7 @@ But at the terminal, we emit either `ESC[38;5;Nm` (256-color) or
 If the client supports truecolor, we need the exact RGB. If not, we need the
 XTERM index. We need both.
 
-**New encoding: 2 code points for full 24-bit FG or BG**:
+**New encoding: 2 code points for full 24-bit FG or BG:**
 
 Repurpose the 6 SMP PUA ranges (currently U+F0000–F05FF, 1536 code points)
 as two ranges:
@@ -447,14 +455,14 @@ BG 24-bit:
 Each range uses 4096 code points (12 bits: 4-bit nibble + 8-bit channel).
 Total SMP PUA used: 16384 code points (U+F0000–F3FFF).
 
-**Size**: 2 code points, 8 bytes per 24-bit color layer. Always exactly 8
+**Size:** 2 code points, 8 bytes per 24-bit color layer. Always exactly 8
 bytes (no variable-length delta mess).
 
-**Comparison**:
+**Comparison:**
 
 | Color Type | Current | Proposed |
 |------------|---------|----------|
-| Exact XTERM match | 3 bytes (1 cp) | 3 bytes (1 cp) — unchanged |
+| Exact XTERM match | 3 bytes (1 cp) | 3 bytes (1 cp)—unchanged |
 | 1 channel differs | 7 bytes (2 cp) | 8 bytes (2 cp) |
 | 2 channels differ | 11 bytes (3 cp) | 8 bytes (2 cp) |
 | 3 channels differ | 15 bytes (4 cp) | 8 bytes (2 cp) |
@@ -465,7 +473,7 @@ bytes in the common multi-channel case. More importantly, it's fixed-size,
 which simplifies the DFA scanner and eliminates the need for the base XTERM
 index when doing 24-bit.
 
-**Alternative**: Keep the XTERM base index even in 24-bit mode (useful for
+**Alternative:** Keep the XTERM base index even in 24-bit mode (useful for
 256-color fallback). Then encoding becomes:
 
 ```
@@ -486,11 +494,11 @@ The XTERM base index is computed once (nearest-neighbor search at attribute
 write time) and stored. At output time, the same string is adapted for
 potentially 100+ connected players with different client capabilities:
 
-- **NOANSI**: Strip all PUA code points
-- **ANSI**: Map index to 8/16-color via `palette[index].color8` /
+- **NOANSI:** Strip all PUA code points
+- **ANSI:** Map index to 8/16-color via `palette[index].color8` /
   `palette[index].color16` — no search, just a table lookup
-- **ANSI256**: Emit `ESC[38;5;{index}m` directly from the stored index
-- **HTML/Truecolor**: Read the full RGB from the two SMP code points
+- **ANSI256:** Emit `ESC[38;5;{index}m` directly from the stored index
+- **HTML/Truecolor:** Read the full RGB from the two SMP code points
 
 Without the stored base, every output path that doesn't support truecolor
 would need to recompute the nearest-neighbor search per color transition per
@@ -520,7 +528,7 @@ Each SMP block uses 4096 code points (12 bits payload). Four blocks total:
 U+F0000–F0FFF (FG cp1), U+F1000–F1FFF (FG cp2), U+F2000–F2FFF (BG cp1),
 U+F3000–F3FFF (BG cp2).
 
-**Size comparison**:
+**Size comparison:**
 
 | Color Type | Current | Proposed |
 |------------|---------|----------|
@@ -533,6 +541,7 @@ U+F3000–F3FFF (BG cp2).
 
 The 1-channel case is 4 bytes worse, but it's fixed-size and the common
 all-channels case saves 4 bytes. More importantly:
+
 - Always exactly 3 cp per 24-bit layer (predictable, simpler DFA)
 - No variable-length delta logic
 - No dependency on knowing which channels match the palette entry

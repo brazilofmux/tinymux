@@ -6,14 +6,14 @@ docs/survey-rhostmush.md.
 ---
 
 Rhost has the most features of any MU* server by raw count. But features are
-not architecture. MUX's advantages are structural — the kind of changes that
+not architecture. MUX's advantages are structural—the kind of changes that
 require rethinking foundations, not adding functions.
 
 ## Architecture
 
 ### 1. SQLite Write-Through vs QDBM + Cache + Flatfile Dumps
 
-Rhost uses QDBM (not GDBM) — a reimplementation of the DBM interface with
+Rhost uses QDBM (not GDBM)—a reimplementation of the DBM interface with
 better space efficiency and performance. On top of QDBM, Rhost has a
 two-level cache architecture:
 
@@ -31,7 +31,7 @@ two-level cache architecture:
 - **Attributes packed in object blobs:** Each object is serialized with all
   its attributes as one unit. Adding an attribute means rewriting the blob.
 
-This is real engineering — the cache hit rates are good and the
+This is real engineering—the cache hit rates are good and the
 active/modified split means dirty objects get priority treatment. But the
 fundamental constraints remain:
 
@@ -48,25 +48,25 @@ fundamental constraints remain:
 MUX's SQLite write-through:
 
 - Every mutation (s_Location, s_Owner, atr_add) writes through immediately
-- Individual attributes are separate rows — no blob relocation
-- @dump is a WAL checkpoint only — sub-millisecond, no fork
+- Individual attributes are separate rows—no blob relocation
+- @dump is a WAL checkpoint only—sub-millisecond, no fork
 - @search routes to indexed SQL queries
 - Database inspectable with `sqlite3` CLI, standard backup tools
-- Comsys and mail in the same database — unified backup
+- Comsys and mail in the same database—unified backup
 
 **Impact:** MUX eliminates both the crash-durability gap and the
 blob-relocation pathology. On a 100k-object game, indexed @search is orders
-of magnitude faster. But credit where due — Rhost's cache layer means most
+of magnitude faster. But credit where due—Rhost's cache layer means most
 operations never touch QDBM at all during normal play.
 
 ### 2. GANL Networking vs BSD select()
 
 Rhost uses raw BSD sockets with `select()`. MUX's GANL provides:
 
-- epoll (Linux) — O(1) event delivery
-- kqueue (BSD/macOS) — O(1) event delivery
-- select fallback — portability
-- Factory pattern — runtime engine selection
+- epoll (Linux)—O(1) event delivery
+- kqueue (BSD/macOS)—O(1) event delivery
+- select fallback—portability
+- Factory pattern—runtime engine selection
 
 Rhost has added WebSocket support on top of raw BSD sockets, which works but
 doesn't address the fundamental scalability issue.
@@ -107,20 +107,20 @@ Rhost has WebSocket support (two implementations). MUX 2.14 now also has
 WebSocket support (RFC 6455, same-port auto-detection, wss://), plus web
 features Rhost lacks:
 
-- **JSON:** isjson(), json(), json_query(), json_mod() — Rhost has none
-- **Connection logging:** SQLite connlog table — Rhost has none
-- **HMAC:** hmac() for webhook verification — Rhost has none
-- **Base64:** encode64()/decode64() — both now have this
+- **JSON:** isjson(), json(), json_query(), json_mod()—Rhost has none
+- **Connection logging:** SQLite connlog table—Rhost has none
+- **HMAC:** hmac() for webhook verification—Rhost has none
+- **Base64:** encode64()/decode64()—both now have this
 
-### 3. @restart / @reboot — Connection Preservation
+### 3. @restart / @reboot—Connection Preservation
 
 Both Rhost and MUX preserve player connections across reboot. The mechanism is
 the same: serialize descriptor state to a restart file (`restart.db` /
 `reboot.db`), `exec()` the new binary, reload descriptors on startup. MUX has
-an extra step — GANL deregisters fds from epoll/kqueue before the exec —
+an extra step—GANL deregisters fds from epoll/kqueue before the exec —
 but this is an implementation detail, not a different approach.
 
-**Impact:** Parity — both servers handle this well.
+**Impact:** Parity—both servers handle this well.
 
 ---
 
@@ -279,7 +279,7 @@ enumeration.
 ## Omega Converter
 
 MUX's Omega converter handles T5X ↔ T6H ↔ P6H ↔ R7H conversions. The
-recent direct T5X — R7H path preserves full 24-bit color by translating
+recent direct T5X—R7H path preserves full 24-bit color by translating
 MUX's private-use Unicode color code points into Rhost's `%c<#RRGGBB>`
 softcode.
 
@@ -317,8 +317,8 @@ On the depth side: SQLite write-through (crash durability), GANL networking
 (scalability), full UTF-8/NFC (correctness), AST-based expression evaluator
 (performance), three-layer architecture (modularity), PCRE2 (modern regex),
 indexed @search (performance), and Omega converter (portability). On the
-breadth side: MUX has closed several feature gaps where Rhost led — printf(),
-strdistance(), lockencode/lockdecode, dynhelp(), base64, mailsend() — and
+breadth side: MUX has closed several feature gaps where Rhost led—printf(),
+strdistance(), lockencode/lockdecode, dynhelp(), base64, mailsend()—and
 added new capabilities Rhost lacks entirely: JSON functions, connection
 logging, HMAC, letq(), sortkey(), @cron scheduling, and cursor-based SQL.
 

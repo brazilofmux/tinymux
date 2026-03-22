@@ -39,7 +39,8 @@ BaseEvent (abstract)
 
 ## State Object (AtlantisState)
 
-Context passed through the entire condition→action pipeline:
+Context passed through the entire condition—action pipeline:
+
 - `_rdEventLine` — the text/line that triggered the event
 - `_rdEventWorld` — current world connection
 - `_rdEventSpawn` — active spawn/view
@@ -61,6 +62,7 @@ Used to filter which actions/conditions are valid for a given event type.
 ## Protocols
 
 ### EventDataProtocol (event container)
+
 - `eventName`, `eventDescription` — display strings
 - `eventIsEnabled` / `eventSetEnabled:` — enable/disable
 - `eventConditions`, `eventConditionsAnded` — condition list + AND/OR
@@ -71,12 +73,14 @@ Used to filter which actions/conditions are valid for a given event type.
 - NSCoding for serialization
 
 ### EventActionProtocol
+
 - `+actionName`, `+actionDescription` — class-level metadata
 - `+validForType:(AtlantisEventType)` — type filtering
 - `-executeForState:(AtlantisState *)` — execute; return YES to stop chain
 - `-actionConfigurationView` — optional NIB-based config UI
 
 ### EventConditionProtocol
+
 - `+conditionName`, `+conditionDescription` — class-level metadata
 - `+validForType:(AtlantisEventType)` — type filtering
 - `-isTrueForState:(AtlantisState *)` — evaluate; return YES if true

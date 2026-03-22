@@ -3,11 +3,11 @@
 ## Motivation
 
 Both comsys and mail store rich structured data in SQLite, but the softcode
-accessor layer exposes only a fraction of it.  Common complaints:
+accessor layer exposes only a fraction of it. Common complaints:
 
 - Fields present in the schema (timestamps, recipient lists, flags, headers)
   return "cannot get that information" or simply have no accessor at all.
-- Permission models are inconsistent — a channel *subscriber* cannot query
+- Permission models are inconsistent—a channel *subscriber* cannot query
   basic metadata on a non-public channel they belong to.
 - The `mail()` function is overloaded three ways (count / stats / body),
   making it hard to use and harder to extend.
@@ -29,12 +29,12 @@ replace the current patchwork and expose everything the schema stores.
 3. **Bulk-friendly** — list functions return delimited sets; field-based
    accessors avoid the need for dozens of single-purpose functions.
 4. **Intentional behavior changes** — where new accessors widen or narrow
-   access relative to old functions, this is called out explicitly.  Legacy
+   access relative to old functions, this is called out explicitly. Legacy
    wrappers preserve old behavior; they do not silently adopt new rules.
 
 ---
 
-## Part 1 — Comsys Accessors
+## Part 1—Comsys Accessors
 
 ### Current Functions (13)
 
@@ -88,8 +88,8 @@ A player can query channel metadata via the new accessors if **any** of:
 - The player has the `Comm_All` power, **or**
 - The player Controls the channel owner.
 
-This is the single rule for `chaninfo()` and `chanusers()`.  It adds
-subscriber access — an intentional behavior change from the current model
+This is the single rule for `chaninfo()` and `chanusers()`. It adds
+subscriber access—an intentional behavior change from the current model
 where subscribers to non-public channels are locked out of metadata queries.
 
 ### New Functions
@@ -115,12 +115,13 @@ Returns the value of `field` for the named channel.
 | `cantransmit` | `test_transmit_access(executor)` | 0 / 1 | Channel visible |
 | `canreceive` | `test_receive_access(executor)` | 0 / 1 | Channel visible |
 
-**Note on `object` field:** `chanobj()` is currently CA_WIZARD.  The
-`chaninfo(chan, object)` field preserves this restriction.  Channel objects
+**Note on `object` field:** `chanobj()` is currently CA_WIZARD. The
+`chaninfo(chan, object)` field preserves this restriction. Channel objects
 often carry privileged attributes and locks; exposing their dbref to
 subscribers would be a security change we are not making here.
 
 Error returns:
+
 - `#-1 CHANNEL NOT FOUND` — channel does not exist or not visible.
 - `#-1 INVALID FIELD` — unrecognized field name.
 - `#-1 PERMISSION DENIED` — `object` field without Wizard.
@@ -129,7 +130,7 @@ Error returns:
 
 Returns a delimited list of dbrefs subscribed to the channel.
 
-Permission: new channel visibility rule.  Non-members of non-public
+Permission: new channel visibility rule. Non-members of non-public
 channels get `#-1 CHANNEL NOT FOUND`.
 
 #### `chanuser(channel, player, field)`
@@ -146,18 +147,19 @@ Returns per-user information for a player on a channel.
 | `comtitles` | `channel_users.comtitle_status` | 0 / 1 | Self, or both on channel, or Wizard |
 
 **Note on `alias` permission:** `comalias()` today allows Wizard, self, or
-`Owner(executor)==victim && Inherits(executor)`.  The `alias` field
-preserves this Owner+Inherits path.  Other fields use a simpler co-member
+`Owner(executor)==victim && Inherits(executor)`. The `alias` field
+preserves this Owner+Inherits path. Other fields use a simpler co-member
 rule since titles and status are already visible via channel output.
 
 **Note on `flags` field:** This is new and returns the same compact O/G/Q
-letter string that `cflags(chan, player)` returns today.  It exists because
+letter string that `cflags(chan, player)` returns today. It exists because
 `cflags(chan, player)` and `cstatus(chan, player)` return *different*
 formats: `cflags` returns flag letters (O, G, Q) while `cstatus` returns
-words (On, Off, Gag).  The `status` field maps to `cstatus` semantics;
+words (On, Off, Gag). The `status` field maps to `cstatus` semantics;
 the `flags` field maps to `cflags(chan, player)` semantics.
 
 Error returns:
+
 - `#-1 CHANNEL NOT FOUND` — not visible.
 - `#-1 PLAYER NOT FOUND` — bad player argument.
 - `#-1 NOT ON CHANNEL` — player not subscribed.
@@ -167,13 +169,13 @@ Error returns:
 ### Legacy Wrappers
 
 Old functions are reimplemented as wrappers but **preserve their original
-permission checks**.  They do not adopt the new visibility rules.
+permission checks**. They do not adopt the new visibility rules.
 
 | Old Function | Dispatches To | Permission Preserved |
 |-------------|---------------|----------------------|
 | `cowner(chan)` | `chaninfo(chan, owner)` | PUBLIC or Comm_All or Controls(charge_who) |
 | `chanobj(chan)` | `chaninfo(chan, object)` | **CA_WIZARD** (registration-level) |
-| `cmogrifier(chan)` | **kept as own implementation** | PUBLIC or Comm_All or Controls(charge_who) — returns chan_obj without Wizard gate |
+| `cmogrifier(chan)` | **kept as own implementation** | PUBLIC or Comm_All or Controls(charge_who)—returns chan_obj without Wizard gate |
 | `cusers(chan)` | `chaninfo(chan, users)` | PUBLIC or Comm_All or Controls(charge_who) |
 | `cmsgs(chan)` | `chaninfo(chan, msgs)` | PUBLIC or Comm_All or Controls(charge_who) |
 | `cbuffer(chan)` | `chaninfo(chan, buffer)` | PUBLIC or Comm_All or Controls(charge_who) |
@@ -190,10 +192,10 @@ dispatch through the new accessors without changing semantics:
 - `cflags(chan, player)` — uses the old visibility check (not co-member)
   and returns O/G/Q letters (not On/Off/Gag words).
 - `cstatus(chan, player)` — returns `"Off"` for non-subscribers, while
-  `chanuser()` returns `#-1 NOT ON CHANNEL`.  Callers depend on `"Off"`.
+  `chanuser()` returns `#-1 NOT ON CHANNEL`. Callers depend on `"Off"`.
 - `cmogrifier(chan)` — exposes `chan_obj` to anyone passing the standard
-  channel visibility check (PUBLIC/Comm_All/Controls).  `chaninfo(chan,
-  object)` is Wizard-gated.  `cmogrifier()` predates `chanobj()` and has
+  channel visibility check (PUBLIC/Comm_All/Controls). `chaninfo(chan,
+  object)` is Wizard-gated. `cmogrifier()` predates `chanobj()` and has
   different semantics; simplest to keep its own implementation.
 
 `channels()` and `crecall()` are kept as-is (with the subscriber
@@ -210,7 +212,7 @@ visibility fix applied to `channels()`).
 
 ---
 
-## Part 2 — Mail Accessors
+## Part 2—Mail Accessors
 
 ### Current Functions (9)
 
@@ -238,7 +240,7 @@ visibility fix applied to `channels()`).
 | `malias(player)` | **ExpMail** (not Wizard) |
 
 The God-only restriction on `mail(player, num)` body access is the most
-notable divergence.  This was likely a deliberate security decision: message
+notable divergence. This was likely a deliberate security decision: message
 bodies are the most sensitive mail data.
 
 ### Schema Fields Not Exposed
@@ -254,14 +256,14 @@ bodies are the most sensitive mail data.
 
 #### `mailcount([player])`
 
-Returns total message count for the player.  Replaces the no-arg form of
+Returns total message count for the player. Replaces the no-arg form of
 `mail()`.
 
 Permission: self always; Wizard for others.
 
 #### `mailstats([player])`
 
-Returns `read unread cleared` as three space-separated integers.  Replaces
+Returns `read unread cleared` as three space-separated integers. Replaces
 the one-arg-player form of `mail()`.
 
 Permission: self always; Wizard for others.
@@ -269,14 +271,14 @@ Permission: self always; Wizard for others.
 #### `maillist([player])`
 
 Returns a space-separated list of valid message numbers for the player.
-This is new — currently there is no way to enumerate messages without
+This is new—currently there is no way to enumerate messages without
 probing sequentially.
 
 Permission: self always; Wizard for others.
 
 #### `mailinfo(msg#, field[, player])`
 
-Returns any per-message field by name.  The optional third argument lets
+Returns any per-message field by name. The optional third argument lets
 an admin query another player's mail, **with per-field permission rules**.
 
 | Field | Source | Return Type | Cross-Player Access |
@@ -292,9 +294,9 @@ an admin query another player's mail, **with per-field permission rules**.
 | `read` | derived from `read_flags` | 0 / 1 | Wizard |
 
 **Note on `body` cross-player access:** The current `mail(player, num)`
-restricts cross-player body reads to God.  `mailinfo(num, body, player)`
-preserves this restriction.  Message bodies are the most sensitive mail
-data; this is an intentional security boundary.  The nObjEvalNest guard
+restricts cross-player body reads to God. `mailinfo(num, body, player)`
+preserves this restriction. Message bodies are the most sensitive mail
+data; this is an intentional security boundary. The nObjEvalNest guard
 on self-access is also preserved.
 
 Flag letters for the `flags` field:
@@ -309,14 +311,15 @@ Flag letters for the `flags` field:
 | `P` | M_REPLY | Replied-to |
 
 Error returns:
+
 - `#-1 NO SUCH MESSAGE` — invalid number or filtered by recycled-dbref guard.
 - `#-1 INVALID FIELD` — unrecognized field name.
 - `#-1 PERMISSION DENIED` — insufficient access for the requested field/player.
 
 #### `mailflags(msg#[, player])`
 
-Shorthand for `mailinfo(msg#, flags[, player])`.  Returns the flag letter
-string.  Provided because flag checking is a common operation in softcode
+Shorthand for `mailinfo(msg#, flags[, player])`. Returns the flag letter
+string. Provided because flag checking is a common operation in softcode
 that currently requires no fewer than zero accessors (it simply cannot be
 done).
 
@@ -358,7 +361,7 @@ permission checks**.
 
 ## Implementation Plan
 
-### Phase 1 — Comsys (chaninfo / chanuser / chanusers)
+### Phase 1—Comsys (chaninfo / chanuser / chanusers)
 
 1. Fix `channels()` visibility to include subscribers.
 2. Implement `chaninfo()` with field dispatch table and per-field permissions.
@@ -369,7 +372,7 @@ permission checks**.
 7. Keep `cflags(chan, player)` as its own implementation.
 8. Smoke tests for each new function and field.
 
-### Phase 2 — Mail (mailinfo / mailcount / mailstats / maillist)
+### Phase 2—Mail (mailinfo / mailcount / mailstats / maillist)
 
 1. Implement `mailcount()` and `mailstats()` (trivial extractions from `mail()`).
 2. Implement `maillist()`.
@@ -379,7 +382,7 @@ permission checks**.
 6. Rewrite old functions as wrappers (preserving original permissions).
 7. Smoke tests for each new function and field.
 
-### Phase 3 — Deprecation & Docs
+### Phase 3—Deprecation & Docs
 
 1. Add `@list functions` annotations marking old names as deprecated.
 2. Update `docs/FUNCTIONS.md` or equivalent.
@@ -393,17 +396,17 @@ permission checks**.
 - [x] Phase 1.2 — `chaninfo()` with per-field permissions (14 fields incl. canjoin/cantransmit/canreceive)
 - [x] Phase 1.3 — `chanusers()` with bulk field output (8 modes)
 - [x] Phase 1.4 — `chanuser()` with per-field permissions (including `flags` field)
-- [x] Phase 1.5 — `chanfind()` reverse header→name lookup
+- [x] Phase 1.5 — `chanfind()` reverse header—name lookup
 - [x] Phase 1.6 — `@clist/full` redesign (header, owner names, effective access)
 - [x] Phase 1.7 — `@clist` subscriber visibility fix
-- [x] Phase 1.8 — Comsys smoke tests (30 tests)
+- [x] Phase 1.8—Comsys smoke tests (30 tests)
 - [x] Phase 2.1 — `mailcount()` and `mailstats()`
 - [x] Phase 2.2 — `maillist()`
 - [x] Phase 2.3 — `mailinfo()` with per-field permissions (body=God, rest=Wizard)
 - [x] Phase 2.4 — `mailflags()`
-- [ ] ~~Phase 2.5 — `mailalias()`~~ (deferred — existing `malias()` covers the need)
-- [ ] ~~Phase 2.6 — Mail legacy wrappers~~ (deferred — old functions kept as-is, no wrapper rewrite needed)
-- [x] Phase 2.7 — Mail smoke tests (13 tests)
-- [ ] ~~Phase 3.1 — Deprecation annotations~~ (deferred — no deprecation mechanism exists in `@list functions`)
-- [x] Phase 3.2 — Documentation (design doc kept current throughout)
-- [x] Phase 3.3 — Helptext (help.txt entries for all 9 new functions + FUNCTION CLASSES/LIST updates)
+- [ ] ~~Phase 2.5 — `mailalias()`~~ (deferred—existing `malias()` covers the need)
+- [ ] ~~Phase 2.6—Mail legacy wrappers~~ (deferred—old functions kept as-is, no wrapper rewrite needed)
+- [x] Phase 2.7—Mail smoke tests (13 tests)
+- [ ] ~~Phase 3.1—Deprecation annotations~~ (deferred—no deprecation mechanism exists in `@list functions`)
+- [x] Phase 3.2—Documentation (design doc kept current throughout)
+- [x] Phase 3.3—Helptext (help.txt entries for all 9 new functions + FUNCTION CLASSES/LIST updates)

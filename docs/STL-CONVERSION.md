@@ -9,7 +9,7 @@ and their conversion to STL containers.
 ## Completed
 
 ### Comsys Module (`mux/modules/comsys/`)
-**Commit**: `a52f0b16` (2026-03-19, brazil)
+**Commit:** `a52f0b16` (2026-03-19, brazil)
 
 | Old Pattern | New Pattern |
 |-------------|-------------|
@@ -35,7 +35,7 @@ Net: −641 lines, +264 lines. All 551 smoke tests pass.
 ---
 
 ### Engine-Side Comsys (`mux/modules/engine/comsys.cpp` + `mux/include/comsys.h`)
-**Commit**: (2026-03-19, brazil)
+**Commit:** (2026-03-19, brazil)
 
 | Old Pattern | New Pattern |
 |-------------|-------------|
@@ -54,8 +54,8 @@ Net: −927 lines, +443 lines. All 551 smoke tests pass.
 
 ---
 
-### Mail Module — Full Conversion (`mux/modules/mail/`)
-**Commit**: (2026-03-19, brazil)
+### Mail Module—Full Conversion (`mux/modules/mail/`)
+**Commit:** (2026-03-19, brazil)
 
 | Old Pattern | New Pattern |
 |-------------|-------------|
@@ -75,8 +75,8 @@ Net: −863 lines, +563 lines. All 551 smoke tests pass.
 
 ---
 
-### UFUN Chain, ADDENT Chain, qsort→std::sort
-**Commit**: (2026-03-19, brazil)
+### UFUN Chain, ADDENT Chain, qsort—std:: sort
+**Commit:** (2026-03-19, brazil)
 
 | Old Pattern | New Pattern |
 |-------------|-------------|
@@ -92,17 +92,17 @@ Net: −171 lines, +105 lines. All 551 smoke tests pass.
 ---
 
 ### Pool Allocator (`mux/lib/alloc.cpp`)
-**Commit**: (2026-03-19, brazil)
+**Commit:** (2026-03-19, brazil)
 
 | Old Pattern | New Pattern |
 |-------------|-------------|
 | `POOLHDR *next` intrusive chain (all buffers) | `std::vector<char*> all_buffers` |
 | `POOLHDR *nxtfree` intrusive freelist | `std::vector<char*> free_stack` (push/pop back) |
 | `POOL::free_head` / `chain_head` pointers | Eliminated |
-| `pool_vfy`: corrupt → silently truncate chain (leak memory) | corrupt → report and continue |
+| `pool_vfy`: corrupt—silently truncate chain (leak memory) | corrupt—report and continue |
 | `pool_reset`: walk intrusive chain rebuilding | `unordered_set` of free ptrs + `remove_if` |
 
-Public API (`alloc.h`) unchanged — zero callers affected. POOLHDR shrinks by
+Public API (`alloc.h`) unchanged—zero callers affected. POOLHDR shrinks by
 16 bytes (removed `next`/`nxtfree` pointers). Sentinel/magic diagnostics preserved.
 
 Net: rewrite of alloc.cpp internals. All 551 smoke tests pass.
@@ -114,7 +114,7 @@ Net: rewrite of alloc.cpp internals. All 551 smoke tests pass.
 | `objlist_block *next` intrusive linked list of dbref arrays | mudconf.h:392–405 | `std::vector<dbref>` |
 | `objlist_stack *next` stack of block lists | mudconf.h:392 | `std::stack<std::vector<dbref>>` |
 
-**Rationale for deferral**: These are transient structures used only during
+**Rationale for deferral:** These are transient structures used only during
 `@search`/`@find` operations. Allocated and freed within a single function
 call. Small blast radius but also small benefit.
 
@@ -125,7 +125,7 @@ call. Small blast radius but also small benefit.
 | `block_entry_t *cache` (calloc, fixed size) | dbt.cpp:2851 | `std::vector<block_entry_t>` |
 | `patch_site_t *patches` (calloc, fixed size) | dbt.cpp:2862 | `std::vector<patch_site_t>` |
 
-**Rationale for deferral**: Fixed-size allocations for JIT compiler internals.
+**Rationale for deferral:** Fixed-size allocations for JIT compiler internals.
 The JIT compiler is still evolving; converting these now risks churn.
 
 ---

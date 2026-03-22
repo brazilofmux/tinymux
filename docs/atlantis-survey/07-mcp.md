@@ -25,6 +25,7 @@ Multiline messages:
 
 ### MCPMessage
 Parsed MCP packet representation:
+
 - `_rdNamespace` — package namespace (e.g., "dns-org-mud-moo-simpleedit")
 - `_rdCommand` — subcommand
 - `_rdAttributes` — key-value dictionary
@@ -34,6 +35,7 @@ Parsed MCP packet representation:
 - `_rdCompat10` — MCP 1.0 mode
 
 Key methods:
+
 - `addText:toAttribute:` — append to attribute value
 - `makeAttributeMultiline:` — mark attribute as multiline
 - `attributeText:` — get single-line value
@@ -42,23 +44,27 @@ Key methods:
 
 ### MCPDispatch
 Central dispatcher (singleton-like per controller):
+
 - `registerHandler:forNamespace:` — add handler
 - `dispatchMessage:forState:` — route to handler
 - `handlerForNamespace:` — lookup by longest prefix
 
 ### MCPHandler (abstract base)
+
 - `handleMessage:withState:` — process incoming message
 - `minVersion:` / `maxVersion:` — version range per namespace
 - `negotiated:state` — callback after successful negotiation
 
 ### MCPNegotiateHandler
 Built-in handler for the `mcp` core namespace:
+
 - Version negotiation
 - Package list exchange
 - Session key validation
 
 ### MCPEditHandler
 Built-in handler for text editing:
+
 - Receives edit requests from server
 - Opens local editor (MCPLocalEditor panel)
 - Sends modified text back on save/close

@@ -1,11 +1,11 @@
-# Server-Side Lua Integration — Design Document
+# Server-Side Lua Integration—Design Document
 
 ## 1. Goals
 
 Embed Lua 5.4 into the TinyMUX server as a first-class scripting layer
 alongside softcode. Lua scripts live on objects (in attributes), execute with
 the same security model as softcode, and can optionally be JIT-compiled
-through the existing RV64→x86-64 pipeline.
+through the existing RV64—x86-64 pipeline.
 
 **Non-goals for Phase 1:** client-side Lua, Lua-to-Lua module loading, custom
 Lua C libraries, replacing softcode.
@@ -42,7 +42,7 @@ Softcode                 Lua
 ## 3. Module Structure
 
 **Update (2026-03-18):** Lua was folded from a separate `lua_mod.so` into
-`engine.so`.  This eliminates the .so boundary between the Lua VM and the
+`engine.so`. This eliminates the .so boundary between the Lua VM and the
 JIT compiler, enabling ECALL-back-to-VM for table ops, generic function
 calls, and global access.
 
@@ -60,12 +60,12 @@ mux/lua54/
     *.c, *.h            — Bundled Lua 5.4.7 source → liblua54.a
 ```
 
-Lua is registered as CID_LuaMod in engine.so's COM front-door.  No
+Lua is registered as CID_LuaMod in engine.so's COM front-door. No
 separate `module lua_mod` config line needed.
 
 ### 3.2 COM Interfaces
 
-**New interface — mux_ILuaControl:**
+**New interface—mux_ILuaControl:**
 
 ```cpp
 const MUX_CID CID_LuaMod       = UINT64_C(0x00000002E1A3B5C7);
@@ -100,6 +100,7 @@ interface mux_ILuaControl : public mux_IUnknown
 ```
 
 **Acquired interfaces** (same pattern as comsys_mod):
+
 - `mux_ILog` — logging
 - `mux_IServerEventsControl` — lifecycle hooks
 - `mux_INotify` — player notification
@@ -109,6 +110,7 @@ interface mux_ILuaControl : public mux_IUnknown
 - `mux_IPermissions` — IsWizard, HasControl, HasCommAll
 
 **Lifecycle** (mux_IServerEventsSink):
+
 - `startup()` — create the global Lua state, register builtins
 - `presync_database()` — flush any cached Lua bytecode to SQLite
 - `shutdown()` — close all Lua states, release COM interfaces
@@ -155,7 +157,7 @@ CREATE TABLE lua_cache (
 
 Cache invalidation: compare `source_hash` (SHA-1 of attribute value) on
 load. If stale, recompile. The module owns this table via its own SQLite
-connection (same pattern as comsys_mod/mail_mod — WAL mode,
+connection (same pattern as comsys_mod/mail_mod—WAL mode,
 busy_timeout=5000).
 
 ### 4.3 Metadata
@@ -192,7 +194,7 @@ environments is standard practice (OpenResty, Prosody, WoW addons).
 environment table that restricts global access. The sandbox is discarded
 after execution. This prevents scripts from polluting each other's state.
 
-### 5.2 Softcode Integration — lua() Function
+### 5.2 Softcode Integration—lua() Function
 
 Register `lua()` as a builtin softcode function:
 
@@ -204,9 +206,10 @@ Register `lua()` as a builtin softcode function:
 **Signature:** `lua(<object>/<attr>, <arg1>, <arg2>, ...)`
 
 **Semantics:**
+
 1. Resolve `<object>/<attr>` using standard attribute lookup (respects
    `see_attr`, `AF_VISUAL`, ownership, `AF_WIZARD`)
-2. Read attribute value — must be Lua source
+2. Read attribute value—must be Lua source
 3. Check bytecode cache; compile if miss
 4. Create sandbox environment with `mux.args = {arg1, arg2, ...}`
 5. Execute in sandbox with resource limits active
@@ -228,10 +231,10 @@ For interactive use and debugging:
 @lua/stats                    — Show Lua resource usage
 ```
 
-### 5.4 Lua-to-Server Bridge (mux.* API)
+### 5.4 Lua-to-Server Bridge (mux. API)
 
 The `mux` table is the Lua API surface into the server. All calls go through
-COM interfaces — the Lua module never touches `db[]` or engine internals
+COM interfaces—the Lua module never touches `db[]` or engine internals
 directly.
 
 ```lua
@@ -278,9 +281,9 @@ the player who triggered the Lua execution, not the object owner (unless
 
 | Library  | Status  | Rationale                                    |
 |----------|---------|----------------------------------------------|
-| base     | Partial | `print` remapped to `mux.notify(executor)`.  |
-|          |         | `load`, `dofile`, `loadfile` removed.        |
-|          |         | `require` removed.                           |
+| base     | Partial | `print` remapped to `mux.notify(executor)`. |
+|          |         | `load`, `dofile`, `loadfile` removed. |
+|          |         | `require` removed. |
 | string   | Full    | Pure computation, no side effects             |
 | table    | Full    | Pure computation                              |
 | math     | Full    | Pure computation                              |
@@ -339,6 +342,7 @@ lua_enabled             yes       # Master enable/disable
 ```
 
 **@list lua** — Shows:
+
 - Number of cached bytecode entries
 - Total bytecode bytes
 - Total Lua memory in use
@@ -346,7 +350,7 @@ lua_enabled             yes       # Master enable/disable
 
 ## 8. JIT Integration (Phase 2)
 
-The existing JIT pipeline compiles softcode: AST → HIR → RV64 → x86-64.
+The existing JIT pipeline compiles softcode: AST—HIR—RV64—x86-64.
 Lua bytecode is a well-defined, stable input format that can enter this
 pipeline at the HIR level.
 
@@ -391,7 +395,7 @@ DBT                     — Existing: RV64 → x86-64 translation
 Native execution
 ```
 
-### 8.3 Lua Bytecode → HIR Mapping
+### 8.3 Lua Bytecode—HIR Mapping
 
 Lua 5.4 has ~80 opcodes. The HIR already handles the fundamental operations:
 
@@ -402,7 +406,7 @@ Lua 5.4 has ~80 opcodes. The HIR already handles the fundamental operations:
 | OP_EQ/LT/LE      | HIR_EQ/LT/LE            | Comparison                 |
 | OP_MOVE          | HIR_COPY                 | Register move (SSA rename) |
 | OP_LOADK         | HIR_ICONST/HIR_SCONST    | Constant load              |
-| OP_GETTABUP      | HIR_CALL (ECALL)         | Table lookup → bridge call |
+| OP_GETTABUP      | HIR_CALL (ECALL)         | Table lookup—bridge call |
 | OP_CALL          | HIR_CALL                 | Function call              |
 | OP_RETURN        | (block terminator)       | Exit                       |
 | OP_FORLOOP       | HIR_BR/HIR_BRC           | Loop (M2 multi-block)      |
@@ -474,10 +478,10 @@ blob version for invalidation.
 11. Write smoke tests
 
 **Deliverable:** `lua()` works, scripts live on attributes, sandbox enforced,
-no JIT. This is the validation phase — proves the API surface before
+no JIT. This is the validation phase—proves the API surface before
 investing in JIT work.
 
-### Phase 2: Lua Bytecode → HIR Lowering
+### Phase 2: Lua Bytecode—HIR Lowering
 
 1. Write `lua_to_hir.cpp` — walk Lua Proto, emit HIR
 2. Handle integer arithmetic, comparisons, string ops natively
@@ -538,7 +542,7 @@ This is optional and depends on user demand.
 
 ## 10.1 Phase 2 Design Constraint
 
-Before implementing Lua bytecode → HIR lowering, the mixed execution model
+Before implementing Lua bytecode—HIR lowering, the mixed execution model
 needs a tighter specification than this document currently gives.
 
 The current text assumes unsupported Lua opcodes can simply fall back to

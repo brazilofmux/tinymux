@@ -1,4 +1,4 @@
-# Lua Bytecode → JIT: Phase 2 Specification
+# Lua Bytecode—JIT: Phase 2 Specification
 
 ## 1. Scope
 
@@ -15,7 +15,7 @@ upvalue descriptor list, and nested Proto references.
 
 Compilation is **method-at-a-time**, not trace-based. The entire Proto is
 lowered to HIR in one pass. This matches the existing softcode JIT model
-(one expression → one compiled_program).
+(one expression—one compiled_program).
 
 ### 2.1 Eligibility
 
@@ -29,7 +29,7 @@ A Proto is eligible for JIT compilation when:
 - No `OP_TBC` (to-be-closed requires finalizer integration)
 - No `OP_TAILCALL` (requires frame manipulation)
 
-Ineligible Protos run in the stock Lua VM. This is not a fallback — the VM
+Ineligible Protos run in the stock Lua VM. This is not a fallback—the VM
 is the baseline, and JIT is an optimization for qualifying functions.
 
 ## 3. Type Model
@@ -118,7 +118,7 @@ When entering JIT execution for a Proto with N integer parameters:
 3. Execute JIT'd code (RV64 → x86-64 via DBT)
 ```
 
-### 4.3 ECALL Protocol (JIT → Lua VM)
+### 4.3 ECALL Protocol (JIT—Lua VM)
 
 When the JIT hits an operation it can't handle natively:
 
@@ -268,7 +268,7 @@ struct lua_eval_ctx : public eval_ctx {
 
 ## 7. Opcode Lowering
 
-### 7.1 Native (HIR) — Integer Arithmetic
+### 7.1 Native (HIR)—Integer Arithmetic
 
 These opcodes lower directly to existing HIR instructions when both
 operands are known-integer:
@@ -306,7 +306,7 @@ operands are known-integer:
 | OP_TESTSET | HIR_BRC+COPY | Branch and conditional copy |
 | OP_JMP | HIR_BR | Unconditional branch |
 
-### 7.2 Native — Numeric For Loops
+### 7.2 Native—Numeric For Loops
 
 `OP_FORPREP` / `OP_FORLOOP` are the highest-value optimization target.
 They lower to M2 multi-block HIR with PHI nodes:
@@ -336,7 +336,7 @@ Block 3 (exit):
 This is identical to how the existing softcode JIT handles `iter()` loops
 — the M2 multi-block infrastructure with PHI/SSA is already proven.
 
-### 7.3 ECALL — Non-Integer Operations
+### 7.3 ECALL—Non-Integer Operations
 
 These opcodes always emit an ECALL:
 
@@ -402,6 +402,7 @@ Closures are **not compiled**. A Proto containing `OP_CLOSURE` is
 ineligible for JIT. The created closure runs in the Lua VM.
 
 Future work (Phase 4+) could JIT closures by:
+
 - Compiling the inner Proto separately
 - Storing upvalue indices in guest memory
 - Handling upvalue capture as a specialized ECALL
@@ -419,8 +420,8 @@ MOVE      R(A+1), R(arg)           → (native if integer)
 CALL      R(A), 2, 2               → ECALL_LUA_CALL
 ```
 
-The call chain is: JIT → ECALL → Lua VM → C bridge function → COM
-interface → server. This is the expected path for `mux.*` calls — they
+The call chain is: JIT—ECALL—Lua VM—C bridge function—COM
+interface—server. This is the expected path for `mux.*` calls—they
 are I/O-bound, not compute-bound.
 
 ## 9. Table Identity and Mutation
@@ -437,6 +438,7 @@ state. Every table read/write goes through the VM, which maintains the
 authoritative table state.
 
 This means table-heavy code gets no JIT benefit. That is acceptable:
+
 - Table-heavy code is I/O-bound (attribute lookups, player queries)
 - The value of Lua JIT is in numeric loops and arithmetic
 - Table operations go through `mux.*` bridge calls anyway
@@ -452,6 +454,7 @@ end
 ```
 
 A future optimization could:
+
 1. At loop entry, pin the table and copy the array part to guest memory
 2. JIT the loop body with native array access
 3. At loop exit, write back if modified
@@ -588,14 +591,15 @@ functions that players complain are slow in softcode today.
 |------|--------|-------|
 | 1. eval_ctx + lua_State | ✅ Done | `void *lua_state` in eval_ctx, threaded through RunCompiled |
 | 2. ECALL handlers | ✅ Done | __lua_newtable/geti/seti/getfield/setfield/getglobal/setglobal/call/pow |
-| 3. Lua→HIR lowering | ✅ Done | 73/83 opcodes in hir_lower_lua.cpp |
-| 4. Numeric for loop | ✅ Done | STORE_Q/LOAD_Q → PHI via hir_ssa_construct |
+| 3. Lua—HIR lowering | ✅ Done | 73/83 opcodes in hir_lower_lua.cpp |
+| 4. Numeric for loop | ✅ Done | STORE_Q/LOAD_Q—PHI via hir_ssa_construct |
 | 5. Type guards | ✅ Done | Compile-time: operand type checks, float constant validation |
-| 6. Dirty register tracking | Skipped | Not needed — simplified architecture without dual register file |
+| 6. Dirty register tracking | Skipped | Not needed—simplified architecture without dual register file |
 | 7. Compile cache | ✅ Done | Sequential key in CJITCompile, LRU in CLuaMod |
 | 8. Smoke tests | ✅ Done | 46 lua tests (TC001-TC046) |
 
 **Additional completed work beyond original plan:**
+
 - TY_FLOAT in HIR + RV64D codegen (16 float instructions)
 - Lua folded into engine.so (not a separate module)
 - Generic function calls: GETTABUP generalized, __lua_call via lua_pcall
@@ -608,18 +612,21 @@ functions that players complain are slow in softcode today.
 ## 15. Remaining Work
 
 **Phase 2 completion (DONE as of 2026-03-21):**
+
 - ✅ GETUPVAL/SETUPVAL — _ENV only (non-_ENV rejected)
-- ✅ TFORPREP/TFORCALL/TFORLOOP — generic for-loop via iterator ECALL
-- ✅ CLOSE — no-op (safe since closures are ineligible)
+- ✅ TFORPREP/TFORCALL/TFORLOOP—generic for-loop via iterator ECALL
+- ✅ CLOSE—no-op (safe since closures are ineligible)
 
 **Phase 3 (DONE as of 2026-03-21):**
-- ✅ Runtime type guards — string→numeric promotion at all arithmetic/comparison sites via HIR_ATOI/HIR_ATOF
-- ✅ XMM register cache — 6-slot LRU FP cache in DBT (XMM2-XMM7)
-- ✅ Native string comparison — HIR_STRCMP inline RV64 byte compare (no ECALL)
-- ✅ Array optimization — Phase A: HIR_LUA_GETI integer fast-path; Phase B: pin-and-copy with HIR_LUA_ALOAD native memory access in for-loops
-- ✅ Persistent cache — sha1(bytecodes) keyed SQLite cache via jit_store_to_sqlite/jit_load_from_sqlite
+
+- ✅ Runtime type guards—string—numeric promotion at all arithmetic/comparison sites via HIR_ATOI/HIR_ATOF
+- ✅ XMM register cache—6-slot LRU FP cache in DBT (XMM2-XMM7)
+- ✅ Native string comparison—HIR_STRCMP inline RV64 byte compare (no ECALL)
+- ✅ Array optimization—Phase A: HIR_LUA_GETI integer fast-path; Phase B: pin-and-copy with HIR_LUA_ALOAD native memory access in for-loops
+- ✅ Persistent cache—sha1(bytecodes) keyed SQLite cache via jit_store_to_sqlite/jit_load_from_sqlite
 
 **Phase 4 (future):**
-- Tier 2 coverage expansion — move more softcode builtins (time, secs, get, member, words, extract) into pre-compiled RV64 guest blobs to eliminate ECALLs
-- Closures — JIT-compile inner Protos, handle upvalue capture via ECALL
-- Float string parsing — proper HIR_ATOF codegen (currently uses ATOI+ITOF shortcut)
+
+- Tier 2 coverage expansion—move more softcode builtins (time, secs, get, member, words, extract) into pre-compiled RV64 guest blobs to eliminate ECALLs
+- Closures—JIT-compile inner Protos, handle upvalue capture via ECALL
+- Float string parsing—proper HIR_ATOF codegen (currently uses ATOI+ITOF shortcut)

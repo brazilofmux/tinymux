@@ -37,8 +37,8 @@ TinyMUX has solid Unicode support at the **code point** level:
 | `strlen()` | Code point count (after color stripping) |
 | `mid(str, pos, len)` | Code point indexing |
 | `mux_cursor` | `(byte_offset, codepoint_offset)` pair |
-| `ord(str)` | Single code point — integer |
-| `chr(int)` | Integer — single code point |
+| `ord(str)` | Single code point—integer |
+| `chr(int)` | Integer—single code point |
 | Color vector | One entry per code point |
 | Display width | Per-code-point via East Asian Width |
 | Network input | Validated printable code points only |
@@ -49,9 +49,9 @@ TinyMUX has solid Unicode support at the **code point** level:
 
 The character `é` can be represented two ways in Unicode:
 
-1. **Precomposed:** U+00E9 (LATIN SMALL LETTER E WITH ACUTE) — 1 code point
+1. **Precomposed:** U+00E9 (LATIN SMALL LETTER E WITH ACUTE)—1 code point
 2. **Decomposed:** U+0065 U+0301 (LATIN SMALL LETTER E + COMBINING ACUTE
-   ACCENT) — 2 code points
+   ACCENT)—2 code points
 
 Both render identically. But today, TinyMUX:
 
@@ -82,7 +82,7 @@ Users expect `strlen()` to return 1 for each of these.
 - Two strings that look identical can fail equality checks if they use
   different normalization forms
 - Case-insensitive comparison works (via `mux_stricmp`) but only
-  because both inputs come through the same path — a decomposed input   from
+  because both inputs come through the same path—a decomposed input   from
 
 an external source would not match
 
@@ -107,7 +107,7 @@ enforced at the input boundary.
 unit. Code points become an internal implementation detail.
 
 3. **DFA state machines for all Unicode properties.** Continue the
-   existing pattern: Unicode data files — table generators — compiled
+   existing pattern: Unicode data files—table generators—compiled
 
 state machines in `utf8tables.cpp`. No runtime library dependencies.
 
@@ -134,7 +134,7 @@ state machines in `utf8tables.cpp`. No runtime library dependencies.
   - `ConsoleWidth` (East Asian Width)
   - Charset conversion tables
 - Verify that existing smoke tests still pass
-- No behavioral changes — just updated data
+- No behavioral changes—just updated data
 
 **Data files needed:**
 
@@ -192,7 +192,7 @@ passes through NFC normalization.
 **Quick check function:** A fast `bool utf8_is_nfc(const UTF8 *src, size_t n)`
 that returns true if a string is already in NFC (common case) without doing a
 full normalize. This is a DFA that checks for NFC_QC=No and NFC_QC=Maybe
-characters — if none are found, the string is already NFC. This avoids the
+characters—if none are found, the string is already NFC. This avoids the
 cost of normalization on strings that are already well-formed, which will be
 the vast majority.
 
@@ -323,8 +323,8 @@ addressed based on user demand.
 
 The `utf/` directory contains:
 
-1. **Unicode data files** (`.txt`) — downloaded from unicode.org
-2. **Transformation rule files** (`tr_*.txt`, `cl_*.txt`) — define which
+1. **Unicode data files** (`.txt`)—downloaded from unicode.org
+2. **Transformation rule files** (`tr_*.txt`, `cl_*.txt`)—define which
    code points belong to each class or transformation
 3. **Table generators** — Perl/Python scripts that compile Unicode
    properties into DFA state machines
@@ -459,7 +459,7 @@ count, `ord()` on each cluster gives the constituent    code points.
 5. **Title case:** `mux_totitle()` exists as a stub. Should it be
    implemented as part of this work? It's straightforward with the    existing
 
-DFA infrastructure but requires `SpecialCasing.txt` data. Low priority — can
+DFA infrastructure but requires `SpecialCasing.txt` data. Low priority—can
 be added later.
 
 6. **Locale-sensitive operations:** Beyond collation, some operations

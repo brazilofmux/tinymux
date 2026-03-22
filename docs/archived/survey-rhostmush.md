@@ -19,7 +19,7 @@ separating signal from noise.
 
 ---
 
-## High Priority — Worth Implementing
+## High Priority—Worth Implementing
 
 ### 1. Base64 Functions (encode64/decode64)
 
@@ -30,7 +30,7 @@ Required for any HTTP/webhook/API integration.
 
 **Status:** Implemented in MUX 2.14.
 
-### 2. printf() — Formatted Output
+### 2. printf()—Formatted Output
 
 `printf(<format>, <arg1>, <arg2>, ...)` — C-style formatted output with
 `%s`, `%d`, `%-20s`, etc. Powerful for aligned output without juggling
@@ -39,7 +39,7 @@ ljust()/rjust()/center().
 **Worth borrowing?** Yes. Very useful for softcoders writing formatted reports
 and tables. More readable than nested ljust/rjust calls.
 
-**Status:** Implemented in MUX 2.14 — ANSI-aware formatted output with %s/%d/%f/%c, width, alignment, precision.
+**Status:** Implemented in MUX 2.14—ANSI-aware formatted output with %s/%d/%f/%c, width, alignment, precision.
 
 ### 3. Account System (account_)
 
@@ -67,7 +67,7 @@ Separates presentation from logic.
 **Worth borrowing?** Nice for game builders doing consistent formatting.
 Simple concept, moderate implementation.
 
-### 6. dynhelp() — Dynamic Help from Attributes
+### 6. dynhelp()—Dynamic Help from Attributes
 
 `dynhelp(<object>, <topic>)` — read help text from object attributes instead
 of static files. Allows softcode-driven help systems.
@@ -75,7 +75,7 @@ of static files. Allows softcode-driven help systems.
 **Worth borrowing?** Yes. MUX has `textfile()` for reading static help files,
 but dynamic help from objects is more flexible for game-specific help systems.
 
-**Status:** Implemented in MUX 2.14 — prefix matching, custom prefix, case-insensitive.
+**Status:** Implemented in MUX 2.14—prefix matching, custom prefix, case-insensitive.
 
 ### 7. Totem System
 
@@ -90,9 +90,9 @@ tag system would be more flexible. Medium effort.
 
 ---
 
-## Medium Priority — Interesting Ideas
+## Medium Priority—Interesting Ideas
 
-### 7.5. @protect — Player Name Protection (missed 2026-03-06)
+### 7.5. @protect—Player Name Protection (missed 2026-03-06)
 
 `@protect/add <name>` — lets players reserve alternate names so nobody else
 can take them. Stored in attribute A_PROTECTNAME (249), managed via a linked
@@ -105,7 +105,7 @@ equivalent. Could store in a SQLite table for MUX.
 
 **Effort:** Small. **Dependencies:** None.
 
-### 7.6. @hook — Command Interception (missed 2026-03-06)
+### 7.6. @hook—Command Interception (missed 2026-03-06)
 
 `@hook/before`, `@hook/after`, `@hook/permit`, `@hook/fail`, `@hook/include`,
 `@hook/ignore` — intercept any built-in command with softcode on a global
@@ -157,7 +157,7 @@ for arbitrary expressions. Small effort.
 ### 7.10. Senses System (senses.c) (missed 2026-03-06)
 
 Commands `touch`, `taste`, `smell`, `listen` with corresponding attribute
-pairs (STOUCH/SOTOUCH/SATOUCH, etc.) — the "other four senses" beyond look.
+pairs (STOUCH/SOTOUCH/SATOUCH, etc.)—the "other four senses" beyond look.
 Each sense has its own @-command and did_it() trigger.
 
 **Worth borrowing?** Niche. Easy to do in softcode with custom attributes.
@@ -175,7 +175,7 @@ communication.
 
 ### 8. Cluster System (cluster_)
 
-Object clusters — group objects that share attributes and operations. 28
+Object clusters—group objects that share attributes and operations. 28
 cluster_* functions covering get/set/grep/u/wipe/stats/flags on clustered
 objects.
 
@@ -266,7 +266,7 @@ Rhost has several string functions MUX lacks:
 relevant for MUX's UTF-8 work. The ASCII ones are trivial but occasionally
 useful.
 
-**Status:** Partially implemented in MUX 2.14 — isalpha(), isdigit(), isupper(), islower(), ispunct(), isspace(), isword() via Unicode DFA.
+**Status:** Partially implemented in MUX 2.14—isalpha(), isdigit(), isupper(), islower(), ispunct(), isspace(), isword() via Unicode DFA.
 
 ### 13. Lua Scripting Integration (lua.c)
 
@@ -317,14 +317,14 @@ currently requires `@mail` via `@force` or similar hacks.
 
 **Status:** mailsend() implemented in MUX 2.14.
 
-### 17. nslookup() — DNS Lookup from Softcode
+### 17. nslookup()—DNS Lookup from Softcode
 
 Resolve hostnames/IPs from within softcode.
 
 **Worth borrowing?** Niche but occasionally useful for softcode-driven site
 checking. Must be async to avoid blocking.
 
-### 18. subnetmatch() — IP Subnet Matching
+### 18. subnetmatch()—IP Subnet Matching
 
 `subnetmatch(<ip>, <cidr>)` — test if IP is in a subnet.
 
@@ -340,11 +340,11 @@ implement.
 Rhost has two WebSocket implementations (old and new). RFC 6455 compliant with
 text/binary frames, ping/pong, proper handshake.
 
-**Status:** Implemented in MUX 2.14 — RFC 6455 in GANL layer.
+**Status:** Implemented in MUX 2.14—RFC 6455 in GANL layer.
 
 ### 20. Doors System (door.c, door_mail.c, door_mush.c)
 
-Inter-MU* communication via "doors" — TCP connections to external processes
+Inter-MU* communication via "doors"—TCP connections to external processes
 or other MUDs. Includes an Empire game protocol client.
 
 **Worth borrowing?** The concept of external process integration is
@@ -461,7 +461,7 @@ Both Rhost and MUX have these. No delta.
 ### MUX has 106 functions Rhost doesn't. Notable:
 
 - Full SQL result set API (rserror, rsnext, rsrec, rsrows, etc.)
-- Band/bor/bxor/bnand (bitwise — Rhost uses different names)
+- Band/bor/bxor/bnand (bitwise—Rhost uses different names)
 - Channel functions (cemit, channels, chanobj, comalias, comtitle, cwho)
 - Integer math (iabs, iadd, idiv, imul, isub)
 - Color depth support (colordepth, moniker)
@@ -544,7 +544,7 @@ Both Rhost and MUX have these. No delta.
 
 ## Consolidated Recommendations (All Three Surveys)
 
-### Tier 1 — High Value, Implement
+### Tier 1—High Value, Implement
 
 1. **JSON support** — **Done** (2.14). SQLite JSON1 + native functions.
 2. **WebSocket support** — **Done** (2.14). RFC 6455 in GANL layer.
@@ -553,7 +553,7 @@ Both Rhost and MUX have these. No delta.
 5. **printf()** — **Done** (2.14). ANSI-aware formatted output.
 6. **mailsend()** — **Done** (2.14). Send mail from softcode.
 
-### Tier 2 — Medium Value, Consider
+### Tier 2—Medium Value, Consider
 
 7. **letq()** — **Done** (2.14). Scoped registers.
 8. **sortkey()** — **Done** (2.14). Sort-by-computed-key.
@@ -570,7 +570,7 @@ Both Rhost and MUX have these. No delta.
 18. **@hook (command interception)** — TODO. Before/after/permit hooks. (New find.)
 19. **CPU time guard** — TODO. Wall-clock limit on evaluations. (New find.)
 
-### Tier 3 — Low Value or Long-Term
+### Tier 3—Low Value or Long-Term
 
 20. **HTTP server** — TODO. Very ambitious.
 21. **Lua scripting** — TODO. Relates to parser roadmap item #5.
@@ -609,7 +609,7 @@ server are high-effort/high-impact for modern MU* games.
 **Color comparison note:** Rhost's 24-bit color support maps to xterm-256
 using Manhattan RGB distance (sum of absolute channel deltas). MUX uses
 CIELAB perceptual distance, which produces better results for pastel and
-mid-tone colors. Neither server sends true 24-bit SGR sequences (38;2;r;g;b)
+mid-tone colors. Neither server sends true 24-bit SGR sequences (38;2; r; g; b)
 directly; both map to the 256-color palette.
 
 **Reality levels comparison:** Both servers store reality levels identically --
@@ -624,5 +624,5 @@ pursuing.
 Rhost's approach is "add everything, let config sort it out." This produces an
 impressive feature count but also a maintenance burden and a learning curve
 that can overwhelm new users. The 549 config options tell the story. MUX
-maintains a leaner design philosophy -- fewer functions, cleaner interfaces,
+maintains a leaner design philosophy—fewer functions, cleaner interfaces,
 COM module architecture for extensibility.

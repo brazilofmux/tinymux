@@ -17,6 +17,7 @@ Commands registered in `RDAtlantisMainController.init` via `addCommand:forText:`
 Stored in `_rdCommands` dictionary with lowercase keys. Lookup is case-insensitive.
 
 ### Dispatch Flow
+
 1. User types in spawn input view
 2. `processInputString:onSpawn:` extracts text
 3. If starts with "/", extract command name
@@ -39,7 +40,7 @@ Stored in `_rdCommands` dictionary with lowercase keys. Lookup is case-insensiti
 | `/logs` | LogsCommand | Log management |
 
 ### AliasEvent (special case)
-Not a BaseCommand subclass — extends BaseEvent instead. User-defined
+Not a BaseCommand subclass—extends BaseEvent instead. User-defined
 aliases participate in the event system with conditions and actions.
 Spaces in alias names converted to underscores. Does not support conditions.
 
@@ -63,11 +64,13 @@ handleLocalInput:onSpawn:
 ```
 
 ### Command History
+
 - Per-world instance: `_rdCommandHistory` (NSMutableArray)
 - Navigation via Action_HistoryNext / Action_HistoryPrev
 - Hotkey-bindable (up/down arrows typically)
 
 ### MUSH-Specific Input
+
 - `Action_InputConvertToMUSH` — convert special codes to MUSH format
 - `Action_InputConvertFromMUSH` — convert MUSH codes to readable text
 - Grab commands use "SimpleMUUser" as default password (configurable)

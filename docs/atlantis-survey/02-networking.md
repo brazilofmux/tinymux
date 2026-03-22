@@ -5,12 +5,12 @@
 ### NetSocket (BSD socket wrapper)
 Low-level TCP socket using CFSocket for runloop integration.
 
-- **Creation**: `+netsocketConnectedToHost:port:` with optional timeout
-- **Buffering**: Separate `NSMutableData` for incoming and outgoing
-- **SSL/TLS**: OpenSSL integration (`SSL_CTX`, `SSL` objects)
+- **Creation:** `+netsocketConnectedToHost:port:` with optional timeout
+- **Buffering:** Separate `NSMutableData` for incoming and outgoing
+- **SSL/TLS:** OpenSSL integration (`SSL_CTX`, `SSL` objects)
   - `startEncrypting` initiates handshake
   - Delegate callbacks: `netsocketSSLConnected:`, `netsocketSSLFailure:`
-- **Async I/O**: CFRunLoopSource integration for non-blocking reads
+- **Async I/O:** CFRunLoopSource integration for non-blocking reads
 
 ### ALSocket (high-level wrapper)
 Wraps NetSocket, adds SecureTransport (macOS native TLS) as alternative.
@@ -60,6 +60,7 @@ Values: `TQ_NO` (0), `TQ_YES` (1), `TQ_WANTNO` (2), `TQ_WANTYES` (3)
 16-bit big-endian width and height. 0xFF bytes escaped as 0xFF 0xFF.
 
 ### CHARSET Negotiation (RFC 2066)
+
 - Server sends charset list
 - Client selects preferred via `CFStringConvertIANACharSetNameToEncoding()`
 - Response codes: 1=request, 2=accepted, 3=rejected
@@ -67,13 +68,15 @@ Values: `TQ_NO` (0), `TQ_YES` (1), `TQ_WANTNO` (2), `TQ_WANTYES` (3)
 
 ### Keepalive
 Configurable modes:
+
 - NOP command (0xF1) every 60 seconds
 - Newline every 60 seconds
 - Disabled
 
 ### Go Ahead / EOR
-- GA (Go Ahead) → converted to prompt marker `\x1b[1a\n`
-- EOR (End of Record) → same prompt marker
+
+- GA (Go Ahead)—converted to prompt marker `\x1b[1a\n`
+- EOR (End of Record)—same prompt marker
 
 ### Server Type Detection
 Sets `mudProtocol` flag for `AtlantisServerMud` or `AtlantisServerIRE`,
@@ -83,6 +86,7 @@ which affects prompt handling behavior.
 
 ### Per-Spawn State (RDAnsiState)
 Each spawn maintains independent ANSI state:
+
 - Bold, invert, underline flags
 - Current foreground color (0-255)
 - Current background color (0-255)
@@ -103,6 +107,7 @@ Invert swaps foreground/background while preserving color indices.
 
 ### Attribute Output
 Produces `NSAttributedString` with:
+
 - `NSFontAttributeName` — regular or bold font
 - `NSForegroundColorAttributeName` — text color
 - `NSBackgroundColorAttributeName` — background color
@@ -115,7 +120,7 @@ Produces `NSAttributedString` with:
 
 MCCP v2 (TELOPT_COMPRESS2, option 86) decompression via zlib.
 
-- Server negotiates COMPRESS2 → all subsequent data is zlib-compressed
+- Server negotiates COMPRESS2—all subsequent data is zlib-compressed
 - `z_stream` maintained for session lifetime
 - Custom allocators (`zlib_calloc`, `zlib_free`)
 - 0.5-second catchup timer flushes partial data

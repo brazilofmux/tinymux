@@ -6,17 +6,17 @@
 ## Summary
 
 The JIT compiler introduced a **17,000x slowdown** on `u()` calls to
-remote objects compared to the AST interpreter.  The root cause was
-**re-entrant DBT execution**: when JIT code ECALLed into `u()`, the
+remote objects compared to the AST interpreter. The root cause was
+**re-entrant DBT execution:** when JIT code ECALLed into `u()`, the
 nested `mux_exec()` re-entered `jit_eval()` and created a full DBT
-context (~50ms setup/teardown) for the inner expression.  A simple
+context (~50ms setup/teardown) for the inner expression. A simple
 re-entrancy guard that falls back to the AST interpreter for nested
 calls eliminated the bottleneck completely.
 
 ### Fix applied
 
 `jit_compiler.cpp`: added `s_jit_depth` guard at `jit_eval()` entry.
-When `s_jit_depth > 0`, return false (fall back to AST).  RAII guard
+When `s_jit_depth > 0`, return false (fall back to AST). RAII guard
 decrements on scope exit.
 
 ### Results after fix
@@ -80,9 +80,9 @@ All times are for 100 iterations via `benchmark()`.
 |---|---|---|---|
 | `add(1,2)` | 0.002s | 0.02ms | Builtin baseline |
 | `extract(time(),1,3)` | 0.010s | 0.10ms | Builtin inline |
-| `u(me/testfn)` [add(1,2)] | 0.010s | 0.10ms | u() on self — fast |
+| `u(me/testfn)` [add(1,2)] | 0.010s | 0.10ms | u() on self—fast |
 | `u(#21/fn_extract)` [new attr] | 0.001s | 0.01ms | u() remote, no JIT cache |
-| `get(#21/bbtime)` | 0.010s | 0.10ms | Raw fetch — fast |
+| `get(#21/bbtime)` | 0.010s | 0.10ms | Raw fetch—fast |
 | `u(#21/get_group,1)` | 0.050s | 0.50ms | u() remote, pre-existing |
 | `u(#21/FN_UNREAD_LIST,#4)` | 5.07s | **50ms** | u() remote, pre-existing |
 | `u(#21/bbtime)` | 5.10s | **51ms** | u() remote, pre-existing |
@@ -109,7 +109,7 @@ All times are for 100 iterations via `benchmark()`.
 ### 1. Only pre-existing attributes are slow
 
 Freshly-created attributes with **identical bodies** (`extract(time(),
-1, 3)`) are fast even with JIT enabled.  The slow attrs have cached
+1, 3)`) are fast even with JIT enabled. The slow attrs have cached
 JIT blobs in the SQLite database from prior game runs.
 
 ### 2. The JIT cache IS being hit
@@ -119,7 +119,7 @@ JIT blobs in the SQLite database from prior game runs.
 cache_hit_mem=19  cache_hit_sqlite=2  cache_miss=3
 compile_ok=3  compile_fail=0
 ```
-The compiled code is found in cache and reused.  The 51ms cost is in
+The compiled code is found in cache and reused. The 51ms cost is in
 **executing the cached blob**, not in compiling it.
 
 ### 3. `get()` is fast, `u()` is slow
@@ -130,16 +130,16 @@ The bottleneck is in the parse/eval path when JIT is active.
 
 ### 4. `u(me/...)` is fast, `u(#21/...)` is slow
 
-Same function body, same JIT build.  `u()` on self = 0.1ms,
-`u()` on a different object = 51ms.  The cross-object path
+Same function body, same JIT build. `u()` on self = 0.1ms,
+`u()` on a different object = 51ms. The cross-object path
 does something the self path doesn't.
 
 ### 5. Real-world impact
 
 Every `+bbread` calls `valid_groups` at least once (87ms).
 `+bbscan` calls it plus iterates groups calling `FN_UNREAD_LIST`
-(50ms each).  A simple BBS operation that should take <1ms takes
-200-400ms — noticeable as a hang on a live game.
+(50ms each). A simple BBS operation that should take <1ms takes
+200-400ms—noticeable as a hang on a live game.
 
 ## Architecture Context
 
@@ -148,41 +148,41 @@ The JIT pipeline (from `docs/design-jit-compiler.md` and memory notes):
 softcode → AST → HIR → SSA → optimize → RV64 codegen → x86-64 DBT
 ```
 
-- **Tier 1**: AST interpreter (always available)
-- **Tier 2**: JIT-compiled native code (RV64 → x86-64 DBT)
+- **Tier 1:** AST interpreter (always available)
+- **Tier 2:** JIT-compiled native code (RV64—x86-64 DBT)
 - Compiled blobs are cached in SQLite (`jit_cache` table?)
 - LRU parse cache (1024 entries) for AST trees
 - `ecalls` in jitstats = calls back into the engine from JIT code
 
 ## Investigation Areas
 
-### A. SQLite blob load cost — RULED OUT
+### A. SQLite blob load cost—RULED OUT
 Clearing the entire `code_cache` table and re-running benchmarks
-produced identical 51ms results.  Fresh compilation is equally
-slow.  The cost is in execution, not cache loading.
+produced identical 51ms results. Fresh compilation is equally
+slow. The cost is in execution, not cache loading.
 
-### B. DBT interpretation overhead — RULED OUT
+### B. DBT interpretation overhead—RULED OUT
 Small functions (`add(1,2)`) execute in 0.02ms through the DBT.
-The DBT itself is fast.  The cost is specific to nested execution.
+The DBT itself is fast. The cost is specific to nested execution.
 
-### C. ECALL overhead — PARTIALLY CORRECT
-ECALLs themselves are cheap.  But ECALLs into functions that call
+### C. ECALL overhead—PARTIALLY CORRECT
+ECALLs themselves are cheap. But ECALLs into functions that call
 `mux_exec()` (like `u()`, `iter()`, `switch()`) trigger nested
-`jit_eval()` re-entry, which is catastrophically expensive.  The
+`jit_eval()` re-entry, which is catastrophically expensive. The
 ECALL count correlates with slowness because more ECALLs = more
 re-entry opportunities.
 
-### D. Self vs remote object path — EXPLAINED
+### D. Self vs remote object path—EXPLAINED
 `u(me/...)` appeared fast because muxscript's `&attr obj=value`
-evaluates the value before storing.  All "self" test attrs had
+evaluates the value before storing. All "self" test attrs had
 literal bodies (no function calls), so the inner `mux_exec()`
-never triggered JIT.  The self-vs-remote difference was an
+never triggered JIT. The self-vs-remote difference was an
 artifact of the test methodology, not a real code path difference.
 
-### E. Stale cache entries — EXPLAINED
-Same artifact.  Freshly-created attrs had evaluated (literal)
-bodies that don't trigger inner JIT.  Pre-existing attrs had
-real function call bodies that trigger nested JIT.  The "stale"
+### E. Stale cache entries—EXPLAINED
+Same artifact. Freshly-created attrs had evaluated (literal)
+bodies that don't trigger inner JIT. Pre-existing attrs had
+real function call bodies that trigger nested JIT. The "stale"
 appearance was because only pre-existing attrs had real softcode.
 
 ### Root Cause: Nested DBT execution
@@ -210,11 +210,11 @@ Outer mux_exec("u(#21/bbtime)")
 ```
 
 `run_cached_program()` allocates/resets guest memory, initializes
-the DBT context, and runs the RV64→x86-64 translator.  This
+the DBT context, and runs the RV64—x86-64 translator. This
 ~50ms cost is acceptable for a top-level expression but
 catastrophic when paid per-ECALL in nested evaluation.
 
-**Fix**: `s_jit_depth` guard at `jit_eval()` entry.  Nested calls
+**Fix:** `s_jit_depth` guard at `jit_eval()` entry. Nested calls
 fall back to AST interpreter (~0.003ms instead of ~50ms).
 
 ## BBS Object Map
@@ -235,41 +235,42 @@ For reference when profiling:
 
 | Attribute | Body | Per-call (JIT) |
 |---|---|---|
-| `bbtime` | `extract(time(), 1, 3)` | 51ms → 0.028ms |
-| `get_group` | `switch(isnum(%0),1,extract(v(groups),%0,1),locate(#21,%0,ni))` | 0.5ms → 0.052ms |
-| `valid_groups` | `iter(v(groups),switch(and(u(##/can%1,%0),...),1,##))` | 87ms → 0.052ms |
-| `fn_unread_list` | `sort(iter(setdiff(get(%1/mess_lst),...),member(...,##)))` | 50ms → 0.005ms |
+| `bbtime` | `extract(time(), 1, 3)` | 51ms—0.028ms |
+| `get_group` | `switch(isnum(%0),1,extract(v(groups),%0,1),locate(#21,%0,ni))` | 0.5ms—0.052ms |
+| `valid_groups` | `iter(v(groups),switch(and(u(##/can%1,%0),...),1,##))` | 87ms—0.052ms |
+| `fn_unread_list` | `sort(iter(setdiff(get(%1/mess_lst),...),member(...,##)))` | 50ms—0.005ms |
 | `fn_msg_flags` | `switch([member(get(%0/bb_read),%2)]:...,0:*,U,*:1,T)` | (not measured) |
 
 ## Optimization Roadmap
 
-The re-entrancy guard is the immediate fix.  The following optimizations
+The re-entrancy guard is the immediate fix. The following optimizations
 can further reduce ECALL overhead, listed from easiest to hardest:
 
 ### Level 1: Re-entrancy guard (DONE)
 
-**Cost:** 1 line of code.  **Benefit:** 1,000-10,000x on nested calls.
+**Cost:** 1 line of code. **Benefit:** 1,000-10,000x on nested calls.
 
-When `jit_eval()` is entered recursively (via ECALL → `mux_exec()`),
-fall back to the AST interpreter.  The AST evaluator handles the inner
+When `jit_eval()` is entered recursively (via ECALL — `mux_exec()`),
+fall back to the AST interpreter. The AST evaluator handles the inner
 expression in ~0.003ms vs the DBT's ~50ms context setup.
 
-Every avoided re-entrant `jit_eval()` saves ~50ms.  This is the
+Every avoided re-entrant `jit_eval()` saves ~50ms. This is the
 safety net that makes all other optimizations optional rather than
 urgent.
 
 ### Level 2: Expand Tier 2 coverage
 
-**Cost:** Medium — add more co_* wrappers and builtin implementations.
+**Cost:** Medium—add more co_* wrappers and builtin implementations.
 **Benefit:** Eliminates ECALLs for covered functions.
 
 Tier 2 functions (`co_first`, `co_rest`, `add`, `mul`, etc.) are
-pre-compiled RV64 blobs called via JAL — no ECALL, no host transition.
+pre-compiled RV64 blobs called via JAL—no ECALL, no host transition.
 Extending Tier 2 to cover more builtins (`time()`, `secs()`, `name()`,
 `get()`, `member()`, etc.) eliminates the ECALL entirely for those
-calls.  The inner expression stays in guest code, no re-entry question.
+calls. The inner expression stays in guest code, no re-entry question.
 
 **Priority targets** (most-used in BBS/Jobs softcode):
+
 - `time()`, `secs()` — trivial, no side effects
 - `get()`, `xget()` — attribute fetch (needs guest↔host string I/O)
 - `name()`, `owner()`, `flags()` — object metadata
@@ -277,14 +278,15 @@ calls.  The inner expression stays in guest code, no re-entry question.
 
 ### Level 3: u() inlining at compile time (PROTOTYPED, REVERTED)
 
-**Cost:** High — requires solving four correctness problems.
+**Cost:** High—requires solving four correctness problems.
 **Benefit:** Eliminates the ECALL for `u()` entirely.
-**Status:** Prototype proved 2.8x over guard-only.  Reverted due to
-semantic regressions found in code review.  Re-implementation needed.
+**Status:** Prototype proved 2.8x over guard-only. Reverted due to
+semantic regressions found in code review. Re-implementation needed.
 
 #### Concept
 
 When the JIT compiles `u(#21/bbtime)`, the compiler:
+
 1. Resolves `#21/bbtime` at compile time (Tier 1 knowledge)
 2. Fetches the body: `extract(time(), 1, 3)`
 3. Parses the body into an AST
@@ -292,9 +294,10 @@ When the JIT compiles `u(#21/bbtime)`, the compiler:
 5. The body's functions become direct Tier 2 / ECALL calls
 
 Three tiers cooperating:
-- **Tier 1 (AST)**: resolves the attr at compile time
-- **Tier 2 (guest blobs)**: body's pure functions run natively
-- **Tier 3 (compiler)**: orchestrates the inlining
+
+- **Tier 1 (AST):** resolves the attr at compile time
+- **Tier 2 (guest blobs):** body's pure functions run natively
+- **Tier 3 (compiler):** orchestrates the inlining
 
 #### Prototype results (2026-03-20, reverted)
 
@@ -303,54 +306,55 @@ Three tiers cooperating:
 | `u(#21/bbtime)` | 0.028ms | 0.010ms |
 | `u(#21/valid_groups,...)` | 0.052ms | 0.044ms |
 
-The jitstats showed `tier2=5011` calls — inlined bodies used Tier 2
-guest code directly.  610/610 smoke tests passed.
+The jitstats showed `tier2=5011` calls—inlined bodies used Tier 2
+guest code directly. 610/610 smoke tests passed.
 
 #### Four correctness problems (from code review)
 
-**Problem 1 — Cache staleness (HIGH)**
+**Problem 1—Cache staleness (HIGH)**
 
-The compile cache key is `(source_text, eval_flags)`.  When the
+The compile cache key is `(source_text, eval_flags)`. When the
 compiler inlines `u(#21/bbtime)`, the cached blob embeds bbtime's
-body.  If `#21/bbtime` is later modified (`&bbtime #21=new_body`),
+body. If `#21/bbtime` is later modified (`&bbtime #21=new_body`),
 callers containing `u(#21/bbtime)` keep running the old inlined body
-until the cache evicts.  The runtime `fun_u` path re-reads the attr
-on every call — inlining must preserve this semantic.
+until the cache evicts. The runtime `fun_u` path re-reads the attr
+on every call—inlining must preserve this semantic.
 
 *Location*: `compile_cached()` in `jit_compiler.cpp:830`.
 
-*Fix*: The cache key must include a dependency fingerprint — a hash
-or version stamp of every inlined attr body.  Two approaches:
+*Fix*: The cache key must include a dependency fingerprint—a hash
+or version stamp of every inlined attr body. Two approaches:
 
-  A. **Attr modification counter**: Add a per-attr `mod_count` field
-     (incremented by `s_Name()`/`atr_add()`/`atr_clr()`).  At
+  A. **Attr modification counter:** Add a per-attr `mod_count` field
+     (incremented by `s_Name()`/`atr_add()`/`atr_clr()`). At
      compile time, record `{dbref, attr_num, mod_count}` for each
-     inlined attr.  At runtime, emit a lightweight ECALL at the
+     inlined attr. At runtime, emit a lightweight ECALL at the
      start of the compiled program that checks each dependency:
      `if (current_mod_count != compiled_mod_count) return false;`
-     (bail to AST).  Fast path: one integer compare per inlined attr.
+     (bail to AST). Fast path: one integer compare per inlined attr.
 
-  B. **Body hash in cache key**: Append a hash of each inlined body
-     text to the cache key string.  If bbtime's body changes, the
-     key no longer matches — cache miss → recompile with new body.
-     Pro: no runtime check.  Con: compile-time resolution must
+  B. **Body hash in cache key:** Append a hash of each inlined body
+     text to the cache key string. If bbtime's body changes, the
+     key no longer matches—cache miss—recompile with new body.
+     Pro: no runtime check. Con: compile-time resolution must
      re-fetch and re-hash on every compile_cached lookup, which adds
      cost even on cache hits.
 
   **Decision: per-attr mod_count (Approach A).**
 
   A global generation counter would invalidate every inlined u()
-  on any attr write anywhere in the game.  On a live game, every
+  on any attr write anywhere in the game. On a live game, every
   +bbpost writes `&mess_lst`, `&hdr_*`, `&bdy_*`, `&bb_read` —
   that would thrash the entire JIT cache even though the inlined
   function bodies (`#21/bbtime`, `#21/valid_groups`) never changed.
 
   Per-attr mod_count invalidates only callers that inlined the
-  specific changed attr.  Cost: one uint32_t per attr slot,
+  specific changed attr. Cost: one uint32_t per attr slot,
   a small dependency vector per compiled_program (~2-3 entries
   for typical u() inlining), and a short compare loop at runtime.
 
   Implementation:
+
   - Add `uint32_t mod_count` to the attr metadata (e.g., alongside
     aflags in the SQLite attributes table, or a parallel in-memory
     array indexed by `{dbref, attr_num}`).
@@ -362,17 +366,19 @@ or version stamp of every inlined attr body.  Two approaches:
   - Persist dependency list in the SQLite code_cache alongside
     the compiled blob.
 
-**Problem 2 — Permission bypass (HIGH)**
+**Problem 2—Permission bypass (HIGH)**
 
 The prototype used `parse_attrib(GOD, ...)` to resolve the attr at
-compile time, bypassing `See_attr(executor, thing, pattr)`.  This
+compile time, bypassing `See_attr(executor, thing, pattr)`. This
 means:
+
 - A player who can't read `#21/secret` could still get a compiled
   caller that contains its body.
-- `NoEval(thing)` is ignored — the body is compiled and executed
+- `NoEval(thing)` is ignored—the body is compiled and executed
   even if the object has NOEVAL set.
 
 *Locations*:
+
 - Compile-time: `hir_lower.cpp` (the new inlining code)
 - Runtime references: `See_attr()` in `funceval.cpp:108`,
   `NoEval(thing)` in `functions.cpp:2419`
@@ -385,15 +391,15 @@ if (denied) → ECALL_CALL_INDEX(fun_u)  // fall back to host u()
 else → execute inlined body
 ```
 The compile-time resolution (using GOD) is fine for fetching the
-body text to compile.  The runtime check ensures that the executor
-actually has permission each time the code runs.  Cost: one ECALL
+body text to compile. The runtime check ensures that the executor
+actually has permission each time the code runs. Cost: one ECALL
 per inlined u() call on the fast path.
 
 The same ECALL must also check `NoEval(thing)` and `AF_NOEVAL` at
-runtime, not just at compile time.  `NoEval(thing)` is object-level
-state that can change via `@set` after compilation.  If the ECALL
+runtime, not just at compile time. `NoEval(thing)` is object-level
+state that can change via `@set` after compilation. If the ECALL
 detects NOEVAL, it bails to host `fun_u` which returns the raw text
-without evaluation.  All three runtime checks — `See_attr()`,
+without evaluation. All three runtime checks — `See_attr()`,
 `NoEval(thing)`, `AF_NOEVAL` — live in the single permission ECALL:
 
 ```
@@ -405,10 +411,10 @@ ECALL_CHECK_U_PERM(executor, thing, attr_num)
              1 = bail to host fun_u (handles NOEVAL/deny)
 ```
 
-**Problem 3 — ULOCAL register leak (MEDIUM)**
+**Problem 3—ULOCAL register leak (MEDIUM)**
 
 `ulocal()` saves and restores `%q0-%q9` around the body evaluation.
-The prototype treated `U` and `ULOCAL` identically — no save/restore.
+The prototype treated `U` and `ULOCAL` identically—no save/restore.
 Inlined bodies that mutate `%q*` leak changes to the caller.
 
 *Runtime reference*: `fun_ulocal` in `functions.cpp:2408` calls
@@ -416,19 +422,19 @@ Inlined bodies that mutate `%q*` leak changes to the caller.
 `restore_global_regs()`/`PopRegisters()` after.
 
 *Fix*: For `ULOCAL`, emit register save/restore around the inlined
-body.  Two options:
-  A. **ECALL pair**: `ECALL_SAVE_QREGS` before, `ECALL_RESTORE_QREGS`
-     after.  Simple, delegates to existing save/restore code.
-  B. **HIR save/restore**: Emit `HIR_QREG_PUSH` / `HIR_QREG_POP`
+body. Two options:
+  A. **ECALL pair:** `ECALL_SAVE_QREGS` before, `ECALL_RESTORE_QREGS`
+     after. Simple, delegates to existing save/restore code.
+  B. **HIR save/restore:** Emit `HIR_QREG_PUSH` / `HIR_QREG_POP`
      that copies the 10 SUBST slots to a guest-side shadow array
-     and restores after.  Avoids ECALL overhead.
+     and restores after. Avoids ECALL overhead.
 
-  Option A is simpler for the prototype.  Option B is better long-term.
+  Option A is simpler for the prototype. Option B is better long-term.
 
-**Problem 4 — CARGS slot mismatch (MEDIUM)**
+**Problem 4—CARGS slot mismatch (MEDIUM)**
 
 For `u(obj/attr, arg1, arg2, ...)`, the body's `%0-%9` resolve to
-fixed guest memory at `CARGS_BASE + idx * CARGS_SLOT`.  The prototype
+fixed guest memory at `CARGS_BASE + idx * CARGS_SLOT`. The prototype
 wrote args with `HIR_STORE_Q`, which targets `%q` registers (SSA
 tracking in `hir_ssa.cpp:292`), not the CARGS memory slots.
 
@@ -436,7 +442,7 @@ tracking in `hir_ssa.cpp:292`), not the CARGS memory slots.
 Either:
   A. **New HIR op** `HIR_STORE_CARG(val, idx)` that emits a store
      to `CARGS_BASE + idx * CARGS_SLOT` in codegen.
-  B. **Emit as memory store**: Use the existing `HIR_DMA_WRITE` or
+  B. **Emit as memory store:** Use the existing `HIR_DMA_WRITE` or
      add a guest memory write that copies the string to the fixed
      address.
 
@@ -448,16 +454,17 @@ Either:
 
 The HIR_CALL codegen is string-oriented: arguments are marshaled
 as guest string pointers via `loc[ai].addr`, and results are written
-to a guest output buffer.  TY_INT calls don't get output buffers.
+to a guest output buffer. TY_INT calls don't get output buffers.
 Dedicated ECALLs that need integer arguments or integer results
 (permission guard, save/restore handles, CARGS indices) cannot be
 forced through this ABI without corruption.
 
 **Two failed approaches:**
+
 1. Dedicated ECALL types (ECALL_CHECK_U_PERM etc.) with custom
-   codegen — broke because the HIR_CALL path always marshals
+   codegen—broke because the HIR_CALL path always marshals
    args as string pointers.
-2. Register-based result passing (`loc[i].in_reg = true`) — broke
+2. Register-based result passing (`loc[i].in_reg = true`)—broke
    because BRC reads conditions from guest memory addresses, not
    registers.
 
@@ -472,26 +479,26 @@ _save_cargs()                      → handle_str
 _restore_cargs(handle_str)         → ""
 ```
 These go through ECALL_CALL_INDEX with standard string marshaling.
-No codegen changes needed.  The permission check result ("0"/"1")
-goes through ATOI → BRC via the existing known_int path.
+No codegen changes needed. The permission check result ("0"/"1")
+goes through ATOI—BRC via the existing known_int path.
 
 CARGS save/restore is required to avoid clobbering the caller's
-%0-%9.  The real fun_u scopes cargs to the nested mux_exec() call;
+%0-%9. The real fun_u scopes cargs to the nested mux_exec() call;
 the inlined path must save the CARGS_BASE region before writing
 new args and restore it after the body completes.
 
 #### Implementation order
 
-1. Add per-attr `mod_count` to attr metadata.  Increment in
-   `atr_add()` / `atr_clr()`.  Persist in SQLite attributes table.
+1. Add per-attr `mod_count` to attr metadata. Increment in
+   `atr_add()` / `atr_clr()`. Persist in SQLite attributes table.
 2. Register `_check_u_perm`, `_save_qregs`, `_restore_qregs`,
    `_write_carg`, `_save_cargs`, `_restore_cargs` in engine_api.
 3. Implement the helpers as FUNCTION() handlers.
-4. Add dependency vector to compiled_program.  Add corresponding
-   columns to the SQLite code_cache schema.  Update
+4. Add dependency vector to compiled_program. Add corresponding
+   columns to the SQLite code_cache schema. Update
    `reconstruct_from_cache()` and `store_to_sqlite_cache()`.
 5. Add staleness check in `compile_cached()`: on memory cache hit,
-   verify each `{dbref, attr_num, mod_count}` dependency.  Evict
+   verify each `{dbref, attr_num, mod_count}` dependency. Evict
    and recompile if any is stale.
 6. Re-implement the inlining in `hir_lower_funccall()` using
    `emit_call()` to the registered helpers.
@@ -499,28 +506,28 @@ new args and restore it after the body completes.
    benchmark on production DB), and staleness (modify attr,
    verify only affected callers recompile).
 
-### Level 4: Persistent/shared DBT context — DEFERRED
+### Level 4: Persistent/shared DBT context—DEFERRED
 
-**Cost:** Very high — architectural change to DBT lifecycle.
+**Cost:** Very high—architectural change to DBT lifecycle.
 **Benefit:** Marginal after Tier 2 coverage expansion and Tier 3 inlining.
 **Status:** Investigation complete (2026-03-21). Not worth pursuing.
 
 #### Why the original analysis was wrong
 
 The original 50ms figure was the **first-time** cost of `mmap(1MB,
-PROT_EXEC)` in `dbt_init()`.  This happens exactly once per server
-lifetime.  Subsequent program switches use `dbt_reset()` (~1ms) or
+PROT_EXEC)` in `dbt_init()`. This happens exactly once per server
+lifetime. Subsequent program switches use `dbt_reset()` (~1ms) or
 `dbt_rerun()` (<1µs for same program).
 
 For nested re-entrant execution, the actual cost would be ~2ms per
 nesting level (two `dbt_reset()` calls + block retranslation), vs
-~0.003ms for the AST fallback.  The re-entrancy guard is **600x
+~0.003ms for the AST fallback. The re-entrancy guard is **600x
 faster** than switching DBT contexts for typical `u()` calls.
 
 #### When would it matter?
 
 Only when the inner expression is complex enough that AST evaluation
-takes >2ms — rare for typical `u()` bodies.  And Tier 3 u() inlining
+takes >2ms—rare for typical `u()` bodies. And Tier 3 u() inlining
 (Level 3, shipped) eliminates the nested call entirely for the hot
 path, making Level 4 redundant for the most common case.
 
@@ -531,11 +538,11 @@ The better approach is to **eliminate ECALLs** rather than make nested
 JIT cheap:
 
 1. **Level 2 Tier 2 coverage** — move more builtins into pre-compiled
-   RV64 guest blobs (JAL, no ECALL, no host transition).  Every
+   RV64 guest blobs (JAL, no ECALL, no host transition). Every
    builtin moved to Tier 2 is one fewer opportunity for re-entry.
-2. **Level 3 u() inlining** (DONE) — resolves the `u()` call at
+2. **Level 3 u() inlining** (DONE)—resolves the `u()` call at
    compile time, inlines the body, no ECALL at all.
-3. **Lua JIT Phase 3** (DONE) — native string compare, integer table
+3. **Lua JIT Phase 3** (DONE)—native string compare, integer table
    fast-path, pinned array access, persistent cache.
 
 If both Level 2 and Level 3 are fully exploited, the remaining ECALLs
@@ -545,7 +552,7 @@ the ECALL overhead is negligible compared to the operation itself.
 ### Measurement methodology
 
 All measurements use `muxscript --readonly` against the production
-database snapshot.  This gives repeatable, isolated results without
+database snapshot. This gives repeatable, isolated results without
 running a live game server.
 
 ```sh
@@ -568,7 +575,7 @@ echo 'think [jitstats()]' \
 
 The per-attr dependency infrastructure built for Tier 3 cache
 invalidation is the same foundation needed for concurrent softcode
-evaluation (multiple parser threads).  The core problem is identical:
+evaluation (multiple parser threads). The core problem is identical:
 knowing when cached/in-progress work is stale because underlying
 data changed.
 
@@ -576,9 +583,9 @@ data changed.
 
 | Tier 3 component | Concurrent eval equivalent |
 |---|---|
-| `attr_mod_count_get()` | Optimistic read validation: snapshot mod_count before reading attr, check after evaluation. If changed → retry or invalidate. |
+| `attr_mod_count_get()` | Optimistic read validation: snapshot mod_count before reading attr, check after evaluation. If changed—retry or invalidate. |
 | `s_attr_mod_counts` map | Needs `std::atomic<uint32_t>` or reader-writer lock. Current `uint32_t` is single-threaded only. |
-| `s_compile_cache` | Needs concurrent hash map or RW lock. Compiled blobs are immutable after creation — reads are safe, only insertion and staleness eviction need sync. |
+| `s_compile_cache` | Needs concurrent hash map or RW lock. Compiled blobs are immutable after creation—reads are safe, only insertion and staleness eviction need sync. |
 | `deps_are_fresh()` | Per-thread validation before executing cached code. Same compare loop, just atomic reads. |
 | Two-phase collect/apply | Transaction isolation for bulk attr operations across threads. |
 
@@ -598,10 +605,10 @@ data changed.
 
 ### What's already safe
 
-- **compiled_program blobs**: immutable after creation. Multiple
+- **compiled_program blobs:** immutable after creation. Multiple
   threads can read the same cached blob concurrently.
-- **Tier 2 RV64 blob**: read-only shared code loaded once at startup.
-- **SQLite**: thread-safe with WAL mode (concurrent readers, serial
+- **Tier 2 RV64 blob:** read-only shared code loaded once at startup.
+- **SQLite:** thread-safe with WAL mode (concurrent readers, serial
   writer). `attr_mod_count_get()` SQLite fallback works as-is.
 - **Permission checks** (`See_attr`, `NoEval`): read-only queries
   against object flags and attr metadata. Safe for concurrent reads
@@ -612,7 +619,7 @@ data changed.
 - **attr writes** (`atr_add`, `atr_clr`): must serialize to maintain
   mod_count monotonicity. Current write-through to SQLite already
   serializes via SQLite's writer lock.
-- **JIT cache insertion/eviction**: needs mutex or concurrent map.
+- **JIT cache insertion/eviction:** needs mutex or concurrent map.
   The LRU list (`s_compile_lru`) is not thread-safe.
 - **Guest memory allocation** (`rv_compiler` pools): per-compilation,
   so per-thread if compilations are thread-local.

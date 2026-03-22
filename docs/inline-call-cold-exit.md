@@ -12,7 +12,7 @@ The DBT translates RV64 guest code to x86-64 native code. Functions
 in the "blob" (pre-compiled softlib.rv64) provide Tier 2 string
 operations (WORDS, SPLIT_TOKEN, STRCAT, etc.).
 
-**Inline CALL mechanism**: When a program block has a JAL ra (function
+**Inline CALL mechanism:** When a program block has a JAL ra (function
 call) to a blob function, and the blob entry is in the block cache,
 the translator emits an x86 `CALL` to the blob's native code instead
 of exiting to the dispatch loop. After the callee RETs, the hot-path
@@ -52,43 +52,44 @@ blocks. Eventually reaches block 0x1094C (21 instructions):
 ```
 
 The JALR at #21 terminates the block via:
-1. `rc_read(rs1=ra)` → reads restored ra (0x140) from register cache
-2. `emit_store_next_pc(RCX)` → stores 0x140 to ctx.next_pc
-3. `rc_flush` → writes all cached registers to ctx
-4. `emit_exit_indirect(RCX)` → stores next_pc=RCX, RETs
+
+1. `rc_read(rs1=ra)` — reads restored ra (0x140) from register cache
+2. `emit_store_next_pc(RCX)` — stores 0x140 to ctx.next_pc
+3. `rc_flush` — writes all cached registers to ctx
+4. `emit_exit_indirect(RCX)` — stores next_pc=RCX, RETs
 
 After the RET, the program's inline CALL continuation checks:
-`cmp ctx.next_pc, 0x140` → should match → hot path.
+`cmp ctx.next_pc, 0x140` — should match—hot path.
 
 **BUT the cold exit fires with actual=0x1096C.** The JALR's
 `emit_store_next_pc` should have overwritten 0x1096C with 0x140.
 
 ### What We've Ruled Out
 
-1. **Cache collisions**: 4-way set-associative cache (1024 sets × 4 ways).
+1. **Cache collisions:** 4-way set-associative cache (1024 sets × 4 ways).
    Verified no collisions between blob and program PCs.
 
-2. **Unchained blob blocks**: All 3043/3043 chains resolved. No
+2. **Unchained blob blocks:** All 3043/3043 chains resolved. No
    slow-path stubs executing within the blob.
 
-3. **Pretranslation gaps**: Deep pretranslation with callee-first
+3. **Pretranslation gaps:** Deep pretranslation with callee-first
    ordering and visited set. All blob blocks pretranslated.
 
-4. **RAS prediction corruption**: Disabled RAS pop_and_probe entirely.
+4. **RAS prediction corruption:** Disabled RAS pop_and_probe entirely.
    Cold exit pattern unchanged.
 
-5. **Register state corruption**: JALR handler stores next_pc BEFORE
+5. **Register state corruption:** JALR handler stores next_pc BEFORE
    flush. Flush doesn't touch ctx.next_pc (offset 256, flush writes
    to x[0..31] at offsets 0-248).
 
-6. **Wrong block executing**: Block 0x1094C's instruction dump
+6. **Wrong block executing:** Block 0x1094C's instruction dump
    confirms JALR x0, ra, 0 at insn #21. LD ra, 56(sp) at insn #13
    restores correct ra. Prologue (0x10820) saves ra at 56(sp).
 
 ### RAS Probe: Not the Cause of This Symptom
 
 Disabling emit_ras_pop_and_probe globally did not change the
-0x1096C cold-exit pattern — the probe is not the cause of THIS
+0x1096C cold-exit pattern—the probe is not the cause of THIS
 symptom. However, the probe remains architecturally unsafe for
 inline-call contexts: on a hit, it JMPs directly to the predicted
 block, bypassing emit_exit_indirect's RET. This breaks the x86
@@ -111,7 +112,7 @@ is currently disabled pending a context-aware mechanism.
 
 3. **Is the x86 CALL/RET pairing correct?** The inline CALL pushes
    a continuation on the x86 stack. The callee's JALR does
-   exit_indirect → RET. The RET should pop the continuation. If
+   exit_indirect—RET. The RET should pop the continuation. If
    something between the CALL and the final RET consumes the
    continuation (extra RET from an unchained exit), the cold exit
    fires. All 3043/3043 chains verified resolved, so no slow-path
@@ -125,8 +126,8 @@ is currently disabled pending a context-aware mechanism.
 
 5. **ANSWERED: The cold exit is from the OUTER inline CALL.**
    `cold_exit_expected` reports `e=0x140` (program return address),
-   confirming the OUTER program→blob inline CALL's cold exit fires.
-   The inner blob→intrinsic inline CALL succeeds (hot path).
+   confirming the OUTER program—blob inline CALL's cold exit fires.
+   The inner blob—intrinsic inline CALL succeeds (hot path).
 
 6. **ANSWERED: 0x1096C cold exit SOLVED.** The leaf function at
    0x11E78 (satoi/sitoa epilogue) was called via JMP (non-inline)
@@ -139,7 +140,7 @@ is currently disabled pending a context-aware mechanism.
 7. **Remaining: WORDS cold exit.** `ce=7(a=0x107C4,e=0x14,from=0x11E88)`.
    Same leaf function (0x11E88), but from the WORDS call chain.
    The sitoa intrinsic at 0x158A8 is translated AFTER its caller
-   block (0x107B4) — a translation-order race where a parent block
+   block (0x107B4)—a translation-order race where a parent block
    absorbs 0x107B4 via superblock extension before the worklist
    processes it. The inline CALL check sees found=0 on first
    translation, found=1 on subsequent. This costs 2 constant

@@ -10,13 +10,13 @@ underneath.
 ## Why Two Languages
 
 **TF script** is the MU-native language. It understands triggers, macros,
-worlds, hilites — the domain vocabulary. Players who have used TinyFugue for
+worlds, hilites—the domain vocabulary. Players who have used TinyFugue for
 25 years think in it. It is terse and domain-appropriate for interactive use.
 You do not want to type `lua.macro.create("foo", function() ... end)` to make
 a trigger.
 
 **Lua** is the embed-everywhere language. Small, fast, clean C API, embeds
-into anything — C++, Swift, Kotlin, even WASM. If one scripting language must
+into anything—C++, Swift, Kotlin, even WASM. If one scripting language must
 work across all clients, Lua is the only realistic answer. JavaScript only
 works natively on the web. Python is too heavy. Lua was literally designed for
 embedding.
@@ -27,7 +27,7 @@ TF script stays as the **shell** — the interactive command language. `/def`,
 `/trig`, `/bind`, the things typed at the input line.
 
 Lua becomes the **power layer** underneath. When a TF script needs real
-logic — string parsing, state machines, complex trigger behavior — it calls
+logic—string parsing, state machines, complex trigger behavior—it calls
 into Lua. Think of it like how vim has ex commands for quick stuff and
 Lua/Python for serious plugins.
 
@@ -53,7 +53,7 @@ A common capability surface should be defined across the Lua and JavaScript
 - What queries can they make (room state, channel list, mail count).
 - What mutations are allowed (send command, set variable, modify trigger).
 
-Defining this contract early — even informally — prevents the Lua and
+Defining this contract early—even informally—prevents the Lua and
 JavaScript implementations from diverging into incompatible ecosystems.
 
 ### HTML5 Client
@@ -76,7 +76,7 @@ Lua integrate with the existing AST evaluator.
 
 Server-side Lua comes first because:
 
-1. Full control over the environment — iterate without breaking client UX.
+1. Full control over the environment—iterate without breaking client UX.
 2. Sandboxing, memory limits, and API surface questions get answered here.
 3. The binding patterns learned directly inform client embedding.
 
@@ -87,11 +87,11 @@ the complexity of an embedded scripting runtime.
 
 Requirements (no compromises):
 
-- **IOCP** for async I/O — proper overlapped sockets, not select/poll.
+- **IOCP** for async I/O—proper overlapped sockets, not select/poll.
 - **Unicode 16.0** — full grapheme cluster segmentation, NFC normalization,
   using libmux's existing `co_*` functions and DFA tables.
-- **Schannel** for TLS — native Windows crypto, no OpenSSL dependency.
-- **Telnet** protocol — NAWS, CHARSET, GMCP/MSSP negotiation.
+- **Schannel** for TLS—native Windows crypto, no OpenSSL dependency.
+- **Telnet** protocol—NAWS, CHARSET, GMCP/MSSP negotiation.
 - **Win32 Console API** — direct console buffer manipulation, not a POSIX
   compatibility layer. Input line, scrollback, status bar.
 - Reuses libmux (or equivalent code) for color ops, string handling, and
@@ -111,7 +111,7 @@ and embedding patterns.
 
 The full vision is a series of reference clients:
 
-1. **ncurses** (TitanFugue) — DONE.
+1. **ncurses** (TitanFugue)—DONE.
 2. **Win32 Console** — Phase 2 above. IOCP, Schannel, Unicode 16, Win32 API.
 3. **Win32 GUI** — Raw Win32 API (not MFC). Rich edit output, tabbed
    connections, proper font rendering. The MUSHClient replacement without

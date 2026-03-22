@@ -8,9 +8,9 @@ Predecessors: `docs/PARSER.md` (study), `docs/PARSER_REPLACE.md` (AST evaluator)
 
 External work: `~/riscv` (DBT runtime), `~/slow-32` (ISA design + toolchain history)
 
-**As of 2026-03-14**: 593 smoke tests, ~8,400 lines across 8 files
+**As of 2026-03-14:** 593 smoke tests, ~8,400 lines across 8 files
 (+ DBT runtime). Full SSA compiler pipeline operational:
-AST → HIR → SSA → optimize → linear-scan regalloc → RV64 → x86-64 JIT.
+AST—HIR—SSA—optimize—linear-scan regalloc—RV64—x86-64 JIT.
 Loop compilation (iter) with SSA back-edges and PHI nodes. Tier 2 blob
 with two layers: hand-written RV64 functions + cross-compiled Ragel
 color_ops (full PUA color, Unicode 16, CJK width). 17 co_* intrinsics
@@ -21,9 +21,9 @@ persists compiled programs across restarts (schema v7).
 Inline CALL pipeline: zero cold exits, constant disp=2 (entry + exit).
 4-way set-associative block cache (1024 sets × 4 ways = 4096 entries).
 Pre-translate intrinsic stubs before function pretranslation (leaves first).
-Callee-first recursive pretranslation with visited set.  Scan past JAL rd=1
+Callee-first recursive pretranslation with visited set. Scan past JAL rd=1
 in worklist to discover all call targets within superblock-extended blocks.
-Entire iter loop body runs in one trampoline call — no per-element dispatch.
+Entire iter loop body runs in one trampoline call—no per-element dispatch.
 
 ## Motivation
 
@@ -31,7 +31,7 @@ The AST evaluator (complete in brazil) eliminated the text-level
 replacement-and-reparse loop. Every softcode expression is now parsed
 once into a typed AST and cached via an LRU parse cache. This is
 faster than the classic `mux_exec()` stream transformer, but still
-interpreted — each eval walks the tree, dispatches on node type, and
+interpreted—each eval walks the tree, dispatches on node type, and
 calls into the engine.
 
 The next step is to compile softcode to native machine code. The key
@@ -44,7 +44,7 @@ non-RISC-V hosts, we get:
  - Native execution on RISC-V hosts (no translation overhead).
  - ~70% of native speed on other hosts via DBT with block/superblock
    translation, register caching, and peephole optimization.
- - A portable binary cache — compiled code stored in SQLite travels
+ - A portable binary cache—compiled code stored in SQLite travels
    with the database across architectures.
 
 ## The Type Problem
@@ -54,7 +54,7 @@ strings, parses them to numbers, adds, converts the result back to a
 string. `#123` is four characters. A list is a string with spaces in
 it.
 
-The compiler's job is not to optimize arithmetic — it's to figure out
+The compiler's job is not to optimize arithmetic—it's to figure out
 when intermediate values can **avoid being strings**. If `add(mul(%q0,2),1)`
 can keep the intermediate values as integers in machine registers and
 only convert to string at the final output boundary, that eliminates
@@ -73,32 +73,32 @@ The SSA IR uses a type lattice for each value:
          string
 ```
 
- - **Bottom-up (production)**: Each function has a known output type.
+ - **Bottom-up (production):** Each function has a known output type.
    `add()` produces int64. `fdiv()` produces f64. `name()` produces
    string. Literals are typed at parse time (`42` is int64, `3.14`
    is f64, `#123` is dbref, anything else is string).
 
- - **Top-down (consumption)**: Each value's type is constrained by
+ - **Top-down (consumption):** Each value's type is constrained by
    how it is consumed. If the result of `add()` feeds into another
    `add()`, it stays int64. If it feeds into `cat()` or becomes final
    output, it must materialize as string.
 
- - **Narrowing**: The compiler intersects production and consumption
+ - **Narrowing:** The compiler intersects production and consumption
    types. If `add()` produces int64 and its consumer needs int64, no
    conversion. If the consumer needs string, insert a `to_string`
    conversion at the edge.
 
-This is not traditional type inference — it's type *avoidance*. The
+This is not traditional type inference—it's type *avoidance*. The
 goal is to keep values in machine representation as long as possible
 and only pay the string conversion cost at boundaries.
 
 ### Representation at Runtime
 
- - **int64**: Machine register, 64-bit signed integer.
- - **f64**: Floating-point register, IEEE 754 double.
- - **dbref**: Machine register, 32-bit signed integer (same as int64
+ - **int64:** Machine register, 64-bit signed integer.
+ - **f64:** Floating-point register, IEEE 754 double.
+ - **dbref:** Machine register, 32-bit signed integer (same as int64
    in registers, but semantically distinct for validation).
- - **string**: Opaque handle (pointer + length). Reference counted.
+ - **string:** Opaque handle (pointer + length). Reference counted.
    Engine-managed allocation.
 
 ### Where Conversions Happen
@@ -125,7 +125,7 @@ sandbox.
 
 Lua is a natural candidate:
 
- - Already has real types (number, string, boolean, table, nil) — the
+ - Already has real types (number, string, boolean, table, nil)—the
    type inference problem is simpler than for MUXcode.
  - Well-understood compilation (LuaJIT exists as a reference, though
    we are not embedding it).
@@ -135,7 +135,7 @@ Lua is a natural candidate:
 
 The Lua frontend produces SSA IR with richer type information than
 MUXcode (Lua variables have declared types or can be inferred from
-usage). This means Lua code compiles more efficiently — fewer
+usage). This means Lua code compiles more efficiently—fewer
 speculative conversions, more values stay in machine types.
 
 ### Shared Infrastructure
@@ -149,6 +149,7 @@ Lua source --------> Lua AST ---/                      |
 ```
 
 Both languages:
+
  - Share the same SSA optimization passes
  - Share the same RISC-V code generator
  - Share the same SQLite code cache
@@ -190,7 +191,7 @@ For any softcode expression, given the same game state:
  - String allocation/deallocation goes through the engine's allocator,
    not `malloc`. This ensures buffer pools and leak detection work
    the same way.
- - The DBT runtime enforces memory isolation — compiled code cannot
+ - The DBT runtime enforces memory isolation—compiled code cannot
    access arbitrary memory outside its sandbox (stack, registers,
    and engine API calls only).
 
@@ -201,7 +202,7 @@ tiers based on execution frequency:
 
 ### Tier 0: Interpret Only
 
- - Code executed fewer than N times (configurable threshold, e.g. 8).
+ - Code executed fewer than N times (configurable threshold, e.g., 8).
  - Uses the existing AST evaluator with LRU parse cache.
  - An execution counter on each parse cache entry tracks invocations.
  - Zero compilation overhead. This is the right tier for:
@@ -238,7 +239,7 @@ tiers based on execution frequency:
  - Invalidation is keyed by source text hash, not object/attribute.
    If two attributes have identical source text, they share the
    same compiled binary (content-addressed).
- - `@dbclean` / `@purge` do not affect the code cache — compiled
+ - `@dbclean` / `@purge` do not affect the code cache—compiled
    entries are keyed by content, not by attrnum.
 
 ## Architecture
@@ -283,7 +284,7 @@ x86-64 DBT: block chaining, register cache,      [done]
 
 ### RISC-V Target: RV64IMD
 
-The target ISA is RV64IMD — Integer, Multiply, Double-precision float.
+The target ISA is RV64IMD—Integer, Multiply, Double-precision float.
 This provides:
 
  - 64-bit integer arithmetic (sufficient for dbref, timestamps, counters)
@@ -299,18 +300,18 @@ native code at execution time. The initial host target is **x86-64**
 (the only host with a proven translator in ~/riscv). ARM64 host
 support is a future addition.
 
- - **Block translation**: Translate basic blocks on first execution,
+ - **Block translation:** Translate basic blocks on first execution,
    cache the native translation.
- - **Superblocks**: Chain hot blocks across branches to reduce
+ - **Superblocks:** Chain hot blocks across branches to reduce
    translation overhead and enable cross-block optimization.
- - **Register caching**: Map frequently-used RV64 registers to host
+ - **Register caching:** Map frequently-used RV64 registers to host
    registers across block boundaries. 8-slot LRU cache using
    RSI/RDI/R8-R11/R14/R15 on x86-64.
- - **Instruction fusion**: LUI+ADDI → single MOV imm32. AUIPC+ADDI
-   → LEA. AUIPC+JALR → direct CALL. SLT+branch → single Jcc.
- - **Diamond merge**: Short forward branches (≤16 bytes of guest
+ - **Instruction fusion:** LUI+ADDI—single MOV imm32. AUIPC+ADDI
+   — LEA. AUIPC+JALR—direct CALL. SLT+branch—single Jcc.
+ - **Diamond merge:** Short forward branches (≤16 bytes of guest
    code) translated as conditional moves instead of branches.
- - **Return address stack**: Predict JALR returns to avoid indirect
+ - **Return address stack:** Predict JALR returns to avoid indirect
    branch overhead.
 
 The DBT layer is host-specific (one implementation per target
@@ -318,14 +319,15 @@ architecture) but the input is always the same RV64IMD binary. This
 inverts the traditional cross-compilation problem: instead of N
 compiler backends, you have N thin translation layers.
 
-On native RISC-V hosts, compiled code executes directly — no
+On native RISC-V hosts, compiled code executes directly—no
 translation needed. The DBT layer is bypassed entirely.
 
 ### What Gets Compiled vs. Runtime Calls
 
 Not every softcode function becomes inline machine code. The split:
 
-**Compiled (inline RISC-V)**:
+**Compiled (inline RISC-V):**
+
  - Arithmetic: `add()`, `sub()`, `mul()`, `div()`, `mod()`, comparisons
  - Logic: `and()`, `or()`, `not()`, `t()`
  - Control flow: `if()`, `ifelse()`, `switch()`/`case()`, `switchall()`/
@@ -335,7 +337,8 @@ Not every softcode function becomes inline machine code. The split:
  - Register access: `%q0`-`%q9`, `setr()`, `setq()`
  - Type conversions: `int_to_string`, `string_to_int`, etc.
 
-**Runtime calls (call into engine via function pointer table)**:
+**Runtime calls (call into engine via function pointer table):**
+
  - Database access: `get()`, `set()`, `u()`, `v()`, `xget()`
  - Object operations: `tel()`, `create()`, `name()`, `owner()`
  - I/O: `pemit()`, `remit()`, `oemit()`
@@ -344,7 +347,7 @@ Not every softcode function becomes inline machine code. The split:
  - Anything touching the descriptor/connection layer
 
 The compiled code calls into the engine for runtime operations using
-a stable ABI — a function pointer table passed to the compiled code
+a stable ABI—a function pointer table passed to the compiled code
 at invocation. The table is the sandbox boundary.
 
 ## Relationship to ~/slow-32 and ~/riscv
@@ -366,74 +369,75 @@ Both projects are **studies and reference implementations**, not
 dependencies. TinyMUX's execution environment is fundamentally
 different from a microcontroller profile:
 
- - **No guest memory model**: Compiled softcode doesn't do pointer
+ - **No guest memory model:** Compiled softcode doesn't do pointer
    arithmetic, heap allocation, or file I/O in the guest. The "memory"
    is a register file (q-registers, loop state) and engine API calls.
- - **No ELF loading**: Code is emitted directly into byte buffers,
+ - **No ELF loading:** Code is emitted directly into byte buffers,
    not compiled as separate ELF binaries. No linker, no crt0, no
    guest libc.
- - **ECALL = Engine API**: Instead of Linux syscall numbers, ECALL
+ - **ECALL = Engine API:** Instead of Linux syscall numbers, ECALL
    dispatches to the EngineAPI function pointer table (get_attr,
    set_attr, notify, etc.). The sandbox boundary.
- - **RV64 not RV32**: ~/riscv targets RV32IMFD (32-bit integers,
-   32-bit pointers). TinyMUX needs RV64IMD — 64-bit integers for
+ - **RV64 not RV32:** ~/riscv targets RV32IMFD (32-bit integers,
+   32-bit pointers). TinyMUX needs RV64IMD—64-bit integers for
    timestamps, counters, and pennies; 64-bit pointers for calling
    into the host engine API on 64-bit hosts. The decoder and
    translator must be ported from 32-bit to 64-bit register width.
 
 What carries over from ~/riscv unchanged:
 
- - **DBT techniques**: Block translation, superblock formation,
+ - **DBT techniques:** Block translation, superblock formation,
    register caching (LRU), instruction fusion (LUI+ADDI, AUIPC+ADDI,
    AUIPC+JALR, SLT+branch), diamond merge for short forward branches,
    block chaining via inline cache probes, return address stack
    prediction.
- - **Host register convention**: RBX = context pointer, R12 = memory
+ - **Host register convention:** RBX = context pointer, R12 = memory
    base, R13 = cache base, 8-slot LRU register cache in RSI/RDI/
    R8-R11/R14/R15. (Adapted for 64-bit guest registers.)
- - **Block cache**: Direct-mapped hash table for translated blocks.
- - **Interpreter**: Reference interpreter for correctness testing
+ - **Block cache:** Direct-mapped hash table for translated blocks.
+ - **Interpreter:** Reference interpreter for correctness testing
    and debugging, runs the same RV64IMD code without translation.
 
 What must be written fresh for TinyMUX:
 
- - **RV64 decoder**: Widen all register reads/writes from 32 to 64
+ - **RV64 decoder:** Widen all register reads/writes from 32 to 64
    bits. Add RV64-specific instructions: ADDIW, ADDW, SUBW, SLLW,
-   SRLW, SRAW, MULW, DIVW, REMW (and unsigned variants) — the W-suffix
+   SRLW, SRAW, MULW, DIVW, REMW (and unsigned variants)—the W-suffix
    instructions that operate on the lower 32 bits with sign extension.
    LD/SD (64-bit load/store) replace LW/SW as the primary width.
- - **RV64 x86-64 emitter**: Guest registers are now 64-bit, so the
+ - **RV64 x86-64 emitter:** Guest registers are now 64-bit, so the
    emitter uses full 64-bit host register operations (REX.W prefixes
    throughout). The 8-slot register cache maps 64-bit guest registers
-   to 64-bit host registers — same LRU logic, wider values.
- - **ECALL dispatch**: Replace Linux syscall routing with EngineAPI
+   to 64-bit host registers—same LRU logic, wider values.
+ - **ECALL dispatch:** Replace Linux syscall routing with EngineAPI
    dispatch. Each ECALL number maps to an EngineAPI function pointer.
-   Arguments in a0-a7, return value in a0 — same calling convention,
+   Arguments in a0-a7, return value in a0—same calling convention,
    different dispatch table.
- - **Simplified memory model**: No guest heap, no W^X enforcement.
+ - **Simplified memory model:** No guest heap, no W^X enforcement.
    Compiled code accesses a small, fixed-size context struct (q-regs,
    loop counters, executor/caller/enactor) via a base pointer. All
    game state access goes through ECALL.
 
 ## Implementation Stages
 
-### Proof of Concept → Production Compiler (Complete)
+### Proof of Concept—Production Compiler (Complete)
 
-The initial proof of concept (AST → direct RV64 emission) validated
+The initial proof of concept (AST—direct RV64 emission) validated
 the end-to-end architecture. It has since evolved into a full SSA
 compiler with control flow, register allocation, and Tier 2 blob
-support. The "PoC" label no longer applies — this is the production
+support. The "PoC" label no longer applies—this is the production
 compiler.
 
 **What exists** (dbt_compile.cpp, ~3870 lines + hir.h/hir_ssa/hir_opt):
- - Full HIR-based SSA pipeline: AST → HIR → SSA → optimize → codegen
+
+ - Full HIR-based SSA pipeline: AST—HIR—SSA—optimize—codegen
  - Constant folding for 28+ functions at compile time
  - Type tracking (TY_INT / TY_STRING) with inline RV64 atoi/itoa
  - Native RV64 arithmetic: add, sub, mul, div, rem, abs, sign, max,
    min, inc, dec, eq, ne, lt, le, gt, ge, not, bool
- - Control flow: if/ifelse → BRC+PHI, cand/cor → short-circuit chains,
-   switch/case → branch-chain codegen with ECALL pattern matching,
-   iter() → multi-block loop with SSA back-edges and PHI nodes
+ - Control flow: if/ifelse—BRC+PHI, cand/cor—short-circuit chains,
+   switch/case—branch-chain codegen with ECALL pattern matching,
+   iter()—multi-block loop with SSA back-edges and PHI nodes
  - SSA: CFG, RPO, dominator tree, PHI insertion, renaming (%q0-%q9),
    loop-aware liveness analysis for cross-iteration register safety
  - Linear-scan register allocation (Poletto-Sarkar, 11 regs, spill/reload)
@@ -443,13 +447,14 @@ compiler.
  - Softcode functions: rvcall(), rveval(), rvbench()
 
 **Benchmark results** (production cache path, 10K iterations, ce=0, disp=2):
+
  - Folded expressions: 0.03-0.06 us/call (10-19x faster than AST eval)
  - ECALL expressions: 0.40-0.52 us/call (at parity or faster than AST eval)
  - Tier 2 string ops: 0.49-0.80 us/call (parity with native co_* eval)
  - iter(3 elems, X): 0.66 us/call vs 0.91us native (**1.4x faster**)
  - iter(5 elems, add): 1.60 us/call vs 2.07us native (**1.3x faster**)
- - iter(20 elems, X): 4.69 us/call vs 1.13us native (4.2x — per-element work)
- - Cold exits: 0.  Dispatches: 2 (entry + ECALL exit).
+ - iter(20 elems, X): 4.69 us/call vs 1.13us native (4.2x—per-element work)
+ - Cold exits: 0. Dispatches: 2 (entry + ECALL exit).
  - Native arithmetic chains: 0.40-0.44 us/call (20% faster than AST eval)
  - Native AST eval baseline: 0.3-1.0 us/call
 
@@ -458,7 +463,7 @@ compiler.
 RV64IMD dynamic binary translator, fresh implementation informed by
 ~/riscv's proven patterns.
 
-**Location**: `mux/modules/engine/` — compiled into `engine.so`.
+**Location:** `mux/modules/engine/` — compiled into `engine.so`.
 
 Files: `dbt_decoder.h`, `dbt_interp.cpp`, `dbt.cpp` (~1600 lines),
 `dbt_emit_x64.h`, `dbt_elf64.cpp`, `dbt_harness.cpp`
@@ -485,12 +490,13 @@ instructions to x86-64. Self-loop detection with superblock side exits.
 Native CALL continuation for Tier 2 function calls.
 
 Optimization state:
+
  - ✅ 8-slot LRU register cache (RSI/RDI/R8-R11/R14/R15)
- - ✅ 4 pinned registers: a0→RSI, a1→RDI, a2→R8, a3→R9
+ - ✅ 4 pinned registers: a0—RSI, a1—RDI, a2—R8, a3—R9
  - ✅ Pinned register persistence across chained blocks
  - ✅ Block chaining: direct JMP between translated blocks, backpatching
  - ✅ Instruction fusion: LUI+ADDI, AUIPC+ADDI, AUIPC+JALR
- - ✅ Diamond merge: branch-over-one → CMOVcc (ADDI/ADD/SUB/AND/OR/XOR/LUI)
+ - ✅ Diamond merge: branch-over-one—CMOVcc (ADDI/ADD/SUB/AND/OR/XOR/LUI)
  - ✅ RAS: JAL rd=x1 pushes, JALR rs1=x1 pops + inline cache probe
  - ✅ AUIPC 32-bit immediate compression
  - ✅ Immediate size optimization (imm8 short forms)
@@ -499,8 +505,8 @@ Optimization state:
  - ✅ Register aliasing safety: rd==rs2 detection for commutative/non-commutative ops
  - ✅ Self-loop detection: pre-scan finds backward branches (follows JAL-ra calls, JALR returns)
  - ✅ 32-byte warm_entry alignment for self-loop back-edge targets
- - ✅ Superblock side exits: forward branches → Jcc cold stubs, fall-through inline
- - ✅ Native CALL continuation: JAL-ra to pre-translated Tier 2 → x86-64 CALL rel32
+ - ✅ Superblock side exits: forward branches—Jcc cold stubs, fall-through inline
+ - ✅ Native CALL continuation: JAL-ra to pre-translated Tier 2—x86-64 CALL rel32
  - ✅ Pre-translation: worklist-based ahead-of-time translation of Tier 2 entry points
  - ✅ Cache hash XOR spreading: prevents Tier 2 / program code slot collisions
  - ✅ Native intrinsic stubs: data-driven array (32 slots), 6 block-level
@@ -542,16 +548,16 @@ instead of exiting the block. The callee's RET returns to the caller,
 and translation continues inline. Mechanism:
 
  1. `dbt_pretranslate()` — worklist-based pre-translation with:
-    - **Intrinsics-first**: all intrinsic stubs cached before any
+    - **Intrinsics-first:** all intrinsic stubs cached before any
       function pretranslation (leaves first, eliminates ordering races)
-    - **Callee-first**: recursive pretranslation of call targets before
+    - **Callee-first:** recursive pretranslation of call targets before
       translating callers (ensures cache residency for inline CALL)
-    - **Scan-past-JAL**: worklist scanner continues past JAL rd=1
+    - **Scan-past-JAL:** worklist scanner continues past JAL rd=1
       (function calls) to discover ALL call targets in a block, not
-      just the first — critical for functions with multiple internal calls
-    - **Visited set**: 4096-entry hash prevents infinite loops during
+      just the first—critical for functions with multiple internal calls
+    - **Visited set:** 4096-entry hash prevents infinite loops during
       recursive pretranslation across cached intermediate blocks
- 2. 4-way set-associative cache — eliminates hash collisions that
+ 2. 4-way set-associative cache—eliminates hash collisions that
     previously prevented inline CALL decisions at translate time
  3. `try_emit_inline_call()` — shared inline CALL helper, callable
     from JAL handler, LUI+JALR fusion, and AUIPC+JALR fusion:
@@ -559,7 +565,7 @@ and translation continues inline. Mechanism:
     - `emit_ras_push(1)` — poison RAS so callee's probe mismatches
     - `CALL rel32` to callee's native code
     - `CMP [rbx+CTX_NEXT_PC], return_pc` — check callee returned normally
-    - `JNE cold_stub` → cold stub stores diagnostics + `RET` to dispatch
+    - `JNE cold_stub` — cold stub stores diagnostics + `RET` to dispatch
     - `rc_invalidate_reload()` — callee may have clobbered any register
  4. Result: zero cold exits, disp=2 (entry + exit only).
     The entire iter() loop body runs in one trampoline call.
@@ -568,16 +574,18 @@ and translation continues inline. Mechanism:
 
 Data-driven intrinsic system in dbt_state_t: up to 32 slots, each
 mapping a guest address to an emitter function + optional host
-function pointer.  Six signature patterns cover all current needs
+function pointer. Six signature patterns cover all current needs
 (3-6 args, bitfield indicates which are guest pointers).
 
 Block-level intrinsics (custom x86-64 emitters):
- - `rv64_slen` → host strlen
- - `rv64_scopy` → host strcpy+strlen
- - `memcpy`, `memcmp`, `memset` → host libc
- - `memswap` → inline qword swap loop
+
+ - `rv64_slen` — host strlen
+ - `rv64_scopy` — host strcpy+strlen
+ - `memcpy`, `memcmp`, `memset` — host libc
+ - `memswap` — inline qword swap loop
 
 co_* Ragel intrinsics (generic emitter, native host CALL):
+
  - `co_first`, `co_rest`, `co_last`, `co_repeat` (4 args)
  - `co_words_count` (3 args), `co_pos` (4 args)
  - `co_mid`, `co_trim` (5 args), `co_member` (5 args)
@@ -604,20 +612,23 @@ The compiler resolves function names to integer indices at compile
 time; the ECALL handler uses `engine_api_table[index]`.
 
 Files:
+
  - `engine_api.h` — ECALL constants, table declaration, lookup API
  - `functions.cpp` — `engine_api_init()` builds flat FUN* array
  - `dbt_compile.cpp` — emits ECALL_CALL_INDEX (0x101) when known
  - `dbt_harness.cpp` — handles both 0x100 and 0x101 dispatch
 
 ECALL convention:
+
  - `a7 = 0x100` (ECALL_CALL_FUNC): a0 = name ptr (string fallback)
  - `a7 = 0x101` (ECALL_CALL_INDEX): a0 = function index (O(1) lookup)
  - `a7 = 93` (ECALL_EXIT): a0 = exit code
 
 Performance impact (cached path):
- - ECALL dispatch: 0.49→0.41 us (16% faster, 1-ECALL expr)
- - 2-ECALL expr: 0.64→0.50 us (22% faster)
- - Mixed expr: 0.48→0.43 us (10% faster)
+
+ - ECALL dispatch: 0.49—0.41 us (16% faster, 1-ECALL expr)
+ - 2-ECALL expr: 0.64—0.50 us (22% faster)
+ - Mixed expr: 0.48—0.43 us (10% faster)
  - JIT now **faster than native C++ eval** on mixed expressions
 
 #### Stage 2b: High-Level Engine API (FUTURE)
@@ -627,7 +638,7 @@ access, object queries, side effects), define a struct of function
 pointers. Not needed for current Tier 2 functions (cat/strlen/strcat
 are pure string ops with no engine callbacks).
 
-### Stage 3: Softcode Compiler (SSA Pipeline) — Substantially Complete
+### Stage 3: Softcode Compiler (SSA Pipeline)—Substantially Complete
 
 Architecture follows the same parallel-array HIR design proven in
 ~/slow-32/selfhost (14K-line C compiler with full SSA pipeline).
@@ -635,6 +646,7 @@ Architecture follows the same parallel-array HIR design proven in
 #### IR Design
 
 **Parallel-array HIR** (`hir.h`, 353 lines, instruction index = value number):
+
  - `kind[]`, `ty[]`, `src1[]`, `src2[]`, `val[]`, `blk[]`
  - `carg[]`/`cbase[]`/`cnargs[]` — flattened call arguments
  - `pblk[]`/`pval[]`/`pbase[]`/`pnargs[]` — flattened PHI arguments
@@ -642,6 +654,7 @@ Architecture follows the same parallel-array HIR design proven in
  - `known_int[]` — flag for string-typed results known to parse as int
 
 **32 instruction kinds** (see `hir.h` enum):
+
  - Constants: ICONST, SCONST
  - Arithmetic: ADD, SUB, MUL, DIV, REM, NEG, ABS, SIGN, MAX, MIN
  - Comparison: EQ, NE, LT, LE, GT, GE (return int 0/1)
@@ -654,7 +667,7 @@ Architecture follows the same parallel-array HIR design proven in
  - Control: BR, BRC, RET
  - Marker: NOP
 
-**Type lattice**: TY_INT (64-bit in register), TY_STRING (guest
+**Type lattice:** TY_INT (64-bit in register), TY_STRING (guest
 memory address), TY_VOID (side-effect only).
 
 #### Files
@@ -667,12 +680,12 @@ mux/modules/engine/hir_opt.cpp     — SSA optimization passes (654 lines)
 ```
 
 Pipeline in `compile_expression()`:
-AST → hir_lower → hir_build_cfg → hir_ssa_construct → hir_optimize
-→ hir_codegen → guest memory → DBT
+AST—hir_lower—hir_build_cfg—hir_ssa_construct—hir_optimize
+— hir_codegen—guest memory—DBT
 
 #### Milestones
 
- - ✅ **M1: HIR + lowering** — parallel-array IR, AST→HIR for
+ - ✅ **M1: HIR + lowering** — parallel-array IR, AST—HIR for
    literals/calls/sequences/arithmetic, RV64 codegen from HIR.
    576 smoke tests pass. Folded exprs 0.03 us.
 
@@ -682,16 +695,16 @@ AST → hir_lower → hir_build_cfg → hir_ssa_construct → hir_optimize
    (411 lines). setq/r rveval tests pass.
 
  - ✅ **M3: SSA optimization** — constant folding (28+ functions
-   + algebraic identities), copy propagation (chain resolution),
+   - algebraic identities), copy propagation (chain resolution),
    CSE (dominator-based duplicate elimination), DCE (reachability
    marking). Multi-pass convergence (3 rounds). LICM hoists
    loop-invariant pure ops to preheader. `hir_opt.cpp`. Folded
    exprs still 0.03 us.
 
- - ✅ **M4: Control flow** — if/ifelse → BRC + 3 blocks + merge PHI.
-   cand/cor/candbool/corbool → short-circuit chains with forward BRC
-   jumps. switch/case → branch-chain codegen with ECALL pattern
-   matching and fallthrough. iter() → 7-block loop (init, header,
+ - ✅ **M4: Control flow** — if/ifelse—BRC + 3 blocks + merge PHI.
+   cand/cor/candbool/corbool—short-circuit chains with forward BRC
+   jumps. switch/case—branch-chain codegen with ECALL pattern
+   matching and fallthrough. iter()—7-block loop (init, header,
    body, first-iter, not-first, latch, exit) with SSA back-edges,
    PHI nodes for inum and accumulator, loop-aware register allocation.
    Constant conditions folded at compile time (no blocks emitted).
@@ -706,9 +719,9 @@ AST → hir_lower → hir_build_cfg → hir_ssa_construct → hir_optimize
  - ✅ **M6: Advanced optimizations** — CSE (common subexpression
    elimination) and LICM (loop-invariant code motion) implemented.
    CSE replaces duplicate pure instructions with COPYs using
-   dominator-based validity check.  LICM hoists loop-invariant
-   pure operations to the preheader.  Both limited to pure ops
-   (arithmetic, comparison, conversion) — ECALLs are excluded.
+   dominator-based validity check. LICM hoists loop-invariant
+   pure operations to the preheader. Both limited to pure ops
+   (arithmetic, comparison, conversion)—ECALLs are excluded.
    Nested iter() would need qreg stacking (currently flat).
    All 7 NOEVAL functions compiled: if, ifelse, cand/candbool,
    cor/corbool, switch/case/switchall/caseall, iter.
@@ -717,34 +730,35 @@ Actual total: ~5,600 lines (vs. 2,500-3,500 estimated).
 
 #### What NOT to Build
 
- - No BURG instruction selection — RV64 is regular enough for
+ - No BURG instruction selection—RV64 is regular enough for
    direct pattern matching.
- - No instruction scheduling — x86-64 OoO handles this downstream.
- - No interprocedural optimization — each rveval() is one unit.
+ - No instruction scheduling—x86-64 OoO handles this downstream.
+ - No interprocedural optimization—each rveval() is one unit.
 
-### Stage 4: Tier 2 — RISC-V Function Library — In Progress
+### Stage 4: Tier 2—RISC-V Function Library—In Progress
 
 The architectural insight: softcode support functions do not need
 to exist as C++ `fun_*()` functions in engine.so. Each function is
-either absorbed into the compiler (Tier 1 — constant folding,
+either absorbed into the compiler (Tier 1—constant folding,
 native arithmetic) or cross-compiled to a RISC-V binary blob that
 compiled softcode calls via JAL instead of ECALL (Tier 2).
 
-**Tier 1 (compiler intelligence)**: Functions where the compiler
+**Tier 1 (compiler intelligence):** Functions where the compiler
 reasons about types and semantics. Currently: add, sub, mul, div,
 rem, abs, sign, max, min, inc, dec, eq, ne, lt, le, gt, ge, not,
 bool, atoi, itoa, strlen, cat, strcat, mid, first, rest, words,
 pos, strmatch, comp, floor, ceil, trunc, round, bound, fdiv, idiv.
 
-**Tier 2 (RISC-V library)**: Function bodies cross-compiled to
+**Tier 2 (RISC-V library):** Function bodies cross-compiled to
 RV64 via `riscv64-unknown-elf-gcc -march=rv64imd -O2 -nostdlib`.
 Loaded as a binary blob into guest memory at BLOB_BASE (0x10000).
-Compiled softcode calls via JAL — same address space, no ECALL
+Compiled softcode calls via JAL—same address space, no ECALL
 boundary crossing.
 
 The blob has two layers:
 
 **Layer 1: Hand-written RV64 functions** (`softlib.c`, ~1400 lines):
+
  - `rv64_cat` — concatenate with space separators
  - `rv64_strcat` — concatenate without separators
  - `rv64_extract` — extract elements from delimiter-separated list
@@ -755,6 +769,7 @@ The blob has two layers:
    and forward to the cross-compiled Ragel functions
 
 **Layer 2: Cross-compiled Ragel functions** (`color_ops.c` + tables):
+
  - Full PUA-color-aware, Unicode 16, CJK-width-aware implementations
  - 43 co_* functions from the Ragel-generated color_ops.c
  - Unicode DFA tables (`unicode_tables.c`, ~1200 lines): widths,
@@ -763,33 +778,35 @@ The blob has two layers:
    call host's native Ragel implementation directly)
 
 Build toolchain:
- - `mux/rv64/Makefile` — cross-compile 3 objects → softlib.elf
+
+ - `mux/rv64/Makefile` — cross-compile 3 objects—softlib.elf
  - `riscv64-unknown-elf-gcc -march=rv64imd -O2 -nostdlib -ffunction-sections`
  - `-Wl,--gc-sections` with `KEEP(*(.text*))` preserves all entry points
- - `mux/src/tools/rv64strip.cpp` — extract .text → softlib.rv64
+ - `mux/src/tools/rv64strip.cpp` — extract .text—softlib.rv64
  - `mux/rv64/rv64blob.h` — blob header format (entry table)
  - `mux/rv64/src/softlib.ld` — linker script (base 0x10000)
- - `tier2_load()` in dbt_compile.cpp — lazy-loads blob on first compile
- - `tier2_lookup()` — maps MUX function name → blob guest address
+ - `tier2_load()` in dbt_compile.cpp—lazy-loads blob on first compile
+ - `tier2_lookup()` — maps MUX function name—blob guest address
  - `rv_emit_tier2_call()` — emits a0/a1/a2 setup + JAL ra,target
  - `pretranslate_tier2()` — registers intrinsics + pre-translates all entries
 
 Benchmark (BENCH030-042, cached path vs AST eval baseline, ce=0, disp=2):
- - cat(rand,rand): 0.52us (tier2=1) vs 0.50us native
- - strlen(cat(rand,rand)): 0.64us (tier2=2) vs 0.61us native
- - strcat(rand,rand): 0.51us (tier2=1) vs 0.53us native
+
+ - cat(rand, rand): 0.52us (tier2=1) vs 0.50us native
+ - strlen(cat(rand, rand)): 0.64us (tier2=2) vs 0.61us native
+ - strcat(rand, rand): 0.51us (tier2=1) vs 0.53us native
  - iter(3 elems, X): 0.66us vs 0.91us native (**1.4x faster**)
  - iter(5 elems, X): 0.99us vs 0.39us native (2.5x)
  - iter(5 elems, add(##,1)): 1.60us vs 2.07us native (**1.3x faster**)
  - iter(7 elems, X): 1.34us vs 0.50us native (2.7x)
- - iter(10 single-char, X): 9.25us vs 0.63us native (14.6x — anomalous)
+ - iter(10 single-char, X): 9.25us vs 0.63us native (14.6x—anomalous)
  - iter(10 two-char, X): 2.05us vs 0.64us native (3.2x)
  - iter(15 elems, X): 4.45us vs 0.85us native (5.2x)
  - iter(20 elems, X): 4.69us vs 1.13us native (4.2x)
 
-Zero cold exits.  Dispatch count constant at 2 (entry + ECALL exit).
-The entire iter loop body runs inside one trampoline call — no
-per-element dispatch overhead.  Inline CALL pipeline ensures all
+Zero cold exits. Dispatch count constant at 2 (entry + ECALL exit).
+The entire iter loop body runs inside one trampoline call—no
+per-element dispatch overhead. Inline CALL pipeline ensures all
 blob function calls (SPLIT_TOKEN, WORDS, satoi, sitoa, intrinsics)
 use x86 CALL/RET discipline with correct stack pairing.
 
@@ -800,7 +817,7 @@ re-parses on every call while the JIT compiles once.
 — slower than iter(15) at 4.45us and iter(20) at 4.69us. The dispatch
 count is 2 (same as all iter variants), so this is not a dispatch
 overhead issue. The per-element work cost for single-char elements
-with exactly 10 elements hits some pathological case — possibly
+with exactly 10 elements hits some pathological case—possibly
 icache alignment, JIT code buffer address effects, or the
 SPLIT_TOKEN byte-loop hot path. Under investigation.
 
@@ -811,19 +828,20 @@ pure-Tier-2 iter loops (ecalls=0 for literal body).
 **The two-path strategy:** A Tier 2 function exists in two forms:
 (1) as cross-compiled RV64 code in the blob, callable via JAL from
 any compiled softcode, and (2) as a native intrinsic that the DBT
-substitutes when it recognizes the target address.  The RV64 path
-provides correctness (any RV64 host runs it natively).  The intrinsic
+substitutes when it recognizes the target address. The RV64 path
+provides correctness (any RV64 host runs it natively). The intrinsic
 path provides performance (host Ragel code runs at native speed).
 
 **What this unlocks for the compiler:** Every co_* function that has
-an intrinsic is now a "cheap" operation.  The compiler emits a JAL
-and the DBT handles the rest — no ECALL boundary, no string
-marshalling, no hash lookup.  The compiler doesn't need to understand
+an intrinsic is now a "cheap" operation. The compiler emits a JAL
+and the DBT handles the rest—no ECALL boundary, no string
+marshalling, no hash lookup. The compiler doesn't need to understand
 color or Unicode; it just needs to know the function exists in the
-blob.  This is the same pattern as Tier 1 native ops (add/sub/mul)
+blob. This is the same pattern as Tier 1 native ops (add/sub/mul)
 but for string operations.
 
 Current intrinsic coverage (30 of 32 slots used):
+
  - Block-level: rv64_slen, rv64_scopy, memcpy, memcmp, memset, memswap
  - Batch 1 co_*: co_first, co_rest, co_last, co_repeat, co_words_count,
    co_pos, co_mid, co_trim, co_member, co_delete, co_sort_words,
@@ -832,15 +850,16 @@ Current intrinsic coverage (30 of 32 slots used):
    co_escape, co_left, co_right, co_compress, co_lpos
 
 Next candidates for Tier 2 wrappers + intrinsics:
- - `edit()`, `match()`, `regmatch()` (regex-based — need Ragel or PCRE)
- - `ljust()`/`rjust()`/`center()` (padding — straightforward co_*)
- - `translate()`, `scramble()` (character mapping)
- - `foreach()` (loop variant — compiler support needed)
 
-**ECALL (escape hatch)**: Only for operations needing host state —
+ - `edit()`, `match()`, `regmatch()` (regex-based—need Ragel or PCRE)
+ - `ljust()`/`rjust()`/`center()` (padding—straightforward co_*)
+ - `translate()`, `scramble()` (character mapping)
+ - `foreach()` (loop variant—compiler support needed)
+
+**ECALL (escape hatch):** Only for operations needing host state —
 database access, network I/O, @pemit, object manipulation.
 
-### Stage 5: SQLite Code Cache — COMPLETE
+### Stage 5: SQLite Code Cache—COMPLETE
 
 Schema (v7 migration):
 
@@ -860,11 +879,12 @@ CREATE TABLE code_cache (
 ```
 
 Implementation:
+
  - `CSQLiteDB::CodeCacheGet/Put/Flush` in sqlitedb.cpp
  - `compile_cached()` checks SQLite on memory-cache miss before compiling
  - After compilation, stores to SQLite for persistence across restarts
  - Blob version = `size:func_count` of the Tier 2 blob; version mismatch
-   → stale entry skipped (baked JAL addresses would be wrong)
+   — stale entry skipped (baked JAL addresses would be wrong)
  - Memory blob stores code + string pool + fargs (32KB max per entry)
  - `reconstruct_from_cache()` restores full 128KB guest memory from blob,
    reinstalls Tier 2 blob at BLOB_BASE
@@ -877,12 +897,12 @@ Implementation:
 
 Add execution counters to the AST parse cache. Promotion policy:
 
- - **0 → Tier 0**: Always. Every expression starts interpreted.
- - **Tier 0 → Tier 1**: After N executions (e.g., 8). Compile to
+ - **0—Tier 0:** Always. Every expression starts interpreted.
+ - **Tier 0—Tier 1:** After N executions (e.g., 8). Compile to
    RISC-V, store in memory cache.
- - **Tier 1 → Tier 2**: After sustained use (e.g., still in memory
+ - **Tier 1—Tier 2:** After sustained use (e.g., still in memory
    cache after M minutes, or total executions > K). Persist to SQLite.
- - **Tier 2 → eviction**: `@cleancache` command, or manual. Normally
+ - **Tier 2—eviction:** `@cleancache` command, or manual. Normally
    Tier 2 entries live forever (they're small and the database is
    the compilation artifact).
 
@@ -891,4 +911,4 @@ Add execution counters to the AST parse cache. Promotion policy:
 Add a Lua parser that produces SSA IR using the same infrastructure.
 Lua attributes (marked by convention or flag) are parsed by the Lua
 frontend instead of the MUXcode scanner. Everything downstream —
-optimization, codegen, caching, execution — is shared.
+optimization, codegen, caching, execution—is shared.

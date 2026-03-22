@@ -1,16 +1,16 @@
 # Parser Percent-Substitution Semantic Matrix
 
 This document enumerates every `%` substitution form across TinyMUX 2.13,
-TinyMUX 2.14 (AST), and PennMUSH.  Each row classifies the divergence
+TinyMUX 2.14 (AST), and PennMUSH. Each row classifies the divergence
 type so that production compatibility work can target the right layer.
 
 ## Legend
 
-- **Token**: divergence is in the scanner / tokenizer
-- **Eval**: same tokens, different evaluation semantics
-- **Stream**: behavior depends on multi-pass streaming interaction
-- **=**: engines agree
-- `(lit)`: unknown-fallback — outputs the character after `%` literally
+- **Token:** divergence is in the scanner / tokenizer
+- **Eval:** same tokens, different evaluation semantics
+- **Stream:** behavior depends on multi-pass streaming interaction
+- **=:** engines agree
+- `(lit)`: unknown-fallback—outputs the character after `%` literally
 
 ## 1. Percent Substitution Forms
 
@@ -45,7 +45,7 @@ type so that production compatibility work can target the right layer.
 | `%+` | arg count (iCode 22) | arg count | arg count | = | — |
 | `%:` | enactor objid (iCode 25) | enactor objid | enactor unique id | = | — |
 | `%\|` | piped output (iCode 13) | piped output | — | Not in Penn | Eval |
-| `% ` (pct-space) | (lit) → space | (lit) → space | `% ` (two chars) | **Key divergence** | Token+Eval |
+| `% ` (pct-space) | (lit)—space | (lit)—space | `% ` (two chars) | **Key divergence** | Token+Eval |
 | `%c` / `%C` | color dispatch | color dispatch | raw command line | **Collision** | Token+Eval |
 | `%u` / `%U` | — | — | evaled command | Penn-only | Eval |
 | `%~` | — | — | accented name | Penn-only | Eval |
@@ -55,12 +55,12 @@ type so that production compatibility work can target the right layer.
 | `%iL` / `%IL` | — | — | iter current level | Penn-only | Eval |
 | `%wa`–`%wz` | — | — | W-attr on executor | Penn-only | Token |
 | `%xa`–`%xz` | — | — | X-attr on executor | Penn overlaps MUX color | Token |
-| unknown `%X` | (lit) → `X` | (lit) → `X` | (lit) → `X` | = | — |
+| unknown `%X` | (lit) — `X` | (lit) — `X` | (lit) — `X` | = | — |
 
 ### Uppercase Case-Modification
 
 All three engines apply first-character uppercasing when the substitution
-letter is uppercase.  The set of letters with this behavior:
+letter is uppercase. The set of letters with this behavior:
 
 | Letter | 2.13 (0x80 flag) | 2.14 | Penn |
 |--------|-------------------|------|------|
@@ -86,11 +86,11 @@ letter is uppercase.  The set of letters with this behavior:
 
 | Sequence | 2.13 (streaming) | 2.14 (AST) | PennMUSH | Divergence | Type |
 |----------|-------------------|-------------|----------|------------|------|
-| `\X` | consume `\`, emit `X` | ESC node → `X` | consume `\`, emit `X` | = | — |
-| `\%` | consume `\`, emit `%` | ESC node → `%` | consume `\`, emit `%` | = | — |
-| `\\` | consume `\`, emit `\` | ESC node → `\` | consume `\`, emit `\` | = | — |
-| `\` (at EOL) | back up, no consume | ESC node → `\` | exit sequence | Minor | Eval |
-| `\\%X` | `\` then `%X` substituted | ESC(`\\`)→`\` + SUBST(`%X`)→*expanded* | `\` then `%X` substituted | = | — |
+| `\X` | consume `\`, emit `X` | ESC node — `X` | consume `\`, emit `X` | = | — |
+| `\%` | consume `\`, emit `%` | ESC node — `%` | consume `\`, emit `%` | = | — |
+| `\\` | consume `\`, emit `\` | ESC node — `\` | consume `\`, emit `\` | = | — |
+| `\` (at EOL) | back up, no consume | ESC node — `\` | exit sequence | Minor | Eval |
+| `\\%X` | `\` then `%X` substituted | ESC(`\\`)—`\` + SUBST(`%X`)—*expanded* | `\` then `%X` substituted | = | — |
 
 ### The `\\%X` Case: Where Engines Agree
 
@@ -98,8 +98,8 @@ For `\\%X` where `%X` is a recognized form:
 
 | Step | 2.13 streaming | 2.14 AST | PennMUSH |
 |------|----------------|----------|----------|
-| 1 | `\` escapes `\` → `\` | ESC(`\\`) → `\` | `\` escapes `\` → `\` |
-| 2 | `%X` → substitution | SUBST(`%X`) → *result* | `%X` → substitution |
+| 1 | `\` escapes `\` — `\` | ESC(`\\`) — `\` | `\` escapes `\` — `\` |
+| 2 | `%X` — substitution | SUBST(`%X`) — *result* | `%X` — substitution |
 | Result | `\` + *subst* | `\` + *subst* | `\` + *subst* |
 
 All three agree when `%X` is recognized (like `%b`, `%#`, `%n`).
@@ -110,11 +110,11 @@ For `\%b` (backslash-percent-b):
 
 | Step | 2.13 streaming | 2.14 AST | PennMUSH |
 |------|----------------|----------|----------|
-| 1 | `\` escapes `%` → `%` | ESC(`\%`) → `%` | `\` escapes `%` → `%` |
+| 1 | `\` escapes `%` — `%` | ESC(`\%`) — `%` | `\` escapes `%` — `%` |
 | 2 | `b` is literal | `b` is literal | `b` is literal |
 | Result | `%b` | `%b` | `%b` |
 
-All three agree on `\%b` → `%b`.
+All three agree on `\%b` — `%b`.
 
 ### The Real-World Break: Confirmed via Debugger
 
@@ -134,7 +134,7 @@ Plain `\\%` outside braces gives `\ capacity` on all engines.
 ### Root Cause: Unconditional Backslash Consumption
 
 In 2.13's `mux_exec()`, the backslash handler (eval.cpp line 2439) has
-**no `EV_EVAL` guard**.  It runs on every pass — eval or noeval:
+**no `EV_EVAL` guard**. It runs on every pass—eval or noeval:
 
 ```c
 else  // if (pStr[iStr] == '\\')
@@ -158,17 +158,17 @@ if (!(eval & EV_EVAL))
 ```
 
 This asymmetry means **NOEVAL does not mean "don't touch the text."**
-It means "don't substitute percents."  Backslash escaping still runs.
+It means "don't substitute percents." Backslash escaping still runs.
 
 ### Two-Pass Trace Through `switch(1,1,{\\% capacity})`
 
-**Pass 1 — FN_NOEVAL argument collection** (EV_EVAL stripped):
+**Pass 1—FN_NOEVAL argument collection** (EV_EVAL stripped):
 
-`switch` is FN_NOEVAL.  `mux_exec()` extracts arguments with
+`switch` is FN_NOEVAL. `mux_exec()` extracts arguments with
 `feval = eval & ~(EV_EVAL|EV_TOP|EV_FMAND|EV_STRIP_CURLY)`.
 
 For arg 2 (`{\\% capacity}`), the brace contents go through
-`mux_exec` without EV_EVAL.  The backslash handler fires anyway:
+`mux_exec` without EV_EVAL. The backslash handler fires anyway:
 
 | Input | Handler | Guard? | Output |
 |-------|---------|--------|--------|
@@ -193,14 +193,14 @@ Result: **`% capacity`**
 
 The Ragel scanner tokenizes the original text once, greedily:
 
-- `\\` → `ASTTOK_ESC("\\")` (backslash + any)
-- `% ` → `ASTTOK_PCT("% ")` (percent + any)
+- `\\` — `ASTTOK_ESC("\\")` (backslash + any)
+- `% ` — `ASTTOK_PCT("% ")` (percent + any)
 
-These become independent AST nodes.  There is no first pass to strip
-a layer of backslash.  When the winning branch is evaluated:
+These become independent AST nodes. There is no first pass to strip
+a layer of backslash. When the winning branch is evaluated:
 
-- ESC(`\\`) → `\`
-- SUBST(`% `) → ` ` (unknown fallback)
+- ESC(`\\`) — `\`
+- SUBST(`% `) — ` ` (unknown fallback)
 
 Result: **`\ capacity`** — missing the backslash-consumption pass.
 
@@ -212,8 +212,8 @@ Specifically, ESC nodes inside brace groups that are processed in a
 noeval context need one layer of backslash stripping before the
 branch is evaluated.
 
-This is not a tokenizer fix.  The tokenizer is correct to produce
-independent ESC and SUBST nodes.  The fix belongs in the evaluator's
+This is not a tokenizer fix. The tokenizer is correct to produce
+independent ESC and SUBST nodes. The fix belongs in the evaluator's
 handling of brace-group children of FN_NOEVAL function calls.
 
 ## 3. Divergence Classification
@@ -224,7 +224,7 @@ These can be resolved by profile-aware tokenizer rules:
 
 | Issue | Description |
 |-------|-------------|
-| `% ` recognition | Penn: atomic `% ` token. MUX: `%` + unknown → literal. |
+| `% ` recognition | Penn: atomic `% ` token. MUX: `%` + unknown—literal. |
 | `%c`/`%x` collision | MUX: color codes. Penn: `%c` = raw command, `%x` = X-attr. |
 | `%w` forms | Penn-only: W-attribute substitution. |
 | Hash forms `##`/`#@`/`#$` | MUX-only. Not in Penn. |
@@ -252,24 +252,25 @@ This is the critical divergence, confirmed via debugger trace:
 
 Two distinct goals, in priority order:
 
-### Goal 1: Correctness — Parse bboard code like 2.13 does
+### Goal 1: Correctness—Parse bboard code like 2.13 does
 
-This is a **regression fix**, not a feature.  Root cause confirmed
+This is a **regression fix**, not a feature. Root cause confirmed
 via debugger trace of 2.13.0.12.
 
 The fix is in the AST evaluator's handling of **brace-group arguments
-to FN_NOEVAL functions**.  When the evaluator processes a brace group
+to FN_NOEVAL functions**. When the evaluator processes a brace group
 in a noeval context, it must walk the AST and strip one layer of
 backslash escaping from ESC nodes before storing the argument text.
 This replicates 2.13's unconditional backslash handler.
 
 Specifically:
-- `ESC("\\")` (esc-backslash) → becomes `ESC("\")` or raw `\`
-- `ESC("\X")` for any X → becomes raw `X`
-- SUBST, LIT, SPACE nodes → copied literally (percent handler
+
+- `ESC("\\")` (esc-backslash)—becomes `ESC("\")` or raw `\`
+- `ESC("\X")` for any X—becomes raw `X`
+- SUBST, LIT, SPACE nodes—copied literally (percent handler
   IS guarded by EV_EVAL, so no substitution in noeval)
 
-The tokenizer is correct.  The scanner is correct.  The fix is
+The tokenizer is correct. The scanner is correct. The fix is
 purely in evaluation semantics for noeval brace-group processing.
 
 ### Goal 2: Configurable backslash reduction
@@ -282,13 +283,13 @@ A separate, opt-in mode that reduces the backslash burden:
 - **Default: off** — existing games keep current behavior.
 - Games can opt in when they're ready to modernize their softcode.
 
-This is independent of Goal 1.  Goal 1 is about matching 2.13
-behavior exactly.  Goal 2 is about offering a better future.
+This is independent of Goal 1. Goal 1 is about matching 2.13
+behavior exactly. Goal 2 is about offering a better future.
 
 ### Implementation layers
 
 | Layer | Goal 1 (correctness) | Goal 2 (backslash reduction) |
 |-------|---------------------|------------------------------|
 | Tokenizer | No change needed | `% ` recognition flag |
-| Evaluator | Noeval brace-group: strip one backslash layer from ESC nodes | `% ` → `"% "` expansion |
-| Config | None (always on — matches 2.13) | `parser_profile` config option |
+| Evaluator | Noeval brace-group: strip one backslash layer from ESC nodes | `% ` — `"% "` expansion |
+| Config | None (always on—matches 2.13) | `parser_profile` config option |

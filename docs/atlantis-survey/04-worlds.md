@@ -5,6 +5,7 @@
 ### RDAtlantisWorldPreferences (persistent config)
 
 Two-layer preference system:
+
 - `_rdWorldPreferences` — world-level defaults
 - `_rdCharacterPreferences` — per-character overrides
 
@@ -30,12 +31,14 @@ UUID tracking for persistence. Dirty flag for save optimization.
 Created per (world, character) pair. One instance per active connection.
 
 **Network I/O:**
+
 - NSInputStream / NSOutputStream (SSL-capable)
 - NSStreamDelegate for async read/write
 - Holdover buffer for incomplete ANSI sequences
 - Output buffer + timer for write batching
 
 **Connection properties:**
+
 - `_rdCharacter` — connected character name
 - `_rdUuid` — session UUID
 - `_rdBasePath` — character-specific storage directory
@@ -44,6 +47,7 @@ Created per (world, character) pair. One instance per active connection.
 - `_rdInputEncoding` / `_rdOutputEncoding` — charset
 
 **MCP Support:**
+
 - `_rdMcpPackets` — pending MCP messages
 - `_rdMcpTags` — MCP by data tag
 - `_rdMcpSessionKey` — authentication key
@@ -52,26 +56,27 @@ Created per (world, character) pair. One instance per active connection.
 - `supportsMcpPackage:` — capability query
 
 **State Management:**
+
 - `_rdBaseStateInfo` — persistent variables
 - `_rdTempVariables` — session-local variables
 - `_rdCommandHistory` — command history array
 
 ## Connection Lifecycle
 
-1. **Initialize**: `initWithWorld:forCharacter:withBasePath:`
+1. **Initialize:** `initWithWorld:forCharacter:withBasePath:`
    - Load world preferences
    - Create main spawn
    - Instantiate filter chain
    - Set up MCP support
 
-2. **Connect**: `connect` / `connectAndFocus`
+2. **Connect:** `connect` / `connectAndFocus`
    - Verify not already connected
    - Retrieve host, port, encoding from prefs
    - Create NSInputStream/NSOutputStream pair
    - Start stream reading/writing
    - Begin MCP negotiation
 
-3. **Active Session**: `handleBytesOnStream:`
+3. **Active Session:** `handleBytesOnStream:`
    - Read incoming data
    - Buffer incomplete sequences
    - Run through filter chain
@@ -79,18 +84,18 @@ Created per (world, character) pair. One instance per active connection.
    - Route to spawns via pattern matching
    - Fire events (triggers, aliases)
 
-4. **Input Processing**: `handleLocalInput:onSpawn:`
+4. **Input Processing:** `handleLocalInput:onSpawn:`
    - Extract text from spawn input view
    - Check for slash commands
    - Execute command or send to MUD
    - Add to command history
 
-5. **Disconnect**: `disconnect` / `disconnectWithMessage:`
+5. **Disconnect:** `disconnect` / `disconnectWithMessage:`
    - Close streams
    - Mark disconnected
    - Optionally send goodbye message
 
-6. **Reconnect**: Auto-reconnect if `shouldReconnect` flag set
+6. **Reconnect:** Auto-reconnect if `shouldReconnect` flag set
 
 ## Spawn System (Output Routing)
 
@@ -104,17 +109,20 @@ separate views.
 Conforms to `RDNestedViewDescriptor` (Lemuria tab/window protocol).
 
 **View hierarchy:**
+
 - `_rdOutputView` — RDTextView (read-only scrollback)
 - `_rdInputView` — NSTextView (command input)
 - RBSplitView for resizable panes
 - `_rdStatusBar` — ImageBackgroundView with SSL indicator, timer, user text
 
 **Display properties:**
+
 - Font, background color, input color, console color (per-spawn)
 - Paragraph style, timestamp toggle, link styling
 - Prefix display (e.g., "[COMBAT]")
 
 **Key methods:**
+
 - `appendString:` / `appendStringNoTimestamp:` — output display
 - `stringFromInput` / `stringFromInputSelection` — get user input
 - `stringIntoInput:` / `stringInsertIntoInput:` — macro injection
@@ -123,6 +131,7 @@ Conforms to `RDNestedViewDescriptor` (Lemuria tab/window protocol).
 
 ### RDSpawnConfigRecord
 Pattern-based routing configuration per spawn:
+
 - `_rdPatterns` — array of RDStringPattern (regex/glob)
 - `_rdExceptions` — patterns to exclude
 - `_rdActiveExceptions` — override list
@@ -133,6 +142,7 @@ Pattern-based routing configuration per spawn:
 - `_rdSpawnWeight` — tab ordering
 
 ### Spawn Lifecycle
+
 1. World instance creates main spawn (path = "")
 2. Additional spawns configured via SpawnConfigRecords
 3. When output arrives, each spawn's patterns checked
@@ -143,6 +153,7 @@ Pattern-based routing configuration per spawn:
 ## World Storage
 
 ### WorldCollection
+
 - Worlds stored in `~/Library/Application Support/Atlantis/worlds/*.awd`
 - `.awd` format = NSKeyedArchiver (binary Cocoa serialization)
 - Methods: `loadAllWorlds`, `saveAllWorlds`, `saveDirtyWorlds`
@@ -153,10 +164,11 @@ Pattern-based routing configuration per spawn:
 ### World File Formats
 | Extension | Format | Usage |
 |-----------|--------|-------|
-| .awd | NSKeyedArchiver binary | Internal storage |
-| .axworld | XML | Shareable export format |
+|.awd | NSKeyedArchiver binary | Internal storage |
+|.axworld | XML | Shareable export format |
 
 ## Address Book (UI)
+
 - Outline view of worlds and characters
 - Tab-based configuration panels
 - Character management (add/remove/rename)

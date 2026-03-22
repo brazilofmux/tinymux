@@ -46,8 +46,8 @@ All 256 entries in `palette[]` (`stringutil.cpp:1369-1627`):
 
 | Indices | Description | RGB Values |
 |---------|-------------|------------|
-| 0-7     | ANSI standard | User-configurable; TinyMUX assumes VGA-style (0,0,0), (187,0,0), ... |
-| 8-15    | ANSI bright | User-configurable; TinyMUX assumes (85,85,85), (255,85,85), ... |
+| 0-7     | ANSI standard | User-configurable; TinyMUX assumes VGA-style (0,0,0), (187,0,0),... |
+| 8-15    | ANSI bright | User-configurable; TinyMUX assumes (85,85,85), (255,85,85),... |
 | 16-231  | 6x6x6 color cube | Levels: 0, 95, 135, 175, 215, 255 |
 | 232-255 | Grayscale ramp | 24 shades from (8,8,8) to (238,238,238) |
 
@@ -74,12 +74,14 @@ The tree is built offline in `color/kdtree.cpp` and the resulting
 `color16` fields) is pasted into `stringutil.cpp`.
 
 Construction algorithm (`kdtree.cpp:489-519`):
+
 1. Sort eligible palette entries by the current axis (Y, U, or V at depth % 3)
 2. Pick the median as the current node
 3. Recurse on left and right halves with depth+1
 4. Store child indices in `table[median].child[0]` and `child[1]`
 
 Two trees are built:
+
 - One from the 16 "disabled" entries (indices 0-15, `fDisable=true`)
 - One from the 240 "enabled" entries (indices 16-255, `fDisable=false`)
 
@@ -123,6 +125,7 @@ differences. The ad-hoc 1.5x Y weighting partially compensates but is not
 principled.
 
 Specific failure modes:
+
 - Blues and purples are poorly distinguished (low sensitivity in U/V)
 - Greens are over-separated relative to human perception
 - Dark colors with different hues can appear "closer" than they look
@@ -138,7 +141,7 @@ well-characterized models.
 
 The K-d tree prunes branches by comparing `axis_distance^2` against the full
 distance. This is valid for weighted Euclidean metrics (which the current YUV
-metric is), but CIEDE2000 is NOT a simple weighted Euclidean metric — it has
+metric is), but CIEDE2000 is NOT a simple weighted Euclidean metric—it has
 cross-terms (the rotation term RT). If we switch to CIEDE2000, the K-d tree
 pruning criterion needs rethinking or we need a different spatial index.
 
@@ -149,6 +152,7 @@ pruning criterion needs rethinking or we need a different spatial index.
 ### Reference: TinyMUSH Implementation
 
 TinyMUSH (`/tmp/tinymush/src/netmush/ansi.c`) implements full CIEDE2000 with:
+
 1. sRGB inverse gamma correction (threshold at 0.04045)
 2. sRGB to XYZ (D65 illuminant, standard 3x3 matrix)
 3. XYZ to CIELAB (piecewise cube-root function)
@@ -163,6 +167,7 @@ scan at query time. No spatial index.
 ```
 ΔE*ab = sqrt((L1-L2)^2 + (a1-a2)^2 + (b1-b2)^2)
 ```
+
 - Pros: Simple, fast, perceptually much better than YUV. K-d tree-compatible
   (standard Euclidean in L*a*b* space).
 - Cons: Known weaknesses in blue and saturated regions.
@@ -172,8 +177,9 @@ scan at query time. No spatial index.
 ΔE*94 = sqrt((ΔL/SL)^2 + (ΔC/SC)^2 + (ΔH/SH)^2)
 ```
 where SC = 1 + 0.045*C1, SH = 1 + 0.015*C1
+
 - Pros: Better than CIE76 for saturated colors.
-- Cons: Not symmetric (d(a,b) != d(b,a)). Still K-d tree compatible if you
+- Cons: Not symmetric (d(a, b) != d(b, a)). Still K-d tree compatible if you
   use the palette-side chroma for SC/SH (since palette is fixed).
 
 **CIEDE2000** — The current standard:
@@ -181,6 +187,7 @@ where SC = 1 + 0.045*C1, SH = 1 + 0.015*C1
 ΔE00 = sqrt((ΔL'/SL)^2 + (ΔC'/SC)^2 + (ΔH'/SH)^2 + RT*(ΔC'/SC)*(ΔH'/SH))
 ```
 with modified a* axis, hue rotation in blue region, etc.
+
 - Pros: Most accurate perceptual model. CIE standard.
 - Cons: Complex. Has cross-terms (RT) that invalidate K-d tree pruning.
   Requires `atan2`, `pow`, `sqrt`, `cos` per comparison. Not symmetric.
@@ -201,12 +208,13 @@ CIE76 (Euclidean distance in CIELAB) is the sweet spot for TinyMUX:
    time (in `color/` tool), embed in `palette[]`. Only the query color needs
    runtime conversion.
 
-The runtime conversion (sRGB→XYZ→CIELAB) involves gamma correction and cube
+The runtime conversion (sRGB—XYZ—CIELAB) involves gamma correction and cube
 roots, which is heavier than the current integer YUV multiply-and-shift. Two
 approaches:
+
 - **Float at runtime** (~20 FP ops per query): acceptable given this runs once
   per color transition, not per character.
-- **Lookup table**: 256-entry sRGB→linear table, then fixed-point XYZ→Lab
+- **Lookup table:** 256-entry sRGB—linear table, then fixed-point XYZ—Lab
   with a small cube-root table.
 
 If CIE76 proves insufficient for the blue region (the main known weakness),
@@ -216,15 +224,16 @@ upgrading to CIEDE2000 with a brute-force scan over 256 entries is also fine —
 ### Impact on K-d Tree
 
 If we stay with CIE76 (plain Euclidean in Lab), the tree structure is
-identical — just change the three axes from (y2, u, v) to (L*, a*, b*) and
+identical—just change the three axes from (y2, u, v) to (L*, a*, b*) and
 rebuild. `kdtree.cpp` comparators change from `yuv.y2/u/v` to `lab.L/a/b`.
 
 If we go to CIEDE2000, the K-d tree cannot be used as-is because the RT
 cross-term means `axis_distance^2` is not a valid lower bound. Options:
-- **Drop the tree**: 240-entry brute-force scan. Still fast.
-- **Use the tree as a heuristic**: Find the K-d tree's best, then brute-force
+
+- **Drop the tree:** 240-entry brute-force scan. Still fast.
+- **Use the tree as a heuristic:** Find the K-d tree's best, then brute-force
   verify against entries within some radius. Fragile.
-- **Vantage-point tree (VP-tree)**: Works with any metric, but more complex to
+- **Vantage-point tree (VP-tree):** Works with any metric, but more complex to
   build and query.
 
 Given that N=240 and this runs ~once per color change, brute-force with
@@ -237,10 +246,10 @@ CIEDE2000 is a perfectly reasonable fallback.
 The existing `color/kdtree.cpp` already serves as the offline K-d tree builder.
 The plan:
 
-1. **Add CIE conversion functions** to `color/`: sRGB→XYZ→CIELAB, CIEDE2000
+1. **Add CIE conversion functions** to `color/`: sRGB—XYZ—CIELAB, CIEDE2000
 2. **Add a CIELAB palette table generator** that outputs a new `palette[]`
    with precomputed Lab values
-3. **Validate**: exhaustive 16.7M-point comparison between brute-force
+3. **Validate:** exhaustive 16.7M-point comparison between brute-force
    CIEDE2000 and K-d-tree CIE76, to measure how many mismatches exist and how
    large the perceptual error is
 4. **Replace** the YUV conversion and distance in `stringutil.cpp` with CIELAB

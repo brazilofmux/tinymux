@@ -33,6 +33,7 @@ to its world instance (`initWithWorld:`).
 
 ### RDTelnetFilter
 See [02-networking.md](02-networking.md) for full details.
+
 - State machine for IAC parsing
 - Option negotiation (WILL/WONT/DO/DONT)
 - Subnegotiation handling
@@ -41,6 +42,7 @@ See [02-networking.md](02-networking.md) for full details.
 - Keepalive timer
 
 ### RDCompressionFilter
+
 - Handles MCCP v2 (option 86) decompression
 - zlib `inflateInit()` / `inflate()` stream
 - 0.5-second catchup timer for partial data
@@ -48,6 +50,7 @@ See [02-networking.md](02-networking.md) for full details.
 
 ### RDMCPFilter
 See [07-mcp.md](07-mcp.md) for full details.
+
 - Detects `#$#` prefix lines
 - Parses MCP messages (key-value pairs)
 - Handles multiline messages (data tags)
@@ -56,17 +59,20 @@ See [07-mcp.md](07-mcp.md) for full details.
 
 ### RDAnsiFilter
 See [02-networking.md](02-networking.md) for color details.
+
 - Per-spawn RDAnsiState object
 - Parses ESC[ sequences
 - Produces NSAttributedString with color/style attributes
 - Handles holdover (incomplete sequences across packet boundaries)
 
 ### RDURLFilter
+
 - Scans text for URL patterns (http://, https://, etc.)
 - Adds NSLinkAttributeName to matching ranges
 - Makes URLs clickable in RDTextView
 
 ### RDEmailFilter
+
 - Scans text for email address patterns
 - Adds mailto: link annotations
 - Makes emails clickable

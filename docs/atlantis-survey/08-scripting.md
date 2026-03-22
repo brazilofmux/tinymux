@@ -6,7 +6,7 @@ Atlantis supports extensible scripting via pluggable language engines.
 Historically Perl (CamelBones) and Lua (LuaCore), both currently disabled
 in the open-source build due to framework link issues.
 
-The scripting API is valuable reference regardless — it documents what
+The scripting API is valuable reference regardless—it documents what
 operations Atlantis considers scriptable.
 
 ## Architecture
@@ -21,6 +21,7 @@ operations Atlantis considers scriptable.
 ```
 
 ### ScriptingDispatch (central registry)
+
 - Dictionary of engines keyed by language name
 - `executeScript:withState:inLanguage:` — route to engine
 - `refreshEngines:state` — reinitialize engines on reload
@@ -33,6 +34,7 @@ Concrete implementations wrapping their respective interpreters.
 High-level Atlantis operations exposed to scripts:
 
 ### Spawn/Window Operations
+
 - `sendText:toWorld:` — send text to MUD
 - `sendStatus:toSpawn:inWorld:` — update status bar
 - `focusSpawn:` — focus a spawn
@@ -41,26 +43,31 @@ High-level Atlantis operations exposed to scripts:
 - `appendAML:toSpawn:` — append AML to output
 
 ### Input Control
+
 - `getTextFromInput` — read input field
 - `sendTextToInput:` — replace input text
 - Per-spawn variants of the above
 
 ### Variables
+
 - `setVariable:forKey:inWorld:` — set user variable
 - `getPreference:inWorld:` — read preference
 
 ### Media
+
 - `speakText:` — text-to-speech
 - `playSoundFile:` — play audio
 - `systemBeep` — beep
 - `growlText:withTitle:` — notification
 
 ### Upload
+
 - `uploadTextfile:toWorld:` — upload text file
 - `uploadCodefile:toWorld:` — upload code file
 
 ### Automation Registration
 Scripts can register handlers dynamically:
+
 - Line patterns (regex triggers)
 - Event types (connect, disconnect, etc.)
 - Aliases
@@ -69,6 +76,7 @@ Scripts can register handlers dynamically:
 
 ### ScriptEventAction
 Concrete action class (part of event system) for script invocation:
+
 - `_rdFunction` — function name to call
 - `_rdLanguage` — scripting language
 - `_rdWorld` — world scope

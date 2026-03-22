@@ -25,14 +25,14 @@ Both backends store objects as bundled blobs (object header + all attributes
 in one record). Neither provides indexed queries — @search is always linear.
 
 MUX's SQLite write-through stores each attribute as a separate row with typed
-columns (owner INTEGER, flags INTEGER). @dump is a WAL checkpoint — no
+columns (owner INTEGER, flags INTEGER). @dump is a WAL checkpoint—no
 re-serialization. @search routes to indexed SQL queries on owner, type, zone,
 parent.
 
 **Impact:** TinyMUSH's LMDB backend solves the crash-durability problem that
 GDBM has. But MUX's per-attribute rows eliminate the blob-relocation
 pathology, and SQL indexes make @search O(log n) instead of O(n). LMDB
-narrows the gap significantly — the remaining difference is query capability
+narrows the gap significantly—the remaining difference is query capability
 and storage granularity.
 
 ### 2. @search via Indexed SQL Queries
@@ -51,7 +51,7 @@ TinyMUSH uses `select()`. MUX's GANL layer provides:
 - `epoll` on Linux (O(1) event delivery)
 - `kqueue` on BSD/macOS
 - `select` fallback
-- Factory pattern — same binary, platform-specific engine
+- Factory pattern—same binary, platform-specific engine
 
 **Impact:** Scales to thousands of concurrent connections without performance
 degradation. select() is O(n) in file descriptors.
@@ -89,15 +89,15 @@ driver). Clean separation of concerns.
 TinyMUSH uses PCRE. MUX 2.14 upgraded to PCRE2 with JIT compilation support,
 better Unicode handling, and modern memory management.
 
-### 4. @restart — Connection Preservation
+### 4. @restart—Connection Preservation
 
 Both TinyMUSH and MUX preserve player connections across restart. The
 mechanism is the same: serialize descriptor state to a restart file
 (`restart.db`), `exec()` the new binary, reload descriptors on startup. MUX
-has an extra step — GANL deregisters fds from epoll/kqueue before the exec
+has an extra step—GANL deregisters fds from epoll/kqueue before the exec
 — but this is an implementation detail, not a different approach.
 
-**Impact:** Parity — both servers handle this well.
+**Impact:** Parity—both servers handle this well.
 
 ---
 
@@ -127,8 +127,8 @@ e+combining-acute normalize to the same form. No mojibake.
 
 | Function | What It Does |
 |----------|-------------|
-| **SQL result sets** (rserror, rsnext, rsrec, rsrows, rsrecnext, rsrecprev, rsprev, rsrelease) | Cursor-based SQL query API — iterate results without loading all into memory |
-| **sha1()** | SHA-1 hash — useful for data integrity, passwords, deduplication |
+| **SQL result sets** (rserror, rsnext, rsrec, rsrows, rsrecnext, rsrecprev, rsprev, rsrelease) | Cursor-based SQL query API—iterate results without loading all into memory |
+| **sha1()** | SHA-1 hash—useful for data integrity, passwords, deduplication |
 | **digest()** | Generalized hash function (SHA-256, SHA-512, etc.) |
 | **crc32()** | Fast checksum |
 | **chr() / ord()** | Unicode codepoint ↔ character conversion |
@@ -136,7 +136,7 @@ e+combining-acute normalize to the same form. No mojibake.
 | **moniker()** | ANSI-decorated display name |
 | **pack() / unpack()** | Multi-radix (2-64) binary encoding |
 | **JSON** (isjson, json, json_query, json_mod) | JSON construction, querying, and modification via SQLite JSON1 |
-| **WebSocket** (wsjson, wshtml) | WebSocket output functions — TinyMUSH has no WebSocket support |
+| **WebSocket** (wsjson, wshtml) | WebSocket output functions—TinyMUSH has no WebSocket support |
 | **Connection logging** (connlog, addrlog) | SQLite-based connection audit trail |
 | **encode64() / decode64()** | Base64 encoding/decoding |
 | **hmac()** | Keyed-hash message authentication |
@@ -210,13 +210,13 @@ conversion tool.
 ## Summary
 
 The gap between MUX and TinyMUSH has widened significantly with 2.14. Beyond
-the existing architectural advantages — SQLite storage, GANL networking,
-UTF-8/NFC, connection-preserving @restart — MUX now has web integration
+the existing architectural advantages—SQLite storage, GANL networking,
+UTF-8/NFC, connection-preserving @restart—MUX now has web integration
 features (JSON, WebSocket, base64) that TinyMUSH completely lacks, plus
 architectural advances that have no TinyMUSH counterpart: an AST-based
 expression evaluator with parse caching, a three-layer driver/engine/library
 split communicating through COM interfaces, and PCRE2 with JIT support.
 TinyMUSH's LMDB backend and module system are genuine improvements over its
-older architecture, but the scope of MUX's 2.14 changes — 489 smoke tests
-covering the expanded feature set — puts it on a fundamentally different
+older architecture, but the scope of MUX's 2.14 changes—489 smoke tests
+covering the expanded feature set—puts it on a fundamentally different
 trajectory.

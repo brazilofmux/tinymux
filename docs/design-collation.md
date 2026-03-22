@@ -152,7 +152,7 @@ integrity.
   reconstructed from the generated tables
 
 **Variable weighting:** Entries marked with `*` (asterisk) in allkeys.txt are
-"variable" — punctuation, whitespace, symbols. In the default
+"variable"—punctuation, whitespace, symbols. In the default
 "non-ignorable" mode, their weights are kept as-is. We implement non-ignorable
 first (simplest, matches existing strcmp behavior for punctuation ordering).
 Shifted mode can be added later.
@@ -217,7 +217,7 @@ machines from Phase 1 output.
   q_rec, then qsort with memcmp-based comparator
 - Update `handle_sets()` comparator dispatch
 - Update `fun_comp()` to accept optional third argument for comparison
-  type (or always use collation — TBD)
+  type (or always use collation—TBD)
 - Update `AutoDetect` -- when list is non-numeric, default to
   UNICODE_LIST instead of ASCII_LIST
 - Add `'u'`/`'U'` to sort type dispatch in `fun_sort()`
@@ -276,7 +276,7 @@ the hot path. Most contractions are for combining-character sequences that are
 rare in MUD text.
 
 **Implicit weights:** CJK unified ideographs (~97,000 code points) are not in
-allkeys.txt — their weights are derived algorithmically. This is
+allkeys.txt—their weights are derived algorithmically. This is
 well-specified in UCA Section 10.1 and is a few lines of code.
 
 ## Future Extensions

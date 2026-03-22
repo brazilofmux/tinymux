@@ -9,22 +9,22 @@ Version 0.9.9.8, last updated 2022-10-28. Built with Xcode 14, targeting macOS 1
 
 ## Documents
 
-1. [Architecture Overview](01-architecture.md) — high-level structure, data flow, design patterns
-2. [Networking & Protocol](02-networking.md) — sockets, telnet, ANSI, MCCP, charset negotiation
-3. [Event System](03-events.md) — triggers, conditions, actions, the automation pipeline
-4. [Worlds & Spawns](04-worlds.md) — world model, connections, spawn routing, address book
-5. [Commands & Input](05-commands.md) — slash commands, input processing, command history
-6. [Filter Pipeline](06-filters.md) — filter chain architecture, each filter's role
-7. [MCP Protocol](07-mcp.md) — MUD Client Protocol handlers
-8. [Scripting](08-scripting.md) — Perl/Lua bridge, ScriptBridge API
-9. [UI Systems](09-ui.md) — hotkeys, toolbar, preferences, logs, uploads
-10. [Lemuria Framework](10-lemuria.md) — text views, nested view manager, tab system
+1. [Architecture Overview](01-architecture.md)—high-level structure, data flow, design patterns
+2. [Networking & Protocol](02-networking.md)—sockets, telnet, ANSI, MCCP, charset negotiation
+3. [Event System](03-events.md)—triggers, conditions, actions, the automation pipeline
+4. [Worlds & Spawns](04-worlds.md)—world model, connections, spawn routing, address book
+5. [Commands & Input](05-commands.md)—slash commands, input processing, command history
+6. [Filter Pipeline](06-filters.md)—filter chain architecture, each filter's role
+7. [MCP Protocol](07-mcp.md)—MUD Client Protocol handlers
+8. [Scripting](08-scripting.md)—Perl/Lua bridge, ScriptBridge API
+9. [UI Systems](09-ui.md)—hotkeys, toolbar, preferences, logs, uploads
+10. [Lemuria Framework](10-lemuria.md)—text views, nested view manager, tab system
 
 ## Repository Stats
 
-- **Atlantis**: 1,099 files, 211 Objective-C source files (.m)
-- **Lemuria**: ~80 files, the windowing/text framework Atlantis builds on
-- **Frameworks**: OgreKit (regex), Sparkle (auto-update), Growl (notifications)
+- **Atlantis:** 1,099 files, 211 Objective-C source files (.m)
+- **Lemuria:** ~80 files, the windowing/text framework Atlantis builds on
+- **Frameworks:** OgreKit (regex), Sparkle (auto-update), Growl (notifications)
 
 ## Source Directory Map
 

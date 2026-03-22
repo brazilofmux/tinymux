@@ -2,7 +2,7 @@
 
 Source: `/tmp/pennmush`
 
-## Tier 1 — High Value, Moderate Effort
+## Tier 1—High Value, Moderate Effort
 
 ### Softcode Functions
 
@@ -52,7 +52,7 @@ Source: `/tmp/pennmush`
 | `@chatformat` | Per-player channel output format attribute | extchat.c |
 | `@include` | Inline attribute evaluation (not queued) | command.c |
 
-## Tier 2 — High Value, Higher Effort
+## Tier 2—High Value, Higher Effort
 
 | Feature | What it does | PennMUSH source |
 |---------|-------------|-----------------|
@@ -65,7 +65,7 @@ Source: `/tmp/pennmush`
 | Nospoof emits | NS* family (nsemit, nspemit, etc.) | cmds.c |
 | Built-in HTTP server | Serve web pages/REST from softcode | http.c |
 
-## Tier 3 — Nice to Have
+## Tier 3—Nice to Have
 
 | Feature | What it does |
 |---------|-------------|
@@ -77,6 +77,6 @@ Source: `/tmp/pennmush`
 
 ## Skip
 
-- decompose(), soundex(), soundslike() — niche
-- Penn-specific naming variants — not worth compatibility
-- pe_regs_dump() — internal debugging
+- decompose(), soundex(), soundslike()—niche
+- Penn-specific naming variants—not worth compatibility
+- pe_regs_dump()—internal debugging

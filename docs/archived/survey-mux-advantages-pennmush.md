@@ -21,7 +21,7 @@ genuinely sophisticated:
 - **LRU disk paging:** Regions page in/out of memory via a swap file.
   Configurable cache size. Hot regions stay resident; cold ones go to disk.
 - **Locality-driven migration:** Frequently-accessed chunks migrate together
-  within regions. Migration runs incrementally — slides, away-moves, and
+  within regions. Migration runs incrementally—slides, away-moves, and
   fill-moves to consolidate free space and improve cache locality.
 - **Per-attribute granularity:** Each attribute value is its own chunk, not
   packed into an object blob. No blob-relocation pathology.
@@ -29,7 +29,7 @@ genuinely sophisticated:
   continues serving. Swap file is cloned for the child.
 
 This is the most sophisticated memory management of any MU* server. The
-dereference-weighted migration is clever — it's essentially a user-space
+dereference-weighted migration is clever—it's essentially a user-space
 generational collector for attribute data.
 
 What it doesn't provide:
@@ -58,15 +58,15 @@ engine on each platform.
 
 **Impact:** Better scalability under high connection counts.
 
-### 3. @restart / @shutdown/reboot — Connection Preservation
+### 3. @restart / @shutdown/reboot—Connection Preservation
 
 Both Penn and MUX preserve player connections across reboot. The mechanism is
 the same: serialize descriptor state to a restart file (`restart.db` /
 `reboot.db`), `exec()` the new binary, reload descriptors on startup. MUX has
-an extra step — GANL deregisters fds from epoll/kqueue before the exec —
+an extra step—GANL deregisters fds from epoll/kqueue before the exec —
 but this is an implementation detail, not a different approach.
 
-**Impact:** Parity — both servers handle this well.
+**Impact:** Parity—both servers handle this well.
 
 ### 4. Comsys/Mail in SQLite
 
@@ -112,7 +112,7 @@ MUX's variant has larger state and wider output.
 MUX 2.14 now has:
 
 - **JSON:** isjson() (native RFC 8259 parser), json()/json_query()/json_mod()
-  (via SQLite JSON1) — comparable to Penn's cJSON + JSON1 approach
+  (via SQLite JSON1)—comparable to Penn's cJSON + JSON1 approach
 - **WebSocket:** RFC 6455 with same-port auto-detection and wss:// — comparable
   to Penn's implementation
 - **Connection logging:** SQLite connlog table with connlog()/addrlog() —
@@ -152,7 +152,7 @@ utf_impl.c work) but lacks:
 - Hangul algorithmic composition
 - Width-aware string operations for CJK
 
-MUX's UTF-8 pipeline: input — NFC normalize — store. Every attribute value
+MUX's UTF-8 pipeline: input—NFC normalize—store. Every attribute value
 is canonical. The DFA tables are generated from Unicode data files via a
 reproducible pipeline (utf/buildFiles + pairs + integers tools).
 
@@ -163,7 +163,7 @@ bugs. MUX normalizes at storage, eliminating the class.
 
 ## Functions (114 that PennMUSH lacks)
 
-### SQL Result Sets — MUX's Unique API
+### SQL Result Sets—MUX's Unique API
 
 Penn has `sql()` and `mapsql()` but returns everything in one string. MUX has
 a full cursor-based API:
@@ -257,7 +257,7 @@ MUX has more time format variants:
 ## Omega Converter
 
 MUX ships Omega, supporting conversion between T5X (TinyMUX), T6H (TinyMUSH),
-P6H (PennMUSH), and R7H (RhostMUSH) formats. The recent direct T5X — R7H
+P6H (PennMUSH), and R7H (RhostMUSH) formats. The recent direct T5X—R7H
 path preserves full 24-bit color.
 
 Penn has `dbtools/` (dbupgrade, grepdb, pwutil, db2dot) but no cross-format
@@ -278,7 +278,7 @@ GANL networking (scalability), full UTF-8/NFC (correctness), cursor-based SQL
 (capability), AST evaluator (performance), and three-layer architecture
 (isolation). These are harder to retrofit than adding functions.
 
-The remaining gap is Penn's HTTP server — the one Tier 1 web feature MUX has
+The remaining gap is Penn's HTTP server—the one Tier 1 web feature MUX has
 not yet implemented. Penn's Perl-based test harness is also more sophisticated
 than MUX's Expect-based smoke tests, though MUX's 489 test cases provide
 broader function coverage.

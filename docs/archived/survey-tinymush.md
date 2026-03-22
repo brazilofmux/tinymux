@@ -22,13 +22,13 @@ TinyMUSH implements CIEDE2000 color distance for downgrading 24-bit color to
 256-color or 16-color palettes. This uses CIELAB color space with sRGB gamma
 correction and pre-computed Lab coordinates for each palette entry.
 
-Their ansi.c is 3818 lines — substantial. The color pipeline works like this:
+Their ansi.c is 3818 lines—substantial. The color pipeline works like this:
 every `ColorEntry` in the 272-entry `colorDefinitions[]` table has pre-computed
 CIELAB coordinates. When converting from RGB to a lower palette, they call
 `ansi_rgb_to_cielab()` (sRGB inverse gamma, D65 reference white, CIE 1976
 formulas) then `ansi_find_closest_color_with_lab()` which does a linear scan
 of all entries of the target `ColorType`, computing CIEDE2000 distance for
-each. The CIEDE2000 implementation is textbook — luminance/chroma/hue
+each. The CIEDE2000 implementation is textbook—luminance/chroma/hue
 corrections with the standard 25^7 constant (6103515625).
 
 **Worth borrowing?** ~~Maybe.~~ **Done in 2.14** — MUX now uses CIELAB
@@ -81,7 +81,7 @@ module template (src/modules/skeleton/) is well-documented with clear patterns
 for commands, functions, config directives, and hash tables.
 
 **Worth borrowing?** No. MUX's COM-based module system (typed interfaces with
-QueryInterface, AddRef, Release) is architecturally superior — it provides
+QueryInterface, AddRef, Release) is architecturally superior—it provides
 binary-compatible versioned interfaces rather than relying on dlsym name
 conventions. MUX 2.14 now has comsys and mail as COM modules too, plus the
 engine itself is a COM module in engine.so. The dlsym approach is simpler but
@@ -91,7 +91,7 @@ fragile (no versioning, no interface discovery, silent NULL on typos).
 
 Per-connection ANSI color remapping. Players can remap any of the 18 SGR
 foreground/background colors to another. Stored as an `int[18]` array on the
-descriptor. Applied during output postprocessing — a streaming filter that
+descriptor. Applied during output postprocessing—a streaming filter that
 intercepts SGR sequences and rewrites the color parameter.
 
 The output postprocessing pipeline (PostprocessStreamContext) is a single-pass
@@ -111,12 +111,12 @@ downgrade; per-player colormap would be a small addition if there's demand.
 
 ### Structures System (construct/destruct/structure/unstructure/etc.)
 
-TinyMUSH has a "structures" feature — named record types with typed fields
+TinyMUSH has a "structures" feature—named record types with typed fields
 that can be instantiated on objects. Functions: CONSTRUCT, DESTRUCT,
 STRUCTURE, UNSTRUCTURE, LSTRUCTURES, LINSTANCES, MODIFY, LOAD, UNLOAD, READ,
 WRITE.
 
-This is the "records or some nonsense" — it's a complex system that adds
+This is the "records or some nonsense"—it's a complex system that adds
 structured data types to softcode. In practice, MUSH builders use delimited
 strings and lists for structured data. The structures system adds complexity
 without enough payoff. Nobody asked for this.
@@ -153,7 +153,7 @@ t() already handle this.
 
 ### Deprecated/Legacy Functions
 
-IFZERO, IFTRUE, IFFALSE, ISFALSE, ISTRUE, NONZERO — all trivially expressed
+IFZERO, IFTRUE, IFFALSE, ISFALSE, ISTRUE, NONZERO—all trivially expressed
 with if/ifelse/t/not in MUX.
 
 ---
@@ -213,7 +213,7 @@ Most of these MUX already has or doesn't need.
   config-file preservation during install (backup + skip-if-exists pattern),
   and CPack integration. The `modules.cmake` file is a simple list of
   `add_subdirectory()` calls with comment-to-disable. Module CMakeLists are
-  minimal (4 lines each). No clever patterns worth borrowing — MUX's
+  minimal (4 lines each). No clever patterns worth borrowing—MUX's
   autoconf setup handles the same concerns differently but equivalently.
 - **Networking:** select()-based event loop. MUX's GANL (epoll/kqueue) is
   more modern and performant.
@@ -221,7 +221,7 @@ Most of these MUX already has or doesn't need.
   process. Both work; MUX's approach is more portable.
 - **Eval:** TinyMUSH has a similar token-based parser with a separate
   `parse_to_cleanup()` pass. MUX 2.14 replaced this with an AST-based
-  evaluator — Ragel-generated scanner, parsed into AST, LRU cache (1024
+  evaluator—Ragel-generated scanner, parsed into AST, LRU cache (1024
   entries), and a DBT/JIT compiler (softcode -> AST -> RV64 -> x86-64). A
   massive architectural divergence.
 - **Color handling:** TinyMUSH's ansi.c (3818 lines) is a clean
@@ -230,11 +230,11 @@ Most of these MUX already has or doesn't need.
   table, streaming output postprocessing (NoBleed + colormap), and
   per-player color depth flags (ANSI/COLOR256/COLOR24BIT on FLAG_WORD2/3).
   They handle depth downgrade at output time via `resolve_color_type()`.
-  They do NOT use PUA encoding for inline color — their %x codes generate
+  They do NOT use PUA encoding for inline color—their %x codes generate
   ANSI escape sequences directly during eval, then the output postprocessor
   handles NoBleed and colormap. MUX's approach of encoding color state into
   PUA codepoints in the string (V5 two-code-point format) and deferring ANSI
-  generation to the final output stage is more flexible — it preserves color
+  generation to the final output stage is more flexible—it preserves color
   information through string manipulation functions (mid, left, edit, etc.)
   where TinyMUSH would lose it. The PUA approach is architecturally superior
   for a system that does heavy string processing.
@@ -251,7 +251,7 @@ Most of these MUX already has or doesn't need.
   interface IDs and class factories. MUX's comsys and mail are now COM
   modules; the engine itself is a COM module in engine.so. The COM approach
   provides interface versioning, binary compatibility, and runtime
-  discovery — none of which the dlsym approach offers.
+  discovery—none of which the dlsym approach offers.
 
 ---
 

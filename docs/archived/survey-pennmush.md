@@ -24,7 +24,7 @@ advances.
 
 ---
 
-## High Priority -- Worth Implementing
+## High Priority—Worth Implementing
 
 ### 1. JSON Support (funjson.c, jsontypes.c, cJSON)
 
@@ -41,7 +41,7 @@ for queries. Handles UTF-8 escaping, all JSON types.
 
 **Worth borrowing?** Yes. JSON is the lingua franca of web APIs. Games with
 web portals, Discord bots, or external integrations need this. MUX already has
-SQLite with JSON1 -- could leverage that for queries and add softcode
+SQLite with JSON1—could leverage that for queries and add softcode
 functions on top.
 
 **Status:** Implemented in MUX 2.14. isjson() is a native RFC 8259 parser;
@@ -103,7 +103,7 @@ digest() algorithm.
 
 ---
 
-## Medium Priority -- Interesting Ideas
+## Medium Priority—Interesting Ideas
 
 ### 6. Built-in HTTP Server
 
@@ -152,12 +152,12 @@ MUD Server Status Protocol (telnet option 70):
 auto-discover your game's name, player count, codebase, etc. Simple telnet
 subnegotiation, maybe 50 lines of code.
 
-### 9. letq() -- Scoped Named Registers
+### 9. letq()—Scoped Named Registers
 
 `letq(<name>, <value>, ..., <expression>)` -- bind named registers for the
 duration of an expression, then automatically unset them.
 
-MUX has `setq(name, val)` but no scoping -- registers persist until
+MUX has `setq(name, val)` but no scoping—registers persist until
 overwritten. `letq()` prevents register pollution in nested calls.
 
 **Worth borrowing?** Good idea. Clean, safe, reduces debugging headaches for
@@ -165,7 +165,7 @@ softcoders working with nested u() calls.
 
 **Status:** Implemented in MUX 2.14.
 
-### 10. sortkey() -- Sort by Computed Key
+### 10. sortkey()—Sort by Computed Key
 
 `sortkey(<ufun>, <list>)` -- sort a list where the sort key is computed by a
 user function applied to each element. Avoids the Schwartzian transform
@@ -198,7 +198,7 @@ Penn uses PCG (Permuted Congruential Generator):
 known statistical weaknesses, PCG is a good modern replacement. Low priority
 unless someone finds bias in the current generator.
 
-**Status:** Implemented in MUX 2.14 -- PCG-XSL-RR-128/64 (pcg64), replacing
+**Status:** Implemented in MUX 2.14—PCG-XSL-RR-128/64 (pcg64), replacing
 Mersenne Twister.
 
 ### 13. Spell Suggestion (spellfix.c, suggest())
@@ -220,7 +220,7 @@ Full suite of regex-based attribute name matching:
 **Worth borrowing?** Useful for code introspection. MUX has `lattr()` with
 wildcards but no regex variant.
 
-**Status:** Implemented in MUX 2.14 -- reglattr()/reglattrp() via PCRE2.
+**Status:** Implemented in MUX 2.14—reglattr()/reglattrp() via PCRE2.
 
 ### 15. Extended Lock Types
 
@@ -251,7 +251,7 @@ names. Players can set TZ attribute for localized times.
 **Worth borrowing?** Nice for international games. MUX has basic UTC offset
 support. Full tz database is more correct for DST handling.
 
-### 17. spellnum() / ordinal() -- Number to Words
+### 17. spellnum() / ordinal()—Number to Words
 
 `spellnum(<number>)` converts integers and decimals to English words (e.g.,
 `spellnum(42)` returns "forty-two"). `ordinal(<number>)` returns ordinal form
@@ -261,7 +261,7 @@ up to 999,999,999,999,999.
 **Worth borrowing?** Niche but charming for RP-oriented games. ~120 lines of C.
 MUX has nothing equivalent.
 
-### 18. benchmark() -- Expression Timing
+### 18. benchmark()—Expression Timing
 
 `benchmark(<expression>, <count>[, <sendto>])` -- evaluates an expression N
 times and reports min/max/total timing using TSC (timestamp counter). Useful
@@ -323,6 +323,7 @@ requires libevent as an additional dependency.
 ### 24. OpenBSD pledge() Sandboxing
 
 Penn uses `pledge(2)` on OpenBSD to restrict process privileges:
+
 - netmush: limited to stdio, rpath, wpath, cpath, inet, unix, dns, proc,
   exec, flock, fattr
 - info_slave: limited to stdio, proc, flock, inet, dns
@@ -403,31 +404,34 @@ softcode.
 Penn and MUX have significantly different approaches to color:
 
 ### Penn's Approach (markup.c, ansi.h)
+
 - Internal markup system using TAG_START/TAG_END (0x02/0x03) delimiters
 - `ansi_data` struct: bits/offbits for styles, fg/bg as color name strings
 - Color name database in SQLite (loaded from `game/txt/colors.json`)
   - Stores name, RGB hex, xterm index, 16-color ANSI code per entry
   - Nearest-neighbor 256-color downgrade via brute-force scan of xterm colors
   - `colorname_lookup()` and `rgb_lookup()` use prepared statements
-- **Output modes**: None, Hilite-only, 16-color, Xterm-256, HTML
-- **No 24-bit truecolor output**: Penn stores 24-bit internally (via `#RRGGBB`
+- **Output modes:** None, Hilite-only, 16-color, Xterm-256, HTML
+- **No 24-bit truecolor output:** Penn stores 24-bit internally (via `#RRGGBB`
   or `<R G B>` syntax in ansi_data) but always downgrades to 256-color on
   output. `ANSI_FORMAT_XTERM256` is the maximum output fidelity.
 - `ansi_string` type: parsed representation with per-character markup indices,
   supports insert/delete/replace/scramble operations on styled text
 
 ### MUX's Approach
+
 - 5-channel color model (V5): foreground, background, underline-color,
   strikethrough-color, plus style bits
 - Per-channel encoding: 16-color, 256-color, or 24-bit RGB
 - Unicode PUA encoding for 24-bit colors (redesigned 2026-03-15): fixed
   2-code-point encoding per channel, not per-channel deltas
-- **Output modes**: None, 16-color, 256-color, 24-bit truecolor
+- **Output modes:** None, 16-color, 256-color, 24-bit truecolor
 - CIELAB nearest-neighbor for palette downgrades (perceptually uniform)
 - DFA-based color state machine (generated tables)
 
 ### Assessment
 MUX's color system is now substantially more advanced than Penn's:
+
 - MUX outputs true 24-bit color; Penn caps at 256
 - MUX uses perceptually uniform CIELAB for downgrades; Penn uses RGB distance
 - MUX has 5 independent color channels; Penn has 2 (fg/bg) plus style bits
@@ -439,17 +443,19 @@ MUX's color system is now substantially more advanced than Penn's:
 ## Unicode Comparison (New Section, 2026-03-16)
 
 ### Penn's Unicode Support
+
 - Historical Latin-1 base with UTF-8 conversion layer (charconv.c)
 - Optional ICU dependency for: NFC/NFD/NFKC/NFKD normalization, proper
   case folding (`lcstr2`/`ucstr2`), transliteration (`stripaccents`)
 - Without ICU: bundled subset of ICU headers (punicode/) for basic UTF-8
-  encode/decode macros only -- no normalization, no case mapping, no width
+  encode/decode macros only—no normalization, no case mapping, no width
 - `ansi_strlen()` counts characters, not bytes, but no grapheme cluster
   awareness
 - No Unicode collation (DUCET or otherwise)
 - No East Asian width tables for console column counting
 
 ### MUX's Unicode Support
+
 - Native UTF-8 throughout (no Latin-1 legacy layer)
 - Built-in NFC normalization (DFA-based, 129-state table from Unicode 16.0)
 - DUCET collation with proper multi-level sort keys
@@ -512,11 +518,12 @@ Unicode support (built-in NFC, DUCET, grapheme clusters, Unicode 16.0 vs
 Penn's optional ICU dependency with no collation or width tables).
 
 The remaining actionable gaps are:
-1. **GMCP/MSSP** (medium priority) -- modern MU* client protocols, ~200 lines
-2. **Built-in HTTP server** (lower priority) -- ambitious, significant attack surface
-3. **spellnum()/benchmark()** (low priority) -- nice-to-have softcode functions
 
-The function library differences are now mostly noise -- Penn has more variants
+1. **GMCP/MSSP** (medium priority)—modern MU* client protocols, ~200 lines
+2. **Built-in HTTP server** (lower priority)—ambitious, significant attack surface
+3. **spellnum()/benchmark()** (low priority)—nice-to-have softcode functions
+
+The function library differences are now mostly noise—Penn has more variants
 of existing concepts (nspemit vs pemit) rather than fundamentally different
 capabilities.
 
