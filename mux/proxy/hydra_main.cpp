@@ -5,6 +5,7 @@
 
 #ifdef GRPC_ENABLED
 #include "grpc_server.h"
+#include "work_queue.h"
 #endif
 
 #include <network_engine.h>
@@ -204,9 +205,11 @@ int main(int argc, char* argv[]) {
 
     // Start gRPC server if configured and compiled in
 #ifdef GRPC_ENABLED
+    WorkQueue workQueue;
     std::unique_ptr<GrpcServer> grpcServer;
     if (!config.grpcListenAddr.empty()) {
-        grpcServer = std::make_unique<GrpcServer>(sessionMgr, accounts, config);
+        grpcServer = std::make_unique<GrpcServer>(
+            sessionMgr, accounts, config, sessionMgr.processMgr(), workQueue);
         std::string grpcErr;
         if (!grpcServer->start(config.grpcListenAddr, grpcErr)) {
             LOG_WARN("gRPC: %s", grpcErr.c_str());
@@ -285,6 +288,12 @@ int main(int argc, char* argv[]) {
         }
 
         sessionMgr.runTimers();
+
+#ifdef GRPC_ENABLED
+        // Process work items posted by gRPC threads
+        workQueue.processPending(sessionMgr, accounts, config,
+                                 sessionMgr.processMgr());
+#endif
 
         if (g_dumpStatus) {
             g_dumpStatus = 0;

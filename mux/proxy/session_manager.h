@@ -10,7 +10,11 @@
 #include "websocket.h"
 #include <network_engine.h>
 #include <network_types.h>
+#include <atomic>
+#include <condition_variable>
 #include <map>
+#include <mutex>
+#include <queue>
 #include <string>
 #include <vector>
 
@@ -57,6 +61,22 @@ struct HydraSession {
 
     // Persistent session ID (random hex string for SQLite storage)
     std::string persistId;
+
+    // gRPC output queue for Subscribe streaming.
+    // Heap-allocated so HydraSession stays movable.
+    struct OutputItem {
+        std::string text;       // ANSI TrueColor rendered
+        std::string source;     // game name
+        time_t timestamp;
+        int linkNumber;         // 1-based
+    };
+    struct OutputQueue {
+        std::mutex mutex;
+        std::condition_variable cv;
+        std::queue<OutputItem> queue;
+        std::atomic<int> subscriberCount{0};
+    };
+    std::shared_ptr<OutputQueue> outputQueue{std::make_shared<OutputQueue>()};
 };
 
 // Per front-door connection state (before and after auth)
@@ -111,6 +131,24 @@ public:
     void runTimers();
     void shutdownSessions();
 
+    // ---- gRPC support ----
+
+    // Find session by persistent ID (random hex, survives restart).
+    HydraSession* findByPersistId(const std::string& persistId);
+
+    // Authenticate and create/resume a session. Returns persistId, or empty on failure.
+    std::string authenticateAndGetSession(const std::string& username,
+                                          const std::string& password);
+
+    // Expose internals for gRPC work items (called from main thread only).
+    const HydraConfig& config() const { return config_; }
+    AccountManager& accounts() { return accounts_; }
+    ProcessManager& processMgr() { return procMgr_; }
+
+    // Public session operations (used by gRPC work items and dispatchCommand).
+    void connectToGame(HydraSession& session, const std::string& gameName);
+    void closeLink(HydraSession& session, size_t linkIdx);
+
 private:
     void flushSession(HydraSession& session);
     std::string generatePersistId();
@@ -124,11 +162,9 @@ private:
                          const std::string& line);
     void showBanner(ganl::ConnectionHandle handle);
     void showGameMenu(HydraSession& session, ganl::ConnectionHandle fdHandle);
-    void connectToGame(HydraSession& session, const std::string& gameName);
     void forwardToGame(HydraSession& session,
                        ganl::ConnectionHandle fdHandle,
                        const std::string& line);
-    void closeLink(HydraSession& session, size_t linkIdx);
 
     // Look up session + link from a back-door handle.
     bool findByBackDoor(ganl::ConnectionHandle bdHandle,

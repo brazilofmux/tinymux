@@ -1,6 +1,7 @@
 #include "session_manager.h"
 #include "crypto.h"
 #include "hydra_log.h"
+#include <color_ops.h>
 #include <sys/socket.h>
 #include <cstring>
 #include <algorithm>
@@ -1118,6 +1119,27 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
                      MSG_NOSIGNAL);
             }
         }
+
+        // Push to gRPC output queue if any subscribers
+        if (session->outputQueue->subscriberCount.load() > 0) {
+            // Render at TrueColor for gRPC consumers
+            unsigned char ansiBuf[8000];
+            size_t ansiLen = co_render_truecolor(ansiBuf,
+                reinterpret_cast<const unsigned char*>(puaText.data()),
+                puaText.size(), 0);
+
+            HydraSession::OutputItem item;
+            item.text.assign(reinterpret_cast<char*>(ansiBuf), ansiLen);
+            item.source = link->gameName;
+            item.timestamp = time(nullptr);
+            item.linkNumber = static_cast<int>(linkIdx) + 1;
+
+            {
+                std::lock_guard<std::mutex> lock(session->outputQueue->mutex);
+                session->outputQueue->queue.push(std::move(item));
+            }
+            session->outputQueue->cv.notify_all();
+        }
     }
 }
 
@@ -1368,5 +1390,72 @@ void SessionManager::shutdownSessions() {
     LOG_INFO("Flushing all sessions before shutdown");
     for (auto& [sid, session] : sessions_) {
         flushSession(session);
+        // Wake any blocked gRPC subscribers so they can exit
+        session.outputQueue->cv.notify_all();
     }
+}
+
+// ---- gRPC support ----
+
+HydraSession* SessionManager::findByPersistId(const std::string& persistId) {
+    for (auto& [id, session] : sessions_) {
+        if (session.persistId == persistId) return &session;
+    }
+    return nullptr;
+}
+
+std::string SessionManager::authenticateAndGetSession(
+    const std::string& username, const std::string& password) {
+    std::vector<uint8_t> sbKey;
+    uint32_t accountId = accounts_.authenticate(username, password, sbKey);
+    if (accountId == 0) return "";
+
+    // Check for existing in-memory session
+    for (auto& [sid, sess] : sessions_) {
+        if (sess.accountId == accountId) {
+            sess.state = SessionState::Active;
+            sess.lastActivity = time(nullptr);
+            return sess.persistId;
+        }
+    }
+
+    // Check for saved session in SQLite (after restart)
+    AccountManager::SavedSession saved;
+    if (accounts_.loadSession(accountId, saved)) {
+        HydraSession session;
+        session.id = nextSessionId_++;
+        session.accountId = accountId;
+        session.username = username;
+        session.created = time(nullptr);
+        session.lastActivity = session.created;
+        session.scrollbackKey = sbKey;
+        session.persistId = saved.id;
+
+        session.scrollback.loadFromDb(
+            accounts_.db(), saved.id, accountId, sbKey);
+
+        sessions_[session.id] = std::move(session);
+        LOG_INFO("Session %lu (%s) restored via gRPC for '%s'",
+                 (unsigned long)session.id, saved.id.c_str(),
+                 username.c_str());
+        return saved.id;
+    }
+
+    // New session
+    HydraSession session;
+    session.id = nextSessionId_++;
+    session.accountId = accountId;
+    session.username = username;
+    session.created = time(nullptr);
+    session.lastActivity = session.created;
+    session.scrollbackKey = sbKey;
+    session.persistId = generatePersistId();
+
+    std::string pid = session.persistId;
+    sessions_[session.id] = std::move(session);
+
+    LOG_INFO("Session %lu (%s) created via gRPC for '%s'",
+             (unsigned long)(nextSessionId_ - 1), pid.c_str(),
+             username.c_str());
+    return pid;
 }
