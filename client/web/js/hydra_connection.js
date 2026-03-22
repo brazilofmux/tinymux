@@ -227,6 +227,39 @@ const LINK_STATE_NAMES = {
     4: 'logging-in', 5: 'active', 6: 'reconnecting', 7: 'suspended', 8: 'dead',
 };
 
+// Credential RPCs
+const AddCredentialRequestFields = {
+    session_id: {num: 1, type: 'string'},
+    game:       {num: 2, type: 'string'},
+    character:  {num: 3, type: 'string'},
+    verb:       {num: 4, type: 'string'},
+    name:       {num: 5, type: 'string'},
+    secret:     {num: 6, type: 'string'},
+};
+const AddCredentialResponseDecode = {
+    1: {name: 'success', type: 'bool'},
+    2: {name: 'error', type: 'string'},
+};
+const DeleteCredentialRequestFields = {
+    session_id: {num: 1, type: 'string'},
+    game:       {num: 2, type: 'string'},
+    character:  {num: 3, type: 'string'},
+};
+const DeleteCredentialResponseDecode = {
+    1: {name: 'success', type: 'bool'},
+    2: {name: 'error', type: 'string'},
+};
+const CredentialDecode = {
+    1: {name: 'game', type: 'string'},
+    2: {name: 'character', type: 'string'},
+    3: {name: 'verb', type: 'string'},
+    4: {name: 'name', type: 'string'},
+    5: {name: 'auto_login', type: 'bool'},
+};
+const ListCredentialsResponseDecode = {
+    1: {name: 'credentials', type: 'message', fields: CredentialDecode, repeated: true},
+};
+
 // ---- grpc-web frame codec ----
 
 function grpcWebEncodeRequest(protoBytes) {
@@ -365,6 +398,7 @@ class HydraConnection {
                         this.connected = true;
                         if (this.onConnect) this.onConnect();
                         this._startSubscribe();
+                        this._startKeepalive();
                         return true;
                     }
                 } catch (e) {
@@ -394,6 +428,7 @@ class HydraConnection {
 
             if (this.onConnect) this.onConnect();
             this._startSubscribe();
+            this._startKeepalive();
             return true;
         } catch (e) {
             this._emit('% [Hydra] Connection error: ' + e.message);
@@ -404,6 +439,7 @@ class HydraConnection {
     disconnect() {
         this.connected = false;
         this._reconnecting = false;
+        this._stopKeepalive();
         if (this._subscribeAbort) {
             this._subscribeAbort.abort();
             this._subscribeAbort = null;
@@ -435,13 +471,22 @@ class HydraConnection {
                 await this._cmdScroll(text.substring(8).trim());
             } else if (lower === '/hhelp') {
                 this._emit('% [Hydra] Commands:');
-                this._emit('%   /hconnect <game>     - connect to a game');
-                this._emit('%   /hswitch <link#>     - switch active link');
-                this._emit('%   /hdisconnect <link#> - disconnect a link');
-                this._emit('%   /hlinks              - list active links');
-                this._emit('%   /hgames              - list available games');
-                this._emit('%   /hscroll [n]         - fetch server scroll-back');
-                this._emit('%   /hhelp               - this help');
+                this._emit('%   /hconnect <game>       - connect to a game');
+                this._emit('%   /hswitch <link#>       - switch active link');
+                this._emit('%   /hdisconnect <link#>   - disconnect a link');
+                this._emit('%   /hlinks                - list active links');
+                this._emit('%   /hgames                - list available games');
+                this._emit('%   /hscroll [n]           - fetch server scroll-back');
+                this._emit('%   /haddcred <g> <c> <v> <n> <s> - add credential');
+                this._emit('%   /hdelcred <game> [char]        - delete credential');
+                this._emit('%   /hcreds                - list stored credentials');
+                this._emit('%   /hhelp                 - this help');
+            } else if (lower.startsWith('/haddcred ')) {
+                await this._cmdAddCred(text.substring(10).trim());
+            } else if (lower.startsWith('/hdelcred ')) {
+                await this._cmdDelCred(text.substring(10).trim());
+            } else if (lower === '/hcreds') {
+                await this._cmdCreds();
             } else {
                 // Unknown /h command — send as input
                 await this._sendInput(text);
@@ -557,6 +602,89 @@ class HydraConnection {
             for (const l of lines) this._emit(l.text || '');
             this._emit('-- End server scroll-back --');
         } catch (e) { this._emit('% [Hydra] Scroll error: ' + e.message); }
+    }
+
+    // ---- Credential management ----
+
+    async _cmdAddCred(args) {
+        const parts = args.split(/\s+/);
+        if (parts.length < 5) {
+            this._emit('% [Hydra] Usage: /haddcred <game> <character> <verb> <name> <secret>');
+            return;
+        }
+        const [game, character, verb, name, ...rest] = parts;
+        const secret = rest.join(' ');
+        try {
+            const reqBytes = Proto.encode({
+                session_id: this.sessionId, game, character, verb, name, secret
+            }, AddCredentialRequestFields);
+            const resp = await this._rpc('AddCredential', reqBytes, AddCredentialResponseDecode);
+            if (resp.success) {
+                this._emit('% [Hydra] Credential stored for ' + game + '/' + character);
+            } else {
+                this._emit('% [Hydra] AddCredential failed: ' + (resp.error || resp._error || 'unknown'));
+            }
+        } catch (e) { this._emit('% [Hydra] AddCredential error: ' + e.message); }
+    }
+
+    async _cmdDelCred(args) {
+        const parts = args.split(/\s+/);
+        if (parts.length < 1 || !parts[0]) {
+            this._emit('% [Hydra] Usage: /hdelcred <game> [character]');
+            return;
+        }
+        try {
+            const reqBytes = Proto.encode({
+                session_id: this.sessionId, game: parts[0], character: parts[1] || ''
+            }, DeleteCredentialRequestFields);
+            const resp = await this._rpc('DeleteCredential', reqBytes, DeleteCredentialResponseDecode);
+            if (resp.success) {
+                this._emit('% [Hydra] Credential(s) deleted.');
+            } else {
+                this._emit('% [Hydra] DeleteCredential failed: ' + (resp.error || resp._error || 'unknown'));
+            }
+        } catch (e) { this._emit('% [Hydra] DeleteCredential error: ' + e.message); }
+    }
+
+    async _cmdCreds() {
+        try {
+            const reqBytes = Proto.encode(
+                {session_id: this.sessionId}, SessionRequestFields);
+            const resp = await this._rpc('ListCredentials', reqBytes, ListCredentialsResponseDecode);
+            const creds = resp.credentials || [];
+            if (creds.length === 0) {
+                this._emit('% [Hydra] No stored credentials.');
+                return;
+            }
+            this._emit('% [Hydra] Stored credentials:');
+            for (const c of creds) {
+                let line = '  ' + c.game + '/' + c.character
+                    + '  verb=' + c.verb + ' name=' + c.name;
+                if (c.auto_login) line += ' [auto]';
+                this._emit(line);
+            }
+        } catch (e) { this._emit('% [Hydra] ListCredentials error: ' + e.message); }
+    }
+
+    // ---- Keepalive ----
+
+    _startKeepalive() {
+        if (this._keepaliveTimer) return;
+        this._keepaliveTimer = setInterval(() => {
+            if (this.connected && this.sessionId) {
+                // Ping via unary RPC (grpc-web can't do bidi stream pings)
+                const reqBytes = Proto.encode(
+                    {session_id: this.sessionId}, SessionRequestFields);
+                this._rpc('Ping', reqBytes, {}).catch(() => {});
+            }
+        }, 60000);  // every 60 seconds
+    }
+
+    _stopKeepalive() {
+        if (this._keepaliveTimer) {
+            clearInterval(this._keepaliveTimer);
+            this._keepaliveTimer = null;
+        }
     }
 
     async connectGame(gameName) {

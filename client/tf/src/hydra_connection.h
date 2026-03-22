@@ -85,6 +85,13 @@ private:
     void cmdLinks();
     void cmdGames();
     void cmdScroll(const std::string& args);
+    void cmdAddCred(const std::string& args);
+    void cmdDelCred(const std::string& args);
+    void cmdCreds();
+
+    // Keepalive
+    void sendPing();
+    static constexpr int PING_INTERVAL_SECS = 60;
 
     // Reconnect logic
     void attemptReconnect();
@@ -120,6 +127,7 @@ private:
     // Idle tracking
     std::chrono::steady_clock::time_point lastRecvTime_;
     std::chrono::steady_clock::time_point lastSendTime_;
+    std::chrono::steady_clock::time_point lastPingTime_;
 };
 
 #endif // HYDRA_GRPC

@@ -8,6 +8,7 @@
 #include <sys/eventfd.h>
 #include <unistd.h>
 #include <algorithm>
+#include <sstream>
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -55,6 +56,7 @@ HydraConnection::HydraConnection(const std::string& world_name,
     eventFd_ = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     lastRecvTime_ = std::chrono::steady_clock::now();
     lastSendTime_ = lastRecvTime_;
+    lastPingTime_ = lastRecvTime_;
 }
 
 HydraConnection::~HydraConnection() {
@@ -176,15 +178,27 @@ bool HydraConnection::send_line(const std::string& line) {
         } else if (lower.substr(0, 8) == "/hscroll") {
             cmdScroll(trim(line.substr(8)));
             return true;
+        } else if (lower.substr(0, 9) == "/haddcred") {
+            cmdAddCred(trim(line.substr(9)));
+            return true;
+        } else if (lower.substr(0, 9) == "/hdelcred") {
+            cmdDelCred(trim(line.substr(9)));
+            return true;
+        } else if (lower == "/hcreds") {
+            cmdCreds();
+            return true;
         } else if (lower == "/hhelp") {
             pushOutput("[Hydra] Commands:");
-            pushOutput("  /hconnect <game>     - connect to a game");
-            pushOutput("  /hswitch <link#>     - switch active link");
-            pushOutput("  /hdisconnect <link#> - disconnect a link");
-            pushOutput("  /hlinks              - list active links");
-            pushOutput("  /hgames              - list available games");
-            pushOutput("  /hscroll [n]         - fetch server scroll-back");
-            pushOutput("  /hhelp               - this help");
+            pushOutput("  /hconnect <game>       - connect to a game");
+            pushOutput("  /hswitch <link#>       - switch active link");
+            pushOutput("  /hdisconnect <link#>   - disconnect a link");
+            pushOutput("  /hlinks                - list active links");
+            pushOutput("  /hgames                - list available games");
+            pushOutput("  /hscroll [n]           - fetch server scroll-back");
+            pushOutput("  /haddcred <g> <c> <v> <n> <s> - add credential");
+            pushOutput("  /hdelcred <game> [char]        - delete credential");
+            pushOutput("  /hcreds                - list stored credentials");
+            pushOutput("  /hhelp                 - this help");
             return true;
         }
     }
@@ -209,6 +223,17 @@ std::vector<std::string> HydraConnection::read_lines() {
     // Drain the eventfd
     uint64_t val;
     ::read(eventFd_, &val, sizeof(val));
+
+    // Keepalive: send ping if interval elapsed
+    if (connected_.load()) {
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+            now - lastPingTime_).count();
+        if (elapsed >= PING_INTERVAL_SECS) {
+            sendPing();
+            lastPingTime_ = now;
+        }
+    }
 
     std::lock_guard<std::mutex> lock(outputMutex_);
     while (!outputQueue_.empty()) {
@@ -421,6 +446,118 @@ void HydraConnection::cmdScroll(const std::string& args) {
         pushOutput(resp.lines(i).text());
     }
     pushOutput("-- End server scroll-back --");
+}
+
+// ---- Keepalive ----
+
+void HydraConnection::sendPing() {
+    if (!connected_.load() || !grpc_ || !grpc_->stream) return;
+
+    hydra::ClientMessage msg;
+    auto* ping = msg.mutable_ping();
+    auto now = std::chrono::system_clock::now();
+    ping->set_client_timestamp(
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            now.time_since_epoch()).count());
+
+    grpc_->stream->Write(msg);
+}
+
+// ---- Credential management ----
+
+void HydraConnection::cmdAddCred(const std::string& args) {
+    // Parse: <game> <character> <verb> <name> <secret>
+    if (!grpc_ || !grpc_->stub || sessionId_.empty()) return;
+
+    std::istringstream ss(args);
+    std::string game, character, verb, name, secret;
+    ss >> game >> character >> verb >> name;
+    std::getline(ss, secret);
+    secret = trim(secret);
+
+    if (game.empty() || character.empty() || verb.empty() || name.empty() || secret.empty()) {
+        pushOutput("[Hydra] Usage: /haddcred <game> <character> <verb> <name> <secret>");
+        pushOutput("[Hydra] Example: /haddcred LocalMUX player1 connect player1 mypassword");
+        return;
+    }
+
+    ClientContext ctx;
+    ctx.AddMetadata("authorization", sessionId_);
+    hydra::AddCredentialRequest req;
+    req.set_session_id(sessionId_);
+    req.set_game(game);
+    req.set_character(character);
+    req.set_verb(verb);
+    req.set_name(name);
+    req.set_secret(secret);
+    hydra::AddCredentialResponse resp;
+
+    Status status = grpc_->stub->AddCredential(&ctx, req, &resp);
+    if (status.ok() && resp.success()) {
+        pushOutput("[Hydra] Credential stored for " + game + "/" + character);
+    } else {
+        pushOutput("[Hydra] AddCredential failed: "
+            + (resp.error().empty() ? status.error_message() : resp.error()));
+    }
+}
+
+void HydraConnection::cmdDelCred(const std::string& args) {
+    if (!grpc_ || !grpc_->stub || sessionId_.empty()) return;
+
+    std::istringstream ss(args);
+    std::string game, character;
+    ss >> game >> character;
+
+    if (game.empty()) {
+        pushOutput("[Hydra] Usage: /hdelcred <game> [character]");
+        return;
+    }
+
+    ClientContext ctx;
+    ctx.AddMetadata("authorization", sessionId_);
+    hydra::DeleteCredentialRequest req;
+    req.set_session_id(sessionId_);
+    req.set_game(game);
+    if (!character.empty()) req.set_character(character);
+    hydra::DeleteCredentialResponse resp;
+
+    Status status = grpc_->stub->DeleteCredential(&ctx, req, &resp);
+    if (status.ok() && resp.success()) {
+        pushOutput("[Hydra] Credential(s) deleted.");
+    } else {
+        pushOutput("[Hydra] DeleteCredential failed: "
+            + (resp.error().empty() ? status.error_message() : resp.error()));
+    }
+}
+
+void HydraConnection::cmdCreds() {
+    if (!grpc_ || !grpc_->stub || sessionId_.empty()) return;
+
+    ClientContext ctx;
+    ctx.AddMetadata("authorization", sessionId_);
+    hydra::ListCredentialsRequest req;
+    req.set_session_id(sessionId_);
+    hydra::ListCredentialsResponse resp;
+
+    Status status = grpc_->stub->ListCredentials(&ctx, req, &resp);
+    if (!status.ok()) {
+        pushOutput("[Hydra] ListCredentials failed: " + status.error_message());
+        return;
+    }
+
+    if (resp.credentials_size() == 0) {
+        pushOutput("[Hydra] No stored credentials.");
+        return;
+    }
+
+    pushOutput("[Hydra] Stored credentials:");
+    for (int i = 0; i < resp.credentials_size(); i++) {
+        const auto& c = resp.credentials(i);
+        std::string line = "  " + c.game() + "/" + c.character()
+            + "  verb=" + c.verb() + " name=" + c.name();
+        if (c.auto_login()) line += " [auto]";
+        pushOutput(line);
+    }
 }
 
 // ---- Reader thread with reconnect ----
