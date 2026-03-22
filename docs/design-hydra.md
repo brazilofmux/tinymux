@@ -1126,8 +1126,12 @@ SELECT * FROM saved_sessions WHERE account_id = ?
     └── Saved session in SQLite (after Hydra restart)
         → Restore session from SQLite
         → Attach this front-door
-        → Load persisted scroll-back from SQLite, decrypt, replay
         → Reconnect back-door links per saved link list
+        → If authenticated by password: derive scroll-back key,
+          load persisted scroll-back from SQLite, decrypt, replay
+        → If authenticated by token/cert: session resumes and new
+          output flows, but persisted scroll-back replay is deferred
+          until the player provides their password
 ```
 
 No special client-side protocol is needed. The client logs in
