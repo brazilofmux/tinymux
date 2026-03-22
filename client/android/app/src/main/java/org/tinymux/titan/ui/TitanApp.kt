@@ -51,6 +51,7 @@ import org.tinymux.titan.data.SpawnConfig
 import org.tinymux.titan.data.SpawnRepository
 import org.tinymux.titan.net.AnsiParser
 import org.tinymux.titan.net.CertInfo
+import org.tinymux.titan.net.HydraConnection
 import org.tinymux.titan.net.MudConnection
 import org.tinymux.titan.net.TofuCertStore
 import org.tinymux.titan.service.ConnectionService
@@ -68,6 +69,7 @@ data class McpEditState(
 class WorldTab(
     val name: String,
     var connection: MudConnection? = null,
+    var hydraConnection: HydraConnection? = null,
     val lines: SnapshotStateList<AnnotatedString> = mutableStateListOf(),
     val history: MutableList<String> = mutableListOf(),
     var hasActivity: Boolean = false,
@@ -76,7 +78,11 @@ class WorldTab(
     var activeSpawn: String = "",  // "" = main, otherwise spawn path
     val mcpParser: McpParser = McpParser(),
     val variables: VariableStore = VariableStore(),
-)
+) {
+    val isConnected: Boolean get() = connection?.connected == true || hydraConnection?.connected == true
+    fun sendLine(text: String) { connection?.sendLine(text) ?: hydraConnection?.sendLine(text) }
+    fun disconnectAll() { connection?.disconnect(); hydraConnection?.disconnect() }
+}
 
 @Composable
 fun TitanApp() {
@@ -137,7 +143,7 @@ fun TitanApp() {
     }
 
     fun updateService() {
-        val count = tabs.count { it.connection?.connected == true }
+        val count = tabs.count { it.isConnected }
         if (count > 0) {
             val intent = Intent(context, ConnectionService::class.java).apply {
                 action = ConnectionService.ACTION_UPDATE
@@ -155,9 +161,8 @@ fun TitanApp() {
     // Wire timer fire callback — sends command to active tab's connection
     timerEngine.onFire = { name, command ->
         val tab = tabs.getOrNull(activeTab)
-        val conn = tab?.connection
-        if (conn != null && conn.connected) {
-            conn.sendLine(command)
+        if (tab != null && tab.isConnected) {
+            tab.sendLine(command)
         }
     }
 
@@ -199,7 +204,7 @@ fun TitanApp() {
         if (tab.mcpParser.processLine(line)) return
 
         val context = ConditionContext(
-            isConnected = tab.connection?.connected == true,
+            isConnected = tab.isConnected,
             idleSeconds = 0, // TODO: track idle time
         )
         val result = triggerEngine.check(AnsiParser.stripAnsi(line), context)
@@ -207,9 +212,8 @@ fun TitanApp() {
         val display = result.displayLine ?: line
         appendLine(tabIndex, display)
         // Execute trigger commands
-        val conn = tab.connection
-        if (conn != null && conn.connected) {
-            for (cmd in result.commands) conn.sendLine(cmd)
+        if (tab.isConnected) {
+            for (cmd in result.commands) tab.sendLine(cmd)
         }
         // Text-to-speech
         result.speakText?.let { text ->
@@ -262,6 +266,40 @@ fun TitanApp() {
         conn.connect(scope)
     }
 
+    fun connectHydra(name: String, host: String, port: Int,
+                     hydraUser: String, hydraPass: String, hydraGame: String) {
+        val tab = WorldTab(name)
+        tabs.add(tab)
+        val tabIndex = tabs.size - 1
+        activeTab = tabIndex
+
+        val hconn = HydraConnection(name, host, port, hydraUser, hydraPass, hydraGame)
+        tab.hydraConnection = hconn
+
+        hconn.onLine = { line -> processServerLine(tabIndex, line) }
+        hconn.onConnect = {
+            appendLine(tabIndex, "% Connected via Hydra to $host:$port")
+            tab.disconnected = false
+            for (cmd in hookRepo.fireEvent("CONNECT")) hconn.sendLine(cmd)
+            updateService()
+        }
+        hconn.onDisconnect = {
+            appendLine(tabIndex, "% Hydra connection lost.")
+            tab.disconnected = true
+            timerEngine.cancelAll()
+            hookRepo.fireEvent("DISCONNECT").forEach { cmd ->
+                appendLine(tabIndex, "% [hook] $cmd")
+            }
+            updateService()
+        }
+        appendLine(tabIndex, "% Connecting via Hydra to $host:$port...")
+        val startIntent = Intent(context, ConnectionService::class.java).apply {
+            action = ConnectionService.ACTION_START
+        }
+        context.startForegroundService(startIntent)
+        hconn.connect(scope)
+    }
+
     fun handleCommand(cmd: String, args: String): Boolean {
         val tab = currentTab()
         val idx = activeTab
@@ -280,7 +318,7 @@ fun TitanApp() {
             }
             "dc", "disconnect" -> {
                 if (activeTab > 0) {
-                    tabs.getOrNull(activeTab)?.connection?.disconnect()
+                    tabs.getOrNull(activeTab)?.disconnectAll()
                     tabs.removeAt(activeTab)
                     activeTab = (activeTab - 1).coerceAtLeast(0)
                     updateService()
@@ -576,10 +614,10 @@ fun TitanApp() {
             return
         }
 
-        val conn = tab.connection
-        if (conn != null && conn.connected) {
-            conn.sendLine(text)
-            if (!conn.telnet.remoteEcho) {
+        if (tab.isConnected) {
+            tab.sendLine(text)
+            val remoteEcho = tab.connection?.telnet?.remoteEcho == true
+            if (!remoteEcho) {
                 appendLine(activeTab, "> $text")
             }
         } else {
@@ -644,7 +682,7 @@ fun TitanApp() {
             ToolbarButton("Cfg") { showSettings = true }
             ToolbarButton("DC") {
                 if (activeTab > 0) {
-                    tabs.getOrNull(activeTab)?.connection?.disconnect()
+                    tabs.getOrNull(activeTab)?.disconnectAll()
                     tabs.removeAt(activeTab)
                     activeTab = (activeTab - 1).coerceAtLeast(0)
                     updateService()
@@ -698,7 +736,7 @@ fun TitanApp() {
                             fontSize = 10.sp,
                             color = Color(0xFF808080),
                             modifier = Modifier.clickable {
-                                tab.connection?.disconnect()
+                                tab.disconnectAll()
                                 tabs.removeAt(index)
                                 if (activeTab >= tabs.size) activeTab = tabs.size - 1
                                 else if (activeTab > index) activeTab--
@@ -936,10 +974,11 @@ fun TitanApp() {
         // Directional movement pad
         if (showDpad) {
             val dpadSend = { dir: String ->
-                val conn = currentTab()?.connection
-                if (conn != null && conn.connected) {
-                    conn.sendLine(dir)
-                    if (!conn.telnet.remoteEcho) {
+                val tab = currentTab()
+                if (tab != null && tab.isConnected) {
+                    tab.sendLine(dir)
+                    val remoteEcho = tab.connection?.telnet?.remoteEcho == true
+                    if (!remoteEcho) {
                         appendLine(activeTab, "> $dir")
                     }
                 }
@@ -992,9 +1031,11 @@ fun TitanApp() {
             val tab = currentTab()
             val status = buildString {
                 append(tab?.name ?: "(no connection)")
-                tab?.connection?.let { conn ->
-                    if (conn.useSsl) append(" [ssl]")
-                    if (!conn.connected) append(" (disconnected)")
+                if (tab != null) {
+                    if (tab.hydraConnection != null) append(" [hydra]")
+                    else if (tab.connection?.useSsl == true) append(" [ssl]")
+                    if (!tab.isConnected && !tab.disconnected) append(" (connecting)")
+                    else if (tab.disconnected) append(" (disconnected)")
                 }
                 if (logActive) append(" [log]")
             }
@@ -1034,7 +1075,12 @@ fun TitanApp() {
             worldRepo = worldRepo,
             onConnect = { world ->
                 showWorldManager = false
-                connectWorld(world.name, world.host, world.port, world.ssl, world.loginCommands)
+                if (world.useHydra) {
+                    connectHydra(world.name, world.host, world.port,
+                        world.hydraUser, world.hydraPass, world.hydraGame)
+                } else {
+                    connectWorld(world.name, world.host, world.port, world.ssl, world.loginCommands)
+                }
             },
             onDismiss = { showWorldManager = false }
         )

@@ -15,6 +15,11 @@ data class World(
     val character: String = "",
     val notes: String = "",
     val loginCommands: List<String> = emptyList(),
+    // Hydra proxy fields
+    val useHydra: Boolean = false,
+    val hydraUser: String = "",
+    val hydraPass: String = "",
+    val hydraGame: String = "",
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("name", name)
@@ -24,6 +29,12 @@ data class World(
         put("character", character)
         put("notes", notes)
         put("loginCommands", JSONArray(loginCommands))
+        if (useHydra) {
+            put("useHydra", true)
+            put("hydraUser", hydraUser)
+            put("hydraPass", hydraPass)
+            put("hydraGame", hydraGame)
+        }
     }
 
     companion object {
@@ -37,6 +48,10 @@ data class World(
             loginCommands = obj.optJSONArray("loginCommands")?.let { arr ->
                 (0 until arr.length()).map { arr.optString(it, "") }.filter { it.isNotBlank() }
             } ?: emptyList(),
+            useHydra = obj.optBoolean("useHydra", false),
+            hydraUser = obj.optString("hydraUser", ""),
+            hydraPass = obj.optString("hydraPass", ""),
+            hydraGame = obj.optString("hydraGame", ""),
         )
     }
 }

@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.protobuf")
 }
 
 android {
@@ -37,6 +38,40 @@ android {
     }
 }
 
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:4.29.3"
+    }
+    plugins {
+        create("grpc") {
+            artifact = "io.grpc:protoc-gen-grpc-java:1.71.0"
+        }
+        create("grpckt") {
+            artifact = "io.grpc:protoc-gen-grpc-kotlin:1.4.3:jdk8@jar"
+        }
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.plugins {
+                create("grpc") {
+                    option("lite")
+                }
+                create("grpckt") {
+                    option("lite")
+                }
+            }
+            task.builtins {
+                create("java") {
+                    option("lite")
+                }
+                create("kotlin") {
+                    option("lite")
+                }
+            }
+        }
+    }
+}
+
 dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
@@ -49,4 +84,11 @@ dependencies {
     implementation("androidx.compose.ui:ui-text")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    // gRPC + Protobuf
+    implementation("io.grpc:grpc-okhttp:1.71.0")
+    implementation("io.grpc:grpc-stub:1.71.0")
+    implementation("io.grpc:grpc-kotlin-stub:1.4.3")
+    implementation("io.grpc:grpc-protobuf-lite:1.71.0")
+    implementation("com.google.protobuf:protobuf-kotlin-lite:4.29.3")
 }
