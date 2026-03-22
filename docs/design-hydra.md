@@ -829,6 +829,115 @@ Hydra does not need to reveal stored game passwords to administrators
 or users. Operationally, credentials should be writable and replaceable,
 not exportable in plaintext.
 
+### Threat Model
+
+Hydra holds sensitive material on behalf of players: game credentials
+and scroll-back (which contains private conversations, pages, mail,
+and channel chatter). The encryption design addresses specific
+adversaries and their capabilities.
+
+**Adversary 1: Database theft.**
+An attacker obtains a copy of `hydra.sqlite` (backup, disk image,
+SQL dump) but does not have the master key file.
+
+- Game credentials: encrypted, unreadable. The attacker sees
+  ciphertext, nonce, and key ID. No plaintext passwords.
+- Scroll-back: encrypted, unreadable. The attacker sees ciphertext
+  for every persisted line but cannot decrypt any of it.
+- Account passwords: hashed with Argon2id, not reversible.
+- **Result:** The database alone reveals account names and game
+  configuration. It does not reveal any player's credentials,
+  scroll-back, or account password.
+
+**Adversary 2: Host operator (box owner).**
+The operator has root access to the host, can read the master key
+file, and can read the database. They are curious or compelled to
+examine a specific player's data.
+
+- The master key can derive per-account key material, so the
+  operator *could* decrypt any account's credentials and scroll-back
+  offline.
+- Hydra itself does not provide an admin interface that exposes
+  another player's scroll-back or credentials. There is no
+  `/viewscroll <user>` command. The operator would have to write
+  custom tooling that reads the database and the master key.
+- **Mitigation:** This is the irreducible trust boundary. If you
+  control the host, you control the keys. Hydra minimizes casual
+  exposure by never exporting plaintext through its own interfaces,
+  but a determined operator with root access is outside the
+  encryption threat model.
+- **Organizational mitigation:** In a shared-hosting or co-located
+  environment, the master key file can be owned by a dedicated
+  service account with restrictive permissions. This limits exposure
+  to the Hydra process itself rather than every root-equivalent
+  user on the host.
+
+**Adversary 3: Authenticated player.**
+A player who has a valid Hydra account and is logged in.
+
+- They can replay their own scroll-back (Hydra decrypts it for
+  them during session resume and `/scroll`).
+- They cannot access another account's scroll-back. Per-account key
+  material means decryption of account A's data requires account A's
+  derived key. Hydra only decrypts for the authenticated account.
+- They cannot read their own raw key material or export encrypted
+  blobs. Hydra decrypts internally and renders to the client's
+  terminal — there is no "download my encrypted data" command.
+- **Result:** A player colluding with the box owner still cannot
+  read another player's scroll-back. The player can only access
+  their own data. The box owner's master key access does not change
+  what Hydra will serve to a given authenticated session.
+
+**Adversary 4: Network eavesdropper (front-door).**
+An attacker on the network path between the client and Hydra.
+
+- Front-door connections use TLS. The attacker sees encrypted traffic.
+- **Result:** No exposure if TLS is properly configured. Standard TLS
+  threat model applies.
+
+**Adversary 5: Network eavesdropper (back-door).**
+An attacker on the network path between Hydra and a game server.
+
+- For local games (localhost or Unix socket): no network exposure.
+- For remote games over TCP: the back-door connection is plain telnet
+  by default. An attacker on this path sees game traffic in the
+  clear, including login commands with credentials.
+- **Mitigation:** Back-door TLS is supported (per R13) for remote
+  games that require it. For games on trusted LANs, plain telnet is
+  acceptable. The game configuration specifies the transport security
+  per game.
+
+**Adversary 6: Hydra process compromise.**
+An attacker gains code execution inside the Hydra process.
+
+- All in-memory data is exposed: master key, decrypted credentials,
+  plaintext scroll-back, session state.
+- **Mitigation:** This is outside the encryption threat model. Hydra
+  is a small, focused process with a minimal attack surface (no
+  softcode interpreter, no user-supplied code execution, no shell
+  access). Standard hardening applies: minimal privileges, seccomp
+  where available, memory-safe practices.
+
+**What encryption does NOT protect against:**
+
+- A root-level operator who is willing to write custom decryption
+  tooling using the master key file.
+- Runtime compromise of the Hydra process.
+- A player viewing their own scroll-back (by design — that is the
+  feature).
+
+**What encryption DOES protect against:**
+
+- Casual snooping by operators who have database access but not the
+  master key (e.g., database backups, shared hosting).
+- Database theft (backup exfiltration, disk cloning, SQL injection
+  against a co-hosted service).
+- Cross-account data exposure (player A cannot read player B's data,
+  even with cooperation from the operator, unless the operator
+  bypasses Hydra entirely with custom tooling).
+- Regulatory or policy compliance requirements for data-at-rest
+  encryption.
+
 ### First-Run Bootstrap
 
 If Hydra starts with an empty accounts table, it enters bootstrap
