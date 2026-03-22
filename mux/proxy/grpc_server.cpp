@@ -12,15 +12,31 @@
 
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/server_builder.h>
+#include <chrono>
 
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::ServerWriter;
+using grpc::ServerReaderWriter;
 using grpc::Status;
 using grpc::StatusCode;
 
-// Helper: populate a LinkInfo proto from a BackDoorLink.
+// ---- Auth helper: extract session_id from metadata or message field ----
+
+static std::string getSessionId(ServerContext* ctx, const std::string& msgField) {
+    // Prefer metadata "authorization" header
+    auto md = ctx->client_metadata();
+    auto it = md.find("authorization");
+    if (it != md.end()) {
+        return std::string(it->second.data(), it->second.size());
+    }
+    // Fall back to per-message session_id field
+    return msgField;
+}
+
+// ---- Helper: populate LinkInfo proto ----
+
 static void fillLinkInfo(hydra::LinkInfo* li, const BackDoorLink& link,
                          size_t idx, size_t activeIdx) {
     li->set_number(static_cast<int>(idx) + 1);
@@ -31,7 +47,6 @@ static void fillLinkInfo(hydra::LinkInfo* li, const BackDoorLink& link,
     li->set_retry_count(link.retryCount);
     li->set_next_retry(static_cast<int64_t>(link.nextRetry));
 
-    // State name
     const char* stateName = "unknown";
     switch (link.state) {
     case LinkState::Connecting:     stateName = "connecting"; break;
@@ -63,14 +78,34 @@ public:
             (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
                 return sm.authenticateAndGetSession(user, pw);
             });
-
-        std::string persistId = future.get();
-        if (persistId.empty()) {
+        std::string pid = future.get();
+        if (pid.empty()) {
             resp->set_success(false);
             resp->set_error("authentication failed");
         } else {
             resp->set_success(true);
-            resp->set_session_id(persistId);
+            resp->set_session_id(pid);
+        }
+        return Status::OK;
+    }
+
+    Status CreateAccount(ServerContext* ctx, const hydra::CreateAccountRequest* req,
+                         hydra::CreateAccountResponse* resp) override {
+        auto future = workQueue_.enqueue<std::pair<std::string, std::string>>(
+            [user = req->username(), pw = req->password()]
+            (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&)
+                -> std::pair<std::string, std::string> {
+                std::string errorMsg;
+                std::string pid = sm.createAccountAndGetSession(user, pw, errorMsg);
+                return {pid, errorMsg};
+            });
+        auto [pid, err] = future.get();
+        if (pid.empty()) {
+            resp->set_success(false);
+            resp->set_error(err.empty() ? "account creation failed" : err);
+        } else {
+            resp->set_success(true);
+            resp->set_session_id(pid);
         }
         return Status::OK;
     }
@@ -79,8 +114,9 @@ public:
 
     Status GetSession(ServerContext* ctx, const hydra::SessionRequest* req,
                       hydra::SessionInfo* resp) override {
+        std::string sid = getSessionId(ctx, req->session_id());
         auto future = workQueue_.enqueue<bool>(
-            [sid = req->session_id(), resp]
+            [sid, resp]
             (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
                 HydraSession* s = sm.findByPersistId(sid);
                 if (!s) return false;
@@ -97,18 +133,15 @@ public:
                 }
                 return true;
             });
-
-        if (!future.get()) {
-            return Status(StatusCode::NOT_FOUND, "session not found");
-        }
+        if (!future.get()) return Status(StatusCode::NOT_FOUND, "session not found");
         return Status::OK;
     }
 
     Status DetachSession(ServerContext* ctx, const hydra::SessionRequest* req,
                          hydra::Empty* resp) override {
+        std::string sid = getSessionId(ctx, req->session_id());
         auto future = workQueue_.enqueue<bool>(
-            [sid = req->session_id()]
-            (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
+            [sid](SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
                 HydraSession* s = sm.findByPersistId(sid);
                 if (!s) return false;
                 s->state = SessionState::Detached;
@@ -120,15 +153,27 @@ public:
 
     Status DestroySession(ServerContext* ctx, const hydra::SessionRequest* req,
                           hydra::Empty* resp) override {
-        // TODO: full session destruction (close links, delete from DB)
         return Status(StatusCode::UNIMPLEMENTED, "use /quit via telnet for now");
+    }
+
+    Status Ping(ServerContext* ctx, const hydra::SessionRequest* req,
+                hydra::Empty* resp) override {
+        std::string sid = getSessionId(ctx, req->session_id());
+        auto future = workQueue_.enqueue<bool>(
+            [sid](SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
+                HydraSession* s = sm.findByPersistId(sid);
+                if (!s) return false;
+                s->lastActivity = time(nullptr);
+                return true;
+            });
+        if (!future.get()) return Status(StatusCode::NOT_FOUND, "session not found");
+        return Status::OK;
     }
 
     // ---- Game catalog ----
 
     Status ListGames(ServerContext* ctx, const hydra::Empty* req,
                      hydra::GameList* resp) override {
-        // Config is immutable — safe to read from any thread
         for (const auto& game : config_.games) {
             auto* gi = resp->add_games();
             gi->set_name(game.name);
@@ -144,8 +189,9 @@ public:
 
     Status Connect(ServerContext* ctx, const hydra::ConnectRequest* req,
                    hydra::ConnectResponse* resp) override {
+        std::string sid = getSessionId(ctx, req->session_id());
         auto future = workQueue_.enqueue<bool>(
-            [sid = req->session_id(), game = req->game_name(), resp]
+            [sid, game = req->game_name(), resp]
             (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
                 HydraSession* s = sm.findByPersistId(sid);
                 if (!s) { resp->set_error("session not found"); return false; }
@@ -165,8 +211,9 @@ public:
 
     Status SwitchLink(ServerContext* ctx, const hydra::SwitchRequest* req,
                       hydra::SwitchResponse* resp) override {
+        std::string sid = getSessionId(ctx, req->session_id());
         auto future = workQueue_.enqueue<bool>(
-            [sid = req->session_id(), num = req->link_number(), resp]
+            [sid, num = req->link_number(), resp]
             (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
                 HydraSession* s = sm.findByPersistId(sid);
                 if (!s) { resp->set_error("session not found"); return false; }
@@ -185,8 +232,9 @@ public:
 
     Status DisconnectLink(ServerContext* ctx, const hydra::DisconnectRequest* req,
                           hydra::DisconnectResponse* resp) override {
+        std::string sid = getSessionId(ctx, req->session_id());
         auto future = workQueue_.enqueue<bool>(
-            [sid = req->session_id(), num = req->link_number(), resp]
+            [sid, num = req->link_number(), resp]
             (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
                 HydraSession* s = sm.findByPersistId(sid);
                 if (!s) { resp->set_error("session not found"); return false; }
@@ -205,8 +253,9 @@ public:
 
     Status ListLinks(ServerContext* ctx, const hydra::SessionRequest* req,
                      hydra::LinkList* resp) override {
+        std::string sid = getSessionId(ctx, req->session_id());
         auto future = workQueue_.enqueue<bool>(
-            [sid = req->session_id(), resp]
+            [sid, resp]
             (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
                 HydraSession* s = sm.findByPersistId(sid);
                 if (!s) return false;
@@ -219,12 +268,147 @@ public:
         return Status::OK;
     }
 
-    // ---- I/O ----
+    // ---- Bidirectional I/O (primary channel) ----
+
+    Status GameSession(ServerContext* ctx,
+                       ServerReaderWriter<hydra::ServerMessage, hydra::ClientMessage>* stream) override {
+        // Read initial metadata for session_id and color_format
+        auto md = ctx->client_metadata();
+        std::string sid;
+        auto it = md.find("authorization");
+        if (it != md.end()) {
+            sid = std::string(it->second.data(), it->second.size());
+        }
+        // Also check "session-id" metadata as fallback
+        if (sid.empty()) {
+            it = md.find("session-id");
+            if (it != md.end()) {
+                sid = std::string(it->second.data(), it->second.size());
+            }
+        }
+        if (sid.empty()) {
+            return Status(StatusCode::UNAUTHENTICATED, "session_id required in metadata");
+        }
+
+        // Get output queue
+        std::shared_ptr<HydraSession::OutputQueue> oq;
+        auto future = workQueue_.enqueue<std::shared_ptr<HydraSession::OutputQueue>>(
+            [&sid](SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&)
+                -> std::shared_ptr<HydraSession::OutputQueue> {
+                HydraSession* s = sm.findByPersistId(sid);
+                if (!s) return nullptr;
+                s->state = SessionState::Active;
+                s->lastActivity = time(nullptr);
+                return s->outputQueue;
+            });
+        oq = future.get();
+        if (!oq) return Status(StatusCode::NOT_FOUND, "session not found");
+
+        oq->subscriberCount.fetch_add(1);
+        oq->gmcpSubscriberCount.fetch_add(1);
+
+        // Reader thread: process client input
+        std::atomic<bool> done{false};
+        std::thread reader([&]() {
+            hydra::ClientMessage msg;
+            while (stream->Read(&msg)) {
+                if (msg.has_input_line()) {
+                    workQueue_.enqueue<void>(
+                        [sid, line = msg.input_line()]
+                        (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
+                            HydraSession* s = sm.findByPersistId(sid);
+                            if (!s) return;
+                            BackDoorLink* active = s->getActiveLink();
+                            if (active && active->state == LinkState::Active) {
+                                std::string data = line + "\r\n";
+                                int bdFd = static_cast<int>(active->handle);
+                                send(bdFd, data.data(), data.size(), MSG_NOSIGNAL);
+                            }
+                        });
+                } else if (msg.has_ping()) {
+                    hydra::ServerMessage resp;
+                    auto* pong = resp.mutable_pong();
+                    pong->set_client_timestamp(msg.ping().client_timestamp());
+                    pong->set_server_timestamp(
+                        std::chrono::duration_cast<std::chrono::milliseconds>(
+                            std::chrono::system_clock::now().time_since_epoch()).count());
+                    stream->Write(resp);
+                } else if (msg.has_gmcp()) {
+                    // Forward GMCP to active link
+                    workQueue_.enqueue<void>(
+                        [sid, pkg = msg.gmcp().package(), json = msg.gmcp().json()]
+                        (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
+                            HydraSession* s = sm.findByPersistId(sid);
+                            if (!s) return;
+                            BackDoorLink* active = s->getActiveLink();
+                            if (active && active->handle != ganl::InvalidConnectionHandle
+                                && active->gmcpEnabled) {
+                                std::string payload = pkg + " " + json;
+                                // Build GMCP telnet frame
+                                std::string frame;
+                                frame.push_back(static_cast<char>(255)); // IAC
+                                frame.push_back(static_cast<char>(250)); // SB
+                                frame.push_back(static_cast<char>(201)); // GMCP
+                                frame.append(payload);
+                                frame.push_back(static_cast<char>(255)); // IAC
+                                frame.push_back(static_cast<char>(240)); // SE
+                                int bdFd = static_cast<int>(active->handle);
+                                send(bdFd, frame.data(), frame.size(), MSG_NOSIGNAL);
+                            }
+                        });
+                }
+            }
+            done.store(true);
+            oq->cv.notify_all();
+        });
+
+        // Writer loop: push output + GMCP to client
+        while (!done.load() && !ctx->IsCancelled()) {
+            std::unique_lock<std::mutex> lock(oq->mutex);
+            oq->cv.wait_for(lock, std::chrono::milliseconds(500),
+                [&oq, &done] { return !oq->queue.empty() || !oq->gmcpQueue.empty() || done.load(); });
+
+            while (!oq->queue.empty()) {
+                auto& item = oq->queue.front();
+                hydra::ServerMessage msg;
+                auto* go = msg.mutable_game_output();
+                go->set_text(item.text);
+                go->set_source(item.source);
+                go->set_timestamp(static_cast<int64_t>(item.timestamp));
+                go->set_link_number(item.linkNumber);
+                oq->queue.pop();
+                lock.unlock();
+                if (!stream->Write(msg)) { done.store(true); break; }
+                lock.lock();
+            }
+
+            while (!oq->gmcpQueue.empty()) {
+                auto& item = oq->gmcpQueue.front();
+                hydra::ServerMessage msg;
+                auto* gm = msg.mutable_gmcp();
+                gm->set_package(item.package);
+                gm->set_json(item.json);
+                gm->set_link_number(item.linkNumber);
+                oq->gmcpQueue.pop();
+                lock.unlock();
+                if (!stream->Write(msg)) { done.store(true); break; }
+                lock.lock();
+            }
+        }
+
+        oq->subscriberCount.fetch_sub(1);
+        oq->gmcpSubscriberCount.fetch_sub(1);
+        reader.join();
+        return Status::OK;
+    }
+
+    // ---- Legacy unary I/O ----
 
     Status SendInput(ServerContext* ctx, const hydra::InputRequest* req,
                      hydra::InputResponse* resp) override {
+        std::string sid = getSessionId(ctx, req->session_id());
         auto future = workQueue_.enqueue<bool>(
-            [sid = req->session_id(), line = req->line(), resp]
+            [sid, line = req->line(), resp]
             (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
                 HydraSession* s = sm.findByPersistId(sid);
                 if (!s) { resp->set_error("session not found"); return false; }
@@ -233,7 +417,6 @@ public:
                     resp->set_error("no active link");
                     return false;
                 }
-                // Send directly to game (main thread, safe)
                 std::string data = line + "\r\n";
                 int bdFd = static_cast<int>(active->handle);
                 send(bdFd, data.data(), data.size(), MSG_NOSIGNAL);
@@ -246,9 +429,7 @@ public:
 
     Status Subscribe(ServerContext* ctx, const hydra::SessionRequest* req,
                      ServerWriter<hydra::GameOutput>* writer) override {
-        std::string sid = req->session_id();
-
-        // Get the output queue via work queue (main thread lookup)
+        std::string sid = getSessionId(ctx, req->session_id());
         std::shared_ptr<HydraSession::OutputQueue> oq;
         auto future = workQueue_.enqueue<std::shared_ptr<HydraSession::OutputQueue>>(
             [&sid](SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&)
@@ -258,13 +439,10 @@ public:
                 return s->outputQueue;
             });
         oq = future.get();
-        if (!oq) {
-            return Status(StatusCode::NOT_FOUND, "session not found");
-        }
+        if (!oq) return Status(StatusCode::NOT_FOUND, "session not found");
 
         oq->subscriberCount.fetch_add(1);
 
-        // Stream output until client disconnects or context cancelled
         while (!ctx->IsCancelled()) {
             std::unique_lock<std::mutex> lock(oq->mutex);
             oq->cv.wait_for(lock, std::chrono::milliseconds(500),
@@ -277,12 +455,13 @@ public:
                 msg.set_source(item.source);
                 msg.set_timestamp(static_cast<int64_t>(item.timestamp));
                 msg.set_link_number(item.linkNumber);
-
+                oq->queue.pop();
+                lock.unlock();
                 if (!writer->Write(msg)) {
                     oq->subscriberCount.fetch_sub(1);
                     return Status::OK;
                 }
-                oq->queue.pop();
+                lock.lock();
             }
         }
 
@@ -290,28 +469,89 @@ public:
         return Status::OK;
     }
 
+    // ---- GMCP subscription ----
+
+    Status SubscribeGmcp(ServerContext* ctx, const hydra::GmcpSubscribeRequest* req,
+                         ServerWriter<hydra::GmcpMessage>* writer) override {
+        std::string sid = getSessionId(ctx, req->session_id());
+        std::shared_ptr<HydraSession::OutputQueue> oq;
+        auto future = workQueue_.enqueue<std::shared_ptr<HydraSession::OutputQueue>>(
+            [&sid](SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&)
+                -> std::shared_ptr<HydraSession::OutputQueue> {
+                HydraSession* s = sm.findByPersistId(sid);
+                if (!s) return nullptr;
+                return s->outputQueue;
+            });
+        oq = future.get();
+        if (!oq) return Status(StatusCode::NOT_FOUND, "session not found");
+
+        // Collect package filters
+        std::vector<std::string> filters;
+        for (int i = 0; i < req->packages_size(); i++) {
+            filters.push_back(req->packages(i));
+        }
+
+        oq->gmcpSubscriberCount.fetch_add(1);
+
+        while (!ctx->IsCancelled()) {
+            std::unique_lock<std::mutex> lock(oq->mutex);
+            oq->cv.wait_for(lock, std::chrono::milliseconds(500),
+                [&oq] { return !oq->gmcpQueue.empty(); });
+
+            while (!oq->gmcpQueue.empty()) {
+                auto item = oq->gmcpQueue.front();
+                oq->gmcpQueue.pop();
+                lock.unlock();
+
+                // Apply package filter if any
+                bool match = filters.empty();
+                if (!match) {
+                    for (const auto& f : filters) {
+                        if (item.package.compare(0, f.size(), f) == 0) {
+                            match = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (match) {
+                    hydra::GmcpMessage msg;
+                    msg.set_package(item.package);
+                    msg.set_json(item.json);
+                    msg.set_link_number(item.linkNumber);
+                    if (!writer->Write(msg)) {
+                        oq->gmcpSubscriberCount.fetch_sub(1);
+                        return Status::OK;
+                    }
+                }
+                lock.lock();
+            }
+        }
+
+        oq->gmcpSubscriberCount.fetch_sub(1);
+        return Status::OK;
+    }
+
     // ---- Scroll-back ----
 
     Status GetScrollBack(ServerContext* ctx, const hydra::ScrollBackRequest* req,
                          hydra::ScrollBackResponse* resp) override {
+        std::string sid = getSessionId(ctx, req->session_id());
         auto future = workQueue_.enqueue<bool>(
-            [sid = req->session_id(), maxLines = req->max_lines(), resp]
+            [sid, maxLines = req->max_lines(), resp]
             (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
                 HydraSession* s = sm.findByPersistId(sid);
                 if (!s) return false;
-
                 size_t n = maxLines > 0 ? static_cast<size_t>(maxLines)
                                         : s->scrollback.count();
-                struct ReplayCtx {
-                    hydra::ScrollBackResponse* resp;
-                };
+                struct ReplayCtx { hydra::ScrollBackResponse* resp; };
                 ReplayCtx rctx{resp};
                 s->scrollback.replay(n,
                     [](const std::string& text, const std::string& source,
                        time_t timestamp, void* ctx) {
                         auto* rc = static_cast<ReplayCtx*>(ctx);
                         auto* line = rc->resp->add_lines();
-                        line->set_text(text);  // PUA-encoded; TODO: render
+                        line->set_text(text);
                         line->set_source(source);
                         line->set_timestamp(static_cast<int64_t>(timestamp));
                     },
@@ -326,8 +566,9 @@ public:
 
     Status AddCredential(ServerContext* ctx, const hydra::AddCredentialRequest* req,
                          hydra::AddCredentialResponse* resp) override {
+        std::string sid = getSessionId(ctx, req->session_id());
         auto future = workQueue_.enqueue<bool>(
-            [sid = req->session_id(), game = req->game(), character = req->character(),
+            [sid, game = req->game(), character = req->character(),
              verb = req->verb(), name = req->name(), secret = req->secret(), resp]
             (SessionManager& sm, AccountManager& am, const HydraConfig&, ProcessManager&) {
                 HydraSession* s = sm.findByPersistId(sid);
@@ -347,9 +588,9 @@ public:
 
     Status DeleteCredential(ServerContext* ctx, const hydra::DeleteCredentialRequest* req,
                             hydra::DeleteCredentialResponse* resp) override {
+        std::string sid = getSessionId(ctx, req->session_id());
         auto future = workQueue_.enqueue<bool>(
-            [sid = req->session_id(), game = req->game(),
-             character = req->character(), resp]
+            [sid, game = req->game(), character = req->character(), resp]
             (SessionManager& sm, AccountManager& am, const HydraConfig&, ProcessManager&) {
                 HydraSession* s = sm.findByPersistId(sid);
                 if (!s) { resp->set_error("session not found"); return false; }
@@ -362,8 +603,9 @@ public:
 
     Status ListCredentials(ServerContext* ctx, const hydra::ListCredentialsRequest* req,
                            hydra::ListCredentialsResponse* resp) override {
+        std::string sid = getSessionId(ctx, req->session_id());
         auto future = workQueue_.enqueue<bool>(
-            [sid = req->session_id(), resp]
+            [sid, resp]
             (SessionManager& sm, AccountManager& am, const HydraConfig&, ProcessManager&) {
                 HydraSession* s = sm.findByPersistId(sid);
                 if (!s) return false;

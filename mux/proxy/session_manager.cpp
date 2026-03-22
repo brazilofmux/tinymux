@@ -1093,6 +1093,30 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
             send(static_cast<int>(h), frame.data(), frame.size(),
                  MSG_NOSIGNAL);
         }
+
+        // Push to gRPC GMCP queue if any subscribers
+        if (session->outputQueue->gmcpSubscriberCount.load() > 0) {
+            // Parse GMCP payload: "Package.Name json_data"
+            std::string pkg, json;
+            size_t sp = gm.payload.find(' ');
+            if (sp != std::string::npos) {
+                pkg = gm.payload.substr(0, sp);
+                json = gm.payload.substr(sp + 1);
+            } else {
+                pkg = gm.payload;
+            }
+
+            HydraSession::GmcpItem item;
+            item.package = pkg;
+            item.json = json;
+            item.linkNumber = static_cast<int>(linkIdx) + 1;
+
+            {
+                std::lock_guard<std::mutex> lock(session->outputQueue->mutex);
+                session->outputQueue->gmcpQueue.push(std::move(item));
+            }
+            session->outputQueue->cv.notify_all();
+        }
     }
 
     // Process regular (non-GMCP) data through the color/charset bridge
@@ -1485,6 +1509,19 @@ std::string SessionManager::authenticateAndGetSession(
              (unsigned long)(nextSessionId_ - 1), pid.c_str(),
              username.c_str());
     return pid;
+}
+
+std::string SessionManager::createAccountAndGetSession(
+    const std::string& username, const std::string& password,
+    std::string& errorOut) {
+    bool admin = accounts_.isEmpty();
+    uint32_t accountId = 0;
+    if (!accounts_.createAccount(username, password, admin,
+                                 accountId, errorOut)) {
+        return "";
+    }
+    // Auto-login
+    return authenticateAndGetSession(username, password);
 }
 
 // ---- Phase 4: Session serialization ----

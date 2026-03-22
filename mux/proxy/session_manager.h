@@ -70,11 +70,20 @@ struct HydraSession {
         time_t timestamp;
         int linkNumber;         // 1-based
     };
+    // GMCP message queued for gRPC consumers.
+    struct GmcpItem {
+        std::string package;    // e.g. "Char.Vitals"
+        std::string json;
+        int linkNumber;         // 1-based
+    };
+
     struct OutputQueue {
         std::mutex mutex;
         std::condition_variable cv;
         std::queue<OutputItem> queue;
+        std::queue<GmcpItem> gmcpQueue;
         std::atomic<int> subscriberCount{0};
+        std::atomic<int> gmcpSubscriberCount{0};
     };
     std::shared_ptr<OutputQueue> outputQueue{std::make_shared<OutputQueue>()};
 };
@@ -139,6 +148,11 @@ public:
     // Authenticate and create/resume a session. Returns persistId, or empty on failure.
     std::string authenticateAndGetSession(const std::string& username,
                                           const std::string& password);
+
+    // Create account and auto-login. Returns persistId, or empty on failure.
+    std::string createAccountAndGetSession(const std::string& username,
+                                           const std::string& password,
+                                           std::string& errorOut);
 
     // Eagerly restore all saved sessions from SQLite on startup.
     // Links are reconnected; scroll-back stays encrypted until client authenticates.

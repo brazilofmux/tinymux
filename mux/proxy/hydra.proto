@@ -2,6 +2,18 @@ syntax = "proto3";
 
 package hydra;
 
+// ---- Enums ----
+
+// How the server should render color in output text.
+// Clients specify this when opening a GameSession or Subscribe stream.
+enum ColorFormat {
+    ANSI_TRUECOLOR = 0;    // ESC[38;2;R;G;Bm — for terminal clients (default)
+    ANSI_256       = 1;    // ESC[38;5;Nm — xterm-256 palette
+    ANSI_16        = 2;    // ESC[31m etc. — basic 16-color
+    PUA_UTF8       = 3;    // TinyMUX PUA-encoded UTF-8 — for custom renderers
+    PLAIN          = 4;    // All color stripped
+}
+
 // ---- Common types ----
 
 message Empty {}
@@ -36,11 +48,19 @@ message SessionInfo {
     int64  last_activity = 8;
 }
 
+// Game text output from a back-door link.
 message GameOutput {
-    string text = 1;            // ANSI 256-color rendered
+    string text = 1;            // rendered per ColorFormat
     string source = 2;          // game name
     int64  timestamp = 3;
     int32  link_number = 4;     // 1-based
+}
+
+// A GMCP message (structured MUD protocol data).
+message GmcpMessage {
+    string package = 1;         // e.g. "Char.Vitals", "Room.Info"
+    string json = 2;            // JSON payload
+    int32  link_number = 3;     // 1-based, which link it came from
 }
 
 message StoredCredential {
@@ -60,6 +80,12 @@ message ProcessInfo {
 }
 
 // ---- Authentication ----
+//
+// Authenticate returns a session_id token.  All subsequent RPCs
+// should pass this token via the "authorization" gRPC metadata header
+// instead of per-message session_id fields.  Per-message session_id
+// fields are supported as a fallback but the metadata approach is
+// preferred (enables interceptor-based auth).
 
 message AuthRequest {
     string username = 1;
@@ -68,14 +94,25 @@ message AuthRequest {
 
 message AuthResponse {
     bool   success = 1;
-    string session_id = 2;      // persistId (stable across restarts)
+    string session_id = 2;      // use as "authorization" metadata value
+    string error = 3;
+}
+
+message CreateAccountRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message CreateAccountResponse {
+    bool   success = 1;
+    string session_id = 2;      // auto-login after creation
     string error = 3;
 }
 
 // ---- Session operations ----
 
 message SessionRequest {
-    string session_id = 1;
+    string session_id = 1;      // fallback if not using metadata auth
 }
 
 message ConnectRequest {
@@ -109,6 +146,67 @@ message DisconnectResponse {
     string error = 2;
 }
 
+// ---- Bidirectional I/O ----
+//
+// GameSession is the primary I/O channel.  The client opens a bidi
+// stream and sends ClientMessage (input lines, commands).  The server
+// pushes ServerMessage (game output, GMCP, system notices).
+// This eliminates per-line round-trips and maps to a persistent
+// connection model.
+
+message GameSessionRequest {
+    string session_id = 1;
+    ColorFormat color_format = 2;   // how to render output text
+}
+
+// Client → Server messages on the bidi stream.
+message ClientMessage {
+    oneof payload {
+        string input_line = 1;          // text input to active link
+        GmcpClientMessage gmcp = 2;    // GMCP to active link
+        PingMessage ping = 3;          // application-level keepalive
+    }
+}
+
+message GmcpClientMessage {
+    string package = 1;
+    string json = 2;
+}
+
+message PingMessage {
+    int64 client_timestamp = 1;     // client's unix millis for RTT calc
+}
+
+// Server → Client messages on the bidi stream.
+message ServerMessage {
+    oneof payload {
+        GameOutput game_output = 1;     // text from a game link
+        GmcpMessage gmcp = 2;          // structured GMCP data
+        SystemNotice notice = 3;        // Hydra system messages
+        PongMessage pong = 4;          // keepalive response
+        LinkEvent link_event = 5;      // link state changes
+    }
+}
+
+message SystemNotice {
+    string text = 1;                    // e.g. "[Shangrila: connected]"
+    string severity = 2;               // "info", "warn", "error"
+}
+
+message PongMessage {
+    int64 client_timestamp = 1;         // echoed from ping
+    int64 server_timestamp = 2;         // server's unix millis
+}
+
+message LinkEvent {
+    int32  link_number = 1;
+    string game_name = 2;
+    string old_state = 3;
+    string new_state = 4;              // "connected", "disconnected", "reconnecting", etc.
+}
+
+// ---- Legacy unary I/O (kept for simple clients) ----
+
 message InputRequest {
     string session_id = 1;
     string line = 2;
@@ -123,7 +221,8 @@ message InputResponse {
 
 message ScrollBackRequest {
     string session_id = 1;
-    int32  max_lines = 2;       // 0 = all
+    int32  max_lines = 2;           // 0 = all
+    ColorFormat color_format = 3;   // how to render historical lines
 }
 
 message ScrollBackResponse {
@@ -138,7 +237,7 @@ message AddCredentialRequest {
     string character = 3;
     string verb = 4;
     string name = 5;
-    string secret = 6;          // encrypted at rest, never returned
+    string secret = 6;              // encrypted at rest, never returned
 }
 
 message AddCredentialResponse {
@@ -149,7 +248,7 @@ message AddCredentialResponse {
 message DeleteCredentialRequest {
     string session_id = 1;
     string game = 2;
-    string character = 3;       // empty = delete all for game
+    string character = 3;           // empty = delete all for game
 }
 
 message DeleteCredentialResponse {
@@ -178,7 +277,7 @@ message GameResponse {
 }
 
 message GameStatusRequest {
-    string game_name = 1;       // empty = all games
+    string game_name = 1;           // empty = all games
 }
 
 message GameStatusResponse {
@@ -195,16 +294,25 @@ message LinkList {
     repeated LinkInfo links = 1;
 }
 
+// ---- GMCP subscription ----
+
+message GmcpSubscribeRequest {
+    string session_id = 1;
+    repeated string packages = 2;   // filter by package prefix, empty = all
+}
+
 // ---- Service definition ----
 
 service HydraService {
-    // Authentication
+    // Authentication & account management
     rpc Authenticate(AuthRequest) returns (AuthResponse);
+    rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse);
 
     // Session lifecycle
     rpc GetSession(SessionRequest) returns (SessionInfo);
     rpc DetachSession(SessionRequest) returns (Empty);
     rpc DestroySession(SessionRequest) returns (Empty);
+    rpc Ping(SessionRequest) returns (Empty);
 
     // Game catalog
     rpc ListGames(Empty) returns (GameList);
@@ -215,9 +323,18 @@ service HydraService {
     rpc DisconnectLink(DisconnectRequest) returns (DisconnectResponse);
     rpc ListLinks(SessionRequest) returns (LinkList);
 
-    // I/O
+    // Bidirectional I/O — the primary channel for interactive clients.
+    // Client sends input lines + GMCP + pings; server pushes game output
+    // + GMCP + system notices + link events + pongs.
+    rpc GameSession(stream ClientMessage) returns (stream ServerMessage);
+
+    // Legacy unary I/O (for simple/scripted clients)
     rpc SendInput(InputRequest) returns (InputResponse);
     rpc Subscribe(SessionRequest) returns (stream GameOutput);
+
+    // GMCP subscription — structured MUD protocol data as a separate stream.
+    // For clients that want GMCP without the text output, or vice versa.
+    rpc SubscribeGmcp(GmcpSubscribeRequest) returns (stream GmcpMessage);
 
     // Scroll-back history
     rpc GetScrollBack(ScrollBackRequest) returns (ScrollBackResponse);
