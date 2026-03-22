@@ -3,9 +3,10 @@
 
 #include "hydra_types.h"
 #include "config.h"
-#include "front_door.h"
-#include "back_door.h"
 #include "scrollback.h"
+#include "account_manager.h"
+#include <network_engine.h>
+#include <network_types.h>
 #include <map>
 #include <string>
 #include <vector>
@@ -16,61 +17,95 @@ struct HydraSession {
     std::string         username;
 
     std::vector<ganl::ConnectionHandle> frontDoors;
-    std::vector<BackDoorLink*>          links;
-    BackDoorLink*                       activeLink{nullptr};
+
+    // Back-door link (Phase 1: one link per session)
+    ganl::ConnectionHandle backDoor{ganl::InvalidConnectionHandle};
+    std::string         gameName;
+    LinkState           linkState{LinkState::Dead};
 
     ScrollBack          scrollback;
 
     time_t              created;
     time_t              lastActivity;
 
-    SessionState        state{SessionState::Login};
+    SessionState        state{SessionState::Active};
 
-    // Scroll-back encryption key (derived from password, in memory only)
     std::vector<uint8_t> scrollbackKey;
+};
+
+// Per front-door connection state (before and after auth)
+struct FrontDoorState {
+    ganl::ConnectionHandle handle;
+    HydraSessionId sessionId{InvalidHydraSessionId};
+
+    enum LoginPhase { AwaitUsername, AwaitPassword, Authenticated };
+    LoginPhase loginPhase{AwaitUsername};
+    std::string pendingUsername;
+
+    // Line assembly buffer (for telnet line-at-a-time)
+    std::string lineBuf;
 };
 
 class SessionManager {
 public:
-    SessionManager(FrontDoor& frontDoor, BackDoor& backDoor,
+    SessionManager(ganl::NetworkEngine& engine,
+                   AccountManager& accounts,
                    const HydraConfig& config);
     ~SessionManager();
 
-    // Process a line of input from a front-door connection.
-    void onFrontDoorInput(ganl::ConnectionHandle handle,
-                          const std::string& line);
+    // Called when a new front-door connection is accepted.
+    void onAccept(ganl::ConnectionHandle handle);
 
-    // Called when a front-door connection is established.
-    void onFrontDoorConnect(ganl::ConnectionHandle handle);
+    // Called when data is available on a front-door connection.
+    // raw data from recv() — may contain partial lines.
+    void onFrontDoorData(ganl::ConnectionHandle handle,
+                         const char* data, size_t len);
 
-    // Called when a front-door connection is lost.
-    void onFrontDoorDisconnect(ganl::ConnectionHandle handle);
+    // Called when a front-door connection closes.
+    void onFrontDoorClose(ganl::ConnectionHandle handle);
 
-    // Called when back-door data arrives.
-    void onBackDoorData(BackDoorLink* link, const std::string& data);
+    // Called when a back-door connect succeeds.
+    void onBackDoorConnect(ganl::ConnectionHandle bdHandle);
 
-    // Called when a back-door connection is established.
-    void onBackDoorConnect(BackDoorLink* link);
+    // Called when a back-door connect fails.
+    void onBackDoorConnectFail(ganl::ConnectionHandle bdHandle, int error);
 
-    // Called when a back-door connection is lost.
-    void onBackDoorDisconnect(BackDoorLink* link);
+    // Called when data arrives from a back-door connection.
+    void onBackDoorData(ganl::ConnectionHandle bdHandle,
+                        const char* data, size_t len);
 
-    // Run periodic timers (idle timeouts, reconnect).
+    // Called when a back-door connection closes.
+    void onBackDoorClose(ganl::ConnectionHandle bdHandle);
+
+    // Is this handle a known back-door connection?
+    bool isBackDoor(ganl::ConnectionHandle handle) const;
+
+    // Run periodic timers.
     void runTimers();
 
 private:
-    void handleLogin(FrontDoorConn* fd, const std::string& line);
-    void dispatchSessionCommand(HydraSession* session,
-                                ganl::ConnectionHandle fdHandle,
-                                const std::string& line);
-    void sendToFrontDoor(ganl::ConnectionHandle handle,
-                         const std::string& text);
+    void sendToClient(ganl::ConnectionHandle handle, const std::string& text);
+    void processLine(FrontDoorState& fd, const std::string& line);
+    void handleLogin(FrontDoorState& fd, const std::string& line);
+    void dispatchCommand(HydraSession& session,
+                         ganl::ConnectionHandle fdHandle,
+                         const std::string& line);
+    void showBanner(ganl::ConnectionHandle handle);
+    void showGameMenu(HydraSession& session, ganl::ConnectionHandle fdHandle);
+    void connectToGame(HydraSession& session, const std::string& gameName);
+    void forwardToGame(HydraSession& session, const std::string& line);
 
-    FrontDoor& frontDoor_;
-    BackDoor& backDoor_;
+    HydraSession* findSessionByBackDoor(ganl::ConnectionHandle bdHandle);
+
+    ganl::NetworkEngine& engine_;
+    AccountManager& accounts_;
     const HydraConfig& config_;
 
-    std::map<HydraSessionId, HydraSession*> sessions_;
+    std::map<ganl::ConnectionHandle, FrontDoorState> frontDoors_;
+    std::map<HydraSessionId, HydraSession> sessions_;
+    // Reverse map: back-door handle → session id
+    std::map<ganl::ConnectionHandle, HydraSessionId> backDoorMap_;
+
     HydraSessionId nextSessionId_{1};
 };
 

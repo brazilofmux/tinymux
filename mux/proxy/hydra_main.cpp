@@ -1,20 +1,16 @@
 #include "config.h"
 #include "hydra_log.h"
-#include "front_door.h"
-#include "back_door.h"
 #include "session_manager.h"
 #include "account_manager.h"
 
 #include <network_engine.h>
 #include <network_engine_factory.h>
 #include <network_types.h>
-#include <io_buffer.h>
 
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <map>
 #include <string>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -65,23 +61,6 @@ static void usage(const char* prog) {
         prog);
 }
 
-// ---- Dumb pipe: bidirectional byte shuttle ----
-//
-// For Step 5, we skip authentication, sessions, telnet negotiation,
-// and color translation.  Each front-door connection is paired with
-// one back-door connection.  Bytes flow transparently.
-
-struct PipeEntry {
-    ganl::ConnectionHandle partner;  // The other end
-    bool isFrontDoor;                // true = front-door, false = back-door
-};
-
-// Map from connection handle → pipe entry
-static std::map<ganl::ConnectionHandle, PipeEntry> g_pipes;
-
-// Map from front-door handle → pending (not yet connected) back-door handle
-static std::map<ganl::ConnectionHandle, ganl::ConnectionHandle> g_pending;
-
 int main(int argc, char* argv[]) {
     std::string configPath = "hydra.conf";
     std::string createAdmin;
@@ -115,17 +94,21 @@ int main(int argc, char* argv[]) {
     if (!logInit(config.logFile, config.logLevel)) {
         return 1;
     }
-    LOG_INFO("Hydra starting (dumb pipe mode)");
+    LOG_INFO("Hydra starting");
 
     ganl::setLogger(hydraGanlLogCallback);
 
-    // Handle --create-admin (not used in dumb pipe mode, but keep for later)
+    // Initialize account database
+    AccountManager accounts;
+    if (!accounts.initialize(config.databasePath, errorMsg)) {
+        LOG_ERROR("Database init failed: %s", errorMsg.c_str());
+        logShutdown();
+        return 1;
+    }
+    LOG_INFO("Database opened: %s", config.databasePath.c_str());
+
+    // Handle --create-admin
     if (!createAdmin.empty()) {
-        AccountManager accounts;
-        if (!accounts.initialize(config.databasePath, errorMsg)) {
-            fprintf(stderr, "HYDRA: db error: %s\n", errorMsg.c_str());
-            return 1;
-        }
         char* pw = getpass("Password: ");
         if (!pw || strlen(pw) == 0) {
             fprintf(stderr, "HYDRA: password required\n");
@@ -145,7 +128,7 @@ int main(int argc, char* argv[]) {
 
     installSignals();
 
-    // ---- Initialize GANL ----
+    // Initialize GANL network engine
     auto engine = ganl::NetworkEngineFactory::createEngine();
     if (!engine) {
         LOG_ERROR("Failed to create network engine");
@@ -159,19 +142,10 @@ int main(int argc, char* argv[]) {
     }
     LOG_INFO("Network engine initialized");
 
-    // We need at least one game configured
-    if (config.games.empty()) {
-        LOG_ERROR("No games configured");
-        engine->shutdown();
-        logShutdown();
-        return 1;
-    }
-    const GameConfig& game = config.games[0];
-    LOG_INFO("Target game: %s -> %s:%u", game.name.c_str(),
-             game.host.c_str(), game.port);
+    // Create session manager
+    SessionManager sessionMgr(*engine, accounts, config);
 
-    // ---- Create front-door listener (plain telnet for now) ----
-    // Find the first plain (non-TLS) listener, or use the first one
+    // Create front-door listener (plain telnet for now)
     const ListenConfig* listenCfg = nullptr;
     for (const auto& lc : config.listeners) {
         if (!lc.tls) {
@@ -179,11 +153,14 @@ int main(int argc, char* argv[]) {
             break;
         }
     }
-    if (!listenCfg) {
-        // Use first listener regardless
+    if (!listenCfg && !config.listeners.empty()) {
         listenCfg = &config.listeners[0];
-        LOG_WARN("No plain listener configured, using first listener "
-                 "(TLS not implemented in dumb pipe mode)");
+    }
+    if (!listenCfg) {
+        LOG_ERROR("No listeners configured");
+        engine->shutdown();
+        logShutdown();
+        return 1;
     }
 
     ganl::ErrorCode err = 0;
@@ -197,22 +174,26 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    int tag = 1;  // listener context
+    int tag = 1;
     if (!engine->startListening(listener, &tag, err)) {
         LOG_ERROR("Failed to start listening: %s", strerror(err));
         engine->shutdown();
         logShutdown();
         return 1;
     }
-    LOG_INFO("Listening on %s:%u (plain telnet)",
-             listenCfg->host.c_str(), listenCfg->port);
+    LOG_INFO("Listening on %s:%u", listenCfg->host.c_str(), listenCfg->port);
+
+    // Log configured games
+    for (const auto& game : config.games) {
+        LOG_INFO("Game: %s -> %s:%u", game.name.c_str(),
+                 game.host.c_str(), game.port);
+    }
+
+    LOG_INFO("Hydra ready");
 
     // ---- Event loop ----
     constexpr int MAX_EVENTS = 32;
     ganl::IoEvent events[MAX_EVENTS];
-
-    LOG_INFO("Hydra ready — dumb pipe to %s:%u",
-             game.host.c_str(), game.port);
 
     while (!g_shutdown) {
         int n = engine->processEvents(100, events, MAX_EVENTS);
@@ -221,132 +202,50 @@ int main(int argc, char* argv[]) {
             const ganl::IoEvent& ev = events[i];
 
             switch (ev.type) {
-            case ganl::IoEventType::Accept: {
-                ganl::ConnectionHandle fdConn = ev.connection;
-                LOG_INFO("Front-door accept: handle %lu",
-                         (unsigned long)fdConn);
+            case ganl::IoEventType::Accept:
+                sessionMgr.onAccept(ev.connection);
+                break;
 
-                // Initiate back-door connection to game
-                ganl::ErrorCode connectErr = 0;
-                ganl::ConnectionHandle bdConn = engine->initiateConnect(
-                    game.host, game.port, nullptr, connectErr);
+            case ganl::IoEventType::ConnectSuccess:
+                sessionMgr.onBackDoorConnect(ev.connection);
+                break;
 
-                if (bdConn == ganl::InvalidConnectionHandle) {
-                    LOG_ERROR("Failed to connect to %s:%u: %s",
-                              game.host.c_str(), game.port,
-                              strerror(connectErr));
-                    engine->closeConnection(fdConn);
-                    break;
-                }
-
-                // Store as pending until connect completes
-                g_pending[fdConn] = bdConn;
-                // Store back-door → front-door mapping for ConnectSuccess
-                g_pipes[bdConn] = PipeEntry{fdConn, false};
-                LOG_INFO("Back-door connecting: handle %lu -> %s:%u",
-                         (unsigned long)bdConn, game.host.c_str(),
-                         game.port);
-            } break;
-
-            case ganl::IoEventType::ConnectSuccess: {
-                ganl::ConnectionHandle bdConn = ev.connection;
-                LOG_INFO("Back-door connected: handle %lu",
-                         (unsigned long)bdConn);
-
-                // Find the front-door partner
-                auto it = g_pipes.find(bdConn);
-                if (it == g_pipes.end()) break;
-                ganl::ConnectionHandle fdConn = it->second.partner;
-
-                // Complete the pipe: both directions
-                g_pipes[fdConn] = PipeEntry{bdConn, true};
-                g_pipes[bdConn] = PipeEntry{fdConn, false};
-                g_pending.erase(fdConn);
-
-                LOG_INFO("Pipe established: fd=%lu <-> bd=%lu",
-                         (unsigned long)fdConn, (unsigned long)bdConn);
-            } break;
-
-            case ganl::IoEventType::ConnectFail: {
-                ganl::ConnectionHandle bdConn = ev.connection;
-                LOG_ERROR("Back-door connect failed: handle %lu err=%d (%s)",
-                          (unsigned long)bdConn, ev.error,
-                          strerror(ev.error));
-
-                // Find and close the front-door partner
-                auto it = g_pipes.find(bdConn);
-                if (it != g_pipes.end()) {
-                    ganl::ConnectionHandle fdConn = it->second.partner;
-                    g_pending.erase(fdConn);
-                    g_pipes.erase(fdConn);
-                    engine->closeConnection(fdConn);
-                }
-                g_pipes.erase(bdConn);
-            } break;
+            case ganl::IoEventType::ConnectFail:
+                sessionMgr.onBackDoorConnectFail(ev.connection, ev.error);
+                break;
 
             case ganl::IoEventType::Read: {
                 ganl::ConnectionHandle conn = ev.connection;
-
-                // Read data from the socket
                 char buf[4096];
                 ssize_t nr = recv(static_cast<int>(conn), buf,
                                   sizeof(buf), 0);
                 if (nr <= 0) {
-                    // Connection closed or error
-                    if (nr == 0) {
-                        LOG_INFO("Connection closed: handle %lu",
-                                 (unsigned long)conn);
+                    if (sessionMgr.isBackDoor(conn)) {
+                        sessionMgr.onBackDoorClose(conn);
                     } else {
-                        LOG_INFO("Read error on handle %lu: %s",
-                                 (unsigned long)conn, strerror(errno));
+                        sessionMgr.onFrontDoorClose(conn);
                     }
-
-                    // Close partner too
-                    auto it = g_pipes.find(conn);
-                    if (it != g_pipes.end()) {
-                        ganl::ConnectionHandle partner = it->second.partner;
-                        g_pipes.erase(partner);
-                        engine->closeConnection(partner);
-                    }
-                    g_pipes.erase(conn);
                     engine->closeConnection(conn);
                     break;
                 }
 
-                // Forward to partner
-                auto it = g_pipes.find(conn);
-                if (it != g_pipes.end()) {
-                    ganl::ConnectionHandle partner = it->second.partner;
-                    // Direct write to partner fd
-                    ssize_t nw = send(static_cast<int>(partner), buf,
-                                      static_cast<size_t>(nr), MSG_NOSIGNAL);
-                    if (nw < 0) {
-                        LOG_INFO("Write error to partner %lu: %s",
-                                 (unsigned long)partner, strerror(errno));
-                        // Close both sides
-                        g_pipes.erase(partner);
-                        g_pipes.erase(conn);
-                        engine->closeConnection(partner);
-                        engine->closeConnection(conn);
-                    }
+                if (sessionMgr.isBackDoor(conn)) {
+                    sessionMgr.onBackDoorData(conn, buf,
+                                              static_cast<size_t>(nr));
+                } else {
+                    sessionMgr.onFrontDoorData(conn, buf,
+                                               static_cast<size_t>(nr));
                 }
             } break;
 
             case ganl::IoEventType::Close:
             case ganl::IoEventType::Error: {
                 ganl::ConnectionHandle conn = ev.connection;
-                LOG_INFO("Connection %s: handle %lu",
-                         ev.type == ganl::IoEventType::Close
-                             ? "closed" : "error",
-                         (unsigned long)conn);
-
-                auto it = g_pipes.find(conn);
-                if (it != g_pipes.end()) {
-                    ganl::ConnectionHandle partner = it->second.partner;
-                    g_pipes.erase(partner);
-                    engine->closeConnection(partner);
+                if (sessionMgr.isBackDoor(conn)) {
+                    sessionMgr.onBackDoorClose(conn);
+                } else {
+                    sessionMgr.onFrontDoorClose(conn);
                 }
-                g_pipes.erase(conn);
                 engine->closeConnection(conn);
             } break;
 
@@ -355,14 +254,17 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        sessionMgr.runTimers();
+
         if (g_dumpStatus) {
             g_dumpStatus = 0;
-            LOG_INFO("Status: %zu active pipes", g_pipes.size() / 2);
+            LOG_INFO("Status dump requested (TODO)");
         }
     }
 
     LOG_INFO("Hydra shutting down");
     engine->shutdown();
+    accounts.shutdown();
     logShutdown();
     return 0;
 }
