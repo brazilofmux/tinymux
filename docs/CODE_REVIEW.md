@@ -31,11 +31,6 @@ The proposed JIT Level 3 (inlining `u()` calls) introduces several correctness r
 - **Resource Leaks:** `ulocal()` and CARGS (`%0-%9`) must be scoped. Inlining risks "leaking" register or argument state into the caller.
     - *Fix Required:* Helper functions (`_save_qregs`, `_write_carg`) to manage scope transitions.
 
-### 2.2 Unicode Inconsistency
-The current engine operates at the **code point** level rather than the **grapheme cluster** level.
-
-- **Risk:** Modern emoji (multi-code-point) and combining characters (e.g., `é` as `e + '`) are handled inconsistently by `strlen()` and `mid()`. This leads to "broken" strings in the UI and incorrect indexing in softcode.
-
 ## 3. Concurrency & Scalability
 
 ### 3.1 Global State Contention
@@ -49,5 +44,4 @@ Softcode evaluation is currently single-threaded and relies heavily on global st
 |----------|----------|--------|--------|
 | STL Conversion (`walkdb`, `dbt`) | High | Stability | Low |
 | JIT Level 3 (Inlining) | High | 2-3x Performance | High |
-| Unicode 16.0 / Graphemes | Medium | Correctness | Medium |
 | Concurrent Evaluation | Low | Scalability | Very High |
