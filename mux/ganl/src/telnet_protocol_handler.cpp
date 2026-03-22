@@ -115,6 +115,36 @@ namespace ganl {
         return true;
     }
 
+    bool TelnetProtocolHandler::createClientProtocolContext(ConnectionHandle conn,
+                                                              uint16_t clientWidth,
+                                                              uint16_t clientHeight,
+                                                              const std::string& clientTtype) {
+        GANL_TELNET_DEBUG(conn, "Creating CLIENT protocol context.");
+        auto [it, success] = contexts_.try_emplace(conn);
+        if (!success) {
+            GANL_TELNET_DEBUG(conn, "Error: Context already exists.");
+            return false;
+        }
+
+        TelnetContext& context = it->second;
+        context.mode = NegotiationMode::Client;
+        context.clientWidth = clientWidth;
+        context.clientHeight = clientHeight;
+        context.clientTtype = clientTtype;
+        context.state = {};
+        context.state.encoding = EncodingType::Ascii;
+        context.state.width = clientWidth;
+        context.state.height = clientHeight;
+        context.parserState = ParserState::Normal;
+        context.currentNegotiationStatus = NegotiationStatus::InProgress;
+        context.negotiationTimedOut = false;
+        context.negotiationStartTime = std::chrono::steady_clock::now();
+
+        GANL_TELNET_DEBUG(conn, "Client context created (" << clientWidth << "x" << clientHeight
+            << ", ttype=" << clientTtype << ").");
+        return true;
+    }
+
     void TelnetProtocolHandler::destroyProtocolContext(ConnectionHandle conn) {
         GANL_TELNET_DEBUG(conn, "Destroying protocol context.");
         size_t erased = contexts_.erase(conn);
@@ -234,6 +264,13 @@ namespace ganl {
         context.optionStates.clear(); // Clear previous states if re-negotiating
         context.weSentDo.clear();     // Clear previous intentions
         context.weSentWill.clear();   // Clear previous intentions
+
+        // In Client mode, we don't initiate negotiation — we wait for
+        // the server to send its WILL/DO offers and respond to them.
+        if (context.mode == NegotiationMode::Client) {
+            GANL_TELNET_DEBUG(conn, "Client mode: waiting for server negotiation offers.");
+            return;
+        }
 
         GANL_TELNET_DEBUG(conn, "Sending initial Telnet negotiation offers (MUX style).");
 
@@ -695,7 +732,121 @@ namespace ganl {
         if (it == contexts_.end()) return;
         TelnetContext& context = it->second;
 
-        GANL_TELNET_DEBUG(conn, "Handling negotiation: CMD=" << static_cast<int>(cmd) << ", OPT=" << static_cast<int>(opt));
+        GANL_TELNET_DEBUG(conn, "Handling negotiation: CMD=" << static_cast<int>(cmd) << ", OPT=" << static_cast<int>(opt)
+            << " mode=" << (context.mode == NegotiationMode::Client ? "Client" : "Server"));
+
+        // --- Client-mode negotiation ---
+        // In Client mode, we are connecting TO a server.  The server
+        // sends WILL/DO offers and we respond.  This is the reverse of
+        // the Server-mode logic below.
+        if (context.mode == NegotiationMode::Client) {
+            switch (cmd) {
+            case TelnetCommand::WILL: // Server WILL X — do we want it?
+            {
+                bool accept = false;
+                switch (opt) {
+                case TelnetOption::EOR:     accept = true; context.setTelnetEOR(true); break;
+                case TelnetOption::ECHO:    accept = true; context.setTelnetEcho(true); break;
+                case TelnetOption::SGA:     accept = true; context.setTelnetSGA(true); break;
+                case TelnetOption::CHARSET: accept = true; break;
+                // Accept GMCP/MSSP if offered
+                default: accept = false; break;
+                }
+                if (accept) {
+                    sendTelnetCommand(telnet_responses_out, TelnetCommand::DO, opt);
+                    context.optionStates[opt] = OptionNegotiationState::ActiveDo;
+                } else {
+                    sendTelnetCommand(telnet_responses_out, TelnetCommand::DONT, opt);
+                    context.optionStates[opt] = OptionNegotiationState::RejectedDo;
+                }
+            } break;
+
+            case TelnetCommand::WONT: // Server WONT X
+                context.optionStates[opt] = OptionNegotiationState::RejectedDo;
+                switch (opt) {
+                case TelnetOption::EOR:  context.setTelnetEOR(false); break;
+                case TelnetOption::ECHO: context.setTelnetEcho(false); break;
+                case TelnetOption::SGA:  context.setTelnetSGA(false); break;
+                default: break;
+                }
+                break;
+
+            case TelnetCommand::DO: // Server DO X — wants us to enable X
+            {
+                bool weWill = false;
+                switch (opt) {
+                case TelnetOption::NAWS:
+                    weWill = true;
+                    // Send WILL NAWS, then immediately send our terminal size
+                    sendTelnetCommand(telnet_responses_out, TelnetCommand::WILL, opt);
+                    {
+                        // SB NAWS <width-hi> <width-lo> <height-hi> <height-lo> SE
+                        char sb[] = {
+                            static_cast<char>(TelnetCommand::IAC),
+                            static_cast<char>(TelnetCommand::SB),
+                            static_cast<char>(TelnetOption::NAWS),
+                            static_cast<char>((context.clientWidth >> 8) & 0xFF),
+                            static_cast<char>(context.clientWidth & 0xFF),
+                            static_cast<char>((context.clientHeight >> 8) & 0xFF),
+                            static_cast<char>(context.clientHeight & 0xFF),
+                            static_cast<char>(TelnetCommand::IAC),
+                            static_cast<char>(TelnetCommand::SE)
+                        };
+                        telnet_responses_out.append(sb, sizeof(sb));
+                    }
+                    context.optionStates[opt] = OptionNegotiationState::ActiveWill;
+                    break;
+
+                case TelnetOption::TTYPE:
+                    weWill = true;
+                    sendTelnetCommand(telnet_responses_out, TelnetCommand::WILL, opt);
+                    // The server will follow up with SB TTYPE SEND, handled
+                    // in processSubnegotiationData.
+                    context.optionStates[opt] = OptionNegotiationState::ActiveWill;
+                    break;
+
+                case TelnetOption::SGA:
+                    weWill = true;
+                    sendTelnetCommand(telnet_responses_out, TelnetCommand::WILL, opt);
+                    context.setTelnetSGA(true);
+                    context.optionStates[opt] = OptionNegotiationState::ActiveWill;
+                    break;
+
+                case TelnetOption::EOR:
+                    weWill = true;
+                    sendTelnetCommand(telnet_responses_out, TelnetCommand::WILL, opt);
+                    context.setTelnetEOR(true);
+                    context.optionStates[opt] = OptionNegotiationState::ActiveWill;
+                    break;
+
+                case TelnetOption::NEW_ENVIRON:
+                case TelnetOption::CHARSET:
+                    weWill = true;
+                    sendTelnetCommand(telnet_responses_out, TelnetCommand::WILL, opt);
+                    context.optionStates[opt] = OptionNegotiationState::ActiveWill;
+                    break;
+
+                default:
+                    weWill = false;
+                    break;
+                }
+                if (!weWill) {
+                    sendTelnetCommand(telnet_responses_out, TelnetCommand::WONT, opt);
+                    context.optionStates[opt] = OptionNegotiationState::RejectedWill;
+                }
+            } break;
+
+            case TelnetCommand::DONT: // Server DONT X
+                context.optionStates[opt] = OptionNegotiationState::RejectedWill;
+                sendTelnetCommand(telnet_responses_out, TelnetCommand::WONT, opt);
+                break;
+
+            default: break;
+            }
+            return; // Client mode handled — skip Server mode logic below
+        }
+
+        // --- Server-mode negotiation (existing logic) ---
 
         OptionNegotiationState oldState = context.optionStates.count(opt) ? context.optionStates.at(opt) : OptionNegotiationState::Idle;
         OptionNegotiationState newState = oldState;
@@ -898,16 +1049,18 @@ namespace ganl {
                 break;
             }
             if (buffer[0] == 1 /* SEND */) {
-                GANL_TELNET_DEBUG(conn, "Received TTYPE SEND request. Responding with default type.");
-                const char* termType = "XTERM-256COLOR"; // Or "ANSI", "VT100", "MUX-DEFAULT"
+                // Respond with our terminal type.  In Client mode, use
+                // the configured clientTtype; in Server mode (where this
+                // fires if we ever act as a relay), use a default.
+                std::string termType = context.clientTtype.empty()
+                    ? "XTERM-256COLOR" : context.clientTtype;
+                GANL_TELNET_DEBUG(conn, "Received TTYPE SEND. Responding with '" << termType << "'.");
                 char sb_start[] = { static_cast<char>(TelnetCommand::IAC), static_cast<char>(TelnetCommand::SB), static_cast<char>(TelnetOption::TTYPE), 0 /* IS */ };
                 char sb_end[] = { static_cast<char>(TelnetCommand::IAC), static_cast<char>(TelnetCommand::SE) };
                 telnet_responses_out.append(sb_start, sizeof(sb_start));
-                telnet_responses_out.append(termType, strlen(termType));
+                telnet_responses_out.append(termType.c_str(), termType.size());
                 telnet_responses_out.append(sb_end, sizeof(sb_end));
-                // We don't mark ttypeDataReceived yet, wait for their *next* response if they send SEND again.
-                // Or mark it received now if this is the only type we offer? Let's mark it.
-                context.ttypeDataReceived = true; // Assume one round is enough unless we need more specific types
+                context.ttypeDataReceived = true;
             }
             else if (buffer[0] == 0 /* IS */) {
                 if (buffer.size() > 1) {

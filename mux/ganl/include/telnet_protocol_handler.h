@@ -31,12 +31,25 @@ namespace ganl {
         IAC = 255
     };
 
+    // Negotiation mode: Server initiates offers, Client responds to them.
+    enum class NegotiationMode { Server, Client };
+
     class TelnetProtocolHandler : public ProtocolHandler {
     public:
         TelnetProtocolHandler();
         ~TelnetProtocolHandler() override;
 
+        // Server-mode context (existing behavior).
         bool createProtocolContext(ConnectionHandle conn) override;
+
+        // Client-mode context: Hydra acts as a telnet client connecting
+        // to a game server.  Does not initiate negotiation — responds
+        // to the server's WILL/DO offers instead.
+        bool createClientProtocolContext(ConnectionHandle conn,
+                                         uint16_t clientWidth = 80,
+                                         uint16_t clientHeight = 24,
+                                         const std::string& clientTtype = "Hydra");
+
         void destroyProtocolContext(ConnectionHandle conn) override;
 
         virtual bool canOfferStartTls() const { return true; /* TODO: Make configurable */ }
@@ -86,6 +99,13 @@ namespace ganl {
 
     private:
         struct TelnetContext {
+            NegotiationMode mode{ NegotiationMode::Server };
+
+            // Client-mode parameters (what Hydra reports to the game)
+            uint16_t clientWidth{ 80 };
+            uint16_t clientHeight{ 24 };
+            std::string clientTtype{ "Hydra" };
+
             ProtocolState state;
             std::vector<char> inputBuffer;
             bool sawCR{ false };
