@@ -263,6 +263,7 @@ int main(int argc, char* argv[]) {
     }
 
     LOG_INFO("Hydra shutting down");
+    sessionMgr.shutdownSessions();
     engine->shutdown();
     accounts.shutdown();
     logShutdown();

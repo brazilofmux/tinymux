@@ -17,7 +17,8 @@ hydra_SOURCES = \
     session_manager.cpp \
     account_manager.cpp \
     telnet_bridge.cpp \
-    scrollback.cpp
+    scrollback.cpp \
+    crypto.cpp
 
 hydra_CXXFLAGS = $(AM_CXXFLAGS) -fPIC -std=c++17
 

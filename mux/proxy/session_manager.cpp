@@ -1,4 +1,5 @@
 #include "session_manager.h"
+#include "crypto.h"
 #include "hydra_log.h"
 #include <sys/socket.h>
 #include <cstring>
@@ -111,6 +112,8 @@ void SessionManager::onFrontDoorClose(ganl::ConnectionHandle handle) {
                 LOG_INFO("Session %lu: all front-doors gone, detaching",
                          (unsigned long)sid);
                 session.state = SessionState::Detached;
+                // Flush scroll-back to SQLite before detach
+                flushSession(session);
                 // Back-door stays alive — session persists
             }
         }
@@ -185,13 +188,15 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                         session.created = time(nullptr);
                         session.lastActivity = session.created;
                         session.scrollbackKey = sbKey;
+                        session.persistId = generatePersistId();
                         session.frontDoors.push_back(fd.handle);
 
                         fd.sessionId = session.id;
                         sessions_[session.id] = std::move(session);
 
-                        LOG_INFO("Session %lu created for '%s'",
+                        LOG_INFO("Session %lu (%s) created for '%s'",
                                  (unsigned long)fd.sessionId,
+                                 sessions_[fd.sessionId].persistId.c_str(),
                                  username.c_str());
 
                         showGameMenu(sessions_[fd.sessionId], fd.handle);
@@ -287,6 +292,13 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                 showGameMenu(*existing, fd.handle);
             }
         } else {
+            // Check for a saved session in SQLite (after Hydra restart)
+            AccountManager::SavedSession saved;
+            if (accounts_.loadSession(accountId, saved)) {
+                resumeSavedSession(fd, accountId, sbKey);
+                return;
+            }
+
             // New session
             HydraSession session;
             session.id = nextSessionId_++;
@@ -295,13 +307,15 @@ void SessionManager::handleLogin(FrontDoorState& fd,
             session.created = time(nullptr);
             session.lastActivity = session.created;
             session.scrollbackKey = sbKey;
+            session.persistId = generatePersistId();
             session.frontDoors.push_back(fd.handle);
 
             fd.sessionId = session.id;
             sessions_[session.id] = std::move(session);
 
-            LOG_INFO("Session %lu created for '%s'",
+            LOG_INFO("Session %lu (%s) created for '%s'",
                      (unsigned long)fd.sessionId,
+                     sessions_[fd.sessionId].persistId.c_str(),
                      fd.pendingUsername.c_str());
 
             sendToClient(fd.handle, "\r\nWelcome, "
@@ -346,6 +360,10 @@ void SessionManager::dispatchCommand(HydraSession& session,
             backDoorMap_.erase(session.backDoor);
             engine_.closeConnection(session.backDoor);
             session.backDoor = ganl::InvalidConnectionHandle;
+        }
+        // Delete persisted session and scroll-back
+        if (!session.persistId.empty()) {
+            accounts_.deleteSession(session.persistId);
         }
         // Close all front-doors
         for (auto h : session.frontDoors) {
@@ -606,5 +624,131 @@ HydraSession* SessionManager::findSessionByBackDoor(
 }
 
 void SessionManager::runTimers() {
+    time_t now = time(nullptr);
+
+    // Periodic scroll-back flush every 60 seconds
+    if (now - lastFlush_ >= 60) {
+        lastFlush_ = now;
+        for (auto& [sid, session] : sessions_) {
+            if (session.scrollback.dirtyCount() > 0) {
+                flushSession(session);
+            }
+        }
+    }
+
     // TODO: idle timeouts, detached session cleanup, reconnect backoff
+}
+
+// ---- Persistence helpers ----
+
+std::string SessionManager::generatePersistId() {
+    uint8_t buf[16];
+    randomBytes(buf, sizeof(buf));
+    static const char hex[] = "0123456789abcdef";
+    std::string id;
+    id.reserve(32);
+    for (int i = 0; i < 16; i++) {
+        id.push_back(hex[buf[i] >> 4]);
+        id.push_back(hex[buf[i] & 0x0F]);
+    }
+    return id;
+}
+
+void SessionManager::flushSession(HydraSession& session) {
+    if (session.persistId.empty() || session.scrollbackKey.empty()) return;
+
+    // Save session record
+    std::string created = std::to_string(session.created);
+    std::string lastActive = std::to_string(session.lastActivity);
+    std::string linksJson;
+    if (session.backDoor != ganl::InvalidConnectionHandle) {
+        linksJson = "{\"game\":\"" + session.gameName + "\"}";
+    }
+
+    std::string errorMsg;
+    if (!accounts_.saveSession(session.persistId, session.accountId,
+                               created, lastActive, linksJson, errorMsg)) {
+        LOG_ERROR("Failed to save session %s: %s",
+                  session.persistId.c_str(), errorMsg.c_str());
+        return;
+    }
+
+    // Flush dirty scroll-back lines
+    int n = session.scrollback.flushToDb(
+        accounts_.db(), session.persistId,
+        session.accountId, session.scrollbackKey);
+    if (n < 0) {
+        LOG_ERROR("Scroll-back flush failed for session %s",
+                  session.persistId.c_str());
+    }
+}
+
+void SessionManager::resumeSavedSession(FrontDoorState& fd,
+                                        uint32_t accountId,
+                                        const std::vector<uint8_t>& sbKey) {
+    AccountManager::SavedSession saved;
+    if (!accounts_.loadSession(accountId, saved)) return;
+
+    // Create in-memory session from saved state
+    HydraSession session;
+    session.id = nextSessionId_++;
+    session.accountId = accountId;
+    session.username = fd.pendingUsername;
+    session.created = time(nullptr);
+    session.lastActivity = session.created;
+    session.scrollbackKey = sbKey;
+    session.persistId = saved.id;
+    session.frontDoors.push_back(fd.handle);
+
+    // Load persisted scroll-back
+    int loaded = session.scrollback.loadFromDb(
+        accounts_.db(), saved.id, accountId, sbKey);
+
+    fd.sessionId = session.id;
+    sessions_[session.id] = std::move(session);
+    HydraSession& sess = sessions_[fd.sessionId];
+
+    LOG_INFO("Session %lu (%s) restored from SQLite for '%s' (%d lines)",
+             (unsigned long)fd.sessionId, saved.id.c_str(),
+             fd.pendingUsername.c_str(), loaded > 0 ? loaded : 0);
+
+    sendToClient(fd.handle,
+        "\r\nRestoring saved session...\r\n");
+
+    // Replay scroll-back
+    if (sess.scrollback.count() > 0) {
+        sendToClient(fd.handle,
+            "-- Scroll-back ("
+            + std::to_string(sess.scrollback.count())
+            + " lines) --\r\n");
+
+        ReplayContext rctx{fd.handle, fd.encoding,
+                           fd.colorDepth, &bridge_};
+        sess.scrollback.replay(
+            sess.scrollback.count(),
+            [](const std::string& text,
+               const std::string& source,
+               time_t timestamp, void* ctx) {
+                auto* rc = static_cast<ReplayContext*>(ctx);
+                std::string rendered = rc->bridge->renderForClient(
+                    rc->encoding, rc->colorDepth, text);
+                rendered += "\r\n";
+                int fd = static_cast<int>(rc->handle);
+                send(fd, rendered.data(), rendered.size(),
+                     MSG_NOSIGNAL);
+            },
+            &rctx);
+
+        sendToClient(fd.handle,
+            "-- End scroll-back --\r\n");
+    }
+
+    showGameMenu(sess, fd.handle);
+}
+
+void SessionManager::shutdownSessions() {
+    LOG_INFO("Flushing all sessions before shutdown");
+    for (auto& [sid, session] : sessions_) {
+        flushSession(session);
+    }
 }

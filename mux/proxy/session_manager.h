@@ -33,6 +33,9 @@ struct HydraSession {
 
     std::vector<uint8_t> scrollbackKey;
 
+    // Persistent session ID (random hex string for SQLite storage)
+    std::string persistId;
+
     // Game protocol state (charset from config; telnet negotiation in future)
     ganl::ProtocolState gameProtoState;
 };
@@ -91,7 +94,14 @@ public:
     // Run periodic timers.
     void runTimers();
 
+    // Flush all sessions and save state before shutdown.
+    void shutdownSessions();
+
 private:
+    void flushSession(HydraSession& session);
+    std::string generatePersistId();
+    void resumeSavedSession(FrontDoorState& fd, uint32_t accountId,
+                            const std::vector<uint8_t>& sbKey);
     void sendToClient(ganl::ConnectionHandle handle, const std::string& text);
     void processLine(FrontDoorState& fd, const std::string& line);
     void handleLogin(FrontDoorState& fd, const std::string& line);
@@ -117,6 +127,7 @@ private:
     std::map<ganl::ConnectionHandle, HydraSessionId> backDoorMap_;
 
     HydraSessionId nextSessionId_{1};
+    time_t lastFlush_{0};
 
     TelnetBridge bridge_;
 };

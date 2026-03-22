@@ -37,6 +37,30 @@ public:
     // Returns true if the accounts table is empty (bootstrap mode).
     bool isEmpty();
 
+    // ---- Session persistence ----
+
+    struct SavedSession {
+        std::string id;
+        uint32_t    accountId;
+        std::string created;
+        std::string lastActive;
+        std::string linksJson;
+    };
+
+    // Save or update a session record.
+    bool saveSession(const std::string& sessionId, uint32_t accountId,
+                     const std::string& created, const std::string& lastActive,
+                     const std::string& linksJson, std::string& errorMsg);
+
+    // Load a saved session for an account. Returns true if found.
+    bool loadSession(uint32_t accountId, SavedSession& out);
+
+    // Delete a session and its scroll-back.
+    bool deleteSession(const std::string& sessionId);
+
+    // Access the database handle (for scroll-back flush/load).
+    sqlite3* db() { return db_; }
+
 private:
     bool createSchema(std::string& errorMsg);
 
