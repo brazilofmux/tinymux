@@ -396,10 +396,11 @@ connection is attached (or always, for `/scroll` support).
 - Default size: 10,000 lines (configurable per-account or globally)
 - Hot path: in-memory ring buffer for speed
 - Persistence: periodically flushed to SQLite, encrypted at rest
-  using the same AEAD scheme as stored game credentials (per-account
-  key material, local master key). Without the master key, persisted
-  scroll-back is unreadable — the database alone is never sufficient
-  to read any player's scroll-back.
+  using a player-derived key (derived from the player's Hydra
+  password, not the master key). The box owner cannot decrypt
+  scroll-back without the player's password. The database alone is
+  never sufficient to read any player's scroll-back. See the threat
+  model in `docs/design-hydra.md` for details.
 - Replay: on front-door reconnect, Hydra sends buffered output to the
   new connection, respecting the new connection's charset and color
   capabilities

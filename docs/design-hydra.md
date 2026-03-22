@@ -329,24 +329,68 @@ in-memory ring buffer from SQLite before replay begins.
 
 **Scroll-back encryption:** Persisted scroll-back contains private
 game output (conversations, pages, mail, channel chatter). It is
-encrypted at rest using the same AEAD scheme as stored game
-credentials:
+encrypted at rest using a **player-derived key**, not the master key.
 
-- Each scroll-back row is encrypted with the account's key material
-  (derived from or wrapped by the local master key)
-- AAD includes the session ID and line sequence number to prevent
-  reordering or cross-session substitution
-- Without the master key, persisted scroll-back is unreadable
-- Different accounts' scroll-back is encrypted under different key
-  material — compromise of one account does not expose others
+This is a deliberate separation from game credential encryption:
 
-The SQLite database alone is never sufficient to read any player's
-scroll-back.
+- **Game credentials** are encrypted with the master key because
+  Hydra must decrypt them autonomously (auto-login reconnect while
+  the player is disconnected).
+- **Scroll-back** is encrypted with a key derived from the player's
+  Hydra password because Hydra only needs to decrypt it when the
+  player is present and authenticated.
 
-If no master key is configured, scroll-back is not persisted to
-SQLite. The in-memory ring buffer still works normally, but
-durability across Hydra restarts is not available. This is the same
-degraded-mode behavior as credential storage without a master key.
+Key derivation:
+
+- At login, Hydra derives a scroll-back key from the player's
+  password via a second Argon2id derivation using a distinct salt
+  and context string (separate from the password-verification hash).
+- The `scrollback_key_salt` is stored per-account in the `accounts`
+  table. It is generated once at account creation.
+- The derived key is held in memory for the lifetime of the session
+  (including Detached state, where back-door links are still active
+  and producing output that needs to be encrypted on flush).
+- When the session is destroyed or Hydra shuts down, the derived key
+  is wiped from memory.
+
+Per-row encryption:
+
+- Algorithm: AES-256-GCM or ChaCha20-Poly1305 (same AEAD as
+  credentials, different key)
+- One random nonce per scroll-back row
+- AAD includes the account ID, session ID, and line sequence number
+  to prevent reordering or cross-session substitution
+
+What the box owner can and cannot do:
+
+- The box owner has the database and the master key file.
+- The master key can decrypt **game credentials** (unavoidable —
+  Hydra needs this for auto-login).
+- The master key **cannot** decrypt scroll-back. Scroll-back keys
+  are derived from player passwords, which the box owner does not
+  have.
+- The box owner would have to modify Hydra's source code to capture
+  passwords at login time. Short of that, player scroll-back is
+  opaque to the operator.
+
+After Hydra restart:
+
+- The player-derived scroll-back key is not persisted anywhere. When
+  Hydra restarts, all derived keys are gone.
+- Persisted scroll-back remains in SQLite but cannot be decrypted
+  until the player logs in again and the key is re-derived from
+  their password.
+- On session resume after Hydra restart, `loadFromDb()` is called
+  after authentication, at which point the derived key is available.
+
+Password change:
+
+- When a player changes their Hydra password (`/passwd`), the
+  scroll-back key changes. Hydra must re-encrypt all persisted
+  scroll-back rows for that account with the new derived key. This
+  is done synchronously during the password change operation.
+  (For large scroll-back buffers, this may take a moment.)
+- A new `scrollback_key_salt` is generated and stored.
 
 ## Front Door Detail
 
@@ -705,6 +749,7 @@ CREATE TABLE accounts (
     username    TEXT UNIQUE NOT NULL COLLATE NOCASE,
     pw_hash     TEXT NOT NULL,          -- argon2id hash
     pw_salt     TEXT NOT NULL,
+    sb_key_salt TEXT NOT NULL,          -- salt for scroll-back key derivation
     created     TEXT NOT NULL DEFAULT (datetime('now')),
     last_login  TEXT,
     flags       INTEGER DEFAULT 0       -- bit 0: admin, bit 1: suspended
@@ -831,19 +876,28 @@ not exportable in plaintext.
 
 ### Threat Model
 
-Hydra holds sensitive material on behalf of players: game credentials
-and scroll-back (which contains private conversations, pages, mail,
-and channel chatter). The encryption design addresses specific
-adversaries and their capabilities.
+Hydra holds two categories of sensitive material, encrypted under
+**different key hierarchies** with different trust properties:
+
+| Material          | Key source        | Who can decrypt              |
+|-------------------|-------------------|------------------------------|
+| Game credentials  | Master key (host) | Hydra process, box owner     |
+| Scroll-back       | Player password   | Player (via Hydra), no one else |
+
+This separation is the central design decision. Game credentials
+must be decryptable by Hydra autonomously (auto-login reconnect
+while the player is disconnected), so they are keyed to the master
+key. Scroll-back is only needed when the player is present and
+authenticated, so it is keyed to the player's password. The box
+owner cannot read scroll-back without the player's password.
 
 **Adversary 1: Database theft.**
 An attacker obtains a copy of `hydra.sqlite` (backup, disk image,
-SQL dump) but does not have the master key file.
+SQL dump) but has neither the master key file nor any player
+passwords.
 
-- Game credentials: encrypted, unreadable. The attacker sees
-  ciphertext, nonce, and key ID. No plaintext passwords.
-- Scroll-back: encrypted, unreadable. The attacker sees ciphertext
-  for every persisted line but cannot decrypt any of it.
+- Game credentials: encrypted with master key, unreadable.
+- Scroll-back: encrypted with player-derived keys, unreadable.
 - Account passwords: hashed with Argon2id, not reversible.
 - **Result:** The database alone reveals account names and game
   configuration. It does not reveal any player's credentials,
@@ -851,51 +905,63 @@ SQL dump) but does not have the master key file.
 
 **Adversary 2: Host operator (box owner).**
 The operator has root access to the host, can read the master key
-file, and can read the database. They are curious or compelled to
-examine a specific player's data.
+file, and can read the database. They do not have any player's
+Hydra password.
 
-- The master key can derive per-account key material, so the
-  operator *could* decrypt any account's credentials and scroll-back
-  offline.
-- Hydra itself does not provide an admin interface that exposes
-  another player's scroll-back or credentials. There is no
-  `/viewscroll <user>` command. The operator would have to write
-  custom tooling that reads the database and the master key.
-- **Mitigation:** This is the irreducible trust boundary. If you
-  control the host, you control the keys. Hydra minimizes casual
-  exposure by never exporting plaintext through its own interfaces,
-  but a determined operator with root access is outside the
-  encryption threat model.
-- **Organizational mitigation:** In a shared-hosting or co-located
-  environment, the master key file can be owned by a dedicated
-  service account with restrictive permissions. This limits exposure
-  to the Hydra process itself rather than every root-equivalent
-  user on the host.
+- Game credentials: the master key can decrypt these. The operator
+  can read stored game passwords. This is unavoidable — Hydra
+  needs the master key for autonomous auto-login.
+- Scroll-back: **the master key cannot decrypt scroll-back.**
+  Scroll-back is encrypted with keys derived from player passwords.
+  The operator does not have player passwords and cannot derive the
+  scroll-back keys.
+- To read a player's scroll-back, the operator would have to modify
+  Hydra's source code to capture the player's password at login
+  time, then wait for the player to log in. Short of that, the
+  scroll-back is opaque.
+- Hydra does not provide an admin interface that exposes another
+  player's scroll-back. There is no `/viewscroll <user>` command.
+- **Result:** The box owner can read game credentials but **cannot**
+  read any player's scroll-back without modifying Hydra itself.
 
 **Adversary 3: Authenticated player.**
 A player who has a valid Hydra account and is logged in.
 
-- They can replay their own scroll-back (Hydra decrypts it for
-  them during session resume and `/scroll`).
-- They cannot access another account's scroll-back. Per-account key
-  material means decryption of account A's data requires account A's
-  derived key. Hydra only decrypts for the authenticated account.
-- They cannot read their own raw key material or export encrypted
-  blobs. Hydra decrypts internally and renders to the client's
-  terminal — there is no "download my encrypted data" command.
-- **Result:** A player colluding with the box owner still cannot
-  read another player's scroll-back. The player can only access
-  their own data. The box owner's master key access does not change
-  what Hydra will serve to a given authenticated session.
+- They can replay their own scroll-back (Hydra derives their
+  scroll-back key from their password at login and decrypts on
+  their behalf).
+- They cannot access another player's scroll-back. Each account's
+  scroll-back key is derived from that account's password. Knowing
+  your own password gives you no information about anyone else's
+  derived key.
+- **Result:** Even a player colluding with the box owner cannot
+  read another player's scroll-back. The player provides their own
+  password (useless for other accounts). The box owner provides the
+  master key (useless for scroll-back). Neither has the other
+  player's password.
 
-**Adversary 4: Network eavesdropper (front-door).**
+**Adversary 4: Box owner + colluding player.**
+The box owner has the master key and database. A player volunteers
+their own Hydra password.
+
+- The player's password derives the player's own scroll-back key.
+  The box owner can now decrypt that player's scroll-back.
+- The player's password tells them nothing about other accounts.
+- The master key decrypts game credentials for all accounts but
+  decrypts scroll-back for none.
+- **Result:** Collusion between operator and player A exposes only
+  player A's scroll-back. Player B's scroll-back remains protected
+  by player B's password, which neither the operator nor player A
+  possesses.
+
+**Adversary 5: Network eavesdropper (front-door).**
 An attacker on the network path between the client and Hydra.
 
 - Front-door connections use TLS. The attacker sees encrypted traffic.
 - **Result:** No exposure if TLS is properly configured. Standard TLS
   threat model applies.
 
-**Adversary 5: Network eavesdropper (back-door).**
+**Adversary 6: Network eavesdropper (back-door).**
 An attacker on the network path between Hydra and a game server.
 
 - For local games (localhost or Unix socket): no network exposure.
@@ -907,11 +973,14 @@ An attacker on the network path between Hydra and a game server.
   acceptable. The game configuration specifies the transport security
   per game.
 
-**Adversary 6: Hydra process compromise.**
+**Adversary 7: Hydra process compromise.**
 An attacker gains code execution inside the Hydra process.
 
-- All in-memory data is exposed: master key, decrypted credentials,
-  plaintext scroll-back, session state.
+- All in-memory data is exposed: master key, derived scroll-back
+  keys for currently active sessions, decrypted credentials,
+  plaintext scroll-back for active sessions.
+- Scroll-back keys for accounts not currently logged in are not in
+  memory and cannot be derived without those players' passwords.
 - **Mitigation:** This is outside the encryption threat model. Hydra
   is a small, focused process with a minimal attack surface (no
   softcode interpreter, no user-supplied code execution, no shell
@@ -920,21 +989,23 @@ An attacker gains code execution inside the Hydra process.
 
 **What encryption does NOT protect against:**
 
-- A root-level operator who is willing to write custom decryption
-  tooling using the master key file.
-- Runtime compromise of the Hydra process.
+- A box owner who modifies Hydra's source to capture passwords at
+  login time (active attack requiring code changes and redeployment).
+- Runtime compromise of the Hydra process (exposes in-memory keys
+  for active sessions only).
 - A player viewing their own scroll-back (by design — that is the
   feature).
 
 **What encryption DOES protect against:**
 
-- Casual snooping by operators who have database access but not the
-  master key (e.g., database backups, shared hosting).
-- Database theft (backup exfiltration, disk cloning, SQL injection
-  against a co-hosted service).
-- Cross-account data exposure (player A cannot read player B's data,
-  even with cooperation from the operator, unless the operator
-  bypasses Hydra entirely with custom tooling).
+- Box owner reading any player's scroll-back (master key is not
+  sufficient; player password is required).
+- Database theft (nothing decryptable without master key or player
+  passwords).
+- Cross-account data exposure (player A + box owner cannot read
+  player B's scroll-back).
+- Casual snooping by anyone with database access (backups, shared
+  hosting, co-located services).
 - Regulatory or policy compliance requirements for data-at-rest
   encryption.
 
