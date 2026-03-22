@@ -11,7 +11,9 @@ Predecessor: `docs/hydra-problem-statement.md`
 Hydra is a persistent connection proxy for MUD games. It sits between
 clients and game servers, owning TLS on the internet side, maintaining
 session state across disconnects on both sides, and translating
-protocols and encodings between heterogeneous clients and games.
+protocols and encodings between heterogeneous clients and games. Hydra
+terminates internet-facing TLS itself and normally talks to games over
+plain telnet or another local non-encrypted transport.
 
 ```
                     Internet                          Local / LAN
@@ -110,8 +112,9 @@ Each front-door connection has its own:
 ### Back-Door Connections
 
 A back-door connection is Hydra's connection to a game server. It
-speaks whatever protocol the game expects (usually telnet, possibly
-over a Unix domain socket for local games).
+speaks whatever protocol the game expects, which for the primary target
+case is plain telnet or a Unix domain socket for a locally-hosted game.
+The game does not need to know Hydra exists.
 
 Each back-door connection has its own:
 
@@ -131,7 +134,7 @@ termination, and telnet protocol handling.
 
 | Protocol       | Default Port | TLS | Notes                          |
 |----------------|--------------|-----|--------------------------------|
-| Telnet         | 4201         | No  | Plain telnet (upgrade via STARTTLS) |
+| Telnet         | 4201         | No  | Plain telnet                        |
 | Telnet+TLS     | 4202         | Yes | TLS-wrapped telnet             |
 | WebSocket      | 4203         | Yes | WSS, for browser clients       |
 | gRPC           | 4204         | Yes | Protobuf-based, for mobile/API |
@@ -144,7 +147,7 @@ Ports are configurable. Hydra can listen on as many ports as needed.
 2. TLS handshake (if applicable)
 3. Telnet negotiation (charset, NAWS, TTYPE, etc.)
 4. Hydra presents a login prompt (its own, not a game's)
-5. User authenticates (username + password, or token)
+5. User authenticates to Hydra (username + password, or token)
 6. Session created or resumed
 7. If session has active links, output begins flowing
 8. If no links, Hydra presents a menu of configured games
@@ -241,7 +244,8 @@ available color.
 ### 4. Back Door
 
 Connects to game servers. Each game is a configured destination with
-connection parameters.
+connection parameters. Hydra behaves like a normal client connection
+from the game's point of view.
 
 **Game configuration (in SQLite or config file):**
 
@@ -253,7 +257,7 @@ game "Shangrila" {
     binary      /home/sdennis/tinymux/mux/game/bin/netmux
     workdir     /home/sdennis/tinymux/mux/game
     autostart   yes             # Hydra starts it if not running
-    reconnect   yes             # auto-reconnect on game restart
+    reconnect   yes             # auto-reconnect after crash/outage
     retry       5s, 10s, 30s, 60s   # backoff schedule
     charset     UTF-8
 }
@@ -275,20 +279,35 @@ game "SomeLegacyMUD" {
 2. If game is local and not running and autostart=yes, Hydra starts it
 3. Hydra opens TCP (or Unix socket) to game
 4. Telnet negotiation with the game (Hydra is the "client" here)
-5. Hydra presents stored credentials (or prompts user for them)
+5. Hydra sends the normal game login commands using stored credentials
+   (or passes the login prompt through so the user can log in manually)
 6. Link enters Active state
 7. Data flows: game output—telnet bridge—front door(s)
 
-**Reconnect behavior:**
+**Reconnect behavior after back-door loss:**
 
-When a back-door connection drops (game @restart, crash, network
-error):
+When a back-door connection drops (game crash, remote network error,
+or any restart scenario where the underlying back-door transport does
+not survive):
 
 1. Link enters Reconnecting state
 2. Hydra sends a status line to front-door: `[Shangrila: reconnecting...]`
 3. Hydra retries per the backoff schedule
-4. On success, re-authenticates, link returns to Active
+4. On success, Hydra replays the normal game login sequence, link
+   returns to Active
 5. On retry exhaustion, link enters Dead state, user is notified
+
+For locally-hosted TinyMUX, the normal case is better than this:
+TinyMUX already preserves ordinary non-SSL connections across
+`@restart`, so Hydra's plain back-door connection should survive
+without reconnection. Hydra is specifically positioned so the
+player-facing TLS session lives on the front door, where game restart
+cannot affect it.
+
+If a game actually goes away long enough for the back-door connection to
+be lost, Hydra can keep the front-door session alive and reconnect the
+link when the game returns, subject to the reconnect policy for that
+game.
 
 ### 5. Process Manager
 
@@ -342,6 +361,11 @@ CREATE TABLE sessions (
     state       TEXT                -- serialized session state
 );
 ```
+
+Hydra stores whatever login material is needed to perform a normal game
+login on the user's behalf. Hydra does not manage in-game password
+changes; if the player changes a password inside the game, the player
+updates Hydra's stored login material separately.
 
 ### 7. Scroll-Back Buffer
 
@@ -430,42 +454,35 @@ Client                    Hydra
 ```
 Client                    Hydra                         Game
   │                         │                            │
-  │  (connected, idle)      │◄── connection closed ──────│ @restart
+  │  (connected, idle)      │                            │ @restart
   │                         │                            │
-  │◄── "[reconnecting]" ────│                            │
+  │                         │    back-door fd survives   │
   │                         │                            │
-  │                         │   ... retry backoff ...    │
-  │                         │                            │ (game back)
-  │                         │────── TCP connect ────────►│
-  │                         │────── telnet negot. ──────►│
-  │                         │────── auto-login ─────────►│
-  │                         │                            │
-  │◄── "[reconnected]" ─────│                            │
   │                         │◄───── game output ────────►│
   │◄── game output ─────────│                            │
 ```
 
 ## Graceful Self-Upgrade
 
-Hydra itself can be upgraded without dropping client connections,
-using the same fd-inheritance pattern as TinyMUX @restart:
+Hydra is intended to run unchanged for very long periods. Normal game
+maintenance, including TinyMUX `@restart`, should not require Hydra to
+restart.
+
+If Hydra itself is upgraded or replaced, client-facing TLS connections
+may be lost. In that case the goal is to preserve enough persistent
+state that clients can reconnect to Hydra and resume their sessions.
+
+**Self-upgrade goals:**
 
 1. Admin issues upgrade command
-2. Hydra serializes session state to SQLite
-3. Hydra detaches all client fds from GANL (but does not close them)
-4. Hydra records fd-to-session mappings in a restart database
-5. Hydra `exec()`s the new binary
-6. New Hydra reads restart database
-7. New Hydra re-adopts fds into GANL
-8. New Hydra resumes sessions from SQLite
-9. Client connections continue uninterrupted—TLS state is preserved
-   because the kernel preserved the fds and the TLS library state is
-   re-initialized from the existing TCP stream
+2. Hydra serializes resumable session state to SQLite
+3. Hydra stops accepting new front-door connections
+4. Hydra exits or `exec()`s the new binary
+5. New Hydra reads resumable session state from SQLite
+6. Clients reconnect and authenticate to resume their sessions
 
-**Note:** TLS session resumption after exec() is the hardest part.
-Options include serializing OpenSSL session state (fragile, version-
-dependent) or performing a transparent TLS renegotiation. This needs
-further investigation and may be deferred to a later phase.
+Preserving live TLS connections across Hydra's own replacement is not a
+requirement.
 
 ## Configuration
 
@@ -549,32 +566,22 @@ mux/
 - GMCP forwarding
 - Color depth translation
 
-### Phase 4: Graceful self-upgrade
+### Phase 4: Session-preserving Hydra replacement
 
-- fd-inheritance across exec()
 - Session state serialization/restore
-- TLS continuity (or transparent renegotiation)
+- Controlled shutdown/startup of Hydra itself
+- Client reconnect and session resume after Hydra replacement
 
 ## Open Questions
 
-1. **TLS survival across exec().** OpenSSL session state is deeply
-   tied to the process. Can we serialize it? Should we use a different
-   approach (kernel TLS, shared-memory TLS context)? Or accept that
-   Hydra self-upgrade drops TLS and clients must reconnect?
-
-2. **Back-door protocol enhancement.** Should Hydra speak enhanced
-   telnet to TinyMUX games (carrying session metadata in GMCP/MSDP)
-   to avoid the login-screen dance? Or is auto-typing credentials
-   sufficient?
-
-3. **Session token mechanism.** For client reconnection—cookie-based
+1. **Session token mechanism.** For client reconnection—cookie-based
    token? TLS client certificate? Time-limited HMAC token?
 
-4. **Multi-front-door output policy.** When two front-door connections
+2. **Multi-front-door output policy.** When two front-door connections
    are attached to the same session, do both get output? Does one
    become read-only? Is this user-configurable?
 
-5. **Scroll-back and charset.** The scroll-back buffer stores output.
+3. **Scroll-back and charset.** The scroll-back buffer stores output.
    In what encoding? If we store raw game bytes, we need the original
    charset to replay correctly. If we normalize to UTF-8, replay is
    simpler but we've lost the original bytes.

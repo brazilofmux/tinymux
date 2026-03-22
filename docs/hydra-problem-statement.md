@@ -8,9 +8,10 @@ Branch: `master`
 
 Every MUD player has experienced it: the game @restarts and your
 connection drops. You reconnect, re-authenticate, and hope you didn't
-miss anything. For players on SSL/TLS, the situation is worse—the TLS
-session state lives inside the game process, so @restart *must* kill
-the encrypted connection. There is no workaround within the game itself.
+miss anything. Hydra changes where TLS lives: client-facing connections
+terminate at Hydra, while Hydra talks to the game over plain telnet (or
+another local non-encrypted transport). That means the game no longer
+owns the internet-facing TLS session at all.
 
 This is one instance of a general problem: **the process that owns the
 network connection is also the process that needs to restart, crash, or
@@ -21,13 +22,16 @@ change.** The connection's lifetime is coupled to the wrong thing.
 ### 1. Game @restart drops connections
 
 TinyMUX's @restart uses `exec()` to replace the running process.
-Non-TLS connections survive via file descriptor inheritance, but TLS
-connections cannot—the OpenSSL/Schannel session state is in-process
-memory that doesn't survive exec(). The player sees a disconnect.
+Non-TLS connections survive via file descriptor inheritance. Hydra
+depends on that property: Hydra's back-door connection to TinyMUX is a
+plain telnet or local socket connection, so TinyMUX can @restart
+without dropping Hydra's connection to the game. The player should not
+see a disconnect because the player is connected to Hydra, not directly
+to TinyMUX.
 
-**Impact:** Every @restart drops every TLS player. Games that care
-about uptime avoid @restart, which means they can't deploy fixes
-without a full shutdown.
+**Impact:** Without Hydra, every internet-facing TLS player drops on
+@restart. With Hydra in front, TinyMUX can restart while Hydra keeps
+the player-facing TLS session alive.
 
 ### 2. Client @restart drops connections
 
@@ -63,18 +67,21 @@ states. There is no unified session layer.
 
 ## Root Cause
 
-All six scenarios share one root cause: **the TLS termination point and
-the session persistence point are the same process as the game server
-(or the client).** When either endpoint restarts, crashes, or changes
-networks, the connection dies because no third party is holding it open.
+All six scenarios share one root cause: **the session persistence point
+is tied to the wrong endpoint.** Without Hydra, the client talks
+directly to the game, so either endpoint restarting, crashing, or
+changing networks kills the connection. No third party is holding the
+player session open.
 
 The only architectural solution is a **persistent intermediary** — a
 process that:
 
-1. Owns TLS on the internet-facing side (so TLS survives game restarts)
+1. Owns TLS on the internet-facing side, completely decoupled from the
+   game server
 2. Maintains session state independent of both client and game
 3. Reconnects to either side transparently when connections drop
-4. Never needs to restart itself (or can restart without losing sessions)
+4. Runs independently of the game for extremely long periods, so game
+   maintenance and restarts do not affect player-facing TLS sessions
 
 ## Requirements
 
@@ -82,20 +89,27 @@ process that:
 
 Hydra terminates TLS on the internet-facing side. The TLS session
 persists as long as Hydra is running, independent of game server
-lifecycle. Game @restart does not affect client TLS connections.
+lifecycle. The game does not terminate TLS. Game @restart does not
+affect client TLS connections.
 
 ### R2. Session persistence across disconnects
 
 A Hydra session survives:
 
-- Game @restart or crash (Hydra reconnects to the game when it comes
-  back)
+- Game @restart (for TinyMUX's ordinary non-SSL back-door connection,
+  the connection should normally survive)
+- Game crash, shutdown, or outage (Hydra reconnects to the game when it
+  comes back, if reconnect is enabled for that game)
 - Client disconnect and reconnect (Hydra reattaches the client to
   existing game sessions)
 - Client network change (new TCP connection, same Hydra session)
 
 The player's experience is continuity—at most a brief pause, never a
 full disconnect/reconnect/re-authenticate cycle.
+
+This requirement applies to game lifecycle events and client-side
+disconnects. It does not require Hydra itself to preserve TLS context
+across its own upgrade or replacement.
 
 ### R3. Scroll-back buffer
 
@@ -128,6 +142,11 @@ and each game. It translates between them:
 A client with different capabilities than what the game expects gets
 correct translation without either side needing to change.
 
+For TinyMUX specifically, Hydra's back-door connection uses the same
+plain telnet-style protocol that TinyMUX already supports for ordinary
+non-SSL clients. Hydra relies on TinyMUX's existing ability to
+`@restart` without dropping that non-SSL connection.
+
 ### R6. Multi-game, multi-character support
 
 A single authenticated Hydra session can maintain simultaneous
@@ -142,6 +161,11 @@ authentication. A user logs into Hydra once, and Hydra presents stored
 credentials to games on the user's behalf. This decouples internet-
 facing authentication from per-game authentication.
 
+Hydra does not own the game password lifecycle. Players continue to
+change their passwords inside each game using that game's existing
+commands. Hydra only stores the user's current login material and
+provides a way for the user to update it for future auto-login.
+
 ### R8. Game process management
 
 Hydra can start and stop game server processes. For locally-hosted
@@ -151,11 +175,13 @@ Hydra connects over TCP.
 
 ### R9. Graceful self-upgrade
 
-Even though Hydra is designed to run indefinitely, it must support
-graceful upgrade. It uses the same fd-inheritance technique as TinyMUX
-@restart: the new process inherits all client-facing file descriptors
-and TLS contexts from the old process, so client connections survive
-Hydra upgrades.
+Hydra should be designed to run unchanged for very long periods, with
+the expectation that normal game maintenance does not require Hydra to
+restart. If Hydra itself is upgraded or replaced, loss of client TLS
+context is acceptable. In that case, Hydra should preserve as much
+session state as practical so clients can reconnect and resume, but
+preserving the TLS connection itself is not a requirement for Hydra
+self-upgrade.
 
 ### R10. Builds on existing infrastructure
 
@@ -168,6 +194,11 @@ Hydra reuses:
 Hydra is a new binary (`hydra`) that links against libmux.so and GANL
 but does *not* link against engine.so. It is not a game server—it is
 infrastructure.
+
+Hydra is transparent to the game. The game does not need to know Hydra
+exists; from the game's point of view, Hydra is just another network
+client speaking the game's normal login and command protocol over a
+telnet-style connection.
 
 ### R11. Minimal resource footprint
 
@@ -187,6 +218,9 @@ with negligible overhead, or on a separate host as a dedicated proxy.
 
 - **Game logic.** Hydra does not run softcode, manage objects, or
   implement any MUD game mechanics.
+- **Game modifications for Hydra awareness.** TinyMUX and other target
+  games do not need protocol changes, special modules, or explicit
+  Hydra integration in order to be usable behind Hydra.
 - **Cross-host clustering.** Hydra is a single-process proxy, not a
   distributed system. It may connect to remote games, but it is not
   itself distributed.
@@ -194,3 +228,7 @@ with negligible overhead, or on a separate host as a dedicated proxy.
   defines its own session protocol. It does not need to implement
   SOCKS, HTTP CONNECT, or HAProxy PROXY protocol (though these could
   be added later).
+- **Automatic synchronization of in-game password changes.** If a
+  player changes a game password inside the game, Hydra is not required
+  to detect that change automatically. The player updates Hydra's stored
+  login material separately.
