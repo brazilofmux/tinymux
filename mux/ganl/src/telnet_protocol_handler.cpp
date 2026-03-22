@@ -312,6 +312,12 @@ namespace ganl {
         context.weSentDo[TelnetOption::NEW_ENVIRON] = true; // Populate map
         GANL_TELNET_DEBUG(conn, "Sent: DO NEW-ENVIRON");
 
+        // Offer GMCP to clients
+        sendTelnetCommand(telnet_responses_out, TelnetCommand::WILL, TelnetOption::GMCP);
+        context.optionStates[TelnetOption::GMCP] = OptionNegotiationState::SentWill;
+        context.weSentWill[TelnetOption::GMCP] = true;
+        GANL_TELNET_DEBUG(conn, "Sent: WILL GMCP");
+
         sendTelnetCommand(telnet_responses_out, TelnetCommand::DO, TelnetOption::CHARSET);
         // Overwrite state for CHARSET to SentDo
         context.optionStates[TelnetOption::CHARSET] = OptionNegotiationState::SentDo;
@@ -749,7 +755,8 @@ namespace ganl {
                 case TelnetOption::ECHO:    accept = true; context.setTelnetEcho(true); break;
                 case TelnetOption::SGA:     accept = true; context.setTelnetSGA(true); break;
                 case TelnetOption::CHARSET: accept = true; break;
-                // Accept GMCP/MSSP if offered
+                case TelnetOption::GMCP:    accept = true; break;
+                case TelnetOption::MSSP:    accept = true; break;
                 default: accept = false; break;
                 }
                 if (accept) {
@@ -893,7 +900,7 @@ namespace ganl {
                 switch (opt) { // Decide if we accept unsolicited WILLs
                 case TelnetOption::SGA: accept = true; context.setTelnetSGA(true); break;
                 case TelnetOption::EOR: accept = true; context.setTelnetEOR(true); break;
-                    // Add others we are willing to DO if client WILLs
+                case TelnetOption::GMCP: accept = true; break;
                 default: accept = false; break;
                 }
                 if (accept) {

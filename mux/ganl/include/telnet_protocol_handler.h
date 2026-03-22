@@ -20,6 +20,8 @@ namespace ganl {
         NEW_ENVIRON = 39,
         CHARSET     = 42,
         STARTTLS    = 46,
+        MSSP        = 70,
+        GMCP        = 201,
         UNKNOWN     = 255
     };
 

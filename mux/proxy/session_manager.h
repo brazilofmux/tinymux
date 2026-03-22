@@ -21,6 +21,7 @@ struct BackDoorLink {
     LinkState           state{LinkState::Dead};
     ganl::ProtocolState protoState;
     const GameConfig*   gameConfig{nullptr};
+    bool                gmcpEnabled{false};
 
     // Reconnect backoff
     int                 retryCount{0};
@@ -72,6 +73,7 @@ struct FrontDoorState {
     // Client capabilities (defaults for Phase 1; auto-detect in future)
     ganl::EncodingType encoding{ganl::EncodingType::Utf8};
     ColorDepth colorDepth{ColorDepth::Ansi256};
+    bool gmcpEnabled{false};
 };
 
 // Reverse map value: session ID + link index

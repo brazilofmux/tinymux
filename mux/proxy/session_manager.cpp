@@ -13,6 +13,121 @@ struct ReplayContext {
     TelnetBridge* bridge;
 };
 
+// Telnet constants for GMCP parsing
+static constexpr unsigned char T_IAC = 255;
+static constexpr unsigned char T_SB  = 250;
+static constexpr unsigned char T_SE  = 240;
+static constexpr unsigned char T_GMCP = 201;
+static constexpr unsigned char T_WILL = 251;
+static constexpr unsigned char T_DO   = 253;
+
+// A GMCP sub-negotiation extracted from the raw byte stream.
+struct GmcpMessage {
+    std::string payload;  // everything between SB GMCP and IAC SE
+};
+
+// Split raw telnet data into regular bytes and GMCP sub-negotiations.
+// Regular bytes go into 'regular', GMCP messages go into 'gmcp'.
+// Also detects WILL GMCP / DO GMCP for capability tracking.
+static void splitGmcp(const char* data, size_t len,
+                      std::string& regular,
+                      std::vector<GmcpMessage>& gmcp,
+                      bool& sawWillGmcp, bool& sawDoGmcp) {
+    sawWillGmcp = false;
+    sawDoGmcp = false;
+    regular.reserve(len);
+
+    enum { Normal, SawIAC, SawSB, InGmcpSB, InGmcpIAC, SawCmd } state = Normal;
+    unsigned char cmdByte = 0;
+    std::string gmcpBuf;
+
+    for (size_t i = 0; i < len; i++) {
+        unsigned char ch = static_cast<unsigned char>(data[i]);
+
+        switch (state) {
+        case Normal:
+            if (ch == T_IAC) { state = SawIAC; }
+            else { regular.push_back(static_cast<char>(ch)); }
+            break;
+
+        case SawIAC:
+            if (ch == T_IAC) {
+                regular.push_back(static_cast<char>(T_IAC));  // escaped IAC
+                state = Normal;
+            } else if (ch == T_SB) {
+                state = SawSB;
+            } else if (ch == T_WILL || ch == T_DO) {
+                cmdByte = ch;
+                state = SawCmd;
+            } else {
+                // Other telnet command — pass through
+                regular.push_back(static_cast<char>(T_IAC));
+                regular.push_back(static_cast<char>(ch));
+                state = Normal;
+            }
+            break;
+
+        case SawCmd:
+            if (ch == T_GMCP) {
+                if (cmdByte == T_WILL) sawWillGmcp = true;
+                if (cmdByte == T_DO)   sawDoGmcp = true;
+            }
+            // Pass the negotiation through to regular stream
+            regular.push_back(static_cast<char>(T_IAC));
+            regular.push_back(static_cast<char>(cmdByte));
+            regular.push_back(static_cast<char>(ch));
+            state = Normal;
+            break;
+
+        case SawSB:
+            if (ch == T_GMCP) {
+                gmcpBuf.clear();
+                state = InGmcpSB;
+            } else {
+                // Non-GMCP subneg — pass through
+                regular.push_back(static_cast<char>(T_IAC));
+                regular.push_back(static_cast<char>(T_SB));
+                regular.push_back(static_cast<char>(ch));
+                state = Normal;  // will catch IAC SE from regular flow
+            }
+            break;
+
+        case InGmcpSB:
+            if (ch == T_IAC) { state = InGmcpIAC; }
+            else { gmcpBuf.push_back(static_cast<char>(ch)); }
+            break;
+
+        case InGmcpIAC:
+            if (ch == T_SE) {
+                gmcp.push_back({gmcpBuf});
+                state = Normal;
+            } else if (ch == T_IAC) {
+                gmcpBuf.push_back(static_cast<char>(T_IAC));
+                state = InGmcpSB;
+            } else {
+                // Unexpected byte after IAC inside GMCP SB
+                gmcpBuf.push_back(static_cast<char>(T_IAC));
+                gmcpBuf.push_back(static_cast<char>(ch));
+                state = InGmcpSB;
+            }
+            break;
+        }
+    }
+}
+
+// Build a GMCP telnet sub-negotiation frame: IAC SB GMCP <payload> IAC SE
+static std::string buildGmcpFrame(const std::string& payload) {
+    std::string frame;
+    frame.reserve(payload.size() + 5);
+    frame.push_back(static_cast<char>(T_IAC));
+    frame.push_back(static_cast<char>(T_SB));
+    frame.push_back(static_cast<char>(T_GMCP));
+    frame.append(payload);
+    frame.push_back(static_cast<char>(T_IAC));
+    frame.push_back(static_cast<char>(T_SE));
+    return frame;
+}
+
 static const char* linkStateName(LinkState s) {
     switch (s) {
     case LinkState::Connecting:     return "connecting";
@@ -109,8 +224,36 @@ void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
 
     FrontDoorState& fd = it->second;
 
-    for (size_t i = 0; i < len; i++) {
-        char ch = data[i];
+    // Split GMCP sub-negotiations from regular data
+    std::string regular;
+    std::vector<GmcpMessage> gmcpMsgs;
+    bool sawWillGmcp = false, sawDoGmcp = false;
+    splitGmcp(data, len, regular, gmcpMsgs, sawWillGmcp, sawDoGmcp);
+
+    // Track client GMCP capability
+    if (sawWillGmcp || sawDoGmcp) {
+        fd.gmcpEnabled = true;
+    }
+
+    // Forward client GMCP to the active back-door link
+    if (!gmcpMsgs.empty() && fd.sessionId != InvalidHydraSessionId) {
+        auto sit = sessions_.find(fd.sessionId);
+        if (sit != sessions_.end()) {
+            BackDoorLink* active = sit->second.getActiveLink();
+            if (active && active->handle != ganl::InvalidConnectionHandle &&
+                active->gmcpEnabled) {
+                for (const auto& gm : gmcpMsgs) {
+                    std::string frame = buildGmcpFrame(gm.payload);
+                    send(static_cast<int>(active->handle),
+                         frame.data(), frame.size(), MSG_NOSIGNAL);
+                }
+            }
+        }
+    }
+
+    // Process regular (non-GMCP) data as lines
+    for (size_t i = 0; i < regular.size(); i++) {
+        char ch = regular[i];
         if (ch == '\n') {
             if (!fd.lineBuf.empty() && fd.lineBuf.back() == '\r') {
                 fd.lineBuf.pop_back();
@@ -813,23 +956,46 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
     size_t linkIdx = 0;
     if (!findByBackDoor(bdHandle, session, link, linkIdx)) return;
 
-    // Ingest: charset-decode + ANSI→PUA
-    std::string puaText = bridge_.ingestGameOutput(
-        link->protoState, data, len);
+    // Split GMCP sub-negotiations from regular data
+    std::string regular;
+    std::vector<GmcpMessage> gmcpMsgs;
+    bool sawWillGmcp = false, sawDoGmcp = false;
+    splitGmcp(data, len, regular, gmcpMsgs, sawWillGmcp, sawDoGmcp);
 
-    // Append to shared scroll-back with game name as source
-    session->scrollback.append(puaText, link->gameName);
+    // Track GMCP capability on the back-door link
+    if (sawWillGmcp || sawDoGmcp) {
+        link->gmcpEnabled = true;
+    }
 
-    // Render and send to all front-doors
-    for (auto h : session->frontDoors) {
-        auto fdIt = frontDoors_.find(h);
-        if (fdIt == frontDoors_.end()) continue;
-        const FrontDoorState& fd = fdIt->second;
+    // Forward GMCP messages to all GMCP-enabled front-doors
+    for (const auto& gm : gmcpMsgs) {
+        std::string frame = buildGmcpFrame(gm.payload);
+        for (auto h : session->frontDoors) {
+            auto fdIt = frontDoors_.find(h);
+            if (fdIt == frontDoors_.end()) continue;
+            if (!fdIt->second.gmcpEnabled) continue;
+            send(static_cast<int>(h), frame.data(), frame.size(),
+                 MSG_NOSIGNAL);
+        }
+    }
 
-        std::string rendered = bridge_.renderForClient(
-            fd.encoding, fd.colorDepth, puaText);
-        send(static_cast<int>(h), rendered.data(), rendered.size(),
-             MSG_NOSIGNAL);
+    // Process regular (non-GMCP) data through the color/charset bridge
+    if (!regular.empty()) {
+        std::string puaText = bridge_.ingestGameOutput(
+            link->protoState, regular.data(), regular.size());
+
+        session->scrollback.append(puaText, link->gameName);
+
+        for (auto h : session->frontDoors) {
+            auto fdIt = frontDoors_.find(h);
+            if (fdIt == frontDoors_.end()) continue;
+            const FrontDoorState& fd = fdIt->second;
+
+            std::string rendered = bridge_.renderForClient(
+                fd.encoding, fd.colorDepth, puaText);
+            send(static_cast<int>(h), rendered.data(), rendered.size(),
+                 MSG_NOSIGNAL);
+        }
     }
 }
 
