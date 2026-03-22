@@ -59,6 +59,7 @@
 ---
 
 ## Success Metrics
+
 - **Performance:** 2x overall increase in `muxscript` benchmarks.
 - **Correctness:** 100% pass rate on updated Unicode 16.0 test suite.
 - **Sustainability:** Zero manual `free`/`realloc` calls remaining in the "engine" module.
