@@ -1329,8 +1329,7 @@ fun ConnectDialog(
                     Text("SSL/TLS", style = MaterialTheme.typography.bodyLarge)
                 }
                 OutlinedTextField(value = saveName, onValueChange = { saveName = it },
-                    label = { Text("Save as (optional)") },
-                    placeholder = { Text("e.g. MyMUD") },
+                    placeholder = { Text("Save as world (optional)") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth())
             }
