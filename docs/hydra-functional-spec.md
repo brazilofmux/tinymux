@@ -300,11 +300,12 @@ game "SomeLegacyMUD" {
 1. User issues `/connect Shangrila`
 2. If game is local and not running and autostart=yes, Hydra starts it
 3. Hydra opens TCP (or Unix socket) to game
-4. Telnet negotiation with the game (Hydra is the "client" here)
-5. Hydra sends the normal game login commands using stored credentials
+4. TLS handshake if `tls=yes` in game config (skipped for plain)
+5. Telnet negotiation with the game (Hydra is the "client" here)
+6. Hydra sends the normal game login commands using stored credentials
    (or passes the login prompt through so the user can log in manually)
-6. Link enters Active state
-7. Data flows: game output—telnet bridge—front door(s)
+7. Link enters Active state
+8. Data flows: game output—telnet bridge—front door(s)
 
 **Reconnect behavior after back-door loss:**
 

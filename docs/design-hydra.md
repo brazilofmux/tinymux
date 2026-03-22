@@ -614,12 +614,18 @@ void onBackDoorConnected(BackDoorLink* link, const GameConfig& game) {
 }
 
 void onBackDoorTlsComplete(BackDoorLink* link, bool success,
-                           const std::string& error) {
+                           const std::string& error,
+                           bool isCertVerifyFailure) {
     if (!success) {
-        // Certificate verification or handshake failure
         notifyFrontDoors(link->session,
             "[" + link->gameName + ": TLS failed: " + error + "]\r\n");
-        link->state = Dead;  // cert problems don't self-heal
+        if (isCertVerifyFailure) {
+            // Cert problems don't self-heal — no point retrying
+            link->state = Dead;
+        } else {
+            // Transient handshake failure — retry per schedule
+            link->state = Reconnecting;
+        }
         return;
     }
 
