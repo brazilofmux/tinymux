@@ -353,6 +353,39 @@ public:
                         std::chrono::duration_cast<std::chrono::milliseconds>(
                             std::chrono::system_clock::now().time_since_epoch()).count());
                     stream->Write(resp);
+                } else if (msg.has_preferences()) {
+                    const auto& prefs = msg.preferences();
+                    // Update subscriber's color format
+                    sq->renderFormat = static_cast<HydraSession::RenderFormat>(
+                        prefs.color_format());
+                    // Forward terminal size to game via NAWS
+                    if (prefs.terminal_width() > 0 || prefs.terminal_height() > 0) {
+                        workQueue_.enqueue<void>(
+                            [sid, w = prefs.terminal_width(), h = prefs.terminal_height()]
+                            (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
+                                HydraSession* s = sm.findByPersistId(sid);
+                                if (!s) return;
+                                BackDoorLink* active = s->getActiveLink();
+                                if (active && active->handle != ganl::InvalidConnectionHandle) {
+                                    // Send NAWS to game: IAC SB NAWS w_hi w_lo h_hi h_lo IAC SE
+                                    uint16_t width = w ? static_cast<uint16_t>(w) : 80;
+                                    uint16_t height = h ? static_cast<uint16_t>(h) : 24;
+                                    char naws[] = {
+                                        static_cast<char>(255), static_cast<char>(250),
+                                        static_cast<char>(31),  // NAWS
+                                        static_cast<char>((width >> 8) & 0xFF),
+                                        static_cast<char>(width & 0xFF),
+                                        static_cast<char>((height >> 8) & 0xFF),
+                                        static_cast<char>(height & 0xFF),
+                                        static_cast<char>(255), static_cast<char>(240)
+                                    };
+                                    int bdFd = static_cast<int>(active->handle);
+                                    send(bdFd, naws, sizeof(naws), MSG_NOSIGNAL);
+                                }
+                            });
+                    }
+                    LOG_DEBUG("GameSession: client set preferences color=%d width=%u height=%u",
+                              prefs.color_format(), prefs.terminal_width(), prefs.terminal_height());
                 } else if (msg.has_gmcp()) {
                     // Forward GMCP to active link
                     workQueue_.enqueue<void>(
@@ -463,12 +496,13 @@ public:
         oq = future.get();
         if (!oq) return Status(StatusCode::NOT_FOUND, "session not found");
 
-        // Register as subscriber (output only, no GMCP)
+        // Register as subscriber (output only, no GMCP) with requested color format
+        auto renderFmt = static_cast<HydraSession::RenderFormat>(req->color_format());
         int subId;
         std::shared_ptr<HydraSession::SubscriberQueue> sq;
         {
             std::lock_guard<std::mutex> lock(oq->mutex);
-            auto [id, q] = oq->addSubscriber(true, false);
+            auto [id, q] = oq->addSubscriber(true, false, renderFmt);
             subId = id;
             sq = q;
         }

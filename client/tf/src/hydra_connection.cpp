@@ -125,6 +125,15 @@ bool HydraConnection::openStream() {
         return false;
     }
 
+    // Send initial preferences: TrueColor, terminal size
+    hydra::ClientMessage prefsMsg;
+    auto* prefs = prefsMsg.mutable_preferences();
+    prefs->set_color_format(hydra::ANSI_TRUECOLOR);
+    prefs->set_terminal_width(80);   // TODO: get actual terminal size
+    prefs->set_terminal_height(24);
+    prefs->set_terminal_type("TitanFugue");
+    grpc_->stream->Write(prefsMsg);
+
     connected_.store(true);
     readerThread_ = std::thread(&HydraConnection::readerLoop, this);
     return true;
@@ -273,6 +282,17 @@ std::vector<std::string> HydraConnection::read_lines() {
 
 int HydraConnection::fd() const {
     return eventFd_;
+}
+
+void HydraConnection::send_naws(uint16_t width, uint16_t height) {
+    if (!connected_.load() || !grpc_ || !grpc_->stream) return;
+
+    hydra::ClientMessage msg;
+    auto* prefs = msg.mutable_preferences();
+    prefs->set_color_format(hydra::ANSI_TRUECOLOR);
+    prefs->set_terminal_width(width);
+    prefs->set_terminal_height(height);
+    grpc_->stream->Write(msg);
 }
 
 std::string HydraConnection::check_prompt(std::chrono::milliseconds) {

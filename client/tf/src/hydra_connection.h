@@ -62,6 +62,7 @@ public:
     const std::deque<std::string>& scrollback() const override { return scrollback_; }
     void add_to_scrollback(const std::string& line) override;
 
+    void send_naws(uint16_t width, uint16_t height) override;
     int idle_secs() const override;
     int sidle_secs() const override;
 
