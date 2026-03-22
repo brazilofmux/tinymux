@@ -10,6 +10,7 @@ struct ListenConfig {
     std::string     host;       // bind address
     uint16_t        port;       // listen port
     bool            tls;        // TLS-wrapped
+    bool            websocket;  // WebSocket protocol (HTTP upgrade)
     std::string     certFile;   // TLS certificate path
     std::string     keyFile;    // TLS key path
 };

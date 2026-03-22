@@ -154,6 +154,15 @@ SessionManager::~SessionManager() {
 void SessionManager::sendToClient(ganl::ConnectionHandle handle,
                                   const std::string& text) {
     int fd = static_cast<int>(handle);
+
+    // Check if this is a WebSocket connection
+    auto it = frontDoors_.find(handle);
+    if (it != frontDoors_.end() && it->second.proto == FrontDoorProto::WebSocket) {
+        std::string frame = wsEncodeFrame(text);
+        send(fd, frame.data(), frame.size(), MSG_NOSIGNAL);
+        return;
+    }
+
     send(fd, text.data(), text.size(), MSG_NOSIGNAL);
 }
 
@@ -211,10 +220,26 @@ void SessionManager::onAccept(ganl::ConnectionHandle handle) {
     FrontDoorState fd;
     fd.handle = handle;
     fd.loginPhase = FrontDoorState::AwaitUsername;
+    fd.proto = FrontDoorProto::Telnet;
     frontDoors_[handle] = fd;
 
-    LOG_INFO("Session manager: new front-door %lu", (unsigned long)handle);
+    LOG_INFO("Session manager: new front-door %lu (telnet)", (unsigned long)handle);
     showBanner(handle);
+}
+
+void SessionManager::onAcceptWebSocket(ganl::ConnectionHandle handle) {
+    FrontDoorState fd;
+    fd.handle = handle;
+    fd.loginPhase = FrontDoorState::AwaitUsername;
+    fd.proto = FrontDoorProto::WebSocket;
+    // WebSocket clients are always UTF-8 and typically support 256 colors
+    fd.encoding = ganl::EncodingType::Utf8;
+    fd.colorDepth = ColorDepth::Ansi256;
+    frontDoors_[handle] = fd;
+
+    LOG_INFO("Session manager: new front-door %lu (websocket, awaiting handshake)",
+             (unsigned long)handle);
+    // Don't send banner yet — wait for WebSocket handshake to complete
 }
 
 void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
@@ -223,6 +248,96 @@ void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
     if (it == frontDoors_.end()) return;
 
     FrontDoorState& fd = it->second;
+
+    // ---- WebSocket path ----
+    if (fd.proto == FrontDoorProto::WebSocket) {
+        if (!fd.wsState.handshakeComplete) {
+            // Still in HTTP upgrade handshake
+            std::string response = wsProcessHandshake(fd.wsState, data, len);
+            if (!response.empty()) {
+                int sockfd = static_cast<int>(handle);
+                send(sockfd, response.data(), response.size(), MSG_NOSIGNAL);
+
+                if (!fd.wsState.handshakeOk) {
+                    // Handshake failed — close
+                    engine_.closeConnection(handle);
+                    return;
+                }
+
+                LOG_INFO("WebSocket handshake complete for fd %lu",
+                         (unsigned long)handle);
+                showBanner(handle);
+
+                // Process any trailing data after the handshake
+                if (!fd.wsState.handshakeBuf.empty()) {
+                    std::string trailing = fd.wsState.handshakeBuf;
+                    fd.wsState.handshakeBuf.clear();
+                    std::string responses;
+                    auto msgs = wsDecodeFrames(fd.wsState,
+                        trailing.data(), trailing.size(), responses);
+                    if (!responses.empty()) {
+                        send(static_cast<int>(handle), responses.data(),
+                             responses.size(), MSG_NOSIGNAL);
+                    }
+                    for (const auto& msg : msgs) {
+                        if (msg.opcode == WS_OP_TEXT) {
+                            // Process as lines
+                            for (char ch : msg.payload) {
+                                if (ch == '\n') {
+                                    if (!fd.lineBuf.empty() && fd.lineBuf.back() == '\r')
+                                        fd.lineBuf.pop_back();
+                                    processLine(fd, fd.lineBuf);
+                                    fd.lineBuf.clear();
+                                } else {
+                                    fd.lineBuf += ch;
+                                }
+                            }
+                            // WS messages often don't end with \n
+                            if (!fd.lineBuf.empty()) {
+                                processLine(fd, fd.lineBuf);
+                                fd.lineBuf.clear();
+                            }
+                        }
+                    }
+                }
+            }
+            return;
+        }
+
+        // Decode WebSocket frames
+        std::string responses;
+        auto msgs = wsDecodeFrames(fd.wsState, data, len, responses);
+        if (!responses.empty()) {
+            send(static_cast<int>(handle), responses.data(),
+                 responses.size(), MSG_NOSIGNAL);
+        }
+        for (const auto& msg : msgs) {
+            if (msg.opcode == WS_OP_CLOSE) {
+                engine_.closeConnection(handle);
+                return;
+            }
+            if (msg.opcode == WS_OP_TEXT) {
+                // Each WS text message is one line (or contains newlines)
+                for (char ch : msg.payload) {
+                    if (ch == '\n') {
+                        if (!fd.lineBuf.empty() && fd.lineBuf.back() == '\r')
+                            fd.lineBuf.pop_back();
+                        processLine(fd, fd.lineBuf);
+                        fd.lineBuf.clear();
+                    } else {
+                        fd.lineBuf += ch;
+                    }
+                }
+                if (!fd.lineBuf.empty()) {
+                    processLine(fd, fd.lineBuf);
+                    fd.lineBuf.clear();
+                }
+            }
+        }
+        return;
+    }
+
+    // ---- Telnet path ----
 
     // Split GMCP sub-negotiations from regular data
     std::string regular;
@@ -993,8 +1108,15 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
 
             std::string rendered = bridge_.renderForClient(
                 fd.encoding, fd.colorDepth, puaText);
-            send(static_cast<int>(h), rendered.data(), rendered.size(),
-                 MSG_NOSIGNAL);
+
+            if (fd.proto == FrontDoorProto::WebSocket) {
+                std::string frame = wsEncodeFrame(rendered);
+                send(static_cast<int>(h), frame.data(), frame.size(),
+                     MSG_NOSIGNAL);
+            } else {
+                send(static_cast<int>(h), rendered.data(), rendered.size(),
+                     MSG_NOSIGNAL);
+            }
         }
     }
 }

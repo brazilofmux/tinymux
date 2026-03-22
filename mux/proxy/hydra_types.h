@@ -16,7 +16,7 @@ constexpr HydraSessionId InvalidHydraSessionId = 0;
 // Front-door protocol type
 enum class FrontDoorProto {
     Telnet,
-    // WebSocket,  // Phase 3
+    WebSocket,
     // Grpc,       // Phase 3
 };
 

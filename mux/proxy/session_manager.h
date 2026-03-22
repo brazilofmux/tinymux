@@ -7,6 +7,7 @@
 #include "account_manager.h"
 #include "telnet_bridge.h"
 #include "process_manager.h"
+#include "websocket.h"
 #include <network_engine.h>
 #include <network_types.h>
 #include <map>
@@ -74,6 +75,10 @@ struct FrontDoorState {
     ganl::EncodingType encoding{ganl::EncodingType::Utf8};
     ColorDepth colorDepth{ColorDepth::Ansi256};
     bool gmcpEnabled{false};
+
+    // Protocol type
+    FrontDoorProto proto{FrontDoorProto::Telnet};
+    WsState wsState;  // only used if proto == WebSocket
 };
 
 // Reverse map value: session ID + link index
@@ -90,6 +95,7 @@ public:
     ~SessionManager();
 
     void onAccept(ganl::ConnectionHandle handle);
+    void onAcceptWebSocket(ganl::ConnectionHandle handle);
     void onFrontDoorData(ganl::ConnectionHandle handle,
                          const char* data, size_t len);
     void onFrontDoorClose(ganl::ConnectionHandle handle);

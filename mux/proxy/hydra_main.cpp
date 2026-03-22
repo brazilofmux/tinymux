@@ -157,43 +157,40 @@ int main(int argc, char* argv[]) {
     // Create session manager
     SessionManager sessionMgr(*engine, accounts, config);
 
-    // Create front-door listener (plain telnet for now)
-    const ListenConfig* listenCfg = nullptr;
+    // Create listeners — tag 1 = telnet, tag 2 = websocket
+    static int tagTelnet = 1;
+    static int tagWebSocket = 2;
+    bool anyListener = false;
+
     for (const auto& lc : config.listeners) {
-        if (!lc.tls) {
-            listenCfg = &lc;
-            break;
+        ganl::ErrorCode err = 0;
+        ganl::ListenerHandle lh = engine->createListener(
+            lc.host, lc.port, err);
+        if (lh == ganl::InvalidListenerHandle) {
+            LOG_ERROR("Failed to create listener on %s:%u: %s",
+                      lc.host.c_str(), lc.port, strerror(err));
+            continue;
         }
-    }
-    if (!listenCfg && !config.listeners.empty()) {
-        listenCfg = &config.listeners[0];
-    }
-    if (!listenCfg) {
-        LOG_ERROR("No listeners configured");
-        engine->shutdown();
-        logShutdown();
-        return 1;
+
+        int* tag = lc.websocket ? &tagWebSocket : &tagTelnet;
+        if (!engine->startListening(lh, tag, err)) {
+            LOG_ERROR("Failed to start listening on %s:%u: %s",
+                      lc.host.c_str(), lc.port, strerror(err));
+            continue;
+        }
+
+        LOG_INFO("Listening on %s:%u (%s)",
+                 lc.host.c_str(), lc.port,
+                 lc.websocket ? "websocket" : "telnet");
+        anyListener = true;
     }
 
-    ganl::ErrorCode err = 0;
-    ganl::ListenerHandle listener = engine->createListener(
-        listenCfg->host, listenCfg->port, err);
-    if (listener == ganl::InvalidListenerHandle) {
-        LOG_ERROR("Failed to create listener on %s:%u: %s",
-                  listenCfg->host.c_str(), listenCfg->port, strerror(err));
+    if (!anyListener) {
+        LOG_ERROR("No listeners could be created");
         engine->shutdown();
         logShutdown();
         return 1;
     }
-
-    int tag = 1;
-    if (!engine->startListening(listener, &tag, err)) {
-        LOG_ERROR("Failed to start listening: %s", strerror(err));
-        engine->shutdown();
-        logShutdown();
-        return 1;
-    }
-    LOG_INFO("Listening on %s:%u", listenCfg->host.c_str(), listenCfg->port);
 
     // Log configured games
     for (const auto& game : config.games) {
@@ -215,7 +212,11 @@ int main(int argc, char* argv[]) {
 
             switch (ev.type) {
             case ganl::IoEventType::Accept:
-                sessionMgr.onAccept(ev.connection);
+                if (ev.context == &tagWebSocket) {
+                    sessionMgr.onAcceptWebSocket(ev.connection);
+                } else {
+                    sessionMgr.onAccept(ev.connection);
+                }
                 break;
 
             case ganl::IoEventType::ConnectSuccess:

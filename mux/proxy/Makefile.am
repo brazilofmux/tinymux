@@ -19,7 +19,8 @@ hydra_SOURCES = \
     telnet_bridge.cpp \
     scrollback.cpp \
     crypto.cpp \
-    process_manager.cpp
+    process_manager.cpp \
+    websocket.cpp
 
 hydra_CXXFLAGS = $(AM_CXXFLAGS) -fPIC -std=c++17
 
