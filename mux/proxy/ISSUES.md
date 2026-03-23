@@ -84,9 +84,8 @@ existing grpc-web handler.
 ### ~~Terminal Capability Reporting~~
 - **Fixed:** `SetPreferences` on `GameSession` streams + `terminal_width`/`terminal_height` on `SessionRequest` for `Subscribe`. Both forward NAWS to the game. (9033f3d)
 
-### GMCP Synthesis
-- **Issue:** Hydra only forwards GMCP if both sides support it.
-- **Opportunity:** Synthesize `Core.KeepAlive` or provide a `Hydra.*` GMCP package for proxy-specific features.
+### ~~GMCP Synthesis~~
+- **Fixed:** Core.Hello on connect, Core.KeepAlive every 60s, Hydra.Links on state changes. (1b3a6fc)
 
 ## Opportunities for Improvement
 
