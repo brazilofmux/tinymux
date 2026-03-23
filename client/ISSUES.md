@@ -43,10 +43,8 @@
 ### ~~`GetScrollBack` color_format Not Used~~
 - **Fixed:** Console and Android now set color_format = ANSI_TRUECOLOR on scroll-back requests. (3096196)
 
-### Reported Terminal Size Is Still Hardcoded On Native Hydra Clients
-- **Issue:** Console, TF, and Android now send preferences, but they still hardcode `80x24` instead of reporting the actual viewport on initial connect.
-- **Evidence:** `client/console/src/hydra_connection.cpp:120-123`, `client/tf/src/hydra_connection.cpp:131-134`, `client/android/app/src/main/java/org/tinymux/titan/net/HydraConnection.kt:135-139`
-- **Impact:** The issue tracker marks terminal capability reporting as fixed, but real games will still wrap output and paginate as if every client were `80x24` until a later resize message exists, if one exists at all.
+### ~~Reported Terminal Size Is Still Hardcoded On Native Hydra Clients~~
+- **Fixed:** Console reports actual console window size, Android estimates from screen dp and font size. TF still pending (Ubuntu). (1d2a548)
 
 ### Browser grpc-web Path Still Cannot Choose Live Output Color Format
 - **Issue:** `Subscribe` now supports `SessionRequest.color_format`, but the web client's subscribe request sends only `session_id` and terminal size.
