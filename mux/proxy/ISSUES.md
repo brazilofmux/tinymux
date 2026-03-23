@@ -27,21 +27,13 @@
 - ~~O(N) Memory Check~~ — Fixed: atomic global counter, O(1) per append (ca97aa4)
 - ~~Thread-Unsafe strerror()~~ — Fixed: replaced with strerror_r() (ca97aa4)
 
+- ~~GetScrollBack Ignores color_format~~ — Fixed: renders PUA text at requested ColorFormat during replay (d2c7625)
+- ~~SetPreferences Overwrites Unspecified Fields~~ — Fixed: added COLOR_UNSPECIFIED=0 to enum, values shifted to 1-5, handler skips color update when 0 (d2c7625)
+- ~~terminal_type Ignored~~ — Partially fixed: stored in HydraSession, full TTYPE forwarding deferred to GANL integration (d2c7625)
+
 ## Bugs & Technical Debt
 
-### `GetScrollBack` RPC Ignores `color_format`
-- **Issue:** `GrpcServer::GetScrollBack` ignores the requested `color_format` in the `ScrollBackRequest`.
-- **Impact:** Clients receive raw PUA text, even if they requested PLAIN or TrueColor.
-- **Fix:** Use `OutputItem::render` during replay.
-
-### `SetPreferences` Overwrites Unspecified Fields
-- **Issue:** Protobuf 3 scalar fields default to 0. When a client sends `SetPreferences` (e.g., for a NAWS resize) but doesn't set `color_format`, the server receives 0 and resets the subscriber to `ANSI_TRUECOLOR`.
-- **Impact:** Unexpected color rendering changes when resizing windows or updating other preferences.
-- **Fix:** Add `COLOR_NO_CHANGE = 0` to the enum or make fields `optional` (proto3).
-
-### `terminal_type` Is Defined But Ignored
-- **Issue:** `SetPreferences` carries `terminal_type`, but the server never consumes it anywhere after parsing the protobuf.
-- **Opportunity:** Persist terminal type in subscriber/front-door state and feed it into telnet negotiation for back-door TTYPE.
+*No open bugs from review rounds 1 and 2.*
 
 ## Design Notes
 
