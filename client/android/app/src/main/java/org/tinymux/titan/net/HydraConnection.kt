@@ -359,6 +359,7 @@ class HydraConnection(
                 ScrollBackRequest.newBuilder()
                     .setSessionId(sessionId)
                     .setMaxLines(200)
+                    .setColorFormat(ColorFormat.ANSI_TRUECOLOR)
                     .build()
             )
             if (resp.linesList.isNotEmpty()) {

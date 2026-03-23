@@ -264,6 +264,7 @@ void HydraConnection::fetchScrollBack() {
         hydra::ScrollBackRequest req;
         req.set_session_id(sessionId_);
         req.set_max_lines(200);  // fetch last 200 lines on reconnect
+        req.set_color_format(hydra::ANSI_TRUECOLOR);
         hydra::ScrollBackResponse resp;
         Status status = grpc_->stub->GetScrollBack(&ctx, req, &resp);
         if (status.ok() && resp.lines_size() > 0) {
