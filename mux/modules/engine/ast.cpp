@@ -133,7 +133,7 @@ static bool ast_call_arg_is_deferred(const ASTNode *call, int argIndex)
     }
     if (argIndex < static_cast<int>(call->deferred_args.size()))
     {
-        return call->deferred_args[argIndex] != 0;
+        return call->deferred_args[argIndex].is_deferred;
     }
     if (!call->parser_known_noeval)
     {
@@ -150,9 +150,9 @@ static const std::string *ast_call_raw_arg(const ASTNode *call, int argIndex)
     {
         return nullptr;
     }
-    if (argIndex < static_cast<int>(call->raw_args.size()))
+    if (argIndex < static_cast<int>(call->deferred_args.size()))
     {
-        return &call->raw_args[argIndex];
+        return &call->deferred_args[argIndex].raw_text;
     }
     return nullptr;
 }
@@ -219,7 +219,7 @@ private:
         {
             return;
         }
-        call->raw_args.push_back(rawTextFromTokens(start, end));
+        call->deferred_args.emplace_back(rawTextFromTokens(start, end), false);
     }
 
     void parser_apply_structural_arg_policy(ASTNode *call)
@@ -229,7 +229,7 @@ private:
             return;
         }
 
-        call->deferred_args.assign(call->children.size(), 0);
+        call->deferred_args.resize(call->children.size());
         for (int i = 0; i < static_cast<int>(call->children.size()); i++)
         {
             if (!parser_should_structuralize_arg(call, i))
@@ -237,7 +237,7 @@ private:
                 continue;
             }
 
-            call->deferred_args[i] = 1;
+            call->deferred_args[i].is_deferred = true;
             const std::string *raw = ast_call_raw_arg(call, i);
             if (!raw)
             {
@@ -632,7 +632,7 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 //   Pass 1: noeval -- parse/evaluate the deferred region under ASTLEX_NOEVAL
 //   Pass 2: eval -- re-tokenize the result and evaluate it
 //
-static void ast_eval_noeval_legacy_arg(const ASTNode *node,
+static void ast_eval_deferred_region(const ASTNode *node,
     const ASTNode *noevalNode, const std::string *rawText, UTF8 *buff,
     UTF8 **bufc, dbref executor, dbref caller, dbref enactor,
     int eval, const UTF8 *cargs[], int ncargs)
@@ -1313,7 +1313,7 @@ static void ast_eval_branch(const ASTNode *callNode, int childIndex,
         rawText = &fallbackRaw;
     }
 
-    ast_eval_noeval_legacy_arg(child, noevalNode, rawText, buff, bufc,
+    ast_eval_deferred_region(child, noevalNode, rawText, buff, bufc,
         executor, caller, enactor, eval, cargs, ncargs);
 }
 

@@ -53,12 +53,19 @@ enum ASTNoevalKind {
     ASTNOEVAL_CORBOOL
 };
 
+struct ASTDeferredArg {
+    std::string raw_text;
+    bool is_deferred;
+
+    ASTDeferredArg(std::string_view raw = "", bool deferred = false)
+        : raw_text(raw), is_deferred(deferred) {}
+};
+
 struct ASTNode {
     ASTNodeType type;
     std::string text;
     std::vector<std::unique_ptr<ASTNode>> children;
-    std::vector<std::string> raw_args;
-    std::vector<char> deferred_args;
+    std::vector<ASTDeferredArg> deferred_args; // FUNCCALL arg metadata
     ASTNoevalKind noeval_kind;
     bool parser_known_noeval;
     bool has_close_paren;   // FUNCCALL: true if ')' was found

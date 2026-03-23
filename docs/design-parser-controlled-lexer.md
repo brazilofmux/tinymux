@@ -152,7 +152,12 @@ During function-call parsing:
 - resolve the function name early
 - if the callee is `FN_NOEVAL`, do not fully semantic-tokenize arg
   contents yet
-- record raw arg regions for later
+- record deferred-region metadata for later
+
+Current implementation note:
+
+- `AST_FUNCCALL` now carries per-arg deferred metadata as
+  `ASTDeferredArg { raw_text, is_deferred }`
 
 This is the key parser/lexer handshake.
 
