@@ -86,6 +86,7 @@ existing grpc-web handler.
 
 ### ~~GMCP Synthesis~~
 - **Fixed:** Core.Hello on connect, Core.KeepAlive every 60s, Hydra.Links on state changes. (1b3a6fc)
+- **Enhanced:** GMCP state cache with replay on client attach — vitals/room info replayed to new front-doors and gRPC subscribers. (4d18e7b)
 
 ## Opportunities for Improvement
 
