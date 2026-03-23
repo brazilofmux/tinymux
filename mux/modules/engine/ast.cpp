@@ -635,6 +635,17 @@ static void ast_eval_noeval_legacy_arg(const ASTNode *node,
         text = ast_noeval_pass(inner);
     }
 
+    // The selected branch/body of a FN_NOEVAL function is evaluated
+    // with one outer brace layer stripped. Nested inner braces remain
+    // part of the deferred text.
+    if (  node->type == AST_BRACEGROUP
+       && text.size() >= 2
+       && text.front() == '{'
+       && text.back() == '}')
+    {
+        text = text.substr(1, text.size() - 2);
+    }
+
     // Pass 2: re-tokenize the selected region in EVAL mode and
     // evaluate the resulting subtree directly. This is the first
     // concrete use of the parser-controlled region-parse API.
