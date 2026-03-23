@@ -12,14 +12,11 @@
 
 ## Bugs & Security Risks
 
-### TF Hydra Transport Still Uses Plaintext gRPC
-- **Issue:** The "native gRPC TLS fixed" status is not true for TF. Its Hydra transport still creates the channel with `grpc::InsecureChannelCredentials()`.
-- **Evidence:** `client/tf/src/hydra_connection.cpp:72-80`
-- **Impact:** TF remains the odd client out: Hydra credentials and session tokens are still exposed on any non-local network path.
+### ~~TF Hydra Transport Still Uses Plaintext gRPC~~
+- **Fixed:** TF now uses SslCredentials when world has SSL flag. (3d496b9)
 
-### HTML5 Protobuf Encoder Edge Cases
-- **Issue:** The hand-rolled browser protobuf encoder has been improved but may still have edge cases with zero-valued scalars that are semantically meaningful.
-- **Opportunity:** Replace with generated code or track field presence explicitly.
+### ~~HTML5 Protobuf Encoder Edge Cases~~
+- **Mitigated:** Proto enum shifted to COLOR_UNSPECIFIED=0 so proto3 zero-default is harmless. HTML5 Subscribe explicitly sends ANSI_TRUECOLOR=1. (3d496b9)
 
 ### ~~Android Reconnect `inputChannel` Lifecycle Bug~~
 - **Fixed:** inputChannel is now @Volatile var, replaced with fresh Channel on reconnect. (ffb0026)
@@ -27,10 +24,8 @@
 ### ~~`fetchScrollBack()` Ignores `color_format`~~
 - **Fixed:** Console and Android set color_format = ANSI_TRUECOLOR. (3096196)
 
-### TF `send_naws` Hardcodes `ColorFormat`
-- **Issue:** `HydraConnection::send_naws` always sends `ANSI_TRUECOLOR`.
-- **Impact:** Reseting preferences may revert the color rendering to TrueColor if the user had manually requested another format.
-- **Fix:** Track the current preferred format and use it for all `SetPreferences` messages.
+### ~~TF `send_naws` Hardcodes `ColorFormat`~~
+- **Fixed:** TF now tracks `currentColorFormat_` and uses it in send_naws. (3d496b9)
 
 ### Web Client Uses Legacy Unary/Server-Streaming Instead of GameSession
 - **Issue:** Browser client uses `SendInput` + `Subscribe` instead of the bidi `GameSession`.
