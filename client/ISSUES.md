@@ -30,9 +30,9 @@
 - **Issue:** Protocol exposes `ScrollBackRequest.color_format` but no client sets it.
 - **Opportunity:** When clients fetch scroll-back, they should render at their preferred format.
 
-### Scrollback Fetch and Session Resume Uneven
-- **Issue:** Web persists session tokens and fetches scroll-back. TF fetches on demand. Console and Android have no comparable path.
-- **Opportunity:** Standardize session persistence and reconnect-time scroll-back fetch.
+### ~~Scrollback Fetch on Reconnect~~
+- **Fixed:** Console and Android now call GetScrollBack (200 lines) after successful reconnect. (46ba394)
+- **Remaining:** Session persistence (saving session_id across client restart) is not yet implemented for Console/Android.
 
 ### Create-Account Flow Not Exposed
 - **Issue:** `CreateAccount` RPC exists but no client offers a first-run account creation flow.
