@@ -80,5 +80,5 @@ existing grpc-web handler.
 ### ~~Master Key Management~~
 - **Fixed:** Three key sources: env var (`HYDRA_MASTER_KEY`), file with permission checking, auto-generation on first run. System keystores deferred — not practical for server daemons. (a60cd06)
 
-### Rate Limiting Cleanup
-- **Status:** Per-IP connection limits and login lockout are enforced. `maxScrollbackMemoryMb` is parsed but not enforced (needs per-session memory tracking).
+### ~~Rate Limiting Cleanup~~
+- **Fixed:** All resource limits enforced. `maxScrollbackMemoryMb` now tracked per-session via `ScrollBack::memoryBytes()` with global check in `onBackDoorData()`. (706800347)
