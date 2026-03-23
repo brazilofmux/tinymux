@@ -65,9 +65,8 @@ support to Hydra would give browsers the full `GameSession` experience.
 This would require a Connect-compatible HTTP handler alongside the
 existing grpc-web handler.
 
-### Terminal Capability Reporting
-- **Status:** Partially resolved. `SetPreferences` carries width/height/type on `GameSession` streams. Legacy `Subscribe` does not carry terminal size.
-- **Opportunity:** Forward NAWS from Subscribe callers if they provide it.
+### ~~Terminal Capability Reporting~~
+- **Fixed:** `SetPreferences` on `GameSession` streams + `terminal_width`/`terminal_height` on `SessionRequest` for `Subscribe`. Both forward NAWS to the game. (9033f3d)
 
 ### GMCP Synthesis
 - **Issue:** Hydra only forwards GMCP if both sides support it.
