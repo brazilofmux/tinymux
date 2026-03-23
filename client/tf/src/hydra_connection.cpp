@@ -50,9 +50,11 @@ HydraConnection::HydraConnection(const std::string& world_name,
                                  const std::string& port,
                                  const std::string& username,
                                  const std::string& password,
-                                 const std::string& game_name)
+                                 const std::string& game_name,
+                                 bool use_tls)
     : worldName_(world_name), host_(host), port_(port),
-      username_(username), password_(password), gameName_(game_name) {
+      username_(username), password_(password), gameName_(game_name),
+      useTls_(use_tls) {
     eventFd_ = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     lastRecvTime_ = std::chrono::steady_clock::now();
     lastSendTime_ = lastRecvTime_;
@@ -75,8 +77,13 @@ bool HydraConnection::connect() {
     grpc_ = std::make_unique<GrpcState>();
 
     std::string target = host_ + ":" + port_;
-    grpc_->channel = grpc::CreateChannel(target,
-        grpc::InsecureChannelCredentials());
+    if (useTls_) {
+        grpc_->channel = grpc::CreateChannel(target,
+            grpc::SslCredentials(grpc::SslCredentialsOptions()));
+    } else {
+        grpc_->channel = grpc::CreateChannel(target,
+            grpc::InsecureChannelCredentials());
+    }
     grpc_->stub = hydra::HydraService::NewStub(grpc_->channel);
 
     // Authenticate
@@ -128,7 +135,8 @@ bool HydraConnection::openStream() {
     // Send initial preferences: TrueColor, terminal size
     hydra::ClientMessage prefsMsg;
     auto* prefs = prefsMsg.mutable_preferences();
-    prefs->set_color_format(hydra::ANSI_TRUECOLOR);
+    currentColorFormat_ = hydra::ANSI_TRUECOLOR;
+    prefs->set_color_format(static_cast<hydra::ColorFormat>(currentColorFormat_));
     prefs->set_terminal_width(80);   // TODO: get actual terminal size
     prefs->set_terminal_height(24);
     prefs->set_terminal_type("TitanFugue");
@@ -289,7 +297,8 @@ void HydraConnection::send_naws(uint16_t width, uint16_t height) {
 
     hydra::ClientMessage msg;
     auto* prefs = msg.mutable_preferences();
-    prefs->set_color_format(hydra::ANSI_TRUECOLOR);
+    // Use tracked color format (don't send COLOR_UNSPECIFIED=0 which means "no change")
+    prefs->set_color_format(static_cast<hydra::ColorFormat>(currentColorFormat_));
     prefs->set_terminal_width(width);
     prefs->set_terminal_height(height);
     grpc_->stream->Write(msg);

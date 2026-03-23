@@ -209,8 +209,9 @@ void cmd_connect(App& app, const std::string& args) {
         // password = password, name of first game to connect comes from mfile field
         std::string game = w->mfile;  // repurpose mfile as game name
         conn = std::make_unique<HydraConnection>(
-            w->name, w->host, w->port, w->character, w->password, game);
-        app.terminal.print_system("Connecting to Hydra at " + w->host + ":" + w->port + "...");
+            w->name, w->host, w->port, w->character, w->password, game, w->ssl());
+        app.terminal.print_system("Connecting to Hydra at " + w->host + ":" + w->port
+            + (w->ssl() ? " (TLS)" : "") + "...");
     } else
 #endif
     {

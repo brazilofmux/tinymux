@@ -36,7 +36,8 @@ public:
                     const std::string& port,
                     const std::string& username,
                     const std::string& password,
-                    const std::string& game_name);
+                    const std::string& game_name,
+                    bool use_tls = false);
     ~HydraConnection() override;
 
     HydraConnection(const HydraConnection&) = delete;
@@ -110,6 +111,8 @@ private:
     std::string password_;
     std::string gameName_;      // game to /connect after auth
     std::string sessionId_;     // Hydra persistent session token
+    bool useTls_{false};
+    int currentColorFormat_{1}; // hydra::ANSI_TRUECOLOR (tracks SetPreferences)
 
     // eventfd for waking the poll() loop when output arrives
     int eventFd_ = -1;

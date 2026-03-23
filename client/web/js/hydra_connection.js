@@ -812,6 +812,7 @@ class HydraConnection {
 
         const reqBytes = Proto.encode({
             session_id: this.sessionId,
+            color_format: 1,  // ANSI_TRUECOLOR (new enum: 0=unspecified, 1=truecolor)
             terminal_width: window.innerWidth ? Math.floor(window.innerWidth / 8) : 80,
             terminal_height: window.innerHeight ? Math.floor(window.innerHeight / 18) : 24,
         }, SessionRequestFields);
