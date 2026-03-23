@@ -265,6 +265,27 @@ void SessionManager::showGameMenu(HydraSession& session,
         }
     }
     sendToClient(fdHandle, menu);
+
+    // Replay cached GMCP state to this front-door (if GMCP-enabled)
+    auto fdIt = frontDoors_.find(fdHandle);
+    if (fdIt != frontDoors_.end() && fdIt->second.gmcpEnabled) {
+        for (const auto& [pkg, json] : session.gmcpCache) {
+            safeWrite(fdHandle, buildGmcpFrame(pkg + " " + json));
+        }
+    }
+}
+
+void SessionManager::replayGmcpCache(HydraSession& session,
+                                      std::shared_ptr<HydraSession::SubscriberQueue> sq) {
+    // Replay cached GMCP state into a gRPC subscriber queue
+    for (const auto& [pkg, json] : session.gmcpCache) {
+        HydraSession::GmcpItem item;
+        item.package = pkg;
+        item.json = json;
+        item.linkNumber = session.activeLink < session.links.size()
+            ? static_cast<int>(session.activeLink) + 1 : 0;
+        sq->gmcp.push(std::move(item));
+    }
 }
 
 // ---- Reverse map helper ----
@@ -1259,6 +1280,16 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
 
     // Forward GMCP messages to all GMCP-enabled front-doors
     for (const auto& gm : gmcpMsgs) {
+        // Cache GMCP state for replay on reconnect
+        {
+            std::string pkg;
+            size_t sp = gm.payload.find(' ');
+            if (sp != std::string::npos) {
+                pkg = gm.payload.substr(0, sp);
+                session->gmcpCache[pkg] = gm.payload.substr(sp + 1);
+            }
+        }
+
         std::string frame = buildGmcpFrame(gm.payload);
         for (auto h : session->frontDoors) {
             auto fdIt = frontDoors_.find(h);

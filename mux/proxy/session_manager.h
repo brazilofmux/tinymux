@@ -67,6 +67,11 @@ struct HydraSession {
     // Used for back-door TTYPE negotiation when GANL supports it.
     std::string terminalType{"Hydra"};
 
+    // GMCP state cache — last payload per package.  Replayed to new
+    // front-doors and gRPC subscribers on attach so vitals/room info
+    // aren't blank after reconnect.
+    std::map<std::string, std::string> gmcpCache;
+
     // Pending link reconnect info — populated on eager restore when
     // scrollbackKey is not yet available.  Links are reconnected when
     // the player authenticates and the key becomes available.
@@ -240,6 +245,10 @@ public:
     // Mark a front-door connection as needing TLS.
     void setFrontDoorTls(ganl::ConnectionHandle handle,
                          ganl::SecureTransport* transport);
+
+    // Replay cached GMCP state into a gRPC subscriber queue.
+    void replayGmcpCache(HydraSession& session,
+                         std::shared_ptr<HydraSession::SubscriberQueue> sq);
 
     void runTimers();
     void shutdownSessions();

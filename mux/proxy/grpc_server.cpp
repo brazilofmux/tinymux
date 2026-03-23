@@ -328,6 +328,18 @@ public:
             sq = q;
         }
 
+        // Replay cached GMCP state into the new subscriber's queue
+        {
+            auto replayFuture = workQueue_.enqueue<bool>(
+                [sid, sq](SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) -> bool {
+                    HydraSession* s = sm.findByPersistId(sid);
+                    if (!s) return false;
+                    sm.replayGmcpCache(*s, sq);
+                    return true;
+                });
+            replayFuture.get();
+        }
+
         // Reader thread: process client input
         std::atomic<bool> done{false};
         std::thread reader([&]() {
