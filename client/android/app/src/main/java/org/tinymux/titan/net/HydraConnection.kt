@@ -198,6 +198,9 @@ class HydraConnection(
                         addScrollback(reconMsg)
                         launch(mainDispatcher) { onLine?.invoke(reconMsg) }
 
+                        // Fetch scroll-back to restore missed output
+                        fetchScrollBack(stub, mainDispatcher)
+
                         newResponses.collect { msg2 ->
                             dispatchServerMessage(msg2, mainDispatcher)
                         }
@@ -331,6 +334,33 @@ class HydraConnection(
             connected = false
             "[Hydra] Session detached. Reconnect to resume."
         } catch (e: Exception) { "[Hydra] Error: ${e.message}" }
+    }
+
+    private suspend fun CoroutineScope.fetchScrollBack(
+        stub: HydraServiceCoroutineStub, mainDispatcher: CoroutineDispatcher
+    ) {
+        try {
+            val resp = stub.getScrollBack(
+                ScrollBackRequest.newBuilder()
+                    .setSessionId(sessionId)
+                    .setMaxLines(200)
+                    .build()
+            )
+            if (resp.linesList.isNotEmpty()) {
+                val header = "-- scroll-back (${resp.linesCount} lines) --"
+                addScrollback(header)
+                launch(mainDispatcher) { onLine?.invoke(header) }
+                for (line in resp.linesList) {
+                    addScrollback(line.text)
+                    launch(mainDispatcher) { onLine?.invoke(line.text) }
+                }
+                val footer = "-- end scroll-back --"
+                addScrollback(footer)
+                launch(mainDispatcher) { onLine?.invoke(footer) }
+            }
+        } catch (_: Exception) {
+            // Non-fatal — scroll-back is optional
+        }
     }
 
     private fun CoroutineScope.dispatchServerMessage(

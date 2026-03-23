@@ -256,6 +256,28 @@ void HydraConnection::readerLoop() {
     }
 }
 
+void HydraConnection::fetchScrollBack() {
+    if (!grpc_ || !grpc_->stub || sessionId_.empty()) return;
+    try {
+        ClientContext ctx;
+        ctx.AddMetadata("authorization", sessionId_);
+        hydra::ScrollBackRequest req;
+        req.set_session_id(sessionId_);
+        req.set_max_lines(200);  // fetch last 200 lines on reconnect
+        hydra::ScrollBackResponse resp;
+        Status status = grpc_->stub->GetScrollBack(&ctx, req, &resp);
+        if (status.ok() && resp.lines_size() > 0) {
+            pushOutput("-- scroll-back (" + std::to_string(resp.lines_size()) + " lines) --");
+            for (int i = 0; i < resp.lines_size(); i++) {
+                pushOutput(resp.lines(i).text());
+            }
+            pushOutput("-- end scroll-back --");
+        }
+    } catch (...) {
+        // Non-fatal — scroll-back is optional
+    }
+}
+
 void HydraConnection::attemptReconnect() {
     if (reconnecting_.exchange(true)) return;
 
@@ -283,6 +305,9 @@ void HydraConnection::attemptReconnect() {
             connected_.store(true);
             reconnecting_.store(false);
             pushOutput("[Hydra] Reconnected (attempt " + std::to_string(attempt) + ")");
+
+            // Fetch scroll-back to restore missed output
+            fetchScrollBack();
 
             // Re-enter read loop
             hydra::ServerMessage msg;

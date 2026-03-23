@@ -77,6 +77,7 @@ private:
     void signalOutput();
     void pushOutput(const std::string& line);
     void attemptReconnect();
+    void fetchScrollBack();
 
     static constexpr int MAX_RECONNECT_ATTEMPTS = 5;
     static constexpr int RECONNECT_DELAY_SECS = 3;
