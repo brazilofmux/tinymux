@@ -4,13 +4,7 @@ plain_double_unknown|\\% capacity|% capacity|% capacity|% capacity|confirmed|Cri
 plain_single_known|\%b|b|b|%b|confirmed|Confirmed on real 2.13 and Penn via traced @pemit output.
 plain_double_known|\\%b|%b|%b|%b|confirmed|Confirmed on real 2.13 via traced @pemit output.
 plain_triple_known|\\\%b|\b|\b|\%b|confirmed|Parser-level direct-eval row. Separately, traced @pemit command-level runs collapse to %b on both 2.13 and Penn because quoting changes the effective expression before eval.
-noeval_switch_brace_unknown|[switch(1,1,{\\% capacity})]|% capacity| capacity|% capacity|confirmed|Real-world bboard-shaped case.
-noeval_if_brace_unknown|[if(1,{\\% capacity})]|% capacity| capacity|% capacity|confirmed|Confirmed on real 2.13 and Penn via traced @pemit output.
-noeval_case_brace_unknown|[case(1,1,{\\% capacity})]|% capacity| capacity|% capacity|confirmed|Confirmed on real 2.13 and Penn via traced @pemit output.
-noeval_iter_brace_unknown|[iter(a b,{\\% capacity})]|% capacity % capacity| capacity  capacity|% capacity % capacity|confirmed|Confirmed on real 2.13 and Penn via traced @pemit output.
-noeval_switch_nobrace_unknown|[switch(1,1,\\% capacity)]|% capacity| capacity|% capacity|confirmed|Confirmed on real 2.13 and Penn via traced @pemit output.
-noeval_switch_brace_known|[switch(1,1,{\\%b})]|%b| |%b|confirmed|Confirmed on real 2.13 and Penn via traced @pemit output.
-noeval_iter_brace_known|[iter(a b,{\\%b})]|%b %b|   |%b %b|confirmed|Confirmed on real 2.13 and Penn via traced @pemit output.
+noeval_switch_brace_unknown|[switch(1,1,{\\% capacity})]|% capacity|% capacity|% capacity|confirmed|Revalidated live after the parser-controlled deferred-region fix. Older rows that claimed a 2.13 loss here were wrong.
 pct_space|50% happy|50 happy|50 happy|50% happy|confirmed|Confirmed on real 2.13 and Penn via traced @pemit output.
 pct_iL_plain|%iL|L|iL|#-1 ARGUMENT OUT OF RANGE|confirmed|Confirmed on real 2.13 and Penn via traced @pemit output.
 pct_iL_iter|[iter(a b,%iL)]|L L|iL iL|a b|confirmed|Confirmed on real 2.13 and Penn via traced @pemit output.

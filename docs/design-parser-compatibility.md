@@ -16,7 +16,7 @@ boundaries, such as `]\\\\% capacity`.
 The study tool now has a verified minimal reproduction of that case:
 
 - `mux214`: `[switch(1,1,{\\% capacity})]` -> `% capacity`
-- `mux213`: `[switch(1,1,{\\% capacity})]` -> ` capacity`
+- `mux213`: `[switch(1,1,{\\% capacity})]` -> `% capacity`
 - `penn`: `[switch(1,1,{\\% capacity})]` -> `% capacity`
 
 ## Key Finding
@@ -50,9 +50,10 @@ This means 2.13 behavior is shaped by the interaction of:
 - later `%` dispatch on the surviving character stream
 - possible multi-pass evaluation around brackets and function args
 
-The real-engine tests now show that 2.13 differs from 2.14/Penn most
-clearly in noeval branch/body contexts such as `if`, `switch`, `case`,
-and `iter`, where `%` can disappear from forms like `\\% capacity`.
+The real-engine tests now show that noeval branch/body behavior is where
+the parser-level evidence must be handled most carefully. Some older
+study rows in that area were wrong, so deferred `%` cases must be driven
+by live-validated parser inputs rather than inherited assumptions.
 
 ### TinyMUX 2.14 AST
 
@@ -112,27 +113,22 @@ differences:
 | `\\% capacity` | `% capacity` | `% capacity` | `% capacity` |
 | `\% capacity` | ` capacity` | ` capacity` | `% capacity` |
 | `% capacity` | ` capacity` | ` capacity` | `% capacity` |
-| `[switch(1,1,{\\% capacity})]` | `% capacity` | ` capacity` | `% capacity` |
-| `[if(1,{\\% capacity})]` | `% capacity` | ` capacity` | `% capacity` |
-| `[case(1,1,{\\% capacity})]` | `% capacity` | ` capacity` | `% capacity` |
-| `[switch(1,1,\\% capacity)]` | `% capacity` | ` capacity` | `% capacity` |
-| `[iter(a b,{\\% capacity})]` | `% capacity % capacity` | ` capacity  capacity` | `% capacity % capacity` |
+| `[switch(1,1,{\\% capacity})]` | `% capacity` | `% capacity` | `% capacity` |
 | `%wa` | `wa` | `wa` | empty in tested context |
 | `%iL` | `L` | `iL` | `#-1 ARGUMENT OUT OF RANGE` |
 | `[iter(a b,%iL)]` | `L L` | `iL iL` | `a b` |
 | `%=` | `=` | `=` | empty in tested context |
 | `%xg` | MUX color form | MUX color form | `thing` |
 | `%cg` | MUX color form | MUX color form | `@pemit me=%cgg` |
-| `[switch(1,1,{\\%b})]` | `%b` | ` ` | `%b` |
-| `[iter(a b,{\\%b})]` | `%b %b` | `   ` | `%b %b` |
 
 This matrix matters because it separates three different causes:
 
 - tokenizer grammar differences, such as Penn-only `%wa`, `%xg`, and
   `%cg`
 - substitution-table differences, especially Penn `% `
-- noeval branch/body behavior, where 2.13 diverges from both 2.14 and
-  Penn on the tested `% capacity` cases
+- noeval branch/body behavior, which must be validated on parser-level
+  inputs rather than inferred from stale study rows or command-level
+  quoting
 
 Important: the `mux214` column here reflects the parser-study oracle in
 `parser/`, not a claim that production `mux/modules/engine/ast.cpp`

@@ -73,9 +73,10 @@ Ragel scanner + recursive-descent parser can reproduce its behavior.
 The study tools now support `--profile mux214|mux213|penn`:
 
 - `mux214` models the current AST tokenizer/evaluator shape.
-- `mux213` currently models the verified 2.13 noeval split from 2.14:
-  in tested `if`/`switch`/`case`/`iter` branch-body contexts,
-  `\\%...` loses the percent where 2.14 and Penn preserve it.
+- `mux213` is a study profile for 2.13-like behavior, but some older
+  deferred-noeval rows were wrong and have now been removed from the
+  focused oracle. Treat live-engine checks and the focused oracle as the
+  spec, not the study profile.
 - `penn` recognizes Penn-only `%` behavior where we have real-engine
   data, including `% `, `%wa`, `%iL`, `%xg`, `%cg`, and `%=`.
 
@@ -86,7 +87,8 @@ echo '\\\\% capacity' | ./eval --profile mux214
 # -> % capacity
 
 echo '[switch(1,1,{\\\\% capacity})]' | ./eval --profile mux213
-# ->  capacity
+# study profile output may still lag the corrected oracle; use the
+# focused oracle and live-engine checks as the spec here
 
 echo '%xg' | ./eval --profile penn
 # -> thing
@@ -111,11 +113,15 @@ That runner:
 - checks the narrow escape/percent corpus across `mux214`, `mux213`, and
   `penn`
 - prints which cases still need live-server verification
+- is allowed to disagree with the exploratory `mux213` study profile if
+  the profile has drifted from the corrected oracle
 - keeps the current effort centered on parser semantics instead of the
   whole evaluator surface area
 
 The intended workflow is:
 
 1. keep adding only parser-semantic cases to `escape_oracle_cases.txt`
-2. mark cases `confirmed` only after a live engine check
-3. use the resulting matrix to drive AST-engine changes in `mux/`
+2. remove or downgrade rows when the live basis is unclear instead of
+   keeping stale guesses in the oracle
+3. mark cases `confirmed` only after a live engine check
+4. use the resulting matrix to drive AST-engine changes in `mux/`

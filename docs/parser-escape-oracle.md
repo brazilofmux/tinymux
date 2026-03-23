@@ -42,6 +42,10 @@ That means the oracle should stay focused on:
 - `confirmed`: checked against a running real engine and reflected in the corpus
 - `needs_live`: local model is useful, but still needs a live-server checksum
 
+If a row turns out to be based on a bad translation or a stale study
+assumption, remove it or downgrade it. Do not keep known-bad rows in the
+oracle just because they are old.
+
 The current 2.13 and Penn confirmations were captured from traced `@pemit`
 runs and recorded only in sanitized form. Player names and dbrefs are
 intentionally not preserved here.
@@ -81,14 +85,17 @@ Requirements:
 Penn can inform this mode, but Penn behavior should not be smuggled into
 the 2.13-compatibility target.
 
-## Immediate Next Step
+## Current Cleanup
 
-Use the oracle corpus to close the smallest set of live unknowns before
-touching more production code.
+The focused oracle was recently pruned after some deferred-NOEVAL rows
+turned out to be wrong. In particular, the old claim that TinyMUX 2.13
+lost the percent for `[switch(1,1,{\\% capacity})]` was false; that row
+has been revalidated live and corrected.
 
-The focused oracle corpus is now fully pinned for the currently tracked
-rows. Further live checks should only be added when a new divergence is
-discovered, not as open-ended exploration.
+The current rule is simple:
 
-With the current corpus pinned, the AST-engine work can proceed one
-divergence at a time with a clear oracle behind it.
+- keep rows only when their parser-level input is clear
+- correct rows when live validation disproves them
+- remove rows when the live basis is not trustworthy enough yet
+
+That leaves a smaller oracle, but it is a cleaner specification target.

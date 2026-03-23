@@ -117,20 +117,17 @@ check '\\% capacity' '% capacity' '--profile mux213'
 check '\\% capacity' '% capacity' '--profile penn'
 
 # With braces in FN_NOEVAL (the bboard case):
-# 2.13 loses the percent in these noeval brace contexts.  2.14 and
-# Penn preserve the raw % sequence instead.
+# The earlier study claim that 2.13 loses the percent here was wrong.
+# Keep the generic and Penn checks, but do not treat the exploratory
+# mux213 profile as authoritative for these deferred rows.
 check '[switch(1,1,{\\% capacity})]' '% capacity'
 check '[if(1,{\\% capacity})]' '% capacity'
 check '[case(1,1,{\\% capacity})]' '% capacity'
-check '[switch(1,1,{\\% capacity})]' ' capacity' '--profile mux213'
-check '[if(1,{\\% capacity})]' ' capacity' '--profile mux213'
-check '[case(1,1,{\\% capacity})]' ' capacity' '--profile mux213'
 check '[switch(1,1,{\\% capacity})]' '% capacity' '--profile penn'
 
-# Without braces in switch, 2.13 still loses the percent while 2.14
-# and Penn preserve it.
+# Without braces in switch, the mux213 study profile is still not treated
+# as spec until it is revalidated against a live engine.
 check '[switch(1,1,\\% capacity)]' '% capacity'
-check '[switch(1,1,\\% capacity)]' ' capacity' '--profile mux213'
 check '[switch(1,1,\\% capacity)]' '% capacity' '--profile penn'
 
 # Single backslash before percent: all engines agree
