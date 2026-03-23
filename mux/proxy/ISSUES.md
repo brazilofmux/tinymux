@@ -77,8 +77,8 @@ existing grpc-web handler.
 ### ~~Persistence of OutputQueue~~
 - **Mitigated:** The OutputQueue itself is transient by design (it's a delivery buffer, not storage). The crash window is now narrowed: sessions with gRPC subscribers flush scroll-back every 15s instead of 60s, and sessions flush immediately when the last front-door disconnects. Graceful shutdown flushes everything. The remaining gap is at most 15s of output during an ungraceful crash, which is acceptable. (1b3a6fc)
 
-### Master Key Management
-- **Opportunity:** Integrate with system keystores (Linux Secret Service, macOS Keychain, Windows DPAPI) instead of file-based master key.
+### ~~Master Key Management~~
+- **Fixed:** Three key sources: env var (`HYDRA_MASTER_KEY`), file with permission checking, auto-generation on first run. System keystores deferred — not practical for server daemons. (a60cd06)
 
 ### Rate Limiting Cleanup
 - **Status:** Per-IP connection limits and login lockout are enforced. `maxScrollbackMemoryMb` is parsed but not enforced (needs per-session memory tracking).
