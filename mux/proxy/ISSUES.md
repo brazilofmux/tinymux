@@ -11,13 +11,9 @@
 - ~~Config Parser Ignores TLS Material~~ — Fixed: TLS listener infra wired into GANL (8237a3a)
 - ~~Unsafe Direct send() Calls~~ — Fixed: all writes routed through GANL postWrite via safeWrite() (3dd350f)
 - ~~GMCP Frame Manual Building~~ — Fixed: centralized in telnet_utils.h (bc01d39)
+- ~~Restored Session Scrollback Gap~~ — Fixed: links deferred until player login provides key (541d842)
 
 ## Bugs & Technical Debt
-
-### Restored Detached Sessions Cannot Persist New Scrollback
-- **Issue:** Eagerly restored sessions have no `scrollbackKey` (requires player login). New game output received before login only lives in memory.
-- **Impact:** A second Hydra crash loses output generated between restarts.
-- **Opportunity:** Pause restored links until player authenticates, or persist an encrypted session key.
 
 ### Naming Inconsistency
 - **Issue:** Sessions are identified by `persistId` (string), `HydraSessionId` (uint64), and SQLite `id` (TEXT) in different contexts.
