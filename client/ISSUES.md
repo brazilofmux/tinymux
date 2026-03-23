@@ -34,9 +34,8 @@
 - **Fixed:** Console and Android now call GetScrollBack (200 lines) after successful reconnect. (46ba394)
 - **Remaining:** Session persistence (saving session_id across client restart) is not yet implemented for Console/Android.
 
-### Create-Account Flow Not Exposed
-- **Issue:** `CreateAccount` RPC exists but no client offers a first-run account creation flow.
-- **Opportunity:** Add account creation UI for gRPC-only clients.
+### ~~Create-Account Flow Not Exposed~~
+- **Fixed:** /hcreate command added to Console, Win32GUI, and Android. (098c2c2)
 
 ### GMCP Support Is Raw JSON Only
 - **Issue:** All clients format GMCP as `[GMCP Package] {json}` text.
