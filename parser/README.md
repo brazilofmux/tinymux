@@ -13,6 +13,9 @@ For end-to-end traced command behavior, see
 - `test_corpus.txt` — Test expressions
 - `escape_oracle_cases.txt` — focused cross-profile escape corpus
 - `run_escape_oracle.sh` — runner for the focused escape corpus
+- `borrowed-stream-semantics.md` — reduced 2.13/Penn parser mechanisms
+- `stream_passes.cpp` — tiny pass-by-pass stream vs frozen-token model
+- `hammer_refrozen.sh` — prints core deferred-boundary cases across models
 - `Makefile` — Build rules
 
 ## Usage
@@ -25,6 +28,9 @@ echo '[setq(0,hello)]%q0 world' | ./parse
 echo '\\\\% capacity' | ./eval --profile mux214
 echo '[switch(1,1,{\\\\% capacity})]' | ./eval --profile mux213
 echo '%xg' | ./eval --profile penn
+echo '\\\\% capacity' | ./stream_passes --profile mux213 --model stream --passes noeval,eval
+echo '\\\\% capacity' | ./stream_passes --profile mux213 --model frozen --passes noeval,eval
+./hammer_refrozen.sh
 ./run_escape_oracle.sh
 ```
 

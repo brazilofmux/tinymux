@@ -43,17 +43,37 @@ struct ASTNode {
     ASTNodeType type;
     std::string text;
     std::vector<std::unique_ptr<ASTNode>> children;
+    std::vector<std::string> raw_args;
+    bool parser_known_noeval;
     bool has_close_paren;   // FUNCCALL: true if ')' was found
     bool has_close_bracket; // EVALBRACKET: true if ']' was found
     bool has_close_brace;   // BRACEGROUP: true if '}' was found
 
     ASTNode(ASTNodeType t, std::string_view s = "")
-        : type(t), text(s), has_close_paren(true),
+        : type(t), text(s), parser_known_noeval(false), has_close_paren(true),
           has_close_bracket(true), has_close_brace(true) {}
 
     void addChild(std::unique_ptr<ASTNode> child) {
         children.push_back(std::move(child));
     }
+};
+
+// ---------------------------------------------------------------
+// Source regions and lexer modes
+// ---------------------------------------------------------------
+
+enum ASTLexMode {
+    ASTLEX_EVAL,
+    ASTLEX_NOEVAL,
+    ASTLEX_STRUCTURAL
+};
+
+struct ASTSourceSpan {
+    const UTF8 *input;
+    size_t nLen;
+
+    ASTSourceSpan(const UTF8 *p = nullptr, size_t n = 0)
+        : input(p), nLen(n) {}
 };
 
 // ---------------------------------------------------------------
@@ -90,6 +110,16 @@ struct ASTToken {
 //
 std::vector<ASTToken> ast_tokenize(const UTF8 *input, size_t nLen);
 
+// Tokenize a MUX expression region under an explicit lexer mode.
+//
+// Phase 1 note:
+// This is currently a naming/API scaffold. The initial implementation
+// may still share behavior with the legacy whole-input tokenizer until
+// parser-controlled mode switching is wired through.
+//
+std::vector<ASTToken> ast_tokenize_mode(const UTF8 *input, size_t nLen,
+                                        ASTLexMode mode);
+
 // Parse a token stream into an AST.
 //
 std::unique_ptr<ASTNode> ast_parse(const std::vector<ASTToken> &tokens);
@@ -98,6 +128,12 @@ std::unique_ptr<ASTNode> ast_parse(const std::vector<ASTToken> &tokens);
 // Convenience wrapper: tokenize + parse.
 //
 std::unique_ptr<ASTNode> ast_parse_string(const UTF8 *input, size_t nLen);
+
+// Parse a source region directly into an AST under an explicit lexer
+// mode. This is the entrypoint intended for deferred-region reparsing.
+//
+std::unique_ptr<ASTNode> ast_parse_region(ASTSourceSpan span,
+                                          ASTLexMode mode);
 
 // Reconstruct the raw source text from an AST subtree.
 //

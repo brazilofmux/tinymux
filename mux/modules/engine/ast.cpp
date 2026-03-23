@@ -51,6 +51,42 @@ private:
             || m_tokens[m_pos].type == ASTTOK_EOF;
     }
 
+    static bool parser_lookup_builtin_noeval(std::string_view funcName)
+    {
+        UTF8 TempFun[LBUF_SIZE];
+        size_t nName = funcName.size();
+        if (nName >= LBUF_SIZE)
+        {
+            nName = LBUF_SIZE - 1;
+        }
+        memcpy(TempFun, funcName.data(), nName);
+        TempFun[nName] = '\0';
+
+        size_t nUpper;
+        UTF8 *pUpper = mux_strupr(TempFun, nUpper);
+        if (nUpper >= LBUF_SIZE)
+        {
+            nUpper = LBUF_SIZE - 1;
+        }
+        memcpy(TempFun, pUpper, nUpper);
+        TempFun[nUpper] = '\0';
+
+        std::vector<UTF8> name_key(TempFun, TempFun + nUpper);
+        const auto it = mudstate.builtin_functions.find(name_key);
+        return it != mudstate.builtin_functions.end()
+            && (it->second->flags & FN_NOEVAL) != 0;
+    }
+
+    std::string rawTextFromTokens(size_t start, size_t end) const
+    {
+        std::string raw;
+        for (size_t i = start; i < end && i < m_tokens.size(); i++)
+        {
+            raw.append(m_tokens[i].text.data(), m_tokens[i].text.size());
+        }
+        return raw;
+    }
+
     std::unique_ptr<ASTNode> parseSequence(
         bool stopRP, bool stopRB, bool stopRC, bool stopCM)
     {
@@ -148,6 +184,7 @@ private:
     {
         ASTToken funcTok = advance();
         auto call = std::make_unique<ASTNode>(AST_FUNCCALL, funcTok.text);
+        call->parser_known_noeval = parser_lookup_builtin_noeval(funcTok.text);
 
         if (atEnd() || peek().type != ASTTOK_LPAREN)
         {
@@ -180,13 +217,23 @@ private:
         //
         bool inBracket = (m_bracketDepth > 0);
         bool inBrace = (m_braceDepth > 0);
+        size_t argStart = m_pos;
         auto arg = parseSequence(true, inBracket, inBrace, true);
+        if (call->parser_known_noeval)
+        {
+            call->raw_args.push_back(rawTextFromTokens(argStart, m_pos));
+        }
         call->addChild(std::move(arg));
 
         while (!atEnd() && peek().type == ASTTOK_COMMA)
         {
             advance();
+            argStart = m_pos;
             arg = parseSequence(true, inBracket, inBrace, true);
+            if (call->parser_known_noeval)
+            {
+                call->raw_args.push_back(rawTextFromTokens(argStart, m_pos));
+            }
             call->addChild(std::move(arg));
         }
 
@@ -250,10 +297,35 @@ std::unique_ptr<ASTNode> ast_parse(const std::vector<ASTToken> &tokens)
     return parser.parse();
 }
 
-std::unique_ptr<ASTNode> ast_parse_string(const UTF8 *input, size_t nLen)
+std::vector<ASTToken> ast_tokenize_mode(const UTF8 *input, size_t nLen,
+                                        ASTLexMode mode)
 {
     auto tokens = ast_tokenize(input, nLen);
+
+    if (mode == ASTLEX_NOEVAL)
+    {
+        for (auto &tok : tokens)
+        {
+            if (tok.type == ASTTOK_PCT)
+            {
+                tok.type = ASTTOK_LIT;
+            }
+        }
+    }
+
+    return tokens;
+}
+
+std::unique_ptr<ASTNode> ast_parse_region(ASTSourceSpan span,
+                                          ASTLexMode mode)
+{
+    auto tokens = ast_tokenize_mode(span.input, span.nLen, mode);
     return ast_parse(tokens);
+}
+
+std::unique_ptr<ASTNode> ast_parse_string(const UTF8 *input, size_t nLen)
+{
+    return ast_parse_region(ASTSourceSpan(input, nLen), ASTLEX_EVAL);
 }
 
 // ---------------------------------------------------------------
@@ -503,6 +575,12 @@ static std::string ast_noeval_pass(const ASTNode *node)
     return "";
 }
 
+// Forward declaration.
+//
+static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
+    dbref executor, dbref caller, dbref enactor,
+    int eval, const UTF8 *cargs[], int ncargs);
+
 // Evaluate a selected argument from a FN_NOEVAL function using the
 // 2.13-style noeval pass followed by reparse/re-eval.
 //
@@ -510,7 +588,8 @@ static std::string ast_noeval_pass(const ASTNode *node)
 //   Pass 1: noeval -- strip one layer of backslash (ast_noeval_pass)
 //   Pass 2: eval -- re-tokenize the result and evaluate it
 //
-static void ast_eval_noeval_legacy_arg(const ASTNode *node, UTF8 *buff,
+static void ast_eval_noeval_legacy_arg(const ASTNode *node,
+    const std::string *rawText, UTF8 *buff,
     UTF8 **bufc, dbref executor, dbref caller, dbref enactor,
     int eval, const UTF8 *cargs[], int ncargs)
 {
@@ -519,30 +598,61 @@ static void ast_eval_noeval_legacy_arg(const ASTNode *node, UTF8 *buff,
         return;
     }
 
-    const ASTNode *inner = node;
-    if (node->type == AST_BRACEGROUP && !node->children.empty())
+    std::string text;
+
+    if (rawText)
     {
-        inner = node->children[0].get();
+        auto noevalAst = ast_parse_region(
+            ASTSourceSpan(reinterpret_cast<const UTF8 *>(rawText->c_str()),
+                          rawText->size()),
+            ASTLEX_NOEVAL);
+        if (!noevalAst)
+        {
+            return;
+        }
+
+        UTF8 *temp = alloc_lbuf("ast_noeval_region");
+        UTF8 *tp = temp;
+        ast_eval_node(noevalAst.get(), temp, &tp,
+            executor, caller, enactor,
+            ((eval & ~(EV_EVAL | EV_TOP | EV_FMAND | EV_STRIP_CURLY | EV_FCHECK))
+                | EV_NOFCHECK),
+            cargs, ncargs);
+        *tp = '\0';
+        text.assign(reinterpret_cast<const char *>(temp), tp - temp);
+        free_lbuf(temp);
+    }
+    else
+    {
+        const ASTNode *inner = node;
+        if (node->type == AST_BRACEGROUP && !node->children.empty())
+        {
+            inner = node->children[0].get();
+        }
+
+        // Fallback path for callers that do not yet preserve a raw
+        // deferred region: produce text from the existing AST.
+        text = ast_noeval_pass(inner);
     }
 
-    // Pass 1: produce text with one backslash layer stripped.
+    // Pass 2: re-tokenize the selected region in EVAL mode and
+    // evaluate the resulting subtree directly. This is the first
+    // concrete use of the parser-controlled region-parse API.
     //
-    std::string text = ast_noeval_pass(inner);
+    auto reparsed = ast_parse_region(
+        ASTSourceSpan(reinterpret_cast<const UTF8 *>(text.c_str()), text.size()),
+        ASTLEX_EVAL);
+    if (!reparsed)
+    {
+        return;
+    }
 
-    // Pass 2: re-tokenize and evaluate.
-    //
-    mux_exec(reinterpret_cast<const UTF8 *>(text.c_str()), text.size(),
-        buff, bufc, executor, caller, enactor,
+    ast_eval_node(reparsed.get(), buff, bufc,
+        executor, caller, enactor,
         (eval & ~(EV_TOP | EV_FMAND | EV_STRIP_CURLY))
             | EV_EVAL | EV_FCHECK,
         cargs, ncargs);
 }
-
-// Forward declaration.
-//
-static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
-    dbref executor, dbref caller, dbref enactor,
-    int eval, const UTF8 *cargs[], int ncargs);
 
 static bool ast_is_malformed_qsubst(const ASTNode *node)
 {
@@ -1124,11 +1234,21 @@ static void ast_eval_subst(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 // ##/#@/#$ are resolved natively as AST_SUBST nodes at eval time
 // (from mudstate.itext/inum/switch_token).
 //
-static void ast_eval_branch(const ASTNode *child, UTF8 *buff, UTF8 **bufc,
+static void ast_eval_branch(const ASTNode *callNode, int childIndex,
+    const ASTNode *child, UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
     int eval, const UTF8 *cargs[], int ncargs)
 {
-    ast_eval_noeval_legacy_arg(child, buff, bufc,
+    const std::string *rawText = nullptr;
+    if (  callNode
+       && callNode->parser_known_noeval
+       && 0 <= childIndex
+       && childIndex < static_cast<int>(callNode->raw_args.size()))
+    {
+        rawText = &callNode->raw_args[childIndex];
+    }
+
+    ast_eval_noeval_legacy_arg(child, rawText, buff, bufc,
         executor, caller, enactor, eval, cargs, ncargs);
 }
 
@@ -1200,12 +1320,12 @@ static void ast_noeval_ifelse(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 
     if (xlate(lbuff))
     {
-        ast_eval_branch(node->children[1].get(), buff, bufc,
+        ast_eval_branch(node, 1, node->children[1].get(), buff, bufc,
             executor, caller, enactor, eval, cargs, ncargs);
     }
     else if (nfargs >= 3)
     {
-        ast_eval_branch(node->children[2].get(), buff, bufc,
+        ast_eval_branch(node, 2, node->children[2].get(), buff, bufc,
             executor, caller, enactor, eval, cargs, ncargs);
     }
 
@@ -1253,7 +1373,7 @@ static void ast_noeval_switch(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
                      reinterpret_cast<char *>(mbuff)) == 0)
         {
             free_lbuf(tbuff);
-            ast_eval_branch(node->children[i + 1].get(), buff, bufc,
+            ast_eval_branch(node, i + 1, node->children[i + 1].get(), buff, bufc,
                 executor, caller, enactor, eval, cargs, ncargs);
             mudstate.switch_token = saved_switch;
             free_lbuf(mbuff);
@@ -1266,7 +1386,7 @@ static void ast_noeval_switch(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     //
     if (i < nfargs)
     {
-        ast_eval_branch(node->children[i].get(), buff, bufc,
+        ast_eval_branch(node, i, node->children[i].get(), buff, bufc,
             executor, caller, enactor, eval, cargs, ncargs);
     }
 
@@ -1315,7 +1435,7 @@ static void ast_noeval_switchall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
                      reinterpret_cast<char *>(mbuff)) == 0)
         {
             bMatched = true;
-            ast_eval_branch(node->children[i + 1].get(), buff, bufc,
+            ast_eval_branch(node, i + 1, node->children[i + 1].get(), buff, bufc,
                 executor, caller, enactor, eval, cargs, ncargs);
         }
     }
@@ -1325,7 +1445,7 @@ static void ast_noeval_switchall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     //
     if (!bMatched && i < nfargs)
     {
-        ast_eval_branch(node->children[i].get(), buff, bufc,
+        ast_eval_branch(node, i, node->children[i].get(), buff, bufc,
             executor, caller, enactor, eval, cargs, ncargs);
     }
 
@@ -1463,16 +1583,11 @@ static void ast_noeval_iter(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             mudstate.inum[mudstate.in_loop - 1] = number;
         }
 
-        // Evaluate the body subtree directly. ## and #@ resolve
-        // natively from mudstate.itext/inum.
-        //
-        // Note: iter() body is not a noeval branch — evaluate directly.
-        // ast_eval_branch would route through the two-pass noeval→eval
-        // path intended for switch/if branches.
-        //
-        ast_eval_node(node->children[1].get(), buff, bufc,
-            executor, caller, enactor,
-            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
+        // iter() body is collected through the FN_NOEVAL arg path and
+        // then re-evaluated per item. Preserve that boundary by
+        // routing through the deferred branch helper as well.
+        ast_eval_branch(node, 1, node->children[1].get(), buff, bufc,
+            executor, caller, enactor, eval, cargs, ncargs);
     }
 
     mudstate.in_loop--;
@@ -1840,7 +1955,16 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 
                     if (i < nfargs - 1 || nParsed <= nfargs)
                     {
-                        std::string raw = ast_raw_text(node->children[i].get());
+                        std::string raw;
+                        if (  node->parser_known_noeval
+                           && i < static_cast<int>(node->raw_args.size()))
+                        {
+                            raw = node->raw_args[i];
+                        }
+                        else
+                        {
+                            raw = ast_raw_text(node->children[i].get());
+                        }
                         size_t len = raw.size();
                         if (len >= LBUF_SIZE) len = LBUF_SIZE - 1;
                         memcpy(fargs[i], raw.c_str(), len);
@@ -1854,7 +1978,16 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
                         for (int j = i; j < nParsed; j++)
                         {
                             if (j > i) safe_chr(',', fargs[i], &bp);
-                            std::string raw = ast_raw_text(node->children[j].get());
+                            std::string raw;
+                            if (  node->parser_known_noeval
+                               && j < static_cast<int>(node->raw_args.size()))
+                            {
+                                raw = node->raw_args[j];
+                            }
+                            else
+                            {
+                                raw = ast_raw_text(node->children[j].get());
+                            }
                             safe_str(reinterpret_cast<const UTF8 *>(raw.c_str()),
                                 fargs[i], &bp);
                         }

@@ -3,7 +3,7 @@ CXXFLAGS = -std=c++17 -Wall -Wextra -g -O2
 
 HEADERS = mux_parse.h
 
-all: tokenize parse eval
+all: tokenize parse eval stream_passes
 
 tokenize: tokenize.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) -o $@ $<
@@ -14,7 +14,10 @@ parse: parse.cpp $(HEADERS)
 eval: eval.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
+stream_passes: stream_passes.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
 clean:
-	rm -f tokenize parse eval
+	rm -f tokenize parse eval stream_passes
 
 .PHONY: all clean
