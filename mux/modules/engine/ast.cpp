@@ -26,6 +26,137 @@
 // Parser
 // ---------------------------------------------------------------
 
+static std::string ast_upper_builtin_name(std::string_view funcName)
+{
+    UTF8 TempFun[LBUF_SIZE];
+    size_t nName = funcName.size();
+    if (nName >= LBUF_SIZE)
+    {
+        nName = LBUF_SIZE - 1;
+    }
+    memcpy(TempFun, funcName.data(), nName);
+    TempFun[nName] = '\0';
+
+    size_t nUpper;
+    UTF8 *pUpper = mux_strupr(TempFun, nUpper);
+    if (nUpper >= LBUF_SIZE)
+    {
+        nUpper = LBUF_SIZE - 1;
+    }
+    return std::string(reinterpret_cast<const char *>(pUpper), nUpper);
+}
+
+static ASTNoevalKind ast_noeval_kind(std::string_view funcName)
+{
+    const std::string name = ast_upper_builtin_name(funcName);
+
+    if (name == "IF" || name == "IFELSE")
+    {
+        return ASTNOEVAL_IFELSE;
+    }
+    if (name == "ITER")
+    {
+        return ASTNOEVAL_ITER;
+    }
+    if (name == "CAND" || name == "CANDBOOL")
+    {
+        return (name == "CANDBOOL")
+            ? ASTNOEVAL_CANDBOOL
+            : ASTNOEVAL_CAND;
+    }
+    if (name == "COR" || name == "CORBOOL")
+    {
+        return (name == "CORBOOL")
+            ? ASTNOEVAL_CORBOOL
+            : ASTNOEVAL_COR;
+    }
+    if (name == "SWITCH")
+    {
+        return ASTNOEVAL_SWITCH;
+    }
+    if (name == "CASE")
+    {
+        return ASTNOEVAL_CASE;
+    }
+    if (name == "SWITCHALL")
+    {
+        return ASTNOEVAL_SWITCHALL;
+    }
+    if (name == "CASEALL")
+    {
+        return ASTNOEVAL_CASEALL;
+    }
+    return ASTNOEVAL_NONE;
+}
+
+static bool ast_noeval_arg_is_deferred(ASTNoevalKind kind, int argIndex, int nfargs)
+{
+    switch (kind)
+    {
+    case ASTNOEVAL_IFELSE:
+        return argIndex >= 1;
+
+    case ASTNOEVAL_ITER:
+        return argIndex == 1;
+
+    case ASTNOEVAL_CAND:
+    case ASTNOEVAL_CANDBOOL:
+    case ASTNOEVAL_COR:
+    case ASTNOEVAL_CORBOOL:
+        return true;
+
+    case ASTNOEVAL_SWITCH:
+    case ASTNOEVAL_CASE:
+    case ASTNOEVAL_SWITCHALL:
+    case ASTNOEVAL_CASEALL:
+        if (argIndex == 0)
+        {
+            return false;
+        }
+        if ((nfargs % 2) == 0 && argIndex == nfargs - 1)
+        {
+            return true;
+        }
+        return (argIndex % 2) == 0;
+
+    case ASTNOEVAL_NONE:
+    default:
+        return false;
+    }
+}
+
+static bool ast_call_arg_is_deferred(const ASTNode *call, int argIndex)
+{
+    if (!call || argIndex < 0)
+    {
+        return false;
+    }
+    if (argIndex < static_cast<int>(call->deferred_args.size()))
+    {
+        return call->deferred_args[argIndex] != 0;
+    }
+    if (!call->parser_known_noeval)
+    {
+        return false;
+    }
+
+    const int nfargs = static_cast<int>(call->children.size());
+    return ast_noeval_arg_is_deferred(call->noeval_kind, argIndex, nfargs);
+}
+
+static const std::string *ast_call_raw_arg(const ASTNode *call, int argIndex)
+{
+    if (!call || argIndex < 0)
+    {
+        return nullptr;
+    }
+    if (argIndex < static_cast<int>(call->raw_args.size()))
+    {
+        return &call->raw_args[argIndex];
+    }
+    return nullptr;
+}
+
 class ASTParser {
 public:
     ASTParser(const std::vector<ASTToken> &tokens)
@@ -75,6 +206,53 @@ private:
         const auto it = mudstate.builtin_functions.find(name_key);
         return it != mudstate.builtin_functions.end()
             && (it->second->flags & FN_NOEVAL) != 0;
+    }
+
+    static bool parser_should_structuralize_arg(const ASTNode *call, int argIndex)
+    {
+        return ast_call_arg_is_deferred(call, argIndex);
+    }
+
+    void parser_capture_raw_arg(ASTNode *call, size_t start, size_t end)
+    {
+        if (!call || !call->parser_known_noeval)
+        {
+            return;
+        }
+        call->raw_args.push_back(rawTextFromTokens(start, end));
+    }
+
+    void parser_apply_structural_arg_policy(ASTNode *call)
+    {
+        if (!call || !call->parser_known_noeval)
+        {
+            return;
+        }
+
+        call->deferred_args.assign(call->children.size(), 0);
+        for (int i = 0; i < static_cast<int>(call->children.size()); i++)
+        {
+            if (!parser_should_structuralize_arg(call, i))
+            {
+                continue;
+            }
+
+            call->deferred_args[i] = 1;
+            const std::string *raw = ast_call_raw_arg(call, i);
+            if (!raw)
+            {
+                continue;
+            }
+
+            auto structural = ast_parse_region(
+                ASTSourceSpan(reinterpret_cast<const UTF8 *>(raw->c_str()),
+                              raw->size()),
+                ASTLEX_STRUCTURAL);
+            if (structural)
+            {
+                call->children[i] = std::move(structural);
+            }
+        }
     }
 
     std::string rawTextFromTokens(size_t start, size_t end) const
@@ -184,6 +362,7 @@ private:
     {
         ASTToken funcTok = advance();
         auto call = std::make_unique<ASTNode>(AST_FUNCCALL, funcTok.text);
+        call->noeval_kind = ast_noeval_kind(funcTok.text);
         call->parser_known_noeval = parser_lookup_builtin_noeval(funcTok.text);
 
         if (atEnd() || peek().type != ASTTOK_LPAREN)
@@ -219,10 +398,7 @@ private:
         bool inBrace = (m_braceDepth > 0);
         size_t argStart = m_pos;
         auto arg = parseSequence(true, inBracket, inBrace, true);
-        if (call->parser_known_noeval)
-        {
-            call->raw_args.push_back(rawTextFromTokens(argStart, m_pos));
-        }
+        parser_capture_raw_arg(call, argStart, m_pos);
         call->addChild(std::move(arg));
 
         while (!atEnd() && peek().type == ASTTOK_COMMA)
@@ -230,10 +406,7 @@ private:
             advance();
             argStart = m_pos;
             arg = parseSequence(true, inBracket, inBrace, true);
-            if (call->parser_known_noeval)
-            {
-                call->raw_args.push_back(rawTextFromTokens(argStart, m_pos));
-            }
+            parser_capture_raw_arg(call, argStart, m_pos);
             call->addChild(std::move(arg));
         }
 
@@ -242,6 +415,8 @@ private:
             advance();
             call->has_close_paren = true;
         }
+
+        parser_apply_structural_arg_policy(call);
     }
 
     std::unique_ptr<ASTNode> parseEvalBracket()
@@ -295,25 +470,6 @@ std::unique_ptr<ASTNode> ast_parse(const std::vector<ASTToken> &tokens)
 {
     ASTParser parser(tokens);
     return parser.parse();
-}
-
-std::vector<ASTToken> ast_tokenize_mode(const UTF8 *input, size_t nLen,
-                                        ASTLexMode mode)
-{
-    auto tokens = ast_tokenize(input, nLen);
-
-    if (mode == ASTLEX_NOEVAL)
-    {
-        for (auto &tok : tokens)
-        {
-            if (tok.type == ASTTOK_PCT)
-            {
-                tok.type = ASTTOK_LIT;
-            }
-        }
-    }
-
-    return tokens;
 }
 
 std::unique_ptr<ASTNode> ast_parse_region(ASTSourceSpan span,
@@ -463,118 +619,6 @@ void ast_dump(const ASTNode *node, int indent)
 // This produces a string with one layer of backslash stripping,
 // which can then be re-tokenized and evaluated.
 //
-static std::string ast_noeval_pass(const ASTNode *node)
-{
-    if (!node)
-    {
-        return "";
-    }
-
-    switch (node->type)
-    {
-    case AST_LITERAL:
-    case AST_SPACE:
-    case AST_SEMICOLON:
-        return node->text;
-
-    case AST_SUBST:
-        // Percent handler IS guarded by EV_EVAL in 2.13.
-        // With EV_EVAL off, it copies % and following char literally.
-        //
-        return node->text;
-
-    case AST_ESCAPE:
-        // Backslash handler is NOT guarded by EV_EVAL in 2.13.
-        // It unconditionally consumes the backslash and emits the
-        // next character.
-        //
-        if (node->text.size() >= 2)
-        {
-            return node->text.substr(1);
-        }
-        return "\\";
-
-    case AST_FUNCCALL:
-        // In noeval, function calls are not dispatched.
-        // Copy the name and parens literally.
-        //
-        {
-            std::string r = node->text + "(";
-            for (size_t i = 0; i < node->children.size(); i++)
-            {
-                if (i > 0) r += ",";
-                r += ast_noeval_pass(node->children[i].get());
-            }
-            if (node->has_close_paren)
-            {
-                r += ")";
-            }
-            return r;
-        }
-
-    case AST_EVALBRACKET:
-        // In noeval, [...] is not evaluated.
-        // Copy brackets and contents literally.
-        //
-        {
-            std::string r = "[";
-            for (const auto &c : node->children)
-            {
-                r += ast_noeval_pass(c.get());
-            }
-            if (node->has_close_bracket)
-            {
-                r += "]";
-            }
-            return r;
-        }
-
-    case AST_BRACEGROUP:
-        // Nested brace groups: copy braces and recurse.
-        //
-        {
-            std::string r = "{";
-            for (const auto &c : node->children)
-            {
-                r += ast_noeval_pass(c.get());
-            }
-            if (node->has_close_brace)
-            {
-                r += "}";
-            }
-            return r;
-        }
-
-    case AST_SEQUENCE:
-        {
-            std::string r;
-            for (size_t i = 0; i < node->children.size(); i++)
-            {
-                const auto &c = node->children[i];
-
-                // In 2.13's noeval pass, backslash still consumes
-                // the next character.  For an AST split like
-                // Esc("\\") + Sub("%..."), that means the replay
-                // text should keep the raw %... sequence, not a
-                // literal backslash followed by the substitution.
-                //
-                if (  c->type == AST_ESCAPE
-                   && c->text == "\\\\"
-                   && i + 1 < node->children.size()
-                   && node->children[i + 1]->type == AST_SUBST)
-                {
-                    r += node->children[i + 1]->text;
-                    i++;
-                    continue;
-                }
-                r += ast_noeval_pass(c.get());
-            }
-            return r;
-        }
-    }
-    return "";
-}
-
 // Forward declaration.
 //
 static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
@@ -585,11 +629,11 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 // 2.13-style noeval pass followed by reparse/re-eval.
 //
 // This replicates the two-pass behavior observed in 2.13:
-//   Pass 1: noeval -- strip one layer of backslash (ast_noeval_pass)
+//   Pass 1: noeval -- parse/evaluate the deferred region under ASTLEX_NOEVAL
 //   Pass 2: eval -- re-tokenize the result and evaluate it
 //
 static void ast_eval_noeval_legacy_arg(const ASTNode *node,
-    const std::string *rawText, UTF8 *buff,
+    const ASTNode *noevalNode, const std::string *rawText, UTF8 *buff,
     UTF8 **bufc, dbref executor, dbref caller, dbref enactor,
     int eval, const UTF8 *cargs[], int ncargs)
 {
@@ -600,7 +644,20 @@ static void ast_eval_noeval_legacy_arg(const ASTNode *node,
 
     std::string text;
 
-    if (rawText)
+    if (noevalNode)
+    {
+        UTF8 *temp = alloc_lbuf("ast_noeval_region");
+        UTF8 *tp = temp;
+        ast_eval_node(noevalNode, temp, &tp,
+            executor, caller, enactor,
+            ((eval & ~(EV_EVAL | EV_TOP | EV_FMAND | EV_STRIP_CURLY | EV_FCHECK))
+                | EV_NOFCHECK),
+            cargs, ncargs);
+        *tp = '\0';
+        text.assign(reinterpret_cast<const char *>(temp), tp - temp);
+        free_lbuf(temp);
+    }
+    else if (rawText)
     {
         auto noevalAst = ast_parse_region(
             ASTSourceSpan(reinterpret_cast<const UTF8 *>(rawText->c_str()),
@@ -624,15 +681,7 @@ static void ast_eval_noeval_legacy_arg(const ASTNode *node,
     }
     else
     {
-        const ASTNode *inner = node;
-        if (node->type == AST_BRACEGROUP && !node->children.empty())
-        {
-            inner = node->children[0].get();
-        }
-
-        // Fallback path for callers that do not yet preserve a raw
-        // deferred region: produce text from the existing AST.
-        text = ast_noeval_pass(inner);
+        return;
     }
 
     // The selected branch/body of a FN_NOEVAL function is evaluated
@@ -1250,16 +1299,21 @@ static void ast_eval_branch(const ASTNode *callNode, int childIndex,
     dbref executor, dbref caller, dbref enactor,
     int eval, const UTF8 *cargs[], int ncargs)
 {
+    const ASTNode *noevalNode = nullptr;
     const std::string *rawText = nullptr;
-    if (  callNode
-       && callNode->parser_known_noeval
-       && 0 <= childIndex
-       && childIndex < static_cast<int>(callNode->raw_args.size()))
+    std::string fallbackRaw;
+    if (ast_call_arg_is_deferred(callNode, childIndex))
     {
-        rawText = &callNode->raw_args[childIndex];
+        noevalNode = child;
+        rawText = ast_call_raw_arg(callNode, childIndex);
+    }
+    else if (child)
+    {
+        fallbackRaw = ast_raw_text(child);
+        rawText = &fallbackRaw;
     }
 
-    ast_eval_noeval_legacy_arg(child, rawText, buff, bufc,
+    ast_eval_noeval_legacy_arg(child, noevalNode, rawText, buff, bufc,
         executor, caller, enactor, eval, cargs, ncargs);
 }
 
@@ -1614,102 +1668,78 @@ static void ast_noeval_iter(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 // function was handled natively (caller should skip generic dispatch).
 //
 static bool ast_try_native_noeval(const ASTNode *node,
-    const UTF8 *funcName, size_t nameLen,
     UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
     int eval, const UTF8 *cargs[], int ncargs)
 {
-    if (nameLen == 2 && memcmp(funcName, "IF", 2) == 0)
+    if (!node)
     {
+        return false;
+    }
+
+    switch (node->noeval_kind)
+    {
+    case ASTNOEVAL_IFELSE:
         ast_noeval_ifelse(node, buff, bufc, executor, caller, enactor,
             eval, cargs, ncargs);
         return true;
-    }
-    if (nameLen == 3)
-    {
-        if (memcmp(funcName, "COR", 3) == 0)
-        {
-            ast_noeval_cor(node, buff, bufc, executor, caller, enactor,
-                eval, cargs, ncargs, false);
-            return true;
-        }
-        return false;
-    }
-    if (nameLen == 4)
-    {
-        if (memcmp(funcName, "CAND", 4) == 0)
-        {
-            ast_noeval_cand(node, buff, bufc, executor, caller, enactor,
-                eval, cargs, ncargs, false);
-            return true;
-        }
-        if (memcmp(funcName, "CASE", 4) == 0)
-        {
-            ast_noeval_switch(node, buff, bufc, executor, caller, enactor,
-                eval, cargs, ncargs, false);
-            return true;
-        }
-        if (memcmp(funcName, "ITER", 4) == 0)
-        {
-            ast_noeval_iter(node, buff, bufc, executor, caller, enactor,
-                eval, cargs, ncargs);
-            return true;
-        }
-        return false;
-    }
-    if (nameLen == 6)
-    {
-        if (memcmp(funcName, "IFELSE", 6) == 0)
-        {
-            ast_noeval_ifelse(node, buff, bufc, executor, caller, enactor,
-                eval, cargs, ncargs);
-            return true;
-        }
-        if (memcmp(funcName, "SWITCH", 6) == 0)
-        {
-            ast_noeval_switch(node, buff, bufc, executor, caller, enactor,
-                eval, cargs, ncargs, true);
-            return true;
-        }
-        return false;
-    }
-    if (nameLen == 7)
-    {
-        if (memcmp(funcName, "CASEALL", 7) == 0)
-        {
-            ast_noeval_switchall(node, buff, bufc, executor, caller, enactor,
-                eval, cargs, ncargs, false);
-            return true;
-        }
-        if (memcmp(funcName, "CORBOOL", 7) == 0)
-        {
-            ast_noeval_cor(node, buff, bufc, executor, caller, enactor,
-                eval, cargs, ncargs, true);
-            return true;
-        }
-        return false;
-    }
-    if (nameLen == 8)
-    {
-        if (memcmp(funcName, "CANDBOOL", 8) == 0)
-        {
-            ast_noeval_cand(node, buff, bufc, executor, caller, enactor,
-                eval, cargs, ncargs, true);
-            return true;
-        }
-        if (memcmp(funcName, "CASEALL", 7) == 0)
-        {
-            // CASEALL is 7 chars, handled above.
-        }
-        return false;
-    }
-    if (nameLen == 9 && memcmp(funcName, "SWITCHALL", 9) == 0)
-    {
+    case ASTNOEVAL_SWITCH:
+        ast_noeval_switch(node, buff, bufc, executor, caller, enactor,
+            eval, cargs, ncargs, true);
+        return true;
+    case ASTNOEVAL_CASE:
+        ast_noeval_switch(node, buff, bufc, executor, caller, enactor,
+            eval, cargs, ncargs, false);
+        return true;
+    case ASTNOEVAL_SWITCHALL:
         ast_noeval_switchall(node, buff, bufc, executor, caller, enactor,
             eval, cargs, ncargs, true);
         return true;
+    case ASTNOEVAL_CASEALL:
+        ast_noeval_switchall(node, buff, bufc, executor, caller, enactor,
+            eval, cargs, ncargs, false);
+        return true;
+    case ASTNOEVAL_ITER:
+        ast_noeval_iter(node, buff, bufc, executor, caller, enactor,
+            eval, cargs, ncargs);
+        return true;
+    case ASTNOEVAL_CAND:
+        ast_noeval_cand(node, buff, bufc, executor, caller, enactor,
+            eval, cargs, ncargs, false);
+        return true;
+    case ASTNOEVAL_CANDBOOL:
+        ast_noeval_cand(node, buff, bufc, executor, caller, enactor,
+            eval, cargs, ncargs, true);
+        return true;
+    case ASTNOEVAL_COR:
+        ast_noeval_cor(node, buff, bufc, executor, caller, enactor,
+            eval, cargs, ncargs, false);
+        return true;
+    case ASTNOEVAL_CORBOOL:
+        ast_noeval_cor(node, buff, bufc, executor, caller, enactor,
+            eval, cargs, ncargs, true);
+        return true;
+    case ASTNOEVAL_NONE:
+    default:
+        return false;
     }
-    return false;
+}
+
+static std::string ast_raw_arg_text(const ASTNode *callNode, int argIndex)
+{
+    if (!callNode || argIndex < 0)
+    {
+        return "";
+    }
+    if (const std::string *raw = ast_call_raw_arg(callNode, argIndex))
+    {
+        return *raw;
+    }
+    if (argIndex < static_cast<int>(callNode->children.size()))
+    {
+        return ast_raw_text(callNode->children[argIndex].get());
+    }
+    return "";
 }
 
 // Output a function call node as literal text: name(arg,arg,...).
@@ -1941,8 +1971,8 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             // Try native NOEVAL handlers first.
             //
             if (  (fp->flags & FN_NOEVAL)
-               && ast_try_native_noeval(node, TempFun, nUpper,
-                      buff, bufc, executor, caller, enactor,
+               && ast_try_native_noeval(node, buff, bufc,
+                      executor, caller, enactor,
                       eval, cargs, ncargs))
             {
                 mudstate.func_nest_lev--;
@@ -1966,16 +1996,7 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 
                     if (i < nfargs - 1 || nParsed <= nfargs)
                     {
-                        std::string raw;
-                        if (  node->parser_known_noeval
-                           && i < static_cast<int>(node->raw_args.size()))
-                        {
-                            raw = node->raw_args[i];
-                        }
-                        else
-                        {
-                            raw = ast_raw_text(node->children[i].get());
-                        }
+                        std::string raw = ast_raw_arg_text(node, i);
                         size_t len = raw.size();
                         if (len >= LBUF_SIZE) len = LBUF_SIZE - 1;
                         memcpy(fargs[i], raw.c_str(), len);
@@ -1989,16 +2010,7 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
                         for (int j = i; j < nParsed; j++)
                         {
                             if (j > i) safe_chr(',', fargs[i], &bp);
-                            std::string raw;
-                            if (  node->parser_known_noeval
-                               && j < static_cast<int>(node->raw_args.size()))
-                            {
-                                raw = node->raw_args[j];
-                            }
-                            else
-                            {
-                                raw = ast_raw_text(node->children[j].get());
-                            }
+                            std::string raw = ast_raw_arg_text(node, j);
                             safe_str(reinterpret_cast<const UTF8 *>(raw.c_str()),
                                 fargs[i], &bp);
                         }

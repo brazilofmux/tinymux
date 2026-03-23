@@ -39,18 +39,35 @@ enum ASTNodeType {
     AST_SEMICOLON,      // ; command separator
 };
 
+enum ASTNoevalKind {
+    ASTNOEVAL_NONE,
+    ASTNOEVAL_IFELSE,
+    ASTNOEVAL_SWITCH,
+    ASTNOEVAL_CASE,
+    ASTNOEVAL_SWITCHALL,
+    ASTNOEVAL_CASEALL,
+    ASTNOEVAL_ITER,
+    ASTNOEVAL_CAND,
+    ASTNOEVAL_CANDBOOL,
+    ASTNOEVAL_COR,
+    ASTNOEVAL_CORBOOL
+};
+
 struct ASTNode {
     ASTNodeType type;
     std::string text;
     std::vector<std::unique_ptr<ASTNode>> children;
     std::vector<std::string> raw_args;
+    std::vector<char> deferred_args;
+    ASTNoevalKind noeval_kind;
     bool parser_known_noeval;
     bool has_close_paren;   // FUNCCALL: true if ')' was found
     bool has_close_bracket; // EVALBRACKET: true if ']' was found
     bool has_close_brace;   // BRACEGROUP: true if '}' was found
 
     ASTNode(ASTNodeType t, std::string_view s = "")
-        : type(t), text(s), parser_known_noeval(false), has_close_paren(true),
+        : type(t), text(s), noeval_kind(ASTNOEVAL_NONE),
+          parser_known_noeval(false), has_close_paren(true),
           has_close_bracket(true), has_close_brace(true) {}
 
     void addChild(std::unique_ptr<ASTNode> child) {

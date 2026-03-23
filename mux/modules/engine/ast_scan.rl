@@ -17,6 +17,19 @@
 #include <string_view>
 #include <vector>
 
+static inline ASTTokenType ast_pct_token_type(ASTLexMode mode)
+{
+    switch (mode)
+    {
+    case ASTLEX_NOEVAL:
+    case ASTLEX_STRUCTURAL:
+        return ASTTOK_LIT;
+    case ASTLEX_EVAL:
+    default:
+        return ASTTOK_PCT;
+    }
+}
+
 // Helper: construct token text view from Ragel ts/te pointers.
 // Views point directly into the input buffer — no allocation.
 //
@@ -61,55 +74,55 @@
         # %-substitutions with angle brackets (longest match wins).
         #
         '%' [qQ] '<' angle_body '>'        => {
-            tokens.push_back({ASTTOK_PCT, TOK_TEXT()});
+            tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         };
         '%' [qQ] '<' angle_body            => {
-            tokens.push_back({ASTTOK_PCT, TOK_TEXT()});
+            tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         };
         '%' [cCxX] '<' angle_body '>'      => {
-            tokens.push_back({ASTTOK_PCT, TOK_TEXT()});
+            tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         };
         '%' [cCxX] '<' angle_body          => {
-            tokens.push_back({ASTTOK_PCT, TOK_TEXT()});
+            tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         };
         '%' '=' '<' angle_body '>'         => {
-            tokens.push_back({ASTTOK_PCT, TOK_TEXT()});
+            tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         };
         '%' '=' '<' angle_body             => {
-            tokens.push_back({ASTTOK_PCT, TOK_TEXT()});
+            tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         };
 
         # %-substitutions (fixed length, 2-3 bytes total).
         #
         '%' [0-9]                           => {
-            tokens.push_back({ASTTOK_PCT, TOK_TEXT()});
+            tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         };
         '%' [qQ] any                        => {
-            tokens.push_back({ASTTOK_PCT, TOK_TEXT()});
+            tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         };
         '%' [vV] alpha                      => {
-            tokens.push_back({ASTTOK_PCT, TOK_TEXT()});
+            tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         };
         '%' [cCxX] any                      => {
-            tokens.push_back({ASTTOK_PCT, TOK_TEXT()});
+            tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         };
         '%' [iI] [0-9]                      => {
-            tokens.push_back({ASTTOK_PCT, TOK_TEXT()});
+            tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         };
         '%' '='                             => {
-            tokens.push_back({ASTTOK_PCT, TOK_TEXT()});
+            tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         };
         '%' any                             => {
-            tokens.push_back({ASTTOK_PCT, TOK_TEXT()});
+            tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         };
         '%'                                 => {
-            tokens.push_back({ASTTOK_PCT, TOK_TEXT()});
+            tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         };
 
         # Hash tokens: ##, #@, #$
         #
         '##' | '#@' | '#$'                  => {
-            tokens.push_back({ASTTOK_PCT, TOK_TEXT()});
+            tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         };
 
         # Escape sequences: \ followed by one character.
@@ -180,7 +193,8 @@
 //
 %% write data nofinal;
 
-std::vector<ASTToken> ast_tokenize(const UTF8 *input, size_t nLen)
+std::vector<ASTToken> ast_tokenize_mode(const UTF8 *input, size_t nLen,
+                                        ASTLexMode mode)
 {
     std::vector<ASTToken> tokens;
 
@@ -213,4 +227,9 @@ std::vector<ASTToken> ast_tokenize(const UTF8 *input, size_t nLen)
 
     tokens.push_back({ASTTOK_EOF, ""});
     return tokens;
+}
+
+std::vector<ASTToken> ast_tokenize(const UTF8 *input, size_t nLen)
+{
+    return ast_tokenize_mode(input, nLen, ASTLEX_EVAL);
 }
