@@ -9,13 +9,7 @@
 - ~~Saved Session Timestamps Clobbered~~ — Fixed in both restore paths (621a80b, 96b73e2)
 - ~~Dead Links Drop activeLink~~ — Fixed: remapped on compaction (621a80b)
 - ~~Config Parser Ignores TLS Material~~ — Fixed: TLS listener infra wired into GANL (8237a3a)
-
-## Bugs & Technical Debt
-
-### Unsafe Direct `send()` Calls
-- **Issue:** `SessionManager` and `grpc_server.cpp` use raw `send()` on `ganl::ConnectionHandle` cast to `int`, bypassing GANL's write queue.
-- **Impact:** Blocking I/O if socket buffer is full. Thread safety risk when multiple threads send to the same FD. Partial writes not handled.
-- **Opportunity:** Route all writes through GANL's `NetworkEngine` write queue.
+- ~~Unsafe Direct send() Calls~~ — Fixed: all writes routed through GANL postWrite via safeWrite() (3dd350f)
 
 ### GMCP Frame Manual Building
 - **Issue:** Telnet IAC SB GMCP frames are manually constructed in `grpc_server.cpp` and `session_manager.cpp`.
