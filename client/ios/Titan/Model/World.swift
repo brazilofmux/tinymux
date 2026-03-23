@@ -12,6 +12,12 @@ struct World: Codable, Identifiable {
     var character: String = ""
     var notes: String = ""
     var loginCommands: [String] = []
+
+    // Hydra proxy fields
+    var useHydra: Bool = false
+    var hydraUser: String = ""
+    var hydraPass: String = ""
+    var hydraGame: String = ""
 }
 
 // MARK: - World Repository (Keychain-backed)

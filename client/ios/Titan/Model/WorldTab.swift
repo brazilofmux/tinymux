@@ -9,6 +9,9 @@ class WorldTab: Identifiable {
     let id = UUID()
     let name: String
     var connection: MudConnection?
+    #if canImport(GRPC)
+    var hydraConnection: HydraConnection?
+    #endif
     var lines: [AttributedString] = []
     var history: [String] = []
     var hasActivity = false
@@ -25,6 +28,32 @@ class WorldTab: Identifiable {
     var activeLines: [AttributedString] {
         if activeSpawn.isEmpty { return lines }
         return spawnLines[activeSpawn] ?? []
+    }
+
+    var isConnected: Bool {
+        if connection?.connected == true { return true }
+        #if canImport(GRPC)
+        if hydraConnection?.connected == true { return true }
+        #endif
+        return false
+    }
+
+    func sendLine(_ text: String) {
+        if let conn = connection, conn.connected {
+            conn.sendLine(text)
+        }
+        #if canImport(GRPC)
+        else if let hconn = hydraConnection, hconn.connected {
+            hconn.sendLine(text)
+        }
+        #endif
+    }
+
+    func disconnectAll() {
+        connection?.disconnect()
+        #if canImport(GRPC)
+        hydraConnection?.disconnect()
+        #endif
     }
 }
 

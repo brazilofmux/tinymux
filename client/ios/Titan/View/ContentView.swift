@@ -51,8 +51,19 @@ struct ContentView: View {
         }
         .sheet(isPresented: $state.showWorldManager) {
             WorldManagerView(worldRepo: worldRepo) { world in
+                #if canImport(GRPC)
+                if world.useHydra {
+                    connectHydra(name: world.name, host: world.host, port: world.port,
+                                 hydraUser: world.hydraUser, hydraPass: world.hydraPass,
+                                 hydraGame: world.hydraGame)
+                } else {
+                    connectWorld(name: world.name, host: world.host, port: world.port,
+                                 ssl: world.ssl, loginCommands: world.loginCommands)
+                }
+                #else
                 connectWorld(name: world.name, host: world.host, port: world.port,
                              ssl: world.ssl, loginCommands: world.loginCommands)
+                #endif
             }
         }
         .sheet(isPresented: $state.showTriggerManager) {
@@ -367,16 +378,48 @@ struct ContentView: View {
         conn.connect()
     }
 
+    #if canImport(GRPC)
+    func connectHydra(name: String, host: String, port: Int,
+                      hydraUser: String, hydraPass: String, hydraGame: String) {
+        let tab = WorldTab(name: name)
+        state.tabs.append(tab)
+        let tabIndex = state.tabs.count - 1
+        state.activeTabIndex = tabIndex
+
+        let hconn = HydraConnection(name: name, host: host, port: port,
+                                     username: hydraUser, password: hydraPass,
+                                     gameName: hydraGame)
+        tab.hydraConnection = hconn
+
+        hconn.onLine = { line in processServerLine(tabIndex, line) }
+        hconn.onConnect = {
+            state.appendLine(tabIndex, "% Connected via Hydra to \(host):\(port)")
+            tab.disconnected = false
+            for cmd in hookRepo.fireEvent("CONNECT") { hconn.sendLine(cmd) }
+        }
+        hconn.onDisconnect = {
+            state.appendLine(tabIndex, "% Hydra connection lost.")
+            tab.disconnected = true
+            timerEngine.cancelAll()
+            for cmd in hookRepo.fireEvent("DISCONNECT") {
+                state.appendLine(tabIndex, "% [hook] \(cmd)")
+            }
+        }
+        state.appendLine(tabIndex, "% Connecting via Hydra to \(host):\(port)...")
+        hconn.connect()
+    }
+    #endif
+
     private func disconnectActive() {
         guard state.activeTabIndex > 0 else { return }
-        state.tabs[state.activeTabIndex].connection?.disconnect()
+        state.tabs[state.activeTabIndex].disconnectAll()
         state.tabs.remove(at: state.activeTabIndex)
         state.activeTabIndex = max(state.activeTabIndex - 1, 0)
     }
 
     private func closeTab(_ index: Int) {
         guard index > 0 else { return }
-        state.tabs[index].connection?.disconnect()
+        state.tabs[index].disconnectAll()
         state.tabs.remove(at: index)
         if state.activeTabIndex >= state.tabs.count {
             state.activeTabIndex = state.tabs.count - 1
@@ -407,9 +450,10 @@ struct ContentView: View {
             return
         }
 
-        if let conn = state.activeTab?.connection, conn.connected {
-            conn.sendLine(text)
-            if !conn.telnet.remoteEcho {
+        if let tab = state.activeTab, tab.isConnected {
+            tab.sendLine(text)
+            let remoteEcho = tab.connection?.telnet.remoteEcho ?? false
+            if !remoteEcho {
                 state.appendLine(state.activeTabIndex, "> \(text)")
             }
         } else {
@@ -432,6 +476,67 @@ struct ContentView: View {
                 let ssl = parts.contains { $0.lowercased() == "ssl" || $0.lowercased() == "tls" }
                 connectWorld(name: "\(host):\(port)", host: host, port: port, ssl: ssl)
             }
+        #if canImport(GRPC)
+        case "hydra":
+            let parts = args.split(separator: " ")
+            if parts.count < 5 {
+                state.appendLine(idx, "% Usage: /hydra <host> <port> <user> <pass> <game>")
+            } else {
+                let h = String(parts[0])
+                let p = Int(parts[1]) ?? 50051
+                let u = String(parts[2])
+                let pw = String(parts[3])
+                let g = parts.dropFirst(4).joined(separator: " ")
+                connectHydra(name: "\(h):\(p)", host: h, port: p,
+                             hydraUser: u, hydraPass: pw, hydraGame: g)
+            }
+        case "hconnect":
+            let tab = state.activeTab
+            guard let hconn = tab?.hydraConnection, hconn.connected else {
+                state.appendLine(idx, "% Not connected via Hydra."); break
+            }
+            let game = args.trimmingCharacters(in: .whitespaces)
+            guard !game.isEmpty else {
+                state.appendLine(idx, "% Usage: /hconnect <game>"); break
+            }
+            Task { state.appendLine(idx, await hconn.rpcConnectGame(game)) }
+        case "hswitch":
+            let tab = state.activeTab
+            guard let hconn = tab?.hydraConnection, hconn.connected else {
+                state.appendLine(idx, "% Not connected via Hydra."); break
+            }
+            guard let link = Int32(args.trimmingCharacters(in: .whitespaces)), link > 0 else {
+                state.appendLine(idx, "% Usage: /hswitch <link#>"); break
+            }
+            Task { state.appendLine(idx, await hconn.rpcSwitchLink(link)) }
+        case "hlinks":
+            let tab = state.activeTab
+            guard let hconn = tab?.hydraConnection, hconn.connected else {
+                state.appendLine(idx, "% Not connected via Hydra."); break
+            }
+            Task { for line in await hconn.rpcListLinks() { state.appendLine(idx, line) } }
+        case "hdisconnect":
+            let tab = state.activeTab
+            guard let hconn = tab?.hydraConnection, hconn.connected else {
+                state.appendLine(idx, "% Not connected via Hydra."); break
+            }
+            guard let link = Int32(args.trimmingCharacters(in: .whitespaces)), link > 0 else {
+                state.appendLine(idx, "% Usage: /hdisconnect <link#>"); break
+            }
+            Task { state.appendLine(idx, await hconn.rpcDisconnectLink(link)) }
+        case "hsession":
+            let tab = state.activeTab
+            guard let hconn = tab?.hydraConnection, hconn.connected else {
+                state.appendLine(idx, "% Not connected via Hydra."); break
+            }
+            Task { for line in await hconn.rpcGetSession() { state.appendLine(idx, line) } }
+        case "hdetach":
+            let tab = state.activeTab
+            guard let hconn = tab?.hydraConnection, hconn.connected else {
+                state.appendLine(idx, "% Not connected via Hydra."); break
+            }
+            Task { state.appendLine(idx, await hconn.rpcDetachSession()) }
+        #endif
         case "dc", "disconnect":
             disconnectActive()
         case "worlds":
