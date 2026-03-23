@@ -656,9 +656,6 @@ LTLIBOBJS
 LIBOBJS
 OPENSSL_LIBS
 OPENSSL_CFLAGS
-PKG_CONFIG_LIBDIR
-PKG_CONFIG_PATH
-PKG_CONFIG
 HAVE_KQUEUE_FALSE
 HAVE_KQUEUE_TRUE
 HAVE_EPOLL_FALSE
@@ -712,6 +709,13 @@ SQL_LIBPATH
 SQL_INCLUDE
 SELFCHECK
 INLINESQL
+GRPC_CPP_PLUGIN
+PROTOC
+GRPC_LIBS
+GRPC_CFLAGS
+GRPC_ENABLED
+GRPC_ENABLED_FALSE
+GRPC_ENABLED_TRUE
 TINYMUX_JIT
 JIT_ENABLED_FALSE
 JIT_ENABLED_TRUE
@@ -722,6 +726,9 @@ WOD_REALMS
 REALITY_LVLS
 REALITY_ENABLED_FALSE
 REALITY_ENABLED_TRUE
+PKG_CONFIG_LIBDIR
+PKG_CONFIG_PATH
+PKG_CONFIG
 AM_BACKSLASH
 AM_DEFAULT_VERBOSITY
 AM_DEFAULT_V
@@ -800,6 +807,7 @@ enable_realitylvls
 enable_wodrealms
 enable_stubslave
 enable_jit
+enable_grpc
 enable_inlinesql
 enable_selfcheck
 with_mysql_include
@@ -809,6 +817,11 @@ enable_dependency_tracking
       ac_precious_vars='build_alias
 host_alias
 target_alias
+PKG_CONFIG
+PKG_CONFIG_PATH
+PKG_CONFIG_LIBDIR
+GRPC_CFLAGS
+GRPC_LIBS
 CXX
 CXXFLAGS
 LDFLAGS
@@ -819,9 +832,6 @@ CXXCPP
 CC
 CFLAGS
 CPP
-PKG_CONFIG
-PKG_CONFIG_PATH
-PKG_CONFIG_LIBDIR
 OPENSSL_CFLAGS
 OPENSSL_LIBS'
 
@@ -1457,6 +1467,8 @@ Optional Features:
   --enable-wodrealms      enable WOD Realms (default is NO)
   --enable-stubslave      enable Stub Slave (default is NO)
   --enable-jit            enable JIT compiler via RISC-V DBT (default is NO)
+  --enable-grpc           enable gRPC front-door for Hydra proxy (default is
+                          NO)
   --enable-inlinesql      enable inline MySQL support compatible with PennMUSH
                           and TinyMUSH 3.x (default is NO)
   --enable-selfcheck      enable expensive self-checking (default is NO)
@@ -1473,6 +1485,13 @@ Optional Packages:
   --with-mysql-libs=PATH  set the library path for SQL library files
 
 Some influential environment variables:
+  PKG_CONFIG  path to pkg-config utility
+  PKG_CONFIG_PATH
+              directories to add to pkg-config's search path
+  PKG_CONFIG_LIBDIR
+              path overriding pkg-config's built-in search path
+  GRPC_CFLAGS C compiler flags for GRPC, overriding pkg-config
+  GRPC_LIBS   linker flags for GRPC, overriding pkg-config
   CXX         C++ compiler command
   CXXFLAGS    C++ compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
@@ -1484,11 +1503,6 @@ Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   CPP         C preprocessor
-  PKG_CONFIG  path to pkg-config utility
-  PKG_CONFIG_PATH
-              directories to add to pkg-config's search path
-  PKG_CONFIG_LIBDIR
-              path overriding pkg-config's built-in search path
   OPENSSL_CFLAGS
               C compiler flags for OPENSSL, overriding pkg-config
   OPENSSL_LIBS
@@ -3893,6 +3907,137 @@ END
 fi
 
 
+
+
+
+
+
+
+
+if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
+	if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
+set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_path_PKG_CONFIG+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_path_PKG_CONFIG="$as_dir$ac_word$ac_exec_ext"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
+printf "%s\n" "$PKG_CONFIG" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_PKG_CONFIG"; then
+  ac_pt_PKG_CONFIG=$PKG_CONFIG
+  # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_path_ac_pt_PKG_CONFIG+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  case $ac_pt_PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_PKG_CONFIG="$ac_pt_PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_PKG_CONFIG="$as_dir$ac_word$ac_exec_ext"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_PKG_CONFIG=$ac_cv_path_ac_pt_PKG_CONFIG
+if test -n "$ac_pt_PKG_CONFIG"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_pt_PKG_CONFIG" >&5
+printf "%s\n" "$ac_pt_PKG_CONFIG" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+  if test "x$ac_pt_PKG_CONFIG" = x; then
+    PKG_CONFIG=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+printf "%s\n" "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    PKG_CONFIG=$ac_pt_PKG_CONFIG
+  fi
+else
+  PKG_CONFIG="$ac_cv_path_PKG_CONFIG"
+fi
+
+fi
+if test -n "$PKG_CONFIG"; then
+	_pkg_min_version=0.9.0
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking pkg-config is at least version $_pkg_min_version" >&5
+printf %s "checking pkg-config is at least version $_pkg_min_version... " >&6; }
+	if $PKG_CONFIG --atleast-pkgconfig-version $_pkg_min_version; then
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+	else
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+		PKG_CONFIG=""
+	fi
+fi
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable Reality Levels" >&5
 printf %s "checking whether to enable Reality Levels... " >&6; }
 # Check whether --enable-realitylvls was given.
@@ -4025,6 +4170,207 @@ else
 fi
 
 
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable gRPC support for Hydra proxy" >&5
+printf %s "checking whether to enable gRPC support for Hydra proxy... " >&6; }
+# Check whether --enable-grpc was given.
+if test ${enable_grpc+y}
+then :
+  enableval=$enable_grpc;
+    if test "x$enableval" = "xno"; then
+      grpc_enabled=no
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+    else
+      grpc_enabled=yes
+      GRPC_ENABLED="-DGRPC_ENABLED"
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+    fi
+
+else $as_nop
+
+    grpc_enabled=no
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+fi
+
+ if test "x$grpc_enabled" = "xyes"; then
+  GRPC_ENABLED_TRUE=
+  GRPC_ENABLED_FALSE='#'
+else
+  GRPC_ENABLED_TRUE='#'
+  GRPC_ENABLED_FALSE=
+fi
+
+
+
+if test "x$grpc_enabled" = "xyes"; then
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for grpc++ protobuf" >&5
+printf %s "checking for grpc++ protobuf... " >&6; }
+
+if test -n "$GRPC_CFLAGS"; then
+    pkg_cv_GRPC_CFLAGS="$GRPC_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"grpc++ protobuf\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "grpc++ protobuf") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GRPC_CFLAGS=`$PKG_CONFIG --cflags "grpc++ protobuf" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$GRPC_LIBS"; then
+    pkg_cv_GRPC_LIBS="$GRPC_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"grpc++ protobuf\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "grpc++ protobuf") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GRPC_LIBS=`$PKG_CONFIG --libs "grpc++ protobuf" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+                GRPC_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "grpc++ protobuf" 2>&1`
+        else
+                GRPC_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "grpc++ protobuf" 2>&1`
+        fi
+        # Put the nasty error message in config.log where it belongs
+        echo "$GRPC_PKG_ERRORS" >&5
+
+        as_fn_error $? "gRPC++ and protobuf development libraries not found. Install them or use --disable-grpc." "$LINENO" 5
+
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+        as_fn_error $? "gRPC++ and protobuf development libraries not found. Install them or use --disable-grpc." "$LINENO" 5
+
+else
+        GRPC_CFLAGS=$pkg_cv_GRPC_CFLAGS
+        GRPC_LIBS=$pkg_cv_GRPC_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+fi
+
+
+
+  # Extract the first word of "protoc", so it can be a program name with args.
+set dummy protoc; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_prog_PROTOC+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  if test -n "$PROTOC"; then
+  ac_cv_prog_PROTOC="$PROTOC" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_prog_PROTOC="protoc"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+PROTOC=$ac_cv_prog_PROTOC
+if test -n "$PROTOC"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $PROTOC" >&5
+printf "%s\n" "$PROTOC" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
+  # Extract the first word of "grpc_cpp_plugin", so it can be a program name with args.
+set dummy grpc_cpp_plugin; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_prog_GRPC_CPP_PLUGIN+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  if test -n "$GRPC_CPP_PLUGIN"; then
+  ac_cv_prog_GRPC_CPP_PLUGIN="$GRPC_CPP_PLUGIN" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_prog_GRPC_CPP_PLUGIN="grpc_cpp_plugin"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+GRPC_CPP_PLUGIN=$ac_cv_prog_GRPC_CPP_PLUGIN
+if test -n "$GRPC_CPP_PLUGIN"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $GRPC_CPP_PLUGIN" >&5
+printf "%s\n" "$GRPC_CPP_PLUGIN" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
+  if test -z "$PROTOC" || test -z "$GRPC_CPP_PLUGIN"; then
+    as_fn_error $? "protoc and grpc_cpp_plugin are required for --enable-grpc" "$LINENO" 5
+  fi
+fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to enable inline MySQL" >&5
 printf %s "checking whether to enable inline MySQL... " >&6; }
@@ -10884,139 +11230,9 @@ printf "%s\n" "#define HAVE_DEV_URANDOM /**/" >>confdefs.h
 
 fi
 
-ac_config_files="$ac_config_files Makefile lib/Makefile src/Makefile modules/Makefile modules/engine/Makefile sqlite/Makefile lua54/Makefile announce/Makefile muxescape/Makefile script/Makefile ganl/Makefile proxy/Makefile"
+ac_config_files="$ac_config_files Makefile lib/Makefile src/Makefile modules/Makefile modules/engine/Makefile sqlite/Makefile lua54/Makefile announce/Makefile muxescape/Makefile script/Makefile ganl/Makefile"
 
 
-
-
-
-
-
-
-
-if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
-	if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
-set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-printf %s "checking for $ac_word... " >&6; }
-if test ${ac_cv_path_PKG_CONFIG+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  case $PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  case $as_dir in #(((
-    '') as_dir=./ ;;
-    */) ;;
-    *) as_dir=$as_dir/ ;;
-  esac
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
-    ac_cv_path_PKG_CONFIG="$as_dir$ac_word$ac_exec_ext"
-    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-PKG_CONFIG=$ac_cv_path_PKG_CONFIG
-if test -n "$PKG_CONFIG"; then
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
-printf "%s\n" "$PKG_CONFIG" >&6; }
-else
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_path_PKG_CONFIG"; then
-  ac_pt_PKG_CONFIG=$PKG_CONFIG
-  # Extract the first word of "pkg-config", so it can be a program name with args.
-set dummy pkg-config; ac_word=$2
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-printf %s "checking for $ac_word... " >&6; }
-if test ${ac_cv_path_ac_pt_PKG_CONFIG+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  case $ac_pt_PKG_CONFIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_ac_pt_PKG_CONFIG="$ac_pt_PKG_CONFIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  case $as_dir in #(((
-    '') as_dir=./ ;;
-    */) ;;
-    *) as_dir=$as_dir/ ;;
-  esac
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
-    ac_cv_path_ac_pt_PKG_CONFIG="$as_dir$ac_word$ac_exec_ext"
-    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-ac_pt_PKG_CONFIG=$ac_cv_path_ac_pt_PKG_CONFIG
-if test -n "$ac_pt_PKG_CONFIG"; then
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_pt_PKG_CONFIG" >&5
-printf "%s\n" "$ac_pt_PKG_CONFIG" >&6; }
-else
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-fi
-
-  if test "x$ac_pt_PKG_CONFIG" = x; then
-    PKG_CONFIG=""
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-printf "%s\n" "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    PKG_CONFIG=$ac_pt_PKG_CONFIG
-  fi
-else
-  PKG_CONFIG="$ac_cv_path_PKG_CONFIG"
-fi
-
-fi
-if test -n "$PKG_CONFIG"; then
-	_pkg_min_version=0.9.0
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking pkg-config is at least version $_pkg_min_version" >&5
-printf %s "checking pkg-config is at least version $_pkg_min_version... " >&6; }
-	if $PKG_CONFIG --atleast-pkgconfig-version $_pkg_min_version; then
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-	else
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-		PKG_CONFIG=""
-	fi
-fi
 
 pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for openssl" >&5
@@ -11229,6 +11445,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${JIT_ENABLED_TRUE}" && test -z "${JIT_ENABLED_FALSE}"; then
   as_fn_error $? "conditional \"JIT_ENABLED\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${GRPC_ENABLED_TRUE}" && test -z "${GRPC_ENABLED_FALSE}"; then
+  as_fn_error $? "conditional \"GRPC_ENABLED\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${AMDEP_TRUE}" && test -z "${AMDEP_FALSE}"; then
@@ -11854,7 +12074,6 @@ do
     "muxescape/Makefile") CONFIG_FILES="$CONFIG_FILES muxescape/Makefile" ;;
     "script/Makefile") CONFIG_FILES="$CONFIG_FILES script/Makefile" ;;
     "ganl/Makefile") CONFIG_FILES="$CONFIG_FILES ganl/Makefile" ;;
-    "proxy/Makefile") CONFIG_FILES="$CONFIG_FILES proxy/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

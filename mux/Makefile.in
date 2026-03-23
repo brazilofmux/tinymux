@@ -247,6 +247,10 @@ EGREP = @EGREP@
 ETAGS = @ETAGS@
 EXEEXT = @EXEEXT@
 GREP = @GREP@
+GRPC_CFLAGS = @GRPC_CFLAGS@
+GRPC_CPP_PLUGIN = @GRPC_CPP_PLUGIN@
+GRPC_ENABLED = @GRPC_ENABLED@
+GRPC_LIBS = @GRPC_LIBS@
 HAVE_CXX17 = @HAVE_CXX17@
 INLINESQL = @INLINESQL@
 INSTALL = @INSTALL@
@@ -277,6 +281,7 @@ PCRE2_LIBS = @PCRE2_LIBS@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
+PROTOC = @PROTOC@
 RANLIB = @RANLIB@
 REALITY_LVLS = @REALITY_LVLS@
 SELFCHECK = @SELFCHECK@
@@ -343,7 +348,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = ganl sqlite lua54 lib src modules announce muxescape script proxy
+SUBDIRS = ganl sqlite lua54 lib src modules announce muxescape script
 
 # Shared build flags available to all subdirectories.
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdir)/sqlite \

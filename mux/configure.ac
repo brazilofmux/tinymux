@@ -6,6 +6,8 @@ AC_CONFIG_SRCDIR([src/driver.cpp])
 AC_CONFIG_HEADERS([include/autoconf.h] [modules/autoconf.h] [announce/autoconf.h])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
+PKG_PROG_PKG_CONFIG
+
 AC_MSG_CHECKING(whether to enable Reality Levels)
 AC_ARG_ENABLE(
   [realitylvls],
@@ -661,7 +663,6 @@ AC_CONFIG_FILES([
     muxescape/Makefile
     script/Makefile
     ganl/Makefile
-    proxy/Makefile
 ])
 
 PKG_CHECK_MODULES([OPENSSL], [openssl], [],
