@@ -63,6 +63,11 @@ struct HydraSession {
     // Persistent session ID (random hex string for SQLite storage)
     std::string persistId;
 
+    // Pending link reconnect info — populated on eager restore when
+    // scrollbackKey is not yet available.  Links are reconnected when
+    // the player authenticates and the key becomes available.
+    std::string pendingLinksJson;
+
     // Color rendering preference for gRPC subscribers.
     // Values match hydra.proto ColorFormat enum.
     enum class RenderFormat {

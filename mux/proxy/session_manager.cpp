@@ -632,6 +632,31 @@ void SessionManager::handleLogin(FrontDoorState& fd,
             existing->lastActivity = time(nullptr);
             fd.sessionId = existing->id;
 
+            // Provide the scrollback key if the session was restored without one
+            if (existing->scrollbackKey.empty() && !sbKey.empty()) {
+                existing->scrollbackKey = sbKey;
+                existing->username = fd.pendingUsername;
+
+                // Load persisted scroll-back now that we have the key
+                existing->scrollback.loadFromDb(
+                    accounts_.db(), existing->persistId,
+                    existing->accountId, sbKey);
+            }
+
+            // Reconnect deferred links (from eager restore without key)
+            if (!existing->pendingLinksJson.empty()) {
+                std::vector<SavedLinkInfo> savedLinks;
+                size_t savedActiveLink = 0;
+                parseLinksJson(existing->pendingLinksJson, savedLinks, savedActiveLink);
+                existing->activeLink = savedActiveLink;
+                restoreSessionLinks(*existing, savedLinks);
+                existing->pendingLinksJson.clear();
+
+                sendToClient(fd.handle,
+                    "\r\nReconnecting " + std::to_string(savedLinks.size())
+                    + " saved link(s)...\r\n");
+            }
+
             LOG_INFO("Session %lu resumed for '%s'",
                      (unsigned long)existing->id,
                      fd.pendingUsername.c_str());
@@ -1576,6 +1601,25 @@ std::string SessionManager::authenticateAndGetSession(
         if (sess.accountId == accountId) {
             sess.state = SessionState::Active;
             sess.lastActivity = time(nullptr);
+
+            // Provide scrollback key and reconnect deferred links
+            if (sess.scrollbackKey.empty() && !sbKey.empty()) {
+                sess.scrollbackKey = sbKey;
+                sess.username = username;
+                sess.scrollback.loadFromDb(
+                    accounts_.db(), sess.persistId, sess.accountId, sbKey);
+            }
+            if (!sess.pendingLinksJson.empty()) {
+                std::vector<SavedLinkInfo> savedLinks;
+                size_t savedActiveLink = 0;
+                parseLinksJson(sess.pendingLinksJson, savedLinks, savedActiveLink);
+                sess.activeLink = savedActiveLink;
+                restoreSessionLinks(sess, savedLinks);
+                sess.pendingLinksJson.clear();
+                LOG_INFO("Session %s: deferred links reconnected via gRPC auth",
+                         sess.persistId.c_str());
+            }
+
             return sess.persistId;
         }
     }
@@ -2192,21 +2236,16 @@ void SessionManager::restoreAllSessions() {
         if (session.lastActivity == 0) session.lastActivity = session.created;
         session.persistId = s.id;
         session.state = SessionState::Detached;
-        // scrollbackKey is empty — can't decrypt scroll-back until player logs in
-        // Links can still reconnect though
-
-        std::vector<SavedLinkInfo> savedLinks;
-        size_t savedActiveLink = 0;
-        parseLinksJson(s.linksJson, savedLinks, savedActiveLink);
-        session.activeLink = savedActiveLink;
+        // scrollbackKey is empty — can't decrypt scroll-back until player logs in.
+        // Defer link reconnection: back-door links will reconnect when the
+        // player authenticates, providing the scrollback key.  This prevents
+        // accumulating unflushable output if Hydra crashes again.
+        session.pendingLinksJson = s.linksJson;
 
         HydraSessionId sessId = session.id;
         sessions_[sessId] = std::move(session);
 
-        // Reconnect saved links (back-door connections)
-        restoreSessionLinks(sessions_[sessId], savedLinks);
-
-        LOG_INFO("Restored session %s (account %u, %zu links)",
-                 s.id.c_str(), s.accountId, savedLinks.size());
+        LOG_INFO("Restored session %s (account %u, links deferred until login)",
+                 s.id.c_str(), s.accountId);
     }
 }
