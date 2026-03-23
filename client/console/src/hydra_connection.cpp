@@ -303,6 +303,17 @@ void HydraConnection::attemptReconnect() {
         grpc_->stream = grpc_->stub->GameSession(grpc_->sessionCtx.get());
 
         if (grpc_->stream) {
+            // Resend preferences on the new stream
+            {
+                hydra::ClientMessage prefsMsg;
+                auto* prefs = prefsMsg.mutable_preferences();
+                prefs->set_color_format(hydra::ANSI_TRUECOLOR);
+                prefs->set_terminal_width(80);
+                prefs->set_terminal_height(24);
+                prefs->set_terminal_type("TinyMUX-Console");
+                grpc_->stream->Write(prefsMsg);
+            }
+
             connected_.store(true);
             reconnecting_.store(false);
             pushOutput("[Hydra] Reconnected (attempt " + std::to_string(attempt) + ")");

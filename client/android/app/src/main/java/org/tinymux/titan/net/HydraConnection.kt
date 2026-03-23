@@ -43,8 +43,9 @@ class HydraConnection(
     private var channel: ManagedChannel? = null
     private var sessionId: String = ""
     private var sessionJob: Job? = null
-    // Coroutine channel for sending input through the bidi stream
-    private val inputChannel = Channel<ClientMessage>(Channel.BUFFERED)
+    // Coroutine channel for sending input through the bidi stream.
+    // Replaced on reconnect so sendLine() always targets the active stream.
+    @Volatile private var inputChannel = Channel<ClientMessage>(Channel.BUFFERED)
 
     /** Attach authorization metadata to a gRPC stub. */
     private fun <S : AbstractStub<S>> S.withAuth(): S {
@@ -172,7 +173,25 @@ class HydraConnection(
                     if (intentionalDisconnect) break
 
                     try {
-                        val newInput = Channel<ClientMessage>(Channel.BUFFERED)
+                        // Replace the input channel so sendLine() targets the new stream
+                        inputChannel.close()
+                        val freshChannel = Channel<ClientMessage>(Channel.BUFFERED)
+                        inputChannel = freshChannel
+
+                        // Send initial preferences on the new stream
+                        freshChannel.trySend(
+                            ClientMessage.newBuilder()
+                                .setPreferences(
+                                    SetPreferences.newBuilder()
+                                        .setColorFormat(ColorFormat.ANSI_TRUECOLOR)
+                                        .setTerminalWidth(80)
+                                        .setTerminalHeight(24)
+                                        .setTerminalType("Titan-Android")
+                                        .build()
+                                )
+                                .build()
+                        )
+
                         val newPings = flow {
                             while (true) {
                                 delay(60000)
@@ -186,13 +205,9 @@ class HydraConnection(
                             }
                         }
                         @OptIn(kotlinx.coroutines.FlowPreview::class)
-                        val newRequests = merge(newInput.consumeAsFlow(), newPings)
+                        val newRequests = merge(freshChannel.consumeAsFlow(), newPings)
                         val newResponses = stub.gameSession(newRequests)
 
-                        // Reconnect succeeded — replace input channel
-                        // Close old inputChannel and swap
-                        inputChannel.close()
-                        // We can't reassign val, so we use the new channel for this stream
                         connected = true
                         val reconMsg = "[Hydra] Reconnected (attempt $attempt)"
                         addScrollback(reconMsg)
