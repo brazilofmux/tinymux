@@ -18,9 +18,22 @@ listen telnet       0.0.0.0:4201
 database hydra.sqlite
 
 # --- Master key (for game credential encryption) ---
-# Generate with: dd if=/dev/urandom bs=32 count=1 of=master.key
-# Without this, auto-login and credential storage are disabled.
-# master_key /etc/hydra/master.key
+#
+# The master key encrypts stored game login credentials (auto-login).
+# Without it, credential storage and auto-login are disabled.
+#
+# Three ways to provide the key (checked in this order):
+#
+# 1. Environment variable (preferred for containers/systemd):
+#    export HYDRA_MASTER_KEY=<64 hex chars>
+#
+# 2. File path (32 raw bytes, mode 0600):
+#    master_key /etc/hydra/master.key
+#
+# 3. Auto-generate: if master_key is set but the file doesn't exist,
+#    Hydra generates a new key and saves it with mode 0600.
+#
+master_key master.key
 
 # --- Session defaults ---
 scrollback_lines            10000

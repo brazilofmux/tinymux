@@ -67,7 +67,16 @@ public:
     // ---- Master key and game credentials ----
 
     // Load the master key from a raw 32-byte binary file.
+    // Also checks file permissions and warns if world-readable.
     bool loadMasterKey(const std::string& path, std::string& errorMsg);
+
+    // Load the master key from a hex-encoded environment variable.
+    bool loadMasterKeyFromEnv(const std::string& envVar, std::string& errorMsg);
+
+    // Generate a new master key and save it to the given path.
+    // Used for first-run auto-generation.
+    bool generateMasterKey(const std::string& path, std::string& errorMsg);
+
     bool hasMasterKey() const { return masterKey_.size() >= 32; }
 
     // Store a game credential (encrypts secret with master key).

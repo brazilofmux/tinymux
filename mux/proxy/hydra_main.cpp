@@ -114,13 +114,24 @@ int main(int argc, char* argv[]) {
     }
     LOG_INFO("Database opened: %s", config.databasePath.c_str());
 
-    // Load master key (optional — auto-login disabled without it)
-    if (!config.masterKeyPath.empty()) {
+    // Load master key — try environment variable, then file, then auto-generate.
+    // Priority: HYDRA_MASTER_KEY env > master_key config > auto-generate.
+    if (accounts.loadMasterKeyFromEnv("HYDRA_MASTER_KEY", errorMsg)) {
+        // Loaded from environment — preferred for containers/systemd
+    } else if (!config.masterKeyPath.empty()) {
         if (accounts.loadMasterKey(config.masterKeyPath, errorMsg)) {
-            LOG_INFO("Master key loaded from %s", config.masterKeyPath.c_str());
+            // Loaded from file
         } else {
-            LOG_WARN("Master key not available: %s (auto-login disabled)",
-                     errorMsg.c_str());
+            // File doesn't exist — try to auto-generate
+            LOG_INFO("Master key file not found, generating: %s",
+                     config.masterKeyPath.c_str());
+            if (accounts.generateMasterKey(config.masterKeyPath, errorMsg)) {
+                LOG_INFO("Master key auto-generated at %s",
+                         config.masterKeyPath.c_str());
+            } else {
+                LOG_WARN("Master key not available: %s (auto-login disabled)",
+                         errorMsg.c_str());
+            }
         }
     } else {
         LOG_INFO("No master key configured (auto-login disabled)");

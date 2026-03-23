@@ -3,9 +3,14 @@
 #include "hydra_log.h"
 #include <sqlite3.h>
 #include <crypt.h>
-#include <cstring>
+#include <cerrno>
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <random>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 // Generate a random salt string for crypt(3) SHA-512.
 static std::string generateSalt() {
@@ -437,6 +442,19 @@ static std::vector<uint8_t> buildCredentialAAD(uint32_t accountId,
 
 bool AccountManager::loadMasterKey(const std::string& path,
                                    std::string& errorMsg) {
+    // Check file permissions — warn if world-readable
+    struct stat st;
+    if (stat(path.c_str(), &st) == 0) {
+        if (st.st_mode & S_IROTH) {
+            LOG_WARN("Master key file %s is world-readable! "
+                     "Run: chmod 600 %s", path.c_str(), path.c_str());
+        }
+        if (st.st_mode & S_IWOTH) {
+            LOG_WARN("Master key file %s is world-writable! "
+                     "Run: chmod 600 %s", path.c_str(), path.c_str());
+        }
+    }
+
     FILE* f = fopen(path.c_str(), "rb");
     if (!f) {
         errorMsg = "cannot open master key file: " + path;
@@ -455,7 +473,74 @@ bool AccountManager::loadMasterKey(const std::string& path,
     }
 
     masterKeyId_ = computeKeyId(masterKey_);
-    LOG_INFO("Master key loaded (key_id=%s)", masterKeyId_.c_str());
+    LOG_INFO("Master key loaded from %s (key_id=%s)",
+             path.c_str(), masterKeyId_.c_str());
+    return true;
+}
+
+bool AccountManager::loadMasterKeyFromEnv(const std::string& envVar,
+                                          std::string& errorMsg) {
+    const char* hex = getenv(envVar.c_str());
+    if (!hex || strlen(hex) == 0) {
+        errorMsg = "environment variable " + envVar + " not set";
+        return false;
+    }
+
+    std::string hexStr(hex);
+    if (hexStr.size() != AEAD_KEY_LEN * 2) {
+        errorMsg = envVar + " must be " + std::to_string(AEAD_KEY_LEN * 2)
+                 + " hex characters (got " + std::to_string(hexStr.size()) + ")";
+        return false;
+    }
+
+    masterKey_.resize(AEAD_KEY_LEN);
+    for (size_t i = 0; i < AEAD_KEY_LEN; i++) {
+        unsigned int byte = 0;
+        if (sscanf(hexStr.c_str() + i * 2, "%02x", &byte) != 1) {
+            errorMsg = envVar + " contains invalid hex at position "
+                     + std::to_string(i * 2);
+            masterKey_.clear();
+            return false;
+        }
+        masterKey_[i] = static_cast<uint8_t>(byte);
+    }
+
+    masterKeyId_ = computeKeyId(masterKey_);
+    LOG_INFO("Master key loaded from env %s (key_id=%s)",
+             envVar.c_str(), masterKeyId_.c_str());
+    return true;
+}
+
+bool AccountManager::generateMasterKey(const std::string& path,
+                                       std::string& errorMsg) {
+    masterKey_.resize(AEAD_KEY_LEN);
+    randomBytes(masterKey_.data(), AEAD_KEY_LEN);
+
+    // Write with restrictive permissions (owner-only)
+    int fd = open(path.c_str(), O_WRONLY | O_CREAT | O_EXCL, 0600);
+    if (fd < 0) {
+        if (errno == EEXIST) {
+            errorMsg = "master key file already exists: " + path;
+        } else {
+            errorMsg = "cannot create master key file: " + std::string(strerror(errno));
+        }
+        masterKey_.clear();
+        return false;
+    }
+
+    ssize_t written = write(fd, masterKey_.data(), AEAD_KEY_LEN);
+    close(fd);
+
+    if (written != static_cast<ssize_t>(AEAD_KEY_LEN)) {
+        errorMsg = "failed to write master key file";
+        unlink(path.c_str());
+        masterKey_.clear();
+        return false;
+    }
+
+    masterKeyId_ = computeKeyId(masterKey_);
+    LOG_INFO("Generated new master key at %s (key_id=%s, mode 0600)",
+             path.c_str(), masterKeyId_.c_str());
     return true;
 }
 
