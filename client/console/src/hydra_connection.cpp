@@ -27,10 +27,13 @@ HydraConnection::HydraConnection(const std::string& world_name,
                                  const std::string& password,
                                  const std::string& game_name,
                                  HANDLE iocp,
-                                 bool use_tls)
+                                 bool use_tls,
+                                 int term_width,
+                                 int term_height)
     : worldName_(world_name), host_(host), port_(port),
       username_(username), password_(password), gameName_(game_name),
-      iocp_(iocp), useTls_(use_tls) {
+      iocp_(iocp), useTls_(use_tls),
+      termWidth_(term_width), termHeight_(term_height) {
     lastRecvTime_ = std::chrono::steady_clock::now();
     lastSendTime_ = lastRecvTime_;
 }
@@ -118,8 +121,8 @@ bool HydraConnection::connect() {
         hydra::ClientMessage prefsMsg;
         auto* prefs = prefsMsg.mutable_preferences();
         prefs->set_color_format(hydra::ANSI_TRUECOLOR);
-        prefs->set_terminal_width(80);   // TODO: get actual console width
-        prefs->set_terminal_height(24);  // TODO: get actual console height
+        prefs->set_terminal_width(termWidth_);
+        prefs->set_terminal_height(termHeight_);
         prefs->set_terminal_type("TinyMUX-Console");
         grpc_->stream->Write(prefsMsg);
     }

@@ -29,7 +29,9 @@ public:
                     const std::string& password,
                     const std::string& game_name,
                     HANDLE iocp,
-                    bool use_tls = true);
+                    bool use_tls = true,
+                    int term_width = 80,
+                    int term_height = 24);
     ~HydraConnection() override;
 
     HydraConnection(const HydraConnection&) = delete;
@@ -97,6 +99,8 @@ private:
     std::string sessionId_;
     HANDLE iocp_;
     bool useTls_;
+    int termWidth_;
+    int termHeight_;
 
     // gRPC state (opaque — actual types in .cpp to avoid grpc headers here)
     struct GrpcState;

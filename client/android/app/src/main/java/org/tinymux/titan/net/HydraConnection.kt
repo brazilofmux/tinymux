@@ -25,6 +25,8 @@ class HydraConnection(
     private val password: String,
     private val gameName: String,
     private val useTls: Boolean = true,
+    private val termWidth: Int = 80,
+    private val termHeight: Int = 24,
 ) {
     var connected = false; private set
     @Volatile private var intentionalDisconnect = false
@@ -135,8 +137,8 @@ class HydraConnection(
                         .setPreferences(
                             SetPreferences.newBuilder()
                                 .setColorFormat(ColorFormat.ANSI_TRUECOLOR)
-                                .setTerminalWidth(80)   // TODO: get actual screen width
-                                .setTerminalHeight(24)
+                                .setTerminalWidth(termWidth)
+                                .setTerminalHeight(termHeight)
                                 .setTerminalType("Titan-Android")
                                 .build()
                         )

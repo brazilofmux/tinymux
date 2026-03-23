@@ -96,7 +96,8 @@ static void cmd_connect(App& app, const std::vector<std::string>& args) {
         auto hconn = std::make_unique<HydraConnection>(
             name, world->host, world->port,
             world->hydra_user, world->hydra_pass,
-            world->hydra_game, app.iocp, world->use_ssl);
+            world->hydra_game, app.iocp, world->use_ssl,
+            app.terminal.get_cols(), app.terminal.get_rows());
         app.terminal.print_system("Connecting via Hydra to " + name + " (" +
                                   world->host + ":" + world->port + ")...");
         IConnection* raw = hconn.get();

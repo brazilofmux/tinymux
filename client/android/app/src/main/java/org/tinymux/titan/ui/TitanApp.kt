@@ -274,7 +274,14 @@ fun TitanApp() {
         val tabIndex = tabs.size - 1
         activeTab = tabIndex
 
-        val hconn = HydraConnection(name, host, port, hydraUser, hydraPass, hydraGame, useTls)
+        // Estimate terminal size from screen dimensions and font size
+        val screenWidthDp = context.resources.configuration.screenWidthDp
+        val screenHeightDp = context.resources.configuration.screenHeightDp
+        val charWidthDp = appSettings.fontSize * 0.6  // monospace char ~60% of font size
+        val termW = (screenWidthDp / charWidthDp).toInt().coerceIn(40, 200)
+        val termH = (screenHeightDp / (appSettings.fontSize * 1.2)).toInt().coerceIn(10, 80)
+
+        val hconn = HydraConnection(name, host, port, hydraUser, hydraPass, hydraGame, useTls, termW, termH)
         tab.hydraConnection = hconn
 
         hconn.onLine = { line -> processServerLine(tabIndex, line) }
