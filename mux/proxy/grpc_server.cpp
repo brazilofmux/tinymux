@@ -7,6 +7,7 @@
 #include "process_manager.h"
 #include "config.h"
 #include "hydra_log.h"
+#include "telnet_utils.h"
 
 #include "hydra.grpc.pb.h"
 
@@ -369,16 +370,7 @@ public:
                                     // Send NAWS to game: IAC SB NAWS w_hi w_lo h_hi h_lo IAC SE
                                     uint16_t width = w ? static_cast<uint16_t>(w) : 80;
                                     uint16_t height = h ? static_cast<uint16_t>(h) : 24;
-                                    char naws[] = {
-                                        static_cast<char>(255), static_cast<char>(250),
-                                        static_cast<char>(31),  // NAWS
-                                        static_cast<char>((width >> 8) & 0xFF),
-                                        static_cast<char>(width & 0xFF),
-                                        static_cast<char>((height >> 8) & 0xFF),
-                                        static_cast<char>(height & 0xFF),
-                                        static_cast<char>(255), static_cast<char>(240)
-                                    };
-                                    sm.safeWrite(active->handle, naws, sizeof(naws));
+                                    sm.safeWrite(active->handle, buildNawsFrame(width, height));
                                 }
                             });
                     }
@@ -395,15 +387,7 @@ public:
                             if (active && active->handle != ganl::InvalidConnectionHandle
                                 && active->gmcpEnabled) {
                                 std::string payload = pkg + " " + json;
-                                // Build GMCP telnet frame
-                                std::string frame;
-                                frame.push_back(static_cast<char>(255)); // IAC
-                                frame.push_back(static_cast<char>(250)); // SB
-                                frame.push_back(static_cast<char>(201)); // GMCP
-                                frame.append(payload);
-                                frame.push_back(static_cast<char>(255)); // IAC
-                                frame.push_back(static_cast<char>(240)); // SE
-                                sm.safeWrite(active->handle, frame);
+                                sm.safeWrite(active->handle, buildGmcpFrame(payload));
                             }
                         });
                 }

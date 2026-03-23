@@ -1,6 +1,7 @@
 #include "session_manager.h"
 #include "crypto.h"
 #include "hydra_log.h"
+#include "telnet_utils.h"
 #include <color_ops.h>
 #include <nlohmann/json.hpp>
 #ifdef GRPC_ENABLED
@@ -20,13 +21,13 @@ struct ReplayContext {
     ganl::NetworkEngine* engine;  // for safeWrite via postWrite
 };
 
-// Telnet constants for GMCP parsing
-static constexpr unsigned char T_IAC = 255;
-static constexpr unsigned char T_SB  = 250;
-static constexpr unsigned char T_SE  = 240;
-static constexpr unsigned char T_GMCP = 201;
-static constexpr unsigned char T_WILL = 251;
-static constexpr unsigned char T_DO   = 253;
+// Telnet constants for GMCP parsing (from shared telnet_utils.h)
+static constexpr unsigned char T_IAC  = telnet::IAC;
+static constexpr unsigned char T_SB   = telnet::SB;
+static constexpr unsigned char T_SE   = telnet::SE;
+static constexpr unsigned char T_GMCP = telnet::GMCP;
+static constexpr unsigned char T_WILL = telnet::WILL;
+static constexpr unsigned char T_DO   = telnet::DO;
 
 // A GMCP sub-negotiation extracted from the raw byte stream.
 struct GmcpMessage {
@@ -122,18 +123,7 @@ static void splitGmcp(const char* data, size_t len,
     }
 }
 
-// Build a GMCP telnet sub-negotiation frame: IAC SB GMCP <payload> IAC SE
-static std::string buildGmcpFrame(const std::string& payload) {
-    std::string frame;
-    frame.reserve(payload.size() + 5);
-    frame.push_back(static_cast<char>(T_IAC));
-    frame.push_back(static_cast<char>(T_SB));
-    frame.push_back(static_cast<char>(T_GMCP));
-    frame.append(payload);
-    frame.push_back(static_cast<char>(T_IAC));
-    frame.push_back(static_cast<char>(T_SE));
-    return frame;
-}
+// buildGmcpFrame() is now in telnet_utils.h (shared with grpc_server.cpp)
 
 static const char* linkStateName(LinkState s) {
     switch (s) {
