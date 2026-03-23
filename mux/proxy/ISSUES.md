@@ -21,6 +21,18 @@
 
 ## Bugs & Technical Debt
 
+### Concurrent `stream->Write()` Calls In `GameSession`
+- **Issue:** The `GameSession` reader thread writes `PongMessage` replies directly to `stream`, while the writer loop simultaneously writes queued output and GMCP on the same `ServerReaderWriter`.
+- **Evidence:** `mux/proxy/grpc_server.cpp:348-355`, `mux/proxy/grpc_server.cpp:399-428`
+- **Impact:** Synchronous gRPC streams do not guarantee safety for concurrent writes from multiple threads. Pings racing with output can corrupt stream state or produce intermittent write failures under load.
+- **Fix:** Funnel pongs through the same outbound queue or serialize all writes behind a single writer thread.
+
+### Data Race On Per-Subscriber `renderFormat`
+- **Issue:** The reader thread mutates `sq->renderFormat` in response to `SetPreferences`, while the writer loop reads it to render outbound text, with no lock or atomic protection.
+- **Evidence:** `mux/proxy/grpc_server.cpp:356-360`, `mux/proxy/grpc_server.cpp:405-415`
+- **Impact:** This is undefined behavior in C++. Under TSAN or real contention it can manifest as torn reads, stale formats, or hard-to-reproduce rendering glitches.
+- **Fix:** Guard `renderFormat` with the output-queue mutex or make it an atomic integral type.
+
 ### Telnet `IAC` Escaping Missing in SB Frames
 - **Issue:** `buildGmcpFrame` and `buildNawsFrame` in `telnet_utils.h` do not escape `IAC` (255) bytes in their payloads.
 - **Impact:** If a GMCP payload or a NAWS width/height byte happens to be 255, it will be interpreted as the start of a telnet command, breaking the sub-negotiation and potentially the entire stream.
@@ -40,6 +52,12 @@
 - **Issue:** Protobuf 3 scalar fields default to 0. When a client sends `SetPreferences` (e.g., for a NAWS resize) but doesn't set `color_format`, the server receives 0 and resets the subscriber to `ANSI_TRUECOLOR`.
 - **Impact:** Unexpected color rendering changes when resizing windows or updating other preferences.
 - **Fix:** Add `COLOR_NO_CHANGE = 0` to the enum or make fields `optional` (proto3).
+
+### `terminal_type` Is Defined But Ignored
+- **Issue:** `SetPreferences` carries `terminal_type`, but the server never consumes it anywhere after parsing the protobuf.
+- **Evidence:** `mux/proxy/hydra.proto:212-216`, `mux/proxy/grpc_server.cpp:356-378`
+- **Impact:** The protocol now advertises terminal-type reporting without any backend effect. Back-door TTYPE forwarding still cannot reflect the client's declared terminal type.
+- **Opportunity:** Persist terminal type in subscriber/front-door state and feed it into telnet negotiation for back-door TTYPE.
 
 ### Thread-Unsafe `strerror()` in `safeWrite`
 - **Issue:** `SessionManager::safeWrite` uses `strerror(err)` for logging.
@@ -108,4 +126,4 @@ existing grpc-web handler.
 - **Fixed:** Three key sources: env var (`HYDRA_MASTER_KEY`), file with permission checking, auto-generation on first run. System keystores deferred — not practical for server daemons. (a60cd06)
 
 ### ~~Rate Limiting Cleanup~~
-- **Fixed:** All resource limits enforced. `maxScrollbackMemoryMb` now tracked per-session via `ScrollBack::memoryBytes()` with global check in `onBackDoorData()`. (706800347)
+- **Partially fixed:** limits are enforced, but the current `maxScrollbackMemoryMb` check is still `O(N sessions)` on each append; the remaining performance issue is tracked above.

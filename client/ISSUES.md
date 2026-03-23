@@ -2,7 +2,7 @@
 
 ## Recently Fixed
 
-- ~~Native gRPC Clients Always Disable Transport Security~~ — Fixed: TLS by default (1192607)
+- ~~Console/Android gRPC plaintext~~ — Fixed there: TLS by default landed for those clients (1192607). TF still pending below.
 - ~~Android Opens GameSession Without Input Path~~ — Fixed: bidi input (572843e)
 - ~~gRPC Subscribers Steal Messages~~ — Fixed server-side: per-subscriber queues (d0d5d05)
 - ~~OutputQueue Pre-rendering~~ — Fixed server-side: deferred per-subscriber rendering (634ce31)
@@ -11,6 +11,11 @@
 - ~~Browser localStorage Session Tokens~~ — Fixed: moved to sessionStorage (bcdb9f8)
 
 ## Bugs & Security Risks
+
+### TF Hydra Transport Still Uses Plaintext gRPC
+- **Issue:** The "native gRPC TLS fixed" status is not true for TF. Its Hydra transport still creates the channel with `grpc::InsecureChannelCredentials()`.
+- **Evidence:** `client/tf/src/hydra_connection.cpp:72-80`
+- **Impact:** TF remains the odd client out: Hydra credentials and session tokens are still exposed on any non-local network path.
 
 ### HTML5 Protobuf Encoder Edge Cases
 - **Issue:** The hand-rolled browser protobuf encoder has been improved but may still have edge cases with zero-valued scalars that are semantically meaningful.
@@ -36,6 +41,11 @@
 - **Impact:** The web path diverges from the primary protocol. Features added to `GameSession` only (like `SetPreferences`) don't reach browser clients.
 - **Note:** This is a grpc-web limitation — true bidi streaming requires WebSocket-based gRPC.
 
+### Reconnect Paths Reopen `GameSession` Without Re-Sending Preferences
+- **Issue:** Initial `SetPreferences` is sent on first connect, but the reconnect code paths in Console, TF, and Android reopen `GameSession` without replaying preferences before resuming reads.
+- **Evidence:** `client/console/src/hydra_connection.cpp:116-125`, `client/console/src/hydra_connection.cpp:299-310`, `client/tf/src/hydra_connection.cpp:128-135`, `client/tf/src/hydra_connection.cpp:755-766`, `client/android/app/src/main/java/org/tinymux/titan/net/HydraConnection.kt:131-143`, `client/android/app/src/main/java/org/tinymux/titan/net/HydraConnection.kt:175-205`
+- **Impact:** After reconnect, color format, terminal size, and terminal type can silently fall back to server defaults until another resize or preference update happens. Android also never re-seeds the new stream with preferences at all.
+
 ## Feature Gaps
 
 ### ~~Clients Do Not Send Initial Capability Message Consistently~~
@@ -43,6 +53,16 @@
 
 ### ~~`GetScrollBack` color_format Not Used~~
 - **Fixed:** Console and Android now set color_format = ANSI_TRUECOLOR on scroll-back requests. (3096196)
+
+### Reported Terminal Size Is Still Hardcoded On Native Hydra Clients
+- **Issue:** Console, TF, and Android now send preferences, but they still hardcode `80x24` instead of reporting the actual viewport on initial connect.
+- **Evidence:** `client/console/src/hydra_connection.cpp:120-123`, `client/tf/src/hydra_connection.cpp:131-134`, `client/android/app/src/main/java/org/tinymux/titan/net/HydraConnection.kt:135-139`
+- **Impact:** The issue tracker marks terminal capability reporting as fixed, but real games will still wrap output and paginate as if every client were `80x24` until a later resize message exists, if one exists at all.
+
+### Browser grpc-web Path Still Cannot Choose Live Output Color Format
+- **Issue:** `Subscribe` now supports `SessionRequest.color_format`, but the web client's subscribe request sends only `session_id` and terminal size.
+- **Evidence:** `mux/proxy/hydra.proto:152-156`, `client/web/js/hydra_connection.js:810-817`
+- **Impact:** Browser Hydra output is still effectively pinned to the server default render mode. The SetPreferences work fixed native gRPC, not the grpc-web path.
 
 ### ~~Scrollback Fetch on Reconnect~~
 - **Fixed:** Console and Android now call GetScrollBack (200 lines) after successful reconnect. (46ba394)
