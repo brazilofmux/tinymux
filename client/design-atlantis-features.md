@@ -1,4 +1,4 @@
-# Atlantis-Inspired Features — Cross-Client Design
+# Atlantis-Inspired Features—Cross-Client Design
 
 Features from the Atlantis source survey (`docs/atlantis-survey/`) that
 would benefit the Titan client family. Prioritized by impact and
@@ -6,15 +6,16 @@ feasibility across platforms.
 
 ## 1. Spawn System (Output Routing)
 
-**Priority: HIGH — Atlantis's most distinctive feature, no client has it.**
+**Priority: HIGH—Atlantis's most distinctive feature, no client has it.**
 
 ### Concept
 A "spawn" is a sub-tab within a world connection. Each spawn has a list
 of patterns (regex/glob). When a line arrives from the server, each
-spawn's patterns are checked — matching lines route to that spawn's
+spawn's patterns are checked—matching lines route to that spawn's
 display. The main spawn always receives everything.
 
 ### Use Cases
+
 - Route combat output to a "Combat" tab
 - Route pages/tells to a "Pages" tab
 - Route channel chat to per-channel tabs ("Public", "Staff", etc.)
@@ -47,44 +48,51 @@ For each spawn config (by weight order):
 ```
 
 Lines can match multiple spawns (a line can appear in both main and
-a spawn tab). This is intentional — the main tab is the complete log.
+a spawn tab). This is intentional—the main tab is the complete log.
 
 ### Per-Client Implementation
 
 **Console (C++):**
+
 - Spawns as additional output buffers, switchable via `/fg spawn:combat`
 - `/spawn add <name> <pattern>` to define
 - `/spawn remove <name>` to delete
 - Status bar shows spawn activity indicators
 
 **TF (C++):**
-- Natural fit — TF already has world switching
+
+- Natural fit—TF already has world switching
 - Spawns as sub-worlds within a connection
 - `/spawn` command family
 - ncurses split view for active spawn
 
 **Web (JavaScript):**
+
 - Spawns as additional tabs within the world tab group
 - Nested tab bar: [Main] [Combat] [Pages] [Public]
 - Or sidebar panel with spawn list
 - Pattern config in World Manager
 
 **Win32GUI (C++):**
+
 - Spawns as child tabs within the world's pane
 - Or split view with spawn list sidebar
 - Best visual presentation potential
 
 **Android (Kotlin):**
+
 - Spawns as swipeable sub-tabs below the world tab bar
 - Or bottom sheet with spawn selector
 - Edit spawn patterns in World Manager
 
 **iOS (Swift):**
+
 - Spawns as segmented control or tab bar within world view
 - iPad: NavigationSplitView with spawn list + output
 - Edit spawn patterns in World Manager
 
 ### Implementation Order
+
 1. Data model + persistence (SpawnConfig in world settings)
 2. Pattern matching in the line processing pipeline
 3. UI for spawn display (platform-specific)
@@ -95,7 +103,7 @@ a spawn tab). This is intentional — the main tab is the complete log.
 
 ## 2. MCP Protocol (MUD Client Protocol)
 
-**Priority: HIGH — used by MOOs and some MUSHes.**
+**Priority: HIGH—used by MOOs and some MUSHes.**
 
 ### Concept
 Structured server↔client communication beyond raw text. Primary use
@@ -116,6 +124,7 @@ editor, user edits, client sends it back).
 | dns-org-mud-moo-simpleedit | Remote text editing |
 
 ### Per-Client Implementation
+
 - All clients: detect `#$#` prefix, parse MCP messages, handle negotiation
 - Remote editing: open a text editor view/dialog with the content,
   send back on save
@@ -124,6 +133,7 @@ editor, user edits, client sends it back).
 - GUI clients: editor pane or sheet
 
 ### Implementation Order
+
 1. MCP message parser (shared logic, similar across clients)
 2. Negotiation handler
 3. Simple edit handler with editor UI
@@ -133,13 +143,14 @@ editor, user edits, client sends it back).
 
 ## 3. Composite Conditions
 
-**Priority: MEDIUM — makes triggers much more expressive.**
+**Priority: MEDIUM—makes triggers much more expressive.**
 
 ### Concept
-Current triggers: pattern matches → action fires. No way to combine
+Current triggers: pattern matches—action fires. No way to combine
 conditions.
 
 Atlantis model: conditions are composable with AND/OR/NOT:
+
 - "Line matches /combat/ AND world is connected AND idle < 60s"
 - "Line matches /tells you/ OR line matches /pages you/"
 - "NOT line matches /spambot/"
@@ -159,14 +170,16 @@ Condition types:
 ```
 
 ### Per-Client Implementation
+
 - Extend existing trigger models with optional conditions list
 - Default behavior (no conditions): same as today (pattern match only)
 - UI: condition list in trigger editor with add/remove
-- Backward compatible — triggers without conditions work as before
+- Backward compatible—triggers without conditions work as before
 
 ### Implementation Order
+
 1. Condition protocol/interface in each client's trigger model
-2. StringMatch condition (replaces inline pattern — same behavior)
+2. StringMatch condition (replaces inline pattern—same behavior)
 3. Negate and Group conditions
 4. WorldConnected, WorldIdle conditions
 5. UI for condition editing
@@ -175,14 +188,15 @@ Condition types:
 
 ## 4. Substitution Action
 
-**Priority: MEDIUM — rewrite ugly server output before display.**
+**Priority: MEDIUM—rewrite ugly server output before display.**
 
 ### Concept
 A trigger action that does regex find/replace on the display text
 before it reaches the output. Different from gag (which hides the
-whole line) — substitute rewrites part of it.
+whole line)—substitute rewrites part of it.
 
 ### Examples
+
 - Replace `[OOC] PlayerName says "..."` with just `[OOC] Player: ...`
 - Strip redundant timestamps from server output
 - Reformat combat messages for readability
@@ -195,7 +209,7 @@ Trigger action type: SUBSTITUTE
 ```
 
 ### Implementation
-Straightforward in all clients — apply regex replace to the display
+Straightforward in all clients—apply regex replace to the display
 string before passing to AnsiParser/output. Fits naturally into the
 existing trigger pipeline between pattern match and display.
 
@@ -203,7 +217,7 @@ existing trigger pipeline between pattern match and display.
 
 ## 5. Variable Namespace
 
-**Priority: MEDIUM — enables smarter triggers and status bars.**
+**Priority: MEDIUM—enables smarter triggers and status bars.**
 
 ### Concept
 Structured key-value state accessible from triggers, commands, and
@@ -218,11 +232,13 @@ status bar formatting:
 | `temp.*` | User-defined, session-scoped |
 
 ### Use Cases
+
 - Status bar: `$world.name [$world.connected]s - $datetime.time`
 - Trigger action: `say I see $regexp.1 at $datetime.time`
 - Conditional: fire only if `$world.connected > 300`
 
 ### Implementation
+
 - Variable store as a dictionary per world instance
 - Built-in namespaces populated automatically
 - `$var.name` expansion in trigger bodies, command arguments, status bar
@@ -232,18 +248,20 @@ status bar formatting:
 
 ## 6. Line Classification
 
-**Priority: LOW-MEDIUM — useful for advanced trigger workflows.**
+**Priority: LOW-MEDIUM—useful for advanced trigger workflows.**
 
 ### Concept
 Assign CSS-like class names to lines. Other triggers can then match
 on class instead of text content.
 
 ### Example
-1. Trigger 1: pattern `/attacks you/` → assign class `combat`
-2. Trigger 2: condition `class == combat` → route to Combat spawn
-3. Trigger 3: condition `class == combat` → play sound
+
+1. Trigger 1: pattern `/attacks you/` — assign class `combat`
+2. Trigger 2: condition `class == combat` — route to Combat spawn
+3. Trigger 3: condition `class == combat` — play sound
 
 ### Implementation
+
 - Add `lineClass` field to the line metadata
 - Classification action type in triggers
 - Condition type that checks line class
@@ -253,10 +271,11 @@ on class instead of text content.
 
 ## 7. Text-to-Speech
 
-**Priority: LOW — accessibility win.**
+**Priority: LOW—accessibility win.**
 
 ### Concept
 Trigger action that speaks matched text aloud. Useful for:
+
 - Alert on pages/tells when not looking at screen
 - Accessibility for visually impaired users
 
@@ -294,7 +313,7 @@ Shared parsing logic, per-client editor UI:
 ### Phase C: Trigger Enhancements
 Composite conditions, substitution, variables:
 
-1. All clients in parallel — extend existing trigger models
+1. All clients in parallel—extend existing trigger models
 2. Start with substitution (simplest, most visible benefit)
 3. Then composite conditions
 4. Then variable namespace

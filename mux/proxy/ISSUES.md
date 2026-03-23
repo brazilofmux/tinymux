@@ -1,4 +1,4 @@
-# Hydra Proxy — Open Issues & Opportunities
+# Hydra Proxy—Open Issues & Opportunities
 
 ## Recently Fixed
 
@@ -16,6 +16,7 @@
 ## Bugs & Technical Debt
 
 ### ~~Naming Inconsistency~~
+
 - **Fixed:** Standardized to `internalId` (uint64 in-memory) and `persistId` (string durable) everywhere. (348d8f5)
 - **Status:** Windows agent working on this.
 
@@ -42,8 +43,8 @@
 The grpc-web protocol (HTTP/1.1 POST) has a fundamental asymmetry:
 
 - **Server-streaming works:** Hydra's Subscribe RPC pushes game output as
-  chunked HTTP frames.  The browser's `fetch()` + `ReadableStream` receives
-  them incrementally.  This is live streaming — output flows as it arrives
+  chunked HTTP frames. The browser's `fetch()` + `ReadableStream` receives
+  them incrementally. This is live streaming—output flows as it arrives
   from the game.
 
 - **Client-streaming does not exist in grpc-web:** There is no way for the
@@ -53,7 +54,7 @@ The grpc-web protocol (HTTP/1.1 POST) has a fundamental asymmetry:
 
 - **Bidi streaming (GameSession) is not available from browsers.**  Native
   gRPC clients (TF, Console, Android) use the bidi `GameSession` RPC for
-  both input and output on a single persistent stream.  Browsers cannot.
+  both input and output on a single persistent stream. Browsers cannot.
 
 **What this means in practice:**
 
@@ -68,33 +69,38 @@ The grpc-web protocol (HTTP/1.1 POST) has a fundamental asymmetry:
 
 **Recommended browser architecture:**
 
-1. Use **WebSocket** (Hydra telnet front-door) for live game I/O — full
+1. Use **WebSocket** (Hydra telnet front-door) for live game I/O—full
    bidi, no per-line overhead, telnet protocol handles NAWS/charset/GMCP.
-2. Use **gRPC-Web** for management RPCs only — ListGames, Connect,
+2. Use **gRPC-Web** for management RPCs only—ListGames, Connect,
    SwitchLink, credentials, process control, GetScrollBack.
 3. Or use WebSocket for everything (the existing web client already works
    this way) and treat gRPC-Web as an optional enhancement.
 
 **Future option:** The [Connect protocol](https://connectrpc.com/) from Buf
-supports bidi streaming over WebSocket from browsers.  Adding Connect
+supports bidi streaming over WebSocket from browsers. Adding Connect
 support to Hydra would give browsers the full `GameSession` experience.
 This would require a Connect-compatible HTTP handler alongside the
 existing grpc-web handler.
 
 ### ~~Terminal Capability Reporting~~
+
 - **Fixed:** `SetPreferences` on `GameSession` streams + `terminal_width`/`terminal_height` on `SessionRequest` for `Subscribe`. Both forward NAWS to the game. (9033f3d)
 
 ### ~~GMCP Synthesis~~
+
 - **Fixed:** Core.Hello on connect, Core.KeepAlive every 60s, Hydra.Links on state changes. (1b3a6fc)
 - **Enhanced:** GMCP state cache with replay on client attach — vitals/room info replayed to new front-doors and gRPC subscribers. (4d18e7b)
 
 ## Opportunities for Improvement
 
 ### ~~Persistence of OutputQueue~~
+
 - **Mitigated:** The OutputQueue itself is transient by design (it's a delivery buffer, not storage). The crash window is now narrowed: sessions with gRPC subscribers flush scroll-back every 15s instead of 60s, and sessions flush immediately when the last front-door disconnects. Graceful shutdown flushes everything. The remaining gap is at most 15s of output during an ungraceful crash, which is acceptable. (1b3a6fc)
 
 ### ~~Master Key Management~~
-- **Fixed:** Three key sources: env var (`HYDRA_MASTER_KEY`), file with permission checking, auto-generation on first run. System keystores deferred — not practical for server daemons. (a60cd06)
+
+- **Fixed:** Three key sources: env var (`HYDRA_MASTER_KEY`), file with permission checking, auto-generation on first run. System keystores deferred—not practical for server daemons. (a60cd06)
 
 ### ~~Rate Limiting Cleanup~~
+
 - **Partially fixed:** limits are enforced, but the current `maxScrollbackMemoryMb` check is still `O(N sessions)` on each append; the remaining performance issue is tracked above.

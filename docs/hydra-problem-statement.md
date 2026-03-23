@@ -254,13 +254,13 @@ Hydra is internet-facing infrastructure. It must:
 
 Hydra must handle failure cases without crashing or losing state:
 
-- Game rejects stored credentials → notify user, link enters a state
+- Game rejects stored credentials—notify user, link enters a state
   where the user can log in manually or update credentials
-- SQLite errors → log, degrade gracefully (e.g., disable account
+- SQLite errors—log, degrade gracefully (e.g., disable account
   creation but keep existing sessions alive)
-- Back-door unreachable at startup → defer connection, retry per
+- Back-door unreachable at startup—defer connection, retry per
   policy, do not block Hydra startup
-- Malformed client input → drop the input or the connection, never
+- Malformed client input—drop the input or the connection, never
   crash
 
 ## Non-Requirements

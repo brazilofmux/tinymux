@@ -51,7 +51,7 @@ SMTP client. What is missing is the high-level abstraction that
 - **Async connect state machine** — `ConnectionBase` assumes the
   socket is already connected (accepted from a listener).
   `OutboundConnection` needs states before `Running`:
-  `Resolving → Connecting → TelnetNegotiating → Running`.
+  `Resolving—Connecting—TelnetNegotiating—Running`.
 
 - **`NetworkEngine::initiateConnect()`** — a new method that creates a
   socket, calls `connect()` (non-blocking), adopts the fd, and
@@ -108,10 +108,10 @@ configured CA bundle (`tls_ca`) or the system default trust store.
 
 TLS failure paths:
 
-- Handshake failure (protocol error, timeout) → link enters
+- Handshake failure (protocol error, timeout)—link enters
   `Disconnected`, follows retry schedule.
 - Certificate verification failure (expired, wrong hostname,
-  untrusted CA) → link enters `Dead` immediately (no retry — a
+  untrusted CA)—link enters `Dead` immediately (no retry—a
   cert problem won't fix itself). Hydra notifies the front door:
   `[GameName: TLS certificate verification failed]`. The operator
   must fix the game configuration or the remote game's certificate.
@@ -429,7 +429,7 @@ networkEngine->startListening(lh, &listenerCtx, err);
 // listenerCtx records whether this is TLS, WebSocket, etc.
 ```
 
-### Accept → Authenticate → Attach
+### Accept—Authenticate—Attach
 
 ```
 Accept event
@@ -489,7 +489,7 @@ The difference is only how identity is established before the
 
 Phase 1 always prompts for username + password. This is adequate for
 initial testing and for clients that do not implement token storage.
-A fast-resume token mechanism is a natural Phase 2 addition — the
+A fast-resume token mechanism is a natural Phase 2 addition—the
 session manager already identifies sessions by account, so adding a
 second authentication path requires no architectural change.
 
@@ -501,7 +501,7 @@ two resume scenarios:
 
 - **Resume while Hydra is still running** (normal case). The
   player-derived scroll-back key is already in memory from the
-  original login. Token or cert authentication is sufficient — the
+  original login. Token or cert authentication is sufficient—the
   key is available without re-entering the password. In-memory
   scroll-back is replayed immediately.
 
@@ -520,8 +520,8 @@ two resume scenarios:
 
 This is an acceptable tradeoff: Hydra restarts are rare operational
 events, and asking for a password once after a restart to unlock
-historical scroll-back is reasonable. The alternative — wrapping
-per-session scroll-back keys so that tokens could unlock them — would
+historical scroll-back is reasonable. The alternative—wrapping
+per-session scroll-back keys so that tokens could unlock them—would
 add significant complexity and weaken the threat model by making the
 master key sufficient to decrypt scroll-back indirectly.
 
@@ -688,7 +688,7 @@ and back-door telnet states.
 
 Hydra uses the same PUA (Private Use Area) color encoding that TinyMUX
 uses internally. Color is not carried as raw ANSI escape sequences
-inside Hydra — it is parsed to PUA on ingestion and rendered back to
+inside Hydra—it is parsed to PUA on ingestion and rendered back to
 ANSI on output:
 
 ```
@@ -704,19 +704,20 @@ ANSI SGR bytes   ──ANSI→PUA──►   PUA-encoded UTF-8   ──PUA→ANS
 ```
 
 **PUA encoding (from `color_ops.h`):**
+
 - U+F500–F507: attributes (reset, intense, underline, blink, inverse)
 - U+F600–F6FF: 256 foreground indexed colors
 - U+F700–F7FF: 256 background indexed colors
 - U+F0000–F3FFF: 24-bit true color (FG/BG, split across two code
   point pairs)
 
-This means every piece of text inside Hydra — in the scroll-back, in
-the telnet bridge, in string measurement — is in the same format that
+This means every piece of text inside Hydra—in the scroll-back, in
+the telnet bridge, in string measurement—is in the same format that
 all of libmux's `co_*` functions expect. No special-casing needed.
 
-### ANSI → PUA Parser (New Work)
+### ANSI—PUA Parser (New Work)
 
-TinyMUX generates PUA internally from softcode. It has extensive PUA →
+TinyMUX generates PUA internally from softcode. It has extensive PUA —
 ANSI renderers (`co_render_ansi16/256/truecolor()`) but does **not**
 have a parser that goes the other direction: ingesting ANSI SGR escape
 sequences from a byte stream and converting them to PUA code points.
@@ -816,7 +817,7 @@ Client (UTF-8 bytes with ANSI SGR)
 When both sides use UTF-8, charset conversion is a no-op. When the
 client uses a narrower encoding (Latin-1, CP437), Unicode characters
 outside that encoding's range are approximated using the existing
-code page tables — the same approximation logic TinyMUX already uses.
+code page tables—the same approximation logic TinyMUX already uses.
 
 CJK double-width characters are correctly accounted for via
 `ConsoleWidth()` and `co_visual_width()` throughout the pipeline.
@@ -997,7 +998,7 @@ file, and can read the database. They do not have any player's
 Hydra password.
 
 - Game credentials: the master key can decrypt these. The operator
-  can read stored game passwords. This is unavoidable — Hydra
+  can read stored game passwords. This is unavoidable—Hydra
   needs the master key for autonomous auto-login.
 - Scroll-back: **the master key cannot decrypt scroll-back.**
   Scroll-back is encrypted with keys derived from player passwords.
@@ -1081,7 +1082,7 @@ An attacker gains code execution inside the Hydra process.
   login time (active attack requiring code changes and redeployment).
 - Runtime compromise of the Hydra process (exposes in-memory keys
   for active sessions only).
-- A player viewing their own scroll-back (by design — that is the
+- A player viewing their own scroll-back (by design—that is the
   feature).
 
 **What encryption DOES protect against:**
@@ -1347,7 +1348,7 @@ defaults:
 | `max_scrollback_memory_mb`     | 64      | Global         |
 | `max_connections_per_ip`       | 10      | Per source IP  |
 | `connect_rate_limit`           | 5/min   | Per source IP  |
-| `failed_login_lockout`         | 5 failures → 5min lockout | Per account |
+| `failed_login_lockout`         | 5 failures—5min lockout | Per account |
 
 When a limit is hit, Hydra rejects the request with a message
 explaining why, rather than silently dropping it.
@@ -1369,7 +1370,7 @@ explaining why, rather than silently dropping it.
 
 Integration tests use the same smoke-test infrastructure as TinyMUX
 (scripted expect-style sequences), adapted for the two-hop path
-(client → Hydra → game).
+(client—Hydra—game).
 
 ## Phase Boundaries
 

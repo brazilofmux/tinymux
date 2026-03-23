@@ -153,7 +153,7 @@ Ports are configurable. Hydra can listen on as many ports as needed.
 7. If session has active links, output begins flowing
 8. If no links, Hydra presents a menu of configured games
 
-**Account creation:** Configurable policy — open self-registration,
+**Account creation:** Configurable policy—open self-registration,
 admin-only creation, or disabled. When self-registration is enabled,
 the login prompt accepts a `create <username> <password>` command.
 When disabled, accounts are created via `hydra --create-user` on the
@@ -176,7 +176,7 @@ Manages session lifecycle. This is the heart of Hydra.
 
 **Detached session lifetime:** When all front-door connections
 disconnect, the session enters Detached state. Back-door links remain
-active — the game keeps sending output, and Hydra keeps buffering it
+active—the game keeps sending output, and Hydra keeps buffering it
 in the scroll-back. A detached session with active back-door links is
 *not* idle (the game is still generating output). The session expires
 only after `session_idle_timeout` with no front-door activity *and*
@@ -361,7 +361,7 @@ Key points:
 - Game credentials: structured fields (`login_verb`, `login_name`,
   encrypted secret), AEAD-encrypted with the host master key
 - Scroll-back: AEAD-encrypted with a key derived from the player's
-  own Hydra password (not the master key — the box owner cannot
+  own Hydra password (not the master key—the box owner cannot
   decrypt scroll-back without the player's password)
 - Saved sessions: link list for resume after Hydra restart
 
@@ -558,7 +558,7 @@ mux/
 - Single back-door protocol (plain telnet)
 - Session manager with login/resume
 - Telnet bridge with charset conversion and PUA color pipeline
-  (ANSI→PUA on ingestion, PUA→ANSI on output; color depth
+  (ANSI—PUA on ingestion, PUA—ANSI on output; color depth
   translation uses existing libmux co_* renderers)
 - Scroll-back buffer (PUA-encoded UTF-8, persisted to SQLite,
   encrypted with player-derived key)
