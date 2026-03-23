@@ -23,9 +23,8 @@
 
 ## Feature Gaps
 
-### Clients Do Not Send Initial Capability Message Consistently
-- **Status:** TitanFugue now sends `SetPreferences` on stream open. Console and Android need updating.
-- **Opportunity:** Standardize: all `GameSession` clients send `SetPreferences` as first message.
+### ~~Clients Do Not Send Initial Capability Message Consistently~~
+- **Fixed:** All three C++ and Android clients now send `SetPreferences` on stream open. (b8661cf)
 
 ### `GetScrollBack` color_format Not Used
 - **Issue:** Protocol exposes `ScrollBackRequest.color_format` but no client sets it.
@@ -43,9 +42,8 @@
 - **Issue:** All clients format GMCP as `[GMCP Package] {json}` text.
 - **Opportunity:** Provide structured hooks for common GMCP packages (Char.Vitals → vitals bar).
 
-### SwiftUI / iOS Hydra Support Missing
-- **Observation:** No iOS Hydra transport exists yet.
-- **Opportunity:** Add when Swift toolchain is available on the build platform.
+### ~~SwiftUI / iOS Hydra Support Missing~~
+- **Fixed:** HydraConnection.swift written with full feature parity, guarded behind #if canImport(GRPC). Needs Mac build with grpc-swift package. (6858c4d)
 
 ### Hydra Command Surface Inconsistent Across Clients
 - **Issue:** TF and web intercept `/h*` commands in the transport layer. Console routes through command.cpp. Android routes in UI code.
