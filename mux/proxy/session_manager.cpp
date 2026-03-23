@@ -125,6 +125,43 @@ static void splitGmcp(const char* data, size_t len,
 
 // buildGmcpFrame() is now in telnet_utils.h (shared with grpc_server.cpp)
 
+// Send Hydra.Links GMCP to all GMCP-enabled front-doors of a session.
+// Called whenever link state changes (connect, disconnect, reconnect).
+static void sendHydraLinksGmcp(HydraSession& session,
+                               std::map<ganl::ConnectionHandle, FrontDoorState>& frontDoors,
+                               std::function<void(ganl::ConnectionHandle, const std::string&)> writeFn) {
+    nlohmann::json linksArr = nlohmann::json::array();
+    for (size_t i = 0; i < session.links.size(); i++) {
+        const auto& l = session.links[i];
+        const char* state = "unknown";
+        switch (l.state) {
+        case LinkState::Connecting:     state = "connecting"; break;
+        case LinkState::TlsHandshaking: state = "tls"; break;
+        case LinkState::Negotiating:    state = "negotiating"; break;
+        case LinkState::AutoLoggingIn:  state = "logging-in"; break;
+        case LinkState::Active:         state = "active"; break;
+        case LinkState::Reconnecting:   state = "reconnecting"; break;
+        case LinkState::Suspended:      state = "suspended"; break;
+        case LinkState::Dead:           state = "dead"; break;
+        }
+        linksArr.push_back({
+            {"number", static_cast<int>(i) + 1},
+            {"game", l.gameName},
+            {"state", state},
+            {"active", i == session.activeLink},
+        });
+    }
+    std::string gmcpPayload = "Hydra.Links " + linksArr.dump();
+    std::string frame = buildGmcpFrame(gmcpPayload);
+
+    for (auto h : session.frontDoors) {
+        auto fdIt = frontDoors.find(h);
+        if (fdIt != frontDoors.end() && fdIt->second.gmcpEnabled) {
+            writeFn(h, frame);
+        }
+    }
+}
+
 static const char* linkStateName(LinkState s) {
     switch (s) {
     case LinkState::Connecting:     return "connecting";
@@ -1140,6 +1177,18 @@ void SessionManager::onBackDoorConnect(ganl::ConnectionHandle bdHandle) {
             + std::to_string(linkIdx + 1) + "): connected]\r\n");
     }
 
+    // Send Core.Hello to the game if GMCP is enabled on this link
+    if (link->gmcpEnabled) {
+        std::string hello = "Core.Hello {\"client\":\"Hydra\",\"version\":\"0.2\"}";
+        safeWrite(link->handle, buildGmcpFrame(hello));
+    }
+
+    // Send Hydra.Links GMCP to all GMCP-enabled front-doors
+    sendHydraLinksGmcp(*session, frontDoors_,
+        [this](ganl::ConnectionHandle h, const std::string& data) {
+            safeWrite(h, data);
+        });
+
     // Auto-login
     std::string verb, loginName, secret;
     if (accounts_.getLoginSecret(session->accountId, link->gameName,
@@ -1327,6 +1376,8 @@ void SessionManager::onBackDoorClose(ganl::ConnectionHandle bdHandle) {
                     "[" + link->gameName + ": disconnected, retrying in "
                     + std::to_string(delay) + "s]\r\n");
             }
+            sendHydraLinksGmcp(*session, frontDoors_,
+                [this](ganl::ConnectionHandle h, const std::string& d) { safeWrite(h, d); });
             return;
         }
     }
@@ -1342,6 +1393,8 @@ void SessionManager::onBackDoorClose(ganl::ConnectionHandle bdHandle) {
             "[" + link->gameName + " (link "
             + std::to_string(linkIdx + 1) + "): disconnected]\r\n");
     }
+    sendHydraLinksGmcp(*session, frontDoors_,
+        [this](ganl::ConnectionHandle h, const std::string& d) { safeWrite(h, d); });
 }
 
 bool SessionManager::isBackDoor(ganl::ConnectionHandle handle) const {
@@ -1366,6 +1419,19 @@ void SessionManager::runTimers() {
         for (auto& [sid, session] : sessions_) {
             if (session.scrollback.dirtyCount() > 0) {
                 flushSession(session);
+            }
+        }
+    }
+
+    // GMCP Core.KeepAlive to active game links (prevents idle disconnects)
+    if (now - lastFlush_ < 2) {  // piggyback on the 60s flush interval
+        for (auto& [sid, session] : sessions_) {
+            for (auto& link : session.links) {
+                if (link.state == LinkState::Active && link.gmcpEnabled &&
+                    link.handle != ganl::InvalidConnectionHandle) {
+                    safeWrite(link.handle,
+                        buildGmcpFrame("Core.KeepAlive"));
+                }
             }
         }
     }
@@ -2244,7 +2310,7 @@ void SessionManager::restoreAllSessions() {
         session.lastActivity = static_cast<time_t>(std::atol(s.lastActive.c_str()));
         if (session.created == 0) session.created = time(nullptr);
         if (session.lastActivity == 0) session.lastActivity = session.created;
-        session.persistId = s.id;
+        session.persistId = s.persistId;
         session.state = SessionState::Detached;
         // scrollbackKey is empty — can't decrypt scroll-back until player logs in.
         // Defer link reconnection: back-door links will reconnect when the
