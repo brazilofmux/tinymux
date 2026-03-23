@@ -150,8 +150,10 @@ message CreateAccountResponse {
 // ---- Session operations ----
 
 message SessionRequest {
-    string session_id = 1;      // fallback if not using metadata auth
-    ColorFormat color_format = 2; // for Subscribe: how to render output (default TrueColor)
+    string session_id = 1;          // fallback if not using metadata auth
+    ColorFormat color_format = 2;   // for Subscribe: how to render output (default TrueColor)
+    uint32 terminal_width = 3;      // for Subscribe: viewport columns (0 = use default 80)
+    uint32 terminal_height = 4;     // for Subscribe: viewport rows (0 = use default 24)
 }
 
 message ConnectRequest {

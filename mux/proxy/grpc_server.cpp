@@ -476,6 +476,24 @@ public:
         oq = future.get();
         if (!oq) return Status(StatusCode::NOT_FOUND, "session not found");
 
+        // Forward terminal size to the active game link if provided
+        if (req->terminal_width() > 0 || req->terminal_height() > 0) {
+            uint32_t w = req->terminal_width();
+            uint32_t h = req->terminal_height();
+            workQueue_.enqueue<void>(
+                [sid, w, h]
+                (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
+                    HydraSession* s = sm.findByPersistId(sid);
+                    if (!s) return;
+                    BackDoorLink* active = s->getActiveLink();
+                    if (active && active->handle != ganl::InvalidConnectionHandle) {
+                        uint16_t width = w ? static_cast<uint16_t>(w) : 80;
+                        uint16_t height = h ? static_cast<uint16_t>(h) : 24;
+                        sm.safeWrite(active->handle, buildNawsFrame(width, height));
+                    }
+                });
+        }
+
         // Register as subscriber (output only, no GMCP) with requested color format
         auto renderFmt = static_cast<HydraSession::RenderFormat>(req->color_format());
         int subId;

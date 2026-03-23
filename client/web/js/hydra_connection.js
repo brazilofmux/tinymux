@@ -161,7 +161,10 @@ const InputResponseDecode = {
     2: {name: 'error', type: 'string'},
 };
 const SessionRequestFields = {
-    session_id: {num: 1, type: 'string'},
+    session_id:      {num: 1, type: 'string'},
+    color_format:    {num: 2, type: 'enum'},
+    terminal_width:  {num: 3, type: 'int32'},
+    terminal_height: {num: 4, type: 'int32'},
 };
 const GameInfoDecode = {
     1: {name: 'name', type: 'string'},
@@ -807,8 +810,11 @@ class HydraConnection {
         const controller = new AbortController();
         this._subscribeAbort = controller;
 
-        const reqBytes = Proto.encode(
-            {session_id: this.sessionId}, SessionRequestFields);
+        const reqBytes = Proto.encode({
+            session_id: this.sessionId,
+            terminal_width: window.innerWidth ? Math.floor(window.innerWidth / 8) : 80,
+            terminal_height: window.innerHeight ? Math.floor(window.innerHeight / 18) : 24,
+        }, SessionRequestFields);
         const body = grpcWebEncodeRequest(reqBytes);
 
         try {

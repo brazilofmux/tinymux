@@ -1956,6 +1956,16 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
             s->frontDoors.push_back(fd.handle);
             s->state = SessionState::Active;
 
+            // Forward terminal size to the active game link if provided
+            if (rpcReq.terminal_width() > 0 || rpcReq.terminal_height() > 0) {
+                BackDoorLink* active = s->getActiveLink();
+                if (active && active->handle != ganl::InvalidConnectionHandle) {
+                    uint16_t w = rpcReq.terminal_width() ? static_cast<uint16_t>(rpcReq.terminal_width()) : 80;
+                    uint16_t h = rpcReq.terminal_height() ? static_cast<uint16_t>(rpcReq.terminal_height()) : 24;
+                    safeWrite(active->handle, buildNawsFrame(w, h));
+                }
+            }
+
             LOG_INFO("grpc-web Subscribe: fd %lu subscribed to session %s",
                      (unsigned long)fd.handle, s->persistId.c_str());
 
