@@ -398,15 +398,34 @@ Changes since TinyMUX 2.12.0.12.
  - PennMUSH and RhostMUSH feature adoption documented in
    `docs/PENNMUSH-FEATURES.md` and `docs/RHOSTMUSH-FEATURES.md`.
 
-# Changes in 2.14.0.2 (2026-MAR-20):
+# Changes in 2.14.0.5 (2026-MAR-23):
 
- - Fixed incomplete distribution TOC files: many source files were
-   missing from the unix and win32 distribution archives in 2.14.0.1.
- - Switched Windows build from /MT (static CRT) to /MD (dynamic CRT)
-   and added `mux_fclose()` wrapper for cross-module FILE* handling.
- - Added `Startmux.bat` to the win32 distribution.
- - Added `softlib.rv64` to the win32 binary distribution.
- - Removed stale `buildnum.sh` from unix distribution.
+ - Lua JIT Phase 3 shipped: runtime type guards with string-to-numeric
+   promotion at all arithmetic and comparison sites; XMM register cache
+   for floating-point (6-slot LRU in XMM2–XMM7); native `HIR_STRCMP`
+   for string comparisons; integer fast-path for Lua table access
+   (`HIR_LUA_GETI` bypasses string marshalling); pinned array
+   optimization for native memory access in numeric for-loops;
+   persistent SQLite cache for compiled Lua programs.
+ - v2 blob format: flat image layout with BSS support and extended blob
+   region, replacing the ELF-based format.
+ - Comsys softcode accessors: `chaninfo()`, `chanusers()`,
+   `chanuser()`, `chanfind()` — query channel configuration, membership,
+   per-user status, and reverse-lookup by partial name. `chaninfo()`
+   includes access-check fields.
+ - Mail softcode accessors: `mailcount()`, `mailstats()`, `maillist()`,
+   `mailinfo()`, `mailflags()` — query folder counts, read/unread/clear
+   statistics, message lists, per-message metadata, and flag strings.
+ - Help text for all new comsys and mail accessor functions.
+ - Fixed `@clist/full` display and added access-check fields to
+   `chaninfo()`.
+ - Fixed `iter()` body evaluation: was incorrectly using the noeval
+   branch path instead of direct eval.
+ - Added 2.13-compatible noeval branch evaluation mode for backward
+   compatibility with existing softcode.
+ - Converted walkdb object list, DBT cache, and DBT patches from
+   custom containers to STL.
+ - Fixed `size_t` loop variable warnings in DBT patch iteration.
 
 # Changes in 2.14.0.4 (2026-MAR-21):
 
@@ -453,3 +472,13 @@ Changes since TinyMUX 2.12.0.12.
    without `muxescape/Makefile.in`).
  - Added `rv64/rv64blob.h` and `rv64/softlib.rv64` to distribution TOCs
    (build with `--enable-jit` failed without the RV64 blob header).
+
+# Changes in 2.14.0.2 (2026-MAR-20):
+
+ - Fixed incomplete distribution TOC files: many source files were
+   missing from the unix and win32 distribution archives in 2.14.0.1.
+ - Switched Windows build from /MT (static CRT) to /MD (dynamic CRT)
+   and added `mux_fclose()` wrapper for cross-module FILE* handling.
+ - Added `Startmux.bat` to the win32 distribution.
+ - Added `softlib.rv64` to the win32 binary distribution.
+ - Removed stale `buildnum.sh` from unix distribution.
