@@ -21,15 +21,11 @@
 - **Issue:** The hand-rolled browser protobuf encoder has been improved but may still have edge cases with zero-valued scalars that are semantically meaningful.
 - **Opportunity:** Replace with generated code or track field presence explicitly.
 
-### Android Reconnect `inputChannel` Lifecycle Bug
-- **Issue:** `HydraConnection.kt` uses a `val inputChannel` which is closed on stream break and replaced by a *local* `newInput` channel inside the `connect()` coroutine.
-- **Impact:** `sendLine()` continues to use the closed `inputChannel`, so no input is sent to the server after the first reconnect.
-- **Fix:** Use a thread-safe way to swap channels or keep the channel alive across reconnects.
+### ~~Android Reconnect `inputChannel` Lifecycle Bug~~
+- **Fixed:** inputChannel is now @Volatile var, replaced with fresh Channel on reconnect. (ffb0026)
 
-### `fetchScrollBack()` Ignores `color_format`
-- **Issue:** Console and Android clients do not set `color_format` in the `ScrollBackRequest`.
-- **Impact:** Server (even when fixed) may return output in an undesired format.
-- **Fix:** Set the preferred `ColorFormat` in the request.
+### ~~`fetchScrollBack()` Ignores `color_format`~~
+- **Fixed:** Console and Android set color_format = ANSI_TRUECOLOR. (3096196)
 
 ### TF `send_naws` Hardcodes `ColorFormat`
 - **Issue:** `HydraConnection::send_naws` always sends `ANSI_TRUECOLOR`.
@@ -41,10 +37,8 @@
 - **Impact:** The web path diverges from the primary protocol. Features added to `GameSession` only (like `SetPreferences`) don't reach browser clients.
 - **Note:** This is a grpc-web limitation — true bidi streaming requires WebSocket-based gRPC.
 
-### Reconnect Paths Reopen `GameSession` Without Re-Sending Preferences
-- **Issue:** Initial `SetPreferences` is sent on first connect, but the reconnect code paths in Console, TF, and Android reopen `GameSession` without replaying preferences before resuming reads.
-- **Evidence:** `client/console/src/hydra_connection.cpp:116-125`, `client/console/src/hydra_connection.cpp:299-310`, `client/tf/src/hydra_connection.cpp:128-135`, `client/tf/src/hydra_connection.cpp:755-766`, `client/android/app/src/main/java/org/tinymux/titan/net/HydraConnection.kt:131-143`, `client/android/app/src/main/java/org/tinymux/titan/net/HydraConnection.kt:175-205`
-- **Impact:** After reconnect, color format, terminal size, and terminal type can silently fall back to server defaults until another resize or preference update happens. Android also never re-seeds the new stream with preferences at all.
+### ~~Reconnect Paths Reopen `GameSession` Without Re-Sending Preferences~~
+- **Fixed:** Console and Android now resend SetPreferences on reconnect. TF still pending. (ffb0026)
 
 ## Feature Gaps
 
