@@ -176,6 +176,8 @@ static const char* linkStateName(LinkState s) {
     return "?";
 }
 
+std::atomic<size_t> SessionManager::globalScrollbackBytes_{0};
+
 SessionManager::SessionManager(ganl::NetworkEngine& engine,
                                AccountManager& accounts,
                                const HydraConfig& config)
@@ -228,8 +230,11 @@ void SessionManager::safeWrite(ganl::ConnectionHandle handle,
                                const char* data, size_t len) {
     ganl::ErrorCode err = 0;
     if (!engine_.postWrite(handle, data, len, err)) {
+        char errbuf[128] = {};
+        // GNU strerror_r returns char* (may not use errbuf)
+        const char* errstr = strerror_r(err, errbuf, sizeof(errbuf));
         LOG_DEBUG("safeWrite failed for fd %lu: %s",
-                  (unsigned long)handle, strerror(err));
+                  (unsigned long)handle, errstr ? errstr : "unknown");
     }
 }
 
@@ -1291,24 +1296,24 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
         std::string puaText = bridge_.ingestGameOutput(
             link->protoState, regular.data(), regular.size());
 
-        // Enforce global scrollback memory limit.
-        // The ring buffer evicts oldest entries on overflow, so we always
-        // append.  But if we're over the global limit, log a warning.
+        // Track global scrollback memory via atomic counter (O(1) per append).
+        size_t oldBytes = session->scrollback.memoryBytes();
+        session->scrollback.append(puaText, link->gameName);
+        size_t newBytes = session->scrollback.memoryBytes();
+        int64_t delta = static_cast<int64_t>(newBytes) - static_cast<int64_t>(oldBytes);
+        if (delta > 0) globalScrollbackBytes_.fetch_add(static_cast<size_t>(delta));
+        else if (delta < 0) globalScrollbackBytes_.fetch_sub(static_cast<size_t>(-delta));
+
         if (config_.maxScrollbackMemoryMb > 0) {
-            size_t totalBytes = 0;
-            for (const auto& [sid, s] : sessions_) {
-                totalBytes += s.scrollback.memoryBytes();
-            }
             size_t limitBytes = config_.maxScrollbackMemoryMb * 1024 * 1024;
-            if (totalBytes >= limitBytes && !scrollbackLimitWarned_) {
-                LOG_WARN("Global scrollback memory limit reached (%zu MB across %zu sessions)",
-                         config_.maxScrollbackMemoryMb, sessions_.size());
+            if (globalScrollbackBytes_.load() >= limitBytes && !scrollbackLimitWarned_) {
+                LOG_WARN("Global scrollback memory limit reached (%zu MB)",
+                         config_.maxScrollbackMemoryMb);
                 scrollbackLimitWarned_ = true;
-            } else if (totalBytes < limitBytes) {
+            } else if (globalScrollbackBytes_.load() < limitBytes) {
                 scrollbackLimitWarned_ = false;
             }
         }
-        session->scrollback.append(puaText, link->gameName);
 
         for (auto h : session->frontDoors) {
             auto fdIt = frontDoors_.find(h);

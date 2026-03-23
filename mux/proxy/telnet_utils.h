@@ -17,30 +17,55 @@ namespace telnet {
     constexpr uint8_t NAWS = 31;
 }
 
+// Escape IAC bytes in a telnet sub-negotiation payload.
+// Any 0xFF byte becomes 0xFF 0xFF per RFC 854.
+inline std::string telnetEscapeIAC(const std::string& data) {
+    std::string out;
+    out.reserve(data.size());
+    for (unsigned char ch : data) {
+        out.push_back(static_cast<char>(ch));
+        if (ch == telnet::IAC) {
+            out.push_back(static_cast<char>(telnet::IAC));
+        }
+    }
+    return out;
+}
+
 // Build a GMCP telnet sub-negotiation frame: IAC SB GMCP <payload> IAC SE
+// Payload bytes are IAC-escaped per RFC 854.
 inline std::string buildGmcpFrame(const std::string& payload) {
+    std::string escaped = telnetEscapeIAC(payload);
     std::string frame;
-    frame.reserve(payload.size() + 5);
+    frame.reserve(escaped.size() + 5);
     frame.push_back(static_cast<char>(telnet::IAC));
     frame.push_back(static_cast<char>(telnet::SB));
     frame.push_back(static_cast<char>(telnet::GMCP));
-    frame.append(payload);
+    frame.append(escaped);
     frame.push_back(static_cast<char>(telnet::IAC));
     frame.push_back(static_cast<char>(telnet::SE));
     return frame;
 }
 
+// Escape a single byte for NAWS: if 0xFF, emit 0xFF 0xFF.
+inline void nawsAppendByte(std::string& frame, uint8_t byte) {
+    frame.push_back(static_cast<char>(byte));
+    if (byte == telnet::IAC) {
+        frame.push_back(static_cast<char>(telnet::IAC));
+    }
+}
+
 // Build a NAWS telnet sub-negotiation frame: IAC SB NAWS w_hi w_lo h_hi h_lo IAC SE
+// Width/height bytes are IAC-escaped per RFC 854.
 inline std::string buildNawsFrame(uint16_t width, uint16_t height) {
     std::string frame;
-    frame.reserve(9);
+    frame.reserve(13);  // worst case: all 4 data bytes are 0xFF
     frame.push_back(static_cast<char>(telnet::IAC));
     frame.push_back(static_cast<char>(telnet::SB));
     frame.push_back(static_cast<char>(telnet::NAWS));
-    frame.push_back(static_cast<char>((width >> 8) & 0xFF));
-    frame.push_back(static_cast<char>(width & 0xFF));
-    frame.push_back(static_cast<char>((height >> 8) & 0xFF));
-    frame.push_back(static_cast<char>(height & 0xFF));
+    nawsAppendByte(frame, static_cast<uint8_t>((width >> 8) & 0xFF));
+    nawsAppendByte(frame, static_cast<uint8_t>(width & 0xFF));
+    nawsAppendByte(frame, static_cast<uint8_t>((height >> 8) & 0xFF));
+    nawsAppendByte(frame, static_cast<uint8_t>(height & 0xFF));
     frame.push_back(static_cast<char>(telnet::IAC));
     frame.push_back(static_cast<char>(telnet::SE));
     return frame;

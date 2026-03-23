@@ -317,6 +317,10 @@ private:
     time_t lastFlush_{0};
     bool scrollbackLimitWarned_{false};
 
+    // Global scrollback memory counter — avoids O(N) scan on each append.
+    // Updated by ScrollBack::append (via callback) and session destruction.
+    static std::atomic<size_t> globalScrollbackBytes_;
+
     // ---- Rate limiting state ----
     struct IpTracker {
         int connectionCount{0};         // current live connections from this IP

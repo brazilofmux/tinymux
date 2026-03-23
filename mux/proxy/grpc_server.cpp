@@ -346,18 +346,26 @@ public:
                             }
                         });
                 } else if (msg.has_ping()) {
-                    hydra::ServerMessage resp;
-                    auto* pong = resp.mutable_pong();
-                    pong->set_client_timestamp(msg.ping().client_timestamp());
-                    pong->set_server_timestamp(
-                        std::chrono::duration_cast<std::chrono::milliseconds>(
-                            std::chrono::system_clock::now().time_since_epoch()).count());
-                    stream->Write(resp);
+                    // Queue pong for the writer loop (don't write from reader thread)
+                    HydraSession::OutputItem pongItem;
+                    pongItem.puaText = "\x01PONG\x01" +
+                        std::to_string(msg.ping().client_timestamp());
+                    pongItem.source = "__pong__";
+                    pongItem.timestamp = 0;
+                    pongItem.linkNumber = 0;
+                    {
+                        std::lock_guard<std::mutex> lock(oq->mutex);
+                        sq->output.push(std::move(pongItem));
+                    }
+                    oq->cv.notify_all();
                 } else if (msg.has_preferences()) {
                     const auto& prefs = msg.preferences();
-                    // Update subscriber's color format
-                    sq->renderFormat = static_cast<HydraSession::RenderFormat>(
-                        prefs.color_format());
+                    // Update subscriber's color format (under lock — writer reads it)
+                    {
+                        std::lock_guard<std::mutex> lock(oq->mutex);
+                        sq->renderFormat = static_cast<HydraSession::RenderFormat>(
+                            prefs.color_format());
+                    }
                     // Forward terminal size to game via NAWS
                     if (prefs.terminal_width() > 0 || prefs.terminal_height() > 0) {
                         workQueue_.enqueue<void>(
@@ -402,17 +410,35 @@ public:
             oq->cv.wait_for(lock, std::chrono::milliseconds(500),
                 [&sq, &done] { return !sq->output.empty() || !sq->gmcp.empty() || done.load(); });
 
+            // Read renderFormat under lock (writer reads, reader sets)
+            auto currentFmt = sq->renderFormat;
+
             while (!sq->output.empty()) {
                 auto item = std::move(sq->output.front());
                 sq->output.pop();
                 lock.unlock();
-                hydra::ServerMessage msg;
-                auto* go = msg.mutable_game_output();
-                go->set_text(item.render(sq->renderFormat));
-                go->set_source(item.source);
-                go->set_timestamp(static_cast<int64_t>(item.timestamp));
-                go->set_link_number(item.linkNumber);
-                if (!stream->Write(msg)) { done.store(true); break; }
+
+                // Check for pong sentinel (queued by reader thread)
+                if (item.source == "__pong__") {
+                    hydra::ServerMessage msg;
+                    auto* pong = msg.mutable_pong();
+                    int64_t clientTs = 0;
+                    try { clientTs = std::stoll(item.puaText.substr(6)); }
+                    catch (...) {}
+                    pong->set_client_timestamp(clientTs);
+                    pong->set_server_timestamp(
+                        std::chrono::duration_cast<std::chrono::milliseconds>(
+                            std::chrono::system_clock::now().time_since_epoch()).count());
+                    if (!stream->Write(msg)) { done.store(true); break; }
+                } else {
+                    hydra::ServerMessage msg;
+                    auto* go = msg.mutable_game_output();
+                    go->set_text(item.render(currentFmt));
+                    go->set_source(item.source);
+                    go->set_timestamp(static_cast<int64_t>(item.timestamp));
+                    go->set_link_number(item.linkNumber);
+                    if (!stream->Write(msg)) { done.store(true); break; }
+                }
                 lock.lock();
             }
 
