@@ -6,12 +6,15 @@ package hydra;
 
 // How the server should render color in output text.
 // Clients specify this when opening a GameSession or Subscribe stream.
+// COLOR_UNSPECIFIED (0) means "don't change" in SetPreferences, or
+// "server default (TrueColor)" when used in Subscribe/ScrollBack requests.
 enum ColorFormat {
-    ANSI_TRUECOLOR = 0;    // ESC[38;2;R;G;Bm — for terminal clients (default)
-    ANSI_256       = 1;    // ESC[38;5;Nm — xterm-256 palette
-    ANSI_16        = 2;    // ESC[31m etc. — basic 16-color
-    PUA_UTF8       = 3;    // TinyMUX PUA-encoded UTF-8 — for custom renderers
-    PLAIN          = 4;    // All color stripped
+    COLOR_UNSPECIFIED = 0; // proto3 default — no change / server default
+    ANSI_TRUECOLOR = 1;   // ESC[38;2;R;G;Bm — for terminal clients
+    ANSI_256       = 2;   // ESC[38;5;Nm — xterm-256 palette
+    ANSI_16        = 3;   // ESC[31m etc. — basic 16-color
+    PUA_UTF8       = 4;   // TinyMUX PUA-encoded UTF-8 — for custom renderers
+    PLAIN          = 5;   // All color stripped
 }
 
 // State of a back-door link to a game server.

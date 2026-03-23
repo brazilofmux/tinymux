@@ -63,6 +63,10 @@ struct HydraSession {
     // Persistent session ID (random hex string for SQLite storage)
     std::string persistId;
 
+    // Terminal type reported by the most recent gRPC client (from SetPreferences).
+    // Used for back-door TTYPE negotiation when GANL supports it.
+    std::string terminalType{"Hydra"};
+
     // Pending link reconnect info — populated on eager restore when
     // scrollbackKey is not yet available.  Links are reconnected when
     // the player authenticates and the key becomes available.
@@ -70,12 +74,14 @@ struct HydraSession {
 
     // Color rendering preference for gRPC subscribers.
     // Values match hydra.proto ColorFormat enum.
+    // Values match hydra.proto ColorFormat enum.
     enum class RenderFormat {
-        TrueColor = 0,
-        Ansi256   = 1,
-        Ansi16    = 2,
-        PuaUtf8   = 3,
-        Plain     = 4,
+        Unspecified = 0, // no change / use default
+        TrueColor  = 1,
+        Ansi256    = 2,
+        Ansi16     = 3,
+        PuaUtf8    = 4,
+        Plain      = 5,
     };
 
     // gRPC output distribution for Subscribe/GameSession streaming.
@@ -102,7 +108,7 @@ struct HydraSession {
         std::queue<GmcpItem> gmcp;
         bool wantsOutput{true};
         bool wantsGmcp{false};
-        RenderFormat renderFormat{RenderFormat::TrueColor};
+        RenderFormat renderFormat{RenderFormat::TrueColor};  // default for new subscribers
     };
 
     struct OutputQueue {

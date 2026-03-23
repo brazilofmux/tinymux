@@ -361,7 +361,8 @@ public:
                 } else if (msg.has_preferences()) {
                     const auto& prefs = msg.preferences();
                     // Update subscriber's color format (under lock — writer reads it)
-                    {
+                    // Skip if COLOR_UNSPECIFIED (0) — means "don't change"
+                    if (prefs.color_format() != hydra::COLOR_UNSPECIFIED) {
                         std::lock_guard<std::mutex> lock(oq->mutex);
                         sq->renderFormat = static_cast<HydraSession::RenderFormat>(
                             prefs.color_format());
@@ -382,8 +383,18 @@ public:
                                 }
                             });
                     }
-                    LOG_DEBUG("GameSession: client set preferences color=%d width=%u height=%u",
-                              prefs.color_format(), prefs.terminal_width(), prefs.terminal_height());
+                    // Store terminal_type in session for future TTYPE forwarding
+                    if (!prefs.terminal_type().empty()) {
+                        workQueue_.enqueue<void>(
+                            [sid, ttype = prefs.terminal_type()]
+                            (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
+                                HydraSession* s = sm.findByPersistId(sid);
+                                if (s) s->terminalType = ttype;
+                            });
+                    }
+                    LOG_DEBUG("GameSession: client set preferences color=%d width=%u height=%u type=%s",
+                              prefs.color_format(), prefs.terminal_width(), prefs.terminal_height(),
+                              prefs.terminal_type().c_str());
                 } else if (msg.has_gmcp()) {
                     // Forward GMCP to active link
                     workQueue_.enqueue<void>(
@@ -521,7 +532,10 @@ public:
         }
 
         // Register as subscriber (output only, no GMCP) with requested color format
-        auto renderFmt = static_cast<HydraSession::RenderFormat>(req->color_format());
+        // COLOR_UNSPECIFIED (0) → default to TrueColor
+        auto renderFmt = req->color_format() == hydra::COLOR_UNSPECIFIED
+            ? HydraSession::RenderFormat::TrueColor
+            : static_cast<HydraSession::RenderFormat>(req->color_format());
         int subId;
         std::shared_ptr<HydraSession::SubscriberQueue> sq;
         {
@@ -641,21 +655,32 @@ public:
     Status GetScrollBack(ServerContext* ctx, const hydra::ScrollBackRequest* req,
                          hydra::ScrollBackResponse* resp) override {
         std::string sid = getSessionId(ctx, req->session_id());
+        // Resolve color format: UNSPECIFIED → TrueColor
+        auto fmt = req->color_format() == hydra::COLOR_UNSPECIFIED
+            ? HydraSession::RenderFormat::TrueColor
+            : static_cast<HydraSession::RenderFormat>(req->color_format());
+
         auto future = workQueue_.enqueue<bool>(
-            [sid, maxLines = req->max_lines(), resp]
+            [sid, maxLines = req->max_lines(), fmt, resp]
             (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
                 HydraSession* s = sm.findByPersistId(sid);
                 if (!s) return false;
                 size_t n = maxLines > 0 ? static_cast<size_t>(maxLines)
                                         : s->scrollback.count();
-                struct ReplayCtx { hydra::ScrollBackResponse* resp; };
-                ReplayCtx rctx{resp};
+                struct ReplayCtx {
+                    hydra::ScrollBackResponse* resp;
+                    HydraSession::RenderFormat fmt;
+                };
+                ReplayCtx rctx{resp, fmt};
                 s->scrollback.replay(n,
                     [](const std::string& text, const std::string& source,
                        time_t timestamp, void* ctx) {
                         auto* rc = static_cast<ReplayCtx*>(ctx);
                         auto* line = rc->resp->add_lines();
-                        line->set_text(text);
+                        // Render PUA text at the requested color format
+                        HydraSession::OutputItem item;
+                        item.puaText = text;
+                        line->set_text(item.render(rc->fmt));
                         line->set_source(source);
                         line->set_timestamp(static_cast<int64_t>(timestamp));
                     },

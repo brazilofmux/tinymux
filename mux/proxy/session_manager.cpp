@@ -1798,6 +1798,7 @@ std::string HydraSession::OutputItem::render(RenderFormat fmt) const {
     size_t n = 0;
 
     switch (fmt) {
+    case RenderFormat::Unspecified:  // fall through to TrueColor default
     case RenderFormat::TrueColor:
         n = co_render_truecolor(buf, src, srcLen, 0);
         break;
