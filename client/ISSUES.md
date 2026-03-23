@@ -16,6 +16,21 @@
 - **Issue:** The hand-rolled browser protobuf encoder has been improved but may still have edge cases with zero-valued scalars that are semantically meaningful.
 - **Opportunity:** Replace with generated code or track field presence explicitly.
 
+### Android Reconnect `inputChannel` Lifecycle Bug
+- **Issue:** `HydraConnection.kt` uses a `val inputChannel` which is closed on stream break and replaced by a *local* `newInput` channel inside the `connect()` coroutine.
+- **Impact:** `sendLine()` continues to use the closed `inputChannel`, so no input is sent to the server after the first reconnect.
+- **Fix:** Use a thread-safe way to swap channels or keep the channel alive across reconnects.
+
+### `fetchScrollBack()` Ignores `color_format`
+- **Issue:** Console and Android clients do not set `color_format` in the `ScrollBackRequest`.
+- **Impact:** Server (even when fixed) may return output in an undesired format.
+- **Fix:** Set the preferred `ColorFormat` in the request.
+
+### TF `send_naws` Hardcodes `ColorFormat`
+- **Issue:** `HydraConnection::send_naws` always sends `ANSI_TRUECOLOR`.
+- **Impact:** Reseting preferences may revert the color rendering to TrueColor if the user had manually requested another format.
+- **Fix:** Track the current preferred format and use it for all `SetPreferences` messages.
+
 ### Web Client Uses Legacy Unary/Server-Streaming Instead of GameSession
 - **Issue:** Browser client uses `SendInput` + `Subscribe` instead of the bidi `GameSession`.
 - **Impact:** The web path diverges from the primary protocol. Features added to `GameSession` only (like `SetPreferences`) don't reach browser clients.

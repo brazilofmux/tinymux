@@ -19,6 +19,33 @@
 - **Fixed:** Standardized to `internalId` (uint64 in-memory) and `persistId` (string durable) everywhere. (348d8f5)
 - **Status:** Windows agent working on this.
 
+## Bugs & Technical Debt
+
+### Telnet `IAC` Escaping Missing in SB Frames
+- **Issue:** `buildGmcpFrame` and `buildNawsFrame` in `telnet_utils.h` do not escape `IAC` (255) bytes in their payloads.
+- **Impact:** If a GMCP payload or a NAWS width/height byte happens to be 255, it will be interpreted as the start of a telnet command, breaking the sub-negotiation and potentially the entire stream.
+- **Fix:** Payload bytes must be checked and escaped as `IAC IAC` (255, 255).
+
+### $O(N)$ Memory Check in `onBackDoorData`
+- **Issue:** Every time a game sends data, Hydra iterates over *all* active sessions to calculate global scrollback memory usage.
+- **Impact:** Significant performance bottleneck and lag as the number of sessions grows.
+- **Fix:** Replace with a global atomic counter updated by `ScrollBack::append` and `ScrollBack` eviction/load.
+
+### `GetScrollBack` RPC Ignores `color_format`
+- **Issue:** `GrpcServer::GetScrollBack` ignores the requested `color_format` in the `ScrollBackRequest`.
+- **Impact:** Clients receive raw PUA text or whatever is stored in the ring buffer, even if they requested PLAIN or TrueColor.
+- **Fix:** Use `OutputItem::render` or `TelnetBridge::renderForClient` during replay.
+
+### `SetPreferences` Overwrites Unspecified Fields
+- **Issue:** Protobuf 3 scalar fields default to 0. When a client sends `SetPreferences` (e.g., for a NAWS resize) but doesn't set `color_format`, the server receives 0 and resets the subscriber to `ANSI_TRUECOLOR`.
+- **Impact:** Unexpected color rendering changes when resizing windows or updating other preferences.
+- **Fix:** Add `COLOR_NO_CHANGE = 0` to the enum or make fields `optional` (proto3).
+
+### Thread-Unsafe `strerror()` in `safeWrite`
+- **Issue:** `SessionManager::safeWrite` uses `strerror(err)` for logging.
+- **Impact:** `strerror` is not thread-safe on many platforms as it uses a static buffer.
+- **Fix:** Use `strerror_r` or a safe wrapper.
+
 ## Design Notes
 
 ### Browser Transport Strategy: WebSocket for I/O, gRPC-Web for Management
