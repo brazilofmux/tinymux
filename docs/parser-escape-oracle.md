@@ -15,6 +15,10 @@ The corpus lives in
 [parser/escape_oracle_cases.txt](/home/sdennis/tinymux/parser/escape_oracle_cases.txt)
 and is exercised by
 [parser/run_escape_oracle.sh](/home/sdennis/tinymux/parser/run_escape_oracle.sh).
+That runner validates the production-shaped `mux214` and `penn` study
+profiles by default. The exploratory `mux213` study profile is optional
+because matching corrected deferred-region semantics there would require
+server-grade machinery the study tool does not fully implement.
 
 For traced real-command behavior after command parsing/quoting, see the
 separate command-level oracle in

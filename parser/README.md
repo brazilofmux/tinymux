@@ -32,6 +32,7 @@ echo '\\\\% capacity' | ./stream_passes --profile mux213 --model stream --passes
 echo '\\\\% capacity' | ./stream_passes --profile mux213 --model frozen --passes noeval,eval
 ./hammer_refrozen.sh
 ./run_escape_oracle.sh
+RUN_EXPLORATORY_MUX213=1 ./run_escape_oracle.sh
 ```
 
 ## Stages
@@ -112,6 +113,8 @@ That runner:
 
 - checks the narrow escape/percent corpus across `mux214`, `mux213`, and
   `penn`
+- validates `mux214` and `penn` by default
+- treats `mux213` as exploratory unless `RUN_EXPLORATORY_MUX213=1` is set
 - prints which cases still need live-server verification
 - is allowed to disagree with the exploratory `mux213` study profile if
   the profile has drifted from the corrected oracle

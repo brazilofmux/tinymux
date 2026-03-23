@@ -557,17 +557,6 @@ private:
                 std::string r;
                 for (size_t i = 0; i < node->children.size(); i++) {
                     const auto &c = node->children[i];
-                    if (  c->type == NODE_ESCAPE
-                       && i + 1 < node->children.size()
-                       && node->children[i + 1]->type == NODE_SUBST) {
-                        // In 2.13's noeval pass, backslash still consumes
-                        // the next character. For an AST split like ESC +
-                        // SUBST, that means the replay text should keep the
-                        // raw % sequence, not a literal backslash.
-                        r += node->children[i + 1]->text;
-                        i++;
-                        continue;
-                    }
                     r += noevalPass(c.get());
                 }
                 return r;

@@ -11,6 +11,7 @@ fi
 PASS=0
 FAIL=0
 NEEDS_LIVE=0
+RUN_EXPLORATORY_MUX213="${RUN_EXPLORATORY_MUX213:-0}"
 
 run_case() {
     local id="$1"
@@ -43,7 +44,9 @@ while IFS='|' read -r id input mux214 mux213 penn live_status notes; do
     esac
 
     run_case "$id" "$input" "$mux214" "mux214"
-    run_case "$id" "$input" "$mux213" "mux213"
+    if [ "$RUN_EXPLORATORY_MUX213" = "1" ]; then
+        run_case "$id" "$input" "$mux213" "mux213"
+    fi
     run_case "$id" "$input" "$penn" "penn"
 
     if [ "$live_status" != "confirmed" ]; then
@@ -55,6 +58,9 @@ while IFS='|' read -r id input mux214 mux213 penn live_status notes; do
 done < "$CASES_FILE"
 
 echo
+if [ "$RUN_EXPLORATORY_MUX213" != "1" ]; then
+    echo "note: skipped exploratory mux213 study profile"
+fi
 echo "escape oracle summary: $PASS passed, $FAIL failed, $NEEDS_LIVE still need live-server checks"
 
 if [ "$FAIL" -ne 0 ]; then
