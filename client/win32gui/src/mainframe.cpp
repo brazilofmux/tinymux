@@ -448,39 +448,18 @@ void CMainFrame::HandleSlashCommand(const std::string& input) {
         sys("%   /hdetach                     - Detach from Hydra session");
 #endif
 #ifdef HYDRA_GRPC
-    } else if (cmd == "hconnect" || cmd == "hswitch" || cmd == "hlinks"
-            || cmd == "hdisconnect" || cmd == "hsession" || cmd == "hdetach") {
+    } else if (cmd.size() > 1 && cmd[0] == 'h') {
         auto* h = dynamic_cast<HydraConnection*>(ts->conn.get());
         if (!h) {
             sys("% Not connected via Hydra.");
-        } else if (cmd == "hcreate") {
-            if (args.size() < 3) sys("% Usage: /hcreate <username> <password>");
-            else sys(h->rpc_create_account(args[1], args[2]));
-        } else if (cmd == "hconnect") {
-            if (args.size() < 2) sys("% Usage: /hconnect <game>");
-            else sys(h->rpc_connect_game(args[1]));
-        } else if (cmd == "hswitch") {
-            if (args.size() < 2) sys("% Usage: /hswitch <link#>");
-            else {
-                int link = 0;
-                try { link = std::stoi(args[1]); } catch (...) {}
-                if (link <= 0) sys("% Invalid link number.");
-                else sys(h->rpc_switch_link(link));
+        } else if (h->handleCommand(input)) {
+            // Drain output pushed by handleCommand
+            for (auto& line : h->drain_output()) {
+                ts->buffer.append(line);
             }
-        } else if (cmd == "hlinks") {
-            for (auto& line : h->rpc_list_links()) sys(line);
-        } else if (cmd == "hdisconnect") {
-            if (args.size() < 2) sys("% Usage: /hdisconnect <link#>");
-            else {
-                int link = 0;
-                try { link = std::stoi(args[1]); } catch (...) {}
-                if (link <= 0) sys("% Invalid link number.");
-                else sys(h->rpc_disconnect_link(link));
-            }
-        } else if (cmd == "hsession") {
-            for (auto& line : h->rpc_get_session()) sys(line);
-        } else if (cmd == "hdetach") {
-            sys(h->rpc_detach_session());
+            output.Invalidate();
+        } else {
+            sys("% Unknown Hydra command. Try /hhelp.");
         }
 #endif
     } else {

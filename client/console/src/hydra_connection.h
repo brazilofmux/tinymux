@@ -64,6 +64,11 @@ public:
     // Hydra session token
     const std::string& session_id() const { return sessionId_; }
 
+    // Intercept /h* commands from user input.  Returns true if the
+    // line was a Hydra command (handled internally), false if it should
+    // be forwarded to the game.  Output is pushed to the output queue.
+    bool handleCommand(const std::string& line);
+
     // Hydra session management RPCs (unary, may block briefly)
     std::string rpc_create_account(const std::string& username, const std::string& password);
     std::string rpc_connect_game(const std::string& game_name);

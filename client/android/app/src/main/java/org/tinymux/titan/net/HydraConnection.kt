@@ -249,6 +249,54 @@ class HydraConnection(
         inputChannel.trySend(msg)
     }
 
+    // ---- Hydra command dispatch ----
+    // Centralizes /h* command parsing. Returns results as a list of lines,
+    // or null if the line is not a recognized /h* command.
+
+    suspend fun handleCommand(line: String): List<String>? {
+        if (!line.startsWith("/") || line.length < 2) return null
+        val spaceIdx = line.indexOf(' ')
+        val cmd = (if (spaceIdx >= 0) line.substring(1, spaceIdx) else line.substring(1)).lowercase()
+        val args = if (spaceIdx >= 0) line.substring(spaceIdx + 1).trim() else ""
+
+        return when (cmd) {
+            "hcreate" -> {
+                val parts = args.split("\\s+".toRegex(), limit = 2)
+                if (parts.size < 2 || parts[0].isBlank()) listOf("[Hydra] Usage: /hcreate <username> <password>")
+                else listOf(rpcCreateAccount(parts[0], parts[1]))
+            }
+            "hconnect" -> {
+                if (args.isBlank()) listOf("[Hydra] Usage: /hconnect <game>")
+                else listOf(rpcConnectGame(args))
+            }
+            "hswitch" -> {
+                val link = args.toIntOrNull()
+                if (link == null || link <= 0) listOf("[Hydra] Usage: /hswitch <link#>")
+                else listOf(rpcSwitchLink(link))
+            }
+            "hlinks" -> rpcListLinks()
+            "hdisconnect" -> {
+                val link = args.toIntOrNull()
+                if (link == null || link <= 0) listOf("[Hydra] Usage: /hdisconnect <link#>")
+                else listOf(rpcDisconnectLink(link))
+            }
+            "hsession" -> rpcGetSession()
+            "hdetach" -> listOf(rpcDetachSession())
+            "hhelp" -> listOf(
+                "[Hydra] Commands:",
+                "  /hcreate <user> <pass>     - create account",
+                "  /hconnect <game>           - connect to a game",
+                "  /hswitch <link#>           - switch active link",
+                "  /hdisconnect <link#>       - disconnect a link",
+                "  /hlinks                    - list active links",
+                "  /hsession                  - show session info",
+                "  /hdetach                   - detach session",
+                "  /hhelp                     - this help",
+            )
+            else -> null
+        }
+    }
+
     // ---- Hydra session management RPCs ----
 
     suspend fun rpcCreateAccount(username: String, password: String): String {

@@ -360,6 +360,73 @@ void HydraConnection::signalOutput() {
     PostQueuedCompletionStatus(iocp_, 0, IOCP_KEY_HYDRA, nullptr);
 }
 
+// ---- Hydra command dispatch ----
+// Centralizes /h* command parsing so all clients can delegate here.
+
+static std::string trimStr(const std::string& s) {
+    size_t start = s.find_first_not_of(" \t");
+    if (start == std::string::npos) return "";
+    return s.substr(start, s.find_last_not_of(" \t") - start + 1);
+}
+
+bool HydraConnection::handleCommand(const std::string& line) {
+    if (line.size() < 2 || line[0] != '/') return false;
+
+    // Extract command and args
+    std::string lower = line;
+    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+
+    std::string cmd, args;
+    size_t sp = line.find(' ');
+    if (sp != std::string::npos) {
+        cmd = lower.substr(1, sp - 1);
+        args = trimStr(line.substr(sp + 1));
+    } else {
+        cmd = lower.substr(1);
+    }
+
+    if (cmd == "hcreate") {
+        size_t sep = args.find(' ');
+        if (sep == std::string::npos) {
+            pushOutput("[Hydra] Usage: /hcreate <username> <password>");
+        } else {
+            pushOutput(rpc_create_account(args.substr(0, sep), trimStr(args.substr(sep + 1))));
+        }
+    } else if (cmd == "hconnect") {
+        if (args.empty()) pushOutput("[Hydra] Usage: /hconnect <game>");
+        else pushOutput(rpc_connect_game(args));
+    } else if (cmd == "hswitch") {
+        int link = 0;
+        try { link = std::stoi(args); } catch (...) {}
+        if (link <= 0) pushOutput("[Hydra] Usage: /hswitch <link#>");
+        else pushOutput(rpc_switch_link(link));
+    } else if (cmd == "hlinks") {
+        for (auto& l : rpc_list_links()) pushOutput(l);
+    } else if (cmd == "hdisconnect") {
+        int link = 0;
+        try { link = std::stoi(args); } catch (...) {}
+        if (link <= 0) pushOutput("[Hydra] Usage: /hdisconnect <link#>");
+        else pushOutput(rpc_disconnect_link(link));
+    } else if (cmd == "hsession") {
+        for (auto& l : rpc_get_session()) pushOutput(l);
+    } else if (cmd == "hdetach") {
+        pushOutput(rpc_detach_session());
+    } else if (cmd == "hhelp") {
+        pushOutput("[Hydra] Commands:");
+        pushOutput("  /hcreate <user> <pass>     - create account");
+        pushOutput("  /hconnect <game>           - connect to a game");
+        pushOutput("  /hswitch <link#>           - switch active link");
+        pushOutput("  /hdisconnect <link#>       - disconnect a link");
+        pushOutput("  /hlinks                    - list active links");
+        pushOutput("  /hsession                  - show session info");
+        pushOutput("  /hdetach                   - detach session");
+        pushOutput("  /hhelp                     - this help");
+    } else {
+        return false;  // not a recognized /h* command
+    }
+    return true;
+}
+
 // ---- Hydra session management RPCs ----
 
 std::string HydraConnection::rpc_create_account(const std::string& username,
