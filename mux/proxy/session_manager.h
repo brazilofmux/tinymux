@@ -35,7 +35,7 @@ struct BackDoorLink {
 };
 
 struct HydraSession {
-    HydraSessionId      id;
+    HydraSessionId      internalId;  // in-memory map key (not persisted)
     uint32_t            accountId;
     std::string         username;
 
@@ -170,7 +170,7 @@ struct HydraSession {
 // Per front-door connection state (before and after auth)
 struct FrontDoorState {
     ganl::ConnectionHandle handle;
-    HydraSessionId sessionId{InvalidHydraSessionId};
+    HydraSessionId internalSessionId{InvalidHydraSessionId};
 
     enum LoginPhase { AwaitUsername, AwaitPassword, Authenticated };
     LoginPhase loginPhase{AwaitUsername};
@@ -205,7 +205,7 @@ struct FrontDoorState {
 
 // Reverse map value: session ID + link index
 struct BackDoorMapEntry {
-    HydraSessionId sessionId;
+    HydraSessionId internalSessionId;
     size_t linkIndex;
 };
 

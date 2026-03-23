@@ -40,7 +40,7 @@ public:
     // ---- Session persistence ----
 
     struct SavedSession {
-        std::string id;
+        std::string persistId;   // random hex, matches HydraSession::persistId
         uint32_t    accountId;
         std::string created;
         std::string lastActive;
@@ -48,7 +48,7 @@ public:
     };
 
     // Save or update a session record.
-    bool saveSession(const std::string& sessionId, uint32_t accountId,
+    bool saveSession(const std::string& persistId, uint32_t accountId,
                      const std::string& created, const std::string& lastActive,
                      const std::string& linksJson, std::string& errorMsg);
 
@@ -56,7 +56,7 @@ public:
     bool loadSession(uint32_t accountId, SavedSession& out);
 
     // Delete a session and its scroll-back.
-    bool deleteSession(const std::string& sessionId);
+    bool deleteSession(const std::string& persistId);
 
     // Load all saved sessions (for eager restore on startup).
     std::vector<SavedSession> loadAllSessions();

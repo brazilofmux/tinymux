@@ -234,7 +234,7 @@ bool SessionManager::findByBackDoor(ganl::ConnectionHandle bdHandle,
     auto it = backDoorMap_.find(bdHandle);
     if (it == backDoorMap_.end()) return false;
 
-    auto sit = sessions_.find(it->second.sessionId);
+    auto sit = sessions_.find(it->second.internalSessionId);
     if (sit == sessions_.end()) return false;
 
     session = &sit->second;
@@ -429,8 +429,8 @@ void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
     }
 
     // Forward client GMCP to the active back-door link
-    if (!gmcpMsgs.empty() && fd.sessionId != InvalidHydraSessionId) {
-        auto sit = sessions_.find(fd.sessionId);
+    if (!gmcpMsgs.empty() && fd.internalSessionId != InvalidHydraSessionId) {
+        auto sit = sessions_.find(fd.internalSessionId);
         if (sit != sessions_.end()) {
             BackDoorLink* active = sit->second.getActiveLink();
             if (active && active->handle != ganl::InvalidConnectionHandle &&
@@ -465,7 +465,7 @@ void SessionManager::onFrontDoorClose(ganl::ConnectionHandle handle) {
     if (it == frontDoors_.end()) return;
 
     FrontDoorState& fd = it->second;
-    HydraSessionId sid = fd.sessionId;
+    HydraSessionId sid = fd.internalSessionId;
     std::string ip = fd.clientIp;
 
     frontDoors_.erase(it);
@@ -498,7 +498,7 @@ void SessionManager::processLine(FrontDoorState& fd,
         return;
     }
 
-    auto sit = sessions_.find(fd.sessionId);
+    auto sit = sessions_.find(fd.internalSessionId);
     if (sit == sessions_.end()) return;
     HydraSession& session = sit->second;
 
@@ -544,7 +544,7 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                         fd.loginPhase = FrontDoorState::Authenticated;
 
                         HydraSession session;
-                        session.id = nextSessionId_++;
+                        session.internalId = nextSessionId_++;
                         session.accountId = authId;
                         session.username = username;
                         session.created = time(nullptr);
@@ -553,15 +553,15 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                         session.persistId = generatePersistId();
                         session.frontDoors.push_back(fd.handle);
 
-                        fd.sessionId = session.id;
-                        sessions_[session.id] = std::move(session);
+                        fd.internalSessionId = session.internalId;
+                        sessions_[session.internalId] = std::move(session);
 
                         LOG_INFO("Session %lu (%s) created for '%s'",
-                                 (unsigned long)fd.sessionId,
-                                 sessions_[fd.sessionId].persistId.c_str(),
+                                 (unsigned long)fd.internalSessionId,
+                                 sessions_[fd.internalSessionId].persistId.c_str(),
                                  username.c_str());
 
-                        showGameMenu(sessions_[fd.sessionId], fd.handle);
+                        showGameMenu(sessions_[fd.internalSessionId], fd.handle);
                     }
                 } else {
                     sendToClient(fd.handle,
@@ -630,7 +630,7 @@ void SessionManager::handleLogin(FrontDoorState& fd,
             existing->frontDoors.push_back(fd.handle);
             existing->state = SessionState::Active;
             existing->lastActivity = time(nullptr);
-            fd.sessionId = existing->id;
+            fd.internalSessionId = existing->internalId;
 
             // Provide the scrollback key if the session was restored without one
             if (existing->scrollbackKey.empty() && !sbKey.empty()) {
@@ -658,7 +658,7 @@ void SessionManager::handleLogin(FrontDoorState& fd,
             }
 
             LOG_INFO("Session %lu resumed for '%s'",
-                     (unsigned long)existing->id,
+                     (unsigned long)existing->internalId,
                      fd.pendingUsername.c_str());
 
             sendToClient(fd.handle, "\r\nResuming session...\r\n");
@@ -712,7 +712,7 @@ void SessionManager::handleLogin(FrontDoorState& fd,
             }
 
             HydraSession session;
-            session.id = nextSessionId_++;
+            session.internalId = nextSessionId_++;
             session.accountId = accountId;
             session.username = fd.pendingUsername;
             session.created = time(nullptr);
@@ -721,17 +721,17 @@ void SessionManager::handleLogin(FrontDoorState& fd,
             session.persistId = generatePersistId();
             session.frontDoors.push_back(fd.handle);
 
-            fd.sessionId = session.id;
-            sessions_[session.id] = std::move(session);
+            fd.internalSessionId = session.internalId;
+            sessions_[session.internalId] = std::move(session);
 
             LOG_INFO("Session %lu (%s) created for '%s'",
-                     (unsigned long)fd.sessionId,
-                     sessions_[fd.sessionId].persistId.c_str(),
+                     (unsigned long)fd.internalSessionId,
+                     sessions_[fd.internalSessionId].persistId.c_str(),
                      fd.pendingUsername.c_str());
 
             sendToClient(fd.handle, "\r\nWelcome, "
                 + fd.pendingUsername + ".\r\n");
-            showGameMenu(sessions_[fd.sessionId], fd.handle);
+            showGameMenu(sessions_[fd.internalSessionId], fd.handle);
         }
     } break;
 
@@ -807,7 +807,7 @@ void SessionManager::dispatchCommand(HydraSession& session,
             engine_.closeConnection(h);
             frontDoors_.erase(h);
         }
-        sessions_.erase(session.id);
+        sessions_.erase(session.internalId);
     } else if (verb == "detach") {
         sendToClient(fdHandle, "Session detached. Reconnect to resume.\r\n");
         engine_.closeConnection(fdHandle);
@@ -1066,7 +1066,7 @@ void SessionManager::connectToGame(HydraSession& session,
     session.links.push_back(std::move(link));
     session.activeLink = linkIdx;  // new link becomes active
 
-    backDoorMap_[bdHandle] = {session.id, linkIdx};
+    backDoorMap_[bdHandle] = {session.internalId, linkIdx};
 
     for (auto h : session.frontDoors) {
         sendToClient(h,
@@ -1075,7 +1075,7 @@ void SessionManager::connectToGame(HydraSession& session,
     }
 
     LOG_INFO("Session %lu: connecting link %zu to %s (%s:%u)",
-             (unsigned long)session.id, linkIdx + 1,
+             (unsigned long)session.internalId, linkIdx + 1,
              game->name.c_str(), game->host.c_str(), game->port);
 }
 
@@ -1131,7 +1131,7 @@ void SessionManager::onBackDoorConnect(ganl::ConnectionHandle bdHandle) {
     link->retryCount = 0;
 
     LOG_INFO("Session %lu: link %zu connected to %s",
-             (unsigned long)session->id, linkIdx + 1,
+             (unsigned long)session->internalId, linkIdx + 1,
              link->gameName.c_str());
 
     for (auto h : session->frontDoors) {
@@ -1150,7 +1150,7 @@ void SessionManager::onBackDoorConnect(ganl::ConnectionHandle bdHandle) {
         link->character = loginName;
 
         LOG_INFO("Session %lu: auto-login sent for link %zu (%s)",
-                 (unsigned long)session->id, linkIdx + 1,
+                 (unsigned long)session->internalId, linkIdx + 1,
                  link->gameName.c_str());
 
         for (auto h : session->frontDoors) {
@@ -1175,7 +1175,7 @@ void SessionManager::onBackDoorConnectFail(ganl::ConnectionHandle bdHandle,
     backDoorMap_.erase(bdHandle);
 
     LOG_ERROR("Session %lu: link %zu connect failed: %s",
-              (unsigned long)session->id, linkIdx + 1, strerror(error));
+              (unsigned long)session->internalId, linkIdx + 1, strerror(error));
 
     for (auto h : session->frontDoors) {
         sendToClient(h,
@@ -1319,7 +1319,7 @@ void SessionManager::onBackDoorClose(ganl::ConnectionHandle bdHandle) {
             link->retryCount++;
 
             LOG_INFO("Session %lu: link %zu (%s) lost, reconnecting in %ds",
-                     (unsigned long)session->id, linkIdx + 1,
+                     (unsigned long)session->internalId, linkIdx + 1,
                      link->gameName.c_str(), delay);
 
             for (auto h : session->frontDoors) {
@@ -1334,7 +1334,7 @@ void SessionManager::onBackDoorClose(ganl::ConnectionHandle bdHandle) {
     link->state = LinkState::Dead;
 
     LOG_INFO("Session %lu: link %zu (%s) lost",
-             (unsigned long)session->id, linkIdx + 1,
+             (unsigned long)session->internalId, linkIdx + 1,
              link->gameName.c_str());
 
     for (auto h : session->frontDoors) {
@@ -1504,7 +1504,7 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
     if (!accounts_.loadSession(accountId, saved)) return;
 
     HydraSession session;
-    session.id = nextSessionId_++;
+    session.internalId = nextSessionId_++;
     session.accountId = accountId;
     session.username = fd.pendingUsername;
     // Preserve original timestamps from saved data
@@ -1513,11 +1513,11 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
     if (session.created == 0) session.created = time(nullptr);
     if (session.lastActivity == 0) session.lastActivity = time(nullptr);
     session.scrollbackKey = sbKey;
-    session.persistId = saved.id;
+    session.persistId = saved.persistId;
     session.frontDoors.push_back(fd.handle);
 
     int loaded = session.scrollback.loadFromDb(
-        accounts_.db(), saved.id, accountId, sbKey);
+        accounts_.db(), saved.persistId, accountId, sbKey);
 
     // Restore links from JSON
     std::vector<SavedLinkInfo> savedLinks;
@@ -1525,16 +1525,16 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
     parseLinksJson(saved.linksJson, savedLinks, savedActiveLink);
     session.activeLink = savedActiveLink;
 
-    fd.sessionId = session.id;
-    HydraSessionId sessId = session.id;
+    fd.internalSessionId = session.internalId;
+    HydraSessionId sessId = session.internalId;
     sessions_[sessId] = std::move(session);
-    HydraSession& sess = sessions_[fd.sessionId];
+    HydraSession& sess = sessions_[fd.internalSessionId];
 
     // Reconnect saved links
     restoreSessionLinks(sess, savedLinks);
 
     LOG_INFO("Session %lu (%s) restored from SQLite for '%s' (%d lines, %zu links)",
-             (unsigned long)fd.sessionId, saved.id.c_str(),
+             (unsigned long)fd.internalSessionId, saved.persistId.c_str(),
              fd.pendingUsername.c_str(), loaded > 0 ? loaded : 0,
              savedLinks.size());
 
@@ -1628,16 +1628,16 @@ std::string SessionManager::authenticateAndGetSession(
     AccountManager::SavedSession saved;
     if (accounts_.loadSession(accountId, saved)) {
         HydraSession session;
-        session.id = nextSessionId_++;
+        session.internalId = nextSessionId_++;
         session.accountId = accountId;
         session.username = username;
         session.created = time(nullptr);
         session.lastActivity = session.created;
         session.scrollbackKey = sbKey;
-        session.persistId = saved.id;
+        session.persistId = saved.persistId;
 
         session.scrollback.loadFromDb(
-            accounts_.db(), saved.id, accountId, sbKey);
+            accounts_.db(), saved.persistId, accountId, sbKey);
 
         // Restore links from JSON
         std::vector<SavedLinkInfo> savedLinks;
@@ -1645,19 +1645,19 @@ std::string SessionManager::authenticateAndGetSession(
         parseLinksJson(saved.linksJson, savedLinks, savedActiveLink);
         session.activeLink = savedActiveLink;
 
-        HydraSessionId sessId = session.id;
+        HydraSessionId sessId = session.internalId;
         sessions_[sessId] = std::move(session);
         restoreSessionLinks(sessions_[sessId], savedLinks);
 
         LOG_INFO("Session %lu (%s) restored via gRPC for '%s' (%zu links)",
-                 (unsigned long)sessId, saved.id.c_str(),
+                 (unsigned long)sessId, saved.persistId.c_str(),
                  username.c_str(), savedLinks.size());
-        return saved.id;
+        return saved.persistId;
     }
 
     // New session
     HydraSession session;
-    session.id = nextSessionId_++;
+    session.internalId = nextSessionId_++;
     session.accountId = accountId;
     session.username = username;
     session.created = time(nullptr);
@@ -1666,7 +1666,7 @@ std::string SessionManager::authenticateAndGetSession(
     session.persistId = generatePersistId();
 
     std::string pid = session.persistId;
-    sessions_[session.id] = std::move(session);
+    sessions_[session.internalId] = std::move(session);
 
     LOG_INFO("Session %lu (%s) created via gRPC for '%s'",
              (unsigned long)(nextSessionId_ - 1), pid.c_str(),
@@ -1950,7 +1950,7 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
             fd.grpcWebSubscribed = true;
             fd.grpcWebSessionId = s->persistId;
             fd.grpcWebTextMode = isText;
-            fd.sessionId = s->id;
+            fd.internalSessionId = s->internalId;
 
             // Add to session's front-door list so it receives output
             s->frontDoors.push_back(fd.handle);
@@ -2221,13 +2221,13 @@ void SessionManager::restoreAllSessions() {
         }
         if (alreadyLoaded) {
             LOG_INFO("Session %s (account %u) already in memory, skipping restore",
-                     s.id.c_str(), s.accountId);
+                     s.persistId.c_str(), s.accountId);
             continue;
         }
 
         // Create in-memory session (detached — no front-door yet)
         HydraSession session;
-        session.id = nextSessionId_++;
+        session.internalId = nextSessionId_++;
         session.accountId = s.accountId;
         // Preserve original timestamps from saved data
         session.created = static_cast<time_t>(std::atol(s.created.c_str()));
@@ -2242,10 +2242,10 @@ void SessionManager::restoreAllSessions() {
         // accumulating unflushable output if Hydra crashes again.
         session.pendingLinksJson = s.linksJson;
 
-        HydraSessionId sessId = session.id;
+        HydraSessionId sessId = session.internalId;
         sessions_[sessId] = std::move(session);
 
         LOG_INFO("Restored session %s (account %u, links deferred until login)",
-                 s.id.c_str(), s.accountId);
+                 s.persistId.c_str(), s.accountId);
     }
 }

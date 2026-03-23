@@ -307,7 +307,7 @@ bool AccountManager::changePassword(uint32_t accountId,
 
 // ---- Session persistence ----
 
-bool AccountManager::saveSession(const std::string& sessionId,
+bool AccountManager::saveSession(const std::string& persistId,
                                  uint32_t accountId,
                                  const std::string& created,
                                  const std::string& lastActive,
@@ -326,7 +326,7 @@ bool AccountManager::saveSession(const std::string& sessionId,
         return false;
     }
 
-    sqlite3_bind_text(stmt, 1, sessionId.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 1, persistId.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_int(stmt, 2, static_cast<int>(accountId));
     sqlite3_bind_text(stmt, 3, created.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 4, lastActive.c_str(), -1, SQLITE_TRANSIENT);
@@ -359,7 +359,7 @@ bool AccountManager::loadSession(uint32_t accountId, SavedSession& out) {
         return false;
     }
 
-    out.id = (const char*)sqlite3_column_text(stmt, 0);
+    out.persistId = (const char*)sqlite3_column_text(stmt, 0);
     out.accountId = static_cast<uint32_t>(sqlite3_column_int(stmt, 1));
     const char* created = (const char*)sqlite3_column_text(stmt, 2);
     const char* lastActive = (const char*)sqlite3_column_text(stmt, 3);
@@ -372,7 +372,7 @@ bool AccountManager::loadSession(uint32_t accountId, SavedSession& out) {
     return true;
 }
 
-bool AccountManager::deleteSession(const std::string& sessionId) {
+bool AccountManager::deleteSession(const std::string& persistId) {
     if (!db_) return false;
 
     // Cascade deletes scrollback rows via FK constraint.
@@ -381,7 +381,7 @@ bool AccountManager::deleteSession(const std::string& sessionId) {
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     if (rc != SQLITE_OK) return false;
 
-    sqlite3_bind_text(stmt, 1, sessionId.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 1, persistId.c_str(), -1, SQLITE_TRANSIENT);
     rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
     return rc == SQLITE_DONE;
@@ -402,7 +402,7 @@ AccountManager::loadAllSessions() {
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         SavedSession s;
         const char* id = (const char*)sqlite3_column_text(stmt, 0);
-        s.id = id ? id : "";
+        s.persistId = id ? id : "";
         s.accountId = static_cast<uint32_t>(sqlite3_column_int(stmt, 1));
         const char* created = (const char*)sqlite3_column_text(stmt, 2);
         const char* lastActive = (const char*)sqlite3_column_text(stmt, 3);
