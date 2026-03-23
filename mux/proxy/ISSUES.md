@@ -10,11 +10,9 @@
 - ~~Dead Links Drop activeLink~~ — Fixed: remapped on compaction (621a80b)
 - ~~Config Parser Ignores TLS Material~~ — Fixed: TLS listener infra wired into GANL (8237a3a)
 - ~~Unsafe Direct send() Calls~~ — Fixed: all writes routed through GANL postWrite via safeWrite() (3dd350f)
+- ~~GMCP Frame Manual Building~~ — Fixed: centralized in telnet_utils.h (bc01d39)
 
-### GMCP Frame Manual Building
-- **Issue:** Telnet IAC SB GMCP frames are manually constructed in `grpc_server.cpp` and `session_manager.cpp`.
-- **Impact:** Duplicate logic, potential for incorrect IAC escaping.
-- **Opportunity:** Centralize in a protocol helper function.
+## Bugs & Technical Debt
 
 ### Restored Detached Sessions Cannot Persist New Scrollback
 - **Issue:** Eagerly restored sessions have no `scrollbackKey` (requires player login). New game output received before login only lives in memory.
