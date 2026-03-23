@@ -27,6 +27,9 @@ public:
     // Number of lines currently buffered.
     size_t count() const { return count_; }
 
+    // Approximate memory usage in bytes (text + source strings).
+    size_t memoryBytes() const { return memoryBytes_; }
+
     // Number of unflushed lines.
     size_t dirtyCount() const { return dirtyCount_; }
 
@@ -65,6 +68,7 @@ private:
     size_t count_{0};
     size_t capacity_;
     size_t dirtyCount_{0};
+    size_t memoryBytes_{0};
     uint64_t nextSeq_{1};
 };
 

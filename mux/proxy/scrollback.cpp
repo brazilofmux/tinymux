@@ -11,6 +11,14 @@ ScrollBack::ScrollBack(size_t capacity)
 
 void ScrollBack::append(const std::string& text, const std::string& source) {
     Line& line = buffer_[head_];
+
+    // Track memory: subtract evicted line, add new line
+    if (count_ == capacity_) {
+        // Ring is full — head_ slot is being overwritten
+        memoryBytes_ -= line.text.size() + line.source.size();
+    }
+    memoryBytes_ += text.size() + source.size();
+
     line.text = text;
     line.source = source;
     line.timestamp = time(nullptr);

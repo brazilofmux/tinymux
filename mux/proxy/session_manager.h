@@ -315,6 +315,7 @@ private:
 
     HydraSessionId nextSessionId_{1};
     time_t lastFlush_{0};
+    bool scrollbackLimitWarned_{false};
 
     // ---- Rate limiting state ----
     struct IpTracker {

@@ -1291,6 +1291,23 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
         std::string puaText = bridge_.ingestGameOutput(
             link->protoState, regular.data(), regular.size());
 
+        // Enforce global scrollback memory limit.
+        // The ring buffer evicts oldest entries on overflow, so we always
+        // append.  But if we're over the global limit, log a warning.
+        if (config_.maxScrollbackMemoryMb > 0) {
+            size_t totalBytes = 0;
+            for (const auto& [sid, s] : sessions_) {
+                totalBytes += s.scrollback.memoryBytes();
+            }
+            size_t limitBytes = config_.maxScrollbackMemoryMb * 1024 * 1024;
+            if (totalBytes >= limitBytes && !scrollbackLimitWarned_) {
+                LOG_WARN("Global scrollback memory limit reached (%zu MB across %zu sessions)",
+                         config_.maxScrollbackMemoryMb, sessions_.size());
+                scrollbackLimitWarned_ = true;
+            } else if (totalBytes < limitBytes) {
+                scrollbackLimitWarned_ = false;
+            }
+        }
         session->scrollback.append(puaText, link->gameName);
 
         for (auto h : session->frontDoors) {
