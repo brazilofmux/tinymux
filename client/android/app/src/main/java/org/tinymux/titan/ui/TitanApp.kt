@@ -331,6 +331,19 @@ fun TitanApp() {
                     connectHydra("$hHost:$hPort", hHost, hPort, hUser, hPass, hGame)
                 }
             }
+            "hcreate" -> {
+                val hconn = tab?.hydraConnection
+                if (hconn == null || !hconn.connected) {
+                    appendLine(idx, "% Not connected via Hydra.")
+                } else {
+                    val parts = args.trim().split("\\s+".toRegex(), limit = 2)
+                    if (parts.size < 2 || parts[0].isBlank()) {
+                        appendLine(idx, "% Usage: /hcreate <username> <password>")
+                    } else {
+                        scope.launch { appendLine(idx, hconn.rpcCreateAccount(parts[0], parts[1])) }
+                    }
+                }
+            }
             "hconnect" -> {
                 val hconn = tab?.hydraConnection
                 if (hconn == null || !hconn.connected) {
@@ -633,6 +646,7 @@ fun TitanApp() {
                 appendLine(idx, "% Commands:")
                 appendLine(idx, "%   /connect <host> [port] [ssl]  - Connect to a world")
                 appendLine(idx, "%   /hydra <host> <port> <u> <p> <game> - Connect via Hydra")
+                appendLine(idx, "%   /hcreate <user> <pass>         - Create Hydra account")
                 appendLine(idx, "%   /hconnect <game>              - Connect to game on Hydra")
                 appendLine(idx, "%   /hswitch <link#>              - Switch active Hydra link")
                 appendLine(idx, "%   /hlinks                       - List Hydra links")

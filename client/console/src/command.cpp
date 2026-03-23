@@ -754,6 +754,19 @@ static void cmd_speak(App& app, const std::vector<std::string>& args) {
 }
 
 #ifdef HYDRA_GRPC
+static void cmd_hcreate(App& app, const std::vector<std::string>& args) {
+    if (!app.fg || !app.fg->is_hydra()) {
+        app.terminal.print_system("Not connected via Hydra.");
+        return;
+    }
+    if (args.size() < 3) {
+        app.terminal.print_system("Usage: /hcreate <username> <password>");
+        return;
+    }
+    auto* h = static_cast<HydraConnection*>(app.fg);
+    app.terminal.print_system(h->rpc_create_account(args[1], args[2]));
+}
+
 static void cmd_hconnect(App& app, const std::vector<std::string>& args) {
     if (!app.fg || !app.fg->is_hydra()) {
         app.terminal.print_system("Not connected via Hydra.");
@@ -878,6 +891,7 @@ void register_builtin_commands(App& app) {
     app.commands.register_cmd("speak",       cmd_speak,       "Text-to-speech");
     app.commands.register_cmd("help",        cmd_help,        "Show this help");
 #ifdef HYDRA_GRPC
+    app.commands.register_cmd("hcreate",     cmd_hcreate,     "Create a Hydra account");
     app.commands.register_cmd("hconnect",    cmd_hconnect,    "Connect to a game on Hydra");
     app.commands.register_cmd("hswitch",     cmd_hswitch,     "Switch active Hydra link");
     app.commands.register_cmd("hlinks",      cmd_hlinks,      "List active Hydra links");

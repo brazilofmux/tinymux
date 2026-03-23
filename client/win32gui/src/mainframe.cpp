@@ -439,6 +439,7 @@ void CMainFrame::HandleSlashCommand(const std::string& input) {
         sys("%   /help                         - This help");
         sys("% Also: File > Connect, File > Worlds, Edit > Find");
 #ifdef HYDRA_GRPC
+        sys("%   /hcreate <user> <pass>       - Create Hydra account");
         sys("%   /hconnect <game>             - Connect to game via Hydra");
         sys("%   /hswitch <link#>             - Switch active Hydra link");
         sys("%   /hlinks                      - List Hydra links");
@@ -452,6 +453,9 @@ void CMainFrame::HandleSlashCommand(const std::string& input) {
         auto* h = dynamic_cast<HydraConnection*>(ts->conn.get());
         if (!h) {
             sys("% Not connected via Hydra.");
+        } else if (cmd == "hcreate") {
+            if (args.size() < 3) sys("% Usage: /hcreate <username> <password>");
+            else sys(h->rpc_create_account(args[1], args[2]));
         } else if (cmd == "hconnect") {
             if (args.size() < 2) sys("% Usage: /hconnect <game>");
             else sys(h->rpc_connect_game(args[1]));

@@ -251,6 +251,21 @@ class HydraConnection(
 
     // ---- Hydra session management RPCs ----
 
+    suspend fun rpcCreateAccount(username: String, password: String): String {
+        val ch = channel ?: return "[Hydra] Not connected."
+        return try {
+            val stub = HydraServiceCoroutineStub(ch)
+            val resp = stub.createAccount(
+                CreateAccountRequest.newBuilder()
+                    .setUsername(username).setPassword(password).build()
+            )
+            if (resp.success) {
+                sessionId = resp.sessionId
+                "[Hydra] Account created. Logged in as $username (${sessionId.take(8)}...)"
+            } else "[Hydra] Create failed: ${resp.error}"
+        } catch (e: Exception) { "[Hydra] Error: ${e.message}" }
+    }
+
     suspend fun rpcConnectGame(gameName: String): String {
         val ch = channel ?: return "[Hydra] Not connected."
         return try {

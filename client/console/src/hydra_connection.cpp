@@ -361,6 +361,29 @@ void HydraConnection::signalOutput() {
 
 // ---- Hydra session management RPCs ----
 
+std::string HydraConnection::rpc_create_account(const std::string& username,
+                                                 const std::string& password) {
+    if (!grpc_ || !grpc_->stub) return "[Hydra] Not connected.";
+    try {
+        ClientContext ctx;
+        hydra::CreateAccountRequest req;
+        req.set_username(username);
+        req.set_password(password);
+        hydra::CreateAccountResponse resp;
+        Status status = grpc_->stub->CreateAccount(&ctx, req, &resp);
+        if (!status.ok())
+            return "[Hydra] RPC error: " + status.error_message();
+        if (resp.success()) {
+            sessionId_ = resp.session_id();
+            return "[Hydra] Account created. Logged in as " + username
+                + " (" + sessionId_.substr(0, 8) + "...)";
+        }
+        return "[Hydra] Create failed: " + resp.error();
+    } catch (const std::exception& e) {
+        return std::string("[Hydra] Error: ") + e.what();
+    }
+}
+
 std::string HydraConnection::rpc_connect_game(const std::string& game_name) {
     if (!grpc_ || !grpc_->stub) return "[Hydra] Not connected.";
     try {
