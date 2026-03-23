@@ -15,9 +15,8 @@
 
 ## Bugs & Technical Debt
 
-### Naming Inconsistency
-- **Issue:** Sessions are identified by `persistId` (string), `HydraSessionId` (uint64), and SQLite `id` (TEXT) in different contexts.
-- **Impact:** Developer confusion.
+### ~~Naming Inconsistency~~
+- **Fixed:** Standardized to `internalId` (uint64 in-memory) and `persistId` (string durable) everywhere. (348d8f5)
 - **Status:** Windows agent working on this.
 
 ## Design Notes
