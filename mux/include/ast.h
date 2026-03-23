@@ -9,7 +9,8 @@
  *   - No ## / #@ / #$ substitutions (use %i0-%i9 instead)
  *   - No dynamic function calls (computed function names)
  *   - All function names are statically known at parse time
- *   - FN_NOEVAL functions receive AST subtrees, not raw text
+ *   - FN_NOEVAL function calls preserve deferred-region metadata
+ *     alongside parse-time AST children
  *
  * The AST is cacheable: parsing is pure (no side effects, no database
  * access). The same cached AST can be evaluated with different contexts.

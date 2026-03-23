@@ -1,5 +1,12 @@
 # Split Lexer Design: Deferred Backslash/Percent Semantics
 
+Status: superseded as the primary implementation direction.
+
+The production tree now follows the parser-controlled lexer-mode design
+in [docs/design-parser-controlled-lexer.md](/home/sdennis/tinymux/docs/design-parser-controlled-lexer.md).
+This note remains useful as a record of the rejected alternative and as
+an explanation of why pure up-front tokenization was insufficient.
+
 ## Problem
 
 The 2.14 AST parser tokenizes backslash escapes (`\\`) and percent

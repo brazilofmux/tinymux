@@ -1,5 +1,9 @@
 # Parser-Controlled Lexer Modes
 
+Status: this is the implemented direction in `mux/modules/engine/ast.*`.
+The remaining work is refinement and validation, not choosing between
+this and the split-lexer design.
+
 ## Purpose
 
 This note documents an alternative to the full "split lexer" design in
@@ -118,6 +122,25 @@ before the parser knows whether a region is `EVAL` or `NOEVAL`.
 
 That is the decision that must move.
 
+## Status
+
+Implemented:
+
+- explicit lexer modes: `ASTLEX_EVAL`, `ASTLEX_NOEVAL`,
+  `ASTLEX_STRUCTURAL`
+- region parse entrypoints
+- parser-time `FN_NOEVAL` classification
+- per-arg deferred-region metadata on `AST_FUNCCALL`
+- structural parsing of deferred arg positions
+- deferred-region replay as `NOEVAL` parse/eval followed by `EVAL`
+  reparse/eval
+
+Still optional:
+
+- a fully incremental scanner object with mid-parse mode switching
+- a more distinct structural scanner strategy than the current
+  mode-guided token policy
+
 ## Phase Plan
 
 ### Phase 1: API and naming groundwork
@@ -140,10 +163,11 @@ Add parser/scanner entrypoints that work on a substring or source span:
 - tokenize region with a supplied mode
 - parse region into a subtree
 
-Still acceptable at this stage:
+Current implementation:
 
-- `ASTLEX_EVAL` and `ASTLEX_NOEVAL` may initially share most code
-- `FN_NOEVAL` may still store raw text rather than raw pointers
+- `ASTLEX_EVAL` and `ASTLEX_NOEVAL` are real scanner-visible modes
+- deferred regions are currently preserved as stored raw text rather
+  than raw source pointers
 
 ### Phase 3: Parser-aware function args
 
@@ -159,19 +183,19 @@ Current implementation note:
 - `AST_FUNCCALL` now carries per-arg deferred metadata as
   `ASTDeferredArg { raw_text, is_deferred }`
 
-This is the key parser/lexer handshake.
+This is the key parser/lexer handshake. It is implemented.
 
 ### Phase 4: Replace legacy replay path
 
-Replace the current noeval text-replay workaround with:
+Implemented path:
 
 1. collect deferred region in `NOEVAL`
 2. strip braces if required
 3. parse selected region again in `EVAL`
 4. evaluate resulting subtree
 
-At that point, re-scanning is intentional and parser-directed rather
-than an after-the-fact AST serialization trick.
+Re-scanning is now intentional and parser-directed rather than an
+after-the-fact AST serialization trick.
 
 ### Phase 5: Optional full incremental scanner
 
