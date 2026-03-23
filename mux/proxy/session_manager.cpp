@@ -1413,14 +1413,25 @@ void SessionManager::setFrontDoorTls(ganl::ConnectionHandle handle,
 void SessionManager::runTimers() {
     time_t now = time(nullptr);
 
-    // Periodic scroll-back flush every 60 seconds
-    if (now - lastFlush_ >= 60) {
-        lastFlush_ = now;
-        for (auto& [sid, session] : sessions_) {
-            if (session.scrollback.dirtyCount() > 0) {
-                flushSession(session);
-            }
+    // Periodic scroll-back flush.
+    // Sessions with active gRPC subscribers flush every 15 seconds
+    // (narrower crash window).  Others flush every 60 seconds.
+    for (auto& [sid, session] : sessions_) {
+        if (session.scrollback.dirtyCount() == 0) continue;
+
+        bool hasSubscribers = false;
+        {
+            std::lock_guard<std::mutex> lock(session.outputQueue->mutex);
+            hasSubscribers = !session.outputQueue->subscribers.empty();
         }
+
+        int interval = hasSubscribers ? 15 : 60;
+        if (now - lastFlush_ >= interval) {
+            flushSession(session);
+        }
+    }
+    if (now - lastFlush_ >= 15) {
+        lastFlush_ = now;
     }
 
     // GMCP Core.KeepAlive to active game links (prevents idle disconnects)

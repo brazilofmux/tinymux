@@ -74,8 +74,8 @@ existing grpc-web handler.
 
 ## Opportunities for Improvement
 
-### Persistence of OutputQueue
-- **Opportunity:** In-memory gRPC output queue is lost on Hydra restart. Scrollback is persisted but unsent live messages are not.
+### ~~Persistence of OutputQueue~~
+- **Mitigated:** The OutputQueue itself is transient by design (it's a delivery buffer, not storage). The crash window is now narrowed: sessions with gRPC subscribers flush scroll-back every 15s instead of 60s, and sessions flush immediately when the last front-door disconnects. Graceful shutdown flushes everything. The remaining gap is at most 15s of output during an ungraceful crash, which is acceptable. (1b3a6fc)
 
 ### Master Key Management
 - **Opportunity:** Integrate with system keystores (Linux Secret Service, macOS Keychain, Windows DPAPI) instead of file-based master key.
