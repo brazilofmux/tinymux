@@ -235,6 +235,9 @@ void cmd_connect(App& app, const std::string& args) {
     app.terminal.set_output_context(app.fg->world_name());
     app.terminal.print_system("Connected to " + w->name);
 
+    // Send actual terminal size (Hydra connections update via SetPreferences)
+    raw->send_naws((uint16_t)app.terminal.get_cols(), (uint16_t)app.terminal.get_rows());
+
     // Auto-login for telnet worlds (Hydra handles auth via gRPC)
     if (!raw->is_hydra() && !w->character.empty()) {
         if (app_send_line(app, app.fg, "connect " + w->character + " " + w->password, false)) {

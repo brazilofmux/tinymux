@@ -44,12 +44,10 @@
 - **Fixed:** Console and Android now set color_format = ANSI_TRUECOLOR on scroll-back requests. (3096196)
 
 ### ~~Reported Terminal Size Is Still Hardcoded On Native Hydra Clients~~
-- **Fixed:** Console reports actual console window size, Android estimates from screen dp and font size. TF still pending (Ubuntu). (1d2a548)
+- **Fixed:** All clients now send actual terminal dimensions. Console reports window size, Android estimates from screen dp, TF sends ncurses cols/rows after connect. (1d2a548, a9df518)
 
-### Browser grpc-web Path Still Cannot Choose Live Output Color Format
-- **Issue:** `Subscribe` now supports `SessionRequest.color_format`, but the web client's subscribe request sends only `session_id` and terminal size.
-- **Evidence:** `mux/proxy/hydra.proto:152-156`, `client/web/js/hydra_connection.js:810-817`
-- **Impact:** Browser Hydra output is still effectively pinned to the server default render mode. The SetPreferences work fixed native gRPC, not the grpc-web path.
+### ~~Browser grpc-web Path Still Cannot Choose Live Output Color Format~~
+- **Fixed:** HTML5 Subscribe now sends `color_format=1` (ANSI_TRUECOLOR) explicitly. (3d496b9)
 
 ### ~~Scrollback Fetch on Reconnect~~
 - **Fixed:** Console and Android now call GetScrollBack (200 lines) after successful reconnect. (46ba394)
