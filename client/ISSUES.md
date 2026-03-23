@@ -26,9 +26,8 @@
 ### ~~Clients Do Not Send Initial Capability Message Consistently~~
 - **Fixed:** All three C++ and Android clients now send `SetPreferences` on stream open. (b8661cf)
 
-### `GetScrollBack` color_format Not Used
-- **Issue:** Protocol exposes `ScrollBackRequest.color_format` but no client sets it.
-- **Opportunity:** When clients fetch scroll-back, they should render at their preferred format.
+### ~~`GetScrollBack` color_format Not Used~~
+- **Fixed:** Console and Android now set color_format = ANSI_TRUECOLOR on scroll-back requests. (3096196)
 
 ### ~~Scrollback Fetch on Reconnect~~
 - **Fixed:** Console and Android now call GetScrollBack (200 lines) after successful reconnect. (46ba394)
