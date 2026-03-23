@@ -128,6 +128,20 @@ class HydraConnection(
                         )
                     }
                 }
+                // Send initial preferences as first message on the stream
+                inputChannel.trySend(
+                    ClientMessage.newBuilder()
+                        .setPreferences(
+                            SetPreferences.newBuilder()
+                                .setColorFormat(ColorFormat.ANSI_TRUECOLOR)
+                                .setTerminalWidth(80)   // TODO: get actual screen width
+                                .setTerminalHeight(24)
+                                .setTerminalType("Titan-Android")
+                                .build()
+                        )
+                        .build()
+                )
+
                 val userInput = inputChannel.consumeAsFlow()
                 @OptIn(kotlinx.coroutines.FlowPreview::class)
                 val requests = merge(userInput, pings)

@@ -151,6 +151,7 @@ message CreateAccountResponse {
 
 message SessionRequest {
     string session_id = 1;      // fallback if not using metadata auth
+    ColorFormat color_format = 2; // for Subscribe: how to render output (default TrueColor)
 }
 
 message ConnectRequest {
@@ -192,10 +193,7 @@ message DisconnectResponse {
 // This eliminates per-line round-trips and maps to a persistent
 // connection model.
 
-message GameSessionRequest {
-    string session_id = 1;
-    ColorFormat color_format = 2;   // how to render output text
-}
+// (GameSessionRequest removed — use SetPreferences as first ClientMessage instead.)
 
 // Client → Server messages on the bidi stream.
 message ClientMessage {
@@ -203,7 +201,17 @@ message ClientMessage {
         string input_line = 1;          // text input to active link
         GmcpClientMessage gmcp = 2;    // GMCP to active link
         PingMessage ping = 3;          // application-level keepalive
+        SetPreferences preferences = 4; // color/terminal negotiation
     }
+}
+
+// Client preferences — send as the first ClientMessage on a GameSession
+// stream, and again whenever preferences change (e.g., window resize).
+message SetPreferences {
+    ColorFormat color_format = 1;       // how to render output text
+    uint32 terminal_width = 2;          // client viewport columns (0 = use default)
+    uint32 terminal_height = 3;         // client viewport rows (0 = use default)
+    string terminal_type = 4;           // e.g. "xterm-256color" (empty = use default)
 }
 
 message GmcpClientMessage {

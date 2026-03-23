@@ -111,9 +111,6 @@ extern GameRequestDefaultTypeInternal _GameRequest_default_instance_;
 class GameResponse;
 struct GameResponseDefaultTypeInternal;
 extern GameResponseDefaultTypeInternal _GameResponse_default_instance_;
-class GameSessionRequest;
-struct GameSessionRequestDefaultTypeInternal;
-extern GameSessionRequestDefaultTypeInternal _GameSessionRequest_default_instance_;
 class GameStatusRequest;
 struct GameStatusRequestDefaultTypeInternal;
 extern GameStatusRequestDefaultTypeInternal _GameStatusRequest_default_instance_;
@@ -174,6 +171,9 @@ extern SessionInfoDefaultTypeInternal _SessionInfo_default_instance_;
 class SessionRequest;
 struct SessionRequestDefaultTypeInternal;
 extern SessionRequestDefaultTypeInternal _SessionRequest_default_instance_;
+class SetPreferences;
+struct SetPreferencesDefaultTypeInternal;
+extern SetPreferencesDefaultTypeInternal _SetPreferences_default_instance_;
 class StoredCredential;
 struct StoredCredentialDefaultTypeInternal;
 extern StoredCredentialDefaultTypeInternal _StoredCredential_default_instance_;
@@ -1263,6 +1263,238 @@ class StoredCredential final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
+class SetPreferences final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:hydra.SetPreferences) */ {
+ public:
+  inline SetPreferences() : SetPreferences(nullptr) {}
+  ~SetPreferences() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(SetPreferences* msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SetPreferences));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR SetPreferences(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline SetPreferences(const SetPreferences& from) : SetPreferences(nullptr, from) {}
+  inline SetPreferences(SetPreferences&& from) noexcept
+      : SetPreferences(nullptr, std::move(from)) {}
+  inline SetPreferences& operator=(const SetPreferences& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SetPreferences& operator=(SetPreferences&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const SetPreferences& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const SetPreferences* internal_default_instance() {
+    return reinterpret_cast<const SetPreferences*>(
+        &_SetPreferences_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 20;
+  friend void swap(SetPreferences& a, SetPreferences& b) { a.Swap(&b); }
+  inline void Swap(SetPreferences* other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SetPreferences* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  SetPreferences* New(::google::protobuf::Arena* arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SetPreferences>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const SetPreferences& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const SetPreferences& from) { SetPreferences::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* _InternalSerialize(
+      const MessageLite& msg, ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(SetPreferences* other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(
+      ::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "hydra.SetPreferences"; }
+
+ protected:
+  explicit SetPreferences(::google::protobuf::Arena* arena);
+  SetPreferences(::google::protobuf::Arena* arena, const SetPreferences& from);
+  SetPreferences(::google::protobuf::Arena* arena, SetPreferences&& from) noexcept
+      : SetPreferences(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
+  static void* PlacementNew_(const void*, void* mem,
+                             ::google::protobuf::Arena* arena);
+  static constexpr auto InternalNewImpl_();
+  static const ::google::protobuf::internal::ClassDataFull _class_data_;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kTerminalTypeFieldNumber = 4,
+    kColorFormatFieldNumber = 1,
+    kTerminalWidthFieldNumber = 2,
+    kTerminalHeightFieldNumber = 3,
+  };
+  // string terminal_type = 4;
+  void clear_terminal_type() ;
+  const std::string& terminal_type() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_terminal_type(Arg_&& arg, Args_... args);
+  std::string* mutable_terminal_type();
+  PROTOBUF_NODISCARD std::string* release_terminal_type();
+  void set_allocated_terminal_type(std::string* value);
+
+  private:
+  const std::string& _internal_terminal_type() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_terminal_type(
+      const std::string& value);
+  std::string* _internal_mutable_terminal_type();
+
+  public:
+  // .hydra.ColorFormat color_format = 1;
+  void clear_color_format() ;
+  ::hydra::ColorFormat color_format() const;
+  void set_color_format(::hydra::ColorFormat value);
+
+  private:
+  ::hydra::ColorFormat _internal_color_format() const;
+  void _internal_set_color_format(::hydra::ColorFormat value);
+
+  public:
+  // uint32 terminal_width = 2;
+  void clear_terminal_width() ;
+  ::uint32_t terminal_width() const;
+  void set_terminal_width(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_terminal_width() const;
+  void _internal_set_terminal_width(::uint32_t value);
+
+  public:
+  // uint32 terminal_height = 3;
+  void clear_terminal_height() ;
+  ::uint32_t terminal_height() const;
+  void set_terminal_height(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_terminal_height() const;
+  void _internal_set_terminal_height(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:hydra.SetPreferences)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      2, 4, 0,
+      42, 2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const SetPreferences& from_msg);
+    ::google::protobuf::internal::ArenaStringPtr terminal_type_;
+    int color_format_;
+    ::uint32_t terminal_width_;
+    ::uint32_t terminal_height_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_hydra_2eproto;
+};
+// -------------------------------------------------------------------
+
 class SessionRequest final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:hydra.SessionRequest) */ {
  public:
@@ -1410,6 +1642,7 @@ class SessionRequest final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kSessionIdFieldNumber = 1,
+    kColorFormatFieldNumber = 2,
   };
   // string session_id = 1;
   void clear_session_id() ;
@@ -1427,12 +1660,22 @@ class SessionRequest final : public ::google::protobuf::Message
   std::string* _internal_mutable_session_id();
 
   public:
+  // .hydra.ColorFormat color_format = 2;
+  void clear_color_format() ;
+  ::hydra::ColorFormat color_format() const;
+  void set_color_format(::hydra::ColorFormat value);
+
+  private:
+  ::hydra::ColorFormat _internal_color_format() const;
+  void _internal_set_color_format(::hydra::ColorFormat value);
+
+  public:
   // @@protoc_insertion_point(class_scope:hydra.SessionRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      0, 1, 0,
+      1, 2, 0,
       39, 2>
       _table_;
 
@@ -1451,6 +1694,7 @@ class SessionRequest final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from,
                           const SessionRequest& from_msg);
     ::google::protobuf::internal::ArenaStringPtr session_id_;
+    int color_format_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -4287,214 +4531,6 @@ class GameStatusRequest final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from,
                           const GameStatusRequest& from_msg);
     ::google::protobuf::internal::ArenaStringPtr game_name_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_hydra_2eproto;
-};
-// -------------------------------------------------------------------
-
-class GameSessionRequest final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:hydra.GameSessionRequest) */ {
- public:
-  inline GameSessionRequest() : GameSessionRequest(nullptr) {}
-  ~GameSessionRequest() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(GameSessionRequest* msg, std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(GameSessionRequest));
-  }
-#endif
-
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR GameSessionRequest(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline GameSessionRequest(const GameSessionRequest& from) : GameSessionRequest(nullptr, from) {}
-  inline GameSessionRequest(GameSessionRequest&& from) noexcept
-      : GameSessionRequest(nullptr, std::move(from)) {}
-  inline GameSessionRequest& operator=(const GameSessionRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline GameSessionRequest& operator=(GameSessionRequest&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const GameSessionRequest& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const GameSessionRequest* internal_default_instance() {
-    return reinterpret_cast<const GameSessionRequest*>(
-        &_GameSessionRequest_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 19;
-  friend void swap(GameSessionRequest& a, GameSessionRequest& b) { a.Swap(&b); }
-  inline void Swap(GameSessionRequest* other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(GameSessionRequest* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  GameSessionRequest* New(::google::protobuf::Arena* arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<GameSessionRequest>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const GameSessionRequest& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const GameSessionRequest& from) { GameSessionRequest::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  static ::uint8_t* _InternalSerialize(
-      const MessageLite& msg, ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream);
-
-  public:
-  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  ::size_t ByteSizeLong() const final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(GameSessionRequest* other);
- private:
-  template <typename T>
-  friend ::absl::string_view(
-      ::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "hydra.GameSessionRequest"; }
-
- protected:
-  explicit GameSessionRequest(::google::protobuf::Arena* arena);
-  GameSessionRequest(::google::protobuf::Arena* arena, const GameSessionRequest& from);
-  GameSessionRequest(::google::protobuf::Arena* arena, GameSessionRequest&& from) noexcept
-      : GameSessionRequest(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
-  static void* PlacementNew_(const void*, void* mem,
-                             ::google::protobuf::Arena* arena);
-  static constexpr auto InternalNewImpl_();
-  static const ::google::protobuf::internal::ClassDataFull _class_data_;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kSessionIdFieldNumber = 1,
-    kColorFormatFieldNumber = 2,
-  };
-  // string session_id = 1;
-  void clear_session_id() ;
-  const std::string& session_id() const;
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_session_id(Arg_&& arg, Args_... args);
-  std::string* mutable_session_id();
-  PROTOBUF_NODISCARD std::string* release_session_id();
-  void set_allocated_session_id(std::string* value);
-
-  private:
-  const std::string& _internal_session_id() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_session_id(
-      const std::string& value);
-  std::string* _internal_mutable_session_id();
-
-  public:
-  // .hydra.ColorFormat color_format = 2;
-  void clear_color_format() ;
-  ::hydra::ColorFormat color_format() const;
-  void set_color_format(::hydra::ColorFormat value);
-
-  private:
-  ::hydra::ColorFormat _internal_color_format() const;
-  void _internal_set_color_format(::hydra::ColorFormat value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:hydra.GameSessionRequest)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      1, 2, 0,
-      43, 2>
-      _table_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from,
-                          const GameSessionRequest& from_msg);
-    ::google::protobuf::internal::ArenaStringPtr session_id_;
-    int color_format_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -9858,13 +9894,14 @@ class ClientMessage final : public ::google::protobuf::Message
     kInputLine = 1,
     kGmcp = 2,
     kPing = 3,
+    kPreferences = 4,
     PAYLOAD_NOT_SET = 0,
   };
   static inline const ClientMessage* internal_default_instance() {
     return reinterpret_cast<const ClientMessage*>(
         &_ClientMessage_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 20;
+  static constexpr int kIndexInFileMessages = 19;
   friend void swap(ClientMessage& a, ClientMessage& b) { a.Swap(&b); }
   inline void Swap(ClientMessage* other) {
     if (other == this) return;
@@ -9954,6 +9991,7 @@ class ClientMessage final : public ::google::protobuf::Message
     kInputLineFieldNumber = 1,
     kGmcpFieldNumber = 2,
     kPingFieldNumber = 3,
+    kPreferencesFieldNumber = 4,
   };
   // string input_line = 1;
   bool has_input_line() const;
@@ -10010,6 +10048,25 @@ class ClientMessage final : public ::google::protobuf::Message
   ::hydra::PingMessage* _internal_mutable_ping();
 
   public:
+  // .hydra.SetPreferences preferences = 4;
+  bool has_preferences() const;
+  private:
+  bool _internal_has_preferences() const;
+
+  public:
+  void clear_preferences() ;
+  const ::hydra::SetPreferences& preferences() const;
+  PROTOBUF_NODISCARD ::hydra::SetPreferences* release_preferences();
+  ::hydra::SetPreferences* mutable_preferences();
+  void set_allocated_preferences(::hydra::SetPreferences* value);
+  void unsafe_arena_set_allocated_preferences(::hydra::SetPreferences* value);
+  ::hydra::SetPreferences* unsafe_arena_release_preferences();
+
+  private:
+  const ::hydra::SetPreferences& _internal_preferences() const;
+  ::hydra::SetPreferences* _internal_mutable_preferences();
+
+  public:
   void clear_payload();
   PayloadCase payload_case() const;
   // @@protoc_insertion_point(class_scope:hydra.ClientMessage)
@@ -10018,11 +10075,12 @@ class ClientMessage final : public ::google::protobuf::Message
   void set_has_input_line();
   void set_has_gmcp();
   void set_has_ping();
+  void set_has_preferences();
   inline bool has_payload() const;
   inline void clear_has_payload();
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      0, 3, 2,
+      0, 4, 3,
       38, 2>
       _table_;
 
@@ -10046,6 +10104,7 @@ class ClientMessage final : public ::google::protobuf::Message
       ::google::protobuf::internal::ArenaStringPtr input_line_;
       ::hydra::GmcpClientMessage* gmcp_;
       ::hydra::PingMessage* ping_;
+      ::hydra::SetPreferences* preferences_;
     } payload_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint32_t _oneof_case_[1];
@@ -11826,6 +11885,28 @@ inline void SessionRequest::set_allocated_session_id(std::string* value) {
   // @@protoc_insertion_point(field_set_allocated:hydra.SessionRequest.session_id)
 }
 
+// .hydra.ColorFormat color_format = 2;
+inline void SessionRequest::clear_color_format() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.color_format_ = 0;
+}
+inline ::hydra::ColorFormat SessionRequest::color_format() const {
+  // @@protoc_insertion_point(field_get:hydra.SessionRequest.color_format)
+  return _internal_color_format();
+}
+inline void SessionRequest::set_color_format(::hydra::ColorFormat value) {
+  _internal_set_color_format(value);
+  // @@protoc_insertion_point(field_set:hydra.SessionRequest.color_format)
+}
+inline ::hydra::ColorFormat SessionRequest::_internal_color_format() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::hydra::ColorFormat>(_impl_.color_format_);
+}
+inline void SessionRequest::_internal_set_color_format(::hydra::ColorFormat value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.color_format_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // ConnectRequest
@@ -12320,80 +12401,6 @@ inline void DisconnectResponse::set_allocated_error(std::string* value) {
 
 // -------------------------------------------------------------------
 
-// GameSessionRequest
-
-// string session_id = 1;
-inline void GameSessionRequest::clear_session_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_.ClearToEmpty();
-}
-inline const std::string& GameSessionRequest::session_id() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:hydra.GameSessionRequest.session_id)
-  return _internal_session_id();
-}
-template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void GameSessionRequest::set_session_id(Arg_&& arg,
-                                                     Args_... args) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:hydra.GameSessionRequest.session_id)
-}
-inline std::string* GameSessionRequest::mutable_session_id() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  std::string* _s = _internal_mutable_session_id();
-  // @@protoc_insertion_point(field_mutable:hydra.GameSessionRequest.session_id)
-  return _s;
-}
-inline const std::string& GameSessionRequest::_internal_session_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.session_id_.Get();
-}
-inline void GameSessionRequest::_internal_set_session_id(const std::string& value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_.Set(value, GetArena());
-}
-inline std::string* GameSessionRequest::_internal_mutable_session_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _impl_.session_id_.Mutable( GetArena());
-}
-inline std::string* GameSessionRequest::release_session_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:hydra.GameSessionRequest.session_id)
-  return _impl_.session_id_.Release();
-}
-inline void GameSessionRequest::set_allocated_session_id(std::string* value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_.SetAllocated(value, GetArena());
-  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.session_id_.IsDefault()) {
-    _impl_.session_id_.Set("", GetArena());
-  }
-  // @@protoc_insertion_point(field_set_allocated:hydra.GameSessionRequest.session_id)
-}
-
-// .hydra.ColorFormat color_format = 2;
-inline void GameSessionRequest::clear_color_format() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.color_format_ = 0;
-}
-inline ::hydra::ColorFormat GameSessionRequest::color_format() const {
-  // @@protoc_insertion_point(field_get:hydra.GameSessionRequest.color_format)
-  return _internal_color_format();
-}
-inline void GameSessionRequest::set_color_format(::hydra::ColorFormat value) {
-  _internal_set_color_format(value);
-  // @@protoc_insertion_point(field_set:hydra.GameSessionRequest.color_format)
-}
-inline ::hydra::ColorFormat GameSessionRequest::_internal_color_format() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return static_cast<::hydra::ColorFormat>(_impl_.color_format_);
-}
-inline void GameSessionRequest::_internal_set_color_format(::hydra::ColorFormat value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.color_format_ = value;
-}
-
-// -------------------------------------------------------------------
-
 // ClientMessage
 
 // string input_line = 1;
@@ -12639,6 +12646,85 @@ inline ::hydra::PingMessage* ClientMessage::mutable_ping() ABSL_ATTRIBUTE_LIFETI
   return _msg;
 }
 
+// .hydra.SetPreferences preferences = 4;
+inline bool ClientMessage::has_preferences() const {
+  return payload_case() == kPreferences;
+}
+inline bool ClientMessage::_internal_has_preferences() const {
+  return payload_case() == kPreferences;
+}
+inline void ClientMessage::set_has_preferences() {
+  _impl_._oneof_case_[0] = kPreferences;
+}
+inline void ClientMessage::clear_preferences() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (payload_case() == kPreferences) {
+    if (GetArena() == nullptr) {
+      delete _impl_.payload_.preferences_;
+    } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
+      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.payload_.preferences_);
+    }
+    clear_has_payload();
+  }
+}
+inline ::hydra::SetPreferences* ClientMessage::release_preferences() {
+  // @@protoc_insertion_point(field_release:hydra.ClientMessage.preferences)
+  if (payload_case() == kPreferences) {
+    clear_has_payload();
+    auto* temp = _impl_.payload_.preferences_;
+    if (GetArena() != nullptr) {
+      temp = ::google::protobuf::internal::DuplicateIfNonNull(temp);
+    }
+    _impl_.payload_.preferences_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::hydra::SetPreferences& ClientMessage::_internal_preferences() const {
+  return payload_case() == kPreferences ? *_impl_.payload_.preferences_ : reinterpret_cast<::hydra::SetPreferences&>(::hydra::_SetPreferences_default_instance_);
+}
+inline const ::hydra::SetPreferences& ClientMessage::preferences() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:hydra.ClientMessage.preferences)
+  return _internal_preferences();
+}
+inline ::hydra::SetPreferences* ClientMessage::unsafe_arena_release_preferences() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:hydra.ClientMessage.preferences)
+  if (payload_case() == kPreferences) {
+    clear_has_payload();
+    auto* temp = _impl_.payload_.preferences_;
+    _impl_.payload_.preferences_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void ClientMessage::unsafe_arena_set_allocated_preferences(::hydra::SetPreferences* value) {
+  // We rely on the oneof clear method to free the earlier contents
+  // of this oneof. We can directly use the pointer we're given to
+  // set the new value.
+  clear_payload();
+  if (value) {
+    set_has_preferences();
+    _impl_.payload_.preferences_ = value;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:hydra.ClientMessage.preferences)
+}
+inline ::hydra::SetPreferences* ClientMessage::_internal_mutable_preferences() {
+  if (payload_case() != kPreferences) {
+    clear_payload();
+    set_has_preferences();
+    _impl_.payload_.preferences_ =
+        ::google::protobuf::Message::DefaultConstruct<::hydra::SetPreferences>(GetArena());
+  }
+  return _impl_.payload_.preferences_;
+}
+inline ::hydra::SetPreferences* ClientMessage::mutable_preferences() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::hydra::SetPreferences* _msg = _internal_mutable_preferences();
+  // @@protoc_insertion_point(field_mutable:hydra.ClientMessage.preferences)
+  return _msg;
+}
+
 inline bool ClientMessage::has_payload() const {
   return payload_case() != PAYLOAD_NOT_SET;
 }
@@ -12648,6 +12734,124 @@ inline void ClientMessage::clear_has_payload() {
 inline ClientMessage::PayloadCase ClientMessage::payload_case() const {
   return ClientMessage::PayloadCase(_impl_._oneof_case_[0]);
 }
+// -------------------------------------------------------------------
+
+// SetPreferences
+
+// .hydra.ColorFormat color_format = 1;
+inline void SetPreferences::clear_color_format() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.color_format_ = 0;
+}
+inline ::hydra::ColorFormat SetPreferences::color_format() const {
+  // @@protoc_insertion_point(field_get:hydra.SetPreferences.color_format)
+  return _internal_color_format();
+}
+inline void SetPreferences::set_color_format(::hydra::ColorFormat value) {
+  _internal_set_color_format(value);
+  // @@protoc_insertion_point(field_set:hydra.SetPreferences.color_format)
+}
+inline ::hydra::ColorFormat SetPreferences::_internal_color_format() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::hydra::ColorFormat>(_impl_.color_format_);
+}
+inline void SetPreferences::_internal_set_color_format(::hydra::ColorFormat value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.color_format_ = value;
+}
+
+// uint32 terminal_width = 2;
+inline void SetPreferences::clear_terminal_width() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.terminal_width_ = 0u;
+}
+inline ::uint32_t SetPreferences::terminal_width() const {
+  // @@protoc_insertion_point(field_get:hydra.SetPreferences.terminal_width)
+  return _internal_terminal_width();
+}
+inline void SetPreferences::set_terminal_width(::uint32_t value) {
+  _internal_set_terminal_width(value);
+  // @@protoc_insertion_point(field_set:hydra.SetPreferences.terminal_width)
+}
+inline ::uint32_t SetPreferences::_internal_terminal_width() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.terminal_width_;
+}
+inline void SetPreferences::_internal_set_terminal_width(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.terminal_width_ = value;
+}
+
+// uint32 terminal_height = 3;
+inline void SetPreferences::clear_terminal_height() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.terminal_height_ = 0u;
+}
+inline ::uint32_t SetPreferences::terminal_height() const {
+  // @@protoc_insertion_point(field_get:hydra.SetPreferences.terminal_height)
+  return _internal_terminal_height();
+}
+inline void SetPreferences::set_terminal_height(::uint32_t value) {
+  _internal_set_terminal_height(value);
+  // @@protoc_insertion_point(field_set:hydra.SetPreferences.terminal_height)
+}
+inline ::uint32_t SetPreferences::_internal_terminal_height() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.terminal_height_;
+}
+inline void SetPreferences::_internal_set_terminal_height(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.terminal_height_ = value;
+}
+
+// string terminal_type = 4;
+inline void SetPreferences::clear_terminal_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.terminal_type_.ClearToEmpty();
+}
+inline const std::string& SetPreferences::terminal_type() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:hydra.SetPreferences.terminal_type)
+  return _internal_terminal_type();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void SetPreferences::set_terminal_type(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.terminal_type_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:hydra.SetPreferences.terminal_type)
+}
+inline std::string* SetPreferences::mutable_terminal_type() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_terminal_type();
+  // @@protoc_insertion_point(field_mutable:hydra.SetPreferences.terminal_type)
+  return _s;
+}
+inline const std::string& SetPreferences::_internal_terminal_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.terminal_type_.Get();
+}
+inline void SetPreferences::_internal_set_terminal_type(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.terminal_type_.Set(value, GetArena());
+}
+inline std::string* SetPreferences::_internal_mutable_terminal_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.terminal_type_.Mutable( GetArena());
+}
+inline std::string* SetPreferences::release_terminal_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:hydra.SetPreferences.terminal_type)
+  return _impl_.terminal_type_.Release();
+}
+inline void SetPreferences::set_allocated_terminal_type(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.terminal_type_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.terminal_type_.IsDefault()) {
+    _impl_.terminal_type_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:hydra.SetPreferences.terminal_type)
+}
+
 // -------------------------------------------------------------------
 
 // GmcpClientMessage

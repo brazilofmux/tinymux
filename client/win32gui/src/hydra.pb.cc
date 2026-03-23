@@ -147,11 +147,42 @@ struct StoredCredentialDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 StoredCredentialDefaultTypeInternal _StoredCredential_default_instance_;
 
+inline constexpr SetPreferences::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : terminal_type_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        color_format_{static_cast< ::hydra::ColorFormat >(0)},
+        terminal_width_{0u},
+        terminal_height_{0u},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR SetPreferences::SetPreferences(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct SetPreferencesDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR SetPreferencesDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~SetPreferencesDefaultTypeInternal() {}
+  union {
+    SetPreferences _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SetPreferencesDefaultTypeInternal _SetPreferences_default_instance_;
+
 inline constexpr SessionRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : session_id_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
+        color_format_{static_cast< ::hydra::ColorFormat >(0)},
         _cached_size_{0} {}
 
 template <typename>
@@ -550,34 +581,6 @@ struct GameStatusRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GameStatusRequestDefaultTypeInternal _GameStatusRequest_default_instance_;
-
-inline constexpr GameSessionRequest::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : session_id_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
-        color_format_{static_cast< ::hydra::ColorFormat >(0)},
-        _cached_size_{0} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR GameSessionRequest::GameSessionRequest(::_pbi::ConstantInitialized)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(_class_data_.base()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(::_pbi::ConstantInitialized()) {
-}
-struct GameSessionRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR GameSessionRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~GameSessionRequestDefaultTypeInternal() {}
-  union {
-    GameSessionRequest _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GameSessionRequestDefaultTypeInternal _GameSessionRequest_default_instance_;
 
 inline constexpr GameResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -1457,6 +1460,7 @@ const ::uint32_t
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::hydra::SessionRequest, _impl_.session_id_),
+        PROTOBUF_FIELD_OFFSET(::hydra::SessionRequest, _impl_.color_format_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::hydra::ConnectRequest, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -1519,16 +1523,6 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::hydra::DisconnectResponse, _impl_.success_),
         PROTOBUF_FIELD_OFFSET(::hydra::DisconnectResponse, _impl_.error_),
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::hydra::GameSessionRequest, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::hydra::GameSessionRequest, _impl_.session_id_),
-        PROTOBUF_FIELD_OFFSET(::hydra::GameSessionRequest, _impl_.color_format_),
-        ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::hydra::ClientMessage, _internal_metadata_),
         ~0u,  // no _extensions_
         PROTOBUF_FIELD_OFFSET(::hydra::ClientMessage, _impl_._oneof_case_[0]),
@@ -1539,7 +1533,20 @@ const ::uint32_t
         ::_pbi::kInvalidFieldOffsetTag,
         ::_pbi::kInvalidFieldOffsetTag,
         ::_pbi::kInvalidFieldOffsetTag,
+        ::_pbi::kInvalidFieldOffsetTag,
         PROTOBUF_FIELD_OFFSET(::hydra::ClientMessage, _impl_.payload_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::hydra::SetPreferences, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::hydra::SetPreferences, _impl_.color_format_),
+        PROTOBUF_FIELD_OFFSET(::hydra::SetPreferences, _impl_.terminal_width_),
+        PROTOBUF_FIELD_OFFSET(::hydra::SetPreferences, _impl_.terminal_height_),
+        PROTOBUF_FIELD_OFFSET(::hydra::SetPreferences, _impl_.terminal_type_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::hydra::GmcpClientMessage, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -1791,37 +1798,37 @@ static const ::_pbi::MigrationSchema
         {122, -1, -1, sizeof(::hydra::CreateAccountRequest)},
         {132, -1, -1, sizeof(::hydra::CreateAccountResponse)},
         {143, -1, -1, sizeof(::hydra::SessionRequest)},
-        {152, -1, -1, sizeof(::hydra::ConnectRequest)},
-        {162, -1, -1, sizeof(::hydra::ConnectResponse)},
-        {173, -1, -1, sizeof(::hydra::SwitchRequest)},
-        {183, -1, -1, sizeof(::hydra::SwitchResponse)},
-        {193, -1, -1, sizeof(::hydra::DisconnectRequest)},
-        {203, -1, -1, sizeof(::hydra::DisconnectResponse)},
-        {213, -1, -1, sizeof(::hydra::GameSessionRequest)},
-        {223, -1, -1, sizeof(::hydra::ClientMessage)},
-        {235, -1, -1, sizeof(::hydra::GmcpClientMessage)},
-        {245, -1, -1, sizeof(::hydra::PingMessage)},
-        {254, -1, -1, sizeof(::hydra::ServerMessage)},
-        {268, -1, -1, sizeof(::hydra::SystemNotice)},
-        {278, -1, -1, sizeof(::hydra::PongMessage)},
-        {288, -1, -1, sizeof(::hydra::LinkEvent)},
-        {300, -1, -1, sizeof(::hydra::InputRequest)},
-        {310, -1, -1, sizeof(::hydra::InputResponse)},
-        {320, -1, -1, sizeof(::hydra::ScrollBackRequest)},
-        {331, -1, -1, sizeof(::hydra::ScrollBackResponse)},
-        {340, -1, -1, sizeof(::hydra::AddCredentialRequest)},
-        {354, -1, -1, sizeof(::hydra::AddCredentialResponse)},
-        {364, -1, -1, sizeof(::hydra::DeleteCredentialRequest)},
-        {375, -1, -1, sizeof(::hydra::DeleteCredentialResponse)},
-        {385, -1, -1, sizeof(::hydra::ListCredentialsRequest)},
-        {394, -1, -1, sizeof(::hydra::ListCredentialsResponse)},
-        {403, -1, -1, sizeof(::hydra::GameRequest)},
-        {412, -1, -1, sizeof(::hydra::GameResponse)},
-        {423, -1, -1, sizeof(::hydra::GameStatusRequest)},
-        {432, -1, -1, sizeof(::hydra::GameStatusResponse)},
-        {441, -1, -1, sizeof(::hydra::GameList)},
-        {450, -1, -1, sizeof(::hydra::LinkList)},
-        {459, -1, -1, sizeof(::hydra::GmcpSubscribeRequest)},
+        {153, -1, -1, sizeof(::hydra::ConnectRequest)},
+        {163, -1, -1, sizeof(::hydra::ConnectResponse)},
+        {174, -1, -1, sizeof(::hydra::SwitchRequest)},
+        {184, -1, -1, sizeof(::hydra::SwitchResponse)},
+        {194, -1, -1, sizeof(::hydra::DisconnectRequest)},
+        {204, -1, -1, sizeof(::hydra::DisconnectResponse)},
+        {214, -1, -1, sizeof(::hydra::ClientMessage)},
+        {227, -1, -1, sizeof(::hydra::SetPreferences)},
+        {239, -1, -1, sizeof(::hydra::GmcpClientMessage)},
+        {249, -1, -1, sizeof(::hydra::PingMessage)},
+        {258, -1, -1, sizeof(::hydra::ServerMessage)},
+        {272, -1, -1, sizeof(::hydra::SystemNotice)},
+        {282, -1, -1, sizeof(::hydra::PongMessage)},
+        {292, -1, -1, sizeof(::hydra::LinkEvent)},
+        {304, -1, -1, sizeof(::hydra::InputRequest)},
+        {314, -1, -1, sizeof(::hydra::InputResponse)},
+        {324, -1, -1, sizeof(::hydra::ScrollBackRequest)},
+        {335, -1, -1, sizeof(::hydra::ScrollBackResponse)},
+        {344, -1, -1, sizeof(::hydra::AddCredentialRequest)},
+        {358, -1, -1, sizeof(::hydra::AddCredentialResponse)},
+        {368, -1, -1, sizeof(::hydra::DeleteCredentialRequest)},
+        {379, -1, -1, sizeof(::hydra::DeleteCredentialResponse)},
+        {389, -1, -1, sizeof(::hydra::ListCredentialsRequest)},
+        {398, -1, -1, sizeof(::hydra::ListCredentialsResponse)},
+        {407, -1, -1, sizeof(::hydra::GameRequest)},
+        {416, -1, -1, sizeof(::hydra::GameResponse)},
+        {427, -1, -1, sizeof(::hydra::GameStatusRequest)},
+        {436, -1, -1, sizeof(::hydra::GameStatusResponse)},
+        {445, -1, -1, sizeof(::hydra::GameList)},
+        {454, -1, -1, sizeof(::hydra::LinkList)},
+        {463, -1, -1, sizeof(::hydra::GmcpSubscribeRequest)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::hydra::_Empty_default_instance_._instance,
@@ -1843,8 +1850,8 @@ static const ::_pb::Message* const file_default_instances[] = {
     &::hydra::_SwitchResponse_default_instance_._instance,
     &::hydra::_DisconnectRequest_default_instance_._instance,
     &::hydra::_DisconnectResponse_default_instance_._instance,
-    &::hydra::_GameSessionRequest_default_instance_._instance,
     &::hydra::_ClientMessage_default_instance_._instance,
+    &::hydra::_SetPreferences_default_instance_._instance,
     &::hydra::_GmcpClientMessage_default_instance_._instance,
     &::hydra::_PingMessage_default_instance_._instance,
     &::hydra::_ServerMessage_default_instance_._instance,
@@ -1898,117 +1905,120 @@ const char descriptor_table_protodef_hydra_2eproto[] ABSL_ATTRIBUTE_SECTION_VARI
     "\n\005error\030\003 \001(\t\":\n\024CreateAccountRequest\022\020\n"
     "\010username\030\001 \001(\t\022\020\n\010password\030\002 \001(\t\"K\n\025Cre"
     "ateAccountResponse\022\017\n\007success\030\001 \001(\010\022\022\n\ns"
-    "ession_id\030\002 \001(\t\022\r\n\005error\030\003 \001(\t\"$\n\016Sessio"
-    "nRequest\022\022\n\nsession_id\030\001 \001(\t\"7\n\016ConnectR"
-    "equest\022\022\n\nsession_id\030\001 \001(\t\022\021\n\tgame_name\030"
-    "\002 \001(\t\"F\n\017ConnectResponse\022\017\n\007success\030\001 \001("
-    "\010\022\023\n\013link_number\030\002 \001(\005\022\r\n\005error\030\003 \001(\t\"8\n"
-    "\rSwitchRequest\022\022\n\nsession_id\030\001 \001(\t\022\023\n\013li"
-    "nk_number\030\002 \001(\005\"0\n\016SwitchResponse\022\017\n\007suc"
-    "cess\030\001 \001(\010\022\r\n\005error\030\002 \001(\t\"<\n\021DisconnectR"
-    "equest\022\022\n\nsession_id\030\001 \001(\t\022\023\n\013link_numbe"
-    "r\030\002 \001(\005\"4\n\022DisconnectResponse\022\017\n\007success"
-    "\030\001 \001(\010\022\r\n\005error\030\002 \001(\t\"R\n\022GameSessionRequ"
-    "est\022\022\n\nsession_id\030\001 \001(\t\022(\n\014color_format\030"
-    "\002 \001(\0162\022.hydra.ColorFormat\"~\n\rClientMessa"
-    "ge\022\024\n\ninput_line\030\001 \001(\tH\000\022(\n\004gmcp\030\002 \001(\0132\030"
-    ".hydra.GmcpClientMessageH\000\022\"\n\004ping\030\003 \001(\013"
-    "2\022.hydra.PingMessageH\000B\t\n\007payload\"2\n\021Gmc"
-    "pClientMessage\022\017\n\007package\030\001 \001(\t\022\014\n\004json\030"
-    "\002 \001(\t\"\'\n\013PingMessage\022\030\n\020client_timestamp"
-    "\030\001 \001(\003\"\333\001\n\rServerMessage\022(\n\013game_output\030"
-    "\001 \001(\0132\021.hydra.GameOutputH\000\022\"\n\004gmcp\030\002 \001(\013"
-    "2\022.hydra.GmcpMessageH\000\022%\n\006notice\030\003 \001(\0132\023"
-    ".hydra.SystemNoticeH\000\022\"\n\004pong\030\004 \001(\0132\022.hy"
-    "dra.PongMessageH\000\022&\n\nlink_event\030\005 \001(\0132\020."
-    "hydra.LinkEventH\000B\t\n\007payload\"\?\n\014SystemNo"
-    "tice\022\014\n\004text\030\001 \001(\t\022!\n\010severity\030\002 \001(\0162\017.h"
-    "ydra.Severity\"A\n\013PongMessage\022\030\n\020client_t"
-    "imestamp\030\001 \001(\003\022\030\n\020server_timestamp\030\002 \001(\003"
-    "\"}\n\tLinkEvent\022\023\n\013link_number\030\001 \001(\005\022\021\n\tga"
-    "me_name\030\002 \001(\t\022#\n\told_state\030\003 \001(\0162\020.hydra"
-    ".LinkState\022#\n\tnew_state\030\004 \001(\0162\020.hydra.Li"
-    "nkState\"0\n\014InputRequest\022\022\n\nsession_id\030\001 "
-    "\001(\t\022\014\n\004line\030\002 \001(\t\"/\n\rInputResponse\022\017\n\007su"
-    "ccess\030\001 \001(\010\022\r\n\005error\030\002 \001(\t\"d\n\021ScrollBack"
-    "Request\022\022\n\nsession_id\030\001 \001(\t\022\021\n\tmax_lines"
-    "\030\002 \001(\005\022(\n\014color_format\030\003 \001(\0162\022.hydra.Col"
-    "orFormat\"6\n\022ScrollBackResponse\022 \n\005lines\030"
-    "\001 \003(\0132\021.hydra.GameOutput\"w\n\024AddCredentia"
-    "lRequest\022\022\n\nsession_id\030\001 \001(\t\022\014\n\004game\030\002 \001"
-    "(\t\022\021\n\tcharacter\030\003 \001(\t\022\014\n\004verb\030\004 \001(\t\022\014\n\004n"
-    "ame\030\005 \001(\t\022\016\n\006secret\030\006 \001(\t\"7\n\025AddCredenti"
-    "alResponse\022\017\n\007success\030\001 \001(\010\022\r\n\005error\030\002 \001"
-    "(\t\"N\n\027DeleteCredentialRequest\022\022\n\nsession"
-    "_id\030\001 \001(\t\022\014\n\004game\030\002 \001(\t\022\021\n\tcharacter\030\003 \001"
-    "(\t\":\n\030DeleteCredentialResponse\022\017\n\007succes"
-    "s\030\001 \001(\010\022\r\n\005error\030\002 \001(\t\",\n\026ListCredential"
-    "sRequest\022\022\n\nsession_id\030\001 \001(\t\"G\n\027ListCred"
-    "entialsResponse\022,\n\013credentials\030\001 \003(\0132\027.h"
-    "ydra.StoredCredential\" \n\013GameRequest\022\021\n\t"
-    "game_name\030\001 \001(\t\";\n\014GameResponse\022\017\n\007succe"
-    "ss\030\001 \001(\010\022\r\n\005error\030\002 \001(\t\022\013\n\003pid\030\003 \001(\005\"&\n\021"
-    "GameStatusRequest\022\021\n\tgame_name\030\001 \001(\t\";\n\022"
-    "GameStatusResponse\022%\n\tprocesses\030\001 \003(\0132\022."
-    "hydra.ProcessInfo\"*\n\010GameList\022\036\n\005games\030\001"
-    " \003(\0132\017.hydra.GameInfo\"*\n\010LinkList\022\036\n\005lin"
-    "ks\030\001 \003(\0132\017.hydra.LinkInfo\"<\n\024GmcpSubscri"
-    "beRequest\022\022\n\nsession_id\030\001 \001(\t\022\020\n\010package"
-    "s\030\002 \003(\t*U\n\013ColorFormat\022\022\n\016ANSI_TRUECOLOR"
-    "\020\000\022\014\n\010ANSI_256\020\001\022\013\n\007ANSI_16\020\002\022\014\n\010PUA_UTF"
-    "8\020\003\022\t\n\005PLAIN\020\004*\266\001\n\tLinkState\022\020\n\014LINK_UNK"
-    "NOWN\020\000\022\023\n\017LINK_CONNECTING\020\001\022\014\n\010LINK_TLS\020"
-    "\002\022\024\n\020LINK_NEGOTIATING\020\003\022\023\n\017LINK_LOGGING_"
-    "IN\020\004\022\017\n\013LINK_ACTIVE\020\005\022\025\n\021LINK_RECONNECTI"
-    "NG\020\006\022\022\n\016LINK_SUSPENDED\020\007\022\r\n\tLINK_DEAD\020\010*"
-    "`\n\014SessionState\022\023\n\017SESSION_UNKNOWN\020\000\022\021\n\r"
-    "SESSION_LOGIN\020\001\022\022\n\016SESSION_ACTIVE\020\002\022\024\n\020S"
-    "ESSION_DETACHED\020\003*+\n\010GameType\022\017\n\013GAME_RE"
-    "MOTE\020\000\022\016\n\nGAME_LOCAL\020\001*D\n\010Severity\022\021\n\rSE"
-    "VERITY_INFO\020\000\022\021\n\rSEVERITY_WARN\020\001\022\022\n\016SEVE"
-    "RITY_ERROR\020\0022\231\013\n\014HydraService\0227\n\014Authent"
-    "icate\022\022.hydra.AuthRequest\032\023.hydra.AuthRe"
-    "sponse\022J\n\rCreateAccount\022\033.hydra.CreateAc"
-    "countRequest\032\034.hydra.CreateAccountRespon"
-    "se\0227\n\nGetSession\022\025.hydra.SessionRequest\032"
-    "\022.hydra.SessionInfo\0224\n\rDetachSession\022\025.h"
-    "ydra.SessionRequest\032\014.hydra.Empty\0225\n\016Des"
-    "troySession\022\025.hydra.SessionRequest\032\014.hyd"
-    "ra.Empty\022+\n\004Ping\022\025.hydra.SessionRequest\032"
-    "\014.hydra.Empty\022*\n\tListGames\022\014.hydra.Empty"
-    "\032\017.hydra.GameList\0228\n\007Connect\022\025.hydra.Con"
-    "nectRequest\032\026.hydra.ConnectResponse\0229\n\nS"
-    "witchLink\022\024.hydra.SwitchRequest\032\025.hydra."
-    "SwitchResponse\022E\n\016DisconnectLink\022\030.hydra"
-    ".DisconnectRequest\032\031.hydra.DisconnectRes"
-    "ponse\0223\n\tListLinks\022\025.hydra.SessionReques"
-    "t\032\017.hydra.LinkList\022=\n\013GameSession\022\024.hydr"
-    "a.ClientMessage\032\024.hydra.ServerMessage(\0010"
-    "\001\0226\n\tSendInput\022\023.hydra.InputRequest\032\024.hy"
-    "dra.InputResponse\0227\n\tSubscribe\022\025.hydra.S"
-    "essionRequest\032\021.hydra.GameOutput0\001\022B\n\rSu"
-    "bscribeGmcp\022\033.hydra.GmcpSubscribeRequest"
-    "\032\022.hydra.GmcpMessage0\001\022D\n\rGetScrollBack\022"
-    "\030.hydra.ScrollBackRequest\032\031.hydra.Scroll"
-    "BackResponse\022J\n\rAddCredential\022\033.hydra.Ad"
-    "dCredentialRequest\032\034.hydra.AddCredential"
-    "Response\022S\n\020DeleteCredential\022\036.hydra.Del"
-    "eteCredentialRequest\032\037.hydra.DeleteCrede"
-    "ntialResponse\022P\n\017ListCredentials\022\035.hydra"
-    ".ListCredentialsRequest\032\036.hydra.ListCred"
-    "entialsResponse\0224\n\tStartGame\022\022.hydra.Gam"
-    "eRequest\032\023.hydra.GameResponse\0223\n\010StopGam"
-    "e\022\022.hydra.GameRequest\032\023.hydra.GameRespon"
-    "se\0226\n\013RestartGame\022\022.hydra.GameRequest\032\023."
-    "hydra.GameResponse\022D\n\rGetGameStatus\022\030.hy"
-    "dra.GameStatusRequest\032\031.hydra.GameStatus"
-    "Responseb\006proto3"
+    "ession_id\030\002 \001(\t\022\r\n\005error\030\003 \001(\t\"N\n\016Sessio"
+    "nRequest\022\022\n\nsession_id\030\001 \001(\t\022(\n\014color_fo"
+    "rmat\030\002 \001(\0162\022.hydra.ColorFormat\"7\n\016Connec"
+    "tRequest\022\022\n\nsession_id\030\001 \001(\t\022\021\n\tgame_nam"
+    "e\030\002 \001(\t\"F\n\017ConnectResponse\022\017\n\007success\030\001 "
+    "\001(\010\022\023\n\013link_number\030\002 \001(\005\022\r\n\005error\030\003 \001(\t\""
+    "8\n\rSwitchRequest\022\022\n\nsession_id\030\001 \001(\t\022\023\n\013"
+    "link_number\030\002 \001(\005\"0\n\016SwitchResponse\022\017\n\007s"
+    "uccess\030\001 \001(\010\022\r\n\005error\030\002 \001(\t\"<\n\021Disconnec"
+    "tRequest\022\022\n\nsession_id\030\001 \001(\t\022\023\n\013link_num"
+    "ber\030\002 \001(\005\"4\n\022DisconnectResponse\022\017\n\007succe"
+    "ss\030\001 \001(\010\022\r\n\005error\030\002 \001(\t\"\254\001\n\rClientMessag"
+    "e\022\024\n\ninput_line\030\001 \001(\tH\000\022(\n\004gmcp\030\002 \001(\0132\030."
+    "hydra.GmcpClientMessageH\000\022\"\n\004ping\030\003 \001(\0132"
+    "\022.hydra.PingMessageH\000\022,\n\013preferences\030\004 \001"
+    "(\0132\025.hydra.SetPreferencesH\000B\t\n\007payload\"\202"
+    "\001\n\016SetPreferences\022(\n\014color_format\030\001 \001(\0162"
+    "\022.hydra.ColorFormat\022\026\n\016terminal_width\030\002 "
+    "\001(\r\022\027\n\017terminal_height\030\003 \001(\r\022\025\n\rterminal"
+    "_type\030\004 \001(\t\"2\n\021GmcpClientMessage\022\017\n\007pack"
+    "age\030\001 \001(\t\022\014\n\004json\030\002 \001(\t\"\'\n\013PingMessage\022\030"
+    "\n\020client_timestamp\030\001 \001(\003\"\333\001\n\rServerMessa"
+    "ge\022(\n\013game_output\030\001 \001(\0132\021.hydra.GameOutp"
+    "utH\000\022\"\n\004gmcp\030\002 \001(\0132\022.hydra.GmcpMessageH\000"
+    "\022%\n\006notice\030\003 \001(\0132\023.hydra.SystemNoticeH\000\022"
+    "\"\n\004pong\030\004 \001(\0132\022.hydra.PongMessageH\000\022&\n\nl"
+    "ink_event\030\005 \001(\0132\020.hydra.LinkEventH\000B\t\n\007p"
+    "ayload\"\?\n\014SystemNotice\022\014\n\004text\030\001 \001(\t\022!\n\010"
+    "severity\030\002 \001(\0162\017.hydra.Severity\"A\n\013PongM"
+    "essage\022\030\n\020client_timestamp\030\001 \001(\003\022\030\n\020serv"
+    "er_timestamp\030\002 \001(\003\"}\n\tLinkEvent\022\023\n\013link_"
+    "number\030\001 \001(\005\022\021\n\tgame_name\030\002 \001(\t\022#\n\told_s"
+    "tate\030\003 \001(\0162\020.hydra.LinkState\022#\n\tnew_stat"
+    "e\030\004 \001(\0162\020.hydra.LinkState\"0\n\014InputReques"
+    "t\022\022\n\nsession_id\030\001 \001(\t\022\014\n\004line\030\002 \001(\t\"/\n\rI"
+    "nputResponse\022\017\n\007success\030\001 \001(\010\022\r\n\005error\030\002"
+    " \001(\t\"d\n\021ScrollBackRequest\022\022\n\nsession_id\030"
+    "\001 \001(\t\022\021\n\tmax_lines\030\002 \001(\005\022(\n\014color_format"
+    "\030\003 \001(\0162\022.hydra.ColorFormat\"6\n\022ScrollBack"
+    "Response\022 \n\005lines\030\001 \003(\0132\021.hydra.GameOutp"
+    "ut\"w\n\024AddCredentialRequest\022\022\n\nsession_id"
+    "\030\001 \001(\t\022\014\n\004game\030\002 \001(\t\022\021\n\tcharacter\030\003 \001(\t\022"
+    "\014\n\004verb\030\004 \001(\t\022\014\n\004name\030\005 \001(\t\022\016\n\006secret\030\006 "
+    "\001(\t\"7\n\025AddCredentialResponse\022\017\n\007success\030"
+    "\001 \001(\010\022\r\n\005error\030\002 \001(\t\"N\n\027DeleteCredential"
+    "Request\022\022\n\nsession_id\030\001 \001(\t\022\014\n\004game\030\002 \001("
+    "\t\022\021\n\tcharacter\030\003 \001(\t\":\n\030DeleteCredential"
+    "Response\022\017\n\007success\030\001 \001(\010\022\r\n\005error\030\002 \001(\t"
+    "\",\n\026ListCredentialsRequest\022\022\n\nsession_id"
+    "\030\001 \001(\t\"G\n\027ListCredentialsResponse\022,\n\013cre"
+    "dentials\030\001 \003(\0132\027.hydra.StoredCredential\""
+    " \n\013GameRequest\022\021\n\tgame_name\030\001 \001(\t\";\n\014Gam"
+    "eResponse\022\017\n\007success\030\001 \001(\010\022\r\n\005error\030\002 \001("
+    "\t\022\013\n\003pid\030\003 \001(\005\"&\n\021GameStatusRequest\022\021\n\tg"
+    "ame_name\030\001 \001(\t\";\n\022GameStatusResponse\022%\n\t"
+    "processes\030\001 \003(\0132\022.hydra.ProcessInfo\"*\n\010G"
+    "ameList\022\036\n\005games\030\001 \003(\0132\017.hydra.GameInfo\""
+    "*\n\010LinkList\022\036\n\005links\030\001 \003(\0132\017.hydra.LinkI"
+    "nfo\"<\n\024GmcpSubscribeRequest\022\022\n\nsession_i"
+    "d\030\001 \001(\t\022\020\n\010packages\030\002 \003(\t*U\n\013ColorFormat"
+    "\022\022\n\016ANSI_TRUECOLOR\020\000\022\014\n\010ANSI_256\020\001\022\013\n\007AN"
+    "SI_16\020\002\022\014\n\010PUA_UTF8\020\003\022\t\n\005PLAIN\020\004*\266\001\n\tLin"
+    "kState\022\020\n\014LINK_UNKNOWN\020\000\022\023\n\017LINK_CONNECT"
+    "ING\020\001\022\014\n\010LINK_TLS\020\002\022\024\n\020LINK_NEGOTIATING\020"
+    "\003\022\023\n\017LINK_LOGGING_IN\020\004\022\017\n\013LINK_ACTIVE\020\005\022"
+    "\025\n\021LINK_RECONNECTING\020\006\022\022\n\016LINK_SUSPENDED"
+    "\020\007\022\r\n\tLINK_DEAD\020\010*`\n\014SessionState\022\023\n\017SES"
+    "SION_UNKNOWN\020\000\022\021\n\rSESSION_LOGIN\020\001\022\022\n\016SES"
+    "SION_ACTIVE\020\002\022\024\n\020SESSION_DETACHED\020\003*+\n\010G"
+    "ameType\022\017\n\013GAME_REMOTE\020\000\022\016\n\nGAME_LOCAL\020\001"
+    "*D\n\010Severity\022\021\n\rSEVERITY_INFO\020\000\022\021\n\rSEVER"
+    "ITY_WARN\020\001\022\022\n\016SEVERITY_ERROR\020\0022\231\013\n\014Hydra"
+    "Service\0227\n\014Authenticate\022\022.hydra.AuthRequ"
+    "est\032\023.hydra.AuthResponse\022J\n\rCreateAccoun"
+    "t\022\033.hydra.CreateAccountRequest\032\034.hydra.C"
+    "reateAccountResponse\0227\n\nGetSession\022\025.hyd"
+    "ra.SessionRequest\032\022.hydra.SessionInfo\0224\n"
+    "\rDetachSession\022\025.hydra.SessionRequest\032\014."
+    "hydra.Empty\0225\n\016DestroySession\022\025.hydra.Se"
+    "ssionRequest\032\014.hydra.Empty\022+\n\004Ping\022\025.hyd"
+    "ra.SessionRequest\032\014.hydra.Empty\022*\n\tListG"
+    "ames\022\014.hydra.Empty\032\017.hydra.GameList\0228\n\007C"
+    "onnect\022\025.hydra.ConnectRequest\032\026.hydra.Co"
+    "nnectResponse\0229\n\nSwitchLink\022\024.hydra.Swit"
+    "chRequest\032\025.hydra.SwitchResponse\022E\n\016Disc"
+    "onnectLink\022\030.hydra.DisconnectRequest\032\031.h"
+    "ydra.DisconnectResponse\0223\n\tListLinks\022\025.h"
+    "ydra.SessionRequest\032\017.hydra.LinkList\022=\n\013"
+    "GameSession\022\024.hydra.ClientMessage\032\024.hydr"
+    "a.ServerMessage(\0010\001\0226\n\tSendInput\022\023.hydra"
+    ".InputRequest\032\024.hydra.InputResponse\0227\n\tS"
+    "ubscribe\022\025.hydra.SessionRequest\032\021.hydra."
+    "GameOutput0\001\022B\n\rSubscribeGmcp\022\033.hydra.Gm"
+    "cpSubscribeRequest\032\022.hydra.GmcpMessage0\001"
+    "\022D\n\rGetScrollBack\022\030.hydra.ScrollBackRequ"
+    "est\032\031.hydra.ScrollBackResponse\022J\n\rAddCre"
+    "dential\022\033.hydra.AddCredentialRequest\032\034.h"
+    "ydra.AddCredentialResponse\022S\n\020DeleteCred"
+    "ential\022\036.hydra.DeleteCredentialRequest\032\037"
+    ".hydra.DeleteCredentialResponse\022P\n\017ListC"
+    "redentials\022\035.hydra.ListCredentialsReques"
+    "t\032\036.hydra.ListCredentialsResponse\0224\n\tSta"
+    "rtGame\022\022.hydra.GameRequest\032\023.hydra.GameR"
+    "esponse\0223\n\010StopGame\022\022.hydra.GameRequest\032"
+    "\023.hydra.GameResponse\0226\n\013RestartGame\022\022.hy"
+    "dra.GameRequest\032\023.hydra.GameResponse\022D\n\r"
+    "GetGameStatus\022\030.hydra.GameStatusRequest\032"
+    "\031.hydra.GameStatusResponseb\006proto3"
 };
 static ::absl::once_flag descriptor_table_hydra_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_hydra_2eproto = {
     false,
     false,
-    5256,
+    5394,
     descriptor_table_protodef_hydra_2eproto,
     "hydra.proto",
     &descriptor_table_hydra_2eproto_once,
@@ -5747,6 +5757,7 @@ SessionRequest::SessionRequest(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.color_format_ = from._impl_.color_format_;
 
   // @@protoc_insertion_point(copy_constructor:hydra.SessionRequest)
 }
@@ -5758,6 +5769,7 @@ inline PROTOBUF_NDEBUG_INLINE SessionRequest::Impl_::Impl_(
 
 inline void SessionRequest::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.color_format_ = {};
 }
 SessionRequest::~SessionRequest() {
   // @@protoc_insertion_point(destructor:hydra.SessionRequest)
@@ -5807,15 +5819,15 @@ const ::google::protobuf::internal::ClassData* SessionRequest::GetClassData() co
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 39, 2> SessionRequest::_table_ = {
+const ::_pbi::TcParseTable<1, 2, 0, 39, 2> SessionRequest::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    1, 0,  // max_field_number, fast_idx_mask
+    2, 8,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967294,  // skipmap
+    4294967292,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    1,  // num_field_entries
+    2,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     _class_data_.base(),
@@ -5825,6 +5837,9 @@ const ::_pbi::TcParseTable<0, 1, 0, 39, 2> SessionRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::hydra::SessionRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
+    // .hydra.ColorFormat color_format = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SessionRequest, _impl_.color_format_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(SessionRequest, _impl_.color_format_)}},
     // string session_id = 1;
     {::_pbi::TcParser::FastUS1,
      {10, 63, 0, PROTOBUF_FIELD_OFFSET(SessionRequest, _impl_.session_id_)}},
@@ -5834,6 +5849,9 @@ const ::_pbi::TcParseTable<0, 1, 0, 39, 2> SessionRequest::_table_ = {
     // string session_id = 1;
     {PROTOBUF_FIELD_OFFSET(SessionRequest, _impl_.session_id_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // .hydra.ColorFormat color_format = 2;
+    {PROTOBUF_FIELD_OFFSET(SessionRequest, _impl_.color_format_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
   }},
   // no aux_entries
   {{
@@ -5851,6 +5869,7 @@ PROTOBUF_NOINLINE void SessionRequest::Clear() {
   (void) cached_has_bits;
 
   _impl_.session_id_.ClearToEmpty();
+  _impl_.color_format_ = 0;
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -5877,6 +5896,13 @@ PROTOBUF_NOINLINE void SessionRequest::Clear() {
             target = stream->WriteStringMaybeAliased(1, _s, target);
           }
 
+          // .hydra.ColorFormat color_format = 2;
+          if (this_._internal_color_format() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteEnumToArray(
+                2, this_._internal_color_format(), target);
+          }
+
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
             target =
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -5900,11 +5926,17 @@ PROTOBUF_NOINLINE void SessionRequest::Clear() {
           // Prevent compiler warnings about cached_has_bits being unused
           (void)cached_has_bits;
 
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
            {
             // string session_id = 1;
             if (!this_._internal_session_id().empty()) {
               total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                               this_._internal_session_id());
+            }
+            // .hydra.ColorFormat color_format = 2;
+            if (this_._internal_color_format() != 0) {
+              total_size += 1 +
+                            ::_pbi::WireFormatLite::EnumSize(this_._internal_color_format());
             }
           }
           return this_.MaybeComputeUnknownFieldsSize(total_size,
@@ -5921,6 +5953,9 @@ void SessionRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::
 
   if (!from._internal_session_id().empty()) {
     _this->_internal_set_session_id(from._internal_session_id());
+  }
+  if (from._internal_color_format() != 0) {
+    _this->_impl_.color_format_ = from._impl_.color_format_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -5939,6 +5974,7 @@ void SessionRequest::InternalSwap(SessionRequest* PROTOBUF_RESTRICT other) {
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.session_id_, &other->_impl_.session_id_, arena);
+  swap(_impl_.color_format_, other->_impl_.color_format_);
 }
 
 ::google::protobuf::Metadata SessionRequest::GetMetadata() const {
@@ -7528,263 +7564,6 @@ void DisconnectResponse::InternalSwap(DisconnectResponse* PROTOBUF_RESTRICT othe
 }
 // ===================================================================
 
-class GameSessionRequest::_Internal {
- public:
-};
-
-GameSessionRequest::GameSessionRequest(::google::protobuf::Arena* arena)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, _class_data_.base()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:hydra.GameSessionRequest)
-}
-inline PROTOBUF_NDEBUG_INLINE GameSessionRequest::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
-    const Impl_& from, const ::hydra::GameSessionRequest& from_msg)
-      : session_id_(arena, from.session_id_),
-        _cached_size_{0} {}
-
-GameSessionRequest::GameSessionRequest(
-    ::google::protobuf::Arena* arena,
-    const GameSessionRequest& from)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, _class_data_.base()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  GameSessionRequest* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
-  _impl_.color_format_ = from._impl_.color_format_;
-
-  // @@protoc_insertion_point(copy_constructor:hydra.GameSessionRequest)
-}
-inline PROTOBUF_NDEBUG_INLINE GameSessionRequest::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* arena)
-      : session_id_(arena),
-        _cached_size_{0} {}
-
-inline void GameSessionRequest::SharedCtor(::_pb::Arena* arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.color_format_ = {};
-}
-GameSessionRequest::~GameSessionRequest() {
-  // @@protoc_insertion_point(destructor:hydra.GameSessionRequest)
-  SharedDtor(*this);
-}
-inline void GameSessionRequest::SharedDtor(MessageLite& self) {
-  GameSessionRequest& this_ = static_cast<GameSessionRequest&>(self);
-  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  ABSL_DCHECK(this_.GetArena() == nullptr);
-  this_._impl_.session_id_.Destroy();
-  this_._impl_.~Impl_();
-}
-
-inline void* GameSessionRequest::PlacementNew_(const void*, void* mem,
-                                        ::google::protobuf::Arena* arena) {
-  return ::new (mem) GameSessionRequest(arena);
-}
-constexpr auto GameSessionRequest::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(GameSessionRequest),
-                                            alignof(GameSessionRequest));
-}
-PROTOBUF_CONSTINIT
-PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::google::protobuf::internal::ClassDataFull GameSessionRequest::_class_data_ = {
-    ::google::protobuf::internal::ClassData{
-        &_GameSessionRequest_default_instance_._instance,
-        &_table_.header,
-        nullptr,  // OnDemandRegisterArenaDtor
-        nullptr,  // IsInitialized
-        &GameSessionRequest::MergeImpl,
-        ::google::protobuf::Message::GetNewImpl<GameSessionRequest>(),
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-        &GameSessionRequest::SharedDtor,
-        ::google::protobuf::Message::GetClearImpl<GameSessionRequest>(), &GameSessionRequest::ByteSizeLong,
-            &GameSessionRequest::_InternalSerialize,
-#endif  // PROTOBUF_CUSTOM_VTABLE
-        PROTOBUF_FIELD_OFFSET(GameSessionRequest, _impl_._cached_size_),
-        false,
-    },
-    &GameSessionRequest::kDescriptorMethods,
-    &descriptor_table_hydra_2eproto,
-    nullptr,  // tracker
-};
-const ::google::protobuf::internal::ClassData* GameSessionRequest::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
-  return _class_data_.base();
-}
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 43, 2> GameSessionRequest::_table_ = {
-  {
-    0,  // no _has_bits_
-    0, // no _extensions_
-    2, 8,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967292,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    2,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
-    _class_data_.base(),
-    nullptr,  // post_loop_handler
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::hydra::GameSessionRequest>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    // .hydra.ColorFormat color_format = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GameSessionRequest, _impl_.color_format_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(GameSessionRequest, _impl_.color_format_)}},
-    // string session_id = 1;
-    {::_pbi::TcParser::FastUS1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(GameSessionRequest, _impl_.session_id_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // string session_id = 1;
-    {PROTOBUF_FIELD_OFFSET(GameSessionRequest, _impl_.session_id_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // .hydra.ColorFormat color_format = 2;
-    {PROTOBUF_FIELD_OFFSET(GameSessionRequest, _impl_.color_format_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
-  }},
-  // no aux_entries
-  {{
-    "\30\12\0\0\0\0\0\0"
-    "hydra.GameSessionRequest"
-    "session_id"
-  }},
-};
-
-PROTOBUF_NOINLINE void GameSessionRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:hydra.GameSessionRequest)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  _impl_.session_id_.ClearToEmpty();
-  _impl_.color_format_ = 0;
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-        ::uint8_t* GameSessionRequest::_InternalSerialize(
-            const MessageLite& base, ::uint8_t* target,
-            ::google::protobuf::io::EpsCopyOutputStream* stream) {
-          const GameSessionRequest& this_ = static_cast<const GameSessionRequest&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-        ::uint8_t* GameSessionRequest::_InternalSerialize(
-            ::uint8_t* target,
-            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-          const GameSessionRequest& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(serialize_to_array_start:hydra.GameSessionRequest)
-          ::uint32_t cached_has_bits = 0;
-          (void)cached_has_bits;
-
-          // string session_id = 1;
-          if (!this_._internal_session_id().empty()) {
-            const std::string& _s = this_._internal_session_id();
-            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "hydra.GameSessionRequest.session_id");
-            target = stream->WriteStringMaybeAliased(1, _s, target);
-          }
-
-          // .hydra.ColorFormat color_format = 2;
-          if (this_._internal_color_format() != 0) {
-            target = stream->EnsureSpace(target);
-            target = ::_pbi::WireFormatLite::WriteEnumToArray(
-                2, this_._internal_color_format(), target);
-          }
-
-          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
-            target =
-                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-          }
-          // @@protoc_insertion_point(serialize_to_array_end:hydra.GameSessionRequest)
-          return target;
-        }
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-        ::size_t GameSessionRequest::ByteSizeLong(const MessageLite& base) {
-          const GameSessionRequest& this_ = static_cast<const GameSessionRequest&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-        ::size_t GameSessionRequest::ByteSizeLong() const {
-          const GameSessionRequest& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          // @@protoc_insertion_point(message_byte_size_start:hydra.GameSessionRequest)
-          ::size_t total_size = 0;
-
-          ::uint32_t cached_has_bits = 0;
-          // Prevent compiler warnings about cached_has_bits being unused
-          (void)cached_has_bits;
-
-          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
-           {
-            // string session_id = 1;
-            if (!this_._internal_session_id().empty()) {
-              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
-                                              this_._internal_session_id());
-            }
-            // .hydra.ColorFormat color_format = 2;
-            if (this_._internal_color_format() != 0) {
-              total_size += 1 +
-                            ::_pbi::WireFormatLite::EnumSize(this_._internal_color_format());
-            }
-          }
-          return this_.MaybeComputeUnknownFieldsSize(total_size,
-                                                     &this_._impl_._cached_size_);
-        }
-
-void GameSessionRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<GameSessionRequest*>(&to_msg);
-  auto& from = static_cast<const GameSessionRequest&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:hydra.GameSessionRequest)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  if (!from._internal_session_id().empty()) {
-    _this->_internal_set_session_id(from._internal_session_id());
-  }
-  if (from._internal_color_format() != 0) {
-    _this->_impl_.color_format_ = from._impl_.color_format_;
-  }
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
-}
-
-void GameSessionRequest::CopyFrom(const GameSessionRequest& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:hydra.GameSessionRequest)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-
-void GameSessionRequest::InternalSwap(GameSessionRequest* PROTOBUF_RESTRICT other) {
-  using std::swap;
-  auto* arena = GetArena();
-  ABSL_DCHECK_EQ(arena, other->GetArena());
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.session_id_, &other->_impl_.session_id_, arena);
-  swap(_impl_.color_format_, other->_impl_.color_format_);
-}
-
-::google::protobuf::Metadata GameSessionRequest::GetMetadata() const {
-  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
-}
-// ===================================================================
-
 class ClientMessage::_Internal {
  public:
   static constexpr ::int32_t kOneofCaseOffset =
@@ -7816,6 +7595,19 @@ void ClientMessage::set_allocated_ping(::hydra::PingMessage* ping) {
     _impl_.payload_.ping_ = ping;
   }
   // @@protoc_insertion_point(field_set_allocated:hydra.ClientMessage.ping)
+}
+void ClientMessage::set_allocated_preferences(::hydra::SetPreferences* preferences) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  clear_payload();
+  if (preferences) {
+    ::google::protobuf::Arena* submessage_arena = preferences->GetArena();
+    if (message_arena != submessage_arena) {
+      preferences = ::google::protobuf::internal::GetOwnedMessage(message_arena, preferences, submessage_arena);
+    }
+    set_has_preferences();
+    _impl_.payload_.preferences_ = preferences;
+  }
+  // @@protoc_insertion_point(field_set_allocated:hydra.ClientMessage.preferences)
 }
 ClientMessage::ClientMessage(::google::protobuf::Arena* arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
@@ -7857,6 +7649,9 @@ ClientMessage::ClientMessage(
         break;
       case kPing:
         _impl_.payload_.ping_ = ::google::protobuf::Message::CopyConstruct<::hydra::PingMessage>(arena, *from._impl_.payload_.ping_);
+        break;
+      case kPreferences:
+        _impl_.payload_.preferences_ = ::google::protobuf::Message::CopyConstruct<::hydra::SetPreferences>(arena, *from._impl_.payload_.preferences_);
         break;
   }
 
@@ -7910,6 +7705,14 @@ void ClientMessage::clear_payload() {
       }
       break;
     }
+    case kPreferences: {
+      if (GetArena() == nullptr) {
+        delete _impl_.payload_.preferences_;
+      } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
+        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.payload_.preferences_);
+      }
+      break;
+    }
     case PAYLOAD_NOT_SET: {
       break;
     }
@@ -7954,16 +7757,16 @@ const ::google::protobuf::internal::ClassData* ClientMessage::GetClassData() con
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 3, 2, 38, 2> ClientMessage::_table_ = {
+const ::_pbi::TcParseTable<0, 4, 3, 38, 2> ClientMessage::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    3, 0,  // max_field_number, fast_idx_mask
+    4, 0,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967288,  // skipmap
+    4294967280,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    3,  // num_field_entries
-    2,  // num_aux_entries
+    4,  // num_field_entries
+    3,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     _class_data_.base(),
     nullptr,  // post_loop_handler
@@ -7985,9 +7788,13 @@ const ::_pbi::TcParseTable<0, 3, 2, 38, 2> ClientMessage::_table_ = {
     // .hydra.PingMessage ping = 3;
     {PROTOBUF_FIELD_OFFSET(ClientMessage, _impl_.payload_.ping_), _Internal::kOneofCaseOffset + 0, 1,
     (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
+    // .hydra.SetPreferences preferences = 4;
+    {PROTOBUF_FIELD_OFFSET(ClientMessage, _impl_.payload_.preferences_), _Internal::kOneofCaseOffset + 0, 2,
+    (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::hydra::GmcpClientMessage>()},
     {::_pbi::TcParser::GetTable<::hydra::PingMessage>()},
+    {::_pbi::TcParser::GetTable<::hydra::SetPreferences>()},
   }}, {{
     "\23\12\0\0\0\0\0\0"
     "hydra.ClientMessage"
@@ -8041,6 +7848,12 @@ PROTOBUF_NOINLINE void ClientMessage::Clear() {
                   stream);
               break;
             }
+            case kPreferences: {
+              target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+                  4, *this_._impl_.payload_.preferences_, this_._impl_.payload_.preferences_->GetCachedSize(), target,
+                  stream);
+              break;
+            }
             default:
               break;
           }
@@ -8084,6 +7897,12 @@ PROTOBUF_NOINLINE void ClientMessage::Clear() {
             case kPing: {
               total_size += 1 +
                             ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.payload_.ping_);
+              break;
+            }
+            // .hydra.SetPreferences preferences = 4;
+            case kPreferences: {
+              total_size += 1 +
+                            ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.payload_.preferences_);
               break;
             }
             case PAYLOAD_NOT_SET: {
@@ -8139,6 +7958,15 @@ void ClientMessage::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::g
         }
         break;
       }
+      case kPreferences: {
+        if (oneof_needs_init) {
+          _this->_impl_.payload_.preferences_ =
+              ::google::protobuf::Message::CopyConstruct<::hydra::SetPreferences>(arena, *from._impl_.payload_.preferences_);
+        } else {
+          _this->_impl_.payload_.preferences_->MergeFrom(from._internal_preferences());
+        }
+        break;
+      }
       case PAYLOAD_NOT_SET:
         break;
     }
@@ -8162,6 +7990,323 @@ void ClientMessage::InternalSwap(ClientMessage* PROTOBUF_RESTRICT other) {
 }
 
 ::google::protobuf::Metadata ClientMessage::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class SetPreferences::_Internal {
+ public:
+};
+
+SetPreferences::SetPreferences(::google::protobuf::Arena* arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:hydra.SetPreferences)
+}
+inline PROTOBUF_NDEBUG_INLINE SetPreferences::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::hydra::SetPreferences& from_msg)
+      : terminal_type_(arena, from.terminal_type_),
+        _cached_size_{0} {}
+
+SetPreferences::SetPreferences(
+    ::google::protobuf::Arena* arena,
+    const SetPreferences& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, _class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SetPreferences* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, color_format_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, color_format_),
+           offsetof(Impl_, terminal_height_) -
+               offsetof(Impl_, color_format_) +
+               sizeof(Impl_::terminal_height_));
+
+  // @@protoc_insertion_point(copy_constructor:hydra.SetPreferences)
+}
+inline PROTOBUF_NDEBUG_INLINE SetPreferences::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : terminal_type_(arena),
+        _cached_size_{0} {}
+
+inline void SetPreferences::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, color_format_),
+           0,
+           offsetof(Impl_, terminal_height_) -
+               offsetof(Impl_, color_format_) +
+               sizeof(Impl_::terminal_height_));
+}
+SetPreferences::~SetPreferences() {
+  // @@protoc_insertion_point(destructor:hydra.SetPreferences)
+  SharedDtor(*this);
+}
+inline void SetPreferences::SharedDtor(MessageLite& self) {
+  SetPreferences& this_ = static_cast<SetPreferences&>(self);
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.terminal_type_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* SetPreferences::PlacementNew_(const void*, void* mem,
+                                        ::google::protobuf::Arena* arena) {
+  return ::new (mem) SetPreferences(arena);
+}
+constexpr auto SetPreferences::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(SetPreferences),
+                                            alignof(SetPreferences));
+}
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::google::protobuf::internal::ClassDataFull SetPreferences::_class_data_ = {
+    ::google::protobuf::internal::ClassData{
+        &_SetPreferences_default_instance_._instance,
+        &_table_.header,
+        nullptr,  // OnDemandRegisterArenaDtor
+        nullptr,  // IsInitialized
+        &SetPreferences::MergeImpl,
+        ::google::protobuf::Message::GetNewImpl<SetPreferences>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        &SetPreferences::SharedDtor,
+        ::google::protobuf::Message::GetClearImpl<SetPreferences>(), &SetPreferences::ByteSizeLong,
+            &SetPreferences::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+        PROTOBUF_FIELD_OFFSET(SetPreferences, _impl_._cached_size_),
+        false,
+    },
+    &SetPreferences::kDescriptorMethods,
+    &descriptor_table_hydra_2eproto,
+    nullptr,  // tracker
+};
+const ::google::protobuf::internal::ClassData* SetPreferences::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_class_data_.tc_table);
+  return _class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 4, 0, 42, 2> SetPreferences::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    4, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967280,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    4,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    _class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::hydra::SetPreferences>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string terminal_type = 4;
+    {::_pbi::TcParser::FastUS1,
+     {34, 63, 0, PROTOBUF_FIELD_OFFSET(SetPreferences, _impl_.terminal_type_)}},
+    // .hydra.ColorFormat color_format = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SetPreferences, _impl_.color_format_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(SetPreferences, _impl_.color_format_)}},
+    // uint32 terminal_width = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SetPreferences, _impl_.terminal_width_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(SetPreferences, _impl_.terminal_width_)}},
+    // uint32 terminal_height = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SetPreferences, _impl_.terminal_height_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(SetPreferences, _impl_.terminal_height_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .hydra.ColorFormat color_format = 1;
+    {PROTOBUF_FIELD_OFFSET(SetPreferences, _impl_.color_format_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
+    // uint32 terminal_width = 2;
+    {PROTOBUF_FIELD_OFFSET(SetPreferences, _impl_.terminal_width_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // uint32 terminal_height = 3;
+    {PROTOBUF_FIELD_OFFSET(SetPreferences, _impl_.terminal_height_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt32)},
+    // string terminal_type = 4;
+    {PROTOBUF_FIELD_OFFSET(SetPreferences, _impl_.terminal_type_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\24\0\0\0\15\0\0\0"
+    "hydra.SetPreferences"
+    "terminal_type"
+  }},
+};
+
+PROTOBUF_NOINLINE void SetPreferences::Clear() {
+// @@protoc_insertion_point(message_clear_start:hydra.SetPreferences)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.terminal_type_.ClearToEmpty();
+  ::memset(&_impl_.color_format_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.terminal_height_) -
+      reinterpret_cast<char*>(&_impl_.color_format_)) + sizeof(_impl_.terminal_height_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::uint8_t* SetPreferences::_InternalSerialize(
+            const MessageLite& base, ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) {
+          const SetPreferences& this_ = static_cast<const SetPreferences&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::uint8_t* SetPreferences::_InternalSerialize(
+            ::uint8_t* target,
+            ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+          const SetPreferences& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(serialize_to_array_start:hydra.SetPreferences)
+          ::uint32_t cached_has_bits = 0;
+          (void)cached_has_bits;
+
+          // .hydra.ColorFormat color_format = 1;
+          if (this_._internal_color_format() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteEnumToArray(
+                1, this_._internal_color_format(), target);
+          }
+
+          // uint32 terminal_width = 2;
+          if (this_._internal_terminal_width() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+                2, this_._internal_terminal_width(), target);
+          }
+
+          // uint32 terminal_height = 3;
+          if (this_._internal_terminal_height() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+                3, this_._internal_terminal_height(), target);
+          }
+
+          // string terminal_type = 4;
+          if (!this_._internal_terminal_type().empty()) {
+            const std::string& _s = this_._internal_terminal_type();
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "hydra.SetPreferences.terminal_type");
+            target = stream->WriteStringMaybeAliased(4, _s, target);
+          }
+
+          if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+            target =
+                ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+                    this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+          }
+          // @@protoc_insertion_point(serialize_to_array_end:hydra.SetPreferences)
+          return target;
+        }
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+        ::size_t SetPreferences::ByteSizeLong(const MessageLite& base) {
+          const SetPreferences& this_ = static_cast<const SetPreferences&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+        ::size_t SetPreferences::ByteSizeLong() const {
+          const SetPreferences& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          // @@protoc_insertion_point(message_byte_size_start:hydra.SetPreferences)
+          ::size_t total_size = 0;
+
+          ::uint32_t cached_has_bits = 0;
+          // Prevent compiler warnings about cached_has_bits being unused
+          (void)cached_has_bits;
+
+          ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+           {
+            // string terminal_type = 4;
+            if (!this_._internal_terminal_type().empty()) {
+              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                              this_._internal_terminal_type());
+            }
+            // .hydra.ColorFormat color_format = 1;
+            if (this_._internal_color_format() != 0) {
+              total_size += 1 +
+                            ::_pbi::WireFormatLite::EnumSize(this_._internal_color_format());
+            }
+            // uint32 terminal_width = 2;
+            if (this_._internal_terminal_width() != 0) {
+              total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+                  this_._internal_terminal_width());
+            }
+            // uint32 terminal_height = 3;
+            if (this_._internal_terminal_height() != 0) {
+              total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+                  this_._internal_terminal_height());
+            }
+          }
+          return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                                     &this_._impl_._cached_size_);
+        }
+
+void SetPreferences::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<SetPreferences*>(&to_msg);
+  auto& from = static_cast<const SetPreferences&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:hydra.SetPreferences)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_terminal_type().empty()) {
+    _this->_internal_set_terminal_type(from._internal_terminal_type());
+  }
+  if (from._internal_color_format() != 0) {
+    _this->_impl_.color_format_ = from._impl_.color_format_;
+  }
+  if (from._internal_terminal_width() != 0) {
+    _this->_impl_.terminal_width_ = from._impl_.terminal_width_;
+  }
+  if (from._internal_terminal_height() != 0) {
+    _this->_impl_.terminal_height_ = from._impl_.terminal_height_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void SetPreferences::CopyFrom(const SetPreferences& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:hydra.SetPreferences)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void SetPreferences::InternalSwap(SetPreferences* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.terminal_type_, &other->_impl_.terminal_type_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(SetPreferences, _impl_.terminal_height_)
+      + sizeof(SetPreferences::_impl_.terminal_height_)
+      - PROTOBUF_FIELD_OFFSET(SetPreferences, _impl_.color_format_)>(
+          reinterpret_cast<char*>(&_impl_.color_format_),
+          reinterpret_cast<char*>(&other->_impl_.color_format_));
+}
+
+::google::protobuf::Metadata SetPreferences::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
