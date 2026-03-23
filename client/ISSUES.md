@@ -43,6 +43,5 @@
 ### ~~SwiftUI / iOS Hydra Support Missing~~
 - **Fixed:** HydraConnection.swift written with full feature parity, guarded behind #if canImport(GRPC). Needs Mac build with grpc-swift package. (6858c4d)
 
-### Hydra Command Surface Inconsistent Across Clients
-- **Issue:** TF and web intercept `/h*` commands in the transport layer. Console routes through command.cpp. Android routes in UI code.
-- **Opportunity:** Standardize command dispatch in a consistent layer.
+### ~~Hydra Command Surface Inconsistent Across Clients~~
+- **Fixed:** All clients now delegate /h* commands to HydraConnection::handleCommand(). One place to add new commands per language. (43fb05b)
