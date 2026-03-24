@@ -15,7 +15,7 @@ constexpr int POOL_QENTRY  = 5;
 constexpr int POOL_PCACHE  = 6;
 constexpr int NUM_POOLS    = 7;
 
-#define LBUF_SIZE   8000    // Large (must remain #define for preprocessor conditionals)
+#define LBUF_SIZE   32768   // Large (must remain #define for preprocessor conditionals)
 constexpr int GBUF_SIZE   = 1024;    // Generic
 constexpr int MBUF_SIZE   = 400;     // Medium
 constexpr int PBUF_SIZE   = 128;     // Pathname

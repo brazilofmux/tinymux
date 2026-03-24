@@ -2839,8 +2839,8 @@ FUNCTION(fun_jitstats)
     }
 
     // Format: key=value pairs, newline-separated for readability.
-    char tmp[LBUF_SIZE];
-    int n = snprintf(tmp, sizeof(tmp),
+    LBuf tmp = LBuf_Src("jitstats");
+    int n = snprintf(reinterpret_cast<char *>(tmp.get()), LBUF_SIZE,
         "eval_attempts=%llu "
         "eval_handled=%llu "
         "eval_bailout=%llu "
@@ -2869,13 +2869,13 @@ FUNCTION(fun_jitstats)
         (unsigned long long)s_jit_stats.tier2_total);
 
     // Append NOEVAL breakdown.
-    for (int i = 0; i < s_jit_stats.noeval_top_used && n < static_cast<int>(sizeof(tmp)) - 64; i++) {
-        n += snprintf(tmp + n, sizeof(tmp) - n, " noeval_%s=%llu",
+    for (int i = 0; i < s_jit_stats.noeval_top_used && n < static_cast<int>(LBUF_SIZE) - 64; i++) {
+        n += snprintf(reinterpret_cast<char *>(tmp.get()) + n, LBUF_SIZE - n, " noeval_%s=%llu",
             s_jit_stats.noeval_top[i].name,
             (unsigned long long)s_jit_stats.noeval_top[i].count);
     }
 
-    safe_str(reinterpret_cast<UTF8 *>(tmp), buff, bufc);
+    safe_str(tmp, buff, bufc);
 }
 
 // ---------------------------------------------------------------

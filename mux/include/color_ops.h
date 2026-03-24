@@ -50,8 +50,10 @@
 extern "C" {
 #endif
 
-/* LBUF_SIZE matches TinyMUX. */
+/* LBUF_SIZE is defined in alloc.h; use it from there. */
+#ifndef LBUF_SIZE
 #define LBUF_SIZE 8000
+#endif
 
 /*
  * co_visible_length — Count visible code points (skipping color PUA).

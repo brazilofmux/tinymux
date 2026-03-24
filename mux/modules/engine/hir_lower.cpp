@@ -400,29 +400,29 @@ static bool try_fold(const std::string &func_name,
     }
 
     if (upper == "LCSTR" && nargs == 1) {
-        unsigned char out[LBUF_SIZE];
-        size_t n = co_tolower(out,
+        LBuf out = LBuf_Src("hir_lcstr");
+        size_t n = co_tolower(reinterpret_cast<unsigned char *>(out.get()),
             reinterpret_cast<const unsigned char *>(args[0].data()),
             args[0].size());
-        result.assign(reinterpret_cast<const char *>(out), n);
+        result.assign(reinterpret_cast<const char *>(out.get()), n);
         return true;
     }
 
     if (upper == "UCSTR" && nargs == 1) {
-        unsigned char out[LBUF_SIZE];
-        size_t n = co_toupper(out,
+        LBuf out = LBuf_Src("hir_ucstr");
+        size_t n = co_toupper(reinterpret_cast<unsigned char *>(out.get()),
             reinterpret_cast<const unsigned char *>(args[0].data()),
             args[0].size());
-        result.assign(reinterpret_cast<const char *>(out), n);
+        result.assign(reinterpret_cast<const char *>(out.get()), n);
         return true;
     }
 
     if (upper == "CAPSTR" && nargs == 1) {
-        unsigned char out[LBUF_SIZE];
-        size_t n = co_totitle(out,
+        LBuf out = LBuf_Src("hir_capstr");
+        size_t n = co_totitle(reinterpret_cast<unsigned char *>(out.get()),
             reinterpret_cast<const unsigned char *>(args[0].data()),
             args[0].size());
-        result.assign(reinterpret_cast<const char *>(out), n);
+        result.assign(reinterpret_cast<const char *>(out.get()), n);
         return true;
     }
 
