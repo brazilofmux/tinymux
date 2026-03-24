@@ -101,6 +101,7 @@ enum hir_kind {
     // Direct FP calls to blob intrinsics (type-propagated path).
     // Bypass string marshalling — args and result are TY_FLOAT.
     // val = blob guest address of the target function.
+    // func_idx = FMATH_* selector (for constant folding in optimizer).
     HIR_FCALL1,     // unary:  result = f(src1)        (sin, cos, etc.)
     HIR_FCALL2,     // binary: result = f(src1, src2)   (pow, atan2, fmod)
 
@@ -136,6 +137,22 @@ enum hir_type {
     TY_INT,         // 64-bit integer (in RV64 integer register)
     TY_FLOAT,       // 64-bit double (in RV64 FP register)
     TY_STRING,      // string (guest memory address)
+};
+
+// ---------------------------------------------------------------
+// FMATH selector — identifies which libm function an FCALL1/FCALL2
+// represents, enabling compile-time constant folding in the optimizer.
+// ---------------------------------------------------------------
+
+enum fmath_id {
+    FMATH_NONE = 0,
+    // Unary (FCALL1)
+    FMATH_SIN, FMATH_COS, FMATH_TAN,
+    FMATH_ASIN, FMATH_ACOS, FMATH_ATAN,
+    FMATH_EXP, FMATH_LOG, FMATH_LOG10,
+    FMATH_SQRT, FMATH_CEIL, FMATH_FLOOR, FMATH_FABS,
+    // Binary (FCALL2)
+    FMATH_POW, FMATH_ATAN2, FMATH_FMOD,
 };
 
 // ---------------------------------------------------------------

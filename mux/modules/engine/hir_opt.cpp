@@ -29,6 +29,7 @@
 
 #include <cstring>
 #include <cstdlib>
+#include <cmath>
 #include <unordered_map>
 #include <vector>
 
@@ -348,6 +349,135 @@ void hir_const_fold(hir_program &h) {
                     h.val[i] = -h.val[s1];
                     h.src1[i] = -1;
                     changed = true;
+                }
+                break;
+
+            // ---------------------------------------------------------------
+            // Float constant folding.
+            // ---------------------------------------------------------------
+
+            // ITOF of ICONST → FCONST.
+            case HIR_ITOF:
+                if (s1 >= 0 && h.kind[s1] == HIR_ICONST) {
+                    double v = static_cast<double>(h.val[s1]);
+                    h.kind[i] = HIR_FCONST;
+                    h.ty[i] = TY_FLOAT;
+                    h.fval[i] = v;
+                    h.src1[i] = -1;
+                    changed = true;
+                }
+                break;
+
+            // FTOI of FCONST → ICONST.
+            case HIR_FTOI:
+                if (s1 >= 0 && h.kind[s1] == HIR_FCONST) {
+                    h.kind[i] = HIR_ICONST;
+                    h.ty[i] = TY_INT;
+                    h.val[i] = static_cast<int64_t>(h.fval[s1]);
+                    h.src1[i] = -1;
+                    changed = true;
+                }
+                break;
+
+            // Binary float arithmetic on two FCONSTs.
+#define FOLD_FBINOP(HIR_OP, C_OP) \
+            case HIR_OP: \
+                if (s1 >= 0 && s2 >= 0 \
+                    && h.kind[s1] == HIR_FCONST && h.kind[s2] == HIR_FCONST) { \
+                    h.kind[i] = HIR_FCONST; \
+                    h.fval[i] = h.fval[s1] C_OP h.fval[s2]; \
+                    h.src1[i] = h.src2[i] = -1; \
+                    changed = true; \
+                } \
+                break;
+            FOLD_FBINOP(HIR_FADD, +)
+            FOLD_FBINOP(HIR_FSUB, -)
+            FOLD_FBINOP(HIR_FMUL, *)
+            FOLD_FBINOP(HIR_FDIV, /)
+#undef FOLD_FBINOP
+
+            // Unary float ops on FCONST.
+            case HIR_FNEG:
+                if (s1 >= 0 && h.kind[s1] == HIR_FCONST) {
+                    h.kind[i] = HIR_FCONST;
+                    h.fval[i] = -h.fval[s1];
+                    h.src1[i] = -1;
+                    changed = true;
+                }
+                break;
+            case HIR_FSQRT:
+                if (s1 >= 0 && h.kind[s1] == HIR_FCONST) {
+                    h.kind[i] = HIR_FCONST;
+                    h.fval[i] = ::sqrt(h.fval[s1]);
+                    h.src1[i] = -1;
+                    changed = true;
+                }
+                break;
+
+            // Float comparisons on two FCONSTs → ICONST (0/1).
+#define FOLD_FCMP(HIR_OP, C_OP) \
+            case HIR_OP: \
+                if (s1 >= 0 && s2 >= 0 \
+                    && h.kind[s1] == HIR_FCONST && h.kind[s2] == HIR_FCONST) { \
+                    h.kind[i] = HIR_ICONST; \
+                    h.ty[i] = TY_INT; \
+                    h.val[i] = (h.fval[s1] C_OP h.fval[s2]) ? 1 : 0; \
+                    h.src1[i] = h.src2[i] = -1; \
+                    changed = true; \
+                } \
+                break;
+            FOLD_FCMP(HIR_FEQ, ==)
+            FOLD_FCMP(HIR_FLT, <)
+            FOLD_FCMP(HIR_FLE, <=)
+#undef FOLD_FCMP
+
+            // FCALL1 on FCONST → evaluate libm at compile time.
+            case HIR_FCALL1:
+                if (s1 >= 0 && h.kind[s1] == HIR_FCONST) {
+                    double a = h.fval[s1];
+                    double r;
+                    switch (h.func_idx[i]) {
+                    case FMATH_SIN:   r = ::sin(a);   break;
+                    case FMATH_COS:   r = ::cos(a);   break;
+                    case FMATH_TAN:   r = ::tan(a);   break;
+                    case FMATH_ASIN:  r = ::asin(a);  break;
+                    case FMATH_ACOS:  r = ::acos(a);  break;
+                    case FMATH_ATAN:  r = ::atan(a);  break;
+                    case FMATH_EXP:   r = ::exp(a);   break;
+                    case FMATH_LOG:   r = ::log(a);   break;
+                    case FMATH_LOG10: r = ::log10(a); break;
+                    case FMATH_SQRT:  r = ::sqrt(a);  break;
+                    case FMATH_CEIL:  r = ::ceil(a);  break;
+                    case FMATH_FLOOR: r = ::floor(a); break;
+                    case FMATH_FABS:  r = ::fabs(a);  break;
+                    default: goto no_fold;
+                    }
+                    h.kind[i] = HIR_FCONST;
+                    h.fval[i] = r;
+                    h.src1[i] = -1;
+                    changed = true;
+                no_fold:;
+                }
+                break;
+
+            // FCALL2 on two FCONSTs → evaluate libm at compile time.
+            case HIR_FCALL2:
+                if (s1 >= 0 && s2 >= 0
+                    && h.kind[s1] == HIR_FCONST && h.kind[s2] == HIR_FCONST) {
+                    double a = h.fval[s1];
+                    double b = h.fval[s2];
+                    double r;
+                    switch (h.func_idx[i]) {
+                    case FMATH_POW:   r = ::pow(a, b);   break;
+                    case FMATH_ATAN2: r = ::atan2(a, b); break;
+                    case FMATH_FMOD:  r = ::fmod(a, b);  break;
+                    default: goto no_fold2;
+                    }
+                    h.kind[i] = HIR_FCONST;
+                    h.fval[i] = r;
+                    h.src1[i] = h.src2[i] = -1;
+                    changed = true;
+                no_fold2:;
                 }
                 break;
 

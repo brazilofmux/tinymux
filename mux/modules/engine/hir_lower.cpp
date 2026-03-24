@@ -489,29 +489,30 @@ static bool returns_float(const std::string &upper) {
 struct fp_math_entry {
     const char *mux_name;
     const char *blob_sym;
+    int         fmath;      // fmath_id for compile-time folding
 };
 
 static const fp_math_entry s_fp_unary[] = {
-    { "SIN",   "sin"   },
-    { "COS",   "cos"   },
-    { "TAN",   "tan"   },
-    { "ASIN",  "asin"  },
-    { "ACOS",  "acos"  },
-    { "ATAN",  "atan"  },
-    { "EXP",   "exp"   },
-    { "LOG",   "log"   },
-    { "LOG10", "log10" },
-    { "SQRT",  "sqrt"  },
-    { "CEIL",  "ceil"  },
-    { "FLOOR", "floor" },
-    { nullptr, nullptr }
+    { "SIN",   "sin",   FMATH_SIN   },
+    { "COS",   "cos",   FMATH_COS   },
+    { "TAN",   "tan",   FMATH_TAN   },
+    { "ASIN",  "asin",  FMATH_ASIN  },
+    { "ACOS",  "acos",  FMATH_ACOS  },
+    { "ATAN",  "atan",  FMATH_ATAN  },
+    { "EXP",   "exp",   FMATH_EXP   },
+    { "LOG",   "log",   FMATH_LOG   },
+    { "LOG10", "log10", FMATH_LOG10 },
+    { "SQRT",  "sqrt",  FMATH_SQRT  },
+    { "CEIL",  "ceil",  FMATH_CEIL  },
+    { "FLOOR", "floor", FMATH_FLOOR },
+    { nullptr, nullptr, 0 }
 };
 
 static const fp_math_entry s_fp_binary[] = {
-    { "POWER", "pow"   },
-    { "ATAN2", "atan2" },
-    { "FMOD",  "fmod"  },
-    { nullptr, nullptr }
+    { "POWER", "pow",   FMATH_POW   },
+    { "ATAN2", "atan2", FMATH_ATAN2 },
+    { "FMOD",  "fmod",  FMATH_FMOD  },
+    { nullptr, nullptr, 0 }
 };
 
 // Look up the blob address for a direct FP intrinsic call.
@@ -2223,6 +2224,7 @@ general_lowering:
                 int a = ensure_float(args[0]);
                 int r = h.emit(HIR_FCALL1, TY_FLOAT, a, -1,
                                static_cast<int64_t>(addr));
+                h.func_idx[r] = s_fp_unary[ti].fmath;
                 h.native_ops++;
                 h.needs_jit = true;
                 return r;
@@ -2241,6 +2243,7 @@ general_lowering:
                 int b = ensure_float(args[1]);
                 int r = h.emit(HIR_FCALL2, TY_FLOAT, a, b,
                                static_cast<int64_t>(addr));
+                h.func_idx[r] = s_fp_binary[ti].fmath;
                 h.native_ops++;
                 h.needs_jit = true;
                 return r;
