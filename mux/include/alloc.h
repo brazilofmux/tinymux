@@ -75,6 +75,48 @@ LIBMUX_API void pool_reset(void);
 #define safe_mb_chr safe_mb_chr_ascii
 #define safe_chr safe_chr_ascii
 
+// ---------------------------------------------------------------
+// RAII wrapper for pool-allocated LBUF buffers.
+//
+// Replaces stack-allocated UTF8 buf[LBUF_SIZE] with a heap-backed
+// pool buffer that is automatically freed when the scope exits.
+// This removes LBUF_SIZE from the stack frame, making it safe to
+// increase LBUF_SIZE without risking stack overflow in recursive
+// evaluation paths.
+//
+// Usage:
+//   LBuf tmp(T("my_func"));
+//   UTF8 *bp = tmp;
+//   safe_str(text, tmp, &bp);
+//   *bp = '\0';
+//
+// The LBuf_Src macro captures __FILE__/__LINE__ for pool tracking:
+//   LBuf_Src tmp("my_func");
+//
+class LBuf {
+    UTF8 *m_buf;
+    const UTF8 *m_file;
+    int m_line;
+public:
+    LBuf(const UTF8 *tag, const UTF8 *file, int line)
+        : m_buf(pool_alloc_lbuf(tag, file, line)),
+          m_file(file), m_line(line) {}
+
+    ~LBuf() { pool_free_lbuf(m_buf, m_file, m_line); }
+
+    LBuf(const LBuf &) = delete;
+    LBuf &operator=(const LBuf &) = delete;
+
+    UTF8 *get() { return m_buf; }
+    const UTF8 *get() const { return m_buf; }
+    operator UTF8 *() { return m_buf; }
+    operator const UTF8 *() const { return m_buf; }
+    UTF8 &operator[](size_t i) { return m_buf[i]; }
+    const UTF8 &operator[](size_t i) const { return m_buf[i]; }
+};
+
+#define LBuf_Src(tag) LBuf(T(tag), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
+
 #include <memory>
 
 //! \struct RegBuffer

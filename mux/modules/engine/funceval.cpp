@@ -234,7 +234,7 @@ FUNCTION(fun_ansi)
     int iArg0;
     for (iArg0 = 0; iArg0 + 1 < nfargs; iArg0 += 2)
     {
-        UTF8 tmp[LBUF_SIZE];
+        LBuf tmp = LBuf_Src("fun_translate");
         UTF8 *bp = tmp;
 
         safe_str(LettersToBinary(fargs[iArg0]), tmp, &bp);
@@ -635,8 +635,8 @@ FUNCTION(fun_nspemit)
     UNUSED_PARAMETER(ncargs);
 
     if (check_command(executor, T("@pemit"), buff, bufc)) return;
-    UTF8 nsbuf[LBUF_SIZE];
-    build_nospoof_msg(executor, fargs[1], nsbuf, sizeof(nsbuf));
+    LBuf nsbuf = LBuf_Src("fun_nspemit");
+    build_nospoof_msg(executor, fargs[1], nsbuf, LBUF_SIZE);
     do_pemit_list(executor, PEMIT_PEMIT, false, 0, fargs[0], 0, nsbuf);
 }
 
@@ -648,8 +648,8 @@ FUNCTION(fun_nsemit)
     UNUSED_PARAMETER(ncargs);
 
     if (check_command(executor, T("@emit"), buff, bufc)) return;
-    UTF8 nsbuf[LBUF_SIZE];
-    build_nospoof_msg(executor, fargs[0], nsbuf, sizeof(nsbuf));
+    LBuf nsbuf = LBuf_Src("fun_nsemit");
+    build_nospoof_msg(executor, fargs[0], nsbuf, LBUF_SIZE);
     do_say(executor, caller, enactor, 0, SAY_EMIT, nsbuf, nullptr, 0);
 }
 
@@ -663,8 +663,8 @@ FUNCTION(fun_nsoemit)
     UNUSED_PARAMETER(ncargs);
 
     if (check_command(executor, T("@oemit"), buff, bufc)) return;
-    UTF8 nsbuf[LBUF_SIZE];
-    build_nospoof_msg(executor, fargs[1], nsbuf, sizeof(nsbuf));
+    LBuf nsbuf = LBuf_Src("fun_nsoemit");
+    build_nospoof_msg(executor, fargs[1], nsbuf, LBUF_SIZE);
     do_pemit_list(executor, PEMIT_OEMIT, false, 0, fargs[0], 0, nsbuf);
 }
 
@@ -678,8 +678,8 @@ FUNCTION(fun_nsremit)
     UNUSED_PARAMETER(ncargs);
 
     if (check_command(executor, T("@pemit"), buff, bufc)) return;
-    UTF8 nsbuf[LBUF_SIZE];
-    build_nospoof_msg(executor, fargs[1], nsbuf, sizeof(nsbuf));
+    LBuf nsbuf = LBuf_Src("fun_nsremit");
+    build_nospoof_msg(executor, fargs[1], nsbuf, LBUF_SIZE);
     do_pemit_single(executor, PEMIT_PEMIT, true, 0, fargs[0], 0, nsbuf);
 }
 
@@ -1344,8 +1344,8 @@ static const UTF8 *crypt_code(UTF8 *code, UTF8 *text, bool type)
         return text;
     }
 
-    UTF8 codebuff[LBUF_SIZE];
-    size_t nCode = GenCode(codebuff, sizeof(codebuff), code);
+    LBuf codebuff = LBuf_Src("accent_code");
+    size_t nCode = GenCode(codebuff, LBUF_SIZE, code);
     if (0 == nCode)
     {
         return text;

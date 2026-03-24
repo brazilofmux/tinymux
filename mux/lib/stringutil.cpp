@@ -6503,7 +6503,7 @@ bool BMH_ExecuteI(BMH_State *bmhs, size_t *pnMatched, size_t nPat, const UTF8 *p
 
     // mux_strlwr uses a static buffer, so copy the lowered pattern first.
     //
-    UTF8 LowPat[LBUF_SIZE];
+    LBuf LowPat = LBuf_Src("BMH_ExecuteI");
     if (nLowerPat >= LBUF_SIZE) nLowerPat = LBUF_SIZE - 1;
     memcpy(LowPat, pLowerPat, nLowerPat);
     LowPat[nLowerPat] = '\0';
@@ -6526,7 +6526,7 @@ bool BMH_StringSearchI(size_t *pnMatched, size_t nPat, const UTF8 *pPat, size_t 
     size_t nLowerPat;
     UTF8 *pLowerPat = mux_strlwr(pPat, nLowerPat);
 
-    UTF8 LowPat[LBUF_SIZE];
+    LBuf LowPat = LBuf_Src("BMH_StringSearchI");
     if (nLowerPat >= LBUF_SIZE) nLowerPat = LBUF_SIZE - 1;
     memcpy(LowPat, pLowerPat, nLowerPat);
     LowPat[nLowerPat] = '\0';

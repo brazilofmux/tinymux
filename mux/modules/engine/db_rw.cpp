@@ -1092,7 +1092,7 @@ dbref db_write(FILE *f, int format, int version)
 
     // Dump user-named attribute info.
     //
-    UTF8 Buffer[LBUF_SIZE];
+    LBuf Buffer = LBuf_Src("db_write_vattrs");
     Buffer[0] = '+';
     Buffer[1] = 'A';
     int iAttr;

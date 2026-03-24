@@ -952,7 +952,7 @@ void do_addcommand
         }
         {
             size_t nPlain = strlen(reinterpret_cast<const char *>(pName));
-            UTF8 tmp[LBUF_SIZE];
+            LBuf tmp = LBuf_Src("ok_name");
             nPlain = co_tolower(tmp, pName, nPlain);
             memcpy(pName, tmp, nPlain + 1);
         }
@@ -2977,22 +2977,22 @@ void do_reference
         }
     }
 
-    UTF8 tbuf[LBUF_SIZE];
+    LBuf tbuf = LBuf_Src("do_name");
     size_t tbuf_len;
     if ('_' == reference_name[0])
     {
         tbuf_len = static_cast<size_t>(
-            snprintf(reinterpret_cast<char *>(tbuf), sizeof(tbuf),
+            snprintf(reinterpret_cast<char *>(tbuf.get()), LBUF_SIZE,
                      "%s", reinterpret_cast<const char *>(reference_name)));
     }
     else
     {
         tbuf_len = static_cast<size_t>(
-            snprintf(reinterpret_cast<char *>(tbuf), sizeof(tbuf),
+            snprintf(reinterpret_cast<char *>(tbuf.get()), LBUF_SIZE,
                      "%s.%ld", reinterpret_cast<const char *>(reference_name),
                      static_cast<long>(executor)));
     }
-    auto it_ref = mudstate.reference_htab.find(std::vector<UTF8>(tbuf, tbuf + tbuf_len));
+    auto it_ref = mudstate.reference_htab.find(std::vector<UTF8>(tbuf.get(), tbuf.get() + tbuf_len));
     struct reference_entry *result = (it_ref != mudstate.reference_htab.end())
         ? static_cast<reference_entry*>(it_ref->second) : nullptr;
 
@@ -3040,7 +3040,7 @@ void do_reference
         result->name = nullptr;
         MEMFREE(result);
         result = nullptr;
-        mudstate.reference_htab.erase(std::vector<UTF8>(tbuf, tbuf + tbuf_len));
+        mudstate.reference_htab.erase(std::vector<UTF8>(tbuf.get(), tbuf.get() + tbuf_len));
     }
 
     if (  Update == eOperation
@@ -3060,7 +3060,7 @@ void do_reference
             result->target = target;
             result->owner = executor;
             result->name = StringCloneLen(tbuf, tbuf_len);
-            mudstate.reference_htab.emplace(std::vector<UTF8>(tbuf, tbuf + tbuf_len), result);
+            mudstate.reference_htab.emplace(std::vector<UTF8>(tbuf.get(), tbuf.get() + tbuf_len), result);
         }
         else
         {

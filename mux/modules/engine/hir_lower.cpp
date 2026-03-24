@@ -32,11 +32,11 @@
 // buffer and call fval, then extract the string.
 //
 static std::string format_double(double val) {
-    UTF8 buf[LBUF_SIZE];
+    LBuf buf = LBuf_Src("format_double");
     UTF8 *bufc = buf;
     fval(buf, &bufc, val);
     *bufc = '\0';
-    return std::string(reinterpret_cast<const char *>(buf));
+    return std::string(reinterpret_cast<const char *>(buf.get()));
 }
 
 static std::string format_long(long val) {

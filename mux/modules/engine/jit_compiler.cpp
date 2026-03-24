@@ -1454,7 +1454,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                         static_cast<long long>(lua_tointeger(L, -1)));
                     ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
                 } else if (lua_isnumber(L, -1)) {
-                    UTF8 buf[LBUF_SIZE]; UTF8 *bufc = buf;
+                    LBuf buf = LBuf_Src("ecall.geti"); UTF8 *bufc = buf;
                     fval(buf, &bufc, lua_tonumber(L, -1));
                     *bufc = '\0';
                     size_t len = bufc - buf;
@@ -1537,7 +1537,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                         static_cast<long long>(lua_tointeger(L, -1)));
                     ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
                 } else if (lua_isnumber(L, -1)) {
-                    UTF8 buf[LBUF_SIZE]; UTF8 *bufc = buf;
+                    LBuf buf = LBuf_Src("ecall.getfield"); UTF8 *bufc = buf;
                     fval(buf, &bufc, lua_tonumber(L, -1));
                     *bufc = '\0';
                     size_t len = bufc - buf;
@@ -1632,7 +1632,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                             static_cast<long long>(lua_tointeger(L, -1)));
                         ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
                     } else {
-                        UTF8 buf[LBUF_SIZE]; UTF8 *bufc = buf;
+                        LBuf buf = LBuf_Src("ecall.newobj"); UTF8 *bufc = buf;
                         fval(buf, &bufc, lua_tonumber(L, -1));
                         *bufc = '\0';
                         size_t len = bufc - buf;
@@ -1764,7 +1764,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                         static_cast<long long>(lua_tointeger(L, -1)));
                     ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
                 } else if (lua_isnumber(L, -1)) {
-                    UTF8 buf[LBUF_SIZE]; UTF8 *bufc = buf;
+                    LBuf buf = LBuf_Src("ecall.call"); UTF8 *bufc = buf;
                     fval(buf, &bufc, lua_tonumber(L, -1));
                     *bufc = '\0';
                     size_t len = bufc - buf;
@@ -1807,7 +1807,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 }
                 double result = pow(base_v, exp_v);
                 char *out = reinterpret_cast<char *>(ec->memory + out_addr);
-                UTF8 buf[LBUF_SIZE]; UTF8 *bufc = buf;
+                LBuf buf = LBuf_Src("ecall.power"); UTF8 *bufc = buf;
                 fval(buf, &bufc, result);
                 *bufc = '\0';
                 size_t len = bufc - buf;
@@ -1894,7 +1894,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                         static_cast<long long>(lua_tointeger(L, first_pos)));
                     ctx->x[10] = static_cast<uint64_t>(n2 > 0 ? n2 : 0);
                 } else if (lua_isnumber(L, first_pos)) {
-                    UTF8 buf2[LBUF_SIZE]; UTF8 *bufc2 = buf2;
+                    LBuf buf2 = LBuf_Src("ecall.pcall"); UTF8 *bufc2 = buf2;
                     fval(buf2, &bufc2, lua_tonumber(L, first_pos));
                     *bufc2 = '\0';
                     size_t len2 = bufc2 - buf2;
@@ -2107,7 +2107,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                             static_cast<long long>(lua_tointeger(L, -1)));
                         ctx->x[10] = static_cast<uint64_t>(n2 > 0 ? n2 : 0);
                     } else if (lua_isnumber(L, -1)) {
-                        UTF8 buf2[LBUF_SIZE]; UTF8 *bufc2 = buf2;
+                        LBuf buf2 = LBuf_Src("ecall.getresult"); UTF8 *bufc2 = buf2;
                         fval(buf2, &bufc2, lua_tonumber(L, -1));
                         *bufc2 = '\0';
                         size_t len2 = bufc2 - buf2;
@@ -2334,7 +2334,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         uint64_t out_addr = ctx->x[11];
         if (out_addr < ec->memory_size - 64) {
             char *out = reinterpret_cast<char *>(ec->memory + out_addr);
-            UTF8 buf[LBUF_SIZE];
+            LBuf buf = LBuf_Src("ecall.fmvxd");
             UTF8 *bufc = buf;
             fval(buf, &bufc, val);
             *bufc = '\0';
@@ -2381,7 +2381,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 out[n] = '\0';
             } else if (lua_isnumber(L, -1)) {
                 double v = lua_tonumber(L, -1);
-                UTF8 buf[LBUF_SIZE];
+                LBuf buf = LBuf_Src("ecall.tgeti");
                 UTF8 *bufc = buf;
                 fval(buf, &bufc, v);
                 *bufc = '\0';
@@ -2438,7 +2438,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 if (n < 0) n = 0;
                 out[n] = '\0';
             } else if (lua_isnumber(L, -1)) {
-                UTF8 buf[LBUF_SIZE];
+                LBuf buf = LBuf_Src("ecall.tgetfield");
                 UTF8 *bufc = buf;
                 fval(buf, &bufc, lua_tonumber(L, -1));
                 *bufc = '\0';
@@ -2797,9 +2797,9 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
         return true;
     }
 
-    UTF8 result[LBUF_SIZE];
+    LBuf result = LBuf_Src("jit_eval");
     if (!run_cached_program(prog, executor, caller, enactor,
-                             result, sizeof(result),
+                             result, LBUF_SIZE,
                              cargs, ncargs, eval)) {
         s_jit_stats.eval_bailout++;
         return false;  // JIT execution error — fall back to AST.
@@ -3076,8 +3076,8 @@ FUNCTION(fun_rvbench)
     uint64_t ce_expected = s_persistent_dbt.cold_exit_expected;
     uint64_t ce_from = s_persistent_dbt.last_exit_from;
 
-    UTF8 report[LBUF_SIZE];
-    snprintf(reinterpret_cast<char *>(report), sizeof(report),
+    LBuf report = LBuf_Src("rvbench");
+    snprintf(reinterpret_cast<char *>(report.get()), LBUF_SIZE,
         "expr=%s iters=%d folds=%d ecalls=%d tier2=%d nativ=%d disp=%llu sb=%llu/%llu ic=%llu ih=%llu ce=%llu(a=0x%llX,e=0x%llX,from=0x%llX) | "
         "native=%.2fus/call | "
         "compile-each=%.2fus/call (%.1fx) | "

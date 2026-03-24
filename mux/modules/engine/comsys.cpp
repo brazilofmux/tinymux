@@ -403,10 +403,10 @@ static const UTF8* get_channel_from_alias(dbref player, UTF8* alias)
 //
 void load_comsystem_V5(FILE* fp)
 {
-    UTF8 temp[LBUF_SIZE];
+    LBuf temp = LBuf_Src("load_comsystem_V5");
 
     int nc = 0;
-    if (nullptr == fgets(reinterpret_cast<char*>(temp), sizeof(temp), fp))
+    if (nullptr == fgets(reinterpret_cast<char*>(temp.get()), LBUF_SIZE, fp))
     {
         return;
     }
@@ -418,7 +418,7 @@ void load_comsystem_V5(FILE* fp)
 
         auto ch = new channel();
 
-        size_t nChannel = GetLineTrunc(temp, sizeof(temp), fp);
+        size_t nChannel = GetLineTrunc(temp, LBUF_SIZE, fp);
         if (nChannel > MAX_CHANNEL_LEN)
         {
             nChannel = MAX_CHANNEL_LEN;
@@ -432,7 +432,7 @@ void load_comsystem_V5(FILE* fp)
         memcpy(ch->name, temp, nChannel);
         ch->name[nChannel] = '\0';
 
-        size_t nHeader = GetLineTrunc(temp, sizeof(temp), fp);
+        size_t nHeader = GetLineTrunc(temp, LBUF_SIZE, fp);
         if (nHeader > MAX_HEADER_LEN)
         {
             nHeader = MAX_HEADER_LEN;
@@ -486,7 +486,7 @@ void load_comsystem_V5(FILE* fp)
 
                 // Read Comtitle.
                 //
-                size_t nTitle = GetLineTrunc(temp, sizeof(temp), fp);
+                size_t nTitle = GetLineTrunc(temp, LBUF_SIZE, fp);
                 const UTF8* pTitle = temp;
 
                 if (!Good_dbref(t_user.who))
@@ -549,10 +549,10 @@ void load_comsystem_V5(FILE* fp)
 //
 void load_comsystem_V4(FILE* fp)
 {
-    UTF8 temp[LBUF_SIZE];
+    LBuf temp = LBuf_Src("load_comsystem_V4");
 
     int nc = 0;
-    if (nullptr == fgets(reinterpret_cast<char*>(temp), sizeof(temp), fp))
+    if (nullptr == fgets(reinterpret_cast<char*>(temp.get()), LBUF_SIZE, fp))
     {
         return;
     }
@@ -564,7 +564,7 @@ void load_comsystem_V4(FILE* fp)
 
         auto ch = new channel();
 
-        size_t nChannel = GetLineTrunc(temp, sizeof(temp), fp);
+        size_t nChannel = GetLineTrunc(temp, LBUF_SIZE, fp);
         if (nChannel > MAX_CHANNEL_LEN)
         {
             nChannel = MAX_CHANNEL_LEN;
@@ -578,7 +578,7 @@ void load_comsystem_V4(FILE* fp)
         memcpy(ch->name, temp, nChannel);
         ch->name[nChannel] = '\0';
 
-        size_t nHeader = GetLineTrunc(temp, sizeof(temp), fp);
+        size_t nHeader = GetLineTrunc(temp, LBUF_SIZE, fp);
         if (nHeader > MAX_HEADER_LEN)
         {
             nHeader = MAX_HEADER_LEN;
@@ -631,7 +631,7 @@ void load_comsystem_V4(FILE* fp)
 
                 // Read Comtitle.
                 //
-                size_t nTitle = GetLineTrunc(temp, sizeof(temp), fp);
+                size_t nTitle = GetLineTrunc(temp, LBUF_SIZE, fp);
                 const UTF8* pTitle = temp;
 
                 if (!Good_dbref(t_user.who))
@@ -692,14 +692,14 @@ void load_comsystem_V4(FILE* fp)
 void load_comsystem_V0123(FILE* fp)
 {
     int ver = 0;
-    UTF8 temp[LBUF_SIZE];
+    LBuf temp = LBuf_Src("load_comsystem_V0123");
 
     int nc = 0;
-    if (nullptr == fgets(reinterpret_cast<char *>(temp), sizeof(temp), fp))
+    if (nullptr == fgets(reinterpret_cast<char *>(temp.get()), LBUF_SIZE, fp))
     {
         return;
     }
-    if (!strncmp(reinterpret_cast<char *>(temp), "+V", 2))
+    if (!strncmp(reinterpret_cast<char *>(temp.get()), "+V", 2))
     {
         // +V2 has colored headers.
         //
@@ -722,7 +722,7 @@ void load_comsystem_V0123(FILE* fp)
 
         auto ch = new channel();
 
-        size_t nChannel = GetLineTrunc(temp, sizeof(temp), fp);
+        size_t nChannel = GetLineTrunc(temp, LBUF_SIZE, fp);
         if (temp[nChannel - 1] == '\n')
         {
             // Get rid of trailing '\n'.
@@ -733,7 +733,7 @@ void load_comsystem_V0123(FILE* fp)
 
         // Convert entire line to UTF-8 including ANSI escapes.
         //
-        const UTF8* pBufferUnicode = ConvertToUTF8(reinterpret_cast<char*>(temp), &nChannel);
+        const UTF8* pBufferUnicode = ConvertToUTF8(reinterpret_cast<char*>(temp.get()), &nChannel);
         if (MAX_CHANNEL_LEN < nChannel)
         {
             nChannel = MAX_CHANNEL_LEN;
@@ -749,7 +749,7 @@ void load_comsystem_V0123(FILE* fp)
 
         if (ver >= 2)
         {
-            size_t nHeader = GetLineTrunc(temp, sizeof(temp), fp);
+            size_t nHeader = GetLineTrunc(temp, LBUF_SIZE, fp);
             if (temp[nHeader - 1] == '\n')
             {
                 nHeader--;
@@ -758,7 +758,7 @@ void load_comsystem_V0123(FILE* fp)
 
             // Convert entire line to UTF-8 including ANSI escapes.
             //
-            pBufferUnicode = ConvertToUTF8(reinterpret_cast<char*>(temp), &nHeader);
+            pBufferUnicode = ConvertToUTF8(reinterpret_cast<char*>(temp.get()), &nHeader);
             if (MAX_HEADER_LEN < nHeader)
             {
                 nHeader = MAX_HEADER_LEN;
@@ -818,12 +818,12 @@ void load_comsystem_V0123(FILE* fp)
             //
             if (ch->type & CHANNEL_PUBLIC)
             {
-                mux_sprintf(temp, sizeof(temp), T("%s[%s%s%s%s%s]%s"), COLOR_FG_CYAN, COLOR_INTENSE,
+                mux_sprintf(temp, LBUF_SIZE, T("%s[%s%s%s%s%s]%s"), COLOR_FG_CYAN, COLOR_INTENSE,
                             COLOR_FG_BLUE, ch->name, COLOR_RESET, COLOR_FG_CYAN, COLOR_RESET);
             }
             else
             {
-                mux_sprintf(temp, sizeof(temp), T("%s[%s%s%s%s%s]%s"), COLOR_FG_MAGENTA, COLOR_INTENSE,
+                mux_sprintf(temp, LBUF_SIZE, T("%s[%s%s%s%s%s]%s"), COLOR_FG_MAGENTA, COLOR_INTENSE,
                             COLOR_FG_RED, ch->name, COLOR_RESET, COLOR_FG_MAGENTA,
                             COLOR_RESET);
             }
@@ -870,11 +870,11 @@ void load_comsystem_V0123(FILE* fp)
 
                 // Read Comtitle.
                 //
-                size_t nTitle = GetLineTrunc(temp, sizeof(temp), fp);
+                size_t nTitle = GetLineTrunc(temp, LBUF_SIZE, fp);
 
                 // Convert entire line to UTF-8 including ANSI escapes.
                 //
-                UTF8* pTitle = ConvertToUTF8(reinterpret_cast<char*>(temp), &nTitle);
+                UTF8* pTitle = ConvertToUTF8(reinterpret_cast<char*>(temp.get()), &nTitle);
 
                 if (!Good_dbref(t_user.who))
                 {
@@ -932,7 +932,7 @@ void load_comsystem_V0123(FILE* fp)
 
 void load_channels_V4(FILE* fp)
 {
-    UTF8 buffer[LBUF_SIZE];
+    LBuf buffer = LBuf_Src("load_channels_V4");
 
     int np = 0;
     mux_assert(ReadListOfNumbers(fp, 1, &np));
@@ -952,7 +952,7 @@ void load_channels_V4(FILE* fp)
         {
             for (int j = 0; j < numchannels; j++)
             {
-                size_t n = GetLineTrunc(buffer, sizeof(buffer), fp);
+                size_t n = GetLineTrunc(buffer, LBUF_SIZE, fp);
                 if (buffer[n - 1] == '\n')
                 {
                     // Get rid of trailing '\n'.
@@ -1338,8 +1338,8 @@ static void BuildChannelMessage
         {
             // Evaluate the comtitle as code.
             //
-            UTF8 TempToEval[LBUF_SIZE];
-            mux_strncpy(TempToEval, reinterpret_cast<const UTF8 *>(user->title.c_str()), sizeof(TempToEval) - 1);
+            LBuf TempToEval = LBuf_Src("eval_comtitle");
+            mux_strncpy(TempToEval, reinterpret_cast<const UTF8 *>(user->title.c_str()), LBUF_SIZE - 1);
             mux_exec(TempToEval, LBUF_SIZE - 1, *messNormal, &mnptr, user->who, user->who, user->who,
                      EV_FCHECK | EV_EVAL | EV_TOP, nullptr, 0);
         }
@@ -1812,8 +1812,8 @@ void SendChannelMessage
 
                     // Save message in history with timestamp.
                     //
-                    UTF8 temp[LBUF_SIZE];
-                    mux_sprintf(temp, sizeof(temp), T("[%s] %s"), ltaNow.ReturnDateString(0), msgNormal);
+                    LBuf temp = LBuf_Src("chan_history");
+                    mux_sprintf(temp, LBUF_SIZE, T("[%s] %s"), ltaNow.ReturnDateString(0), msgNormal);
                     atr_add(ch->chan_obj, atr, temp, GOD, AF_CONST | AF_NOPROG | AF_NOPARSE);
                 }
                 else

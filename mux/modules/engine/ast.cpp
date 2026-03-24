@@ -28,7 +28,7 @@
 
 static std::string ast_upper_builtin_name(std::string_view funcName)
 {
-    UTF8 TempFun[LBUF_SIZE];
+    LBuf TempFun = LBuf_Src("ast_upper_builtin");
     size_t nName = funcName.size();
     if (nName >= LBUF_SIZE)
     {
@@ -184,7 +184,7 @@ private:
 
     static bool parser_lookup_builtin_noeval(std::string_view funcName)
     {
-        UTF8 TempFun[LBUF_SIZE];
+        LBuf TempFun = LBuf_Src("lookup_noeval");
         size_t nName = funcName.size();
         if (nName >= LBUF_SIZE)
         {
@@ -202,7 +202,7 @@ private:
         memcpy(TempFun, pUpper, nUpper);
         TempFun[nUpper] = '\0';
 
-        std::vector<UTF8> name_key(TempFun, TempFun + nUpper);
+        std::vector<UTF8> name_key(TempFun.get(), TempFun.get() + nUpper);
         const auto it = mudstate.builtin_functions.find(name_key);
         return it != mudstate.builtin_functions.end()
             && (it->second->flags & FN_NOEVAL) != 0;
@@ -854,7 +854,7 @@ static void ast_eval_subst(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         }
     }
 
-    UTF8 scratch[LBUF_SIZE];
+    LBuf scratch = LBuf_Src("ast_eval_subst");
     UTF8 *TempPtr = *bufc;
 
     // %0-%9 — command argument substitution.
@@ -1806,7 +1806,7 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         return;
     }
 
-    UTF8 TempFun[LBUF_SIZE];
+    LBuf TempFun = LBuf_Src("ast_eval_funccall");
     memcpy(TempFun, node->text.c_str(), nName);
     TempFun[nName] = '\0';
     size_t nUpper;
@@ -1818,7 +1818,7 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     memcpy(TempFun, pUpper, nUpper);
     TempFun[nUpper] = '\0';
 
-    std::vector<UTF8> name_key(TempFun, TempFun + nUpper);
+    std::vector<UTF8> name_key(TempFun.get(), TempFun.get() + nUpper);
     FUN *fp = nullptr;
     UFUN *ufp = nullptr;
 
@@ -2601,7 +2601,7 @@ FUNCTION(fun_astbench)
     clock_gettime(CLOCK_MONOTONIC, &t0);
 #endif
     for (int i = 0; i < iterations; i++) {
-        UTF8 temp[LBUF_SIZE];
+        LBuf temp = LBuf_Src("astbench_ast");
         UTF8 *tp = temp;
         ast_eval_node(ast.get(), temp, &tp,
             executor, caller, enactor,
@@ -2631,7 +2631,7 @@ FUNCTION(fun_astbench)
     clock_gettime(CLOCK_MONOTONIC, &t0);
 #endif
     for (int i = 0; i < iterations; i++) {
-        UTF8 temp[LBUF_SIZE];
+        LBuf temp = LBuf_Src("astbench_jit");
         UTF8 *tp = temp;
         jit_eval(expr, nLen, temp, &tp, executor, caller, enactor,
                  eval | EV_FMAND | EV_EVAL, nullptr, 0);
@@ -2650,7 +2650,7 @@ FUNCTION(fun_astbench)
 #endif
 
     // Get the result value.
-    UTF8 result[LBUF_SIZE];
+    LBuf result = LBuf_Src("astbench_result");
     UTF8 *rp = result;
     ast_eval_node(ast.get(), result, &rp,
         executor, caller, enactor,
@@ -2660,5 +2660,5 @@ FUNCTION(fun_astbench)
     double ratio = (jit_us > 0.001) ? ast_us / jit_us : 0.0;
     safe_tprintf_str(buff, bufc,
         T("ast=%.2fus jit=%.2fus ratio=%.1fx result=%s"),
-        ast_us, jit_us, ratio, result);
+        ast_us, jit_us, ratio, result.get());
 }

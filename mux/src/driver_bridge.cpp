@@ -381,7 +381,7 @@ void DCL_CDECL raw_broadcast(int inflags, const UTF8 *fmt, ...)
         return;
     }
 
-    UTF8 buff[LBUF_SIZE];
+    LBuf buff = LBuf_Src("driver_notify_printf");
 
     va_list ap;
     va_start(ap, fmt);

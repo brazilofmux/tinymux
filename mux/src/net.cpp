@@ -417,11 +417,11 @@ void save_command(DESC *d, const UTF8 *cmd, size_t len)
     {
         // Normalize to NFC before queuing.  NFC never expands the string.
         //
-        UTF8 nfc_buf[LBUF_SIZE];
+        LBuf nfc_buf = LBuf_Src("save_command");
         size_t nNfc;
-        utf8_normalize_nfc(cmd, len, nfc_buf, sizeof(nfc_buf) - 1, &nNfc);
+        utf8_normalize_nfc(cmd, len, nfc_buf, LBUF_SIZE - 1, &nNfc);
         nfc_buf[nNfc] = '\0';
-        d->input_queue.emplace_back(reinterpret_cast<const char *>(nfc_buf), nNfc);
+        d->input_queue.emplace_back(reinterpret_cast<const char *>(nfc_buf.get()), nNfc);
     }
     else
     {

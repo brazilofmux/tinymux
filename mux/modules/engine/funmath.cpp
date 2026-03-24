@@ -2349,7 +2349,7 @@ FUNCTION(fun_allof)
     // Last argument is the output separator.
     //
     int nArgs = nfargs;
-    UTF8 osep[LBUF_SIZE];
+    LBuf osep = LBuf_Src("fun_allof");
     osep[0] = ' ';
     osep[1] = '\0';
     size_t nOsep = 1;
@@ -2396,7 +2396,7 @@ FUNCTION(fun_strallof)
     }
 
     int nArgs = nfargs;
-    UTF8 osep[LBUF_SIZE];
+    LBuf osep = LBuf_Src("fun_strallof");
     osep[0] = ' ';
     osep[1] = '\0';
     size_t nOsep = 1;

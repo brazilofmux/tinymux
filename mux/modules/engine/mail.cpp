@@ -163,7 +163,7 @@ static void sqlite_wt_sync_all_aliases(void)
     {
         malias_t *m = malias[i];
 
-        UTF8 members_buf[LBUF_SIZE];
+        LBuf members_buf = LBuf_Src("wt_sync_alias");
         UTF8 *bp = members_buf;
         for (size_t j = 0; j < m->list.size(); j++)
         {
@@ -468,7 +468,7 @@ static void add_folder_name(dbref player, int fld, UTF8 *name)
              "%d:%s:%d", fld, reinterpret_cast<const char *>(name), fld);
     size_t nNew = strlen(reinterpret_cast<char *>(aNew));
     {
-        UTF8 tmp[LBUF_SIZE];
+        LBuf tmp = LBuf_Src("add_folder_name");
         nNew = co_toupper(tmp, aNew, nNew);
         memcpy(aNew, tmp, nNew + 1);
     }
@@ -618,7 +618,7 @@ static int get_folder_number(dbref player, UTF8 *name)
                  ":%s:", reinterpret_cast<const char *>(name));
         size_t nPattern = strlen(reinterpret_cast<char *>(aPattern));
         {
-            UTF8 tmp[LBUF_SIZE];
+            LBuf tmp = LBuf_Src("get_folder_number");
             nPattern = co_toupper(tmp, aPattern, nPattern);
             memcpy(aPattern, tmp, nPattern + 1);
         }
@@ -3663,7 +3663,7 @@ static void malias_read(FILE *fp, bool bConvert)
     {
         return;
     }
-    UTF8 buffer[LBUF_SIZE];
+    LBuf buffer = LBuf_Src("malias_read");
 
     ma_size = ma_top = i;
 
@@ -3689,7 +3689,7 @@ static void malias_read(FILE *fp, bool bConvert)
     {
         // Format is: "%d %d\n", &(m->owner), &(m->numrecep)
         //
-        if (!fgets(reinterpret_cast<char *>(buffer), sizeof(buffer), fp))
+        if (!fgets(reinterpret_cast<char *>(buffer.get()), LBUF_SIZE, fp))
         {
             // We've hit the end of the file. Set the last recognized
             // @malias, and give up.
@@ -3724,7 +3724,7 @@ static void malias_read(FILE *fp, bool bConvert)
 
         malias[i] = m;
 
-        UTF8 *p = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(buffer), ' '));
+        UTF8 *p = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(buffer.get()), ' '));
         m->owner = 0;
         int numrecep = 0;
         if (p)
@@ -3735,14 +3735,14 @@ static void malias_read(FILE *fp, bool bConvert)
 
         // The format of @malias name is "N:<name>\n".
         //
-        size_t nLen = GetLineTrunc(buffer, sizeof(buffer), fp);
+        size_t nLen = GetLineTrunc(buffer, LBUF_SIZE, fp);
         buffer[nLen-1] = '\0'; // Get rid of trailing '\n'.
 
         UTF8 *pBufferUnicode;
         if (bConvert)
         {
             size_t nBufferUnicode;
-            pBufferUnicode = ConvertToUTF8(reinterpret_cast<char *>(buffer), &nBufferUnicode);
+            pBufferUnicode = ConvertToUTF8(reinterpret_cast<char *>(buffer.get()), &nBufferUnicode);
         }
         else
         {
@@ -3765,11 +3765,11 @@ static void malias_read(FILE *fp, bool bConvert)
 
         // The format of the description is "D:<description>\n"
         //
-        nLen = GetLineTrunc(buffer, sizeof(buffer), fp);
+        nLen = GetLineTrunc(buffer, LBUF_SIZE, fp);
         if (bConvert)
         {
             size_t nBufferUnicode;
-            pBufferUnicode = ConvertToUTF8(reinterpret_cast<char *>(buffer), &nBufferUnicode);
+            pBufferUnicode = ConvertToUTF8(reinterpret_cast<char *>(buffer.get()), &nBufferUnicode);
         }
         else
         {
@@ -5891,7 +5891,7 @@ bool sqlite_sync_mail(void)
 
         // Serialize member list to space-separated string.
         //
-        UTF8 members_buf[LBUF_SIZE];
+        LBuf members_buf = LBuf_Src("sync_mail_alias");
         UTF8 *bp = members_buf;
         for (size_t j = 0; j < m->list.size(); j++)
         {
@@ -6050,7 +6050,7 @@ int sqlite_load_mail(void)
         m->list.clear();
         if (members && members[0] != '\0')
         {
-            UTF8 buf[LBUF_SIZE];
+            LBuf buf = LBuf_Src("load_mail_alias");
             mux_strncpy(buf, members, LBUF_SIZE - 1);
             UTF8 *p = buf;
             while (*p)

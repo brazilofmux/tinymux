@@ -2688,7 +2688,7 @@ static void scan_check
 
     atr_push();
     unsigned char *as;
-    UTF8 buff[LBUF_SIZE];
+    LBuf buff = LBuf_Src("find_wild_attrs");
     for (int atr = atr_head(thing, &as); atr; atr = atr_next(&as))
     {
         ATTR *ap = atr_num(atr);
@@ -2771,7 +2771,7 @@ void do_scan(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     //
     size_t nLower;
     UTF8 *pLower = mux_strlwr(command, nLower);
-    UTF8 lcmd[LBUF_SIZE];
+    LBuf lcmd = LBuf_Src("find_wild_attrs_cmd");
     if (nLower >= LBUF_SIZE)
     {
         nLower = LBUF_SIZE - 1;

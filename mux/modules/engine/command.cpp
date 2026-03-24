@@ -2424,7 +2424,7 @@ UTF8 *process_command
     {
         iPos++;
     }
-    UTF8 TempCmd[LBUF_SIZE];
+    LBuf TempCmd = LBuf_Src("process_command");
     size_t nCopy = iPos;
     if (nCopy >= LBUF_SIZE)
     {

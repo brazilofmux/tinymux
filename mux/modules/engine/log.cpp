@@ -1547,13 +1547,13 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
                 return MUX_E_INVALIDARG;
             }
 
-            UTF8 bufPrimary[LBUF_SIZE];
-            UTF8 bufSecondary[LBUF_SIZE];
+            LBuf bufPrimary = LBuf_Src("start_log.primary");
+            LBuf bufSecondary = LBuf_Src("start_log.secondary");
             const UTF8 *pPrimary;
             const UTF8 *pSecondary;
 
-            if (  !Marshal_GetString(pqi, bufPrimary, sizeof(bufPrimary), &pPrimary)
-               || !Marshal_GetString(pqi, bufSecondary, sizeof(bufSecondary), &pSecondary))
+            if (  !Marshal_GetString(pqi, bufPrimary, LBUF_SIZE, &pPrimary)
+               || !Marshal_GetString(pqi, bufSecondary, LBUF_SIZE, &pSecondary))
             {
                 return MUX_E_INVALIDARG;
             }
@@ -1577,19 +1577,19 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
 
     case 4: // log_perror
         {
-            UTF8 bufPrimary[LBUF_SIZE];
-            UTF8 bufSecondary[LBUF_SIZE];
-            UTF8 bufExtra[LBUF_SIZE];
-            UTF8 bufFailing[LBUF_SIZE];
+            LBuf bufPrimary = LBuf_Src("log_perror.primary");
+            LBuf bufSecondary = LBuf_Src("log_perror.secondary");
+            LBuf bufExtra = LBuf_Src("log_perror.extra");
+            LBuf bufFailing = LBuf_Src("log_perror.failing");
             const UTF8 *pPrimary;
             const UTF8 *pSecondary;
             const UTF8 *pExtra;
             const UTF8 *pFailing;
 
-            if (  !Marshal_GetString(pqi, bufPrimary, sizeof(bufPrimary), &pPrimary)
-               || !Marshal_GetString(pqi, bufSecondary, sizeof(bufSecondary), &pSecondary)
-               || !Marshal_GetString(pqi, bufExtra, sizeof(bufExtra), &pExtra)
-               || !Marshal_GetString(pqi, bufFailing, sizeof(bufFailing), &pFailing))
+            if (  !Marshal_GetString(pqi, bufPrimary, LBUF_SIZE, &pPrimary)
+               || !Marshal_GetString(pqi, bufSecondary, LBUF_SIZE, &pSecondary)
+               || !Marshal_GetString(pqi, bufExtra, LBUF_SIZE, &pExtra)
+               || !Marshal_GetString(pqi, bufFailing, LBUF_SIZE, &pFailing))
             {
                 return MUX_E_INVALIDARG;
             }
@@ -1603,9 +1603,9 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
 
     case 5: // log_text
         {
-            UTF8 bufText[LBUF_SIZE];
+            LBuf bufText = LBuf_Src("log_text");
             const UTF8 *pText;
-            if (!Marshal_GetString(pqi, bufText, sizeof(bufText), &pText))
+            if (!Marshal_GetString(pqi, bufText, LBUF_SIZE, &pText))
             {
                 return MUX_E_INVALIDARG;
             }
@@ -1688,9 +1688,9 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
 
     case 11: // WriteString
         {
-            UTF8 bufText[LBUF_SIZE];
+            LBuf bufText = LBuf_Src("WriteString");
             const UTF8 *pText;
-            if (Marshal_GetString(pqi, bufText, sizeof(bufText), &pText))
+            if (Marshal_GetString(pqi, bufText, LBUF_SIZE, &pText))
             {
                 mr = m_pILog->WriteString(pText);
             }
@@ -1701,9 +1701,9 @@ MUX_RESULT CLogStub::Invoke(QUEUE_INFO *pqi)
 
     case 12: // SetBasename
         {
-            UTF8 bufBasename[LBUF_SIZE];
+            LBuf bufBasename = LBuf_Src("SetBasename");
             const UTF8 *pBasename;
-            if (Marshal_GetString(pqi, bufBasename, sizeof(bufBasename), &pBasename))
+            if (Marshal_GetString(pqi, bufBasename, LBUF_SIZE, &pBasename))
             {
                 mr = m_pILog->SetBasename(pBasename);
             }

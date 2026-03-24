@@ -1523,8 +1523,8 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         // Everything else: queue for the engine.
                         // Format: "\x01GMCP package json"
                         //
-                        UTF8 cmd[LBUF_SIZE];
-                        auto cp2 = cmd;
+                        LBuf cmd = LBuf_Src("gmcp_queue");
+                        UTF8 *cp2 = cmd;
                         *(cp2++) = '\x01';
                         memcpy(cp2, "GMCP ", 5);
                         cp2 += 5;

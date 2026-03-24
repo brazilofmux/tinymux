@@ -924,8 +924,8 @@ MUX_RESULT CDriverControl::SiteUpdate(const UTF8 *subnetStr,
 
     // parse_subnet needs a mutable copy.
     //
-    UTF8 buf[LBUF_SIZE];
-    mux_strncpy(buf, subnetStr, sizeof(buf) - 1);
+    LBuf buf = LBuf_Src("parse_subnet");
+    mux_strncpy(buf, subnetStr, LBUF_SIZE - 1);
 
     mux_subnet *pSubnet = parse_subnet(buf, player, cmd);
     if (nullptr == pSubnet)

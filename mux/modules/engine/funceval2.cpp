@@ -1912,11 +1912,11 @@ FUNCTION(fun_alphamax)
     UNUSED_PARAMETER(ncargs);
 
     UTF8 *amax = fargs[0];
-    UTF8 buf_max[LBUF_SIZE];
+    LBuf buf_max = LBuf_Src("fun_alphamax");
     mux_strncpy(buf_max, strip_color(amax), LBUF_SIZE-1);
     for (int i = 1; i < nfargs; i++)
     {
-        if (fargs[i] && strcmp(reinterpret_cast<char *>(buf_max), reinterpret_cast<char *>(strip_color(fargs[i]))) < 0)
+        if (fargs[i] && strcmp(reinterpret_cast<char *>(buf_max.get()), reinterpret_cast<char *>(strip_color(fargs[i]))) < 0)
         {
             amax = fargs[i];
             mux_strncpy(buf_max, strip_color(amax), LBUF_SIZE-1);
@@ -1937,11 +1937,11 @@ FUNCTION(fun_alphamin)
     UNUSED_PARAMETER(ncargs);
 
     UTF8 *amin = fargs[0];
-    UTF8 buf_min[LBUF_SIZE];
+    LBuf buf_min = LBuf_Src("fun_alphamin");
     mux_strncpy(buf_min, strip_color(amin), LBUF_SIZE-1);
     for (int i = 1; i < nfargs; i++)
     {
-        if (fargs[i] && strcmp(reinterpret_cast<char *>(buf_min), reinterpret_cast<char *>(strip_color(fargs[i]))) > 0)
+        if (fargs[i] && strcmp(reinterpret_cast<char *>(buf_min.get()), reinterpret_cast<char *>(strip_color(fargs[i]))) > 0)
         {
             amin = fargs[i];
             mux_strncpy(buf_min, strip_color(amin), LBUF_SIZE-1);
@@ -2487,8 +2487,8 @@ static void regedit_substitute(const UTF8 *replacement,
                         memcpy(namebuf, namestart, namelen);
                         namebuf[namelen] = '\0';
 
-                        UTF8 groupbuf[LBUF_SIZE];
-                        PCRE2_SIZE outlen = sizeof(groupbuf) - 1;
+                        LBuf groupbuf = LBuf_Src("regsub_named");
+                        PCRE2_SIZE outlen = LBUF_SIZE - 1;
                         int ret = pcre2_substring_copy_byname(
                             match_data,
                             namebuf,
@@ -2522,8 +2522,8 @@ static void regedit_substitute(const UTF8 *replacement,
                     p++;
                 }
 
-                UTF8 groupbuf[LBUF_SIZE];
-                PCRE2_SIZE outlen = sizeof(groupbuf) - 1;
+                LBuf groupbuf = LBuf_Src("regsub_numbered");
+                PCRE2_SIZE outlen = LBUF_SIZE - 1;
                 int ret = pcre2_substring_copy_bynumber(
                     match_data,
                     groupnum,

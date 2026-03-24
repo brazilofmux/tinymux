@@ -2164,12 +2164,12 @@ bool atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
         return true;
     }
 
-    UTF8 nfc_buf[LBUF_SIZE];
+    LBuf nfc_buf = LBuf_Src("atr_add_raw");
     if (  clean_len > 0
        && !utf8_is_nfc(clean, clean_len))
     {
         size_t nNfc;
-        utf8_normalize_nfc(clean, clean_len, nfc_buf, sizeof(nfc_buf) - 1, &nNfc);
+        utf8_normalize_nfc(clean, clean_len, nfc_buf, LBUF_SIZE - 1, &nNfc);
         nfc_buf[nNfc] = '\0';
         clean = nfc_buf;
         clean_len = nNfc;

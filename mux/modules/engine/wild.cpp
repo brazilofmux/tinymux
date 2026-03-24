@@ -388,7 +388,7 @@ bool wild(UTF8 *tstr, UTF8 *dstr, UTF8 *args[], int nargs)
     //
     size_t nLower;
     UTF8 *pLower = mux_strlwr(tstr, nLower);
-    UTF8 LoweredPattern[LBUF_SIZE];
+    LBuf LoweredPattern = LBuf_Src("wild1");
     if (nLower >= LBUF_SIZE) nLower = LBUF_SIZE - 1;
     memcpy(LoweredPattern, pLower, nLower);
     LoweredPattern[nLower] = '\0';
@@ -514,7 +514,7 @@ bool wild_match(UTF8 *tstr, const UTF8 *dstr)
     //
     size_t nLower;
     UTF8 *pLower = mux_strlwr(tstr, nLower);
-    UTF8 LoweredPattern[LBUF_SIZE];
+    LBuf LoweredPattern = LBuf_Src("wild_match");
     if (nLower >= LBUF_SIZE) nLower = LBUF_SIZE - 1;
     memcpy(LoweredPattern, pLower, nLower);
     LoweredPattern[nLower] = '\0';
@@ -531,7 +531,7 @@ bool quick_wild(const UTF8 *tstr, const UTF8 *dstr)
 {
     size_t nLower;
     UTF8 *pLower = mux_strlwr(tstr, nLower);
-    UTF8 LoweredPattern[LBUF_SIZE];
+    LBuf LoweredPattern = LBuf_Src("quick_wild");
     if (nLower >= LBUF_SIZE) nLower = LBUF_SIZE - 1;
     memcpy(LoweredPattern, pLower, nLower);
     LoweredPattern[nLower] = '\0';

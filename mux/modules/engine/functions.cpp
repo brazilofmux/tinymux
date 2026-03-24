@@ -8885,16 +8885,16 @@ typedef int (*CompareFunction)(const q_rec &, const q_rec &);
 
 static int a_comp(const q_rec &r1, const q_rec &r2)
 {
-    UTF8 buf1[LBUF_SIZE];
+    LBuf buf1 = LBuf_Src("a_comp");
     mux_strncpy(buf1, strip_color(r1.str), LBUF_SIZE-1);
     return strcmp(
-        reinterpret_cast<const char *>(buf1),
+        reinterpret_cast<const char *>(buf1.get()),
         reinterpret_cast<const char *>(strip_color(r2.str)));
 }
 
 static int a_casecomp(const q_rec &r1, const q_rec &r2)
 {
-    UTF8 buf1[LBUF_SIZE];
+    LBuf buf1 = LBuf_Src("a_casecomp");
     mux_strncpy(buf1, strip_color(r1.str), LBUF_SIZE-1);
     return mux_stricmp(buf1, strip_color(r2.str));
 }
@@ -10050,7 +10050,7 @@ static FUNCTION(fun_printf)
 
         // Format the value into a temporary buffer.
         //
-        UTF8 valBuf[LBUF_SIZE];
+        LBuf valBuf = LBuf_Src("fun_printf");
         UTF8 *pVal = valBuf;
 
         switch (cConv)
@@ -10086,8 +10086,8 @@ static FUNCTION(fun_printf)
                 }
                 else
                 {
-                    snprintf(reinterpret_cast<char *>(valBuf),
-                             sizeof(valBuf), "%.*f", places, v);
+                    snprintf(reinterpret_cast<char *>(valBuf.get()),
+                             LBUF_SIZE, "%.*f", places, v);
                 }
                 nPrec = -1; // consumed by %f
             }
@@ -12337,9 +12337,9 @@ static FUNCTION(fun_chr)
 
     // Build UTF-8 from space-separated code point integers.
     //
-    UTF8 raw[LBUF_SIZE];
+    LBuf raw = LBuf_Src("fun_chr");
     UTF8 *pRaw = raw;
-    const UTF8 *pEnd = raw + sizeof(raw) - 5;
+    const UTF8 *pEnd = raw.get() + LBUF_SIZE - 5;
 
     const UTF8 *pArg = fargs[0];
     bool bAny = false;
@@ -12453,9 +12453,9 @@ static FUNCTION(fun_chr)
     // NFC normalize the result.
     //
     size_t nRaw = pRaw - raw;
-    UTF8 nfc[LBUF_SIZE];
+    LBuf nfc = LBuf_Src("fun_chr.nfc");
     size_t nNfc;
-    utf8_normalize_nfc(raw, nRaw, nfc, sizeof(nfc) - 1, &nNfc);
+    utf8_normalize_nfc(raw, nRaw, nfc, LBUF_SIZE - 1, &nNfc);
     nfc[nNfc] = '\0';
 
     safe_str(nfc, buff, bufc);
@@ -12664,7 +12664,7 @@ static size_t expand_range(UTF8 *buf, size_t len)
     // Expand a-z, A-Z, 0-9 character ranges in-place.
     // Dashes without valid endpoints are treated literally.
     //
-    UTF8 out[LBUF_SIZE];
+    LBuf out = LBuf_Src("expand_range");
     size_t wp = 0;
 
     for (size_t i = 0; i < len; i++)
@@ -12752,7 +12752,7 @@ static FUNCTION(fun_tr)
     {
         // Expand character ranges (a-z, A-Z, 0-9) in from/to sets.
         //
-        UTF8 fromBuf[LBUF_SIZE], toBuf[LBUF_SIZE];
+        LBuf fromBuf = LBuf_Src("fun_tr.from"), toBuf = LBuf_Src("fun_tr.to");
         size_t fLen = strlen(reinterpret_cast<const char *>(fargs[1]));
         size_t tLen = strlen(reinterpret_cast<const char *>(fargs[2]));
 
@@ -12774,8 +12774,8 @@ static FUNCTION(fun_tr)
             unsigned char out[LBUF_SIZE];
             size_t nOut = co_transform(out,
                 reinterpret_cast<const unsigned char *>(fargs[0]), nStr,
-                reinterpret_cast<const unsigned char *>(fromBuf), fLen,
-                reinterpret_cast<const unsigned char *>(toBuf), tLen);
+                reinterpret_cast<const unsigned char *>(fromBuf.get()), fLen,
+                reinterpret_cast<const unsigned char *>(toBuf.get()), tLen);
 
             size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
             if (nOut > nMax) nOut = nMax;
@@ -13758,7 +13758,7 @@ static FUNCTION(fun_benchmark)
 
     for (int i = 0; i < iterations; i++)
     {
-        UTF8 temp[LBUF_SIZE];
+        LBuf temp = LBuf_Src("fun_benchmark");
         UTF8 *tp = temp;
         mux_exec(expr, nLen, temp, &tp, executor, caller, enactor,
                  eval | EV_STRIP_CURLY | EV_FCHECK | EV_EVAL,
@@ -14772,8 +14772,8 @@ CF_HAND(cf_func_access)
 
     // Uppercase the function name (Unicode-aware).
     //
-    UTF8 TempName[LBUF_SIZE];
-    memcpy(TempName, str, nOrigName);
+    LBuf TempName = LBuf_Src("cf_func_access");
+    memcpy(TempName.get(), str, nOrigName);
     TempName[nOrigName] = '\0';
     size_t nUpper;
     UTF8 *pUpper = mux_strupr(TempName, nUpper);

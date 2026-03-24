@@ -243,7 +243,7 @@ static int atr_match1
         //
         dbref aowner;
         int   aflags;
-        UTF8 buff[LBUF_SIZE];
+        LBuf buff = LBuf_Src("atr_match_scan");
         atr_get_str(buff, parent, atr, &aowner, &aflags);
 
         UTF8 *s = nullptr;

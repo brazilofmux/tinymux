@@ -1484,7 +1484,7 @@ MUX_RESULT CAttributeAccess::GetAttribute(dbref executor, dbref obj,
     dbref aowner;
     int   aflags;
     size_t nLen;
-    UTF8 buf[LBUF_SIZE];
+    LBuf buf = LBuf_Src("GetFormatCmd");
     atr_get_str_LEN(buf, obj, pattr->number, &aowner, &aflags, &nLen);
 
     if (0 == nLen)
@@ -1716,7 +1716,7 @@ MUX_RESULT CEvaluator::Eval(dbref executor, dbref caller, dbref enactor,
 
     // Evaluate into an LBUF, then copy to the caller's buffer.
     //
-    UTF8 buf[LBUF_SIZE];
+    LBuf buf = LBuf_Src("EvalExpr");
     UTF8 *bufc = buf;
     size_t nExpr = strlen((const char *)pExpr);
     mux_exec(pExpr, nExpr, buf, &bufc, executor, caller, enactor,
@@ -2441,7 +2441,7 @@ MUX_RESULT CHelpSystem::LookupTopic(dbref executor, int iHelpfile,
 
     // help_helper expects a mutable topic argument.
     //
-    UTF8 topic_buf[LBUF_SIZE];
+    LBuf topic_buf = LBuf_Src("LookupTopic");
     mux_strncpy(topic_buf, pTopic, LBUF_SIZE - 1);
 
     help_helper(executor, iHelpfile, topic_buf, buff, &bufc);
