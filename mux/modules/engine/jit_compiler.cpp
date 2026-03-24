@@ -174,15 +174,26 @@ static bool tier2_allowed(const std::string &mux_name) {
         "STRCAT",
         "SPACE",
 
-        // Blocked — rv64_f* math: infrastructure in place (dtoa.c in blob,
-        // v2 blob format with BSS), but semantic parity not yet validated.
-        // FDIV returns #-1 vs server's Inf, ROUND uses different algorithm,
-        // POWER returns "0" for non-integer exponents.
-        // Enable individually after parity testing.
+        // Tier 2 math — MATH_WRAP transcendentals.
+        // These are simple strtod → libm → fval wrappers, semantics-
+        // matched to the server by construction.
         //
-        // "ADD", "SUB", "MUL", "FDIV", "MOD", "ABS", "SIGN",
-        // "MIN", "MAX", "SQRT", "ROUND", "TRUNC", "CEIL", "FLOOR",
-        // "INC", "DEC", "POWER",
+        "SIN", "COS", "TAN",
+        "ASIN", "ACOS", "ATAN", "ATAN2",
+        "EXP", "LOG", "LOG10",
+        "SQRT", "CEIL", "FLOOR",
+        "ABS",          // rv64_fabs: fabs() via MATH_WRAP_1
+        "FMOD",         // rv64_fmod: fmod() via MATH_WRAP_2
+        "POWER",        // rv64_power: pow() via MATH_WRAP_2
+
+        // Blocked — arithmetic with dual integer/float paths or
+        // special rounding (NearestPretty, AddDoubles, Inf/Ind).
+        // The type propagation pass handles numeric args natively;
+        // these only affect the string-arg ECALL fallback.
+        //
+        // "ADD", "SUB", "MUL", "FDIV", "MOD", "SIGN",
+        // "MIN", "MAX", "ROUND", "TRUNC",
+        // "INC", "DEC",
 
         // Blocked — rv64_* diverges from server:
         //   SORT       Shellsort vs DUCET collation
