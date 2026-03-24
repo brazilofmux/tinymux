@@ -202,12 +202,13 @@ static bool tier2_allowed(const std::string &mux_name) {
         "BEFORE", "AFTER",
         "DELETE", "ELEMENTS", "WORDPOS", "REMOVE",
         "REVWORDS",
-        "LNUM", "ISDBREF",
+        "LNUM",
         "LADD", "LMAX", "LMIN", "LAND", "LOR",
         "ISNUM", "ISINT",
         "DEC2HEX", "HEX2DEC",
 
         // Blocked — rv64_* diverges from server:
+        //   ISDBREF    format-only check vs database lookup
         //   SORT       Shellsort vs DUCET collation
         //   CHR/ORD       ASCII-only vs Unicode/grapheme-aware
         //   SECURE/SQUISH/TRANSLATE  byte-level vs Unicode
