@@ -536,6 +536,31 @@ void pretranslate_tier2(dbt_state_t *dbt) {
     reg_intrinsic(dbt, "co_strip_color",     DBT_EMIT_CO_3PP, reinterpret_cast<void *>(co_strip_color));
     reg_intrinsic(dbt, "co_visible_length",  DBT_EMIT_CO_2P,  reinterpret_cast<void *>(co_visible_length));
 
+    // FP math intrinsics — double→double via platform libm.
+    // Explicit casts resolve C++ overload ambiguity (float/double/long double).
+    //
+    using fn_d_d = double(*)(double);
+    using fn_dd_d = double(*)(double, double);
+
+    reg_intrinsic(dbt, "sin",   DBT_EMIT_FP_D_D,  reinterpret_cast<void *>(static_cast<fn_d_d>(::sin)));
+    reg_intrinsic(dbt, "cos",   DBT_EMIT_FP_D_D,  reinterpret_cast<void *>(static_cast<fn_d_d>(::cos)));
+    reg_intrinsic(dbt, "tan",   DBT_EMIT_FP_D_D,  reinterpret_cast<void *>(static_cast<fn_d_d>(::tan)));
+    reg_intrinsic(dbt, "asin",  DBT_EMIT_FP_D_D,  reinterpret_cast<void *>(static_cast<fn_d_d>(::asin)));
+    reg_intrinsic(dbt, "acos",  DBT_EMIT_FP_D_D,  reinterpret_cast<void *>(static_cast<fn_d_d>(::acos)));
+    reg_intrinsic(dbt, "atan",  DBT_EMIT_FP_D_D,  reinterpret_cast<void *>(static_cast<fn_d_d>(::atan)));
+    reg_intrinsic(dbt, "exp",   DBT_EMIT_FP_D_D,  reinterpret_cast<void *>(static_cast<fn_d_d>(::exp)));
+    reg_intrinsic(dbt, "log",   DBT_EMIT_FP_D_D,  reinterpret_cast<void *>(static_cast<fn_d_d>(::log)));
+    reg_intrinsic(dbt, "log10", DBT_EMIT_FP_D_D,  reinterpret_cast<void *>(static_cast<fn_d_d>(::log10)));
+    reg_intrinsic(dbt, "ceil",  DBT_EMIT_FP_D_D,  reinterpret_cast<void *>(static_cast<fn_d_d>(::ceil)));
+    reg_intrinsic(dbt, "floor", DBT_EMIT_FP_D_D,  reinterpret_cast<void *>(static_cast<fn_d_d>(::floor)));
+    reg_intrinsic(dbt, "fabs",  DBT_EMIT_FP_D_D,  reinterpret_cast<void *>(static_cast<fn_d_d>(::fabs)));
+
+    // FP math intrinsics — (double,double)→double via platform libm.
+    //
+    reg_intrinsic(dbt, "pow",   DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::pow)));
+    reg_intrinsic(dbt, "atan2", DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::atan2)));
+    reg_intrinsic(dbt, "fmod",  DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::fmod)));
+
     // Pre-translate all intrinsic stubs into the cache BEFORE any
     // function pretranslation.  Intrinsics are leaf functions (strlen,
     // memcpy, sitoa, co_* wrappers) that blob functions call internally.

@@ -670,6 +670,83 @@ static void emit_stub_memswap(emit_t *e) {
     emit_intrinsic_return(e);
 }
 
+// ---- FP intrinsic stubs ----
+//
+// For double→double functions (sin, cos, etc.):
+//   Load guest fa0 (f[10]) into host xmm0.
+//   Call the host libm function.
+//   Store xmm0 result back to guest fa0.
+//
+// For (double,double)→double functions (pow, atan2, fmod):
+//   Load guest fa0 (f[10]) into host xmm0.
+//   Load guest fa1 (f[11]) into host xmm1.
+//   Call the host libm function.
+//   Store xmm0 result back to guest fa0.
+//
+// Guest FP register fa0 = f[10], offset = CTX_FP_OFF + 10*8 = 608.
+// Guest FP register fa1 = f[11], offset = CTX_FP_OFF + 11*8 = 616.
+//
+static constexpr int CTX_FA0_OFF = CTX_FP_OFF + 10 * 8;  // 608
+static constexpr int CTX_FA1_OFF = CTX_FP_OFF + 11 * 8;  // 616
+
+// Helper: movsd xmm_reg, [rbx + offset]
+//
+static void emit_load_ctx_fp(emit_t *e, int xmm_reg, int ctx_off) {
+    // F2 0F 10 /r  (movsd xmm, m64)
+    // With RBX as base: mod=10 (disp32), rm=011 (rbx)
+    emit_byte(e, 0xF2);
+    if (xmm_reg >= 8) {
+        emit_byte(e, rex(0, (xmm_reg >> 3) & 1, 0, 0));
+    }
+    emit_byte(e, 0x0F);
+    emit_byte(e, 0x10);
+    emit_byte(e, modrm(0x02, xmm_reg & 7, X64_RBX));
+    emit_u32(e, ctx_off);
+}
+
+// Helper: movsd [rbx + offset], xmm_reg
+//
+static void emit_store_ctx_fp(emit_t *e, int ctx_off, int xmm_reg) {
+    // F2 0F 11 /r  (movsd m64, xmm)
+    emit_byte(e, 0xF2);
+    if (xmm_reg >= 8) {
+        emit_byte(e, rex(0, (xmm_reg >> 3) & 1, 0, 0));
+    }
+    emit_byte(e, 0x0F);
+    emit_byte(e, 0x11);
+    emit_byte(e, modrm(0x02, xmm_reg & 7, X64_RBX));
+    emit_u32(e, ctx_off);
+}
+
+// double fn(double): sin, cos, tan, asin, acos, atan, exp, log, etc.
+//
+static void emit_stub_fp_d_d(void *ev, void *fn) {
+    emit_t *e = static_cast<emit_t *>(ev);
+    emit_stub_prologue(e);
+
+    emit_load_ctx_fp(e, 0, CTX_FA0_OFF);   // movsd xmm0, [rbx+608]
+    emit_call_host(e, fn);
+    emit_store_ctx_fp(e, CTX_FA0_OFF, 0);   // movsd [rbx+608], xmm0
+
+    emit_stub_epilogue(e);
+    emit_intrinsic_return(e);
+}
+
+// double fn(double, double): pow, atan2, fmod
+//
+static void emit_stub_fp_dd_d(void *ev, void *fn) {
+    emit_t *e = static_cast<emit_t *>(ev);
+    emit_stub_prologue(e);
+
+    emit_load_ctx_fp(e, 0, CTX_FA0_OFF);   // movsd xmm0, [rbx+608]
+    emit_load_ctx_fp(e, 1, CTX_FA1_OFF);   // movsd xmm1, [rbx+616]
+    emit_call_host(e, fn);
+    emit_store_ctx_fp(e, CTX_FA0_OFF, 0);   // movsd [rbx+608], xmm0
+
+    emit_stub_epilogue(e);
+    emit_intrinsic_return(e);
+}
+
 // ---- Generic co_* intrinsic stub emitter ----
 //
 // Emits a native CALL to the host co_* function.  Arguments are in
@@ -889,6 +966,8 @@ static generic_emitter_fn s_emitter_table[] = {
     emit_stub_co_3pp,      // DBT_EMIT_CO_3PP
     emit_stub_co_7pp,      // DBT_EMIT_CO_7PP
     emit_stub_co_8ppp,     // DBT_EMIT_CO_8PPP
+    emit_stub_fp_d_d,      // DBT_EMIT_FP_D_D
+    emit_stub_fp_dd_d,     // DBT_EMIT_FP_DD_D
 };
 
 void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,

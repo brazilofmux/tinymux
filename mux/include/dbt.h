@@ -210,6 +210,12 @@ enum dbt_emitter_id {
     //
     DBT_EMIT_CO_7PP,         // 7 args: a0=ptr, a1=ptr, a2-a6=int
     DBT_EMIT_CO_8PPP,        // 8 args: a0=ptr, a1=ptr, a3=ptr, rest=int
+
+    // FP intrinsics — double→double and (double,double)→double.
+    // Guest fa0/fa1 ↔ host xmm0/xmm1, call platform libm.
+    //
+    DBT_EMIT_FP_D_D,         // double fn(double): sin, cos, tan, etc.
+    DBT_EMIT_FP_DD_D,        // double fn(double, double): pow, atan2, fmod
 };
 
 void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,
