@@ -19,12 +19,58 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+
+#if defined(_WIN32)
+#include <io.h>
+#include <windows.h>
+#else
 #include <unistd.h>
 #include <sys/socket.h>
+#endif
 
 static volatile sig_atomic_t g_shutdown = 0;
 static volatile sig_atomic_t g_reload = 0;
 static volatile sig_atomic_t g_dumpStatus = 0;
+
+#if defined(_WIN32)
+
+static BOOL WINAPI ConsoleCtrlHandler(DWORD ctrlType) {
+    switch (ctrlType) {
+        case CTRL_C_EVENT:
+        case CTRL_BREAK_EVENT:
+        case CTRL_CLOSE_EVENT:
+            g_shutdown = 1;
+            return TRUE;
+    }
+    return FALSE;
+}
+
+static void installSignals() {
+    SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
+}
+
+// Read a password from the console without echoing.
+static std::string readPassword(const char* prompt) {
+    fprintf(stderr, "%s", prompt);
+    HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD oldMode;
+    GetConsoleMode(hStdin, &oldMode);
+    SetConsoleMode(hStdin, oldMode & ~ENABLE_ECHO_INPUT);
+
+    char buf[256];
+    DWORD nRead = 0;
+    ReadConsoleA(hStdin, buf, sizeof(buf) - 1, &nRead, nullptr);
+    SetConsoleMode(hStdin, oldMode);
+    fprintf(stderr, "\n");
+
+    // Strip trailing \r\n
+    while (nRead > 0 && (buf[nRead - 1] == '\n' || buf[nRead - 1] == '\r')) {
+        nRead--;
+    }
+    return std::string(buf, nRead);
+}
+
+#else // POSIX
 
 static void signalHandler(int sig) {
     switch (sig) {
@@ -56,6 +102,13 @@ static void installSignals() {
     sa.sa_handler = SIG_IGN;
     sigaction(SIGPIPE, &sa, nullptr);
 }
+
+static std::string readPassword(const char* prompt) {
+    char* pw = getpass(prompt);
+    return pw ? std::string(pw) : std::string();
+}
+
+#endif // _WIN32
 
 static void usage(const char* prog) {
     fprintf(stderr,
@@ -139,8 +192,8 @@ int main(int argc, char* argv[]) {
 
     // Handle --create-admin
     if (!createAdmin.empty()) {
-        char* pw = getpass("Password: ");
-        if (!pw || strlen(pw) == 0) {
+        std::string pw = readPassword("Password: ");
+        if (pw.empty()) {
             fprintf(stderr, "HYDRA: password required\n");
             return 1;
         }
@@ -330,8 +383,13 @@ int main(int argc, char* argv[]) {
             case ganl::IoEventType::Read: {
                 ganl::ConnectionHandle conn = ev.connection;
                 char buf[4096];
+#if defined(_WIN32)
+                int nr = recv(static_cast<SOCKET>(conn), buf,
+                              static_cast<int>(sizeof(buf)), 0);
+#else
                 ssize_t nr = recv(static_cast<int>(conn), buf,
                                   sizeof(buf), 0);
+#endif
                 if (nr <= 0) {
                     if (sessionMgr.isBackDoor(conn)) {
                         sessionMgr.onBackDoorClose(conn);

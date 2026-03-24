@@ -8,7 +8,6 @@
 #include "grpc_web.h"
 #include "hydra.pb.h"
 #endif
-#include <sys/socket.h>
 #include <cstring>
 #include <algorithm>
 

@@ -56,7 +56,11 @@ void logMessage(LogLevel level, const char* fmt, ...) {
 
     time_t now = time(nullptr);
     struct tm tm;
+#if defined(_WIN32)
+    _localtime64_s(&tm, &now);
+#else
     localtime_r(&now, &tm);
+#endif
 
     char timebuf[32];
     strftime(timebuf, sizeof(timebuf), "%Y-%m-%d %H:%M:%S", &tm);

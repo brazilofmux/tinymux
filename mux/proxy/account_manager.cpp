@@ -3,17 +3,33 @@
 #include "hydra_log.h"
 #include "scrollback.h"
 #include <sqlite3.h>
-#include <crypt.h>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <random>
+
+#if defined(_WIN32)
+#include <io.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <windows.h>
+#else
+#include <crypt.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#endif
 
-// Generate a random salt string for crypt(3) SHA-512.
+// ---- Password hashing ----
+//
+// On Unix, we use crypt_r(3) with SHA-512 ($6$) for compatibility with
+// existing databases.  On Windows (which lacks crypt_r), we use
+// PBKDF2-HMAC-SHA256 with a $pbkdf2$ prefix.  The verify path checks
+// the prefix to pick the right algorithm.
+
 static std::string generateSalt() {
     static const char charset[] =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789./";
@@ -21,7 +37,11 @@ static std::string generateSalt() {
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dist(0, sizeof(charset) - 2);
 
+#if defined(_WIN32)
+    std::string salt = "$pbkdf2$";
+#else
     std::string salt = "$6$";  // SHA-512
+#endif
     for (int i = 0; i < 16; i++) {
         salt += charset[dist(gen)];
     }
@@ -29,21 +49,61 @@ static std::string generateSalt() {
     return salt;
 }
 
+static std::string bytesToHex(const uint8_t* data, size_t len) {
+    std::string out;
+    out.reserve(len * 2);
+    for (size_t i = 0; i < len; i++) {
+        char buf[3];
+        snprintf(buf, sizeof(buf), "%02x", data[i]);
+        out += buf;
+    }
+    return out;
+}
+
 static std::string hashPassword(const std::string& password,
                                 const std::string& salt) {
+#if defined(_WIN32)
+    // PBKDF2-HMAC-SHA256, 100000 iterations, 32-byte output
+    // Format: $pbkdf2$<salt>$<hex-hash>
+    constexpr int iterations = 100000;
+    uint8_t derived[32];
+    // Extract the raw salt between the second and third '$'
+    size_t s1 = salt.find('$', 1);
+    size_t s2 = salt.find('$', s1 + 1);
+    std::string rawSalt = salt.substr(s1 + 1, s2 - s1 - 1);
+
+    if (!PKCS5_PBKDF2_HMAC(password.c_str(), static_cast<int>(password.size()),
+                            reinterpret_cast<const uint8_t*>(rawSalt.c_str()),
+                            static_cast<int>(rawSalt.size()),
+                            iterations, EVP_sha256(), sizeof(derived), derived)) {
+        return "";
+    }
+    return salt + bytesToHex(derived, sizeof(derived));
+#else
     struct crypt_data cd;
     memset(&cd, 0, sizeof(cd));
     char* result = crypt_r(password.c_str(), salt.c_str(), &cd);
     if (!result) return "";
     return result;
+#endif
 }
 
 // Derive a scroll-back key from the password and a salt.
-// For Phase 1, this is a SHA-512 crypt with a different salt.
-// The key material is the hash bytes — not cryptographically ideal
-// but functional until we add proper Argon2id + AEAD.
 static std::vector<uint8_t> deriveScrollbackKey(
     const std::string& password, const std::string& sbKeySalt) {
+#if defined(_WIN32)
+    // Use PBKDF2-HMAC-SHA256 for key derivation on Windows
+    constexpr int iterations = 100000;
+    std::vector<uint8_t> key(32);
+    if (!PKCS5_PBKDF2_HMAC(password.c_str(), static_cast<int>(password.size()),
+                            reinterpret_cast<const uint8_t*>(sbKeySalt.c_str()),
+                            static_cast<int>(sbKeySalt.size()),
+                            iterations, EVP_sha256(),
+                            static_cast<int>(key.size()), key.data())) {
+        return {};
+    }
+    return key;
+#else
     struct crypt_data cd;
     memset(&cd, 0, sizeof(cd));
     std::string salt = "$6$" + sbKeySalt + "$";
@@ -58,6 +118,7 @@ static std::vector<uint8_t> deriveScrollbackKey(
         key[i] = static_cast<uint8_t>(hash[hlen - 32 + i]);
     }
     return key;
+#endif
 }
 
 AccountManager::AccountManager() {
@@ -466,7 +527,8 @@ static std::vector<uint8_t> buildCredentialAAD(uint32_t accountId,
 
 bool AccountManager::loadMasterKey(const std::string& path,
                                    std::string& errorMsg) {
-    // Check file permissions — warn if world-readable
+#if !defined(_WIN32)
+    // Check file permissions — warn if world-readable (POSIX only)
     struct stat st;
     if (stat(path.c_str(), &st) == 0) {
         if (st.st_mode & S_IROTH) {
@@ -478,6 +540,7 @@ bool AccountManager::loadMasterKey(const std::string& path,
                      "Run: chmod 600 %s", path.c_str(), path.c_str());
         }
     }
+#endif
 
     FILE* f = fopen(path.c_str(), "rb");
     if (!f) {
@@ -540,7 +603,30 @@ bool AccountManager::generateMasterKey(const std::string& path,
     masterKey_.resize(AEAD_KEY_LEN);
     randomBytes(masterKey_.data(), AEAD_KEY_LEN);
 
-    // Write with restrictive permissions (owner-only)
+    // Write atomically — fail if file already exists.
+#if defined(_WIN32)
+    HANDLE hFile = CreateFileA(path.c_str(), GENERIC_WRITE, 0, nullptr,
+                               CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (hFile == INVALID_HANDLE_VALUE) {
+        if (GetLastError() == ERROR_FILE_EXISTS) {
+            errorMsg = "master key file already exists: " + path;
+        } else {
+            errorMsg = "cannot create master key file: error "
+                     + std::to_string(GetLastError());
+        }
+        masterKey_.clear();
+        return false;
+    }
+    DWORD written = 0;
+    BOOL ok = WriteFile(hFile, masterKey_.data(), AEAD_KEY_LEN, &written, nullptr);
+    CloseHandle(hFile);
+    if (!ok || written != AEAD_KEY_LEN) {
+        errorMsg = "failed to write master key file";
+        DeleteFileA(path.c_str());
+        masterKey_.clear();
+        return false;
+    }
+#else
     int fd = open(path.c_str(), O_WRONLY | O_CREAT | O_EXCL, 0600);
     if (fd < 0) {
         if (errno == EEXIST) {
@@ -561,9 +647,10 @@ bool AccountManager::generateMasterKey(const std::string& path,
         masterKey_.clear();
         return false;
     }
+#endif
 
     masterKeyId_ = computeKeyId(masterKey_);
-    LOG_INFO("Generated new master key at %s (key_id=%s, mode 0600)",
+    LOG_INFO("Generated new master key at %s (key_id=%s)",
              path.c_str(), masterKeyId_.c_str());
     return true;
 }
