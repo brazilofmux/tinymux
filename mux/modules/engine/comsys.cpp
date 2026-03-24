@@ -2546,11 +2546,11 @@ void do_createchannel(const dbref executor, const dbref caller, dbref enactor, c
         pNameNoANSI = strip_color(Buffer, &nNameNoANSI);
     }
 
-    // TODO: Truncation needs to be fixed.
-    //
     if (nNameNoANSI > MAX_CHANNEL_LEN)
     {
-        nNameNoANSI = MAX_CHANNEL_LEN;
+        raw_notify(executor, T("Channel name is too long."));
+        delete newchannel;
+        return;
     }
 
     memcpy(newchannel->name, pNameNoANSI, nNameNoANSI);

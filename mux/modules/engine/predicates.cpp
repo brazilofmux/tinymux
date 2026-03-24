@@ -1257,8 +1257,21 @@ void do_delcommand
             }
             else
             {
-                // TODO: Delete everything related to 'old'.
+                // No backup command to restore. Remove all hash
+                // entries that still reference 'old'.
                 //
+                mudstate.command_htab.erase(std::vector<UTF8>(p__Name, p__Name + n__Name));
+                for (auto it2 = mudstate.command_htab.begin(); it2 != mudstate.command_htab.end(); )
+                {
+                    if (it2->second == old)
+                    {
+                        it2 = mudstate.command_htab.erase(it2);
+                    }
+                    else
+                    {
+                        ++it2;
+                    }
+                }
             }
             MEMFREE(old->cmdname);
             old->cmdname = nullptr;

@@ -1375,20 +1375,41 @@ static int add_helpfile(dbref player, UTF8 *cmd, UTF8 *str, bool bEval)
         cmdp->perms = CA_PUBLIC;
         cmdp->switches = nullptr;
 
-        // TODO: If a command is deleted with one or both of the two
-        // erase() calls below, what guarantee do we have that parts
-        // of the command weren't dynamically allocated.  This might leak
-        // memory.
+        // Free any previously-allocated command at the same key.
         //
         const UTF8 *p = cmdp->cmdname;
         size_t nLen = strlen(reinterpret_cast<const char *>(p));
-        mudstate.command_htab.erase(std::vector<UTF8>(p, p + nLen));
-        mudstate.command_htab.emplace(std::vector<UTF8>(p, p + nLen), cmdp);
+        std::vector<UTF8> key(p, p + nLen);
+        auto it = mudstate.command_htab.find(key);
+        if (it != mudstate.command_htab.end())
+        {
+            CMDENT *old = static_cast<CMDENT *>(it->second);
+            if (old && (old->flags & CEF_ALLOC))
+            {
+                MEMFREE(old->cmdname);
+                old->cmdname = nullptr;
+                MEMFREE(old);
+            }
+        }
+        mudstate.command_htab.erase(key);
+        mudstate.command_htab.emplace(key, cmdp);
 
         p = tprintf(T("__%s"), cmdp->cmdname);
         nLen = strlen(reinterpret_cast<const char *>(p));
-        mudstate.command_htab.erase(std::vector<UTF8>(p, p + nLen));
-        mudstate.command_htab.emplace(std::vector<UTF8>(p, p + nLen), cmdp);
+        std::vector<UTF8> key2(p, p + nLen);
+        it = mudstate.command_htab.find(key2);
+        if (it != mudstate.command_htab.end())
+        {
+            CMDENT *old = static_cast<CMDENT *>(it->second);
+            if (old && (old->flags & CEF_ALLOC))
+            {
+                MEMFREE(old->cmdname);
+                old->cmdname = nullptr;
+                MEMFREE(old);
+            }
+        }
+        mudstate.command_htab.erase(key2);
+        mudstate.command_htab.emplace(key2, cmdp);
     }
     else
     {

@@ -580,9 +580,8 @@ static void look_exits(dbref player, dbref loc, const UTF8 *exit_name)
                     /* Copy the exit name into 'buff' */
                     if (Html(player))
                     {
-                        /* XXX The exit name needs to be HTML escaped. */
                         safe_str(T("<a xch_cmd=\""), buff, &e);
-                        safe_str(buff1, buff, &e);
+                        html_escape(buff1, buff, &e);
                         safe_str(T("\"> "), buff, &e);
                         html_escape(buff1, buff, &e);
                         safe_str(T(" </a>"), buff, &e);

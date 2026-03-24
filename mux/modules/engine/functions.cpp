@@ -14540,11 +14540,11 @@ UTF8 *MakeCanonicalUserFunctionName(const UTF8 *pName, size_t *pnName, bool *pbV
     UTF8 *pNameStripped = strip_color(pName, &nLen);
     UTF8 *pCased = mux_strupr(pNameStripped, nLen);
 
-    // TODO: Fix truncation.
-    //
     if (sizeof(Buffer)-1 < nLen)
     {
-        nLen = sizeof(Buffer)-1;
+        *pnName = 0;
+        *pbValid = false;
+        return nullptr;
     }
     memcpy(Buffer, pCased, nLen);
     Buffer[nLen] = '\0';
