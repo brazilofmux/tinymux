@@ -31,14 +31,7 @@ Implement the framework for evaluating softcode on multiple cores simultaneously
 - **File:** `driver.cpp:384`
 - **Issue:** Need to create a proper platform interface abstraction for the driver to better separate OS-specific logic from core server lifecycle management.
 
-### 4. Output Queue Threshold
-
-- **File:** `net.cpp:144`
-- **Issue:** The threshold for spending time to push output when the queue is full might be too high, potentially causing latency. It needs tuning and possibly a better way to predict if a write would be productive.
-
-## Other Engine Issues
-
-### 5. Session/Driver Separation
+### 4. Session/Driver Separation
 
 - **File:** `session.cpp:339`
 - **Issue:** `access_list` currently lives in the driver, but session-related access checks might need a better abstraction or to be moved.
