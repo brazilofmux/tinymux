@@ -891,15 +891,20 @@ static FUNCTION(fun_timefmt)
     {
         ltaUTC.GetUTC();
     }
+    // Query timezone info from cache (offset, DST, and name)
+    //
+    bool bDST;
+    std::string strTZName;
+    CLinearTimeDelta ltd = TimezoneCache::queryLocalOffsetAtUTC(ltaUTC, &bDST, &strTZName);
+
     lta = ltaUTC;
-    lta.UTC2Local();
+    lta += ltd;
 
     FIELDEDTIME ft;
     lta.ReturnFields(&ft);
 
-    // Calculate Time Zone Info
+    // Calculate Time Zone offset components
     //
-    CLinearTimeDelta ltd = lta - ltaUTC;
     int iTZSecond = ltd.ReturnSeconds();
     int iTZSign;
     if (iTZSecond < 0)
@@ -1202,15 +1207,9 @@ static FUNCTION(fun_timefmt)
             break;
 
         case 'Z': // $Z - Time zone name
+            if (!strTZName.empty())
             {
-                time_t t = static_cast<time_t>(ltaUTC.ReturnSeconds());
-                struct tm tmLocal;
-                if (localtime_r(&t, &tmLocal))
-                {
-                    char tzName[64];
-                    strftime(tzName, sizeof(tzName), "%Z", &tmLocal);
-                    safe_str(reinterpret_cast<const UTF8 *>(tzName), buff, bufc);
-                }
+                safe_str(reinterpret_cast<const UTF8 *>(strTZName.c_str()), buff, bufc);
             }
             break;
 

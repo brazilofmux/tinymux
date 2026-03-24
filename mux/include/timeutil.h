@@ -12,6 +12,7 @@
 #include <memory>
 #include <atomic>
 #include <cstdint>
+#include <string>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -280,7 +281,7 @@ const CLinearTimeDelta time_1w    = FACTOR_100NS_PER_WEEK;
 
 namespace TimezoneCache {
     LIBMUX_API void initialize(void);
-    LIBMUX_API CLinearTimeDelta queryLocalOffsetAtUTC(const CLinearTimeAbsolute& utc_lta, bool* is_dst);
+    LIBMUX_API CLinearTimeDelta queryLocalOffsetAtUTC(const CLinearTimeAbsolute& utc_lta, bool* is_dst, std::string* tz_name = nullptr);
     LIBMUX_API CLinearTimeDelta getCurrentLocalOffset(bool* is_dst);
 }
 

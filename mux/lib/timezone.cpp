@@ -47,6 +47,7 @@ namespace TimezoneCache {
             CLinearTimeDelta offset_ltd;
             int touched_count; // For LRU
             bool is_dst;
+            std::string tz_name;
 
             // Need comparison operators for sorting/lower_bound
             // Compare OffsetEntry < CLinearTimeAbsolute
@@ -483,7 +484,7 @@ namespace TimezoneCache {
 
 
         // Updates the cache with a new data point (lta, offset, is_dst)
-        void update_offset_table(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& offset, bool is_dst)
+        void update_offset_table(const CLinearTimeAbsolute& lta, const CLinearTimeDelta& offset, bool is_dst, const std::string& tz_name)
         {
             CacheState& state = getState();
             // Lock the mutex for cache modification
@@ -497,7 +498,7 @@ namespace TimezoneCache {
             // Case 1: Found an existing entry that covers this time point
             if (it != state.offset_table.end() && lta >= it->start_lta && lta <= it->end_lta) {
                 // Check for consistency. If data matches, just update touch count.
-                if (it->offset_ltd == offset && it->is_dst == is_dst) {
+                if (it->offset_ltd == offset && it->is_dst == is_dst && it->tz_name == tz_name) {
                     it->touched_count = state.touch_counter;
                     return; // Cache hit, data consistent
                 }
@@ -577,7 +578,7 @@ namespace TimezoneCache {
                 auto insert_pos = std::lower_bound(state.offset_table.begin(), state.offset_table.end(), lta);
 
                 // Insert the new entry as a single point interval [lta, lta]
-                state.offset_table.insert(insert_pos, { lta, lta, offset, state.touch_counter, is_dst });
+                state.offset_table.insert(insert_pos, { lta, lta, offset, state.touch_counter, is_dst, tz_name });
 
                 // After insertion, could we now merge this new entry with neighbors?
                 // This logic can get complex. The original code handled merging after extending.
@@ -652,6 +653,11 @@ namespace TimezoneCache {
 
             *is_dst = (local_tm.tm_isdst > 0);
 
+            // Capture timezone name from the localtime result
+            char tz_buf[64];
+            strftime(tz_buf, sizeof(tz_buf), "%Z", &local_tm);
+            std::string tz_name_str(tz_buf);
+
             // Calculate the offset: Local time represented by local_tm - UTC time represented by query_lta
             FIELDEDTIME ft_local;
             setFieldedTimeFromStructTm(&ft_local, &local_tm);
@@ -670,7 +676,7 @@ namespace TimezoneCache {
 
             // Update the cache with the result for the *original* utc_lta
             // Note: update_offset_table handles locking internally
-            update_offset_table(utc_lta, offset, *is_dst);
+            update_offset_table(utc_lta, offset, *is_dst, tz_name_str);
             return offset;
         }
 
@@ -684,12 +690,13 @@ namespace TimezoneCache {
     }
 
     // Query the local time offset from UTC at a specific UTC time point
-    CLinearTimeDelta queryLocalOffsetAtUTC(const CLinearTimeAbsolute& utc_lta, bool* is_dst)
+    CLinearTimeDelta queryLocalOffsetAtUTC(const CLinearTimeAbsolute& utc_lta, bool* is_dst, std::string* tz_name)
     {
         initialize(); // Ensure initialized (call_once handles subsequent calls)
 
         Detail::CacheState& state = Detail::getState();
         *is_dst = false; // Default
+        if (tz_name) tz_name->clear();
 
         // Handle times before the known lower bound (assume standard offset, no DST)
         if (utc_lta < state.lower_bound_lta) {
@@ -698,6 +705,7 @@ namespace TimezoneCache {
 
         CLinearTimeDelta offset_result;
         bool dst_result;
+        std::string name_result;
         bool found_in_cache = false;
 
         { // Scope for cache read lock
@@ -710,6 +718,7 @@ namespace TimezoneCache {
                 // Cache hit!
                 offset_result = it->offset_ltd;
                 dst_result = it->is_dst;
+                name_result = it->tz_name;
                 it->touched_count = state.touch_counter; // Update LRU counter on hit
                 found_in_cache = true;
             }
@@ -717,6 +726,7 @@ namespace TimezoneCache {
 
         if (found_in_cache) {
             *is_dst = dst_result;
+            if (tz_name) *tz_name = name_result;
             return offset_result;
         }
         else {
@@ -724,19 +734,27 @@ namespace TimezoneCache {
             // This internal call will perform the localtime query and update the cache (including locking).
             offset_result = Detail::queryLocalOffsetAt_Internal(utc_lta, is_dst);
 
-            // Optional: Probing nearby times (as in previous version) can be added here
-            // if desired, calling Detail::queryLocalOffsetAt_Internal for probe points.
-            // Ensure probe points are within lower_bound_lta before calling.
-            /*
+            // Probe nearby times to pre-populate the cache so that subsequent
+            // queries within this time range are cache hits.  Without this,
+            // the cache stores a point interval [lta, lta] and the very next
+            // second is another miss.
+            //
             bool dont_care_dst;
             CLinearTimeAbsolute probe_before = utc_lta - Detail::MIN_MERGE_INTERVAL;
             if (probe_before >= state.lower_bound_lta) {
-                 Detail::queryLocalOffsetAt_Internal(probe_before, &dont_care_dst);
+                Detail::queryLocalOffsetAt_Internal(probe_before, &dont_care_dst);
             }
             CLinearTimeAbsolute probe_after = utc_lta + Detail::MIN_MERGE_INTERVAL;
-            // queryLocalOffsetAt_Internal handles upper bound and mapping
             Detail::queryLocalOffsetAt_Internal(probe_after, &dont_care_dst);
-            */
+
+            // Read the timezone name back from the newly-cached entry
+            if (tz_name) {
+                std::lock_guard<std::mutex> lock(state.cache_mutex);
+                auto it = Detail::find_entry_iter(utc_lta);
+                if (it != state.offset_table.end() && utc_lta >= it->start_lta && utc_lta <= it->end_lta) {
+                    *tz_name = it->tz_name;
+                }
+            }
 
             return offset_result;
         }
