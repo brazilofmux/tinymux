@@ -13,6 +13,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "ast.h"
 
 extern "C" {
 #include "color_ops.h"
@@ -361,7 +362,12 @@ static int u_comp(ucomp_context *pctx, const void *s1, const void *s2)
     mux_strncpy(tbuf, pctx->buff, LBUF_SIZE-1);
     UTF8 *result = alloc_lbuf("u_comp");
     UTF8 *bp = result;
-    mux_exec(tbuf, LBUF_SIZE-1, result, &bp, pctx->executor, pctx->caller, pctx->enactor,
+
+    // Use ast_exec (not mux_exec) to bypass the JIT compiler.
+    // The JIT does not support dynamically-provided cargs — it would
+    // use the outer caller's cargs instead of the comparison elements.
+    //
+    ast_exec(tbuf, LBUF_SIZE-1, result, &bp, pctx->executor, pctx->caller, pctx->enactor,
              AttrTrace(pctx->aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), elems, 2);
     *bp = '\0';
     int n = mux_atol(result);
