@@ -444,6 +444,18 @@ uint64_t tier2_lookup(const std::string &mux_name) {
     return 0;
 }
 
+// Look up a raw blob symbol by name (e.g., "sin", "cos", "rv64_strtod").
+// Bypasses the tier2_allowed() gate — used for direct FP intrinsic calls
+// from the type-propagated lowering path.
+// Returns guest address, or 0 if not found.
+//
+uint64_t tier2_sym_addr(const char *blob_name) {
+    if (!s_tier2.loaded) return 0;
+    auto it = s_tier2.funcs.find(blob_name);
+    if (it != s_tier2.funcs.end()) return it->second.guest_addr;
+    return 0;
+}
+
 // Pre-translate all Tier 2 blob entry points so that superblocks
 // can use native CALL continuation for Tier 2 function calls.
 // Called after dbt_init/dbt_reset, before dbt_run.
@@ -694,6 +706,13 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     s_inline_depth = 0;
 
     h.result = hir_lower_node(h, rc, ast.get());
+
+    // If the final result is TY_FLOAT, insert FTOA to convert to
+    // string for MUX output.  This is the boundary where FP values
+    // escape to string context.
+    if (h.result >= 0 && h.ty[h.result] == TY_FLOAT) {
+        h.result = h.emit(HIR_FTOA, TY_STRING, h.result);
+    }
 
     s_compile_deps = nullptr;
 
@@ -2387,6 +2406,18 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             memcpy(out, buf, len);
             out[len] = '\0';
         }
+        return -1;
+    }
+
+    case ECALL_ATOF: {
+        // a0 = guest address of string → store double in fa0 (f[10]).
+        uint64_t str_addr = ctx->x[10];
+        double val = 0.0;
+        if (str_addr < ec->memory_size - 1) {
+            const char *s = reinterpret_cast<const char *>(ec->memory + str_addr);
+            val = mux_atof(reinterpret_cast<const UTF8 *>(s));
+        }
+        memcpy(&ctx->f[10], &val, 8);
         return -1;
     }
 

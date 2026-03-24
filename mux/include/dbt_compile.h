@@ -130,6 +130,7 @@ extern std::string s_blob_version;
 
 // Tier 2 functions used across translation units.
 uint64_t tier2_lookup(const std::string &mux_name);
+uint64_t tier2_sym_addr(const char *blob_name);
 void tier2_install(std::vector<uint8_t> &memory, uint64_t guest_base);
 void pretranslate_tier2(struct dbt_state_t *dbt);
 

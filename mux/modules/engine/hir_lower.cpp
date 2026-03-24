@@ -469,6 +469,58 @@ bool returns_int(const std::string &upper) {
         || upper == "STRMATCH" || upper == "MEMBER";
 }
 
+// Functions known to always return floating-point strings.
+//
+static bool returns_float(const std::string &upper) {
+    return upper == "SIN" || upper == "COS" || upper == "TAN"
+        || upper == "ASIN" || upper == "ACOS" || upper == "ATAN"
+        || upper == "ATAN2" || upper == "EXP" || upper == "LOG"
+        || upper == "LOG10" || upper == "SQRT" || upper == "POWER"
+        || upper == "FDIV" || upper == "FMOD"
+        || upper == "CEIL" || upper == "FLOOR"
+        || upper == "ROUND" || upper == "TRUNC"
+        || upper == "PI" || upper == "E";
+}
+
+// Unary FP math functions: map MUX name → blob symbol name.
+// These are the raw libm stubs in the Tier 2 blob that the DBT
+// intercepts and executes natively via registered intrinsics.
+//
+struct fp_math_entry {
+    const char *mux_name;
+    const char *blob_sym;
+};
+
+static const fp_math_entry s_fp_unary[] = {
+    { "SIN",   "sin"   },
+    { "COS",   "cos"   },
+    { "TAN",   "tan"   },
+    { "ASIN",  "asin"  },
+    { "ACOS",  "acos"  },
+    { "ATAN",  "atan"  },
+    { "EXP",   "exp"   },
+    { "LOG",   "log"   },
+    { "LOG10", "log10" },
+    { "SQRT",  "sqrt"  },
+    { "CEIL",  "ceil"  },
+    { "FLOOR", "floor" },
+    { nullptr, nullptr }
+};
+
+static const fp_math_entry s_fp_binary[] = {
+    { "POWER", "pow"   },
+    { "ATAN2", "atan2" },
+    { "FMOD",  "fmod"  },
+    { nullptr, nullptr }
+};
+
+// Look up the blob address for a direct FP intrinsic call.
+// Returns 0 if the blob is not loaded or the symbol is missing.
+//
+static uint64_t fp_intrinsic_addr(const char *blob_sym) {
+    return tier2_sym_addr(blob_sym);
+}
+
 // (Old compile_node chain removed — replaced by HIR pipeline below.)
 // ===============================================================
 // HIR LOWERING: AST → HIR
@@ -626,10 +678,12 @@ static int hir_lower_sequence(hir_program &h, rv_compiler &rc,
         return h.emit_sconst(addr, merged);
     }
 
-    // Mixed: emit STRCAT.  Convert any ints to strings first.
+    // Mixed: emit STRCAT.  Convert any ints/floats to strings first.
     for (auto &ci : children) {
         if (h.ty[ci] == TY_INT) {
             ci = h.emit(HIR_ITOA, TY_STRING, ci);
+        } else if (h.ty[ci] == TY_FLOAT) {
+            ci = h.emit(HIR_FTOA, TY_STRING, ci);
         }
     }
 
@@ -690,6 +744,8 @@ static int hir_lower_trimmed(hir_program &h, rv_compiler &rc,
         for (auto &p : parts) {
             if (h.ty[p] == TY_INT) {
                 p = h.emit(HIR_ITOA, TY_STRING, p);
+            } else if (h.ty[p] == TY_FLOAT) {
+                p = h.emit(HIR_FTOA, TY_STRING, p);
             }
         }
         int strcat_idx = engine_api_lookup("STRCAT");
@@ -728,6 +784,8 @@ static int hir_lower_argument(hir_program &h, rv_compiler &rc,
         for (auto &p : parts) {
             if (h.ty[p] == TY_INT) {
                 p = h.emit(HIR_ITOA, TY_STRING, p);
+            } else if (h.ty[p] == TY_FLOAT) {
+                p = h.emit(HIR_FTOA, TY_STRING, p);
             }
         }
         int strcat_idx = engine_api_lookup("STRCAT");
@@ -792,6 +850,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
             int arg = args[ai];
             if (h.ty[arg] == TY_INT) {
                 arg = h.emit(HIR_ITOA, TY_STRING, arg);
+            } else if (h.ty[arg] == TY_FLOAT) {
+                arg = h.emit(HIR_FTOA, TY_STRING, arg);
             }
             parts.push_back(arg);
         }
@@ -845,6 +905,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 int sval = val;
                 if (h.ty[sval] == TY_INT) {
                     sval = h.emit(HIR_ITOA, TY_STRING, sval);
+                } else if (h.ty[sval] == TY_FLOAT) {
+                    sval = h.emit(HIR_FTOA, TY_STRING, sval);
                 }
                 h.emit(HIR_SETQ_SYNC, TY_VOID, sval, -1, rn);
                 h.needs_jit = true;
@@ -870,6 +932,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 int sval = val;
                 if (h.ty[sval] == TY_INT) {
                     sval = h.emit(HIR_ITOA, TY_STRING, sval);
+                } else if (h.ty[sval] == TY_FLOAT) {
+                    sval = h.emit(HIR_FTOA, TY_STRING, sval);
                 }
                 h.emit(HIR_SETQ_SYNC, TY_VOID, sval, -1, rn);
                 h.needs_jit = true;
@@ -900,6 +964,9 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 int64_t v = static_cast<int64_t>(
                     mux_atol(u8(h.sval[cond])));
                 cond = h.emit_iconst(v);
+            } else if (h.ty[cond] == TY_FLOAT) {
+                // Float condition: truncate to int (nonzero = true).
+                cond = h.emit(HIR_FTOI, TY_INT, cond);
             } else if (h.known_int[cond]) {
                 cond = h.emit(HIR_ATOI, TY_INT, cond);
             } else {
@@ -1007,6 +1074,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                     int64_t v = static_cast<int64_t>(
                         mux_atol(u8(h.sval[cond])));
                     cond = h.emit_iconst(v);
+                } else if (h.ty[cond] == TY_FLOAT) {
+                    cond = h.emit(HIR_FTOI, TY_INT, cond);
                 } else if (h.known_int[cond]) {
                     cond = h.emit(HIR_ATOI, TY_INT, cond);
                 } else {
@@ -1176,6 +1245,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         // Ensure target is a string for comparison.
         if (h.ty[target] == TY_INT) {
             target = h.emit(HIR_ITOA, TY_STRING, target);
+        } else if (h.ty[target] == TY_FLOAT) {
+            target = h.emit(HIR_FTOA, TY_STRING, target);
         }
 
         // Count pattern/result pairs and whether there's a default.
@@ -1205,6 +1276,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 node->children[1 + pi * 2].get());
             if (h.ty[pat] == TY_INT) {
                 pat = h.emit(HIR_ITOA, TY_STRING, pat);
+            } else if (h.ty[pat] == TY_FLOAT) {
+                pat = h.emit(HIR_FTOA, TY_STRING, pat);
             }
 
             // Compare target against pattern.
@@ -1327,6 +1400,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         int list_val = hir_lower_trimmed(h, rc, node->children[0].get());
         if (h.ty[list_val] == TY_INT) {
             list_val = h.emit(HIR_ITOA, TY_STRING, list_val);
+        } else if (h.ty[list_val] == TY_FLOAT) {
+            list_val = h.emit(HIR_FTOA, TY_STRING, list_val);
         }
 
         // Evaluate delimiters (child[2] = input, child[3] = output).
@@ -1335,6 +1410,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
             delim_val = hir_lower_trimmed(h, rc, node->children[2].get());
             if (h.ty[delim_val] == TY_INT) {
                 delim_val = h.emit(HIR_ITOA, TY_STRING, delim_val);
+            } else if (h.ty[delim_val] == TY_FLOAT) {
+                delim_val = h.emit(HIR_FTOA, TY_STRING, delim_val);
             }
         } else {
             uint64_t addr = rc.pool_str(" ");
@@ -1346,6 +1423,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
             osep_val = hir_lower_trimmed(h, rc, node->children[3].get());
             if (h.ty[osep_val] == TY_INT) {
                 osep_val = h.emit(HIR_ITOA, TY_STRING, osep_val);
+            } else if (h.ty[osep_val] == TY_FLOAT) {
+                osep_val = h.emit(HIR_FTOA, TY_STRING, osep_val);
             }
         } else {
             uint64_t addr = rc.pool_str(" ");
@@ -1446,6 +1525,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         int body_val = hir_lower_trimmed(h, rc, node->children[1].get());
         if (h.ty[body_val] == TY_INT) {
             body_val = h.emit(HIR_ITOA, TY_STRING, body_val);
+        } else if (h.ty[body_val] == TY_FLOAT) {
+            body_val = h.emit(HIR_FTOA, TY_STRING, body_val);
         }
 
         // Restore iter context.
@@ -1699,6 +1780,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                                 int val = u_args[ei + 1];
                                 if (h.ty[val] == TY_INT) {
                                     val = h.emit(HIR_ITOA, TY_STRING, val);
+                                } else if (h.ty[val] == TY_FLOAT) {
+                                    val = h.emit(HIR_FTOA, TY_STRING, val);
                                 }
                                 int wargs[2] = { idx_c, val };
                                 h.emit_call(TY_STRING, write_idx, wargs, 2);
@@ -1857,6 +1940,46 @@ general_lowering:
         return h.emit(HIR_ATOI, TY_INT, ai);
     };
 
+    // Helper: ensure arg is TY_FLOAT.
+    // - FCONST/TY_FLOAT: pass through.
+    // - SCONST: compile-time parse → FCONST (no runtime cost).
+    // - ICONST: compile-time convert → FCONST.
+    // - TY_INT: emit ITOF.
+    // - TY_STRING (runtime): emit ATOF.
+    //
+    auto ensure_float = [&](int ai) -> int {
+        if (h.ty[ai] == TY_FLOAT) return ai;
+        if (h.kind[ai] == HIR_SCONST && !h.sval[ai].empty()) {
+            double v = mux_atof(u8(h.sval[ai]));
+            return h.emit_fconst(v);
+        }
+        if (h.kind[ai] == HIR_ICONST) {
+            double v = static_cast<double>(h.val[ai]);
+            return h.emit_fconst(v);
+        }
+        if (h.ty[ai] == TY_INT) {
+            return h.emit(HIR_ITOF, TY_FLOAT, ai);
+        }
+        // TY_STRING at runtime — emit ATOF.
+        return h.emit(HIR_ATOF, TY_FLOAT, ai);
+    };
+
+    // Helper: check if any arg is provably float.
+    auto any_float = [&]() -> bool {
+        for (int ai : args) {
+            if (h.is_float(ai) && !h.is_int(ai)) return true;
+        }
+        return false;
+    };
+
+    // Helper: check if all args are provably numeric (int or float).
+    auto all_numeric = [&]() -> bool {
+        for (int ai : args) {
+            if (!h.is_numeric(ai)) return false;
+        }
+        return true;
+    };
+
     // Binary ops: ADD, SUB, MUL, MOD.
     if ((upper == "ADD" || upper == "SUB") && nargs >= 2 && all_int()) {
         bool is_add = (upper == "ADD");
@@ -2003,13 +2126,108 @@ general_lowering:
     }
 
     // ---------------------------------------------------------------
+    // Native float arithmetic (type-propagated path).
+    //
+    // When args are numeric but not all integer (at least one float),
+    // or for functions that inherently produce floats, operate on
+    // doubles directly.  The result stays TY_FLOAT — only converted
+    // to string at the boundary where it escapes to non-math context.
+    // ---------------------------------------------------------------
+
+    // ADD / SUB with float args: promote to double, emit FADD/FSUB.
+    if ((upper == "ADD" || upper == "SUB") && nargs >= 2
+        && all_numeric() && any_float()) {
+        bool is_add = (upper == "ADD");
+        int acc = ensure_float(args[0]);
+        for (int i = 1; i < nargs; i++) {
+            int b = ensure_float(args[i]);
+            hir_kind op = (is_add || i > 1) ? HIR_FADD : HIR_FSUB;
+            acc = h.emit(op, TY_FLOAT, acc, b);
+        }
+        h.native_ops++;
+        h.needs_jit = true;
+        return acc;
+    }
+
+    // MUL with float args.
+    if (upper == "MUL" && nargs >= 2 && all_numeric() && any_float()) {
+        int acc = ensure_float(args[0]);
+        for (int i = 1; i < nargs; i++) {
+            int b = ensure_float(args[i]);
+            acc = h.emit(HIR_FMUL, TY_FLOAT, acc, b);
+        }
+        h.native_ops++;
+        h.needs_jit = true;
+        return acc;
+    }
+
+    // FDIV: always produces float.  Promote args to double.
+    if (upper == "FDIV" && nargs == 2 && all_numeric()) {
+        int a = ensure_float(args[0]);
+        int b = ensure_float(args[1]);
+        int r = h.emit(HIR_FDIV, TY_FLOAT, a, b);
+        h.native_ops++;
+        h.needs_jit = true;
+        return r;
+    }
+
+    // SQRT: always produces float.
+    if (upper == "SQRT" && nargs == 1 && h.is_numeric(args[0])) {
+        int a = ensure_float(args[0]);
+        int r = h.emit(HIR_FSQRT, TY_FLOAT, a);
+        h.native_ops++;
+        h.needs_jit = true;
+        return r;
+    }
+
+    // Unary transcendentals: SIN, COS, TAN, etc. → FCALL1.
+    // Only when the argument is provably numeric, and the blob
+    // has the raw libm symbol registered as an intrinsic.
+    //
+    for (int ti = 0; s_fp_unary[ti].mux_name; ti++) {
+        if (upper == s_fp_unary[ti].mux_name && nargs == 1
+            && h.is_numeric(args[0])) {
+            uint64_t addr = fp_intrinsic_addr(s_fp_unary[ti].blob_sym);
+            if (addr) {
+                int a = ensure_float(args[0]);
+                int r = h.emit(HIR_FCALL1, TY_FLOAT, a, -1,
+                               static_cast<int64_t>(addr));
+                h.native_ops++;
+                h.needs_jit = true;
+                return r;
+            }
+            break;
+        }
+    }
+
+    // Binary FP functions: POWER, ATAN2, FMOD → FCALL2.
+    for (int ti = 0; s_fp_binary[ti].mux_name; ti++) {
+        if (upper == s_fp_binary[ti].mux_name && nargs == 2
+            && all_numeric()) {
+            uint64_t addr = fp_intrinsic_addr(s_fp_binary[ti].blob_sym);
+            if (addr) {
+                int a = ensure_float(args[0]);
+                int b = ensure_float(args[1]);
+                int r = h.emit(HIR_FCALL2, TY_FLOAT, a, b,
+                               static_cast<int64_t>(addr));
+                h.native_ops++;
+                h.needs_jit = true;
+                return r;
+            }
+            break;
+        }
+    }
+
+    // ---------------------------------------------------------------
     // Fall through to ECALL.
     // ---------------------------------------------------------------
 
-    // Convert any TY_INT args to strings for the ECALL convention.
+    // Convert any TY_INT or TY_FLOAT args to strings for ECALL.
     for (auto &ai : args) {
         if (h.ty[ai] == TY_INT) {
             ai = h.emit(HIR_ITOA, TY_STRING, ai);
+        } else if (h.ty[ai] == TY_FLOAT) {
+            ai = h.emit(HIR_FTOA, TY_STRING, ai);
         }
     }
 
@@ -2080,6 +2298,8 @@ literal_strcat:
                 int arg = args[ai];
                 if (h.ty[arg] == TY_INT) {
                     arg = h.emit(HIR_ITOA, TY_STRING, arg);
+                } else if (h.ty[arg] == TY_FLOAT) {
+                    arg = h.emit(HIR_FTOA, TY_STRING, arg);
                 }
                 parts.push_back(arg);
             }
@@ -2141,6 +2361,9 @@ literal_strcat:
     }
     if (returns_int(upper)) {
         h.known_int[i] = true;
+    }
+    if (returns_float(upper)) {
+        h.known_float[i] = true;
     }
     h.needs_jit = true;
     return i;
@@ -2590,6 +2813,8 @@ int hir_lower_node(hir_program &h, rv_compiler &rc,
             int close = h.emit_sconst(caddr, "}");
             if (h.ty[content] == TY_INT) {
                 content = h.emit(HIR_ITOA, TY_STRING, content);
+            } else if (h.ty[content] == TY_FLOAT) {
+                content = h.emit(HIR_FTOA, TY_STRING, content);
             }
             int parts[3] = { open, content, close };
             int strcat_idx = engine_api_lookup("STRCAT");

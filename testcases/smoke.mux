@@ -15,7 +15,7 @@
   connlog_fn cor_fn corbool_fn cos_fn cpad_fn crc32_fn crc32obj_fn cron_fn ctu_fn \
   dec_fn delete_fn delextract_fn digest_fn digittime_fn dist2d_fn dist3d_fn dolist_cmd dynhelp_fn \
   e_fn edit_fn elements_fn encode64_fn eq_fn escape_fn exp3_fn exp_fn exptime_fn extract_fn \
-  fdiv_fn first_fn firstof_fn floor_fn floordiv_fn fmod_fn grab_fn graball_fn gt_fn gte_fn \
+  fdiv_fn first_fn firstof_fn floor_fn floordiv_fn fmod_fn fpprop_fn grab_fn graball_fn gt_fn gte_fn \
   hmac_fn iadd_fn iabs_fn idiv_fn imul_fn inc_fn index_fn insert_fn \
   include_fn isalpha_fn isdbref_fn isign_fn isint_fn isjson_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn \
   json_fn lambda_fn letq_fn

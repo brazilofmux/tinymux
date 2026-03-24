@@ -37,6 +37,7 @@ static constexpr uint64_t ECALL_DMA_ACK       = 0x121; // -> a0=window (next fre
 
 // Float/double conversion ECALLs.
 static constexpr uint64_t ECALL_FTOA          = 0x140; // a0=double bits, a1=output addr
+static constexpr uint64_t ECALL_ATOF          = 0x141; // a0=string addr → fa0=double
 
 // Lua VM ECALLs — operations that call back into the Lua interpreter.
 // Require eval_ctx.lua_state != nullptr.

@@ -98,6 +98,12 @@ enum hir_kind {
     HIR_CALL,       // ECALL to engine function
     HIR_STRCAT,     // concatenate N strings via ECALL
 
+    // Direct FP calls to blob intrinsics (type-propagated path).
+    // Bypass string marshalling — args and result are TY_FLOAT.
+    // val = blob guest address of the target function.
+    HIR_FCALL1,     // unary:  result = f(src1)        (sin, cos, etc.)
+    HIR_FCALL2,     // binary: result = f(src1, src2)   (pow, atan2, fmod)
+
     // Control flow
     HIR_RET,        // return/exit program
 
@@ -160,6 +166,12 @@ struct hir_program {
     // Known-integer flag: true if a TY_STRING result is known to
     // parse as an integer (e.g., ECALL result from strlen/eq/gt).
     bool known_int[HIR_MAX_INSNS];
+
+    // Known-float flag: true if a TY_STRING result is known to
+    // parse as a floating-point number (e.g., ECALL result from
+    // sin/cos/fdiv).  Enables downstream float promotion without
+    // runtime string parsing.
+    bool known_float[HIR_MAX_INSNS];
 
     // Runtime-reference flag: true if an SCONST points to a
     // runtime-populated address (CARGS_BASE, SUBST_BASE) rather
@@ -286,6 +298,7 @@ struct hir_program {
         sval[i].clear();
         call_name[i].clear();
         known_int[i] = false;
+        known_float[i] = false;
         runtime_ref[i] = false;
         fval[i] = 0.0;
         return i;
@@ -407,6 +420,38 @@ struct hir_program {
             return *s == '\0';
         }
         return false;
+    }
+
+    // Is instruction i provably float-valued?
+    bool is_float(int i) const {
+        if (i < 0) return false;
+        if (ty[i] == TY_FLOAT) return true;
+        if (known_float[i]) return true;
+        // SCONST that parses as a float (contains '.', 'e', or 'E').
+        if (kind[i] == HIR_SCONST && !sval[i].empty()) {
+            const char *s = sval[i].c_str();
+            if (*s == '-' || *s == '+') s++;
+            if (*s == '\0') return false;
+            bool has_digit = false;
+            bool has_dot = false;
+            while ((*s >= '0' && *s <= '9') || *s == '.') {
+                if (*s == '.') has_dot = true;
+                else has_digit = true;
+                s++;
+            }
+            if (*s == 'e' || *s == 'E') {
+                s++;
+                if (*s == '+' || *s == '-') s++;
+                while (*s >= '0' && *s <= '9') s++;
+            }
+            return has_digit && *s == '\0';
+        }
+        return false;
+    }
+
+    // Is instruction i provably numeric (int or float)?
+    bool is_numeric(int i) const {
+        return is_int(i) || is_float(i);
     }
 
     // Get string value of a constant (SCONST or ICONST formatted).

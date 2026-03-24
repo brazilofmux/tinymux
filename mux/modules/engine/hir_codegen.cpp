@@ -704,6 +704,8 @@ static bool needs_fp_reg(hir_program &h, int i) {
     case HIR_FADD: case HIR_FSUB: case HIR_FMUL: case HIR_FDIV:
     case HIR_FNEG: case HIR_FSQRT:
     case HIR_ITOF:
+    case HIR_ATOF:
+    case HIR_FCALL1: case HIR_FCALL2:
         return true;
     case HIR_PHI:
         return h.ty[i] == TY_FLOAT;
@@ -1650,6 +1652,61 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 break;
             }
 
+            // ATOF: string → double.  Use ECALL to parse.
+            case HIR_ATOF: {
+                uint64_t str_addr = loc[h.src1[i]].addr;
+                uint64_t dst = loc[i].addr;
+                // a0 = guest string address, a7 = ECALL_ATOF.
+                rv_load_val(rc.code, 10, str_addr);         // a0 = string
+                rv_load_val(rc.code, 17, 0x141);            // a7 = ECALL_ATOF
+                rc.code.push_back(rv_ECALL());
+                // Result in fa0 (f10).  Store to FP slot.
+                rv_load_val(rc.code, RA_SCRATCH, dst);
+                rc.code.push_back(rv_FSD(RA_SCRATCH, 10, 0)); // *dst = fa0
+                break;
+            }
+
+            // FCALL1: unary FP intrinsic call (sin, cos, etc.).
+            // arg in fa0, result in fa0.  JAL to blob stub.
+            case HIR_FCALL1: {
+                uint64_t a1 = loc[h.src1[i]].addr;
+                uint64_t dst = loc[i].addr;
+                uint64_t func_addr = static_cast<uint64_t>(h.val[i]);
+                // Load argument into fa0 (f10).
+                rv_load_val(rc.code, RA_SCRATCH, a1);
+                rc.code.push_back(rv_FLD(10, RA_SCRATCH, 0));  // fa0 = *a1
+                // JAL to blob function.
+                uint64_t pc = rc.code.size() * 4;
+                int32_t offset = static_cast<int32_t>(func_addr - pc);
+                rc.code.push_back(rv_JAL(1, offset));          // JAL ra, func
+                // Store result from fa0 to FP slot.
+                rv_load_val(rc.code, RA_SCRATCH, dst);
+                rc.code.push_back(rv_FSD(RA_SCRATCH, 10, 0));  // *dst = fa0
+                break;
+            }
+
+            // FCALL2: binary FP intrinsic call (pow, atan2, fmod).
+            // args in fa0, fa1; result in fa0.
+            case HIR_FCALL2: {
+                uint64_t a1 = loc[h.src1[i]].addr;
+                uint64_t a2 = loc[h.src2[i]].addr;
+                uint64_t dst = loc[i].addr;
+                uint64_t func_addr = static_cast<uint64_t>(h.val[i]);
+                // Load arguments into fa0, fa1.
+                rv_load_val(rc.code, RA_SCRATCH, a1);
+                rc.code.push_back(rv_FLD(10, RA_SCRATCH, 0));  // fa0 = *a1
+                rv_load_val(rc.code, RA_SCRATCH, a2);
+                rc.code.push_back(rv_FLD(11, RA_SCRATCH, 0));  // fa1 = *a2
+                // JAL to blob function.
+                uint64_t pc = rc.code.size() * 4;
+                int32_t offset = static_cast<int32_t>(func_addr - pc);
+                rc.code.push_back(rv_JAL(1, offset));          // JAL ra, func
+                // Store result from fa0 to FP slot.
+                rv_load_val(rc.code, RA_SCRATCH, dst);
+                rc.code.push_back(rv_FSD(RA_SCRATCH, 10, 0));  // *dst = fa0
+                break;
+            }
+
             // Float comparisons: result is integer 0/1.
 #define FP_CMP(RV_INSN) \
             { \
@@ -1916,6 +1973,8 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_FLE:        return "FLE";
     case HIR_CALL:       return "CALL";
     case HIR_STRCAT:     return "STRCAT";
+    case HIR_FCALL1:     return "FCALL1";
+    case HIR_FCALL2:     return "FCALL2";
     case HIR_RET:        return "RET";
     case HIR_COPY:       return "COPY";
     case HIR_PHI:        return "PHI";
