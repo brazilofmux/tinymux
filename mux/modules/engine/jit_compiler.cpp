@@ -332,24 +332,23 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "FLIP",        "rv64_revwords" },   // alias
     { "ISDBREF",     "rv64_isdbref" },
 
-    // --- Batch 8: floating-point math (RV64D hardware instructions) ---
-    { "ADD",         "rv64_fadd" },
-    { "SUB",         "rv64_fsub" },
-    { "MUL",         "rv64_fmul" },
-    { "FDIV",        "rv64_fdiv" },
-    { "MOD",         "rv64_fmod" },
+    // --- Batch 8: math via intrinsics (string↔double + platform libm) ---
+    { "SIN",         "rv64_sin" },
+    { "COS",         "rv64_cos" },
+    { "TAN",         "rv64_tan" },
+    { "ASIN",        "rv64_asin" },
+    { "ACOS",        "rv64_acos" },
+    { "ATAN",        "rv64_atan" },
+    { "ATAN2",       "rv64_atan2" },
+    { "EXP",         "rv64_exp" },
+    { "LOG",         "rv64_log" },
+    { "LOG10",       "rv64_log10" },
+    { "SQRT",        "rv64_sqrt" },
+    { "CEIL",        "rv64_ceil" },
+    { "FLOOR",       "rv64_floor" },
     { "ABS",         "rv64_fabs" },
-    { "SIGN",        "rv64_fsign" },
-    { "MIN",         "rv64_fmin" },
-    { "MAX",         "rv64_fmax" },
-    { "SQRT",        "rv64_fsqrt" },
-    { "ROUND",       "rv64_fround" },
-    { "TRUNC",       "rv64_ftrunc" },
-    { "CEIL",        "rv64_fceil" },
-    { "FLOOR",       "rv64_ffloor" },
-    { "INC",         "rv64_finc" },
-    { "DEC",         "rv64_fdec" },
-    { "POWER",       "rv64_fpower" },
+    { "FMOD",        "rv64_fmod" },
+    { "POWER",       "rv64_power" },
 
     { nullptr, nullptr }
 };
