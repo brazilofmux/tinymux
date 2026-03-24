@@ -475,11 +475,14 @@ static bool returns_float(const std::string &upper) {
     return upper == "SIN" || upper == "COS" || upper == "TAN"
         || upper == "ASIN" || upper == "ACOS" || upper == "ATAN"
         || upper == "ATAN2" || upper == "EXP" || upper == "LOG"
-        || upper == "LOG10" || upper == "SQRT" || upper == "POWER"
-        || upper == "FDIV" || upper == "FMOD"
+        || upper == "LOG10" || upper == "LN" || upper == "SQRT"
+        || upper == "POWER" || upper == "FDIV" || upper == "FMOD"
         || upper == "CEIL" || upper == "FLOOR"
         || upper == "ROUND" || upper == "TRUNC"
-        || upper == "PI" || upper == "E";
+        || upper == "PI" || upper == "E"
+        || upper == "DIST2D" || upper == "DIST3D"
+        || upper == "CTU"
+        || upper == "MEAN" || upper == "MEDIAN" || upper == "STDDEV";
 }
 
 // Unary FP math functions: map MUX name → blob symbol name.
