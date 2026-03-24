@@ -188,16 +188,16 @@ static bool tier2_allowed(const std::string &mux_name) {
 
         // Tier 2 arithmetic.
         "ADD", "SUB",
-        "MUL",          // rv64_mul: strtod * ... * strtod → NearestPretty → fval
+        "MUL",          // rv64_mul: NearestPretty intrinsic
+        "FDIV",         // rv64_fdiv: IEEE div, fval handles Inf/NaN
+        "MOD",          // rv64_mod: atoi64 % atoi64
+        "SIGN",         // rv64_sign: -1/0/1
+        "MIN", "MAX",   // rv64_min/max: strtod compare → fval
+        "INC", "DEC",   // rv64_inc/dec: atoi64 ± 1
+        "TRUNC",        // rv64_trunc: modf → fval
 
-        // Blocked — arithmetic with edge cases (Inf/Ind, FP class).
-        // (NearestPretty, Inf/Ind, FP class checks).
-        // The type propagation pass handles numeric args natively;
-        // these only affect the string-arg ECALL fallback.
-        //
-        // "MUL", "FDIV", "MOD", "SIGN",
-        // "MIN", "MAX", "ROUND", "TRUNC",
-        // "INC", "DEC",
+        // Blocked — ROUND needs mux_ftoa with precision argument.
+        // "ROUND",
 
         // Blocked — rv64_* diverges from server:
         //   SORT       Shellsort vs DUCET collation
@@ -369,6 +369,14 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "ADD",         "rv64_add" },
     { "SUB",         "rv64_sub" },
     { "MUL",         "rv64_mul" },
+    { "FDIV",        "rv64_fdiv" },
+    { "MOD",         "rv64_mod" },
+    { "SIGN",        "rv64_sign" },
+    { "MIN",         "rv64_min" },
+    { "MAX",         "rv64_max" },
+    { "INC",         "rv64_inc" },
+    { "DEC",         "rv64_dec" },
+    { "TRUNC",       "rv64_trunc" },
 
     { nullptr, nullptr }
 };

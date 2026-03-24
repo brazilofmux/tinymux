@@ -2495,6 +2495,111 @@ static int rv64_ltoa(char *buf, long val) {
     return len;
 }
 
+/* Simple atoi64 — matches mux_atoi64 for integer strings. */
+static long long rv64_atoi64(const char *s) {
+    while (*s == ' ') s++;
+    int neg = 0;
+    if (*s == '-') { neg = 1; s++; }
+    else if (*s == '+') { s++; }
+    long long v = 0;
+    while (*s >= '0' && *s <= '9') {
+        v = v * 10 + (*s - '0');
+        s++;
+    }
+    return neg ? -v : v;
+}
+
+/* Simple i64toa into buffer.  Returns length written. */
+static int rv64_i64toa(char *buf, long long val) {
+    char tmp[24];
+    int i = 0;
+    int neg = 0;
+    unsigned long long uv;
+    if (val < 0) { neg = 1; uv = (unsigned long long)(-(val + 1)) + 1; }
+    else { uv = (unsigned long long)val; }
+    if (uv == 0) { tmp[i++] = '0'; }
+    else { while (uv) { tmp[i++] = '0' + (char)(uv % 10); uv /= 10; } }
+    int len = 0;
+    if (neg) buf[len++] = '-';
+    while (i > 0) buf[len++] = tmp[--i];
+    buf[len] = '\0';
+    return len;
+}
+
+char *rv64_fdiv(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '0'; out[1] = '\0'; return out; }
+    double top = rv64_strtod(fargs[0]);
+    double bot = rv64_strtod(fargs[1]);
+    /* IEEE 754: top/0.0 produces +Inf/-Inf/NaN — fval handles it. */
+    int n = rv64_fval(out, top / bot);
+    out[n] = '\0';
+    return out;
+}
+
+char *rv64_trunc(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '0'; out[1] = '\0'; return out; }
+    double val = rv64_strtod(fargs[0]);
+    /* Truncate toward zero: use floor/ceil (intrinsics). */
+    double ipart = (val >= 0.0) ? floor(val) : ceil(val);
+    int n = rv64_fval(out, ipart);
+    out[n] = '\0';
+    return out;
+}
+
+char *rv64_sign(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '0'; out[1] = '\0'; return out; }
+    double num = rv64_strtod(fargs[0]);
+    if (num < 0.0)      { out[0] = '-'; out[1] = '1'; out[2] = '\0'; }
+    else if (num > 0.0)  { out[0] = '1'; out[1] = '\0'; }
+    else                 { out[0] = '0'; out[1] = '\0'; }
+    return out;
+}
+
+char *rv64_min(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '0'; out[1] = '\0'; return out; }
+    double minimum = rv64_strtod(fargs[0]);
+    for (int i = 1; i < nfargs; i++) {
+        double v = rv64_strtod(fargs[i]);
+        if (v < minimum) minimum = v;
+    }
+    int n = rv64_fval(out, minimum);
+    out[n] = '\0';
+    return out;
+}
+
+char *rv64_max(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '0'; out[1] = '\0'; return out; }
+    double maximum = rv64_strtod(fargs[0]);
+    for (int i = 1; i < nfargs; i++) {
+        double v = rv64_strtod(fargs[i]);
+        if (v > maximum) maximum = v;
+    }
+    int n = rv64_fval(out, maximum);
+    out[n] = '\0';
+    return out;
+}
+
+char *rv64_mod(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '0'; out[1] = '\0'; return out; }
+    long long bot = rv64_atoi64(fargs[1]);
+    if (bot == 0) bot = 1;
+    long long top = rv64_atoi64(fargs[0]);
+    rv64_i64toa(out, top % bot);
+    return out;
+}
+
+char *rv64_inc(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '1'; out[1] = '\0'; return out; }
+    rv64_i64toa(out, rv64_atoi64(fargs[0]) + 1);
+    return out;
+}
+
+char *rv64_dec(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '-'; out[1] = '1'; out[2] = '\0'; return out; }
+    rv64_i64toa(out, rv64_atoi64(fargs[0]) - 1);
+    return out;
+}
+
 char *rv64_mul(char *out, const char **fargs, int nfargs) {
     if (nfargs < 1) { out[0] = '0'; out[1] = '\0'; return out; }
     double prod = 1.0;
