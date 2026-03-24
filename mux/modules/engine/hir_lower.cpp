@@ -1961,7 +1961,11 @@ general_lowering:
             return h.emit(HIR_ITOF, TY_FLOAT, ai);
         }
         // TY_STRING at runtime — emit ATOF.
-        return h.emit(HIR_ATOF, TY_FLOAT, ai);
+        // Use blob rv64_strtod intrinsic if available (JAL, fast path),
+        // otherwise fall back to ECALL_ATOF.
+        uint64_t strtod_addr = tier2_sym_addr("rv64_strtod");
+        return h.emit(HIR_ATOF, TY_FLOAT, ai, -1,
+                       static_cast<int64_t>(strtod_addr));
     };
 
     // Helper: check if any arg is provably float.

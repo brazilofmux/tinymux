@@ -1652,14 +1652,24 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 break;
             }
 
-            // ATOF: string → double.  Use ECALL to parse.
+            // ATOF: string → double.
+            // Fast path: JAL to blob rv64_strtod (DBT intercepts as
+            // native intrinsic).  Fallback: ECALL_ATOF.
             case HIR_ATOF: {
                 uint64_t str_addr = loc[h.src1[i]].addr;
                 uint64_t dst = loc[i].addr;
-                // a0 = guest string address, a7 = ECALL_ATOF.
+                uint64_t blob_addr = static_cast<uint64_t>(h.val[i]);
                 rv_load_val(rc.code, 10, str_addr);         // a0 = string
-                rv_load_val(rc.code, 17, 0x141);            // a7 = ECALL_ATOF
-                rc.code.push_back(rv_ECALL());
+                if (blob_addr) {
+                    // JAL to rv64_strtod — result in fa0.
+                    uint64_t pc = rc.code.size() * 4;
+                    int32_t offset = static_cast<int32_t>(blob_addr - pc);
+                    rc.code.push_back(rv_JAL(1, offset));
+                } else {
+                    // ECALL fallback.
+                    rv_load_val(rc.code, 17, 0x141);        // a7 = ECALL_ATOF
+                    rc.code.push_back(rv_ECALL());
+                }
                 // Result in fa0 (f10).  Store to FP slot.
                 rv_load_val(rc.code, RA_SCRATCH, dst);
                 rc.code.push_back(rv_FSD(RA_SCRATCH, 10, 0)); // *dst = fa0
