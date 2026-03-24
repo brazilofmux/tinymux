@@ -87,6 +87,16 @@ size_t co_compress(unsigned char *out, const unsigned char *p, size_t len,
 size_t co_lpos(unsigned char *out, const unsigned char *haystack, size_t hlen,
                unsigned char pattern);
 
+/* Stubs for color_ops symbols referenced by new functions but not
+ * needed in the Tier 2 blob.  gc-sections would remove them if they
+ * weren't transitively pulled in by co_render_ansi256/co_dfa_ascii.
+ */
+unsigned char co_nearest_xterm16(unsigned long rgb) { (void)rgb; return 0; }
+unsigned char co_nearest_xterm256(unsigned long rgb) { (void)rgb; return 0; }
+const unsigned char tr_ascii_itt[256] = {0};
+const unsigned short tr_ascii_sot[99] = {0};
+const unsigned char tr_ascii_sbt[3431] = {0};
+
 /* ---------------------------------------------------------------
  * Intrinsic helpers — global and noinline so the DBT can intercept
  * JAL calls to these and emit native x86-64 instead of translating
@@ -2326,3 +2336,29 @@ char *rv64_insert(char *out, const char **fargs, int nfargs) {
     *op = '\0';
     return out;
 }
+
+/* ---------------------------------------------------------------
+ * Math function stubs — DBT intrinsic targets.
+ *
+ * The DBT intercepts JALs to these symbols and replaces them with
+ * native host libm calls.  These bodies are never executed; they
+ * exist only so the linker emits symbols at known addresses.
+ * ---------------------------------------------------------------
+ */
+
+double sin(double x)   { return x; }
+double cos(double x)   { return x; }
+double tan(double x)   { return x; }
+double asin(double x)  { return x; }
+double acos(double x)  { return x; }
+double atan(double x)  { return x; }
+double exp(double x)   { return x; }
+double log(double x)   { return x; }
+double log10(double x) { return x; }
+double ceil(double x)  { return x; }
+double floor(double x) { return x; }
+double fabs(double x)  { return x; }
+
+double pow(double x, double y)   { (void)y; return x; }
+double atan2(double y, double x) { (void)x; return y; }
+double fmod(double x, double y)  { (void)y; return x; }
