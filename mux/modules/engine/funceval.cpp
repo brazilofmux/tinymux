@@ -13,6 +13,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "ast.h"
 
 extern "C" {
 #include "color_ops.h"
@@ -4056,10 +4057,13 @@ FUNCTION(fun_while)
 
         // Evaluate the eval attribute.
         //
+        // Use ast_exec (not mux_exec) to bypass the JIT compiler.
+        // The JIT does not support dynamically-provided cargs.
+        //
         const UTF8 *eval_args[1] = { element };
         UTF8 *eval_result = alloc_lbuf("fun_while.eval");
         UTF8 *erp = eval_result;
-        mux_exec(eval_atext, LBUF_SIZE-1, eval_result, &erp,
+        ast_exec(eval_atext, LBUF_SIZE-1, eval_result, &erp,
             eval_thing, executor, enactor,
             AttrTrace(eval_aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL),
             eval_args, 1);
@@ -4086,7 +4090,7 @@ FUNCTION(fun_while)
             UTF8 *cond_result = alloc_lbuf("fun_while.cond");
             UTF8 *crp = cond_result;
             const UTF8 *cond_args[1] = { element };
-            mux_exec(cond_atext, LBUF_SIZE-1, cond_result, &crp,
+            ast_exec(cond_atext, LBUF_SIZE-1, cond_result, &crp,
                 cond_thing, executor, enactor,
                 AttrTrace(cond_aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL),
                 cond_args, 1);
