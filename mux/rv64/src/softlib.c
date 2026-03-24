@@ -2424,3 +2424,122 @@ MATH_WRAP_1(sqrt,  sqrt)
 MATH_WRAP_2(power, pow)
 MATH_WRAP_2(atan2, atan2)
 MATH_WRAP_2(fmod,  fmod)
+
+/* ---------------------------------------------------------------
+ * rv64_add / rv64_sub — replicate server's dual integer/float path.
+ *
+ * Integer fast path: if all args are integers with <= 9 digits
+ * and cumulative max won't overflow a 32-bit long, use integer
+ * arithmetic and format with itoa.
+ *
+ * Float fallback: parse all args as doubles, sum, format with fval.
+ * For 2-arg sums the server uses AddDoubles (compensated Kahan sum)
+ * but the compensation term is zero for 2 values with no rounding
+ * error, so simple addition matches.  For N>2 args the sort +
+ * compensate can produce different ULP rounding; we accept this
+ * minor divergence since N>2 add() with non-integer args is rare.
+ * ---------------------------------------------------------------
+ */
+
+static const long nMaximums[10] = {
+    0, 9, 99, 999, 9999, 99999, 999999, 9999999, 99999999, 999999999
+};
+
+/* Check if string is an integer with at most 9 digits.
+ * Returns digit count, or -1 if not a small integer.
+ * Matches the server's is_integer() + nDigits <= 9 guard.
+ */
+static int is_int9(const char *s) {
+    /* Skip leading spaces. */
+    while (*s == ' ') s++;
+    /* Optional sign. */
+    if (*s == '-' || *s == '+') s++;
+    if (*s < '0' || *s > '9') return -1;
+    int n = 0;
+    while (*s >= '0' && *s <= '9') { s++; n++; }
+    /* Trailing spaces. */
+    while (*s == ' ') s++;
+    if (*s != '\0') return -1;
+    return (n <= 9) ? n : -1;
+}
+
+/* Simple atol — matches mux_atol for small integers. */
+static long rv64_atol(const char *s) {
+    while (*s == ' ') s++;
+    int neg = 0;
+    if (*s == '-') { neg = 1; s++; }
+    else if (*s == '+') { s++; }
+    long v = 0;
+    while (*s >= '0' && *s <= '9') {
+        v = v * 10 + (*s - '0');
+        s++;
+    }
+    return neg ? -v : v;
+}
+
+/* Simple ltoa into buffer.  Returns length written. */
+static int rv64_ltoa(char *buf, long val) {
+    char tmp[20];
+    int i = 0;
+    int neg = 0;
+    unsigned long uv;
+    if (val < 0) { neg = 1; uv = (unsigned long)(-(val + 1)) + 1; }
+    else { uv = (unsigned long)val; }
+    if (uv == 0) { tmp[i++] = '0'; }
+    else { while (uv) { tmp[i++] = '0' + (char)(uv % 10); uv /= 10; } }
+    int len = 0;
+    if (neg) buf[len++] = '-';
+    while (i > 0) buf[len++] = tmp[--i];
+    buf[len] = '\0';
+    return len;
+}
+
+char *rv64_add(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '0'; out[1] = '\0'; return out; }
+
+    /* Integer fast path: check all args. */
+    long nMaxValue = 0;
+    int all_int = 1;
+    for (int i = 0; i < nfargs; i++) {
+        int nd = is_int9(fargs[i]);
+        if (nd < 0) { all_int = 0; break; }
+        nMaxValue += nMaximums[nd];
+        if (nMaxValue > 999999999L) { all_int = 0; break; }
+    }
+
+    if (all_int) {
+        long sum = 0;
+        for (int i = 0; i < nfargs; i++) {
+            sum += rv64_atol(fargs[i]);
+        }
+        rv64_ltoa(out, sum);
+    } else {
+        double sum = 0.0;
+        for (int i = 0; i < nfargs; i++) {
+            sum += rv64_strtod(fargs[i]);
+        }
+        int n = rv64_fval(out, sum);
+        out[n] = '\0';
+    }
+    return out;
+}
+
+char *rv64_sub(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '0'; out[1] = '\0'; return out; }
+
+    int nd0 = is_int9(fargs[0]);
+    int nd1 = is_int9(fargs[1]);
+
+    if (nd0 >= 0 && nd1 >= 0) {
+        /* Integer fast path. */
+        long a = rv64_atol(fargs[0]);
+        long b = rv64_atol(fargs[1]);
+        rv64_ltoa(out, a - b);
+    } else {
+        double a = rv64_strtod(fargs[0]);
+        double b = rv64_strtod(fargs[1]);
+        int n = rv64_fval(out, a - b);
+        out[n] = '\0';
+    }
+    return out;
+}

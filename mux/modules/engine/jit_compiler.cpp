@@ -186,12 +186,15 @@ static bool tier2_allowed(const std::string &mux_name) {
         "FMOD",         // rv64_fmod: fmod() via MATH_WRAP_2
         "POWER",        // rv64_power: pow() via MATH_WRAP_2
 
-        // Blocked — arithmetic with dual integer/float paths or
-        // special rounding (NearestPretty, AddDoubles, Inf/Ind).
+        // Tier 2 arithmetic with integer fast path.
+        "ADD", "SUB",
+
+        // Blocked — arithmetic with special rounding or edge cases
+        // (NearestPretty, Inf/Ind, FP class checks).
         // The type propagation pass handles numeric args natively;
         // these only affect the string-arg ECALL fallback.
         //
-        // "ADD", "SUB", "MUL", "FDIV", "MOD", "SIGN",
+        // "MUL", "FDIV", "MOD", "SIGN",
         // "MIN", "MAX", "ROUND", "TRUNC",
         // "INC", "DEC",
 
@@ -360,6 +363,10 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "ABS",         "rv64_fabs" },
     { "FMOD",        "rv64_fmod" },
     { "POWER",       "rv64_power" },
+
+    // --- Batch 9: arithmetic with integer fast path ---
+    { "ADD",         "rv64_add" },
+    { "SUB",         "rv64_sub" },
 
     { nullptr, nullptr }
 };
