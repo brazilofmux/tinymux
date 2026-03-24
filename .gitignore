@@ -138,3 +138,6 @@ __pycache__/
 .claude/
 client/tf/build/
 .worldbuilder/
+mux/vcpkg_installed
+mux/proxy/hydra.pb.*
+mux/proxy/hydra.grpc.pb.*
