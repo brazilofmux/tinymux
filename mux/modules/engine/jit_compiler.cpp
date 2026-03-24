@@ -197,17 +197,21 @@ static bool tier2_allowed(const std::string &mux_name) {
         "TRUNC",        // rv64_trunc: modf → fval
         "ROUND",        // rv64_round: ftoa_round intrinsic
 
+        // Tier 2 list/string ops — parity-tested via smoke suite.
+        //
+        "BEFORE", "AFTER",
+        "DELETE", "ELEMENTS", "WORDPOS", "REMOVE",
+        "REVWORDS",
+        "LNUM", "ISDBREF",
+        "LADD", "LMAX", "LMIN", "LAND", "LOR",
+        "ISNUM", "ISINT",
+        "DEC2HEX", "HEX2DEC",
+
         // Blocked — rv64_* diverges from server:
         //   SORT       Shellsort vs DUCET collation
-        //   BEFORE/AFTER  byte match vs color-aware search
-        //   ISNUM/ISINT   hand parser vs is_real()/is_integer()
         //   CHR/ORD       ASCII-only vs Unicode/grapheme-aware
         //   SECURE/SQUISH/TRANSLATE  byte-level vs Unicode
         //   STRMATCH/MATCH/GRAB/GRABALL  may diverge on Unicode
-        //   DELETE/ELEMENTS/WORDPOS/REMOVE/REVWORDS/FLIP  untested
-        //   LNUM/DEC2HEX/HEX2DEC/ISDBREF  untested
-        //   LADD/LMAX/LMIN/LAND/LOR  untested
-        // These need parity tests in testcases/ before re-enabling.
 
         nullptr
     };

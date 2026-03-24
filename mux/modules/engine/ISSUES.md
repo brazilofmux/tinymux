@@ -8,11 +8,19 @@ These issues are based on the findings in `docs/JIT-PERF-INVESTIGATION.md`.
 
 Move more frequently used builtin functions into pre-compiled RV64 guest code blobs to eliminate ECALL overhead.
 
-**Priority targets:**
-- `time()`, `secs()`
-- `get()`, `xget()`
-- `name()`, `owner()`, `flags()`
-- `member()`, `words()`, `extract()`
+**Completed:** 18 functions unblocked (BEFORE, AFTER, DELETE, ELEMENTS,
+WORDPOS, REMOVE, REVWORDS, LNUM, ISDBREF, LADD, LMAX, LMIN, LAND, LOR,
+ISNUM, ISINT, DEC2HEX, HEX2DEC) — parity-tested via smoke suite.
+
+**Note:** `time()`, `secs()`, `get()`, `xget()`, `name()`, `owner()`,
+`flags()` cannot be Tier 2 — they require database access or engine
+state. `member()`, `words()`, `extract()` were already Tier 2.
+
+**Remaining blocked (diverge from server):**
+- `SORT` — Shellsort vs DUCET collation
+- `CHR/ORD` — ASCII-only vs Unicode/grapheme-aware
+- `SECURE/SQUISH/TRANSLATE` — byte-level vs Unicode
+- `STRMATCH/MATCH/GRAB/GRABALL` — may diverge on Unicode
 
 ### 2. Phase 3: Concurrent Softcode Evaluation
 
