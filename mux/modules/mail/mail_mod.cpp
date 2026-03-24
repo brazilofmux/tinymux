@@ -5253,8 +5253,67 @@ MUX_RESULT CMailMod::CheckMail(dbref player, int folder, bool silent)
 
 MUX_RESULT CMailMod::ExpireMail(void)
 {
-    // TODO: Implement mail expiration (needs DO_WHOLE_DB, No_Mail_Expire, time classes).
-    return MUX_E_NOTIMPLEMENTED;
+    if (m_mail_expiration <= 0)
+    {
+        return MUX_S_OK;
+    }
+
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetLocal();
+
+    int nExpired = 0;
+
+    for (auto &kv : m_mail_htab)
+    {
+        dbref player = kv.first;
+
+        // Wizards are exempt from mail expiration.
+        //
+        bool bWizard = false;
+        if (nullptr != m_pIObjectInfo)
+        {
+            m_pIObjectInfo->IsWizard(player, &bWizard);
+        }
+        if (bWizard)
+        {
+            continue;
+        }
+
+        auto &mlist = kv.second;
+        for (auto it = mlist.begin(); it != mlist.end(); )
+        {
+            // Skip unread mail — don't expire what hasn't been seen.
+            //
+            if (!(it->read & M_ISREAD))
+            {
+                ++it;
+                continue;
+            }
+
+            CLinearTimeAbsolute ltaMail;
+            if (ltaMail.SetString(reinterpret_cast<const UTF8 *>(it->time.c_str())))
+            {
+                CLinearTimeDelta ltd(ltaMail, ltaNow);
+                int iAgeDays = ltd.ReturnDays();
+                if (iAgeDays < 0)
+                {
+                    iAgeDays = -iAgeDays;
+                }
+
+                if (iAgeDays > m_mail_expiration)
+                {
+                    MessageReferenceDec(it->number);
+                    sqlite_wt_delete_mail(&(*it));
+                    it = mlist.erase(it);
+                    nExpired++;
+                    continue;
+                }
+            }
+            ++it;
+        }
+    }
+
+    return MUX_S_OK;
 }
 
 MUX_RESULT CMailMod::CountMail(dbref player, int folder,
