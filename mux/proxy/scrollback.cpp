@@ -242,3 +242,136 @@ bool ScrollBack::deleteFromDb(sqlite3* db, const std::string& sessionId) {
     sqlite3_finalize(stmt);
     return rc == SQLITE_DONE;
 }
+
+int ScrollBack::reencryptInDb(sqlite3* db,
+                              const std::string& sessionId,
+                              uint32_t accountId,
+                              const std::vector<uint8_t>& oldKey,
+                              const std::vector<uint8_t>& newKey) {
+    if (!db || oldKey.size() < AEAD_KEY_LEN || newKey.size() < AEAD_KEY_LEN) {
+        return -1;
+    }
+
+    std::string oldKeyId = computeKeyId(oldKey);
+    std::string newKeyId = computeKeyId(newKey);
+
+    // Read all rows encrypted with the old key
+    sqlite3_stmt* selStmt = nullptr;
+    const char* selSql =
+        "SELECT seq, source, strftime('%s', timestamp), ciphertext, nonce"
+        " FROM scrollback WHERE session_id = ? AND key_id = ?"
+        " ORDER BY seq ASC";
+    int rc = sqlite3_prepare_v2(db, selSql, -1, &selStmt, nullptr);
+    if (rc != SQLITE_OK) {
+        LOG_ERROR("reencrypt select prepare: %s", sqlite3_errmsg(db));
+        return -1;
+    }
+
+    sqlite3_bind_text(selStmt, 1, sessionId.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(selStmt, 2, oldKeyId.c_str(), -1, SQLITE_TRANSIENT);
+
+    struct Row {
+        uint64_t seq;
+        std::string source;
+        int64_t timestamp;
+        std::string plaintext;
+    };
+    std::vector<Row> rows;
+
+    while (sqlite3_step(selStmt) == SQLITE_ROW) {
+        uint64_t seq = static_cast<uint64_t>(sqlite3_column_int64(selStmt, 0));
+        const char* source = (const char*)sqlite3_column_text(selStmt, 1);
+        int64_t ts = sqlite3_column_int64(selStmt, 2);
+        const void* ctBlob = sqlite3_column_blob(selStmt, 3);
+        int ctLen = sqlite3_column_bytes(selStmt, 3);
+        const void* nonceBlob = sqlite3_column_blob(selStmt, 4);
+        int nonceLen = sqlite3_column_bytes(selStmt, 4);
+
+        if (!source || !ctBlob || !nonceBlob || nonceLen != AEAD_NONCE_LEN) {
+            continue;
+        }
+
+        std::vector<uint8_t> aad = buildScrollbackAAD(accountId, sessionId, seq);
+        std::vector<uint8_t> plaintext;
+        if (!aeadDecrypt(oldKey.data(), oldKey.size(),
+                         static_cast<const uint8_t*>(nonceBlob),
+                         AEAD_NONCE_LEN,
+                         aad.data(), aad.size(),
+                         static_cast<const uint8_t*>(ctBlob),
+                         static_cast<size_t>(ctLen),
+                         plaintext)) {
+            LOG_WARN("reencrypt: decrypt failed for seq %lu", (unsigned long)seq);
+            continue;
+        }
+
+        Row row;
+        row.seq = seq;
+        row.source = source;
+        row.timestamp = ts;
+        row.plaintext.assign(reinterpret_cast<char*>(plaintext.data()),
+                             plaintext.size());
+        rows.push_back(std::move(row));
+    }
+    sqlite3_finalize(selStmt);
+
+    if (rows.empty()) return 0;
+
+    // Re-encrypt and update each row with the new key
+    sqlite3_stmt* updStmt = nullptr;
+    const char* updSql =
+        "INSERT OR REPLACE INTO scrollback"
+        " (session_id, seq, source, timestamp, ciphertext, nonce, key_id)"
+        " VALUES (?, ?, ?, datetime(?, 'unixepoch'), ?, ?, ?)";
+    rc = sqlite3_prepare_v2(db, updSql, -1, &updStmt, nullptr);
+    if (rc != SQLITE_OK) {
+        LOG_ERROR("reencrypt update prepare: %s", sqlite3_errmsg(db));
+        return -1;
+    }
+
+    int reencrypted = 0;
+    sqlite3_exec(db, "BEGIN", nullptr, nullptr, nullptr);
+
+    for (const Row& row : rows) {
+        std::vector<uint8_t> aad = buildScrollbackAAD(
+            accountId, sessionId, row.seq);
+
+        uint8_t nonce[AEAD_NONCE_LEN];
+        randomBytes(nonce, AEAD_NONCE_LEN);
+
+        std::vector<uint8_t> ciphertext;
+        if (!aeadEncrypt(newKey.data(), newKey.size(),
+                         nonce, AEAD_NONCE_LEN,
+                         aad.data(), aad.size(),
+                         reinterpret_cast<const uint8_t*>(row.plaintext.data()),
+                         row.plaintext.size(),
+                         ciphertext)) {
+            LOG_ERROR("reencrypt: encrypt failed for seq %lu",
+                      (unsigned long)row.seq);
+            continue;
+        }
+
+        sqlite3_reset(updStmt);
+        sqlite3_bind_text(updStmt, 1, sessionId.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int64(updStmt, 2, static_cast<sqlite3_int64>(row.seq));
+        sqlite3_bind_text(updStmt, 3, row.source.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int64(updStmt, 4, static_cast<sqlite3_int64>(row.timestamp));
+        sqlite3_bind_blob(updStmt, 5, ciphertext.data(),
+                          static_cast<int>(ciphertext.size()), SQLITE_TRANSIENT);
+        sqlite3_bind_blob(updStmt, 6, nonce, AEAD_NONCE_LEN, SQLITE_TRANSIENT);
+        sqlite3_bind_text(updStmt, 7, newKeyId.c_str(), -1, SQLITE_TRANSIENT);
+
+        rc = sqlite3_step(updStmt);
+        if (rc == SQLITE_DONE) {
+            reencrypted++;
+        } else {
+            LOG_ERROR("reencrypt update: %s", sqlite3_errmsg(db));
+        }
+    }
+
+    sqlite3_exec(db, "COMMIT", nullptr, nullptr, nullptr);
+    sqlite3_finalize(updStmt);
+
+    LOG_INFO("Re-encrypted %d/%zu scroll-back rows for session %s",
+             reencrypted, rows.size(), sessionId.c_str());
+    return reencrypted;
+}

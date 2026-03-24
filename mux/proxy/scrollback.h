@@ -55,6 +55,15 @@ public:
     // Delete all persisted scroll-back for a session.
     static bool deleteFromDb(sqlite3* db, const std::string& sessionId);
 
+    // Re-encrypt all persisted scroll-back for a session.
+    // Decrypts with oldKey and re-encrypts with newKey.
+    // Returns number of rows re-encrypted, or -1 on error.
+    static int reencryptInDb(sqlite3* db,
+                             const std::string& sessionId,
+                             uint32_t accountId,
+                             const std::vector<uint8_t>& oldKey,
+                             const std::vector<uint8_t>& newKey);
+
 private:
     struct Line {
         std::string text;

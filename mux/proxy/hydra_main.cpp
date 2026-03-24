@@ -377,7 +377,7 @@ int main(int argc, char* argv[]) {
 
         if (g_dumpStatus) {
             g_dumpStatus = 0;
-            LOG_INFO("Status dump requested (TODO)");
+            sessionMgr.dumpStatus();
         }
     }
 

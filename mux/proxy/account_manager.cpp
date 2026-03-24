@@ -1,6 +1,7 @@
 #include "account_manager.h"
 #include "crypto.h"
 #include "hydra_log.h"
+#include "scrollback.h"
 #include <sqlite3.h>
 #include <crypt.h>
 #include <cerrno>
@@ -264,6 +265,8 @@ uint32_t AccountManager::authenticate(const std::string& username,
 
 bool AccountManager::changePassword(uint32_t accountId,
                                     const std::string& newPassword,
+                                    const std::vector<uint8_t>& oldScrollbackKey,
+                                    std::vector<uint8_t>& newScrollbackKeyOut,
                                     std::string& errorMsg) {
     std::string salt = generateSalt();
     std::string hash = hashPassword(newPassword, salt);
@@ -306,7 +309,28 @@ bool AccountManager::changePassword(uint32_t accountId,
         return false;
     }
 
-    // TODO: re-encrypt scroll-back with new key
+    // Derive the new scrollback key
+    newScrollbackKeyOut = deriveScrollbackKey(newPassword, sbSalt);
+
+    // Re-encrypt persisted scroll-back for all sessions owned by this account
+    if (!oldScrollbackKey.empty() && !newScrollbackKeyOut.empty()) {
+        sqlite3_stmt* sessStmt = nullptr;
+        const char* sessSql = "SELECT id FROM saved_sessions WHERE account_id = ?";
+        rc = sqlite3_prepare_v2(db_, sessSql, -1, &sessStmt, nullptr);
+        if (rc == SQLITE_OK) {
+            sqlite3_bind_int(sessStmt, 1, static_cast<int>(accountId));
+            while (sqlite3_step(sessStmt) == SQLITE_ROW) {
+                const char* sessId = (const char*)sqlite3_column_text(sessStmt, 0);
+                if (sessId) {
+                    ScrollBack::reencryptInDb(db_, sessId, accountId,
+                                              oldScrollbackKey,
+                                              newScrollbackKeyOut);
+                }
+            }
+            sqlite3_finalize(sessStmt);
+        }
+    }
+
     return true;
 }
 

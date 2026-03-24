@@ -252,6 +252,7 @@ public:
 
     void runTimers();
     void shutdownSessions();
+    void dumpStatus() const;
 
     // ---- gRPC support ----
 

@@ -1,24 +1,10 @@
 # Hydra Proxy — Open Issues
 
-### 1. GANL Integration
+(none)
 
-- **File:** `front_door.cpp`, `back_door.cpp`
-- **Tasks:**
-  - Create GANL listeners for incoming connections.
-  - Implement full lifecycle handling (Accept, Read, Write, Close) via GANL.
-  - Bridge connections between front-door and back-door using GANL queueing.
+## Closed
 
-### 2. Status Dumps
-
-- **File:** `hydra_main.cpp:380`
-- **Issue:** Implement status dump reporting to show current proxy state and throughput.
-
-### 3. Configuration
-
-- **File:** `config.cpp:213`
-- **Issue:** Support duration strings (e.g., "24h", "7d") in the configuration parser.
-
-### 4. Security
-
-- **File:** `account_manager.cpp:309`
-- **Issue:** Re-encrypt scroll-back buffers with new keys when account credentials change.
+- **GANL Integration** — Front/back doors already use GANL exclusively. The facade classes delegate to SessionManager which handles all networking via GANL.
+- **Status Dumps** — Implemented `SessionManager::dumpStatus()`, wired to SIGUSR1 signal. Logs session count, front/back door counts, per-session state, links, and scrollback metrics.
+- **Duration Strings** — `parseDuration()` in config.cpp supports bare integers (seconds) and suffixed values (s/m/h/d). Applied to all timeout fields.
+- **Scrollback Re-encryption** — `ScrollBack::reencryptInDb()` decrypts with old key and re-encrypts with new key. Called from `changePassword()` for all sessions owned by the account.

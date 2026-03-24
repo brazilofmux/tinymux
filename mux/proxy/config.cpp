@@ -20,6 +20,37 @@ static std::string toLower(const std::string& s) {
     return r;
 }
 
+// Parse a duration string into seconds.
+// Accepts: bare integer (seconds), or integer with suffix s/m/h/d.
+// Returns -1 on parse failure.
+static int parseDuration(const std::string& s) {
+    if (s.empty()) return -1;
+
+    // Check for suffix
+    char suffix = s.back();
+    int multiplier = 1;
+    std::string digits = s;
+
+    if (std::isalpha(static_cast<unsigned char>(suffix))) {
+        digits = s.substr(0, s.size() - 1);
+        switch (std::tolower(static_cast<unsigned char>(suffix))) {
+            case 's': multiplier = 1;     break;
+            case 'm': multiplier = 60;    break;
+            case 'h': multiplier = 3600;  break;
+            case 'd': multiplier = 86400; break;
+            default: return -1;
+        }
+    }
+
+    try {
+        int val = std::stoi(digits);
+        if (val < 0) return -1;
+        return val * multiplier;
+    } catch (...) {
+        return -1;
+    }
+}
+
 // Split a line into key and value at first whitespace.
 static bool splitKeyValue(const std::string& line, std::string& key,
                           std::string& value) {
@@ -210,15 +241,14 @@ bool loadConfig(const std::string& path, HydraConfig& config,
             try { config.scrollbackLines = std::stoul(value); }
             catch (...) {}
         } else if (key == "session_idle_timeout") {
-            // TODO: parse duration strings like "24h"
-            try { config.sessionIdleTimeout = std::stoi(value); }
-            catch (...) {}
+            int d = parseDuration(value);
+            if (d >= 0) config.sessionIdleTimeout = d;
         } else if (key == "detached_session_timeout") {
-            try { config.detachedSessionTimeout = std::stoi(value); }
-            catch (...) {}
+            int d = parseDuration(value);
+            if (d >= 0) config.detachedSessionTimeout = d;
         } else if (key == "link_reconnect_timeout") {
-            try { config.linkReconnectTimeout = std::stoi(value); }
-            catch (...) {}
+            int d = parseDuration(value);
+            if (d >= 0) config.linkReconnectTimeout = d;
         } else if (key == "grpc_listen") {
             config.grpcListenAddr = value;
         } else if (key == "max_sessions_per_account") {
@@ -243,8 +273,8 @@ bool loadConfig(const std::string& path, HydraConfig& config,
             try { config.failedLoginLockout = std::stoi(value); }
             catch (...) {}
         } else if (key == "failed_login_lockout_minutes") {
-            try { config.failedLoginLockoutMinutes = std::stoi(value); }
-            catch (...) {}
+            int d = parseDuration(value);
+            if (d >= 0) config.failedLoginLockoutMinutes = d;
         } else if (key == "log_file") {
             config.logFile = value;
         } else if (key == "log_level") {

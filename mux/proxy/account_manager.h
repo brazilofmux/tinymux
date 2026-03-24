@@ -32,6 +32,8 @@ public:
 
     bool changePassword(uint32_t accountId,
                         const std::string& newPassword,
+                        const std::vector<uint8_t>& oldScrollbackKey,
+                        std::vector<uint8_t>& newScrollbackKeyOut,
                         std::string& errorMsg);
 
     // Returns true if the accounts table is empty (bootstrap mode).

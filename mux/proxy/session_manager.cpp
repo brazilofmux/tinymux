@@ -2390,3 +2390,47 @@ void SessionManager::restoreAllSessions() {
                  s.persistId.c_str(), s.accountId);
     }
 }
+
+void SessionManager::dumpStatus() const {
+    LOG_INFO("=== Hydra Status Dump ===");
+    LOG_INFO("Sessions: %zu  Front-doors: %zu  Back-doors: %zu",
+             sessions_.size(), frontDoors_.size(), backDoorMap_.size());
+    LOG_INFO("Global scrollback memory: %zu bytes",
+             globalScrollbackBytes_.load());
+
+    for (const auto& kv : sessions_) {
+        const HydraSession& s = kv.second;
+        const char* stateStr = "?";
+        switch (s.state) {
+            case SessionState::Login:    stateStr = "Login";    break;
+            case SessionState::Active:   stateStr = "Active";   break;
+            case SessionState::Detached: stateStr = "Detached"; break;
+        }
+
+        LOG_INFO("  Session %s [%s] user=%s fd=%zu links=%zu "
+                 "scrollback=%zu/%zu dirty=%zu",
+                 s.persistId.c_str(), stateStr, s.username.c_str(),
+                 s.frontDoors.size(), s.links.size(),
+                 s.scrollback.count(), s.scrollback.memoryBytes(),
+                 s.scrollback.dirtyCount());
+
+        for (size_t i = 0; i < s.links.size(); i++) {
+            const BackDoorLink& link = s.links[i];
+            const char* linkStr = "?";
+            switch (link.state) {
+                case LinkState::Connecting:     linkStr = "Connecting";     break;
+                case LinkState::TlsHandshaking: linkStr = "TlsHandshake";  break;
+                case LinkState::Negotiating:    linkStr = "Negotiating";    break;
+                case LinkState::AutoLoggingIn:  linkStr = "AutoLogin";      break;
+                case LinkState::Active:         linkStr = "Active";         break;
+                case LinkState::Reconnecting:   linkStr = "Reconnecting";   break;
+                case LinkState::Suspended:      linkStr = "Suspended";      break;
+                case LinkState::Dead:           linkStr = "Dead";           break;
+            }
+            LOG_INFO("    Link %zu: game=%s char=%s [%s]%s",
+                     i + 1, link.gameName.c_str(), link.character.c_str(),
+                     linkStr, (i == s.activeLink) ? " *active*" : "");
+        }
+    }
+    LOG_INFO("=== End Status Dump ===");
+}
