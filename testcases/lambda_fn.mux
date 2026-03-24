@@ -69,22 +69,22 @@
   }
 -
 #
-# Test Case #4 - u with #lambda.
-# u(#lambda/mul(\%0,\%1), 6, 7) => 42
+# Test Case #4 - ulambda with #lambda.
+# ulambda(#lambda/mul(\%0,\%1), 6, 7) => 42
 #
 &tr.tc004 test_lambda_fn=
   @if strmatch(
         setr(0,sha1(
-            [u(#lambda/mul(\%0,\%1), 6, 7)]
+            [ulambda(#lambda/mul(\%0,\%1), 6, 7)]
           )
         ),
         92CFCEB39D57D914ED8B14D0E37643DE0797AE56
       )=
   {
-    @log smoke=TC004: u with lambda. Succeeded.
+    @log smoke=TC004: ulambda with lambda. Succeeded.
   },
   {
-    @log smoke=TC004: u with lambda. Failed (%q0).
+    @log smoke=TC004: ulambda with lambda. Failed (%q0).
   }
 -
 #

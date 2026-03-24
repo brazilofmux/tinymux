@@ -14400,6 +14400,7 @@ static FUN builtin_function_list[] =
     {T("U"),           fun_u,          MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {T("UCSTR"),       fun_ucstr,            1, 1,       1,         0, CA_PUBLIC},
     {T("UDEFAULT"),    fun_udefault,   MAX_ARG, 2, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
+    {T("ULAMBDA"),     fun_u,          MAX_ARG, 1, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
     {T("ULOCAL"),      fun_ulocal,     MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {T("UNIQUE"),      fun_unique,     MAX_ARG, 1,       4,         0, CA_PUBLIC},
     {T("UNPACK"),      fun_unpack,     MAX_ARG, 1,       3,         0, CA_PUBLIC},

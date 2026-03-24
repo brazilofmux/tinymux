@@ -86,6 +86,10 @@ static ASTNoevalKind ast_noeval_kind(std::string_view funcName)
     {
         return ASTNOEVAL_CASEALL;
     }
+    if (name == "ULAMBDA")
+    {
+        return ASTNOEVAL_ULAMBDA;
+    }
     return ASTNOEVAL_NONE;
 }
 
@@ -118,6 +122,9 @@ static bool ast_noeval_arg_is_deferred(ASTNoevalKind kind, int argIndex, int nfa
             return true;
         }
         return (argIndex % 2) == 0;
+
+    case ASTNOEVAL_ULAMBDA:
+        return argIndex == 0;  // only the body/reference is deferred
 
     case ASTNOEVAL_NONE:
     default:
@@ -1664,6 +1671,97 @@ static void ast_noeval_iter(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     free_lbuf(curr);
 }
 
+// ulambda(body, arg0, arg1, ...): anonymous function evaluation.
+//
+// The first argument (body) is received UNEVALUATED — the parser's
+// deferred-eval mechanism prevents inner function calls from being
+// dispatched.  We reconstruct the raw text, then evaluate it with
+// the remaining args as %0-%9 substitutions.
+//
+// The body can be:
+//   - #lambda/code      → extract code after "#lambda/"
+//   - #apply[N]/func    → synthesize func(%0,...,%N-1)
+//   - obj/attr           → resolve attribute from object
+//   - attrname           → resolve attribute from executor
+//
+static void ast_noeval_ulambda(const ASTNode *node,
+    UTF8 *buff, UTF8 **bufc,
+    dbref executor, dbref caller, dbref enactor,
+    int eval, const UTF8 *cargs[], int ncargs)
+{
+    UNUSED_PARAMETER(caller);
+
+    int nfargs = static_cast<int>(node->children.size());
+    if (nfargs < 1) return;
+
+    // Reconstruct the first argument from the raw deferred text.
+    // The deferred mechanism preserves the raw token text, bypassing
+    // function-call parsing of the body.  We evaluate it with
+    // EV_STRIP_CURLY|EV_EVAL but WITHOUT EV_FCHECK so inner function
+    // names like mul(...) are emitted as literal text, not dispatched.
+    //
+    LBuf raw_arg0 = LBuf_Src("ulambda.arg0");
+    UTF8 *rp = raw_arg0;
+
+    const std::string *rawText = ast_call_raw_arg(node, 0);
+    if (rawText && !rawText->empty()) {
+        UTF8 *rawCopy = alloc_lbuf("ulambda.raw");
+        size_t rawLen = rawText->size();
+        if (rawLen > LBUF_SIZE - 1) rawLen = LBUF_SIZE - 1;
+        memcpy(rawCopy, rawText->c_str(), rawLen);
+        rawCopy[rawLen] = '\0';
+
+        mux_exec(rawCopy, rawLen, raw_arg0, &rp,
+            executor, executor, enactor,
+            EV_STRIP_CURLY | EV_EVAL,
+            cargs, ncargs);
+        free_lbuf(rawCopy);
+    }
+    *rp = '\0';
+
+    // Evaluate the remaining arguments (these are NOT deferred).
+    //
+    UTF8 *fargs[MAX_ARG];
+    memset(fargs, 0, sizeof(fargs));
+    fargs[0] = raw_arg0;
+    int real_nfargs = nfargs;
+    if (real_nfargs > MAX_ARG) real_nfargs = MAX_ARG;
+    for (int i = 1; i < real_nfargs; i++) {
+        fargs[i] = alloc_lbuf("ulambda.arg");
+        UTF8 *bp = fargs[i];
+        ast_eval_node(node->children[i].get(), fargs[i], &bp,
+            executor, executor, enactor,
+            eval | EV_FCHECK | EV_EVAL, cargs, ncargs);
+        *bp = '\0';
+    }
+
+    // Use parse_and_get_attrib to handle #lambda/, #apply/, obj/attr.
+    //
+    UTF8 *atext;
+    dbref thing;
+    dbref aowner;
+    int aflags;
+    if (!parse_and_get_attrib(executor, fargs, &atext, &thing,
+                               &aowner, &aflags, buff, bufc))
+    {
+        for (int i = 1; i < real_nfargs; i++) free_lbuf(fargs[i]);
+        return;
+    }
+
+    // Evaluate the body with fargs[1]... as %0, %1, ...
+    //
+    // Use ast_exec (not mux_exec) to bypass the JIT compiler.
+    // The JIT does not currently support dynamically-provided cargs
+    // from ulambda — it compiles with the cargs from the outer
+    // expression, not the ones we pass here.
+    //
+    ast_exec(atext, LBUF_SIZE - 1, buff, bufc, thing, executor, enactor,
+        AttrTrace(aflags, EV_FCHECK | EV_EVAL),
+        const_cast<const UTF8 **>(&fargs[1]), real_nfargs - 1);
+    free_lbuf(atext);
+    for (int i = 1; i < real_nfargs; i++) free_lbuf(fargs[i]);
+}
+
 // Dispatch table for native NOEVAL handling. Returns true if the
 // function was handled natively (caller should skip generic dispatch).
 //
@@ -1718,6 +1816,10 @@ static bool ast_try_native_noeval(const ASTNode *node,
     case ASTNOEVAL_CORBOOL:
         ast_noeval_cor(node, buff, bufc, executor, caller, enactor,
             eval, cargs, ncargs, true);
+        return true;
+    case ASTNOEVAL_ULAMBDA:
+        ast_noeval_ulambda(node, buff, bufc, executor, caller, enactor,
+            eval, cargs, ncargs);
         return true;
     case ASTNOEVAL_NONE:
     default:
