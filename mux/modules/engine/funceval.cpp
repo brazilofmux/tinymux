@@ -1999,8 +1999,6 @@ FUNCTION(fun_columns)
 //
 // Ported from PennMUSH 1.7.3 by Morgan.
 //
-// TODO: Support ANSI in output separator and padding.
-//
 FUNCTION(fun_table)
 {
     UNUSED_PARAMETER(executor);
@@ -2012,12 +2010,12 @@ FUNCTION(fun_table)
 
     // Check argument numbers, assign values and defaults if necessary.
     //
-    UTF8 *pPaddingStart = nullptr;
-    UTF8 *pPaddingEnd = nullptr;
+    const unsigned char *pFill = nullptr;
+    size_t lenFill = 0;
     if (nfargs == 6 && *fargs[5])
     {
-        pPaddingStart = strip_color(fargs[5]);
-        pPaddingEnd = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(pPaddingStart), '\0'));
+        pFill = reinterpret_cast<const unsigned char *>(fargs[5]);
+        lenFill = strlen(reinterpret_cast<const char *>(pFill));
     }
 
     // Get single-character separator.
@@ -2103,44 +2101,22 @@ FUNCTION(fun_table)
     size_t nCurrentCol = nNumCols - 1;
     for (;;)
     {
-        mux_field fldLength = StripTabsAndTruncate( pCurrent, *bufc, nBufferAvailable,
-                                                    static_cast<LBUF_OFFSET>(nFieldWidth));
-        size_t nVisibleLength = fldLength.m_column;
-        size_t nStringLength = fldLength.m_byte;
+        // Left-justify the field with ANSI-aware padding via co_ljust.
+        //
+        unsigned char ljBuf[LBUF_SIZE];
+        size_t nOut = co_ljust(ljBuf,
+            reinterpret_cast<const unsigned char *>(pCurrent),
+            strlen(reinterpret_cast<const char *>(pCurrent)),
+            static_cast<size_t>(nFieldWidth),
+            pFill, lenFill, 1);
 
-        *bufc += nStringLength;
-        nBufferAvailable -= nStringLength;
-
-        size_t nPaddingLength = nFieldWidth - nVisibleLength;
-        if (nPaddingLength > nBufferAvailable)
+        if (nOut > nBufferAvailable)
         {
-            nPaddingLength = nBufferAvailable;
+            nOut = nBufferAvailable;
         }
-        if (nPaddingLength)
-        {
-            nBufferAvailable -= nPaddingLength;
-            if (pPaddingStart)
-            {
-                for (  UTF8 *pPaddingCurrent = pPaddingStart;
-                       nPaddingLength > 0;
-                       nPaddingLength--)
-                {
-                    **bufc = *pPaddingCurrent;
-                    (*bufc)++;
-                    pPaddingCurrent++;
-
-                    if (pPaddingCurrent == pPaddingEnd)
-                    {
-                        pPaddingCurrent = pPaddingStart;
-                    }
-                }
-            }
-            else
-            {
-                memset(*bufc, ' ', nPaddingLength);
-                *bufc += nPaddingLength;
-            }
-        }
+        memcpy(*bufc, ljBuf, nOut);
+        *bufc += nOut;
+        nBufferAvailable -= nOut;
 
         pCurrent = split_token(&pNext, sep);
         if (!pCurrent)

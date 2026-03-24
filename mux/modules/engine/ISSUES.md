@@ -38,12 +38,7 @@ Implement the framework for evaluating softcode on multiple cores simultaneously
 
 ## Other Engine Issues
 
-### 5. ANSI Support in funceval
-
-- **File:** `funceval.cpp:2002`
-- **Issue:** Support ANSI in output separators and padding for functions that generate lists or formatted output.
-
-### 6. Session/Driver Separation
+### 5. Session/Driver Separation
 
 - **File:** `session.cpp:339`
 - **Issue:** `access_list` currently lives in the driver, but session-related access checks might need a better abstraction or to be moved.
