@@ -450,13 +450,25 @@ namespace
 class GanlTinyMuxSessionManager : public ganl::SessionManager {
 private:
     GanlAdapter& adapter_;
+    std::map<ganl::SessionId, std::string> session_errors_;
+
+    void setSessionError(ganl::SessionId sid, const std::string& err) {
+        if (sid != ganl::InvalidSessionId) {
+            session_errors_[sid] = err;
+        }
+    }
+
+    void clearSessionError(ganl::SessionId sid) {
+        session_errors_.erase(sid);
+    }
 
 public:
     GanlTinyMuxSessionManager(GanlAdapter& adapter) : adapter_(adapter) {}
     ~GanlTinyMuxSessionManager() override = default;
 
-    bool initialize() override { /* TODO: Any TinyMUX session init? */ return true; }
-    void shutdown() override { /* TODO: Any TinyMUX session cleanup? */ }
+    bool initialize() override { return true; }
+    void shutdown() override { session_errors_.clear(); }
+
 
     ganl::SessionId onConnectionOpen(ganl::ConnectionHandle handle, const std::string& remoteAddress) override {
         // During @restart, DESCs already exist — just wire up the mappings.
@@ -505,6 +517,7 @@ public:
         if (!conn) {
             g_pILog->WriteString(tprintf(T("GANL: Missing ConnectionBase for handle %llu\n"),
                 static_cast<unsigned long long>(handle)));
+            setSessionError(static_cast<ganl::SessionId>(handle), "Missing ConnectionBase");
             return ganl::InvalidSessionId;
         }
 
@@ -512,6 +525,7 @@ public:
         if (!d) {
             g_pILog->WriteString(tprintf(T("GANL: Failed to allocate DESC for handle %llu\n"),
                 static_cast<unsigned long long>(handle)));
+            setSessionError(static_cast<ganl::SessionId>(handle), "Failed to allocate descriptor");
             return ganl::InvalidSessionId;
         }
 
@@ -603,6 +617,7 @@ public:
             fcache_rawdump(static_cast<SOCKET>(d->socket), FC_CONN_SITE);
 
             adapter_.free_desc2(d);
+            setSessionError(static_cast<ganl::SessionId>(handle), "Connection refused (forbidden site)");
             return ganl::InvalidSessionId;
         }
 
@@ -841,6 +856,8 @@ public:
         // Free queues, then destroy non-trivial members, then free the DESC.
         freeqs(d);
         adapter_.free_desc2(d);
+
+        clearSessionError(sessionId);
     }
 
     bool sendToSession(ganl::SessionId sessionId, const std::string& message) override {
@@ -1148,9 +1165,9 @@ public:
         return false; // Placeholder
     }
 
-    std::string getLastSessionErrorString(ganl::SessionId sessionId) {
-        // TODO: Store last error per session if needed
-        return "";
+    std::string getLastSessionErrorString(ganl::SessionId sessionId) override {
+        auto it = session_errors_.find(sessionId);
+        return (it != session_errors_.end()) ? it->second : std::string();
     }
 };
 
@@ -1270,7 +1287,7 @@ bool GanlAdapter::initialize() {
     }
 
     // 3. Create Secure Transport (TLS/SSL)
-    // TODO: Make transport type configurable?
+    // The factory selects the platform backend (Schannel/OpenSSL) automatically.
     secureTransport_ = ganl::SecureTransportFactory::createTransport();
     if (secureTransport_) {
         ganl::TlsConfig tlsConfig;
