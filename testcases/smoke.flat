@@ -2792,7 +2792,7 @@
 >256
 "@log smoke=Beginning fpprop test cases."
 >257
-"@if strmatch(setr(0,sha1([fdiv(3,2)][fdiv(7,3)][fdiv(1,3)][fdiv(22,7)][sin(fdiv(pi(),2))][cos(fdiv(pi(),4))][sin(fdiv(pi(),6))][sin(3.14)][cos(1.57)][sqrt(2.0)][power(2.5,3.0)][atan2(1.0,1.0)][fmod(7.5,2.5)][add(1.5,2.5)][sub(10.0,3.7)][mul(2.5,4.0)][sin(add(mul(2,3),1))])),E29A4BAE2A378E74D16F36845D721399F1B1497A)={@log smoke=TC001: fp type propagation. Succeeded.;@trig me/tr.done},{@log smoke=TC001: fp type propagation. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([fdiv(3,2)][fdiv(7,3)][fdiv(1,3)][fdiv(22,7)][sin(fdiv(pi(),2))][cos(fdiv(pi(),4))][sin(fdiv(pi(),6))][sin(3.14)][cos(1.57)][sqrt(2.0)][power(2.5,3.0)][atan2(1.0,1.0)][fmod(7.5,2.5)][add(1.5,2.5)][sub(10.0,3.7)][mul(2.5,4.0)][sin(add(mul(2,3),1))][eq(1.5,1.5)][eq(1.5,2.5)][neq(1.5,2.5)][gt(2.5,1.5)][gt(1.5,2.5)][gte(2.5,2.5)][lt(1.5,2.5)][lte(2.5,2.5)][gt(fdiv(3,2),1.0)][if(gt(fdiv(7,3),2.0),yes,no)])),8F8D5F78E10AA72511602D306B730051FDF5378C)={@log smoke=TC001: fp type propagation. Succeeded.;@trig me/tr.done},{@log smoke=TC001: fp type propagation. Failed (%q0).;@trig me/tr.done}"
 >258
 "@log smoke=End fpprop test cases.;@notify smoke"
 <

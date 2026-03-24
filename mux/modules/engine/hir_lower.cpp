@@ -2033,6 +2033,33 @@ general_lowering:
         return r;
     }
 
+    // Float comparisons: EQ, NEQ, GT, GTE, LT, LTE with float args.
+    // Synthesize missing opcodes: NEQ→NOT(FEQ), GT→FLT(b,a), GTE→FLE(b,a).
+    if ((upper == "EQ" || upper == "NEQ" || upper == "GT" || upper == "GTE"
+         || upper == "LT" || upper == "LTE") && nargs == 2
+        && all_numeric() && any_float()) {
+        int a = ensure_float(args[0]);
+        int b = ensure_float(args[1]);
+        int r;
+        if (upper == "EQ") {
+            r = h.emit(HIR_FEQ, TY_INT, a, b);
+        } else if (upper == "NEQ") {
+            r = h.emit(HIR_FEQ, TY_INT, a, b);
+            r = h.emit(HIR_NOT, TY_INT, r);
+        } else if (upper == "GT") {
+            r = h.emit(HIR_FLT, TY_INT, b, a);  // a > b ≡ b < a
+        } else if (upper == "GTE") {
+            r = h.emit(HIR_FLE, TY_INT, b, a);   // a >= b ≡ b <= a
+        } else if (upper == "LT") {
+            r = h.emit(HIR_FLT, TY_INT, a, b);
+        } else {
+            r = h.emit(HIR_FLE, TY_INT, a, b);   // LTE
+        }
+        h.native_ops++;
+        h.needs_jit = true;
+        return r;
+    }
+
     // NOT: not(x) → (x == 0)
     if (upper == "NOT" && nargs == 1 && h.is_int(args[0])) {
         int a = ensure_hi(args[0]);
