@@ -98,9 +98,41 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int eval, int key)
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(key);
 
-    notify(executor, T("@dbclean is not needed with SQLite storage."));
-    notify(executor, T("Attribute numbers are indexed keys; gaps cost nothing."));
-    return;
+    // Phase 1: Find orphaned vattr names — user-defined attribute
+    // names (attrnum >= 256) not referenced by any object.
+    //
+    std::vector<int> orphans = g_pSQLiteBackend->GetDB().FindOrphanedAttrNames();
+
+    // Phase 2: Remove orphans from in-memory maps.
+    //
+    for (int anum : orphans)
+    {
+        ATTR *vp = static_cast<ATTR *>(anum_table[anum]);
+        if (vp)
+        {
+            if (vp->name)
+            {
+                std::string name(reinterpret_cast<const char *>(vp->name));
+                mudstate.vattr_name_map.erase(name);
+            }
+            mudstate.vattr_numbers.erase(anum);
+            anum_set(anum, nullptr);
+            MEMFREE(vp);
+        }
+    }
+
+    // Phase 3: Purge from SQLite and refresh statistics.
+    //
+    int purged = g_pSQLiteBackend->GetDB().PurgeOrphanedAttrNames();
+    if (purged < 0)
+    {
+        notify(executor, T("@dbclean: SQLite error during orphan purge."));
+        return;
+    }
+    g_pSQLiteBackend->GetDB().Analyze();
+
+    notify(executor, tprintf(T("@dbclean: %d orphaned attribute name%s purged."),
+        purged, (purged == 1) ? "" : "s"));
 }
 
 void vattr_delete_LEN(UTF8 *pName, size_t nName)

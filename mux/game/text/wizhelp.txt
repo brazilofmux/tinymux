@@ -356,10 +356,14 @@ INDESTRUCTIBLE
 
   COMMAND: @dbclean
 
-  This command searches the entire database and removes any stale
-  user-defined attributes.  It should be used sparingly, as it may take many
-  minutes to execute, depending upon database size and machine speed.  Only
-  God may execute this command.
+  Purge orphaned user-defined attribute names from the database.
+  An attribute name is orphaned when no object in the database has
+  an attribute using that name.  This can happen when objects are
+  destroyed or attributes are removed.
+
+  After purging, SQLite query planner statistics are refreshed.
+
+  Only God may execute this command.
 
 & @DELCOMMAND
 @DELCOMMAND

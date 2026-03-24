@@ -1414,6 +1414,48 @@ int CSQLiteDB::CountAttributes(dbref obj)
     return count;
 }
 
+std::vector<int> CSQLiteDB::FindOrphanedAttrNames()
+{
+    std::vector<int> orphans;
+    const char *sql =
+        "SELECT attrnum FROM attrnames WHERE attrnum >= 256"
+        " AND attrnum NOT IN (SELECT DISTINCT attrnum FROM attributes)";
+
+    sqlite3_stmt *stmt = nullptr;
+    if (SQLITE_OK != sqlite3_prepare_v2(m_db, sql, -1, &stmt, nullptr))
+    {
+        return orphans;
+    }
+    while (SQLITE_ROW == sqlite3_step(stmt))
+    {
+        orphans.push_back(sqlite3_column_int(stmt, 0));
+    }
+    sqlite3_finalize(stmt);
+    return orphans;
+}
+
+int CSQLiteDB::PurgeOrphanedAttrNames()
+{
+    // Delete vattr names (attrnum >= A_USER_START) that are not
+    // referenced by any row in the attributes table.
+    //
+    const char *sql =
+        "DELETE FROM attrnames WHERE attrnum >= 256"
+        " AND attrnum NOT IN (SELECT DISTINCT attrnum FROM attributes)";
+
+    int rc = sqlite3_exec(m_db, sql, nullptr, nullptr, nullptr);
+    if (SQLITE_OK != rc)
+    {
+        return -1;
+    }
+    return sqlite3_changes(m_db);
+}
+
+void CSQLiteDB::Analyze()
+{
+    sqlite3_exec(m_db, "ANALYZE", nullptr, nullptr, nullptr);
+}
+
 bool CSQLiteDB::ClearAttributes()
 {
     bool ok = SQLITE_OK == sqlite3_exec(m_db, "DELETE FROM attributes;", nullptr, nullptr, nullptr);

@@ -101,6 +101,9 @@ public:
     void GetAllAttrModCounts(dbref obj, std::function<void(int attrnum, uint32_t mc)> cb);
     bool DelAllAttributes(dbref obj);
     int CountAttributes(dbref obj);
+    std::vector<int> FindOrphanedAttrNames();
+    int PurgeOrphanedAttrNames();
+    void Analyze();
     bool ClearAttributes();
 
     // Bulk attribute read for preloading / @search.
