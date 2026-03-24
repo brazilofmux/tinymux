@@ -2378,6 +2378,7 @@ double fmod(double x, double y)  { (void)y; return x; }
 
 double rv64_strtod(const char *s) { (void)s; return 0.0; }
 int rv64_fval(char *buf, double val) { (void)buf; (void)val; return 0; }
+double rv64_nearest_pretty(double val) { return val; }  /* intrinsic → host NearestPretty */
 
 /* ---------------------------------------------------------------
  * Tier 2 math wrappers — softcode function entry points.
@@ -2492,6 +2493,17 @@ static int rv64_ltoa(char *buf, long val) {
     while (i > 0) buf[len++] = tmp[--i];
     buf[len] = '\0';
     return len;
+}
+
+char *rv64_mul(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '0'; out[1] = '\0'; return out; }
+    double prod = 1.0;
+    for (int i = 0; i < nfargs; i++) {
+        prod *= rv64_strtod(fargs[i]);
+    }
+    int n = rv64_fval(out, rv64_nearest_pretty(prod));
+    out[n] = '\0';
+    return out;
 }
 
 char *rv64_add(char *out, const char **fargs, int nfargs) {

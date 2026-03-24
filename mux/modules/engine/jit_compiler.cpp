@@ -186,10 +186,11 @@ static bool tier2_allowed(const std::string &mux_name) {
         "FMOD",         // rv64_fmod: fmod() via MATH_WRAP_2
         "POWER",        // rv64_power: pow() via MATH_WRAP_2
 
-        // Tier 2 arithmetic with integer fast path.
+        // Tier 2 arithmetic.
         "ADD", "SUB",
+        "MUL",          // rv64_mul: strtod * ... * strtod → NearestPretty → fval
 
-        // Blocked — arithmetic with special rounding or edge cases
+        // Blocked — arithmetic with edge cases (Inf/Ind, FP class).
         // (NearestPretty, Inf/Ind, FP class checks).
         // The type propagation pass handles numeric args natively;
         // these only affect the string-arg ECALL fallback.
@@ -364,9 +365,10 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "FMOD",        "rv64_fmod" },
     { "POWER",       "rv64_power" },
 
-    // --- Batch 9: arithmetic with integer fast path ---
+    // --- Batch 9: arithmetic ---
     { "ADD",         "rv64_add" },
     { "SUB",         "rv64_sub" },
+    { "MUL",         "rv64_mul" },
 
     { nullptr, nullptr }
 };
@@ -604,6 +606,11 @@ void pretranslate_tier2(dbt_state_t *dbt) {
     reg_intrinsic(dbt, "pow",   DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::pow)));
     reg_intrinsic(dbt, "atan2", DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::atan2)));
     reg_intrinsic(dbt, "fmod",  DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::fmod)));
+
+    // Rounding intrinsic — NearestPretty (double→double).
+    //
+    reg_intrinsic(dbt, "rv64_nearest_pretty", DBT_EMIT_FP_D_D,
+                  reinterpret_cast<void *>(static_cast<fn_d_d>(NearestPretty)));
 
     // String↔double conversion intrinsics.
     //
