@@ -505,6 +505,7 @@ static const fp_math_entry s_fp_unary[] = {
     { "SQRT",  "sqrt",  FMATH_SQRT  },
     { "CEIL",  "ceil",  FMATH_CEIL  },
     { "FLOOR", "floor", FMATH_FLOOR },
+    { "ABS",   "fabs",  FMATH_FABS  },
     { nullptr, nullptr, 0 }
 };
 
