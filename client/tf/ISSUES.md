@@ -1,30 +1,16 @@
 # TitanFugue C++ Client — Open Issues
 
-Updated: 2026-03-17 (commit 3916f46f7)
+Updated: 2026-03-24
 
 ## Bugs
 
-- **`substitute()` only replaces the last visual line, not the logical line**
-  When a logical line is wrapped into multiple visual lines in the scrollback
-  buffer, calling `substitute()` (or `replace_last_output_line`) only removes
-  the very last `pop_back()` entry. Classic TF replaces the entire logical
-  line regardless of wrapping.
+All previously reported bugs have been resolved:
 
-- **`Ctrl-C` exits immediately instead of showing the interrupt menu**
-  Classic TF shows an interactive menu (Continue, Exit, Disable Triggers,
-  Kill Processes) on `SIGINT`. TitanFugue currently treats `SIGINT` as an
-  immediate shutdown signal.
-
-- **`Macro::compile_trigger` treats `simple` match type as `glob`**
-  The `simple` match type (literal match) is not explicitly handled and
-  falls through to the `glob_to_regex` compiler.
+- ~~`substitute()` only replaces last visual line~~ — Fixed: `replace_last_output_line` tracks `last_logical_line_count` and pops all visual lines of the logical line.
+- ~~`Ctrl-C` exits immediately~~ — Fixed: SIGINT handler sets flag, event loop prints "Interrupt: /quit to exit" instead of exiting.
+- ~~`compile_trigger` treats `simple` as `glob`~~ — Fixed: `simple` and `substr` both call `regex_escape()` for literal matching.
 
 ## Stubbed Or Partially Implemented Interfaces
-
-- **`SIGTSTP` (Ctrl-Z) support is only manual via `/suspend`**
-  While `/suspend` is implemented, the client does not automatically
-  handle `SIGTSTP` signals. Standard Unix behavior for CLI tools is
-  to suspend correctly on `Ctrl-Z`.
 
 - **Lack of multi-key binding support**
   `KeyBindings` and `InputLexer` only support single-event bindings. Classic
@@ -49,6 +35,11 @@ Updated: 2026-03-17 (commit 3916f46f7)
   The `E` (error), `W` (warning), and `I` (info) meta-attribute codes
   are not implemented as they reference TF's configurable style variables.
 
+## Previously Reported — Now Resolved
+
+- ~~`SIGTSTP` (Ctrl-Z) support~~ — Implemented: proper shutdown/raise/reinit cycle with handler reinstall on resume.
+- ~~Shell process read loop EAGAIN~~ — Fixed: non-blocking read now distinguishes EAGAIN from real errors, closes fd on non-EAGAIN failures.
+
 ## Charset Support
 
 Supported charsets (bidirectional, negotiated via telnet CHARSET option 42):
@@ -62,30 +53,9 @@ Supported charsets (bidirectional, negotiated via telnet CHARSET option 42):
 | Windows-1252 | cp1252, win1252 | Smart quotes, web text |
 | KOI8-R | | Russian Cyrillic MUDs |
 
-Not supported (rejected during negotiation): ISO-8859-15 (Latin-9),
-CP850, KOI8-U. These differ from their near-neighbors in enough
-codepoints to cause silent corruption. Proper tables could be added
-to `charset.cpp` if demand arises.
-
-## Opportunities for Improvement
-
-- **Shell process read loop doesn't distinguish EAGAIN from errors**
-  (main.cpp) When `read()` returns -1, the loop breaks without
-  checking `errno`. EAGAIN is handled implicitly (poll retries next
-  iteration) but an actual error leaves the fd open. Consider closing
-  on non-EAGAIN errors.
-
 ## Notes
 
-- Status bar is at parity with classic TF 5.0: variable-driven fields,
-  all 7 internal fields (`@world`, `@more`, `@clock`, `@active`, `@log`,
-  `@read`, `@mail`), format variables (`status_int_*`, `status_var_*`),
-  attribute variables (`status_attr_int_*`, `status_attr_var_*`),
-  right-justification (negative widths), reactive redraw, both word-token
-  and classic single-char attribute syntax.
-- TrueColor (24-bit) rendering via ncurses `init_extended_color()` with
-  CIE97 perceptual-distance fallback to xterm-256 via libmux's
-  `co_nearest_xterm256()`.
+- Status bar is at parity with classic TF 5.0.
+- TrueColor (24-bit) rendering via ncurses with CIE97 perceptual fallback.
 - MCCP v2 (telnet option 86) zlib decompression.
-- Full telnet: ECHO, SGA, TTYPE, NAWS (with IAC escaping), BINARY,
-  CHARSET negotiation.
+- Full telnet: ECHO, SGA, TTYPE, NAWS, BINARY, CHARSET negotiation.

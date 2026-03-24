@@ -699,6 +699,13 @@ static void run(App& app) {
                     if (n == 0) {
                         drain_shell_buffer(app, proc, true);
                         close_shell_process(proc);
+                        break;
+                    }
+                    // n == -1: EAGAIN means no more data right now,
+                    // any other error means the fd is bad.
+                    if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                        drain_shell_buffer(app, proc, true);
+                        close_shell_process(proc);
                     }
                     break;
                 }
