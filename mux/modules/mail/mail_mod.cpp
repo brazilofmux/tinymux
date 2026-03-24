@@ -4526,15 +4526,28 @@ void CMailMod::get_player_name(dbref who, UTF8 *buf, size_t bufsize)
 
 bool CMailMod::is_connected_visible(dbref who, dbref viewer)
 {
-    UNUSED_PARAMETER(viewer);
     if (nullptr == m_pIObjectInfo)
     {
         return false;
     }
     bool bConnected = false;
     m_pIObjectInfo->IsConnected(who, &bConnected);
-    // TODO: Check Hidden/See_Hidden when interface supports it.
-    return bConnected;
+    if (!bConnected)
+    {
+        return false;
+    }
+
+    // If 'who' is Hidden (DARK flag), only visible to See_Hidden viewers.
+    //
+    unsigned int flags = 0;
+    m_pIObjectInfo->GetFlags(who, 0, &flags);  // FLAG_WORD1 = 0
+    if (flags & 0x00000040)  // DARK = 0x00000040
+    {
+        bool bSeeHidden = false;
+        m_pIObjectInfo->SeeHidden(viewer, &bSeeHidden);
+        return bSeeHidden;
+    }
+    return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -5354,7 +5367,48 @@ void CMailMod::shutdown(void)
 
 void CMailMod::dbck(void)
 {
-    // TODO: Mail consistency checks.
+    // Mail consistency check: remove mail referencing destroyed players.
+    //
+    if (nullptr == m_pIObjectInfo)
+    {
+        return;
+    }
+
+    for (auto it = m_mail_htab.begin(); it != m_mail_htab.end(); )
+    {
+        bool bValid = false;
+        m_pIObjectInfo->IsValid(it->first, &bValid);
+        if (!bValid)
+        {
+            // Recipient destroyed — purge their mail.
+            //
+            for (auto &m : it->second)
+            {
+                MessageReferenceDec(m.number);
+            }
+            sqlite_wt_delete_all_mail(it->first);
+            it = m_mail_htab.erase(it);
+        }
+        else
+        {
+            // Check for mail from destroyed senders — mark as NOTHING.
+            //
+            for (auto &m : it->second)
+            {
+                if (m.from != NOTHING)
+                {
+                    bool bFromValid = false;
+                    m_pIObjectInfo->IsValid(m.from, &bFromValid);
+                    if (!bFromValid)
+                    {
+                        m.from = NOTHING;
+                        sqlite_wt_update_mail_flags(&m);
+                    }
+                }
+            }
+            ++it;
+        }
+    }
 }
 
 void CMailMod::connect(dbref player, int isnew, int num)
@@ -5383,8 +5437,10 @@ void CMailMod::data_clone(dbref clone, dbref source)
 
 void CMailMod::data_free(dbref object)
 {
-    // TODO: Enable when module fully owns mail data.
-    UNUSED_PARAMETER(object);
+    // When a player is destroyed, purge their mail and clean up
+    // references from other players' mailboxes.
+    //
+    DestroyPlayerMail(object);
 }
 
 // ---------------------------------------------------------------------------
