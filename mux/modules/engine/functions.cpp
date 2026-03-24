@@ -1202,7 +1202,16 @@ static FUNCTION(fun_timefmt)
             break;
 
         case 'Z': // $Z - Time zone name
-            // TODO
+            {
+                time_t t = static_cast<time_t>(ltaUTC.ReturnSeconds());
+                struct tm tmLocal;
+                if (localtime_r(&t, &tmLocal))
+                {
+                    char tzName[64];
+                    strftime(tzName, sizeof(tzName), "%Z", &tmLocal);
+                    safe_str(reinterpret_cast<const UTF8 *>(tzName), buff, bufc);
+                }
+            }
             break;
 
         case '$': // $$

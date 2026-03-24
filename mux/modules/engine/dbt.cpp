@@ -2395,11 +2395,18 @@ no_addr_fusion:
                     emit_imul1_r64(&e, rs2);
                     rc_store(&e, &rc, insn.rd, X64_RDX);
                     break;
-                case 2: // MULHSU (signed * unsigned, high 64) — fall back to helper
-                    // Not easily done with x86. Use: RAX=rs1, imul1 with abs, then adjust.
-                    // For now, emit interpreter fallback via ECALL-like mechanism.
-                    // TODO: implement MULHSU inline
-                    goto fallback_interp;
+                case 2: // MULHSU (signed * unsigned, high 64)
+                    // MULHSU(rs1, rs2) = MULHU(rs1, rs2) - (rs1 < 0 ? rs2 : 0)
+                    // RCX is scratch (never cached), rs2 is always a cached reg.
+                    //
+                    rc_load(&e, &rc, X64_RAX, insn.rs1);
+                    emit_mov_r64(&e, X64_RCX, X64_RAX);   // save rs1 for sign check
+                    emit_mul_r64(&e, rs2);                  // RDX:RAX = unsigned(rs1) * rs2
+                    emit_sar_r64_imm(&e, X64_RCX, 63);    // RCX = sign mask (-1 or 0)
+                    emit_and_r64(&e, X64_RCX, rs2);        // RCX = rs2 if rs1 < 0, else 0
+                    emit_sub_r64(&e, X64_RDX, X64_RCX);   // RDX -= adjustment
+                    rc_store(&e, &rc, insn.rd, X64_RDX);
+                    break;
                 case 3: // MULHU (unsigned * unsigned, high 64)
                     rc_load(&e, &rc, X64_RAX, insn.rs1);
                     emit_mul_r64(&e, rs2);
