@@ -1836,7 +1836,29 @@ void GanlAdapter::run_main_loop() {
                     //GANL_CONN_DEBUG(events[i].connection, "Warning: Event received for untracked/closed connection.");
                 }
             }
-            // TODO: Handle listener errors? (events[i].listener != InvalidListenerHandle)
+            else if (events[i].listener != ganl::InvalidListenerHandle
+                  && events[i].type == ganl::IoEventType::Error)
+            {
+                // A listener experienced an error (e.g., failed accept).
+                // The network engines re-arm the listener internally, so
+                // we just log the event for diagnostics.
+                //
+                int port = 0;
+                bool isSsl = false;
+                auto ctxIt = listener_contexts_.find(events[i].listener);
+                if (ctxIt != listener_contexts_.end()) {
+                    port = ctxIt->second.port;
+                    isSsl = ctxIt->second.is_ssl;
+                }
+
+                STARTLOG(LOG_NET, "NET", "LERR");
+                g_pILog->WriteString(tprintf(T("Listener error on %sport %d (handle %llu): error %d"),
+                    isSsl ? T("SSL ") : T(""),
+                    port,
+                    static_cast<unsigned long long>(events[i].listener),
+                    events[i].error));
+                ENDLOG;
+            }
         }
 
         // If SIGCHLD recorded a dump child exit, report it to the
