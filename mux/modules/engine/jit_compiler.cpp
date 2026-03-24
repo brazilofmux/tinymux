@@ -502,7 +502,7 @@ static void reg_intrinsic(dbt_state_t *dbt, const char *blob_name,
 // These are called by the DBT stubs with host pointers and FP values.
 //
 static double host_strtod(const char *s) {
-    return strtod(s, nullptr);
+    return mux_atof(reinterpret_cast<const UTF8 *>(s));
 }
 
 static int host_fval(char *buf, double val) {

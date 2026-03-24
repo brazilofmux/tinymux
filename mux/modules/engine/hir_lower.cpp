@@ -2198,6 +2198,7 @@ general_lowering:
     }
 
     // FDIV: always produces float.  Promote args to double.
+#ifdef HAVE_IEEE_FP_SNAN
     if (upper == "FDIV" && nargs == 2 && all_numeric()) {
         int a = ensure_float(args[0]);
         int b = ensure_float(args[1]);
@@ -2206,8 +2207,10 @@ general_lowering:
         h.needs_jit = true;
         return r;
     }
+#endif
 
     // SQRT: always produces float.
+#ifdef HAVE_IEEE_FP_SNAN
     if (upper == "SQRT" && nargs == 1 && h.is_numeric(args[0])) {
         int a = ensure_float(args[0]);
         int r = h.emit(HIR_FSQRT, TY_FLOAT, a);
@@ -2215,6 +2218,7 @@ general_lowering:
         h.needs_jit = true;
         return r;
     }
+#endif
 
     // Unary transcendentals: SIN, COS, TAN, etc. → FCALL1.
     // Only when the argument is provably numeric, and the blob
@@ -2223,6 +2227,21 @@ general_lowering:
     for (int ti = 0; s_fp_unary[ti].mux_name; ti++) {
         if (upper == s_fp_unary[ti].mux_name && nargs == 1
             && h.is_numeric(args[0])) {
+#ifndef HAVE_IEEE_FP_SNAN
+            // On non-IEEE systems, ASIN/ACOS/LOG/LOG10/SQRT have
+            // domain guards in the interpreter that return "Ind".
+            // The JIT bypasses those guards, so fall through to
+            // ECALL for these functions.
+            //
+            if (  s_fp_unary[ti].fmath == FMATH_ASIN
+               || s_fp_unary[ti].fmath == FMATH_ACOS
+               || s_fp_unary[ti].fmath == FMATH_LOG
+               || s_fp_unary[ti].fmath == FMATH_LOG10
+               || s_fp_unary[ti].fmath == FMATH_SQRT)
+            {
+                break;
+            }
+#endif
             uint64_t addr = fp_intrinsic_addr(s_fp_unary[ti].blob_sym);
             if (addr) {
                 int a = ensure_float(args[0]);
@@ -2241,6 +2260,16 @@ general_lowering:
     for (int ti = 0; s_fp_binary[ti].mux_name; ti++) {
         if (upper == s_fp_binary[ti].mux_name && nargs == 2
             && all_numeric()) {
+#ifndef HAVE_IEEE_FP_SNAN
+            // On non-IEEE systems, POWER and FMOD have domain guards
+            // in the interpreter.  Fall through to ECALL.
+            //
+            if (  s_fp_binary[ti].fmath == FMATH_POW
+               || s_fp_binary[ti].fmath == FMATH_FMOD)
+            {
+                break;
+            }
+#endif
             uint64_t addr = fp_intrinsic_addr(s_fp_binary[ti].blob_sym);
             if (addr) {
                 int a = ensure_float(args[0]);

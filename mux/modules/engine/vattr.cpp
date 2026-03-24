@@ -103,7 +103,18 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int eval, int key)
     //
     std::vector<int> orphans = g_pSQLiteBackend->GetDB().FindOrphanedAttrNames();
 
-    // Phase 2: Remove orphans from in-memory maps.
+    // Phase 2: Purge from SQLite first.  If this fails, bail out
+    // without touching in-memory state so the process and database
+    // stay consistent.
+    //
+    int purged = g_pSQLiteBackend->GetDB().PurgeOrphanedAttrNames();
+    if (purged < 0)
+    {
+        notify(executor, T("@dbclean: SQLite error during orphan purge."));
+        return;
+    }
+
+    // Phase 3: SQLite succeeded — now remove orphans from in-memory maps.
     //
     for (int anum : orphans)
     {
@@ -121,14 +132,6 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int eval, int key)
         }
     }
 
-    // Phase 3: Purge from SQLite and refresh statistics.
-    //
-    int purged = g_pSQLiteBackend->GetDB().PurgeOrphanedAttrNames();
-    if (purged < 0)
-    {
-        notify(executor, T("@dbclean: SQLite error during orphan purge."));
-        return;
-    }
     g_pSQLiteBackend->GetDB().Analyze();
 
     notify(executor, tprintf(T("@dbclean: %d orphaned attribute name%s purged."),
