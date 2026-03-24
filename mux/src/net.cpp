@@ -137,14 +137,10 @@ void queue_write_LEN(DESC *d, const UTF8 *b, size_t n)
         return;
     }
 
-    // If the output queue has grown enough that it needs to be chopped, spend
-    // some time attempting to push at least some of it out. It may be that
-    // writes are already flowing out to the network, but we check anyway.
-    //
-    // TODO: The threshold for this should perhaps be lowered, but we should
-    // not lower it to the point that process_output is called on every call
-    // to queue_write_LEN(). If we could know somehow that process_output()
-    // would be unproductive, then we wouldn't make even the following call.
+    // If the output queue has grown past output_limit, flush it into GANL's
+    // internal buffers before appending more.  With GANL, process_output()
+    // always fully drains the queue (buffer-to-buffer copy), so this call
+    // is never unproductive.
     //
     if (static_cast<size_t>(g_dc.output_limit) < d->output_size + n)
     {

@@ -8,10 +8,9 @@
 
 ## Core Networking
 
-### 2. Output Throttling Threshold
+### ~~2. Output Throttling Threshold~~ (Fixed)
 
-- **File:** `net.cpp:144`
-- **Issue:** The output queue threshold for triggered flushing needs to be tuned. The current limit might cause unnecessary latency or unproductive calls to `process_output`.
+- Default `output_limit` bumped from 16384 to `2 * LBUF_SIZE` (65536) to match the LBUF_SIZE increase to 32K. Stale TODO removed — with GANL, `process_output` always fully drains the queue.
 
 ## Closed
 

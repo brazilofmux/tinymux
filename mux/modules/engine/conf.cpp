@@ -137,7 +137,7 @@ void cf_init(void)
     mudconf.idle_interval = 60;
     mudconf.keepalive_interval = 60;
     mudconf.retry_limit = 3;
-    mudconf.output_limit = 16384;
+    mudconf.output_limit = 2 * LBUF_SIZE;
     mudconf.paycheck = 0;
     mudconf.paystart = 0;
     mudconf.paylimit = 10000;
