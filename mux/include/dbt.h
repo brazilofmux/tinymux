@@ -216,6 +216,11 @@ enum dbt_emitter_id {
     //
     DBT_EMIT_FP_D_D,         // double fn(double): sin, cos, tan, etc.
     DBT_EMIT_FP_DD_D,        // double fn(double, double): pow, atan2, fmod
+
+    // Mixed integer/FP intrinsics for string↔double conversion.
+    //
+    DBT_EMIT_STRTOD,         // double rv64_strtod(char *s): a0=ptr → fa0=double
+    DBT_EMIT_FVAL,           // int rv64_fval(char *buf, double val): a0=ptr, fa0=double → a0=len
 };
 
 void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,

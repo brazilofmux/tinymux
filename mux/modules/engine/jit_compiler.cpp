@@ -460,6 +460,21 @@ static void reg_intrinsic(dbt_state_t *dbt, const char *blob_name,
 }
 
 
+// Host-side wrappers for string↔double conversion intrinsics.
+// These are called by the DBT stubs with host pointers and FP values.
+//
+static double host_strtod(const char *s) {
+    return strtod(s, nullptr);
+}
+
+static int host_fval(char *buf, double val) {
+    UTF8 *bufc = reinterpret_cast<UTF8 *>(buf);
+    UTF8 *start = bufc;
+    fval(reinterpret_cast<UTF8 *>(buf), &bufc, val);
+    *bufc = '\0';
+    return static_cast<int>(bufc - start);
+}
+
 void pretranslate_tier2(dbt_state_t *dbt) {
     if (!s_tier2.loaded) return;
 
@@ -560,6 +575,11 @@ void pretranslate_tier2(dbt_state_t *dbt) {
     reg_intrinsic(dbt, "pow",   DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::pow)));
     reg_intrinsic(dbt, "atan2", DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::atan2)));
     reg_intrinsic(dbt, "fmod",  DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::fmod)));
+
+    // String↔double conversion intrinsics.
+    //
+    reg_intrinsic(dbt, "rv64_strtod", DBT_EMIT_STRTOD, reinterpret_cast<void *>(host_strtod));
+    reg_intrinsic(dbt, "rv64_fval",   DBT_EMIT_FVAL,   reinterpret_cast<void *>(host_fval));
 
     // Pre-translate all intrinsic stubs into the cache BEFORE any
     // function pretranslation.  Intrinsics are leaf functions (strlen,

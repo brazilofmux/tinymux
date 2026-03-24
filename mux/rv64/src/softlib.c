@@ -20,6 +20,8 @@ typedef unsigned long uint64_t;
 typedef unsigned long size_t;
 typedef long          int64_t;
 
+#include <math.h>
+
 /* Forward declarations for intrinsics (defined below). */
 int   rv64_slen(const char *s);
 char *rv64_scopy(char *dst, const char *src);
@@ -2362,3 +2364,63 @@ double fabs(double x)  { return x; }
 double pow(double x, double y)   { (void)y; return x; }
 double atan2(double y, double x) { (void)x; return y; }
 double fmod(double x, double y)  { (void)y; return x; }
+
+/* ---------------------------------------------------------------
+ * String↔double conversion — DBT intrinsic targets.
+ *
+ * rv64_strtod: parse string → double (intrinsic → host strtod)
+ * rv64_fval:   format double → string (intrinsic → host fval)
+ *
+ * These stubs are never executed; the DBT intercepts and calls
+ * the host implementations directly.
+ * ---------------------------------------------------------------
+ */
+
+double rv64_strtod(const char *s) { (void)s; return 0.0; }
+int rv64_fval(char *buf, double val) { (void)buf; (void)val; return 0; }
+
+/* ---------------------------------------------------------------
+ * Tier 2 math wrappers — softcode function entry points.
+ *
+ * Each wrapper: parse fargs[0] string → double, call math fn
+ * (intrinsic → native libm), format result → string.
+ * All three steps run at native host speed via intrinsics.
+ * ---------------------------------------------------------------
+ */
+
+#define MATH_WRAP_1(name, fn) \
+char *rv64_##name(char *out, const char **fargs, int nfargs) { \
+    if (nfargs < 1) { out[0] = '0'; out[1] = '\0'; return out; } \
+    double val = rv64_strtod(fargs[0]); \
+    int n = rv64_fval(out, fn(val)); \
+    out[n] = '\0'; \
+    return out; \
+}
+
+#define MATH_WRAP_2(name, fn) \
+char *rv64_##name(char *out, const char **fargs, int nfargs) { \
+    if (nfargs < 2) { out[0] = '0'; out[1] = '\0'; return out; } \
+    double a = rv64_strtod(fargs[0]); \
+    double b = rv64_strtod(fargs[1]); \
+    int n = rv64_fval(out, fn(a, b)); \
+    out[n] = '\0'; \
+    return out; \
+}
+
+MATH_WRAP_1(sin,   sin)
+MATH_WRAP_1(cos,   cos)
+MATH_WRAP_1(tan,   tan)
+MATH_WRAP_1(asin,  asin)
+MATH_WRAP_1(acos,  acos)
+MATH_WRAP_1(atan,  atan)
+MATH_WRAP_1(exp,   exp)
+MATH_WRAP_1(log,   log)
+MATH_WRAP_1(log10, log10)
+MATH_WRAP_1(ceil,  ceil)
+MATH_WRAP_1(floor, floor)
+MATH_WRAP_1(fabs,  fabs)
+MATH_WRAP_1(sqrt,  sqrt)
+
+MATH_WRAP_2(power, pow)
+MATH_WRAP_2(atan2, atan2)
+MATH_WRAP_2(fmod,  fmod)

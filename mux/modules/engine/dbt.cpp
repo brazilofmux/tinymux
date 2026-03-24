@@ -747,6 +747,48 @@ static void emit_stub_fp_dd_d(void *ev, void *fn) {
     emit_intrinsic_return(e);
 }
 
+// ---- String↔double conversion intrinsic stubs ----
+
+// rv64_strtod: guest a0=string_ptr → guest fa0=double
+// Host: double host_strtod(const char *s)
+// SysV: rdi=s → xmm0=result
+//
+static void emit_stub_strtod(void *ev, void *fn) {
+    emit_t *e = static_cast<emit_t *>(ev);
+    emit_stub_prologue(e);
+
+    // rdi = host pointer to string
+    emit_load_ctx_reg(e, X64_RDI, 10);   // guest a0
+    emit_guest_to_host(e, X64_RDI);
+    emit_call_host(e, fn);
+    // Result in xmm0 → store to guest fa0
+    emit_store_ctx_fp(e, CTX_FA0_OFF, 0);
+
+    emit_stub_epilogue(e);
+    emit_intrinsic_return(e);
+}
+
+// rv64_fval: guest a0=buf_ptr, guest fa0=double → guest a0=length
+// Host: int host_fval(char *buf, double val)
+// SysV: rdi=buf, xmm0=val → rax=len
+//
+static void emit_stub_fval(void *ev, void *fn) {
+    emit_t *e = static_cast<emit_t *>(ev);
+    emit_stub_prologue(e);
+
+    // rdi = host pointer to output buffer
+    emit_load_ctx_reg(e, X64_RDI, 10);   // guest a0
+    emit_guest_to_host(e, X64_RDI);
+    // xmm0 = double value from guest fa0
+    emit_load_ctx_fp(e, 0, CTX_FA0_OFF);
+    emit_call_host(e, fn);
+    // Result (length) in rax → store to guest a0
+    emit_store_ctx_reg(e, 10, X64_RAX);
+
+    emit_stub_epilogue(e);
+    emit_intrinsic_return(e);
+}
+
 // ---- Generic co_* intrinsic stub emitter ----
 //
 // Emits a native CALL to the host co_* function.  Arguments are in
@@ -968,6 +1010,8 @@ static generic_emitter_fn s_emitter_table[] = {
     emit_stub_co_8ppp,     // DBT_EMIT_CO_8PPP
     emit_stub_fp_d_d,      // DBT_EMIT_FP_D_D
     emit_stub_fp_dd_d,     // DBT_EMIT_FP_DD_D
+    emit_stub_strtod,      // DBT_EMIT_STRTOD
+    emit_stub_fval,        // DBT_EMIT_FVAL
 };
 
 void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,
