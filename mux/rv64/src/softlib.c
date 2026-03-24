@@ -2380,6 +2380,14 @@ double rv64_strtod(const char *s) { (void)s; return 0.0; }
 int rv64_fval(char *buf, double val) { (void)buf; (void)val; return 0; }
 double rv64_nearest_pretty(double val) { return val; }  /* intrinsic → host NearestPretty */
 
+/* rv64_ftoa_round: format double with rounding to frac digits.
+ * Intrinsic → host mux_ftoa(val, true, frac) + FP class handling.
+ * a0 = output buffer, fa0 = val, a1 = frac.  Returns length in a0.
+ */
+int rv64_ftoa_round(char *buf, double val, int frac) {
+    (void)buf; (void)val; (void)frac; return 0;
+}
+
 /* ---------------------------------------------------------------
  * Tier 2 math wrappers — softcode function entry points.
  *
@@ -2524,6 +2532,15 @@ static int rv64_i64toa(char *buf, long long val) {
     while (i > 0) buf[len++] = tmp[--i];
     buf[len] = '\0';
     return len;
+}
+
+char *rv64_round(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '0'; out[1] = '\0'; return out; }
+    double val = rv64_strtod(fargs[0]);
+    int frac = (int)rv64_atol(fargs[1]);
+    int n = rv64_ftoa_round(out, val, frac);
+    out[n] = '\0';
+    return out;
 }
 
 char *rv64_fdiv(char *out, const char **fargs, int nfargs) {

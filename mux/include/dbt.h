@@ -221,6 +221,7 @@ enum dbt_emitter_id {
     //
     DBT_EMIT_STRTOD,         // double rv64_strtod(char *s): a0=ptr → fa0=double
     DBT_EMIT_FVAL,           // int rv64_fval(char *buf, double val): a0=ptr, fa0=double → a0=len
+    DBT_EMIT_FTOA_ROUND,    // int rv64_ftoa_round(char *buf, double val, int frac): a0=ptr, fa0=double, a1=frac → a0=len
 };
 
 void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,

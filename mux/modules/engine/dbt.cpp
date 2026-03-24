@@ -789,6 +789,29 @@ static void emit_stub_fval(void *ev, void *fn) {
     emit_intrinsic_return(e);
 }
 
+// rv64_ftoa_round: guest a0=buf_ptr, guest fa0=double, guest a1=frac → guest a0=length
+// Host: int host_ftoa_round(char *buf, double val, int frac)
+// SysV: rdi=buf, xmm0=val, esi=frac → rax=len
+//
+static void emit_stub_ftoa_round(void *ev, void *fn) {
+    emit_t *e = static_cast<emit_t *>(ev);
+    emit_stub_prologue(e);
+
+    // rdi = host pointer to output buffer
+    emit_load_ctx_reg(e, X64_RDI, 10);   // guest a0
+    emit_guest_to_host(e, X64_RDI);
+    // xmm0 = double value from guest fa0
+    emit_load_ctx_fp(e, 0, CTX_FA0_OFF);
+    // esi = frac from guest a1
+    emit_load_ctx_reg(e, X64_RSI, 11);   // guest a1
+    emit_call_host(e, fn);
+    // Result (length) in rax → store to guest a0
+    emit_store_ctx_reg(e, 10, X64_RAX);
+
+    emit_stub_epilogue(e);
+    emit_intrinsic_return(e);
+}
+
 // ---- Generic co_* intrinsic stub emitter ----
 //
 // Emits a native CALL to the host co_* function.  Arguments are in
@@ -1012,6 +1035,7 @@ static generic_emitter_fn s_emitter_table[] = {
     emit_stub_fp_dd_d,     // DBT_EMIT_FP_DD_D
     emit_stub_strtod,      // DBT_EMIT_STRTOD
     emit_stub_fval,        // DBT_EMIT_FVAL
+    emit_stub_ftoa_round,  // DBT_EMIT_FTOA_ROUND
 };
 
 void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,

@@ -195,9 +195,7 @@ static bool tier2_allowed(const std::string &mux_name) {
         "MIN", "MAX",   // rv64_min/max: strtod compare → fval
         "INC", "DEC",   // rv64_inc/dec: atoi64 ± 1
         "TRUNC",        // rv64_trunc: modf → fval
-
-        // Blocked — ROUND needs mux_ftoa with precision argument.
-        // "ROUND",
+        "ROUND",        // rv64_round: ftoa_round intrinsic
 
         // Blocked — rv64_* diverges from server:
         //   SORT       Shellsort vs DUCET collation
@@ -377,6 +375,7 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "INC",         "rv64_inc" },
     { "DEC",         "rv64_dec" },
     { "TRUNC",       "rv64_trunc" },
+    { "ROUND",       "rv64_round" },
 
     { nullptr, nullptr }
 };
@@ -514,6 +513,31 @@ static int host_fval(char *buf, double val) {
     return static_cast<int>(bufc - start);
 }
 
+// Host-side wrapper for rv64_ftoa_round intrinsic.
+// Matches fun_round: mux_fpclass check + mux_ftoa(r, true, frac).
+//
+static int host_ftoa_round(char *buf, double val, int frac) {
+#ifdef HAVE_IEEE_FP_FORMAT
+    int fpc = mux_fpclass(val);
+    if (MUX_FPGROUP(fpc) != MUX_FPGROUP_PASS
+        && MUX_FPGROUP(fpc) != MUX_FPGROUP_ZERO) {
+        const UTF8 *s = mux_FPStrings[MUX_FPCLASS(fpc)];
+        size_t len = strlen(reinterpret_cast<const char *>(s));
+        memcpy(buf, s, len);
+        buf[len] = '\0';
+        return static_cast<int>(len);
+    }
+    if (MUX_FPGROUP(fpc) == MUX_FPGROUP_ZERO) {
+        val = 0.0;
+    }
+#endif
+    UTF8 *result = mux_ftoa(val, true, frac);
+    size_t len = strlen(reinterpret_cast<const char *>(result));
+    memcpy(buf, result, len);
+    buf[len] = '\0';
+    return static_cast<int>(len);
+}
+
 void pretranslate_tier2(dbt_state_t *dbt) {
     if (!s_tier2.loaded) return;
 
@@ -624,6 +648,10 @@ void pretranslate_tier2(dbt_state_t *dbt) {
     //
     reg_intrinsic(dbt, "rv64_strtod", DBT_EMIT_STRTOD, reinterpret_cast<void *>(host_strtod));
     reg_intrinsic(dbt, "rv64_fval",   DBT_EMIT_FVAL,   reinterpret_cast<void *>(host_fval));
+
+    // Round-to-precision intrinsic.
+    reg_intrinsic(dbt, "rv64_ftoa_round", DBT_EMIT_FTOA_ROUND,
+                  reinterpret_cast<void *>(host_ftoa_round));
 
     // Pre-translate all intrinsic stubs into the cache BEFORE any
     // function pretranslation.  Intrinsics are leaf functions (strlen,
