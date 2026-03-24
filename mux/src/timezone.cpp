@@ -724,19 +724,17 @@ namespace TimezoneCache {
             // This internal call will perform the localtime query and update the cache (including locking).
             offset_result = Detail::queryLocalOffsetAt_Internal(utc_lta, is_dst);
 
-            // Optional: Probing nearby times (as in previous version) can be added here
-            // if desired, calling Detail::queryLocalOffsetAt_Internal for probe points.
-            // Ensure probe points are within lower_bound_lta before calling.
-            /*
+            // Probe a week ahead and behind (two weeks of coverage) to pre-populate
+            // the cache so that subsequent queries within this time range are hits.
+            // Without the probes, the cache stores [lta, lta] and the very next
+            // second is a miss.
             bool dont_care_dst;
             CLinearTimeAbsolute probe_before = utc_lta - Detail::MIN_MERGE_INTERVAL;
             if (probe_before >= state.lower_bound_lta) {
-                 Detail::queryLocalOffsetAt_Internal(probe_before, &dont_care_dst);
+                Detail::queryLocalOffsetAt_Internal(probe_before, &dont_care_dst);
             }
             CLinearTimeAbsolute probe_after = utc_lta + Detail::MIN_MERGE_INTERVAL;
-            // queryLocalOffsetAt_Internal handles upper bound and mapping
             Detail::queryLocalOffsetAt_Internal(probe_after, &dont_care_dst);
-            */
 
             return offset_result;
         }
