@@ -203,6 +203,7 @@ struct confdata
     int     trace_limit;        /* Max lines of trace output if top-down */
     int     vattr_flags;        /* Attr flags for all user-defined attrs */
     int     vattr_per_hour;     // Maximum allowed vattrs per hour per object.
+    int     vlimit;             // Max attributes per object (0 = unlimited).
     int     waitcost;           /* cost of @wait (refunded when finishes) */
     int     wild_invk_lim;      // Max Regular Expression function calls.
     int     zone_nest_lim;      /* Max nesting of zones */

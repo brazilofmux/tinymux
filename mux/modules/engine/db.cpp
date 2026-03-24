@@ -2164,6 +2164,27 @@ bool atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
         return true;
     }
 
+    // Enforce per-object attribute count limit.
+    // Wizards bypass the limit.  A vlimit of 0 means unlimited.
+    //
+    if (  0 < mudconf.vlimit
+       && !Wizard(Owner(thing)))
+    {
+        // Only check the limit for new attributes, not updates.
+        //
+        size_t existing_len;
+        dbref existing_owner;
+        int existing_flags;
+        if (!cache_get(&okey, &existing_len, &existing_owner, &existing_flags))
+        {
+            int count = cache_count(thing);
+            if (count >= mudconf.vlimit)
+            {
+                return false;
+            }
+        }
+    }
+
     LBuf nfc_buf = LBuf_Src("atr_add_raw");
     if (  clean_len > 0
        && !utf8_is_nfc(clean, clean_len))

@@ -44,6 +44,7 @@ CSQLiteDB::CSQLiteDB()
       m_stmtAttrDelObj(nullptr),
       m_stmtAttrGetObj(nullptr),
       m_stmtAttrGetBuiltin(nullptr),
+      m_stmtAttrCount(nullptr),
       m_stmtAttrNamePut(nullptr),
       m_stmtAttrNameDel(nullptr),
       m_stmtAttrNameLoadAll(nullptr),
@@ -782,6 +783,13 @@ bool CSQLiteDB::PrepareStatements()
         return false;
     }
 
+    if (!Prepare(m_db,
+        "SELECT COUNT(*) FROM attributes WHERE object=?",
+        &m_stmtAttrCount))
+    {
+        return false;
+    }
+
     // Attribute name registry.
     //
     if (!Prepare(m_db,
@@ -1037,6 +1045,7 @@ void CSQLiteDB::FinalizeStatements()
     Finalize(&m_stmtAttrDelObj);
     Finalize(&m_stmtAttrGetObj);
     Finalize(&m_stmtAttrGetBuiltin);
+    Finalize(&m_stmtAttrCount);
     Finalize(&m_stmtAttrNamePut);
     Finalize(&m_stmtAttrNameDel);
     Finalize(&m_stmtAttrNameLoadAll);
@@ -1390,6 +1399,19 @@ bool CSQLiteDB::DelAllAttributes(dbref obj)
         return true;
     }
     return false;
+}
+
+int CSQLiteDB::CountAttributes(dbref obj)
+{
+    sqlite3_bind_int(m_stmtAttrCount, 1, obj);
+    int count = 0;
+    int rc = sqlite3_step(m_stmtAttrCount);
+    if (SQLITE_ROW == rc)
+    {
+        count = sqlite3_column_int(m_stmtAttrCount, 0);
+    }
+    sqlite3_reset(m_stmtAttrCount);
+    return count;
 }
 
 bool CSQLiteDB::ClearAttributes()

@@ -289,6 +289,7 @@ void cf_init(void)
     mudconf.mail_max_per_player = 500;
     mudconf.email_per_hour = 50;
     mudconf.vattr_per_hour = 5000;
+    mudconf.vlimit = 1000;
     mudconf.references_per_hour = 500;
     mudconf.pcreate_per_hour = 100;
     mudconf.lbuf_size = LBUF_SIZE;
@@ -1960,6 +1961,7 @@ static CONFPARM conftable[] =
     {T("unowned_safe"),              cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.safe_unowned),    nullptr,            0},
     {T("user_attr_access"),          cf_modify_bits, CA_GOD,    CA_DISABLED, &mudconf.vattr_flags,            attraccess_nametab, 0},
     {T("user_attr_per_hour"),        cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.vattr_per_hour,         nullptr,            0},
+    {T("vlimit"),                    cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.vlimit,                 nullptr,            0},
     {T("wait_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.waitcost,               nullptr,            0},
     {T("wizard_motd_file"),          cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.wizmotd_file),    nullptr, SIZEOF_PATHNAME},
     {T("wizard_motd_message"),       cf_string,      CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(mudconf.wizmotd_msg),      nullptr,    GBUF_SIZE},

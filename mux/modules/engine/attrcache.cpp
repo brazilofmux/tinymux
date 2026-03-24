@@ -306,6 +306,17 @@ bool cache_del(Aname *nam)
 // Preload built-in attributes (attrnum < 256) for an object into the LRU
 // cache in a single bulk read from SQLite.  This avoids individual cache
 // misses when the game first touches a freshly-connected player or a room
+// Count the number of attributes stored on an object.
+//
+int cache_count(dbref obj)
+{
+    if (!cache_initted || !g_pSQLiteBackend)
+    {
+        return 0;
+    }
+    return g_pSQLiteBackend->GetDB().CountAttributes(obj);
+}
+
 // the player moves into.
 //
 void cache_preload(dbref obj)

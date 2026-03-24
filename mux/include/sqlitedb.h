@@ -100,6 +100,7 @@ public:
     uint32_t GetAttrModCount(dbref obj, int attrnum);
     void GetAllAttrModCounts(dbref obj, std::function<void(int attrnum, uint32_t mc)> cb);
     bool DelAllAttributes(dbref obj);
+    int CountAttributes(dbref obj);
     bool ClearAttributes();
 
     // Bulk attribute read for preloading / @search.
@@ -301,6 +302,7 @@ private:
     sqlite3_stmt *m_stmtAttrDelObj;
     sqlite3_stmt *m_stmtAttrGetObj;
     sqlite3_stmt *m_stmtAttrGetBuiltin;
+    sqlite3_stmt *m_stmtAttrCount;
 
     // Attribute name registry statements.
     //

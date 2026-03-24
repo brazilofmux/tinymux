@@ -5489,6 +5489,22 @@ WAIT_COST
 
   Related Topics: @wait.
 
+& VLIMIT
+VLIMIT
+
+  CONFIG PARAMETER: vlimit <number>.
+  DEFAULT: 1000
+
+  Sets the maximum number of attributes that may be stored on a single
+  object.  When the limit is reached, new attributes on that object are
+  silently rejected.  Existing attributes may still be updated.
+
+  A value of 0 disables the limit entirely.
+
+  Wizard-owned objects are exempt from this limit.
+
+  Related Topics: @admin.
+
 & WHO
 WHO
 

@@ -26,6 +26,7 @@ void cache_tick(void);
 bool cache_sync(void);
 bool cache_del(Aname *nam);
 void cache_preload(dbref obj);
+int cache_count(dbref obj);
 void list_cache_stats(dbref player);
 
 #endif // !ATTRCACHE_H
