@@ -615,26 +615,5 @@ int DCL_CDECL main(int argc, char *argv[])
     return 0;
 }
 
-#if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
-void init_rlimit(void)
-{
-    struct rlimit *rlp;
-
-    rlp = reinterpret_cast<struct rlimit *>(alloc_lbuf("rlimit"));
-
-    if (getrlimit(RLIMIT_NOFILE, rlp))
-    {
-        g_pILog->log_perror(T("RLM"), T("FAIL"), nullptr, T("getrlimit()"));
-        free_lbuf(rlp);
-        return;
-    }
-    rlp->rlim_cur = rlp->rlim_max;
-    if (setrlimit(RLIMIT_NOFILE, rlp))
-    {
-        g_pILog->log_perror(T("RLM"), T("FAIL"), nullptr, T("setrlimit()"));
-    }
-    free_lbuf(rlp);
-
-}
-#endif // HAVE_SETRLIMIT RLIMIT_NOFILE
+// init_rlimit removed — replaced by g_pIPlatform->MaximizeFileDescriptors()
 

@@ -446,9 +446,7 @@ extern DCL_EXPORT void OutOfMemory(const UTF8 *SourceFile, unsigned int LineNo);
 #define getrusage(x,p)   syscall(SYS_GETRUSAGE,x,p)
 #endif // hpux
 
-#if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
-void init_rlimit(void);
-#endif // HAVE_SETRLIMIT RLIMIT_NOFILE
+// init_rlimit removed — replaced by mux_IPlatform::MaximizeFileDescriptors()
 
 #if defined(WIN32)
 
