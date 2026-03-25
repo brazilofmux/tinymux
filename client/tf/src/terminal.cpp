@@ -793,14 +793,34 @@ static int color_name_to_index(const std::string& name) {
     return -1;
 }
 
+// Look up a meta-attribute variable (E/W/I → error_attr/warning_attr/info_attr).
+// Returns the variable value, or empty string if not found.
+//
+static std::string lookup_meta_attr(char code,
+    const std::unordered_map<std::string, std::string>* vars)
+{
+    if (!vars) return {};
+    const char* name = nullptr;
+    switch (code) {
+    case 'E': name = "error_attr";   break;
+    case 'W': name = "warning_attr"; break;
+    case 'I': name = "info_attr";    break;
+    default: return {};
+    }
+    auto it = vars->find(name);
+    return (it != vars->end()) ? it->second : std::string{};
+}
+
 // Classic TF single-char attribute parser.
 //
 // Format: concatenated single-char codes with C<colorname> for colors.
 //   B=bold, u=underline, r=reverse, f=flash, d=dim, h=hilite(bold),
 //   b=bell(ignored), g=gag(ignored), n=none(reset).
+//   E=error, W=warning, I=info (expand from configurable variables).
 //   Cred=fg red, Cbgblue=bg blue, Cbgbrightcyan=bright bg cyan.
 //
-static std::string attrs_to_sgr_classic(const std::string& attrs) {
+static std::string attrs_to_sgr_classic(const std::string& attrs,
+    const std::unordered_map<std::string, std::string>* vars = nullptr) {
     std::vector<std::string> codes;
     size_t i = 0;
 
@@ -817,6 +837,21 @@ static std::string attrs_to_sgr_classic(const std::string& attrs) {
         case 'b': break;  // bell — no visual attribute
         case 'g': break;  // gag — no visual attribute
         case 'x': break;  // exclusive — no visual attribute
+        case 'E': case 'W': case 'I': {
+            // Meta-attributes: expand from configurable variables.
+            std::string expanded = lookup_meta_attr(ch, vars);
+            if (!expanded.empty()) {
+                std::string sub = attrs_to_sgr_classic(expanded, vars);
+                if (!sub.empty()) {
+                    // Extract the SGR parameters (between "\033[" and "m")
+                    // and append them to our codes list.
+                    if (sub.size() > 3 && sub[0] == '\033' && sub[1] == '[' && sub.back() == 'm') {
+                        codes.push_back(sub.substr(2, sub.size() - 3));
+                    }
+                }
+            }
+            break;
+        }
         case 'C': {
             // Read color name: all lowercase letters are part of the name.
             // Stop at comma, uppercase code letter, or end of string.
@@ -886,16 +921,19 @@ static bool is_word_format(const std::string& attrs) {
 //   BG:     bg_black, bgblack, bg_red, bgred, etc.
 //   Bright BG: bgbright_red, bgbrightred, etc.
 //   xterm-256: color0..color255 (fg), bg_color0..bg_color255 (bg)
+//   Meta:   error, warning, info (expand from configurable variables)
 //
 // Classic TF format (no delimiters):
 //   B=bold, u=underline, r=reverse, f=flash, d=dim, h=hilite
+//   E=error, W=warning, I=info (expand from configurable variables)
 //   Cred=fg red, Cbgblue=bg blue, etc.
 //
-static std::string attrs_to_sgr(const std::string& attrs) {
+static std::string attrs_to_sgr(const std::string& attrs,
+    const std::unordered_map<std::string, std::string>* vars = nullptr) {
     if (attrs.empty()) return {};
 
     // Classic TF single-char mode if no word delimiters present.
-    if (!is_word_format(attrs)) return attrs_to_sgr_classic(attrs);
+    if (!is_word_format(attrs)) return attrs_to_sgr_classic(attrs, vars);
 
     std::vector<std::string> codes;
 
@@ -910,6 +948,19 @@ static std::string attrs_to_sgr(const std::string& attrs) {
         else if (token == "underline" || token == "u") { codes.push_back("4"); }
         else if (token == "blink" || token == "flash") { codes.push_back("5"); }
         else if (token == "reverse" || token == "rev" || token == "r") { codes.push_back("7"); }
+
+        // Meta-attributes: expand from configurable variables.
+        //
+        else if (token == "error" || token == "warning" || token == "info") {
+            char code = (token[0] == 'e') ? 'E' : (token[0] == 'w') ? 'W' : 'I';
+            std::string expanded = lookup_meta_attr(code, vars);
+            if (!expanded.empty()) {
+                std::string sub = attrs_to_sgr(expanded, vars);
+                if (sub.size() > 3 && sub[0] == '\033' && sub[1] == '[' && sub.back() == 'm') {
+                    codes.push_back(sub.substr(2, sub.size() - 3));
+                }
+            }
+        }
 
         // Background colors: bg_<color>, bg<color>, bgbright_<color>, bgbright<color>.
         //
@@ -1028,7 +1079,7 @@ std::string Terminal::style_status_field(const std::string& field, const std::st
         combined += dyn_attrs;
     }
 
-    std::string sgr = attrs_to_sgr(combined);
+    std::string sgr = attrs_to_sgr(combined, vars_);
     if (sgr.empty()) return text;
     return sgr + text + "\033[0m";
 }

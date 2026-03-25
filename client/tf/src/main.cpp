@@ -840,6 +840,12 @@ int main(int argc, char* argv[]) {
 
     app.terminal.set_app(&app);
 
+    // Default meta-attribute styles (E/W/I codes).
+    //
+    app.vars.emplace("error_attr",   "bold,red");
+    app.vars.emplace("warning_attr", "bold,yellow");
+    app.vars.emplace("info_attr",    "cyan");
+
     // Import mail-related environment variables (classic TF behavior).
     //
     const char* env_mail = std::getenv("MAIL");

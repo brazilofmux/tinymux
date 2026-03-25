@@ -12,9 +12,10 @@ All previously reported bugs have been resolved:
 
 ## Stubbed Or Partially Implemented Interfaces
 
-- **Lack of multi-key binding support**
-  `KeyBindings` and `InputLexer` only support single-event bindings. Classic
-  TF supports multi-key sequences such as `Meta-a` (Esc a) or `^X^F`.
+- ~~**Lack of multi-key binding support**~~
+  **Fixed:** `KeyBindings` uses a trie (`SeqTrieNode`) for multi-key
+  sequence matching. `parse_key_sequence()` handles `^X^F`, `Meta-a`,
+  `Esc a`, and mixed formats. Timeout-based disambiguation in event loop.
 
 - **Nested keyboard read (`tfread()`) is missing**
   The `tfread()` scripting function only supports reading from file handles.
@@ -31,9 +32,10 @@ All previously reported bugs have been resolved:
   status bar redraw. Unlikely to matter in practice since redraws are
   infrequent.
 
-- **Classic TF attribute codes: `E`, `W`, `I` meta-attrs not implemented**
-  The `E` (error), `W` (warning), and `I` (info) meta-attribute codes
-  are not implemented as they reference TF's configurable style variables.
+- ~~**Classic TF attribute codes: `E`, `W`, `I` meta-attrs not implemented**~~
+  **Fixed:** `E`/`W`/`I` expand from `error_attr`/`warning_attr`/`info_attr`
+  variables. Defaults: bold red, bold yellow, cyan. Word-token equivalents:
+  `error`, `warning`, `info`. Users can override via `/set error_attr=...`.
 
 ## Previously Reported — Now Resolved
 
