@@ -1350,6 +1350,10 @@ MUX_RESULT CPlatform::BootHelperProcess(
                 _exit(1);
             }
         }
+        if (sv[1] > 1)
+        {
+            mux_close(sv[1]);
+        }
         for (int i = 3; i < maxfds; i++)
         {
             mux_close(i);
