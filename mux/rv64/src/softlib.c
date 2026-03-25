@@ -339,6 +339,18 @@ static long ecall3(long num, long a0, long a1, long a2) {
     return x10;
 }
 
+static long ecall5(long num, long a0, long a1, long a2, long a3, long a4) {
+    register long x10 __asm__("a0") = a0;
+    register long x11 __asm__("a1") = a1;
+    register long x12 __asm__("a2") = a2;
+    register long x13 __asm__("a3") = a3;
+    register long x14 __asm__("a4") = a4;
+    register long x17 __asm__("a7") = num;
+    __asm__ volatile ("ecall" : "+r"(x10)
+        : "r"(x11), "r"(x12), "r"(x13), "r"(x14), "r"(x17) : "memory");
+    return x10;
+}
+
 /* ---------------------------------------------------------------
  * Tier 2 wrappers for co_* functions.
  *
@@ -489,18 +501,22 @@ char *co_pos_wrap(char *out, const char **fargs, int nfargs) {
     return out;
 }
 
+/* sort(list[, sort_type[, delim[, osep]]]) via ECALL_SORT (0x164).
+ * MUX arg order: fargs[1]=sort_type, fargs[2]=delim, fargs[3]=osep.
+ */
 char *co_sort_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 1) { out[0] = '\0'; return out; }
-    unsigned char delim = get_delim(fargs, nfargs, 1);
-    unsigned char osep = get_osep(fargs, nfargs, 2, delim);
-    char sort_type = 'a';  /* alphabetic default */
+    char sort_type = '?';  /* auto-detect default */
+    if (nfargs >= 2 && fargs[1][0] != '\0')
+        sort_type = fargs[1][0];
+    unsigned char delim = ' ';
+    if (nfargs >= 3 && fargs[2][0] != '\0')
+        delim = (unsigned char)fargs[2][0];
+    unsigned char osep = delim;
     if (nfargs >= 4 && fargs[3][0] != '\0')
-        sort_type = fargs[3][0];
-    size_t n = co_sort_words((unsigned char *)out,
-                             (const unsigned char *)fargs[0],
-                             rv64_slen(fargs[0]),
-                             delim, osep, sort_type);
-    out[n] = '\0';
+        osep = (unsigned char)fargs[3][0];
+    ecall5(0x164, (long)fargs[0], (long)sort_type,
+           (long)delim, (long)osep, (long)out);
     return out;
 }
 

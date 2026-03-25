@@ -47,6 +47,7 @@ static constexpr uint64_t ECALL_CHR            = 0x160; // a0=input_addr, a1=out
 static constexpr uint64_t ECALL_ORD            = 0x161; // a0=input_addr, a1=output_addr → a0=0(ok)/-1(err)
 static constexpr uint64_t ECALL_TRANSLATE      = 0x162; // a0=input_addr, a1=type(0/1), a2=output_addr
 static constexpr uint64_t ECALL_QUICK_WILD     = 0x163; // a0=pattern_addr, a1=data_addr → a0=0/1
+static constexpr uint64_t ECALL_SORT           = 0x164; // a0=list_addr, a1=sort_type, a2=delim, a3=osep, a4=out_addr
 
 // Lua VM ECALLs — operations that call back into the Lua interpreter.
 // Require eval_ctx.lua_state != nullptr.
@@ -113,6 +114,12 @@ std::vector<std::pair<uint64_t, uint32_t>>
          attr_mod_count_collect_object(dbref obj);
 void     attr_mod_count_apply_increments(
              const std::vector<std::pair<uint64_t, uint32_t>> &collected);
+
+// Sort helper for ECALL_SORT — complete sort-and-format to buffer.
+//
+size_t sort_to_buffer(const UTF8 *list_in, char sort_type_char,
+                      unsigned char delim, unsigned char osep,
+                      UTF8 *out_buf, size_t out_max);
 
 // SQLite code cache helpers (shared by softcode JIT and Lua JIT).
 //

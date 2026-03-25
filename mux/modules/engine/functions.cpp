@@ -9170,6 +9170,64 @@ static FUNCTION(fun_sort)
 }
 
 // ---------------------------------------------------------------------------
+// sort_to_buffer(): Complete sort-and-format for ECALL_SORT.
+// Takes a NUL-terminated list string, sort type char, delimiter, output
+// separator, and writes the sorted result to out_buf.  Returns bytes written.
+//
+size_t sort_to_buffer(const UTF8 *list_in, char sort_type_char,
+                      unsigned char delim, unsigned char osep,
+                      UTF8 *out_buf, size_t out_max)
+{
+    LBuf list = LBuf_Src("sort_to_buffer");
+    mux_strncpy(list, list_in, LBUF_SIZE - 1);
+
+    SEP sep;
+    sep.n = 1;
+    sep.str[0] = delim;
+    sep.str[1] = '\0';
+
+    UTF8 *ptrs[LBUF_SIZE / 2];
+    int nitems = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
+
+    int sort_type = ASCII_LIST;
+    switch (sort_type_char)
+    {
+    case 'd': case 'D': sort_type = DBREF_LIST;      break;
+    case 'n': case 'N': sort_type = NUMERIC_LIST;     break;
+    case 'f': case 'F': sort_type = FLOAT_LIST;       break;
+    case 'i': case 'I': sort_type = CI_ASCII_LIST;    break;
+    case 'u': case 'U': sort_type = UNICODE_LIST;     break;
+    case 'c': case 'C': sort_type = CI_UNICODE_LIST;  break;
+    case 'a': case 'A': sort_type = ASCII_LIST;       break;
+    case '?': case '\0':
+        {
+            AutoDetect ad;
+            ad.ExamineList(nitems, ptrs);
+            sort_type = ad.GetType();
+        }
+        break;
+    }
+
+    SortContext sc;
+    if (do_asort_start(&sc, nitems, ptrs, sort_type))
+    {
+        do_asort_finish(&sc);
+    }
+
+    // Format sorted list into output buffer.
+    SEP osep_s;
+    osep_s.n = 1;
+    osep_s.str[0] = osep;
+    osep_s.str[1] = '\0';
+
+    UTF8 *bufc = out_buf;
+    arr2list(ptrs, nitems, out_buf, &bufc, osep_s);
+    *bufc = '\0';
+
+    return static_cast<size_t>(bufc - out_buf);
+}
+
+// ---------------------------------------------------------------------------
 // sortkey(): Sort a list by computed key values.
 //
 // sortkey([obj/]attr, list[, sort_type[, delim[, osep]]])

@@ -21,13 +21,12 @@ use `ECALL_CHR`/`ECALL_ORD` for Unicode encoding + NFC normalization
 and grapheme cluster extraction. All are leaf lookups with no
 re-entrancy risk, keeping surrounding code in the JIT.
 
-**Remaining blocked (diverge from server):**
-- `SORT` — Shellsort vs DUCET collation
-
-**Recently unblocked:** SECURE (→ `co_secure_wrap` via `co_transform`),
-SQUISH (→ `co_compress_wrap`), TRANSLATE (→ `ECALL_TRANSLATE`),
-STRMATCH/MATCH/GRAB/GRABALL (→ `ECALL_QUICK_WILD` calling native
-`quick_wild()` with `mux_strlwr` Unicode case folding).
+**No blocked functions remain.**  All previously blocked functions have
+been unblocked via co_* wrappers or ECALLs:
+SECURE (→ `co_secure_wrap`), SQUISH (→ `co_compress_wrap`),
+TRANSLATE (→ `ECALL_TRANSLATE`), STRMATCH/MATCH/GRAB/GRABALL
+(→ `ECALL_QUICK_WILD`), SORT (→ `ECALL_SORT` calling native
+`sort_to_buffer()` with full DUCET collation support).
 
 ### 2. Phase 3: Concurrent Softcode Evaluation
 

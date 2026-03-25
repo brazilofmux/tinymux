@@ -211,9 +211,7 @@ static bool tier2_allowed(const std::string &mux_name) {
         "SECURE", "SQUISH",
         "TRANSLATE",
         "STRMATCH", "MATCH", "GRAB", "GRABALL",
-
-        // Blocked — diverge from server:
-        //   SORT       Shellsort vs DUCET collation
+        "SORT",
 
         nullptr
     };
@@ -2685,6 +2683,30 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         const UTF8 *data = ec->memory + data_addr;
         mudstate.wild_invk_ctr = 0;
         ctx->x[10] = quick_wild(pat, data) ? 1 : 0;
+        return -1;
+    }
+
+    case ECALL_SORT: {
+        // a0 = guest addr of list string
+        // a1 = sort_type char (e.g. 'a', 'n', 'u')
+        // a2 = delim char
+        // a3 = osep char
+        // a4 = guest addr of output buffer
+        uint64_t list_addr = ctx->x[10];
+        char sort_type     = static_cast<char>(ctx->x[11]);
+        unsigned char delim = static_cast<unsigned char>(ctx->x[12]);
+        unsigned char osep  = static_cast<unsigned char>(ctx->x[13]);
+        uint64_t out_addr  = ctx->x[14];
+        if (list_addr >= ec->memory_size ||
+            out_addr >= ec->memory_size - 64) {
+            ctx->x[10] = 0;
+            return -1;
+        }
+        const UTF8 *list_in = ec->memory + list_addr;
+        UTF8 *out = ec->memory + out_addr;
+        size_t n = sort_to_buffer(list_in, sort_type, delim, osep,
+                                  out, LBUF_SIZE - 1);
+        ctx->x[10] = n;
         return -1;
     }
 

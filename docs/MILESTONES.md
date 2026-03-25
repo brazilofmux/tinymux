@@ -66,11 +66,15 @@ Server supports sort types `u`/`U`/`c`/`C` using `mux_collate_sortkey()`
 the collation key generator for Unicode sort types.  ASCII/numeric sort
 types (`a`/`i`/`n`/`d`/`f`) are likely fine as-is.
 
-- [ ] Audit `co_sort_wrap` against server's `fun_sort` for all sort types
-- [ ] Add ECALL for `mux_collate_sortkey` if needed
-- [ ] Add SORT to `s_allowlist[]`
-- [ ] Add targeted sort-type smoke tests (especially `u` and `c`)
-- [ ] Smoke clean
+- [x] Approach: ECALL_SORT (0x164) calls native `sort_to_buffer()` which
+  uses the full `do_asort_start`/`do_asort_finish` pipeline with all
+  sort types including DUCET collation (`u`/`U`/`c`/`C`), float,
+  numeric, dbref, auto-detect.  No sort logic on the RISC-V side.
+- [x] Fixed arg order in `co_sort_wrap` (was delim/osep/type, now
+  matches MUX convention: sort_type/delim/osep)
+- [x] Add SORT to `s_allowlist[]`
+- [x] Smoke clean (666 tests) — 2026-03-25
+- [ ] Add targeted sort-type smoke tests (especially `u` and `c`) — M5
 
 ### M5. Parity test suite
 
