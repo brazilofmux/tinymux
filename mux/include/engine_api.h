@@ -53,11 +53,20 @@ static constexpr uint64_t ECALL_SORT           = 0x164; // a0=list_addr, a1=sort
 // Saves ctx, runs inner function via dbt_resume, restores ctx.
 //   a0 = entry_pc of compiled function
 //   a1 = guest addr of output buffer (for inner result)
-//   a2 = guest addr of fargs (for inner CARGS, or 0)
-//   a3 = nfargs
 // Returns: a0 = bytes written to output buffer (0 on failure)
 //
 static constexpr uint64_t ECALL_CALL_COMPILED = 0x200;
+
+// Attribute resolution + compile.
+// Resolves an attribute on an object, compiles the body into the
+// persistent VM code heap, and returns the entry point.
+//   a0 = dbref of target object
+//   a1 = guest addr of attribute name string
+// Returns: a0 = entry_pc (0 on failure)
+//          a1 = out_addr (where the compiled function writes its result)
+//          a2 = aflags (AF_NOEVAL etc.)
+//
+static constexpr uint64_t ECALL_COMPILE_ATTR  = 0x201;
 
 // Lua VM ECALLs — operations that call back into the Lua interpreter.
 // Require eval_ctx.lua_state != nullptr.

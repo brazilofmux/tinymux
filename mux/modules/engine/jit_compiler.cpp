@@ -955,6 +955,227 @@ static dbt_state_t *get_dbt(uint8_t *memory, size_t memory_size,
 //
 
 static int eval_ecall(rv64_ctx_t *ctx, void *user_data);
+static int poc_ecall(rv64_ctx_t *ctx, void *user_data);
+
+struct persistent_vm_t {
+    std::vector<uint8_t> memory;
+    dbt_state_t dbt;
+    bool dbt_ready;
+    uint32_t run_count;
+
+    // Code heap: bump allocator for code sections.
+    uint64_t code_heap_next;
+
+    // Shared pool cursors — advance across compilations so each
+    // function gets its own non-overlapping region.
+    uint64_t str_pool_next;
+    uint64_t fargs_pool_next;
+    uint64_t out_pool_next;
+
+    // Compiled attribute cache: maps (obj, attr_num) → compiled info.
+    // Checked for staleness via mod_count on each lookup.
+    //
+    struct attr_cache_entry {
+        dbref    obj;
+        int      attr_num;
+        uint32_t mod_count;
+        uint64_t entry_pc;
+        uint64_t out_addr;
+    };
+    std::vector<attr_cache_entry> attr_cache;
+
+    persistent_vm_t()
+        : memory(rv_compiler::MEM_SIZE, 0),
+          dbt_ready(false), run_count(0),
+          code_heap_next(0x0004),  // avoid PC=0 (cache sentinel)
+          str_pool_next(rv_compiler::STR_BASE),
+          fargs_pool_next(rv_compiler::FARGS_BASE),
+          out_pool_next(rv_compiler::STACK_TOP - 8) {}
+
+    // Compile an expression and install it into persistent memory.
+    // Returns {entry_pc, out_addr} on success, {0, 0} on failure.
+    //
+    struct compile_result {
+        uint64_t entry_pc;
+        uint64_t out_addr;
+    };
+
+    compile_result compile(const UTF8 *expr, size_t len,
+                           int eval = EV_FCHECK | EV_EVAL) {
+        tier2_lazy_init();
+
+        compiled_program prog = compile_expression(
+            expr, len, eval,
+            code_heap_next, str_pool_next,
+            fargs_pool_next, out_pool_next);
+
+        if (!prog.ok) return {0, 0};
+
+        install(prog);
+        return {prog.entry_pc, prog.out_addr};
+    }
+
+    // Compile an attribute body, with caching and staleness checks.
+    // Returns {entry_pc, out_addr} on success, {0, 0} on failure.
+    //
+    compile_result compile_attr(dbref obj, int attr_num,
+                                const UTF8 *body, size_t body_len,
+                                int eval = EV_FCHECK | EV_EVAL) {
+        // Check cache.
+        uint32_t mc = attr_mod_count_get(obj, attr_num);
+        for (auto &e : attr_cache) {
+            if (e.obj == obj && e.attr_num == attr_num) {
+                if (e.mod_count == mc) {
+                    return {e.entry_pc, e.out_addr};
+                }
+                // Stale — evict and recompile.
+                // (Code heap space is leaked; future: reclaim.)
+                e.entry_pc = 0;
+                break;
+            }
+        }
+
+        // Compile.
+        compile_result cr = compile(body, body_len, eval);
+        if (!cr.entry_pc) return {0, 0};
+
+        // Cache.
+        attr_cache_entry entry;
+        entry.obj = obj;
+        entry.attr_num = attr_num;
+        entry.mod_count = mc;
+        entry.entry_pc = cr.entry_pc;
+        entry.out_addr = cr.out_addr;
+
+        // Update existing or append.
+        bool found = false;
+        for (auto &e : attr_cache) {
+            if (e.obj == obj && e.attr_num == attr_num) {
+                e = entry;
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            attr_cache.push_back(entry);
+        }
+
+        return cr;
+    }
+
+    // Install a hand-assembled code blob at the current code heap
+    // position.  Returns the entry_pc.
+    //
+    uint64_t install_code(const std::vector<uint32_t> &code) {
+        uint64_t entry = code_heap_next;
+        for (size_t i = 0; i < code.size(); i++) {
+            memcpy(memory.data() + entry + i * 4, &code[i], 4);
+        }
+        code_heap_next = entry + code.size() * 4;
+        code_heap_next = (code_heap_next + 15) & ~15ULL;
+        return entry;
+    }
+
+    // Initialize the DBT (first time) or update ECALL handler.
+    //
+    bool ensure_dbt() {
+        if (!dbt_ready) {
+            if (dbt_init(&dbt, memory.data(), memory.size(),
+                         poc_ecall, &dbt) != 0) {
+                return false;
+            }
+            dbt_ready = true;
+            tier2_install(memory, rv_compiler::BLOB_BASE);
+            pretranslate_tier2(&dbt);
+            dbt.blob_code_end = dbt.code_used;
+        }
+        return true;
+    }
+
+    // Prepare for execution: clear output buffers and reset blob BSS.
+    //
+    void prepare_run() {
+        if (out_pool_next < rv_compiler::STACK_TOP - 8) {
+            memset(memory.data() + out_pool_next, 0,
+                   (rv_compiler::STACK_TOP - 8) - out_pool_next);
+        }
+        if (s_tier2.loaded) {
+            tier2_install(memory, rv_compiler::BLOB_BASE);
+        }
+    }
+
+    // Run a compiled function.  Returns 0 on success.
+    // First call uses dbt_run (zeroes ctx); subsequent use dbt_resume.
+    //
+    int run(uint64_t entry_pc) {
+        dbt_rerun(&dbt, poc_ecall, &dbt);
+        if (run_count == 0) {
+            run_count++;
+            return dbt_run(&dbt, entry_pc, rv_compiler::STACK_TOP);
+        }
+        dbt.ctx.x[2] = rv_compiler::STACK_TOP;
+        run_count++;
+        return dbt_resume(&dbt, entry_pc);
+    }
+
+    // Reset blob BSS between function runs (Tier 2 writable data).
+    //
+    void reset_blob_bss() {
+        if (s_tier2.loaded && s_tier2.bss_size > 0) {
+            uint64_t bss_start = rv_compiler::BLOB_BASE
+                               + s_tier2.code.size();
+            if (bss_start + s_tier2.bss_size <= memory.size()) {
+                memset(memory.data() + bss_start, 0, s_tier2.bss_size);
+            }
+        }
+    }
+
+    // Read a NUL-terminated result string from guest memory.
+    //
+    const char *result(uint64_t out_addr) const {
+        if (out_addr == 0 || out_addr >= memory.size()) return "";
+        return reinterpret_cast<const char *>(memory.data() + out_addr);
+    }
+
+private:
+    // Install a compiled program's regions into persistent memory
+    // and advance pool cursors.
+    //
+    void install(const compiled_program &prog) {
+        // Code.
+        memcpy(memory.data() + prog.entry_pc,
+               prog.memory.data() + prog.entry_pc, prog.code_size);
+
+        // Strings.
+        if (prog.str_pool_end > str_pool_next) {
+            memcpy(memory.data() + str_pool_next,
+                   prog.memory.data() + str_pool_next,
+                   prog.str_pool_end - str_pool_next);
+        }
+
+        // Fargs.
+        if (prog.fargs_pool_end > fargs_pool_next) {
+            memcpy(memory.data() + fargs_pool_next,
+                   prog.memory.data() + fargs_pool_next,
+                   prog.fargs_pool_end - fargs_pool_next);
+        }
+
+        // Output (stack-allocated, grows downward).
+        if (prog.out_pool_end < out_pool_next) {
+            memcpy(memory.data() + prog.out_pool_end,
+                   prog.memory.data() + prog.out_pool_end,
+                   out_pool_next - prog.out_pool_end);
+        }
+
+        // Advance cursors.
+        code_heap_next = prog.entry_pc + prog.code_size;
+        code_heap_next = (code_heap_next + 15) & ~15ULL;
+        str_pool_next = prog.str_pool_end;
+        fargs_pool_next = prog.fargs_pool_end;
+        out_pool_next = prog.out_pool_end;
+    }
+};
+
 
 // ---------------------------------------------------------------
 // Compile cache — LRU cache of compiled programs.
@@ -1348,6 +1569,7 @@ bool run_cached_program(compiled_program *prog,
     ec.ncargs = ncargs;
     ec.lua_state = lua_state;
     ec.dbt = nullptr;  // set below after DBT is resolved
+    ec.pvm = nullptr;  // production path doesn't use persistent VM yet
 
     dbt_state_t *dbt;
     if (s_dbt_ready && s_dbt_last_memory == prog->memory.data()) {
@@ -2990,6 +3212,71 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         return -1;  // continue outer execution
     }
 
+    case ECALL_COMPILE_ATTR: {
+        // Resolve an attribute, compile its body into the persistent
+        // VM, and return the entry point.
+        //
+        // a0 = dbref of target object
+        // a1 = guest addr of attribute name string
+        // Returns: a0 = entry_pc (0 on failure)
+        //          a1 = out_addr
+        //          a2 = aflags
+        //
+        persistent_vm_t *pvm =
+            static_cast<persistent_vm_t *>(ec->pvm);
+        if (!pvm) {
+            ctx->x[10] = 0;
+            return -1;
+        }
+
+        dbref obj = static_cast<dbref>(ctx->x[10]);
+        uint64_t name_addr = ctx->x[11];
+
+        if (!Good_obj(obj) || name_addr >= ec->memory_size) {
+            ctx->x[10] = 0;
+            return -1;
+        }
+
+        const UTF8 *attr_name = ec->memory + name_addr;
+        ATTR *ap = atr_str(attr_name);
+        if (!ap) {
+            ctx->x[10] = 0;
+            return -1;
+        }
+
+        if (!See_attr(ec->executor, obj, ap)) {
+            ctx->x[10] = 0;
+            return -1;
+        }
+
+        dbref aowner;
+        int aflags;
+        UTF8 *atext = atr_pget(obj, ap->number, &aowner, &aflags);
+        if (!atext || !*atext) {
+            if (atext) free_lbuf(atext);
+            ctx->x[10] = 0;
+            return -1;
+        }
+
+        // Skip compilation if NOEVAL.
+        if ((aflags & AF_NOEVAL) || NoEval(obj)) {
+            free_lbuf(atext);
+            ctx->x[10] = 0;
+            ctx->x[12] = static_cast<uint64_t>(aflags);
+            return -1;
+        }
+
+        // Compile (with caching).
+        size_t alen = strlen(reinterpret_cast<const char *>(atext));
+        auto cr = pvm->compile_attr(obj, ap->number, atext, alen);
+        free_lbuf(atext);
+
+        ctx->x[10] = cr.entry_pc;
+        ctx->x[11] = cr.out_addr;
+        ctx->x[12] = static_cast<uint64_t>(aflags);
+        return -1;  // continue
+    }
+
     default:
         ctx->x[10] = 0;
         return -1;
@@ -3377,6 +3664,7 @@ static bool run_compiled(compiled_program &prog,
     ec.ncargs = 0;
     ec.lua_state = nullptr;
     ec.dbt = nullptr;
+    ec.pvm = nullptr;
 
     dbt_state_t *dbt;
     if (reuse_dbt && s_dbt_ready) {
@@ -3665,164 +3953,6 @@ static int poc_ecall(rv64_ctx_t *ctx, void *user_data) {
 
 // ---------------------------------------------------------------
 
-struct persistent_vm_t {
-    std::vector<uint8_t> memory;
-    dbt_state_t dbt;
-    bool dbt_ready;
-    uint32_t run_count;
-
-    // Code heap: bump allocator for code sections.
-    uint64_t code_heap_next;
-
-    // Shared pool cursors — advance across compilations so each
-    // function gets its own non-overlapping region.
-    uint64_t str_pool_next;
-    uint64_t fargs_pool_next;
-    uint64_t out_pool_next;
-
-    persistent_vm_t()
-        : memory(rv_compiler::MEM_SIZE, 0),
-          dbt_ready(false), run_count(0),
-          code_heap_next(0x0004),  // avoid PC=0 (cache sentinel)
-          str_pool_next(rv_compiler::STR_BASE),
-          fargs_pool_next(rv_compiler::FARGS_BASE),
-          out_pool_next(rv_compiler::STACK_TOP - 8) {}
-
-    // Compile an expression and install it into persistent memory.
-    // Returns {entry_pc, out_addr} on success, {0, 0} on failure.
-    //
-    struct compile_result {
-        uint64_t entry_pc;
-        uint64_t out_addr;
-    };
-
-    compile_result compile(const UTF8 *expr, size_t len,
-                           int eval = EV_FCHECK | EV_EVAL) {
-        tier2_lazy_init();
-
-        compiled_program prog = compile_expression(
-            expr, len, eval,
-            code_heap_next, str_pool_next,
-            fargs_pool_next, out_pool_next);
-
-        if (!prog.ok) return {0, 0};
-
-        install(prog);
-        return {prog.entry_pc, prog.out_addr};
-    }
-
-    // Install a hand-assembled code blob at the current code heap
-    // position.  Returns the entry_pc.
-    //
-    uint64_t install_code(const std::vector<uint32_t> &code) {
-        uint64_t entry = code_heap_next;
-        for (size_t i = 0; i < code.size(); i++) {
-            memcpy(memory.data() + entry + i * 4, &code[i], 4);
-        }
-        code_heap_next = entry + code.size() * 4;
-        code_heap_next = (code_heap_next + 15) & ~15ULL;
-        return entry;
-    }
-
-    // Initialize the DBT (first time) or update ECALL handler.
-    //
-    bool ensure_dbt() {
-        if (!dbt_ready) {
-            if (dbt_init(&dbt, memory.data(), memory.size(),
-                         poc_ecall, &dbt) != 0) {
-                return false;
-            }
-            dbt_ready = true;
-            tier2_install(memory, rv_compiler::BLOB_BASE);
-            pretranslate_tier2(&dbt);
-            dbt.blob_code_end = dbt.code_used;
-        }
-        return true;
-    }
-
-    // Prepare for execution: clear output buffers and reset blob BSS.
-    //
-    void prepare_run() {
-        if (out_pool_next < rv_compiler::STACK_TOP - 8) {
-            memset(memory.data() + out_pool_next, 0,
-                   (rv_compiler::STACK_TOP - 8) - out_pool_next);
-        }
-        if (s_tier2.loaded) {
-            tier2_install(memory, rv_compiler::BLOB_BASE);
-        }
-    }
-
-    // Run a compiled function.  Returns 0 on success.
-    // First call uses dbt_run (zeroes ctx); subsequent use dbt_resume.
-    //
-    int run(uint64_t entry_pc) {
-        dbt_rerun(&dbt, poc_ecall, &dbt);
-        if (run_count == 0) {
-            run_count++;
-            return dbt_run(&dbt, entry_pc, rv_compiler::STACK_TOP);
-        }
-        dbt.ctx.x[2] = rv_compiler::STACK_TOP;
-        run_count++;
-        return dbt_resume(&dbt, entry_pc);
-    }
-
-    // Reset blob BSS between function runs (Tier 2 writable data).
-    //
-    void reset_blob_bss() {
-        if (s_tier2.loaded && s_tier2.bss_size > 0) {
-            uint64_t bss_start = rv_compiler::BLOB_BASE
-                               + s_tier2.code.size();
-            if (bss_start + s_tier2.bss_size <= memory.size()) {
-                memset(memory.data() + bss_start, 0, s_tier2.bss_size);
-            }
-        }
-    }
-
-    // Read a NUL-terminated result string from guest memory.
-    //
-    const char *result(uint64_t out_addr) const {
-        if (out_addr == 0 || out_addr >= memory.size()) return "";
-        return reinterpret_cast<const char *>(memory.data() + out_addr);
-    }
-
-private:
-    // Install a compiled program's regions into persistent memory
-    // and advance pool cursors.
-    //
-    void install(const compiled_program &prog) {
-        // Code.
-        memcpy(memory.data() + prog.entry_pc,
-               prog.memory.data() + prog.entry_pc, prog.code_size);
-
-        // Strings.
-        if (prog.str_pool_end > str_pool_next) {
-            memcpy(memory.data() + str_pool_next,
-                   prog.memory.data() + str_pool_next,
-                   prog.str_pool_end - str_pool_next);
-        }
-
-        // Fargs.
-        if (prog.fargs_pool_end > fargs_pool_next) {
-            memcpy(memory.data() + fargs_pool_next,
-                   prog.memory.data() + fargs_pool_next,
-                   prog.fargs_pool_end - fargs_pool_next);
-        }
-
-        // Output (stack-allocated, grows downward).
-        if (prog.out_pool_end < out_pool_next) {
-            memcpy(memory.data() + prog.out_pool_end,
-                   prog.memory.data() + prog.out_pool_end,
-                   out_pool_next - prog.out_pool_end);
-        }
-
-        // Advance cursors.
-        code_heap_next = prog.entry_pc + prog.code_size;
-        code_heap_next = (code_heap_next + 15) & ~15ULL;
-        str_pool_next = prog.str_pool_end;
-        fargs_pool_next = prog.fargs_pool_end;
-        out_pool_next = prog.out_pool_end;
-    }
-};
 
 static persistent_vm_t s_pvm;
 

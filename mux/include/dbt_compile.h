@@ -354,6 +354,11 @@ struct eval_ctx {
     // the dispatch loop via dbt_resume for nested function calls.
     // nullptr disables re-entrant calls (falls back to ECALL fun_u).
     struct dbt_state_t *dbt;
+
+    // Persistent VM pointer — enables ECALL_COMPILE_ATTR to compile
+    // attribute bodies into the persistent code heap.
+    // nullptr disables attribute compilation.
+    void *pvm;
 };
 
 // ---------------------------------------------------------------
