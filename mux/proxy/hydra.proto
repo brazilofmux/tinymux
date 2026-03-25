@@ -217,6 +217,7 @@ message SetPreferences {
     uint32 terminal_width = 2;          // client viewport columns (0 = use default)
     uint32 terminal_height = 3;         // client viewport rows (0 = use default)
     string terminal_type = 4;           // e.g. "xterm-256color" (empty = use default)
+    string session_id = 5;             // WS GameSession first-message auth (ignored by gRPC)
 }
 
 message GmcpClientMessage {
