@@ -139,7 +139,7 @@
 &tr.tc008 test_reglattr_fn=
   @if strmatch(
         setr(0,sha1(sort(reglattr(me,_ONE$)))),
-        0CA923E1C9FE9DE4138C1274783DCFD127997667
+        6CFC326A1F47802EB927085C80E6ECB33557CA94
       )=
   {
     @log smoke=TC008: reglattr _ONE suffix. Succeeded.;

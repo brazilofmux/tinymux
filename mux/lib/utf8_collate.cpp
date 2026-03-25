@@ -548,16 +548,41 @@ int mux_collate_cmp(const UTF8 *a, size_t nA, const UTF8 *b, size_t nB)
     if (iA < nCEsA) return 1;
     if (iB < nCEsB) return -1;
 
-    // Tiebreaker: binary code-point order.
+    // Tiebreaker: binary comparison of NFC-normalized forms.
     //
-    size_t nMin = (nA < nB) ? nA : nB;
-    int cmp = memcmp(a, b, nMin);
+    // UCA requires canonical equivalents to compare equal.  Levels 1-3
+    // already handle this (CEs are identical for equivalent forms), but
+    // the tiebreaker must also use normalized bytes so that decomposed
+    // and precomposed forms don't diverge here.
+    //
+    // We defer normalization to this point because most comparisons
+    // resolve at levels 1-3 and never reach the tiebreaker.
+    //
+    UTF8 nfcBufA[LBUF_SIZE];
+    UTF8 nfcBufB[LBUF_SIZE];
+    const UTF8 *tieA = a;
+    const UTF8 *tieB = b;
+    size_t tieNA = nA, tieNB = nB;
+
+    if (!utf8_is_nfc(a, nA))
+    {
+        utf8_normalize_nfc(a, nA, nfcBufA, sizeof(nfcBufA), &tieNA);
+        tieA = nfcBufA;
+    }
+    if (!utf8_is_nfc(b, nB))
+    {
+        utf8_normalize_nfc(b, nB, nfcBufB, sizeof(nfcBufB), &tieNB);
+        tieB = nfcBufB;
+    }
+
+    size_t nMin = (tieNA < tieNB) ? tieNA : tieNB;
+    int cmp = memcmp(tieA, tieB, nMin);
     if (0 != cmp)
     {
         return cmp;
     }
-    if (nA < nB) return -1;
-    if (nA > nB) return 1;
+    if (tieNA < tieNB) return -1;
+    if (tieNA > tieNB) return 1;
     return 0;
 }
 

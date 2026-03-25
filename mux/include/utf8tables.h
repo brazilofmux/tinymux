@@ -273,13 +273,13 @@ extern LIBMUX_API const string_desc tr_nfd_ott[2045];
 // utf/tr_compose.txt
 //
 // 964 composition pairs.
-// 129 states, 112 columns, 7592 bytes
+// 1010 states, 141 columns, 19004 bytes
 //
 #define TR_NFC_COMPOSE_START_STATE (0)
-#define TR_NFC_COMPOSE_ACCEPTING_STATES_START (129)
+#define TR_NFC_COMPOSE_ACCEPTING_STATES_START (1010)
 extern LIBMUX_API const unsigned char tr_nfc_compose_itt[256];
-extern LIBMUX_API const unsigned short tr_nfc_compose_sot[129];
-extern LIBMUX_API const unsigned short tr_nfc_compose_sbt[3539];
+extern LIBMUX_API const unsigned short tr_nfc_compose_sot[1010];
+extern LIBMUX_API const unsigned short tr_nfc_compose_sbt[8364];
 #define TR_NFC_COMPOSE_NFC_COMPOSE_RESULTS (964)
 extern LIBMUX_API const UTF32 tr_nfc_compose_nfc_compose_result[965];
 
@@ -319,13 +319,13 @@ extern LIBMUX_API const unsigned short tr_ducet_sbt[43141];
 // utf/tr_ducet_contract.txt
 //
 // 956 composition pairs.
-// 27 states, 64 columns, 3238 bytes
+// 294 states, 77 columns, 6470 bytes
 //
 #define TR_DUCET_CONTRACT_START_STATE (0)
-#define TR_DUCET_CONTRACT_ACCEPTING_STATES_START (27)
+#define TR_DUCET_CONTRACT_ACCEPTING_STATES_START (294)
 extern LIBMUX_API const unsigned char tr_ducet_contract_itt[256];
-extern LIBMUX_API const unsigned short tr_ducet_contract_sot[27];
-extern LIBMUX_API const unsigned short tr_ducet_contract_sbt[1464];
+extern LIBMUX_API const unsigned short tr_ducet_contract_sot[294];
+extern LIBMUX_API const unsigned short tr_ducet_contract_sbt[2813];
 #define TR_DUCET_CONTRACT_NFC_COMPOSE_RESULTS (953)
 extern LIBMUX_API const UTF32 tr_ducet_contract_nfc_compose_result[954];
 

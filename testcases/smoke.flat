@@ -5599,7 +5599,7 @@
 >264
 "@if strmatch(setr(0,reglattr(me,\\[invalid)),#-1 REGEXP ERROR*)={@log smoke=TC007: reglattr bad regex. Succeeded.},{@log smoke=TC007: reglattr bad regex. Failed (%q0).}"
 >265
-"@if strmatch(setr(0,sha1(sort(reglattr(me,_ONE$)))),0CA923E1C9FE9DE4138C1274783DCFD127997667)={@log smoke=TC008: reglattr _ONE suffix. Succeeded.;@trig me/tr.done},{@log smoke=TC008: reglattr _ONE suffix. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1(sort(reglattr(me,_ONE$)))),6CFC326A1F47802EB927085C80E6ECB33557CA94)={@log smoke=TC008: reglattr _ONE suffix. Succeeded.;@trig me/tr.done},{@log smoke=TC008: reglattr _ONE suffix. Failed (%q0).;@trig me/tr.done}"
 >389
 "1"
 >390
