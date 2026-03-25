@@ -243,101 +243,65 @@ moves into `platform_unix.cpp::BootHelperProcess()`. The adapter gets
 a new `attach_stubslave(readFd, writeFd, childPid)` that takes the
 already-created IPC channel from the platform module.
 
-## Platform Module Implementations
+## Implementation: CPlatform in modules.cpp
 
-### platform_unix.cpp
+`CPlatform` is **not** a separately loadable module. It is compiled
+directly into `netmux` (the driver binary), registered in
+`driver_classes[]` alongside `CDriverControl` and `CConnectionManager`,
+and created via `mux_CreateInstance(CID_Platform, ...)` at startup.
 
-Registers as `CID_Platform`. Implements all methods:
+This is the same pattern as every other driver-side COM class. The
+platform interface needs to be available before engine.so loads
+(MaximizeFileDescriptors runs before config, BootHelperProcess before
+engine creation), so it cannot be in a separate .so/.dll — there is
+no config to tell the driver which module to load at that point.
 
-- `RegisterSignalHandler`: installs POSIX `sigaction()` handlers that
-  translate signals into `PlatformSignal` enum values and call the
-  registered callback.
-- `BootHelperProcess`: the existing fork/socketpair/dup2/exec code from
-  `ganl_adapter.cpp:2820–2867`, moved here.
-- `ReapChild`: `waitpid(0, &status, WNOHANG)` with WIFEXITED/WIFSIGNALED
-  decoding.
-- `MaximizeFileDescriptors`: the existing `init_rlimit()` code from
-  `driver.cpp:600–621`.
-- `PanicRestart`: the existing fork+dump+exec code from
-  `signals.cpp:577–608`.
-- `GetProcessId`: `getpid()`.
-- `GetSignalNametab`: the existing `build_signal_names_table()`.
+The `#ifdef` blocks that were scattered across driver.cpp, signals.cpp,
+and ganl_adapter.cpp are now concentrated in `CPlatform` method bodies
+in `modules.cpp`. One class, one file, one place to find all platform
+conditionals. The driver code that calls the interface is `#ifdef`-free.
 
-### platform_win32.cpp
+### Method implementations
 
-Registers as `CID_Platform`. Returns not-implemented for Unix-only
-operations:
+| Method | Unix (`HAVE_WORKING_FORK` etc.) | Windows |
+|--------|--------------------------------|---------|
+| `BootHelperProcess` | fork + socketpair + exec | `MUX_E_NOTIMPLEMENTED` |
+| `ReapChild` | waitpid(WNOHANG) + WIFEXITED/WIFSIGNALED | `MUX_E_NOTIMPLEMENTED` |
+| `MaximizeFileDescriptors` | getrlimit + setrlimit | `MUX_E_NOTIMPLEMENTED` |
+| `PanicRestart` | fork (dump core) + execl (restart) | `abort()` |
+| `GetProcessId` | `mux_getpid()` | `mux_getpid()` |
+| `RegisterSignalHandler` | Placeholder (signal registration stays in signals.cpp for now) | Placeholder |
+| `GetSignalNametab` | Placeholder | Placeholder |
 
-- `RegisterSignalHandler`: installs `SetConsoleCtrlHandler` for
-  CTRL_C_EVENT (→ PLATSIG_SHUTDOWN), CTRL_CLOSE_EVENT (→ PLATSIG_SHUTDOWN).
-  Installs structured exception handler for access violations
-  (→ PLATSIG_PANIC).
-- `BootHelperProcess`: returns `MUX_E_NOTIMPLEMENTED`.
-- `ReapChild`: returns `MUX_E_NOTIMPLEMENTED`.
-- `MaximizeFileDescriptors`: returns `MUX_E_NOTIMPLEMENTED` (Windows
-  doesn't have the Unix fd limit concept).
-- `PanicRestart`: calls `abort()`. Could potentially use
-  `CreateProcess()` for restart in the future.
-- `GetProcessId`: `GetCurrentProcessId()`.
-- `GetSignalNametab`: returns minimal table (SIGINT, SIGTERM, SIGABRT).
+## What Changed
 
-## Build Integration
-
-### Unix (Makefile.am / configure)
-
-`platform_unix.cpp` is compiled as part of netmux (same as other driver
-files). No separate shared library — it's in-process, registered via
-`mux_RegisterClassObjects` during `init_modules()`.
-
-### Windows (netmux.vcxproj)
-
-`platform_win32.cpp` is compiled as part of netmux. Same pattern.
-
-Both files are in `mux/src/`. Only one compiles per platform, selected
-by the build system (Makefile.am on Unix, vcxproj on Windows).
-
-## What Moves
-
-| Current Location | Lines | Destination |
-|-----------------|-------|-------------|
-| `ganl_adapter.cpp:2800–2870` (boot_stubslave) | ~70 | `platform_unix.cpp::BootHelperProcess` |
-| `driver.cpp:600–621` (init_rlimit) | ~22 | `platform_unix.cpp::MaximizeFileDescriptors` |
-| `signals.cpp:649–680` (signal registration) | ~32 | `platform_{unix,win32}.cpp::RegisterSignalHandler` |
-| `signals.cpp:571–608` (panic restart) | ~38 | `platform_{unix,win32}.cpp::PanicRestart` |
-| `signals.cpp:426–478` (SIGCHLD handler) | ~53 | `platform_unix.cpp` internal + `ReapChild` |
-| `signals.cpp:345–390` (signal name table) | ~46 | `platform_{unix,win32}.cpp::GetSignalNametab` |
-
-**Total moved:** ~260 lines out of driver/signals/ganl_adapter into
-platform modules.
-
-**Total #ifdef blocks eliminated from driver code:** All platform-
-conditional blocks in driver.cpp, signals.cpp. The driver becomes
-purely platform-neutral.
+| File | Before | After |
+|------|--------|-------|
+| `driver.cpp` | `#ifdef HAVE_SETRLIMIT` block, `#ifdef HAVE_WORKING_FORK && STUB_SLAVE` block | `g_pIPlatform->MaximizeFileDescriptors()`, `g_pIPlatform->BootHelperProcess()` |
+| `signals.cpp` | SIGCHLD: nested `#ifdef` with waitpid/STUB_SLAVE/HAVE_WORKING_FORK. Panic: `#ifdef WINDOWS_PROCESSES` / `#ifdef UNIX_PROCESSES` fork+exec vs abort | `g_pIPlatform->ReapChild()` loop, `g_pIPlatform->PanicRestart()` |
+| `ganl_adapter.cpp` | `boot_stubslave()` contains fork+socketpair+dup2+exec | `attach_stubslave()` takes pre-created IPC fds (BootHelperProcess will eventually supply them) |
+| `modules.cpp` | No platform class | `CPlatform` + `CPlatformFactory`, `#ifdef` blocks concentrated here |
 
 ## What Stays
 
 - `main()` — in `driver.cpp`, unchanged
-- `modules.cpp` — module registration, unchanged
-- `mux_CreateInstance(CID_Platform, ...)` — the one new line in driver.cpp
-- Signal callback (`driver_signal_callback`) — platform-neutral flag
-  setting, stays in driver code
+- `modules.cpp` — module registration, `CPlatform` class
+- `set_signals()` — still in `signals.cpp` with `#ifdef UNIX_SIGNALS`
+  for the extended signal set (candidate for `RegisterSignalHandler`
+  in a future pass)
+- `sighandler()` — stays in `signals.cpp`, calls platform methods
+  for ReapChild and PanicRestart
 - GANL networking — already abstracted, untouched
 
-## Implementation Order
+## Remaining Work
 
-1. **modules.h:** Add `CID_Platform`, `IID_IPlatform`, `PlatformSignal`
-   enum, `PLATFORM_SIGNAL_HANDLER` typedef, `mux_IPlatform` interface.
-2. **platform_unix.cpp:** Move fork/signal/rlimit code, implement
-   interface. Register in `init_modules()`.
-3. **platform_win32.cpp:** Implement interface with not-implemented
-   stubs and Windows equivalents. Register in `init_modules()`.
-4. **driver.cpp:** Replace `#ifdef` blocks with `g_pIPlatform->` calls.
-5. **signals.cpp:** Replace signal registration and handler dispatch
-   with platform callback.
-6. **ganl_adapter.cpp:** Replace `boot_stubslave()` with
-   `attach_stubslave(readFd, writeFd, pid)`.
-7. **Build:** Add platform files to Makefile.am and vcxproj.
-8. **Testing:** Build and smoke test on both platforms.
+- `set_signals()` still has `#ifdef UNIX_SIGNALS` — move into
+  `CPlatform::RegisterSignalHandler` (low priority, straightforward)
+- `boot_stubslave()` body should eventually move into
+  `CPlatform::BootHelperProcess` on Unix (currently BootHelperProcess
+  returns `MUX_E_NOTIMPLEMENTED` on both platforms)
+- `GetSignalNametab` — not yet wired
+- `build_signal_names_table()` — candidate for `GetSignalNametab`
 
 ## Risk Assessment
 
@@ -345,10 +309,9 @@ purely platform-neutral.
   directly. It interacts with the driver through `mux_IDriverControl`
   and `mux_IConnectionManager`, which are unchanged.
 - **Moderate risk to signal handling:** Signal handlers are delicate
-  (async-signal-safe requirements). The platform module must preserve
-  the same signal-safety guarantees as the current inline code.
-- **Low risk to Windows:** Most methods return `MUX_E_NOTIMPLEMENTED`,
-  which the driver already handles gracefully. The Windows platform
-  module is mostly stubs.
-- **Build system:** Two new .cpp files, one per platform. Straightforward
-  Makefile.am and vcxproj additions.
+  (async-signal-safe requirements). `ReapChild` and `PanicRestart`
+  preserve the same signal-safety guarantees — waitpid and fork/exec
+  are async-signal-safe.
+- **No build system changes:** `CPlatform` lives in `modules.cpp`,
+  which is already compiled on both platforms. No new files to add
+  to Makefile.am or vcxproj.
