@@ -1,8 +1,8 @@
 /*
  * test_unicode_icu.cpp — Unicode correctness tests against ICU reference.
  *
- * Tests NFC normalization and DUCET collation by comparing libmux
- * results against ICU.  Run after building libmux.so:
+ * Tests NFC normalization and untailored UCA/DUCET collation by comparing
+ * libmux results against ICU root collation. Run after building libmux.so:
  *
  *   make test_unicode_icu
  *   ./test_unicode_icu
@@ -166,9 +166,9 @@ int main(void)
         return 1;
     }
 
-    UCollator *coll = ucol_open("", &err);
+    UCollator *coll = ucol_open("root", &err);
     if (U_FAILURE(err)) {
-        fprintf(stderr, "ICU collator error: %s\n", u_errorName(err));
+        fprintf(stderr, "ICU root collator error: %s\n", u_errorName(err));
         return 1;
     }
 
