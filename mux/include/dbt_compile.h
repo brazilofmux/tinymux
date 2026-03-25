@@ -142,6 +142,11 @@ struct rv_compiler {
     std::vector<uint8_t> memory;
     std::vector<uint32_t> code;
 
+    // Code base address in guest memory.  Defaults to CODE_BASE (0)
+    // for backward compatibility.  In persistent VM mode, each compiled
+    // function gets a different code_base from the code heap allocator.
+    uint64_t code_base;
+
     // Pool allocators (bump pointers into guest memory).
     uint64_t str_pool;      // next free byte in string pool
     uint64_t fargs_pool;    // next free byte in fargs area
@@ -203,7 +208,8 @@ struct rv_compiler {
     static constexpr uint64_t STACK_TOP  = 0xFFFF0;
     static constexpr uint64_t BLOB_LIMIT = 0x40000;
 
-    rv_compiler() : memory(MEM_SIZE, 0),
+    rv_compiler() : code_base(CODE_BASE),
+                    memory(MEM_SIZE, 0),
                     str_pool(STR_BASE),
                     fargs_pool(FARGS_BASE),
                     out_pool(OUT_BASE),
@@ -212,6 +218,26 @@ struct rv_compiler {
                     ecalls(0),
                     native_ops(0),
                     needs_jit(false) {}
+
+    // Persistent VM constructor: caller specifies code base and pool
+    // starting positions to avoid collisions with previously compiled
+    // functions in the same guest memory.
+    rv_compiler(uint64_t cb, uint64_t sp, uint64_t fp, uint64_t op)
+        : code_base(cb),
+          memory(MEM_SIZE, 0),
+          str_pool(sp),
+          fargs_pool(fp),
+          out_pool(op),
+          final_out(0),
+          folds(0),
+          ecalls(0),
+          native_ops(0),
+          needs_jit(false) {}
+
+    // Current guest PC of the next instruction to be emitted.
+    uint64_t current_pc() const {
+        return code_base + code.size() * 4;
+    }
 
     uint64_t pool_str(const char *s, size_t len) {
         uint64_t addr = str_pool;
@@ -264,6 +290,7 @@ struct compiled_program {
     size_t memory_size;
     uint64_t out_addr;      // where the final result lives
     uint64_t out_used;      // bytes of output region actually allocated
+    uint64_t entry_pc;      // guest PC of compiled code entry point
     bool ok;
     int folds;
     int ecalls;

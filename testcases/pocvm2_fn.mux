@@ -1,0 +1,66 @@
+#
+# pocvm2_fn.mux - Persistent VM Phase 2 tests.
+#
+# Tests that the real JIT compiler can compile two MUX expressions
+# at different code_base offsets in shared persistent guest memory.
+#
+@create test_pocvm2_fn
+-
+@set test_pocvm2_fn=INHERIT QUIET
+-
+&tr.tc000 test_pocvm2_fn=
+  @log smoke=Beginning pocvm2() test cases.
+-
+#
+# Test Case #1 - Function A: first(one two three) = one
+#
+&tr.tc001 test_pocvm2_fn=
+  @if strmatch(
+        setr(0,pocvm2()),
+        a=one *
+      )=
+  {
+    @log smoke=TC001: pocvm2 func A=one. Succeeded.
+  },
+  {
+    @log smoke=TC001: pocvm2 func A=one. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Function B: rest(one two three) = two three
+#
+&tr.tc002 test_pocvm2_fn=
+  @if strmatch(
+        setr(0,pocvm2()),
+        *b=two three *
+      )=
+  {
+    @log smoke=TC002: pocvm2 func B=two three. Succeeded.
+  },
+  {
+    @log smoke=TC002: pocvm2 func B=two three. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Functions at different code_base offsets.
+#
+&tr.tc003 test_pocvm2_fn=
+  @if strmatch(
+        setr(0,pocvm2()),
+        *b_pc=0x1000 *
+      )=
+  {
+    @log smoke=TC003: pocvm2 different code bases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: pocvm2 different code bases. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_pocvm2_fn=
+  @log smoke=End pocvm2() test cases.;
+  @notify smoke
+-
+drop test_pocvm2_fn
+-

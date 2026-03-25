@@ -531,17 +531,17 @@ static void rv_emit_exit(std::vector<uint32_t> &code) {
 // Calling convention: a0=output, a1=fargs, a2=nfargs.
 // Return value in a0 (pointer to output buffer).
 //
-static void rv_emit_tier2_call(std::vector<uint32_t> &code,
+static void rv_emit_tier2_call(rv_compiler &rc,
                                 uint64_t fargs_addr, int nfargs,
                                 uint64_t out_addr, uint64_t func_guest_addr) {
-    rv_load_val(code, 10, out_addr);                  // a0 = output
-    rv_load_val(code, 11, fargs_addr);                // a1 = fargs
-    code.push_back(rv_ADDI(12, 0, nfargs));           // a2 = nfargs
+    rv_load_val(rc.code, 10, out_addr);                  // a0 = output
+    rv_load_val(rc.code, 11, fargs_addr);                // a1 = fargs
+    rc.code.push_back(rv_ADDI(12, 0, nfargs));           // a2 = nfargs
 
     // JAL ra, target — offset relative to current PC.
-    uint64_t current_pc = code.size() * 4;  // guest PC of the JAL
-    int32_t offset = static_cast<int32_t>(func_guest_addr - current_pc);
-    code.push_back(rv_JAL(1, offset));                // JAL ra, blob_func
+    uint64_t cur_pc = rc.current_pc();
+    int32_t offset = static_cast<int32_t>(func_guest_addr - cur_pc);
+    rc.code.push_back(rv_JAL(1, offset));                // JAL ra, blob_func
 }
 
 // ---------------------------------------------------------------
@@ -1662,7 +1662,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 rv_load_val(rc.code, 10, str_addr);         // a0 = string
                 if (blob_addr) {
                     // JAL to rv64_strtod — result in fa0.
-                    uint64_t pc = rc.code.size() * 4;
+                    uint64_t pc = rc.current_pc();
                     int32_t offset = static_cast<int32_t>(blob_addr - pc);
                     rc.code.push_back(rv_JAL(1, offset));
                 } else {
@@ -1686,7 +1686,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 rv_load_val(rc.code, RA_SCRATCH, a1);
                 rc.code.push_back(rv_FLD(10, RA_SCRATCH, 0));  // fa0 = *a1
                 // JAL to blob function.
-                uint64_t pc = rc.code.size() * 4;
+                uint64_t pc = rc.current_pc();
                 int32_t offset = static_cast<int32_t>(func_addr - pc);
                 rc.code.push_back(rv_JAL(1, offset));          // JAL ra, func
                 // Store result from fa0 to FP slot.
@@ -1708,7 +1708,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 rv_load_val(rc.code, RA_SCRATCH, a2);
                 rc.code.push_back(rv_FLD(11, RA_SCRATCH, 0));  // fa1 = *a2
                 // JAL to blob function.
-                uint64_t pc = rc.code.size() * 4;
+                uint64_t pc = rc.current_pc();
                 int32_t offset = static_cast<int32_t>(func_addr - pc);
                 rc.code.push_back(rv_JAL(1, offset));          // JAL ra, func
                 // Store result from fa0 to FP slot.
@@ -1753,7 +1753,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
 
                 if (h.tier2_addr[i]) {
                     // Tier 2: JAL to pre-compiled blob function.
-                    rv_emit_tier2_call(rc.code, fargs_addr, na,
+                    rv_emit_tier2_call(rc, fargs_addr, na,
                                         out_addr, h.tier2_addr[i]);
                 } else {
                     // ECALL to engine function.
@@ -1780,7 +1780,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 uint64_t fargs_addr = rc.alloc_fargs(farg_addrs);
                 uint64_t t2addr = tier2_lookup("STRCAT");
                 if (t2addr) {
-                    rv_emit_tier2_call(rc.code, fargs_addr, na,
+                    rv_emit_tier2_call(rc, fargs_addr, na,
                                         out_addr, t2addr);
                 } else {
                     int fidx = h.func_idx[i];

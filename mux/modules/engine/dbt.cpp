@@ -3470,6 +3470,89 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
     }
 }
 
+// Resume execution in a persistent VM context.
+// Unlike dbt_run(), this does NOT zero the CPU context.  It sets next_pc
+// and enters the dispatch loop, preserving all register state, the block
+// cache, and the code buffer.  The caller is responsible for setting up
+// any registers (SP, etc.) before calling this.
+//
+int dbt_resume(dbt_state_t *dbt, uint64_t entry_pc) {
+    typedef void (*trampoline_fn_t)(rv64_ctx_t *ctx, uint8_t *mem,
+                                     void *block, void *cache);
+    trampoline_fn_t trampoline =
+        reinterpret_cast<trampoline_fn_t>(static_cast<void *>(dbt->code_buf));
+
+    dbt->ctx.next_pc = entry_pc;
+    uint64_t dispatch_count = 0;
+
+    for (;;) {
+        dispatch_count++;
+
+        if (dbt->max_dispatch && dispatch_count > dbt->max_dispatch) {
+            dbt->dispatch_count = dispatch_count;
+            fprintf(stderr, "dbt: dispatch limit exceeded (%llu)\n",
+                    static_cast<unsigned long long>(dbt->max_dispatch));
+            return -2;
+        }
+
+        uint64_t pc = dbt->ctx.next_pc;
+
+        // ECALL signal: bit 0 set.
+        if (pc & 1) {
+            if (dbt->trace & DBT_TRACE_EXEC) {
+                fprintf(stderr, "[dbt] disp=%llu ECALL pc=0x%llX\n",
+                        static_cast<unsigned long long>(dispatch_count),
+                        static_cast<unsigned long long>(pc & ~3ULL));
+            }
+            dbt->ctx.next_pc = (pc & ~3ULL) + 4;
+            int rc = dbt->ecall_fn(&dbt->ctx, dbt->ecall_user);
+            if (rc >= 0) {
+                dbt->dispatch_count = dispatch_count;
+                return rc;
+            }
+            dbt->ctx.x[0] = 0;
+            continue;
+        }
+
+        // EBREAK signal: bit 1 set.
+        if (pc & 2) {
+            dbt->dispatch_count = dispatch_count;
+            fprintf(stderr, "dbt: EBREAK at 0x%llX\n",
+                    static_cast<unsigned long long>(pc & ~3ULL));
+            return -1;
+        }
+
+        // Look up or translate block.
+        block_entry_t *be = cache_lookup(dbt, pc);
+        uint8_t *code;
+        if (be) {
+            code = be->native_code;
+            if (dbt->trace & DBT_TRACE_EXEC) {
+                fprintf(stderr, "[dbt] disp=%llu HIT  pc=0x%llX\n",
+                        static_cast<unsigned long long>(dispatch_count),
+                        static_cast<unsigned long long>(pc));
+            }
+        } else {
+            code = translate_block(dbt, pc);
+            if (!code) {
+                dbt->dispatch_count = dispatch_count;
+                return -1;  // code buffer full
+            }
+            cache_insert(dbt, pc, code);
+            backpatch_chains(dbt, pc, code);
+            if (dbt->trace & DBT_TRACE_EXEC) {
+                fprintf(stderr, "[dbt] disp=%llu MISS pc=0x%llX\n",
+                        static_cast<unsigned long long>(dispatch_count),
+                        static_cast<unsigned long long>(pc));
+            }
+        }
+
+        // Execute.
+        trampoline(&dbt->ctx, dbt->memory, code, dbt->cache.data());
+        dbt->ctx.x[0] = 0;
+    }
+}
+
 void dbt_cleanup(dbt_state_t *dbt) {
 #ifdef WIN32
     if (dbt->code_buf) {

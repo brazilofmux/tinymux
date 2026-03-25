@@ -14326,6 +14326,10 @@ static FUN builtin_function_list[] =
     {T("PLAYMEM"),     fun_playmem,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("PMATCH"),      fun_pmatch,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("POLL"),        fun_poll,       MAX_ARG, 0,       0,         0, CA_PUBLIC},
+#if defined(TINYMUX_JIT)
+    {T("POCVM"),       fun_persistent_poc, MAX_ARG, 0,   0,         0, CA_WIZARD},
+    {T("POCVM2"),      fun_pocvm2,         MAX_ARG, 0,   0,         0, CA_WIZARD},
+#endif
     {T("PORTS"),       fun_ports,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("POS"),         fun_pos,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("PROMPT"),      fun_prompt,     MAX_ARG, 2,       2,         0, CA_PUBLIC},

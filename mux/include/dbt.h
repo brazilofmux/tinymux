@@ -180,6 +180,7 @@ void dbt_rerun(dbt_state_t *dbt,
 void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc);
 void dbt_resolve_chains(dbt_state_t *dbt);
 int  dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top);
+int  dbt_resume(dbt_state_t *dbt, uint64_t entry_pc);
 void dbt_cleanup(dbt_state_t *dbt);
 
 // Intrinsic registration — called from dbt_compile.cpp before pretranslation.

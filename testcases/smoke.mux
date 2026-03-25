@@ -18,14 +18,14 @@
   fdiv_fn first_fn firstof_fn floor_fn floordiv_fn fmod_fn fpprop_fn grab_fn graball_fn gt_fn gte_fn \
   hmac_fn iadd_fn iabs_fn idiv_fn imul_fn inc_fn index_fn insert_fn \
   include_fn isalpha_fn isdbref_fn isign_fn isint_fn isjson_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn \
-  json_fn lambda_fn letq_fn
+  json_fn lambda_fn letq_fn pocvm2_fn
 -
 &suite.list.2 smoke=
   ladd_fn land_fn last_fn lcstr_fn ldelete_fn linsert_fn ljust_fn lmax_fn lmin_fn \
   ln_fn lnum_fn locate_poss lock_fn lockencode_fn log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn \
   mailinfo_fn mailsend_fn match_fn matchall_fn max_fn mean_fn median_fn member_fn merge_fn mid_fn min_fn mod_fn moon_fn mul_fn \
   ncon_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn \
-  parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn power_fn printf_fn protect_fn \
+  parser_fn parenmatch_fn pi_fn pickrand_fn pocvm_fn pos_fn power_fn printf_fn protect_fn \
   reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn \
   right_fn rjust_fn roman_fn round_fn rpad_fn rvbench_fn \
   sandbox_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn \
