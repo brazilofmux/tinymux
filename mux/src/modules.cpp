@@ -21,11 +21,13 @@
 //
 DEFINE_FACTORY(CConnectionManagerFactory)
 DEFINE_FACTORY(CDriverControlFactory)
+DEFINE_FACTORY(CPlatformFactory)
 
 static MUX_CLASS_INFO driver_classes[] =
 {
     { CID_ConnectionManager },
-    { CID_DriverControl     }
+    { CID_DriverControl     },
+    { CID_Platform          }
 };
 #define NUM_DRIVER_CLASSES (sizeof(driver_classes)/sizeof(driver_classes[0]))
 
@@ -61,6 +63,26 @@ extern "C" MUX_RESULT DCL_API driver_GetClassObject(MUX_CID cid, MUX_IID iid, vo
         try
         {
             pFactory = new CDriverControlFactory;
+        }
+        catch (...)
+        {
+            ; // Nothing.
+        }
+
+        if (nullptr == pFactory)
+        {
+            return MUX_E_OUTOFMEMORY;
+        }
+
+        mr = pFactory->QueryInterface(iid, ppv);
+        pFactory->Release();
+    }
+    else if (CID_Platform == cid)
+    {
+        CPlatformFactory *pFactory = nullptr;
+        try
+        {
+            pFactory = new CPlatformFactory;
         }
         catch (...)
         {
@@ -1130,6 +1152,285 @@ MUX_RESULT CDriverControlFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MU
 }
 
 MUX_RESULT CDriverControlFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
+// ---------------------------------------------------------------------------
+// CPlatform — platform abstraction for OS-specific driver operations.
+//
+// On Windows: most methods return MUX_E_NOTIMPLEMENTED (no fork, no
+// setrlimit).  Signal handling uses SetConsoleCtrlHandler.
+// On Unix: platform_unix.cpp would replace this with real implementations.
+// For now, both platforms share this file; Unix-specific code is #ifdef'd.
+// ---------------------------------------------------------------------------
+
+class CPlatform : public mux_IPlatform
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+
+    virtual MUX_RESULT RegisterSignalHandler(
+        PLATFORM_SIGNAL_HANDLER pfHandler, void *context);
+    virtual MUX_RESULT UnregisterSignalHandler(void);
+    virtual MUX_RESULT BootHelperProcess(
+        const UTF8 *path, int *pReadFd, int *pWriteFd, int *pChildPid);
+    virtual MUX_RESULT ReapChild(int *pPid, int *pExitStatus, bool *pSignaled);
+    virtual MUX_RESULT MaximizeFileDescriptors(int *pLimit);
+    virtual MUX_RESULT PanicRestart(
+        const UTF8 *execPath, const UTF8 *const *argv, int argc);
+    virtual MUX_RESULT GetProcessId(int *pPid);
+    virtual MUX_RESULT GetSignalNametab(NAMETAB **ppTable);
+
+    CPlatform(void);
+    virtual ~CPlatform();
+
+private:
+    uint32_t m_cRef;
+};
+
+CPlatform::CPlatform(void) : m_cRef(1)
+{
+}
+
+CPlatform::~CPlatform()
+{
+}
+
+MUX_RESULT CPlatform::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IPlatform *>(this);
+    }
+    else if (IID_IPlatform == iid)
+    {
+        *ppv = static_cast<mux_IPlatform *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CPlatform::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CPlatform::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+// Static storage for the registered callback.
+static PLATFORM_SIGNAL_HANDLER s_pfSignalHandler = nullptr;
+static void *s_pSignalContext = nullptr;
+
+MUX_RESULT CPlatform::RegisterSignalHandler(
+    PLATFORM_SIGNAL_HANDLER pfHandler, void *context)
+{
+    s_pfSignalHandler = pfHandler;
+    s_pSignalContext = context;
+
+    // Install OS-specific signal/event handlers that call the callback.
+    //
+#if defined(WINDOWS_SIGNALS)
+    // TODO: SetConsoleCtrlHandler that maps events to PlatformSignal.
+#endif
+    signal(SIGINT, SIG_IGN);
+    signal(SIGTERM, SIG_IGN);
+    signal(SIGABRT, SIG_DFL);
+#if defined(UNIX_SIGNALS)
+    signal(SIGCHLD, SIG_DFL);
+    signal(SIGHUP, SIG_DFL);
+    signal(SIGPIPE, SIG_IGN);
+#endif
+    return MUX_S_OK;
+}
+
+MUX_RESULT CPlatform::UnregisterSignalHandler(void)
+{
+    s_pfSignalHandler = nullptr;
+    s_pSignalContext = nullptr;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CPlatform::BootHelperProcess(
+    const UTF8 *path, int *pReadFd, int *pWriteFd, int *pChildPid)
+{
+    UNUSED_PARAMETER(path);
+    UNUSED_PARAMETER(pReadFd);
+    UNUSED_PARAMETER(pWriteFd);
+    UNUSED_PARAMETER(pChildPid);
+
+#if defined(HAVE_WORKING_FORK)
+    // Unix implementation would go here (moved from ganl_adapter.cpp).
+    return MUX_E_NOTIMPLEMENTED;
+#else
+    return MUX_E_NOTIMPLEMENTED;
+#endif
+}
+
+MUX_RESULT CPlatform::ReapChild(int *pPid, int *pExitStatus, bool *pSignaled)
+{
+    UNUSED_PARAMETER(pPid);
+    UNUSED_PARAMETER(pExitStatus);
+    UNUSED_PARAMETER(pSignaled);
+
+#if defined(HAVE_WORKING_FORK)
+    // Unix implementation would go here (moved from signals.cpp).
+    return MUX_E_NOTIMPLEMENTED;
+#else
+    return MUX_E_NOTIMPLEMENTED;
+#endif
+}
+
+MUX_RESULT CPlatform::MaximizeFileDescriptors(int *pLimit)
+{
+#if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
+    struct rlimit rlp;
+    if (getrlimit(RLIMIT_NOFILE, &rlp) == 0)
+    {
+        rlp.rlim_cur = rlp.rlim_max;
+        setrlimit(RLIMIT_NOFILE, &rlp);
+        if (pLimit)
+        {
+            *pLimit = static_cast<int>(rlp.rlim_cur);
+        }
+        return MUX_S_OK;
+    }
+    return MUX_E_FAIL;
+#else
+    UNUSED_PARAMETER(pLimit);
+    return MUX_E_NOTIMPLEMENTED;
+#endif
+}
+
+MUX_RESULT CPlatform::PanicRestart(
+    const UTF8 *execPath, const UTF8 *const *argv, int argc)
+{
+    UNUSED_PARAMETER(execPath);
+    UNUSED_PARAMETER(argv);
+    UNUSED_PARAMETER(argc);
+
+#if defined(WINDOWS_PROCESSES)
+    abort();
+    return MUX_E_FAIL;  // unreachable
+#elif defined(HAVE_WORKING_FORK)
+    // Unix implementation would go here (moved from signals.cpp).
+    return MUX_E_NOTIMPLEMENTED;
+#else
+    return MUX_E_NOTIMPLEMENTED;
+#endif
+}
+
+MUX_RESULT CPlatform::GetProcessId(int *pPid)
+{
+    if (nullptr == pPid)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pPid = mux_getpid();
+    return MUX_S_OK;
+}
+
+MUX_RESULT CPlatform::GetSignalNametab(NAMETAB **ppTable)
+{
+    if (nullptr == ppTable)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    // The existing build_signal_names_table() populates signames_tab.
+    // For now, return nullptr until we move that table here.
+    *ppTable = nullptr;
+    return MUX_E_NOTIMPLEMENTED;
+}
+
+// CPlatformFactory
+//
+CPlatformFactory::CPlatformFactory(void) : m_cRef(1)
+{
+}
+
+CPlatformFactory::~CPlatformFactory()
+{
+}
+
+MUX_RESULT CPlatformFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CPlatformFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CPlatformFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CPlatformFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
+{
+    UNUSED_PARAMETER(pUnknownOuter);
+
+    CPlatform *pPlatform = nullptr;
+    try
+    {
+        pPlatform = new CPlatform;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pPlatform)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pPlatform->QueryInterface(iid, ppv);
+    pPlatform->Release();
+    return mr;
+}
+
+MUX_RESULT CPlatformFactory::LockServer(bool bLock)
 {
     UNUSED_PARAMETER(bLock);
     return MUX_S_OK;

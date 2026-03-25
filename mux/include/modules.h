@@ -83,6 +83,8 @@ const MUX_IID IID_IPermissions          = UINT64_C(0x0000000257B1D946);
 const MUX_CID CID_MailDelivery          = UINT64_C(0x00000002B3F5D721);
 const MUX_CID CID_HelpSystem           = UINT64_C(0x00000002C4D6E832);
 const MUX_IID IID_IHelpSystem          = UINT64_C(0x0000000238A9F157);
+const MUX_CID CID_Platform             = UINT64_C(0x00000002D7A1F3E5);
+const MUX_IID IID_IPlatform            = UINT64_C(0x00000002A3B5C7D9);
 
 interface mux_ILog : public mux_IUnknown
 {
@@ -620,6 +622,77 @@ public:
     // Reload all help file indexes.
     //
     virtual MUX_RESULT ReloadIndexes(dbref player) = 0;
+};
+
+// Platform interface — abstracts OS-specific driver operations behind COM.
+// Two implementations: platform_unix.cpp (fork, signals, setrlimit) and
+// platform_win32.cpp (console events, abort, stubs).
+//
+// The driver adapts at runtime based on return codes, not #ifdef.
+
+// Callback signature for lifecycle signals.
+typedef void (*PLATFORM_SIGNAL_HANDLER)(int signal_type, void *context);
+
+// Platform-neutral signal types.
+enum PlatformSignal
+{
+    PLATSIG_SHUTDOWN    = 1,    // graceful shutdown (SIGTERM/SIGQUIT/Ctrl-C)
+    PLATSIG_DUMP        = 2,    // database checkpoint (SIGHUP)
+    PLATSIG_RESTART     = 3,    // restart server (SIGUSR1)
+    PLATSIG_CHILD_EXIT  = 4,    // child process exited (SIGCHLD)
+    PLATSIG_PANIC       = 5,    // fatal signal (SIGSEGV, SIGILL, etc.)
+};
+
+interface mux_IPlatform : public mux_IUnknown
+{
+public:
+    // Register a callback for platform lifecycle events.  The platform
+    // module translates OS signals/events into PlatformSignal values.
+    //
+    virtual MUX_RESULT RegisterSignalHandler(
+        PLATFORM_SIGNAL_HANDLER pfHandler, void *context) = 0;
+
+    // Unregister and restore default signal handling.
+    //
+    virtual MUX_RESULT UnregisterSignalHandler(void) = 0;
+
+    // Boot an external helper process (stubslave).  On success, pReadFd
+    // and pWriteFd are IPC file descriptors, pChildPid is the child PID.
+    // Returns MUX_E_NOTIMPLEMENTED on platforms without fork.
+    //
+    virtual MUX_RESULT BootHelperProcess(
+        const UTF8 *path,
+        int *pReadFd,
+        int *pWriteFd,
+        int *pChildPid) = 0;
+
+    // Wait for a child process to exit (non-blocking).
+    // Returns MUX_E_NOTIMPLEMENTED on platforms without child processes.
+    //
+    virtual MUX_RESULT ReapChild(int *pPid, int *pExitStatus,
+        bool *pSignaled) = 0;
+
+    // Maximize the number of file descriptors available to the process.
+    // Returns MUX_E_NOTIMPLEMENTED on platforms without fd limits.
+    //
+    virtual MUX_RESULT MaximizeFileDescriptors(int *pLimit) = 0;
+
+    // Attempt to restart the server after a fatal error.
+    // Called from signal/exception handler context — must be signal-safe.
+    // Returns MUX_E_NOTIMPLEMENTED if restart is not possible.
+    //
+    virtual MUX_RESULT PanicRestart(
+        const UTF8 *execPath,
+        const UTF8 *const *argv,
+        int argc) = 0;
+
+    // Get the current process ID.
+    //
+    virtual MUX_RESULT GetProcessId(int *pPid) = 0;
+
+    // Build the platform-specific signal name table for @list signals.
+    //
+    virtual MUX_RESULT GetSignalNametab(NAMETAB **ppTable) = 0;
 };
 
 // Static configuration basket: one-time snapshot of mudconf values that
