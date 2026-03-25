@@ -3628,8 +3628,7 @@ struct persistent_vm_t {
     std::vector<uint8_t> memory;
     dbt_state_t dbt;
     bool dbt_ready;
-    bool compiled;
-    uint32_t call_count;
+    uint32_t run_count;
 
     // Code heap: bump allocator for code sections.
     uint64_t code_heap_next;
@@ -3640,24 +3639,148 @@ struct persistent_vm_t {
     uint64_t fargs_pool_next;
     uint64_t out_pool_next;
 
-    // Entry points and output addresses for compiled functions.
-    uint64_t func_a_entry;
-    uint64_t func_a_out;
-    uint64_t func_b_entry;
-    uint64_t func_b_out;
-    uint64_t func_c_entry;   // hand-assembled: calls A via ECALL_CALL_COMPILED
-    uint64_t func_c_out;
-
     persistent_vm_t()
         : memory(rv_compiler::MEM_SIZE, 0),
-          dbt_ready(false), compiled(false), call_count(0),
+          dbt_ready(false), run_count(0),
           code_heap_next(0x0004),  // avoid PC=0 (cache sentinel)
           str_pool_next(rv_compiler::STR_BASE),
           fargs_pool_next(rv_compiler::FARGS_BASE),
-          out_pool_next(rv_compiler::STACK_TOP - 8),
-          func_a_entry(0), func_a_out(0),
-          func_b_entry(0), func_b_out(0),
-          func_c_entry(0), func_c_out(0) {}
+          out_pool_next(rv_compiler::STACK_TOP - 8) {}
+
+    // Compile an expression and install it into persistent memory.
+    // Returns {entry_pc, out_addr} on success, {0, 0} on failure.
+    //
+    struct compile_result {
+        uint64_t entry_pc;
+        uint64_t out_addr;
+    };
+
+    compile_result compile(const UTF8 *expr, size_t len,
+                           int eval = EV_FCHECK | EV_EVAL) {
+        tier2_lazy_init();
+
+        compiled_program prog = compile_expression(
+            expr, len, eval,
+            code_heap_next, str_pool_next,
+            fargs_pool_next, out_pool_next);
+
+        if (!prog.ok) return {0, 0};
+
+        install(prog);
+        return {prog.entry_pc, prog.out_addr};
+    }
+
+    // Install a hand-assembled code blob at the current code heap
+    // position.  Returns the entry_pc.
+    //
+    uint64_t install_code(const std::vector<uint32_t> &code) {
+        uint64_t entry = code_heap_next;
+        for (size_t i = 0; i < code.size(); i++) {
+            memcpy(memory.data() + entry + i * 4, &code[i], 4);
+        }
+        code_heap_next = entry + code.size() * 4;
+        code_heap_next = (code_heap_next + 15) & ~15ULL;
+        return entry;
+    }
+
+    // Initialize the DBT (first time) or update ECALL handler.
+    //
+    bool ensure_dbt() {
+        if (!dbt_ready) {
+            if (dbt_init(&dbt, memory.data(), memory.size(),
+                         poc_ecall, &dbt) != 0) {
+                return false;
+            }
+            dbt_ready = true;
+            tier2_install(memory, rv_compiler::BLOB_BASE);
+            pretranslate_tier2(&dbt);
+            dbt.blob_code_end = dbt.code_used;
+        }
+        return true;
+    }
+
+    // Prepare for execution: clear output buffers and reset blob BSS.
+    //
+    void prepare_run() {
+        if (out_pool_next < rv_compiler::STACK_TOP - 8) {
+            memset(memory.data() + out_pool_next, 0,
+                   (rv_compiler::STACK_TOP - 8) - out_pool_next);
+        }
+        if (s_tier2.loaded) {
+            tier2_install(memory, rv_compiler::BLOB_BASE);
+        }
+    }
+
+    // Run a compiled function.  Returns 0 on success.
+    // First call uses dbt_run (zeroes ctx); subsequent use dbt_resume.
+    //
+    int run(uint64_t entry_pc) {
+        dbt_rerun(&dbt, poc_ecall, &dbt);
+        if (run_count == 0) {
+            run_count++;
+            return dbt_run(&dbt, entry_pc, rv_compiler::STACK_TOP);
+        }
+        dbt.ctx.x[2] = rv_compiler::STACK_TOP;
+        run_count++;
+        return dbt_resume(&dbt, entry_pc);
+    }
+
+    // Reset blob BSS between function runs (Tier 2 writable data).
+    //
+    void reset_blob_bss() {
+        if (s_tier2.loaded && s_tier2.bss_size > 0) {
+            uint64_t bss_start = rv_compiler::BLOB_BASE
+                               + s_tier2.code.size();
+            if (bss_start + s_tier2.bss_size <= memory.size()) {
+                memset(memory.data() + bss_start, 0, s_tier2.bss_size);
+            }
+        }
+    }
+
+    // Read a NUL-terminated result string from guest memory.
+    //
+    const char *result(uint64_t out_addr) const {
+        if (out_addr == 0 || out_addr >= memory.size()) return "";
+        return reinterpret_cast<const char *>(memory.data() + out_addr);
+    }
+
+private:
+    // Install a compiled program's regions into persistent memory
+    // and advance pool cursors.
+    //
+    void install(const compiled_program &prog) {
+        // Code.
+        memcpy(memory.data() + prog.entry_pc,
+               prog.memory.data() + prog.entry_pc, prog.code_size);
+
+        // Strings.
+        if (prog.str_pool_end > str_pool_next) {
+            memcpy(memory.data() + str_pool_next,
+                   prog.memory.data() + str_pool_next,
+                   prog.str_pool_end - str_pool_next);
+        }
+
+        // Fargs.
+        if (prog.fargs_pool_end > fargs_pool_next) {
+            memcpy(memory.data() + fargs_pool_next,
+                   prog.memory.data() + fargs_pool_next,
+                   prog.fargs_pool_end - fargs_pool_next);
+        }
+
+        // Output (stack-allocated, grows downward).
+        if (prog.out_pool_end < out_pool_next) {
+            memcpy(memory.data() + prog.out_pool_end,
+                   prog.memory.data() + prog.out_pool_end,
+                   out_pool_next - prog.out_pool_end);
+        }
+
+        // Advance cursors.
+        code_heap_next = prog.entry_pc + prog.code_size;
+        code_heap_next = (code_heap_next + 15) & ~15ULL;
+        str_pool_next = prog.str_pool_end;
+        fargs_pool_next = prog.fargs_pool_end;
+        out_pool_next = prog.out_pool_end;
+    }
 };
 
 static persistent_vm_t s_pvm;
@@ -3678,257 +3801,108 @@ FUNCTION(fun_pocvm2)
         return;
     }
 
-    if (!s_pvm.compiled) {
-        tier2_lazy_init();
+    // One-time compilation of test functions.
+    static uint64_t func_a_entry = 0, func_a_out = 0;
+    static uint64_t func_b_entry = 0, func_b_out = 0;
+    static uint64_t func_c_entry = 0, func_c_out = 0;
+    static bool compiled = false;
 
-        // --- Compile Function A: first(one two three) ---
-        // first() has a Tier 2 blob, so this exercises JAL offset
-        // calculation at the configured code_base.
-        {
-            const UTF8 *expr_a = reinterpret_cast<const UTF8 *>(
-                "first(one two three)");
-            size_t len_a = strlen(reinterpret_cast<const char *>(expr_a));
-
-            compiled_program pa = compile_expression(
-                expr_a, len_a, EV_FCHECK | EV_EVAL,
-                s_pvm.code_heap_next,
-                s_pvm.str_pool_next,
-                s_pvm.fargs_pool_next,
-                s_pvm.out_pool_next);
-
-            if (!pa.ok) {
-                safe_str(T("#-1 FUNC A COMPILE FAILED"), buff, bufc);
-                return;
-            }
-
-            s_pvm.func_a_entry = pa.entry_pc;
-            s_pvm.func_a_out = pa.out_addr;
-
-            // Copy regions from compiled program into persistent memory.
-            // Code at its unique code_base offset:
-            memcpy(s_pvm.memory.data() + pa.entry_pc,
-                   pa.memory.data() + pa.entry_pc, pa.code_size);
-            // Strings — copy only the portion this compilation used:
-            if (pa.str_pool_end > rv_compiler::STR_BASE) {
-                memcpy(s_pvm.memory.data() + rv_compiler::STR_BASE,
-                       pa.memory.data() + rv_compiler::STR_BASE,
-                       pa.str_pool_end - rv_compiler::STR_BASE);
-            }
-            // Fargs:
-            if (pa.fargs_pool_end > rv_compiler::FARGS_BASE) {
-                memcpy(s_pvm.memory.data() + rv_compiler::FARGS_BASE,
-                       pa.memory.data() + rv_compiler::FARGS_BASE,
-                       pa.fargs_pool_end - rv_compiler::FARGS_BASE);
-            }
-            // Output slots (stack-allocated, near STACK_TOP):
-            if (pa.out_pool_end < rv_compiler::STACK_TOP - 8) {
-                uint64_t out_lo = pa.out_pool_end;
-                uint64_t out_hi = rv_compiler::STACK_TOP - 8;
-                memcpy(s_pvm.memory.data() + out_lo,
-                       pa.memory.data() + out_lo,
-                       out_hi - out_lo);
-            }
-
-            // Advance all cursors so B starts where A left off.
-            s_pvm.code_heap_next = pa.entry_pc + pa.code_size;
-            // Align code heap to 16-byte boundary.
-            s_pvm.code_heap_next = (s_pvm.code_heap_next + 15) & ~15ULL;
-            s_pvm.str_pool_next = pa.str_pool_end;
-            s_pvm.fargs_pool_next = pa.fargs_pool_end;
-            s_pvm.out_pool_next = pa.out_pool_end;
+    if (!compiled) {
+        // Function A: first(one two three) → "one"
+        auto a = s_pvm.compile(
+            reinterpret_cast<const UTF8 *>("first(one two three)"), 20);
+        if (!a.entry_pc) {
+            safe_str(T("#-1 FUNC A COMPILE FAILED"), buff, bufc);
+            return;
         }
+        func_a_entry = a.entry_pc;
+        func_a_out = a.out_addr;
 
-        // --- Compile Function B: rest(one two three) ---
-        // rest() also has a Tier 2 blob.  Compiled at a different
-        // code_base with pool cursors advanced past A's data.
-        {
-            const UTF8 *expr_b = reinterpret_cast<const UTF8 *>(
-                "rest(one two three)");
-            size_t len_b = strlen(reinterpret_cast<const char *>(expr_b));
-
-            compiled_program pb = compile_expression(
-                expr_b, len_b, EV_FCHECK | EV_EVAL,
-                s_pvm.code_heap_next,
-                s_pvm.str_pool_next,
-                s_pvm.fargs_pool_next,
-                s_pvm.out_pool_next);
-
-            if (!pb.ok) {
-                safe_str(T("#-1 FUNC B COMPILE FAILED"), buff, bufc);
-                return;
-            }
-
-            s_pvm.func_b_entry = pb.entry_pc;
-            s_pvm.func_b_out = pb.out_addr;
-
-            // Copy B's code (at its unique offset):
-            memcpy(s_pvm.memory.data() + pb.entry_pc,
-                   pb.memory.data() + pb.entry_pc, pb.code_size);
-            // Copy B's strings (starts where A's ended):
-            if (pb.str_pool_end > s_pvm.str_pool_next) {
-                memcpy(s_pvm.memory.data() + s_pvm.str_pool_next,
-                       pb.memory.data() + s_pvm.str_pool_next,
-                       pb.str_pool_end - s_pvm.str_pool_next);
-            }
-            // Copy B's fargs:
-            if (pb.fargs_pool_end > s_pvm.fargs_pool_next) {
-                memcpy(s_pvm.memory.data() + s_pvm.fargs_pool_next,
-                       pb.memory.data() + s_pvm.fargs_pool_next,
-                       pb.fargs_pool_end - s_pvm.fargs_pool_next);
-            }
-            // Copy B's output (stack-allocated, below A's):
-            if (pb.out_pool_end < s_pvm.out_pool_next) {
-                memcpy(s_pvm.memory.data() + pb.out_pool_end,
-                       pb.memory.data() + pb.out_pool_end,
-                       s_pvm.out_pool_next - pb.out_pool_end);
-            }
-
-            // Advance cursors.
-            s_pvm.code_heap_next = pb.entry_pc + pb.code_size;
-            s_pvm.code_heap_next = (s_pvm.code_heap_next + 15) & ~15ULL;
-            s_pvm.str_pool_next = pb.str_pool_end;
-            s_pvm.fargs_pool_next = pb.fargs_pool_end;
-            s_pvm.out_pool_next = pb.out_pool_end;
+        // Function B: rest(one two three) → "two three"
+        auto b = s_pvm.compile(
+            reinterpret_cast<const UTF8 *>("rest(one two three)"), 19);
+        if (!b.entry_pc) {
+            safe_str(T("#-1 FUNC B COMPILE FAILED"), buff, bufc);
+            return;
         }
+        func_b_entry = b.entry_pc;
+        func_b_out = b.out_addr;
 
-        // --- Function C: hand-assembled re-entrant call stub ---
-        // Calls Function A via ECALL_CALL_COMPILED, then copies
-        // A's output ("one") to C's own output buffer.
-        // This proves re-entrant execution within the persistent VM.
+        // Function C: hand-assembled re-entrant call stub.
+        // Calls A via ECALL_CALL_COMPILED, writes "C:" + A's result.
         {
             std::vector<uint32_t> code;
             constexpr uint8_t a0 = 10, a1 = 11, a7 = 17;
             constexpr uint8_t t0 = 5, t3 = 28, t4 = 29;
 
-            s_pvm.func_c_entry = s_pvm.code_heap_next;
-            s_pvm.func_c_out = 0x3000;  // fixed output address
+            func_c_out = 0x3000;  // fixed output address
 
-            // ECALL_CALL_COMPILED: call Function A.
-            rv64_asm::load_val(code, a0, s_pvm.func_a_entry);
-            rv64_asm::load_val(code, a1, s_pvm.func_a_out);
-            code.push_back(rv64_asm::ADDI(a7, 0, static_cast<int32_t>(ECALL_CALL_COMPILED)));
+            rv64_asm::load_val(code, a0, func_a_entry);
+            rv64_asm::load_val(code, a1, func_a_out);
+            code.push_back(rv64_asm::ADDI(a7, 0,
+                static_cast<int32_t>(ECALL_CALL_COMPILED)));
             code.push_back(rv64_asm::ECALL());
 
-            // A's result is at func_a_out. Write "C:" + A's result to 0x3000.
-            rv64_asm::load_val(code, t4, s_pvm.func_c_out);   // t4 = output addr
+            rv64_asm::load_val(code, t4, func_c_out);
             code.push_back(rv64_asm::ADDI(t3, 0, 'C'));
             code.push_back(rv64_asm::SB(t4, t3, 0));
             code.push_back(rv64_asm::ADDI(t3, 0, ':'));
             code.push_back(rv64_asm::SB(t4, t3, 1));
-            code.push_back(rv64_asm::ADDI(t4, t4, 2));         // past "C:"
+            code.push_back(rv64_asm::ADDI(t4, t4, 2));
 
-            // Copy A's result.
-            rv64_asm::load_val(code, t3, s_pvm.func_a_out);
+            rv64_asm::load_val(code, t3, func_a_out);
             size_t copy_loop = code.size();
-            code.push_back(rv64_asm::i_type(OP_LOAD, t0, 4/*LBU*/, t3, 0));
+            code.push_back(rv64_asm::i_type(OP_LOAD, t0, 4, t3, 0));
             code.push_back(rv64_asm::SB(t4, t0, 0));
             code.push_back(rv64_asm::ADDI(t3, t3, 1));
             code.push_back(rv64_asm::ADDI(t4, t4, 1));
-            int32_t off = -static_cast<int32_t>((code.size() - copy_loop) * 4);
+            int32_t off = -static_cast<int32_t>(
+                (code.size() - copy_loop) * 4);
             code.push_back(rv64_asm::BNE(t0, 0, off));
 
-            // Exit.
             code.push_back(rv64_asm::ADDI(a7, 0, ECALL_EXIT));
             code.push_back(rv64_asm::ADDI(a0, 0, 0));
             code.push_back(rv64_asm::ECALL());
 
-            // Install at code_heap_next.
-            for (size_t i = 0; i < code.size(); i++) {
-                memcpy(s_pvm.memory.data() + s_pvm.func_c_entry + i * 4,
-                       &code[i], 4);
-            }
-            s_pvm.code_heap_next = s_pvm.func_c_entry + code.size() * 4;
-            s_pvm.code_heap_next = (s_pvm.code_heap_next + 15) & ~15ULL;
+            func_c_entry = s_pvm.install_code(code);
         }
 
-        // Install Tier 2 blob.
-        tier2_install(s_pvm.memory, rv_compiler::BLOB_BASE);
-
-        s_pvm.compiled = true;
+        compiled = true;
     }
 
-    // Initialize DBT on first call.
-    if (!s_pvm.dbt_ready) {
-        if (dbt_init(&s_pvm.dbt, s_pvm.memory.data(),
-                     s_pvm.memory.size(), poc_ecall, &s_pvm.dbt) != 0) {
-            safe_str(T("#-1 DBT INIT FAILED"), buff, bufc);
-            return;
-        }
-        s_pvm.dbt_ready = true;
-        pretranslate_tier2(&s_pvm.dbt);
-        s_pvm.dbt.blob_code_end = s_pvm.dbt.code_used;
+    if (!s_pvm.ensure_dbt()) {
+        safe_str(T("#-1 DBT INIT FAILED"), buff, bufc);
+        return;
     }
 
-    // Clear output buffers (stack-allocated near STACK_TOP).
-    if (s_pvm.out_pool_next < rv_compiler::STACK_TOP - 8) {
-        memset(s_pvm.memory.data() + s_pvm.out_pool_next, 0,
-               (rv_compiler::STACK_TOP - 8) - s_pvm.out_pool_next);
-    }
-    if (s_tier2.loaded) {
-        tier2_install(s_pvm.memory, rv_compiler::BLOB_BASE);
-    }
+    // Run A.
+    s_pvm.prepare_run();
+    int rc_a = s_pvm.run(func_a_entry);
+    const char *result_a = (rc_a == 0)
+        ? s_pvm.result(func_a_out) : "#-1 RUN A FAILED";
 
-    // Run Function A.
-    dbt_rerun(&s_pvm.dbt, poc_ecall, &s_pvm.dbt);
-    int rc_a = dbt_run(&s_pvm.dbt, s_pvm.func_a_entry,
-                       rv_compiler::STACK_TOP);
-    const char *result_a = nullptr;
-    char a_err[64] = {};
-    if (rc_a == 0) {
-        result_a = reinterpret_cast<const char *>(
-            s_pvm.memory.data() + s_pvm.func_a_out);
-    } else {
-        snprintf(a_err, sizeof(a_err), "#-1 RUN_A rc=%d", rc_a);
-        result_a = a_err;
-    }
-
-    // Reset blob BSS for Function B.
-    if (s_tier2.loaded && s_tier2.bss_size > 0) {
-        uint64_t bss_start = rv_compiler::BLOB_BASE + s_tier2.code.size();
-        if (bss_start + s_tier2.bss_size <= s_pvm.memory.size()) {
-            memset(s_pvm.memory.data() + bss_start, 0, s_tier2.bss_size);
-        }
-    }
-
-    // Run Function B via dbt_resume (warm cache from A).
-    s_pvm.dbt.ctx.x[2] = rv_compiler::STACK_TOP;
-    int rc_b = dbt_resume(&s_pvm.dbt, s_pvm.func_b_entry);
+    // Run B.
+    s_pvm.reset_blob_bss();
+    int rc_b = s_pvm.run(func_b_entry);
     const char *result_b = (rc_b == 0)
-        ? reinterpret_cast<const char *>(
-              s_pvm.memory.data() + s_pvm.func_b_out)
-        : "#-1 RUN B FAILED";
+        ? s_pvm.result(func_b_out) : "#-1 RUN B FAILED";
 
-    // Reset blob BSS for Function C.
-    if (s_tier2.loaded && s_tier2.bss_size > 0) {
-        uint64_t bss_start = rv_compiler::BLOB_BASE + s_tier2.code.size();
-        if (bss_start + s_tier2.bss_size <= s_pvm.memory.size()) {
-            memset(s_pvm.memory.data() + bss_start, 0, s_tier2.bss_size);
-        }
-    }
-
-    // Clear C's output area and A's output (A will be re-executed by C).
-    memset(s_pvm.memory.data() + s_pvm.func_c_out, 0, 256);
-    memset(s_pvm.memory.data() + s_pvm.func_a_out, 0, 256);
-
-    // Run Function C via dbt_resume.
-    // C calls A via ECALL_CALL_COMPILED, then writes "C:" + A's result.
-    s_pvm.dbt.ctx.x[2] = rv_compiler::STACK_TOP;
-    int rc_c = dbt_resume(&s_pvm.dbt, s_pvm.func_c_entry);
+    // Run C (re-entrant: calls A internally).
+    s_pvm.reset_blob_bss();
+    memset(s_pvm.memory.data() + func_c_out, 0, 256);
+    memset(s_pvm.memory.data() + func_a_out, 0, 256);
+    int rc_c = s_pvm.run(func_c_entry);
     const char *result_c = (rc_c == 0)
-        ? reinterpret_cast<const char *>(
-              s_pvm.memory.data() + s_pvm.func_c_out)
-        : "#-1 RUN C FAILED";
-
-    s_pvm.call_count++;
+        ? s_pvm.result(func_c_out) : "#-1 RUN C FAILED";
 
     LBuf tmp = LBuf_Src("pocvm2");
     snprintf(reinterpret_cast<char *>(tmp.get()), LBUF_SIZE,
         "a=%s b=%s c=%s a_pc=0x%llX b_pc=0x%llX c_pc=0x%llX calls=%u",
         result_a, result_b, result_c,
-        (unsigned long long)s_pvm.func_a_entry,
-        (unsigned long long)s_pvm.func_b_entry,
-        (unsigned long long)s_pvm.func_c_entry,
-        s_pvm.call_count);
+        (unsigned long long)func_a_entry,
+        (unsigned long long)func_b_entry,
+        (unsigned long long)func_c_entry,
+        s_pvm.run_count);
 
     safe_str(tmp, buff, bufc);
 }
