@@ -349,6 +349,11 @@ struct eval_ctx {
     // handlers to call back into the Lua VM for unsupported operations.
     // nullptr for softcode JIT.
     void    *lua_state;
+
+    // DBT state pointer — enables ECALL_CALL_COMPILED to re-enter
+    // the dispatch loop via dbt_resume for nested function calls.
+    // nullptr disables re-entrant calls (falls back to ECALL fun_u).
+    struct dbt_state_t *dbt;
 };
 
 // ---------------------------------------------------------------

@@ -1347,6 +1347,7 @@ bool run_cached_program(compiled_program *prog,
     ec.cargs = cargs;
     ec.ncargs = ncargs;
     ec.lua_state = lua_state;
+    ec.dbt = nullptr;  // set below after DBT is resolved
 
     dbt_state_t *dbt;
     if (s_dbt_ready && s_dbt_last_memory == prog->memory.data()) {
@@ -1365,6 +1366,8 @@ bool run_cached_program(compiled_program *prog,
             dbt->blob_code_end = dbt->code_used;
         }
     }
+
+    ec.dbt = dbt;
 
     int rc = dbt_run(dbt, prog->entry_pc, rv_compiler::STACK_TOP);
     if (rc != 0) return false;
@@ -2950,6 +2953,43 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         return -1;
     }
 
+    case ECALL_CALL_COMPILED: {
+        // Re-entrant call into a compiled function within the
+        // persistent VM.  Saves the full CPU context, runs the
+        // inner function via dbt_resume, restores context.
+        //
+        // a0 = entry_pc of target function
+        // a1 = guest addr of target's output buffer
+        // Returns: a0 = result string length (0 on failure)
+        //
+        if (!ec->dbt) {
+            ctx->x[10] = 0;
+            return -1;
+        }
+
+        uint64_t target_pc = ctx->x[10];
+        uint64_t out_addr  = ctx->x[11];
+
+        // Save outer CPU context.
+        rv64_ctx_t saved_ctx = *ctx;
+
+        // Run inner function.
+        int inner_rc = dbt_resume(ec->dbt, target_pc);
+
+        // Extract result length.
+        uint64_t result_len = 0;
+        if (inner_rc == 0 && out_addr > 0
+            && out_addr < ec->memory_size) {
+            result_len = strlen(reinterpret_cast<const char *>(
+                ec->memory + out_addr));
+        }
+
+        // Restore outer context.
+        *ctx = saved_ctx;
+        ctx->x[10] = result_len;
+        return -1;  // continue outer execution
+    }
+
     default:
         ctx->x[10] = 0;
         return -1;
@@ -3336,6 +3376,7 @@ static bool run_compiled(compiled_program &prog,
     ec.cargs = nullptr;
     ec.ncargs = 0;
     ec.lua_state = nullptr;
+    ec.dbt = nullptr;
 
     dbt_state_t *dbt;
     if (reuse_dbt && s_dbt_ready) {
