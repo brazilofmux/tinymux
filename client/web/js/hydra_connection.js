@@ -1,4 +1,9 @@
-// hydra_connection.js -- gRPC-Web connection to Hydra proxy.
+// hydra_connection.js -- Hydra proxy connection (WebSocket GameSession + gRPC-Web).
+//
+// Primary transport: WebSocket with hydra-gamesession subprotocol for
+// bidirectional GameSession (protobuf ClientMessage/ServerMessage).
+// Fallback: gRPC-Web unary/server-streaming for control RPCs and
+// environments where WebSocket is blocked.
 //
 // Implements the same interface as Connection (WebSocket) so main.js
 // can use either transport interchangeably.
@@ -63,6 +68,16 @@ const Proto = {
         return [...this.encodeTag(fieldNum, 0), ...this.encodeVarint(value)];
     },
 
+    encodeMessage(fieldNum, obj, fieldMap) {
+        if (obj === undefined || obj === null) return [];
+        const inner = this.encode(obj, fieldMap);
+        return [
+            ...this.encodeTag(fieldNum, 2),
+            ...this.encodeVarint(inner.length),
+            ...inner
+        ];
+    },
+
     encode(obj, fieldMap) {
         const parts = [];
         for (const [name, spec] of Object.entries(fieldMap)) {
@@ -82,6 +97,9 @@ const Proto = {
                 case 'enum':
                     // Enums: encode even if 0 when explicitly set
                     if (val !== undefined) parts.push(...this.encodeInt32Always(spec.num, val));
+                    break;
+                case 'message':
+                    parts.push(...this.encodeMessage(spec.num, val, spec.fields));
                     break;
             }
         }
@@ -263,6 +281,52 @@ const ListCredentialsResponseDecode = {
     1: {name: 'credentials', type: 'message', fields: CredentialDecode, repeated: true},
 };
 
+// ---- WebSocket GameSession (bidi) field maps ----
+
+// ClientMessage: oneof payload { string input_line=1; GmcpClientMessage gmcp=2;
+//   PingMessage ping=3; SetPreferences preferences=4; }
+const SetPreferencesFields = {
+    color_format:    {num: 1, type: 'enum'},
+    terminal_width:  {num: 2, type: 'int32'},
+    terminal_height: {num: 3, type: 'int32'},
+    terminal_type:   {num: 4, type: 'string'},
+    session_id:      {num: 5, type: 'string'},
+};
+const PingMessageFields = {
+    client_timestamp: {num: 1, type: 'int64'},
+};
+
+// ClientMessage encode: only set one oneof field per message.
+const ClientMessageFields = {
+    input_line:  {num: 1, type: 'string'},
+    // gmcp:     {num: 2, type: 'message', fields: GmcpClientMessageFields},
+    ping:        {num: 3, type: 'message', fields: PingMessageFields},
+    preferences: {num: 4, type: 'message', fields: SetPreferencesFields},
+};
+
+// ServerMessage decode: oneof payload { GameOutput game_output=1;
+//   GmcpMessage gmcp=2; SystemNotice system_notice=3; PongMessage pong=4;
+//   LinkEvent link_event=5; }
+const PongDecode = {
+    1: {name: 'client_timestamp', type: 'int64'},
+    2: {name: 'server_timestamp', type: 'int64'},
+};
+const SystemNoticeDecode = {
+    1: {name: 'text', type: 'string'},
+    2: {name: 'severity', type: 'int32'},
+};
+const GmcpMessageDecode = {
+    1: {name: 'package', type: 'string'},
+    2: {name: 'json', type: 'string'},
+    3: {name: 'link_number', type: 'int32'},
+};
+const ServerMessageDecode = {
+    1: {name: 'game_output', type: 'message', fields: GameOutputDecode},
+    2: {name: 'gmcp', type: 'message', fields: GmcpMessageDecode},
+    3: {name: 'system_notice', type: 'message', fields: SystemNoticeDecode},
+    4: {name: 'pong', type: 'message', fields: PongDecode},
+};
+
 // Process management RPCs
 const GameRequestFields = {
     game_name: {num: 1, type: 'string'},
@@ -346,10 +410,17 @@ class HydraConnection {
         this.maxScrollback = 20000;
         this._subscribeAbort = null;
         this._reconnecting = false;
+        this._ws = null;             // WebSocket GameSession connection
+        this._wsAuthenticated = false;
     }
 
     get _baseUrl() {
         const proto = this.ssl ? 'https' : 'http';
+        return `${proto}://${this.host}:${this.port}`;
+    }
+
+    get _wsBaseUrl() {
+        const proto = this.ssl ? 'wss' : 'ws';
         return `${proto}://${this.host}:${this.port}`;
     }
 
@@ -423,7 +494,7 @@ class HydraConnection {
                         this._emit('% [Hydra] Resuming session ' + savedId.substring(0, 8) + '...');
                         this.connected = true;
                         if (this.onConnect) this.onConnect();
-                        this._startSubscribe();
+                        this._startGameSession();
                         this._startKeepalive();
                         return true;
                     }
@@ -453,7 +524,7 @@ class HydraConnection {
             sessionStorage.setItem(this._storageKey, this.sessionId);
 
             if (this.onConnect) this.onConnect();
-            this._startSubscribe();
+            this._startGameSession();
             this._startKeepalive();
             return true;
         } catch (e) {
@@ -466,6 +537,11 @@ class HydraConnection {
         this.connected = false;
         this._reconnecting = false;
         this._stopKeepalive();
+        if (this._ws) {
+            this._ws.close();
+            this._ws = null;
+            this._wsAuthenticated = false;
+        }
         if (this._subscribeAbort) {
             this._subscribeAbort.abort();
             this._subscribeAbort = null;
@@ -544,6 +620,13 @@ class HydraConnection {
     }
 
     async _sendInput(text) {
+        // Use WebSocket GameSession if available
+        if (this._ws && this._ws.readyState === WebSocket.OPEN && this._wsAuthenticated) {
+            const msg = Proto.encode({input_line: text}, ClientMessageFields);
+            this._ws.send(msg);
+            return;
+        }
+        // Fallback to grpc-web unary RPC
         try {
             const reqBytes = Proto.encode(
                 {session_id: this.sessionId, line: text},
@@ -556,7 +639,17 @@ class HydraConnection {
         }
     }
 
-    sendNaws(width, height) { /* not applicable */ }
+    sendNaws(width, height) {
+        if (this._ws && this._ws.readyState === WebSocket.OPEN && this._wsAuthenticated) {
+            const msg = Proto.encode({
+                preferences: {
+                    terminal_width: width,
+                    terminal_height: height,
+                }
+            }, ClientMessageFields);
+            this._ws.send(msg);
+        }
+    }
 
     addScrollback(line) {
         this.scrollback.push(line);
@@ -759,8 +852,15 @@ class HydraConnection {
     _startKeepalive() {
         if (this._keepaliveTimer) return;
         this._keepaliveTimer = setInterval(() => {
-            if (this.connected && this.sessionId) {
-                // Ping via unary RPC (grpc-web can't do bidi stream pings)
+            if (!this.connected || !this.sessionId) return;
+            if (this._ws && this._ws.readyState === WebSocket.OPEN && this._wsAuthenticated) {
+                // Ping via WebSocket GameSession
+                const msg = Proto.encode({
+                    ping: {client_timestamp: Date.now()}
+                }, ClientMessageFields);
+                this._ws.send(msg);
+            } else {
+                // Fallback: Ping via unary RPC
                 const reqBytes = Proto.encode(
                     {session_id: this.sessionId}, SessionRequestFields);
                 this._rpc('Ping', reqBytes, {}).catch(() => {});
@@ -802,7 +902,64 @@ class HydraConnection {
         }
     }
 
-    // ---- Subscribe with reconnect ----
+    // ---- WebSocket GameSession (bidi) ----
+
+    _startGameSession() {
+        if (!this.sessionId) return;
+        if (this._ws) {
+            this._ws.close();
+            this._ws = null;
+            this._wsAuthenticated = false;
+        }
+
+        const ws = new WebSocket(this._wsBaseUrl, ['hydra-gamesession']);
+        ws.binaryType = 'arraybuffer';
+        this._ws = ws;
+
+        ws.onopen = () => {
+            // First message: SetPreferences with session_id for auth
+            const msg = Proto.encode({
+                preferences: {
+                    session_id: this.sessionId,
+                    color_format: 1,  // ANSI_TRUECOLOR
+                    terminal_width: window.innerWidth ? Math.floor(window.innerWidth / 8) : 80,
+                    terminal_height: window.innerHeight ? Math.floor(window.innerHeight / 18) : 24,
+                    terminal_type: 'Hydra-Web',
+                }
+            }, ClientMessageFields);
+            ws.send(msg);
+            this._wsAuthenticated = true;
+        };
+
+        ws.onmessage = (event) => {
+            const msg = Proto.decode(new Uint8Array(event.data), ServerMessageDecode);
+            if (msg.game_output) {
+                this.addScrollback(msg.game_output.text);
+                this._emit(msg.game_output.text);
+            } else if (msg.gmcp) {
+                // GMCP: emit as formatted text for now
+                this._emit('[GMCP ' + msg.gmcp.package + '] ' + msg.gmcp.json);
+            } else if (msg.pong) {
+                // Keepalive response — no action needed
+            } else if (msg.system_notice) {
+                this._emit('% [Hydra] ' + msg.system_notice.text);
+            }
+        };
+
+        ws.onclose = () => {
+            this._ws = null;
+            this._wsAuthenticated = false;
+            if (this.connected && !this._reconnecting) {
+                this._attemptReconnect();
+            }
+        };
+
+        ws.onerror = () => {
+            // onclose will fire after onerror — reconnect handled there
+        };
+    }
+
+    // ---- Subscribe with reconnect (legacy fallback) ----
 
     async _startSubscribe() {
         if (!this.sessionId) return;
@@ -884,8 +1041,8 @@ class HydraConnection {
 
             try {
                 this._reconnecting = false;
-                await this._startSubscribe();
-                return;  // reconnected successfully (will loop in _startSubscribe)
+                this._startGameSession();
+                return;  // reconnected — GameSession onclose will re-trigger if needed
             } catch (e) {
                 // retry
             }
