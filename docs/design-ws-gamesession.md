@@ -24,10 +24,9 @@ protocol. To distinguish GameSession connections, the client requests the
 WebSocket subprotocol `hydra-gamesession` during the HTTP upgrade:
 
 ```
-GET /hydra/gamesession HTTP/1.1
+GET / HTTP/1.1
 Upgrade: websocket
 Sec-WebSocket-Protocol: hydra-gamesession
-Authorization: <session_id>
 ```
 
 The handshake response includes:
@@ -40,6 +39,9 @@ Sec-WebSocket-Protocol: hydra-gamesession
 If the `Sec-WebSocket-Protocol` header is absent or doesn't contain
 `hydra-gamesession`, the connection falls through to the existing telnet-
 over-WebSocket path (no behavior change).
+
+No request-target parsing is required — the subprotocol header alone
+discriminates the two paths.
 
 ### Framing
 
@@ -55,22 +57,70 @@ message boundaries.
 ### Connection Lifecycle
 
 1. Client opens WebSocket to existing WS listener with subprotocol
-   `hydra-gamesession` and `Authorization` header containing session_id.
-2. Server validates session_id during handshake, registers as subscriber.
-3. Client sends initial `ClientMessage` with `SetPreferences` (color format,
-   terminal size, terminal type).
-4. Server begins pushing `ServerMessage` frames (game output, GMCP, pongs,
-   link events, system notices).
-5. Client sends `ClientMessage` frames (input lines, GMCP, pings,
+   `hydra-gamesession`. No auth header — browsers can't set custom
+   headers on WebSocket upgrades.
+2. Server completes the 101 handshake. Connection is unauthenticated.
+   Server holds all output until the first message arrives.
+3. Client sends initial `ClientMessage` with `SetPreferences` containing
+   `session_id`, color format, terminal size, and terminal type.
+4. Server validates session_id. If invalid, server sends a `ServerMessage`
+   with `system_notice` containing the error, then closes the WebSocket.
+5. On success, server registers a subscriber, replays GMCP cache, and
+   begins pushing `ServerMessage` frames.
+6. Client sends `ClientMessage` frames (input lines, GMCP, pings,
    preference updates).
-6. On WebSocket close frame or disconnect, server unsubscribes and cleans up.
+7. On WebSocket close frame or disconnect, server unsubscribes and cleans up.
 
 ### Authentication
 
-Session ID is extracted from the `Authorization` header in the HTTP upgrade
-request — same as the gRPC metadata approach. No per-message session_id
-field needed. If the header is missing or the session is not found, the
-server rejects the upgrade with HTTP 401.
+First-message auth: the session ID is carried in `SetPreferences.session_id`
+(see Proto Changes below). The server accepts the WebSocket upgrade without
+auth, then validates the session on the first `ClientMessage`. This avoids
+the browser limitation where `new WebSocket()` cannot set custom headers.
+
+The gRPC GameSession path continues to use metadata headers for auth; it
+ignores `SetPreferences.session_id`.
+
+### Phase 1 Message Scope
+
+Phase 1 carries the message types that the existing OutputQueue and gRPC
+GameSession writer already produce:
+
+| Direction | Message Type | Source |
+|-----------|-------------|--------|
+| Server → Client | `game_output` | `OutputQueue::pushOutput()` |
+| Server → Client | `gmcp` | `OutputQueue::pushGmcp()` |
+| Server → Client | `pong` | Pong sentinel in subscriber queue |
+| Client → Server | `input_line` | Forward to active link |
+| Client → Server | `gmcp` | Forward to active link |
+| Client → Server | `ping` | Queue pong sentinel |
+| Client → Server | `preferences` | Update render format, NAWS, ttype |
+
+**Not in phase 1:** `system_notice` and `link_event`. The OutputQueue has
+no producer path for these today — the gRPC GameSession writer in
+`grpc_server.cpp` doesn't emit them either. Adding them requires new queue
+item types and producer call sites across SessionManager. That's a
+worthwhile follow-up but out of scope here.
+
+### Control Messages and sendToClient()
+
+The existing telnet/WebSocket path emits text-mode control messages through
+`sendToClient()` and related helpers (banners, "/connect" responses,
+reconnect notices, "no active link" errors, etc.). These are raw text
+frames, not protobuf.
+
+For phase 1, a `WsGameSession` front-door **does not receive these
+text-mode control messages**. The connection is authenticated via
+first-message auth and goes straight to subscriber output — there is no
+login menu, no banner, no slash-command handling on the transport itself.
+All session control (connect, switch, disconnect, list) continues to use
+the existing grpc-web unary RPCs from the HTML5 client.
+
+This means the WsGameSession transport is a pure game I/O channel: it
+carries `ClientMessage`/`ServerMessage` and nothing else. The HTML5 client
+uses grpc-web Fetch for control RPCs and WebSocket for the streaming
+session — the same split it has today, just with bidi instead of
+unary+server-stream.
 
 ## Server Changes
 
@@ -93,13 +143,14 @@ Extend `wsProcessHandshake()` to:
 - Parse `Sec-WebSocket-Protocol` header during handshake.
 - If it contains `hydra-gamesession`, set a flag on `WsState` and include
   `Sec-WebSocket-Protocol: hydra-gamesession` in the 101 response.
-- Parse and store the `Authorization` header value.
+
+No request-target or `Authorization` header parsing needed — auth is
+handled by first-message auth after the handshake completes.
 
 Add to `WsState`:
 
 ```cpp
 bool isGameSession{false};       // true if hydra-gamesession subprotocol
-std::string authSessionId;       // from Authorization header
 ```
 
 ### session_manager.h — FrontDoorState
@@ -113,14 +164,28 @@ std::shared_ptr<HydraSession::SubscriberQueue> wsGameSessionQueue;
 std::shared_ptr<HydraSession::OutputQueue> wsGameSessionOQ;
 ```
 
-### session_manager.cpp — onAcceptWebSocket
+### session_manager.cpp — onFrontDoorData (handshake completion)
 
-After handshake completes, check `wsState.isGameSession`:
+After `wsProcessHandshake()` succeeds, check `wsState.isGameSession`:
 
-- If **true**: set `fd.proto = FrontDoorProto::WsGameSession`, look up the
-  session via `wsState.authSessionId`, register a subscriber on its
-  OutputQueue, replay GMCP cache, and begin the output pump. Skip `showBanner()`.
+- If **true**: set `fd.proto = FrontDoorProto::WsGameSession`. Skip
+  `showBanner()`. The connection is now unauthenticated and waiting for
+  its first `ClientMessage` containing `SetPreferences` with `session_id`.
 - If **false**: existing telnet-over-WebSocket path (unchanged).
+
+### session_manager.cpp — First-message auth (WsGameSession)
+
+When the first binary WebSocket frame arrives on a `WsGameSession`
+front-door that has no subscriber registered yet:
+
+1. Deserialize as `hydra::ClientMessage`.
+2. Expect `preferences` with a non-empty `session_id`.
+3. Look up the session via `findByPersistId()`.
+4. If invalid: serialize a `ServerMessage` with `system_notice` error,
+   send as binary frame, close the WebSocket.
+5. If valid: register subscriber on the session's OutputQueue, replay
+   GMCP cache, apply color/NAWS/ttype from preferences, store the OQ
+   and subscriber queue on the FrontDoorState.
 
 ### session_manager.cpp — onFrontDoorData (WsGameSession path)
 
@@ -189,15 +254,16 @@ connection:
 
 ```javascript
 _startGameSession() {
-    const wsUrl = this._baseUrl.replace(/^http/, 'ws')
-                  + '/hydra/gamesession';  // or just same host:port
+    // Use the same host:port as the WS listener
+    const wsUrl = this._wsBaseUrl;  // e.g. ws://host:port or wss://host:port
     const ws = new WebSocket(wsUrl, ['hydra-gamesession']);
     ws.binaryType = 'arraybuffer';
 
     ws.onopen = () => {
-        // Send initial SetPreferences
+        // First message: SetPreferences with session_id for auth
         const prefs = Proto.encode({
             preferences: {
+                session_id: this.sessionId,
                 color_format: 1,  // ANSI_TRUECOLOR
                 terminal_width: Math.floor(window.innerWidth / 8) || 80,
                 terminal_height: Math.floor(window.innerHeight / 18) || 24,
@@ -218,7 +284,6 @@ _startGameSession() {
         } else if (msg.pong) {
             this._handlePong(msg.pong);
         }
-        // link_event, system_notice as needed
     };
 
     ws.onclose = () => {
@@ -237,50 +302,9 @@ sendInput(text) {
 }
 ```
 
-**Authentication:** The WebSocket API doesn't allow custom headers in
-browser JavaScript. The `Authorization` header can't be set via
-`new WebSocket(url, protocols)`. Two options:
-
-1. **Query parameter:** `ws://host:port/hydra/gamesession?sid=<session_id>`.
-   Server extracts from the URL during handshake. Simple, but session ID
-   appears in server logs and browser history.
-
-2. **First-message auth:** Client sends an initial `ClientMessage` with a
-   new `authenticate` field (or reuse the `session_id` field already in the
-   proto's per-message pattern). Server validates before registering the
-   subscriber. Cleaner — no URL leakage.
-
-**Recommendation:** First-message auth. Add a `session_id` string field to
-`ClientMessage` (or the existing `SetPreferences` which is already the first
-message sent). Server holds output until the first message arrives and
-validates the session.
-
-Revised lifecycle:
-
-1. Client opens WebSocket (no auth header needed).
-2. Client sends `ClientMessage` with `session_id` + `SetPreferences`.
-3. Server validates session_id, registers subscriber, begins output.
-4. If invalid, server sends a `ServerMessage` with `system_notice`
-   containing the error, then closes the WebSocket.
-
 ### Proto Changes
 
-Add `session_id` to `ClientMessage`:
-
-```protobuf
-message ClientMessage {
-    oneof payload {
-        string input_line = 1;
-        GmcpMessage gmcp = 2;
-        PingMessage ping = 3;
-        SetPreferences preferences = 4;
-        string session_id = 5;        // NEW — first-message auth
-    }
-}
-```
-
-Or, since `SetPreferences` is always the first message, add `session_id`
-to `SetPreferences`:
+Add `session_id` to `SetPreferences`:
 
 ```protobuf
 message SetPreferences {
@@ -288,12 +312,17 @@ message SetPreferences {
     uint32 terminal_width = 2;
     uint32 terminal_height = 3;
     string terminal_type = 4;
-    string session_id = 5;           // NEW — for WS auth
+    string session_id = 5;           // NEW — WS first-message auth
 }
 ```
 
-The second option is cleaner — keeps the auth bundled with the mandatory
-first message. The gRPC path ignores this field (it uses metadata).
+This keeps auth bundled with the mandatory first message and avoids
+conflicting with the `ClientMessage` oneof (a separate `session_id` field
+in the oneof would be mutually exclusive with `preferences`).
+
+The gRPC GameSession path ignores this field — it uses metadata headers.
+Existing clients that don't set the field are unaffected (proto3 default
+is empty string).
 
 ## What Stays The Same
 
@@ -306,25 +335,50 @@ first message. The gRPC path ignores this field (it uses metadata).
 
 ## Implementation Order
 
-1. **Proto:** Add `session_id` to `SetPreferences`.
-2. **websocket.cpp:** Parse `Sec-WebSocket-Protocol` and `Authorization`
-   (or just the subprotocol) during handshake.
+1. **Proto:** Add `session_id` field 5 to `SetPreferences` in
+   `hydra.proto`. Regenerate C++ stubs.
+2. **websocket.cpp:** Parse `Sec-WebSocket-Protocol` header during
+   handshake. Set `WsState::isGameSession` and echo the subprotocol in
+   the 101 response. No request-target or Authorization parsing.
 3. **hydra_types.h:** Add `WsGameSession` to `FrontDoorProto`.
-4. **session_manager.h:** Add `WsGameSession` fields to `FrontDoorState`.
-5. **session_manager.cpp:** Handshake discrimination, subscriber
-   registration, ClientMessage dispatch, output fan-out.
+4. **session_manager.h:** Add `WsGameSession` fields to `FrontDoorState`
+   (subscriber ID, subscriber queue, output queue shared_ptr).
+5. **session_manager.cpp:** Four integration points:
+   a. Handshake completion — set `proto = WsGameSession`, skip banner.
+   b. First-message auth — validate `session_id`, register subscriber,
+      replay GMCP, apply preferences.
+   c. Subsequent `ClientMessage` dispatch — input, ping, prefs, gmcp
+      (port of `grpc_server.cpp:348–424` logic).
+   d. Output fan-out — add `WsGameSession` case alongside existing
+      WebSocket/grpc-web cases, serialize `ServerMessage`, send as
+      `wsEncodeFrame(proto, WS_OP_BINARY)`.
+   e. `onFrontDoorClose` — unsubscribe cleanup.
 6. **hydra_connection.js:** `_startGameSession()`, `ServerMessage` decoder,
-   retire `_startSubscribe`/`_sendInput` (keep as fallback for old proxies).
+   `ClientMessage` encoder, first-message auth with `session_id` in
+   `SetPreferences`. Retire `_startSubscribe`/`_sendInput` (keep as
+   fallback for old proxies or WebSocket-blocked environments).
 7. **Testing:** Connect web client, verify bidi flow, test reconnect,
-   verify telnet-over-WS still works.
+   test auth rejection, verify telnet-over-WS still works.
 
 ## Risk Assessment
 
-- **Low risk:** No changes to gRPC server, telnet path, or native clients.
-- **Moderate complexity:** The ClientMessage dispatch in
-  `session_manager.cpp` is new code, but it's a direct port of the logic
-  already in `grpc_server.cpp:348–424`.
+- **gRPC server and native clients:** Untouched. The only proto change is
+  an additive field on `SetPreferences` which existing clients don't set.
+- **Shared WebSocket handshake path:** Moderate risk. `wsProcessHandshake()`
+  is shared by telnet-over-WS and the new GameSession path. The
+  subprotocol check must not break the existing no-subprotocol case.
+  Mitigation: test telnet-over-WS explicitly after the change.
+- **Front-door dispatch and fan-out:** Moderate risk. New code paths in
+  `session_manager.cpp:373–468` (protocol dispatch) and
+  `session_manager.cpp:1262–1394` (output fan-out) touch shared
+  infrastructure. The fan-out case follows the grpc-web pattern closely,
+  but careful testing is needed.
+- **sendToClient() bypass:** By design, WsGameSession does not receive
+  text-mode control messages. This is safe in phase 1 because the HTML5
+  client uses grpc-web RPCs for all control operations. If future work
+  adds slash-command handling on this transport, sendToClient() will need
+  to emit `ServerMessage.system_notice` for WsGameSession front-doors.
 - **Browser compat:** WebSocket with binary frames and subprotocols works
   in all modern browsers.
-- **Fallback:** The existing grpc-web path can remain as a fallback for
+- **Fallback:** The existing grpc-web path remains available for
   environments where WebSocket is blocked (corporate proxies, etc.).
