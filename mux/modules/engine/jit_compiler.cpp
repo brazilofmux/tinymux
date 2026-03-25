@@ -734,7 +734,7 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
                                             uint64_t code_base = 0,
                                             uint64_t str_start = rv_compiler::STR_BASE,
                                             uint64_t fargs_start = rv_compiler::FARGS_BASE,
-                                            uint64_t out_start = rv_compiler::OUT_BASE) {
+                                            uint64_t out_start = 0) {
     tier2_lazy_init();
 
     compiled_program prog;
@@ -836,7 +836,7 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     prog.memory = std::move(rc.memory);
     prog.memory_size = rv_compiler::MEM_SIZE;
     prog.out_addr = rc.final_out;
-    prog.out_used = rc.out_pool - rv_compiler::OUT_BASE;
+    prog.out_used = (rv_compiler::STACK_TOP - 8) - rc.out_pool;
     prog.entry_pc = rc.code_base;
     prog.code_size = rc.code.size() * 4;
     prog.str_pool_end = rc.str_pool;
@@ -1000,12 +1000,12 @@ static compiled_program reconstruct_from_cache(
     tier2_install(prog.memory, rv_compiler::BLOB_BASE);
     prog.memory_size = rv_compiler::MEM_SIZE;
     prog.out_addr = static_cast<uint64_t>(rec.out_addr);
-    prog.out_used = rv_compiler::OUT_LIMIT - rv_compiler::OUT_BASE;  // conservative
+    prog.out_used = 0;  // cached programs re-compute at runtime
     prog.entry_pc = rv_compiler::CODE_BASE;  // cached programs always start at 0
     prog.code_size = 0;
     prog.str_pool_end = rv_compiler::STR_BASE;
     prog.fargs_pool_end = rv_compiler::FARGS_BASE;
-    prog.out_pool_end = rv_compiler::OUT_BASE;
+    prog.out_pool_end = rv_compiler::STACK_TOP - 8;
     prog.ok = true;
     prog.needs_jit = rec.needs_jit != 0;
     prog.folds = rec.folds;
@@ -1229,27 +1229,17 @@ bool run_cached_program(compiled_program *prog,
         tier2_install(prog->memory, rv_compiler::BLOB_BASE);
     }
 
-    // Clear output ranges and CARGS/SUBST.  Skip the blob and DMA regions.
-    //   Range 1: OUT_BASE to OUT_GAP_LO (below blob)
-    //   Range 2: OUT_GAP_HI to OUT_GAP2_LO (above blob, below CARGS)
-    //   CARGS/SUBST: OUT_GAP2_LO to end of SUBST
-    //   Range 3: OUT_GAP2_HI to OUT_LIMIT (above DMA)
-    memset(prog->memory.data() + rv_compiler::OUT_BASE, 0,
-           rv_compiler::OUT_GAP_LO - rv_compiler::OUT_BASE);
+    // Clear output buffers (stack-allocated near STACK_TOP) and CARGS/SUBST.
+    // Output lives from out_pool_end (lowest allocated) up to STACK_TOP-8.
+    if (prog->out_pool_end < rv_compiler::STACK_TOP - 8) {
+        memset(prog->memory.data() + prog->out_pool_end, 0,
+               (rv_compiler::STACK_TOP - 8) - prog->out_pool_end);
+    }
+    // CARGS/SUBST region.
     uint64_t subst_end = rv_compiler::SUBST_BASE
                        + rv_compiler::SUBST_COUNT * rv_compiler::SUBST_SLOT;
-    memset(prog->memory.data() + rv_compiler::OUT_GAP_HI, 0,
-           subst_end - rv_compiler::OUT_GAP_HI);
-    // Range 3 — only clear what was actually allocated, not the full 2.5MB.
-    if (prog->out_used > 0) {
-        uint64_t r3_clear = prog->out_pool_end;
-        if (r3_clear > rv_compiler::OUT_GAP2_HI
-            && r3_clear <= rv_compiler::OUT_LIMIT)
-        {
-            memset(prog->memory.data() + rv_compiler::OUT_GAP2_HI, 0,
-                   r3_clear - rv_compiler::OUT_GAP2_HI);
-        }
-    }
+    memset(prog->memory.data() + rv_compiler::CARGS_BASE, 0,
+           subst_end - rv_compiler::CARGS_BASE);
 
     // Copy %0-%9 cargs into fixed guest memory slots.
     // Each carg gets a 256-byte slot at CARGS_BASE + idx * 256.
@@ -3934,10 +3924,10 @@ struct persistent_vm2 {
     persistent_vm2()
         : memory(rv_compiler::MEM_SIZE, 0),
           dbt_ready(false), compiled(false), call_count(0),
-          code_heap_next(0x0000),
+          code_heap_next(0x0004),  // avoid PC=0 (cache sentinel)
           str_pool_next(rv_compiler::STR_BASE),
           fargs_pool_next(rv_compiler::FARGS_BASE),
-          out_pool_next(rv_compiler::OUT_BASE),
+          out_pool_next(rv_compiler::STACK_TOP - 8),
           func_a_entry(0), func_a_out(0),
           func_b_entry(0), func_b_out(0) {}
 };
@@ -4002,11 +3992,13 @@ FUNCTION(fun_pocvm2)
                        pa.memory.data() + rv_compiler::FARGS_BASE,
                        pa.fargs_pool_end - rv_compiler::FARGS_BASE);
             }
-            // Output slots:
-            if (pa.out_pool_end > rv_compiler::OUT_BASE) {
-                memcpy(s_pvm2.memory.data() + rv_compiler::OUT_BASE,
-                       pa.memory.data() + rv_compiler::OUT_BASE,
-                       pa.out_pool_end - rv_compiler::OUT_BASE);
+            // Output slots (stack-allocated, near STACK_TOP):
+            if (pa.out_pool_end < rv_compiler::STACK_TOP - 8) {
+                uint64_t out_lo = pa.out_pool_end;
+                uint64_t out_hi = rv_compiler::STACK_TOP - 8;
+                memcpy(s_pvm2.memory.data() + out_lo,
+                       pa.memory.data() + out_lo,
+                       out_hi - out_lo);
             }
 
             // Advance all cursors so B starts where A left off.
@@ -4056,11 +4048,11 @@ FUNCTION(fun_pocvm2)
                        pb.memory.data() + s_pvm2.fargs_pool_next,
                        pb.fargs_pool_end - s_pvm2.fargs_pool_next);
             }
-            // Copy B's output:
-            if (pb.out_pool_end > s_pvm2.out_pool_next) {
-                memcpy(s_pvm2.memory.data() + s_pvm2.out_pool_next,
-                       pb.memory.data() + s_pvm2.out_pool_next,
-                       pb.out_pool_end - s_pvm2.out_pool_next);
+            // Copy B's output (stack-allocated, below A's):
+            if (pb.out_pool_end < s_pvm2.out_pool_next) {
+                memcpy(s_pvm2.memory.data() + pb.out_pool_end,
+                       pb.memory.data() + pb.out_pool_end,
+                       s_pvm2.out_pool_next - pb.out_pool_end);
             }
 
             // Advance cursors.
@@ -4089,14 +4081,10 @@ FUNCTION(fun_pocvm2)
         s_pvm2.dbt.blob_code_end = s_pvm2.dbt.code_used;
     }
 
-    // Clear output ranges and re-install blob BSS before each run.
-    memset(s_pvm2.memory.data() + rv_compiler::OUT_BASE, 0,
-           rv_compiler::OUT_GAP_LO - rv_compiler::OUT_BASE);
-    memset(s_pvm2.memory.data() + rv_compiler::OUT_GAP_HI, 0,
-           rv_compiler::OUT_GAP2_LO - rv_compiler::OUT_GAP_HI);
-    if (s_pvm2.out_pool_next > rv_compiler::OUT_GAP2_HI) {
-        memset(s_pvm2.memory.data() + rv_compiler::OUT_GAP2_HI, 0,
-               s_pvm2.out_pool_next - rv_compiler::OUT_GAP2_HI);
+    // Clear output buffers (stack-allocated near STACK_TOP).
+    if (s_pvm2.out_pool_next < rv_compiler::STACK_TOP - 8) {
+        memset(s_pvm2.memory.data() + s_pvm2.out_pool_next, 0,
+               (rv_compiler::STACK_TOP - 8) - s_pvm2.out_pool_next);
     }
     if (s_tier2.loaded) {
         tier2_install(s_pvm2.memory, rv_compiler::BLOB_BASE);
@@ -4106,10 +4094,15 @@ FUNCTION(fun_pocvm2)
     dbt_rerun(&s_pvm2.dbt, poc_ecall, nullptr);
     int rc_a = dbt_run(&s_pvm2.dbt, s_pvm2.func_a_entry,
                        rv_compiler::STACK_TOP);
-    const char *result_a = (rc_a == 0)
-        ? reinterpret_cast<const char *>(
-              s_pvm2.memory.data() + s_pvm2.func_a_out)
-        : "#-1 RUN A FAILED";
+    const char *result_a = nullptr;
+    char a_err[64] = {};
+    if (rc_a == 0) {
+        result_a = reinterpret_cast<const char *>(
+            s_pvm2.memory.data() + s_pvm2.func_a_out);
+    } else {
+        snprintf(a_err, sizeof(a_err), "#-1 RUN_A rc=%d", rc_a);
+        result_a = a_err;
+    }
 
     // Reset blob BSS for Function B.
     if (s_tier2.loaded && s_tier2.bss_size > 0) {

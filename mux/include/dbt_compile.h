@@ -171,19 +171,17 @@ struct rv_compiler {
     static constexpr uint64_t BLOB_LIMIT = 0x40000;
 
     // Output slots — sized to match LBUF_SIZE (32768).
-    // Three non-contiguous ranges around the blob and data regions:
-    //   Range 1: 0x08000 - 0x10000  (32 KB, 1 slot)
-    //   Range 2: 0x50000 - 0x68000  (96 KB, 2 slots)
-    //   Range 3: 0x81000 - 0x310000 (2.5 MB, 78 slots)
-    // alloc_output() skips the gaps automatically.
+    // Stack-allocated: output buffers grow downward from STACK_TOP.
+    // The compiled code prologue decrements SP by the total output
+    // frame size.  Each slot is STACK_TOP - 8 - (N+1)*OUT_SLOT.
+    // Addresses are compile-time constants (STACK_TOP is fixed).
     //
-    static constexpr uint64_t OUT_BASE    = 0x8000;
-    static constexpr uint64_t OUT_GAP_LO  = 0x10000;   // gap 1: blob
-    static constexpr uint64_t OUT_GAP_HI  = 0x50000;
-    static constexpr uint64_t OUT_GAP2_LO = 0x68000;   // gap 2: CARGS/SUBST/DMA
-    static constexpr uint64_t OUT_GAP2_HI = 0x81000;
-    static constexpr uint64_t OUT_LIMIT   = 0x310000;   // end of output region
-    static constexpr int      OUT_SLOT    = 32768;       // = LBUF_SIZE
+    // Legacy OUT_BASE retained for backward compatibility with
+    // cached programs and output clearing.
+    //
+    static constexpr uint64_t OUT_BASE       = 0x8000;   // legacy (unused by new alloc)
+    static constexpr int      OUT_SLOT       = 32768;    // = LBUF_SIZE
+    static constexpr uint64_t OUT_STACK_LIMIT = 0x81000; // lowest valid output addr
 
     // Pinned Lua array region: 0x50000-0x60000 (64KB = 8192 int64 elements)
     // Shares address space with output range 2 — never used simultaneously.
@@ -218,16 +216,20 @@ struct rv_compiler {
 
     static constexpr uint64_t STACK_TOP  = 0x3FFFF0;    // top of 4MB space
 
+    // Number of output slots allocated (for prologue frame size).
+    int n_output_slots;
+
     rv_compiler() : code_base(CODE_BASE),
                     memory(MEM_SIZE, 0),
                     str_pool(STR_BASE),
                     fargs_pool(FARGS_BASE),
-                    out_pool(OUT_BASE),
+                    out_pool(STACK_TOP - 8),
                     final_out(0),
                     folds(0),
                     ecalls(0),
                     native_ops(0),
-                    needs_jit(false) {}
+                    needs_jit(false),
+                    n_output_slots(0) {}
 
     // Persistent VM constructor: caller specifies code base and pool
     // starting positions to avoid collisions with previously compiled
@@ -237,12 +239,13 @@ struct rv_compiler {
           memory(MEM_SIZE, 0),
           str_pool(sp),
           fargs_pool(fp),
-          out_pool(op),
+          out_pool(op ? op : STACK_TOP - 8),
           final_out(0),
           folds(0),
           ecalls(0),
           native_ops(0),
-          needs_jit(false) {}
+          needs_jit(false),
+          n_output_slots(0) {}
 
     // Current guest PC of the next instruction to be emitted.
     uint64_t current_pc() const {
@@ -277,22 +280,14 @@ struct rv_compiler {
     bool bail_was_noeval = false;
 
     uint64_t alloc_output() {
-        uint64_t addr = out_pool;
-        // Gap 1: skip blob region (0x10000-0x50000).
-        if (addr >= OUT_GAP_LO && addr < OUT_GAP_HI) {
-            addr = OUT_GAP_HI;
-            out_pool = addr;
-        }
-        // Gap 2: skip CARGS/SUBST/DMA region (0x68000-0x81000).
-        if (addr >= OUT_GAP2_LO && addr < OUT_GAP2_HI) {
-            addr = OUT_GAP2_HI;
-            out_pool = addr;
-        }
-        if (addr + OUT_SLOT > OUT_LIMIT) {
+        // Stack-allocated: grow downward from STACK_TOP.
+        uint64_t addr = out_pool - OUT_SLOT;
+        if (addr < OUT_STACK_LIMIT) {
             out_exhausted = true;
             return 0;
         }
-        out_pool = addr + OUT_SLOT;
+        out_pool = addr;
+        n_output_slots++;
         return addr;
     }
 };

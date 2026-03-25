@@ -1113,6 +1113,20 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
         }
     }
 
+    // Reserve prologue slots for stack frame setup.
+    // Output buffers are stack-allocated; the prologue decrements SP
+    // by the total frame size.  We don't know the final count yet
+    // (the itoa path may allocate 1 more slot), so reserve 3 NOPs
+    // and backpatch after all code is emitted.
+    //
+    // 3 instructions = LUI t0, upper + ADDI t0, t0, lower + SUB SP, SP, t0
+    //
+    size_t prologue_pos = rc.code.size();
+    static constexpr int PROLOGUE_SLOTS = 3;
+    for (int p = 0; p < PROLOGUE_SLOTS; p++) {
+        rc.code.push_back(rv_ADDI(0, 0, 0));  // NOP placeholder
+    }
+
     // Process blocks in layout order.
     for (int b = 0; b < h.n_blocks; b++) {
         block_offset[b] = static_cast<int>(rc.code.size());
@@ -1925,6 +1939,24 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
             rc.final_out = loc[ri].addr;
         }
     }
+
+    // Backpatch prologue: set SP to accommodate output frame.
+    if (rc.n_output_slots > 0) {
+        // Frame includes 8-byte alignment pad + all output slots.
+        // SP must end up BELOW the lowest output address so spill
+        // slots (at SP-8, SP-16, ...) don't alias output buffers.
+        uint64_t frame_size = 8 + static_cast<uint64_t>(rc.n_output_slots)
+                            * rv_compiler::OUT_SLOT;
+        // LUI t0, upper20
+        uint32_t hi = static_cast<uint32_t>(frame_size) & 0xFFFFF000;
+        int32_t lo = static_cast<int32_t>(frame_size & 0xFFF);
+        if (lo & 0x800) { hi += 0x1000; lo -= 0x1000; }
+
+        rc.code[prologue_pos + 0] = rv_LUI(5, hi);           // LUI t0, upper
+        rc.code[prologue_pos + 1] = rv_ADDI(5, 5, lo);       // ADDI t0, t0, lower
+        rc.code[prologue_pos + 2] = rv_SUB(2, 2, 5);         // SUB SP, SP, t0
+    }
+    // If n_output_slots == 0, the NOPs remain (harmless).
 
     // Emit exit.
     rv_emit_exit(rc.code);
