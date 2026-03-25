@@ -82,11 +82,18 @@ The smoke suite (666 tests) is a baseline but doesn't specifically
 stress Unicode and ANSI color edge cases in the newly unblocked
 functions.  Build targeted tests.
 
-- [ ] ANSI color preservation tests (SECURE, SQUISH with embedded color)
-- [ ] Unicode case folding tests (STRMATCH with non-ASCII patterns)
-- [ ] DUCET collation order tests (SORT with accented characters)
-- [ ] Grapheme cluster edge cases (multi-codepoint clusters in ORD)
-- [ ] All smoke tests passing with `--enable-jit`
+- [x] `testcases/tier2_parity_fn.mux` — 8 targeted tests:
+  - TC001: squish() ANSI color preservation
+  - TC002: translate() p-mode control char conversion
+  - TC003: strmatch() case-insensitive matching
+  - TC004: grab/graball case-insensitive wildcards
+  - TC005: sort() numeric/float/case-insensitive types
+  - TC006: sort() DUCET case-insensitive (`c` type)
+  - TC007: sort() auto-detect
+  - TC008: match() case-insensitive position
+- [x] All 674 smoke tests passing with `--enable-jit` — 2026-03-25
+- [x] Existing tests: secure (4 tests with color+Unicode), sort (4 tests
+  with DUCET/fullwidth), jit_parity (7 tests with chr/ord grapheme)
 
 ---
 

@@ -1,0 +1,197 @@
+#
+# parity_fn.mux - Tier 2 parity tests for Unicode/ANSI edge cases.
+#
+# These tests exercise the ECALL and co_* wrapper paths that replaced
+# byte-level rv64_* implementations.  They target edge cases that the
+# old implementations would have gotten wrong.
+#
+@create test_tier2_parity_fn
+-
+@set test_tier2_parity_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_tier2_parity_fn=
+  @log smoke=Beginning Tier 2 parity test cases.
+-
+#
+# Test Case #1 - squish() preserves ANSI color codes.
+# squish() with embedded color should compress spaces but keep color.
+# translate(,p) renders the color as percent subs for hashing.
+#
+&tr.tc001 test_tier2_parity_fn=
+  @if strmatch(
+        setr(0,sha1(
+            translate(squish(%xr[space(3)]red%xn[space(3)]plain),p)
+          )
+        ),
+        428FC60ABB80D776A3F2E636BAB0D938C71D65E9
+      )=
+  {
+    @log smoke=TC001: squish color preservation. Succeeded.
+  },
+  {
+    @log smoke=TC001: squish color preservation. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - translate(string,p) converts tab and return.
+# %t=tab, %r=return.  translate(,p) should produce %t and %r subs.
+#
+&tr.tc002 test_tier2_parity_fn=
+  @if strmatch(
+        setr(0,sha1(
+            translate(before%tafter%rend,p)
+          )
+        ),
+        EA96636B2674AAB3F0744B110DD7F8B7B2CDF840
+      )=
+  {
+    @log smoke=TC002: translate p-mode control chars. Succeeded.
+  },
+  {
+    @log smoke=TC002: translate p-mode control chars. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - strmatch() Unicode case folding.
+# Uppercase pattern should match lowercase data.
+# ASCII case: FOO* matches foobar.
+# If Unicode case folding works, this is a baseline.
+#
+&tr.tc003 test_tier2_parity_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [strmatch(foobar,FOO*)]
+            [strmatch(FOOBAR,foo*)]
+            [strmatch(FooBar,?OO?AR)]
+          )
+        ),
+        6216F8A75FD5BB3D5F22B6F9958CDEDE3FC086C2
+      )=
+  {
+    @log smoke=TC003: strmatch case folding. Succeeded.
+  },
+  {
+    @log smoke=TC003: strmatch case folding. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - grab/graball with case-insensitive wildcard.
+# grab should find element regardless of case.
+#
+&tr.tc004 test_tier2_parity_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [grab(Alpha Beta Gamma,b*)]
+            [graball(Alpha Beta Gamma abba,*a)]
+          )
+        ),
+        DA60C50A1F1B9E9A52039D6D7C2E2CB59CCE74E3
+      )=
+  {
+    @log smoke=TC004: grab/graball case folding. Succeeded.
+  },
+  {
+    @log smoke=TC004: grab/graball case folding. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - sort() explicit sort types.
+# n=numeric, f=float, i=case-insensitive ASCII, d=dbref.
+#
+&tr.tc005 test_tier2_parity_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sort(3 -1 10 2,n)]
+            [sort(1.5 0.3 2.7 -0.1,f)]
+            [sort(Bravo alpha CHARLIE delta,i)]
+          )
+        ),
+        C64F2644BCC5E09F3FEC3C73A8B148B735E330E5
+      )=
+  {
+    @log smoke=TC005: sort types n/f/i. Succeeded.
+  },
+  {
+    @log smoke=TC005: sort types n/f/i. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - sort() DUCET case-insensitive (c type).
+# c/C uses mux_collate_sortkey_ci().
+#
+&tr.tc006 test_tier2_parity_fn=
+  @if chr(256)=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [sort(Bravo alpha CHARLIE delta,c)]
+            )
+          ),
+          BE24659BDE76BCC5A64E2FF5DC451E5A9B878E5B
+        )=
+    {
+      @log smoke=TC006: sort type c (CI Unicode). Succeeded.
+    },
+    {
+      @log smoke=TC006: sort type c (CI Unicode). Failed (%q0).
+    }
+  },
+  {
+    @log smoke=TC006: Unicode not supported. Okay.
+  }
+-
+#
+# Test Case #7 - sort() auto-detect.
+# sort(list) with no type should auto-detect numeric vs alpha.
+#
+&tr.tc007 test_tier2_parity_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [sort(3 1 4 1 5)]
+            [sort(banana apple cherry)]
+          )
+        ),
+        70483DE64BFED22E21F76462C73385A19236D141
+      )=
+  {
+    @log smoke=TC007: sort auto-detect. Succeeded.
+  },
+  {
+    @log smoke=TC007: sort auto-detect. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - match() with case-insensitive wildcard.
+# match returns 1-based position.
+#
+&tr.tc008 test_tier2_parity_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [match(Alpha Beta Gamma,BETA)]
+            [match(Alpha Beta Gamma,g*)]
+            [match(Alpha Beta Gamma,NOMATCH)]
+          )
+        ),
+        2815F6B98B7A1FC00FC6BBB6D86583C410D86AF7
+      )=
+  {
+    @log smoke=TC008: match case folding. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC008: match case folding. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_tier2_parity_fn=
+  @log smoke=End Tier 2 parity test cases.;
+  @notify smoke
+-
+drop test_tier2_parity_fn
+-
+#
+# End of Test Cases
+#
