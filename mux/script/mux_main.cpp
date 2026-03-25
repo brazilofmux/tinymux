@@ -744,6 +744,7 @@ public:
     virtual MUX_RESULT PrepareNetworkForRestart(void);
     virtual MUX_RESULT StartEmailSend(dbref executor, const UTF8 *recipient,
         const UTF8 *subject, const UTF8 *body, bool *pResult);
+    virtual MUX_RESULT ListSiteInfo(dbref player);
 
     CScriptDriverControl(void);
     virtual ~CScriptDriverControl();
@@ -932,6 +933,12 @@ MUX_RESULT CScriptDriverControl::StartEmailSend(dbref executor,
     if (nullptr == pResult) return MUX_E_INVALIDARG;
     *pResult = false;
     return MUX_S_OK;
+}
+
+MUX_RESULT CScriptDriverControl::ListSiteInfo(dbref player)
+{
+    UNUSED_PARAMETER(player);
+    return MUX_E_NOTIMPLEMENTED;
 }
 
 // ---------------------------------------------------------------------------

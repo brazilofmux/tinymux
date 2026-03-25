@@ -40,7 +40,6 @@ Implement the framework for evaluating softcode on multiple cores simultaneously
 - **File:** `driver.cpp:384`
 - **Issue:** Need to create a proper platform interface abstraction for the driver to better separate OS-specific logic from core server lifecycle management.
 
-### 4. Session/Driver Separation
+### ~~4. Session/Driver Separation~~
 
-- **File:** `session.cpp:339`
-- **Issue:** `access_list` currently lives in the driver, but session-related access checks might need a better abstraction or to be moved.
+- **Fixed:** `access_list` stays in the driver (hot-path connection checks must not cross COM). Added `mux_IDriverControl::ListSiteInfo()` COM method so the engine can query the site list for `@list sites` display.

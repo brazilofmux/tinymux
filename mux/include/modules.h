@@ -987,6 +987,10 @@ public:
     //
     virtual MUX_RESULT StartEmailSend(dbref executor, const UTF8 *recipient,
         const UTF8 *subject, const UTF8 *body, bool *pResult) = 0;
+
+    // Display the site access list to a player.
+    //
+    virtual MUX_RESULT ListSiteInfo(dbref player) = 0;
 };
 
 // Connection manager — the interface the engine uses to interact with

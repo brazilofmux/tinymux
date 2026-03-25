@@ -83,6 +83,14 @@ int site_update(const UTF8 *subnetStr, dbref player, UTF8 *cmd, int operation)
     return -1;
 }
 
+void list_siteinfo_via_driver(dbref player)
+{
+    if (g_pDriverCtl)
+    {
+        g_pDriverCtl->ListSiteInfo(player);
+    }
+}
+
 // --- Output ---
 
 void send_text_to_player(dbref target, const UTF8 *text)

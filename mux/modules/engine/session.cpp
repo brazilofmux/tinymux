@@ -336,10 +336,7 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
 
 void list_siteinfo(dbref player)
 {
-    // TODO: access_list lives in the driver.  Need a
-    // mux_IDriverControl::ListSiteInfo() COM method to display it.
-    //
-    notify(player, T("@list sites not yet available via COM interface."));
+    list_siteinfo_via_driver(player);
 }
 
 /* ---------------------------------------------------------------------------

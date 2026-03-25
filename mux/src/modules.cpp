@@ -846,6 +846,7 @@ public:
     virtual MUX_RESULT PrepareNetworkForRestart(void);
     virtual MUX_RESULT StartEmailSend(dbref executor, const UTF8 *recipient,
         const UTF8 *subject, const UTF8 *body, bool *pResult);
+    virtual MUX_RESULT ListSiteInfo(dbref player);
 
     CDriverControl(void);
     virtual ~CDriverControl();
@@ -1047,6 +1048,12 @@ MUX_RESULT CDriverControl::StartEmailSend(dbref executor,
     if (nullptr == pResult) return MUX_E_INVALIDARG;
     *pResult = g_GanlAdapter.start_email_send(executor, recipient,
         subject, body);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CDriverControl::ListSiteInfo(dbref player)
+{
+    g_access_list.listinfo(player);
     return MUX_S_OK;
 }
 
