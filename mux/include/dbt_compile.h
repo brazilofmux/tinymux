@@ -159,7 +159,7 @@ struct rv_compiler {
     int native_ops;         // number of native arithmetic ops
     bool needs_jit;         // true if any runtime code was emitted
 
-    static constexpr size_t MEM_SIZE     = 1024 * 1024;
+    static constexpr size_t MEM_SIZE     = 4 * 1024 * 1024;  // 4 MB
     static constexpr uint64_t CODE_BASE  = 0x0000;
     static constexpr uint64_t CODE_LIMIT = 0x1000;
     static constexpr uint64_t STR_BASE   = 0x1000;
@@ -168,14 +168,25 @@ struct rv_compiler {
     static constexpr uint64_t FARGS_LIMIT= 0x8000;
 
     static constexpr uint64_t BLOB_BASE  = 0x10000;
+    static constexpr uint64_t BLOB_LIMIT = 0x40000;
 
-    static constexpr uint64_t OUT_BASE   = 0x8000;
-    static constexpr uint64_t OUT_GAP_LO = 0x10000;
-    static constexpr uint64_t OUT_GAP_HI = 0x50000;  // blob grows: dtoa adds 60KB rodata
-    static constexpr uint64_t OUT_LIMIT  = 0x68000;
-    static constexpr int      OUT_SLOT   = 8000;
+    // Output slots — sized to match LBUF_SIZE (32768).
+    // Three non-contiguous ranges around the blob and data regions:
+    //   Range 1: 0x08000 - 0x10000  (32 KB, 1 slot)
+    //   Range 2: 0x50000 - 0x68000  (96 KB, 2 slots)
+    //   Range 3: 0x81000 - 0x310000 (2.5 MB, 78 slots)
+    // alloc_output() skips the gaps automatically.
+    //
+    static constexpr uint64_t OUT_BASE    = 0x8000;
+    static constexpr uint64_t OUT_GAP_LO  = 0x10000;   // gap 1: blob
+    static constexpr uint64_t OUT_GAP_HI  = 0x50000;
+    static constexpr uint64_t OUT_GAP2_LO = 0x68000;   // gap 2: CARGS/SUBST/DMA
+    static constexpr uint64_t OUT_GAP2_HI = 0x81000;
+    static constexpr uint64_t OUT_LIMIT   = 0x310000;   // end of output region
+    static constexpr int      OUT_SLOT    = 32768;       // = LBUF_SIZE
 
     // Pinned Lua array region: 0x50000-0x60000 (64KB = 8192 int64 elements)
+    // Shares address space with output range 2 — never used simultaneously.
     static constexpr uint64_t LUA_ARRAY_BASE  = 0x50000;
     static constexpr uint64_t LUA_ARRAY_LIMIT = 0x60000;
     static constexpr int      LUA_ARRAY_MAX   = 8192;
@@ -205,8 +216,7 @@ struct rv_compiler {
     static constexpr int      DMA_WINDOW_COUNT = 4;
     static constexpr uint64_t DMA_DESC_BASE    = 0x80000; // descriptor rings (4KB)
 
-    static constexpr uint64_t STACK_TOP  = 0xFFFF0;
-    static constexpr uint64_t BLOB_LIMIT = 0x40000;
+    static constexpr uint64_t STACK_TOP  = 0x3FFFF0;    // top of 4MB space
 
     rv_compiler() : code_base(CODE_BASE),
                     memory(MEM_SIZE, 0),
@@ -268,8 +278,14 @@ struct rv_compiler {
 
     uint64_t alloc_output() {
         uint64_t addr = out_pool;
+        // Gap 1: skip blob region (0x10000-0x50000).
         if (addr >= OUT_GAP_LO && addr < OUT_GAP_HI) {
             addr = OUT_GAP_HI;
+            out_pool = addr;
+        }
+        // Gap 2: skip CARGS/SUBST/DMA region (0x68000-0x81000).
+        if (addr >= OUT_GAP2_LO && addr < OUT_GAP2_HI) {
+            addr = OUT_GAP2_HI;
             out_pool = addr;
         }
         if (addr + OUT_SLOT > OUT_LIMIT) {

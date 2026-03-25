@@ -1229,18 +1229,27 @@ bool run_cached_program(compiled_program *prog,
         tier2_install(prog->memory, rv_compiler::BLOB_BASE);
     }
 
-    // Two output ranges around the blob gap:
-    //   Range 1: OUT_BASE (0x8000) to OUT_GAP_LO (0x10000) — below blob
-    //   Range 2: OUT_GAP_HI to CARGS end — above blob
-    // Do NOT zero the blob region (0x10000-OUT_GAP_HI)!
+    // Clear output ranges and CARGS/SUBST.  Skip the blob and DMA regions.
+    //   Range 1: OUT_BASE to OUT_GAP_LO (below blob)
+    //   Range 2: OUT_GAP_HI to OUT_GAP2_LO (above blob, below CARGS)
+    //   CARGS/SUBST: OUT_GAP2_LO to end of SUBST
+    //   Range 3: OUT_GAP2_HI to OUT_LIMIT (above DMA)
     memset(prog->memory.data() + rv_compiler::OUT_BASE, 0,
            rv_compiler::OUT_GAP_LO - rv_compiler::OUT_BASE);
-    // Clear from above-blob to end of SUBST region (covers output range 2,
-    // CARGS, and SUBST slots).
     uint64_t subst_end = rv_compiler::SUBST_BASE
                        + rv_compiler::SUBST_COUNT * rv_compiler::SUBST_SLOT;
     memset(prog->memory.data() + rv_compiler::OUT_GAP_HI, 0,
            subst_end - rv_compiler::OUT_GAP_HI);
+    // Range 3 — only clear what was actually allocated, not the full 2.5MB.
+    if (prog->out_used > 0) {
+        uint64_t r3_clear = prog->out_pool_end;
+        if (r3_clear > rv_compiler::OUT_GAP2_HI
+            && r3_clear <= rv_compiler::OUT_LIMIT)
+        {
+            memset(prog->memory.data() + rv_compiler::OUT_GAP2_HI, 0,
+                   r3_clear - rv_compiler::OUT_GAP2_HI);
+        }
+    }
 
     // Copy %0-%9 cargs into fixed guest memory slots.
     // Each carg gets a 256-byte slot at CARGS_BASE + idx * 256.
@@ -4080,9 +4089,15 @@ FUNCTION(fun_pocvm2)
         s_pvm2.dbt.blob_code_end = s_pvm2.dbt.code_used;
     }
 
-    // Clear output slots and re-install blob BSS before each run.
+    // Clear output ranges and re-install blob BSS before each run.
     memset(s_pvm2.memory.data() + rv_compiler::OUT_BASE, 0,
            rv_compiler::OUT_GAP_LO - rv_compiler::OUT_BASE);
+    memset(s_pvm2.memory.data() + rv_compiler::OUT_GAP_HI, 0,
+           rv_compiler::OUT_GAP2_LO - rv_compiler::OUT_GAP_HI);
+    if (s_pvm2.out_pool_next > rv_compiler::OUT_GAP2_HI) {
+        memset(s_pvm2.memory.data() + rv_compiler::OUT_GAP2_HI, 0,
+               s_pvm2.out_pool_next - rv_compiler::OUT_GAP2_HI);
+    }
     if (s_tier2.loaded) {
         tier2_install(s_pvm2.memory, rv_compiler::BLOB_BASE);
     }
