@@ -288,18 +288,15 @@ int main(int argc, char *argv[])
 {
     const char *pPrefix = nullptr;
     const char *pFilename = nullptr;
+    const char *pBodyFile = "utf8tables.cpp.txt";
+    const char *pIncludeFile = "utf8tables.h.txt";
 
     if (argc < 3)
     {
-#if 0
-        fprintf(stderr, "Usage: %s [-d ch] prefix unicodedata.txt\n", argv[0]);
-        exit(0);
-#else
         pFilename = "NumericDecimal.txt";
         pPrefix   = "digit";
         g_bDefault = false;
         g_iDefaultState = '?';
-#endif
     }
     else
     {
@@ -319,6 +316,14 @@ int main(int argc, char *argv[])
                     g_iDefaultState = '?';
                 }
             }
+            else if (0 == strcmp(argv[j], "-o") && j + 1 < argc)
+            {
+                pBodyFile = argv[++j];
+            }
+            else if (0 == strcmp(argv[j], "-i") && j + 1 < argc)
+            {
+                pIncludeFile = argv[++j];
+            }
             else
             {
                 if (nullptr == pPrefix)
@@ -334,13 +339,13 @@ int main(int argc, char *argv[])
     }
 
     FILE *fp = fopen(pFilename, "rb");
-    FILE *fpBody = fopen("utf8tables.cpp.txt", "a");
-    FILE *fpInclude = fopen("utf8tables.h.txt", "a");
+    FILE *fpBody = fopen(pBodyFile, "a");
+    FILE *fpInclude = fopen(pIncludeFile, "a");
     if (  nullptr == fp
        || nullptr == fpBody
        || nullptr == fpInclude)
     {
-        fprintf(stderr, "Cannot open %s, utf8tables.cpp.txt, or utf8tables.h.txt\n", pFilename);
+        fprintf(stderr, "Cannot open %s, %s, or %s\n", pFilename, pBodyFile, pIncludeFile);
         exit(0);
     }
 

@@ -1045,7 +1045,7 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
         fprintf(poc->fpInclude, "#define %s_START_STATE (0)\n", poc->UpperPrefix);
         fprintf(poc->fpInclude, "#define %s_ACCEPTING_STATES_START (%d)\n", poc->UpperPrefix, iAcceptingStatesStart);
 
-        fprintf(poc->fpInclude, "extern const unsigned char %s_itt[256];\n", poc->LowerPrefix);
+        fprintf(poc->fpInclude, "extern LIBMUX_API const unsigned char %s_itt[256];\n", poc->LowerPrefix);
         fprintf(poc->fpBody, "const unsigned char %s_itt[256] =\n", poc->LowerPrefix);
         fprintf(poc->fpBody, "{\n");
         for (i = 0; i < 256; i++)
@@ -1082,17 +1082,17 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
         switch (os.SizeOfBlobOffset)
         {
         case 1:
-            fprintf(poc->fpInclude, "extern const unsigned char %s_sot[%d];\n", poc->LowerPrefix, m_nStates);
+            fprintf(poc->fpInclude, "extern LIBMUX_API const unsigned char %s_sot[%d];\n", poc->LowerPrefix, m_nStates);
             fprintf(poc->fpBody, "const unsigned char %s_sot[%d] =\n", poc->LowerPrefix, m_nStates);
             break;
 
         case 2:
-            fprintf(poc->fpInclude, "extern const unsigned short %s_sot[%d];\n", poc->LowerPrefix, m_nStates);
+            fprintf(poc->fpInclude, "extern LIBMUX_API const unsigned short %s_sot[%d];\n", poc->LowerPrefix, m_nStates);
             fprintf(poc->fpBody, "const unsigned short %s_sot[%d] =\n", poc->LowerPrefix, m_nStates);
             break;
 
         default:
-            fprintf(poc->fpInclude, "extern const unsigned long %s_sot[%d];\n", poc->LowerPrefix, m_nStates);
+            fprintf(poc->fpInclude, "extern LIBMUX_API const unsigned long %s_sot[%d];\n", poc->LowerPrefix, m_nStates);
             fprintf(poc->fpBody, "const unsigned long %s_sot[%d] =\n", poc->LowerPrefix, m_nStates);
             break;
         }
@@ -1126,17 +1126,17 @@ void StateMachine::OutputTables(OutputControl *poc, OutputStatus *pos)
         switch (os.SizeOfState)
         {
         case 1:
-            fprintf(poc->fpInclude, "extern const unsigned char %s_sbt[%d];\n", poc->LowerPrefix, nBlob);
+            fprintf(poc->fpInclude, "extern LIBMUX_API const unsigned char %s_sbt[%d];\n", poc->LowerPrefix, nBlob);
             fprintf(poc->fpBody, "const unsigned char %s_sbt[%d] =\n", poc->LowerPrefix, nBlob);
             break;
 
         case 2:
-            fprintf(poc->fpInclude, "extern const unsigned short %s_sbt[%d];\n", poc->LowerPrefix, nBlob);
+            fprintf(poc->fpInclude, "extern LIBMUX_API const unsigned short %s_sbt[%d];\n", poc->LowerPrefix, nBlob);
             fprintf(poc->fpBody, "const unsigned short %s_sbt[%d] =\n", poc->LowerPrefix, nBlob);
             break;
 
         default:
-            fprintf(poc->fpInclude, "extern const unsigned long %s_sbt[%d];\n", poc->LowerPrefix, nBlob);
+            fprintf(poc->fpInclude, "extern LIBMUX_API const unsigned long %s_sbt[%d];\n", poc->LowerPrefix, nBlob);
             fprintf(poc->fpBody, "const unsigned long %s_sbt[%d] =\n", poc->LowerPrefix, nBlob);
             break;
         }

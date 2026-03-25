@@ -200,7 +200,7 @@ void OutputResultTable(FILE *fpBody, FILE *fpInclude, char *UpperPrefix, char *L
     // Index 0 is unused (means "no composition"); indices are 1-based.
     //
     fprintf(fpInclude, "#define %s_NFC_COMPOSE_RESULTS (%d)\n", UpperPrefix, g_nResults);
-    fprintf(fpInclude, "extern const UTF32 %s_nfc_compose_result[%d];\n",
+    fprintf(fpInclude, "extern LIBMUX_API const UTF32 %s_nfc_compose_result[%d];\n",
             LowerPrefix, g_nResults + 1);
 
     fprintf(fpBody, "const UTF32 %s_nfc_compose_result[%d] =\n{\n", LowerPrefix, g_nResults + 1);
@@ -221,11 +221,14 @@ void BuildAndOutputTable(FILE *fp, FILE *fpBody, FILE *fpInclude, char *UpperPre
     LoadPairs(fp, fpBody, fpInclude);
     TestTable(fp);
 
-    if (g_bDefault)
-    {
-        sm.SetUndefinedStates(g_iDefaultState);
-        TestTable(fp);
-    }
+    // Pairs DFAs must always resolve undefined transitions before
+    // optimization.  RowsEqual() and MergeAcceptingStates() treat
+    // m_Undefined as "don't care", which is correct for single-
+    // codepoint DFAs (undefined = invalid UTF-8 continuation) but
+    // wrong for pairs DFAs (undefined = no composition pair exists).
+    //
+    sm.SetUndefinedStates(g_bDefault ? g_iDefaultState : 0);
+    TestTable(fp);
 
     sm.MergeAcceptingStates();
     TestTable(fp);
@@ -265,6 +268,9 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
+    const char *pBodyFile = "utf8tables.cpp.txt";
+    const char *pIncludeFile = "utf8tables.h.txt";
+
     int j;
     for (j = 1; j < argc; j++)
     {
@@ -276,6 +282,14 @@ int main(int argc, char *argv[])
                 j++;
                 g_iDefaultState = atoi(argv[j]);
             }
+        }
+        else if (0 == strcmp(argv[j], "-o") && j + 1 < argc)
+        {
+            pBodyFile = argv[++j];
+        }
+        else if (0 == strcmp(argv[j], "-i") && j + 1 < argc)
+        {
+            pIncludeFile = argv[++j];
         }
         else
         {
@@ -291,13 +305,13 @@ int main(int argc, char *argv[])
     }
 
     FILE *fp = fopen(pFilename, "rb");
-    FILE *fpBody = fopen("utf8tables.cpp.txt", "a");
-    FILE *fpInclude = fopen("utf8tables.h.txt", "a");
+    FILE *fpBody = fopen(pBodyFile, "a");
+    FILE *fpInclude = fopen(pIncludeFile, "a");
     if (  nullptr == fp
        || nullptr == fpBody
        || nullptr == fpInclude)
     {
-        fprintf(stderr, "Cannot open %s, utf8tables.cpp.txt, or utf8tables.h.txt\n", pFilename);
+        fprintf(stderr, "Cannot open %s, %s, or %s\n", pFilename, pBodyFile, pIncludeFile);
         exit(0);
     }
 
