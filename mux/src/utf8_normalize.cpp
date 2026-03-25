@@ -179,21 +179,24 @@ static int RunIntegerDFA(
 static int GetCCC(const UTF8 *pStart, const UTF8 *pEnd)
 {
     return RunIntegerDFA(
-        tr_ccc_itt, tr_ccc_sot, tr_ccc_sbt,
-        TR_CCC_START_STATE, TR_CCC_ACCEPTING_STATES_START,
+        tr_ccc_nfcqc_itt, tr_ccc_nfcqc_sot, tr_ccc_nfcqc_sbt,
+        TR_CCC_NFCQC_START_STATE, TR_CCC_NFCQC_ACCEPTING_STATES_START,
         0,
-        pStart, pEnd);
+        pStart, pEnd) / 3;
 }
 
-// Get NFC_QC property: 0=Yes, 1=No, 2=Maybe.
+// Combined CCC + NFC_QC lookup — single DFA traversal instead of two.
 //
-static int GetNFCQC(const UTF8 *pStart, const UTF8 *pEnd)
+static void GetCCCandNFCQC(const UTF8 *pStart, const UTF8 *pEnd,
+                            int &ccc, int &nfcqc)
 {
-    return RunIntegerDFA(
-        tr_nfcqc_itt, tr_nfcqc_sot, tr_nfcqc_sbt,
-        TR_NFCQC_START_STATE, TR_NFCQC_ACCEPTING_STATES_START,
+    int combined = RunIntegerDFA(
+        tr_ccc_nfcqc_itt, tr_ccc_nfcqc_sot, tr_ccc_nfcqc_sbt,
+        TR_CCC_NFCQC_START_STATE, TR_CCC_NFCQC_ACCEPTING_STATES_START,
         0,
         pStart, pEnd);
+    ccc   = combined / 3;
+    nfcqc = combined % 3;
 }
 
 // Get NFD decomposition for a code point.
@@ -427,26 +430,17 @@ bool utf8_is_nfc(const UTF8 *src, size_t nSrc)
             return false;
         }
 
-        // Check NFC_QC property.
+        // Combined CCC + NFC_QC lookup — single DFA traversal.
         //
-        int qc = GetNFCQC(pStart, pStart + n);
-        if (1 == qc)  // No
+        int ccc, qc;
+        GetCCCandNFCQC(pStart, pStart + n, ccc, qc);
+        if (0 != qc)
         {
-            return false;
+            return false;  // No or Maybe
         }
-
-        // Check CCC ordering.
-        //
-        int ccc = GetCCC(pStart, pStart + n);
         if (ccc != 0 && lastCCC > ccc)
         {
             // Combining marks out of canonical order.
-            return false;
-        }
-
-        if (2 == qc)  // Maybe
-        {
-            // Could be NFC or not — need full normalization to be sure.
             return false;
         }
 

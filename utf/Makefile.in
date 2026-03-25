@@ -48,10 +48,13 @@ tr_gcb.txt: gen_gcb.pl GraphemeBreakProperty.txt
 cl_ExtPict.txt: gen_extpict.pl emoji-data.txt
 	perl gen_extpict.pl > cl_ExtPict.txt
 
+tr_ccc_nfcqc.txt: gen_ccc_nfcqc.pl tr_ccc.txt tr_nfcqc.txt
+	perl gen_ccc_nfcqc.pl > tr_ccc_nfcqc.txt
+
 tr_ducet.txt tr_ducet_contract.txt ../mux/src/ducet_cetable.h: gen_ducet.pl allkeys.txt
 	perl gen_ducet.pl
 
-utf8tables.cpp.txt utf8tables.h.txt: classify integers strings pairs cl_Printable.txt cl_AttrNameInitial.txt cl_AttrName.txt cl_PrivateUse.txt tr_utf8_ascii.txt tr_utf8_cp437.txt tr_utf8_latin1.txt tr_utf8_latin2.txt tr_Color.txt tr_tolower.txt tr_toupper.txt tr_totitle.txt cl_8859_1.txt cl_8859_2.txt tr_ccc.txt tr_nfcqc.txt tr_nfd.txt tr_compose.txt tr_gcb.txt cl_ExtPict.txt tr_ducet.txt tr_ducet_contract.txt tr_widths.txt
+utf8tables.cpp.txt utf8tables.h.txt: classify integers strings pairs cl_Printable.txt cl_AttrNameInitial.txt cl_AttrName.txt cl_PrivateUse.txt tr_utf8_ascii.txt tr_utf8_cp437.txt tr_utf8_latin1.txt tr_utf8_latin2.txt tr_Color.txt tr_tolower.txt tr_toupper.txt tr_totitle.txt cl_8859_1.txt cl_8859_2.txt tr_ccc_nfcqc.txt tr_nfd.txt tr_compose.txt tr_gcb.txt cl_ExtPict.txt tr_ducet.txt tr_ducet_contract.txt tr_widths.txt
 	-rm utf8tables.cpp.txt utf8tables.h.txt
 	printf '/*! \\file utf8tables.h\n * \\brief Static tables with UTF-8 state machines.\n *\n */\n\n#ifndef UTF8TABLES_H\n#define UTF8TABLES_H\n\n#ifndef LIBMUX_API\n#define LIBMUX_API\n#endif\n\n' > utf8tables.h.txt
 	printf '/*! \\file utf8tables.cpp\n * \\brief Static tables with UTF-8 state machines.\n *\n */\n\n#include "copyright.h"\n#include "autoconf.h"\n#include "config.h"\n#include "externs.h"\n\n' > utf8tables.cpp.txt
@@ -76,8 +79,7 @@ utf8tables.cpp.txt utf8tables.h.txt: classify integers strings pairs cl_Printabl
 	./strings -d tr_totitle tr_totitle.txt
 	./strings -d tr_foldmatch tr_foldmatch.txt
 	./integers -d 0 tr_color tr_Color.txt
-	./integers -d 0 tr_ccc tr_ccc.txt
-	./integers -d 0 tr_nfcqc tr_nfcqc.txt
+	./integers -d 0 tr_ccc_nfcqc tr_ccc_nfcqc.txt
 	./strings -d tr_nfd tr_nfd.txt
 	./pairs tr_nfc_compose tr_compose.txt
 	./integers -d 0 tr_gcb tr_gcb.txt
