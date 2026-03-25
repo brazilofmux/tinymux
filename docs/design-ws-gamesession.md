@@ -96,11 +96,15 @@ GameSession writer already produce:
 | Client → Server | `ping` | Queue pong sentinel |
 | Client → Server | `preferences` | Update render format, NAWS, ttype |
 
-**Not in phase 1:** `system_notice` and `link_event`. The OutputQueue has
-no producer path for these today — the gRPC GameSession writer in
-`grpc_server.cpp` doesn't emit them either. Adding them requires new queue
-item types and producer call sites across SessionManager. That's a
-worthwhile follow-up but out of scope here.
+**Not in phase 1 session streaming:** `system_notice` and `link_event`.
+The OutputQueue has no producer path for these today — the gRPC
+GameSession writer in `grpc_server.cpp` doesn't emit them either. Adding
+them requires new queue item types and producer call sites across
+SessionManager. That's a worthwhile follow-up but out of scope here.
+
+**Exception:** `system_notice` is used during connection setup for auth
+rejection (see First-message auth above). This is a one-shot error
+before the subscriber is registered, not part of normal session streaming.
 
 ### Control Messages and sendToClient()
 
@@ -202,43 +206,44 @@ New handler block for `FrontDoorProto::WsGameSession`:
 
 ### session_manager.cpp — Output delivery
 
-In the existing `onBackDoorData` output fan-out (around line 1356), add a
-case for `WsGameSession` front-doors:
+**WsGameSession does NOT join `session.frontDoors`.** The handle exists in
+the `frontDoors_` map (for connection-level data routing), but does not
+appear in the per-session `session.frontDoors` vector.
 
-```cpp
-} else if (fd.proto == FrontDoorProto::WsGameSession) {
-    // Drain subscriber queue, serialize as ServerMessage, send as
-    // binary WebSocket frames.
-}
-```
+This is the key architectural decision. The existing `onBackDoorData`
+fan-out iterates `session.frontDoors` for text-mode rendering
+(`session_manager.cpp:1348–1379`), then pushes to the OutputQueue for
+gRPC subscribers (`session_manager.cpp:1381–1394`). Many other call sites
+iterate `session.frontDoors` for `sendToClient()` control messages
+(`session_manager.cpp:1067, 1075, 1088, 1111, 1133, 1150`).
 
-However, the better approach is a **poll-based drain** in `runTimers()` or a
-dedicated method called from the main loop. The gRPC path uses a blocking
-writer thread; the WebSocket path should be non-blocking since it runs on
-the main GANL event loop:
+By staying out of `session.frontDoors`, the WsGameSession connection:
+- Is invisible to all `sendToClient()` loops — no text-mode control
+  messages leak through.
+- Receives game output through its subscriber queue on the OutputQueue,
+  same as a gRPC GameSession subscriber.
+- Requires no new cases in the front-door fan-out loop.
 
-- After every `pushOutput`/`pushGmcp`, the condition variable wakes.
-- But we're on the main thread — we can't block on `cv.wait()`.
-- Instead, add a `drainWsGameSessions()` method called each main-loop
-  iteration that checks all WsGameSession front-doors' subscriber queues
-  and sends any pending output.
+Output delivery uses a `drainWsGameSessions()` method called each
+main-loop iteration. For each `WsGameSession` front-door in `frontDoors_`
+that has a registered subscriber:
 
-This is similar to how grpc-web Subscribe streaming already works: output
-arrives via `onBackDoorData`, and the grpc-web handler immediately encodes
-and writes the frame to the front-door handle.
+1. Lock the OutputQueue mutex.
+2. Read `sq->renderFormat`.
+3. Pop all pending output and GMCP items from the subscriber queue.
+4. Unlock.
+5. For each output item: serialize as `hydra::ServerMessage` with
+   `game_output`, wrap in `wsEncodeFrame(serialized, WS_OP_BINARY)`,
+   call `safeWrite(handle, frame)`.
+6. For each GMCP item: serialize as `hydra::ServerMessage` with `gmcp`,
+   same framing.
+7. For pong sentinels (source == `"__pong__"`): serialize as
+   `hydra::ServerMessage` with `pong`, same framing.
 
-**Recommended approach:** Follow the grpc-web pattern. In the output fan-out
-code that already iterates front-doors (around `session_manager.cpp:1356`),
-add a `WsGameSession` case that:
-
-1. Reads `sq->renderFormat` under lock.
-2. Pops output/GMCP items from the subscriber queue.
-3. Serializes each as a `hydra::ServerMessage`.
-4. Wraps in `wsEncodeFrame(serialized, WS_OP_BINARY)`.
-5. Calls `safeWrite(handle, frame)`.
-
-This avoids any new threading — output flows through the same main-thread
-path as telnet and grpc-web.
+This runs on the main thread, non-blocking. The gRPC GameSession uses a
+blocking writer thread with `cv.wait()`; the WebSocket path polls instead,
+since it shares the main GANL event loop. The poll cost is negligible —
+one map scan per loop iteration, skipping entries with empty queues.
 
 ### session_manager.cpp — onFrontDoorClose
 
@@ -343,15 +348,18 @@ is empty string).
 3. **hydra_types.h:** Add `WsGameSession` to `FrontDoorProto`.
 4. **session_manager.h:** Add `WsGameSession` fields to `FrontDoorState`
    (subscriber ID, subscriber queue, output queue shared_ptr).
-5. **session_manager.cpp:** Four integration points:
+5. **session_manager.cpp:** Five integration points:
    a. Handshake completion — set `proto = WsGameSession`, skip banner.
+      Do NOT add handle to `session.frontDoors`.
    b. First-message auth — validate `session_id`, register subscriber,
-      replay GMCP, apply preferences.
+      replay GMCP, apply preferences. On failure, send `system_notice`
+      error and close.
    c. Subsequent `ClientMessage` dispatch — input, ping, prefs, gmcp
       (port of `grpc_server.cpp:348–424` logic).
-   d. Output fan-out — add `WsGameSession` case alongside existing
-      WebSocket/grpc-web cases, serialize `ServerMessage`, send as
-      `wsEncodeFrame(proto, WS_OP_BINARY)`.
+   d. `drainWsGameSessions()` — new method called each main-loop
+      iteration. Scans `frontDoors_` for `WsGameSession` entries with
+      registered subscribers, pops output/GMCP/pong items, serializes
+      as `ServerMessage`, sends as `wsEncodeFrame(proto, WS_OP_BINARY)`.
    e. `onFrontDoorClose` — unsubscribe cleanup.
 6. **hydra_connection.js:** `_startGameSession()`, `ServerMessage` decoder,
    `ClientMessage` encoder, first-message auth with `session_id` in
@@ -368,16 +376,18 @@ is empty string).
   is shared by telnet-over-WS and the new GameSession path. The
   subprotocol check must not break the existing no-subprotocol case.
   Mitigation: test telnet-over-WS explicitly after the change.
-- **Front-door dispatch and fan-out:** Moderate risk. New code paths in
-  `session_manager.cpp:373–468` (protocol dispatch) and
-  `session_manager.cpp:1262–1394` (output fan-out) touch shared
-  infrastructure. The fan-out case follows the grpc-web pattern closely,
-  but careful testing is needed.
-- **sendToClient() bypass:** By design, WsGameSession does not receive
-  text-mode control messages. This is safe in phase 1 because the HTML5
-  client uses grpc-web RPCs for all control operations. If future work
-  adds slash-command handling on this transport, sendToClient() will need
-  to emit `ServerMessage.system_notice` for WsGameSession front-doors.
+- **Front-door dispatch:** Moderate risk. New code path in
+  `session_manager.cpp:373–468` (protocol dispatch). The output fan-out
+  loop at `session_manager.cpp:1348–1379` is NOT modified — WsGameSession
+  handles are not in `session.frontDoors`, so the loop doesn't see them.
+- **sendToClient() isolation:** WsGameSession is invisible to
+  `sendToClient()` because it's not in `session.frontDoors`. No risk of
+  text-mode control messages leaking through. If future work adds
+  slash-command handling on this transport, `sendToClient()` will need
+  to be taught about `WsGameSession`, but that's out of phase 1 scope.
+- **drainWsGameSessions() poll cost:** One scan of `frontDoors_` per
+  main-loop iteration. Entries without subscribers or with empty queues
+  are skipped immediately. Negligible overhead.
 - **Browser compat:** WebSocket with binary frames and subprotocols works
   in all modern browsers.
 - **Fallback:** The existing grpc-web path remains available for
