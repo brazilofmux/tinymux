@@ -178,6 +178,9 @@ void final_stubslave(void)
         g_pISlaveControl = nullptr;
     }
 }
+#else // !STUB_SLAVE
+MUX_RESULT init_stubslave(void) { return MUX_S_OK; }
+void final_stubslave(void) {}
 #endif // STUB_SLAVE
 
 void final_modules(void)

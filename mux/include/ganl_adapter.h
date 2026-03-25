@@ -185,6 +185,10 @@ public:
     void email_advance_state_locked(const std::string& responseLine);
     void email_notify_and_cleanup(const UTF8* message);
 
+    // Attach an externally-created stubslave process (from mux_IPlatform).
+    // No-op on platforms without STUB_SLAVE.
+    void attach_stubslave(int readFd, int writeFd, int childPid);
+
 #if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
     struct StubSlaveChannel {
         int fd{-1};

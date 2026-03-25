@@ -20,6 +20,7 @@
 #include "driver_bridge.h"
 
 mux_ILog *g_pILog = nullptr;
+mux_IPlatform *g_pIPlatform = nullptr;
 DRIVER_CONFIG g_dc;
 
 #if defined(INLINESQL)
@@ -381,7 +382,11 @@ int DCL_CDECL main(int argc, char *argv[])
                             IID_ILog,
                             reinterpret_cast<void **>(&g_pILog));
 
-    // TODO: Create platform interface
+    // Create platform interface for OS-specific operations.
+    //
+    mr = mux_CreateInstance(CID_Platform, nullptr, UseSameProcess,
+                            IID_IPlatform,
+                            reinterpret_cast<void **>(&g_pIPlatform));
 
     TimezoneCache::initialize();
     SeedRandomNumberGenerator();
@@ -422,9 +427,11 @@ int DCL_CDECL main(int argc, char *argv[])
     pool_init(POOL_SBUF, SBUF_SIZE);
     pool_init(POOL_DESC, sizeof(DESC));
 
-#if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
-    init_rlimit();
-#endif // HAVE_SETRLIMIT RLIMIT_NOFILE
+    if (g_pIPlatform)
+    {
+        int fdLimit = 0;
+        g_pIPlatform->MaximizeFileDescriptors(&fdLimit);
+    }
     init_logout_cmdtab();
     init_version();
 
@@ -433,10 +440,21 @@ int DCL_CDECL main(int argc, char *argv[])
     // much until they get a notification that the part of loading they depend
     // on is complete.
     //
-#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
-    g_GanlAdapter.boot_stubslave();
-    init_stubslave();
-#endif // HAVE_WORKING_FORK && STUB_SLAVE
+    // Boot stubslave helper process via platform interface.
+    // On Unix: fork+exec creates a child process with IPC pipe.
+    // On Windows: returns MUX_E_NOTIMPLEMENTED (runs in-process).
+    //
+    if (g_pIPlatform)
+    {
+        int readFd = -1, writeFd = -1, childPid = 0;
+        MUX_RESULT mrHelper = g_pIPlatform->BootHelperProcess(
+            T("bin/stubslave"), &readFd, &writeFd, &childPid);
+        if (MUX_SUCCEEDED(mrHelper))
+        {
+            g_GanlAdapter.attach_stubslave(readFd, writeFd, childPid);
+            init_stubslave();
+        }
+    }
 
     // log_dir was previously written to mudconf here; it's now
     // passed via pErrorBasename to SetBasename above.

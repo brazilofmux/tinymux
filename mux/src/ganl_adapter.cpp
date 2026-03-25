@@ -2777,6 +2777,32 @@ void GanlAdapter::email_notify_and_cleanup(const UTF8* message) {
 
 // --- Stub Slave Channel ---
 
+void GanlAdapter::attach_stubslave(int readFd, int writeFd, int childPid)
+{
+#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
+    shutdown_stubslave();
+
+    stubslave_pid = childPid;
+    stubslave_channel_ = std::make_unique<StubSlaveChannel>();
+    stubslave_channel_->fd = readFd;
+    if (writeFd != readFd)
+    {
+        mux_close(writeFd);
+    }
+
+    STARTLOG(LOG_ALWAYS, "NET", "STUB");
+    g_pILog->log_text(T("Stub slave attached on fd "));
+    g_pILog->log_number(stubslave_channel_->fd);
+    g_pILog->log_text(T(" pid "));
+    g_pILog->log_number(stubslave_pid);
+    ENDLOG;
+#else
+    UNUSED_PARAMETER(readFd);
+    UNUSED_PARAMETER(writeFd);
+    UNUSED_PARAMETER(childPid);
+#endif
+}
+
 #if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
 
 extern QUEUE_INFO Queue_In;
