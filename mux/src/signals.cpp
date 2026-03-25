@@ -391,11 +391,6 @@ void LogStatBuf(int stat_buf, const char *Name)
 
 static void DCL_CDECL sighandler(int sig)
 {
-#if defined(UNIX_SIGNALS)
-    int stat_buf;
-    pid_t child;
-#endif // UNIX_SIGNALS
-
     switch (sig)
     {
 #if defined(UNIX_SIGNALS)
@@ -431,50 +426,35 @@ static void DCL_CDECL sighandler(int sig)
         signal(SIGCHLD, CAST_SIGNAL_FUNC sighandler);
 #endif // !SIGNAL_SIGCHLD_BRAINDAMAGE
 
-        while ((child = waitpid(0, &stat_buf, WNOHANG)) > 0)
+        if (g_pIPlatform)
         {
-#if defined(HAVE_WORKING_FORK)
-            if (  WIFEXITED(stat_buf)
-               || WIFSIGNALED(stat_buf))
+            int reapPid = 0, exitStatus = 0;
+            bool signaled = false;
+            while (MUX_SUCCEEDED(g_pIPlatform->ReapChild(&reapPid, &exitStatus, &signaled))
+                   && reapPid > 0)
             {
 #ifdef STUB_SLAVE
-                if (child == stubslave_pid)
+                if (reapPid == stubslave_pid)
                 {
-                    // The Stub slave process ended unexpectedly.
-                    //
                     stubslave_pid = 0;
-
-                    LogStatBuf(stat_buf, "STUB");
-
+                    STARTLOG(LOG_ALWAYS, "NET", "STUB");
+                    g_pILog->WriteString(tprintf(T("Stub slave exited (status %d, signaled=%d)." ENDLINE),
+                        exitStatus, signaled ? 1 : 0));
+                    ENDLOG;
                     continue;
                 }
-                else
 #endif // STUB_SLAVE
                 if (g_dc.fork_dump)
                 {
-                    // Record the event for the main loop to pick up.
-                    // No COM calls from signal handlers.
-                    //
-                    g_dump_child_pid = child;
+                    g_dump_child_pid = reapPid;
                     continue;
                 }
+                log_signal(sig);
+                STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
+                g_pILog->WriteString(tprintf(T("Unknown child=%d, status=%d" ENDLINE),
+                    reapPid, exitStatus));
+                ENDLOG;
             }
-#endif // HAVE_WORKING_FORK
-
-            log_signal(sig);
-            LogStatBuf(stat_buf, "UKNWN");
-
-#if defined(HAVE_WORKING_FORK)
-            STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
-#ifdef STUB_SLAVE
-            g_pILog->WriteString(tprintf(T("Unknown child=%d, stubslave_pid=%d" ENDLINE),
-                child, stubslave_pid));
-#else
-            g_pILog->WriteString(tprintf(T("Unknown child=%d" ENDLINE),
-                child));
-#endif // STUB_SLAVE
-            ENDLOG;
-#endif // HAVE_WORKING_FORK
         }
         break;
 
@@ -568,37 +548,21 @@ static void DCL_CDECL sighandler(int sig)
             // SQLite write-through means the database is already durable.
             // No flatfile dump or WAL checkpoint from a signal handler.
             //
-#if defined(WINDOWS_PROCESSES)
+            if (g_pIPlatform)
+            {
+                const UTF8 *argv[] = {
+                    T("netmux"),
+                    T("-c"), g_dc.config_file,
+                    T("-p"), g_dc.pid_file,
+                    T("-e"), g_dc.log_dir,
+                    nullptr
+                };
+                g_pIPlatform->PanicRestart(T("bin/netmux"), argv, 7);
+            }
+            // If PanicRestart returned, it couldn't restart.
             unset_signals();
             signal(sig, SIG_DFL);
-            exit(12345678);
-#endif // WINDOWS_PROCESSES
-
-#if defined(UNIX_PROCESSES)
-#if defined(HAVE_WORKING_FORK)
-            // Try our best to dump a core first
-            //
-            if (!fork())
-            {
-                // We are the broken parent. Die.
-                //
-                unset_signals();
-                exit(1);
-            }
-
-            // We are the reproduced child with a slightly better chance.
-            //
-            dump_restart_db();
-#endif // HAVE_WORKING_FORK
-
-#ifdef GAME_DOOFERMUX
-            execl("bin/netmux", g_dc.mud_name, "-c", g_dc.config_file, "-p", g_dc.pid_file, "-e", g_dc.log_dir, static_cast<char *>(nullptr));
-#else // GAME_DOOFERMUX
-            execl("bin/netmux", "netmux", "-c", g_dc.config_file, "-p", g_dc.pid_file, "-e", g_dc.log_dir, static_cast<char *>(nullptr));
-#endif // GAME_DOOFERMUX
-            mux_assert(false);
-            break;
-#endif // UNIX_PROCESSES
+            exit(1);
         }
         else
         {

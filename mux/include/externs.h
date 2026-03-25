@@ -227,6 +227,8 @@ extern void emergency_shutdown();
 //
 class mux_ILog;
 extern mux_ILog *g_pILog;
+class mux_IPlatform;
+extern mux_IPlatform *g_pIPlatform;
 
 struct DRIVER_CONFIG;
 extern DRIVER_CONFIG g_dc;

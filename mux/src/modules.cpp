@@ -1290,14 +1290,28 @@ MUX_RESULT CPlatform::BootHelperProcess(
 
 MUX_RESULT CPlatform::ReapChild(int *pPid, int *pExitStatus, bool *pSignaled)
 {
+#if defined(HAVE_WORKING_FORK)
+    int stat_buf;
+    pid_t child = waitpid(0, &stat_buf, WNOHANG);
+    if (child <= 0)
+    {
+        if (pPid) *pPid = 0;
+        return MUX_S_FALSE;  // no child exited
+    }
+    if (pPid) *pPid = static_cast<int>(child);
+    if (pExitStatus)
+    {
+        *pExitStatus = WIFEXITED(stat_buf) ? WEXITSTATUS(stat_buf) : 0;
+    }
+    if (pSignaled)
+    {
+        *pSignaled = WIFSIGNALED(stat_buf);
+    }
+    return MUX_S_OK;
+#else
     UNUSED_PARAMETER(pPid);
     UNUSED_PARAMETER(pExitStatus);
     UNUSED_PARAMETER(pSignaled);
-
-#if defined(HAVE_WORKING_FORK)
-    // Unix implementation would go here (moved from signals.cpp).
-    return MUX_E_NOTIMPLEMENTED;
-#else
     return MUX_E_NOTIMPLEMENTED;
 #endif
 }
@@ -1326,17 +1340,45 @@ MUX_RESULT CPlatform::MaximizeFileDescriptors(int *pLimit)
 MUX_RESULT CPlatform::PanicRestart(
     const UTF8 *execPath, const UTF8 *const *argv, int argc)
 {
+#if defined(HAVE_WORKING_FORK)
+    UNUSED_PARAMETER(argc);
+
+    // Fork a child to dump core, then exec to restart.
+    //
+    if (!fork())
+    {
+        // We are the broken parent. Die and leave a core.
+        //
+        signal(SIGABRT, SIG_DFL);
+        abort();
+    }
+
+    // We are the reproduced child with a slightly better chance.
+    // The caller (signals.cpp) has already done presync and cleanup.
+    //
+    execl(reinterpret_cast<const char *>(execPath),
+          reinterpret_cast<const char *>(argv[0]),
+          reinterpret_cast<const char *>(argv[1]),
+          reinterpret_cast<const char *>(argv[2]),
+          reinterpret_cast<const char *>(argv[3]),
+          reinterpret_cast<const char *>(argv[4]),
+          reinterpret_cast<const char *>(argv[5]),
+          reinterpret_cast<const char *>(argv[6]),
+          static_cast<char *>(nullptr));
+
+    // execl failed — fall through to caller's exit path.
+    return MUX_E_FAIL;
+
+#elif defined(WINDOWS_PROCESSES)
     UNUSED_PARAMETER(execPath);
     UNUSED_PARAMETER(argv);
     UNUSED_PARAMETER(argc);
-
-#if defined(WINDOWS_PROCESSES)
     abort();
     return MUX_E_FAIL;  // unreachable
-#elif defined(HAVE_WORKING_FORK)
-    // Unix implementation would go here (moved from signals.cpp).
-    return MUX_E_NOTIMPLEMENTED;
 #else
+    UNUSED_PARAMETER(execPath);
+    UNUSED_PARAMETER(argv);
+    UNUSED_PARAMETER(argc);
     return MUX_E_NOTIMPLEMENTED;
 #endif
 }
