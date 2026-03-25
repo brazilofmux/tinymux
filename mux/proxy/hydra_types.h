@@ -17,6 +17,7 @@ constexpr HydraSessionId InvalidHydraSessionId = 0;
 enum class FrontDoorProto {
     Telnet,
     WebSocket,
+    WsGameSession,  // WebSocket carrying protobuf GameSession
     GrpcWeb,
 };
 

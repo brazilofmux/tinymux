@@ -114,14 +114,24 @@ std::string wsProcessHandshake(WsState& ws, const char* data, size_t len) {
          accept_input.size(), sha);
     std::string accept = base64Encode(sha, SHA_DIGEST_LENGTH);
 
+    // Check for hydra-gamesession subprotocol
+    const char* subproto = findHeader(hdrs.c_str(), "Sec-WebSocket-Protocol");
+    std::string subprotoVal = headerValue(subproto);
+    ws.isGameSession = (subprotoVal.find("hydra-gamesession") != std::string::npos);
+
     ws.handshakeOk = true;
 
     std::string response =
         "HTTP/1.1 101 Switching Protocols\r\n"
         "Upgrade: websocket\r\n"
         "Connection: Upgrade\r\n"
-        "Sec-WebSocket-Accept: " + accept + "\r\n"
-        "\r\n";
+        "Sec-WebSocket-Accept: " + accept + "\r\n";
+
+    if (ws.isGameSession) {
+        response += "Sec-WebSocket-Protocol: hydra-gamesession\r\n";
+    }
+
+    response += "\r\n";
 
     // Any trailing data after headers needs to be fed back as frames
     // (stored in handshakeBuf for caller to re-process)

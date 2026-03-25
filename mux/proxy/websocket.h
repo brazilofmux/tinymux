@@ -42,6 +42,9 @@ struct WsState {
     // Fragment reassembly
     std::string fragBuf;
     uint8_t fragOpcode{0};
+
+    // Subprotocol negotiation (set during handshake)
+    bool isGameSession{false};       // true if hydra-gamesession subprotocol
 };
 
 // A decoded WebSocket message.

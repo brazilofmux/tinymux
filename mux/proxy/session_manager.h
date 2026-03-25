@@ -212,6 +212,13 @@ struct FrontDoorState {
     bool grpcWebSubscribed{false};
     std::string grpcWebSessionId;   // which session we're subscribed to
     bool grpcWebTextMode{false};    // base64 encoding
+
+    // WebSocket GameSession state (only used if proto == WsGameSession).
+    // Not in session.frontDoors — output comes via subscriber queue.
+    int wsGameSessionSubId{0};
+    std::shared_ptr<HydraSession::SubscriberQueue> wsGameSessionQueue;
+    std::shared_ptr<HydraSession::OutputQueue> wsGameSessionOQ;
+    std::string wsGameSessionPersistId;  // session persistId once authenticated
 };
 
 // Reverse map value: session ID + link index
