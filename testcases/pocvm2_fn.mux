@@ -45,9 +45,9 @@
 # Test Case #3 - Functions at different code_base offsets.
 #
 &tr.tc003 test_pocvm2_fn=
-  @if strmatch(
-        setr(0,pocvm2()),
-        *b_pc=0x1000 *
+  @if cand(
+        strmatch(setr(0,pocvm2()), *a_pc=0x0 *),
+        not(strmatch(r(0), *b_pc=0x0 *))
       )=
   {
     @log smoke=TC003: pocvm2 different code bases. Succeeded.;

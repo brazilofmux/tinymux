@@ -838,6 +838,10 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     prog.out_addr = rc.final_out;
     prog.out_used = rc.out_pool - rv_compiler::OUT_BASE;
     prog.entry_pc = rc.code_base;
+    prog.code_size = rc.code.size() * 4;
+    prog.str_pool_end = rc.str_pool;
+    prog.fargs_pool_end = rc.fargs_pool;
+    prog.out_pool_end = rc.out_pool;
     prog.ok = true;
     s_jit_stats.compile_ok++;
     prog.folds = h.folds;
@@ -998,6 +1002,10 @@ static compiled_program reconstruct_from_cache(
     prog.out_addr = static_cast<uint64_t>(rec.out_addr);
     prog.out_used = rv_compiler::OUT_LIMIT - rv_compiler::OUT_BASE;  // conservative
     prog.entry_pc = rv_compiler::CODE_BASE;  // cached programs always start at 0
+    prog.code_size = 0;
+    prog.str_pool_end = rv_compiler::STR_BASE;
+    prog.fargs_pool_end = rv_compiler::FARGS_BASE;
+    prog.out_pool_end = rv_compiler::OUT_BASE;
     prog.ok = true;
     prog.needs_jit = rec.needs_jit != 0;
     prog.folds = rec.folds;
@@ -3902,7 +3910,10 @@ struct persistent_vm2 {
     // Code heap: bump allocator for code sections.
     uint64_t code_heap_next;
 
-    // Pool state: shared across compilations, never reset.
+    // Shared pool cursors — advance across compilations so each
+    // function gets its own non-overlapping region.
+    uint64_t str_pool_next;
+    uint64_t fargs_pool_next;
     uint64_t out_pool_next;
 
     // Entry points and output addresses for compiled functions.
@@ -3915,6 +3926,8 @@ struct persistent_vm2 {
         : memory(rv_compiler::MEM_SIZE, 0),
           dbt_ready(false), compiled(false), call_count(0),
           code_heap_next(0x0000),
+          str_pool_next(rv_compiler::STR_BASE),
+          fargs_pool_next(rv_compiler::FARGS_BASE),
           out_pool_next(rv_compiler::OUT_BASE),
           func_a_entry(0), func_a_out(0),
           func_b_entry(0), func_b_out(0) {}
@@ -3951,7 +3964,10 @@ FUNCTION(fun_pocvm2)
 
             compiled_program pa = compile_expression(
                 expr_a, len_a, EV_FCHECK | EV_EVAL,
-                s_pvm2.code_heap_next);
+                s_pvm2.code_heap_next,
+                s_pvm2.str_pool_next,
+                s_pvm2.fargs_pool_next,
+                s_pvm2.out_pool_next);
 
             if (!pa.ok) {
                 safe_str(T("#-1 FUNC A COMPILE FAILED"), buff, bufc);
@@ -3961,29 +3977,41 @@ FUNCTION(fun_pocvm2)
             s_pvm2.func_a_entry = pa.entry_pc;
             s_pvm2.func_a_out = pa.out_addr;
 
-            // Copy all regions from compiled program into persistent
-            // memory.  Each compile_expression gets a full 1MB image;
-            // we overlay the relevant parts.
+            // Copy regions from compiled program into persistent memory.
+            // Code at its unique code_base offset:
             memcpy(s_pvm2.memory.data() + pa.entry_pc,
-                   pa.memory.data() + pa.entry_pc,
-                   rv_compiler::CODE_LIMIT);
-            memcpy(s_pvm2.memory.data() + rv_compiler::STR_BASE,
-                   pa.memory.data() + rv_compiler::STR_BASE,
-                   rv_compiler::STR_LIMIT - rv_compiler::STR_BASE);
-            memcpy(s_pvm2.memory.data() + rv_compiler::FARGS_BASE,
-                   pa.memory.data() + rv_compiler::FARGS_BASE,
-                   rv_compiler::FARGS_LIMIT - rv_compiler::FARGS_BASE);
-            memcpy(s_pvm2.memory.data() + rv_compiler::OUT_BASE,
-                   pa.memory.data() + rv_compiler::OUT_BASE,
-                   rv_compiler::OUT_GAP_LO - rv_compiler::OUT_BASE);
+                   pa.memory.data() + pa.entry_pc, pa.code_size);
+            // Strings — copy only the portion this compilation used:
+            if (pa.str_pool_end > rv_compiler::STR_BASE) {
+                memcpy(s_pvm2.memory.data() + rv_compiler::STR_BASE,
+                       pa.memory.data() + rv_compiler::STR_BASE,
+                       pa.str_pool_end - rv_compiler::STR_BASE);
+            }
+            // Fargs:
+            if (pa.fargs_pool_end > rv_compiler::FARGS_BASE) {
+                memcpy(s_pvm2.memory.data() + rv_compiler::FARGS_BASE,
+                       pa.memory.data() + rv_compiler::FARGS_BASE,
+                       pa.fargs_pool_end - rv_compiler::FARGS_BASE);
+            }
+            // Output slots:
+            if (pa.out_pool_end > rv_compiler::OUT_BASE) {
+                memcpy(s_pvm2.memory.data() + rv_compiler::OUT_BASE,
+                       pa.memory.data() + rv_compiler::OUT_BASE,
+                       pa.out_pool_end - rv_compiler::OUT_BASE);
+            }
 
-            s_pvm2.code_heap_next = pa.entry_pc + rv_compiler::CODE_LIMIT;
-            s_pvm2.out_pool_next = rv_compiler::OUT_BASE + pa.out_used;
+            // Advance all cursors so B starts where A left off.
+            s_pvm2.code_heap_next = pa.entry_pc + pa.code_size;
+            // Align code heap to 16-byte boundary.
+            s_pvm2.code_heap_next = (s_pvm2.code_heap_next + 15) & ~15ULL;
+            s_pvm2.str_pool_next = pa.str_pool_end;
+            s_pvm2.fargs_pool_next = pa.fargs_pool_end;
+            s_pvm2.out_pool_next = pa.out_pool_end;
         }
 
         // --- Compile Function B: rest(one two three) ---
         // rest() also has a Tier 2 blob.  Compiled at a different
-        // code_base to prove JAL offsets are correct at both locations.
+        // code_base with pool cursors advanced past A's data.
         {
             const UTF8 *expr_b = reinterpret_cast<const UTF8 *>(
                 "rest(one two three)");
@@ -3991,7 +4019,10 @@ FUNCTION(fun_pocvm2)
 
             compiled_program pb = compile_expression(
                 expr_b, len_b, EV_FCHECK | EV_EVAL,
-                s_pvm2.code_heap_next);
+                s_pvm2.code_heap_next,
+                s_pvm2.str_pool_next,
+                s_pvm2.fargs_pool_next,
+                s_pvm2.out_pool_next);
 
             if (!pb.ok) {
                 safe_str(T("#-1 FUNC B COMPILE FAILED"), buff, bufc);
@@ -4001,22 +4032,34 @@ FUNCTION(fun_pocvm2)
             s_pvm2.func_b_entry = pb.entry_pc;
             s_pvm2.func_b_out = pb.out_addr;
 
+            // Copy B's code (at its unique offset):
             memcpy(s_pvm2.memory.data() + pb.entry_pc,
-                   pb.memory.data() + pb.entry_pc,
-                   rv_compiler::CODE_LIMIT);
-            // Overlay strings/fargs (B's strings may overwrite A's at
-            // the same addresses — this is fine since both are compiled
-            // independently with their own string pools starting at
-            // STR_BASE.  In the real persistent VM, pools would be
-            // shared with advancing cursors.)
-            memcpy(s_pvm2.memory.data() + rv_compiler::STR_BASE,
-                   pb.memory.data() + rv_compiler::STR_BASE,
-                   rv_compiler::STR_LIMIT - rv_compiler::STR_BASE);
-            memcpy(s_pvm2.memory.data() + rv_compiler::FARGS_BASE,
-                   pb.memory.data() + rv_compiler::FARGS_BASE,
-                   rv_compiler::FARGS_LIMIT - rv_compiler::FARGS_BASE);
+                   pb.memory.data() + pb.entry_pc, pb.code_size);
+            // Copy B's strings (starts where A's ended):
+            if (pb.str_pool_end > s_pvm2.str_pool_next) {
+                memcpy(s_pvm2.memory.data() + s_pvm2.str_pool_next,
+                       pb.memory.data() + s_pvm2.str_pool_next,
+                       pb.str_pool_end - s_pvm2.str_pool_next);
+            }
+            // Copy B's fargs:
+            if (pb.fargs_pool_end > s_pvm2.fargs_pool_next) {
+                memcpy(s_pvm2.memory.data() + s_pvm2.fargs_pool_next,
+                       pb.memory.data() + s_pvm2.fargs_pool_next,
+                       pb.fargs_pool_end - s_pvm2.fargs_pool_next);
+            }
+            // Copy B's output:
+            if (pb.out_pool_end > s_pvm2.out_pool_next) {
+                memcpy(s_pvm2.memory.data() + s_pvm2.out_pool_next,
+                       pb.memory.data() + s_pvm2.out_pool_next,
+                       pb.out_pool_end - s_pvm2.out_pool_next);
+            }
 
-            s_pvm2.code_heap_next = pb.entry_pc + rv_compiler::CODE_LIMIT;
+            // Advance cursors.
+            s_pvm2.code_heap_next = pb.entry_pc + pb.code_size;
+            s_pvm2.code_heap_next = (s_pvm2.code_heap_next + 15) & ~15ULL;
+            s_pvm2.str_pool_next = pb.str_pool_end;
+            s_pvm2.fargs_pool_next = pb.fargs_pool_end;
+            s_pvm2.out_pool_next = pb.out_pool_end;
         }
 
         // Install Tier 2 blob.
@@ -4025,24 +4068,66 @@ FUNCTION(fun_pocvm2)
         s_pvm2.compiled = true;
     }
 
-    // Both expressions constant-fold (needs_jit=false), so the results
-    // are already in guest memory at the output addresses.
-    // The code_base infrastructure is exercised during compilation
-    // (JAL offset calculation for Tier 2 calls) even though these
-    // particular expressions don't need runtime execution.
-    const char *result_a = reinterpret_cast<const char *>(
-        s_pvm2.memory.data() + s_pvm2.func_a_out);
-    const char *result_b = reinterpret_cast<const char *>(
-        s_pvm2.memory.data() + s_pvm2.func_b_out);
+    // Initialize DBT on first call.
+    if (!s_pvm2.dbt_ready) {
+        if (dbt_init(&s_pvm2.dbt, s_pvm2.memory.data(),
+                     s_pvm2.memory.size(), poc_ecall, nullptr) != 0) {
+            safe_str(T("#-1 DBT INIT FAILED"), buff, bufc);
+            return;
+        }
+        s_pvm2.dbt_ready = true;
+        pretranslate_tier2(&s_pvm2.dbt);
+        s_pvm2.dbt.blob_code_end = s_pvm2.dbt.code_used;
+    }
+
+    // Clear output slots and re-install blob BSS before each run.
+    memset(s_pvm2.memory.data() + rv_compiler::OUT_BASE, 0,
+           rv_compiler::OUT_GAP_LO - rv_compiler::OUT_BASE);
+    if (s_tier2.loaded) {
+        tier2_install(s_pvm2.memory, rv_compiler::BLOB_BASE);
+    }
+
+    // Run Function A.
+    dbt_rerun(&s_pvm2.dbt, poc_ecall, nullptr);
+    int rc_a = dbt_run(&s_pvm2.dbt, s_pvm2.func_a_entry,
+                       rv_compiler::STACK_TOP);
+    const char *result_a = (rc_a == 0)
+        ? reinterpret_cast<const char *>(
+              s_pvm2.memory.data() + s_pvm2.func_a_out)
+        : "#-1 RUN A FAILED";
+
+    // Reset blob BSS for Function B.
+    if (s_tier2.loaded && s_tier2.bss_size > 0) {
+        uint64_t bss_start = rv_compiler::BLOB_BASE + s_tier2.code.size();
+        if (bss_start + s_tier2.bss_size <= s_pvm2.memory.size()) {
+            memset(s_pvm2.memory.data() + bss_start, 0, s_tier2.bss_size);
+        }
+    }
+
+    // Run Function B via dbt_resume (warm cache from A).
+    s_pvm2.dbt.ctx.x[2] = rv_compiler::STACK_TOP;
+    int rc_b = dbt_resume(&s_pvm2.dbt, s_pvm2.func_b_entry);
+    const char *result_b = (rc_b == 0)
+        ? reinterpret_cast<const char *>(
+              s_pvm2.memory.data() + s_pvm2.func_b_out)
+        : "#-1 RUN B FAILED";
 
     s_pvm2.call_count++;
 
     LBuf tmp = LBuf_Src("pocvm2");
     snprintf(reinterpret_cast<char *>(tmp.get()), LBUF_SIZE,
-        "a=%s b=%s a_pc=0x%llX b_pc=0x%llX calls=%u",
+        "a=%s b=%s a_pc=0x%llX b_pc=0x%llX "
+        "a_out=0x%llX b_out=0x%llX "
+        "str=0x%llX fargs=0x%llX out=0x%llX code=0x%llX calls=%u",
         result_a, result_b,
         (unsigned long long)s_pvm2.func_a_entry,
         (unsigned long long)s_pvm2.func_b_entry,
+        (unsigned long long)s_pvm2.func_a_out,
+        (unsigned long long)s_pvm2.func_b_out,
+        (unsigned long long)s_pvm2.str_pool_next,
+        (unsigned long long)s_pvm2.fargs_pool_next,
+        (unsigned long long)s_pvm2.out_pool_next,
+        (unsigned long long)s_pvm2.code_heap_next,
         s_pvm2.call_count);
 
     safe_str(tmp, buff, bufc);

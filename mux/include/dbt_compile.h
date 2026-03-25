@@ -291,12 +291,20 @@ struct compiled_program {
     uint64_t out_addr;      // where the final result lives
     uint64_t out_used;      // bytes of output region actually allocated
     uint64_t entry_pc;      // guest PC of compiled code entry point
+    uint64_t code_size;     // bytes of code emitted
     bool ok;
     int folds;
     int ecalls;
     int tier2_calls;
     int native_ops;
     bool needs_jit;         // true if JIT execution required
+
+    // Pool high-water marks after compilation.
+    // Persistent VM uses these to advance shared pool cursors so the
+    // next compilation starts where this one left off.
+    uint64_t str_pool_end;
+    uint64_t fargs_pool_end;
+    uint64_t out_pool_end;
 
     // Tier 3 u()-inlining dependency tracking.
     // Each entry records an attr whose body was inlined at compile

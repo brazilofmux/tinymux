@@ -5471,7 +5471,7 @@
 >259
 "@if strmatch(setr(0,pocvm2()),*b=two three *)={@log smoke=TC002: pocvm2 func B=two three. Succeeded.},{@log smoke=TC002: pocvm2 func B=two three. Failed (%q0).}"
 >260
-"@if strmatch(setr(0,pocvm2()),*b_pc=0x1000 *)={@log smoke=TC003: pocvm2 different code bases. Succeeded.;@trig me/tr.done},{@log smoke=TC003: pocvm2 different code bases. Failed (%q0).;@trig me/tr.done}"
+"@if cand(strmatch(setr(0,pocvm2()), *a_pc=0x0 *),not(strmatch(r(0), *b_pc=0x0 *)))={@log smoke=TC003: pocvm2 different code bases. Succeeded.;@trig me/tr.done},{@log smoke=TC003: pocvm2 different code bases. Failed (%q0).;@trig me/tr.done}"
 <
 !159
 "test_pocvm_fn"
