@@ -122,7 +122,6 @@ XFUNCTION(fun_astbench);
 #if defined(TINYMUX_JIT)
 XFUNCTION(fun_rvbench);
 XFUNCTION(fun_jitstats);
-XFUNCTION(fun_persistent_poc);
 XFUNCTION(fun_pocvm2);
 #endif
 // In comsys.cpp
