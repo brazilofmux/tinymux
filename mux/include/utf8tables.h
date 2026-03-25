@@ -232,27 +232,16 @@ extern LIBMUX_API const unsigned char tr_color_itt[256];
 extern LIBMUX_API const unsigned short tr_color_sot[11];
 extern LIBMUX_API const unsigned short tr_color_sbt[570];
 
-// utf/tr_ccc.txt
+// utf/tr_ccc_nfcqc.txt
 //
-// 934 code points.
-// 132 states, 83 columns, 3702 bytes
+// 2143 code points.
+// 164 states, 84 columns, 4846 bytes
 //
-#define TR_CCC_START_STATE (0)
-#define TR_CCC_ACCEPTING_STATES_START (132)
-extern LIBMUX_API const unsigned char tr_ccc_itt[256];
-extern LIBMUX_API const unsigned short tr_ccc_sot[132];
-extern LIBMUX_API const unsigned short tr_ccc_sbt[1591];
-
-// utf/tr_nfcqc.txt
-//
-// 1252 code points.
-// 60 states, 75 columns, 1090 bytes
-//
-#define TR_NFCQC_START_STATE (0)
-#define TR_NFCQC_ACCEPTING_STATES_START (60)
-extern LIBMUX_API const unsigned char tr_nfcqc_itt[256];
-extern LIBMUX_API const unsigned short tr_nfcqc_sot[60];
-extern LIBMUX_API const unsigned char tr_nfcqc_sbt[714];
+#define TR_CCC_NFCQC_START_STATE (0)
+#define TR_CCC_NFCQC_ACCEPTING_STATES_START (164)
+extern LIBMUX_API const unsigned char tr_ccc_nfcqc_itt[256];
+extern LIBMUX_API const unsigned short tr_ccc_nfcqc_sot[164];
+extern LIBMUX_API const unsigned short tr_ccc_nfcqc_sbt[2131];
 
 // utf/tr_nfd.txt
 //

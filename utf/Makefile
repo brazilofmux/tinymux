@@ -1,0 +1,188 @@
+# utf/Makefile.in — Unicode DFA table pipeline.
+#
+# Generates output files directly in their final locations:
+#   ../mux/include/utf8tables.h       C++ header (libmux.so)
+#   ../mux/lib/utf8tables.cpp         C++ table data (libmux.so)
+#   ../mux/include/unicode_tables_c.h C header (color_ops, rv64)
+#   ../ragel/unicode_tables.h         symlink to unicode_tables_c.h
+#   ../ragel/unicode_tables.c         C table data (case mapping + utf8_FirstByte)
+#   ../mux/rv64/src/unicode_tables.c  C table data (case + gcb + extpict + widths)
+#
+
+# Local copy of ftp://www.unicode.org/
+#
+UNICODE=~/unicode
+
+# Output file locations.
+CPP_H     = ../mux/include/utf8tables.h
+CPP_CPP   = ../mux/lib/utf8tables.cpp
+C_H       = ../mux/include/unicode_tables_c.h
+C_LIBMUX  = ../mux/lib/unicode_tables.c
+C_RAGEL   = ../ragel/unicode_tables.c
+C_RV64    = ../mux/rv64/src/unicode_tables.c
+RAGEL_H   = ../ragel/unicode_tables.h
+
+# Persistent intermediates (cleaned by 'make clean').
+C_CASE_BODY = c_case_tables.c.tmp
+C_CASE_HDR  = c_case_tables.h.tmp
+
+all: tools cpp_tables c_tables
+
+tools: classify integers strings pairs buildFiles
+
+cpp_tables: $(CPP_H) $(CPP_CPP)
+
+c_tables: $(C_H) $(C_LIBMUX) $(C_RAGEL) $(C_RV64) $(RAGEL_H)
+
+UnicodeData.txt:
+	( if [ -f $(UNICODE)/UNIDATA/UnicodeData.txt ]; then ln -s $(UNICODE)/UNIDATA/UnicodeData.txt UnicodeData.txt; else wget http://www.unicode.org/Public/UNIDATA/UnicodeData.txt; fi )
+
+EastAsianWidth.txt:
+	( if [ -f $(UNICODE)/UNIDATA/EastAsianWidth.txt ]; then ln -s $(UNICODE)/UNIDATA/EastAsianWidth.txt EastAsianWidth.txt; else wget http://www.unicode.org/Public/UNIDATA/EastAsianWidth.txt; fi )
+
+UnicodeMaster.txt tr_totitle.txt tr_tolower.txt tr_toupper.txt cl_PrivateUse.txt Decompositions.txt cl_Printable.txt cl_Alpha.txt cl_Digit.txt cl_Alnum.txt tr_decimal_value.txt tr_widths.txt: UnicodeData.txt UnicodeHan.txt EastAsianWidth.txt buildFiles
+	./buildFiles
+
+classify: classify.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
+	g++ -O3 -g -o classify classify.cpp ConvertUTF.cpp smutil.cpp
+
+integers: integers.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
+	g++ -O3 -g -o integers integers.cpp ConvertUTF.cpp smutil.cpp
+
+strings: strings.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
+	g++ -O3 -g -o strings strings.cpp ConvertUTF.cpp smutil.cpp
+
+pairs: pairs.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
+	g++ -O3 -g -o pairs pairs.cpp ConvertUTF.cpp smutil.cpp
+
+buildFiles: buildFiles.cpp smutil.cpp smutil.h
+	g++ -O3 -g -o buildFiles buildFiles.cpp smutil.cpp
+
+# Perl-generated intermediate data files from Unicode source data.
+#
+tr_ccc.txt: gen_ccc.pl UnicodeData.txt
+	perl gen_ccc.pl > tr_ccc.txt
+
+tr_nfcqc.txt: gen_nfcqc.pl DerivedNormalizationProps.txt
+	perl gen_nfcqc.pl > tr_nfcqc.txt
+
+tr_nfd.txt: gen_nfd.pl Decompositions.txt
+	perl gen_nfd.pl > tr_nfd.txt
+
+tr_compose.txt: gen_compose.pl UnicodeData.txt CompositionExclusions.txt
+	perl gen_compose.pl > tr_compose.txt
+
+tr_gcb.txt: gen_gcb.pl GraphemeBreakProperty.txt
+	perl gen_gcb.pl > tr_gcb.txt
+
+cl_ExtPict.txt: gen_extpict.pl emoji-data.txt
+	perl gen_extpict.pl > cl_ExtPict.txt
+
+tr_ccc_nfcqc.txt: gen_ccc_nfcqc.pl tr_ccc.txt tr_nfcqc.txt
+	perl gen_ccc_nfcqc.pl > tr_ccc_nfcqc.txt
+
+tr_ducet.txt tr_ducet_contract.txt ../mux/src/ducet_cetable.h: gen_ducet.pl allkeys.txt
+	perl gen_ducet.pl
+
+# --- C++ tables (libmux.so) ---
+#
+COMMON_DEPS = classify integers strings pairs cl_Printable.txt cl_Alpha.txt cl_Digit.txt cl_Alnum.txt cl_AttrNameInitial.txt cl_AttrName.txt cl_PrivateUse.txt tr_utf8_ascii.txt tr_utf8_cp437.txt tr_utf8_latin1.txt tr_utf8_latin2.txt tr_Color.txt tr_tolower.txt tr_toupper.txt tr_totitle.txt cl_8859_1.txt cl_8859_2.txt tr_ccc_nfcqc.txt tr_nfd.txt tr_compose.txt tr_gcb.txt cl_ExtPict.txt tr_ducet.txt tr_ducet_contract.txt tr_widths.txt
+
+$(CPP_H) $(CPP_CPP): $(COMMON_DEPS)
+	-rm -f $(CPP_CPP) $(CPP_H)
+	printf '/*! \\file utf8tables.h\n * \\brief Static tables with UTF-8 state machines.\n *\n */\n\n#ifndef UTF8TABLES_H\n#define UTF8TABLES_H\n\n#include "config.h"\n\n#ifdef __cplusplus\nextern "C" {\n#endif\n\n' > $(CPP_H)
+	printf '/*! \\file utf8tables.cpp\n * \\brief Static tables with UTF-8 state machines.\n *\n */\n\n#include "copyright.h"\n#include "autoconf.h"\n#include "config.h"\n#include "externs.h"\n\nextern "C" {\n\n' > $(CPP_CPP)
+	./classify -o $(CPP_CPP) -i $(CPP_H) cl_print cl_Printable.txt
+	./classify -o $(CPP_CPP) -i $(CPP_H) cl_alpha cl_Alpha.txt
+	./classify -o $(CPP_CPP) -i $(CPP_H) cl_digit cl_Digit.txt
+	./classify -o $(CPP_CPP) -i $(CPP_H) cl_alnum cl_Alnum.txt
+	./classify -o $(CPP_CPP) -i $(CPP_H) cl_attrnameinitial cl_AttrNameInitial.txt
+	./classify -o $(CPP_CPP) -i $(CPP_H) cl_attrname cl_AttrName.txt
+	./classify -o $(CPP_CPP) -i $(CPP_H) cl_objectname cl_ObjectName.txt
+	./classify -o $(CPP_CPP) -i $(CPP_H) cl_playername cl_PlayerName.txt
+	./classify -o $(CPP_CPP) -i $(CPP_H) cl_8859_1 cl_8859_1.txt
+	./classify -o $(CPP_CPP) -i $(CPP_H) cl_8859_2 cl_8859_2.txt
+	./classify -o $(CPP_CPP) -i $(CPP_H) cl_hangul cl_hangul.txt
+	./classify -o $(CPP_CPP) -i $(CPP_H) cl_hiragana cl_hiragana.txt
+	./classify -o $(CPP_CPP) -i $(CPP_H) cl_kanji cl_kanji.txt
+	./classify -o $(CPP_CPP) -i $(CPP_H) cl_katakana cl_katakana.txt
+	./integers -o $(CPP_CPP) -i $(CPP_H) -d 63 tr_ascii tr_utf8_ascii.txt
+	./integers -o $(CPP_CPP) -i $(CPP_H) -d 63 tr_cp437 tr_utf8_cp437.txt
+	./integers -o $(CPP_CPP) -i $(CPP_H) -d 63 tr_latin1 tr_utf8_latin1.txt
+	./integers -o $(CPP_CPP) -i $(CPP_H) -d 63 tr_latin2 tr_utf8_latin2.txt
+	./integers -o $(CPP_CPP) -i $(CPP_H) -d 0 tr_widths tr_widths.txt
+	# tolower/toupper/totitle/foldmatch are now in the C tables only
+	# (unicode_tables_c.h + color_ops linkage). See c_tables target.
+	./integers -o $(CPP_CPP) -i $(CPP_H) -d 0 tr_color tr_Color.txt
+	./integers -o $(CPP_CPP) -i $(CPP_H) -d 0 tr_ccc_nfcqc tr_ccc_nfcqc.txt
+	./strings  -o $(CPP_CPP) -i $(CPP_H) -d tr_nfd tr_nfd.txt
+	./pairs    -o $(CPP_CPP) -i $(CPP_H) tr_nfc_compose tr_compose.txt
+	./integers -o $(CPP_CPP) -i $(CPP_H) -d 0 tr_gcb tr_gcb.txt
+	./classify -o $(CPP_CPP) -i $(CPP_H) cl_extpict cl_ExtPict.txt
+	./integers -o $(CPP_CPP) -i $(CPP_H) -d 0 tr_ducet tr_ducet.txt
+	./pairs    -o $(CPP_CPP) -i $(CPP_H) tr_ducet_contract tr_ducet_contract.txt
+	printf '\n} // extern "C"\n' >> $(CPP_CPP)
+	printf '\n#ifdef __cplusplus\n}\n#endif\n\n#endif // UTF8TABLES_H\n' >> $(CPP_H)
+
+# --- C case mapping tables (shared intermediate) ---
+#
+# Generate tolower/toupper/totitle with -c flag (co_string_desc, C casts).
+# Both ragel and rv64 consumers use this output.
+#
+$(C_CASE_BODY) $(C_CASE_HDR): strings tr_tolower.txt tr_toupper.txt tr_totitle.txt tr_foldmatch.txt
+	-rm -f $(C_CASE_BODY) $(C_CASE_HDR)
+	: > $(C_CASE_BODY)
+	: > $(C_CASE_HDR)
+	./strings -c -o $(C_CASE_BODY) -i $(C_CASE_HDR) -d tr_tolower tr_tolower.txt
+	./strings -c -o $(C_CASE_BODY) -i $(C_CASE_HDR) -d tr_toupper tr_toupper.txt
+	./strings -c -o $(C_CASE_BODY) -i $(C_CASE_HDR) -d tr_totitle tr_totitle.txt
+	./strings -c -o $(C_CASE_BODY) -i $(C_CASE_HDR) -d tr_foldmatch tr_foldmatch.txt
+
+# --- unicode_tables_c.h (C header for color_ops + rv64) ---
+#
+$(C_H): unicode_tables_c_preamble.h unicode_tables_c_postamble.h $(C_CASE_HDR)
+	cat unicode_tables_c_preamble.h $(C_CASE_HDR) unicode_tables_c_postamble.h > $(C_H)
+
+# --- mux/lib/unicode_tables.c (case mapping tables for libmux.so) ---
+#
+# Same table data as ragel, but without utf8_FirstByte (provided by stringutil.cpp).
+#
+$(C_LIBMUX): $(C_CASE_BODY)
+	printf '/* unicode_tables.c — Generated by utf/ pipeline. DO NOT EDIT. */\n\n#include "unicode_tables_c.h"\n\n' > $(C_LIBMUX)
+	cat $(C_CASE_BODY) >> $(C_LIBMUX)
+
+# --- ragel/unicode_tables.h (symlink to C header) ---
+#
+$(RAGEL_H): $(C_H)
+	rm -f $(RAGEL_H)
+	ln -s ../mux/include/unicode_tables_c.h $(RAGEL_H)
+
+# --- ragel/unicode_tables.c (case mapping + utf8_FirstByte) ---
+#
+$(C_RAGEL): $(C_CASE_BODY) utf8_FirstByte.c
+	printf '/* unicode_tables.c — Generated by utf/ pipeline. DO NOT EDIT. */\n\n#include "unicode_tables.h"\n\n' > $(C_RAGEL)
+	cat utf8_FirstByte.c >> $(C_RAGEL)
+	printf '\n' >> $(C_RAGEL)
+	cat $(C_CASE_BODY) >> $(C_RAGEL)
+
+# --- mux/rv64/src/unicode_tables.c (case + widths + gcb + extpict) ---
+#
+$(C_RV64): $(C_CASE_BODY) utf8_FirstByte.c integers classify tr_widths.txt tr_gcb.txt cl_ExtPict.txt
+	-rm -f rv64_extra.c.tmp rv64_extra.h.tmp
+	: > rv64_extra.c.tmp
+	: > rv64_extra.h.tmp
+	./integers -o rv64_extra.c.tmp -i rv64_extra.h.tmp -d 0 tr_widths tr_widths.txt
+	./integers -o rv64_extra.c.tmp -i rv64_extra.h.tmp -d 0 tr_gcb tr_gcb.txt
+	./classify -o rv64_extra.c.tmp -i rv64_extra.h.tmp cl_extpict cl_ExtPict.txt
+	printf '/* unicode_tables.c — Generated by utf/ pipeline. DO NOT EDIT. */\n\n#include "unicode_tables_c.h"\n\n' > $(C_RV64)
+	cat utf8_FirstByte.c >> $(C_RV64)
+	printf '\n' >> $(C_RV64)
+	cat $(C_CASE_BODY) >> $(C_RV64)
+	printf '\n' >> $(C_RV64)
+	cat rv64_extra.c.tmp >> $(C_RV64)
+	rm -f rv64_extra.c.tmp rv64_extra.h.tmp
+
+clean:
+	rm -f classify integers strings pairs buildFiles
+	rm -f $(C_CASE_BODY) $(C_CASE_HDR)
+	rm -f rv64_extra.c.tmp rv64_extra.h.tmp
