@@ -209,10 +209,10 @@ static bool tier2_allowed(const std::string &mux_name) {
         "ISDBREF",
         "CHR", "ORD",
         "SECURE", "SQUISH",
+        "TRANSLATE",
 
         // Blocked — diverge from server:
         //   SORT       Shellsort vs DUCET collation
-        //   TRANSLATE  byte-level vs color-aware
         //   STRMATCH/MATCH/GRAB/GRABALL  ASCII tolower vs Unicode case fold
 
         nullptr
@@ -2643,6 +2643,29 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             q += nAdv;
         }
         *op = '\0';
+        ctx->x[10] = 0;
+        return -1;
+    }
+
+    case ECALL_TRANSLATE: {
+        // a0 = guest addr of input string
+        // a1 = type (0=spaces, 1=percent substitutions)
+        // a2 = guest addr of output buffer
+        uint64_t in_addr  = ctx->x[10];
+        int type           = static_cast<int>(ctx->x[11]);
+        uint64_t out_addr = ctx->x[12];
+        if (in_addr >= ec->memory_size || out_addr >= ec->memory_size - 64) {
+            ctx->x[10] = static_cast<uint64_t>(-1);
+            return -1;
+        }
+        const UTF8 *pIn = ec->memory + in_addr;
+        char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+
+        UTF8 *result = translate_string(pIn, type != 0);
+        size_t len = strlen(reinterpret_cast<const char *>(result));
+        if (len > 7999) len = 7999;
+        memcpy(out, result, len);
+        out[len] = '\0';
         ctx->x[10] = 0;
         return -1;
     }

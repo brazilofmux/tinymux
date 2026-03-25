@@ -34,11 +34,16 @@ ANSI color.  Evaluate whether `co_transform` covers this or whether a
 new `ECALL_TRANSLATE` calling the native `translate_string()` is
 cleaner.
 
-- [ ] Determine approach (co_* wrapper vs ECALL)
-- [ ] Implement
-- [ ] Add TRANSLATE to `s_allowlist[]`
-- [ ] Smoke clean
-- [ ] Remove dead `rv64_translate`
+- [x] Determined approach: ECALL to native `translate_string()` — the
+  function uses MUX color state machine, `MU_Substitutes` tables, and
+  percent-encoding logic that don't belong in the blob.
+- [x] Note: the old `rv64_translate` implemented 3-arg char mapping
+  (tr() semantics), not MUX translate() semantics.  Fixed to match
+  the actual 2-arg translate(string, type) interface.
+- [x] Added `ECALL_TRANSLATE` (0x162) with `ecall3` helper
+- [x] Add TRANSLATE to `s_allowlist[]`
+- [x] Smoke clean (666 tests) — 2026-03-25
+- [x] Old rv64_translate (wrong semantics) replaced
 
 ### M3. STRMATCH / MATCH / GRAB / GRABALL — Unicode case fold
 

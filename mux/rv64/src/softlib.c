@@ -312,6 +312,33 @@ size_t strlen(const char *s) {
 static int sitoa(char *buf, int val);
 static int satoi(const char *s);
 
+/* ECALL helpers — invoke host syscall from guest code.
+ * a7 = syscall number, a0..a2 = args.  Returns a0.
+ */
+static long ecall1(long num, long a0) {
+    register long x10 __asm__("a0") = a0;
+    register long x17 __asm__("a7") = num;
+    __asm__ volatile ("ecall" : "+r"(x10) : "r"(x17) : "memory");
+    return x10;
+}
+
+static long ecall2(long num, long a0, long a1) {
+    register long x10 __asm__("a0") = a0;
+    register long x11 __asm__("a1") = a1;
+    register long x17 __asm__("a7") = num;
+    __asm__ volatile ("ecall" : "+r"(x10) : "r"(x11), "r"(x17) : "memory");
+    return x10;
+}
+
+static long ecall3(long num, long a0, long a1, long a2) {
+    register long x10 __asm__("a0") = a0;
+    register long x11 __asm__("a1") = a1;
+    register long x12 __asm__("a2") = a2;
+    register long x17 __asm__("a7") = num;
+    __asm__ volatile ("ecall" : "+r"(x10) : "r"(x11), "r"(x12), "r"(x17) : "memory");
+    return x10;
+}
+
 /* ---------------------------------------------------------------
  * Tier 2 wrappers for co_* functions.
  *
@@ -924,35 +951,17 @@ char *rv64_elements(char *out, const char **fargs, int nfargs) {
     return out;
 }
 
-/* translate(string, from, to) — character-by-character mapping */
+/* translate(string, type) — control-char conversion via ECALL_TRANSLATE (0x162)
+ * type 's'/0 = control chars to spaces, 'p'/1 = percent substitutions.
+ */
 char *rv64_translate(char *out, const char **fargs, int nfargs) {
-    if (nfargs < 3) {
+    if (nfargs < 2) {
         if (nfargs >= 1) rv64_scopy(out, fargs[0]);
         else out[0] = '\0';
         return out;
     }
-    const unsigned char *from = (const unsigned char *)fargs[1];
-    const unsigned char *to   = (const unsigned char *)fargs[2];
-    size_t flen = rv64_slen(fargs[1]);
-    size_t tlen = rv64_slen(fargs[2]);
-    const unsigned char *sp = (const unsigned char *)fargs[0];
-    unsigned char *op = (unsigned char *)out;
-    unsigned char *end = op + 7999;
-    while (*sp && op < end) {
-        unsigned char c = *sp++;
-        /* Search for c in 'from'. */
-        int found = 0;
-        for (size_t i = 0; i < flen; i++) {
-            if (from[i] == c) {
-                /* Replace with corresponding 'to' char (or last if shorter). */
-                *op++ = (i < tlen) ? to[i] : to[tlen > 0 ? tlen - 1 : 0];
-                found = 1;
-                break;
-            }
-        }
-        if (!found) *op++ = c;
-    }
-    *op = '\0';
+    int type = (fargs[1][0] == 'p' || fargs[1][0] == '1') ? 1 : 0;
+    ecall3(0x162, (long)fargs[0], (long)type, (long)out);
     return out;
 }
 
@@ -1169,25 +1178,6 @@ char *rv64_isint(char *out, const char **fargs, int nfargs) {
     }
     out[0] = '1'; out[1] = '\0';
     return out;
-}
-
-/* chr(number) — ASCII/Unicode code point to character */
-/* ECALL helpers — invoke host syscall from guest code.
- * a7 = syscall number, a0..a1 = args.  Returns a0.
- */
-static long ecall1(long num, long a0) {
-    register long x10 __asm__("a0") = a0;
-    register long x17 __asm__("a7") = num;
-    __asm__ volatile ("ecall" : "+r"(x10) : "r"(x17) : "memory");
-    return x10;
-}
-
-static long ecall2(long num, long a0, long a1) {
-    register long x10 __asm__("a0") = a0;
-    register long x11 __asm__("a1") = a1;
-    register long x17 __asm__("a7") = num;
-    __asm__ volatile ("ecall" : "+r"(x10) : "r"(x11), "r"(x17) : "memory");
-    return x10;
 }
 
 /* chr(codepoints) — Unicode codepoints to UTF-8 via ECALL_CHR (0x160) */

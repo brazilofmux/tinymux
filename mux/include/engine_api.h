@@ -45,6 +45,7 @@ static constexpr uint64_t ECALL_GOOD_OBJ      = 0x150; // a0=dbref → a0=0/1
 // Unicode ECALLs — heavy-weight operations that use host tables.
 static constexpr uint64_t ECALL_CHR            = 0x160; // a0=input_addr, a1=output_addr → a0=0(ok)/-1(err)
 static constexpr uint64_t ECALL_ORD            = 0x161; // a0=input_addr, a1=output_addr → a0=0(ok)/-1(err)
+static constexpr uint64_t ECALL_TRANSLATE      = 0x162; // a0=input_addr, a1=type(0/1), a2=output_addr
 
 // Lua VM ECALLs — operations that call back into the Lua interpreter.
 // Require eval_ctx.lua_state != nullptr.
