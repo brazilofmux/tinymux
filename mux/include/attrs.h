@@ -201,12 +201,7 @@ constexpr int A_MODIFIED      = 219;     // Date/time last modified
 constexpr int A_VRML_URL  = 220; /* URL of the VRML scene for this object */
 constexpr int A_HTDESC    = 221; /* HTML @desc */
 
-// Added by D.Piper (del@doofer.org) 2000-APR
-//
 constexpr int A_REASON    = 222; // Disconnect reason
-#ifdef GAME_DOOFERMUX
-constexpr int A_REGINFO   = 223; // Registration Information
-#endif // GAME_DOOFERMUX
 constexpr int A_CONNINFO  = 224; // Connection info: (total connected time,
                         // longest connection last connection, total
                         // connections, time of logout.

@@ -369,24 +369,6 @@ static void log_signal_ignore(int iSignal)
     ENDLOG;
 }
 
-void LogStatBuf(int stat_buf, const char *Name)
-{
-    STARTLOG(LOG_ALWAYS, "NET", Name);
-    if (WIFEXITED(stat_buf))
-    {
-        g_pILog->WriteString(tprintf(T("process exited unexpectedly with exit status %d."), WEXITSTATUS(stat_buf)));
-    }
-    else if (WIFSIGNALED(stat_buf))
-    {
-        g_pILog->WriteString(tprintf(T("process was terminated with signal %s."), signal_desc(WTERMSIG(stat_buf))));
-    }
-    else
-    {
-        g_pILog->log_text(T("process ended unexpectedly."));
-    }
-    ENDLOG;
-}
-
 #endif  // UNIX_SIGNALS
 
 static void DCL_CDECL sighandler(int sig)

@@ -1024,11 +1024,6 @@ void do_pcreate
         log_text(T(" created by "));
         log_name(executor);
         ENDLOG;
-#ifdef GAME_DOOFERMUX
-        // Added by D.Piper (del@doofer.org) 2000-APR
-        //
-        atr_add_raw(newplayer, A_REGINFO, "*Requires Registration*");
-#endif
     }
 }
 
