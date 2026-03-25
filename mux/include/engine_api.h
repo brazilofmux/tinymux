@@ -46,6 +46,7 @@ static constexpr uint64_t ECALL_GOOD_OBJ      = 0x150; // a0=dbref → a0=0/1
 static constexpr uint64_t ECALL_CHR            = 0x160; // a0=input_addr, a1=output_addr → a0=0(ok)/-1(err)
 static constexpr uint64_t ECALL_ORD            = 0x161; // a0=input_addr, a1=output_addr → a0=0(ok)/-1(err)
 static constexpr uint64_t ECALL_TRANSLATE      = 0x162; // a0=input_addr, a1=type(0/1), a2=output_addr
+static constexpr uint64_t ECALL_QUICK_WILD     = 0x163; // a0=pattern_addr, a1=data_addr → a0=0/1
 
 // Lua VM ECALLs — operations that call back into the Lua interpreter.
 // Require eval_ctx.lua_state != nullptr.

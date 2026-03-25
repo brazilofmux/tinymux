@@ -210,10 +210,10 @@ static bool tier2_allowed(const std::string &mux_name) {
         "CHR", "ORD",
         "SECURE", "SQUISH",
         "TRANSLATE",
+        "STRMATCH", "MATCH", "GRAB", "GRABALL",
 
         // Blocked — diverge from server:
         //   SORT       Shellsort vs DUCET collation
-        //   STRMATCH/MATCH/GRAB/GRABALL  ASCII tolower vs Unicode case fold
 
         nullptr
     };
@@ -2667,6 +2667,24 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         memcpy(out, result, len);
         out[len] = '\0';
         ctx->x[10] = 0;
+        return -1;
+    }
+
+    case ECALL_QUICK_WILD: {
+        // a0 = guest addr of pattern, a1 = guest addr of data string
+        // Returns a0 = 1 on match, 0 on no match.
+        // Uses quick_wild() which pre-lowercases the pattern with
+        // mux_strlwr() for Unicode-aware case-insensitive matching.
+        uint64_t pat_addr  = ctx->x[10];
+        uint64_t data_addr = ctx->x[11];
+        if (pat_addr >= ec->memory_size || data_addr >= ec->memory_size) {
+            ctx->x[10] = 0;
+            return -1;
+        }
+        const UTF8 *pat  = ec->memory + pat_addr;
+        const UTF8 *data = ec->memory + data_addr;
+        mudstate.wild_invk_ctr = 0;
+        ctx->x[10] = quick_wild(pat, data) ? 1 : 0;
         return -1;
     }
 

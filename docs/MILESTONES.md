@@ -52,11 +52,12 @@ matching.  The rv64 versions use ASCII `tolower`.  Two options:
 (a) ECALL for `mux_strlwr` and keep wildcard matching in guest code,
 or (b) ECALL the entire match operation.
 
-- [ ] Determine approach
-- [ ] Implement (4 functions share one wildcard engine)
-- [ ] Add STRMATCH, MATCH, GRAB, GRABALL to `s_allowlist[]`
-- [ ] Smoke clean
-- [ ] Remove dead `rv64_strmatch`, `rv64_match`, `rv64_grab`, `rv64_graball`
+- [x] Approach: ECALL_QUICK_WILD (0x163) calls host `quick_wild()` which
+  uses `mux_strlwr()` for Unicode case folding.  List tokenization stays
+  in guest code; only the pattern match crosses the ECALL boundary.
+- [x] Implement (4 functions, removed `wc_lower`/`wild_match` from blob)
+- [x] Add STRMATCH, MATCH, GRAB, GRABALL to `s_allowlist[]`
+- [x] Smoke clean (666 tests) — 2026-03-25
 
 ### M4. SORT — DUCET collation
 

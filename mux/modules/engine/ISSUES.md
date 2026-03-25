@@ -23,11 +23,11 @@ re-entrancy risk, keeping surrounding code in the JIT.
 
 **Remaining blocked (diverge from server):**
 - `SORT` — Shellsort vs DUCET collation
-- `STRMATCH/MATCH/GRAB/GRABALL` — ASCII tolower vs Unicode case fold
 
 **Recently unblocked:** SECURE (→ `co_secure_wrap` via `co_transform`),
-SQUISH (→ `co_compress_wrap`), TRANSLATE (→ `ECALL_TRANSLATE` calling
-native `translate_string()` — old rv64 had wrong semantics).
+SQUISH (→ `co_compress_wrap`), TRANSLATE (→ `ECALL_TRANSLATE`),
+STRMATCH/MATCH/GRAB/GRABALL (→ `ECALL_QUICK_WILD` calling native
+`quick_wild()` with `mux_strlwr` Unicode case folding).
 
 ### 2. Phase 3: Concurrent Softcode Evaluation
 
