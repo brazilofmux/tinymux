@@ -915,8 +915,16 @@ class HydraConnection {
         const ws = new WebSocket(this._wsBaseUrl, ['hydra-gamesession']);
         ws.binaryType = 'arraybuffer';
         this._ws = ws;
+        let wsOpened = false;
+
+        const fallbackToSubscribe = () => {
+            if (!this.connected || !this.sessionId || this._subscribeAbort) return;
+            this._emit('% [Hydra] WebSocket unavailable, falling back to gRPC-Web stream.');
+            this._startSubscribe().catch(() => {});
+        };
 
         ws.onopen = () => {
+            wsOpened = true;
             // First message: SetPreferences with session_id for auth
             const msg = Proto.encode({
                 preferences: {
@@ -949,6 +957,10 @@ class HydraConnection {
         ws.onclose = () => {
             this._ws = null;
             this._wsAuthenticated = false;
+            if (this.connected && !wsOpened) {
+                fallbackToSubscribe();
+                return;
+            }
             if (this.connected && !this._reconnecting) {
                 this._attemptReconnect();
             }

@@ -2528,7 +2528,13 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             }
             uint64_t uv = 0;
             while (mux_isdigit(*pArg)) {
-                uv = 10ULL * uv + (*pArg - '0');
+                const uint64_t digit = static_cast<uint64_t>(*pArg - '0');
+                if (uv > (UINT64_MAX - digit) / 10ULL) {
+                    memcpy(out, "#-1 ARGUMENT OUT OF RANGE", 26);
+                    ctx->x[10] = static_cast<uint64_t>(-1);
+                    return -1;
+                }
+                uv = 10ULL * uv + digit;
                 pArg++;
             }
             if ('\0' != *pArg && !mux_isspace(*pArg)) {
@@ -2619,6 +2625,9 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 ctx->x[10] = static_cast<uint64_t>(-1);
                 return -1;
             }
+            memcpy(out, "#-1 STRING IS INVALID", 22);
+            ctx->x[10] = static_cast<uint64_t>(-1);
+            return -1;
         }
 
         // Decode codepoints.

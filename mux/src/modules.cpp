@@ -1275,15 +1275,129 @@ MUX_RESULT CPlatform::UnregisterSignalHandler(void)
 MUX_RESULT CPlatform::BootHelperProcess(
     const UTF8 *path, int *pReadFd, int *pWriteFd, int *pChildPid)
 {
+#if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
+    if (nullptr == path || '\0' == *path)
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    if (pReadFd)
+    {
+        *pReadFd = -1;
+    }
+    if (pWriteFd)
+    {
+        *pWriteFd = -1;
+    }
+    if (pChildPid)
+    {
+        *pChildPid = 0;
+    }
+
+    const char *pFailedFunc = nullptr;
+    int sv[2] = {-1, -1};
+    pid_t childPid = 0;
+    int maxfds = 256;
+
+#ifdef HAVE_GETDTABLESIZE
+    maxfds = getdtablesize();
+#else
+    maxfds = sysconf(_SC_OPEN_MAX);
+#endif
+    if (maxfds < 3)
+    {
+        maxfds = 256;
+    }
+
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0)
+    {
+        pFailedFunc = "socketpair() error: ";
+        goto failure;
+    }
+
+    {
+        int flags = fcntl(sv[0], F_GETFL, 0);
+        if (flags < 0 || fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) < 0)
+        {
+            pFailedFunc = "fcntl(O_NONBLOCK) error: ";
+            goto failure;
+        }
+    }
+
+    childPid = fork();
+    switch (childPid)
+    {
+    case -1:
+        pFailedFunc = "fork() error: ";
+        goto failure;
+
+    case 0:
+        alarm_clock.clear();
+        mux_close(sv[0]);
+        if (sv[1] != 0)
+        {
+            mux_close(0);
+            if (dup2(sv[1], 0) == -1)
+            {
+                _exit(1);
+            }
+        }
+        if (sv[1] != 1)
+        {
+            mux_close(1);
+            if (dup2(sv[1], 1) == -1)
+            {
+                _exit(1);
+            }
+        }
+        for (int i = 3; i < maxfds; i++)
+        {
+            mux_close(i);
+        }
+        execlp(reinterpret_cast<const char *>(path),
+               "stubslave",
+               static_cast<char *>(nullptr));
+        _exit(1);
+    }
+
+    mux_close(sv[1]);
+    if (pReadFd)
+    {
+        *pReadFd = sv[0];
+    }
+    if (pWriteFd)
+    {
+        *pWriteFd = sv[0];
+    }
+    if (pChildPid)
+    {
+        *pChildPid = static_cast<int>(childPid);
+    }
+    return MUX_S_OK;
+
+failure:
+    if (sv[0] >= 0)
+    {
+        mux_close(sv[0]);
+    }
+    if (sv[1] >= 0)
+    {
+        mux_close(sv[1]);
+    }
+    if (childPid > 0)
+    {
+        waitpid(childPid, nullptr, 0);
+    }
+    STARTLOG(LOG_ALWAYS, "NET", "STUB");
+    g_pILog->log_text(T(pFailedFunc ? pFailedFunc : "BootHelperProcess() error: "));
+    g_pILog->log_number(errno);
+    ENDLOG;
+    return MUX_E_FAIL;
+#else
     UNUSED_PARAMETER(path);
     UNUSED_PARAMETER(pReadFd);
     UNUSED_PARAMETER(pWriteFd);
     UNUSED_PARAMETER(pChildPid);
-
-#if defined(HAVE_WORKING_FORK)
-    // Unix implementation would go here (moved from ganl_adapter.cpp).
-    return MUX_E_NOTIMPLEMENTED;
-#else
     return MUX_E_NOTIMPLEMENTED;
 #endif
 }
