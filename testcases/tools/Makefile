@@ -31,5 +31,16 @@ all: $(TOOLS)
 %: %.c
 	$(CC) $(CFLAGS) -o $@ $<
 
+MUX_LIB  = ../../mux/lib
+MUX_INC  = ../../mux/include
+ICU_LIBS = $(shell pkg-config --libs icu-uc icu-i18n 2>/dev/null || echo "-licui18n -licuuc -licudata")
+
+test_unicode_icu: test_unicode_icu.cpp
+	g++ -std=c++17 -O2 -I$(MUX_INC) -o $@ $< -L$(MUX_LIB) -Wl,-rpath,$(MUX_LIB) -lmux $(ICU_LIBS) -lm
+
+.PHONY: test_icu
+test_icu: test_unicode_icu
+	./test_unicode_icu
+
 clean:
-	rm -f $(TOOLS)
+	rm -f $(TOOLS) test_unicode_icu
