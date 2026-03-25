@@ -39,6 +39,13 @@ static constexpr uint64_t ECALL_DMA_ACK       = 0x121; // -> a0=window (next fre
 static constexpr uint64_t ECALL_FTOA          = 0x140; // a0=double bits, a1=output addr
 static constexpr uint64_t ECALL_ATOF          = 0x141; // a0=string addr → fa0=double
 
+// Database query ECALLs — leaf lookups, no softcode evaluation.
+static constexpr uint64_t ECALL_GOOD_OBJ      = 0x150; // a0=dbref → a0=0/1
+
+// Unicode ECALLs — heavy-weight operations that use host tables.
+static constexpr uint64_t ECALL_CHR            = 0x160; // a0=input_addr, a1=output_addr → a0=0(ok)/-1(err)
+static constexpr uint64_t ECALL_ORD            = 0x161; // a0=input_addr, a1=output_addr → a0=0(ok)/-1(err)
+
 // Lua VM ECALLs — operations that call back into the Lua interpreter.
 // Require eval_ctx.lua_state != nullptr.
 //

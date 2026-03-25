@@ -15,7 +15,12 @@ STRIP   = ../src/tools/rv64strip
 
 OBJS    = src/softlib.o src/color_ops.o src/unicode_tables.o
 
+INSTALL_DIR = ../game/bin
+
 all: softlib.rv64
+
+install: softlib.rv64
+	cp softlib.rv64 $(INSTALL_DIR)/softlib.rv64
 
 # Build rv64strip if needed.
 $(STRIP): ../src/tools/rv64strip.cpp rv64blob.h

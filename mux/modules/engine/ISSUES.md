@@ -8,18 +8,21 @@ These issues are based on the findings in `docs/JIT-PERF-INVESTIGATION.md`.
 
 Move more frequently used builtin functions into pre-compiled RV64 guest code blobs to eliminate ECALL overhead.
 
-**Completed:** 17 functions unblocked (BEFORE, AFTER, DELETE, ELEMENTS,
+**Completed:** 20 functions unblocked (BEFORE, AFTER, DELETE, ELEMENTS,
 WORDPOS, REMOVE, REVWORDS, LNUM, LADD, LMAX, LMIN, LAND, LOR,
-ISNUM, ISINT, DEC2HEX, HEX2DEC) — parity-tested via smoke suite.
+ISNUM, ISINT, DEC2HEX, HEX2DEC, ISDBREF, CHR, ORD) — parity-tested
+via smoke suite.
 
 **Note:** `time()`, `secs()`, `get()`, `xget()`, `name()`, `owner()`,
 `flags()` cannot be Tier 2 — they require database access or engine
 state. `member()`, `words()`, `extract()` were already Tier 2.
+`ISDBREF` uses `ECALL_GOOD_OBJ` for database validation; `CHR`/`ORD`
+use `ECALL_CHR`/`ECALL_ORD` for Unicode encoding + NFC normalization
+and grapheme cluster extraction. All are leaf lookups with no
+re-entrancy risk, keeping surrounding code in the JIT.
 
 **Remaining blocked (diverge from server):**
-- `ISDBREF` — format-only check vs database lookup (requires Good_obj)
 - `SORT` — Shellsort vs DUCET collation
-- `CHR/ORD` — ASCII-only vs Unicode/grapheme-aware
 - `SECURE/SQUISH/TRANSLATE` — byte-level vs Unicode
 - `STRMATCH/MATCH/GRAB/GRABALL` — may diverge on Unicode
 

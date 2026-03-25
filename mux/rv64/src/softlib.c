@@ -1198,19 +1198,44 @@ char *rv64_isint(char *out, const char **fargs, int nfargs) {
 }
 
 /* chr(number) — ASCII/Unicode code point to character */
+/* ECALL helpers — invoke host syscall from guest code.
+ * a7 = syscall number, a0..a1 = args.  Returns a0.
+ */
+static long ecall1(long num, long a0) {
+    register long x10 __asm__("a0") = a0;
+    register long x17 __asm__("a7") = num;
+    __asm__ volatile ("ecall" : "+r"(x10) : "r"(x17) : "memory");
+    return x10;
+}
+
+static long ecall2(long num, long a0, long a1) {
+    register long x10 __asm__("a0") = a0;
+    register long x11 __asm__("a1") = a1;
+    register long x17 __asm__("a7") = num;
+    __asm__ volatile ("ecall" : "+r"(x10) : "r"(x11), "r"(x17) : "memory");
+    return x10;
+}
+
+/* chr(codepoints) — Unicode codepoints to UTF-8 via ECALL_CHR (0x160) */
 char *rv64_chr(char *out, const char **fargs, int nfargs) {
     if (nfargs < 1) { out[0] = '\0'; return out; }
-    int val = satoi(fargs[0]);
-    if (val < 1 || val > 127) { out[0] = '\0'; return out; }
-    out[0] = (char)val;
-    out[1] = '\0';
+    long rc = ecall2(0x160, (long)fargs[0], (long)out);
+    if (rc != 0) {
+        /* Error message already in out from the ECALL handler. */
+    }
     return out;
 }
 
-/* ord(string) — first character to ASCII code */
+/* ord(string) — first grapheme cluster to codepoints via ECALL_ORD (0x161) */
 char *rv64_ord(char *out, const char **fargs, int nfargs) {
-    if (nfargs < 1 || fargs[0][0] == '\0') { out[0] = '\0'; return out; }
-    sitoa(out, (int)(unsigned char)fargs[0][0]);
+    if (nfargs < 1 || fargs[0][0] == '\0') {
+        rv64_scopy(out, "#-1 FUNCTION EXPECTS ONE CHARACTER");
+        return out;
+    }
+    long rc = ecall2(0x161, (long)fargs[0], (long)out);
+    if (rc != 0) {
+        /* Error message already in out from the ECALL handler. */
+    }
     return out;
 }
 
@@ -1498,19 +1523,29 @@ char *rv64_revwords(char *out, const char **fargs, int nfargs) {
     return out;
 }
 
-/* isdbref(string) — is it a valid dbref format (#NNN)? */
+/* isdbref(string) — parse #<digits>, validate via ECALL_GOOD_OBJ */
 char *rv64_isdbref(char *out, const char **fargs, int nfargs) {
-    if (nfargs < 1 || fargs[0][0] != '#') { out[0] = '0'; out[1] = '\0'; return out; }
-    const char *p = fargs[0] + 1;
-    if (*p == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
-    /* Allow negative dbrefs (#-1). */
-    if (*p == '-') p++;
-    if (*p == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
-    while (*p) {
-        if (*p < '0' || *p > '9') { out[0] = '0'; out[1] = '\0'; return out; }
+    if (nfargs < 1) { out[0] = '0'; out[1] = '\0'; return out; }
+    const char *p = fargs[0];
+    /* Skip leading spaces. */
+    while (*p == ' ') p++;
+    if (*p != '#') { out[0] = '0'; out[1] = '\0'; return out; }
+    p++;
+    /* Must start with a digit (no negative dbrefs). */
+    if (*p < '0' || *p > '9') { out[0] = '0'; out[1] = '\0'; return out; }
+    /* Parse integer. */
+    long val = 0;
+    while (*p >= '0' && *p <= '9') {
+        val = val * 10 + (*p - '0');
         p++;
     }
-    out[0] = '1'; out[1] = '\0';
+    /* Skip trailing spaces. */
+    while (*p == ' ') p++;
+    if (*p != '\0') { out[0] = '0'; out[1] = '\0'; return out; }
+    /* ECALL_GOOD_OBJ = 0x150 */
+    long ok = ecall1(0x150, val);
+    out[0] = ok ? '1' : '0';
+    out[1] = '\0';
     return out;
 }
 

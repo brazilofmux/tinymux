@@ -206,11 +206,11 @@ static bool tier2_allowed(const std::string &mux_name) {
         "LADD", "LMAX", "LMIN", "LAND", "LOR",
         "ISNUM", "ISINT",
         "DEC2HEX", "HEX2DEC",
+        "ISDBREF",
+        "CHR", "ORD",
 
         // Blocked — rv64_* diverges from server:
-        //   ISDBREF    format-only check vs database lookup
         //   SORT       Shellsort vs DUCET collation
-        //   CHR/ORD       ASCII-only vs Unicode/grapheme-aware
         //   SECURE/SQUISH/TRANSLATE  byte-level vs Unicode
         //   STRMATCH/MATCH/GRAB/GRABALL  may diverge on Unicode
 
@@ -2484,6 +2484,165 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             val = mux_atof(reinterpret_cast<const UTF8 *>(s));
         }
         memcpy(&ctx->f[10], &val, 8);
+        return -1;
+    }
+
+    case ECALL_GOOD_OBJ: {
+        // a0 = dbref integer → a0 = 1 if Good_obj, 0 otherwise.
+        // This is a leaf database lookup — no softcode evaluation,
+        // no re-entrancy risk.
+        dbref obj = static_cast<dbref>(ctx->x[10]);
+        ctx->x[10] = Good_obj(obj) ? 1 : 0;
+        return -1;
+    }
+
+    case ECALL_CHR: {
+        // a0 = guest addr of input string (space-separated codepoints)
+        // a1 = guest addr of output buffer
+        // Returns a0 = 0 on success, -1 on error (output holds error msg).
+        uint64_t in_addr  = ctx->x[10];
+        uint64_t out_addr = ctx->x[11];
+        if (in_addr >= ec->memory_size || out_addr >= ec->memory_size - 64) {
+            ctx->x[10] = static_cast<uint64_t>(-1);
+            return -1;
+        }
+        const UTF8 *pArg = ec->memory + in_addr;
+        char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+        size_t out_max = 7999;
+
+        // Build raw UTF-8 from space-separated codepoints.
+        LBuf raw = LBuf_Src("ecall.chr");
+        UTF8 *pRaw = raw;
+        const UTF8 *pEnd = raw.get() + LBUF_SIZE - 5;
+        bool bAny = false;
+
+        while ('\0' != *pArg) {
+            while (mux_isspace(*pArg)) pArg++;
+            if ('\0' == *pArg) break;
+
+            bool bNeg = ('-' == *pArg);
+            if ('-' == *pArg || '+' == *pArg) pArg++;
+            if (!mux_isdigit(*pArg)) {
+                memcpy(out, "#-1 ARGUMENT MUST BE A NUMBER", 30);
+                ctx->x[10] = static_cast<uint64_t>(-1);
+                return -1;
+            }
+            uint64_t uv = 0;
+            while (mux_isdigit(*pArg)) {
+                uv = 10ULL * uv + (*pArg - '0');
+                pArg++;
+            }
+            if ('\0' != *pArg && !mux_isspace(*pArg)) {
+                memcpy(out, "#-1 ARGUMENT MUST BE A NUMBER", 30);
+                ctx->x[10] = static_cast<uint64_t>(-1);
+                return -1;
+            }
+            int64_t iv = bNeg ? -static_cast<int64_t>(uv) : static_cast<int64_t>(uv);
+            if (iv < 0 || iv > static_cast<int64_t>(UNI_MAX_LEGAL_UTF32)
+                || (static_cast<UTF32>(iv) >= UNI_SUR_HIGH_START
+                    && static_cast<UTF32>(iv) <= UNI_SUR_LOW_END)) {
+                memcpy(out, "#-1 ARGUMENT OUT OF RANGE", 26);
+                ctx->x[10] = static_cast<uint64_t>(-1);
+                return -1;
+            }
+            UTF32 ch = static_cast<UTF32>(iv);
+            UTF8 *p = ConvertToUTF8(ch);
+            if (!mux_isprint(p)) {
+                memcpy(out, "#-1 UNPRINTABLE CHARACTER", 26);
+                ctx->x[10] = static_cast<uint64_t>(-1);
+                return -1;
+            }
+            size_t nb = strlen(reinterpret_cast<const char *>(p));
+            if (pRaw + nb <= pEnd) {
+                memcpy(pRaw, p, nb);
+                pRaw += nb;
+            }
+            bAny = true;
+        }
+        *pRaw = '\0';
+
+        if (!bAny) {
+            memcpy(out, "#-1 ARGUMENT MUST BE A NUMBER", 30);
+            ctx->x[10] = static_cast<uint64_t>(-1);
+            return -1;
+        }
+
+        // NFC normalize.
+        size_t nRaw = pRaw - raw;
+        LBuf nfc = LBuf_Src("ecall.chr.nfc");
+        size_t nNfc;
+        utf8_normalize_nfc(raw, nRaw, nfc, LBUF_SIZE - 1, &nNfc);
+        nfc[nNfc] = '\0';
+
+        if (nNfc > out_max) nNfc = out_max;
+        memcpy(out, nfc, nNfc);
+        out[nNfc] = '\0';
+        ctx->x[10] = 0;
+        return -1;
+    }
+
+    case ECALL_ORD: {
+        // a0 = guest addr of input string
+        // a1 = guest addr of output buffer
+        // Returns a0 = 0 on success, -1 on error.
+        uint64_t in_addr  = ctx->x[10];
+        uint64_t out_addr = ctx->x[11];
+        if (in_addr >= ec->memory_size || out_addr >= ec->memory_size - 64) {
+            ctx->x[10] = static_cast<uint64_t>(-1);
+            return -1;
+        }
+        const UTF8 *pIn = ec->memory + in_addr;
+        char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+
+        // Strip color.
+        size_t nBytes = 0;
+        UTF8 *p = strip_color(pIn, &nBytes, nullptr);
+        if (0 == nBytes) {
+            memcpy(out, "#-1 FUNCTION EXPECTS ONE CHARACTER", 35);
+            ctx->x[10] = static_cast<uint64_t>(-1);
+            return -1;
+        }
+
+        // First grapheme cluster.
+        mux_cursor cluster = utf8_next_grapheme(p, nBytes);
+        if (0 == cluster.m_byte) {
+            memcpy(out, "#-1 STRING IS INVALID", 22);
+            ctx->x[10] = static_cast<uint64_t>(-1);
+            return -1;
+        }
+
+        // Exactly one cluster.
+        if (cluster.m_byte < nBytes) {
+            mux_cursor second = utf8_next_grapheme(p + cluster.m_byte,
+                                                    nBytes - cluster.m_byte);
+            if (0 < second.m_byte) {
+                memcpy(out, "#-1 FUNCTION EXPECTS ONE CHARACTER", 35);
+                ctx->x[10] = static_cast<uint64_t>(-1);
+                return -1;
+            }
+        }
+
+        // Decode codepoints.
+        char *op = out;
+        const UTF8 *q = p;
+        const UTF8 *qEnd = p + cluster.m_byte;
+        bool bFirst = true;
+        while (q < qEnd) {
+            UTF32 ch = ConvertFromUTF8(q);
+            if (UNI_EOF == ch) {
+                memcpy(out, "#-1 STRING IS INVALID", 22);
+                ctx->x[10] = static_cast<uint64_t>(-1);
+                return -1;
+            }
+            if (!bFirst) *op++ = ' ';
+            op += sprintf(op, "%ld", static_cast<long>(ch));
+            bFirst = false;
+            size_t nAdv = utf8_FirstByte[static_cast<unsigned char>(*q)];
+            if (nAdv < 1 || nAdv >= UTF8_CONTINUE) nAdv = 1;
+            q += nAdv;
+        }
+        *op = '\0';
+        ctx->x[10] = 0;
         return -1;
     }
 
