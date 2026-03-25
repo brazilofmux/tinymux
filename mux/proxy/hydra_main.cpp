@@ -426,6 +426,7 @@ int main(int argc, char* argv[]) {
         }
 
         sessionMgr.runTimers();
+        sessionMgr.drainWsGameSessions();
 
 #ifdef GRPC_ENABLED
         // Process work items posted by gRPC threads

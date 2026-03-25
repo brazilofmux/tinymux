@@ -258,6 +258,7 @@ public:
                          std::shared_ptr<HydraSession::SubscriberQueue> sq);
 
     void runTimers();
+    void drainWsGameSessions();
     void shutdownSessions();
     void dumpStatus() const;
 
@@ -310,6 +311,8 @@ private:
                        ganl::ConnectionHandle fdHandle,
                        const std::string& line);
     void handleGrpcWebRequest(FrontDoorState& fd);
+    void handleWsGameSessionData(FrontDoorState& fd,
+                                  const char* data, size_t len);
 
     // Parse links_json and reconstruct BackDoorLink objects + activeLink.
     struct SavedLinkInfo {

@@ -8,6 +8,7 @@
 #include "grpc_web.h"
 #include "hydra.pb.h"
 #endif
+#include <chrono>
 #include <cstring>
 #include <algorithm>
 
@@ -377,7 +378,7 @@ void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
 
     FrontDoorState& fd = it->second;
 
-    // ---- WebSocket path ----
+    // ---- WebSocket path (also handles WsGameSession during handshake) ----
     if (fd.proto == FrontDoorProto::WebSocket) {
         if (!fd.wsState.handshakeComplete) {
             // Still in HTTP upgrade handshake
@@ -391,6 +392,23 @@ void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
                     engine_.closeConnection(handle);
                     return;
                 }
+
+                // Check if this is a GameSession WebSocket (hydra-gamesession subprotocol)
+#ifdef GRPC_ENABLED
+                if (fd.wsState.isGameSession) {
+                    fd.proto = FrontDoorProto::WsGameSession;
+                    LOG_INFO("WebSocket GameSession handshake complete for fd %lu",
+                             (unsigned long)handle);
+                    // No banner, no session.frontDoors — wait for first-message auth.
+                    // Process any trailing data as WsGameSession frames.
+                    if (!fd.wsState.handshakeBuf.empty()) {
+                        std::string trailing = fd.wsState.handshakeBuf;
+                        fd.wsState.handshakeBuf.clear();
+                        handleWsGameSessionData(fd, trailing.data(), trailing.size());
+                    }
+                    return;
+                }
+#endif
 
                 LOG_INFO("WebSocket handshake complete for fd %lu",
                          (unsigned long)handle);
@@ -463,6 +481,14 @@ void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
         return;
     }
 
+    // ---- WebSocket GameSession path ----
+#ifdef GRPC_ENABLED
+    if (fd.proto == FrontDoorProto::WsGameSession) {
+        handleWsGameSessionData(fd, data, len);
+        return;
+    }
+#endif
+
     // ---- gRPC-Web path ----
 #ifdef GRPC_ENABLED
     if (fd.proto == FrontDoorProto::GrpcWeb) {
@@ -530,6 +556,16 @@ void SessionManager::onFrontDoorClose(ganl::ConnectionHandle handle) {
     HydraSessionId sid = fd.internalSessionId;
     std::string ip = fd.clientIp;
 
+#ifdef GRPC_ENABLED
+    // WsGameSession: unsubscribe from output queue (not in session.frontDoors)
+    if (fd.proto == FrontDoorProto::WsGameSession && fd.wsGameSessionOQ) {
+        std::lock_guard<std::mutex> lock(fd.wsGameSessionOQ->mutex);
+        fd.wsGameSessionOQ->removeSubscriber(fd.wsGameSessionSubId);
+        LOG_INFO("WsGameSession fd %lu: unsubscribed (sub %d)",
+                 (unsigned long)handle, fd.wsGameSessionSubId);
+    }
+#endif
+
     frontDoors_.erase(it);
     recordDisconnect(ip);
 
@@ -541,8 +577,8 @@ void SessionManager::onFrontDoorClose(ganl::ConnectionHandle handle) {
             fds.erase(std::remove(fds.begin(), fds.end(), handle),
                       fds.end());
 
-            if (fds.empty()) {
-                LOG_INFO("Session %lu: all front-doors gone, detaching",
+            if (fds.empty() && !session.outputQueue->hasSubscribers()) {
+                LOG_INFO("Session %lu: no front-doors or subscribers, detaching",
                          (unsigned long)sid);
                 session.state = SessionState::Detached;
                 flushSession(session);
@@ -552,6 +588,221 @@ void SessionManager::onFrontDoorClose(ganl::ConnectionHandle handle) {
 
     LOG_INFO("Front-door %lu closed", (unsigned long)handle);
 }
+
+#ifdef GRPC_ENABLED
+void SessionManager::handleWsGameSessionData(FrontDoorState& fd,
+                                              const char* data, size_t len) {
+    // Decode WebSocket frames
+    std::string responses;
+    auto msgs = wsDecodeFrames(fd.wsState, data, len, responses);
+    if (!responses.empty()) {
+        safeWrite(fd.handle, responses);
+    }
+
+    for (const auto& msg : msgs) {
+        if (msg.opcode == WS_OP_CLOSE) {
+            engine_.closeConnection(fd.handle);
+            return;
+        }
+        if (msg.opcode != WS_OP_BINARY) continue;
+
+        hydra::ClientMessage cmsg;
+        if (!cmsg.ParseFromString(msg.payload)) {
+            LOG_WARN("WsGameSession fd %lu: invalid ClientMessage",
+                     (unsigned long)fd.handle);
+            continue;
+        }
+
+        // First-message auth: expect SetPreferences with session_id
+        if (!fd.wsGameSessionOQ) {
+            if (!cmsg.has_preferences() ||
+                cmsg.preferences().session_id().empty()) {
+                // Send error and close
+                hydra::ServerMessage errMsg;
+                auto* notice = errMsg.mutable_system_notice();
+                notice->set_text("First message must be SetPreferences with session_id");
+                notice->set_severity(hydra::SEVERITY_ERROR);
+                std::string frame = wsEncodeFrame(errMsg.SerializeAsString(),
+                                                  WS_OP_BINARY);
+                safeWrite(fd.handle, frame);
+                safeWrite(fd.handle, wsCloseFrame(1008));
+                engine_.closeConnection(fd.handle);
+                return;
+            }
+
+            const auto& prefs = cmsg.preferences();
+            std::string sid = prefs.session_id();
+
+            HydraSession* session = findByPersistId(sid);
+            if (!session) {
+                hydra::ServerMessage errMsg;
+                auto* notice = errMsg.mutable_system_notice();
+                notice->set_text("Invalid session_id");
+                notice->set_severity(hydra::SEVERITY_ERROR);
+                std::string frame = wsEncodeFrame(errMsg.SerializeAsString(),
+                                                  WS_OP_BINARY);
+                safeWrite(fd.handle, frame);
+                safeWrite(fd.handle, wsCloseFrame(1008));
+                engine_.closeConnection(fd.handle);
+                return;
+            }
+
+            // Register subscriber
+            {
+                std::lock_guard<std::mutex> lock(session->outputQueue->mutex);
+                auto [id, sq] = session->outputQueue->addSubscriber(true, true);
+                fd.wsGameSessionSubId = id;
+                fd.wsGameSessionQueue = sq;
+            }
+            fd.wsGameSessionOQ = session->outputQueue;
+            fd.wsGameSessionPersistId = sid;
+            fd.internalSessionId = session->internalId;
+
+            session->state = SessionState::Active;
+            session->lastActivity = time(nullptr);
+
+            // Replay GMCP cache
+            replayGmcpCache(*session, fd.wsGameSessionQueue);
+
+            // Apply preferences (color format, NAWS, ttype)
+            if (prefs.color_format() != hydra::COLOR_UNSPECIFIED) {
+                std::lock_guard<std::mutex> lock(fd.wsGameSessionOQ->mutex);
+                fd.wsGameSessionQueue->renderFormat =
+                    static_cast<HydraSession::RenderFormat>(prefs.color_format());
+            }
+            if (prefs.terminal_width() > 0 || prefs.terminal_height() > 0) {
+                BackDoorLink* active = session->getActiveLink();
+                if (active && active->handle != ganl::InvalidConnectionHandle) {
+                    uint16_t w = prefs.terminal_width() ? static_cast<uint16_t>(prefs.terminal_width()) : 80;
+                    uint16_t h = prefs.terminal_height() ? static_cast<uint16_t>(prefs.terminal_height()) : 24;
+                    safeWrite(active->handle, buildNawsFrame(w, h));
+                }
+            }
+            if (!prefs.terminal_type().empty()) {
+                session->terminalType = prefs.terminal_type();
+            }
+
+            LOG_INFO("WsGameSession fd %lu: authenticated session %s (sub %d)",
+                     (unsigned long)fd.handle, sid.c_str(), fd.wsGameSessionSubId);
+            return;
+        }
+
+        // Authenticated — dispatch ClientMessage
+        HydraSession* session = findByPersistId(fd.wsGameSessionPersistId);
+        if (!session) continue;
+
+        session->lastActivity = time(nullptr);
+
+        if (cmsg.has_input_line()) {
+            BackDoorLink* active = session->getActiveLink();
+            if (active && active->state == LinkState::Active) {
+                std::string line = cmsg.input_line() + "\r\n";
+                safeWrite(active->handle, line);
+            }
+        } else if (cmsg.has_ping()) {
+            // Queue pong sentinel for the drain loop
+            HydraSession::OutputItem pongItem;
+            pongItem.puaText = "\x01PONG\x01" +
+                std::to_string(cmsg.ping().client_timestamp());
+            pongItem.source = "__pong__";
+            pongItem.timestamp = 0;
+            pongItem.linkNumber = 0;
+            {
+                std::lock_guard<std::mutex> lock(fd.wsGameSessionOQ->mutex);
+                fd.wsGameSessionQueue->output.push(std::move(pongItem));
+            }
+            fd.wsGameSessionOQ->cv.notify_all();
+        } else if (cmsg.has_preferences()) {
+            const auto& prefs = cmsg.preferences();
+            if (prefs.color_format() != hydra::COLOR_UNSPECIFIED) {
+                std::lock_guard<std::mutex> lock(fd.wsGameSessionOQ->mutex);
+                fd.wsGameSessionQueue->renderFormat =
+                    static_cast<HydraSession::RenderFormat>(prefs.color_format());
+            }
+            if (prefs.terminal_width() > 0 || prefs.terminal_height() > 0) {
+                BackDoorLink* active = session->getActiveLink();
+                if (active && active->handle != ganl::InvalidConnectionHandle) {
+                    uint16_t w = prefs.terminal_width() ? static_cast<uint16_t>(prefs.terminal_width()) : 80;
+                    uint16_t h = prefs.terminal_height() ? static_cast<uint16_t>(prefs.terminal_height()) : 24;
+                    safeWrite(active->handle, buildNawsFrame(w, h));
+                }
+            }
+            if (!prefs.terminal_type().empty()) {
+                session->terminalType = prefs.terminal_type();
+            }
+        } else if (cmsg.has_gmcp()) {
+            BackDoorLink* active = session->getActiveLink();
+            if (active && active->handle != ganl::InvalidConnectionHandle
+                && active->gmcpEnabled) {
+                std::string payload = cmsg.gmcp().package() + " " + cmsg.gmcp().json();
+                safeWrite(active->handle, buildGmcpFrame(payload));
+            }
+        }
+    }
+}
+
+void SessionManager::drainWsGameSessions() {
+    for (auto& [handle, fd] : frontDoors_) {
+        if (fd.proto != FrontDoorProto::WsGameSession) continue;
+        if (!fd.wsGameSessionQueue) continue;
+
+        auto& oq = fd.wsGameSessionOQ;
+        auto& sq = fd.wsGameSessionQueue;
+
+        HydraSession::RenderFormat fmt;
+        std::vector<HydraSession::OutputItem> outputItems;
+        std::vector<HydraSession::GmcpItem> gmcpItems;
+
+        {
+            std::lock_guard<std::mutex> lock(oq->mutex);
+            if (sq->output.empty() && sq->gmcp.empty()) continue;
+            fmt = sq->renderFormat;
+            while (!sq->output.empty()) {
+                outputItems.push_back(std::move(sq->output.front()));
+                sq->output.pop();
+            }
+            while (!sq->gmcp.empty()) {
+                gmcpItems.push_back(std::move(sq->gmcp.front()));
+                sq->gmcp.pop();
+            }
+        }
+
+        for (const auto& item : outputItems) {
+            hydra::ServerMessage smsg;
+            if (item.source == "__pong__") {
+                auto* pong = smsg.mutable_pong();
+                int64_t clientTs = 0;
+                try { clientTs = std::stoll(item.puaText.substr(6)); }
+                catch (...) {}
+                pong->set_client_timestamp(clientTs);
+                pong->set_server_timestamp(
+                    std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()).count());
+            } else {
+                auto* go = smsg.mutable_game_output();
+                go->set_text(item.render(fmt));
+                go->set_source(item.source);
+                go->set_timestamp(static_cast<int64_t>(item.timestamp));
+                go->set_link_number(item.linkNumber);
+            }
+            std::string frame = wsEncodeFrame(smsg.SerializeAsString(),
+                                              WS_OP_BINARY);
+            safeWrite(handle, frame);
+        }
+
+        for (const auto& item : gmcpItems) {
+            hydra::ServerMessage smsg;
+            auto* gm = smsg.mutable_gmcp();
+            gm->set_package(item.package);
+            gm->set_json(item.json);
+            gm->set_link_number(item.linkNumber);
+            std::string frame = wsEncodeFrame(smsg.SerializeAsString(),
+                                              WS_OP_BINARY);
+            safeWrite(handle, frame);
+        }
+    }
+}
+#endif
 
 void SessionManager::processLine(FrontDoorState& fd,
                                  const std::string& line) {
@@ -2181,6 +2432,8 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
 }
 #else
 void SessionManager::handleGrpcWebRequest(FrontDoorState&) {}
+void SessionManager::handleWsGameSessionData(FrontDoorState&, const char*, size_t) {}
+void SessionManager::drainWsGameSessions() {}
 #endif
 
 // ---- Rate limiting ----
