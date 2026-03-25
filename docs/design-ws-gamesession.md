@@ -245,10 +245,44 @@ blocking writer thread with `cv.wait()`; the WebSocket path polls instead,
 since it shares the main GANL event loop. The poll cost is negligible —
 one map scan per loop iteration, skipping entries with empty queues.
 
+### session_manager.cpp — Attach/detach semantics
+
+A WsGameSession subscriber keeps the session in `SessionState::Active`.
+
+The current close path (`session_manager.cpp:544–548`) sets
+`SessionState::Detached` and calls `flushSession()` when
+`session.frontDoors` becomes empty. Since WsGameSession handles are not
+in `session.frontDoors`, this would fire even while a WebSocket stream
+is actively delivering output — wrong behavior.
+
+Fix: the detach check must also consider whether the session's
+OutputQueue has active subscribers. The updated condition becomes:
+
+```cpp
+if (fds.empty() && !session.outputQueue->hasSubscribers()) {
+    session.state = SessionState::Detached;
+    flushSession(session);
+}
+```
+
+`hasSubscribers()` already exists on OutputQueue
+(`session_manager.h:164`). Both gRPC GameSession and WsGameSession
+register as subscribers, so this single check covers both. A session
+with no text front-doors but an active gRPC or WebSocket subscriber
+remains attached.
+
+Note: this is also the correct behavior for the existing gRPC
+GameSession path — today a gRPC bidi stream does not prevent detach
+either, since it also doesn't join `session.frontDoors`. This fix
+closes that latent bug too.
+
 ### session_manager.cpp — onFrontDoorClose
 
-When a `WsGameSession` front-door closes, remove its subscriber from the
-OutputQueue.
+When a `WsGameSession` front-door closes:
+1. Remove its subscriber from the OutputQueue.
+2. Remove the entry from `frontDoors_`.
+3. If the connection was authenticated, re-evaluate the detach condition
+   (same `fds.empty() && !hasSubscribers()` check).
 
 ## Client Changes
 
@@ -360,7 +394,10 @@ is empty string).
       iteration. Scans `frontDoors_` for `WsGameSession` entries with
       registered subscribers, pops output/GMCP/pong items, serializes
       as `ServerMessage`, sends as `wsEncodeFrame(proto, WS_OP_BINARY)`.
-   e. `onFrontDoorClose` — unsubscribe cleanup.
+   e. `onFrontDoorClose` — unsubscribe, re-evaluate detach condition.
+   f. Detach guard — update `onFrontDoorClose` detach check to
+      `fds.empty() && !session.outputQueue->hasSubscribers()` so that
+      subscriber-only sessions (gRPC or WsGameSession) stay attached.
 6. **hydra_connection.js:** `_startGameSession()`, `ServerMessage` decoder,
    `ClientMessage` encoder, first-message auth with `session_id` in
    `SetPreferences`. Retire `_startSubscribe`/`_sendInput` (keep as
