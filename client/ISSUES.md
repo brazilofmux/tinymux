@@ -32,11 +32,9 @@
 
 - **Fixed:** TF now tracks `currentColorFormat_` and uses it in send_naws. (3d496b9)
 
-### Web Client Uses Legacy Unary/Server-Streaming Instead of GameSession
+### ~~Web Client Uses Legacy Unary/Server-Streaming Instead of GameSession~~
 
-- **Issue:** Browser client uses `SendInput` + `Subscribe` instead of the bidi `GameSession`.
-- **Impact:** The web path diverges from the primary protocol. Features added to `GameSession` only (like `SetPreferences`) don't reach browser clients.
-- **Note:** This is a grpc-web limitation—true bidi streaming requires WebSocket-based gRPC.
+- **Fixed:** WebSocket GameSession transport with `hydra-gamesession` subprotocol. Binary protobuf ClientMessage/ServerMessage frames over WS, first-message auth via SetPreferences.session_id. Legacy grpc-web path retained as fallback. (55e6bb832)
 
 ### ~~Reconnect Paths Reopen `GameSession` Without Re-Sending Preferences~~
 
