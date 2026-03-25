@@ -3670,11 +3670,54 @@ static persistent_vm s_pvm;
 // Minimal ECALL handler for the PoC.
 // Only handles ECALL_EXIT.
 //
-static int poc_ecall(rv64_ctx_t *ctx, void *) {
+static int poc_ecall(rv64_ctx_t *ctx, void *user_data) {
     uint64_t nr = ctx->x[17];  // a7
     if (nr == ECALL_EXIT) {
         return static_cast<int>(ctx->x[10]);  // a0 = exit code
     }
+
+    if (nr == ECALL_CALL_COMPILED) {
+        // Re-entrant call into a compiled function.
+        // a0 = entry_pc, a1 = output buffer addr, a2 = fargs addr, a3 = nfargs
+        dbt_state_t *dbt = static_cast<dbt_state_t *>(user_data);
+        if (!dbt) {
+            ctx->x[10] = 0;
+            return -1;  // continue
+        }
+
+        uint64_t target_pc = ctx->x[10];
+        uint64_t out_addr  = ctx->x[11];
+
+        // Save outer execution's full CPU context.
+        rv64_ctx_t saved_ctx = *ctx;
+
+        // Set up for inner call: SP already points to available
+        // stack space (below outer's frame).
+        // The inner function's prologue will decrement SP further.
+        ctx->x[2] = saved_ctx.x[2];  // preserve SP
+
+        // Run inner function via dbt_resume.
+        int inner_rc = dbt_resume(dbt, target_pc);
+
+        // Extract inner result length.
+        uint64_t result_len = 0;
+        if (inner_rc == 0 && out_addr > 0 && out_addr < dbt->memory_size) {
+            // Inner function wrote to its own output buffer.
+            // Its final_out address... we don't have it directly.
+            // For this PoC, assume the caller passed the correct
+            // output address — the inner function already wrote there.
+            result_len = strlen(reinterpret_cast<const char *>(
+                dbt->memory + out_addr));
+        }
+
+        // Restore outer CPU context.
+        *ctx = saved_ctx;
+
+        // Return result info in a0.
+        ctx->x[10] = result_len;
+        return -1;  // continue outer execution
+    }
+
     // Unknown ECALL — error.
     fprintf(stderr, "pocvm: unknown ECALL %llu\n",
             static_cast<unsigned long long>(nr));
@@ -3823,7 +3866,7 @@ FUNCTION(fun_persistent_poc)
             s_poc_dbt_ready = false;
         }
         if (dbt_init(&s_poc_dbt, s_pvm.memory.data(), s_pvm.memory.size(),
-                     poc_ecall, nullptr) != 0) {
+                     poc_ecall, &s_poc_dbt) != 0) {
             safe_str(T("#-1 DBT INIT FAILED"), buff, bufc);
             return;
         }
@@ -3840,7 +3883,7 @@ FUNCTION(fun_persistent_poc)
     } else {
         // Subsequent calls — resume without reset.
         // Update the ECALL handler but keep everything else.
-        dbt_rerun(&s_poc_dbt, poc_ecall, nullptr);
+        dbt_rerun(&s_poc_dbt, poc_ecall, &s_poc_dbt);
 
         // Use dbt_resume: doesn't zero ctx, just sets next_pc.
         // We do need to reset SP though.
@@ -3920,6 +3963,8 @@ struct persistent_vm2 {
     uint64_t func_a_out;
     uint64_t func_b_entry;
     uint64_t func_b_out;
+    uint64_t func_c_entry;   // hand-assembled: calls A via ECALL_CALL_COMPILED
+    uint64_t func_c_out;
 
     persistent_vm2()
         : memory(rv_compiler::MEM_SIZE, 0),
@@ -3929,7 +3974,8 @@ struct persistent_vm2 {
           fargs_pool_next(rv_compiler::FARGS_BASE),
           out_pool_next(rv_compiler::STACK_TOP - 8),
           func_a_entry(0), func_a_out(0),
-          func_b_entry(0), func_b_out(0) {}
+          func_b_entry(0), func_b_out(0),
+          func_c_entry(0), func_c_out(0) {}
 };
 
 static persistent_vm2 s_pvm2;
@@ -4063,6 +4109,56 @@ FUNCTION(fun_pocvm2)
             s_pvm2.out_pool_next = pb.out_pool_end;
         }
 
+        // --- Function C: hand-assembled re-entrant call stub ---
+        // Calls Function A via ECALL_CALL_COMPILED, then copies
+        // A's output ("one") to C's own output buffer.
+        // This proves re-entrant execution within the persistent VM.
+        {
+            std::vector<uint32_t> code;
+            constexpr uint8_t a0 = 10, a1 = 11, a7 = 17;
+            constexpr uint8_t t0 = 5, t3 = 28, t4 = 29;
+
+            s_pvm2.func_c_entry = s_pvm2.code_heap_next;
+            s_pvm2.func_c_out = 0x3000;  // fixed output address
+
+            // ECALL_CALL_COMPILED: call Function A.
+            poc::load_val(code, a0, s_pvm2.func_a_entry);
+            poc::load_val(code, a1, s_pvm2.func_a_out);
+            code.push_back(poc::ADDI(a7, 0, static_cast<int32_t>(ECALL_CALL_COMPILED)));
+            code.push_back(poc::ECALL());
+
+            // A's result is at func_a_out. Write "C:" + A's result to 0x3000.
+            poc::load_val(code, t4, s_pvm2.func_c_out);   // t4 = output addr
+            code.push_back(poc::ADDI(t3, 0, 'C'));
+            code.push_back(poc::SB(t4, t3, 0));
+            code.push_back(poc::ADDI(t3, 0, ':'));
+            code.push_back(poc::SB(t4, t3, 1));
+            code.push_back(poc::ADDI(t4, t4, 2));         // past "C:"
+
+            // Copy A's result.
+            poc::load_val(code, t3, s_pvm2.func_a_out);
+            size_t copy_loop = code.size();
+            code.push_back(poc::i_type(OP_LOAD, t0, 4/*LBU*/, t3, 0));
+            code.push_back(poc::SB(t4, t0, 0));
+            code.push_back(poc::ADDI(t3, t3, 1));
+            code.push_back(poc::ADDI(t4, t4, 1));
+            int32_t off = -static_cast<int32_t>((code.size() - copy_loop) * 4);
+            code.push_back(poc::BNE(t0, 0, off));
+
+            // Exit.
+            code.push_back(poc::ADDI(a7, 0, ECALL_EXIT));
+            code.push_back(poc::ADDI(a0, 0, 0));
+            code.push_back(poc::ECALL());
+
+            // Install at code_heap_next.
+            for (size_t i = 0; i < code.size(); i++) {
+                memcpy(s_pvm2.memory.data() + s_pvm2.func_c_entry + i * 4,
+                       &code[i], 4);
+            }
+            s_pvm2.code_heap_next = s_pvm2.func_c_entry + code.size() * 4;
+            s_pvm2.code_heap_next = (s_pvm2.code_heap_next + 15) & ~15ULL;
+        }
+
         // Install Tier 2 blob.
         tier2_install(s_pvm2.memory, rv_compiler::BLOB_BASE);
 
@@ -4072,7 +4168,7 @@ FUNCTION(fun_pocvm2)
     // Initialize DBT on first call.
     if (!s_pvm2.dbt_ready) {
         if (dbt_init(&s_pvm2.dbt, s_pvm2.memory.data(),
-                     s_pvm2.memory.size(), poc_ecall, nullptr) != 0) {
+                     s_pvm2.memory.size(), poc_ecall, &s_pvm2.dbt) != 0) {
             safe_str(T("#-1 DBT INIT FAILED"), buff, bufc);
             return;
         }
@@ -4091,7 +4187,7 @@ FUNCTION(fun_pocvm2)
     }
 
     // Run Function A.
-    dbt_rerun(&s_pvm2.dbt, poc_ecall, nullptr);
+    dbt_rerun(&s_pvm2.dbt, poc_ecall, &s_pvm2.dbt);
     int rc_a = dbt_run(&s_pvm2.dbt, s_pvm2.func_a_entry,
                        rv_compiler::STACK_TOP);
     const char *result_a = nullptr;
@@ -4120,22 +4216,36 @@ FUNCTION(fun_pocvm2)
               s_pvm2.memory.data() + s_pvm2.func_b_out)
         : "#-1 RUN B FAILED";
 
+    // Reset blob BSS for Function C.
+    if (s_tier2.loaded && s_tier2.bss_size > 0) {
+        uint64_t bss_start = rv_compiler::BLOB_BASE + s_tier2.code.size();
+        if (bss_start + s_tier2.bss_size <= s_pvm2.memory.size()) {
+            memset(s_pvm2.memory.data() + bss_start, 0, s_tier2.bss_size);
+        }
+    }
+
+    // Clear C's output area and A's output (A will be re-executed by C).
+    memset(s_pvm2.memory.data() + s_pvm2.func_c_out, 0, 256);
+    memset(s_pvm2.memory.data() + s_pvm2.func_a_out, 0, 256);
+
+    // Run Function C via dbt_resume.
+    // C calls A via ECALL_CALL_COMPILED, then writes "C:" + A's result.
+    s_pvm2.dbt.ctx.x[2] = rv_compiler::STACK_TOP;
+    int rc_c = dbt_resume(&s_pvm2.dbt, s_pvm2.func_c_entry);
+    const char *result_c = (rc_c == 0)
+        ? reinterpret_cast<const char *>(
+              s_pvm2.memory.data() + s_pvm2.func_c_out)
+        : "#-1 RUN C FAILED";
+
     s_pvm2.call_count++;
 
     LBuf tmp = LBuf_Src("pocvm2");
     snprintf(reinterpret_cast<char *>(tmp.get()), LBUF_SIZE,
-        "a=%s b=%s a_pc=0x%llX b_pc=0x%llX "
-        "a_out=0x%llX b_out=0x%llX "
-        "str=0x%llX fargs=0x%llX out=0x%llX code=0x%llX calls=%u",
-        result_a, result_b,
+        "a=%s b=%s c=%s a_pc=0x%llX b_pc=0x%llX c_pc=0x%llX calls=%u",
+        result_a, result_b, result_c,
         (unsigned long long)s_pvm2.func_a_entry,
         (unsigned long long)s_pvm2.func_b_entry,
-        (unsigned long long)s_pvm2.func_a_out,
-        (unsigned long long)s_pvm2.func_b_out,
-        (unsigned long long)s_pvm2.str_pool_next,
-        (unsigned long long)s_pvm2.fargs_pool_next,
-        (unsigned long long)s_pvm2.out_pool_next,
-        (unsigned long long)s_pvm2.code_heap_next,
+        (unsigned long long)s_pvm2.func_c_entry,
         s_pvm2.call_count);
 
     safe_str(tmp, buff, bufc);

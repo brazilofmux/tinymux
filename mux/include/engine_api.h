@@ -49,6 +49,16 @@ static constexpr uint64_t ECALL_TRANSLATE      = 0x162; // a0=input_addr, a1=typ
 static constexpr uint64_t ECALL_QUICK_WILD     = 0x163; // a0=pattern_addr, a1=data_addr → a0=0/1
 static constexpr uint64_t ECALL_SORT           = 0x164; // a0=list_addr, a1=sort_type, a2=delim, a3=osep, a4=out_addr
 
+// Persistent VM re-entrant call.
+// Saves ctx, runs inner function via dbt_resume, restores ctx.
+//   a0 = entry_pc of compiled function
+//   a1 = guest addr of output buffer (for inner result)
+//   a2 = guest addr of fargs (for inner CARGS, or 0)
+//   a3 = nfargs
+// Returns: a0 = bytes written to output buffer (0 on failure)
+//
+static constexpr uint64_t ECALL_CALL_COMPILED = 0x200;
+
 // Lua VM ECALLs — operations that call back into the Lua interpreter.
 // Require eval_ctx.lua_state != nullptr.
 //
