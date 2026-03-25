@@ -208,11 +208,12 @@ static bool tier2_allowed(const std::string &mux_name) {
         "DEC2HEX", "HEX2DEC",
         "ISDBREF",
         "CHR", "ORD",
+        "SECURE", "SQUISH",
 
-        // Blocked — rv64_* diverges from server:
+        // Blocked — diverge from server:
         //   SORT       Shellsort vs DUCET collation
-        //   SECURE/SQUISH/TRANSLATE  byte-level vs Unicode
-        //   STRMATCH/MATCH/GRAB/GRABALL  may diverge on Unicode
+        //   TRANSLATE  byte-level vs color-aware
+        //   STRMATCH/MATCH/GRAB/GRABALL  ASCII tolower vs Unicode case fold
 
         nullptr
     };
@@ -315,8 +316,8 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
 
     // --- Batch 4: space, secure, squish, delete, elements ---
     { "SPACE",       "rv64_space" },
-    { "SECURE",      "rv64_secure" },
-    { "SQUISH",      "rv64_squish" },
+    { "SECURE",      "co_secure_wrap" },
+    { "SQUISH",      "co_compress_wrap" },
     { "DELETE",      "rv64_delete" },
     { "ELEMENTS",    "rv64_elements" },
     { "TRANSLATE",   "rv64_translate" },

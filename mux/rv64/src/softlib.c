@@ -86,6 +86,10 @@ size_t co_right(unsigned char *out, const unsigned char *p, size_t len,
                 size_t n);
 size_t co_compress(unsigned char *out, const unsigned char *p, size_t len,
                    unsigned char compress_char);
+size_t co_transform(unsigned char *out,
+                    const unsigned char *str, size_t slen,
+                    const unsigned char *from_set, size_t flen,
+                    const unsigned char *to_set, size_t tlen);
 size_t co_lpos(unsigned char *out, const unsigned char *haystack, size_t hlen,
                unsigned char pattern);
 
@@ -666,6 +670,19 @@ char *co_compress_wrap(char *out, const char **fargs, int nfargs) {
     return out;
 }
 
+char *co_secure_wrap(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '\0'; return out; }
+    static const unsigned char from_set[] = "$%(),;[\\]{}";
+    static const unsigned char to_set[]   = "           ";
+    size_t n = co_transform((unsigned char *)out,
+                            (const unsigned char *)fargs[0],
+                            rv64_slen(fargs[0]),
+                            from_set, sizeof(from_set) - 1,
+                            to_set, sizeof(to_set) - 1);
+    out[n] = '\0';
+    return out;
+}
+
 char *co_lpos_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 2 || fargs[1][0] == '\0') { out[0] = '\0'; return out; }
     size_t n = co_lpos((unsigned char *)out,
@@ -834,52 +851,9 @@ char *rv64_space(char *out, const char **fargs, int nfargs) {
     return out;
 }
 
-/* secure(string) — escape special characters: %$\[]{}();, */
-char *rv64_secure(char *out, const char **fargs, int nfargs) {
-    if (nfargs < 1) { out[0] = '\0'; return out; }
-    const unsigned char *p = (const unsigned char *)fargs[0];
-    unsigned char *op = (unsigned char *)out;
-    unsigned char *end = op + 7999;
-    while (*p && op < end) {
-        unsigned char c = *p++;
-        if (c == '%' || c == '$' || c == '\\' || c == '[' || c == ']'
-            || c == '{' || c == '}' || c == '(' || c == ')' || c == ';'
-            || c == ',') {
-            if (op + 1 >= end) break;
-            *op++ = '\\';
-            *op++ = c;
-        } else {
-            *op++ = c;
-        }
-    }
-    *op = '\0';
-    return out;
-}
-
-/* squish(string[, delim]) — compress runs of delimiters to single */
-char *rv64_squish(char *out, const char **fargs, int nfargs) {
-    if (nfargs < 1) { out[0] = '\0'; return out; }
-    unsigned char delim = ' ';
-    if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
-    const unsigned char *p = (const unsigned char *)fargs[0];
-    unsigned char *op = (unsigned char *)out;
-    unsigned char *end = op + 7999;
-    /* Skip leading delimiters. */
-    while (*p == delim) p++;
-    while (*p && op < end) {
-        if (*p == delim) {
-            *op++ = delim;
-            p++;
-            while (*p == delim) p++;
-        } else {
-            *op++ = *p++;
-        }
-    }
-    /* Strip trailing delimiter. */
-    if (op > (unsigned char *)out && op[-1] == delim) op--;
-    *op = '\0';
-    return out;
-}
+/* rv64_secure, rv64_squish removed — superseded by co_secure_wrap
+ * and co_compress_wrap routing in s_tier2_map[].
+ */
 
 /* delete(string, first, len) — delete characters by position */
 char *rv64_delete(char *out, const char **fargs, int nfargs) {

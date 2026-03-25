@@ -23,8 +23,11 @@ re-entrancy risk, keeping surrounding code in the JIT.
 
 **Remaining blocked (diverge from server):**
 - `SORT` — Shellsort vs DUCET collation
-- `SECURE/SQUISH/TRANSLATE` — byte-level vs Unicode
-- `STRMATCH/MATCH/GRAB/GRABALL` — may diverge on Unicode
+- `TRANSLATE` — byte-level vs color-aware
+- `STRMATCH/MATCH/GRAB/GRABALL` — ASCII tolower vs Unicode case fold
+
+**Recently unblocked:** SECURE (→ `co_secure_wrap` using `co_transform`),
+SQUISH (→ `co_compress_wrap`).
 
 ### 2. Phase 3: Concurrent Softcode Evaluation
 
