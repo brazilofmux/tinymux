@@ -1,58 +1,113 @@
-#!/bin/sh
+#!/bin/bash
 #
-#   Smoke - Run the automated smoke tests.
+#   Smoke — Run smoke tests with hang detection.
 #
-#   Expects to be run from the testcases/ directory after Makesmoke
-#   has generated smoke.flat.  Results go to smoke.log.
+#   Modes:
+#     ./tools/Smoke           Server mode (netmux, default)
+#     ./tools/Smoke --script  Script mode (muxscript, no networking)
 #
-PATH=/usr/ucb:/bin:/usr/bin:.; export PATH
+#   On success: prints summary, exits 0.
+#   On failure/hang: collects artifacts in smoke.fail/, exits 1.
+#
+#   Usage: cd testcases && ./tools/Smoke
+#
+set -euo pipefail
+
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+TC=$(cd "$SCRIPT_DIR/.." && pwd)
+cd "$TC"
 
 GAMENAME=smoke
-PIDFILE=$GAMENAME.pid
 BIN=../mux/game/bin
-TEXT=./text
 DATA=./$GAMENAME.d
-LOGDIR=$DATA
-INPUT_DB=$GAMENAME.db
+PIDFILE=$GAMENAME.pid
+LOGFILE=logs/M-smoke.log
 
-#
-#   Clean up any stale state from a previous run.
-#
-if [ -r "$DATA" ]; then
-    echo "Deleting $DATA, logs, and text directories."
-    rm -f smoke.conf alias.conf compat.conf "$PIDFILE" shutdown.status 2>/dev/null
-    rm -rf "$DATA" ./logs ./text
-    rm -f bin
+ACTIVITY_TIMEOUT=30    # seconds of no log growth = idle-hang
+WALLCLOCK_TIMEOUT=300  # total seconds = busy-hang
+CHECK_INTERVAL=2       # seconds between checks
+
+USE_SCRIPT=false
+
+# ---------------------------------------------------------------------------
+# Parse arguments.
+# ---------------------------------------------------------------------------
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --script)  USE_SCRIPT=true ;;
+        --activity-timeout)  ACTIVITY_TIMEOUT="$2"; shift ;;
+        --wallclock-timeout) WALLCLOCK_TIMEOUT="$2"; shift ;;
+        *)  echo "Unknown option: $1"; exit 1 ;;
+    esac
+    shift
+done
+
+# ---------------------------------------------------------------------------
+# Portable file-size helper.
+# ---------------------------------------------------------------------------
+
+if stat --version >/dev/null 2>&1; then
+    filesize() { stat -c%s "$1" 2>/dev/null || echo 0; }
+else
+    filesize() { stat -f%z "$1" 2>/dev/null || echo 0; }
 fi
 
-#
-#   Make sure the smoke test isn't already running.
-#
-if [ -r "$PIDFILE" ]; then
-    oldpid=$(cat "$PIDFILE")
-    if [ "$oldpid" -gt 1 ] 2>/dev/null; then
-        if kill -0 "$oldpid" 2>/dev/null; then
-            echo "A smoke test already seems to be running (pid $oldpid)."
-            exit 1
-        fi
+# ---------------------------------------------------------------------------
+# Preflight.
+# ---------------------------------------------------------------------------
+
+if [ ! -r smoke.flat ]; then
+    echo "ERROR: smoke.flat not found. Run Makesmoke first."
+    exit 1
+fi
+
+if $USE_SCRIPT; then
+    if [ ! -x "$BIN/muxscript" ]; then
+        echo "ERROR: $BIN/muxscript not found. Run Build.sh first."
+        exit 1
+    fi
+else
+    if [ ! -x "$BIN/netmux" ]; then
+        echo "ERROR: $BIN/netmux not found. Run Build.sh first."
+        exit 1
     fi
 fi
 
-#
-#   Create necessary environment.
-#
-echo "Creating $DATA directory."
+# ---------------------------------------------------------------------------
+# Kill any stale netmux.
+# ---------------------------------------------------------------------------
+
+if [ -r "$PIDFILE" ]; then
+    oldpid=$(cat "$PIDFILE" 2>/dev/null || echo "")
+    if [ -n "$oldpid" ] && kill -0 "$oldpid" 2>/dev/null; then
+        echo "Killing stale netmux (pid $oldpid)..."
+        kill "$oldpid" 2>/dev/null || true
+        sleep 2
+        kill -9 "$oldpid" 2>/dev/null || true
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+# Clean ALL prior state unconditionally.
+# ---------------------------------------------------------------------------
+
+rm -rf "$DATA" logs text smoke.fail
+rm -f smoke.conf alias.conf compat.conf "$PIDFILE" shutdown.status
+rm -f bin smoke.log netmux.log
+
+# ---------------------------------------------------------------------------
+# Create fresh environment.
+# ---------------------------------------------------------------------------
+
 mkdir "$DATA"
 mkdir -p logs text
 
-if [ ! -e bin ]; then
-    ln -s "$BIN" bin
-fi
-
-cp smoke.flat "$DATA/$INPUT_DB"
+[ ! -e bin ] && ln -s "$BIN" bin
+cp smoke.flat "$DATA/smoke.db"
 cp ../mux/game/alias.conf .
 cp ../mux/game/compat.conf .
-touch logs/M-smoke.log
+touch "$LOGFILE"
 
 cat > text/smokehelp.txt <<'_HELPEOF'
 & help
@@ -65,23 +120,16 @@ _HELPEOF
 
 cat > smoke.conf <<'_EOF'
 # smoke.conf - TinyMUX configuration file for smoke testing.
-#
 input_database	smoke.d/smoke.db
 output_database	smoke.d/smoke.db.new
 crash_database	smoke.d/smoke.db.CRASH
-#
-# Mail, comsystem, and macro databases.
-#
 mail_database   smoke.d/mail.db
 comsys_database smoke.d/comsys.db
-#
 port 2860
 mud_name SmokeMUX
-#
 command_quota_increment 10000
 command_quota_max 10000
 player_queue_limit 100000
-#
 include alias.conf
 include compat.conf
 raw_helpfile help text/smokehelp
@@ -90,31 +138,154 @@ module comsys_mod
 module mail_mod
 _EOF
 
-#
-#   Kick off MUX.
-#
+# ---------------------------------------------------------------------------
+# Start MUX and monitor.
+# ---------------------------------------------------------------------------
+
+echo "Starting smoke tests..."
+
 LD_LIBRARY_PATH=$BIN; export LD_LIBRARY_PATH
 DYLD_LIBRARY_PATH=$BIN; export DYLD_LIBRARY_PATH
-LIBPATH=$BIN; export LIBPATH
-SHLIB_PATH=$BIN; export SHLIB_PATH
 
-$BIN/netmux -c $GAMENAME.conf -p $PIDFILE -e $LOGDIR > netmux.log 2>&1
+if $USE_SCRIPT; then
+    echo "  (script mode via muxscript)"
+    "$BIN/muxscript" -g . -c smoke.conf > netmux.log 2>&1 &
+else
+    echo "  (server mode via netmux)"
+    "$BIN/netmux" -c $GAMENAME.conf -p $PIDFILE -e "$DATA" > netmux.log 2>&1 &
+fi
+MUX_PID=$!
 
-#
-#   Wait for MUX to finish shutdown.
-#
-waited=0
-while [ -r "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE" 2>/dev/null)" 2>/dev/null; do
-    sleep 1
-    waited=$((waited + 1))
-    if [ "$waited" -ge 100000 ]; then
-        echo "MUX process still running after ${waited}s."
-        exit 1
+# ---------------------------------------------------------------------------
+# Monitor with dual timeouts.
+# ---------------------------------------------------------------------------
+
+WALL_START=$SECONDS
+LAST_SIZE=0
+LAST_ACTIVITY=$SECONDS
+HANG_TYPE=""
+
+while kill -0 "$MUX_PID" 2>/dev/null; do
+    sleep "$CHECK_INTERVAL"
+
+    ELAPSED=$((SECONDS - WALL_START))
+    CURRENT_SIZE=$(filesize "$LOGFILE")
+
+    # Check for log growth.
+    if [ "$CURRENT_SIZE" -gt "$LAST_SIZE" ]; then
+        LAST_SIZE=$CURRENT_SIZE
+        LAST_ACTIVITY=$SECONDS
+    fi
+
+    IDLE=$((SECONDS - LAST_ACTIVITY))
+
+    # Wall-clock timeout.
+    if [ "$ELAPSED" -ge "$WALLCLOCK_TIMEOUT" ]; then
+        HANG_TYPE="busy-hang (wall-clock ${ELAPSED}s >= ${WALLCLOCK_TIMEOUT}s)"
+        echo "TIMEOUT: $HANG_TYPE"
+        kill "$MUX_PID" 2>/dev/null || true
+        sleep 2
+        kill -9 "$MUX_PID" 2>/dev/null || true
+        break
+    fi
+
+    # Activity timeout.
+    if [ "$IDLE" -ge "$ACTIVITY_TIMEOUT" ]; then
+        HANG_TYPE="idle-hang (no log activity for ${IDLE}s >= ${ACTIVITY_TIMEOUT}s)"
+        echo "TIMEOUT: $HANG_TYPE"
+        kill "$MUX_PID" 2>/dev/null || true
+        sleep 2
+        kill -9 "$MUX_PID" 2>/dev/null || true
+        break
     fi
 done
-sleep 1
 
-#
-#   Grab resulting log file.
-#
-mv logs/M-smoke.log smoke.log
+# Wait for process to fully exit.
+wait "$MUX_PID" 2>/dev/null || true
+ELAPSED=$((SECONDS - WALL_START))
+echo "MUX ran for ${ELAPSED}s."
+
+# ---------------------------------------------------------------------------
+# Collect results.
+# ---------------------------------------------------------------------------
+
+if [ -r "$LOGFILE" ] && [ -s "$LOGFILE" ]; then
+    mv "$LOGFILE" smoke.log
+else
+    # muxscript mode: output went to netmux.log via stdout redirect.
+    # Server mode: log should be in LOGFILE.  Either way, ensure smoke.log exists.
+    touch smoke.log
+fi
+
+# ---------------------------------------------------------------------------
+# Print summary.
+# ---------------------------------------------------------------------------
+
+echo ""
+echo "=== Smoke Test Results ==="
+SUCCEEDED=$(grep -c 'Succeeded' smoke.log 2>/dev/null || echo "0")
+FAILED=$(grep -c 'Failed' smoke.log 2>/dev/null || echo "0")
+CRASHES=$(grep -cE 'SIGABRT|SIGSEGV|SIGBUS' smoke.log netmux.log 2>/dev/null || echo "0")
+
+echo "  Succeeded: $SUCCEEDED"
+echo "  Failed:    $FAILED"
+echo "  Crashes:   $CRASHES"
+if [ -n "$HANG_TYPE" ]; then
+    echo "  Hang:      $HANG_TYPE"
+fi
+echo "  Log lines: $(wc -l < smoke.log)"
+echo ""
+
+# Show failures if any.
+if [ "$FAILED" -gt 0 ]; then
+    echo "--- Failed tests ---"
+    grep 'Failed' smoke.log
+    echo ""
+fi
+
+# ---------------------------------------------------------------------------
+# Determine overall status.
+# ---------------------------------------------------------------------------
+
+ALL_PASS=true
+if [ "$FAILED" -gt 0 ]; then ALL_PASS=false; fi
+if [ "$CRASHES" -gt 0 ]; then ALL_PASS=false; fi
+if [ -n "$HANG_TYPE" ]; then ALL_PASS=false; fi
+if [ "$SUCCEEDED" -eq 0 ]; then ALL_PASS=false; fi
+
+# ---------------------------------------------------------------------------
+# Failure artifact collection.
+# ---------------------------------------------------------------------------
+
+if ! $ALL_PASS; then
+    echo "Collecting failure artifacts into smoke.fail/..."
+    rm -rf smoke.fail
+    mkdir -p smoke.fail
+    cp smoke.log smoke.fail/ 2>/dev/null || true
+    cp netmux.log smoke.fail/ 2>/dev/null || true
+    cp "$DATA"/*.log smoke.fail/ 2>/dev/null || true
+    cp "$DATA"/*.sqlite smoke.fail/ 2>/dev/null || true
+fi
+
+# ---------------------------------------------------------------------------
+# Clean up runtime state.
+# ---------------------------------------------------------------------------
+
+rm -f smoke.conf alias.conf compat.conf "$PIDFILE" shutdown.status
+rm -rf "$DATA" logs text
+rm -f bin netmux.log
+
+# ---------------------------------------------------------------------------
+# Exit status.
+# ---------------------------------------------------------------------------
+
+if $ALL_PASS; then
+    echo "=== Smoke: ALL $SUCCEEDED TESTS PASSED ==="
+    exit 0
+else
+    echo "=== Smoke: FAILED ==="
+    if [ -d smoke.fail ]; then
+        echo "    Artifacts saved in testcases/smoke.fail/"
+    fi
+    exit 1
+fi

@@ -101,6 +101,7 @@ mux/lib/*.d
 mux/modules/engine/*.d
 
 # Test output and runtime
+testcases/smoke.fail/
 testcases/smoke.log
 testcases/smoke.conf
 testcases/alias.conf

@@ -1,33 +1,40 @@
-#!/bin/sh
+#!/bin/bash
 #
-#   BuildAndSmoke - Build from repo root, install, and run smoke tests.
+#   BuildAndSmoke — Build, create smoke DB if needed, run smoke tests.
 #
-#   Usage:  cd testcases && ./tools/BuildAndSmoke
+#   Usage: cd testcases && ./tools/BuildAndSmoke [-f] [--script]
 #
-#   Skips Makesmoke if smoke.flat is already up to date (no .mux changes).
-#   Pass -f to force Makesmoke regardless.
+#   -f          Force Makesmoke even if smoke.flat is up to date.
+#   --script    Use muxscript instead of netmux for Smoke.
 #
-set -e
+set -euo pipefail
+
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+TC=$(cd "$SCRIPT_DIR/.." && pwd)
+cd "$TC"
 
 FORCE_MAKESMOKE=false
-if [ "$1" = "-f" ]; then
-    FORCE_MAKESMOKE=true
-fi
+SMOKE_ARGS=""
 
-cd ~/tinymux/mux && make && make install
-cd ~/tinymux/testcases
+for arg in "$@"; do
+    case "$arg" in
+        -f)        FORCE_MAKESMOKE=true ;;
+        --script)  SMOKE_ARGS="--script" ;;
+    esac
+done
 
+# Build.
+"$SCRIPT_DIR/Build.sh"
+
+# Makesmoke if needed.
 if $FORCE_MAKESMOKE || [ ! -f smoke.flat ]; then
-    ./tools/Makesmoke
+    "$SCRIPT_DIR/Makesmoke"
 elif [ -n "$(find . -maxdepth 1 -name '*.mux' -newer smoke.flat -print -quit 2>/dev/null)" ]; then
-    ./tools/Makesmoke
+    "$SCRIPT_DIR/Makesmoke"
+else
+    echo "smoke.flat is up to date (use -f to force)."
 fi
 
-./tools/Smoke
-
-# Post-test summary.
-echo "---"
-grep -c Succeeded smoke.log | xargs printf "Succeeded: %s\n"
-grep -c Failed smoke.log | xargs printf "Failed:    %s\n"
-wc -l < netmux.log | xargs printf "netmux.log: %s lines\n"
-grep -H SIGABRT smoke.d/*.log 2>/dev/null || true
+# Smoke.
+# shellcheck disable=SC2086
+"$SCRIPT_DIR/Smoke" $SMOKE_ARGS
