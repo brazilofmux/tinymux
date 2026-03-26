@@ -983,6 +983,7 @@ struct persistent_vm_t {
         uint32_t mod_count;
         uint64_t entry_pc;
         uint64_t out_addr;
+        bool     needs_jit;
     };
     std::vector<attr_cache_entry> attr_cache;
 
@@ -1000,6 +1001,7 @@ struct persistent_vm_t {
     struct compile_result {
         uint64_t entry_pc;
         uint64_t out_addr;
+        bool     needs_jit;
     };
 
     compile_result compile(const UTF8 *expr, size_t len,
@@ -1008,7 +1010,7 @@ struct persistent_vm_t {
 
         // Bounds check: code heap must not reach blob region.
         if (code_heap_next >= rv_compiler::BLOB_BASE) {
-            return {0, 0};
+            return {0, 0, false};
         }
 
         compiled_program prog = compile_expression(
@@ -1018,16 +1020,16 @@ struct persistent_vm_t {
             fargs_pool_next, rv_compiler::FARGS_LIMIT,
             out_pool_next);
 
-        if (!prog.ok) return {0, 0};
+        if (!prog.ok) return {0, 0, false};
 
         // Post-compilation overflow check.
         uint64_t code_end = prog.entry_pc + prog.code_size;
         if (code_end > rv_compiler::BLOB_BASE) {
-            return {0, 0};
+            return {0, 0, false};
         }
 
         install(prog);
-        return {prog.entry_pc, prog.out_addr};
+        return {prog.entry_pc, prog.out_addr, prog.needs_jit};
     }
 
     // Compile an attribute body, with caching and staleness checks.
@@ -1041,7 +1043,7 @@ struct persistent_vm_t {
         for (auto &e : attr_cache) {
             if (e.obj == obj && e.attr_num == attr_num) {
                 if (e.mod_count == mc) {
-                    return {e.entry_pc, e.out_addr};
+                    return {e.entry_pc, e.out_addr, e.needs_jit};
                 }
                 // Stale — evict and recompile.
                 // (Code heap space is leaked; future: reclaim.)
@@ -1052,7 +1054,7 @@ struct persistent_vm_t {
 
         // Compile.
         compile_result cr = compile(body, body_len, eval);
-        if (!cr.entry_pc) return {0, 0};
+        if (!cr.entry_pc) return {0, 0, false};
 
         // Cache.
         attr_cache_entry entry;
@@ -1061,6 +1063,7 @@ struct persistent_vm_t {
         entry.mod_count = mc;
         entry.entry_pc = cr.entry_pc;
         entry.out_addr = cr.out_addr;
+        entry.needs_jit = cr.needs_jit;
 
         // Update existing or append.
         bool found = false;
