@@ -2,10 +2,9 @@
 #
 #   BuildAndSmoke — Build, create smoke DB if needed, run smoke tests.
 #
-#   Usage: cd testcases && ./tools/BuildAndSmoke [-f] [--script]
+#   Usage: cd testcases && ./tools/BuildAndSmoke [-f]
 #
-#   -f          Force Makesmoke even if smoke.flat is up to date.
-#   --script    Use muxscript instead of netmux for Smoke.
+#   -f    Force Makesmoke even if smoke.flat is up to date.
 #
 set -euo pipefail
 
@@ -14,14 +13,9 @@ TC=$(cd "$SCRIPT_DIR/.." && pwd)
 cd "$TC"
 
 FORCE_MAKESMOKE=false
-SMOKE_ARGS=""
-
-for arg in "$@"; do
-    case "$arg" in
-        -f)        FORCE_MAKESMOKE=true ;;
-        --script)  SMOKE_ARGS="--script" ;;
-    esac
-done
+if [ "${1:-}" = "-f" ]; then
+    FORCE_MAKESMOKE=true
+fi
 
 # Build.
 "$SCRIPT_DIR/Build.sh"
@@ -36,5 +30,4 @@ else
 fi
 
 # Smoke.
-# shellcheck disable=SC2086
-"$SCRIPT_DIR/Smoke" $SMOKE_ARGS
+"$SCRIPT_DIR/Smoke"

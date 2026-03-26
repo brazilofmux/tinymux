@@ -2,8 +2,8 @@
 #
 #   Makesmoke — Build smoke.flat from .mux test files.
 #
-#   Starts netmux to create a fresh database, uploads test data via
-#   expect/upload.tcl, exports to smoke.flat.
+#   Uses muxscript to create a fresh database, pipe in the unformatted
+#   .mux commands, then export to smoke.flat via dbconvert.
 #
 #   On success: only smoke.flat survives.
 #   On failure: artifacts collected in smoke.fail/.
@@ -20,11 +20,7 @@ cd "$TC"
 GAMENAME=smoke
 BIN=../mux/game/bin
 DATA=./$GAMENAME.d
-PIDFILE=$GAMENAME.pid
 SQLITE_BASE=$DATA/$GAMENAME
-
-UPLOAD_TIMEOUT=60
-SHUTDOWN_TIMEOUT=30
 
 TMP=$(mktemp)
 trap 'rm -f "$TMP"' EXIT
@@ -35,13 +31,13 @@ EXIT_CODE=0
 # Preflight checks.
 # ---------------------------------------------------------------------------
 
-if [ ! -x "$BIN/netmux" ]; then
-    echo "ERROR: $BIN/netmux not found. Run Build.sh first."
+if [ ! -x "$BIN/muxscript" ]; then
+    echo "ERROR: $BIN/muxscript not found. Run Build.sh first."
     exit 1
 fi
 
-if ! command -v expect >/dev/null 2>&1; then
-    echo "ERROR: expect not installed."
+if [ ! -x "$BIN/dbconvert" ]; then
+    echo "ERROR: $BIN/dbconvert not found. Run Build.sh first."
     exit 1
 fi
 
@@ -51,25 +47,11 @@ if [ ! -x "$SCRIPT_DIR/unformat" ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Kill any stale netmux.
-# ---------------------------------------------------------------------------
-
-if [ -r "$PIDFILE" ]; then
-    oldpid=$(cat "$PIDFILE" 2>/dev/null || echo "")
-    if [ -n "$oldpid" ] && kill -0 "$oldpid" 2>/dev/null; then
-        echo "Killing stale netmux (pid $oldpid)..."
-        kill "$oldpid" 2>/dev/null || true
-        sleep 2
-        kill -9 "$oldpid" 2>/dev/null || true
-    fi
-fi
-
-# ---------------------------------------------------------------------------
 # Clean ALL prior state unconditionally.
 # ---------------------------------------------------------------------------
 
 rm -rf "$DATA" logs text smoke.fail
-rm -f smoke.conf alias.conf compat.conf "$PIDFILE" shutdown.status
+rm -f smoke.conf alias.conf compat.conf shutdown.status
 rm -f bin smoke.flat netmux.log
 
 # ---------------------------------------------------------------------------
@@ -77,7 +59,7 @@ rm -f bin smoke.flat netmux.log
 # ---------------------------------------------------------------------------
 
 mkdir "$DATA"
-mkdir -p text
+mkdir -p logs text
 
 [ ! -e bin ] && ln -s "$BIN" bin
 cp ../mux/game/alias.conf .
@@ -111,91 +93,53 @@ if [ ! -s "$TMP" ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Start netmux.
+# Run muxscript to create and populate the database.
+#
+# muxscript starts with no database (LoadGame creates a fresh one with
+# #0 Limbo and #1 Wizard).  The unformatted .mux commands are piped
+# to stdin.  After EOF, muxscript drains the queue (including the
+# @shutdown at the end of the upload), saves, and exits.
 # ---------------------------------------------------------------------------
 
-echo "Starting netmux for database creation..."
+echo "Running muxscript to create database..."
 
-LD_LIBRARY_PATH=$BIN; export LD_LIBRARY_PATH
-DYLD_LIBRARY_PATH=$BIN; export DYLD_LIBRARY_PATH
+LD_LIBRARY_PATH=$BIN
+export LD_LIBRARY_PATH
 
-(nohup "$BIN/netmux" -c $GAMENAME.conf -p $PIDFILE -e "$DATA" >/dev/null 2>&1 &)
+# Append @shutdown — the .mux files don't include it for the Makesmoke phase.
+# (upload.tcl used to send @shutdown after seeing "Uploaded.")
+echo "@shutdown" >> "$TMP"
 
-sleep 2
-if [ ! -r "$PIDFILE" ]; then
-    echo "ERROR: netmux did not start (no PID file after 2s)."
+if ! timeout 120 "$BIN/muxscript" -g . -c smoke.conf < "$TMP" > netmux.log 2>&1; then
+    echo "ERROR: muxscript failed or timed out."
     EXIT_CODE=1
 fi
 
 # ---------------------------------------------------------------------------
-# Upload via expect.
-# ---------------------------------------------------------------------------
-
-if [ $EXIT_CODE -eq 0 ]; then
-    echo "Uploading test data..."
-    if ! timeout "$UPLOAD_TIMEOUT" expect "$SCRIPT_DIR/upload.tcl" "$TMP"; then
-        echo "ERROR: Upload failed or timed out after ${UPLOAD_TIMEOUT}s."
-        EXIT_CODE=1
-    fi
-fi
-
-# ---------------------------------------------------------------------------
-# Wait for shutdown.
-# ---------------------------------------------------------------------------
-
-if [ $EXIT_CODE -eq 0 ]; then
-    waited=0
-    while [ -r "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE" 2>/dev/null)" 2>/dev/null; do
-        sleep 1
-        waited=$((waited + 1))
-        if [ "$waited" -ge "$SHUTDOWN_TIMEOUT" ]; then
-            echo "ERROR: netmux did not shut down after ${SHUTDOWN_TIMEOUT}s."
-            pid=$(cat "$PIDFILE" 2>/dev/null || echo "")
-            if [ -n "$pid" ]; then
-                kill "$pid" 2>/dev/null || true
-                sleep 1
-                kill -9 "$pid" 2>/dev/null || true
-            fi
-            EXIT_CODE=1
-            break
-        fi
-    done
-fi
-sleep 1
-
-# ---------------------------------------------------------------------------
-# Export flatfile from SQLite.
+# Export flatfile from SQLite via dbconvert.
 # ---------------------------------------------------------------------------
 
 if [ $EXIT_CODE -eq 0 ]; then
     echo "Exporting flatfile..."
     rm -f smoke.flat
-    NEW_DB=$GAMENAME.db.new
 
-    if [ -r "$DATA/$NEW_DB" ]; then
-        if ! "$BIN/netmux" -d "$DATA/$GAMENAME" -i "$DATA/$NEW_DB" -o smoke.flat -u; then
-            echo "ERROR: Unflatten failed."
+    if [ ! -r "$SQLITE_BASE.sqlite" ]; then
+        set -- "$DATA"/*.sqlite
+        if [ "$1" = "$DATA/*.sqlite" ]; then
+            echo "ERROR: No SQLite database found in $DATA."
             EXIT_CODE=1
+        elif [ $# -ne 1 ]; then
+            echo "ERROR: Expected one SQLite database, found $#."
+            EXIT_CODE=1
+        else
+            SQLITE_BASE=${1%.sqlite}
         fi
-    else
-        # SQLite backend: find the .sqlite file.
-        if [ ! -r "$SQLITE_BASE.sqlite" ]; then
-            set -- "$DATA"/*.sqlite
-            if [ "$1" = "$DATA/*.sqlite" ]; then
-                echo "ERROR: No SQLite database found in $DATA."
-                EXIT_CODE=1
-            elif [ $# -ne 1 ]; then
-                echo "ERROR: Expected one SQLite database, found $#."
-                EXIT_CODE=1
-            else
-                SQLITE_BASE=${1%.sqlite}
-            fi
-        fi
-        if [ $EXIT_CODE -eq 0 ]; then
-            if ! "$BIN/netmux" -d "$SQLITE_BASE" -o smoke.flat -u; then
-                echo "ERROR: Export from database failed."
-                EXIT_CODE=1
-            fi
+    fi
+
+    if [ $EXIT_CODE -eq 0 ]; then
+        if ! "$BIN/dbconvert" -d "$SQLITE_BASE" -o smoke.flat -u 2>&1; then
+            echo "ERROR: Export from database failed."
+            EXIT_CODE=1
         fi
     fi
 fi
@@ -232,8 +176,8 @@ fi
 
 if [ $EXIT_CODE -eq 0 ] && [ -r smoke.flat ]; then
     # Success: remove everything except smoke.flat.
-    rm -f smoke.conf alias.conf compat.conf "$PIDFILE" shutdown.status netmux.log
-    rm -rf "$DATA" text
+    rm -f smoke.conf alias.conf compat.conf shutdown.status netmux.log
+    rm -rf "$DATA" logs text
     rm -f bin
     echo "=== Makesmoke: SUCCESS ==="
 else
@@ -241,14 +185,14 @@ else
     echo "Collecting failure artifacts into smoke.fail/..."
     rm -rf smoke.fail
     mkdir -p smoke.fail
-    for f in netmux.log smoke.conf "$PIDFILE"; do
+    for f in netmux.log smoke.conf; do
         [ -r "$f" ] && cp "$f" smoke.fail/ 2>/dev/null || true
     done
     cp "$DATA"/*.log smoke.fail/ 2>/dev/null || true
     cp "$DATA"/*.sqlite smoke.fail/ 2>/dev/null || true
     # Clean up runtime state even on failure.
-    rm -f smoke.conf alias.conf compat.conf "$PIDFILE" shutdown.status
-    rm -rf "$DATA" text
+    rm -f smoke.conf alias.conf compat.conf shutdown.status
+    rm -rf "$DATA" logs text
     rm -f bin
     echo "=== Makesmoke: FAILED (artifacts in smoke.fail/) ==="
     exit 1

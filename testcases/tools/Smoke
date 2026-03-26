@@ -1,10 +1,10 @@
 #!/bin/bash
 #
-#   Smoke — Run smoke tests with hang detection.
+#   Smoke — Run smoke tests via muxscript.
 #
-#   Modes:
-#     ./tools/Smoke           Server mode (netmux, default)
-#     ./tools/Smoke --script  Script mode (muxscript, no networking)
+#   Imports smoke.flat into SQLite via dbconvert, then runs muxscript
+#   which fires @startup and drains the test chain.  No networking,
+#   no server process, gdb-friendly.
 #
 #   On success: prints summary, exits 0.
 #   On failure/hang: collects artifacts in smoke.fail/, exits 1.
@@ -20,14 +20,11 @@ cd "$TC"
 GAMENAME=smoke
 BIN=../mux/game/bin
 DATA=./$GAMENAME.d
-PIDFILE=$GAMENAME.pid
 LOGFILE=logs/M-smoke.log
 
 ACTIVITY_TIMEOUT=30    # seconds of no log growth = idle-hang
 WALLCLOCK_TIMEOUT=300  # total seconds = busy-hang
 CHECK_INTERVAL=2       # seconds between checks
-
-USE_SCRIPT=false
 
 # ---------------------------------------------------------------------------
 # Parse arguments.
@@ -35,7 +32,6 @@ USE_SCRIPT=false
 
 while [ $# -gt 0 ]; do
     case "$1" in
-        --script)  USE_SCRIPT=true ;;
         --activity-timeout)  ACTIVITY_TIMEOUT="$2"; shift ;;
         --wallclock-timeout) WALLCLOCK_TIMEOUT="$2"; shift ;;
         *)  echo "Unknown option: $1"; exit 1 ;;
@@ -62,30 +58,14 @@ if [ ! -r smoke.flat ]; then
     exit 1
 fi
 
-if $USE_SCRIPT; then
-    if [ ! -x "$BIN/muxscript" ]; then
-        echo "ERROR: $BIN/muxscript not found. Run Build.sh first."
-        exit 1
-    fi
-else
-    if [ ! -x "$BIN/netmux" ]; then
-        echo "ERROR: $BIN/netmux not found. Run Build.sh first."
-        exit 1
-    fi
+if [ ! -x "$BIN/muxscript" ]; then
+    echo "ERROR: $BIN/muxscript not found. Run Build.sh first."
+    exit 1
 fi
 
-# ---------------------------------------------------------------------------
-# Kill any stale netmux.
-# ---------------------------------------------------------------------------
-
-if [ -r "$PIDFILE" ]; then
-    oldpid=$(cat "$PIDFILE" 2>/dev/null || echo "")
-    if [ -n "$oldpid" ] && kill -0 "$oldpid" 2>/dev/null; then
-        echo "Killing stale netmux (pid $oldpid)..."
-        kill "$oldpid" 2>/dev/null || true
-        sleep 2
-        kill -9 "$oldpid" 2>/dev/null || true
-    fi
+if [ ! -x "$BIN/dbconvert" ]; then
+    echo "ERROR: $BIN/dbconvert not found. Run Build.sh first."
+    exit 1
 fi
 
 # ---------------------------------------------------------------------------
@@ -93,7 +73,7 @@ fi
 # ---------------------------------------------------------------------------
 
 rm -rf "$DATA" logs text smoke.fail
-rm -f smoke.conf alias.conf compat.conf "$PIDFILE" shutdown.status
+rm -f smoke.conf alias.conf compat.conf shutdown.status
 rm -f bin smoke.log netmux.log
 
 # ---------------------------------------------------------------------------
@@ -104,7 +84,6 @@ mkdir "$DATA"
 mkdir -p logs text
 
 [ ! -e bin ] && ln -s "$BIN" bin
-cp smoke.flat "$DATA/smoke.db"
 cp ../mux/game/alias.conf .
 cp ../mux/game/compat.conf .
 touch "$LOGFILE"
@@ -139,21 +118,28 @@ module mail_mod
 _EOF
 
 # ---------------------------------------------------------------------------
-# Start MUX and monitor.
+# Import smoke.flat into SQLite via dbconvert.
+# ---------------------------------------------------------------------------
+
+echo "Importing smoke.flat into SQLite..."
+
+LD_LIBRARY_PATH=$BIN
+export LD_LIBRARY_PATH
+
+if ! "$BIN/dbconvert" -d "$DATA/$GAMENAME" -i smoke.flat -l > netmux.log 2>&1; then
+    echo "ERROR: dbconvert import failed."
+    cat netmux.log
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Run muxscript.  @startup fires the test chain; after the chain
+# completes, @shutdown exits muxscript.
 # ---------------------------------------------------------------------------
 
 echo "Starting smoke tests..."
 
-LD_LIBRARY_PATH=$BIN; export LD_LIBRARY_PATH
-DYLD_LIBRARY_PATH=$BIN; export DYLD_LIBRARY_PATH
-
-if $USE_SCRIPT; then
-    echo "  (script mode via muxscript)"
-    "$BIN/muxscript" -g . -c smoke.conf > netmux.log 2>&1 &
-else
-    echo "  (server mode via netmux)"
-    "$BIN/netmux" -c $GAMENAME.conf -p $PIDFILE -e "$DATA" > netmux.log 2>&1 &
-fi
+"$BIN/muxscript" -g . -c smoke.conf --readonly < /dev/null >> netmux.log 2>&1 &
 MUX_PID=$!
 
 # ---------------------------------------------------------------------------
@@ -203,7 +189,7 @@ done
 # Wait for process to fully exit.
 wait "$MUX_PID" 2>/dev/null || true
 ELAPSED=$((SECONDS - WALL_START))
-echo "MUX ran for ${ELAPSED}s."
+echo "muxscript ran for ${ELAPSED}s."
 
 # ---------------------------------------------------------------------------
 # Collect results.
@@ -212,8 +198,6 @@ echo "MUX ran for ${ELAPSED}s."
 if [ -r "$LOGFILE" ] && [ -s "$LOGFILE" ]; then
     mv "$LOGFILE" smoke.log
 else
-    # muxscript mode: output went to netmux.log via stdout redirect.
-    # Server mode: log should be in LOGFILE.  Either way, ensure smoke.log exists.
     touch smoke.log
 fi
 
@@ -274,7 +258,7 @@ fi
 # Clean up runtime state.
 # ---------------------------------------------------------------------------
 
-rm -f smoke.conf alias.conf compat.conf "$PIDFILE" shutdown.status
+rm -f smoke.conf alias.conf compat.conf shutdown.status
 rm -rf "$DATA" logs text
 rm -f bin netmux.log
 

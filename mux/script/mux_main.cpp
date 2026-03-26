@@ -1166,7 +1166,7 @@ static void execute_command(const UTF8 *line)
     UTF8 *pLogBuf = nullptr;
 
     g_pEngine->PrepareForCommand(g_player);
-    g_pEngine->ProcessCommand(g_player, g_player, g_player, 0, false,
+    g_pEngine->ProcessCommand(g_player, g_player, g_player, 0, true,
         const_cast<UTF8 *>(line), nullptr, 0, &pLogBuf);
     g_pEngine->FinishCommand();
     fflush(stdout);
@@ -1241,14 +1241,10 @@ static void script_loop(FILE *input)
             timeout_ms = -1;
         }
 
-        // After EOF, only drain currently-ready tasks.  Don't wait
-        // for future scheduled tasks (cron, timers) — those belong
-        // to a running game, not a script session.
+        // After EOF, keep running the scheduler until @shutdown fires
+        // or no more tasks remain.  This allows @wait/@notify chains
+        // (like smoke tests) to complete fully.
         //
-        if (eof_seen && timeout_ms > 0)
-        {
-            break;
-        }
 
         // Poll for stdin readability.
         //
