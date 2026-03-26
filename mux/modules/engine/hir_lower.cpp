@@ -2604,9 +2604,9 @@ int hir_lower_node(hir_program &h, rv_compiler &rc,
                                 }
                             }
                         }
-                        // Extended parse failed — emit empty.
-                        uint64_t addr = rc.pool_str("");
-                        return h.emit_sconst(addr, "");
+                        // Extended parse failed — emit raw text literally.
+                        uint64_t addr = rc.pool_str(node->text);
+                        return h.emit_sconst(addr, node->text);
                     } else {
                         // Simple color: %xh, %cn, etc.
                         unsigned int iColor = ColorTable[
@@ -2625,9 +2625,9 @@ int hir_lower_node(hir_program &h, rv_compiler &rc,
                         return h.emit_sconst(addr, lit);
                     }
                 }
-                // Malformed %c/%x — emit empty.
-                uint64_t addr = rc.pool_str("");
-                return h.emit_sconst(addr, "");
+                // Malformed %c/%x — emit raw text literally.
+                uint64_t addr = rc.pool_str(node->text);
+                return h.emit_sconst(addr, node->text);
             }
 
             // %va-%vz — variable attributes.  Emit ECALL xget(%!, "VA").
@@ -2720,9 +2720,9 @@ int hir_lower_node(hir_program &h, rv_compiler &rc,
                         return result;
                     }
                 }
-                // Bare %= or malformed — emit empty.
-                uint64_t addr = rc.pool_str("");
-                return h.emit_sconst(addr, "");
+                // Bare %= or malformed — emit raw text literally.
+                uint64_t addr = rc.pool_str(node->text);
+                return h.emit_sconst(addr, node->text);
             }
 
             // %q0-%q9 and %qa-%qz = global register values.
@@ -2759,9 +2759,9 @@ int hir_lower_node(hir_program &h, rv_compiler &rc,
                         h.needs_jit = true;
                         return result;
                     }
-                    // Malformed %q<name with no closing > — emit empty.
-                    uint64_t addr = rc.pool_str("");
-                    return h.emit_sconst(addr, "");
+                    // Malformed %q<name with no closing > — emit raw text literally.
+                    uint64_t addr = rc.pool_str(node->text);
+                    return h.emit_sconst(addr, node->text);
                 }
             }
 
@@ -2852,10 +2852,10 @@ int hir_lower_node(hir_program &h, rv_compiler &rc,
             return h.emit_sconst(addr, lit);
         }
 
-        // Unresolvable substitution — emit empty string.
+        // Unresolvable substitution — emit raw text literally.
         {
-            uint64_t addr = rc.pool_str("");
-            return h.emit_sconst(addr, "");
+            uint64_t addr = rc.pool_str(node->text);
+            return h.emit_sconst(addr, node->text);
         }
 
     case AST_BRACEGROUP:
