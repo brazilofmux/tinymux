@@ -66,13 +66,15 @@ find "$MUX/modules" -name '*.so' -delete 2>/dev/null || true
 find "$MUX/lib" -name '*.so' -delete 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
-# game/bin/ — remove all contents (these are symlinks and copies).
-# The source softlib.rv64 in rv64/ is preserved.
+# game/bin/ — remove generated symlinks and binaries, preserve tracked files.
+# Tracked: .placeholder, softlib.rv64
 # ---------------------------------------------------------------------------
 
 if [ -d "$MUX/game/bin" ]; then
-    find "$MUX/game/bin" -maxdepth 1 -type f -delete 2>/dev/null || true
     find "$MUX/game/bin" -maxdepth 1 -type l -delete 2>/dev/null || true
+    find "$MUX/game/bin" -maxdepth 1 -type f \
+        ! -name '.placeholder' \
+        -delete 2>/dev/null || true
 fi
 
 # ---------------------------------------------------------------------------
@@ -94,7 +96,7 @@ rm -rf "$MUX/proxy/.deps"
 
 cd "$TC"
 rm -rf smoke.d smoke.fail logs text
-rm -f smoke.flat smoke.log netmux.log
+rm -f smoke.log netmux.log
 rm -f smoke.conf alias.conf compat.conf
 rm -f shutdown.status smoke.pid smoke.*.pid
 rm -f bin

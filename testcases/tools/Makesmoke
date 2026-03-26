@@ -13,6 +13,7 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+REPO_ROOT=$(cd "$SCRIPT_DIR/../.." && pwd)
 TC=$(cd "$SCRIPT_DIR/.." && pwd)
 cd "$TC"
 
@@ -208,6 +209,21 @@ if [ $EXIT_CODE -eq 0 ] && [ -r smoke.flat ]; then
     mv "$TMP" smoke.flat
     TMP=$(mktemp)  # refresh for the trap
     echo "smoke.flat created ($(wc -c < smoke.flat) bytes)."
+fi
+
+# ---------------------------------------------------------------------------
+# Validate flatfile with omega.
+# ---------------------------------------------------------------------------
+
+OMEGA="$REPO_ROOT/mux/convert/omega"
+if [ $EXIT_CODE -eq 0 ] && [ -r smoke.flat ] && [ -x "$OMEGA" ]; then
+    echo "Validating smoke.flat with omega..."
+    if ! "$OMEGA" -i t5x smoke.flat > /dev/null 2>&1; then
+        echo "ERROR: omega rejected smoke.flat."
+        EXIT_CODE=1
+    else
+        echo "  omega: valid."
+    fi
 fi
 
 # ---------------------------------------------------------------------------

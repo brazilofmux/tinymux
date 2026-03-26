@@ -223,9 +223,12 @@ fi
 
 echo ""
 echo "=== Smoke Test Results ==="
-SUCCEEDED=$(grep -c 'Succeeded' smoke.log 2>/dev/null || echo "0")
-FAILED=$(grep -c 'Failed' smoke.log 2>/dev/null || echo "0")
-CRASHES=$(grep -cE 'SIGABRT|SIGSEGV|SIGBUS' smoke.log netmux.log 2>/dev/null || echo "0")
+SUCCEEDED=$(grep -c 'Succeeded' smoke.log || true)
+FAILED=$(grep -c 'Failed' smoke.log || true)
+CRASH_SMOKE=$(grep -cE 'SIGABRT|SIGSEGV|SIGBUS' smoke.log || true)
+CRASH_NETMUX=$(grep -cE 'SIGABRT|SIGSEGV|SIGBUS' netmux.log 2>/dev/null || true)
+: "${SUCCEEDED:=0}" "${FAILED:=0}" "${CRASH_SMOKE:=0}" "${CRASH_NETMUX:=0}"
+CRASHES=$((CRASH_SMOKE + CRASH_NETMUX))
 
 echo "  Succeeded: $SUCCEEDED"
 echo "  Failed:    $FAILED"
