@@ -16,6 +16,7 @@
 #include "externs.h"
 #include "sqlite_backend.h"
 #include "mguests.h"
+#include "engine_api.h"
 
 // g_debug_cmd moved to libmux.cpp — shared by all layers.
 
@@ -2753,6 +2754,10 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
         mudconf.config_file = StringClone(configFile);
     }
     cf_read();
+
+    // Sync function aliases into JIT lookup table now that config
+    // (including alias.conf) has been processed.
+    engine_api_sync_aliases();
 
     // Sync core-layer globals from mudconf after config is loaded.
     //

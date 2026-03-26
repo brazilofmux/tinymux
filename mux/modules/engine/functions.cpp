@@ -14575,6 +14575,32 @@ void engine_api_init()
     }
 }
 
+// Sync function aliases from mudstate.builtin_functions into the
+// JIT lookup map.  Called after cf_read() so that function_alias
+// entries from netmux.conf / alias.conf are visible to the compiler.
+//
+void engine_api_sync_aliases()
+{
+    // Build a reverse map: FUN* → engine_api index.
+    unordered_map<FUN *, int> ptr_to_idx;
+    for (int i = 1; i < engine_api_count; i++) {
+        ptr_to_idx[engine_api_table[i]] = i;
+    }
+
+    // Walk all names in mudstate.builtin_functions.  Any name that
+    // points to a FUN* already in the table but isn't in s_api_map
+    // is an alias — add it.
+    for (const auto &kv : mudstate.builtin_functions) {
+        auto pit = ptr_to_idx.find(kv.second);
+        if (pit == ptr_to_idx.end()) continue;
+
+        string name(kv.first.begin(), kv.first.end());
+        if (s_api_map.find(name) == s_api_map.end()) {
+            s_api_map[name] = pit->second;
+        }
+    }
+}
+
 int engine_api_lookup(const char *name)
 {
     auto it = s_api_map.find(name);

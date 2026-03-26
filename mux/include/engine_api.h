@@ -112,6 +112,11 @@ extern int   engine_api_count;  // number of valid entries (1..count-1)
 //
 void engine_api_init();
 
+// Sync function aliases (from netmux.conf / alias.conf) into the
+// JIT lookup map.  Must be called after cf_read().
+//
+void engine_api_sync_aliases();
+
 // Look up a function index by uppercase name.
 // Returns 0 if not found.
 //
