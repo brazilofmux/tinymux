@@ -1948,6 +1948,79 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     }
 
     // ---------------------------------------------------------------
+    // default(obj/attr, default-expr)
+    // edefault(obj/attr, default-expr)
+    //
+    // Look up an attribute.  If non-empty, return its value (default)
+    // or evaluate it (edefault).  Otherwise evaluate the default expr.
+    //
+    // Compiled as: result = ECALL _DEFAULT_GET(arg0)
+    //              if result non-empty → return result
+    //              else → lower arg1 (default body)
+    // ---------------------------------------------------------------
+
+    if ((fname == "DEFAULT" || fname == "EDEFAULT")
+        && node->children.size() == 2) {
+
+        bool is_edefault = (fname == "EDEFAULT");
+
+        // Evaluate arg 0 (the obj/attr reference).
+        int arg0 = hir_lower_trimmed(h, rc, node->children[0].get());
+        if (h.ty[arg0] == TY_INT) {
+            arg0 = h.emit(HIR_ITOA, TY_STRING, arg0);
+        } else if (h.ty[arg0] == TY_FLOAT) {
+            arg0 = h.emit(HIR_FTOA, TY_STRING, arg0);
+        }
+
+        // ECALL _DEFAULT_GET or _EDEFAULT_GET.
+        const char *helper = is_edefault ? "_EDEFAULT_GET" : "_DEFAULT_GET";
+        int helper_idx = engine_api_lookup(helper);
+        int hargs[1] = { arg0 };
+        int lookup_result = h.emit_call(TY_STRING, helper_idx, hargs, 1);
+        h.ecalls++;
+        h.needs_jit = true;
+
+        // Check if result is non-empty: strlen(result) > 0.
+        int len = h.emit(HIR_STRCMP, TY_INT, lookup_result,
+            h.emit_sconst(rc.pool_str(""), ""));
+
+        // Branch: non-empty (len != 0) → use lookup result, empty → default body.
+        int entry_block = h.cur_block;
+        int found_block = h.new_block();
+        int default_block = h.new_block();
+        int merge_block = h.new_block();
+
+        h.emit(HIR_BRC, TY_VOID, len, default_block, found_block);
+        h.add_edge(entry_block, found_block);
+        h.add_edge(entry_block, default_block);
+
+        // Found block: return the lookup result.
+        h.cur_block = found_block;
+        int found_val = lookup_result;
+        h.emit(HIR_BR, TY_VOID, -1, -1, merge_block);
+        h.add_edge(found_block, merge_block);
+
+        // Default block: lower the default body.
+        h.cur_block = default_block;
+        int default_val = hir_lower_trimmed(h, rc,
+            node->children[1].get());
+        if (h.ty[default_val] == TY_INT) {
+            default_val = h.emit(HIR_ITOA, TY_STRING, default_val);
+        } else if (h.ty[default_val] == TY_FLOAT) {
+            default_val = h.emit(HIR_FTOA, TY_STRING, default_val);
+        }
+        int default_exit = h.cur_block;
+        h.emit(HIR_BR, TY_VOID, -1, -1, merge_block);
+        h.add_edge(default_exit, merge_block);
+
+        // Merge with PHI.
+        h.cur_block = merge_block;
+        int blocks[2] = { found_block, default_exit };
+        int vals[2] = { found_val, default_val };
+        return h.emit_phi(TY_STRING, -1, blocks, vals, 2);
+    }
+
+    // ---------------------------------------------------------------
     // localize(body)
     //
     // Save all q-registers, evaluate body, restore registers.

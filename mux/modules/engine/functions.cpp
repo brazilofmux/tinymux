@@ -13979,6 +13979,79 @@ static FUNCTION(fun__restore_qregs)
     }
 }
 
+// _DEFAULT_GET(obj/attr)
+//   JIT helper for default(). Evaluates obj/attr reference, looks up the
+//   attribute, returns the raw value.  Returns empty string if the
+//   attribute is missing, empty, or not visible.
+//
+static FUNCTION(fun__default_get)
+{
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (nfargs < 1) return;
+
+    dbref thing;
+    ATTR *pattr;
+    if (!parse_attrib(executor, fargs[0], &thing, &pattr))
+    {
+        thing = executor;
+        pattr = atr_str(fargs[0]);
+    }
+
+    if (pattr && See_attr(executor, thing, pattr))
+    {
+        dbref aowner;
+        int aflags;
+        UTF8 *atr_gotten = atr_pget(thing, pattr->number, &aowner, &aflags);
+        if (atr_gotten[0] != '\0')
+        {
+            safe_str(atr_gotten, buff, bufc);
+        }
+        free_lbuf(atr_gotten);
+    }
+}
+
+// _EDEFAULT_GET(obj/attr)
+//   JIT helper for edefault(). Like _DEFAULT_GET but evaluates the
+//   attribute body before returning.  Returns empty string if the
+//   attribute is missing, empty, or not visible.
+//
+static FUNCTION(fun__edefault_get)
+{
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    if (nfargs < 1) return;
+
+    dbref thing;
+    ATTR *pattr;
+    if (!parse_attrib(executor, fargs[0], &thing, &pattr))
+    {
+        thing = executor;
+        pattr = atr_str(fargs[0]);
+    }
+
+    if (pattr && See_attr(executor, thing, pattr))
+    {
+        dbref aowner;
+        int aflags;
+        UTF8 *atr_gotten = atr_pget(thing, pattr->number, &aowner, &aflags);
+        if (atr_gotten[0] != '\0')
+        {
+            mux_exec(atr_gotten, LBUF_SIZE-1, buff, bufc, thing,
+                     executor, executor,
+                     AttrTrace(aflags, EV_FIGNORE|EV_EVAL),
+                     nullptr, 0);
+        }
+        free_lbuf(atr_gotten);
+    }
+}
+
 // _SAVE_CARGS, _RESTORE_CARGS, _WRITE_CARG, _SET_NCARGS:
 // defined in jit_compiler.cpp where s_current_ecall_ctx provides
 // guest memory access.
@@ -13999,6 +14072,8 @@ static FUN builtin_function_list[] =
 {
     {T("@@"),          fun_null,             1, 1,       1, FN_NOEVAL, CA_PUBLIC},
     {T("_CHECK_U_PERM"),  fun__check_u_perm,  MAX_ARG, 2, 2, 0, CA_GOD},
+    {T("_DEFAULT_GET"),   fun__default_get,   MAX_ARG, 1, 1, 0, CA_GOD},
+    {T("_EDEFAULT_GET"),  fun__edefault_get,  MAX_ARG, 1, 1, 0, CA_GOD},
     {T("_RESTORE_CARGS"), fun__restore_cargs, MAX_ARG, 1, 1, 0, CA_GOD},
     {T("_RESTORE_QREGS"), fun__restore_qregs, MAX_ARG, 1, 1, 0, CA_GOD},
     {T("_SAVE_CARGS"),    fun__save_cargs,    MAX_ARG, 0, 0, 0, CA_GOD},
