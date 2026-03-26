@@ -142,3 +142,4 @@ client/tf/build/
 mux/vcpkg_installed
 mux/proxy/hydra.pb.*
 mux/proxy/hydra.grpc.pb.*
+mux/script/x64/

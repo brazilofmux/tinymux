@@ -32,10 +32,18 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cerrno>
+
+#if defined(WIN32)
+#include <io.h>
+#include <direct.h>
+#include <windows.h>
+#define chdir _chdir
+#else
 #include <unistd.h>
 #include <poll.h>
 #include <fcntl.h>
-#include <cerrno>
+#endif
 
 // Script mode doesn't include externs.h or db.h, so we define the
 // constants we need directly.
@@ -1097,7 +1105,11 @@ static bool resolve_gamedir(const char *flag_dir)
         dir = ".";
     }
 
+#if defined(WIN32)
+    if (!_fullpath(g_gamedir, dir, sizeof(g_gamedir)))
+#else
     if (!realpath(dir, g_gamedir))
+#endif
     {
         fprintf(stderr, "muxscript: cannot resolve game directory '%s': %s\n",
                 dir, strerror(errno));
@@ -1105,10 +1117,15 @@ static bool resolve_gamedir(const char *flag_dir)
     }
 
     char engine_path[4096 + 64];
+#if defined(WIN32)
+    snprintf(engine_path, sizeof(engine_path), "%s\\bin\\engine.dll", g_gamedir);
+    if (_access(engine_path, 4) != 0)  // 4 = read permission
+#else
     snprintf(engine_path, sizeof(engine_path), "%s/bin/engine.so", g_gamedir);
     if (access(engine_path, R_OK) != 0)
+#endif
     {
-        fprintf(stderr, "muxscript: engine.so not found at '%s'\n", engine_path);
+        fprintf(stderr, "muxscript: engine not found at '%s'\n", engine_path);
         return false;
     }
 
@@ -1133,15 +1150,21 @@ static MUX_RESULT init_com(void)
         return mr;
     }
 
-    // Build engine.so path relative to game directory.
+    // Build engine path relative to game directory.
+#if defined(WIN32)
+    wchar_t engine_pathw[4096 + 64];
+    swprintf(engine_pathw, sizeof(engine_pathw)/sizeof(wchar_t),
+             L"%hs\\bin\\engine.dll", g_gamedir);
+    mr = mux_AddModule(T("engine"), engine_pathw);
+#else
     char engine_path[4096 + 64];
     snprintf(engine_path, sizeof(engine_path), "%s/bin/engine.so", g_gamedir);
-
     mr = mux_AddModule(T("engine"),
                         reinterpret_cast<const UTF8 *>(engine_path));
+#endif
     if (MUX_FAILED(mr))
     {
-        fprintf(stderr, "muxscript: cannot load '%s' (%d)\n", engine_path, mr);
+        fprintf(stderr, "muxscript: cannot load engine (%d)\n", mr);
         return mr;
     }
 
@@ -1188,6 +1211,153 @@ static void run_tasks_now(void)
 // queue until no tasks remain.
 // ---------------------------------------------------------------------------
 
+// Helper: process complete lines in linebuf, returning new linepos.
+//
+static size_t process_lines(UTF8 *linebuf, size_t linepos)
+{
+    size_t start = 0;
+    for (size_t i = 0; i < linepos; i++)
+    {
+        if (linebuf[i] == '\n')
+        {
+            linebuf[i] = '\0';
+            size_t len = i - start;
+            if (len > 0 && linebuf[start + len - 1] == '\r')
+            {
+                linebuf[start + len - 1] = '\0';
+                len--;
+            }
+
+            UTF8 *line = linebuf + start;
+            if (len > 0
+                && !(line[0] == '#'
+                     && (len < 2 || line[1] < '0' || line[1] > '9')))
+            {
+                execute_command(line);
+            }
+            start = i + 1;
+        }
+    }
+
+    if (start > 0)
+    {
+        linepos -= start;
+        if (linepos > 0)
+        {
+            memmove(linebuf, linebuf + start, linepos);
+        }
+    }
+    return linepos;
+}
+
+// Helper: compute scheduler timeout in milliseconds.
+// Returns -1 for infinite wait, 0 for immediate, or positive ms.
+//
+static int scheduler_timeout_ms(bool eof_seen)
+{
+    CLinearTimeAbsolute ltaNext;
+    if (MUX_SUCCEEDED(g_pEngine->WhenNext(&ltaNext)))
+    {
+        CLinearTimeAbsolute ltaNow;
+        ltaNow.GetUTC();
+        if (ltaNext <= ltaNow)
+        {
+            return 0;
+        }
+        long ms = (ltaNext - ltaNow).ReturnMilliseconds();
+        if (ms > 1000) ms = 1000;
+        return (int)ms;
+    }
+    return eof_seen ? -2 : -1;  // -2 = no tasks + eof = exit
+}
+
+#if defined(WIN32)
+
+static void script_loop(FILE *input)
+{
+    HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+    int fd = _fileno(input);
+    bool eof_seen = false;
+    UTF8 linebuf[8192];
+    size_t linepos = 0;
+
+    while (!g_script_shutdown)
+    {
+        int timeout_ms = scheduler_timeout_ms(eof_seen);
+        if (timeout_ms == -2) break;  // no tasks + eof
+
+        if (!eof_seen)
+        {
+            DWORD waitResult = WaitForSingleObject(hStdin,
+                timeout_ms < 0 ? INFINITE : (DWORD)timeout_ms);
+
+            if (waitResult == WAIT_OBJECT_0)
+            {
+                int n = _read(fd, linebuf + linepos,
+                              (unsigned)(sizeof(linebuf) - linepos - 1));
+                if (n > 0)
+                {
+                    linepos += (size_t)n;
+                    linepos = process_lines(linebuf, linepos);
+
+                    if (linepos >= sizeof(linebuf) - 1)
+                    {
+                        linebuf[linepos] = '\0';
+                        execute_command(linebuf);
+                        linepos = 0;
+                    }
+                }
+                else
+                {
+                    eof_seen = true;
+                    if (linepos > 0)
+                    {
+                        linebuf[linepos] = '\0';
+                        size_t len = linepos;
+                        if (len > 0 && linebuf[len - 1] == '\r')
+                        {
+                            linebuf[--len] = '\0';
+                        }
+                        if (len > 0
+                            && !(linebuf[0] == '#'
+                                 && (len < 2 || linebuf[1] < '0' || linebuf[1] > '9')))
+                        {
+                            execute_command(linebuf);
+                        }
+                        linepos = 0;
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (timeout_ms > 0)
+            {
+                Sleep((DWORD)timeout_ms);
+            }
+        }
+
+        for (int i = 0; i < 100; i++)
+        {
+            run_tasks_now();
+
+            CLinearTimeAbsolute ltaCheck;
+            if (MUX_FAILED(g_pEngine->WhenNext(&ltaCheck)))
+            {
+                break;
+            }
+            CLinearTimeAbsolute ltaNow;
+            ltaNow.GetUTC();
+            if (ltaCheck > ltaNow)
+            {
+                break;
+            }
+        }
+    }
+}
+
+#else // Unix
+
 static void script_loop(FILE *input)
 {
     int fd = fileno(input);
@@ -1207,44 +1377,8 @@ static void script_loop(FILE *input)
 
     while (!g_script_shutdown)
     {
-        // Determine poll timeout from the scheduler.
-        // If no tasks are pending, use a short timeout when stdin
-        // is still open, or exit if stdin is EOF.
-        //
-        int timeout_ms = -1;
-        CLinearTimeAbsolute ltaNext;
-        if (MUX_SUCCEEDED(g_pEngine->WhenNext(&ltaNext)))
-        {
-            CLinearTimeAbsolute ltaNow;
-            ltaNow.GetUTC();
-            if (ltaNext <= ltaNow)
-            {
-                timeout_ms = 0;
-            }
-            else
-            {
-                long ms = (ltaNext - ltaNow).ReturnMilliseconds();
-                if (ms > 1000) ms = 1000;
-                timeout_ms = (int)ms;
-            }
-        }
-        else if (eof_seen)
-        {
-            // No pending tasks and stdin is closed — we're done.
-            //
-            break;
-        }
-        else
-        {
-            // No pending tasks but stdin is still open — wait for input.
-            //
-            timeout_ms = -1;
-        }
-
-        // After EOF, keep running the scheduler until @shutdown fires
-        // or no more tasks remain.  This allows @wait/@notify chains
-        // (like smoke tests) to complete fully.
-        //
+        int timeout_ms = scheduler_timeout_ms(eof_seen);
+        if (timeout_ms == -2) break;  // no tasks + eof
 
         // Poll for stdin readability.
         //
@@ -1255,7 +1389,7 @@ static void script_loop(FILE *input)
             pfd.events = POLLIN;
             pfd.revents = 0;
 
-            int found = poll(&pfd, 1, timeout_ms);
+            int found = poll(&pfd, 1, timeout_ms < 0 ? -1 : timeout_ms);
             if (found < 0 && EINTR != errno)
             {
                 break;
@@ -1272,45 +1406,7 @@ static void script_loop(FILE *input)
                     if (n > 0)
                     {
                         linepos += (size_t)n;
-
-                        // Process complete lines.
-                        //
-                        size_t start = 0;
-                        for (size_t i = 0; i < linepos; i++)
-                        {
-                            if (linebuf[i] == '\n')
-                            {
-                                linebuf[i] = '\0';
-                                size_t len = i - start;
-                                if (len > 0 && linebuf[start + len - 1] == '\r')
-                                {
-                                    linebuf[start + len - 1] = '\0';
-                                    len--;
-                                }
-
-                                UTF8 *line = linebuf + start;
-                                // Skip comments and blank lines.
-                                //
-                                if (len > 0
-                                    && !(line[0] == '#'
-                                         && (len < 2 || line[1] < '0' || line[1] > '9')))
-                                {
-                                    execute_command(line);
-                                }
-                                start = i + 1;
-                            }
-                        }
-
-                        // Shift remaining partial line to front.
-                        //
-                        if (start > 0)
-                        {
-                            linepos -= start;
-                            if (linepos > 0)
-                            {
-                                memmove(linebuf, linebuf + start, linepos);
-                            }
-                        }
+                        linepos = process_lines(linebuf, linepos);
 
                         // Protect against line overflow.
                         //
@@ -1389,6 +1485,8 @@ static void script_loop(FILE *input)
         }
     }
 }
+
+#endif // WIN32 / Unix
 
 // ---------------------------------------------------------------------------
 // Main
