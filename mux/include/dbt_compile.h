@@ -15,8 +15,36 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <memory>
 
 #include "hir.h"
+
+// ---------------------------------------------------------------
+// No-init allocator for std::vector<uint8_t>.
+//
+// Skips value-initialization (zero-fill) on resize/construct.
+// Used for guest memory buffers where we control exactly which
+// regions are written before use.
+// ---------------------------------------------------------------
+
+template<typename Elem>
+struct noinit_alloc : std::allocator<Elem> {
+    using std::allocator<Elem>::allocator;
+
+    template<typename U>
+    struct rebind { using other = noinit_alloc<U>; };
+
+    // construct() with no value: skip zero-initialization.
+    void construct(Elem *p) noexcept {}
+
+    // construct() with a value: placement-new as usual.
+    template<typename... Args>
+    void construct(Elem *p, Args&&... args) {
+        ::new (static_cast<void *>(p)) Elem(std::forward<Args>(args)...);
+    }
+};
+
+using guest_memory_t = std::vector<uint8_t, noinit_alloc<uint8_t>>;
 
 // ---------------------------------------------------------------
 // JIT statistics
@@ -131,7 +159,13 @@ extern std::string s_blob_version;
 // Tier 2 functions used across translation units.
 uint64_t tier2_lookup(const std::string &mux_name);
 uint64_t tier2_sym_addr(const char *blob_name);
-void tier2_install(std::vector<uint8_t> &memory, uint64_t guest_base);
+// Accepts both guest_memory_t and std::vector<uint8_t>.
+template<typename Vec>
+void tier2_install(Vec &memory, uint64_t guest_base);
+
+// Explicit instantiation declarations (defined in jit_compiler.cpp).
+extern template void tier2_install(guest_memory_t &, uint64_t);
+extern template void tier2_install(std::vector<uint8_t> &, uint64_t);
 void pretranslate_tier2(struct dbt_state_t *dbt);
 
 // ---------------------------------------------------------------
@@ -139,7 +173,7 @@ void pretranslate_tier2(struct dbt_state_t *dbt);
 // ---------------------------------------------------------------
 
 struct rv_compiler {
-    std::vector<uint8_t> memory;
+    guest_memory_t memory;
     std::vector<uint32_t> code;
 
     // Code base address in guest memory.  Defaults to CODE_BASE (0)
@@ -225,7 +259,7 @@ struct rv_compiler {
     int n_output_slots;
 
     rv_compiler() : code_base(CODE_BASE),
-                    memory(MEM_SIZE, 0),
+                    memory(MEM_SIZE),
                     str_pool(STR_BASE),
                     str_pool_limit(STR_LIMIT),
                     fargs_pool(FARGS_BASE),
@@ -245,7 +279,7 @@ struct rv_compiler {
                 uint64_t fp, uint64_t fp_lim,
                 uint64_t op)
         : code_base(cb),
-          memory(MEM_SIZE, 0),
+          memory(MEM_SIZE),
           str_pool(sp),
           str_pool_limit(sp_lim),
           fargs_pool(fp),
@@ -327,7 +361,7 @@ struct rv_compiler {
 // ---------------------------------------------------------------
 
 struct compiled_program {
-    std::vector<uint8_t> memory;
+    guest_memory_t memory;
     size_t memory_size;
     uint64_t out_addr;      // guest addr or tagged frame-relative output ref
     uint64_t out_used;      // bytes of output region actually allocated

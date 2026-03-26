@@ -1,0 +1,159 @@
+#!/bin/bash
+#
+#   PerfSmoke �� Run smoke tests under perf record.
+#
+#   Same setup as Smoke, but wraps muxscript with perf record -g.
+#   Produces perf.data in testcases/ for analysis with perf report.
+#
+#   Usage: cd testcases && ./tools/PerfSmoke
+#          perf report -i perf.data
+#
+set -euo pipefail
+
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+TC=$(cd "$SCRIPT_DIR/.." && pwd)
+cd "$TC"
+
+GAMENAME=smoke
+BIN=../mux/game/bin
+DATA=./$GAMENAME.d
+LOGFILE=logs/M-smoke.log
+
+# ---------------------------------------------------------------------------
+# Preflight.
+# ---------------------------------------------------------------------------
+
+if [ ! -r smoke.flat ]; then
+    echo "ERROR: smoke.flat not found. Run Makesmoke first."
+    exit 1
+fi
+
+for bin in muxscript dbconvert; do
+    if [ ! -x "$BIN/$bin" ]; then
+        echo "ERROR: $BIN/$bin not found. Run Build.sh first."
+        exit 1
+    fi
+done
+
+if ! command -v perf >/dev/null 2>&1; then
+    echo "ERROR: perf not found."
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Clean prior state.
+# ---------------------------------------------------------------------------
+
+rm -rf "$DATA" logs text
+rm -f smoke.conf alias.conf compat.conf shutdown.status
+rm -f bin smoke.log netmux.log perf.data perf.data.old
+
+# ---------------------------------------------------------------------------
+# Create fresh environment (same as Smoke).
+# ---------------------------------------------------------------------------
+
+mkdir "$DATA"
+mkdir -p logs text
+
+[ ! -e bin ] && ln -s "$BIN" bin
+cp ../mux/game/alias.conf .
+cp ../mux/game/compat.conf .
+touch "$LOGFILE"
+
+cat > text/smokehelp.txt <<'_HELPEOF'
+& help
+This is the smoke test help system.
+& test topic
+This is a test topic for mhelp().
+& another topic
+Another test topic.
+_HELPEOF
+
+cat > smoke.conf <<'_EOF'
+input_database	smoke.d/smoke.db
+output_database	smoke.d/smoke.db.new
+crash_database	smoke.d/smoke.db.CRASH
+mail_database   smoke.d/mail.db
+comsys_database smoke.d/comsys.db
+port 2860
+mud_name SmokeMUX
+command_quota_increment 10000
+command_quota_max 10000
+player_queue_limit 100000
+include alias.conf
+include compat.conf
+raw_helpfile help text/smokehelp
+module exp3
+module comsys_mod
+module mail_mod
+_EOF
+
+# ---------------------------------------------------------------------------
+# Import.
+# ---------------------------------------------------------------------------
+
+echo "Importing smoke.flat into SQLite..."
+
+LD_LIBRARY_PATH=$BIN
+export LD_LIBRARY_PATH
+
+if ! "$BIN/dbconvert" -d "$DATA/$GAMENAME" -i smoke.flat -l > netmux.log 2>&1; then
+    echo "ERROR: dbconvert import failed."
+    cat netmux.log
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Run muxscript under perf record.
+# ---------------------------------------------------------------------------
+
+echo "Starting smoke tests under perf record..."
+WALL_START=$SECONDS
+
+perf record -g --call-graph dwarf,16384 -F 997 -o perf.data -- \
+    "$BIN/muxscript" -g . -c smoke.conf --readonly < /dev/null >> netmux.log 2>&1
+
+ELAPSED=$((SECONDS - WALL_START))
+echo "muxscript ran for ${ELAPSED}s."
+
+# ---------------------------------------------------------------------------
+# Collect smoke log.
+# ---------------------------------------------------------------------------
+
+if [ -r "$LOGFILE" ] && [ -s "$LOGFILE" ]; then
+    mv "$LOGFILE" smoke.log
+else
+    touch smoke.log
+fi
+
+SUCCEEDED=$(grep -c 'Succeeded' smoke.log || true)
+FAILED=$(grep -c 'Failed' smoke.log || true)
+: "${SUCCEEDED:=0}" "${FAILED:=0}"
+
+echo ""
+echo "=== PerfSmoke Results ==="
+echo "  Succeeded: $SUCCEEDED"
+echo "  Failed:    $FAILED"
+echo "  Log lines: $(wc -l < smoke.log)"
+echo ""
+echo "perf.data written ($(du -h perf.data | cut -f1))."
+echo ""
+echo "Analysis commands:"
+echo "  perf report -i perf.data                    # interactive TUI"
+echo "  perf report -i perf.data --stdio | head -80 # top functions"
+echo "  perf report -i perf.data --stdio -g          # call graph"
+echo ""
+
+# ---------------------------------------------------------------------------
+# Clean up runtime state (keep perf.data and smoke.log).
+# ---------------------------------------------------------------------------
+
+rm -f smoke.conf alias.conf compat.conf shutdown.status
+rm -rf "$DATA" logs text
+rm -f bin netmux.log
+
+if [ "$FAILED" -gt 0 ]; then
+    echo "WARNING: $FAILED tests failed."
+    exit 1
+fi
+echo "=== PerfSmoke: $SUCCEEDED tests passed ==="

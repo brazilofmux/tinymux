@@ -12,6 +12,8 @@
 #include "sqlite_backend.h"
 #include "engine_api.h"
 
+#include <unordered_map>
+
 extern "C" {
 #include "color_ops.h"
 }
@@ -14556,27 +14558,27 @@ void init_functab(void)
 FUN *engine_api_table[ENGINE_API_MAX_FUNCS];
 int   engine_api_count = 0;
 
+// Hash map for O(1) function lookup by name.
+static unordered_map<string, int> s_api_map;
+
 void engine_api_init()
 {
     memset(engine_api_table, 0, sizeof(engine_api_table));
     engine_api_count = 1;  // index 0 is reserved (invalid)
+    s_api_map.clear();
 
     for (FUN *fp = builtin_function_list; fp->name; fp++) {
         if (engine_api_count >= ENGINE_API_MAX_FUNCS) break;
         engine_api_table[engine_api_count] = fp;
+        s_api_map[reinterpret_cast<const char *>(fp->name)] = engine_api_count;
         engine_api_count++;
     }
 }
 
 int engine_api_lookup(const char *name)
 {
-    // Linear scan — called at compile time only, not in the hot path.
-    for (int i = 1; i < engine_api_count; i++) {
-        if (mux_stricmp((const UTF8 *)name,
-                        engine_api_table[i]->name) == 0) {
-            return i;
-        }
-    }
+    auto it = s_api_map.find(name);
+    if (it != s_api_map.end()) return it->second;
     return 0;
 }
 

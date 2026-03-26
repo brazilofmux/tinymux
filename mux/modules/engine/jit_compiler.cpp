@@ -688,7 +688,8 @@ void pretranslate_tier2(dbt_state_t *dbt) {
 // Copy blob code into a program's guest memory.
 // Called during compile_expression() before codegen.
 //
-void tier2_install(std::vector<uint8_t> &memory, uint64_t guest_base) {
+template<typename Vec>
+void tier2_install(Vec &memory, uint64_t guest_base) {
     if (!s_tier2.loaded) return;
 
     // The flat image (code + rodata + initialized data) is copied as one
@@ -707,6 +708,9 @@ void tier2_install(std::vector<uint8_t> &memory, uint64_t guest_base) {
                0, s_tier2.bss_size);
     }
 }
+
+template void tier2_install(guest_memory_t &, uint64_t);
+template void tier2_install(std::vector<uint8_t> &, uint64_t);
 
 // Lazy-init Tier 2 blob on first compile.
 static bool s_tier2_init = false;
@@ -1243,7 +1247,7 @@ static uint8_t *s_dbt_last_memory = nullptr;
 static compiled_program reconstruct_from_cache(
     const CSQLiteDB::CodeCacheRecord &rec) {
     compiled_program prog;
-    prog.memory.resize(rv_compiler::MEM_SIZE, 0);
+    prog.memory.resize(rv_compiler::MEM_SIZE);
     int copy_len = rec.memory_len;
     if (copy_len > static_cast<int>(rv_compiler::FARGS_LIMIT)) {
         copy_len = static_cast<int>(rv_compiler::FARGS_LIMIT);
