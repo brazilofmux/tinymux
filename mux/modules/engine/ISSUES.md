@@ -38,6 +38,20 @@ Implement the framework for evaluating softcode on multiple cores simultaneously
   - Migrate `s_compile_cache` and `s_attr_mod_counts` to thread-safe structures (atomic/RW locks).
   - Ensure DBT contexts are thread-safe or per-thread.
 
+### 5. Windows JIT/DBT: System V → Windows x64 Calling Convention
+
+- **Status:** Windows is AST-only. `TINYMUX_JIT` compiles but crashes at runtime.
+- **Root cause:** The DBT code generator (`dbt.cpp`) emits x86_64 native code
+  using System V AMD64 calling convention (args in RDI, RSI, RDX, RCX, R8, R9).
+  Windows x64 uses RCX, RDX, R8, R9 (4 register args + 32-byte shadow space).
+- **Scope:** ~31 direct RDI/RSI references in emit_stub_* functions,
+  `x64_arg_regs[]` table (line 829), `emit_trampoline()` (line 3046),
+  all co_* generic stubs, strtod/strlen/memcpy call sites.
+  RSI and RDI are callee-saved on Windows but caller-saved on System V.
+  Windows requires 32 bytes of shadow space before every `call`.
+- **Fix:** Ifdef `x64_arg_regs`, trampoline, stub prologue/epilogue,
+  and shadow space allocation for `WIN32`. Significant but mechanical.
+
 ## Core Engine Issues
 
 ### 3. Platform Interface Driver
