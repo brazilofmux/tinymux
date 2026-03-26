@@ -1120,13 +1120,18 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
     }
 
     // Reserve prologue slots for stack frame setup.
+    // First instruction snapshots the incoming SP into s0 so
+    // stack-allocated output buffers can be addressed relative to
+    // the function's entry stack pointer even across nested calls.
     // Output buffers are stack-allocated; the prologue decrements SP
     // by the total frame size.  We don't know the final count yet
     // (the itoa path may allocate 1 more slot), so reserve 3 NOPs
     // and backpatch after all code is emitted.
     //
-    // 3 instructions = LUI t0, upper + ADDI t0, t0, lower + SUB SP, SP, t0
+    // 4 instructions = mv s0, sp + LUI t0, upper + ADDI t0, t0, lower
+    //                + SUB sp, sp, t0
     //
+    rc.code.push_back(rv_ADDI(RA_FRAME_TOP, 2, 0));  // mv s0, sp
     size_t prologue_pos = rc.code.size();
     static constexpr int PROLOGUE_SLOTS = 3;
     for (int p = 0; p < PROLOGUE_SLOTS; p++) {
