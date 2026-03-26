@@ -1948,6 +1948,30 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     }
 
     // ---------------------------------------------------------------
+    // localize(body)
+    //
+    // Save all q-registers, evaluate body, restore registers.
+    // Same as letq but without name/value assignments.
+    // ---------------------------------------------------------------
+
+    if (fname == "LOCALIZE" && node->children.size() == 1) {
+        int save_idx = engine_api_lookup("_SAVE_QREGS");
+        int save_handle = h.emit_call(TY_STRING, save_idx, nullptr, 0);
+        h.ecalls++;
+        h.needs_jit = true;
+
+        int body_result = hir_lower_trimmed(h, rc,
+            node->children[0].get());
+
+        int restore_idx = engine_api_lookup("_RESTORE_QREGS");
+        int rqargs[1] = { save_handle };
+        h.emit_call(TY_STRING, restore_idx, rqargs, 1);
+        h.ecalls++;
+
+        return body_result;
+    }
+
+    // ---------------------------------------------------------------
     // General function call lowering.
     // ---------------------------------------------------------------
 general_lowering:
