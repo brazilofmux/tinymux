@@ -184,6 +184,7 @@ struct rv_compiler {
     static constexpr uint64_t OUT_BASE       = 0x8000;   // legacy (unused by new alloc)
     static constexpr int      OUT_SLOT       = 32768;    // = LBUF_SIZE
     static constexpr uint64_t OUT_STACK_LIMIT = 0x81000; // lowest valid output addr
+    static constexpr uint64_t OUT_FRAME_TAG   = 0x80000000ULL;
 
     // Pinned Lua array region: 0x50000-0x60000 (64KB = 8192 int64 elements)
     // Shares address space with output range 2 — never used simultaneously.
@@ -286,6 +287,25 @@ struct rv_compiler {
 
     bool out_exhausted = false;
     bool bail_was_noeval = false;
+
+    static bool is_output_frame_ref(uint64_t addr) {
+        return (addr & OUT_FRAME_TAG) != 0;
+    }
+
+    static uint64_t output_frame_delta(uint64_t addr) {
+        return addr & ~OUT_FRAME_TAG;
+    }
+
+    static uint64_t make_output_frame_ref(uint64_t abs_addr) {
+        return OUT_FRAME_TAG | (STACK_TOP - abs_addr);
+    }
+
+    static uint64_t resolve_output_addr(uint64_t addr, uint64_t entry_sp) {
+        if (!is_output_frame_ref(addr)) {
+            return addr;
+        }
+        return entry_sp - output_frame_delta(addr);
+    }
 
     uint64_t alloc_output() {
         // Stack-allocated: grow downward from STACK_TOP.
