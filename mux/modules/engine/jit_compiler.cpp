@@ -1484,6 +1484,134 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
     return &ins_it->second.prog;
 }
 
+// ---------------------------------------------------------------
+// Shared code heap — persistent guest memory for re-entrant JIT.
+//
+// All compiled expressions deposit code, strings, and fargs into
+// a single 4MB guest memory image.  The blob is installed once.
+// Code accumulates via bump allocation; the DBT block cache
+// persists across all expressions.
+//
+// Pool layout within shared memory:
+//   0x0004-0x0FFFF  Code heap (64KB)
+//   0x10000-0x3FFFF Blob (installed once)
+//   0x40000-0x5FFFF String pool (128KB)
+//   0x60000-0x67FFF Fargs pool (32KB)
+//   0x68000+        CARGS/SUBST/DMA/output (per-execution)
+// ---------------------------------------------------------------
+
+struct shared_heap_t {
+    guest_memory_t memory;
+    bool ready;
+
+    uint64_t code_next;        // next free code address
+    uint64_t str_next;         // next free string pool address
+    uint64_t fargs_next;       // next free fargs address
+
+    static constexpr uint64_t CODE_START  = 0x0004;  // avoid PC=0
+    static constexpr uint64_t CODE_LIMIT  = rv_compiler::BLOB_BASE;
+    static constexpr uint64_t STR_START   = 0x40000;
+    static constexpr uint64_t STR_LIMIT   = 0x60000;
+    static constexpr uint64_t FARGS_START = 0x60000;
+    static constexpr uint64_t FARGS_LIMIT = 0x68000;
+
+    // Compile result — lightweight, references shared memory.
+    struct entry {
+        uint64_t entry_pc;
+        uint64_t out_addr;
+        bool needs_jit;
+        int ecalls;
+        int tier2_calls;
+    };
+
+    // Expression cache.
+    std::unordered_map<std::string, entry> cache;
+
+    shared_heap_t()
+        : memory(rv_compiler::MEM_SIZE),
+          ready(false),
+          code_next(CODE_START),
+          str_next(STR_START),
+          fargs_next(FARGS_START) {}
+
+    // Initialize: install blob once.
+    bool init() {
+        if (ready) return true;
+        tier2_lazy_init();
+        if (!s_tier2.loaded) return false;
+        tier2_install(memory, rv_compiler::BLOB_BASE);
+        ready = true;
+        return true;
+    }
+
+    // Compile an expression into the shared heap.
+    // Returns {0,0,false} on failure.
+    entry compile(const UTF8 *expr, size_t nLen,
+                  int eval = EV_FCHECK | EV_EVAL) {
+
+        if (!init()) return {0, 0, false, 0, 0};
+
+        // Bounds check: code heap must not overflow.
+        if (code_next >= CODE_LIMIT) return {0, 0, false, 0, 0};
+
+        compiled_program prog = compile_expression(
+            expr, nLen, eval,
+            code_next,
+            str_next, STR_LIMIT,
+            fargs_next, FARGS_LIMIT,
+            rv_compiler::STACK_TOP - 8);
+
+        if (!prog.ok) return {0, 0, false, 0, 0};
+
+        // Install compiled regions into shared memory.
+        //
+        // Code.
+        if (prog.entry_pc + prog.code_size > CODE_LIMIT) {
+            return {0, 0, false, 0, 0};
+        }
+        memcpy(memory.data() + prog.entry_pc,
+               prog.memory.data() + prog.entry_pc, prog.code_size);
+
+        // Strings (if any new strings were added).
+        if (prog.str_pool_end > str_next) {
+            memcpy(memory.data() + str_next,
+                   prog.memory.data() + str_next,
+                   prog.str_pool_end - str_next);
+        }
+
+        // Fargs (if any new fargs were added).
+        if (prog.fargs_pool_end > fargs_next) {
+            memcpy(memory.data() + fargs_next,
+                   prog.memory.data() + fargs_next,
+                   prog.fargs_pool_end - fargs_next);
+        }
+
+        // Advance cursors.
+        code_next = prog.entry_pc + prog.code_size;
+        code_next = (code_next + 15) & ~15ULL;  // align
+        str_next = prog.str_pool_end;
+        fargs_next = prog.fargs_pool_end;
+
+        return {prog.entry_pc, prog.out_addr, prog.needs_jit,
+                prog.ecalls, prog.tier2_calls};
+    }
+
+    // Look up or compile an expression.  Returns nullptr on failure.
+    const entry *lookup(const UTF8 *expr, size_t nLen, int eval) {
+        std::string key = compile_cache_key(expr, nLen, eval);
+        auto it = cache.find(key);
+        if (it != cache.end()) return &it->second;
+
+        entry e = compile(expr, nLen, eval);
+        if (!e.entry_pc) return nullptr;
+
+        auto [ins, _] = cache.emplace(key, e);
+        return &ins->second;
+    }
+};
+
+static shared_heap_t s_shared_heap;
+
 // Run a cached program.  Uses dbt_rerun if the DBT already has
 // translated blocks for this program, otherwise dbt_reset.
 //
@@ -3591,6 +3719,7 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
     }
 
     // Runtime execution requires the DBT — only allowed at depth 1.
+    // (Future: shared heap + dbt_resume for needs_jit at depth > 1.)
     if (s_jit_depth > 1) {
         s_jit_stats.eval_bailout++;
         return false;
