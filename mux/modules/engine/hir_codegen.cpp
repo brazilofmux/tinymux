@@ -1971,11 +1971,24 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
     int ri = h.result;
     if (ri >= 0) {
         if (loc[ri].in_reg) {
-            // Final result is in a register — need ITOA.
-            uint64_t out_addr = rc.alloc_output();
-            rv_load_guest_addr(rc.code, 10, out_addr);
-            rv_emit_itoa(rc.code, loc[ri].reg, 10);
-            rc.final_out = out_addr;
+            if (!rc.needs_jit && h.kind[ri] == HIR_ICONST) {
+                // Constant integer with no runtime code — convert to
+                // string at compile time instead of emitting ITOA.
+                // This keeps the result in the string pool (low memory)
+                // so it survives SQLite cache persistence.
+                char buf[32];
+                snprintf(buf, sizeof(buf), "%lld",
+                         static_cast<long long>(h.val[ri]));
+                uint64_t addr = rc.pool_str(buf, strlen(buf));
+                rc.final_out = addr;
+            } else {
+                // Final result is in a register — need ITOA at runtime.
+                uint64_t out_addr = rc.alloc_output();
+                rv_load_guest_addr(rc.code, 10, out_addr);
+                rv_emit_itoa(rc.code, loc[ri].reg, 10);
+                rc.final_out = out_addr;
+                rc.needs_jit = true;
+            }
         } else if (loc[ri].spill_slot >= 0) {
             // Final result is spilled — reload and ITOA.
             uint64_t out_addr = rc.alloc_output();
@@ -1983,6 +1996,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
             rv_load_guest_addr(rc.code, 10, out_addr);
             rv_emit_itoa(rc.code, RA_SCRATCH, 10);
             rc.final_out = out_addr;
+            rc.needs_jit = true;
         } else {
             rc.final_out = loc[ri].addr;
         }

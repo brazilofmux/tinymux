@@ -889,7 +889,7 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     prog.ecalls = h.ecalls;
     prog.tier2_calls = h.tier2_calls;
     prog.native_ops = h.native_ops;
-    prog.needs_jit = h.needs_jit;
+    prog.needs_jit = h.needs_jit || rc.needs_jit;
     prog.deps = std::move(deps);
     return prog;
 }
@@ -1296,7 +1296,12 @@ static compiled_program reconstruct_from_cache(
     prog.code_size = 0;
     prog.str_pool_end = rv_compiler::STR_BASE;
     prog.fargs_pool_end = rv_compiler::FARGS_BASE;
-    prog.out_pool_end = rv_compiler::STACK_TOP - 8;
+    // For JIT programs, use OUT_STACK_LIMIT as a conservative lower bound
+    // so the output-clearing loop covers all possible slots.  For constant-
+    // folded programs, no output slots exist.
+    prog.out_pool_end = rec.needs_jit
+        ? rv_compiler::OUT_STACK_LIMIT
+        : rv_compiler::STACK_TOP - 8;
     prog.ok = true;
     prog.needs_jit = rec.needs_jit != 0;
     prog.folds = rec.folds;
