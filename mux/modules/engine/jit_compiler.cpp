@@ -733,7 +733,9 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
                                             int eval = EV_FCHECK | EV_EVAL,
                                             uint64_t code_base = 0,
                                             uint64_t str_start = rv_compiler::STR_BASE,
+                                            uint64_t str_lim = rv_compiler::STR_LIMIT,
                                             uint64_t fargs_start = rv_compiler::FARGS_BASE,
+                                            uint64_t fargs_lim = rv_compiler::FARGS_LIMIT,
                                             uint64_t out_start = 0) {
     tier2_lazy_init();
 
@@ -757,7 +759,7 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     // --- HIR pipeline ---
 
     // Phase 1: Lower AST → HIR.
-    rv_compiler rc(code_base, str_start, fargs_start, out_start);
+    rv_compiler rc(code_base, str_start, str_lim, fargs_start, fargs_lim, out_start);
 
     // Install Tier 2 blob into guest memory (if loaded).
     tier2_install(rc.memory, rv_compiler::BLOB_BASE);
@@ -1004,12 +1006,25 @@ struct persistent_vm_t {
                            int eval = EV_FCHECK | EV_EVAL) {
         tier2_lazy_init();
 
+        // Bounds check: code heap must not reach blob region.
+        if (code_heap_next >= rv_compiler::BLOB_BASE) {
+            return {0, 0};
+        }
+
         compiled_program prog = compile_expression(
             expr, len, eval,
-            code_heap_next, str_pool_next,
-            fargs_pool_next, out_pool_next);
+            code_heap_next,
+            str_pool_next, rv_compiler::STR_LIMIT,
+            fargs_pool_next, rv_compiler::FARGS_LIMIT,
+            out_pool_next);
 
         if (!prog.ok) return {0, 0};
+
+        // Post-compilation overflow check.
+        uint64_t code_end = prog.entry_pc + prog.code_size;
+        if (code_end > rv_compiler::BLOB_BASE) {
+            return {0, 0};
+        }
 
         install(prog);
         return {prog.entry_pc, prog.out_addr};

@@ -149,7 +149,9 @@ struct rv_compiler {
 
     // Pool allocators (bump pointers into guest memory).
     uint64_t str_pool;      // next free byte in string pool
+    uint64_t str_pool_limit; // upper bound for string pool
     uint64_t fargs_pool;    // next free byte in fargs area
+    uint64_t fargs_pool_limit; // upper bound for fargs pool
     uint64_t out_pool;      // next free byte in output area
     uint64_t final_out;     // guest addr of final result
 
@@ -222,7 +224,9 @@ struct rv_compiler {
     rv_compiler() : code_base(CODE_BASE),
                     memory(MEM_SIZE, 0),
                     str_pool(STR_BASE),
+                    str_pool_limit(STR_LIMIT),
                     fargs_pool(FARGS_BASE),
+                    fargs_pool_limit(FARGS_LIMIT),
                     out_pool(STACK_TOP - 8),
                     final_out(0),
                     folds(0),
@@ -231,14 +235,18 @@ struct rv_compiler {
                     needs_jit(false),
                     n_output_slots(0) {}
 
-    // Persistent VM constructor: caller specifies code base and pool
-    // starting positions to avoid collisions with previously compiled
-    // functions in the same guest memory.
-    rv_compiler(uint64_t cb, uint64_t sp, uint64_t fp, uint64_t op)
+    // Persistent VM constructor: caller specifies code base, pool
+    // starting positions, and pool limits.
+    rv_compiler(uint64_t cb,
+                uint64_t sp, uint64_t sp_lim,
+                uint64_t fp, uint64_t fp_lim,
+                uint64_t op)
         : code_base(cb),
           memory(MEM_SIZE, 0),
           str_pool(sp),
+          str_pool_limit(sp_lim),
           fargs_pool(fp),
+          fargs_pool_limit(fp_lim),
           out_pool(op ? op : STACK_TOP - 8),
           final_out(0),
           folds(0),
@@ -254,7 +262,7 @@ struct rv_compiler {
 
     uint64_t pool_str(const char *s, size_t len) {
         uint64_t addr = str_pool;
-        if (addr + len + 1 > STR_LIMIT) return 0;
+        if (addr + len + 1 > str_pool_limit) return 0;
         memcpy(memory.data() + addr, s, len);
         memory[addr + len] = '\0';
         str_pool = (addr + len + 1 + 7) & ~7ULL;
@@ -268,7 +276,7 @@ struct rv_compiler {
     uint64_t alloc_fargs(const std::vector<uint64_t> &ptrs) {
         uint64_t addr = fargs_pool;
         size_t sz = ptrs.size() * 8;
-        if (addr + sz > FARGS_LIMIT) return 0;
+        if (addr + sz > fargs_pool_limit) return 0;
         for (size_t i = 0; i < ptrs.size(); i++) {
             memcpy(memory.data() + addr + i * 8, &ptrs[i], 8);
         }
