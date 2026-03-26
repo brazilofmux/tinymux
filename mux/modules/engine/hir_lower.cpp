@@ -1873,6 +1873,81 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     }
 
     // ---------------------------------------------------------------
+    // letq(name, value, ..., body)
+    //
+    // Scoped q-register assignment.  Save all registers, assign
+    // name/value pairs, lower the body, restore registers.
+    //
+    // Only handles literal single-char register names (0-9, a-z).
+    // Named registers or dynamic names bail to AST.
+    // ---------------------------------------------------------------
+
+    if (fname == "LETQ" && node->children.size() >= 3
+        && (node->children.size() % 2) == 1) {
+
+        int nfargs = static_cast<int>(node->children.size());
+        int npairs = (nfargs - 1) / 2;
+
+        // Pre-check: all register names must be literal single-char.
+        // Bail if any are dynamic or named registers.
+        std::vector<int> regnums;
+        for (int i = 0; i < npairs; i++) {
+            const ASTNode *name_node = node->children[i * 2].get();
+
+            // Strip brace groups for the register name literal.
+            const ASTNode *inner = name_node;
+            if (inner->type == AST_BRACEGROUP && !inner->children.empty())
+                inner = inner->children[0].get();
+            // Unwrap single-child sequence.
+            if (inner->type == AST_SEQUENCE && inner->children.size() == 1)
+                inner = inner->children[0].get();
+
+            if (inner->type != AST_LITERAL || inner->text.size() != 1)
+                goto general_lowering;  // dynamic or named register
+
+            int rn = mux_RegisterSet[
+                static_cast<unsigned char>(inner->text[0])];
+            if (rn < 0 || rn >= MAX_GLOBAL_REGS)
+                goto general_lowering;  // invalid register
+
+            regnums.push_back(rn);
+        }
+
+        // Save q-registers via ECALL.
+        int save_idx = engine_api_lookup("_SAVE_QREGS");
+        int save_handle = h.emit_call(TY_STRING, save_idx, nullptr, 0);
+        h.ecalls++;
+        h.needs_jit = true;
+
+        // Evaluate and assign each value.
+        for (int i = 0; i < npairs; i++) {
+            int val = hir_lower_trimmed(h, rc,
+                node->children[i * 2 + 1].get());
+
+            // Convert to string for SETQ_SYNC if needed.
+            int sval = val;
+            if (h.ty[sval] == TY_INT) {
+                sval = h.emit(HIR_ITOA, TY_STRING, sval);
+            } else if (h.ty[sval] == TY_FLOAT) {
+                sval = h.emit(HIR_FTOA, TY_STRING, sval);
+            }
+            h.emit(HIR_SETQ_SYNC, TY_VOID, sval, -1, regnums[i]);
+        }
+
+        // Lower the body (last argument).
+        int body_result = hir_lower_trimmed(h, rc,
+            node->children[nfargs - 1].get());
+
+        // Restore q-registers via ECALL.
+        int restore_idx = engine_api_lookup("_RESTORE_QREGS");
+        int rqargs[1] = { save_handle };
+        h.emit_call(TY_STRING, restore_idx, rqargs, 1);
+        h.ecalls++;
+
+        return body_result;
+    }
+
+    // ---------------------------------------------------------------
     // General function call lowering.
     // ---------------------------------------------------------------
 general_lowering:
