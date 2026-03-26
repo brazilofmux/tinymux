@@ -496,6 +496,17 @@ static void rv_load_val(std::vector<uint32_t> &code, uint8_t rd,
     if (lo) code.push_back(rv_ADDI(rd, rd, lo));
 }
 
+static void rv_load_guest_addr(std::vector<uint32_t> &code, uint8_t rd,
+                                uint64_t addr) {
+    if (!rv_compiler::is_output_frame_ref(addr)) {
+        rv_load_val(code, rd, addr);
+        return;
+    }
+
+    rv_load_val(code, rd, rv_compiler::output_frame_delta(addr));
+    code.push_back(rv_SUB(rd, 8, rd));  // rd = frame_top - delta
+}
+
 // Emit ECALL to call a function.
 //
 // If func_idx > 0, uses indexed dispatch (ECALL_CALL_INDEX, a0 = index).
@@ -516,7 +527,7 @@ static void rv_emit_call(std::vector<uint32_t> &code,
     }
     rv_load_val(code, 11, fargs_addr);             // a1 = fargs
     code.push_back(rv_ADDI(12, 0, nfargs));        // a2 = nfargs
-    rv_load_val(code, 13, out_addr);               // a3 = output
+    rv_load_guest_addr(code, 13, out_addr);        // a3 = output
     rv_load_val(code, 14, out_size);               // a4 = outsize
     code.push_back(rv_ECALL());
 }
@@ -534,7 +545,7 @@ static void rv_emit_exit(std::vector<uint32_t> &code) {
 static void rv_emit_tier2_call(rv_compiler &rc,
                                 uint64_t fargs_addr, int nfargs,
                                 uint64_t out_addr, uint64_t func_guest_addr) {
-    rv_load_val(rc.code, 10, out_addr);                  // a0 = output
+    rv_load_guest_addr(rc.code, 10, out_addr);           // a0 = output
     rv_load_val(rc.code, 11, fargs_addr);                // a1 = fargs
     rc.code.push_back(rv_ADDI(12, 0, nfargs));           // a2 = nfargs
 
@@ -1035,7 +1046,7 @@ static void emit_phi_copies(hir_program &h, rv_compiler &rc,
                     val_reg = RA_SCRATCH2;
                 } else {
                     // String value used as int PHI — load addr and atoi.
-                    rv_load_val(rc.code, 10, loc[val].addr);
+                    rv_load_guest_addr(rc.code, 10, loc[val].addr);
                     rv_emit_atoi(rc.code, 10, phi_dest);
                     if (loc[i].spill_slot >= 0 && !loc[i].in_reg) {
                         emit_spill_store(rc.code, phi_dest, loc[i].spill_slot);
@@ -1050,17 +1061,17 @@ static void emit_phi_copies(hir_program &h, rv_compiler &rc,
                 // String PHI: copy string to PHI's output buffer.
                 if (loc[val].in_reg) {
                     // Integer val → ITOA to PHI buffer.
-                    rv_load_val(rc.code, 10, loc[i].addr);
+                    rv_load_guest_addr(rc.code, 10, loc[i].addr);
                     rv_emit_itoa(rc.code, loc[val].reg, 10);
                 } else if (loc[val].spill_slot >= 0) {
                     // Spilled integer val → reload, then ITOA.
                     emit_spill_load(rc.code, RA_SCRATCH, loc[val].spill_slot);
-                    rv_load_val(rc.code, 10, loc[i].addr);
+                    rv_load_guest_addr(rc.code, 10, loc[i].addr);
                     rv_emit_itoa(rc.code, RA_SCRATCH, 10);
                 } else {
                     // String → string: byte copy.
-                    rv_load_val(rc.code, 7, loc[i].addr);    // t2 = dest
-                    rv_load_val(rc.code, 6, loc[val].addr);  // t1 = src
+                    rv_load_guest_addr(rc.code, 7, loc[i].addr);   // t2 = dest
+                    rv_load_guest_addr(rc.code, 6, loc[val].addr); // t1 = src
                     rv_emit_strcpy(rc.code, 7, 6);
                 }
             }
@@ -1173,7 +1184,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                         mux_atol(u8(h.sval[s1])));
                     rv_load_i64(rc.code, dest, v);
                 } else {
-                    rv_load_val(rc.code, 10, loc[s1].addr);
+                    rv_load_guest_addr(rc.code, 10, loc[s1].addr);
                     rv_emit_atoi(rc.code, 10, dest);
                 }
                 ra_set_loc(rc, loc, int_alloc, i, dest);
@@ -1190,8 +1201,8 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                     int r = strcmp(h.sval[s1].c_str(), h.sval[s2].c_str());
                     rv_load_i64(rc.code, dest, r < 0 ? -1 : r > 0 ? 1 : 0);
                 } else {
-                    rv_load_val(rc.code, 10, loc[s1].addr);
-                    rv_load_val(rc.code, 11, loc[s2].addr);
+                    rv_load_guest_addr(rc.code, 10, loc[s1].addr);
+                    rv_load_guest_addr(rc.code, 11, loc[s2].addr);
                     rv_emit_strcmp(rc.code, 10, 11, dest);
                 }
                 ra_set_loc(rc, loc, int_alloc, i, dest);
@@ -1262,7 +1273,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 int s1 = h.src1[i];
                 uint8_t s1r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 uint64_t out_addr = loc[i].addr;
-                rv_load_val(rc.code, 10, out_addr);
+                rv_load_guest_addr(rc.code, 10, out_addr);
                 rv_emit_itoa(rc.code, s1r, 10);
                 break;
             }
@@ -1601,12 +1612,12 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 uint64_t a1 = loc[h.src1[i]].addr; \
                 uint64_t a2 = loc[h.src2[i]].addr; \
                 uint64_t dst = loc[i].addr; \
-                rv_load_val(rc.code, RA_SCRATCH, a1); \
+                rv_load_guest_addr(rc.code, RA_SCRATCH, a1); \
                 rc.code.push_back(rv_FLD(0, RA_SCRATCH, 0)); \
-                rv_load_val(rc.code, RA_SCRATCH, a2); \
+                rv_load_guest_addr(rc.code, RA_SCRATCH, a2); \
                 rc.code.push_back(rv_FLD(1, RA_SCRATCH, 0)); \
                 rc.code.push_back(RV_INSN(0, 0, 1)); \
-                rv_load_val(rc.code, RA_SCRATCH, dst); \
+                rv_load_guest_addr(rc.code, RA_SCRATCH, dst); \
                 rc.code.push_back(rv_FSD(RA_SCRATCH, 0, 0)); \
                 break; \
             }
@@ -1620,10 +1631,10 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
             case HIR_FNEG: {
                 uint64_t a1 = loc[h.src1[i]].addr;
                 uint64_t dst = loc[i].addr;
-                rv_load_val(rc.code, RA_SCRATCH, a1);
+                rv_load_guest_addr(rc.code, RA_SCRATCH, a1);
                 rc.code.push_back(rv_FLD(0, RA_SCRATCH, 0));
                 rc.code.push_back(rv_FNEG_D(0, 0));
-                rv_load_val(rc.code, RA_SCRATCH, dst);
+                rv_load_guest_addr(rc.code, RA_SCRATCH, dst);
                 rc.code.push_back(rv_FSD(RA_SCRATCH, 0, 0));
                 break;
             }
@@ -1631,10 +1642,10 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
             case HIR_FSQRT: {
                 uint64_t a1 = loc[h.src1[i]].addr;
                 uint64_t dst = loc[i].addr;
-                rv_load_val(rc.code, RA_SCRATCH, a1);
+                rv_load_guest_addr(rc.code, RA_SCRATCH, a1);
                 rc.code.push_back(rv_FLD(0, RA_SCRATCH, 0));
                 rc.code.push_back(rv_FSQRT_D(0, 0));
-                rv_load_val(rc.code, RA_SCRATCH, dst);
+                rv_load_guest_addr(rc.code, RA_SCRATCH, dst);
                 rc.code.push_back(rv_FSD(RA_SCRATCH, 0, 0));
                 break;
             }
@@ -1644,7 +1655,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 uint8_t r1 = ra_get_reg(rc, loc, h.src1[i], RA_SCRATCH);
                 uint64_t dst = loc[i].addr;
                 rc.code.push_back(rv_FCVT_D_L(0, r1));
-                rv_load_val(rc.code, RA_SCRATCH, dst);
+                rv_load_guest_addr(rc.code, RA_SCRATCH, dst);
                 rc.code.push_back(rv_FSD(RA_SCRATCH, 0, 0));
                 break;
             }
@@ -1652,7 +1663,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
             // FTOI: double → int64 (truncate toward zero).
             case HIR_FTOI: {
                 uint64_t a1 = loc[h.src1[i]].addr;
-                rv_load_val(rc.code, RA_SCRATCH, a1);
+                rv_load_guest_addr(rc.code, RA_SCRATCH, a1);
                 rc.code.push_back(rv_FLD(0, RA_SCRATCH, 0));
                 uint8_t reg = int_alloc.reg[i];
                 bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
@@ -1668,10 +1679,10 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 uint64_t a1 = loc[h.src1[i]].addr;
                 uint64_t out_addr = loc[i].addr;
                 // Load double bits into a0 via FMV.X.D.
-                rv_load_val(rc.code, RA_SCRATCH, a1);
+                rv_load_guest_addr(rc.code, RA_SCRATCH, a1);
                 rc.code.push_back(rv_FLD(0, RA_SCRATCH, 0));
                 rc.code.push_back(rv_FMV_X_D(10, 0));  // a0 = double bits
-                rv_load_val(rc.code, 11, out_addr);     // a1 = output buffer
+                rv_load_guest_addr(rc.code, 11, out_addr);    // a1 = output buffer
                 rv_load_val(rc.code, 17, 0x140);        // a7 = ECALL_FTOA
                 rc.code.push_back(rv_ECALL());
                 break;
@@ -1684,7 +1695,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 uint64_t str_addr = loc[h.src1[i]].addr;
                 uint64_t dst = loc[i].addr;
                 uint64_t blob_addr = static_cast<uint64_t>(h.val[i]);
-                rv_load_val(rc.code, 10, str_addr);         // a0 = string
+                rv_load_guest_addr(rc.code, 10, str_addr);    // a0 = string
                 if (blob_addr) {
                     // JAL to rv64_strtod — result in fa0.
                     uint64_t pc = rc.current_pc();
@@ -1696,7 +1707,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                     rc.code.push_back(rv_ECALL());
                 }
                 // Result in fa0 (f10).  Store to FP slot.
-                rv_load_val(rc.code, RA_SCRATCH, dst);
+                rv_load_guest_addr(rc.code, RA_SCRATCH, dst);
                 rc.code.push_back(rv_FSD(RA_SCRATCH, 10, 0)); // *dst = fa0
                 break;
             }
@@ -1708,14 +1719,14 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 uint64_t dst = loc[i].addr;
                 uint64_t func_addr = static_cast<uint64_t>(h.val[i]);
                 // Load argument into fa0 (f10).
-                rv_load_val(rc.code, RA_SCRATCH, a1);
+                rv_load_guest_addr(rc.code, RA_SCRATCH, a1);
                 rc.code.push_back(rv_FLD(10, RA_SCRATCH, 0));  // fa0 = *a1
                 // JAL to blob function.
                 uint64_t pc = rc.current_pc();
                 int32_t offset = static_cast<int32_t>(func_addr - pc);
                 rc.code.push_back(rv_JAL(1, offset));          // JAL ra, func
                 // Store result from fa0 to FP slot.
-                rv_load_val(rc.code, RA_SCRATCH, dst);
+                rv_load_guest_addr(rc.code, RA_SCRATCH, dst);
                 rc.code.push_back(rv_FSD(RA_SCRATCH, 10, 0));  // *dst = fa0
                 break;
             }
@@ -1728,16 +1739,16 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 uint64_t dst = loc[i].addr;
                 uint64_t func_addr = static_cast<uint64_t>(h.val[i]);
                 // Load arguments into fa0, fa1.
-                rv_load_val(rc.code, RA_SCRATCH, a1);
+                rv_load_guest_addr(rc.code, RA_SCRATCH, a1);
                 rc.code.push_back(rv_FLD(10, RA_SCRATCH, 0));  // fa0 = *a1
-                rv_load_val(rc.code, RA_SCRATCH, a2);
+                rv_load_guest_addr(rc.code, RA_SCRATCH, a2);
                 rc.code.push_back(rv_FLD(11, RA_SCRATCH, 0));  // fa1 = *a2
                 // JAL to blob function.
                 uint64_t pc = rc.current_pc();
                 int32_t offset = static_cast<int32_t>(func_addr - pc);
                 rc.code.push_back(rv_JAL(1, offset));          // JAL ra, func
                 // Store result from fa0 to FP slot.
-                rv_load_val(rc.code, RA_SCRATCH, dst);
+                rv_load_guest_addr(rc.code, RA_SCRATCH, dst);
                 rc.code.push_back(rv_FSD(RA_SCRATCH, 10, 0));  // *dst = fa0
                 break;
             }
@@ -1747,9 +1758,9 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
             { \
                 uint64_t a1 = loc[h.src1[i]].addr; \
                 uint64_t a2 = loc[h.src2[i]].addr; \
-                rv_load_val(rc.code, RA_SCRATCH, a1); \
+                rv_load_guest_addr(rc.code, RA_SCRATCH, a1); \
                 rc.code.push_back(rv_FLD(0, RA_SCRATCH, 0)); \
-                rv_load_val(rc.code, RA_SCRATCH, a2); \
+                rv_load_guest_addr(rc.code, RA_SCRATCH, a2); \
                 rc.code.push_back(rv_FLD(1, RA_SCRATCH, 0)); \
                 uint8_t reg = int_alloc.reg[i]; \
                 bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0); \
@@ -1890,7 +1901,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 rc.code.push_back(rv_ADDI(17, 0, 0x130));  // a7 = ECALL_SETQ_PACK
                 rv_load_val(rc.code, 10, static_cast<uint64_t>(regnum));  // a0 = regnum
                 if (val_idx >= 0) {
-                    rv_load_val(rc.code, 11, loc[val_idx].addr);  // a1 = value addr
+                    rv_load_guest_addr(rc.code, 11, loc[val_idx].addr);  // a1 = value addr
                 } else {
                     rv_load_val(rc.code, 11, 0);
                 }
@@ -1936,14 +1947,14 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
         if (loc[ri].in_reg) {
             // Final result is in a register — need ITOA.
             uint64_t out_addr = rc.alloc_output();
-            rv_load_val(rc.code, 10, out_addr);
+            rv_load_guest_addr(rc.code, 10, out_addr);
             rv_emit_itoa(rc.code, loc[ri].reg, 10);
             rc.final_out = out_addr;
         } else if (loc[ri].spill_slot >= 0) {
             // Final result is spilled — reload and ITOA.
             uint64_t out_addr = rc.alloc_output();
             emit_spill_load(rc.code, RA_SCRATCH, loc[ri].spill_slot);
-            rv_load_val(rc.code, 10, out_addr);
+            rv_load_guest_addr(rc.code, 10, out_addr);
             rv_emit_itoa(rc.code, RA_SCRATCH, 10);
             rc.final_out = out_addr;
         } else {
