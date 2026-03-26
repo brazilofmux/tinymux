@@ -1152,6 +1152,12 @@ static MUX_RESULT init_com(void)
 
     // Build engine path relative to game directory.
 #if defined(WIN32)
+    // Add game/bin to DLL search path so engine.dll can find libmux.dll.
+    {
+        wchar_t bindir[4096 + 64];
+        swprintf(bindir, sizeof(bindir)/sizeof(wchar_t), L"%hs\\bin", g_gamedir);
+        SetDllDirectoryW(bindir);
+    }
     wchar_t engine_pathw[4096 + 64];
     swprintf(engine_pathw, sizeof(engine_pathw)/sizeof(wchar_t),
              L"%hs\\bin\\engine.dll", g_gamedir);
@@ -1164,7 +1170,13 @@ static MUX_RESULT init_com(void)
 #endif
     if (MUX_FAILED(mr))
     {
-        fprintf(stderr, "muxscript: cannot load engine (%d)\n", mr);
+#if defined(WIN32)
+        fprintf(stderr, "muxscript: cannot load engine (%d) path=%ls\n", mr, engine_pathw);
+        DWORD err = GetLastError();
+        if (err) fprintf(stderr, "muxscript: GetLastError=%lu\n", err);
+#else
+        fprintf(stderr, "muxscript: cannot load engine (%d) path=%s\n", mr, engine_path);
+#endif
         return mr;
     }
 
