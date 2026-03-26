@@ -3536,34 +3536,36 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
         return false;
     }
 
-    // Prevent re-entrant JIT execution.  When JIT code ECALLs into
-    // a function like u() which calls mux_exec(), the nested
-    // mux_exec would re-enter jit_eval() and create another full
-    // DBT context.  The DBT setup/teardown overhead (~50ms) dwarfs
-    // the AST interpreter cost (~0.003ms) for the inner expression.
-    // Fall back to AST for nested evaluations.
+    // Re-entrancy depth tracking.  When JIT code ECALLs into a
+    // function like u() which calls mux_exec(), the nested mux_exec
+    // re-enters jit_eval().
+    //
+    // Depth 0 (top-level): full JIT — compile, constant-fold, or
+    //   DBT-execute.
+    // Depth 1+ (nested): compile and return constant-folded results
+    //   (no DBT needed), but fall back to AST for programs that
+    //   require runtime execution.  This is step 1 toward full
+    //   re-entrant JIT: inner expressions that fold at compile time
+    //   get the JIT result without touching the DBT.
     //
     static int s_jit_depth = 0;
-    if (s_jit_depth > 0)
-    {
-        return false;
-    }
     s_jit_depth++;
 
     struct jit_depth_guard {
         ~jit_depth_guard() { s_jit_depth--; }
     } depth_guard;
 
-    JITArena::gc();
-    jit_dma_controller::reset();
+    if (s_jit_depth == 1) {
+        JITArena::gc();
+        jit_dma_controller::reset();
+    }
+
     // Don't JIT until the Tier 2 blob is loaded and the persistent
     // DBT state is initialized.  compile_cached calls tier2_lazy_init,
     // but the DBT infrastructure (mmap, block cache) may not be safe
     // to initialize during early startup (config loading, @startup).
     // The s_dbt_ready flag is set after the first successful get_dbt.
     if (!s_tier2_init) {
-        // First call: try to init.  If it works, proceed.
-        // If not, bail and let AST eval handle it.
         tier2_lazy_init();
         if (!s_tier2.loaded) return false;
     }
@@ -3578,6 +3580,7 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
 
     if (!prog->needs_jit) {
         // Constant-folded — result is in the string pool.
+        // Safe at any nesting depth (no DBT involved).
         s_jit_stats.folded_total++;
         s_jit_stats.eval_handled++;
         uint64_t out_addr = resolve_runtime_out_addr(
@@ -3585,6 +3588,12 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
         const UTF8 *result = prog->memory.data() + out_addr;
         safe_str(result, buff, bufc);
         return true;
+    }
+
+    // Runtime execution requires the DBT — only allowed at depth 1.
+    if (s_jit_depth > 1) {
+        s_jit_stats.eval_bailout++;
+        return false;
     }
 
     LBuf result = LBuf_Src("jit_eval");
