@@ -572,14 +572,20 @@ struct branch_patch {
 // ending furthest in the future is spilled to the RV64 stack.
 // ---------------------------------------------------------------
 
-// Allocatable integer registers: s1-s11 (x9, x18-x27).
-static constexpr int RA_NUM_REGS = 11;
+// Allocatable integer registers: s1-s10 (x9, x18-x26).
+// s11 (x27) is reserved as RA_SCRATCH.
+static constexpr int RA_NUM_REGS = 10;
 static constexpr uint8_t RA_REGS[RA_NUM_REGS] = {
-    9, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27
+    9, 18, 19, 20, 21, 22, 23, 24, 25, 26
 };
 
-// Scratch register for spill/reload (s0 = x8, callee-saved).
-static constexpr uint8_t RA_SCRATCH = 8;
+// Scratch register for spill/reload (s11 = x27, callee-saved).
+// Must be callee-saved to survive across ECALL and Tier 2 JAL calls.
+// Must not conflict with rv_emit_itoa/strcpy/atoi helpers (which use t0-t2).
+static constexpr uint8_t RA_SCRATCH = 27;
+
+// Frame-top register: incoming SP captured in the prologue (s0 = x8).
+static constexpr uint8_t RA_FRAME_TOP = 8;
 
 // Second scratch for two-operand instructions (t3 = x28).
 // Safe because arithmetic ops don't call atoi/itoa.
