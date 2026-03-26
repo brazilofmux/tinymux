@@ -184,7 +184,9 @@ struct rv_compiler {
     static constexpr uint64_t OUT_BASE       = 0x8000;   // legacy (unused by new alloc)
     static constexpr int      OUT_SLOT       = 32768;    // = LBUF_SIZE
     static constexpr uint64_t OUT_STACK_LIMIT = 0x81000; // lowest valid output addr
-    static constexpr uint64_t OUT_FRAME_TAG   = 0x80000000ULL;
+    // Bit 30, not bit 31: RV64 LUI sign-extends bit 31 to 64 bits,
+    // which corrupts tagged values loaded via load_val.
+    static constexpr uint64_t OUT_FRAME_TAG   = 0x40000000ULL;
 
     // Pinned Lua array region: 0x50000-0x60000 (64KB = 8192 int64 elements)
     // Shares address space with output range 2 — never used simultaneously.

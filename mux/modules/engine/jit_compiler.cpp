@@ -4115,13 +4115,16 @@ FUNCTION(fun_pocvm2)
     const char *result_a = (rc_a == 0)
         ? s_pvm.result(func_a_out) : "#-1 RUN A FAILED";
 
-    // Run B.
+    // Run B.  Copy A's result first — B shares the same output slot.
+    std::string str_a(result_a);
     s_pvm.reset_blob_bss();
     int rc_b = s_pvm.run(func_b_entry);
     const char *result_b = (rc_b == 0)
         ? s_pvm.result(func_b_out) : "#-1 RUN B FAILED";
 
     // Run C (re-entrant: calls A internally).
+    // Copy B's result — C will overwrite the shared output slot.
+    std::string str_b(result_b);
     s_pvm.reset_blob_bss();
     uint64_t c_out_abs = rv_compiler::resolve_output_addr(
         func_c_out, rv_compiler::STACK_TOP);
@@ -4138,7 +4141,7 @@ FUNCTION(fun_pocvm2)
     LBuf tmp = LBuf_Src("pocvm2");
     snprintf(reinterpret_cast<char *>(tmp.get()), LBUF_SIZE,
         "a=%s b=%s c=%s a_pc=0x%llX b_pc=0x%llX c_pc=0x%llX calls=%u",
-        result_a, result_b, result_c,
+        str_a.c_str(), str_b.c_str(), result_c,
         (unsigned long long)func_a_entry,
         (unsigned long long)func_b_entry,
         (unsigned long long)func_c_entry,
