@@ -991,13 +991,17 @@ struct persistent_vm_t {
     };
     std::vector<attr_cache_entry> attr_cache;
 
+    // Track the worst-case output allocation across all compilations.
+    uint64_t worst_out_pool;
+
     persistent_vm_t()
         : memory(rv_compiler::MEM_SIZE, 0),
           dbt_ready(false), run_count(0),
           code_heap_next(0x0004),  // avoid PC=0 (cache sentinel)
           str_pool_next(rv_compiler::STR_BASE),
           fargs_pool_next(rv_compiler::FARGS_BASE),
-          out_pool_next(rv_compiler::STACK_TOP - 8) {}
+          out_pool_next(rv_compiler::STACK_TOP - 8),
+          worst_out_pool(rv_compiler::STACK_TOP - 8) {}
 
     // Compile an expression and install it into persistent memory.
     // Returns {entry_pc, out_addr} on success, {0, 0} on failure.
@@ -1017,12 +1021,17 @@ struct persistent_vm_t {
             return {0, 0, false};
         }
 
+        // Reset the output pool for each compilation.  Output slots
+        // are stack-allocated at runtime via the prologue, so each
+        // expression can reuse the same output addresses.
+        uint64_t out_start = rv_compiler::STACK_TOP - 8;
+
         compiled_program prog = compile_expression(
             expr, len, eval,
             code_heap_next,
             str_pool_next, rv_compiler::STR_LIMIT,
             fargs_pool_next, rv_compiler::FARGS_LIMIT,
-            out_pool_next);
+            out_start);
 
         if (!prog.ok) return {0, 0, false};
 
@@ -1117,9 +1126,9 @@ struct persistent_vm_t {
     // Prepare for execution: clear output buffers and reset blob BSS.
     //
     void prepare_run() {
-        if (out_pool_next < rv_compiler::STACK_TOP - 8) {
-            memset(memory.data() + out_pool_next, 0,
-                   (rv_compiler::STACK_TOP - 8) - out_pool_next);
+        if (worst_out_pool < rv_compiler::STACK_TOP - 8) {
+            memset(memory.data() + worst_out_pool, 0,
+                   (rv_compiler::STACK_TOP - 8) - worst_out_pool);
         }
         if (s_tier2.loaded) {
             tier2_install(memory, rv_compiler::BLOB_BASE);
@@ -1184,19 +1193,17 @@ private:
                    prog.fargs_pool_end - fargs_pool_next);
         }
 
-        // Output (stack-allocated, grows downward).
-        if (prog.out_pool_end < out_pool_next) {
-            memcpy(memory.data() + prog.out_pool_end,
-                   prog.memory.data() + prog.out_pool_end,
-                   out_pool_next - prog.out_pool_end);
+        // Output is stack-allocated at runtime via the prologue;
+        // no install-time copy needed.  Track worst-case for clearing.
+        if (prog.out_pool_end < worst_out_pool) {
+            worst_out_pool = prog.out_pool_end;
         }
 
-        // Advance cursors.
+        // Advance code and data cursors only.
         code_heap_next = prog.entry_pc + prog.code_size;
         code_heap_next = (code_heap_next + 15) & ~15ULL;
         str_pool_next = prog.str_pool_end;
         fargs_pool_next = prog.fargs_pool_end;
-        out_pool_next = prog.out_pool_end;
     }
 };
 
@@ -4075,7 +4082,9 @@ FUNCTION(fun_pocvm2)
             code.push_back(rv64_asm::SB(t4, t3, 1));
             code.push_back(rv64_asm::ADDI(t4, t4, 2));
 
-            rv64_asm::load_val(code, t3, func_a_out);
+            // After ECALL_CALL_COMPILED, a1 (x11) holds the resolved
+            // output address of the inner function.
+            code.push_back(rv64_asm::ADDI(t3, a1, 0));  // t3 = a1
             size_t copy_loop = code.size();
             code.push_back(rv64_asm::i_type(OP_LOAD, t0, 4, t3, 0));
             code.push_back(rv64_asm::SB(t4, t0, 0));
@@ -4114,8 +4123,14 @@ FUNCTION(fun_pocvm2)
 
     // Run C (re-entrant: calls A internally).
     s_pvm.reset_blob_bss();
-    memset(s_pvm.memory.data() + func_c_out, 0, 256);
-    memset(s_pvm.memory.data() + func_a_out, 0, 256);
+    uint64_t c_out_abs = rv_compiler::resolve_output_addr(
+        func_c_out, rv_compiler::STACK_TOP);
+    uint64_t a_out_abs = rv_compiler::resolve_output_addr(
+        func_a_out, rv_compiler::STACK_TOP);
+    if (c_out_abs && c_out_abs < s_pvm.memory.size())
+        memset(s_pvm.memory.data() + c_out_abs, 0, 256);
+    if (a_out_abs && a_out_abs < s_pvm.memory.size())
+        memset(s_pvm.memory.data() + a_out_abs, 0, 256);
     int rc_c = s_pvm.run(func_c_entry);
     const char *result_c = (rc_c == 0)
         ? s_pvm.result(func_c_out) : "#-1 RUN C FAILED";

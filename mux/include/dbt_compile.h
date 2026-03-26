@@ -316,7 +316,7 @@ struct rv_compiler {
         }
         out_pool = addr;
         n_output_slots++;
-        return addr;
+        return make_output_frame_ref(addr);
     }
 };
 
