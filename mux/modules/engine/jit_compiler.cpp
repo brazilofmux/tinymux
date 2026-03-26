@@ -421,6 +421,15 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
     // BSS size tells the loader how much to zero-fill after.
     s_tier2.bss_size = (hdr.version >= 2) ? hdr.bss_size : 0;
 
+    // Record writable data offset within the flat image for runtime reset.
+    if (hdr.version >= 2 && hdr.data_size > 0) {
+        s_tier2.data_image_offset = hdr.data_offset - hdr.code_offset;
+        s_tier2.data_image_size = hdr.data_size;
+    } else {
+        s_tier2.data_image_offset = 0;
+        s_tier2.data_image_size = 0;
+    }
+
     // Read entry table.
     std::vector<rv64_blob_entry> entries(hdr.entry_count);
     fseek(f, hdr.entry_offset, SEEK_SET);
@@ -711,6 +720,32 @@ void tier2_install(Vec &memory, uint64_t guest_base) {
 
 template void tier2_install(guest_memory_t &, uint64_t);
 template void tier2_install(std::vector<uint8_t> &, uint64_t);
+
+// Reset only the writable portions of the Tier 2 blob (data + BSS).
+// Code and rodata are immutable and don't need re-copying at runtime.
+//
+template<typename Vec>
+static void tier2_reset_writable(Vec &memory, uint64_t guest_base) {
+    if (!s_tier2.loaded) return;
+
+    // Re-copy initialized writable data (.sdata/.data).
+    if (s_tier2.data_image_size > 0) {
+        uint64_t dst = guest_base + s_tier2.data_image_offset;
+        if (dst + s_tier2.data_image_size <= memory.size()) {
+            memcpy(memory.data() + dst,
+                   s_tier2.code.data() + s_tier2.data_image_offset,
+                   s_tier2.data_image_size);
+        }
+    }
+
+    // Zero-fill BSS.
+    if (s_tier2.bss_size > 0) {
+        uint64_t bss_start = guest_base + s_tier2.code.size();
+        if (bss_start + s_tier2.bss_size <= memory.size()) {
+            memset(memory.data() + bss_start, 0, s_tier2.bss_size);
+        }
+    }
+}
 
 // Lazy-init Tier 2 blob on first compile.
 static bool s_tier2_init = false;
@@ -1467,24 +1502,11 @@ bool run_cached_program(compiled_program *prog,
         return true;
     }
 
-    // Clear output regions + cargs for clean re-run.
-    // Re-zero the blob's BSS on each execution.  The initialized portion
-    // (code + rodata + data) is preserved, but BSS (dtoa pools, heap, etc.)
-    // must be reset to zero for correct behavior across calls.
-    if (s_tier2.loaded && s_tier2.bss_size > 0) {
-        uint64_t bss_start = rv_compiler::BLOB_BASE + s_tier2.code.size();
-        if (bss_start + s_tier2.bss_size <= prog->memory_size) {
-            memset(prog->memory.data() + bss_start, 0, s_tier2.bss_size);
-        }
-    }
-
-    // Re-copy initialized writable data (sdata) on each execution.
-    // The flat image includes code + rodata + data, but only data changes.
-    // For now, just re-install the full image on each run to be safe.
-    // This is fast (~167KB memcpy) and ensures dtoa_divmax, pmem_next, etc.
-    // are reset to their initial values.
+    // Reset writable blob state (data + BSS) for clean re-run.
+    // Code and rodata are immutable — only data section (dtoa_divmax,
+    // pmem_next, etc.) and BSS (dtoa pools, heap) need resetting.
     if (s_tier2.loaded) {
-        tier2_install(prog->memory, rv_compiler::BLOB_BASE);
+        tier2_reset_writable(prog->memory, rv_compiler::BLOB_BASE);
     }
 
     // Clear output buffers (stack-allocated near STACK_TOP) and CARGS/SUBST.

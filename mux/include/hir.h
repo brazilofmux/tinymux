@@ -177,8 +177,9 @@ struct hir_program {
 
     // String values for SCONST (compile-time known strings).
     // Indexed by instruction index.  Empty for non-SCONST insns.
-    std::string sval[HIR_MAX_INSNS];
-    std::string call_name[HIR_MAX_INSNS];
+    // Vectors sized to n_insns — avoids constructing 4096 strings.
+    std::vector<std::string> sval;
+    std::vector<std::string> call_name;
 
     // Known-integer flag: true if a TY_STRING result is known to
     // parse as an integer (e.g., ECALL result from strlen/eq/gt).
@@ -287,6 +288,9 @@ struct hir_program {
         native_ops = 0;
         needs_jit = false;
 
+        sval.clear();
+        call_name.clear();
+
         // Initialize block 0.
         block_succ[0][0] = block_succ[0][1] = -1;
         block_nsucc[0] = 0;
@@ -312,8 +316,8 @@ struct hir_program {
         tier2_addr[i] = 0;
         pbase[i] = 0;
         pnargs[i] = 0;
-        sval[i].clear();
-        call_name[i].clear();
+        sval.emplace_back();
+        call_name.emplace_back();
         known_int[i] = false;
         known_float[i] = false;
         runtime_ref[i] = false;

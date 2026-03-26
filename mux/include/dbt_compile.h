@@ -145,10 +145,12 @@ struct tier2_entry {
 
 struct tier2_state {
     bool loaded;
-    std::vector<uint8_t> code;           // code section bytes
+    std::vector<uint8_t> code;           // flat image (code + rodata + data)
     std::vector<uint8_t> rodata;         // rodata section bytes
     std::vector<uint8_t> data;           // initialized writable data
     uint32_t bss_size;                   // zero-fill size after data
+    uint32_t data_image_offset;          // offset of writable data within code[]
+    uint32_t data_image_size;            // size of writable data section
     std::map<std::string, tier2_entry> funcs;  // name → entry
     uint64_t guest_base;                 // where code is loaded in guest memory
 };
