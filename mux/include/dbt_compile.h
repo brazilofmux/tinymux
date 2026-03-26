@@ -153,7 +153,7 @@ struct rv_compiler {
     uint64_t fargs_pool;    // next free byte in fargs area
     uint64_t fargs_pool_limit; // upper bound for fargs pool
     uint64_t out_pool;      // next free byte in output area
-    uint64_t final_out;     // guest addr of final result
+    uint64_t final_out;     // guest addr or tagged frame-relative output ref
 
     // Statistics.
     int folds;              // number of constant-folded calls
@@ -327,7 +327,7 @@ struct rv_compiler {
 struct compiled_program {
     std::vector<uint8_t> memory;
     size_t memory_size;
-    uint64_t out_addr;      // where the final result lives
+    uint64_t out_addr;      // guest addr or tagged frame-relative output ref
     uint64_t out_used;      // bytes of output region actually allocated
     uint64_t entry_pc;      // guest PC of compiled code entry point
     uint64_t code_size;     // bytes of code emitted

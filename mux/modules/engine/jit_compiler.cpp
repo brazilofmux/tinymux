@@ -855,6 +855,10 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     return prog;
 }
 
+static uint64_t resolve_runtime_out_addr(uint64_t out_addr, uint64_t entry_sp) {
+    return rv_compiler::resolve_output_addr(out_addr, entry_sp);
+}
+
 // ---------------------------------------------------------------
 // fun_rveval: softcode function.
 //
@@ -1150,9 +1154,11 @@ struct persistent_vm_t {
 
     // Read a NUL-terminated result string from guest memory.
     //
-    const char *result(uint64_t out_addr) const {
-        if (out_addr == 0 || out_addr >= memory.size()) return "";
-        return reinterpret_cast<const char *>(memory.data() + out_addr);
+    const char *result(uint64_t out_addr,
+                       uint64_t entry_sp = rv_compiler::STACK_TOP) const {
+        uint64_t resolved = resolve_runtime_out_addr(out_addr, entry_sp);
+        if (resolved == 0 || resolved >= memory.size()) return "";
+        return reinterpret_cast<const char *>(memory.data() + resolved);
     }
 
 private:
@@ -1439,8 +1445,10 @@ bool run_cached_program(compiled_program *prog,
                         int eval,
                         void *lua_state) {
     if (!prog->needs_jit) {
+        uint64_t out_addr = resolve_runtime_out_addr(
+            prog->out_addr, rv_compiler::STACK_TOP);
         const char *r = reinterpret_cast<const char *>(
-            prog->memory.data() + prog->out_addr);
+            prog->memory.data() + out_addr);
         size_t n = strlen(r);
         if (n >= out_size) n = out_size - 1;
         memcpy(out, r, n);
@@ -1612,8 +1620,10 @@ bool run_cached_program(compiled_program *prog,
     int rc = dbt_run(dbt, prog->entry_pc, rv_compiler::STACK_TOP);
     if (rc != 0) return false;
 
+    uint64_t out_addr = resolve_runtime_out_addr(
+        prog->out_addr, rv_compiler::STACK_TOP);
     const char *r = reinterpret_cast<const char *>(
-        prog->memory.data() + prog->out_addr);
+        prog->memory.data() + out_addr);
     size_t n = strlen(r);
     if (n >= out_size) n = out_size - 1;
     memcpy(out, r, n);
@@ -1664,9 +1674,14 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
 
     UTF8 *fargs[MAX_ARG];
     if (nfargs > MAX_ARG) nfargs = MAX_ARG;
+    uint64_t frame_top = ctx->x[8];  // s0 = frame pointer
     for (int i = 0; i < nfargs; i++) {
         uint64_t ptr;
         memcpy(&ptr, ec->memory + fargs_addr + i * 8, 8);
+        // Resolve frame-relative output references.
+        if (rv_compiler::is_output_frame_ref(ptr)) {
+            ptr = rv_compiler::resolve_output_addr(ptr, frame_top);
+        }
         if (ptr >= ec->memory_size) {
             ctx->x[10] = 0;
             return -1;
@@ -3208,7 +3223,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         }
 
         uint64_t target_pc = ctx->x[10];
-        uint64_t out_addr  = ctx->x[11];
+        uint64_t out_ref   = ctx->x[11];
 
         // Save outer CPU context.
         rv64_ctx_t saved_ctx = *ctx;
@@ -3218,15 +3233,17 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
 
         // Extract result length.
         uint64_t result_len = 0;
-        if (inner_rc == 0 && out_addr > 0
-            && out_addr < ec->memory_size) {
+        uint64_t resolved_out = resolve_runtime_out_addr(out_ref, saved_ctx.x[2]);
+        if (inner_rc == 0 && resolved_out > 0
+            && resolved_out < ec->memory_size) {
             result_len = strlen(reinterpret_cast<const char *>(
-                ec->memory + out_addr));
+                ec->memory + resolved_out));
         }
 
         // Restore outer context.
         *ctx = saved_ctx;
         ctx->x[10] = result_len;
+        ctx->x[11] = resolved_out;
         return -1;  // continue outer execution
     }
 
@@ -3525,7 +3542,9 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
         // Constant-folded — result is in the string pool.
         s_jit_stats.folded_total++;
         s_jit_stats.eval_handled++;
-        const UTF8 *result = prog->memory.data() + prog->out_addr;
+        uint64_t out_addr = resolve_runtime_out_addr(
+            prog->out_addr, rv_compiler::STACK_TOP);
+        const UTF8 *result = prog->memory.data() + out_addr;
         safe_str(result, buff, bufc);
         return true;
     }
@@ -3662,8 +3681,10 @@ static bool run_compiled(compiled_program &prog,
                           bool reuse_dbt = false) {
     if (!prog.needs_jit) {
         // Fully folded — result is already in guest memory.
+        uint64_t out_addr = resolve_runtime_out_addr(
+            prog.out_addr, rv_compiler::STACK_TOP);
         const char *r = reinterpret_cast<const char *>(
-            prog.memory.data() + prog.out_addr);
+            prog.memory.data() + out_addr);
         size_t n = strlen(r);
         if (n >= out_size) n = out_size - 1;
         memcpy(out, r, n);
@@ -3702,8 +3723,10 @@ static bool run_compiled(compiled_program &prog,
 
     if (rc != 0) return false;
 
+    uint64_t out_addr = resolve_runtime_out_addr(
+        prog.out_addr, rv_compiler::STACK_TOP);
     const char *r = reinterpret_cast<const char *>(
-        prog.memory.data() + prog.out_addr);
+        prog.memory.data() + out_addr);
     size_t n = strlen(r);
     if (n >= out_size) n = out_size - 1;
     memcpy(out, r, n);
@@ -3905,6 +3928,21 @@ static void load_val(std::vector<uint32_t> &code, uint8_t rd, uint64_t val) {
     if (lo) code.push_back(ADDI(rd, rd, lo));
 }
 
+static uint32_t SUB(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return OP_REG | (rd << 7) | (0 << 12) | (rs1 << 15)
+         | (rs2 << 20) | (0x20u << 25);
+}
+
+static void load_guest_addr(std::vector<uint32_t> &code, uint8_t rd,
+                            uint64_t addr) {
+    if (!rv_compiler::is_output_frame_ref(addr)) {
+        load_val(code, rd, addr);
+        return;
+    }
+    load_val(code, rd, rv_compiler::output_frame_delta(addr));
+    code.push_back(SUB(rd, 8, rd));  // rd = frame_top - delta
+}
+
 } // namespace rv64_asm
 
 // Persistent VM ECALL handler.
@@ -3926,7 +3964,7 @@ static int poc_ecall(rv64_ctx_t *ctx, void *user_data) {
         }
 
         uint64_t target_pc = ctx->x[10];
-        uint64_t out_addr  = ctx->x[11];
+        uint64_t out_ref   = ctx->x[11];
 
         // Save outer execution's full CPU context.
         rv64_ctx_t saved_ctx = *ctx;
@@ -3941,13 +3979,10 @@ static int poc_ecall(rv64_ctx_t *ctx, void *user_data) {
 
         // Extract inner result length.
         uint64_t result_len = 0;
-        if (inner_rc == 0 && out_addr > 0 && out_addr < dbt->memory_size) {
-            // Inner function wrote to its own output buffer.
-            // Its final_out address... we don't have it directly.
-            // For this PoC, assume the caller passed the correct
-            // output address — the inner function already wrote there.
+        uint64_t resolved_out = resolve_runtime_out_addr(out_ref, saved_ctx.x[2]);
+        if (inner_rc == 0 && resolved_out > 0 && resolved_out < dbt->memory_size) {
             result_len = strlen(reinterpret_cast<const char *>(
-                dbt->memory + out_addr));
+                dbt->memory + resolved_out));
         }
 
         // Restore outer CPU context.
@@ -3955,6 +3990,7 @@ static int poc_ecall(rv64_ctx_t *ctx, void *user_data) {
 
         // Return result info in a0.
         ctx->x[10] = result_len;
+        ctx->x[11] = resolved_out;
         return -1;  // continue outer execution
     }
 
