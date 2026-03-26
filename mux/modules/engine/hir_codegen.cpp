@@ -507,6 +507,29 @@ static void rv_load_guest_addr(std::vector<uint32_t> &code, uint8_t rd,
     code.push_back(rv_SUB(rd, 8, rd));  // rd = frame_top - delta
 }
 
+// Emit runtime patching of fargs entries that contain frame-relative
+// output references.  For each tagged entry, resolves it using s0
+// (frame pointer) and stores the resolved address back into the
+// fargs array in guest memory.
+//
+// Uses t0 (x5) and t1 (x6) as temporaries.
+//
+static void rv_patch_fargs(std::vector<uint32_t> &code,
+                            uint64_t fargs_addr,
+                            const std::vector<uint64_t> &farg_addrs) {
+    for (size_t j = 0; j < farg_addrs.size(); j++) {
+        if (rv_compiler::is_output_frame_ref(farg_addrs[j])) {
+            // t0 = resolved address (s0 - delta)
+            rv_load_val(code, 5, rv_compiler::output_frame_delta(farg_addrs[j]));
+            code.push_back(rv_SUB(5, 8, 5));  // t0 = s0 - delta
+
+            // Store resolved address into fargs[j]
+            rv_load_val(code, 6, fargs_addr + j * 8);  // t1 = &fargs[j]
+            code.push_back(rv_SD(6, 5, 0));             // *t1 = t0
+        }
+    }
+}
+
 // Emit ECALL to call a function.
 //
 // If func_idx > 0, uses indexed dispatch (ECALL_CALL_INDEX, a0 = index).
@@ -1789,6 +1812,8 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
 
                 if (h.tier2_addr[i]) {
                     // Tier 2: JAL to pre-compiled blob function.
+                    // Patch any frame-relative fargs at runtime.
+                    rv_patch_fargs(rc.code, fargs_addr, farg_addrs);
                     rv_emit_tier2_call(rc, fargs_addr, na,
                                         out_addr, h.tier2_addr[i]);
                 } else {
@@ -1816,6 +1841,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 uint64_t fargs_addr = rc.alloc_fargs(farg_addrs);
                 uint64_t t2addr = tier2_lookup("STRCAT");
                 if (t2addr) {
+                    rv_patch_fargs(rc.code, fargs_addr, farg_addrs);
                     rv_emit_tier2_call(rc, fargs_addr, na,
                                         out_addr, t2addr);
                 } else {
