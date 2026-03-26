@@ -1509,29 +1509,29 @@ bool run_cached_program(compiled_program *prog,
         tier2_reset_writable(prog->memory, rv_compiler::BLOB_BASE);
     }
 
-    // Clear output buffers (stack-allocated near STACK_TOP) and CARGS/SUBST.
-    // Output lives from out_pool_end (lowest allocated) up to STACK_TOP-8.
-    if (prog->out_pool_end < rv_compiler::STACK_TOP - 8) {
-        memset(prog->memory.data() + prog->out_pool_end, 0,
-               (rv_compiler::STACK_TOP - 8) - prog->out_pool_end);
+    // Clear output buffers: NUL the first byte of each slot.
+    // Generated code always writes before reading; the NUL sentinel
+    // ensures empty-string semantics for unused outputs.
+    {
+        uint64_t addr = rv_compiler::STACK_TOP - 8 - rv_compiler::OUT_SLOT;
+        while (addr >= prog->out_pool_end) {
+            prog->memory[addr] = 0;
+            addr -= rv_compiler::OUT_SLOT;
+        }
     }
-    // CARGS/SUBST region.
-    uint64_t subst_end = rv_compiler::SUBST_BASE
-                       + rv_compiler::SUBST_COUNT * rv_compiler::SUBST_SLOT;
-    memset(prog->memory.data() + rv_compiler::CARGS_BASE, 0,
-           subst_end - rv_compiler::CARGS_BASE);
 
-    // Copy %0-%9 cargs into fixed guest memory slots.
-    // Each carg gets a 256-byte slot at CARGS_BASE + idx * 256.
-    for (int i = 0; i < rv_compiler::MAX_CARGS && i < ncargs; i++) {
-        if (cargs && cargs[i]) {
+    // Populate CARGS: copy each arg, NUL-terminate unused slots.
+    for (int i = 0; i < rv_compiler::MAX_CARGS; i++) {
+        uint64_t slot = rv_compiler::CARGS_BASE
+                      + static_cast<uint64_t>(i) * rv_compiler::CARGS_SLOT;
+        if (i < ncargs && cargs && cargs[i]) {
             size_t len = strlen(reinterpret_cast<const char *>(cargs[i]));
             if (len >= static_cast<size_t>(rv_compiler::CARGS_SLOT))
                 len = rv_compiler::CARGS_SLOT - 1;
-            uint64_t slot = rv_compiler::CARGS_BASE
-                          + static_cast<uint64_t>(i) * rv_compiler::CARGS_SLOT;
             memcpy(prog->memory.data() + slot, cargs[i], len);
             prog->memory[slot + len] = 0;
+        } else {
+            prog->memory[slot] = 0;
         }
     }
 
