@@ -311,8 +311,8 @@ void HydraConnection::attemptReconnect() {
                 hydra::ClientMessage prefsMsg;
                 auto* prefs = prefsMsg.mutable_preferences();
                 prefs->set_color_format(hydra::ANSI_TRUECOLOR);
-                prefs->set_terminal_width(80);
-                prefs->set_terminal_height(24);
+                prefs->set_terminal_width(termWidth_);
+                prefs->set_terminal_height(termHeight_);
                 prefs->set_terminal_type("TinyMUX-Console");
                 grpc_->stream->Write(prefsMsg);
             }

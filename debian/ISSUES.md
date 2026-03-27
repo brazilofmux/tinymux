@@ -20,10 +20,9 @@ Updated: 2026-03-27
 
 ## Medium — Packaging Quality
 
-### Hardcoded `--enable-stubslave` in rules
+### ~~Hardcoded `--enable-stubslave` in rules~~ INTENTIONAL
 
-- **File:** `rules:8-9`
-- **Issue:** Configure called with `--enable-stubslave` always. No option to build without it or with other feature flags.
+- `--enable-stubslave` is correct for release/distribution packages per CLAUDE.md. Omitting it is only for local smoke testing.
 
 ### Game data files installed world-readable, no postinst permissions
 

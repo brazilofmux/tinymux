@@ -10,10 +10,9 @@ Updated: 2026-03-27
 
 ## Medium — Thread Safety
 
-### Global reference counters are not thread-safe
+### ~~Global reference counters are not thread-safe~~ FIXED
 
-- **File:** `mail_mod.cpp:57-58`
-- **Issue:** `g_cComponents` and `g_cServerLocks` are plain `uint32_t` with unprotected increment/decrement in constructors and destructors. Race condition if modules are loaded/unloaded from multiple threads.
+- Changed `g_cComponents` and `g_cServerLocks` from `uint32_t` to `std::atomic<uint32_t>`.
 
 ## Medium — Memory Management
 

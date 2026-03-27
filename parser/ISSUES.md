@@ -13,10 +13,9 @@ Updated: 2026-03-27
 
 ## Opportunities
 
-### `make` is not warning-clean under `-Wall -Wextra`
+### ~~`make` is not warning-clean under `-Wall -Wextra`~~ FIXED
 
-- **Evidence:** `make` in `parser/` succeeds, but `parse.cpp` and `eval.cpp` both warn that `token_name(TokenType)` in `parser/mux_parse.h:78` is defined but unused.
-- **Impact:** Small warning drift makes it harder to notice new parser-tool regressions in CI or local builds.
+- Changed `token_name()` from `static` to `inline` in `mux_parse.h` — eliminates unused-function warning in translation units that don't call it.
 
 ### Escape oracle corpus requires manual curation
 

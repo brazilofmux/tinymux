@@ -24,6 +24,7 @@
 #include "modules.h"
 #include "comsys_mod.h"
 
+#include <atomic>
 #include <cstring>
 
 // Windows compatibility for POSIX functions.
@@ -34,8 +35,8 @@
 
 // Module bookkeeping.
 //
-static uint32_t g_cComponents  = 0;
-static uint32_t g_cServerLocks = 0;
+static std::atomic<uint32_t> g_cComponents{0};
+static std::atomic<uint32_t> g_cServerLocks{0};
 
 // Module entry points.
 //

@@ -4,11 +4,9 @@ Updated: 2026-03-27
 
 ## Bugs
 
-### Hydra reconnect resends stale `80x24` terminal geometry
+### ~~Hydra reconnect resends stale `80x24` terminal geometry~~ FIXED
 
-- **Evidence:** `client/console/src/hydra_connection.cpp:309-317` rebuilds `SetPreferences` after reconnect, but hardcodes `terminal_width=80` and `terminal_height=24`.
-- **Impact:** Reconnected sessions can momentarily or permanently advertise the wrong viewport to Hydra unless another code path updates the dimensions later.
-- **Regression note:** This conflicts with the higher-level client tracker claim that native Hydra clients now consistently report actual terminal dimensions.
+- Reconnect path now uses cached `termWidth_`/`termHeight_` (set from constructor) instead of hardcoded 80x24.
 
 ### Write context memory leak on disconnect
 

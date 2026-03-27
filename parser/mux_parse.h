@@ -75,7 +75,7 @@ struct Token {
     std::string text;
 };
 
-static const char *token_name(TokenType t)
+inline const char *token_name(TokenType t)
 {
     switch (t) {
     case TOK_LIT:    return "LIT";

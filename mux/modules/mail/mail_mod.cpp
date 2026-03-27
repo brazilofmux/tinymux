@@ -24,6 +24,7 @@
 #include "mail_mod.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cstring>
 #include <cstdlib>
 #include <cctype>
@@ -54,8 +55,8 @@ static const UTF8 *MOD_DASH_LINE =
 
 // Module bookkeeping.
 //
-static uint32_t g_cComponents  = 0;
-static uint32_t g_cServerLocks = 0;
+static std::atomic<uint32_t> g_cComponents{0};
+static std::atomic<uint32_t> g_cServerLocks{0};
 
 // Module entry points.
 //
