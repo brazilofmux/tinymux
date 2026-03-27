@@ -892,6 +892,17 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     prog.out_pool_end = rc.out_pool;
     prog.ok = true;
     s_jit_stats.compile_ok++;
+
+    // Code size tracking.
+    uint64_t code_bytes = rc.code.size() * 4;
+    s_jit_stats.code_bytes_total += code_bytes;
+    if (code_bytes > s_jit_stats.code_bytes_max)
+        s_jit_stats.code_bytes_max = code_bytes;
+    s_jit_stats.hir_insns_total += static_cast<uint64_t>(h.n_insns);
+    if (static_cast<uint64_t>(h.n_insns) > s_jit_stats.hir_insns_max)
+        s_jit_stats.hir_insns_max = static_cast<uint64_t>(h.n_insns);
+    s_jit_stats.spills_total += static_cast<uint64_t>(rc.spills);
+
     prog.folds = h.folds;
     prog.ecalls = h.ecalls;
     prog.tier2_calls = h.tier2_calls;
@@ -3978,7 +3989,12 @@ FUNCTION(fun_jitstats)
         "bail_slots=%llu "
         "folded=%llu "
         "ecalls=%llu "
-        "tier2=%llu",
+        "tier2=%llu "
+        "code_bytes=%llu "
+        "code_max=%llu "
+        "hir_insns=%llu "
+        "hir_max=%llu "
+        "spills=%llu",
         (unsigned long long)s_jit_stats.eval_attempts,
         (unsigned long long)s_jit_stats.eval_handled,
         (unsigned long long)s_jit_stats.eval_bailout,
@@ -3991,7 +4007,12 @@ FUNCTION(fun_jitstats)
         (unsigned long long)s_jit_stats.bail_slots,
         (unsigned long long)s_jit_stats.folded_total,
         (unsigned long long)s_jit_stats.ecall_total,
-        (unsigned long long)s_jit_stats.tier2_total);
+        (unsigned long long)s_jit_stats.tier2_total,
+        (unsigned long long)s_jit_stats.code_bytes_total,
+        (unsigned long long)s_jit_stats.code_bytes_max,
+        (unsigned long long)s_jit_stats.hir_insns_total,
+        (unsigned long long)s_jit_stats.hir_insns_max,
+        (unsigned long long)s_jit_stats.spills_total);
 
     // Append NOEVAL breakdown.
     for (int i = 0; i < s_jit_stats.noeval_top_used && n < static_cast<int>(LBUF_SIZE) - 64; i++) {

@@ -1118,6 +1118,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
     std::vector<live_interval> int_intervals;
     compute_live_ranges(h, int_intervals, needs_int_reg);
     reg_alloc_result int_alloc = linear_scan(int_intervals);
+    rc.spills = int_alloc.n_spill_slots;
 
     // 2. Run liveness-based allocation for output buffers.
     std::vector<live_interval> str_intervals;

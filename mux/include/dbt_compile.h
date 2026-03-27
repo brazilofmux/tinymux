@@ -69,6 +69,13 @@ struct jit_stats_t {
     uint64_t ecall_total;         // ECALL invocations at runtime
     uint64_t tier2_total;         // Tier 2 blob calls at runtime
 
+    // Code size tracking.
+    uint64_t code_bytes_total;    // total RV64 bytes emitted across all compiles
+    uint64_t code_bytes_max;      // largest single program (bytes)
+    uint64_t hir_insns_total;     // total HIR instructions across all compiles
+    uint64_t hir_insns_max;       // most HIR instructions in one program
+    uint64_t spills_total;        // register allocator spills
+
     // Top NOEVAL bailout functions.
     static constexpr int NOEVAL_TRACK_MAX = 16;
     struct { char name[32]; uint64_t count; } noeval_top[NOEVAL_TRACK_MAX];
@@ -199,6 +206,7 @@ struct rv_compiler {
     int folds;              // number of constant-folded calls
     int ecalls;             // number of runtime ECALL calls
     int native_ops;         // number of native arithmetic ops
+    int spills;             // register allocator spill slots used
     bool needs_jit;         // true if any runtime code was emitted
 
     static constexpr size_t MEM_SIZE     = 4 * 1024 * 1024;  // 4 MB
@@ -275,6 +283,7 @@ struct rv_compiler {
                     folds(0),
                     ecalls(0),
                     native_ops(0),
+                    spills(0),
                     needs_jit(false),
                     n_output_slots(0) {}
 
@@ -295,6 +304,7 @@ struct rv_compiler {
           folds(0),
           ecalls(0),
           native_ops(0),
+          spills(0),
           needs_jit(false),
           n_output_slots(0) {}
 
