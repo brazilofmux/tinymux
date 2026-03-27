@@ -856,6 +856,9 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     // For single-block programs this is a no-op but builds the CFG.
     hir_build_cfg(h);
     if (h.n_blocks > 1) {
+        // TODO: superblock pass needs more investigation.
+        // hir_superblock(h);
+
         hir_ssa_construct(h);
         if (bDump) {
             printf("Phase 2: SSA Construction\n");

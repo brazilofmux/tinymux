@@ -1057,6 +1057,69 @@ void hir_peephole(hir_program &h) {
 // After merging, the CFG is rebuilt to maintain consistency.
 // ---------------------------------------------------------------
 
+// Renumber blocks to eliminate gaps left by merging.
+// Builds a compact mapping and rewrites all block references.
+//
+static void hir_renumber_blocks(hir_program &h) {
+    int remap[HIR_MAX_BLOCKS];
+    memset(remap, -1, sizeof(int) * h.n_blocks);
+
+    // Find which block IDs are still in use.
+    bool used[HIR_MAX_BLOCKS];
+    memset(used, 0, sizeof(bool) * h.n_blocks);
+    for (int i = 0; i < h.n_insns; i++) {
+        int b = h.blk[i];
+        if (b >= 0 && b < h.n_blocks && h.kind[i] != HIR_NOP) {
+            used[b] = true;
+        }
+    }
+
+    // Block 0 is always the entry — keep it even if empty.
+    used[0] = true;
+
+    // Build compact mapping.
+    int new_count = 0;
+    for (int b = 0; b < h.n_blocks; b++) {
+        if (used[b]) {
+            remap[b] = new_count++;
+        }
+    }
+
+    // If nothing changed, skip the rewrite.
+    if (new_count == h.n_blocks) return;
+
+    // Rewrite blk[] on all instructions.
+    for (int i = 0; i < h.n_insns; i++) {
+        int b = h.blk[i];
+        if (b >= 0 && b < h.n_blocks && remap[b] >= 0) {
+            h.blk[i] = remap[b];
+        }
+    }
+
+    // Rewrite branch targets.
+    for (int i = 0; i < h.n_insns; i++) {
+        if (h.kind[i] == HIR_BR) {
+            int t = static_cast<int>(h.val[i]);
+            if (t >= 0 && t < h.n_blocks && remap[t] >= 0) {
+                h.val[i] = remap[t];
+            }
+        } else if (h.kind[i] == HIR_BRC) {
+            int t = static_cast<int>(h.val[i]);
+            if (t >= 0 && t < h.n_blocks && remap[t] >= 0) {
+                h.val[i] = remap[t];
+            }
+            int f = h.src2[i];
+            if (f >= 0 && f < h.n_blocks && remap[f] >= 0) {
+                h.src2[i] = remap[f];
+            }
+        }
+    }
+
+    h.n_blocks = new_count;
+    h.cur_block = (h.cur_block >= 0 && h.cur_block < HIR_MAX_BLOCKS
+                   && remap[h.cur_block] >= 0) ? remap[h.cur_block] : 0;
+}
+
 void hir_superblock(hir_program &h) {
     if (h.n_blocks <= 1) return;
 
@@ -1066,11 +1129,16 @@ void hir_superblock(hir_program &h) {
     bool merged_any = false;
 
     // Iterate until no more merges are possible.
+    // Bounded by n_blocks: each merge eliminates one block.
     bool progress = true;
-    while (progress) {
+    int limit = h.n_blocks;
+    while (progress && limit-- > 0) {
         progress = false;
 
         for (int a = 0; a < h.n_blocks; a++) {
+            // Skip empty blocks (already merged away).
+            if (h.block_last[a] < h.block_first[a]) continue;
+
             // Block A must have exactly one successor.
             if (h.block_nsucc[a] != 1) continue;
             int b = h.block_succ[a][0];
@@ -1082,10 +1150,12 @@ void hir_superblock(hir_program &h) {
             // Block B must not be the entry block.
             if (b == 0) continue;
 
+            // Block B must not be empty.
+            if (h.block_last[b] < h.block_first[b]) continue;
+
             // Block A must end with HIR_BR targeting B.
-            // Find the terminator in A.  After SSA, block ranges are
-            // non-contiguous (PHIs from other blocks may interleave),
-            // so we must check blk[i] to avoid hitting foreign terminators.
+            // Pre-SSA, block ranges are contiguous, so a simple
+            // reverse scan within the range is safe.
             int term = -1;
             for (int i = h.block_last[a]; i >= h.block_first[a]; i--) {
                 if (h.blk[i] != a) continue;
@@ -1108,18 +1178,6 @@ void hir_superblock(hir_program &h) {
                 }
             }
 
-            // Update PHI nodes that reference block B — they now come from A.
-            for (int i = 0; i < h.n_insns; i++) {
-                if (h.kind[i] == HIR_PHI) {
-                    int base = h.pbase[i];
-                    for (int j = 0; j < h.pnargs[i]; j++) {
-                        if (h.pblk[base + j] == b) {
-                            h.pblk[base + j] = a;
-                        }
-                    }
-                }
-            }
-
             // Rewrite branch targets: anything targeting B now targets A.
             for (int i = 0; i < h.n_insns; i++) {
                 if (h.kind[i] == HIR_BR && static_cast<int>(h.val[i]) == b) {
@@ -1131,27 +1189,18 @@ void hir_superblock(hir_program &h) {
                 }
             }
 
-            // Transfer successors: A now has B's successors.
-            h.block_nsucc[a] = h.block_nsucc[b];
-            h.block_succ[a][0] = h.block_succ[b][0];
-            h.block_succ[a][1] = h.block_succ[b][1];
-
-            // Clear block B.
-            h.block_nsucc[b] = 0;
-            h.block_succ[b][0] = h.block_succ[b][1] = -1;
-            h.block_first[b] = h.n_insns;  // empty sentinel
-            h.block_last[b] = -1;
-
             merged_any = true;
             progress = true;
 
             // Rebuild CFG after each merge to keep pred info fresh.
             hir_build_cfg(h);
+            break;  // restart scan with fresh CFG
         }
     }
 
-    // If we merged blocks, rebuild the full CFG data.
     if (merged_any) {
+        // Compact block numbering: eliminate gaps left by empty blocks.
+        hir_renumber_blocks(h);
         hir_build_cfg(h);
     }
 }
@@ -1161,22 +1210,15 @@ void hir_superblock(hir_program &h) {
 // ---------------------------------------------------------------
 
 void hir_optimize(hir_program &h) {
-    // Superblock formation: disabled pending proper handling of
-    // non-contiguous block ranges after SSA PHI insertion.
-    // The current instruction array layout interleaves PHIs from
-    // different blocks, making block_first/block_last ranges unsafe
-    // for instruction reassignment.
-    //
-    // if (h.n_blocks > 1) {
-    //     hir_superblock(h);
-    // }
+    // Superblock runs pre-SSA in the compile pipeline (jit_compiler.cpp),
+    // not here, because it requires contiguous block ranges.
 
     // Run constant folding + peephole + copy prop + CSE + DCE.
     // Iterate: folding can create new COPYs, peephole can expose
     // new constant operands, copy prop chains, CSE replaces
     // duplicates with COPYs, DCE can simplify the graph.
-    int prev = 0;
-    for (int pass = 0; pass < 4; pass++) {
+    for (int pass = 0; pass < 3; pass++) {
+        int prev = h.n_insns;
         hir_const_fold(h);
         hir_peephole(h);
         hir_copy_prop(h);
@@ -1189,7 +1231,6 @@ void hir_optimize(hir_program &h) {
             if (h.kind[i] != HIR_NOP) live++;
         }
         if (live == prev) break;  // converged
-        prev = live;
     }
 
     // LICM runs once after the main optimization loop.
