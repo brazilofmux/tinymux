@@ -60,16 +60,13 @@ Implement the framework for evaluating softcode on multiple cores simultaneously
 - **Issue:** Database growth code shifts `db` pointer backward by `SIZE_HACK` before `memcpy`, then reassigns. The sequence in the "else" (first allocation) branch sets `db = newdb` unshifted, calls `initialize_objects(0, SIZE_HACK)`, then overwrites with `db = newdb + SIZE_HACK`. The intermediate unshifted pointer creates a window where `db` is temporarily invalid.
 - **Risk:** If `initialize_objects` accesses `db` during that window, it operates on the wrong base.
 
-### Silent failure when storage interfaces fail to initialize
+### ~~Silent failure when storage interfaces fail to initialize~~ FIXED
 
-- **File:** `engine_com.cpp:2783-2834`
-- **Issue:** `pComsysStorage` and `pMailStorage` creation via `mux_CreateInstance` can fail without any error log. The code checks `MUX_SUCCEEDED(mr)` for the inner block but has no "else" clause to report failure.
-- **Impact:** Comsys or mail silently disabled with no diagnostic.
+- Added `else` clauses with `log_printf` diagnostics when `CID_ComsysStorage` or `CID_MailStorage` creation fails.
 
-### exp3 module: unchecked interface acquisitions
+### ~~exp3 module: unchecked interface acquisitions~~ FIXED
 
-- **File:** `../exp3/exp3.cpp:305-325`
-- **Issue:** Five `mux_CreateInstance()` calls for core interfaces with no return value checks and no nullptr verification before use in `Call()`.
+- All five `mux_CreateInstance()` calls in exp3 `FinalConstruct()` now check return values and bail early on failure.
 
 ## Core Engine Issues
 

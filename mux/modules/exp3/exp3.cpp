@@ -302,27 +302,47 @@ MUX_RESULT CExp3::FinalConstruct(void)
 
     // Acquire notification interface.
     //
-    mux_CreateInstance(CID_Notify, nullptr, UseSameProcess,
-                       IID_INotify,
-                       reinterpret_cast<void **>(&m_pINotify));
+    mr = mux_CreateInstance(CID_Notify, nullptr, UseSameProcess,
+                            IID_INotify,
+                            reinterpret_cast<void **>(&m_pINotify));
+    if (MUX_FAILED(mr))
+    {
+        return mr;
+    }
 
     // Acquire object info interface.
     //
-    mux_CreateInstance(CID_ObjectInfo, nullptr, UseSameProcess,
-                       IID_IObjectInfo,
-                       reinterpret_cast<void **>(&m_pIObjectInfo));
+    mr = mux_CreateInstance(CID_ObjectInfo, nullptr, UseSameProcess,
+                            IID_IObjectInfo,
+                            reinterpret_cast<void **>(&m_pIObjectInfo));
+    if (MUX_FAILED(mr))
+    {
+        return mr;
+    }
 
-    mux_CreateInstance(CID_AttributeAccess, nullptr, UseSameProcess,
-                       IID_IAttributeAccess,
-                       reinterpret_cast<void **>(&m_pIAttributeAccess));
+    mr = mux_CreateInstance(CID_AttributeAccess, nullptr, UseSameProcess,
+                            IID_IAttributeAccess,
+                            reinterpret_cast<void **>(&m_pIAttributeAccess));
+    if (MUX_FAILED(mr))
+    {
+        return mr;
+    }
 
-    mux_CreateInstance(CID_Evaluator, nullptr, UseSameProcess,
-                       IID_IEvaluator,
-                       reinterpret_cast<void **>(&m_pIEvaluator));
+    mr = mux_CreateInstance(CID_Evaluator, nullptr, UseSameProcess,
+                            IID_IEvaluator,
+                            reinterpret_cast<void **>(&m_pIEvaluator));
+    if (MUX_FAILED(mr))
+    {
+        return mr;
+    }
 
-    mux_CreateInstance(CID_HelpSystem, nullptr, UseSameProcess,
-                       IID_IHelpSystem,
-                       reinterpret_cast<void **>(&m_pIHelpSystem));
+    mr = mux_CreateInstance(CID_HelpSystem, nullptr, UseSameProcess,
+                            IID_IHelpSystem,
+                            reinterpret_cast<void **>(&m_pIHelpSystem));
+    if (MUX_FAILED(mr))
+    {
+        return mr;
+    }
 
     return mr;
 }

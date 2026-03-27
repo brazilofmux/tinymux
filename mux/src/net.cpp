@@ -3105,8 +3105,13 @@ void load_restart_db(void)
     g_restarting = true;
 
     char buf[8];
-    fgets(buf, 3, f);
-    mux_assert(strncmp(buf, "+V", 2) == 0);
+    if (  nullptr == fgets(buf, 3, f)
+       || strncmp(buf, "+V", 2) != 0)
+    {
+        mux_fclose(f);
+        g_restarting = false;
+        return;
+    }
     int version = getref(f);
     if (  1 == version
        || 2 == version
@@ -3119,6 +3124,18 @@ void load_restart_db(void)
         // Version 4 started on 2007-AUG-12
         //
         num_main_game_ports = getref(f);
+#ifdef UNIX_SSL
+        constexpr int nMaxPorts = MAX_LISTEN_PORTS * 2;
+#else
+        constexpr int nMaxPorts = MAX_LISTEN_PORTS;
+#endif
+        if (  num_main_game_ports < 0
+           || num_main_game_ports > nMaxPorts)
+        {
+            mux_fclose(f);
+            g_restarting = false;
+            return;
+        }
         for (int i = 0; i < num_main_game_ports; i++)
         {
             unsigned short usPort = getref(f);
@@ -3127,7 +3144,9 @@ void load_restart_db(void)
             if (  0 != getsockname(main_game_ports[i].socket, main_game_ports[i].msa.sa(), &n)
                || usPort != main_game_ports[i].msa.port())
             {
-                mux_assert(0);
+                mux_fclose(f);
+                g_restarting = false;
+                return;
             }
 
             if (3 <= version)
@@ -3143,11 +3162,13 @@ void load_restart_db(void)
     }
     else
     {
-        // The restart file, restart.db, has a version other than 1.  You
+        // The restart file, restart.db, has a version other than 1-4.  You
         // cannot @restart from the previous version to the new version.  Use
         // @shutdown instead.
         //
-        mux_assert(0);
+        mux_fclose(f);
+        g_restarting = false;
+        return;
     }
     {
         CLinearTimeAbsolute ltaStart;
@@ -3258,8 +3279,13 @@ void load_restart_db(void)
             UTF8 *pBufferUnicode = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBufferUnicode));
             if ('\0' != pBufferUnicode[0])
             {
+                if (nBufferUnicode >= LBUF_SIZE)
+                {
+                    nBufferUnicode = LBUF_SIZE - 1;
+                }
                 d->output_prefix = alloc_lbuf("set_userstring");
-                memcpy(d->output_prefix, pBufferUnicode, nBufferUnicode+1);
+                memcpy(d->output_prefix, pBufferUnicode, nBufferUnicode);
+                d->output_prefix[nBufferUnicode] = '\0';
             }
             else
             {
@@ -3271,8 +3297,13 @@ void load_restart_db(void)
             pBufferUnicode = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBufferUnicode));
             if ('\0' != pBufferUnicode[0])
             {
+                if (nBufferUnicode >= LBUF_SIZE)
+                {
+                    nBufferUnicode = LBUF_SIZE - 1;
+                }
                 d->output_suffix = alloc_lbuf("set_userstring");
-                memcpy(d->output_suffix, pBufferUnicode, nBufferUnicode+1);
+                memcpy(d->output_suffix, pBufferUnicode, nBufferUnicode);
+                d->output_suffix[nBufferUnicode] = '\0';
             }
             else
             {
@@ -3282,17 +3313,32 @@ void load_restart_db(void)
             // Host address.
             //
             pBufferUnicode = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBufferUnicode));
-            memcpy(d->addr, pBufferUnicode, nBufferUnicode+1);
+            if (nBufferUnicode >= sizeof(d->addr))
+            {
+                nBufferUnicode = sizeof(d->addr) - 1;
+            }
+            memcpy(d->addr, pBufferUnicode, nBufferUnicode);
+            d->addr[nBufferUnicode] = '\0';
 
             // Doing.
             //
             pBufferUnicode = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBufferUnicode));
-            memcpy(d->doing, pBufferUnicode, nBufferUnicode+1);
+            if (nBufferUnicode >= sizeof(d->doing))
+            {
+                nBufferUnicode = sizeof(d->doing) - 1;
+            }
+            memcpy(d->doing, pBufferUnicode, nBufferUnicode);
+            d->doing[nBufferUnicode] = '\0';
 
             // User name.
             //
             pBufferUnicode = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBufferUnicode));
-            memcpy(d->username, pBufferUnicode, nBufferUnicode+1);
+            if (nBufferUnicode >= sizeof(d->username))
+            {
+                nBufferUnicode = sizeof(d->username) - 1;
+            }
+            memcpy(d->username, pBufferUnicode, nBufferUnicode);
+            d->username[nBufferUnicode] = '\0';
         }
         else
         {
@@ -3305,8 +3351,13 @@ void load_restart_db(void)
             if ('\0' != pBufferLatin1[0])
             {
                 pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+                if (nBufferUnicode >= LBUF_SIZE)
+                {
+                    nBufferUnicode = LBUF_SIZE - 1;
+                }
                 d->output_prefix = alloc_lbuf("set_userstring");
-                memcpy(d->output_prefix, pBufferUnicode, nBufferUnicode+1);
+                memcpy(d->output_prefix, pBufferUnicode, nBufferUnicode);
+                d->output_prefix[nBufferUnicode] = '\0';
             }
             else
             {
@@ -3319,8 +3370,13 @@ void load_restart_db(void)
             if ('\0' != pBufferLatin1[0])
             {
                 pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+                if (nBufferUnicode >= LBUF_SIZE)
+                {
+                    nBufferUnicode = LBUF_SIZE - 1;
+                }
                 d->output_suffix = alloc_lbuf("set_userstring");
-                memcpy(d->output_suffix, pBufferUnicode, nBufferUnicode+1);
+                memcpy(d->output_suffix, pBufferUnicode, nBufferUnicode);
+                d->output_suffix[nBufferUnicode] = '\0';
             }
             else
             {
@@ -3331,19 +3387,34 @@ void load_restart_db(void)
             //
             pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBufferLatin1));
             pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
-            memcpy(d->addr, pBufferUnicode, nBufferUnicode+1);
+            if (nBufferUnicode >= sizeof(d->addr))
+            {
+                nBufferUnicode = sizeof(d->addr) - 1;
+            }
+            memcpy(d->addr, pBufferUnicode, nBufferUnicode);
+            d->addr[nBufferUnicode] = '\0';
 
             // Doing.
             //
             pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBufferLatin1));
             pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
-            memcpy(d->doing, pBufferUnicode, nBufferUnicode+1);
+            if (nBufferUnicode >= sizeof(d->doing))
+            {
+                nBufferUnicode = sizeof(d->doing) - 1;
+            }
+            memcpy(d->doing, pBufferUnicode, nBufferUnicode);
+            d->doing[nBufferUnicode] = '\0';
 
             // User name.
             //
             pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBufferLatin1));
             pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
-            memcpy(d->username, pBufferUnicode, nBufferUnicode+1);
+            if (nBufferUnicode >= sizeof(d->username))
+            {
+                nBufferUnicode = sizeof(d->username) - 1;
+            }
+            memcpy(d->username, pBufferUnicode, nBufferUnicode);
+            d->username[nBufferUnicode] = '\0';
         }
 
         d->output_size = 0;

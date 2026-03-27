@@ -23,17 +23,13 @@ This is the top-level tracker for the TinyMUX project. It links to specialized i
 
 ## Release Scripts
 
-### `dowin32.sh` lacks error handling
+### ~~`dowin32.sh` lacks error handling~~ NOT A BUG
 
-- **File:** `dowin32.sh:1-10`
-- **Issue:** No `set -e` or `set -o pipefail` (unlike `dounix.sh` which has both). Only one error exit in the entire script (line 26, xdelta3 check). All other failures are silent.
-- **Impact:** Release builds can produce incomplete or corrupted artifacts without any indication.
+- Survey was incorrect: `dowin32.sh` already has `set -e` (line 8) and `set -o pipefail` (line 9).
 
-### Shell injection risk in `dowin32.sh` path handling
+### ~~Shell injection risk in `dowin32.sh` path handling~~ FIXED
 
-- **File:** `dowin32.sh:112, 117, 136, 139`
-- **Issue:** `mkdir -p $(dirname $rel_path)` — unquoted variable expansion. Paths containing spaces will produce incorrect directories.
-- **Fix:** Quote all variable expansions: `mkdir -p "$(dirname "$rel_path")"`.
+- `dirname $rel_path` now properly quoted as `dirname "$rel_path"` at all four call sites.
 
 ### Insecure external downloads in `dowin32.sh`
 

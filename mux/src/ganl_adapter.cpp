@@ -39,7 +39,7 @@ static BOOL WINAPI ConsoleCtrlHandler(DWORD dwCtrlType)
     case CTRL_CLOSE_EVENT:
     case CTRL_BREAK_EVENT:
     case CTRL_SHUTDOWN_EVENT:
-        g_shutdown_flag = true;
+        g_shutdown_flag = 1;
         return TRUE;
     default:
         return FALSE;
@@ -1766,7 +1766,7 @@ void GanlAdapter::run_main_loop() {
 
         if (num_events < 0) {
             g_pILog->WriteString(T("GANL: Network engine processEvents error. Shutting down.\n"));
-            g_shutdown_flag = true;
+            g_shutdown_flag = 1;
             break;
         }
 

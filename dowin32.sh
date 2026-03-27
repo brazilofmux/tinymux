@@ -109,12 +109,12 @@ process_distribution() {
             if ! cmp -s "$src_file" "$new_file"; then
                 if is_binary "$src_file" || is_binary "$new_file"; then
                     # Binary file - use xdelta3
-                    mkdir -p "patches_$dist_type/bin/$(dirname $rel_path)"
+                    mkdir -p "patches_$dist_type/bin/$(dirname "$rel_path")"
                     xdelta3 -e -s "$src_file" "$new_file" "patches_$dist_type/bin/$rel_path.vcdiff"
                     binary_files+=("$rel_path")
                 else
                     # Text file - use standard diff
-                    mkdir -p "patches_$dist_type/text/$(dirname $rel_path)"
+                    mkdir -p "patches_$dist_type/text/$(dirname "$rel_path")"
                     diff -u "$src_file" "$new_file" > "patches_$dist_type/text/$rel_path.patch" 2>/dev/null || true
                     text_files+=("$rel_path")
                 fi
@@ -133,10 +133,10 @@ process_distribution() {
         if [ ! -f "$src_file" ]; then
             # File was added - copy directly
             if is_binary "$new_file"; then
-                mkdir -p "patches_$dist_type/bin/$(dirname $rel_path)"
+                mkdir -p "patches_$dist_type/bin/$(dirname "$rel_path")"
                 cp "$new_file" "patches_$dist_type/bin/$rel_path.new"
             else
-                mkdir -p "patches_$dist_type/text/$(dirname $rel_path)"
+                mkdir -p "patches_$dist_type/text/$(dirname "$rel_path")"
                 cp "$new_file" "patches_$dist_type/text/$rel_path.new"
             fi
             new_files+=("$rel_path")

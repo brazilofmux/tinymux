@@ -32,9 +32,9 @@ mux_INotify        *g_pINotify = nullptr;
 mux_IObjectInfo    *g_pIObjectInfo = nullptr;
 
 bool g_bStandAlone = false;
-bool g_shutdown_flag = false;
+volatile sig_atomic_t g_shutdown_flag = 0;
 bool g_restarting = false;
-bool g_panicking = false;
+volatile sig_atomic_t g_panicking = 0;
 volatile pid_t g_dump_child_pid = 0;
 mux_subnets g_access_list;
 StringPtrMap g_logout_cmd_htab;

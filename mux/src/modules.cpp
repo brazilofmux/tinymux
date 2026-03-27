@@ -926,7 +926,7 @@ uint32_t CDriverControl::Release(void)
 
 MUX_RESULT CDriverControl::ShutdownRequest(void)
 {
-    g_shutdown_flag = true;
+    g_shutdown_flag = 1;
     return MUX_S_OK;
 }
 

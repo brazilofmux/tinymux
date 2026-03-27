@@ -2,13 +2,11 @@
 
 Updated: 2026-03-27
 
-## High — Missing Error Handling in COM Interface Acquisition
+## ~~High — Missing Error Handling in COM Interface Acquisition~~ FIXED
 
-### Unchecked `mux_CreateInstance()` calls in `FinalConstruct()`
+### ~~Unchecked `mux_CreateInstance()` calls in `FinalConstruct()`~~ FIXED
 
-- **File:** `comsys_mod.cpp:142-160`
-- **Issue:** Five `mux_CreateInstance()` calls for `IID_INotify`, `IID_IObjectInfo`, `IID_IAttributeAccess`, `IID_IEvaluator`, and `IID_IPermissions` do not check return values. Null pointers will be dereferenced if any creation fails.
-- **Fix:** Check `MUX_FAILED(mr)` after each call.
+- All five core interface acquisitions now check `MUX_FAILED(mr)` and return early on failure, consistent with the `IID_ILog` pattern.
 
 ## Medium — Thread Safety
 

@@ -72,7 +72,9 @@ extern bool g_bStandAlone;
 // mux_IDriverControl::ShutdownRequest() (engine's @shutdown command).
 // The GANL main loop checks this to know when to exit.
 //
-extern bool g_shutdown_flag;
+// volatile sig_atomic_t for safe access from signal handlers.
+//
+extern volatile sig_atomic_t g_shutdown_flag;
 
 // Restart flag — driver sets during @restart sequence, engine reads
 // via mux_IDriverControl::GetRestarting().
@@ -83,7 +85,9 @@ extern bool g_restarting;
 // SIGSEGV inside a SIGSEGV handler, we know we're the biggest risk
 // to the data and bail immediately.
 //
-extern bool g_panicking;
+// volatile sig_atomic_t for safe access from signal handlers.
+//
+extern volatile sig_atomic_t g_panicking;
 
 // Dump child PID — set by SIGCHLD handler, consumed by main loop.
 // Nonzero means a dump child exited; the main loop reports it to

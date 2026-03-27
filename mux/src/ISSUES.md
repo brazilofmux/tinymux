@@ -2,33 +2,23 @@
 
 Updated: 2026-03-27
 
-## Critical — Buffer Overflows & Memory Safety
+## ~~Critical — Buffer Overflows & Memory Safety~~ FIXED
 
-### Buffer overflow in `load_restart_db()` memcpy calls
+### ~~Buffer overflow in `load_restart_db()` memcpy calls~~ FIXED
 
-- **File:** `net.cpp:3334, 3340, 3346`
-- **Issue:** `memcpy()` copies `nBufferUnicode+1` bytes from `ConvertToUTF8()` into fixed-size descriptor fields without bounds checking:
-  - `d->addr` is 51 bytes
-  - `d->doing` is `SIZEOF_DOING_STRING`
-  - `d->username` is 11 bytes
-- **Risk:** Heap corruption if a corrupted `restart.db` produces oversized strings.
+- All `memcpy()` calls into fixed-size descriptor fields (`d->addr`, `d->doing`, `d->username`) and `alloc_lbuf()` buffers (`output_prefix`, `output_suffix`) now clamp to the destination size before copying.
 
-### Unvalidated array index from restart file
+### ~~Unvalidated array index from restart file~~ FIXED
 
-- **File:** `net.cpp:3121-3125`
-- **Issue:** `num_main_game_ports = getref(f)` is read from untrusted file with no bounds check before use as loop count over `main_game_ports[]`.
-- **Fix:** Validate `num_main_game_ports <= MAX_LISTEN_PORTS` before the loop.
+- `num_main_game_ports` is now validated against `MAX_LISTEN_PORTS` (or `MAX_LISTEN_PORTS * 2` with SSL) before the loop. Out-of-range values close the file and abort restart gracefully.
 
-### Missing null check after `getstring_noalloc()`
+### ~~Missing null check after `getstring_noalloc()`~~ NOT A BUG
 
-- **File:** `net.cpp:3222-3223`
-- **Issue:** Return value assumed valid: `temp[0]` is dereferenced without a null check.
-- **Risk:** Crash on corrupted restart file.
+- `getstring_noalloc()` returns a static buffer, never null. No fix needed.
 
-### Missing null check after `ConvertToUTF8()`
+### ~~Missing null check after `ConvertToUTF8()`~~ NOT A BUG
 
-- **File:** `net.cpp:3333-3346`
-- **Issue:** `pBufferUnicode` used in `memcpy()` without null check after conversion.
+- `ConvertToUTF8()` returns a static buffer, never null. The real risk was the unbounded copy, now fixed above.
 
 ## Critical — Signal Handler Safety
 
@@ -37,42 +27,34 @@ Updated: 2026-03-27
 - **File:** `signals.cpp:374-569`
 - **Issue:** Signal handler calls logging functions (`log_text()`, `Flush()`), engine methods (`GetBCanRestart()`), and module teardown (`final_modules()`). These are not async-signal-safe per POSIX.
 - **Risk:** Deadlock if signal arrives while a lock is held; data corruption from re-entrant heap operations.
-- **Fix:** Signal handler should only set atomic flags; complex work should happen in the main loop.
+- **Fix:** Signal handler should only set atomic flags; complex work should happen in the main loop. This is a larger refactor deferred for now.
 
-### `g_shutdown_flag` is not volatile
+### ~~`g_shutdown_flag` is not volatile~~ FIXED
 
-- **File:** `bsd.cpp:35`
-- **Issue:** `bool g_shutdown_flag = false` is written from `signals.cpp:476` (signal handler) and read from `ganl_adapter.cpp:1745` (main loop). Without `volatile` or `sig_atomic_t`, the compiler may cache the value.
-- **Risk:** Shutdown signal silently ignored.
+- Changed from `bool` to `volatile sig_atomic_t` in `bsd.cpp` and `driverstate.h`. All write sites updated.
 
-### `g_panicking` is not volatile
+### ~~`g_panicking` is not volatile~~ FIXED
 
-- **File:** `bsd.cpp:37`
-- **Issue:** Same pattern — written in signal handler at `signals.cpp:335`, read at `signals.cpp:322`.
+- Changed from `bool` to `volatile sig_atomic_t` in `bsd.cpp` and `driverstate.h`. All write sites updated.
 
 ### `g_dump_child_pid` race condition
 
 - **File:** `bsd.cpp:38`
-- **Issue:** `volatile pid_t` but accessed without atomic operations between signal handler (`signals.cpp:431`) and main thread (`ganl_adapter.cpp:1884`).
-- **Mitigation:** `volatile` provides visibility on most platforms but is technically not sufficient per C++ standard. Should use `sig_atomic_t` or `std::atomic`.
+- **Issue:** `volatile pid_t` but `pid_t` is not guaranteed to be `sig_atomic_t`-sized. Works in practice on Linux/BSD but not strictly portable.
 
 ## High — Unchecked Return Values & Error Paths
 
-### `getsockname()` failure crashes server
+### ~~`getsockname()` failure crashes server~~ FIXED
 
-- **File:** `net.cpp:3127-3131`
-- **Issue:** On failure, `mux_assert(0)` is called instead of graceful error handling.
-- **Risk:** DoS via corrupted restart file.
+- Replaced `mux_assert(0)` with `mux_fclose(f); g_restarting = false; return;`
 
-### File not closed on invalid restart version
+### ~~File not closed on invalid restart version~~ FIXED
 
-- **File:** `net.cpp:3144-3151`
-- **Issue:** When restart file version is unrecognized, `mux_assert(0)` fires without closing the file handle first.
+- Replaced `mux_assert(0)` with `mux_fclose(f); g_restarting = false; return;`
 
-### `fgets()` return value unchecked
+### ~~`fgets()` return value unchecked~~ FIXED
 
-- **File:** `net.cpp:3108-3109`
-- **Issue:** `fgets(buf, 3, f)` return not checked; uninitialized buffer fed to `strncmp()` assertion on next line.
+- Now checks `fgets()` return and `strncmp()` result; closes file and returns on failure.
 
 ### Unvalidated enum/range values from restart file
 
@@ -96,10 +78,9 @@ Updated: 2026-03-27
 - **File:** `net.cpp:3225-3227, 3262, 3309, 3323, 3346`
 - **Issue:** `nBuffer+1` or `nBufferUnicode+1` could overflow if the value read from file is `SIZE_MAX`.
 
-### Volatile counters in slave.cpp lack atomicity
+### ~~Volatile counters in slave.cpp lack atomicity~~ PARTIALLY FIXED
 
-- **File:** `slave.cpp:151-153, 165, 253-254`
-- **Issue:** `volatile int nChildrenStarted/EndedSIGCHLD/EndedMain` use `++` from signal handler — compound operations are not atomic.
+- Changed from `volatile int` to `volatile sig_atomic_t`. The `++` in a signal handler is still technically non-atomic, but `sig_atomic_t` is the POSIX-sanctioned type for this pattern.
 
 ## Low — Dead Code & Technical Debt
 

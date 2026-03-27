@@ -332,7 +332,7 @@ static void check_panicking(int sig)
         kill(game_pid, sig);
 #endif // UNIX_PROCESSES
     }
-    g_panicking = true;
+    g_panicking = 1;
 }
 
 static UTF8 *signal_desc(const int iSignal)
@@ -473,7 +473,7 @@ static void DCL_CDECL sighandler(int sig)
         {
             raw_broadcast(0, T("GAME: %s"), g_dc.crash_msg);
         }
-        g_shutdown_flag = true;
+        g_shutdown_flag = 1;
         break;
 
     case SIGILL:
@@ -565,7 +565,7 @@ static void DCL_CDECL sighandler(int sig)
         exit(1);
     }
     signal(sig, CAST_SIGNAL_FUNC sighandler);
-    g_panicking = false;
+    g_panicking = 0;
 }
 
 NAMETAB sigactions_nametab[] =

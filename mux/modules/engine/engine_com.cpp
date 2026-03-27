@@ -2797,6 +2797,12 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
                 ENDLOG;
             }
         }
+        else
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "MOD");
+            log_printf(T("Comsys storage interface creation failed (mr=%d)."), mr);
+            ENDLOG;
+        }
     }
 
     // Try to discover the mail module.  If not loaded, the pointer
@@ -2831,6 +2837,12 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
                 log_printf(T("Mail module Initialize failed (mr=%d)."), mr);
                 ENDLOG;
             }
+        }
+        else
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "MOD");
+            log_printf(T("Mail storage interface creation failed (mr=%d)."), mr);
+            ENDLOG;
         }
     }
 

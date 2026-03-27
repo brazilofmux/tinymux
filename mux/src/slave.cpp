@@ -148,9 +148,9 @@ void alarm_signal(int iSig)
 }
 
 #define MAX_CHILDREN 20
-volatile int nChildrenStarted = 0;
-volatile int nChildrenEndedSIGCHLD = 0;
-volatile int nChildrenEndedMain = 0;
+volatile sig_atomic_t nChildrenStarted = 0;
+volatile sig_atomic_t nChildrenEndedSIGCHLD = 0;
+volatile sig_atomic_t nChildrenEndedMain = 0;
 
 void child_signal(int iSig)
 {
