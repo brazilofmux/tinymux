@@ -2119,7 +2119,9 @@ void hir_dump(const hir_program &h) {
         }
         printf("\n  IDom:  %d\n", h.idom[b]);
 
-        if (h.block_first[b] <= h.block_last[b]) {
+        if (h.block_first[b] >= 0
+            && h.block_first[b] <= h.block_last[b]
+            && h.block_last[b] < h.n_insns) {
             for (int i = h.block_first[b]; i <= h.block_last[b]; i++) {
                 if (h.blk[i] != b) continue;
                 printf("  v%-3d = %-10s %-4s", i, hir_kind_name(h.kind[i]), hir_type_name(h.ty[i]));
@@ -2127,7 +2129,9 @@ void hir_dump(const hir_program &h) {
                 if (h.kind[i] == HIR_ICONST) {
                     printf(" %lld", (long long)h.val[i]);
                 } else if (h.kind[i] == HIR_SCONST) {
-                    printf(" \"%s\" (0x%llX)", h.sval[i].c_str(), (unsigned long long)h.val[i]);
+                    const char *sv = (i < static_cast<int>(h.sval.size()))
+                        ? h.sval[i].c_str() : "<unset>";
+                    printf(" \"%s\" (0x%llX)", sv, (unsigned long long)h.val[i]);
                 } else if (h.kind[i] == HIR_BR) {
                     printf(" -> BLOCK %d", (int)h.val[i]);
                 } else if (h.kind[i] == HIR_BRC) {
@@ -2139,7 +2143,8 @@ void hir_dump(const hir_program &h) {
                     }
                     printf("}");
                 } else if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
-                    if (!h.call_name[i].empty()) printf(" %s", h.call_name[i].c_str());
+                    if (i < static_cast<int>(h.call_name.size()) && !h.call_name[i].empty())
+                        printf(" %s", h.call_name[i].c_str());
                     printf(" ( ");
                     for (int j = 0; j < h.cnargs[i]; j++) {
                         printf("v%d ", h.carg[h.cbase[i] + j]);

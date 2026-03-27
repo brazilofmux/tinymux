@@ -292,9 +292,13 @@ struct hir_program {
         call_name.clear();
 
         // Initialize block 0.
+        block_first[0] = 0;
+        block_last[0] = -1;  // empty until hir_build_cfg computes ranges
         block_succ[0][0] = block_succ[0][1] = -1;
         block_nsucc[0] = 0;
         pred_base[0] = 0;
+        n_pred[0] = 0;
+        idom[0] = -1;
         n_pred[0] = 0;
         idom[0] = -1;
     }
