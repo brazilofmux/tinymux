@@ -504,6 +504,8 @@ void hir_copy_prop(hir_program &h);
 void hir_gvn(hir_program &h);
 void hir_dce(hir_program &h);
 void hir_licm(hir_program &h);
+void hir_peephole(hir_program &h);
+void hir_superblock(hir_program &h);
 void hir_optimize(hir_program &h);
 
 #endif // HIR_H

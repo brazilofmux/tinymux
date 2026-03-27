@@ -870,17 +870,308 @@ void hir_licm(hir_program &h) {
 }
 
 // ---------------------------------------------------------------
+// Peephole optimization
+//
+// Pattern-based simplification on HIR instruction pairs/triples.
+// Runs as part of the optimization loop since it creates COPYs
+// that copy propagation and DCE can clean up.
+//
+// Patterns:
+//   ATOI(ITOA(x))      → COPY x       (round-trip elimination)
+//   BOOL(BOOL(x))      → COPY x       (idempotent)
+//   NOT(NOT(x))         → BOOL x       (double negation → bool)
+//   BOOL(cmp)           → COPY cmp     (comparisons already return 0/1)
+//   NEG(NEG(x))         → COPY x       (double negation)
+//   FNEG(FNEG(x))       → COPY x       (double negation, float)
+//   ADD(x, NEG(y))      → SUB(x, y)    (strength reduction)
+//   SUB(x, NEG(y))      → ADD(x, y)    (strength reduction)
+//   MUL(x, 2^k)         → SHL(x, k)    (strength reduction)
+//   NOT(EQ(a,b))        → NE(a,b)      (comparison inversion)
+//   NOT(NE(a,b))        → EQ(a,b)
+//   NOT(LT(a,b))        → GE(a,b)
+//   NOT(LE(a,b))        → GT(a,b)
+//   NOT(GT(a,b))        → LE(a,b)
+//   NOT(GE(a,b))        → LT(a,b)
+//   BRC(NOT(x), T, F)   → BRC(x, F, T) (branch inversion)
+// ---------------------------------------------------------------
+
+// Helper: is this kind a comparison that always returns 0 or 1?
+static bool is_cmp_kind(hir_kind k) {
+    switch (k) {
+    case HIR_EQ: case HIR_NE: case HIR_LT: case HIR_LE:
+    case HIR_GT: case HIR_GE:
+    case HIR_FEQ: case HIR_FLT: case HIR_FLE:
+    case HIR_NOT: case HIR_BOOL:
+        return true;
+    default:
+        return false;
+    }
+}
+
+// Helper: is this an exact power of two?  Returns the exponent, or -1.
+static int log2_exact(int64_t v) {
+    if (v <= 0) return -1;
+    if (v & (v - 1)) return -1;
+    int k = 0;
+    while (v > 1) { v >>= 1; k++; }
+    return k;
+}
+
+void hir_peephole(hir_program &h) {
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        for (int i = 0; i < h.n_insns; i++) {
+            int s1 = h.src1[i];
+            int s2 = h.src2[i];
+
+            switch (h.kind[i]) {
+
+            // ATOI(ITOA(x)) → COPY x.
+            // The round-trip string→int→string→int is identity on integers.
+            case HIR_ATOI:
+                if (s1 >= 0 && h.kind[s1] == HIR_ITOA) {
+                    h.kind[i] = HIR_COPY;
+                    h.src1[i] = h.src1[s1];
+                    h.ty[i] = TY_INT;
+                    changed = true;
+                }
+                break;
+
+            // BOOL(BOOL(x)) → COPY x.  (idempotent: already 0/1)
+            // BOOL(cmp) → COPY cmp.     (comparisons already return 0/1)
+            case HIR_BOOL:
+                if (s1 >= 0 && is_cmp_kind(h.kind[s1])) {
+                    h.kind[i] = HIR_COPY;
+                    changed = true;
+                }
+                break;
+
+            // NOT(NOT(x)) → BOOL(x).  (double negation restores truth value)
+            // NOT(cmp) → inverted cmp.
+            case HIR_NOT:
+                if (s1 >= 0 && h.kind[s1] == HIR_NOT) {
+                    h.kind[i] = HIR_BOOL;
+                    h.src1[i] = h.src1[s1];
+                    changed = true;
+                } else if (s1 >= 0) {
+                    // Invert comparisons: NOT(EQ(a,b)) → NE(a,b), etc.
+                    hir_kind inv = HIR_NOP;
+                    switch (h.kind[s1]) {
+                    case HIR_EQ: inv = HIR_NE; break;
+                    case HIR_NE: inv = HIR_EQ; break;
+                    case HIR_LT: inv = HIR_GE; break;
+                    case HIR_LE: inv = HIR_GT; break;
+                    case HIR_GT: inv = HIR_LE; break;
+                    case HIR_GE: inv = HIR_LT; break;
+                    default: break;
+                    }
+                    if (inv != HIR_NOP) {
+                        h.kind[i] = inv;
+                        h.src1[i] = h.src1[s1];
+                        h.src2[i] = h.src2[s1];
+                        changed = true;
+                    }
+                }
+                break;
+
+            // NEG(NEG(x)) → COPY x.
+            case HIR_NEG:
+                if (s1 >= 0 && h.kind[s1] == HIR_NEG) {
+                    h.kind[i] = HIR_COPY;
+                    h.src1[i] = h.src1[s1];
+                    changed = true;
+                }
+                break;
+
+            // FNEG(FNEG(x)) → COPY x.
+            case HIR_FNEG:
+                if (s1 >= 0 && h.kind[s1] == HIR_FNEG) {
+                    h.kind[i] = HIR_COPY;
+                    h.src1[i] = h.src1[s1];
+                    h.ty[i] = TY_FLOAT;
+                    changed = true;
+                }
+                break;
+
+            // ADD(x, NEG(y)) → SUB(x, y).
+            case HIR_ADD:
+                if (s2 >= 0 && h.kind[s2] == HIR_NEG) {
+                    h.kind[i] = HIR_SUB;
+                    h.src2[i] = h.src1[s2];
+                    changed = true;
+                }
+                // NEG(x) + y → SUB(y, x).
+                else if (s1 >= 0 && h.kind[s1] == HIR_NEG) {
+                    h.kind[i] = HIR_SUB;
+                    h.src1[i] = s2;
+                    h.src2[i] = h.src1[s1];
+                    changed = true;
+                }
+                break;
+
+            // SUB(x, NEG(y)) → ADD(x, y).
+            case HIR_SUB:
+                if (s2 >= 0 && h.kind[s2] == HIR_NEG) {
+                    h.kind[i] = HIR_ADD;
+                    h.src2[i] = h.src1[s2];
+                    changed = true;
+                }
+                break;
+
+            // Future: MUL(x, 2^k) → SHL(x, k) once use-count analysis
+            // is available to safely rewrite shared ICONSTs.
+
+            // BRC(NOT(x), T, F) → BRC(x, F, T).  Branch inversion.
+            case HIR_BRC:
+                if (s1 >= 0 && h.kind[s1] == HIR_NOT) {
+                    h.src1[i] = h.src1[s1];
+                    // Swap true/false targets.
+                    int true_blk = static_cast<int>(h.val[i]);
+                    int false_blk = h.src2[i];
+                    h.val[i] = false_blk;
+                    h.src2[i] = true_blk;
+                    changed = true;
+                }
+                break;
+
+            default:
+                break;
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------
+// Superblock formation (block merging)
+//
+// Merge pairs of basic blocks where block A has exactly one
+// successor (block B) and block B has exactly one predecessor
+// (block A).  The unconditional branch from A to B becomes a NOP,
+// and all instructions in B are reassigned to block A.
+//
+// This runs after SSA construction and before the main optimization
+// loop.  It reduces control flow overhead and enables better
+// optimization across the merged region.
+//
+// After merging, the CFG is rebuilt to maintain consistency.
+// ---------------------------------------------------------------
+
+void hir_superblock(hir_program &h) {
+    if (h.n_blocks <= 1) return;
+
+    // Rebuild CFG to get fresh pred/succ info.
+    hir_build_cfg(h);
+
+    bool merged_any = false;
+
+    // Iterate until no more merges are possible.
+    bool progress = true;
+    while (progress) {
+        progress = false;
+
+        for (int a = 0; a < h.n_blocks; a++) {
+            // Block A must have exactly one successor.
+            if (h.block_nsucc[a] != 1) continue;
+            int b = h.block_succ[a][0];
+            if (b < 0 || b >= h.n_blocks || b == a) continue;
+
+            // Block B must have exactly one predecessor.
+            if (h.n_pred[b] != 1) continue;
+
+            // Block B must not be the entry block.
+            if (b == 0) continue;
+
+            // Block A must end with HIR_BR targeting B.
+            // Find the terminator in A.
+            int term = -1;
+            for (int i = h.block_last[a]; i >= h.block_first[a]; i--) {
+                if (h.kind[i] == HIR_BR || h.kind[i] == HIR_BRC) {
+                    term = i;
+                    break;
+                }
+            }
+            if (term < 0 || h.kind[term] != HIR_BR) continue;
+            if (static_cast<int>(h.val[term]) != b) continue;
+
+            // Kill the branch instruction.
+            h.kind[term] = HIR_NOP;
+            h.src1[term] = h.src2[term] = -1;
+
+            // Reassign all instructions in B to block A.
+            for (int i = 0; i < h.n_insns; i++) {
+                if (h.blk[i] == b) {
+                    h.blk[i] = a;
+                }
+            }
+
+            // Update PHI nodes that reference block B — they now come from A.
+            for (int i = 0; i < h.n_insns; i++) {
+                if (h.kind[i] == HIR_PHI) {
+                    int base = h.pbase[i];
+                    for (int j = 0; j < h.pnargs[i]; j++) {
+                        if (h.pblk[base + j] == b) {
+                            h.pblk[base + j] = a;
+                        }
+                    }
+                }
+            }
+
+            // Rewrite branch targets: anything targeting B now targets A.
+            for (int i = 0; i < h.n_insns; i++) {
+                if (h.kind[i] == HIR_BR && static_cast<int>(h.val[i]) == b) {
+                    h.val[i] = a;
+                }
+                if (h.kind[i] == HIR_BRC) {
+                    if (static_cast<int>(h.val[i]) == b) h.val[i] = a;
+                    if (h.src2[i] == b) h.src2[i] = a;
+                }
+            }
+
+            // Transfer successors: A now has B's successors.
+            h.block_nsucc[a] = h.block_nsucc[b];
+            h.block_succ[a][0] = h.block_succ[b][0];
+            h.block_succ[a][1] = h.block_succ[b][1];
+
+            // Clear block B.
+            h.block_nsucc[b] = 0;
+            h.block_succ[b][0] = h.block_succ[b][1] = -1;
+            h.block_first[b] = h.n_insns;  // empty sentinel
+            h.block_last[b] = -1;
+
+            merged_any = true;
+            progress = true;
+
+            // Rebuild CFG after each merge to keep pred info fresh.
+            hir_build_cfg(h);
+        }
+    }
+
+    // If we merged blocks, rebuild the full CFG data.
+    if (merged_any) {
+        hir_build_cfg(h);
+    }
+}
+
+// ---------------------------------------------------------------
 // Top-level optimization entry point
 // ---------------------------------------------------------------
 
 void hir_optimize(hir_program &h) {
-    // Run constant folding + copy prop + CSE + DCE.
-    // Iterate: folding can create new COPYs, copy prop can expose
-    // new constant operands, CSE replaces duplicates with COPYs,
-    // DCE can simplify the graph.
-    for (int pass = 0; pass < 3; pass++) {
-        int prev = h.n_insns;
+    // Superblock formation: merge single-pred/single-succ block pairs.
+    // Runs first to simplify the CFG before other passes.
+    if (h.n_blocks > 1) {
+        hir_superblock(h);
+    }
+
+    // Run constant folding + peephole + copy prop + CSE + DCE.
+    // Iterate: folding can create new COPYs, peephole can expose
+    // new constant operands, copy prop chains, CSE replaces
+    // duplicates with COPYs, DCE can simplify the graph.
+    int prev = 0;
+    for (int pass = 0; pass < 4; pass++) {
         hir_const_fold(h);
+        hir_peephole(h);
         hir_copy_prop(h);
         hir_gvn(h);
         hir_dce(h);
