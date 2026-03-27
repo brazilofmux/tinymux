@@ -1,5 +1,12 @@
 # Hydra Client—Open Issues & Feature Gaps
 
+## Active Sub-Trackers
+
+- **[Console](console/ISSUES.md):** Console-only Hydra reconnect and terminal-capability bugs.
+- **[Android](android/ISSUES.md):** Android trigger/runtime issues.
+- **[iOS](ios/ISSUES.md):** Swift Hydra transport correctness and resource-lifetime issues.
+- **[TinyFugue](tf/ISSUES.md):** TF-specific Hydra transport and scripting gaps.
+
 ## Recently Fixed
 
 - ~~Console/Android gRPC plaintext~~ — Fixed there: TLS by default landed for those clients (1192607). TF still pending below.
@@ -71,6 +78,32 @@
 
 - **Issue:** All clients format GMCP as `[GMCP Package] {json}` text.
 - **Opportunity:** Provide structured hooks for common GMCP packages (Char.Vitals—vitals bar).
+
+## Cross-Client Issues
+
+### Credential storage in plaintext
+
+- **Files:** `console/src/hydra_connection.h:96-97`, `console/src/world.h:15-20`
+- **Issue:** Passwords stored as `std::string` in memory without protection. `worlds.txt` persists credentials in plaintext on disk. No attempt to wipe credentials from memory after use.
+- **Impact:** Security risk if process memory is dumped or disk is accessed. Applies to Console client; other clients may have similar patterns.
+- **Fix:** Use secure string wrappers that zero memory on destruction; encrypt credentials on disk.
+
+### Spawn config regex errors silently discarded
+
+- **File:** `console/src/spawn.cpp:9-10, 24-25`
+- **Issue:** `try { compiled.push_back(std::regex(...)); } catch (...) {}` silently swallows regex compilation errors. Users get no feedback when a spawn rule is invalid.
+
+## Newly Confirmed Regressions
+
+### Console reconnect path still hardcodes `80x24`
+
+- **Evidence:** `client/console/src/hydra_connection.cpp:309-317` resends `SetPreferences` after reconnect, but always uses `terminal_width=80` and `terminal_height=24`.
+- **Impact:** The tracker entry claiming native clients now report actual terminal size is no longer fully true. Reconnected console sessions can revert to stale viewport metadata until some later resize or NAWS update occurs.
+
+### iOS Hydra client still does not send `SetPreferences`
+
+- **Evidence:** `client/ios/Titan/Net/HydraConnection.swift:138-157` opens the `GameSession` stream and starts periodic pings, but never yields an initial preferences message with color format, terminal size, or terminal type.
+- **Impact:** The iOS client currently leaves output color negotiation and viewport reporting to server defaults, which can cause capability mismatches compared with the other Hydra clients.
 
 ### ~~SwiftUI / iOS Hydra Support Missing~~
 

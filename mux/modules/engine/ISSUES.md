@@ -52,13 +52,41 @@ Implement the framework for evaluating softcode on multiple cores simultaneously
 - **Fix:** Ifdef `x64_arg_regs`, trampoline, stub prologue/epilogue,
   and shadow space allocation for `WIN32`. Significant but mechanical.
 
+## COM & Module System Issues
+
+### Memory Management: SIZE_HACK Pointer Arithmetic
+
+- **File:** `db.cpp:2850-2868`
+- **Issue:** Database growth code shifts `db` pointer backward by `SIZE_HACK` before `memcpy`, then reassigns. The sequence in the "else" (first allocation) branch sets `db = newdb` unshifted, calls `initialize_objects(0, SIZE_HACK)`, then overwrites with `db = newdb + SIZE_HACK`. The intermediate unshifted pointer creates a window where `db` is temporarily invalid.
+- **Risk:** If `initialize_objects` accesses `db` during that window, it operates on the wrong base.
+
+### Silent failure when storage interfaces fail to initialize
+
+- **File:** `engine_com.cpp:2783-2834`
+- **Issue:** `pComsysStorage` and `pMailStorage` creation via `mux_CreateInstance` can fail without any error log. The code checks `MUX_SUCCEEDED(mr)` for the inner block but has no "else" clause to report failure.
+- **Impact:** Comsys or mail silently disabled with no diagnostic.
+
+### exp3 module: unchecked interface acquisitions
+
+- **File:** `../exp3/exp3.cpp:305-325`
+- **Issue:** Five `mux_CreateInstance()` calls for core interfaces with no return value checks and no nullptr verification before use in `Call()`.
+
 ## Core Engine Issues
 
 ### 3. Platform Interface Driver
 
-- **File:** `driver.cpp:384`
-- **Issue:** Need to create a proper platform interface abstraction for the driver to better separate OS-specific logic from core server lifecycle management.
+- **File:** `driver.cpp:384`, `modules.cpp:1172`
+- **Issue:** Need to create a proper platform interface abstraction for the driver.
+- **Goal:** Refactor `CPlatform` from `modules.cpp` into separate files (`platform_unix.cpp`, `platform_win32.cpp`). This will eliminate the current `#ifdef` tangle and allow for cleaner, OS-specific implementations of signals, helper processes, and file descriptor management.
 
-### ~~4. Session/Driver Separation~~
+### 4. Engine & LibMux Unit Testing
+
+- **Status:** Backend logic has unit tests in `db/`, but the core server engine and foundational libraries (`mux/lib`) lack comprehensive unit tests.
+- **Opportunity:** Add unit tests for:
+  - `stringutil.cpp`: UTF-8 handling, case conversion, and buffer management.
+  - `funmath.cpp`: Floating point and integer math edge cases.
+  - `ast.cpp` & `eval.cpp`: AST construction and evaluation logic in isolation from the full server.
+
+### ~~5. Session/Driver Separation~~
 
 - **Fixed:** `access_list` stays in the driver (hot-path connection checks must not cross COM). Added `mux_IDriverControl::ListSiteInfo()` COM method so the engine can query the site list for `@list sites` display.
