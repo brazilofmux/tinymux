@@ -33,6 +33,10 @@ mux_IObjectInfo    *g_pIObjectInfo = nullptr;
 
 bool g_bStandAlone = false;
 volatile sig_atomic_t g_shutdown_flag = 0;
+volatile sig_atomic_t g_shutdown_signal = 0;
+volatile sig_atomic_t g_restart_flag = 0;
+volatile sig_atomic_t g_dump_flag = 0;
+volatile sig_atomic_t g_sigchld_flag = 0;
 bool g_restarting = false;
 volatile sig_atomic_t g_panicking = 0;
 volatile sig_atomic_t g_bCanRestart = 0;

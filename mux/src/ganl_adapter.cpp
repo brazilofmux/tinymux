@@ -1890,6 +1890,81 @@ void GanlAdapter::run_main_loop() {
             }
         }
 
+        // ---------------------------------------------------------------
+        // Deferred signal processing — safe context, not a signal handler.
+        // ---------------------------------------------------------------
+
+#if defined(HAVE_WORKING_FORK)
+        // SIGUSR1 → @restart
+        //
+        if (g_restart_flag)
+        {
+            g_restart_flag = 0;
+            bool bCan = false;
+            g_pIGameEngine->GetBCanRestart(&bCan);
+            if (bCan)
+            {
+                STARTLOG(LOG_ALWAYS, T("SIG"), T("CATCH"));
+                g_pILog->log_text(T("Caught signal SIGUSR1 — restarting."));
+                ENDLOG;
+                drv_DoRestart(GOD, GOD, GOD, 0, 0);
+            }
+            else
+            {
+                STARTLOG(LOG_ALWAYS, T("SIG"), T("CATCH"));
+                g_pILog->log_text(T("Caught signal SIGUSR1 — ignored (server not ready)."));
+                ENDLOG;
+            }
+        }
+
+        // SIGHUP → database checkpoint
+        //
+        if (g_dump_flag)
+        {
+            g_dump_flag = 0;
+            STARTLOG(LOG_ALWAYS, T("SIG"), T("CATCH"));
+            g_pILog->log_text(T("Caught signal SIGHUP — database checkpoint."));
+            ENDLOG;
+            g_pIGameEngine->DumpDatabase();
+        }
+
+        // SIGCHLD → reap children
+        //
+        if (g_sigchld_flag)
+        {
+            g_sigchld_flag = 0;
+            if (g_pIPlatform)
+            {
+                int reapPid = 0, exitStatus = 0;
+                bool signaled = false;
+                while (MUX_SUCCEEDED(g_pIPlatform->ReapChild(&reapPid, &exitStatus, &signaled))
+                       && reapPid > 0)
+                {
+#ifdef STUB_SLAVE
+                    if (reapPid == stubslave_pid)
+                    {
+                        stubslave_pid = 0;
+                        STARTLOG(LOG_ALWAYS, "NET", "STUB");
+                        g_pILog->WriteString(tprintf(T("Stub slave exited (status %d, signaled=%d)." ENDLINE),
+                            exitStatus, signaled ? 1 : 0));
+                        ENDLOG;
+                        continue;
+                    }
+#endif // STUB_SLAVE
+                    if (g_dc.fork_dump)
+                    {
+                        g_dump_child_pid = reapPid;
+                        continue;
+                    }
+                    STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
+                    g_pILog->WriteString(tprintf(T("Unknown child=%d, status=%d" ENDLINE),
+                        reapPid, exitStatus));
+                    ENDLOG;
+                }
+            }
+        }
+#endif // HAVE_WORKING_FORK
+
         // If SIGCHLD recorded a dump child exit, report it to the
         // engine now (safe context, not a signal handler).
         //
@@ -1904,6 +1979,19 @@ void GanlAdapter::run_main_loop() {
         process_tinyMUX_tasks();
 
     } // end while (!g_shutdown_flag)
+
+    // Shutdown broadcast — deferred from signal handler to safe context.
+    //
+    int signum = g_shutdown_signal;
+    if (0 != signum)
+    {
+        log_signal(signum);
+        raw_broadcast(0, T("GAME: Caught signal %s, exiting."), signal_desc(signum));
+        if ('\0' != g_dc.crash_msg[0])
+        {
+            raw_broadcast(0, T("GAME: %s"), g_dc.crash_msg);
+        }
+    }
 
 #if defined(_WIN32)
     SetConsoleCtrlHandler(ConsoleCtrlHandler, FALSE);

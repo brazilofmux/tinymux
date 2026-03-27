@@ -76,6 +76,24 @@ extern bool g_bStandAlone;
 //
 extern volatile sig_atomic_t g_shutdown_flag;
 
+// Signal number that triggered shutdown — stored by the handler so the
+// main loop can broadcast the signal name and crash_msg after exiting
+// the event loop (in safe, non-signal context).
+//
+extern volatile sig_atomic_t g_shutdown_signal;
+
+// Deferred signal flags — signal handlers set these, the GANL main
+// loop polls and handles them in safe context.
+//
+extern volatile sig_atomic_t g_restart_flag;   // SIGUSR1
+extern volatile sig_atomic_t g_dump_flag;      // SIGHUP
+extern volatile sig_atomic_t g_sigchld_flag;   // SIGCHLD
+
+// Signal description and logging (defined in signals.cpp).
+//
+UTF8 *signal_desc(int iSignal);
+void log_signal(int iSignal);
+
 // Restart flag — driver sets during @restart sequence, engine reads
 // via mux_IDriverControl::GetRestarting().
 //

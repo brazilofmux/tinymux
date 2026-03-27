@@ -335,7 +335,7 @@ static void check_panicking(int sig)
     g_panicking = 1;
 }
 
-static UTF8 *signal_desc(const int iSignal)
+UTF8 *signal_desc(const int iSignal)
 {
     static UTF8 buff[LBUF_SIZE];
     auto bufc = buff;
@@ -350,7 +350,7 @@ static UTF8 *signal_desc(const int iSignal)
     return buff;
 }
 
-static void log_signal(const int iSignal)
+void log_signal(const int iSignal)
 {
     STARTLOG(LOG_PROBLEMS, T("SIG"), T("CATCH"));
     g_pILog->log_text(T("Caught signal "));
@@ -373,88 +373,49 @@ static void log_signal_ignore(int iSignal)
 
 static void DCL_CDECL sighandler(int sig)
 {
+    // All cases below use only async-signal-safe operations: writing
+    // to volatile sig_atomic_t variables and calling signal().
+    //
     switch (sig)
     {
 #if defined(UNIX_SIGNALS)
     case SIGUSR1:
-        {
-            bool bCan = false;
-            g_pIGameEngine->GetBCanRestart(&bCan);
-            if (bCan)
-            {
-                log_signal(sig);
-                drv_DoRestart(GOD, GOD, GOD, 0, 0);
-            }
-            else
-            {
-                log_signal_ignore(sig);
-            }
-        }
+
+        // Request @restart — deferred to main loop.
+        //
+        g_restart_flag = 1;
         break;
 
     case SIGUSR2:
 
         // With SQLite write-through, flatfile dumps from a signal handler
-        // are both unnecessary and dangerous.  Log and ignore.
+        // are both unnecessary and dangerous.  Ignore.
         //
-        log_signal_ignore(sig);
         break;
 
     case SIGCHLD:
 
-        // Change in child status.
+        // Change in child status — deferred to main loop for reaping.
         //
 #ifndef SIGNAL_SIGCHLD_BRAINDAMAGE
         signal(SIGCHLD, CAST_SIGNAL_FUNC sighandler);
 #endif // !SIGNAL_SIGCHLD_BRAINDAMAGE
-
-        if (g_pIPlatform)
-        {
-            int reapPid = 0, exitStatus = 0;
-            bool signaled = false;
-            while (MUX_SUCCEEDED(g_pIPlatform->ReapChild(&reapPid, &exitStatus, &signaled))
-                   && reapPid > 0)
-            {
-#ifdef STUB_SLAVE
-                if (reapPid == stubslave_pid)
-                {
-                    stubslave_pid = 0;
-                    STARTLOG(LOG_ALWAYS, "NET", "STUB");
-                    g_pILog->WriteString(tprintf(T("Stub slave exited (status %d, signaled=%d)." ENDLINE),
-                        exitStatus, signaled ? 1 : 0));
-                    ENDLOG;
-                    continue;
-                }
-#endif // STUB_SLAVE
-                if (g_dc.fork_dump)
-                {
-                    g_dump_child_pid = reapPid;
-                    continue;
-                }
-                log_signal(sig);
-                STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
-                g_pILog->WriteString(tprintf(T("Unknown child=%d, status=%d" ENDLINE),
-                    reapPid, exitStatus));
-                ENDLOG;
-            }
-        }
+        g_sigchld_flag = 1;
         break;
 
     case SIGHUP:
 
-        // Perform a database dump.
+        // Database dump — deferred to main loop.
         //
-        log_signal(sig);
-        g_pIGameEngine->DumpDatabase();
+        g_dump_flag = 1;
         break;
 
 #endif // UNIX_SIGNALS
 
     case SIGINT:
 
-        // Log + ignore
+        // Ignore.
         //
-        log_signal(sig);
         break;
 
 #if defined(UNIX_SIGNALS)
@@ -464,15 +425,9 @@ static void DCL_CDECL sighandler(int sig)
 #ifdef SIGXCPU
     case SIGXCPU:
 #endif // SIGXCPU
-        // Time for a normal and short-winded shutdown.
+        // Normal shutdown — deferred to main loop for broadcast/log.
         //
-        check_panicking(sig);
-        log_signal(sig);
-        raw_broadcast(0, T("GAME: Caught signal %s, exiting."), signal_desc(sig));
-        if ('\0' != g_dc.crash_msg[0])
-        {
-            raw_broadcast(0, T("GAME: %s"), g_dc.crash_msg);
-        }
+        g_shutdown_signal = sig;
         g_shutdown_flag = 1;
         break;
 

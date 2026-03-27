@@ -28,12 +28,10 @@ Updated: 2026-03-27
 - Restart decision uses cached `g_bCanRestart` (volatile sig_atomic_t) set by the GANL main loop from `GetBCanRestart()` before entering the event loop.
 - SIGABRT handler also stripped to `_exit(134)` — no logging or engine calls.
 
-### Non-async-signal-safe calls in normal signal handlers
+### ~~Non-async-signal-safe calls in normal signal handlers~~ FIXED
 
-- **File:** `signals.cpp` — SIGUSR1, SIGHUP, SIGTERM, SIGCHLD, SIGINT cases
-- **Issue:** Normal signal handlers still call logging functions, `DumpDatabase()`, `drv_DoRestart()`, and `raw_broadcast()` from signal context.
-- **Risk:** Lower than crash handlers (process is not in an undefined state), but still technically UB.
-- **Fix (future):** Convert to flag-based deferral — set `g_restart_flag`, `g_dump_flag`, etc. and handle in the GANL main loop.
+- All normal signal handlers converted to flag-based deferral. Signal handler now only sets `volatile sig_atomic_t` flags (`g_restart_flag`, `g_dump_flag`, `g_sigchld_flag`, `g_shutdown_signal`/`g_shutdown_flag`). The GANL main loop polls these flags and performs restart, dump, child reaping, and shutdown broadcast in safe context.
+- `signal_desc()` and `log_signal()` made non-static for use by the main loop.
 
 ### ~~`g_shutdown_flag` is not volatile~~ FIXED
 
