@@ -1551,6 +1551,7 @@ struct shared_heap_t {
         bool needs_jit;
         int ecalls;
         int tier2_calls;
+        std::vector<compiled_program::inline_dep> deps;
     };
 
     // Expression cache.
@@ -1622,19 +1623,38 @@ struct shared_heap_t {
         fargs_next = prog.fargs_pool_end;
 
         return {prog.entry_pc, prog.out_addr, prog.needs_jit,
-                prog.ecalls, prog.tier2_calls};
+                prog.ecalls, prog.tier2_calls, std::move(prog.deps)};
     }
 
     // Look up or compile an expression.  Returns nullptr on failure.
+    // Validates inline dependencies on cache hit — if any inlined
+    // attribute body has changed, the cached entry is stale and
+    // must be evicted.  (Code heap space is leaked; the shared heap
+    // has no reclamation yet.)
     const entry *lookup(const UTF8 *expr, size_t nLen, int eval) {
         std::string key = compile_cache_key(expr, nLen, eval);
         auto it = cache.find(key);
-        if (it != cache.end()) return &it->second;
+        if (it != cache.end()) {
+            // Check dependency freshness.
+            bool fresh = true;
+            for (const auto &dep : it->second.deps) {
+                uint32_t current = attr_mod_count_get(
+                    static_cast<dbref>(dep.obj), dep.attr_num);
+                if (current != dep.mod_count) {
+                    fresh = false;
+                    break;
+                }
+            }
+            if (fresh) return &it->second;
+
+            // Stale — evict and recompile.
+            cache.erase(it);
+        }
 
         entry e = compile(expr, nLen, eval);
         if (!e.entry_pc) return nullptr;
 
-        auto [ins, _] = cache.emplace(key, e);
+        auto [ins, _] = cache.emplace(key, std::move(e));
         return &ins->second;
     }
 

@@ -605,7 +605,11 @@ static bool try_fold(const std::string &func_name,
 
     // --- TRIM(string[, type[, char]]) ---
     // type: b=both (default), l=left, r=right
-    if (upper == "TRIM" && nargs >= 1 && nargs <= 3) {
+    // Only fold single-character trim patterns.  Multi-character
+    // patterns use co_trim_pattern() at runtime which has different
+    // semantics — let those go through the ECALL path.
+    if (upper == "TRIM" && nargs >= 1 && nargs <= 3
+        && (nargs < 3 || args[2].size() <= 1)) {
         unsigned char trim_char = (nargs >= 3 && !args[2].empty())
             ? static_cast<unsigned char>(args[2][0]) : ' ';
         int trim_flags = 3;  // both (1=left, 2=right, 3=both)
