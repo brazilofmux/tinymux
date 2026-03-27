@@ -305,7 +305,10 @@ struct rv_compiler {
 
     uint64_t pool_str(const char *s, size_t len) {
         uint64_t addr = str_pool;
-        if (addr + len + 1 > str_pool_limit) return 0;
+        if (addr + len + 1 > str_pool_limit) {
+            pool_exhausted = true;
+            return 0;
+        }
         memcpy(memory.data() + addr, s, len);
         memory[addr + len] = '\0';
         str_pool = (addr + len + 1 + 7) & ~7ULL;
@@ -319,7 +322,10 @@ struct rv_compiler {
     uint64_t alloc_fargs(const std::vector<uint64_t> &ptrs) {
         uint64_t addr = fargs_pool;
         size_t sz = ptrs.size() * 8;
-        if (addr + sz > fargs_pool_limit) return 0;
+        if (addr + sz > fargs_pool_limit) {
+            pool_exhausted = true;
+            return 0;
+        }
         for (size_t i = 0; i < ptrs.size(); i++) {
             memcpy(memory.data() + addr + i * 8, &ptrs[i], 8);
         }
@@ -328,6 +334,7 @@ struct rv_compiler {
     }
 
     bool out_exhausted = false;
+    bool pool_exhausted = false;
     bool bail_was_noeval = false;
 
     static bool is_output_frame_ref(uint64_t addr) {

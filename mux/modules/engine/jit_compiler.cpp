@@ -858,16 +858,22 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     // Phase 4: Codegen HIR → RV64.
     hir_codegen(h, rc);
 
+    // Check for code overflow before copying.
+    if (rc.code.size() * 4 > rv_compiler::CODE_LIMIT) {
+        s_jit_stats.compile_fail++;
+        s_jit_stats.bail_slots++;
+        return prog;  // prog.ok is still false
+    }
+
     // Copy code to guest memory at the configured code_base.
-    for (size_t i = 0; i < rc.code.size()
-         && rc.code_base + i * 4 < rc.code_base + rv_compiler::CODE_LIMIT; i++) {
+    for (size_t i = 0; i < rc.code.size(); i++) {
         memcpy(rc.memory.data() + rc.code_base + i * 4, &rc.code[i], 4);
     }
 
-    // If output slots were exhausted during codegen, the generated
+    // If any resource was exhausted during compilation, the generated
     // code references address 0 and would corrupt guest memory.
     // Bail out — the AST evaluator will handle this expression.
-    if (rc.out_exhausted) {
+    if (rc.out_exhausted || rc.pool_exhausted) {
         s_jit_stats.compile_fail++;
         if (!rc.bail_was_noeval) {
             s_jit_stats.bail_slots++;
