@@ -495,40 +495,22 @@ static void DCL_CDECL sighandler(int sig)
 #endif // SIGSYS
 #endif // UNIX_SIGNALS
 
-        // Panic save + restart.
+        // Crash handler — async-signal-safe only.
         //
-        g_pILog->Flush();
+        // The SQLite WAL is already durable via write-through, so we do
+        // NOT call into the engine, logging, SQLite, or module teardown
+        // from signal context.  All functions called here must be on the
+        // POSIX async-signal-safe list: check_panicking (writes volatile
+        // + calls signal/kill), fork, execl, _exit, signal, write.
+        //
         check_panicking(sig);
-        log_signal(sig);
-        drv_Report();
 
-        drv_PresyncDatabaseSigsegv();
-#if defined(STUB_SLAVE)
-        final_stubslave();
-#endif // STUB_SLAVE
-        final_modules();
-
-        // SQLite write-through means the database is already durable.
-        // Do NOT call pcache_sync/cache_sync/cache_close from a signal
-        // handler — calling into SQLite here risks WAL corruption.
-        //
-
-        {
-        bool bCanRestart = false;
-        g_pIGameEngine->GetBCanRestart(&bCanRestart);
         if (  g_dc.sig_action != SA_EXIT
-           && bCanRestart)
+           && g_bCanRestart)
         {
-            raw_broadcast(0,
-                    T("GAME: Fatal signal %s caught, restarting."), signal_desc(sig));
-
-            if ('\0' != g_dc.crash_msg[0])
-            {
-                raw_broadcast(0, T("GAME: %s"), g_dc.crash_msg);
-            }
-
-            // SQLite write-through means the database is already durable.
-            // No flatfile dump or WAL checkpoint from a signal handler.
+            // Attempt restart.  PanicRestart forks (child dumps core),
+            // then the parent exec's a fresh netmux.  Both fork() and
+            // execl() are async-signal-safe.
             //
             if (g_pIPlatform)
             {
@@ -541,28 +523,25 @@ static void DCL_CDECL sighandler(int sig)
                 };
                 g_pIPlatform->PanicRestart(T("bin/netmux"), argv, 7);
             }
-            // If PanicRestart returned, it couldn't restart.
-            unset_signals();
-            signal(sig, SIG_DFL);
-            exit(1);
+            // PanicRestart returned — exec failed.
         }
-        else
-        {
-            unset_signals();
-            signal(sig, SIG_DFL);
-            exit(1);
-        }
-        }
+
+        // Cannot restart or exec failed.  Reset signal to default and
+        // terminate.  _exit avoids atexit handlers and stdio flushing
+        // which are not safe in signal context.
+        //
+        unset_signals();
+        signal(sig, SIG_DFL);
+        _exit(1);
         break;
 
     case SIGABRT:
 
-        // Coredump.
+        // Let the default handler produce a core dump.
         //
-        log_signal(sig);
-        drv_Report();
-
-        exit(1);
+        unset_signals();
+        signal(SIGABRT, SIG_DFL);
+        _exit(134); // 128 + SIGABRT(6)
     }
     signal(sig, CAST_SIGNAL_FUNC sighandler);
     g_panicking = 0;

@@ -1742,6 +1742,18 @@ void GanlAdapter::run_main_loop() {
     avail_descriptors = sysconf(_SC_OPEN_MAX) - 7;
 #endif
 
+    // Cache the engine's restart-readiness in a volatile flag so that
+    // signal handlers can read it without a COM call.
+    //
+    {
+        bool bCan = false;
+        if (g_pIGameEngine)
+        {
+            g_pIGameEngine->GetBCanRestart(&bCan);
+        }
+        g_bCanRestart = bCan ? 1 : 0;
+    }
+
     while (!g_shutdown_flag) {
         int timeout_ms = 100; // Default timeout for processEvents
 

@@ -89,6 +89,13 @@ extern bool g_restarting;
 //
 extern volatile sig_atomic_t g_panicking;
 
+// Cached restart-readiness flag — set by the driver after the engine
+// reports mudstate.bCanRestart == true.  Read by signal handlers to
+// decide whether to attempt PanicRestart (async-signal-safe) or just
+// _exit.  Avoids a COM call from signal context.
+//
+extern volatile sig_atomic_t g_bCanRestart;
+
 // Dump child PID — set by SIGCHLD handler, consumed by main loop.
 // Nonzero means a dump child exited; the main loop reports it to
 // the engine via DumpChildExited() COM call where it's safe.

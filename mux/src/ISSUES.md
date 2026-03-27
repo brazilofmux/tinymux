@@ -22,12 +22,18 @@ Updated: 2026-03-27
 
 ## Critical — Signal Handler Safety
 
-### Non-async-signal-safe calls in `sighandler()`
+### ~~Non-async-signal-safe calls in crash signal handler~~ FIXED
 
-- **File:** `signals.cpp:374-569`
-- **Issue:** Signal handler calls logging functions (`log_text()`, `Flush()`), engine methods (`GetBCanRestart()`), and module teardown (`final_modules()`). These are not async-signal-safe per POSIX.
-- **Risk:** Deadlock if signal arrives while a lock is held; data corruption from re-entrant heap operations.
-- **Fix:** Signal handler should only set atomic flags; complex work should happen in the main loop. This is a larger refactor deferred for now.
+- Crash signals (SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGTRAP, etc.) now use only async-signal-safe functions: `check_panicking()` (volatile write + `signal`/`kill`), `PanicRestart()` (`fork` + `execl`), `_exit()`. Removed: `Flush()`, `log_signal()`, `drv_Report()`, `drv_PresyncDatabaseSigsegv()`, `final_stubslave()`, `final_modules()`, `raw_broadcast()`, and `GetBCanRestart()` COM call.
+- Restart decision uses cached `g_bCanRestart` (volatile sig_atomic_t) set by the GANL main loop from `GetBCanRestart()` before entering the event loop.
+- SIGABRT handler also stripped to `_exit(134)` — no logging or engine calls.
+
+### Non-async-signal-safe calls in normal signal handlers
+
+- **File:** `signals.cpp` — SIGUSR1, SIGHUP, SIGTERM, SIGCHLD, SIGINT cases
+- **Issue:** Normal signal handlers still call logging functions, `DumpDatabase()`, `drv_DoRestart()`, and `raw_broadcast()` from signal context.
+- **Risk:** Lower than crash handlers (process is not in an undefined state), but still technically UB.
+- **Fix (future):** Convert to flag-based deferral — set `g_restart_flag`, `g_dump_flag`, etc. and handle in the GANL main loop.
 
 ### ~~`g_shutdown_flag` is not volatile~~ FIXED
 
