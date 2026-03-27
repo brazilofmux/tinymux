@@ -800,8 +800,9 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     // Phase 1: Lower AST → HIR.
     rv_compiler rc(code_base, str_start, str_lim, fargs_start, fargs_lim, out_start);
 
-    // Install Tier 2 blob into guest memory (if loaded).
-    tier2_install(rc.memory, rv_compiler::BLOB_BASE);
+    // Tier 2 blob is NOT installed here — compilation never reads
+    // the blob region.  Callers that use prog.memory for runtime
+    // execution install it after compile_expression() returns.
 
     // Set compile-time eval flags for unknown-function resolution.
     s_compile_eval = eval;
@@ -1461,6 +1462,10 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
         s_jit_stats.cache_miss++;
         prog = compile_expression(expr, nLen, eval);
         if (!prog.ok) return nullptr;
+
+        // Install the Tier 2 blob — prog.memory is the runtime
+        // image and needs the blob for Tier 2 function execution.
+        tier2_install(prog.memory, rv_compiler::BLOB_BASE);
 
         // Persist to SQLite for future restarts.
         if (nLen >= COMPILE_CACHE_MIN_LEN) {
@@ -4122,6 +4127,7 @@ FUNCTION(fun_rvbench)
         safe_str(T("#-1 COMPILATION FAILED"), buff, bufc);
         return;
     }
+    tier2_install(prog.memory, rv_compiler::BLOB_BASE);
 
     // --- Benchmark 1: Native mux_exec ---
     BENCH_TIMER t0, t1;
@@ -4144,6 +4150,7 @@ FUNCTION(fun_rvbench)
     for (int i = 0; i < iterations; i++) {
         compiled_program p = compile_expression(expr, nLen);
         if (p.ok) {
+            tier2_install(p.memory, rv_compiler::BLOB_BASE);
             UTF8 result[256];
             run_compiled(p, executor, caller, enactor, result, sizeof(result));
         }
