@@ -516,6 +516,130 @@ static bool try_fold(const std::string &func_name,
         return true;
     }
 
+    // --- MID(string, start, count) ---
+    // Uses co_mid_cluster (grapheme clusters) to match fun_mid.
+    if (upper == "MID" && nargs == 3) {
+        int iStart = static_cast<int>(mux_atol(u8(args[1])));
+        int nMid   = static_cast<int>(mux_atol(u8(args[2])));
+        if (nMid < 0) {
+            iStart += 1 + nMid;
+            nMid = -nMid;
+        }
+        if (iStart < 0) {
+            nMid += iStart;
+            iStart = 0;
+        }
+        if (nMid <= 0) {
+            result = "";
+            return true;
+        }
+        LBuf out = LBuf_Src("hir_mid");
+        size_t n = co_mid_cluster(reinterpret_cast<unsigned char *>(out.get()),
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size(),
+            static_cast<size_t>(iStart), static_cast<size_t>(nMid));
+        result.assign(reinterpret_cast<const char *>(out.get()), n);
+        return true;
+    }
+
+    // --- POS(needle, haystack) ---
+    if (upper == "POS" && nargs == 2) {
+        size_t n = co_pos(
+            reinterpret_cast<const unsigned char *>(args[1].data()),
+            args[1].size(),
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size());
+        result = format_long(static_cast<long>(n));
+        return true;
+    }
+
+    // --- MEMBER(target, list[, delim]) ---
+    if (upper == "MEMBER" && (nargs == 2 || nargs == 3)) {
+        unsigned char delim = (nargs == 3 && !args[2].empty())
+            ? static_cast<unsigned char>(args[2][0]) : ' ';
+        size_t n = co_member(
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size(),
+            reinterpret_cast<const unsigned char *>(args[1].data()),
+            args[1].size(), delim);
+        result = format_long(static_cast<long>(n));
+        return true;
+    }
+
+    // --- EXTRACT(list, first, count[, delim[, osep]]) ---
+    if (upper == "EXTRACT" && nargs >= 3 && nargs <= 5) {
+        int iFirst = static_cast<int>(mux_atol(u8(args[1])));
+        int nWords = static_cast<int>(mux_atol(u8(args[2])));
+        if (iFirst < 1 || nWords < 1) {
+            result = "";
+            return true;
+        }
+        unsigned char delim = (nargs >= 4 && !args[3].empty())
+            ? static_cast<unsigned char>(args[3][0]) : ' ';
+        unsigned char osep = (nargs >= 5 && !args[4].empty())
+            ? static_cast<unsigned char>(args[4][0]) : delim;
+        LBuf out = LBuf_Src("hir_extract");
+        size_t n = co_extract(reinterpret_cast<unsigned char *>(out.get()),
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size(),
+            static_cast<size_t>(iFirst), static_cast<size_t>(nWords),
+            delim, osep);
+        result.assign(reinterpret_cast<const char *>(out.get()), n);
+        return true;
+    }
+
+    // --- REPEAT(string, count) ---
+    if (upper == "REPEAT" && nargs == 2) {
+        int count = static_cast<int>(mux_atol(u8(args[1])));
+        if (count <= 0) {
+            result = "";
+            return true;
+        }
+        LBuf out = LBuf_Src("hir_repeat");
+        size_t n = co_repeat(reinterpret_cast<unsigned char *>(out.get()),
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size(), static_cast<size_t>(count));
+        result.assign(reinterpret_cast<const char *>(out.get()), n);
+        return true;
+    }
+
+    // --- TRIM(string[, type[, char]]) ---
+    // type: b=both (default), l=left, r=right
+    if (upper == "TRIM" && nargs >= 1 && nargs <= 3) {
+        unsigned char trim_char = (nargs >= 3 && !args[2].empty())
+            ? static_cast<unsigned char>(args[2][0]) : ' ';
+        int trim_flags = 3;  // both (1=left, 2=right, 3=both)
+        if (nargs >= 2 && !args[1].empty()) {
+            char t = static_cast<char>(tolower(
+                static_cast<unsigned char>(args[1][0])));
+            if (t == 'l') trim_flags = 1;
+            else if (t == 'r') trim_flags = 2;
+        }
+        LBuf out = LBuf_Src("hir_trim");
+        size_t n = co_trim(reinterpret_cast<unsigned char *>(out.get()),
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size(), trim_char, trim_flags);
+        result.assign(reinterpret_cast<const char *>(out.get()), n);
+        return true;
+    }
+
+    // --- EDIT(string, from, to[, from2, to2, ...]) ---
+    if (upper == "EDIT" && nargs >= 3 && (nargs % 2) == 1) {
+        std::string cur = args[0];
+        for (int i = 1; i + 1 < nargs; i += 2) {
+            LBuf out = LBuf_Src("hir_edit");
+            size_t n = co_edit(reinterpret_cast<unsigned char *>(out.get()),
+                reinterpret_cast<const unsigned char *>(cur.data()), cur.size(),
+                reinterpret_cast<const unsigned char *>(args[i].data()),
+                args[i].size(),
+                reinterpret_cast<const unsigned char *>(args[i+1].data()),
+                args[i+1].size());
+            cur.assign(reinterpret_cast<const char *>(out.get()), n);
+        }
+        result = cur;
+        return true;
+    }
+
     // =============================================================
     // Pure constants (0-arg functions returning fixed values)
     // =============================================================

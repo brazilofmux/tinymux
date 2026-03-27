@@ -4402,10 +4402,10 @@ FUNCTION(fun_pocvm2)
     static bool compiled = false;
 
     if (!compiled) {
-        // Function A: mid(one two three,0,3) → "one"
-        // mid() is Tier 2 (no ECALL) and not in try_fold,
+        // Function A: lnum(3) → "0 1 2"
+        // lnum() is Tier 2 (no ECALL) and not in try_fold,
         // so the persistent VM produces executable JIT code.
-        const char *expr_a = "mid(one two three,0,3)";
+        const char *expr_a = "lnum(3)";
         auto a = s_pvm.compile(
             reinterpret_cast<const UTF8 *>(expr_a), strlen(expr_a));
         if (!a.entry_pc) {
@@ -4415,8 +4415,8 @@ FUNCTION(fun_pocvm2)
         func_a_entry = a.entry_pc;
         func_a_out = a.out_addr;
 
-        // Function B: mid(one two three,4,9) → "two three"
-        const char *expr_b = "mid(one two three,4,9)";
+        // Function B: lnum(5) → "0 1 2 3 4"
+        const char *expr_b = "lnum(5)";
         auto b = s_pvm.compile(
             reinterpret_cast<const UTF8 *>(expr_b), strlen(expr_b));
         if (!b.entry_pc) {

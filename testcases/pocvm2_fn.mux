@@ -13,50 +13,50 @@
   @log smoke=Beginning pocvm2() test cases.
 -
 #
-# Test Case #1 - Function A: mid(one two three,0,3) = one
-# mid() is Tier 2 (no ECALL) and not in try_fold, so it produces JIT code.
+# Test Case #1 - Function A: lnum(3) = 0 1 2
+# lnum() is Tier 2 (no ECALL) and not in try_fold, so it produces JIT code.
 #
 &tr.tc001 test_pocvm2_fn=
   @if strmatch(
         setr(0,pocvm2()),
-        a=one *
+        a=0 1 2 *
       )=
   {
-    @log smoke=TC001: pocvm2 func A=one. Succeeded.
+    @log smoke=TC001: pocvm2 func A=0 1 2. Succeeded.
   },
   {
-    @log smoke=TC001: pocvm2 func A=one. Failed (%q0).
+    @log smoke=TC001: pocvm2 func A=0 1 2. Failed (%q0).
   }
 -
 #
-# Test Case #2 - Function B: mid(one two three,4,9) = two three
+# Test Case #2 - Function B: lnum(5) = 0 1 2 3 4
 #
 &tr.tc002 test_pocvm2_fn=
   @if strmatch(
         setr(0,pocvm2()),
-        *b=two three *
+        *b=0 1 2 3 4 *
       )=
   {
-    @log smoke=TC002: pocvm2 func B=two three. Succeeded.
+    @log smoke=TC002: pocvm2 func B=0 1 2 3 4. Succeeded.
   },
   {
-    @log smoke=TC002: pocvm2 func B=two three. Failed (%q0).
+    @log smoke=TC002: pocvm2 func B=0 1 2 3 4. Failed (%q0).
   }
 -
 #
-# Test Case #3 - Function C: re-entrant call to A produces C:one.
+# Test Case #3 - Function C: re-entrant call to A produces C:0 1 2.
 #
 &tr.tc003 test_pocvm2_fn=
   @if strmatch(
         setr(0,pocvm2()),
-        *c=C:one *
+        *c=C:0 1 2 *
       )=
   {
-    @log smoke=TC003: pocvm2 re-entrant C:one. Succeeded.;
+    @log smoke=TC003: pocvm2 re-entrant C:0 1 2. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: pocvm2 re-entrant C:one. Failed (%q0).;
+    @log smoke=TC003: pocvm2 re-entrant C:0 1 2. Failed (%q0).;
     @trig me/tr.done
   }
 -

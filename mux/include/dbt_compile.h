@@ -132,6 +132,9 @@ extern "C" {
     size_t co_totitle(unsigned char *, const unsigned char *, size_t);
     size_t co_strip_color(unsigned char *, const unsigned char *, size_t);
     size_t co_visible_length(const unsigned char *, size_t);
+    size_t co_mid_cluster(unsigned char *, const unsigned char *, size_t, size_t, size_t);
+    size_t co_edit(unsigned char *, const unsigned char *, size_t,
+                   const unsigned char *, size_t, const unsigned char *, size_t);
 }
 
 // ---------------------------------------------------------------

@@ -5455,13 +5455,13 @@
 >256
 "@log smoke=Beginning pocvm2() test cases."
 >257
-"@if strmatch(setr(0,pocvm2()),a=one *)={@log smoke=TC001: pocvm2 func A=one. Succeeded.},{@log smoke=TC001: pocvm2 func A=one. Failed (%q0).}"
+"@if strmatch(setr(0,pocvm2()),a=0 1 2 *)={@log smoke=TC001: pocvm2 func A=0 1 2. Succeeded.},{@log smoke=TC001: pocvm2 func A=0 1 2. Failed (%q0).}"
 >258
 "@log smoke=End pocvm2() test cases.;@notify smoke"
 >259
-"@if strmatch(setr(0,pocvm2()),*b=two three *)={@log smoke=TC002: pocvm2 func B=two three. Succeeded.},{@log smoke=TC002: pocvm2 func B=two three. Failed (%q0).}"
+"@if strmatch(setr(0,pocvm2()),*b=0 1 2 3 4 *)={@log smoke=TC002: pocvm2 func B=0 1 2 3 4. Succeeded.},{@log smoke=TC002: pocvm2 func B=0 1 2 3 4. Failed (%q0).}"
 >260
-"@if strmatch(setr(0,pocvm2()),*c=C:one *)={@log smoke=TC003: pocvm2 re-entrant C:one. Succeeded.;@trig me/tr.done},{@log smoke=TC003: pocvm2 re-entrant C:one. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,pocvm2()),*c=C:0 1 2 *)={@log smoke=TC003: pocvm2 re-entrant C:0 1 2. Succeeded.;@trig me/tr.done},{@log smoke=TC003: pocvm2 re-entrant C:0 1 2. Failed (%q0).;@trig me/tr.done}"
 <
 !159
 "test_pos_fn"
