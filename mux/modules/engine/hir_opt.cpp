@@ -1083,9 +1083,12 @@ void hir_superblock(hir_program &h) {
             if (b == 0) continue;
 
             // Block A must end with HIR_BR targeting B.
-            // Find the terminator in A.
+            // Find the terminator in A.  After SSA, block ranges are
+            // non-contiguous (PHIs from other blocks may interleave),
+            // so we must check blk[i] to avoid hitting foreign terminators.
             int term = -1;
             for (int i = h.block_last[a]; i >= h.block_first[a]; i--) {
+                if (h.blk[i] != a) continue;
                 if (h.kind[i] == HIR_BR || h.kind[i] == HIR_BRC) {
                     term = i;
                     break;
@@ -1158,11 +1161,15 @@ void hir_superblock(hir_program &h) {
 // ---------------------------------------------------------------
 
 void hir_optimize(hir_program &h) {
-    // Superblock formation: merge single-pred/single-succ block pairs.
-    // Runs first to simplify the CFG before other passes.
-    if (h.n_blocks > 1) {
-        hir_superblock(h);
-    }
+    // Superblock formation: disabled pending proper handling of
+    // non-contiguous block ranges after SSA PHI insertion.
+    // The current instruction array layout interleaves PHIs from
+    // different blocks, making block_first/block_last ranges unsafe
+    // for instruction reassignment.
+    //
+    // if (h.n_blocks > 1) {
+    //     hir_superblock(h);
+    // }
 
     // Run constant folding + peephole + copy prop + CSE + DCE.
     // Iterate: folding can create new COPYs, peephole can expose
