@@ -5641,25 +5641,6 @@ BXOR()
 
   Related Topics: shl(), shr(), band(), bnand(), bor().
 
-& BOUND()
-BOUND()
-
-  FUNCTION: bound(<value>, <min>[, <max>])
-
-  Clamps a value to a range. If <value> is less than <min>, returns <min>.
-  If <max> is given and <value> is greater than <max>, returns <max>.
-  Otherwise returns <value>.
-
-  Examples:
-    > say bound(5,1,10)
-    You say, "5"
-    > say bound(-3,0,100)
-    You say, "0"
-    > say bound(50,0,10)
-    You say, "10"
-
-  Related Topics: min(), max().
-
 & CAND()
 CAND()
 
@@ -10329,22 +10310,6 @@ LINK_OK
 
   Related Topics: @link, LINKING
 
-& LINSERT()
-LINSERT()
-
-  FUNCTION: linsert(<list>, <position>, <item>[, <sep>])
-
-  Inserts <item> at the 0-based <position> in <list>. If <position> is
-  greater than the length of the list, <item> is appended at the end.
-
-  Examples:
-    > say linsert(a b c,1,X)
-    You say, "a X b c"
-    > say linsert(a b c,0,X)
-    You say, "X a b c"
-
-  Related Topics: lreplace(), insert(), replace().
-
 & LIST()
 LIST()
 
@@ -10404,20 +10369,6 @@ LISTENING
     test says "I got a foo with bar!."
 
   Related Topics: @ahear, @listen, @set.
-
-& LISTQ()
-LISTQ()
-
-  FUNCTION: listq()
-
-  Returns a space-separated list of all currently set q-registers (0-9,
-  A-Z). Only registers that have non-empty values are listed.
-
-  Examples:
-    > think setq(0,hello)[setq(1,world)][listq()]
-    0 1
-
-  Related Topics: unsetq(), setr(), setq(), r().
 
 & LISTRLEVELS()
 LISTRLEVELS()
@@ -10982,19 +10933,6 @@ LPOS()
     > say lpos(a-bc-def-g,-)
     You say, "1 4 8"
 
-& LPLAYERS()
-LPLAYERS()
-
-  FUNCTION: lplayers(<object>)
-
-  Returns a space-separated list of dbref numbers of all connected players
-  in the contents of <object>.
-
-  Examples:
-    > say lplayers(here)
-
-  Related Topics: lthings(), nplayers(), lcon().
-
 & LRAND()
 LRAND()
 
@@ -11040,23 +10978,6 @@ LREST()
     You say ""
 
   Related Topics: first(), last(), rest()
-
-& LREPLACE()
-LREPLACE()
-
-  FUNCTION: lreplace(<list>, <position>, <value>[, <delim>])
-
-  Replaces the element at zero-based <position> in <list> with <value>.
-  Positions outside the list yield '#-1 POSITION OUT OF RANGE'.  <delim>
-  controls the input/output separator and defaults to a space.
-
-  Examples:
-    > say lreplace(alpha beta gamma, 1, BETA)
-    You say, "alpha BETA gamma"
-    > say lreplace(one|two|three, 0, start, |)
-    You say, "start|two|three"
-
-  Related Topics: ldelete(), linsert().
 
 & LROOMS()
 LROOMS()
@@ -11129,19 +11050,6 @@ LTE()
     You say, "1"
 
   Related Topics: BOOLEAN VALUES, lt(), gte(), gt(), eq(), neq().
-
-& LTHINGS()
-LTHINGS()
-
-  FUNCTION: lthings(<object>)
-
-  Returns a space-separated list of dbref numbers of all things in the
-  contents of <object>.
-
-  Examples:
-    > say lthings(here)
-
-  Related Topics: lplayers(), nthings(), lcon().
 
 & LWHO()
 LWHO()
@@ -11841,28 +11749,6 @@ MEMBER()
 
   Related Topics: LISTS, match(), strmatch().
 
-& MEAN()
-MEAN()
-
-  FUNCTION: mean(<number>[,<numberN>...])
-
-  Returns the arithmetic average of the supplied numbers.  Accepts floating
-  point arguments and returns a floating point result.  At least one argument
-  is required.
-
-  Related Topics: median(), stddev(), add(), lmath().
-
-& MEDIAN()
-MEDIAN()
-
-  FUNCTION: median(<number>[,<numberN>...])
-
-  Returns the median of the supplied numbers.  The arguments are sorted and
-  the middle value (or the average of the two middle values) is returned.  At
-  least one argument is required.
-
-  Related Topics: mean(), stddev(), lmath().
-
 & MERGE()
 MERGE()
 
@@ -12351,18 +12237,6 @@ NEWS
 
   Shows you the current news for the MUX.
 
-& NEXITS()
-NEXITS()
-
-  FUNCTION: nexits(<object>)
-
-  Returns the count of exits from <object>.
-
-  Examples:
-    > say nexits(here)
-
-  Related Topics: ncon(), nplayers(), nthings(), lexits().
-
 & NEXT()
 NEXT()
 
@@ -12510,30 +12384,6 @@ NO_COMMAND
   be set NO_COMMAND.
 
   Related Topics:
-
-& NPLAYERS()
-NPLAYERS()
-
-  FUNCTION: nplayers(<object>)
-
-  Returns the count of connected players in the contents of <object>.
-
-  Examples:
-    > say nplayers(here)
-
-  Related Topics: ncon(), nexits(), nthings(), lplayers().
-
-& NTHINGS()
-NTHINGS()
-
-  FUNCTION: nthings(<object>)
-
-  Returns the count of things in the contents of <object>.
-
-  Examples:
-    > say nthings(here)
-
-  Related Topics: ncon(), nexits(), nplayers(), lthings().
 
 & NULL()
 NULL()
@@ -15589,21 +15439,6 @@ STRMEM()
   but strlen() would return 1.
 
   Related Topics: strlen(), UNICODE.
-
-& STRREPLACE()
-STRREPLACE()
-
-  FUNCTION: strreplace(<string>, <start>, <count>, <replacement>)
-
-  Replaces <count> characters starting at 0-based <start> with
-  <replacement>. The replacement can be a different length than the
-  original substring.
-
-  Examples:
-    > say strreplace(abcdef,2,3,XY)
-    You say, "abXYf"
-
-  Related Topics: strdelete(), strinsert().
 
 & STRTRUNC()
 & LEFT()
