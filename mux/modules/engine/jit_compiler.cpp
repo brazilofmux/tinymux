@@ -4402,9 +4402,12 @@ FUNCTION(fun_pocvm2)
     static bool compiled = false;
 
     if (!compiled) {
-        // Function A: first(one two three) → "one"
+        // Function A: mid(one two three,0,3) → "one"
+        // mid() is Tier 2 (no ECALL) and not in try_fold,
+        // so the persistent VM produces executable JIT code.
+        const char *expr_a = "mid(one two three,0,3)";
         auto a = s_pvm.compile(
-            reinterpret_cast<const UTF8 *>("first(one two three)"), 20);
+            reinterpret_cast<const UTF8 *>(expr_a), strlen(expr_a));
         if (!a.entry_pc) {
             safe_str(T("#-1 FUNC A COMPILE FAILED"), buff, bufc);
             return;
@@ -4412,9 +4415,10 @@ FUNCTION(fun_pocvm2)
         func_a_entry = a.entry_pc;
         func_a_out = a.out_addr;
 
-        // Function B: rest(one two three) → "two three"
+        // Function B: mid(one two three,4,9) → "two three"
+        const char *expr_b = "mid(one two three,4,9)";
         auto b = s_pvm.compile(
-            reinterpret_cast<const UTF8 *>("rest(one two three)"), 19);
+            reinterpret_cast<const UTF8 *>(expr_b), strlen(expr_b));
         if (!b.entry_pc) {
             safe_str(T("#-1 FUNC B COMPILE FAILED"), buff, bufc);
             return;
@@ -4483,10 +4487,9 @@ FUNCTION(fun_pocvm2)
     int rc_b = s_pvm.run(func_b_entry);
     const char *result_b = (rc_b == 0)
         ? s_pvm.result(func_b_out) : "#-1 RUN B FAILED";
+    std::string str_b(result_b);
 
     // Run C (re-entrant: calls A internally).
-    // Copy B's result — C will overwrite the shared output slot.
-    std::string str_b(result_b);
     s_pvm.reset_blob_bss();
     uint64_t c_out_abs = rv_compiler::resolve_output_addr(
         func_c_out, rv_compiler::STACK_TOP);

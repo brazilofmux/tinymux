@@ -13,7 +13,8 @@
   @log smoke=Beginning pocvm2() test cases.
 -
 #
-# Test Case #1 - Function A: first(one two three) = one
+# Test Case #1 - Function A: mid(one two three,0,3) = one
+# mid() is Tier 2 (no ECALL) and not in try_fold, so it produces JIT code.
 #
 &tr.tc001 test_pocvm2_fn=
   @if strmatch(
@@ -28,7 +29,7 @@
   }
 -
 #
-# Test Case #2 - Function B: rest(one two three) = two three
+# Test Case #2 - Function B: mid(one two three,4,9) = two three
 #
 &tr.tc002 test_pocvm2_fn=
   @if strmatch(

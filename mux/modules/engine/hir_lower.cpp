@@ -378,7 +378,12 @@ static bool try_fold(const std::string &func_name,
     // =============================================================
 
     if (upper == "STRLEN" && nargs == 1) {
-        result = format_long(static_cast<long>(args[0].size()));
+        // Use co_cluster_count: strip color, then count grapheme
+        // clusters — matches fun_strlen's utf8_cluster_count.
+        size_t n = co_cluster_count(
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size());
+        result = format_long(static_cast<long>(n));
         return true;
     }
 
@@ -444,10 +449,95 @@ static bool try_fold(const std::string &func_name,
         return true;
     }
 
-    // String functions (MID, FIRST, REST, WORDS, POS, STRMATCH) are
-    // NOT constant-folded — their edge-case behavior (negative indices,
-    // custom delimiters, Unicode graphemes, wildcard matching) is too
-    // complex to replicate here.  Let them go through ECALL.
+    // String functions via co_* Ragel wrappers — semantics-matched
+    // to the server by construction (same Ragel source).
+    // Default delimiter is space (0x20).
+
+    if (upper == "WORDS" && (nargs == 1 || nargs == 2)) {
+        unsigned char delim = (nargs == 2 && !args[1].empty())
+            ? static_cast<unsigned char>(args[1][0]) : ' ';
+        size_t n = co_words_count(
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size(), delim);
+        result = format_long(static_cast<long>(n));
+        return true;
+    }
+
+    if (upper == "FIRST" && (nargs == 1 || nargs == 2)) {
+        unsigned char delim = (nargs == 2 && !args[1].empty())
+            ? static_cast<unsigned char>(args[1][0]) : ' ';
+        LBuf out = LBuf_Src("hir_first");
+        size_t n = co_first(reinterpret_cast<unsigned char *>(out.get()),
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size(), delim);
+        result.assign(reinterpret_cast<const char *>(out.get()), n);
+        return true;
+    }
+
+    if (upper == "REST" && (nargs == 1 || nargs == 2)) {
+        unsigned char delim = (nargs == 2 && !args[1].empty())
+            ? static_cast<unsigned char>(args[1][0]) : ' ';
+        LBuf out = LBuf_Src("hir_rest");
+        size_t n = co_rest(reinterpret_cast<unsigned char *>(out.get()),
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size(), delim);
+        result.assign(reinterpret_cast<const char *>(out.get()), n);
+        return true;
+    }
+
+    if (upper == "LAST" && (nargs == 1 || nargs == 2)) {
+        unsigned char delim = (nargs == 2 && !args[1].empty())
+            ? static_cast<unsigned char>(args[1][0]) : ' ';
+        LBuf out = LBuf_Src("hir_last");
+        size_t n = co_last(reinterpret_cast<unsigned char *>(out.get()),
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size(), delim);
+        result.assign(reinterpret_cast<const char *>(out.get()), n);
+        return true;
+    }
+
+    if (upper == "STRIPANSI" && nargs == 1) {
+        LBuf out = LBuf_Src("hir_strip");
+        size_t n = co_strip_color(reinterpret_cast<unsigned char *>(out.get()),
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size());
+        result.assign(reinterpret_cast<const char *>(out.get()), n);
+        return true;
+    }
+
+    if (upper == "SQUISH" && nargs == 1) {
+        // Squish compresses multiple spaces to one — co_compress
+        // with the compress char being space.
+        LBuf out = LBuf_Src("hir_squish");
+        size_t n = co_compress(reinterpret_cast<unsigned char *>(out.get()),
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size(), ' ');
+        result.assign(reinterpret_cast<const char *>(out.get()), n);
+        return true;
+    }
+
+    // =============================================================
+    // Pure constants (0-arg functions returning fixed values)
+    // =============================================================
+
+    if (upper == "PI" && nargs == 0) {
+        result = "3.141592653589793";
+        return true;
+    }
+    if (upper == "E" && nargs == 0) {
+        result = "2.718281828459045";
+        return true;
+    }
+
+    // Server constants — immutable after startup.
+    if (upper == "MUDNAME" && nargs == 0) {
+        result = reinterpret_cast<const char *>(mudconf.mud_name);
+        return true;
+    }
+    if (upper == "VERSION" && nargs == 0) {
+        result = reinterpret_cast<const char *>(mudstate.version);
+        return true;
+    }
 
     return false;
 }
