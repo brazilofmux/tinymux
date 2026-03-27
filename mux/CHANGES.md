@@ -5,7 +5,81 @@ author:
  - Brazil
 ---
 
-Changes since TinyMUX 2.12.0.12.
+Changes in TinyMUX 2.14 (relative to the 2.13 branch point).
+
+# Changes in 2.14.0.6 (2026-MAR-26):
+
+## JIT Compiler Improvements
+
+ - Re-entrant JIT execution via shared heap DBT. Inner expressions
+   reached through ECALL (e.g., `u()` bodies) now compile and execute
+   in a persistent shared code heap with an independent DBT context.
+ - Compile-time constant folding for 35+ functions: arithmetic (ADD,
+   SUB, MUL, FDIV, IDIV, MOD, INC, DEC, ABS, SIGN, FLOOR, CEIL,
+   TRUNC, ROUND, MAX, MIN, BOUND), comparison (EQ, NEQ, GT, GTE, LT,
+   LTE, COMP), boolean (NOT, T), string (CAT, STRCAT, STRLEN, LCSTR,
+   UCSTR, CAPSTR, REVERSE, ESCAPE, STRIPANSI, SQUISH, MID, POS,
+   MEMBER, FIRST, REST, LAST, WORDS, EXTRACT, REPEAT, TRIM, EDIT,
+   DELETE, RIGHT, ISNUM, ISINT, LPOS), and constants (PI, E, MUDNAME,
+   VERSION). All use the same co_* Ragel or libmux implementations as
+   the runtime evaluator — semantics-matched by construction.
+ - STRLEN constant fold uses grapheme cluster counting (co_cluster_count)
+   to match the runtime fun_strlen behavior. MID and DELETE use
+   co_mid_cluster and co_delete_cluster respectively.
+ - Code quality metrics in jitstats(): code_bytes (total/max),
+   hir_insns (total/max), spills (register allocator spill count).
+ - 50 JIT/AST parity tests comparing try_fold results against
+   asteval() for all foldable functions.
+ - JIT coverage measurement tests validating eval_attempts,
+   eval_handled, compile_ok, and folded counters.
+
+## JIT Bug Fixes
+
+ - Fix silent memory corruption on string pool, fargs pool, and code
+   size overflow. Pool overflow now sets a `pool_exhausted` flag and
+   bails to the AST evaluator instead of using address 0.
+ - Fix shared heap cache staleness: cached entries now track inline
+   dependencies and validate via attr_mod_count on lookup. Stale
+   entries from modified attribute bodies are evicted and recompiled.
+ - Fix TRIM constant fold for multi-character patterns. Single-char
+   patterns use co_trim; multi-char patterns fall through to the
+   runtime co_trim_pattern path.
+ - Fix DUMP_HIR crash from uninitialized block_first/block_last
+   arrays. Phase 1 dump called hir_dump before hir_build_cfg computed
+   block ranges.
+ - Skip tier2_install for constant-folded programs (needs_jit=false).
+   64% of compiled programs never touch the DBT — the 132KB blob copy
+   was wasted for them.
+
+## Performance
+
+ - Eliminate 132KB tier2_install memcpy from compile_expression().
+   The compilation pipeline never reads the blob region; callers that
+   need it for runtime install it afterward.
+ - Use tier2_reset_writable() in persistent VM prepare_run() instead
+   of full tier2_install. Code and rodata are immutable after
+   ensure_dbt() installs them once.
+ - Disable WAL auto-checkpoint for SQLite. The WAL accumulates writes
+   without fsync during normal operation; explicit checkpoint at @dump
+   and shutdown handles persistence. Eliminates the 48% fsync
+   bottleneck from code cache writes.
+ - Add ASCII fast path to string_prefix(), string_compare(), and
+   mux_stricmp(). Object name matching and command dispatch skip the
+   full Unicode mux_tolower state machine for ASCII characters (<0x80),
+   using a direct table lookup instead.
+ - Remove rvbench from smoke suite — benchmarking tool was consuming
+   86% of test runtime with no correctness assertions.
+
+## Other
+
+ - Native HIR handlers for default(), edefault(), localize(), letq().
+ - mux_IPlatform COM interface replaces platform #ifdefs in signal
+   handler and driver initialization.
+ - WebSocket GameSession transport design and scaffolding.
+ - Unicode collation fixes ported from libutf: pairs DFA, NFC
+   tiebreaker, root collation.
+ - Mail expiration, @dbclean, vlimit config parameter.
+ - LBUF_SIZE increased from 8000 to 32768 with pool-backed LBuf RAII.
 
 # Major changes that may affect performance and require softcode tweaks:
 
