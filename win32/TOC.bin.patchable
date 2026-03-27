@@ -18,6 +18,7 @@ game/bin/exp3.dll
 game/bin/libmux.dll
 game/bin/mail.dll
 game/bin/msvcp140.dll
+game/bin/muxscript.exe
 game/bin/netmux.exe
 game/bin/pcre2-8.dll
 game/bin/softlib.rv64
@@ -30,6 +31,7 @@ game/data/db_load.bat
 game/data/db_unload.bat
 game/Startmux.bat
 game/Startmux.wsf
+game/text/connect_help.txt
 game/text/help.txt
 game/text/wizhelp.txt
 include/copyright.h

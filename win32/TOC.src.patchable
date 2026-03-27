@@ -240,6 +240,7 @@ rv64/rv64blob.h
 rv64/softlib.rv64
 script/Makefile.am
 script/mux_main.cpp
+script/muxscript.vcxproj
 modules/autoconf.h.in
 modules/autoconf-win32.h
 modules/comsys/comsys_mod.cpp
