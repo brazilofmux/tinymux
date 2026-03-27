@@ -76,6 +76,7 @@ private:
     void readerLoop();
     void signalOutput();
     void pushOutput(const std::string& line);
+    void sendPreferences();
 
     // Open (or reopen) the bidi GameSession stream.
     bool openStream();
@@ -113,6 +114,8 @@ private:
     std::string sessionId_;     // Hydra persistent session token
     bool useTls_{false};
     int currentColorFormat_{1}; // hydra::ANSI_TRUECOLOR (tracks SetPreferences)
+    uint16_t termWidth_{80};    // cached terminal dimensions for SetPreferences
+    uint16_t termHeight_{24};
 
     // eventfd for waking the poll() loop when output arrives
     int eventFd_ = -1;

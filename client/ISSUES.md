@@ -98,7 +98,8 @@
 ### Console reconnect path still hardcodes `80x24`
 
 - **Evidence:** `client/console/src/hydra_connection.cpp:309-317` resends `SetPreferences` after reconnect, but always uses `terminal_width=80` and `terminal_height=24`.
-- **Impact:** The tracker entry claiming native clients now report actual terminal size is no longer fully true. Reconnected console sessions can revert to stale viewport metadata until some later resize or NAWS update occurs.
+- **Impact:** Reconnected console sessions can revert to stale viewport metadata until some later resize or NAWS update occurs.
+- **Note:** The TF client has been fixed with cached terminal dimensions — Console needs the same pattern.
 
 ### ~~iOS Hydra client still does not send `SetPreferences`~~ FIXED
 

@@ -10,13 +10,11 @@ All previously reported bugs have been resolved:
 - ~~`Ctrl-C` exits immediately~~ — Fixed: SIGINT handler sets flag, event loop prints "Interrupt: /quit to exit" instead of exiting.
 - ~~`compile_trigger` treats `simple` as `glob`~~ — Fixed: `simple` and `substr` both call `regex_escape()` for literal matching.
 
-## Newly Confirmed Bugs
+## ~~Newly Confirmed Bugs~~ FIXED
 
-- **Hydra reconnect drops capability negotiation**
-  `client/tf/src/hydra_connection.cpp:135-143` sends `SetPreferences` on the initial stream open, but `client/tf/src/hydra_connection.cpp:764-767` recreates the `GameSession` stream during reconnect without resending preferences. The server can therefore lose terminal size, terminal type, and preferred color format after reconnect.
+- ~~**Hydra reconnect drops capability negotiation**~~ FIXED — `sendPreferences()` is now called after stream reopen in `attemptReconnect()`, resending color format, terminal size, and terminal type.
 
-- **Initial Hydra viewport is still hardcoded to `80x24`**
-  `client/tf/src/hydra_connection.cpp:140-141` still sends `terminal_width=80` and `terminal_height=24` on first connect. A later resize path exists, but the initial capability advertisement is still wrong until a resize occurs.
+- ~~**Initial Hydra viewport is still hardcoded to `80x24`**~~ FIXED — Terminal dimensions are cached in `termWidth_`/`termHeight_` instance variables, updated by `send_naws()` (called on SIGWINCH). Both `openStream()` and `attemptReconnect()` use the cached values. The initial 80x24 default still applies until the first `send_naws()` call, which happens immediately after connect from `main.cpp`.
 
 ## Stubbed Or Partially Implemented Interfaces
 

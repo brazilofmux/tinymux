@@ -132,15 +132,8 @@ bool HydraConnection::openStream() {
         return false;
     }
 
-    // Send initial preferences: TrueColor, terminal size
-    hydra::ClientMessage prefsMsg;
-    auto* prefs = prefsMsg.mutable_preferences();
-    currentColorFormat_ = hydra::ANSI_TRUECOLOR;
-    prefs->set_color_format(static_cast<hydra::ColorFormat>(currentColorFormat_));
-    prefs->set_terminal_width(80);   // TODO: get actual terminal size
-    prefs->set_terminal_height(24);
-    prefs->set_terminal_type("TitanFugue");
-    grpc_->stream->Write(prefsMsg);
+    // Send initial preferences: TrueColor, cached terminal size
+    sendPreferences();
 
     connected_.store(true);
     readerThread_ = std::thread(&HydraConnection::readerLoop, this);
@@ -293,14 +286,20 @@ int HydraConnection::fd() const {
 }
 
 void HydraConnection::send_naws(uint16_t width, uint16_t height) {
+    termWidth_ = width;
+    termHeight_ = height;
+    sendPreferences();
+}
+
+void HydraConnection::sendPreferences() {
     if (!connected_.load() || !grpc_ || !grpc_->stream) return;
 
     hydra::ClientMessage msg;
     auto* prefs = msg.mutable_preferences();
-    // Use tracked color format (don't send COLOR_UNSPECIFIED=0 which means "no change")
     prefs->set_color_format(static_cast<hydra::ColorFormat>(currentColorFormat_));
-    prefs->set_terminal_width(width);
-    prefs->set_terminal_height(height);
+    prefs->set_terminal_width(termWidth_);
+    prefs->set_terminal_height(termHeight_);
+    prefs->set_terminal_type("TitanFugue");
     grpc_->stream->Write(msg);
 }
 
@@ -769,6 +768,7 @@ void HydraConnection::attemptReconnect() {
         if (grpc_->stream) {
             connected_.store(true);
             reconnecting_.store(false);
+            sendPreferences();
             pushOutput("[Hydra] Reconnected (attempt " + std::to_string(attempt) + ")");
 
             // Re-enter the read loop
