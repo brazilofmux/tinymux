@@ -1,0 +1,69 @@
+# profile_heavy.mux — Heavy computation for profiling.
+# ~5000 evaluations covering string, math, list, and iteration paths.
+
+# 200 math evaluations
+think iter(lnum(50),add(mul(##,##),div(100,inc(##))))
+think iter(lnum(50),sqrt(mul(##,100)))
+think iter(lnum(50),power(2,mod(##,16)))
+think iter(lnum(50),round(fdiv(mul(##,355),113),6))
+
+# 200 string evaluations
+think iter(lnum(50),strlen(repeat(abcdefghij,mul(##,2))))
+think iter(lnum(50),mid(repeat(abcdefghij,20),mul(##,3),20))
+think iter(lnum(50),edit(repeat(hello world ,10),world,universe))
+think iter(lnum(50),lcstr(repeat(ABCDEFGHIJ,mul(##,2))))
+
+# 200 list evaluations
+think iter(lnum(50),words(iter(lnum(##),mul(%i0,##))))
+think iter(lnum(50),sort(shuffle(lnum(##))))
+think iter(lnum(20),setunion(lnum(##),lnum(add(##,5))))
+think iter(lnum(20),setinter(lnum(mul(##,2)),lnum(mul(##,3))))
+think iter(lnum(20),setdiff(lnum(mul(##,3)),lnum(mul(##,2))))
+
+# SHA hashing (exercises crypto + string)
+think iter(lnum(100),sha1(repeat(##,50)))
+
+# Nested iteration
+think iter(lnum(20),iter(lnum(##),add(%i0,##)))
+think iter(lnum(20),iter(lnum(##),cat(%i0,##)))
+
+# Heavy string building
+think iter(lnum(50),cat(repeat(a,##),repeat(b,sub(50,##))))
+think iter(lnum(50),reverse(repeat(abcdef,##)))
+
+# Pattern matching
+think iter(lnum(50),strmatch(repeat(abcdefghij,##),*cdef*))
+think iter(lnum(50),match(iter(lnum(##),cat(item,##)),item25))
+
+# switch/case
+think iter(lnum(100),switch(mod(##,5),0,zero,1,one,2,two,3,three,4,four))
+think iter(lnum(100),if(gt(mod(##,3),1),big,small))
+
+# Encoding
+think iter(lnum(50),secure(repeat(%r%t%%,##)))
+
+# More iteration - heavier
+think iter(lnum(30),fold(#lambda/add(%0,%1),lnum(##)))
+think iter(lnum(30),filter(#lambda/gt(%0,div(##,2)),lnum(##)))
+think iter(lnum(30),map(#lambda/mul(%0,%0),lnum(##)))
+
+# sort with larger lists
+think sort(shuffle(lnum(200)))
+think sort(shuffle(lnum(200)))
+think sort(shuffle(lnum(200)))
+think sort(shuffle(lnum(200)))
+think sort(shuffle(lnum(200)))
+
+# Repeated small evaluations (many function calls)
+think iter(lnum(200),add(##,1))
+think iter(lnum(200),mul(##,2))
+think iter(lnum(200),sub(##,1))
+think iter(lnum(200),inc(##))
+think iter(lnum(200),dec(##))
+think iter(lnum(200),isnum(##))
+think iter(lnum(200),isint(##))
+think iter(lnum(200),abs(sub(100,##)))
+think iter(lnum(200),sign(sub(100,##)))
+think iter(lnum(200),eq(mod(##,2),0))
+
+@shutdown

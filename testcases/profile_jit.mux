@@ -1,0 +1,67 @@
+# profile_jit.mux — Exercise JIT compilation and execution for profiling.
+#
+# Creates objects with softcode attributes, then evaluates them
+# repeatedly to trigger JIT compilation and measure execution.
+
+# Create test object with user-defined functions
+@create profobj
+-
+@set profobj=INHERIT QUIET
+-
+# Math-heavy user function
+&fn_mathwork profobj=add(mul(%0,%0),div(100,inc(%0)))
+-
+# String-heavy user function
+&fn_strwork profobj=cat(lcstr(repeat(%0,5)),ucstr(repeat(%1,5)))
+-
+# List manipulation function
+&fn_listwork profobj=sort(iter(lnum(%0),mul(##,sub(%0,##))))
+-
+# Nested evaluation
+&fn_nested profobj=iter(lnum(%0),u(fn_mathwork,##))
+-
+# Pattern matching function
+&fn_matchwork profobj=strmatch(repeat(abcdef,%0),*cd*ef*)
+-
+# Conditional function
+&fn_condwork profobj=switch(%0,1,one,2,two,3,three,4,four,5,five,other)
+-
+# Now exercise them heavily
+
+# Direct think evaluations (these go through jit_eval)
+think iter(lnum(100),add(mul(##,##),div(1000,inc(##))))
+think iter(lnum(100),strlen(repeat(abc,##)))
+think iter(lnum(100),sort(lnum(##)))
+think iter(lnum(100),mid(repeat(abcdefghij,10),mod(mul(##,7),90),10))
+think iter(lnum(100),edit(repeat(hello,##),hel,HEL))
+think iter(lnum(100),words(lnum(##)))
+think iter(lnum(100),first(lnum(##)))
+think iter(lnum(100),last(lnum(##)))
+think iter(lnum(100),member(50,lnum(##)))
+think iter(lnum(100),extract(lnum(100),##,5))
+
+# Call user-defined functions (triggers attribute fetch + JIT compile)
+think iter(lnum(100),u(profobj/fn_mathwork,##))
+think iter(lnum(100),u(profobj/fn_strwork,a##,b##))
+think iter(lnum(30),u(profobj/fn_listwork,##))
+think iter(lnum(20),u(profobj/fn_nested,##))
+think iter(lnum(100),u(profobj/fn_matchwork,##))
+think iter(lnum(100),u(profobj/fn_condwork,mod(##,6)))
+
+# More user-function calls to amortize compilation
+think iter(lnum(200),u(profobj/fn_mathwork,##))
+think iter(lnum(200),u(profobj/fn_condwork,mod(##,6)))
+think iter(lnum(200),u(profobj/fn_matchwork,##))
+
+# Heavy string building through user functions
+think iter(lnum(50),u(profobj/fn_strwork,repeat(x,##),repeat(y,##)))
+
+# lambda calls (each is a fresh compile)
+think iter(lnum(100),map(#lambda/add(%0,%0),lnum(##)))
+think iter(lnum(50),fold(#lambda/add(%0,%1),lnum(##)))
+think iter(lnum(50),filter(#lambda/gt(%0,div(##,2)),lnum(##)))
+
+# Cleanup
+@destroy profobj
+-
+@shutdown
