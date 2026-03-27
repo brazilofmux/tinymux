@@ -1202,6 +1202,35 @@ void hir_superblock(hir_program &h) {
         // Compact block numbering: eliminate gaps left by empty blocks.
         hir_renumber_blocks(h);
         hir_build_cfg(h);
+
+        // Ensure every leaf block has an explicit HIR_RET terminator.
+        // Codegen emits blocks in numeric order with implicit fallthrough;
+        // without an explicit exit, a leaf block that is no longer last
+        // in layout will fall through into the next block's code.
+        for (int b = 0; b < h.n_blocks; b++) {
+            if (h.block_nsucc[b] != 0) continue;    // not a leaf
+            if (h.block_last[b] < h.block_first[b]) continue;  // empty
+
+            // Check if block already has a terminator.
+            bool has_term = false;
+            for (int i = h.block_first[b]; i <= h.block_last[b]; i++) {
+                if (h.blk[i] == b && (h.kind[i] == HIR_RET
+                    || h.kind[i] == HIR_BR || h.kind[i] == HIR_BRC)) {
+                    has_term = true;
+                    break;
+                }
+            }
+            if (has_term) continue;
+
+            // Append HIR_RET to this block.
+            int saved = h.cur_block;
+            h.cur_block = b;
+            h.emit(HIR_RET, TY_VOID);
+            h.cur_block = saved;
+        }
+
+        // Rebuild CFG one final time with the new RET instructions.
+        hir_build_cfg(h);
     }
 }
 
@@ -1217,8 +1246,8 @@ void hir_optimize(hir_program &h) {
     // Iterate: folding can create new COPYs, peephole can expose
     // new constant operands, copy prop chains, CSE replaces
     // duplicates with COPYs, DCE can simplify the graph.
-    for (int pass = 0; pass < 3; pass++) {
-        int prev = h.n_insns;
+    int prev_live = -1;
+    for (int pass = 0; pass < 4; pass++) {
         hir_const_fold(h);
         hir_peephole(h);
         hir_copy_prop(h);
@@ -1230,7 +1259,8 @@ void hir_optimize(hir_program &h) {
         for (int i = 0; i < h.n_insns; i++) {
             if (h.kind[i] != HIR_NOP) live++;
         }
-        if (live == prev) break;  // converged
+        if (live == prev_live) break;  // converged
+        prev_live = live;
     }
 
     // LICM runs once after the main optimization loop.
