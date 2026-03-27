@@ -1,0 +1,674 @@
+#
+# jit_fold_parity_fn.mux - Parity tests for try_fold constant folding.
+#
+# Each test evaluates an expression normally (JIT/fold path) and via
+# asteval() (AST-only path).  Results must match byte-for-byte.
+# SHA1 is used when results may contain special characters.
+#
+# These tests specifically target edge cases that could expose
+# mismatches between the co_* Ragel wrappers used in try_fold
+# and the runtime fun_* implementations.
+#
+@create test_jit_fold_parity_fn
+-
+@set test_jit_fold_parity_fn=INHERIT QUIET
+-
+&tr.tc000 test_jit_fold_parity_fn=
+  @log smoke=Beginning JIT fold parity test cases.
+-
+#
+# STRLEN - grapheme clusters, not bytes or code points.
+#
+&tr.tc001 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,[strlen(hello)]),
+        setr(1,[asteval({strlen(hello)})])
+      )=
+  {
+    @log smoke=TC001: strlen() ASCII parity. Succeeded.
+  },
+  {
+    @log smoke=TC001: strlen() ASCII parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc002 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,[strlen()]),
+        setr(1,[asteval({strlen()})])
+      )=
+  {
+    @log smoke=TC002: strlen() empty parity. Succeeded.
+  },
+  {
+    @log smoke=TC002: strlen() empty parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# WORDS - word counting with default and custom delimiters.
+#
+&tr.tc003 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,[words(the quick brown fox)]),
+        setr(1,[asteval({words(the quick brown fox)})])
+      )=
+  {
+    @log smoke=TC003: words() basic parity. Succeeded.
+  },
+  {
+    @log smoke=TC003: words() basic parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc004 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,[words()]),
+        setr(1,[asteval({words()})])
+      )=
+  {
+    @log smoke=TC004: words() empty parity. Succeeded.
+  },
+  {
+    @log smoke=TC004: words() empty parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc005 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,[words(a-b-c-d,-)]),
+        setr(1,[asteval({words(a-b-c-d,-)})])
+      )=
+  {
+    @log smoke=TC005: words() custom delim parity. Succeeded.
+  },
+  {
+    @log smoke=TC005: words() custom delim parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# FIRST/REST/LAST - word extraction with delimiters.
+#
+&tr.tc006 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([first(alpha beta gamma)])),
+        setr(1,sha1([asteval({first(alpha beta gamma)})]))
+      )=
+  {
+    @log smoke=TC006: first() basic parity. Succeeded.
+  },
+  {
+    @log smoke=TC006: first() basic parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc007 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([first()])),
+        setr(1,sha1([asteval({first()})]))
+      )=
+  {
+    @log smoke=TC007: first() empty parity. Succeeded.
+  },
+  {
+    @log smoke=TC007: first() empty parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc008 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([rest(alpha beta gamma)])),
+        setr(1,sha1([asteval({rest(alpha beta gamma)})]))
+      )=
+  {
+    @log smoke=TC008: rest() basic parity. Succeeded.
+  },
+  {
+    @log smoke=TC008: rest() basic parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc009 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([rest(single)])),
+        setr(1,sha1([asteval({rest(single)})]))
+      )=
+  {
+    @log smoke=TC009: rest() single word parity. Succeeded.
+  },
+  {
+    @log smoke=TC009: rest() single word parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc010 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([last(alpha beta gamma)])),
+        setr(1,sha1([asteval({last(alpha beta gamma)})]))
+      )=
+  {
+    @log smoke=TC010: last() basic parity. Succeeded.
+  },
+  {
+    @log smoke=TC010: last() basic parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc011 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([first(a-b-c,-)])),
+        setr(1,sha1([asteval({first(a-b-c,-)})]))
+      )=
+  {
+    @log smoke=TC011: first() custom delim parity. Succeeded.
+  },
+  {
+    @log smoke=TC011: first() custom delim parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc012 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([rest(a-b-c,-)])),
+        setr(1,sha1([asteval({rest(a-b-c,-)})]))
+      )=
+  {
+    @log smoke=TC012: rest() custom delim parity. Succeeded.
+  },
+  {
+    @log smoke=TC012: rest() custom delim parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# MID - grapheme cluster positioning.
+#
+&tr.tc013 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([mid(foobar,2,3)])),
+        setr(1,sha1([asteval({mid(foobar,2,3)})]))
+      )=
+  {
+    @log smoke=TC013: mid() basic parity. Succeeded.
+  },
+  {
+    @log smoke=TC013: mid() basic parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc014 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([mid(foobar,2,-2)])),
+        setr(1,sha1([asteval({mid(foobar,2,-2)})]))
+      )=
+  {
+    @log smoke=TC014: mid() negative count parity. Succeeded.
+  },
+  {
+    @log smoke=TC014: mid() negative count parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc015 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([mid(foobar,0,100)])),
+        setr(1,sha1([asteval({mid(foobar,0,100)})]))
+      )=
+  {
+    @log smoke=TC015: mid() overflow parity. Succeeded.
+  },
+  {
+    @log smoke=TC015: mid() overflow parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc016 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([mid(,0,5)])),
+        setr(1,sha1([asteval({mid(,0,5)})]))
+      )=
+  {
+    @log smoke=TC016: mid() empty string parity. Succeeded.
+  },
+  {
+    @log smoke=TC016: mid() empty string parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# POS - substring position finding.
+#
+&tr.tc017 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,[pos(cd,abcdef)]),
+        setr(1,[asteval({pos(cd,abcdef)})])
+      )=
+  {
+    @log smoke=TC017: pos() basic parity. Succeeded.
+  },
+  {
+    @log smoke=TC017: pos() basic parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc018 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,[pos(xyz,abcdef)]),
+        setr(1,[asteval({pos(xyz,abcdef)})])
+      )=
+  {
+    @log smoke=TC018: pos() not found parity. Succeeded.
+  },
+  {
+    @log smoke=TC018: pos() not found parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# MEMBER - word membership in lists.
+#
+&tr.tc019 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,[member(gamma,alpha beta gamma delta)]),
+        setr(1,[asteval({member(gamma,alpha beta gamma delta)})])
+      )=
+  {
+    @log smoke=TC019: member() found parity. Succeeded.
+  },
+  {
+    @log smoke=TC019: member() found parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc020 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,[member(missing,alpha beta gamma)]),
+        setr(1,[asteval({member(missing,alpha beta gamma)})])
+      )=
+  {
+    @log smoke=TC020: member() not found parity. Succeeded.
+  },
+  {
+    @log smoke=TC020: member() not found parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# EXTRACT - word extraction with position and count.
+#
+&tr.tc021 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([extract(a b c d e,2,3)])),
+        setr(1,sha1([asteval({extract(a b c d e,2,3)})]))
+      )=
+  {
+    @log smoke=TC021: extract() basic parity. Succeeded.
+  },
+  {
+    @log smoke=TC021: extract() basic parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc022 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([extract(a b c d e,0,1)])),
+        setr(1,sha1([asteval({extract(a b c d e,0,1)})]))
+      )=
+  {
+    @log smoke=TC022: extract() zero pos parity. Succeeded.
+  },
+  {
+    @log smoke=TC022: extract() zero pos parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc023 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([extract(a-b-c-d,2,2,-)])),
+        setr(1,sha1([asteval({extract(a-b-c-d,2,2,-)})]))
+      )=
+  {
+    @log smoke=TC023: extract() custom delim parity. Succeeded.
+  },
+  {
+    @log smoke=TC023: extract() custom delim parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# REPEAT - string repetition.
+#
+&tr.tc024 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([repeat(abc,3)])),
+        setr(1,sha1([asteval({repeat(abc,3)})]))
+      )=
+  {
+    @log smoke=TC024: repeat() basic parity. Succeeded.
+  },
+  {
+    @log smoke=TC024: repeat() basic parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc025 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([repeat(x,0)])),
+        setr(1,sha1([asteval({repeat(x,0)})]))
+      )=
+  {
+    @log smoke=TC025: repeat() zero parity. Succeeded.
+  },
+  {
+    @log smoke=TC025: repeat() zero parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# TRIM - leading/trailing character removal.
+#
+&tr.tc026 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([trim(hello)])),
+        setr(1,sha1([asteval({trim(hello)})]))
+      )=
+  {
+    @log smoke=TC026: trim() no-op parity. Succeeded.
+  },
+  {
+    @log smoke=TC026: trim() no-op parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc027 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([trim(xxxhelloxxx,l,x)])),
+        setr(1,sha1([asteval({trim(xxxhelloxxx,l,x)})]))
+      )=
+  {
+    @log smoke=TC027: trim() left custom parity. Succeeded.
+  },
+  {
+    @log smoke=TC027: trim() left custom parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc028 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([trim(xxxhelloxxx,r,x)])),
+        setr(1,sha1([asteval({trim(xxxhelloxxx,r,x)})]))
+      )=
+  {
+    @log smoke=TC028: trim() right custom parity. Succeeded.
+  },
+  {
+    @log smoke=TC028: trim() right custom parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc029 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([trim(xxxhelloxxx,b,x)])),
+        setr(1,sha1([asteval({trim(xxxhelloxxx,b,x)})]))
+      )=
+  {
+    @log smoke=TC029: trim() both custom parity. Succeeded.
+  },
+  {
+    @log smoke=TC029: trim() both custom parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# EDIT - find and replace.
+#
+&tr.tc030 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([edit(hello world,world,earth)])),
+        setr(1,sha1([asteval({edit(hello world,world,earth)})]))
+      )=
+  {
+    @log smoke=TC030: edit() basic parity. Succeeded.
+  },
+  {
+    @log smoke=TC030: edit() basic parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc031 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([edit(aaa,a,bb)])),
+        setr(1,sha1([asteval({edit(aaa,a,bb)})]))
+      )=
+  {
+    @log smoke=TC031: edit() multiple replace parity. Succeeded.
+  },
+  {
+    @log smoke=TC031: edit() multiple replace parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc032 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([edit(hello,,)])),
+        setr(1,sha1([asteval({edit(hello,,)})]))
+      )=
+  {
+    @log smoke=TC032: edit() empty pattern parity. Succeeded.
+  },
+  {
+    @log smoke=TC032: edit() empty pattern parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# DELETE - grapheme cluster deletion.
+#
+&tr.tc033 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([delete(abcdef,2,2)])),
+        setr(1,sha1([asteval({delete(abcdef,2,2)})]))
+      )=
+  {
+    @log smoke=TC033: delete() basic parity. Succeeded.
+  },
+  {
+    @log smoke=TC033: delete() basic parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc034 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([delete(abcdef,3,-2)])),
+        setr(1,sha1([asteval({delete(abcdef,3,-2)})]))
+      )=
+  {
+    @log smoke=TC034: delete() negative count parity. Succeeded.
+  },
+  {
+    @log smoke=TC034: delete() negative count parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc035 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([delete(abcdef,0,0)])),
+        setr(1,sha1([asteval({delete(abcdef,0,0)})]))
+      )=
+  {
+    @log smoke=TC035: delete() zero count parity. Succeeded.
+  },
+  {
+    @log smoke=TC035: delete() zero count parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# RIGHT - rightmost grapheme clusters.
+#
+&tr.tc036 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([right(abcdef,3)])),
+        setr(1,sha1([asteval({right(abcdef,3)})]))
+      )=
+  {
+    @log smoke=TC036: right() basic parity. Succeeded.
+  },
+  {
+    @log smoke=TC036: right() basic parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc037 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([right(abc,100)])),
+        setr(1,sha1([asteval({right(abc,100)})]))
+      )=
+  {
+    @log smoke=TC037: right() overflow parity. Succeeded.
+  },
+  {
+    @log smoke=TC037: right() overflow parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc038 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([right(abc,0)])),
+        setr(1,sha1([asteval({right(abc,0)})]))
+      )=
+  {
+    @log smoke=TC038: right() zero parity. Succeeded.
+  },
+  {
+    @log smoke=TC038: right() zero parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# ISNUM / ISINT - type predicates.
+#
+&tr.tc039 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,[isnum(3.14)]),
+        setr(1,[asteval({isnum(3.14)})])
+      )=
+  {
+    @log smoke=TC039: isnum() float parity. Succeeded.
+  },
+  {
+    @log smoke=TC039: isnum() float parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc040 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,[isnum(abc)]),
+        setr(1,[asteval({isnum(abc)})])
+      )=
+  {
+    @log smoke=TC040: isnum() non-number parity. Succeeded.
+  },
+  {
+    @log smoke=TC040: isnum() non-number parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc041 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,[isnum()]),
+        setr(1,[asteval({isnum()})])
+      )=
+  {
+    @log smoke=TC041: isnum() empty parity. Succeeded.
+  },
+  {
+    @log smoke=TC041: isnum() empty parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc042 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,[isint(42)]),
+        setr(1,[asteval({isint(42)})])
+      )=
+  {
+    @log smoke=TC042: isint() integer parity. Succeeded.
+  },
+  {
+    @log smoke=TC042: isint() integer parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc043 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,[isint(3.14)]),
+        setr(1,[asteval({isint(3.14)})])
+      )=
+  {
+    @log smoke=TC043: isint() float parity. Succeeded.
+  },
+  {
+    @log smoke=TC043: isint() float parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# LPOS - position finding in lists.
+#
+&tr.tc044 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([lpos(a b a c a,a)])),
+        setr(1,sha1([asteval({lpos(a b a c a,a)})]))
+      )=
+  {
+    @log smoke=TC044: lpos() basic parity. Succeeded.
+  },
+  {
+    @log smoke=TC044: lpos() basic parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# STRIPANSI / SQUISH - string cleaning.
+#
+&tr.tc045 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([stripansi(hello)])),
+        setr(1,sha1([asteval({stripansi(hello)})]))
+      )=
+  {
+    @log smoke=TC045: stripansi() plain parity. Succeeded.
+  },
+  {
+    @log smoke=TC045: stripansi() plain parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc046 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([squish(hello world)])),
+        setr(1,sha1([asteval({squish(hello world)})]))
+      )=
+  {
+    @log smoke=TC046: squish() parity. Succeeded.
+  },
+  {
+    @log smoke=TC046: squish() parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# PI / E / MUDNAME / VERSION - pure constants.
+#
+&tr.tc047 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,[pi()]),
+        setr(1,[asteval({pi()})])
+      )=
+  {
+    @log smoke=TC047: pi() parity. Succeeded.
+  },
+  {
+    @log smoke=TC047: pi() parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc048 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,[e()]),
+        setr(1,[asteval({e()})])
+      )=
+  {
+    @log smoke=TC048: e() parity. Succeeded.
+  },
+  {
+    @log smoke=TC048: e() parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc049 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([mudname()])),
+        setr(1,sha1([asteval({mudname()})]))
+      )=
+  {
+    @log smoke=TC049: mudname() parity. Succeeded.
+  },
+  {
+    @log smoke=TC049: mudname() parity. Failed (%q0 vs %q1).
+  }
+-
+&tr.tc050 test_jit_fold_parity_fn=
+  @if strmatch(
+        setr(0,sha1([version()])),
+        setr(1,sha1([asteval({version()})]))
+      )=
+  {
+    @log smoke=TC050: version() parity. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC050: version() parity. Failed (%q0 vs %q1).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_jit_fold_parity_fn=
+  @log smoke=End JIT fold parity test cases.;
+  @notify smoke
+-
+drop test_jit_fold_parity_fn
+-
