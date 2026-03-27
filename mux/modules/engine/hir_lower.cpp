@@ -640,6 +640,86 @@ static bool try_fold(const std::string &func_name,
         return true;
     }
 
+    // --- DELETE(string, start, count) ---
+    // Uses co_delete_cluster (grapheme clusters) to match fun_delete.
+    if (upper == "DELETE" && nargs == 3) {
+        int iStart = static_cast<int>(mux_atol(u8(args[1])));
+        int nDel   = static_cast<int>(mux_atol(u8(args[2])));
+        if (nDel < 0) {
+            iStart += 1 + nDel;
+            nDel = -nDel;
+        }
+        if (iStart < 0) {
+            nDel += iStart;
+            iStart = 0;
+        }
+        if (nDel <= 0) {
+            result = args[0];
+            return true;
+        }
+        LBuf out = LBuf_Src("hir_delete");
+        size_t n = co_delete_cluster(reinterpret_cast<unsigned char *>(out.get()),
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size(),
+            static_cast<size_t>(iStart), static_cast<size_t>(nDel));
+        result.assign(reinterpret_cast<const char *>(out.get()), n);
+        return true;
+    }
+
+    // --- RIGHT(string, count) ---
+    // Uses co_cluster_count + co_mid_cluster to match fun_right.
+    if (upper == "RIGHT" && nargs == 2) {
+        int nRight = static_cast<int>(mux_atol(u8(args[1])));
+        if (nRight < 0) {
+            result = "#-1 OUT OF RANGE";
+            return true;
+        }
+        if (nRight == 0) {
+            result = "";
+            return true;
+        }
+        size_t nClusters = co_cluster_count(
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size());
+        if (static_cast<size_t>(nRight) >= nClusters) {
+            result = args[0];
+        } else {
+            LBuf out = LBuf_Src("hir_right");
+            size_t n = co_mid_cluster(
+                reinterpret_cast<unsigned char *>(out.get()),
+                reinterpret_cast<const unsigned char *>(args[0].data()),
+                args[0].size(),
+                nClusters - static_cast<size_t>(nRight),
+                static_cast<size_t>(nRight));
+            result.assign(reinterpret_cast<const char *>(out.get()), n);
+        }
+        return true;
+    }
+
+    // --- ISNUM(string) ---
+    if (upper == "ISNUM" && nargs == 1) {
+        result = is_real(u8(args[0])) ? "1" : "0";
+        return true;
+    }
+
+    // --- ISINT(string) ---
+    if (upper == "ISINT" && nargs == 1) {
+        result = is_integer(u8(args[0]), nullptr) ? "1" : "0";
+        return true;
+    }
+
+    // --- LPOS(list, char) ---
+    if (upper == "LPOS" && nargs == 2) {
+        unsigned char target = (!args[1].empty())
+            ? static_cast<unsigned char>(args[1][0]) : ' ';
+        LBuf out = LBuf_Src("hir_lpos");
+        size_t n = co_lpos(reinterpret_cast<unsigned char *>(out.get()),
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size(), target);
+        result.assign(reinterpret_cast<const char *>(out.get()), n);
+        return true;
+    }
+
     // =============================================================
     // Pure constants (0-arg functions returning fixed values)
     // =============================================================
