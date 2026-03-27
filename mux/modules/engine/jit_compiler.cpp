@@ -1608,6 +1608,181 @@ struct shared_heap_t {
         auto [ins, _] = cache.emplace(key, e);
         return &ins->second;
     }
+
+    // ---------------------------------------------------------------
+    // Evaluate an expression via the shared heap's own DBT.
+    //
+    // Compiles (or cache-hits), populates CARGS/SUBST, runs via
+    // dbt_run, extracts result.  Returns true if handled.
+    //
+    // The shared heap DBT is independent of the outer expression's
+    // DBT, so this is safe to call from within an ECALL handler.
+    // ---------------------------------------------------------------
+
+    dbt_state_t dbt;
+    bool dbt_ready = false;
+    uint32_t run_count = 0;
+
+    bool eval(const UTF8 *expr, size_t nLen,
+              UTF8 *out, size_t out_size,
+              dbref executor, dbref caller, dbref enactor,
+              int eval_flags,
+              const UTF8 *cargs[], int ncargs) {
+
+        const entry *e = lookup(expr, nLen, eval_flags);
+        if (!e) return false;
+
+        // Constant-folded: result is in shared memory.
+        if (!e->needs_jit) {
+            uint64_t out_addr = resolve_runtime_out_addr(
+                e->out_addr, rv_compiler::STACK_TOP);
+            if (out_addr == 0 || out_addr >= memory.size()) return false;
+            const char *r = reinterpret_cast<const char *>(
+                memory.data() + out_addr);
+            size_t n = strlen(r);
+            if (n >= out_size) n = out_size - 1;
+            memcpy(out, r, n);
+            out[n] = '\0';
+            return true;
+        }
+
+        // Runtime execution: initialize DBT on first use.
+        if (!dbt_ready) {
+            if (dbt_init(&dbt, memory.data(), memory.size(),
+                         eval_ecall, nullptr) != 0) {
+                return false;
+            }
+            dbt_ready = true;
+
+            const char *md_env = getenv("TINYMUX_DBT_MAX_DISPATCH");
+            dbt.max_dispatch = md_env
+                ? strtoull(md_env, nullptr, 0) : 10000000;
+
+            pretranslate_tier2(&dbt);
+            dbt.blob_code_end = dbt.code_used;
+        }
+
+        // Reset writable blob state.
+        tier2_reset_writable(memory, rv_compiler::BLOB_BASE);
+
+        // NUL-sentinel output slots.
+        {
+            uint64_t addr = rv_compiler::STACK_TOP - 8
+                          - rv_compiler::OUT_SLOT;
+            while (addr >= rv_compiler::OUT_STACK_LIMIT) {
+                memory[addr] = 0;
+                addr -= rv_compiler::OUT_SLOT;
+            }
+        }
+
+        // Populate CARGS.
+        for (int i = 0; i < rv_compiler::MAX_CARGS; i++) {
+            uint64_t slot = rv_compiler::CARGS_BASE
+                          + static_cast<uint64_t>(i) * rv_compiler::CARGS_SLOT;
+            if (i < ncargs && cargs && cargs[i]) {
+                size_t len = strlen(
+                    reinterpret_cast<const char *>(cargs[i]));
+                if (len >= static_cast<size_t>(rv_compiler::CARGS_SLOT))
+                    len = rv_compiler::CARGS_SLOT - 1;
+                memcpy(memory.data() + slot, cargs[i], len);
+                memory[slot + len] = 0;
+            } else {
+                memory[slot] = 0;
+            }
+        }
+
+        // Populate SUBST slots.
+        auto copy_subst = [&](int slot_idx, const UTF8 *value) {
+            uint64_t slot = rv_compiler::SUBST_BASE
+                + static_cast<uint64_t>(slot_idx) * rv_compiler::SUBST_SLOT;
+            if (value && value[0]) {
+                size_t len = strlen(
+                    reinterpret_cast<const char *>(value));
+                if (len >= static_cast<size_t>(rv_compiler::SUBST_SLOT))
+                    len = rv_compiler::SUBST_SLOT - 1;
+                memcpy(memory.data() + slot, value, len);
+                memory[slot + len] = 0;
+            } else {
+                memory[slot] = 0;
+            }
+        };
+
+        {
+            UTF8 dbref_buf[32];
+            mux_sprintf(dbref_buf, sizeof(dbref_buf), T("#%d"), enactor);
+            copy_subst(rv_compiler::SUBST_ENACTOR, dbref_buf);
+            mux_sprintf(dbref_buf, sizeof(dbref_buf), T("#%d"), executor);
+            copy_subst(rv_compiler::SUBST_EXECUTOR, dbref_buf);
+        }
+        if (Good_obj(enactor)) {
+            copy_subst(rv_compiler::SUBST_NAME, Name(enactor));
+            UTF8 dbref_buf[32];
+            mux_sprintf(dbref_buf, sizeof(dbref_buf), T("#%d"),
+                        Location(enactor));
+            copy_subst(rv_compiler::SUBST_LOCATION, dbref_buf);
+            copy_subst(rv_compiler::SUBST_MONIKER, Moniker(enactor));
+        } else {
+            copy_subst(rv_compiler::SUBST_NAME, nullptr);
+            copy_subst(rv_compiler::SUBST_LOCATION, nullptr);
+            copy_subst(rv_compiler::SUBST_MONIKER, nullptr);
+        }
+        for (int i = 0; i < MAX_GLOBAL_REGS; i++) {
+            if (mudstate.global_regs[i]
+                && mudstate.global_regs[i]->reg_ptr) {
+                copy_subst(rv_compiler::SUBST_QREG0 + i,
+                           mudstate.global_regs[i]->reg_ptr);
+            } else {
+                copy_subst(rv_compiler::SUBST_QREG0 + i, nullptr);
+            }
+        }
+        copy_subst(rv_compiler::SUBST_LASTCMD, mudstate.curr_cmd);
+        copy_subst(rv_compiler::SUBST_POUT, mudstate.pout);
+        {
+            UTF8 ncbuf[32];
+            mux_sprintf(ncbuf, sizeof(ncbuf), T("%d"), ncargs);
+            copy_subst(rv_compiler::SUBST_NCARGS, ncbuf);
+        }
+
+        // Set up ECALL context.
+        eval_ctx ec;
+        ec.memory = memory.data();
+        ec.memory_size = memory.size();
+        ec.executor = executor;
+        ec.caller = caller;
+        ec.enactor = enactor;
+        ec.eval = eval_flags;
+        ec.cargs = cargs;
+        ec.ncargs = ncargs;
+        ec.lua_state = nullptr;
+        ec.dbt = &dbt;
+        ec.pvm = nullptr;
+
+        // Run via the shared heap's DBT.
+        dbt_rerun(&dbt, eval_ecall, &ec);
+        int rc;
+        if (run_count == 0) {
+            run_count++;
+            rc = dbt_run(&dbt, e->entry_pc, rv_compiler::STACK_TOP);
+        } else {
+            dbt.ctx.x[2] = rv_compiler::STACK_TOP;
+            run_count++;
+            rc = dbt_resume(&dbt, e->entry_pc);
+        }
+
+        if (rc != 0) return false;
+
+        // Extract result.
+        uint64_t out_addr = resolve_runtime_out_addr(
+            e->out_addr, rv_compiler::STACK_TOP);
+        if (out_addr == 0 || out_addr >= memory.size()) return false;
+        const char *r = reinterpret_cast<const char *>(
+            memory.data() + out_addr);
+        size_t n = strlen(r);
+        if (n >= out_size) n = out_size - 1;
+        memcpy(out, r, n);
+        out[n] = '\0';
+        return true;
+    }
 };
 
 static shared_heap_t s_shared_heap;
@@ -3718,9 +3893,18 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
         return true;
     }
 
-    // Runtime execution requires the DBT — only allowed at depth 1.
-    // (Future: shared heap + dbt_resume for needs_jit at depth > 1.)
+    // Depth > 1: try executing via the shared heap's independent DBT.
+    // The shared heap compiles into persistent memory and runs in its
+    // own DBT context, so this is safe during an outer ECALL.
     if (s_jit_depth > 1) {
+        LBuf shresult = LBuf_Src("jit_eval.shared");
+        if (s_shared_heap.eval(expr, nLen, shresult, LBUF_SIZE,
+                               executor, caller, enactor, eval,
+                               cargs, ncargs)) {
+            s_jit_stats.eval_handled++;
+            safe_str(shresult, buff, bufc);
+            return true;
+        }
         s_jit_stats.eval_bailout++;
         return false;
     }
