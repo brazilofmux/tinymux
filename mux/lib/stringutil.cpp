@@ -3847,6 +3847,20 @@ int string_compare(const UTF8 *s1, const UTF8 *s2)
                 continue;
             }
 
+            // ASCII fast path: compare via table without the full
+            // Unicode state machine.
+            //
+            if (*s1 < 0x80 && *s2 < 0x80)
+            {
+                if (mux_tolower_ascii[*s1] != mux_tolower_ascii[*s2])
+                {
+                    break;
+                }
+                s1++;
+                s2++;
+                continue;
+            }
+
             // Compare code points case-insensitively (Unicode-aware).
             //
             UTF8 la[4], lb[4];
@@ -3956,7 +3970,23 @@ int string_prefix(const UTF8 *string, const UTF8 *prefix)
 {
     int count = 0;
 
-    // Code-point-at-a-time case-insensitive comparison (Unicode-aware).
+    // ASCII fast path: compare bytes directly via tolower table.
+    // Most object names and commands are pure ASCII — this avoids
+    // the full Unicode mux_tolower state machine per character.
+    //
+    while (*string && *prefix
+           && *string < 0x80 && *prefix < 0x80)
+    {
+        if (mux_tolower_ascii[*string] != mux_tolower_ascii[*prefix])
+        {
+            return 0;
+        }
+        string++;
+        prefix++;
+        count++;
+    }
+
+    // Unicode fallback: code-point-at-a-time case-insensitive comparison.
     //
     while (*string && *prefix)
     {
@@ -5354,6 +5384,22 @@ void ItemToList_Final(ITL *pContext)
 //
 int mux_stricmp(const UTF8 *a, const UTF8 *b)
 {
+    // ASCII fast path: compare via tolower table without entering
+    // the Unicode state machine.  Falls through to the full path
+    // when a non-ASCII byte is encountered.
+    //
+    while (*a && *b && *a < 0x80 && *b < 0x80)
+    {
+        unsigned char la = mux_tolower_ascii[*a];
+        unsigned char lb = mux_tolower_ascii[*b];
+        if (la != lb)
+        {
+            return (la < lb) ? -1 : 1;
+        }
+        a++;
+        b++;
+    }
+
     for (;;)
     {
         if ('\0' == *a || '\0' == *b)
