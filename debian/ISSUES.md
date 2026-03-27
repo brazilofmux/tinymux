@@ -10,10 +10,9 @@ Updated: 2026-03-27
 
 ## Medium — Outdated Metadata
 
-### Documentation references TinyMUX 2.12
+### ~~Documentation references TinyMUX 2.12~~ FIXED
 
-- **File:** `README.Debian:15, 23`
-- **Issue:** Text still mentions TinyMUX 2.12. Should reference 2.14.
+- Updated all references in `README.Debian` from 2.12 to 2.14.
 
 ### ~~Standards-Version is from 2017~~ FIXED
 

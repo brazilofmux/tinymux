@@ -1,17 +1,22 @@
 // spawn.cpp -- Output routing spawn implementation.
 #include "spawn.h"
 #include <algorithm>
+#include <iostream>
 
 void SpawnConfig::compile() {
     compiled.clear();
     compiled_exceptions.clear();
     for (auto& p : patterns) {
         try { compiled.push_back(std::regex(p, std::regex::ECMAScript | std::regex::icase)); }
-        catch (...) {}
+        catch (const std::regex_error& e) {
+            std::cerr << "spawn: invalid pattern \"" << p << "\": " << e.what() << std::endl;
+        }
     }
     for (auto& p : exceptions) {
         try { compiled_exceptions.push_back(std::regex(p, std::regex::ECMAScript | std::regex::icase)); }
-        catch (...) {}
+        catch (const std::regex_error& e) {
+            std::cerr << "spawn: invalid exception pattern \"" << p << "\": " << e.what() << std::endl;
+        }
     }
     is_compiled = true;
 }

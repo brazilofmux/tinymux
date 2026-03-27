@@ -17,10 +17,9 @@ Updated: 2026-03-27
 
 ## Medium — Data Integrity
 
-### Channel consistency checks unimplemented
+### ~~Channel consistency checks unimplemented~~ FIXED
 
-- **File:** `comsys_mod.cpp:2942`
-- **Issue:** `// TODO: Channel consistency checks.` — `dbck()` method is empty. If the channel list or membership becomes corrupted, there is no validation or repair path.
+- `dbck()` now prunes channel users whose dbrefs are no longer valid players, reassigns channel ownership to GOD when the owner is destroyed, and removes comsys entries for destroyed players.
 
 ## Low — Code Quality
 

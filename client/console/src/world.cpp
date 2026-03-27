@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <iostream>
 
 const World* WorldDB::find(const std::string& name) const {
     auto it = worlds_.find(name);
@@ -39,7 +40,10 @@ bool WorldDB::load(const std::string& path) {
         ss >> keyword;
         if (keyword == "world") {
             World w;
-            ss >> w.name >> w.host >> w.port;
+            if (!(ss >> w.name >> w.host >> w.port)) {
+                std::cerr << "worlds: malformed world line: " << line << std::endl;
+                continue;
+            }
             std::string token;
             while (ss >> token) {
                 if (token == "ssl") w.use_ssl = true;
@@ -51,7 +55,10 @@ bool WorldDB::load(const std::string& path) {
             World w;
             w.use_hydra = true;
             w.use_ssl = true;  // TLS by default for Hydra
-            ss >> w.name >> w.host >> w.port >> w.hydra_user >> w.hydra_pass >> w.hydra_game;
+            if (!(ss >> w.name >> w.host >> w.port >> w.hydra_user >> w.hydra_pass >> w.hydra_game)) {
+                std::cerr << "worlds: malformed hydra line: " << line << std::endl;
+                continue;
+            }
             std::string token;
             while (ss >> token) {
                 if (token == "notls") w.use_ssl = false;

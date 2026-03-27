@@ -37,10 +37,9 @@ This is the top-level tracker for the TinyMUX project. It links to specialized i
 - **Issue:** Downloads xdelta3 and patch.exe from GitHub/SourceForge via PowerShell without signature or hash verification.
 - **Risk:** Supply-chain compromise if URLs are tampered with or stale.
 
-### Inconsistent diff/patch error handling between scripts
+### ~~Inconsistent diff/patch error handling between scripts~~ FIXED
 
-- **File:** `dowin32.sh:118` vs `dounix.sh:60`
-- **Issue:** `dowin32.sh` uses `diff ... || true` silently ignoring all errors. `dounix.sh` properly checks diff exit code.
+- `dowin32.sh` now checks diff exit code: 0/1 are normal (identical/different), exit code >= 2 aborts with error message.
 
 ## Survey Summary (2026-03-27)
 

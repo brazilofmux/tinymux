@@ -4,21 +4,15 @@ Updated: 2026-03-27
 
 ## Bugs
 
-### `test_worldbuilder.py` only works when run from `tools/worldbuilder/`
+### ~~`test_worldbuilder.py` only works when run from `tools/worldbuilder/`~~ FIXED
 
-- **Evidence:** The header says `Run: python test_worldbuilder.py` at `tools/worldbuilder/test_worldbuilder.py:18`, but the test bodies open fixtures via relative paths like `tests/park.yaml` at `tools/worldbuilder/test_worldbuilder.py:69-87`.
-- **Observed failure:** Running `python3 tools/worldbuilder/test_worldbuilder.py` from the repository root raises `FileNotFoundError: tests/park.yaml`.
-- **Why it happens:** `tools/worldbuilder/worldbuilder.py:114` opens the given path directly, and the harness only adjusts `sys.path`, not its fixture base directory.
-- **Impact:** The main offline WorldBuilder regression suite is easy to invoke incorrectly from the repo root, which makes test results less trustworthy and automation harder to script.
+- Test harness now calls `os.chdir()` to its own directory at startup, so fixture paths resolve correctly regardless of the caller's working directory.
 
 ## Additional Issues Found (2026-03-27 Survey)
 
-### File handle leak in executor.py
+### ~~File handle leak in executor.py~~ FALSE ALARM
 
-- **File:** `executor.py:557`
-- **Issue:** `log_file = open(args.log, 'w') if args.log else None` — opened but never explicitly closed. No `finally` block or context manager.
-- **Risk:** Resource leak if execution fails or is interrupted.
-- **Fix:** Use `with open(args.log, 'w') as log_file:` pattern.
+- On inspection, `executor.py:593-595` already closes the log file in a `finally` block.
 
 ### Softcode lint KNOWN_FUNCTIONS is incomplete and hand-maintained
 

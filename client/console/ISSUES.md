@@ -28,7 +28,6 @@ Updated: 2026-03-27
 - **Issue:** `TerminateThread()` used after timeout waiting for input thread to exit. This can leave locks held and corrupt heap state.
 - **Fix:** Use cooperative shutdown signaling or accept a longer timeout.
 
-### World file parsing has no field validation
+### ~~World file parsing has no field validation~~ FIXED
 
-- **File:** `client/console/src/world.cpp:54`
-- **Issue:** `ss >> w.hydra_user >> w.hydra_pass >> w.hydra_game` reads fields without checking extraction success. Malformed lines produce silently partial world entries.
+- Both `world` and `hydra` lines now check the `>>` extraction result. Malformed lines are skipped with a diagnostic to stderr.

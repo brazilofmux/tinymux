@@ -88,7 +88,7 @@
 - **Impact:** Security risk if process memory is dumped or disk is accessed. Applies to Console client; other clients may have similar patterns.
 - **Fix:** Use secure string wrappers that zero memory on destruction; encrypt credentials on disk.
 
-### Spawn config regex errors silently discarded
+### ~~Spawn config regex errors silently discarded~~ FIXED
 
 - **File:** `console/src/spawn.cpp:9-10, 24-25`
 - **Issue:** `try { compiled.push_back(std::regex(...)); } catch (...) {}` silently swallows regex compilation errors. Users get no feedback when a spawn rule is invalid.

@@ -21,8 +21,11 @@ Run: python test_worldbuilder.py
 import sys
 import os
 
-# Ensure we can import from the worldbuilder directory
-sys.path.insert(0, os.path.dirname(__file__))
+# Ensure we can import from the worldbuilder directory and that fixture
+# paths resolve correctly regardless of the caller's working directory.
+_here = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, _here)
+os.chdir(_here)
 
 from worldbuilder import (parse_spec, check_drc, compile_spec, format_commands,
                           format_plan, mux_escape, mux_unescape, diff_spec,

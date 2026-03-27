@@ -2959,7 +2959,59 @@ void CComsysMod::shutdown(void)
 
 void CComsysMod::dbck(void)
 {
-    // TODO: Channel consistency checks.
+    // Channel consistency checks:
+    // 1. Remove users whose dbrefs are no longer valid players.
+    // 2. Reassign channel ownership if owner is gone.
+    // 3. Prune comsys entries for destroyed players.
+    //
+    for (auto &kv : m_channels)
+    {
+        struct channel *ch = kv.second.get();
+
+        // Prune users that are no longer valid players.
+        //
+        for (auto it = ch->users.begin(); it != ch->users.end(); )
+        {
+            bool bPlayer = false;
+            m_pIObjectInfo->IsPlayer(it->second.who, &bPlayer);
+            if (!bPlayer)
+            {
+                it = ch->users.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
+        // If the channel owner is no longer a valid player, reassign to GOD.
+        //
+        if (ch->charge_who != NOTHING)
+        {
+            bool bPlayer = false;
+            m_pIObjectInfo->IsPlayer(ch->charge_who, &bPlayer);
+            if (!bPlayer)
+            {
+                ch->charge_who = 1; // GOD
+            }
+        }
+    }
+
+    // Prune comsys entries for players that no longer exist.
+    //
+    for (auto it = m_comsys.begin(); it != m_comsys.end(); )
+    {
+        bool bPlayer = false;
+        m_pIObjectInfo->IsPlayer(it->first, &bPlayer);
+        if (!bPlayer)
+        {
+            it = m_comsys.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
 }
 
 void CComsysMod::connect(dbref player, int isnew, int num)
