@@ -1,0 +1,283 @@
+#
+# overflow_inject_fn.mux - Integer overflow and injection edge cases.
+#
+# Tests boundary behavior of arithmetic at INT64 limits,
+# division by zero, and secure handling of special characters
+# (%r, %t, %[, %]) that could cause command injection if
+# passed through unsanitized.
+#
+@create test_overflow_inject_fn
+-
+@set test_overflow_inject_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_overflow_inject_fn=
+  @log smoke=Beginning overflow/injection test cases.
+-
+#
+# Test Case #1 - power() overflow: 2^63 wraps signed, 2^64 promotes
+# to float, identity cases (2^0, 0^0).
+#
+&tr.tc001 test_overflow_inject_fn=
+  @if strmatch(
+        setr(0,sha1(
+            cat(power(2,63),power(2,64),power(2,0),power(0,0))
+          )
+        ),
+        B8F908D18D1EA4F2F9966C67BB3231360E0D3654
+      )=
+  {
+    @log smoke=TC001: power overflow/identity. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: power overflow/identity. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #2 - mul/add overflow and div-by-zero.
+# mul(INT64_MAX,2) promotes to float, add(INT64_MAX,1) wraps,
+# div(1,0) returns error, mod(1,0) returns 0.
+#
+&tr.tc002 test_overflow_inject_fn=
+  @if strmatch(
+        setr(0,sha1(
+            cat(
+                mul(9223372036854775807,2),
+                add(9223372036854775807,1),
+                div(1,0),
+                mod(1,0)
+              )
+          )
+        ),
+        2B3DBB9AB78908D4EEB85FA7B0F8335C8CD6CBE5
+      )=
+  {
+    @log smoke=TC002: mul/add overflow and div-by-zero. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: mul/add overflow and div-by-zero. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #3 - sub/mul/add at negative boundary.
+# sub(INT64_MIN+1,2) and mul(INT64_MIN+1,2) wrap,
+# add(INT64_MIN,0) is identity.
+#
+&tr.tc003 test_overflow_inject_fn=
+  @if strmatch(
+        setr(0,sha1(
+            cat(
+                sub(-9223372036854775807,2),
+                mul(-9223372036854775807,2),
+                add(-9223372036854775808,0)
+              )
+          )
+        ),
+        AEFD69B325731E15AF6DFCBF203AB55117E915AC
+      )=
+  {
+    @log smoke=TC003: negative boundary sub/mul/add. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: negative boundary sub/mul/add. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #4 - shl/shr at boundary.
+# shl(1,62) is safe, shl(1,63) wraps to INT64_MIN,
+# shr(-1,1) is arithmetic shift.
+#
+&tr.tc004 test_overflow_inject_fn=
+  @if strmatch(
+        setr(0,sha1(
+            cat(shl(1,62),shl(1,63),shr(-1,1))
+          )
+        ),
+        23EA90F04A2188FD68EEE1A259DE429CB3B70184
+      )=
+  {
+    @log smoke=TC004: shl/shr boundary. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: shl/shr boundary. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #5 - inc/dec at boundary.
+# inc(INT64_MAX) wraps, dec(INT64_MIN) wraps.
+#
+&tr.tc005 test_overflow_inject_fn=
+  @if strmatch(
+        setr(0,sha1(
+            cat(
+                inc(9223372036854775807),
+                dec(-9223372036854775808)
+              )
+          )
+        ),
+        E924DAA5E8F753F45CFED7EA06E8BAF72D88F940
+      )=
+  {
+    @log smoke=TC005: inc/dec boundary. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC005: inc/dec boundary. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #6 - abs/sign at boundary.
+# abs(INT64_MIN) behavior, sign of extreme values.
+#
+&tr.tc006 test_overflow_inject_fn=
+  @if strmatch(
+        setr(0,sha1(
+            cat(
+                abs(-9223372036854775808),
+                sign(-9223372036854775808),
+                sign(9223372036854775807)
+              )
+          )
+        ),
+        C76CBDAD3533A3385AAC6910A5CA19160044CA73
+      )=
+  {
+    @log smoke=TC006: abs/sign boundary. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC006: abs/sign boundary. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #7 - isnum/isint recognize large values.
+#
+&tr.tc007 test_overflow_inject_fn=
+  @if strmatch(
+        setr(0,sha1(
+            cat(
+                isnum(9223372036854775807),
+                isint(9223372036854775807),
+                isnum(1.8446744073709552E19)
+              )
+          )
+        ),
+        E6F1BEC448F5B1CF8BD57DAACE593E9970ECD32D
+      )=
+  {
+    @log smoke=TC007: isnum/isint large values. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC007: isnum/isint large values. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #8 - Newline (%r) in strings: edit() can replace it,
+# mid() preserves it, strlen() counts it.
+#
+&tr.tc008 test_overflow_inject_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [edit(abc%rdef,%r,NL)] 
+            [edit(abc%tdef,%t,TAB)]
+          )
+        ),
+        1C0F6BAFD38C25AA6C80D6BC816861D83BAEED97
+      )=
+  {
+    @log smoke=TC008: newline/tab in edit. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC008: newline/tab in edit. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #9 - secure() strips dangerous characters including
+# brackets that could cause eval injection.
+#
+&tr.tc009 test_overflow_inject_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [secure(%[haval(crash)%])] 
+            [secure(%%)]
+          )
+        ),
+        ABE7DAB34CF429189E613D532A9EB3139AC8BD45
+      )=
+  {
+    @log smoke=TC009: secure() injection prevention. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC009: secure() injection prevention. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #10 - localize() register scoping: nested localize()
+# should not bleed %q register values across scopes.
+# Sets A, then B inside localize, then C inside nested localize.
+# Result should be CBA as each scope pops.
+#
+&tr.tc010 test_overflow_inject_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [setq(0,A)][localize([setq(0,B)][localize([setq(0,C)]%q0)]%q0)]%q0
+          )
+        ),
+        2328B5FBF2A82E270E2CC0CF051067E191647E0F
+      )=
+  {
+    @log smoke=TC010: localize register scoping. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC010: localize register scoping. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #11 - iter() with delimiter handles special chars.
+#
+&tr.tc011 test_overflow_inject_fn=
+  @if strmatch(
+        setr(0,sha1(
+            cat(iter(a|b|c,strlen(##),|,|))
+          )
+        ),
+        B64E6BFF8D1F853565CBD0E0FB0E3510A469B6CB
+      )=
+  {
+    @log smoke=TC011: iter with pipe delimiter. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC011: iter with pipe delimiter. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_overflow_inject_fn=
+  @log smoke=End overflow/injection test cases.;
+  @notify smoke
+-
+drop test_overflow_inject_fn
+-
+#
+# End of Test Cases
+#
