@@ -97,6 +97,10 @@ static constexpr uint64_t ECALL_LUA_NOTIFY    = 0x385; // mux.notify(dbref, msg)
 static constexpr uint64_t ECALL_LUA_EVAL      = 0x386; // mux.eval(expr)
 static constexpr uint64_t ECALL_LUA_BRIDGE_MAX= 0x38F;
 
+// Alarm check for JIT back-edge budgeting.
+// Returns: a0 = 0 (ok, budget refilled) or 1 (alarmed, must exit).
+static constexpr uint64_t ECALL_CHECK_ALARM   = 0x400;
+
 // Maximum number of indexed functions.
 static constexpr int ENGINE_API_MAX_FUNCS = 512;
 

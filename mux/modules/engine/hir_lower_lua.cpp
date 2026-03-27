@@ -35,7 +35,8 @@ static constexpr int MAX_LUA_REGS = 256;
 // Reuses compiler-internal slots 10-12 (same as softcode iter()).
 // Safe because Lua lowering never calls the softcode iter() path.
 //
-static constexpr int QREG_LUA_IDX = 10;   // loop index variable
+static constexpr int QREG_LUA_IDX    = 10;   // loop index variable
+static constexpr int QREG_LUA_BUDGET = 12;   // back-edge iteration budget
 
 // Maximum inline depth for nested lowering.
 static constexpr int MAX_INLINE_DEPTH = 4;
@@ -48,6 +49,39 @@ static constexpr int MAX_LUA_STACK = 64;
 
 // Maximum parameters.
 static constexpr int MAX_LUA_PARAMS = 8;
+
+// ---------------------------------------------------------------
+// Back-edge iteration budget.
+//
+// Emits HIR to decrement QREG_LUA_BUDGET at each back-edge.
+// When the counter reaches zero, the combined condition forces
+// loop exit — same model as MUSHcode's func_invk_lim.  The
+// budget is initialized to lua_instruction_limit (default 100K)
+// at function entry.
+//
+// The per-iteration cost is: LOAD_Q, SUB, STORE_Q, GT, BAND —
+// five integer ops, no ECALL.  At GHz speed this is negligible.
+//
+// cond: the original loop condition (>=0 for FORLOOP/TFORLOOP),
+//       or -1 for unconditional back-edges (JMP).
+// Returns: combined condition value.
+// ---------------------------------------------------------------
+
+static int emit_budget_check(hir_program &h, int cond) {
+    int budget = h.emit(HIR_LOAD_Q, TY_INT, -1, -1, QREG_LUA_BUDGET);
+    if (budget < 0) return cond;
+    int one = h.emit(HIR_ICONST, TY_INT, -1, -1, 1);
+    int new_budget = h.emit(HIR_SUB, TY_INT, budget, one);
+    h.emit(HIR_STORE_Q, TY_VOID, new_budget, -1, QREG_LUA_BUDGET);
+
+    int zero_val = h.emit(HIR_ICONST, TY_INT, -1, -1, 0);
+    int budget_ok = h.emit(HIR_GT, TY_INT, new_budget, zero_val);
+
+    if (cond >= 0) {
+        return h.emit(HIR_BAND, TY_INT, cond, budget_ok);
+    }
+    return budget_ok;
+}
 
 // ---------------------------------------------------------------
 // Rejection reason names (for diagnostics).
@@ -463,6 +497,15 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
     int cur_hir_block = 0;
     h.cur_block = 0;
     int result_val = -1;
+
+    // Initialize back-edge budget counter for loop DoS protection.
+    // Uses the same limit as the Lua interpreter's instruction hook.
+    // Only needed for multi-block programs (which can have loops).
+    if (multi_block) {
+        int budget_init = h.emit(HIR_ICONST, TY_INT, -1, -1,
+            static_cast<int64_t>(mudconf.lua_instruction_limit));
+        h.emit(HIR_STORE_Q, TY_VOID, budget_init, -1, QREG_LUA_BUDGET);
+    }
 
     // Pinned table tracking for array optimization.
     // When a for-loop body accesses t[i] where i is the loop variable,
@@ -1364,6 +1407,26 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (!multi_block) return -1;
             int target_blk = (target >= 0 && target < n) ? pc_to_block[target] : -1;
             if (target_blk < 0) return -1;
+
+            // If this is a back-edge (jumping to an earlier PC), insert
+            // a budget check to prevent infinite-loop DoS.
+            if (target <= pc) {
+                int exit_target = pc + 1;
+                int exit_blk = (exit_target >= 0 && exit_target < n)
+                    ? pc_to_block[exit_target] : -1;
+                if (exit_blk >= 0) {
+                    int budget_ok = emit_budget_check(h, -1);
+                    if (budget_ok >= 0) {
+                        // Convert unconditional branch to conditional:
+                        // if budget ok, loop back; else exit.
+                        h.emit(HIR_BRC, TY_VOID, budget_ok, exit_blk, target_blk);
+                        h.add_edge(cur_hir_block, target_blk);
+                        h.add_edge(cur_hir_block, exit_blk);
+                        break;
+                    }
+                }
+            }
+
             h.emit(HIR_BR, TY_VOID, -1, -1, target_blk);
             h.add_edge(cur_hir_block, target_blk);
             break;
@@ -1480,6 +1543,11 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int cmp = h.emit(HIR_LE, TY_INT, new_idx, limit);
             if (cmp < 0) return -1;
             h.native_ops++;
+
+            // Back-edge budget: decrement counter, combine with
+            // loop condition.  When budget hits zero, forces exit
+            // so the queue runner can check alarm_clock.alarmed.
+            cmp = emit_budget_check(h, cmp);
 
             // Branch: if true, loop back; else fall through.
             int loop_target = pc + 1 + insn.sBx();
@@ -1828,6 +1896,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int zero = h.emit_iconst(0);
             int cmp = h.emit(HIR_GT, TY_INT, len_int, zero);
             if (cmp < 0) return -1;
+
+            // Back-edge budget check.
+            cmp = emit_budget_check(h, cmp);
 
             // If non-nil: set control = first_result, loop back.
             int loop_target = pc + 1 + insn.sBx();
