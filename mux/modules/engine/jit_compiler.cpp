@@ -126,7 +126,17 @@ private:
 
 tier2_state s_tier2 = { false, {}, {}, {}, 0, {}, 0 };
 
-// Blob content hash for cache invalidation.
+// Tier 1 compiler version.  Bump this whenever the HIR lowering,
+// codegen, constant folding, NOEVAL handlers, or any other tier 1
+// logic changes in a way that could produce different RV64 output
+// for the same softcode input.
+//
+static const char JIT_COMPILER_VERSION[] = "jit-t1-001";
+
+// Blob content hash for cache invalidation.  Incorporates both the
+// tier 2 blob and the tier 1 compiler version so that upgrading
+// either one invalidates stale cached entries.
+//
 std::string s_blob_version = "none";
 
 static bool tier2_allowed(const std::string &mux_name) {
@@ -460,16 +470,18 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
 
     s_tier2.loaded = true;
     const void *parts[] = {
+        JIT_COMPILER_VERSION,
         &hdr,
         s_tier2.code.data(),
         entries.empty() ? nullptr : entries.data(),
     };
     const size_t sizes[] = {
+        sizeof(JIT_COMPILER_VERSION) - 1,
         sizeof(hdr),
         s_tier2.code.size(),
         entries.size() * sizeof(rv64_blob_entry),
     };
-    s_blob_version = sha1_hex_parts(parts, sizes, 3);
+    s_blob_version = sha1_hex_parts(parts, sizes, 4);
     return true;
 }
 
@@ -765,7 +777,10 @@ static void tier2_lazy_init() {
         }
     }
     // No blob found — Tier 2 disabled, ECALL fallback for everything.
-    s_blob_version = "none";
+    // Still hash the compiler version so tier 1 upgrades invalidate.
+    const void *parts[] = { JIT_COMPILER_VERSION };
+    const size_t sizes[] = { sizeof(JIT_COMPILER_VERSION) - 1 };
+    s_blob_version = sha1_hex_parts(parts, sizes, 1);
 }
 
 static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
