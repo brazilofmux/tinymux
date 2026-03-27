@@ -50,8 +50,9 @@ struct descriptor_data
   int raw_input_state;
   int raw_codepoint_state;
   size_t raw_codepoint_length;
-  int nvt_him_state[256];
-  int nvt_us_state[256];
+  static constexpr int NVT_TABLE_SIZE = 256;
+  int nvt_him_state[NVT_TABLE_SIZE];
+  int nvt_us_state[NVT_TABLE_SIZE];
   UTF8 *ttype;
   int encoding;
   int negotiated_encoding;

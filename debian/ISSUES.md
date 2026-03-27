@@ -2,17 +2,11 @@
 
 Updated: 2026-03-27
 
-## High — Missing Build Dependencies
+## ~~High — Missing Build Dependencies~~ FIXED
 
-### `debian/control` does not declare all required build dependencies
+### ~~`debian/control` does not declare all required build dependencies~~ FIXED
 
-- **File:** `control:5`
-- **Issue:** Missing explicit `Build-Depends` for:
-  - `ragel` (needed for `.rl` file compilation)
-  - `pkg-config` (used in `configure.ac` for `PKG_CHECK_MODULES`)
-  - `libpcre2-dev` (mandatory — `configure.ac:239-241` hard-errors without it)
-  - `libssl-dev` (checked at `configure.ac:243-244`)
-- **Impact:** Package build fails on a clean system without these pre-installed.
+- Added `g++`, `ragel`, `pkg-config`, `libpcre2-dev`, `libssl-dev` to `Build-Depends`.
 
 ## Medium — Outdated Metadata
 
@@ -21,10 +15,9 @@ Updated: 2026-03-27
 - **File:** `README.Debian:15, 23`
 - **Issue:** Text still mentions TinyMUX 2.12. Should reference 2.14.
 
-### Standards-Version is from 2017
+### ~~Standards-Version is from 2017~~ FIXED
 
-- **File:** `control:6`
-- **Issue:** `Standards-Version: 4.0.1` — current Debian policy is 4.7+.
+- Updated from `4.0.1` to `4.6.2`.
 
 ## Medium — Packaging Quality
 

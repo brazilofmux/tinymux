@@ -54,11 +54,9 @@ Implement the framework for evaluating softcode on multiple cores simultaneously
 
 ## COM & Module System Issues
 
-### Memory Management: SIZE_HACK Pointer Arithmetic
+### ~~Memory Management: SIZE_HACK Pointer Arithmetic~~ FALSE ALARM
 
-- **File:** `db.cpp:2850-2868`
-- **Issue:** Database growth code shifts `db` pointer backward by `SIZE_HACK` before `memcpy`, then reassigns. The sequence in the "else" (first allocation) branch sets `db = newdb` unshifted, calls `initialize_objects(0, SIZE_HACK)`, then overwrites with `db = newdb + SIZE_HACK`. The intermediate unshifted pointer creates a window where `db` is temporarily invalid.
-- **Risk:** If `initialize_objects` accesses `db` during that window, it operates on the wrong base.
+- On inspection, the code is correct. In the first-allocation "else" branch, `db = newdb` (unshifted) is set before `initialize_objects(0, SIZE_HACK)` fills the `#-1` padding slot at `db[0]`. Then `db = newdb + SIZE_HACK` shifts so `db[0]` addresses the first real object and `db[-1]` is the padding. No invalid window exists.
 
 ### ~~Silent failure when storage interfaces fail to initialize~~ FIXED
 

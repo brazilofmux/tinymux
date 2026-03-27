@@ -1,4 +1,4 @@
-FROM tinymux:2.12.0.10
+FROM tinymux:2.13.0.11
 COPY game /game/
 WORKDIR /game
 VOLUME ["/game"]

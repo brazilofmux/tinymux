@@ -56,10 +56,9 @@ Updated: 2026-03-27
 
 - Now checks `fgets()` return and `strncmp()` result; closes file and returns on failure.
 
-### Unvalidated enum/range values from restart file
+### ~~Unvalidated enum/range values from restart file~~ FIXED
 
-- **File:** `net.cpp:3192-3193, 3218-3219, 3230, 3242-3243`
-- **Issue:** `getref(f)` values used directly for `d->height`, `d->width`, `d->encoding` without range validation.
+- `d->height` and `d->width` now clamped to 1..512 (default to 24x78 on out-of-range). `d->encoding` clamped to 0..255 (default to `g_dc.default_charset`). Applied in both version 2 and version 3+ paths.
 
 ## Medium — Code Quality
 
@@ -94,7 +93,6 @@ Updated: 2026-03-27
 - **File:** `ganl_adapter.cpp:744, 1114, 1853, 3058, 3071, 3142, 3152, 3156`
 - **Issue:** Multiple commented-out logging statements scattered through networking code.
 
-### Telnet state array magic number
+### ~~Telnet state array magic number~~ FIXED
 
-- **File:** `net.cpp:3077-3080, 3197-3204, 3212-3216`
-- **Issue:** Hard-coded loop bound `256` must match `nvt_him_state[]`/`nvt_us_state[]` array sizes. No `static_assert` or named constant ties them together.
+- Added `static constexpr int NVT_TABLE_SIZE = 256` to `descriptor_data` in `interface.h`. All loop bounds in `net.cpp` now use `DESC::NVT_TABLE_SIZE` instead of bare `256`.

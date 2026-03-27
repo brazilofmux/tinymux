@@ -3074,7 +3074,7 @@ void dump_restart_db(void)
         putref(f, d->raw_input_state);
         putref(f, d->raw_codepoint_state);
 
-        for (int stateloop = 0; stateloop < 256; stateloop++) {
+        for (int stateloop = 0; stateloop < DESC::NVT_TABLE_SIZE; stateloop++) {
             putref(f, d->nvt_him_state[stateloop]);
             putref(f, d->nvt_us_state[stateloop]);
         }
@@ -3230,14 +3230,22 @@ void load_restart_db(void)
         {
             d->raw_input_state              = getref(f);
             d->raw_codepoint_state          = getref(f);
-            for (int stateloop = 0; stateloop < 256; stateloop++)
+            for (int stateloop = 0; stateloop < DESC::NVT_TABLE_SIZE; stateloop++)
             {
                 d->nvt_him_state[stateloop] = getref(f);
                 d->nvt_us_state[stateloop] = getref(f);
             }
 
             d->height = getref(f);
+            if (d->height < 1 || d->height > 512)
+            {
+                d->height = 24;
+            }
             d->width = getref(f);
+            if (d->width < 1 || d->width > 512)
+            {
+                d->width = 78;
+            }
 
             size_t nBuffer;
             char *temp = reinterpret_cast<char *>(getstring_noalloc(f, true, &nBuffer));
@@ -3248,7 +3256,12 @@ void load_restart_db(void)
                 memcpy(d->ttype, temp, nBuffer + 1);
             }
 
-            d->encoding = getref(f);
+            int enc = getref(f);
+            if (enc < 0 || enc > 255)
+            {
+                enc = g_dc.default_charset;
+            }
+            d->encoding = enc;
         }
         else if (2 == version)
         {
@@ -3261,7 +3274,15 @@ void load_restart_db(void)
             d->nvt_him_state[TELNET_NAWS]   = getref(f);
             d->nvt_us_state[TELNET_NAWS]    = getref(f);
             d->height = getref(f);
+            if (d->height < 1 || d->height > 512)
+            {
+                d->height = 24;
+            }
             d->width = getref(f);
+            if (d->width < 1 || d->width > 512)
+            {
+                d->width = 78;
+            }
         }
         else
         {

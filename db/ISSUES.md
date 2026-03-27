@@ -4,12 +4,9 @@ Updated: 2026-03-27
 
 ## Bugs
 
-### Standalone DB test harness no longer builds after backend file moves
+### ~~Standalone DB test harness no longer builds after backend file moves~~ FIXED
 
-- **Evidence:** `make test` in `db/` currently fails with `No rule to make target '../mux/src/sqlitedb.h', needed by 'test_sqlitedb.o'.`
-- **Cause:** `db/Makefile:5-23` still points `SRCDIR` at `../mux/src` and `SQLITEDIR` at `../mux/sqlite`, but the relevant files now live in `mux/include/` and `mux/modules/engine/`.
-- **Current locations:** `mux/include/sqlitedb.h`, `mux/include/sqlite_backend.h`, `mux/include/storage_backend.h`, `mux/modules/engine/sqlitedb.cpp`, and `mux/modules/engine/sqlite_backend.cpp`.
-- **Impact:** The only standalone backend regression suite in the repository is effectively disabled, so SQLite backend breakage can slip through unnoticed.
+- Updated `db/Makefile` to use `INCDIR=../mux/include` for headers and `ENGDIR=../mux/modules/engine` for `.cpp` sources. `SQLITEDIR` unchanged.
 
 ## Opportunities
 

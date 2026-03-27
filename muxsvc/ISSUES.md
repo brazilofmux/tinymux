@@ -10,17 +10,13 @@ Updated: 2026-03-27
 - **Issue:** `ServiceMain()` just sleeps for 2 seconds in a loop. No actual game server work is performed.
 - **Impact:** Service registers and starts but does nothing useful.
 
-### Event creation failures not checked
+### ~~Event creation failures not checked~~ FIXED
 
-- **File:** `muxsvc.cpp:57-59`
-- **Issue:** `CreateEvent()` return values not checked. If any event creation fails, `WaitForMultipleObjects()` at line 73 will receive null handles and behave unpredictably.
-- **Fix:** Check each `CreateEvent()` return and fail gracefully.
+- All three `CreateEvent()` calls now check for `NULL` return and report error via `ErrorPrinter()` + `SendStatus(SERVICE_STOPPED)` before returning.
 
-### Global event names cause multi-instance conflicts
+### ~~Global event names cause multi-instance conflicts~~ FIXED
 
-- **File:** `muxsvc.cpp:57-59`
-- **Issue:** Named events "StopEvent", "PauseEvent", "ContinueEvent" are global. If multiple service instances run on the same machine, they share these events.
-- **Fix:** Use unnamed events or unique per-instance names.
+- Changed from named events (`L"StopEvent"`, etc.) to unnamed events (`NULL` name parameter). Each service instance now gets private event handles.
 
 ## Low — Modernization
 

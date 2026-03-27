@@ -54,9 +54,18 @@ void WINAPI ServiceMain(DWORD argc, LPWSTR argv[])
 
     SendStatus(SERVICE_START_PENDING, 1, 5000, 0);
 
-    g_hEvents[0] = CreateEvent(NULL, FALSE, FALSE, L"StopEvent");
-    g_hEvents[1] = CreateEvent(NULL, FALSE, FALSE, L"PauseEvent");
-    g_hEvents[2] = CreateEvent(NULL, FALSE, FALSE, L"ContinueEvent");
+    g_hEvents[0] = CreateEvent(NULL, FALSE, FALSE, NULL);
+    g_hEvents[1] = CreateEvent(NULL, FALSE, FALSE, NULL);
+    g_hEvents[2] = CreateEvent(NULL, FALSE, FALSE, NULL);
+    for (int i = 0; i < NUM_EVENTS; i++)
+    {
+        if (NULL == g_hEvents[i])
+        {
+            ErrorPrinter(L"CreateEvent");
+            SendStatus(SERVICE_STOPPED, 0, 0, 0, GetLastError());
+            return;
+        }
+    }
     bool bRun = true;
 
     SendStatus(SERVICE_RUNNING);
