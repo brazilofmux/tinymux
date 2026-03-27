@@ -1308,7 +1308,9 @@ static compiled_program reconstruct_from_cache(
         copy_len = static_cast<int>(rv_compiler::FARGS_LIMIT);
     }
     memcpy(prog.memory.data(), rec.memory_blob, copy_len);
-    tier2_install(prog.memory, rv_compiler::BLOB_BASE);
+    if (rec.needs_jit) {
+        tier2_install(prog.memory, rv_compiler::BLOB_BASE);
+    }
     prog.memory_size = rv_compiler::MEM_SIZE;
     prog.out_addr = static_cast<uint64_t>(rec.out_addr);
     prog.out_used = 0;  // cached programs re-compute at runtime
@@ -1480,9 +1482,12 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
         prog = compile_expression(expr, nLen, eval);
         if (!prog.ok) return nullptr;
 
-        // Install the Tier 2 blob — prog.memory is the runtime
-        // image and needs the blob for Tier 2 function execution.
-        tier2_install(prog.memory, rv_compiler::BLOB_BASE);
+        // Install the Tier 2 blob only if the program needs JIT
+        // execution.  Constant-folded programs (needs_jit=false)
+        // never touch the DBT — the blob copy is wasted for them.
+        if (prog.needs_jit) {
+            tier2_install(prog.memory, rv_compiler::BLOB_BASE);
+        }
 
         // Persist to SQLite for future restarts.
         if (nLen >= COMPILE_CACHE_MIN_LEN) {
