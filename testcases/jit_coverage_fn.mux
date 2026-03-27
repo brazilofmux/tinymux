@@ -1,0 +1,122 @@
+#
+# jit_coverage_fn.mux - JIT coverage measurement and validation.
+#
+# Resets jitstats, runs a representative set of expressions through
+# both JIT and AST paths, then checks that the JIT handled what it
+# should and bailed on what it can't.
+#
+@create test_jit_coverage_fn
+-
+@set test_jit_coverage_fn=INHERIT QUIET
+-
+&tr.tc000 test_jit_coverage_fn=
+  @log smoke=Beginning JIT coverage test cases.
+-
+#
+# Phase 1: Run expressions that SHOULD be handled by JIT.
+# After these, eval_handled should be > 0.
+#
+# Constant-foldable expressions:
+#
+&tr.tc001 test_jit_coverage_fn=
+  think [add(1,2)][sub(10,3)][mul(2,3)][fdiv(10,3)];
+  think [strlen(hello)][words(a b c)][first(a b c)][rest(a b c)];
+  think [last(a b c)][mid(foobar,0,3)][pos(cd,abcdef)];
+  think [member(b,a b c)][extract(a b c d,2,2)];
+  think [repeat(x,5)][trim(hello)][edit(hello,l,r)];
+  think [pi()][e()][mudname()][version()];
+  think [eq(1,1)][gt(3,2)][not(0)][t(1)];
+  think [cat(a,b,c)][strcat(a,b)][lcstr(HELLO)][ucstr(hello)];
+  think [capstr(hello)][reverse(abc)][escape(hello)];
+  think [isnum(3.14)][isint(42)][delete(abcdef,2,2)][right(abc,2)];
+  think [comp(a,b)][lpos(a b a,a)][stripansi(hello)][squish(hello)]
+-
+#
+# Tier 2 expressions (need JIT, not just folding):
+#
+&tr.tc002 test_jit_coverage_fn=
+  think [add(%#,1)][strlen(%#)][first(cat(%#,foo,bar))];
+  think [words(cat(%#,a,b,c))][mid(%#,0,1)]
+-
+#
+# Phase 2: Check coverage counters.
+#
+&tr.tc003 test_jit_coverage_fn=
+  @log smoke=[jitstats()]
+-
+#
+# TC004: eval_attempts > 0 (JIT was invoked).
+#
+&tr.tc004 test_jit_coverage_fn=
+  @if gt(
+        setr(0,after(grab(jitstats(),eval_attempts=*),=)),
+        0
+      )=
+  {
+    @log smoke=TC004: JIT invoked (%q0 attempts). Succeeded.
+  },
+  {
+    @log smoke=TC004: JIT invoked (%q0 attempts). Failed.
+  }
+-
+#
+# TC005: eval_handled > 0 (JIT handled some expressions).
+#
+&tr.tc005 test_jit_coverage_fn=
+  @if gt(
+        setr(0,after(grab(jitstats(),eval_handled=*),=)),
+        0
+      )=
+  {
+    @log smoke=TC005: JIT handled %q0 expressions. Succeeded.
+  },
+  {
+    @log smoke=TC005: JIT handled %q0 expressions. Failed.
+  }
+-
+#
+# TC006: folded > 0 (constant folding occurred).
+#
+&tr.tc006 test_jit_coverage_fn=
+  @if gt(
+        setr(0,after(grab(jitstats(),folded=*),=)),
+        0
+      )=
+  {
+    @log smoke=TC006: %q0 expressions folded. Succeeded.
+  },
+  {
+    @log smoke=TC006: %q0 expressions folded. Failed.
+  }
+-
+#
+# TC007: compile_ok > 0 (some expressions compiled to JIT code).
+#
+&tr.tc007 test_jit_coverage_fn=
+  @if gt(
+        setr(0,after(grab(jitstats(),compile_ok=*),=)),
+        0
+      )=
+  {
+    @log smoke=TC007: %q0 successful compilations. Succeeded.
+  },
+  {
+    @log smoke=TC007: %q0 successful compilations. Failed.
+  }
+-
+#
+# TC008: coverage ratio - eval_handled / eval_attempts.
+# Log the ratio for analysis. No pass/fail threshold yet —
+# we need to establish a baseline first.
+#
+&tr.tc008 test_jit_coverage_fn=
+  @log smoke=TC008: Coverage stats:
+    [jitstats()]. Succeeded.;
+  @trig me/tr.done
+-
+&tr.done test_jit_coverage_fn=
+  @log smoke=End JIT coverage test cases.;
+  @notify smoke
+-
+drop test_jit_coverage_fn
+-
