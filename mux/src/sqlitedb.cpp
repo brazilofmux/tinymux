@@ -145,6 +145,11 @@ bool CSQLiteDB::ConfigurePragmas()
         "PRAGMA page_size=4096",
         "PRAGMA cache_size=-65536",
         "PRAGMA foreign_keys=ON",
+
+        // Disable automatic WAL checkpointing.  The WAL accumulates
+        // writes without fsync during normal operation; explicit
+        // checkpoint at @dump and shutdown handles persistence.
+        "PRAGMA wal_autocheckpoint=0",
         nullptr
     };
 
