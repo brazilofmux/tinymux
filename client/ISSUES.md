@@ -100,10 +100,9 @@
 - **Evidence:** `client/console/src/hydra_connection.cpp:309-317` resends `SetPreferences` after reconnect, but always uses `terminal_width=80` and `terminal_height=24`.
 - **Impact:** The tracker entry claiming native clients now report actual terminal size is no longer fully true. Reconnected console sessions can revert to stale viewport metadata until some later resize or NAWS update occurs.
 
-### iOS Hydra client still does not send `SetPreferences`
+### ~~iOS Hydra client still does not send `SetPreferences`~~ FIXED
 
-- **Evidence:** `client/ios/Titan/Net/HydraConnection.swift:138-157` opens the `GameSession` stream and starts periodic pings, but never yields an initial preferences message with color format, terminal size, or terminal type.
-- **Impact:** The iOS client currently leaves output color negotiation and viewport reporting to server defaults, which can cause capability mismatches compared with the other Hydra clients.
+- `runGameSession()` now sends `SetPreferences` (ANSI_TRUECOLOR, 80x24, "Titan-iOS") as the first bidi stream message. Also fixed: `EventLoopGroup` leak on repeated connect/disconnect.
 
 ### ~~SwiftUI / iOS Hydra Support Missing~~
 

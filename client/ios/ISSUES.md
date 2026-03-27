@@ -4,14 +4,15 @@ Updated: 2026-03-27
 
 ## Bugs
 
-### Hydra `GameSession` never sends initial `SetPreferences`
+### ~~Hydra `GameSession` never sends initial `SetPreferences`~~ FIXED
 
-- **Evidence:** `client/ios/Titan/Net/HydraConnection.swift:138-157` opens the bidi stream and only yields periodic ping messages.
-- **Missing fields:** `color_format`, `terminal_width`, `terminal_height`, and `terminal_type`.
-- **Impact:** The iOS client can connect successfully, but it does not advertise viewport or color capabilities the way the other Hydra clients do. Server defaults may be used instead, which can produce degraded formatting or mismatched negotiation.
+- `runGameSession()` now yields a `SetPreferences` message (ANSI_TRUECOLOR, 80x24, "Titan-iOS") as the first item on the bidi stream, before the ping task starts. Sent on both initial connect and reconnect since `runGameSession` is called from both paths.
 
-### `EventLoopGroup` lifetime is unmanaged across connects
+### ~~`EventLoopGroup` lifetime is unmanaged across connects~~ FIXED
 
-- **Evidence:** `client/ios/Titan/Net/HydraConnection.swift:58-63` allocates a fresh `EventLoopGroup` inside `connect()`, but `client/ios/Titan/Net/HydraConnection.swift:111-113` only closes the channel and never shuts the group down.
-- **Impact:** Repeated connect/disconnect cycles can leak threads and related NIO resources in long-lived app sessions.
-- **Fix:** Store `EventLoopGroup` as an instance variable and call `shutdown()` on it in `disconnect()`.
+- `EventLoopGroup` is now stored as an instance variable, reused across reconnects, and shut down via `syncShutdownGracefully()` in `disconnect()`.
+
+### Hardcoded 80x24 viewport
+
+- **Issue:** `SetPreferences` sends `terminalWidth=80` and `terminalHeight=24`. On iOS, the viewport depends on the text view layout. Actual dimensions should be queried from the UI and updated on resize.
+- **Severity:** Medium — functional but not pixel-accurate.

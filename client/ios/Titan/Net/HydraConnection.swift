@@ -22,6 +22,7 @@ class HydraConnection: ObservableObject {
     @Published var connected = false
     private var intentionalDisconnect = false
     private var sessionId = ""
+    private var eventLoopGroup: EventLoopGroup?
     private var channel: GRPCChannel?
     private var stub: Hydra_HydraServiceAsyncClient?
     private var streamTask: Task<Void, Never>?
@@ -54,8 +55,14 @@ class HydraConnection: ObservableObject {
 
         streamTask = Task {
             do {
-                // Create gRPC channel
-                let group = PlatformSupport.makeEventLoopGroup(loopCount: 1)
+                // Create gRPC channel (reuse or create EventLoopGroup)
+                let group: EventLoopGroup
+                if let existing = self.eventLoopGroup {
+                    group = existing
+                } else {
+                    group = PlatformSupport.makeEventLoopGroup(loopCount: 1)
+                    self.eventLoopGroup = group
+                }
                 let builder = useTls
                     ? ClientConnection.usingTLSBackedByNIOSSL(on: group)
                     : ClientConnection.insecure(group: group)
@@ -124,6 +131,8 @@ class HydraConnection: ObservableObject {
         streamTask?.cancel()
         try? channel?.close().wait()
         channel = nil
+        try? eventLoopGroup?.syncShutdownGracefully()
+        eventLoopGroup = nil
     }
 
     func sendLine(_ text: String) {
@@ -140,6 +149,16 @@ class HydraConnection: ObservableObject {
 
         let (inputStream, continuation) = AsyncStream<Hydra_ClientMessage>.makeStream()
         inputContinuation = continuation
+
+        // Send initial preferences as first message on the stream.
+        var prefs = Hydra_SetPreferences()
+        prefs.colorFormat = .ansiTruecolor
+        prefs.terminalWidth = 80
+        prefs.terminalHeight = 24
+        prefs.terminalType = "Titan-iOS"
+        var prefsMsg = Hydra_ClientMessage()
+        prefsMsg.preferences = prefs
+        continuation.yield(prefsMsg)
 
         // Periodic pings
         let pingTask = Task {
