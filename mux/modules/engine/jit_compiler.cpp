@@ -1162,7 +1162,9 @@ struct persistent_vm_t {
         return true;
     }
 
-    // Prepare for execution: clear output buffers and reset blob BSS.
+    // Prepare for execution: clear output buffers and reset blob
+    // writable state.  Code and rodata are immutable — only the
+    // data section and BSS need resetting between runs.
     //
     void prepare_run() {
         if (worst_out_pool < rv_compiler::STACK_TOP - 8) {
@@ -1170,7 +1172,7 @@ struct persistent_vm_t {
                    (rv_compiler::STACK_TOP - 8) - worst_out_pool);
         }
         if (s_tier2.loaded) {
-            tier2_install(memory, rv_compiler::BLOB_BASE);
+            tier2_reset_writable(memory, rv_compiler::BLOB_BASE);
         }
     }
 
