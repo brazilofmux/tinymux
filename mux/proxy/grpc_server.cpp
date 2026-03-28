@@ -106,12 +106,23 @@ public:
 
     Status CreateAccount(ServerContext* ctx, const hydra::CreateAccountRequest* req,
                          hydra::CreateAccountResponse* resp) override {
+        // Extract client IP from gRPC peer (format: "ipv4:1.2.3.4:port")
+        std::string peer = ctx->peer();
+        std::string clientIp;
+        {
+            auto c1 = peer.find(':');
+            if (c1 != std::string::npos) {
+                auto c2 = peer.rfind(':');
+                if (c2 > c1) clientIp = peer.substr(c1 + 1, c2 - c1 - 1);
+                else clientIp = peer.substr(c1 + 1);
+            }
+        }
         auto future = workQueue_.enqueue<std::pair<std::string, std::string>>(
-            [user = req->username(), pw = req->password()]
+            [user = req->username(), pw = req->password(), clientIp]
             (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&)
                 -> std::pair<std::string, std::string> {
                 std::string errorMsg;
-                std::string pid = sm.createAccountAndGetSession(user, pw, errorMsg);
+                std::string pid = sm.createAccountAndGetSession(user, pw, clientIp, errorMsg);
                 return {pid, errorMsg};
             });
         auto [pid, err] = future.get();

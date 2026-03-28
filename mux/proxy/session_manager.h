@@ -61,9 +61,14 @@ struct HydraSession {
 
     std::vector<uint8_t> scrollbackKey;
 
-    // Persistent session ID (random hex string for SQLite storage)
+    // Persistent session ID (random hex string, used by gRPC/grpc-web clients)
     std::string persistId;
     time_t      tokenCreated{0};   // when persistId was last generated/rotated
+
+    // Database session ID — the persistId stored in SQLite saved_sessions.
+    // May differ from persistId after token rotation.  Scrollback rows
+    // reference this ID via FK, so it must not change without migrating them.
+    std::string dbPersistId;
 
     // Terminal type reported by the most recent gRPC client (from SetPreferences).
     // Used for back-door TTYPE negotiation when GANL supports it.
@@ -276,8 +281,10 @@ public:
                                           const std::string& password);
 
     // Create account and auto-login. Returns persistId, or empty on failure.
+    // clientIp is used for rate-limiting (empty = no rate check).
     std::string createAccountAndGetSession(const std::string& username,
                                            const std::string& password,
+                                           const std::string& clientIp,
                                            std::string& errorOut);
 
     // Eagerly restore all saved sessions from SQLite on startup.
@@ -288,6 +295,10 @@ public:
     const HydraConfig& config() const { return config_; }
     AccountManager& accounts() { return accounts_; }
     ProcessManager& processMgr() { return procMgr_; }
+
+    // Rate-limiting (exposed for gRPC work items)
+    bool checkAccountCreateRate(const std::string& ip);
+    void recordAccountCreate(const std::string& ip);
 
     // Public session operations (used by gRPC work items and dispatchCommand).
     void connectToGame(HydraSession& session, const std::string& gameName);
@@ -372,8 +383,6 @@ private:
     void recordLoginFailure(const std::string& ip);
     void clearLoginFailures(const std::string& ip);
     bool isLockedOut(const std::string& ip);
-    bool checkAccountCreateRate(const std::string& ip);
-    void recordAccountCreate(const std::string& ip);
 
     time_t lastIpPrune_{0};
 

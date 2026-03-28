@@ -342,6 +342,13 @@ int main(int argc, char* argv[]) {
             sessionMgr, accounts, config, sessionMgr.processMgr(), workQueue);
         std::string grpcErr;
         if (!grpcServer->start(config.grpcListenAddr, grpcErr)) {
+            if (!config.grpcTlsCert.empty()) {
+                // TLS was explicitly configured — fail fast, don't fall back
+                LOG_ERROR("gRPC TLS startup failed: %s", grpcErr.c_str());
+                engine->shutdown();
+                logShutdown();
+                return 1;
+            }
             LOG_WARN("gRPC: %s", grpcErr.c_str());
             grpcServer.reset();
         }

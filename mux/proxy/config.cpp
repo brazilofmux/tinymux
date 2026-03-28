@@ -333,5 +333,11 @@ bool loadConfig(const std::string& path, HydraConfig& config,
         return false;
     }
 
+    // Validate gRPC TLS config: both cert and key must be provided together
+    if (!config.grpcTlsCert.empty() != !config.grpcTlsKey.empty()) {
+        errorMsg = "grpc_tls_cert and grpc_tls_key must both be set (or both omitted)";
+        return false;
+    }
+
     return true;
 }

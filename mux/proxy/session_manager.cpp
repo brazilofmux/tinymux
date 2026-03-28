@@ -900,6 +900,7 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                         session.lastActivity = session.created;
                         session.scrollbackKey = sbKey;
                         session.persistId = generatePersistId();
+                        session.dbPersistId = session.persistId;
                         session.tokenCreated = session.created;
                         session.frontDoors.push_back(fd.handle);
 
@@ -1070,6 +1071,7 @@ void SessionManager::handleLogin(FrontDoorState& fd,
             session.lastActivity = session.created;
             session.scrollbackKey = sbKey;
             session.persistId = generatePersistId();
+            session.dbPersistId = session.persistId;
             session.tokenCreated = session.created;
             session.frontDoors.push_back(fd.handle);
 
@@ -1151,9 +1153,11 @@ void SessionManager::dispatchCommand(HydraSession& session,
         for (size_t i = 0; i < session.links.size(); i++) {
             closeLink(session, i);
         }
-        // Delete persisted session and scroll-back
-        if (!session.persistId.empty()) {
-            accounts_.deleteSession(session.persistId);
+        // Delete persisted session and scroll-back (use dbPersistId for FK)
+        const std::string& delId = session.dbPersistId.empty()
+            ? session.persistId : session.dbPersistId;
+        if (!delId.empty()) {
+            accounts_.deleteSession(delId);
         }
         for (auto h : session.frontDoors) {
             sendToClient(h, "Session destroyed. Goodbye.\r\n");
@@ -1938,10 +1942,12 @@ void SessionManager::runTimers() {
         for (size_t i = 0; i < session.links.size(); i++) {
             closeLink(session, i);
         }
-        // Flush and delete persisted state
+        // Flush and delete persisted state (use dbPersistId for FK)
         flushSession(session);
-        if (!session.persistId.empty()) {
-            accounts_.deleteSession(session.persistId);
+        const std::string& reapDelId = session.dbPersistId.empty()
+            ? session.persistId : session.dbPersistId;
+        if (!reapDelId.empty()) {
+            accounts_.deleteSession(reapDelId);
         }
         // Close any remaining front-doors
         for (auto h : session.frontDoors) {
@@ -1970,7 +1976,11 @@ std::string SessionManager::generatePersistId() {
 }
 
 void SessionManager::flushSession(HydraSession& session) {
-    if (session.persistId.empty()) return;
+    // Use dbPersistId for SQLite operations — persistId may have been
+    // rotated in-memory without updating the database row.
+    const std::string& dbId = session.dbPersistId.empty()
+        ? session.persistId : session.dbPersistId;
+    if (dbId.empty()) return;
 
     std::string created = std::to_string(session.created);
     std::string lastActive = std::to_string(session.lastActivity);
@@ -1993,21 +2003,21 @@ void SessionManager::flushSession(HydraSession& session) {
     std::string linksJson = linksDoc.dump();
 
     std::string errorMsg;
-    if (!accounts_.saveSession(session.persistId, session.accountId,
+    if (!accounts_.saveSession(dbId, session.accountId,
                                created, lastActive, linksJson, errorMsg)) {
         LOG_ERROR("Failed to save session %s: %s",
-                  session.persistId.c_str(), errorMsg.c_str());
+                  dbId.c_str(), errorMsg.c_str());
         return;
     }
 
     // Flush scroll-back only if we have the encryption key
     if (!session.scrollbackKey.empty()) {
         int n = session.scrollback.flushToDb(
-            accounts_.db(), session.persistId,
+            accounts_.db(), dbId,
             session.accountId, session.scrollbackKey);
         if (n < 0) {
             LOG_ERROR("Scroll-back flush failed for session %s",
-                      session.persistId.c_str());
+                      dbId.c_str());
         }
     }
 }
@@ -2029,6 +2039,7 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
     if (session.lastActivity == 0) session.lastActivity = time(nullptr);
     session.scrollbackKey = sbKey;
     session.persistId = saved.persistId;
+    session.dbPersistId = session.persistId;
     session.tokenCreated = time(nullptr);
     session.frontDoors.push_back(fd.handle);
 
@@ -2154,8 +2165,10 @@ std::string SessionManager::authenticateAndGetSession(
             if (sess.scrollbackKey.empty() && !sbKey.empty()) {
                 sess.scrollbackKey = sbKey;
                 sess.username = username;
+                const std::string& loadId = sess.dbPersistId.empty()
+                    ? sess.persistId : sess.dbPersistId;
                 sess.scrollback.loadFromDb(
-                    accounts_.db(), sess.persistId, sess.accountId, sbKey);
+                    accounts_.db(), loadId, sess.accountId, sbKey);
             }
             if (!sess.pendingLinksJson.empty()) {
                 std::vector<SavedLinkInfo> savedLinks;
@@ -2168,25 +2181,18 @@ std::string SessionManager::authenticateAndGetSession(
                          sess.persistId.c_str());
             }
 
-            // Rotate session token on re-authentication
-            std::string oldId = sess.persistId;
+            // Rotate session token on re-authentication (in-memory only).
+            // The SQLite saved_sessions row keeps the original persistId
+            // for crash recovery — the user re-authenticates post-crash
+            // and gets a fresh token then.  We do NOT delete+reinsert
+            // because ON DELETE CASCADE would destroy scrollback rows.
             unindexSession(sess);
             sess.persistId = generatePersistId();
             sess.tokenCreated = time(nullptr);
             indexSession(sess);
 
-            // Update SQLite with new persistId
-            if (!oldId.empty()) {
-                std::string errorMsg;
-                accounts_.saveSession(sess.persistId, sess.accountId,
-                    std::to_string(sess.created),
-                    std::to_string(sess.lastActivity),
-                    sess.pendingLinksJson, errorMsg);
-                accounts_.deleteSession(oldId);
-            }
-
-            LOG_INFO("Session token rotated for '%s': %s -> %s",
-                     username.c_str(), oldId.c_str(), sess.persistId.c_str());
+            LOG_INFO("Session token rotated for '%s' (new=%s)",
+                     username.c_str(), sess.persistId.c_str());
             return sess.persistId;
         }
     }
@@ -2202,6 +2208,7 @@ std::string SessionManager::authenticateAndGetSession(
         session.lastActivity = session.created;
         session.scrollbackKey = sbKey;
         session.persistId = saved.persistId;
+        session.dbPersistId = session.persistId;
         session.tokenCreated = session.created;
 
         session.scrollback.loadFromDb(
@@ -2233,6 +2240,7 @@ std::string SessionManager::authenticateAndGetSession(
     session.lastActivity = session.created;
     session.scrollbackKey = sbKey;
     session.persistId = generatePersistId();
+    session.dbPersistId = session.persistId;
     session.tokenCreated = session.created;
 
     std::string pid = session.persistId;
@@ -2247,13 +2255,24 @@ std::string SessionManager::authenticateAndGetSession(
 
 std::string SessionManager::createAccountAndGetSession(
     const std::string& username, const std::string& password,
-    std::string& errorOut) {
+    const std::string& clientIp, std::string& errorOut) {
+    // Rate-limit account creation per IP
+    if (!clientIp.empty() && !checkAccountCreateRate(clientIp)) {
+        errorOut = "too many accounts created from this address";
+        return "";
+    }
+
     bool admin = accounts_.isEmpty();
     uint32_t accountId = 0;
     if (!accounts_.createAccount(username, password, admin,
                                  accountId, errorOut)) {
         return "";
     }
+
+    if (!clientIp.empty()) {
+        recordAccountCreate(clientIp);
+    }
+
     // Auto-login
     return authenticateAndGetSession(username, password);
 }
@@ -2400,7 +2419,7 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
 
         std::string errorMsg;
         std::string pid = createAccountAndGetSession(
-            rpcReq.username(), rpcReq.password(), errorMsg);
+            rpcReq.username(), rpcReq.password(), fd.clientIp, errorMsg);
 
         hydra::CreateAccountResponse resp;
         if (pid.empty()) {
@@ -2852,6 +2871,7 @@ void SessionManager::restoreAllSessions() {
         if (session.created == 0) session.created = time(nullptr);
         if (session.lastActivity == 0) session.lastActivity = session.created;
         session.persistId = s.persistId;
+        session.dbPersistId = s.persistId;
         session.state = SessionState::Detached;
         // scrollbackKey is empty — can't decrypt scroll-back until player logs in.
         // Defer link reconnection: back-door links will reconnect when the
