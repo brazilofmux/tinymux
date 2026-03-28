@@ -120,7 +120,7 @@ bool HydraConnection::connect() {
     {
         hydra::ClientMessage prefsMsg;
         auto* prefs = prefsMsg.mutable_preferences();
-        prefs->set_color_format(hydra::ANSI_TRUECOLOR);
+        prefs->set_color_format(static_cast<hydra::ColorFormat>(colorFormat_));
         prefs->set_terminal_width(termWidth_);
         prefs->set_terminal_height(termHeight_);
         prefs->set_terminal_type("TinyMUX-Console");
@@ -267,7 +267,7 @@ void HydraConnection::fetchScrollBack() {
         hydra::ScrollBackRequest req;
         req.set_session_id(sessionId_);
         req.set_max_lines(200);  // fetch last 200 lines on reconnect
-        req.set_color_format(hydra::ANSI_TRUECOLOR);
+        req.set_color_format(static_cast<hydra::ColorFormat>(colorFormat_));
         hydra::ScrollBackResponse resp;
         Status status = grpc_->stub->GetScrollBack(&ctx, req, &resp);
         if (status.ok() && resp.lines_size() > 0) {
@@ -310,7 +310,7 @@ void HydraConnection::attemptReconnect() {
             {
                 hydra::ClientMessage prefsMsg;
                 auto* prefs = prefsMsg.mutable_preferences();
-                prefs->set_color_format(hydra::ANSI_TRUECOLOR);
+                prefs->set_color_format(static_cast<hydra::ColorFormat>(colorFormat_));
                 prefs->set_terminal_width(termWidth_);
                 prefs->set_terminal_height(termHeight_);
                 prefs->set_terminal_type("TinyMUX-Console");

@@ -101,6 +101,13 @@ private:
     bool useTls_;
     int termWidth_;
     int termHeight_;
+    int colorFormat_{1};  // hydra::ANSI_TRUECOLOR=1, hydra::PUA_UTF8=4
+
+public:
+    // Set color format before connect(). Default is ANSI_TRUECOLOR (1).
+    // Win32 GUI should set PUA_UTF8 (4) for custom rendering.
+    void setColorFormat(int fmt) { colorFormat_ = fmt; }
+private:
 
     // gRPC state (opaque — actual types in .cpp to avoid grpc headers here)
     struct GrpcState;

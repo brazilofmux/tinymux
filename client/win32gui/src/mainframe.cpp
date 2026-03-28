@@ -179,6 +179,7 @@ int CMainFrame::ConnectHydra(const std::string& name, const std::string& host,
     auto& ts = tab_states[idx];
 
     auto hconn = std::make_unique<HydraConnection>(name, host, port, user, pass, game, iocp, use_tls);
+    hconn->setColorFormat(4);  // PUA_UTF8 for custom GUI rendering
     ts->buffer.append("% Connecting via Hydra to " + host + ":" + port + "...");
     ts->conn = std::move(hconn);
 
