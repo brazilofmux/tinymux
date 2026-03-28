@@ -492,11 +492,59 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    LOG_INFO("Hydra shutting down");
+    LOG_INFO("Hydra shutting down — draining connections");
+
+    // Phase 1: Notify sessions and flush state.
+    sessionMgr.shutdownSessions();
+
 #ifdef GRPC_ENABLED
+    // Signal gRPC server to stop accepting new RPCs.
+    // Existing streams get a grace period to finish.
     if (grpcServer) grpcServer->shutdown();
 #endif
-    sessionMgr.shutdownSessions();
+
+    // Phase 3: Drain — continue processing events for up to 3 seconds
+    // so pending writes flush and clients see the shutdown message.
+    // New connections accepted during drain are immediately closed.
+    {
+        time_t drainStart = time(nullptr);
+        constexpr int DRAIN_SECONDS = 3;
+        while (time(nullptr) - drainStart < DRAIN_SECONDS) {
+            int n = engine->processEvents(100, events, MAX_EVENTS);
+            for (int i = 0; i < n; i++) {
+                const ganl::IoEvent& ev = events[i];
+                switch (ev.type) {
+                case ganl::IoEventType::Accept:
+                    // Reject new connections during drain
+                    engine->closeConnection(ev.connection);
+                    break;
+                case ganl::IoEventType::Read: {
+                    // Drain reads so send buffers can flush
+                    char buf[4096];
+#if defined(_WIN32)
+                    recv(static_cast<SOCKET>(ev.connection), buf,
+                         static_cast<int>(sizeof(buf)), 0);
+#else
+                    recv(static_cast<int>(ev.connection), buf,
+                         sizeof(buf), 0);
+#endif
+                } break;
+                case ganl::IoEventType::Close:
+                case ganl::IoEventType::Error:
+                    engine->closeConnection(ev.connection);
+                    break;
+                default:
+                    break;
+                }
+            }
+#ifdef GRPC_ENABLED
+            workQueue.processPending(sessionMgr, accounts, config,
+                                     sessionMgr.processMgr());
+#endif
+        }
+    }
+
+    LOG_INFO("Drain complete, shutting down");
     engine->shutdown();
     accounts.shutdown();
     logShutdown();

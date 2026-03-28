@@ -10,6 +10,10 @@ listen telnet+tls   0.0.0.0:4202 cert=hydra.pem key=hydra.key
 # listen telnet       0.0.0.0:4201
 # listen websocket    0.0.0.0:4203
 # listen grpc-web     0.0.0.0:4205
+#
+# Health checks: grpc-web listeners serve GET /healthz (HTTP 200 "ok").
+# For ALB/NLB, point health checks at the grpc-web listener port.
+# Telnet listeners support TCP health checks (connection accepted = healthy).
 
 # --- Front-door TLS policy ---
 # By default, plaintext (non-TLS) front-door connections are rejected.

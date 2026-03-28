@@ -1,0 +1,55 @@
+[Unit]
+Description=Hydra MUD Proxy
+Documentation=https://github.com/brazilofmux/tinymux
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hydra
+Group=hydra
+
+# Working directory — adjust to your installation
+WorkingDirectory=/opt/hydra
+
+ExecStart=/opt/hydra/bin/hydra -c /opt/hydra/hydra.conf
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Master key via environment (preferred over file for systemd)
+# Create /opt/hydra/env with: HYDRA_MASTER_KEY=<64 hex chars>
+EnvironmentFile=-/opt/hydra/env
+
+# Give Hydra time for graceful drain (3s internal + margin)
+TimeoutStopSec=10
+
+# Restart policy
+Restart=on-failure
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+
+# Allow write to working directory (for database, logs, master key)
+ReadWritePaths=/opt/hydra
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=64
+
+# Logging — stdout/stderr go to journald if log_file is set to "-"
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hydra
+
+[Install]
+WantedBy=multi-user.target

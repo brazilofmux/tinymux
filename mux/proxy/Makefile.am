@@ -37,12 +37,16 @@ CLEANFILES = hydra.pb.cc hydra.pb.h hydra.grpc.pb.cc hydra.grpc.pb.h
 AM_CPPFLAGS += $(GRPC_CFLAGS)
 endif
 
-hydra_CXXFLAGS = $(AM_CXXFLAGS) -fPIC -std=c++17
+hydra_CXXFLAGS = $(AM_CXXFLAGS) -fPIC -std=c++17 \
+    -fstack-protector-strong -Wformat -Wformat-security
+
+hydra_CPPFLAGS = $(AM_CPPFLAGS) -D_FORTIFY_SOURCE=2
 
 hydra_LDFLAGS = -L$(top_builddir)/lib \
     -Wl,-rpath,'$$ORIGIN' \
     -Wl,-rpath,$(abs_top_builddir)/lib \
-    -pie
+    -pie \
+    -Wl,-z,relro,-z,now
 
 hydra_LDADD = -lmux $(top_builddir)/ganl/libganl.a \
     $(top_builddir)/sqlite/libsqlite3.a \

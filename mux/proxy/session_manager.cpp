@@ -2338,6 +2338,17 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
 
     int sockfd = static_cast<int>(fd.handle);
 
+    // Health check endpoint — responds to any method on /healthz
+    if (req.path == "/healthz") {
+        std::string resp = "HTTP/1.1 200 OK\r\n"
+                           "Content-Type: text/plain\r\n"
+                           "Content-Length: 2\r\n"
+                           "\r\nok";
+        safeWrite(fd.handle, resp);
+        fd.httpBuf.clear();
+        return;
+    }
+
     // Extract Origin header for CORS
     std::string requestOrigin;
     auto originIt = req.headers.find("origin");
