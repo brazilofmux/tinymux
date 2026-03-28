@@ -1421,11 +1421,34 @@ void SessionManager::dispatchCommand(HydraSession& session,
                 sendToClient(fdHandle, "Restart failed: " + errorMsg + "\r\n");
             }
         }
+    } else if (verb == "passwd") {
+        // Require TLS for password changes.
+        auto fdIt2 = frontDoors_.find(fdHandle);
+        if (fdIt2 != frontDoors_.end() && !fdIt2->second.tlsTransport) {
+            sendToClient(fdHandle,
+                "Password changes require a TLS connection.\r\n");
+            return;
+        }
+        if (args.empty()) {
+            sendToClient(fdHandle, "Usage: /passwd <newpassword>\r\n");
+            return;
+        }
+        std::vector<uint8_t> newKey;
+        std::string errorMsg;
+        if (accounts_.changePassword(session.accountId, args,
+                                      session.scrollbackKey,
+                                      newKey, errorMsg)) {
+            session.scrollbackKey = newKey;
+            sendToClient(fdHandle, "Password changed.\r\n");
+        } else {
+            sendToClient(fdHandle,
+                "Password change failed: " + errorMsg + "\r\n");
+        }
     } else {
         sendToClient(fdHandle,
             "Unknown command: /" + verb + "\r\n"
             "Commands: /games /connect /switch /disconnect /links\r\n"
-            "          /scroll /detach /quit\r\n"
+            "          /scroll /detach /quit /passwd\r\n"
             "          /start /stop /restart\r\n"
             "          /addcred /delcred /creds\r\n");
     }
