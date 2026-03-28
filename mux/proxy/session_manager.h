@@ -391,7 +391,19 @@ private:
 
     // Per-connection write buffers for non-blocking I/O.
     // Data lands here only when ::send() returns EAGAIN/partial.
-    std::unordered_map<ganl::ConnectionHandle, std::string> writeBuffers_;
+    // Offset tracking avoids O(n) erase on partial writes.
+    struct WriteBuffer {
+        std::string data;
+        size_t offset{0};
+
+        size_t remaining() const { return data.size() - offset; }
+        const char* ptr() const { return data.data() + offset; }
+        void advance(size_t n) { offset += n; }
+        bool empty() const { return offset >= data.size(); }
+        void append(const char* p, size_t len) { data.append(p, len); }
+        void reset() { data.clear(); offset = 0; }
+    };
+    std::unordered_map<ganl::ConnectionHandle, WriteBuffer> writeBuffers_;
 
     TelnetBridge bridge_;
     ProcessManager procMgr_;

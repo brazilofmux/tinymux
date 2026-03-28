@@ -251,7 +251,9 @@ void SessionManager::safeWrite(ganl::ConnectionHandle handle,
     if (sent < 0) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             // Socket not ready — buffer everything and arm EPOLLOUT.
-            writeBuffers_[handle].assign(data, len);
+            auto& wb = writeBuffers_[handle];
+            wb.reset();
+            wb.append(data, len);
             ganl::ErrorCode err = 0;
             engine_.postWrite(handle, nullptr, 0, err);
         } else {
@@ -263,7 +265,9 @@ void SessionManager::safeWrite(ganl::ConnectionHandle handle,
     size_t n = static_cast<size_t>(sent);
     if (n < len) {
         // Partial write — buffer the remainder and arm EPOLLOUT.
-        writeBuffers_[handle].assign(data + n, len - n);
+        auto& wb = writeBuffers_[handle];
+        wb.reset();
+        wb.append(data + n, len - n);
         ganl::ErrorCode err = 0;
         engine_.postWrite(handle, nullptr, 0, err);
     }
@@ -273,9 +277,10 @@ void SessionManager::drainWriteBuffer(ganl::ConnectionHandle handle) {
     auto it = writeBuffers_.find(handle);
     if (it == writeBuffers_.end() || it->second.empty()) return;
 
-    std::string& buf = it->second;
+    WriteBuffer& wb = it->second;
     int fd = static_cast<int>(handle);
-    ssize_t sent = ::send(fd, buf.data(), buf.size(), MSG_DONTWAIT | MSG_NOSIGNAL);
+    ssize_t sent = ::send(fd, wb.ptr(), wb.remaining(),
+                          MSG_DONTWAIT | MSG_NOSIGNAL);
 
     if (sent < 0) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -290,10 +295,9 @@ void SessionManager::drainWriteBuffer(ganl::ConnectionHandle handle) {
         return;
     }
 
-    size_t n = static_cast<size_t>(sent);
-    if (n < buf.size()) {
-        // Partial write — keep the remainder, re-arm.
-        buf.erase(0, n);
+    wb.advance(static_cast<size_t>(sent));
+    if (!wb.empty()) {
+        // More data remains — re-arm.
         ganl::ErrorCode err = 0;
         engine_.postWrite(handle, nullptr, 0, err);
     } else {
