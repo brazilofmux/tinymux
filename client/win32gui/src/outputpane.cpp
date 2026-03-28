@@ -347,8 +347,8 @@ std::string COutputPane::GetSelectedText() const {
     std::string result;
     for (int i = l1; i <= l2 && i < (int)lines.size(); i++) {
         auto& line = lines[i];
-        int start = (i == l1) ? std::min(c1 * char_width_, (int)line.text.size()) : 0;
-        int end = (i == l2) ? std::min(c2 * char_width_, (int)line.text.size()) : (int)line.text.size();
+        int start = (i == l1) ? std::min(c1, (int)line.text.size()) : 0;
+        int end = (i == l2) ? std::min(c2, (int)line.text.size()) : (int)line.text.size();
         if (start < end) {
             result.append(line.text, start, end - start);
         }
