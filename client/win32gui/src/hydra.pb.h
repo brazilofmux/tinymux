@@ -5149,7 +5149,7 @@ class GameOutput final : public ::google::protobuf::Message
     kTimestampFieldNumber = 3,
     kLinkNumberFieldNumber = 4,
   };
-  // bytes text = 1;
+  // string text = 1;
   void clear_text() ;
   const std::string& text() const;
   template <typename Arg_ = const std::string&, typename... Args_>
@@ -5207,7 +5207,7 @@ class GameOutput final : public ::google::protobuf::Message
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
       2, 4, 0,
-      31, 2>
+      35, 2>
       _table_;
 
   friend class ::google::protobuf::MessageLite;
@@ -10834,7 +10834,7 @@ inline void SessionInfo::_internal_set_last_activity(::int64_t value) {
 
 // GameOutput
 
-// bytes text = 1;
+// string text = 1;
 inline void GameOutput::clear_text() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.text_.ClearToEmpty();
@@ -10848,7 +10848,7 @@ template <typename Arg_, typename... Args_>
 inline PROTOBUF_ALWAYS_INLINE void GameOutput::set_text(Arg_&& arg,
                                                      Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.text_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  _impl_.text_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
   // @@protoc_insertion_point(field_set:hydra.GameOutput.text)
 }
 inline std::string* GameOutput::mutable_text() ABSL_ATTRIBUTE_LIFETIME_BOUND {

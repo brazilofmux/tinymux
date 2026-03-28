@@ -1899,7 +1899,7 @@ const char descriptor_table_protodef_hydra_2eproto[] ABSL_ATTRIBUTE_SECTION_VARI
     "\n\013active_link\030\004 \001(\005\022\030\n\020scrollback_lines\030"
     "\005 \001(\005\022\"\n\005state\030\006 \001(\0162\023.hydra.SessionStat"
     "e\022\017\n\007created\030\007 \001(\003\022\025\n\rlast_activity\030\010 \001("
-    "\003\"R\n\nGameOutput\022\014\n\004text\030\001 \001(\014\022\016\n\006source\030"
+    "\003\"R\n\nGameOutput\022\014\n\004text\030\001 \001(\t\022\016\n\006source\030"
     "\002 \001(\t\022\021\n\ttimestamp\030\003 \001(\003\022\023\n\013link_number\030"
     "\004 \001(\005\"A\n\013GmcpMessage\022\017\n\007package\030\001 \001(\t\022\014\n"
     "\004json\030\002 \001(\t\022\023\n\013link_number\030\003 \001(\005\"c\n\020Stor"
@@ -3485,7 +3485,7 @@ const ::google::protobuf::internal::ClassData* GameOutput::GetClassData() const 
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 4, 0, 31, 2> GameOutput::_table_ = {
+const ::_pbi::TcParseTable<2, 4, 0, 35, 2> GameOutput::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -3506,8 +3506,8 @@ const ::_pbi::TcParseTable<2, 4, 0, 31, 2> GameOutput::_table_ = {
     // int32 link_number = 4;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GameOutput, _impl_.link_number_), 63>(),
      {32, 63, 0, PROTOBUF_FIELD_OFFSET(GameOutput, _impl_.link_number_)}},
-    // bytes text = 1;
-    {::_pbi::TcParser::FastBS1,
+    // string text = 1;
+    {::_pbi::TcParser::FastUS1,
      {10, 63, 0, PROTOBUF_FIELD_OFFSET(GameOutput, _impl_.text_)}},
     // string source = 2;
     {::_pbi::TcParser::FastUS1,
@@ -3518,9 +3518,9 @@ const ::_pbi::TcParseTable<2, 4, 0, 31, 2> GameOutput::_table_ = {
   }}, {{
     65535, 65535
   }}, {{
-    // bytes text = 1;
+    // string text = 1;
     {PROTOBUF_FIELD_OFFSET(GameOutput, _impl_.text_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kBytes | ::_fl::kRepAString)},
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // string source = 2;
     {PROTOBUF_FIELD_OFFSET(GameOutput, _impl_.source_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
@@ -3533,8 +3533,9 @@ const ::_pbi::TcParseTable<2, 4, 0, 31, 2> GameOutput::_table_ = {
   }},
   // no aux_entries
   {{
-    "\20\0\6\0\0\0\0\0"
+    "\20\4\6\0\0\0\0\0"
     "hydra.GameOutput"
+    "text"
     "source"
   }},
 };
@@ -3569,10 +3570,12 @@ PROTOBUF_NOINLINE void GameOutput::Clear() {
           ::uint32_t cached_has_bits = 0;
           (void)cached_has_bits;
 
-          // bytes text = 1;
+          // string text = 1;
           if (!this_._internal_text().empty()) {
             const std::string& _s = this_._internal_text();
-            target = stream->WriteBytesMaybeAliased(1, _s, target);
+            ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+                _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "hydra.GameOutput.text");
+            target = stream->WriteStringMaybeAliased(1, _s, target);
           }
 
           // string source = 2;
@@ -3622,9 +3625,9 @@ PROTOBUF_NOINLINE void GameOutput::Clear() {
 
           ::_pbi::Prefetch5LinesFrom7Lines(&this_);
            {
-            // bytes text = 1;
+            // string text = 1;
             if (!this_._internal_text().empty()) {
-              total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+              total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                               this_._internal_text());
             }
             // string source = 2;
