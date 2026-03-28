@@ -20,70 +20,88 @@ from pathlib import Path
 # MUX Function Dictionary
 # ---------------------------------------------------------------------------
 
-# Core functions that exist in TinyMUX 2.x
-# This is a representative set — not exhaustive but covers the common ones.
+# Authoritative function list extracted from builtin_function_list[] in
+# mux/modules/engine/functions.cpp.  To regenerate:
+#
+#   grep -oP '\{T\("([A-Z_0-9]+)"\)' mux/modules/engine/functions.cpp \
+#     | sed 's/{T("//;s/")//' | grep -v '^_' | sort -u \
+#     | awk '{printf "    '\''%s'\'',\n", tolower($0)}'
+#
+# Internal GOD-only helpers (prefixed with _) are excluded.
+#
 KNOWN_FUNCTIONS = {
-    # Math
-    'abs', 'add', 'bound', 'ceil', 'div', 'fdiv', 'floor', 'inc', 'dec',
-    'max', 'mean', 'median', 'min', 'mod', 'mul', 'power', 'round',
-    'sign', 'sqrt', 'stddev', 'sub', 'trunc',
-
-    # String
-    'after', 'alphamax', 'alphamin', 'ansi', 'art', 'before', 'capstr',
-    'cat', 'center', 'comp', 'decrypt', 'delete', 'edit', 'encrypt',
-    'escape', 'finditer', 'first', 'foreach', 'grab', 'graball',
-    'insert', 'iter', 'itext', 'last', 'lcstr', 'left', 'linsert',
-    'ljust', 'lnum', 'match', 'member', 'merge', 'mid', 'munge',
-    'null', 'num', 'objeval', 'pos', 'regmatch', 'regmatchi',
-    'regrab', 'regraball', 'repeat', 'replace', 'rest', 'reverse',
-    'right', 'rjust', 'scramble', 'secure', 'setq', 'setr',
-    'sha1', 'sort', 'sortby', 'space', 'splice', 'squish', 'step',
-    'strcat', 'strdelete', 'strinsert', 'strip', 'stripaccents',
-    'stripansi', 'strlen', 'strmatch', 'strmem', 'strreplace',
-    'strtrunc', 'subeval', 'switch', 'switchall', 'table', 'tr',
-    'trim', 'ucstr', 'unique', 'wordpos', 'words', 'wrap',
-
-    # List
-    'elements', 'extract', 'filter', 'index', 'itemize', 'ladd',
-    'lattr', 'lcon', 'ldelete', 'lexits', 'lmax', 'lmin', 'lnum',
-    'lreplace', 'map', 'mix', 'munge', 'revwords', 'setdiff',
-    'setinter', 'setunion', 'shuffle', 'sort', 'sortby',
-
-    # DB query
-    'children', 'con', 'controls', 'create', 'entrances', 'elock',
-    'exit', 'flags', 'fullname', 'get', 'get_eval', 'grep', 'grepi',
-    'hasattr', 'hasattrp', 'hasflag', 'haspower', 'hastype', 'home',
-    'ifelse', 'isdbref', 'isint', 'isnum', 'isword', 'lattr',
-    'lattrp', 'lcon', 'lexits', 'link', 'loc', 'locate', 'lock',
-    'lplayers', 'lthings', 'money', 'mudname', 'name', 'ncon',
-    'nearby', 'nexits', 'next', 'nplayers', 'nthings', 'num',
-    'obj', 'objeval', 'owner', 'parent', 'pemit', 'playermem',
-    'pmatch', 'ports', 'r', 'room', 'type', 'visible', 'where',
-    'xget', 'zone',
-
-    # Logic/Control
-    'and', 'case', 'cand', 'cor', 'eq', 'gt', 'gte', 'if', 'ifelse',
-    'lt', 'lte', 'ne', 'neq', 'not', 'or', 'switch', 'switchall',
-    't', 'u', 'udefault', 'ufun', 'ulocal', 'v', 'xor',
-
-    # Time
-    'convsecs', 'convtime', 'secs', 'starttime', 'time', 'timefmt',
-
-    # Register
-    'listq', 'r', 'setq', 'setr', 'unsetq',
-
-    # Formatting
-    'ansi', 'ljust', 'rjust', 'center', 'columns', 'table', 'wrap',
-
-    # Misc
-    'aposs', 'channels', 'checkpass', 'cwho', 'default', 'die',
-    'doing', 'dumping', 'edefault', 'elements', 'entrances',
-    'eval', 'fold', 'idle', 'isword', 'lattr', 'lflags', 'lit',
-    'lnum', 'localize', 'lwho', 'mail', 'motd', 'mtime', 'mudname',
-    'ncomp', 'objeval', 'pack', 'pick', 'poss', 'pueblo', 'rand',
-    's', 'search', 'set', 'shl', 'shr', 'sign', 'subj', 'tel',
-    'textfile', 'toss', 'type', 'unpack', 'version', 'visible',
-    'width', 'wordpos', 'words', 'xget',
+    '@@', 'abs', 'accent', 'acos', 'add', 'addrlog', 'after', 'allof',
+    'alphamax', 'alphamin', 'and', 'andbool', 'andflags', 'ansi', 'aposs',
+    'art', 'asin', 'astbench', 'asteval', 'atan', 'atan2', 'attrcnt',
+    'attrib_set', 'band', 'baseconv', 'beep', 'before', 'benchmark',
+    'between', 'bittype', 'bnand', 'bor', 'bound', 'bxor', 'cand',
+    'candbool', 'cansee', 'caplist', 'capstr', 'case', 'caseall', 'cat',
+    'cbuffer', 'cdesc', 'ceil', 'cemit', 'center', 'cflags', 'chanfind',
+    'chaninfo', 'channels', 'chanobj', 'chanuser', 'chanusers', 'children',
+    'choose', 'chr', 'citer', 'clone', 'cmds', 'cmogrifier', 'cmsgs',
+    'colordepth', 'columns', 'comalias', 'comp', 'comtitle', 'con',
+    'config', 'conn', 'connlast', 'connleft', 'connlog', 'connmax',
+    'connnum', 'connrecord', 'conntotal', 'controls', 'convsecs',
+    'convtime', 'cor', 'corbool', 'cos', 'cowner', 'cpad', 'crc32',
+    'crc32obj', 'create', 'crecall', 'cstatus', 'ctime', 'ctu', 'cusers',
+    'cwho', 'dec', 'decode64', 'decrypt', 'default', 'delete', 'delextract',
+    'destroy', 'die', 'digest', 'digittime', 'dist2d', 'dist3d',
+    'distribute', 'doing', 'dumping', 'dynhelp', 'e', 'edefault', 'edit',
+    'elements', 'elock', 'emit', 'encode64', 'encrypt', 'entrances', 'eq',
+    'error', 'escape', 'etimefmt', 'eval', 'exit', 'exp', 'exptime',
+    'extract', 'fcount', 'fdepth', 'fdiv', 'filter', 'filterbool',
+    'findable', 'first', 'firstof', 'flags', 'floor', 'floordiv', 'fmod',
+    'fold', 'foreach', 'fullname', 'garble', 'get', 'get_eval', 'gmcp',
+    'grab', 'graball', 'grep', 'grepi', 'gt', 'gte', 'hasattr', 'hasattrp',
+    'hasflag', 'haspower', 'hasquota', 'hasrxlevel', 'hastxlevel',
+    'hastype', 'height', 'hmac', 'home', 'host', 'iabs', 'iadd', 'idiv',
+    'idle', 'if', 'ifelse', 'ilev', 'imul', 'inc', 'index', 'insert',
+    'inum', 'inzone', 'isalnum', 'isalpha', 'isdbref', 'isdigit', 'isign',
+    'isint', 'isjson', 'isnum', 'isobjid', 'israt', 'isub', 'isword',
+    'itemize', 'iter', 'itext', 'jitstats', 'json', 'json_mod',
+    'json_query', 'ladd', 'land', 'last', 'lastcreate', 'lattr',
+    'lattrcmds', 'lattrp', 'lcmds', 'lcon', 'lcstr', 'ldelete', 'ledit',
+    'letq', 'lexits', 'lflags', 'link', 'linsert', 'list', 'listq',
+    'listrlevels', 'lit', 'ljust', 'lmath', 'lmax', 'lmin', 'ln', 'lnum',
+    'loc', 'localize', 'locate', 'lock', 'lockdecode', 'lockencode', 'log',
+    'lor', 'lpad', 'lparent', 'lplayers', 'lports', 'lpos', 'lrand',
+    'lreplace', 'lrest', 'lrooms', 'lt', 'lte', 'lthings', 'lua', 'lwho',
+    'mail', 'mailcount', 'mailflags', 'mailfrom', 'mailinfo', 'maillist',
+    'mailreview', 'mailsend', 'mailsize', 'mailstats', 'mailsubj',
+    'malias', 'map', 'mapsql', 'match', 'matchall', 'max', 'mean',
+    'median', 'member', 'merge', 'mid', 'min', 'mix', 'mod', 'money',
+    'moniker', 'moon', 'motd', 'mtime', 'mudname', 'mul', 'munge', 'name',
+    'ncon', 'nearby', 'neq', 'nexits', 'next', 'not', 'nplayers', 'nsemit',
+    'nsoemit', 'nspemit', 'nsremit', 'nthings', 'null', 'num', 'obj',
+    'objeval', 'objid', 'objmem', 'oemit', 'or', 'orbool', 'ord',
+    'orflags', 'owner', 'pack', 'parenmatch', 'parent', 'pemit', 'pfind',
+    'pi', 'pickrand', 'playmem', 'pmatch', 'pocvm2', 'poll', 'ports',
+    'pos', 'pose', 'poss', 'power', 'powers', 'printf', 'prompt', 'r',
+    'rand', 'regedit', 'regeditall', 'regeditalli', 'regediti', 'reglattr',
+    'reglattri', 'regmatch', 'regmatchi', 'regnattr', 'regnattri', 'regrab',
+    'regraball', 'regraballi', 'regrabi', 'regrep', 'regrepi', 'remainder',
+    'remit', 'remove', 'repeat', 'replace', 'rest', 'restarts',
+    'restartsecs', 'restarttime', 'reverse', 'revwords', 'right', 'rjust',
+    'rloc', 'roman', 'room', 'round', 'rpad', 'rserror', 'rsnext',
+    'rsprev', 'rsrec', 'rsrecnext', 'rsrecprev', 'rsrelease', 'rsrows',
+    'rvbench', 'rxlevel', 's', 'sandbox', 'scramble', 'search', 'secs',
+    'secure', 'set', 'setdiff', 'setinter', 'setq', 'setr', 'setunion',
+    'sha1', 'shl', 'shr', 'shuffle', 'sign', 'sin', 'singletime',
+    'siteinfo', 'sort', 'sortby', 'sortkey', 'soundex', 'soundlike',
+    'space', 'spellnum', 'splice', 'sql', 'sqrt', 'squish', 'startsecs',
+    'starttime', 'stats', 'stddev', 'step', 'strallof', 'strcat',
+    'strdelete', 'strdistance', 'strfirstof', 'strinsert', 'strip',
+    'stripaccents', 'stripansi', 'strlen', 'strmatch', 'strmem',
+    'strreplace', 'strtrunc', 'sub', 'subeval', 'subj', 'subnetmatch',
+    'successes', 'switch', 'switchall', 't', 'table', 'tan', 'tel',
+    'terminfo', 'textfile', 'time', 'timefmt', 'tr', 'trace', 'translate',
+    'trigger', 'trim', 'trunc', 'txlevel', 'type', 'u', 'ucstr',
+    'udefault', 'ulambda', 'ulocal', 'unique', 'unpack', 'unsetq',
+    'url_escape', 'url_unescape', 'v', 'vadd', 'valid', 'vcross', 'vdim',
+    'vdot', 'verb', 'version', 'visible', 'vmag', 'vmul', 'vsub', 'vunit',
+    'where', 'while', 'width', 'wipe', 'wordpos', 'words', 'wrap',
+    'wrapcolumns', 'writetime', 'xget', 'xor', 'zchildren', 'zexits',
+    'zfun', 'zone', 'zrooms', 'zthings', 'zwho',
 }
 
 # Dangerous functions/commands that probably shouldn't be in builder specs

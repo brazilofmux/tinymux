@@ -14,12 +14,9 @@ Updated: 2026-03-27
 
 - On inspection, `executor.py:593-595` already closes the log file in a `finally` block.
 
-### Softcode lint KNOWN_FUNCTIONS is incomplete and hand-maintained
+### ~~Softcode lint KNOWN_FUNCTIONS is incomplete and hand-maintained~~ FIXED
 
-- **File:** `softcode_lint.py:23-87`
-- **Issue:** Only ~100 function names in the dictionary. The engine supports 200+ functions. Many modern functions (e.g., `encode64`, `decode64`, `url_escape`, `json`, `hmac`, `crc32`, `lua`) are missing.
-- **Impact:** Linter flags valid modern softcode as "unknown function."
-- **Opportunity:** Auto-generate the function list from engine source headers.
+- Replaced hand-maintained ~100-entry set with authoritative 482-entry set extracted from `builtin_function_list[]` in `mux/modules/engine/functions.cpp`. Regeneration command documented in the source comment.
 
 ### Dangerous pattern detection is incomplete
 
