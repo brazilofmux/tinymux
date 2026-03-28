@@ -1403,6 +1403,11 @@ MUX_RESULT CComsysMod::PlayerDisconnect(dbref player)
 
 MUX_RESULT CComsysMod::PlayerNuke(dbref player)
 {
+    if (player < 0)
+    {
+        return MUX_E_INVALIDARG;
+    }
+
     // Remove all channels owned by this player.
     //
     for (auto it = m_channels.begin(); it != m_channels.end(); )

@@ -24,15 +24,12 @@ Updated: 2026-03-27
 
 - `--enable-stubslave` is correct for release/distribution packages per CLAUDE.md. Omitting it is only for local smoke testing.
 
-### Game data files installed world-readable, no postinst permissions
+### ~~Game data files installed world-readable, no postinst permissions~~ FIXED
 
-- **File:** `install:6-9, 22-28`
-- **Issue:** Config files (`netmux.conf`, `alias.conf`) and database files installed without restricted permissions. No `postinst` script sets proper ownership or modes.
-- **Risk:** Game credentials or configuration could be readable by other users on the system.
+- Added `debian/postinst` that restricts config files (`netmux.conf`, `mux.config`, `muxssl.conf`, `alias.conf`, `compat.conf`) to mode 640 on configure.
 
 ## Low — Convert Tool Build
 
-### `convert/configure.ac` has weak yacc/lex checking
+### ~~`convert/configure.ac` has weak yacc/lex checking~~ FIXED
 
-- **File:** `../mux/convert/configure.ac:13-14`
-- **Issue:** Checks for `AC_PROG_YACC` and `AC_PROG_LEX` but doesn't error if they're missing. Build will fail with an unclear message.
+- Added `AC_MSG_ERROR` if yacc/bison or lex/flex are not found. Also fixed `AC_CHECK_LIB` to check for `yywrap` instead of `main`.

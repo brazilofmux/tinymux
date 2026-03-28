@@ -11,11 +11,16 @@ AC_PROG_CXXCPP
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_YACC
+if test "x$YACC" = "x"; then
+    AC_MSG_ERROR([yacc or bison is required but was not found])
+fi
 AC_PROG_LEX
+if test "x$LEX" = "x"; then
+    AC_MSG_ERROR([lex or flex is required but was not found])
+fi
 
 # Checks for libraries.
-# FIXME: Replace `main' with a function in `-lfl':
-AC_CHECK_LIB([fl], [main])
+AC_CHECK_LIB([fl], [yywrap])
 
 # Checks for header files.
 AC_FUNC_ALLOCA

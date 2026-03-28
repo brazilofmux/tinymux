@@ -27,7 +27,6 @@ Updated: 2026-03-27
 - **File:** `comsys_mod.cpp:309, 315`
 - **Issue:** `strncpy()` with casts to `char *` — verify source strings are null-terminated and destination buffers are properly sized.
 
-### No parameter validation on PlayerNuke
+### ~~No parameter validation on PlayerNuke~~ FIXED
 
-- **File:** `comsys_mod.cpp` (around line 2900-2920)
-- **Issue:** Relies on caller ensuring player dbref is valid. No range validation before use.
+- Added `player < 0` guard returning `MUX_E_INVALIDARG`.

@@ -16,15 +16,13 @@ Updated: 2026-03-27
 
 ## Medium — Memory Management
 
-### Possible malloc/free vs new/delete mismatch
+### ~~Possible malloc/free vs new/delete mismatch~~ FALSE ALARM
 
-- **File:** `mail_mod.cpp:2524-2525`
-- **Issue:** `free(list)` called on a `UTF8 *` — verify the allocation matches (should be `MEMALLOC`/`MEMFREE` or `malloc`/`free`, not `new`/`delete`).
+- `list` is allocated via `strdup()` (which uses `malloc`) at all call sites. `free()` is correct.
 
-### Partial interface cleanup on `FinalConstruct()` failure
+### ~~Partial interface cleanup on `FinalConstruct()` failure~~ FALSE ALARM
 
-- **File:** `mail_mod.cpp:5573-5581`
-- **Issue:** If `FinalConstruct()` fails partway, `Release()` is called on the object. The destructor checks each interface for null individually, which is correct — but the FinalConstruct error path doesn't release interfaces already acquired before the failing call.
+- Constructor initializes all interface pointers to `nullptr`. On `FinalConstruct` failure, the caller calls `Release()` which invokes the destructor. The destructor null-checks each pointer individually before releasing — partially-acquired interfaces are cleaned up correctly.
 
 ## Low — Code Quality
 

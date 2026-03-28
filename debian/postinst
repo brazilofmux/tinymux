@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+
+# Restrict permissions on configuration files that may contain
+# sensitive settings (port numbers, passwords, SSL paths).
+#
+if [ "$1" = "configure" ]; then
+    for conf in netmux.conf mux.config muxssl.conf alias.conf compat.conf; do
+        f="/usr/share/tinymux/game/$conf"
+        if [ -f "$f" ]; then
+            chmod 640 "$f"
+        fi
+    done
+fi
+
+#DEBHELPER#
+
+exit 0
