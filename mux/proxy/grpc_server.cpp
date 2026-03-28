@@ -926,8 +926,18 @@ bool GrpcServer::start(const std::string& listenAddr, std::string& errorMsg) {
         LOG_INFO("gRPC using TLS: cert=%s key=%s",
                  config_.grpcTlsCert.c_str(), config_.grpcTlsKey.c_str());
     } else {
+        // Without TLS, only allow binding to loopback addresses
+        bool isLoopback = (listenAddr.find("127.0.0.1") != std::string::npos
+                        || listenAddr.find("[::1]") != std::string::npos
+                        || listenAddr.find("localhost") != std::string::npos);
+        if (!isLoopback) {
+            errorMsg = "gRPC without TLS must bind to loopback "
+                       "(127.0.0.1 or [::1]), got: " + listenAddr;
+            return false;
+        }
         builder.AddListeningPort(listenAddr, grpc::InsecureServerCredentials());
-        LOG_WARN("gRPC using insecure credentials — bind to loopback only");
+        LOG_INFO("gRPC using insecure credentials on loopback: %s",
+                 listenAddr.c_str());
     }
 
     builder.RegisterService(service.get());

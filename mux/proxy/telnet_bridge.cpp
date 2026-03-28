@@ -1,9 +1,13 @@
 #include "telnet_bridge.h"
+
+// Override color_ops.h fallback LBUF_SIZE (8000) to match the engine's
+// alloc.h value (32768).  The proxy doesn't include alloc.h directly,
+// but color_ops render functions internally cap output at LBUF_SIZE.
+#define LBUF_SIZE 32768
+
 #include <color_ops.h>
 #include <cstring>
-
-// Maximum buffer size for color_ops output (matches LBUF_SIZE).
-static constexpr size_t MAX_BUF = LBUF_SIZE;
+#include <vector>
 
 // Charset lookup tables from libmux (declared in stringutil.h, but that
 // header pulls in too much of the engine).  These are LIBMUX_API arrays
@@ -36,11 +40,12 @@ static std::string charsetEncodeFromUtf8(const std::string& utf8Str,
     // For ASCII output, use co_render_ascii() which strips to 7-bit
     // with perceptual approximation.
     if (encoding == ganl::EncodingType::Ascii) {
-        unsigned char buf[MAX_BUF];
-        size_t n = co_render_ascii(buf,
+        size_t bufCap = std::max(utf8Str.size(), static_cast<size_t>(LBUF_SIZE));
+        std::vector<unsigned char> buf(bufCap);
+        size_t n = co_render_ascii(buf.data(),
             reinterpret_cast<const unsigned char*>(utf8Str.data()),
             utf8Str.size());
-        return std::string(reinterpret_cast<char*>(buf), n);
+        return std::string(reinterpret_cast<char*>(buf.data()), n);
     }
 
     // For Latin1/CP437/CP1252: walk UTF-8 code points.
@@ -90,13 +95,16 @@ std::string TelnetBridge::ingestGameOutput(
     }
 
     // Step 2: Parse ANSI SGR escape sequences into PUA color codes.
-    unsigned char puaBuf[MAX_BUF];
+    // PUA encoding can expand slightly (3-byte PUA per SGR), but the
+    // visible text is roughly 1:1.  Use generous heap buffer.
+    size_t bufCap = std::max(utf8Str.size() * 2, static_cast<size_t>(LBUF_SIZE));
+    std::vector<unsigned char> puaBuf(bufCap);
     size_t puaLen = co_parse_ansi(
         reinterpret_cast<const unsigned char*>(utf8Str.data()),
         utf8Str.size(),
-        puaBuf, MAX_BUF);
+        puaBuf.data(), bufCap);
 
-    return std::string(reinterpret_cast<char*>(puaBuf), puaLen);
+    return std::string(reinterpret_cast<char*>(puaBuf.data()), puaLen);
 }
 
 std::string TelnetBridge::renderForClient(
@@ -111,32 +119,34 @@ std::string TelnetBridge::renderForClient(
     size_t srcLen = puaUtf8.size();
 
     // Step 1: Render PUA color codes to ANSI SGR at the client's depth.
-    unsigned char ansiBuf[MAX_BUF];
+    // Truecolor SGR can expand ~4x; use heap buffer.
+    size_t bufCap = std::max(srcLen * 4 + 256, static_cast<size_t>(LBUF_SIZE));
+    std::vector<unsigned char> ansiBuf(bufCap);
     size_t ansiLen = 0;
 
     switch (colorDepth) {
     case ColorDepth::TrueColor:
-        ansiLen = co_render_truecolor(ansiBuf, src, srcLen, 0);
+        ansiLen = co_render_truecolor(ansiBuf.data(), src, srcLen, 0);
         break;
     case ColorDepth::Ansi256:
-        ansiLen = co_render_ansi256(ansiBuf, src, srcLen, 0);
+        ansiLen = co_render_ansi256(ansiBuf.data(), src, srcLen, 0);
         break;
     case ColorDepth::Ansi16:
-        ansiLen = co_render_ansi16(ansiBuf, src, srcLen, 0);
+        ansiLen = co_render_ansi16(ansiBuf.data(), src, srcLen, 0);
         break;
     case ColorDepth::None:
-        ansiLen = co_strip_color(ansiBuf, src, srcLen);
+        ansiLen = co_strip_color(ansiBuf.data(), src, srcLen);
         break;
     }
 
     // Step 2: Charset-encode if client is not UTF-8.
     if (clientEncoding != ganl::EncodingType::Utf8 &&
         clientEncoding != ganl::EncodingType::Ascii) {
-        std::string rendered(reinterpret_cast<char*>(ansiBuf), ansiLen);
+        std::string rendered(reinterpret_cast<char*>(ansiBuf.data()), ansiLen);
         return charsetEncodeFromUtf8(rendered, clientEncoding);
     }
 
-    return std::string(reinterpret_cast<char*>(ansiBuf), ansiLen);
+    return std::string(reinterpret_cast<char*>(ansiBuf.data()), ansiLen);
 }
 
 std::string TelnetBridge::convertInput(

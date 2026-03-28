@@ -1905,9 +1905,22 @@ void SessionManager::runTimers() {
     // Prune stale IP tracker entries every 5 minutes
     if (now - lastIpPrune_ >= 300) {
         lastIpPrune_ = now;
+        time_t rateWindow = now - 3600;  // 1-hour window for account creation
         for (auto it = ipTrackers_.begin(); it != ipTrackers_.end(); ) {
-            if (it->second.connectionCount <= 0 &&
-                it->second.lockoutUntil <= now) {
+            auto& tracker = it->second;
+
+            // Prune expired account-creation timestamps first
+            tracker.accountCreateTimes.erase(
+                std::remove_if(tracker.accountCreateTimes.begin(),
+                               tracker.accountCreateTimes.end(),
+                               [rateWindow](time_t t) { return t < rateWindow; }),
+                tracker.accountCreateTimes.end());
+
+            // Only erase the entry if truly idle: no connections, no lockout,
+            // and no recent account creations within the rate window.
+            if (tracker.connectionCount <= 0 &&
+                tracker.lockoutUntil <= now &&
+                tracker.accountCreateTimes.empty()) {
                 it = ipTrackers_.erase(it);
             } else {
                 ++it;
