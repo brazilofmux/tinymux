@@ -66,33 +66,42 @@ always compiled in but controlled by opt-in configuration:
   overflow.
 - **Files changed**: websocket.cpp
 
-### H-4. Session tokens never expire or rotate
-- **Status**: Open.
-- **Recommendation**: Add token rotation, TTL-based expiry, and consider IP
-  binding for sensitive operations.
+### H-4. Session tokens never expire or rotate -- FIXED
+- **Resolution**: Added `session_token_ttl` config (default 24h). Tokens now
+  rotate on re-authentication. `dbPersistId` introduced to maintain scroll-back
+  foreign keys across rotations.
+- **Files changed**: config.h, config.cpp, session_manager.h, session_manager.cpp
 
-### H-5. No TLS on gRPC native listener
-- **Status**: Open.
-- **Recommendation**: Add TLS support, or document that gRPC native must only
-  bind to loopback/VPN.
+### H-5. No TLS on gRPC native listener -- FIXED
+- **Resolution**: Added `grpc_tls_cert` and `grpc_tls_key` configuration.
+  `GrpcServer` now initializes `SslServerCredentials` if provided.
+- **Files changed**: config.h, config.cpp, grpc_server.cpp, hydra.conf.example
 
 ### H-6. Non-constant-time password comparison -- FIXED
 - **Resolution**: Replaced `std::string::operator!=` with `CRYPTO_memcmp` from
   OpenSSL in `AccountManager::authenticate()`.
 - **Files changed**: account_manager.cpp
 
+### H-8. LBUF_SIZE discrepancy (8000 vs 32768)
+- **Status**: Open.
+- **Problem**: TinyMUX server has shifted to `LBUF_SIZE=32768` (`alloc.h`), but
+  `color_ops.h` still defaults to 8000. `TelnetBridge` in `telnet_bridge.cpp`
+  uses the 8000 limit for its fixed stack buffers. This leads to truncation or
+  potential overflows when processing large outputs from the game backend.
+- **Recommendation**: Update `color_ops.h` and use heap-allocated buffers in
+  `TelnetBridge` (similar to `OutputItem::render`).
+
 ### H-7. Weak key derivation on POSIX -- FIXED
 - **Resolution**: Replaced `crypt_r`-based key derivation with PBKDF2-HMAC-SHA256
   uniformly on all platforms (matching the existing Windows path).
 - **Files changed**: account_manager.cpp
-- **Note**: Existing databases with keys derived via the old `crypt_r` method
-  will need password resets to re-derive scroll-back keys.
 
 ## Medium
 
-### M-1. `getpass()` is deprecated
-- **Status**: Open.
-- **Recommendation**: Use custom terminal echo-disable approach.
+### M-1. `getpass()` is deprecated -- FIXED
+- **Resolution**: Implemented `readPassword()` in `hydra_main.cpp` using
+  `tcsetattr` to disable echo on STDIN.
+- **Files changed**: hydra_main.cpp
 
 ### M-2. Idle/detached session timeouts not enforced -- FIXED
 - **Resolution**: Added session reaping in `runTimers()` using
@@ -100,35 +109,49 @@ always compiled in but controlled by opt-in configuration:
   flushed, their links closed, and persisted state deleted.
 - **Files changed**: session_manager.cpp
 
-### M-3. `findByPersistId` is O(N) linear scan
-- **Status**: Open.
-- **Recommendation**: Add `std::unordered_map<std::string, HydraSessionId>`.
+### M-3. `findByPersistId` is O(N) linear scan -- FIXED
+- **Resolution**: Added `persistIdIndex_` (`unordered_map<string, HydraSessionId>`)
+  for O(1) session lookups.
+- **Files changed**: session_manager.h, session_manager.cpp
 
-### M-4. No account creation rate limiting
-- **Status**: Open.
-- **Recommendation**: Rate-limit per IP.
+### M-4. No account creation rate limiting -- FIXED
+- **Resolution**: Added IP-based rate limiting (max 2 per hour) for account
+  creation via both telnet and gRPC.
+- **Files changed**: session_manager.h, session_manager.cpp, grpc_server.cpp
 
 ### M-5. `ipTrackers_` map grows without bound -- FIXED
 - **Resolution**: Added periodic pruning (every 5 minutes) of `ipTrackers_`
   entries with zero connections and no active lockout.
 - **Files changed**: session_manager.h, session_manager.cpp
 
-### M-6. `strerror_r` assumes GNU semantics
-- **Status**: Open.
-- **Recommendation**: Guard with `#ifdef _GNU_SOURCE` or use `strerror_l()`.
+### M-6. `strerror_r` assumes GNU semantics -- FIXED
+- **Resolution**: Added `#if defined(_GNU_SOURCE)` check to handle both GNU and
+  XSI variants of `strerror_r`.
+- **Files changed**: session_manager.cpp
 
-### M-7. GMCP cache grows without bound
-- **Status**: Open.
-- **Recommendation**: Limit cached GMCP packages.
+### M-7. GMCP cache grows without bound -- FIXED
+- **Resolution**: Added `MAX_GMCP_CACHE_ENTRIES` (64) limit to `gmcpCache`.
+- **Files changed**: session_manager.h, session_manager.cpp
 
-### M-8. Stack buffer overflow risk in telnet_bridge
-- **Status**: Open.
-- **Recommendation**: Validate buffer sizes or use heap allocation.
+### M-8. Stack buffer overflow risk in telnet_bridge -- PARTIALLY FIXED
+- **Resolution**: `HydraSession::OutputItem::render` moved from fixed stack
+  buffer to heap-allocated `std::vector`.
+- **Note**: `TelnetBridge` methods in `telnet_bridge.cpp` still use fixed stack
+  buffers (`MAX_BUF`) which are currently limited to 8000 due to the
+  discrepancy in H-8.
 
 ### M-9. `std::stoul` without exception handling -- FIXED
 - **Resolution**: Wrapped `std::stoul` for Content-Length parsing in try/catch.
   Returns incomplete-request on parse failure.
 - **Files changed**: grpc_web.cpp
+
+### M-10. IP-based rate limit bypass via pruning
+- **Status**: Open.
+- **Problem**: The 5-minute global pruning of `ipTrackers_` erases entries with
+  zero connections and no lockout, which effectively resets the 1-hour account
+  creation rate limit for disconnected IPs.
+- **Recommendation**: Pruning should preserve entries if `accountCreateTimes` is
+  not empty (after pruning old timestamps).
 
 ## Low
 
@@ -140,18 +163,27 @@ always compiled in but controlled by opt-in configuration:
 - **Status**: Open.
 - **Recommendation**: Consolidate into shared utility.
 
-### L-3. No log rotation
-- **Status**: Open.
-- **Recommendation**: Integrate with logrotate via SIGHUP or implement internal
-  rotation.
+### L-3. No log rotation -- FIXED
+- **Resolution**: Added SIGHUP signal handler to call `logReopen()`, enabling
+  integration with standard `logrotate`.
+- **Files changed**: hydra_log.h, hydra_log.cpp, hydra_main.cpp
 
-### L-4. Dead stub files
-- **Status**: Open.
-- **Recommendation**: Remove or complete the planned refactor.
+### L-4. Dead stub files -- FIXED
+- **Resolution**: Removed `front_door.cpp`, `front_door.h`, `back_door.cpp`, and
+  `back_door.h` as they were superseded by GANL-integrated logic.
+- **Files changed**: Makefile.am, front_door.*, back_door.*
 
-### L-5. Hardcoded 100ms poll interval
+### L-5. Hardcoded 100ms poll interval -- FIXED
+- **Resolution**: Implemented adaptive polling in `hydra_main.cpp` (10ms when
+  active, ramping to 100ms when idle).
+- **Files changed**: hydra_main.cpp
+
+### L-6. gRPC insecure listener not restricted
 - **Status**: Open.
-- **Recommendation**: Make configurable or adaptive.
+- **Problem**: The gRPC native listener warns about insecure credentials but
+  does not enforce binding to loopback or VPN.
+- **Recommendation**: Add configuration or enforcement to prevent insecure
+  exposure on public interfaces.
 
 ## Bonus: Bug fix
 
@@ -167,10 +199,34 @@ always compiled in but controlled by opt-in configuration:
   map when TLS state is applied.
 - **Files changed**: hydra_main.cpp
 
-## Production Deployment Gaps
+## Production Deployment
 
-- No systemd service file for process supervision
-- No health check endpoint for AWS ALB/NLB integration
-- No metrics/monitoring (Prometheus, CloudWatch)
-- No graceful connection drain on SIGTERM
-- Missing build hardening flags (`-fstack-protector-strong`, `-D_FORTIFY_SOURCE=2`)
+### P-1. Systemd service file -- FIXED
+- **Resolution**: Added `hydra.service` with security hardening
+  (NoNewPrivileges, ProtectSystem=strict, PrivateTmp), restart-on-failure,
+  environment file for `HYDRA_MASTER_KEY`, and SIGHUP reload support.
+- **Files added**: hydra.service
+
+### P-2. Health check endpoint -- FIXED
+- **Resolution**: grpc-web listeners serve `GET /healthz` returning HTTP 200
+  `ok`. Telnet listeners support TCP health checks (accept = healthy).
+  Documented in hydra.conf.example for ALB/NLB configuration.
+- **Files changed**: session_manager.cpp, hydra.conf.example
+
+### P-3. Graceful connection drain on SIGTERM -- FIXED
+- **Resolution**: On SIGTERM, sessions are notified and flushed, gRPC server
+  stops accepting new RPCs, then a 3-second drain loop flushes pending writes
+  while rejecting new connections. `TimeoutStopSec=10` in systemd unit.
+- **Files changed**: hydra_main.cpp, hydra.service
+
+### P-4. Build hardening flags -- FIXED
+- **Resolution**: Added `-fstack-protector-strong`, `-D_FORTIFY_SOURCE=2`,
+  `-Wformat -Wformat-security` to compiler flags. Full RELRO
+  (`-Wl,-z,relro,-z,now`) added to linker flags. Existing `-pie` retained.
+- **Files changed**: Makefile.am
+
+### P-5. Metrics/monitoring
+- **Status**: Open.
+- **Recommendation**: Add Prometheus endpoint or structured JSON logging for
+  CloudWatch. Useful metrics: active sessions, front-door count, back-door
+  link count, scrollback memory usage, auth failures per minute.
