@@ -228,3 +228,45 @@ always compiled in but controlled by opt-in configuration:
 - **Recommendation**: Add Prometheus endpoint or structured JSON logging for
   CloudWatch. Useful metrics: active sessions, front-door count, back-door
   link count, scrollback memory usage, auth failures per minute.
+
+## Deployment issues (discovered 2026-03-28)
+
+### D-1. GANL postWrite discards data — writes never reach the client
+- **Status**: Open (workaround in place).
+- **Severity**: Critical — Hydra is non-functional without the workaround.
+- **Problem**: `EpollNetworkEngine::postWrite()` accepts data and length
+  parameters but never buffers or sends the data.  It only registers
+  EPOLLOUT interest.  GANL then generates `IoEventType::Write` events,
+  but Hydra's event loop has no Write handler — the case falls through
+  to `default: break;`.  Result: all writes (banners, healthz responses,
+  HTTP responses, game output) are silently dropped.
+- **Workaround**: `safeWrite()` in session_manager.cpp bypasses
+  `postWrite()` and calls `::send()` directly.  This works for loopback
+  but is not a proper long-term solution.
+- **Proper fix**: Either (a) make GANL's `postWrite` buffer data
+  internally and flush on EPOLLOUT, or (b) add per-connection write
+  buffers in Hydra and handle `IoEventType::Write` in the event loop
+  to drain them.
+- **Files affected**: ganl/src/epoll_network_engine.cpp, session_manager.cpp,
+  hydra_main.cpp
+
+### D-2. Proto field name drift: `system_notice` vs `notice`
+- **Status**: Fixed (2026-03-28).
+- **Problem**: `session_manager.cpp` called `mutable_system_notice()` but
+  `hydra.proto` defines the field as `notice` (line 237:
+  `SystemNotice notice = 3`).  Compile error when `GRPC_ENABLED` is set.
+- **Resolution**: Changed `mutable_system_notice()` to `mutable_notice()`
+  in session_manager.cpp (2 occurrences, lines 644 and 661).
+- **Note**: Cross-check all client code under `./client/` against
+  `hydra.proto` for similar drift.
+- **Files changed**: session_manager.cpp
+
+### D-3. NGINX stream listener conflicts with Hydra telnet port
+- **Status**: Fixed (configuration change).
+- **Problem**: DEPLOY.md configures both NGINX stream and Hydra to use
+  port 4201.  NGINX binds `0.0.0.0:4201` first, preventing Hydra from
+  binding `127.0.0.1:4201`.  Only the grpc-web listener starts.
+- **Resolution**: Hydra telnet listener moved to port 4202 in
+  hydra.conf.  NGINX stream upstream updated to proxy to 4202.
+  DEPLOY.md should be updated to reflect this.
+- **Files affected**: hydra.conf, DEPLOY.md, hydra-stream.nginx.conf

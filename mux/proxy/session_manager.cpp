@@ -641,7 +641,7 @@ void SessionManager::handleWsGameSessionData(FrontDoorState& fd,
                 cmsg.preferences().session_id().empty()) {
                 // Send error and close
                 hydra::ServerMessage errMsg;
-                auto* notice = errMsg.mutable_system_notice();
+                auto* notice = errMsg.mutable_notice();
                 notice->set_text("First message must be SetPreferences with session_id");
                 notice->set_severity(hydra::SEVERITY_ERROR);
                 std::string frame = wsEncodeFrame(errMsg.SerializeAsString(),
@@ -658,7 +658,7 @@ void SessionManager::handleWsGameSessionData(FrontDoorState& fd,
             HydraSession* session = findByPersistId(sid);
             if (!session) {
                 hydra::ServerMessage errMsg;
-                auto* notice = errMsg.mutable_system_notice();
+                auto* notice = errMsg.mutable_notice();
                 notice->set_text("Invalid session_id");
                 notice->set_severity(hydra::SEVERITY_ERROR);
                 std::string frame = wsEncodeFrame(errMsg.SerializeAsString(),
