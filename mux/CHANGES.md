@@ -1,6 +1,6 @@
 ---
 title: TinyMUX 2.13 CHANGES
-date: March 2026
+date: March 28, 2026
 author:
  - Brazil
 ---
@@ -148,6 +148,13 @@ author:
  - Fix trim_space_sep_LEN declaration/definition signature mismatch
    (const SEP& vs SEP*) that prevented cross-file linking.
  - Fix null handle crash in ModuleUnload when dlopen handle is NULL.
+ - Fix NFC over-composition and DUCET contraction false-matches caused
+   by pairs DFA generator not resolving undefined transitions before
+   optimization. Regenerated NFC compose tables (129->1010 states)
+   and DUCET contraction tables (27->294 states).
+ - Fix collation NFC tiebreaker: normalize to NFC before binary
+   comparison so canonically equivalent strings compare equal per UCA.
+ - Restore timezone prefetch probes inadvertently disabled.
 
 # Performance Enhancements:
 
@@ -155,6 +162,16 @@ author:
    queries.
  - Attribute cache preloading: built-in attributes (attrnum < 256) are
    bulk-loaded from SQLite on player connect and object move.
+ - Disabled WAL auto-checkpoint for write-through operations;
+   eliminates per-transaction fsync from the hot path. WAL is
+   checkpointed at @dump and shutdown.
+ - Combined CCC+NFCQC DFA: merged two separate DFA lookups into one,
+   eliminating a full DFA traversal per non-ASCII codepoint in NFC
+   quick-check and normalization.
+ - Collation performance: Latin CE cache for U+0000..U+017F,
+   ASCII byte-skip in FastLatinCmp, CJK inline implicit weights,
+   bounded CE collection with overflow fallback, fast case-insensitive
+   Latin sort keys, and buffered level comparisons.
  - Replaced CHashTable with std::unordered_map throughout (vattr
    registry, function table, etc.).
  - Replaced qsort() with std::sort() in sort and set functions.
@@ -288,3 +305,5 @@ author:
    `MUX_RELEASE_DATE` from `_build.h`.
  - Documented mail helper attributes and admin mail attributes in
    help and wizhelp.
+ - Updated table generator tools (classify, integers, strings, pairs)
+   to support -o/-i flags for output file control.
