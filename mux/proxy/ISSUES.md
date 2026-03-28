@@ -82,14 +82,12 @@ always compiled in but controlled by opt-in configuration:
   OpenSSL in `AccountManager::authenticate()`.
 - **Files changed**: account_manager.cpp
 
-### H-8. LBUF_SIZE discrepancy (8000 vs 32768)
-- **Status**: Open.
-- **Problem**: TinyMUX server has shifted to `LBUF_SIZE=32768` (`alloc.h`), but
-  `color_ops.h` still defaults to 8000. `TelnetBridge` in `telnet_bridge.cpp`
-  uses the 8000 limit for its fixed stack buffers. This leads to truncation or
-  potential overflows when processing large outputs from the game backend.
-- **Recommendation**: Update `color_ops.h` and use heap-allocated buffers in
-  `TelnetBridge` (similar to `OutputItem::render`).
+### H-8. LBUF_SIZE discrepancy (8000 vs 32768) -- FIXED
+- **Resolution**: `telnet_bridge.cpp` now defines `LBUF_SIZE=32768` before
+  including `color_ops.h` (matching `alloc.h`). All three TelnetBridge methods
+  (`ingestGameOutput`, `renderForClient`, `charsetEncodeFromUtf8`) converted
+  from fixed stack buffers to heap-allocated `std::vector` sized to input.
+- **Files changed**: telnet_bridge.cpp
 
 ### H-7. Weak key derivation on POSIX -- FIXED
 - **Resolution**: Replaced `crypt_r`-based key derivation with PBKDF2-HMAC-SHA256
@@ -133,25 +131,22 @@ always compiled in but controlled by opt-in configuration:
 - **Resolution**: Added `MAX_GMCP_CACHE_ENTRIES` (64) limit to `gmcpCache`.
 - **Files changed**: session_manager.h, session_manager.cpp
 
-### M-8. Stack buffer overflow risk in telnet_bridge -- PARTIALLY FIXED
+### M-8. Stack buffer overflow risk in telnet_bridge -- FIXED
 - **Resolution**: `HydraSession::OutputItem::render` moved from fixed stack
-  buffer to heap-allocated `std::vector`.
-- **Note**: `TelnetBridge` methods in `telnet_bridge.cpp` still use fixed stack
-  buffers (`MAX_BUF`) which are currently limited to 8000 due to the
-  discrepancy in H-8.
+  buffer to heap-allocated `std::vector`. TelnetBridge methods also converted
+  to heap buffers (see H-8).
+- **Files changed**: session_manager.cpp, telnet_bridge.cpp
 
 ### M-9. `std::stoul` without exception handling -- FIXED
 - **Resolution**: Wrapped `std::stoul` for Content-Length parsing in try/catch.
   Returns incomplete-request on parse failure.
 - **Files changed**: grpc_web.cpp
 
-### M-10. IP-based rate limit bypass via pruning
-- **Status**: Open.
-- **Problem**: The 5-minute global pruning of `ipTrackers_` erases entries with
-  zero connections and no lockout, which effectively resets the 1-hour account
-  creation rate limit for disconnected IPs.
-- **Recommendation**: Pruning should preserve entries if `accountCreateTimes` is
-  not empty (after pruning old timestamps).
+### M-10. IP-based rate limit bypass via pruning -- FIXED
+- **Resolution**: Pruning now removes expired `accountCreateTimes` entries
+  first, then only erases the IP tracker if `accountCreateTimes` is also
+  empty. Rate-limit window survives disconnection and pruning cycles.
+- **Files changed**: session_manager.cpp
 
 ## Low
 
@@ -178,12 +173,10 @@ always compiled in but controlled by opt-in configuration:
   active, ramping to 100ms when idle).
 - **Files changed**: hydra_main.cpp
 
-### L-6. gRPC insecure listener not restricted
-- **Status**: Open.
-- **Problem**: The gRPC native listener warns about insecure credentials but
-  does not enforce binding to loopback or VPN.
-- **Recommendation**: Add configuration or enforcement to prevent insecure
-  exposure on public interfaces.
+### L-6. gRPC insecure listener not restricted -- FIXED
+- **Resolution**: `GrpcServer::start()` rejects non-loopback bind addresses
+  when TLS is not configured (must be `127.0.0.1`, `[::1]`, or `localhost`).
+- **Files changed**: grpc_server.cpp
 
 ## Bonus: Bug fix
 
