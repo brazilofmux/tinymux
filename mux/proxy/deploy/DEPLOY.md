@@ -140,25 +140,26 @@ Create the directory:
 sudo mkdir -p /etc/nginx/stream.d
 ```
 
-### Install the config files
+### Phase 1: HTTP-only bootstrap (for certificate provisioning)
+
+The TLS configs reference Let's Encrypt cert files that don't exist yet.
+Start with HTTP only so certbot can provision the certificate.
 
 ```bash
-# Stream config (telnet TLS)
-sudo cp mux/proxy/deploy/hydra-stream.nginx.conf /etc/nginx/stream.d/hydra.conf
-
-# HTTP config (grpc-web, websocket, health check)
+# Install the HTTP config (no TLS blocks yet)
 sudo cp mux/proxy/deploy/hydra-http.nginx.conf /etc/nginx/sites-available/hydra
 sudo ln -s /etc/nginx/sites-available/hydra /etc/nginx/sites-enabled/
 ```
 
-### Edit the configs
-
-Replace `mud.example.com` with your actual domain in both files:
+Replace the domain name in the config, then strip the HTTPS server block
+(which references cert files that don't exist yet):
 
 ```bash
 sudo sed -i 's/mud\.example\.com/your.actual.domain/g' \
-    /etc/nginx/stream.d/hydra.conf \
     /etc/nginx/sites-available/hydra
+
+# Remove everything after the port-80 block (the HTTPS block needs certs)
+sudo sed -i '/^# HTTPS/,$d' /etc/nginx/sites-available/hydra
 ```
 
 Also update `cors_origin` in `/opt/hydra/hydra.conf`:
@@ -167,16 +168,41 @@ Also update `cors_origin` in `/opt/hydra/hydra.conf`:
 sudo sed -i 's/mud\.example\.com/your.actual.domain/g' /opt/hydra/hydra.conf
 ```
 
+Start NGINX with just the HTTP redirect/ACME server:
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
 ## 8. Get a Let's Encrypt certificate
 
 ```bash
-sudo apt install certbot python3-certbot-nginx
+sudo apt install certbot
+sudo mkdir -p /var/www/certbot
 
-# Get the certificate (NGINX plugin handles the ACME challenge)
-sudo certbot --nginx -d your.actual.domain
+# Provision the certificate using webroot (HTTP-only — no TLS needed yet)
+sudo certbot certonly --webroot -w /var/www/certbot -d your.actual.domain
+```
 
-# Certbot will modify the NGINX http config to add ssl directives.
-# The stream config references the same cert paths manually.
+This creates the cert files in `/etc/letsencrypt/live/your.actual.domain/`.
+
+### Phase 2: Enable TLS configs
+
+Now that the cert exists, install the full configs:
+
+```bash
+# Restore the full HTTP config (uncomment the HTTPS block)
+sudo cp mux/proxy/deploy/hydra-http.nginx.conf /etc/nginx/sites-available/hydra
+sudo sed -i 's/mud\.example\.com/your.actual.domain/g' \
+    /etc/nginx/sites-available/hydra
+
+# Stream config (telnet TLS)
+sudo cp mux/proxy/deploy/hydra-stream.nginx.conf /etc/nginx/stream.d/hydra.conf
+sudo sed -i 's/mud\.example\.com/your.actual.domain/g' \
+    /etc/nginx/stream.d/hydra.conf
+
+# Verify and reload
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
 Verify auto-renewal:
