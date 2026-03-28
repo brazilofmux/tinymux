@@ -5,6 +5,7 @@
 #include <color_ops.h>
 #include <nlohmann/json.hpp>
 #ifdef GRPC_ENABLED
+#include "base64.h"
 #include "grpc_web.h"
 #include "hydra.pb.h"
 #endif

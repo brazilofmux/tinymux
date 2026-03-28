@@ -154,9 +154,14 @@ always compiled in but controlled by opt-in configuration:
 - **Resolution**: Added `{false}` default initializers.
 - **Files changed**: config.h
 
-### L-2. Duplicate base64 implementations
-- **Status**: Open.
-- **Recommendation**: Consolidate into shared utility.
+### L-2. Duplicate base64 implementations -- FIXED
+- **Resolution**: Consolidated into `base64.h`/`base64.cpp` with three
+  overloads: `base64Encode(uint8_t*, size_t)`, `base64Encode(string)`,
+  and `base64Decode(string)`. Removed duplicate implementations from
+  `websocket.cpp` and `grpc_web.cpp`.
+- **Files added**: base64.h, base64.cpp
+- **Files changed**: websocket.cpp, grpc_web.cpp, grpc_web.h,
+  session_manager.cpp, Makefile.am
 
 ### L-3. No log rotation -- FIXED
 - **Resolution**: Added SIGHUP signal handler to call `logReopen()`, enabling

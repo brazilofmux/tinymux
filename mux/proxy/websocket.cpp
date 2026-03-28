@@ -1,43 +1,11 @@
 #include "websocket.h"
+#include "base64.h"
 #include <openssl/sha.h>
 #include <cstring>
 #include <algorithm>
 
 // RFC 6455 GUID
 static const char WS_GUID[] = "258EAFA5-E914-47DA-95CA-5AB5AA98CA57";
-
-// ---- Base64 (minimal, for handshake only) ----
-
-static const char b64[] =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-static std::string base64Encode(const uint8_t* in, size_t len) {
-    std::string out;
-    out.reserve(((len + 2) / 3) * 4);
-    size_t i = 0;
-    while (i + 2 < len) {
-        uint32_t v = (in[i] << 16) | (in[i+1] << 8) | in[i+2];
-        out.push_back(b64[(v >> 18) & 0x3F]);
-        out.push_back(b64[(v >> 12) & 0x3F]);
-        out.push_back(b64[(v >>  6) & 0x3F]);
-        out.push_back(b64[(v      ) & 0x3F]);
-        i += 3;
-    }
-    if (i + 1 == len) {
-        uint32_t v = in[i] << 16;
-        out.push_back(b64[(v >> 18) & 0x3F]);
-        out.push_back(b64[(v >> 12) & 0x3F]);
-        out.push_back('=');
-        out.push_back('=');
-    } else if (i + 2 == len) {
-        uint32_t v = (in[i] << 16) | (in[i+1] << 8);
-        out.push_back(b64[(v >> 18) & 0x3F]);
-        out.push_back(b64[(v >> 12) & 0x3F]);
-        out.push_back(b64[(v >>  6) & 0x3F]);
-        out.push_back('=');
-    }
-    return out;
-}
 
 // ---- HTTP header helpers ----
 

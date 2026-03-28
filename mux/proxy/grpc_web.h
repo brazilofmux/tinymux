@@ -29,10 +29,6 @@ std::string grpcWebEncodeUnaryResponse(const std::string& proto,
                                         int grpcStatus,
                                         const std::string& message = "");
 
-// Base64 encode/decode for grpc-web-text.
-std::string base64Encode(const std::string& data);
-std::string base64Decode(const std::string& data);
-
 // ---- HTTP request parsing ----
 
 struct HttpRequest {

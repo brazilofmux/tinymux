@@ -12,6 +12,7 @@ hydra_SOURCES = \
     hydra_main.cpp \
     config.cpp \
     hydra_log.cpp \
+    base64.cpp \
     session_manager.cpp \
     account_manager.cpp \
     telnet_bridge.cpp \
