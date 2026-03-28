@@ -990,8 +990,11 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                 existing->username = fd.pendingUsername;
 
                 // Load persisted scroll-back now that we have the key
+                // Use dbPersistId — persistId may have been rotated by gRPC re-auth
+                const std::string& loadId = existing->dbPersistId.empty()
+                    ? existing->persistId : existing->dbPersistId;
                 existing->scrollback.loadFromDb(
-                    accounts_.db(), existing->persistId,
+                    accounts_.db(), loadId,
                     existing->accountId, sbKey);
             }
 
