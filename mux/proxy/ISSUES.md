@@ -231,14 +231,17 @@ always compiled in but controlled by opt-in configuration:
 
 ## Deployment issues (discovered 2026-03-28)
 
-### D-1. GANL postWrite discards data — writes never reach the client -- FIXED
-- **Resolution**: `safeWrite()` now does a non-blocking `::send()` immediately.
-  If the socket returns EAGAIN or a partial write, the remainder is appended to
-  a per-connection write buffer (`writeBuffers_` in SessionManager) and EPOLLOUT
-  is armed via `postWrite()`.  A new `IoEventType::Write` handler in the event
-  loop calls `drainWriteBuffer()` to send buffered data and re-arm if needed.
-  No polling loops or sleeps — purely event-driven.  Write buffers are cleaned
-  up on Close/Error events.
+### D-1. Write-path fix bypasses GANL transport layer
+- **Status**: Reopened (2026-03-28).
+- **Problem**: The new `safeWrite()`/`drainWriteBuffer()` path writes with raw
+  `::send()` on `ganl::ConnectionHandle`. That bypasses GANL's transport layer,
+  so TLS front-doors (`telnet+tls`, `websocket+tls`, `grpc-web+tls`) can send
+  plaintext bytes directly on the socket instead of encrypted transport
+  records. This is a likely cause of "connects, then falls apart" behavior in
+  real deployments.
+- **Recommendation**: Keep the event-driven buffering idea, but move the actual
+  writes back behind GANL/transport-aware APIs so TLS and future transports
+  remain correct.
 - **Files changed**: session_manager.h, session_manager.cpp, hydra_main.cpp
 
 ### D-2. Proto field name drift: `system_notice` vs `notice`
@@ -261,3 +264,20 @@ always compiled in but controlled by opt-in configuration:
   hydra.conf.  NGINX stream upstream updated to proxy to 4202.
   DEPLOY.md should be updated to reflect this.
 - **Files affected**: hydra.conf, DEPLOY.md, hydra-stream.nginx.conf
+
+### D-4. `GameOutput.text` receives malformed UTF-8
+- **Status**: Open.
+- **Problem**: Hydra logs protobuf serialization errors for
+  `hydra.GameOutput.text` containing invalid UTF-8. The field is correctly a
+  `string`; PUA code points are legal Unicode scalar values and are not the
+  issue by themselves. The likely fault is earlier in the pipeline:
+  `TelnetBridge::ingestGameOutput()` passes bytes through unchanged whenever
+  the game encoding is treated as UTF-8/ASCII, without validating UTF-8 or
+  carrying incomplete multibyte sequences across socket reads. That can inject
+  malformed UTF-8 into gRPC/grpc-web/WebSocket protobuf messages.
+- **Recommendation**: Add temporary diagnostics before `set_text()` to log the
+  first invalid byte offset and a short hex dump. Then either validate/sanitize
+  claimed UTF-8 input or add a carry-over buffer for split multibyte sequences
+  on back-door reads.
+- **Files implicated**: telnet_bridge.cpp, session_manager.cpp, grpc_server.cpp,
+  hydra.proto
