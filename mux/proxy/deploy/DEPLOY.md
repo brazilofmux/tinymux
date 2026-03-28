@@ -38,7 +38,7 @@ On the build machine (can be the same server):
 
 ```bash
 cd tinymux/mux
-./configure --enable-realitylvls --enable-wodrealms
+./configure
 cd ..
 make install
 ```
@@ -265,6 +265,131 @@ sudo tee /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh << 'EOF'
 systemctl reload nginx
 EOF
 sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh
+```
+
+## Optional: Native gRPC over HTTP/2
+
+The default deployment uses **grpc-web** (HTTP/1.1 POST), which works
+for browser clients and doesn't require a gRPC build dependency.  If you
+need native gRPC over HTTP/2 — for server-to-server integration, CLI
+tooling, or mobile clients using the full gRPC stack — Hydra supports
+that too.
+
+### Build with gRPC support
+
+```bash
+cd tinymux/mux
+./configure --enable-grpc
+cd ..
+make install
+```
+
+This requires the gRPC C++ libraries (`libgrpc++-dev` or built from
+source) and `protoc` with the gRPC C++ plugin.
+
+### Configure Hydra
+
+Add to `/opt/hydra/hydra.conf`:
+
+```
+grpc_listen 127.0.0.1:4204
+```
+
+Hydra enforces loopback-only binding when gRPC TLS is not configured.
+NGINX handles TLS on the public side.
+
+### NGINX gRPC proxy
+
+Add this location block to the `server` block in
+`/etc/nginx/sites-available/hydra` (inside the HTTPS server):
+
+```nginx
+    # --- Native gRPC over HTTP/2 ---
+    # For gRPC clients (not grpc-web).  Requires NGINX compiled with
+    # HTTP/2 support (standard in modern packages).
+    location /hydra.HydraService/ {
+        grpc_pass grpc://127.0.0.1:4204;
+        grpc_set_header X-Real-IP $remote_addr;
+        grpc_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # Streaming RPCs (Subscribe, GameSession) are long-lived
+        grpc_read_timeout 24h;
+        grpc_send_timeout 24h;
+    }
+```
+
+**Important:** This `location` block conflicts with the grpc-web
+`location /hydra.HydraService/` block in the default config because they
+match the same path.  You have three options:
+
+1. **Replace grpc-web with native gRPC** — swap the `proxy_pass` block
+   for the `grpc_pass` block.  Native gRPC clients work; browser
+   grpc-web clients do not.
+
+2. **Run both on different paths** — not possible since both use the
+   same service path (`/hydra.HydraService/`).
+
+3. **Run both on different ports** — add a second NGINX `server` block
+   on a different port (e.g. 8443) for native gRPC:
+
+```nginx
+server {
+    listen 8443 ssl http2;
+    listen [::]:8443 ssl http2;
+    server_name mud.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/mud.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/mud.example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location /hydra.HydraService/ {
+        grpc_pass grpc://127.0.0.1:4204;
+        grpc_read_timeout 24h;
+        grpc_send_timeout 24h;
+    }
+}
+```
+
+Then open port 8443 in the firewall.  grpc-web stays on 443, native
+gRPC on 8443.
+
+### Hydra-managed TLS (without NGINX)
+
+If you prefer Hydra to handle gRPC TLS directly (no NGINX proxy):
+
+```
+grpc_listen   0.0.0.0:4204
+grpc_tls_cert /etc/letsencrypt/live/mud.example.com/fullchain.pem
+grpc_tls_key  /etc/letsencrypt/live/mud.example.com/privkey.pem
+```
+
+The `hydra` user needs read access to the Let's Encrypt cert files.
+Add the user to the `ssl-cert` group or adjust permissions:
+
+```bash
+sudo usermod -aG ssl-cert hydra
+sudo systemctl restart hydra
+```
+
+Note that cert renewal requires restarting Hydra (it reads the cert at
+startup).  Add a certbot deploy hook:
+
+```bash
+sudo tee /etc/letsencrypt/renewal-hooks/deploy/restart-hydra.sh << 'EOF'
+#!/bin/sh
+systemctl restart hydra
+EOF
+sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/restart-hydra.sh
+```
+
+### Verify
+
+```bash
+# List games via grpcurl (install: go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest)
+grpcurl -d '{}' mud.example.com:8443 hydra.HydraService/ListGames
+
+# Or via the Hydra proto directly
+grpcurl -proto mux/proxy/hydra.proto mud.example.com:8443 hydra.HydraService/ListGames
 ```
 
 ## Troubleshooting
