@@ -3,6 +3,7 @@
 #include "hydra_log.h"
 #include "scrollback.h"
 #include <sqlite3.h>
+#include <openssl/crypto.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <cerrno>
@@ -89,10 +90,9 @@ static std::string hashPassword(const std::string& password,
 }
 
 // Derive a scroll-back key from the password and a salt.
+// Uses PBKDF2-HMAC-SHA256 uniformly on all platforms for full-entropy keys.
 static std::vector<uint8_t> deriveScrollbackKey(
     const std::string& password, const std::string& sbKeySalt) {
-#if defined(_WIN32)
-    // Use PBKDF2-HMAC-SHA256 for key derivation on Windows
     constexpr int iterations = 100000;
     std::vector<uint8_t> key(32);
     if (!PKCS5_PBKDF2_HMAC(password.c_str(), static_cast<int>(password.size()),
@@ -103,22 +103,6 @@ static std::vector<uint8_t> deriveScrollbackKey(
         return {};
     }
     return key;
-#else
-    struct crypt_data cd;
-    memset(&cd, 0, sizeof(cd));
-    std::string salt = "$6$" + sbKeySalt + "$";
-    char* result = crypt_r(password.c_str(), salt.c_str(), &cd);
-    if (!result) return {};
-
-    std::string hash(result);
-    // Use last 32 bytes of the hash as key material
-    std::vector<uint8_t> key(32, 0);
-    size_t hlen = hash.size();
-    for (size_t i = 0; i < 32 && i < hlen; i++) {
-        key[i] = static_cast<uint8_t>(hash[hlen - 32 + i]);
-    }
-    return key;
-#endif
 }
 
 AccountManager::AccountManager() {
@@ -303,9 +287,10 @@ uint32_t AccountManager::authenticate(const std::string& username,
         return 0;
     }
 
-    // Verify password
+    // Verify password (constant-time comparison to prevent timing attacks)
     std::string computed = hashPassword(password, storedSalt);
-    if (computed.empty() || computed != storedHash) {
+    if (computed.empty() || computed.size() != strlen(storedHash) ||
+        CRYPTO_memcmp(computed.data(), storedHash, computed.size()) != 0) {
         sqlite3_finalize(stmt);
         return 0;  // Wrong password
     }
@@ -858,6 +843,24 @@ bool AccountManager::getLoginSecret(uint32_t accountId,
     name = dbName;
     secret.assign(reinterpret_cast<char*>(plaintext.data()), plaintext.size());
     return true;
+}
+
+bool AccountManager::isAdmin(uint32_t accountId) {
+    if (!db_) return false;
+
+    sqlite3_stmt* stmt = nullptr;
+    int rc = sqlite3_prepare_v2(db_, "SELECT flags FROM accounts WHERE id = ?",
+                                -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) return false;
+
+    sqlite3_bind_int(stmt, 1, static_cast<int>(accountId));
+
+    int flags = 0;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        flags = sqlite3_column_int(stmt, 0);
+    }
+    sqlite3_finalize(stmt);
+    return (flags & 1) != 0;
 }
 
 bool AccountManager::isEmpty() {

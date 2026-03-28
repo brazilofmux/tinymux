@@ -498,6 +498,15 @@ void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
             return;
         }
         fd.httpBuf.append(data, len);
+        if (fd.httpBuf.size() > 1024 * 1024) {  // 1MB limit
+            LOG_WARN("Front-door %lu: HTTP buffer too large (%zu bytes), closing",
+                     (unsigned long)fd.handle, fd.httpBuf.size());
+            std::string resp = "HTTP/1.1 413 Payload Too Large\r\n"
+                               "Content-Length: 0\r\n\r\n";
+            safeWrite(fd.handle, resp);
+            engine_.closeConnection(fd.handle);
+            return;
+        }
         handleGrpcWebRequest(fd);
         return;
     }
@@ -542,8 +551,14 @@ void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
             fd.lineBuf.clear();
         } else if (ch == '\0') {
             // Telnet NUL after CR — ignore
-        } else {
+        } else if (fd.lineBuf.size() < FrontDoorState::MAX_LINE_LENGTH) {
             fd.lineBuf += ch;
+        } else {
+            // Line too long — drop the connection
+            LOG_WARN("Front-door %lu: line too long (%zu bytes), closing",
+                     (unsigned long)fd.handle, fd.lineBuf.size());
+            engine_.closeConnection(fd.handle);
+            return;
         }
     }
 }
@@ -834,6 +849,13 @@ void SessionManager::handleLogin(FrontDoorState& fd,
     switch (fd.loginPhase) {
     case FrontDoorState::AwaitUsername: {
         if (line.substr(0, 7) == "create " && line.size() > 7) {
+            // Credential commands require TLS regardless of allow_plaintext
+            if (!fd.tlsTransport) {
+                sendToClient(fd.handle,
+                    "Account creation requires a TLS connection.\r\n"
+                    "Username: ");
+                return;
+            }
             size_t space = line.find(' ', 7);
             if (space != std::string::npos && space + 1 < line.size()) {
                 std::string username = line.substr(7, space - 7);
@@ -1182,6 +1204,13 @@ void SessionManager::dispatchCommand(HydraSession& session,
             sendToClient(fdHandle, out);
         }
     } else if (verb == "addcred") {
+        // Credential commands require TLS regardless of allow_plaintext
+        auto fdIt2 = frontDoors_.find(fdHandle);
+        if (fdIt2 != frontDoors_.end() && !fdIt2->second.tlsTransport) {
+            sendToClient(fdHandle,
+                "Credential storage requires a TLS connection.\r\n");
+            return;
+        }
         std::vector<std::string> parts;
         size_t pos = 0;
         std::string tmp = args;
@@ -1238,6 +1267,10 @@ void SessionManager::dispatchCommand(HydraSession& session,
             sendToClient(fdHandle, out);
         }
     } else if (verb == "start") {
+        if (!accounts_.isAdmin(session.accountId)) {
+            sendToClient(fdHandle, "Permission denied (admin required).\r\n");
+            return;
+        }
         if (args.empty()) {
             sendToClient(fdHandle, "Usage: /start <game>\r\n");
             return;
@@ -1261,6 +1294,10 @@ void SessionManager::dispatchCommand(HydraSession& session,
             }
         }
     } else if (verb == "stop") {
+        if (!accounts_.isAdmin(session.accountId)) {
+            sendToClient(fdHandle, "Permission denied (admin required).\r\n");
+            return;
+        }
         if (args.empty()) {
             sendToClient(fdHandle, "Usage: /stop <game>\r\n");
             return;
@@ -1271,6 +1308,10 @@ void SessionManager::dispatchCommand(HydraSession& session,
             sendToClient(fdHandle, args + " is not running.\r\n");
         }
     } else if (verb == "restart") {
+        if (!accounts_.isAdmin(session.accountId)) {
+            sendToClient(fdHandle, "Permission denied (admin required).\r\n");
+            return;
+        }
         if (args.empty()) {
             sendToClient(fdHandle, "Usage: /restart <game>\r\n");
             return;
@@ -1317,6 +1358,18 @@ void SessionManager::connectToGame(HydraSession& session,
     if (!game) {
         for (auto h : session.frontDoors) {
             sendToClient(h, "Unknown game: " + gameName + "\r\n");
+        }
+        return;
+    }
+
+    // Enforce back-door TLS policy: if tls_required is set but the game
+    // doesn't have TLS enabled, reject the connection.
+    if (game->tlsRequired && !game->tls) {
+        for (auto h : session.frontDoors) {
+            sendToClient(h,
+                "[" + gameName + ": TLS is required but not configured. "
+                "Set 'tls_required no' in the game block to allow "
+                "plaintext back-door connections.]\r\n");
         }
         return;
     }
@@ -1817,6 +1870,63 @@ void SessionManager::runTimers() {
             }
         }
     }
+
+    // Prune stale IP tracker entries every 5 minutes
+    if (now - lastIpPrune_ >= 300) {
+        lastIpPrune_ = now;
+        for (auto it = ipTrackers_.begin(); it != ipTrackers_.end(); ) {
+            if (it->second.connectionCount <= 0 &&
+                it->second.lockoutUntil <= now) {
+                it = ipTrackers_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    // Reap idle and detached sessions
+    std::vector<HydraSessionId> toReap;
+    for (auto& [sid, session] : sessions_) {
+        int timeout = 0;
+        if (session.state == SessionState::Detached) {
+            timeout = config_.detachedSessionTimeout;
+        } else if (session.frontDoors.empty() &&
+                   !session.outputQueue->hasSubscribers()) {
+            // No front-doors and no gRPC subscribers — effectively detached
+            timeout = config_.detachedSessionTimeout;
+        } else {
+            timeout = config_.sessionIdleTimeout;
+        }
+
+        if (timeout > 0 && (now - session.lastActivity) >= timeout) {
+            toReap.push_back(sid);
+        }
+    }
+    for (auto sid : toReap) {
+        auto sit = sessions_.find(sid);
+        if (sit == sessions_.end()) continue;
+        HydraSession& session = sit->second;
+
+        LOG_INFO("Session %lu (%s) timed out, destroying",
+                 (unsigned long)sid, session.persistId.c_str());
+
+        // Close all links
+        for (size_t i = 0; i < session.links.size(); i++) {
+            closeLink(session, i);
+        }
+        // Flush and delete persisted state
+        flushSession(session);
+        if (!session.persistId.empty()) {
+            accounts_.deleteSession(session.persistId);
+        }
+        // Close any remaining front-doors
+        for (auto h : session.frontDoors) {
+            sendToClient(h, "\r\n[Session timed out. Goodbye.]\r\n");
+            engine_.closeConnection(h);
+            frontDoors_.erase(h);
+        }
+        sessions_.erase(sid);
+    }
 }
 
 // ---- Persistence helpers ----
@@ -2108,10 +2218,16 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
 
     int sockfd = static_cast<int>(fd.handle);
 
+    // Extract Origin header for CORS
+    std::string requestOrigin;
+    auto originIt = req.headers.find("origin");
+    if (originIt != req.headers.end()) requestOrigin = originIt->second;
+
     // CORS preflight
     if (req.method == "OPTIONS") {
-        std::string resp = corsPreflightResponse();
-        safeWrite(handle, resp);
+        std::string resp = corsPreflightResponse(requestOrigin,
+                                                  config_.corsOrigins);
+        safeWrite(fd.handle, resp);
         fd.httpBuf.clear();
         return;
     }
@@ -2119,7 +2235,7 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
     if (req.method != "POST") {
         std::string resp = "HTTP/1.1 405 Method Not Allowed\r\n"
                            "Content-Length: 0\r\n\r\n";
-        safeWrite(handle, resp);
+        safeWrite(fd.handle, resp);
         fd.httpBuf.clear();
         return;
     }
@@ -2155,10 +2271,10 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
 
         std::string http = "HTTP/1.1 200 OK\r\n"
             "Content-Type: " + respContentType + "\r\n"
-            + corsHeaders()
+            + corsHeaders(requestOrigin, config_.corsOrigins)
             + "Content-Length: " + std::to_string(body.size()) + "\r\n"
             "\r\n" + body;
-        safeWrite(handle, http);
+        safeWrite(fd.handle, http);
     };
 
     // ---- Dispatch RPCs ----
@@ -2321,10 +2437,10 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
             // Send HTTP headers for chunked streaming
             std::string httpHdr = "HTTP/1.1 200 OK\r\n"
                 "Content-Type: " + respContentType + "\r\n"
-                + corsHeaders()
+                + corsHeaders(requestOrigin, config_.corsOrigins)
                 + "Transfer-Encoding: chunked\r\n"
                 "\r\n";
-            safeWrite(handle, httpHdr);
+            safeWrite(fd.handle, httpHdr);
 
             // Mark this FrontDoorState as a live grpc-web subscriber.
             // onBackDoorData() will send output to it as chunked frames.

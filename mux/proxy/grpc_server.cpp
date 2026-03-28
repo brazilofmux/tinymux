@@ -769,9 +769,15 @@ public:
 
     Status StartGame(ServerContext* ctx, const hydra::GameRequest* req,
                      hydra::GameResponse* resp) override {
+        std::string sid = getSessionId(ctx, "");
         auto future = workQueue_.enqueue<bool>(
-            [gameName = req->game_name(), resp]
-            (SessionManager&, AccountManager&, const HydraConfig& cfg, ProcessManager& pm) {
+            [sid, gameName = req->game_name(), resp]
+            (SessionManager& sm, AccountManager& am, const HydraConfig& cfg, ProcessManager& pm) {
+                HydraSession* s = sm.findByPersistId(sid);
+                if (!s || !am.isAdmin(s->accountId)) {
+                    resp->set_error("permission denied (admin required)");
+                    return false;
+                }
                 const GameConfig* game = nullptr;
                 for (const auto& g : cfg.games) {
                     if (g.name == gameName) { game = &g; break; }
@@ -796,9 +802,15 @@ public:
 
     Status StopGame(ServerContext* ctx, const hydra::GameRequest* req,
                     hydra::GameResponse* resp) override {
+        std::string sid = getSessionId(ctx, "");
         auto future = workQueue_.enqueue<bool>(
-            [gameName = req->game_name(), resp]
-            (SessionManager&, AccountManager&, const HydraConfig&, ProcessManager& pm) {
+            [sid, gameName = req->game_name(), resp]
+            (SessionManager& sm, AccountManager& am, const HydraConfig&, ProcessManager& pm) {
+                HydraSession* s = sm.findByPersistId(sid);
+                if (!s || !am.isAdmin(s->accountId)) {
+                    resp->set_error("permission denied (admin required)");
+                    return false;
+                }
                 resp->set_success(pm.stopGame(gameName));
                 if (!resp->success()) resp->set_error("game not running");
                 return true;
@@ -809,9 +821,15 @@ public:
 
     Status RestartGame(ServerContext* ctx, const hydra::GameRequest* req,
                        hydra::GameResponse* resp) override {
+        std::string sid = getSessionId(ctx, "");
         auto future = workQueue_.enqueue<bool>(
-            [gameName = req->game_name(), resp]
-            (SessionManager&, AccountManager&, const HydraConfig& cfg, ProcessManager& pm) {
+            [sid, gameName = req->game_name(), resp]
+            (SessionManager& sm, AccountManager& am, const HydraConfig& cfg, ProcessManager& pm) {
+                HydraSession* s = sm.findByPersistId(sid);
+                if (!s || !am.isAdmin(s->accountId)) {
+                    resp->set_error("permission denied (admin required)");
+                    return false;
+                }
                 const GameConfig* game = nullptr;
                 for (const auto& g : cfg.games) {
                     if (g.name == gameName) { game = &g; break; }

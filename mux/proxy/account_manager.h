@@ -39,6 +39,9 @@ public:
     // Returns true if the accounts table is empty (bootstrap mode).
     bool isEmpty();
 
+    // Returns true if the account has admin privileges (flags & 1).
+    bool isAdmin(uint32_t accountId);
+
     // ---- Session persistence ----
 
     struct SavedSession {

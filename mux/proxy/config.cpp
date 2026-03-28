@@ -194,6 +194,8 @@ static bool parseGameBlock(std::ifstream& file, GameConfig& game,
             game.retrySchedule = parseRetrySchedule(value);
         } else if (key == "charset") {
             game.charset = parseCharset(value);
+        } else if (key == "tls_required") {
+            game.tlsRequired = (toLower(value) != "no");
         } else if (key == "tls") {
             game.tls = (toLower(value) == "yes");
         } else if (key == "tls_verify") {
@@ -249,6 +251,10 @@ bool loadConfig(const std::string& path, HydraConfig& config,
         } else if (key == "link_reconnect_timeout") {
             int d = parseDuration(value);
             if (d >= 0) config.linkReconnectTimeout = d;
+        } else if (key == "allow_plaintext") {
+            config.allowPlaintext = (toLower(value) == "yes");
+        } else if (key == "cors_origin") {
+            config.corsOrigins.push_back(value);
         } else if (key == "grpc_listen") {
             config.grpcListenAddr = value;
         } else if (key == "max_sessions_per_account") {

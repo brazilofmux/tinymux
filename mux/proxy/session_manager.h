@@ -188,6 +188,7 @@ struct FrontDoorState {
     std::string pendingUsername;
 
     // Line assembly buffer (for telnet line-at-a-time)
+    static constexpr size_t MAX_LINE_LENGTH = 8192;
     std::string lineBuf;
 
     // Client capabilities (defaults for Phase 1; auto-detect in future)
@@ -363,6 +364,8 @@ private:
     void recordLoginFailure(const std::string& ip);
     void clearLoginFailures(const std::string& ip);
     bool isLockedOut(const std::string& ip);
+
+    time_t lastIpPrune_{0};
 
     TelnetBridge bridge_;
     ProcessManager procMgr_;

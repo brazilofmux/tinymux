@@ -184,6 +184,10 @@ std::vector<WsMessage> wsDecodeFrames(WsState& ws, const char* data,
             if (ws.lenBytesRead == 2) {
                 ws.payloadLen = (static_cast<uint64_t>(ws.lenBuf[0]) << 8)
                               | ws.lenBuf[1];
+                if (ws.payloadLen > WS_MAX_PAYLOAD) {
+                    responses += wsCloseFrame(1009);
+                    return messages;
+                }
                 ws.frameBuf.clear();
                 ws.maskIdx = 0;
                 ws.parseState = ws.masked ? WsState::MaskKey : WsState::Payload;
@@ -246,6 +250,12 @@ std::vector<WsMessage> wsDecodeFrames(WsState& ws, const char* data,
                     // Data frame
                     if (op == WS_OP_CONTINUATION) {
                         ws.fragBuf += ws.frameBuf;
+                        if (ws.fragBuf.size() > WS_MAX_PAYLOAD) {
+                            // Fragment reassembly too large
+                            responses += wsCloseFrame(1009);
+                            ws.fragBuf.clear();
+                            return messages;
+                        }
                         if (ws.fin) {
                             messages.push_back({ws.fragOpcode, ws.fragBuf});
                             ws.fragBuf.clear();

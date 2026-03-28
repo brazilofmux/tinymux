@@ -357,18 +357,32 @@ int main(int argc, char* argv[]) {
                         engine->closeConnection(ev.connection);
                         break;
                     }
-                    // Mark in session manager that this front-door needs TLS
-                    // The handshake will complete during subsequent Read events
-                    // via processIncoming before data reaches the protocol layer.
-                    sessionMgr.setFrontDoorTls(ev.connection, tlsTransport.get());
                 }
 
+                // Create front-door state, then mark TLS.
+                // setFrontDoorTls requires the entry to exist in frontDoors_.
+                ganl::SecureTransport* tlsForConn = (isTls && tlsTransport)
+                    ? tlsTransport.get() : nullptr;
                 if (ev.context == &tagWebSocket || ev.context == &tagWebSocketTls) {
                     sessionMgr.onAcceptWebSocket(ev.connection, clientIp);
                 } else if (ev.context == &tagGrpcWeb || ev.context == &tagGrpcWebTls) {
                     sessionMgr.onAcceptGrpcWeb(ev.connection, clientIp);
                 } else {
                     sessionMgr.onAccept(ev.connection, clientIp);
+                }
+
+                if (tlsForConn) {
+                    sessionMgr.setFrontDoorTls(ev.connection, tlsForConn);
+                } else if (!config.allowPlaintext) {
+                    // Reject plaintext connections unless explicitly allowed
+                    static const char rejectMsg[] =
+                        "\r\nPlaintext connections are disabled. "
+                        "Please use TLS.\r\n";
+                    ganl::ErrorCode werr = 0;
+                    engine->postWrite(ev.connection, rejectMsg,
+                                      sizeof(rejectMsg) - 1, werr);
+                    sessionMgr.onFrontDoorClose(ev.connection);
+                    engine->closeConnection(ev.connection);
                 }
             } break;
 

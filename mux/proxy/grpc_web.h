@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include <vector>
 
 // ---- grpc-web frame codec ----
 
@@ -48,8 +49,13 @@ bool parseHttpRequest(const std::string& raw, HttpRequest& req);
 
 // ---- CORS ----
 
-std::string corsPreflightResponse();
-std::string corsHeaders();
+// Generate CORS headers for the given request Origin, checking against
+// the allowed origins list.  If origins is empty, no Access-Control-Allow-Origin
+// header is emitted (deny by default).
+std::string corsHeaders(const std::string& requestOrigin,
+                        const std::vector<std::string>& allowedOrigins);
+std::string corsPreflightResponse(const std::string& requestOrigin,
+                                   const std::vector<std::string>& allowedOrigins);
 
 // ---- grpc-web content type detection ----
 

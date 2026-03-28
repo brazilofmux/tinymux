@@ -6,10 +6,22 @@
 # listen <type> <host:port> [cert=<path> key=<path>]
 #
 # Types: telnet, telnet+tls, websocket, websocket+tls, grpc-web
-listen telnet       0.0.0.0:4201
-# listen telnet+tls   0.0.0.0:4202 cert=hydra.pem key=hydra.key
+listen telnet+tls   0.0.0.0:4202 cert=hydra.pem key=hydra.key
+# listen telnet       0.0.0.0:4201
 # listen websocket    0.0.0.0:4203
 # listen grpc-web     0.0.0.0:4205
+
+# --- Front-door TLS policy ---
+# By default, plaintext (non-TLS) front-door connections are rejected.
+# Set to 'yes' to allow plaintext telnet (e.g. for SSH+TF users).
+# Note: credential commands (create, /addcred) always require TLS
+# regardless of this setting.
+# allow_plaintext no
+
+# --- CORS (for grpc-web listeners) ---
+# Allowed origins for cross-origin requests.  Repeat for multiple origins.
+# Default: deny all.  Use '*' to allow any origin (not recommended).
+# cors_origin https://your-web-client.example.com
 
 # --- gRPC native (optional, requires --enable-grpc at build time) ---
 # grpc_listen 0.0.0.0:4204
@@ -57,16 +69,19 @@ log_level info
 
 # --- Games ---
 game "LocalMUX" {
-    host        localhost
-    port        2860
-    transport   tcp
-    type        local
-    binary      /home/user/tinymux/mux/game/bin/netmux
-    workdir     /home/user/tinymux/mux/game
-    autostart   no
-    reconnect   yes
-    retry       5s 10s 30s 60s
-    charset     utf-8
+    host            localhost
+    port            2860
+    transport       tcp
+    type            local
+    binary          /home/user/tinymux/mux/game/bin/netmux
+    workdir         /home/user/tinymux/mux/game
+    autostart       no
+    reconnect       yes
+    retry           5s 10s 30s 60s
+    charset         utf-8
+    # Back-door TLS is required by default. Set to 'no' for games on
+    # localhost or the same VPC that don't support TLS.
+    tls_required    no
 }
 
 # game "RemoteMUD" {

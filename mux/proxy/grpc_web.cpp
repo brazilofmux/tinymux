@@ -198,7 +198,12 @@ bool parseHttpRequest(const std::string& raw, HttpRequest& req) {
     size_t bodyStart = hdrEnd + 4;
     auto clIt = req.headers.find("content-length");
     if (clIt != req.headers.end()) {
-        size_t contentLen = std::stoul(clIt->second);
+        size_t contentLen = 0;
+        try { contentLen = std::stoul(clIt->second); }
+        catch (...) {
+            req.complete = false;
+            return false;
+        }
         if (raw.size() < bodyStart + contentLen) {
             req.complete = false;
             return false;  // body not fully received
@@ -214,21 +219,37 @@ bool parseHttpRequest(const std::string& raw, HttpRequest& req) {
 
 // ---- CORS ----
 
-static const char* CORS_HDRS =
-    "Access-Control-Allow-Origin: *\r\n"
-    "Access-Control-Allow-Methods: POST, OPTIONS\r\n"
-    "Access-Control-Allow-Headers: Content-Type, X-Grpc-Web, Authorization, X-User-Agent\r\n"
-    "Access-Control-Expose-Headers: Grpc-Status, Grpc-Message, Grpc-Status-Details-Bin\r\n"
-    "Access-Control-Max-Age: 86400\r\n";
-
-std::string corsPreflightResponse() {
-    return std::string("HTTP/1.1 204 No Content\r\n")
-         + CORS_HDRS
-         + "Content-Length: 0\r\n\r\n";
+// Check if requestOrigin is in the allowed list.  Returns the matching
+// origin string, or empty if not allowed.
+static std::string matchOrigin(const std::string& requestOrigin,
+                               const std::vector<std::string>& allowed) {
+    if (requestOrigin.empty()) return "";
+    for (const auto& o : allowed) {
+        if (o == "*" || o == requestOrigin) return requestOrigin;
+    }
+    return "";
 }
 
-std::string corsHeaders() {
-    return CORS_HDRS;
+std::string corsHeaders(const std::string& requestOrigin,
+                        const std::vector<std::string>& allowedOrigins) {
+    std::string origin = matchOrigin(requestOrigin, allowedOrigins);
+    if (origin.empty()) {
+        // No CORS headers — browser will reject the response
+        return "";
+    }
+    return "Access-Control-Allow-Origin: " + origin + "\r\n"
+           "Access-Control-Allow-Methods: POST, OPTIONS\r\n"
+           "Access-Control-Allow-Headers: Content-Type, X-Grpc-Web, Authorization, X-User-Agent\r\n"
+           "Access-Control-Expose-Headers: Grpc-Status, Grpc-Message, Grpc-Status-Details-Bin\r\n"
+           "Access-Control-Max-Age: 86400\r\n"
+           "Vary: Origin\r\n";
+}
+
+std::string corsPreflightResponse(const std::string& requestOrigin,
+                                   const std::vector<std::string>& allowedOrigins) {
+    return std::string("HTTP/1.1 204 No Content\r\n")
+         + corsHeaders(requestOrigin, allowedOrigins)
+         + "Content-Length: 0\r\n\r\n";
 }
 
 // ---- Content type detection ----
