@@ -72,16 +72,18 @@ SRCS += grpc_server.cpp grpc_web.cpp
 # Protobuf-generated sources
 PROTO_SRCS = hydra.pb.cpp hydra.grpc.pb.cpp
 PROTO_HDRS = hydra.pb.h hydra.grpc.pb.h
+PROTO_STAMP = .hydra_proto.stamp
 
 SRCS += $(PROTO_SRCS)
 
-hydra.pb.cpp hydra.pb.h: hydra.proto
+$(PROTO_STAMP): hydra.proto
 	$(PROTOC) --cpp_out=. $<
-	mv hydra.pb.cc hydra.pb.cpp
-
-hydra.grpc.pb.cpp hydra.grpc.pb.h: hydra.proto
 	$(PROTOC) --grpc_out=. --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN) $<
+	mv hydra.pb.cc hydra.pb.cpp
 	mv hydra.grpc.pb.cc hydra.grpc.pb.cpp
+	touch $@
+
+$(PROTO_SRCS) $(PROTO_HDRS): $(PROTO_STAMP)
 
 # Files that #include proto headers must wait for codegen
 session_manager.o grpc_server.o grpc_web.o: $(PROTO_HDRS)
@@ -103,7 +105,7 @@ $(TARGET): $(OBJS)
 clean:
 	rm -f $(OBJS) $(TARGET)
 ifeq ($(GRPC),1)
-	rm -f $(PROTO_SRCS) $(PROTO_HDRS)
+	rm -f $(PROTO_SRCS) $(PROTO_HDRS) $(PROTO_STAMP)
 endif
 
 install: $(TARGET)

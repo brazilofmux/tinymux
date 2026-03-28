@@ -9,11 +9,13 @@
 #include "process_manager.h"
 #include "websocket.h"
 #include <network_engine.h>
+#include <io_buffer.h>
 #include <network_types.h>
 #include <secure_transport.h>
 #include <atomic>
 #include <condition_variable>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <string>
@@ -215,6 +217,11 @@ struct FrontDoorState {
     // TLS state (non-null if this front-door uses TLS)
     ganl::SecureTransport* tlsTransport{nullptr};
     bool tlsEstablished{false};
+    bool initialPromptSent{false};
+    std::unique_ptr<ganl::IoBuffer> tlsEncryptedIn;
+    std::unique_ptr<ganl::IoBuffer> tlsDecryptedIn;
+    std::unique_ptr<ganl::IoBuffer> tlsPlainOut;
+    std::unique_ptr<ganl::IoBuffer> tlsEncryptedOut;
 
     // grpc-web Subscribe stream state — when set, this fd receives
     // chunked game output frames instead of processing HTTP requests.
@@ -243,7 +250,8 @@ public:
                    const HydraConfig& config);
     ~SessionManager();
 
-    void onAccept(ganl::ConnectionHandle handle, const std::string& clientIp = "");
+    void onAccept(ganl::ConnectionHandle handle, const std::string& clientIp = "",
+                  bool deferPrompt = false);
     void onAcceptWebSocket(ganl::ConnectionHandle handle, const std::string& clientIp = "");
     void onAcceptGrpcWeb(ganl::ConnectionHandle handle, const std::string& clientIp = "");
     void onFrontDoorData(ganl::ConnectionHandle handle,
@@ -313,6 +321,9 @@ public:
     void drainWriteBuffer(ganl::ConnectionHandle handle);
 
 private:
+    void handleFrontDoorPlainData(FrontDoorState& fd, const char* data, size_t len);
+    bool flushFrontDoorTlsOutgoing(FrontDoorState& fd);
+    bool drainTlsCiphertext(FrontDoorState& fd);
     void indexSession(const HydraSession& session);
     void unindexSession(const HydraSession& session);
     void flushSession(HydraSession& session);

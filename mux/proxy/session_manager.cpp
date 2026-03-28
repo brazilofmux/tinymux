@@ -236,6 +236,17 @@ void SessionManager::safeWrite(ganl::ConnectionHandle handle,
                                const char* data, size_t len) {
     if (len == 0) return;
 
+    auto fdIt = frontDoors_.find(handle);
+    if (fdIt != frontDoors_.end() && fdIt->second.tlsTransport) {
+        FrontDoorState& fd = fdIt->second;
+        if (!fd.tlsPlainOut) {
+            fd.tlsPlainOut = std::make_unique<ganl::IoBuffer>(4096);
+        }
+        fd.tlsPlainOut->append(data, len);
+        flushFrontDoorTlsOutgoing(fd);
+        return;
+    }
+
     // If there is already buffered data for this connection, append and
     // let drainWriteBuffer send it in order.
     auto it = writeBuffers_.find(handle);
@@ -274,6 +285,12 @@ void SessionManager::safeWrite(ganl::ConnectionHandle handle,
 }
 
 void SessionManager::drainWriteBuffer(ganl::ConnectionHandle handle) {
+    auto fdIt = frontDoors_.find(handle);
+    if (fdIt != frontDoors_.end() && fdIt->second.tlsTransport) {
+        flushFrontDoorTlsOutgoing(fdIt->second);
+        return;
+    }
+
     auto it = writeBuffers_.find(handle);
     if (it == writeBuffers_.end() || it->second.empty()) return;
 
@@ -304,6 +321,63 @@ void SessionManager::drainWriteBuffer(ganl::ConnectionHandle handle) {
         // Fully drained.
         writeBuffers_.erase(it);
     }
+}
+
+bool SessionManager::drainTlsCiphertext(FrontDoorState& fd) {
+    if (!fd.tlsEncryptedOut || fd.tlsEncryptedOut->readableBytes() == 0) {
+        return true;
+    }
+
+    int sock = static_cast<int>(fd.handle);
+    while (fd.tlsEncryptedOut->readableBytes() > 0) {
+        ssize_t sent = ::send(sock, fd.tlsEncryptedOut->readPtr(),
+                              fd.tlsEncryptedOut->readableBytes(),
+                              MSG_DONTWAIT | MSG_NOSIGNAL);
+        if (sent < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                ganl::ErrorCode err = 0;
+                engine_.postWrite(fd.handle, nullptr, 0, err);
+                return true;
+            }
+            LOG_DEBUG("TLS send failed for fd %d: %s", sock, strerror(errno));
+            engine_.closeConnection(fd.handle);
+            return false;
+        }
+        fd.tlsEncryptedOut->consumeRead(static_cast<size_t>(sent));
+    }
+
+    return true;
+}
+
+bool SessionManager::flushFrontDoorTlsOutgoing(FrontDoorState& fd) {
+    if (!fd.tlsTransport) return true;
+
+    if (!fd.tlsPlainOut) {
+        fd.tlsPlainOut = std::make_unique<ganl::IoBuffer>(4096);
+    }
+    if (!fd.tlsEncryptedOut) {
+        fd.tlsEncryptedOut = std::make_unique<ganl::IoBuffer>(4096);
+    }
+
+    while (fd.tlsPlainOut->readableBytes() > 0) {
+        ganl::TlsResult res = fd.tlsTransport->processOutgoing(
+            fd.handle, *fd.tlsPlainOut, *fd.tlsEncryptedOut, true);
+        if (fd.tlsTransport->isEstablished(fd.handle)) {
+            fd.tlsEstablished = true;
+        }
+        if (res == ganl::TlsResult::Error || res == ganl::TlsResult::Closed) {
+            LOG_WARN("TLS outgoing failed for fd %lu: %s",
+                     (unsigned long)fd.handle,
+                     fd.tlsTransport->getLastTlsErrorString(fd.handle).c_str());
+            engine_.closeConnection(fd.handle);
+            return false;
+        }
+        if (res == ganl::TlsResult::WantRead || res == ganl::TlsResult::WantWrite) {
+            break;
+        }
+    }
+
+    return drainTlsCiphertext(fd);
 }
 
 void SessionManager::showBanner(ganl::ConnectionHandle handle) {
@@ -378,7 +452,8 @@ bool SessionManager::findByBackDoor(ganl::ConnectionHandle bdHandle,
 // ---- Front-door lifecycle ----
 
 void SessionManager::onAccept(ganl::ConnectionHandle handle,
-                              const std::string& clientIp) {
+                              const std::string& clientIp,
+                              bool deferPrompt) {
     if (!checkConnectionLimits(clientIp)) {
         engine_.closeConnection(handle);
         return;
@@ -390,11 +465,14 @@ void SessionManager::onAccept(ganl::ConnectionHandle handle,
     fd.loginPhase = FrontDoorState::AwaitUsername;
     fd.proto = FrontDoorProto::Telnet;
     fd.clientIp = clientIp;
-    frontDoors_[handle] = fd;
+    frontDoors_[handle] = std::move(fd);
 
     LOG_INFO("Session manager: new front-door %lu (telnet) from %s",
              (unsigned long)handle, clientIp.c_str());
-    showBanner(handle);
+    if (!deferPrompt) {
+        showBanner(handle);
+        frontDoors_[handle].initialPromptSent = true;
+    }
 }
 
 void SessionManager::onAcceptWebSocket(ganl::ConnectionHandle handle,
@@ -412,7 +490,7 @@ void SessionManager::onAcceptWebSocket(ganl::ConnectionHandle handle,
     fd.encoding = ganl::EncodingType::Utf8;
     fd.colorDepth = ColorDepth::Ansi256;
     fd.clientIp = clientIp;
-    frontDoors_[handle] = fd;
+    frontDoors_[handle] = std::move(fd);
 
     LOG_INFO("Session manager: new front-door %lu (websocket) from %s",
              (unsigned long)handle, clientIp.c_str());
@@ -433,18 +511,15 @@ void SessionManager::onAcceptGrpcWeb(ganl::ConnectionHandle handle,
     fd.encoding = ganl::EncodingType::Utf8;
     fd.colorDepth = ColorDepth::Ansi256;
     fd.clientIp = clientIp;
-    frontDoors_[handle] = fd;
+    frontDoors_[handle] = std::move(fd);
 
     LOG_INFO("Session manager: new front-door %lu (grpc-web) from %s",
              (unsigned long)handle, clientIp.c_str());
 }
 
-void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
-                                     const char* data, size_t len) {
-    auto it = frontDoors_.find(handle);
-    if (it == frontDoors_.end()) return;
-
-    FrontDoorState& fd = it->second;
+void SessionManager::handleFrontDoorPlainData(FrontDoorState& fd,
+                                              const char* data, size_t len) {
+    ganl::ConnectionHandle handle = fd.handle;
 
     // ---- WebSocket path (also handles WsGameSession during handshake) ----
     if (fd.proto == FrontDoorProto::WebSocket) {
@@ -631,12 +706,82 @@ void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
     }
 }
 
+void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
+                                     const char* data, size_t len) {
+    auto it = frontDoors_.find(handle);
+    if (it == frontDoors_.end()) return;
+
+    FrontDoorState& fd = it->second;
+    if (!fd.initialPromptSent && !fd.tlsTransport && fd.proto == FrontDoorProto::Telnet) {
+        showBanner(handle);
+        fd.initialPromptSent = true;
+    }
+
+    if (!fd.tlsTransport) {
+        handleFrontDoorPlainData(fd, data, len);
+        return;
+    }
+
+    if (!fd.tlsEncryptedIn) fd.tlsEncryptedIn = std::make_unique<ganl::IoBuffer>(4096);
+    if (!fd.tlsDecryptedIn) fd.tlsDecryptedIn = std::make_unique<ganl::IoBuffer>(4096);
+    if (!fd.tlsEncryptedOut) fd.tlsEncryptedOut = std::make_unique<ganl::IoBuffer>(4096);
+    if (!fd.tlsPlainOut) fd.tlsPlainOut = std::make_unique<ganl::IoBuffer>(4096);
+
+    fd.tlsEncryptedIn->append(data, len);
+
+    while (true) {
+        size_t encBefore = fd.tlsEncryptedIn->readableBytes();
+        size_t decBefore = fd.tlsDecryptedIn->readableBytes();
+        size_t outBefore = fd.tlsEncryptedOut->readableBytes();
+
+        ganl::TlsResult res = fd.tlsTransport->processIncoming(
+            handle, *fd.tlsEncryptedIn, *fd.tlsDecryptedIn, *fd.tlsEncryptedOut, true);
+
+        if (fd.tlsTransport->isEstablished(handle) && !fd.tlsEstablished) {
+            fd.tlsEstablished = true;
+            if (!fd.initialPromptSent && fd.proto == FrontDoorProto::Telnet) {
+                showBanner(handle);
+                fd.initialPromptSent = true;
+            }
+        }
+
+        if (fd.tlsEncryptedOut->readableBytes() > 0) {
+            if (!drainTlsCiphertext(fd)) return;
+        }
+
+        if (fd.tlsDecryptedIn->readableBytes() > 0) {
+            std::string plain = fd.tlsDecryptedIn->consumeReadAllAsString();
+            handleFrontDoorPlainData(fd, plain.data(), plain.size());
+        }
+
+        if (res == ganl::TlsResult::Error || res == ganl::TlsResult::Closed) {
+            LOG_WARN("TLS incoming failed for fd %lu: %s",
+                     (unsigned long)handle,
+                     fd.tlsTransport->getLastTlsErrorString(handle).c_str());
+            engine_.closeConnection(handle);
+            return;
+        }
+
+        bool progressed =
+            fd.tlsEncryptedIn->readableBytes() != encBefore ||
+            fd.tlsDecryptedIn->readableBytes() != decBefore ||
+            fd.tlsEncryptedOut->readableBytes() != outBefore;
+
+        if (!progressed || res == ganl::TlsResult::WantRead) {
+            break;
+        }
+    }
+}
+
 void SessionManager::onFrontDoorClose(ganl::ConnectionHandle handle) {
     writeBuffers_.erase(handle);
     auto it = frontDoors_.find(handle);
     if (it == frontDoors_.end()) return;
 
     FrontDoorState& fd = it->second;
+    if (fd.tlsTransport) {
+        fd.tlsTransport->destroySessionContext(handle);
+    }
     HydraSessionId sid = fd.internalSessionId;
     std::string ip = fd.clientIp;
 
@@ -1914,6 +2059,11 @@ void SessionManager::setFrontDoorTls(ganl::ConnectionHandle handle,
     if (it != frontDoors_.end()) {
         it->second.tlsTransport = transport;
         it->second.tlsEstablished = false;
+        it->second.initialPromptSent = false;
+        it->second.tlsEncryptedIn = std::make_unique<ganl::IoBuffer>(4096);
+        it->second.tlsDecryptedIn = std::make_unique<ganl::IoBuffer>(4096);
+        it->second.tlsPlainOut = std::make_unique<ganl::IoBuffer>(4096);
+        it->second.tlsEncryptedOut = std::make_unique<ganl::IoBuffer>(4096);
     }
 }
 

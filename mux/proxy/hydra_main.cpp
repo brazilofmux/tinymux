@@ -400,7 +400,7 @@ int main(int argc, char* argv[]) {
                 } else if (ev.context == &tagGrpcWeb || ev.context == &tagGrpcWebTls) {
                     sessionMgr.onAcceptGrpcWeb(ev.connection, clientIp);
                 } else {
-                    sessionMgr.onAccept(ev.connection, clientIp);
+                    sessionMgr.onAccept(ev.connection, clientIp, tlsForConn != nullptr);
                 }
 
                 if (tlsForConn) {
