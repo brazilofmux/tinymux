@@ -17,7 +17,7 @@ mux/game/bin/*.dll
 mux/game/bin/*.so
 mux/game/bin/announce
 mux/game/bin/dbconvert
-mux/game/bin/dosign.bat
+mux/game/bin/dosign*.bat
 mux/game/bin/netmux
 mux/game/bin/slave
 mux/game/bin/stubslave
