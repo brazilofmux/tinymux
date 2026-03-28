@@ -192,6 +192,26 @@ void COutputPane::OnPaint() {
 
             if (a.inverse) { COLORREF tmp = fg; fg = bg; bg = tmp; }
 
+            // Selection highlighting: invert colors for selected range.
+            bool in_sel = false;
+            if (sel_active_) {
+                int sl1 = sel_start_line_, sc1 = sel_start_col_;
+                int sl2 = sel_end_line_, sc2 = sel_end_col_;
+                if (sl1 > sl2 || (sl1 == sl2 && sc1 > sc2)) {
+                    std::swap(sl1, sl2); std::swap(sc1, sc2);
+                }
+                if (idx > sl1 && idx < sl2) {
+                    in_sel = true;
+                } else if (idx == sl1 && idx == sl2) {
+                    in_sel = ((int)run_start < sc2 && (int)i > sc1);
+                } else if (idx == sl1) {
+                    in_sel = ((int)i > sc1);
+                } else if (idx == sl2) {
+                    in_sel = ((int)run_start < sc2);
+                }
+            }
+            if (in_sel) { COLORREF tmp = fg; fg = bg; bg = tmp; }
+
             SetTextColor(hdc, fg);
             SetBkColor(hdc, bg);
 
