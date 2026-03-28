@@ -45,6 +45,7 @@ HydraConnection::~HydraConnection() {
 bool HydraConnection::connect() {
     if (connected_.load()) return true;
 
+    try {
     grpc_ = std::make_unique<GrpcState>();
 
     // Create channel (TLS by default, plaintext only for local dev)
@@ -124,6 +125,8 @@ bool HydraConnection::connect() {
         prefs->set_terminal_width(termWidth_);
         prefs->set_terminal_height(termHeight_);
         prefs->set_terminal_type("TinyMUX-Console");
+        fprintf(stderr, "[Hydra] Sending preferences: color_format=%d width=%d height=%d\n",
+                colorFormat_, termWidth_, termHeight_);
         grpc_->stream->Write(prefsMsg);
     }
 
@@ -139,6 +142,17 @@ bool HydraConnection::connect() {
     signalOutput();
 
     return true;
+    } catch (const std::exception& e) {
+        std::lock_guard<std::mutex> lock(outputMutex_);
+        outputQueue_.push(std::string("[Hydra] Connect exception: ") + e.what());
+        signalOutput();
+        return false;
+    } catch (...) {
+        std::lock_guard<std::mutex> lock(outputMutex_);
+        outputQueue_.push("[Hydra] Connect failed with unknown exception");
+        signalOutput();
+        return false;
+    }
 }
 
 void HydraConnection::disconnect() {

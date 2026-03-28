@@ -194,11 +194,12 @@ namespace protobuf {
 
 namespace hydra {
 enum ColorFormat : int {
-  ANSI_TRUECOLOR = 0,
-  ANSI_256 = 1,
-  ANSI_16 = 2,
-  PUA_UTF8 = 3,
-  PLAIN = 4,
+  COLOR_UNSPECIFIED = 0,
+  ANSI_TRUECOLOR = 1,
+  ANSI_256 = 2,
+  ANSI_16 = 3,
+  PUA_UTF8 = 4,
+  PLAIN = 5,
   ColorFormat_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   ColorFormat_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -208,8 +209,8 @@ enum ColorFormat : int {
 bool ColorFormat_IsValid(int value);
 extern const uint32_t ColorFormat_internal_data_[];
 constexpr ColorFormat ColorFormat_MIN = static_cast<ColorFormat>(0);
-constexpr ColorFormat ColorFormat_MAX = static_cast<ColorFormat>(4);
-constexpr int ColorFormat_ARRAYSIZE = 4 + 1;
+constexpr ColorFormat ColorFormat_MAX = static_cast<ColorFormat>(5);
+constexpr int ColorFormat_ARRAYSIZE = 5 + 1;
 const ::google::protobuf::EnumDescriptor*
 ColorFormat_descriptor();
 template <typename T>
@@ -222,7 +223,7 @@ const std::string& ColorFormat_Name(T value) {
 template <>
 inline const std::string& ColorFormat_Name(ColorFormat value) {
   return ::google::protobuf::internal::NameOfDenseEnum<ColorFormat_descriptor,
-                                                 0, 4>(
+                                                 0, 5>(
       static_cast<int>(value));
 }
 inline bool ColorFormat_Parse(absl::string_view name, ColorFormat* value) {
@@ -1410,6 +1411,7 @@ class SetPreferences final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kTerminalTypeFieldNumber = 4,
+    kSessionIdFieldNumber = 5,
     kColorFormatFieldNumber = 1,
     kTerminalWidthFieldNumber = 2,
     kTerminalHeightFieldNumber = 3,
@@ -1428,6 +1430,22 @@ class SetPreferences final : public ::google::protobuf::Message
   inline PROTOBUF_ALWAYS_INLINE void _internal_set_terminal_type(
       const std::string& value);
   std::string* _internal_mutable_terminal_type();
+
+  public:
+  // string session_id = 5;
+  void clear_session_id() ;
+  const std::string& session_id() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_session_id(Arg_&& arg, Args_... args);
+  std::string* mutable_session_id();
+  PROTOBUF_NODISCARD std::string* release_session_id();
+  void set_allocated_session_id(std::string* value);
+
+  private:
+  const std::string& _internal_session_id() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_session_id(
+      const std::string& value);
+  std::string* _internal_mutable_session_id();
 
   public:
   // .hydra.ColorFormat color_format = 1;
@@ -1465,8 +1483,8 @@ class SetPreferences final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      2, 4, 0,
-      42, 2>
+      3, 5, 0,
+      52, 2>
       _table_;
 
   friend class ::google::protobuf::MessageLite;
@@ -1484,6 +1502,7 @@ class SetPreferences final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena, const Impl_& from,
                           const SetPreferences& from_msg);
     ::google::protobuf::internal::ArenaStringPtr terminal_type_;
+    ::google::protobuf::internal::ArenaStringPtr session_id_;
     int color_format_;
     ::uint32_t terminal_width_;
     ::uint32_t terminal_height_;
@@ -1643,6 +1662,8 @@ class SessionRequest final : public ::google::protobuf::Message
   enum : int {
     kSessionIdFieldNumber = 1,
     kColorFormatFieldNumber = 2,
+    kTerminalWidthFieldNumber = 3,
+    kTerminalHeightFieldNumber = 4,
   };
   // string session_id = 1;
   void clear_session_id() ;
@@ -1670,12 +1691,32 @@ class SessionRequest final : public ::google::protobuf::Message
   void _internal_set_color_format(::hydra::ColorFormat value);
 
   public:
+  // uint32 terminal_width = 3;
+  void clear_terminal_width() ;
+  ::uint32_t terminal_width() const;
+  void set_terminal_width(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_terminal_width() const;
+  void _internal_set_terminal_width(::uint32_t value);
+
+  public:
+  // uint32 terminal_height = 4;
+  void clear_terminal_height() ;
+  ::uint32_t terminal_height() const;
+  void set_terminal_height(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_terminal_height() const;
+  void _internal_set_terminal_height(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:hydra.SessionRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      1, 2, 0,
+      2, 4, 0,
       39, 2>
       _table_;
 
@@ -1695,6 +1736,8 @@ class SessionRequest final : public ::google::protobuf::Message
                           const SessionRequest& from_msg);
     ::google::protobuf::internal::ArenaStringPtr session_id_;
     int color_format_;
+    ::uint32_t terminal_width_;
+    ::uint32_t terminal_height_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -11907,6 +11950,50 @@ inline void SessionRequest::_internal_set_color_format(::hydra::ColorFormat valu
   _impl_.color_format_ = value;
 }
 
+// uint32 terminal_width = 3;
+inline void SessionRequest::clear_terminal_width() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.terminal_width_ = 0u;
+}
+inline ::uint32_t SessionRequest::terminal_width() const {
+  // @@protoc_insertion_point(field_get:hydra.SessionRequest.terminal_width)
+  return _internal_terminal_width();
+}
+inline void SessionRequest::set_terminal_width(::uint32_t value) {
+  _internal_set_terminal_width(value);
+  // @@protoc_insertion_point(field_set:hydra.SessionRequest.terminal_width)
+}
+inline ::uint32_t SessionRequest::_internal_terminal_width() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.terminal_width_;
+}
+inline void SessionRequest::_internal_set_terminal_width(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.terminal_width_ = value;
+}
+
+// uint32 terminal_height = 4;
+inline void SessionRequest::clear_terminal_height() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.terminal_height_ = 0u;
+}
+inline ::uint32_t SessionRequest::terminal_height() const {
+  // @@protoc_insertion_point(field_get:hydra.SessionRequest.terminal_height)
+  return _internal_terminal_height();
+}
+inline void SessionRequest::set_terminal_height(::uint32_t value) {
+  _internal_set_terminal_height(value);
+  // @@protoc_insertion_point(field_set:hydra.SessionRequest.terminal_height)
+}
+inline ::uint32_t SessionRequest::_internal_terminal_height() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.terminal_height_;
+}
+inline void SessionRequest::_internal_set_terminal_height(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.terminal_height_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // ConnectRequest
@@ -12850,6 +12937,54 @@ inline void SetPreferences::set_allocated_terminal_type(std::string* value) {
     _impl_.terminal_type_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:hydra.SetPreferences.terminal_type)
+}
+
+// string session_id = 5;
+inline void SetPreferences::clear_session_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.session_id_.ClearToEmpty();
+}
+inline const std::string& SetPreferences::session_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:hydra.SetPreferences.session_id)
+  return _internal_session_id();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void SetPreferences::set_session_id(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.session_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:hydra.SetPreferences.session_id)
+}
+inline std::string* SetPreferences::mutable_session_id() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_session_id();
+  // @@protoc_insertion_point(field_mutable:hydra.SetPreferences.session_id)
+  return _s;
+}
+inline const std::string& SetPreferences::_internal_session_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.session_id_.Get();
+}
+inline void SetPreferences::_internal_set_session_id(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.session_id_.Set(value, GetArena());
+}
+inline std::string* SetPreferences::_internal_mutable_session_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.session_id_.Mutable( GetArena());
+}
+inline std::string* SetPreferences::release_session_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:hydra.SetPreferences.session_id)
+  return _impl_.session_id_.Release();
+}
+inline void SetPreferences::set_allocated_session_id(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.session_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.session_id_.IsDefault()) {
+    _impl_.session_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:hydra.SetPreferences.session_id)
 }
 
 // -------------------------------------------------------------------
