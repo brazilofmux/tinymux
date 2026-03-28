@@ -231,24 +231,15 @@ always compiled in but controlled by opt-in configuration:
 
 ## Deployment issues (discovered 2026-03-28)
 
-### D-1. GANL postWrite discards data — writes never reach the client
-- **Status**: Open (workaround in place).
-- **Severity**: Critical — Hydra is non-functional without the workaround.
-- **Problem**: `EpollNetworkEngine::postWrite()` accepts data and length
-  parameters but never buffers or sends the data.  It only registers
-  EPOLLOUT interest.  GANL then generates `IoEventType::Write` events,
-  but Hydra's event loop has no Write handler — the case falls through
-  to `default: break;`.  Result: all writes (banners, healthz responses,
-  HTTP responses, game output) are silently dropped.
-- **Workaround**: `safeWrite()` in session_manager.cpp bypasses
-  `postWrite()` and calls `::send()` directly.  This works for loopback
-  but is not a proper long-term solution.
-- **Proper fix**: Either (a) make GANL's `postWrite` buffer data
-  internally and flush on EPOLLOUT, or (b) add per-connection write
-  buffers in Hydra and handle `IoEventType::Write` in the event loop
-  to drain them.
-- **Files affected**: ganl/src/epoll_network_engine.cpp, session_manager.cpp,
-  hydra_main.cpp
+### D-1. GANL postWrite discards data — writes never reach the client -- FIXED
+- **Resolution**: `safeWrite()` now does a non-blocking `::send()` immediately.
+  If the socket returns EAGAIN or a partial write, the remainder is appended to
+  a per-connection write buffer (`writeBuffers_` in SessionManager) and EPOLLOUT
+  is armed via `postWrite()`.  A new `IoEventType::Write` handler in the event
+  loop calls `drainWriteBuffer()` to send buffered data and re-arm if needed.
+  No polling loops or sleeps — purely event-driven.  Write buffers are cleaned
+  up on Close/Error events.
+- **Files changed**: session_manager.h, session_manager.cpp, hydra_main.cpp
 
 ### D-2. Proto field name drift: `system_notice` vs `notice`
 - **Status**: Fixed (2026-03-28).

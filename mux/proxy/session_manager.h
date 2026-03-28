@@ -304,10 +304,13 @@ public:
     void connectToGame(HydraSession& session, const std::string& gameName);
     void closeLink(HydraSession& session, size_t linkIdx);
 
-    // Safe write via GANL's write queue (handles buffering and partial writes).
+    // Safe write: non-blocking send with automatic buffering on EAGAIN.
     // Public so gRPC work items can use it.
     void safeWrite(ganl::ConnectionHandle handle, const std::string& data);
     void safeWrite(ganl::ConnectionHandle handle, const char* data, size_t len);
+
+    // Drain pending write buffer for a connection (called on EPOLLOUT).
+    void drainWriteBuffer(ganl::ConnectionHandle handle);
 
 private:
     void indexSession(const HydraSession& session);
@@ -385,6 +388,10 @@ private:
     bool isLockedOut(const std::string& ip);
 
     time_t lastIpPrune_{0};
+
+    // Per-connection write buffers for non-blocking I/O.
+    // Data lands here only when ::send() returns EAGAIN/partial.
+    std::unordered_map<ganl::ConnectionHandle, std::string> writeBuffers_;
 
     TelnetBridge bridge_;
     ProcessManager procMgr_;

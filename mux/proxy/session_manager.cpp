@@ -9,9 +9,14 @@
 #include "grpc_web.h"
 #include "hydra.pb.h"
 #endif
+#include <cerrno>
 #include <chrono>
 #include <cstring>
 #include <algorithm>
+
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
 
 // Context for scroll-back replay callback — renders PUA through the bridge.
 struct ReplayContext {
@@ -229,19 +234,71 @@ void SessionManager::safeWrite(ganl::ConnectionHandle handle,
 
 void SessionManager::safeWrite(ganl::ConnectionHandle handle,
                                const char* data, size_t len) {
-    ganl::ErrorCode err = 0;
-    if (!engine_.postWrite(handle, data, len, err)) {
-        char errbuf[128] = {};
-#if defined(_GNU_SOURCE)
-        // GNU strerror_r returns char* (may not use errbuf)
-        const char* errstr = strerror_r(err, errbuf, sizeof(errbuf));
-#else
-        // XSI strerror_r returns int, writes to errbuf
-        strerror_r(err, errbuf, sizeof(errbuf));
-        const char* errstr = errbuf;
-#endif
-        LOG_DEBUG("safeWrite failed for fd %lu: %s",
-                  (unsigned long)handle, errstr ? errstr : "unknown");
+    if (len == 0) return;
+
+    // If there is already buffered data for this connection, append and
+    // let drainWriteBuffer send it in order.
+    auto it = writeBuffers_.find(handle);
+    if (it != writeBuffers_.end() && !it->second.empty()) {
+        it->second.append(data, len);
+        return;
+    }
+
+    // Try a non-blocking send immediately.
+    int fd = static_cast<int>(handle);
+    ssize_t sent = ::send(fd, data, len, MSG_DONTWAIT | MSG_NOSIGNAL);
+
+    if (sent < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            // Socket not ready — buffer everything and arm EPOLLOUT.
+            writeBuffers_[handle].assign(data, len);
+            ganl::ErrorCode err = 0;
+            engine_.postWrite(handle, nullptr, 0, err);
+        } else {
+            LOG_DEBUG("safeWrite send failed for fd %d: %s", fd, strerror(errno));
+        }
+        return;
+    }
+
+    size_t n = static_cast<size_t>(sent);
+    if (n < len) {
+        // Partial write — buffer the remainder and arm EPOLLOUT.
+        writeBuffers_[handle].assign(data + n, len - n);
+        ganl::ErrorCode err = 0;
+        engine_.postWrite(handle, nullptr, 0, err);
+    }
+}
+
+void SessionManager::drainWriteBuffer(ganl::ConnectionHandle handle) {
+    auto it = writeBuffers_.find(handle);
+    if (it == writeBuffers_.end() || it->second.empty()) return;
+
+    std::string& buf = it->second;
+    int fd = static_cast<int>(handle);
+    ssize_t sent = ::send(fd, buf.data(), buf.size(), MSG_DONTWAIT | MSG_NOSIGNAL);
+
+    if (sent < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            // Still blocked — re-arm EPOLLOUT.
+            ganl::ErrorCode err = 0;
+            engine_.postWrite(handle, nullptr, 0, err);
+        } else {
+            LOG_DEBUG("drainWriteBuffer send failed for fd %d: %s",
+                      fd, strerror(errno));
+            writeBuffers_.erase(it);
+        }
+        return;
+    }
+
+    size_t n = static_cast<size_t>(sent);
+    if (n < buf.size()) {
+        // Partial write — keep the remainder, re-arm.
+        buf.erase(0, n);
+        ganl::ErrorCode err = 0;
+        engine_.postWrite(handle, nullptr, 0, err);
+    } else {
+        // Fully drained.
+        writeBuffers_.erase(it);
     }
 }
 
@@ -571,6 +628,7 @@ void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
 }
 
 void SessionManager::onFrontDoorClose(ganl::ConnectionHandle handle) {
+    writeBuffers_.erase(handle);
     auto it = frontDoors_.find(handle);
     if (it == frontDoors_.end()) return;
 
@@ -1732,6 +1790,7 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
 }
 
 void SessionManager::onBackDoorClose(ganl::ConnectionHandle bdHandle) {
+    writeBuffers_.erase(bdHandle);
     HydraSession* session = nullptr;
     BackDoorLink* link = nullptr;
     size_t linkIdx = 0;

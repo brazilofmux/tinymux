@@ -410,9 +410,8 @@ int main(int argc, char* argv[]) {
                     static const char rejectMsg[] =
                         "\r\nPlaintext connections are disabled. "
                         "Please use TLS.\r\n";
-                    ganl::ErrorCode werr = 0;
-                    engine->postWrite(ev.connection, rejectMsg,
-                                      sizeof(rejectMsg) - 1, werr);
+                    sessionMgr.safeWrite(ev.connection, rejectMsg,
+                                         sizeof(rejectMsg) - 1);
                     sessionMgr.onFrontDoorClose(ev.connection);
                     engine->closeConnection(ev.connection);
                 }
@@ -454,6 +453,10 @@ int main(int argc, char* argv[]) {
                                                static_cast<size_t>(nr));
                 }
             } break;
+
+            case ganl::IoEventType::Write:
+                sessionMgr.drainWriteBuffer(ev.connection);
+                break;
 
             case ganl::IoEventType::Close:
             case ganl::IoEventType::Error: {
@@ -529,6 +532,9 @@ int main(int argc, char* argv[]) {
                          sizeof(buf), 0);
 #endif
                 } break;
+                case ganl::IoEventType::Write:
+                    sessionMgr.drainWriteBuffer(ev.connection);
+                    break;
                 case ganl::IoEventType::Close:
                 case ganl::IoEventType::Error:
                     engine->closeConnection(ev.connection);
