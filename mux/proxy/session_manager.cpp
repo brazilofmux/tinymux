@@ -24,7 +24,7 @@ struct ReplayContext {
     ganl::EncodingType encoding;
     ColorDepth colorDepth;
     TelnetBridge* bridge;
-    ganl::NetworkEngine* engine;  // for safeWrite via postWrite
+    SessionManager* sessionMgr;
 };
 
 // Telnet constants for GMCP parsing (from shared telnet_utils.h)
@@ -1087,7 +1087,7 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                     + std::to_string(existing->scrollback.count())
                     + " lines) --\r\n");
 
-                ReplayContext rctx{fd.handle, fd.encoding, fd.colorDepth, &bridge_, &engine_};
+                ReplayContext rctx{fd.handle, fd.encoding, fd.colorDepth, &bridge_, this};
                 existing->scrollback.replay(
                     existing->scrollback.count(),
                     [](const std::string& text,
@@ -1097,8 +1097,7 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                         std::string rendered = rc->bridge->renderForClient(
                             rc->encoding, rc->colorDepth, text);
                         rendered += "\r\n";
-                        ganl::ErrorCode werr = 0;
-                        rc->engine->postWrite(rc->handle, rendered.data(), rendered.size(), werr);
+                        rc->sessionMgr->safeWrite(rc->handle, rendered);
                     },
                     &rctx);
 
@@ -1252,7 +1251,7 @@ void SessionManager::dispatchCommand(HydraSession& session,
                 enc = fdIt->second.encoding;
                 depth = fdIt->second.colorDepth;
             }
-            ReplayContext rctx{fdHandle, enc, depth, &bridge_, &engine_};
+            ReplayContext rctx{fdHandle, enc, depth, &bridge_, this};
             session.scrollback.replay(n,
                 [](const std::string& text,
                    const std::string& source,
@@ -1261,8 +1260,7 @@ void SessionManager::dispatchCommand(HydraSession& session,
                     std::string rendered = rc->bridge->renderForClient(
                         rc->encoding, rc->colorDepth, text);
                     rendered += "\r\n";
-                    ganl::ErrorCode werr = 0;
-                        rc->engine->postWrite(rc->handle, rendered.data(), rendered.size(), werr);
+                    rc->sessionMgr->safeWrite(rc->handle, rendered);
                 },
                 &rctx);
             sendToClient(fdHandle, "-- End --\r\n");
@@ -1463,8 +1461,29 @@ void SessionManager::connectToGame(HydraSession& session,
         return;
     }
 
-    // Check max links limit
-    if (session.links.size() >= static_cast<size_t>(config_.maxLinksPerSession)) {
+    // Check for existing link to this game.
+    // If active/connecting/reconnecting, reject the duplicate.
+    // If dead, reuse the slot.
+    size_t reuseIdx = SIZE_MAX;
+    for (size_t i = 0; i < session.links.size(); i++) {
+        if (session.links[i].gameName == gameName) {
+            if (session.links[i].state != LinkState::Dead) {
+                for (auto h : session.frontDoors) {
+                    sendToClient(h,
+                        "[Already connected to " + gameName + " (link "
+                        + std::to_string(i + 1) + ")]\r\n");
+                }
+                return;
+            }
+            if (reuseIdx == SIZE_MAX) {
+                reuseIdx = i;
+            }
+        }
+    }
+
+    // Check max links limit (dead slots being reused don't count)
+    if (reuseIdx == SIZE_MAX &&
+        session.links.size() >= static_cast<size_t>(config_.maxLinksPerSession)) {
         for (auto h : session.frontDoors) {
             sendToClient(h, "Maximum links reached ("
                 + std::to_string(config_.maxLinksPerSession) + ").\r\n");
@@ -1509,17 +1528,31 @@ void SessionManager::connectToGame(HydraSession& session,
         return;
     }
 
-    // Create new link
-    BackDoorLink link;
-    link.handle = bdHandle;
-    link.gameName = game->name;
-    link.state = LinkState::Connecting;
-    link.protoState.encoding = game->charset;
-    link.gameConfig = game;
-
-    size_t linkIdx = session.links.size();
-    session.links.push_back(std::move(link));
-    session.activeLink = linkIdx;  // new link becomes active
+    // Reuse a dead slot or create a new link.
+    size_t linkIdx;
+    if (reuseIdx != SIZE_MAX) {
+        linkIdx = reuseIdx;
+        BackDoorLink& reused = session.links[linkIdx];
+        reused.handle = bdHandle;
+        reused.gameName = game->name;
+        reused.state = LinkState::Connecting;
+        reused.protoState.encoding = game->charset;
+        reused.gameConfig = game;
+        reused.retryCount = 0;
+        reused.nextRetry = 0;
+        reused.character.clear();
+        reused.gmcpEnabled = false;
+    } else {
+        BackDoorLink link;
+        link.handle = bdHandle;
+        link.gameName = game->name;
+        link.state = LinkState::Connecting;
+        link.protoState.encoding = game->charset;
+        link.gameConfig = game;
+        linkIdx = session.links.size();
+        session.links.push_back(std::move(link));
+    }
+    session.activeLink = linkIdx;
 
     backDoorMap_[bdHandle] = {session.internalId, linkIdx};
 
@@ -2154,7 +2187,7 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
             + std::to_string(sess.scrollback.count())
             + " lines) --\r\n");
 
-        ReplayContext rctx{fd.handle, fd.encoding, fd.colorDepth, &bridge_, &engine_};
+        ReplayContext rctx{fd.handle, fd.encoding, fd.colorDepth, &bridge_, this};
         sess.scrollback.replay(
             sess.scrollback.count(),
             [](const std::string& text,
@@ -2164,8 +2197,7 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
                 std::string rendered = rc->bridge->renderForClient(
                     rc->encoding, rc->colorDepth, text);
                 rendered += "\r\n";
-                ganl::ErrorCode werr = 0;
-                        rc->engine->postWrite(rc->handle, rendered.data(), rendered.size(), werr);
+                rc->sessionMgr->safeWrite(rc->handle, rendered);
             },
             &rctx);
 
