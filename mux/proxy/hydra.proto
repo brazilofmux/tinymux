@@ -87,7 +87,7 @@ message SessionInfo {
 
 // Game text output from a back-door link.
 message GameOutput {
-    string text = 1;            // rendered per ColorFormat
+    bytes  text = 1;            // rendered per ColorFormat (bytes for PUA encoding)
     string source = 2;          // game name
     int64  timestamp = 3;
     int32  link_number = 4;     // 1-based
