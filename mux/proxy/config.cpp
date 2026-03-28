@@ -251,12 +251,19 @@ bool loadConfig(const std::string& path, HydraConfig& config,
         } else if (key == "link_reconnect_timeout") {
             int d = parseDuration(value);
             if (d >= 0) config.linkReconnectTimeout = d;
+        } else if (key == "session_token_ttl") {
+            int d = parseDuration(value);
+            if (d >= 0) config.sessionTokenTtl = d;
         } else if (key == "allow_plaintext") {
             config.allowPlaintext = (toLower(value) == "yes");
         } else if (key == "cors_origin") {
             config.corsOrigins.push_back(value);
         } else if (key == "grpc_listen") {
             config.grpcListenAddr = value;
+        } else if (key == "grpc_tls_cert") {
+            config.grpcTlsCert = value;
+        } else if (key == "grpc_tls_key") {
+            config.grpcTlsKey = value;
         } else if (key == "max_sessions_per_account") {
             try { config.maxSessionsPerAccount = std::stoi(value); }
             catch (...) {}

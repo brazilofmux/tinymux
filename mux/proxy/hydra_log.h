@@ -16,6 +16,9 @@ bool logInit(const std::string& filePath, const std::string& level);
 // Close the log file.
 void logShutdown();
 
+// Reopen the log file (for logrotate integration via SIGHUP).
+void logReopen();
+
 // Log a message at the given level.
 void logMessage(LogLevel level, const char* fmt, ...)
     __attribute__((format(printf, 2, 3)));

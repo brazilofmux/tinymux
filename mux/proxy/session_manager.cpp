@@ -231,8 +231,14 @@ void SessionManager::safeWrite(ganl::ConnectionHandle handle,
     ganl::ErrorCode err = 0;
     if (!engine_.postWrite(handle, data, len, err)) {
         char errbuf[128] = {};
+#if defined(_GNU_SOURCE)
         // GNU strerror_r returns char* (may not use errbuf)
         const char* errstr = strerror_r(err, errbuf, sizeof(errbuf));
+#else
+        // XSI strerror_r returns int, writes to errbuf
+        strerror_r(err, errbuf, sizeof(errbuf));
+        const char* errstr = errbuf;
+#endif
         LOG_DEBUG("safeWrite failed for fd %lu: %s",
                   (unsigned long)handle, errstr ? errstr : "unknown");
     }
@@ -856,6 +862,13 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                     "Username: ");
                 return;
             }
+            // Rate-limit account creation per IP
+            if (!checkAccountCreateRate(fd.clientIp)) {
+                sendToClient(fd.handle,
+                    "Too many accounts created from this address. "
+                    "Try again later.\r\nUsername: ");
+                return;
+            }
             size_t space = line.find(' ', 7);
             if (space != std::string::npos && space + 1 < line.size()) {
                 std::string username = line.substr(7, space - 7);
@@ -866,6 +879,7 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                 std::string errorMsg;
                 if (accounts_.createAccount(username, password, admin,
                                             accountId, errorMsg)) {
+                    recordAccountCreate(fd.clientIp);
                     sendToClient(fd.handle,
                         "Account '" + username + "' created"
                         + (admin ? " (admin)" : "") + ".\r\n"
@@ -886,10 +900,12 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                         session.lastActivity = session.created;
                         session.scrollbackKey = sbKey;
                         session.persistId = generatePersistId();
+                        session.tokenCreated = session.created;
                         session.frontDoors.push_back(fd.handle);
 
                         fd.internalSessionId = session.internalId;
                         sessions_[session.internalId] = std::move(session);
+                        indexSession(sessions_[fd.internalSessionId]);
 
                         LOG_INFO("Session %lu (%s) created for '%s'",
                                  (unsigned long)fd.internalSessionId,
@@ -1054,10 +1070,12 @@ void SessionManager::handleLogin(FrontDoorState& fd,
             session.lastActivity = session.created;
             session.scrollbackKey = sbKey;
             session.persistId = generatePersistId();
+            session.tokenCreated = session.created;
             session.frontDoors.push_back(fd.handle);
 
             fd.internalSessionId = session.internalId;
             sessions_[session.internalId] = std::move(session);
+            indexSession(sessions_[fd.internalSessionId]);
 
             LOG_INFO("Session %lu (%s) created for '%s'",
                      (unsigned long)fd.internalSessionId,
@@ -1142,6 +1160,7 @@ void SessionManager::dispatchCommand(HydraSession& session,
             engine_.closeConnection(h);
             frontDoors_.erase(h);
         }
+        unindexSession(session);
         sessions_.erase(session.internalId);
     } else if (verb == "detach") {
         sendToClient(fdHandle, "Session detached. Reconnect to resume.\r\n");
@@ -1589,7 +1608,12 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
             size_t sp = gm.payload.find(' ');
             if (sp != std::string::npos) {
                 pkg = gm.payload.substr(0, sp);
-                session->gmcpCache[pkg] = gm.payload.substr(sp + 1);
+                // Cap cache size — update existing keys freely, but
+                // reject new keys once the limit is reached.
+                if (session->gmcpCache.count(pkg) ||
+                    session->gmcpCache.size() < HydraSession::MAX_GMCP_CACHE_ENTRIES) {
+                    session->gmcpCache[pkg] = gm.payload.substr(sp + 1);
+                }
             }
         }
 
@@ -1925,6 +1949,7 @@ void SessionManager::runTimers() {
             engine_.closeConnection(h);
             frontDoors_.erase(h);
         }
+        unindexSession(session);
         sessions_.erase(sid);
     }
 }
@@ -2004,6 +2029,7 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
     if (session.lastActivity == 0) session.lastActivity = time(nullptr);
     session.scrollbackKey = sbKey;
     session.persistId = saved.persistId;
+    session.tokenCreated = time(nullptr);
     session.frontDoors.push_back(fd.handle);
 
     int loaded = session.scrollback.loadFromDb(
@@ -2018,6 +2044,7 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
     fd.internalSessionId = session.internalId;
     HydraSessionId sessId = session.internalId;
     sessions_[sessId] = std::move(session);
+    indexSession(sessions_[sessId]);
     HydraSession& sess = sessions_[fd.internalSessionId];
 
     // Reconnect saved links
@@ -2073,11 +2100,42 @@ void SessionManager::shutdownSessions() {
 
 // ---- gRPC support ----
 
-HydraSession* SessionManager::findByPersistId(const std::string& persistId) {
-    for (auto& [id, session] : sessions_) {
-        if (session.persistId == persistId) return &session;
+void SessionManager::indexSession(const HydraSession& session) {
+    if (!session.persistId.empty()) {
+        persistIdIndex_[session.persistId] = session.internalId;
     }
-    return nullptr;
+}
+
+void SessionManager::unindexSession(const HydraSession& session) {
+    if (!session.persistId.empty()) {
+        persistIdIndex_.erase(session.persistId);
+    }
+}
+
+HydraSession* SessionManager::findByPersistId(const std::string& persistId) {
+    auto it = persistIdIndex_.find(persistId);
+    if (it == persistIdIndex_.end()) return nullptr;
+
+    auto sit = sessions_.find(it->second);
+    if (sit == sessions_.end()) {
+        // Stale index entry — clean up
+        persistIdIndex_.erase(it);
+        return nullptr;
+    }
+
+    HydraSession& session = sit->second;
+
+    // Check token TTL
+    if (config_.sessionTokenTtl > 0 && session.tokenCreated > 0) {
+        time_t now = time(nullptr);
+        if ((now - session.tokenCreated) >= config_.sessionTokenTtl) {
+            LOG_INFO("Session token expired for '%s' (age %lds)",
+                     session.username.c_str(),
+                     (long)(now - session.tokenCreated));
+            return nullptr;
+        }
+    }
+    return &session;
 }
 
 std::string SessionManager::authenticateAndGetSession(
@@ -2110,6 +2168,25 @@ std::string SessionManager::authenticateAndGetSession(
                          sess.persistId.c_str());
             }
 
+            // Rotate session token on re-authentication
+            std::string oldId = sess.persistId;
+            unindexSession(sess);
+            sess.persistId = generatePersistId();
+            sess.tokenCreated = time(nullptr);
+            indexSession(sess);
+
+            // Update SQLite with new persistId
+            if (!oldId.empty()) {
+                std::string errorMsg;
+                accounts_.saveSession(sess.persistId, sess.accountId,
+                    std::to_string(sess.created),
+                    std::to_string(sess.lastActivity),
+                    sess.pendingLinksJson, errorMsg);
+                accounts_.deleteSession(oldId);
+            }
+
+            LOG_INFO("Session token rotated for '%s': %s -> %s",
+                     username.c_str(), oldId.c_str(), sess.persistId.c_str());
             return sess.persistId;
         }
     }
@@ -2125,6 +2202,7 @@ std::string SessionManager::authenticateAndGetSession(
         session.lastActivity = session.created;
         session.scrollbackKey = sbKey;
         session.persistId = saved.persistId;
+        session.tokenCreated = session.created;
 
         session.scrollback.loadFromDb(
             accounts_.db(), saved.persistId, accountId, sbKey);
@@ -2137,6 +2215,7 @@ std::string SessionManager::authenticateAndGetSession(
 
         HydraSessionId sessId = session.internalId;
         sessions_[sessId] = std::move(session);
+        indexSession(sessions_[sessId]);
         restoreSessionLinks(sessions_[sessId], savedLinks);
 
         LOG_INFO("Session %lu (%s) restored via gRPC for '%s' (%zu links)",
@@ -2154,9 +2233,11 @@ std::string SessionManager::authenticateAndGetSession(
     session.lastActivity = session.created;
     session.scrollbackKey = sbKey;
     session.persistId = generatePersistId();
+    session.tokenCreated = session.created;
 
     std::string pid = session.persistId;
     sessions_[session.internalId] = std::move(session);
+    indexSession(sessions_[nextSessionId_ - 1]);
 
     LOG_INFO("Session %lu (%s) created via gRPC for '%s'",
              (unsigned long)(nextSessionId_ - 1), pid.c_str(),
@@ -2181,32 +2262,36 @@ std::string SessionManager::createAccountAndGetSession(
 
 std::string HydraSession::OutputItem::render(RenderFormat fmt) const {
     if (puaText.empty()) return puaText;
+    if (fmt == RenderFormat::PuaUtf8) return puaText;
 
     const unsigned char* src =
         reinterpret_cast<const unsigned char*>(puaText.data());
     size_t srcLen = puaText.size();
-    unsigned char buf[8000];
+
+    // Truecolor SGR expansion can be ~4x; allocate generous heap buffer.
+    size_t bufSize = srcLen * 4 + 256;
+    std::vector<unsigned char> buf(bufSize);
     size_t n = 0;
 
     switch (fmt) {
     case RenderFormat::Unspecified:  // fall through to TrueColor default
     case RenderFormat::TrueColor:
-        n = co_render_truecolor(buf, src, srcLen, 0);
+        n = co_render_truecolor(buf.data(), src, srcLen, 0);
         break;
     case RenderFormat::Ansi256:
-        n = co_render_ansi256(buf, src, srcLen, 0);
+        n = co_render_ansi256(buf.data(), src, srcLen, 0);
         break;
     case RenderFormat::Ansi16:
-        n = co_render_ansi16(buf, src, srcLen, 0);
+        n = co_render_ansi16(buf.data(), src, srcLen, 0);
         break;
     case RenderFormat::PuaUtf8:
-        return puaText;  // no rendering needed
+        return puaText;  // unreachable, handled above
     case RenderFormat::Plain:
-        n = co_strip_color(buf, src, srcLen);
+        n = co_strip_color(buf.data(), src, srcLen);
         break;
     }
 
-    return std::string(reinterpret_cast<char*>(buf), n);
+    return std::string(reinterpret_cast<char*>(buf.data()), n);
 }
 
 // ---- gRPC-Web request handler ----
@@ -2639,6 +2724,29 @@ bool SessionManager::isLockedOut(const std::string& ip) {
     return true;
 }
 
+bool SessionManager::checkAccountCreateRate(const std::string& ip) {
+    if (ip.empty()) return true;
+    auto it = ipTrackers_.find(ip);
+    if (it == ipTrackers_.end()) return true;
+
+    // Allow max 2 account creations per hour per IP
+    time_t now = time(nullptr);
+    time_t window = now - 3600;
+    auto& times = it->second.accountCreateTimes;
+
+    // Prune old entries
+    times.erase(std::remove_if(times.begin(), times.end(),
+        [window](time_t t) { return t < window; }),
+        times.end());
+
+    return times.size() < 2;
+}
+
+void SessionManager::recordAccountCreate(const std::string& ip) {
+    if (ip.empty()) return;
+    ipTrackers_[ip].accountCreateTimes.push_back(time(nullptr));
+}
+
 // ---- Phase 4: Session serialization ----
 
 bool SessionManager::parseLinksJson(const std::string& jsonStr,
@@ -2753,6 +2861,7 @@ void SessionManager::restoreAllSessions() {
 
         HydraSessionId sessId = session.internalId;
         sessions_[sessId] = std::move(session);
+        indexSession(sessions_[sessId]);
 
         LOG_INFO("Restored session %s (account %u, links deferred until login)",
                  s.persistId.c_str(), s.accountId);

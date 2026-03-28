@@ -25,6 +25,8 @@ listen telnet+tls   0.0.0.0:4202 cert=hydra.pem key=hydra.key
 
 # --- gRPC native (optional, requires --enable-grpc at build time) ---
 # grpc_listen 0.0.0.0:4204
+# grpc_tls_cert hydra.pem
+# grpc_tls_key  hydra.key
 
 # --- Database ---
 database hydra.sqlite
@@ -49,9 +51,10 @@ master_key master.key
 
 # --- Session defaults ---
 scrollback_lines            10000
-session_idle_timeout        86400
-detached_session_timeout    86400
-link_reconnect_timeout      300
+session_idle_timeout        24h
+detached_session_timeout    24h
+link_reconnect_timeout      5m
+session_token_ttl           24h
 
 # --- Resource limits ---
 max_sessions_per_account    1

@@ -14,6 +14,7 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/server_builder.h>
 #include <chrono>
+#include <fstream>
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -893,7 +894,31 @@ bool GrpcServer::start(const std::string& listenAddr, std::string& errorMsg) {
         sessionMgr_, accounts_, config_, procMgr_, workQueue_);
 
     ServerBuilder builder;
-    builder.AddListeningPort(listenAddr, grpc::InsecureServerCredentials());
+
+    // Use TLS if cert/key are configured for gRPC
+    if (!config_.grpcTlsCert.empty() && !config_.grpcTlsKey.empty()) {
+        std::ifstream certFile(config_.grpcTlsCert);
+        std::ifstream keyFile(config_.grpcTlsKey);
+        if (!certFile.is_open() || !keyFile.is_open()) {
+            errorMsg = "cannot open gRPC TLS cert/key files";
+            return false;
+        }
+        std::string cert((std::istreambuf_iterator<char>(certFile)),
+                         std::istreambuf_iterator<char>());
+        std::string key((std::istreambuf_iterator<char>(keyFile)),
+                        std::istreambuf_iterator<char>());
+
+        grpc::SslServerCredentialsOptions sslOpts;
+        sslOpts.pem_key_cert_pairs.push_back({key, cert});
+        builder.AddListeningPort(listenAddr,
+                                 grpc::SslServerCredentials(sslOpts));
+        LOG_INFO("gRPC using TLS: cert=%s key=%s",
+                 config_.grpcTlsCert.c_str(), config_.grpcTlsKey.c_str());
+    } else {
+        builder.AddListeningPort(listenAddr, grpc::InsecureServerCredentials());
+        LOG_WARN("gRPC using insecure credentials — bind to loopback only");
+    }
+
     builder.RegisterService(service.get());
 
     server_ = builder.BuildAndStart();

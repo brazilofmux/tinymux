@@ -58,6 +58,7 @@ struct HydraConfig {
     int                         sessionIdleTimeout{86400};      // 24h
     int                         detachedSessionTimeout{86400};  // 24h
     int                         linkReconnectTimeout{300};      // 5m
+    int                         sessionTokenTtl{86400};         // 24h
 
     // Front-door TLS policy
     bool                        allowPlaintext{false};     // allow non-TLS front-door connections
@@ -77,6 +78,8 @@ struct HydraConfig {
 
     // gRPC (optional, requires --enable-grpc at configure time)
     std::string                 grpcListenAddr;  // e.g. "0.0.0.0:4204"
+    std::string                 grpcTlsCert;     // TLS cert for gRPC (optional)
+    std::string                 grpcTlsKey;      // TLS key for gRPC (optional)
 
     // Logging
     std::string                 logFile{"hydra.log"};

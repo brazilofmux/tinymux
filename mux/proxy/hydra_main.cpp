@@ -14,6 +14,7 @@
 #include <openssl_transport.h>
 #include <secure_transport.h>
 
+#include <algorithm>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
@@ -24,6 +25,7 @@
 #include <io.h>
 #include <windows.h>
 #else
+#include <termios.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #endif
@@ -104,8 +106,28 @@ static void installSignals() {
 }
 
 static std::string readPassword(const char* prompt) {
-    char* pw = getpass(prompt);
-    return pw ? std::string(pw) : std::string();
+    fprintf(stderr, "%s", prompt);
+
+    // Disable echo
+    struct termios oldt, newt;
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~static_cast<tcflag_t>(ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    char buf[256];
+    std::string pw;
+    if (fgets(buf, sizeof(buf), stdin)) {
+        pw = buf;
+        // Strip trailing newline
+        while (!pw.empty() && (pw.back() == '\n' || pw.back() == '\r'))
+            pw.pop_back();
+    }
+
+    // Restore echo
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    fprintf(stderr, "\n");
+    return pw;
 }
 
 #endif // _WIN32
@@ -334,9 +356,12 @@ int main(int argc, char* argv[]) {
     // ---- Event loop ----
     constexpr int MAX_EVENTS = 32;
     ganl::IoEvent events[MAX_EVENTS];
+    int pollMs = 10;  // start responsive
 
     while (!g_shutdown) {
-        int n = engine->processEvents(100, events, MAX_EVENTS);
+        int n = engine->processEvents(pollMs, events, MAX_EVENTS);
+        // Adaptive: short poll when active, longer when idle
+        pollMs = (n > 0) ? 10 : std::min(pollMs + 10, 100);
 
         for (int i = 0; i < n; i++) {
             const ganl::IoEvent& ev = events[i];
@@ -447,6 +472,12 @@ int main(int argc, char* argv[]) {
         workQueue.processPending(sessionMgr, accounts, config,
                                  sessionMgr.processMgr());
 #endif
+
+        if (g_reload) {
+            g_reload = 0;
+            LOG_INFO("SIGHUP received — reopening log file");
+            logReopen();
+        }
 
         if (g_dumpStatus) {
             g_dumpStatus = 0;

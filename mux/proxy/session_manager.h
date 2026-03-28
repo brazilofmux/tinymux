@@ -17,6 +17,7 @@
 #include <mutex>
 #include <queue>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 // A single back-door connection to a game server.
@@ -62,6 +63,7 @@ struct HydraSession {
 
     // Persistent session ID (random hex string for SQLite storage)
     std::string persistId;
+    time_t      tokenCreated{0};   // when persistId was last generated/rotated
 
     // Terminal type reported by the most recent gRPC client (from SetPreferences).
     // Used for back-door TTYPE negotiation when GANL supports it.
@@ -70,6 +72,7 @@ struct HydraSession {
     // GMCP state cache — last payload per package.  Replayed to new
     // front-doors and gRPC subscribers on attach so vitals/room info
     // aren't blank after reconnect.
+    static constexpr size_t MAX_GMCP_CACHE_ENTRIES = 64;
     std::map<std::string, std::string> gmcpCache;
 
     // Pending link reconnect info — populated on eager restore when
@@ -296,6 +299,8 @@ public:
     void safeWrite(ganl::ConnectionHandle handle, const char* data, size_t len);
 
 private:
+    void indexSession(const HydraSession& session);
+    void unindexSession(const HydraSession& session);
     void flushSession(HydraSession& session);
     std::string generatePersistId();
     void resumeSavedSession(FrontDoorState& fd, uint32_t accountId,
@@ -337,6 +342,8 @@ private:
 
     std::map<ganl::ConnectionHandle, FrontDoorState> frontDoors_;
     std::map<HydraSessionId, HydraSession> sessions_;
+    // Index: persistId → session internal ID (for O(1) lookup)
+    std::unordered_map<std::string, HydraSessionId> persistIdIndex_;
     // Reverse map: back-door handle → (session id, link index)
     std::map<ganl::ConnectionHandle, BackDoorMapEntry> backDoorMap_;
 
@@ -354,6 +361,7 @@ private:
         std::vector<time_t> connectTimes;  // timestamps of recent connections (for rate)
         int failedLogins{0};            // consecutive failed login attempts
         time_t lockoutUntil{0};         // locked out until this time (0 = not locked)
+        std::vector<time_t> accountCreateTimes;  // timestamps of account creations
     };
     std::map<std::string, IpTracker> ipTrackers_;
 
@@ -364,6 +372,8 @@ private:
     void recordLoginFailure(const std::string& ip);
     void clearLoginFailures(const std::string& ip);
     bool isLockedOut(const std::string& ip);
+    bool checkAccountCreateRate(const std::string& ip);
+    void recordAccountCreate(const std::string& ip);
 
     time_t lastIpPrune_{0};
 

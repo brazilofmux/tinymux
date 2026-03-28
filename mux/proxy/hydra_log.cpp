@@ -7,6 +7,7 @@
 static FILE* s_logFile = nullptr;
 static LogLevel s_logLevel = LogLevel::Info;
 static std::mutex s_logMutex;
+static std::string s_logPath;
 
 static LogLevel parseLevel(const std::string& level) {
     if (level == "debug") return LogLevel::Debug;
@@ -28,6 +29,7 @@ static const char* levelString(LogLevel level) {
 
 bool logInit(const std::string& filePath, const std::string& level) {
     s_logLevel = parseLevel(level);
+    s_logPath = filePath;
 
     if (filePath.empty() || filePath == "-") {
         s_logFile = stderr;
@@ -48,6 +50,20 @@ void logShutdown() {
         fclose(s_logFile);
     }
     s_logFile = nullptr;
+}
+
+void logReopen() {
+    std::lock_guard<std::mutex> lock(s_logMutex);
+    if (s_logPath.empty() || s_logFile == stderr) return;
+
+    FILE* newFile = fopen(s_logPath.c_str(), "a");
+    if (newFile) {
+        if (s_logFile && s_logFile != stderr) {
+            fclose(s_logFile);
+        }
+        s_logFile = newFile;
+    }
+    // If fopen fails, keep the old file handle
 }
 
 void logMessage(LogLevel level, const char* fmt, ...) {
