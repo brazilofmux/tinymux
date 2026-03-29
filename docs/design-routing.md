@@ -495,7 +495,9 @@ adding the minimum player-facing safety check.
   cached. Expensive but correct, and rare by design. Rate-limited to
   one uncached BFS per executor per second to prevent abuse; excess
   calls return `#-1 RATE LIMITED` rather than blocking.
-- `route()` with `locked` option.
+- Phase 3a: `route()` with `locked` and `locked rebuild` options, using
+  the existing Tier 1/2 tables plus query-time validation of only the
+  returned next hop.
 - `#-1 EXIT IMPASSABLE` return when validation fails.
 
 ### Phase 4: NPC Primitives

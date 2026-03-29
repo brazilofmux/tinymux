@@ -497,11 +497,27 @@ think [attrib_set(test_route_fn/exit_r1q1, [lastcreate(me, e)])]
         [v(exit_ab)] [v(exit_bc)]
       )=
   {
-    @log smoke=TC022: route locked path. Succeeded.;
+    @log smoke=TC022: route locked path. Succeeded.
+  },
+  {
+    @log smoke=TC022: route locked path. Failed ([route(v(room_a), v(room_c), locked path)]).
+  }
+-
+#
+# Test Case #23 - locked rebuild succeeds for a passable exit and
+#                 remains wizard-gated through the existing rebuild path.
+#
+&tr.tc023 test_route_fn=
+  @if strmatch(
+        route(v(room_a), v(room_b), locked rebuild),
+        v(exit_ab)
+      )=
+  {
+    @log smoke=TC023: route locked rebuild. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC022: route locked path. Failed ([route(v(room_a), v(room_c), locked path)]).;
+    @log smoke=TC023: route locked rebuild. Failed ([route(v(room_a), v(room_b), locked rebuild)]).;
     @trig me/tr.done
   }
 -
