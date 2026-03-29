@@ -125,6 +125,13 @@ void testSplitTtypeSignals() {
     expect(buildTtypeIsFrame("xterm-256color")
                == bytes({0xff, 0xfa, 0x18, 0x00}) + "xterm-256color" + bytes({0xff, 0xf0}),
            "TTYPE IS frame encoding mismatch");
+
+    expect(buildTelnetCommandFrame(telnet::DO, telnet::GMCP)
+               == bytes({0xff, 0xfd, 0xc9}),
+           "DO GMCP frame encoding mismatch");
+    expect(buildTelnetCommandFrame(telnet::WILL, telnet::NAWS)
+               == bytes({0xff, 0xfb, 0x1f}),
+           "WILL NAWS frame encoding mismatch");
 }
 
 void testAsciiBridgeConversion() {

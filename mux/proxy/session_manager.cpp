@@ -1708,6 +1708,13 @@ void SessionManager::onBackDoorConnect(ganl::ConnectionHandle bdHandle) {
             + std::to_string(linkIdx + 1) + "): connected]\r\n");
     }
 
+    // Advertise the back-door capabilities Hydra can actually drive.
+    // This makes later GMCP/TTYPE/NAWS traffic standards-compliant instead of
+    // relying on tolerant servers to accept unsolicited subnegotiations.
+    safeWrite(link->handle, buildTelnetCommandFrame(telnet::DO, telnet::GMCP));
+    safeWrite(link->handle, buildTelnetCommandFrame(telnet::WILL, telnet::TTYPE));
+    safeWrite(link->handle, buildTelnetCommandFrame(telnet::WILL, telnet::NAWS));
+
     // Send Core.Hello to the game if GMCP is enabled on this link
     if (link->gmcpEnabled) {
         std::string hello = "Core.Hello {\"client\":\"Hydra\",\"version\":\"0.2\"}";
