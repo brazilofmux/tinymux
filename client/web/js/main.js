@@ -306,7 +306,16 @@ function connectWorld(name, host, port, ssl, loginCommands = [], opts = {}) {
     }
 
     // Auto-save to worlds
-    Settings.addWorld({ name, host, port, ssl });
+    Settings.addWorld({
+        name,
+        host,
+        port,
+        ssl,
+        transport: opts.transport || 'websocket',
+        character: opts.character || '',
+        password: opts.password || '',
+        game: opts.game || '',
+    });
 }
 
 // -- Input --

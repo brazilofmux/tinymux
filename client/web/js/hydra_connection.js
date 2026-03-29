@@ -199,6 +199,7 @@ const GameOutputDecode = {
     2: {name: 'source', type: 'string'},
     3: {name: 'timestamp', type: 'int64'},
     4: {name: 'link_number', type: 'int32'},
+    5: {name: 'end_of_record', type: 'bool'},
 };
 const ConnectRequestFields = {
     session_id: {num: 1, type: 'string'},
@@ -320,11 +321,18 @@ const GmcpMessageDecode = {
     2: {name: 'json', type: 'string'},
     3: {name: 'link_number', type: 'int32'},
 };
+const LinkEventDecode = {
+    1: {name: 'link_number', type: 'int32'},
+    2: {name: 'game_name', type: 'string'},
+    3: {name: 'old_state', type: 'int32'},
+    4: {name: 'new_state', type: 'int32'},
+};
 const ServerMessageDecode = {
     1: {name: 'game_output', type: 'message', fields: GameOutputDecode},
     2: {name: 'gmcp', type: 'message', fields: GmcpMessageDecode},
-    3: {name: 'system_notice', type: 'message', fields: SystemNoticeDecode},
+    3: {name: 'notice', type: 'message', fields: SystemNoticeDecode},
     4: {name: 'pong', type: 'message', fields: PongDecode},
+    5: {name: 'link_event', type: 'message', fields: LinkEventDecode},
 };
 
 // Process management RPCs
@@ -412,6 +420,7 @@ class HydraConnection {
         this._reconnecting = false;
         this._ws = null;             // WebSocket GameSession connection
         this._wsAuthenticated = false;
+        this._lineBuf = '';
     }
 
     get _baseUrl() {
@@ -426,6 +435,33 @@ class HydraConnection {
 
     _emit(line) {
         if (this.onLine) this.onLine(line);
+    }
+
+    _emitPrompt(prompt) {
+        if (!prompt) return;
+        this.addScrollback(prompt);
+        if (this.onPrompt) this.onPrompt(prompt);
+    }
+
+    _processGameOutput(output) {
+        const text = output.text || '';
+        if (text) {
+            this._lineBuf += text;
+            const parts = this._lineBuf.split('\n');
+            this._lineBuf = parts.pop();
+            for (const raw of parts) {
+                const line = raw.endsWith('\r') ? raw.slice(0, -1) : raw;
+                this.addScrollback(line);
+                this._emit(line);
+            }
+        }
+
+        if (output.end_of_record) {
+            const prompt = this._lineBuf.endsWith('\r')
+                ? this._lineBuf.slice(0, -1)
+                : this._lineBuf;
+            this._emitPrompt(prompt);
+        }
     }
 
     async _rpc(method, requestBytes, responseDecoder) {
@@ -598,8 +634,8 @@ class HydraConnection {
                 await this._cmdProcess('StartGame', text.substring(8).trim());
             } else if (lower.startsWith('/hstop ')) {
                 await this._cmdProcess('StopGame', text.substring(7).trim());
-            } else if (lower.startsWith('/hrestart ')) {
-                await this._cmdProcess('RestartGame', text.substring(10).trim());
+            } else if (lower.startsWith('/hrestart')) {
+                await this._cmdProcess('RestartGame', text.substring(9).trim());
             } else if (lower.startsWith('/hstatus')) {
                 await this._cmdStatus(text.substring(8).trim());
             } else if (lower === '/hdetach') {
@@ -942,15 +978,18 @@ class HydraConnection {
         ws.onmessage = (event) => {
             const msg = Proto.decode(new Uint8Array(event.data), ServerMessageDecode);
             if (msg.game_output) {
-                this.addScrollback(msg.game_output.text);
-                this._emit(msg.game_output.text);
+                this._processGameOutput(msg.game_output);
             } else if (msg.gmcp) {
                 // GMCP: emit as formatted text for now
                 this._emit('[GMCP ' + msg.gmcp.package + '] ' + msg.gmcp.json);
             } else if (msg.pong) {
                 // Keepalive response — no action needed
-            } else if (msg.system_notice) {
-                this._emit('% [Hydra] ' + msg.system_notice.text);
+            } else if (msg.notice) {
+                this._emit('% [Hydra] ' + msg.notice.text);
+            } else if (msg.link_event) {
+                const ev = msg.link_event;
+                const state = LINK_STATE_NAMES[ev.new_state] || 'unknown';
+                this._emit('% [Hydra] Link ' + ev.link_number + ' (' + ev.game_name + '): ' + state);
             }
         };
 
@@ -1023,10 +1062,7 @@ class HydraConnection {
 
                     if (flag === 0x00) {
                         const output = Proto.decode(payload, GameOutputDecode);
-                        if (output.text) {
-                            this.addScrollback(output.text);
-                            this._emit(output.text);
-                        }
+                        this._processGameOutput(output);
                     }
                 }
                 buffer = buffer.slice(pos);
