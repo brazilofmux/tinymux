@@ -130,6 +130,13 @@ std::vector<WsMessage> wsDecodeFrames(WsState& ws, const char* data,
             uint8_t len7 = *p & 0x7F;
             p++;
 
+            // Client-to-server frames must be masked.
+            if (!ws.masked) {
+                responses += wsCloseFrame(1002);
+                ws.parseState = WsState::Header1;
+                return messages;
+            }
+
             if (len7 < 126) {
                 ws.payloadLen = len7;
                 ws.parseState = ws.masked ? WsState::MaskKey : WsState::Payload;

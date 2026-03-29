@@ -7,6 +7,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdi
     $(SSL) $(OPENSSL_CFLAGS) $(GRPC_ENABLED)
 
 bin_PROGRAMS = hydra
+noinst_PROGRAMS = proxy_regression
 
 hydra_SOURCES = \
     hydra_main.cpp \
@@ -16,10 +17,23 @@ hydra_SOURCES = \
     session_manager.cpp \
     account_manager.cpp \
     telnet_bridge.cpp \
+    telnet_stream.cpp \
     scrollback.cpp \
     crypto.cpp \
     process_manager.cpp \
     websocket.cpp
+
+proxy_regression_SOURCES = \
+    proxy_regression.cpp \
+    telnet_bridge.cpp \
+    telnet_stream.cpp \
+    websocket.cpp \
+    base64.cpp
+
+proxy_regression_CXXFLAGS = $(hydra_CXXFLAGS)
+proxy_regression_CPPFLAGS = $(hydra_CPPFLAGS)
+proxy_regression_LDFLAGS = $(hydra_LDFLAGS)
+proxy_regression_LDADD = $(hydra_LDADD)
 
 # gRPC support (optional, requires --enable-grpc at configure time)
 if GRPC_ENABLED

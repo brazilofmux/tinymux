@@ -6,6 +6,7 @@
 #include "scrollback.h"
 #include "account_manager.h"
 #include "telnet_bridge.h"
+#include "telnet_stream.h"
 #include "process_manager.h"
 #include "websocket.h"
 #include <network_engine.h>
@@ -32,6 +33,7 @@ struct BackDoorLink {
     const GameConfig*   gameConfig{nullptr};
     bool                gmcpEnabled{false};
     std::string         utf8Carry;          // incomplete trailing UTF-8 bytes between reads
+    TelnetParseState    telnetState;        // partial telnet/GMCP parse state between reads
 
     // Reconnect backoff
     int                 retryCount{0};
@@ -206,6 +208,7 @@ struct FrontDoorState {
     ganl::EncodingType encoding{ganl::EncodingType::Utf8};
     ColorDepth colorDepth{ColorDepth::Ansi256};
     bool gmcpEnabled{false};
+    TelnetParseState telnetState;   // partial telnet/GMCP parse state between reads
 
     // Protocol type
     FrontDoorProto proto{FrontDoorProto::Telnet};

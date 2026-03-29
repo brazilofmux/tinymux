@@ -1,6 +1,7 @@
 #include "session_manager.h"
 #include "crypto.h"
 #include "hydra_log.h"
+#include "telnet_stream.h"
 #include "telnet_utils.h"
 #include "utf8_utils.h"
 #include <color_ops.h>
@@ -27,147 +28,6 @@ struct ReplayContext {
     TelnetBridge* bridge;
     SessionManager* sessionMgr;
 };
-
-// Telnet constants for GMCP parsing (from shared telnet_utils.h)
-static constexpr unsigned char T_IAC  = telnet::IAC;
-static constexpr unsigned char T_SB   = telnet::SB;
-static constexpr unsigned char T_SE   = telnet::SE;
-static constexpr unsigned char T_GMCP = telnet::GMCP;
-static constexpr unsigned char T_WILL = telnet::WILL;
-static constexpr unsigned char T_WONT = telnet::WONT;
-static constexpr unsigned char T_DO   = telnet::DO;
-static constexpr unsigned char T_DONT = telnet::DONT;
-
-// A GMCP sub-negotiation extracted from the raw byte stream.
-struct GmcpMessage {
-    std::string payload;  // everything between SB GMCP and IAC SE
-};
-
-// Split raw telnet data into regular bytes and GMCP sub-negotiations.
-// Regular bytes go into 'regular', GMCP messages go into 'gmcp'.
-// Also detects WILL GMCP / DO GMCP for capability tracking.
-static void splitGmcp(const char* data, size_t len,
-                      std::string& regular,
-                      std::vector<GmcpMessage>& gmcp,
-                      bool& sawWillGmcp, bool& sawDoGmcp,
-                      bool stripTelnet = false) {
-    sawWillGmcp = false;
-    sawDoGmcp = false;
-    regular.reserve(len);
-
-    enum { Normal, SawIAC, SawSB, InGmcpSB, InGmcpIAC, SawCmd,
-           InOtherSB, InOtherSBIAC } state = Normal;
-    unsigned char cmdByte = 0;
-    std::string gmcpBuf;
-    std::string otherSBBuf;
-
-    for (size_t i = 0; i < len; i++) {
-        unsigned char ch = static_cast<unsigned char>(data[i]);
-
-        switch (state) {
-        case Normal:
-            if (ch == T_IAC) { state = SawIAC; }
-            else { regular.push_back(static_cast<char>(ch)); }
-            break;
-
-        case SawIAC:
-            if (ch == T_IAC) {
-                regular.push_back(static_cast<char>(T_IAC));  // escaped IAC
-                state = Normal;
-            } else if (ch == T_SB) {
-                state = SawSB;
-            } else if (ch == T_WILL || ch == T_WONT ||
-                       ch == T_DO   || ch == T_DONT) {
-                cmdByte = ch;
-                state = SawCmd;
-            } else {
-                // Other telnet command (2-byte: IAC + cmd)
-                if (!stripTelnet) {
-                    regular.push_back(static_cast<char>(T_IAC));
-                    regular.push_back(static_cast<char>(ch));
-                }
-                state = Normal;
-            }
-            break;
-
-        case SawCmd:
-            // 3-byte command: IAC WILL/WONT/DO/DONT <option>
-            if (ch == T_GMCP) {
-                if (cmdByte == T_WILL) sawWillGmcp = true;
-                if (cmdByte == T_DO)   sawDoGmcp = true;
-            }
-            if (!stripTelnet) {
-                regular.push_back(static_cast<char>(T_IAC));
-                regular.push_back(static_cast<char>(cmdByte));
-                regular.push_back(static_cast<char>(ch));
-            }
-            state = Normal;
-            break;
-
-        case SawSB:
-            if (ch == T_GMCP) {
-                gmcpBuf.clear();
-                state = InGmcpSB;
-            } else {
-                // Non-GMCP subneg — consume the entire body until IAC SE
-                otherSBBuf.clear();
-                otherSBBuf.push_back(static_cast<char>(ch));
-                state = InOtherSB;
-            }
-            break;
-
-        case InOtherSB:
-            if (ch == T_IAC) {
-                state = InOtherSBIAC;
-            } else {
-                otherSBBuf.push_back(static_cast<char>(ch));
-            }
-            break;
-
-        case InOtherSBIAC:
-            if (ch == T_SE) {
-                // End of non-GMCP subneg — pass through or discard
-                if (!stripTelnet) {
-                    regular.push_back(static_cast<char>(T_IAC));
-                    regular.push_back(static_cast<char>(T_SB));
-                    regular.append(otherSBBuf);
-                    regular.push_back(static_cast<char>(T_IAC));
-                    regular.push_back(static_cast<char>(T_SE));
-                }
-                state = Normal;
-            } else if (ch == T_IAC) {
-                otherSBBuf.push_back(static_cast<char>(T_IAC));  // escaped IAC
-                state = InOtherSB;
-            } else {
-                // Unexpected byte after IAC inside subneg
-                otherSBBuf.push_back(static_cast<char>(T_IAC));
-                otherSBBuf.push_back(static_cast<char>(ch));
-                state = InOtherSB;
-            }
-            break;
-
-        case InGmcpSB:
-            if (ch == T_IAC) { state = InGmcpIAC; }
-            else { gmcpBuf.push_back(static_cast<char>(ch)); }
-            break;
-
-        case InGmcpIAC:
-            if (ch == T_SE) {
-                gmcp.push_back({gmcpBuf});
-                state = Normal;
-            } else if (ch == T_IAC) {
-                gmcpBuf.push_back(static_cast<char>(T_IAC));
-                state = InGmcpSB;
-            } else {
-                // Unexpected byte after IAC inside GMCP SB
-                gmcpBuf.push_back(static_cast<char>(T_IAC));
-                gmcpBuf.push_back(static_cast<char>(ch));
-                state = InGmcpSB;
-            }
-            break;
-        }
-    }
-}
 
 // buildGmcpFrame() is now in telnet_utils.h (shared with grpc_server.cpp)
 
@@ -700,9 +560,9 @@ void SessionManager::handleFrontDoorPlainData(FrontDoorState& fd,
 
     // Split GMCP sub-negotiations from regular data
     std::string regular;
-    std::vector<GmcpMessage> gmcpMsgs;
+    std::vector<TelnetGmcpMessage> gmcpMsgs;
     bool sawWillGmcp = false, sawDoGmcp = false;
-    splitGmcp(data, len, regular, gmcpMsgs, sawWillGmcp, sawDoGmcp);
+    splitTelnetStream(data, len, fd.telnetState, regular, gmcpMsgs, sawWillGmcp, sawDoGmcp);
 
     // Track client GMCP capability
     if (sawWillGmcp || sawDoGmcp) {
@@ -966,7 +826,11 @@ void SessionManager::handleWsGameSessionData(FrontDoorState& fd,
         if (cmsg.has_input_line()) {
             BackDoorLink* active = session->getActiveLink();
             if (active && active->state == LinkState::Active) {
-                std::string line = cmsg.input_line() + "\r\n";
+                std::string line = bridge_.convertInput(
+                    ganl::EncodingType::Utf8,
+                    active->protoState.encoding,
+                    cmsg.input_line());
+                line += "\r\n";
                 safeWrite(active->handle, line);
             }
         } else if (cmsg.has_ping()) {
@@ -1754,6 +1618,7 @@ void SessionManager::connectToGame(HydraSession& session,
         reused.character.clear();
         reused.gmcpEnabled = false;
         reused.utf8Carry.clear();
+        reused.telnetState = TelnetParseState{};
     } else {
         BackDoorLink link;
         link.handle = bdHandle;
@@ -1819,6 +1684,7 @@ void SessionManager::closeLink(HydraSession& session, size_t linkIdx) {
     link.retryCount = 0;
     link.nextRetry = 0;
     link.utf8Carry.clear();
+    link.telnetState = TelnetParseState{};
 }
 
 // ---- Back-door lifecycle ----
@@ -1909,9 +1775,9 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
     // Split GMCP sub-negotiations from regular data.
     // Strip all telnet sequences — back-door data should be clean text.
     std::string regular;
-    std::vector<GmcpMessage> gmcpMsgs;
+    std::vector<TelnetGmcpMessage> gmcpMsgs;
     bool sawWillGmcp = false, sawDoGmcp = false;
-    splitGmcp(data, len, regular, gmcpMsgs, sawWillGmcp, sawDoGmcp, true);
+    splitTelnetStream(data, len, link->telnetState, regular, gmcpMsgs, sawWillGmcp, sawDoGmcp, true);
 
     // Track GMCP capability on the back-door link
     if (sawWillGmcp || sawDoGmcp) {
@@ -2136,12 +2002,15 @@ void SessionManager::runTimers() {
             flushSession(session);
         }
     }
+    bool ranFlushTick = false;
     if (now - lastFlush_ >= 15) {
         lastFlush_ = now;
+        ranFlushTick = true;
     }
 
-    // GMCP Core.KeepAlive to active game links (prevents idle disconnects)
-    if (now - lastFlush_ < 2) {  // piggyback on the 60s flush interval
+    // GMCP Core.KeepAlive to active game links (prevents idle disconnects).
+    // Send once per flush tick rather than in a short burst window.
+    if (ranFlushTick) {
         for (auto& [sid, session] : sessions_) {
             for (auto& link : session.links) {
                 if (link.state == LinkState::Active && link.gmcpEnabled &&

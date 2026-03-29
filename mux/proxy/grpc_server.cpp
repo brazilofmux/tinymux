@@ -366,7 +366,11 @@ public:
                             if (!s) return;
                             BackDoorLink* active = s->getActiveLink();
                             if (active && active->state == LinkState::Active) {
-                                std::string data = line + "\r\n";
+                                std::string data = TelnetBridge().convertInput(
+                                    ganl::EncodingType::Utf8,
+                                    active->protoState.encoding,
+                                    line);
+                                data += "\r\n";
                                 sm.safeWrite(active->handle, data);
                             }
                         });
@@ -517,7 +521,11 @@ public:
                     resp->set_error("no active link");
                     return false;
                 }
-                std::string data = line + "\r\n";
+                std::string data = TelnetBridge().convertInput(
+                    ganl::EncodingType::Utf8,
+                    active->protoState.encoding,
+                    line);
+                data += "\r\n";
                 sm.safeWrite(active->handle, data);
                 resp->set_success(true);
                 return true;

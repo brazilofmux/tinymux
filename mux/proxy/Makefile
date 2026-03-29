@@ -54,6 +54,7 @@ SRCS = \
     session_manager.cpp \
     account_manager.cpp \
     telnet_bridge.cpp \
+    telnet_stream.cpp \
     scrollback.cpp \
     crypto.cpp \
     process_manager.cpp \
@@ -91,19 +92,28 @@ endif
 
 OBJS = $(SRCS:.cpp=.o)
 TARGET = hydra
+TEST_SRCS = proxy_regression.cpp telnet_bridge.cpp telnet_stream.cpp websocket.cpp base64.cpp
+TEST_OBJS = $(TEST_SRCS:.cpp=.o)
+TEST_TARGET = proxy_regression
 
-.PHONY: all clean install
+.PHONY: all clean install test
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
 
+$(TEST_TARGET): $(TEST_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(TEST_OBJS) $(LDLIBS)
+
+test: $(TEST_TARGET)
+	./$(TEST_TARGET)
+
 %.o: %.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(TARGET) $(TEST_OBJS) $(TEST_TARGET)
 ifeq ($(GRPC),1)
 	rm -f $(PROTO_SRCS) $(PROTO_HDRS) $(PROTO_STAMP)
 endif

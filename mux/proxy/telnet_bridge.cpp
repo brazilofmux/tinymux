@@ -158,8 +158,7 @@ std::string TelnetBridge::renderForClient(
     }
 
     // Step 2: Charset-encode if client is not UTF-8.
-    if (clientEncoding != ganl::EncodingType::Utf8 &&
-        clientEncoding != ganl::EncodingType::Ascii) {
+    if (clientEncoding != ganl::EncodingType::Utf8) {
         std::string rendered(reinterpret_cast<char*>(ansiBuf.data()), ansiLen);
         return charsetEncodeFromUtf8(rendered, clientEncoding);
     }
@@ -192,8 +191,7 @@ std::string TelnetBridge::convertInput(
     }
 
     // Step 2: Encode UTF-8 to game encoding if needed.
-    if (gameEncoding != ganl::EncodingType::Utf8 &&
-        gameEncoding != ganl::EncodingType::Ascii) {
+    if (gameEncoding != ganl::EncodingType::Utf8) {
         return charsetEncodeFromUtf8(utf8Str, gameEncoding);
     }
 
