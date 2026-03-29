@@ -107,7 +107,7 @@ std::string TelnetBridge::ingestGameOutput(
         }
         break;
     default:
-        // UTF-8 or ASCII — pass through
+        // ASCII — pass through
         utf8Str.assign(data, len);
         break;
     }

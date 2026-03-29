@@ -1,6 +1,8 @@
 #ifndef HYDRA_UTF8_UTILS_H
 #define HYDRA_UTF8_UTILS_H
 
+#include "hydra_log.h"
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdio>
@@ -30,7 +32,7 @@ inline Utf8Issue findFirstUtf8Issue(std::string_view s) {
             continue;
         }
 
-        auto truncated = [&](size_t need) {
+        auto truncated = [&]() {
             return Utf8Issue{Utf8IssueType::TruncatedSequence, i, s.size() - i};
         };
         auto invalid = [&](size_t badBytes = 1u) {
@@ -38,7 +40,7 @@ inline Utf8Issue findFirstUtf8Issue(std::string_view s) {
         };
 
         if (c >= 0xC2 && c <= 0xDF) {
-            if (i + 1 >= s.size()) return truncated(2);
+            if (i + 1 >= s.size()) return truncated();
             const unsigned char c1 = static_cast<unsigned char>(s[i + 1]);
             if ((c1 & 0xC0) != 0x80) return invalid();
             i += 2;
@@ -46,7 +48,7 @@ inline Utf8Issue findFirstUtf8Issue(std::string_view s) {
         }
 
         if (c == 0xE0) {
-            if (i + 2 >= s.size()) return truncated(3);
+            if (i + 2 >= s.size()) return truncated();
             const unsigned char c1 = static_cast<unsigned char>(s[i + 1]);
             const unsigned char c2 = static_cast<unsigned char>(s[i + 2]);
             if (c1 < 0xA0 || c1 > 0xBF || (c2 & 0xC0) != 0x80) return invalid();
@@ -54,7 +56,7 @@ inline Utf8Issue findFirstUtf8Issue(std::string_view s) {
             continue;
         }
         if ((c >= 0xE1 && c <= 0xEC) || (c >= 0xEE && c <= 0xEF)) {
-            if (i + 2 >= s.size()) return truncated(3);
+            if (i + 2 >= s.size()) return truncated();
             const unsigned char c1 = static_cast<unsigned char>(s[i + 1]);
             const unsigned char c2 = static_cast<unsigned char>(s[i + 2]);
             if ((c1 & 0xC0) != 0x80 || (c2 & 0xC0) != 0x80) return invalid();
@@ -62,7 +64,7 @@ inline Utf8Issue findFirstUtf8Issue(std::string_view s) {
             continue;
         }
         if (c == 0xED) {
-            if (i + 2 >= s.size()) return truncated(3);
+            if (i + 2 >= s.size()) return truncated();
             const unsigned char c1 = static_cast<unsigned char>(s[i + 1]);
             const unsigned char c2 = static_cast<unsigned char>(s[i + 2]);
             if (c1 < 0x80 || c1 > 0x9F || (c2 & 0xC0) != 0x80) return invalid();
@@ -71,7 +73,7 @@ inline Utf8Issue findFirstUtf8Issue(std::string_view s) {
         }
 
         if (c == 0xF0) {
-            if (i + 3 >= s.size()) return truncated(4);
+            if (i + 3 >= s.size()) return truncated();
             const unsigned char c1 = static_cast<unsigned char>(s[i + 1]);
             const unsigned char c2 = static_cast<unsigned char>(s[i + 2]);
             const unsigned char c3 = static_cast<unsigned char>(s[i + 3]);
@@ -83,7 +85,7 @@ inline Utf8Issue findFirstUtf8Issue(std::string_view s) {
             continue;
         }
         if (c >= 0xF1 && c <= 0xF3) {
-            if (i + 3 >= s.size()) return truncated(4);
+            if (i + 3 >= s.size()) return truncated();
             const unsigned char c1 = static_cast<unsigned char>(s[i + 1]);
             const unsigned char c2 = static_cast<unsigned char>(s[i + 2]);
             const unsigned char c3 = static_cast<unsigned char>(s[i + 3]);
@@ -95,7 +97,7 @@ inline Utf8Issue findFirstUtf8Issue(std::string_view s) {
             continue;
         }
         if (c == 0xF4) {
-            if (i + 3 >= s.size()) return truncated(4);
+            if (i + 3 >= s.size()) return truncated();
             const unsigned char c1 = static_cast<unsigned char>(s[i + 1]);
             const unsigned char c2 = static_cast<unsigned char>(s[i + 2]);
             const unsigned char c3 = static_cast<unsigned char>(s[i + 3]);
@@ -150,6 +152,31 @@ inline std::string sanitizeUtf8(std::string_view s) {
     }
 
     return out;
+}
+
+inline std::string issueTypeName(Utf8IssueType type) {
+    switch (type) {
+    case Utf8IssueType::None:
+        return "none";
+    case Utf8IssueType::InvalidSequence:
+        return "invalid";
+    case Utf8IssueType::TruncatedSequence:
+        return "truncated";
+    }
+    return "unknown";
+}
+
+inline std::string sanitizeProtoTextForLog(const std::string& text,
+                                           const char* path,
+                                           const std::string& source,
+                                           int linkNumber) {
+    Utf8Issue issue = findFirstUtf8Issue(text);
+    if (!issue.hasIssue()) return text;
+
+    LOG_WARN("Proto UTF-8 issue on %s source=%s link=%d type=%s offset=%zu bytes=%zu hex=[%s]",
+             path, source.c_str(), linkNumber, issueTypeName(issue.type).c_str(),
+             issue.offset, issue.bytes, hexWindow(text, issue.offset).c_str());
+    return sanitizeUtf8(text);
 }
 
 #endif // HYDRA_UTF8_UTILS_H

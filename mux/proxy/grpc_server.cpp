@@ -25,31 +25,6 @@ using grpc::ServerReaderWriter;
 using grpc::Status;
 using grpc::StatusCode;
 
-static std::string issueTypeName(Utf8IssueType type) {
-    switch (type) {
-    case Utf8IssueType::None:
-        return "none";
-    case Utf8IssueType::InvalidSequence:
-        return "invalid";
-    case Utf8IssueType::TruncatedSequence:
-        return "truncated";
-    }
-    return "unknown";
-}
-
-static std::string sanitizeProtoTextForLog(const std::string& text,
-                                           const char* path,
-                                           const std::string& source,
-                                           int linkNumber) {
-    Utf8Issue issue = findFirstUtf8Issue(text);
-    if (!issue.hasIssue()) return text;
-
-    LOG_WARN("Proto UTF-8 issue on %s source=%s link=%d type=%s offset=%zu bytes=%zu hex=[%s]",
-             path, source.c_str(), linkNumber, issueTypeName(issue.type).c_str(),
-             issue.offset, issue.bytes, hexWindow(text, issue.offset).c_str());
-    return sanitizeUtf8(text);
-}
-
 // ---- Auth helper: extract session_id from metadata or message field ----
 
 static std::string getSessionId(ServerContext* ctx, const std::string& msgField) {

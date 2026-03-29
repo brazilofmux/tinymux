@@ -36,31 +36,6 @@ static constexpr unsigned char T_GMCP = telnet::GMCP;
 static constexpr unsigned char T_WILL = telnet::WILL;
 static constexpr unsigned char T_DO   = telnet::DO;
 
-static std::string issueTypeName(Utf8IssueType type) {
-    switch (type) {
-    case Utf8IssueType::None:
-        return "none";
-    case Utf8IssueType::InvalidSequence:
-        return "invalid";
-    case Utf8IssueType::TruncatedSequence:
-        return "truncated";
-    }
-    return "unknown";
-}
-
-static std::string sanitizeProtoTextForLog(const std::string& text,
-                                           const char* path,
-                                           const std::string& source,
-                                           int linkNumber) {
-    Utf8Issue issue = findFirstUtf8Issue(text);
-    if (!issue.hasIssue()) return text;
-
-    LOG_WARN("Proto UTF-8 issue on %s source=%s link=%d type=%s offset=%zu bytes=%zu hex=[%s]",
-             path, source.c_str(), linkNumber, issueTypeName(issue.type).c_str(),
-             issue.offset, issue.bytes, hexWindow(text, issue.offset).c_str());
-    return sanitizeUtf8(text);
-}
-
 // A GMCP sub-negotiation extracted from the raw byte stream.
 struct GmcpMessage {
     std::string payload;  // everything between SB GMCP and IAC SE
