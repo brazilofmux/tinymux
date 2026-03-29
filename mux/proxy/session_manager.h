@@ -32,6 +32,10 @@ struct BackDoorLink {
     ganl::ProtocolState protoState;
     const GameConfig*   gameConfig{nullptr};
     bool                gmcpEnabled{false};
+    bool                sentWillTtype{false};
+    bool                sentWillNaws{false};
+    bool                sentWillCharset{false};
+    bool                sentWillEor{false};
     std::string         utf8Carry;          // incomplete trailing UTF-8 bytes between reads
     TelnetParseState    telnetState;        // partial telnet/GMCP parse state between reads
 

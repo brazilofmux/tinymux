@@ -157,14 +157,52 @@ void testSplitCharsetSignals() {
     expect(!signals.sawCharsetRequest, "partial CHARSET REQUEST should not fire early");
     splitTelnetStream(req2.data(), req2.size(), state, regular, gmcp, signals, true);
     expect(signals.sawCharsetRequest, "CHARSET REQUEST should be detected across reads");
-    expect(signals.charsetPayload == "|UTF-8|US-ASCII",
+    expect(signals.charsetRequestPayload == "|UTF-8|US-ASCII",
            "CHARSET REQUEST payload mismatch");
 
     const std::string accepted = bytes({0xff, 0xfa, 0x2a, 0x02}) + "ISO-8859-1" + bytes({0xff, 0xf0});
     splitTelnetStream(accepted.data(), accepted.size(), state, regular, gmcp, signals, true);
     expect(signals.sawCharsetAccepted, "CHARSET ACCEPTED should be detected");
-    expect(signals.charsetPayload == "ISO-8859-1",
+    expect(signals.charsetAcceptedPayload == "ISO-8859-1",
            "CHARSET ACCEPTED payload mismatch");
+}
+
+void testCharsetRequestAndAcceptedInSameRead() {
+    TelnetParseState state;
+    std::string regular;
+    std::vector<TelnetGmcpMessage> gmcp;
+    TelnetSignals signals;
+
+    // CHARSET REQUEST followed immediately by CHARSET ACCEPTED in one read.
+    const std::string combined =
+        bytes({0xff, 0xfa, 0x2a, 0x01, ';'}) + "UTF-8;US-ASCII" + bytes({0xff, 0xf0})
+        + bytes({0xff, 0xfa, 0x2a, 0x02}) + "CP437" + bytes({0xff, 0xf0});
+    splitTelnetStream(combined.data(), combined.size(), state, regular, gmcp, signals, true);
+
+    expect(signals.sawCharsetRequest, "REQUEST should fire in combined read");
+    expect(signals.charsetRequestPayload == ";UTF-8;US-ASCII",
+           "REQUEST payload mismatch in combined read");
+    expect(signals.sawCharsetAccepted, "ACCEPTED should fire in combined read");
+    expect(signals.charsetAcceptedPayload == "CP437",
+           "ACCEPTED payload mismatch in combined read");
+}
+
+void testSplitEorAcrossReads() {
+    TelnetParseState state;
+    std::string regular;
+    std::vector<TelnetGmcpMessage> gmcp;
+    TelnetSignals signals;
+
+    // IAC in first chunk, EOR_CMD in second chunk.
+    splitTelnetStream(bytes({0xff}).data(), 1, state, regular, gmcp, signals, true);
+    expect(!signals.sawEor, "partial IAC EOR should not fire early");
+    expect(state.state == TelnetParseState::SawIAC,
+           "parser should be in SawIAC after lone IAC byte");
+
+    splitTelnetStream(bytes({0xef}).data(), 1, state, regular, gmcp, signals, true);
+    expect(signals.sawEor, "IAC EOR should be detected across reads");
+    expect(state.state == TelnetParseState::Normal,
+           "parser should return to Normal after split EOR");
 }
 
 void testSplitEorSignals() {
@@ -238,7 +276,9 @@ int main() {
     testStripNonGmcpSubnegotiationAcrossReads();
     testSplitTtypeSignals();
     testSplitCharsetSignals();
+    testCharsetRequestAndAcceptedInSameRead();
     testSplitEorSignals();
+    testSplitEorAcrossReads();
     testAsciiBridgeConversion();
     testWebSocketMaskEnforcement();
     std::cout << "proxy_regression: ok\n";

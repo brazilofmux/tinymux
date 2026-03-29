@@ -1687,6 +1687,10 @@ void SessionManager::connectToGame(HydraSession& session,
         reused.nextRetry = 0;
         reused.character.clear();
         reused.gmcpEnabled = false;
+        reused.sentWillTtype = false;
+        reused.sentWillNaws = false;
+        reused.sentWillCharset = false;
+        reused.sentWillEor = false;
         reused.utf8Carry.clear();
         reused.telnetState = TelnetParseState{};
     } else {
@@ -1753,6 +1757,10 @@ void SessionManager::closeLink(HydraSession& session, size_t linkIdx) {
     link.state = LinkState::Dead;
     link.retryCount = 0;
     link.nextRetry = 0;
+    link.sentWillTtype = false;
+    link.sentWillNaws = false;
+    link.sentWillCharset = false;
+    link.sentWillEor = false;
     link.utf8Carry.clear();
     link.telnetState = TelnetParseState{};
 }
@@ -1786,6 +1794,10 @@ void SessionManager::onBackDoorConnect(ganl::ConnectionHandle bdHandle) {
     safeWrite(link->handle, buildTelnetCommandFrame(telnet::WILL, telnet::TTYPE));
     safeWrite(link->handle, buildTelnetCommandFrame(telnet::WILL, telnet::NAWS));
     safeWrite(link->handle, buildTelnetCommandFrame(telnet::WILL, telnet::CHARSET));
+    link->sentWillTtype = true;
+    link->sentWillNaws = true;
+    link->sentWillCharset = true;
+    link->sentWillEor = true;
 
     // Send Core.Hello to the game if GMCP is enabled on this link
     if (link->gmcpEnabled) {
@@ -1863,15 +1875,18 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
         link->gmcpEnabled = true;
     }
 
-    if (signals.sawDoTtype) {
+    if (signals.sawDoTtype && !link->sentWillTtype) {
+        link->sentWillTtype = true;
         safeWrite(link->handle,
                   buildTelnetCommandFrame(telnet::WILL, telnet::TTYPE));
     }
-    if (signals.sawDoCharset) {
+    if (signals.sawDoCharset && !link->sentWillCharset) {
+        link->sentWillCharset = true;
         safeWrite(link->handle,
                   buildTelnetCommandFrame(telnet::WILL, telnet::CHARSET));
     }
-    if (signals.sawDoEor) {
+    if (signals.sawDoEor && !link->sentWillEor) {
+        link->sentWillEor = true;
         safeWrite(link->handle,
                   buildTelnetCommandFrame(telnet::WILL, telnet::EOR_OPT));
     }
@@ -1883,7 +1898,7 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
     }
     if (signals.sawCharsetRequest) {
         std::string wanted = hydraCharsetName(link->protoState.encoding);
-        if (charsetOffered(signals.charsetPayload, wanted)) {
+        if (charsetOffered(signals.charsetRequestPayload, wanted)) {
             safeWrite(link->handle, buildCharsetAcceptedFrame(wanted));
         } else {
             safeWrite(link->handle, buildCharsetRejectedFrame());
@@ -1891,7 +1906,7 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
     }
     if (signals.sawCharsetAccepted) {
         link->protoState.encoding =
-            parseNegotiatedCharset(signals.charsetPayload, link->protoState.encoding);
+            parseNegotiatedCharset(signals.charsetAcceptedPayload, link->protoState.encoding);
     }
     if (signals.sawCharsetRejected) {
         LOG_INFO("Session %lu: link %zu charset negotiation rejected by %s",

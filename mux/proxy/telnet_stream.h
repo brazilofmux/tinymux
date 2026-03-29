@@ -38,7 +38,8 @@ struct TelnetSignals {
     bool sawCharsetAccepted{false};
     bool sawCharsetRejected{false};
     bool sawEor{false};
-    std::string charsetPayload;
+    std::string charsetRequestPayload;
+    std::string charsetAcceptedPayload;
 };
 
 void splitTelnetStream(const char* data, size_t len,

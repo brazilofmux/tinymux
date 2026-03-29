@@ -20,8 +20,8 @@ namespace telnet {
     constexpr uint8_t CHARSET = 42;
     constexpr uint8_t EOR_OPT = 25;
     constexpr uint8_t TELQUAL_IS = 0;
-    constexpr uint8_t TELQUAL_SEND = 1;
-    constexpr uint8_t TELQUAL_REQUEST = 1;
+    constexpr uint8_t TELQUAL_SEND = 1;    // TTYPE sub-command: send terminal type
+    constexpr uint8_t TELQUAL_REQUEST = 1; // CHARSET sub-command: request (same value, different option)
     constexpr uint8_t TELQUAL_ACCEPTED = 2;
     constexpr uint8_t TELQUAL_REJECTED = 3;
 }

@@ -109,15 +109,14 @@ void splitTelnetStream(const char* data, size_t len,
                         static_cast<unsigned char>(parseState.otherSBBuf[1]);
                     if (subcmd == telnet::TELQUAL_REQUEST) {
                         signals.sawCharsetRequest = true;
-                        signals.charsetPayload.assign(parseState.otherSBBuf.begin() + 2,
-                                                     parseState.otherSBBuf.end());
+                        signals.charsetRequestPayload.assign(parseState.otherSBBuf.begin() + 2,
+                                                             parseState.otherSBBuf.end());
                     } else if (subcmd == telnet::TELQUAL_ACCEPTED) {
                         signals.sawCharsetAccepted = true;
-                        signals.charsetPayload.assign(parseState.otherSBBuf.begin() + 2,
-                                                     parseState.otherSBBuf.end());
+                        signals.charsetAcceptedPayload.assign(parseState.otherSBBuf.begin() + 2,
+                                                              parseState.otherSBBuf.end());
                     } else if (subcmd == telnet::TELQUAL_REJECTED) {
                         signals.sawCharsetRejected = true;
-                        signals.charsetPayload.clear();
                     }
                 }
                 if (!stripTelnet) {
