@@ -156,11 +156,12 @@ bool HydraConnection::connect() {
 }
 
 void HydraConnection::disconnect() {
-    bool wasConnected = connected_.exchange(false);
+    connected_.store(false);
     reconnecting_.store(false);
-    if (!wasConnected) return;
 
-    // Cancel the gRPC context to unblock the reader
+    // Cancel the gRPC context to unblock the reader thread.
+    // The reconnect loop may have replaced sessionCtx, so cancel
+    // whatever context currently exists.
     if (grpc_ && grpc_->sessionCtx) {
         grpc_->sessionCtx->TryCancel();
     }
