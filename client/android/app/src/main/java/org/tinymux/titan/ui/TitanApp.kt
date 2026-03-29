@@ -78,10 +78,20 @@ class WorldTab(
     var activeSpawn: String = "",  // "" = main, otherwise spawn path
     val mcpParser: McpParser = McpParser(),
     val variables: VariableStore = VariableStore(),
+    var lastActivityAtMs: Long = System.currentTimeMillis(),
 ) {
     val isConnected: Boolean get() = connection?.connected == true || hydraConnection?.connected == true
-    fun sendLine(text: String) { connection?.sendLine(text) ?: hydraConnection?.sendLine(text) }
+    fun sendLine(text: String) {
+        touchActivity()
+        connection?.sendLine(text) ?: hydraConnection?.sendLine(text)
+    }
     fun disconnectAll() { connection?.disconnect(); hydraConnection?.disconnect() }
+    fun touchActivity() { lastActivityAtMs = System.currentTimeMillis() }
+    fun idleSeconds(): Int {
+        val source = hydraConnection?.idleSeconds()
+            ?: ((System.currentTimeMillis() - lastActivityAtMs) / 1000L).coerceAtLeast(0L).toInt()
+        return source
+    }
 }
 
 @Composable
@@ -205,9 +215,10 @@ fun TitanApp() {
 
         val context = ConditionContext(
             isConnected = tab.isConnected,
-            idleSeconds = 0, // TODO: track idle time
+            idleSeconds = tab.idleSeconds(),
         )
         val result = triggerEngine.check(AnsiParser.stripAnsi(line), context)
+        tab.touchActivity()
         if (result.gagged) return
         val display = result.displayLine ?: line
         appendLine(tabIndex, display)

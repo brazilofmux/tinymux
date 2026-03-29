@@ -11,6 +11,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.merge
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * A connection to a game server via Hydra's gRPC GameSession bidi stream.
@@ -45,9 +46,12 @@ class HydraConnection(
     private var channel: ManagedChannel? = null
     private var sessionId: String = ""
     private var sessionJob: Job? = null
+    private val inputLock = Any()
     // Coroutine channel for sending input through the bidi stream.
     // Replaced on reconnect so sendLine() always targets the active stream.
-    @Volatile private var inputChannel = Channel<ClientMessage>(Channel.BUFFERED)
+    private var inputChannel = Channel<ClientMessage>(Channel.BUFFERED)
+    private val outputBuffer = StringBuilder()
+    private val lastActivityAtMs = AtomicLong(System.currentTimeMillis())
 
     /** Attach authorization metadata to a gRPC stub. */
     private fun <S : AbstractStub<S>> S.withAuth(): S {
@@ -55,6 +59,15 @@ class HydraConnection(
             put(Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER), sessionId)
         }
         return withInterceptors(io.grpc.stub.MetadataUtils.newAttachHeadersInterceptor(meta))
+    }
+
+    fun idleSeconds(): Int {
+        val idleMs = System.currentTimeMillis() - lastActivityAtMs.get()
+        return (idleMs / 1000L).coerceAtLeast(0L).toInt()
+    }
+
+    private fun markActivity() {
+        lastActivityAtMs.set(System.currentTimeMillis())
     }
 
     fun connect(scope: CoroutineScope) {
@@ -69,6 +82,10 @@ class HydraConnection(
                 channel = ch
 
                 val stub = HydraServiceCoroutineStub(ch)
+                synchronized(inputLock) {
+                    inputChannel = Channel(Channel.BUFFERED)
+                }
+                outputBuffer.clear()
 
                 // Authenticate
                 val authResp = stub.authenticate(
@@ -108,6 +125,7 @@ class HydraConnection(
                 }
 
                 connected = true
+                markActivity()
                 val sessionMsg = "[Hydra] Session established (${sessionId.take(8)}...)"
                 addScrollback(sessionMsg)
                 launch(mainDispatcher) {
@@ -132,20 +150,21 @@ class HydraConnection(
                     }
                 }
                 // Send initial preferences as first message on the stream
-                inputChannel.trySend(
-                    ClientMessage.newBuilder()
-                        .setPreferences(
-                            SetPreferences.newBuilder()
-                                .setColorFormat(ColorFormat.ANSI_TRUECOLOR)
-                                .setTerminalWidth(termWidth)
-                                .setTerminalHeight(termHeight)
-                                .setTerminalType("Titan-Android")
-                                .build()
-                        )
-                        .build()
-                )
-
-                val userInput = inputChannel.consumeAsFlow()
+                synchronized(inputLock) {
+                    inputChannel.trySend(
+                        ClientMessage.newBuilder()
+                            .setPreferences(
+                                SetPreferences.newBuilder()
+                                    .setColorFormat(ColorFormat.ANSI_TRUECOLOR)
+                                    .setTerminalWidth(termWidth)
+                                    .setTerminalHeight(termHeight)
+                                    .setTerminalType("Titan-Android")
+                                    .build()
+                            )
+                            .build()
+                    )
+                }
+                val userInput = synchronized(inputLock) { inputChannel }.consumeAsFlow()
                 @OptIn(kotlinx.coroutines.FlowPreview::class)
                 val requests = merge(userInput, pings)
 
@@ -176,9 +195,12 @@ class HydraConnection(
 
                     try {
                         // Replace the input channel so sendLine() targets the new stream
-                        inputChannel.close()
                         val freshChannel = Channel<ClientMessage>(Channel.BUFFERED)
-                        inputChannel = freshChannel
+                        synchronized(inputLock) {
+                            inputChannel.close()
+                            inputChannel = freshChannel
+                        }
+                        outputBuffer.clear()
 
                         // Send initial preferences on the new stream
                         freshChannel.trySend(
@@ -186,8 +208,8 @@ class HydraConnection(
                                 .setPreferences(
                                     SetPreferences.newBuilder()
                                         .setColorFormat(ColorFormat.ANSI_TRUECOLOR)
-                                        .setTerminalWidth(80)
-                                        .setTerminalHeight(24)
+                                        .setTerminalWidth(termWidth)
+                                        .setTerminalHeight(termHeight)
                                         .setTerminalType("Titan-Android")
                                         .build()
                                 )
@@ -211,6 +233,7 @@ class HydraConnection(
                         val newResponses = stub.gameSession(newRequests)
 
                         connected = true
+                        markActivity()
                         val reconMsg = "[Hydra] Reconnected (attempt $attempt)"
                         addScrollback(reconMsg)
                         launch(mainDispatcher) { onLine?.invoke(reconMsg) }
@@ -256,6 +279,7 @@ class HydraConnection(
         sessionJob?.cancel()
         channel?.shutdownNow()
         channel = null
+        outputBuffer.clear()
     }
 
     fun sendLine(text: String) {
@@ -263,7 +287,10 @@ class HydraConnection(
         val msg = ClientMessage.newBuilder()
             .setInputLine(text)
             .build()
-        inputChannel.trySend(msg)
+        synchronized(inputLock) {
+            inputChannel.trySend(msg)
+        }
+        markActivity()
     }
 
     // ---- Hydra command dispatch ----
@@ -447,20 +474,63 @@ class HydraConnection(
     private fun CoroutineScope.dispatchServerMessage(
         msg: ServerMessage, mainDispatcher: CoroutineDispatcher
     ) {
-        val text = when (msg.payloadCase) {
-            ServerMessage.PayloadCase.GAME_OUTPUT -> msg.gameOutput.text
-            ServerMessage.PayloadCase.GMCP -> "[GMCP ${msg.gmcp.`package`}] ${msg.gmcp.json}"
-            ServerMessage.PayloadCase.NOTICE -> "[Hydra] ${msg.notice.text}"
+        when (msg.payloadCase) {
+            ServerMessage.PayloadCase.GAME_OUTPUT -> {
+                dispatchGameOutput(msg.gameOutput, mainDispatcher)
+            }
+            ServerMessage.PayloadCase.GMCP -> {
+                val text = "[GMCP ${msg.gmcp.`package`}] ${msg.gmcp.json}"
+                addScrollback(text)
+                markActivity()
+                launch(mainDispatcher) { onLine?.invoke(text) }
+            }
+            ServerMessage.PayloadCase.NOTICE -> {
+                val text = "[Hydra] ${msg.notice.text}"
+                addScrollback(text)
+                markActivity()
+                launch(mainDispatcher) { onLine?.invoke(text) }
+            }
             ServerMessage.PayloadCase.LINK_EVENT -> {
                 val ev = msg.linkEvent
-                "[Hydra] Link ${ev.linkNumber} (${ev.gameName}): ${ev.newState.name}"
+                val text = "[Hydra] Link ${ev.linkNumber} (${ev.gameName}): ${ev.newState.name}"
+                addScrollback(text)
+                markActivity()
+                launch(mainDispatcher) { onLine?.invoke(text) }
             }
-            ServerMessage.PayloadCase.PONG -> null
-            else -> null
+            else -> {
+                return
+            }
         }
-        if (text != null) {
-            addScrollback(text)
-            launch(mainDispatcher) { onLine?.invoke(text) }
+    }
+
+    private fun CoroutineScope.dispatchGameOutput(
+        output: GameOutput,
+        mainDispatcher: CoroutineDispatcher
+    ) {
+        outputBuffer.append(output.text)
+
+        var newline = outputBuffer.indexOf("\n")
+        while (newline >= 0) {
+            var line = outputBuffer.substring(0, newline)
+            outputBuffer.delete(0, newline + 1)
+            if (line.endsWith("\r")) {
+                line = line.dropLast(1)
+            }
+            addScrollback(line)
+            markActivity()
+            launch(mainDispatcher) { onLine?.invoke(line) }
+            newline = outputBuffer.indexOf("\n")
+        }
+
+        if (output.endOfRecord && outputBuffer.isNotEmpty()) {
+            var line = outputBuffer.toString()
+            outputBuffer.clear()
+            if (line.endsWith("\r")) {
+                line = line.dropLast(1)
+            }
+            addScrollback(line)
+            markActivity()
+            launch(mainDispatcher) { onLine?.invoke(line) }
         }
     }
 
