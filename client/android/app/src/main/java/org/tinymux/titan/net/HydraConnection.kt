@@ -47,6 +47,7 @@ class HydraConnection(
     private var sessionId: String = ""
     private var sessionJob: Job? = null
     private val inputLock = Any()
+    private val outputLock = Any()
     // Coroutine channel for sending input through the bidi stream.
     // Replaced on reconnect so sendLine() always targets the active stream.
     private var inputChannel = Channel<ClientMessage>(Channel.BUFFERED)
@@ -85,7 +86,9 @@ class HydraConnection(
                 synchronized(inputLock) {
                     inputChannel = Channel(Channel.BUFFERED)
                 }
-                outputBuffer.clear()
+                synchronized(outputLock) {
+                    outputBuffer.clear()
+                }
 
                 // Authenticate
                 val authResp = stub.authenticate(
@@ -200,7 +203,9 @@ class HydraConnection(
                             inputChannel.close()
                             inputChannel = freshChannel
                         }
-                        outputBuffer.clear()
+                        synchronized(outputLock) {
+                            outputBuffer.clear()
+                        }
 
                         // Send initial preferences on the new stream
                         freshChannel.trySend(
@@ -279,7 +284,9 @@ class HydraConnection(
         sessionJob?.cancel()
         channel?.shutdownNow()
         channel = null
-        outputBuffer.clear()
+        synchronized(outputLock) {
+            outputBuffer.clear()
+        }
     }
 
     fun sendLine(text: String) {
@@ -507,27 +514,32 @@ class HydraConnection(
         output: GameOutput,
         mainDispatcher: CoroutineDispatcher
     ) {
-        outputBuffer.append(output.text)
+        val completedLines = mutableListOf<String>()
+        synchronized(outputLock) {
+            outputBuffer.append(output.text)
 
-        var newline = outputBuffer.indexOf("\n")
-        while (newline >= 0) {
-            var line = outputBuffer.substring(0, newline)
-            outputBuffer.delete(0, newline + 1)
-            if (line.endsWith("\r")) {
-                line = line.dropLast(1)
+            var newline = outputBuffer.indexOf("\n")
+            while (newline >= 0) {
+                var line = outputBuffer.substring(0, newline)
+                outputBuffer.delete(0, newline + 1)
+                if (line.endsWith("\r")) {
+                    line = line.dropLast(1)
+                }
+                completedLines.add(line)
+                newline = outputBuffer.indexOf("\n")
             }
-            addScrollback(line)
-            markActivity()
-            launch(mainDispatcher) { onLine?.invoke(line) }
-            newline = outputBuffer.indexOf("\n")
+
+            if (output.endOfRecord && outputBuffer.isNotEmpty()) {
+                var line = outputBuffer.toString()
+                outputBuffer.clear()
+                if (line.endsWith("\r")) {
+                    line = line.dropLast(1)
+                }
+                completedLines.add(line)
+            }
         }
 
-        if (output.endOfRecord && outputBuffer.isNotEmpty()) {
-            var line = outputBuffer.toString()
-            outputBuffer.clear()
-            if (line.endsWith("\r")) {
-                line = line.dropLast(1)
-            }
+        for (line in completedLines) {
             addScrollback(line)
             markActivity()
             launch(mainDispatcher) { onLine?.invoke(line) }
