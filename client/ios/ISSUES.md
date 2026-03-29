@@ -29,3 +29,21 @@ Updated: 2026-03-29
 - `ConditionContext` and trigger-command execution now use `WorldTab` transport
   state instead of only `tab.connection`, so Hydra tabs participate in idle,
   connected, timer, and trigger-command behavior.
+
+## Remaining Enhancements
+
+### Hydra viewport sizing still uses a coarse screen-bounds estimate
+
+- The iOS Hydra client currently estimates terminal columns/rows from
+  `UIScreen.main.bounds` and configured font size at connect time.
+- This is functionally acceptable for MUD output, but it is only an estimate
+  and may produce deprecation warnings on newer SDKs where scene/window
+  geometry is preferred.
+
+### Hydra terminal size is not updated after connect
+
+- `SetPreferences` is sent with the initial estimated viewport, but the client
+  does not currently resend updated dimensions on device rotation or major
+  layout changes.
+- A future improvement should recompute the viewport from live view geometry
+  and send a fresh `SetPreferences` when the visible output area changes.
