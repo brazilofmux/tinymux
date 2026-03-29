@@ -286,6 +286,7 @@ toward `<destination>`.
 | `locked`      | Lock-aware routing for the executor (Tier 2)  |
 | `distance`    | Return hop count instead of exit dbref        |
 | `path`        | Return full exit list (space-separated dbrefs) |
+| `rebuild`     | Force immediate table recomputation for the zone|
 
 **Option combinations and validation semantics**:
 
@@ -304,6 +305,18 @@ toward `<destination>`.
   hop is validated at query time. Subsequent hops reflect the table
   snapshot and may include exits the executor can no longer pass.
   Callers walking this path must validate each hop before use.
+- `route(A, B, rebuild)` -- Forces the zone's Tier 1 table to be
+  discarded and recomputed before answering. Useful after a known
+  topology change if the caller cannot tolerate stale data.
+  **Restricted to wizards** — this is a cache-busting operation that
+  triggers a full BFS recomputation. Unprivileged callers receive
+  `#-1 PERMISSION DENIED`. Rebuilds the zone containing `<source>`;
+  if `<source>` and `<destination>` are in different zones, only the
+  source zone is rebuilt (the destination zone rebuilds lazily when
+  a query next enters it).
+- `route(A, B, locked rebuild)` -- Same, but for the executor's Tier 2
+  table. Use when a prior call returned `EXIT IMPASSABLE` and the
+  caller wants a fresh attempt. Also wizard-only.
 
 **Default mode rationale**: The default is unconditional (Tier 1) because
 it is the only mode available in Phase 1, it requires no lock evaluation
@@ -318,6 +331,7 @@ Correctness Contract section.
 - `#-1 NO ROUTE` -- no path exists between source and destination
 - `#-1 NOT NAVIGABLE` -- source or destination is not in the routing graph
 - `#-1 EXIT IMPASSABLE` -- Tier 2 only; see Failure Behavior below
+- `#-1 PERMISSION DENIED` -- `rebuild` used by non-wizard caller
 - `#-2` -- invalid arguments
 
 **Failure behavior for `locked` mode**:
@@ -400,7 +414,8 @@ data. The in-memory representation is:
 struct RouteClassTable {
     int          zone_id;
     int          class_id;       // lock-equivalence class
-    uint64_t     lock_bitmap;    // which exits this class can pass
+    dynamic_bitset lock_bitmap;  // which exits this class can pass
+                                 // (one bit per exit in the zone)
     time_t       created_at;     // for TTL expiry
     // compressed next-hop table (same format as Tier 1)
 };
@@ -421,11 +436,32 @@ best-effort hints, not durable state.
 - Generation-counter invalidation on topology changes.
 - SQLite persistence.
 
-### Phase 2: Zone-Scoped Tables
+### Phase 2: Hierarchical Zone Routing
 
 - Associate navigable rooms with zones.
-- Per-zone routing tables with independent invalidation.
-- Cross-zone bridge entries for inter-zone routing.
+- Per-zone local tables with independent invalidation.
+- **Meta-table** for inter-zone routing. The meta-table is a directed
+  graph of **gateway edges**, not just zone adjacency. Each entry is:
+  ```
+  (source_zone, dest_zone, gate_room, gate_exit, target_room)
+  ```
+  where `gate_room` is the room in `source_zone` containing `gate_exit`,
+  and `target_room` is the destination room in `dest_zone`. Multiple
+  gateway edges may exist between the same pair of zones (different
+  border crossings, one-way links, exits into different subregions).
+  The meta-table runs Dijkstra over gateway edges to find the best
+  border crossing for a given destination zone. Edge weight is the
+  intra-zone hop count from `gate_room` to the zone's entry point
+  (i.e., the local-table distance to reach the gateway), so the
+  meta-table prefers short cuts through small zones over long detours
+  through large ones.
+  Routing logic:
+  - Same zone: use the local table directly.
+  - Different zones: consult the meta-table to find the specific
+    gateway edge (not just "next zone"), then use the local table
+    to route from the current room to that gate room.
+- Meta-table is cheap to compute and rarely invalidated (only when
+  cross-zone exits are created or destroyed).
 
 ### Phase 3: Lock-Aware Routing
 
@@ -434,14 +470,35 @@ best-effort hints, not durable state.
 - TTL-based expiration for Tier 2 tables.
 - Equivalence class detection (snapshot-based, rebuilt on table expiry).
 - Multiple routing tables per zone (one per equivalence class).
+- **Class limit**: cap at 8 active lock-equivalence classes per zone. If
+  a player's capability set matches no existing class and the limit is
+  reached, fall back to an **uncached lock-aware BFS** for that specific
+  executor and query. This is a real BFS that respects the executor's
+  locks (via `could_doit()` at each edge), not Tier 1 — it just isn't
+  cached. Expensive but correct, and rare by design. Rate-limited to
+  one uncached BFS per executor per second to prevent abuse; excess
+  calls return `#-1 NO ROUTE` rather than blocking.
 - `route()` with `locked` option.
 - `#-1 EXIT IMPASSABLE` return when validation fails.
 
-### Phase 4: Optimizations
+### Phase 4: NPC Primitives
+
+- Server-side `@walk <npc>=<destination>` -- moves an NPC one hop per
+  tick along the routed path, consuming routing data without softcode
+  overhead.
+- Server-side `@patrol <npc>=<room1> <room2> ...` -- continuous loop
+  movement between waypoints.
+- These leverage the routing tables natively, avoiding the cost of
+  repeated `route()` softcode calls per tick.
+
+### Phase 5: Optimizations
 
 - Incremental table updates for single-edge changes.
 - ROUTE_HINT attribute for variable exits.
 - Path caching for hot routes.
+- Background recomputation: rebuild tables in a worker thread, serve
+  stale data during recomputation, atomic-swap the new table in when
+  ready. Prevents main-thread stalls on large zones.
 - JIT integration -- `route()` calls in compiled softcode.
 
 ## Open Questions
@@ -449,9 +506,9 @@ best-effort hints, not durable state.
 1. **Granularity of NAVIGABLE**: Flag on each room, or zone-level opt-in?
    Both? Flag is more flexible; zone-level is less work for builders.
 
-2. **Cross-zone routing**: How to handle paths that cross zone boundaries?
-   Bridge nodes? Hierarchical routing (zone-level table of zone-to-zone
-   hops, then intra-zone tables)?
+2. **Cross-zone routing**: Addressed by the hierarchical meta-table /
+   local-table design in Phase 2. Remaining detail: how to handle rooms
+   that belong to no zone (orphan rooms, zone 0)?
 
 3. **Cost metric**: All exits equal weight (hop count), or support weighted
    edges? Weighted edges enable "prefer the main road" but add complexity.
