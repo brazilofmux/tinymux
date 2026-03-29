@@ -7,6 +7,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "routing.h"
 using namespace std;
 
 /* ---------------------------------------------------------------------------
@@ -37,6 +38,24 @@ static bool fh_any(dbref target, dbref player, FLAG flag, int fflags, bool reset
         s_Flags(target, fflags, db[target].fs.word[fflags] | flag);
     }
     return true;
+}
+
+/* ---------------------------------------------------------------------------
+ * fh_room_bit: only settable on rooms (TYPE_ROOM).
+ */
+
+static bool fh_room_bit(dbref target, dbref player, FLAG flag, int fflags, bool reset)
+{
+    if (!isRoom(target))
+    {
+        return false;
+    }
+    bool result = fh_any(target, player, flag, fflags, reset);
+    if (result)
+    {
+        route_invalidate();
+    }
+    return result;
 }
 
 /* ---------------------------------------------------------------------------
@@ -385,6 +404,7 @@ static FLAGBITENT fbeNoExamine      = { NOEXAMINE,    'E',    FLAG_WORD3, 0,    
 static FLAGBITENT fbeNoModify       = { NOMODIFY,     ' ',    FLAG_WORD3, 0,                    fh_wizroy};
 static FLAGBITENT fbeIndestructible = { INDESTRUCTIBLE, ' ',  FLAG_WORD3, 0,                    fh_wizroy};
 static FLAGBITENT fbeNoEval         = { NOEVAL,        ' ',  FLAG_WORD3, 0,                    fh_any};
+static FLAGBITENT fbeNavigable     = { NAVIGABLE,    ' ',    FLAG_WORD3, 0,                    fh_room_bit};
 static FLAGBITENT fbeSitemon        = { SITEMON,      '$',    FLAG_WORD3, 0,                    fh_wiz};
 #ifdef WOD_REALMS
 static FLAGBITENT fbeFae            = { FAE,          '0',    FLAG_WORD3, CA_STAFF,             fh_wizroy};
@@ -470,6 +490,7 @@ FLAGNAMEENT gen_flag_names[] =
     {T("MARKER9"),         true, &fbeMarker9        },
     {T("MONITOR"),         true, &fbeMonitor        },
     {T("MYOPIC"),          true, &fbeMyopic         },
+    {T("NAVIGABLE"),       true, &fbeNavigable      },
     {T("NO_COMMAND"),      true, &fbeNoCommand      },
     {T("NO_EXAMINE"),      true, &fbeNoExamine      },
     {T("NOBLEED"),         true, &fbeNoBleed        },

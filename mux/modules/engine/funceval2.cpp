@@ -2929,3 +2929,69 @@ FUNCTION(fun_lrooms)
     }
     ItemToList_Final(&pContext);
 }
+
+// ---------------------------------------------------------------------------
+// fun_route: next-hop routing over NAVIGABLE rooms.
+//
+//   route(<source>, <destination>[, <options>])
+//
+// Options (space-separated): distance, path, rebuild.
+// See docs/design-routing.md for the full specification.
+// ---------------------------------------------------------------------------
+
+#include "routing.h"
+
+FUNCTION(fun_route)
+{
+    UNUSED_PARAMETER(fp);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    dbref source = match_thing_quiet(executor, fargs[0]);
+    if (!Good_obj(source))
+    {
+        safe_match_result(source, buff, bufc);
+        return;
+    }
+    dbref destination = match_thing_quiet(executor, fargs[1]);
+    if (!Good_obj(destination))
+    {
+        safe_match_result(destination, buff, bufc);
+        return;
+    }
+
+    // Parse options (third argument, space-separated).
+    //
+    int options = 0;
+    if (nfargs >= 3 && fargs[2] && *fargs[2])
+    {
+        UTF8 *opts = trim_space_sep(fargs[2], sepSpace);
+        UTF8 *token;
+        while (opts && *opts)
+        {
+            token = split_token(&opts, sepSpace);
+            if (mux_stricmp(token, T("distance")) == 0)
+            {
+                options |= ROUTE_OPT_DISTANCE;
+            }
+            else if (mux_stricmp(token, T("path")) == 0)
+            {
+                options |= ROUTE_OPT_PATH;
+            }
+            else if (mux_stricmp(token, T("rebuild")) == 0)
+            {
+                options |= ROUTE_OPT_REBUILD;
+            }
+            else
+            {
+                safe_str(T("#-2"), buff, bufc);
+                return;
+            }
+        }
+    }
+
+    route_query(executor, source, destination, options, buff, bufc);
+}

@@ -1,0 +1,211 @@
+#
+# route_fn.mux - Test Cases for route().
+#
+# Creates a small linear grid of NAVIGABLE rooms and tests
+# route() for next-hop, distance, path, and error cases.
+#
+@create test_route_fn
+-
+@set test_route_fn=INHERIT QUIET
+-
+#
+# Setup: create rooms and exits.  Use think+setq to evaluate
+# side-effect functions at load time, then attrib_set the dbrefs.
+#
+think [setq(0, create(Route_Room_A, 10, r))][set(%q0, NAVIGABLE)][attrib_set(test_route_fn/room_a, %q0)]
+-
+think [setq(0, create(Route_Room_B, 10, r))][set(%q0, NAVIGABLE)][attrib_set(test_route_fn/room_b, %q0)]
+-
+think [setq(0, create(Route_Room_C, 10, r))][set(%q0, NAVIGABLE)][attrib_set(test_route_fn/room_c, %q0)]
+-
+think [setq(0, create(Route_Room_D, 10, r))][attrib_set(test_route_fn/room_d, %q0)]
+-
+#
+# Create exits: teleport to source room, @open exit to dest room.
+#
+@tel me=[get(test_route_fn/room_a)]
+-
+@open route_exit_ab=[get(test_route_fn/room_b)]
+-
+think [attrib_set(test_route_fn/exit_ab, [lastcreate(me, e)])]
+-
+@tel me=[get(test_route_fn/room_b)]
+-
+@open route_exit_bc=[get(test_route_fn/room_c)]
+-
+think [attrib_set(test_route_fn/exit_bc, [lastcreate(me, e)])]
+-
+@tel me=#0
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_route_fn=
+  @log smoke=Beginning route() test cases.
+-
+#
+# Test Case #1 - Verify setup: all dbrefs are valid.
+#
+&tr.tc001 test_route_fn=
+  @if and(
+        isdbref(v(room_a)),
+        isdbref(v(room_b)),
+        isdbref(v(room_c)),
+        isdbref(v(exit_ab)),
+        isdbref(v(exit_bc))
+      )=
+  {
+    @log smoke=TC001: route setup. Succeeded.
+  },
+  {
+    @log smoke=TC001: route setup. Failed (ra=[v(room_a)] rb=[v(room_b)] rc=[v(room_c)] eab=[v(exit_ab)] ebc=[v(exit_bc)]).
+  }
+-
+#
+# Test Case #2 - route() next-hop: A to B should return exit_ab.
+#
+&tr.tc002 test_route_fn=
+  @if strmatch(
+        route(v(room_a), v(room_b)),
+        v(exit_ab)
+      )=
+  {
+    @log smoke=TC002: route next-hop A to B. Succeeded.
+  },
+  {
+    @log smoke=TC002: route next-hop A to B. Failed ([route(v(room_a), v(room_b))]).
+  }
+-
+#
+# Test Case #3 - route() next-hop: A to C should return exit_ab
+#                (first hop toward C goes through B).
+#
+&tr.tc003 test_route_fn=
+  @if strmatch(
+        route(v(room_a), v(room_c)),
+        v(exit_ab)
+      )=
+  {
+    @log smoke=TC003: route next-hop A to C. Succeeded.
+  },
+  {
+    @log smoke=TC003: route next-hop A to C. Failed ([route(v(room_a), v(room_c))]).
+  }
+-
+#
+# Test Case #4 - route() distance: A to C should be 2 hops.
+#
+&tr.tc004 test_route_fn=
+  @if strmatch(
+        route(v(room_a), v(room_c), distance),
+        2
+      )=
+  {
+    @log smoke=TC004: route distance A to C. Succeeded.
+  },
+  {
+    @log smoke=TC004: route distance A to C. Failed ([route(v(room_a), v(room_c), distance)]).
+  }
+-
+#
+# Test Case #5 - route() distance: same room should be 0.
+#
+&tr.tc005 test_route_fn=
+  @if strmatch(
+        route(v(room_a), v(room_a), distance),
+        0
+      )=
+  {
+    @log smoke=TC005: route distance same room. Succeeded.
+  },
+  {
+    @log smoke=TC005: route distance same room. Failed ([route(v(room_a), v(room_a), distance)]).
+  }
+-
+#
+# Test Case #6 - route() path: A to C should be "exit_ab exit_bc".
+#
+&tr.tc006 test_route_fn=
+  @if strmatch(
+        route(v(room_a), v(room_c), path),
+        [v(exit_ab)] [v(exit_bc)]
+      )=
+  {
+    @log smoke=TC006: route path A to C. Succeeded.
+  },
+  {
+    @log smoke=TC006: route path A to C. Failed ([route(v(room_a), v(room_c), path)]).
+  }
+-
+#
+# Test Case #7 - route() no route: C to A should fail (no reverse exits).
+#
+&tr.tc007 test_route_fn=
+  @if strmatch(
+        route(v(room_c), v(room_a)),
+        #-1 NO ROUTE
+      )=
+  {
+    @log smoke=TC007: route no reverse path. Succeeded.
+  },
+  {
+    @log smoke=TC007: route no reverse path. Failed ([route(v(room_c), v(room_a))]).
+  }
+-
+#
+# Test Case #8 - route() not navigable: use a non-navigable room.
+#
+&tr.tc008 test_route_fn=
+  @if strmatch(
+        route(v(room_a), v(room_d)),
+        #-1 NOT NAVIGABLE
+      )=
+  {
+    @log smoke=TC008: route not navigable. Succeeded.
+  },
+  {
+    @log smoke=TC008: route not navigable. Failed ([route(v(room_a), v(room_d))]).
+  }
+-
+#
+# Test Case #9 - route() rebuild option: should succeed and
+#                return the same result.
+#
+&tr.tc009 test_route_fn=
+  @if strmatch(
+        route(v(room_a), v(room_b), rebuild),
+        v(exit_ab)
+      )=
+  {
+    @log smoke=TC009: route rebuild. Succeeded.
+  },
+  {
+    @log smoke=TC009: route rebuild. Failed ([route(v(room_a), v(room_b), rebuild)]).
+  }
+-
+#
+# Test Case #10 - route() invalid option returns #-2.
+#
+&tr.tc010 test_route_fn=
+  @if strmatch(
+        route(v(room_a), v(room_b), bogus),
+        #-2
+      )=
+  {
+    @log smoke=TC010: route invalid option. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC010: route invalid option. Failed ([route(v(room_a), v(room_b), bogus)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_route_fn=
+  @log smoke=End route() test cases.;
+  @notify smoke
+-
+drop test_route_fn
+-
+#
+# End of Test Cases
+#

@@ -14448,6 +14448,7 @@ static FUN builtin_function_list[] =
     {T("RLOC"),        fun_rloc,       MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("ROMAN"),       fun_roman,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ROOM"),        fun_room,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("ROUTE"),       fun_route,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("ROUND"),       fun_round,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("RPAD"),        fun_rpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
 #if defined(STUB_SLAVE)

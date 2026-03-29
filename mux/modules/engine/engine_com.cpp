@@ -17,6 +17,7 @@
 #include "sqlite_backend.h"
 #include "mguests.h"
 #include "engine_api.h"
+#include "routing.h"
 
 // g_debug_cmd moved to libmux.cpp — shared by all layers.
 
@@ -3087,6 +3088,8 @@ MUX_RESULT CGameEngine::Startup(void)
     //
     do_dbck(NOTHING, NOTHING, NOTHING, 0, 0);
 
+    route_init();
+
     ValidateConfigurationDbrefs();
     process_preload();
 
@@ -3141,6 +3144,7 @@ MUX_RESULT CGameEngine::Shutdown(void)
 #if defined(TINYMUX_JIT)
     dbt_compile_cleanup();
 #endif
+    route_shutdown();
     conn_bridge_final();
     local_shutdown();
 

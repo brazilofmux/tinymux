@@ -10,6 +10,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "routing.h"
 
 void set_modified(dbref thing)
 {
@@ -708,6 +709,7 @@ void do_unlink(dbref executor, dbref caller, dbref enactor, int eval, int key, U
                     notify_quiet(executor, T("Unlinked."));
                 }
                 giveto(Owner(exit), mudconf.linkcost);
+                route_invalidate();
                 break;
 
             case TYPE_ROOM:

@@ -229,6 +229,7 @@ XFUNCTION(fun_regedit);
 XFUNCTION(fun_regediti);
 XFUNCTION(fun_regeditall);
 XFUNCTION(fun_regeditalli);
+XFUNCTION(fun_route);
 XFUNCTION(fun_scramble);
 XFUNCTION(fun_shuffle);
 XFUNCTION(fun_sortby);

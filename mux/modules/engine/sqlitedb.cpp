@@ -365,7 +365,7 @@ static bool RunMigration(sqlite3 *db, const char *sql, int target_version)
 
 bool CSQLiteDB::MigrateSchema()
 {
-    static const int CURRENT_SCHEMA_VERSION = 9;
+    static const int CURRENT_SCHEMA_VERSION = 10;
 
     int version = 0;
     sqlite3_stmt *stmt = nullptr;
@@ -637,6 +637,43 @@ bool CSQLiteDB::MigrateSchema()
             return false;
         }
         version = 9;
+    }
+
+    if (version < 10)
+    {
+        const char *migration_v10 =
+            "BEGIN;"
+
+            "CREATE TABLE IF NOT EXISTS route_nodes ("
+            "    room_dbref   INTEGER PRIMARY KEY,"
+            "    zone_id      INTEGER NOT NULL DEFAULT 0,"
+            "    is_navigable INTEGER NOT NULL DEFAULT 1"
+            ");"
+
+            "CREATE TABLE IF NOT EXISTS route_table ("
+            "    zone_id      INTEGER NOT NULL DEFAULT 0,"
+            "    source       INTEGER NOT NULL,"
+            "    destination  INTEGER NOT NULL,"
+            "    next_exit    INTEGER NOT NULL,"
+            "    PRIMARY KEY (zone_id, source, destination)"
+            ") WITHOUT ROWID;"
+
+            "CREATE TABLE IF NOT EXISTS route_meta ("
+            "    zone_id      INTEGER PRIMARY KEY,"
+            "    generation   INTEGER NOT NULL DEFAULT 0,"
+            "    node_count   INTEGER NOT NULL DEFAULT 0"
+            ");"
+
+            "INSERT OR REPLACE INTO metadata(key, value)"
+            "    VALUES('schema_version', 10);"
+
+            "COMMIT;";
+
+        if (!RunMigration(m_db, migration_v10, 10))
+        {
+            return false;
+        }
+        version = 10;
     }
 
     // Log any FK violations (informational, not fatal).

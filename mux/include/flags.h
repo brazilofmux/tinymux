@@ -111,6 +111,7 @@ constexpr unsigned int NOEXAMINE    = 0x00004000;      // Blocks examine and @de
 constexpr unsigned int NOMODIFY     = 0x00008000;      // Blocks all modifications.
 constexpr unsigned int INDESTRUCTIBLE = 0x00010000;    // Cannot be destroyed.
 constexpr unsigned int NOEVAL        = 0x00020000;     // Attribute contents not evaluated.
+constexpr unsigned int NAVIGABLE    = 0x00040000;      // Room participates in routing.
 constexpr unsigned int MARK_0       = 0x00400000;      // User-defined flags.
 constexpr unsigned int MARK_1       = 0x00800000;
 constexpr unsigned int MARK_2       = 0x01000000;
@@ -349,6 +350,7 @@ UTF8 *MakeCanonicalFlagName
 #define NoModify(x)         ((Flags3(x) & NOMODIFY) != 0)
 #define Indestructible(x)   ((Flags3(x) & INDESTRUCTIBLE) != 0)
 #define NoEval(x)           ((Flags3(x) & NOEVAL) != 0)
+#define Navigable(x)        ((Flags3(x) & NAVIGABLE) != 0)
 #define CmdCheck(x)         ((Flags3(x) & CMDCHECK) != 0)
 #if defined(WOD_REALMS) || defined(REALITY_LVLS)
 #define isObfuscate(x)        ((Flags3(x) & OBF) != 0)

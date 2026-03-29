@@ -145,6 +145,7 @@ include/modules.h
 include/mudconf.h
 include/muxcli.h
 include/powers.h
+include/routing.h
 include/sha1.h
 include/sql.h
 include/sqlite_backend.h
@@ -325,6 +326,7 @@ modules/engine/powers.cpp
 modules/engine/predicates.cpp
 modules/engine/quota.cpp
 modules/engine/rob.cpp
+modules/engine/routing.cpp
 modules/engine/session.cpp
 modules/engine/set.cpp
 modules/engine/speech.cpp

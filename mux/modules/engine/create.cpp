@@ -9,6 +9,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "routing.h"
 
 // ---------------------------------------------------------------------------
 // parse_linkable_room: Get a location to link to.
@@ -124,6 +125,7 @@ static void open_exit(const dbref player, dbref loc, UTF8 *direction, UTF8 *link
         {
             s_Location(exit, loc);
             notify_quiet(player, T("Linked."));
+            route_invalidate();
         }
     }
 }
@@ -240,6 +242,7 @@ void link_exit(const dbref player, const dbref exit, const dbref dest)
     {
         notify_quiet(player, T("Linked."));
     }
+    route_invalidate();
 }
 
 void do_link
@@ -1320,4 +1323,5 @@ void do_destroy(const dbref executor, const dbref caller, dbref enactor, const i
         }
     }
     s_Going(thing);
+    route_invalidate();
 }

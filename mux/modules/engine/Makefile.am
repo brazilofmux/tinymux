@@ -17,7 +17,7 @@ ENGINE_CXX_SRC = art_scan.cpp ast.cpp ast_scan.cpp attrcache.cpp boolexp.cpp \
     db.cpp db_rw.cpp engine.cpp engine_com.cpp eval.cpp file_c.cpp flags.cpp \
     funceval.cpp funceval2.cpp functions.cpp funmath.cpp funcweb.cpp help.cpp htab.cpp \
     local.cpp log.cpp look.cpp mail.cpp match.cpp mguests.cpp \
-    move.cpp object.cpp predicates.cpp player.cpp player_c.cpp \
+    move.cpp object.cpp predicates.cpp player.cpp player_c.cpp routing.cpp \
     plusemail.cpp powers.cpp quota.cpp rob.cpp set.cpp \
     dbt.cpp hir_lower.cpp hir_codegen.cpp jit_compiler.cpp dbt_interp.cpp dbt_elf64.cpp \
     hir_ssa.cpp hir_opt.cpp lua_bytecode.cpp hir_lower_lua.cpp jit_lua.cpp \
