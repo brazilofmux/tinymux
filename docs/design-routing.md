@@ -1,8 +1,8 @@
 # Routing Function Design
 
-## Inspiration: Half-Life (1998) Navigation System
+## Inspiration: FPS NPC Navigation (late 1990s)
 
-In the original Half-Life, level designers placed invisible navigational nodes
+In a late-1990s first-person shooter, level designers placed invisible navigational nodes
 throughout each level. At level load, Dijkstra's algorithm pre-computed a
 routing table for every node pair. The table stored only the **next hop** --
 not the full path -- answering the question: "To get from node A to node B,
@@ -25,7 +25,7 @@ next node, walk toward it, repeat.
 
 ## Mapping to TinyMUX
 
-| Half-Life              | TinyMUX                                |
+| FPS engine             | TinyMUX                                |
 |------------------------|----------------------------------------|
 | Navigational nodes     | Rooms (or a marked subset)             |
 | Edges between nodes    | Exits (TYPE_EXIT)                      |
@@ -36,7 +36,7 @@ next node, walk toward it, repeat.
 
 ### Navigational Nodes vs. All Rooms
 
-Half-Life did not make every point in space a node. Level designers chose
+The FPS engine did not make every point in space a node. Level designers chose
 where to place them -- enough for coverage, few enough for efficiency.
 
 TinyMUX can do the same. Not every room needs to participate in routing.
@@ -66,7 +66,7 @@ move toward dest_room?" Only the next hop is stored.
 ### Compression
 
 MUSH topologies are extremely sparse. Most rooms have 2-6 exits. The same
-three compression techniques from Half-Life apply, and MUSH topology is
+three compression techniques from the FPS approach apply, and MUSH topology is
 arguably more compressible:
 
 1. **Diagonal** -- trivial; already there.
@@ -76,14 +76,14 @@ arguably more compressible:
    (corridors, lobbies, grid chokepoints).
 
 Expected size: a 1,000-room zone should compress to well under 35KB. Most
-MUSH grids are far more regular than Half-Life levels.
+MUSH grids are far more regular than FPS levels.
 
 ## Lock-Aware Routing Tiers
 
 ### Tier 1: Unconditional Routing
 
 Ignore all locks. Assume every exit is traversable. This is the direct
-analog of Half-Life's approach and covers the common case: public grid
+analog of the FPS approach and covers the common case: public grid
 navigation.
 
 - Simple to compute (standard Dijkstra/BFS on the static graph).
@@ -107,7 +107,7 @@ of patterns:
 - Builder/admin access (`hasflag(me, WIZARD)`)
 - Key possession (`carries(#123)`)
 
-**However**: unlike Half-Life's hull sizes, which are immutable properties
+**However**: unlike the FPS hull sizes, which are immutable properties
 of an NPC class, every one of these MUX conditions is mutable actor state.
 A player can pick up or drop a key, gain or lose a flag, change ownership --
 all without touching the exit's lock definition. This means lock-based
@@ -115,7 +115,7 @@ equivalence classes are not stable over cache lifetime. The 3-5 class
 estimate is plausible for a snapshot in time, but the classes shift as
 world state changes.
 
-This is the fundamental difference from Half-Life: hull size was a static
+This is the fundamental difference from the FPS model: hull size was a static
 property of the NPC type. Lock-passing is a dynamic property of the
 actor's current state.
 
@@ -187,7 +187,7 @@ Callers must understand what is and is not guaranteed.
 
 ## Invalidation
 
-Half-Life nodes were static. MUSH topology is not. The routing table is a
+FPS nodes were static. MUSH topology is not. The routing table is a
 cache that must be invalidated when the underlying graph changes.
 
 Invalidation is split into two categories: topology changes (which affect
@@ -403,7 +403,7 @@ CREATE TABLE route_meta (
 
 For runtime performance, the compressed Tier 1 routing table for active
 zones lives in memory. SQLite is the persistence layer; the in-memory
-representation uses the same compression as Half-Life (direct markers,
+representation uses the same compression as the FPS model (direct markers,
 always-X rows, sparse entries).
 
 **Tier 2 tables are in-memory only.** They are ephemeral by design:
