@@ -16,8 +16,12 @@ namespace telnet {
     constexpr uint8_t GMCP = 201;
     constexpr uint8_t NAWS = 31;
     constexpr uint8_t TTYPE = 24;
+    constexpr uint8_t CHARSET = 42;
     constexpr uint8_t TELQUAL_IS = 0;
     constexpr uint8_t TELQUAL_SEND = 1;
+    constexpr uint8_t TELQUAL_REQUEST = 1;
+    constexpr uint8_t TELQUAL_ACCEPTED = 2;
+    constexpr uint8_t TELQUAL_REJECTED = 3;
 }
 
 // Escape IAC bytes in a telnet sub-negotiation payload.
@@ -92,6 +96,32 @@ inline std::string buildTtypeIsFrame(const std::string& terminalType) {
     frame.push_back(static_cast<char>(telnet::TTYPE));
     frame.push_back(static_cast<char>(telnet::TELQUAL_IS));
     frame.append(escaped);
+    frame.push_back(static_cast<char>(telnet::IAC));
+    frame.push_back(static_cast<char>(telnet::SE));
+    return frame;
+}
+
+inline std::string buildCharsetAcceptedFrame(const std::string& charsetName) {
+    std::string escaped = telnetEscapeIAC(charsetName);
+    std::string frame;
+    frame.reserve(escaped.size() + 6);
+    frame.push_back(static_cast<char>(telnet::IAC));
+    frame.push_back(static_cast<char>(telnet::SB));
+    frame.push_back(static_cast<char>(telnet::CHARSET));
+    frame.push_back(static_cast<char>(telnet::TELQUAL_ACCEPTED));
+    frame.append(escaped);
+    frame.push_back(static_cast<char>(telnet::IAC));
+    frame.push_back(static_cast<char>(telnet::SE));
+    return frame;
+}
+
+inline std::string buildCharsetRejectedFrame() {
+    std::string frame;
+    frame.reserve(6);
+    frame.push_back(static_cast<char>(telnet::IAC));
+    frame.push_back(static_cast<char>(telnet::SB));
+    frame.push_back(static_cast<char>(telnet::CHARSET));
+    frame.push_back(static_cast<char>(telnet::TELQUAL_REJECTED));
     frame.push_back(static_cast<char>(telnet::IAC));
     frame.push_back(static_cast<char>(telnet::SE));
     return frame;

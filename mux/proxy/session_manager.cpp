@@ -15,6 +15,7 @@
 #include <chrono>
 #include <cstring>
 #include <algorithm>
+#include <cctype>
 
 #ifndef MSG_NOSIGNAL
 #define MSG_NOSIGNAL 0
@@ -80,6 +81,67 @@ static const char* linkStateName(LinkState s) {
     case LinkState::Dead:           return "dead";
     }
     return "?";
+}
+
+static std::string hydraCharsetName(ganl::EncodingType encoding) {
+    switch (encoding) {
+    case ganl::EncodingType::Utf8:
+        return "UTF-8";
+    case ganl::EncodingType::Latin1:
+        return "ISO-8859-1";
+    case ganl::EncodingType::Cp437:
+        return "CP437";
+    case ganl::EncodingType::Cp1252:
+        return "CP1252";
+    case ganl::EncodingType::Ascii:
+    default:
+        return "US-ASCII";
+    }
+}
+
+static ganl::EncodingType parseNegotiatedCharset(const std::string& name,
+                                                 ganl::EncodingType fallback) {
+    std::string upper;
+    upper.reserve(name.size());
+    for (unsigned char ch : name) {
+        upper.push_back(static_cast<char>(std::toupper(ch)));
+    }
+    if (upper == "UTF-8" || upper == "UTF8") return ganl::EncodingType::Utf8;
+    if (upper == "ISO-8859-1" || upper == "ISO8859-1" || upper == "LATIN-1" || upper == "LATIN1") {
+        return ganl::EncodingType::Latin1;
+    }
+    if (upper == "CP437") return ganl::EncodingType::Cp437;
+    if (upper == "CP1252" || upper == "WINDOWS-1252") return ganl::EncodingType::Cp1252;
+    if (upper == "US-ASCII" || upper == "ASCII") return ganl::EncodingType::Ascii;
+    return fallback;
+}
+
+static bool charsetOffered(const std::string& payload, const std::string& wanted) {
+    if (payload.empty()) return false;
+    char sep = payload[0];
+    std::string wantedUpper;
+    wantedUpper.reserve(wanted.size());
+    for (unsigned char ch : wanted) {
+        wantedUpper.push_back(static_cast<char>(std::toupper(ch)));
+    }
+
+    size_t start = 1;
+    while (start <= payload.size()) {
+        size_t end = payload.find(sep, start);
+        if (end == std::string::npos) end = payload.size();
+        if (end > start) {
+            std::string candidate = payload.substr(start, end - start);
+            std::string candidateUpper;
+            candidateUpper.reserve(candidate.size());
+            for (unsigned char ch : candidate) {
+                candidateUpper.push_back(static_cast<char>(std::toupper(ch)));
+            }
+            if (candidateUpper == wantedUpper) return true;
+        }
+        if (end == payload.size()) break;
+        start = end + 1;
+    }
+    return false;
 }
 
 std::atomic<size_t> SessionManager::globalScrollbackBytes_{0};
@@ -1714,6 +1776,7 @@ void SessionManager::onBackDoorConnect(ganl::ConnectionHandle bdHandle) {
     safeWrite(link->handle, buildTelnetCommandFrame(telnet::DO, telnet::GMCP));
     safeWrite(link->handle, buildTelnetCommandFrame(telnet::WILL, telnet::TTYPE));
     safeWrite(link->handle, buildTelnetCommandFrame(telnet::WILL, telnet::NAWS));
+    safeWrite(link->handle, buildTelnetCommandFrame(telnet::WILL, telnet::CHARSET));
 
     // Send Core.Hello to the game if GMCP is enabled on this link
     if (link->gmcpEnabled) {
@@ -1795,11 +1858,32 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
         safeWrite(link->handle,
                   buildTelnetCommandFrame(telnet::WILL, telnet::TTYPE));
     }
+    if (signals.sawDoCharset) {
+        safeWrite(link->handle,
+                  buildTelnetCommandFrame(telnet::WILL, telnet::CHARSET));
+    }
     if (signals.sawTtypeSend) {
         safeWrite(link->handle,
                   buildTtypeIsFrame(session->terminalType.empty()
                       ? std::string("Hydra")
                       : session->terminalType));
+    }
+    if (signals.sawCharsetRequest) {
+        std::string wanted = hydraCharsetName(link->protoState.encoding);
+        if (charsetOffered(signals.charsetPayload, wanted)) {
+            safeWrite(link->handle, buildCharsetAcceptedFrame(wanted));
+        } else {
+            safeWrite(link->handle, buildCharsetRejectedFrame());
+        }
+    }
+    if (signals.sawCharsetAccepted) {
+        link->protoState.encoding =
+            parseNegotiatedCharset(signals.charsetPayload, link->protoState.encoding);
+    }
+    if (signals.sawCharsetRejected) {
+        LOG_INFO("Session %lu: link %zu charset negotiation rejected by %s",
+                 (unsigned long)session->internalId, linkIdx + 1,
+                 link->gameName.c_str());
     }
 
     // Forward GMCP messages to all GMCP-enabled front-doors

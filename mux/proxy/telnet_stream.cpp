@@ -55,6 +55,9 @@ void splitTelnetStream(const char* data, size_t len,
             if (ch == telnet::TTYPE && parseState.cmdByte == T_DO) {
                 signals.sawDoTtype = true;
             }
+            if (ch == telnet::CHARSET && parseState.cmdByte == T_DO) {
+                signals.sawDoCharset = true;
+            }
             if (!stripTelnet) {
                 regular.push_back(static_cast<char>(T_IAC));
                 regular.push_back(static_cast<char>(parseState.cmdByte));
@@ -89,6 +92,23 @@ void splitTelnetStream(const char* data, size_t len,
                     parseState.otherSBBuf.size() >= 2 &&
                     static_cast<unsigned char>(parseState.otherSBBuf[1]) == telnet::TELQUAL_SEND) {
                     signals.sawTtypeSend = true;
+                } else if (!parseState.otherSBBuf.empty() &&
+                           static_cast<unsigned char>(parseState.otherSBBuf[0]) == telnet::CHARSET &&
+                           parseState.otherSBBuf.size() >= 2) {
+                    unsigned char subcmd =
+                        static_cast<unsigned char>(parseState.otherSBBuf[1]);
+                    if (subcmd == telnet::TELQUAL_REQUEST) {
+                        signals.sawCharsetRequest = true;
+                        signals.charsetPayload.assign(parseState.otherSBBuf.begin() + 2,
+                                                     parseState.otherSBBuf.end());
+                    } else if (subcmd == telnet::TELQUAL_ACCEPTED) {
+                        signals.sawCharsetAccepted = true;
+                        signals.charsetPayload.assign(parseState.otherSBBuf.begin() + 2,
+                                                     parseState.otherSBBuf.end());
+                    } else if (subcmd == telnet::TELQUAL_REJECTED) {
+                        signals.sawCharsetRejected = true;
+                        signals.charsetPayload.clear();
+                    }
                 }
                 if (!stripTelnet) {
                     regular.push_back(static_cast<char>(T_IAC));

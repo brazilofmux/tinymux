@@ -132,6 +132,39 @@ void testSplitTtypeSignals() {
     expect(buildTelnetCommandFrame(telnet::WILL, telnet::NAWS)
                == bytes({0xff, 0xfb, 0x1f}),
            "WILL NAWS frame encoding mismatch");
+    expect(buildCharsetAcceptedFrame("UTF-8")
+               == bytes({0xff, 0xfa, 0x2a, 0x02}) + "UTF-8" + bytes({0xff, 0xf0}),
+           "CHARSET ACCEPTED frame encoding mismatch");
+    expect(buildCharsetRejectedFrame()
+               == bytes({0xff, 0xfa, 0x2a, 0x03, 0xff, 0xf0}),
+           "CHARSET REJECTED frame encoding mismatch");
+}
+
+void testSplitCharsetSignals() {
+    TelnetParseState state;
+    std::string regular;
+    std::vector<TelnetGmcpMessage> gmcp;
+    TelnetSignals signals;
+
+    splitTelnetStream(bytes({0xff, 0xfd}).data(), 2, state, regular, gmcp, signals, true);
+    expect(!signals.sawDoCharset, "partial DO CHARSET should not fire early");
+    splitTelnetStream(bytes({0x2a}).data(), 1, state, regular, gmcp, signals, true);
+    expect(signals.sawDoCharset, "DO CHARSET should be detected across reads");
+
+    const std::string req1 = bytes({0xff, 0xfa, 0x2a, 0x01, '|'});
+    const std::string req2 = "UTF-8|US-ASCII" + bytes({0xff, 0xf0});
+    splitTelnetStream(req1.data(), req1.size(), state, regular, gmcp, signals, true);
+    expect(!signals.sawCharsetRequest, "partial CHARSET REQUEST should not fire early");
+    splitTelnetStream(req2.data(), req2.size(), state, regular, gmcp, signals, true);
+    expect(signals.sawCharsetRequest, "CHARSET REQUEST should be detected across reads");
+    expect(signals.charsetPayload == "|UTF-8|US-ASCII",
+           "CHARSET REQUEST payload mismatch");
+
+    const std::string accepted = bytes({0xff, 0xfa, 0x2a, 0x02}) + "ISO-8859-1" + bytes({0xff, 0xf0});
+    splitTelnetStream(accepted.data(), accepted.size(), state, regular, gmcp, signals, true);
+    expect(signals.sawCharsetAccepted, "CHARSET ACCEPTED should be detected");
+    expect(signals.charsetPayload == "ISO-8859-1",
+           "CHARSET ACCEPTED payload mismatch");
 }
 
 void testAsciiBridgeConversion() {
@@ -181,6 +214,7 @@ int main() {
     testSplitTelnetNegotiationAcrossReads();
     testStripNonGmcpSubnegotiationAcrossReads();
     testSplitTtypeSignals();
+    testSplitCharsetSignals();
     testAsciiBridgeConversion();
     testWebSocketMaskEnforcement();
     std::cout << "proxy_regression: ok\n";
