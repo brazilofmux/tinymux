@@ -208,7 +208,8 @@ std::string HydraConnection::check_prompt(int) {
 }
 
 bool HydraConnection::has_partial_line() const {
-    return false;
+    std::lock_guard<std::mutex> lock(outputMutex_);
+    return !streamLineBuffer_.empty();
 }
 
 void HydraConnection::add_to_scrollback(const std::string& line) {
@@ -339,17 +340,28 @@ void HydraConnection::readerLoop(std::shared_ptr<StreamState> streamState) {
         std::lock_guard<std::mutex> lock(outputMutex_);
 
         if (msg.has_game_output()) {
-            outputQueue_.push(OutputChunk{msg.game_output().text(), true});
+            const auto& output = msg.game_output();
+            streamLineBuffer_ += output.text();
+
+            size_t nl = 0;
+            while ((nl = streamLineBuffer_.find('\n')) != std::string::npos) {
+                streamLineBuffer_.erase(0, nl + 1);
+            }
+            if (output.end_of_record()) {
+                streamLineBuffer_.clear();
+            }
+
+            outputQueue_.push(OutputChunk{output.text(), true, output.end_of_record()});
         } else if (msg.has_gmcp()) {
             outputQueue_.push(OutputChunk{"[GMCP " + msg.gmcp().package() + "] "
-                            + msg.gmcp().json(), false});
+                            + msg.gmcp().json(), false, false});
         } else if (msg.has_notice()) {
-            outputQueue_.push(OutputChunk{"[Hydra] " + msg.notice().text(), false});
+            outputQueue_.push(OutputChunk{"[Hydra] " + msg.notice().text(), false, false});
         } else if (msg.has_link_event()) {
             const auto& ev = msg.link_event();
             outputQueue_.push(OutputChunk{"[Hydra] Link " + std::to_string(ev.link_number())
                 + " (" + ev.game_name() + "): "
-                + hydra::LinkState_Name(ev.new_state()), false});
+                + hydra::LinkState_Name(ev.new_state()), false, false});
         } else if (msg.has_pong()) {
             continue;
         }

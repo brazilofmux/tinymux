@@ -6,6 +6,7 @@
 - **[Android](android/ISSUES.md):** Android trigger/runtime issues.
 - **[iOS](ios/ISSUES.md):** Swift Hydra transport correctness and resource-lifetime issues.
 - **[TinyFugue](tf/ISSUES.md):** TF-specific Hydra transport and scripting gaps.
+- **[Win32 GUI](win32gui/ISSUES.md):** Windows GUI Hydra prompt/rendering and platform-validation gaps.
 
 ## Recently Fixed
 

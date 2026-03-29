@@ -21,6 +21,7 @@ class OutputBuffer {
 public:
     void append(const std::string& pua_line);
     void append_text(const std::string& pua_text);
+    void seal_open_line();
     void clear();
 
     const std::deque<OutputLine>& lines() const { return lines_; }

@@ -480,21 +480,25 @@ void CMainFrame::ProcessHydraTriggerText(TabState& ts, const std::string& text) 
     while ((nl = ts.hydra_line_buffer.find('\n')) != std::string::npos) {
         std::string display = ts.hydra_line_buffer.substr(0, nl);
         ts.hydra_line_buffer.erase(0, nl + 1);
-        if (!display.empty() && display.back() == '\r') {
-            display.pop_back();
-        }
+        FinalizeHydraTriggerLine(ts, std::move(display));
+    }
+}
 
-        TriggerResult tr = CheckTriggers(display);
-        if (tr.gagged) {
-            continue;
-        }
+void CMainFrame::FinalizeHydraTriggerLine(TabState& ts, std::string display) {
+    if (!display.empty() && display.back() == '\r') {
+        display.pop_back();
+    }
 
-        auto matched = spawns.match(display);
-        for (auto& path : matched) {
-            auto& sl = spawn_lines[ts.name][path];
-            sl.push_back(display);
-            while (sl.size() > 20000) sl.pop_front();
-        }
+    TriggerResult tr = CheckTriggers(display);
+    if (tr.gagged) {
+        return;
+    }
+
+    auto matched = spawns.match(display);
+    for (auto& path : matched) {
+        auto& sl = spawn_lines[ts.name][path];
+        sl.push_back(display);
+        while (sl.size() > 20000) sl.pop_front();
     }
 }
 
@@ -505,6 +509,14 @@ void CMainFrame::AppendHydraChunk(TabState& ts, HydraConnection& hydra,
     if (chunk.is_stream_text) {
         ts.buffer.append_text(chunk.text);
         ProcessHydraTriggerText(ts, chunk.text);
+        if (chunk.end_of_record) {
+            ts.buffer.seal_open_line();
+            if (!ts.hydra_line_buffer.empty()) {
+                std::string display = std::move(ts.hydra_line_buffer);
+                ts.hydra_line_buffer.clear();
+                FinalizeHydraTriggerLine(ts, std::move(display));
+            }
+        }
         return;
     }
 

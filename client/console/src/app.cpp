@@ -68,7 +68,8 @@ void app_clear_partial_line(App& app, const std::string& world_name) {
 }
 
 void app_receive_hydra_chunk(App& app, IConnection* conn, const std::string& world_name,
-                             const std::string& text, bool is_stream_text) {
+                             const std::string& text, bool is_stream_text,
+                             bool end_of_record) {
     if (!is_stream_text) {
         app_receive_line(app, conn, world_name, text);
         return;
@@ -87,7 +88,16 @@ void app_receive_hydra_chunk(App& app, IConnection* conn, const std::string& wor
         app_receive_line(app, conn, world_name, line);
     }
 
-    app_receive_partial_line(app, conn, world_name, buffer);
+    if (end_of_record && !buffer.empty()) {
+        app_receive_line(app, conn, world_name, buffer);
+        buffer.clear();
+    }
+
+    if (!buffer.empty()) {
+        app_receive_partial_line(app, conn, world_name, buffer);
+    } else {
+        app_clear_partial_line(app, world_name);
+    }
 }
 
 void app_rerender_foreground(App& app) {

@@ -27,6 +27,7 @@ public:
     struct OutputChunk {
         std::string text;
         bool is_stream_text = false;
+        bool end_of_record = false;
     };
 
     HydraConnection(const std::string& world_name,
@@ -133,8 +134,9 @@ private:
     std::mutex writeMutex_;
 
     // Reader thread pushes lines here
-    std::mutex outputMutex_;
+    mutable std::mutex outputMutex_;
     std::queue<OutputChunk> outputQueue_;
+    std::string streamLineBuffer_;
     std::atomic<bool> connected_{false};
     std::atomic<bool> reconnecting_{false};
     std::atomic<bool> stopRequested_{false};

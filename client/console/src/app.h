@@ -40,7 +40,8 @@ bool app_send_line(App& app, IConnection* conn, const std::string& line);
 void app_receive_line(App& app, IConnection* conn, const std::string& world_name,
                       const std::string& line);
 void app_receive_hydra_chunk(App& app, IConnection* conn, const std::string& world_name,
-                             const std::string& text, bool is_stream_text);
+                             const std::string& text, bool is_stream_text,
+                             bool end_of_record);
 void app_receive_partial_line(App& app, IConnection* conn, const std::string& world_name,
                               const std::string& line);
 void app_clear_partial_line(App& app, const std::string& world_name);

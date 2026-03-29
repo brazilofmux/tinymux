@@ -48,6 +48,10 @@ void OutputBuffer::append_text(const std::string& pua_text) {
     }
 }
 
+void OutputBuffer::seal_open_line() {
+    open_line_ = false;
+}
+
 void OutputBuffer::render_line(OutputLine& line) {
     unsigned char out_text[LBUF_SIZE];
     co_color_attr out_attrs[LBUF_SIZE];

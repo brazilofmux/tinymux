@@ -94,6 +94,7 @@ public:
     void AppendHydraChunk(TabState& ts, HydraConnection& hydra,
                           const HydraConnection::OutputChunk& chunk);
     void ProcessHydraTriggerText(TabState& ts, const std::string& text);
+    void FinalizeHydraTriggerLine(TabState& ts, std::string display);
 
     // IOCP thread management
     HANDLE iocp_thread = nullptr;

@@ -180,7 +180,8 @@ int main(int argc, char* argv[]) {
                 auto chunks = hydra->drain_output_chunks();
                 for (auto& chunk : chunks) {
                     app_receive_hydra_chunk(app, hydra, name, chunk.text,
-                                            chunk.is_stream_text);
+                                            chunk.is_stream_text,
+                                            chunk.end_of_record);
                 }
                 if (!hydra->is_connected() && !hydra->is_reconnecting()) {
                     to_remove.push_back(name);
