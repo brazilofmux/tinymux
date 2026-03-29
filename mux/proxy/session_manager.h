@@ -31,6 +31,7 @@ struct BackDoorLink {
     ganl::ProtocolState protoState;
     const GameConfig*   gameConfig{nullptr};
     bool                gmcpEnabled{false};
+    std::string         utf8Carry;          // incomplete trailing UTF-8 bytes between reads
 
     // Reconnect backoff
     int                 retryCount{0};

@@ -2,6 +2,7 @@
 #include "crypto.h"
 #include "hydra_log.h"
 #include "telnet_utils.h"
+#include "utf8_utils.h"
 #include <color_ops.h>
 #include <nlohmann/json.hpp>
 #ifdef GRPC_ENABLED
@@ -34,6 +35,31 @@ static constexpr unsigned char T_SE   = telnet::SE;
 static constexpr unsigned char T_GMCP = telnet::GMCP;
 static constexpr unsigned char T_WILL = telnet::WILL;
 static constexpr unsigned char T_DO   = telnet::DO;
+
+static std::string issueTypeName(Utf8IssueType type) {
+    switch (type) {
+    case Utf8IssueType::None:
+        return "none";
+    case Utf8IssueType::InvalidSequence:
+        return "invalid";
+    case Utf8IssueType::TruncatedSequence:
+        return "truncated";
+    }
+    return "unknown";
+}
+
+static std::string sanitizeProtoTextForLog(const std::string& text,
+                                           const char* path,
+                                           const std::string& source,
+                                           int linkNumber) {
+    Utf8Issue issue = findFirstUtf8Issue(text);
+    if (!issue.hasIssue()) return text;
+
+    LOG_WARN("Proto UTF-8 issue on %s source=%s link=%d type=%s offset=%zu bytes=%zu hex=[%s]",
+             path, source.c_str(), linkNumber, issueTypeName(issue.type).c_str(),
+             issue.offset, issue.bytes, hexWindow(text, issue.offset).c_str());
+    return sanitizeUtf8(text);
+}
 
 // A GMCP sub-negotiation extracted from the raw byte stream.
 struct GmcpMessage {
@@ -208,7 +234,8 @@ void SessionManager::sendToClient(ganl::ConnectionHandle handle,
         if (it->second.grpcWebSubscribed) {
             // Send as a grpc-web data frame with the text as GameOutput
             hydra::GameOutput go;
-            go.set_text(text);
+            go.set_text(sanitizeProtoTextForLog(
+                text, "grpc-web system output", "hydra", 0));
             go.set_source("hydra");
             go.set_timestamp(static_cast<int64_t>(time(nullptr)));
 
@@ -1009,7 +1036,9 @@ void SessionManager::drainWsGameSessions() {
                         std::chrono::system_clock::now().time_since_epoch()).count());
             } else {
                 auto* go = smsg.mutable_game_output();
-                go->set_text(item.render(fmt));
+                go->set_text(sanitizeProtoTextForLog(
+                    item.render(fmt), "ws gamesession output",
+                    item.source, item.linkNumber));
                 go->set_source(item.source);
                 go->set_timestamp(static_cast<int64_t>(item.timestamp));
                 go->set_link_number(item.linkNumber);
@@ -1710,6 +1739,7 @@ void SessionManager::connectToGame(HydraSession& session,
         reused.nextRetry = 0;
         reused.character.clear();
         reused.gmcpEnabled = false;
+        reused.utf8Carry.clear();
     } else {
         BackDoorLink link;
         link.handle = bdHandle;
@@ -1717,6 +1747,7 @@ void SessionManager::connectToGame(HydraSession& session,
         link.state = LinkState::Connecting;
         link.protoState.encoding = game->charset;
         link.gameConfig = game;
+        link.utf8Carry.clear();
         linkIdx = session.links.size();
         session.links.push_back(std::move(link));
     }
@@ -1773,6 +1804,7 @@ void SessionManager::closeLink(HydraSession& session, size_t linkIdx) {
     link.state = LinkState::Dead;
     link.retryCount = 0;
     link.nextRetry = 0;
+    link.utf8Carry.clear();
 }
 
 // ---- Back-door lifecycle ----
@@ -1923,7 +1955,7 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
     // Process regular (non-GMCP) data through the color/charset bridge
     if (!regular.empty()) {
         std::string puaText = bridge_.ingestGameOutput(
-            link->protoState, regular.data(), regular.size());
+            link->protoState, regular.data(), regular.size(), &link->utf8Carry);
 
         // Track global scrollback memory via atomic counter (O(1) per append).
         size_t oldBytes = session->scrollback.memoryBytes();
@@ -1959,7 +1991,9 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
             } else if (fd.grpcWebSubscribed) {
                 // Send as chunked grpc-web data frame
                 hydra::GameOutput go;
-                go.set_text(rendered);
+                go.set_text(sanitizeProtoTextForLog(
+                    rendered, "grpc-web live output", link->gameName,
+                    static_cast<int>(linkIdx) + 1));
                 go.set_source(link->gameName);
                 go.set_timestamp(static_cast<int64_t>(time(nullptr)));
                 go.set_link_number(static_cast<int>(linkIdx) + 1);
@@ -2891,7 +2925,8 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
                    time_t timestamp, void* c) {
                     auto* rc = static_cast<Ctx*>(c);
                     auto* line = rc->resp->add_lines();
-                    line->set_text(text);
+                    line->set_text(sanitizeProtoTextForLog(
+                        text, "grpc-web scrollback", source, 0));
                     line->set_source(source);
                     line->set_timestamp(static_cast<int64_t>(timestamp));
                 },

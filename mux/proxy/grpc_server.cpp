@@ -8,6 +8,7 @@
 #include "config.h"
 #include "hydra_log.h"
 #include "telnet_utils.h"
+#include "utf8_utils.h"
 
 #include "hydra.grpc.pb.h"
 
@@ -23,6 +24,31 @@ using grpc::ServerWriter;
 using grpc::ServerReaderWriter;
 using grpc::Status;
 using grpc::StatusCode;
+
+static std::string issueTypeName(Utf8IssueType type) {
+    switch (type) {
+    case Utf8IssueType::None:
+        return "none";
+    case Utf8IssueType::InvalidSequence:
+        return "invalid";
+    case Utf8IssueType::TruncatedSequence:
+        return "truncated";
+    }
+    return "unknown";
+}
+
+static std::string sanitizeProtoTextForLog(const std::string& text,
+                                           const char* path,
+                                           const std::string& source,
+                                           int linkNumber) {
+    Utf8Issue issue = findFirstUtf8Issue(text);
+    if (!issue.hasIssue()) return text;
+
+    LOG_WARN("Proto UTF-8 issue on %s source=%s link=%d type=%s offset=%zu bytes=%zu hex=[%s]",
+             path, source.c_str(), linkNumber, issueTypeName(issue.type).c_str(),
+             issue.offset, issue.bytes, hexWindow(text, issue.offset).c_str());
+    return sanitizeUtf8(text);
+}
 
 // ---- Auth helper: extract session_id from metadata or message field ----
 
@@ -468,7 +494,9 @@ public:
                 } else {
                     hydra::ServerMessage msg;
                     auto* go = msg.mutable_game_output();
-                    go->set_text(item.render(currentFmt));
+                    go->set_text(sanitizeProtoTextForLog(
+                        item.render(currentFmt), "grpc bidi output",
+                        item.source, item.linkNumber));
                     go->set_source(item.source);
                     go->set_timestamp(static_cast<int64_t>(item.timestamp));
                     go->set_link_number(item.linkNumber);
@@ -579,7 +607,9 @@ public:
                 sq->output.pop();
                 lock.unlock();
                 hydra::GameOutput msg;
-                msg.set_text(item.render(sq->renderFormat));
+                msg.set_text(sanitizeProtoTextForLog(
+                    item.render(sq->renderFormat), "grpc subscribe output",
+                    item.source, item.linkNumber));
                 msg.set_source(item.source);
                 msg.set_timestamp(static_cast<int64_t>(item.timestamp));
                 msg.set_link_number(item.linkNumber);
@@ -704,7 +734,9 @@ public:
                         // Render PUA text at the requested color format
                         HydraSession::OutputItem item;
                         item.puaText = text;
-                        line->set_text(item.render(rc->fmt));
+                        line->set_text(sanitizeProtoTextForLog(
+                            item.render(rc->fmt), "grpc scrollback",
+                            source, 0));
                         line->set_source(source);
                         line->set_timestamp(static_cast<int64_t>(timestamp));
                     },

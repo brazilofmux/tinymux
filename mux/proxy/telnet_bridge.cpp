@@ -1,4 +1,5 @@
 #include "telnet_bridge.h"
+#include "utf8_utils.h"
 
 // Override color_ops.h fallback LBUF_SIZE (8000) to match the engine's
 // alloc.h value (32768).  The proxy doesn't include alloc.h directly,
@@ -77,7 +78,8 @@ static std::string charsetEncodeFromUtf8(const std::string& utf8Str,
 
 std::string TelnetBridge::ingestGameOutput(
     const ganl::ProtocolState& gameState,
-    const char* data, size_t len) {
+    const char* data, size_t len,
+    std::string* utf8Carry) {
 
     // Step 1: Charset-decode to UTF-8 if needed.
     std::string utf8Str;
@@ -87,6 +89,22 @@ std::string TelnetBridge::ingestGameOutput(
         break;
     case ganl::EncodingType::Cp437:
         utf8Str = charsetDecodeToUtf8(data, len, cp437_utf8);
+        break;
+    case ganl::EncodingType::Utf8:
+        if (utf8Carry && !utf8Carry->empty()) {
+            utf8Str = *utf8Carry;
+            utf8Str.append(data, len);
+        } else {
+            utf8Str.assign(data, len);
+        }
+        if (utf8Carry) {
+            utf8Carry->clear();
+            Utf8Issue issue = findFirstUtf8Issue(utf8Str);
+            if (issue.type == Utf8IssueType::TruncatedSequence) {
+                utf8Carry->assign(utf8Str.data() + issue.offset, issue.bytes);
+                utf8Str.resize(issue.offset);
+            }
+        }
         break;
     default:
         // UTF-8 or ASCII — pass through
