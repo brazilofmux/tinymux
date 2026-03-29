@@ -56,10 +56,20 @@ think [parent(get(test_route_fn/room_child), get(test_route_fn/room_parent))]
 #   Zone_X: rooms X1, X2  (X1 --exit_x12--> X2)
 #   Zone_Y: rooms Y1, Y2  (Y1 --exit_y12--> Y2)
 #   Cross-zone exit: X2 --exit_x2y1--> Y1
+#   Additional deterministic regression:
+#     Zone_P has reachable P1->P2 and isolated P_dead.
+#     Unreachable direct gateway: P_dead -> Q1
+#     Reachable alternate route: P2 -> R1 -> Q1
 #
 think [setq(0, create(Route_Zone_X))][attrib_set(test_route_fn/zone_x, %q0)]
 -
 think [setq(0, create(Route_Zone_Y))][attrib_set(test_route_fn/zone_y, %q0)]
+-
+think [setq(0, create(Route_Zone_P))][attrib_set(test_route_fn/zone_p, %q0)]
+-
+think [setq(0, create(Route_Zone_Q))][attrib_set(test_route_fn/zone_q, %q0)]
+-
+think [setq(0, create(Route_Zone_R))][attrib_set(test_route_fn/zone_r, %q0)]
 -
 think [setq(0, create(Route_Room_X1, 10, r))][set(%q0, NAVIGABLE)][attrib_set(test_route_fn/room_x1, %q0)]
 -
@@ -69,6 +79,16 @@ think [setq(0, create(Route_Room_Y1, 10, r))][set(%q0, NAVIGABLE)][attrib_set(te
 -
 think [setq(0, create(Route_Room_Y2, 10, r))][set(%q0, NAVIGABLE)][attrib_set(test_route_fn/room_y2, %q0)]
 -
+think [setq(0, create(Route_Room_P1, 10, r))][set(%q0, NAVIGABLE)][attrib_set(test_route_fn/room_p1, %q0)]
+-
+think [setq(0, create(Route_Room_P2, 10, r))][set(%q0, NAVIGABLE)][attrib_set(test_route_fn/room_p2, %q0)]
+-
+think [setq(0, create(Route_Room_PDead, 10, r))][set(%q0, NAVIGABLE)][attrib_set(test_route_fn/room_pdead, %q0)]
+-
+think [setq(0, create(Route_Room_Q1, 10, r))][set(%q0, NAVIGABLE)][attrib_set(test_route_fn/room_q1, %q0)]
+-
+think [setq(0, create(Route_Room_R1, 10, r))][set(%q0, NAVIGABLE)][attrib_set(test_route_fn/room_r1, %q0)]
+-
 @chzone [get(test_route_fn/room_x1)]=[get(test_route_fn/zone_x)]
 -
 @chzone [get(test_route_fn/room_x2)]=[get(test_route_fn/zone_x)]
@@ -76,6 +96,16 @@ think [setq(0, create(Route_Room_Y2, 10, r))][set(%q0, NAVIGABLE)][attrib_set(te
 @chzone [get(test_route_fn/room_y1)]=[get(test_route_fn/zone_y)]
 -
 @chzone [get(test_route_fn/room_y2)]=[get(test_route_fn/zone_y)]
+-
+@chzone [get(test_route_fn/room_p1)]=[get(test_route_fn/zone_p)]
+-
+@chzone [get(test_route_fn/room_p2)]=[get(test_route_fn/zone_p)]
+-
+@chzone [get(test_route_fn/room_pdead)]=[get(test_route_fn/zone_p)]
+-
+@chzone [get(test_route_fn/room_q1)]=[get(test_route_fn/zone_q)]
+-
+@chzone [get(test_route_fn/room_r1)]=[get(test_route_fn/zone_r)]
 -
 @tel me=[get(test_route_fn/room_x1)]
 -
@@ -94,6 +124,30 @@ think [attrib_set(test_route_fn/exit_x2y1, [lastcreate(me, e)])]
 @open route_exit_y12=[get(test_route_fn/room_y2)]
 -
 think [attrib_set(test_route_fn/exit_y12, [lastcreate(me, e)])]
+-
+@tel me=[get(test_route_fn/room_p1)]
+-
+@open route_exit_p12=[get(test_route_fn/room_p2)]
+-
+think [attrib_set(test_route_fn/exit_p12, [lastcreate(me, e)])]
+-
+@tel me=[get(test_route_fn/room_p2)]
+-
+@open route_exit_p2r1=[get(test_route_fn/room_r1)]
+-
+think [attrib_set(test_route_fn/exit_p2r1, [lastcreate(me, e)])]
+-
+@tel me=[get(test_route_fn/room_pdead)]
+-
+@open route_exit_pdead_q1=[get(test_route_fn/room_q1)]
+-
+think [attrib_set(test_route_fn/exit_pdead_q1, [lastcreate(me, e)])]
+-
+@tel me=[get(test_route_fn/room_r1)]
+-
+@open route_exit_r1q1=[get(test_route_fn/room_q1)]
+-
+think [attrib_set(test_route_fn/exit_r1q1, [lastcreate(me, e)])]
 -
 @tel me=#0
 -
@@ -364,10 +418,46 @@ think [attrib_set(test_route_fn/exit_y12, [lastcreate(me, e)])]
       )=
   {
     @log smoke=TC017: route no reverse cross-zone. Succeeded.;
-    @trig me/tr.done
+    @trig me/tr.tc018
   },
   {
     @log smoke=TC017: route no reverse cross-zone. Failed ([route(v(room_y1), v(room_x1))]).;
+    @trig me/tr.tc018
+  }
+-
+#
+# Test Case #18 - prefer a reachable multi-zone route over an unreachable
+#                 direct gateway edge from the same source zone.
+#
+&tr.tc018 test_route_fn=
+  @if strmatch(
+        route(v(room_p1), v(room_q1)),
+        v(exit_p12)
+      )=
+  {
+    @log smoke=TC018: route reachable alternate gateway chain. Succeeded.;
+    @trig me/tr.tc019
+  },
+  {
+    @log smoke=TC018: route reachable alternate gateway chain. Failed ([route(v(room_p1), v(room_q1))]).;
+    @trig me/tr.tc019
+  }
+-
+#
+# Test Case #19 - alternate cross-zone path should use P1->P2->R1->Q1,
+#                 not the unreachable direct gateway from P_dead.
+#
+&tr.tc019 test_route_fn=
+  @if strmatch(
+        route(v(room_p1), v(room_q1), path),
+        [v(exit_p12)] [v(exit_p2r1)] [v(exit_r1q1)]
+      )=
+  {
+    @log smoke=TC019: route alternate cross-zone path. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC019: route alternate cross-zone path. Failed ([route(v(room_p1), v(room_q1), path)]).;
     @trig me/tr.done
   }
 -

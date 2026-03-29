@@ -534,6 +534,7 @@ static void route_ensure_zone_current(dbref zone_id)
         return;
     }
     route_build_zone(zone_id);
+    route_persist_to_sqlite();
 }
 
 static void route_ensure_meta_current(void)
@@ -545,6 +546,7 @@ static void route_ensure_meta_current(void)
         return;
     }
     route_build_meta();
+    route_persist_to_sqlite();
 }
 
 // ---------------------------------------------------------------------------
@@ -571,6 +573,50 @@ static dbref zone_next_hop(const ZoneTable &zt, dbref source, dbref destination)
         return NOTHING;
     }
     return hop_it->second;
+}
+
+// Append the exact intra-zone path from source to destination. Returns
+// false if the destination is unreachable from source.
+//
+static bool append_zone_path(const ZoneTable &zt, dbref source,
+                             dbref destination, std::vector<dbref> &path)
+{
+    if (source == destination)
+    {
+        return true;
+    }
+
+    auto src_it = zt.node_index.find(source);
+    auto dst_it = zt.node_index.find(destination);
+    if (src_it == zt.node_index.end() || dst_it == zt.node_index.end())
+    {
+        return false;
+    }
+
+    dbref current = source;
+    int hops = 0;
+    int max_hops = static_cast<int>(zt.index_to_room.size());
+
+    while (current != destination && hops < max_hops)
+    {
+        dbref next_exit = zone_next_hop(zt, current, destination);
+        if (next_exit == NOTHING)
+        {
+            return false;
+        }
+
+        dbref next_room = Location(next_exit);
+        if (!Good_obj(next_room) || next_room == current)
+        {
+            return false;
+        }
+
+        path.push_back(next_exit);
+        current = next_room;
+        hops++;
+    }
+
+    return current == destination;
 }
 
 // Intra-zone hop count between two rooms (returns -1 if unreachable).
@@ -621,12 +667,14 @@ static int zone_hop_count(const ZoneTable &zt, dbref source, dbref destination)
 // ---------------------------------------------------------------------------
 
 static void meta_dijkstra(
-    dbref source_zone,
-    dbref dest_zone,
+    dbref source_room,
+    dbref dest_room,
     std::vector<const GatewayEdge *> &result)
 {
     result.clear();
 
+    dbref source_zone = g_room_to_zone[source_room];
+    dbref dest_zone = g_room_to_zone[dest_room];
     if (source_zone == dest_zone)
     {
         return;
@@ -640,36 +688,65 @@ static void meta_dijkstra(
         adj[g_meta.edges[i].source_zone].push_back(i);
     }
 
-    // Dijkstra with edge weights = 1 (hop count between zones).
-    // Since all weights are 1 this is effectively BFS.
+    // Dijkstra over actual room states. The state is "currently standing in
+    // room R", where R is the query source or the target room of a gateway
+    // edge already crossed. This avoids choosing an unreachable gateway just
+    // because its zone edge count looks shorter.
     //
     std::unordered_map<dbref, int> dist;
-    std::unordered_map<dbref, int> prev_edge;  // zone -> edge index that reached it.
+    std::unordered_map<dbref, dbref> prev_room;
+    std::unordered_map<dbref, int> prev_edge;  // room -> gateway edge index.
 
-    // Priority queue: (distance, zone).
+    // Priority queue: (distance, room).
     //
     typedef std::pair<int, dbref> PQEntry;
     std::priority_queue<PQEntry, std::vector<PQEntry>, std::greater<PQEntry>> pq;
 
-    dist[source_zone] = 0;
-    pq.push({0, source_zone});
+    int best_goal = INT_MAX;
+    dbref best_goal_room = NOTHING;
+
+    dist[source_room] = 0;
+    pq.push({0, source_room});
 
     while (!pq.empty())
     {
-        auto [d, z] = pq.top();
+        auto [d, room] = pq.top();
         pq.pop();
 
-        if (d > dist[z])
+        auto dist_it = dist.find(room);
+        if (dist_it == dist.end() || d > dist_it->second)
         {
             continue;  // Stale entry.
         }
 
-        if (z == dest_zone)
+        if (d >= best_goal)
         {
-            break;  // Found shortest path.
+            continue;
         }
 
-        auto adj_it = adj.find(z);
+        dbref zone = g_room_to_zone[room];
+        route_ensure_zone_current(zone);
+        auto zt_it = g_zone_tables.find(zone);
+        if (zt_it == g_zone_tables.end())
+        {
+            continue;
+        }
+
+        // Any state already inside the destination zone can finish with an
+        // exact local-table lookup.
+        //
+        if (zone == dest_zone)
+        {
+            int final_cost = zone_hop_count(zt_it->second, room, dest_room);
+            if (  final_cost >= 0
+               && d + final_cost < best_goal)
+            {
+                best_goal = d + final_cost;
+                best_goal_room = room;
+            }
+        }
+
+        auto adj_it = adj.find(zone);
         if (adj_it == adj.end())
         {
             continue;
@@ -677,38 +754,46 @@ static void meta_dijkstra(
 
         for (int ei : adj_it->second)
         {
-            dbref next_z = g_meta.edges[ei].dest_zone;
-            int new_dist = d + 1;
-
-            auto dist_it = dist.find(next_z);
-            if (dist_it == dist.end() || new_dist < dist_it->second)
+            const GatewayEdge &ge = g_meta.edges[ei];
+            int approach_cost = zone_hop_count(zt_it->second, room, ge.gate_room);
+            if (approach_cost < 0)
             {
-                dist[next_z] = new_dist;
-                prev_edge[next_z] = ei;
-                pq.push({new_dist, next_z});
+                continue;
+            }
+
+            dbref next_room = ge.target_room;
+            int new_dist = d + approach_cost + 1;
+
+            auto next_it = dist.find(next_room);
+            if (next_it == dist.end() || new_dist < next_it->second)
+            {
+                dist[next_room] = new_dist;
+                prev_room[next_room] = room;
+                prev_edge[next_room] = ei;
+                pq.push({new_dist, next_room});
             }
         }
     }
 
     // Reconstruct path.
     //
-    if (dist.find(dest_zone) == dist.end())
+    if (best_goal_room == NOTHING)
     {
-        return;  // No route between zones.
+        return;
     }
 
     std::vector<int> edge_path;
-    dbref z = dest_zone;
-    while (z != source_zone)
+    dbref room = best_goal_room;
+    while (room != source_room)
     {
-        auto pe_it = prev_edge.find(z);
+        auto pe_it = prev_edge.find(room);
         if (pe_it == prev_edge.end())
         {
             result.clear();
             return;
         }
         edge_path.push_back(pe_it->second);
-        z = g_meta.edges[pe_it->second].source_zone;
+        room = prev_room[room];
     }
 
     // Reverse to get source-to-dest order.
@@ -743,30 +828,7 @@ static void route_get_path(dbref source, dbref destination,
             return;
         }
         const ZoneTable &zt = zt_it->second;
-
-        dbref current = source;
-        int max_hops = static_cast<int>(zt.index_to_room.size());
-        int hops = 0;
-
-        while (current != destination && hops < max_hops)
-        {
-            dbref next_exit = zone_next_hop(zt, current, destination);
-            if (next_exit == NOTHING)
-            {
-                path.clear();
-                return;
-            }
-            path.push_back(next_exit);
-            dbref next_room = Location(next_exit);
-            if (!Good_obj(next_room) || next_room == current)
-            {
-                path.clear();
-                return;
-            }
-            current = next_room;
-            hops++;
-        }
-        if (current != destination)
+        if (!append_zone_path(zt, source, destination, path))
         {
             path.clear();
         }
@@ -778,7 +840,7 @@ static void route_get_path(dbref source, dbref destination,
     route_ensure_meta_current();
 
     std::vector<const GatewayEdge *> gw_path;
-    meta_dijkstra(src_zone, dst_zone, gw_path);
+    meta_dijkstra(source, destination, gw_path);
     if (gw_path.empty())
     {
         return;
@@ -802,30 +864,7 @@ static void route_get_path(dbref source, dbref destination,
             return;
         }
         const ZoneTable &zt = zt_it->second;
-
-        int max_hops = static_cast<int>(zt.index_to_room.size());
-        int hops = 0;
-
-        while (current != gate_room && hops < max_hops)
-        {
-            dbref next_exit = zone_next_hop(zt, current, gate_room);
-            if (next_exit == NOTHING)
-            {
-                path.clear();
-                return;
-            }
-            path.push_back(next_exit);
-            dbref next_room = Location(next_exit);
-            if (!Good_obj(next_room) || next_room == current)
-            {
-                path.clear();
-                return;
-            }
-            current = next_room;
-            hops++;
-        }
-
-        if (current != gate_room)
+        if (!append_zone_path(zt, current, gate_room, path))
         {
             path.clear();
             return;
@@ -849,30 +888,7 @@ static void route_get_path(dbref source, dbref destination,
             return;
         }
         const ZoneTable &zt = zt_it->second;
-
-        int max_hops = static_cast<int>(zt.index_to_room.size());
-        int hops = 0;
-
-        while (current != destination && hops < max_hops)
-        {
-            dbref next_exit = zone_next_hop(zt, current, destination);
-            if (next_exit == NOTHING)
-            {
-                path.clear();
-                return;
-            }
-            path.push_back(next_exit);
-            dbref next_room = Location(next_exit);
-            if (!Good_obj(next_room) || next_room == current)
-            {
-                path.clear();
-                return;
-            }
-            current = next_room;
-            hops++;
-        }
-
-        if (current != destination)
+        if (!append_zone_path(zt, current, destination, path))
         {
             path.clear();
         }
@@ -1029,45 +1045,14 @@ void route_query(dbref executor, dbref source, dbref destination,
         return;
     }
 
-    // Cross-zone: find gateway, route to it within source zone.
+    // Cross-zone: resolve the full path, then return its first hop.
     //
-    route_ensure_meta_current();
-
-    std::vector<const GatewayEdge *> gw_path;
-    meta_dijkstra(src_zone, dst_zone, gw_path);
-    if (gw_path.empty())
+    std::vector<dbref> path;
+    route_get_path(source, destination, path);
+    if (path.empty())
     {
         safe_str(T("#-1 NO ROUTE"), buff, bufc);
         return;
     }
-
-    const GatewayEdge *first_gw = gw_path[0];
-
-    if (source == first_gw->gate_room)
-    {
-        // Already at the gateway room, return the cross-zone exit.
-        //
-        safe_tprintf_str(buff, bufc, T("#%d"), first_gw->gate_exit);
-        return;
-    }
-
-    // Route within source zone to the gateway room.
-    //
-    route_ensure_zone_current(src_zone);
-    auto zt_it = g_zone_tables.find(src_zone);
-    if (zt_it == g_zone_tables.end())
-    {
-        safe_str(T("#-1 NO ROUTE"), buff, bufc);
-        return;
-    }
-
-    dbref next_exit = zone_next_hop(zt_it->second, source,
-                                    first_gw->gate_room);
-    if (next_exit == NOTHING)
-    {
-        safe_str(T("#-1 NO ROUTE"), buff, bufc);
-        return;
-    }
-
-    safe_tprintf_str(buff, bufc, T("#%d"), next_exit);
+    safe_tprintf_str(buff, bufc, T("#%d"), path[0]);
 }

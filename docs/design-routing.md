@@ -454,12 +454,14 @@ best-effort hints, not durable state.
   gateway edges may exist between the same pair of zones (different
   border crossings, one-way links, exits into different subregions).
   The meta-table runs Dijkstra over gateway edges to find the best
-  border crossing for a given destination zone. Edge weight is a
-  **heuristic estimate**: the intra-zone hop count from `gate_room`
-  to the zone's most-connected room (or zone centroid). This is not
-  exact — the true cost depends on the caller's current room within
-  the zone, which varies per query. The meta-table selects a
-  reasonable gateway; the local-table then routes precisely to it.
+  border crossing for a given destination zone. In the Phase 2
+  implementation, the query-time search uses the caller's **actual**
+  current room (and the target rooms of already-crossed gateways) as
+  state, with exact intra-zone hop counts between gateway rooms. This
+  is stronger than the centroid heuristic sketched here: it avoids
+  choosing an unreachable local gateway just because it looks shorter
+  at zone granularity, while still keeping the search confined to the
+  much smaller gateway graph.
   For zones with multiple gateways to the same neighbor, this may
   not always pick the closest one to the caller, but it avoids the
   cost of per-room meta-table entries.
