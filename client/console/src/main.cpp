@@ -250,10 +250,8 @@ int main(int argc, char* argv[]) {
     if (hThread != INVALID_HANDLE_VALUE) {
         // Cancel the blocking ReadConsoleInputW
         CancelSynchronousIo(hThread);
-        // Wait briefly for clean exit, then give up
-        if (WaitForSingleObject(hThread, 2000) == WAIT_TIMEOUT) {
-            TerminateThread(hThread, 0);  // last resort
-        }
+        // Wait briefly for clean exit, then allow process shutdown to reap it.
+        WaitForSingleObject(hThread, 2000);
         CloseHandle(hThread);
     }
 

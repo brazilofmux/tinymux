@@ -92,7 +92,9 @@ public:
 
 private:
     struct StreamState;
+    struct GrpcState;
 
+    std::shared_ptr<GrpcState> currentGrpcState() const;
     void readerLoop();
     void readerLoop(std::shared_ptr<StreamState> streamState);
     bool openStream(bool startReaderThread = true);
@@ -125,10 +127,9 @@ public:
     // Win32 GUI should set PUA_UTF8 (4) for custom rendering.
     void setColorFormat(int fmt) { colorFormat_ = fmt; }
 private:
-
     // gRPC state (opaque — actual types in .cpp to avoid grpc headers here)
-    struct GrpcState;
-    std::unique_ptr<GrpcState> grpc_;
+    mutable std::mutex grpcMutex_;
+    std::shared_ptr<GrpcState> grpc_;
     std::shared_ptr<StreamState> streamState_;
     mutable std::mutex streamStateMutex_;
     std::mutex writeMutex_;
