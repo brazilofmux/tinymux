@@ -9,7 +9,7 @@ certificates.
 ```
 Internet
    |
-   +--- port 4201 (TLS telnet) ---> NGINX stream ---> Hydra 127.0.0.1:4201
+   +--- port 4201 (TLS telnet) ---> NGINX stream ---> Hydra 127.0.0.1:4202
    +--- port 443  (HTTPS)      ---> NGINX http   ---> Hydra 127.0.0.1:4205 (grpc-web)
    |                                               +-> Hydra 127.0.0.1:4203 (websocket)
    +--- port 80   (HTTP)       ---> NGINX (redirect to 443 / ACME challenge)
@@ -18,6 +18,11 @@ Internet
 Hydra only binds to localhost.  NGINX handles TLS termination, certificate
 renewal, and public-facing ports.  The MUD game server runs on the same
 box, also on localhost.
+
+The telnet listener intentionally uses a different loopback port
+(`127.0.0.1:4202`) than NGINX's public TLS listener (`:4201`).  Do not point
+both layers at the same port or NGINX will win the bind race and Hydra's
+telnet listener will fail to start.
 
 ## Prerequisites
 
@@ -231,6 +236,9 @@ sudo journalctl -u hydra -f    # watch the logs
 # Health check (should return "ok")
 curl -s https://your.actual.domain/healthz
 
+# Prometheus-style metrics (text/plain)
+curl -s https://your.actual.domain/metrics | head
+
 # Telnet with TLS (using openssl s_client as a quick test)
 openssl s_client -connect your.actual.domain:4201 -quiet
 
@@ -261,10 +269,27 @@ sudo journalctl -u hydra --since "1 hour ago"
 sudo systemctl reload hydra    # sends SIGHUP
 ```
 
-**Restart Hydra (sessions persist across restarts):**
+**Fetch metrics:**
+```bash
+curl -s https://your.actual.domain/metrics
+```
+
+If `/metrics` is exposed on a public HTTPS listener, restrict it at NGINX or
+your load balancer to operator IPs or internal networks. Hydra does not apply
+authentication to this endpoint.
+
+The endpoint includes both current-state gauges and monotonic counters such as
+authentication failures, reconnect attempts/failures, and backend disconnects.
+
+**Restart Hydra (clients reconnect; sessions resume if still within token/link timeouts):**
 ```bash
 sudo systemctl restart hydra
 ```
+
+Hydra does a short drain on SIGTERM and persists session state, but restart is
+still an interruption.  Existing front-door connections drop and must
+reconnect.  Treat restart as controlled maintenance, not as a transparent
+zero-impact operation.
 
 **Update Hydra binary:**
 ```bash
@@ -398,7 +423,8 @@ sudo systemctl restart hydra
 ```
 
 Note that cert renewal requires restarting Hydra (it reads the cert at
-startup).  Add a certbot deploy hook:
+startup).  Schedule that restart as a maintenance event because clients will
+be disconnected and need to reconnect.  Add a certbot deploy hook:
 
 ```bash
 sudo tee /etc/letsencrypt/renewal-hooks/deploy/restart-hydra.sh << 'EOF'
@@ -422,7 +448,8 @@ grpcurl -proto mux/proxy/hydra.proto mud.example.com:8443 hydra.HydraService/Lis
 
 **"Plaintext connections are disabled"** — Hydra is rejecting a direct
 connection.  Clients should connect through NGINX (port 4201 with TLS),
-not directly to Hydra's localhost port.
+not directly to Hydra's localhost telnet port (`127.0.0.1:4202` in the
+reference deployment).
 
 **"TLS is required but not configured"** — A game block has
 `tls_required yes` (the default) but `tls no`.  For local games, add

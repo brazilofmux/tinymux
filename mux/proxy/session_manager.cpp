@@ -16,6 +16,7 @@
 #include <cstring>
 #include <algorithm>
 #include <cctype>
+#include <sstream>
 
 #ifndef MSG_NOSIGNAL
 #define MSG_NOSIGNAL 0
@@ -114,6 +115,54 @@ static ganl::EncodingType parseNegotiatedCharset(const std::string& name,
     if (upper == "CP1252" || upper == "WINDOWS-1252") return ganl::EncodingType::Cp1252;
     if (upper == "US-ASCII" || upper == "ASCII") return ganl::EncodingType::Ascii;
     return fallback;
+}
+
+static const char* frontDoorProtoName(FrontDoorProto proto) {
+    switch (proto) {
+    case FrontDoorProto::Telnet:
+        return "telnet";
+    case FrontDoorProto::WebSocket:
+        return "websocket";
+    case FrontDoorProto::GrpcWeb:
+        return "grpc_web";
+    case FrontDoorProto::WsGameSession:
+        return "ws_game_session";
+    }
+    return "unknown";
+}
+
+static const char* linkStateMetricName(LinkState state) {
+    switch (state) {
+    case LinkState::Connecting:
+        return "connecting";
+    case LinkState::TlsHandshaking:
+        return "tls_handshaking";
+    case LinkState::Negotiating:
+        return "negotiating";
+    case LinkState::AutoLoggingIn:
+        return "auto_logging_in";
+    case LinkState::Active:
+        return "active";
+    case LinkState::Reconnecting:
+        return "reconnecting";
+    case LinkState::Suspended:
+        return "suspended";
+    case LinkState::Dead:
+        return "dead";
+    }
+    return "unknown";
+}
+
+static const char* sessionStateMetricName(SessionState state) {
+    switch (state) {
+    case SessionState::Login:
+        return "login";
+    case SessionState::Active:
+        return "active";
+    case SessionState::Detached:
+        return "detached";
+    }
+    return "unknown";
 }
 
 static bool charsetOffered(const std::string& payload, const std::string& wanted) {
@@ -1130,6 +1179,7 @@ void SessionManager::handleLogin(FrontDoorState& fd,
             LOG_INFO("Login failed for '%s' from fd %lu",
                      fd.pendingUsername.c_str(),
                      (unsigned long)fd.handle);
+            authFailuresTotal_.fetch_add(1);
             recordLoginFailure(fd.clientIp);
             if (isLockedOut(fd.clientIp)) {
                 sendToClient(fd.handle,
@@ -1833,6 +1883,7 @@ void SessionManager::onBackDoorConnect(ganl::ConnectionHandle bdHandle) {
 
 void SessionManager::onBackDoorConnectFail(ganl::ConnectionHandle bdHandle,
                                            int error) {
+    backendConnectFailuresTotal_.fetch_add(1);
     HydraSession* session = nullptr;
     BackDoorLink* link = nullptr;
     size_t linkIdx = 0;
@@ -2094,6 +2145,7 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
 
 void SessionManager::onBackDoorClose(ganl::ConnectionHandle bdHandle) {
     writeBuffers_.erase(bdHandle);
+    backendDisconnectsTotal_.fetch_add(1);
     HydraSession* session = nullptr;
     BackDoorLink* link = nullptr;
     size_t linkIdx = 0;
@@ -2224,6 +2276,7 @@ void SessionManager::runTimers() {
             const GameConfig* game = link.gameConfig;
             ganl::ErrorCode err = 0;
             ganl::ConnectionHandle bdHandle;
+            reconnectAttemptsTotal_.fetch_add(1);
 
             if (game->transport == GameTransport::Unix) {
                 bdHandle = engine_.initiateUnixConnect(
@@ -2234,6 +2287,7 @@ void SessionManager::runTimers() {
             }
 
             if (bdHandle == ganl::InvalidConnectionHandle) {
+                reconnectFailuresTotal_.fetch_add(1);
                 // Schedule next retry or give up
                 const auto& schedule = game->retrySchedule;
                 if (link.retryCount < static_cast<int>(schedule.size())) {
@@ -2539,7 +2593,10 @@ std::string SessionManager::authenticateAndGetSession(
     const std::string& username, const std::string& password) {
     std::vector<uint8_t> sbKey;
     uint32_t accountId = accounts_.authenticate(username, password, sbKey);
-    if (accountId == 0) return "";
+    if (accountId == 0) {
+        authFailuresTotal_.fetch_add(1);
+        return "";
+    }
 
     // Check for existing in-memory session
     for (auto& [sid, sess] : sessions_) {
@@ -2703,11 +2760,181 @@ std::string HydraSession::OutputItem::render(RenderFormat fmt) const {
 // ---- gRPC-Web request handler ----
 
 #ifdef GRPC_ENABLED
+std::string SessionManager::renderPrometheusMetrics() {
+    std::map<FrontDoorProto, size_t> frontDoorByProto;
+    std::map<SessionState, size_t> sessionByState;
+    std::map<LinkState, size_t> backDoorByState;
+
+    size_t tlsFrontDoors = 0;
+    size_t grpcWebSubscribers = 0;
+    size_t lineBufferBytes = 0;
+    size_t httpBufferBytes = 0;
+    size_t tlsPlaintextBufferBytes = 0;
+    size_t tlsCiphertextBufferBytes = 0;
+    for (const auto& [handle, fd] : frontDoors_) {
+        (void)handle;
+        frontDoorByProto[fd.proto]++;
+        if (fd.tlsTransport) tlsFrontDoors++;
+        if (fd.grpcWebSubscribed) grpcWebSubscribers++;
+        lineBufferBytes += fd.lineBuf.size();
+        httpBufferBytes += fd.httpBuf.size();
+        if (fd.tlsPlainOut) tlsPlaintextBufferBytes += fd.tlsPlainOut->readableBytes();
+        if (fd.tlsEncryptedOut) tlsCiphertextBufferBytes += fd.tlsEncryptedOut->readableBytes();
+    }
+
+    size_t totalLinks = 0;
+    size_t scrollbackLines = 0;
+    size_t scrollbackDirtyLines = 0;
+    size_t outputSubscribers = 0;
+    size_t gmcpSubscribers = 0;
+    for (auto& [sid, session] : sessions_) {
+        (void)sid;
+        sessionByState[session.state]++;
+        totalLinks += session.links.size();
+        scrollbackLines += session.scrollback.count();
+        scrollbackDirtyLines += session.scrollback.dirtyCount();
+        for (const auto& link : session.links) {
+            backDoorByState[link.state]++;
+        }
+
+        if (session.outputQueue) {
+            std::lock_guard<std::mutex> guard(session.outputQueue->mutex);
+            for (const auto& [subId, sq] : session.outputQueue->subscribers) {
+                (void)subId;
+                outputSubscribers++;
+                if (sq->wantsGmcp) gmcpSubscribers++;
+            }
+        }
+    }
+
+    size_t writeBufferBytes = 0;
+    for (const auto& [handle, wb] : writeBuffers_) {
+        (void)handle;
+        writeBufferBytes += wb.remaining();
+    }
+
+    size_t ipLockedOut = 0;
+    size_t ipActiveConnections = 0;
+    size_t ipRateTrackedCreates = 0;
+    time_t now = time(nullptr);
+    for (const auto& [ip, tracker] : ipTrackers_) {
+        (void)ip;
+        if (tracker.lockoutUntil > now) ipLockedOut++;
+        ipActiveConnections += static_cast<size_t>(std::max(tracker.connectionCount, 0));
+        ipRateTrackedCreates += tracker.accountCreateTimes.size();
+    }
+
+    std::ostringstream out;
+    out << "# HELP hydra_sessions Current Hydra sessions.\n";
+    out << "# TYPE hydra_sessions gauge\n";
+    out << "hydra_sessions " << sessions_.size() << "\n";
+    out << "# HELP hydra_sessions_by_state Current Hydra sessions by session state.\n";
+    out << "# TYPE hydra_sessions_by_state gauge\n";
+    for (SessionState state : {SessionState::Login, SessionState::Active, SessionState::Detached}) {
+        out << "hydra_sessions_by_state{state=\"" << sessionStateMetricName(state)
+            << "\"} " << sessionByState[state] << "\n";
+    }
+
+    out << "# HELP hydra_front_doors Current connected front-door clients.\n";
+    out << "# TYPE hydra_front_doors gauge\n";
+    out << "hydra_front_doors " << frontDoors_.size() << "\n";
+    out << "# HELP hydra_front_doors_by_proto Current front-door clients by protocol.\n";
+    out << "# TYPE hydra_front_doors_by_proto gauge\n";
+    for (FrontDoorProto proto : {FrontDoorProto::Telnet, FrontDoorProto::WebSocket,
+                                 FrontDoorProto::GrpcWeb, FrontDoorProto::WsGameSession}) {
+        out << "hydra_front_doors_by_proto{proto=\"" << frontDoorProtoName(proto)
+            << "\"} " << frontDoorByProto[proto] << "\n";
+    }
+    out << "# HELP hydra_front_doors_tls Current TLS-enabled front-door clients.\n";
+    out << "# TYPE hydra_front_doors_tls gauge\n";
+    out << "hydra_front_doors_tls " << tlsFrontDoors << "\n";
+    out << "# HELP hydra_grpc_web_subscribers Current grpc-web Subscribe streams.\n";
+    out << "# TYPE hydra_grpc_web_subscribers gauge\n";
+    out << "hydra_grpc_web_subscribers " << grpcWebSubscribers << "\n";
+
+    out << "# HELP hydra_back_doors Current back-door game links.\n";
+    out << "# TYPE hydra_back_doors gauge\n";
+    out << "hydra_back_doors " << totalLinks << "\n";
+    out << "# HELP hydra_back_doors_by_state Current back-door links by state.\n";
+    out << "# TYPE hydra_back_doors_by_state gauge\n";
+    for (LinkState state : {LinkState::Connecting, LinkState::TlsHandshaking,
+                            LinkState::Negotiating, LinkState::AutoLoggingIn,
+                            LinkState::Active, LinkState::Reconnecting,
+                            LinkState::Suspended, LinkState::Dead}) {
+        out << "hydra_back_doors_by_state{state=\"" << linkStateMetricName(state)
+            << "\"} " << backDoorByState[state] << "\n";
+    }
+
+    out << "# HELP hydra_scrollback_bytes Current in-memory scrollback bytes.\n";
+    out << "# TYPE hydra_scrollback_bytes gauge\n";
+    out << "hydra_scrollback_bytes " << globalScrollbackBytes_.load() << "\n";
+    out << "# HELP hydra_scrollback_lines Current in-memory scrollback lines.\n";
+    out << "# TYPE hydra_scrollback_lines gauge\n";
+    out << "hydra_scrollback_lines " << scrollbackLines << "\n";
+    out << "# HELP hydra_scrollback_dirty_lines Current scrollback lines pending flush.\n";
+    out << "# TYPE hydra_scrollback_dirty_lines gauge\n";
+    out << "hydra_scrollback_dirty_lines " << scrollbackDirtyLines << "\n";
+
+    out << "# HELP hydra_write_buffer_connections Connections with pending non-blocking writes.\n";
+    out << "# TYPE hydra_write_buffer_connections gauge\n";
+    out << "hydra_write_buffer_connections " << writeBuffers_.size() << "\n";
+    out << "# HELP hydra_write_buffer_bytes Buffered bytes awaiting socket write.\n";
+    out << "# TYPE hydra_write_buffer_bytes gauge\n";
+    out << "hydra_write_buffer_bytes " << writeBufferBytes << "\n";
+    out << "# HELP hydra_front_door_line_buffer_bytes Buffered telnet line assembly bytes.\n";
+    out << "# TYPE hydra_front_door_line_buffer_bytes gauge\n";
+    out << "hydra_front_door_line_buffer_bytes " << lineBufferBytes << "\n";
+    out << "# HELP hydra_front_door_http_buffer_bytes Buffered grpc-web HTTP request bytes.\n";
+    out << "# TYPE hydra_front_door_http_buffer_bytes gauge\n";
+    out << "hydra_front_door_http_buffer_bytes " << httpBufferBytes << "\n";
+    out << "# HELP hydra_tls_plaintext_buffer_bytes Buffered plaintext bytes waiting for TLS framing.\n";
+    out << "# TYPE hydra_tls_plaintext_buffer_bytes gauge\n";
+    out << "hydra_tls_plaintext_buffer_bytes " << tlsPlaintextBufferBytes << "\n";
+    out << "# HELP hydra_tls_ciphertext_buffer_bytes Buffered TLS ciphertext bytes waiting for socket write.\n";
+    out << "# TYPE hydra_tls_ciphertext_buffer_bytes gauge\n";
+    out << "hydra_tls_ciphertext_buffer_bytes " << tlsCiphertextBufferBytes << "\n";
+
+    out << "# HELP hydra_output_subscribers Current streaming output subscribers.\n";
+    out << "# TYPE hydra_output_subscribers gauge\n";
+    out << "hydra_output_subscribers " << outputSubscribers << "\n";
+    out << "# HELP hydra_gmcp_subscribers Current GMCP subscribers.\n";
+    out << "# TYPE hydra_gmcp_subscribers gauge\n";
+    out << "hydra_gmcp_subscribers " << gmcpSubscribers << "\n";
+
+    out << "# HELP hydra_ip_tracker_entries IP tracker entries retained for rate limiting.\n";
+    out << "# TYPE hydra_ip_tracker_entries gauge\n";
+    out << "hydra_ip_tracker_entries " << ipTrackers_.size() << "\n";
+    out << "# HELP hydra_ip_locked_out Current IPs under failed-login lockout.\n";
+    out << "# TYPE hydra_ip_locked_out gauge\n";
+    out << "hydra_ip_locked_out " << ipLockedOut << "\n";
+    out << "# HELP hydra_ip_active_connections Current total active IP-scoped connection count.\n";
+    out << "# TYPE hydra_ip_active_connections gauge\n";
+    out << "hydra_ip_active_connections " << ipActiveConnections << "\n";
+    out << "# HELP hydra_account_create_window_events Account-creation timestamps currently retained for rate limiting.\n";
+    out << "# TYPE hydra_account_create_window_events gauge\n";
+    out << "hydra_account_create_window_events " << ipRateTrackedCreates << "\n";
+    out << "# HELP hydra_auth_failures_total Total failed authentication attempts.\n";
+    out << "# TYPE hydra_auth_failures_total counter\n";
+    out << "hydra_auth_failures_total " << authFailuresTotal_.load() << "\n";
+    out << "# HELP hydra_reconnect_attempts_total Total scheduled back-door reconnect attempts executed.\n";
+    out << "# TYPE hydra_reconnect_attempts_total counter\n";
+    out << "hydra_reconnect_attempts_total " << reconnectAttemptsTotal_.load() << "\n";
+    out << "# HELP hydra_reconnect_failures_total Total back-door reconnect attempts that failed before a socket was established.\n";
+    out << "# TYPE hydra_reconnect_failures_total counter\n";
+    out << "hydra_reconnect_failures_total " << reconnectFailuresTotal_.load() << "\n";
+    out << "# HELP hydra_backend_disconnects_total Total back-door disconnect events observed after a live socket existed.\n";
+    out << "# TYPE hydra_backend_disconnects_total counter\n";
+    out << "hydra_backend_disconnects_total " << backendDisconnectsTotal_.load() << "\n";
+    out << "# HELP hydra_backend_connect_failures_total Total initial back-door connection failures before a live socket was established.\n";
+    out << "# TYPE hydra_backend_connect_failures_total counter\n";
+    out << "hydra_backend_connect_failures_total " << backendConnectFailuresTotal_.load() << "\n";
+
+    return out.str();
+}
+
 void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
     HttpRequest req;
     if (!parseHttpRequest(fd.httpBuf, req)) return;  // incomplete
-
-    int sockfd = static_cast<int>(fd.handle);
 
     // Health check endpoint — responds to any method on /healthz
     if (req.path == "/healthz") {
@@ -2715,6 +2942,18 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
                            "Content-Type: text/plain\r\n"
                            "Content-Length: 2\r\n"
                            "\r\nok";
+        safeWrite(fd.handle, resp);
+        fd.httpBuf.clear();
+        return;
+    }
+
+    if (req.path == "/metrics") {
+        std::string body = renderPrometheusMetrics();
+        std::string resp = "HTTP/1.1 200 OK\r\n"
+                           "Content-Type: text/plain; version=0.0.4\r\n"
+                           "Cache-Control: no-store\r\n"
+                           "Content-Length: " + std::to_string(body.size()) + "\r\n"
+                           "\r\n" + body;
         safeWrite(fd.handle, resp);
         fd.httpBuf.clear();
         return;

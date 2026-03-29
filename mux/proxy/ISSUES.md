@@ -224,25 +224,39 @@ always compiled in but controlled by opt-in configuration:
 - **Files changed**: Makefile.am
 
 ### P-5. Metrics/monitoring
+- **Status**: Fixed (2026-03-29).
+- **Resolution**: Added a Prometheus-style `/metrics` endpoint on the grpc-web
+  HTTP listener. It exports current sessions, front-doors by protocol, TLS
+  front-doors, back-door links by state, scrollback bytes/lines, buffered
+  write backlog, subscriber counts, IP rate-limit/lockout gauges, and
+  monotonic counters for auth failures, reconnect attempts/failures, and
+  backend disconnect/connect-failure events.
+- **Files changed**: session_manager.cpp, session_manager.h, deploy/DEPLOY.md
+
+### P-6. Restart semantics are still disruptive
 - **Status**: Open.
-- **Recommendation**: Add Prometheus endpoint or structured JSON logging for
-  CloudWatch. Useful metrics: active sessions, front-door count, back-door
-  link count, scrollback memory usage, auth failures per minute.
+- **Problem**: Hydra drains and persists sessions on SIGTERM, but restart is
+  not transparent. Existing front-door connections are told to reconnect and
+  any in-flight client activity is interrupted. The current deployment story
+  should treat restart as a maintenance event, not routine background churn.
+- **Recommendation**: Keep restart behavior explicit in docs and systemd
+  guidance. If zero-disconnect upgrades become a requirement, add a separate
+  handoff design rather than implying restart is harmless.
+- **Files implicated**: hydra_main.cpp, session_manager.cpp, hydra.service,
+  deploy/DEPLOY.md
 
 ## Deployment issues (discovered 2026-03-28)
 
 ### D-1. Write-path fix bypasses GANL transport layer
-- **Status**: Reopened (2026-03-28).
-- **Problem**: The new `safeWrite()`/`drainWriteBuffer()` path writes with raw
-  `::send()` on `ganl::ConnectionHandle`. That bypasses GANL's transport layer,
-  so TLS front-doors (`telnet+tls`, `websocket+tls`, `grpc-web+tls`) can send
-  plaintext bytes directly on the socket instead of encrypted transport
-  records. This is a likely cause of "connects, then falls apart" behavior in
-  real deployments.
-- **Recommendation**: Keep the event-driven buffering idea, but move the actual
-  writes back behind GANL/transport-aware APIs so TLS and future transports
-  remain correct.
-- **Files changed**: session_manager.h, session_manager.cpp, hydra_main.cpp
+- **Status**: Fixed (2026-03-28).
+- **Problem**: The first write-buffer refactor used raw `::send()` for all
+  front-door traffic, which bypassed GANL transport handling for TLS listeners.
+- **Resolution**: `safeWrite()` now splits the path correctly: TLS front-doors
+  enqueue plaintext into `tlsPlainOut`, run it through
+  `flushFrontDoorTlsOutgoing()`, and drain ciphertext via
+  `drainTlsCiphertext()`. Raw socket `::send()` remains only for non-TLS
+  connections and back-door links.
+- **Files changed**: session_manager.cpp
 
 ### D-2. Proto field name drift: `system_notice` vs `notice`
 - **Status**: Fixed (2026-03-28).
@@ -262,22 +276,17 @@ always compiled in but controlled by opt-in configuration:
   binding `127.0.0.1:4201`.  Only the grpc-web listener starts.
 - **Resolution**: Hydra telnet listener moved to port 4202 in
   hydra.conf.  NGINX stream upstream updated to proxy to 4202.
-  DEPLOY.md should be updated to reflect this.
+  DEPLOY.md and the shipped deploy configs now reflect this.
 - **Files affected**: hydra.conf, DEPLOY.md, hydra-stream.nginx.conf
 
 ### D-4. `GameOutput.text` receives malformed UTF-8
-- **Status**: Open.
-- **Problem**: Hydra logs protobuf serialization errors for
-  `hydra.GameOutput.text` containing invalid UTF-8. The field is correctly a
-  `string`; PUA code points are legal Unicode scalar values and are not the
-  issue by themselves. The likely fault is earlier in the pipeline:
-  `TelnetBridge::ingestGameOutput()` passes bytes through unchanged whenever
-  the game encoding is treated as UTF-8/ASCII, without validating UTF-8 or
-  carrying incomplete multibyte sequences across socket reads. That can inject
-  malformed UTF-8 into gRPC/grpc-web/WebSocket protobuf messages.
-- **Recommendation**: Add temporary diagnostics before `set_text()` to log the
-  first invalid byte offset and a short hex dump. Then either validate/sanitize
-  claimed UTF-8 input or add a carry-over buffer for split multibyte sequences
-  on back-door reads.
-- **Files implicated**: telnet_bridge.cpp, session_manager.cpp, grpc_server.cpp,
-  hydra.proto
+- **Status**: Fixed (2026-03-28).
+- **Problem**: Hydra was serializing malformed UTF-8 into
+  `hydra.GameOutput.text`, especially when UTF-8 sequences were split across
+  reads or when claimed UTF-8 input was invalid.
+- **Resolution**: Added `utf8Carry` buffering for split trailing sequences in
+  `TelnetBridge::ingestGameOutput()`, plus `sanitizeProtoTextForLog()` to log
+  the first invalid offset/hex window and replace invalid/truncated sequences
+  before populating protobuf text fields.
+- **Files changed**: telnet_bridge.cpp, session_manager.cpp, grpc_server.cpp,
+  utf8_utils.h

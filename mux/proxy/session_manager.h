@@ -346,6 +346,7 @@ private:
     void dispatchCommand(HydraSession& session,
                          ganl::ConnectionHandle fdHandle,
                          const std::string& line);
+    std::string renderPrometheusMetrics();
     void showBanner(ganl::ConnectionHandle handle);
     void showGameMenu(HydraSession& session, ganl::ConnectionHandle fdHandle);
     void forwardToGame(HydraSession& session,
@@ -389,6 +390,11 @@ private:
     // Global scrollback memory counter — avoids O(N) scan on each append.
     // Updated by ScrollBack::append (via callback) and session destruction.
     static std::atomic<size_t> globalScrollbackBytes_;
+    std::atomic<uint64_t> authFailuresTotal_{0};
+    std::atomic<uint64_t> reconnectAttemptsTotal_{0};
+    std::atomic<uint64_t> reconnectFailuresTotal_{0};
+    std::atomic<uint64_t> backendDisconnectsTotal_{0};
+    std::atomic<uint64_t> backendConnectFailuresTotal_{0};
 
     // ---- Rate limiting state ----
     struct IpTracker {
