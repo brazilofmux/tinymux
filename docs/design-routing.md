@@ -475,6 +475,13 @@ best-effort hints, not durable state.
 
 ### Phase 3: Lock-Aware Routing
 
+Phase 3 can be staged. The initial **Phase 3a** slice is intentionally
+small: reuse the Tier 1/2 route tables already built in memory, add the
+`locked` option, and validate only the returned next-hop exit via
+`could_doit()` at query time. This preserves the existing fast-path
+lookup behavior for unconditional and same-zone next-hop queries while
+adding the minimum player-facing safety check.
+
 - Lock classification (structurally static / volatilely static / dynamic).
 - Query-time lock validation on returned next-hop exit.
 - TTL-based expiration for Tier 2 tables.

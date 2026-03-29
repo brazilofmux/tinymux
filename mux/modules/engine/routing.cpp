@@ -979,9 +979,45 @@ void route_query(dbref executor, dbref source, dbref destination,
         return;
     }
 
-    // Resolve the route.  All modes need the full path for locked
-    // validation, distance, or path output.  The default mode uses
-    // only the first hop.
+    dbref src_zone = g_room_to_zone[source];
+    dbref dst_zone = g_room_to_zone[destination];
+
+    // Preserve the O(1) same-zone next-hop lookup for the common case.
+    // Phase 3a only needs full-path reconstruction for distance/path, or
+    // when the route itself spans zones.
+    //
+    if (  !(options & (ROUTE_OPT_PATH | ROUTE_OPT_DISTANCE))
+       && src_zone == dst_zone)
+    {
+        route_ensure_zone_current(src_zone);
+        auto zt_it = g_zone_tables.find(src_zone);
+        if (zt_it == g_zone_tables.end())
+        {
+            safe_str(T("#-1 NO ROUTE"), buff, bufc);
+            return;
+        }
+
+        dbref next_exit = zone_next_hop(zt_it->second, source, destination);
+        if (next_exit == NOTHING)
+        {
+            safe_str(T("#-1 NO ROUTE"), buff, bufc);
+            return;
+        }
+
+        if (  (options & ROUTE_OPT_LOCKED)
+           && !could_doit(executor, next_exit, A_LOCK))
+        {
+            safe_str(T("#-1 EXIT IMPASSABLE"), buff, bufc);
+            return;
+        }
+
+        safe_tprintf_str(buff, bufc, T("#%d"), next_exit);
+        return;
+    }
+
+    // Resolve the full path for distance/path output and for cross-zone
+    // routing, where the first hop may need intra-zone movement to a
+    // gateway room before crossing zones.
     //
     std::vector<dbref> path;
     route_get_path(source, destination, path);
@@ -991,8 +1027,7 @@ void route_query(dbref executor, dbref source, dbref destination,
         return;
     }
 
-    // Locked mode: validate the next-hop exit against the executor's
-    // lock.  Only the first hop is checked at query time.
+    // Locked mode validates only the next hop at query time.
     //
     if (  (options & ROUTE_OPT_LOCKED)
        && !could_doit(executor, path[0], A_LOCK))
