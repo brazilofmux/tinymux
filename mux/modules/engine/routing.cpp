@@ -1,14 +1,15 @@
 /*! \file routing.cpp
- * \brief Phase 1 routing: static unconditional next-hop tables.
+ * \brief Routing: per-zone next-hop tables with cross-zone meta-table.
  *
- * Implements BFS-based shortest-path routing over rooms marked NAVIGABLE.
- * The routing table stores only the next-hop exit for each (source, dest)
- * pair, compressed via three techniques:
+ * Implements BFS-based shortest-path routing over rooms marked NAVIGABLE,
+ * partitioned by zone.  Each zone has an independent routing table with
+ * its own generation counter.  Cross-zone routing uses a gateway-edge
+ * meta-table with Dijkstra over the (small) zone graph.
  *
+ * Compression techniques per zone:
  *   1. Diagonal elimination  -- source == dest needs no entry.
- *   2. Adjacent marking      -- dest is one hop away; store the exit directly.
- *   3. Row redundancy        -- if every destination funnels through the same
- *      exit, store a single "always(exit)" sentinel instead of N entries.
+ *   2. Row redundancy        -- if every reachable destination funnels
+ *      through the same exit, store a single "always(exit)" sentinel.
  *
  * See docs/design-routing.md for the full design.
  */
@@ -28,82 +29,12 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <queue>
+#include <climits>
 #include <cstring>
+#include <algorithm>
 
 // ---------------------------------------------------------------------------
-// In-memory routing table.
-// ---------------------------------------------------------------------------
-
-// Per-room routing row.  If always_exit != NOTHING, every destination from
-// this room funnels through always_exit and the sparse map is empty.
-//
-struct RouteRow
-{
-    dbref always_exit;                          // NOTHING if not compressed.
-    std::unordered_map<dbref, dbref> next_hop;  // dest -> exit dbref.
-};
-
-// Global routing state.
-//
-static int                                 g_route_generation = 0;
-static int                                 g_table_generation = -1;
-static std::unordered_map<dbref, int>      g_node_index;   // room -> dense index
-static std::vector<dbref>                  g_index_to_room; // dense index -> room
-static std::vector<RouteRow>               g_table;        // indexed by dense index
-static bool                                g_table_valid = false;
-
-// ---------------------------------------------------------------------------
-// Forward declarations.
-// ---------------------------------------------------------------------------
-
-static void route_build_table(void);
-static void route_persist_to_sqlite(void);
-static void route_load_from_sqlite(void);
-
-// ---------------------------------------------------------------------------
-// Initialization / shutdown.
-// ---------------------------------------------------------------------------
-
-void route_init(void)
-{
-    g_route_generation = 0;
-    g_table_generation = -1;
-    g_table_valid = false;
-
-    // Try to load a persisted table from SQLite.
-    //
-    route_load_from_sqlite();
-}
-
-void route_shutdown(void)
-{
-    g_node_index.clear();
-    g_index_to_room.clear();
-    g_table.clear();
-    g_table_valid = false;
-}
-
-void route_invalidate(void)
-{
-    g_route_generation++;
-}
-
-// ---------------------------------------------------------------------------
-// Ensure the table is current.  Lazy rebuild on generation mismatch.
-// ---------------------------------------------------------------------------
-
-static void route_ensure_current(void)
-{
-    if (g_table_valid && g_table_generation == g_route_generation)
-    {
-        return;
-    }
-    route_build_table();
-    route_persist_to_sqlite();
-}
-
-// ---------------------------------------------------------------------------
-// Collect navigable rooms and their static exits.
+// Data structures.
 // ---------------------------------------------------------------------------
 
 struct ExitEdge
@@ -112,6 +43,202 @@ struct ExitEdge
     dbref dest_room;
 };
 
+// Per-room routing row within a zone.
+//
+struct RouteRow
+{
+    dbref always_exit;                          // NOTHING if not compressed.
+    std::unordered_map<dbref, dbref> next_hop;  // dest_room -> exit dbref.
+};
+
+// Per-zone routing table.
+//
+struct ZoneTable
+{
+    int  generation;                            // Bumped on invalidation.
+    int  table_generation;                      // Generation at last rebuild.
+    bool valid;
+
+    std::unordered_map<dbref, int> node_index;  // room -> dense index.
+    std::vector<dbref> index_to_room;           // dense index -> room.
+    std::vector<RouteRow> table;                // indexed by dense index.
+    std::vector<std::vector<ExitEdge>> adj;     // adjacency lists.
+
+    ZoneTable() : generation(0), table_generation(-1), valid(false) {}
+};
+
+// Gateway edge: a cross-zone exit connecting two zones.
+//
+struct GatewayEdge
+{
+    dbref source_zone;
+    dbref dest_zone;
+    dbref gate_room;       // Room in source_zone containing the exit.
+    dbref gate_exit;       // The exit itself.
+    dbref target_room;     // Room in dest_zone the exit leads to.
+};
+
+// Meta-table for inter-zone routing.
+//
+struct MetaTable
+{
+    int  generation;
+    int  table_generation;
+    bool valid;
+
+    std::vector<GatewayEdge> edges;
+
+    MetaTable() : generation(0), table_generation(-1), valid(false) {}
+};
+
+// ---------------------------------------------------------------------------
+// Global state.
+// ---------------------------------------------------------------------------
+
+// All navigable rooms, keyed by room dbref -> zone dbref.
+//
+static std::unordered_map<dbref, dbref>     g_room_to_zone;
+
+// Per-zone tables, keyed by zone dbref (NOTHING for orphan rooms).
+//
+static std::unordered_map<dbref, ZoneTable> g_zone_tables;
+
+// Meta-table for cross-zone routing.
+//
+static MetaTable                            g_meta;
+
+// Global node index across all zones (for navigable-check in route_query).
+//
+static std::unordered_set<dbref>            g_all_navigable;
+
+// ---------------------------------------------------------------------------
+// Forward declarations.
+// ---------------------------------------------------------------------------
+
+static void route_scan_navigable(void);
+static void route_build_zone(dbref zone_id);
+static void route_build_meta(void);
+static void route_ensure_zone_current(dbref zone_id);
+static void route_ensure_meta_current(void);
+static void route_persist_to_sqlite(void);
+
+// ---------------------------------------------------------------------------
+// Initialization / shutdown.
+// ---------------------------------------------------------------------------
+
+void route_init(void)
+{
+    g_room_to_zone.clear();
+    g_zone_tables.clear();
+    g_all_navigable.clear();
+    g_meta = MetaTable();
+}
+
+void route_shutdown(void)
+{
+    g_room_to_zone.clear();
+    g_zone_tables.clear();
+    g_all_navigable.clear();
+    g_meta = MetaTable();
+}
+
+void route_invalidate(void)
+{
+    for (auto &kv : g_zone_tables)
+    {
+        kv.second.generation++;
+    }
+    g_meta.generation++;
+
+    // Also invalidate the navigable scan so new rooms are picked up.
+    //
+    g_all_navigable.clear();
+    g_room_to_zone.clear();
+}
+
+void route_invalidate_zone(dbref zone_id)
+{
+    auto it = g_zone_tables.find(zone_id);
+    if (it != g_zone_tables.end())
+    {
+        it->second.generation++;
+    }
+
+    // A zone-local change might also affect gateway edges (e.g., a new
+    // room at the border).  Invalidate the scan and meta conservatively.
+    //
+    g_all_navigable.clear();
+    g_room_to_zone.clear();
+    g_meta.generation++;
+}
+
+void route_invalidate_meta(void)
+{
+    g_meta.generation++;
+    g_all_navigable.clear();
+    g_room_to_zone.clear();
+}
+
+// ---------------------------------------------------------------------------
+// Scan all navigable rooms and partition by zone.
+// ---------------------------------------------------------------------------
+
+static void route_scan_navigable(void)
+{
+    if (!g_all_navigable.empty())
+    {
+        return;  // Already scanned since last invalidation.
+    }
+
+    g_room_to_zone.clear();
+
+    // Discover all navigable rooms and their zones.
+    //
+    dbref thing;
+    DO_WHOLE_DB(thing)
+    {
+        if (  isRoom(thing)
+           && !isGarbage(thing)
+           && Navigable(thing))
+        {
+            dbref z = Zone(thing);
+            g_room_to_zone[thing] = z;
+            g_all_navigable.insert(thing);
+
+            // Ensure a ZoneTable entry exists (preserve generation if
+            // already present).
+            //
+            if (g_zone_tables.find(z) == g_zone_tables.end())
+            {
+                g_zone_tables[z] = ZoneTable();
+            }
+        }
+    }
+
+    // Prune zone tables for zones that no longer have navigable rooms.
+    //
+    std::unordered_set<dbref> active_zones;
+    for (const auto &kv : g_room_to_zone)
+    {
+        active_zones.insert(kv.second);
+    }
+    for (auto it = g_zone_tables.begin(); it != g_zone_tables.end(); )
+    {
+        if (active_zones.find(it->first) == active_zones.end())
+        {
+            it = g_zone_tables.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Collect edges for a single room (walks parent chain).
+// ---------------------------------------------------------------------------
+
 static void collect_room_edges(
     dbref room,
     const std::unordered_map<dbref, int> &node_idx,
@@ -119,9 +246,6 @@ static void collect_room_edges(
 {
     edges.clear();
 
-    // Movement and exit matching walk the room's parent chain, so the
-    // routing graph must do the same to stay behaviorally aligned.
-    //
     std::unordered_set<dbref> seen_exits;
     int level;
     dbref parent;
@@ -136,8 +260,6 @@ static void collect_room_edges(
                 continue;
             }
 
-            // Skip variable-destination exits.
-            //
             const UTF8 *vdest = atr_get_raw(exit_obj, A_EXITVARDEST);
             if (vdest && *vdest)
             {
@@ -151,7 +273,19 @@ static void collect_room_edges(
                 continue;
             }
 
-            // Destination must also be navigable.
+            // Destination must be navigable (in any zone).
+            //
+            if (g_all_navigable.find(dest) == g_all_navigable.end())
+            {
+                continue;
+            }
+
+            // For zone-local edges, destination must be in the same zone
+            // OR we accept it as a gateway edge if it's in a different
+            // zone.  The node_idx check restricts to same-zone nodes.
+            // Cross-zone edges are still recorded (dest is navigable)
+            // but won't match node_idx -- that's fine, they are handled
+            // by the meta-table.
             //
             auto it = node_idx.find(dest);
             if (it == node_idx.end())
@@ -167,44 +301,8 @@ static void collect_room_edges(
     }
 }
 
-static void collect_navigable_graph(
-    std::unordered_map<dbref, int> &node_idx,
-    std::vector<dbref> &idx_to_room,
-    std::vector<std::vector<ExitEdge>> &adj)
-{
-    node_idx.clear();
-    idx_to_room.clear();
-
-    // Pass 1: identify all navigable rooms.
-    //
-    dbref thing;
-    DO_WHOLE_DB(thing)
-    {
-        if (  isRoom(thing)
-           && !isGarbage(thing)
-           && Navigable(thing))
-        {
-            int idx = static_cast<int>(idx_to_room.size());
-            node_idx[thing] = idx;
-            idx_to_room.push_back(thing);
-        }
-    }
-
-    int n = static_cast<int>(idx_to_room.size());
-    adj.resize(n);
-
-    // Pass 2: collect static exits between navigable rooms.
-    //
-    for (int i = 0; i < n; i++)
-    {
-        dbref room = idx_to_room[i];
-        collect_room_edges(room, node_idx, adj[i]);
-    }
-}
-
 // ---------------------------------------------------------------------------
-// BFS from a single source.  Fills in next_hop[dest] = exit for all
-// reachable destinations.
+// BFS from a single source within a zone.
 // ---------------------------------------------------------------------------
 
 static void bfs_from_source(
@@ -218,17 +316,12 @@ static void bfs_from_source(
     row.always_exit = NOTHING;
     row.next_hop.clear();
 
-    // BFS state: visited[i] = true if node i has been reached.
-    // first_exit[i] = the exit from source_idx that leads toward i.
-    //
     std::vector<bool> visited(n, false);
     std::vector<dbref> first_exit(n, NOTHING);
     std::queue<int> queue;
 
     visited[source_idx] = true;
 
-    // Seed BFS with direct neighbors.
-    //
     for (const auto &edge : adj[source_idx])
     {
         auto it = node_idx.find(edge.dest_room);
@@ -245,8 +338,6 @@ static void bfs_from_source(
         }
     }
 
-    // Standard BFS.
-    //
     while (!queue.empty())
     {
         int cur = queue.front();
@@ -269,13 +360,11 @@ static void bfs_from_source(
         }
     }
 
-    // Populate the row.
-    //
     for (int i = 0; i < n; i++)
     {
         if (i == source_idx)
         {
-            continue;  // Diagonal elimination.
+            continue;
         }
         if (first_exit[i] != NOTHING)
         {
@@ -283,10 +372,8 @@ static void bfs_from_source(
         }
     }
 
-    // Row redundancy compression is only safe when the exit is valid for
-    // every non-diagonal destination. If some navigable rooms are
-    // unreachable from this source, keep sparse per-destination entries so
-    // route_query() can still return NO ROUTE.
+    // Row redundancy compression: only safe when all non-diagonal
+    // destinations are reachable.
     //
     if (  !row.next_hop.empty()
        && row.next_hop.size() == static_cast<size_t>(n - 1))
@@ -310,29 +397,490 @@ static void bfs_from_source(
 }
 
 // ---------------------------------------------------------------------------
-// Build the full routing table from scratch.
+// Build one zone's routing table.
 // ---------------------------------------------------------------------------
 
-static void route_build_table(void)
+static void route_build_zone(dbref zone_id)
 {
-    std::vector<std::vector<ExitEdge>> adj;
+    route_scan_navigable();
 
-    collect_navigable_graph(g_node_index, g_index_to_room, adj);
+    auto zt_it = g_zone_tables.find(zone_id);
+    if (zt_it == g_zone_tables.end())
+    {
+        return;
+    }
+    ZoneTable &zt = zt_it->second;
 
-    int n = static_cast<int>(g_index_to_room.size());
-    g_table.resize(n);
+    zt.node_index.clear();
+    zt.index_to_room.clear();
+
+    // Collect rooms in this zone.
+    //
+    for (const auto &kv : g_room_to_zone)
+    {
+        if (kv.second == zone_id)
+        {
+            int idx = static_cast<int>(zt.index_to_room.size());
+            zt.node_index[kv.first] = idx;
+            zt.index_to_room.push_back(kv.first);
+        }
+    }
+
+    int n = static_cast<int>(zt.index_to_room.size());
+    zt.adj.resize(n);
 
     for (int i = 0; i < n; i++)
     {
-        bfs_from_source(i, adj, g_node_index, g_index_to_room, g_table[i]);
+        collect_room_edges(zt.index_to_room[i], zt.node_index, zt.adj[i]);
     }
 
-    g_table_generation = g_route_generation;
-    g_table_valid = true;
+    zt.table.resize(n);
+    for (int i = 0; i < n; i++)
+    {
+        bfs_from_source(i, zt.adj, zt.node_index, zt.index_to_room,
+                        zt.table[i]);
+    }
+
+    zt.table_generation = zt.generation;
+    zt.valid = true;
 }
 
 // ---------------------------------------------------------------------------
-// SQLite persistence.
+// Build the inter-zone meta-table: collect gateway edges.
+// ---------------------------------------------------------------------------
+
+static void route_build_meta(void)
+{
+    route_scan_navigable();
+
+    g_meta.edges.clear();
+
+    // Scan all navigable rooms.  For each exit that leads to a room in
+    // a different zone, emit a gateway edge.
+    //
+    for (const auto &kv : g_room_to_zone)
+    {
+        dbref room = kv.first;
+        dbref src_zone = kv.second;
+
+        std::unordered_set<dbref> seen_exits;
+        int level;
+        dbref parent;
+        ITER_PARENTS(room, parent, level)
+        {
+            dbref exit_obj;
+            DOLIST(exit_obj, Exits(parent))
+            {
+                if (  !isExit(exit_obj)
+                   || !seen_exits.insert(exit_obj).second)
+                {
+                    continue;
+                }
+
+                const UTF8 *vdest = atr_get_raw(exit_obj, A_EXITVARDEST);
+                if (vdest && *vdest)
+                {
+                    continue;
+                }
+
+                dbref dest = Location(exit_obj);
+                if (  !Good_obj(dest)
+                   || !isRoom(dest))
+                {
+                    continue;
+                }
+
+                if (g_all_navigable.find(dest) == g_all_navigable.end())
+                {
+                    continue;
+                }
+
+                dbref dst_zone = g_room_to_zone[dest];
+                if (dst_zone == src_zone)
+                {
+                    continue;  // Intra-zone, not a gateway.
+                }
+
+                GatewayEdge ge;
+                ge.source_zone = src_zone;
+                ge.dest_zone   = dst_zone;
+                ge.gate_room   = room;
+                ge.gate_exit   = exit_obj;
+                ge.target_room = dest;
+                g_meta.edges.push_back(ge);
+            }
+        }
+    }
+
+    g_meta.table_generation = g_meta.generation;
+    g_meta.valid = true;
+}
+
+// ---------------------------------------------------------------------------
+// Ensure tables are current.
+// ---------------------------------------------------------------------------
+
+static void route_ensure_zone_current(dbref zone_id)
+{
+    route_scan_navigable();
+
+    auto it = g_zone_tables.find(zone_id);
+    if (it == g_zone_tables.end())
+    {
+        return;
+    }
+    if (it->second.valid && it->second.table_generation == it->second.generation)
+    {
+        return;
+    }
+    route_build_zone(zone_id);
+}
+
+static void route_ensure_meta_current(void)
+{
+    route_scan_navigable();
+
+    if (g_meta.valid && g_meta.table_generation == g_meta.generation)
+    {
+        return;
+    }
+    route_build_meta();
+}
+
+// ---------------------------------------------------------------------------
+// Intra-zone next-hop lookup.
+// ---------------------------------------------------------------------------
+
+static dbref zone_next_hop(const ZoneTable &zt, dbref source, dbref destination)
+{
+    auto src_it = zt.node_index.find(source);
+    if (src_it == zt.node_index.end())
+    {
+        return NOTHING;
+    }
+
+    const RouteRow &row = zt.table[src_it->second];
+    if (row.always_exit != NOTHING)
+    {
+        return row.always_exit;
+    }
+
+    auto hop_it = row.next_hop.find(destination);
+    if (hop_it == row.next_hop.end())
+    {
+        return NOTHING;
+    }
+    return hop_it->second;
+}
+
+// Intra-zone hop count between two rooms (returns -1 if unreachable).
+//
+static int zone_hop_count(const ZoneTable &zt, dbref source, dbref destination)
+{
+    if (source == destination)
+    {
+        return 0;
+    }
+
+    auto src_it = zt.node_index.find(source);
+    auto dst_it = zt.node_index.find(destination);
+    if (src_it == zt.node_index.end() || dst_it == zt.node_index.end())
+    {
+        return -1;
+    }
+
+    // Walk next-hop chain counting steps.
+    //
+    dbref current = source;
+    int hops = 0;
+    int max_hops = static_cast<int>(zt.index_to_room.size());
+
+    while (current != destination && hops < max_hops)
+    {
+        dbref next_exit = zone_next_hop(zt, current, destination);
+        if (next_exit == NOTHING)
+        {
+            return -1;
+        }
+        dbref next_room = Location(next_exit);
+        if (!Good_obj(next_room) || next_room == current)
+        {
+            return -1;
+        }
+        current = next_room;
+        hops++;
+    }
+    return (current == destination) ? hops : -1;
+}
+
+// ---------------------------------------------------------------------------
+// Cross-zone Dijkstra: find the sequence of gateway edges from
+// source_zone to dest_zone.
+//
+// Returns the gateway edges in order.  Empty result = no route.
+// ---------------------------------------------------------------------------
+
+static void meta_dijkstra(
+    dbref source_zone,
+    dbref dest_zone,
+    std::vector<const GatewayEdge *> &result)
+{
+    result.clear();
+
+    if (source_zone == dest_zone)
+    {
+        return;
+    }
+
+    // Build adjacency: zone -> list of edge indices.
+    //
+    std::unordered_map<dbref, std::vector<int>> adj;
+    for (int i = 0; i < static_cast<int>(g_meta.edges.size()); i++)
+    {
+        adj[g_meta.edges[i].source_zone].push_back(i);
+    }
+
+    // Dijkstra with edge weights = 1 (hop count between zones).
+    // Since all weights are 1 this is effectively BFS.
+    //
+    std::unordered_map<dbref, int> dist;
+    std::unordered_map<dbref, int> prev_edge;  // zone -> edge index that reached it.
+
+    // Priority queue: (distance, zone).
+    //
+    typedef std::pair<int, dbref> PQEntry;
+    std::priority_queue<PQEntry, std::vector<PQEntry>, std::greater<PQEntry>> pq;
+
+    dist[source_zone] = 0;
+    pq.push({0, source_zone});
+
+    while (!pq.empty())
+    {
+        auto [d, z] = pq.top();
+        pq.pop();
+
+        if (d > dist[z])
+        {
+            continue;  // Stale entry.
+        }
+
+        if (z == dest_zone)
+        {
+            break;  // Found shortest path.
+        }
+
+        auto adj_it = adj.find(z);
+        if (adj_it == adj.end())
+        {
+            continue;
+        }
+
+        for (int ei : adj_it->second)
+        {
+            dbref next_z = g_meta.edges[ei].dest_zone;
+            int new_dist = d + 1;
+
+            auto dist_it = dist.find(next_z);
+            if (dist_it == dist.end() || new_dist < dist_it->second)
+            {
+                dist[next_z] = new_dist;
+                prev_edge[next_z] = ei;
+                pq.push({new_dist, next_z});
+            }
+        }
+    }
+
+    // Reconstruct path.
+    //
+    if (dist.find(dest_zone) == dist.end())
+    {
+        return;  // No route between zones.
+    }
+
+    std::vector<int> edge_path;
+    dbref z = dest_zone;
+    while (z != source_zone)
+    {
+        auto pe_it = prev_edge.find(z);
+        if (pe_it == prev_edge.end())
+        {
+            result.clear();
+            return;
+        }
+        edge_path.push_back(pe_it->second);
+        z = g_meta.edges[pe_it->second].source_zone;
+    }
+
+    // Reverse to get source-to-dest order.
+    //
+    std::reverse(edge_path.begin(), edge_path.end());
+    for (int ei : edge_path)
+    {
+        result.push_back(&g_meta.edges[ei]);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Full path reconstruction (handles cross-zone).
+// ---------------------------------------------------------------------------
+
+static void route_get_path(dbref source, dbref destination,
+                           std::vector<dbref> &path)
+{
+    path.clear();
+
+    dbref src_zone = g_room_to_zone[source];
+    dbref dst_zone = g_room_to_zone[destination];
+
+    if (src_zone == dst_zone)
+    {
+        // Same zone: walk next-hop chain.
+        //
+        route_ensure_zone_current(src_zone);
+        auto zt_it = g_zone_tables.find(src_zone);
+        if (zt_it == g_zone_tables.end())
+        {
+            return;
+        }
+        const ZoneTable &zt = zt_it->second;
+
+        dbref current = source;
+        int max_hops = static_cast<int>(zt.index_to_room.size());
+        int hops = 0;
+
+        while (current != destination && hops < max_hops)
+        {
+            dbref next_exit = zone_next_hop(zt, current, destination);
+            if (next_exit == NOTHING)
+            {
+                path.clear();
+                return;
+            }
+            path.push_back(next_exit);
+            dbref next_room = Location(next_exit);
+            if (!Good_obj(next_room) || next_room == current)
+            {
+                path.clear();
+                return;
+            }
+            current = next_room;
+            hops++;
+        }
+        if (current != destination)
+        {
+            path.clear();
+        }
+        return;
+    }
+
+    // Cross-zone: use meta-table to find gateway chain.
+    //
+    route_ensure_meta_current();
+
+    std::vector<const GatewayEdge *> gw_path;
+    meta_dijkstra(src_zone, dst_zone, gw_path);
+    if (gw_path.empty())
+    {
+        return;
+    }
+
+    dbref current = source;
+
+    for (size_t gi = 0; gi < gw_path.size(); gi++)
+    {
+        const GatewayEdge *ge = gw_path[gi];
+        dbref gate_room = ge->gate_room;
+
+        // Route within current zone from current to gate_room.
+        //
+        dbref cur_zone = g_room_to_zone[current];
+        route_ensure_zone_current(cur_zone);
+        auto zt_it = g_zone_tables.find(cur_zone);
+        if (zt_it == g_zone_tables.end())
+        {
+            path.clear();
+            return;
+        }
+        const ZoneTable &zt = zt_it->second;
+
+        int max_hops = static_cast<int>(zt.index_to_room.size());
+        int hops = 0;
+
+        while (current != gate_room && hops < max_hops)
+        {
+            dbref next_exit = zone_next_hop(zt, current, gate_room);
+            if (next_exit == NOTHING)
+            {
+                path.clear();
+                return;
+            }
+            path.push_back(next_exit);
+            dbref next_room = Location(next_exit);
+            if (!Good_obj(next_room) || next_room == current)
+            {
+                path.clear();
+                return;
+            }
+            current = next_room;
+            hops++;
+        }
+
+        if (current != gate_room)
+        {
+            path.clear();
+            return;
+        }
+
+        // Cross the gateway exit.
+        //
+        path.push_back(ge->gate_exit);
+        current = ge->target_room;
+    }
+
+    // Final segment: route within destination zone to the destination.
+    //
+    if (current != destination)
+    {
+        route_ensure_zone_current(dst_zone);
+        auto zt_it = g_zone_tables.find(dst_zone);
+        if (zt_it == g_zone_tables.end())
+        {
+            path.clear();
+            return;
+        }
+        const ZoneTable &zt = zt_it->second;
+
+        int max_hops = static_cast<int>(zt.index_to_room.size());
+        int hops = 0;
+
+        while (current != destination && hops < max_hops)
+        {
+            dbref next_exit = zone_next_hop(zt, current, destination);
+            if (next_exit == NOTHING)
+            {
+                path.clear();
+                return;
+            }
+            path.push_back(next_exit);
+            dbref next_room = Location(next_exit);
+            if (!Good_obj(next_room) || next_room == current)
+            {
+                path.clear();
+                return;
+            }
+            current = next_room;
+            hops++;
+        }
+
+        if (current != destination)
+        {
+            path.clear();
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// SQLite persistence (metadata only for now).
 // ---------------------------------------------------------------------------
 
 static void route_persist_to_sqlite(void)
@@ -345,91 +893,17 @@ static void route_persist_to_sqlite(void)
 
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
 
-    // Store generation and node count via metadata key-value store.
-    // The route_nodes / route_table SQL tables exist for future phases;
-    // Phase 1 rebuilds lazily from NAVIGABLE flags on rooms.
-    //
-    sqldb.PutMeta("route_generation", g_route_generation);
+    sqldb.PutMeta("route_zone_count",
+        static_cast<int>(g_zone_tables.size()));
     sqldb.PutMeta("route_node_count",
-        static_cast<int>(g_index_to_room.size()));
-}
-
-static void route_load_from_sqlite(void)
-{
-    if (  nullptr == g_pSQLiteBackend
-       || !g_pSQLiteBackend->GetDB().IsOpen())
-    {
-        return;
-    }
-
-    // Phase 1: always rebuild lazily on first query.  The persisted
-    // generation counter is stored for future phases to use for
-    // warm-start logic.
+        static_cast<int>(g_all_navigable.size()));
+    sqldb.PutMeta("route_gateway_count",
+        static_cast<int>(g_meta.edges.size()));
 }
 
 // ---------------------------------------------------------------------------
 // Query interface.
 // ---------------------------------------------------------------------------
-
-// Reconstruct the full path from source to destination by following
-// next-hop entries.
-//
-static void route_get_path(dbref source, dbref destination,
-                           std::vector<dbref> &path)
-{
-    path.clear();
-
-    dbref current = source;
-    int max_hops = static_cast<int>(g_index_to_room.size());
-    int hops = 0;
-
-    while (current != destination && hops < max_hops)
-    {
-        auto src_it = g_node_index.find(current);
-        if (src_it == g_node_index.end())
-        {
-            path.clear();
-            return;
-        }
-
-        int src_idx = src_it->second;
-        const RouteRow &row = g_table[src_idx];
-
-        dbref next_exit;
-        if (row.always_exit != NOTHING)
-        {
-            next_exit = row.always_exit;
-        }
-        else
-        {
-            auto hop_it = row.next_hop.find(destination);
-            if (hop_it == row.next_hop.end())
-            {
-                path.clear();
-                return;
-            }
-            next_exit = hop_it->second;
-        }
-
-        path.push_back(next_exit);
-
-        // Follow the exit to the next room.
-        //
-        dbref next_room = Location(next_exit);
-        if (!Good_obj(next_room) || next_room == current)
-        {
-            path.clear();
-            return;
-        }
-        current = next_room;
-        hops++;
-    }
-
-    if (current != destination)
-    {
-        path.clear();
-    }
-}
 
 void route_query(dbref executor, dbref source, dbref destination,
                  int options, UTF8 *buff, UTF8 **bufc)
@@ -445,10 +919,6 @@ void route_query(dbref executor, dbref source, dbref destination,
         }
         route_invalidate();
     }
-
-    // Ensure the table is up to date.
-    //
-    route_ensure_current();
 
     // Validate source and destination.
     //
@@ -475,17 +945,19 @@ void route_query(dbref executor, dbref source, dbref destination,
         }
         else
         {
-            // No exit needed.
             safe_str(T("#-1"), buff, bufc);
         }
         return;
     }
 
+    // Ensure navigable rooms are scanned.
+    //
+    route_scan_navigable();
+
     // Check that both rooms are navigable.
     //
-    auto src_it = g_node_index.find(source);
-    auto dst_it = g_node_index.find(destination);
-    if (src_it == g_node_index.end() || dst_it == g_node_index.end())
+    if (  g_all_navigable.find(source) == g_all_navigable.end()
+       || g_all_navigable.find(destination) == g_all_navigable.end())
     {
         safe_str(T("#-1 NOT NAVIGABLE"), buff, bufc);
         return;
@@ -532,23 +1004,69 @@ void route_query(dbref executor, dbref source, dbref destination,
 
     // Default: return next-hop exit.
     //
-    int src_idx = src_it->second;
-    const RouteRow &row = g_table[src_idx];
+    dbref src_zone = g_room_to_zone[source];
+    dbref dst_zone = g_room_to_zone[destination];
 
-    dbref next_exit;
-    if (row.always_exit != NOTHING)
+    if (src_zone == dst_zone)
     {
-        next_exit = row.always_exit;
-    }
-    else
-    {
-        auto hop_it = row.next_hop.find(destination);
-        if (hop_it == row.next_hop.end())
+        // Same zone: direct lookup.
+        //
+        route_ensure_zone_current(src_zone);
+        auto zt_it = g_zone_tables.find(src_zone);
+        if (zt_it == g_zone_tables.end())
         {
             safe_str(T("#-1 NO ROUTE"), buff, bufc);
             return;
         }
-        next_exit = hop_it->second;
+
+        dbref next_exit = zone_next_hop(zt_it->second, source, destination);
+        if (next_exit == NOTHING)
+        {
+            safe_str(T("#-1 NO ROUTE"), buff, bufc);
+            return;
+        }
+        safe_tprintf_str(buff, bufc, T("#%d"), next_exit);
+        return;
+    }
+
+    // Cross-zone: find gateway, route to it within source zone.
+    //
+    route_ensure_meta_current();
+
+    std::vector<const GatewayEdge *> gw_path;
+    meta_dijkstra(src_zone, dst_zone, gw_path);
+    if (gw_path.empty())
+    {
+        safe_str(T("#-1 NO ROUTE"), buff, bufc);
+        return;
+    }
+
+    const GatewayEdge *first_gw = gw_path[0];
+
+    if (source == first_gw->gate_room)
+    {
+        // Already at the gateway room, return the cross-zone exit.
+        //
+        safe_tprintf_str(buff, bufc, T("#%d"), first_gw->gate_exit);
+        return;
+    }
+
+    // Route within source zone to the gateway room.
+    //
+    route_ensure_zone_current(src_zone);
+    auto zt_it = g_zone_tables.find(src_zone);
+    if (zt_it == g_zone_tables.end())
+    {
+        safe_str(T("#-1 NO ROUTE"), buff, bufc);
+        return;
+    }
+
+    dbref next_exit = zone_next_hop(zt_it->second, source,
+                                    first_gw->gate_room);
+    if (next_exit == NOTHING)
+    {
+        safe_str(T("#-1 NO ROUTE"), buff, bufc);
+        return;
     }
 
     safe_tprintf_str(buff, bufc, T("#%d"), next_exit);

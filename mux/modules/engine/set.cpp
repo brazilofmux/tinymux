@@ -152,7 +152,19 @@ void do_chzone
 
     // Everything is okay, do the change.
     //
+    dbref old_zone = Zone(thing);
     s_Zone(thing, zone);
+
+    // If a room changed zones, invalidate both the old and new zone
+    // routing tables plus the inter-zone meta-table.
+    //
+    if (isRoom(thing) && Navigable(thing) && old_zone != zone)
+    {
+        route_invalidate_zone(old_zone);
+        route_invalidate_zone(zone);
+        route_invalidate_meta();
+    }
+
     if (!isPlayer(thing))
     {
         // If the object is a player, resetting these flags is rather

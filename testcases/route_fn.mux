@@ -47,7 +47,53 @@ think [attrib_set(test_route_fn/exit_bc, [lastcreate(me, e)])]
 -
 think [attrib_set(test_route_fn/exit_parent_to_c, [lastcreate(me, e)])]
 -
-@parent [get(test_route_fn/room_child)]=[get(test_route_fn/room_parent)]
+think [parent(get(test_route_fn/room_child), get(test_route_fn/room_parent))]
+-
+#
+# Phase 2 setup: create zone objects and cross-zone rooms.
+#
+# Zone layout:
+#   Zone_X: rooms X1, X2  (X1 --exit_x12--> X2)
+#   Zone_Y: rooms Y1, Y2  (Y1 --exit_y12--> Y2)
+#   Cross-zone exit: X2 --exit_x2y1--> Y1
+#
+think [setq(0, create(Route_Zone_X))][attrib_set(test_route_fn/zone_x, %q0)]
+-
+think [setq(0, create(Route_Zone_Y))][attrib_set(test_route_fn/zone_y, %q0)]
+-
+think [setq(0, create(Route_Room_X1, 10, r))][set(%q0, NAVIGABLE)][attrib_set(test_route_fn/room_x1, %q0)]
+-
+think [setq(0, create(Route_Room_X2, 10, r))][set(%q0, NAVIGABLE)][attrib_set(test_route_fn/room_x2, %q0)]
+-
+think [setq(0, create(Route_Room_Y1, 10, r))][set(%q0, NAVIGABLE)][attrib_set(test_route_fn/room_y1, %q0)]
+-
+think [setq(0, create(Route_Room_Y2, 10, r))][set(%q0, NAVIGABLE)][attrib_set(test_route_fn/room_y2, %q0)]
+-
+@chzone [get(test_route_fn/room_x1)]=[get(test_route_fn/zone_x)]
+-
+@chzone [get(test_route_fn/room_x2)]=[get(test_route_fn/zone_x)]
+-
+@chzone [get(test_route_fn/room_y1)]=[get(test_route_fn/zone_y)]
+-
+@chzone [get(test_route_fn/room_y2)]=[get(test_route_fn/zone_y)]
+-
+@tel me=[get(test_route_fn/room_x1)]
+-
+@open route_exit_x12=[get(test_route_fn/room_x2)]
+-
+think [attrib_set(test_route_fn/exit_x12, [lastcreate(me, e)])]
+-
+@tel me=[get(test_route_fn/room_x2)]
+-
+@open route_exit_x2y1=[get(test_route_fn/room_y1)]
+-
+think [attrib_set(test_route_fn/exit_x2y1, [lastcreate(me, e)])]
+-
+@tel me=[get(test_route_fn/room_y1)]
+-
+@open route_exit_y12=[get(test_route_fn/room_y2)]
+-
+think [attrib_set(test_route_fn/exit_y12, [lastcreate(me, e)])]
 -
 @tel me=#0
 -
@@ -208,12 +254,10 @@ think [attrib_set(test_route_fn/exit_parent_to_c, [lastcreate(me, e)])]
         #-2
       )=
   {
-    @log smoke=TC010: route invalid option. Succeeded.;
-    @trig me/tr.tc011
+    @log smoke=TC010: route invalid option. Succeeded.
   },
   {
-    @log smoke=TC010: route invalid option. Failed ([route(v(room_a), v(room_b), bogus)]).;
-    @trig me/tr.tc011
+    @log smoke=TC010: route invalid option. Failed ([route(v(room_a), v(room_b), bogus)]).
   }
 -
 #
@@ -226,12 +270,10 @@ think [attrib_set(test_route_fn/exit_parent_to_c, [lastcreate(me, e)])]
         #-1 NO ROUTE
       )=
   {
-    @log smoke=TC011: route unreachable navigable room. Succeeded.;
-    @trig me/tr.tc012
+    @log smoke=TC011: route unreachable navigable room. Succeeded.
   },
   {
-    @log smoke=TC011: route unreachable navigable room. Failed ([route(v(room_a), v(room_e))]).;
-    @trig me/tr.tc012
+    @log smoke=TC011: route unreachable navigable room. Failed ([route(v(room_a), v(room_e))]).
   }
 -
 #
@@ -243,11 +285,89 @@ think [attrib_set(test_route_fn/exit_parent_to_c, [lastcreate(me, e)])]
         v(exit_parent_to_c)
       )=
   {
-    @log smoke=TC012: route inherited parent exit. Succeeded.;
+    @log smoke=TC012: route inherited parent exit. Succeeded.
+  },
+  {
+    @log smoke=TC012: route inherited parent exit. Failed ([route(v(room_child), v(room_c))]).
+  }
+-
+#
+# Test Case #13 - same-zone route within Zone_X.
+#
+&tr.tc013 test_route_fn=
+  @if strmatch(
+        route(v(room_x1), v(room_x2)),
+        v(exit_x12)
+      )=
+  {
+    @log smoke=TC013: route same-zone X. Succeeded.;
+  },
+  {
+    @log smoke=TC013: route same-zone X. Failed ([route(v(room_x1), v(room_x2))]).;
+  }
+-
+#
+# Test Case #14 - cross-zone route: X1 to Y1.
+#                 First hop should go toward X2 (the gateway room).
+#
+&tr.tc014 test_route_fn=
+  @if strmatch(
+        route(v(room_x1), v(room_y1)),
+        v(exit_x12)
+      )=
+  {
+    @log smoke=TC014: route cross-zone X1 to Y1. Succeeded.;
+  },
+  {
+    @log smoke=TC014: route cross-zone X1 to Y1. Failed ([route(v(room_x1), v(room_y1))]).;
+  }
+-
+#
+# Test Case #15 - cross-zone distance: X1 to Y2 should be 3 hops
+#                 (X1->X2, X2->Y1, Y1->Y2).
+#
+&tr.tc015 test_route_fn=
+  @if strmatch(
+        route(v(room_x1), v(room_y2), distance),
+        3
+      )=
+  {
+    @log smoke=TC015: route cross-zone distance. Succeeded.;
+  },
+  {
+    @log smoke=TC015: route cross-zone distance. Failed ([route(v(room_x1), v(room_y2), distance)]).;
+  }
+-
+#
+# Test Case #16 - cross-zone path: X1 to Y2 should be exit_x12 exit_x2y1 exit_y12.
+#
+&tr.tc016 test_route_fn=
+  @if strmatch(
+        route(v(room_x1), v(room_y2), path),
+        [v(exit_x12)] [v(exit_x2y1)] [v(exit_y12)]
+      )=
+  {
+    @log smoke=TC016: route cross-zone path. Succeeded.;
+  },
+  {
+    @log smoke=TC016: route cross-zone path. Failed ([route(v(room_x1), v(room_y2), path)]).;
+  }
+-
+#
+# Test Case #17 - no reverse cross-zone route (one-way gateway).
+#                 Y1 to X1 should fail since no exit from Y to X.
+#
+&tr.tc017 test_route_fn=
+  @if strmatch(
+        route(v(room_y1), v(room_x1)),
+        #-1 NO ROUTE
+      )=
+  {
+    @log smoke=TC017: route no reverse cross-zone. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC012: route inherited parent exit. Failed ([route(v(room_child), v(room_c))]).;
+    @log smoke=TC017: route no reverse cross-zone. Failed ([route(v(room_y1), v(room_x1))]).;
     @trig me/tr.done
   }
 -

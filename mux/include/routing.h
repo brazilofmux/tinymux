@@ -1,8 +1,9 @@
 /*! \file routing.h
- * \brief Phase 1 routing: static unconditional next-hop tables.
+ * \brief Routing: per-zone next-hop tables with cross-zone meta-table.
  *
- * BFS over NAVIGABLE rooms, compressed next-hop table, generation-counter
- * invalidation, SQLite persistence.  See docs/design-routing.md.
+ * BFS over NAVIGABLE rooms, compressed next-hop tables partitioned by
+ * zone, gateway-edge meta-table for cross-zone Dijkstra.
+ * See docs/design-routing.md.
  */
 
 #ifndef ROUTING_H
@@ -25,11 +26,20 @@ void route_init(void);
 //
 void route_shutdown(void);
 
-// Bump the routing generation counter, marking the cached table stale.
-// Called by topology-changing commands (@dig, @destroy, @link, @open,
-// @unlink) and by the NAVIGABLE flag set/clear handler.
+// Invalidate all zone tables and the meta-table.  Backward-compatible
+// catch-all used by most topology-changing commands.
 //
 void route_invalidate(void);
+
+// Invalidate one zone's local table.  Use when the change is known to
+// affect only one zone (e.g., NAVIGABLE flag toggle on a room).
+//
+void route_invalidate_zone(dbref zone_id);
+
+// Invalidate the inter-zone meta-table.  Use when cross-zone exits are
+// created or destroyed, or when a room changes zones.
+//
+void route_invalidate_meta(void);
 
 // Core query: look up a route from source to destination.
 // Writes the result into buff/bufc using the standard softcode output
