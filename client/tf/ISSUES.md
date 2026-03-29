@@ -1,6 +1,6 @@
 # TitanFugue C++ Client — Open Issues
 
-Updated: 2026-03-24
+Updated: 2026-03-29
 
 ## Bugs
 
@@ -15,6 +15,12 @@ All previously reported bugs have been resolved:
 - ~~**Hydra reconnect drops capability negotiation**~~ FIXED — `sendPreferences()` is now called after stream reopen in `attemptReconnect()`, resending color format, terminal size, and terminal type.
 
 - ~~**Initial Hydra viewport is still hardcoded to `80x24`**~~ FIXED — Terminal dimensions are cached in `termWidth_`/`termHeight_` instance variables, updated by `send_naws()` (called on SIGWINCH). Both `openStream()` and `attemptReconnect()` use the cached values. The initial 80x24 default still applies until the first `send_naws()` call, which happens immediately after connect from `main.cpp`.
+
+- ~~**Hydra-enabled builds fail from source**~~ FIXED — `client/tf/CMakeLists.txt` now points protobuf generation at `mux/proxy/hydra.proto` instead of a nonexistent top-level `proxy/hydra.proto`. Verified with `cmake -S client/tf -B /tmp/tf-build-hydra -DHYDRA_GRPC=ON` and `cmake --build /tmp/tf-build-hydra -j2`.
+
+- ~~**Hydra stream output ignored line framing and EOR prompts**~~ FIXED — `HydraConnection` now buffers `GameOutput.text`, emits only complete newline-terminated lines to the UI, preserves partial text, and treats `GameOutput.end_of_record` as a prompt boundary for `check_prompt()`/`current_prompt()`.
+
+- ~~**`/hrestart` only matched when followed by a space**~~ FIXED — `HydraConnection::send_line()` now recognizes bare `/hrestart` and routes it to the existing usage/help path instead of forwarding it to the active game.
 
 ## Stubbed Or Partially Implemented Interfaces
 

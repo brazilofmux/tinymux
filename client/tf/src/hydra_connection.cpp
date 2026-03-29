@@ -14,6 +14,8 @@ using grpc::Channel;
 using grpc::ClientContext;
 using grpc::ClientReaderWriter;
 using grpc::Status;
+using hydra::GameOutput;
+using hydra::ServerMessage;
 
 // Internal gRPC state — kept in .cpp to avoid grpc headers in .h
 struct HydraConnection::GrpcState {
@@ -41,6 +43,11 @@ static std::string trim(const std::string& s) {
     if (start == std::string::npos) return "";
     size_t end = s.find_last_not_of(" \t");
     return s.substr(start, end - start + 1);
+}
+
+static std::string strip_trailing_cr(std::string s) {
+    if (!s.empty() && s.back() == '\r') s.pop_back();
+    return s;
 }
 
 // ---- Construction / Destruction ----
@@ -204,8 +211,8 @@ bool HydraConnection::send_line(const std::string& line) {
         } else if (lower.substr(0, 6) == "/hstop") {
             cmdStop(trim(line.substr(6)));
             return true;
-        } else if (lower.substr(0, 10) == "/hrestart ") {
-            cmdRestart(trim(line.substr(10)));
+        } else if (lower.substr(0, 9) == "/hrestart") {
+            cmdRestart(trim(line.substr(9)));
             return true;
         } else if (lower.substr(0, 8) == "/hstatus") {
             cmdStatus(trim(line.substr(8)));
@@ -305,15 +312,20 @@ void HydraConnection::sendPreferences() {
 }
 
 std::string HydraConnection::check_prompt(std::chrono::milliseconds) {
-    return "";
+    std::lock_guard<std::mutex> lock(outputMutex_);
+    if (currentPrompt_.empty() || currentPrompt_ == lastPrompt_) return "";
+    lastPrompt_ = currentPrompt_;
+    return currentPrompt_;
 }
 
 std::string HydraConnection::current_prompt() const {
-    return "";
+    std::lock_guard<std::mutex> lock(outputMutex_);
+    return currentPrompt_;
 }
 
 bool HydraConnection::has_partial_line() const {
-    return false;
+    std::lock_guard<std::mutex> lock(outputMutex_);
+    return !lineBuf_.empty();
 }
 
 void HydraConnection::add_to_scrollback(const std::string& line) {
@@ -710,30 +722,54 @@ void HydraConnection::cmdStatus(const std::string& args) {
 
 // ---- Reader thread with reconnect ----
 
+void HydraConnection::processGameOutput(const GameOutput& out) {
+    if (!out.text().empty()) {
+        lineBuf_.append(out.text());
+
+        size_t start = 0;
+        for (size_t i = 0; i < lineBuf_.size(); i++) {
+            if (lineBuf_[i] != '\n') continue;
+            std::string line = strip_trailing_cr(lineBuf_.substr(start, i - start));
+            outputQueue_.push(std::move(line));
+            start = i + 1;
+        }
+        if (start > 0) {
+            lineBuf_.erase(0, start);
+            currentPrompt_.clear();
+            lastPrompt_.clear();
+        }
+    }
+
+    if (out.end_of_record()) {
+        currentPrompt_ = strip_trailing_cr(lineBuf_);
+    }
+}
+
+void HydraConnection::processServerMessage(const ServerMessage& msg) {
+    if (msg.has_game_output()) {
+        processGameOutput(msg.game_output());
+    } else if (msg.has_gmcp()) {
+        outputQueue_.push("[GMCP " + msg.gmcp().package() + "] "
+                        + msg.gmcp().json());
+    } else if (msg.has_notice()) {
+        outputQueue_.push("[Hydra] " + msg.notice().text());
+    } else if (msg.has_link_event()) {
+        const auto& ev = msg.link_event();
+        outputQueue_.push("[Hydra] Link " + std::to_string(ev.link_number())
+            + " (" + ev.game_name() + "): "
+            + hydra::LinkState_Name(ev.new_state()));
+    }
+}
+
 void HydraConnection::readerLoop() {
-    hydra::ServerMessage msg;
+    ServerMessage msg;
     while (connected_.load() && grpc_ && grpc_->stream &&
            grpc_->stream->Read(&msg)) {
         lastRecvTime_ = std::chrono::steady_clock::now();
 
         std::lock_guard<std::mutex> lock(outputMutex_);
-
-        if (msg.has_game_output()) {
-            outputQueue_.push(msg.game_output().text());
-        } else if (msg.has_gmcp()) {
-            outputQueue_.push("[GMCP " + msg.gmcp().package() + "] "
-                            + msg.gmcp().json());
-        } else if (msg.has_notice()) {
-            outputQueue_.push("[Hydra] " + msg.notice().text());
-        } else if (msg.has_link_event()) {
-            const auto& ev = msg.link_event();
-            outputQueue_.push("[Hydra] Link " + std::to_string(ev.link_number())
-                + " (" + ev.game_name() + "): "
-                + hydra::LinkState_Name(ev.new_state()));
-        } else if (msg.has_pong()) {
-            continue;
-        }
-
+        if (msg.has_pong()) continue;
+        processServerMessage(msg);
         signalOutput();
     }
 
@@ -773,28 +809,13 @@ void HydraConnection::attemptReconnect() {
             pushOutput("[Hydra] Reconnected (attempt " + std::to_string(attempt) + ")");
 
             // Re-enter the read loop
-            hydra::ServerMessage msg;
+            ServerMessage msg;
             while (connected_.load() && grpc_->stream->Read(&msg)) {
                 lastRecvTime_ = std::chrono::steady_clock::now();
 
                 std::lock_guard<std::mutex> lock(outputMutex_);
-
-                if (msg.has_game_output()) {
-                    outputQueue_.push(msg.game_output().text());
-                } else if (msg.has_gmcp()) {
-                    outputQueue_.push("[GMCP " + msg.gmcp().package() + "] "
-                                    + msg.gmcp().json());
-                } else if (msg.has_notice()) {
-                    outputQueue_.push("[Hydra] " + msg.notice().text());
-                } else if (msg.has_link_event()) {
-                    const auto& ev = msg.link_event();
-                    outputQueue_.push("[Hydra] Link " + std::to_string(ev.link_number())
-                        + " (" + ev.game_name() + "): "
-                        + hydra::LinkState_Name(ev.new_state()));
-                } else if (msg.has_pong()) {
-                    continue;
-                }
-
+                if (msg.has_pong()) continue;
+                processServerMessage(msg);
                 signalOutput();
             }
 

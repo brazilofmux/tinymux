@@ -15,6 +15,7 @@
 #include <vector>
 
 namespace grpc { class Channel; class ClientContext; }
+namespace hydra { class ServerMessage; class GameOutput; }
 
 // A connection to a game server via Hydra's gRPC GameSession bidi stream.
 // Presents the same IConnection interface as Connection (telnet) so the
@@ -77,6 +78,8 @@ private:
     void signalOutput();
     void pushOutput(const std::string& line);
     void sendPreferences();
+    void processServerMessage(const hydra::ServerMessage& msg);
+    void processGameOutput(const hydra::GameOutput& out);
 
     // Open (or reopen) the bidi GameSession stream.
     bool openStream();
@@ -125,8 +128,11 @@ private:
     std::unique_ptr<GrpcState> grpc_;
 
     // Reader thread pushes lines here
-    std::mutex outputMutex_;
+    mutable std::mutex outputMutex_;
     std::queue<std::string> outputQueue_;
+    std::string lineBuf_;
+    std::string currentPrompt_;
+    std::string lastPrompt_;
     std::atomic<bool> connected_{false};
     std::atomic<bool> reconnecting_{false};
     std::thread readerThread_;

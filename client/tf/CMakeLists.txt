@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 get_filename_component(TINYMUX_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
 
 # Hydra proto directory
-set(HYDRA_PROTO_DIR "${TINYMUX_DIR}/proxy")
+set(HYDRA_PROTO_DIR "${TINYMUX_DIR}/mux/proxy")
 
 find_program(RAGEL ragel REQUIRED)
 find_library(NCURSESW_LIB ncursesw REQUIRED)
