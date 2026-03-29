@@ -6305,7 +6305,9 @@
 >296
 "@if strmatch(route(v(room_a), v(room_c), locked distance),2)={@log smoke=TC021: route locked distance. Succeeded.},{@log smoke=TC021: route locked distance. Failed ([route(v(room_a), v(room_c), locked distance)]).}"
 >297
-"@if strmatch(route(v(room_a), v(room_c), locked path),[v(exit_ab)] [v(exit_bc)])={@log smoke=TC022: route locked path. Succeeded.;@trig me/tr.done},{@log smoke=TC022: route locked path. Failed ([route(v(room_a), v(room_c), locked path)]).;@trig me/tr.done}"
+"@if strmatch(route(v(room_a), v(room_c), locked path),[v(exit_ab)] [v(exit_bc)])={@log smoke=TC022: route locked path. Succeeded.},{@log smoke=TC022: route locked path. Failed ([route(v(room_a), v(room_c), locked path)]).}"
+>298
+"@if strmatch(route(v(room_a), v(room_b), locked rebuild),v(exit_ab))={@log smoke=TC023: route locked rebuild. Succeeded.;@trig me/tr.done},{@log smoke=TC023: route locked rebuild. Failed ([route(v(room_a), v(room_b), locked rebuild)]).;@trig me/tr.done}"
 >395
 "#179"
 >396

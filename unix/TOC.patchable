@@ -147,6 +147,7 @@ include/muxcli.h
 include/powers.h
 include/routing.h
 include/sha1.h
+include/walk.h
 include/sql.h
 include/sqlite_backend.h
 include/sqlitedb.h
@@ -335,6 +336,7 @@ modules/engine/sqlitedb.cpp
 modules/engine/timer.cpp
 modules/engine/unparse.cpp
 modules/engine/vattr.cpp
+modules/engine/walk.cpp
 modules/engine/walkdb.cpp
 modules/engine/wild.cpp
 modules/engine/wiz.cpp

@@ -21,7 +21,7 @@ ENGINE_CXX_SRC = art_scan.cpp ast.cpp ast_scan.cpp attrcache.cpp boolexp.cpp \
     plusemail.cpp powers.cpp quota.cpp rob.cpp set.cpp \
     dbt.cpp hir_lower.cpp hir_codegen.cpp jit_compiler.cpp dbt_interp.cpp dbt_elf64.cpp \
     hir_ssa.cpp hir_opt.cpp lua_bytecode.cpp hir_lower_lua.cpp jit_lua.cpp \
-    lua_mod.cpp session.cpp speech.cpp timer.cpp \
+    lua_mod.cpp session.cpp speech.cpp timer.cpp walk.cpp \
     unparse.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp
 
 # Add reality levels if enabled

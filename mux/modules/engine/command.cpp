@@ -12,6 +12,7 @@
 #include "config.h"
 #include "externs.h"
 #include "ganl_stub.h"
+#include "walk.h"
 
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
@@ -581,6 +582,14 @@ static NAMETAB toad_sw[] =
     {static_cast<UTF8*>(nullptr),     0,          0,  0}
 };
 
+static NAMETAB walk_sw[] =
+{
+    {T("stop"),            1,  CA_PUBLIC,  WALK_STOP},
+    {T("quiet"),           1,  CA_PUBLIC,  WALK_QUIET|SW_MULTIPLE},
+    {T("locked"),          1,  CA_PUBLIC,  WALK_LOCKED|SW_MULTIPLE},
+    {static_cast<UTF8*>(nullptr),     0,          0,  0}
+};
+
 static NAMETAB include_sw[] =
 {
     {T("nobreak"),         1,  CA_PUBLIC,  INCLUDE_NOBREAK},
@@ -888,6 +897,8 @@ static CMDENT_TWO_ARG command_table_two_arg[] =
     {T("@txlevel"),     nullptr,    CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_txlevel},
 #endif
     {T("@toad"),        toad_sw,    CA_WIZARD,                                        0,           CS_TWO_ARG|CS_INTERP, 0, do_toad},
+    {T("@walk"),        walk_sw,    CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_walk},
+    {T("@patrol"),      walk_sw,    CA_NO_SLAVE|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_patrol},
     {T("@wait"),        wait_sw,    CA_GBL_INTERP,                                    0,           CS_TWO_ARG|CS_CMDARG|CS_NOINTERP|CS_STRIP_AROUND, 0, do_wait},
     {T("addcom"),       nullptr,    CA_NO_SLAVE,                                      0,           CS_TWO_ARG,           0, do_addcom},
     {T("comtitle"),     comtitle_sw,CA_NO_SLAVE,                                      0,           CS_TWO_ARG,           0, do_comtitle},

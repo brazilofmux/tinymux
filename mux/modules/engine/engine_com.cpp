@@ -18,6 +18,7 @@
 #include "mguests.h"
 #include "engine_api.h"
 #include "routing.h"
+#include "walk.h"
 
 // g_debug_cmd moved to libmux.cpp — shared by all layers.
 
@@ -3089,6 +3090,7 @@ MUX_RESULT CGameEngine::Startup(void)
     do_dbck(NOTHING, NOTHING, NOTHING, 0, 0);
 
     route_init();
+    walk_init();
 
     ValidateConfigurationDbrefs();
     process_preload();
@@ -3144,6 +3146,7 @@ MUX_RESULT CGameEngine::Shutdown(void)
 #if defined(TINYMUX_JIT)
     dbt_compile_cleanup();
 #endif
+    walk_shutdown();
     route_shutdown();
     conn_bridge_final();
     local_shutdown();

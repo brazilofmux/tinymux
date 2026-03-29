@@ -49,4 +49,12 @@ void route_invalidate_meta(void);
 void route_query(dbref executor, dbref source, dbref destination,
                  int options, UTF8 *buff, UTF8 **bufc);
 
+// Return the exit dbref for the next hop from source toward destination,
+// or NOTHING if no route exists.  If ROUTE_OPT_LOCKED is set and the
+// exit fails could_doit(), returns NOTHING.  This is the C-level
+// entry point used by @walk/@patrol to avoid text format/parse overhead.
+//
+dbref route_next_exit(dbref executor, dbref source, dbref destination,
+                      int options);
+
 #endif // !ROUTING_H

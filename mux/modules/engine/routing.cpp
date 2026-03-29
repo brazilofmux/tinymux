@@ -1059,3 +1059,63 @@ void route_query(dbref executor, dbref source, dbref destination,
     //
     safe_tprintf_str(buff, bufc, T("#%d"), path[0]);
 }
+
+// ---------------------------------------------------------------------------
+// C-level next-hop lookup for @walk/@patrol.
+// ---------------------------------------------------------------------------
+
+dbref route_next_exit(dbref executor, dbref source, dbref destination,
+                      int options)
+{
+    if (  !Good_obj(source)
+       || !isRoom(source)
+       || !Good_obj(destination)
+       || !isRoom(destination)
+       || source == destination)
+    {
+        return NOTHING;
+    }
+
+    route_scan_navigable();
+
+    if (  g_all_navigable.find(source) == g_all_navigable.end()
+       || g_all_navigable.find(destination) == g_all_navigable.end())
+    {
+        return NOTHING;
+    }
+
+    dbref src_zone = g_room_to_zone[source];
+    dbref dst_zone = g_room_to_zone[destination];
+
+    dbref next_exit = NOTHING;
+
+    if (src_zone == dst_zone)
+    {
+        route_ensure_zone_current(src_zone);
+        auto zt_it = g_zone_tables.find(src_zone);
+        if (zt_it != g_zone_tables.end())
+        {
+            next_exit = zone_next_hop(zt_it->second, source, destination);
+        }
+    }
+    else
+    {
+        // Cross-zone: get the full path and return the first hop.
+        //
+        std::vector<dbref> path;
+        route_get_path(source, destination, path);
+        if (!path.empty())
+        {
+            next_exit = path[0];
+        }
+    }
+
+    if (  next_exit != NOTHING
+       && (options & ROUTE_OPT_LOCKED)
+       && !could_doit(executor, next_exit, A_LOCK))
+    {
+        return NOTHING;
+    }
+
+    return next_exit;
+}
