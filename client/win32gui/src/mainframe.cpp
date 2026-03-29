@@ -130,6 +130,8 @@ bool CMainFrame::Create(HINSTANCE hInst, int nCmdShow) {
     tab_states[0]->buffer.append(
         pua_bold() + pua_fg(1) + "Bold Red " + pua_fg(2) + "Bold Green " +
         pua_fg(4) + "Bold Blue" + pua_reset());
+    output.ScrollToBottom();
+    output.Invalidate();
 
     ShowWindow(hwnd, settings.win_maximized ? SW_SHOWMAXIMIZED : nCmdShow);
     UpdateWindow(hwnd);
@@ -141,9 +143,6 @@ bool CMainFrame::Create(HINSTANCE hInst, int nCmdShow) {
 int CMainFrame::AddWorld(const std::string& name) {
     auto state = std::make_unique<TabState>();
     state->name = name;
-
-    // Add a demo line
-    state->buffer.append("% Connected to " + name);
 
     tab_states.push_back(std::move(state));
     int idx = tabbar.AddTab(name);
@@ -185,17 +184,9 @@ int CMainFrame::ConnectHydra(const std::string& name, const std::string& host,
 
     auto* hydra = static_cast<HydraConnection*>(ts->conn.get());
     if (!hydra->connect()) {
-        auto chunks = hydra->drain_output();
+        auto chunks = hydra->drain_output_chunks();
         for (auto& chunk : chunks) {
-            size_t pos = 0;
-            while (pos < chunk.size()) {
-                size_t nl = chunk.find('\n', pos);
-                std::string line = (nl == std::string::npos)
-                    ? chunk.substr(pos) : chunk.substr(pos, nl - pos);
-                pos = (nl == std::string::npos) ? chunk.size() : nl + 1;
-                if (!line.empty() && line.back() == '\r') line.pop_back();
-                ts->buffer.append(line);
-            }
+            AppendHydraChunk(*ts, *hydra, chunk);
         }
         ts->conn.reset();
     }
@@ -482,6 +473,56 @@ void CMainFrame::HandleSlashCommand(const std::string& input) {
     }
 }
 
+void CMainFrame::ProcessHydraTriggerText(TabState& ts, const std::string& text) {
+    ts.hydra_line_buffer += text;
+
+    size_t nl = 0;
+    while ((nl = ts.hydra_line_buffer.find('\n')) != std::string::npos) {
+        std::string display = ts.hydra_line_buffer.substr(0, nl);
+        ts.hydra_line_buffer.erase(0, nl + 1);
+        if (!display.empty() && display.back() == '\r') {
+            display.pop_back();
+        }
+
+        TriggerResult tr = CheckTriggers(display);
+        if (tr.gagged) {
+            continue;
+        }
+
+        auto matched = spawns.match(display);
+        for (auto& path : matched) {
+            auto& sl = spawn_lines[ts.name][path];
+            sl.push_back(display);
+            while (sl.size() > 20000) sl.pop_front();
+        }
+    }
+}
+
+void CMainFrame::AppendHydraChunk(TabState& ts, HydraConnection& hydra,
+                                  const HydraConnection::OutputChunk& chunk) {
+    hydra.add_to_scrollback(chunk.text);
+
+    if (chunk.is_stream_text) {
+        ts.buffer.append_text(chunk.text);
+        ProcessHydraTriggerText(ts, chunk.text);
+        return;
+    }
+
+    std::string display = chunk.text;
+    TriggerResult tr = CheckTriggers(display);
+    if (tr.gagged) {
+        return;
+    }
+
+    ts.buffer.append(display);
+    auto matched = spawns.match(display);
+    for (auto& path : matched) {
+        auto& sl = spawn_lines[ts.name][path];
+        sl.push_back(display);
+        while (sl.size() > 20000) sl.pop_front();
+    }
+}
+
 // IOCP thread — blocks on GetQueuedCompletionStatus, posts to UI thread.
 DWORD WINAPI CMainFrame::IocpThreadProc(LPVOID param) {
     CMainFrame* self = (CMainFrame*)param;
@@ -647,37 +688,8 @@ LRESULT CMainFrame::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         for (int i = 0; i < (int)tab_states.size(); i++) {
             auto* hydra = dynamic_cast<HydraConnection*>(tab_states[i]->conn.get());
             if (!hydra) continue;
-            auto chunks = hydra->drain_output();
-            for (auto& chunk : chunks) {
-                // Game output may contain multiple lines separated by \r\n or \n.
-                // Split into individual lines for the output buffer.
-                size_t pos = 0;
-                while (pos < chunk.size()) {
-                    size_t nl = chunk.find('\n', pos);
-                    std::string display;
-                    if (nl == std::string::npos) {
-                        display = chunk.substr(pos);
-                        pos = chunk.size();
-                    } else {
-                        display = chunk.substr(pos, nl - pos);
-                        pos = nl + 1;
-                    }
-                    // Strip trailing \r
-                    if (!display.empty() && display.back() == '\r') {
-                        display.pop_back();
-                    }
-                    hydra->add_to_scrollback(display);
-                    TriggerResult tr = CheckTriggers(display);
-                    if (!tr.gagged) {
-                        tab_states[i]->buffer.append(display);
-                        auto matched = spawns.match(display);
-                        for (auto& path : matched) {
-                            auto& sl = spawn_lines[tab_states[i]->name][path];
-                            sl.push_back(display);
-                            while (sl.size() > 20000) sl.pop_front();
-                        }
-                    }
-                }
+            for (auto& chunk : hydra->drain_output_chunks()) {
+                AppendHydraChunk(*tab_states[i], *hydra, chunk);
             }
             if (!hydra->is_connected()) {
                 tab_states[i]->buffer.append("% Hydra connection lost.");
@@ -686,6 +698,9 @@ LRESULT CMainFrame::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
                 ti.name = tab_states[i]->name;
                 ti.connected = false;
                 tabbar.UpdateTab(i, ti);
+            }
+            if (i == active_tab) {
+                output.ScrollToBottom();
             }
         }
         output.Invalidate();

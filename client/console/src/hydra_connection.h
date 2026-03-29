@@ -22,6 +22,11 @@ namespace grpc { class Channel; class ClientContext; }
 // via PostQueuedCompletionStatus with IOCP_KEY_HYDRA.
 class HydraConnection : public IConnection {
 public:
+    struct OutputChunk {
+        std::string text;
+        bool is_stream_text = false;
+    };
+
     HydraConnection(const std::string& world_name,
                     const std::string& host,
                     const std::string& port,
@@ -62,6 +67,7 @@ public:
 
     // Drain output queue — called from main loop on IOCP_KEY_HYDRA.
     std::vector<std::string> drain_output();
+    std::vector<OutputChunk> drain_output_chunks();
 
     // Hydra session token
     const std::string& session_id() const { return sessionId_; }
@@ -115,7 +121,7 @@ private:
 
     // Reader thread pushes lines here
     std::mutex outputMutex_;
-    std::queue<std::string> outputQueue_;
+    std::queue<OutputChunk> outputQueue_;
     std::atomic<bool> connected_{false};
     std::atomic<bool> reconnecting_{false};
     std::thread readerThread_;

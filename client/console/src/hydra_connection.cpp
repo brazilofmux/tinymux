@@ -73,7 +73,7 @@ bool HydraConnection::connect() {
                                                    : resp.error();
             {
                 std::lock_guard<std::mutex> lock(outputMutex_);
-                outputQueue_.push("[Hydra] Authentication failed: " + err);
+                outputQueue_.push(OutputChunk{"[Hydra] Authentication failed: " + err, false});
             }
             signalOutput();
             grpc_.reset();
@@ -90,7 +90,7 @@ bool HydraConnection::connect() {
 
     if (!grpc_->stream) {
         std::lock_guard<std::mutex> lock(outputMutex_);
-        outputQueue_.push("[Hydra] Failed to open GameSession stream");
+        outputQueue_.push(OutputChunk{"[Hydra] Failed to open GameSession stream", false});
         signalOutput();
         grpc_.reset();
         return false;
@@ -114,7 +114,7 @@ bool HydraConnection::connect() {
 
     {
         std::lock_guard<std::mutex> lock(outputMutex_);
-        outputQueue_.push("[Hydra] Session established (" + sessionId_.substr(0, 8) + "...)");
+        outputQueue_.push(OutputChunk{"[Hydra] Session established (" + sessionId_.substr(0, 8) + "...)", false});
     }
     signalOutput();
 
@@ -131,12 +131,12 @@ bool HydraConnection::connect() {
         Status status = grpc_->stub->Connect(&connCtx, req, &resp);
         if (status.ok() && resp.success()) {
             std::lock_guard<std::mutex> lock(outputMutex_);
-            outputQueue_.push("[Hydra] Connected to " + gameName_
-                + " (link " + std::to_string(resp.link_number()) + ")");
+            outputQueue_.push(OutputChunk{"[Hydra] Connected to " + gameName_
+                + " (link " + std::to_string(resp.link_number()) + ")", false});
         } else {
             std::lock_guard<std::mutex> lock(outputMutex_);
-            outputQueue_.push("[Hydra] Game connect failed: "
-                + (resp.error().empty() ? status.error_message() : resp.error()));
+            outputQueue_.push(OutputChunk{"[Hydra] Game connect failed: "
+                + (resp.error().empty() ? status.error_message() : resp.error()), false});
         }
         signalOutput();
     }
@@ -144,12 +144,12 @@ bool HydraConnection::connect() {
     return true;
     } catch (const std::exception& e) {
         std::lock_guard<std::mutex> lock(outputMutex_);
-        outputQueue_.push(std::string("[Hydra] Connect exception: ") + e.what());
+        outputQueue_.push(OutputChunk{std::string("[Hydra] Connect exception: ") + e.what(), false});
         signalOutput();
         return false;
     } catch (...) {
         std::lock_guard<std::mutex> lock(outputMutex_);
-        outputQueue_.push("[Hydra] Connect failed with unknown exception");
+        outputQueue_.push(OutputChunk{"[Hydra] Connect failed with unknown exception", false});
         signalOutput();
         return false;
     }
@@ -196,13 +196,23 @@ bool HydraConnection::send_line(const std::string& line) {
 }
 
 std::vector<std::string> HydraConnection::drain_output() {
+    auto chunks = drain_output_chunks();
     std::vector<std::string> lines;
-    std::lock_guard<std::mutex> lock(outputMutex_);
-    while (!outputQueue_.empty()) {
-        lines.push_back(std::move(outputQueue_.front()));
-        outputQueue_.pop();
+    lines.reserve(chunks.size());
+    for (auto& chunk : chunks) {
+        lines.push_back(std::move(chunk.text));
     }
     return lines;
+}
+
+std::vector<HydraConnection::OutputChunk> HydraConnection::drain_output_chunks() {
+    std::vector<OutputChunk> chunks;
+    std::lock_guard<std::mutex> lock(outputMutex_);
+    while (!outputQueue_.empty()) {
+        chunks.push_back(std::move(outputQueue_.front()));
+        outputQueue_.pop();
+    }
+    return chunks;
 }
 
 std::string HydraConnection::check_prompt(int) {
@@ -236,7 +246,7 @@ int HydraConnection::send_idle_secs() const {
 
 void HydraConnection::pushOutput(const std::string& line) {
     std::lock_guard<std::mutex> lock(outputMutex_);
-    outputQueue_.push(line);
+    outputQueue_.push(OutputChunk{line, false});
     signalOutput();
 }
 
@@ -249,17 +259,17 @@ void HydraConnection::readerLoop() {
         std::lock_guard<std::mutex> lock(outputMutex_);
 
         if (msg.has_game_output()) {
-            outputQueue_.push(msg.game_output().text());
+            outputQueue_.push(OutputChunk{msg.game_output().text(), true});
         } else if (msg.has_gmcp()) {
-            outputQueue_.push("[GMCP " + msg.gmcp().package() + "] "
-                            + msg.gmcp().json());
+            outputQueue_.push(OutputChunk{"[GMCP " + msg.gmcp().package() + "] "
+                            + msg.gmcp().json(), false});
         } else if (msg.has_notice()) {
-            outputQueue_.push("[Hydra] " + msg.notice().text());
+            outputQueue_.push(OutputChunk{"[Hydra] " + msg.notice().text(), false});
         } else if (msg.has_link_event()) {
             const auto& ev = msg.link_event();
-            outputQueue_.push("[Hydra] Link " + std::to_string(ev.link_number())
+            outputQueue_.push(OutputChunk{"[Hydra] Link " + std::to_string(ev.link_number())
                 + " (" + ev.game_name() + "): "
-                + hydra::LinkState_Name(ev.new_state()));
+                + hydra::LinkState_Name(ev.new_state()), false});
         } else if (msg.has_pong()) {
             continue;
         }
@@ -346,17 +356,17 @@ void HydraConnection::attemptReconnect() {
                 std::lock_guard<std::mutex> lock(outputMutex_);
 
                 if (msg.has_game_output()) {
-                    outputQueue_.push(msg.game_output().text());
+                    outputQueue_.push(OutputChunk{msg.game_output().text(), true});
                 } else if (msg.has_gmcp()) {
-                    outputQueue_.push("[GMCP " + msg.gmcp().package() + "] "
-                                    + msg.gmcp().json());
+                    outputQueue_.push(OutputChunk{"[GMCP " + msg.gmcp().package() + "] "
+                                    + msg.gmcp().json(), false});
                 } else if (msg.has_notice()) {
-                    outputQueue_.push("[Hydra] " + msg.notice().text());
+                    outputQueue_.push(OutputChunk{"[Hydra] " + msg.notice().text(), false});
                 } else if (msg.has_link_event()) {
                     const auto& ev = msg.link_event();
-                    outputQueue_.push("[Hydra] Link " + std::to_string(ev.link_number())
+                    outputQueue_.push(OutputChunk{"[Hydra] Link " + std::to_string(ev.link_number())
                         + " (" + ev.game_name() + "): "
-                        + hydra::LinkState_Name(ev.new_state()));
+                        + hydra::LinkState_Name(ev.new_state()), false});
                 } else if (msg.has_pong()) {
                     continue;
                 }

@@ -40,6 +40,7 @@ public:
         std::string name;
         OutputBuffer buffer;
         std::unique_ptr<IConnection> conn;   // null for system tab
+        std::string hydra_line_buffer;
     };
     std::vector<std::unique_ptr<TabState>> tab_states;
     int active_tab = -1;
@@ -90,6 +91,9 @@ public:
     void OnIocpCompletion(IocpMsg* msg);
     void CheckPrompts();
     void UpdateStatusBar();
+    void AppendHydraChunk(TabState& ts, HydraConnection& hydra,
+                          const HydraConnection::OutputChunk& chunk);
+    void ProcessHydraTriggerText(TabState& ts, const std::string& text);
 
     // IOCP thread management
     HANDLE iocp_thread = nullptr;
