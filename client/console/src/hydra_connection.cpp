@@ -302,7 +302,7 @@ void HydraConnection::fetchScrollBack() {
             pushOutput("-- scroll-back (" + std::to_string(resp.lines_size()) + " lines) --");
             for (int i = 0; i < resp.lines_size(); i++) {
                 std::lock_guard<std::mutex> lock(outputMutex_);
-                outputQueue_.push(OutputChunk{resp.lines(i).text(), true});
+                outputQueue_.push(OutputChunk{resp.lines(i).text(), false});
             }
             signalOutput();
             pushOutput("-- end scroll-back --");
