@@ -185,9 +185,17 @@ int CMainFrame::ConnectHydra(const std::string& name, const std::string& host,
 
     auto* hydra = static_cast<HydraConnection*>(ts->conn.get());
     if (!hydra->connect()) {
-        auto lines = hydra->drain_output();
-        for (auto& line : lines) {
-            ts->buffer.append(line);
+        auto chunks = hydra->drain_output();
+        for (auto& chunk : chunks) {
+            size_t pos = 0;
+            while (pos < chunk.size()) {
+                size_t nl = chunk.find('\n', pos);
+                std::string line = (nl == std::string::npos)
+                    ? chunk.substr(pos) : chunk.substr(pos, nl - pos);
+                pos = (nl == std::string::npos) ? chunk.size() : nl + 1;
+                if (!line.empty() && line.back() == '\r') line.pop_back();
+                ts->buffer.append(line);
+            }
         }
         ts->conn.reset();
     }

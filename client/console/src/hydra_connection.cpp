@@ -82,29 +82,8 @@ bool HydraConnection::connect() {
         sessionId_ = resp.session_id();
     }
 
-    // Connect to game if specified
-    if (!gameName_.empty()) {
-        ClientContext connCtx;
-        connCtx.AddMetadata("authorization", sessionId_);
-        hydra::ConnectRequest req;
-        req.set_session_id(sessionId_);
-        req.set_game_name(gameName_);
-        hydra::ConnectResponse resp;
-
-        Status status = grpc_->stub->Connect(&connCtx, req, &resp);
-        if (status.ok() && resp.success()) {
-            std::lock_guard<std::mutex> lock(outputMutex_);
-            outputQueue_.push("[Hydra] Connected to " + gameName_
-                + " (link " + std::to_string(resp.link_number()) + ")");
-        } else {
-            std::lock_guard<std::mutex> lock(outputMutex_);
-            outputQueue_.push("[Hydra] Game connect failed: "
-                + (resp.error().empty() ? status.error_message() : resp.error()));
-        }
-        signalOutput();
-    }
-
-    // Open bidi GameSession stream
+    // Open bidi GameSession stream BEFORE connecting to the game,
+    // so the subscriber is registered when game output arrives.
     grpc_->sessionCtx = std::make_unique<ClientContext>();
     grpc_->sessionCtx->AddMetadata("authorization", sessionId_);
     grpc_->stream = grpc_->stub->GameSession(grpc_->sessionCtx.get());
@@ -125,8 +104,6 @@ bool HydraConnection::connect() {
         prefs->set_terminal_width(termWidth_);
         prefs->set_terminal_height(termHeight_);
         prefs->set_terminal_type("TinyMUX-Console");
-        fprintf(stderr, "[Hydra] Sending preferences: color_format=%d width=%d height=%d\n",
-                colorFormat_, termWidth_, termHeight_);
         grpc_->stream->Write(prefsMsg);
     }
 
@@ -140,6 +117,29 @@ bool HydraConnection::connect() {
         outputQueue_.push("[Hydra] Session established (" + sessionId_.substr(0, 8) + "...)");
     }
     signalOutput();
+
+    // Connect to game AFTER the stream is open and the reader is
+    // consuming output, so the welcome screen isn't lost.
+    if (!gameName_.empty()) {
+        ClientContext connCtx;
+        connCtx.AddMetadata("authorization", sessionId_);
+        hydra::ConnectRequest req;
+        req.set_session_id(sessionId_);
+        req.set_game_name(gameName_);
+        hydra::ConnectResponse resp;
+
+        Status status = grpc_->stub->Connect(&connCtx, req, &resp);
+        if (status.ok() && resp.success()) {
+            std::lock_guard<std::mutex> lock(outputMutex_);
+            outputQueue_.push("[Hydra] Connected to " + gameName_
+                + " (link " + std::to_string(resp.link_number()) + ")");
+        } else {
+            std::lock_guard<std::mutex> lock(outputMutex_);
+            outputQueue_.push("[Hydra] Game connect failed: "
+                + (resp.error().empty() ? status.error_message() : resp.error()));
+        }
+        signalOutput();
+    }
 
     return true;
     } catch (const std::exception& e) {
