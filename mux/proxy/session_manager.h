@@ -110,6 +110,7 @@ struct HydraSession {
         std::string source;     // game name
         time_t timestamp;
         int linkNumber;         // 1-based
+        bool endOfRecord{false};
 
         // Render puaText to the requested format.
         std::string render(RenderFormat fmt) const;
@@ -208,6 +209,7 @@ struct FrontDoorState {
     ganl::EncodingType encoding{ganl::EncodingType::Utf8};
     ColorDepth colorDepth{ColorDepth::Ansi256};
     bool gmcpEnabled{false};
+    bool eorEnabled{false};
     TelnetParseState telnetState;   // partial telnet/GMCP parse state between reads
 
     // Protocol type

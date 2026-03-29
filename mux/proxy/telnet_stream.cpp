@@ -39,6 +39,9 @@ void splitTelnetStream(const char* data, size_t len,
                 parseState.cmdByte = ch;
                 parseState.state = TelnetParseState::SawCmd;
             } else {
+                if (ch == telnet::EOR_CMD) {
+                    signals.sawEor = true;
+                }
                 if (!stripTelnet) {
                     regular.push_back(static_cast<char>(T_IAC));
                     regular.push_back(static_cast<char>(ch));
@@ -51,6 +54,13 @@ void splitTelnetStream(const char* data, size_t len,
             if (ch == T_GMCP) {
                 if (parseState.cmdByte == T_WILL) signals.sawWillGmcp = true;
                 if (parseState.cmdByte == T_DO)   signals.sawDoGmcp = true;
+            }
+            if (ch == telnet::EOR_OPT) {
+                if (parseState.cmdByte == T_DO) {
+                    signals.sawDoEor = true;
+                } else if (parseState.cmdByte == T_DONT) {
+                    signals.sawDontEor = true;
+                }
             }
             if (ch == telnet::TTYPE && parseState.cmdByte == T_DO) {
                 signals.sawDoTtype = true;

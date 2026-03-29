@@ -167,6 +167,29 @@ void testSplitCharsetSignals() {
            "CHARSET ACCEPTED payload mismatch");
 }
 
+void testSplitEorSignals() {
+    TelnetParseState state;
+    std::string regular;
+    std::vector<TelnetGmcpMessage> gmcp;
+    TelnetSignals signals;
+
+    splitTelnetStream(bytes({0xff, 0xfd}).data(), 2, state, regular, gmcp, signals, true);
+    expect(!signals.sawDoEor, "partial DO EOR should not fire early");
+    splitTelnetStream(bytes({0x19}).data(), 1, state, regular, gmcp, signals, true);
+    expect(signals.sawDoEor, "DO EOR should be detected across reads");
+
+    splitTelnetStream(bytes({0xff, 0xfe, 0x19}).data(), 3, state, regular, gmcp, signals, true);
+    expect(signals.sawDontEor, "DONT EOR should be detected");
+
+    splitTelnetStream(bytes({0xff, 0xef}).data(), 2, state, regular, gmcp, signals, true);
+    expect(signals.sawEor, "standalone EOR should be detected");
+
+    expect(buildTelnetCommandFrame(telnet::DO, telnet::EOR_OPT) == bytes({0xff, 0xfd, 0x19}),
+           "DO EOR option frame encoding mismatch");
+    expect(buildTelnetTwoByteCommand(telnet::EOR_CMD) == bytes({0xff, 0xef}),
+           "IAC EOR frame encoding mismatch");
+}
+
 void testAsciiBridgeConversion() {
     TelnetBridge bridge;
     std::string utf8 = "caf\xc3\xa9 \xe2\x98\x83";
@@ -215,6 +238,7 @@ int main() {
     testStripNonGmcpSubnegotiationAcrossReads();
     testSplitTtypeSignals();
     testSplitCharsetSignals();
+    testSplitEorSignals();
     testAsciiBridgeConversion();
     testWebSocketMaskEnforcement();
     std::cout << "proxy_regression: ok\n";

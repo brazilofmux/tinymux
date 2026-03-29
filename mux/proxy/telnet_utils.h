@@ -13,10 +13,12 @@ namespace telnet {
     constexpr uint8_t WONT = 252;
     constexpr uint8_t DO   = 253;
     constexpr uint8_t DONT = 254;
+    constexpr uint8_t EOR_CMD = 239;
     constexpr uint8_t GMCP = 201;
     constexpr uint8_t NAWS = 31;
     constexpr uint8_t TTYPE = 24;
     constexpr uint8_t CHARSET = 42;
+    constexpr uint8_t EOR_OPT = 25;
     constexpr uint8_t TELQUAL_IS = 0;
     constexpr uint8_t TELQUAL_SEND = 1;
     constexpr uint8_t TELQUAL_REQUEST = 1;
@@ -84,6 +86,14 @@ inline std::string buildTelnetCommandFrame(uint8_t command, uint8_t option) {
     frame.push_back(static_cast<char>(telnet::IAC));
     frame.push_back(static_cast<char>(command));
     frame.push_back(static_cast<char>(option));
+    return frame;
+}
+
+inline std::string buildTelnetTwoByteCommand(uint8_t command) {
+    std::string frame;
+    frame.reserve(2);
+    frame.push_back(static_cast<char>(telnet::IAC));
+    frame.push_back(static_cast<char>(command));
     return frame;
 }
 

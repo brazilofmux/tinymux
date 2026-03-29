@@ -32,9 +32,12 @@ struct TelnetSignals {
     bool sawDoTtype{false};
     bool sawTtypeSend{false};
     bool sawDoCharset{false};
+    bool sawDoEor{false};
+    bool sawDontEor{false};
     bool sawCharsetRequest{false};
     bool sawCharsetAccepted{false};
     bool sawCharsetRejected{false};
+    bool sawEor{false};
     std::string charsetPayload;
 };
 

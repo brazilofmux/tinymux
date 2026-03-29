@@ -479,6 +479,7 @@ public:
                     go->set_source(item.source);
                     go->set_timestamp(static_cast<int64_t>(item.timestamp));
                     go->set_link_number(item.linkNumber);
+                    go->set_end_of_record(item.endOfRecord);
                     if (!stream->Write(msg)) { done.store(true); break; }
                 }
                 lock.lock();
@@ -596,6 +597,7 @@ public:
                 msg.set_source(item.source);
                 msg.set_timestamp(static_cast<int64_t>(item.timestamp));
                 msg.set_link_number(item.linkNumber);
+                msg.set_end_of_record(item.endOfRecord);
                 if (!writer->Write(msg)) {
                     std::lock_guard<std::mutex> lk(oq->mutex);
                     oq->removeSubscriber(subId);

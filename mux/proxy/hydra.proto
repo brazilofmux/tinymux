@@ -91,6 +91,7 @@ message GameOutput {
     string source = 2;          // game name
     int64  timestamp = 3;
     int32  link_number = 4;     // 1-based
+    bool   end_of_record = 5;   // prompt/end-of-record boundary marker
 }
 
 // A GMCP message (structured MUD protocol data).

@@ -432,6 +432,7 @@ void SessionManager::onAccept(ganl::ConnectionHandle handle,
 
     LOG_INFO("Session manager: new front-door %lu (telnet) from %s",
              (unsigned long)handle, clientIp.c_str());
+    safeWrite(handle, buildTelnetCommandFrame(telnet::WILL, telnet::EOR_OPT));
     if (!deferPrompt) {
         showBanner(handle);
         frontDoors_[handle].initialPromptSent = true;
@@ -629,6 +630,12 @@ void SessionManager::handleFrontDoorPlainData(FrontDoorState& fd,
     // Track client GMCP capability
     if (signals.sawWillGmcp || signals.sawDoGmcp) {
         fd.gmcpEnabled = true;
+    }
+    if (signals.sawDoEor) {
+        fd.eorEnabled = true;
+    }
+    if (signals.sawDontEor) {
+        fd.eorEnabled = false;
     }
 
     // Forward client GMCP to the active back-door link
@@ -982,6 +989,7 @@ void SessionManager::drainWsGameSessions() {
                 go->set_source(item.source);
                 go->set_timestamp(static_cast<int64_t>(item.timestamp));
                 go->set_link_number(item.linkNumber);
+                go->set_end_of_record(item.endOfRecord);
             }
             std::string frame = wsEncodeFrame(smsg.SerializeAsString(),
                                               WS_OP_BINARY);
@@ -1774,6 +1782,7 @@ void SessionManager::onBackDoorConnect(ganl::ConnectionHandle bdHandle) {
     // This makes later GMCP/TTYPE/NAWS traffic standards-compliant instead of
     // relying on tolerant servers to accept unsolicited subnegotiations.
     safeWrite(link->handle, buildTelnetCommandFrame(telnet::DO, telnet::GMCP));
+    safeWrite(link->handle, buildTelnetCommandFrame(telnet::DO, telnet::EOR_OPT));
     safeWrite(link->handle, buildTelnetCommandFrame(telnet::WILL, telnet::TTYPE));
     safeWrite(link->handle, buildTelnetCommandFrame(telnet::WILL, telnet::NAWS));
     safeWrite(link->handle, buildTelnetCommandFrame(telnet::WILL, telnet::CHARSET));
@@ -1861,6 +1870,10 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
     if (signals.sawDoCharset) {
         safeWrite(link->handle,
                   buildTelnetCommandFrame(telnet::WILL, telnet::CHARSET));
+    }
+    if (signals.sawDoEor) {
+        safeWrite(link->handle,
+                  buildTelnetCommandFrame(telnet::WILL, telnet::EOR_OPT));
     }
     if (signals.sawTtypeSend) {
         safeWrite(link->handle,
@@ -2005,6 +2018,47 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
                 item.timestamp = time(nullptr);
                 item.linkNumber = static_cast<int>(linkIdx) + 1;
 
+                session->outputQueue->pushOutput(std::move(item));
+            }
+        }
+    }
+
+    if (signals.sawEor) {
+        for (auto h : session->frontDoors) {
+            auto fdIt = frontDoors_.find(h);
+            if (fdIt == frontDoors_.end()) continue;
+            const FrontDoorState& fd = fdIt->second;
+
+            if (fd.proto == FrontDoorProto::WebSocket) {
+                continue;
+#ifdef GRPC_ENABLED
+            } else if (fd.grpcWebSubscribed) {
+                hydra::GameOutput go;
+                go.set_text("");
+                go.set_source(link->gameName);
+                go.set_timestamp(static_cast<int64_t>(time(nullptr)));
+                go.set_link_number(static_cast<int>(linkIdx) + 1);
+                go.set_end_of_record(true);
+
+                std::string gwFrame = grpcWebEncodeDataFrame(go.SerializeAsString());
+                if (fd.grpcWebTextMode) gwFrame = base64Encode(gwFrame);
+                std::string chunk = std::to_string(gwFrame.size())
+                    + "\r\n" + gwFrame + "\r\n";
+                safeWrite(h, chunk);
+#endif
+            } else if (fd.eorEnabled) {
+                safeWrite(h, buildTelnetTwoByteCommand(telnet::EOR_CMD));
+            }
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(session->outputQueue->mutex);
+            if (session->outputQueue->hasOutputSubscribers()) {
+                HydraSession::OutputItem item;
+                item.source = link->gameName;
+                item.timestamp = time(nullptr);
+                item.linkNumber = static_cast<int>(linkIdx) + 1;
+                item.endOfRecord = true;
                 session->outputQueue->pushOutput(std::move(item));
             }
         }
@@ -2585,6 +2639,7 @@ std::string SessionManager::createAccountAndGetSession(
 // ---- OutputItem rendering ----
 
 std::string HydraSession::OutputItem::render(RenderFormat fmt) const {
+    if (endOfRecord) return "";
     if (puaText.empty()) return puaText;
     if (fmt == RenderFormat::PuaUtf8) return puaText;
 
