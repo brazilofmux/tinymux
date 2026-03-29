@@ -16,6 +16,7 @@
 #include <vector>
 
 namespace grpc { class Channel; class ClientContext; }
+namespace hydra { class ClientMessage; }
 
 // A connection to a game server via Hydra's gRPC GameSession bidi stream.
 // Implements IConnection so the IOCP event loop can treat it like a telnet
@@ -65,6 +66,7 @@ public:
     int send_idle_secs() const override;
 
     bool is_hydra() const override { return true; }
+    bool is_reconnecting() const { return reconnecting_.load(); }
 
     // Drain output queue — called from main loop on IOCP_KEY_HYDRA.
     std::vector<std::string> drain_output();
@@ -88,7 +90,14 @@ public:
     std::string rpc_detach_session();
 
 private:
+    struct StreamState;
+
     void readerLoop();
+    void readerLoop(std::shared_ptr<StreamState> streamState);
+    bool openStream(bool startReaderThread = true);
+    bool sendClientMessage(const hydra::ClientMessage& msg);
+    bool sendPreferences();
+    void keepaliveLoop();
     void signalOutput();
     void pushOutput(const std::string& line);
     void attemptReconnect();
@@ -119,13 +128,18 @@ private:
     // gRPC state (opaque — actual types in .cpp to avoid grpc headers here)
     struct GrpcState;
     std::unique_ptr<GrpcState> grpc_;
+    std::shared_ptr<StreamState> streamState_;
+    mutable std::mutex streamStateMutex_;
+    std::mutex writeMutex_;
 
     // Reader thread pushes lines here
     std::mutex outputMutex_;
     std::queue<OutputChunk> outputQueue_;
     std::atomic<bool> connected_{false};
     std::atomic<bool> reconnecting_{false};
+    std::atomic<bool> stopRequested_{false};
     std::thread readerThread_;
+    std::thread keepaliveThread_;
 
     // Shutdown signal — wakes the reconnect loop immediately.
     std::mutex shutdownMutex_;
@@ -138,6 +152,10 @@ private:
     // Idle tracking
     std::chrono::steady_clock::time_point lastRecvTime_;
     std::chrono::steady_clock::time_point lastSendTime_;
+    std::chrono::steady_clock::time_point lastPingTime_;
+
+    static constexpr int KEEPALIVE_INTERVAL_SECS = 30;
+    static constexpr int KEEPALIVE_IDLE_SECS = 20;
 };
 
 #endif // HYDRA_GRPC

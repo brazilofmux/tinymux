@@ -641,7 +641,10 @@ void CMainFrame::UpdateStatusBar() {
     std::string s = ts->name;
     if (ts->conn) {
         if (ts->conn->uses_ssl()) s += " [ssl]";
-        if (ts->conn->is_connected()) {
+        auto* hydra = dynamic_cast<HydraConnection*>(ts->conn.get());
+        if (hydra && hydra->is_reconnecting()) {
+            s += "  reconnecting";
+        } else if (ts->conn->is_connected()) {
             int idle = ts->conn->idle_secs();
             if (idle > 0) s += "  idle:" + std::to_string(idle) + "s";
         } else {
@@ -688,15 +691,28 @@ LRESULT CMainFrame::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         for (int i = 0; i < (int)tab_states.size(); i++) {
             auto* hydra = dynamic_cast<HydraConnection*>(tab_states[i]->conn.get());
             if (!hydra) continue;
+            bool hadOutput = false;
             for (auto& chunk : hydra->drain_output_chunks()) {
+                hadOutput = true;
                 AppendHydraChunk(*tab_states[i], *hydra, chunk);
             }
             if (!hydra->is_connected()) {
                 tab_states[i]->buffer.append("% Hydra connection lost.");
+                for (auto& cmd : hooks.fire_event("DISCONNECT")) {
+                    tab_states[i]->buffer.append("% [hook] " + cmd);
+                }
+                timers.cancel_all();
                 tab_states[i]->conn.reset();
                 TabInfo ti;
                 ti.name = tab_states[i]->name;
                 ti.connected = false;
+                tabbar.UpdateTab(i, ti);
+            } else if (hadOutput && i != active_tab) {
+                TabInfo ti;
+                ti.name = tab_states[i]->name;
+                ti.active = true;
+                ti.connected = true;
+                ti.ssl = hydra->uses_ssl();
                 tabbar.UpdateTab(i, ti);
             }
             if (i == active_tab) {
