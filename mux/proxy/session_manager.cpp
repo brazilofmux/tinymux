@@ -1797,7 +1797,7 @@ void SessionManager::onBackDoorConnect(ganl::ConnectionHandle bdHandle) {
     link->sentWillTtype = true;
     link->sentWillNaws = true;
     link->sentWillCharset = true;
-    link->sentWillEor = true;
+    link->sentWillEor = false;
 
     // Send Core.Hello to the game if GMCP is enabled on this link
     if (link->gmcpEnabled) {
@@ -1880,15 +1880,27 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
         safeWrite(link->handle,
                   buildTelnetCommandFrame(telnet::WILL, telnet::TTYPE));
     }
+    if (signals.sawDontTtype) {
+        link->sentWillTtype = false;
+    }
     if (signals.sawDoCharset && !link->sentWillCharset) {
         link->sentWillCharset = true;
         safeWrite(link->handle,
                   buildTelnetCommandFrame(telnet::WILL, telnet::CHARSET));
     }
+    if (signals.sawDontCharset) {
+        link->sentWillCharset = false;
+    }
     if (signals.sawDoEor && !link->sentWillEor) {
         link->sentWillEor = true;
         safeWrite(link->handle,
                   buildTelnetCommandFrame(telnet::WILL, telnet::EOR_OPT));
+    }
+    if (signals.sawDontEor) {
+        link->sentWillEor = false;
+    }
+    if (signals.sawDontNaws) {
+        link->sentWillNaws = false;
     }
     if (signals.sawTtypeSend) {
         safeWrite(link->handle,

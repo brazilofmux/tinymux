@@ -30,10 +30,13 @@ struct TelnetSignals {
     bool sawWillGmcp{false};
     bool sawDoGmcp{false};
     bool sawDoTtype{false};
+    bool sawDontTtype{false};
     bool sawTtypeSend{false};
     bool sawDoCharset{false};
+    bool sawDontCharset{false};
     bool sawDoEor{false};
     bool sawDontEor{false};
+    bool sawDontNaws{false};
     bool sawCharsetRequest{false};
     bool sawCharsetAccepted{false};
     bool sawCharsetRejected{false};

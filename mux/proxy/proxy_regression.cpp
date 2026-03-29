@@ -112,6 +112,9 @@ void testSplitTtypeSignals() {
     splitTelnetStream(ttypeOpt.data(), ttypeOpt.size(), state, regular, gmcp, signals, true);
     expect(signals.sawDoTtype, "DO TTYPE should be detected across reads");
 
+    splitTelnetStream(bytes({0xff, 0xfe, 0x18}).data(), 3, state, regular, gmcp, signals, true);
+    expect(signals.sawDontTtype, "DONT TTYPE should be detected");
+
     const std::string sendChunk1 = bytes({0xff, 0xfa, 0x18, 0x01});
     const std::string sendChunk2 = bytes({0xff, 0xf0});
     splitTelnetStream(sendChunk1.data(), sendChunk1.size(), state, regular, gmcp, signals, true);
@@ -165,6 +168,9 @@ void testSplitCharsetSignals() {
     expect(signals.sawCharsetAccepted, "CHARSET ACCEPTED should be detected");
     expect(signals.charsetAcceptedPayload == "ISO-8859-1",
            "CHARSET ACCEPTED payload mismatch");
+
+    splitTelnetStream(bytes({0xff, 0xfe, 0x2a}).data(), 3, state, regular, gmcp, signals, true);
+    expect(signals.sawDontCharset, "DONT CHARSET should be detected");
 }
 
 void testCharsetRequestAndAcceptedInSameRead() {
@@ -218,6 +224,9 @@ void testSplitEorSignals() {
 
     splitTelnetStream(bytes({0xff, 0xfe, 0x19}).data(), 3, state, regular, gmcp, signals, true);
     expect(signals.sawDontEor, "DONT EOR should be detected");
+
+    splitTelnetStream(bytes({0xff, 0xfe, 0x1f}).data(), 3, state, regular, gmcp, signals, true);
+    expect(signals.sawDontNaws, "DONT NAWS should be detected");
 
     splitTelnetStream(bytes({0xff, 0xef}).data(), 2, state, regular, gmcp, signals, true);
     expect(signals.sawEor, "standalone EOR should be detected");

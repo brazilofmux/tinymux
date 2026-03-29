@@ -62,11 +62,22 @@ void splitTelnetStream(const char* data, size_t len,
                     signals.sawDontEor = true;
                 }
             }
-            if (ch == telnet::TTYPE && parseState.cmdByte == T_DO) {
-                signals.sawDoTtype = true;
+            if (ch == telnet::TTYPE) {
+                if (parseState.cmdByte == T_DO) {
+                    signals.sawDoTtype = true;
+                } else if (parseState.cmdByte == T_DONT) {
+                    signals.sawDontTtype = true;
+                }
             }
-            if (ch == telnet::CHARSET && parseState.cmdByte == T_DO) {
-                signals.sawDoCharset = true;
+            if (ch == telnet::CHARSET) {
+                if (parseState.cmdByte == T_DO) {
+                    signals.sawDoCharset = true;
+                } else if (parseState.cmdByte == T_DONT) {
+                    signals.sawDontCharset = true;
+                }
+            }
+            if (ch == telnet::NAWS && parseState.cmdByte == T_DONT) {
+                signals.sawDontNaws = true;
             }
             if (!stripTelnet) {
                 regular.push_back(static_cast<char>(T_IAC));
