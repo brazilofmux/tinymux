@@ -185,6 +185,7 @@ void cmd_connect(App& app, const std::string& args) {
         app.fg = it->second.get();
         app_clear_fg_activity(app);
         app.terminal.set_history_context(app.fg->world_name());
+        app.terminal.set_output_context(app.fg->world_name());
         if (std::string prompt = app.fg->current_prompt(); !prompt.empty()) {
             app.terminal.set_prompt(prompt);
         } else {

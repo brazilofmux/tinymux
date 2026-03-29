@@ -711,9 +711,10 @@ void perform_restart(App& app, const std::vector<std::string>& original_argv) {
         return;
     }
 
-    // Disconnect SSL/MCCP connections (their FDs can't survive execv)
+    // Disconnect transport types that aren't preserved across execv.
     for (auto& [name, conn] : app.connections) {
-        if (conn->is_connected() && (conn->uses_ssl() || conn->mccp_active())) {
+        if (conn->is_connected() &&
+            (conn->uses_ssl() || conn->mccp_active() || conn->is_hydra())) {
             conn->disconnect();
         }
     }

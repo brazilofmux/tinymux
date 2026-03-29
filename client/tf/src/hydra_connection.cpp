@@ -132,10 +132,11 @@ bool HydraConnection::openStream() {
         return false;
     }
 
-    // Send initial preferences: TrueColor, cached terminal size
+    connected_.store(true);
+
+    // Send initial preferences only after the stream is marked live.
     sendPreferences();
 
-    connected_.store(true);
     readerThread_ = std::thread(&HydraConnection::readerLoop, this);
     return true;
 }
