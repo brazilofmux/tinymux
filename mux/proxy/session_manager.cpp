@@ -34,7 +34,9 @@ static constexpr unsigned char T_SB   = telnet::SB;
 static constexpr unsigned char T_SE   = telnet::SE;
 static constexpr unsigned char T_GMCP = telnet::GMCP;
 static constexpr unsigned char T_WILL = telnet::WILL;
+static constexpr unsigned char T_WONT = telnet::WONT;
 static constexpr unsigned char T_DO   = telnet::DO;
+static constexpr unsigned char T_DONT = telnet::DONT;
 
 // A GMCP sub-negotiation extracted from the raw byte stream.
 struct GmcpMessage {
@@ -47,14 +49,17 @@ struct GmcpMessage {
 static void splitGmcp(const char* data, size_t len,
                       std::string& regular,
                       std::vector<GmcpMessage>& gmcp,
-                      bool& sawWillGmcp, bool& sawDoGmcp) {
+                      bool& sawWillGmcp, bool& sawDoGmcp,
+                      bool stripTelnet = false) {
     sawWillGmcp = false;
     sawDoGmcp = false;
     regular.reserve(len);
 
-    enum { Normal, SawIAC, SawSB, InGmcpSB, InGmcpIAC, SawCmd } state = Normal;
+    enum { Normal, SawIAC, SawSB, InGmcpSB, InGmcpIAC, SawCmd,
+           InOtherSB, InOtherSBIAC } state = Normal;
     unsigned char cmdByte = 0;
     std::string gmcpBuf;
+    std::string otherSBBuf;
 
     for (size_t i = 0; i < len; i++) {
         unsigned char ch = static_cast<unsigned char>(data[i]);
@@ -71,26 +76,31 @@ static void splitGmcp(const char* data, size_t len,
                 state = Normal;
             } else if (ch == T_SB) {
                 state = SawSB;
-            } else if (ch == T_WILL || ch == T_DO) {
+            } else if (ch == T_WILL || ch == T_WONT ||
+                       ch == T_DO   || ch == T_DONT) {
                 cmdByte = ch;
                 state = SawCmd;
             } else {
-                // Other telnet command — pass through
-                regular.push_back(static_cast<char>(T_IAC));
-                regular.push_back(static_cast<char>(ch));
+                // Other telnet command (2-byte: IAC + cmd)
+                if (!stripTelnet) {
+                    regular.push_back(static_cast<char>(T_IAC));
+                    regular.push_back(static_cast<char>(ch));
+                }
                 state = Normal;
             }
             break;
 
         case SawCmd:
+            // 3-byte command: IAC WILL/WONT/DO/DONT <option>
             if (ch == T_GMCP) {
                 if (cmdByte == T_WILL) sawWillGmcp = true;
                 if (cmdByte == T_DO)   sawDoGmcp = true;
             }
-            // Pass the negotiation through to regular stream
-            regular.push_back(static_cast<char>(T_IAC));
-            regular.push_back(static_cast<char>(cmdByte));
-            regular.push_back(static_cast<char>(ch));
+            if (!stripTelnet) {
+                regular.push_back(static_cast<char>(T_IAC));
+                regular.push_back(static_cast<char>(cmdByte));
+                regular.push_back(static_cast<char>(ch));
+            }
             state = Normal;
             break;
 
@@ -99,11 +109,40 @@ static void splitGmcp(const char* data, size_t len,
                 gmcpBuf.clear();
                 state = InGmcpSB;
             } else {
-                // Non-GMCP subneg — pass through
-                regular.push_back(static_cast<char>(T_IAC));
-                regular.push_back(static_cast<char>(T_SB));
-                regular.push_back(static_cast<char>(ch));
-                state = Normal;  // will catch IAC SE from regular flow
+                // Non-GMCP subneg — consume the entire body until IAC SE
+                otherSBBuf.clear();
+                otherSBBuf.push_back(static_cast<char>(ch));
+                state = InOtherSB;
+            }
+            break;
+
+        case InOtherSB:
+            if (ch == T_IAC) {
+                state = InOtherSBIAC;
+            } else {
+                otherSBBuf.push_back(static_cast<char>(ch));
+            }
+            break;
+
+        case InOtherSBIAC:
+            if (ch == T_SE) {
+                // End of non-GMCP subneg — pass through or discard
+                if (!stripTelnet) {
+                    regular.push_back(static_cast<char>(T_IAC));
+                    regular.push_back(static_cast<char>(T_SB));
+                    regular.append(otherSBBuf);
+                    regular.push_back(static_cast<char>(T_IAC));
+                    regular.push_back(static_cast<char>(T_SE));
+                }
+                state = Normal;
+            } else if (ch == T_IAC) {
+                otherSBBuf.push_back(static_cast<char>(T_IAC));  // escaped IAC
+                state = InOtherSB;
+            } else {
+                // Unexpected byte after IAC inside subneg
+                otherSBBuf.push_back(static_cast<char>(T_IAC));
+                otherSBBuf.push_back(static_cast<char>(ch));
+                state = InOtherSB;
             }
             break;
 
@@ -1867,11 +1906,12 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
     size_t linkIdx = 0;
     if (!findByBackDoor(bdHandle, session, link, linkIdx)) return;
 
-    // Split GMCP sub-negotiations from regular data
+    // Split GMCP sub-negotiations from regular data.
+    // Strip all telnet sequences — back-door data should be clean text.
     std::string regular;
     std::vector<GmcpMessage> gmcpMsgs;
     bool sawWillGmcp = false, sawDoGmcp = false;
-    splitGmcp(data, len, regular, gmcpMsgs, sawWillGmcp, sawDoGmcp);
+    splitGmcp(data, len, regular, gmcpMsgs, sawWillGmcp, sawDoGmcp, true);
 
     // Track GMCP capability on the back-door link
     if (sawWillGmcp || sawDoGmcp) {
