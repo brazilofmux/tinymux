@@ -29,6 +29,7 @@ void app_on_disconnect(App& app, const std::string& world_name) {
 
 void app_receive_line(App& app, IConnection* conn, const std::string& world_name,
                       const std::string& line) {
+    app.terminal.clear_partial_line(world_name);
     conn->add_to_scrollback(line);
 
     // Check triggers
@@ -52,6 +53,41 @@ void app_receive_line(App& app, IConnection* conn, const std::string& world_name
     if (app.fg != conn) {
         app.active_worlds.insert(world_name);
     }
+}
+
+void app_receive_partial_line(App& app, IConnection* conn, const std::string& world_name,
+                              const std::string& line) {
+    app.terminal.set_partial_line(world_name, line);
+    if (app.fg != conn) {
+        app.active_worlds.insert(world_name);
+    }
+}
+
+void app_clear_partial_line(App& app, const std::string& world_name) {
+    app.terminal.clear_partial_line(world_name);
+}
+
+void app_receive_hydra_chunk(App& app, IConnection* conn, const std::string& world_name,
+                             const std::string& text, bool is_stream_text) {
+    if (!is_stream_text) {
+        app_receive_line(app, conn, world_name, text);
+        return;
+    }
+
+    auto& buffer = app.hydra_line_buffers[world_name];
+    buffer += text;
+
+    size_t nl = 0;
+    while ((nl = buffer.find('\n')) != std::string::npos) {
+        std::string line = buffer.substr(0, nl);
+        buffer.erase(0, nl + 1);
+        if (!line.empty() && line.back() == '\r') {
+            line.pop_back();
+        }
+        app_receive_line(app, conn, world_name, line);
+    }
+
+    app_receive_partial_line(app, conn, world_name, buffer);
 }
 
 void app_rerender_foreground(App& app) {

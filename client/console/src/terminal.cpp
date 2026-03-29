@@ -254,10 +254,33 @@ void Terminal::print_line(const std::string& line) {
 void Terminal::print_line_to(const std::string& context, const std::string& line) {
     auto& screen = output_screens_[context];
     screen.lines.push_back(line);
+    screen.partial_line.clear();
     while (screen.lines.size() > MAX_SCROLLBACK) {
         screen.lines.pop_front();
     }
     if (context == output_key_ && screen.scroll_offset == 0) {
+        redraw_output();
+    }
+}
+
+void Terminal::set_partial_line(const std::string& context, const std::string& line) {
+    auto& screen = output_screens_[context];
+    screen.partial_line = line;
+    if (context == output_key_ && screen.scroll_offset == 0) {
+        redraw_output();
+    }
+}
+
+void Terminal::clear_partial_line(const std::string& context) {
+    auto it = output_screens_.find(context);
+    if (it == output_screens_.end()) {
+        return;
+    }
+    if (it->second.partial_line.empty()) {
+        return;
+    }
+    it->second.partial_line.clear();
+    if (context == output_key_ && it->second.scroll_offset == 0) {
         redraw_output();
     }
 }
@@ -383,16 +406,26 @@ void Terminal::write_at(int row, int col, const std::string& text, WORD attr) {
 void Terminal::redraw_output() {
     auto& screen = current_output();
     int nlines = output_rows();
+    bool show_partial = screen.scroll_offset == 0 && !screen.partial_line.empty();
+    int committed_rows = nlines - (show_partial ? 1 : 0);
+    if (committed_rows < 0) committed_rows = 0;
     int total = (int)screen.lines.size();
-    int start = total - nlines - screen.scroll_offset;
+    int start = total - committed_rows - screen.scroll_offset;
     if (start < 0) start = 0;
 
-    for (int i = 0; i < nlines; i++) {
+    for (int i = 0; i < committed_rows; i++) {
         clear_row(i);
         int idx = start + i;
         if (idx >= 0 && idx < total) {
             write_at(i, 0, render_line(screen.lines[idx]));
         }
+    }
+    for (int i = committed_rows; i < nlines; i++) {
+        clear_row(i);
+    }
+
+    if (show_partial && committed_rows < nlines) {
+        write_at(committed_rows, 0, render_line(screen.partial_line));
     }
 
     // Restore cursor to input line

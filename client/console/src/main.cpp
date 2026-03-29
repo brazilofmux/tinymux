@@ -22,7 +22,10 @@ static void update_status_bar(App& app) {
     if (app.fg) {
         status = app.fg->world_name();
         if (app.fg->uses_ssl()) status += " [ssl]";
-        if (!app.fg->is_connected()) {
+        auto* hydra = dynamic_cast<HydraConnection*>(app.fg);
+        if (hydra && hydra->is_reconnecting()) {
+            status += "  reconnecting";
+        } else if (!app.fg->is_connected()) {
             status += " (disconnected)";
         } else {
             int idle = app.fg->idle_secs();
@@ -78,6 +81,9 @@ static void remove_connection(App& app, const std::string& name, const char* rea
         if (app.fg == it->second.get()) app.fg = nullptr;
         app.connections.erase(it);
     }
+    app.hydra_line_buffers.erase(name);
+    app.active_worlds.erase(name);
+    app_clear_partial_line(app, name);
     if (!app.fg && !app.connections.empty()) {
         app.fg = app.connections.begin()->second.get();
         app.terminal.set_output_context(app.fg->world_name());
@@ -171,11 +177,12 @@ int main(int argc, char* argv[]) {
             for (auto& [name, conn] : app.connections) {
                 auto* hydra = dynamic_cast<HydraConnection*>(conn.get());
                 if (!hydra) continue;
-                auto lines = hydra->drain_output();
-                for (auto& line : lines) {
-                    app_receive_line(app, hydra, name, line);
+                auto chunks = hydra->drain_output_chunks();
+                for (auto& chunk : chunks) {
+                    app_receive_hydra_chunk(app, hydra, name, chunk.text,
+                                            chunk.is_stream_text);
                 }
-                if (!hydra->is_connected()) {
+                if (!hydra->is_connected() && !hydra->is_reconnecting()) {
                     to_remove.push_back(name);
                 }
             }
@@ -216,7 +223,9 @@ int main(int argc, char* argv[]) {
                 if (it == app.connections.end()) continue;
                 std::string prompt = it->second->check_prompt(500);
                 if (!prompt.empty()) {
-                    app_receive_line(app, it->second.get(), name, prompt);
+                    app_receive_partial_line(app, it->second.get(), name, prompt);
+                } else if (!it->second->has_partial_line()) {
+                    app_clear_partial_line(app, name);
                 }
             }
         }

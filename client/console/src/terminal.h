@@ -60,6 +60,8 @@ public:
     // Output
     void print_line(const std::string& line);
     void print_line_to(const std::string& context, const std::string& line);
+    void set_partial_line(const std::string& context, const std::string& line);
+    void clear_partial_line(const std::string& context);
     void print_system(const std::string& msg);
 
     // Status bar
@@ -123,6 +125,7 @@ private:
     // Output scrollback per context
     struct OutputScreen {
         std::deque<std::string> lines;
+        std::string partial_line;
         int scroll_offset = 0;
     };
     std::unordered_map<std::string, OutputScreen> output_screens_;

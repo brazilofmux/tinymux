@@ -29,6 +29,7 @@ struct App {
     HookDB                                         hooks;
     SpawnDB                                        spawns;
     std::unordered_map<std::string, SpawnLines>    spawn_lines;
+    std::unordered_map<std::string, std::string>   hydra_line_buffers;
     std::unordered_map<std::string, std::string>   vars;
     std::unordered_set<std::string>                active_worlds;
     HANDLE                                         iocp = INVALID_HANDLE_VALUE;
@@ -38,6 +39,11 @@ struct App {
 bool app_send_line(App& app, IConnection* conn, const std::string& line);
 void app_receive_line(App& app, IConnection* conn, const std::string& world_name,
                       const std::string& line);
+void app_receive_hydra_chunk(App& app, IConnection* conn, const std::string& world_name,
+                             const std::string& text, bool is_stream_text);
+void app_receive_partial_line(App& app, IConnection* conn, const std::string& world_name,
+                              const std::string& line);
+void app_clear_partial_line(App& app, const std::string& world_name);
 void app_on_connect(App& app, IConnection* conn, const std::string& world_name);
 void app_on_disconnect(App& app, const std::string& world_name);
 void app_rerender_foreground(App& app);
