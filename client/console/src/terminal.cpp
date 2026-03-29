@@ -290,6 +290,9 @@ void Terminal::print_system(const std::string& msg) {
 }
 
 void Terminal::set_status(const std::string& text) {
+    if (status_text_ == text) {
+        return;
+    }
     status_text_ = text;
     redraw_status();
 }
