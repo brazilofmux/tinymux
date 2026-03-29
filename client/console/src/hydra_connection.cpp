@@ -297,8 +297,10 @@ void HydraConnection::fetchScrollBack() {
         if (status.ok() && resp.lines_size() > 0) {
             pushOutput("-- scroll-back (" + std::to_string(resp.lines_size()) + " lines) --");
             for (int i = 0; i < resp.lines_size(); i++) {
-                pushOutput(resp.lines(i).text());
+                std::lock_guard<std::mutex> lock(outputMutex_);
+                outputQueue_.push(OutputChunk{resp.lines(i).text(), true});
             }
+            signalOutput();
             pushOutput("-- end scroll-back --");
         }
     } catch (...) {
@@ -319,8 +321,12 @@ void HydraConnection::attemptReconnect() {
     connected_.store(false);
 
     for (int attempt = 1; attempt <= MAX_RECONNECT_ATTEMPTS; attempt++) {
-        std::this_thread::sleep_for(
-            std::chrono::seconds(RECONNECT_DELAY_SECS));
+        // Interruptible sleep — check connected_ every 100ms so
+        // disconnect() can unblock us promptly.
+        for (int w = 0; w < RECONNECT_DELAY_SECS * 10; w++) {
+            if (!connected_.load() && !reconnecting_.load()) return;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
 
         if (!grpc_ || !grpc_->stub || sessionId_.empty()) break;
 
