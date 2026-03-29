@@ -639,18 +639,35 @@ LRESULT CMainFrame::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         for (int i = 0; i < (int)tab_states.size(); i++) {
             auto* hydra = dynamic_cast<HydraConnection*>(tab_states[i]->conn.get());
             if (!hydra) continue;
-            auto lines = hydra->drain_output();
-            for (auto& line : lines) {
-                hydra->add_to_scrollback(line);
-                std::string display = line;
-                TriggerResult tr = CheckTriggers(display);
-                if (!tr.gagged) {
-                    tab_states[i]->buffer.append(display);
-                    auto matched = spawns.match(display);
-                    for (auto& path : matched) {
-                        auto& sl = spawn_lines[tab_states[i]->name][path];
-                        sl.push_back(display);
-                        while (sl.size() > 20000) sl.pop_front();
+            auto chunks = hydra->drain_output();
+            for (auto& chunk : chunks) {
+                // Game output may contain multiple lines separated by \r\n or \n.
+                // Split into individual lines for the output buffer.
+                size_t pos = 0;
+                while (pos < chunk.size()) {
+                    size_t nl = chunk.find('\n', pos);
+                    std::string display;
+                    if (nl == std::string::npos) {
+                        display = chunk.substr(pos);
+                        pos = chunk.size();
+                    } else {
+                        display = chunk.substr(pos, nl - pos);
+                        pos = nl + 1;
+                    }
+                    // Strip trailing \r
+                    if (!display.empty() && display.back() == '\r') {
+                        display.pop_back();
+                    }
+                    hydra->add_to_scrollback(display);
+                    TriggerResult tr = CheckTriggers(display);
+                    if (!tr.gagged) {
+                        tab_states[i]->buffer.append(display);
+                        auto matched = spawns.match(display);
+                        for (auto& path : matched) {
+                            auto& sl = spawn_lines[tab_states[i]->name][path];
+                            sl.push_back(display);
+                            while (sl.size() > 20000) sl.pop_front();
+                        }
                     }
                 }
             }
