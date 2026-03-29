@@ -561,11 +561,11 @@ void SessionManager::handleFrontDoorPlainData(FrontDoorState& fd,
     // Split GMCP sub-negotiations from regular data
     std::string regular;
     std::vector<TelnetGmcpMessage> gmcpMsgs;
-    bool sawWillGmcp = false, sawDoGmcp = false;
-    splitTelnetStream(data, len, fd.telnetState, regular, gmcpMsgs, sawWillGmcp, sawDoGmcp);
+    TelnetSignals signals;
+    splitTelnetStream(data, len, fd.telnetState, regular, gmcpMsgs, signals);
 
     // Track client GMCP capability
-    if (sawWillGmcp || sawDoGmcp) {
+    if (signals.sawWillGmcp || signals.sawDoGmcp) {
         fd.gmcpEnabled = true;
     }
 
@@ -1776,12 +1776,23 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
     // Strip all telnet sequences — back-door data should be clean text.
     std::string regular;
     std::vector<TelnetGmcpMessage> gmcpMsgs;
-    bool sawWillGmcp = false, sawDoGmcp = false;
-    splitTelnetStream(data, len, link->telnetState, regular, gmcpMsgs, sawWillGmcp, sawDoGmcp, true);
+    TelnetSignals signals;
+    splitTelnetStream(data, len, link->telnetState, regular, gmcpMsgs, signals, true);
 
     // Track GMCP capability on the back-door link
-    if (sawWillGmcp || sawDoGmcp) {
+    if (signals.sawWillGmcp || signals.sawDoGmcp) {
         link->gmcpEnabled = true;
+    }
+
+    if (signals.sawDoTtype) {
+        safeWrite(link->handle,
+                  buildTelnetCommandFrame(telnet::WILL, telnet::TTYPE));
+    }
+    if (signals.sawTtypeSend) {
+        safeWrite(link->handle,
+                  buildTtypeIsFrame(session->terminalType.empty()
+                      ? std::string("Hydra")
+                      : session->terminalType));
     }
 
     // Forward GMCP messages to all GMCP-enabled front-doors

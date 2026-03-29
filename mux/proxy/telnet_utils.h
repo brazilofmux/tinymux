@@ -15,6 +15,9 @@ namespace telnet {
     constexpr uint8_t DONT = 254;
     constexpr uint8_t GMCP = 201;
     constexpr uint8_t NAWS = 31;
+    constexpr uint8_t TTYPE = 24;
+    constexpr uint8_t TELQUAL_IS = 0;
+    constexpr uint8_t TELQUAL_SEND = 1;
 }
 
 // Escape IAC bytes in a telnet sub-negotiation payload.
@@ -66,6 +69,29 @@ inline std::string buildNawsFrame(uint16_t width, uint16_t height) {
     nawsAppendByte(frame, static_cast<uint8_t>(width & 0xFF));
     nawsAppendByte(frame, static_cast<uint8_t>((height >> 8) & 0xFF));
     nawsAppendByte(frame, static_cast<uint8_t>(height & 0xFF));
+    frame.push_back(static_cast<char>(telnet::IAC));
+    frame.push_back(static_cast<char>(telnet::SE));
+    return frame;
+}
+
+inline std::string buildTelnetCommandFrame(uint8_t command, uint8_t option) {
+    std::string frame;
+    frame.reserve(3);
+    frame.push_back(static_cast<char>(telnet::IAC));
+    frame.push_back(static_cast<char>(command));
+    frame.push_back(static_cast<char>(option));
+    return frame;
+}
+
+inline std::string buildTtypeIsFrame(const std::string& terminalType) {
+    std::string escaped = telnetEscapeIAC(terminalType);
+    std::string frame;
+    frame.reserve(escaped.size() + 6);
+    frame.push_back(static_cast<char>(telnet::IAC));
+    frame.push_back(static_cast<char>(telnet::SB));
+    frame.push_back(static_cast<char>(telnet::TTYPE));
+    frame.push_back(static_cast<char>(telnet::TELQUAL_IS));
+    frame.append(escaped);
     frame.push_back(static_cast<char>(telnet::IAC));
     frame.push_back(static_cast<char>(telnet::SE));
     return frame;

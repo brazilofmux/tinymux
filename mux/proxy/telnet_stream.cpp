@@ -14,10 +14,9 @@ void splitTelnetStream(const char* data, size_t len,
                        TelnetParseState& parseState,
                        std::string& regular,
                        std::vector<TelnetGmcpMessage>& gmcp,
-                       bool& sawWillGmcp, bool& sawDoGmcp,
+                       TelnetSignals& signals,
                        bool stripTelnet) {
-    sawWillGmcp = false;
-    sawDoGmcp = false;
+    signals = {};
     regular.reserve(regular.size() + len);
 
     for (size_t i = 0; i < len; i++) {
@@ -50,8 +49,11 @@ void splitTelnetStream(const char* data, size_t len,
 
         case TelnetParseState::SawCmd:
             if (ch == T_GMCP) {
-                if (parseState.cmdByte == T_WILL) sawWillGmcp = true;
-                if (parseState.cmdByte == T_DO)   sawDoGmcp = true;
+                if (parseState.cmdByte == T_WILL) signals.sawWillGmcp = true;
+                if (parseState.cmdByte == T_DO)   signals.sawDoGmcp = true;
+            }
+            if (ch == telnet::TTYPE && parseState.cmdByte == T_DO) {
+                signals.sawDoTtype = true;
             }
             if (!stripTelnet) {
                 regular.push_back(static_cast<char>(T_IAC));
@@ -82,6 +84,12 @@ void splitTelnetStream(const char* data, size_t len,
 
         case TelnetParseState::InOtherSBIAC:
             if (ch == T_SE) {
+                if (!parseState.otherSBBuf.empty() &&
+                    static_cast<unsigned char>(parseState.otherSBBuf[0]) == telnet::TTYPE &&
+                    parseState.otherSBBuf.size() >= 2 &&
+                    static_cast<unsigned char>(parseState.otherSBBuf[1]) == telnet::TELQUAL_SEND) {
+                    signals.sawTtypeSend = true;
+                }
                 if (!stripTelnet) {
                     regular.push_back(static_cast<char>(T_IAC));
                     regular.push_back(static_cast<char>(T_SB));

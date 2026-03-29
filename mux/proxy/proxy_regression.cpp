@@ -41,21 +41,18 @@ void testSplitGmcpAcrossReads() {
     TelnetParseState state;
     std::string regular;
     std::vector<TelnetGmcpMessage> gmcp;
-    bool sawWill = false;
-    bool sawDo = false;
+    TelnetSignals signals;
 
     const std::string chunk1 = "look\r\n" + bytes({0xff, 0xfa, 0xc9}) + "Core.Hello ";
     const std::string chunk2 = "{}" + bytes({0xff, 0xf0});
 
-    splitTelnetStream(chunk1.data(), chunk1.size(), state, regular, gmcp,
-                      sawWill, sawDo);
+    splitTelnetStream(chunk1.data(), chunk1.size(), state, regular, gmcp, signals);
     expect(regular == "look\r\n", "chunk1 regular text mismatch");
     expect(gmcp.empty(), "chunk1 should not complete GMCP");
     expect(state.state == TelnetParseState::InGmcpSB,
            "chunk1 should leave parser inside GMCP subnegotiation");
 
-    splitTelnetStream(chunk2.data(), chunk2.size(), state, regular, gmcp,
-                      sawWill, sawDo);
+    splitTelnetStream(chunk2.data(), chunk2.size(), state, regular, gmcp, signals);
     expect(regular == "look\r\n", "chunk2 should not alter regular text");
     expect(gmcp.size() == 1, "chunk2 should complete one GMCP message");
     expect(gmcp[0].payload == "Core.Hello {}",
@@ -68,21 +65,18 @@ void testSplitTelnetNegotiationAcrossReads() {
     TelnetParseState state;
     std::string regular;
     std::vector<TelnetGmcpMessage> gmcp;
-    bool sawWill = false;
-    bool sawDo = false;
+    TelnetSignals signals;
 
     const std::string chunk1 = bytes({0xff, 0xfb});
     const std::string chunk2 = bytes({0xc9});
 
-    splitTelnetStream(chunk1.data(), chunk1.size(), state, regular, gmcp,
-                      sawWill, sawDo);
-    expect(!sawWill, "partial WILL GMCP should not fire early");
+    splitTelnetStream(chunk1.data(), chunk1.size(), state, regular, gmcp, signals);
+    expect(!signals.sawWillGmcp, "partial WILL GMCP should not fire early");
     expect(state.state == TelnetParseState::SawCmd,
            "parser should remember partial WILL command");
 
-    splitTelnetStream(chunk2.data(), chunk2.size(), state, regular, gmcp,
-                      sawWill, sawDo);
-    expect(sawWill, "WILL GMCP should be detected across reads");
+    splitTelnetStream(chunk2.data(), chunk2.size(), state, regular, gmcp, signals);
+    expect(signals.sawWillGmcp, "WILL GMCP should be detected across reads");
     expect(state.state == TelnetParseState::Normal,
            "parser should return to Normal after option byte");
 }
@@ -91,19 +85,46 @@ void testStripNonGmcpSubnegotiationAcrossReads() {
     TelnetParseState state;
     std::string regular;
     std::vector<TelnetGmcpMessage> gmcp;
-    bool sawWill = false;
-    bool sawDo = false;
+    TelnetSignals signals;
 
     const std::string chunk1 = "A" + bytes({0xff, 0xfa, 0x1f});
     const std::string chunk2 = bytes({0x00, 0x50, 0x00, 0x28, 0xff, 0xf0}) + "B";
 
-    splitTelnetStream(chunk1.data(), chunk1.size(), state, regular, gmcp,
-                      sawWill, sawDo, true);
-    splitTelnetStream(chunk2.data(), chunk2.size(), state, regular, gmcp,
-                      sawWill, sawDo, true);
+    splitTelnetStream(chunk1.data(), chunk1.size(), state, regular, gmcp, signals, true);
+    splitTelnetStream(chunk2.data(), chunk2.size(), state, regular, gmcp, signals, true);
 
     expect(regular == "AB", "stripTelnet should remove split NAWS subnegotiation");
     expect(gmcp.empty(), "NAWS test should not create GMCP messages");
+}
+
+void testSplitTtypeSignals() {
+    TelnetParseState state;
+    std::string regular;
+    std::vector<TelnetGmcpMessage> gmcp;
+    TelnetSignals signals;
+
+    splitTelnetStream(bytes({0xff, 0xfd}).data(), 2, state, regular, gmcp, signals, true);
+    expect(!signals.sawDoTtype, "partial DO TTYPE should not fire early");
+    expect(state.state == TelnetParseState::SawCmd,
+           "partial DO TTYPE should leave parser in SawCmd");
+
+    std::string ttypeOpt = bytes({0x18});
+    splitTelnetStream(ttypeOpt.data(), ttypeOpt.size(), state, regular, gmcp, signals, true);
+    expect(signals.sawDoTtype, "DO TTYPE should be detected across reads");
+
+    const std::string sendChunk1 = bytes({0xff, 0xfa, 0x18, 0x01});
+    const std::string sendChunk2 = bytes({0xff, 0xf0});
+    splitTelnetStream(sendChunk1.data(), sendChunk1.size(), state, regular, gmcp, signals, true);
+    expect(!signals.sawTtypeSend, "partial TTYPE SEND should not fire early");
+    splitTelnetStream(sendChunk2.data(), sendChunk2.size(), state, regular, gmcp, signals, true);
+    expect(signals.sawTtypeSend, "TTYPE SEND should be detected across reads");
+
+    expect(buildTelnetCommandFrame(telnet::WILL, telnet::TTYPE)
+               == bytes({0xff, 0xfb, 0x18}),
+           "WILL TTYPE frame encoding mismatch");
+    expect(buildTtypeIsFrame("xterm-256color")
+               == bytes({0xff, 0xfa, 0x18, 0x00}) + "xterm-256color" + bytes({0xff, 0xf0}),
+           "TTYPE IS frame encoding mismatch");
 }
 
 void testAsciiBridgeConversion() {
@@ -152,6 +173,7 @@ int main() {
     testSplitGmcpAcrossReads();
     testSplitTelnetNegotiationAcrossReads();
     testStripNonGmcpSubnegotiationAcrossReads();
+    testSplitTtypeSignals();
     testAsciiBridgeConversion();
     testWebSocketMaskEnforcement();
     std::cout << "proxy_regression: ok\n";

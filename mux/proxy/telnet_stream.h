@@ -26,11 +26,18 @@ struct TelnetGmcpMessage {
     std::string payload;
 };
 
+struct TelnetSignals {
+    bool sawWillGmcp{false};
+    bool sawDoGmcp{false};
+    bool sawDoTtype{false};
+    bool sawTtypeSend{false};
+};
+
 void splitTelnetStream(const char* data, size_t len,
                        TelnetParseState& parseState,
                        std::string& regular,
                        std::vector<TelnetGmcpMessage>& gmcp,
-                       bool& sawWillGmcp, bool& sawDoGmcp,
+                       TelnetSignals& signals,
                        bool stripTelnet = false);
 
 #endif // HYDRA_TELNET_STREAM_H
