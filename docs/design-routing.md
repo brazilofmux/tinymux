@@ -332,6 +332,7 @@ Correctness Contract section.
 - `#-1 NOT NAVIGABLE` -- source or destination is not in the routing graph
 - `#-1 EXIT IMPASSABLE` -- Tier 2 only; see Failure Behavior below
 - `#-1 PERMISSION DENIED` -- `rebuild` used by non-wizard caller
+- `#-1 RATE LIMITED` -- uncached BFS throttled (one per executor per second)
 - `#-2` -- invalid arguments
 
 **Failure behavior for `locked` mode**:
@@ -450,11 +451,15 @@ best-effort hints, not durable state.
   gateway edges may exist between the same pair of zones (different
   border crossings, one-way links, exits into different subregions).
   The meta-table runs Dijkstra over gateway edges to find the best
-  border crossing for a given destination zone. Edge weight is the
-  intra-zone hop count from `gate_room` to the zone's entry point
-  (i.e., the local-table distance to reach the gateway), so the
-  meta-table prefers short cuts through small zones over long detours
-  through large ones.
+  border crossing for a given destination zone. Edge weight is a
+  **heuristic estimate**: the intra-zone hop count from `gate_room`
+  to the zone's most-connected room (or zone centroid). This is not
+  exact — the true cost depends on the caller's current room within
+  the zone, which varies per query. The meta-table selects a
+  reasonable gateway; the local-table then routes precisely to it.
+  For zones with multiple gateways to the same neighbor, this may
+  not always pick the closest one to the caller, but it avoids the
+  cost of per-room meta-table entries.
   Routing logic:
   - Same zone: use the local table directly.
   - Different zones: consult the meta-table to find the specific
@@ -477,7 +482,7 @@ best-effort hints, not durable state.
   locks (via `could_doit()` at each edge), not Tier 1 — it just isn't
   cached. Expensive but correct, and rare by design. Rate-limited to
   one uncached BFS per executor per second to prevent abuse; excess
-  calls return `#-1 NO ROUTE` rather than blocking.
+  calls return `#-1 RATE LIMITED` rather than blocking.
 - `route()` with `locked` option.
 - `#-1 EXIT IMPASSABLE` return when validation fails.
 
