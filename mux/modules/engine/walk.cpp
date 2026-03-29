@@ -53,6 +53,7 @@ static const int WALK_INTERVAL_SECS = 1;
 static void dispatch_WalkEntry(void *pArg, int iUnused);
 static void walk_schedule(WALKTAB *wp);
 static void walk_remove(WALKTAB *wp);
+static bool walk_next_hop_blocked(const WALKTAB *wp, dbref src, dbref target);
 
 // ---------------------------------------------------------------------------
 // Initialization / shutdown.
@@ -126,6 +127,19 @@ static void walk_remove(WALKTAB *wp)
         pp = &(*pp)->next;
     }
     delete wp;
+}
+
+// Distinguish "no route exists" from "a route exists, but the locked
+// next hop is currently impassable for this mover".
+//
+static bool walk_next_hop_blocked(const WALKTAB *wp, dbref src, dbref target)
+{
+    if (!(wp->options & ROUTE_OPT_LOCKED))
+    {
+        return false;
+    }
+
+    return route_next_exit(wp->npc, src, target, 0) != NOTHING;
 }
 
 // ---------------------------------------------------------------------------
@@ -212,23 +226,38 @@ static void dispatch_WalkEntry(void *pArg, int iUnused)
     dbref next_exit = route_next_exit(wp->npc, src, target, wp->options);
     if (next_exit == NOTHING)
     {
+        bool blocked = walk_next_hop_blocked(wp, src, target);
+
         if (!wp->quiet && Good_obj(wp->executor))
         {
-            notify(wp->executor,
-                tprintf(T("%s can\xE2\x80\x99t find a route from here."),
-                        Moniker(wp->npc)));
+            if (blocked)
+            {
+                notify(wp->executor,
+                    tprintf(T("%s was blocked at an exit."),
+                            Moniker(wp->npc)));
+            }
+            else
+            {
+                notify(wp->executor,
+                    tprintf(T("%s can\xE2\x80\x99t find a route from here."),
+                            Moniker(wp->npc)));
+            }
         }
 
         if (wp->destination != NOTHING)
         {
-            // @walk: no route, stop.
+            // @walk: stop on either no route or a blocked next hop.
             walk_remove(wp);
         }
         else
         {
-            // @patrol: skip to next waypoint and try again next tick.
-            wp->current_wp = (wp->current_wp + 1)
-                           % static_cast<int>(wp->waypoints.size());
+            // @patrol: a blocked exit may clear later, so retry the same
+            // waypoint. Only skip when no route exists at all.
+            if (!blocked)
+            {
+                wp->current_wp = (wp->current_wp + 1)
+                               % static_cast<int>(wp->waypoints.size());
+            }
             walk_schedule(wp);
         }
         return;
@@ -325,11 +354,11 @@ void do_walk(dbref executor, dbref caller, dbref enactor, int eval,
         return;
     }
 
-    // Validate the NPC is a thing or player.
+    // Validate the NPC is a thing.
     //
-    if (!isThing(npc) && !isPlayer(npc))
+    if (!isThing(npc))
     {
-        notify_quiet(executor, T("Only things and players can walk."));
+        notify_quiet(executor, T("Only things can walk."));
         return;
     }
 
@@ -414,9 +443,9 @@ void do_patrol(dbref executor, dbref caller, dbref enactor, int eval,
         return;
     }
 
-    if (!isThing(npc) && !isPlayer(npc))
+    if (!isThing(npc))
     {
-        notify_quiet(executor, T("Only things and players can patrol."));
+        notify_quiet(executor, T("Only things can patrol."));
         return;
     }
 

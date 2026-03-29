@@ -507,6 +507,8 @@ adding the minimum player-facing safety check.
   overhead.
 - Server-side `@patrol <npc>=<room1> <room2> ...` -- continuous loop
   movement between waypoints.
+- These are intended for NPC objects (things/robots), not player
+  characters.
 - These leverage the routing tables natively, avoiding the cost of
   repeated `route()` softcode calls per tick.
 
