@@ -10,7 +10,6 @@ struct ContentView: View {
 
     // Subsystems
     let worldRepo = WorldRepository()
-    let worldRepo = WorldRepository()
     let triggerRepo = TriggerRepository()
     let hookRepo = HookRepository()
     let settings = AppSettings()
@@ -38,8 +37,8 @@ struct ContentView: View {
             state.appendLine(0, "Tap Connect or Worlds to get started.")
             triggerEngine.load(triggerRepo.load())
             timerEngine.onFire = { _, command in
-                if let conn = state.activeTab?.connection, conn.connected {
-                    conn.sendLine(command)
+                if let tab = state.activeTab, tab.isConnected {
+                    tab.sendLine(command)
                 }
             }
             inputFocused = true
@@ -305,6 +304,12 @@ struct ContentView: View {
             if conn.useSsl { s += " [ssl]" }
             if !conn.connected { s += " (disconnected)" }
         }
+        #if canImport(GRPC)
+        else if let hconn = tab.hydraConnection {
+            if hconn.useTls { s += " [ssl]" }
+            if !hconn.connected { s += " (disconnected)" }
+        }
+        #endif
         if state.logActive { s += " [log]" }
         return s
     }
@@ -317,15 +322,16 @@ struct ContentView: View {
         if tab?.mcpParser.processLine(line) == true { return }
 
         let context = ConditionContext(
-            isConnected: tab?.connection?.connected ?? false,
-            idleSeconds: 0
+            isConnected: tab?.isConnected ?? false,
+            idleSeconds: tab?.idleSeconds ?? 0
         )
         let result = triggerEngine.check(AnsiParser.stripAnsi(line), context: context)
+        tab?.touchActivity()
         if result.gagged { return }
         let display = result.displayLine ?? line
         state.appendLine(tabIndex, display)
-        if let conn = state.tabs[safe: tabIndex]?.connection, conn.connected {
-            for cmd in result.commands { conn.sendLine(cmd) }
+        if let activeTab = state.tabs[safe: tabIndex], activeTab.isConnected {
+            for cmd in result.commands { activeTab.sendLine(cmd) }
         }
         if sessionLogger.active && tabIndex == state.activeTabIndex {
             sessionLogger.writeLine(AnsiParser.stripAnsi(line))
@@ -386,9 +392,19 @@ struct ContentView: View {
         let tabIndex = state.tabs.count - 1
         state.activeTabIndex = tabIndex
 
+        let screen = UIScreen.main.bounds
+        let isLandscape = screen.width > screen.height
+        let fontSize = CGFloat(isLandscape ? settings.fontSizeLandscape : settings.fontSize)
+        let charWidth = max(fontSize * 0.6, 1)
+        let lineHeight = max(fontSize * 1.2, 1)
+        let termWidth = max(40, min(200, Int(screen.width / charWidth)))
+        let termHeight = max(10, min(80, Int(screen.height / lineHeight)))
+
         let hconn = HydraConnection(name: name, host: host, port: port,
                                      username: hydraUser, password: hydraPass,
-                                     gameName: hydraGame)
+                                     gameName: hydraGame,
+                                     termWidth: termWidth,
+                                     termHeight: termHeight)
         tab.hydraConnection = hconn
 
         hconn.onLine = { line in processServerLine(tabIndex, line) }

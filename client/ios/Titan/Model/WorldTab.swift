@@ -20,6 +20,7 @@ class WorldTab: Identifiable {
     var activeSpawn: String = ""  // "" = main, otherwise spawn path
     let mcpParser = McpParser()
     let variables = VariableStore()
+    var lastActivityAt = Date()
 
     init(name: String) {
         self.name = name
@@ -39,6 +40,7 @@ class WorldTab: Identifiable {
     }
 
     func sendLine(_ text: String) {
+        touchActivity()
         if let conn = connection, conn.connected {
             conn.sendLine(text)
         }
@@ -54,6 +56,19 @@ class WorldTab: Identifiable {
         #if canImport(GRPC)
         hydraConnection?.disconnect()
         #endif
+    }
+
+    func touchActivity() {
+        lastActivityAt = Date()
+    }
+
+    var idleSeconds: Int {
+        #if canImport(GRPC)
+        if let hconn = hydraConnection, hconn.connected {
+            return hconn.idleSeconds
+        }
+        #endif
+        return max(0, Int(Date().timeIntervalSince(lastActivityAt)))
     }
 }
 

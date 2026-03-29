@@ -18,6 +18,8 @@ class HydraConnection: ObservableObject {
     private let username: String
     private let password: String
     private let gameName: String
+    private let termWidth: Int
+    private let termHeight: Int
 
     @Published var connected = false
     private var intentionalDisconnect = false
@@ -27,6 +29,8 @@ class HydraConnection: ObservableObject {
     private var stub: Hydra_HydraServiceAsyncClient?
     private var streamTask: Task<Void, Never>?
     private var inputContinuation: AsyncStream<Hydra_ClientMessage>.Continuation?
+    private var outputBuffer = ""
+    private(set) var lastActivityAt = Date()
 
     private static let maxReconnectAttempts = 5
     private static let reconnectDelay: UInt64 = 3_000_000_000 // 3 seconds
@@ -40,7 +44,9 @@ class HydraConnection: ObservableObject {
 
     init(name: String, host: String, port: Int,
          username: String, password: String, gameName: String,
-         useTls: Bool = true) {
+         useTls: Bool = true,
+         termWidth: Int = 80,
+         termHeight: Int = 24) {
         self.name = name
         self.host = host
         self.port = port
@@ -48,6 +54,12 @@ class HydraConnection: ObservableObject {
         self.password = password
         self.gameName = gameName
         self.useTls = useTls
+        self.termWidth = termWidth
+        self.termHeight = termHeight
+    }
+
+    var idleSeconds: Int {
+        max(0, Int(Date().timeIntervalSince(lastActivityAt)))
     }
 
     func connect() {
@@ -71,6 +83,7 @@ class HydraConnection: ObservableObject {
                 stub = Hydra_HydraServiceAsyncClient(channel: conn)
 
                 guard let stub = stub else { return }
+                outputBuffer.removeAll(keepingCapacity: true)
 
                 // Authenticate
                 var authReq = Hydra_AuthRequest()
@@ -100,6 +113,7 @@ class HydraConnection: ObservableObject {
                 }
 
                 connected = true
+                markActivity()
                 pushLine("[Hydra] Session established (\(String(sessionId.prefix(8)))...)")
                 onConnect?()
 
@@ -131,6 +145,7 @@ class HydraConnection: ObservableObject {
         streamTask?.cancel()
         try? channel?.close().wait()
         channel = nil
+        outputBuffer.removeAll(keepingCapacity: true)
         try? eventLoopGroup?.syncShutdownGracefully()
         eventLoopGroup = nil
     }
@@ -140,6 +155,7 @@ class HydraConnection: ObservableObject {
         var msg = Hydra_ClientMessage()
         msg.inputLine = text
         inputContinuation?.yield(msg)
+        markActivity()
     }
 
     // MARK: - GameSession Stream
@@ -153,8 +169,8 @@ class HydraConnection: ObservableObject {
         // Send initial preferences as first message on the stream.
         var prefs = Hydra_SetPreferences()
         prefs.colorFormat = .ansiTruecolor
-        prefs.terminalWidth = 80
-        prefs.terminalHeight = 24
+        prefs.terminalWidth = UInt32(termWidth)
+        prefs.terminalHeight = UInt32(termHeight)
         prefs.terminalType = "Titan-iOS"
         var prefsMsg = Hydra_ClientMessage()
         prefsMsg.preferences = prefs
@@ -197,6 +213,8 @@ class HydraConnection: ObservableObject {
             guard !intentionalDisconnect else { return }
 
             connected = true
+            outputBuffer.removeAll(keepingCapacity: true)
+            markActivity()
             await runGameSession(stub: stub)
 
             if intentionalDisconnect { return }
@@ -209,7 +227,7 @@ class HydraConnection: ObservableObject {
     private func dispatchServerMessage(_ msg: Hydra_ServerMessage) {
         switch msg.payload {
         case .gameOutput(let output):
-            pushLine(output.text)
+            dispatchGameOutput(output)
         case .gmcp(let gmcp):
             pushLine("[GMCP \(gmcp.package)] \(gmcp.json)")
         case .notice(let notice):
@@ -220,6 +238,28 @@ class HydraConnection: ObservableObject {
             break
         case .none:
             break
+        }
+    }
+
+    private func dispatchGameOutput(_ output: Hydra_GameOutput) {
+        outputBuffer += output.text
+
+        while let newline = outputBuffer.firstIndex(of: "\n") {
+            var line = String(outputBuffer[..<newline])
+            outputBuffer.removeSubrange(...newline)
+            if line.hasSuffix("\r") {
+                line.removeLast()
+            }
+            pushLine(line)
+        }
+
+        if output.endOfRecord, !outputBuffer.isEmpty {
+            var line = outputBuffer
+            outputBuffer.removeAll(keepingCapacity: true)
+            if line.hasSuffix("\r") {
+                line.removeLast()
+            }
+            pushLine(line)
         }
     }
 
@@ -319,9 +359,14 @@ class HydraConnection: ObservableObject {
     // MARK: - Helpers
 
     private func pushLine(_ text: String) {
+        markActivity()
         scrollback.append(text)
         while scrollback.count > maxScrollback { scrollback.removeFirst() }
         onLine?(text)
+    }
+
+    private func markActivity() {
+        lastActivityAt = Date()
     }
 }
 
