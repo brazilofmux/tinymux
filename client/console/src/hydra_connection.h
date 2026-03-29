@@ -126,6 +126,10 @@ private:
     std::atomic<bool> reconnecting_{false};
     std::thread readerThread_;
 
+    // Shutdown signal — wakes the reconnect loop immediately.
+    std::mutex shutdownMutex_;
+    std::condition_variable shutdownCv_;
+
     // Scrollback
     std::deque<std::string> scrollback_;
     static constexpr size_t MAX_SCROLLBACK = 10000;

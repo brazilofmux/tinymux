@@ -159,6 +159,9 @@ void HydraConnection::disconnect() {
     connected_.store(false);
     reconnecting_.store(false);
 
+    // Wake the reconnect loop if it's waiting.
+    shutdownCv_.notify_all();
+
     // Cancel the gRPC context to unblock the reader thread.
     // The reconnect loop may have replaced sessionCtx, so cancel
     // whatever context currently exists.
@@ -322,11 +325,14 @@ void HydraConnection::attemptReconnect() {
     connected_.store(false);
 
     for (int attempt = 1; attempt <= MAX_RECONNECT_ATTEMPTS; attempt++) {
-        // Interruptible sleep — check connected_ every 100ms so
-        // disconnect() can unblock us promptly.
-        for (int w = 0; w < RECONNECT_DELAY_SECS * 10; w++) {
-            if (!connected_.load() && !reconnecting_.load()) return;
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        // Wait for reconnect delay or until disconnect() signals us.
+        {
+            std::unique_lock<std::mutex> lock(shutdownMutex_);
+            if (shutdownCv_.wait_for(lock,
+                    std::chrono::seconds(RECONNECT_DELAY_SECS),
+                    [this] { return !reconnecting_.load(); })) {
+                return;  // disconnect() woke us — stop reconnecting
+            }
         }
 
         if (!grpc_ || !grpc_->stub || sessionId_.empty()) break;
