@@ -354,10 +354,10 @@ think [attrib_set(test_route_fn/exit_r1q1, [lastcreate(me, e)])]
         v(exit_x12)
       )=
   {
-    @log smoke=TC013: route same-zone X. Succeeded.;
+    @log smoke=TC013: route same-zone X. Succeeded.
   },
   {
-    @log smoke=TC013: route same-zone X. Failed ([route(v(room_x1), v(room_x2))]).;
+    @log smoke=TC013: route same-zone X. Failed ([route(v(room_x1), v(room_x2))]).
   }
 -
 #
@@ -370,10 +370,10 @@ think [attrib_set(test_route_fn/exit_r1q1, [lastcreate(me, e)])]
         v(exit_x12)
       )=
   {
-    @log smoke=TC014: route cross-zone X1 to Y1. Succeeded.;
+    @log smoke=TC014: route cross-zone X1 to Y1. Succeeded.
   },
   {
-    @log smoke=TC014: route cross-zone X1 to Y1. Failed ([route(v(room_x1), v(room_y1))]).;
+    @log smoke=TC014: route cross-zone X1 to Y1. Failed ([route(v(room_x1), v(room_y1))]).
   }
 -
 #
@@ -386,10 +386,10 @@ think [attrib_set(test_route_fn/exit_r1q1, [lastcreate(me, e)])]
         3
       )=
   {
-    @log smoke=TC015: route cross-zone distance. Succeeded.;
+    @log smoke=TC015: route cross-zone distance. Succeeded.
   },
   {
-    @log smoke=TC015: route cross-zone distance. Failed ([route(v(room_x1), v(room_y2), distance)]).;
+    @log smoke=TC015: route cross-zone distance. Failed ([route(v(room_x1), v(room_y2), distance)]).
   }
 -
 #
@@ -401,10 +401,10 @@ think [attrib_set(test_route_fn/exit_r1q1, [lastcreate(me, e)])]
         [v(exit_x12)] [v(exit_x2y1)] [v(exit_y12)]
       )=
   {
-    @log smoke=TC016: route cross-zone path. Succeeded.;
+    @log smoke=TC016: route cross-zone path. Succeeded.
   },
   {
-    @log smoke=TC016: route cross-zone path. Failed ([route(v(room_x1), v(room_y2), path)]).;
+    @log smoke=TC016: route cross-zone path. Failed ([route(v(room_x1), v(room_y2), path)]).
   }
 -
 #
@@ -417,12 +417,10 @@ think [attrib_set(test_route_fn/exit_r1q1, [lastcreate(me, e)])]
         #-1 NO ROUTE
       )=
   {
-    @log smoke=TC017: route no reverse cross-zone. Succeeded.;
-    @trig me/tr.tc018
+    @log smoke=TC017: route no reverse cross-zone. Succeeded.
   },
   {
-    @log smoke=TC017: route no reverse cross-zone. Failed ([route(v(room_y1), v(room_x1))]).;
-    @trig me/tr.tc018
+    @log smoke=TC017: route no reverse cross-zone. Failed ([route(v(room_y1), v(room_x1))]).
   }
 -
 #
@@ -435,12 +433,10 @@ think [attrib_set(test_route_fn/exit_r1q1, [lastcreate(me, e)])]
         v(exit_p12)
       )=
   {
-    @log smoke=TC018: route reachable alternate gateway chain. Succeeded.;
-    @trig me/tr.tc019
+    @log smoke=TC018: route reachable alternate gateway chain. Succeeded.
   },
   {
-    @log smoke=TC018: route reachable alternate gateway chain. Failed ([route(v(room_p1), v(room_q1))]).;
-    @trig me/tr.tc019
+    @log smoke=TC018: route reachable alternate gateway chain. Failed ([route(v(room_p1), v(room_q1))]).
   }
 -
 #
@@ -453,11 +449,59 @@ think [attrib_set(test_route_fn/exit_r1q1, [lastcreate(me, e)])]
         [v(exit_p12)] [v(exit_p2r1)] [v(exit_r1q1)]
       )=
   {
-    @log smoke=TC019: route alternate cross-zone path. Succeeded.;
+    @log smoke=TC019: route alternate cross-zone path. Succeeded.
+  },
+  {
+    @log smoke=TC019: route alternate cross-zone path. Failed ([route(v(room_p1), v(room_q1), path)]).
+  }
+-
+#
+# Test Case #20 - locked mode returns same next-hop as unlocked when the
+#                 exit is passable (wizard executor passes all locks).
+#
+&tr.tc020 test_route_fn=
+  @if strmatch(
+        route(v(room_a), v(room_b), locked),
+        v(exit_ab)
+      )=
+  {
+    @log smoke=TC020: route locked passable exit. Succeeded.
+  },
+  {
+    @log smoke=TC020: route locked passable exit. Failed ([route(v(room_a), v(room_b), locked)]).
+  }
+-
+#
+# Test Case #21 - locked distance returns same count as unlocked for
+#                 passable exits.
+#
+&tr.tc021 test_route_fn=
+  @if strmatch(
+        route(v(room_a), v(room_c), locked distance),
+        2
+      )=
+  {
+    @log smoke=TC021: route locked distance. Succeeded.
+  },
+  {
+    @log smoke=TC021: route locked distance. Failed ([route(v(room_a), v(room_c), locked distance)]).
+  }
+-
+#
+# Test Case #22 - locked path returns same path as unlocked for
+#                 passable exits.
+#
+&tr.tc022 test_route_fn=
+  @if strmatch(
+        route(v(room_a), v(room_c), locked path),
+        [v(exit_ab)] [v(exit_bc)]
+      )=
+  {
+    @log smoke=TC022: route locked path. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC019: route alternate cross-zone path. Failed ([route(v(room_p1), v(room_q1), path)]).;
+    @log smoke=TC022: route locked path. Failed ([route(v(room_a), v(room_c), locked path)]).;
     @trig me/tr.done
   }
 -

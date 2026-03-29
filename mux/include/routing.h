@@ -16,6 +16,7 @@
 constexpr int ROUTE_OPT_DISTANCE = 0x01;  // Return hop count, not exit dbref.
 constexpr int ROUTE_OPT_PATH     = 0x02;  // Return full exit list.
 constexpr int ROUTE_OPT_REBUILD  = 0x04;  // Force table recomputation.
+constexpr int ROUTE_OPT_LOCKED   = 0x08;  // Validate next-hop lock (Tier 2).
 
 // Initialize the routing subsystem.  Called once at startup after the
 // database is fully loaded.

@@ -2985,6 +2985,10 @@ FUNCTION(fun_route)
             {
                 options |= ROUTE_OPT_REBUILD;
             }
+            else if (mux_stricmp(token, T("locked")) == 0)
+            {
+                options |= ROUTE_OPT_LOCKED;
+            }
             else
             {
                 safe_str(T("#-2"), buff, bufc);

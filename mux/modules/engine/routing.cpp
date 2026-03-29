@@ -979,18 +979,30 @@ void route_query(dbref executor, dbref source, dbref destination,
         return;
     }
 
-    // Handle path option.
+    // Resolve the route.  All modes need the full path for locked
+    // validation, distance, or path output.  The default mode uses
+    // only the first hop.
     //
+    std::vector<dbref> path;
+    route_get_path(source, destination, path);
+    if (path.empty())
+    {
+        safe_str(T("#-1 NO ROUTE"), buff, bufc);
+        return;
+    }
+
+    // Locked mode: validate the next-hop exit against the executor's
+    // lock.  Only the first hop is checked at query time.
+    //
+    if (  (options & ROUTE_OPT_LOCKED)
+       && !could_doit(executor, path[0], A_LOCK))
+    {
+        safe_str(T("#-1 EXIT IMPASSABLE"), buff, bufc);
+        return;
+    }
+
     if (options & ROUTE_OPT_PATH)
     {
-        std::vector<dbref> path;
-        route_get_path(source, destination, path);
-        if (path.empty())
-        {
-            safe_str(T("#-1 NO ROUTE"), buff, bufc);
-            return;
-        }
-
         for (size_t i = 0; i < path.size(); i++)
         {
             if (i > 0)
@@ -1002,57 +1014,13 @@ void route_query(dbref executor, dbref source, dbref destination,
         return;
     }
 
-    // Handle distance option.
-    //
     if (options & ROUTE_OPT_DISTANCE)
     {
-        std::vector<dbref> path;
-        route_get_path(source, destination, path);
-        if (path.empty())
-        {
-            safe_str(T("#-1 NO ROUTE"), buff, bufc);
-            return;
-        }
-
         safe_ltoa(static_cast<long>(path.size()), buff, bufc);
         return;
     }
 
     // Default: return next-hop exit.
     //
-    dbref src_zone = g_room_to_zone[source];
-    dbref dst_zone = g_room_to_zone[destination];
-
-    if (src_zone == dst_zone)
-    {
-        // Same zone: direct lookup.
-        //
-        route_ensure_zone_current(src_zone);
-        auto zt_it = g_zone_tables.find(src_zone);
-        if (zt_it == g_zone_tables.end())
-        {
-            safe_str(T("#-1 NO ROUTE"), buff, bufc);
-            return;
-        }
-
-        dbref next_exit = zone_next_hop(zt_it->second, source, destination);
-        if (next_exit == NOTHING)
-        {
-            safe_str(T("#-1 NO ROUTE"), buff, bufc);
-            return;
-        }
-        safe_tprintf_str(buff, bufc, T("#%d"), next_exit);
-        return;
-    }
-
-    // Cross-zone: resolve the full path, then return its first hop.
-    //
-    std::vector<dbref> path;
-    route_get_path(source, destination, path);
-    if (path.empty())
-    {
-        safe_str(T("#-1 NO ROUTE"), buff, bufc);
-        return;
-    }
     safe_tprintf_str(buff, bufc, T("#%d"), path[0]);
 }
