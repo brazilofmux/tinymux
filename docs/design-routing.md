@@ -371,10 +371,13 @@ check runs against the freshly built table's result. If that also fails,
 
 ## Storage
 
-### SQLite (Tier 1 only)
+### SQLite (Tier 1 groundwork)
 
-Tier 1 routing tables are long-lived and benefit from persistence across
-restarts. They are stored in SQLite:
+Phase 1 creates the Tier 1 SQLite schema and persists routing metadata
+(`route_generation`, node count) so later phases can warm-start cleanly.
+The full `route_table` contents are not persisted yet; Phase 1 still
+rebuilds the in-memory table lazily on first query after startup. The
+schema for later persistence is:
 
 ```sql
 CREATE TABLE route_nodes (
@@ -435,7 +438,7 @@ best-effort hints, not durable state.
 - Build next-hop table with compression.
 - Implement `route()` softcode function (Tier 1 only).
 - Generation-counter invalidation on topology changes.
-- SQLite persistence.
+- SQLite schema groundwork plus routing metadata persistence.
 
 ### Phase 2: Hierarchical Zone Routing
 

@@ -26,17 +26,13 @@
 
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <queue>
 #include <cstring>
 
 // ---------------------------------------------------------------------------
 // In-memory routing table.
 // ---------------------------------------------------------------------------
-
-// Sentinel values for compressed table entries.
-//
-constexpr dbref ROUTE_DIRECT  = -2;  // Destination is adjacent (one hop).
-constexpr dbref ROUTE_NONE    = -3;  // No route exists.
 
 // Per-room routing row.  If always_exit != NOTHING, every destination from
 // this room funnels through always_exit and the sparse map is empty.
@@ -116,6 +112,61 @@ struct ExitEdge
     dbref dest_room;
 };
 
+static void collect_room_edges(
+    dbref room,
+    const std::unordered_map<dbref, int> &node_idx,
+    std::vector<ExitEdge> &edges)
+{
+    edges.clear();
+
+    // Movement and exit matching walk the room's parent chain, so the
+    // routing graph must do the same to stay behaviorally aligned.
+    //
+    std::unordered_set<dbref> seen_exits;
+    int level;
+    dbref parent;
+    ITER_PARENTS(room, parent, level)
+    {
+        dbref exit_obj;
+        DOLIST(exit_obj, Exits(parent))
+        {
+            if (  !isExit(exit_obj)
+               || !seen_exits.insert(exit_obj).second)
+            {
+                continue;
+            }
+
+            // Skip variable-destination exits.
+            //
+            const UTF8 *vdest = atr_get_raw(exit_obj, A_EXITVARDEST);
+            if (vdest && *vdest)
+            {
+                continue;
+            }
+
+            dbref dest = Location(exit_obj);
+            if (  !Good_obj(dest)
+               || !isRoom(dest))
+            {
+                continue;
+            }
+
+            // Destination must also be navigable.
+            //
+            auto it = node_idx.find(dest);
+            if (it == node_idx.end())
+            {
+                continue;
+            }
+
+            ExitEdge edge;
+            edge.exit_dbref = exit_obj;
+            edge.dest_room  = dest;
+            edges.push_back(edge);
+        }
+    }
+}
+
 static void collect_navigable_graph(
     std::unordered_map<dbref, int> &node_idx,
     std::vector<dbref> &idx_to_room,
@@ -147,44 +198,7 @@ static void collect_navigable_graph(
     for (int i = 0; i < n; i++)
     {
         dbref room = idx_to_room[i];
-        adj[i].clear();
-
-        dbref exit_obj;
-        DOLIST(exit_obj, Exits(room))
-        {
-            if (!isExit(exit_obj))
-            {
-                continue;
-            }
-
-            // Skip variable-destination exits.
-            //
-            const UTF8 *vdest = atr_get_raw(exit_obj, A_EXITVARDEST);
-            if (vdest && *vdest)
-            {
-                continue;
-            }
-
-            dbref dest = Location(exit_obj);
-            if (  !Good_obj(dest)
-               || !isRoom(dest))
-            {
-                continue;
-            }
-
-            // Destination must also be navigable.
-            //
-            auto it = node_idx.find(dest);
-            if (it == node_idx.end())
-            {
-                continue;
-            }
-
-            ExitEdge edge;
-            edge.exit_dbref = exit_obj;
-            edge.dest_room  = dest;
-            adj[i].push_back(edge);
-        }
+        collect_room_edges(room, node_idx, adj[i]);
     }
 }
 
@@ -269,10 +283,13 @@ static void bfs_from_source(
         }
     }
 
-    // Row redundancy compression: if every reachable destination uses the
-    // same exit, collapse to always_exit.
+    // Row redundancy compression is only safe when the exit is valid for
+    // every non-diagonal destination. If some navigable rooms are
+    // unreachable from this source, keep sparse per-destination entries so
+    // route_query() can still return NO ROUTE.
     //
-    if (!row.next_hop.empty())
+    if (  !row.next_hop.empty()
+       && row.next_hop.size() == static_cast<size_t>(n - 1))
     {
         dbref candidate = row.next_hop.begin()->second;
         bool all_same = true;

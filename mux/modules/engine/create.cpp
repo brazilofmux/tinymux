@@ -529,6 +529,8 @@ void do_parent
     //
     if (parent != previous_parent)
     {
+        route_invalidate();
+
         // Setup the appropriate stack arguments.
         //
         UTF8 child[SBUF_SIZE];

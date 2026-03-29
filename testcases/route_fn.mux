@@ -20,6 +20,12 @@ think [setq(0, create(Route_Room_C, 10, r))][set(%q0, NAVIGABLE)][attrib_set(tes
 -
 think [setq(0, create(Route_Room_D, 10, r))][attrib_set(test_route_fn/room_d, %q0)]
 -
+think [setq(0, create(Route_Room_E, 10, r))][set(%q0, NAVIGABLE)][attrib_set(test_route_fn/room_e, %q0)]
+-
+think [setq(0, create(Route_Room_Parent, 10, r))][attrib_set(test_route_fn/room_parent, %q0)]
+-
+think [setq(0, create(Route_Room_Child, 10, r))][set(%q0, NAVIGABLE)][attrib_set(test_route_fn/room_child, %q0)]
+-
 #
 # Create exits: teleport to source room, @open exit to dest room.
 #
@@ -34,6 +40,14 @@ think [attrib_set(test_route_fn/exit_ab, [lastcreate(me, e)])]
 @open route_exit_bc=[get(test_route_fn/room_c)]
 -
 think [attrib_set(test_route_fn/exit_bc, [lastcreate(me, e)])]
+-
+@tel me=[get(test_route_fn/room_parent)]
+-
+@open route_exit_parent_to_c=[get(test_route_fn/room_c)]
+-
+think [attrib_set(test_route_fn/exit_parent_to_c, [lastcreate(me, e)])]
+-
+@parent [get(test_route_fn/room_child)]=[get(test_route_fn/room_parent)]
 -
 @tel me=#0
 -
@@ -51,14 +65,16 @@ think [attrib_set(test_route_fn/exit_bc, [lastcreate(me, e)])]
         isdbref(v(room_a)),
         isdbref(v(room_b)),
         isdbref(v(room_c)),
+        isdbref(v(room_e)),
         isdbref(v(exit_ab)),
-        isdbref(v(exit_bc))
+        isdbref(v(exit_bc)),
+        isdbref(v(exit_parent_to_c))
       )=
   {
     @log smoke=TC001: route setup. Succeeded.
   },
   {
-    @log smoke=TC001: route setup. Failed (ra=[v(room_a)] rb=[v(room_b)] rc=[v(room_c)] eab=[v(exit_ab)] ebc=[v(exit_bc)]).
+    @log smoke=TC001: route setup. Failed (ra=[v(room_a)] rb=[v(room_b)] rc=[v(room_c)] re=[v(room_e)] eab=[v(exit_ab)] ebc=[v(exit_bc)] epc=[v(exit_parent_to_c)]).
   }
 -
 #
@@ -193,10 +209,45 @@ think [attrib_set(test_route_fn/exit_bc, [lastcreate(me, e)])]
       )=
   {
     @log smoke=TC010: route invalid option. Succeeded.;
-    @trig me/tr.done
+    @trig me/tr.tc011
   },
   {
     @log smoke=TC010: route invalid option. Failed ([route(v(room_a), v(room_b), bogus)]).;
+    @trig me/tr.tc011
+  }
+-
+#
+# Test Case #11 - unreachable navigable room must return NO ROUTE even
+#                 when the source row otherwise compresses to one exit.
+#
+&tr.tc011 test_route_fn=
+  @if strmatch(
+        route(v(room_a), v(room_e)),
+        #-1 NO ROUTE
+      )=
+  {
+    @log smoke=TC011: route unreachable navigable room. Succeeded.;
+    @trig me/tr.tc012
+  },
+  {
+    @log smoke=TC011: route unreachable navigable room. Failed ([route(v(room_a), v(room_e))]).;
+    @trig me/tr.tc012
+  }
+-
+#
+# Test Case #12 - inherited exits on parent rooms are part of the graph.
+#
+&tr.tc012 test_route_fn=
+  @if strmatch(
+        route(v(room_child), v(room_c)),
+        v(exit_parent_to_c)
+      )=
+  {
+    @log smoke=TC012: route inherited parent exit. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC012: route inherited parent exit. Failed ([route(v(room_child), v(room_c))]).;
     @trig me/tr.done
   }
 -

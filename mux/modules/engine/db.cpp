@@ -18,6 +18,7 @@
 #include "config.h"
 #include "externs.h"
 
+#include "routing.h"
 #include "sqlite_backend.h"
 
 #include "engine_api.h"
@@ -2073,6 +2074,12 @@ bool atr_clr(dbref thing, int atr)
     // of the same attr gets a higher counter.
     attr_mod_count_inc(thing, atr);
 
+    if (  atr == A_EXITVARDEST
+       && isExit(thing))
+    {
+        route_invalidate();
+    }
+
     switch (atr)
     {
     case A_STARTUP:
@@ -2202,6 +2209,12 @@ bool atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
 
     // Increment AFTER successful write.
     attr_mod_count_inc(thing, atr);
+
+    if (  atr == A_EXITVARDEST
+       && isExit(thing))
+    {
+        route_invalidate();
+    }
 
     switch (atr)
     {
