@@ -149,9 +149,12 @@ static bool try_fold(const std::string &func_name,
             for (int i = 0; i < nargs; i++) sum += mux_atol(u8(args[i]));
             result = format_long(sum);
         } else {
-            double sum = 0.0;
-            for (int i = 0; i < nargs; i++) sum += mux_atof(u8(args[i]));
-            result = format_double(sum);
+            std::vector<double> vals;
+            vals.reserve(nargs);
+            for (int i = 0; i < nargs; i++) {
+                vals.push_back(mux_atof(u8(args[i])));
+            }
+            result = format_double(AddDoubles(nargs, vals.data()));
         }
         return true;
     }
@@ -162,7 +165,10 @@ static bool try_fold(const std::string &func_name,
         if (two_int9(args[0], args[1], va, vb)) {
             result = format_long(va - vb);
         } else {
-            result = format_double(mux_atof(u8(args[0])) - mux_atof(u8(args[1])));
+            double vals[2];
+            vals[0] = mux_atof(u8(args[0]));
+            vals[1] = -mux_atof(u8(args[1]));
+            result = format_double(AddDoubles(2, vals));
         }
         return true;
     }
@@ -2459,34 +2465,70 @@ general_lowering:
         return true;
     };
 
-    // Binary ops: ADD, SUB, MUL, MOD.
+    // Binary ops: ADD, SUB, MOD.
+    //
+    // The interpreter's add()/sub() use a fast integer path only when
+    // all arguments have <= 9 digits (fitting in a 32-bit long).  For
+    // larger values, they fall back to double arithmetic via mux_atof.
+    // The JIT must match: only use HIR_ADD/HIR_SUB when all constant
+    // args are small enough.  Runtime-valued args whose magnitude is
+    // unknown fall through to ECALL to match interpreter behavior.
+    //
+    // TODO: the 9-digit threshold dates from 32-bit long.  Both the
+    // interpreter and JIT could safely use 64-bit integer math for
+    // values up to 18 digits, but that would change observable output
+    // for values in [10^9, 10^18] and should be done as a coordinated
+    // interpreter+JIT change.
+    //
+    // Note: mul() always uses doubles in the interpreter.  Only imul()
+    // does integer multiply.  So mul() is NOT handled here — it falls
+    // through to ECALL or the float path.
+    //
     if ((upper == "ADD" || upper == "SUB") && nargs >= 2 && all_int()) {
-        bool is_add = (upper == "ADD");
-        int acc = ensure_hi(args[0]);
-        for (int i = 1; i < nargs; i++) {
-            int b = ensure_hi(args[i]);
-            hir_kind op = (is_add || i > 1) ? HIR_ADD : HIR_SUB;
-            acc = h.emit(op, TY_INT, acc, b);
+        // Check that all constant args have <= 9 digits (interpreter
+        // fast-path threshold).  If any constant is too large, fall
+        // through to ECALL which will use the double path.
+        bool all_small = true;
+        for (int ai : args) {
+            if (h.kind[ai] == HIR_ICONST) {
+                int64_t v = h.val[ai];
+                if (v > 999999999LL || v < -999999999LL) {
+                    all_small = false;
+                    break;
+                }
+            } else if (h.kind[ai] == HIR_SCONST && !h.sval[ai].empty()) {
+                const char *s = h.sval[ai].c_str();
+                if (*s == '-') s++;
+                int nDigits = 0;
+                while (*s >= '0' && *s <= '9') { s++; nDigits++; }
+                if (nDigits > 9) {
+                    all_small = false;
+                    break;
+                }
+            }
         }
-        h.native_ops++;
-        h.needs_jit = true;
-        return acc;
-    }
-
-    if (upper == "MUL" && nargs >= 2 && all_int()) {
-        int acc = ensure_hi(args[0]);
-        for (int i = 1; i < nargs; i++) {
-            int b = ensure_hi(args[i]);
-            acc = h.emit(HIR_MUL, TY_INT, acc, b);
+        if (all_small) {
+            bool is_add = (upper == "ADD");
+            int acc = ensure_hi(args[0]);
+            for (int i = 1; i < nargs; i++) {
+                int b = ensure_hi(args[i]);
+                hir_kind op = (is_add || i > 1) ? HIR_ADD : HIR_SUB;
+                acc = h.emit(op, TY_INT, acc, b);
+            }
+            h.native_ops++;
+            h.needs_jit = true;
+            return acc;
         }
-        h.native_ops++;
-        h.needs_jit = true;
-        return acc;
     }
 
     if (upper == "MOD" && nargs == 2 && all_int()) {
         int a = ensure_hi(args[0]);
         int b = ensure_hi(args[1]);
+        // Match interpreter: mod(x,0) normalizes divisor 0 to 1.
+        if (h.kind[b] == HIR_ICONST && h.val[b] == 0) {
+            int one = h.emit_iconst(1);
+            b = one;
+        }
         int r = h.emit(HIR_REM, TY_INT, a, b);
         h.native_ops++;
         h.needs_jit = true;
@@ -2610,7 +2652,13 @@ general_lowering:
     }
 
     // IDIV: integer division (truncate toward zero).
+    // Match interpreter: idiv(x,0) returns "#-1 DIVIDE BY ZERO".
     if (upper == "IDIV" && nargs == 2 && all_int()) {
+        // Constant divisor 0 → fold to error string at compile time.
+        if (h.kind[args[1]] == HIR_ICONST && h.val[args[1]] == 0) {
+            uint64_t addr = rc.pool_str("#-1 DIVIDE BY ZERO");
+            return h.emit_sconst(addr, "#-1 DIVIDE BY ZERO");
+        }
         int a = ensure_hi(args[0]);
         int b = ensure_hi(args[1]);
         int r = h.emit(HIR_DIV, TY_INT, a, b);

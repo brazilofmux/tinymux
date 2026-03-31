@@ -66,8 +66,8 @@
 -
 #
 # Test Case #3 - sub/mul/add at negative boundary.
-# sub(INT64_MIN+1,2) and mul(INT64_MIN+1,2) wrap,
-# add(INT64_MIN,0) is identity.
+# These values have >9 digits, so sub()/mul()/add() use the
+# floating-point path (same as the interpreter).
 #
 &tr.tc003 test_overflow_inject_fn=
   @if strmatch(
@@ -79,7 +79,7 @@
               )
           )
         ),
-        AEFD69B325731E15AF6DFCBF203AB55117E915AC
+        A346DF2E9F92CAEC604ACD3B638C303D3E6D554A
       )=
   {
     @log smoke=TC003: negative boundary sub/mul/add. Succeeded.;
