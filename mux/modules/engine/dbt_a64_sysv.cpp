@@ -798,6 +798,9 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
         case OP_STORE: {
             int rs1 = rc_read(&e, &rc, insn.rs1);
             int rs2 = rc_read(&e, &rc, insn.rs2);
+            // Move value to X1 first — rc_read for x0 returns A64_X0,
+            // which would be clobbered by the address calculation below.
+            emit_mov_r64(&e, A64_X1, rs2);
             // Address: X0 = rs1 + imm
             if (insn.imm) {
                 emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
@@ -806,8 +809,6 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             } else {
                 emit_mov_r64(&e, A64_X0, rs1);
             }
-            // Move value to X1 (scratch) if needed for the store.
-            emit_mov_r64(&e, A64_X1, rs2);
             switch (insn.funct3) {
             case ST_SB: emit_store_mem8(&e, A64_X0, A64_X1);  break;
             case ST_SH: emit_store_mem16(&e, A64_X0, A64_X1); break;
@@ -902,29 +903,66 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                 case 1: // MULH
                     emit_smulh(&e, rd, rs1, rs2);
                     break;
-                case 2: // MULHSU — signed × unsigned high
-                    // No single AArch64 instruction. Use SMULH + correction.
-                    // Approximation: SMULH then add rs1 if rs2 negative.
-                    // TODO: exact implementation
+                case 2: { // MULHSU — signed × unsigned high
+                    // SMULH treats both as signed. To get signed×unsigned:
+                    // If rs2's sign bit is set, SMULH interprets it as negative
+                    // (off by 2^64), so we add rs1 to correct.
+                    // If rs1 is negative, SMULH treats rs2 correctly for the
+                    // signed interpretation, but the unsigned interpretation
+                    // of rs2 differs when rs2 >= 2^63, which is the case
+                    // above. Net: MULHSU = SMULH(rs1,rs2) + (rs2<0 ? rs1 : 0)
                     emit_smulh(&e, rd, rs1, rs2);
+                    // ASR X0, rs2, #63 → 0 if rs2 positive, -1 if negative
+                    emit_inst(&e, 0x937FFC00 | (rs2 << 5) | A64_X0);
+                    // AND X0, X0, rs1 → rs1 if rs2 was negative, 0 otherwise
+                    emit_inst(&e, 0x8A000000 | (rs1 << 16) | (A64_X0 << 5) | A64_X0);
+                    // ADD rd, rd, X0
+                    emit_add_r64(&e, rd, rd, A64_X0);
                     break;
+                }
                 case 3: // MULHU
                     emit_umulh(&e, rd, rs1, rs2);
                     break;
-                case 4: // DIV
+                case 4: { // DIV — RISC-V: div-by-0 → -1, overflow → INT64_MIN
+                    // CBZ rs2, .zero
+                    uint32_t zchk = emit_cbz_x64(&e, rs2, 0);
                     emit_sdiv_r64(&e, rd, rs1, rs2);
+                    uint32_t done = emit_b(&e, 0);
+                    // .zero: rd = -1 via ORN Xd, XZR, XZR
+                    emit_patch_b19(&e, zchk, emit_pos(&e));
+                    emit_inst(&e, 0xAA2003E0 | rd);  // ORN Xd, XZR, XZR
+                    emit_patch_b26(&e, done, emit_pos(&e));
                     break;
-                case 5: // DIVU
+                }
+                case 5: { // DIVU — RISC-V: div-by-0 → UINT64_MAX
+                    uint32_t zchk = emit_cbz_x64(&e, rs2, 0);
                     emit_udiv_r64(&e, rd, rs1, rs2);
+                    uint32_t done = emit_b(&e, 0);
+                    emit_patch_b19(&e, zchk, emit_pos(&e));
+                    emit_inst(&e, 0xAA2003E0 | rd);  // ORN Xd, XZR, XZR
+                    emit_patch_b26(&e, done, emit_pos(&e));
                     break;
-                case 6: // REM — rd = rs1 - (rs1/rs2)*rs2
+                }
+                case 6: { // REM — RISC-V: rem-by-0 → rs1
+                    uint32_t zchk = emit_cbz_x64(&e, rs2, 0);
                     emit_sdiv_r64(&e, A64_X0, rs1, rs2);
                     emit_msub_r64(&e, rd, A64_X0, rs2, rs1);
+                    uint32_t done = emit_b(&e, 0);
+                    emit_patch_b19(&e, zchk, emit_pos(&e));
+                    emit_mov_r64(&e, rd, rs1);
+                    emit_patch_b26(&e, done, emit_pos(&e));
                     break;
-                case 7: // REMU
+                }
+                case 7: { // REMU — RISC-V: remu-by-0 → rs1
+                    uint32_t zchk = emit_cbz_x64(&e, rs2, 0);
                     emit_udiv_r64(&e, A64_X0, rs1, rs2);
                     emit_msub_r64(&e, rd, A64_X0, rs2, rs1);
+                    uint32_t done = emit_b(&e, 0);
+                    emit_patch_b19(&e, zchk, emit_pos(&e));
+                    emit_mov_r64(&e, rd, rs1);
+                    emit_patch_b26(&e, done, emit_pos(&e));
                     break;
+                }
                 }
             } else {
                 switch (insn.funct3) {
@@ -1017,23 +1055,50 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                 case 0: // MULW
                     emit_mul_r32(&e, rd, rs1, rs2);
                     break;
-                case 4: // DIVW
+                case 4: { // DIVW — RISC-V: div-by-0 → -1
+                    // CBZ Wrs2, .zero (32-bit zero test)
+                    uint32_t zchk = emit_pos(&e);
+                    emit_inst(&e, 0x34000000 | rs2);  // CBZ Wt, +0 (patched)
                     emit_sdiv_r32(&e, rd, rs1, rs2);
+                    uint32_t done = emit_b(&e, 0);
+                    emit_patch_b19(&e, zchk, emit_pos(&e));
+                    emit_inst(&e, 0xAA2003E0 | rd);  // ORN Xd, XZR, XZR = -1
+                    emit_patch_b26(&e, done, emit_pos(&e));
                     break;
-                case 5: // DIVUW
+                }
+                case 5: { // DIVUW — RISC-V: div-by-0 → all-ones
+                    uint32_t zchk = emit_pos(&e);
+                    emit_inst(&e, 0x34000000 | rs2);  // CBZ Wt, +0
                     emit_udiv_r32(&e, rd, rs1, rs2);
+                    uint32_t done = emit_b(&e, 0);
+                    emit_patch_b19(&e, zchk, emit_pos(&e));
+                    emit_inst(&e, 0xAA2003E0 | rd);  // ORN Xd, XZR, XZR
+                    emit_patch_b26(&e, done, emit_pos(&e));
                     break;
-                case 6: { // REMW
+                }
+                case 6: { // REMW — RISC-V: rem-by-0 → rs1
+                    uint32_t zchk = emit_pos(&e);
+                    emit_inst(&e, 0x34000000 | rs2);  // CBZ Wt, +0
                     emit_sdiv_r32(&e, A64_X0, rs1, rs2);
                     // MSUB Wd, Wn, Wm, Wa (32-bit)
                     emit_inst(&e, 0x1B008000 | (rs2 << 16) | (rs1 << 10)
                               | (A64_X0 << 5) | rd);
+                    uint32_t done = emit_b(&e, 0);
+                    emit_patch_b19(&e, zchk, emit_pos(&e));
+                    emit_mov_r64(&e, rd, rs1);
+                    emit_patch_b26(&e, done, emit_pos(&e));
                     break;
                 }
-                case 7: { // REMUW
+                case 7: { // REMUW — RISC-V: remu-by-0 → rs1
+                    uint32_t zchk = emit_pos(&e);
+                    emit_inst(&e, 0x34000000 | rs2);  // CBZ Wt, +0
                     emit_udiv_r32(&e, A64_X0, rs1, rs2);
                     emit_inst(&e, 0x1B008000 | (rs2 << 16) | (rs1 << 10)
                               | (A64_X0 << 5) | rd);
+                    uint32_t done = emit_b(&e, 0);
+                    emit_patch_b19(&e, zchk, emit_pos(&e));
+                    emit_mov_r64(&e, rd, rs1);
+                    emit_patch_b26(&e, done, emit_pos(&e));
                     break;
                 }
                 }
@@ -1164,13 +1229,16 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                         emit_patch_b19(&e, skip, emit_pos(&e));
                     }
                     break;
-                case 2: // FSGNJX.D — XOR signs
+                case 2: // FSGNJX.D — XOR sign bits, preserve magnitude of fs1
                     if (insn.rs1 == insn.rs2) {
                         emit_fabs_d(&e, fd, fs1);  // FABS.D
                     } else {
-                        // XOR the sign bits via integer ops
+                        // Extract sign bit of fs2, XOR into sign bit of fs1.
                         emit_fmov_x64_d(&e, A64_X0, fs1);
                         emit_fmov_x64_d(&e, A64_X1, fs2);
+                        // Isolate sign bit of fs2: AND X1, X1, #(1<<63)
+                        emit_inst(&e, 0x92410021);  // AND X1, X1, #0x8000000000000000
+                        // XOR only the sign bit into X0
                         emit_eor_r64(&e, A64_X0, A64_X0, A64_X1);
                         emit_fmov_d_x64(&e, fd, A64_X0);
                     }
@@ -1216,7 +1284,8 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                     emit_sxtw(&e, rd, rd);
                 } else if (insn.rs2 == 1) {
                     // FCVT.WU.D — double to unsigned 32-bit
-                    emit_fcvtzs_x64_d(&e, rd, fs1);
+                    // FCVTZU Xd, Dn (unsigned conversion)
+                    emit_inst(&e, 0x9E790000 | (fs1 << 5) | rd);
                     // Zero-extend 32→64: use MOV Wd, Wd
                     emit_mov_r32(&e, rd, rd);
                 } else if (insn.rs2 == 2) {
@@ -1240,7 +1309,8 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                 } else if (insn.rs2 == 1) {
                     // FCVT.D.WU — unsigned 32-bit to double
                     emit_mov_r32(&e, A64_X0, rs1);  // zero-extend
-                    emit_scvtf_d_x64(&e, fd, A64_X0);
+                    // UCVTF Dd, Xn (unsigned int to double)
+                    emit_inst(&e, 0x9E630000 | (A64_X0 << 5) | fd);
                 } else if (insn.rs2 == 2) {
                     // FCVT.D.L — signed 64-bit to double
                     emit_scvtf_d_x64(&e, fd, rs1);
@@ -1257,8 +1327,13 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                     int fs1 = fc_read(&e, &fc, insn.rs1);
                     int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : A64_X1;
                     emit_fmov_x64_d(&e, rd, fs1);
+                } else {
+                    // FCLASS.D (funct3==1) — not yet implemented.
+                    // Exit to dispatcher to avoid wrong architectural state.
+                    rc_flush(&e, &rc); fc_flush(&e, &fc);
+                    emit_exit_with_pc(&e, pc);
+                    goto done;
                 }
-                // FCLASS.D (funct3==1) not implemented — rare, fallback OK.
                 break;
             }
             case FP_FMVDX: {

@@ -744,12 +744,16 @@ static inline void emit_fsqrt_d(emit_t *e, int rd, int rn) {
     emit_inst(e, 0x1E61C000 | (rn << 5) | rd);
 }
 
+// FMINNM Dd, Dn, Dm — IEEE 754 minNum (number-preferred for NaN)
+// Matches RISC-V FMIN.D semantics.
 static inline void emit_fmin_d(emit_t *e, int rd, int rn, int rm) {
-    emit_inst(e, 0x1E605800 | (rm << 16) | (rn << 5) | rd);
+    emit_inst(e, 0x1E607800 | (rm << 16) | (rn << 5) | rd);
 }
 
+// FMAXNM Dd, Dn, Dm — IEEE 754 maxNum (number-preferred for NaN)
+// Matches RISC-V FMAX.D semantics.
 static inline void emit_fmax_d(emit_t *e, int rd, int rn, int rm) {
-    emit_inst(e, 0x1E604800 | (rm << 16) | (rn << 5) | rd);
+    emit_inst(e, 0x1E606800 | (rm << 16) | (rn << 5) | rd);
 }
 
 static inline void emit_fneg_d(emit_t *e, int rd, int rn) {

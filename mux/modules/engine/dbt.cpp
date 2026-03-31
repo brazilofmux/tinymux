@@ -22,6 +22,21 @@
 #include <new>
 
 // ---------------------------------------------------------------
+// Instruction cache coherency
+// ---------------------------------------------------------------
+
+// Flush the instruction cache for newly generated or modified code.
+// On AArch64, the I-cache and D-cache are not coherent — writes to
+// executable memory require an explicit cache maintenance operation
+// before the CPU will fetch the new instructions.  On x86-64, this
+// is a no-op (coherent I-cache).
+//
+static inline void dbt_flush_code(dbt_state_t *dbt, uint32_t from_offset) {
+    jit_write_end(dbt->code_buf + from_offset,
+                  dbt->code_used - from_offset);
+}
+
+// ---------------------------------------------------------------
 // Trace helpers
 // ---------------------------------------------------------------
 
@@ -173,6 +188,7 @@ int dbt_init(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
 
     // Emit trampoline at the start of the code buffer.
     dbt_backend_emit_trampoline(dbt);
+    dbt_flush_code(dbt, 0);
 
     return 0;
 }
@@ -199,7 +215,10 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
         dbt->code_used = dbt->blob_code_end;
 
         // Optional NOP sled for alignment experiments.
-        // TINYMUX_DBT_PAD=N inserts N bytes before program code.
+        // TINYMUX_DBT_PAD=N inserts N bytes of NOP padding before
+        // program code.  On x86-64, each NOP is 1 byte (0x90).
+        // On AArch64, NOPs are 4 bytes so N is rounded up to a
+        // multiple of 4.
         {
             static int pad = -1;
             if (pad < 0) {
@@ -207,13 +226,28 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
                 pad = env ? atoi(env) : 0;
             }
             uint32_t p = static_cast<uint32_t>(pad);
+#if defined(__aarch64__)
+            // AArch64 NOP: 0xD503201F (4 bytes each).
+            uint32_t n_nops = (p + 3) / 4;
+            uint32_t pad_bytes = n_nops * 4;
+            if (n_nops > 0 && dbt->code_used + pad_bytes < CODE_BUF_SIZE) {
+                for (uint32_t i = 0; i < n_nops; i++) {
+                    uint32_t nop = 0xD503201F;
+                    memcpy(dbt->code_buf + dbt->code_used + i * 4, &nop, 4);
+                }
+                dbt->code_used += pad_bytes;
+            }
+#else
+            // x86-64 NOP: 0x90 (1 byte each).
             if (p > 0 && dbt->code_used + p < CODE_BUF_SIZE) {
                 memset(dbt->code_buf + dbt->code_used, 0x90, p);
                 dbt->code_used += p;
             }
+#endif
         }
 
         // Keep intrinsics — they're blob-related.
+        dbt_flush_code(dbt, dbt->blob_code_end);
     } else {
         // No blob — full reset.
         for (auto &entry : dbt->cache) {
@@ -224,6 +258,7 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
         dbt_backend_emit_trampoline(dbt);
         dbt->num_intrinsics = 0;
         memset(dbt->intrinsics, 0, sizeof(dbt->intrinsics));
+        dbt_flush_code(dbt, 0);
     }
 
     // Reset statistics.
@@ -374,6 +409,9 @@ void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc) {
             dbt_backpatch_chains(dbt, pc, code);
         }
     }
+
+    // Flush I-cache for all code generated during blob pretranslation.
+    dbt_flush_code(dbt, 0);
 }
 
 void dbt_resolve_chains(dbt_state_t *dbt) {
@@ -417,6 +455,11 @@ void dbt_resolve_chains(dbt_state_t *dbt) {
                         "resolve_chains: %u resolved, %u already_ok, %u unresolvable of %u total",
                         resolved, already_ok, unresolvable,
                         static_cast<unsigned>(dbt->patches.size()));
+
+    // Flush I-cache for any backpatched JMP targets.
+    if (resolved > 0) {
+        dbt_flush_code(dbt, 0);
+    }
 }
 
 int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
@@ -487,6 +530,10 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
 
             // Backpatch any chained exits that were waiting for this block.
             dbt_backpatch_chains(dbt, pc, code);
+
+            // Flush I-cache for newly generated and backpatched code.
+            dbt_flush_code(dbt, static_cast<uint32_t>(code - dbt->code_buf));
+
             if (dbt->trace & DBT_TRACE_EXEC) {
                 fprintf(stderr, "[dbt] disp=%llu MISS pc=0x%llX\n",
                         static_cast<unsigned long long>(dispatch_count),
@@ -566,6 +613,10 @@ int dbt_resume(dbt_state_t *dbt, uint64_t entry_pc) {
 
             // Backpatch any chained exits that were waiting for this block.
             dbt_backpatch_chains(dbt, pc, code);
+
+            // Flush I-cache for newly generated and backpatched code.
+            dbt_flush_code(dbt, static_cast<uint32_t>(code - dbt->code_buf));
+
             if (dbt->trace & DBT_TRACE_EXEC) {
                 fprintf(stderr, "[dbt] disp=%llu MISS pc=0x%llX\n",
                         static_cast<unsigned long long>(dispatch_count),
