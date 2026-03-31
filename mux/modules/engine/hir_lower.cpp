@@ -2929,6 +2929,21 @@ literal_strcat:
         }
     }
 
+    // Convert non-string args to strings before the ECALL.  ECALL args
+    // are passed as guest memory pointers, so TY_INT/TY_FLOAT values
+    // (which live in registers) must be written to memory first via
+    // ITOA/FTOA.  Without this, the fargs array contains garbage
+    // addresses for register-resident values and the callee sees
+    // truncated or corrupted argument lists.
+    //
+    for (int ai = 0; ai < nargs; ai++) {
+        if (h.ty[args[ai]] == TY_INT) {
+            args[ai] = h.emit(HIR_ITOA, TY_STRING, args[ai]);
+        } else if (h.ty[args[ai]] == TY_FLOAT) {
+            args[ai] = h.emit(HIR_FTOA, TY_STRING, args[ai]);
+        }
+    }
+
     // Check Tier 2 blob before falling through to ECALL.
     uint64_t t2addr = tier2_lookup(upper);
 
