@@ -127,6 +127,9 @@
     <ClCompile Include="rob.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="routing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="session.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -152,6 +155,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="vattr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="walk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbt_x64_win64.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="walkdb.cpp">
