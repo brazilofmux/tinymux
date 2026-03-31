@@ -237,7 +237,7 @@ if test "x$jit_enabled" = "xyes"; then
     x86_64|amd64)
       case "$host_os" in
         mingw*|cygwin*|msys*)
-          AC_MSG_ERROR([JIT not yet implemented for Windows (Win64 ABI backend needed)]) ;;
+          DBT_BACKEND="dbt_x64_win64" ;;
         *)
           DBT_BACKEND="dbt_x64_sysv" ;;
       esac ;;

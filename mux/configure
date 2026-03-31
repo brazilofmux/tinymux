@@ -6702,7 +6702,7 @@ printf %s "checking DBT backend for host platform... " >&6; }
     x86_64|amd64)
       case "$host_os" in
         mingw*|cygwin*|msys*)
-          as_fn_error $? "JIT not yet implemented for Windows (Win64 ABI backend needed)" "$LINENO" 5 ;;
+          DBT_BACKEND="dbt_x64_win64" ;;
         *)
           DBT_BACKEND="dbt_x64_sysv" ;;
       esac ;;
