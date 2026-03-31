@@ -41,7 +41,9 @@
 # Test Case #2 - mul/add overflow and div-by-zero.
 # These values have >9 digits, so mul() and add() use the
 # floating-point path (same as the interpreter).
-# div(1,0) returns error, mod(1,0) returns 0.
+# idiv(1,0) returns error, mod(1,0) returns 0.
+# Use idiv() explicitly (not the div alias) so the JIT constant
+# folder resolves it correctly.
 #
 &tr.tc002 test_overflow_inject_fn=
   @if strmatch(
@@ -49,7 +51,7 @@
             cat(
                 mul(9223372036854775807,2),
                 add(9223372036854775807,1),
-                div(1,0),
+                idiv(1,0),
                 mod(1,0)
               )
           )
