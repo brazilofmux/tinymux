@@ -22,7 +22,7 @@
 
 #elif defined(__aarch64__) || defined(_M_ARM64)
   // AArch64 host — select sub-variant by OS.
-  // #include "dbt_emit_a64.h"  // TODO: Phase 3b
+  #include "dbt_emit_a64.h"
   #define DBT_HOST_AARCH64 1
   #if defined(__APPLE__)
     #define DBT_HOST_AARCH64_APPLE 1
