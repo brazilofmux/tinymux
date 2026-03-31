@@ -24,8 +24,10 @@
 #
 # AArch64/GCC:  "9223372036854775807 1.8446744073709552E19 1 1"
 #   SHA1 = 7F1844D36AF2F0285C0E6C278966A62C054802B8
-# AMD64/GCC:    (may differ in power(2,63) or power(2,64) formatting)
+# AMD64/GCC:    "-9223372036854775808 1.8446744073709552E19"  (2 values only)
 #   SHA1 = B8F908D18D1EA4F2F9966C67BB3231360E0D3654
+#   power(2,63) wraps to INT64_MIN (double→int64 overflow),
+#   and cat() JIT bug drops args 3-4 (power(2,0), power(0,0)).
 #
 &tr.tc001 test_overflow_inject_fn=
   @if cor(
@@ -114,8 +116,9 @@
 #
 # AArch64/GCC:  "4611686018427387904 -9223372036854775808 -1"
 #   SHA1 = C04D499E97DAB875DF818C548CEB3EEEA125C88E
-# AMD64/GCC:
+# AMD64/GCC:    "4611686018427387904 -9223372036854775808"  (2 values only)
 #   SHA1 = 23EA90F04A2188FD68EEE1A259DE429CB3B70184
+#   (same values but cat() JIT bug drops shr(-1,1) — see TC002 note)
 #
 &tr.tc004 test_overflow_inject_fn=
   @if cor(
@@ -171,8 +174,10 @@
 #
 # AArch64/GCC:  "9223372036854775807 -1 1"
 #   SHA1 = 7559F505A95361A8A70E043F87F50C60660CEA60
-# AMD64/GCC:
+#   (abs(INT64_MIN) clamps to INT64_MAX on AArch64)
+# AMD64/GCC:    "-9223372036854775808 -1 1"
 #   SHA1 = C76CBDAD3533A3385AAC6910A5CA19160044CA73
+#   (abs(INT64_MIN) overflows to INT64_MIN on AMD64)
 #
 &tr.tc006 test_overflow_inject_fn=
   @if cor(
