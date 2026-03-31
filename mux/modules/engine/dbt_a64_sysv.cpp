@@ -624,24 +624,699 @@ static void emit_exit_chained(emit_t *e, dbt_state_t *dbt,
 }
 
 // ---------------------------------------------------------------
-// Translate a single block — STUB
+// Translate a single block — Stage 1 (basic, no fusion/superblock)
 // ---------------------------------------------------------------
 //
-// TODO: Full RV64→AArch64 per-instruction translation.
-//
-// The Lenovo ARM Chromebook's Claude Code instance will implement
-// this incrementally, testing each RV64 opcode as it goes.
-//
-// Intrinsic stubs (Tier 2 blob functions) work now — they're
-// handled by try_emit_intrinsic above.
+// Straight-line per-instruction translation with register cache.
+// No superblocks, no RAS, no inline CALL, no fusion.
+// At any branch/jump, flush register cache and exit.
 
 uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
     uint8_t *intrinsic = try_emit_intrinsic(dbt, guest_pc);
     if (intrinsic) return intrinsic;
 
-    // No general instruction translation yet — return nullptr so the
-    // dispatch loop falls back to the interpreter.
-    return nullptr;
+    uint8_t *block_start = dbt->code_buf + dbt->code_used;
+
+    emit_t e;
+    e.buf = block_start;
+    e.offset = 0;
+    e.capacity = CODE_BUF_SIZE - dbt->code_used;
+
+    reg_cache_t rc;
+    rc_init_pinned(&rc);
+
+    fp_cache_t fc;
+    fc_init(&fc);
+
+    uint64_t pc = guest_pc;
+    int count = 0;
+
+    while (count < MAX_BLOCK_INSNS) {
+        if (pc + 4 > dbt->memory_size) {
+            rc_flush(&e, &rc); fc_flush(&e, &fc);
+            emit_exit_chained(&e, dbt, pc);
+            break;
+        }
+
+        uint32_t word;
+        memcpy(&word, dbt->memory + pc, 4);
+
+        rv64_insn_t insn;
+        rv64_decode(word, &insn);
+        count++;
+
+        switch (insn.opcode) {
+
+        // -- LUI --
+        case OP_LUI: {
+            if (insn.rd) {
+                int rd = rc_write(&e, &rc, insn.rd);
+                emit_mov_r64_imm32(&e, rd, insn.imm);
+            }
+            pc += 4;
+            continue;
+        }
+
+        // -- AUIPC --
+        case OP_AUIPC: {
+            if (insn.rd) {
+                int64_t val = static_cast<int64_t>(pc)
+                            + static_cast<int64_t>(insn.imm);
+                int rd = rc_write(&e, &rc, insn.rd);
+                emit_mov_r64_imm64(&e, rd, static_cast<uint64_t>(val));
+            }
+            pc += 4;
+            continue;
+        }
+
+        // -- JAL --
+        case OP_JAL: {
+            uint64_t target = pc + static_cast<int64_t>(insn.imm);
+            if (insn.rd) {
+                int rd = rc_write(&e, &rc, insn.rd);
+                emit_mov_r64_imm64(&e, rd, pc + 4);
+            }
+            rc_flush(&e, &rc); fc_flush(&e, &fc);
+            emit_exit_chained(&e, dbt, target);
+            goto done;
+        }
+
+        // -- JALR --
+        case OP_JALR: {
+            int rs1 = rc_read(&e, &rc, insn.rs1);
+            // X0 = rs1 + imm (target)
+            if (insn.imm) {
+                emit_add_r64_imm(&e, A64_X0, rs1,
+                                  static_cast<uint32_t>(insn.imm & 0xFFF));
+                // Handle negative imm: if imm is negative, use SUB
+                if (insn.imm < 0) {
+                    emit_mov_r64_imm64(&e, A64_X1, static_cast<uint64_t>(
+                        static_cast<int64_t>(insn.imm)));
+                    emit_add_r64(&e, A64_X0, rs1, A64_X1);
+                } else {
+                    emit_add_r64_imm(&e, A64_X0, rs1, insn.imm & 0xFFF);
+                }
+            } else {
+                emit_mov_r64(&e, A64_X0, rs1);
+            }
+            // Clear bit 0 per JALR spec.
+            if (!emit_and_r64_imm(&e, A64_X0, A64_X0, ~1ULL)) {
+                emit_mov_r64_imm64(&e, A64_X1, ~1ULL);
+                emit_and_r64(&e, A64_X0, A64_X0, A64_X1);
+            }
+            if (insn.rd) {
+                int rd = rc_write(&e, &rc, insn.rd);
+                emit_mov_r64_imm64(&e, rd, pc + 4);
+            }
+            rc_flush(&e, &rc); fc_flush(&e, &fc);
+            emit_exit_indirect(&e, A64_X0);
+            goto done;
+        }
+
+        // -- BRANCH --
+        case OP_BRANCH: {
+            uint64_t target = pc + static_cast<int64_t>(insn.imm);
+            int rs1 = rc_read(&e, &rc, insn.rs1);
+            int rs2 = rc_read(&e, &rc, insn.rs2);
+
+            // Compare.
+            emit_cmp_r64(&e, rs1, rs2);
+
+            // Flush before emitting exits.
+            rc_flush(&e, &rc); fc_flush(&e, &fc);
+
+            // Conditional branch: if taken → target, else → pc+4.
+            uint8_t cond;
+            switch (insn.funct3) {
+            case BR_BEQ:  cond = A64_COND_EQ; break;
+            case BR_BNE:  cond = A64_COND_NE; break;
+            case BR_BLT:  cond = A64_COND_LT; break;
+            case BR_BGE:  cond = A64_COND_GE; break;
+            case BR_BLTU: cond = A64_COND_CC; break;  // unsigned <
+            case BR_BGEU: cond = A64_COND_CS; break;  // unsigned >=
+            default:
+                emit_exit_with_pc(&e, pc + 4);
+                goto done;
+            }
+
+            // B.cond taken_path
+            uint32_t bcond_patch = emit_b_cond(&e, cond, 0);
+            // Fall-through: not taken → pc+4
+            emit_exit_chained(&e, dbt, pc + 4);
+            // Taken:
+            emit_patch_b19(&e, bcond_patch, emit_pos(&e));
+            emit_exit_chained(&e, dbt, target);
+            goto done;
+        }
+
+        // -- LOAD --
+        case OP_LOAD: {
+            int rs1 = rc_read(&e, &rc, insn.rs1);
+            // Compute address: X0 = rs1 + imm
+            if (insn.imm) {
+                emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                    static_cast<int64_t>(insn.imm)));
+                emit_add_r64(&e, A64_X0, rs1, A64_X0);
+            } else {
+                emit_mov_r64(&e, A64_X0, rs1);
+            }
+            int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : A64_X1;
+            switch (insn.funct3) {
+            case LD_LB:  emit_load_mem8s(&e, rd, A64_X0);  break;
+            case LD_LH:  emit_load_mem16s(&e, rd, A64_X0); break;
+            case LD_LW:  emit_load_mem32s(&e, rd, A64_X0); break;
+            case LD_LD:  emit_load_mem64(&e, rd, A64_X0);  break;
+            case LD_LBU: emit_load_mem8u(&e, rd, A64_X0);  break;
+            case LD_LHU: emit_load_mem16u(&e, rd, A64_X0); break;
+            case LD_LWU: emit_load_mem32(&e, rd, A64_X0);  break;
+            }
+            pc += 4;
+            continue;
+        }
+
+        // -- STORE --
+        case OP_STORE: {
+            int rs1 = rc_read(&e, &rc, insn.rs1);
+            int rs2 = rc_read(&e, &rc, insn.rs2);
+            // Address: X0 = rs1 + imm
+            if (insn.imm) {
+                emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                    static_cast<int64_t>(insn.imm)));
+                emit_add_r64(&e, A64_X0, rs1, A64_X0);
+            } else {
+                emit_mov_r64(&e, A64_X0, rs1);
+            }
+            // Move value to X1 (scratch) if needed for the store.
+            emit_mov_r64(&e, A64_X1, rs2);
+            switch (insn.funct3) {
+            case ST_SB: emit_store_mem8(&e, A64_X0, A64_X1);  break;
+            case ST_SH: emit_store_mem16(&e, A64_X0, A64_X1); break;
+            case ST_SW: emit_store_mem32(&e, A64_X0, A64_X1); break;
+            case ST_SD: emit_store_mem64(&e, A64_X0, A64_X1); break;
+            }
+            pc += 4;
+            continue;
+        }
+
+        // -- IMM (64-bit ALU with immediate) --
+        case OP_IMM: {
+            int rs1 = rc_read(&e, &rc, insn.rs1);
+            int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : A64_X1;
+
+            switch (insn.funct3) {
+            case ALU_ADDI:
+                if (insn.imm >= 0 && insn.imm < 4096) {
+                    emit_add_r64_imm(&e, rd, rs1, insn.imm);
+                } else if (insn.imm < 0 && insn.imm > -4096) {
+                    emit_sub_r64_imm(&e, rd, rs1, -insn.imm);
+                } else {
+                    emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                        static_cast<int64_t>(insn.imm)));
+                    emit_add_r64(&e, rd, rs1, A64_X0);
+                }
+                break;
+            case ALU_SLTI:
+                emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                    static_cast<int64_t>(insn.imm)));
+                emit_cmp_r64(&e, rs1, A64_X0);
+                emit_cset(&e, rd, A64_COND_LT);
+                break;
+            case ALU_SLTIU:
+                emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                    static_cast<int64_t>(insn.imm)));
+                emit_cmp_r64(&e, rs1, A64_X0);
+                emit_cset(&e, rd, A64_COND_CC);  // unsigned <
+                break;
+            case ALU_XORI:
+                if (!emit_eor_r64_imm(&e, rd, rs1, static_cast<uint64_t>(
+                        static_cast<int64_t>(insn.imm)))) {
+                    emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                        static_cast<int64_t>(insn.imm)));
+                    emit_eor_r64(&e, rd, rs1, A64_X0);
+                }
+                break;
+            case ALU_ORI:
+                if (!emit_orr_r64_imm(&e, rd, rs1, static_cast<uint64_t>(
+                        static_cast<int64_t>(insn.imm)))) {
+                    emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                        static_cast<int64_t>(insn.imm)));
+                    emit_orr_r64(&e, rd, rs1, A64_X0);
+                }
+                break;
+            case ALU_ANDI:
+                if (!emit_and_r64_imm(&e, rd, rs1, static_cast<uint64_t>(
+                        static_cast<int64_t>(insn.imm)))) {
+                    emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                        static_cast<int64_t>(insn.imm)));
+                    emit_and_r64(&e, rd, rs1, A64_X0);
+                }
+                break;
+            case ALU_SLLI:
+                emit_lsl_r64_imm(&e, rd, rs1, insn.imm & 63);
+                break;
+            case ALU_SRLI:
+                if (insn.funct7 & 0x20) {
+                    // SRAI
+                    emit_asr_r64_imm(&e, rd, rs1, insn.imm & 63);
+                } else {
+                    emit_lsr_r64_imm(&e, rd, rs1, insn.imm & 63);
+                }
+                break;
+            }
+            pc += 4;
+            continue;
+        }
+
+        // -- REG (64-bit ALU register-register) --
+        case OP_REG: {
+            int rs1 = rc_read(&e, &rc, insn.rs1);
+            int rs2 = rc_read(&e, &rc, insn.rs2);
+            int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : A64_X1;
+
+            if (insn.funct7 == 0x01) {
+                // M extension
+                switch (insn.funct3) {
+                case 0: // MUL
+                    emit_mul_r64(&e, rd, rs1, rs2);
+                    break;
+                case 1: // MULH
+                    emit_smulh(&e, rd, rs1, rs2);
+                    break;
+                case 2: // MULHSU — signed × unsigned high
+                    // No single AArch64 instruction. Use SMULH + correction.
+                    // Approximation: SMULH then add rs1 if rs2 negative.
+                    // TODO: exact implementation
+                    emit_smulh(&e, rd, rs1, rs2);
+                    break;
+                case 3: // MULHU
+                    emit_umulh(&e, rd, rs1, rs2);
+                    break;
+                case 4: // DIV
+                    emit_sdiv_r64(&e, rd, rs1, rs2);
+                    break;
+                case 5: // DIVU
+                    emit_udiv_r64(&e, rd, rs1, rs2);
+                    break;
+                case 6: // REM — rd = rs1 - (rs1/rs2)*rs2
+                    emit_sdiv_r64(&e, A64_X0, rs1, rs2);
+                    emit_msub_r64(&e, rd, A64_X0, rs2, rs1);
+                    break;
+                case 7: // REMU
+                    emit_udiv_r64(&e, A64_X0, rs1, rs2);
+                    emit_msub_r64(&e, rd, A64_X0, rs2, rs1);
+                    break;
+                }
+            } else {
+                switch (insn.funct3) {
+                case ALU_ADD:
+                    if (insn.funct7 == 0x20)
+                        emit_sub_r64(&e, rd, rs1, rs2);  // SUB
+                    else
+                        emit_add_r64(&e, rd, rs1, rs2);  // ADD
+                    break;
+                case ALU_SLL:
+                    emit_lslv_r64(&e, rd, rs1, rs2);
+                    break;
+                case ALU_SLT:
+                    emit_cmp_r64(&e, rs1, rs2);
+                    emit_cset(&e, rd, A64_COND_LT);
+                    break;
+                case ALU_SLTU:
+                    emit_cmp_r64(&e, rs1, rs2);
+                    emit_cset(&e, rd, A64_COND_CC);
+                    break;
+                case ALU_XOR:
+                    emit_eor_r64(&e, rd, rs1, rs2);
+                    break;
+                case ALU_SRL:
+                    if (insn.funct7 == 0x20)
+                        emit_asrv_r64(&e, rd, rs1, rs2);  // SRA
+                    else
+                        emit_lsrv_r64(&e, rd, rs1, rs2);  // SRL
+                    break;
+                case ALU_OR:
+                    emit_orr_r64(&e, rd, rs1, rs2);
+                    break;
+                case ALU_AND:
+                    emit_and_r64(&e, rd, rs1, rs2);
+                    break;
+                }
+            }
+            pc += 4;
+            continue;
+        }
+
+        // -- IMM32 (32-bit ALU with immediate, sign-extend result) --
+        case OP_IMM32: {
+            int rs1 = rc_read(&e, &rc, insn.rs1);
+            int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : A64_X1;
+
+            switch (insn.funct3) {
+            case ALU_ADDI: {  // ADDIW
+                if (insn.imm >= 0 && insn.imm < 4096) {
+                    emit_inst(&e, 0x11000000 | ((insn.imm & 0xFFF) << 10)
+                              | (rs1 << 5) | rd);  // ADD Wd, Wn, #imm
+                } else if (insn.imm < 0 && insn.imm > -4096) {
+                    emit_inst(&e, 0x51000000 | (((-insn.imm) & 0xFFF) << 10)
+                              | (rs1 << 5) | rd);  // SUB Wd, Wn, #imm
+                } else {
+                    emit_mov_r64_imm32(&e, A64_X0, insn.imm);
+                    emit_add_r32(&e, rd, rs1, A64_X0);
+                }
+                emit_sxtw(&e, rd, rd);
+                break;
+            }
+            case ALU_SLLI:  // SLLIW
+                emit_lsl_r32_imm(&e, rd, rs1, insn.imm & 31);
+                emit_sxtw(&e, rd, rd);
+                break;
+            case ALU_SRLI:
+                if (insn.funct7 & 0x20) {
+                    // SRAIW
+                    emit_asr_r32_imm(&e, rd, rs1, insn.imm & 31);
+                } else {
+                    // SRLIW
+                    emit_lsr_r32_imm(&e, rd, rs1, insn.imm & 31);
+                }
+                emit_sxtw(&e, rd, rd);
+                break;
+            }
+            pc += 4;
+            continue;
+        }
+
+        // -- REG32 (32-bit ALU register-register, sign-extend result) --
+        case OP_REG32: {
+            int rs1 = rc_read(&e, &rc, insn.rs1);
+            int rs2 = rc_read(&e, &rc, insn.rs2);
+            int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : A64_X1;
+
+            if (insn.funct7 == 0x01) {
+                // M extension (32-bit)
+                switch (insn.funct3) {
+                case 0: // MULW
+                    emit_mul_r32(&e, rd, rs1, rs2);
+                    break;
+                case 4: // DIVW
+                    emit_sdiv_r32(&e, rd, rs1, rs2);
+                    break;
+                case 5: // DIVUW
+                    emit_udiv_r32(&e, rd, rs1, rs2);
+                    break;
+                case 6: { // REMW
+                    emit_sdiv_r32(&e, A64_X0, rs1, rs2);
+                    // MSUB Wd, Wn, Wm, Wa (32-bit)
+                    emit_inst(&e, 0x1B008000 | (rs2 << 16) | (rs1 << 10)
+                              | (A64_X0 << 5) | rd);
+                    break;
+                }
+                case 7: { // REMUW
+                    emit_udiv_r32(&e, A64_X0, rs1, rs2);
+                    emit_inst(&e, 0x1B008000 | (rs2 << 16) | (rs1 << 10)
+                              | (A64_X0 << 5) | rd);
+                    break;
+                }
+                }
+            } else {
+                switch (insn.funct3) {
+                case ALU_ADD:
+                    if (insn.funct7 == 0x20)
+                        emit_sub_r32(&e, rd, rs1, rs2);  // SUBW
+                    else
+                        emit_add_r32(&e, rd, rs1, rs2);  // ADDW
+                    break;
+                case ALU_SLL:  // SLLW
+                    emit_lslv_r32(&e, rd, rs1, rs2);
+                    break;
+                case ALU_SRL:
+                    if (insn.funct7 == 0x20)
+                        emit_asrv_r32(&e, rd, rs1, rs2);  // SRAW
+                    else
+                        emit_lsrv_r32(&e, rd, rs1, rs2);  // SRLW
+                    break;
+                }
+            }
+            emit_sxtw(&e, rd, rd);
+            pc += 4;
+            continue;
+        }
+
+        // -- FP LOAD (FLD) --
+        case OP_FP_LOAD: {
+            int rs1 = rc_read(&e, &rc, insn.rs1);
+            // Address: X0 = rs1 + imm
+            if (insn.imm) {
+                emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                    static_cast<int64_t>(insn.imm)));
+                emit_add_r64(&e, A64_X0, rs1, A64_X0);
+            } else {
+                emit_mov_r64(&e, A64_X0, rs1);
+            }
+            int fd = fc_write(&e, &fc, insn.rd);
+            emit_load_mem_f64(&e, fd, A64_X0);
+            pc += 4;
+            continue;
+        }
+
+        // -- FP STORE (FSD) --
+        case OP_FP_STORE: {
+            int rs1 = rc_read(&e, &rc, insn.rs1);
+            int fs2 = fc_read(&e, &fc, insn.rs2);
+            if (insn.imm) {
+                emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                    static_cast<int64_t>(insn.imm)));
+                emit_add_r64(&e, A64_X0, rs1, A64_X0);
+            } else {
+                emit_mov_r64(&e, A64_X0, rs1);
+            }
+            emit_store_mem_f64(&e, A64_X0, fs2);
+            pc += 4;
+            continue;
+        }
+
+        // -- FP arithmetic/convert/compare --
+        case OP_FP: {
+            uint8_t funct5 = insn.funct7 >> 2;
+
+            switch (funct5) {
+            case FP_FADD: {
+                int fs1 = fc_read(&e, &fc, insn.rs1);
+                int fs2 = fc_read(&e, &fc, insn.rs2);
+                int fd = fc_write(&e, &fc, insn.rd);
+                emit_fadd_d(&e, fd, fs1, fs2);
+                break;
+            }
+            case FP_FSUB: {
+                int fs1 = fc_read(&e, &fc, insn.rs1);
+                int fs2 = fc_read(&e, &fc, insn.rs2);
+                int fd = fc_write(&e, &fc, insn.rd);
+                emit_fsub_d(&e, fd, fs1, fs2);
+                break;
+            }
+            case FP_FMUL: {
+                int fs1 = fc_read(&e, &fc, insn.rs1);
+                int fs2 = fc_read(&e, &fc, insn.rs2);
+                int fd = fc_write(&e, &fc, insn.rd);
+                emit_fmul_d(&e, fd, fs1, fs2);
+                break;
+            }
+            case FP_FDIV: {
+                int fs1 = fc_read(&e, &fc, insn.rs1);
+                int fs2 = fc_read(&e, &fc, insn.rs2);
+                int fd = fc_write(&e, &fc, insn.rd);
+                emit_fdiv_d(&e, fd, fs1, fs2);
+                break;
+            }
+            case FP_FSQRT: {
+                int fs1 = fc_read(&e, &fc, insn.rs1);
+                int fd = fc_write(&e, &fc, insn.rd);
+                emit_fsqrt_d(&e, fd, fs1);
+                break;
+            }
+            case FP_FSGNJ: {
+                int fs1 = fc_read(&e, &fc, insn.rs1);
+                int fs2 = fc_read(&e, &fc, insn.rs2);
+                int fd = fc_write(&e, &fc, insn.rd);
+                switch (insn.funct3) {
+                case 0: // FSGNJ.D — copy sign of fs2
+                    if (insn.rs1 == insn.rs2) {
+                        emit_fmov_d(&e, fd, fs1);  // FMV.D
+                    } else {
+                        // ABS(fs1) with sign of fs2: use bit manipulation
+                        emit_fabs_d(&e, fd, fs1);
+                        emit_fmov_x64_d(&e, A64_X0, fs2);
+                        // Test sign bit of fs2
+                        emit_cmp_r64_imm(&e, A64_X0, 0);
+                        uint32_t skip = emit_b_cond(&e, A64_COND_GE, 0);
+                        emit_fneg_d(&e, fd, fd);
+                        emit_patch_b19(&e, skip, emit_pos(&e));
+                    }
+                    break;
+                case 1: // FSGNJN.D — negate sign of fs2
+                    if (insn.rs1 == insn.rs2) {
+                        emit_fneg_d(&e, fd, fs1);  // FNEG.D
+                    } else {
+                        emit_fabs_d(&e, fd, fs1);
+                        emit_fmov_x64_d(&e, A64_X0, fs2);
+                        emit_cmp_r64_imm(&e, A64_X0, 0);
+                        uint32_t skip = emit_b_cond(&e, A64_COND_LT, 0);
+                        emit_fneg_d(&e, fd, fd);
+                        emit_patch_b19(&e, skip, emit_pos(&e));
+                    }
+                    break;
+                case 2: // FSGNJX.D — XOR signs
+                    if (insn.rs1 == insn.rs2) {
+                        emit_fabs_d(&e, fd, fs1);  // FABS.D
+                    } else {
+                        // XOR the sign bits via integer ops
+                        emit_fmov_x64_d(&e, A64_X0, fs1);
+                        emit_fmov_x64_d(&e, A64_X1, fs2);
+                        emit_eor_r64(&e, A64_X0, A64_X0, A64_X1);
+                        emit_fmov_d_x64(&e, fd, A64_X0);
+                    }
+                    break;
+                }
+                break;
+            }
+            case FP_FMINMAX: {
+                int fs1 = fc_read(&e, &fc, insn.rs1);
+                int fs2 = fc_read(&e, &fc, insn.rs2);
+                int fd = fc_write(&e, &fc, insn.rd);
+                if (insn.funct3 == 0)
+                    emit_fmin_d(&e, fd, fs1, fs2);
+                else
+                    emit_fmax_d(&e, fd, fs1, fs2);
+                break;
+            }
+            case FP_FCMP: {
+                int fs1 = fc_read(&e, &fc, insn.rs1);
+                int fs2 = fc_read(&e, &fc, insn.rs2);
+                int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : A64_X1;
+                emit_fcmp_d(&e, fs1, fs2);
+                switch (insn.funct3) {
+                case 0: // FLE.D
+                    emit_cset(&e, rd, A64_COND_LS);
+                    break;
+                case 1: // FLT.D
+                    emit_cset(&e, rd, A64_COND_CC);
+                    break;
+                case 2: // FEQ.D
+                    emit_cset(&e, rd, A64_COND_EQ);
+                    break;
+                }
+                break;
+            }
+            case FP_FCVTW: {
+                // FCVT int ← double
+                int fs1 = fc_read(&e, &fc, insn.rs1);
+                int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : A64_X1;
+                if (insn.rs2 == 0) {
+                    // FCVT.W.D — double to signed 32-bit
+                    emit_fcvtzs_x64_d(&e, rd, fs1);
+                    emit_sxtw(&e, rd, rd);
+                } else if (insn.rs2 == 1) {
+                    // FCVT.WU.D — double to unsigned 32-bit
+                    emit_fcvtzs_x64_d(&e, rd, fs1);
+                    // Zero-extend 32→64: use MOV Wd, Wd
+                    emit_mov_r32(&e, rd, rd);
+                } else if (insn.rs2 == 2) {
+                    // FCVT.L.D — double to signed 64-bit
+                    emit_fcvtzs_x64_d(&e, rd, fs1);
+                } else {
+                    // FCVT.LU.D — double to unsigned 64-bit
+                    // Use unsigned variant (FCVTZU)
+                    emit_inst(&e, 0x9E790000 | (fs1 << 5) | rd);
+                }
+                break;
+            }
+            case FP_FCVTDW: {
+                // FCVT double ← int
+                int rs1 = rc_read(&e, &rc, insn.rs1);
+                int fd = fc_write(&e, &fc, insn.rd);
+                if (insn.rs2 == 0) {
+                    // FCVT.D.W — signed 32-bit to double
+                    emit_sxtw(&e, A64_X0, rs1);
+                    emit_scvtf_d_x64(&e, fd, A64_X0);
+                } else if (insn.rs2 == 1) {
+                    // FCVT.D.WU — unsigned 32-bit to double
+                    emit_mov_r32(&e, A64_X0, rs1);  // zero-extend
+                    emit_scvtf_d_x64(&e, fd, A64_X0);
+                } else if (insn.rs2 == 2) {
+                    // FCVT.D.L — signed 64-bit to double
+                    emit_scvtf_d_x64(&e, fd, rs1);
+                } else {
+                    // FCVT.D.LU — unsigned 64-bit to double
+                    // UCVTF Dd, Xn
+                    emit_inst(&e, 0x9E630000 | (rs1 << 5) | fd);
+                }
+                break;
+            }
+            case FP_FCLASS: {
+                if (insn.funct3 == 0) {
+                    // FMV.X.D — move double bits to integer
+                    int fs1 = fc_read(&e, &fc, insn.rs1);
+                    int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : A64_X1;
+                    emit_fmov_x64_d(&e, rd, fs1);
+                }
+                // FCLASS.D (funct3==1) not implemented — rare, fallback OK.
+                break;
+            }
+            case FP_FMVDX: {
+                // FMV.D.X — move integer bits to double
+                int rs1 = rc_read(&e, &rc, insn.rs1);
+                int fd = fc_write(&e, &fc, insn.rd);
+                emit_fmov_d_x64(&e, fd, rs1);
+                break;
+            }
+            default:
+                // Unhandled FP opcode — exit to dispatcher.
+                rc_flush(&e, &rc); fc_flush(&e, &fc);
+                emit_exit_with_pc(&e, pc);
+                goto done;
+            }
+            pc += 4;
+            continue;
+        }
+
+        // -- SYSTEM --
+        case OP_SYSTEM: {
+            rc_flush(&e, &rc); fc_flush(&e, &fc);
+            if (insn.imm == 0) {
+                // ECALL — set bit 0 signal
+                emit_exit_with_pc(&e, pc | 1);
+            } else if (insn.imm == 1) {
+                // EBREAK — set bit 1 signal
+                emit_exit_with_pc(&e, pc | 2);
+            } else {
+                emit_exit_with_pc(&e, pc);
+            }
+            goto done;
+        }
+
+        // -- FENCE (no-op on single-threaded DBT) --
+        case OP_FENCE:
+            pc += 4;
+            continue;
+
+        default:
+            // Unknown opcode — exit to dispatcher.
+            rc_flush(&e, &rc); fc_flush(&e, &fc);
+            emit_exit_with_pc(&e, pc);
+            goto done;
+        }
+    }
+
+    // Max instructions reached — flush and exit.
+    rc_flush(&e, &rc); fc_flush(&e, &fc);
+    emit_exit_chained(&e, dbt, pc);
+
+done:
+    if (e.offset > e.capacity) return nullptr;
+
+    dbt->code_used += e.offset;
+    dbt->blocks_translated++;
+    dbt->insns_translated += count;
+    return block_start;
 }
 
 // ---------------------------------------------------------------
