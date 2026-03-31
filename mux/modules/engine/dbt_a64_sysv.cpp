@@ -649,6 +649,85 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
     fp_cache_t fc;
     fc_init(&fc);
 
+    // -- Superblock: self-loop detection --
+    //
+    // Scan forward from guest_pc looking for a branch/JAL back to
+    // guest_pc.  If found, the block contains a self-loop and we
+    // can keep the entire loop body in one native block.
+    //
+    uint32_t warm_entry = 0;
+    bool self_loop = false;
+    {
+        uint64_t scan_pc = guest_pc;
+        int used[32] = {0};
+        bool past_first_branch = false;
+        for (int i = 0; i < MAX_BLOCK_INSNS && scan_pc + 4 <= dbt->memory_size; i++) {
+            uint32_t w;
+            memcpy(&w, dbt->memory + scan_pc, 4);
+            rv64_insn_t si;
+            rv64_decode(w, &si);
+            if (!past_first_branch) {
+                if (si.rs1) used[si.rs1] = 1;
+                if ((si.opcode == OP_REG || si.opcode == OP_BRANCH || si.opcode == OP_STORE) && si.rs2)
+                    used[si.rs2] = 1;
+            }
+            if (si.opcode == OP_BRANCH) {
+                uint64_t target = scan_pc + static_cast<int64_t>(si.imm);
+                if (target == guest_pc) { self_loop = true; break; }
+                if (si.imm < 0) break;
+                past_first_branch = true;
+                scan_pc = target;
+                continue;
+            }
+            if (si.opcode == OP_JAL) {
+                if (si.rd != 0) {
+                    past_first_branch = true;
+                    scan_pc += 4;
+                    continue;
+                }
+                uint64_t target = scan_pc + static_cast<int64_t>(si.imm);
+                if (target == guest_pc) { self_loop = true; break; }
+                if (si.imm < 0) break;
+                if (si.imm > 0 && target + 4 <= dbt->memory_size) {
+                    past_first_branch = true;
+                    scan_pc = target;
+                    continue;
+                }
+                break;
+            }
+            if (si.opcode == OP_JALR) {
+                if (si.rd == 0 && si.rs1 == 1 && si.imm == 0) {
+                    scan_pc += 4;
+                    continue;
+                }
+                break;
+            }
+            if (si.opcode == OP_SYSTEM) break;
+            scan_pc += 4;
+        }
+        if (self_loop) {
+            // Pre-load frequently used registers into the cache.
+            int loaded = 0;
+            for (int r = 1; r < 32 && loaded < RC_NUM_SLOTS; r++) {
+                if (used[r]) { rc_read(&e, &rc, r); loaded++; }
+            }
+
+            // Align warm_entry to 16-byte boundary (AArch64 fetch unit).
+            // All AArch64 instructions are 4 bytes, so we pad with NOPs.
+            uintptr_t abs_cur = reinterpret_cast<uintptr_t>(e.buf) + emit_pos(&e);
+            uint32_t pad_needed = ((abs_cur + 15) & ~(uintptr_t)15) - abs_cur;
+            uint32_t n_nops = pad_needed / 4;
+            for (uint32_t i = 0; i < n_nops; i++) {
+                emit_inst(&e, 0xD503201F);  // NOP
+            }
+
+            warm_entry = emit_pos(&e);
+        }
+    }
+
+    side_exit_t side_exits[MAX_SIDE_EXITS];
+    int num_side_exits = 0;
+
     uint64_t pc = guest_pc;
     int count = 0;
 
@@ -857,7 +936,35 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                 }
             }
 
-            // Non-diamond SLT+branch fusion.
+            // Superblock: SLT+branch back-edge to loop start.
+            if (self_loop && target == guest_pc) {
+                rc_flush(&e, &rc); fc_flush(&e, &fc);
+                uint32_t bcond_patch = emit_b_cond(&e, cond, 0);
+                emit_patch_b19(&e, bcond_patch, warm_entry);
+                emit_exit_chained(&e, dbt, branch_pc + 4);
+                dbt->insns_fused++;
+                count++;
+                goto done;
+            }
+
+            // Superblock: SLT+branch side exit (forward).
+            if (self_loop && next.imm > 0
+                && num_side_exits < MAX_SIDE_EXITS
+                && count < MAX_BLOCK_INSNS - 5) {
+                uint32_t bcond_patch = emit_b_cond(&e, cond, 0);
+                side_exits[num_side_exits].jcc_patch = bcond_patch;
+                side_exits[num_side_exits].target_pc = target;
+                side_exits[num_side_exits].expected_next_pc = 0;
+                memcpy(side_exits[num_side_exits].snapshot, rc.slots,
+                       sizeof(rc.slots));
+                num_side_exits++;
+                pc = branch_pc + 4;
+                count++;
+                dbt->insns_fused++;
+                continue;
+            }
+
+            // Non-diamond SLT+branch fusion (non-superblock).
             rc_flush(&e, &rc); fc_flush(&e, &fc);
             uint32_t bcond_patch = emit_b_cond(&e, cond, 0);
             emit_exit_chained(&e, dbt, branch_pc + 4);
@@ -1051,6 +1158,21 @@ no_addr_fusion:
         // -- JAL --
         case OP_JAL: {
             uint64_t target = pc + static_cast<int64_t>(insn.imm);
+
+            // Superblock: unconditional backward jump to loop start.
+            if (self_loop && insn.rd == 0 && target == guest_pc) {
+                rc_flush(&e, &rc); fc_flush(&e, &fc);
+                uint32_t b_patch = emit_b(&e, 0);
+                emit_patch_b26(&e, b_patch, warm_entry);
+                goto done;
+            }
+
+            // Superblock: forward unconditional jump — follow inline.
+            if (self_loop && insn.rd == 0 && insn.imm > 0) {
+                pc = target;
+                continue;
+            }
+
             if (insn.rd) {
                 int rd = rc_write(&e, &rc, insn.rd);
                 emit_mov_r64_imm64(&e, rd, pc + 4);
@@ -1095,30 +1217,61 @@ no_addr_fusion:
         // -- BRANCH --
         case OP_BRANCH: {
             uint64_t target = pc + static_cast<int64_t>(insn.imm);
-            int rs1 = rc_read(&e, &rc, insn.rs1);
-            int rs2 = rc_read(&e, &rc, insn.rs2);
 
-            // Compare.
-            emit_cmp_r64(&e, rs1, rs2);
-
-            // Flush before emitting exits.
-            rc_flush(&e, &rc); fc_flush(&e, &fc);
-
-            // Conditional branch: if taken → target, else → pc+4.
+            // Conditional branch condition code.
             uint8_t cond;
             switch (insn.funct3) {
             case BR_BEQ:  cond = A64_COND_EQ; break;
             case BR_BNE:  cond = A64_COND_NE; break;
             case BR_BLT:  cond = A64_COND_LT; break;
             case BR_BGE:  cond = A64_COND_GE; break;
-            case BR_BLTU: cond = A64_COND_CC; break;  // unsigned <
-            case BR_BGEU: cond = A64_COND_CS; break;  // unsigned >=
+            case BR_BLTU: cond = A64_COND_CC; break;
+            case BR_BGEU: cond = A64_COND_CS; break;
             default:
+                rc_flush(&e, &rc); fc_flush(&e, &fc);
                 emit_exit_with_pc(&e, pc + 4);
                 goto done;
             }
 
-            // B.cond taken_path
+            // Superblock: back-edge to loop start → B.cond to warm_entry.
+            if (self_loop && target == guest_pc) {
+                int rs1 = rc_read(&e, &rc, insn.rs1);
+                int rs2 = rc_read(&e, &rc, insn.rs2);
+                rc_flush(&e, &rc); fc_flush(&e, &fc);
+                emit_cmp_r64(&e, rs1, rs2);
+                uint32_t bcond_patch = emit_b_cond(&e, cond, 0);
+                emit_patch_b19(&e, bcond_patch, warm_entry);
+                // Fall-through = loop exit.
+                emit_exit_chained(&e, dbt, pc + 4);
+                goto done;
+            }
+
+            // Superblock side exit: forward branch within self-loop.
+            // Record taken path as cold stub, continue with fall-through.
+            if (self_loop && insn.imm > 0
+                && num_side_exits < MAX_SIDE_EXITS
+                && count < MAX_BLOCK_INSNS - 4) {
+                int rs1 = rc_read(&e, &rc, insn.rs1);
+                int rs2 = rc_read(&e, &rc, insn.rs2);
+                emit_cmp_r64(&e, rs1, rs2);
+                uint32_t bcond_patch = emit_b_cond(&e, cond, 0);
+                side_exits[num_side_exits].jcc_patch = bcond_patch;
+                side_exits[num_side_exits].target_pc = target;
+                side_exits[num_side_exits].expected_next_pc = 0;
+                memcpy(side_exits[num_side_exits].snapshot, rc.slots,
+                       sizeof(rc.slots));
+                num_side_exits++;
+                pc += 4;
+                continue;
+            }
+
+            // Normal branch: terminate block with two exits.
+            {
+                int rs1 = rc_read(&e, &rc, insn.rs1);
+                int rs2 = rc_read(&e, &rc, insn.rs2);
+                emit_cmp_r64(&e, rs1, rs2);
+            }
+            rc_flush(&e, &rc); fc_flush(&e, &fc);
             uint32_t bcond_patch = emit_b_cond(&e, cond, 0);
             // Fall-through: not taken → pc+4
             emit_exit_chained(&e, dbt, pc + 4);
@@ -1745,11 +1898,29 @@ no_addr_fusion:
     emit_exit_chained(&e, dbt, pc);
 
 done:
+    // Emit cold stubs for superblock side exits.
+    // Each stub: restore dirty registers from snapshot, then chained exit.
+    for (int i = 0; i < num_side_exits; i++) {
+        emit_patch_b19(&e, side_exits[i].jcc_patch, emit_pos(&e));
+        for (int j = 0; j < RC_NUM_SLOTS; j++) {
+            if (side_exits[i].snapshot[j].guest_reg >= 0
+                && side_exits[i].snapshot[j].dirty) {
+                emit_store_guest(&e, side_exits[i].snapshot[j].guest_reg,
+                                 rc_host_regs[j]);
+            }
+        }
+        emit_exit_chained(&e, dbt, side_exits[i].target_pc);
+    }
+
     if (e.offset > e.capacity) return nullptr;
 
     dbt->code_used += e.offset;
     dbt->blocks_translated++;
     dbt->insns_translated += count;
+    if (self_loop) {
+        dbt->superblock_count++;
+        dbt->side_exits_total += num_side_exits;
+    }
     return block_start;
 }
 
