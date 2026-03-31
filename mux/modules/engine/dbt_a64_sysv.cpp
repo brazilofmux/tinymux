@@ -624,11 +624,12 @@ static void emit_exit_chained(emit_t *e, dbt_state_t *dbt,
 }
 
 // ---------------------------------------------------------------
-// Translate a single block — Stage 1 (basic, no fusion/superblock)
+// Translate a single block — with instruction fusion
 // ---------------------------------------------------------------
 //
 // Straight-line per-instruction translation with register cache.
-// No superblocks, no RAS, no inline CALL, no fusion.
+// Instruction fusion: LUI+ADDI, AUIPC+ADDI, LUI+JALR, AUIPC+JALR,
+// LUI/AUIPC+LOAD/STORE, SLT+BEQ/BNE peepholes.
 // At any branch/jump, flush register cache and exit.
 
 uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
@@ -665,10 +666,327 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
         rv64_decode(word, &insn);
         count++;
 
+        // -- Peek-ahead for instruction fusion --
+        rv64_insn_t next;
+        bool have_next = false;
+        if (pc + 8 <= dbt->memory_size) {
+            uint32_t next_word;
+            memcpy(&next_word, dbt->memory + pc + 4, 4);
+            rv64_decode(next_word, &next);
+            have_next = true;
+        }
+
+        // -- Fusion: SLT/SLTI/SLTU/SLTIU + BEQ/BNE against x0 --
+        // Reuse the compare flags to branch directly, avoiding a
+        // redundant test of the SLT result register.
+        if (have_next
+            && ((insn.opcode == OP_REG && insn.funct7 == 0
+                 && (insn.funct3 == ALU_SLT || insn.funct3 == ALU_SLTU))
+                || (insn.opcode == OP_IMM
+                    && (insn.funct3 == ALU_SLTI || insn.funct3 == ALU_SLTIU)))
+            && next.opcode == OP_BRANCH
+            && (next.funct3 == 0 || next.funct3 == 1)
+            && ((next.rs1 == insn.rd && next.rs2 == 0)
+                || (next.rs2 == insn.rd && next.rs1 == 0))) {
+            uint64_t branch_pc = pc + 4;
+            uint64_t target = branch_pc + static_cast<int64_t>(next.imm);
+
+            bool is_unsigned = (insn.opcode == OP_REG)
+                ? (insn.funct3 == ALU_SLTU)
+                : (insn.funct3 == ALU_SLTIU);
+
+            // Emit the comparison.
+            if (insn.opcode == OP_REG) {
+                int rs1 = rc_read(&e, &rc, insn.rs1);
+                int rs2 = rc_read(&e, &rc, insn.rs2);
+                emit_cmp_r64(&e, rs1, rs2);
+            } else {
+                int rs1 = rc_read(&e, &rc, insn.rs1);
+                emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                    static_cast<int64_t>(insn.imm)));
+                emit_cmp_r64(&e, rs1, A64_X0);
+            }
+
+            // Preserve the SLT result in rd if needed.
+            if (insn.rd) {
+                int rd = rc_write(&e, &rc, insn.rd);
+                emit_cset(&e, rd, is_unsigned ? A64_COND_CC : A64_COND_LT);
+            }
+
+            // Determine the AArch64 condition for the fused branch.
+            // BNE rd,x0 means "branch if SLT result != 0" = "branch if LT"
+            // BEQ rd,x0 means "branch if SLT result == 0" = "branch if GE"
+            uint8_t cond;
+            if (next.funct3 == 1) { // BNE
+                cond = is_unsigned ? A64_COND_CC : A64_COND_LT;
+            } else { // BEQ
+                cond = is_unsigned ? A64_COND_CS : A64_COND_GE;
+            }
+
+            // Diamond merge: branch-over-one → CSEL (branchless)
+            if (next.imm == 8 && pc + 12 <= dbt->memory_size) {
+                uint32_t skip_word;
+                memcpy(&skip_word, dbt->memory + pc + 8, 4);
+                rv64_insn_t skip;
+                rv64_decode(skip_word, &skip);
+
+                // Invert condition for CSEL: if branch IS taken, skip
+                // the instruction, so CSEL selects the old value.
+                uint8_t csel_cond = cond ^ 1;
+
+                bool can_predicate = false;
+                if (skip.opcode == OP_IMM && skip.rd != 0
+                    && (skip.funct3 == ALU_ADDI || skip.funct3 == ALU_XORI
+                        || skip.funct3 == ALU_ORI || skip.funct3 == ALU_ANDI)) {
+                    can_predicate = true;
+                }
+                if (skip.opcode == OP_REG && skip.rd != 0
+                    && skip.funct7 != 0x01
+                    && (skip.funct3 == ALU_ADD || skip.funct3 == ALU_XOR
+                        || skip.funct3 == ALU_OR || skip.funct3 == ALU_AND)) {
+                    can_predicate = true;
+                }
+                if (skip.opcode == OP_LUI && skip.rd != 0) {
+                    can_predicate = true;
+                }
+
+                if (can_predicate) {
+                    // Compute skip instruction result into X0 (scratch).
+                    if (skip.opcode == OP_LUI) {
+                        emit_mov_r64_imm32(&e, A64_X0, skip.imm);
+                    } else if (skip.opcode == OP_IMM) {
+                        int hr_src = rc_read(&e, &rc, skip.rs1);
+                        emit_mov_r64(&e, A64_X0, hr_src);
+                        switch (skip.funct3) {
+                        case ALU_ADDI:
+                            if (skip.imm >= 0 && skip.imm < 4096)
+                                emit_add_r64_imm(&e, A64_X0, A64_X0,
+                                    static_cast<uint32_t>(skip.imm));
+                            else {
+                                emit_mov_r64_imm64(&e, A64_X1, static_cast<uint64_t>(
+                                    static_cast<int64_t>(skip.imm)));
+                                emit_add_r64(&e, A64_X0, A64_X0, A64_X1);
+                            }
+                            break;
+                        case ALU_XORI:
+                            if (!emit_eor_r64_imm(&e, A64_X0, A64_X0,
+                                    static_cast<uint64_t>(
+                                        static_cast<int64_t>(skip.imm)))) {
+                                emit_mov_r64_imm64(&e, A64_X1, static_cast<uint64_t>(
+                                    static_cast<int64_t>(skip.imm)));
+                                emit_eor_r64(&e, A64_X0, A64_X0, A64_X1);
+                            }
+                            break;
+                        case ALU_ORI:
+                            if (!emit_orr_r64_imm(&e, A64_X0, A64_X0,
+                                    static_cast<uint64_t>(
+                                        static_cast<int64_t>(skip.imm)))) {
+                                emit_mov_r64_imm64(&e, A64_X1, static_cast<uint64_t>(
+                                    static_cast<int64_t>(skip.imm)));
+                                emit_orr_r64(&e, A64_X0, A64_X0, A64_X1);
+                            }
+                            break;
+                        case ALU_ANDI:
+                            if (!emit_and_r64_imm(&e, A64_X0, A64_X0,
+                                    static_cast<uint64_t>(
+                                        static_cast<int64_t>(skip.imm)))) {
+                                emit_mov_r64_imm64(&e, A64_X1, static_cast<uint64_t>(
+                                    static_cast<int64_t>(skip.imm)));
+                                emit_inst(&e, 0x8A000000 | (A64_X1 << 16)
+                                          | (A64_X0 << 5) | A64_X0);
+                            }
+                            break;
+                        }
+                    } else { // OP_REG
+                        int hr_s1 = rc_read(&e, &rc, skip.rs1);
+                        int hr_s2 = rc_read(&e, &rc, skip.rs2);
+                        emit_mov_r64(&e, A64_X0, hr_s1);
+                        switch (skip.funct3) {
+                        case ALU_ADD:
+                            if (skip.funct7 == 0x20)
+                                emit_sub_r64(&e, A64_X0, A64_X0, hr_s2);
+                            else
+                                emit_add_r64(&e, A64_X0, A64_X0, hr_s2);
+                            break;
+                        case ALU_XOR:
+                            emit_eor_r64(&e, A64_X0, A64_X0, hr_s2);
+                            break;
+                        case ALU_OR:
+                            emit_orr_r64(&e, A64_X0, A64_X0, hr_s2);
+                            break;
+                        case ALU_AND:
+                            emit_inst(&e, 0x8A000000 | (hr_s2 << 16)
+                                      | (A64_X0 << 5) | A64_X0);
+                            break;
+                        }
+                    }
+
+                    // Re-emit the comparison (skip instruction may have
+                    // clobbered flags via ADD/SUB).
+                    if (insn.opcode == OP_REG) {
+                        int rs1 = rc_read(&e, &rc, insn.rs1);
+                        int rs2 = rc_read(&e, &rc, insn.rs2);
+                        emit_cmp_r64(&e, rs1, rs2);
+                    } else {
+                        int rs1 = rc_read(&e, &rc, insn.rs1);
+                        emit_mov_r64_imm64(&e, A64_X1, static_cast<uint64_t>(
+                            static_cast<int64_t>(insn.imm)));
+                        emit_cmp_r64(&e, rs1, A64_X1);
+                    }
+
+                    if (insn.rd) {
+                        int rd = rc_write(&e, &rc, insn.rd);
+                        emit_cset(&e, rd, is_unsigned ? A64_COND_CC : A64_COND_LT);
+                    }
+
+                    // CSEL: rd = branch_taken ? old_rd : X0 (new value)
+                    int hr_rd = rc_read(&e, &rc, skip.rd);
+                    emit_csel(&e, hr_rd, hr_rd, A64_X0, csel_cond);
+
+                    int slot = rc_find(&rc, skip.rd);
+                    if (slot >= 0) {
+                        rc.slots[slot].dirty = 1;
+                        rc.slots[slot].last_use = ++rc.clock;
+                    }
+
+                    dbt_trace_fusion(dbt, pc, "slt_branch_diamond");
+                    pc += 12;
+                    count += 2;
+                    dbt->insns_fused++;
+                    continue;
+                }
+            }
+
+            // Non-diamond SLT+branch fusion.
+            rc_flush(&e, &rc); fc_flush(&e, &fc);
+            uint32_t bcond_patch = emit_b_cond(&e, cond, 0);
+            emit_exit_chained(&e, dbt, branch_pc + 4);
+            emit_patch_b19(&e, bcond_patch, emit_pos(&e));
+            emit_exit_chained(&e, dbt, target);
+            dbt_trace_fusion(dbt, pc, "slt_branch");
+            dbt->insns_fused++;
+            count++;
+            goto done;
+        }
+
+        // -- Fusion: LUI/AUIPC + LOAD/STORE with computed address --
+        if (have_next
+            && (insn.opcode == OP_LUI || insn.opcode == OP_AUIPC)
+            && insn.rd) {
+            int64_t base = (insn.opcode == OP_AUIPC)
+                ? static_cast<int64_t>(pc)
+                : 0;
+            uint64_t addr = static_cast<uint64_t>(
+                base + static_cast<int64_t>(insn.imm)
+                     + static_cast<int64_t>(next.imm));
+
+            if (next.opcode == OP_LOAD && next.rs1 == insn.rd) {
+                // Preserve LUI/AUIPC result in rd when load writes elsewhere.
+                if (insn.rd != next.rd) {
+                    int au_rd = rc_write(&e, &rc, insn.rd);
+                    emit_mov_r64_imm64(&e, au_rd,
+                        static_cast<uint64_t>(
+                            base + static_cast<int64_t>(insn.imm)));
+                }
+
+                emit_mov_r64_imm64(&e, A64_X0, addr);
+                int rd = next.rd ? rc_write(&e, &rc, next.rd) : A64_X1;
+                switch (next.funct3) {
+                case LD_LB:  emit_load_mem8s(&e, rd, A64_X0);  break;
+                case LD_LH:  emit_load_mem16s(&e, rd, A64_X0); break;
+                case LD_LW:  emit_load_mem32s(&e, rd, A64_X0); break;
+                case LD_LD:  emit_load_mem64(&e, rd, A64_X0);  break;
+                case LD_LBU: emit_load_mem8u(&e, rd, A64_X0);  break;
+                case LD_LHU: emit_load_mem16u(&e, rd, A64_X0); break;
+                case LD_LWU: emit_load_mem32(&e, rd, A64_X0);  break;
+                default: goto no_addr_fusion;
+                }
+                dbt_trace_fusion(dbt, pc,
+                    insn.opcode == OP_AUIPC ? "auipc_load" : "lui_load");
+                pc += 8;
+                count++;
+                dbt->insns_fused++;
+                continue;
+            }
+
+            if (next.opcode == OP_STORE && next.rs1 == insn.rd) {
+                // Preserve LUI/AUIPC result in rd.
+                int au_rd = rc_write(&e, &rc, insn.rd);
+                emit_mov_r64_imm64(&e, au_rd,
+                    static_cast<uint64_t>(
+                        base + static_cast<int64_t>(insn.imm)));
+
+                // Value to store: handle x0 (zero register) safely.
+                int rs2;
+                if (next.rs2 == 0) {
+                    emit_mov_r64(&e, A64_X1, A64_XZR);
+                    rs2 = A64_X1;
+                } else {
+                    rs2 = rc_read(&e, &rc, next.rs2);
+                    emit_mov_r64(&e, A64_X1, rs2);
+                }
+
+                emit_mov_r64_imm64(&e, A64_X0, addr);
+                switch (next.funct3) {
+                case ST_SB: emit_store_mem8(&e, A64_X0, A64_X1);  break;
+                case ST_SH: emit_store_mem16(&e, A64_X0, A64_X1); break;
+                case ST_SW: emit_store_mem32(&e, A64_X0, A64_X1); break;
+                case ST_SD: emit_store_mem64(&e, A64_X0, A64_X1); break;
+                default: goto no_addr_fusion;
+                }
+                dbt_trace_fusion(dbt, pc,
+                    insn.opcode == OP_AUIPC ? "auipc_store" : "lui_store");
+                pc += 8;
+                count++;
+                dbt->insns_fused++;
+                continue;
+            }
+        }
+no_addr_fusion:
+
         switch (insn.opcode) {
 
-        // -- LUI --
+        // -- LUI (with LUI+ADDI and LUI+JALR fusion) --
         case OP_LUI: {
+            // Fusion: LUI rd + JALR rs1=rd → direct jump/call
+            uint64_t target_u64;
+            uint64_t return_pc;
+            if (have_next
+                && dbt_resolve_direct_jalr_target(pc, insn, next,
+                                                   &target_u64, &return_pc)) {
+                // Materialize LUI result if JALR writes a different rd.
+                if (insn.rd != next.rd && insn.rd != 0) {
+                    int rd = rc_write(&e, &rc, insn.rd);
+                    emit_mov_r64_imm32(&e, rd, insn.imm);
+                }
+                if (next.rd) {
+                    int rd = rc_write(&e, &rc, next.rd);
+                    emit_mov_r64_imm64(&e, rd, return_pc);
+                }
+                rc_flush(&e, &rc); fc_flush(&e, &fc);
+                emit_exit_chained(&e, dbt, target_u64);
+                dbt_trace_fusion(dbt, pc, "lui_jalr");
+                dbt->insns_fused++;
+                count++;
+                goto done;
+            }
+
+            // Fusion: LUI rd + ADDI rd,rd,lower → MOV rd, imm32
+            if (have_next && insn.rd
+                && next.opcode == OP_IMM && next.funct3 == ALU_ADDI
+                && next.rd == insn.rd && next.rs1 == insn.rd) {
+                int64_t val = static_cast<int64_t>(insn.imm)
+                            + static_cast<int64_t>(next.imm);
+                int rd = rc_write(&e, &rc, insn.rd);
+                emit_mov_r64_imm64(&e, rd, static_cast<uint64_t>(val));
+                dbt_trace_fusion(dbt, pc, "lui_addi");
+                pc += 8;
+                count++;
+                dbt->insns_fused++;
+                continue;
+            }
+
+            // Unfused LUI.
             if (insn.rd) {
                 int rd = rc_write(&e, &rc, insn.rd);
                 emit_mov_r64_imm32(&e, rd, insn.imm);
@@ -677,8 +995,49 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             continue;
         }
 
-        // -- AUIPC --
+        // -- AUIPC (with AUIPC+ADDI and AUIPC+JALR fusion) --
         case OP_AUIPC: {
+            // Fusion: AUIPC rd + JALR rs1=rd → direct jump/call
+            uint64_t target_u64;
+            uint64_t return_pc;
+            if (have_next
+                && dbt_resolve_direct_jalr_target(pc, insn, next,
+                                                   &target_u64, &return_pc)) {
+                if (insn.rd != next.rd && insn.rd != 0) {
+                    int rd = rc_write(&e, &rc, insn.rd);
+                    int64_t val = static_cast<int64_t>(pc)
+                                + static_cast<int64_t>(insn.imm);
+                    emit_mov_r64_imm64(&e, rd, static_cast<uint64_t>(val));
+                }
+                if (next.rd) {
+                    int rd = rc_write(&e, &rc, next.rd);
+                    emit_mov_r64_imm64(&e, rd, return_pc);
+                }
+                rc_flush(&e, &rc); fc_flush(&e, &fc);
+                emit_exit_chained(&e, dbt, target_u64);
+                dbt_trace_fusion(dbt, pc, "auipc_jalr");
+                dbt->insns_fused++;
+                count++;
+                goto done;
+            }
+
+            // Fusion: AUIPC rd + ADDI rd,rd,lower → MOV rd, pc+imm
+            if (have_next && insn.rd
+                && next.opcode == OP_IMM && next.funct3 == ALU_ADDI
+                && next.rd == insn.rd && next.rs1 == insn.rd) {
+                int64_t val = static_cast<int64_t>(pc)
+                            + static_cast<int64_t>(insn.imm)
+                            + static_cast<int64_t>(next.imm);
+                int rd = rc_write(&e, &rc, insn.rd);
+                emit_mov_r64_imm64(&e, rd, static_cast<uint64_t>(val));
+                dbt_trace_fusion(dbt, pc, "auipc_addi");
+                pc += 8;
+                count++;
+                dbt->insns_fused++;
+                continue;
+            }
+
+            // Unfused AUIPC.
             if (insn.rd) {
                 int64_t val = static_cast<int64_t>(pc)
                             + static_cast<int64_t>(insn.imm);
