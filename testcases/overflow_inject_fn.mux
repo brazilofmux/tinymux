@@ -39,7 +39,8 @@
 -
 #
 # Test Case #2 - mul/add overflow and div-by-zero.
-# mul(INT64_MAX,2) promotes to float, add(INT64_MAX,1) wraps,
+# These values have >9 digits, so mul() and add() use the
+# floating-point path (same as the interpreter).
 # div(1,0) returns error, mod(1,0) returns 0.
 #
 &tr.tc002 test_overflow_inject_fn=
@@ -53,7 +54,7 @@
               )
           )
         ),
-        2B3DBB9AB78908D4EEB85FA7B0F8335C8CD6CBE5
+        D6965F36A9BEBF3FD5BC21184D6B47381C6EBF0C
       )=
   {
     @log smoke=TC002: mul/add overflow and div-by-zero. Succeeded.;
