@@ -228,22 +228,23 @@ AC_CANONICAL_HOST
 
 dnl Select the DBT backend based on host platform.
 dnl The backend file (dbt_BACKEND.cpp) is compiled alongside dbt.cpp.
+dnl Only x86-64 SysV is implemented; other platforms error out until
+dnl their backend files exist.
 DBT_BACKEND="dbt_x64_sysv"
 if test "x$jit_enabled" = "xyes"; then
   AC_MSG_CHECKING(DBT backend for host platform)
   case "$host_cpu" in
     x86_64|amd64)
       case "$host_os" in
-        mingw*|cygwin*|msys*) DBT_BACKEND="dbt_x64_win64" ;;
-        *)                    DBT_BACKEND="dbt_x64_sysv" ;;
+        mingw*|cygwin*|msys*)
+          AC_MSG_ERROR([JIT not yet implemented for Windows (Win64 ABI backend needed)]) ;;
+        *)
+          DBT_BACKEND="dbt_x64_sysv" ;;
       esac ;;
     aarch64|arm64)
-      case "$host_os" in
-        darwin*) DBT_BACKEND="dbt_a64_apple" ;;
-        *)       DBT_BACKEND="dbt_a64_sysv" ;;
-      esac ;;
+      AC_MSG_ERROR([JIT not yet implemented for AArch64 (backend needed)]) ;;
     riscv64)
-      DBT_BACKEND="dbt_rv64_native" ;;
+      AC_MSG_ERROR([JIT not yet implemented for native RV64 (backend needed)]) ;;
     *)
       AC_MSG_ERROR([JIT not supported on $host_cpu]) ;;
   esac

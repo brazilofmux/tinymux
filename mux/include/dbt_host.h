@@ -5,11 +5,16 @@
  * and operating system.  The DBT_HOST_* macros identify the active
  * backend for conditional compilation.
  *
+ * When TINYMUX_JIT is not defined, this header is a no-op — the DBT
+ * is not compiled and no platform detection is needed.
+ *
  * See docs/DBT-PORTABILITY.md for the full multi-platform design.
  */
 
 #ifndef DBT_HOST_H
 #define DBT_HOST_H
+
+#ifdef TINYMUX_JIT
 
 #if defined(__riscv) && __riscv_xlen == 64
   // RV64 native: guest code IS native code.  No translation needed.
@@ -36,7 +41,9 @@
   #endif
 
 #else
-  #error "Unsupported host platform for DBT"
+  #error "Unsupported host platform for DBT — disable JIT or add a backend"
 #endif
+
+#endif // TINYMUX_JIT
 
 #endif // DBT_HOST_H
