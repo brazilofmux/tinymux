@@ -601,6 +601,62 @@ void dbt_backend_backpatch_jmp(uint8_t *code_buf, uint32_t patch_offset,
     memcpy(code_buf + patch_offset, &inst, 4);
 }
 
+// Inline CALL: emit a native BLR to an already-translated callee.
+//
+// The callee's translated code ends with RET (BR X30), which returns
+// to the instruction after our BLR.  We save X30 (link register) on
+// the native stack before BLR and restore it after, so that the caller
+// can eventually RET back to the trampoline.
+//
+// After the callee returns, we check ctx.next_pc against the expected
+// return PC.  If it matches (hot path), execution continues inline.
+// If not (cold path), a side exit stub falls back to the dispatch loop.
+//
+static bool try_emit_inline_call(emit_t *e, reg_cache_t *rc, fp_cache_t *fc,
+                                 dbt_state_t *dbt,
+                                 uint64_t target_pc, block_entry_t *callee,
+                                 uint64_t return_pc,
+                                 side_exit_t *side_exits,
+                                 int *num_side_exits) {
+    (void)target_pc;
+    if (!callee || *num_side_exits >= MAX_SIDE_EXITS) return false;
+
+    // Flush cached registers — callee reads from ctx.
+    rc_flush(e, rc);
+    fc_flush(e, fc);
+
+    // Store ra = return_pc in ctx (callee's JALR reads this).
+    emit_mov_r64_imm64(e, A64_X0, return_pc);
+    emit_store_guest(e, 1, A64_X0);  // x1 = ra
+
+    // Save X30 (link register) on the native stack.
+    emit_stp_pre(e, A64_X29, A64_X30, A64_SP, -16);
+
+    // Load callee's native code address and BLR.
+    uint8_t *callee_code = callee->native_code;
+    emit_mov_r64_imm64(e, A64_X0, reinterpret_cast<uint64_t>(callee_code));
+    emit_blr(e, A64_X0);
+
+    // Restore X30 (link register) from the native stack.
+    emit_ldp_post(e, A64_X29, A64_X30, A64_SP, 16);
+
+    // Check: did the callee return to the expected PC?
+    // If ctx.next_pc != return_pc → cold exit.
+    emit_cmp_ctx_imm32(e, CTX_NEXT_PC_OFF, static_cast<int32_t>(return_pc));
+    uint32_t bne_cold = emit_b_cond(e, A64_COND_NE, 0);
+
+    // Hot path: callee returned normally.  Invalidate register cache
+    // since the callee may have modified any guest register.
+    rc_invalidate_reload(e, rc);
+
+    side_exits[*num_side_exits].jcc_patch = bne_cold;
+    side_exits[*num_side_exits].target_pc = 0;  // sentinel: cold exit
+    side_exits[*num_side_exits].expected_next_pc = return_pc;
+    (*num_side_exits)++;
+    dbt->inline_calls++;
+    return true;
+}
+
 static void emit_exit_chained(emit_t *e, dbt_state_t *dbt,
                                uint64_t target_pc) {
     block_entry_t *be = dbt_cache_lookup(dbt, target_pc);
@@ -1070,6 +1126,19 @@ no_addr_fusion:
                     int rd = rc_write(&e, &rc, next.rd);
                     emit_mov_r64_imm64(&e, rd, return_pc);
                 }
+                // Try inline call for JAL ra (function call).
+                if (next.rd == 1) {
+                    block_entry_t *be = dbt_cache_lookup(dbt, target_u64);
+                    if (try_emit_inline_call(&e, &rc, &fc, dbt, target_u64,
+                                              be, return_pc, side_exits,
+                                              &num_side_exits)) {
+                        dbt_trace_fusion(dbt, pc, "lui_jalr_inline");
+                        dbt->insns_fused++;
+                        pc = return_pc;
+                        count++;
+                        continue;
+                    }
+                }
                 rc_flush(&e, &rc); fc_flush(&e, &fc);
                 emit_exit_chained(&e, dbt, target_u64);
                 dbt_trace_fusion(dbt, pc, "lui_jalr");
@@ -1119,6 +1188,19 @@ no_addr_fusion:
                 if (next.rd) {
                     int rd = rc_write(&e, &rc, next.rd);
                     emit_mov_r64_imm64(&e, rd, return_pc);
+                }
+                // Try inline call for JAL ra (function call).
+                if (next.rd == 1) {
+                    block_entry_t *be = dbt_cache_lookup(dbt, target_u64);
+                    if (try_emit_inline_call(&e, &rc, &fc, dbt, target_u64,
+                                              be, return_pc, side_exits,
+                                              &num_side_exits)) {
+                        dbt_trace_fusion(dbt, pc, "auipc_jalr_inline");
+                        dbt->insns_fused++;
+                        pc = return_pc;
+                        count++;
+                        continue;
+                    }
                 }
                 rc_flush(&e, &rc); fc_flush(&e, &fc);
                 emit_exit_chained(&e, dbt, target_u64);
@@ -1171,6 +1253,21 @@ no_addr_fusion:
             if (self_loop && insn.rd == 0 && insn.imm > 0) {
                 pc = target;
                 continue;
+            }
+
+            // Inline CALL: if this is a function call (JAL ra) and the
+            // target is already translated, emit a native BLR instead
+            // of exiting the block.
+            if (insn.rd == 1) {
+                block_entry_t *be = dbt_cache_lookup(dbt, target);
+                if (try_emit_inline_call(&e, &rc, &fc, dbt, target, be,
+                                          pc + 4, side_exits,
+                                          &num_side_exits)) {
+                    dbt_trace_fusion(dbt, pc, "inline_call");
+                    pc += 4;
+                    count++;
+                    continue;
+                }
             }
 
             if (insn.rd) {
@@ -1899,17 +1996,24 @@ no_addr_fusion:
 
 done:
     // Emit cold stubs for superblock side exits.
-    // Each stub: restore dirty registers from snapshot, then chained exit.
     for (int i = 0; i < num_side_exits; i++) {
         emit_patch_b19(&e, side_exits[i].jcc_patch, emit_pos(&e));
-        for (int j = 0; j < RC_NUM_SLOTS; j++) {
-            if (side_exits[i].snapshot[j].guest_reg >= 0
-                && side_exits[i].snapshot[j].dirty) {
-                emit_store_guest(&e, side_exits[i].snapshot[j].guest_reg,
-                                 rc_host_regs[j]);
+        if (side_exits[i].target_pc == 0) {
+            // Cold exit from inline CALL: callee returned with
+            // unexpected next_pc.  RET to the dispatch loop.
+            emit_ret(&e);
+        } else {
+            // Normal side exit: restore dirty registers from snapshot,
+            // then chained exit to the taken-path target.
+            for (int j = 0; j < RC_NUM_SLOTS; j++) {
+                if (side_exits[i].snapshot[j].guest_reg >= 0
+                    && side_exits[i].snapshot[j].dirty) {
+                    emit_store_guest(&e, side_exits[i].snapshot[j].guest_reg,
+                                     rc_host_regs[j]);
+                }
             }
+            emit_exit_chained(&e, dbt, side_exits[i].target_pc);
         }
-        emit_exit_chained(&e, dbt, side_exits[i].target_pc);
     }
 
     if (e.offset > e.capacity) return nullptr;
