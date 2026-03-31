@@ -114,11 +114,26 @@
         setr(1,[asteval({ord(chr(101 769))})])
       )=
   {
-    @log smoke=TC007: ord(chr()) grapheme parity. Succeeded.;
+    @log smoke=TC007: ord(chr()) grapheme parity. Succeeded.
+  },
+  {
+    @log smoke=TC007: ord(chr()) grapheme parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #8 - cat() must preserve all runtime float arguments.
+#
+&tr.tc008 test_jit_parity_fn=
+  @if strmatch(
+        setr(0,sha1([cat(sin(1),sin(2),sin(3))])),
+        setr(1,sha1([asteval({cat(sin(1),sin(2),sin(3))})]))
+      )=
+  {
+    @log smoke=TC008: cat() runtime float parity. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC007: ord(chr()) grapheme parity. Failed (%q0 vs %q1).;
+    @log smoke=TC008: cat() runtime float parity. Failed (%q0 vs %q1).;
     @trig me/tr.done
   }
 -

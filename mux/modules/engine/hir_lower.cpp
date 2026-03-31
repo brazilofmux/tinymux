@@ -2904,6 +2904,41 @@ literal_strcat:
         }
     }
 
+    if (upper == "CAT") {
+        if (nargs == 0) {
+            uint64_t addr = rc.pool_str("");
+            return h.emit_sconst(addr, "");
+        }
+        if (nargs == 1) {
+            return args[0];
+        }
+
+        std::vector<int> parts;
+        parts.reserve(static_cast<size_t>(nargs) * 2 - 1);
+
+        uint64_t spaddr = rc.pool_str(" ");
+        int sp = h.emit_sconst(spaddr, " ");
+        for (int ai = 0; ai < nargs; ai++) {
+            if (ai > 0) {
+                parts.push_back(sp);
+            }
+            parts.push_back(args[ai]);
+        }
+
+        int strcat_idx = engine_api_lookup("STRCAT");
+        int r = h.emit_strcat(parts.data(), static_cast<int>(parts.size()));
+        if (r >= 0) {
+            h.func_idx[r] = strcat_idx;
+        }
+        if (tier2_lookup("STRCAT")) {
+            h.tier2_calls++;
+        } else {
+            h.ecalls++;
+        }
+        h.needs_jit = true;
+        return r;
+    }
+
     // Validate argument count at compile time.  If the function
     // requires more args than we have, return the same error string
     // the AST evaluator would — not empty.

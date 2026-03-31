@@ -24,10 +24,9 @@
 #
 # AArch64/GCC:  "9223372036854775807 1.8446744073709552E19 1 1"
 #   SHA1 = 7F1844D36AF2F0285C0E6C278966A62C054802B8
-# AMD64/GCC:    "-9223372036854775808 1.8446744073709552E19"  (2 values only)
-#   SHA1 = B8F908D18D1EA4F2F9966C67BB3231360E0D3654
-#   power(2,63) wraps to INT64_MIN (double→int64 overflow),
-#   and cat() JIT bug drops args 3-4 (power(2,0), power(0,0)).
+# AMD64/GCC:    "-9223372036854775808 1.8446744073709552E19 1 1"
+#   SHA1 = A89ADB199FA00CC6068DF814D25EB950AD2DBADB
+#   power(2,63) wraps to INT64_MIN (double→int64 overflow on AMD64).
 #
 &tr.tc001 test_overflow_inject_fn=
   @if cor(
@@ -39,7 +38,7 @@
           7F1844D36AF2F0285C0E6C278966A62C054802B8
         ),
         strmatch(%q0,
-          B8F908D18D1EA4F2F9966C67BB3231360E0D3654
+          A89ADB199FA00CC6068DF814D25EB950AD2DBADB
         )
       )=
   {
@@ -116,22 +115,17 @@
 #
 # AArch64/GCC:  "4611686018427387904 -9223372036854775808 -1"
 #   SHA1 = C04D499E97DAB875DF818C548CEB3EEEA125C88E
-# AMD64/GCC:    "4611686018427387904 -9223372036854775808"  (2 values only)
-#   SHA1 = 23EA90F04A2188FD68EEE1A259DE429CB3B70184
-#   (same values but cat() JIT bug drops shr(-1,1) — see TC002 note)
+# AMD64/GCC:    "4611686018427387904 -9223372036854775808 -1"  (same)
+#   SHA1 = C04D499E97DAB875DF818C548CEB3EEEA125C88E
+#   (identical on both platforms — shl/shr boundary behavior matches)
 #
 &tr.tc004 test_overflow_inject_fn=
-  @if cor(
-        strmatch(
-          setr(0,sha1(
-              cat(shl(1,62),shl(1,63),shr(-1,1))
-            )
-          ),
-          C04D499E97DAB875DF818C548CEB3EEEA125C88E
+  @if strmatch(
+        setr(0,sha1(
+            cat(shl(1,62),shl(1,63),shr(-1,1))
+          )
         ),
-        strmatch(%q0,
-          23EA90F04A2188FD68EEE1A259DE429CB3B70184
-        )
+        C04D499E97DAB875DF818C548CEB3EEEA125C88E
       )=
   {
     @log smoke=TC004: shl/shr boundary. Succeeded.;

@@ -3724,7 +3724,9 @@
 >263
 "@if strmatch(setr(0,[ord(chr(233))]),setr(1,[asteval({ord(chr(233))})]))={@log smoke=TC006: ord(chr()) Unicode parity. Succeeded.},{@log smoke=TC006: ord(chr()) Unicode parity. Failed (%q0 vs %q1).}"
 >264
-"@if strmatch(setr(0,[ord(chr(101 769))]),setr(1,[asteval({ord(chr(101 769))})]))={@log smoke=TC007: ord(chr()) grapheme parity. Succeeded.;@trig me/tr.done},{@log smoke=TC007: ord(chr()) grapheme parity. Failed (%q0 vs %q1).;@trig me/tr.done}"
+"@if strmatch(setr(0,[ord(chr(101 769))]),setr(1,[asteval({ord(chr(101 769))})]))={@log smoke=TC007: ord(chr()) grapheme parity. Succeeded.},{@log smoke=TC007: ord(chr()) grapheme parity. Failed (%q0 vs %q1).}"
+>265
+"@if strmatch(setr(0,sha1([cat(sin(1),sin(2),sin(3))])),setr(1,sha1([asteval({cat(sin(1),sin(2),sin(3))})])))={@log smoke=TC008: cat() runtime float parity. Succeeded.;@trig me/tr.done},{@log smoke=TC008: cat() runtime float parity. Failed (%q0 vs %q1).;@trig me/tr.done}"
 <
 !108
 "test_jitstats_fn"
@@ -5455,19 +5457,19 @@
 >256
 "@log smoke=Beginning overflow/injection test cases."
 >257
-"@if strmatch(setr(0,sha1(cat(power(2,63),power(2,64),power(2,0),power(0,0)))),B8F908D18D1EA4F2F9966C67BB3231360E0D3654)={@log smoke=TC001: power overflow/identity. Succeeded.;@trig me/tr.done},{@log smoke=TC001: power overflow/identity. Failed (%q0).;@trig me/tr.done}"
+"@if cor(strmatch(setr(0,sha1(cat(power(2,63),power(2,64),power(2,0),power(0,0)))),7F1844D36AF2F0285C0E6C278966A62C054802B8),strmatch(%q0,A89ADB199FA00CC6068DF814D25EB950AD2DBADB))={@log smoke=TC001: power overflow/identity. Succeeded.;@trig me/tr.done},{@log smoke=TC001: power overflow/identity. Failed (%q0).;@trig me/tr.done}"
 >258
 "@log smoke=End overflow/injection test cases.;@notify smoke"
 >259
-"@if strmatch(setr(0,sha1(cat(mul(9223372036854775807,2),add(9223372036854775807,1),div(1,0),mod(1,0)))),2B3DBB9AB78908D4EEB85FA7B0F8335C8CD6CBE5)={@log smoke=TC002: mul/add overflow and div-by-zero. Succeeded.;@trig me/tr.done},{@log smoke=TC002: mul/add overflow and div-by-zero. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1(cat(mul(9223372036854775807,2),add(9223372036854775807,1),idiv(1,0),mod(1,0)))),923324D2CBB7CEBF33FDB21FD59D605B93A8BD16)={@log smoke=TC002: mul/add overflow and div-by-zero. Succeeded.;@trig me/tr.done},{@log smoke=TC002: mul/add overflow and div-by-zero. Failed (%q0).;@trig me/tr.done}"
 >260
-"@if strmatch(setr(0,sha1(cat(sub(-9223372036854775807,2),mul(-9223372036854775807,2),add(-9223372036854775808,0)))),AEFD69B325731E15AF6DFCBF203AB55117E915AC)={@log smoke=TC003: negative boundary sub/mul/add. Succeeded.;@trig me/tr.done},{@log smoke=TC003: negative boundary sub/mul/add. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1(cat(sub(-9223372036854775807,2),mul(-9223372036854775807,2),add(-9223372036854775808,0)))),A346DF2E9F92CAEC604ACD3B638C303D3E6D554A)={@log smoke=TC003: negative boundary sub/mul/add. Succeeded.;@trig me/tr.done},{@log smoke=TC003: negative boundary sub/mul/add. Failed (%q0).;@trig me/tr.done}"
 >261
-"@if strmatch(setr(0,sha1(cat(shl(1,62),shl(1,63),shr(-1,1)))),23EA90F04A2188FD68EEE1A259DE429CB3B70184)={@log smoke=TC004: shl/shr boundary. Succeeded.;@trig me/tr.done},{@log smoke=TC004: shl/shr boundary. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1(cat(shl(1,62),shl(1,63),shr(-1,1)))),C04D499E97DAB875DF818C548CEB3EEEA125C88E)={@log smoke=TC004: shl/shr boundary. Succeeded.;@trig me/tr.done},{@log smoke=TC004: shl/shr boundary. Failed (%q0).;@trig me/tr.done}"
 >262
 "@if strmatch(setr(0,sha1(cat(inc(9223372036854775807),dec(-9223372036854775808)))),E924DAA5E8F753F45CFED7EA06E8BAF72D88F940)={@log smoke=TC005: inc/dec boundary. Succeeded.;@trig me/tr.done},{@log smoke=TC005: inc/dec boundary. Failed (%q0).;@trig me/tr.done}"
 >263
-"@if strmatch(setr(0,sha1(cat(abs(-9223372036854775808),sign(-9223372036854775808),sign(9223372036854775807)))),C76CBDAD3533A3385AAC6910A5CA19160044CA73)={@log smoke=TC006: abs/sign boundary. Succeeded.;@trig me/tr.done},{@log smoke=TC006: abs/sign boundary. Failed (%q0).;@trig me/tr.done}"
+"@if cor(strmatch(setr(0,sha1(cat(abs(-9223372036854775808),sign(-9223372036854775808),sign(9223372036854775807)))),7559F505A95361A8A70E043F87F50C60660CEA60),strmatch(%q0,C76CBDAD3533A3385AAC6910A5CA19160044CA73))={@log smoke=TC006: abs/sign boundary. Succeeded.;@trig me/tr.done},{@log smoke=TC006: abs/sign boundary. Failed (%q0).;@trig me/tr.done}"
 >264
 "@if strmatch(setr(0,sha1(cat(isnum(9223372036854775807),isint(9223372036854775807),isnum(1.8446744073709552E19)))),E6F1BEC448F5B1CF8BD57DAACE593E9970ECD32D)={@log smoke=TC007: isnum/isint large values. Succeeded.;@trig me/tr.done},{@log smoke=TC007: isnum/isint large values. Failed (%q0).;@trig me/tr.done}"
 >265

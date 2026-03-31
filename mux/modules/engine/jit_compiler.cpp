@@ -131,7 +131,7 @@ tier2_state s_tier2 = { false, {}, {}, {}, 0, {}, 0 };
 // logic changes in a way that could produce different RV64 output
 // for the same softcode input.
 //
-static const char JIT_COMPILER_VERSION[] = "jit-t1-001";
+static const char JIT_COMPILER_VERSION[] = "jit-t1-002";
 
 // Blob content hash for cache invalidation.  Incorporates both the
 // tier 2 blob and the tier 1 compiler version so that upgrading
