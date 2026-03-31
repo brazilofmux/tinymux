@@ -225,6 +225,32 @@ AC_PROG_CPP
 AC_PROG_LN_S
 AC_PROG_RANLIB
 AC_CANONICAL_HOST
+
+dnl Select the DBT backend based on host platform.
+dnl The backend file (dbt_BACKEND.cpp) is compiled alongside dbt.cpp.
+DBT_BACKEND="dbt_x64_sysv"
+if test "x$jit_enabled" = "xyes"; then
+  AC_MSG_CHECKING(DBT backend for host platform)
+  case "$host_cpu" in
+    x86_64|amd64)
+      case "$host_os" in
+        mingw*|cygwin*|msys*) DBT_BACKEND="dbt_x64_win64" ;;
+        *)                    DBT_BACKEND="dbt_x64_sysv" ;;
+      esac ;;
+    aarch64|arm64)
+      case "$host_os" in
+        darwin*) DBT_BACKEND="dbt_a64_apple" ;;
+        *)       DBT_BACKEND="dbt_a64_sysv" ;;
+      esac ;;
+    riscv64)
+      DBT_BACKEND="dbt_rv64_native" ;;
+    *)
+      AC_MSG_ERROR([JIT not supported on $host_cpu]) ;;
+  esac
+  AC_MSG_RESULT($DBT_BACKEND)
+fi
+AC_SUBST(DBT_BACKEND)
+
 AC_USE_SYSTEM_EXTENSIONS
 m4_include([m4/ax_cxx_compile_stdcxx.m4])
 AX_CXX_COMPILE_STDCXX([17], [noext], [mandatory])

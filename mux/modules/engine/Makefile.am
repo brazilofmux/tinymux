@@ -19,7 +19,7 @@ ENGINE_CXX_SRC = art_scan.cpp ast.cpp ast_scan.cpp attrcache.cpp boolexp.cpp \
     local.cpp log.cpp look.cpp mail.cpp match.cpp mguests.cpp \
     move.cpp object.cpp predicates.cpp player.cpp player_c.cpp routing.cpp \
     plusemail.cpp powers.cpp quota.cpp rob.cpp set.cpp \
-    dbt.cpp hir_lower.cpp hir_codegen.cpp jit_compiler.cpp dbt_interp.cpp dbt_elf64.cpp \
+    dbt.cpp @DBT_BACKEND@.cpp hir_lower.cpp hir_codegen.cpp jit_compiler.cpp dbt_interp.cpp dbt_elf64.cpp \
     hir_ssa.cpp hir_opt.cpp lua_bytecode.cpp hir_lower_lua.cpp jit_lua.cpp \
     lua_mod.cpp session.cpp speech.cpp timer.cpp walk.cpp \
     unparse.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp

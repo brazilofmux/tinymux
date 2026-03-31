@@ -1,12 +1,11 @@
 /*! \file dbt.h
  * \brief RV64IMD dynamic binary translator — context and block cache.
  *
- * Convention during JIT execution:
- *   RBX = pointer to rv64_ctx_t (guest state)
- *   R12 = pointer to guest memory base
- *   R13 = pointer to block cache base
- *   RAX, RCX, RDX = scratch (not cached)
- *   RSI, RDI, R8-R11, R14, R15 = register cache (8 slots)
+ * Platform-independent guest state, block cache, and public API.
+ * Per-platform register conventions are in the backend files
+ * (dbt_x64_sysv.cpp, etc.) and emitter headers (dbt_emit_x64.h, etc.).
+ *
+ * See docs/DBT-PORTABILITY.md for the multi-platform design.
  */
 
 #ifndef DBT_H

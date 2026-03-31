@@ -670,6 +670,7 @@ DYNAMICLIB_CXXFLAGS
 DYNAMICLIB_EXT
 PCRE2_LIBS
 HAVE_CXX17
+DBT_BACKEND
 host_os
 host_vendor
 host_cpu
@@ -6690,6 +6691,32 @@ shift; shift
 host_os=$*
 IFS=$ac_save_IFS
 case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
+
+
+
+DBT_BACKEND="dbt_x64_sysv"
+if test "x$jit_enabled" = "xyes"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking DBT backend for host platform" >&5
+printf %s "checking DBT backend for host platform... " >&6; }
+  case "$host_cpu" in
+    x86_64|amd64)
+      case "$host_os" in
+        mingw*|cygwin*|msys*) DBT_BACKEND="dbt_x64_win64" ;;
+        *)                    DBT_BACKEND="dbt_x64_sysv" ;;
+      esac ;;
+    aarch64|arm64)
+      case "$host_os" in
+        darwin*) DBT_BACKEND="dbt_a64_apple" ;;
+        *)       DBT_BACKEND="dbt_a64_sysv" ;;
+      esac ;;
+    riscv64)
+      DBT_BACKEND="dbt_rv64_native" ;;
+    *)
+      as_fn_error $? "JIT not supported on $host_cpu" "$LINENO" 5 ;;
+  esac
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $DBT_BACKEND" >&5
+printf "%s\n" "$DBT_BACKEND" >&6; }
+fi
 
 
 
