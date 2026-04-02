@@ -273,8 +273,22 @@ static bool try_fold(const std::string &func_name,
         result = format_double(ip);
         return true;
     }
-    if (upper == "ROUND" && nargs == 1) {
-        result = format_double(round(mux_atof(u8(args[0]))));
+    if (upper == "ROUND" && nargs == 2) {
+        double r = mux_atof(u8(args[0]));
+#ifdef HAVE_IEEE_FP_FORMAT
+        int fpc = mux_fpclass(r);
+        if (  MUX_FPGROUP(fpc) != MUX_FPGROUP_PASS
+           && MUX_FPGROUP(fpc) != MUX_FPGROUP_ZERO) {
+            result = reinterpret_cast<const char *>(
+                mux_FPStrings[MUX_FPCLASS(fpc)]);
+            return true;
+        }
+        if (MUX_FPGROUP(fpc) == MUX_FPGROUP_ZERO) {
+            r = 0.0;
+        }
+#endif
+        int frac = mux_atol(u8(args[1]));
+        result = reinterpret_cast<const char *>(mux_ftoa(r, true, frac));
         return true;
     }
 
