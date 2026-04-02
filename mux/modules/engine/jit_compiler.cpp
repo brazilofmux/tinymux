@@ -319,9 +319,11 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "LJUST",       "co_ljust_wrap" },
     { "RJUST",       "co_rjust_wrap" },
     { "CENTER",      "co_center_wrap" },
-    // Deliberately exclude EDIT/SPLICE for now. Updated regressions
-    // show semantic gaps in anchor/error handling; fall back to the
-    // interpreter until the wrapper behavior is parity-correct.
+    { "EDIT",        "co_edit_wrap" },
+    // SPLICE: co_splice() in color_ops.c strips color before word
+    // comparison, but the interpreter uses raw strcmp.  This makes
+    // Tier 2 color-insensitive vs the interpreter's color-sensitive
+    // matching.  Needs a raw-comparison co_splice variant.
     { "CAPSTR",      "co_totitle_wrap" },
     { "STRIPANSI",   "co_stripansi_wrap" },
 

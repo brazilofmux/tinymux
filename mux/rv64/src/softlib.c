@@ -67,9 +67,11 @@ size_t co_setinter(unsigned char *out, const unsigned char *a, size_t alen,
                    unsigned char delim, unsigned char osep, char sort_type);
 size_t co_delete(unsigned char *out, const unsigned char *list, size_t llen,
                  size_t pos, unsigned char delim, unsigned char osep);
-size_t co_splice(unsigned char *out, const unsigned char *list, size_t llen,
-                 size_t pos, size_t count, const unsigned char *word,
-                 size_t wlen, unsigned char delim, unsigned char osep);
+size_t co_splice(unsigned char *out,
+                 const unsigned char *list1, size_t len1,
+                 const unsigned char *list2, size_t len2,
+                 const unsigned char *search, size_t slen,
+                 unsigned char delim, unsigned char osep);
 size_t co_insert_word(unsigned char *out, const unsigned char *list,
                       size_t llen, size_t pos, const unsigned char *word,
                       size_t wlen, unsigned char delim, unsigned char osep);
@@ -861,7 +863,7 @@ size_t co_center(unsigned char *out, const unsigned char *data, size_t len,
 size_t co_edit(unsigned char *out, const unsigned char *str, size_t slen,
                const unsigned char *from, size_t flen,
                const unsigned char *to, size_t tlen);
-/* co_splice already declared above — (out, list, llen, pos, count, word, wlen, delim, osep) */
+/* co_splice declared above — (out, list1, len1, list2, len2, search, slen, delim, osep) */
 size_t co_totitle(unsigned char *out, const unsigned char *data, size_t len);
 size_t co_strip_color(unsigned char *out, const unsigned char *data,
                       size_t len);
@@ -925,28 +927,116 @@ char *co_center_wrap(char *out, const char **fargs, int nfargs) {
 }
 
 /* edit(string, from, to) */
+/* edit(string, from, to[, from2, to2, ...])
+ *
+ * Supports anchor semantics matching the interpreter:
+ *   ^ as from  → prepend 'to' to string
+ *   $ as from  → append 'to' to string
+ *   \^ or %^   → literal ^ substitution
+ *   \$ or %$   → literal $ substitution
+ * Multiple from/to pairs applied sequentially.
+ */
 char *co_edit_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 3) { out[0] = '\0'; return out; }
-    size_t n = co_edit((unsigned char *)out,
-                       (const unsigned char *)fargs[0], rv64_slen(fargs[0]),
-                       (const unsigned char *)fargs[1], rv64_slen(fargs[1]),
-                       (const unsigned char *)fargs[2], rv64_slen(fargs[2]));
-    out[n] = '\0';
+
+    /* Use two alternating buffers like the interpreter. */
+    unsigned char bufA[8000], bufB[8000];
+    size_t nLen = rv64_slen(fargs[0]);
+    if (nLen > 7999) nLen = 7999;
+    { size_t ci; for (ci = 0; ci < nLen; ci++) bufA[ci] = (unsigned char)fargs[0][ci]; }
+    bufA[nLen] = '\0';
+
+    unsigned char *pSrc = bufA, *pDst = bufB;
+    int i;
+    for (i = 1; i + 1 < nfargs; i += 2) {
+        const unsigned char *pFrom = (const unsigned char *)fargs[i];
+        const unsigned char *pTo = (const unsigned char *)fargs[i + 1];
+        size_t fLen = rv64_slen(fargs[i]);
+        size_t tLen = rv64_slen(fargs[i + 1]);
+
+        if (fLen == 1 && pFrom[0] == '^') {
+            /* Prepend 'to' to string. */
+            size_t nTotal = tLen + nLen;
+            if (nTotal > 7999) nTotal = 7999;
+            size_t nToCopy = (tLen < 7999) ? tLen : 7999;
+            { size_t ci; for (ci = 0; ci < nToCopy; ci++) pDst[ci] = pTo[ci]; }
+            size_t nRemain = (nTotal > nToCopy) ? nTotal - nToCopy : 0;
+            if (nRemain > 0) {
+                size_t ci; for (ci = 0; ci < nRemain; ci++) pDst[nToCopy + ci] = pSrc[ci];
+            }
+            nLen = nTotal;
+            pDst[nLen] = '\0';
+        } else if (fLen == 1 && pFrom[0] == '$') {
+            /* Append 'to' to string. */
+            size_t nTotal = nLen + tLen;
+            if (nTotal > 7999) nTotal = 7999;
+            { size_t ci; for (ci = 0; ci < nLen; ci++) pDst[ci] = pSrc[ci]; }
+            size_t nAppend = nTotal - nLen;
+            if (nAppend > 0) {
+                size_t ci; for (ci = 0; ci < nAppend; ci++) pDst[nLen + ci] = pTo[ci];
+            }
+            nLen = nTotal;
+            pDst[nLen] = '\0';
+        } else {
+            /* Handle escaped ^ and $ (\^ %^ \$ %$). */
+            const unsigned char *pFromActual = pFrom;
+            size_t fLenActual = fLen;
+            unsigned char fromBuf[2];
+            if (fLen == 2
+                && (pFrom[0] == '\\' || pFrom[0] == '%')
+                && (pFrom[1] == '^' || pFrom[1] == '$')) {
+                fromBuf[0] = pFrom[1];
+                fromBuf[1] = '\0';
+                pFromActual = fromBuf;
+                fLenActual = 1;
+            }
+            nLen = co_edit(pDst, pSrc, nLen,
+                           pFromActual, fLenActual, pTo, tLen);
+        }
+        /* Swap buffers. */
+        { unsigned char *tmp = pSrc; pSrc = pDst; pDst = tmp; }
+    }
+    /* Copy result to output. */
+    { size_t ci; for (ci = 0; ci <= nLen; ci++) out[ci] = (char)pSrc[ci]; }
     return out;
 }
 
-/* splice(list, pos, word[, delim][, osep]) */
+/* splice(list1, list2, word[, delim][, osep])
+ *
+ * For each word in list1, if it matches 'word', output the
+ * corresponding word from list2 instead.  list1 and list2 must
+ * have the same number of words.
+ */
 char *co_splice_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 3) { out[0] = '\0'; return out; }
-    int pos = satoi(fargs[1]);
-    if (pos < 1) pos = 1;
-    unsigned char delim = ' ';
-    unsigned char osep = ' ';
-    if (nfargs >= 4 && fargs[3][0] != '\0') delim = (unsigned char)fargs[3][0];
-    if (nfargs >= 5 && fargs[4][0] != '\0') osep = (unsigned char)fargs[4][0];
+    unsigned char delim = get_delim(fargs, nfargs, 3);
+    unsigned char osep = get_osep(fargs, nfargs, 4, delim);
+
+    /* Validate: search word must be single-word (no delimiter). */
+    {
+        const unsigned char *wp = (const unsigned char *)fargs[2];
+        while (*wp) {
+            if (*wp == delim) {
+                rv64_scopy(out, "#-1 TOO MANY WORDS");
+                return out;
+            }
+            wp++;
+        }
+    }
+
+    /* Validate: list1 and list2 must have equal word counts. */
+    size_t n1 = co_words_count((const unsigned char *)fargs[0],
+                                rv64_slen(fargs[0]), delim);
+    size_t n2 = co_words_count((const unsigned char *)fargs[1],
+                                rv64_slen(fargs[1]), delim);
+    if (n1 != n2) {
+        rv64_scopy(out, "#-1 NUMBER OF WORDS MUST BE EQUAL");
+        return out;
+    }
+
     size_t n = co_splice((unsigned char *)out,
                          (const unsigned char *)fargs[0], rv64_slen(fargs[0]),
-                         (size_t)pos, 1,
+                         (const unsigned char *)fargs[1], rv64_slen(fargs[1]),
                          (const unsigned char *)fargs[2], rv64_slen(fargs[2]),
                          delim, osep);
     out[n] = '\0';

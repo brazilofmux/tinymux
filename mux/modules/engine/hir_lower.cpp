@@ -670,10 +670,45 @@ static bool try_fold(const std::string &func_name,
         return true;
     }
 
-    // Deliberately do not fold EDIT for now. The updated regressions
-    // exercise anchor/substitution behavior that the current co_edit
-    // folding path does not match exactly. Use the interpreter path
-    // until parity is proven.
+    // --- EDIT(string, from, to[, from2, to2, ...]) ---
+    // Fold constant edit operations including anchor semantics.
+    if (upper == "EDIT" && nargs >= 3) {
+        std::string cur = args[0];
+        for (int i = 1; i + 1 < nargs; i += 2) {
+            size_t fLen = args[i].size();
+            if (fLen == 1 && args[i][0] == '^') {
+                // Prepend.
+                cur = args[i + 1] + cur;
+            } else if (fLen == 1 && args[i][0] == '$') {
+                // Append.
+                cur = cur + args[i + 1];
+            } else {
+                // Handle escaped anchors (\^ %^ \$ %$).
+                const char *pFrom = args[i].data();
+                size_t fLenActual = fLen;
+                std::string fromBuf;
+                if (fLen == 2
+                    && (pFrom[0] == '\\' || pFrom[0] == '%')
+                    && (pFrom[1] == '^' || pFrom[1] == '$')) {
+                    fromBuf = std::string(1, pFrom[1]);
+                    pFrom = fromBuf.data();
+                    fLenActual = 1;
+                }
+                LBuf out = LBuf_Src("hir_edit");
+                size_t n = co_edit(
+                    reinterpret_cast<unsigned char *>(out.get()),
+                    reinterpret_cast<const unsigned char *>(cur.data()),
+                    cur.size(),
+                    reinterpret_cast<const unsigned char *>(pFrom),
+                    fLenActual,
+                    reinterpret_cast<const unsigned char *>(args[i+1].data()),
+                    args[i+1].size());
+                cur.assign(reinterpret_cast<const char *>(out.get()), n);
+            }
+        }
+        result = cur;
+        return true;
+    }
 
     // --- DELETE(string, start, count) ---
     // Uses co_delete_cluster (grapheme clusters) to match fun_delete.
