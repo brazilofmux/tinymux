@@ -1,0 +1,135 @@
+#
+# assert_cmd.mux - Test Cases for @assert and @break commands.
+#
+@create test_assert_cmd
+-
+@set test_assert_cmd=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_assert_cmd=
+  @log smoke=Beginning @assert/@break command test cases.
+-
+#
+# Test Case #1 - @assert true does not break (queued @dolist).
+#
+&tr.tc001 test_assert_cmd=
+  &tc001_result me=;
+  @dolist a b c=
+  {
+    @assert 1;
+    &tc001_result me=[get(me/tc001_result)] ##
+  };
+  @wait 0.5=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [trim(get(me/tc001_result))]
+            )
+          ),
+          6B3F339C67BB03D57A7195CF43ED86B12BFDD347
+        )=
+    {
+      @log smoke=TC001: assert true continues. Succeeded.
+    },
+    {
+      @log smoke=TC001: assert true continues. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #2 - @break true breaks out of @dolist/inline.
+#                On item 'b', break fires. Only 'a' recorded.
+#
+&tr.helper2 test_assert_cmd=
+  &tc002_result me=;
+  @dolist/inline a b c=
+    {@break/inline eq(##,b);&tc002_result me=[get(me/tc002_result)] ##}
+-
+&tr.tc002 test_assert_cmd=
+  @trig/now me/tr.helper2;
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [trim(get(me/tc002_result))]
+            )
+          ),
+          654CEE559A88D1FB22F553220DCD6839D4BEF02E
+        )=
+    {
+      @log smoke=TC002: break inline stops dolist. Succeeded.
+    },
+    {
+      @log smoke=TC002: break inline stops dolist. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #3 - @break false does not break.
+#
+&tr.helper3 test_assert_cmd=
+  &tc003_result me=;
+  @dolist/inline a b c=
+    {@break/inline 0;&tc003_result me=[get(me/tc003_result)] ##}
+-
+&tr.tc003 test_assert_cmd=
+  @trig/now me/tr.helper3;
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [trim(get(me/tc003_result))]
+            )
+          ),
+          BC4B2CE73024492C7E7BEFA4CB6116DDCDB4A166
+        )=
+    {
+      @log smoke=TC003: break false continues. Succeeded.
+    },
+    {
+      @log smoke=TC003: break false continues. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #4 - @assert false breaks out of @dolist/inline.
+#                On item 'b', assert neq(##,b) is false -> break.
+#                Only 'a' recorded.
+#
+&tr.helper4 test_assert_cmd=
+  &tc004_result me=;
+  @dolist/inline a b c=
+    {@assert/inline neq(##,b);&tc004_result me=[get(me/tc004_result)] ##}
+-
+&tr.tc004 test_assert_cmd=
+  @trig/now me/tr.helper4;
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [trim(get(me/tc004_result))]
+            )
+          ),
+          D962B1177351FAAB1E1F17B9AA6008C8D7876459
+        )=
+    {
+      @log smoke=TC004: assert false breaks. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC004: assert false breaks. Failed (%q0).;
+      @trig me/tr.done
+    }
+  }
+-
+&tr.done test_assert_cmd=
+  @log smoke=End @assert/@break command test cases.;
+  @notify smoke
+-
+drop test_assert_cmd
+-
+#
+# End of Test Cases
+#

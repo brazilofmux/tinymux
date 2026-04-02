@@ -1,0 +1,201 @@
+#
+# wait_cmd.mux - Test Cases for @wait and @notify commands.
+#
+@create test_wait_cmd
+-
+@set test_wait_cmd=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_wait_cmd=
+  @log smoke=Beginning @wait/@notify command test cases.
+-
+#
+# Test Case #1 - @wait <seconds> delays execution.
+#                Set result before and after; the delayed write
+#                should overwrite.
+#
+&tr.tc001 test_wait_cmd=
+  &tc001_result me=early;
+  @wait 0.1=
+  {
+    &tc001_result me=delayed
+  };
+  @wait 0.5=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc001_result)]
+            )
+          ),
+          128DF232B97C2E76F97B9184A2D9659ADB239D4E
+        )=
+    {
+      @log smoke=TC001: wait timed delay. Succeeded.
+    },
+    {
+      @log smoke=TC001: wait timed delay. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #2 - @wait 0= still defers to next queue cycle.
+#
+&tr.tc002 test_wait_cmd=
+  &tc002_result me=;
+  &tc002_result me=before;
+  @wait 0=
+  {
+    &tc002_result me=after
+  };
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc002_result)]
+            )
+          ),
+          405906C9D5BE6AE5393CA65FB0E7C38E0D585ECB
+        )=
+    {
+      @log smoke=TC002: wait 0 defers. Succeeded.
+    },
+    {
+      @log smoke=TC002: wait 0 defers. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #3 - Semaphore: @wait me= blocks until @notify me.
+#
+&tr.tc003 test_wait_cmd=
+  &tc003_result me=;
+  @wait me=
+  {
+    &tc003_result me=signaled
+  };
+  @wait 0.1=
+  {
+    @notify me
+  };
+  @wait 0.5=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc003_result)]
+            )
+          ),
+          DD3B33DE7CDEA375A34C8FB99B4B8F67D11CF30C
+        )=
+    {
+      @log smoke=TC003: semaphore wait/notify. Succeeded.
+    },
+    {
+      @log smoke=TC003: semaphore wait/notify. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #4 - @notify/all drains multiple waiters.
+#
+&tr.tc004 test_wait_cmd=
+  &tc004_result me=;
+  @wait me/tc004_sem=
+  {
+    &tc004_result me=[get(me/tc004_result)]A
+  };
+  @wait me/tc004_sem=
+  {
+    &tc004_result me=[get(me/tc004_result)]B
+  };
+  @wait 0.1=
+  {
+    @notify/all me/tc004_sem
+  };
+  @wait 0.5=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc004_result)]
+            )
+          ),
+          06D945942AA26A61BE18C3E22BF19BBCA8DD2B5D
+        )=
+    {
+      @log smoke=TC004: notify/all drains. Succeeded.
+    },
+    {
+      @log smoke=TC004: notify/all drains. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #5 - @notify without waiters increments semaphore
+#                so a subsequent @wait runs immediately.
+#
+&tr.tc005 test_wait_cmd=
+  &tc005_result me=;
+  @notify me/tc005_sem;
+  @wait me/tc005_sem=
+  {
+    &tc005_result me=immediate
+  };
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc005_result)]
+            )
+          ),
+          F1D16437085AE1E36539A5328125CEC05A91BADA
+        )=
+    {
+      @log smoke=TC005: pre-notify runs wait immediately. Succeeded.
+    },
+    {
+      @log smoke=TC005: pre-notify runs wait immediately. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #6 - @drain clears all semaphore waiters without running.
+#
+&tr.tc006 test_wait_cmd=
+  &tc006_result me=untouched;
+  @wait me/tc006_sem=
+  {
+    &tc006_result me=ran
+  };
+  @wait 0.1=
+  {
+    @drain me/tc006_sem
+  };
+  @wait 0.5=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc006_result)]
+            )
+          ),
+          5B173D20202F7D77027ABF335F1AD47844E20292
+        )=
+    {
+      @log smoke=TC006: drain clears waiters. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC006: drain clears waiters. Failed (%q0).;
+      @trig me/tr.done
+    }
+  }
+-
+&tr.done test_wait_cmd=
+  @log smoke=End @wait/@notify command test cases.;
+  @notify smoke
+-
+drop test_wait_cmd
+-
+#
+# End of Test Cases
+#

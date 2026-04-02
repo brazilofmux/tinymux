@@ -1,0 +1,149 @@
+#
+# trigger_cmd.mux - Test Cases for @trigger command.
+#
+@create test_trigger_cmd
+-
+@set test_trigger_cmd=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_trigger_cmd=
+  @log smoke=Beginning @trigger command test cases.
+-
+#
+# Test Case #1 - Basic @trigger executes attribute.
+#
+&tr.helper1 test_trigger_cmd=
+  &tc001_result me=triggered
+-
+&tr.tc001 test_trigger_cmd=
+  &tc001_result me=;
+  @trig me/tr.helper1;
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc001_result)]
+            )
+          ),
+          5E6FD2D8C9A6AF66100AB6D81595FE594E603268
+        )=
+    {
+      @log smoke=TC001: trigger basic. Succeeded.
+    },
+    {
+      @log smoke=TC001: trigger basic. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #2 - @trigger passes %0 argument.
+#
+&tr.helper2 test_trigger_cmd=
+  &tc002_result me=%0
+-
+&tr.tc002 test_trigger_cmd=
+  &tc002_result me=;
+  @trig me/tr.helper2=hello;
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc002_result)]
+            )
+          ),
+          AAF4C61DDCC5E8A2DABEDE0F3B482CD9AEA9434D
+        )=
+    {
+      @log smoke=TC002: trigger with %0. Succeeded.
+    },
+    {
+      @log smoke=TC002: trigger with %0. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #3 - @trigger passes multiple args (%0-%2).
+#
+&tr.helper3 test_trigger_cmd=
+  &tc003_result me=%0 %1 %2
+-
+&tr.tc003 test_trigger_cmd=
+  &tc003_result me=;
+  @trig me/tr.helper3=alpha,bravo,charlie;
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc003_result)]
+            )
+          ),
+          76D63D69376D5B05ACC20970061C40762E5CA049
+        )=
+    {
+      @log smoke=TC003: trigger multiple args. Succeeded.
+    },
+    {
+      @log smoke=TC003: trigger multiple args. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #4 - @trigger/now executes inline (result visible
+#                immediately without @wait).
+#
+&tr.helper4 test_trigger_cmd=
+  &tc004_result me=inline
+-
+&tr.tc004 test_trigger_cmd=
+  &tc004_result me=;
+  @trig/now me/tr.helper4;
+  @if strmatch(
+        setr(0,sha1(
+            [get(me/tc004_result)]
+          )
+        ),
+        6E9937E7DDF42C6644513492F9C75AA07378E781
+      )=
+  {
+    @log smoke=TC004: trigger/now inline. Succeeded.
+  },
+  {
+    @log smoke=TC004: trigger/now inline. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - @trigger nonexistent attribute does nothing.
+#
+&tr.tc005 test_trigger_cmd=
+  &tc005_result me=untouched;
+  @trig me/tr.nosuchattr;
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc005_result)]
+            )
+          ),
+          5B173D20202F7D77027ABF335F1AD47844E20292
+        )=
+    {
+      @log smoke=TC005: trigger nonexistent attr. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC005: trigger nonexistent attr. Failed (%q0).;
+      @trig me/tr.done
+    }
+  }
+-
+&tr.done test_trigger_cmd=
+  @log smoke=End @trigger command test cases.;
+  @notify smoke
+-
+drop test_trigger_cmd
+-
+#
+# End of Test Cases
+#

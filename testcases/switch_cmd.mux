@@ -1,0 +1,225 @@
+#
+# switch_cmd.mux - Test Cases for @switch command.
+#
+@create test_switch_cmd
+-
+@set test_switch_cmd=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_switch_cmd=
+  @log smoke=Beginning @switch command test cases.
+-
+#
+# Test Case #1 - @switch matches first case.
+#
+&tr.tc001 test_switch_cmd=
+  &tc001_result me=;
+  @switch foo=
+    foo, {&tc001_result me=matched},
+    bar, {&tc001_result me=wrong};
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc001_result)]
+            )
+          ),
+          D010685FC836384D78AC35EA6590BF2C53E4247F
+        )=
+    {
+      @log smoke=TC001: switch first match. Succeeded.
+    },
+    {
+      @log smoke=TC001: switch first match. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #2 - @switch matches second case.
+#
+&tr.tc002 test_switch_cmd=
+  &tc002_result me=;
+  @switch bar=
+    foo, {&tc002_result me=wrong},
+    bar, {&tc002_result me=matched};
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc002_result)]
+            )
+          ),
+          D010685FC836384D78AC35EA6590BF2C53E4247F
+        )=
+    {
+      @log smoke=TC002: switch second match. Succeeded.
+    },
+    {
+      @log smoke=TC002: switch second match. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #3 - @switch wildcard matching.
+#
+&tr.tc003 test_switch_cmd=
+  &tc003_result me=;
+  @switch foobar=
+    foo*, {&tc003_result me=wild},
+    foobar, {&tc003_result me=exact};
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc003_result)]
+            )
+          ),
+          B55E22FE7830E8FE49F48F834B913EF8618F0521
+        )=
+    {
+      @log smoke=TC003: switch wildcard. Succeeded.
+    },
+    {
+      @log smoke=TC003: switch wildcard. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #4 - @switch default case (no match).
+#
+&tr.tc004 test_switch_cmd=
+  &tc004_result me=;
+  @switch baz=
+    foo, {&tc004_result me=wrong},
+    bar, {&tc004_result me=wrong},
+    {&tc004_result me=default};
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc004_result)]
+            )
+          ),
+          7505D64A54E061B7ACD54CCD58B49DC43500B635
+        )=
+    {
+      @log smoke=TC004: switch default case. Succeeded.
+    },
+    {
+      @log smoke=TC004: switch default case. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #5 - @switch/all matches multiple cases.
+#
+&tr.tc005 test_switch_cmd=
+  &tc005_result me=;
+  @switch/all foo=
+    f*, {&tc005_result me=[get(me/tc005_result)]A},
+    foo, {&tc005_result me=[get(me/tc005_result)]B},
+    bar, {&tc005_result me=[get(me/tc005_result)]C};
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc005_result)]
+            )
+          ),
+          06D945942AA26A61BE18C3E22BF19BBCA8DD2B5D
+        )=
+    {
+      @log smoke=TC005: switch/all multiple matches. Succeeded.
+    },
+    {
+      @log smoke=TC005: switch/all multiple matches. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #6 - @switch/first stops at first match (default behavior).
+#
+&tr.tc006 test_switch_cmd=
+  &tc006_result me=;
+  @switch foo=
+    f*, {&tc006_result me=[get(me/tc006_result)]A},
+    foo, {&tc006_result me=[get(me/tc006_result)]B};
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc006_result)]
+            )
+          ),
+          06D945942AA26A61BE18C3E22BF19BBCA8DD2B5D
+        )=
+    {
+      @log smoke=TC006: switch/first stops at first. Succeeded.
+    },
+    {
+      @log smoke=TC006: switch/first stops at first. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #7 - @switch no match, no default = nothing happens.
+#
+&tr.tc007 test_switch_cmd=
+  &tc007_result me=untouched;
+  @switch baz=
+    foo, {&tc007_result me=wrong},
+    bar, {&tc007_result me=wrong};
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc007_result)]
+            )
+          ),
+          5B173D20202F7D77027ABF335F1AD47844E20292
+        )=
+    {
+      @log smoke=TC007: switch no match no default. Succeeded.
+    },
+    {
+      @log smoke=TC007: switch no match no default. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #8 - @switch with #$ substitution.
+#
+&tr.tc008 test_switch_cmd=
+  &tc008_result me=;
+  @switch Hello World=
+    Hello*, {&tc008_result me=#$};
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc008_result)]
+            )
+          ),
+          0A4D55A8D778E5022FAB701977C5D840BBC486D0
+        )=
+    {
+      @log smoke=TC008: switch #$ substitution. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC008: switch #$ substitution. Failed (%q0).;
+      @trig me/tr.done
+    }
+  }
+-
+&tr.done test_switch_cmd=
+  @log smoke=End @switch command test cases.;
+  @notify smoke
+-
+drop test_switch_cmd
+-
+#
+# End of Test Cases
+#

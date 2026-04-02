@@ -1,0 +1,247 @@
+#
+# if_cmd.mux - Test Cases for @if command.
+#
+@create test_if_cmd
+-
+@set test_if_cmd=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_if_cmd=
+  @log smoke=Beginning @if command test cases.
+-
+#
+# Test Case #1 - @if true branch executes.
+#
+&tr.tc001 test_if_cmd=
+  &tc001_result me=;
+  @if 1=
+  {
+    &tc001_result me=true
+  },
+  {
+    &tc001_result me=false
+  };
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc001_result)]
+            )
+          ),
+          5FFE533B830F08A0326348A9160AFAFC8ADA44DB
+        )=
+    {
+      @log smoke=TC001: if true branch. Succeeded.
+    },
+    {
+      @log smoke=TC001: if true branch. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #2 - @if false branch executes.
+#
+&tr.tc002 test_if_cmd=
+  &tc002_result me=;
+  @if 0=
+  {
+    &tc002_result me=true
+  },
+  {
+    &tc002_result me=false
+  };
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc002_result)]
+            )
+          ),
+          7CB6EFB98BA5972A9B5090DC2E517FE14D12CB04
+        )=
+    {
+      @log smoke=TC002: if false branch. Succeeded.
+    },
+    {
+      @log smoke=TC002: if false branch. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #3 - @if with no false branch, true.
+#
+&tr.tc003 test_if_cmd=
+  &tc003_result me=untouched;
+  @if 1=
+  {
+    &tc003_result me=ran
+  };
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc003_result)]
+            )
+          ),
+          24765B4C90FC2E23473C676AE4ED89A28C4ECF1E
+        )=
+    {
+      @log smoke=TC003: if true no false branch. Succeeded.
+    },
+    {
+      @log smoke=TC003: if true no false branch. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #4 - @if with no false branch, false expr does nothing.
+#
+&tr.tc004 test_if_cmd=
+  &tc004_result me=untouched;
+  @if 0=
+  {
+    &tc004_result me=ran
+  };
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc004_result)]
+            )
+          ),
+          5B173D20202F7D77027ABF335F1AD47844E20292
+        )=
+    {
+      @log smoke=TC004: if false no false branch. Succeeded.
+    },
+    {
+      @log smoke=TC004: if false no false branch. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #5 - @if evaluates expression (function call).
+#
+&tr.tc005 test_if_cmd=
+  &tc005_result me=;
+  @if gt(5,3)=
+  {
+    &tc005_result me=yes
+  },
+  {
+    &tc005_result me=no
+  };
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc005_result)]
+            )
+          ),
+          FB360F9C09AC8C5EDB2F18BE5DE4E80EA4C430D0
+        )=
+    {
+      @log smoke=TC005: if expression eval. Succeeded.
+    },
+    {
+      @log smoke=TC005: if expression eval. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #6 - @if with empty expression treats as false.
+#
+&tr.tc006 test_if_cmd=
+  &tc006_result me=;
+  @if =
+  {
+    &tc006_result me=true
+  },
+  {
+    &tc006_result me=false
+  };
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc006_result)]
+            )
+          ),
+          7CB6EFB98BA5972A9B5090DC2E517FE14D12CB04
+        )=
+    {
+      @log smoke=TC006: if empty expr is false. Succeeded.
+    },
+    {
+      @log smoke=TC006: if empty expr is false. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #7 - @if preserves %q-registers across branches.
+#
+&tr.tc007 test_if_cmd=
+  &tc007_result me=;
+  @if setr(0,hello)=
+  {
+    &tc007_result me=%q0
+  };
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc007_result)]
+            )
+          ),
+          AAF4C61DDCC5E8A2DABEDE0F3B482CD9AEA9434D
+        )=
+    {
+      @log smoke=TC007: if preserves qregs. Succeeded.
+    },
+    {
+      @log smoke=TC007: if preserves qregs. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #8 - @if with string expression (non-empty = true).
+#
+&tr.tc008 test_if_cmd=
+  &tc008_result me=;
+  @if foo=
+  {
+    &tc008_result me=true
+  },
+  {
+    &tc008_result me=false
+  };
+  @wait 0.1=
+  {
+    @if strmatch(
+          setr(0,sha1(
+              [get(me/tc008_result)]
+            )
+          ),
+          5FFE533B830F08A0326348A9160AFAFC8ADA44DB
+        )=
+    {
+      @log smoke=TC008: if string expr is true. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC008: if string expr is true. Failed (%q0).;
+      @trig me/tr.done
+    }
+  }
+-
+&tr.done test_if_cmd=
+  @log smoke=End @if command test cases.;
+  @notify smoke
+-
+drop test_if_cmd
+-
+#
+# End of Test Cases
+#
