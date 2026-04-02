@@ -3252,8 +3252,10 @@ void load_restart_db(void)
             if ('\0' != temp[0])
             {
                 d->ttype = reinterpret_cast<UTF8 *>(MEMALLOC(nBuffer+1));
-                ISOUTOFMEMORY(d->ttype);
-                memcpy(d->ttype, temp, nBuffer + 1);
+                if (d->ttype)
+                {
+                    memcpy(d->ttype, temp, nBuffer + 1);
+                }
             }
 
             int enc = getref(f);

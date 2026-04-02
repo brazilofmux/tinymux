@@ -1048,7 +1048,14 @@ static BQUE *setup_que
     tmp->comm = nullptr;
 
     UTF8 *tptr = tmp->text = static_cast<UTF8*>(MEMALLOC(tlen));
-    ISOUTOFMEMORY(tptr);
+    if (nullptr == tptr)
+    {
+        STARTLOG(LOG_PROBLEMS, "QUE", "MEM");
+        log_printf(T("setup_que: out of memory allocating %zu bytes for queue entry."), tlen);
+        ENDLOG;
+        free_qentry(tmp);
+        return nullptr;
+    }
 
     if (command)
     {

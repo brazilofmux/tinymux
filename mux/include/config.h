@@ -431,7 +431,6 @@ extern DCL_EXPORT bool AssertionFailed(const UTF8 *SourceFile, unsigned int Line
 #define mux_assert(exp) (void)( (exp) || (AssertionFailed(reinterpret_cast<const UTF8 *>(__FILE__), __LINE__), 0) )
 
 extern DCL_EXPORT void OutOfMemory(const UTF8 *SourceFile, unsigned int LineNo);
-#define ISOUTOFMEMORY(exp) {if (!(exp)) { OutOfMemory(reinterpret_cast<const UTF8 *>(__FILE__), __LINE__); }}
 
 #define MEMALLOC(n)          malloc((n))
 #define MEMFREE(p)           free((p))

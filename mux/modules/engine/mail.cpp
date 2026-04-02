@@ -209,7 +209,13 @@ static void mail_db_grow(int newtop)
         }
 
         MAILBODY *newdb = static_cast<MAILBODY *>(MEMALLOC((newsize + MAIL_FUDGE) * sizeof(MAILBODY)));
-        ISOUTOFMEMORY(newdb);
+        if (nullptr == newdb)
+        {
+            STARTLOG(LOG_PROBLEMS, "MAIL", "MEM");
+            log_printf(T("mail_db_grow: out of memory growing mail body array to %d."), newsize);
+            ENDLOG;
+            return;
+        }
         if (mail_list)
         {
             mail_list -= MAIL_FUDGE;

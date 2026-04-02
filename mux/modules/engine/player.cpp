@@ -1245,7 +1245,9 @@ void badname_add(UTF8 *bad_name)
     }
     else
     {
-        ISOUTOFMEMORY(bp);
+        STARTLOG(LOG_PROBLEMS, "NAM", "MEM");
+        log_printf(T("badname_add: out of memory."));
+        ENDLOG;
     }
 }
 

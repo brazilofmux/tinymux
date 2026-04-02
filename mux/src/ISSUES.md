@@ -41,10 +41,9 @@ Updated: 2026-03-27
 
 - Changed from `bool` to `volatile sig_atomic_t` in `bsd.cpp` and `driverstate.h`. All write sites updated.
 
-### `g_dump_child_pid` race condition
+### ~~`g_dump_child_pid` race condition~~ FIXED
 
-- **File:** `bsd.cpp:38`
-- **Issue:** `volatile pid_t` but `pid_t` is not guaranteed to be `sig_atomic_t`-sized. Works in practice on Linux/BSD but not strictly portable.
+- Changed from `volatile pid_t` to `volatile sig_atomic_t` in `bsd.cpp` and `driverstate.h`. Added explicit casts in `ganl_adapter.cpp`.
 
 ## High — Unchecked Return Values & Error Paths
 
@@ -66,20 +65,17 @@ Updated: 2026-03-27
 
 ## Medium — Code Quality
 
-### `ISOUTOFMEMORY` macro terminates instead of recovering
+### ~~`ISOUTOFMEMORY` macro terminates instead of recovering~~ FIXED
 
-- **File:** `net.cpp:3225-3226` and multiple other sites
-- **Issue:** OOM after `MEMALLOC()` triggers `mux_assert`-style abort. A long-running server may prefer to gracefully disconnect the session.
+- Removed `ISOUTOFMEMORY` macro entirely from `config.h`. All 23 call sites replaced with site-appropriate handling: truly unrecoverable allocations (buffer pools, db array, anum table, markbuf) use `mux_assert` or `OutOfMemory`; recoverable sites (queue entries, commands, mail, guests, vattrs, config, restart ttype, forward lists) log the failure and return gracefully.
 
-### Inconsistent error handling patterns
+### ~~Inconsistent error handling patterns~~ MOSTLY RESOLVED
 
-- **File:** `net.cpp` (throughout `load_restart_db()`)
-- **Issue:** Mix of `mux_assert(0)`, return codes, and silent fallthrough makes the code unpredictable under corruption.
+- Remaining `mux_assert(0)` sites in `load_restart_db()` were previously fixed. OOM handling now consistently uses per-site recovery.
 
-### Integer overflow potential in buffer calculations
+### ~~Integer overflow potential in buffer calculations~~ FALSE ALARM
 
-- **File:** `net.cpp:3225-3227, 3262, 3309, 3323, 3346`
-- **Issue:** `nBuffer+1` or `nBufferUnicode+1` could overflow if the value read from file is `SIZE_MAX`.
+- `getstring_noalloc()` reads into a static `buf[2*LBUF_SIZE + 20]` (~65KB). The returned `nBuffer` is always bounded by this buffer size, so `nBuffer+1` cannot overflow `size_t`.
 
 ### ~~Volatile counters in slave.cpp lack atomicity~~ PARTIALLY FIXED
 

@@ -4246,7 +4246,7 @@ UTF8 *StringCloneLen(const UTF8 *str, size_t nStr)
     }
     else
     {
-        ISOUTOFMEMORY(buff);
+        OutOfMemory(reinterpret_cast<const UTF8 *>(__FILE__), __LINE__);
     }
     return buff;
 }

@@ -1342,7 +1342,9 @@ void olist_push(void)
     }
     catch (const std::bad_alloc &)
     {
-        ISOUTOFMEMORY(0);
+        STARTLOG(LOG_PROBLEMS, "OBJ", "MEM");
+        log_printf(T("olist_push: out of memory."));
+        ENDLOG;
     }
 }
 

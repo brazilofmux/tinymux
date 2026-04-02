@@ -1029,7 +1029,9 @@ void init_cmdtab(void)
         }
         else
         {
-            ISOUTOFMEMORY(cp2a);
+            STARTLOG(LOG_PROBLEMS, "CMD", "MEM");
+            log_printf(T("init_cmdtab: out of memory adding @set-attr command."));
+            ENDLOG;
         }
     }
 
@@ -3531,7 +3533,13 @@ CF_HAND(cf_cmd_alias)
                 {
                     ; // Nothing.
                 }
-                ISOUTOFMEMORY(cmd2);
+                if (nullptr == cmd2)
+                {
+                    STARTLOG(LOG_PROBLEMS, "CMD", "MEM");
+                    log_printf(T("cf_alias: out of memory creating switch alias."));
+                    ENDLOG;
+                    return -1;
+                }
                 cmd2->cmdname = StringClone(alias);
                 cmd2->switches = cmdp->switches;
                 cmd2->perms = cmdp->perms | nt->perm;

@@ -1413,7 +1413,10 @@ static int add_helpfile(dbref player, UTF8 *cmd, UTF8 *str, bool bEval)
     }
     else
     {
-        ISOUTOFMEMORY(cmdp);
+        STARTLOG(LOG_PROBLEMS, "HLP", "MEM");
+        log_printf(T("cf_helpfile_add: out of memory registering help command."));
+        ENDLOG;
+        return -1;
     }
 
     mudstate.nHelpDesc++;
@@ -2237,11 +2240,19 @@ int cf_read(void)
             const UTF8 *pSuffix = DefaultSuffixes[i].pSuffix;
             size_t nSuffix = strlen(reinterpret_cast<const char *>(pSuffix));
             UTF8 *buff = reinterpret_cast<UTF8 *>(MEMALLOC(nInDB + nSuffix + 1));
-            ISOUTOFMEMORY(buff);
-            memcpy(buff, mudconf.indb, nInDB);
-            memcpy(buff + nInDB, pSuffix, nSuffix+1);
-            MEMFREE(*p);
-            *p = buff;
+            if (nullptr == buff)
+            {
+                STARTLOG(LOG_PROBLEMS, "CNF", "MEM");
+                log_printf(T("cf_verify: out of memory constructing default filename."));
+                ENDLOG;
+            }
+            else
+            {
+                memcpy(buff, mudconf.indb, nInDB);
+                memcpy(buff + nInDB, pSuffix, nSuffix+1);
+                MEMFREE(*p);
+                *p = buff;
+            }
         }
     }
     return retval;

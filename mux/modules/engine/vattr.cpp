@@ -86,7 +86,9 @@ ATTR *vattr_define_LEN(const UTF8 *pName, size_t nName, int number, int flags)
     }
     else
     {
-        ISOUTOFMEMORY(vp);
+        STARTLOG(LOG_PROBLEMS, "ATR", "MEM");
+        log_printf(T("vattr_define_LEN: out of memory allocating vattr."));
+        ENDLOG;
     }
     return vp;
 }

@@ -1953,7 +1953,7 @@ void GanlAdapter::run_main_loop() {
 #endif // STUB_SLAVE
                     if (g_dc.fork_dump)
                     {
-                        g_dump_child_pid = reapPid;
+                        g_dump_child_pid = static_cast<sig_atomic_t>(reapPid);
                         continue;
                     }
                     STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
@@ -1968,7 +1968,7 @@ void GanlAdapter::run_main_loop() {
         // If SIGCHLD recorded a dump child exit, report it to the
         // engine now (safe context, not a signal handler).
         //
-        pid_t dump_pid = g_dump_child_pid;
+        pid_t dump_pid = static_cast<pid_t>(g_dump_child_pid);
         if (0 != dump_pid)
         {
             g_dump_child_pid = 0;

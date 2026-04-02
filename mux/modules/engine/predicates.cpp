@@ -1034,7 +1034,11 @@ void do_addcommand
         {
             ; // Nothing.
         }
-        ISOUTOFMEMORY(cmd);
+        if (nullptr == cmd)
+        {
+            notify(player, OUT_OF_MEMORY);
+            return;
+        }
         cmd->cmdname = StringClone(pName);
         cmd->switches = nullptr;
         cmd->perms = 0;
@@ -1517,7 +1521,11 @@ void do_prog
     }
 
     const auto program = static_cast<program_data*>(MEMALLOC(sizeof(program_data)));
-    ISOUTOFMEMORY(program);
+    if (nullptr == program)
+    {
+        notify(player, OUT_OF_MEMORY);
+        return;
+    }
     program->wait_enactor = player;
     for (int i = 0; i < MAX_GLOBAL_REGS; i++)
     {

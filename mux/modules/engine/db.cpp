@@ -438,12 +438,17 @@ void fwdlist_set(dbref thing, FWDLIST *ifp)
         }
         else
         {
-            ISOUTOFMEMORY(fp->data);
+            STARTLOG(LOG_PROBLEMS, "FWD", "MEM");
+            log_printf(T("fwdlist_set: out of memory allocating forward list data for #%d."), thing);
+            ENDLOG;
+            delete fp;
         }
     }
     else
     {
-        ISOUTOFMEMORY(fp);
+        STARTLOG(LOG_PROBLEMS, "FWD", "MEM");
+        log_printf(T("fwdlist_set: out of memory allocating forward list for #%d."), thing);
+        ENDLOG;
     }
 }
 
@@ -1601,7 +1606,7 @@ void anum_extend(int newtop)
     }
     else
     {
-        ISOUTOFMEMORY(anum_table2);
+        mux_assert(anum_table2);
     }
     anum_alc_top = newtop;
 }
@@ -2861,7 +2866,7 @@ void db_grow(dbref newtop)
     // to reclaim the memory.
     //
     OBJ *newdb = static_cast<OBJ *>(MEMALLOC((newsize + SIZE_HACK) * sizeof(OBJ)));
-    ISOUTOFMEMORY(newdb);
+    mux_assert(newdb);
     if (db)
     {
         // An old struct database exists. Copy it to the new buffer.
@@ -2889,7 +2894,7 @@ void db_grow(dbref newtop)
     //
     int marksize = (newsize + 7) >> 3;
     MARKBUF *newmarkbuf = static_cast<MARKBUF *>(MEMALLOC(marksize));
-    ISOUTOFMEMORY(newmarkbuf);
+    mux_assert(newmarkbuf);
     memset(newmarkbuf, 0, marksize);
     if (mudstate.markbits)
     {

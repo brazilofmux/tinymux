@@ -94,7 +94,13 @@ void CGuests::SizeGuests(int nMin)
     }
 
     dbref *newGuests = static_cast<dbref *>(MEMALLOC(nMin * sizeof(dbref)));
-    ISOUTOFMEMORY(newGuests);
+    if (nullptr == newGuests)
+    {
+        STARTLOG(LOG_PROBLEMS, "GST", "MEM");
+        log_printf(T("SizeGuests: out of memory growing guest array to %d."), nMin);
+        ENDLOG;
+        return;
+    }
     if (Guests)
     {
         memcpy(newGuests, Guests, nGuests * sizeof(dbref));
