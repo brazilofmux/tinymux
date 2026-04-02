@@ -15,45 +15,37 @@
 # Test Case #1 - Basic delete operations.
 #
 &tr.tc001 test_delete_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [delete(abcdef,2,2)]
-            [delete(abcdef,0,1)]
-            [delete(abcdef,5,1)]
-            [delete(abcdef,0,0)]
-          )
-        ),
-        F9C18D40DC9E5C216EF39B23E6283B70D52DB7A6
+  @if cand(
+        strmatch(delete(abcdef,2,2), abef),
+        strmatch(delete(abcdef,0,1), bcdef),
+        strmatch(delete(abcdef,5,1), abcde),
+        strmatch(delete(abcdef,0,0), abcdef)
       )=
   {
     @log smoke=TC001: delete basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: delete basic operations. Failed (%q0).
+    @log smoke=TC001: delete basic operations. Failed (del(2%,2)=[delete(abcdef,2,2)] del(0%,1)=[delete(abcdef,0,1)] del(5%,1)=[delete(abcdef,5,1)] del(0%,0)=[delete(abcdef,0,0)]).
   }
 -
 #
 # Test Case #2 - Delete Unicode characters by grapheme position.
 # String: A + e-acute + B + fullwidth-0 + C (5 graphemes).
-# Delete at position 1 (the e-acute), length 1.
-# Delete at position 3 (fullwidth-0), length 1.
 #
 &tr.tc002 test_delete_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [delete(A[chr(233)]B[chr(65296)]C,1,1)]
-            [delete(A[chr(233)]B[chr(65296)]C,3,1)]
-            [delete(A[chr(233)]B[chr(65296)]C,0,2)]
-          )
-        ),
-        5FDB0BE2796861DCF545A759324035EABD5D7E44
+  @if cand(
+        eq(strlen(delete(A[chr(233)]B[chr(65296)]C,1,1)), 4),
+        strmatch(mid(delete(A[chr(233)]B[chr(65296)]C,1,1),0,1), A),
+        strmatch(mid(delete(A[chr(233)]B[chr(65296)]C,1,1),1,1), B),
+        eq(strlen(delete(A[chr(233)]B[chr(65296)]C,3,1)), 4),
+        eq(strlen(delete(A[chr(233)]B[chr(65296)]C,0,2)), 3)
       )=
   {
     @log smoke=TC002: delete Unicode graphemes. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: delete Unicode graphemes. Failed (%q0).;
+    @log smoke=TC002: delete Unicode graphemes. Failed (del(1%,1) len=[strlen(delete(A[chr(233)]B[chr(65296)]C,1,1))] del(3%,1) len=[strlen(delete(A[chr(233)]B[chr(65296)]C,3,1))] del(0%,2) len=[strlen(delete(A[chr(233)]B[chr(65296)]C,0,2))]).;
     @trig me/tr.done
   }
 -

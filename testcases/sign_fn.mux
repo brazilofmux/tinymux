@@ -15,21 +15,17 @@
 # Test Case #1 - Basic sign operations.
 #
 &tr.tc001 test_sign_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [sign(-5)]
-            [sign(0)]
-            [sign(5)]
-          )
-        ),
-        671CC6A3DFA9EB58EA4236AFC97998D9CDDD6C08
+  @if cand(
+        eq(sign(-5), -1),
+        eq(sign(0), 0),
+        eq(sign(5), 1)
       )=
   {
     @log smoke=TC001: sign basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: sign basic operations. Failed (%q0).;
+    @log smoke=TC001: sign basic operations. Failed (sign(-5)=[sign(-5)] sign(0)=[sign(0)] sign(5)=[sign(5)]).;
     @trig me/tr.done
   }
 -

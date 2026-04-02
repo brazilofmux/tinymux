@@ -15,20 +15,16 @@
 # Test Case #1 - Basic cat operations.
 #
 &tr.tc001 test_cat_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [cat(hello,world)]
-            [cat(a,b,c)]
-          )
-        ),
-        DE9E53BBE477FFCCA4920FDDD0B8CE4C9284CD24
+  @if cand(
+        strmatch(cat(hello,world), hello world),
+        strmatch(cat(a,b,c), a b c)
       )=
   {
     @log smoke=TC001: cat basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: cat basic operations. Failed (%q0).;
+    @log smoke=TC001: cat basic operations. Failed (cat(hello%,world)=[cat(hello,world)] cat(a%,b%,c)=[cat(a,b,c)]).;
     @trig me/tr.done
   }
 -

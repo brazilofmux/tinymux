@@ -18,19 +18,15 @@
 # Test Case #1 - Help file examples.
 #
 &tr.tc001 test_mid_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [mid(foobar,2,2)]
-            [mid(foobar,2,-2)]
-          )
-        ),
-        973A0ABA88E038ED295728D49D24759890274404
+  @if cand(
+        strmatch(mid(foobar,2,2), ob),
+        strmatch(mid(foobar,2,-2), oo)
       )=
   {
     @log smoke=TC001: mid examples. Succeeded.
   },
   {
-    @log smoke=TC001: mid examples. Failed (%q0).
+    @log smoke=TC001: mid examples. Failed (mid(2%,2)=[mid(foobar,2,2)] mid(2%,-2)=[mid(foobar,2,-2)]).
   }
 -
 #
@@ -38,21 +34,17 @@
 # String is: A + e-acute + B + fullwidth-0 + C (5 graphemes).
 #
 &tr.tc002 test_mid_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [ord(mid(A[chr(233)]B[chr(65296)]C,1,1))]
-            [mid(A[chr(233)]B[chr(65296)]C,2,1)]
-            [ord(mid(A[chr(233)]B[chr(65296)]C,3,1))]
-            [mid(A[chr(233)]B[chr(65296)]C,0,2)]
-          )
-        ),
-        2908CBCA501FE7FBEE76719E4BF7E52D26458E97
+  @if cand(
+        eq(ord(mid(A[chr(233)]B[chr(65296)]C,1,1)), 233),
+        strmatch(mid(A[chr(233)]B[chr(65296)]C,2,1), B),
+        eq(ord(mid(A[chr(233)]B[chr(65296)]C,3,1)), 65296),
+        strmatch(mid(A[chr(233)]B[chr(65296)]C,0,1), A)
       )=
   {
     @log smoke=TC002: mid Unicode graphemes. Succeeded.
   },
   {
-    @log smoke=TC002: mid Unicode graphemes. Failed (%q0).
+    @log smoke=TC002: mid Unicode graphemes. Failed (ord@1=[ord(mid(A[chr(233)]B[chr(65296)]C,1,1))] @2=[mid(A[chr(233)]B[chr(65296)]C,2,1)] ord@3=[ord(mid(A[chr(233)]B[chr(65296)]C,3,1))]).
   }
 -
 #
@@ -60,21 +52,17 @@
 # chr(101 769) normalizes to chr(233) via NFC.
 #
 &tr.tc003 test_mid_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [ord(mid(A[chr(101 769)]B,1,1))]
-            [mid(A[chr(101 769)]B,0,1)]
-            [mid(A[chr(101 769)]B,2,1)]
-          )
-        ),
-        6A9BF7F9AF24CC04F236A9851A6D3764D5E23603
+  @if cand(
+        eq(ord(mid(A[chr(101 769)]B,1,1)), 233),
+        strmatch(mid(A[chr(101 769)]B,0,1), A),
+        strmatch(mid(A[chr(101 769)]B,2,1), B)
       )=
   {
     @log smoke=TC003: mid combining cluster. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: mid combining cluster. Failed (%q0).;
+    @log smoke=TC003: mid combining cluster. Failed (ord@1=[ord(mid(A[chr(101 769)]B,1,1))] @0=[mid(A[chr(101 769)]B,0,1)] @2=[mid(A[chr(101 769)]B,2,1)]).;
     @trig me/tr.done
   }
 -

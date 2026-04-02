@@ -15,20 +15,16 @@
 # Test Case #1 - Basic trim operations.
 #
 &tr.tc001 test_trim_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [trim(%b%bhello%b%b)]
-            [trim(xxhelloxx,b,x)]
-          )
-        ),
-        0B156215B189103C3D268F61299A854CD0B31E70
+  @if cand(
+        strmatch(trim(%b%bhello%b%b), hello),
+        strmatch(trim(xxhelloxx,b,x), hello)
       )=
   {
     @log smoke=TC001: trim basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: trim basic operations. Failed (%q0).;
+    @log smoke=TC001: trim basic operations. Failed (trim spaces=.[trim(%b%bhello%b%b)]. trim x=.[trim(xxhelloxx,b,x)].).;
     @trig me/tr.done
   }
 -

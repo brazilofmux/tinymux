@@ -13,7 +13,7 @@ This is the top-level tracker for the TinyMUX project. It links to specialized i
 - **[Android Client](client/android/ISSUES.md):** Idle time wiring, inputChannel race condition.
 - **[iOS Client](client/ios/ISSUES.md):** Missing SetPreferences, EventLoopGroup leak.
 - **[TinyFugue Client](client/tf/ISSUES.md):** Hydra reconnect drops capabilities, hardcoded viewport.
-- **[Test Infrastructure](testcases/ISSUES.md):** SHA1 hash brittleness, coverage gaps, no test discovery.
+- **[Test Infrastructure](testcases/ISSUES.md):** SHA1 hash brittleness, edge case coverage, no test discovery. Two-tier model: `testcases/` (smoke) + `tests/` (standalone unit).
 - **[Parser Research Tools](parser/ISSUES.md):** Evaluator compatibility gaps, build warnings, escape oracle curation.
 - **[DB Backend Tests](tests/db/ISSUES.md):** Standalone harness breakage after file moves.
 - **[WorldBuilder](tools/worldbuilder/ISSUES.md):** Test path sensitivity, file handle leak, incomplete lint function list.

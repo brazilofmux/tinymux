@@ -15,21 +15,17 @@
 # Test Case #1 - Basic addition operations.
 #
 &tr.tc001 test_add_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [add(1,2)]
-            [add(1,2,3)]
-            [add(-1,1)]
-          )
-        ),
-        A1773D62A609DD09E98EA1AEBEDDBD949B78BF83
+  @if cand(
+        eq(add(1,2), 3),
+        eq(add(1,2,3), 6),
+        eq(add(-1,1), 0)
       )=
   {
     @log smoke=TC001: add basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: add basic operations. Failed (%q0).;
+    @log smoke=TC001: add basic operations. Failed (add(1%,2)=[add(1,2)] add(1%,2%,3)=[add(1,2,3)] add(-1%,1)=[add(-1,1)]).;
     @trig me/tr.done
   }
 -

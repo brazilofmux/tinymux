@@ -15,19 +15,13 @@
 # Test Case #1 - Basic right operations.
 #
 &tr.tc001 test_right_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [right(abcdefgh,3)]
-          )
-        ),
-        3F7B1E2A98DEA15069FDC2542560C21BF5FD8234
-      )=
+  @if strmatch(right(abcdefgh,3), fgh)=
   {
     @log smoke=TC001: right basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: right basic operations. Failed (%q0).;
+    @log smoke=TC001: right basic operations. Failed (right(abcdefgh%,3)=[right(abcdefgh,3)]).;
     @trig me/tr.done
   }
 -

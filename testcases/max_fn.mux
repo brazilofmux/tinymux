@@ -15,20 +15,16 @@
 # Test Case #1 - Basic maximum operations.
 #
 &tr.tc001 test_max_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [max(1,5,3)]
-            [max(-1,-5,-3)]
-          )
-        ),
-        377EB704F59A32DC0C615859A9E7BB66246A732D
+  @if cand(
+        eq(max(1,5,3), 5),
+        eq(max(-1,-5,-3), -1)
       )=
   {
     @log smoke=TC001: max basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: max basic operations. Failed (%q0).;
+    @log smoke=TC001: max basic operations. Failed (max(1%,5%,3)=[max(1,5,3)] max(-1%,-5%,-3)=[max(-1,-5,-3)]).;
     @trig me/tr.done
   }
 -

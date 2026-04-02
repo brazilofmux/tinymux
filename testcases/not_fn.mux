@@ -15,21 +15,17 @@
 # Test Case #1 - Basic logical NOT operations.
 #
 &tr.tc001 test_not_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [not(0)]
-            [not(1)]
-            [not(5)]
-          )
-        ),
-        310B86E0B62B828562FC91C7BE5380A992B2786A
+  @if cand(
+        eq(not(0), 1),
+        eq(not(1), 0),
+        eq(not(5), 0)
       )=
   {
     @log smoke=TC001: not basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: not basic operations. Failed (%q0).;
+    @log smoke=TC001: not basic operations. Failed (not(0)=[not(0)] not(1)=[not(1)] not(5)=[not(5)]).;
     @trig me/tr.done
   }
 -

@@ -15,20 +15,16 @@
 # Test Case #1 - Basic minimum operations.
 #
 &tr.tc001 test_min_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [min(1,5,3)]
-            [min(-1,-5,-3)]
-          )
-        ),
-        C21121BC3D131CAA637B02486F7004319310DDBF
+  @if cand(
+        eq(min(1,5,3), 1),
+        eq(min(-1,-5,-3), -5)
       )=
   {
     @log smoke=TC001: min basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: min basic operations. Failed (%q0).;
+    @log smoke=TC001: min basic operations. Failed (min(1%,5%,3)=[min(1,5,3)] min(-1%,-5%,-3)=[min(-1,-5,-3)]).;
     @trig me/tr.done
   }
 -

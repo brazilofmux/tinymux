@@ -15,20 +15,16 @@
 # Test Case #1 - Basic modulo operations.
 #
 &tr.tc001 test_mod_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [mod(10,3)]
-            [mod(-10,3)]
-          )
-        ),
-        7B52009B64FD0A2A49E6D8A939753077792B0554
+  @if cand(
+        eq(mod(10,3), 1),
+        eq(mod(-10,3), 2)
       )=
   {
     @log smoke=TC001: mod basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: mod basic operations. Failed (%q0).;
+    @log smoke=TC001: mod basic operations. Failed (mod(10%,3)=[mod(10,3)] mod(-10%,3)=[mod(-10,3)]).;
     @trig me/tr.done
   }
 -

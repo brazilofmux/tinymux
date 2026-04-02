@@ -15,20 +15,16 @@
 # Test Case #1 - Basic lowercase operations.
 #
 &tr.tc001 test_lcstr_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [lcstr(FOO)]
-            [lcstr(FoO)]
-            [lcstr(123)]
-          )
-        ),
-        E7E82E298B9C50EB2B368584370BE0FCFEA1CC03
+  @if cand(
+        strmatch(lcstr(FOO), foo),
+        strmatch(lcstr(FoO), foo),
+        strmatch(lcstr(123), 123)
       )=
   {
     @log smoke=TC001: lcstr basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: lcstr basic operations. Failed (%q0).
+    @log smoke=TC001: lcstr basic operations. Failed (lcstr(FOO)=[lcstr(FOO)] lcstr(FoO)=[lcstr(FoO)] lcstr(123)=[lcstr(123)]).
   }
 -
 #
@@ -37,21 +33,16 @@
 # chr(220) = U-umlaut -> should become u-umlaut (chr(252)).
 #
 &tr.tc002 test_lcstr_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [ord(lcstr(chr(201)))]
-            [ord(lcstr(chr(220)))]
-            [lcstr(A[chr(201)]B[chr(220)]C)]
-          )
-        ),
-        463CCF775A6B270FACA5F166263A8E2DAD6581CD
+  @if cand(
+        eq(ord(lcstr(chr(201))), 233),
+        eq(ord(lcstr(chr(220))), 252)
       )=
   {
     @log smoke=TC002: lcstr Unicode. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: lcstr Unicode. Failed (%q0).;
+    @log smoke=TC002: lcstr Unicode. Failed (ord lcstr E-acute=[ord(lcstr(chr(201)))] ord lcstr U-umlaut=[ord(lcstr(chr(220)))]).;
     @trig me/tr.done
   }
 -

@@ -15,21 +15,17 @@
 # Test Case #1 - Basic increment operations.
 #
 &tr.tc001 test_inc_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [inc(5)]
-            [inc(0)]
-            [inc(-3)]
-          )
-        ),
-        DA956729BFECA8DCA4A802679359ED605BF367F7
+  @if cand(
+        eq(inc(5), 6),
+        eq(inc(0), 1),
+        eq(inc(-3), -2)
       )=
   {
     @log smoke=TC001: inc basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: inc basic operations. Failed (%q0).;
+    @log smoke=TC001: inc basic operations. Failed (inc(5)=[inc(5)] inc(0)=[inc(0)] inc(-3)=[inc(-3)]).;
     @trig me/tr.done
   }
 -

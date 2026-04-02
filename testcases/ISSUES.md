@@ -1,23 +1,33 @@
 # Test Infrastructure — Open Issues
 
-Updated: 2026-03-27
+Updated: 2026-04-01
+
+## Testing Levels
+
+The project now has two complementary testing tiers:
+
+- **`testcases/`** — Smoke tests: softcode-level integration tests that run inside a live MUX instance. 811 test cases across ~240 `.mux` files, exercising functions and commands end-to-end.
+- **`tests/`** — Standalone unit test harnesses that link directly against built `.so` files and run without a MUX instance:
+  - `tests/libmux/` — stringutil, mathutil, alloc (29 tests, links libmux.so)
+  - `tests/color_ops/` — Ragel DFA color primitives (C, standalone)
+  - `tests/db/` — SQLite storage backend (C++, standalone)
 
 ## High — Test Brittleness
 
-### 84% of tests use SHA1 hash comparison with no semantic assertions
+### 84% of smoke tests use SHA1 hash comparison with no semantic assertions
 
-- **Scope:** 217 of 239 test files, ~590 SHA1 references
+- **Scope:** ~217 of ~240 test files, ~590 SHA1 references
 - **Issue:** Tests compute `sha1(output)` and compare against a hardcoded hex hash. When a test fails, the hash mismatch gives zero clue about what actually changed. Adding or modifying any function behavior requires recalculating all dependent hashes.
 - **Risk:** Function behavior could drift without visibility if a hash is copied incorrectly.
 - **Opportunity:** Gradually introduce semantic assertions (`strmatch`, value comparisons) alongside or replacing hashes for the highest-risk functions.
 
 ## High — Coverage Gaps
 
-### Only 1 command-level test file
+### ~~Only 1 command-level test file~~ FIXED
 
-- **File:** `dolist_cmd.mux` (84 lines)
-- **Gap:** No tests for `@if`, `@switch`, `@for`, `@while`, `@trigger`, `@wait`, `@notify`, or other command variants.
-- **Impact:** Command-level behavior relies entirely on integration smoke testing.
+- Now 7 command-level test files (1,101 lines total):
+  `dolist_cmd.mux`, `if_cmd.mux`, `switch_cmd.mux`, `trigger_cmd.mux`,
+  `wait_cmd.mux`, `assert_cmd.mux` (`@assert`/`@break`), `cmd_say.mux`.
 
 ### Minimal edge case testing across the board
 
@@ -29,6 +39,7 @@ Updated: 2026-03-27
   - Invalid argument types and malformed syntax
   - Permission failure paths
   - Unicode: multi-byte characters, combining diacriticals, RTL text (only `accent_fn.mux` and `strdistance_fn.mux` touch this)
+- **Note:** The `tests/` standalone harnesses are the right place for low-level edge case and boundary testing (overflow, LBUF limits, UTF-8 multi-byte). Smoke tests (`testcases/`) are better suited for end-to-end semantic correctness.
 
 ### Single test case per function is the norm
 

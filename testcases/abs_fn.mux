@@ -15,21 +15,17 @@
 # Test Case #1 - Basic absolute value operations.
 #
 &tr.tc001 test_abs_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [abs(5)]
-            [abs(-5)]
-            [abs(0)]
-          )
-        ),
-        CF94DB48FB7AA4DA74260DA3F6C7E4722E913B72
+  @if cand(
+        eq(abs(5), 5),
+        eq(abs(-5), 5),
+        eq(abs(0), 0)
       )=
   {
     @log smoke=TC001: abs basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: abs basic operations. Failed (%q0).;
+    @log smoke=TC001: abs basic operations. Failed (abs(5)=[abs(5)] abs(-5)=[abs(-5)] abs(0)=[abs(0)]).;
     @trig me/tr.done
   }
 -

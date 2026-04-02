@@ -15,21 +15,17 @@
 # Test Case #1 - Basic logical AND operations.
 #
 &tr.tc001 test_and_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [and(1,1)]
-            [and(1,0)]
-            [and(0,0)]
-          )
-        ),
-        310B86E0B62B828562FC91C7BE5380A992B2786A
+  @if cand(
+        eq(and(1,1), 1),
+        eq(and(1,0), 0),
+        eq(and(0,0), 0)
       )=
   {
     @log smoke=TC001: and basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: and basic operations. Failed (%q0).;
+    @log smoke=TC001: and basic operations. Failed (and(1%,1)=[and(1,1)] and(1%,0)=[and(1,0)] and(0%,0)=[and(0,0)]).;
     @trig me/tr.done
   }
 -

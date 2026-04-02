@@ -15,20 +15,16 @@
 # Test Case #1 - Basic space operations.
 #
 &tr.tc001 test_space_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strlen(space(5))]
-            [strlen(space(0))]
-          )
-        ),
-        E1822DB470E60D090AFFD0956D743CB0E7CDF113
+  @if cand(
+        eq(strlen(space(5)), 5),
+        eq(strlen(space(0)), 0)
       )=
   {
     @log smoke=TC001: space basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: space basic operations. Failed (%q0).;
+    @log smoke=TC001: space basic operations. Failed (space(5) len=[strlen(space(5))] space(0) len=[strlen(space(0))]).;
     @trig me/tr.done
   }
 -

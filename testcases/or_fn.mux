@@ -15,21 +15,17 @@
 # Test Case #1 - Basic logical OR operations.
 #
 &tr.tc001 test_or_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [or(1,0)]
-            [or(0,0)]
-            [or(1,1)]
-          )
-        ),
-        DBC0F004854457F59FB16AB863A3A1722CEF553F
+  @if cand(
+        eq(or(1,0), 1),
+        eq(or(0,0), 0),
+        eq(or(1,1), 1)
       )=
   {
     @log smoke=TC001: or basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: or basic operations. Failed (%q0).;
+    @log smoke=TC001: or basic operations. Failed (or(1%,0)=[or(1,0)] or(0%,0)=[or(0,0)] or(1%,1)=[or(1,1)]).;
     @trig me/tr.done
   }
 -

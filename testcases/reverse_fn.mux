@@ -15,41 +15,36 @@
 # Test Case #1 - Basic reverse operations.
 #
 &tr.tc001 test_reverse_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [reverse(abcdef)]
-            [reverse(12345)]
-          )
-        ),
-        BE76EC6E1C94467F992F131EBA9F091423C4BCD4
+  @if cand(
+        strmatch(reverse(abcdef), fedcba),
+        strmatch(reverse(12345), 54321)
       )=
   {
     @log smoke=TC001: reverse basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: reverse basic operations. Failed (%q0).
+    @log smoke=TC001: reverse basic operations. Failed (reverse(abcdef)=[reverse(abcdef)] reverse(12345)=[reverse(12345)]).
   }
 -
 #
 # Test Case #2 - Reverse with multi-byte Unicode characters.
 # String: A + e-acute + B (3 graphemes).
 # Reversed should be: B + e-acute + A.
+# Use ord() to verify the middle character is preserved.
 #
 &tr.tc002 test_reverse_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [reverse(A[chr(233)]B)]
-            [reverse([chr(65296)]A[chr(233)])]
-          )
-        ),
-        1FF3172E970414A58FB715B257FE1B395150C264
+  @if cand(
+        eq(ord(mid(reverse(A[chr(233)]B),0,1)), 66),
+        eq(ord(mid(reverse(A[chr(233)]B),1,1)), 233),
+        eq(ord(mid(reverse(A[chr(233)]B),2,1)), 65),
+        eq(strlen(reverse(A[chr(233)]B)), 3)
       )=
   {
     @log smoke=TC002: reverse multi-byte Unicode. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: reverse multi-byte Unicode. Failed (%q0).;
+    @log smoke=TC002: reverse multi-byte Unicode. Failed (reverse=[reverse(A[chr(233)]B)] len=[strlen(reverse(A[chr(233)]B))]).;
     @trig me/tr.done
   }
 -

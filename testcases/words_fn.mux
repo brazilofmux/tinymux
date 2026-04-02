@@ -15,20 +15,16 @@
 # Test Case #1 - Basic words operations.
 #
 &tr.tc001 test_words_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [words(a b c d)]
-            [words(a|b|c,|)]
-          )
-        ),
-        0286DD552C9BEA9A69ECB3759E7B94777635514B
+  @if cand(
+        eq(words(a b c d), 4),
+        eq(words(a|b|c,|), 3)
       )=
   {
     @log smoke=TC001: words basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: words basic operations. Failed (%q0).;
+    @log smoke=TC001: words basic operations. Failed (words(a b c d)=[words(a b c d)] words(a|b|c%,|)=[words(a|b|c,|)]).;
     @trig me/tr.done
   }
 -

@@ -15,21 +15,17 @@
 # Test Case #1 - Basic decrement operations.
 #
 &tr.tc001 test_dec_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [dec(5)]
-            [dec(0)]
-            [dec(-3)]
-          )
-        ),
-        20E8D2FBE879AFBA877F8F82787C8B17EE5EE98C
+  @if cand(
+        eq(dec(5), 4),
+        eq(dec(0), -1),
+        eq(dec(-3), -4)
       )=
   {
     @log smoke=TC001: dec basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: dec basic operations. Failed (%q0).;
+    @log smoke=TC001: dec basic operations. Failed (dec(5)=[dec(5)] dec(0)=[dec(0)] dec(-3)=[dec(-3)]).;
     @trig me/tr.done
   }
 -

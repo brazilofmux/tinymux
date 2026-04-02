@@ -15,19 +15,15 @@
 # Test Case #1 - Basic string length operations.
 #
 &tr.tc001 test_strlen_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strlen(hello)]
-            [strlen()]
-          )
-        ),
-        E1822DB470E60D090AFFD0956D743CB0E7CDF113
+  @if cand(
+        eq(strlen(hello), 5),
+        eq(strlen(), 0)
       )=
   {
     @log smoke=TC001: strlen basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: strlen basic operations. Failed (%q0).
+    @log smoke=TC001: strlen basic operations. Failed (strlen(hello)=[strlen(hello)] strlen()=[strlen()]).
   }
 -
 #
@@ -36,20 +32,16 @@
 # strlen should count grapheme clusters, not bytes.
 #
 &tr.tc002 test_strlen_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strlen(chr(233))]
-            [strlen(chr(65296))]
-            [strlen(A[chr(233)]B[chr(65296)]C)]
-          )
-        ),
-        EFA6E44DFA0145249BE273ECD84A97F534B04920
+  @if cand(
+        eq(strlen(chr(233)), 1),
+        eq(strlen(chr(65296)), 1),
+        eq(strlen(A[chr(233)]B[chr(65296)]C), 5)
       )=
   {
     @log smoke=TC002: strlen multi-byte Unicode. Succeeded.
   },
   {
-    @log smoke=TC002: strlen multi-byte Unicode. Failed (%q0).
+    @log smoke=TC002: strlen multi-byte Unicode. Failed (chr233=[strlen(chr(233))] chr65296=[strlen(chr(65296))] mixed=[strlen(A[chr(233)]B[chr(65296)]C)]).
   }
 -
 #
@@ -57,20 +49,16 @@
 # chr(101 769) normalizes to single precomposed char via NFC.
 #
 &tr.tc003 test_strlen_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strlen(chr(101 769))]
-            [strlen(A[chr(101 769)]B)]
-          )
-        ),
-        BD307A3EC329E10A2CFF8FB87480823DA114F8F4
+  @if cand(
+        eq(strlen(chr(101 769)), 1),
+        eq(strlen(A[chr(101 769)]B), 3)
       )=
   {
     @log smoke=TC003: strlen combining cluster. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: strlen combining cluster. Failed (%q0).;
+    @log smoke=TC003: strlen combining cluster. Failed (comb=[strlen(chr(101 769))] mixed=[strlen(A[chr(101 769)]B)]).;
     @trig me/tr.done
   }
 -

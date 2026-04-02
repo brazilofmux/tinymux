@@ -15,20 +15,16 @@
 # Test Case #1 - Basic multiplication operations.
 #
 &tr.tc001 test_mul_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [mul(2,3)]
-            [mul(2,3,4)]
-          )
-        ),
-        5DCA477752FC50226595C6A93528EAF3297DBCF8
+  @if cand(
+        eq(mul(2,3), 6),
+        eq(mul(2,3,4), 24)
       )=
   {
     @log smoke=TC001: mul basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: mul basic operations. Failed (%q0).;
+    @log smoke=TC001: mul basic operations. Failed (mul(2%,3)=[mul(2,3)] mul(2%,3%,4)=[mul(2,3,4)]).;
     @trig me/tr.done
   }
 -

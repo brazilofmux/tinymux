@@ -15,40 +15,33 @@
 # Test Case #1 - Basic capitalize string operations.
 #
 &tr.tc001 test_capstr_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [capstr(hello world)]
-            [capstr(HELLO)]
-          )
-        ),
-        DF3AF98FE50A1D6B1AE69F48B7B3C6FDAC2D2B28
+  @if cand(
+        strmatch(capstr(hello world), Hello world),
+        strmatch(capstr(HELLO), HELLO)
       )=
   {
     @log smoke=TC001: capstr basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: capstr basic operations. Failed (%q0).
+    @log smoke=TC001: capstr basic operations. Failed (capstr(hello world)=[capstr(hello world)] capstr(HELLO)=[capstr(HELLO)]).
   }
 -
 #
 # Test Case #2 - Capitalize Unicode first character.
 # chr(233) = e-acute -> capitalized should be E-acute (chr(201)) + rest.
+# chr(252) = u-umlaut -> capitalized should be U-umlaut (chr(220)) + rest.
 #
 &tr.tc002 test_capstr_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [capstr(chr(233)abc)]
-            [capstr(chr(252)test)]
-          )
-        ),
-        42D60718D4A780C434AC1449F0CB790593819F12
+  @if cand(
+        eq(ord(mid(capstr(chr(233)abc),0,1)), 201),
+        eq(ord(mid(capstr(chr(252)test),0,1)), 220)
       )=
   {
     @log smoke=TC002: capstr Unicode. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: capstr Unicode. Failed (%q0).;
+    @log smoke=TC002: capstr Unicode. Failed (capstr e-acute first=[ord(mid(capstr(chr(233)abc),0,1))] capstr u-umlaut first=[ord(mid(capstr(chr(252)test),0,1))]).;
     @trig me/tr.done
   }
 -

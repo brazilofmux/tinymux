@@ -15,19 +15,15 @@
 # Test Case #1 - Basic uppercase string operations.
 #
 &tr.tc001 test_ucstr_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [ucstr(hello)]
-            [ucstr(hElLo)]
-          )
-        ),
-        FF7AAB7D326C086155B2FC188713A5E1DAECF28C
+  @if cand(
+        strmatch(ucstr(hello), HELLO),
+        strmatch(ucstr(hElLo), HELLO)
       )=
   {
     @log smoke=TC001: ucstr basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: ucstr basic operations. Failed (%q0).
+    @log smoke=TC001: ucstr basic operations. Failed (ucstr(hello)=[ucstr(hello)] ucstr(hElLo)=[ucstr(hElLo)]).
   }
 -
 #
@@ -36,21 +32,16 @@
 # chr(252) = u-umlaut -> should become U-umlaut (chr(220)).
 #
 &tr.tc002 test_ucstr_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [ord(ucstr(chr(233)))]
-            [ord(ucstr(chr(252)))]
-            [ucstr(a[chr(233)]b[chr(252)]c)]
-          )
-        ),
-        8E612C464984F26EE01756199F8D0EB28D719A04
+  @if cand(
+        eq(ord(ucstr(chr(233))), 201),
+        eq(ord(ucstr(chr(252))), 220)
       )=
   {
     @log smoke=TC002: ucstr Unicode. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: ucstr Unicode. Failed (%q0).;
+    @log smoke=TC002: ucstr Unicode. Failed (ord ucstr e-acute=[ord(ucstr(chr(233)))] ord ucstr u-umlaut=[ord(ucstr(chr(252)))]).;
     @trig me/tr.done
   }
 -

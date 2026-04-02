@@ -15,20 +15,16 @@
 # Test Case #1 - Basic repeat operations.
 #
 &tr.tc001 test_repeat_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [repeat(ab,3)]
-            [repeat(x,5)]
-          )
-        ),
-        F54E92CD4B50BF07BEE26CDDEBBD59CF248D4CE1
+  @if cand(
+        strmatch(repeat(ab,3), ababab),
+        strmatch(repeat(x,5), xxxxx)
       )=
   {
     @log smoke=TC001: repeat basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: repeat basic operations. Failed (%q0).;
+    @log smoke=TC001: repeat basic operations. Failed (repeat(ab%,3)=[repeat(ab,3)] repeat(x%,5)=[repeat(x,5)]).;
     @trig me/tr.done
   }
 -
