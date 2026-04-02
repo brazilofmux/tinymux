@@ -12,7 +12,7 @@
   @log smoke=Beginning tr() test cases.
 -
 #
-# Test Case #1 - Basic transliteration operations.
+# Test Case #1 - Basic transliteration operations (ASCII fast path).
 # tr(Hello,eo,EO) => HEllO (e->E, o->O)
 # tr(Hello,el,EL) => HELLo (e->E, l->L)
 #
@@ -22,11 +22,281 @@
         strmatch(tr(Hello,el,EL), HELLo)
       )=
   {
-    @log smoke=TC001: tr basic operations. Succeeded.;
+    @log smoke=TC001: tr basic ASCII operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: tr basic ASCII operations. Failed (tr1=[tr(Hello,eo,EO)] tr2=[tr(Hello,el,EL)]).
+  }
+-
+#
+# Test Case #2 - ROT-13 with ASCII ranges (fast path).
+#
+&tr.tc002 test_tr_fn=
+  @if cand(
+        strmatch(tr(hello, a-z, n-za-m), uryyb),
+        strmatch(tr(uryyb, a-z, n-za-m), hello),
+        strmatch(tr(This is an example, a-Z, n-za-mN-ZA-M), Guvf vf na rknzcyr)
+      )=
+  {
+    @log smoke=TC002: tr ROT-13 ranges. Succeeded.
+  },
+  {
+    @log smoke=TC002: tr ROT-13 ranges. Failed.
+  }
+-
+#
+# Test Case #3 - Multi-byte grapheme cluster mapping (slow path).
+# Map three 2-byte Latin-1 supplement chars to ASCII.
+# chr(233)=e-acute, chr(241)=n-tilde, chr(252)=u-umlaut
+#
+&tr.tc003 test_tr_fn=
+  think setq(0,
+    tr(
+      caf[chr(233)],
+      [chr(233)][chr(241)][chr(252)],
+      enu
+    )
+  );
+  @if strmatch(%q0, cafe)=
+  {
+    @log smoke=TC003: tr multi-byte to ASCII. Succeeded.
+  },
+  {
+    @log smoke=TC003: tr multi-byte to ASCII. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - ASCII-to-multi-byte (slow path, reverse direction).
+# Map ASCII a,b,c to multi-byte clusters.
+#
+&tr.tc004 test_tr_fn=
+  think setq(0,
+    tr(
+      abc,
+      abc,
+      [chr(233)][chr(241)][chr(252)]
+    )
+  );
+  @if strmatch(%q0, [chr(233)][chr(241)][chr(252)])=
+  {
+    @log smoke=TC004: tr ASCII to multi-byte. Succeeded.
+  },
+  {
+    @log smoke=TC004: tr ASCII to multi-byte. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - Multi-byte to multi-byte (slow path).
+# Swap e-acute and n-tilde in a string.
+#
+&tr.tc005 test_tr_fn=
+  think setq(0,
+    tr(
+      [chr(233)][chr(241)],
+      [chr(233)][chr(241)],
+      [chr(241)][chr(233)]
+    )
+  );
+  @if strmatch(%q0, [chr(241)][chr(233)])=
+  {
+    @log smoke=TC005: tr multi-byte swap. Succeeded.
+  },
+  {
+    @log smoke=TC005: tr multi-byte swap. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - Mismatched cluster count error.
+# from has 2 clusters (a + e-acute), to has 1 cluster (b).
+#
+&tr.tc006 test_tr_fn=
+  think setq(0,
+    tr(test, a[chr(233)], b)
+  );
+  @if strmatch(%q0, #-1 STRING LENGTHS MUST BE EQUAL)=
+  {
+    @log smoke=TC006: tr cluster count mismatch error. Succeeded.
+  },
+  {
+    @log smoke=TC006: tr cluster count mismatch error. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - Duplicate in from-set: last occurrence wins.
+# from=aba, to=XYZ. 'a' maps to Z (last), 'b' maps to Y.
+#
+&tr.tc007 test_tr_fn=
+  @if strmatch(tr(abc, aba, XYZ), ZYc)=
+  {
+    @log smoke=TC007: tr duplicate last-wins. Succeeded.
+  },
+  {
+    @log smoke=TC007: tr duplicate last-wins. Failed (tr(abc,aba,XYZ)=[tr(abc, aba, XYZ)]).
+  }
+-
+#
+# Test Case #8 - Unmapped clusters pass through.
+# Only map 'a' to 'X'; everything else including multi-byte stays.
+#
+&tr.tc008 test_tr_fn=
+  think setq(0,
+    tr(
+      a[chr(233)]b,
+      a,
+      X
+    )
+  );
+  @if strmatch(%q0, X[chr(233)]b)=
+  {
+    @log smoke=TC008: tr unmapped pass-through. Succeeded.
+  },
+  {
+    @log smoke=TC008: tr unmapped pass-through. Failed (%q0).
+  }
+-
+#
+# Test Case #9 - CJK multi-byte mapping (3-byte clusters).
+# chr(20320)=U+4F60 'ni', chr(22909)=U+597D 'hao'
+# Map them to ASCII equivalents.
+#
+&tr.tc009 test_tr_fn=
+  think setq(0,
+    tr(
+      [chr(20320)][chr(22909)],
+      [chr(20320)][chr(22909)],
+      AB
+    )
+  );
+  @if strmatch(%q0, AB)=
+  {
+    @log smoke=TC009: tr CJK to ASCII. Succeeded.
+  },
+  {
+    @log smoke=TC009: tr CJK to ASCII. Failed (%q0).
+  }
+-
+#
+# Test Case #10 - Empty string input returns empty.
+#
+&tr.tc010 test_tr_fn=
+  @if strmatch(tr(,a,b),)=
+  {
+    @log smoke=TC010: tr empty input. Succeeded.
+  },
+  {
+    @log smoke=TC010: tr empty input. Failed.
+  }
+-
+#
+# Test Case #11 - Decomposed grapheme cluster (multi-code-point).
+# e + combining acute (U+0301) is one grapheme cluster.
+# Map it to X. The 'a' should pass through unchanged.
+#
+&tr.tc011 test_tr_fn=
+  think setq(0,
+    tr(
+      a[chr(101)][chr(769)],
+      [chr(101)][chr(769)],
+      X
+    )
+  );
+  @if strmatch(%q0, aX)=
+  {
+    @log smoke=TC011: tr decomposed cluster. Succeeded.
+  },
+  {
+    @log smoke=TC011: tr decomposed cluster. Failed (%q0).
+  }
+-
+#
+# Test Case #12 - Swap two decomposed clusters.
+# Map e+combining-acute to o+combining-tilde, and vice versa.
+# chr(769)=U+0301 combining acute, chr(771)=U+0303 combining tilde
+#
+&tr.tc012 test_tr_fn=
+  think setq(0,
+    tr(
+      [chr(101)][chr(769)][chr(111)][chr(771)],
+      [chr(101)][chr(769)][chr(111)][chr(771)],
+      [chr(111)][chr(771)][chr(101)][chr(769)]
+    )
+  );
+  @if strmatch(%q0, [chr(111)][chr(771)][chr(101)][chr(769)])=
+  {
+    @log smoke=TC012: tr swap decomposed clusters. Succeeded.
+  },
+  {
+    @log smoke=TC012: tr swap decomposed clusters. Failed (%q0).
+  }
+-
+#
+# Test Case #13 - Mix of single-byte and multi-code-point clusters.
+# Input: a + (e+combining-acute) + b
+# Map a->X, (e+combining-acute)->Y, b passes through.
+#
+&tr.tc013 test_tr_fn=
+  think setq(0,
+    tr(
+      a[chr(101)][chr(769)]b,
+      a[chr(101)][chr(769)],
+      XY
+    )
+  );
+  @if strmatch(%q0, XYb)=
+  {
+    @log smoke=TC013: tr mixed single and multi-codepoint. Succeeded.
+  },
+  {
+    @log smoke=TC013: tr mixed single and multi-codepoint. Failed (%q0).
+  }
+-
+#
+# Test Case #14 - Regional indicator pair (flag emoji).
+# chr(127462)=U+1F1E6 (RI A), chr(127467)=U+1F1EB (RI F)
+# chr(127464)=U+1F1E8 (RI C), chr(127469)=U+1F1ED (RI H)
+# Two RI code points form one grapheme cluster (a flag).
+# Map flag AF -> flag CH.
+#
+&tr.tc014 test_tr_fn=
+  think setq(0,
+    tr(
+      [chr(127462)][chr(127467)],
+      [chr(127462)][chr(127467)],
+      [chr(127464)][chr(127469)]
+    )
+  );
+  @if strmatch(%q0, [chr(127464)][chr(127469)])=
+  {
+    @log smoke=TC014: tr regional indicator pair. Succeeded.
+  },
+  {
+    @log smoke=TC014: tr regional indicator pair. Failed (%q0).
+  }
+-
+#
+# Test Case #15 - Color preservation through decomposed cluster replacement.
+# ansi(r,...) wraps text in red PUA codes.  When we replace a
+# multi-code-point cluster, the color codes must survive so that
+# translate(...,p) still shows them.
+#
+&tr.tc015 test_tr_fn=
+  think setq(0,
+    tr(
+      [ansi(r, [chr(101)][chr(769)])]Z,
+      [chr(101)][chr(769)],
+      X
+    )
+  );
+  @if cand(
+        strmatch(stripansi(%q0), XZ),
+        gt(strlen(translate(%q0, p)), strlen(stripansi(%q0)))
+      )=
+  {
+    @log smoke=TC015: tr color preserved through cluster replace. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: tr basic operations. Failed (tr1=[tr(Hello,eo,EO)] tr2=[tr(Hello,el,EL)]).;
+    @log smoke=TC015: tr color preserved through cluster replace. Failed (strip=[stripansi(%q0)] tlen=[strlen(translate(%q0, p))]).;
     @trig me/tr.done
   }
 -

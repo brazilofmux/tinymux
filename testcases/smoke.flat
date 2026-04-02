@@ -8539,9 +8539,37 @@
 >256
 "@log smoke=Beginning tr() test cases."
 >257
-"@if cand(strmatch(tr(Hello,eo,EO), HEllO),strmatch(tr(Hello,el,EL), HELLo))={@log smoke=TC001: tr basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: tr basic operations. Failed (tr1=[tr(Hello,eo,EO)] tr2=[tr(Hello,el,EL)]).;@trig me/tr.done}"
+"@if cand(strmatch(tr(Hello,eo,EO), HEllO),strmatch(tr(Hello,el,EL), HELLo))={@log smoke=TC001: tr basic ASCII operations. Succeeded.},{@log smoke=TC001: tr basic ASCII operations. Failed (tr1=[tr(Hello,eo,EO)] tr2=[tr(Hello,el,EL)]).}"
 >258
 "@log smoke=End tr() test cases.;@notify smoke"
+>259
+"@if cand(strmatch(tr(hello, a-z, n-za-m), uryyb),strmatch(tr(uryyb, a-z, n-za-m), hello),strmatch(tr(This is an example, a-Z, n-za-mN-ZA-M), Guvf vf na rknzcyr))={@log smoke=TC002: tr ROT-13 ranges. Succeeded.},{@log smoke=TC002: tr ROT-13 ranges. Failed.}"
+>262
+"think setq(0,tr(caf[chr(233)],[chr(233)][chr(241)][chr(252)],enu));@if strmatch(%q0, cafe)={@log smoke=TC003: tr multi-byte to ASCII. Succeeded.},{@log smoke=TC003: tr multi-byte to ASCII. Failed (%q0).}"
+>264
+"think setq(0,tr(abc,abc,[chr(233)][chr(241)][chr(252)]));@if strmatch(%q0, [chr(233)][chr(241)][chr(252)])={@log smoke=TC004: tr ASCII to multi-byte. Succeeded.},{@log smoke=TC004: tr ASCII to multi-byte. Failed (%q0).}"
+>265
+"think setq(0,tr([chr(233)][chr(241)],[chr(233)][chr(241)],[chr(241)][chr(233)]));@if strmatch(%q0, [chr(241)][chr(233)])={@log smoke=TC005: tr multi-byte swap. Succeeded.},{@log smoke=TC005: tr multi-byte swap. Failed (%q0).}"
+>266
+"think setq(0,tr(test, a[chr(233)], b));@if strmatch(%q0, #-1 STRING LENGTHS MUST BE EQUAL)={@log smoke=TC006: tr cluster count mismatch error. Succeeded.},{@log smoke=TC006: tr cluster count mismatch error. Failed (%q0).}"
+>267
+"@if strmatch(tr(abc, aba, XYZ), ZYc)={@log smoke=TC007: tr duplicate last-wins. Succeeded.},{@log smoke=TC007: tr duplicate last-wins. Failed (tr(abc,aba,XYZ)=[tr(abc, aba, XYZ)]).}"
+>268
+"think setq(0,tr(a[chr(233)]b,a,X));@if strmatch(%q0, X[chr(233)]b)={@log smoke=TC008: tr unmapped pass-through. Succeeded.},{@log smoke=TC008: tr unmapped pass-through. Failed (%q0).}"
+>269
+"think setq(0,tr([chr(20320)][chr(22909)],[chr(20320)][chr(22909)],AB));@if strmatch(%q0, AB)={@log smoke=TC009: tr CJK to ASCII. Succeeded.},{@log smoke=TC009: tr CJK to ASCII. Failed (%q0).}"
+>270
+"@if strmatch(tr(,a,b),)={@log smoke=TC010: tr empty input. Succeeded.},{@log smoke=TC010: tr empty input. Failed.}"
+>271
+"think setq(0,tr(a[chr(101)][chr(769)],[chr(101)][chr(769)],X));@if strmatch(%q0, aX)={@log smoke=TC011: tr decomposed cluster. Succeeded.},{@log smoke=TC011: tr decomposed cluster. Failed (%q0).}"
+>272
+"think setq(0,tr([chr(101)][chr(769)][chr(111)][chr(771)],[chr(101)][chr(769)][chr(111)][chr(771)],[chr(111)][chr(771)][chr(101)][chr(769)]));@if strmatch(%q0, [chr(111)][chr(771)][chr(101)][chr(769)])={@log smoke=TC012: tr swap decomposed clusters. Succeeded.},{@log smoke=TC012: tr swap decomposed clusters. Failed (%q0).}"
+>273
+"think setq(0,tr(a[chr(101)][chr(769)]b,a[chr(101)][chr(769)],XY));@if strmatch(%q0, XYb)={@log smoke=TC013: tr mixed single and multi-codepoint. Succeeded.},{@log smoke=TC013: tr mixed single and multi-codepoint. Failed (%q0).}"
+>274
+"think setq(0,tr([chr(127462)][chr(127467)],[chr(127462)][chr(127467)],[chr(127464)][chr(127469)]));@if strmatch(%q0, [chr(127464)][chr(127469)])={@log smoke=TC014: tr regional indicator pair. Succeeded.},{@log smoke=TC014: tr regional indicator pair. Failed (%q0).}"
+>275
+"think setq(0,tr([ansi(r, [chr(101)][chr(769)])]Z,[chr(101)][chr(769)],X));@if cand(strmatch(stripansi(%q0), XZ),gt(strlen(translate(%q0, p)), strlen(stripansi(%q0))))={@log smoke=TC015: tr color preserved through cluster replace. Succeeded.;@trig me/tr.done},{@log smoke=TC015: tr color preserved through cluster replace. Failed (strip=[stripansi(%q0)] tlen=[strlen(translate(%q0, p))]).;@trig me/tr.done}"
 <
 !253
 "test_trigger_cmd"

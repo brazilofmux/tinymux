@@ -2933,6 +2933,46 @@ size_t co_edit(unsigned char *out,
 
 /* ---- co_transform ---- */
 
+/* Forward declaration: defined later in the cluster-support section. */
+static const unsigned char *advance_pua_by_plain_bytes(
+    const unsigned char *p, const unsigned char *pe, size_t nPlainBytes);
+
+typedef struct {
+    size_t offset;   /* byte offset into the plain buffer */
+    size_t length;   /* byte length of this cluster */
+} cluster_span_t;
+
+/*
+ * parse_clusters: decompose plain UTF-8 into grapheme clusters.
+ * Returns number of clusters found.  Fills spans[0..return-1].
+ */
+static size_t parse_clusters(const unsigned char *plain, size_t plen,
+                             cluster_span_t *spans, size_t max_spans)
+{
+    size_t nClusters = 0;
+    size_t pos = 0;
+    while (pos < plen && nClusters < max_spans) {
+        size_t cb = next_grapheme_plain(plain + pos, plen - pos);
+        if (cb == 0) break;
+        spans[nClusters].offset = pos;
+        spans[nClusters].length = cb;
+        nClusters++;
+        pos += cb;
+    }
+    return nClusters;
+}
+
+/* Returns 1 if every cluster in spans[0..n-1] is exactly one ASCII byte. */
+static int is_all_single_byte_ascii(const unsigned char *plain,
+                                    const cluster_span_t *spans, size_t n)
+{
+    for (size_t i = 0; i < n; i++) {
+        if (spans[i].length != 1 || plain[spans[i].offset] >= 0x80)
+            return 0;
+    }
+    return 1;
+}
+
 size_t co_transform(unsigned char *out,
                     const unsigned char *str, size_t slen,
                     const unsigned char *from_set, size_t flen,
@@ -2943,39 +2983,119 @@ size_t co_transform(unsigned char *out,
     size_t fp_len = co_strip_color(fplain, from_set, flen);
     size_t tp_len = co_strip_color(tplain, to_set, tlen);
 
-    /* Build ASCII lookup table. */
-    unsigned char table[256];
-    for (int i = 0; i < 256; i++) table[i] = (unsigned char)i;
+    /* Parse both sets into grapheme clusters. */
+    cluster_span_t fspans[MAX_TR_CLUSTERS], tspans[MAX_TR_CLUSTERS];
+    size_t fn = parse_clusters(fplain, fp_len, fspans, MAX_TR_CLUSTERS);
+    size_t tn = parse_clusters(tplain, tp_len, tspans, MAX_TR_CLUSTERS);
+    size_t n = fn < tn ? fn : tn;
 
-    /* Map from_set[i] → to_set[i] for single-byte (ASCII) chars. */
-    size_t n = fp_len < tp_len ? fp_len : tp_len;
-    for (size_t i = 0; i < n; i++) {
-        if (fplain[i] < 0x80 && tplain[i] < 0x80) {
-            table[fplain[i]] = tplain[i];
+    if (is_all_single_byte_ascii(fplain, fspans, fn) &&
+        is_all_single_byte_ascii(tplain, tspans, tn))
+    {
+        /* --- ASCII fast path: 256-byte lookup table --- */
+        unsigned char table[256];
+        for (int i = 0; i < 256; i++) table[i] = (unsigned char)i;
+        for (size_t i = 0; i < n; i++) {
+            table[fplain[fspans[i].offset]] = tplain[tspans[i].offset];
         }
+
+        const unsigned char *p = str;
+        const unsigned char *pe = str + slen;
+        unsigned char *wp = out;
+        const unsigned char *wp_end = out + LBUF_SIZE - 1;
+
+        while (p < pe && wp < wp_end) {
+            const unsigned char *q = co_skip_color(p, pe);
+            while (p < q) WP_SAFE(wp, wp_end, *p++);
+            if (p >= pe) break;
+
+            if (*p < 0x80) {
+                WP_SAFE(wp, wp_end, table[*p++]);
+            } else {
+                const unsigned char *after = co_visible_advance(p, pe, 1, NULL);
+                while (p < after) WP_SAFE(wp, wp_end, *p++);
+            }
+        }
+        *wp = '\0';
+        return (size_t)(wp - out);
     }
 
-    /* Apply transform: color copied, ASCII visible transformed. */
-    const unsigned char *p = str;
-    const unsigned char *pe = str + slen;
+    /* --- Cluster slow path: grapheme-to-grapheme mapping --- */
+
+    /* Strip color from input to walk clusters in plain text. */
+    unsigned char splain[LBUF_SIZE];
+    size_t sp_len = co_strip_color(splain, str, slen);
+
+    const unsigned char *pp = splain;
+    const unsigned char *pp_end = splain + sp_len;
+    const unsigned char *pua = str;
+    const unsigned char *pua_end = str + slen;
     unsigned char *wp = out;
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
-    while (p < pe && wp < wp_end) {
-        /* Copy color bytes unchanged. */
-        const unsigned char *q = co_skip_color(p, pe);
-        while (p < q) WP_SAFE(wp, wp_end, *p++);
-        if (p >= pe) break;
+    while (pp < pp_end && wp < wp_end) {
+        /* Get the current grapheme cluster in plain text. */
+        size_t cb = next_grapheme_plain(pp, (size_t)(pp_end - pp));
+        if (cb == 0) break;
 
-        /* Visible code point: transform if single-byte ASCII. */
-        if (*p < 0x80) {
-            WP_SAFE(wp, wp_end, table[*p++]);
-        } else {
-            /* Multi-byte visible: copy unchanged. */
-            const unsigned char *after = co_visible_advance(p, pe, 1, NULL);
-            while (p < after) WP_SAFE(wp, wp_end, *p++);
+        /* Search for this cluster in from-set.
+         * Reverse scan so first match = last occurrence wins. */
+        int found = -1;
+        for (size_t i = n; i-- > 0; ) {
+            if (fspans[i].length == cb &&
+                memcmp(fplain + fspans[i].offset, pp, cb) == 0)
+            {
+                found = (int)i;
+                break;
+            }
         }
+
+        /* Advance PUA pointer: skip leading color, then past cb
+         * plain bytes (which may have interleaved color). */
+        const unsigned char *pua_vis = co_skip_color(pua, pua_end);
+        const unsigned char *pua_next = advance_pua_by_plain_bytes(
+            pua_vis, pua_end, cb);
+
+        if (found >= 0) {
+            /* Preserve ALL color codes (leading + interleaved within
+             * the cluster) so color state is not lost.  Walk from
+             * pua to pua_next, copying only PUA bytes. */
+            {
+                const unsigned char *cp = pua;
+                while (cp < pua_next) {
+                    const unsigned char *cq = co_skip_color(cp, pua_next);
+                    while (cp < cq && wp < wp_end)
+                        WP_SAFE(wp, wp_end, *cp++);
+                    if (cp >= pua_next) break;
+                    /* Skip visible code point. */
+                    unsigned char ch = *cp;
+                    size_t cplen;
+                    if (ch < 0x80)       cplen = 1;
+                    else if (ch < 0xE0)  cplen = 2;
+                    else if (ch < 0xF0)  cplen = 3;
+                    else                 cplen = 4;
+                    if (cp + cplen > pua_next) break;
+                    cp += cplen;
+                }
+            }
+
+            /* Emit the replacement cluster. */
+            wp += wp_safe_copy(wp, wp_end,
+                tplain + tspans[found].offset, tspans[found].length);
+
+            pua = pua_next;
+        } else {
+            /* Unmapped: copy original PUA bytes (color + visible). */
+            while (pua < pua_next && wp < wp_end)
+                WP_SAFE(wp, wp_end, *pua++);
+        }
+
+        pp += cb;
     }
+
+    /* Copy any trailing color codes. */
+    while (pua < pua_end && wp < wp_end)
+        WP_SAFE(wp, wp_end, *pua++);
 
     *wp = '\0';
     return (size_t)(wp - out);
@@ -4855,13 +4975,13 @@ unsigned char co_dfa_ascii(const unsigned char *p)
 /* ---- co_render_ascii ---- */
 
 
-#line 4648 "color_ops.c"
+#line 4768 "color_ops.c"
 static const int render_ascii_start = 12;
 
 static const int render_ascii_en_main = 12;
 
 
-#line 3388 "color_ops.rl"
+#line 3508 "color_ops.rl"
 
 
 size_t co_render_ascii(unsigned char *out,
@@ -4875,21 +4995,21 @@ size_t co_render_ascii(unsigned char *out,
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     
-#line 4664 "color_ops.c"
+#line 4784 "color_ops.c"
 	{
 	cs = render_ascii_start;
 	}
 
-#line 3401 "color_ops.rl"
+#line 3521 "color_ops.rl"
     
-#line 4667 "color_ops.c"
+#line 4787 "color_ops.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 3373 "color_ops.rl"
+#line 3493 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -4903,9 +5023,9 @@ tr0:
     }
 	goto st12;
 tr7:
-#line 3372 "color_ops.rl"
+#line 3492 "color_ops.rl"
 	{ mark = p; }
-#line 3373 "color_ops.rl"
+#line 3493 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -4922,7 +5042,7 @@ st12:
 	if ( ++p == pe )
 		goto _test_eof12;
 case 12:
-#line 4703 "color_ops.c"
+#line 4823 "color_ops.c"
 	switch( (*p) ) {
 		case 0u: goto st0;
 		case 224u: goto tr9;
@@ -4951,62 +5071,62 @@ st0:
 cs = 0;
 	goto _out;
 tr8:
-#line 3372 "color_ops.rl"
+#line 3492 "color_ops.rl"
 	{ mark = p; }
 	goto st1;
 st1:
 	if ( ++p == pe )
 		goto _test_eof1;
 case 1:
-#line 4737 "color_ops.c"
+#line 4857 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto tr0;
 	goto st0;
 tr9:
-#line 3372 "color_ops.rl"
+#line 3492 "color_ops.rl"
 	{ mark = p; }
 	goto st2;
 st2:
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 4747 "color_ops.c"
+#line 4867 "color_ops.c"
 	if ( 160u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr10:
-#line 3372 "color_ops.rl"
+#line 3492 "color_ops.rl"
 	{ mark = p; }
 	goto st3;
 st3:
 	if ( ++p == pe )
 		goto _test_eof3;
 case 3:
-#line 4757 "color_ops.c"
+#line 4877 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr11:
-#line 3372 "color_ops.rl"
+#line 3492 "color_ops.rl"
 	{ mark = p; }
 	goto st4;
 st4:
 	if ( ++p == pe )
 		goto _test_eof4;
 case 4:
-#line 4767 "color_ops.c"
+#line 4887 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 159u )
 		goto st1;
 	goto st0;
 tr12:
-#line 3372 "color_ops.rl"
+#line 3492 "color_ops.rl"
 	{ mark = p; }
 	goto st5;
 st5:
 	if ( ++p == pe )
 		goto _test_eof5;
 case 5:
-#line 4777 "color_ops.c"
+#line 4897 "color_ops.c"
 	if ( (*p) < 148u ) {
 		if ( 128u <= (*p) && (*p) <= 147u )
 			goto st1;
@@ -5024,38 +5144,38 @@ case 6:
 		goto st12;
 	goto st0;
 tr13:
-#line 3372 "color_ops.rl"
+#line 3492 "color_ops.rl"
 	{ mark = p; }
 	goto st7;
 st7:
 	if ( ++p == pe )
 		goto _test_eof7;
 case 7:
-#line 4800 "color_ops.c"
+#line 4920 "color_ops.c"
 	if ( 144u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr14:
-#line 3372 "color_ops.rl"
+#line 3492 "color_ops.rl"
 	{ mark = p; }
 	goto st8;
 st8:
 	if ( ++p == pe )
 		goto _test_eof8;
 case 8:
-#line 4810 "color_ops.c"
+#line 4930 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr15:
-#line 3372 "color_ops.rl"
+#line 3492 "color_ops.rl"
 	{ mark = p; }
 	goto st9;
 st9:
 	if ( ++p == pe )
 		goto _test_eof9;
 case 9:
-#line 4820 "color_ops.c"
+#line 4940 "color_ops.c"
 	if ( (*p) < 176u ) {
 		if ( 128u <= (*p) && (*p) <= 175u )
 			goto st3;
@@ -5073,14 +5193,14 @@ case 10:
 		goto st6;
 	goto st0;
 tr16:
-#line 3372 "color_ops.rl"
+#line 3492 "color_ops.rl"
 	{ mark = p; }
 	goto st11;
 st11:
 	if ( ++p == pe )
 		goto _test_eof11;
 case 11:
-#line 4843 "color_ops.c"
+#line 4963 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 143u )
 		goto st3;
 	goto st0;
@@ -5102,7 +5222,7 @@ case 11:
 	_out: {}
 	}
 
-#line 3402 "color_ops.rl"
+#line 3522 "color_ops.rl"
 
     *wp = '\0';
     return (size_t)(wp - out);

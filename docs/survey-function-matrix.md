@@ -173,8 +173,8 @@ listed separately to keep the unit model clean.
 | :--- | :--- | :--- |
 | Substring replace | `edit(str,from,to,...)` | Whole-string find-and-replace, not grapheme-indexed |
 | Strip characters | `strip(str,chars)` | Removes characters from a set; not grapheme-cluster-aware |
-| Transliterate | `tr(str,from,to)` | Character-set translation; maps single characters, not clusters |
-| Case translate | `translate(str,mode)` | Case/mode transform on the whole string |
+| Transliterate | `tr(str,from,to)` | ASCII-to-ASCII lookup table; walks code points but only transforms bytes < 0x80 |
+| Escape recovery | `translate(str,mode)` | Turns hidden internal codes (color, etc.) back into MUX escape sequences |
 
 ### 2e. Reordering
 

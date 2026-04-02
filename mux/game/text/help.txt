@@ -16115,15 +16115,20 @@ TR()
 
   FUNCTION: tr(<string>, <find>, <replace>)
 
-  This function translates every character in <string> that exists in
-  <find> to the character at an identical position in <replace>. Ranges of
-  characters separated by -'s are accepted. <find> and <replace> must be the
-  same length after expansion of ranges. If a character exists more than
-  once in <find>, only the last instance will be counted. The example
-  below is the common ROT-13 algorithm for lower case strings, demonstrated
-  with every letter explicitly listed, and with the equivalent but briefer
-  character ranges. Literal -'s can be in <find> and <replace> if they are not
-  part of valid ranges. Valid ranges are of the forms a-z, A-Z, a-Z, and 0-9.
+  Translates every grapheme cluster in <string> that exists in <find>
+  to the cluster at the same position in <replace>.  A grapheme cluster
+  is a user-perceived character: a single letter, a multi-byte Unicode
+  character, an emoji, or a base character with combining marks.
+
+  <find> and <replace> must contain the same number of grapheme clusters
+  after expansion of ranges.  If a cluster appears more than once in
+  <find>, only the last instance is used.
+
+  ASCII ranges separated by - are accepted: a-z, A-Z, a-Z, and 0-9.
+  Literal -'s can appear in <find> and <replace> if they are not part
+  of valid ranges.  Non-ASCII clusters are always treated as literals.
+
+  Color codes (ansi()) in the input string are preserved.
 
    Examples:
       > say tr(hello,abcdefghijklmnopqrstuvwxyz,nopqrstuvwxyzabcdefghijklm)

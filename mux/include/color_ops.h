@@ -288,16 +288,20 @@ LIBMUX_API size_t co_edit(unsigned char *out,
                const unsigned char *to, size_t tlen);
 
 /*
- * co_transform — Character mapping (tr/translate).
+ * co_transform — Grapheme-cluster mapping (tr/translate).
  *
- * For each visible code point in str, if it appears in from_set at
- * position i, replace it with the code point at position i in to_set.
- * Color is preserved.  from_set and to_set must have the same number
- * of visible code points.
+ * For each visible grapheme cluster in str, if it matches the i-th
+ * cluster in from_set, replace it with the i-th cluster in to_set.
+ * Color PUA codes in str are preserved.  from_set and to_set should
+ * have the same number of grapheme clusters (after color stripping),
+ * and the count must not exceed MAX_TR_CLUSTERS.
  *
- * ASCII fast path: if both sets are pure ASCII, uses 256-byte lookup.
+ * Dual-path: if all clusters in both sets are single ASCII bytes,
+ * uses a 256-byte lookup table (fast path).  Otherwise, walks
+ * clusters via next_grapheme_plain() with linear-scan matching.
  * Returns bytes written to out.
  */
+#define MAX_TR_CLUSTERS 1024
 LIBMUX_API size_t co_transform(unsigned char *out,
                     const unsigned char *str, size_t slen,
                     const unsigned char *from_set, size_t flen,

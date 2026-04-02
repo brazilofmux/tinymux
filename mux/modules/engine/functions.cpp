@@ -12850,9 +12850,20 @@ static FUNCTION(fun_tr)
         fLen = expand_range(fromBuf, fLen);
         tLen = expand_range(toBuf,   tLen);
 
-        if (fLen != tLen)
+        // Compare grapheme cluster counts, not byte lengths.
+        //
+        size_t fClusters = co_cluster_count(
+            reinterpret_cast<const unsigned char *>(fromBuf.get()), fLen);
+        size_t tClusters = co_cluster_count(
+            reinterpret_cast<const unsigned char *>(toBuf.get()), tLen);
+
+        if (fClusters != tClusters)
         {
             safe_str(T("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
+        }
+        else if (fClusters > MAX_TR_CLUSTERS)
+        {
+            safe_str(T("#-1 TOO MANY CLUSTERS"), buff, bufc);
         }
         else
         {
