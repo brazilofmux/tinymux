@@ -2568,20 +2568,24 @@ general_lowering:
         return r;
     }
 
-    // Float comparisons: EQ, NEQ, GT, GTE, LT, LTE with float args.
-    // Synthesize missing opcodes: NEQ→NOT(FEQ), GT→FLT(b,a), GTE→FLE(b,a).
-    if ((upper == "EQ" || upper == "NEQ" || upper == "GT" || upper == "GTE"
+    // Float ordering comparisons: GT, GTE, LT, LTE with float args.
+    //
+    // Deliberately exclude EQ/NEQ here. The interpreter's fun_eq/fun_neq
+    // are string-first and only fall back to numeric comparison if the
+    // rendered strings differ. Lowering float EQ/NEQ to raw FEQ breaks
+    // parity for values that stringify identically after TinyMUX's dtoa/
+    // pretty-rounding path but differ by a few ulps internally.
+    //
+    // Leave EQ/NEQ on the general call path for now so we preserve
+    // interpreter semantics. We can revisit a faster lowering later if
+    // we prove it is semantically equivalent.
+    if ((upper == "GT" || upper == "GTE"
          || upper == "LT" || upper == "LTE") && nargs == 2
         && all_numeric() && any_float()) {
         int a = ensure_float(args[0]);
         int b = ensure_float(args[1]);
         int r;
-        if (upper == "EQ") {
-            r = h.emit(HIR_FEQ, TY_INT, a, b);
-        } else if (upper == "NEQ") {
-            r = h.emit(HIR_FEQ, TY_INT, a, b);
-            r = h.emit(HIR_NOT, TY_INT, r);
-        } else if (upper == "GT") {
+        if (upper == "GT") {
             r = h.emit(HIR_FLT, TY_INT, b, a);  // a > b ≡ b < a
         } else if (upper == "GTE") {
             r = h.emit(HIR_FLE, TY_INT, b, a);   // a >= b ≡ b <= a
