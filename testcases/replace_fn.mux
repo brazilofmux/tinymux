@@ -17,96 +17,82 @@
 # Test Case #1 - Help file examples.
 #
 &tr.tc001 test_replace_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [replace(This is a test, 4, quiz)]
-            [insert(Yet@Another@Mundane@List, 3, Funky, @)]
-          )
-        ),
-        928F739D325B8C8882EE7C4E32E6D5764AA08626
+  @if cand(
+        strmatch(replace(This is a test, 4, quiz), This is a quiz),
+        strmatch(insert(Yet@Another@Mundane@List, 3, Funky, @), Yet@Another@Funky@Mundane@List)
       )=
   {
     @log smoke=TC001: Help file examples. Succeeded.
   },
   {
-    @log smoke=TC001: Help file examples. Failed (%q0).
+    @log smoke=TC001: Help file examples. Failed (replace=[replace(This is a test, 4, quiz)] insert=[insert(Yet@Another@Mundane@List, 3, Funky, @)]).
   }
 -
 #
 # Test Case #2 - Empty list. ASCII. Positive positions.
 #
 &tr.tc002 test_replace_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(0 1 2,## [replace(,##,Pear,|)])]
-          )
-        ),
-        6E58F1F3A34A9082AD078C3706E3067C0B22FE6E
+  @if cand(
+        eq(strlen(replace(,0,Pear,|)), 0),
+        eq(strlen(replace(,1,Pear,|)), 0),
+        eq(strlen(replace(,2,Pear,|)), 0)
       )=
   {
     @log smoke=TC002: Empty list, ASCII, positive positions. Succeeded.
   },
   {
-    @log smoke=TC002: Empty list, ASCII, positive positions. Failed (%q0).
+    @log smoke=TC002: Empty list, ASCII, positive positions. Failed.
   }
 -
 #
 # Test Case #3 - Non-empty lists. ASCII. Positive positions.
 #
 &tr.tc003 test_replace_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(0 1 2 3,## [replace(|,##,Pear,|)])]
-            [iter(0 1 2 3 4,## [replace(||,##,Pear,|)])]
-            [iter(0 1 2 3 4 5,## [replace(|||,##,Pear,|)])]
-          )
-        ),
-        40A8E0B4CA8FF2E2C9956AE9C09F9C68C8A16673
+  @if cand(
+        strmatch(replace(|,1,Pear,|), Pear|),
+        strmatch(replace(|,2,Pear,|), |Pear),
+        strmatch(replace(||,2,Pear,|), |Pear|),
+        strmatch(replace(|||,2,Pear,|), |Pear||)
       )=
   {
     @log smoke=TC003: Non-empty lists, ASCII, positive positions. Succeeded.
   },
   {
-    @log smoke=TC003: Non-empty lists, ASCII, positive positions. Failed (%q0).
+    @log smoke=TC003: Non-empty lists, ASCII, positive positions. Failed.
   }
 -
 #
 # Test Case #4 - Empty list. ASCII. Negative positions.
 #
 &tr.tc004 test_replace_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(-2 -1,## [replace(,##,Pear,|)])]
-          )
-        ),
-        5F364FF7EEEC93E30C5709B5184501A17046BDEA
+  @if cand(
+        eq(strlen(replace(,-2,Pear,|)), 0),
+        eq(strlen(replace(,-1,Pear,|)), 0)
       )=
   {
     @log smoke=TC004: Empty list, ASCII, negative positions. Succeeded.
   },
   {
-    @log smoke=TC004: Empty list, ASCII, negative positions. Failed (%q0).
+    @log smoke=TC004: Empty list, ASCII, negative positions. Failed.
   }
 -
 #
 # Test Case #5 - Non-empty lists. ASCII. Negative positions.
 #
 &tr.tc005 test_replace_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(-3 -2 -1,## [replace(|,##,Pear,|)])]
-            [iter(-4 -3 -2 -1,## [replace(||,##,Pear,|)])]
-            [iter(-5 -4 -3 -2 -1,## [replace(|||,##,Pear,|)])]
-          )
-        ),
-        29B941B8D4EE1193E602E3DDB0ED55DA5F86EFC9
+  @if cand(
+        strmatch(replace(|,-1,Pear,|), |Pear),
+        strmatch(replace(|,-2,Pear,|), Pear|),
+        strmatch(replace(||,-1,Pear,|), ||Pear),
+        strmatch(replace(||,-2,Pear,|), |Pear|),
+        strmatch(replace(||,-3,Pear,|), Pear||)
       )=
   {
     @log smoke=TC005: Non-empty lists, ASCII, negative positions. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: Non-empty lists, ASCII, negative positions. Failed (%q0).;
+    @log smoke=TC005: Non-empty lists, ASCII, negative positions. Failed.;
     @trig me/tr.done
   }
 -

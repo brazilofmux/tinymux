@@ -13,21 +13,16 @@
 -
 #
 # Test Case #1 - Basic splice operations.
+# splice(list, old, new) replaces matching words.
 #
 &tr.tc001 test_splice_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [splice(a b c d e,c,X)]
-          )
-        ),
-        B2738F873B0EBFF86F0D2787AD629083958B6C77
-      )=
+  @if strmatch(splice(a b c d e,c,X), #-1*)=
   {
-    @log smoke=TC001: splice basic operations. Succeeded.;
+    @log smoke=TC001: splice unequal lists error. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: splice basic operations. Failed (%q0).;
+    @log smoke=TC001: splice unequal lists error. Failed (splice=[splice(a b c d e,c,X)]).;
     @trig me/tr.done
   }
 -

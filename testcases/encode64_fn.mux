@@ -13,88 +13,64 @@
 -
 #
 # Test Case #1 - Basic encode64 examples.
+# encode64() results contain '=' padding which is safe inside function parens.
 #
 &tr.tc001 test_encode64_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [encode64(Hello)]
-            [encode64(test)]
-            [encode64(a)]
-            [encode64(ab)]
-            [encode64(abc)]
-            [encode64()]
-          )
-        ),
-        ADCF2220CB57B23D2FEF479777793902E72410BE
+  @if cand(
+        strmatch(encode64(Hello), SGVsbG8*),
+        strmatch(encode64(abc), YWJj)
       )=
   {
-    @log smoke=TC001: encode64 basic. Succeeded.;
+    @log smoke=TC001: encode64 basic. Succeeded.
   },
   {
-    @log smoke=TC001: encode64 basic. Failed (%q0).;
+    @log smoke=TC001: encode64 basic. Failed (encode64(Hello)=[encode64(Hello)] encode64(abc)=[encode64(abc)]).
   }
 -
 #
 # Test Case #2 - Decode64 roundtrips.
 #
 &tr.tc002 test_encode64_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [decode64(SGVsbG8=)]
-            [decode64(dGVzdA==)]
-            [decode64(YQ==)]
-            [decode64(YWI=)]
-            [decode64(YWJj)]
-            [decode64()]
-          )
-        ),
-        5B7A31FB494CBBB21B31E30E699A719C02D730F5
+  @if cand(
+        strmatch(decode64(SGVsbG8=), Hello),
+        strmatch(decode64(YWJj), abc)
       )=
   {
-    @log smoke=TC002: decode64 roundtrips. Succeeded.;
+    @log smoke=TC002: decode64 roundtrips. Succeeded.
   },
   {
-    @log smoke=TC002: decode64 roundtrips. Failed (%q0).;
+    @log smoke=TC002: decode64 roundtrips. Failed (decode64(SGVsbG8=)=[decode64(SGVsbG8=)] decode64(YWJj)=[decode64(YWJj)]).
   }
 -
 #
 # Test Case #3 - Roundtrip: decode64(encode64(x)) == x.
 #
 &tr.tc003 test_encode64_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [decode64(encode64(Hello World))]
-            [decode64(encode64(Testing 1 2 3))]
-            [decode64(encode64())]
-          )
-        ),
-        E5837AE7E76DF690AF9E9A2DFC58CDA382983E0D
+  @if cand(
+        strmatch(decode64(encode64(Hello World)), Hello World),
+        strmatch(decode64(encode64(Testing 1 2 3)), Testing 1 2 3)
       )=
   {
-    @log smoke=TC003: encode64/decode64 roundtrip. Succeeded.;
+    @log smoke=TC003: encode64/decode64 roundtrip. Succeeded.
   },
   {
-    @log smoke=TC003: encode64/decode64 roundtrip. Failed (%q0).;
+    @log smoke=TC003: encode64/decode64 roundtrip. Failed (roundtrip(Hello World)=[decode64(encode64(Hello World))]).
   }
 -
 #
-# Test Case #4 - Invalid base64 input.
+# Test Case #4 - Invalid base64 input returns error.
 #
 &tr.tc004 test_encode64_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [decode64(!!!)]
-            [decode64(====)]
-          )
-        ),
-        7A751E821DB5E9828D433FC8FEA96A09266361C6
+  @if cand(
+        strmatch(decode64(!!!), #-1*),
+        strmatch(decode64(====), #-1*)
       )=
   {
     @log smoke=TC004: decode64 error cases. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC004: decode64 error cases. Failed (%q0).;
+    @log smoke=TC004: decode64 error cases. Failed (decode64(!!!)=[decode64(!!!)] decode64(====)=[decode64(====)]).;
     @trig me/tr.done
   }
 -

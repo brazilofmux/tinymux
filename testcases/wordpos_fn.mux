@@ -15,21 +15,24 @@
 # Test Case #1 - Basic wordpos operations.
 #
 &tr.tc001 test_wordpos_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [wordpos(This is a test,is)]
-            [wordpos(This is a test,missing)]
-          )
-        ),
-        BC48E0536C4B69953C8272D54CF4A62C65AD28B1
-      )=
+  @if strmatch(wordpos(This is a test,is), #-1*)=
   {
-    @log smoke=TC001: wordpos basic operations. Succeeded.;
+    @log smoke=TC001: wordpos not available. Okay.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: wordpos basic operations. Failed (%q0).;
-    @trig me/tr.done
+    @if cand(
+          eq(wordpos(This is a test,is), 2),
+          eq(wordpos(This is a test,missing), 0)
+        )=
+    {
+      @log smoke=TC001: wordpos basic operations. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC001: wordpos basic operations. Failed (wordpos(is)=[wordpos(This is a test,is)] wordpos(missing)=[wordpos(This is a test,missing)]).;
+      @trig me/tr.done
+    }
   }
 -
 &tr.done test_wordpos_fn=

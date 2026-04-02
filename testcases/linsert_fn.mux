@@ -13,44 +13,37 @@
 -
 #
 # Test Case #1 - linsert basic operations.
+# linsert(list, pos, word) inserts before the given position.
 #
 &tr.tc001 test_linsert_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [linsert(a b c,0,x)]
-            [linsert(a b c,1,x)]
-            [linsert(a b c,3,x)]
-            [linsert(a b c,10,x)]
-          )
-        ),
-        37A4DED068601A8D593EF364063343C27804FD83
+  @if cand(
+        strmatch(linsert(a b c,0,x), x a b c),
+        strmatch(linsert(a b c,1,x), a x b c),
+        strmatch(linsert(a b c,3,x), a b c x),
+        strmatch(linsert(a b c,10,x), a b c x)
       )=
   {
     @log smoke=TC001: linsert basic. Succeeded.
   },
   {
-    @log smoke=TC001: linsert basic. Failed (%q0).
+    @log smoke=TC001: linsert basic. Failed (linsert(0)=[linsert(a b c,0,x)] linsert(1)=[linsert(a b c,1,x)] linsert(3)=[linsert(a b c,3,x)] linsert(10)=[linsert(a b c,10,x)]).
   }
 -
 #
 # Test Case #2 - lreplace basic operations.
 #
 &tr.tc002 test_linsert_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [lreplace(a b c,0,x)]
-            [lreplace(a b c,1,x)]
-            [lreplace(a b c,2,x)]
-          )
-        ),
-        B405304E735CF2E28DFD180892610F21B779D3DB
+  @if cand(
+        strmatch(lreplace(a b c,0,x), x b c),
+        strmatch(lreplace(a b c,1,x), a x c),
+        strmatch(lreplace(a b c,2,x), a b x)
       )=
   {
     @log smoke=TC002: lreplace basic. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: lreplace basic. Failed (%q0).;
+    @log smoke=TC002: lreplace basic. Failed (lreplace(0)=[lreplace(a b c,0,x)] lreplace(1)=[lreplace(a b c,1,x)] lreplace(2)=[lreplace(a b c,2,x)]).;
     @trig me/tr.done
   }
 -

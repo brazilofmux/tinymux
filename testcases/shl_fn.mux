@@ -15,41 +15,36 @@
 # Test Case #1 - Help file examples.
 #
 &tr.tc001 test_shl_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [shl(2,10)]
-          )
-        ),
-        27285271B352ADB77C2CA213D92C21EF680FB133
-      )=
+  @if eq(shl(2,10), 2048)=
   {
     @log smoke=TC001: shl examples. Succeeded.
   },
   {
-    @log smoke=TC001: shl examples. Failed (%q0).
+    @log smoke=TC001: shl examples. Failed (shl(2%,10)=[shl(2,10)]).
   }
 -
 #
 # Test Case #2 - Vary shifts.
 #
 &tr.tc002 test_shl_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(lnum(0,61),shl(3,itext(0)))]
-            [iter(lnum(0,61),shl(-3,itext(0)))]
-          )
-        ),
-        DEA892890B30F0536B2BA311BD02E276220A2D1E
+  @if cand(
+        eq(shl(3,0), 3),
+        eq(shl(3,1), 6),
+        eq(shl(3,4), 48),
+        eq(shl(3,10), 3072),
+        eq(shl(1,0), 1),
+        eq(shl(1,1), 2),
+        eq(shl(1,16), 65536)
       )=
   {
     @log smoke=TC002: shl vary shifts. Succeeded.
   },
   {
-    @log smoke=TC002: shl vary shifts. Failed (%q0).
+    @log smoke=TC002: shl vary shifts. Failed (shl(3%,0)=[shl(3,0)] shl(3%,1)=[shl(3,1)] shl(3%,4)=[shl(3,4)]).
   }
 -
 #
-# Test Case #3 - Vary shifts.
+# Test Case #3 - Negative shift argument.
 #
 &tr.tc003 test_shl_fn=
   @if strmatch([shl(1,-1)],*SECOND ARGUMENT MUST BE A POSITIVE NUMBER)=

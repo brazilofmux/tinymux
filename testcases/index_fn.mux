@@ -13,21 +13,17 @@
 -
 #
 # Test Case #1 - Basic index operations.
+# index(text, delimiter, start, count).
+# start = ":" → mux_atol(":") = 0 → start < 1 → returns empty.
 #
 &tr.tc001 test_index_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [index(a:b|c:d|e:f,|,:,2)]
-          )
-        ),
-        DA39A3EE5E6B4B0D3255BFEF95601890AFD80709
-      )=
+  @if eq(strlen(index(a:b|c:d|e:f,|,:,2)), 0)=
   {
     @log smoke=TC001: index basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: index basic operations. Failed (%q0).;
+    @log smoke=TC001: index basic operations. Failed (index=[index(a:b|c:d|e:f,|,:,2)]).;
     @trig me/tr.done
   }
 -

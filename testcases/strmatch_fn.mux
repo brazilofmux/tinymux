@@ -15,22 +15,18 @@
 # Test Case #1 - Basic wildcard matching.
 #
 &tr.tc001 test_strmatch_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strmatch(foo,f*)]
-            [strmatch(foo,bar)]
-            [strmatch(foo,foo)]
-            [strmatch(foo,?oo)]
-          )
-        ),
-        DD2DFA50DC8FECA1E5303A87B2C6A42DB3EBE102
+  @if cand(
+        eq(strmatch(foo,f*), 1),
+        eq(strmatch(foo,bar), 0),
+        eq(strmatch(foo,foo), 1),
+        eq(strmatch(foo,?oo), 1)
       )=
   {
     @log smoke=TC001: strmatch basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: strmatch basic operations. Failed (%q0).;
+    @log smoke=TC001: strmatch basic operations. Failed (f*=[strmatch(foo,f*)] bar=[strmatch(foo,bar)] foo=[strmatch(foo,foo)] ?oo=[strmatch(foo,?oo)]).;
     @trig me/tr.done
   }
 -

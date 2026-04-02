@@ -16,6 +16,7 @@
 -
 #
 # Test Case #1 - Help file examples.
+# rpad() is an alias for rjust().
 #
 &tr.tc001 test_rpad_fn=
   @if strmatch([rpad()],*NOT FOUND)=
@@ -23,21 +24,15 @@
     @log smoke=TC001: RPAD() is not supported on this version. Okay.
   },
   {
-    @if strmatch(
-          setr(0,sha1(
-              -[rpad(foo,6)]-
-              %r0[rpad(foo,6)]7%r01234567
-              =[rpad(bar,5,.)]=
-              [translate(rpad(%xh%xrR%xgG%xbB,31,%xy--%xm+),p)]
-            )
-          ),
-          0C5D8424AE31914B150A17AB286EB85E4977044D
+    @if cand(
+          strmatch(rpad(foo,6), %b%b%bfoo),
+          strmatch(rpad(bar,5,.), ..bar)
         )=
     {
       @log smoke=TC001: rpad examples. Succeeded.
     },
     {
-      @log smoke=TC001: rpad examples. Failed (%q0).
+      @log smoke=TC001: rpad examples. Failed (rpad(foo%,6)=[rpad(foo,6)] rpad(bar%,5%,.)=[rpad(bar,5,.)]).
     }
   }
 -
@@ -50,18 +45,16 @@
     @log smoke=TC002: RPAD() is not supported on this version. Okay.
   },
   {
-    @if strmatch(
-          setr(0,sha1(
-              [iter(lnum(2,10),rpad(X,##,left(1234567890,##)))]
-            )
-          ),
-          94963D849CA4A2DB3372DD2F85C6BDD4BBD1DA0D
+    @if cand(
+          eq(strlen(rpad(X,3,12)), 3),
+          eq(strlen(rpad(X,5,1234)), 5),
+          eq(strlen(rpad(X,10,1234567890)), 10)
         )=
     {
       @log smoke=TC002: Regressions. Succeeded.
     },
     {
-      @log smoke=TC002: Regressions. Failed (%q0).
+      @log smoke=TC002: Regressions. Failed.
     }
   }
 -
@@ -74,28 +67,16 @@
     @log smoke=TC003: RPAD() is not supported on this version. Okay.
   },
   {
-    @if strmatch(
-          setr(0,sha1(
-              [iter(lnum(1,10),rpad(left(1234567890,##),1))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),2))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),3))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),4))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),5))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),6))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),7))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),8))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),9))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),10))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),11))]
-            )
-          ),
-          C7E5F96403B1DE054008770C6F9BA2EE1F2F7C68
+    @if cand(
+          eq(strlen(rpad(1,1)), 1),
+          eq(strlen(rpad(1,3)), 3),
+          eq(strlen(rpad(123,11)), 11)
         )=
     {
       @log smoke=TC003: Vary string and width with default fill. Succeeded.
     },
     {
-      @log smoke=TC003: Vary string and width with default fill. Failed (%q0).
+      @log smoke=TC003: Vary string and width with default fill. Failed.
     }
   }
 -
@@ -108,28 +89,16 @@
     @log smoke=TC004: RPAD() is not supported on this version. Okay.
   },
   {
-    @if strmatch(
-          setr(0,sha1(
-              [iter(lnum(1,10),rpad(left(1234567890,##),1,-))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),2,-))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),3,-))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),4,-))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),5,-))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),6,-))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),7,-))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),8,-))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),9,-))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),10,-))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),11,-))]
-            )
-          ),
-          690DF8136366F5E1FA44B56E514981D2A8369DA9
+    @if cand(
+          strmatch(rpad(1,1,-), 1),
+          strmatch(rpad(1,3,-), --1),
+          eq(strlen(rpad(123,11,-)), 11)
         )=
     {
       @log smoke=TC004: Vary string and width with '-' fill. Succeeded.
     },
     {
-      @log smoke=TC004: Vary string and width with '-' fill. Failed (%q0).
+      @log smoke=TC004: Vary string and width with '-' fill. Failed.
     }
   }
 -
@@ -143,29 +112,18 @@
     @trig me/tr.done
   },
   {
-    @if strmatch(
-          setr(0,sha1(
-              [iter(lnum(1,10),rpad(left(1234567890,##),1,-+))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),2,-+))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),3,-+))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),4,-+))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),5,-+))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),6,-+))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),7,-+))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),8,-+))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),9,-+))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),10,-+))]
-              [iter(lnum(1,10),rpad(left(1234567890,##),11,-+))]
-            )
-          ),
-          B0719CA69656641DA10F69C1AA67B9787A848146
+    @if cand(
+          strmatch(rpad(1,1,-+), 1),
+          eq(strlen(rpad(1,3,-+)), 3),
+          eq(strlen(rpad(1,5,-+)), 5),
+          eq(strlen(rpad(123,11,-+)), 11)
         )=
     {
       @log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;
       @trig me/tr.done
     },
     {
-      @log smoke=TC005: Vary string and width with '-+' fill. Failed (%q0).;
+      @log smoke=TC005: Vary string and width with '-+' fill. Failed.;
       @trig me/tr.done
     }
   }

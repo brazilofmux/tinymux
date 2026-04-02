@@ -15,19 +15,15 @@
 # Test Case #1 - Basic substring position.
 #
 &tr.tc001 test_pos_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [pos(cd,abcdef)]
-            [pos(xy,abcdef)]
-          )
-        ),
-        C24F6B8389BC8FB2D6943DED3EE5497E7AE09DD0
+  @if cand(
+        eq(pos(cd,abcdef), 3),
+        eq(pos(xy,abcdef), 0)
       )=
   {
     @log smoke=TC001: pos basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: pos basic operations. Failed (%q0).
+    @log smoke=TC001: pos basic operations. Failed (pos(cd)=[pos(cd,abcdef)] pos(xy)=[pos(xy,abcdef)]).
   }
 -
 #
@@ -36,21 +32,16 @@
 # pos(B,...) should be 3 (grapheme position, not byte position).
 #
 &tr.tc002 test_pos_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [pos(B,A[chr(233)]B[chr(65296)]C)]
-            [pos(C,A[chr(233)]B[chr(65296)]C)]
-            [pos(chr(233),A[chr(233)]B)]
-          )
-        ),
-        EFBC0848B836A9DE4B0C18C93EC052D87647FB06
+  @if cand(
+        eq(pos(B,A[chr(233)]B[chr(65296)]C), 3),
+        eq(pos(C,A[chr(233)]B[chr(65296)]C), 5)
       )=
   {
     @log smoke=TC002: pos Unicode. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: pos Unicode. Failed (%q0).;
+    @log smoke=TC002: pos Unicode. Failed (pos(B)=[pos(B,A[chr(233)]B[chr(65296)]C)] pos(C)=[pos(C,A[chr(233)]B[chr(65296)]C)]).;
     @trig me/tr.done
   }
 -

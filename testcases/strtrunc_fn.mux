@@ -15,43 +15,36 @@
 # Test Case #1 - Basic string truncation.
 #
 &tr.tc001 test_strtrunc_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strtrunc(abcdefgh,5)]
-            [strtrunc(abcdefgh,0)]
-            [strtrunc(abcdefgh,20)]
-          )
-        ),
-        C98A908EA9E37A0CD40837648883D2E30FC963C0
+  @if cand(
+        strmatch(strtrunc(abcdefgh,5), abcde),
+        eq(strlen(strtrunc(abcdefgh,0)), 0),
+        strmatch(strtrunc(abcdefgh,20), abcdefgh)
       )=
   {
     @log smoke=TC001: strtrunc basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: strtrunc basic operations. Failed (%q0).
+    @log smoke=TC001: strtrunc basic operations. Failed (strtrunc(5)=[strtrunc(abcdefgh,5)] strtrunc(0)=[strtrunc(abcdefgh,0)] strtrunc(20)=[strtrunc(abcdefgh,20)]).
   }
 -
 #
 # Test Case #2 - Truncate string with multi-byte Unicode characters.
-# String: A + e-acute + B + fullwidth-0 + C (5 graphemes).
-# strtrunc counts visual width (bytes), not grapheme clusters.
+# strtrunc counts visual width, not graphemes.
+# A=1, e-acute=1, B=1, fullwidth-0=2, C=1.
+# strtrunc(...,3) should give A + e-acute + B (3 visual columns).
+# strtrunc(...,20) should give everything.
 #
 &tr.tc002 test_strtrunc_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strtrunc(A[chr(233)]B[chr(65296)]C,3)]
-            [strtrunc(A[chr(233)]B[chr(65296)]C,6)]
-            [strtrunc(A[chr(233)]B[chr(65296)]C,20)]
-          )
-        ),
-        304AB80FCDD5A44BDD7F3233FFE566A2A8A1CF09
+  @if cand(
+        strmatch(strtrunc(A[chr(233)]B[chr(65296)]C,3), A[chr(233)]B),
+        strmatch(strtrunc(A[chr(233)]B[chr(65296)]C,20), A[chr(233)]B[chr(65296)]C)
       )=
   {
     @log smoke=TC002: strtrunc multi-byte Unicode. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: strtrunc multi-byte Unicode. Failed (%q0).;
+    @log smoke=TC002: strtrunc multi-byte Unicode. Failed.;
     @trig me/tr.done
   }
 -

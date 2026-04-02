@@ -15,20 +15,16 @@
 # Test Case #1 - Basic strip operations.
 #
 &tr.tc001 test_strip_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strip(hello,lo)]
-            [strip(abcabc,ac)]
-          )
-        ),
-        9BEEFDC398F3D4EECCDF309812C3D196E82DFDB4
+  @if cand(
+        strmatch(strip(hello,lo), he),
+        strmatch(strip(abcabc,ac), bb)
       )=
   {
     @log smoke=TC001: strip basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: strip basic operations. Failed (%q0).;
+    @log smoke=TC001: strip basic operations. Failed (strip(hello%,lo)=[strip(hello,lo)] strip(abcabc%,ac)=[strip(abcabc,ac)]).;
     @trig me/tr.done
   }
 -

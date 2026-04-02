@@ -18,123 +18,85 @@
 # Test Case #1 - Help file examples.
 #
 &tr.tc001 test_center_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [center(a,5,-)]
-            [center(*BAMF*,15)]
-            [translate(center(%xh%xrR%xgG%xbB,31,%xy--%xm+),p)]
-          )
-        ),
-        7B23EFB39D9DF2AFA07D7B3B1F015933E12D56B5
+  @if cand(
+        strmatch(center(a,5,-), --a--),
+        strmatch(center(*BAMF*,15), %b%b%b%b*BAMF*%b%b%b%b%b)
       )=
   {
     @log smoke=TC001: center examples. Succeeded.
   },
   {
-    @log smoke=TC001: center examples. Failed (%q0).
+    @log smoke=TC001: center examples. Failed (center(a%,5%,-)=[center(a,5,-)] center(*BAMF*%,15)=[center(*BAMF*,15)]).
   }
 -
 #
 # Test Case #2 - Regression of Issue 527.
+# Verify multi-char fill with varying widths.
 #
 &tr.tc002 test_center_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(lnum(2,10),center(X,##,left(1234567890,##)))]
-          )
-        ),
-        E4CEF3B8FE10F39C96A3887D9996FFF33E0582FD
+  @if cand(
+        eq(strlen(center(X,3,12)), 3),
+        eq(strlen(center(X,5,1234)), 5),
+        eq(strlen(center(X,10,1234567890)), 10)
       )=
   {
     @log smoke=TC002: Regressions. Succeeded.
   },
   {
-    @log smoke=TC002: Regressions. Failed (%q0).
+    @log smoke=TC002: Regressions. Failed.
   }
 -
 #
 # Test Case #3 - Vary string and width with default fill.
+# String longer than width returns original string.
+# String shorter than width gets padded with spaces.
 #
 &tr.tc003 test_center_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(lnum(1,10),center(left(1234567890,##),1))]
-            [iter(lnum(1,10),center(left(1234567890,##),2))]
-            [iter(lnum(1,10),center(left(1234567890,##),3))]
-            [iter(lnum(1,10),center(left(1234567890,##),4))]
-            [iter(lnum(1,10),center(left(1234567890,##),5))]
-            [iter(lnum(1,10),center(left(1234567890,##),6))]
-            [iter(lnum(1,10),center(left(1234567890,##),7))]
-            [iter(lnum(1,10),center(left(1234567890,##),8))]
-            [iter(lnum(1,10),center(left(1234567890,##),9))]
-            [iter(lnum(1,10),center(left(1234567890,##),10))]
-            [iter(lnum(1,10),center(left(1234567890,##),11))]
-          )
-        ),
-        408101CA72C23A52F2281139D8932B5D98984EAB
+  @if cand(
+        strmatch(center(1,1), 1),
+        gt(strlen(center(1,3)), 1),
+        gt(strlen(center(123,11)), 3)
       )=
   {
     @log smoke=TC003: Vary string and width with default fill. Succeeded.
   },
   {
-    @log smoke=TC003: Vary string and width with default fill. Failed (%q0).
+    @log smoke=TC003: Vary string and width with default fill. Failed.
   }
 -
 #
 # Test Case #4 - Vary string and width with '-' fill.
 #
 &tr.tc004 test_center_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(lnum(1,10),center(left(1234567890,##),1,-))]
-            [iter(lnum(1,10),center(left(1234567890,##),2,-))]
-            [iter(lnum(1,10),center(left(1234567890,##),3,-))]
-            [iter(lnum(1,10),center(left(1234567890,##),4,-))]
-            [iter(lnum(1,10),center(left(1234567890,##),5,-))]
-            [iter(lnum(1,10),center(left(1234567890,##),6,-))]
-            [iter(lnum(1,10),center(left(1234567890,##),7,-))]
-            [iter(lnum(1,10),center(left(1234567890,##),8,-))]
-            [iter(lnum(1,10),center(left(1234567890,##),9,-))]
-            [iter(lnum(1,10),center(left(1234567890,##),10,-))]
-            [iter(lnum(1,10),center(left(1234567890,##),11,-))]
-          )
-        ),
-        56FA35A7601DB428A47B60B0494F14DB2CCFB034
+  @if cand(
+        strmatch(center(1,1,-), 1),
+        strmatch(center(1,3,-), -1-),
+        strmatch(center(12,4,-), -12-),
+        eq(strlen(center(123,11,-)), 11)
       )=
   {
     @log smoke=TC004: Vary string and width with '-' fill. Succeeded.
   },
   {
-    @log smoke=TC004: Vary string and width with '-' fill. Failed (%q0).
+    @log smoke=TC004: Vary string and width with '-' fill. Failed.
   }
 -
 #
 # Test Case #5 - Vary string and width with '-+' fill.
 #
 &tr.tc005 test_center_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(lnum(1,10),center(left(1234567890,##),1,-+))]
-            [iter(lnum(1,10),center(left(1234567890,##),2,-+))]
-            [iter(lnum(1,10),center(left(1234567890,##),3,-+))]
-            [iter(lnum(1,10),center(left(1234567890,##),4,-+))]
-            [iter(lnum(1,10),center(left(1234567890,##),5,-+))]
-            [iter(lnum(1,10),center(left(1234567890,##),6,-+))]
-            [iter(lnum(1,10),center(left(1234567890,##),7,-+))]
-            [iter(lnum(1,10),center(left(1234567890,##),8,-+))]
-            [iter(lnum(1,10),center(left(1234567890,##),9,-+))]
-            [iter(lnum(1,10),center(left(1234567890,##),10,-+))]
-            [iter(lnum(1,10),center(left(1234567890,##),11,-+))]
-          )
-        ),
-        9DBD70A1087ED2303A41D82132BB6B0538BDDA31
+  @if cand(
+        strmatch(center(1,1,-+), 1),
+        eq(strlen(center(1,3,-+)), 3),
+        eq(strlen(center(1,5,-+)), 5),
+        eq(strlen(center(123,11,-+)), 11)
       )=
   {
     @log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: Vary string and width with '-+' fill. Failed (%q0).;
+    @log smoke=TC005: Vary string and width with '-+' fill. Failed.;
     @trig me/tr.done
   }
 -

@@ -15,22 +15,18 @@
 # Test Case #1 - Basic unique operations.
 #
 &tr.tc001 test_unique_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [unique(a b c b a)]
-            [unique(1|2|3|2|1,,|)]
-            [unique(x)]
-            [unique(a a a)]
-          )
-        ),
-        7248042252C1B38DF134982FA459D87C0F826778
+  @if cand(
+        strmatch(unique(a b c b a), a b c),
+        strmatch(unique(1|2|3|2|1,,|), 1|2|3),
+        strmatch(unique(x), x),
+        strmatch(unique(a a a), a)
       )=
   {
     @log smoke=TC001: unique basic. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: unique basic. Failed (%q0).;
+    @log smoke=TC001: unique basic. Failed (unique(a b c b a)=[unique(a b c b a)] unique(1|..|1)=[unique(1|2|3|2|1,,|)] unique(x)=[unique(x)] unique(a a a)=[unique(a a a)]).;
     @trig me/tr.done
   }
 -
