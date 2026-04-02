@@ -24,14 +24,15 @@ LIBMUX_OBJS = $(LIBMUX_CXX_OBJS) $(LIBMUX_C_OBJS)
 
 all-local: libmux.so
 
-# Compile C++ with -fPIC (default visibility).
+# Compile C++ with -fPIC and hidden visibility (only LIBMUX_API/DCL_EXPORT symbols exported).
 # -MMD -MF generates per-object dependency files for header tracking.
 %.lo: %.cpp
-	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -MMD -MF $(@:.lo=.d) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -fvisibility=hidden -MMD -MF $(@:.lo=.d) -c -o $@ $<
 
-# Compile C (Ragel-generated color_ops, unicode tables) with -fPIC.
+# Compile C (Ragel-generated color_ops, unicode tables) with -fPIC and hidden visibility.
+# LIBMUX_API fallback in color_ops.h / unicode_tables_c.h provides visibility("default").
 %.lo: %.c
-	$(CC) $(AM_CFLAGS) -I$(top_srcdir)/include $(DYNAMICLIB_CXXFLAGS) -MMD -MF $(@:.lo=.d) -c -o $@ $<
+	$(CC) $(AM_CFLAGS) -I$(top_srcdir)/include $(DYNAMICLIB_CXXFLAGS) -fvisibility=hidden -MMD -MF $(@:.lo=.d) -c -o $@ $<
 
 -include $(LIBMUX_CXX_OBJS:.lo=.d)
 -include $(LIBMUX_C_OBJS:.lo=.d)

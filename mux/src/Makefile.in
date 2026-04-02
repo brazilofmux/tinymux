@@ -116,9 +116,9 @@ am__objects_1 = netmux-_build.$(OBJEXT) netmux-bsd.$(OBJEXT) \
 	netmux-driver.$(OBJEXT) netmux-driver_bridge.$(OBJEXT) \
 	netmux-ganl_adapter.$(OBJEXT) netmux-modules.$(OBJEXT) \
 	netmux-muxcli.$(OBJEXT) netmux-net.$(OBJEXT) \
-	netmux-netaddr.$(OBJEXT) netmux-signals.$(OBJEXT) \
-	netmux-sitemon.$(OBJEXT) netmux-telnet.$(OBJEXT) \
-	netmux-websocket.$(OBJEXT)
+	netmux-netaddr.$(OBJEXT) netmux-platform.$(OBJEXT) \
+	netmux-signals.$(OBJEXT) netmux-sitemon.$(OBJEXT) \
+	netmux-telnet.$(OBJEXT) netmux-websocket.$(OBJEXT)
 am_netmux_OBJECTS = $(am__objects_1) netmux-version.$(OBJEXT)
 netmux_OBJECTS = $(am_netmux_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -156,10 +156,10 @@ am__depfiles_remade = ./$(DEPDIR)/netmux-_build.Po \
 	./$(DEPDIR)/netmux-ganl_adapter.Po \
 	./$(DEPDIR)/netmux-modules.Po ./$(DEPDIR)/netmux-muxcli.Po \
 	./$(DEPDIR)/netmux-net.Po ./$(DEPDIR)/netmux-netaddr.Po \
-	./$(DEPDIR)/netmux-signals.Po ./$(DEPDIR)/netmux-sitemon.Po \
-	./$(DEPDIR)/netmux-telnet.Po ./$(DEPDIR)/netmux-version.Po \
-	./$(DEPDIR)/netmux-websocket.Po ./$(DEPDIR)/slave.Po \
-	./$(DEPDIR)/stubslave.Po
+	./$(DEPDIR)/netmux-platform.Po ./$(DEPDIR)/netmux-signals.Po \
+	./$(DEPDIR)/netmux-sitemon.Po ./$(DEPDIR)/netmux-telnet.Po \
+	./$(DEPDIR)/netmux-version.Po ./$(DEPDIR)/netmux-websocket.Po \
+	./$(DEPDIR)/slave.Po ./$(DEPDIR)/stubslave.Po
 am__mv = mv -f
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -346,7 +346,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdi
 
 DRIVER_SRC = _build.cpp bsd.cpp driver.cpp driver_bridge.cpp \
     ganl_adapter.cpp modules.cpp muxcli.cpp net.cpp netaddr.cpp \
-    signals.cpp sitemon.cpp telnet.cpp websocket.cpp
+    platform.cpp signals.cpp sitemon.cpp telnet.cpp websocket.cpp
 
 
 # netmux driver — links against libmux.so only.
@@ -470,6 +470,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-muxcli.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-net.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-netaddr.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-platform.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-signals.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-sitemon.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netmux-telnet.Po@am__quote@ # am--include-marker
@@ -625,6 +626,20 @@ netmux-netaddr.obj: netaddr.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='netaddr.cpp' object='netmux-netaddr.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-netaddr.obj `if test -f 'netaddr.cpp'; then $(CYGPATH_W) 'netaddr.cpp'; else $(CYGPATH_W) '$(srcdir)/netaddr.cpp'; fi`
+
+netmux-platform.o: platform.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-platform.o -MD -MP -MF $(DEPDIR)/netmux-platform.Tpo -c -o netmux-platform.o `test -f 'platform.cpp' || echo '$(srcdir)/'`platform.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-platform.Tpo $(DEPDIR)/netmux-platform.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='platform.cpp' object='netmux-platform.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-platform.o `test -f 'platform.cpp' || echo '$(srcdir)/'`platform.cpp
+
+netmux-platform.obj: platform.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-platform.obj -MD -MP -MF $(DEPDIR)/netmux-platform.Tpo -c -o netmux-platform.obj `if test -f 'platform.cpp'; then $(CYGPATH_W) 'platform.cpp'; else $(CYGPATH_W) '$(srcdir)/platform.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/netmux-platform.Tpo $(DEPDIR)/netmux-platform.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='platform.cpp' object='netmux-platform.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -c -o netmux-platform.obj `if test -f 'platform.cpp'; then $(CYGPATH_W) 'platform.cpp'; else $(CYGPATH_W) '$(srcdir)/platform.cpp'; fi`
 
 netmux-signals.o: signals.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(netmux_CXXFLAGS) $(CXXFLAGS) -MT netmux-signals.o -MD -MP -MF $(DEPDIR)/netmux-signals.Tpo -c -o netmux-signals.o `test -f 'signals.cpp' || echo '$(srcdir)/'`signals.cpp
@@ -831,6 +846,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/netmux-muxcli.Po
 	-rm -f ./$(DEPDIR)/netmux-net.Po
 	-rm -f ./$(DEPDIR)/netmux-netaddr.Po
+	-rm -f ./$(DEPDIR)/netmux-platform.Po
 	-rm -f ./$(DEPDIR)/netmux-signals.Po
 	-rm -f ./$(DEPDIR)/netmux-sitemon.Po
 	-rm -f ./$(DEPDIR)/netmux-telnet.Po
@@ -893,6 +909,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/netmux-muxcli.Po
 	-rm -f ./$(DEPDIR)/netmux-net.Po
 	-rm -f ./$(DEPDIR)/netmux-netaddr.Po
+	-rm -f ./$(DEPDIR)/netmux-platform.Po
 	-rm -f ./$(DEPDIR)/netmux-signals.Po
 	-rm -f ./$(DEPDIR)/netmux-sitemon.Po
 	-rm -f ./$(DEPDIR)/netmux-telnet.Po

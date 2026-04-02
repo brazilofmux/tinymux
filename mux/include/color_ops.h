@@ -42,7 +42,7 @@
 #define LIBMUX_API __declspec(dllimport)
 #endif
 #else
-#define LIBMUX_API
+#define LIBMUX_API __attribute__((visibility("default")))
 #endif
 #endif
 
