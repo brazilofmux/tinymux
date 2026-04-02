@@ -12,23 +12,19 @@
   @log smoke=Beginning case() test cases.
 -
 #
-# Test Case #1 - Basic case matching.
+# Test Case #1 - Basic case() operations.
 #
 &tr.tc001 test_case_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [case(2,1,one,2,two,default)]
-            [case(5,1,one,2,two,default)]
-          )
-        ),
-        3F334237D4E7CB885808C57FE3DADDC6338BA0E8
+  @if cand(
+        strmatch(case(2,1,one,2,two,default),two),
+        strmatch(case(5,1,one,2,two,default),default)
       )=
   {
-    @log smoke=TC001: case basic operations. Succeeded.;
+    @log smoke=TC001: case() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: case basic operations. Failed (%q0).;
+    @log smoke=TC001: case() basic operations. Failed (case(2)=[case(2,1,one,2,two,default)] case(5)=[case(5,1,one,2,two,default)]).;
     @trig me/tr.done
   }
 -

@@ -12,22 +12,18 @@
   @log smoke=Beginning pi() test cases.
 -
 #
-# Test Case #1 - pi() constant.
+# Test Case #1 - Basic pi() operations.
 #
 &tr.tc001 test_pi_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [round(pi(),6)]
-          )
-        ),
-        47E2AFC2724B13B51FD0C236C888137BF2C6D36C
+  @if cand(
+        strmatch(round(pi(),6),3.141593)
       )=
   {
-    @log smoke=TC001: pi constant. Succeeded.;
+    @log smoke=TC001: pi() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: pi constant. Failed (%q0).;
+    @log smoke=TC001: pi() basic operations. Failed (pi()=[round(pi(),6)]).;
     @trig me/tr.done
   }
 -

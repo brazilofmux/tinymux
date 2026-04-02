@@ -12,23 +12,19 @@
   @log smoke=Beginning lmin() test cases.
 -
 #
-# Test Case #1 - Basic list minimum.
+# Test Case #1 - Basic lmin() operations.
 #
 &tr.tc001 test_lmin_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [lmin(3 1 4 1 5)]
-            [lmin(3|1|4,|)]
-          )
-        ),
-        17BA0791499DB908433B80F37C5FBC89B870084B
+  @if cand(
+        eq(lmin(3 1 4 1 5),1),
+        eq(lmin(3|1|4,|),1)
       )=
   {
-    @log smoke=TC001: lmin basic operations. Succeeded.;
+    @log smoke=TC001: lmin() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: lmin basic operations. Failed (%q0).;
+    @log smoke=TC001: lmin() basic operations. Failed (lmin(3 1 4 1 5)=[lmin(3 1 4 1 5)] lmin(3|1|4)=[lmin(3|1|4,|)]).;
     @trig me/tr.done
   }
 -

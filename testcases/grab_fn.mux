@@ -12,23 +12,19 @@
   @log smoke=Beginning grab() test cases.
 -
 #
-# Test Case #1 - Basic grab operations.
+# Test Case #1 - Basic grab() operations.
 #
 &tr.tc001 test_grab_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [grab(foo bar baz,b*)]
-            [grab(one two three,t*)]
-          )
-        ),
-        749621B34AD278B3FA17458FD452D3E16E55295C
+  @if cand(
+        strmatch(grab(foo bar baz,b*),bar),
+        strmatch(grab(one two three,t*),two)
       )=
   {
-    @log smoke=TC001: grab basic operations. Succeeded.;
+    @log smoke=TC001: grab() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: grab basic operations. Failed (%q0).;
+    @log smoke=TC001: grab() basic operations. Failed (grab(b*)=[grab(foo bar baz,b*)] grab(t*)=[grab(one two three,t*)]).;
     @trig me/tr.done
   }
 -

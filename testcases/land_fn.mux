@@ -12,23 +12,19 @@
   @log smoke=Beginning land() test cases.
 -
 #
-# Test Case #1 - Basic list AND.
+# Test Case #1 - Basic land() operations.
 #
 &tr.tc001 test_land_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [land(1 1 1)]
-            [land(1 0 1)]
-          )
-        ),
-        B1D5781111D84F7B3FE45A0852E59758CD7A87E5
+  @if cand(
+        eq(land(1 1 1),1),
+        eq(land(1 0 1),0)
       )=
   {
-    @log smoke=TC001: land basic operations. Succeeded.;
+    @log smoke=TC001: land() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: land basic operations. Failed (%q0).;
+    @log smoke=TC001: land() basic operations. Failed (land(1 1 1)=[land(1 1 1)] land(1 0 1)=[land(1 0 1)]).;
     @trig me/tr.done
   }
 -

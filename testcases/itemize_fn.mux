@@ -12,23 +12,19 @@
   @log smoke=Beginning itemize() test cases.
 -
 #
-# Test Case #1 - Basic itemization.
+# Test Case #1 - Basic itemize() operations.
 #
 &tr.tc001 test_itemize_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [itemize(a b c)]
-            [itemize(a b c d,|,or)]
-          )
-        ),
-        0F2D469051B670CB19757357255658F4A53027E6
+  @if cand(
+        strmatch(itemize(a b c),a%, b%, and c),
+        strmatch(itemize(a|b|c|d,|,or),a%, b%, c%, or d)
       )=
   {
-    @log smoke=TC001: itemize basic operations. Succeeded.;
+    @log smoke=TC001: itemize() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: itemize basic operations. Failed (%q0).;
+    @log smoke=TC001: itemize() basic operations. Failed (itemize(a b c)=[itemize(a b c)] itemize(|%,or)=[itemize(a|b|c|d,|,or)]).;
     @trig me/tr.done
   }
 -

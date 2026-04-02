@@ -12,23 +12,19 @@
   @log smoke=Beginning alphamax() test cases.
 -
 #
-# Test Case #1 - Basic alphamax operations.
+# Test Case #1 - Basic alphamax() operations.
 #
 &tr.tc001 test_alphamax_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [alphamax(foo,bar,baz)]
-            [alphamax(abc,xyz,mno)]
-          )
-        ),
-        3B6938B4BC35AF3CB9706E69B737B20C04BABD54
+  @if cand(
+        strmatch(alphamax(foo,bar,baz),foo),
+        strmatch(alphamax(abc,xyz,mno),xyz)
       )=
   {
-    @log smoke=TC001: alphamax basic operations. Succeeded.;
+    @log smoke=TC001: alphamax() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: alphamax basic operations. Failed (%q0).;
+    @log smoke=TC001: alphamax() basic operations. Failed (alphamax(foo%,bar%,baz)=[alphamax(foo,bar,baz)] alphamax(abc%,xyz%,mno)=[alphamax(abc,xyz,mno)]).;
     @trig me/tr.done
   }
 -

@@ -12,23 +12,19 @@
   @log smoke=Beginning matchall() test cases.
 -
 #
-# Test Case #1 - Basic wildcard list matching.
+# Test Case #1 - Basic matchall() operations.
 #
 &tr.tc001 test_matchall_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [matchall(one two three,t*)]
-            [matchall(one two three,*o*)]
-          )
-        ),
-        652A3C234080E80381E36F708AA71143FC7ABA01
+  @if cand(
+        strmatch(matchall(one two three,t*),2 3),
+        strmatch(matchall(one two three,*o*),1 2)
       )=
   {
-    @log smoke=TC001: matchall basic operations. Succeeded.;
+    @log smoke=TC001: matchall() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: matchall basic operations. Failed (%q0).;
+    @log smoke=TC001: matchall() basic operations. Failed (matchall(t*)=[matchall(one two three,t*)] matchall(*o*)=[matchall(one two three,*o*)]).;
     @trig me/tr.done
   }
 -

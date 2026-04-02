@@ -12,23 +12,19 @@
   @log smoke=Beginning baseconv() test cases.
 -
 #
-# Test Case #1 - Basic base conversion operations.
+# Test Case #1 - Basic baseconv() operations.
 #
 &tr.tc001 test_baseconv_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [baseconv(255,10,16)]
-            [baseconv(FF,16,10)]
-          )
-        ),
-        B840CF11BD395FCEBF0810FA8686414ADE2F7697
+  @if cand(
+        strmatch(baseconv(255,10,16),ff),
+        eq(baseconv(ff,16,10),255)
       )=
   {
-    @log smoke=TC001: baseconv basic operations. Succeeded.;
+    @log smoke=TC001: baseconv() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: baseconv basic operations. Failed (%q0).;
+    @log smoke=TC001: baseconv() basic operations. Failed (baseconv(255%,10%,16)=[baseconv(255,10,16)] baseconv(ff%,16%,10)=[baseconv(ff,16,10)]).;
     @trig me/tr.done
   }
 -

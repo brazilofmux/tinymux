@@ -12,23 +12,19 @@
   @log smoke=Beginning lnum() test cases.
 -
 #
-# Test Case #1 - Basic lnum operations.
+# Test Case #1 - Basic lnum() operations.
 #
 &tr.tc001 test_lnum_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [lnum(5)]
-            [lnum(3,7)]
-          )
-        ),
-        F00A3D64A2341EC861A5D99F7223566A657B468A
+  @if cand(
+        strmatch(lnum(5),0 1 2 3 4),
+        strmatch(lnum(3,7),3 4 5 6 7)
       )=
   {
-    @log smoke=TC001: lnum basic operations. Succeeded.;
+    @log smoke=TC001: lnum() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: lnum basic operations. Failed (%q0).;
+    @log smoke=TC001: lnum() basic operations. Failed (lnum(5)=[lnum(5)] lnum(3%,7)=[lnum(3,7)]).;
     @trig me/tr.done
   }
 -

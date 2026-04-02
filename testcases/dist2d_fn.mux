@@ -12,23 +12,19 @@
   @log smoke=Beginning dist2d() test cases.
 -
 #
-# Test Case #1 - Basic 2D distance operations.
+# Test Case #1 - Basic dist2d() operations.
 #
 &tr.tc001 test_dist2d_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [dist2d(0,0,3,4)]
-            [dist2d(1,1,4,5)]
-          )
-        ),
-        8EFFEE409C625E1A2D8F5033631840E6CE1DCB64
+  @if cand(
+        eq(dist2d(0,0,3,4),5),
+        eq(dist2d(1,1,4,5),5)
       )=
   {
-    @log smoke=TC001: dist2d basic operations. Succeeded.;
+    @log smoke=TC001: dist2d() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: dist2d basic operations. Failed (%q0).;
+    @log smoke=TC001: dist2d() basic operations. Failed (dist2d(0%,0%,3%,4)=[dist2d(0,0,3,4)] dist2d(1%,1%,4%,5)=[dist2d(1,1,4,5)]).;
     @trig me/tr.done
   }
 -

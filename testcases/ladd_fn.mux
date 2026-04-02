@@ -12,23 +12,19 @@
   @log smoke=Beginning ladd() test cases.
 -
 #
-# Test Case #1 - Basic list addition.
+# Test Case #1 - Basic ladd() operations.
 #
 &tr.tc001 test_ladd_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [ladd(1 2 3)]
-            [ladd(1|2|3,|)]
-          )
-        ),
-        59129AACFB6CEBBE2C52F30EF3424209F7252E82
+  @if cand(
+        eq(ladd(1 2 3),6),
+        eq(ladd(1|2|3,|),6)
       )=
   {
-    @log smoke=TC001: ladd basic operations. Succeeded.;
+    @log smoke=TC001: ladd() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: ladd basic operations. Failed (%q0).;
+    @log smoke=TC001: ladd() basic operations. Failed (ladd(1 2 3)=[ladd(1 2 3)] ladd(1|2|3)=[ladd(1|2|3,|)]).;
     @trig me/tr.done
   }
 -

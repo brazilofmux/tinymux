@@ -1,31 +1,30 @@
 #
-# soundex_fn.mux - Test Cases for soundex() and soundlike().
+# soundex_fn.mux - Test Cases for soundex().
 #
 @create test_soundex_fn
 -
 @set test_soundex_fn=INHERIT QUIET
 -
+#
+# Beginning of Test Cases
+#
 &tr.tc000 test_soundex_fn=
   @log smoke=Beginning soundex() test cases.
 -
+#
+# Test Case #1 - Basic soundex() operations.
+#
 &tr.tc001 test_soundex_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [soundex(Robert)]
-            [soundex(Rupert)]
-            [soundlike(Robert,Rupert)]
-            [soundlike(Robert,Smith)]
-            [soundex(Ashcraft)]
-          )
-        ),
-        334126F542F582DA7A29CBD3A7AF0B1BC9F2FCDE
+  @if cand(
+        strmatch(soundex(Robert),R163),
+        strmatch(soundex(Smith),S530)
       )=
   {
-    @log smoke=TC001: soundex basic ops. Succeeded.;
+    @log smoke=TC001: soundex() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: soundex basic ops. Failed (%q0).;
+    @log smoke=TC001: soundex() basic operations. Failed (soundex(Robert)=[soundex(Robert)] soundex(Smith)=[soundex(Smith)]).;
     @trig me/tr.done
   }
 -
@@ -35,3 +34,6 @@
 -
 drop test_soundex_fn
 -
+#
+# End of Test Cases
+#

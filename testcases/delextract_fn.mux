@@ -5,27 +5,29 @@
 -
 @set test_delextract_fn=INHERIT QUIET
 -
+#
+# Beginning of Test Cases
+#
 &tr.tc000 test_delextract_fn=
   @log smoke=Beginning delextract() test cases.
 -
+#
+# Test Case #1 - Basic delextract() operations.
+#
 &tr.tc001 test_delextract_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [delextract(a b c d e,2,2)]
-            [delextract(a b c d e,1,1)]
-            [delextract(a b c d e,5,1)]
-            [delextract(a b c d e,3,10)]
-            [delextract(a b c,1,0)]
-          )
-        ),
-        4E7832DD078DE641E0CC600D07C5320AD1EE6CD6
+  @if cand(
+        strmatch(delextract(a b c d e,2,2),a d e),
+        strmatch(delextract(a b c d e,1,1),b c d e),
+        strmatch(delextract(a b c d e,5,1),a b c d),
+        strmatch(delextract(a b c d e,3,10),a b),
+        strmatch(delextract(a b c,1,0),a b c)
       )=
   {
-    @log smoke=TC001: delextract basic ops. Succeeded.;
+    @log smoke=TC001: delextract() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: delextract basic ops. Failed (%q0).;
+    @log smoke=TC001: delextract() basic operations. Failed (delextract(2%,2)=[delextract(a b c d e,2,2)] delextract(1%,1)=[delextract(a b c d e,1,1)] delextract(5%,1)=[delextract(a b c d e,5,1)] delextract(3%,10)=[delextract(a b c d e,3,10)] delextract(1%,0)=[delextract(a b c,1,0)]).;
     @trig me/tr.done
   }
 -
@@ -35,3 +37,6 @@
 -
 drop test_delextract_fn
 -
+#
+# End of Test Cases
+#

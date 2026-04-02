@@ -12,23 +12,19 @@
   @log smoke=Beginning lor() test cases.
 -
 #
-# Test Case #1 - Basic list OR.
+# Test Case #1 - Basic lor() operations.
 #
 &tr.tc001 test_lor_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [lor(0 0 0)]
-            [lor(0 1 0)]
-          )
-        ),
-        DDFE163345D338193AC2BDC183F8E9DCFF904B43
+  @if cand(
+        eq(lor(0 0 0),0),
+        eq(lor(0 1 0),1)
       )=
   {
-    @log smoke=TC001: lor basic operations. Succeeded.;
+    @log smoke=TC001: lor() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: lor basic operations. Failed (%q0).;
+    @log smoke=TC001: lor() basic operations. Failed (lor(0 0 0)=[lor(0 0 0)] lor(0 1 0)=[lor(0 1 0)]).;
     @trig me/tr.done
   }
 -

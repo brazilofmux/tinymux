@@ -12,22 +12,18 @@
   @log smoke=Beginning e() test cases.
 -
 #
-# Test Case #1 - e() constant.
+# Test Case #1 - Basic e() operations.
 #
 &tr.tc001 test_e_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [round(e(),6)]
-          )
-        ),
-        D4F0C68A63BF494C135C3E3A25C3961E66E2E788
+  @if cand(
+        strmatch(round(e(),6),2.718282)
       )=
   {
-    @log smoke=TC001: e constant. Succeeded.;
+    @log smoke=TC001: e() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: e constant. Failed (%q0).;
+    @log smoke=TC001: e() basic operations. Failed (e()=[round(e(),6)]).;
     @trig me/tr.done
   }
 -

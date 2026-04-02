@@ -12,23 +12,19 @@
   @log smoke=Beginning crc32() test cases.
 -
 #
-# Test Case #1 - Basic CRC32 checksums.
+# Test Case #1 - Basic crc32() operations.
 #
 &tr.tc001 test_crc32_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [crc32(Hello)]
-            [crc32(abc)]
-          )
-        ),
-        AD8BA279B14380D1716B313A77BC9A29EFA35DEF
+  @if cand(
+        eq(crc32(Hello),4157704578),
+        eq(crc32(abc),891568578)
       )=
   {
-    @log smoke=TC001: crc32 basic operations. Succeeded.;
+    @log smoke=TC001: crc32() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: crc32 basic operations. Failed (%q0).;
+    @log smoke=TC001: crc32() basic operations. Failed (crc32(Hello)=[crc32(Hello)] crc32(abc)=[crc32(abc)]).;
     @trig me/tr.done
   }
 -

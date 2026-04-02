@@ -12,24 +12,20 @@
   @log smoke=Beginning mean() test cases.
 -
 #
-# Test Case #1 - Basic mean operations.
+# Test Case #1 - Basic mean() operations.
 #
 &tr.tc001 test_mean_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [mean(2,4,6)]
-            [mean(10)]
-            [mean(1,2,3,4,5)]
-          )
-        ),
-        C89D8EF5E8B870C3285EC4A51C732C5459BC72E8
+  @if cand(
+        eq(mean(2,4,6),4),
+        eq(mean(10),10),
+        eq(mean(1,2,3,4,5),3)
       )=
   {
-    @log smoke=TC001: mean basic. Succeeded.;
+    @log smoke=TC001: mean() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: mean basic. Failed (%q0).;
+    @log smoke=TC001: mean() basic operations. Failed (mean(2%,4%,6)=[mean(2,4,6)] mean(10)=[mean(10)] mean(1..5)=[mean(1,2,3,4,5)]).;
     @trig me/tr.done
   }
 -

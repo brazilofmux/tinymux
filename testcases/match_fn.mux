@@ -12,23 +12,19 @@
   @log smoke=Beginning match() test cases.
 -
 #
-# Test Case #1 - Basic match operations.
+# Test Case #1 - Basic match() operations.
 #
 &tr.tc001 test_match_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [match(a b c d,c)]
-            [match(a b c d,x)]
-          )
-        ),
-        22D200F8670DBDB3E253A90EEE5098477C95C23D
+  @if cand(
+        eq(match(a b c d,c),3),
+        eq(match(a b c d,x),0)
       )=
   {
-    @log smoke=TC001: match basic operations. Succeeded.;
+    @log smoke=TC001: match() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: match basic operations. Failed (%q0).;
+    @log smoke=TC001: match() basic operations. Failed (match(c)=[match(a b c d,c)] match(x)=[match(a b c d,x)]).;
     @trig me/tr.done
   }
 -

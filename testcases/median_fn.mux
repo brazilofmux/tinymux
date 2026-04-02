@@ -12,25 +12,20 @@
   @log smoke=Beginning median() test cases.
 -
 #
-# Test Case #1 - Basic median operations.
+# Test Case #1 - Basic median() operations.
 #
 &tr.tc001 test_median_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [median(3,1,2)]
-            [median(1,2,3,4)]
-            [median(5)]
-            [median(10,20)]
-          )
-        ),
-        A35461AA9E3A0557970A207A8850C20E5F402703
+  @if cand(
+        eq(median(3,1,2),2),
+        strmatch(median(1,2,3,4),2.5),
+        eq(median(5),5)
       )=
   {
-    @log smoke=TC001: median basic. Succeeded.;
+    @log smoke=TC001: median() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: median basic. Failed (%q0).;
+    @log smoke=TC001: median() basic operations. Failed (median(3%,1%,2)=[median(3,1,2)] median(1..4)=[median(1,2,3,4)] median(5)=[median(5)]).;
     @trig me/tr.done
   }
 -

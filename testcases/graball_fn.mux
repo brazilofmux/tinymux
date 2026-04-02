@@ -12,23 +12,19 @@
   @log smoke=Beginning graball() test cases.
 -
 #
-# Test Case #1 - Basic wildcard grab all.
+# Test Case #1 - Basic graball() operations.
 #
 &tr.tc001 test_graball_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [graball(foo bar baz,b*)]
-            [graball(foo bar baz,*oo)]
-          )
-        ),
-        3AE6ED1BF430F326C25376D76C7A4CD0A08AC8DE
+  @if cand(
+        strmatch(graball(foo bar baz,b*),bar baz),
+        strmatch(graball(foo bar baz,*oo),foo)
       )=
   {
-    @log smoke=TC001: graball basic operations. Succeeded.;
+    @log smoke=TC001: graball() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: graball basic operations. Failed (%q0).;
+    @log smoke=TC001: graball() basic operations. Failed (graball(b*)=[graball(foo bar baz,b*)] graball(*oo)=[graball(foo bar baz,*oo)]).;
     @trig me/tr.done
   }
 -

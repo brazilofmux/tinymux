@@ -5,25 +5,27 @@
 -
 @set test_caplist_fn=INHERIT QUIET
 -
+#
+# Beginning of Test Cases
+#
 &tr.tc000 test_caplist_fn=
   @log smoke=Beginning caplist() test cases.
 -
+#
+# Test Case #1 - Basic caplist() operations.
+#
 &tr.tc001 test_caplist_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [caplist(the lord of the rings)]
-            [caplist(a tale of two cities)]
-            [caplist(war and peace)]
-          )
-        ),
-        46FBCF732D2397441A674D8F633E62F50553F273
+  @if cand(
+        strmatch(caplist(the lord of the rings),The Lord Of The Rings),
+        strmatch(caplist(a tale of two cities),A Tale Of Two Cities),
+        strmatch(caplist(war and peace),War And Peace)
       )=
   {
-    @log smoke=TC001: caplist title case. Succeeded.;
+    @log smoke=TC001: caplist() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: caplist title case. Failed (%q0).;
+    @log smoke=TC001: caplist() basic operations. Failed (caplist1=[caplist(the lord of the rings)] caplist2=[caplist(a tale of two cities)] caplist3=[caplist(war and peace)]).;
     @trig me/tr.done
   }
 -
@@ -33,3 +35,6 @@
 -
 drop test_caplist_fn
 -
+#
+# End of Test Cases
+#
