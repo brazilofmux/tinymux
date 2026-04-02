@@ -793,6 +793,7 @@ static const fp_math_entry s_fp_unary[] = {
     { "ACOS",  "acos",  FMATH_ACOS  },
     { "ATAN",  "atan",  FMATH_ATAN  },
     { "EXP",   "exp",   FMATH_EXP   },
+    { "LOG",   "log10", FMATH_LOG10 },  // MUX log() defaults to common (base 10)
     { "LOG10", "log10", FMATH_LOG10 },
     { "SQRT",  "sqrt",  FMATH_SQRT  },
     { "CEIL",  "ceil",  FMATH_CEIL  },
@@ -2742,7 +2743,6 @@ general_lowering:
             //
             if (  s_fp_unary[ti].fmath == FMATH_ASIN
                || s_fp_unary[ti].fmath == FMATH_ACOS
-               || s_fp_unary[ti].fmath == FMATH_LOG
                || s_fp_unary[ti].fmath == FMATH_LOG10
                || s_fp_unary[ti].fmath == FMATH_SQRT)
             {
@@ -2970,6 +2970,13 @@ literal_strcat:
 
     // Check Tier 2 blob before falling through to ECALL.
     uint64_t t2addr = tier2_lookup(upper);
+
+    // LOG's Tier 2 blob (rv64_log10) only handles the 1-arg common-log
+    // case.  The 2-arg form log(value, base) must fall through to ECALL
+    // so the interpreter handles arbitrary bases.
+    if (t2addr && upper == "LOG" && nargs != 1) {
+        t2addr = 0;
+    }
 
     // ECALL/Tier2 results are always strings in guest memory.  If the
     // function is known to return integers (strlen, eq, etc.),

@@ -374,8 +374,7 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     // and the Tier 2 aliases currently bypass that behavior for
     // multi-arg calls.
     { "EXP",         "rv64_exp" },
-    // Deliberately exclude LOG for now. TinyMUX log() defaults to the
-    // common logarithm, while the direct libm fast path is natural log.
+    { "LOG",         "rv64_log10" },  // MUX log() defaults to common (base 10)
     { "LOG10",       "rv64_log10" },
     { "SQRT",        "rv64_sqrt" },
     { "CEIL",        "rv64_ceil" },

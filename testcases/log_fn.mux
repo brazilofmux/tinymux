@@ -21,11 +21,58 @@
         eq(round(log(1),6), 0)
       )=
   {
-    @log smoke=TC001: log basic operations. Succeeded.;
+    @log smoke=TC001: log basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: log basic operations. Failed (log(100)=[round(log(100),6)] log(10)=[round(log(10),6)] log(1)=[round(log(1),6)]).
+  }
+-
+#
+# Test Case #2 - Two-argument form: log(value, base).
+# log(8,2) = 3 (binary log), log(27,3) = 3, log(100,10) = 2.
+#
+&tr.tc002 test_log_fn=
+  @if cand(
+        eq(round(log(8,2),6), 3),
+        eq(round(log(27,3),6), 3),
+        eq(round(log(100,10),6), 2)
+      )=
+  {
+    @log smoke=TC002: log with explicit base. Succeeded.
+  },
+  {
+    @log smoke=TC002: log with explicit base. Failed (log(8,2)=[round(log(8,2),6)] log(27,3)=[round(log(27,3),6)] log(100,10)=[round(log(100,10),6)]).
+  }
+-
+#
+# Test Case #3 - Natural logarithm: log(value, e).
+# log(e(),e) = 1.
+#
+&tr.tc003 test_log_fn=
+  @if eq(round(log(e(),e),6), 1)=
+  {
+    @log smoke=TC003: log natural (base e). Succeeded.
+  },
+  {
+    @log smoke=TC003: log natural (base e). Failed (log(e(),e)=[round(log(e(),e),6)]).
+  }
+-
+#
+# Test Case #4 - Error cases.
+# log(x, 1) => error (base must be > 1).
+# log(x, 0) => error.
+#
+&tr.tc004 test_log_fn=
+  @if cand(
+        strmatch(log(10,1), #-1*),
+        strmatch(log(10,0), #-1*)
+      )=
+  {
+    @log smoke=TC004: log base out of range. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: log basic operations. Failed (log(100)=[round(log(100),6)] log(10)=[round(log(10),6)] log(1)=[round(log(1),6)]).;
+    @log smoke=TC004: log base out of range. Failed (log(10,1)=[log(10,1)] log(10,0)=[log(10,0)]).;
     @trig me/tr.done
   }
 -
