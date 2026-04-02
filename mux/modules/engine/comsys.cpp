@@ -4108,7 +4108,7 @@ FUNCTION(fun_channels)
     }
 
     dbref who = NOTHING;
-    if (nfargs >= 1)
+    if (nfargs >= 1 && fargs[0][0] != '\0')
     {
         who = lookup_player(executor, fargs[0], true);
         if (who == NOTHING
@@ -4119,6 +4119,15 @@ FUNCTION(fun_channels)
         }
     }
 
+    int pg_offset = 0;
+    int pg_limit  = 0;
+    if (nfargs >= 3) pg_offset = mux_atol(fargs[2]);
+    if (nfargs >= 4) pg_limit  = mux_atol(fargs[3]);
+    if (pg_offset < 0) pg_offset = 0;
+    if (pg_limit < 0)  pg_limit = 0;
+
+    int pos = 0;
+    int count = 0;
     bool bFirst = true;
     for (auto it = mudstate.channel_names.begin(); it != mudstate.channel_names.end(); ++it)
     {
@@ -4131,12 +4140,22 @@ FUNCTION(fun_channels)
             && (who == NOTHING
                 || Controls(who, ch->charge_who)))
         {
+            if (pos < pg_offset)
+            {
+                pos++;
+                continue;
+            }
+            if (pg_limit > 0 && count >= pg_limit)
+                break;
+
             if (!bFirst)
             {
                 print_sep(sep, buff, bufc);
             }
             safe_str(ch->name, buff, bufc);
             bFirst = false;
+            count++;
+            pos++;
         }
     }
 }
@@ -4855,9 +4874,26 @@ FUNCTION(fun_chanusers)
         }
     }
 
+    int pg_offset = 0;
+    int pg_limit  = 0;
+    if (nfargs >= 4) pg_offset = mux_atol(fargs[3]);
+    if (nfargs >= 5) pg_limit  = mux_atol(fargs[4]);
+    if (pg_offset < 0) pg_offset = 0;
+    if (pg_limit < 0)  pg_limit = 0;
+
+    int pos = 0;
+    int count = 0;
     bool bFirst = true;
     for (const auto &kv : ch->users)
     {
+        if (pos < pg_offset)
+        {
+            pos++;
+            continue;
+        }
+        if (pg_limit > 0 && count >= pg_limit)
+            break;
+
         if (!bFirst)
         {
             print_sep(sep, buff, bufc);
@@ -4920,6 +4956,8 @@ FUNCTION(fun_chanusers)
             }
             break;
         }
+        count++;
+        pos++;
     }
 }
 

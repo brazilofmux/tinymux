@@ -5889,7 +5889,7 @@ CHANNEL OBJECT
 & CHANNELS()
 CHANNELS()
 
-  FUNCTION: channels([<player>][, <delim>])
+  FUNCTION: channels([<player>][, <delim>[, <offset>[, <limit>]]])
 
   This function lists channels that you can see, much like @clist. If the
   first argument is omitted or is 'all', then all are returned, otherwise
@@ -5897,6 +5897,10 @@ CHANNELS()
 
   <delim> is an optional output delimiter. If not specified, a space is
   used. Multi-character delimiters are supported.
+
+  <offset> is a 0-based number of items to skip (default 0).
+  <limit> is the maximum number of items to return (default 0 = all).
+  These allow pagination through large channel lists.
 
   Example:
     > say channels()
@@ -5907,6 +5911,8 @@ CHANNELS()
     You say, "Code"
     > say channels(all, |)
     You say, "Wizard|Staff|Guest|Public|Code"
+    > say channels(, , 0, 2)
+    You say, "Wizard Staff"
 
   Related Topics: chaninfo(), chanuser(), chanusers(), chanfind(),
     comalias(), comtitle(), cwho()
@@ -6020,7 +6026,7 @@ CHANUSER()
 & CHANUSERS()
 CHANUSERS()
 
-  FUNCTION: chanusers(<channel>[, <delim>[, <field>]])
+  FUNCTION: chanusers(<channel>[, <delim>[, <field>[, <offset>[, <limit>]]]])
 
   Returns a delimited list of subscriber data for a channel.  With no
   <field> argument, returns dbrefs.  With a <field> argument, returns
@@ -6034,6 +6040,10 @@ CHANUSERS()
     alias     - Aliases (Wizard-only)
     name      - Player names
 
+  <offset> is a 0-based number of items to skip (default 0).
+  <limit> is the maximum number of items to return (default 0 = all).
+  These allow pagination through channels with many subscribers.
+
   Visibility: same subscriber-aware rules as chaninfo().
 
   Example:
@@ -6043,6 +6053,8 @@ CHANUSERS()
     You say, "Cherry|Trees|Muffin"
     > say chanusers(Public, |, name)
     You say, "Wizard|PlayerOne|PlayerTwo"
+    > say chanusers(Public, , , 0, 2)
+    You say, "#1 #42"
 
   Related Topics: chaninfo(), chanuser(), channels()
 
@@ -7127,7 +7139,7 @@ CUSERS()
 & CWHO()
 CWHO()
 
-  FUNCTION: cwho(<channel> [, <select>])
+  FUNCTION: cwho(<channel>[, <select>[, <offset>[, <limit>]]])
 
   Returns a list of dbrefs from that channel. Use of this function is limited
   to wizards and channel owners. If not given, <select> defaults to 'on',
@@ -7137,9 +7149,15 @@ CWHO()
     off - all objects and connected players who are 'off' the channel.
     all - all objects and players associated with the channel.
 
+  <offset> is a 0-based number of items to skip (default 0).
+  <limit> is the maximum number of items to return (default 0 = all).
+  These allow pagination through channels with many members.
+
   Example:
     > say cwho(Public)
     You say, "#13 #11"
+    > say cwho(Public, on, 0, 1)
+    You say, "#13"
 
   Related Topics: alias, channels(), comalias(), comtitle().
 
@@ -11444,11 +11462,15 @@ MAILINFO()
 & MAILLIST()
 MAILLIST()
 
-  FUNCTION: maillist([<player>])
+  FUNCTION: maillist([<player>][, <offset>[, <limit>]])
 
   Returns a space-separated list of valid message numbers for the
   player's current mail folder.  With no argument, returns the list for
   the executor.  Wizards may specify another player.
+
+  <offset> is a 0-based number of items to skip (default 0).
+  <limit> is the maximum number of items to return (default 0 = all).
+  These allow pagination through large mailboxes.
 
   This provides a way to enumerate messages without probing sequentially.
 
@@ -11457,6 +11479,10 @@ MAILLIST()
     You say, "1 2 3 4 5"
     > say words(maillist())
     You say, "5"
+    > say maillist(, 0, 3)
+    You say, "1 2 3"
+    > say maillist(, 2, 2)
+    You say, "3 4"
 
   Related Topics: mailcount(), mailinfo(), mail().
 

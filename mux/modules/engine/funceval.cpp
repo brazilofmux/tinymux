@@ -153,7 +153,7 @@ FUNCTION(fun_cwho)
     }
 
     int match_type = CWHO_ON;
-    if (nfargs == 2)
+    if (nfargs >= 2)
     {
         if (mux_stricmp(fargs[1], T("all")) == 0)
         {
@@ -169,6 +169,15 @@ FUNCTION(fun_cwho)
         }
     }
 
+    int pg_offset = 0;
+    int pg_limit  = 0;
+    if (nfargs >= 3) pg_offset = mux_atol(fargs[2]);
+    if (nfargs >= 4) pg_limit  = mux_atol(fargs[3]);
+    if (pg_offset < 0) pg_offset = 0;
+    if (pg_limit < 0)  pg_limit = 0;
+
+    int pos = 0;
+    int count = 0;
     ITL list_context;
     ItemToList_Init(&list_context, buff, bufc, '#');
     if (CWHO_ALL == match_type)
@@ -176,12 +185,21 @@ FUNCTION(fun_cwho)
         for (auto &kv : ch->users)
         {
             const comuser &user = kv.second;
-            if (  (  !Hidden(user.who)
-                  || Wizard_Who(executor)
-                  || See_Hidden(executor))
-               && !ItemToList_AddInteger(&list_context, user.who))
+            if (  !Hidden(user.who)
+               || Wizard_Who(executor)
+               || See_Hidden(executor))
             {
-                break;
+                if (pos < pg_offset)
+                {
+                    pos++;
+                    continue;
+                }
+                if (pg_limit > 0 && count >= pg_limit)
+                    break;
+                if (ItemToList_AddInteger(&list_context, user.who))
+                    break;
+                count++;
+                pos++;
             }
         }
     }
@@ -193,10 +211,19 @@ FUNCTION(fun_cwho)
             if (  user.bConnected
                && (Connected(user.who) || isThing(user.who))
                && (  (match_type == CWHO_ON && user.bUserIsOn)
-                  || (match_type == CWHO_OFF && !user.bUserIsOn))
-               && !ItemToList_AddInteger(&list_context, user.who))
+                  || (match_type == CWHO_OFF && !user.bUserIsOn)))
             {
-                break;
+                if (pos < pg_offset)
+                {
+                    pos++;
+                    continue;
+                }
+                if (pg_limit > 0 && count >= pg_limit)
+                    break;
+                if (ItemToList_AddInteger(&list_context, user.who))
+                    break;
+                count++;
+                pos++;
             }
         }
     }
@@ -2895,15 +2922,32 @@ FUNCTION(fun_maillist)
         return;
     }
 
+    int pg_offset = 0;
+    int pg_limit  = 0;
+    if (nfargs >= 2) pg_offset = mux_atol(fargs[1]);
+    if (nfargs >= 3) pg_limit  = mux_atol(fargs[2]);
+    if (pg_offset < 0) pg_offset = 0;
+    if (pg_limit < 0)  pg_limit = 0;
+
     // Use count_mail to determine the total, then list 1..N.
     // This matches what mail_fetch() considers valid indices.
     //
     int rc, uc, cc;
     count_mail(playerask, 0, &rc, &uc, &cc);
     int total = rc + uc;
-    for (int i = 1; i <= total; i++)
+
+    // Optimize: maillist outputs sequential integers, so we can compute
+    // the range directly instead of iterating.
+    //
+    int first = pg_offset + 1;
+    int last  = total;
+    if (pg_limit > 0 && first + pg_limit - 1 < last)
     {
-        if (i > 1)
+        last = first + pg_limit - 1;
+    }
+    for (int i = first; i <= last; i++)
+    {
+        if (i > first)
         {
             safe_chr(' ', buff, bufc);
         }

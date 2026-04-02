@@ -1,0 +1,253 @@
+#
+# paginate_fn.mux - Test Cases for offset/limit pagination on
+#                   chanusers(), channels(), cwho(), and maillist().
+#
+@create test_paginate_fn
+-
+@set test_paginate_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+# TC000 sets up a channel with 1 subscriber (Wizard/#1) and sends
+# a couple of mail messages so maillist has something to paginate.
+#
+&tr.tc000 test_paginate_fn=
+  @log smoke=Beginning paginate test cases.;
+  @ccreate pgtest;
+  @cset/public pgtest=on;
+  addcom pg=pgtest;
+  @if t(mailsend(Wizard,Paginate Test 1,Body one.))=
+  {
+    @if t(mailsend(Wizard,Paginate Test 2,Body two.))=
+    {
+      @if t(mailsend(Wizard,Paginate Test 3,Body three.))=
+      {
+        @log smoke=TC000: paginate setup. Succeeded.
+      },
+      {
+        @log smoke=TC000: paginate setup. Third mail failed.
+      }
+    },
+    {
+      @log smoke=TC000: paginate setup. Second mail failed.
+    }
+  },
+  {
+    @log smoke=TC000: paginate setup. First mail failed.
+  }
+-
+#
+# Test Case #1 - chanusers(pgtest) with no pagination still works.
+#
+&tr.tc001 test_paginate_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [isdbref(first(chanusers(pgtest)))]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC001: chanusers no pagination. Succeeded.
+  },
+  {
+    @log smoke=TC001: chanusers no pagination. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - chanusers(pgtest,,, 0, 1) returns exactly 1 item.
+#
+&tr.tc002 test_paginate_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [words(chanusers(pgtest,%b,, 0, 1))]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC002: chanusers limit=1. Succeeded.
+  },
+  {
+    @log smoke=TC002: chanusers limit=1. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - chanusers(pgtest,,, 99, 0) with offset beyond end
+#                returns empty.
+#
+&tr.tc003 test_paginate_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eq(words(chanusers(pgtest,%b,, 99, 0)),0)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC003: chanusers offset beyond end. Succeeded.
+  },
+  {
+    @log smoke=TC003: chanusers offset beyond end. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - maillist(#1) with no pagination still works.
+#
+&tr.tc004 test_paginate_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [gte(words(maillist(#1)),1)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC004: maillist no pagination. Succeeded.
+  },
+  {
+    @log smoke=TC004: maillist no pagination. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - maillist(#1, 0, 2) returns exactly 2 items.
+#
+&tr.tc005 test_paginate_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eq(words(maillist(#1, 0, 2)),2)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC005: maillist limit=2. Succeeded.
+  },
+  {
+    @log smoke=TC005: maillist limit=2. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - maillist(#1, 1, 2) skips first, returns next 2.
+#                The first number should be 2 (offset=1 skips msg 1).
+#
+&tr.tc006 test_paginate_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eq(first(maillist(#1, 1, 2)),2)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC006: maillist offset=1. Succeeded.
+  },
+  {
+    @log smoke=TC006: maillist offset=1. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - maillist(#1, 9999, 0) with offset beyond end returns
+#                empty.
+#
+&tr.tc007 test_paginate_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eq(words(maillist(#1, 9999, 0)),0)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC007: maillist offset beyond end. Succeeded.
+  },
+  {
+    @log smoke=TC007: maillist offset beyond end. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - channels() with no pagination still works.
+#
+&tr.tc008 test_paginate_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [gte(words(channels()),1)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC008: channels no pagination. Succeeded.
+  },
+  {
+    @log smoke=TC008: channels no pagination. Failed (%q0).
+  }
+-
+#
+# Test Case #9 - channels(,, 0, 1) returns exactly 1 channel.
+#
+&tr.tc009 test_paginate_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eq(words(channels(,%b, 0, 1)),1)]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC009: channels limit=1. Succeeded.
+  },
+  {
+    @log smoke=TC009: channels limit=1. Failed (%q0).
+  }
+-
+#
+# Test Case #10 - maillist(#1, 0, 0) returns all (limit=0 means no limit).
+#                 Should equal maillist(#1).
+#
+&tr.tc010 test_paginate_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eq(words(maillist(#1, 0, 0)),words(maillist(#1)))]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC010: maillist limit=0 means all. Succeeded.
+  },
+  {
+    @log smoke=TC010: maillist limit=0 means all. Failed (%q0).
+  }
+-
+#
+# Test Case #11 - chanusers with negative offset/limit treated as 0.
+#                 chanusers(pgtest,,, -1, -1) should return all users.
+#
+&tr.tc011 test_paginate_fn=
+  @if strmatch(
+        setr(0,sha1(
+            [eq(words(chanusers(pgtest,%b,,-1,-1)),words(chanusers(pgtest)))]
+          )
+        ),
+        356A192B7913B04C54574D18C28D46E6395428AB
+      )=
+  {
+    @log smoke=TC011: negative offset/limit treated as 0. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC011: negative offset/limit treated as 0. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_paginate_fn=
+  @log smoke=End paginate test cases.;
+  @notify smoke
+-
+drop test_paginate_fn
+-
+#
+# End of Test Cases
+#
