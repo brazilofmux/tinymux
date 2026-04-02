@@ -20,11 +20,27 @@
         eq(round(atan(1),6), 0.785398)
       )=
   {
-    @log smoke=TC001: atan basic operations. Succeeded.;
+    @log smoke=TC001: atan basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: atan basic operations. Failed (atan(0)=[round(atan(0),6)] atan(1)=[round(atan(1),6)]).
+  }
+-
+#
+# Test Case #2 - Output angle unit.
+# atan(1,d) = 45 degrees, atan(1,g) = 50 gradians.
+#
+&tr.tc002 test_atan_fn=
+  @if cand(
+        eq(round(atan(1,d),6), 45),
+        eq(round(atan(1,g),6), 50)
+      )=
+  {
+    @log smoke=TC002: atan angle units. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: atan basic operations. Failed (atan(0)=[round(atan(0),6)] atan(1)=[round(atan(1),6)]).;
+    @log smoke=TC002: atan angle units. Failed (atan(1d)=[round(atan(1,d),6)] atan(1g)=[round(atan(1,g),6)]).;
     @trig me/tr.done
   }
 -

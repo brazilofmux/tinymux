@@ -20,11 +20,27 @@
         eq(round(acos(1),6), 0)
       )=
   {
-    @log smoke=TC001: acos basic operations. Succeeded.;
+    @log smoke=TC001: acos basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: acos basic operations. Failed (acos(0)=[round(acos(0),6)] acos(1)=[round(acos(1),6)]).
+  }
+-
+#
+# Test Case #2 - Output angle unit.
+# acos(0,d) = 90 degrees, acos(0,g) = 100 gradians.
+#
+&tr.tc002 test_acos_fn=
+  @if cand(
+        eq(round(acos(0,d),6), 90),
+        eq(round(acos(0,g),6), 100)
+      )=
+  {
+    @log smoke=TC002: acos angle units. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: acos basic operations. Failed (acos(0)=[round(acos(0),6)] acos(1)=[round(acos(1),6)]).;
+    @log smoke=TC002: acos angle units. Failed (acos(0d)=[round(acos(0,d),6)] acos(0g)=[round(acos(0,g),6)]).;
     @trig me/tr.done
   }
 -

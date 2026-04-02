@@ -27,11 +27,22 @@
           eq(round(atan2(-1,-1),6), -2.356194)
         )=
     {
-      @log smoke=TC001: atan2 examples. Succeeded.;
+      @log smoke=TC001: atan2 examples. Succeeded.
+    },
+    {
+      @log smoke=TC001: atan2 examples. Failed (atan2(1%,1)=[round(atan2(1,1),6)] atan2(0%,0)=[round(atan2(0,0),6)] atan2(-1%,-1)=[round(atan2(-1,-1),6)]).
+    };
+    @if cand(
+          eq(round(atan2(1,1,d),6), 45),
+          eq(round(atan2(1,0,d),6), 90),
+          eq(round(atan2(1,1,g),4), 50)
+        )=
+    {
+      @log smoke=TC002: atan2 angle units. Succeeded.;
       @trig me/tr.done
     },
     {
-      @log smoke=TC001: atan2 examples. Failed (atan2(1%,1)=[round(atan2(1,1),6)] atan2(0%,0)=[round(atan2(0,0),6)] atan2(-1%,-1)=[round(atan2(-1,-1),6)]).;
+      @log smoke=TC002: atan2 angle units. Failed (atan2(1%,1%,d)=[round(atan2(1,1,d),6)] atan2(1%,0%,d)=[round(atan2(1,0,d),6)] atan2(1%,1%,g)=[round(atan2(1,1,g),4)]).;
       @trig me/tr.done
     }
   }

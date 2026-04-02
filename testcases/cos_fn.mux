@@ -20,11 +20,28 @@
         eq(round(cos(pi()),6), -1)
       )=
   {
-    @log smoke=TC001: cos basic operations. Succeeded.;
+    @log smoke=TC001: cos basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: cos basic operations. Failed (cos(0)=[round(cos(0),6)] cos(pi)=[round(cos(pi()),6)]).
+  }
+-
+#
+# Test Case #2 - Angle unit argument.
+# cos(180,d) = -1, cos(200,g) = -1, cos(90,d) = 0.
+#
+&tr.tc002 test_cos_fn=
+  @if cand(
+        eq(round(cos(180,d),6), -1),
+        eq(round(cos(200,g),6), -1),
+        eq(round(cos(90,d),6), 0)
+      )=
+  {
+    @log smoke=TC002: cos angle units. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: cos basic operations. Failed (cos(0)=[round(cos(0),6)] cos(pi)=[round(cos(pi()),6)]).;
+    @log smoke=TC002: cos angle units. Failed (cos(180d)=[round(cos(180,d),6)] cos(200g)=[round(cos(200,g),6)] cos(90d)=[round(cos(90,d),6)]).;
     @trig me/tr.done
   }
 -

@@ -20,11 +20,28 @@
         eq(round(tan(fdiv(pi(),4)),6), 1)
       )=
   {
-    @log smoke=TC001: tan basic operations. Succeeded.;
+    @log smoke=TC001: tan basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: tan basic operations. Failed (tan(0)=[round(tan(0),6)] tan(pi/4)=[round(tan(fdiv(pi(),4)),6)]).
+  }
+-
+#
+# Test Case #2 - Angle unit argument.
+# tan(45,d) = 1, tan(50,g) = 1, tan(0,d) = 0.
+#
+&tr.tc002 test_tan_fn=
+  @if cand(
+        eq(round(tan(45,d),6), 1),
+        eq(round(tan(50,g),6), 1),
+        eq(round(tan(0,d),6), 0)
+      )=
+  {
+    @log smoke=TC002: tan angle units. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: tan basic operations. Failed (tan(0)=[round(tan(0),6)] tan(pi/4)=[round(tan(fdiv(pi(),4)),6)]).;
+    @log smoke=TC002: tan angle units. Failed (tan(45d)=[round(tan(45,d),6)] tan(50g)=[round(tan(50,g),6)] tan(0d)=[round(tan(0,d),6)]).;
     @trig me/tr.done
   }
 -

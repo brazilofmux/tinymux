@@ -20,11 +20,27 @@
         eq(round(asin(1),6), 1.570796)
       )=
   {
-    @log smoke=TC001: asin basic operations. Succeeded.;
+    @log smoke=TC001: asin basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: asin basic operations. Failed (asin(0)=[round(asin(0),6)] asin(1)=[round(asin(1),6)]).
+  }
+-
+#
+# Test Case #2 - Output angle unit.
+# asin(1,d) = 90 degrees, asin(1,g) = 100 gradians.
+#
+&tr.tc002 test_asin_fn=
+  @if cand(
+        eq(round(asin(1,d),6), 90),
+        eq(round(asin(1,g),6), 100)
+      )=
+  {
+    @log smoke=TC002: asin angle units. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: asin basic operations. Failed (asin(0)=[round(asin(0),6)] asin(1)=[round(asin(1),6)]).;
+    @log smoke=TC002: asin angle units. Failed (asin(1d)=[round(asin(1,d),6)] asin(1g)=[round(asin(1,g),6)]).;
     @trig me/tr.done
   }
 -
