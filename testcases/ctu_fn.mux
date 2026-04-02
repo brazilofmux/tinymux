@@ -13,22 +13,20 @@
 -
 #
 # Test Case #1 - Basic angle conversion operations.
+# ctu(180,d,r) = pi radians = 3.141593 (rounded to 6)
+# ctu(pi(),r,d) = 180 degrees = 180.000000 (rounded to 6)
 #
 &tr.tc001 test_ctu_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [round(ctu(180,d,r),6)]
-            [round(ctu(pi(),r,d),6)]
-          )
-        ),
-        8FDD95D11E02B044D3671EFA512561151B8C8DB4
+  @if cand(
+        eq(round(ctu(180,d,r),6), 3.141593),
+        eq(round(ctu(pi(),r,d),6), 180)
       )=
   {
     @log smoke=TC001: ctu basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: ctu basic operations. Failed (%q0).;
+    @log smoke=TC001: ctu basic operations. Failed (ctu1=[round(ctu(180,d,r),6)] ctu2=[round(ctu(pi(),r,d),6)]).;
     @trig me/tr.done
   }
 -

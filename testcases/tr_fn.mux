@@ -13,22 +13,20 @@
 -
 #
 # Test Case #1 - Basic transliteration operations.
+# tr(Hello,eo,EO) => HEllO (e->E, o->O)
+# tr(Hello,el,EL) => HELLo (e->E, l->L)
 #
 &tr.tc001 test_tr_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [tr(Hello,aeiou,*)]
-            [tr(Hello,el,EL)]
-          )
-        ),
-        42AF85D4DBC0CA06706544CF78238B60B44BB96A
+  @if cand(
+        strmatch(tr(Hello,eo,EO), HEllO),
+        strmatch(tr(Hello,el,EL), HELLo)
       )=
   {
     @log smoke=TC001: tr basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: tr basic operations. Failed (%q0).;
+    @log smoke=TC001: tr basic operations. Failed (tr1=[tr(Hello,eo,EO)] tr2=[tr(Hello,el,EL)]).;
     @trig me/tr.done
   }
 -

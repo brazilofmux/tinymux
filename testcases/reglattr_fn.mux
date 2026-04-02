@@ -30,17 +30,15 @@
 -
 #
 # Test Case #1 - reglattr matches attrs by regex.
+# sort(reglattr(me,^ALPHA)) => "ALPHA ALPHA_ONE ALPHA_TWO"
 #
 &tr.tc001 test_reglattr_fn=
-  @if strmatch(
-        setr(0,sha1(sort(reglattr(me,^ALPHA)))),
-        FEC6E34731AE08ED0E5E9CA88CE4F1CBC4BA36D5
-      )=
+  @if strmatch(sort(reglattr(me,^ALPHA)), ALPHA ALPHA_ONE ALPHA_TWO)=
   {
     @log smoke=TC001: reglattr ALPHA. Succeeded.
   },
   {
-    @log smoke=TC001: reglattr ALPHA. Failed (%q0).
+    @log smoke=TC001: reglattr ALPHA. Failed (reglattr=[sort(reglattr(me,^ALPHA))]).
   }
 -
 #
@@ -75,17 +73,15 @@
 -
 #
 # Test Case #4 - reglattri case-insensitive match.
+# sort(reglattri(me,^alpha)) => "ALPHA ALPHA_ONE ALPHA_TWO"
 #
 &tr.tc004 test_reglattr_fn=
-  @if strmatch(
-        setr(0,sha1(sort(reglattri(me,^alpha)))),
-        FEC6E34731AE08ED0E5E9CA88CE4F1CBC4BA36D5
-      )=
+  @if strmatch(sort(reglattri(me,^alpha)), ALPHA ALPHA_ONE ALPHA_TWO)=
   {
     @log smoke=TC004: reglattri case-insensitive. Succeeded.
   },
   {
-    @log smoke=TC004: reglattri case-insensitive. Failed (%q0).
+    @log smoke=TC004: reglattri case-insensitive. Failed (reglattri=[sort(reglattri(me,^alpha))]).
   }
 -
 #
@@ -135,18 +131,16 @@
 -
 #
 # Test Case #8 - reglattr with _ONE suffix pattern.
+# sort(reglattr(me,_ONE$)) => "ALPHA_ONE BETA_ONE"
 #
 &tr.tc008 test_reglattr_fn=
-  @if strmatch(
-        setr(0,sha1(sort(reglattr(me,_ONE$)))),
-        6CFC326A1F47802EB927085C80E6ECB33557CA94
-      )=
+  @if strmatch(sort(reglattr(me,_ONE$)), ALPHA_ONE BETA_ONE)=
   {
     @log smoke=TC008: reglattr _ONE suffix. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC008: reglattr _ONE suffix. Failed (%q0).;
+    @log smoke=TC008: reglattr _ONE suffix. Failed (reglattr=[sort(reglattr(me,_ONE$))]).;
     @trig me/tr.done
   }
 -

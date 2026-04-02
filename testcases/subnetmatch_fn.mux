@@ -8,24 +8,28 @@
 &tr.tc000 test_subnetmatch_fn=
   @log smoke=Beginning subnetmatch() test cases.
 -
+#
+# Test Case #1 - CIDR and mask matching.
+# 192.168.1.50 in 192.168.1.0/24 => 1
+# 192.168.2.50 in 192.168.1.0/24 => 0
+# 10.0.0.1 in 10.0.0.0/8 => 1
+# 10.0.0.1 in 10.0.0.0/255.0.0.0 => 1 (explicit mask)
+# 172.16.5.10 in 172.16.0.0/12 => 1
+#
 &tr.tc001 test_subnetmatch_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [subnetmatch(192.168.1.50,192.168.1.0/24)]
-            [subnetmatch(192.168.2.50,192.168.1.0/24)]
-            [subnetmatch(10.0.0.1,10.0.0.0/8)]
-            [subnetmatch(10.0.0.1,10.0.0.0,255.0.0.0)]
-            [subnetmatch(172.16.5.10,172.16.0.0/12)]
-          )
-        ),
-        31146FD87A0D0A06E068188EFBD9B68DFC9A47DF
+  @if cand(
+        eq(subnetmatch(192.168.1.50,192.168.1.0/24), 1),
+        eq(subnetmatch(192.168.2.50,192.168.1.0/24), 0),
+        eq(subnetmatch(10.0.0.1,10.0.0.0/8), 1),
+        eq(subnetmatch(10.0.0.1,10.0.0.0,255.0.0.0), 1),
+        eq(subnetmatch(172.16.5.10,172.16.0.0/12), 1)
       )=
   {
     @log smoke=TC001: subnetmatch CIDR and mask. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: subnetmatch CIDR and mask. Failed (%q0).;
+    @log smoke=TC001: subnetmatch CIDR and mask. Failed (s1=[subnetmatch(192.168.1.50,192.168.1.0/24)] s2=[subnetmatch(192.168.2.50,192.168.1.0/24)] s3=[subnetmatch(10.0.0.1,10.0.0.0/8)] s4=[subnetmatch(10.0.0.1,10.0.0.0,255.0.0.0)] s5=[subnetmatch(172.16.5.10,172.16.0.0/12)]).;
     @trig me/tr.done
   }
 -

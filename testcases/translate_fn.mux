@@ -13,21 +13,16 @@
 -
 #
 # Test Case #1 - Basic translate operations.
+# translate(hello,0) with mode 0 (no ANSI substitution) returns input unchanged.
 #
 &tr.tc001 test_translate_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [translate(hello,0)]
-          )
-        ),
-        AAF4C61DDCC5E8A2DABEDE0F3B482CD9AEA9434D
-      )=
+  @if strmatch(translate(hello,0), hello)=
   {
     @log smoke=TC001: translate basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: translate basic operations. Failed (%q0).;
+    @log smoke=TC001: translate basic operations. Failed (translate=[translate(hello,0)]).;
     @trig me/tr.done
   }
 -

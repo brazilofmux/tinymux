@@ -13,22 +13,20 @@
 -
 #
 # Test Case #1 - Basic switch matching.
+# switch(foo,f*,found,default) => found (wildcard match)
+# switch(bar,f*,found,default) => default (no match)
 #
 &tr.tc001 test_switch_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [switch(foo,f*,found,default)]
-            [switch(bar,f*,found,default)]
-          )
-        ),
-        53B0B81724DD3015D700A45E587A6C89E490070C
+  @if cand(
+        strmatch(switch(foo,f*,found,default), found),
+        strmatch(switch(bar,f*,found,default), default)
       )=
   {
     @log smoke=TC001: switch basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: switch basic operations. Failed (%q0).;
+    @log smoke=TC001: switch basic operations. Failed (s1=[switch(foo,f*,found,default)] s2=[switch(bar,f*,found,default)]).;
     @trig me/tr.done
   }
 -

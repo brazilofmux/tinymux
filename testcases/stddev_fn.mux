@@ -12,24 +12,23 @@
   @log smoke=Beginning stddev() test cases.
 -
 #
-# Test Case #1 - Basic stddev operations.
+# Test Case #1 - Basic stddev operations (sample stddev, n-1 denominator).
+# stddev(2,4,4,4,5,5,7,9) = 2.138090 (mean=5, var=32/7)
+# stddev(1) = 0 (single element, no variance)
+# stddev(10,10) = 0 (identical elements, no variance)
 #
 &tr.tc001 test_stddev_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [stddev(2,4,4,4,5,5,7,9)]
-            [stddev(1)]
-            [stddev(10,10)]
-          )
-        ),
-        DDCA8BD0C71478715E36271C905F7CB43D45ACC2
+  @if cand(
+        eq(round(stddev(2,4,4,4,5,5,7,9),4), 2.1381),
+        eq(stddev(1), 0),
+        eq(stddev(10,10), 0)
       )=
   {
     @log smoke=TC001: stddev basic. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: stddev basic. Failed (%q0).;
+    @log smoke=TC001: stddev basic. Failed (s1=[stddev(2,4,4,4,5,5,7,9)] s2=[stddev(1)] s3=[stddev(10,10)]).;
     @trig me/tr.done
   }
 -

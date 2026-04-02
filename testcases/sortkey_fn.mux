@@ -22,93 +22,79 @@
 -
 #
 # Test Case #1 - sortkey with identity key = normal sort.
+# sortkey(identity, 3 1 2) => "1 2 3"
 #
 &tr.tc001 test_sortkey_fn=
-  @if strmatch(
-        setr(0,sha1(sortkey(me/fn_ident,3 1 2))),
-        65E9D53484D28EEF5447BC06FE2D754D1090975A
-      )=
+  @if strmatch(sortkey(me/fn_ident,3 1 2), 1 2 3)=
   {
     @log smoke=TC001: sortkey identity. Succeeded.
   },
   {
-    @log smoke=TC001: sortkey identity. Failed (%q0).
+    @log smoke=TC001: sortkey identity. Failed (sortkey=[sortkey(me/fn_ident,3 1 2)]).
   }
 -
 #
 # Test Case #2 - sortkey by string length.
+# sortkey(strlen, aaa bb c dddd, n) => "c bb aaa dddd" (lengths 1,2,3,4)
 #
 &tr.tc002 test_sortkey_fn=
-  @if strmatch(
-        setr(0,sha1(sortkey(me/fn_strlen,aaa bb c dddd,n))),
-        CA831F91021FCB3F8282AE5D2BF5108687E46637
-      )=
+  @if strmatch(sortkey(me/fn_strlen,aaa bb c dddd,n), c bb aaa dddd)=
   {
     @log smoke=TC002: sortkey by strlen. Succeeded.
   },
   {
-    @log smoke=TC002: sortkey by strlen. Failed (%q0).
+    @log smoke=TC002: sortkey by strlen. Failed (sortkey=[sortkey(me/fn_strlen,aaa bb c dddd,n)]).
   }
 -
 #
 # Test Case #3 - sortkey reverse numeric via negative key.
+# sortkey(neg, 1 5 3 2 4, n) => "5 4 3 2 1" (negative keys sorted ascending)
 #
 &tr.tc003 test_sortkey_fn=
-  @if strmatch(
-        setr(0,sha1(sortkey(me/fn_neg,1 5 3 2 4,n))),
-        5B88DE9CB8CD4D2EA8AC027B11C9DCCDFFA4AC19
-      )=
+  @if strmatch(sortkey(me/fn_neg,1 5 3 2 4,n), 5 4 3 2 1)=
   {
     @log smoke=TC003: sortkey reverse. Succeeded.
   },
   {
-    @log smoke=TC003: sortkey reverse. Failed (%q0).
+    @log smoke=TC003: sortkey reverse. Failed (sortkey=[sortkey(me/fn_neg,1 5 3 2 4,n)]).
   }
 -
 #
 # Test Case #4 - sortkey with explicit alpha sort type.
+# sortkey(ident, banana apple cherry, a) => "apple banana cherry"
 #
 &tr.tc004 test_sortkey_fn=
-  @if strmatch(
-        setr(0,sha1(sortkey(me/fn_ident,banana apple cherry,a))),
-        8C6120978D228BC9C3C58F39DF291DDD03151A49
-      )=
+  @if strmatch(sortkey(me/fn_ident,banana apple cherry,a), apple banana cherry)=
   {
     @log smoke=TC004: sortkey alpha. Succeeded.
   },
   {
-    @log smoke=TC004: sortkey alpha. Failed (%q0).
+    @log smoke=TC004: sortkey alpha. Failed (sortkey=[sortkey(me/fn_ident,banana apple cherry,a)]).
   }
 -
 #
 # Test Case #5 - sortkey empty list returns empty.
 #
 &tr.tc005 test_sortkey_fn=
-  @if strmatch(
-        setr(0,eq(strlen(sortkey(me/fn_ident,)),0)),
-        1
-      )=
+  @if eq(strlen(sortkey(me/fn_ident,)),0)=
   {
     @log smoke=TC005: sortkey empty list. Succeeded.
   },
   {
-    @log smoke=TC005: sortkey empty list. Failed (%q0).
+    @log smoke=TC005: sortkey empty list. Failed (sortkey=[sortkey(me/fn_ident,)]).
   }
 -
 #
 # Test Case #6 - sortkey single element returns that element.
 #
 &tr.tc006 test_sortkey_fn=
-  @if strmatch(
-        setr(0,sortkey(me/fn_ident,only)),
-        only
-      )=
+  @if strmatch(sortkey(me/fn_ident,only), only)=
   {
     @log smoke=TC006: sortkey single element. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC006: sortkey single element. Failed (%q0).;
+    @log smoke=TC006: sortkey single element. Failed (sortkey=[sortkey(me/fn_ident,only)]).;
     @trig me/tr.done
   }
 -

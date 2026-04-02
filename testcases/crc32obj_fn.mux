@@ -26,37 +26,25 @@
 # Test Case #1 - crc32obj returns a non-zero integer for object with attrs.
 #
 &tr.tc001 test_crc32obj_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [gt(crc32obj(crctest),0)]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if gt(crc32obj(crctest),0)=
   {
     @log smoke=TC001: crc32obj returns nonzero. Succeeded.
   },
   {
-    @log smoke=TC001: crc32obj returns nonzero. Failed (%q0).
+    @log smoke=TC001: crc32obj returns nonzero. Failed (crc32obj=[crc32obj(crctest)]).
   }
 -
 #
 # Test Case #2 - crc32obj is deterministic (same object = same result).
 #
 &tr.tc002 test_crc32obj_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [eq(crc32obj(crctest),crc32obj(crctest))]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if eq(crc32obj(crctest),crc32obj(crctest))=
   {
     @log smoke=TC002: crc32obj deterministic. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: crc32obj deterministic. Failed (%q0).;
+    @log smoke=TC002: crc32obj deterministic. Failed (c1=[crc32obj(crctest)] c2=[crc32obj(crctest)]).;
     @trig me/tr.done
   }
 -
