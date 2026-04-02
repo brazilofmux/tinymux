@@ -494,27 +494,11 @@ static bool try_fold(const std::string &func_name,
         return true;
     }
 
-    if (upper == "REST" && (nargs == 1 || nargs == 2)) {
-        unsigned char delim = (nargs == 2 && !args[1].empty())
-            ? static_cast<unsigned char>(args[1][0]) : ' ';
-        LBuf out = LBuf_Src("hir_rest");
-        size_t n = co_rest(reinterpret_cast<unsigned char *>(out.get()),
-            reinterpret_cast<const unsigned char *>(args[0].data()),
-            args[0].size(), delim);
-        result.assign(reinterpret_cast<const char *>(out.get()), n);
-        return true;
-    }
-
-    if (upper == "LAST" && (nargs == 1 || nargs == 2)) {
-        unsigned char delim = (nargs == 2 && !args[1].empty())
-            ? static_cast<unsigned char>(args[1][0]) : ' ';
-        LBuf out = LBuf_Src("hir_last");
-        size_t n = co_last(reinterpret_cast<unsigned char *>(out.get()),
-            reinterpret_cast<const unsigned char *>(args[0].data()),
-            args[0].size(), delim);
-        result.assign(reinterpret_cast<const char *>(out.get()), n);
-        return true;
-    }
+    // Deliberately do not fold REST/LAST for now. The interpreter has
+    // subtle whitespace semantics around leading/trailing delimiters,
+    // and the current co_* folding path is not parity-correct for the
+    // updated regressions. Fall back to the normal runtime path until
+    // these semantics are matched exactly.
 
     if (upper == "STRIPANSI" && nargs == 1) {
         LBuf out = LBuf_Src("hir_strip");
@@ -647,22 +631,10 @@ static bool try_fold(const std::string &func_name,
         return true;
     }
 
-    // --- EDIT(string, from, to[, from2, to2, ...]) ---
-    if (upper == "EDIT" && nargs >= 3 && (nargs % 2) == 1) {
-        std::string cur = args[0];
-        for (int i = 1; i + 1 < nargs; i += 2) {
-            LBuf out = LBuf_Src("hir_edit");
-            size_t n = co_edit(reinterpret_cast<unsigned char *>(out.get()),
-                reinterpret_cast<const unsigned char *>(cur.data()), cur.size(),
-                reinterpret_cast<const unsigned char *>(args[i].data()),
-                args[i].size(),
-                reinterpret_cast<const unsigned char *>(args[i+1].data()),
-                args[i+1].size());
-            cur.assign(reinterpret_cast<const char *>(out.get()), n);
-        }
-        result = cur;
-        return true;
-    }
+    // Deliberately do not fold EDIT for now. The updated regressions
+    // exercise anchor/substitution behavior that the current co_edit
+    // folding path does not match exactly. Use the interpreter path
+    // until parity is proven.
 
     // --- DELETE(string, start, count) ---
     // Uses co_delete_cluster (grapheme clusters) to match fun_delete.
@@ -821,7 +793,6 @@ static const fp_math_entry s_fp_unary[] = {
     { "ACOS",  "acos",  FMATH_ACOS  },
     { "ATAN",  "atan",  FMATH_ATAN  },
     { "EXP",   "exp",   FMATH_EXP   },
-    { "LOG",   "log",   FMATH_LOG   },
     { "LOG10", "log10", FMATH_LOG10 },
     { "SQRT",  "sqrt",  FMATH_SQRT  },
     { "CEIL",  "ceil",  FMATH_CEIL  },

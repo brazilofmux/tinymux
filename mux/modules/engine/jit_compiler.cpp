@@ -276,8 +276,9 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     // color preservation and grapheme-cluster-aware word boundaries matter.
     //
     { "FIRST",       "co_first_wrap" },
-    { "REST",        "co_rest_wrap" },
-    { "LAST",        "co_last_wrap" },
+    // Deliberately exclude REST/LAST for now. Updated regressions show
+    // whitespace/delimiter parity gaps; fall back to the interpreter
+    // until the wrapper behavior is proven identical.
     { "WORDS",       "co_words_wrap" },
     { "EXTRACT",     "co_extract_wrap" },
     { "MEMBER",      "co_member_wrap" },
@@ -290,8 +291,9 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "SETDIFF",     "co_setdiff_wrap" },
     { "SETINTER",    "co_setinter_wrap" },
     { "LDELETE",     "co_ldelete_wrap" },
-    { "REPLACE",     "co_replace_wrap" },
-    { "INSERT",      "co_insert_wrap" },
+    // Deliberately exclude REPLACE/INSERT for now. Updated regressions
+    // show list/separator parity gaps; fall back to the interpreter
+    // until the wrapper behavior is proven identical.
 
     // --- ASCII-only rv64_* (no color, byte-level operations) ---
     // These are fine for functions that don't handle colored text.
@@ -317,17 +319,20 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "LJUST",       "co_ljust_wrap" },
     { "RJUST",       "co_rjust_wrap" },
     { "CENTER",      "co_center_wrap" },
-    { "EDIT",        "co_edit_wrap" },
-    { "SPLICE",      "co_splice_wrap" },
+    // Deliberately exclude EDIT/SPLICE for now. Updated regressions
+    // show semantic gaps in anchor/error handling; fall back to the
+    // interpreter until the wrapper behavior is parity-correct.
     { "CAPSTR",      "co_totitle_wrap" },
     { "STRIPANSI",   "co_stripansi_wrap" },
 
     // --- Batch 4: space, secure, squish, delete, elements ---
     { "SPACE",       "rv64_space" },
     { "SECURE",      "co_secure_wrap" },
-    { "SQUISH",      "co_compress_wrap" },
+    // Deliberately exclude SQUISH for now. Multi-character separator
+    // behavior in the fast path does not yet match the interpreter.
     { "DELETE",      "rv64_delete" },
-    { "ELEMENTS",    "rv64_elements" },
+    // Deliberately exclude ELEMENTS for now. Updated regressions show
+    // delimiter/whitespace parity gaps in the Tier 2 implementation.
     { "TRANSLATE",   "rv64_translate" },
 
     // --- Batch 5: wildcard matching ---
@@ -364,15 +369,13 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "ISDBREF",     "rv64_isdbref" },
 
     // --- Batch 8: math via intrinsics (string↔double + platform libm) ---
-    { "SIN",         "rv64_sin" },
-    { "COS",         "rv64_cos" },
-    { "TAN",         "rv64_tan" },
-    { "ASIN",        "rv64_asin" },
-    { "ACOS",        "rv64_acos" },
-    { "ATAN",        "rv64_atan" },
-    { "ATAN2",       "rv64_atan2" },
+    // Deliberately exclude the trig family here for now. Their
+    // optional angle-unit arguments are interpreter-visible semantics,
+    // and the Tier 2 aliases currently bypass that behavior for
+    // multi-arg calls.
     { "EXP",         "rv64_exp" },
-    { "LOG",         "rv64_log" },
+    // Deliberately exclude LOG for now. TinyMUX log() defaults to the
+    // common logarithm, while the direct libm fast path is natural log.
     { "LOG10",       "rv64_log10" },
     { "SQRT",        "rv64_sqrt" },
     { "CEIL",        "rv64_ceil" },
