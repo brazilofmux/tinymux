@@ -8,7 +8,8 @@
 
 CC      = riscv64-unknown-elf-gcc
 CFLAGS  = -march=rv64imd -mabi=lp64d -O2 -fno-builtin -ffreestanding -nostdlib \
-          -ffunction-sections -fdata-sections
+          -ffunction-sections -fdata-sections \
+          -DLBUF_SIZE=32768
 INCLUDES = -isystem src/include -I../include
 LDFLAGS = -nostdlib -Wl,--gc-sections -T src/softlib.ld
 STRIP   = ../src/tools/rv64strip

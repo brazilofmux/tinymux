@@ -3881,8 +3881,12 @@ size_t co_replace_at(unsigned char *out,
         return 0;
     }
 
-    word_range_t words[LBUF_SIZE / 2];
-    size_t nWords = split_words(list, llen, delim, words, LBUF_SIZE / 2);
+    /* Use co_split_words to preserve empty elements for non-space
+     * delimiters, matching do_itemfuns behavior. */
+    unsigned char sep_buf[2] = { delim, 0 };
+    size_t wstarts[LBUF_SIZE / 2], wends[LBUF_SIZE / 2];
+    size_t nWords = co_split_words(list, llen, sep_buf, 1,
+                                   wstarts, wends, LBUF_SIZE / 2);
 
     /* Convert positions: negative wraps, positive 1-based to 0-based. */
     int j;
@@ -3905,8 +3909,8 @@ size_t co_replace_at(unsigned char *out,
         const unsigned char *wp_end = out + LBUF_SIZE - 1;
         for (size_t i = 0; i < nWords && wp < wp_end; i++) {
             if (i > 0) WP_SAFE(wp, wp_end, osep);
-            size_t cb = (size_t)(words[i].end - words[i].start);
-            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            size_t cb = wends[i] - wstarts[i];
+            wp += wp_safe_copy(wp, wp_end, list + wstarts[i], cb);
         }
         *wp = '\0';
         return (size_t)(wp - out);
@@ -3922,8 +3926,8 @@ size_t co_replace_at(unsigned char *out,
     for (j = 0; j < nPositions; j++) {
         while (i < (size_t)positions[j] && wp < wp_end) {
             if (emitted) WP_SAFE(wp, wp_end, osep);
-            size_t cb = (size_t)(words[i].end - words[i].start);
-            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            size_t cb = wends[i] - wstarts[i];
+            wp += wp_safe_copy(wp, wp_end, list + wstarts[i], cb);
             emitted = 1;
             i++;
         }
@@ -3936,8 +3940,8 @@ size_t co_replace_at(unsigned char *out,
 
     while (i < nWords && wp < wp_end) {
         if (emitted) WP_SAFE(wp, wp_end, osep);
-        size_t cb = (size_t)(words[i].end - words[i].start);
-        wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+        size_t cb = wends[i] - wstarts[i];
+        wp += wp_safe_copy(wp, wp_end, list + wstarts[i], cb);
         emitted = 1;
         i++;
     }
@@ -3952,8 +3956,10 @@ size_t co_insert_at(unsigned char *out,
                     const unsigned char *word, size_t wlen,
                     unsigned char delim, unsigned char osep)
 {
-    word_range_t words[LBUF_SIZE / 2];
-    size_t nWords = split_words(list, llen, delim, words, LBUF_SIZE / 2);
+    unsigned char sep_buf[2] = { delim, 0 };
+    size_t wstarts[LBUF_SIZE / 2], wends[LBUF_SIZE / 2];
+    size_t nWords = co_split_words(list, llen, sep_buf, 1,
+                                   wstarts, wends, LBUF_SIZE / 2);
 
     /* For empty lists, validate that at least one position is 1 or -1
      * before proceeding.  This matches do_itemfuns IF_INSERT. */
@@ -3988,8 +3994,8 @@ size_t co_insert_at(unsigned char *out,
         const unsigned char *wp_end = out + LBUF_SIZE - 1;
         for (size_t i = 0; i < nWords && wp < wp_end; i++) {
             if (i > 0) WP_SAFE(wp, wp_end, osep);
-            size_t cb = (size_t)(words[i].end - words[i].start);
-            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            size_t cb = wends[i] - wstarts[i];
+            wp += wp_safe_copy(wp, wp_end, list + wstarts[i], cb);
         }
         *wp = '\0';
         return (size_t)(wp - out);
@@ -4005,8 +4011,8 @@ size_t co_insert_at(unsigned char *out,
     for (j = 0; j < nPositions; j++) {
         while (i < (size_t)positions[j] && wp < wp_end) {
             if (emitted) WP_SAFE(wp, wp_end, osep);
-            size_t cb = (size_t)(words[i].end - words[i].start);
-            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            size_t cb = wends[i] - wstarts[i];
+            wp += wp_safe_copy(wp, wp_end, list + wstarts[i], cb);
             emitted = 1;
             i++;
         }
@@ -4017,8 +4023,8 @@ size_t co_insert_at(unsigned char *out,
 
     while (i < nWords && wp < wp_end) {
         if (emitted) WP_SAFE(wp, wp_end, osep);
-        size_t cb = (size_t)(words[i].end - words[i].start);
-        wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+        size_t cb = wends[i] - wstarts[i];
+        wp += wp_safe_copy(wp, wp_end, list + wstarts[i], cb);
         emitted = 1;
         i++;
     }

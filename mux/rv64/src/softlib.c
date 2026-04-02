@@ -75,6 +75,14 @@ size_t co_splice(unsigned char *out,
 size_t co_insert_word(unsigned char *out, const unsigned char *list,
                       size_t llen, size_t pos, const unsigned char *word,
                       size_t wlen, unsigned char delim, unsigned char osep);
+size_t co_replace_at(unsigned char *out, const unsigned char *list,
+                     size_t llen, int *positions, int nPositions,
+                     const unsigned char *word, size_t wlen,
+                     unsigned char delim, unsigned char osep);
+size_t co_insert_at(unsigned char *out, const unsigned char *list,
+                    size_t llen, int *positions, int nPositions,
+                    const unsigned char *word, size_t wlen,
+                    unsigned char delim, unsigned char osep);
 
 /* New co_* functions for Tier 2 wrappers below. */
 size_t co_cluster_count(const unsigned char *data, size_t len);
@@ -622,99 +630,59 @@ char *co_ldelete_wrap(char *out, const char **fargs, int nfargs) {
     return out;
 }
 
-/* replace(list, positions, word[, delim][, osep])
- *
- * Replace word(s) at given position(s) in list.  Matches do_itemfuns
- * IF_REPLACE semantics: 1-based positions, negative wraps from end,
- * out-of-range positions are ignored, duplicates are collapsed.
- *
- * For the Tier 2 path we handle the single-position case here.
- * Multi-position calls fall through to ECALL via the nargs/delimiter
- * guards in hir_lower.cpp.
- */
+/* Helper: parse a space-separated list of integers from a string.
+ * Matches DecodeListOfIntegers in the interpreter. */
+static int decode_positions(const char *str, int *ai, int max_n) {
+    int n = 0;
+    const char *p = str;
+    while (*p && n < max_n) {
+        while (*p == ' ') p++;
+        if (*p == '\0') break;
+        int sign = 1;
+        if (*p == '+') { p++; }
+        else if (*p == '-') { sign = -1; p++; }
+        int val = 0;
+        int got_digit = 0;
+        while (*p >= '0' && *p <= '9') {
+            val = val * 10 + (*p - '0');
+            p++;
+            got_digit = 1;
+        }
+        if (got_digit) {
+            ai[n++] = val * sign;
+        } else {
+            /* Non-numeric: skip to next space. */
+            while (*p && *p != ' ') p++;
+        }
+    }
+    return n;
+}
+
+/* replace(list, positions, word[, delim][, osep]) */
 char *co_replace_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 3) {
         if (nfargs >= 1) rv64_scopy(out, fargs[0]);
         else out[0] = '\0';
         return out;
     }
-    int raw_pos = satoi(fargs[1]);
     unsigned char delim = get_delim(fargs, nfargs, 3);
     unsigned char osep = get_osep(fargs, nfargs, 4, delim);
 
-    /* For space delimiter, trim leading/trailing spaces. */
-    const unsigned char *data = (const unsigned char *)fargs[0];
-    size_t dlen = rv64_slen(fargs[0]);
-    if (delim == ' ') {
-        while (dlen > 0 && *data == ' ') { data++; dlen--; }
-        while (dlen > 0 && data[dlen - 1] == ' ') { dlen--; }
-    }
+    int positions[LBUF_SIZE / 2];
+    int npos = decode_positions(fargs[1], positions, LBUF_SIZE / 2);
 
-    /* Count words. */
-    size_t nWords = co_words_count(data, dlen, delim);
-
-    /* Convert position: negative wraps from end, 1-based → 0-based. */
-    int pos;
-    if (raw_pos < 0) {
-        pos = raw_pos + (int)nWords;
-    } else {
-        pos = raw_pos - 1;
-    }
-    if (pos < 0 || (size_t)pos >= nWords) {
-        /* Out of range: return original list reassembled with osep. */
-        size_t n = co_extract((unsigned char *)out, data, dlen,
-                              1, nWords, delim, osep);
-        out[n] = '\0';
-        return out;
-    }
-
-    /* Reassemble: words before pos, replacement, words after pos. */
-    const unsigned char *word = (const unsigned char *)fargs[2];
-    size_t wlen = rv64_slen(fargs[2]);
-    unsigned char *wp = (unsigned char *)out;
-    unsigned char *wp_end = wp + 7999;
-    const unsigned char *p = data;
-    const unsigned char *pe = data + dlen;
-    int cur = 0;
-    int emitted = 0;
-
-    while (cur <= (int)nWords && wp < wp_end) {
-        if (cur == pos) {
-            /* Emit replacement word. */
-            if (emitted > 0 && wp < wp_end) *wp++ = osep;
-            size_t cb = wlen;
-            if (cb > (size_t)(wp_end - wp)) cb = (size_t)(wp_end - wp);
-            size_t i; for (i = 0; i < cb; i++) wp[i] = word[i];
-            wp += cb;
-            emitted++;
-            /* Skip the original word. */
-            while (p < pe && *p != delim) p++;
-            if (p < pe) {
-                p++;
-                if (delim == ' ') while (p < pe && *p == ' ') p++;
-            }
-        } else if (p < pe) {
-            /* Emit original word. */
-            if (emitted > 0 && wp < wp_end) *wp++ = osep;
-            while (p < pe && *p != delim && wp < wp_end) *wp++ = *p++;
-            emitted++;
-            if (p < pe && *p == delim) {
-                p++;
-                if (delim == ' ') while (p < pe && *p == ' ') p++;
-            }
-        }
-        cur++;
-    }
-    *wp = '\0';
+    size_t n = co_replace_at((unsigned char *)out,
+                             (const unsigned char *)fargs[0],
+                             rv64_slen(fargs[0]),
+                             positions, npos,
+                             (const unsigned char *)fargs[2],
+                             rv64_slen(fargs[2]),
+                             delim, osep);
+    out[n] = '\0';
     return out;
 }
 
-/* insert(list, word, positions[, delim][, osep])
- *
- * Note: interpreter arg order is (list, positions, word, delim, osep)
- * but the MUX function table says insert(list, word, pos, delim, osep).
- * Actually checking functions.cpp: insert is (list, word, pos[, sep][, osep]).
- */
+/* insert(list, positions, word[, delim][, osep]) */
 char *co_insert_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 3) {
         if (nfargs >= 1) rv64_scopy(out, fargs[0]);
@@ -724,19 +692,16 @@ char *co_insert_wrap(char *out, const char **fargs, int nfargs) {
     unsigned char delim = get_delim(fargs, nfargs, 3);
     unsigned char osep = get_osep(fargs, nfargs, 4, delim);
 
-    /* For space delimiter, trim leading/trailing spaces. */
-    const unsigned char *data = (const unsigned char *)fargs[0];
-    size_t dlen = rv64_slen(fargs[0]);
-    if (delim == ' ') {
-        while (dlen > 0 && *data == ' ') { data++; dlen--; }
-        while (dlen > 0 && data[dlen - 1] == ' ') { dlen--; }
-    }
+    int positions[LBUF_SIZE / 2];
+    int npos = decode_positions(fargs[1], positions, LBUF_SIZE / 2);
 
-    size_t n = co_insert_word((unsigned char *)out, data, dlen,
-                              (const unsigned char *)fargs[2],
-                              rv64_slen(fargs[2]),
-                              (size_t)satoi(fargs[1]),
-                              delim, osep);
+    size_t n = co_insert_at((unsigned char *)out,
+                            (const unsigned char *)fargs[0],
+                            rv64_slen(fargs[0]),
+                            positions, npos,
+                            (const unsigned char *)fargs[2],
+                            rv64_slen(fargs[2]),
+                            delim, osep);
     out[n] = '\0';
     return out;
 }
