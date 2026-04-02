@@ -1419,34 +1419,88 @@ char *rv64_remove(char *out, const char **fargs, int nfargs) {
         else out[0] = '\0';
         return out;
     }
-    unsigned char delim = ' ';
-    unsigned char osep = ' ';
-    if (nfargs >= 3 && fargs[2][0] != '\0') delim = (unsigned char)fargs[2][0];
-    if (nfargs >= 4 && fargs[3][0] != '\0') osep = (unsigned char)fargs[3][0];
+    unsigned char delim = get_delim(fargs, nfargs, 2);
+    /* osep defaults to delimiter (interpreter parity). */
+    unsigned char osep = delim;
+    int osep_null = 0;
+    if (nfargs >= 4) {
+        if (fargs[3][0] != '\0')
+            osep = (unsigned char)fargs[3][0];
+        else
+            osep_null = 1;
+    }
+
     const unsigned char *word = (const unsigned char *)fargs[1];
     size_t wlen = rv64_slen(fargs[1]);
-    const unsigned char *p = (const unsigned char *)fargs[0];
+
+    /* Check that word doesn't contain the delimiter. */
+    {
+        const unsigned char *wp = word;
+        const unsigned char *we = word + wlen;
+        while (wp < we) {
+            if (*wp == delim) {
+                rv64_scopy(out, "#-1 CAN ONLY REMOVE ONE ELEMENT");
+                return out;
+            }
+            wp++;
+        }
+    }
+
+    /* Strip color from the target word for comparison. */
+    unsigned char wordPlain[8000];
+    size_t nWordPlain = co_strip_color(wordPlain, word, wlen);
+
+    /* For space delimiter, trim leading/trailing spaces. */
+    const unsigned char *data = (const unsigned char *)fargs[0];
+    size_t dlen = rv64_slen(fargs[0]);
+    if (delim == ' ') {
+        while (dlen > 0 && *data == ' ') { data++; dlen--; }
+        while (dlen > 0 && data[dlen - 1] == ' ') { dlen--; }
+    }
+
+    const unsigned char *p = data;
+    const unsigned char *pe = data + dlen;
     unsigned char *op = (unsigned char *)out;
     unsigned char *end = op + 7999;
     int first = 1;
     int removed = 0;
-    while (*p) {
-        if (delim == ' ') while (*p == ' ') p++;
-        if (*p == '\0') break;
+
+    while (p < pe) {
+        /* For space delimiter, skip consecutive spaces. */
+        if (delim == ' ') while (p < pe && *p == ' ') p++;
+        if (p >= pe) break;
         const unsigned char *start = p;
-        while (*p && *p != delim) p++;
+        while (p < pe && *p != delim) p++;
         size_t elen = (size_t)(p - start);
-        if (!removed && elen == wlen && memcmp(start, word, wlen) == 0) {
-            removed = 1; /* skip this element */
-        } else {
-            if (!first && op < end) *op++ = osep;
-            first = 0;
-            size_t copy = elen;
-            if (op + copy > end) copy = (size_t)(end - op);
-            memcpy(op, start, copy);
-            op += copy;
+
+        if (!removed) {
+            /* Strip color from this word for comparison. */
+            unsigned char wPlain[8000];
+            size_t nwp = co_strip_color(wPlain, start, elen);
+            if (nwp == nWordPlain && memcmp(wPlain, wordPlain, nwp) == 0) {
+                removed = 1;
+                if (p < pe && *p == delim) {
+                    p++;
+                    if (delim == ' ') while (p < pe && *p == ' ') p++;
+                }
+                continue;
+            }
         }
-        if (*p == delim) p++;
+
+        if (!first && !osep_null && op < end) *op++ = osep;
+        first = 0;
+        size_t copy = elen;
+        if (op + copy > end) copy = (size_t)(end - op);
+        {
+            size_t ci;
+            for (ci = 0; ci < copy; ci++) op[ci] = start[ci];
+        }
+        op += copy;
+
+        if (p < pe && *p == delim) {
+            p++;
+            if (delim == ' ') while (p < pe && *p == ' ') p++;
+        }
     }
     *op = '\0';
     return out;

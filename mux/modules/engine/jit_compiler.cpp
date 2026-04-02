@@ -348,13 +348,9 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "DEC2HEX",     "rv64_dec2hex" },
     { "HEX2DEC",     "rv64_hex2dec" },
 
-    // --- Batch 7: wordpos ---
-    //
-    // Deliberately exclude REMOVE for now. The Tier 2 path currently
-    // mishandles explicit delimiters and separator preservation
-    // (`remove(a|b|c,b,|)` -> `a c`). Fall back to the interpreter
-    // until the rv64 implementation is proven parity-correct.
+    // --- Batch 7: wordpos, remove ---
     { "WORDPOS",     "rv64_wordpos" },
+    { "REMOVE",      "rv64_remove" },
 
     // --- Batch 8: list aggregation, reversal, type checks ---
     { "LADD",        "rv64_ladd" },

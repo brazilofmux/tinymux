@@ -3208,12 +3208,15 @@ literal_strcat:
                 delim_idx = 1;
             } else if (upper == "ELEMENTS" && nargs >= 3) {
                 delim_idx = 2;
+            } else if (upper == "REMOVE" && nargs >= 3) {
+                delim_idx = 2;
             }
             // ELEMENTS osep (arg[3]), REPLACE/INSERT osep (arg[4])
             // are also single-byte only.
             {
                 int osep_idx = -1;
                 if (upper == "ELEMENTS" && nargs >= 4) osep_idx = 3;
+                else if (upper == "REMOVE" && nargs >= 4) osep_idx = 3;
                 if (osep_idx >= 0) {
                     if (!h.is_const(args[osep_idx])) {
                         t2addr = 0;
