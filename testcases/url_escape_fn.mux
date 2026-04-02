@@ -13,38 +13,45 @@
 -
 #
 # Test Case #1 - Basic encoding and unreserved passthrough.
+# RFC 3986: unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
 #
 &tr.tc001 test_url_escape_fn=
   @if cand(
         strmatch(url_escape(hello), hello),
-        strmatch(url_escape(hello world), hello*world),
+        strmatch(url_escape(hello world), hello%%20world),
         strmatch(url_escape(a-b_c.d~e), a-b_c.d~e)
       )=
   {
     @log smoke=TC001: url_escape basic. Succeeded.
   },
   {
-    @log smoke=TC001: url_escape basic. Failed (url_escape(hello)=[url_escape(hello)] url_escape(hello world)=[url_escape(hello world)]).
+    @log smoke=TC001: url_escape basic. Failed (esc(hello)=[url_escape(hello)] esc(hello world)=[url_escape(hello world)] esc(a-b_c.d~e)=[url_escape(a-b_c.d~e)]).
   }
 -
 #
 # Test Case #2 - Roundtrip encode/decode.
 #
 &tr.tc002 test_url_escape_fn=
-  @if strmatch(url_unescape(url_escape(hello world)), hello world)=
+  @if cand(
+        strmatch(url_unescape(url_escape(hello world)), hello world),
+        strmatch(url_unescape(url_escape(a/b&c=d)), a/b&c=d)
+      )=
   {
     @log smoke=TC002: url roundtrip. Succeeded.
   },
   {
-    @log smoke=TC002: url roundtrip. Failed (roundtrip=[url_unescape(url_escape(hello world))]).
+    @log smoke=TC002: url roundtrip. Failed (rt1=[url_unescape(url_escape(hello world))] rt2=[url_unescape(url_escape(a/b&c=d))]).
   }
 -
 #
-# Test Case #3 - Special characters and edge cases.
+# Test Case #3 - Special characters produce correct percent-encoding.
+# '/' → %2F, '&' → %26, '=' → %3D
 #
 &tr.tc003 test_url_escape_fn=
   @if cand(
-        gt(strlen(url_escape(/path/to/resource)), 0),
+        strmatch(url_escape(/), %%2F),
+        strmatch(url_escape(&), %%26),
+        strmatch(url_escape(=), %%3D),
         strmatch(url_unescape(%%41%%42%%43), ABC)
       )=
   {
@@ -52,7 +59,7 @@
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: url special chars. Failed (url_unescape(%%41%%42%%43)=[url_unescape(%%41%%42%%43)]).;
+    @log smoke=TC003: url special chars. Failed (esc(/)=[url_escape(/)] esc(&)=[url_escape(&)] esc(=)=[url_escape(=)] unesc(%%41%%42%%43)=[url_unescape(%%41%%42%%43)]).;
     @trig me/tr.done
   }
 -
