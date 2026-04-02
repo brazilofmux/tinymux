@@ -276,9 +276,8 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     // color preservation and grapheme-cluster-aware word boundaries matter.
     //
     { "FIRST",       "co_first_wrap" },
-    // Deliberately exclude REST/LAST for now. Updated regressions show
-    // whitespace/delimiter parity gaps; fall back to the interpreter
-    // until the wrapper behavior is proven identical.
+    { "REST",        "co_rest_wrap" },
+    { "LAST",        "co_last_wrap" },
     { "WORDS",       "co_words_wrap" },
     { "EXTRACT",     "co_extract_wrap" },
     { "MEMBER",      "co_member_wrap" },

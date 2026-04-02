@@ -494,11 +494,48 @@ static bool try_fold(const std::string &func_name,
         return true;
     }
 
-    // Deliberately do not fold REST/LAST for now. The interpreter has
-    // subtle whitespace semantics around leading/trailing delimiters,
-    // and the current co_* folding path is not parity-correct for the
-    // updated regressions. Fall back to the normal runtime path until
-    // these semantics are matched exactly.
+    if (upper == "REST" && (nargs == 1 || nargs == 2)
+        && (nargs == 1 || args[1].size() <= 1)) {
+        unsigned char delim = (nargs == 2 && !args[1].empty())
+            ? static_cast<unsigned char>(args[1][0]) : ' ';
+        // Match interpreter: trim_space_sep strips leading+trailing
+        // spaces for space delimiter before split_token.
+        const char *p = args[0].data();
+        size_t slen = args[0].size();
+        if (delim == ' ') {
+            while (slen > 0 && *p == ' ') { p++; slen--; }
+            while (slen > 0 && p[slen - 1] == ' ') { slen--; }
+        }
+        LBuf out = LBuf_Src("hir_rest");
+        size_t n = co_rest(reinterpret_cast<unsigned char *>(out.get()),
+            reinterpret_cast<const unsigned char *>(p), slen, delim);
+        // Match interpreter: split_token skips consecutive spaces
+        // after the delimiter for space-delimited lists.
+        const char *r = reinterpret_cast<const char *>(out.get());
+        if (delim == ' ') {
+            while (n > 0 && *r == ' ') { r++; n--; }
+        }
+        result.assign(r, n);
+        return true;
+    }
+
+    if (upper == "LAST" && (nargs == 1 || nargs == 2)
+        && (nargs == 1 || args[1].size() <= 1)) {
+        unsigned char delim = (nargs == 2 && !args[1].empty())
+            ? static_cast<unsigned char>(args[1][0]) : ' ';
+        // Match interpreter: trim_space_sep for space delimiter.
+        const char *p = args[0].data();
+        size_t slen = args[0].size();
+        if (delim == ' ') {
+            while (slen > 0 && *p == ' ') { p++; slen--; }
+            while (slen > 0 && p[slen - 1] == ' ') { slen--; }
+        }
+        LBuf out = LBuf_Src("hir_last");
+        size_t n = co_last(reinterpret_cast<unsigned char *>(out.get()),
+            reinterpret_cast<const unsigned char *>(p), slen, delim);
+        result.assign(reinterpret_cast<const char *>(out.get()), n);
+        return true;
+    }
 
     if (upper == "STRIPANSI" && nargs == 1) {
         LBuf out = LBuf_Src("hir_strip");
@@ -3143,14 +3180,10 @@ literal_strcat:
     // Check Tier 2 blob before falling through to ECALL.
     uint64_t t2addr = tier2_lookup(upper);
 
-    // Tier 2 math blobs only handle the minimum-arg form.  Multi-arg
-    // calls with optional angle units or log bases must fall through
-    // to ECALL (or be handled by the HIR lowering above).
+    // Tier 2 blobs have arg-count and delimiter-width limitations.
+    // Fall through to ECALL when the blob can't handle the call.
     if (t2addr) {
-        // LOG: rv64_log10 handles 1-arg only.
-        // SIN/COS/TAN: rv64_* handle 1-arg (radians) only.
-        // ASIN/ACOS/ATAN: rv64_* handle 1-arg (radians) only.
-        // ATAN2: rv64_atan2 handles 2-arg (y,x in radians) only.
+        // Math intrinsics: only handle minimum-arg form.
         if ((upper == "LOG" || upper == "SIN" || upper == "COS"
              || upper == "TAN" || upper == "ASIN" || upper == "ACOS"
              || upper == "ATAN") && nargs != 1) {
@@ -3158,6 +3191,23 @@ literal_strcat:
         }
         if (upper == "ATAN2" && nargs != 2) {
             t2addr = 0;
+        }
+        // FIRST/REST/LAST wrappers only handle single-byte delimiters.
+        // Multi-char string delimiters (DELIM_STRING) need the
+        // interpreter's co_split_words path.
+        if ((upper == "FIRST" || upper == "REST" || upper == "LAST")
+            && nargs == 2) {
+            // If delimiter arg is a known constant with length > 1,
+            // skip Tier 2.  If dynamic, be conservative and skip too
+            // since we can't verify it's single-char at compile time.
+            if (!h.is_const(args[1])) {
+                t2addr = 0;
+            } else {
+                std::string dstr = h.const_str(args[1]);
+                if (dstr.size() > 1) {
+                    t2addr = 0;
+                }
+            }
         }
     }
 

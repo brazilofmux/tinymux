@@ -384,22 +384,53 @@ char *co_first_wrap(char *out, const char **fargs, int nfargs) {
     return out;
 }
 
+/* trim_space_sep parity: for space delimiter, strip leading+trailing
+ * spaces from the input string.  Returns pointer into str (which may
+ * be mutated by NUL-terminating trailing spaces) and sets *plen to
+ * the trimmed length.  For non-space delimiters, returns str unchanged. */
+static const char *trim_space_input(const char *str, size_t slen,
+                                     unsigned char delim, size_t *plen) {
+    if (delim != ' ') { *plen = slen; return str; }
+    const char *p = str;
+    const char *pe = str + slen;
+    while (p < pe && *p == ' ') p++;
+    while (pe > p && *(pe - 1) == ' ') pe--;
+    *plen = (size_t)(pe - p);
+    return p;
+}
+
 char *co_rest_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 1) { out[0] = '\0'; return out; }
     unsigned char delim = get_delim(fargs, nfargs, 1);
+    size_t tlen;
+    const char *trimmed = trim_space_input(fargs[0],
+                              rv64_slen(fargs[0]), delim, &tlen);
     size_t n = co_rest((unsigned char *)out,
-                       (const unsigned char *)fargs[0],
-                       rv64_slen(fargs[0]), delim);
+                       (const unsigned char *)trimmed, tlen, delim);
     out[n] = '\0';
+    /* For space delimiter, the interpreter's split_token skips
+     * consecutive spaces after the first delimiter.  co_rest
+     * doesn't, so strip leading spaces from the result. */
+    if (delim == ' ' && n > 0) {
+        char *p = out;
+        while (*p == ' ') p++;
+        if (p != out) {
+            size_t remain = n - (size_t)(p - out);
+            size_t i;
+            for (i = 0; i <= remain; i++) out[i] = p[i];
+        }
+    }
     return out;
 }
 
 char *co_last_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 1) { out[0] = '\0'; return out; }
     unsigned char delim = get_delim(fargs, nfargs, 1);
+    size_t tlen;
+    const char *trimmed = trim_space_input(fargs[0],
+                              rv64_slen(fargs[0]), delim, &tlen);
     size_t n = co_last((unsigned char *)out,
-                       (const unsigned char *)fargs[0],
-                       rv64_slen(fargs[0]), delim);
+                       (const unsigned char *)trimmed, tlen, delim);
     out[n] = '\0';
     return out;
 }
