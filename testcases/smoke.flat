@@ -505,9 +505,11 @@
 >256
 "@log smoke=Beginning acos() test cases."
 >257
-"@if cand(eq(round(acos(0),6), 1.570796),eq(round(acos(1),6), 0))={@log smoke=TC001: acos basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: acos basic operations. Failed (acos(0)=[round(acos(0),6)] acos(1)=[round(acos(1),6)]).;@trig me/tr.done}"
+"@if cand(eq(round(acos(0),6), 1.570796),eq(round(acos(1),6), 0))={@log smoke=TC001: acos basic operations. Succeeded.},{@log smoke=TC001: acos basic operations. Failed (acos(0)=[round(acos(0),6)] acos(1)=[round(acos(1),6)]).}"
 >258
 "@log smoke=End acos() test cases.;@notify smoke"
+>259
+"@if cand(eq(round(acos(0,d),6), 90),eq(round(acos(0,g),6), 100))={@log smoke=TC002: acos angle units. Succeeded.;@trig me/tr.done},{@log smoke=TC002: acos angle units. Failed (acos(0d)=[round(acos(0,d),6)] acos(0g)=[round(acos(0,g),6)]).;@trig me/tr.done}"
 <
 !5
 "test_add_fn"
@@ -694,9 +696,11 @@
 >256
 "@log smoke=Beginning asin() test cases."
 >257
-"@if cand(eq(round(asin(0),6), 0),eq(round(asin(1),6), 1.570796))={@log smoke=TC001: asin basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: asin basic operations. Failed (asin(0)=[round(asin(0),6)] asin(1)=[round(asin(1),6)]).;@trig me/tr.done}"
+"@if cand(eq(round(asin(0),6), 0),eq(round(asin(1),6), 1.570796))={@log smoke=TC001: asin basic operations. Succeeded.},{@log smoke=TC001: asin basic operations. Failed (asin(0)=[round(asin(0),6)] asin(1)=[round(asin(1),6)]).}"
 >258
 "@log smoke=End asin() test cases.;@notify smoke"
+>259
+"@if cand(eq(round(asin(1,d),6), 90),eq(round(asin(1,g),6), 100))={@log smoke=TC002: asin angle units. Succeeded.;@trig me/tr.done},{@log smoke=TC002: asin angle units. Failed (asin(1d)=[round(asin(1,d),6)] asin(1g)=[round(asin(1,g),6)]).;@trig me/tr.done}"
 <
 !12
 "test_assert_cmd"
@@ -760,7 +764,7 @@
 >256
 "@log smoke=Beginning atan2() test cases."
 >257
-"@if strmatch([atan2()],*NOT FOUND)={@log smoke=TC001: ATAN2() is not supported on this version. Okay.;@trig me/tr.done},{@if cand(eq(round(atan2(1,1),6), 0.785398),eq(round(atan2(0,0),6), 0),eq(round(atan2(-1,-1),6), -2.356194))={@log smoke=TC001: atan2 examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: atan2 examples. Failed (atan2(1%,1)=[round(atan2(1,1),6)] atan2(0%,0)=[round(atan2(0,0),6)] atan2(-1%,-1)=[round(atan2(-1,-1),6)]).;@trig me/tr.done}}"
+"@if strmatch([atan2()],*NOT FOUND)={@log smoke=TC001: ATAN2() is not supported on this version. Okay.;@trig me/tr.done},{@if cand(eq(round(atan2(1,1),6), 0.785398),eq(round(atan2(0,0),6), 0),eq(round(atan2(-1,-1),6), -2.356194))={@log smoke=TC001: atan2 examples. Succeeded.},{@log smoke=TC001: atan2 examples. Failed (atan2(1%,1)=[round(atan2(1,1),6)] atan2(0%,0)=[round(atan2(0,0),6)] atan2(-1%,-1)=[round(atan2(-1,-1),6)]).};@if cand(eq(round(atan2(1,1,d),6), 45),eq(round(atan2(1,0,d),6), 90),eq(round(atan2(1,1,g),4), 50))={@log smoke=TC002: atan2 angle units. Succeeded.;@trig me/tr.done},{@log smoke=TC002: atan2 angle units. Failed (atan2(1%,1%,d)=[round(atan2(1,1,d),6)] atan2(1%,0%,d)=[round(atan2(1,0,d),6)] atan2(1%,1%,g)=[round(atan2(1,1,g),4)]).;@trig me/tr.done}}"
 >258
 "@log smoke=End atan2() test cases.;@notify smoke"
 <
@@ -787,9 +791,11 @@
 >256
 "@log smoke=Beginning atan() test cases."
 >257
-"@if cand(eq(round(atan(0),6), 0),eq(round(atan(1),6), 0.785398))={@log smoke=TC001: atan basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: atan basic operations. Failed (atan(0)=[round(atan(0),6)] atan(1)=[round(atan(1),6)]).;@trig me/tr.done}"
+"@if cand(eq(round(atan(0),6), 0),eq(round(atan(1),6), 0.785398))={@log smoke=TC001: atan basic operations. Succeeded.},{@log smoke=TC001: atan basic operations. Failed (atan(0)=[round(atan(0),6)] atan(1)=[round(atan(1),6)]).}"
 >258
 "@log smoke=End atan() test cases.;@notify smoke"
+>259
+"@if cand(eq(round(atan(1,d),6), 45),eq(round(atan(1,g),6), 50))={@log smoke=TC002: atan angle units. Succeeded.;@trig me/tr.done},{@log smoke=TC002: atan angle units. Failed (atan(1d)=[round(atan(1,d),6)] atan(1g)=[round(atan(1,g),6)]).;@trig me/tr.done}"
 <
 !15
 "test_attrib_set_fn"
@@ -1796,21 +1802,21 @@
 >256
 "@log smoke=Beginning convtime() test cases."
 >257
-"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 2006,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 2006,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 2006,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 2006,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 2006,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 2006,utc))] )),9FE8D9AAA0AB16874BD7216A1C691186575C31CF)={@log smoke=TC001: Every day in 2006 succeeded.},{@log smoke=TC001: At least one day in 2006 failed (%q0).}"
+"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 2006,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 2006,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 2006,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 2006,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 2006,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 2006,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 2006,utc))] )),9FE8D9AAA0AB16874BD7216A1C691186575C31CF)={@log smoke=TC001: Every day in 2006 Succeeded.},{@log smoke=TC001: At least one day in 2006 failed (%q0).}"
 >258
 "@log smoke=End convtime() test cases.;@notify smoke"
 >259
-"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 1970,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 1970,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 1970,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 1970,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 1970,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 1970,utc))] )),BCCFCB1C5A25BE1A50E7579A2F28ACF4E34799B6)={@log smoke=TC002: Every day in 1970 succeeded.},{@log smoke=TC002: At least one day in 1970 failed (%q0).}"
+"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 1970,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 1970,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 1970,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 1970,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 1970,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 1970,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 1970,utc))] )),BCCFCB1C5A25BE1A50E7579A2F28ACF4E34799B6)={@log smoke=TC002: Every day in 1970 Succeeded.},{@log smoke=TC002: At least one day in 1970 failed (%q0).}"
 >262
-"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 1969,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 1969,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 1969,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 1969,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 1969,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 1969,utc))] )),095DE0A215B35BEC232FB806D3743EE3FB597AF4)={@log smoke=TC003: Every day in 1969 succeeded.},{@log smoke=TC003: At least one day in 1969 failed (%q0).}"
+"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 1969,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 1969,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 1969,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 1969,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 1969,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 1969,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 1969,utc))] )),095DE0A215B35BEC232FB806D3743EE3FB597AF4)={@log smoke=TC003: Every day in 1969 Succeeded.},{@log smoke=TC003: At least one day in 1969 failed (%q0).}"
 >264
-"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 1601,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 1601,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 1601,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 1601,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 1601,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 1601,utc))] )),CF81EFE3EFA928E4D36D3574F2094A0D25274681)={@log smoke=TC004: Every day in 1601 succeeded.},{@log smoke=TC004: At least one day in 1601 failed (%q0).}"
+"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 1601,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 1601,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 1601,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 1601,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 1601,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 1601,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 1601,utc))] )),CF81EFE3EFA928E4D36D3574F2094A0D25274681)={@log smoke=TC004: Every day in 1601 Succeeded.},{@log smoke=TC004: At least one day in 1601 failed (%q0).}"
 >265
-"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 1600,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 1600,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 1600,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 1600,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 1600,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 1600,utc))] )),603B4DF3A3F0289928666DEDC9ACC952A9E400A4)={@log smoke=TC005: Every day in 1600 succeeded.},{@log smoke=TC005: At least one day in 1600 failed (%q0).}"
+"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 1600,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 1600,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 1600,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 1600,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 1600,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 1600,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 1600,utc))] )),603B4DF3A3F0289928666DEDC9ACC952A9E400A4)={@log smoke=TC005: Every day in 1600 Succeeded.},{@log smoke=TC005: At least one day in 1600 failed (%q0).}"
 >266
-"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 1,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 1,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 1,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 1,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 1,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 1,utc))] )),D62426344636E8D947A7153C1E5F682104853197)={@log smoke=TC006: Every day in 1 A.D. succeeded.},{@log smoke=TC006: At least one day in 1 A.D. failed (%q0).}"
+"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 1,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 1,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 1,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 1,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 1,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 1,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 1,utc))] )),D62426344636E8D947A7153C1E5F682104853197)={@log smoke=TC006: Every day in 1 A.D. Succeeded.},{@log smoke=TC006: At least one day in 1 A.D. failed (%q0).}"
 >267
-"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 0,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 0,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 0,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 0,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 0,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 0,utc))] )),F82F361B6C7D954AA4D86F964C10342E89D08F9F)={@log smoke=TC007: Every day in 1 B.C. succeeded.},{@log smoke=TC007: At least one day in 1 B.C. failed (%q0).};@trig me/tr.done"
+"@if strmatch(setr(0,sha1(iter(lnum(1,31),convtime(jan ## 00:00:00 0,utc)) [iter(lnum(1,28),convtime(feb ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(mar ## 00:00:00 0,utc))] [iter(lnum(1,30),convtime(apr ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(may ## 00:00:00 0,utc))] [iter(lnum(1,30),convtime(jun ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(jul ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(aug ## 00:00:00 0,utc))] [iter(lnum(1,30),convtime(sep ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(oct ## 00:00:00 0,utc))] [iter(lnum(1,30),convtime(nov ## 00:00:00 0,utc))] [iter(lnum(1,31),convtime(dec ## 00:00:00 0,utc))] )),F82F361B6C7D954AA4D86F964C10342E89D08F9F)={@log smoke=TC007: Every day in 1 B.C. Succeeded.},{@log smoke=TC007: At least one day in 1 B.C. failed (%q0).};@trig me/tr.done"
 <
 !48
 "test_corbool_fn"
@@ -1889,9 +1895,11 @@
 >256
 "@log smoke=Beginning cos() test cases."
 >257
-"@if cand(eq(round(cos(0),6), 1),eq(round(cos(pi()),6), -1))={@log smoke=TC001: cos basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: cos basic operations. Failed (cos(0)=[round(cos(0),6)] cos(pi)=[round(cos(pi()),6)]).;@trig me/tr.done}"
+"@if cand(eq(round(cos(0),6), 1),eq(round(cos(pi()),6), -1))={@log smoke=TC001: cos basic operations. Succeeded.},{@log smoke=TC001: cos basic operations. Failed (cos(0)=[round(cos(0),6)] cos(pi)=[round(cos(pi()),6)]).}"
 >258
 "@log smoke=End cos() test cases.;@notify smoke"
+>259
+"@if cand(eq(round(cos(180,d),6), -1),eq(round(cos(200,g),6), -1),eq(round(cos(90,d),6), 0))={@log smoke=TC002: cos angle units. Succeeded.;@trig me/tr.done},{@log smoke=TC002: cos angle units. Failed (cos(180d)=[round(cos(180,d),6)] cos(200g)=[round(cos(200,g),6)] cos(90d)=[round(cos(90,d),6)]).;@trig me/tr.done}"
 <
 !51
 "test_cpad_fn"
@@ -8407,9 +8415,11 @@
 >256
 "@log smoke=Beginning tan() test cases."
 >257
-"@if cand(eq(round(tan(0),6), 0),eq(round(tan(fdiv(pi(),4)),6), 1))={@log smoke=TC001: tan basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: tan basic operations. Failed (tan(0)=[round(tan(0),6)] tan(pi/4)=[round(tan(fdiv(pi(),4)),6)]).;@trig me/tr.done}"
+"@if cand(eq(round(tan(0),6), 0),eq(round(tan(fdiv(pi(),4)),6), 1))={@log smoke=TC001: tan basic operations. Succeeded.},{@log smoke=TC001: tan basic operations. Failed (tan(0)=[round(tan(0),6)] tan(pi/4)=[round(tan(fdiv(pi(),4)),6)]).}"
 >258
 "@log smoke=End tan() test cases.;@notify smoke"
+>259
+"@if cand(eq(round(tan(45,d),6), 1),eq(round(tan(50,g),6), 1),eq(round(tan(0,d),6), 0))={@log smoke=TC002: tan angle units. Succeeded.;@trig me/tr.done},{@log smoke=TC002: tan angle units. Failed (tan(45d)=[round(tan(45,d),6)] tan(50g)=[round(tan(50,g),6)] tan(0d)=[round(tan(0,d),6)]).;@trig me/tr.done}"
 <
 !249
 "test_t_fn"
