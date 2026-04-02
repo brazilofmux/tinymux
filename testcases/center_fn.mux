@@ -32,71 +32,73 @@
 #
 # Test Case #2 - Regression of Issue 527.
 # Verify multi-char fill with varying widths.
+# Use '-' fill so exact content is verifiable.
 #
 &tr.tc002 test_center_fn=
   @if cand(
-        eq(strlen(center(X,3,12)), 3),
-        eq(strlen(center(X,5,1234)), 5),
-        eq(strlen(center(X,10,1234567890)), 10)
+        strmatch(center(X,3,-), -X-),
+        strmatch(center(X,5,-), --X--),
+        strmatch(center(X,7,-), ---X---)
       )=
   {
     @log smoke=TC002: Regressions. Succeeded.
   },
   {
-    @log smoke=TC002: Regressions. Failed.
+    @log smoke=TC002: Regressions. Failed (c1=[center(X,3,-)] c2=[center(X,5,-)] c3=[center(X,7,-)]).
   }
 -
 #
 # Test Case #3 - Vary string and width with default fill.
-# String longer than width returns original string.
-# String shorter than width gets padded with spaces.
+# String equal to width returns original string unchanged.
+# String shorter than width gets padded (use '-' to verify content).
 #
 &tr.tc003 test_center_fn=
   @if cand(
-        strmatch(center(1,1), 1),
-        gt(strlen(center(1,3)), 1),
-        gt(strlen(center(123,11)), 3)
+        strmatch(center(ABC,3,-), ABC),
+        strmatch(center(A,5,-), --A--),
+        strmatch(center(AB,6,-), --AB--)
       )=
   {
-    @log smoke=TC003: Vary string and width with default fill. Succeeded.
+    @log smoke=TC003: Vary string and width. Succeeded.
   },
   {
-    @log smoke=TC003: Vary string and width with default fill. Failed.
+    @log smoke=TC003: Vary string and width. Failed (c1=[center(ABC,3,-)] c2=[center(A,5,-)] c3=[center(AB,6,-)]).
   }
 -
 #
 # Test Case #4 - Vary string and width with '-' fill.
+# Verify padding is balanced (left gets floor, right gets ceil or vice versa).
 #
 &tr.tc004 test_center_fn=
   @if cand(
         strmatch(center(1,1,-), 1),
         strmatch(center(1,3,-), -1-),
         strmatch(center(12,4,-), -12-),
-        eq(strlen(center(123,11,-)), 11)
+        strmatch(center(123,11,-), ----123----)
       )=
   {
     @log smoke=TC004: Vary string and width with '-' fill. Succeeded.
   },
   {
-    @log smoke=TC004: Vary string and width with '-' fill. Failed.
+    @log smoke=TC004: Vary string and width with '-' fill. Failed (c4=[center(123,11,-)]).
   }
 -
 #
-# Test Case #5 - Vary string and width with '-+' fill.
+# Test Case #5 - Multi-char fill cycles correctly.
+# center(X,7,-+) should fill with "-+-" on each side.
 #
 &tr.tc005 test_center_fn=
   @if cand(
         strmatch(center(1,1,-+), 1),
-        eq(strlen(center(1,3,-+)), 3),
-        eq(strlen(center(1,5,-+)), 5),
-        eq(strlen(center(123,11,-+)), 11)
+        strmatch(center(X,5,-+), -+X+-),
+        strmatch(center(X,7,-+), -+-X-+-)
       )=
   {
     @log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: Vary string and width with '-+' fill. Failed.;
+    @log smoke=TC005: Vary string and width with '-+' fill. Failed (c2=[center(X,5,-+)] c3=[center(X,7,-+)]).;
     @trig me/tr.done
   }
 -
