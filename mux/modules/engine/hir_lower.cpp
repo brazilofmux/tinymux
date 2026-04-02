@@ -3209,14 +3209,19 @@ literal_strcat:
             } else if (upper == "ELEMENTS" && nargs >= 3) {
                 delim_idx = 2;
             }
-            // ELEMENTS osep (arg[3]) is also single-byte only.
-            if (upper == "ELEMENTS" && nargs >= 4 && delim_idx >= 0) {
-                if (!h.is_const(args[3])) {
-                    t2addr = 0;
-                } else {
-                    std::string ostr = h.const_str(args[3]);
-                    if (ostr.size() > 1) {
+            // ELEMENTS osep (arg[3]), REPLACE/INSERT osep (arg[4])
+            // are also single-byte only.
+            {
+                int osep_idx = -1;
+                if (upper == "ELEMENTS" && nargs >= 4) osep_idx = 3;
+                if (osep_idx >= 0) {
+                    if (!h.is_const(args[osep_idx])) {
                         t2addr = 0;
+                    } else {
+                        std::string ostr = h.const_str(args[osep_idx]);
+                        if (ostr.size() > 1) {
+                            t2addr = 0;
+                        }
                     }
                 }
             }

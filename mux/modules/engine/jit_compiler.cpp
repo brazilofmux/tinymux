@@ -290,9 +290,10 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "SETDIFF",     "co_setdiff_wrap" },
     { "SETINTER",    "co_setinter_wrap" },
     { "LDELETE",     "co_ldelete_wrap" },
-    // Deliberately exclude REPLACE/INSERT for now. Updated regressions
-    // show list/separator parity gaps; fall back to the interpreter
-    // until the wrapper behavior is proven identical.
+    // REPLACE/INSERT: do_itemfuns has complex semantics (negative
+    // positions, empty-list special cases, multi-position support)
+    // that the co_*_wrap wrappers don't fully replicate.  Fall
+    // through to ECALL until the wrappers match do_itemfuns parity.
 
     // --- ASCII-only rv64_* (no color, byte-level operations) ---
     // These are fine for functions that don't handle colored text.
