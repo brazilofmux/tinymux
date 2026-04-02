@@ -2763,6 +2763,74 @@ general_lowering:
         }
     }
 
+    // LOG(value, base) — 2-arg form with constant base.
+    // Resolve the base at compile time and emit the appropriate intrinsic.
+    // Dynamic base falls through to ECALL.
+    //
+    if (upper == "LOG" && nargs == 2
+        && h.is_numeric(args[0]) && h.is_const(args[1])) {
+#ifndef HAVE_IEEE_FP_SNAN
+        // On non-IEEE systems, the interpreter has domain guards that
+        // return "Ind" for negative values and "-Inf" for zero.  The
+        // native intrinsics bypass those guards, so fall through to
+        // ECALL to preserve parity.
+#else
+        std::string base_str = h.const_str(args[1]);
+        uint64_t addr = 0;
+        int fmath_id = 0;
+
+        if (base_str == "10") {
+            addr = fp_intrinsic_addr("log10");
+            fmath_id = FMATH_LOG10;
+        } else if (base_str == "e") {
+            addr = fp_intrinsic_addr("log");
+            fmath_id = FMATH_LOG;
+        } else if (base_str == "2") {
+            // log_2(x) = log(x) / log(2)
+            uint64_t ln_addr = fp_intrinsic_addr("log");
+            if (ln_addr) {
+                int a = ensure_float(args[0]);
+                int lnx = h.emit(HIR_FCALL1, TY_FLOAT, a, -1,
+                                 static_cast<int64_t>(ln_addr));
+                h.func_idx[lnx] = FMATH_LOG;
+                int ln2 = h.emit_fconst(::log(2.0));
+                int r = h.emit(HIR_FDIV, TY_FLOAT, lnx, ln2);
+                h.native_ops++;
+                h.needs_jit = true;
+                return r;
+            }
+        } else {
+            // General case: log_b(x) = log(x) / log(b)
+            double bval = mux_atof(u8(base_str));
+            if (bval > 1.0) {
+                uint64_t ln_addr = fp_intrinsic_addr("log");
+                if (ln_addr) {
+                    int a = ensure_float(args[0]);
+                    int lnx = h.emit(HIR_FCALL1, TY_FLOAT, a, -1,
+                                     static_cast<int64_t>(ln_addr));
+                    h.func_idx[lnx] = FMATH_LOG;
+                    int lnb = h.emit_fconst(::log(bval));
+                    int r = h.emit(HIR_FDIV, TY_FLOAT, lnx, lnb);
+                    h.native_ops++;
+                    h.needs_jit = true;
+                    return r;
+                }
+            }
+            // base <= 1 → fall through to ECALL for error handling.
+        }
+
+        if (addr) {
+            int a = ensure_float(args[0]);
+            int r = h.emit(HIR_FCALL1, TY_FLOAT, a, -1,
+                           static_cast<int64_t>(addr));
+            h.func_idx[r] = fmath_id;
+            h.native_ops++;
+            h.needs_jit = true;
+            return r;
+        }
+#endif
+    }
+
     // Binary FP functions: POWER, ATAN2, FMOD → FCALL2.
     for (int ti = 0; s_fp_binary[ti].mux_name; ti++) {
         if (upper == s_fp_binary[ti].mux_name && nargs == 2
