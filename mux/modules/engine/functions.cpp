@@ -6973,6 +6973,13 @@ static FUNCTION(fun_splice)
         return;
     }
 
+    // Strip color from the search word for comparison.
+    //
+    const unsigned char *pSearch = reinterpret_cast<const unsigned char *>(fargs[2]);
+    size_t nSearchLen = strlen(reinterpret_cast<const char *>(fargs[2]));
+    unsigned char searchPlain[LBUF_SIZE];
+    size_t nSearchPlain = co_strip_color(searchPlain, pSearch, nSearchLen);
+
     // Loop through the two lists.
     //
     UTF8 *p1 = trim_space_sep(fargs[0], sep);
@@ -6988,7 +6995,17 @@ static FUNCTION(fun_splice)
         {
             print_sep(osep, buff, bufc);
         }
-        if (strcmp(reinterpret_cast<char *>(p2), reinterpret_cast<char *>(fargs[2])) == 0)
+
+        // Strip color from this word for comparison,
+        // matching fun_remove's color-insensitive semantics.
+        //
+        unsigned char wPlain[LBUF_SIZE];
+        size_t nwp = co_strip_color(wPlain,
+                         reinterpret_cast<const unsigned char *>(p2),
+                         strlen(reinterpret_cast<const char *>(p2)));
+
+        if (nwp == nSearchPlain
+            && 0 == memcmp(wPlain, searchPlain, nwp))
         {
             safe_str(q2, buff, bufc); // replace
         }

@@ -929,72 +929,46 @@ static void test_splice(void) {
               (const unsigned char *)"a y c", 5);
 }
 
-/* ---- co_splice_raw ---- */
+/* ---- co_splice color-insensitive ---- */
 
-static void test_splice_raw(void) {
-    const char *name = "co_splice_raw";
+static void test_splice_color(void) {
+    const char *name = "co_splice_color";
     unsigned char out[LBUF_SIZE];
     size_t r;
 
-    /* Basic: replace matching word. */
-    r = co_splice_raw(out,
-        (const unsigned char *)"a b c", 5,
-        (const unsigned char *)"x y z", 5,
-        (const unsigned char *)"b", 1,
-        ' ', ' ');
-    check_buf(name, "splice b->y", out, r,
-              (const unsigned char *)"a y c", 5);
-
-    /* No match: list1 returned unchanged. */
-    r = co_splice_raw(out,
-        (const unsigned char *)"a b c", 5,
-        (const unsigned char *)"x y z", 5,
-        (const unsigned char *)"d", 1,
-        ' ', ' ');
-    check_buf(name, "splice no match", out, r,
-              (const unsigned char *)"a b c", 5);
-
-    /* Raw comparison is color-sensitive: colored word does NOT match
-     * plain search word (unlike co_splice which strips color). */
+    /* Color-insensitive: colored word DOES match plain search word
+     * because co_splice strips color before comparing. */
     {
-        /* PUA BMP color: \xEE\x80\x80 = U+E000 (start color) */
-        unsigned char colored[] = { 0xEE, 0x80, 0x80, 'b', 0 };
-        r = co_splice_raw(out,
-            colored, 4,
+        /* U+F600 (fg color 0) = 0xEF 0x98 0x80 */
+        unsigned char colored_list[8];
+        int n = pua_fg(colored_list, 0);
+        colored_list[n++] = 'b';
+        colored_list[n] = '\0';
+        r = co_splice(out,
+            colored_list, (size_t)n,
             (const unsigned char *)"y", 1,
             (const unsigned char *)"b", 1,
             ' ', ' ');
-        /* "b" with color prefix != plain "b", so no replacement. */
-        check_buf(name, "color-sensitive no match", out, r,
-                  colored, 4);
+        /* Colored "b" strips to "b", matches search "b" → replaced with "y". */
+        check_buf(name, "color-insensitive match", out, r,
+                  (const unsigned char *)"y", 1);
     }
 
-    /* Multiple matches: each matching position replaced from list2. */
-    r = co_splice_raw(out,
-        (const unsigned char *)"a b a", 5,
-        (const unsigned char *)"x y z", 5,
-        (const unsigned char *)"a", 1,
-        ' ', ' ');
-    check_buf(name, "splice multiple matches", out, r,
-              (const unsigned char *)"x b z", 5);
-
-    /* Non-space delimiter. */
-    r = co_splice_raw(out,
-        (const unsigned char *)"a|b|c", 5,
-        (const unsigned char *)"x|y|z", 5,
-        (const unsigned char *)"b", 1,
-        '|', '|');
-    check_buf(name, "splice pipe delim", out, r,
-              (const unsigned char *)"a|y|c", 5);
-
-    /* Mismatched word counts: empty output. */
-    r = co_splice_raw(out,
-        (const unsigned char *)"a b c", 5,
-        (const unsigned char *)"x y", 3,
-        (const unsigned char *)"a", 1,
-        ' ', ' ');
-    check_buf(name, "splice mismatched counts", out, r,
-              (const unsigned char *)"", 0);
+    /* Colored search word also stripped: plain "b" matched by colored search. */
+    {
+        unsigned char colored_search[8];
+        int n = pua_fg(colored_search, 1);
+        colored_search[n++] = 'b';
+        colored_search[n] = '\0';
+        r = co_splice(out,
+            (const unsigned char *)"b", 1,
+            (const unsigned char *)"y", 1,
+            colored_search, (size_t)n,
+            ' ', ' ');
+        /* Both strip to "b" → match → replaced. */
+        check_buf(name, "colored search matches plain word", out, r,
+                  (const unsigned char *)"y", 1);
+    }
 }
 
 /* ---- co_insert_word ---- */
@@ -3876,7 +3850,7 @@ static const test_suite_t suites[] = {
     { "member",           test_member },
     { "lpos",             test_lpos },
     { "splice",           test_splice },
-    { "splice_raw",       test_splice_raw },
+    { "splice_color",     test_splice_color },
     { "insert_word",      test_insert_word },
     { "replace_at",       test_replace_at },
     { "insert_at",        test_insert_at },
