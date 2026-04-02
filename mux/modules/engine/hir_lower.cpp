@@ -546,13 +546,15 @@ static bool try_fold(const std::string &func_name,
         return true;
     }
 
-    if (upper == "SQUISH" && nargs == 1) {
-        // Squish compresses multiple spaces to one — co_compress
-        // with the compress char being space.
+    if (upper == "SQUISH" && (nargs == 1
+        || (nargs == 2 && args[1].size() <= 1))) {
+        // Squish compresses consecutive delimiters to one.
+        unsigned char ch = (nargs == 2 && !args[1].empty())
+            ? static_cast<unsigned char>(args[1][0]) : ' ';
         LBuf out = LBuf_Src("hir_squish");
         size_t n = co_compress(reinterpret_cast<unsigned char *>(out.get()),
             reinterpret_cast<const unsigned char *>(args[0].data()),
-            args[0].size(), ' ');
+            args[0].size(), ch);
         result.assign(reinterpret_cast<const char *>(out.get()), n);
         return true;
     }
@@ -3192,11 +3194,11 @@ literal_strcat:
         if (upper == "ATAN2" && nargs != 2) {
             t2addr = 0;
         }
-        // FIRST/REST/LAST wrappers only handle single-byte delimiters.
-        // Multi-char string delimiters (DELIM_STRING) need the
-        // interpreter's co_split_words path.
-        if ((upper == "FIRST" || upper == "REST" || upper == "LAST")
-            && nargs == 2) {
+        // FIRST/REST/LAST/SQUISH wrappers only handle single-byte
+        // delimiters.  Multi-char string delimiters (DELIM_STRING)
+        // need the interpreter's multi-char path.
+        if ((upper == "FIRST" || upper == "REST" || upper == "LAST"
+             || upper == "SQUISH") && nargs == 2) {
             // If delimiter arg is a known constant with length > 1,
             // skip Tier 2.  If dynamic, be conservative and skip too
             // since we can't verify it's single-char at compile time.

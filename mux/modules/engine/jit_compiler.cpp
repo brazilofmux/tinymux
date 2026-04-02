@@ -327,8 +327,7 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     // --- Batch 4: space, secure, squish, delete, elements ---
     { "SPACE",       "rv64_space" },
     { "SECURE",      "co_secure_wrap" },
-    // Deliberately exclude SQUISH for now. Multi-character separator
-    // behavior in the fast path does not yet match the interpreter.
+    { "SQUISH",      "co_compress_wrap" },
     { "DELETE",      "rv64_delete" },
     // Deliberately exclude ELEMENTS for now. Updated regressions show
     // delimiter/whitespace parity gaps in the Tier 2 implementation.
