@@ -15,20 +15,16 @@
 # Test Case #1 - Basic stripansi operations.
 #
 &tr.tc001 test_stripansi_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [stripansi(%xrHello%xn)]
-            [stripansi(NoAnsi)]
-          )
-        ),
-        BA75635A10439C791E7814BC41AE0B1DA6602844
+  @if cand(
+        strmatch(stripansi(%xrHello%xn), Hello),
+        strmatch(stripansi(NoAnsi), NoAnsi)
       )=
   {
     @log smoke=TC001: stripansi basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: stripansi basic operations. Failed (%q0).;
+    @log smoke=TC001: stripansi basic operations. Failed (stripansi=%xrHello%xn)=[stripansi(%xrHello%xn)] stripansi(NoAnsi)=[stripansi(NoAnsi)]).;
     @trig me/tr.done
   }
 -

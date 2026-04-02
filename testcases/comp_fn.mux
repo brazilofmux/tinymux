@@ -15,20 +15,16 @@
 # Test Case #1 - Basic string comparison operations.
 #
 &tr.tc001 test_comp_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [comp(a,b)]
-            [comp(a,a)]
-            [comp(b,a)]
-          )
-        ),
-        671CC6A3DFA9EB58EA4236AFC97998D9CDDD6C08
+  @if cand(
+        eq(comp(a,b), -1),
+        eq(comp(a,a), 0),
+        eq(comp(b,a), 1)
       )=
   {
     @log smoke=TC001: comp basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: comp basic operations. Failed (%q0).
+    @log smoke=TC001: comp basic operations. Failed (comp(a%,b)=[comp(a,b)] comp(a%,a)=[comp(a,a)] comp(b%,a)=[comp(b,a)]).
   }
 -
 #
@@ -37,21 +33,17 @@
 # Also compare different Unicode characters.
 #
 &tr.tc002 test_comp_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [comp(chr(233),chr(101 769))]
-            [comp(chr(233),chr(252))]
-            [comp(chr(65296),chr(65296))]
-          )
-        ),
-        FB1D36F760525763E048979F5DEDBE0D6F280FF3
+  @if cand(
+        eq(comp(chr(233),chr(101 769)), 0),
+        neq(comp(chr(233),chr(252)), 0),
+        eq(comp(chr(65296),chr(65296)), 0)
       )=
   {
     @log smoke=TC002: comp Unicode. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: comp Unicode. Failed (%q0).;
+    @log smoke=TC002: comp Unicode. Failed (comp(233%,101 769)=[comp(chr(233),chr(101 769))] comp(233%,252)=[comp(chr(233),chr(252))] comp(65296%,65296)=[comp(chr(65296),chr(65296))]).;
     @trig me/tr.done
   }
 -

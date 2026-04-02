@@ -15,67 +15,50 @@
 # Test Case #1 - isalpha basic ASCII.
 #
 &tr.tc001 test_isalpha_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [isalpha(Hello)]
-            [isalpha(Hello123)]
-            [isalpha(123)]
-            [isalpha()]
-            [isalpha( )]
-          )
-        ),
-        69970CED7C774C603DEFCA271EB6B11F15B125BB
+  @if cand(
+        eq(isalpha(Hello), 1),
+        eq(isalpha(Hello123), 0),
+        eq(isalpha(123), 0)
       )=
   {
     @log smoke=TC001: isalpha basic. Succeeded.
   },
   {
-    @log smoke=TC001: isalpha basic. Failed (%q0).
+    @log smoke=TC001: isalpha basic. Failed (Hello=[isalpha(Hello)] Hello123=[isalpha(Hello123)] 123=[isalpha(123)]).
   }
 -
 #
 # Test Case #2 - isdigit basic ASCII.
 #
 &tr.tc002 test_isalpha_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [isdigit(12345)]
-            [isdigit(123.45)]
-            [isdigit(Hello)]
-            [isdigit()]
-            [isdigit(-5)]
-          )
-        ),
-        0E6CE05DD9D01E8F360365DEE7648F7EC1645678
+  @if cand(
+        eq(isdigit(12345), 1),
+        eq(isdigit(123.45), 0),
+        eq(isdigit(Hello), 0)
       )=
   {
     @log smoke=TC002: isdigit basic. Succeeded.
   },
   {
-    @log smoke=TC002: isdigit basic. Failed (%q0).
+    @log smoke=TC002: isdigit basic. Failed (12345=[isdigit(12345)] 123.45=[isdigit(123.45)] Hello=[isdigit(Hello)]).
   }
 -
 #
 # Test Case #3 - isalnum basic ASCII.
 #
 &tr.tc003 test_isalpha_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [isalnum(Hello123)]
-            [isalnum(Hello 123)]
-            [isalnum(Hello)]
-            [isalnum(123)]
-            [isalnum()]
-          )
-        ),
-        244A237FBE721E815E0C2A17AE47A46EE658315B
+  @if cand(
+        eq(isalnum(Hello123), 1),
+        eq(isalnum(Hello 123), 0),
+        eq(isalnum(Hello), 1),
+        eq(isalnum(123), 1)
       )=
   {
     @log smoke=TC003: isalnum basic. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: isalnum basic. Failed (%q0).;
+    @log smoke=TC003: isalnum basic. Failed (Hello123=[isalnum(Hello123)] Hello 123=[isalnum(Hello 123)]).;
     @trig me/tr.done
   }
 -

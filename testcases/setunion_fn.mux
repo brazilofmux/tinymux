@@ -15,20 +15,16 @@
 # Test Case #1 - Basic set union.
 #
 &tr.tc001 test_setunion_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [setunion(a b c,b c d)]
-            [setunion(a|b|c,b|c|d,|)]
-          )
-        ),
-        1E7FC49F2592B7D5BEA67CF67CCA81570B738117
+  @if cand(
+        strmatch(setunion(a b c,b c d), a b c d),
+        strmatch(setunion(a|b|c,b|c|d,|), a|b|c|d)
       )=
   {
     @log smoke=TC001: setunion basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: setunion basic operations. Failed (%q0).;
+    @log smoke=TC001: setunion basic operations. Failed (setunion=[setunion(a b c,b c d)] setunion|=[setunion(a|b|c,b|c|d,|)]).;
     @trig me/tr.done
   }
 -

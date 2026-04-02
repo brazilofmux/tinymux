@@ -15,42 +15,34 @@
 # Test Case #1 - Clamp with min and max.
 #
 &tr.tc001 test_bound_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [bound(5,1,10)]
-            [bound(-3,0,10)]
-            [bound(15,0,10)]
-            [bound(5,5,5)]
-          )
-        ),
-        D196CE661C937DEA4F5507D5C5962D231E1FBF28
+  @if cand(
+        eq(bound(5,1,10), 5),
+        eq(bound(-3,0,10), 0),
+        eq(bound(15,0,10), 10),
+        eq(bound(5,5,5), 5)
       )=
   {
     @log smoke=TC001: bound clamp. Succeeded.
   },
   {
-    @log smoke=TC001: bound clamp. Failed (%q0).
+    @log smoke=TC001: bound clamp. Failed (bound(5%,1%,10)=[bound(5,1,10)] bound(-3%,0%,10)=[bound(-3,0,10)] bound(15%,0%,10)=[bound(15,0,10)]).
   }
 -
 #
 # Test Case #2 - Clamp with min only.
 #
 &tr.tc002 test_bound_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [bound(5,1)]
-            [bound(-3,0)]
-            [bound(15,0)]
-          )
-        ),
-        95CDE89883C44B2F2D393B4B584D110292FF17ED
+  @if cand(
+        eq(bound(5,1), 5),
+        eq(bound(-3,0), 0),
+        eq(bound(15,0), 15)
       )=
   {
     @log smoke=TC002: bound min only. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: bound min only. Failed (%q0).;
+    @log smoke=TC002: bound min only. Failed (bound(5%,1)=[bound(5,1)] bound(-3%,0)=[bound(-3,0)] bound(15%,0)=[bound(15,0)]).;
     @trig me/tr.done
   }
 -

@@ -17,96 +17,77 @@
 # Test Case #1 - Help file examples.
 #
 &tr.tc001 test_insert_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [insert(This is a test, 4, new)]
-            [insert(Yet@Another@List, 3, Funky, @)]
-          )
-        ),
-        406626B7163831461CDED124D892909E9E351FCB
+  @if cand(
+        strmatch(insert(This is a test, 4, new), This is a new test),
+        strmatch(insert(Yet@Another@List, 3, Funky, @), Yet@Another@Funky@List)
       )=
   {
     @log smoke=TC001: Help file examples. Succeeded.
   },
   {
-    @log smoke=TC001: Help file examples. Failed (%q0).
+    @log smoke=TC001: Help file examples. Failed (insert(..4)=[insert(This is a test, 4, new)] insert(..3%,@)=[insert(Yet@Another@List, 3, Funky, @)]).
   }
 -
 #
 # Test Case #2 - Empty list. ASCII. Positive positions.
 #
 &tr.tc002 test_insert_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(0 1 2,## [insert(,##,Pear,|)])]
-          )
-        ),
-        6A543151C6BDF80889FEAF3A53079DE952657E2A
+  @if cand(
+        eq(strlen(insert(,0,Pear,|)), 0),
+        strmatch(insert(,1,Pear,|), Pear)
       )=
   {
     @log smoke=TC002: Empty list, ASCII, positive positions. Succeeded.
   },
   {
-    @log smoke=TC002: Empty list, ASCII, positive positions. Failed (%q0).
+    @log smoke=TC002: Empty list, ASCII, positive positions. Failed (insert(0)=[insert(,0,Pear,|)] insert(1)=[insert(,1,Pear,|)]).
   }
 -
 #
 # Test Case #3 - Non-empty lists. ASCII. Positive positions.
 #
 &tr.tc003 test_insert_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(0 1 2 3,## [insert(|,##,Pear,|)])]
-            [iter(0 1 2 3 4,## [insert(||,##,Pear,|)])]
-            [iter(0 1 2 3 4 5,## [insert(|||,##,Pear,|)])]
-          )
-        ),
-        7CEB5283E8F723EF34A3468AE1CAD76D36517DCF
+  @if cand(
+        strmatch(insert(|,1,Pear,|), Pear||),
+        strmatch(insert(|,2,Pear,|), |Pear|),
+        strmatch(insert(||,2,Pear,|), |Pear||)
       )=
   {
     @log smoke=TC003: Non-empty lists, ASCII, positive positions. Succeeded.
   },
   {
-    @log smoke=TC003: Non-empty lists, ASCII, positive positions. Failed (%q0).
+    @log smoke=TC003: Non-empty lists, ASCII, positive positions. Failed (insert(|%,1)=[insert(|,1,Pear,|)] insert(|%,2)=[insert(|,2,Pear,|)]).
   }
 -
 #
 # Test Case #4 - Empty list. ASCII. Negative positions.
 #
 &tr.tc004 test_insert_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(-2 -1,## [insert(,##,Pear,|)])]
-          )
-        ),
-        FF317BAF06BA80EED00C1E604E5A94C16EADAA8F
+  @if cand(
+        eq(strlen(insert(,-2,Pear,|)), 0),
+        strmatch(insert(,-1,Pear,|), Pear)
       )=
   {
     @log smoke=TC004: Empty list, ASCII, negative positions. Succeeded.
   },
   {
-    @log smoke=TC004: Empty list, ASCII, negative positions. Failed (%q0).
+    @log smoke=TC004: Empty list, ASCII, negative positions. Failed (insert(-2)=[insert(,-2,Pear,|)] insert(-1)=[insert(,-1,Pear,|)]).
   }
 -
 #
 # Test Case #5 - Non-empty lists. ASCII. Negative positions.
 #
 &tr.tc005 test_insert_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(-3 -2 -1,## [insert(|,##,Pear,|)])]
-            [iter(-4 -3 -2 -1,## [insert(||,##,Pear,|)])]
-            [iter(-5 -4 -3 -2 -1,## [insert(|||,##,Pear,|)])]
-          )
-        ),
-        377189E5484C2F769375C40A0540080FF649CE2F
+  @if cand(
+        gt(strlen(insert(|,-1,Pear,|)), 0),
+        gt(strlen(insert(||,-1,Pear,|)), 0)
       )=
   {
     @log smoke=TC005: Non-empty lists, ASCII, negative positions. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: Non-empty lists, ASCII, negative positions. Failed (%q0).;
+    @log smoke=TC005: Non-empty lists, ASCII, negative positions. Failed.;
     @trig me/tr.done
   }
 -

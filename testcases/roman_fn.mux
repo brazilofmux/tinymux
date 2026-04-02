@@ -15,23 +15,19 @@
 # Test Case #1 - Basic roman numeral conversions.
 #
 &tr.tc001 test_roman_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [roman(1)]
-            [roman(4)]
-            [roman(9)]
-            [roman(42)]
-            [roman(1999)]
-          )
-        ),
-        A1752932657A663A99E42C51FB5E2F4A95680427
+  @if cand(
+        strmatch(roman(1), i),
+        strmatch(roman(4), iv),
+        strmatch(roman(9), ix),
+        strmatch(roman(42), xlii),
+        strmatch(roman(1999), mcmxcix)
       )=
   {
     @log smoke=TC001: roman basic conversions. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: roman basic conversions. Failed (%q0).;
+    @log smoke=TC001: roman basic conversions. Failed (roman(1)=[roman(1)] roman(4)=[roman(4)] roman(42)=[roman(42)] roman(1999)=[roman(1999)]).;
     @trig me/tr.done
   }
 -

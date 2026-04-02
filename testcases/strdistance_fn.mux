@@ -15,44 +15,36 @@
 # Test Case #1 - Basic edit distance.
 #
 &tr.tc001 test_strdistance_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strdistance(kitten, sitting)]
-            [strdistance(hello, hello)]
-            [strdistance(abc, abc)]
-            [strdistance(, abc)]
-            [strdistance(abc,)]
-          )
-        ),
-        6365ADD1E86CB23BF71B5BCCA0CAD00EDD28D6C3
+  @if cand(
+        eq(strdistance(kitten, sitting), 3),
+        eq(strdistance(hello, hello), 0),
+        eq(strdistance(abc, abc), 0),
+        eq(strdistance(, abc), 3),
+        eq(strdistance(abc,), 3)
       )=
   {
     @log smoke=TC001: strdistance basic. Succeeded.
   },
   {
-    @log smoke=TC001: strdistance basic. Failed (%q0).
+    @log smoke=TC001: strdistance basic. Failed (kitten-sitting=[strdistance(kitten, sitting)] hello-hello=[strdistance(hello, hello)]).
   }
 -
 #
 # Test Case #2 - Single operations.
 #
 &tr.tc002 test_strdistance_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strdistance(a, b)]
-            [strdistance(ab, a)]
-            [strdistance(a, ab)]
-            [strdistance(,)]
-          )
-        ),
-        533958A2148AA8A3466FA3A8340D51E28294F41D
+  @if cand(
+        eq(strdistance(a, b), 1),
+        eq(strdistance(ab, a), 1),
+        eq(strdistance(a, ab), 1),
+        eq(strdistance(,), 0)
       )=
   {
     @log smoke=TC002: strdistance single ops. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: strdistance single ops. Failed (%q0).;
+    @log smoke=TC002: strdistance single ops. Failed (a-b=[strdistance(a, b)] ab-a=[strdistance(ab, a)]).;
     @trig me/tr.done
   }
 -

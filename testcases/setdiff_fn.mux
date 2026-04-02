@@ -15,20 +15,16 @@
 # Test Case #1 - Basic set difference.
 #
 &tr.tc001 test_setdiff_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [setdiff(a b c d,b d)]
-            [setdiff(a|b|c|d,b|d,|)]
-          )
-        ),
-        195EEEBBC2945D7BAD1F47E87B42E04021C1676B
+  @if cand(
+        strmatch(setdiff(a b c d,b d), a c),
+        strmatch(setdiff(a|b|c|d,b|d,|), a|c)
       )=
   {
     @log smoke=TC001: setdiff basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: setdiff basic operations. Failed (%q0).;
+    @log smoke=TC001: setdiff basic operations. Failed (setdiff=[setdiff(a b c d,b d)] setdiff|=[setdiff(a|b|c|d,b|d,|)]).;
     @trig me/tr.done
   }
 -
