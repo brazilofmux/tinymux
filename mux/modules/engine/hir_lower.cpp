@@ -559,15 +559,15 @@ static bool try_fold(const std::string &func_name,
         return true;
     }
 
-    // --- MEMBER(target, list[, delim]) ---
+    // --- MEMBER(list, target[, delim]) ---
     if (upper == "MEMBER" && (nargs == 2 || nargs == 3)) {
         unsigned char delim = (nargs == 3 && !args[2].empty())
             ? static_cast<unsigned char>(args[2][0]) : ' ';
         size_t n = co_member(
-            reinterpret_cast<const unsigned char *>(args[0].data()),
-            args[0].size(),
             reinterpret_cast<const unsigned char *>(args[1].data()),
-            args[1].size(), delim);
+            args[1].size(),
+            reinterpret_cast<const unsigned char *>(args[0].data()),
+            args[0].size(), delim);
         result = format_long(static_cast<long>(n));
         return true;
     }
