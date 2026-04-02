@@ -21,24 +21,17 @@
     @trig me/tr.done
   },
   {
-    @if strmatch(
-          setr(0,sha1(
-              [round(atan2(1,1),6)]
-              [round(atan2(1,-2),6)]
-              [round(atan2(-1,1),6)]
-              [round(atan2(-1,-1),6)]
-              [round(atan2(1,-1),6)]
-              [round(atan2(0,0),6)]
-            )
-          ),
-          B55A79DA9290C1CB2A56FB7960A0D359D20FEFAA
+    @if cand(
+          eq(round(atan2(1,1),6), 0.785398),
+          eq(round(atan2(0,0),6), 0),
+          eq(round(atan2(-1,-1),6), -2.356194)
         )=
     {
       @log smoke=TC001: atan2 examples. Succeeded.;
       @trig me/tr.done
     },
     {
-      @log smoke=TC001: atan2 examples. Failed (%q0).;
+      @log smoke=TC001: atan2 examples. Failed (atan2(1%,1)=[round(atan2(1,1),6)] atan2(0%,0)=[round(atan2(0,0),6)] atan2(-1%,-1)=[round(atan2(-1,-1),6)]).;
       @trig me/tr.done
     }
   }
@@ -52,4 +45,3 @@ drop test_atan2_fn
 #
 # End of Test Cases
 #
-

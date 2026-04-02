@@ -15,21 +15,17 @@
 # Test Case #1 - Basic exponential operations.
 #
 &tr.tc001 test_exp_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [round(exp(0),6)]
-            [round(exp(1),6)]
-            [round(exp(-1),6)]
-          )
-        ),
-        2201976080347510F2B03D698DC7CB20BB6A30DB
+  @if cand(
+        eq(round(exp(0),6), 1),
+        eq(round(exp(1),6), 2.718282),
+        eq(round(exp(-1),6), 0.367879)
       )=
   {
     @log smoke=TC001: exp basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: exp basic operations. Failed (%q0).;
+    @log smoke=TC001: exp basic operations. Failed (exp(0)=[round(exp(0),6)] exp(1)=[round(exp(1),6)] exp(-1)=[round(exp(-1),6)]).;
     @trig me/tr.done
   }
 -

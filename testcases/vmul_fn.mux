@@ -15,20 +15,16 @@
 # Test Case #1 - Basic vector multiply operations.
 #
 &tr.tc001 test_vmul_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [vmul(1 2 3,2)]
-            [vmul(0 0 0,5)]
-          )
-        ),
-        571022336F2590A6ADE42BEA63153951F705C1BA
+  @if cand(
+        strmatch(vmul(1 2 3,2), 2 4 6),
+        strmatch(vmul(0 0 0,5), 0 0 0)
       )=
   {
     @log smoke=TC001: vmul basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: vmul basic operations. Failed (%q0).;
+    @log smoke=TC001: vmul basic operations. Failed (vmul(1 2 3%,2)=[vmul(1 2 3,2)] vmul(0 0 0%,5)=[vmul(0 0 0,5)]).;
     @trig me/tr.done
   }
 -

@@ -15,21 +15,17 @@
 # Test Case #1 - Basic common logarithm operations.
 #
 &tr.tc001 test_log_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [round(log(100),6)]
-            [round(log(10),6)]
-            [round(log(1),6)]
-          )
-        ),
-        F30911627F0896390989D4A2255C8DDF8F56B761
+  @if cand(
+        eq(round(log(100),6), 2),
+        eq(round(log(10),6), 1),
+        eq(round(log(1),6), 0)
       )=
   {
     @log smoke=TC001: log basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: log basic operations. Failed (%q0).;
+    @log smoke=TC001: log basic operations. Failed (log(100)=[round(log(100),6)] log(10)=[round(log(10),6)] log(1)=[round(log(1),6)]).;
     @trig me/tr.done
   }
 -

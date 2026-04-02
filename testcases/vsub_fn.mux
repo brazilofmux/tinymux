@@ -15,19 +15,13 @@
 # Test Case #1 - Basic vector subtraction.
 #
 &tr.tc001 test_vsub_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [vsub(4 5 6,1 2 3)]
-          )
-        ),
-        30B2CD7FACF5A44EBCF05B245BEECC5D1B24FCEC
-      )=
+  @if strmatch(vsub(4 5 6,1 2 3), 3 3 3)=
   {
     @log smoke=TC001: vsub basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: vsub basic operations. Failed (%q0).;
+    @log smoke=TC001: vsub basic operations. Failed (vsub=[vsub(4 5 6,1 2 3)]).;
     @trig me/tr.done
   }
 -

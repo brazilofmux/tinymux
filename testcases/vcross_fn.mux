@@ -13,22 +13,20 @@
 -
 #
 # Test Case #1 - Basic vector cross product operations.
+# (1,0,0) x (0,1,0) = (0,0,1)
+# (1,2,3) x (4,5,6) = (2*6-3*5, 3*4-1*6, 1*5-2*4) = (-3,6,-3)
 #
 &tr.tc001 test_vcross_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [vcross(1 0 0,0 1 0)]
-            [vcross(1 2 3,4 5 6)]
-          )
-        ),
-        345A91FAF64A62EE4950186E751A6D49118415F5
+  @if cand(
+        strmatch(vcross(1 0 0,0 1 0), 0 0 1),
+        strmatch(vcross(1 2 3,4 5 6), -3 6 -3)
       )=
   {
     @log smoke=TC001: vcross basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: vcross basic operations. Failed (%q0).;
+    @log smoke=TC001: vcross basic operations. Failed (vcross(i%,j)=[vcross(1 0 0,0 1 0)] vcross(123%,456)=[vcross(1 2 3,4 5 6)]).;
     @trig me/tr.done
   }
 -

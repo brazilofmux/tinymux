@@ -15,20 +15,16 @@
 # Test Case #1 - Basic arc cosine operations.
 #
 &tr.tc001 test_acos_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [round(acos(0),6)]
-            [round(acos(1),6)]
-          )
-        ),
-        5E7684E933DF828D2705500AAF5EF26A07AD327A
+  @if cand(
+        eq(round(acos(0),6), 1.570796),
+        eq(round(acos(1),6), 0)
       )=
   {
     @log smoke=TC001: acos basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: acos basic operations. Failed (%q0).;
+    @log smoke=TC001: acos basic operations. Failed (acos(0)=[round(acos(0),6)] acos(1)=[round(acos(1),6)]).;
     @trig me/tr.done
   }
 -

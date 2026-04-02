@@ -13,22 +13,19 @@
 -
 #
 # Test Case #1 - Basic unit vector operations.
+# vunit(3 4) = (0.6 0.8), vunit(0 0 1) = (0 0 1)
 #
 &tr.tc001 test_vunit_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [vunit(3 4)]
-            [vunit(0 0 1)]
-          )
-        ),
-        7CDE719B301CDA72179AF33267D600C25A063EF1
+  @if cand(
+        strmatch(vunit(3 4), 0.6 0.8),
+        strmatch(vunit(0 0 1), 0 0 1)
       )=
   {
     @log smoke=TC001: vunit basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: vunit basic operations. Failed (%q0).;
+    @log smoke=TC001: vunit basic operations. Failed (vunit(3 4)=[vunit(3 4)] vunit(0 0 1)=[vunit(0 0 1)]).;
     @trig me/tr.done
   }
 -

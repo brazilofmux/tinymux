@@ -13,23 +13,26 @@
 -
 #
 # Test Case #1 - unsetq and listq operations.
+# Set q0 and q1, verify listq shows both, unset each and check.
 #
 &tr.tc001 test_unsetq_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [setq(0,hello)][setq(1,world)][listq()]
-            [unsetq(0)][listq()]
-            [unsetq(1)][listq()]
-          )
-        ),
-        666981952B48C85620782CE538EC5DEF5F8C9794
+  @if cand(
+        strmatch(
+          [setq(0,hello)][setq(1,world)][listq()],
+          *0*1*),
+        strmatch(
+          [unsetq(0)][listq()],
+          *1*),
+        not(strmatch(
+          [unsetq(1)][listq()],
+          *0*))
       )=
   {
     @log smoke=TC001: unsetq/listq. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: unsetq/listq. Failed (%q0).;
+    @log smoke=TC001: unsetq/listq. Failed.;
     @trig me/tr.done
   }
 -

@@ -15,20 +15,16 @@
 # Test Case #1 - Basic cosine operations.
 #
 &tr.tc001 test_cos_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [round(cos(0),6)]
-            [round(cos(pi()),6)]
-          )
-        ),
-        5285BF9B7F19B689CB86E943878C28A3DEAE7909
+  @if cand(
+        eq(round(cos(0),6), 1),
+        eq(round(cos(pi()),6), -1)
       )=
   {
     @log smoke=TC001: cos basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: cos basic operations. Failed (%q0).;
+    @log smoke=TC001: cos basic operations. Failed (cos(0)=[round(cos(0),6)] cos(pi)=[round(cos(pi()),6)]).;
     @trig me/tr.done
   }
 -

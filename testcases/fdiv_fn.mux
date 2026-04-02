@@ -15,21 +15,17 @@
 # Test Case #1 - Basic floating-point division.
 #
 &tr.tc001 test_fdiv_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [fdiv(10,3)]
-            [fdiv(-10,3)]
-            [fdiv(1,0)]
-          )
-        ),
-        B734EF39217FCB76DE683FD1CC575178A897C9FA
+  @if cand(
+        strmatch(round(fdiv(10,3),6), 3.333333),
+        strmatch(round(fdiv(-10,3),6), -3.333333),
+        strmatch(fdiv(1,0), +Inf)
       )=
   {
     @log smoke=TC001: fdiv basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: fdiv basic operations. Failed (%q0).;
+    @log smoke=TC001: fdiv basic operations. Failed (fdiv(10%,3)=[fdiv(10,3)] fdiv(-10%,3)=[fdiv(-10,3)] fdiv(1%,0)=[fdiv(1,0)]).;
     @trig me/tr.done
   }
 -

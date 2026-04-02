@@ -13,21 +13,16 @@
 -
 #
 # Test Case #1 - Basic dot product.
+# 1*4 + 2*5 + 3*6 = 4+10+18 = 32
 #
 &tr.tc001 test_vdot_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [vdot(1 2 3,4 5 6)]
-          )
-        ),
-        CB4E5208B4CD87268B208E49452ED6E89A68E0B8
-      )=
+  @if eq(vdot(1 2 3,4 5 6), 32)=
   {
     @log smoke=TC001: vdot basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: vdot basic operations. Failed (%q0).;
+    @log smoke=TC001: vdot basic operations. Failed (vdot=[vdot(1 2 3,4 5 6)]).;
     @trig me/tr.done
   }
 -

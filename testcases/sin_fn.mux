@@ -15,22 +15,18 @@
 # Test Case #1 - Help file examples.
 #
 &tr.tc001 test_sin_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [round(sin(270,d),6)]
-            [round(sin(fdiv(pi(),2)),6)]
-            [round(sin(fdiv(pi(),4)),6)]
-            [round(sin(fdiv(pi(),6)),6)]
-          )
-        ),
-        FDF382C82E22F03A4D0E5F927B2BEC715CC842C9
+  @if cand(
+        eq(round(sin(270,d),6), -1),
+        eq(round(sin(fdiv(pi(),2)),6), 1),
+        eq(round(sin(fdiv(pi(),4)),6), 0.707107),
+        eq(round(sin(fdiv(pi(),6)),6), 0.5)
       )=
   {
     @log smoke=TC001: sin examples. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: sin examples. Failed (%q0).;
+    @log smoke=TC001: sin examples. Failed (sin(270d)=[round(sin(270,d),6)] sin(pi/2)=[round(sin(fdiv(pi(),2)),6)] sin(pi/6)=[round(sin(fdiv(pi(),6)),6)]).;
     @trig me/tr.done
   }
 -
@@ -43,4 +39,3 @@ drop test_sin_fn
 #
 # End of Test Cases
 #
-

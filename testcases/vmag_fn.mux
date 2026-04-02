@@ -13,22 +13,19 @@
 -
 #
 # Test Case #1 - Basic vector magnitude.
+# vmag(3 4) = 5, vmag(1 2 2) = 3
 #
 &tr.tc001 test_vmag_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [vmag(3 4)]
-            [vmag(1 2 2)]
-          )
-        ),
-        C5B76DA3E608D34EDB07244CD9B875EE86906328
+  @if cand(
+        eq(vmag(3 4), 5),
+        eq(vmag(1 2 2), 3)
       )=
   {
     @log smoke=TC001: vmag basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: vmag basic operations. Failed (%q0).;
+    @log smoke=TC001: vmag basic operations. Failed (vmag(3 4)=[vmag(3 4)] vmag(1 2 2)=[vmag(1 2 2)]).;
     @trig me/tr.done
   }
 -
