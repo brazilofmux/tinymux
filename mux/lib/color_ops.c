@@ -3975,6 +3975,178 @@ size_t co_insert_word(unsigned char *out,
     return (size_t)(wp - out);
 }
 
+/* ---- co_replace_at / co_insert_at ---- */
+
+/* Simple insertion sort for small position arrays (no stdlib dependency). */
+static void sort_ints(int *arr, int n)
+{
+    int i, j, key;
+    for (i = 1; i < n; i++) {
+        key = arr[i];
+        for (j = i - 1; j >= 0 && arr[j] > key; j--) {
+            arr[j + 1] = arr[j];
+        }
+        arr[j + 1] = key;
+    }
+}
+
+size_t co_replace_at(unsigned char *out,
+                     const unsigned char *list, size_t llen,
+                     int *positions, int nPositions,
+                     const unsigned char *word, size_t wlen,
+                     unsigned char delim, unsigned char osep)
+{
+    if (llen == 0 || !list) {
+        out[0] = '\0';
+        return 0;
+    }
+
+    word_range_t words[LBUF_SIZE / 2];
+    size_t nWords = split_words(list, llen, delim, words, LBUF_SIZE / 2);
+
+    /* Convert positions: negative wraps, positive 1-based to 0-based. */
+    int j;
+    for (j = 0; j < nPositions; ) {
+        if (positions[j] < 0) {
+            positions[j] += (int)nWords;
+        } else {
+            positions[j] -= 1;
+        }
+        if (positions[j] < 0 || positions[j] >= (int)nWords) {
+            positions[j] = positions[nPositions - 1];
+            nPositions--;
+        } else {
+            j++;
+        }
+    }
+
+    if (nPositions == 0) {
+        unsigned char *wp = out;
+        const unsigned char *wp_end = out + LBUF_SIZE - 1;
+        for (size_t i = 0; i < nWords && wp < wp_end; i++) {
+            if (i > 0) WP_SAFE(wp, wp_end, osep);
+            size_t cb = (size_t)(words[i].end - words[i].start);
+            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+        }
+        *wp = '\0';
+        return (size_t)(wp - out);
+    }
+
+    sort_ints(positions, nPositions);
+
+    unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+    size_t i = 0;
+    int emitted = 0;
+
+    for (j = 0; j < nPositions; j++) {
+        while (i < (size_t)positions[j] && wp < wp_end) {
+            if (emitted) WP_SAFE(wp, wp_end, osep);
+            size_t cb = (size_t)(words[i].end - words[i].start);
+            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            emitted = 1;
+            i++;
+        }
+        if (emitted) WP_SAFE(wp, wp_end, osep);
+        wp += wp_safe_copy(wp, wp_end, word, wlen);
+        emitted = 1;
+        i++;
+        while (j < nPositions - 1 && positions[j] == positions[j + 1]) j++;
+    }
+
+    while (i < nWords && wp < wp_end) {
+        if (emitted) WP_SAFE(wp, wp_end, osep);
+        size_t cb = (size_t)(words[i].end - words[i].start);
+        wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+        emitted = 1;
+        i++;
+    }
+
+    *wp = '\0';
+    return (size_t)(wp - out);
+}
+
+size_t co_insert_at(unsigned char *out,
+                    const unsigned char *list, size_t llen,
+                    int *positions, int nPositions,
+                    const unsigned char *word, size_t wlen,
+                    unsigned char delim, unsigned char osep)
+{
+    word_range_t words[LBUF_SIZE / 2];
+    size_t nWords = split_words(list, llen, delim, words, LBUF_SIZE / 2);
+
+    /* For empty lists, validate that at least one position is 1 or -1
+     * before proceeding.  This matches do_itemfuns IF_INSERT. */
+    if (llen == 0) {
+        int found = 0;
+        int k;
+        for (k = 0; k < nPositions; k++) {
+            if (positions[k] == 1 || positions[k] == -1) { found = 1; break; }
+        }
+        if (!found) { out[0] = '\0'; return 0; }
+        /* Fall through to normal processing — the position conversion
+         * and loop handle multiple insertions (e.g., positions 1 1). */
+    }
+
+    int j;
+    for (j = 0; j < nPositions; ) {
+        if (positions[j] < 0) {
+            positions[j] += (int)nWords + 1;
+        } else {
+            positions[j] -= 1;
+        }
+        if (positions[j] < 0 || positions[j] > (int)nWords) {
+            positions[j] = positions[nPositions - 1];
+            nPositions--;
+        } else {
+            j++;
+        }
+    }
+
+    if (nPositions == 0) {
+        unsigned char *wp = out;
+        const unsigned char *wp_end = out + LBUF_SIZE - 1;
+        for (size_t i = 0; i < nWords && wp < wp_end; i++) {
+            if (i > 0) WP_SAFE(wp, wp_end, osep);
+            size_t cb = (size_t)(words[i].end - words[i].start);
+            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+        }
+        *wp = '\0';
+        return (size_t)(wp - out);
+    }
+
+    sort_ints(positions, nPositions);
+
+    unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+    int emitted = 0;
+    size_t i = 0;
+
+    for (j = 0; j < nPositions; j++) {
+        while (i < (size_t)positions[j] && wp < wp_end) {
+            if (emitted) WP_SAFE(wp, wp_end, osep);
+            size_t cb = (size_t)(words[i].end - words[i].start);
+            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            emitted = 1;
+            i++;
+        }
+        if (emitted) WP_SAFE(wp, wp_end, osep);
+        wp += wp_safe_copy(wp, wp_end, word, wlen);
+        emitted = 1;
+    }
+
+    while (i < nWords && wp < wp_end) {
+        if (emitted) WP_SAFE(wp, wp_end, osep);
+        size_t cb = (size_t)(words[i].end - words[i].start);
+        wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+        emitted = 1;
+        i++;
+    }
+
+    *wp = '\0';
+    return (size_t)(wp - out);
+}
+
 /* ---- sort infrastructure ---- */
 
 typedef struct {
@@ -4975,13 +5147,13 @@ unsigned char co_dfa_ascii(const unsigned char *p)
 /* ---- co_render_ascii ---- */
 
 
-#line 4768 "color_ops.c"
+#line 4940 "color_ops.c"
 static const int render_ascii_start = 12;
 
 static const int render_ascii_en_main = 12;
 
 
-#line 3508 "color_ops.rl"
+#line 3680 "color_ops.rl"
 
 
 size_t co_render_ascii(unsigned char *out,
@@ -4995,21 +5167,21 @@ size_t co_render_ascii(unsigned char *out,
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     
-#line 4784 "color_ops.c"
+#line 4956 "color_ops.c"
 	{
 	cs = render_ascii_start;
 	}
 
-#line 3521 "color_ops.rl"
+#line 3693 "color_ops.rl"
     
-#line 4787 "color_ops.c"
+#line 4959 "color_ops.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 3493 "color_ops.rl"
+#line 3665 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5023,9 +5195,9 @@ tr0:
     }
 	goto st12;
 tr7:
-#line 3492 "color_ops.rl"
+#line 3664 "color_ops.rl"
 	{ mark = p; }
-#line 3493 "color_ops.rl"
+#line 3665 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5042,7 +5214,7 @@ st12:
 	if ( ++p == pe )
 		goto _test_eof12;
 case 12:
-#line 4823 "color_ops.c"
+#line 4995 "color_ops.c"
 	switch( (*p) ) {
 		case 0u: goto st0;
 		case 224u: goto tr9;
@@ -5071,62 +5243,62 @@ st0:
 cs = 0;
 	goto _out;
 tr8:
-#line 3492 "color_ops.rl"
+#line 3664 "color_ops.rl"
 	{ mark = p; }
 	goto st1;
 st1:
 	if ( ++p == pe )
 		goto _test_eof1;
 case 1:
-#line 4857 "color_ops.c"
+#line 5029 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto tr0;
 	goto st0;
 tr9:
-#line 3492 "color_ops.rl"
+#line 3664 "color_ops.rl"
 	{ mark = p; }
 	goto st2;
 st2:
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 4867 "color_ops.c"
+#line 5039 "color_ops.c"
 	if ( 160u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr10:
-#line 3492 "color_ops.rl"
+#line 3664 "color_ops.rl"
 	{ mark = p; }
 	goto st3;
 st3:
 	if ( ++p == pe )
 		goto _test_eof3;
 case 3:
-#line 4877 "color_ops.c"
+#line 5049 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr11:
-#line 3492 "color_ops.rl"
+#line 3664 "color_ops.rl"
 	{ mark = p; }
 	goto st4;
 st4:
 	if ( ++p == pe )
 		goto _test_eof4;
 case 4:
-#line 4887 "color_ops.c"
+#line 5059 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 159u )
 		goto st1;
 	goto st0;
 tr12:
-#line 3492 "color_ops.rl"
+#line 3664 "color_ops.rl"
 	{ mark = p; }
 	goto st5;
 st5:
 	if ( ++p == pe )
 		goto _test_eof5;
 case 5:
-#line 4897 "color_ops.c"
+#line 5069 "color_ops.c"
 	if ( (*p) < 148u ) {
 		if ( 128u <= (*p) && (*p) <= 147u )
 			goto st1;
@@ -5144,38 +5316,38 @@ case 6:
 		goto st12;
 	goto st0;
 tr13:
-#line 3492 "color_ops.rl"
+#line 3664 "color_ops.rl"
 	{ mark = p; }
 	goto st7;
 st7:
 	if ( ++p == pe )
 		goto _test_eof7;
 case 7:
-#line 4920 "color_ops.c"
+#line 5092 "color_ops.c"
 	if ( 144u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr14:
-#line 3492 "color_ops.rl"
+#line 3664 "color_ops.rl"
 	{ mark = p; }
 	goto st8;
 st8:
 	if ( ++p == pe )
 		goto _test_eof8;
 case 8:
-#line 4930 "color_ops.c"
+#line 5102 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr15:
-#line 3492 "color_ops.rl"
+#line 3664 "color_ops.rl"
 	{ mark = p; }
 	goto st9;
 st9:
 	if ( ++p == pe )
 		goto _test_eof9;
 case 9:
-#line 4940 "color_ops.c"
+#line 5112 "color_ops.c"
 	if ( (*p) < 176u ) {
 		if ( 128u <= (*p) && (*p) <= 175u )
 			goto st3;
@@ -5193,14 +5365,14 @@ case 10:
 		goto st6;
 	goto st0;
 tr16:
-#line 3492 "color_ops.rl"
+#line 3664 "color_ops.rl"
 	{ mark = p; }
 	goto st11;
 st11:
 	if ( ++p == pe )
 		goto _test_eof11;
 case 11:
-#line 4963 "color_ops.c"
+#line 5135 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 143u )
 		goto st3;
 	goto st0;
@@ -5222,7 +5394,7 @@ case 11:
 	_out: {}
 	}
 
-#line 3522 "color_ops.rl"
+#line 3694 "color_ops.rl"
 
     *wp = '\0';
     return (size_t)(wp - out);
