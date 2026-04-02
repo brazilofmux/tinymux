@@ -484,6 +484,34 @@ LIBMUX_API size_t co_insert_word(unsigned char *out,
                       unsigned char delim, unsigned char osep);
 
 /*
+ * co_replace_at — Replace words at given positions in a word list.
+ *
+ * Matches do_itemfuns IF_REPLACE semantics: positions are 1-based,
+ * negative wraps from end.  Out-of-range positions are ignored.
+ * Duplicate positions are collapsed.  The positions array is modified
+ * (sorted in place).  Returns bytes written to out.
+ */
+LIBMUX_API size_t co_replace_at(unsigned char *out,
+                     const unsigned char *list, size_t llen,
+                     int *positions, int nPositions,
+                     const unsigned char *word, size_t wlen,
+                     unsigned char delim, unsigned char osep);
+
+/*
+ * co_insert_at — Insert a word at given positions in a word list.
+ *
+ * Matches do_itemfuns IF_INSERT semantics: positions are 1-based,
+ * negative wraps from end (+nWords+1).  For empty lists, only
+ * positions 1 and -1 are valid.  The positions array is modified
+ * (sorted in place).  Returns bytes written to out.
+ */
+LIBMUX_API size_t co_insert_at(unsigned char *out,
+                    const unsigned char *list, size_t llen,
+                    int *positions, int nPositions,
+                    const unsigned char *word, size_t wlen,
+                    unsigned char delim, unsigned char osep);
+
+/*
  * co_sort_words — Sort a word list, preserving color per-word.
  *
  * sort_type: 'a' = ASCII, 'i' = case-insensitive ASCII,

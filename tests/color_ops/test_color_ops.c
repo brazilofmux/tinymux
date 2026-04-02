@@ -952,6 +952,262 @@ static void test_insert_word(void) {
               (const unsigned char *)"a b c", 5);
 }
 
+/* ---- co_replace_at ---- */
+
+static void test_replace_at(void) {
+    const char *name = "co_replace_at";
+    unsigned char out[LBUF_SIZE];
+    size_t r;
+
+    /* Basic replace at position 2. */
+    {
+        int pos[] = { 2 };
+        r = co_replace_at(out,
+            (const unsigned char *)"a b c", 5,
+            pos, 1,
+            (const unsigned char *)"X", 1,
+            ' ', ' ');
+        check_buf(name, "replace pos 2", out, r,
+                  (const unsigned char *)"a X c", 5);
+    }
+
+    /* Replace at position 1 (first element). */
+    {
+        int pos[] = { 1 };
+        r = co_replace_at(out,
+            (const unsigned char *)"a b c", 5,
+            pos, 1,
+            (const unsigned char *)"X", 1,
+            ' ', ' ');
+        check_buf(name, "replace pos 1", out, r,
+                  (const unsigned char *)"X b c", 5);
+    }
+
+    /* Replace at last position. */
+    {
+        int pos[] = { 3 };
+        r = co_replace_at(out,
+            (const unsigned char *)"a b c", 5,
+            pos, 1,
+            (const unsigned char *)"X", 1,
+            ' ', ' ');
+        check_buf(name, "replace pos 3 (last)", out, r,
+                  (const unsigned char *)"a b X", 5);
+    }
+
+    /* Negative position: -1 = last. */
+    {
+        int pos[] = { -1 };
+        r = co_replace_at(out,
+            (const unsigned char *)"a b c", 5,
+            pos, 1,
+            (const unsigned char *)"X", 1,
+            ' ', ' ');
+        check_buf(name, "replace pos -1 (last)", out, r,
+                  (const unsigned char *)"a b X", 5);
+    }
+
+    /* Out of range: position 0 does nothing. */
+    {
+        int pos[] = { 0 };
+        r = co_replace_at(out,
+            (const unsigned char *)"a b c", 5,
+            pos, 1,
+            (const unsigned char *)"X", 1,
+            ' ', ' ');
+        check_buf(name, "replace pos 0 (no-op)", out, r,
+                  (const unsigned char *)"a b c", 5);
+    }
+
+    /* Out of range: position > nWords does nothing. */
+    {
+        int pos[] = { 99 };
+        r = co_replace_at(out,
+            (const unsigned char *)"a b c", 5,
+            pos, 1,
+            (const unsigned char *)"X", 1,
+            ' ', ' ');
+        check_buf(name, "replace pos 99 (no-op)", out, r,
+                  (const unsigned char *)"a b c", 5);
+    }
+
+    /* Multiple positions. */
+    {
+        int pos[] = { 1, 3 };
+        r = co_replace_at(out,
+            (const unsigned char *)"a b c d e", 9,
+            pos, 2,
+            (const unsigned char *)"X", 1,
+            ' ', ' ');
+        check_buf(name, "replace pos 1,3", out, r,
+                  (const unsigned char *)"X b X d e", 9);
+    }
+
+    /* Duplicate positions collapsed. */
+    {
+        int pos[] = { 2, 2 };
+        r = co_replace_at(out,
+            (const unsigned char *)"a b c", 5,
+            pos, 2,
+            (const unsigned char *)"X", 1,
+            ' ', ' ');
+        check_buf(name, "replace pos 2,2 (dedup)", out, r,
+                  (const unsigned char *)"a X c", 5);
+    }
+
+    /* Non-space delimiter with osep = delimiter. */
+    {
+        int pos[] = { 2 };
+        r = co_replace_at(out,
+            (const unsigned char *)"a|b|c", 5,
+            pos, 1,
+            (const unsigned char *)"X", 1,
+            '|', '|');
+        check_buf(name, "replace pipe delim pos 2", out, r,
+                  (const unsigned char *)"a|X|c", 5);
+    }
+
+    /* Empty list: no-op. */
+    {
+        int pos[] = { 1 };
+        r = co_replace_at(out,
+            (const unsigned char *)"", 0,
+            pos, 1,
+            (const unsigned char *)"X", 1,
+            ' ', ' ');
+        check_buf(name, "replace empty list", out, r,
+                  (const unsigned char *)"", 0);
+    }
+}
+
+/* ---- co_insert_at ---- */
+
+static void test_insert_at(void) {
+    const char *name = "co_insert_at";
+    unsigned char out[LBUF_SIZE];
+    size_t r;
+
+    /* Insert at position 2. */
+    {
+        int pos[] = { 2 };
+        r = co_insert_at(out,
+            (const unsigned char *)"a c", 3,
+            pos, 1,
+            (const unsigned char *)"b", 1,
+            ' ', ' ');
+        check_buf(name, "insert 'b' at pos 2", out, r,
+                  (const unsigned char *)"a b c", 5);
+    }
+
+    /* Insert at position 1 (beginning). */
+    {
+        int pos[] = { 1 };
+        r = co_insert_at(out,
+            (const unsigned char *)"b c", 3,
+            pos, 1,
+            (const unsigned char *)"a", 1,
+            ' ', ' ');
+        check_buf(name, "insert 'a' at pos 1", out, r,
+                  (const unsigned char *)"a b c", 5);
+    }
+
+    /* Insert at end (pos = nWords + 1). */
+    {
+        int pos[] = { 4 };
+        r = co_insert_at(out,
+            (const unsigned char *)"a b c", 5,
+            pos, 1,
+            (const unsigned char *)"d", 1,
+            ' ', ' ');
+        check_buf(name, "insert 'd' at pos 4 (end)", out, r,
+                  (const unsigned char *)"a b c d", 7);
+    }
+
+    /* Negative position: -1 = end. */
+    {
+        int pos[] = { -1 };
+        r = co_insert_at(out,
+            (const unsigned char *)"a b c", 5,
+            pos, 1,
+            (const unsigned char *)"d", 1,
+            ' ', ' ');
+        check_buf(name, "insert 'd' at pos -1 (end)", out, r,
+                  (const unsigned char *)"a b c d", 7);
+    }
+
+    /* Empty list: position 1 inserts. */
+    {
+        int pos[] = { 1 };
+        r = co_insert_at(out,
+            (const unsigned char *)"", 0,
+            pos, 1,
+            (const unsigned char *)"X", 1,
+            ' ', ' ');
+        check_buf(name, "insert into empty (pos 1)", out, r,
+                  (const unsigned char *)"X", 1);
+    }
+
+    /* Empty list: position -1 inserts. */
+    {
+        int pos[] = { -1 };
+        r = co_insert_at(out,
+            (const unsigned char *)"", 0,
+            pos, 1,
+            (const unsigned char *)"X", 1,
+            ' ', ' ');
+        check_buf(name, "insert into empty (pos -1)", out, r,
+                  (const unsigned char *)"X", 1);
+    }
+
+    /* Empty list: position 0 does nothing. */
+    {
+        int pos[] = { 0 };
+        r = co_insert_at(out,
+            (const unsigned char *)"", 0,
+            pos, 1,
+            (const unsigned char *)"X", 1,
+            ' ', ' ');
+        check_buf(name, "insert into empty (pos 0, no-op)", out, r,
+                  (const unsigned char *)"", 0);
+    }
+
+    /* Non-space delimiter. */
+    {
+        int pos[] = { 2 };
+        r = co_insert_at(out,
+            (const unsigned char *)"a|c", 3,
+            pos, 1,
+            (const unsigned char *)"b", 1,
+            '|', '|');
+        check_buf(name, "insert pipe delim pos 2", out, r,
+                  (const unsigned char *)"a|b|c", 5);
+    }
+
+    /* Empty list: duplicate positions insert multiple copies. */
+    {
+        int pos[] = { 1, 1 };
+        r = co_insert_at(out,
+            (const unsigned char *)"", 0,
+            pos, 2,
+            (const unsigned char *)"X", 1,
+            ' ', ' ');
+        check_buf(name, "insert into empty (pos 1,1 = 2 copies)", out, r,
+                  (const unsigned char *)"X X", 3);
+    }
+
+    /* Empty list: positions 1 and -1 both valid, inserts twice. */
+    {
+        int pos[] = { 1, -1 };
+        r = co_insert_at(out,
+            (const unsigned char *)"", 0,
+            pos, 2,
+            (const unsigned char *)"X", 1,
+            ' ', ' ');
+        check_buf(name, "insert into empty (pos 1,-1 = 2 copies)", out, r,
+                  (const unsigned char *)"X X", 3);
+    }
+}
+
 /* ---- co_visual_width ---- */
 
 static void test_visual_width(void) {
@@ -3553,6 +3809,8 @@ static const test_suite_t suites[] = {
     { "lpos",             test_lpos },
     { "splice",           test_splice },
     { "insert_word",      test_insert_word },
+    { "replace_at",       test_replace_at },
+    { "insert_at",        test_insert_at },
     { "visual_width",     test_visual_width },
     { "justify",          test_justify },
     { "compress",         test_compress },
