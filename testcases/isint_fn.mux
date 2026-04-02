@@ -15,21 +15,17 @@
 # Test Case #1 - Basic integer checking operations.
 #
 &tr.tc001 test_isint_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [isint(5)]
-            [isint(5.5)]
-            [isint(abc)]
-          )
-        ),
-        310B86E0B62B828562FC91C7BE5380A992B2786A
+  @if cand(
+        eq(isint(5), 1),
+        eq(isint(5.5), 0),
+        eq(isint(abc), 0)
       )=
   {
     @log smoke=TC001: isint basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: isint basic operations. Failed (%q0).;
+    @log smoke=TC001: isint basic operations. Failed (isint(5)=[isint(5)] isint(5.5)=[isint(5.5)] isint(abc)=[isint(abc)]).;
     @trig me/tr.done
   }
 -

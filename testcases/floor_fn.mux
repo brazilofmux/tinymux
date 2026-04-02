@@ -15,21 +15,17 @@
 # Test Case #1 - Basic floor operations.
 #
 &tr.tc001 test_floor_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [floor(4.7)]
-            [floor(-4.7)]
-            [floor(0)]
-          )
-        ),
-        58E44B5B1E80571A98AED5F49C105D78A4DF1D1D
+  @if cand(
+        eq(floor(4.7), 4),
+        eq(floor(-4.7), -5),
+        eq(floor(0), 0)
       )=
   {
     @log smoke=TC001: floor basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: floor basic operations. Failed (%q0).;
+    @log smoke=TC001: floor basic operations. Failed (floor(4.7)=[floor(4.7)] floor(-4.7)=[floor(-4.7)] floor(0)=[floor(0)]).;
     @trig me/tr.done
   }
 -

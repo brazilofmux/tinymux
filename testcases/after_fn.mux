@@ -15,20 +15,16 @@
 # Test Case #1 - Basic after operations.
 #
 &tr.tc001 test_after_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [after(foo-bar,-)]
-            [after(foobar,-)]
-          )
-        ),
-        62CDB7020FF920E5AA642C3D4066950DD1F01F4D
+  @if cand(
+        strmatch(after(foo-bar,-), bar),
+        eq(strlen(after(foobar,-)), 0)
       )=
   {
     @log smoke=TC001: after basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: after basic operations. Failed (%q0).;
+    @log smoke=TC001: after basic operations. Failed (after(foo-bar%,-)=[after(foo-bar,-)] after(foobar%,-)=[after(foobar,-)]).;
     @trig me/tr.done
   }
 -

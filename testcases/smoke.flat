@@ -549,7 +549,7 @@
 >256
 "@log smoke=Beginning after() test cases."
 >257
-"@if strmatch(setr(0,sha1([after(foo-bar,-)][after(foobar,-)])),62CDB7020FF920E5AA642C3D4066950DD1F01F4D)={@log smoke=TC001: after basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: after basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if cand(strmatch(after(foo-bar,-), bar),eq(strlen(after(foobar,-)), 0))={@log smoke=TC001: after basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: after basic operations. Failed (after(foo-bar%,-)=[after(foo-bar,-)] after(foobar%,-)=[after(foobar,-)]).;@trig me/tr.done}"
 >258
 "@log smoke=End after() test cases.;@notify smoke"
 <
@@ -889,7 +889,7 @@
 >256
 "@log smoke=Beginning before() test cases."
 >257
-"@if strmatch(setr(0,sha1([before(foo-bar,-)][before(foobar,-)])),CDD05D67167C0781016BD5908276304AF444A12D)={@log smoke=TC001: before basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: before basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if cand(strmatch(before(foo-bar,-), foo),strmatch(before(foobar,-), foobar))={@log smoke=TC001: before basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: before basic operations. Failed (before(foo-bar%,-)=[before(foo-bar,-)] before(foobar%,-)=[before(foobar,-)]).;@trig me/tr.done}"
 >258
 "@log smoke=End before() test cases.;@notify smoke"
 <
@@ -1246,7 +1246,7 @@
 >256
 "@log smoke=Beginning ceil() test cases."
 >257
-"@if strmatch(setr(0,sha1([ceil(4.2)][ceil(-4.2)][ceil(0)][ceil(4.0)])),D3326E3B0D2BAF734A84EAD4F3B99DCCD034D062)={@log smoke=TC001: ceil basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: ceil basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if cand(eq(ceil(4.2), 5),eq(ceil(-4.2), -4),eq(ceil(0), 0),eq(ceil(4.0), 4))={@log smoke=TC001: ceil basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: ceil basic operations. Failed (ceil(4.2)=[ceil(4.2)] ceil(-4.2)=[ceil(-4.2)] ceil(0)=[ceil(0)] ceil(4.0)=[ceil(4.0)]).;@trig me/tr.done}"
 >258
 "@log smoke=End ceil() test cases.;@notify smoke"
 <
@@ -2505,7 +2505,7 @@
 >256
 "@log smoke=Beginning eq() test cases."
 >257
-"@if strmatch(setr(0,sha1([eq(1,1)][eq(1,2)][eq(1.0,1)][eq(a,a)])),DD2DFA50DC8FECA1E5303A87B2C6A42DB3EBE102)={@log smoke=TC001: eq basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: eq basic comparisons. Failed (%q0).;@trig me/tr.done}"
+"@if cand(eq(eq(1,1), 1),eq(eq(1,2), 0),eq(eq(1.0,1), 1),eq(eq(a,a), 1))={@log smoke=TC001: eq basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: eq basic comparisons. Failed (eq(1%,1)=[eq(1,1)] eq(1%,2)=[eq(1,2)] eq(1.0%,1)=[eq(1.0,1)] eq(a%,a)=[eq(a,a)]).;@trig me/tr.done}"
 >258
 "@log smoke=End eq() test cases.;@notify smoke"
 <
@@ -2837,7 +2837,7 @@
 >256
 "@log smoke=Beginning floor() test cases."
 >257
-"@if strmatch(setr(0,sha1([floor(4.7)][floor(-4.7)][floor(0)])),58E44B5B1E80571A98AED5F49C105D78A4DF1D1D)={@log smoke=TC001: floor basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: floor basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if cand(eq(floor(4.7), 4),eq(floor(-4.7), -5),eq(floor(0), 0))={@log smoke=TC001: floor basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: floor basic operations. Failed (floor(4.7)=[floor(4.7)] floor(-4.7)=[floor(-4.7)] floor(0)=[floor(0)]).;@trig me/tr.done}"
 >258
 "@log smoke=End floor() test cases.;@notify smoke"
 <
@@ -2972,7 +2972,7 @@
 >256
 "@log smoke=Beginning gte() test cases."
 >257
-"@if strmatch(setr(0,sha1([gte(2,1)][gte(1,1)][gte(1,2)])),5E796E48332AF4142B10CA0F86E65D9BFDB05884)={@log smoke=TC001: gte basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: gte basic comparisons. Failed (%q0).;@trig me/tr.done}"
+"@if cand(eq(gte(2,1), 1),eq(gte(1,1), 1),eq(gte(1,2), 0))={@log smoke=TC001: gte basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: gte basic comparisons. Failed (gte(2%,1)=[gte(2,1)] gte(1%,1)=[gte(1,1)] gte(1%,2)=[gte(1,2)]).;@trig me/tr.done}"
 >258
 "@log smoke=End gte() test cases.;@notify smoke"
 <
@@ -2999,7 +2999,7 @@
 >256
 "@log smoke=Beginning gt() test cases."
 >257
-"@if strmatch(setr(0,sha1([gt(2,1)][gt(1,2)][gt(1,1)])),310B86E0B62B828562FC91C7BE5380A992B2786A)={@log smoke=TC001: gt basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: gt basic comparisons. Failed (%q0).;@trig me/tr.done}"
+"@if cand(eq(gt(2,1), 1),eq(gt(1,2), 0),eq(gt(1,1), 0))={@log smoke=TC001: gt basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: gt basic comparisons. Failed (gt(2%,1)=[gt(2,1)] gt(1%,2)=[gt(1,2)] gt(1%,1)=[gt(1,1)]).;@trig me/tr.done}"
 >258
 "@log smoke=End gt() test cases.;@notify smoke"
 <
@@ -3385,7 +3385,7 @@
 >256
 "@log smoke=Beginning isdbref() test cases."
 >257
-"@if strmatch(setr(0,sha1([isdbref(#0)][isdbref(#-1)][isdbref(foo)][isdbref()][isdbref(%b#0)][isdbref(#0%b)][isdbref(%b#0%b)][isdbref(%b%b#0%b%b)])),87E3FEC025670077009FFA87753205D77E1C3823)={@log smoke=TC001: isdbref basic and whitespace. Succeeded.;@trig me/tr.done},{@log smoke=TC001: isdbref basic and whitespace. Failed (%q0).;@trig me/tr.done}"
+"@if cand(eq(isdbref(#0), 1),eq(isdbref(#-1), 0),eq(isdbref(foo), 0),eq(isdbref(), 0),eq(isdbref(%b#0), 1),eq(isdbref(#0%b), 1),eq(isdbref(%b#0%b), 1),eq(isdbref(%b%b#0%b%b), 1))={@log smoke=TC001: isdbref basic and whitespace. Succeeded.;@trig me/tr.done},{@log smoke=TC001: isdbref basic and whitespace. Failed (#0=[isdbref(#0)] #-1=[isdbref(#-1)] foo=[isdbref(foo)] empty=[isdbref()] sp#0=[isdbref(%b#0)]).;@trig me/tr.done}"
 >258
 "@log smoke=End isdbref() test cases.;@notify smoke"
 <
@@ -3439,7 +3439,7 @@
 >256
 "@log smoke=Beginning isint() test cases."
 >257
-"@if strmatch(setr(0,sha1([isint(5)][isint(5.5)][isint(abc)])),310B86E0B62B828562FC91C7BE5380A992B2786A)={@log smoke=TC001: isint basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: isint basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if cand(eq(isint(5), 1),eq(isint(5.5), 0),eq(isint(abc), 0))={@log smoke=TC001: isint basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: isint basic operations. Failed (isint(5)=[isint(5)] isint(5.5)=[isint(5.5)] isint(abc)=[isint(abc)]).;@trig me/tr.done}"
 >258
 "@log smoke=End isint() test cases.;@notify smoke"
 <
@@ -3497,7 +3497,7 @@
 >256
 "@log smoke=Beginning isnum() test cases."
 >257
-"@if strmatch(setr(0,sha1([isnum(5)][isnum(5.5)][isnum(abc)])),5E796E48332AF4142B10CA0F86E65D9BFDB05884)={@log smoke=TC001: isnum basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: isnum basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if cand(eq(isnum(5), 1),eq(isnum(5.5), 1),eq(isnum(abc), 0))={@log smoke=TC001: isnum basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: isnum basic operations. Failed (isnum(5)=[isnum(5)] isnum(5.5)=[isnum(5.5)] isnum(abc)=[isnum(abc)]).;@trig me/tr.done}"
 >258
 "@log smoke=End isnum() test cases.;@notify smoke"
 <
@@ -4541,7 +4541,7 @@
 >256
 "@log smoke=Beginning lte() test cases."
 >257
-"@if strmatch(setr(0,sha1([lte(1,2)][lte(1,1)][lte(2,1)])),5E796E48332AF4142B10CA0F86E65D9BFDB05884)={@log smoke=TC001: lte basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: lte basic comparisons. Failed (%q0).;@trig me/tr.done}"
+"@if cand(eq(lte(1,2), 1),eq(lte(1,1), 1),eq(lte(2,1), 0))={@log smoke=TC001: lte basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: lte basic comparisons. Failed (lte(1%,2)=[lte(1,2)] lte(1%,1)=[lte(1,1)] lte(2%,1)=[lte(2,1)]).;@trig me/tr.done}"
 >258
 "@log smoke=End lte() test cases.;@notify smoke"
 <
@@ -4568,7 +4568,7 @@
 >256
 "@log smoke=Beginning lt() test cases."
 >257
-"@if strmatch(setr(0,sha1([lt(1,2)][lt(2,1)][lt(1,1)])),310B86E0B62B828562FC91C7BE5380A992B2786A)={@log smoke=TC001: lt basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: lt basic comparisons. Failed (%q0).;@trig me/tr.done}"
+"@if cand(eq(lt(1,2), 1),eq(lt(2,1), 0),eq(lt(1,1), 0))={@log smoke=TC001: lt basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: lt basic comparisons. Failed (lt(1%,2)=[lt(1,2)] lt(2%,1)=[lt(2,1)] lt(1%,1)=[lt(1,1)]).;@trig me/tr.done}"
 >258
 "@log smoke=End lt() test cases.;@notify smoke"
 <
@@ -5317,7 +5317,7 @@
 >256
 "@log smoke=Beginning neq() test cases."
 >257
-"@if strmatch(setr(0,sha1([neq(1,1)][neq(1,2)])),DDFE163345D338193AC2BDC183F8E9DCFF904B43)={@log smoke=TC001: neq basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: neq basic comparisons. Failed (%q0).;@trig me/tr.done}"
+"@if cand(eq(neq(1,1), 0),eq(neq(1,2), 1))={@log smoke=TC001: neq basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: neq basic comparisons. Failed (neq(1%,1)=[neq(1,1)] neq(1%,2)=[neq(1,2)]).;@trig me/tr.done}"
 >258
 "@log smoke=End neq() test cases.;@notify smoke"
 <
@@ -5927,7 +5927,7 @@
 >256
 "@log smoke=Beginning power() test cases."
 >257
-"@if strmatch(setr(0,sha1([power(2,10)][power(3,3)])),D86861CB9132E3172DE60BD3D1B3A5810FAE1D92)={@log smoke=TC001: power basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: power basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if cand(eq(power(2,10), 1024),eq(power(3,3), 27))={@log smoke=TC001: power basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: power basic operations. Failed (power(2%,10)=[power(2,10)] power(3%,3)=[power(3,3)]).;@trig me/tr.done}"
 >258
 "@log smoke=End power() test cases.;@notify smoke"
 <
@@ -8547,7 +8547,7 @@
 >256
 "@log smoke=Beginning trunc() test cases."
 >257
-"@if strmatch(setr(0,sha1([trunc(4.7)][trunc(-4.7)])),77975F30B602199B5E111F58876E62CC0BDF8ECD)={@log smoke=TC001: trunc basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: trunc basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if cand(eq(trunc(4.7), 4),eq(trunc(-4.7), -4))={@log smoke=TC001: trunc basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: trunc basic operations. Failed (trunc(4.7)=[trunc(4.7)] trunc(-4.7)=[trunc(-4.7)]).;@trig me/tr.done}"
 >258
 "@log smoke=End trunc() test cases.;@notify smoke"
 <

@@ -15,21 +15,17 @@
 # Test Case #1 - Basic less-than-or-equal comparisons.
 #
 &tr.tc001 test_lte_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [lte(1,2)]
-            [lte(1,1)]
-            [lte(2,1)]
-          )
-        ),
-        5E796E48332AF4142B10CA0F86E65D9BFDB05884
+  @if cand(
+        eq(lte(1,2), 1),
+        eq(lte(1,1), 1),
+        eq(lte(2,1), 0)
       )=
   {
     @log smoke=TC001: lte basic comparisons. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: lte basic comparisons. Failed (%q0).;
+    @log smoke=TC001: lte basic comparisons. Failed (lte(1%,2)=[lte(1,2)] lte(1%,1)=[lte(1,1)] lte(2%,1)=[lte(2,1)]).;
     @trig me/tr.done
   }
 -

@@ -15,20 +15,16 @@
 # Test Case #1 - Basic inequality comparisons.
 #
 &tr.tc001 test_neq_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [neq(1,1)]
-            [neq(1,2)]
-          )
-        ),
-        DDFE163345D338193AC2BDC183F8E9DCFF904B43
+  @if cand(
+        eq(neq(1,1), 0),
+        eq(neq(1,2), 1)
       )=
   {
     @log smoke=TC001: neq basic comparisons. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: neq basic comparisons. Failed (%q0).;
+    @log smoke=TC001: neq basic comparisons. Failed (neq(1%,1)=[neq(1,1)] neq(1%,2)=[neq(1,2)]).;
     @trig me/tr.done
   }
 -

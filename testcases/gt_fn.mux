@@ -15,21 +15,17 @@
 # Test Case #1 - Basic greater-than comparisons.
 #
 &tr.tc001 test_gt_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [gt(2,1)]
-            [gt(1,2)]
-            [gt(1,1)]
-          )
-        ),
-        310B86E0B62B828562FC91C7BE5380A992B2786A
+  @if cand(
+        eq(gt(2,1), 1),
+        eq(gt(1,2), 0),
+        eq(gt(1,1), 0)
       )=
   {
     @log smoke=TC001: gt basic comparisons. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: gt basic comparisons. Failed (%q0).;
+    @log smoke=TC001: gt basic comparisons. Failed (gt(2%,1)=[gt(2,1)] gt(1%,2)=[gt(1,2)] gt(1%,1)=[gt(1,1)]).;
     @trig me/tr.done
   }
 -

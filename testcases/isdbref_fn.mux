@@ -15,26 +15,22 @@
 # Test Case #1 - Basic isdbref() cases and leading/trailing spaces.
 #
 &tr.tc001 test_isdbref_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [isdbref(#0)]
-            [isdbref(#-1)]
-            [isdbref(foo)]
-            [isdbref()]
-            [isdbref(%b#0)]
-            [isdbref(#0%b)]
-            [isdbref(%b#0%b)]
-            [isdbref(%b%b#0%b%b)]
-          )
-        ),
-        87E3FEC025670077009FFA87753205D77E1C3823
+  @if cand(
+        eq(isdbref(#0), 1),
+        eq(isdbref(#-1), 0),
+        eq(isdbref(foo), 0),
+        eq(isdbref(), 0),
+        eq(isdbref(%b#0), 1),
+        eq(isdbref(#0%b), 1),
+        eq(isdbref(%b#0%b), 1),
+        eq(isdbref(%b%b#0%b%b), 1)
       )=
   {
     @log smoke=TC001: isdbref basic and whitespace. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: isdbref basic and whitespace. Failed (%q0).;
+    @log smoke=TC001: isdbref basic and whitespace. Failed (#0=[isdbref(#0)] #-1=[isdbref(#-1)] foo=[isdbref(foo)] empty=[isdbref()] sp#0=[isdbref(%b#0)]).;
     @trig me/tr.done
   }
 -

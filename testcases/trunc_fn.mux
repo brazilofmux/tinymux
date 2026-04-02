@@ -15,20 +15,16 @@
 # Test Case #1 - Basic truncation operations.
 #
 &tr.tc001 test_trunc_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [trunc(4.7)]
-            [trunc(-4.7)]
-          )
-        ),
-        77975F30B602199B5E111F58876E62CC0BDF8ECD
+  @if cand(
+        eq(trunc(4.7), 4),
+        eq(trunc(-4.7), -4)
       )=
   {
     @log smoke=TC001: trunc basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: trunc basic operations. Failed (%q0).;
+    @log smoke=TC001: trunc basic operations. Failed (trunc(4.7)=[trunc(4.7)] trunc(-4.7)=[trunc(-4.7)]).;
     @trig me/tr.done
   }
 -

@@ -15,21 +15,17 @@
 # Test Case #1 - Basic numeric checking operations.
 #
 &tr.tc001 test_isnum_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [isnum(5)]
-            [isnum(5.5)]
-            [isnum(abc)]
-          )
-        ),
-        5E796E48332AF4142B10CA0F86E65D9BFDB05884
+  @if cand(
+        eq(isnum(5), 1),
+        eq(isnum(5.5), 1),
+        eq(isnum(abc), 0)
       )=
   {
     @log smoke=TC001: isnum basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: isnum basic operations. Failed (%q0).;
+    @log smoke=TC001: isnum basic operations. Failed (isnum(5)=[isnum(5)] isnum(5.5)=[isnum(5.5)] isnum(abc)=[isnum(abc)]).;
     @trig me/tr.done
   }
 -

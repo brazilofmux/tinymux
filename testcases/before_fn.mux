@@ -15,20 +15,16 @@
 # Test Case #1 - Basic before operations.
 #
 &tr.tc001 test_before_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [before(foo-bar,-)]
-            [before(foobar,-)]
-          )
-        ),
-        CDD05D67167C0781016BD5908276304AF444A12D
+  @if cand(
+        strmatch(before(foo-bar,-), foo),
+        strmatch(before(foobar,-), foobar)
       )=
   {
     @log smoke=TC001: before basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: before basic operations. Failed (%q0).;
+    @log smoke=TC001: before basic operations. Failed (before(foo-bar%,-)=[before(foo-bar,-)] before(foobar%,-)=[before(foobar,-)]).;
     @trig me/tr.done
   }
 -

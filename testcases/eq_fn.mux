@@ -15,22 +15,18 @@
 # Test Case #1 - Basic equality comparisons.
 #
 &tr.tc001 test_eq_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [eq(1,1)]
-            [eq(1,2)]
-            [eq(1.0,1)]
-            [eq(a,a)]
-          )
-        ),
-        DD2DFA50DC8FECA1E5303A87B2C6A42DB3EBE102
+  @if cand(
+        eq(eq(1,1), 1),
+        eq(eq(1,2), 0),
+        eq(eq(1.0,1), 1),
+        eq(eq(a,a), 1)
       )=
   {
     @log smoke=TC001: eq basic comparisons. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: eq basic comparisons. Failed (%q0).;
+    @log smoke=TC001: eq basic comparisons. Failed (eq(1%,1)=[eq(1,1)] eq(1%,2)=[eq(1,2)] eq(1.0%,1)=[eq(1.0,1)] eq(a%,a)=[eq(a,a)]).;
     @trig me/tr.done
   }
 -
