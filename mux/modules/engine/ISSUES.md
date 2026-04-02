@@ -38,19 +38,32 @@ Implement the framework for evaluating softcode on multiple cores simultaneously
   - Migrate `s_compile_cache` and `s_attr_mod_counts` to thread-safe structures (atomic/RW locks).
   - Ensure DBT contexts are thread-safe or per-thread.
 
-### 5. Windows JIT/DBT: System V → Windows x64 Calling Convention
+### ~~5. Windows JIT/DBT: System V → Windows x64 Calling Convention~~ DONE
 
-- **Status:** Windows is AST-only. `TINYMUX_JIT` compiles but crashes at runtime.
-- **Root cause:** The DBT code generator (`dbt.cpp`) emits x86_64 native code
-  using System V AMD64 calling convention (args in RDI, RSI, RDX, RCX, R8, R9).
-  Windows x64 uses RCX, RDX, R8, R9 (4 register args + 32-byte shadow space).
-- **Scope:** ~31 direct RDI/RSI references in emit_stub_* functions,
-  `x64_arg_regs[]` table (line 829), `emit_trampoline()` (line 3046),
-  all co_* generic stubs, strtod/strlen/memcpy call sites.
-  RSI and RDI are callee-saved on Windows but caller-saved on System V.
-  Windows requires 32 bytes of shadow space before every `call`.
-- **Fix:** Ifdef `x64_arg_regs`, trampoline, stub prologue/epilogue,
-  and shadow space allocation for `WIN32`. Significant but mechanical.
+- **Resolved:** Separate `dbt_x64_win64.cpp` backend (2,992 lines) with proper
+  Win64 ABI: RCX/RDX/R8/R9 argument registers, 32-byte shadow space, RSI/RDI
+  callee-saved. Selected automatically by `configure.ac` on mingw/cygwin/msys.
+
+### 6. Apple Silicon DBT: W^X Memory Model
+
+- **Status:** Not yet implemented. `configure` errors out on `aarch64-*-darwin*`.
+- **Planned file:** `dbt_a64_apple.cpp`
+- **Issue:** Apple Silicon enforces W^X (Write XOR Execute) for JIT memory.
+  The existing `dbt_a64_sysv.cpp` uses standard `mprotect()` which doesn't
+  work on macOS. Needs `MAP_JIT`, `pthread_jit_write_protect_np()` toggle,
+  and `sys_icache_invalidate()` for cache coherency.
+- **Calling convention:** Identical AAPCS64 — only the JIT memory model differs
+  from the Linux AArch64 backend.
+- **Blocked on:** Lack of Apple Silicon hardware for testing.
+
+### 7. RISC-V Native Passthrough DBT
+
+- **Status:** Not yet implemented. `configure` errors out on `riscv64`.
+- **Planned file:** `dbt_rv64_native.cpp` (~100 lines)
+- **Issue:** Trivial backend — guest RV64 code IS native code. Translation
+  block cache points directly into guest memory. Just needs `mprotect()`
+  and fence.i for I-cache sync.
+- **Blocked on:** Lack of RV64 hardware for testing.
 
 ## COM & Module System Issues
 

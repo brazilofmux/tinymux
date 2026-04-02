@@ -24,14 +24,11 @@ Updated: 2026-03-27
 
 - Constructor initializes all interface pointers to `nullptr`. On `FinalConstruct` failure, the caller calls `Release()` which invokes the destructor. The destructor null-checks each pointer individually before releasing — partially-acquired interfaces are cleaned up correctly.
 
-## Medium — LBUF Truncation in Accessor Functions (GitHub #704)
+## ~~Medium — LBUF Truncation in Accessor Functions (GitHub #704)~~ FIXED
 
-### List-returning mail functions can truncate on large mailboxes
+### ~~List-returning mail functions can truncate on large mailboxes~~ FIXED
 
-- **Related to:** Comsys `cwho()`/`chanusers()` truncation (same root cause).
-- **Root cause:** Functions like `maillist()` write into a single LBUF with no pagination. Large mailboxes can exceed LBUF_SIZE, silently dropping results.
-- **Fix:** Add `offset`/`limit` parameters to list-returning mail accessors so callers can paginate through large result sets.
-- **Status:** Open
+- Added optional `offset`/`limit` pagination parameters to `maillist()`. Softcode can now paginate through arbitrarily large mailboxes.
 
 ## Low — Code Quality
 
