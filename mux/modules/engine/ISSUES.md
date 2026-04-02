@@ -89,13 +89,13 @@ Implement the framework for evaluating softcode on multiple cores simultaneously
   per-platform files (`platform_apple.cpp`, etc.) can replace or supplement
   `platform.cpp` cleanly.
 
-### 4. Engine & LibMux Unit Testing
+### 4. Engine & LibMux Unit Testing — IN PROGRESS
 
-- **Status:** Backend logic has unit tests in `db/`, but the core server engine and foundational libraries (`mux/lib`) lack comprehensive unit tests.
-- **Opportunity:** Add unit tests for:
-  - `stringutil.cpp`: UTF-8 handling, case conversion, and buffer management.
-  - `funmath.cpp`: Floating point and integer math edge cases.
-  - `ast.cpp` & `eval.cpp`: AST construction and evaluation logic in isolation from the full server.
+- **Status:** `tests/libmux/` harness created with 29 tests covering mux_atol,
+  mux_atof, mux_i64toa, safe buffer writing, StringClone, mux_stricmp,
+  mux_strupr/mux_strlwr, trim_spaces, mux_strncpy. DB tests moved to `tests/db/`.
+- **Remaining:** UTF-8 multi-byte edge cases, numeric overflow/underflow,
+  LBUF boundary behavior, and AST/eval isolation tests.
 
 ### ~~5. Session/Driver Separation~~
 

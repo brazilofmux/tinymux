@@ -15,7 +15,7 @@ This is the top-level tracker for the TinyMUX project. It links to specialized i
 - **[TinyFugue Client](client/tf/ISSUES.md):** Hydra reconnect drops capabilities, hardcoded viewport.
 - **[Test Infrastructure](testcases/ISSUES.md):** SHA1 hash brittleness, coverage gaps, no test discovery.
 - **[Parser Research Tools](parser/ISSUES.md):** Evaluator compatibility gaps, build warnings, escape oracle curation.
-- **[DB Backend Tests](db/ISSUES.md):** Standalone harness breakage after file moves.
+- **[DB Backend Tests](tests/db/ISSUES.md):** Standalone harness breakage after file moves.
 - **[WorldBuilder](tools/worldbuilder/ISSUES.md):** Test path sensitivity, file handle leak, incomplete lint function list.
 - **[Docker](docker/ISSUES.md):** Outdated images referencing MUX 2.12.
 - **[Debian Packaging](debian/ISSUES.md):** Missing build dependencies, outdated metadata.

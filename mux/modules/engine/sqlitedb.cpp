@@ -14,6 +14,7 @@
 #include "engine_api.h"
 #include <cstring>
 #include <cstdio>
+#include <ctime>
 #include <string>
 
 // ---------------------------------------------------------------------------

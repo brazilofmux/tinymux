@@ -2,9 +2,9 @@ CXX = g++
 CC = gcc
 CXXFLAGS = -std=c++17 -g -O2 -Wall -Wextra -DTINYMUX_TYPES_DEFINED
 CFLAGS = -g -O2 -DSQLITE_THREADSAFE=1
-INCDIR = ../mux/include
-ENGDIR = ../mux/modules/engine
-SQLITEDIR = ../mux/sqlite
+INCDIR = ../../mux/include
+ENGDIR = ../../mux/modules/engine
+SQLITEDIR = ../../mux/sqlite
 
 all: test_sqlitedb test_backend
 
@@ -23,10 +23,13 @@ test_sqlitedb.o: test_sqlitedb.cpp $(INCDIR)/sqlitedb.h
 test_backend.o: test_backend.cpp $(INCDIR)/storage_backend.h $(INCDIR)/sqlite_backend.h $(INCDIR)/sqlitedb.h
 	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(SQLITEDIR) -c -o $@ $<
 
-test_sqlitedb: test_sqlitedb.o sqlitedb.o sqlite3.o
+stubs.o: stubs.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+test_sqlitedb: test_sqlitedb.o sqlitedb.o sqlite3.o stubs.o
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-test_backend: test_backend.o sqlite_backend.o sqlitedb.o sqlite3.o
+test_backend: test_backend.o sqlite_backend.o sqlitedb.o sqlite3.o stubs.o
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 test: test_sqlitedb test_backend
