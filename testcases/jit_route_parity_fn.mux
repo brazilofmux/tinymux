@@ -160,11 +160,10 @@
         strmatch(%q0,setr(2,sha1([get(me/tc006_result)])))
       )=
   {
-    @log smoke=TC006: mixed list route parity. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC006: mixed list route parity. Succeeded.
   },
   {
-    @log smoke=TC006: mixed list route parity. Failed (%q0 vs %q1 vs %q2).;
+    @log smoke=TC006: mixed list route parity. Failed (%q0 vs %q1 vs %q2).
   }
 -
 #
