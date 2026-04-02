@@ -1115,6 +1115,18 @@ static void hir_renumber_blocks(hir_program &h) {
         }
     }
 
+    // Rewrite PHI predecessor block IDs.
+    for (int i = 0; i < h.n_insns; i++) {
+        if (h.kind[i] != HIR_PHI) continue;
+        int base = h.pbase[i];
+        for (int j = 0; j < h.pnargs[i]; j++) {
+            int b = h.pblk[base + j];
+            if (b >= 0 && b < h.n_blocks && remap[b] >= 0) {
+                h.pblk[base + j] = remap[b];
+            }
+        }
+    }
+
     h.n_blocks = new_count;
     h.cur_block = (h.cur_block >= 0 && h.cur_block < HIR_MAX_BLOCKS
                    && remap[h.cur_block] >= 0) ? remap[h.cur_block] : 0;
@@ -1186,6 +1198,18 @@ void hir_superblock(hir_program &h) {
                 if (h.kind[i] == HIR_BRC) {
                     if (static_cast<int>(h.val[i]) == b) h.val[i] = a;
                     if (h.src2[i] == b) h.src2[i] = a;
+                }
+            }
+
+            // Rewrite PHI predecessor block IDs: any incoming edge
+            // recorded from B now comes from merged block A.
+            for (int i = 0; i < h.n_insns; i++) {
+                if (h.kind[i] != HIR_PHI) continue;
+                int base = h.pbase[i];
+                for (int j = 0; j < h.pnargs[i]; j++) {
+                    if (h.pblk[base + j] == b) {
+                        h.pblk[base + j] = a;
+                    }
                 }
             }
 

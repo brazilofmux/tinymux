@@ -834,10 +834,12 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
 
     h.result = hir_lower_node(h, rc, ast.get());
 
-    // If the final result is TY_FLOAT, insert FTOA to convert to
-    // string for MUX output.  This is the boundary where FP values
-    // escape to string context.
-    if (h.result >= 0 && h.ty[h.result] == TY_FLOAT) {
+    // Convert native scalar results to strings for MUX output.
+    // This is the boundary where non-string values escape to
+    // top-level string context.
+    if (h.result >= 0 && h.ty[h.result] == TY_INT) {
+        h.result = h.emit(HIR_ITOA, TY_STRING, h.result);
+    } else if (h.result >= 0 && h.ty[h.result] == TY_FLOAT) {
         h.result = h.emit(HIR_FTOA, TY_STRING, h.result);
     }
 
