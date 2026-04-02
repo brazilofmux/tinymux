@@ -3194,20 +3194,40 @@ literal_strcat:
         if (upper == "ATAN2" && nargs != 2) {
             t2addr = 0;
         }
-        // FIRST/REST/LAST/SQUISH wrappers only handle single-byte
-        // delimiters.  Multi-char string delimiters (DELIM_STRING)
-        // need the interpreter's multi-char path.
-        if ((upper == "FIRST" || upper == "REST" || upper == "LAST"
-             || upper == "SQUISH") && nargs == 2) {
-            // If delimiter arg is a known constant with length > 1,
-            // skip Tier 2.  If dynamic, be conservative and skip too
-            // since we can't verify it's single-char at compile time.
-            if (!h.is_const(args[1])) {
-                t2addr = 0;
-            } else {
-                std::string dstr = h.const_str(args[1]);
-                if (dstr.size() > 1) {
+        // List-function wrappers only handle single-byte delimiters.
+        // Multi-char string delimiters (DELIM_STRING) need the
+        // interpreter's multi-char path.
+        //
+        // Check the delimiter arg (position varies by function):
+        //   FIRST/REST/LAST/SQUISH: delimiter is arg[1] (nargs >= 2)
+        //   ELEMENTS: delimiter is arg[2] (nargs >= 3)
+        {
+            int delim_idx = -1;
+            if ((upper == "FIRST" || upper == "REST" || upper == "LAST"
+                 || upper == "SQUISH") && nargs >= 2) {
+                delim_idx = 1;
+            } else if (upper == "ELEMENTS" && nargs >= 3) {
+                delim_idx = 2;
+            }
+            // ELEMENTS osep (arg[3]) is also single-byte only.
+            if (upper == "ELEMENTS" && nargs >= 4 && delim_idx >= 0) {
+                if (!h.is_const(args[3])) {
                     t2addr = 0;
+                } else {
+                    std::string ostr = h.const_str(args[3]);
+                    if (ostr.size() > 1) {
+                        t2addr = 0;
+                    }
+                }
+            }
+            if (delim_idx >= 0) {
+                if (!h.is_const(args[delim_idx])) {
+                    t2addr = 0;
+                } else {
+                    std::string dstr = h.const_str(args[delim_idx]);
+                    if (dstr.size() > 1) {
+                        t2addr = 0;
+                    }
                 }
             }
         }

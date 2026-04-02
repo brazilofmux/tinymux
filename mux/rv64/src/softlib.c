@@ -961,37 +961,74 @@ char *rv64_delete(char *out, const char **fargs, int nfargs) {
 char *rv64_elements(char *out, const char **fargs, int nfargs) {
     if (nfargs < 2) { out[0] = '\0'; return out; }
     unsigned char delim = ' ';
-    unsigned char osep = ' ';
     if (nfargs >= 3 && fargs[2][0] != '\0') delim = (unsigned char)fargs[2][0];
-    if (nfargs >= 4 && fargs[3][0] != '\0') osep = (unsigned char)fargs[3][0];
+    /* Output separator defaults to input delimiter (interpreter parity).
+     * An explicit empty 4th arg means null separator (join with nothing). */
+    unsigned char osep = delim;
+    int osep_null = 0;
+    if (nfargs >= 4) {
+        if (fargs[3][0] != '\0')
+            osep = (unsigned char)fargs[3][0];
+        else
+            osep_null = 1;
+    }
+
+    /* For space delimiter, trim leading/trailing spaces to match
+     * the interpreter's trim_space_sep behavior. */
+    const unsigned char *data = (const unsigned char *)fargs[0];
+    size_t dlen = rv64_slen(fargs[0]);
+    if (delim == ' ') {
+        while (dlen > 0 && *data == ' ') { data++; dlen--; }
+        while (dlen > 0 && data[dlen - 1] == ' ') { dlen--; }
+    }
+
     /* Parse position list. */
     const unsigned char *pos_list = (const unsigned char *)fargs[1];
     unsigned char *op = (unsigned char *)out;
     unsigned char *end = op + 7999;
     int first_output = 1;
     while (*pos_list) {
-        /* Parse next number. */
+        /* Parse next number.  Skip non-numeric tokens to match
+         * the interpreter's mux_atol which consumes and ignores
+         * malformed entries like negative numbers or letters. */
         while (*pos_list == ' ') pos_list++;
         if (*pos_list == '\0') break;
+        /* Parse signed integer to match mux_atol: optional +/- then digits. */
+        int sign = 1;
+        if (*pos_list == '+') { pos_list++; }
+        else if (*pos_list == '-') { sign = -1; pos_list++; }
         int pos = 0;
+        int advanced = 0;
         while (*pos_list >= '0' && *pos_list <= '9') {
             pos = pos * 10 + (*pos_list - '0');
             pos_list++;
+            advanced = 1;
+        }
+        pos *= sign;
+        if (!advanced) {
+            /* Non-numeric token: skip to next space or end. */
+            while (*pos_list && *pos_list != ' ') pos_list++;
         }
         while (*pos_list == ' ') pos_list++;
         /* Extract element at position. */
         if (pos < 1) continue;
-        const unsigned char *p = (const unsigned char *)fargs[0];
+        const unsigned char *p = data;
+        const unsigned char *pe = data + dlen;
         int cur = 1;
-        /* Find element #pos. */
-        while (cur < pos && *p) {
-            while (*p && *p != delim) p++;
-            if (*p == delim) { p++; cur++; }
+        /* Find element #pos.  For space delimiter, skip consecutive
+         * spaces (same as split_token in the interpreter). */
+        while (cur < pos && p < pe) {
+            while (p < pe && *p != delim) p++;
+            if (p < pe && *p == delim) {
+                p++;
+                if (delim == ' ') { while (p < pe && *p == ' ') p++; }
+                cur++;
+            }
         }
-        if (cur == pos && *p) {
-            if (!first_output && op < end) *op++ = osep;
+        if (cur == pos && p < pe) {
+            if (!first_output && !osep_null && op < end) *op++ = osep;
             first_output = 0;
-            while (*p && *p != delim && op < end) *op++ = *p++;
+            while (p < pe && *p != delim && op < end) *op++ = *p++;
         }
     }
     *op = '\0';

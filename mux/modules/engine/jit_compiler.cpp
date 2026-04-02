@@ -329,8 +329,7 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "SECURE",      "co_secure_wrap" },
     { "SQUISH",      "co_compress_wrap" },
     { "DELETE",      "rv64_delete" },
-    // Deliberately exclude ELEMENTS for now. Updated regressions show
-    // delimiter/whitespace parity gaps in the Tier 2 implementation.
+    { "ELEMENTS",    "rv64_elements" },
     { "TRANSLATE",   "rv64_translate" },
 
     // --- Batch 5: wildcard matching ---
