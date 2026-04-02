@@ -12,23 +12,19 @@
   @log smoke=Beginning strcat() test cases.
 -
 #
-# Test Case #1 - Basic string concatenation operations.
+# Test Case #1 - Basic strcat() operations.
 #
 &tr.tc001 test_strcat_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strcat(hello,world)]
-            [strcat(a,b,c)]
-          )
-        ),
-        F6231112EF165E24A023417F1AF02B506886E95E
+  @if cand(
+        strmatch(strcat(hello,world), helloworld),
+        strmatch(strcat(a,b,c), abc)
       )=
   {
-    @log smoke=TC001: strcat basic operations. Succeeded.;
+    @log smoke=TC001: strcat() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: strcat basic operations. Failed (%q0).;
+    @log smoke=TC001: strcat() basic operations. Failed (strcat(hello%,world)=[strcat(hello,world)] strcat(a%,b%,c)=[strcat(a,b,c)]).;
     @trig me/tr.done
   }
 -

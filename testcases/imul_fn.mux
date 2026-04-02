@@ -12,23 +12,19 @@
   @log smoke=Beginning imul() test cases.
 -
 #
-# Test Case #1 - Basic integer multiplication.
+# Test Case #1 - Basic imul() operations.
 #
 &tr.tc001 test_imul_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [imul(2,3)]
-            [imul(2,3,4)]
-          )
-        ),
-        5DCA477752FC50226595C6A93528EAF3297DBCF8
+  @if cand(
+        eq(imul(2,3), 6),
+        eq(imul(2,3,4), 24)
       )=
   {
-    @log smoke=TC001: imul basic operations. Succeeded.;
+    @log smoke=TC001: imul() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: imul basic operations. Failed (%q0).;
+    @log smoke=TC001: imul() basic operations. Failed (imul(2%,3)=[imul(2,3)] imul(2%,3%,4)=[imul(2,3,4)]).;
     @trig me/tr.done
   }
 -

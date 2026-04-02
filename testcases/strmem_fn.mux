@@ -12,23 +12,19 @@
   @log smoke=Beginning strmem() test cases.
 -
 #
-# Test Case #1 - Basic strmem operations.
+# Test Case #1 - Basic strmem() operations.
 #
 &tr.tc001 test_strmem_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strmem(hello)]
-            [strmem()]
-          )
-        ),
-        E1822DB470E60D090AFFD0956D743CB0E7CDF113
+  @if cand(
+        eq(strmem(hello), 5),
+        eq(strmem(), 0)
       )=
   {
-    @log smoke=TC001: strmem basic operations. Succeeded.;
+    @log smoke=TC001: strmem() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: strmem basic operations. Failed (%q0).;
+    @log smoke=TC001: strmem() basic operations. Failed (strmem(hello)=[strmem(hello)] strmem()=[strmem()]).;
     @trig me/tr.done
   }
 -

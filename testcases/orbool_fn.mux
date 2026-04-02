@@ -12,23 +12,19 @@
   @log smoke=Beginning orbool() test cases.
 -
 #
-# Test Case #1 - Basic boolean OR.
+# Test Case #1 - Basic orbool() operations.
 #
 &tr.tc001 test_orbool_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [orbool(0,0,0)]
-            [orbool(0,1,0)]
-          )
-        ),
-        DDFE163345D338193AC2BDC183F8E9DCFF904B43
+  @if cand(
+        eq(orbool(0,0,0), 0),
+        eq(orbool(0,1,0), 1)
       )=
   {
-    @log smoke=TC001: orbool basic operations. Succeeded.;
+    @log smoke=TC001: orbool() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: orbool basic operations. Failed (%q0).;
+    @log smoke=TC001: orbool() basic operations. Failed (orbool(0%,0%,0)=[orbool(0,0,0)] orbool(0%,1%,0)=[orbool(0,1,0)]).;
     @trig me/tr.done
   }
 -

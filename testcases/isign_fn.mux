@@ -12,24 +12,20 @@
   @log smoke=Beginning isign() test cases.
 -
 #
-# Test Case #1 - Basic integer sign.
+# Test Case #1 - Basic isign() operations.
 #
 &tr.tc001 test_isign_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [isign(-5)]
-            [isign(0)]
-            [isign(5)]
-          )
-        ),
-        671CC6A3DFA9EB58EA4236AFC97998D9CDDD6C08
+  @if cand(
+        eq(isign(-5), -1),
+        eq(isign(0), 0),
+        eq(isign(5), 1)
       )=
   {
-    @log smoke=TC001: isign basic operations. Succeeded.;
+    @log smoke=TC001: isign() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: isign basic operations. Failed (%q0).;
+    @log smoke=TC001: isign() basic operations. Failed (isign(-5)=[isign(-5)] isign(0)=[isign(0)] isign(5)=[isign(5)]).;
     @trig me/tr.done
   }
 -

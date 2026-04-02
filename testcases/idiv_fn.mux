@@ -12,23 +12,19 @@
   @log smoke=Beginning idiv() test cases.
 -
 #
-# Test Case #1 - Basic integer division.
+# Test Case #1 - Basic idiv() operations.
 #
 &tr.tc001 test_idiv_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [idiv(10,3)]
-            [idiv(-10,3)]
-          )
-        ),
-        FF75E69EBA7F7BC73BF2E2524DE4C41D32D61506
+  @if cand(
+        eq(idiv(10,3), 3),
+        eq(idiv(-10,3), -3)
       )=
   {
-    @log smoke=TC001: idiv basic operations. Succeeded.;
+    @log smoke=TC001: idiv() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: idiv basic operations. Failed (%q0).;
+    @log smoke=TC001: idiv() basic operations. Failed (idiv(10%,3)=[idiv(10,3)] idiv(-10%,3)=[idiv(-10,3)]).;
     @trig me/tr.done
   }
 -

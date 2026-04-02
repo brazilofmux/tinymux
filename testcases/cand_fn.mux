@@ -12,23 +12,19 @@
   @log smoke=Beginning cand() test cases.
 -
 #
-# Test Case #1 - Basic short-circuit AND.
+# Test Case #1 - Basic cand() operations.
 #
 &tr.tc001 test_cand_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [cand(1,1,1)]
-            [cand(1,0,1)]
-          )
-        ),
-        B1D5781111D84F7B3FE45A0852E59758CD7A87E5
+  @if cand(
+        eq(cand(1,1,1), 1),
+        eq(cand(1,0,1), 0)
       )=
   {
-    @log smoke=TC001: cand basic operations. Succeeded.;
+    @log smoke=TC001: cand() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: cand basic operations. Failed (%q0).;
+    @log smoke=TC001: cand() basic operations. Failed (cand(1%,1%,1)=[cand(1,1,1)] cand(1%,0%,1)=[cand(1,0,1)]).;
     @trig me/tr.done
   }
 -

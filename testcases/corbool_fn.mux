@@ -12,23 +12,19 @@
   @log smoke=Beginning corbool() test cases.
 -
 #
-# Test Case #1 - Basic corbool operations.
+# Test Case #1 - Basic corbool() operations.
 #
 &tr.tc001 test_corbool_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [corbool(0,0,0)]
-            [corbool(0,1,0)]
-          )
-        ),
-        DDFE163345D338193AC2BDC183F8E9DCFF904B43
+  @if cand(
+        eq(corbool(0,0,0), 0),
+        eq(corbool(0,1,0), 1)
       )=
   {
-    @log smoke=TC001: corbool basic operations. Succeeded.;
+    @log smoke=TC001: corbool() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: corbool basic operations. Failed (%q0).;
+    @log smoke=TC001: corbool() basic operations. Failed (corbool(0%,0%,0)=[corbool(0,0,0)] corbool(0%,1%,0)=[corbool(0,1,0)]).;
     @trig me/tr.done
   }
 -

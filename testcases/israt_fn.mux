@@ -12,24 +12,20 @@
   @log smoke=Beginning israt() test cases.
 -
 #
-# Test Case #1 - Basic rational number detection.
+# Test Case #1 - Basic israt() operations.
 #
 &tr.tc001 test_israt_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [israt(1.5)]
-            [israt(1)]
-            [israt(abc)]
-          )
-        ),
-        5E796E48332AF4142B10CA0F86E65D9BFDB05884
+  @if cand(
+        eq(israt(1.5), 1),
+        eq(israt(1), 1),
+        eq(israt(abc), 0)
       )=
   {
-    @log smoke=TC001: israt basic operations. Succeeded.;
+    @log smoke=TC001: israt() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: israt basic operations. Failed (%q0).;
+    @log smoke=TC001: israt() basic operations. Failed (israt(1.5)=[israt(1.5)] israt(1)=[israt(1)] israt(abc)=[israt(abc)]).;
     @trig me/tr.done
   }
 -

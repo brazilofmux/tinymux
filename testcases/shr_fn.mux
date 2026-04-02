@@ -12,23 +12,19 @@
   @log smoke=Beginning shr() test cases.
 -
 #
-# Test Case #1 - Basic shift right operations.
+# Test Case #1 - Basic shr() operations.
 #
 &tr.tc001 test_shr_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [shr(8,2)]
-            [shr(255,4)]
-          )
-        ),
-        828F720439CEFAEB3ACC7A7BABCE0A28ABAA07A3
+  @if cand(
+        eq(shr(8,2), 2),
+        eq(shr(255,4), 15)
       )=
   {
-    @log smoke=TC001: shr basic operations. Succeeded.;
+    @log smoke=TC001: shr() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: shr basic operations. Failed (%q0).;
+    @log smoke=TC001: shr() basic operations. Failed (shr(8%,2)=[shr(8,2)] shr(255%,4)=[shr(255,4)]).;
     @trig me/tr.done
   }
 -

@@ -12,24 +12,20 @@
   @log smoke=Beginning iabs() test cases.
 -
 #
-# Test Case #1 - Basic integer absolute value.
+# Test Case #1 - Basic iabs() operations.
 #
 &tr.tc001 test_iabs_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iabs(-5)]
-            [iabs(5)]
-            [iabs(0)]
-          )
-        ),
-        CF94DB48FB7AA4DA74260DA3F6C7E4722E913B72
+  @if cand(
+        eq(iabs(-5), 5),
+        eq(iabs(5), 5),
+        eq(iabs(0), 0)
       )=
   {
-    @log smoke=TC001: iabs basic operations. Succeeded.;
+    @log smoke=TC001: iabs() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: iabs basic operations. Failed (%q0).;
+    @log smoke=TC001: iabs() basic operations. Failed (iabs(-5)=[iabs(-5)] iabs(5)=[iabs(5)] iabs(0)=[iabs(0)]).;
     @trig me/tr.done
   }
 -

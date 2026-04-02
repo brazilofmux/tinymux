@@ -12,24 +12,20 @@
   @log smoke=Beginning iadd() test cases.
 -
 #
-# Test Case #1 - Basic integer addition.
+# Test Case #1 - Basic iadd() operations.
 #
 &tr.tc001 test_iadd_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iadd(1,2)]
-            [iadd(1,2,3)]
-            [iadd()]
-          )
-        ),
-        A1773D62A609DD09E98EA1AEBEDDBD949B78BF83
+  @if cand(
+        eq(iadd(1,2), 3),
+        eq(iadd(1,2,3), 6),
+        eq(iadd(), 0)
       )=
   {
-    @log smoke=TC001: iadd basic operations. Succeeded.;
+    @log smoke=TC001: iadd() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: iadd basic operations. Failed (%q0).;
+    @log smoke=TC001: iadd() basic operations. Failed (iadd(1%,2)=[iadd(1,2)] iadd(1%,2%,3)=[iadd(1,2,3)] iadd()=[iadd()]).;
     @trig me/tr.done
   }
 -

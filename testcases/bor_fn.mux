@@ -12,23 +12,19 @@
   @log smoke=Beginning bor() test cases.
 -
 #
-# Test Case #1 - Basic bitwise OR.
+# Test Case #1 - Basic bor() operations.
 #
 &tr.tc001 test_bor_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [bor(12,10)]
-            [bor(0,0)]
-          )
-        ),
-        C28ACA23F1EF3718A464383D925C66842078EDAA
+  @if cand(
+        eq(bor(12,10), 14),
+        eq(bor(0,0), 0)
       )=
   {
-    @log smoke=TC001: bor basic operations. Succeeded.;
+    @log smoke=TC001: bor() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: bor basic operations. Failed (%q0).;
+    @log smoke=TC001: bor() basic operations. Failed (bor(12%,10)=[bor(12,10)] bor(0%,0)=[bor(0,0)]).;
     @trig me/tr.done
   }
 -

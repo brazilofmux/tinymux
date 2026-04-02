@@ -12,23 +12,19 @@
   @log smoke=Beginning band() test cases.
 -
 #
-# Test Case #1 - Basic bitwise AND.
+# Test Case #1 - Basic band() operations.
 #
 &tr.tc001 test_band_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [band(12,10)]
-            [band(255,15)]
-          )
-        ),
-        D528EDAA45E66E08A9ECE98272130B42E77CEF55
+  @if cand(
+        eq(band(12,10), 8),
+        eq(band(255,15), 15)
       )=
   {
-    @log smoke=TC001: band basic operations. Succeeded.;
+    @log smoke=TC001: band() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: band basic operations. Failed (%q0).;
+    @log smoke=TC001: band() basic operations. Failed (band(12%,10)=[band(12,10)] band(255%,15)=[band(255,15)]).;
     @trig me/tr.done
   }
 -

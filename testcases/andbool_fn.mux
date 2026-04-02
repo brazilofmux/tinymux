@@ -12,23 +12,19 @@
   @log smoke=Beginning andbool() test cases.
 -
 #
-# Test Case #1 - Basic boolean AND.
+# Test Case #1 - Basic andbool() operations.
 #
 &tr.tc001 test_andbool_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [andbool(1,1,1)]
-            [andbool(1,0,1)]
-          )
-        ),
-        B1D5781111D84F7B3FE45A0852E59758CD7A87E5
+  @if cand(
+        eq(andbool(1,1,1), 1),
+        eq(andbool(1,0,1), 0)
       )=
   {
-    @log smoke=TC001: andbool basic operations. Succeeded.;
+    @log smoke=TC001: andbool() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: andbool basic operations. Failed (%q0).;
+    @log smoke=TC001: andbool() basic operations. Failed (andbool(1%,1%,1)=[andbool(1,1,1)] andbool(1%,0%,1)=[andbool(1,0,1)]).;
     @trig me/tr.done
   }
 -

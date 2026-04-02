@@ -12,23 +12,19 @@
   @log smoke=Beginning fmod() test cases.
 -
 #
-# Test Case #1 - Basic floating-point modulo.
+# Test Case #1 - Basic fmod() operations.
 #
 &tr.tc001 test_fmod_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [fmod(10,3)]
-            [fmod(-10,3)]
-          )
-        ),
-        D787669EE4A103FE0B361FE31C10EA037C72F27C
+  @if cand(
+        eq(fmod(10,3), 1),
+        eq(fmod(-10,3), -1)
       )=
   {
-    @log smoke=TC001: fmod basic operations. Succeeded.;
+    @log smoke=TC001: fmod() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: fmod basic operations. Failed (%q0).;
+    @log smoke=TC001: fmod() basic operations. Failed (fmod(10%,3)=[fmod(10,3)] fmod(-10%,3)=[fmod(-10,3)]).;
     @trig me/tr.done
   }
 -

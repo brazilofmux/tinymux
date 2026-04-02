@@ -5,30 +5,32 @@
 -
 @set test_between_fn=INHERIT QUIET
 -
+#
+# Beginning of Test Cases
+#
 &tr.tc000 test_between_fn=
   @log smoke=Beginning between() test cases.
 -
+#
+# Test Case #1 - Basic between() operations.
+#
 &tr.tc001 test_between_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [between(1,10,5)]
-            [between(1,10,1)]
-            [between(1,10,10)]
-            [between(1,10,0)]
-            [between(1,10,11)]
-            [between(1,10,5,1)]
-            [between(1,10,1,1)]
-            [between(1,10,10,1)]
-          )
-        ),
-        EB3677E0E8567799B4A09B9BC3F74FD9E257A0B9
+  @if cand(
+        eq(between(1,10,5), 1),
+        eq(between(1,10,1), 0),
+        eq(between(1,10,10), 0),
+        eq(between(1,10,0), 0),
+        eq(between(1,10,11), 0),
+        eq(between(1,10,5,1), 1),
+        eq(between(1,10,1,1), 1),
+        eq(between(1,10,10,1), 1)
       )=
   {
-    @log smoke=TC001: between range tests. Succeeded.;
+    @log smoke=TC001: between() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: between range tests. Failed (%q0).;
+    @log smoke=TC001: between() basic operations. Failed (between(1%,10%,5)=[between(1,10,5)] between(1%,10%,1)=[between(1,10,1)] between(1%,10%,10)=[between(1,10,10)] between(1%,10%,0)=[between(1,10,0)] between(1%,10%,11)=[between(1,10,11)] between(1%,10%,5%,1)=[between(1,10,5,1)] between(1%,10%,1%,1)=[between(1,10,1,1)] between(1%,10%,10%,1)=[between(1,10,10,1)]).;
     @trig me/tr.done
   }
 -
@@ -38,3 +40,6 @@
 -
 drop test_between_fn
 -
+#
+# End of Test Cases
+#

@@ -12,25 +12,21 @@
   @log smoke=Beginning t() test cases.
 -
 #
-# Test Case #1 - Basic truth value operations.
+# Test Case #1 - Basic t() operations.
 #
 &tr.tc001 test_t_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [t(1)]
-            [t(0)]
-            [t(abc)]
-            [t()]
-          )
-        ),
-        1966E694BAD90686516F99CDF432800FDCA39290
+  @if cand(
+        eq(t(1), 1),
+        eq(t(0), 0),
+        eq(t(abc), 1),
+        eq(t(), 0)
       )=
   {
-    @log smoke=TC001: t basic operations. Succeeded.;
+    @log smoke=TC001: t() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: t basic operations. Failed (%q0).;
+    @log smoke=TC001: t() basic operations. Failed (t(1)=[t(1)] t(0)=[t(0)] t(abc)=[t(abc)] t()=[t()]).;
     @trig me/tr.done
   }
 -

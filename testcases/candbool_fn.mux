@@ -12,23 +12,19 @@
   @log smoke=Beginning candbool() test cases.
 -
 #
-# Test Case #1 - Basic candbool operations.
+# Test Case #1 - Basic candbool() operations.
 #
 &tr.tc001 test_candbool_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [candbool(1,1,1)]
-            [candbool(1,0,1)]
-          )
-        ),
-        B1D5781111D84F7B3FE45A0852E59758CD7A87E5
+  @if cand(
+        eq(candbool(1,1,1), 1),
+        eq(candbool(1,0,1), 0)
       )=
   {
-    @log smoke=TC001: candbool basic operations. Succeeded.;
+    @log smoke=TC001: candbool() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: candbool basic operations. Failed (%q0).;
+    @log smoke=TC001: candbool() basic operations. Failed (candbool(1%,1%,1)=[candbool(1,1,1)] candbool(1%,0%,1)=[candbool(1,0,1)]).;
     @trig me/tr.done
   }
 -

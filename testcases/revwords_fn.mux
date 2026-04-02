@@ -12,22 +12,18 @@
   @log smoke=Beginning revwords() test cases.
 -
 #
-# Test Case #1 - Basic revwords operations.
+# Test Case #1 - Basic revwords() operations.
 #
 &tr.tc001 test_revwords_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [revwords(a b c d)]
-          )
-        ),
-        6E770FFF792B95DAE77978226C63E9AA5AB87BE3
+  @if cand(
+        strmatch(revwords(a b c d), d c b a)
       )=
   {
-    @log smoke=TC001: revwords basic operations. Succeeded.;
+    @log smoke=TC001: revwords() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: revwords basic operations. Failed (%q0).;
+    @log smoke=TC001: revwords() basic operations. Failed (revwords=[revwords(a b c d)]).;
     @trig me/tr.done
   }
 -

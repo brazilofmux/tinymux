@@ -12,23 +12,19 @@
   @log smoke=Beginning isub() test cases.
 -
 #
-# Test Case #1 - Basic integer subtraction.
+# Test Case #1 - Basic isub() operations.
 #
 &tr.tc001 test_isub_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [isub(10,3)]
-            [isub(3,10)]
-          )
-        ),
-        CBE2F7E7A1B6E93DDF92D0A47B39E0D230ECD2ED
+  @if cand(
+        eq(isub(10,3), 7),
+        eq(isub(3,10), -7)
       )=
   {
-    @log smoke=TC001: isub basic operations. Succeeded.;
+    @log smoke=TC001: isub() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: isub basic operations. Failed (%q0).;
+    @log smoke=TC001: isub() basic operations. Failed (isub(10%,3)=[isub(10,3)] isub(3%,10)=[isub(3,10)]).;
     @trig me/tr.done
   }
 -
