@@ -81,11 +81,13 @@ Implement the framework for evaluating softcode on multiple cores simultaneously
 
 ## Core Engine Issues
 
-### 3. Platform Interface Driver
+### ~~3. Platform Interface Driver~~ DONE
 
-- **File:** `driver.cpp:384`, `modules.cpp:1172`
-- **Issue:** Need to create a proper platform interface abstraction for the driver.
-- **Goal:** Refactor `CPlatform` from `modules.cpp` into separate files (`platform_unix.cpp`, `platform_win32.cpp`). This will eliminate the current `#ifdef` tangle and allow for cleaner, OS-specific implementations of signals, helper processes, and file descriptor management.
+- **Resolved:** Extracted CPlatform and CPlatformFactory (~440 lines) from `modules.cpp`
+  into `platform.cpp`. Added to `DRIVER_SRC` in `Makefile.am`. `modules.cpp` now
+  contains only COM dispatch and CConnectionManager/CDriverControl. Future
+  per-platform files (`platform_apple.cpp`, etc.) can replace or supplement
+  `platform.cpp` cleanly.
 
 ### 4. Engine & LibMux Unit Testing
 

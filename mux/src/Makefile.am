@@ -10,7 +10,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdi
 
 DRIVER_SRC = _build.cpp bsd.cpp driver.cpp driver_bridge.cpp \
     ganl_adapter.cpp modules.cpp muxcli.cpp net.cpp netaddr.cpp \
-    signals.cpp sitemon.cpp telnet.cpp websocket.cpp
+    platform.cpp signals.cpp sitemon.cpp telnet.cpp websocket.cpp
 
 # Build executables
 bin_PROGRAMS = netmux slave
