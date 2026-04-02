@@ -4,41 +4,63 @@
 -
 @set test_jitstats_fn=INHERIT QUIET
 -
+&tr.has_jit test_jitstats_fn=
+  [strmatch(jitstats(),*eval_attempts=*)]
+-
 &tr.tc001 test_jitstats_fn=
-  @if strmatch(
-        setr(0,jitstats()),
-        *eval_attempts=*eval_handled=*
-      )=
+  @if u(me/tr.has_jit)=
   {
-    @log smoke=TC001: jitstats returns counters. Succeeded.
+    @if strmatch(
+          setr(0,jitstats()),
+          *eval_attempts=*eval_handled=*
+        )=
+    {
+      @log smoke=TC001: jitstats returns counters. Succeeded.
+    },
+    {
+      @log smoke=TC001: jitstats returns counters. Failed (%q0).
+    }
   },
   {
-    @log smoke=TC001: jitstats returns counters. Failed (%q0).
+    @log smoke=TC001: jitstats returns counters. Skipped (JIT not enabled).
   }
 -
 &tr.tc002 test_jitstats_fn=
-  @if strmatch(
-        setr(0,jitstats()),
-        *bail_noeval=*bail_slots=*
-      )=
+  @if u(me/tr.has_jit)=
   {
-    @log smoke=TC002: jitstats has bailout counters. Succeeded.
+    @if strmatch(
+          setr(0,jitstats()),
+          *bail_noeval=*bail_slots=*
+        )=
+    {
+      @log smoke=TC002: jitstats has bailout counters. Succeeded.
+    },
+    {
+      @log smoke=TC002: jitstats has bailout counters. Failed (%q0).
+    }
   },
   {
-    @log smoke=TC002: jitstats has bailout counters. Failed (%q0).
+    @log smoke=TC002: jitstats has bailout counters. Skipped (JIT not enabled).
   }
 -
 &tr.tc003 test_jitstats_fn=
-  @if strmatch(
-        setr(0,jitstats(reset)),
-        OK
-      )=
+  @if u(me/tr.has_jit)=
   {
-    @log smoke=TC003: jitstats reset. Succeeded.;
-    @trig me/tr.done
+    @if strmatch(
+          setr(0,jitstats(reset)),
+          OK
+        )=
+    {
+      @log smoke=TC003: jitstats reset. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC003: jitstats reset. Failed (%q0).;
+      @trig me/tr.done
+    }
   },
   {
-    @log smoke=TC003: jitstats reset. Failed (%q0).;
+    @log smoke=TC003: jitstats reset. Skipped (JIT not enabled).;
     @trig me/tr.done
   }
 -

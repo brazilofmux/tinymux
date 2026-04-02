@@ -1,0 +1,168 @@
+#
+# jit_route_parity_fn.mux - Parity tests across evaluation routes.
+#
+# These tests compare the same expression through three routes:
+#   1. normal evaluation under --enable-jit
+#   2. asteval({ ... }) to force the AST evaluator
+#   3. a stored attribute triggered as a command, which exercises
+#      command-argument expansion from an attribute body
+#
+@create test_jit_route_parity_fn
+-
+@set test_jit_route_parity_fn=INHERIT QUIET
+-
+#
+# Helper attributes. Each one stores the routed result in tcNNN_result.
+#
+&tr.helper1 test_jit_route_parity_fn=
+  &tc001_result me=[cand(eq(dist2d(0,0,3,4),5),eq(mean(2,4,6),4),eq(median(3,1,2),2))]
+-
+&tr.helper2 test_jit_route_parity_fn=
+  &tc002_result me=[cand(strmatch(round(sqrt(2),6),1.414214),eq(round(2.5,0),2),strmatch(cat(dist3d(0,0,0,1,2,2)),3))]
+-
+&tr.helper3 test_jit_route_parity_fn=
+  &tc003_result me=[elements(%bAck%b%bMoo%bBeep%bFoof,2,2)]
+-
+&tr.helper4 test_jit_route_parity_fn=
+  &tc004_result me=[insert(Yet@Another@Funky@List,Mundane,4,@)]
+-
+&tr.helper5 test_jit_route_parity_fn=
+  &tc005_result me=[switch(a,a,{result,with,commas},*,other)]
+-
+&tr.helper6 test_jit_route_parity_fn=
+  &tc006_result me=[cand(eq(member(c,a b c d),3),strmatch(remove(b,a|b|c,|),a|c),strmatch(insert(a|c,x,2,|),a|x|c))]
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_jit_route_parity_fn=
+  @log smoke=Beginning JIT route parity test cases.
+-
+#
+# Test Case #1 - float-producing compare chains survive command route replay.
+#
+&tr.tc001 test_jit_route_parity_fn=
+  &tc001_result me=;
+  @trig/now me/tr.helper1;
+  @if cand(
+        strmatch(
+          setr(0,sha1([cand(eq(dist2d(0,0,3,4),5),eq(mean(2,4,6),4),eq(median(3,1,2),2))])),
+          setr(1,sha1([asteval({cand(eq(dist2d(0,0,3,4),5),eq(mean(2,4,6),4),eq(median(3,1,2),2))})]))
+        ),
+        strmatch(%q0,setr(2,sha1([get(me/tc001_result)])))
+      )=
+  {
+    @log smoke=TC001: float compare chain route parity. Succeeded.
+  },
+  {
+    @log smoke=TC001: float compare chain route parity. Failed (%q0 vs %q1 vs %q2).
+  }
+-
+#
+# Test Case #2 - float formatting inside boolean composition matches all routes.
+#
+&tr.tc002 test_jit_route_parity_fn=
+  &tc002_result me=;
+  @trig/now me/tr.helper2;
+  @if cand(
+        strmatch(
+          setr(0,sha1([cand(strmatch(round(sqrt(2),6),1.414214),eq(round(2.5,0),2),strmatch(cat(dist3d(0,0,0,1,2,2)),3))])),
+          setr(1,sha1([asteval({cand(strmatch(round(sqrt(2),6),1.414214),eq(round(2.5,0),2),strmatch(cat(dist3d(0,0,0,1,2,2)),3))})]))
+        ),
+        strmatch(%q0,setr(2,sha1([get(me/tc002_result)])))
+      )=
+  {
+    @log smoke=TC002: float formatting route parity. Succeeded.
+  },
+  {
+    @log smoke=TC002: float formatting route parity. Failed (%q0 vs %q1 vs %q2).
+  }
+-
+#
+# Test Case #3 - whitespace-sensitive list extraction matches all routes.
+#
+&tr.tc003 test_jit_route_parity_fn=
+  &tc003_result me=;
+  @trig/now me/tr.helper3;
+  @if cand(
+        strmatch(
+          setr(0,sha1([elements(%bAck%b%bMoo%bBeep%bFoof,2,2)])),
+          setr(1,sha1([asteval({elements(%bAck%b%bMoo%bBeep%bFoof,2,2)})]))
+        ),
+        strmatch(%q0,setr(2,sha1([get(me/tc003_result)])))
+      )=
+  {
+    @log smoke=TC003: elements() whitespace route parity. Succeeded.
+  },
+  {
+    @log smoke=TC003: elements() whitespace route parity. Failed (%q0 vs %q1 vs %q2).
+  }
+-
+#
+# Test Case #4 - explicit-delimiter list insertion matches all routes.
+#
+&tr.tc004 test_jit_route_parity_fn=
+  &tc004_result me=;
+  @trig/now me/tr.helper4;
+  @if cand(
+        strmatch(
+          setr(0,sha1([insert(Yet@Another@Funky@List,Mundane,4,@)])),
+          setr(1,sha1([asteval({insert(Yet@Another@Funky@List,Mundane,4,@)})]))
+        ),
+        strmatch(%q0,setr(2,sha1([get(me/tc004_result)])))
+      )=
+  {
+    @log smoke=TC004: insert() delimiter route parity. Succeeded.
+  },
+  {
+    @log smoke=TC004: insert() delimiter route parity. Failed (%q0 vs %q1 vs %q2).
+  }
+-
+#
+# Test Case #5 - brace-protected commas match all routes.
+#
+&tr.tc005 test_jit_route_parity_fn=
+  &tc005_result me=;
+  @trig/now me/tr.helper5;
+  @if cand(
+        strmatch(
+          setr(0,sha1([switch(a,a,{result,with,commas},*,other)])),
+          setr(1,sha1([asteval({switch(a,a,{result,with,commas},*,other)})]))
+        ),
+        strmatch(%q0,setr(2,sha1([get(me/tc005_result)])))
+      )=
+  {
+    @log smoke=TC005: brace comma route parity. Succeeded.
+  },
+  {
+    @log smoke=TC005: brace comma route parity. Failed (%q0 vs %q1 vs %q2).
+  }
+-
+#
+# Test Case #6 - mixed list operators inside cand() match all routes.
+#
+&tr.tc006 test_jit_route_parity_fn=
+  &tc006_result me=;
+  @trig/now me/tr.helper6;
+  @if cand(
+        strmatch(
+          setr(0,sha1([cand(eq(member(c,a b c d),3),strmatch(remove(b,a|b|c,|),a|c),strmatch(insert(a|c,x,2,|),a|x|c))])),
+          setr(1,sha1([asteval({cand(eq(member(c,a b c d),3),strmatch(remove(b,a|b|c,|),a|c),strmatch(insert(a|c,x,2,|),a|x|c))})]))
+        ),
+        strmatch(%q0,setr(2,sha1([get(me/tc006_result)])))
+      )=
+  {
+    @log smoke=TC006: mixed list route parity. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC006: mixed list route parity. Failed (%q0 vs %q1 vs %q2).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_jit_route_parity_fn=
+  @log smoke=End JIT route parity test cases.;
+  @notify smoke
+-
+drop test_jit_route_parity_fn
+-
