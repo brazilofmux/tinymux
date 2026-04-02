@@ -2831,6 +2831,110 @@ general_lowering:
 #endif
     }
 
+    // SIN/COS/TAN(value, unit) — 2-arg form with constant angle unit.
+    // Convert the input from degrees/gradians to radians, then call
+    // the intrinsic.  "r" or unknown unit → identity (no conversion).
+    //
+    // ASIN/ACOS/ATAN(value, unit) — inverse trig with output conversion.
+    // Call the intrinsic first, then convert the result from radians
+    // to degrees/gradians.
+    //
+    // ATAN2(y, x, unit) — 3-arg form with output conversion.
+    //
+    if (nargs == 2 && h.is_numeric(args[0]) && h.is_const(args[1])
+        && (upper == "SIN" || upper == "COS" || upper == "TAN"
+            || upper == "ASIN" || upper == "ACOS" || upper == "ATAN")) {
+#ifdef HAVE_IEEE_FP_SNAN
+
+        std::string unit_str = h.const_str(args[1]);
+        char unit = unit_str.empty() ? 'r' : static_cast<char>(
+            tolower(static_cast<unsigned char>(unit_str[0])));
+
+        // Determine conversion factor.
+        double pre_factor = 1.0;   // input multiplier (for sin/cos/tan)
+        double post_factor = 1.0;  // output multiplier (for asin/acos/atan)
+        if (unit == 'd') {
+            pre_factor = 0.017453292519943295;    // deg → rad
+            post_factor = 57.29577951308232;       // rad → deg
+        } else if (unit == 'g') {
+            pre_factor = 0.015707963267948967;    // grad → rad
+            post_factor = 63.66197723675813;       // rad → grad
+        }
+        // 'r' or anything else → factors stay 1.0 (identity).
+
+        // Look up the intrinsic.
+        const char *sym = nullptr;
+        int fmath_id = 0;
+        bool is_inverse = false;
+
+        if (upper == "SIN")       { sym = "sin";  fmath_id = FMATH_SIN;  }
+        else if (upper == "COS")  { sym = "cos";  fmath_id = FMATH_COS;  }
+        else if (upper == "TAN")  { sym = "tan";  fmath_id = FMATH_TAN;  }
+        else if (upper == "ASIN") { sym = "asin"; fmath_id = FMATH_ASIN; is_inverse = true; }
+        else if (upper == "ACOS") { sym = "acos"; fmath_id = FMATH_ACOS; is_inverse = true; }
+        else if (upper == "ATAN") { sym = "atan"; fmath_id = FMATH_ATAN; is_inverse = true; }
+
+        uint64_t addr = fp_intrinsic_addr(sym);
+        if (addr) {
+            int a = ensure_float(args[0]);
+
+            if (!is_inverse && pre_factor != 1.0) {
+                // sin/cos/tan: convert input to radians first.
+                int factor = h.emit_fconst(pre_factor);
+                a = h.emit(HIR_FMUL, TY_FLOAT, a, factor);
+            }
+
+            int r = h.emit(HIR_FCALL1, TY_FLOAT, a, -1,
+                           static_cast<int64_t>(addr));
+            h.func_idx[r] = fmath_id;
+
+            if (is_inverse && post_factor != 1.0) {
+                // asin/acos/atan: convert output from radians.
+                int factor = h.emit_fconst(post_factor);
+                r = h.emit(HIR_FMUL, TY_FLOAT, r, factor);
+            }
+
+            h.native_ops++;
+            h.needs_jit = true;
+            return r;
+        }
+#endif
+    }
+
+    // ATAN2(y, x, unit) — 3-arg form with output conversion.
+    if (upper == "ATAN2" && nargs == 3
+        && h.is_numeric(args[0]) && h.is_numeric(args[1])
+        && h.is_const(args[2])) {
+#ifdef HAVE_IEEE_FP_SNAN
+
+        std::string unit_str = h.const_str(args[2]);
+        char unit = unit_str.empty() ? 'r' : static_cast<char>(
+            tolower(static_cast<unsigned char>(unit_str[0])));
+
+        double post_factor = 1.0;
+        if (unit == 'd')      post_factor = 57.29577951308232;
+        else if (unit == 'g') post_factor = 63.66197723675813;
+
+        uint64_t addr = fp_intrinsic_addr("atan2");
+        if (addr) {
+            int a = ensure_float(args[0]);
+            int b = ensure_float(args[1]);
+            int r = h.emit(HIR_FCALL2, TY_FLOAT, a, b,
+                           static_cast<int64_t>(addr));
+            h.func_idx[r] = FMATH_ATAN2;
+
+            if (post_factor != 1.0) {
+                int factor = h.emit_fconst(post_factor);
+                r = h.emit(HIR_FMUL, TY_FLOAT, r, factor);
+            }
+
+            h.native_ops++;
+            h.needs_jit = true;
+            return r;
+        }
+#endif
+    }
+
     // Binary FP functions: POWER, ATAN2, FMOD → FCALL2.
     for (int ti = 0; s_fp_binary[ti].mux_name; ti++) {
         if (upper == s_fp_binary[ti].mux_name && nargs == 2
@@ -3039,11 +3143,22 @@ literal_strcat:
     // Check Tier 2 blob before falling through to ECALL.
     uint64_t t2addr = tier2_lookup(upper);
 
-    // LOG's Tier 2 blob (rv64_log10) only handles the 1-arg common-log
-    // case.  The 2-arg form log(value, base) must fall through to ECALL
-    // so the interpreter handles arbitrary bases.
-    if (t2addr && upper == "LOG" && nargs != 1) {
-        t2addr = 0;
+    // Tier 2 math blobs only handle the minimum-arg form.  Multi-arg
+    // calls with optional angle units or log bases must fall through
+    // to ECALL (or be handled by the HIR lowering above).
+    if (t2addr) {
+        // LOG: rv64_log10 handles 1-arg only.
+        // SIN/COS/TAN: rv64_* handle 1-arg (radians) only.
+        // ASIN/ACOS/ATAN: rv64_* handle 1-arg (radians) only.
+        // ATAN2: rv64_atan2 handles 2-arg (y,x in radians) only.
+        if ((upper == "LOG" || upper == "SIN" || upper == "COS"
+             || upper == "TAN" || upper == "ASIN" || upper == "ACOS"
+             || upper == "ATAN") && nargs != 1) {
+            t2addr = 0;
+        }
+        if (upper == "ATAN2" && nargs != 2) {
+            t2addr = 0;
+        }
     }
 
     // ECALL/Tier2 results are always strings in guest memory.  If the

@@ -369,10 +369,13 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "ISDBREF",     "rv64_isdbref" },
 
     // --- Batch 8: math via intrinsics (string↔double + platform libm) ---
-    // Deliberately exclude the trig family here for now. Their
-    // optional angle-unit arguments are interpreter-visible semantics,
-    // and the Tier 2 aliases currently bypass that behavior for
-    // multi-arg calls.
+    { "SIN",         "rv64_sin" },
+    { "COS",         "rv64_cos" },
+    { "TAN",         "rv64_tan" },
+    { "ASIN",        "rv64_asin" },
+    { "ACOS",        "rv64_acos" },
+    { "ATAN",        "rv64_atan" },
+    { "ATAN2",       "rv64_atan2" },
     { "EXP",         "rv64_exp" },
     { "LOG",         "rv64_log10" },  // MUX log() defaults to common (base 10)
     { "LOG10",       "rv64_log10" },
