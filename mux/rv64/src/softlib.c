@@ -72,6 +72,11 @@ size_t co_splice(unsigned char *out,
                  const unsigned char *list2, size_t len2,
                  const unsigned char *search, size_t slen,
                  unsigned char delim, unsigned char osep);
+size_t co_splice_raw(unsigned char *out,
+                 const unsigned char *list1, size_t len1,
+                 const unsigned char *list2, size_t len2,
+                 const unsigned char *search, size_t slen,
+                 unsigned char delim, unsigned char osep);
 size_t co_insert_word(unsigned char *out, const unsigned char *list,
                       size_t llen, size_t pos, const unsigned char *word,
                       size_t wlen, unsigned char delim, unsigned char osep);
@@ -999,7 +1004,7 @@ char *co_splice_wrap(char *out, const char **fargs, int nfargs) {
         return out;
     }
 
-    size_t n = co_splice((unsigned char *)out,
+    size_t n = co_splice_raw((unsigned char *)out,
                          (const unsigned char *)fargs[0], rv64_slen(fargs[0]),
                          (const unsigned char *)fargs[1], rv64_slen(fargs[1]),
                          (const unsigned char *)fargs[2], rv64_slen(fargs[2]),

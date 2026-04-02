@@ -3816,6 +3816,49 @@ size_t co_splice(unsigned char *out,
     return (size_t)(wp - out);
 }
 
+/* ---- co_splice_raw ---- */
+
+size_t co_splice_raw(unsigned char *out,
+                     const unsigned char *list1, size_t len1,
+                     const unsigned char *list2, size_t len2,
+                     const unsigned char *search, size_t slen,
+                     unsigned char delim, unsigned char osep)
+{
+    word_range_t w1[LBUF_SIZE / 2], w2[LBUF_SIZE / 2];
+    size_t n1 = split_words(list1, len1, delim, w1, LBUF_SIZE / 2);
+    size_t n2 = split_words(list2, len2, delim, w2, LBUF_SIZE / 2);
+
+    if (n1 != n2) {
+        out[0] = '\0';
+        return 0;
+    }
+
+    unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+
+    for (size_t i = 0; i < n1 && wp < wp_end; i++) {
+        if (i > 0) WP_SAFE(wp, wp_end, osep);
+
+        size_t wlen = (size_t)(w1[i].end - w1[i].start);
+        const unsigned char *src_start;
+        const unsigned char *src_end;
+
+        if (wlen == slen && memcmp(w1[i].start, search, slen) == 0) {
+            src_start = w2[i].start;
+            src_end = w2[i].end;
+        } else {
+            src_start = w1[i].start;
+            src_end = w1[i].end;
+        }
+
+        size_t cb = (size_t)(src_end - src_start);
+        wp += wp_safe_copy(wp, wp_end, src_start, cb);
+    }
+
+    *wp = '\0';
+    return (size_t)(wp - out);
+}
+
 /* ---- co_insert_word ---- */
 
 size_t co_insert_word(unsigned char *out,

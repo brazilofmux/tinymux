@@ -929,6 +929,74 @@ static void test_splice(void) {
               (const unsigned char *)"a y c", 5);
 }
 
+/* ---- co_splice_raw ---- */
+
+static void test_splice_raw(void) {
+    const char *name = "co_splice_raw";
+    unsigned char out[LBUF_SIZE];
+    size_t r;
+
+    /* Basic: replace matching word. */
+    r = co_splice_raw(out,
+        (const unsigned char *)"a b c", 5,
+        (const unsigned char *)"x y z", 5,
+        (const unsigned char *)"b", 1,
+        ' ', ' ');
+    check_buf(name, "splice b->y", out, r,
+              (const unsigned char *)"a y c", 5);
+
+    /* No match: list1 returned unchanged. */
+    r = co_splice_raw(out,
+        (const unsigned char *)"a b c", 5,
+        (const unsigned char *)"x y z", 5,
+        (const unsigned char *)"d", 1,
+        ' ', ' ');
+    check_buf(name, "splice no match", out, r,
+              (const unsigned char *)"a b c", 5);
+
+    /* Raw comparison is color-sensitive: colored word does NOT match
+     * plain search word (unlike co_splice which strips color). */
+    {
+        /* PUA BMP color: \xEE\x80\x80 = U+E000 (start color) */
+        unsigned char colored[] = { 0xEE, 0x80, 0x80, 'b', 0 };
+        r = co_splice_raw(out,
+            colored, 4,
+            (const unsigned char *)"y", 1,
+            (const unsigned char *)"b", 1,
+            ' ', ' ');
+        /* "b" with color prefix != plain "b", so no replacement. */
+        check_buf(name, "color-sensitive no match", out, r,
+                  colored, 4);
+    }
+
+    /* Multiple matches: each matching position replaced from list2. */
+    r = co_splice_raw(out,
+        (const unsigned char *)"a b a", 5,
+        (const unsigned char *)"x y z", 5,
+        (const unsigned char *)"a", 1,
+        ' ', ' ');
+    check_buf(name, "splice multiple matches", out, r,
+              (const unsigned char *)"x b z", 5);
+
+    /* Non-space delimiter. */
+    r = co_splice_raw(out,
+        (const unsigned char *)"a|b|c", 5,
+        (const unsigned char *)"x|y|z", 5,
+        (const unsigned char *)"b", 1,
+        '|', '|');
+    check_buf(name, "splice pipe delim", out, r,
+              (const unsigned char *)"a|y|c", 5);
+
+    /* Mismatched word counts: empty output. */
+    r = co_splice_raw(out,
+        (const unsigned char *)"a b c", 5,
+        (const unsigned char *)"x y", 3,
+        (const unsigned char *)"a", 1,
+        ' ', ' ');
+    check_buf(name, "splice mismatched counts", out, r,
+              (const unsigned char *)"", 0);
+}
+
 /* ---- co_insert_word ---- */
 
 static void test_insert_word(void) {
@@ -3808,6 +3876,7 @@ static const test_suite_t suites[] = {
     { "member",           test_member },
     { "lpos",             test_lpos },
     { "splice",           test_splice },
+    { "splice_raw",       test_splice_raw },
     { "insert_word",      test_insert_word },
     { "replace_at",       test_replace_at },
     { "insert_at",        test_insert_at },

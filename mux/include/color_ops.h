@@ -469,6 +469,20 @@ LIBMUX_API size_t co_splice(unsigned char *out,
                  unsigned char delim, unsigned char osep);
 
 /*
+ * co_splice_raw — Word-level splice with raw (byte-exact) comparison.
+ *
+ * Same as co_splice but compares words against search_word using raw
+ * memcmp instead of stripping color first.  This matches the
+ * interpreter's strcmp semantics in fun_splice, where color codes
+ * in the word are part of the comparison.
+ */
+LIBMUX_API size_t co_splice_raw(unsigned char *out,
+                 const unsigned char *list1, size_t len1,
+                 const unsigned char *list2, size_t len2,
+                 const unsigned char *search, size_t slen,
+                 unsigned char delim, unsigned char osep);
+
+/*
  * co_insert_word — Insert a word at a position in a word list.
  *
  * MUX insert() semantics: iPos is 1-based word position.

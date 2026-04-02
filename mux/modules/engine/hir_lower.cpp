@@ -3245,8 +3245,8 @@ literal_strcat:
                 delim_idx = 2;
             } else if (upper == "REMOVE" && nargs >= 3) {
                 delim_idx = 2;
-            } else if ((upper == "REPLACE" || upper == "INSERT")
-                       && nargs >= 4) {
+            } else if ((upper == "REPLACE" || upper == "INSERT"
+                        || upper == "SPLICE") && nargs >= 4) {
                 delim_idx = 3;
             }
             // ELEMENTS osep (arg[3]), REPLACE/INSERT osep (arg[4])
@@ -3255,8 +3255,8 @@ literal_strcat:
                 int osep_idx = -1;
                 if (upper == "ELEMENTS" && nargs >= 4) osep_idx = 3;
                 else if (upper == "REMOVE" && nargs >= 4) osep_idx = 3;
-                else if ((upper == "REPLACE" || upper == "INSERT")
-                         && nargs >= 5) osep_idx = 4;
+                else if ((upper == "REPLACE" || upper == "INSERT"
+                          || upper == "SPLICE") && nargs >= 5) osep_idx = 4;
                 if (osep_idx >= 0) {
                     if (!h.is_const(args[osep_idx])) {
                         t2addr = 0;

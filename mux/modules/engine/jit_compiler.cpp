@@ -318,10 +318,7 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "RJUST",       "co_rjust_wrap" },
     { "CENTER",      "co_center_wrap" },
     { "EDIT",        "co_edit_wrap" },
-    // SPLICE: co_splice() in color_ops.c strips color before word
-    // comparison, but the interpreter uses raw strcmp.  This makes
-    // Tier 2 color-insensitive vs the interpreter's color-sensitive
-    // matching.  Needs a raw-comparison co_splice variant.
+    { "SPLICE",      "co_splice_wrap" },
     { "CAPSTR",      "co_totitle_wrap" },
     { "STRIPANSI",   "co_stripansi_wrap" },
 
