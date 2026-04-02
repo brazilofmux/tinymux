@@ -15,21 +15,17 @@
 # Test Case #1 - Basic rounding operations.
 #
 &tr.tc001 test_round_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [round(2.345,2)]
-            [round(-2.345,2)]
-            [round(2.5,0)]
-          )
-        ),
-        AE0401F5F57CCAEADE9E56278FDC5630CA31AE0E
+  @if cand(
+        strmatch(round(2.345,2), 2.35),
+        strmatch(round(-2.345,2), -2.35),
+        eq(round(2.5,0), 2)
       )=
   {
     @log smoke=TC001: round basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: round basic operations. Failed (%q0).;
+    @log smoke=TC001: round basic operations. Failed (round(2.345%,2)=[round(2.345,2)] round(-2.345%,2)=[round(-2.345,2)] round(2.5%,0)=[round(2.5,0)]).;
     @trig me/tr.done
   }
 -

@@ -15,20 +15,16 @@
 # Test Case #1 - Basic member operations.
 #
 &tr.tc001 test_member_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [member(a b c d,c)]
-            [member(a b c d,x)]
-          )
-        ),
-        22D200F8670DBDB3E253A90EEE5098477C95C23D
+  @if cand(
+        eq(member(a b c d,c), 3),
+        eq(member(a b c d,x), 0)
       )=
   {
     @log smoke=TC001: member basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: member basic operations. Failed (%q0).;
+    @log smoke=TC001: member basic operations. Failed (member(c)=[member(a b c d,c)] member(x)=[member(a b c d,x)]).;
     @trig me/tr.done
   }
 -

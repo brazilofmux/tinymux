@@ -4514,7 +4514,7 @@
 >256
 "@log smoke=Beginning lpos() test cases."
 >257
-"@if strmatch(setr(0,sha1([lpos(a b c a b c,a)][lpos(a b c a b c,d)])),AC9332EE8FEE56EB9F342EA95F3BE48B62EA7EBD)={@log smoke=TC001: lpos basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: lpos basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if cand(strmatch(lpos(a b c a b c,a), 0 6),eq(strlen(lpos(a b c a b c,d)), 0))={@log smoke=TC001: lpos basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: lpos basic operations. Failed (lpos(a)=[lpos(a b c a b c,a)] lpos(d)=[lpos(a b c a b c,d)]).;@trig me/tr.done}"
 >258
 "@log smoke=End lpos() test cases.;@notify smoke"
 <
@@ -5067,7 +5067,7 @@
 >256
 "@log smoke=Beginning member() test cases."
 >257
-"@if strmatch(setr(0,sha1([member(a b c d,c)][member(a b c d,x)])),22D200F8670DBDB3E253A90EEE5098477C95C23D)={@log smoke=TC001: member basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: member basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if cand(eq(member(a b c d,c), 3),eq(member(a b c d,x), 0))={@log smoke=TC001: member basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: member basic operations. Failed (member(c)=[member(a b c d,c)] member(x)=[member(a b c d,x)]).;@trig me/tr.done}"
 >258
 "@log smoke=End member() test cases.;@notify smoke"
 <
@@ -6096,7 +6096,7 @@
 >256
 "@log smoke=Beginning remove() test cases."
 >257
-"@if strmatch(setr(0,sha1([remove(a b c d,c)][remove(a|b|c,b,|)])),16FE8E3DD3748B772E7C845998A4BF777D310815)={@log smoke=TC001: remove basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: remove basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if cand(strmatch(remove(a b c d,c), a b d),strmatch(remove(a|b|c,b,|), a|c))={@log smoke=TC001: remove basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: remove basic operations. Failed (remove(c)=[remove(a b c d,c)] remove(b%,|)=[remove(a|b|c,b,|)]).;@trig me/tr.done}"
 >258
 "@log smoke=End remove() test cases.;@notify smoke"
 <
@@ -6371,7 +6371,7 @@
 >256
 "@log smoke=Beginning round() test cases."
 >257
-"@if strmatch(setr(0,sha1([round(2.345,2)][round(-2.345,2)][round(2.5,0)])),AE0401F5F57CCAEADE9E56278FDC5630CA31AE0E)={@log smoke=TC001: round basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: round basic operations. Failed (%q0).;@trig me/tr.done}"
+"@if cand(strmatch(round(2.345,2), 2.35),strmatch(round(-2.345,2), -2.35),eq(round(2.5,0), 2))={@log smoke=TC001: round basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: round basic operations. Failed (round(2.345%,2)=[round(2.345,2)] round(-2.345%,2)=[round(-2.345,2)] round(2.5%,0)=[round(2.5,0)]).;@trig me/tr.done}"
 >258
 "@log smoke=End round() test cases.;@notify smoke"
 <
@@ -7841,7 +7841,7 @@
 >256
 "@log smoke=Beginning sqrt() test cases."
 >257
-"@if strmatch(setr(0,sha1([round(sqrt(2),6)][round(sqrt(100),6)][round(sqrt(0),6)][sqrt(-1)])),5303C71ED201F716E63DE1210C4816F5FB8045BC)={@log smoke=TC001: sqrt examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: sqrt examples. Failed (%q0).;@trig me/tr.done}"
+"@if cand(strmatch(round(sqrt(2),6), 1.414214),strmatch(round(sqrt(100),6), 10.000000),strmatch(round(sqrt(0),6), 0.000000),strmatch(sqrt(-1), Ind))={@log smoke=TC001: sqrt examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: sqrt examples. Failed (sqrt(2)=[round(sqrt(2),6)] sqrt(100)=[round(sqrt(100),6)] sqrt(0)=[round(sqrt(0),6)] sqrt(-1)=[sqrt(-1)]).;@trig me/tr.done}"
 >258
 "@log smoke=End sqrt() test cases.;@notify smoke"
 <

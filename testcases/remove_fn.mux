@@ -15,20 +15,16 @@
 # Test Case #1 - Basic list element removal.
 #
 &tr.tc001 test_remove_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [remove(a b c d,c)]
-            [remove(a|b|c,b,|)]
-          )
-        ),
-        16FE8E3DD3748B772E7C845998A4BF777D310815
+  @if cand(
+        strmatch(remove(a b c d,c), a b d),
+        strmatch(remove(a|b|c,b,|), a|c)
       )=
   {
     @log smoke=TC001: remove basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: remove basic operations. Failed (%q0).;
+    @log smoke=TC001: remove basic operations. Failed (remove(c)=[remove(a b c d,c)] remove(b%,|)=[remove(a|b|c,b,|)]).;
     @trig me/tr.done
   }
 -

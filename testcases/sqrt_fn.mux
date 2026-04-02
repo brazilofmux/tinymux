@@ -15,22 +15,18 @@
 # Test Case #1 - Help file examples.
 #
 &tr.tc001 test_sqrt_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [round(sqrt(2),6)]
-            [round(sqrt(100),6)]
-            [round(sqrt(0),6)]
-            [sqrt(-1)]
-          )
-        ),
-        5303C71ED201F716E63DE1210C4816F5FB8045BC
+  @if cand(
+        strmatch(round(sqrt(2),6), 1.414214),
+        strmatch(round(sqrt(100),6), 10.000000),
+        strmatch(round(sqrt(0),6), 0.000000),
+        strmatch(sqrt(-1), Ind)
       )=
   {
     @log smoke=TC001: sqrt examples. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: sqrt examples. Failed (%q0).;
+    @log smoke=TC001: sqrt examples. Failed (sqrt(2)=[round(sqrt(2),6)] sqrt(100)=[round(sqrt(100),6)] sqrt(0)=[round(sqrt(0),6)] sqrt(-1)=[sqrt(-1)]).;
     @trig me/tr.done
   }
 -
@@ -43,4 +39,3 @@ drop test_sqrt_fn
 #
 # End of Test Cases
 #
-

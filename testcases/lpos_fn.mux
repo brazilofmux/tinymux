@@ -13,22 +13,19 @@
 -
 #
 # Test Case #1 - Basic list position.
+# lpos() returns character positions, not word positions.
 #
 &tr.tc001 test_lpos_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [lpos(a b c a b c,a)]
-            [lpos(a b c a b c,d)]
-          )
-        ),
-        AC9332EE8FEE56EB9F342EA95F3BE48B62EA7EBD
+  @if cand(
+        strmatch(lpos(a b c a b c,a), 0 6),
+        eq(strlen(lpos(a b c a b c,d)), 0)
       )=
   {
     @log smoke=TC001: lpos basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: lpos basic operations. Failed (%q0).;
+    @log smoke=TC001: lpos basic operations. Failed (lpos(a)=[lpos(a b c a b c,a)] lpos(d)=[lpos(a b c a b c,d)]).;
     @trig me/tr.done
   }
 -
