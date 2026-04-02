@@ -155,18 +155,26 @@ numeric lists with optional separator overrides.
 
 ### 2d. Modification (Insert / Delete / Replace)
 
-| Operation | Word / List | Grapheme |
-| :--- | :--- | :--- |
-| Delete by position | `ldelete(list,pos,isep,osep)` | `delete(str,pos,len)`, `strdelete(str,pos,len)` |
-| Insert at position | `linsert(list,pos,word,sep)`, `insert(list,pos,word,isep,osep)` | `strinsert(str,pos,text)` |
-| Replace by position | `lreplace(list,pos,word,isep,osep)`, `replace(list,pos,word,isep,osep)` | `strreplace(str,start,len,new)` |
-| Conditional replace | `splice(list,old,new,isep,osep)` | -- |
-| List-aware edit | `ledit(str,from,to,isep,osep)` | -- |
-| Remove by value | `remove(list,word,isep,osep)` | -- |
-| Substring replace (string-level) | -- | `edit(str,from,to,...)` |
-| Strip characters (string-level) | -- | `strip(str,chars)` |
+| Operation | Word / List | Grapheme | Regex |
+| :--- | :--- | :--- | :--- |
+| Delete by position | `ldelete(list,pos,isep,osep)` | `delete(str,pos,len)`, `strdelete(str,pos,len)` | -- |
+| Insert at position | `linsert(list,pos,word,sep)`, `insert(list,pos,word,isep,osep)` | `strinsert(str,pos,text)` | -- |
+| Replace by position | `lreplace(list,pos,word,isep,osep)`, `replace(list,pos,word,isep,osep)` | `strreplace(str,start,len,new)` | -- |
+| Conditional replace | `splice(list,old,new,isep,osep)` | -- | -- |
+| List-aware edit | `ledit(str,from,to,isep,osep)` | -- | -- |
+| Remove by value | `remove(list,word,isep,osep)` | -- | -- |
 | Regex replace | -- | -- | `regedit()` / `regediti()` / `regeditall()` / `regeditalli()` |
-| Transliterate | -- | `tr(str,from,to)`, `translate(str,mode)` |
+
+The following are **string-level** operations. They work on raw strings
+or character sets, not on grapheme clusters or list words. They are
+listed separately to keep the unit model clean.
+
+| Operation | Function | Notes |
+| :--- | :--- | :--- |
+| Substring replace | `edit(str,from,to,...)` | Whole-string find-and-replace, not grapheme-indexed |
+| Strip characters | `strip(str,chars)` | Removes characters from a set; not grapheme-cluster-aware |
+| Transliterate | `tr(str,from,to)` | Character-set translation; maps single characters, not clusters |
+| Case translate | `translate(str,mode)` | Case/mode transform on the whole string |
 
 ### 2e. Reordering
 
@@ -264,7 +272,7 @@ moving between them.
 | Byte offset -> containing word | `wordpos(str, charpos, sep)` | present (byte-offset, not grapheme) |
 | Word index -> grapheme start/end | -- | **missing** |
 | String -> grapheme list | -- | **missing** |
-| Grapheme list -> string | `strcat()` with no separator | effectively covered |
+| Grapheme list -> string | -- | **missing** (no list-consuming joiner; `strcat()` is variadic-args only) |
 
 Note: `wordpos()` indexes into the color-stripped UTF-8 buffer by byte
 position (`cp[charpos - 1]`), not by grapheme cluster. Despite the
