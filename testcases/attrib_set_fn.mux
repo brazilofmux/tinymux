@@ -13,21 +13,18 @@
 -
 #
 # Test Case #1 - Set an attribute, verify with get().
+# attrib_set returns empty on success; get returns the value.
 #
 &tr.tc001 test_attrib_set_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [attrib_set(me/tc001_data,Twenty Pink Pigs)]
-            [get(me/tc001_data)]
-          )
-        ),
-        CD1DA8F1161ECED623ADE356C7A8B5CBC4EDF326
+  @if cand(
+        eq(strlen(attrib_set(me/tc001_data,Twenty Pink Pigs)), 0),
+        strmatch(get(me/tc001_data), Twenty Pink Pigs)
       )=
   {
     @log smoke=TC001: attrib_set set attribute. Succeeded.
   },
   {
-    @log smoke=TC001: attrib_set set attribute. Failed (%q0).
+    @log smoke=TC001: attrib_set set attribute. Failed (set=[attrib_set(me/tc001_data,Twenty Pink Pigs)] get=[get(me/tc001_data)]).
   }
 -
 #
@@ -35,19 +32,15 @@
 #
 &tr.tc002 test_attrib_set_fn=
   @eval attrib_set(me/tc002_data,Something);
-  @if strmatch(
-        setr(0,sha1(
-            [attrib_set(me/tc002_data)]
-            [get(me/tc002_data)]
-          )
-        ),
-        DA39A3EE5E6B4B0D3255BFEF95601890AFD80709
+  @if cand(
+        eq(strlen(attrib_set(me/tc002_data)), 0),
+        eq(strlen(get(me/tc002_data)), 0)
       )=
   {
     @log smoke=TC002: attrib_set clear attribute. Succeeded.
   },
   {
-    @log smoke=TC002: attrib_set clear attribute. Failed (%q0).
+    @log smoke=TC002: attrib_set clear attribute. Failed (get=[get(me/tc002_data)]).
   }
 -
 #
@@ -55,20 +48,16 @@
 #
 &tr.tc003 test_attrib_set_fn=
   @eval attrib_set(me/tc003_data,Something);
-  @if strmatch(
-        setr(0,sha1(
-            [attrib_set(me/tc003_data,)]
-            [get(me/tc003_data)]
-          )
-        ),
-        DA39A3EE5E6B4B0D3255BFEF95601890AFD80709
+  @if cand(
+        eq(strlen(attrib_set(me/tc003_data,)), 0),
+        eq(strlen(get(me/tc003_data)), 0)
       )=
   {
     @log smoke=TC003: attrib_set empty value clears. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: attrib_set empty value clears. Failed (%q0).;
+    @log smoke=TC003: attrib_set empty value clears. Failed (get=[get(me/tc003_data)]).;
     @trig me/tr.done
   }
 -

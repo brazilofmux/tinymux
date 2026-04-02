@@ -10,60 +10,43 @@
 -
 #
 # Test Case #1 - sandbox blocks a named function.
-# add() is blocked, so sandbox(add(1,2),add) should return #-1 PERMISSION DENIED.
+# add() is blocked, so sandbox(add(1\,2),add) should return error.
 #
 &tr.tc001 test_sandbox_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [sandbox(add(1\,2),add)]
-          )
-        ),
-        DEAAD7EB64E524CD4E669611428AF99F4663FC98
-      )=
+  @if strmatch(sandbox(add(1\,2),add), #-1 PERMISSION DENIED)=
   {
     @log smoke=TC001: sandbox blocks function. Succeeded.
   },
   {
-    @log smoke=TC001: sandbox blocks function. Failed (%q0).
+    @log smoke=TC001: sandbox blocks function. Failed (sandbox=[sandbox(add(1\,2),add)]).
   }
 -
 #
 # Test Case #2 - sandbox does not affect unblocked functions.
-# mul() is blocked but add() is not.
+# mul() is blocked but add() is not. The escaped comma makes add()
+# receive "1,2" as a single argument, so add returns 0.
 #
 &tr.tc002 test_sandbox_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [sandbox(add(1\,2),mul)]
-          )
-        ),
-        B6589FC6AB0DC82CF12099D1C2D40AB994E8410C
-      )=
+  @if eq(sandbox(add(1\,2),mul), 0)=
   {
     @log smoke=TC002: sandbox allows other functions. Succeeded.
   },
   {
-    @log smoke=TC002: sandbox allows other functions. Failed (%q0).
+    @log smoke=TC002: sandbox allows other functions. Failed (sandbox=[sandbox(add(1\,2),mul)]).
   }
 -
 #
 # Test Case #3 - sandbox reverse mode: only listed functions are allowed.
-# Allow only add(), try mul() — should fail.
+# Allow only add(), try mul() - should fail.
 #
 &tr.tc003 test_sandbox_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [sandbox(mul(2\,3),add,1)]
-          )
-        ),
-        DEAAD7EB64E524CD4E669611428AF99F4663FC98
-      )=
+  @if strmatch(sandbox(mul(2\,3),add,1), #-1 PERMISSION DENIED)=
   {
     @log smoke=TC003: sandbox reverse blocks unlisted. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: sandbox reverse blocks unlisted. Failed (%q0).;
+    @log smoke=TC003: sandbox reverse blocks unlisted. Failed (sandbox=[sandbox(mul(2\,3),add,1)]).;
     @trig me/tr.done
   }
 -

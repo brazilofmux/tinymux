@@ -25,63 +25,55 @@
 -
 #
 # Test Case #1 - while() iterates and stops on condition.
-# Double each element, stop when element > 10.
-# List: 1 2 3 4 5 6 7 8 9 10 11 12
-# Doubles: 2 4 6 8 10 12 14 16 18 20 — stops at 11 (gt(11,10)=1).
-# Output should be: 2 4 6 8 10 12 14 16 18 20 22
+# Double each element, stop when original element > 10.
+# List: 1..12, doubles: 2 4 6 8 10 12 14 16 18 20, stops at 11.
+# Output: 2 4 6 8 10 12 14 16 18 20 22
 #
 &tr.tc001 test_while_fn=
   @if strmatch(
-        setr(0,sha1(
-            [while(me/fn_double,me/fn_gt10,1 2 3 4 5 6 7 8 9 10 11 12,1)]
-          )
-        ),
-        321583D7E759089A50729F2A510F1241FD209C12
+        while(me/fn_double,me/fn_gt10,1 2 3 4 5 6 7 8 9 10 11 12,1),
+        2 4 6 8 10 12 14 16 18 20 22
       )=
   {
     @log smoke=TC001: while stops on condition. Succeeded.
   },
   {
-    @log smoke=TC001: while stops on condition. Failed (%q0).
+    @log smoke=TC001: while stops on condition. Failed (while=[while(me/fn_double,me/fn_gt10,1 2 3 4 5 6 7 8 9 10 11 12,1)]).
   }
 -
 #
 # Test Case #2 - while() processes all elements when condition never matches.
 # Identity function, condition never returns "STOP".
+# Output: a b c
 #
 &tr.tc002 test_while_fn=
   @if strmatch(
-        setr(0,sha1(
-            [while(me/fn_identity,me/fn_identity,a b c,STOP)]
-          )
-        ),
-        6B3F339C67BB03D57A7195CF43ED86B12BFDD347
+        while(me/fn_identity,me/fn_identity,a b c,STOP),
+        a b c
       )=
   {
     @log smoke=TC002: while processes all. Succeeded.
   },
   {
-    @log smoke=TC002: while processes all. Failed (%q0).
+    @log smoke=TC002: while processes all. Failed (while=[while(me/fn_identity,me/fn_identity,a b c,STOP)]).
   }
 -
 #
 # Test Case #3 - while() with same eval and cond attr (optimization path).
 # Identity: stops when element equals "c".
+# Output: a b c
 #
 &tr.tc003 test_while_fn=
   @if strmatch(
-        setr(0,sha1(
-            [while(me/fn_identity,me/fn_identity,a b c d e,c)]
-          )
-        ),
-        6B3F339C67BB03D57A7195CF43ED86B12BFDD347
+        while(me/fn_identity,me/fn_identity,a b c d e,c),
+        a b c
       )=
   {
     @log smoke=TC003: while same-attr optimization. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: while same-attr optimization. Failed (%q0).;
+    @log smoke=TC003: while same-attr optimization. Failed (while=[while(me/fn_identity,me/fn_identity,a b c d e,c)]).;
     @trig me/tr.done
   }
 -

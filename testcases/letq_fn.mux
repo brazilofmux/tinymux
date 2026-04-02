@@ -13,17 +13,15 @@
 -
 #
 # Test Case #1 - Basic letq with single-char register.
+# letq(a,hello,%qa) => "hello"
 #
 &tr.tc001 test_letq_fn=
-  @if strmatch(
-        setr(0,sha1(letq(a,hello,%qa))),
-        AAF4C61DDCC5E8A2DABEDE0F3B482CD9AEA9434D
-      )=
+  @if strmatch(letq(a,hello,%qa), hello)=
   {
     @log smoke=TC001: letq single-char register. Succeeded.
   },
   {
-    @log smoke=TC001: letq single-char register. Failed (%q0).
+    @log smoke=TC001: letq single-char register. Failed (letq=[letq(a,hello,%qa)]).
   }
 -
 #
@@ -32,45 +30,38 @@
 # Result: "INNEROUTER"
 #
 &tr.tc002 test_letq_fn=
-  @if strmatch(
-        setr(0,sha1([setq(b,OUTER)][letq(b,INNER,%qb)][%qb])),
-        2262DB7FE7506BF1CB454E9357DFA92B8FE68B7F
-      )=
+  @if strmatch([setq(b,OUTER)][letq(b,INNER,%qb)][%qb], INNEROUTER)=
   {
     @log smoke=TC002: letq scoping. Succeeded.
   },
   {
-    @log smoke=TC002: letq scoping. Failed (%q0).
+    @log smoke=TC002: letq scoping. Failed (result=[setq(b,OUTER)][letq(b,INNER,%qb)][%qb]).
   }
 -
 #
 # Test Case #3 - letq with multiple name/value pairs.
+# letq(a,one,b,two,%qa-%qb) => "one-two"
 #
 &tr.tc003 test_letq_fn=
-  @if strmatch(
-        setr(0,sha1(letq(a,one,b,two,%qa-%qb))),
-        F6FA341FA921754426A93DE8913698FCE864F18E
-      )=
+  @if strmatch(letq(a,one,b,two,%qa-%qb), one-two)=
   {
     @log smoke=TC003: letq multiple pairs. Succeeded.
   },
   {
-    @log smoke=TC003: letq multiple pairs. Failed (%q0).
+    @log smoke=TC003: letq multiple pairs. Failed (letq=[letq(a,one,b,two,%qa-%qb)]).
   }
 -
 #
 # Test Case #4 - letq with named registers.
+# letq(foo,BAR,%q<foo>) => "BAR"
 #
 &tr.tc004 test_letq_fn=
-  @if strmatch(
-        setr(0,sha1(letq(foo,BAR,%q<foo>))),
-        A5D5C1BBA91FDB6C669E1AE0413820885BBFC455
-      )=
+  @if strmatch(letq(foo,BAR,%q<foo>), BAR)=
   {
     @log smoke=TC004: letq named register. Succeeded.
   },
   {
-    @log smoke=TC004: letq named register. Failed (%q0).
+    @log smoke=TC004: letq named register. Failed (letq=[letq(foo,BAR,%q<foo>)]).
   }
 -
 #

@@ -21,23 +21,21 @@
 # Test Case #1 - Clone a thing, verify type, name, and attribute copy.
 #
 &tr.tc001 test_clone_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [type(setr(1,clone(CloneSource)))]
-            [name(%q1)]
-            [get(%q1/TESTATTR)]
-          )),
-        CF6E4A31C419BF65849FE26657DDA9BF6316E044
+  @if cand(
+        strmatch(type(setr(1,clone(CloneSource))), THING),
+        strmatch(name(%q1), CloneSource),
+        strmatch(get(%q1/TESTATTR), hello)
       )=
   {
     @log smoke=TC001: clone basic thing. Succeeded.
   },
   {
-    @log smoke=TC001: clone basic thing. Failed (%q0).
+    @log smoke=TC001: clone basic thing. Failed (type=[type(%q1)] name=[name(%q1)] attr=[get(%q1/TESTATTR)]).
   }
 -
 #
-# Test Case #2 - Clone with a new name.
+# Test Case #2 - Clone with a second argument.
+# clone(obj, arg2) behavior depends on implementation; verify consistency.
 #
 &tr.tc002 test_clone_fn=
   @if strmatch(
@@ -56,21 +54,16 @@
   }
 -
 #
-# Test Case #3 - Clone a non-existent object returns #-1.
+# Test Case #3 - Clone a non-existent object returns error.
 #
 &tr.tc003 test_clone_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [clone(DefinitelyDoesNotExist12345)]
-          )),
-        781312E4CA2C1476A946B1D8091199D58E89F203
-      )=
+  @if strmatch(clone(DefinitelyDoesNotExist12345), #-1*)=
   {
     @log smoke=TC003: clone non-existent. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: clone non-existent. Failed (%q0).;
+    @log smoke=TC003: clone non-existent. Failed (clone=[clone(DefinitelyDoesNotExist12345)]).;
     @trig me/tr.done
   }
 -

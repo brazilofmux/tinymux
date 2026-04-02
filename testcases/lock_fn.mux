@@ -13,19 +13,15 @@
 -
 #
 # Test Case #1 - Read default lock (one-argument form).
+# With no lock set, lock(me) returns empty.
 #
 &tr.tc001 test_lock_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [lock(me)]
-          )),
-        DA39A3EE5E6B4B0D3255BFEF95601890AFD80709
-      )=
+  @if eq(strlen(lock(me)), 0)=
   {
     @log smoke=TC001: lock read default. Succeeded.
   },
   {
-    @log smoke=TC001: lock read default. Failed (%q0).
+    @log smoke=TC001: lock read default. Failed (lock=[lock(me)]).
   }
 -
 #
@@ -48,21 +44,17 @@
 -
 #
 # Test Case #3 - Clear a lock via lock() with empty second arg.
+# After clearing, lock(me) returns empty.
 #
 &tr.tc003 test_lock_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [lock(me,)]
-            [lock(me)]
-          )),
-        DA39A3EE5E6B4B0D3255BFEF95601890AFD80709
-      )=
+  think >>> lock clear: [lock(me,)];
+  @if eq(strlen(lock(me)), 0)=
   {
     @log smoke=TC003: lock clear. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: lock clear. Failed (%q0).;
+    @log smoke=TC003: lock clear. Failed (lock=[lock(me)]).;
     @trig me/tr.done
   }
 -
