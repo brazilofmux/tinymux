@@ -32,6 +32,14 @@
 &tr.helper6 test_jit_route_parity_fn=
   &tc006_result me=[cand(eq(member(c,a b c d),3),strmatch(remove(b,a|b|c,|),a|c),strmatch(insert(a|c,x,2,|),a|x|c))]
 -
+
+&tr.helper7 test_jit_route_parity_fn=
+  &tc007_result me=[eval(\[add(1,2)\]\[add(2,2)\]\[mul(2,3)\])]
+-
+
+&tr.helper8 test_jit_route_parity_fn=
+  &tc008_result me=[cat(%q0,-,[add(1,2)],-,%0)]
+-
 #
 # Beginning of Test Cases
 #
@@ -157,6 +165,48 @@
   },
   {
     @log smoke=TC006: mixed list route parity. Failed (%q0 vs %q1 vs %q2).;
+  }
+-
+#
+# Test Case #7 - escaped eval brackets survive the trigger command route.
+#
+&tr.tc007 test_jit_route_parity_fn=
+  &tc007_result me=;
+  @trig/now me/tr.helper7;
+  @if cand(
+        strmatch(
+          setr(0,sha1([eval(\[add(1,2)\]\[add(2,2)\]\[mul(2,3)\])])),
+          setr(1,sha1([asteval({eval(\[add(1,2)\]\[add(2,2)\]\[mul(2,3)\])})]))
+        ),
+        strmatch(%q0,setr(2,sha1([get(me/tc007_result)])))
+      )=
+  {
+    @log smoke=TC007: escaped eval bracket route parity. Succeeded.
+  },
+  {
+    @log smoke=TC007: escaped eval bracket route parity. Failed (%q0 vs %q1 vs %q2).
+  }
+-
+#
+# Test Case #8 - q-registers survive stored-attribute command expansion.
+#
+&tr.tc008 test_jit_route_parity_fn=
+  setr(0,kiwi);
+  &tc008_result me=;
+  @trig/now me/tr.helper8=pear;
+  @if cand(
+        strmatch(
+          setr(1,sha1([cat(%q0,-,[add(1,2)],-,pear)])),
+          setr(2,sha1([asteval({cat(%q0,-,[add(1,2)],-,pear)})]))
+        ),
+        strmatch(%q1,setr(3,sha1([get(me/tc008_result)])))
+      )=
+  {
+    @log smoke=TC008: q-register route parity. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC008: q-register route parity. Failed (%q1 vs %q2 vs %q3).;
     @trig me/tr.done
   }
 -
