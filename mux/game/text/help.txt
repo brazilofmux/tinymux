@@ -9997,7 +9997,60 @@ LAND()
     > say [land(1|1,|)]
     You say, "1"
 
-  Related Topics: and(), lor(), lxor(), not(), t().
+  Related Topics: and(), lband(), lor(), lxor(), not(), t().
+
+& LBAND()
+LBAND()
+
+  FUNCTION: lband(<list of integers>[,<delim>])
+
+  Takes a list of zero or more integers, and returns the bitwise AND of
+  all elements.  An empty list returns -1 (all bits set, the AND
+  identity).
+
+  Examples:
+    > say [lband(7 14)]
+    You say, "6"
+    > say [lband(255 15 3)]
+    You say, "3"
+    > say [lband(12|8,|)]
+    You say, "8"
+
+  Related Topics: band(), lbor(), lbxor(), land().
+
+& LBOR()
+LBOR()
+
+  FUNCTION: lbor(<list of integers>[,<delim>])
+
+  Takes a list of zero or more integers, and returns the bitwise OR of
+  all elements.  An empty list returns 0 (the OR identity).
+
+  Examples:
+    > say [lbor(1 2 4)]
+    You say, "7"
+    > say [lbor(3|12,|)]
+    You say, "15"
+
+  Related Topics: bor(), lband(), lbxor(), lor().
+
+& LBXOR()
+LBXOR()
+
+  FUNCTION: lbxor(<list of integers>[,<delim>])
+
+  Takes a list of zero or more integers, and returns the bitwise XOR of
+  all elements.  An empty list returns 0 (the XOR identity).
+
+  Examples:
+    > say [lbxor(7 3)]
+    You say, "4"
+    > say [lbxor(255 15)]
+    You say, "240"
+    > say [lbxor(5|3|6,|)]
+    You say, "0"
+
+  Related Topics: bxor(), lband(), lbor(), lxor().
 
 & LAST()
 LAST()

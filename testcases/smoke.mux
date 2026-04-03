@@ -21,7 +21,7 @@
   json_fn lambda_fn letq_fn pocvm2_fn
 -
 &suite.list.2 smoke=
-  ladd_fn land_fn last_fn lcstr_fn ldelete_fn linsert_fn ljust_fn lmax_fn lmin_fn \
+  ladd_fn lband_fn land_fn last_fn lcstr_fn ldelete_fn linsert_fn ljust_fn lmax_fn lmin_fn \
   ln_fn lnum_fn locate_poss lock_fn lockencode_fn log_fn lor_fn lxor_fn lpad_fn lpos_fn lt_fn lte_fn \
   mailinfo_fn mailsend_fn match_fn matchall_fn max_fn mean_fn median_fn member_fn merge_fn mid_fn min_fn mod_fn moon_fn mul_fn \
   ncon_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn \

@@ -3035,6 +3035,105 @@ FUNCTION(fun_lxor)
     safe_bool(bValue, buff, bufc);
 }
 
+FUNCTION(fun_lband)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    uint64_t val = UINT64_MAX;
+    if (0 < nfargs)
+    {
+        SEP sep;
+        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
+        {
+            return;
+        }
+
+        UTF8 *cp = trim_space_sep(fargs[0], sep);
+        while (cp)
+        {
+            UTF8 *curr = split_token(&cp, sep);
+            if (!is_integer(curr, nullptr))
+            {
+                safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
+                return;
+            }
+            val &= mux_atoi64(curr);
+        }
+    }
+    safe_i64toa(val, buff, bufc);
+}
+
+FUNCTION(fun_lbor)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    uint64_t val = 0;
+    if (0 < nfargs)
+    {
+        SEP sep;
+        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
+        {
+            return;
+        }
+
+        UTF8 *cp = trim_space_sep(fargs[0], sep);
+        while (cp)
+        {
+            UTF8 *curr = split_token(&cp, sep);
+            if (!is_integer(curr, nullptr))
+            {
+                safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
+                return;
+            }
+            val |= mux_atoi64(curr);
+        }
+    }
+    safe_i64toa(val, buff, bufc);
+}
+
+FUNCTION(fun_lbxor)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    uint64_t val = 0;
+    if (0 < nfargs)
+    {
+        SEP sep;
+        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
+        {
+            return;
+        }
+
+        UTF8 *cp = trim_space_sep(fargs[0], sep);
+        while (cp)
+        {
+            UTF8 *curr = split_token(&cp, sep);
+            if (!is_integer(curr, nullptr))
+            {
+                safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
+                return;
+            }
+            val ^= mux_atoi64(curr);
+        }
+    }
+    safe_i64toa(val, buff, bufc);
+}
+
 FUNCTION(fun_band)
 {
     UNUSED_PARAMETER(executor);

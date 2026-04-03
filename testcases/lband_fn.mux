@@ -1,0 +1,204 @@
+#
+# lband_fn.mux - Test Cases for lband(), lbor(), lbxor().
+#
+@create test_lband_fn
+-
+@set test_lband_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_lband_fn=
+  @log smoke=Beginning lband/lbor/lbxor() test cases.
+-
+#
+# Test Case #1 - lband basic.
+#
+&tr.tc001 test_lband_fn=
+  @if eq(
+        lband(7 14),
+        6
+      )=
+  {
+    @log smoke=TC001: lband basic. Succeeded.
+  },
+  {
+    @log smoke=TC001: lband basic. Failed ([lband(7 14)]).
+  }
+-
+#
+# Test Case #2 - lband three elements.
+#
+&tr.tc002 test_lband_fn=
+  @if eq(
+        lband(255 15 3),
+        3
+      )=
+  {
+    @log smoke=TC002: lband three elements. Succeeded.
+  },
+  {
+    @log smoke=TC002: lband three elements. Failed ([lband(255 15 3)]).
+  }
+-
+#
+# Test Case #3 - lband empty list returns -1 (all bits set).
+#
+&tr.tc003 test_lband_fn=
+  @if eq(
+        lband(),
+        -1
+      )=
+  {
+    @log smoke=TC003: lband empty identity. Succeeded.
+  },
+  {
+    @log smoke=TC003: lband empty identity. Failed ([lband()]).
+  }
+-
+#
+# Test Case #4 - lband custom delimiter.
+#
+&tr.tc004 test_lband_fn=
+  @if eq(
+        lband(12|8,|),
+        8
+      )=
+  {
+    @log smoke=TC004: lband custom delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC004: lband custom delimiter. Failed ([lband(12|8,|)]).
+  }
+-
+#
+# Test Case #5 - lband non-integer error.
+#
+&tr.tc005 test_lband_fn=
+  @if strmatch(
+        lband(7 abc 3),
+        #-1*
+      )=
+  {
+    @log smoke=TC005: lband non-integer error. Succeeded.
+  },
+  {
+    @log smoke=TC005: lband non-integer error. Failed ([lband(7 abc 3)]).
+  }
+-
+#
+# Test Case #6 - lbor basic.
+#
+&tr.tc006 test_lband_fn=
+  @if eq(
+        lbor(1 2 4),
+        7
+      )=
+  {
+    @log smoke=TC006: lbor basic. Succeeded.
+  },
+  {
+    @log smoke=TC006: lbor basic. Failed ([lbor(1 2 4)]).
+  }
+-
+#
+# Test Case #7 - lbor empty list returns 0.
+#
+&tr.tc007 test_lband_fn=
+  @if eq(
+        lbor(),
+        0
+      )=
+  {
+    @log smoke=TC007: lbor empty identity. Succeeded.
+  },
+  {
+    @log smoke=TC007: lbor empty identity. Failed ([lbor()]).
+  }
+-
+#
+# Test Case #8 - lbor custom delimiter.
+#
+&tr.tc008 test_lband_fn=
+  @if eq(
+        lbor(3|12,|),
+        15
+      )=
+  {
+    @log smoke=TC008: lbor custom delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC008: lbor custom delimiter. Failed ([lbor(3|12,|)]).
+  }
+-
+#
+# Test Case #9 - lbxor basic.
+#
+&tr.tc009 test_lband_fn=
+  @if eq(
+        lbxor(7 3),
+        4
+      )=
+  {
+    @log smoke=TC009: lbxor basic. Succeeded.
+  },
+  {
+    @log smoke=TC009: lbxor basic. Failed ([lbxor(7 3)]).
+  }
+-
+#
+# Test Case #10 - lbxor self-cancellation.
+#
+&tr.tc010 test_lband_fn=
+  @if eq(
+        lbxor(5 3 6),
+        0
+      )=
+  {
+    @log smoke=TC010: lbxor self-cancel. Succeeded.
+  },
+  {
+    @log smoke=TC010: lbxor self-cancel. Failed ([lbxor(5 3 6)]).
+  }
+-
+#
+# Test Case #11 - lbxor empty list returns 0.
+#
+&tr.tc011 test_lband_fn=
+  @if eq(
+        lbxor(),
+        0
+      )=
+  {
+    @log smoke=TC011: lbxor empty identity. Succeeded.
+  },
+  {
+    @log smoke=TC011: lbxor empty identity. Failed ([lbxor()]).
+  }
+-
+#
+# Test Case #12 - lbxor custom delimiter.
+#
+&tr.tc012 test_lband_fn=
+  @if eq(
+        lbxor(255|15,|),
+        240
+      )=
+  {
+    @log smoke=TC012: lbxor custom delimiter. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC012: lbxor custom delimiter. Failed ([lbxor(255|15,|)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_lband_fn=
+  @log smoke=End lband/lbor/lbxor() test cases.;
+  @notify smoke
+-
+drop test_lband_fn
+-
+#
+# End of Test Cases
+#

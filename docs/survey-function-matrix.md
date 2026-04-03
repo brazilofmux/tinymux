@@ -74,9 +74,9 @@ numeric lists with optional separator overrides.
 | OR | `or()` | `cor()` | `orbool()`, `corbool()` | `lor()` |
 | XOR | `xor()` | -- | -- | `lxor()` |
 | NOT | `not()` | -- | -- | -- |
-| Bitwise AND | `band()` | -- | -- | **missing** |
-| Bitwise OR | `bor()` | -- | -- | **missing** |
-| Bitwise XOR | `bxor()` | -- | -- | **missing** |
+| Bitwise AND | `band()` | -- | -- | `lband()` |
+| Bitwise OR | `bor()` | -- | -- | `lbor()` |
+| Bitwise XOR | `bxor()` | -- | -- | `lbxor()` |
 | Bitwise NAND | `bnand()` | -- | -- | -- |
 | Shift Left | `shl()` | -- | -- | -- |
 | Shift Right | `shr()` | -- | -- | -- |
@@ -104,9 +104,8 @@ numeric lists with optional separator overrides.
 1. **Integer list reductions**: `iadd`, `isub`, `imul`, `idiv` exist for
    scalars, but the list side (`ladd`, `lmath`) is float-only. No `limath()`
    or `liadd()` / `limul()` etc.
-2. **Horizontal bitwise reducers**: `band()`, `bor()`, `bxor()` accept
-   variadic args, but there is no list-reduction form (`lband()`, `lbor()`,
-   `lbxor()`).
+2. ~~**Horizontal bitwise reducers**~~: **DONE** — `lband()`, `lbor()`,
+   `lbxor()` added.
 3. ~~**`lxor()`**~~: **DONE** — boolean list parity reduction added.
 4. **List comparison**: no element-wise compare that returns a list of
    results (like a vectorized `eq()`). This may be too specialized to
@@ -399,9 +398,9 @@ These fill the most commonly felt gaps and have clean semantics.
 
 | Proposed Function | What It Does | Why |
 | :--- | :--- | :--- |
-| `lband(list, sep)` | Bitwise AND across list | Completes horizontal bitwise family |
-| `lbor(list, sep)` | Bitwise OR across list | Same |
-| `lbxor(list, sep)` | Bitwise XOR across list | Same |
+| ~~`lband(list, sep)`~~ | ~~Bitwise AND across list~~ | **DONE** |
+| ~~`lbor(list, sep)`~~ | ~~Bitwise OR across list~~ | **DONE** |
+| ~~`lbxor(list, sep)`~~ | ~~Bitwise XOR across list~~ | **DONE** |
 | `limath(op, list, sep)` | Integer-only list reduction | Parallel to `lmath()` for 64-bit integers |
 | `posn(str, sub, n)` | Find nth occurrence of substring | Common need; `pos()` only finds first |
 | `strsort(str)` | Sort grapheme clusters within a string | Anagram, dedup, character-set work |
