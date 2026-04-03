@@ -4,7 +4,7 @@ COPY mux-2.13.0.11.unix.tar.gz .
 RUN tar xzf mux-2.13.0.11.unix.tar.gz
 WORKDIR /mux2.13/src
 RUN CC=clang CXX=clang++ ./configure --enable-stubslave
-RUN CC=clang CXX=clang++ CXXFLAGS=-O3 make -j12
+RUN CC=clang CXX=clang++ CXXFLAGS=-O3 make -j$(nproc)
 RUN make install
 RUN cp libmux.so ../game/bin/
 RUN cp modules/*.so ../game/bin/
