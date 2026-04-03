@@ -1,0 +1,204 @@
+#
+# strset_fn.mux - Test Cases for strunion(), strdiff(), strinter().
+#
+@create test_strset_fn
+-
+@set test_strset_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_strset_fn=
+  @log smoke=Beginning strunion/strdiff/strinter() test cases.
+-
+#
+# Test Case #1 - strunion basic.
+#
+&tr.tc001 test_strset_fn=
+  @if strmatch(
+        strunion(abc, cde),
+        abcde
+      )=
+  {
+    @log smoke=TC001: strunion basic. Succeeded.
+  },
+  {
+    @log smoke=TC001: strunion basic. Failed ([strunion(abc, cde)]).
+  }
+-
+#
+# Test Case #2 - strunion no overlap.
+#
+&tr.tc002 test_strset_fn=
+  @if strmatch(
+        strunion(abc, def),
+        abcdef
+      )=
+  {
+    @log smoke=TC002: strunion no overlap. Succeeded.
+  },
+  {
+    @log smoke=TC002: strunion no overlap. Failed ([strunion(abc, def)]).
+  }
+-
+#
+# Test Case #3 - strunion complete overlap.
+#
+&tr.tc003 test_strset_fn=
+  @if strmatch(
+        strunion(abc, abc),
+        abc
+      )=
+  {
+    @log smoke=TC003: strunion complete overlap. Succeeded.
+  },
+  {
+    @log smoke=TC003: strunion complete overlap. Failed ([strunion(abc, abc)]).
+  }
+-
+#
+# Test Case #4 - strunion empty strings.
+#
+&tr.tc004 test_strset_fn=
+  @if strmatch(
+        strunion(abc, [setq(0,)][r(0)]),
+        abc
+      )=
+  {
+    @log smoke=TC004: strunion empty second. Succeeded.
+  },
+  {
+    @log smoke=TC004: strunion empty second. Failed ([strunion(abc, [setq(0,)][r(0)])]).
+  }
+-
+#
+# Test Case #5 - strdiff basic.
+#
+&tr.tc005 test_strset_fn=
+  @if strmatch(
+        strdiff(abcdef, bdf),
+        ace
+      )=
+  {
+    @log smoke=TC005: strdiff basic. Succeeded.
+  },
+  {
+    @log smoke=TC005: strdiff basic. Failed ([strdiff(abcdef, bdf)]).
+  }
+-
+#
+# Test Case #6 - strdiff no overlap returns all of s1.
+#
+&tr.tc006 test_strset_fn=
+  @if strmatch(
+        strdiff(abc, xyz),
+        abc
+      )=
+  {
+    @log smoke=TC006: strdiff no overlap. Succeeded.
+  },
+  {
+    @log smoke=TC006: strdiff no overlap. Failed ([strdiff(abc, xyz)]).
+  }
+-
+#
+# Test Case #7 - strdiff complete overlap returns empty.
+#
+&tr.tc007 test_strset_fn=
+  @if eq(
+        strlen(strdiff(abc, abc)),
+        0
+      )=
+  {
+    @log smoke=TC007: strdiff complete overlap. Succeeded.
+  },
+  {
+    @log smoke=TC007: strdiff complete overlap. Failed ([strdiff(abc, abc)]).
+  }
+-
+#
+# Test Case #8 - strinter basic.
+#
+&tr.tc008 test_strset_fn=
+  @if strmatch(
+        strinter(abcdef, bdf),
+        bdf
+      )=
+  {
+    @log smoke=TC008: strinter basic. Succeeded.
+  },
+  {
+    @log smoke=TC008: strinter basic. Failed ([strinter(abcdef, bdf)]).
+  }
+-
+#
+# Test Case #9 - strinter no overlap returns empty.
+#
+&tr.tc009 test_strset_fn=
+  @if eq(
+        strlen(strinter(abc, xyz)),
+        0
+      )=
+  {
+    @log smoke=TC009: strinter no overlap. Succeeded.
+  },
+  {
+    @log smoke=TC009: strinter no overlap. Failed ([strinter(abc, xyz)]).
+  }
+-
+#
+# Test Case #10 - strinter complete overlap.
+#
+&tr.tc010 test_strset_fn=
+  @if strmatch(
+        strinter(abc, abc),
+        abc
+      )=
+  {
+    @log smoke=TC010: strinter complete overlap. Succeeded.
+  },
+  {
+    @log smoke=TC010: strinter complete overlap. Failed ([strinter(abc, abc)]).
+  }
+-
+#
+# Test Case #11 - strunion with duplicates in input.
+#
+&tr.tc011 test_strset_fn=
+  @if strmatch(
+        strunion(aab, bcc),
+        abc
+      )=
+  {
+    @log smoke=TC011: strunion deduplicates. Succeeded.
+  },
+  {
+    @log smoke=TC011: strunion deduplicates. Failed ([strunion(aab, bcc)]).
+  }
+-
+#
+# Test Case #12 - Unicode: precomposed e-acute in set operations.
+#
+&tr.tc012 test_strset_fn=
+  @if strmatch(
+        strinter(a[chr(233)]b, [chr(233)]c),
+        [chr(233)]
+      )=
+  {
+    @log smoke=TC012: strinter Unicode. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC012: strinter Unicode. Failed ([strinter(a[chr(233)]b, [chr(233)]c)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_strset_fn=
+  @log smoke=End strunion/strdiff/strinter() test cases.;
+  @notify smoke
+-
+drop test_strset_fn
+-
+#
+# End of Test Cases
+#

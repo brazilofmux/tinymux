@@ -200,8 +200,8 @@ listed separately to keep the unit model clean.
    there is no `butlast()` or grapheme equivalent. (Achievable with
    `extract()` or `mid()` + `strlen()`, but not as a one-liner.)
 2. ~~**Grapheme-level sort**~~: **DONE** — `strsort()` added.
-3. **Grapheme set operations**: no `strunion()`, `strdiff()`, `strinter()`.
-   ~~`strunique()` was missing~~ — **DONE**.
+3. ~~**Grapheme set operations**~~: **DONE** — `strunion()`, `strdiff()`,
+   `strinter()`, `strunique()` all added.
 4. ~~**Grapheme-to-list bridge**~~: **DONE** — `graphemes(str, osep)` added.
 5. **Conditional grapheme replace**: `splice()` does conditional replace
    at word level; there is no grapheme-level equivalent (replace grapheme
@@ -408,9 +408,9 @@ These fill the most commonly felt gaps and have clean semantics.
 
 | Proposed Function | What It Does | Why |
 | :--- | :--- | :--- |
-| `strunion(s1, s2)` | Union of grapheme cluster sets | Set algebra at character level |
-| `strdiff(s1, s2)` | Difference of grapheme cluster sets | Same |
-| `strinter(s1, s2)` | Intersection of grapheme cluster sets | Same |
+| ~~`strunion(s1, s2)`~~ | ~~Union of grapheme cluster sets~~ | **DONE** |
+| ~~`strdiff(s1, s2)`~~ | ~~Difference of grapheme cluster sets~~ | **DONE** |
+| ~~`strinter(s1, s2)`~~ | ~~Intersection of grapheme cluster sets~~ | **DONE** |
 | `butlast(str, sep)` | All but last word | Symmetric complement to `rest()` |
 | `zip(l1, l2, sep)` | Interleave two lists (no function call) | Pure structural operation; `mix()` requires a function |
 

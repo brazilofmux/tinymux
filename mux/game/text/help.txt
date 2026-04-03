@@ -15620,6 +15620,40 @@ STRMEM()
 
   Related Topics: strlen(), UNICODE.
 
+& STRDIFF()
+STRDIFF()
+
+  FUNCTION: strdiff(<string1>, <string2>)
+
+  Returns the grapheme clusters that appear in <string1> but not in
+  <string2>.  Each cluster appears at most once, in first-occurrence
+  order from <string1>.  Color codes are stripped.
+
+  Examples:
+    > say strdiff(abcdef, bdf)
+    You say, "ace"
+    > say strdiff(hello, world)
+    You say, "he"
+
+  Related Topics: setdiff(), strinter(), strunion(), strunique().
+
+& STRINTER()
+STRINTER()
+
+  FUNCTION: strinter(<string1>, <string2>)
+
+  Returns the grapheme clusters that appear in both <string1> and
+  <string2>.  Each cluster appears at most once, in first-occurrence
+  order from <string1>.  Color codes are stripped.
+
+  Examples:
+    > say strinter(abcdef, bdf)
+    You say, "bdf"
+    > say strinter(hello, world)
+    You say, "lo"
+
+  Related Topics: setinter(), strdiff(), strunion(), strunique().
+
 & STRSORT()
 STRSORT()
 
@@ -15669,7 +15703,26 @@ STRUNIQUE()
     > say strunique(hello)
     You say, "helo"
 
-  Related Topics: setunion(), strsort(), unique().
+  Related Topics: setunion(), strdiff(), strinter(), strsort(), strunion(),
+  unique().
+
+& STRUNION()
+STRUNION()
+
+  FUNCTION: strunion(<string1>, <string2>)
+
+  Returns the union of grapheme clusters from <string1> and <string2>.
+  Each cluster appears at most once.  Clusters from <string1> appear
+  first in first-occurrence order, followed by clusters unique to
+  <string2>.  Color codes are stripped.
+
+  Examples:
+    > say strunion(abc, cde)
+    You say, "abcde"
+    > say strunion(hello, world)
+    You say, "helowrd"
+
+  Related Topics: setunion(), strdiff(), strinter(), strunique().
 
 & SUB()
 SUB()

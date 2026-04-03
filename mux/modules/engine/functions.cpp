@@ -13555,6 +13555,233 @@ static FUNCTION(fun_strunique)
 }
 
 // ---------------------------------------------------------------------------
+// Grapheme-cluster set operations: strunion, strdiff, strinter.
+//
+// All three strip color, extract grapheme clusters from two input
+// strings, and produce a concatenated result (no separator -- these
+// are character-level, not word-level).
+//
+// strunion(s1, s2)  -- unique clusters from either string, s1 order first
+// strdiff(s1, s2)   -- clusters in s1 not in s2
+// strinter(s1, s2)  -- clusters in both s1 and s2, in s1 order
+// ---------------------------------------------------------------------------
+
+struct StrGC { const UTF8 *p; size_t n; };
+
+static bool gc_equal(const StrGC &a, const StrGC &b)
+{
+    return a.n == b.n && 0 == memcmp(a.p, b.p, a.n);
+}
+
+// Extract grapheme clusters from a color-stripped string.
+// Returns count, or -1 on invalid UTF-8, -2 on overflow.
+//
+static int gc_extract(const UTF8 *pSrc, size_t nBytes,
+                      StrGC *out, int nMax)
+{
+    int nClusters = 0;
+    size_t nRemaining = nBytes;
+    const UTF8 *pCur = pSrc;
+    while (0 < nRemaining)
+    {
+        mux_cursor cluster = utf8_next_grapheme(pCur, nRemaining);
+        if (0 == cluster.m_byte)
+        {
+            return -1;
+        }
+        if (nClusters >= nMax)
+        {
+            return -2;
+        }
+        out[nClusters].p = pCur;
+        out[nClusters].n = cluster.m_byte;
+        nClusters++;
+        pCur += cluster.m_byte;
+        nRemaining -= cluster.m_byte;
+    }
+    return nClusters;
+}
+
+static bool gc_in_set(const StrGC &needle, const StrGC *haystack, int nHay)
+{
+    for (int i = 0; i < nHay; i++)
+    {
+        if (gc_equal(needle, haystack[i]))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Helper: strip_color uses a single static buffer, so when two strings
+// need stripping, the first must be copied before stripping the second.
+//
+static void gc_extract_pair(
+    UTF8 *farg0, UTF8 *farg1,
+    UTF8 *buf1, size_t &nBytes1, UTF8 *&p2, size_t &nBytes2)
+{
+    UTF8 *p1 = strip_color(farg0, &nBytes1, nullptr);
+    memcpy(buf1, p1, nBytes1);
+    buf1[nBytes1] = '\0';
+    p2 = strip_color(farg1, &nBytes2, nullptr);
+}
+
+static FUNCTION(fun_strunion)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    UTF8 buf1[LBUF_SIZE];
+    size_t nBytes1 = 0, nBytes2 = 0;
+    UTF8 *p2 = nullptr;
+    gc_extract_pair(fargs[0], fargs[1], buf1, nBytes1, p2, nBytes2);
+
+    StrGC gc1[LBUF_SIZE], gc2[LBUF_SIZE];
+    int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
+    if (n1 < 0)
+    {
+        safe_str(n1 == -1 ? T("#-1 STRING IS INVALID") : T("#-1 STRING TOO LONG"), buff, bufc);
+        return;
+    }
+    int n2 = gc_extract(p2, nBytes2, gc2, LBUF_SIZE);
+    if (n2 < 0)
+    {
+        safe_str(n2 == -1 ? T("#-1 STRING IS INVALID") : T("#-1 STRING TOO LONG"), buff, bufc);
+        return;
+    }
+
+    // Emit unique clusters from s1, then unique clusters from s2 not in s1.
+    //
+    StrGC seen[LBUF_SIZE];
+    int nSeen = 0;
+
+    for (int i = 0; i < n1; i++)
+    {
+        if (!gc_in_set(gc1[i], seen, nSeen))
+        {
+            safe_copy_buf(gc1[i].p, gc1[i].n, buff, bufc);
+            if (nSeen < LBUF_SIZE)
+            {
+                seen[nSeen++] = gc1[i];
+            }
+        }
+    }
+    for (int i = 0; i < n2; i++)
+    {
+        if (!gc_in_set(gc2[i], seen, nSeen))
+        {
+            safe_copy_buf(gc2[i].p, gc2[i].n, buff, bufc);
+            if (nSeen < LBUF_SIZE)
+            {
+                seen[nSeen++] = gc2[i];
+            }
+        }
+    }
+}
+
+static FUNCTION(fun_strdiff)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    UTF8 buf1[LBUF_SIZE];
+    size_t nBytes1 = 0, nBytes2 = 0;
+    UTF8 *p2 = nullptr;
+    gc_extract_pair(fargs[0], fargs[1], buf1, nBytes1, p2, nBytes2);
+
+    StrGC gc1[LBUF_SIZE], gc2[LBUF_SIZE];
+    int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
+    if (n1 < 0)
+    {
+        safe_str(n1 == -1 ? T("#-1 STRING IS INVALID") : T("#-1 STRING TOO LONG"), buff, bufc);
+        return;
+    }
+    int n2 = gc_extract(p2, nBytes2, gc2, LBUF_SIZE);
+    if (n2 < 0)
+    {
+        safe_str(n2 == -1 ? T("#-1 STRING IS INVALID") : T("#-1 STRING TOO LONG"), buff, bufc);
+        return;
+    }
+
+    // Emit unique clusters from s1 that do not appear in s2.
+    //
+    StrGC seen[LBUF_SIZE];
+    int nSeen = 0;
+
+    for (int i = 0; i < n1; i++)
+    {
+        if (  !gc_in_set(gc1[i], gc2, n2)
+           && !gc_in_set(gc1[i], seen, nSeen))
+        {
+            safe_copy_buf(gc1[i].p, gc1[i].n, buff, bufc);
+            if (nSeen < LBUF_SIZE)
+            {
+                seen[nSeen++] = gc1[i];
+            }
+        }
+    }
+}
+
+static FUNCTION(fun_strinter)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    UTF8 buf1[LBUF_SIZE];
+    size_t nBytes1 = 0, nBytes2 = 0;
+    UTF8 *p2 = nullptr;
+    gc_extract_pair(fargs[0], fargs[1], buf1, nBytes1, p2, nBytes2);
+
+    StrGC gc1[LBUF_SIZE], gc2[LBUF_SIZE];
+    int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
+    if (n1 < 0)
+    {
+        safe_str(n1 == -1 ? T("#-1 STRING IS INVALID") : T("#-1 STRING TOO LONG"), buff, bufc);
+        return;
+    }
+    int n2 = gc_extract(p2, nBytes2, gc2, LBUF_SIZE);
+    if (n2 < 0)
+    {
+        safe_str(n2 == -1 ? T("#-1 STRING IS INVALID") : T("#-1 STRING TOO LONG"), buff, bufc);
+        return;
+    }
+
+    // Emit unique clusters from s1 that also appear in s2.
+    //
+    StrGC seen[LBUF_SIZE];
+    int nSeen = 0;
+
+    for (int i = 0; i < n1; i++)
+    {
+        if (  gc_in_set(gc1[i], gc2, n2)
+           && !gc_in_set(gc1[i], seen, nSeen))
+        {
+            safe_copy_buf(gc1[i].p, gc1[i].n, buff, bufc);
+            if (nSeen < LBUF_SIZE)
+            {
+                seen[nSeen++] = gc1[i];
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // fun_linsert: Insert an item at a position in a list.
 //   linsert(list, position, item[, sep])
 // ---------------------------------------------------------------------------
@@ -14918,7 +15145,10 @@ static FUN builtin_function_list[] =
     {T("STRREPLACE"),  fun_strreplace, MAX_ARG, 4,       4,         0, CA_PUBLIC},
     {T("STRSORT"),     fun_strsort,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("STRTRUNC"),    fun_strtrunc,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("STRUNION"),    fun_strunion,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("STRUNIQUE"),   fun_strunique,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("STRDIFF"),     fun_strdiff,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("STRINTER"),    fun_strinter,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("SUB"),         fun_sub,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("SUBEVAL"),     fun_subeval,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("SUBJ"),        fun_subj,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
