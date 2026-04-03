@@ -72,7 +72,7 @@ numeric lists with optional separator overrides.
 | :--- | :--- | :--- | :--- | :--- |
 | AND | `and()` | `cand()` | `andbool()`, `candbool()` | `land()` |
 | OR | `or()` | `cor()` | `orbool()`, `corbool()` | `lor()` |
-| XOR | `xor()` | -- | -- | **missing** |
+| XOR | `xor()` | -- | -- | `lxor()` |
 | NOT | `not()` | -- | -- | -- |
 | Bitwise AND | `band()` | -- | -- | **missing** |
 | Bitwise OR | `bor()` | -- | -- | **missing** |
@@ -107,7 +107,7 @@ numeric lists with optional separator overrides.
 2. **Horizontal bitwise reducers**: `band()`, `bor()`, `bxor()` accept
    variadic args, but there is no list-reduction form (`lband()`, `lbor()`,
    `lbxor()`).
-3. **`lxor()`**: boolean list parity reduction is missing.
+3. ~~**`lxor()`**~~: **DONE** — boolean list parity reduction added.
 4. **List comparison**: no element-wise compare that returns a list of
    results (like a vectorized `eq()`). This may be too specialized to
    matter; `mix()` can approximate it.
@@ -396,7 +396,7 @@ These fill the most commonly felt gaps and have clean semantics.
 | ~~`graphemes(str, osep)`~~ | ~~Explode string into grapheme-cluster list~~ | **DONE** |
 | `wordstart(str, word, sep)` | Grapheme offset of word N start | Missing direction: word index -> grapheme position |
 | `wordend(str, word, sep)` | Grapheme offset of word N end | Same; also note `wordpos()` currently uses byte offsets |
-| `lxor(list, sep)` | Boolean parity reduction over a list | Completes the `land()`/`lor()` family |
+| ~~`lxor(list, sep)`~~ | ~~Boolean parity reduction over a list~~ | **DONE** |
 
 ### Tier 2 -- Solid Value, Straightforward
 

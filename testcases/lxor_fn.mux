@@ -1,0 +1,159 @@
+#
+# lxor_fn.mux - Test Cases for lxor().
+#
+@create test_lxor_fn
+-
+@set test_lxor_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_lxor_fn=
+  @log smoke=Beginning lxor() test cases.
+-
+#
+# Test Case #1 - Single true element.
+#
+&tr.tc001 test_lxor_fn=
+  @if strmatch(
+        lxor(1),
+        1
+      )=
+  {
+    @log smoke=TC001: lxor single true. Succeeded.
+  },
+  {
+    @log smoke=TC001: lxor single true. Failed ([lxor(1)]).
+  }
+-
+#
+# Test Case #2 - Single false element.
+#
+&tr.tc002 test_lxor_fn=
+  @if strmatch(
+        lxor(0),
+        0
+      )=
+  {
+    @log smoke=TC002: lxor single false. Succeeded.
+  },
+  {
+    @log smoke=TC002: lxor single false. Failed ([lxor(0)]).
+  }
+-
+#
+# Test Case #3 - Two elements, one true (odd parity).
+#
+&tr.tc003 test_lxor_fn=
+  @if strmatch(
+        lxor(1 0),
+        1
+      )=
+  {
+    @log smoke=TC003: lxor odd parity. Succeeded.
+  },
+  {
+    @log smoke=TC003: lxor odd parity. Failed ([lxor(1 0)]).
+  }
+-
+#
+# Test Case #4 - Two true elements (even parity).
+#
+&tr.tc004 test_lxor_fn=
+  @if strmatch(
+        lxor(1 1),
+        0
+      )=
+  {
+    @log smoke=TC004: lxor even parity. Succeeded.
+  },
+  {
+    @log smoke=TC004: lxor even parity. Failed ([lxor(1 1)]).
+  }
+-
+#
+# Test Case #5 - Three true elements (odd parity).
+#
+&tr.tc005 test_lxor_fn=
+  @if strmatch(
+        lxor(1 1 1),
+        1
+      )=
+  {
+    @log smoke=TC005: lxor three true. Succeeded.
+  },
+  {
+    @log smoke=TC005: lxor three true. Failed ([lxor(1 1 1)]).
+  }
+-
+#
+# Test Case #6 - All false.
+#
+&tr.tc006 test_lxor_fn=
+  @if strmatch(
+        lxor(0 0 0),
+        0
+      )=
+  {
+    @log smoke=TC006: lxor all false. Succeeded.
+  },
+  {
+    @log smoke=TC006: lxor all false. Failed ([lxor(0 0 0)]).
+  }
+-
+#
+# Test Case #7 - Custom delimiter.
+#
+&tr.tc007 test_lxor_fn=
+  @if strmatch(
+        lxor(1|0|1,|),
+        0
+      )=
+  {
+    @log smoke=TC007: lxor custom delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC007: lxor custom delimiter. Failed ([lxor(1|0|1,|)]).
+  }
+-
+#
+# Test Case #8 - Empty list returns 0 (identity for XOR).
+#
+&tr.tc008 test_lxor_fn=
+  @if strmatch(
+        lxor(),
+        0
+      )=
+  {
+    @log smoke=TC008: lxor empty list. Succeeded.
+  },
+  {
+    @log smoke=TC008: lxor empty list. Failed ([lxor()]).
+  }
+-
+#
+# Test Case #9 - Non-zero values treated as true.
+#
+&tr.tc009 test_lxor_fn=
+  @if strmatch(
+        lxor(5 0 -3),
+        0
+      )=
+  {
+    @log smoke=TC009: lxor non-zero as true. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC009: lxor non-zero as true. Failed ([lxor(5 0 -3)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_lxor_fn=
+  @log smoke=End lxor() test cases.;
+  @notify smoke
+-
+drop test_lxor_fn
+-
+#
+# End of Test Cases
+#

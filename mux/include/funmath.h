@@ -90,6 +90,7 @@ XFUNCTION(fun_spellnum);
 XFUNCTION(fun_roman);
 XFUNCTION(fun_land);
 XFUNCTION(fun_lor);
+XFUNCTION(fun_lxor);
 XFUNCTION(fun_band);
 XFUNCTION(fun_bor);
 XFUNCTION(fun_bnand);

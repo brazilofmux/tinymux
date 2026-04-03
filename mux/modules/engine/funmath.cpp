@@ -3006,6 +3006,35 @@ FUNCTION(fun_lor)
     safe_bool(bValue, buff, bufc);
 }
 
+FUNCTION(fun_lxor)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    bool bValue = false;
+    if (0 < nfargs)
+    {
+        SEP sep;
+        if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
+        {
+            return;
+        }
+
+        UTF8 *cp = trim_space_sep(fargs[0], sep);
+        while (cp)
+        {
+            UTF8 *curr = split_token(&cp, sep);
+            bool bCurr = isTRUE(mux_atol(curr));
+            bValue = (bValue && !bCurr) || (!bValue && bCurr);
+        }
+    }
+    safe_bool(bValue, buff, bufc);
+}
+
 FUNCTION(fun_band)
 {
     UNUSED_PARAMETER(executor);

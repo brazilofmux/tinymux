@@ -14394,6 +14394,7 @@ static FUN builtin_function_list[] =
     {T("LOCKENCODE"),  fun_lockencode, MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("LOG"),         fun_log,        MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("LOR"),         fun_lor,        MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {T("LXOR"),        fun_lxor,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("LPAD"),        fun_lpad,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("LPARENT"),     fun_lparent,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("LPORTS"),      fun_lports,     MAX_ARG, 0,       0,         0, CA_WIZARD},

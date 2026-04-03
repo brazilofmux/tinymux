@@ -9997,7 +9997,7 @@ LAND()
     > say [land(1|1,|)]
     You say, "1"
 
-  Related Topics: and(), lor(), not(), t().
+  Related Topics: and(), lor(), lxor(), not(), t().
 
 & LAST()
 LAST()
@@ -10892,7 +10892,27 @@ LOR()
     > say [lor(1|1,|)]
     You say, "1"
 
-  Related Topics: land(), not(), or(), t().
+  Related Topics: land(), lxor(), not(), or(), t().
+
+& LXOR()
+LXOR()
+
+  FUNCTION: lxor(<list of booleans>[,<delim>])
+
+  Takes a list of one or more BOOLEAN-Z values, and returns 1 (TRUE) if
+  an odd number of its elements are TRUE.
+
+  Examples:
+    > say [lxor(1 0 0)]
+    You say, "1"
+    > say [lxor(1 1 0)]
+    You say, "0"
+    > say [lxor(1 1 1)]
+    You say, "1"
+    > say [lxor(1|0|1,|)]
+    You say, "0"
+
+  Related Topics: land(), lor(), not(), xor(), t().
 
 & LPAD()
 LPAD()
