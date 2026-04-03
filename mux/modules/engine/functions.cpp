@@ -12111,6 +12111,52 @@ static FUNCTION(fun_ord)
 }
 
 // ---------------------------------------------------------------------------
+// graphemes: Explode a string into a list of grapheme clusters.
+//
+// graphemes(<string>[, <osep>])
+//
+static FUNCTION(fun_graphemes)
+{
+    // Optional Output Delimiter.
+    //
+    SEP osep;
+    if (!OPTIONAL_DELIM(2, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING))
+    {
+        return;
+    }
+
+    size_t nBytes = 0;
+    UTF8 *p = strip_color(fargs[0], &nBytes, nullptr);
+    if (0 == nBytes)
+    {
+        return;
+    }
+
+    bool first = true;
+    size_t nRemaining = nBytes;
+    while (0 < nRemaining)
+    {
+        mux_cursor cluster = utf8_next_grapheme(p, nRemaining);
+        if (0 == cluster.m_byte)
+        {
+            safe_str(T("#-1 STRING IS INVALID"), buff, bufc);
+            return;
+        }
+
+        if (!first)
+        {
+            print_sep(osep, buff, bufc);
+        }
+        first = false;
+
+        safe_copy_buf(p, cluster.m_byte, buff, bufc);
+
+        p += cluster.m_byte;
+        nRemaining -= cluster.m_byte;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // strdistance: Levenshtein edit distance between two strings.
 //
 // Operates on Unicode codepoints (not bytes).
@@ -14259,6 +14305,7 @@ static FUN builtin_function_list[] =
     {T("GRAB"),        fun_grab,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("GRABALL"),     fun_graball,    MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {T("GREP"),        fun_grep,       MAX_ARG, 3,       3,         0, CA_PUBLIC},
+    {T("GRAPHEMES"),   fun_graphemes,  MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("GREPI"),       fun_grepi,      MAX_ARG, 3,       3,         0, CA_PUBLIC},
     {T("GT"),          fun_gt,         MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("GTE"),         fun_gte,        MAX_ARG, 2,       2,         0, CA_PUBLIC},

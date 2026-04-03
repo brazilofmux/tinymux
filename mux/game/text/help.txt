@@ -8781,6 +8781,30 @@ GRABALL()
 
   Related Topics: grab(), LISTS, regrab(), regraball().
 
+& GRAPHEMES()
+GRAPHEMES()
+
+  FUNCTION: graphemes(<string>[, <osep>])
+
+  Explodes <string> into a list of its grapheme clusters.  A grapheme
+  cluster is a user-perceived character: a single letter, a multi-byte
+  Unicode character, an emoji, or a base character with combining marks.
+
+  The optional <osep> specifies the output separator placed between
+  clusters in the result.  It defaults to a space.
+
+  Color codes are stripped before splitting.
+
+  Examples:
+    > say graphemes(hello)
+    You say, "h e l l o"
+    > say graphemes(hello, |)
+    You say, "h|e|l|l|o"
+    > say words(graphemes(test))
+    You say, "4"
+
+  Related Topics: chr(), foreach(), mid(), ord(), strlen(), tr().
+
 & GREP()
 GREP()
 

@@ -173,7 +173,7 @@ listed separately to keep the unit model clean.
 | :--- | :--- | :--- |
 | Substring replace | `edit(str,from,to,...)` | Whole-string find-and-replace, not grapheme-indexed |
 | Strip characters | `strip(str,chars)` | Removes characters from a set; not grapheme-cluster-aware |
-| Transliterate | `tr(str,from,to)` | ASCII-to-ASCII lookup table; walks code points but only transforms bytes < 0x80 |
+| Transliterate | `tr(str,from,to)` | Grapheme-cluster-to-grapheme-cluster mapping; ASCII ranges expanded, non-ASCII clusters literal |
 | Escape recovery | `translate(str,mode)` | Turns hidden internal codes (color, etc.) back into MUX escape sequences |
 
 ### 2e. Reordering
@@ -205,9 +205,7 @@ listed separately to keep the unit model clean.
    `strsort()` to sort the grapheme clusters within a string.
 3. **Grapheme set operations**: no `strunion()`, `strdiff()`, `strinter()`,
    `strunique()`. Useful for anagram/character-set tasks.
-4. **Grapheme-to-list bridge**: no function to explode a string into a list
-   of grapheme clusters (`graphemes(str, osep)`). This would unlock all
-   existing list functions for character-level work.
+4. ~~**Grapheme-to-list bridge**~~: **DONE** — `graphemes(str, osep)` added.
 5. **Conditional grapheme replace**: `splice()` does conditional replace
    at word level; there is no grapheme-level equivalent (replace grapheme
    cluster X with Y everywhere).  `edit()` does this for substrings, but
@@ -395,7 +393,7 @@ These fill the most commonly felt gaps and have clean semantics.
 
 | Proposed Function | What It Does | Why |
 | :--- | :--- | :--- |
-| `graphemes(str, osep)` | Explode string into grapheme-cluster list | Unlocks all list functions for char-level work |
+| ~~`graphemes(str, osep)`~~ | ~~Explode string into grapheme-cluster list~~ | **DONE** |
 | `wordstart(str, word, sep)` | Grapheme offset of word N start | Missing direction: word index -> grapheme position |
 | `wordend(str, word, sep)` | Grapheme offset of word N end | Same; also note `wordpos()` currently uses byte offsets |
 | `lxor(list, sep)` | Boolean parity reduction over a list | Completes the `land()`/`lor()` family |

@@ -1,0 +1,194 @@
+#
+# graphemes_fn.mux - Test Cases for graphemes().
+#
+@create test_graphemes_fn
+-
+@set test_graphemes_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_graphemes_fn=
+  @log smoke=Beginning graphemes() test cases.
+-
+#
+# Test Case #1 - Basic ASCII string.
+#
+&tr.tc001 test_graphemes_fn=
+  @if strmatch(
+        graphemes(hello),
+        h e l l o
+      )=
+  {
+    @log smoke=TC001: graphemes basic ASCII. Succeeded.
+  },
+  {
+    @log smoke=TC001: graphemes basic ASCII. Failed ([graphemes(hello)]).
+  }
+-
+#
+# Test Case #2 - Empty string returns empty.
+#
+&tr.tc002 test_graphemes_fn=
+  @if eq(
+        strlen(graphemes([setq(0,)][r(0)])),
+        0
+      )=
+  {
+    @log smoke=TC002: graphemes empty string. Succeeded.
+  },
+  {
+    @log smoke=TC002: graphemes empty string. Failed ([graphemes([setq(0,)][r(0)])]).
+  }
+-
+#
+# Test Case #3 - Single character.
+#
+&tr.tc003 test_graphemes_fn=
+  @if strmatch(
+        graphemes(X),
+        X
+      )=
+  {
+    @log smoke=TC003: graphemes single char. Succeeded.
+  },
+  {
+    @log smoke=TC003: graphemes single char. Failed ([graphemes(X)]).
+  }
+-
+#
+# Test Case #4 - Custom output separator.
+#
+&tr.tc004 test_graphemes_fn=
+  @if strmatch(
+        graphemes(abc, |),
+        a|b|c
+      )=
+  {
+    @log smoke=TC004: graphemes custom osep. Succeeded.
+  },
+  {
+    @log smoke=TC004: graphemes custom osep. Failed ([graphemes(abc, |)]).
+  }
+-
+#
+# Test Case #5 - Count: words(graphemes(str)) == strlen(str).
+#
+&tr.tc005 test_graphemes_fn=
+  @if eq(
+        words(graphemes(testing)),
+        strlen(testing)
+      )=
+  {
+    @log smoke=TC005: graphemes count matches strlen. Succeeded.
+  },
+  {
+    @log smoke=TC005: graphemes count matches strlen. Failed (words=[words(graphemes(testing))] strlen=[strlen(testing)]).
+  }
+-
+#
+# Test Case #6 - Precomposed e-acute (U+00E9) is one grapheme cluster.
+#
+&tr.tc006 test_graphemes_fn=
+  @if eq(
+        words(graphemes([chr(233)]test)),
+        5
+      )=
+  {
+    @log smoke=TC006: graphemes precomposed character. Succeeded.
+  },
+  {
+    @log smoke=TC006: graphemes precomposed character. Failed (words=[words(graphemes([chr(233)]test))]).
+  }
+-
+#
+# Test Case #7 - Round-trip: first(graphemes(str)) is the first grapheme.
+#
+&tr.tc007 test_graphemes_fn=
+  @if strmatch(
+        first(graphemes(Hello)),
+        H
+      )=
+  {
+    @log smoke=TC007: graphemes first element. Succeeded.
+  },
+  {
+    @log smoke=TC007: graphemes first element. Failed ([first(graphemes(Hello))]).
+  }
+-
+#
+# Test Case #8 - last() returns the last grapheme.
+#
+&tr.tc008 test_graphemes_fn=
+  @if strmatch(
+        last(graphemes(Hello)),
+        o
+      )=
+  {
+    @log smoke=TC008: graphemes last element. Succeeded.
+  },
+  {
+    @log smoke=TC008: graphemes last element. Failed ([last(graphemes(Hello))]).
+  }
+-
+#
+# Test Case #9 - Decomposed e-acute (e + combining acute) is one cluster.
+# chr(101 769) produces e followed by combining acute accent.
+# After NFC normalization this is U+00E9, but graphemes() should treat
+# the input as one cluster regardless.
+#
+&tr.tc009 test_graphemes_fn=
+  @if eq(
+        words(graphemes([chr(101 769)]abc)),
+        4
+      )=
+  {
+    @log smoke=TC009: graphemes decomposed combining mark. Succeeded.
+  },
+  {
+    @log smoke=TC009: graphemes decomposed combining mark. Failed (words=[words(graphemes([chr(101 769)]abc))]).
+  }
+-
+#
+# Test Case #10 - Regional indicator pair (flag sequence) is one cluster.
+# U+1F1FA U+1F1F8 = Regional Indicator Symbol Letters US.
+#
+&tr.tc010 test_graphemes_fn=
+  @if eq(
+        words(graphemes([chr(127482)][chr(127480)]abc)),
+        4
+      )=
+  {
+    @log smoke=TC010: graphemes regional indicator pair. Succeeded.
+  },
+  {
+    @log smoke=TC010: graphemes regional indicator pair. Failed (words=[words(graphemes([chr(127482)][chr(127480)]abc))]).
+  }
+-
+#
+# Test Case #11 - Multiple combining marks stay with their base.
+# a + combining tilde (U+0303) + combining acute (U+0301) = one cluster.
+#
+&tr.tc011 test_graphemes_fn=
+  @if eq(
+        words(graphemes([chr(97 771 769)]bc)),
+        3
+      )=
+  {
+    @log smoke=TC011: graphemes multiple combining marks. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC011: graphemes multiple combining marks. Failed (words=[words(graphemes([chr(97 771 769)]bc))]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_graphemes_fn=
+  @log smoke=End graphemes() test cases.;
+  @notify smoke
+-
+drop test_graphemes_fn
+-
+#
+# End of Test Cases
+#
