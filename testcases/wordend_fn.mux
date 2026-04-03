@@ -1,0 +1,129 @@
+#
+# wordend_fn.mux - Test Cases for wordend().
+#
+@create test_wordend_fn
+-
+@set test_wordend_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_wordend_fn=
+  @log smoke=Beginning wordend() test cases.
+-
+#
+# Test Case #1 - First word ends at position 4.
+#
+&tr.tc001 test_wordend_fn=
+  @if eq(
+        wordend(This is a test, 1),
+        4
+      )=
+  {
+    @log smoke=TC001: wordend first word. Succeeded.
+  },
+  {
+    @log smoke=TC001: wordend first word. Failed ([wordend(This is a test, 1)]).
+  }
+-
+#
+# Test Case #2 - Second word ends at position 7.
+#
+&tr.tc002 test_wordend_fn=
+  @if eq(
+        wordend(This is a test, 2),
+        7
+      )=
+  {
+    @log smoke=TC002: wordend second word. Succeeded.
+  },
+  {
+    @log smoke=TC002: wordend second word. Failed ([wordend(This is a test, 2)]).
+  }
+-
+#
+# Test Case #3 - Last word ends at position 14.
+#
+&tr.tc003 test_wordend_fn=
+  @if eq(
+        wordend(This is a test, 4),
+        14
+      )=
+  {
+    @log smoke=TC003: wordend last word. Succeeded.
+  },
+  {
+    @log smoke=TC003: wordend last word. Failed ([wordend(This is a test, 4)]).
+  }
+-
+#
+# Test Case #4 - Out of range returns nothing.
+#
+&tr.tc004 test_wordend_fn=
+  @if strmatch(
+        wordend(hello, 5),
+        #-1
+      )=
+  {
+    @log smoke=TC004: wordend out of range. Succeeded.
+  },
+  {
+    @log smoke=TC004: wordend out of range. Failed ([wordend(hello, 5)]).
+  }
+-
+#
+# Test Case #5 - Custom delimiter.
+#
+&tr.tc005 test_wordend_fn=
+  @if eq(
+        wordend(one|two|three, 2, |),
+        7
+      )=
+  {
+    @log smoke=TC005: wordend custom delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC005: wordend custom delimiter. Failed ([wordend(one|two|three, 2, |)]).
+  }
+-
+#
+# Test Case #6 - Unicode: "caf<e-acute>" ends at grapheme 4.
+#
+&tr.tc006 test_wordend_fn=
+  @if eq(
+        wordend(caf[chr(233)] latte, 1),
+        4
+      )=
+  {
+    @log smoke=TC006: wordend Unicode grapheme offset. Succeeded.
+  },
+  {
+    @log smoke=TC006: wordend Unicode grapheme offset. Failed ([wordend(caf[chr(233)] latte, 1)]).
+  }
+-
+#
+# Test Case #7 - Single word: start and end bracket the whole string.
+#
+&tr.tc007 test_wordend_fn=
+  @if cand(
+        eq(wordstart(hello, 1), 1),
+        eq(wordend(hello, 1), 5)
+      )=
+  {
+    @log smoke=TC007: wordend single word bracket. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC007: wordend single word bracket. Failed (start=[wordstart(hello, 1)] end=[wordend(hello, 1)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_wordend_fn=
+  @log smoke=End wordend() test cases.;
+  @notify smoke
+-
+drop test_wordend_fn
+-
+#
+# End of Test Cases
+#

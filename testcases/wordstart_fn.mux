@@ -1,0 +1,131 @@
+#
+# wordstart_fn.mux - Test Cases for wordstart().
+#
+@create test_wordstart_fn
+-
+@set test_wordstart_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_wordstart_fn=
+  @log smoke=Beginning wordstart() test cases.
+-
+#
+# Test Case #1 - First word starts at position 1.
+#
+&tr.tc001 test_wordstart_fn=
+  @if eq(
+        wordstart(This is a test, 1),
+        1
+      )=
+  {
+    @log smoke=TC001: wordstart first word. Succeeded.
+  },
+  {
+    @log smoke=TC001: wordstart first word. Failed ([wordstart(This is a test, 1)]).
+  }
+-
+#
+# Test Case #2 - Second word.
+#
+&tr.tc002 test_wordstart_fn=
+  @if eq(
+        wordstart(This is a test, 2),
+        6
+      )=
+  {
+    @log smoke=TC002: wordstart second word. Succeeded.
+  },
+  {
+    @log smoke=TC002: wordstart second word. Failed ([wordstart(This is a test, 2)]).
+  }
+-
+#
+# Test Case #3 - Last word.
+#
+&tr.tc003 test_wordstart_fn=
+  @if eq(
+        wordstart(This is a test, 4),
+        11
+      )=
+  {
+    @log smoke=TC003: wordstart last word. Succeeded.
+  },
+  {
+    @log smoke=TC003: wordstart last word. Failed ([wordstart(This is a test, 4)]).
+  }
+-
+#
+# Test Case #4 - Out of range returns nothing.
+#
+&tr.tc004 test_wordstart_fn=
+  @if strmatch(
+        wordstart(hello, 5),
+        #-1
+      )=
+  {
+    @log smoke=TC004: wordstart out of range. Succeeded.
+  },
+  {
+    @log smoke=TC004: wordstart out of range. Failed ([wordstart(hello, 5)]).
+  }
+-
+#
+# Test Case #5 - Custom delimiter.
+#
+&tr.tc005 test_wordstart_fn=
+  @if eq(
+        wordstart(one|two|three, 2, |),
+        5
+      )=
+  {
+    @log smoke=TC005: wordstart custom delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC005: wordstart custom delimiter. Failed ([wordstart(one|two|three, 2, |)]).
+  }
+-
+#
+# Test Case #6 - Unicode: precomposed e-acute counts as one grapheme.
+# String is "caf<e-acute> latte" = 4+1+5 = 10 graphemes.
+# Word 2 starts at position 6.
+#
+&tr.tc006 test_wordstart_fn=
+  @if eq(
+        wordstart(caf[chr(233)] latte, 2),
+        6
+      )=
+  {
+    @log smoke=TC006: wordstart Unicode grapheme offset. Succeeded.
+  },
+  {
+    @log smoke=TC006: wordstart Unicode grapheme offset. Failed ([wordstart(caf[chr(233)] latte, 2)]).
+  }
+-
+#
+# Test Case #7 - Word 0 is out of range.
+#
+&tr.tc007 test_wordstart_fn=
+  @if strmatch(
+        wordstart(hello world, 0),
+        #-1
+      )=
+  {
+    @log smoke=TC007: wordstart word zero. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC007: wordstart word zero. Failed ([wordstart(hello world, 0)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_wordstart_fn=
+  @log smoke=End wordstart() test cases.;
+  @notify smoke
+-
+drop test_wordstart_fn
+-
+#
+# End of Test Cases
+#

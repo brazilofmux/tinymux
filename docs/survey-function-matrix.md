@@ -268,8 +268,8 @@ moving between them.
 | Word index -> word text | `extract()`, `first()`, `rest()`, `last()` | covered |
 | Grapheme offset -> grapheme slice | `mid()`, `strdelete()`, `strinsert()`, `strreplace()` | covered |
 | Byte offset -> containing word | `wordpos(str, charpos, sep)` | present (byte-offset, not grapheme) |
-| Word index -> grapheme start/end | -- | **missing** |
-| String -> grapheme list | -- | **missing** |
+| Word index -> grapheme start/end | `wordstart()`, `wordend()` | **covered** |
+| String -> grapheme list | `graphemes()` | **covered** |
 | Grapheme list -> string | -- | **missing** (no list-consuming joiner; `strcat()` is variadic-args only) |
 
 Note: `wordpos()` indexes into the color-stripped UTF-8 buffer by byte
@@ -281,11 +281,8 @@ grapheme count instead of a byte offset.
 
 ### Best Additions
 
-1. **`wordstart(str, word, sep)` / `wordend(str, word, sep)`** -- return
-   the grapheme offset where a given word begins/ends.
-2. **`graphemes(str, osep)`** -- explode string into a list of grapheme
-   clusters. This immediately unlocks `sort()`, `setunion()`, `filter()`,
-   etc. for character-level work.
+1. ~~**`wordstart(str, word, sep)` / `wordend(str, word, sep)`**~~ -- **DONE**.
+2. ~~**`graphemes(str, osep)`**~~ -- **DONE**.
 3. **`posn(str, sub, n)`** -- find the nth occurrence of a substring.
 4. **`wordspan(str, word, sep)`** -- return `start end` as a structured
    pair (lower priority; `wordstart`/`wordend` are simpler).
@@ -394,8 +391,8 @@ These fill the most commonly felt gaps and have clean semantics.
 | Proposed Function | What It Does | Why |
 | :--- | :--- | :--- |
 | ~~`graphemes(str, osep)`~~ | ~~Explode string into grapheme-cluster list~~ | **DONE** |
-| `wordstart(str, word, sep)` | Grapheme offset of word N start | Missing direction: word index -> grapheme position |
-| `wordend(str, word, sep)` | Grapheme offset of word N end | Same; also note `wordpos()` currently uses byte offsets |
+| ~~`wordstart(str, word, sep)`~~ | ~~Grapheme offset of word N start~~ | **DONE** |
+| ~~`wordend(str, word, sep)`~~ | ~~Grapheme offset of word N end~~ | **DONE** |
 | ~~`lxor(list, sep)`~~ | ~~Boolean parity reduction over a list~~ | **DONE** |
 
 ### Tier 2 -- Solid Value, Straightforward

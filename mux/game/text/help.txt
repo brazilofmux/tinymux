@@ -16985,7 +16985,49 @@ WORDPOS()
     > say wordpos(This is a test, 20)
     You say, "#-1"
 
-  Related Topics: member(), pos().
+  Related Topics: member(), pos(), wordend(), wordstart().
+
+& WORDSTART()
+WORDSTART()
+
+  FUNCTION: wordstart(<string>, <word>[, <sep>])
+
+  Returns the grapheme-cluster position of the first character of word
+  <word> in <string>.  Words and positions are both numbered starting
+  at 1.  If <word> is out of range, #-1 is returned.
+
+  <sep> may be used to specify a delimiter other than a space.
+
+  Examples:
+    > say wordstart(This is a test, 1)
+    You say, "1"
+    > say wordstart(This is a test, 2)
+    You say, "6"
+    > say wordstart(This is a test, 4)
+    You say, "11"
+
+  Related Topics: mid(), wordend(), wordpos(), words().
+
+& WORDEND()
+WORDEND()
+
+  FUNCTION: wordend(<string>, <word>[, <sep>])
+
+  Returns the grapheme-cluster position of the last character of word
+  <word> in <string>.  Words and positions are both numbered starting
+  at 1.  If <word> is out of range, #-1 is returned.
+
+  <sep> may be used to specify a delimiter other than a space.
+
+  Examples:
+    > say wordend(This is a test, 1)
+    You say, "4"
+    > say wordend(This is a test, 2)
+    You say, "7"
+    > say wordend(This is a test, 4)
+    You say, "14"
+
+  Related Topics: mid(), wordpos(), words(), wordstart().
 
 & WORDS()
 WORDS()

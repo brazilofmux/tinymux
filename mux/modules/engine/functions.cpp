@@ -5053,6 +5053,109 @@ static FUNCTION(fun_wordpos)
     safe_nothing(buff, bufc);
 }
 
+// ---------------------------------------------------------------------------
+// wordstart: Grapheme offset of the start of word N.
+//
+// wordstart(<string>, <word>[, <sep>])
+//
+static FUNCTION(fun_wordstart)
+{
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    int iWord = mux_atol(fargs[1]);
+    if (iWord < 1)
+    {
+        safe_nothing(buff, bufc);
+        return;
+    }
+
+    size_t nBytes = 0;
+    UTF8 *pBase = strip_color(fargs[0], &nBytes, nullptr);
+    UTF8 *cp = trim_space_sep(pBase, sep);
+
+    // Walk to the requested word.
+    //
+    for (int i = 1; i < iWord; i++)
+    {
+        if (  nullptr == cp
+           || '\0' == *cp)
+        {
+            safe_nothing(buff, bufc);
+            return;
+        }
+        split_token(&cp, sep);
+    }
+
+    if (  nullptr == cp
+       || '\0' == *cp)
+    {
+        safe_nothing(buff, bufc);
+        return;
+    }
+
+    // Grapheme offset of the word start (1-based).
+    //
+    size_t nLeadBytes = static_cast<size_t>(cp - pBase);
+    size_t nGraphemes = utf8_cluster_count(pBase, nLeadBytes);
+    safe_ltoa(static_cast<long>(nGraphemes + 1), buff, bufc);
+}
+
+// ---------------------------------------------------------------------------
+// wordend: Grapheme offset of the end of word N (last grapheme of the word).
+//
+// wordend(<string>, <word>[, <sep>])
+//
+static FUNCTION(fun_wordend)
+{
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    int iWord = mux_atol(fargs[1]);
+    if (iWord < 1)
+    {
+        safe_nothing(buff, bufc);
+        return;
+    }
+
+    size_t nBytes = 0;
+    UTF8 *pBase = strip_color(fargs[0], &nBytes, nullptr);
+    UTF8 *cp = trim_space_sep(pBase, sep);
+
+    // Walk to the requested word.
+    //
+    UTF8 *pWord = nullptr;
+    for (int i = 1; i <= iWord; i++)
+    {
+        if (  nullptr == cp
+           || '\0' == *cp)
+        {
+            safe_nothing(buff, bufc);
+            return;
+        }
+        pWord = split_token(&cp, sep);
+    }
+
+    if (nullptr == pWord)
+    {
+        safe_nothing(buff, bufc);
+        return;
+    }
+
+    // Grapheme offset of the word end (1-based, inclusive).
+    //
+    size_t nWordBytes = strlen(reinterpret_cast<const char *>(pWord));
+    size_t nEndBytes = static_cast<size_t>(pWord - pBase) + nWordBytes;
+    size_t nGraphemes = utf8_cluster_count(pBase, nEndBytes);
+    safe_ltoa(static_cast<long>(nGraphemes), buff, bufc);
+}
+
 static FUNCTION(fun_type)
 {
     UNUSED_PARAMETER(caller);
@@ -14646,8 +14749,10 @@ static FUN builtin_function_list[] =
     {T("WHERE"),       fun_where,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("WIDTH"),       fun_width,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("WIPE"),        fun_wipe,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
+    {T("WORDEND"),     fun_wordend,    MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("WORDPOS"),     fun_wordpos,    MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("WORDS"),       fun_words,      MAX_ARG, 0,       2,         0, CA_PUBLIC},
+    {T("WORDSTART"),   fun_wordstart,  MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("WHILE"),       fun_while,      MAX_ARG, 4,       6,         0, CA_PUBLIC},
     {T("WRAP"),        fun_wrap,       MAX_ARG, 1,       8,         0, CA_PUBLIC},
     {T("WRAPCOLUMNS"),fun_wrapcolumns,MAX_ARG, 3,       8,         0, CA_PUBLIC},
