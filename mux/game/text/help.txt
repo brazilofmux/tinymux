@@ -17392,6 +17392,29 @@ ZFUN()
 
   Related Topics: ZONES, zone().
 
+& ZIP()
+ZIP()
+
+  FUNCTION: zip(<list1>, <list2>[, <isep>[, <osep>]])
+
+  Interleaves two lists element by element into a single list.  Elements
+  alternate: the first element of <list1>, the first element of <list2>,
+  the second element of <list1>, the second of <list2>, and so on.  If
+  one list is longer, remaining elements are appended at the end.
+
+  <isep> specifies the input delimiter (default space).  <osep> specifies
+  the output delimiter (defaults to <isep>).
+
+  Examples:
+    > say zip(a b c, 1 2 3)
+    You say, "a 1 b 2 c 3"
+    > say zip(a b c, 1 2)
+    You say, "a 1 b 2 c"
+    > say zip(x|y, a|b, |)
+    You say, "x|a|y|b"
+
+  Related Topics: iter(), mix().
+
 & ZONE OBJECTS
 ZONE OBJECTS
 

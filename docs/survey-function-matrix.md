@@ -245,8 +245,7 @@ list elements.
 2. **No `reduce()` alias**: `fold()` is the standard left-fold, but
    some MU* platforms also offer `reduce()`. Low priority since `fold()`
    already exists.
-3. **No `zip()` without function application**: `mix()` zips and applies;
-   there is no pure zip that interleaves two lists into a single list.
+3. ~~**No `zip()` without function application**~~: **DONE** — `zip()` added.
 4. **No `enumerate()`**: returns `index:value` pairs. Achievable with
    `iter()` + `#@` but not directly available.
 
@@ -410,7 +409,7 @@ These fill the most commonly felt gaps and have clean semantics.
 | ~~`strdiff(s1, s2)`~~ | ~~Difference of grapheme cluster sets~~ | **DONE** |
 | ~~`strinter(s1, s2)`~~ | ~~Intersection of grapheme cluster sets~~ | **DONE** |
 | ~~`butlast(str, sep)`~~ | ~~All but last word~~ | **DONE** |
-| `zip(l1, l2, sep)` | Interleave two lists (no function call) | Pure structural operation; `mix()` requires a function |
+| ~~`zip(l1, l2, sep)`~~ | ~~Interleave two lists (no function call)~~ | **DONE** |
 
 ### What NOT to Add
 

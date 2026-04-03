@@ -1,5 +1,5 @@
 +X996101
-+S285
++S286
 +N444
 -R0
 +A256
@@ -382,7 +382,7 @@
 "Limbo"
 -1
 -1
-284
+285
 -1
 -1
 -1
@@ -420,7 +420,7 @@
 >49
 "20"
 >213
-"207 284 214 -1 284"
+"207 285 214 -1 285"
 >218
 "Fri Jan 01 00:00:00 2010"
 >219
@@ -7987,7 +7987,7 @@
 >435
 "abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn and_fn andbool_fn assert_cmd asin_fn atan_fn atan2_fn attrib_set_fn band_fn baseconv_fn before_fn benchmark_fn between_fn bnand_fn bor_fn bound_fn butlast_fn bxor_fn cand_fn candbool_fn caplist_fn capstr_fn case_fn cat_fn ceil_fn center_fn chaninfo_fn chanuser_fn chanusers_fn choose_fn chr_fn citer_fn clone_fn cmogrifier_fn cmd_say columns_fn comp_fn convtime_fn connlog_fn cor_fn corbool_fn cos_fn cpad_fn crc32_fn crc32obj_fn cron_fn ctu_fn dec_fn delete_fn delextract_fn digest_fn digittime_fn dist2d_fn dist3d_fn dolist_cmd dynhelp_fn e_fn edit_fn elements_fn encode64_fn eq_fn escape_fn exp3_fn exp_fn exptime_fn extract_fn fdiv_fn first_fn firstof_fn floor_fn floordiv_fn fmod_fn fpprop_fn grab_fn graball_fn graphemes_fn gt_fn gte_fn hmac_fn iadd_fn iabs_fn idiv_fn imul_fn inc_fn index_fn insert_fn if_cmd include_fn isalpha_fn isdbref_fn isign_fn isint_fn isjson_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn json_fn lambda_fn letq_fn pocvm2_fn"
 >436
-"ladd_fn lband_fn land_fn last_fn lcstr_fn ldelete_fn limath_fn linsert_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn lockencode_fn log_fn lor_fn lxor_fn lpad_fn lpos_fn lt_fn lte_fn mailinfo_fn mailsend_fn match_fn matchall_fn max_fn mean_fn median_fn member_fn merge_fn mid_fn min_fn mod_fn moon_fn mul_fn ncon_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn paginate_fn parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn posn_fn power_fn printf_fn protect_fn reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn route_fn round_fn rpad_fn sandbox_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn sign_fn sin_fn singletime_fn sort_fn sortkey_fn soundex_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn stddev_fn strcat_fn strdelete_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strdistance_fn strset_fn strsort_fn strtrunc_fn sub_fn subnetmatch_fn switch_cmd switch_fn t_fn table_fn tan_fn tr_fn translate_fn trigger_cmd trim_fn trunc_fn ucstr_fn unique_fn unsetq_fn url_escape_fn vadd_fn vcross_fn vdot_fn vmag_fn vmul_fn vsub_fn vunit_fn visual_width_fn wait_cmd while_fn wordend_fn wordpos_fn words_fn wordstart_fn wrap_fn wrapcolumns_fn xor_fn jit_parity_fn jit_fold_parity_fn jit_route_parity_fn jit_coverage_fn tier2_parity_fn jitstats_fn overflow_inject_fn lua_fn shutdown"
+"ladd_fn lband_fn land_fn last_fn lcstr_fn ldelete_fn limath_fn linsert_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn lockencode_fn log_fn lor_fn lxor_fn lpad_fn lpos_fn lt_fn lte_fn mailinfo_fn mailsend_fn match_fn matchall_fn max_fn mean_fn median_fn member_fn merge_fn mid_fn min_fn mod_fn moon_fn mul_fn ncon_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn paginate_fn parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn posn_fn power_fn printf_fn protect_fn reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn route_fn round_fn rpad_fn sandbox_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn sign_fn sin_fn singletime_fn sort_fn sortkey_fn soundex_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn stddev_fn strcat_fn strdelete_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strdistance_fn strset_fn strsort_fn strtrunc_fn sub_fn subnetmatch_fn switch_cmd switch_fn t_fn table_fn tan_fn tr_fn translate_fn trigger_cmd trim_fn trunc_fn ucstr_fn unique_fn unsetq_fn url_escape_fn vadd_fn vcross_fn vdot_fn vmag_fn vmul_fn vsub_fn vunit_fn visual_width_fn wait_cmd while_fn wordend_fn wordpos_fn words_fn wordstart_fn wrap_fn wrapcolumns_fn xor_fn zip_fn jit_parity_fn jit_fold_parity_fn jit_route_parity_fn jit_coverage_fn tier2_parity_fn jitstats_fn overflow_inject_fn lua_fn shutdown"
 >437
 "@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
 <
@@ -9658,5 +9658,46 @@
 "@if cand(eq(xor(1,0), 1),eq(xor(1,1), 0),eq(xor(0,0), 0))={@log smoke=TC001: xor basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: xor basic operations. Failed (xor(1%,0)=[xor(1,0)] xor(1%,1)=[xor(1,1)] xor(0%,0)=[xor(0,0)]).;@trig me/tr.done}"
 >258
 "@log smoke=End xor() test cases.;@notify smoke"
+<
+!285
+"test_zip_fn"
+0
+-1
+-1
+-1
+0
+284
+1
+-1
+1
+33556481
+0
+0
+0
+0
+>218
+"Fri Jan 01 00:00:00 2010"
+>219
+"Fri Jan 01 00:00:00 2010"
+>256
+"@log smoke=Beginning zip() test cases."
+>257
+"@if strmatch(zip(a b c, 1 2 3),a 1 b 2 c 3)={@log smoke=TC001: zip equal length. Succeeded.},{@log smoke=TC001: zip equal length. Failed ([zip(a b c, 1 2 3)]).}"
+>258
+"@log smoke=End zip() test cases.;@notify smoke"
+>259
+"@if strmatch(zip(a b c, 1 2),a 1 b 2 c)={@log smoke=TC002: zip first longer. Succeeded.},{@log smoke=TC002: zip first longer. Failed ([zip(a b c, 1 2)]).}"
+>262
+"@if strmatch(zip(a b, 1 2 3),a 1 b 2 3)={@log smoke=TC003: zip second longer. Succeeded.},{@log smoke=TC003: zip second longer. Failed ([zip(a b, 1 2 3)]).}"
+>264
+"@if strmatch(zip(x, y),x y)={@log smoke=TC004: zip single elements. Succeeded.},{@log smoke=TC004: zip single elements. Failed ([zip(x, y)]).}"
+>265
+"@if strmatch(zip([setq(0,)][r(0)], a b c),a b c)={@log smoke=TC005: zip empty first. Succeeded.},{@log smoke=TC005: zip empty first. Failed ([zip([setq(0,)][r(0)], a b c)]).}"
+>266
+"@if strmatch(zip(x|y, a|b, |),x|a|y|b)={@log smoke=TC006: zip custom isep. Succeeded.},{@log smoke=TC006: zip custom isep. Failed ([zip(x|y, a|b, |)]).}"
+>267
+"@if strmatch(zip(a|b|c, 1|2|3, |, -),a-1-b-2-c-3)={@log smoke=TC007: zip custom isep and osep. Succeeded.},{@log smoke=TC007: zip custom isep and osep. Failed ([zip(a|b|c, 1|2|3, |, -)]).}"
+>268
+"@if eq(words(zip(a b c, 1 2 3)),6)={@log smoke=TC008: zip word count. Succeeded.;@trig me/tr.done},{@log smoke=TC008: zip word count. Failed ([words(zip(a b c, 1 2 3))]).;@trig me/tr.done}"
 <
 ***END OF DUMP***

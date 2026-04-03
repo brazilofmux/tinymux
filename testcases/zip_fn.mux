@@ -1,0 +1,144 @@
+#
+# zip_fn.mux - Test Cases for zip().
+#
+@create test_zip_fn
+-
+@set test_zip_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_zip_fn=
+  @log smoke=Beginning zip() test cases.
+-
+#
+# Test Case #1 - Equal length lists.
+#
+&tr.tc001 test_zip_fn=
+  @if strmatch(
+        zip(a b c, 1 2 3),
+        a 1 b 2 c 3
+      )=
+  {
+    @log smoke=TC001: zip equal length. Succeeded.
+  },
+  {
+    @log smoke=TC001: zip equal length. Failed ([zip(a b c, 1 2 3)]).
+  }
+-
+#
+# Test Case #2 - First list longer.
+#
+&tr.tc002 test_zip_fn=
+  @if strmatch(
+        zip(a b c, 1 2),
+        a 1 b 2 c
+      )=
+  {
+    @log smoke=TC002: zip first longer. Succeeded.
+  },
+  {
+    @log smoke=TC002: zip first longer. Failed ([zip(a b c, 1 2)]).
+  }
+-
+#
+# Test Case #3 - Second list longer.
+#
+&tr.tc003 test_zip_fn=
+  @if strmatch(
+        zip(a b, 1 2 3),
+        a 1 b 2 3
+      )=
+  {
+    @log smoke=TC003: zip second longer. Succeeded.
+  },
+  {
+    @log smoke=TC003: zip second longer. Failed ([zip(a b, 1 2 3)]).
+  }
+-
+#
+# Test Case #4 - Single element each.
+#
+&tr.tc004 test_zip_fn=
+  @if strmatch(
+        zip(x, y),
+        x y
+      )=
+  {
+    @log smoke=TC004: zip single elements. Succeeded.
+  },
+  {
+    @log smoke=TC004: zip single elements. Failed ([zip(x, y)]).
+  }
+-
+#
+# Test Case #5 - Empty first list.
+#
+&tr.tc005 test_zip_fn=
+  @if strmatch(
+        zip([setq(0,)][r(0)], a b c),
+        a b c
+      )=
+  {
+    @log smoke=TC005: zip empty first. Succeeded.
+  },
+  {
+    @log smoke=TC005: zip empty first. Failed ([zip([setq(0,)][r(0)], a b c)]).
+  }
+-
+#
+# Test Case #6 - Custom input delimiter.
+#
+&tr.tc006 test_zip_fn=
+  @if strmatch(
+        zip(x|y, a|b, |),
+        x|a|y|b
+      )=
+  {
+    @log smoke=TC006: zip custom isep. Succeeded.
+  },
+  {
+    @log smoke=TC006: zip custom isep. Failed ([zip(x|y, a|b, |)]).
+  }
+-
+#
+# Test Case #7 - Custom input and output delimiters.
+#
+&tr.tc007 test_zip_fn=
+  @if strmatch(
+        zip(a|b|c, 1|2|3, |, -),
+        a-1-b-2-c-3
+      )=
+  {
+    @log smoke=TC007: zip custom isep and osep. Succeeded.
+  },
+  {
+    @log smoke=TC007: zip custom isep and osep. Failed ([zip(a|b|c, 1|2|3, |, -)]).
+  }
+-
+#
+# Test Case #8 - Word count: zip of 3+3 produces 6 words.
+#
+&tr.tc008 test_zip_fn=
+  @if eq(
+        words(zip(a b c, 1 2 3)),
+        6
+      )=
+  {
+    @log smoke=TC008: zip word count. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC008: zip word count. Failed ([words(zip(a b c, 1 2 3))]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_zip_fn=
+  @log smoke=End zip() test cases.;
+  @notify smoke
+-
+drop test_zip_fn
+-
+#
+# End of Test Cases
+#

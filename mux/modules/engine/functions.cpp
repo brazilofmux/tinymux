@@ -2871,6 +2871,60 @@ static FUNCTION(fun_butlast)
     }
 }
 
+// ---------------------------------------------------------------------------
+// zip: Interleave two lists element by element.
+//
+// zip(<list1>, <list2>[, <isep>[, <osep>]])
+//
+// Elements alternate: l1[0] l2[0] l1[1] l2[1] ...
+// If one list is longer, remaining elements are appended.
+//
+static FUNCTION(fun_zip)
+{
+    SEP isep;
+    if (!OPTIONAL_DELIM(3, isep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    SEP osep = isep;
+    if (!OPTIONAL_DELIM(4, osep, DELIM_NULL|DELIM_CRLF|DELIM_INIT|DELIM_STRING))
+    {
+        return;
+    }
+
+    UTF8 *cp1 = trim_space_sep(fargs[0], isep);
+    UTF8 *cp2 = trim_space_sep(fargs[1], isep);
+    if (cp1 && '\0' == *cp1) cp1 = nullptr;
+    if (cp2 && '\0' == *cp2) cp2 = nullptr;
+
+    bool first = true;
+    while (cp1 || cp2)
+    {
+        if (cp1)
+        {
+            UTF8 *curr = split_token(&cp1, isep);
+            if (!first)
+            {
+                print_sep(osep, buff, bufc);
+            }
+            first = false;
+            safe_str(curr, buff, bufc);
+        }
+
+        if (cp2)
+        {
+            UTF8 *curr = split_token(&cp2, isep);
+            if (!first)
+            {
+                print_sep(osep, buff, bufc);
+            }
+            first = false;
+            safe_str(curr, buff, bufc);
+        }
+    }
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * fun_v: Function form of %-substitution
@@ -15255,6 +15309,7 @@ static FUN builtin_function_list[] =
     {T("ZCHILDREN"),   fun_zchildren,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ZEXITS"),      fun_zexits,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ZFUN"),        fun_zfun,       MAX_ARG, 2,      11,         0, CA_PUBLIC},
+    {T("ZIP"),         fun_zip,        MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {T("ZONE"),        fun_zone,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ZROOMS"),      fun_zrooms,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("ZTHINGS"),     fun_zthings,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
