@@ -14,6 +14,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "driver_log.h"
 #include "interface.h"
 #include "driverstate.h"
 
