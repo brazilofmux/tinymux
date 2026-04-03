@@ -4560,6 +4560,76 @@ static FUNCTION(fun_lpos)
     }
 }
 
+// ---------------------------------------------------------------------------
+// posn: Find the Nth occurrence of a substring, returning a 1-based
+// grapheme-cluster position (like pos()).
+//
+// posn(<pattern>, <string>, <n>)
+//
+static FUNCTION(fun_posn)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    const unsigned char *pPat = reinterpret_cast<const unsigned char *>(fargs[0]);
+    size_t nPat = strlen(reinterpret_cast<const char *>(pPat));
+    const unsigned char *pStr = reinterpret_cast<const unsigned char *>(fargs[1]);
+    size_t nStr = strlen(reinterpret_cast<const char *>(pStr));
+
+    int iN = mux_atol(fargs[2]);
+    if (iN < 1)
+    {
+        safe_nothing(buff, bufc);
+        return;
+    }
+
+    const unsigned char *pCur = pStr;
+    size_t nRemain = nStr;
+    const unsigned char *pe = pStr + nStr;
+
+    for (int i = 0; i < iN; i++)
+    {
+        const unsigned char *match = co_search(pCur, nRemain, pPat, nPat);
+        if (nullptr == match)
+        {
+            safe_nothing(buff, bufc);
+            return;
+        }
+
+        if (i == iN - 1)
+        {
+            // This is the Nth match.
+            //
+            size_t nBytesBefore = static_cast<size_t>(match - pStr);
+            size_t nClustersBefore = co_cluster_count(pStr, nBytesBefore);
+            safe_ltoa(static_cast<long>(nClustersBefore + 1), buff, bufc);
+            return;
+        }
+
+        // Advance past this match by one visible code point.
+        //
+        const unsigned char *pNext = co_skip_color(match, pe);
+        if (pNext < pe)
+        {
+            unsigned char ch = *pNext;
+            size_t cplen;
+            if (ch < 0x80)       cplen = 1;
+            else if (ch < 0xE0)  cplen = 2;
+            else if (ch < 0xF0)  cplen = 3;
+            else                 cplen = 4;
+            pNext += cplen;
+        }
+        nRemain = static_cast<size_t>(pe - pNext);
+        pCur = pNext;
+    }
+
+    safe_nothing(buff, bufc);
+}
 
 /*
  * ---------------------------------------------------------------------------
@@ -14590,6 +14660,7 @@ static FUN builtin_function_list[] =
 #endif
     {T("PORTS"),       fun_ports,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("POS"),         fun_pos,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("POSN"),        fun_posn,       MAX_ARG, 3,       3,         0, CA_PUBLIC},
     {T("PROMPT"),      fun_prompt,     MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("POSE"),        fun_pose,       MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("POSS"),        fun_poss,       MAX_ARG, 1,       1,         0, CA_PUBLIC},

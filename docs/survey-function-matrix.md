@@ -210,8 +210,8 @@ listed separately to keep the unit model clean.
    cluster X with Y everywhere).  `edit()` does this for substrings, but
    `splice()` compares whole words.
 6. **Nth occurrence search**: `pos()` finds the first substring;
-   `lpos()` finds all positions. There is no `posn(str, sub, n)` to find
-   the nth occurrence directly.
+   `lpos()` finds all positions. ~~`posn(str, sub, n)` was missing~~
+   **DONE** — `posn()` added.
 7. **List-aware regex**: `regedit()` family operates on the whole string.
    There is no `lregedit()` that applies a regex to each list element.
 
@@ -282,7 +282,7 @@ grapheme count instead of a byte offset.
 
 1. ~~**`wordstart(str, word, sep)` / `wordend(str, word, sep)`**~~ -- **DONE**.
 2. ~~**`graphemes(str, osep)`**~~ -- **DONE**.
-3. **`posn(str, sub, n)`** -- find the nth occurrence of a substring.
+3. ~~**`posn(str, sub, n)`**~~ -- **DONE**.
 4. **`wordspan(str, word, sep)`** -- return `start end` as a structured
    pair (lower priority; `wordstart`/`wordend` are simpler).
 
@@ -402,7 +402,7 @@ These fill the most commonly felt gaps and have clean semantics.
 | ~~`lbor(list, sep)`~~ | ~~Bitwise OR across list~~ | **DONE** |
 | ~~`lbxor(list, sep)`~~ | ~~Bitwise XOR across list~~ | **DONE** |
 | `limath(op, list, sep)` | Integer-only list reduction | Parallel to `lmath()` for 64-bit integers |
-| `posn(str, sub, n)` | Find nth occurrence of substring | Common need; `pos()` only finds first |
+| ~~`posn(str, sub, n)`~~ | ~~Find nth occurrence of substring~~ | **DONE** |
 | `strsort(str)` | Sort grapheme clusters within a string | Anagram, dedup, character-set work |
 | `strunique(str)` | Deduplicate grapheme clusters | Character-set extraction |
 

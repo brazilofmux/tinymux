@@ -13140,7 +13140,28 @@ POS()
     > think pos(man,superman)
     6
 
-  Related Topics:
+  Related Topics: lpos(), posn().
+
+& POSN()
+POSN()
+
+  FUNCTION: posn(<pattern>, <string>, <n>)
+
+  Returns the grapheme-cluster position of the Nth occurrence of
+  <pattern> in <string>, with the first position being 1.  If there
+  are fewer than <n> occurrences, #-1 is returned.
+
+  Examples:
+    > say posn(is, This is a test, 1)
+    You say, "3"
+    > say posn(is, This is a test, 2)
+    You say, "6"
+    > say posn(is, This is a test, 3)
+    You say, "#-1"
+    > say posn(a, abracadabra, 3)
+    You say, "6"
+
+  Related Topics: lpos(), pos().
 
 & PROMPT()
 PROMPT()

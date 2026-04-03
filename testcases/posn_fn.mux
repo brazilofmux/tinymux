@@ -1,0 +1,133 @@
+#
+# posn_fn.mux - Test Cases for posn().
+#
+@create test_posn_fn
+-
+@set test_posn_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_posn_fn=
+  @log smoke=Beginning posn() test cases.
+-
+#
+# Test Case #1 - First occurrence matches pos().
+#
+&tr.tc001 test_posn_fn=
+  @if eq(
+        posn(is, This is a test, 1),
+        pos(is, This is a test)
+      )=
+  {
+    @log smoke=TC001: posn first matches pos. Succeeded.
+  },
+  {
+    @log smoke=TC001: posn first matches pos. Failed (posn=[posn(is, This is a test, 1)] pos=[pos(is, This is a test)]).
+  }
+-
+#
+# Test Case #2 - Second occurrence.
+#
+&tr.tc002 test_posn_fn=
+  @if eq(
+        posn(is, This is a test, 2),
+        6
+      )=
+  {
+    @log smoke=TC002: posn second occurrence. Succeeded.
+  },
+  {
+    @log smoke=TC002: posn second occurrence. Failed ([posn(is, This is a test, 2)]).
+  }
+-
+#
+# Test Case #3 - Beyond last occurrence returns #-1.
+#
+&tr.tc003 test_posn_fn=
+  @if strmatch(
+        posn(is, This is a test, 3),
+        #-1
+      )=
+  {
+    @log smoke=TC003: posn beyond last. Succeeded.
+  },
+  {
+    @log smoke=TC003: posn beyond last. Failed ([posn(is, This is a test, 3)]).
+  }
+-
+#
+# Test Case #4 - Pattern not found returns #-1.
+#
+&tr.tc004 test_posn_fn=
+  @if strmatch(
+        posn(xyz, hello, 1),
+        #-1
+      )=
+  {
+    @log smoke=TC004: posn not found. Succeeded.
+  },
+  {
+    @log smoke=TC004: posn not found. Failed ([posn(xyz, hello, 1)]).
+  }
+-
+#
+# Test Case #5 - N=0 returns #-1.
+#
+&tr.tc005 test_posn_fn=
+  @if strmatch(
+        posn(a, abc, 0),
+        #-1
+      )=
+  {
+    @log smoke=TC005: posn n=0 error. Succeeded.
+  },
+  {
+    @log smoke=TC005: posn n=0 error. Failed ([posn(a, abc, 0)]).
+  }
+-
+#
+# Test Case #6 - Multiple occurrences: abracadabra.
+#
+&tr.tc006 test_posn_fn=
+  @if cand(
+        eq(posn(a, abracadabra, 1), 1),
+        eq(posn(a, abracadabra, 2), 4),
+        eq(posn(a, abracadabra, 3), 6),
+        eq(posn(a, abracadabra, 4), 8),
+        eq(posn(a, abracadabra, 5), 11)
+      )=
+  {
+    @log smoke=TC006: posn abracadabra all a's. Succeeded.
+  },
+  {
+    @log smoke=TC006: posn abracadabra all a's. Failed.
+  }
+-
+#
+# Test Case #7 - Unicode: precomposed e-acute counts as one grapheme.
+# "caf<e-acute>caf<e-acute>" - find 2nd "f".
+#
+&tr.tc007 test_posn_fn=
+  @if eq(
+        posn(f, caf[chr(233)]caf[chr(233)], 2),
+        7
+      )=
+  {
+    @log smoke=TC007: posn Unicode grapheme offset. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC007: posn Unicode grapheme offset. Failed ([posn(f, caf[chr(233)]caf[chr(233)], 2)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_posn_fn=
+  @log smoke=End posn() test cases.;
+  @notify smoke
+-
+drop test_posn_fn
+-
+#
+# End of Test Cases
+#
