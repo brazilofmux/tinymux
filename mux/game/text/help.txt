@@ -9988,8 +9988,8 @@ LAND()
 
   FUNCTION: land(<list of booleans>[,<delim>])
 
-  Takes a list of one or more BOOLEAN-Z values, and returns 1 (TRUE) if all
-  elements are TRUE.
+  Takes a list of zero or more BOOLEAN-Z values, and returns 1 (TRUE) if all
+  elements are TRUE.  An empty list returns 1 (the AND identity).
 
   Examples:
     > say [land(1 0)]
@@ -10883,8 +10883,8 @@ LOR()
 
   FUNCTION: lor(<list of booleans>[,<delim>])
 
-  Takes a list of one or more BOOLEAN-Z values, and returns 1 (TRUE) if any
-  of its elements are TRUE.
+  Takes a list of zero or more BOOLEAN-Z values, and returns 1 (TRUE) if any
+  of its elements are TRUE.  An empty list returns 0 (the OR identity).
 
   Examples:
     > say [lor(1 0)]
@@ -10899,8 +10899,9 @@ LXOR()
 
   FUNCTION: lxor(<list of booleans>[,<delim>])
 
-  Takes a list of one or more BOOLEAN-Z values, and returns 1 (TRUE) if
-  an odd number of its elements are TRUE.
+  Takes a list of zero or more BOOLEAN-Z values, and returns 1 (TRUE) if
+  an odd number of its elements are TRUE.  An empty list returns 0 (the
+  XOR identity).
 
   Examples:
     > say [lxor(1 0 0)]
