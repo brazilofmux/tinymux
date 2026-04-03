@@ -10600,7 +10600,42 @@ LMATH()
     > say lmath(sub, 100|25|10, |)
     You say "65"
 
-  Related Topics: ladd(), lmax(), lmin()
+  Related Topics: ladd(), limath(), lmax(), lmin()
+
+& LIMATH()
+LIMATH()
+
+  FUNCTION: limath(<operation>, <list of integers>[, <delim>])
+
+  Integer-only counterpart to lmath().  All arithmetic is 64-bit
+  integer; non-integer list elements produce an error.
+
+  Supported operations:
+
+    add (sum)  - Sum of all values.
+    sub        - First value minus the rest.
+    mul        - Product of all values.
+    div        - First value integer-divided by the rest.
+    mod        - First value modulo the rest.
+    min        - Minimum value.
+    max        - Maximum value.
+    median     - Median value (floor of average for even-length lists).
+
+  An empty list returns 0.
+
+  Examples:
+    > say limath(add, 1 2 3 4 5)
+    You say, "15"
+    > say limath(mul, 2 3 4)
+    You say, "24"
+    > say limath(div, 100 3)
+    You say, "33"
+    > say limath(median, 1 3 5 7)
+    You say, "4"
+    > say limath(add, 1.5 2)
+    You say, "#-1 ARGUMENTS MUST BE INTEGERS"
+
+  Related Topics: iadd(), idiv(), imul(), isub(), lmath().
 
 & LN()
 LN()

@@ -101,9 +101,8 @@ numeric lists with optional separator overrides.
 
 ### Gaps in Numeric / Logical
 
-1. **Integer list reductions**: `iadd`, `isub`, `imul`, `idiv` exist for
-   scalars, but the list side (`ladd`, `lmath`) is float-only. No `limath()`
-   or `liadd()` / `limul()` etc.
+1. ~~**Integer list reductions**~~: **DONE** — `limath()` added, covering
+   add, sub, mul, div, mod, min, max, median for 64-bit integers.
 2. ~~**Horizontal bitwise reducers**~~: **DONE** — `lband()`, `lbor()`,
    `lbxor()` added.
 3. ~~**`lxor()`**~~: **DONE** — boolean list parity reduction added.
@@ -400,7 +399,7 @@ These fill the most commonly felt gaps and have clean semantics.
 | ~~`lband(list, sep)`~~ | ~~Bitwise AND across list~~ | **DONE** |
 | ~~`lbor(list, sep)`~~ | ~~Bitwise OR across list~~ | **DONE** |
 | ~~`lbxor(list, sep)`~~ | ~~Bitwise XOR across list~~ | **DONE** |
-| `limath(op, list, sep)` | Integer-only list reduction | Parallel to `lmath()` for 64-bit integers |
+| ~~`limath(op, list, sep)`~~ | ~~Integer-only list reduction~~ | **DONE** |
 | ~~`posn(str, sub, n)`~~ | ~~Find nth occurrence of substring~~ | **DONE** |
 | ~~`strsort(str)`~~ | ~~Sort grapheme clusters within a string~~ | **DONE** |
 | ~~`strunique(str)`~~ | ~~Deduplicate grapheme clusters~~ | **DONE** |

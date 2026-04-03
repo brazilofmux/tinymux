@@ -1,0 +1,234 @@
+#
+# limath_fn.mux - Test Cases for limath().
+#
+@create test_limath_fn
+-
+@set test_limath_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_limath_fn=
+  @log smoke=Beginning limath() test cases.
+-
+#
+# Test Case #1 - add/sum.
+#
+&tr.tc001 test_limath_fn=
+  @if eq(
+        limath(add, 1 2 3 4 5),
+        15
+      )=
+  {
+    @log smoke=TC001: limath add. Succeeded.
+  },
+  {
+    @log smoke=TC001: limath add. Failed ([limath(add, 1 2 3 4 5)]).
+  }
+-
+#
+# Test Case #2 - mul.
+#
+&tr.tc002 test_limath_fn=
+  @if eq(
+        limath(mul, 2 3 4),
+        24
+      )=
+  {
+    @log smoke=TC002: limath mul. Succeeded.
+  },
+  {
+    @log smoke=TC002: limath mul. Failed ([limath(mul, 2 3 4)]).
+  }
+-
+#
+# Test Case #3 - sub.
+#
+&tr.tc003 test_limath_fn=
+  @if eq(
+        limath(sub, 100 25 10),
+        65
+      )=
+  {
+    @log smoke=TC003: limath sub. Succeeded.
+  },
+  {
+    @log smoke=TC003: limath sub. Failed ([limath(sub, 100 25 10)]).
+  }
+-
+#
+# Test Case #4 - div (integer division).
+#
+&tr.tc004 test_limath_fn=
+  @if eq(
+        limath(div, 100 3),
+        33
+      )=
+  {
+    @log smoke=TC004: limath div. Succeeded.
+  },
+  {
+    @log smoke=TC004: limath div. Failed ([limath(div, 100 3)]).
+  }
+-
+#
+# Test Case #5 - mod.
+#
+&tr.tc005 test_limath_fn=
+  @if eq(
+        limath(mod, 100 7),
+        2
+      )=
+  {
+    @log smoke=TC005: limath mod. Succeeded.
+  },
+  {
+    @log smoke=TC005: limath mod. Failed ([limath(mod, 100 7)]).
+  }
+-
+#
+# Test Case #6 - min.
+#
+&tr.tc006 test_limath_fn=
+  @if eq(
+        limath(min, 5 3 8 1 7),
+        1
+      )=
+  {
+    @log smoke=TC006: limath min. Succeeded.
+  },
+  {
+    @log smoke=TC006: limath min. Failed ([limath(min, 5 3 8 1 7)]).
+  }
+-
+#
+# Test Case #7 - max.
+#
+&tr.tc007 test_limath_fn=
+  @if eq(
+        limath(max, 5 3 8 1 7),
+        8
+      )=
+  {
+    @log smoke=TC007: limath max. Succeeded.
+  },
+  {
+    @log smoke=TC007: limath max. Failed ([limath(max, 5 3 8 1 7)]).
+  }
+-
+#
+# Test Case #8 - median odd-length.
+#
+&tr.tc008 test_limath_fn=
+  @if eq(
+        limath(median, 1 3 5 7 9),
+        5
+      )=
+  {
+    @log smoke=TC008: limath median odd. Succeeded.
+  },
+  {
+    @log smoke=TC008: limath median odd. Failed ([limath(median, 1 3 5 7 9)]).
+  }
+-
+#
+# Test Case #9 - median even-length (floor of average).
+#
+&tr.tc009 test_limath_fn=
+  @if eq(
+        limath(median, 1 3 5 7),
+        4
+      )=
+  {
+    @log smoke=TC009: limath median even. Succeeded.
+  },
+  {
+    @log smoke=TC009: limath median even. Failed ([limath(median, 1 3 5 7)]).
+  }
+-
+#
+# Test Case #10 - divide by zero error.
+#
+&tr.tc010 test_limath_fn=
+  @if strmatch(
+        limath(div, 10 0),
+        #-1*
+      )=
+  {
+    @log smoke=TC010: limath divide by zero. Succeeded.
+  },
+  {
+    @log smoke=TC010: limath divide by zero. Failed ([limath(div, 10 0)]).
+  }
+-
+#
+# Test Case #11 - non-integer error.
+#
+&tr.tc011 test_limath_fn=
+  @if strmatch(
+        limath(add, 1.5 2),
+        #-1*
+      )=
+  {
+    @log smoke=TC011: limath non-integer error. Succeeded.
+  },
+  {
+    @log smoke=TC011: limath non-integer error. Failed ([limath(add, 1.5 2)]).
+  }
+-
+#
+# Test Case #12 - empty list returns 0.
+#
+&tr.tc012 test_limath_fn=
+  @if eq(
+        limath(add,),
+        0
+      )=
+  {
+    @log smoke=TC012: limath empty list. Succeeded.
+  },
+  {
+    @log smoke=TC012: limath empty list. Failed ([limath(add,)]).
+  }
+-
+#
+# Test Case #13 - custom delimiter.
+#
+&tr.tc013 test_limath_fn=
+  @if eq(
+        limath(add, 10|20|30, |),
+        60
+      )=
+  {
+    @log smoke=TC013: limath custom delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC013: limath custom delimiter. Failed ([limath(add, 10|20|30, |)]).
+  }
+-
+#
+# Test Case #14 - unknown operation error.
+#
+&tr.tc014 test_limath_fn=
+  @if strmatch(
+        limath(foo, 1 2 3),
+        #-1*
+      )=
+  {
+    @log smoke=TC014: limath unknown operation. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC014: limath unknown operation. Failed ([limath(foo, 1 2 3)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_limath_fn=
+  @log smoke=End limath() test cases.;
+  @notify smoke
+-
+drop test_limath_fn
+-
+#
+# End of Test Cases
+#

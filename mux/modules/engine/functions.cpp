@@ -14702,6 +14702,7 @@ static FUN builtin_function_list[] =
     {T("LJUST"),       fun_ljust,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("LMAX"),        fun_lmax,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("LMATH"),       fun_lmath,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {T("LIMATH"),      fun_limath,     MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("LMIN"),        fun_lmin,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("LN"),          fun_ln,         MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("LNUM"),        fun_lnum,       MAX_ARG, 0,       4,         0, CA_PUBLIC},

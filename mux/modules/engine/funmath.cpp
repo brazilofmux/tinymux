@@ -668,6 +668,172 @@ FUNCTION(fun_lmath)
     }
 }
 
+// ---------------------------------------------------------------------------
+// limath: Integer-only list reduction, parallel to lmath().
+//
+// limath(<operation>, <list>[, <delim>])
+//
+// Supported operations: add/sum, sub, mul, div, mod, min, max, median.
+// All arithmetic is 64-bit integer.
+//
+FUNCTION(fun_limath)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    SEP sep;
+    if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    int64_t vals[MAX_WORDS];
+    int n = 0;
+    UTF8 *cp = trim_space_sep(fargs[1], sep);
+    while (cp)
+    {
+        if (n >= MAX_WORDS)
+        {
+            safe_str(T("#-1 LIST TOO LONG"), buff, bufc);
+            return;
+        }
+        UTF8 *curr = split_token(&cp, sep);
+        if (!is_integer(curr, nullptr))
+        {
+            safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
+            return;
+        }
+        vals[n++] = mux_atoi64(curr);
+    }
+
+    if (n == 0)
+    {
+        safe_chr('0', buff, bufc);
+        return;
+    }
+
+    UTF8 *op = fargs[0];
+
+    if (  mux_stricmp(op, T("add")) == 0
+       || mux_stricmp(op, T("sum")) == 0)
+    {
+        int64_t sum = 0;
+        for (int i = 0; i < n; i++)
+        {
+            sum += vals[i];
+        }
+        safe_i64toa(sum, buff, bufc);
+    }
+    else if (mux_stricmp(op, T("mul")) == 0)
+    {
+        int64_t prod = 1;
+        for (int i = 0; i < n; i++)
+        {
+            prod *= vals[i];
+        }
+        safe_i64toa(prod, buff, bufc);
+    }
+    else if (mux_stricmp(op, T("sub")) == 0)
+    {
+        int64_t result = vals[0];
+        for (int i = 1; i < n; i++)
+        {
+            result -= vals[i];
+        }
+        safe_i64toa(result, buff, bufc);
+    }
+    else if (mux_stricmp(op, T("div")) == 0)
+    {
+        int64_t result = vals[0];
+        for (int i = 1; i < n; i++)
+        {
+            if (vals[i] == 0)
+            {
+                safe_str(T("#-1 DIVIDE BY ZERO"), buff, bufc);
+                return;
+            }
+            result = i64Division(result, vals[i]);
+        }
+        safe_i64toa(result, buff, bufc);
+    }
+    else if (mux_stricmp(op, T("mod")) == 0)
+    {
+        int64_t result = vals[0];
+        for (int i = 1; i < n; i++)
+        {
+            if (vals[i] == 0)
+            {
+                safe_str(T("#-1 DIVIDE BY ZERO"), buff, bufc);
+                return;
+            }
+            result = i64Mod(result, vals[i]);
+        }
+        safe_i64toa(result, buff, bufc);
+    }
+    else if (mux_stricmp(op, T("min")) == 0)
+    {
+        int64_t minimum = vals[0];
+        for (int i = 1; i < n; i++)
+        {
+            if (vals[i] < minimum)
+            {
+                minimum = vals[i];
+            }
+        }
+        safe_i64toa(minimum, buff, bufc);
+    }
+    else if (mux_stricmp(op, T("max")) == 0)
+    {
+        int64_t maximum = vals[0];
+        for (int i = 1; i < n; i++)
+        {
+            if (vals[i] > maximum)
+            {
+                maximum = vals[i];
+            }
+        }
+        safe_i64toa(maximum, buff, bufc);
+    }
+    else if (mux_stricmp(op, T("median")) == 0)
+    {
+        // Insertion sort.
+        //
+        for (int i = 1; i < n; i++)
+        {
+            int64_t key = vals[i];
+            int j = i - 1;
+            while (  j >= 0
+                  && vals[j] > key)
+            {
+                vals[j + 1] = vals[j];
+                j--;
+            }
+            vals[j + 1] = key;
+        }
+        if (n % 2 == 1)
+        {
+            safe_i64toa(vals[n / 2], buff, bufc);
+        }
+        else
+        {
+            // Integer median of even-length list: floor of average.
+            // Use a + (b - a) / 2 to avoid overflow (a <= b after sort).
+            //
+            int64_t a = vals[n / 2 - 1];
+            int64_t b = vals[n / 2];
+            safe_i64toa(a + i64Division(b - a, 2), buff, bufc);
+        }
+    }
+    else
+    {
+        safe_str(T("#-1 UNKNOWN OPERATION"), buff, bufc);
+    }
+}
+
 /* ---------------------------------------------------------------------------
  * fun_sign: Returns -1, 0, or 1 based on the the sign of its argument.
  */
