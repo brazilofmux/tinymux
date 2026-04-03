@@ -120,8 +120,12 @@ include/dbt.h
 include/dbt_compile.h
 include/dbt_decoder.h
 include/dbt_elf64.h
+include/dbt_emit_a64.h
 include/dbt_emit_x64.h
+include/dbt_host.h
+include/dbt_internal.h
 include/dbt_interp.h
+include/dbt_jit_mem.h
 include/ducet_cetable.h
 include/engine_api.h
 include/externs.h
@@ -281,8 +285,11 @@ modules/engine/cque.cpp
 modules/engine/create.cpp
 modules/engine/cron.cpp
 modules/engine/dbt.cpp
+modules/engine/dbt_a64_sysv.cpp
 modules/engine/dbt_elf64.cpp
 modules/engine/dbt_interp.cpp
+modules/engine/dbt_x64_sysv.cpp
+modules/engine/dbt_x64_win64.cpp
 modules/engine/db.cpp
 modules/engine/db_rw.cpp
 modules/engine/engine.cpp
@@ -373,6 +380,7 @@ src/modules.cpp
 src/muxcli.cpp
 src/netaddr.cpp
 src/net.cpp
+src/platform.cpp
 src/signals.cpp
 src/sitemon.cpp
 src/slave.cpp

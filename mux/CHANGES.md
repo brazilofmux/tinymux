@@ -1,11 +1,163 @@
 ---
 title: TinyMUX 2.14 CHANGES
-date: March 2026
+date: April 2026
 author:
  - Brazil
 ---
 
 Changes in TinyMUX 2.14 (relative to the 2.13 branch point).
+
+# Changes in 2.14.0.7 (2026-APR-03):
+
+## New Softcode Functions
+
+ - `graphemes()` — explode a string into its individual grapheme
+   clusters as a space-delimited list.
+ - `tr()` upgraded to grapheme-cluster-to-grapheme-cluster mapping.
+   Previously operated on individual bytes; now correctly handles
+   multi-byte grapheme clusters in both the source and replacement
+   lists.
+ - `butlast()` — return all but the last element of a list. Symmetric
+   complement to `rest()`.
+ - `zip()` — interleave two lists element-by-element without applying
+   a function. `zip(a b c, 1 2 3)` produces `a 1 b 2 c 3`.
+ - `posn()` — find the Nth occurrence of a substring within a string.
+   Generalizes `pos()` which always returns the first match.
+ - `wordstart()` and `wordend()` — return the grapheme offset of the
+   start or end of the Nth word in a string.
+ - `lxor()` — boolean parity (XOR) reduction across a list. Returns 1
+   if an odd number of list elements are true.
+ - `lband()`, `lbor()`, `lbxor()` — bitwise AND, OR, and XOR
+   reductions across a list of integers. 64-bit arithmetic.
+ - `limath()` — 64-bit integer list reduction with a user-specified
+   operator (+, -, *, /, %, min, max, band, bor, bxor). Generalizes
+   `lmath()` to the integer domain.
+ - `strsort()` and `strunique()` — sort and deduplicate at the
+   grapheme-cluster level. Operate on individual grapheme clusters
+   within a string, not on list words.
+ - `strunion()`, `strdiff()`, `strinter()` — grapheme-cluster-level
+   set union, difference, and intersection. Treat each grapheme
+   cluster as a set element.
+ - `land()`, `lor()`, `lxor()` now document empty-list identity
+   semantics: `land()` returns 1, `lor()` returns 0, `lxor()` returns
+   0 on an empty list.
+ - `cwho()`, `channels()`, `chanusers()`, `maillist()` now support
+   offset/limit pagination for large result sets.
+
+## Routing System
+
+ - New room-to-room routing engine with four phases:
+   - Phase 1: Static unconditional next-hop tables built by
+     `@route/set`. `route()` and `routepath()` query functions.
+   - Phase 2: Per-zone routing tables with cross-zone gateway
+     selection via a meta-table.
+   - Phase 3: Lock-validated routing — exit locks are checked at
+     query time so locked paths are excluded from results.
+   - Phase 4: `@walk` and `@patrol` NPC movement primitives. `@walk`
+     moves an object along a computed route; `@patrol` cycles an
+     object through a list of waypoints indefinitely.
+
+## DBT Multi-Platform Backends
+
+ - The dynamic binary translator has been refactored into pluggable
+   platform backends with a common host-abstraction layer
+   (`dbt_host.h`, `dbt_internal.h`, `dbt_jit_mem.h`).
+ - x86-64 SysV backend (`dbt_x64_sysv.cpp`) extracted from the
+   monolithic `dbt.cpp` — the existing Linux/FreeBSD/macOS path.
+ - x86-64 Win64 backend (`dbt_x64_win64.cpp`) — Windows calling
+   convention (RCX/RDX/R8/R9, shadow space, non-volatile XMM6-15).
+   JIT is now enabled in the Windows build.
+ - AArch64 AAPCS64 backend (`dbt_a64_sysv.cpp`) — ARM64 code
+   generation with instruction fusion (Stage 7), superblock formation
+   (Stage 3), and inline CALL (Stage 5). I-cache flush via
+   `__builtin___clear_cache`.
+ - `JIT_COMPILER_VERSION` added to the SQLite code cache key so that
+   backend changes automatically invalidate stale cached blobs.
+ - Platform dispatch is compile-time; `--disable-jit` builds cleanly
+   stub all backend entry points.
+
+## JIT Compiler Improvements
+
+ - Peephole optimization pass: redundant load-after-store elimination,
+   identity arithmetic removal, and dead-code cleanup.
+ - Superblock optimization pass: merge straight-line basic blocks
+   across unconditional edges to reduce branch overhead. Runs before
+   SSA construction to avoid PHI complications.
+ - Native HIR lowering for `log(value, base)` when the base is a
+   compile-time constant — avoids ECALL overhead for common cases
+   like `log(x, 2)` and `log(x, 10)`.
+ - Re-enabled JIT fast paths for 12 string/list functions with full
+   interpreter parity: `rest()`, `last()`, `squish()`, `elements()`,
+   `remove()`, `edit()`, `replace()`, `insert()`, `splice()`,
+   `log()`, and the trigonometric family (`sin`, `cos`, `tan`, `asin`,
+   `acos`, `atan`, `atan2`) with angle-unit (degree/radian/grad)
+   support.
+ - ITOA/FTOA coercion for non-string ECALL arguments in `hir_lower`.
+   Functions receiving numeric HIR values that expect string fargs now
+   get an automatic coercion node instead of garbage output.
+
+## JIT Bug Fixes
+
+ - Fix `cand()` result handling — JIT was returning the branch
+   condition instead of the final evaluated value when stored as an
+   attribute and triggered.
+ - Fix `cat()` dropping arguments when lowered as ECALL instead of
+   STRCAT.
+ - Fix `MEMBER` and `ROUND` constant folding producing incorrect
+   results.
+ - Fix arithmetic lowering to match interpreter semantics for
+   floating-point boundary cases.
+ - Disable JIT float EQ/NE lowering — IEEE 754 equality semantics
+   differ between the DBT fast path and the interpreter's string
+   comparison. Falls through to ECALL.
+ - Disable Tier 2 JIT for `remove()` and `round()` pending full
+   parity audit.
+ - Fix `splice()` to use color-stripped comparison, matching the
+   interpreter's behavior when ANSI color codes are present.
+
+## Hardening and Reliability
+
+ - All signal handlers are now async-signal-safe. Fatal signal
+   handlers (`SIGSEGV`, `SIGBUS`, `SIGFPE`, `SIGILL`) use only
+   `write()` and `_exit()`. `SIGHUP`, `SIGUSR1`, `SIGUSR2` set
+   atomic flags that are checked in the main event loop.
+ - Restart-file loading hardened: path traversal rejected, file size
+   limited, descriptor range validated before `dup2`.
+ - `ISOUTOFMEMORY` macro removed; each allocation site now has its
+   own recovery path instead of a single global flag.
+ - `g_dump_child_pid` fixed to prevent stale PID reuse after a failed
+   `fork()` during `@dump`.
+ - `PlayerNuke` guard added to prevent destruction of connected
+   players.
+ - Comsys `dbck()` false alarms fixed — channel consistency checks
+   no longer flag valid channel state as corrupt.
+ - Mail module false alarms fixed — mailbox validation no longer
+   reports phantom inconsistencies on empty mailboxes.
+ - Lua JIT: back-edge iteration budget added to prevent infinite loops
+   from consuming unbounded CPU. Loops that exceed the budget bail to
+   the Lua VM interpreter.
+
+## Softcode Bug Fixes
+
+ - Fix `split_words()` to handle non-space delimiters and empty input
+   correctly. Previously returned a spurious empty element.
+
+## Build System and Internals
+
+ - `CPlatform` extracted from `modules.cpp` into `platform.cpp` for
+   cleaner driver/engine separation.
+ - `libmux.so` now builds with `-fvisibility=hidden`, reducing
+   exported symbols from 665 to 351. Only the documented API surface
+   is visible to engine.so and netmux.
+ - `co_replace_at()` and `co_insert_at()` added to color_ops Ragel
+   machine for ANSI-aware positional string replacement and insertion.
+ - Duplicate help entries and stale dynhelp aliases removed.
+ - Function alias table synced into JIT lookup after config load so
+   that aliases defined in `mux.config` are JIT-eligible.
+ - 917 smoke tests (up from 733 in 2.14.0.6). Systematic migration
+   from SHA1-hash assertions to semantic assertions across 10 waves,
+   exposing and fixing latent JIT parity bugs that opaque hashes were
+   hiding.
 
 # Changes in 2.14.0.6 (2026-MAR-26):
 
