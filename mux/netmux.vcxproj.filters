@@ -29,6 +29,9 @@
     <ClCompile Include="src\modules.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\platform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\muxcli.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
