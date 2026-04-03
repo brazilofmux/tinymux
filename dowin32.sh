@@ -115,9 +115,8 @@ process_distribution() {
                 else
                     # Text file - use standard diff
                     mkdir -p "patches_$dist_type/text/$(dirname "$rel_path")"
-                    diff -u "$src_file" "$new_file" > "patches_$dist_type/text/$rel_path.patch" 2>/dev/null
-                    diff_rc=$?
-                    if [ $diff_rc -ge 2 ]; then
+                    diff -u "$src_file" "$new_file" > "patches_$dist_type/text/$rel_path.patch" 2>/dev/null || diff_rc=$?
+                    if [ "${diff_rc:-0}" -ge 2 ]; then
                         echo "Error: diff failed for $rel_path (exit $diff_rc)" >&2
                         exit 1
                     fi
