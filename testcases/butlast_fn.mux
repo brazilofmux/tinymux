@@ -1,0 +1,130 @@
+#
+# butlast_fn.mux - Test Cases for butlast().
+#
+@create test_butlast_fn
+-
+@set test_butlast_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_butlast_fn=
+  @log smoke=Beginning butlast() test cases.
+-
+#
+# Test Case #1 - Basic: all but last word.
+#
+&tr.tc001 test_butlast_fn=
+  @if strmatch(
+        butlast(This is a test),
+        This is a
+      )=
+  {
+    @log smoke=TC001: butlast basic. Succeeded.
+  },
+  {
+    @log smoke=TC001: butlast basic. Failed ([butlast(This is a test)]).
+  }
+-
+#
+# Test Case #2 - Two words.
+#
+&tr.tc002 test_butlast_fn=
+  @if strmatch(
+        butlast(hello world),
+        hello
+      )=
+  {
+    @log smoke=TC002: butlast two words. Succeeded.
+  },
+  {
+    @log smoke=TC002: butlast two words. Failed ([butlast(hello world)]).
+  }
+-
+#
+# Test Case #3 - Single word returns empty.
+#
+&tr.tc003 test_butlast_fn=
+  @if eq(
+        strlen(butlast(only)),
+        0
+      )=
+  {
+    @log smoke=TC003: butlast single word. Succeeded.
+  },
+  {
+    @log smoke=TC003: butlast single word. Failed ([butlast(only)]).
+  }
+-
+#
+# Test Case #4 - Empty string returns empty.
+#
+&tr.tc004 test_butlast_fn=
+  @if eq(
+        strlen(butlast()),
+        0
+      )=
+  {
+    @log smoke=TC004: butlast empty. Succeeded.
+  },
+  {
+    @log smoke=TC004: butlast empty. Failed ([butlast()]).
+  }
+-
+#
+# Test Case #5 - Custom delimiter.
+#
+&tr.tc005 test_butlast_fn=
+  @if strmatch(
+        butlast(one|two|three, |),
+        one|two
+      )=
+  {
+    @log smoke=TC005: butlast custom delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC005: butlast custom delimiter. Failed ([butlast(one|two|three, |)]).
+  }
+-
+#
+# Test Case #6 - Complement: butlast + last == original.
+#
+&tr.tc006 test_butlast_fn=
+  @if strmatch(
+        [butlast(alpha beta gamma)] [last(alpha beta gamma)],
+        alpha beta gamma
+      )=
+  {
+    @log smoke=TC006: butlast + last complement. Succeeded.
+  },
+  {
+    @log smoke=TC006: butlast + last complement. Failed ([butlast(alpha beta gamma)] [last(alpha beta gamma)]).
+  }
+-
+#
+# Test Case #7 - Complement: first + rest == original.
+# Verify symmetry with the rest/first pair.
+#
+&tr.tc007 test_butlast_fn=
+  @if cand(
+        strmatch([first(a b c)] [rest(a b c)], a b c),
+        strmatch([butlast(a b c)] [last(a b c)], a b c)
+      )=
+  {
+    @log smoke=TC007: butlast/last mirrors first/rest. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC007: butlast/last mirrors first/rest. Failed.;
+    @trig me/tr.done
+  }
+-
+&tr.done test_butlast_fn=
+  @log smoke=End butlast() test cases.;
+  @notify smoke
+-
+drop test_butlast_fn
+-
+#
+# End of Test Cases
+#

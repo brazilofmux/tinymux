@@ -5627,6 +5627,27 @@ BOUND()
 
   Related Topics: max(), min().
 
+& BUTLAST()
+BUTLAST()
+
+  FUNCTION: butlast(<string>[, <sep>])
+
+  Returns all but the last word of <string>.  This is the symmetric
+  complement to rest(), which returns all but the first word.  If
+  <string> contains zero or one words, an empty string is returned.
+
+  <sep> may be used to specify a delimiter other than a space.
+
+  Examples:
+    > say butlast(This is a test)
+    You say, "This is a"
+    > say butlast(one|two|three, |)
+    You say, "one|two"
+    > say butlast(only)
+    You say, ""
+
+  Related Topics: extract(), first(), last(), rest().
+
 & BXOR()
 BXOR()
 

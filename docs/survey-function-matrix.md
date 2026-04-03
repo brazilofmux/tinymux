@@ -196,9 +196,7 @@ listed separately to keep the unit model clean.
 
 ### Gaps in Sequence Operations
 
-1. **"All but last" extraction**: `rest()` gives all-but-first for words;
-   there is no `butlast()` or grapheme equivalent. (Achievable with
-   `extract()` or `mid()` + `strlen()`, but not as a one-liner.)
+1. ~~**"All but last" extraction**~~: **DONE** — `butlast()` added.
 2. ~~**Grapheme-level sort**~~: **DONE** — `strsort()` added.
 3. ~~**Grapheme set operations**~~: **DONE** — `strunion()`, `strdiff()`,
    `strinter()`, `strunique()` all added.
@@ -411,7 +409,7 @@ These fill the most commonly felt gaps and have clean semantics.
 | ~~`strunion(s1, s2)`~~ | ~~Union of grapheme cluster sets~~ | **DONE** |
 | ~~`strdiff(s1, s2)`~~ | ~~Difference of grapheme cluster sets~~ | **DONE** |
 | ~~`strinter(s1, s2)`~~ | ~~Intersection of grapheme cluster sets~~ | **DONE** |
-| `butlast(str, sep)` | All but last word | Symmetric complement to `rest()` |
+| ~~`butlast(str, sep)`~~ | ~~All but last word~~ | **DONE** |
 | `zip(l1, l2, sep)` | Interleave two lists (no function call) | Pure structural operation; `mix()` requires a function |
 
 ### What NOT to Add

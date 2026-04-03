@@ -2829,6 +2829,48 @@ static FUNCTION(fun_rest)
     }
 }
 
+// ---------------------------------------------------------------------------
+// butlast: All but the last word of a string (complement to rest()).
+//
+// butlast(<string>[, <sep>])
+//
+static FUNCTION(fun_butlast)
+{
+    if (nfargs == 0)
+    {
+        return;
+    }
+
+    SEP sep;
+    if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    SEP osep = sep;
+
+    // Count words first so we know where to stop.
+    //
+    int nWords = countwords(fargs[0], sep);
+    if (nWords <= 1)
+    {
+        return;
+    }
+
+    UTF8 *cp = trim_space_sep(fargs[0], sep);
+    bool first = true;
+    for (int i = 0; i < nWords - 1; i++)
+    {
+        UTF8 *curr = split_token(&cp, sep);
+        if (!first)
+        {
+            print_sep(osep, buff, bufc);
+        }
+        first = false;
+        safe_str(curr, buff, bufc);
+    }
+}
+
 /*
  * ---------------------------------------------------------------------------
  * * fun_v: Function form of %-substitution
@@ -14729,6 +14771,7 @@ static FUN builtin_function_list[] =
     {T("BNAND"),       fun_bnand,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("BOR"),         fun_bor,        MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {T("BOUND"),       fun_bound,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
+    {T("BUTLAST"),     fun_butlast,    MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("BXOR"),        fun_bxor,       MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
     {T("CAND"),        fun_cand,       MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
     {T("CANDBOOL"),    fun_candbool,   MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
