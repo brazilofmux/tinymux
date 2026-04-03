@@ -15585,6 +15585,25 @@ STRMEM()
 
   Related Topics: strlen(), UNICODE.
 
+& STRSORT()
+STRSORT()
+
+  FUNCTION: strsort(<string>)
+
+  Sorts the grapheme clusters within <string> by Unicode byte order
+  and returns the result as a concatenated string.  Color codes are
+  stripped.
+
+  Examples:
+    > say strsort(dcba)
+    You say, "abcd"
+    > say strsort(banana)
+    You say, "aaabnn"
+    > say strsort(CbA)
+    You say, "ACb"
+
+  Related Topics: sort(), strunique().
+
 & STRTRUNC()
 & LEFT()
 STRTRUNC()
@@ -15598,6 +15617,24 @@ STRTRUNC()
   left() is an alias for strtrunc().
 
   Related Topics: mid(), ljust(), right().
+
+& STRUNIQUE()
+STRUNIQUE()
+
+  FUNCTION: strunique(<string>)
+
+  Removes duplicate grapheme clusters from <string>, keeping the first
+  occurrence of each.  Color codes are stripped.
+
+  Examples:
+    > say strunique(banana)
+    You say, "ban"
+    > say strunique(abcabc)
+    You say, "abc"
+    > say strunique(hello)
+    You say, "helo"
+
+  Related Topics: setunion(), strsort(), unique().
 
 & SUB()
 SUB()

@@ -200,10 +200,9 @@ listed separately to keep the unit model clean.
 1. **"All but last" extraction**: `rest()` gives all-but-first for words;
    there is no `butlast()` or grapheme equivalent. (Achievable with
    `extract()` or `mid()` + `strlen()`, but not as a one-liner.)
-2. **Grapheme-level sort**: `sort()` operates on words; there is no
-   `strsort()` to sort the grapheme clusters within a string.
-3. **Grapheme set operations**: no `strunion()`, `strdiff()`, `strinter()`,
-   `strunique()`. Useful for anagram/character-set tasks.
+2. ~~**Grapheme-level sort**~~: **DONE** — `strsort()` added.
+3. **Grapheme set operations**: no `strunion()`, `strdiff()`, `strinter()`.
+   ~~`strunique()` was missing~~ — **DONE**.
 4. ~~**Grapheme-to-list bridge**~~: **DONE** — `graphemes(str, osep)` added.
 5. **Conditional grapheme replace**: `splice()` does conditional replace
    at word level; there is no grapheme-level equivalent (replace grapheme
@@ -403,8 +402,8 @@ These fill the most commonly felt gaps and have clean semantics.
 | ~~`lbxor(list, sep)`~~ | ~~Bitwise XOR across list~~ | **DONE** |
 | `limath(op, list, sep)` | Integer-only list reduction | Parallel to `lmath()` for 64-bit integers |
 | ~~`posn(str, sub, n)`~~ | ~~Find nth occurrence of substring~~ | **DONE** |
-| `strsort(str)` | Sort grapheme clusters within a string | Anagram, dedup, character-set work |
-| `strunique(str)` | Deduplicate grapheme clusters | Character-set extraction |
+| ~~`strsort(str)`~~ | ~~Sort grapheme clusters within a string~~ | **DONE** |
+| ~~`strunique(str)`~~ | ~~Deduplicate grapheme clusters~~ | **DONE** |
 
 ### Tier 3 -- Nice to Have
 

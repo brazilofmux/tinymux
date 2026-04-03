@@ -13412,6 +13412,149 @@ static FUNCTION(fun_unique)
 }
 
 // ---------------------------------------------------------------------------
+// strsort: Sort the grapheme clusters within a string.
+//
+// strsort(<string>)
+//
+// Grapheme clusters are compared by raw UTF-8 byte order (same collation
+// as sort(,a)).  Color codes are stripped.
+//
+static FUNCTION(fun_strsort)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    size_t nBytes = 0;
+    UTF8 *p = strip_color(fargs[0], &nBytes, nullptr);
+    if (0 == nBytes)
+    {
+        return;
+    }
+
+    // Collect grapheme clusters as (pointer, length) pairs.
+    //
+    struct GC { const UTF8 *p; size_t n; };
+    GC clusters[LBUF_SIZE];
+    int nClusters = 0;
+
+    size_t nRemaining = nBytes;
+    const UTF8 *pCur = p;
+    while (0 < nRemaining)
+    {
+        mux_cursor cluster = utf8_next_grapheme(pCur, nRemaining);
+        if (0 == cluster.m_byte)
+        {
+            safe_str(T("#-1 STRING IS INVALID"), buff, bufc);
+            return;
+        }
+        if (nClusters >= LBUF_SIZE)
+        {
+            safe_str(T("#-1 STRING TOO LONG"), buff, bufc);
+            return;
+        }
+        clusters[nClusters].p = pCur;
+        clusters[nClusters].n = cluster.m_byte;
+        nClusters++;
+        pCur += cluster.m_byte;
+        nRemaining -= cluster.m_byte;
+    }
+
+    // Sort by UTF-8 byte comparison.
+    //
+    qsort(clusters, nClusters, sizeof(GC),
+        [](const void *a, const void *b) -> int
+        {
+            const GC *ga = static_cast<const GC *>(a);
+            const GC *gb = static_cast<const GC *>(b);
+            size_t nMin = (ga->n < gb->n) ? ga->n : gb->n;
+            int cmp = memcmp(ga->p, gb->p, nMin);
+            if (0 != cmp) return cmp;
+            return (ga->n < gb->n) ? -1 : (ga->n > gb->n) ? 1 : 0;
+        });
+
+    for (int i = 0; i < nClusters; i++)
+    {
+        safe_copy_buf(clusters[i].p, clusters[i].n, buff, bufc);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// strunique: Deduplicate grapheme clusters within a string, preserving
+// first-occurrence order.
+//
+// strunique(<string>)
+//
+static FUNCTION(fun_strunique)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    size_t nBytes = 0;
+    UTF8 *p = strip_color(fargs[0], &nBytes, nullptr);
+    if (0 == nBytes)
+    {
+        return;
+    }
+
+    // Collect grapheme clusters.
+    //
+    struct GC { const UTF8 *p; size_t n; };
+    GC seen[LBUF_SIZE];
+    int nSeen = 0;
+
+    size_t nRemaining = nBytes;
+    const UTF8 *pCur = p;
+    while (0 < nRemaining)
+    {
+        mux_cursor cluster = utf8_next_grapheme(pCur, nRemaining);
+        if (0 == cluster.m_byte)
+        {
+            safe_str(T("#-1 STRING IS INVALID"), buff, bufc);
+            return;
+        }
+
+        // Check if we've already seen this cluster.
+        //
+        bool bDup = false;
+        for (int j = 0; j < nSeen; j++)
+        {
+            if (  seen[j].n == cluster.m_byte
+               && 0 == memcmp(seen[j].p, pCur, cluster.m_byte))
+            {
+                bDup = true;
+                break;
+            }
+        }
+
+        if (!bDup)
+        {
+            if (nSeen >= LBUF_SIZE)
+            {
+                safe_str(T("#-1 STRING TOO LONG"), buff, bufc);
+                return;
+            }
+            safe_copy_buf(pCur, cluster.m_byte, buff, bufc);
+            seen[nSeen].p = pCur;
+            seen[nSeen].n = cluster.m_byte;
+            nSeen++;
+        }
+
+        pCur += cluster.m_byte;
+        nRemaining -= cluster.m_byte;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // fun_linsert: Insert an item at a position in a list.
 //   linsert(list, position, item[, sep])
 // ---------------------------------------------------------------------------
@@ -14772,7 +14915,9 @@ static FUN builtin_function_list[] =
     {T("STRMEM"),      fun_strmem,           1, 0,       1,         0, CA_PUBLIC},
     {T("STRDISTANCE"), fun_strdistance,MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("STRREPLACE"),  fun_strreplace, MAX_ARG, 4,       4,         0, CA_PUBLIC},
+    {T("STRSORT"),     fun_strsort,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("STRTRUNC"),    fun_strtrunc,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
+    {T("STRUNIQUE"),   fun_strunique,  MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("SUB"),         fun_sub,        MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("SUBEVAL"),     fun_subeval,    MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("SUBJ"),        fun_subj,       MAX_ARG, 1,       1,         0, CA_PUBLIC},

@@ -1,0 +1,189 @@
+#
+# strsort_fn.mux - Test Cases for strsort() and strunique().
+#
+@create test_strsort_fn
+-
+@set test_strsort_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_strsort_fn=
+  @log smoke=Beginning strsort/strunique() test cases.
+-
+#
+# Test Case #1 - strsort basic reverse.
+#
+&tr.tc001 test_strsort_fn=
+  @if strmatch(
+        strsort(dcba),
+        abcd
+      )=
+  {
+    @log smoke=TC001: strsort basic reverse. Succeeded.
+  },
+  {
+    @log smoke=TC001: strsort basic reverse. Failed ([strsort(dcba)]).
+  }
+-
+#
+# Test Case #2 - strsort with duplicates.
+#
+&tr.tc002 test_strsort_fn=
+  @if strmatch(
+        strsort(banana),
+        aaabnn
+      )=
+  {
+    @log smoke=TC002: strsort with duplicates. Succeeded.
+  },
+  {
+    @log smoke=TC002: strsort with duplicates. Failed ([strsort(banana)]).
+  }
+-
+#
+# Test Case #3 - strsort preserves length.
+#
+&tr.tc003 test_strsort_fn=
+  @if eq(
+        strlen(strsort(hello)),
+        5
+      )=
+  {
+    @log smoke=TC003: strsort preserves length. Succeeded.
+  },
+  {
+    @log smoke=TC003: strsort preserves length. Failed ([strlen(strsort(hello))]).
+  }
+-
+#
+# Test Case #4 - strsort empty string returns empty.
+#
+&tr.tc004 test_strsort_fn=
+  @if eq(
+        strlen(strsort([setq(0,)][r(0)])),
+        0
+      )=
+  {
+    @log smoke=TC004: strsort empty. Succeeded.
+  },
+  {
+    @log smoke=TC004: strsort empty. Failed.
+  }
+-
+#
+# Test Case #5 - strsort uppercase before lowercase (byte order).
+#
+&tr.tc005 test_strsort_fn=
+  @if strmatch(
+        strsort(bAcB),
+        ABbc
+      )=
+  {
+    @log smoke=TC005: strsort case ordering. Succeeded.
+  },
+  {
+    @log smoke=TC005: strsort case ordering. Failed ([strsort(bAcB)]).
+  }
+-
+#
+# Test Case #6 - strunique basic.
+#
+&tr.tc006 test_strsort_fn=
+  @if strmatch(
+        strunique(banana),
+        ban
+      )=
+  {
+    @log smoke=TC006: strunique basic. Succeeded.
+  },
+  {
+    @log smoke=TC006: strunique basic. Failed ([strunique(banana)]).
+  }
+-
+#
+# Test Case #7 - strunique preserves first-occurrence order.
+#
+&tr.tc007 test_strsort_fn=
+  @if strmatch(
+        strunique(abcabc),
+        abc
+      )=
+  {
+    @log smoke=TC007: strunique order preservation. Succeeded.
+  },
+  {
+    @log smoke=TC007: strunique order preservation. Failed ([strunique(abcabc)]).
+  }
+-
+#
+# Test Case #8 - strunique no duplicates passes through.
+#
+&tr.tc008 test_strsort_fn=
+  @if strmatch(
+        strunique(abcdef),
+        abcdef
+      )=
+  {
+    @log smoke=TC008: strunique no duplicates. Succeeded.
+  },
+  {
+    @log smoke=TC008: strunique no duplicates. Failed ([strunique(abcdef)]).
+  }
+-
+#
+# Test Case #9 - strunique empty string.
+#
+&tr.tc009 test_strsort_fn=
+  @if eq(
+        strlen(strunique([setq(0,)][r(0)])),
+        0
+      )=
+  {
+    @log smoke=TC009: strunique empty. Succeeded.
+  },
+  {
+    @log smoke=TC009: strunique empty. Failed.
+  }
+-
+#
+# Test Case #10 - strsort with Unicode: precomposed sorts after ASCII.
+#
+&tr.tc010 test_strsort_fn=
+  @if strmatch(
+        strsort(b[chr(233)]a),
+        ab[chr(233)]
+      )=
+  {
+    @log smoke=TC010: strsort Unicode ordering. Succeeded.
+  },
+  {
+    @log smoke=TC010: strsort Unicode ordering. Failed ([strsort(b[chr(233)]a)]).
+  }
+-
+#
+# Test Case #11 - strunique with Unicode duplicate.
+#
+&tr.tc011 test_strsort_fn=
+  @if strmatch(
+        strunique([chr(233)]a[chr(233)]b),
+        [chr(233)]ab
+      )=
+  {
+    @log smoke=TC011: strunique Unicode dedup. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC011: strunique Unicode dedup. Failed ([strunique([chr(233)]a[chr(233)]b)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_strsort_fn=
+  @log smoke=End strsort/strunique() test cases.;
+  @notify smoke
+-
+drop test_strsort_fn
+-
+#
+# End of Test Cases
+#
