@@ -2372,24 +2372,44 @@ static size_t split_words(const unsigned char *data, size_t len,
     const unsigned char *pe = data + len;
     const unsigned char *p = data;
     size_t count = 0;
+    int is_space = (delim == ' ');
 
-    while (p < pe && count < max_words) {
-        /* Skip delimiters and color. */
-        const unsigned char *q = co_skip_color(p, pe);
-        if (q >= pe) break;
-        if (*q == delim) { p = q + 1; continue; }
+    if (is_space) {
+        /* Space-compress mode: skip leading spaces/color, then split. */
+        while (p < pe && count < max_words) {
+            const unsigned char *q = co_skip_color(p, pe);
+            if (q >= pe) break;
+            if (*q == ' ') { p = q + 1; continue; }
 
-        /* Start of word (include preceding color). */
-        const unsigned char *word_start = p;
-        const unsigned char *d = co_find_delim(q, pe, delim);
-        const unsigned char *word_end = d ? d : pe;
+            const unsigned char *word_start = p;
+            const unsigned char *d = co_find_delim(q, pe, ' ');
+            const unsigned char *word_end = d ? d : pe;
 
-        words[count].start = word_start;
-        words[count].end = word_end;
-        count++;
+            words[count].start = word_start;
+            words[count].end = word_end;
+            count++;
 
-        if (!d) break;
-        p = d + 1;
+            if (!d) break;
+            p = d + 1;
+        }
+    } else {
+        /* Non-space delimiter: each occurrence is significant,
+         * empty words are possible.  Empty input yields 0 words. */
+        if (len > 0) {
+            while (count + 1 < max_words) {
+                const unsigned char *d = co_find_delim(p, pe, delim);
+                if (!d) break;
+
+                words[count].start = p;
+                words[count].end = d;
+                count++;
+                p = d + 1;
+            }
+            /* Last word: everything after the final delimiter. */
+            words[count].start = p;
+            words[count].end = pe;
+            count++;
+        }
     }
     return count;
 }

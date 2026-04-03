@@ -3861,24 +3861,44 @@ static size_t split_words(const unsigned char *data, size_t len,
     const unsigned char *pe = data + len;
     const unsigned char *p = data;
     size_t count = 0;
+    int is_space = (delim == ' ');
 
-    while (p < pe && count < max_words) {
-        /* Skip delimiters and color. */
-        const unsigned char *q = co_skip_color(p, pe);
-        if (q >= pe) break;
-        if (*q == delim) { p = q + 1; continue; }
+    if (is_space) {
+        /* Space-compress mode: skip leading spaces/color, then split. */
+        while (p < pe && count < max_words) {
+            const unsigned char *q = co_skip_color(p, pe);
+            if (q >= pe) break;
+            if (*q == ' ') { p = q + 1; continue; }
 
-        /* Start of word (include preceding color). */
-        const unsigned char *word_start = p;
-        const unsigned char *d = co_find_delim(q, pe, delim);
-        const unsigned char *word_end = d ? d : pe;
+            const unsigned char *word_start = p;
+            const unsigned char *d = co_find_delim(q, pe, ' ');
+            const unsigned char *word_end = d ? d : pe;
 
-        words[count].start = word_start;
-        words[count].end = word_end;
-        count++;
+            words[count].start = word_start;
+            words[count].end = word_end;
+            count++;
 
-        if (!d) break;
-        p = d + 1;
+            if (!d) break;
+            p = d + 1;
+        }
+    } else {
+        /* Non-space delimiter: each occurrence is significant,
+         * empty words are possible.  Empty input yields 0 words. */
+        if (len > 0) {
+            while (count + 1 < max_words) {
+                const unsigned char *d = co_find_delim(p, pe, delim);
+                if (!d) break;
+
+                words[count].start = p;
+                words[count].end = d;
+                count++;
+                p = d + 1;
+            }
+            /* Last word: everything after the final delimiter. */
+            words[count].start = p;
+            words[count].end = pe;
+            count++;
+        }
     }
     return count;
 }
@@ -5147,13 +5167,13 @@ unsigned char co_dfa_ascii(const unsigned char *p)
 /* ---- co_render_ascii ---- */
 
 
-#line 4940 "color_ops.c"
+#line 4960 "color_ops.c"
 static const int render_ascii_start = 12;
 
 static const int render_ascii_en_main = 12;
 
 
-#line 3680 "color_ops.rl"
+#line 3700 "color_ops.rl"
 
 
 size_t co_render_ascii(unsigned char *out,
@@ -5167,21 +5187,21 @@ size_t co_render_ascii(unsigned char *out,
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     
-#line 4956 "color_ops.c"
+#line 4976 "color_ops.c"
 	{
 	cs = render_ascii_start;
 	}
 
-#line 3693 "color_ops.rl"
+#line 3713 "color_ops.rl"
     
-#line 4959 "color_ops.c"
+#line 4979 "color_ops.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 3665 "color_ops.rl"
+#line 3685 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5195,9 +5215,9 @@ tr0:
     }
 	goto st12;
 tr7:
-#line 3664 "color_ops.rl"
+#line 3684 "color_ops.rl"
 	{ mark = p; }
-#line 3665 "color_ops.rl"
+#line 3685 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5214,7 +5234,7 @@ st12:
 	if ( ++p == pe )
 		goto _test_eof12;
 case 12:
-#line 4995 "color_ops.c"
+#line 5015 "color_ops.c"
 	switch( (*p) ) {
 		case 0u: goto st0;
 		case 224u: goto tr9;
@@ -5243,62 +5263,62 @@ st0:
 cs = 0;
 	goto _out;
 tr8:
-#line 3664 "color_ops.rl"
+#line 3684 "color_ops.rl"
 	{ mark = p; }
 	goto st1;
 st1:
 	if ( ++p == pe )
 		goto _test_eof1;
 case 1:
-#line 5029 "color_ops.c"
+#line 5049 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto tr0;
 	goto st0;
 tr9:
-#line 3664 "color_ops.rl"
+#line 3684 "color_ops.rl"
 	{ mark = p; }
 	goto st2;
 st2:
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 5039 "color_ops.c"
+#line 5059 "color_ops.c"
 	if ( 160u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr10:
-#line 3664 "color_ops.rl"
+#line 3684 "color_ops.rl"
 	{ mark = p; }
 	goto st3;
 st3:
 	if ( ++p == pe )
 		goto _test_eof3;
 case 3:
-#line 5049 "color_ops.c"
+#line 5069 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr11:
-#line 3664 "color_ops.rl"
+#line 3684 "color_ops.rl"
 	{ mark = p; }
 	goto st4;
 st4:
 	if ( ++p == pe )
 		goto _test_eof4;
 case 4:
-#line 5059 "color_ops.c"
+#line 5079 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 159u )
 		goto st1;
 	goto st0;
 tr12:
-#line 3664 "color_ops.rl"
+#line 3684 "color_ops.rl"
 	{ mark = p; }
 	goto st5;
 st5:
 	if ( ++p == pe )
 		goto _test_eof5;
 case 5:
-#line 5069 "color_ops.c"
+#line 5089 "color_ops.c"
 	if ( (*p) < 148u ) {
 		if ( 128u <= (*p) && (*p) <= 147u )
 			goto st1;
@@ -5316,38 +5336,38 @@ case 6:
 		goto st12;
 	goto st0;
 tr13:
-#line 3664 "color_ops.rl"
+#line 3684 "color_ops.rl"
 	{ mark = p; }
 	goto st7;
 st7:
 	if ( ++p == pe )
 		goto _test_eof7;
 case 7:
-#line 5092 "color_ops.c"
+#line 5112 "color_ops.c"
 	if ( 144u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr14:
-#line 3664 "color_ops.rl"
+#line 3684 "color_ops.rl"
 	{ mark = p; }
 	goto st8;
 st8:
 	if ( ++p == pe )
 		goto _test_eof8;
 case 8:
-#line 5102 "color_ops.c"
+#line 5122 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr15:
-#line 3664 "color_ops.rl"
+#line 3684 "color_ops.rl"
 	{ mark = p; }
 	goto st9;
 st9:
 	if ( ++p == pe )
 		goto _test_eof9;
 case 9:
-#line 5112 "color_ops.c"
+#line 5132 "color_ops.c"
 	if ( (*p) < 176u ) {
 		if ( 128u <= (*p) && (*p) <= 175u )
 			goto st3;
@@ -5365,14 +5385,14 @@ case 10:
 		goto st6;
 	goto st0;
 tr16:
-#line 3664 "color_ops.rl"
+#line 3684 "color_ops.rl"
 	{ mark = p; }
 	goto st11;
 st11:
 	if ( ++p == pe )
 		goto _test_eof11;
 case 11:
-#line 5135 "color_ops.c"
+#line 5155 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 143u )
 		goto st3;
 	goto st0;
@@ -5394,7 +5414,7 @@ case 11:
 	_out: {}
 	}
 
-#line 3694 "color_ops.rl"
+#line 3714 "color_ops.rl"
 
     *wp = '\0';
     return (size_t)(wp - out);
