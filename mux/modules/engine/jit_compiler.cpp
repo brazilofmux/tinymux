@@ -125,7 +125,7 @@ private:
 // Tier 2: pre-compiled RV64 library blob
 // ---------------------------------------------------------------
 
-tier2_state s_tier2 = { false, {}, {}, {}, 0, {}, 0 };
+tier2_state s_tier2 = { false, {}, {}, {}, {}, 0, 0, 0, {}, 0 };
 
 // Tier 1 compiler version.  Bump this whenever the HIR lowering,
 // codegen, constant folding, NOEVAL handlers, or any other tier 1
@@ -434,6 +434,8 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
     // v2: code_size is the full flat image (code + rodata + data).
     // BSS size tells the loader how much to zero-fill after.
     s_tier2.bss_size = (hdr.version >= 2) ? hdr.bss_size : 0;
+    s_tier2.image = s_tier2.code;
+    s_tier2.image.resize(s_tier2.code.size() + s_tier2.bss_size, 0);
 
     // Record writable data offset within the flat image for runtime reset.
     if (hdr.version >= 2 && hdr.data_size > 0) {
@@ -717,21 +719,14 @@ template<typename Vec>
 void tier2_install(Vec &memory, uint64_t guest_base) {
     if (!s_tier2.loaded) return;
 
-    // The flat image (code + rodata + initialized data) is copied as one
-    // contiguous block at guest_base.  BSS is zero-filled after it.
-    // This preserves the exact ELF virtual address layout.
-    uint64_t total = s_tier2.code.size() + s_tier2.bss_size;
+    // Copy the prebuilt flat image (code + rodata + data + zeroed BSS)
+    // as one contiguous block.  This preserves the exact ELF layout
+    // while avoiding a second memset on each install.
+    uint64_t total = s_tier2.image.size();
     if (guest_base + total > memory.size()) return;
 
-    // Copy the initialized portion (code + rodata + data).
     memcpy(memory.data() + guest_base,
-           s_tier2.code.data(), s_tier2.code.size());
-
-    // Zero-fill BSS after the initialized data.
-    if (s_tier2.bss_size > 0) {
-        memset(memory.data() + guest_base + s_tier2.code.size(),
-               0, s_tier2.bss_size);
-    }
+           s_tier2.image.data(), total);
 }
 
 template void tier2_install(guest_memory_t &, uint64_t);

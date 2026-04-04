@@ -157,6 +157,7 @@ struct tier2_entry {
 struct tier2_state {
     bool loaded;
     std::vector<uint8_t> code;           // flat image (code + rodata + data)
+    std::vector<uint8_t> image;          // flat image + zeroed BSS
     std::vector<uint8_t> rodata;         // rodata section bytes
     std::vector<uint8_t> data;           // initialized writable data
     uint32_t bss_size;                   // zero-fill size after data
