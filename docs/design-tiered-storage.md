@@ -15,7 +15,7 @@ workloads; no mirror or derived index is needed. The remaining stages
 | 2. Backend Interface Audit | COMPLETE |
 | 3. Experimental libmdbx Backend | COMPLETE |
 | 4. Resolve the Search Story | COMPLETE |
-| 5. Stress Testing and Validation | Not started |
+| 5. Stress Testing and Validation | 5a complete; 5b–5d not started |
 | 6. Rollout or Rejection | Not started |
 
 ## Why Study This
@@ -682,11 +682,31 @@ Prove the operational behavior.
 
 Stories:
 
-**5a. Write stress test.**
+**5a. Stress test.** — COMPLETE
 
-- large object/attribute population
-- random read/write mix
-- throughput and latency metrics
+Standalone harness (`tests/db/stress_backend.cpp`) exercises
+IStorageBackend Put/Get/Del/GetAll at scale. Comparison script
+(`tests/db/run_stress.sh`) runs both backends and prints results.
+
+Results (10,000 objects × 10 attrs = 100K entries, 100K random ops):
+
+| Operation | SQLite | mdbx | Ratio |
+|-----------|--------|------|-------|
+| Populate (Put) | 114 us/op | 3,550 us/op | 31× slower |
+| Read (Get) | 3.6 us/op | 1.9 us/op | **2× faster** |
+| Write (Put) | 11.9 us/op | 3,481 us/op | 292× slower |
+| Delete (Del) | 13.3 us/op | 3,396 us/op | 256× slower |
+| Bulk load (GetAll) | 5.5 us/op | 2.4 us/op | **2× faster** |
+
+**Key finding:** mdbx reads are consistently faster (2× for single
+reads, 2× for bulk loads), confirming the Stage 4a search eval results.
+However, mdbx writes are ~300× slower because each Put/Del opens a
+separate read-write transaction.  SQLite's WAL batching dominates write
+performance.
+
+**Implication:** The mdbx write path needs transaction batching before
+mdbx is production-viable under write-heavy workloads.  Read-dominated
+workloads (including search eval) already benefit.
 
 **5b. Crash recovery test.**
 
@@ -745,18 +765,21 @@ That is a successful outcome.
 
 ## Bottom Line
 
-Stages 1–4 are complete. The system now has:
+Stages 1–4 and 5a are complete. The system now has:
 
 - a configurable Tier 1 cache with depth-based preload
 - a clean `IStorageBackend` interface with no SQLite assumptions
 - a working libmdbx attribute backend selectable via `attr_backend mdbx`
 - automatic migration from SQLite on first enable
 - `dbconvert` auto-detection of the active backend
-- measured ~3× search eval performance advantage for mdbx over SQLite
+- measured ~3× search eval read advantage for mdbx over SQLite
+- measured ~300× write disadvantage for mdbx (per-op transactions)
 
-The performance case for mdbx is established. The remaining question is
-whether it is operationally sound under stress. Stages 5–6 will answer
-that:
+The read performance case for mdbx is established. However, the stress
+test revealed that mdbx write latency is dominated by per-operation
+read-write transactions (~3,500 us/op vs SQLite's ~12 us/op). Write
+batching is needed before mdbx is production-viable. The remaining
+stages will address this:
 
 - Stage 5: stress-test durability, memory pressure, and longevity
 - Stage 6: promote libmdbx to default, or keep it as an option, or
