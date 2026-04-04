@@ -35,11 +35,9 @@ Updated: 2026-04-04
 
 ## Medium — SQLite Error Handling (New, 2026-04-04)
 
-### Missing `sqlite3_reset()` in CodeCachePut() error path
+### ~~Missing `sqlite3_reset()` in CodeCachePut() error path~~ FIXED
 
-- **File:** `mux/modules/engine/sqlitedb.cpp:1952-1958`
-- **Issue:** If `sqlite3_step()` fails, the prepared statement is not reset before returning false. Other functions (CodeCacheGet, InsertObject) properly reset on error paths.
-- **Recommendation:** Add `sqlite3_reset(m_stmtCodeCachePut)` before `return false`.
+- Added `sqlite3_reset(m_stmtCodeCachePut)` before the error return from `CodeCachePut()`. Reverified with `make -C tests/db test`.
 
 ### No null pointer check for `sqlite3_column_blob()` results
 

@@ -1949,6 +1949,7 @@ bool CSQLiteDB::CodeCachePut(const char *source_hash, int source_hash_len,
     {
         fprintf(stderr, "CSQLiteDB::CodeCachePut: %s\n",
             sqlite3_errmsg(m_db));
+        sqlite3_reset(m_stmtCodeCachePut);
         return false;
     }
     return true;
