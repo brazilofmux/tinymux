@@ -610,6 +610,13 @@ NAMETAB sigactions_nametab[] =
     {static_cast<UTF8 *>(nullptr), 0,  0,  0}
 };
 
+NAMETAB attr_backend_nametab[] =
+{
+    {T("sqlite"),      6,  0,  ATTR_BACKEND_SQLITE},
+    {T("mdbx"),        4,  0,  ATTR_BACKEND_MDBX},
+    {static_cast<UTF8 *>(nullptr), 0,  0,  0}
+};
+
 NAMETAB logout_cmdtable[] =
 {
     {T("DOING"),         5,  CA_PUBLIC,  CMD_DOING},

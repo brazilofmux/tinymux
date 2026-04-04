@@ -19,18 +19,49 @@ using namespace std;
 #include <unordered_set>
 
 #include "sqlite_backend.h"
+#include "mdbx_backend.h"
 
 CSQLiteBackend *g_pSQLiteBackend = nullptr;
+IStorageBackend *g_pAttrBackend = nullptr;
+static CMdbxBackend *g_pMdbxBackend = nullptr;
 
 static bool cache_initted = false;
 
-// SQLite backend uses its own buffer for attribute retrieval.
+// Backend buffer for attribute retrieval.
 //
 static UTF8 sqlite_attr_buf[LBUF_SIZE];
 
 static size_t cache_size = 0;
 static uint64_t cache_hits = 0;
 static uint64_t cache_misses = 0;
+
+// Migrate all attributes from SQLite to libmdbx.  Called once when
+// mdbx is enabled and the mdbx file does not yet exist.
+//
+static bool migrate_sqlite_to_mdbx(void)
+{
+    int db_top = 0;
+    g_pSQLiteBackend->GetDB().GetMeta("db_top", &db_top);
+    int migrated = 0;
+
+    for (int i = 0; i < db_top; i++)
+    {
+        g_pSQLiteBackend->GetAll(
+            static_cast<unsigned int>(i),
+            [&migrated, i](unsigned int attrnum, const UTF8 *value,
+                           size_t len, int owner, int flags)
+            {
+                g_pMdbxBackend->Put(static_cast<unsigned int>(i),
+                    attrnum, value, len, owner, flags);
+                migrated++;
+            });
+    }
+
+    g_pMdbxBackend->Sync();
+    Log.tinyprintf(T("migrate_sqlite_to_mdbx: migrated %d attributes from %d objects." ENDLINE),
+        migrated, db_top);
+    return true;
+}
 
 int cache_init(const UTF8 *indb)
 {
@@ -44,33 +75,84 @@ int cache_init(const UTF8 *indb)
     // Derive SQLite database path from the input database name.
     // Replace .db extension with .sqlite, or append .sqlite if no .db suffix.
     //
-    char szPath[LBUF_SIZE];
-    mux_strncpy((UTF8 *)szPath, indb, sizeof(szPath) - 1);
-    szPath[sizeof(szPath) - 1] = '\0';
-    size_t n = strlen(szPath);
-    if (n > 3 && strcmp(szPath + n - 3, ".db") == 0)
+    char szSqlitePath[LBUF_SIZE];
+    mux_strncpy((UTF8 *)szSqlitePath, indb, sizeof(szSqlitePath) - 1);
+    szSqlitePath[sizeof(szSqlitePath) - 1] = '\0';
+    size_t n = strlen(szSqlitePath);
+    if (n > 3 && strcmp(szSqlitePath + n - 3, ".db") == 0)
     {
-        strcpy(szPath + n - 3, ".sqlite");
+        strcpy(szSqlitePath + n - 3, ".sqlite");
     }
     else
     {
-        strcat(szPath, ".sqlite");
+        strcat(szSqlitePath, ".sqlite");
     }
 
     // Check if the database file exists before opening.
     // sqlite3_open creates the file if it doesn't exist.
     //
 #if defined(WINDOWS_FILES)
-    bool bNewDatabase = (_access(szPath, 0) != 0);
+    bool bNewDatabase = (_access(szSqlitePath, 0) != 0);
 #else
-    bool bNewDatabase = (access(szPath, F_OK) != 0);
+    bool bNewDatabase = (access(szSqlitePath, F_OK) != 0);
 #endif
 
-    if (!g_pSQLiteBackend->Open(szPath))
+    if (!g_pSQLiteBackend->Open(szSqlitePath))
     {
         delete g_pSQLiteBackend;
         g_pSQLiteBackend = nullptr;
         return HF_OPEN_STATUS_ERROR;
+    }
+
+    // Default: SQLite handles attributes.
+    //
+    g_pAttrBackend = g_pSQLiteBackend;
+
+    // If mdbx backend is selected, open it and optionally migrate.
+    //
+    if (ATTR_BACKEND_MDBX == mudconf.attr_backend)
+    {
+        char szMdbxPath[LBUF_SIZE];
+        mux_strncpy((UTF8 *)szMdbxPath, indb, sizeof(szMdbxPath) - 1);
+        szMdbxPath[sizeof(szMdbxPath) - 1] = '\0';
+        n = strlen(szMdbxPath);
+        if (n > 3 && strcmp(szMdbxPath + n - 3, ".db") == 0)
+        {
+            strcpy(szMdbxPath + n - 3, ".mdbx");
+        }
+        else
+        {
+            strcat(szMdbxPath, ".mdbx");
+        }
+
+#if defined(WINDOWS_FILES)
+        bool bNewMdbx = (_access(szMdbxPath, 0) != 0);
+#else
+        bool bNewMdbx = (access(szMdbxPath, F_OK) != 0);
+#endif
+
+        g_pMdbxBackend = new CMdbxBackend();
+        if (!g_pMdbxBackend->Open(szMdbxPath))
+        {
+            Log.tinyprintf(T("cache_init: failed to open mdbx at %s, falling back to SQLite." ENDLINE),
+                szMdbxPath);
+            delete g_pMdbxBackend;
+            g_pMdbxBackend = nullptr;
+        }
+        else
+        {
+            // First-time migration from SQLite if the mdbx file is new.
+            //
+            if (bNewMdbx && !bNewDatabase)
+            {
+                Log.tinyprintf(T("cache_init: migrating attributes from SQLite to mdbx..." ENDLINE));
+                migrate_sqlite_to_mdbx();
+            }
+
+            g_pAttrBackend = g_pMdbxBackend;
+            Log.tinyprintf(T("cache_init: using mdbx attribute backend (%s)." ENDLINE),
+                szMdbxPath);
+        }
     }
 
     cache_initted = true;
@@ -80,6 +162,14 @@ int cache_init(const UTF8 *indb)
 
 void cache_close(void)
 {
+    if (g_pMdbxBackend)
+    {
+        g_pMdbxBackend->Close();
+        delete g_pMdbxBackend;
+        g_pMdbxBackend = nullptr;
+    }
+    g_pAttrBackend = nullptr;
+
     if (g_pSQLiteBackend)
     {
         g_pSQLiteBackend->Close();
@@ -91,7 +181,12 @@ void cache_close(void)
 
 void cache_tick(void)
 {
-    if (g_pSQLiteBackend)
+    if (g_pAttrBackend)
+    {
+        g_pAttrBackend->Tick();
+    }
+    // SQLite always needs maintenance for non-attribute tables.
+    if (g_pSQLiteBackend && g_pAttrBackend != g_pSQLiteBackend)
     {
         g_pSQLiteBackend->Tick();
     }
@@ -162,9 +257,9 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen, dbref *owner, int *flags)
     size_t nLength = 0;
     int db_owner = NOTHING;
     int db_flags = 0;
-    if (g_pSQLiteBackend->Get(nam->object, nam->attrnum,
-                              sqlite_attr_buf, sizeof(sqlite_attr_buf), &nLength,
-                              &db_owner, &db_flags))
+    if (g_pAttrBackend->Get(nam->object, nam->attrnum,
+                            sqlite_attr_buf, sizeof(sqlite_attr_buf), &nLength,
+                            &db_owner, &db_flags))
     {
         *pLen = nLength;
         *owner = static_cast<dbref>(db_owner);
@@ -218,10 +313,10 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len, dbref owner, int flags
         len = LBUF_SIZE;
     }
 
-    // Write-through: write to SQLite immediately with separate owner/flags.
+    // Write-through: write to backend immediately with separate owner/flags.
     //
-    if (!g_pSQLiteBackend->Put(nam->object, nam->attrnum, value, len,
-                               static_cast<int>(owner), flags))
+    if (!g_pAttrBackend->Put(nam->object, nam->attrnum, value, len,
+                             static_cast<int>(owner), flags))
     {
         Log.tinyprintf(T("cache_put((%d,%d), \xE2\x80\x98%s\xE2\x80\x99, %u) failed" ENDLINE),
             nam->object, nam->attrnum, value, len);
@@ -262,7 +357,12 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len, dbref owner, int flags
 
 bool cache_sync(void)
 {
-    if (g_pSQLiteBackend)
+    if (g_pAttrBackend)
+    {
+        g_pAttrBackend->Sync();
+    }
+    // SQLite always needs checkpoint for non-attribute tables.
+    if (g_pSQLiteBackend && g_pAttrBackend != g_pSQLiteBackend)
     {
         g_pSQLiteBackend->Sync();
     }
@@ -288,7 +388,7 @@ bool cache_del(Aname *nam)
     }
 #endif // HAVE_WORKING_FORK
 
-    if (!g_pSQLiteBackend->Del(nam->object, nam->attrnum))
+    if (!g_pAttrBackend->Del(nam->object, nam->attrnum))
     {
         Log.tinyprintf(T("cache_del((%d,%d)) failed" ENDLINE),
             nam->object, nam->attrnum);
@@ -319,11 +419,11 @@ bool cache_del(Aname *nam)
 //
 int cache_count(dbref obj)
 {
-    if (!cache_initted || !g_pSQLiteBackend)
+    if (!cache_initted || !g_pAttrBackend)
     {
         return 0;
     }
-    return g_pSQLiteBackend->Count(static_cast<unsigned int>(obj));
+    return g_pAttrBackend->Count(static_cast<unsigned int>(obj));
 }
 
 void cache_preload_obj(dbref obj, bool bAll)
@@ -363,11 +463,11 @@ void cache_preload_obj(dbref obj, bool bAll)
     bool ok;
     if (bAll)
     {
-        ok = g_pSQLiteBackend->GetAll(static_cast<unsigned int>(obj), loader);
+        ok = g_pAttrBackend->GetAll(static_cast<unsigned int>(obj), loader);
     }
     else
     {
-        ok = g_pSQLiteBackend->GetBuiltin(static_cast<unsigned int>(obj), loader);
+        ok = g_pAttrBackend->GetBuiltin(static_cast<unsigned int>(obj), loader);
     }
 
     if (!ok)

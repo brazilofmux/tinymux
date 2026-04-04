@@ -337,6 +337,7 @@ extern "C" MUX_RESULT DCL_API pipepump(void);
 #endif // HAVE_WORKING_FORK && STUB_SLAVE
 
 extern NAMETAB sigactions_nametab[];
+extern NAMETAB attr_backend_nametab[];
 
 #include "file_c.h"
 #ifdef REALITY_LVLS
@@ -1649,7 +1650,12 @@ void pcache_trim(void);
 // From attrcache.cpp
 //
 class CSQLiteBackend;
+class IStorageBackend;
 extern CSQLiteBackend *g_pSQLiteBackend;
+extern IStorageBackend *g_pAttrBackend;
+
+#define ATTR_BACKEND_SQLITE 0
+#define ATTR_BACKEND_MDBX   1
 bool sqlite_sync_runtime(void);
 int sqlite_load_game(void);
 bool sqlite_sync_comsys(void);

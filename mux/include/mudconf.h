@@ -213,6 +213,7 @@ struct confdata
 
     int64_t         max_cache_size; // Max size of attribute cache (-1 = unlimited).
     int             cache_preload_depth; // Preload depth (0=obj, 1=+adjacent, 2=two rooms).
+    int             attr_backend;   // 0=sqlite, 1=mdbx.
     unsigned int    site_chars; // where to truncate site name.
 
     std::vector<int> ports;     // user ports.

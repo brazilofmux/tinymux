@@ -54,6 +54,7 @@ void cf_init(void)
     mudconf.status_file = StringClone(T("shutdown.status"));
     mudconf.max_cache_size = 256LL*1024*1024;
     mudconf.cache_preload_depth = 1;
+    mudconf.attr_backend = ATTR_BACKEND_SQLITE;
 
     mudconf.ip_address = nullptr;
     mudconf.ports.push_back(2860);
@@ -1818,6 +1819,7 @@ static CONFPARM conftable[] =
     {T("attr_alias"),                cf_attr_name_alias,CA_GOD, CA_DISABLED, nullptr,                         nullptr,            0},
     {T("attr_cmd_access"),           cf_acmd_access, CA_GOD,    CA_DISABLED, nullptr,                         access_nametab,     0},
     {T("attr_name_charset"),         cf_modify_bits, CA_GOD,    CA_PUBLIC,   &mudconf.attr_name_charset,      allow_charset_nametab, 0},
+    {T("attr_backend"),              cf_option,      CA_STATIC, CA_GOD,      &mudconf.attr_backend,           attr_backend_nametab, 0},
     {T("autozone"),                  cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.autozone),        nullptr,            0},
     {T("bad_name"),                  cf_badname,     CA_GOD,    CA_DISABLED, nullptr,                         nullptr,            0},
     {T("badsite_file"),              cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.site_file),       nullptr, SIZEOF_PATHNAME},
