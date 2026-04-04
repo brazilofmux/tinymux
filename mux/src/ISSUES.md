@@ -111,23 +111,20 @@ Updated: 2026-03-27
 
 ## High — Null Pointer Dereferences (New, 2026-04-04)
 
-### Missing null check after `alloc_lbuf()` for output_prefix/output_suffix
+### ~~Missing null check after `alloc_lbuf()` for output_prefix/output_suffix~~ FIXED
 
 - **File:** `mux/src/net.cpp:3381-3383, 3400-3402`
-- **Issue:** `alloc_lbuf("set_userstring")` return values are not checked for null before `memcpy()` dereference during restart file loading.
-- **Impact:** Crash on OOM during restart.
+- Restart loading now aborts gracefully with `mux_fclose(f); g_restarting = false; return;` if either `alloc_lbuf("set_userstring")` call fails before copying the restored prefix/suffix.
 
-### Missing null check after `alloc_lbuf()` for raw_input_buf
+### ~~Missing null check after `alloc_lbuf()` for raw_input_buf~~ FIXED
 
 - **File:** `mux/src/telnet.cpp:606-607`
-- **Issue:** `alloc_lbuf("process_input.raw")` not checked before `d->raw_input_at = d->raw_input_buf` assignment and subsequent use.
-- **Impact:** Crash on OOM during telnet input processing.
+- `process_input_helper()` now returns early if `alloc_lbuf("process_input.raw")` fails, avoiding a null dereference on `d->raw_input_buf`.
 
-### Missing null check after `MEMALLOC()` for ttype
+### ~~Missing null check after `MEMALLOC()` for ttype~~ FIXED
 
 - **File:** `mux/src/telnet.cpp:1095-1096, 1487-1488`
-- **Issue:** `MEMALLOC(nTermType+1)` and `MEMALLOC(nClient+1)` results not checked before `memcpy()` in TTYPE and GMCP handlers respectively.
-- **Impact:** Crash on OOM during telnet negotiation.
+- The TTYPE and GMCP handlers now skip the `memcpy()` when `MEMALLOC()` fails, leaving `d->ttype` null instead of dereferencing it.
 
 ## High — Buffer Safety & Static Buffer Risks
 

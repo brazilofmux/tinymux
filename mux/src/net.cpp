@@ -3315,6 +3315,12 @@ void load_restart_db(void)
                     nBufferUnicode = LBUF_SIZE - 1;
                 }
                 d->output_prefix = alloc_lbuf("set_userstring");
+                if (nullptr == d->output_prefix)
+                {
+                    mux_fclose(f);
+                    g_restarting = false;
+                    return;
+                }
                 memcpy(d->output_prefix, pBufferUnicode, nBufferUnicode);
                 d->output_prefix[nBufferUnicode] = '\0';
             }
@@ -3333,6 +3339,12 @@ void load_restart_db(void)
                     nBufferUnicode = LBUF_SIZE - 1;
                 }
                 d->output_suffix = alloc_lbuf("set_userstring");
+                if (nullptr == d->output_suffix)
+                {
+                    mux_fclose(f);
+                    g_restarting = false;
+                    return;
+                }
                 memcpy(d->output_suffix, pBufferUnicode, nBufferUnicode);
                 d->output_suffix[nBufferUnicode] = '\0';
             }

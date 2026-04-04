@@ -604,6 +604,10 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
     if (!d->raw_input_buf)
     {
         d->raw_input_buf = alloc_lbuf("process_input.raw");
+        if (!d->raw_input_buf)
+        {
+            return;
+        }
         d->raw_input_at = d->raw_input_buf;
     }
 
@@ -1093,6 +1097,10 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                 d->ttype = nullptr;
                             }
                             d->ttype = static_cast<UTF8 *>(MEMALLOC(nTermType+1));
+                            if (nullptr == d->ttype)
+                            {
+                                break;
+                            }
                             memcpy(d->ttype, pTermType, nTermType);
                             d->ttype[nTermType] = '\0';
 
@@ -1490,6 +1498,10 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                             d->ttype = nullptr;
                                         }
                                         d->ttype = static_cast<UTF8 *>(MEMALLOC(nClient + 1));
+                                        if (nullptr == d->ttype)
+                                        {
+                                            break;
+                                        }
                                         memcpy(d->ttype, found, nClient);
                                         d->ttype[nClient] = '\0';
                                     }
