@@ -34,6 +34,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `mux-2.14.0.[x-1]-2.14.0.x.unix.patch.gz` - Patch from previous version
   - Each file has a corresponding .sha256 checksum file
 
+## Generated Files — DO NOT EDIT
+See [`docs/generated-files.md`](docs/generated-files.md) for the full map of generated files and their sources.
+Ragel outputs (`art_scan.cpp`, `ast_scan.cpp`, `color_ops.c`, `muxescape.cpp`) are
+made read-only on disk (`chmod a-w`) by their Makefile generation rules. A pre-commit
+hook (`hooks/pre-commit`) blocks commits that include generated output without its source.
+Edit the `.rl`/`.ac`/`.proto` source and regenerate — never hand-edit the output.
+
 ## Code Style Guidelines
 - Indentation: 4 spaces, no tabs
 - Bracing: Opening braces on same line: `if (condition) {`

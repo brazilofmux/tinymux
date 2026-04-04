@@ -31,6 +31,16 @@
 - Use descriptive, subsystem-aware names (`sqlite_backend.*`, `parse.cpp`).
 - Testcase files use lowercase snake case with suffixes like `_fn.mux`.
 
+## Generated Files
+- Do not hand-edit generated files. Edit the source input, then regenerate the output.
+- Treat generated outputs as derived artifacts during review: if one changes, check that the corresponding source/regeneration change is present in the same diff.
+- Follow [docs/generated-files.md](docs/generated-files.md) for the current generated-file map and regeneration guidance.
+- Key examples:
+  - Ragel outputs: edit `*.rl`, then regenerate.
+  - Unicode tables: edit inputs under `utf/`, then rebuild the generated tables.
+  - Autoconf output: edit `mux/configure.ac`, then run `autoconf`.
+  - Protobuf output: edit `mux/proxy/hydra.proto`, then rerun `protoc`.
+
 ## Testing Guidelines
 - Run targeted tests for changed areas first (`db/`, `parser/`), then run smoke tests for behavioral changes.
 - Add/update `.mux` coverage in `testcases/` when changing parser/evaluator behavior.

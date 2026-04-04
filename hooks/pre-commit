@@ -1,0 +1,74 @@
+#!/bin/bash
+#
+# Pre-commit hook: warn when committing generated files without their sources.
+# This catches the common mistake of editing generated output instead of the
+# real source (e.g., editing art_scan.cpp instead of art_scan.rl).
+#
+
+# Map: generated-file → source-file (or source-prefix for directory matches)
+declare -A GENERATED=(
+    # Ragel scanners
+    ["mux/modules/engine/art_scan.cpp"]="mux/modules/engine/art_scan.rl"
+    ["mux/modules/engine/ast_scan.cpp"]="mux/modules/engine/ast_scan.rl"
+    ["mux/lib/color_ops.c"]="mux/lib/color_ops.rl"
+    ["mux/muxescape/muxescape.cpp"]="mux/muxescape/muxescape.rl"
+
+    # Unicode tables (source is the utf/ pipeline, not a single file)
+    ["mux/include/utf8tables.h"]="utf/"
+    ["mux/lib/utf8tables.cpp"]="utf/"
+    ["mux/include/unicode_tables_c.h"]="utf/"
+    ["mux/lib/unicode_tables.c"]="utf/"
+    ["mux/include/ducet_cetable.h"]="utf/"
+    ["mux/rv64/src/unicode_tables.c"]="utf/"
+
+    # Autoconf
+    ["mux/configure"]="mux/configure.ac"
+    ["mux/aclocal.m4"]="mux/configure.ac"
+
+    # Protocol Buffers
+    ["client/console/src/hydra.pb.h"]="mux/proxy/hydra.proto"
+    ["client/console/src/hydra.pb.cc"]="mux/proxy/hydra.proto"
+    ["client/console/src/hydra.grpc.pb.h"]="mux/proxy/hydra.proto"
+    ["client/console/src/hydra.grpc.pb.cc"]="mux/proxy/hydra.proto"
+    ["client/win32gui/src/hydra.pb.h"]="mux/proxy/hydra.proto"
+    ["client/win32gui/src/hydra.pb.cc"]="mux/proxy/hydra.proto"
+    ["client/win32gui/src/hydra.grpc.pb.h"]="mux/proxy/hydra.proto"
+    ["client/win32gui/src/hydra.grpc.pb.cc"]="mux/proxy/hydra.proto"
+    ["client/tf/src/proto/hydra.pb.h"]="mux/proxy/hydra.proto"
+    ["client/tf/src/proto/hydra.pb.cc"]="mux/proxy/hydra.proto"
+    ["client/tf/src/proto/hydra.grpc.pb.h"]="mux/proxy/hydra.proto"
+    ["client/tf/src/proto/hydra.grpc.pb.cc"]="mux/proxy/hydra.proto"
+
+    # SQLite amalgamation (third-party)
+    ["mux/sqlite/sqlite3.c"]="NEVER_EDIT"
+    ["mux/sqlite/sqlite3.h"]="NEVER_EDIT"
+)
+
+staged=$(git diff --cached --name-only)
+warnings=""
+
+for gen in "${!GENERATED[@]}"; do
+    src="${GENERATED[$gen]}"
+    if echo "$staged" | grep -qx "$gen"; then
+        if [ "$src" = "NEVER_EDIT" ]; then
+            # Third-party vendored file — should never be hand-edited
+            warnings="${warnings}  ${gen}  (third-party vendored file — replace, don't edit)\n"
+        elif ! echo "$staged" | grep -q "^${src}"; then
+            # Check if the source is also staged
+            warnings="${warnings}  ${gen}  (source: ${src})\n"
+        fi
+    fi
+done
+
+if [ -n "$warnings" ]; then
+    echo ""
+    echo "WARNING: Generated file(s) staged WITHOUT their source:"
+    echo ""
+    printf "$warnings"
+    echo ""
+    echo "Did you edit a generated file by mistake?"
+    echo "Edit the source and regenerate instead."
+    echo ""
+    echo "To commit anyway:  git commit --no-verify"
+    exit 1
+fi

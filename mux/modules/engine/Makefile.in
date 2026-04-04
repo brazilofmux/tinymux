@@ -505,12 +505,16 @@ engine.so: $(ENGINE_CXX_OBJS) $(top_builddir)/sqlite/libsqlite3.a $(top_builddir
 	    -L$(top_builddir)/lib -lmux \
 	    $(LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
 
-# Ragel scanner generation
+# Ragel scanner generation — output is read-only to prevent accidental edits.
 art_scan.cpp: art_scan.rl art_scan.h
+	chmod u+w $@ 2>/dev/null || true
 	ragel -G2 -o $@ $<
+	chmod a-w $@
 
 ast_scan.cpp: ast_scan.rl $(top_srcdir)/include/ast.h
+	chmod u+w $@ 2>/dev/null || true
 	ragel -G2 -o $@ $<
+	chmod a-w $@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

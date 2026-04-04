@@ -6,10 +6,19 @@
 #   make install      — build + create symlinks in mux/game/bin
 #   make clean        — clean all build artifacts
 #   make test         — run smoke tests (build + install first)
+#   make hooks        — install git hooks (done automatically on first build)
 
-.PHONY: all install clean realclean test
+.PHONY: all install clean realclean test hooks
 
-all:
+# Install git hooks on first build so all developers get protection
+# against accidentally editing generated files.
+hooks:
+	@if git rev-parse --git-dir >/dev/null 2>&1 && [ -d hooks ]; then \
+	    git config core.hooksPath hooks; \
+	    echo "Git hooks installed (core.hooksPath = hooks)"; \
+	fi
+
+all: hooks
 	$(MAKE) -C mux
 
 install: all
