@@ -333,6 +333,156 @@ which database sounds more robust in the abstract. The real issue is
 whether TinyMUX's durability contract remains easy to reason about after
 adding batching, migration, and possibly mirroring.
 
+### Crash Recovery by Option
+
+**Today (SQLite only):**
+
+1. Start the server.
+2. `sqlite3_open()` replays the WAL automatically.
+3. No manual steps.
+
+**Option A (libmdbx authoritative, no SQLite attribute table):**
+
+1. Start the server.
+2. libmdbx opens and self-recovers (copy-on-write B+tree — last
+   committed transaction is always intact, no replay needed).
+3. SQLite opens and WAL-recovers.
+4. No mirror reconciliation needed (but startup orphan scan runs;
+   see below).
+
+This avoids mirror reconciliation, but it does not eliminate cross-store
+consistency concerns. Object identity spans both stores: SQLite owns
+object existence and metadata, libmdbx owns attributes keyed by those
+object ids. After a crash, the following states are possible:
+
+- **Orphaned attributes**: An object was destroyed in SQLite (committed)
+  but its attributes survive in libmdbx (the delete was still in the
+  write batch). Startup must scan for attributes whose dbref no longer
+  exists in the object table and clean them up.
+- **Missing initial attributes**: An object was created in SQLite but
+  the initial attribute writes had not yet been committed to libmdbx.
+  The object exists but has no attributes. This is the same state as a
+  crash between `@create` and the first `&attr` — recoverable by the
+  game operator, not a data corruption issue.
+
+A startup consistency check (scan libmdbx for dbrefs not in `db[]`,
+delete orphans) is required. This is lightweight compared to Option B's
+full mirror reconciliation, but it is not zero.
+
+**Option B (libmdbx authoritative, SQLite mirror):**
+
+1. Start the server.
+2. libmdbx self-recovers.
+3. SQLite WAL-recovers.
+4. The mirrored attribute table in SQLite may be behind libmdbx (last
+   sync point). Startup must re-sync libmdbx → SQLite before `@search`
+   is reliable.
+
+This is materially more complex. The reconciliation step must handle
+interrupted syncs, partial writes, and the possibility that the mirror
+is arbitrarily stale if the previous shutdown was unclean.
+
+Option A avoids this entire problem class.
+
+## Backup
+
+### Current Design
+
+`./Backup` uses SQLite's `.backup` API (`sqlite3 db ".backup dest"`),
+which produces a consistent point-in-time snapshot of the database while
+the server is live. No fork(), no @dump, no server pause. The script
+then bundles the snapshot with config and text files into a tar.gz.
+
+This is clean and correct.
+
+### Impact of libmdbx
+
+With tiered storage, `./Backup` must snapshot two files:
+
+- `netmux.sqlite` (objects, mail, comsys, connlog, metadata)
+- `netmux.mdbx` (attribute data)
+
+The concern is consistency: if the two snapshots are taken at different
+times, the backup could contain attributes for objects that have been
+destroyed (or objects missing attributes that were set between
+snapshots).
+
+**Option A reduces the overlap but does not eliminate the problem.**
+SQLite and libmdbx own different data, but object identity spans both
+stores. Two independent live snapshots do not produce a single atomic
+cut across both stores — they can capture a combination of states that
+never existed simultaneously. This is worse than a crash, which gives
+one ordered failure point; staggered snapshots can splice together pre-
+and post-mutation states from different stores.
+
+Examples of backup inconsistency:
+
+- SQLite snapshot includes a newly created object; libmdbx snapshot was
+  taken moments earlier and does not include its attributes.
+- libmdbx snapshot includes attributes for an object that was destroyed
+  in the SQLite snapshot taken moments later.
+- Pending libmdbx write batches (not yet committed) are invisible to
+  `mdbx_env_copy2()`, while the corresponding object-table updates may
+  already be committed in SQLite.
+
+**Recommended approach:**
+
+1. **Server-assisted backup (recommended).** Add `@backup` or extend
+   `@dump` with a backup mode. The server: flushes the pending libmdbx
+   write batch, calls `mdbx_env_copy2()`, then `sqlite3_backup_*()`,
+   all while the game loop is quiesced between ticks. This produces a
+   logically consistent pair of snapshots. This is the only approach
+   that provides strong restore semantics.
+
+2. **Live snapshot via library APIs (weaker guarantee).** libmdbx
+   provides `mdbx_env_copy2()` for live snapshots; combined with
+   `sqlite3 .backup`, both stores can be snapshotted from the
+   `./Backup` script without server involvement. However, this only
+   captures committed libmdbx state (not pending batches), and the two
+   snapshots are not atomic. The resulting backup is crash-equivalent:
+   it represents a state the server could have reached via unclean
+   shutdown, not necessarily a state that ever existed during normal
+   operation. Restore from such a backup requires the same startup
+   consistency check described in the crash recovery section (orphan
+   scan, missing-attr tolerance).
+
+3. **No fork() reintroduced.** Both `mdbx_env_copy2()` and
+   `sqlite3 .backup` are non-forking operations. The design preserves
+   the current no-fork architecture.
+
+### Updated Backup Script Shape
+
+```sh
+# Phase 1a: Snapshot libmdbx (live-safe)
+mdbx_copy "$DATA/$GAMENAME.mdbx" "$BACKUP_MDBX"
+
+# Phase 1b: Snapshot SQLite (live-safe, WAL-aware)
+sqlite3 "$DATA/$GAMENAME.sqlite" ".backup '$BACKUP_SQLITE'"
+
+# Phase 2: Bundle into tar.gz (same as today)
+tar cf - "$BACKUP_SQLITE" "$BACKUP_MDBX" \
+    "mux.config" "$GAMENAME.conf" $TEXT_FILES \
+    | gzip -9 > "$BACKUP_TAR"
+```
+
+`mdbx_copy` is a utility that ships with libmdbx, analogous to
+`sqlite3 .backup`. Both produce consistent, self-contained copies
+suitable for cold-start restore.
+
+### Restore Procedure
+
+1. Stop the server.
+2. Replace `netmux.sqlite` and `netmux.mdbx` from the backup.
+3. Remove any stale `-wal`, `-shm`, or `-lck` files.
+4. Start the server.
+5. Startup consistency check runs automatically: scan libmdbx for
+   attribute dbrefs not present in `db[]`, delete orphans.
+
+If the backup was produced by a server-assisted snapshot, the
+consistency check should find nothing. If it was produced by
+independent live snapshots, it may clean up a small number of orphaned
+attributes or log objects with missing initial attributes.
+
 ## Configuration
 
 Candidate configuration parameters:
