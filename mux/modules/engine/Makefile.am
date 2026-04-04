@@ -8,7 +8,7 @@
 # Only COM front-door functions are exported (mux_Register, etc.).
 
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdir)/sqlite \
-    -I$(top_srcdir)/lua54 \
+    -I$(top_srcdir)/libmdbx -I$(top_srcdir)/lua54 \
     $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(TINYMUX_JIT) \
     $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(OPENSSL_CFLAGS)
 
@@ -43,12 +43,13 @@ all-local: engine.so
 
 -include $(ENGINE_CXX_OBJS:.eo=.d)
 
-engine.so: $(ENGINE_CXX_OBJS) $(top_builddir)/sqlite/libsqlite3.a $(top_builddir)/lua54/liblua54.a $(top_builddir)/lib/libmux.so
+engine.so: $(ENGINE_CXX_OBJS) $(top_builddir)/sqlite/libsqlite3.a $(top_builddir)/libmdbx/libmdbx.a $(top_builddir)/lua54/liblua54.a $(top_builddir)/lib/libmux.so
 	$(CXX) $(CXXFLAGS) $(DYNAMICLIB_CXXFLAGS) -Wl,--no-undefined \
 	    -Wl,-soname,engine.so \
 	    -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(abs_top_builddir)/lib \
 	    -o $@ $(ENGINE_CXX_OBJS) \
 	    $(top_builddir)/sqlite/libsqlite3.a \
+	    $(top_builddir)/libmdbx/libmdbx.a \
 	    $(top_builddir)/lua54/liblua54.a \
 	    -L$(top_builddir)/lib -lmux \
 	    $(LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)

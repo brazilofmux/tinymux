@@ -173,6 +173,10 @@ lib/utf8_grapheme.cpp
 lib/utf8_normalize.cpp
 lib/unicode_tables.c
 lib/utf8tables.cpp
+libmdbx/LICENSE
+libmdbx/Makefile.am
+libmdbx/mdbx.c
+libmdbx/mdbx.h
 libmux.vcxproj
 libmux.vcxproj.filters
 LOCAL.md

@@ -14,14 +14,10 @@
 
 @SET_MAKE@
 
-# Makefile.am for engine.so
+# Makefile.am for libmdbx amalgamation
 #
-# Game logic shared library.  These files have no #include "interface.h"
-# and no direct DESC access.  They call driver functions through
-# conn_bridge.cpp (COM delegation).
-#
-# -fvisibility=hidden: all symbols hidden unless marked DCL_EXPORT.
-# Only COM front-door functions are exported (mux_Register, etc.).
+# Builds mdbx.o as a convenience library for engine.so.
+
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -96,10 +92,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-
-# Add reality levels if enabled
-@REALITY_ENABLED_TRUE@am__append_1 = levels.cpp
-subdir = modules/engine
+subdir = libmdbx
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_cxx_compile_stdcxx.m4 \
 	$(top_srcdir)/configure.ac
@@ -112,6 +105,17 @@ CONFIG_HEADER = $(top_builddir)/include/autoconf.h \
 	$(top_builddir)/announce/autoconf.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+LIBRARIES = $(noinst_LIBRARIES)
+AR = ar
+ARFLAGS = cru
+AM_V_AR = $(am__v_AR_@AM_V@)
+am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
+am__v_AR_0 = @echo "  AR      " $@;
+am__v_AR_1 = 
+libmdbx_a_AR = $(AR) $(ARFLAGS)
+libmdbx_a_LIBADD =
+am_libmdbx_a_OBJECTS = libmdbx_a-mdbx.$(OBJEXT)
+libmdbx_a_OBJECTS = $(am_libmdbx_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -124,15 +128,52 @@ AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
-SOURCES =
-DIST_SOURCES =
+DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include -I$(top_builddir)/modules -I$(top_builddir)/announce
+depcomp = $(SHELL) $(top_srcdir)/depcomp
+am__maybe_remake_depfiles = depfiles
+am__depfiles_remade = ./$(DEPDIR)/libmdbx_a-mdbx.Po
+am__mv = mv -f
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+AM_V_CC = $(am__v_CC_@AM_V@)
+am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
+am__v_CC_0 = @echo "  CC      " $@;
+am__v_CC_1 = 
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CCLD = $(am__v_CCLD_@AM_V@)
+am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
+am__v_CCLD_0 = @echo "  CCLD    " $@;
+am__v_CCLD_1 = 
+SOURCES = $(libmdbx_a_SOURCES)
+DIST_SOURCES = $(libmdbx_a_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
-am__DIST_COMMON = $(srcdir)/Makefile.in
+# Read a list of newline-separated strings from the standard input,
+# and print each of them once, without duplicates.  Input order is
+# *not* preserved.
+am__uniquify_input = $(AWK) '\
+  BEGIN { nonempty = 0; } \
+  { items[$$0] = 1; nonempty = 1; } \
+  END { if (nonempty) { for (i in items) print i; }; } \
+'
+# Make sure the list of sources is unique.  This is necessary because,
+# e.g., the same source file might be shared among _SOURCES variables
+# for different programs/libraries.
+am__define_uniq_tagged_files = \
+  list='$(am__tagged_files)'; \
+  unique=`for i in $$list; do \
+    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+  done | $(am__uniquify_input)`
+am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -268,35 +309,13 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdir)/sqlite \
-    -I$(top_srcdir)/libmdbx -I$(top_srcdir)/lua54 \
-    $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(TINYMUX_JIT) \
-    $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(OPENSSL_CFLAGS)
-
-
-# SQLite storage backend (always enabled)
-ENGINE_CXX_SRC = art_scan.cpp ast.cpp ast_scan.cpp attrcache.cpp \
-	boolexp.cpp command.cpp comsys.cpp conf.cpp conn_bridge.cpp \
-	cque.cpp create.cpp cron.cpp db.cpp db_rw.cpp engine.cpp \
-	engine_com.cpp eval.cpp file_c.cpp flags.cpp funceval.cpp \
-	funceval2.cpp functions.cpp funmath.cpp funcweb.cpp help.cpp \
-	htab.cpp local.cpp log.cpp look.cpp mail.cpp match.cpp \
-	mguests.cpp move.cpp object.cpp predicates.cpp player.cpp \
-	player_c.cpp routing.cpp plusemail.cpp powers.cpp quota.cpp \
-	rob.cpp set.cpp dbt.cpp @DBT_BACKEND@.cpp hir_lower.cpp \
-	hir_codegen.cpp jit_compiler.cpp dbt_interp.cpp dbt_elf64.cpp \
-	hir_ssa.cpp hir_opt.cpp lua_bytecode.cpp hir_lower_lua.cpp \
-	jit_lua.cpp lua_mod.cpp session.cpp speech.cpp timer.cpp \
-	walk.cpp unparse.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp \
-	$(am__append_1) sqlitedb.cpp sqlite_backend.cpp
-ENGINE_CXX_OBJS = $(ENGINE_CXX_SRC:.cpp=.eo)
-BUILT_SOURCES = art_scan.cpp ast_scan.cpp
-CLEANFILES = engine.so *.eo *.d
-EXTRA_DIST = art_scan.rl ast_scan.rl $(ENGINE_CXX_SRC)
-all: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) all-am
+noinst_LIBRARIES = libmdbx.a
+libmdbx_a_SOURCES = mdbx.c
+libmdbx_a_CFLAGS = $(AM_CFLAGS) -fPIC -fvisibility=hidden -std=gnu11
+all: all-am
 
 .SUFFIXES:
+.SUFFIXES: .c .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -306,9 +325,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign modules/engine/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign libmdbx/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign modules/engine/Makefile
+	  $(AUTOMAKE) --foreign libmdbx/Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \
@@ -326,12 +345,110 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-tags TAGS:
 
-ctags CTAGS:
+clean-noinstLIBRARIES:
+	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
 
-cscope cscopelist:
+libmdbx.a: $(libmdbx_a_OBJECTS) $(libmdbx_a_DEPENDENCIES) $(EXTRA_libmdbx_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libmdbx.a
+	$(AM_V_AR)$(libmdbx_a_AR) libmdbx.a $(libmdbx_a_OBJECTS) $(libmdbx_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libmdbx.a
 
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmdbx_a-mdbx.Po@am__quote@ # am--include-marker
+
+$(am__depfiles_remade):
+	@$(MKDIR_P) $(@D)
+	@echo '# dummy' >$@-t && $(am__mv) $@-t $@
+
+am--depfiles: $(am__depfiles_remade)
+
+.c.o:
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
+
+.c.obj:
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+libmdbx_a-mdbx.o: mdbx.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmdbx_a_CFLAGS) $(CFLAGS) -MT libmdbx_a-mdbx.o -MD -MP -MF $(DEPDIR)/libmdbx_a-mdbx.Tpo -c -o libmdbx_a-mdbx.o `test -f 'mdbx.c' || echo '$(srcdir)/'`mdbx.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libmdbx_a-mdbx.Tpo $(DEPDIR)/libmdbx_a-mdbx.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mdbx.c' object='libmdbx_a-mdbx.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmdbx_a_CFLAGS) $(CFLAGS) -c -o libmdbx_a-mdbx.o `test -f 'mdbx.c' || echo '$(srcdir)/'`mdbx.c
+
+libmdbx_a-mdbx.obj: mdbx.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmdbx_a_CFLAGS) $(CFLAGS) -MT libmdbx_a-mdbx.obj -MD -MP -MF $(DEPDIR)/libmdbx_a-mdbx.Tpo -c -o libmdbx_a-mdbx.obj `if test -f 'mdbx.c'; then $(CYGPATH_W) 'mdbx.c'; else $(CYGPATH_W) '$(srcdir)/mdbx.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libmdbx_a-mdbx.Tpo $(DEPDIR)/libmdbx_a-mdbx.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mdbx.c' object='libmdbx_a-mdbx.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmdbx_a_CFLAGS) $(CFLAGS) -c -o libmdbx_a-mdbx.obj `if test -f 'mdbx.c'; then $(CYGPATH_W) 'mdbx.c'; else $(CYGPATH_W) '$(srcdir)/mdbx.c'; fi`
+
+ID: $(am__tagged_files)
+	$(am__define_uniq_tagged_files); mkid -fID $$unique
+tags: tags-am
+TAGS: tags
+
+tags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
+	set x; \
+	here=`pwd`; \
+	$(am__define_uniq_tagged_files); \
+	shift; \
+	if test -z "$(ETAGS_ARGS)$$*$$unique"; then :; else \
+	  test -n "$$unique" || unique=$$empty_fix; \
+	  if test $$# -gt 0; then \
+	    $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
+	      "$$@" $$unique; \
+	  else \
+	    $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
+	      $$unique; \
+	  fi; \
+	fi
+ctags: ctags-am
+
+CTAGS: ctags
+ctags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
+	$(am__define_uniq_tagged_files); \
+	test -z "$(CTAGS_ARGS)$$unique" \
+	  || $(CTAGS) $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
+	     $$unique
+
+GTAGS:
+	here=`$(am__cd) $(top_builddir) && pwd` \
+	  && $(am__cd) $(top_srcdir) \
+	  && gtags -i $(GTAGS_ARGS) "$$here"
+cscopelist: cscopelist-am
+
+cscopelist-am: $(am__tagged_files)
+	list='$(am__tagged_files)'; \
+	case "$(srcdir)" in \
+	  [\\/]* | ?:[\\/]*) sdir="$(srcdir)" ;; \
+	  *) sdir=$(subdir)/$(srcdir) ;; \
+	esac; \
+	for i in $$list; do \
+	  if test -f "$$i"; then \
+	    echo "$(subdir)/$$i"; \
+	  else \
+	    echo "$$sdir/$$i"; \
+	  fi; \
+	done >> $(top_builddir)/cscope.files
+
+distclean-tags:
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 distdir: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) distdir-am
 
@@ -366,14 +483,11 @@ distdir-am: $(DISTFILES)
 	  fi; \
 	done
 check-am: all-am
-check: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) check-am
-all-am: Makefile all-local
+check: check-am
+all-am: Makefile $(LIBRARIES)
 installdirs:
-install: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) install-am
-install-exec: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) install-exec-am
+install: install-am
+install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
 
@@ -394,7 +508,6 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -403,14 +516,15 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-noinstLIBRARIES mostlyclean-am
 
 distclean: distclean-am
+		-rm -f ./$(DEPDIR)/libmdbx_a-mdbx.Po
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-tags
 
 dvi: dvi-am
 
@@ -453,12 +567,13 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
+		-rm -f ./$(DEPDIR)/libmdbx_a-mdbx.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 pdf: pdf-am
 
@@ -470,52 +585,23 @@ ps-am:
 
 uninstall-am:
 
-.MAKE: all check install install-am install-exec install-strip
+.MAKE: install-am install-strip
 
-.PHONY: all all-am all-local check check-am clean clean-generic \
-	cscopelist-am ctags-am distclean distclean-generic distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-man install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
-	pdf-am ps ps-am tags-am uninstall uninstall-am
+.PHONY: CTAGS GTAGS TAGS all all-am am--depfiles check check-am clean \
+	clean-generic clean-noinstLIBRARIES cscopelist-am ctags \
+	ctags-am distclean distclean-compile distclean-generic \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am
 
 .PRECIOUS: Makefile
 
-
-all-local: engine.so
-
-# Engine uses .eo suffix to distinguish from libmux's .lo objects.
-# -MMD -MF generates per-object dependency files for header tracking.
-%.eo: %.cpp
-	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -fvisibility=hidden -MMD -MF $(@:.eo=.d) -c -o $@ $<
-
--include $(ENGINE_CXX_OBJS:.eo=.d)
-
-engine.so: $(ENGINE_CXX_OBJS) $(top_builddir)/sqlite/libsqlite3.a $(top_builddir)/libmdbx/libmdbx.a $(top_builddir)/lua54/liblua54.a $(top_builddir)/lib/libmux.so
-	$(CXX) $(CXXFLAGS) $(DYNAMICLIB_CXXFLAGS) -Wl,--no-undefined \
-	    -Wl,-soname,engine.so \
-	    -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(abs_top_builddir)/lib \
-	    -o $@ $(ENGINE_CXX_OBJS) \
-	    $(top_builddir)/sqlite/libsqlite3.a \
-	    $(top_builddir)/libmdbx/libmdbx.a \
-	    $(top_builddir)/lua54/liblua54.a \
-	    -L$(top_builddir)/lib -lmux \
-	    $(LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
-
-# Ragel scanner generation — output is read-only to prevent accidental edits.
-art_scan.cpp: art_scan.rl art_scan.h
-	chmod u+w $@ 2>/dev/null || true
-	ragel -G2 -o $@ $<
-	chmod a-w $@
-
-ast_scan.cpp: ast_scan.rl $(top_srcdir)/include/ast.h
-	chmod u+w $@ 2>/dev/null || true
-	ragel -G2 -o $@ $<
-	chmod a-w $@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
