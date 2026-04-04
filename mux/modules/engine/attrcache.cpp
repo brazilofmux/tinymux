@@ -71,6 +71,7 @@ static const size_t WRITE_QUEUE_THRESHOLD = 50;
 //
 void cache_flush_writes(void);
 static void trim_attribute_cache(void);
+static bool cache_obj_preloaded(dbref obj, bool bAll);
 
 static void Task_WriteQueueFlush(void *pUnused, int iUnused)
 {
@@ -295,6 +296,8 @@ int cache_init(const UTF8 *indb)
     }
 
     cache_initted = true;
+    mudstate.attribute_preloaded_builtin_objects.clear();
+    mudstate.attribute_preloaded_all_objects.clear();
 
     return bNewDatabase ? HF_OPEN_STATUS_NEW : HF_OPEN_STATUS_OLD;
 }
@@ -308,6 +311,8 @@ void cache_close(void)
         delete g_pSQLiteBackend;
         g_pSQLiteBackend = nullptr;
     }
+    mudstate.attribute_preloaded_builtin_objects.clear();
+    mudstate.attribute_preloaded_all_objects.clear();
     cache_initted = false;
 }
 
@@ -347,6 +352,24 @@ static void trim_attribute_cache(void)
         mudstate.attribute_lru_cache_map.erase(it);
         mudstate.attribute_lru_cache_list.pop_front();
     }
+}
+
+static bool cache_obj_preloaded(dbref obj, bool bAll)
+{
+    if (mudstate.attribute_preloaded_all_objects.find(obj)
+        != mudstate.attribute_preloaded_all_objects.end())
+    {
+        return true;
+    }
+
+    if (!bAll
+        && mudstate.attribute_preloaded_builtin_objects.find(obj)
+            != mudstate.attribute_preloaded_builtin_objects.end())
+    {
+        return true;
+    }
+
+    return false;
 }
 
 const UTF8 *cache_get(Aname *nam, size_t *pLen, dbref *owner, int *flags)
@@ -403,7 +426,8 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen, dbref *owner, int *flags)
     // 2 individual Gets (~3.6 us each), and most code that touches
     // one attribute on an object will touch more.
     //
-    if (!mudstate.bStandAlone)
+    if (!mudstate.bStandAlone
+        && !cache_obj_preloaded(static_cast<dbref>(nam->object), true))
     {
         cache_preload_obj(static_cast<dbref>(nam->object), true);
 
@@ -674,6 +698,11 @@ void cache_preload_obj(dbref obj, bool bAll)
         return;
     }
 
+    if (cache_obj_preloaded(obj, bAll))
+    {
+        return;
+    }
+
     auto loader = [obj](unsigned int attrnum, const UTF8 *value, size_t len,
                         int db_owner, int db_flags)
     {
@@ -715,6 +744,17 @@ void cache_preload_obj(dbref obj, bool bAll)
     if (!ok)
     {
         Log.tinyprintf(T("cache_preload: failed bulk preload for #%d" ENDLINE), obj);
+        return;
+    }
+
+    if (bAll)
+    {
+        mudstate.attribute_preloaded_all_objects.insert(obj);
+        mudstate.attribute_preloaded_builtin_objects.insert(obj);
+    }
+    else
+    {
+        mudstate.attribute_preloaded_builtin_objects.insert(obj);
     }
 
     trim_attribute_cache();

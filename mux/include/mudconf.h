@@ -8,6 +8,7 @@
 
 #include <set>
 #include <stack>
+#include <unordered_set>
 #include <vector>
 
 struct PRONOUN_SET
@@ -569,6 +570,8 @@ struct statedata
     std::list<Aname> attribute_lru_cache_list;   // Evictable (clean) entries.
     std::list<Aname> attribute_pinned_list;       // Dirty entries; not evictable.
     std::unordered_map<Aname, AttrCacheEntry, AnameHasher> attribute_lru_cache_map;
+    std::unordered_set<dbref, dbrefHasher> attribute_preloaded_builtin_objects;
+    std::unordered_set<dbref, dbrefHasher> attribute_preloaded_all_objects;
     std::unordered_map<std::vector<UTF8>, ATTR*, VectorHasher> builtin_attribute_names; /* Attribute names hashtable */
     std::map<std::vector<UTF8>, struct channel*> channel_names; /* Channels hashtable */
     StringPtrMap command_htab;  /* Commands hashtable */
