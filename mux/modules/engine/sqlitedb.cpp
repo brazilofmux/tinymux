@@ -606,8 +606,6 @@ bool CSQLiteDB::MigrateSchema()
 
     if (version < 8)
     {
-        fprintf(stderr, "CSQLiteDB::MigrateSchema: upgraded to schema version 8.\n");
-
         const char *migration_v8 =
             "BEGIN;"
             "ALTER TABLE attributes ADD COLUMN mod_count INTEGER NOT NULL DEFAULT 0;"
@@ -624,8 +622,6 @@ bool CSQLiteDB::MigrateSchema()
 
     if (version < 9)
     {
-        fprintf(stderr, "CSQLiteDB::MigrateSchema: upgraded to schema version 9.\n");
-
         const char *migration_v9 =
             "BEGIN;"
             "ALTER TABLE code_cache ADD COLUMN deps_blob BLOB NOT NULL DEFAULT x'';"

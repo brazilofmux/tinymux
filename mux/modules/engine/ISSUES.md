@@ -68,8 +68,5 @@ Updated: 2026-04-04
 - **Issue:** `ast_noeval_ulambda()` bypasses the JIT compiler because the JIT does not currently support dynamically-provided `cargs`.
 - **Impact:** Reduced performance for complex anonymous functions evaluated via `ulambda()`.
 
-### `MigrateSchema()` logs versions 8 and 9 as "upgraded" before the migration succeeds
-- **File:** `mux/modules/engine/sqlitedb.cpp:362`, `mux/modules/engine/sqlitedb.cpp:607-628`
-- **Issue:** `RunMigration()` already prints the success message after `sqlite3_exec()` completes, but `MigrateSchema()` emits extra `fprintf()` calls for versions 8 and 9 before running the migration. If either migration fails, stderr still claims the upgrade succeeded. Even on success, the message is duplicated.
-- **Impact:** Misleading migration logs make operational debugging harder and polluted the standalone DB test output with duplicate `version 8` and `version 9` lines on every fresh in-memory database open.
-- **Recommendation:** Remove the pre-success `fprintf()` calls from the v8/v9 branches and let `RunMigration()` own success logging consistently.
+### ~~`MigrateSchema()` logs versions 8 and 9 as "upgraded" before the migration succeeds~~ FIXED
+- Removed the pre-success `fprintf()` calls from the v8/v9 branches so `RunMigration()` is the single source of success logging. Reverified with `make -C tests/db test`; schema versions 8 and 9 now log once per fresh database open.
