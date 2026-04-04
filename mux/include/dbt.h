@@ -13,6 +13,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <unordered_map>
 #include <vector>
 
 // Return Address Stack for call/return prediction.
@@ -110,6 +111,7 @@ struct dbt_state_t {
     // Block chaining patch sites.
     //
     std::vector<patch_site_t> patches;
+    std::unordered_map<uint64_t, std::vector<size_t>> pending_patch_targets;
 
     // Statistics.
     //

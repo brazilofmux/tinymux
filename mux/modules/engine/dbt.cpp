@@ -145,14 +145,19 @@ void dbt_cache_insert(dbt_state_t *dbt, uint64_t pc, uint8_t *code) {
 //
 void dbt_backpatch_chains(dbt_state_t *dbt, uint64_t guest_pc,
                            uint8_t *native_code) {
-    for (size_t i = 0; i < dbt->patches.size(); i++) {
-        if (dbt->patches[i].target_pc == guest_pc) {
-            dbt_backend_backpatch_jmp(dbt->code_buf,
-                                       dbt->patches[i].jmp_offset,
-                                       native_code);
-            dbt->chain_hits++;
-        }
+    const auto it = dbt->pending_patch_targets.find(guest_pc);
+    if (it == dbt->pending_patch_targets.end()) {
+        return;
     }
+
+    for (size_t patch_index : it->second) {
+        dbt_backend_backpatch_jmp(dbt->code_buf,
+                                   dbt->patches[patch_index].jmp_offset,
+                                   native_code);
+        dbt->chain_hits++;
+    }
+
+    dbt->pending_patch_targets.erase(it);
 }
 
 // ---------------------------------------------------------------
@@ -212,6 +217,7 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
             }
         }
         dbt->patches.clear();
+        dbt->pending_patch_targets.clear();
         dbt->code_used = dbt->blob_code_end;
 
         // Optional NOP sled for alignment experiments.
@@ -254,6 +260,7 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
             entry = {};
         }
         dbt->patches.clear();
+        dbt->pending_patch_targets.clear();
         dbt->code_used = 0;
         dbt_backend_emit_trampoline(dbt);
         dbt->num_intrinsics = 0;
@@ -435,6 +442,7 @@ void dbt_resolve_chains(dbt_state_t *dbt) {
         uint32_t cur_target = jmp_off + 4 + static_cast<uint32_t>(cur_disp);
 
         if (cur_target != dbt->patches[i].stub_offset) {
+            dbt->pending_patch_targets.erase(target);
             already_ok++;
             continue;  // already resolved by backpatch_chains
         }
@@ -445,6 +453,7 @@ void dbt_resolve_chains(dbt_state_t *dbt) {
                                        be->native_code);
             dbt->chain_hits++;
             resolved++;
+            dbt->pending_patch_targets.erase(target);
         } else {
             unresolvable++;
             dbt_trace_translate(dbt, "unresolved chain: target=0x%llX",
@@ -639,4 +648,5 @@ void dbt_cleanup(dbt_state_t *dbt) {
     dbt->cache.shrink_to_fit();
     dbt->patches.clear();
     dbt->patches.shrink_to_fit();
+    dbt->pending_patch_targets.clear();
 }

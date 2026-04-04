@@ -673,7 +673,9 @@ static void emit_exit_chained(emit_t *e, dbt_state_t *dbt,
         emit_patch_b26(e, b_patch, stub_pos);
 
         uint32_t stub_abs = static_cast<uint32_t>(e->buf - dbt->code_buf) + stub_pos;
+        size_t patch_index = dbt->patches.size();
         dbt->patches.push_back(patch_site_t{abs_offset, stub_abs, target_pc});
+        dbt->pending_patch_targets[target_pc].push_back(patch_index);
         dbt->chain_misses++;
         emit_exit_with_pc(e, target_pc);
     }
