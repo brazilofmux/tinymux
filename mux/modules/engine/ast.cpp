@@ -1852,11 +1852,18 @@ static void ast_emit_literal_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bu
 {
     safe_str(reinterpret_cast<const UTF8 *>(node->text.c_str()), buff, bufc);
     safe_chr('(', buff, bufc);
+
+    // The function name did not resolve — this is not a real function call.
+    // Strip EV_FCHECK so that nested FUNCCALL children are emitted as
+    // literal text, matching the classic evaluator's behavior where a
+    // failed function-call check consumes the FCHECK opportunity.
+    //
+    int childEval = eval & ~EV_FCHECK;
     for (size_t i = 0; i < node->children.size(); i++)
     {
         if (i > 0) safe_chr(',', buff, bufc);
         ast_eval_node(node->children[i].get(), buff, bufc,
-            executor, caller, enactor, eval, cargs, ncargs);
+            executor, caller, enactor, childEval, cargs, ncargs);
     }
     safe_chr(')', buff, bufc);
 }

@@ -1,0 +1,285 @@
+#
+# search_eval_fn.mux - Test Cases for search() with eval= predicates.
+#
+# These tests exercise the attribute-reading path through search(),
+# which uses mux_exec() -> cache_get() -> IStorageBackend.  They
+# validate Stage 4 of the tiered storage design: @search works
+# identically regardless of which attribute backend is active.
+#
+# NOTE: ## inside search() eval expressions must be escaped as \#\#
+# so the outer mux_exec() passes literal ## to search_perform's
+# inner evaluation.
+#
+@create test_search_eval_fn
+-
+@set test_search_eval_fn=INHERIT QUIET WIZARD
+-
+#
+# Create persistent fixture objects for all test cases.
+# These are created during upload, not inside triggered attrs.
+#
+@create se_apple1
+-
+@create se_apple2
+-
+@create se_nonapple
+-
+&marker se_apple1=apple
+-
+&marker se_apple2=apple
+-
+&marker se_nonapple=banana
+-
+@create se_tagged1
+-
+@create se_tagged2
+-
+@create se_untagged
+-
+&searchme se_tagged1=yes
+-
+&searchme se_tagged2=yes
+-
+@create se_neg1
+-
+@create se_neg2
+-
+&flavor se_neg1=vanilla
+-
+&flavor se_neg2=chocolate
+-
+@create se_wild1
+-
+@create se_wild2
+-
+@create se_wild3
+-
+&tag se_wild1=color:red
+-
+&tag se_wild2=color:blue
+-
+&tag se_wild3=size:large
+-
+@create se_num1
+-
+@create se_num2
+-
+@create se_num3
+-
+&score se_num1=50
+-
+&score se_num2=150
+-
+&score se_num3=200
+-
+@create se_multi1
+-
+@create se_multi2
+-
+@create se_multi3
+-
+&color se_multi1=red
+-
+&shape se_multi1=circle
+-
+&color se_multi2=red
+-
+&shape se_multi2=square
+-
+&color se_multi3=blue
+-
+&shape se_multi3=circle
+-
+@create se_clear1
+-
+@create se_clear2
+-
+&ephemeral se_clear1=present
+-
+&ephemeral se_clear2=present
+-
+&ephemeral se_clear1
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_search_eval_fn=
+  @log smoke=Beginning search() eval= test cases.
+-
+#
+# Test Case #1 - eval= with get(): find objects by attribute value.
+#
+&tr.tc001 test_search_eval_fn=
+  @if eq(
+        words(
+          search(eobject=strmatch(get(\#\#/marker),apple))
+        ),
+        2
+      )=
+  {
+    @log smoke=TC001: search eval get attribute. Succeeded.
+  },
+  {
+    @log smoke=TC001: search eval get attribute. Failed
+      (got [words(search(eobject=strmatch(get(\#\#/marker),apple)))] \
+      expected 2).
+  }
+-
+#
+# Test Case #2 - eval= with hasattr(): find objects that have
+# a specific attribute set.
+#
+&tr.tc002 test_search_eval_fn=
+  @if eq(
+        words(
+          search(eobject=hasattr(\#\#,searchme))
+        ),
+        2
+      )=
+  {
+    @log smoke=TC002: search eval hasattr. Succeeded.
+  },
+  {
+    @log smoke=TC002: search eval hasattr. Failed
+      (got [words(search(eobject=hasattr(\#\#,searchme)))] \
+      expected 2).
+  }
+-
+#
+# Test Case #3 - eval= negative: no objects match.
+#
+&tr.tc003 test_search_eval_fn=
+  @if eq(
+        words(
+          search(eobject=strmatch(get(\#\#/flavor),strawberry))
+        ),
+        0
+      )=
+  {
+    @log smoke=TC003: search eval no match. Succeeded.
+  },
+  {
+    @log smoke=TC003: search eval no match. Failed
+      (got [words(search(eobject=strmatch(get(\#\#/flavor),strawberry)))] \
+      expected 0).
+  }
+-
+#
+# Test Case #4 - eval= with wildcard pattern in attribute value.
+#
+&tr.tc004 test_search_eval_fn=
+  @if eq(
+        words(
+          search(eobject=strmatch(get(\#\#/tag),color:*))
+        ),
+        2
+      )=
+  {
+    @log smoke=TC004: search eval wildcard. Succeeded.
+  },
+  {
+    @log smoke=TC004: search eval wildcard. Failed
+      (got [words(search(eobject=strmatch(get(\#\#/tag),color:*)))] \
+      expected 2).
+  }
+-
+#
+# Test Case #5 - eval= with numeric comparison on attribute.
+#
+&tr.tc005 test_search_eval_fn=
+  @if eq(
+        words(
+          search(eobject=gt(get(\#\#/score),100))
+        ),
+        2
+      )=
+  {
+    @log smoke=TC005: search eval numeric compare. Succeeded.
+  },
+  {
+    @log smoke=TC005: search eval numeric compare. Failed
+      (got [words(search(eobject=gt(get(\#\#/score),100)))] \
+      expected 2).
+  }
+-
+#
+# Test Case #6 - eval= with multiple attribute checks (cand).
+#
+&tr.tc006 test_search_eval_fn=
+  @if eq(
+        words(
+          search(eobject=cand(
+            strmatch(get(\#\#/color),red),
+            strmatch(get(\#\#/shape),circle)
+          ))
+        ),
+        1
+      )=
+  {
+    @log smoke=TC006: search eval multi-attr cand. Succeeded.
+  },
+  {
+    @log smoke=TC006: search eval multi-attr cand. Failed
+      (got [words(search(eobject=cand(strmatch(get(\#\#/color),red),strmatch(get(\#\#/shape),circle))))] \
+      expected 1).
+  }
+-
+#
+# Test Case #7 - eval= with attribute set then cleared.
+# Object had an attribute, it was wiped.  search should not find it.
+#
+&tr.tc007 test_search_eval_fn=
+  @if eq(
+        words(
+          search(eobject=hasattr(\#\#,ephemeral))
+        ),
+        1
+      )=
+  {
+    @log smoke=TC007: search eval cleared attr. Succeeded.
+  },
+  {
+    @log smoke=TC007: search eval cleared attr. Failed
+      (got [words(search(eobject=hasattr(\#\#,ephemeral)))] \
+      expected 1).
+  }
+-
+#
+# Test Case #8 - eval= plain (no type restriction) searches
+# all types.  Uses a unique attribute name unlikely to appear
+# elsewhere.
+#
+&tr.tc008 test_search_eval_fn=
+  @if eq(
+        words(
+          search(eval=hasattr(\#\#,marker))
+        ),
+        3
+      )=
+  {
+    @log smoke=TC008: search eval all types. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC008: search eval all types. Failed
+      (got [words(search(eval=hasattr(\#\#,marker)))] \
+      expected 3).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_search_eval_fn=
+  @log smoke=End search() eval= test cases.;
+  @dolist se_apple1 se_apple2 se_nonapple \
+    se_tagged1 se_tagged2 se_untagged \
+    se_neg1 se_neg2 \
+    se_wild1 se_wild2 se_wild3 \
+    se_num1 se_num2 se_num3 \
+    se_multi1 se_multi2 se_multi3 \
+    se_clear1 se_clear2=@destroy \#\#;
+  @notify smoke
+-
+drop test_search_eval_fn
+-
+#
+# End of Test Cases
+#
