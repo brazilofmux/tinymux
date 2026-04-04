@@ -718,6 +718,7 @@ void Connection::start_log(const std::string& path) {
     log_fp = fopen(path.c_str(), "a");
     if (log_fp) {
         log_file = path;
+        log_count = 0;
     }
 }
 
@@ -727,11 +728,13 @@ void Connection::stop_log() {
         log_fp = nullptr;
     }
     log_file.clear();
+    log_count = 0;
 }
 
 void Connection::log_line(const std::string& line) {
     if (log_fp) {
         fprintf(log_fp, "%s\n", line.c_str());
         fflush(log_fp);
+        ++log_count;
     }
 }

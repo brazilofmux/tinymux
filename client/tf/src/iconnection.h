@@ -56,19 +56,29 @@ public:
     // Per-world logging
     std::string log_file;
     FILE* log_fp = nullptr;
+    size_t log_count = 0;
 
     virtual void start_log(const std::string& path) {
         stop_log();
         log_fp = fopen(path.c_str(), "a");
-        if (log_fp) log_file = path;
+        if (log_fp) {
+            log_file = path;
+            log_count = 0;
+        }
     }
     virtual void stop_log() {
         if (log_fp) { fclose(log_fp); log_fp = nullptr; }
         log_file.clear();
+        log_count = 0;
     }
     virtual void log_line(const std::string& line) {
-        if (log_fp) { fprintf(log_fp, "%s\n", line.c_str()); fflush(log_fp); }
+        if (log_fp) {
+            fprintf(log_fp, "%s\n", line.c_str());
+            fflush(log_fp);
+            ++log_count;
+        }
     }
+    virtual size_t log_lines() const { return log_count; }
 
     // Restart serialization accessors (defaults for non-telnet transports)
     virtual Charset charset() const { return Charset::UTF8; }

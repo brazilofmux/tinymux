@@ -1104,8 +1104,10 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
             if (a.size() >= 2) return a[1];
             return Value::make_str("");
         }}},
-        {"nlog", {0, 0, [](ScriptEnv&, const std::vector<Value>&) -> Value {
-            // Number of log lines — stub
+        {"nlog", {0, 0, [](ScriptEnv& env, const std::vector<Value>&) -> Value {
+            if (App* app = env.app(); app && app->fg) {
+                return Value::make_int(static_cast<int>(app->fg->log_lines()));
+            }
             return Value::make_int(0);
         }}},
         {"nmail", {0, 0, [](ScriptEnv&, const std::vector<Value>&) -> Value {
