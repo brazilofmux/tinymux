@@ -96,3 +96,57 @@ Updated: 2026-03-27
 ### ~~Telnet state array magic number~~ FIXED
 
 - Added `static constexpr int NVT_TABLE_SIZE = 256` to `descriptor_data` in `interface.h`. All loop bounds in `net.cpp` now use `DESC::NVT_TABLE_SIZE` instead of bare `256`.
+
+## Critical — Buffer Overflows (New, 2026-04-04)
+
+### Buffer overflow in telnet USER environment variable
+
+- **File:** `mux/src/telnet.cpp:1221`
+- **Issue:** The NEW-ENVIRON handler checks `nVarval < sizeof(varval) - 1` (allows up to 1022 bytes), but then does `memcpy(d->username, varval, nVarval + 1)` into `d->username[11]`. A remote client can copy up to 1023 bytes into an 11-byte field via telnet negotiation.
+- **Impact:** Stack corruption, potential remote code execution via crafted telnet NEW-ENVIRON.
+- **Recommendation:** Add `if (nVarval >= sizeof(d->username)) nVarval = sizeof(d->username) - 1;` before the memcpy.
+
+### Unbounded `set_doing_all()` and `set_doing_least_idle()`
+
+- **File:** `mux/src/net.cpp:1080, 1093`
+- **Issue:** Both functions receive a `size_t len` from the engine but do not validate it against `SIZEOF_DOING_STRING` (90 bytes). `memcpy(d->doing, doing, len + 1)` can overflow the `d->doing` field.
+- **Impact:** Buffer overflow from engine-supplied data.
+- **Recommendation:** Clamp `len` to `SIZEOF_DOING_STRING - 1` at function entry.
+
+## High — Null Pointer Dereferences (New, 2026-04-04)
+
+### Missing null check after `alloc_lbuf()` for output_prefix/output_suffix
+
+- **File:** `mux/src/net.cpp:3381-3383, 3400-3402`
+- **Issue:** `alloc_lbuf("set_userstring")` return values are not checked for null before `memcpy()` dereference during restart file loading.
+- **Impact:** Crash on OOM during restart.
+
+### Missing null check after `alloc_lbuf()` for raw_input_buf
+
+- **File:** `mux/src/telnet.cpp:606-607`
+- **Issue:** `alloc_lbuf("process_input.raw")` not checked before `d->raw_input_at = d->raw_input_buf` assignment and subsequent use.
+- **Impact:** Crash on OOM during telnet input processing.
+
+### Missing null check after `MEMALLOC()` for ttype
+
+- **File:** `mux/src/telnet.cpp:1095-1096, 1487-1488`
+- **Issue:** `MEMALLOC(nTermType+1)` and `MEMALLOC(nClient+1)` results not checked before `memcpy()` in TTYPE and GMCP handlers respectively.
+- **Impact:** Crash on OOM during telnet negotiation.
+
+## High — Buffer Safety & Static Buffer Risks
+
+### Potential buffer overflow in `encode_iac()`
+
+- **File:** `mux/src/net.cpp:198`
+- **Issue:** The `encode_iac()` function copies data into a static `Buffer[2*LBUF_SIZE]` without checking if the doubled IAC characters will exceed the buffer size. If an input string contains many `NVT_IAC` (0xFF) characters, the `memcpy()` and `pBuffer += n` calls will overflow the static buffer.
+- **Impact:** Memory corruption and potential crash during network output processing.
+- **Recommendation:** Use `LBuf` RAII or add explicit bounds checks before `memcpy`.
+
+### Widespread use of `static` buffers in functions
+
+- **File:** Multiple files (see `grep` results for `static UTF8 ...[...LBUF_SIZE]`)
+- **Issue:** Over 30 instances of `static UTF8 buffer[LBUF_SIZE]` or `2*LBUF_SIZE` were found in function scopes (e.g., `encode_iac`, `queue_string`, `Log.tinyprintf` wrappers).
+- **Impact:** 
+    - **Thread Safety:** These functions are not thread-safe. While the server is currently single-threaded for evaluation, this prevents future multi-threading and can cause subtle bugs if functions are ever called re-entrantly (e.g., via a signal or a nested evaluation that triggers another log/network call).
+    - **Memory Safety:** Static buffers persist for the life of the process, increasing the "always-on" memory footprint unnecessarily.
+- **Recommendation:** Migrate these to `LBuf` (stack-allocated via the engine's pool) or `std::string` where appropriate.

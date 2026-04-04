@@ -30,6 +30,36 @@ Updated: 2026-03-27
 
 - Added optional `offset`/`limit` pagination parameters to `maillist()`. Softcode can now paginate through arbitrarily large mailboxes.
 
+## High — Thread Safety (New, 2026-04-04)
+
+### Non-atomic instance reference counting (`m_cRef`)
+
+- **File:** `mail_mod.cpp:322-329, 5559-5566` and all Factory classes
+- **Issue:** While global counters were fixed to `std::atomic<uint32_t>`, individual object reference counters (`m_cRef`) remain plain `uint32_t` with non-atomic `m_cRef++` and `m_cRef--`. In `Release()`, the decrement and zero-check are not atomic, creating a race window for double-delete.
+- **Impact:** Use-after-free or double-delete under concurrent access.
+- **Recommendation:** Change `m_cRef` to `std::atomic<uint32_t>` with `fetch_add`/`fetch_sub`.
+
+## Medium — Buffer Safety (New, 2026-04-04)
+
+### Off-by-one pointer arithmetic in `mail_to_list()` parsing
+
+- **File:** `mail_mod.cpp:2585-2589`
+- **Issue:** The `tail--` decrement after the parsing loop does not check that `tail > head`. On a malformed single-character entry, `tail` becomes `head - 1`, pointing before the buffer.
+- **Impact:** Out-of-bounds read, potential heap corruption.
+- **Recommendation:** Guard with `if (tail > head) tail--;`.
+
+### Missing strdup() null check in `do_mail_quick()`
+
+- **File:** `mail_mod.cpp:3127`
+- **Issue:** `strdup(numlist.c_str())` result is passed directly to `mail_to_list()` without null check. On allocation failure, mail silently fails with no error to the player.
+- **Recommendation:** Check for nullptr and notify player of failure.
+
+### Potential use-after-free in `shutdown()` under concurrent access
+
+- **File:** `mail_mod.cpp:5425-5434`
+- **Issue:** `shutdown()` calls `m_pIStorage->Release()` and sets null, but has no guard against concurrent method calls that could access the pointer during the Release call.
+- **Impact:** Use-after-free if another thread accesses storage during shutdown.
+
 ## Low — Code Quality
 
 ### HACK comments in @mail/quick object handling

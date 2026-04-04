@@ -28,3 +28,12 @@ Updated: 2026-03-29
 ### ~~World file parsing has no field validation~~ FIXED
 
 - Both `world` and `hydra` lines now check the `>>` extraction result. Malformed lines are skipped with a diagnostic to stderr.
+
+## Bugs (New, 2026-04-04)
+
+### Telnet CHARSET negotiation validation gap
+
+- **File:** `client/console/src/connection.cpp:411-431`
+- **Issue:** The CHARSET option handler splits offered charsets by a delimiter but doesn't validate: (1) delimiter is printable, (2) charset names are trimmed, (3) list length is bounded. A malicious server sending thousands of charset names causes O(n^2) parsing.
+- **Impact:** CPU denial-of-service on charset negotiation.
+- **Recommendation:** Cap offered-charsets count (e.g., 50), trim whitespace, use bounded loop.

@@ -1,102 +1,75 @@
-# MUX Engine — Open Issues & Optimization Roadmap
+# Core Engine (mux/modules/engine/) — Open Issues
 
-## JIT/DBT Pipeline Optimization
+Updated: 2026-04-04
 
-These issues are based on the findings in `docs/JIT-PERF-INVESTIGATION.md`.
+## High — AST/JIT Safety & Performance
 
-### 1. Level 2: Tier 2 Coverage Expansion
+### Stack overflow risk from AST recursion
+- **File:** `mux/modules/engine/ast.cpp`
+- **Issue:** `ast_eval_node()` and `ast_dump()` use recursion to traverse the AST. While `mudconf.func_nest_lim` provides some protection, extremely deep ASTs (especially from generated or malicious softcode) could still overflow the stack if the per-frame overhead is high.
+- **Impact:** Server crash due to stack overflow.
+- **Recommendation:** Implement an iterative evaluator or use an explicit stack to limit recursion depth more rigorously.
 
-Move more frequently used builtin functions into pre-compiled RV64 guest code blobs to eliminate ECALL overhead.
+### O(n) lookup in `persistent_vm_t::attr_cache`
+- **File:** `mux/modules/engine/jit_compiler.cpp`
+- **Issue:** The attribute cache used by the JIT compiler uses a `std::vector` and O(n) linear search for lookups.
+- **Impact:** Performance degradation as the number of compiled attributes grows.
+- **Recommendation:** Use a `std::unordered_map` with `(obj, attr_num)` as the key for O(1) lookups.
 
-**Completed:** 20 functions unblocked (BEFORE, AFTER, DELETE, ELEMENTS,
-WORDPOS, REMOVE, REVWORDS, LNUM, LADD, LMAX, LMIN, LAND, LOR,
-ISNUM, ISINT, DEC2HEX, HEX2DEC, ISDBREF, CHR, ORD) — parity-tested
-via smoke suite.
+## Medium — Memory Management
 
-**Note:** `time()`, `secs()`, `get()`, `xget()`, `name()`, `owner()`,
-`flags()` cannot be Tier 2 — they require database access or engine
-state. `member()`, `words()`, `extract()` were already Tier 2.
-`ISDBREF` uses `ECALL_GOOD_OBJ` for database validation; `CHR`/`ORD`
-use `ECALL_CHR`/`ECALL_ORD` for Unicode encoding + NFC normalization
-and grapheme cluster extraction. All are leaf lookups with no
-re-entrancy risk, keeping surrounding code in the JIT.
+### Continued use of manual `alloc_lbuf`/`free_lbuf`
+- **File:** Multiple files in `mux/modules/engine/`
+- **Issue:** Many functions still use manual memory management for large buffers, which is prone to leaks in error paths.
+- **Impact:** Potential memory leaks and use-after-free bugs.
+- **Recommendation:** Accelerate migration to `LBuf` RAII wrapper or `std::string`.
 
-**No blocked functions remain.**  All previously blocked functions have
-been unblocked via co_* wrappers or ECALLs:
-SECURE (→ `co_secure_wrap`), SQUISH (→ `co_compress_wrap`),
-TRANSLATE (→ `ECALL_TRANSLATE`), STRMATCH/MATCH/GRAB/GRABALL
-(→ `ECALL_QUICK_WILD`), SORT (→ `ECALL_SORT` calling native
-`sort_to_buffer()` with full DUCET collation support).
+## High — Buffer Safety (New, 2026-04-04)
 
-### 2. Phase 3: Concurrent Softcode Evaluation
+### Unsafe `strcat()` in fun_rxlevel() and fun_txlevel()
 
-Implement the framework for evaluating softcode on multiple cores simultaneously.
+- **File:** `mux/modules/engine/functions.cpp:5608-5609, 5641-5642`
+- **Issue:** Both functions build a space-separated level list using `strcat()` into a fixed `levelbuff[2048]` with no bounds checking. While the current max (32 levels x 9 bytes) fits, this pattern is fragile and inconsistent with the project's use of `safe_str()`/`safe_chr()` elsewhere.
+- **Impact:** Buffer overflow if level names or count change.
+- **Recommendation:** Replace `strcat()` with `safe_str()` or `strncat()` with explicit remaining-space tracking.
 
-- **Tasks:**
-  - Transition `mudstate`, JIT caches, and parser state to `thread_local` storage.
-  - Implement optimistic read validation using the `mod_count` system.
-  - Migrate `s_compile_cache` and `s_attr_mod_counts` to thread-safe structures (atomic/RW locks).
-  - Ensure DBT contexts are thread-safe or per-thread.
+## Medium — SQLite Error Handling (New, 2026-04-04)
 
-### ~~5. Windows JIT/DBT: System V → Windows x64 Calling Convention~~ DONE
+### Missing `sqlite3_reset()` in CodeCachePut() error path
 
-- **Resolved:** Separate `dbt_x64_win64.cpp` backend (2,992 lines) with proper
-  Win64 ABI: RCX/RDX/R8/R9 argument registers, 32-byte shadow space, RSI/RDI
-  callee-saved. Selected automatically by `configure.ac` on mingw/cygwin/msys.
+- **File:** `mux/modules/engine/sqlitedb.cpp:1952-1958`
+- **Issue:** If `sqlite3_step()` fails, the prepared statement is not reset before returning false. Other functions (CodeCacheGet, InsertObject) properly reset on error paths.
+- **Recommendation:** Add `sqlite3_reset(m_stmtCodeCachePut)` before `return false`.
 
-### 6. Apple Silicon DBT: W^X Memory Model
+### No null pointer check for `sqlite3_column_blob()` results
 
-- **Status:** Not yet implemented. `configure` errors out on `aarch64-*-darwin*`.
-- **Planned file:** `dbt_a64_apple.cpp`
-- **Issue:** Apple Silicon enforces W^X (Write XOR Execute) for JIT memory.
-  The existing `dbt_a64_sysv.cpp` uses standard `mprotect()` which doesn't
-  work on macOS. Needs `MAP_JIT`, `pthread_jit_write_protect_np()` toggle,
-  and `sys_icache_invalidate()` for cache coherency.
-- **Calling convention:** Identical AAPCS64 — only the JIT memory model differs
-  from the Linux AArch64 backend.
-- **Blocked on:** Lack of Apple Silicon hardware for testing.
+- **File:** `mux/modules/engine/sqlitedb.cpp:1890-1913`
+- **Issue:** `sqlite3_column_blob()` can return NULL for NULL column values. The returned pointers (`memory_blob`, `code_blob`, `deps_blob`) are stored without null checks; callers may assume non-null.
+- **Recommendation:** Validate critical blobs are non-null before returning success.
 
-### 7. RISC-V Native Passthrough DBT
+## Medium — JIT Safety (New, 2026-04-04)
 
-- **Status:** Not yet implemented. `configure` errors out on `riscv64`.
-- **Planned file:** `dbt_rv64_native.cpp` (~100 lines)
-- **Issue:** Trivial backend — guest RV64 code IS native code. Translation
-  block cache points directly into guest memory. Just needs `mprotect()`
-  and fence.i for I-cache sync.
-- **Blocked on:** Lack of RV64 hardware for testing.
+### Unsafe global state in JIT compiler
 
-## COM & Module System Issues
+- **File:** `mux/modules/engine/jit_compiler.cpp:120, 2266, 2317-2323`
+- **Issue:** Static variables `s_current`, `s_arenas`, `s_current_ecall_ctx` and the save/restore pattern for eval context have no synchronization. Safe under current single-threaded evaluation but blocks any future multi-threading.
+- **Recommendation:** Use `thread_local` for `s_current_ecall_ctx`; document single-threaded assumption.
 
-### ~~Memory Management: SIZE_HACK Pointer Arithmetic~~ FALSE ALARM
+### Unchecked `jit_alloc()` in `dbt_reset()`
 
-- On inspection, the code is correct. In the first-allocation "else" branch, `db = newdb` (unshifted) is set before `initialize_objects(0, SIZE_HACK)` fills the `#-1` padding slot at `db[0]`. Then `db = newdb + SIZE_HACK` shifts so `db[0]` addresses the first real object and `db[-1]` is the padding. No invalid window exists.
+- **File:** `mux/modules/engine/dbt.cpp:~201-212`
+- **Issue:** `dbt_init()` checks `jit_alloc()` for null, but `dbt_reset()` does not. A null return would cause subsequent null dereference.
+- **Recommendation:** Add the same null check as `dbt_init()`.
 
-### ~~Silent failure when storage interfaces fail to initialize~~ FIXED
+## Low — Technical Debt
 
-- Added `else` clauses with `log_printf` diagnostics when `CID_ComsysStorage` or `CID_MailStorage` creation fails.
+### Missing JIT support for dynamic `ulambda` args
+- **File:** `mux/modules/engine/ast.cpp:1150` (approx)
+- **Issue:** `ast_noeval_ulambda()` bypasses the JIT compiler because the JIT does not currently support dynamically-provided `cargs`.
+- **Impact:** Reduced performance for complex anonymous functions evaluated via `ulambda()`.
 
-### ~~exp3 module: unchecked interface acquisitions~~ FIXED
-
-- All five `mux_CreateInstance()` calls in exp3 `FinalConstruct()` now check return values and bail early on failure.
-
-## Core Engine Issues
-
-### ~~3. Platform Interface Driver~~ DONE
-
-- **Resolved:** Extracted CPlatform and CPlatformFactory (~440 lines) from `modules.cpp`
-  into `platform.cpp`. Added to `DRIVER_SRC` in `Makefile.am`. `modules.cpp` now
-  contains only COM dispatch and CConnectionManager/CDriverControl. Future
-  per-platform files (`platform_apple.cpp`, etc.) can replace or supplement
-  `platform.cpp` cleanly.
-
-### 4. Engine & LibMux Unit Testing — IN PROGRESS
-
-- **Status:** `tests/libmux/` harness created with 29 tests covering mux_atol,
-  mux_atof, mux_i64toa, safe buffer writing, StringClone, mux_stricmp,
-  mux_strupr/mux_strlwr, trim_spaces, mux_strncpy. DB tests moved to `tests/db/`.
-- **Remaining:** UTF-8 multi-byte edge cases, numeric overflow/underflow,
-  LBUF boundary behavior, and AST/eval isolation tests.
-
-### ~~5. Session/Driver Separation~~
-
-- **Fixed:** `access_list` stays in the driver (hot-path connection checks must not cross COM). Added `mux_IDriverControl::ListSiteInfo()` COM method so the engine can query the site list for `@list sites` display.
+### `MigrateSchema()` logs versions 8 and 9 as "upgraded" before the migration succeeds
+- **File:** `mux/modules/engine/sqlitedb.cpp:362`, `mux/modules/engine/sqlitedb.cpp:607-628`
+- **Issue:** `RunMigration()` already prints the success message after `sqlite3_exec()` completes, but `MigrateSchema()` emits extra `fprintf()` calls for versions 8 and 9 before running the migration. If either migration fails, stderr still claims the upgrade succeeded. Even on success, the message is duplicated.
+- **Impact:** Misleading migration logs make operational debugging harder and polluted the standalone DB test output with duplicate `version 8` and `version 9` lines on every fresh in-memory database open.
+- **Recommendation:** Remove the pre-success `fprintf()` calls from the v8/v9 branches and let `RunMigration()` own success logging consistently.

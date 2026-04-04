@@ -62,6 +62,26 @@ The project now has two complementary testing tiers:
 
 - **Issue:** Every test file does `@create test_<name>` and `drop test_<name>`. If a test is interrupted or the drop fails, test objects accumulate in the database.
 
+## Medium — Script Reliability (New, 2026-04-04)
+
+### `mktemp` trap refresh invalidates cleanup in Makesmoke
+
+- **File:** `testcases/tools/Makesmoke:25-26, 154`
+- **Issue:** `TMP=$(mktemp)` with `trap 'rm -f "$TMP"' EXIT` is set early, but `TMP` is reassigned at line 154, making the trap clean up only the second temp file — the first is leaked.
+- **Recommendation:** Save both filenames or use a cleanup function that tracks all temp files.
+
+### Insufficient error context on dbconvert failure
+
+- **File:** `testcases/tools/Smoke:129-133`
+- **Issue:** When `dbconvert` fails, only the log is printed with no context about what command was run. Makes remote debugging harder.
+- **Recommendation:** Print the command line and exit code alongside the log output.
+
+### Optional omega validation silently skipped
+
+- **File:** `testcases/tools/Makesmoke:159-170`
+- **Issue:** If `omega` binary is not found, flatfile validation is silently skipped. A corrupt flatfile could be committed without detection.
+- **Recommendation:** At minimum warn when omega is unavailable; ideally make it mandatory.
+
 ## Low — Hardcoded References
 
 ### Some tests reference `#0` directly

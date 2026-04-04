@@ -26,6 +26,15 @@ Updated: 2026-03-27
 
 - Added optional `offset`/`limit` pagination parameters to `cwho()`, `chanusers()`, and `channels()`. Softcode can now paginate through arbitrarily large result sets.
 
+## High — Thread Safety (New, 2026-04-04)
+
+### Non-atomic instance reference counting (`m_cRef`)
+
+- **File:** `comsys_mod.cpp:293-305, 3085-3098` and all Factory classes
+- **Issue:** Same as mail module — individual object `m_cRef` counters are plain `uint32_t` with non-atomic increment/decrement. The `Release()` decrement-then-check pattern can race to double-delete.
+- **Impact:** Use-after-free or double-delete under concurrent access.
+- **Recommendation:** Change `m_cRef` to `std::atomic<uint32_t>` with `fetch_add`/`fetch_sub`.
+
 ## Low — Code Quality
 
 ### `strncpy()` usage with casts

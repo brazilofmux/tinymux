@@ -22,6 +22,28 @@ All previously reported bugs have been resolved:
 
 - ~~**`/hrestart` only matched when followed by a space**~~ FIXED — `HydraConnection::send_line()` now recognizes bare `/hrestart` and routes it to the existing usage/help path instead of forwarding it to the active game.
 
+## Newly Identified Bugs (2026-04-04)
+
+- **Hydra reconnect path still races on `grpc_` ownership**
+  - **Files:** `client/tf/src/hydra_connection.cpp:151-166`, `client/tf/src/hydra_connection.cpp:764-834`
+  - **Issue:** `disconnect()` runs on the main thread and calls `TryCancel()`, `WritesDone()`, `join()`, and `grpc_.reset()` with no mutex protecting `grpc_`. At the same time, `readerLoop()` and `attemptReconnect()` read and mutate `grpc_->stream`, `grpc_->sessionCtx`, and `grpc_->stub` on the reader thread.
+  - **Impact:** A manual disconnect during reconnect or while the reader loop is unwinding can race into use-after-reset, double-close behavior, or an inconsistent reconnect state. The console client already needed a similar fix for its Hydra transport.
+  - **Recommendation:** Move transport state behind a mutex-protected snapshot or shared state object and make reconnect/disconnect operate on that synchronized state only.
+
+- **`/update` builds a shell command from unquoted user input**
+  - **Files:** `client/tf/src/command.cpp:1731-1795`
+  - **Issue:** `cmd_update()` concatenates `repo_root`, `src_dir`, and the raw `branch` argument into `build_cmd`, then executes it via `execl("/bin/sh", "sh", "-c", build_cmd.c_str(), nullptr)`. A branch value containing shell metacharacters executes arbitrary local commands in the client process context.
+  - **Impact:** This is a local command-injection path. Any user who copies an untrusted `/update ...` invocation into the client can run unintended shell code, not just `git pull`.
+  - **Recommendation:** Avoid `sh -c`; fork/exec `git` and `cmake` directly with argument vectors, or at minimum shell-quote every interpolated token before execution.
+
+## Newly Identified Bugs (2026-04-04) — Continued
+
+- **Incomplete gRPC channel error handling**
+  - **File:** `client/tf/src/hydra_connection.cpp:87-93`
+  - **Issue:** `CreateChannel()` return value is not validated for null. Under resource exhaustion, subsequent stub creation and operations will fail without diagnostic output.
+  - **Impact:** Silently failed connection with no user-visible error message.
+  - **Recommendation:** Add null check after `CreateChannel()` and push diagnostic output.
+
 ## Stubbed Or Partially Implemented Interfaces
 
 - ~~**Lack of multi-key binding support**~~
