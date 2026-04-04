@@ -383,6 +383,7 @@ static void trim_attribute_cache(void)
 
     // Check to see if the cache needs to be trimmed.
     //
+    unordered_set<dbref> evicted_objects;
     while (cache_size > static_cast<size_t>(mudconf.max_cache_size))
     {
         if (mudstate.attribute_lru_cache_list.empty())
@@ -394,10 +395,18 @@ static void trim_attribute_cache(void)
 
         // Blow the oldest thing away.
         //
-        const auto it = mudstate.attribute_lru_cache_map.find(mudstate.attribute_lru_cache_list.front());
+        const Aname nam = mudstate.attribute_lru_cache_list.front();
+        const auto it = mudstate.attribute_lru_cache_map.find(nam);
         cache_size -= it->second.data.size();
+        evicted_objects.insert(static_cast<dbref>(nam.object));
         mudstate.attribute_lru_cache_map.erase(it);
         mudstate.attribute_lru_cache_list.pop_front();
+    }
+
+    for (dbref obj : evicted_objects)
+    {
+        mudstate.attribute_preloaded_builtin_objects.erase(obj);
+        mudstate.attribute_preloaded_all_objects.erase(obj);
     }
 }
 
