@@ -197,12 +197,17 @@ void move_object(dbref thing, dbref dest)
     }
     s_Location(thing, dest);
 
-    // Preload built-in attributes for the destination room before
-    // look_in touches them individually.
+    // Preload the destination synchronously so look_in() doesn't pay
+    // cold misses, then defer BFS neighbors for later.
     //
     if (Good_obj(dest))
     {
-        cache_preload(dest);
+        bool bUnlimited = (mudconf.max_cache_size < 0);
+        cache_preload_obj(dest, bUnlimited);
+        if (bUnlimited && mudconf.cache_preload_depth > 0)
+        {
+            cache_preload_deferred_bfs(dest, mudconf.cache_preload_depth);
+        }
     }
 
     // Look around and do the penny check

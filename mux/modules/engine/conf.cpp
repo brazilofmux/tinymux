@@ -52,7 +52,8 @@ void cf_init(void)
     mudconf.comsys_db = StringClone(T("comsys.db"));
 
     mudconf.status_file = StringClone(T("shutdown.status"));
-    mudconf.max_cache_size = 1*1024*1024;
+    mudconf.max_cache_size = 256LL*1024*1024;
+    mudconf.cache_preload_depth = 1;
 
     mudconf.ip_address = nullptr;
     mudconf.ports.push_back(2860);
@@ -584,6 +585,58 @@ static CF_HAND(cf_int)
     // Copy the numeric value to the parameter.
     //
     *vp = mux_atol(str);
+    return 0;
+}
+
+// ---------------------------------------------------------------------------
+// cf_size: Set a size parameter with optional K/M/G suffix.
+// -1 means unlimited.
+//
+static CF_HAND(cf_size)
+{
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(cmd);
+
+    int64_t *pSize = reinterpret_cast<int64_t *>(vp);
+
+    // Handle -1 (unlimited) directly.
+    //
+    UTF8 *p = str;
+    while (mux_isspace(*p)) p++;
+
+    if (p[0] == '-' && p[1] == '1' && (p[2] == '\0' || mux_isspace(p[2])))
+    {
+        *pSize = -1;
+        return 0;
+    }
+
+    // Reject negative values other than -1.
+    //
+    if (*p == '-')
+    {
+        return -1;
+    }
+
+    int64_t val = mux_atol(p);
+
+    // Find the suffix character.
+    //
+    while (mux_isdigit(*p) || *p == '+') p++;
+    while (mux_isspace(*p)) p++;
+
+    switch (*p)
+    {
+    case 'k': case 'K': val *= 1024LL; break;
+    case 'm': case 'M': val *= 1024LL * 1024; break;
+    case 'g': case 'G': val *= 1024LL * 1024 * 1024; break;
+    case '\0': break;
+    default:
+        return -1;
+    }
+
+    *pSize = val;
     return 0;
 }
 
@@ -1770,6 +1823,8 @@ static CONFPARM conftable[] =
     {T("badsite_file"),              cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.site_file),       nullptr, SIZEOF_PATHNAME},
     {T("cache_names"),               cf_bool,        CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.cache_names),     nullptr,            0},
     {T("cache_tick_period"),         cf_seconds,     CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.cache_tick_period), nullptr,          0},
+    {T("cache_max_size"),            cf_size,        CA_GOD,    CA_GOD,      reinterpret_cast<int *>(&mudconf.max_cache_size),  nullptr,            0},
+    {T("cache_preload_depth"),       cf_int,         CA_GOD,    CA_GOD,      &mudconf.cache_preload_depth,    nullptr,            0},
     {T("check_interval"),            cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.check_interval,         nullptr,            0},
     {T("check_offset"),              cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.check_offset,           nullptr,            0},
     {T("clone_copies_cost"),         cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.clone_copy_cost), nullptr,            0},
@@ -1871,7 +1926,7 @@ static CONFPARM conftable[] =
     {T("email_per_hour"),            cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.email_per_hour,         nullptr,            0},
     {T("master_room"),               cf_dbref,       CA_GOD,    CA_WIZARD,   &mudconf.master_room,            nullptr,            0},
     {T("match_own_commands"),        cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.match_mine),      nullptr,            0},
-    {T("max_cache_size"),            cf_int,         CA_GOD,    CA_GOD,      reinterpret_cast<int *>(&mudconf.max_cache_size),  nullptr,            0},
+    {T("max_cache_size"),            cf_size,        CA_GOD,    CA_GOD,      reinterpret_cast<int *>(&mudconf.max_cache_size),  nullptr,            0},
     {T("max_name_protect"),          cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.max_name_protect,       nullptr,            0},
     {T("max_players"),               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.max_players,            nullptr,            0},
     {T("min_guests"),                cf_int,         CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.min_guests),      nullptr,            0},

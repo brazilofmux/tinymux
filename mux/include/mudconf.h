@@ -211,7 +211,8 @@ struct confdata
     int     float_precision;    // Maximum precision of float-to-string conversion.
     int     lbuf_size;          // LBUF_SIZE accessible to softcode.
 
-    unsigned int    max_cache_size; /* Max size of attribute cache */
+    int64_t         max_cache_size; // Max size of attribute cache (-1 = unlimited).
+    int             cache_preload_depth; // Preload depth (0=obj, 1=+adjacent, 2=two rooms).
     unsigned int    site_chars; // where to truncate site name.
 
     std::vector<int> ports;     // user ports.

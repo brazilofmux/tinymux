@@ -26,6 +26,9 @@ void cache_tick(void);
 bool cache_sync(void);
 bool cache_del(Aname *nam);
 void cache_preload(dbref obj);
+void cache_preload_obj(dbref obj, bool bAll);
+void cache_preload_nearby(dbref obj, int depth);
+void cache_preload_deferred_bfs(dbref room, int depth);
 int cache_count(dbref obj);
 void list_cache_stats(dbref player);
 

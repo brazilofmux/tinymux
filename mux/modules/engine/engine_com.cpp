@@ -4098,14 +4098,9 @@ MUX_RESULT CPlayerSession::AnnounceConnect(dbref player, int numConnections,
     const UTF8 *username, const UTF8 *ipaddr, int *pTimeout,
     int64_t *pConnlogId)
 {
-    // Preload built-in attributes for the player and their location.
+    // Preload attributes for the player and nearby rooms.
     //
-    cache_preload(player);
-    const dbref ploc = Location(player);
-    if (Good_obj(ploc))
-    {
-        cache_preload(ploc);
-    }
+    cache_preload_nearby(player, mudconf.cache_preload_depth);
 
     // Track record player count.
     //

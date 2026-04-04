@@ -770,11 +770,11 @@ INDESTRUCTIBLE
   about the following options:
 
     allocations         attr_permissions    attributes          bad_names
-    buffers             commands            costs               db_stats
-    default_flags       flags               functions           globals
-    guests              hashstats           logging             modules
-    options             permissions         powers              process
-    site_info           switches            user_attributes
+    buffers             cache               commands            costs
+    db_stats            default_flags       flags               functions
+    globals             guests              hashstats           logging
+    modules             options             permissions         powers
+    process             site_info           switches            user_attributes
 
   Type wizhelp @list <option> for help with a particular option.
 
@@ -849,6 +849,24 @@ INDESTRUCTIBLE
 
   For each buffer in a buffer pool that is currently allocated, lists where
   within TinyMUX the buffer was allocated.
+
+& @LIST CACHE
+@LIST CACHE
+
+  COMMAND: @list cache
+
+  Lists attribute cache statistics including:
+
+    Entries       - Number of attribute values currently cached.
+    Size          - Current memory used by cached values.
+    Max           - Maximum cache size (or 'unlimited' when set to -1).
+    Preload depth - Current cache_preload_depth setting.
+    Hits/Misses   - Cache hit and miss counts with hit rate percentage.
+
+  Also lists SQLite storage operation counts: attribute gets, puts,
+  deletes, bulk loads, and object inserts, updates, and loads.
+
+  Related Topics: cache_max_size, cache_preload_depth, cache_tick_period.
 
 & @LIST COMMANDS
 @LIST COMMANDS
@@ -1806,12 +1824,15 @@ BAD_NAME
 & CACHE_DEPTH
 CACHE_DEPTH
 
-  CONFIG PARAMETER: cache_depth <depth>
-  DEFAULT: none.
+  This option is obsolete.  See cache_preload_depth for the current
+  depth-based preload control.
 
-  This option is obsolete. The cache in MUX 2.0 is controlled differently.
+  Related Topics: cache_preload_depth, cache_max_size.
 
-  Related Topics: max_cache_size
+& CACHE_MAX_SIZE
+CACHE_MAX_SIZE
+
+  See: MAX_CACHE_SIZE
 
 & CACHE_NAMES
 CACHE_NAMES
@@ -1826,6 +1847,26 @@ CACHE_NAMES
 
   Related Topics:
 
+& CACHE_PRELOAD_DEPTH
+CACHE_PRELOAD_DEPTH
+
+  CONFIG PARAMETER: cache_preload_depth <depth>
+  DEFAULT: 1
+
+  Controls how many rooms deep the server preloads attributes when a
+  player connects or moves.  Only effective when cache_max_size is -1
+  (unlimited mode).
+
+    0 - Preload only the player and their location.
+    1 - Also preload rooms reachable via one exit.
+    2 - Two rooms deep.
+    3 - Three rooms deep (maximum).
+
+  In bounded cache mode (cache_max_size > 0), this parameter is ignored
+  and only the player and location receive builtin-attribute preloading.
+
+  Related Topics: cache_max_size, @list cache.
+
 & CACHE_TICK_PERIOD
 CACHE_TICK_PERIOD
 
@@ -1837,7 +1878,7 @@ CACHE_TICK_PERIOD
   the work is spread out more evenly.  Therefore, a short period is
   usually best for large games.
 
-  Related Topics: max_cache_size.
+  Related Topics: cache_max_size.
 
 & CACHE_TRIM
 CACHE_TRIM
@@ -1960,8 +2001,9 @@ CONFIG PARAMETERS
   particular parameter.
 
   access  alias  article_rule  attr_access  attr_alias  attr_cmd_access
-  attr_name_charset  autozone  bad_name  badsite_file  cache_names
-  cache_tick_period  check_interval  check_offset  clone_copies_cost
+  attr_name_charset  autozone  bad_name  badsite_file  cache_max_size
+  cache_names  cache_preload_depth  cache_tick_period  check_interval
+  check_offset  clone_copies_cost
   command_quota_increment  command_quota_max  comsys_database
   config_access  conn_timeout  connect_file  connect_reg_file
   crash_database  crash_message  create_max_cost  create_min_cost
@@ -3717,13 +3759,23 @@ MATCH_OWN_COMMANDS
 & MAX_CACHE_SIZE
 MAX_CACHE_SIZE
 
-  CONFIG PARAMETER: max_cache_size <size>
-  DEFAULT: 1048576
+  CONFIG PARAMETER: cache_max_size <size>
+  DEFAULT: 256M
 
-  Expressed in bytes, this is the maximum size the server will use for caching
-  attribute values from the database.
+  Maximum size the server will use for caching attribute values in RAM.
+  Accepts K, M, or G suffixes (e.g. 256M, 1G).  Set to -1 for unlimited
+  (never evict).
 
-  Related Topics: cache_tick_period.
+  In unlimited mode (-1), preloading uses GetAll to load every attribute
+  on the player and their location, and GetBuiltin for adjacent rooms
+  reached via exits (controlled by cache_preload_depth).
+
+  In bounded mode, preloading uses GetBuiltin for the player and
+  location only, with no BFS across exits.
+
+  The old name 'max_cache_size' is accepted as an alias.
+
+  Related Topics: cache_preload_depth, cache_tick_period, @list cache.
 
 & MAX_PLAYERS
 MAX_PLAYERS
