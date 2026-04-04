@@ -34,11 +34,12 @@ class MuxConnection:
     SB   = 250
     SE   = 240
 
-    def __init__(self, host, port, use_ssl=False, timeout=10):
+    def __init__(self, host, port, use_ssl=False, timeout=10, verify_ssl=True):
         self.host = host
         self.port = int(port)
         self.use_ssl = use_ssl
         self.timeout = timeout
+        self.verify_ssl = verify_ssl
         self.sock = None
         self.buffer = b''
 
@@ -46,8 +47,9 @@ class MuxConnection:
         raw = socket.create_connection((self.host, self.port), self.timeout)
         if self.use_ssl:
             ctx = ssl.create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode = ssl.CERT_NONE
+            if not self.verify_ssl:
+                ctx.check_hostname = False
+                ctx.verify_mode = ssl.CERT_NONE
             self.sock = ctx.wrap_socket(raw, server_hostname=self.host)
         else:
             self.sock = raw
@@ -531,6 +533,8 @@ def main():
     parser.add_argument('--host', required=True, help='MUX hostname')
     parser.add_argument('--port', default='4201', help='MUX port')
     parser.add_argument('--ssl', action='store_true', help='Use SSL/TLS')
+    parser.add_argument('--insecure', action='store_true',
+                        help='Disable TLS certificate and hostname verification')
     parser.add_argument('--character', required=True, help='Builder character name')
     parser.add_argument('--password', required=True, help='Builder password')
     parser.add_argument('--state', help='State file path')
@@ -568,7 +572,8 @@ def main():
         else:
             # Connect
             print(f"Connecting to {args.host}:{args.port}...")
-            conn = MuxConnection(args.host, int(args.port), args.ssl)
+            conn = MuxConnection(args.host, int(args.port), args.ssl,
+                                 verify_ssl=not args.insecure)
             conn.connect()
             print("Connected. Logging in...")
 

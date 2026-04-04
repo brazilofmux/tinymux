@@ -20,6 +20,7 @@ Run: python test_worldbuilder.py
 
 import sys
 import os
+import ssl
 
 # Ensure we can import from the worldbuilder directory and that fixture
 # paths resolve correctly regardless of the caller's working directory.
@@ -34,6 +35,8 @@ from softcode_lint import lint_softcode, lint_spec
 from grammar import Grammar, SeededRandom
 from mapgen import extract_graph, layout_grid, render_ascii, render_dot
 from reconciler import build_spec_snapshot, reconcile_snapshots
+from executor import MuxConnection
+import executor as executor_module
 
 
 passed = 0
@@ -181,6 +184,63 @@ def test_softcode_lint():
     test("mail*() caught", not r.ok)
 
 
+def test_mux_connection_tls():
+    section("Executor TLS")
+
+    class FakeSocket:
+        def __init__(self):
+            self.timeouts = []
+
+        def settimeout(self, timeout):
+            self.timeouts.append(timeout)
+
+        def recv(self, _size):
+            raise executor_module.socket.timeout
+
+    class FakeWrappedSocket(FakeSocket):
+        pass
+
+    class FakeContext:
+        def __init__(self):
+            self.check_hostname = True
+            self.verify_mode = ssl.CERT_REQUIRED
+            self.wrap_calls = []
+
+        def wrap_socket(self, raw, server_hostname=None):
+            self.wrap_calls.append((raw, server_hostname))
+            return FakeWrappedSocket()
+
+    original_create_connection = executor_module.socket.create_connection
+    original_create_default_context = executor_module.ssl.create_default_context
+    created_contexts = []
+
+    def fake_create_connection(_addr, _timeout):
+        return FakeSocket()
+
+    def fake_create_default_context():
+        ctx = FakeContext()
+        created_contexts.append(ctx)
+        return ctx
+
+    executor_module.socket.create_connection = fake_create_connection
+    executor_module.ssl.create_default_context = fake_create_default_context
+    try:
+        conn = MuxConnection("mux.example", 4201, use_ssl=True)
+        conn.connect()
+        secure_ctx = created_contexts[-1]
+        test("TLS verifies by default", secure_ctx.verify_mode == ssl.CERT_REQUIRED)
+        test("TLS checks hostname by default", secure_ctx.check_hostname)
+
+        conn = MuxConnection("mux.example", 4201, use_ssl=True, verify_ssl=False)
+        conn.connect()
+        insecure_ctx = created_contexts[-1]
+        test("Insecure mode disables verification", insecure_ctx.verify_mode == ssl.CERT_NONE)
+        test("Insecure mode disables hostname checks", not insecure_ctx.check_hostname)
+    finally:
+        executor_module.socket.create_connection = original_create_connection
+        executor_module.ssl.create_default_context = original_create_default_context
+
+
 def test_grammar():
     section("Grammar Engine")
     g = Grammar({'color': ['red', 'blue', 'green'], 'size': ['big', 'small']}, seed='test')
@@ -280,6 +340,7 @@ def main():
     test_map_generation()
     test_exit_model()
     test_reconciliation()
+    test_mux_connection_tls()
 
     print(f"\n{'=' * 40}")
     print(f"Results: {passed} passed, {failed} failed")

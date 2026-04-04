@@ -22,11 +22,10 @@ Updated: 2026-03-27
 
 - `softcode_lint.py` now flags additional high-risk patterns for review: `@pemit` with `%#`, `@trigger`, dynamic `%(...)` substitution, `setr()`, and `mail*()` calls. `test_worldbuilder.py` includes focused coverage for each new heuristic.
 
-### Executor SSL validation disabled
+### ~~Executor SSL validation disabled~~ FIXED
 
 - **File:** `executor.py:37-40`
-- **Issue:** `ctx.verify_mode = ssl.CERT_NONE` — accepts any certificate, no hostname checking.
-- **Scope:** Suitable for development/internal use only.
+- `MuxConnection` now verifies certificates and hostnames by default. `executor.py` and `importer.py` expose an explicit `--insecure` flag for self-signed or internal development servers that still need the previous behavior.
 
 ### Live adapter undocumented server format assumptions
 

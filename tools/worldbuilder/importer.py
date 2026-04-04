@@ -320,6 +320,8 @@ def main():
     parser.add_argument('--host', required=True, help='MUX hostname')
     parser.add_argument('--port', default='4201', help='MUX port')
     parser.add_argument('--ssl', action='store_true', help='Use SSL/TLS')
+    parser.add_argument('--insecure', action='store_true',
+                        help='Disable TLS certificate and hostname verification')
     parser.add_argument('--character', required=True, help='Character name')
     parser.add_argument('--password', required=True, help='Password')
     parser.add_argument('--start', required=True, help='Starting room dbref (e.g. #123)')
@@ -332,7 +334,8 @@ def main():
 
     # Connect
     print(f"Connecting to {args.host}:{args.port}...")
-    conn = MuxConnection(args.host, int(args.port), args.ssl)
+    conn = MuxConnection(args.host, int(args.port), args.ssl,
+                         verify_ssl=not args.insecure)
     conn.connect()
     print("Connected. Logging in...")
     resp = conn.login(args.character, args.password)
