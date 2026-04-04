@@ -1385,22 +1385,26 @@ static std::string compile_cache_key(const UTF8 *expr, size_t nLen, int eval) {
 
 // Persist a compiled_program to the SQLite code cache.
 //
+// Queued for batched execution via cache_flush_writes() — the same
+// demand-driven mechanism used for attribute writes.  This avoids
+// leaving a transaction open across arbitrary game operations.
+//
 static void store_to_sqlite_cache(const std::string &key,
                                    const compiled_program &prog) {
     if (!g_pSQLiteBackend) return;
-    CSQLiteDB &db = g_pSQLiteBackend->GetDB();
+
     int persist_len = static_cast<int>(rv_compiler::FARGS_LIMIT);
-    db.CodeCachePut(key.data(), static_cast<int>(key.size()),
-                     s_blob_version.data(),
-                     static_cast<int>(s_blob_version.size()),
-                     prog.memory.data(), persist_len,
-                     static_cast<int64_t>(prog.out_addr),
-                     prog.needs_jit ? 1 : 0,
-                     prog.folds, prog.ecalls,
-                     prog.tier2_calls, prog.native_ops,
-                     prog.deps.data(),
-                     static_cast<int>(prog.deps.size()
-                         * sizeof(compiled_program::inline_dep)));
+    cache_queue_code_cache_put(
+        key.data(), static_cast<int>(key.size()),
+        s_blob_version.data(), static_cast<int>(s_blob_version.size()),
+        prog.memory.data(), persist_len,
+        static_cast<int64_t>(prog.out_addr),
+        prog.needs_jit ? 1 : 0,
+        prog.folds, prog.ecalls,
+        prog.tier2_calls, prog.native_ops,
+        prog.deps.data(),
+        static_cast<int>(prog.deps.size()
+            * sizeof(compiled_program::inline_dep)));
 }
 
 // Check if a compiled program's inlined dependencies are still fresh.

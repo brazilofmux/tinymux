@@ -25,6 +25,13 @@ void cache_close(void);
 void cache_tick(void);
 bool cache_sync(void);
 void cache_flush_writes(void);
+void cache_queue_code_cache_put(
+    const char *source_hash, int source_hash_len,
+    const char *blob_hash, int blob_hash_len,
+    const void *memory_blob, int memory_len,
+    int64_t out_addr, int needs_jit,
+    int folds, int ecalls, int tier2_calls, int native_ops,
+    const void *deps_blob, int deps_len);
 bool cache_del(Aname *nam);
 void cache_preload(dbref obj);
 void cache_preload_obj(dbref obj, bool bAll);

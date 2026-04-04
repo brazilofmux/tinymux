@@ -40,13 +40,26 @@ static uint64_t cache_misses = 0;
 
 struct CacheWriteOp
 {
-    enum OpType { OP_PUT, OP_DEL };
+    enum OpType { OP_PUT, OP_DEL, OP_CODE_CACHE_PUT };
     OpType          op;
     unsigned int    object;
     unsigned int    attrnum;
     vector<UTF8>    value;      // empty for OP_DEL
     int             owner;
     int             flags;
+
+    // OP_CODE_CACHE_PUT fields.
+    //
+    string          cc_source_hash;
+    string          cc_blob_hash;
+    vector<char>    cc_memory;
+    int64_t         cc_out_addr;
+    int             cc_needs_jit;
+    int             cc_folds;
+    int             cc_ecalls;
+    int             cc_tier2_calls;
+    int             cc_native_ops;
+    vector<char>    cc_deps;
 };
 
 static vector<CacheWriteOp> s_write_queue;
@@ -110,9 +123,25 @@ void cache_flush_writes(void)
             g_pSQLiteBackend->Put(op.object, op.attrnum,
                 op.value.data(), op.value.size(), op.owner, op.flags);
         }
-        else
+        else if (op.op == CacheWriteOp::OP_DEL)
         {
             g_pSQLiteBackend->Del(op.object, op.attrnum);
+        }
+        else if (op.op == CacheWriteOp::OP_CODE_CACHE_PUT)
+        {
+            db.CodeCachePut(
+                op.cc_source_hash.data(),
+                static_cast<int>(op.cc_source_hash.size()),
+                op.cc_blob_hash.data(),
+                static_cast<int>(op.cc_blob_hash.size()),
+                op.cc_memory.data(),
+                static_cast<int>(op.cc_memory.size()),
+                op.cc_out_addr,
+                op.cc_needs_jit,
+                op.cc_folds, op.cc_ecalls,
+                op.cc_tier2_calls, op.cc_native_ops,
+                op.cc_deps.data(),
+                static_cast<int>(op.cc_deps.size()));
         }
     }
 
@@ -121,6 +150,45 @@ void cache_flush_writes(void)
         db.Commit();
     }
     s_write_queue.clear();
+}
+
+void cache_queue_code_cache_put(
+    const char *source_hash, int source_hash_len,
+    const char *blob_hash, int blob_hash_len,
+    const void *memory_blob, int memory_len,
+    int64_t out_addr, int needs_jit,
+    int folds, int ecalls, int tier2_calls, int native_ops,
+    const void *deps_blob, int deps_len)
+{
+    CacheWriteOp op;
+    op.op = CacheWriteOp::OP_CODE_CACHE_PUT;
+    op.object  = 0;
+    op.attrnum = 0;
+    op.owner   = 0;
+    op.flags   = 0;
+    op.cc_source_hash.assign(source_hash, source_hash_len);
+    op.cc_blob_hash.assign(blob_hash, blob_hash_len);
+    op.cc_memory.assign(static_cast<const char *>(memory_blob),
+                        static_cast<const char *>(memory_blob) + memory_len);
+    op.cc_out_addr     = out_addr;
+    op.cc_needs_jit    = needs_jit;
+    op.cc_folds        = folds;
+    op.cc_ecalls       = ecalls;
+    op.cc_tier2_calls  = tier2_calls;
+    op.cc_native_ops   = native_ops;
+    op.cc_deps.assign(static_cast<const char *>(deps_blob),
+                      static_cast<const char *>(deps_blob) + deps_len);
+
+    s_write_queue.push_back(std::move(op));
+
+    if (s_write_queue.size() >= WRITE_QUEUE_THRESHOLD)
+    {
+        cache_flush_writes();
+    }
+    else
+    {
+        schedule_flush();
+    }
 }
 
 int cache_init(const UTF8 *indb)
