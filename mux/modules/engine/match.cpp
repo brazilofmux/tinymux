@@ -342,6 +342,12 @@ static void match_list(dbref first, int local)
     {
         return;
     }
+
+    const bool ascii_query = (*md.string != '\0' && *md.string < 0x80);
+    const UTF8 query0_lower = ascii_query
+        ? mux_tolower_ascii[*md.string]
+        : 0;
+
     DOLIST(first, first)
     {
         if (first == md.absolute_form)
@@ -356,6 +362,23 @@ static void match_list(dbref first, int local)
          * needed by string_match().
          */
         const UTF8 *namebuf = PureName(first);
+        if (ascii_query)
+        {
+            const UTF8 *name0 = namebuf;
+            if (g_space_compress)
+            {
+                while (mux_isspace(*name0))
+                {
+                    name0++;
+                }
+            }
+
+            if (*name0 < 0x80
+                && mux_tolower_ascii[*name0] != query0_lower)
+            {
+                continue;
+            }
+        }
 
         if (!string_compare(namebuf, md.string))
         {
