@@ -1218,6 +1218,11 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                     }
                                     else if (mux_stricmp(varname, T("USER")) == 0)
                                     {
+                                        if (nVarval >= sizeof(d->username))
+                                        {
+                                            nVarval = sizeof(d->username) - 1;
+                                            varval[nVarval] = '\0';
+                                        }
                                         memcpy(d->username, varval, nVarval + 1);
                                     }
 

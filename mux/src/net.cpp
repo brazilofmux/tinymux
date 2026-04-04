@@ -1074,6 +1074,10 @@ int sum_player_command_count(dbref target)
 //
 void set_doing_all(dbref target, const UTF8 *doing, size_t len)
 {
+    if (len >= SIZEOF_DOING_STRING)
+    {
+        len = SIZEOF_DOING_STRING - 1;
+    }
     const auto range = g_dbref_to_descriptors_map.equal_range(target);
     for (auto it = range.first; it != range.second; ++it)
     {
@@ -1087,6 +1091,10 @@ void set_doing_all(dbref target, const UTF8 *doing, size_t len)
 //
 bool set_doing_least_idle(dbref target, const UTF8 *doing, size_t len)
 {
+    if (len >= SIZEOF_DOING_STRING)
+    {
+        len = SIZEOF_DOING_STRING - 1;
+    }
     DESC *d = find_least_idle(target);
     if (d)
     {

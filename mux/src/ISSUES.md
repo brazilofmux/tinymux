@@ -99,19 +99,15 @@ Updated: 2026-03-27
 
 ## Critical — Buffer Overflows (New, 2026-04-04)
 
-### Buffer overflow in telnet USER environment variable
+### ~~Buffer overflow in telnet USER environment variable~~ FIXED
 
 - **File:** `mux/src/telnet.cpp:1221`
-- **Issue:** The NEW-ENVIRON handler checks `nVarval < sizeof(varval) - 1` (allows up to 1022 bytes), but then does `memcpy(d->username, varval, nVarval + 1)` into `d->username[11]`. A remote client can copy up to 1023 bytes into an 11-byte field via telnet negotiation.
-- **Impact:** Stack corruption, potential remote code execution via crafted telnet NEW-ENVIRON.
-- **Recommendation:** Add `if (nVarval >= sizeof(d->username)) nVarval = sizeof(d->username) - 1;` before the memcpy.
+- The NEW-ENVIRON `USER` path now clamps `nVarval` to `sizeof(d->username) - 1` and re-terminates the temporary buffer before copying into `d->username[11]`.
 
-### Unbounded `set_doing_all()` and `set_doing_least_idle()`
+### ~~Unbounded `set_doing_all()` and `set_doing_least_idle()`~~ FIXED
 
 - **File:** `mux/src/net.cpp:1080, 1093`
-- **Issue:** Both functions receive a `size_t len` from the engine but do not validate it against `SIZEOF_DOING_STRING` (90 bytes). `memcpy(d->doing, doing, len + 1)` can overflow the `d->doing` field.
-- **Impact:** Buffer overflow from engine-supplied data.
-- **Recommendation:** Clamp `len` to `SIZEOF_DOING_STRING - 1` at function entry.
+- Both functions now clamp `len` to `SIZEOF_DOING_STRING - 1` before copying into descriptor `doing[]` buffers.
 
 ## High — Null Pointer Dereferences (New, 2026-04-04)
 
