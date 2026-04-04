@@ -1904,6 +1904,18 @@ bool CSQLiteDB::CodeCacheGet(const char *source_hash, int source_hash_len,
     rec.native_ops  = sqlite3_column_int(m_stmtCodeCacheGet, 14);
     rec.deps_blob   = sqlite3_column_blob(m_stmtCodeCacheGet, 15);
     rec.deps_len    = sqlite3_column_bytes(m_stmtCodeCacheGet, 15);
+
+    if (  (rec.memory_len > 0 && !rec.memory_blob)
+       || (rec.code_len   > 0 && !rec.code_blob)
+       || (rec.str_len    > 0 && !rec.str_blob)
+       || (rec.fargs_len  > 0 && !rec.fargs_blob)
+       || (rec.deps_len   > 0 && !rec.deps_blob))
+    {
+        fprintf(stderr, "CSQLiteDB::CodeCacheGet: invalid NULL blob column\n");
+        sqlite3_reset(m_stmtCodeCacheGet);
+        return false;
+    }
+
     // NOTE: memory_blob and deps_blob pointers are valid until next
     // sqlite3_reset.  Caller must copy before any further DB operations.
     return true;

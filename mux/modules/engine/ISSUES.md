@@ -39,11 +39,9 @@ Updated: 2026-04-04
 
 - Added `sqlite3_reset(m_stmtCodeCachePut)` before the error return from `CodeCachePut()`. Reverified with `make -C tests/db test`.
 
-### No null pointer check for `sqlite3_column_blob()` results
+### ~~No null pointer check for `sqlite3_column_blob()` results~~ FIXED
 
-- **File:** `mux/modules/engine/sqlitedb.cpp:1890-1913`
-- **Issue:** `sqlite3_column_blob()` can return NULL for NULL column values. The returned pointers (`memory_blob`, `code_blob`, `deps_blob`) are stored without null checks; callers may assume non-null.
-- **Recommendation:** Validate critical blobs are non-null before returning success.
+- `CodeCacheGet()` now rejects rows where any blob column reports `len > 0` but returns a null data pointer, resets the statement, and returns failure instead of passing invalid pointers to callers. Reverified with `make -C tests/db test`.
 
 ## Medium — JIT Safety (New, 2026-04-04)
 
