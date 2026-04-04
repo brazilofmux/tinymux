@@ -1165,7 +1165,7 @@
 >267
 "@trig/now me/tr.tc007.helper"
 >268
-"think setr(8,create(bench_cold_obj));&bench.payload %q8=cold payload value;think setr(0,extract(cachestats(),2,1));think get(%q8/desc);think setr(1,extract(cachestats(),2,1));@if gt(%q1,%q0)={@log smoke=TC002: miss on uncached attr read. Succeeded.},{@log smoke=TC002: miss on uncached attr read. Failed (before=%q0 after=%q1).};@destroy %q8"
+"think setr(8,create(bench_cold_obj));think setr(0,extract(cachestats(),2,1));think get(%q8/bench.nonexistent);think setr(1,extract(cachestats(),2,1));@if gt(%q1,%q0)={@log smoke=TC002: miss on absent attr. Succeeded.},{@log smoke=TC002: miss on absent attr. Failed (before=%q0 after=%q1).};@destroy %q8"
 >269
 "&bench.warmup me=This is a warmup value for cache testing.;think get(me/bench.warmup);think setr(0,extract(cachestats(),1,1));think get(me/bench.warmup);think setr(1,extract(cachestats(),1,1));@if gt(%q1,%q0)={@log smoke=TC003: hits increase on cached re-read. Succeeded.},{@log smoke=TC003: hits increase on cached re-read. Failed (before=%q0 after=%q1).}"
 >270

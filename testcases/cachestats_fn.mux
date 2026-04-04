@@ -5,6 +5,12 @@
 # controlled workloads.  Results are logged so later stages have a
 # comparison baseline.
 #
+# Limitation: genuine cold-read testing (attr in SQLite, not in cache)
+# is not possible in the smoke framework because the server process that
+# runs tests is the same one that imported the database — the cache is
+# already warm.  Cold-read benchmarking requires a restart between setup
+# and measurement.
+#
 @create test_cachestats_fn
 -
 @set test_cachestats_fn=INHERIT QUIET
@@ -34,31 +40,31 @@
   }
 -
 #
-# Test Case #2 - Misses increase when reading an uncached attribute.
-# Create a fresh object so its DB-side attributes have never been read.
-# The first get() must miss the cache and go to SQLite.
+# Test Case #2 - Misses increase on a cache-absent attribute lookup.
+# Reading a nonexistent attr on a fresh object forces the cache-miss
+# path: not in cache, consult SQLite, get nothing back.  This does NOT
+# test the "found in SQLite, promote to cache" path (see file header).
 #
 &tr.tc002 test_cachestats_fn=
   @trig/now me/tr.tc002.helper
 -
 &tr.tc002.helper test_cachestats_fn=
   think setr(8,create(bench_cold_obj));
-  &bench.payload %q8=cold payload value;
   think setr(0,extract(cachestats(),2,1));
-  think get(%q8/desc);
+  think get(%q8/bench.nonexistent);
   think setr(1,extract(cachestats(),2,1));
   @if gt(%q1,%q0)=
   {
-    @log smoke=TC002: miss on uncached attr read. Succeeded.
+    @log smoke=TC002: miss on absent attr. Succeeded.
   },
   {
-    @log smoke=TC002: miss on uncached attr read. Failed (before=%q0 after=%q1).
+    @log smoke=TC002: miss on absent attr. Failed (before=%q0 after=%q1).
   };
   @destroy %q8
 -
 #
 # Test Case #3 - Hits increase when re-reading a cached attribute.
-# After a get() populates the cache, a second get() must hit.
+# Write-through puts the attr in cache; a subsequent get() must hit.
 #
 &tr.tc003 test_cachestats_fn=
   @trig/now me/tr.tc003.helper
