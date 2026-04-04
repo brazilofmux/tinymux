@@ -63,12 +63,14 @@ struct CacheWriteOp
 };
 
 static vector<CacheWriteOp> s_write_queue;
+static unordered_map<Aname, size_t, AnameHasher> s_attr_write_index;
 static bool s_flush_scheduled = false;
 static const size_t WRITE_QUEUE_THRESHOLD = 50;
 
 // Forward declaration.
 //
 void cache_flush_writes(void);
+static void trim_attribute_cache(void);
 
 static void Task_WriteQueueFlush(void *pUnused, int iUnused)
 {
@@ -183,8 +185,33 @@ void cache_flush_writes(void)
                 }
             }
         }
+        trim_attribute_cache();
     }
     s_write_queue.clear();
+    s_attr_write_index.clear();
+}
+
+static void queue_attr_write(const CacheWriteOp &new_op)
+{
+    Aname nam;
+    nam.object = new_op.object;
+    nam.attrnum = new_op.attrnum;
+
+    const auto it = s_attr_write_index.find(nam);
+    if (it != s_attr_write_index.end())
+    {
+        CacheWriteOp &existing = s_write_queue[it->second];
+        existing.op = new_op.op;
+        existing.object = new_op.object;
+        existing.attrnum = new_op.attrnum;
+        existing.owner = new_op.owner;
+        existing.flags = new_op.flags;
+        existing.value = new_op.value;
+        return;
+    }
+
+    s_write_queue.push_back(new_op);
+    s_attr_write_index.insert(make_pair(nam, s_write_queue.size() - 1));
 }
 
 void cache_queue_code_cache_put(
@@ -519,7 +546,7 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len, dbref owner, int flags
         op.value.assign(value, value + len);
         op.owner   = static_cast<int>(owner);
         op.flags   = flags;
-        s_write_queue.push_back(std::move(op));
+        queue_attr_write(op);
 
         if (s_write_queue.size() >= WRITE_QUEUE_THRESHOLD)
         {
@@ -610,7 +637,8 @@ bool cache_del(Aname *nam)
         op.attrnum = nam->attrnum;
         op.owner   = 0;
         op.flags   = 0;
-        s_write_queue.push_back(std::move(op));
+        op.value.clear();
+        queue_attr_write(op);
 
         if (s_write_queue.size() >= WRITE_QUEUE_THRESHOLD)
         {
