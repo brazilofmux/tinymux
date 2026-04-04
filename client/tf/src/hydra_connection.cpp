@@ -97,7 +97,15 @@ bool HydraConnection::connect() {
         grpcState->channel = grpc::CreateChannel(target,
             grpc::InsecureChannelCredentials());
     }
+    if (!grpcState->channel) {
+        pushOutput("[Hydra] Failed to create gRPC channel to " + target);
+        return false;
+    }
     grpcState->stub = hydra::HydraService::NewStub(grpcState->channel);
+    if (!grpcState->stub) {
+        pushOutput("[Hydra] Failed to create Hydra service stub for " + target);
+        return false;
+    }
 
     // Authenticate
     {
@@ -152,7 +160,14 @@ std::shared_ptr<HydraConnection::StreamState> HydraConnection::currentStreamStat
 
 bool HydraConnection::openStream(bool startReaderThread) {
     auto grpcState = currentGrpcState();
-    if (!grpcState || !grpcState->stub) return false;
+    if (!grpcState) {
+        pushOutput("[Hydra] Transport unavailable: missing gRPC state");
+        return false;
+    }
+    if (!grpcState->stub) {
+        pushOutput("[Hydra] Transport unavailable: missing Hydra service stub");
+        return false;
+    }
 
     auto streamState = std::make_shared<StreamState>();
     streamState->context = std::make_shared<ClientContext>();
@@ -868,7 +883,18 @@ void HydraConnection::attemptReconnect() {
             std::chrono::seconds(RECONNECT_DELAY_SECS));
 
         auto grpcState = currentGrpcState();
-        if (!grpcState || !grpcState->stub || sessionId_.empty()) break;
+        if (!grpcState) {
+            pushOutput("[Hydra] Reconnect aborted: missing gRPC state");
+            break;
+        }
+        if (!grpcState->stub) {
+            pushOutput("[Hydra] Reconnect aborted: missing Hydra service stub");
+            break;
+        }
+        if (sessionId_.empty()) {
+            pushOutput("[Hydra] Reconnect aborted: missing session id");
+            break;
+        }
 
         if (openStream(false)) {
             auto streamState = currentStreamState();

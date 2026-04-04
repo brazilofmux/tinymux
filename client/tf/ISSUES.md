@@ -30,11 +30,7 @@ All previously reported bugs have been resolved:
 
 ## Newly Identified Bugs (2026-04-04) — Continued
 
-- **Incomplete gRPC channel error handling**
-  - **File:** `client/tf/src/hydra_connection.cpp:87-93`
-  - **Issue:** `CreateChannel()` return value is not validated for null. Under resource exhaustion, subsequent stub creation and operations will fail without diagnostic output.
-  - **Impact:** Silently failed connection with no user-visible error message.
-  - **Recommendation:** Add null check after `CreateChannel()` and push diagnostic output.
+- ~~**Incomplete gRPC channel error handling**~~ FIXED — TF Hydra connect/reconnect now validates channel and stub creation explicitly and emits targeted diagnostics when transport state is missing during stream open or reconnect.
 
 ## Stubbed Or Partially Implemented Interfaces
 
