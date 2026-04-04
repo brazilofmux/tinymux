@@ -2179,8 +2179,10 @@ bool atr_add_raw_LEN(dbref thing, int atr, const UTF8 *szValue, size_t nValue)
     // Enforce per-object attribute count limit.
     // Wizards bypass the limit.  A vlimit of 0 means unlimited.
     //
+    const bool bypass_vlimit =
+        Good_obj(raw_owner) && Wizard(raw_owner);
     if (  0 < mudconf.vlimit
-       && !Wizard(Owner(thing)))
+       && !bypass_vlimit)
     {
         // Only check the limit for new attributes, not updates.
         //
