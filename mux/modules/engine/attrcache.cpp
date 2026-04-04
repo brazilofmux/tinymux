@@ -308,7 +308,8 @@ static void trim_attribute_cache(void)
     {
         if (mudstate.attribute_lru_cache_list.empty())
         {
-            cache_size = 0;
+            // All remaining bytes are pinned (dirty).  Stop evicting.
+            //
             break;
         }
 
@@ -472,6 +473,44 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len, dbref owner, int flags
         return true;
     }
 
+    // Pin the cache entry BEFORE queueing the write.  If the queue
+    // hits the threshold and triggers cache_flush_writes(), the flush
+    // must see the pinned entry so it can unpin it after committing.
+    //
+    {
+        statedata::AttrCacheEntry entry;
+        entry.data.assign(value, value + len);
+        entry.lru_it = mudstate.attribute_pinned_list.insert(
+            mudstate.attribute_pinned_list.end(), *nam);
+        entry.attr_owner = owner;
+        entry.attr_flags = flags;
+        entry.dirty     = true;
+        entry.tombstone = false;
+
+        const auto it = mudstate.attribute_lru_cache_map.find(*nam);
+        if (it != mudstate.attribute_lru_cache_map.end())
+        {
+            cache_size += entry.data.size() - it->second.data.size();
+            if (it->second.dirty)
+            {
+                mudstate.attribute_pinned_list.erase(it->second.lru_it);
+            }
+            else
+            {
+                mudstate.attribute_lru_cache_list.erase(it->second.lru_it);
+            }
+            it->second = std::move(entry);
+        }
+        else
+        {
+            cache_size += entry.data.size();
+            mudstate.attribute_lru_cache_map.insert(make_pair(*nam, std::move(entry)));
+        }
+        trim_attribute_cache();
+    }
+
+    // Queue the write and check threshold.
+    //
     {
         CacheWriteOp op;
         op.op      = CacheWriteOp::OP_PUT;
@@ -490,45 +529,6 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len, dbref owner, int flags
         {
             schedule_flush();
         }
-    }
-
-    if (!mudstate.bStandAlone)
-    {
-        // Update cache.  Entry is pinned (dirty) until the write queue
-        // flushes it to SQLite; trim_attribute_cache skips pinned entries.
-        //
-        statedata::AttrCacheEntry entry;
-        entry.data.assign(value, value + len);
-        entry.lru_it = mudstate.attribute_pinned_list.insert(
-            mudstate.attribute_pinned_list.end(), *nam);
-        entry.attr_owner = owner;
-        entry.attr_flags = flags;
-        entry.dirty     = true;
-        entry.tombstone = false;
-
-        const auto it = mudstate.attribute_lru_cache_map.find(*nam);
-        if (it != mudstate.attribute_lru_cache_map.end())
-        {
-            // It was in the cache map — erase old list entry (could be
-            // in either LRU or pinned list depending on prior dirty state).
-            //
-            cache_size += entry.data.size() - it->second.data.size();
-            if (it->second.dirty)
-            {
-                mudstate.attribute_pinned_list.erase(it->second.lru_it);
-            }
-            else
-            {
-                mudstate.attribute_lru_cache_list.erase(it->second.lru_it);
-            }
-            it->second = std::move(entry);
-        }
-        else
-        {
-            cache_size += entry.data.size();
-            mudstate.attribute_lru_cache_map.insert(make_pair(*nam, std::move(entry)));
-        }
-        trim_attribute_cache();
     }
     return true;
 }
@@ -568,8 +568,41 @@ bool cache_del(Aname *nam)
         {
             return false;
         }
+        return true;
     }
-    else
+
+    // Pin tombstone BEFORE queueing the delete — same ordering
+    // rationale as cache_put (flush must see the pinned entry).
+    //
+    {
+        const auto it = mudstate.attribute_lru_cache_map.find(*nam);
+        if (it != mudstate.attribute_lru_cache_map.end())
+        {
+            it->second.tombstone = true;
+            if (!it->second.dirty)
+            {
+                it->second.dirty = true;
+                mudstate.attribute_pinned_list.splice(
+                    mudstate.attribute_pinned_list.end(),
+                    mudstate.attribute_lru_cache_list,
+                    it->second.lru_it);
+            }
+        }
+        else
+        {
+            statedata::AttrCacheEntry entry;
+            entry.lru_it = mudstate.attribute_pinned_list.insert(
+                mudstate.attribute_pinned_list.end(), *nam);
+            entry.attr_owner = NOTHING;
+            entry.attr_flags = 0;
+            entry.dirty     = true;
+            entry.tombstone = true;
+            mudstate.attribute_lru_cache_map.insert(make_pair(*nam, std::move(entry)));
+        }
+    }
+
+    // Queue the delete and check threshold.
+    //
     {
         CacheWriteOp op;
         op.op      = CacheWriteOp::OP_DEL;
@@ -586,43 +619,6 @@ bool cache_del(Aname *nam)
         else
         {
             schedule_flush();
-        }
-    }
-
-    if (!mudstate.bStandAlone)
-    {
-        // Mark as tombstone in cache — pinned until the write queue
-        // flushes the delete to SQLite, then removed entirely.
-        //
-        const auto it = mudstate.attribute_lru_cache_map.find(*nam);
-        if (it != mudstate.attribute_lru_cache_map.end())
-        {
-            it->second.tombstone = true;
-            if (!it->second.dirty)
-            {
-                // Move from LRU to pinned list.
-                //
-                it->second.dirty = true;
-                mudstate.attribute_pinned_list.splice(
-                    mudstate.attribute_pinned_list.end(),
-                    mudstate.attribute_lru_cache_list,
-                    it->second.lru_it);
-            }
-            // If already dirty+pinned, just set tombstone — it stays pinned.
-        }
-        else
-        {
-            // Not in cache — insert a tombstone so prefetch/GetAll
-            // doesn't resurrect it from SQLite.
-            //
-            statedata::AttrCacheEntry entry;
-            entry.lru_it = mudstate.attribute_pinned_list.insert(
-                mudstate.attribute_pinned_list.end(), *nam);
-            entry.attr_owner = NOTHING;
-            entry.attr_flags = 0;
-            entry.dirty     = true;
-            entry.tombstone = true;
-            mudstate.attribute_lru_cache_map.insert(make_pair(*nam, std::move(entry)));
         }
     }
     return true;
