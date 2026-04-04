@@ -29,9 +29,9 @@ fi
 # Function to clean files
 clean_files() {
     local dir=$1
-    local remove_list=$2
-    
-    for file in $remove_list; do
+    shift
+
+    for file in "$@"; do
         if [ -e "$dir/$file" ]; then
             echo "Removing: $dir/$file"
             rm "$dir/$file"
@@ -48,6 +48,18 @@ is_binary() {
     fi
 }
 
+# Write a sorted newline-delimited file list without adding a blank line for empty arrays.
+write_sorted_list() {
+    local output_file=$1
+    shift
+
+    if [ "$#" -eq 0 ]; then
+        : > "$output_file"
+    else
+        printf '%s\n' "$@" | sort > "$output_file"
+    fi
+}
+
 # Function to process source and create patches
 process_distribution() {
     local dist_type=$1  # "src" or "bin"
@@ -55,52 +67,55 @@ process_distribution() {
     echo "Building Windows $dist_type distribution..."
     
     # Read file lists
-    local patchable_files=$(cat win32/TOC.$dist_type.patchable)
-    local unpatched_files=$(cat win32/TOC.$dist_type.unpatched)
-    local remove_files=$(cat win32/TOC.$dist_type.removed)
+    local -a patchable_files=()
+    local -a unpatched_files=()
+    local -a remove_files=()
+    mapfile -t patchable_files < "win32/TOC.$dist_type.patchable"
+    mapfile -t unpatched_files < "win32/TOC.$dist_type.unpatched"
+    mapfile -t remove_files < "win32/TOC.$dist_type.removed"
     
     # Prepare directories
-    rm -rf ${NEW_DIR}_$dist_type $DISTRO_DIR patches_$dist_type
-    cp -r ${REFERENCE_DIR}_$dist_type $DISTRO_DIR
-    cp -r ${REFERENCE_DIR}_$dist_type ${NEW_DIR}_$dist_type
-    mkdir -p patches_$dist_type/bin patches_$dist_type/text
+    rm -rf "${NEW_DIR}_$dist_type" "$DISTRO_DIR" "patches_$dist_type"
+    cp -r "${REFERENCE_DIR}_$dist_type" "$DISTRO_DIR"
+    cp -r "${REFERENCE_DIR}_$dist_type" "${NEW_DIR}_$dist_type"
+    mkdir -p "patches_$dist_type/bin" "patches_$dist_type/text"
     
     # Copy patchable files
     echo "Copying patchable files for Windows $dist_type..."
-    for file in $patchable_files; do
-        mkdir -p $(dirname "${NEW_DIR}_$dist_type/$file")
+    for file in "${patchable_files[@]}"; do
+        mkdir -p "$(dirname "${NEW_DIR}_$dist_type/$file")"
         cp "$CHANGES_DIR/$file" "${NEW_DIR}_$dist_type/$file"
     done
     
     # Special Windows configurations for source
     if [ "$dist_type" = "src" ]; then
-        cp $CHANGES_DIR/include/autoconf-win32.h ${NEW_DIR}_$dist_type/include/autoconf.h
-        cp $CHANGES_DIR/modules/autoconf-win32.h ${NEW_DIR}_$dist_type/modules/autoconf.h
+        cp "$CHANGES_DIR/include/autoconf-win32.h" "${NEW_DIR}_$dist_type/include/autoconf.h"
+        cp "$CHANGES_DIR/modules/autoconf-win32.h" "${NEW_DIR}_$dist_type/modules/autoconf.h"
     fi
     
     # Remove files
     echo "Cleaning up removed files for Windows $dist_type..."
-    clean_files "${NEW_DIR}_$dist_type" "$remove_files"
+    clean_files "${NEW_DIR}_$dist_type" "${remove_files[@]}"
     
-    chmod -R u+rw $DISTRO_DIR ${NEW_DIR}_$dist_type
+    chmod -R u+rw "$DISTRO_DIR" "${NEW_DIR}_$dist_type"
     
     # Create a master patch manifest
-    echo "# Windows $dist_type patches for MUX $OLD_VERSION to $NEW_VERSION" > patches_$dist_type/MANIFEST.txt
-    echo "# Generated on $(date)" >> patches_$dist_type/MANIFEST.txt
-    echo "" >> patches_$dist_type/MANIFEST.txt
-    echo "# Binary files (xdelta3 format):" >> patches_$dist_type/MANIFEST.txt
+    echo "# Windows $dist_type patches for MUX $OLD_VERSION to $NEW_VERSION" > "patches_$dist_type/MANIFEST.txt"
+    echo "# Generated on $(date)" >> "patches_$dist_type/MANIFEST.txt"
+    echo "" >> "patches_$dist_type/MANIFEST.txt"
+    echo "# Binary files (xdelta3 format):" >> "patches_$dist_type/MANIFEST.txt"
     
     # Process all files to create appropriate patches
     echo "Generating patches for Windows $dist_type..."
     
     # Track files for manifest
-    binary_files=()
-    text_files=()
-    new_files=()
-    removed_files=()
+    local -a binary_files=()
+    local -a text_files=()
+    local -a new_files=()
+    local -a removed_files=()
     
     # Create patches for changed files and track new/removed files
-    find $DISTRO_DIR -type f | while read src_file; do
+    while IFS= read -r src_file; do
         rel_path=${src_file#$DISTRO_DIR/}
         new_file="${NEW_DIR}_$dist_type/$rel_path"
         
@@ -127,10 +142,10 @@ process_distribution() {
             # File was removed
             removed_files+=("$rel_path")
         fi
-    done
+    done < <(find "$DISTRO_DIR" -type f)
     
     # Detect new files
-    find ${NEW_DIR}_$dist_type -type f | while read new_file; do
+    while IFS= read -r new_file; do
         rel_path=${new_file#${NEW_DIR}_$dist_type/}
         src_file="$DISTRO_DIR/$rel_path"
         
@@ -145,43 +160,47 @@ process_distribution() {
             fi
             new_files+=("$rel_path")
         fi
-    done
+    done < <(find "${NEW_DIR}_$dist_type" -type f)
     
     # Create metadata files for patch application
-    echo "${binary_files[@]}" | tr ' ' '\n' | sort > patches_$dist_type/binary_files.txt
-    echo "${text_files[@]}" | tr ' ' '\n' | sort > patches_$dist_type/text_files.txt
-    echo "${new_files[@]}" | tr ' ' '\n' | sort > patches_$dist_type/new_files.txt
-    echo "${removed_files[@]}" | tr ' ' '\n' | sort > patches_$dist_type/removed_files.txt
+    write_sorted_list "patches_$dist_type/binary_files.txt" "${binary_files[@]}"
+    write_sorted_list "patches_$dist_type/text_files.txt" "${text_files[@]}"
+    write_sorted_list "patches_$dist_type/new_files.txt" "${new_files[@]}"
+    write_sorted_list "patches_$dist_type/removed_files.txt" "${removed_files[@]}"
     
     # Complete the manifest
-    cat patches_$dist_type/binary_files.txt | while read file; do
-        echo "bin/$file.vcdiff" >> patches_$dist_type/MANIFEST.txt
-    done
-    
-    echo "" >> patches_$dist_type/MANIFEST.txt
-    echo "# Text files (unified diff format):" >> patches_$dist_type/MANIFEST.txt
-    cat patches_$dist_type/text_files.txt | while read file; do
-        echo "text/$file.patch" >> patches_$dist_type/MANIFEST.txt
-    done
-    
-    echo "" >> patches_$dist_type/MANIFEST.txt
-    echo "# New files:" >> patches_$dist_type/MANIFEST.txt
-    cat patches_$dist_type/new_files.txt | while read file; do
+    while IFS= read -r file; do
+        [ -n "$file" ] || continue
+        echo "bin/$file.vcdiff" >> "patches_$dist_type/MANIFEST.txt"
+    done < "patches_$dist_type/binary_files.txt"
+
+    echo "" >> "patches_$dist_type/MANIFEST.txt"
+    echo "# Text files (unified diff format):" >> "patches_$dist_type/MANIFEST.txt"
+    while IFS= read -r file; do
+        [ -n "$file" ] || continue
+        echo "text/$file.patch" >> "patches_$dist_type/MANIFEST.txt"
+    done < "patches_$dist_type/text_files.txt"
+
+    echo "" >> "patches_$dist_type/MANIFEST.txt"
+    echo "# New files:" >> "patches_$dist_type/MANIFEST.txt"
+    while IFS= read -r file; do
+        [ -n "$file" ] || continue
         if is_binary "${NEW_DIR}_$dist_type/$file"; then
-            echo "bin/$file.new" >> patches_$dist_type/MANIFEST.txt
+            echo "bin/$file.new" >> "patches_$dist_type/MANIFEST.txt"
         else
-            echo "text/$file.new" >> patches_$dist_type/MANIFEST.txt
+            echo "text/$file.new" >> "patches_$dist_type/MANIFEST.txt"
         fi
-    done
-    
-    echo "" >> patches_$dist_type/MANIFEST.txt
-    echo "# Removed files:" >> patches_$dist_type/MANIFEST.txt
-    cat patches_$dist_type/removed_files.txt | while read file; do
-        echo "$file" >> patches_$dist_type/MANIFEST.txt
-    done
+    done < "patches_$dist_type/new_files.txt"
+
+    echo "" >> "patches_$dist_type/MANIFEST.txt"
+    echo "# Removed files:" >> "patches_$dist_type/MANIFEST.txt"
+    while IFS= read -r file; do
+        [ -n "$file" ] || continue
+        echo "$file" >> "patches_$dist_type/MANIFEST.txt"
+    done < "patches_$dist_type/removed_files.txt"
     
     # Create patch application script
-    cat > patches_$dist_type/apply_patch.bat <<EOF
+    cat > "patches_$dist_type/apply_patch.bat" <<EOF
 @echo off
 echo MUX $OLD_VERSION to $NEW_VERSION Patch Applier
 echo =====================================
@@ -247,33 +266,33 @@ EOF
     if [ -e mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.zip ]; then
         rm mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.zip
     fi
-    zip -r mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.zip patches_$dist_type/
+    zip -r "mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.zip" "patches_$dist_type/"
     
     # Also create .7z format
     if command -v 7z &> /dev/null; then
         if [ -e mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.7z ]; then
-            rm mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.7z
+            rm "mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.7z"
         fi
-        7z a mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.7z patches_$dist_type/
+        7z a "mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.7z" "patches_$dist_type/"
     else
         echo "7z command not found, skipping .7z archive creation"
     fi
     
     # Build complete distribution
-    rm -rf $DISTRO_DIR
+    rm -rf "$DISTRO_DIR"
     
     # Copy unpatched files
     echo "Copying unpatched files for Windows $dist_type..."
-    for file in $unpatched_files; do
-        mkdir -p $(dirname "${NEW_DIR}_$dist_type/$file")
+    for file in "${unpatched_files[@]}"; do
+        mkdir -p "$(dirname "${NEW_DIR}_$dist_type/$file")"
         cp "$CHANGES_DIR/$file" "${NEW_DIR}_$dist_type/$file"
     done
     
     # Final cleanup
     echo "Final cleanup of removed files for Windows $dist_type..."
-    clean_files "${NEW_DIR}_$dist_type" "$remove_files"
+    clean_files "${NEW_DIR}_$dist_type" "${remove_files[@]}"
     
-    cp -r ${NEW_DIR}_$dist_type $DISTRO_DIR
+    cp -r "${NEW_DIR}_$dist_type" "$DISTRO_DIR"
     
     # Create full distribution archives
     echo "Creating Windows $dist_type full distribution archives..."
@@ -282,30 +301,30 @@ EOF
     if [ -e mux-$NEW_VERSION.win32.$dist_type.zip ]; then
         rm mux-$NEW_VERSION.win32.$dist_type.zip
     fi
-    zip -r mux-$NEW_VERSION.win32.$dist_type.zip $DISTRO_DIR
+    zip -r "mux-$NEW_VERSION.win32.$dist_type.zip" "$DISTRO_DIR"
     
     # 7z format (also common on Windows)
     if command -v 7z &> /dev/null; then
         if [ -e mux-$NEW_VERSION.win32.$dist_type.7z ]; then
-            rm mux-$NEW_VERSION.win32.$dist_type.7z
+            rm "mux-$NEW_VERSION.win32.$dist_type.7z"
         fi
-        7z a mux-$NEW_VERSION.win32.$dist_type.7z $DISTRO_DIR
+        7z a "mux-$NEW_VERSION.win32.$dist_type.7z" "$DISTRO_DIR"
     else
         echo "7z command not found, skipping .7z archive creation"
     fi
     
     # Generate checksums
     echo "Generating checksums for Windows $dist_type..."
-    sha256sum mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.zip > mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.zip.sha256
-    sha256sum mux-$NEW_VERSION.win32.$dist_type.zip > mux-$NEW_VERSION.win32.$dist_type.zip.sha256
+    sha256sum "mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.zip" > "mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.zip.sha256"
+    sha256sum "mux-$NEW_VERSION.win32.$dist_type.zip" > "mux-$NEW_VERSION.win32.$dist_type.zip.sha256"
     
     if command -v 7z &> /dev/null; then
-        sha256sum mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.7z > mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.7z.sha256
-        sha256sum mux-$NEW_VERSION.win32.$dist_type.7z > mux-$NEW_VERSION.win32.$dist_type.7z.sha256
+        sha256sum "mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.7z" > "mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.7z.sha256"
+        sha256sum "mux-$NEW_VERSION.win32.$dist_type.7z" > "mux-$NEW_VERSION.win32.$dist_type.7z.sha256"
     fi
     
     # Generate a simple README with instructions
-    cat > patches_$dist_type/README.txt <<EOF
+    cat > "patches_$dist_type/README.txt" <<EOF
 MUX $OLD_VERSION to $NEW_VERSION Patch Instructions
 =================================================
 
