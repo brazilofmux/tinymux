@@ -1,9 +1,26 @@
 // connection.cpp -- IOCP async TCP connection with Telnet state machine.
 #include "connection.h"
+#include <cctype>
 #include <cstring>
 
 LPFN_CONNECTEX Connection::ConnectEx_ = nullptr;
 const std::string Connection::empty_string_;
+
+static std::string trim_ascii_whitespace(const std::string& s) {
+    size_t start = 0;
+    while (start < s.size() &&
+           std::isspace(static_cast<unsigned char>(s[start]))) {
+        ++start;
+    }
+
+    size_t end = s.size();
+    while (end > start &&
+           std::isspace(static_cast<unsigned char>(s[end - 1]))) {
+        --end;
+    }
+
+    return s.substr(start, end - start);
+}
 
 bool Connection::LoadConnectEx(SOCKET s) {
     if (ConnectEx_) return true;
@@ -416,16 +433,21 @@ void Connection::process_telnet(const unsigned char* data, size_t len,
                     // Charsets are separated by a delimiter (first byte after REQUEST)
                     if (!offered.empty()) {
                         char delim = offered[0];
-                        size_t pos = 1;
-                        while (pos < offered.size()) {
-                            size_t next = offered.find(delim, pos);
-                            if (next == std::string::npos) next = offered.size();
-                            std::string cs = offered.substr(pos, next - pos);
-                            if (cs == "UTF-8" || cs == "utf-8") {
-                                found_utf8 = true;
-                                break;
+                        if (std::isprint(static_cast<unsigned char>(delim))) {
+                            size_t pos = 1;
+                            size_t offered_count = 0;
+                            while (pos < offered.size() && offered_count < 50) {
+                                size_t next = offered.find(delim, pos);
+                                if (next == std::string::npos) next = offered.size();
+                                std::string cs = trim_ascii_whitespace(
+                                    offered.substr(pos, next - pos));
+                                if (cs == "UTF-8" || cs == "utf-8") {
+                                    found_utf8 = true;
+                                    break;
+                                }
+                                pos = next + 1;
+                                ++offered_count;
                             }
-                            pos = next + 1;
                         }
                     }
                     send_subneg_charset(found_utf8, found_utf8 ? "UTF-8" : "");
