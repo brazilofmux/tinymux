@@ -259,6 +259,43 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen, dbref *owner, int *flags)
     //
     cache_flush_writes();
 
+    // Object-affinity prefetch: instead of loading one attribute,
+    // bulk-load the entire object.  GetAll (~5.5 us) is cheaper than
+    // 2 individual Gets (~3.6 us each), and most code that touches
+    // one attribute on an object will touch more.
+    //
+    if (!mudstate.bStandAlone)
+    {
+        cache_preload_obj(static_cast<dbref>(nam->object), true);
+
+        // Retry the cache — the attribute should be there now.
+        //
+        const auto it2 = mudstate.attribute_lru_cache_map.find(*nam);
+        if (it2 != mudstate.attribute_lru_cache_map.end())
+        {
+            // Don't count as a hit — the miss already counted.
+            //
+            mudstate.attribute_lru_cache_list.splice(
+                mudstate.attribute_lru_cache_list.end(),
+                mudstate.attribute_lru_cache_list,
+                it2->second.lru_it
+            );
+            *pLen = it2->second.data.size();
+            *owner = it2->second.attr_owner;
+            *flags = it2->second.attr_flags;
+            return it2->second.data.data();
+        }
+
+        // Attribute genuinely doesn't exist on this object.
+        //
+        *pLen = 0;
+        *owner = NOTHING;
+        *flags = 0;
+        return nullptr;
+    }
+
+    // Standalone mode: single-attribute load (no cache).
+    //
     size_t nLength = 0;
     int db_owner = NOTHING;
     int db_flags = 0;
@@ -269,20 +306,6 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen, dbref *owner, int *flags)
         *pLen = nLength;
         *owner = static_cast<dbref>(db_owner);
         *flags = db_flags;
-        if (!mudstate.bStandAlone)
-        {
-            // Add this information to the cache.
-            //
-            statedata::AttrCacheEntry entry;
-            entry.data.assign(sqlite_attr_buf, sqlite_attr_buf + nLength);
-            entry.lru_it = mudstate.attribute_lru_cache_list.insert(
-                mudstate.attribute_lru_cache_list.end(), *nam);
-            entry.attr_owner = static_cast<dbref>(db_owner);
-            entry.attr_flags = db_flags;
-            cache_size += entry.data.size();
-            mudstate.attribute_lru_cache_map.insert(make_pair(*nam, std::move(entry)));
-            trim_attribute_cache();
-        }
         return sqlite_attr_buf;
     }
 
