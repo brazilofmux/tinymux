@@ -125,7 +125,7 @@ private:
 // Tier 2: pre-compiled RV64 library blob
 // ---------------------------------------------------------------
 
-tier2_state s_tier2 = { false, {}, {}, {}, {}, 0, 0, 0, {}, 0 };
+tier2_state s_tier2 = { false, {}, 0, 0, 0, 0, {}, 0 };
 
 // Tier 1 compiler version.  Bump this whenever the HIR lowering,
 // codegen, constant folding, NOEVAL handlers, or any other tier 1
@@ -423,19 +423,15 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
         }
     }
 
-    // Read code section.
-    s_tier2.code.resize(hdr.code_size);
+    // Read code section directly into the install image.
+    s_tier2.code_size = hdr.code_size;
+    s_tier2.bss_size = (hdr.version >= 2) ? hdr.bss_size : 0;
+    s_tier2.image.resize(hdr.code_size + s_tier2.bss_size, 0);
     fseek(f, hdr.code_offset, SEEK_SET);
-    if (fread(s_tier2.code.data(), hdr.code_size, 1, f) != 1) {
+    if (fread(s_tier2.image.data(), hdr.code_size, 1, f) != 1) {
         fclose(f);
         return false;
     }
-
-    // v2: code_size is the full flat image (code + rodata + data).
-    // BSS size tells the loader how much to zero-fill after.
-    s_tier2.bss_size = (hdr.version >= 2) ? hdr.bss_size : 0;
-    s_tier2.image = s_tier2.code;
-    s_tier2.image.resize(s_tier2.code.size() + s_tier2.bss_size, 0);
 
     // Record writable data offset within the flat image for runtime reset.
     if (hdr.version >= 2 && hdr.data_size > 0) {
@@ -478,13 +474,13 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
     const void *parts[] = {
         JIT_COMPILER_VERSION,
         &hdr,
-        s_tier2.code.data(),
+        s_tier2.image.data(),
         entries.empty() ? nullptr : entries.data(),
     };
     const size_t sizes[] = {
         sizeof(JIT_COMPILER_VERSION) - 1,
         sizeof(hdr),
-        s_tier2.code.size(),
+        s_tier2.code_size,
         entries.size() * sizeof(rv64_blob_entry),
     };
     s_blob_version = sha1_hex_parts(parts, sizes, 4);
@@ -744,14 +740,14 @@ static void tier2_reset_writable(Vec &memory, uint64_t guest_base) {
         uint64_t dst = guest_base + s_tier2.data_image_offset;
         if (dst + s_tier2.data_image_size <= memory.size()) {
             memcpy(memory.data() + dst,
-                   s_tier2.code.data() + s_tier2.data_image_offset,
+                   s_tier2.image.data() + s_tier2.data_image_offset,
                    s_tier2.data_image_size);
         }
     }
 
     // Zero-fill BSS.
     if (s_tier2.bss_size > 0) {
-        uint64_t bss_start = guest_base + s_tier2.code.size();
+        uint64_t bss_start = guest_base + s_tier2.code_size;
         if (bss_start + s_tier2.bss_size <= memory.size()) {
             memset(memory.data() + bss_start, 0, s_tier2.bss_size);
         }
@@ -1235,7 +1231,7 @@ struct persistent_vm_t {
     void reset_blob_bss() {
         if (s_tier2.loaded && s_tier2.bss_size > 0) {
             uint64_t bss_start = rv_compiler::BLOB_BASE
-                               + s_tier2.code.size();
+                               + s_tier2.code_size;
             if (bss_start + s_tier2.bss_size <= memory.size()) {
                 memset(memory.data() + bss_start, 0, s_tier2.bss_size);
             }
