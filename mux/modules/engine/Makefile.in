@@ -274,7 +274,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdi
     $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(OPENSSL_CFLAGS)
 
 
-# SQLite storage backend (always enabled)
+# Storage backends (SQLite always enabled; libmdbx for tiered storage)
 ENGINE_CXX_SRC = art_scan.cpp ast.cpp ast_scan.cpp attrcache.cpp \
 	boolexp.cpp command.cpp comsys.cpp conf.cpp conn_bridge.cpp \
 	cque.cpp create.cpp cron.cpp db.cpp db_rw.cpp engine.cpp \
@@ -288,7 +288,8 @@ ENGINE_CXX_SRC = art_scan.cpp ast.cpp ast_scan.cpp attrcache.cpp \
 	hir_ssa.cpp hir_opt.cpp lua_bytecode.cpp hir_lower_lua.cpp \
 	jit_lua.cpp lua_mod.cpp session.cpp speech.cpp timer.cpp \
 	walk.cpp unparse.cpp vattr.cpp walkdb.cpp wild.cpp wiz.cpp \
-	$(am__append_1) sqlitedb.cpp sqlite_backend.cpp
+	$(am__append_1) sqlitedb.cpp sqlite_backend.cpp \
+	mdbx_backend.cpp
 ENGINE_CXX_OBJS = $(ENGINE_CXX_SRC:.cpp=.eo)
 BUILT_SOURCES = art_scan.cpp ast_scan.cpp
 CLEANFILES = engine.so *.eo *.d

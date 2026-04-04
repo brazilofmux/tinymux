@@ -29,8 +29,8 @@ if REALITY_ENABLED
 ENGINE_CXX_SRC += levels.cpp
 endif
 
-# SQLite storage backend (always enabled)
-ENGINE_CXX_SRC += sqlitedb.cpp sqlite_backend.cpp
+# Storage backends (SQLite always enabled; libmdbx for tiered storage)
+ENGINE_CXX_SRC += sqlitedb.cpp sqlite_backend.cpp mdbx_backend.cpp
 
 ENGINE_CXX_OBJS = $(ENGINE_CXX_SRC:.cpp=.eo)
 
