@@ -252,6 +252,13 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen, dbref *owner, int *flags)
         cache_misses++;
     }
 
+    // Flush any queued writes before reading from SQLite.  A queued
+    // Put or Del may not be in SQLite yet; reading without flushing
+    // would return stale data.  This matters when the LRU cache has
+    // evicted a recently-written entry (bounded cache mode).
+    //
+    cache_flush_writes();
+
     size_t nLength = 0;
     int db_owner = NOTHING;
     int db_flags = 0;
