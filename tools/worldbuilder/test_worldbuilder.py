@@ -165,6 +165,21 @@ def test_softcode_lint():
     r = lint_softcode("@force %#=bad", "test")
     test("@force caught", not r.ok)
 
+    r = lint_softcode("@pemit %#=secret", "test")
+    test("@pemit %# caught", not r.ok)
+
+    r = lint_softcode("@trigger thing/attr", "test")
+    test("@trigger caught", not r.ok)
+
+    r = lint_softcode("%(unsafe)", "test")
+    test("%(...) caught", not r.ok)
+
+    r = lint_softcode("[setr(0,%0)]", "test")
+    test("setr() caught", not r.ok)
+
+    r = lint_softcode("[mailcount(me)]", "test")
+    test("mail*() caught", not r.ok)
+
 
 def test_grammar():
     section("Grammar Engine")

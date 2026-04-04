@@ -115,7 +115,13 @@ DANGEROUS_PATTERNS = [
     (r'@restart\b', '@restart — restarts the server'),
     (r'@dump\b', '@dump — forces database dump'),
     (r'@clone\b', '@clone — may bypass quota'),
+    (r'@pemit\b[^\n]*%#', '@pemit with %# — may reflect enactor-controlled input or secrets'),
+    (r'@trig(?:ger)?\b', '@trigger — can recurse or fire side effects immediately'),
     (r'\bcreate\s*\(', 'create() — creates objects dynamically'),
+    (r'%\(', '%(...) substitution — evaluates dynamic text; escape user input first'),
+    (r'\bsetr\s*\(', 'setr() — writes q-registers from dynamic text; escape user input first'),
+    (r'\bmail(?:send|review|from|subj|flags|stats|count|info|list)?\s*\(',
+     'mail*() — accesses mail state; review authentication and data exposure'),
 ]
 
 # Valid substitution patterns

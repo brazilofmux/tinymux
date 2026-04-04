@@ -18,10 +18,9 @@ Updated: 2026-03-27
 
 - Replaced hand-maintained ~100-entry set with authoritative 482-entry set extracted from `builtin_function_list[]` in `mux/modules/engine/functions.cpp`. Regeneration command documented in the source comment.
 
-### Dangerous pattern detection is incomplete
+### ~~Dangerous pattern detection is incomplete~~ FIXED
 
-- **File:** `softcode_lint.py:90-101`
-- **Issue:** Only 9 dangerous patterns. Missing: `@pemit` with `%#`, `@trig` without delays, unescaped user input in `%()` or `setr()`, mail functions without auth, debug attributes that expose internals.
+- `softcode_lint.py` now flags additional high-risk patterns for review: `@pemit` with `%#`, `@trigger`, dynamic `%(...)` substitution, `setr()`, and `mail*()` calls. `test_worldbuilder.py` includes focused coverage for each new heuristic.
 
 ### Executor SSL validation disabled
 
