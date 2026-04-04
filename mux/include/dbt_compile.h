@@ -383,7 +383,9 @@ struct rv_compiler {
 // ---------------------------------------------------------------
 
 struct compiled_program {
-    guest_memory_t memory;
+    guest_memory_t memory;          // full 4MB — used by compile_expression(),
+                                    // persistent_vm, run_compiled(); cleared
+                                    // after compaction into cache.
     size_t memory_size;
     uint64_t out_addr;      // guest addr or tagged frame-relative output ref
     uint64_t out_used;      // bytes of output region actually allocated
@@ -402,6 +404,14 @@ struct compiled_program {
     uint64_t str_pool_end;
     uint64_t fargs_pool_end;
     uint64_t out_pool_end;
+
+    // Compact storage — only the occupied regions of guest memory.
+    // Populated by compact_program(); used by materialize_program().
+    std::vector<uint8_t> code_blob;     // CODE: entry_pc .. entry_pc+code_size
+    std::vector<uint8_t> str_blob;      // STR:  STR_BASE .. str_pool_end
+    std::vector<uint8_t> fargs_blob;    // FARGS: FARGS_BASE .. fargs_pool_end
+    std::string folded_result;          // pre-extracted result for !needs_jit
+    uint64_t program_id;                // unique ID for DBT cache invalidation
 
     // Tier 3 u()-inlining dependency tracking.
     // Each entry records an attr whose body was inlined at compile

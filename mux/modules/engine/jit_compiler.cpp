@@ -1311,16 +1311,96 @@ static constexpr size_t COMPILE_CACHE_MIN_LEN = 8;
 // Track which program the DBT was last set up for, so we can
 // use dbt_rerun (fast) instead of dbt_reset (slow) on cache hits.
 //
-static uint8_t *s_dbt_last_memory = nullptr;
+static uint64_t s_dbt_last_program_id = 0;
+static uint64_t s_next_program_id = 1;
+
+// Shared runtime buffer — a single 4MB guest memory used for all
+// cached program executions.  Tier 2 is installed once at init.
+//
+static guest_memory_t s_runtime_buffer;
+static bool s_runtime_buffer_ready = false;
+
+static void runtime_buffer_init() {
+    if (s_runtime_buffer_ready) return;
+    s_runtime_buffer.resize(rv_compiler::MEM_SIZE);
+    tier2_install(s_runtime_buffer, rv_compiler::BLOB_BASE);
+    s_runtime_buffer_ready = true;
+}
+
+// Compact a compiled_program: extract the occupied regions into
+// small blob vectors, extract the folded result if constant-folded,
+// assign a unique program_id, then release the 4MB memory.
+//
+static void compact_program(compiled_program &prog) {
+    prog.program_id = s_next_program_id++;
+
+    // Extract code blob.
+    if (prog.code_size > 0 && prog.entry_pc + prog.code_size <= prog.memory.size()) {
+        prog.code_blob.assign(
+            prog.memory.data() + prog.entry_pc,
+            prog.memory.data() + prog.entry_pc + prog.code_size);
+    }
+
+    // Extract string pool blob.
+    if (prog.str_pool_end > rv_compiler::STR_BASE) {
+        size_t len = static_cast<size_t>(prog.str_pool_end - rv_compiler::STR_BASE);
+        prog.str_blob.assign(
+            prog.memory.data() + rv_compiler::STR_BASE,
+            prog.memory.data() + rv_compiler::STR_BASE + len);
+    }
+
+    // Extract fargs pool blob.
+    if (prog.fargs_pool_end > rv_compiler::FARGS_BASE) {
+        size_t len = static_cast<size_t>(prog.fargs_pool_end - rv_compiler::FARGS_BASE);
+        prog.fargs_blob.assign(
+            prog.memory.data() + rv_compiler::FARGS_BASE,
+            prog.memory.data() + rv_compiler::FARGS_BASE + len);
+    }
+
+    // Extract folded result for constant-folded programs.
+    if (!prog.needs_jit) {
+        uint64_t out_addr = rv_compiler::resolve_output_addr(
+            prog.out_addr, rv_compiler::STACK_TOP);
+        if (out_addr < prog.memory.size()) {
+            prog.folded_result = reinterpret_cast<const char *>(
+                prog.memory.data() + out_addr);
+        }
+    }
+
+    // Release the 4MB vector.
+    prog.memory.clear();
+    prog.memory.shrink_to_fit();
+}
+
+// Materialize a compact program into the shared runtime buffer.
+// Copies code, string pool, and fargs blobs into the buffer.
+// Tier 2 is already installed permanently.
+//
+static void materialize_program(const compiled_program &prog) {
+    runtime_buffer_init();
+
+    if (!prog.code_blob.empty()) {
+        memcpy(s_runtime_buffer.data() + prog.entry_pc,
+               prog.code_blob.data(), prog.code_blob.size());
+    }
+
+    if (!prog.str_blob.empty()) {
+        memcpy(s_runtime_buffer.data() + rv_compiler::STR_BASE,
+               prog.str_blob.data(), prog.str_blob.size());
+    }
+
+    if (!prog.fargs_blob.empty()) {
+        memcpy(s_runtime_buffer.data() + rv_compiler::FARGS_BASE,
+               prog.fargs_blob.data(), prog.fargs_blob.size());
+    }
+}
 
 // Reconstruct a compiled_program from a SQLite code cache record.
-// Copies memory_blob into a full-size guest memory vector and
-// installs the Tier 2 blob.
+// Populates compact blob vectors directly — no full 4MB allocation.
 //
 static compiled_program reconstruct_from_cache(
     const CSQLiteDB::CodeCacheRecord &rec) {
     compiled_program prog;
-    prog.memory.resize(rv_compiler::MEM_SIZE);
 
     const bool has_compact_image =
         rec.code_len > 0
@@ -1365,45 +1445,64 @@ static compiled_program reconstruct_from_cache(
             return prog;
         }
 
-        if (rec.needs_jit) {
-            tier2_install(prog.memory, rv_compiler::BLOB_BASE);
+        // Populate compact blob vectors directly from the SQLite record.
+        if (rec.code_blob && rec.code_len > 0) {
+            prog.code_blob.assign(
+                static_cast<const uint8_t *>(rec.code_blob),
+                static_cast<const uint8_t *>(rec.code_blob) + rec.code_len);
         }
 
-        if (rec.code_blob
-            && rec.code_len > 0
-            && rec.entry_pc >= 0) {
-            memcpy(prog.memory.data() + rec.entry_pc,
-                   rec.code_blob, rec.code_len);
+        if (rec.str_blob && rec.str_len > 0) {
+            prog.str_blob.assign(
+                static_cast<const uint8_t *>(rec.str_blob),
+                static_cast<const uint8_t *>(rec.str_blob) + rec.str_len);
         }
 
-        if (rec.str_blob
-            && rec.str_len > 0) {
-            memcpy(prog.memory.data() + rv_compiler::STR_BASE,
-                   rec.str_blob, rec.str_len);
+        if (rec.fargs_blob && rec.fargs_len > 0) {
+            prog.fargs_blob.assign(
+                static_cast<const uint8_t *>(rec.fargs_blob),
+                static_cast<const uint8_t *>(rec.fargs_blob) + rec.fargs_len);
         }
-
-        if (rec.fargs_blob
-            && rec.fargs_len > 0) {
-            memcpy(prog.memory.data() + rv_compiler::FARGS_BASE,
-                   rec.fargs_blob, rec.fargs_len);
-        }
-    } else {
+    } else if (rec.memory_blob && rec.memory_len > 0) {
+        // Legacy format: single memory blob covering code+str+fargs.
+        // Extract the occupied regions into compact vectors.
         int copy_len = rec.memory_len;
         if (copy_len > static_cast<int>(rv_compiler::FARGS_LIMIT)) {
             copy_len = static_cast<int>(rv_compiler::FARGS_LIMIT);
         }
-        memcpy(prog.memory.data(), rec.memory_blob, copy_len);
-        if (rec.needs_jit) {
-            tier2_install(prog.memory, rv_compiler::BLOB_BASE);
+        const auto *base = static_cast<const uint8_t *>(rec.memory_blob);
+
+        // Code region: [CODE_BASE..CODE_LIMIT)
+        if (copy_len > static_cast<int>(rv_compiler::CODE_BASE)) {
+            int code_end = std::min(copy_len,
+                static_cast<int>(rv_compiler::CODE_LIMIT));
+            prog.code_blob.assign(base + rv_compiler::CODE_BASE,
+                                  base + code_end);
+        }
+
+        // String pool: [STR_BASE..STR_LIMIT)
+        if (copy_len > static_cast<int>(rv_compiler::STR_BASE)) {
+            int str_end = std::min(copy_len,
+                static_cast<int>(rv_compiler::STR_LIMIT));
+            prog.str_blob.assign(base + rv_compiler::STR_BASE,
+                                 base + str_end);
+        }
+
+        // Fargs pool: [FARGS_BASE..FARGS_LIMIT)
+        if (copy_len > static_cast<int>(rv_compiler::FARGS_BASE)) {
+            int fargs_end = std::min(copy_len,
+                static_cast<int>(rv_compiler::FARGS_LIMIT));
+            prog.fargs_blob.assign(base + rv_compiler::FARGS_BASE,
+                                   base + fargs_end);
         }
     }
 
     prog.memory_size = rv_compiler::MEM_SIZE;
     prog.out_addr = static_cast<uint64_t>(rec.out_addr);
-    prog.out_used = 0;  // cached programs re-compute at runtime
+    prog.out_used = 0;
     prog.entry_pc = has_compact_image
         ? static_cast<uint64_t>(rec.entry_pc)
-        : rv_compiler::CODE_BASE;  // legacy cached programs always start at 0
+        : rv_compiler::CODE_BASE;
     prog.code_size = has_compact_image
         ? static_cast<uint64_t>(rec.code_size)
         : 0;
@@ -1416,9 +1515,6 @@ static compiled_program reconstruct_from_cache(
     if (has_compact_image && rec.out_pool_end > 0) {
         prog.out_pool_end = static_cast<uint64_t>(rec.out_pool_end);
     } else {
-        // For legacy JIT programs, use OUT_STACK_LIMIT as a conservative
-        // lower bound so the output-clearing loop covers all possible slots.
-        // For constant-folded programs, no output slots exist.
         prog.out_pool_end = rec.needs_jit
             ? rv_compiler::OUT_STACK_LIMIT
             : rv_compiler::STACK_TOP - 8;
@@ -1431,7 +1527,6 @@ static compiled_program reconstruct_from_cache(
     prog.native_ops = rec.native_ops;
 
     // Restore inline dependencies from BLOB.
-    // Format: packed array of {int32 obj, int32 attr_num, uint32 mod_count}.
     if (rec.deps_blob && rec.deps_len > 0)
     {
         int ndeps = rec.deps_len / static_cast<int>(
@@ -1440,6 +1535,22 @@ static compiled_program reconstruct_from_cache(
         memcpy(prog.deps.data(), rec.deps_blob,
                ndeps * sizeof(compiled_program::inline_dep));
     }
+
+    // Extract folded result for constant-folded programs.
+    // Materialize blobs into the runtime buffer to read the result string.
+    if (!prog.needs_jit && prog.ok) {
+        runtime_buffer_init();
+        materialize_program(prog);
+        uint64_t out_addr = rv_compiler::resolve_output_addr(
+            prog.out_addr, rv_compiler::STACK_TOP);
+        if (out_addr < s_runtime_buffer.size()) {
+            prog.folded_result = reinterpret_cast<const char *>(
+                s_runtime_buffer.data() + out_addr);
+        }
+    }
+
+    // Assign a program ID.
+    prog.program_id = s_next_program_id++;
 
     return prog;
 }
@@ -1564,8 +1675,8 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
         if (!it->second.prog.deps.empty()
             && !deps_are_fresh(it->second.prog))
         {
-            if (s_dbt_last_memory == it->second.prog.memory.data()) {
-                s_dbt_last_memory = nullptr;
+            if (s_dbt_last_program_id == it->second.prog.program_id) {
+                s_dbt_last_program_id = 0;
             }
             s_compile_lru.erase(it->second.lru_it);
             s_compile_cache.erase(it);
@@ -1614,17 +1725,13 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
         prog = compile_expression(expr, nLen, eval);
         if (!prog.ok) return nullptr;
 
-        // Install the Tier 2 blob only if the program needs JIT
-        // execution.  Constant-folded programs (needs_jit=false)
-        // never touch the DBT — the blob copy is wasted for them.
-        if (prog.needs_jit) {
-            tier2_install(prog.memory, rv_compiler::BLOB_BASE);
-        }
-
-        // Persist to SQLite for future restarts.
+        // Persist to SQLite while prog.memory still exists.
         if (nLen >= COMPILE_CACHE_MIN_LEN) {
             store_to_sqlite_cache(key, prog);
         }
+
+        // Compact: extract blobs, release 4MB memory.
+        compact_program(prog);
     }
 
     // Insert into memory LRU cache.
@@ -1632,8 +1739,8 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
         auto &victim_key = s_compile_lru.back();
         auto vit = s_compile_cache.find(victim_key);
         if (vit != s_compile_cache.end()
-            && s_dbt_last_memory == vit->second.prog.memory.data()) {
-            s_dbt_last_memory = nullptr;
+            && s_dbt_last_program_id == vit->second.prog.program_id) {
+            s_dbt_last_program_id = 0;
         }
         s_compile_cache.erase(victim_key);
         s_compile_lru.pop_back();
@@ -1980,31 +2087,26 @@ bool run_cached_program(compiled_program *prog,
                         int eval,
                         void *lua_state) {
     if (!prog->needs_jit) {
-        uint64_t out_addr = resolve_runtime_out_addr(
-            prog->out_addr, rv_compiler::STACK_TOP);
-        const char *r = reinterpret_cast<const char *>(
-            prog->memory.data() + out_addr);
-        size_t n = strlen(r);
+        size_t n = prog->folded_result.size();
         if (n >= out_size) n = out_size - 1;
-        memcpy(out, r, n);
+        memcpy(out, prog->folded_result.data(), n);
         out[n] = '\0';
         return true;
     }
 
+    // Materialize compact blobs into the shared runtime buffer.
+    materialize_program(*prog);
+
     // Reset writable blob state (data + BSS) for clean re-run.
-    // Code and rodata are immutable — only data section (dtoa_divmax,
-    // pmem_next, etc.) and BSS (dtoa pools, heap) need resetting.
     if (s_tier2.loaded) {
-        tier2_reset_writable(prog->memory, rv_compiler::BLOB_BASE);
+        tier2_reset_writable(s_runtime_buffer, rv_compiler::BLOB_BASE);
     }
 
     // Clear output buffers: NUL the first byte of each slot.
-    // Generated code always writes before reading; the NUL sentinel
-    // ensures empty-string semantics for unused outputs.
     {
         uint64_t addr = rv_compiler::STACK_TOP - 8 - rv_compiler::OUT_SLOT;
         while (addr >= prog->out_pool_end) {
-            prog->memory[addr] = 0;
+            s_runtime_buffer[addr] = 0;
             addr -= rv_compiler::OUT_SLOT;
         }
     }
@@ -2017,16 +2119,14 @@ bool run_cached_program(compiled_program *prog,
             size_t len = strlen(reinterpret_cast<const char *>(cargs[i]));
             if (len >= static_cast<size_t>(rv_compiler::CARGS_SLOT))
                 len = rv_compiler::CARGS_SLOT - 1;
-            memcpy(prog->memory.data() + slot, cargs[i], len);
-            prog->memory[slot + len] = 0;
+            memcpy(s_runtime_buffer.data() + slot, cargs[i], len);
+            s_runtime_buffer[slot + len] = 0;
         } else {
-            prog->memory[slot] = 0;
+            s_runtime_buffer[slot] = 0;
         }
     }
 
     // Copy %-substitution runtime values into SUBST slots.
-    // These are populated before each execution so the RV64 code
-    // can reference them as constant addresses.
     auto copy_subst = [&](int slot_idx, const UTF8 *value) {
         uint64_t slot = rv_compiler::SUBST_BASE
                       + static_cast<uint64_t>(slot_idx) * rv_compiler::SUBST_SLOT;
@@ -2034,10 +2134,10 @@ bool run_cached_program(compiled_program *prog,
             size_t len = strlen(reinterpret_cast<const char *>(value));
             if (len >= static_cast<size_t>(rv_compiler::SUBST_SLOT))
                 len = rv_compiler::SUBST_SLOT - 1;
-            memcpy(prog->memory.data() + slot, value, len);
-            prog->memory[slot + len] = 0;
+            memcpy(s_runtime_buffer.data() + slot, value, len);
+            s_runtime_buffer[slot + len] = 0;
         } else {
-            prog->memory[slot] = 0;
+            s_runtime_buffer[slot] = 0;
         }
     };
 
@@ -2102,13 +2202,9 @@ bool run_cached_program(compiled_program *prog,
         copy_subst(rv_compiler::SUBST_NCARGS, ncbuf);
     }
 
-    // %: — enactor objid.  Populated via ECALL at runtime (needs
-    // creation_seconds which isn't available here).  Leave slot empty;
-    // the compiler emits ECALL objid(%#) instead of using the slot.
-
     eval_ctx ec;
-    ec.memory = prog->memory.data();
-    ec.memory_size = prog->memory_size;
+    ec.memory = s_runtime_buffer.data();
+    ec.memory_size = rv_compiler::MEM_SIZE;
     ec.executor = executor;
     ec.caller = caller_db;
     ec.enactor = enactor;
@@ -2116,21 +2212,21 @@ bool run_cached_program(compiled_program *prog,
     ec.cargs = cargs;
     ec.ncargs = ncargs;
     ec.lua_state = lua_state;
-    ec.dbt = nullptr;  // set below after DBT is resolved
-    ec.pvm = nullptr;  // production path doesn't use persistent VM yet
+    ec.dbt = nullptr;
+    ec.pvm = nullptr;
 
     dbt_state_t *dbt;
-    if (s_dbt_ready && s_dbt_last_memory == prog->memory.data()) {
+    if (s_dbt_ready && s_dbt_last_program_id == prog->program_id) {
         // Same program as last time — keep translated blocks.
         dbt = &s_persistent_dbt;
         dbt_rerun(dbt, eval_ecall, &ec);
     } else {
         // Different program — reset and re-translate program blocks.
         // Blob translations persist via blob_code_end.
-        dbt = get_dbt(prog->memory.data(), prog->memory_size,
+        dbt = get_dbt(s_runtime_buffer.data(), rv_compiler::MEM_SIZE,
                        eval_ecall, &ec);
         if (!dbt) return false;
-        s_dbt_last_memory = prog->memory.data();
+        s_dbt_last_program_id = prog->program_id;
         if (dbt->blob_code_end == 0) {
             pretranslate_tier2(dbt);
             dbt->blob_code_end = dbt->code_used;
@@ -2145,7 +2241,7 @@ bool run_cached_program(compiled_program *prog,
     uint64_t out_addr = resolve_runtime_out_addr(
         prog->out_addr, rv_compiler::STACK_TOP);
     const char *r = reinterpret_cast<const char *>(
-        prog->memory.data() + out_addr);
+        s_runtime_buffer.data() + out_addr);
     size_t n = strlen(r);
     if (n >= out_size) n = out_size - 1;
     memcpy(out, r, n);
@@ -4063,14 +4159,12 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
     }
 
     if (!prog->needs_jit) {
-        // Constant-folded — result is in the string pool.
+        // Constant-folded — result was extracted at compaction time.
         // Safe at any nesting depth (no DBT involved).
         s_jit_stats.folded_total++;
         s_jit_stats.eval_handled++;
-        uint64_t out_addr = resolve_runtime_out_addr(
-            prog->out_addr, rv_compiler::STACK_TOP);
-        const UTF8 *result = prog->memory.data() + out_addr;
-        safe_str(result, buff, bufc);
+        safe_str(reinterpret_cast<const UTF8 *>(prog->folded_result.c_str()),
+                 buff, bufc);
         return true;
     }
 
@@ -4354,8 +4448,8 @@ FUNCTION(fun_rvbench)
         std::string key = compile_cache_key(expr, nLen, EV_FMAND | EV_EVAL);
         auto cit = s_compile_cache.find(key);
         if (cit != s_compile_cache.end()) {
-            if (s_dbt_last_memory == cit->second.prog.memory.data()) {
-                s_dbt_last_memory = nullptr;
+            if (s_dbt_last_program_id == cit->second.prog.program_id) {
+                s_dbt_last_program_id = 0;
             }
             s_compile_lru.erase(cit->second.lru_it);
             s_compile_cache.erase(cit);
