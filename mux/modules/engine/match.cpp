@@ -362,6 +362,7 @@ static void match_list(dbref first, int local)
          * needed by string_match().
          */
         const UTF8 *namebuf = PureName(first);
+        bool exact_first_char_mismatch = false;
         if (ascii_query)
         {
             const UTF8 *name0 = namebuf;
@@ -373,14 +374,13 @@ static void match_list(dbref first, int local)
                 }
             }
 
-            if (*name0 < 0x80
-                && mux_tolower_ascii[*name0] != query0_lower)
-            {
-                continue;
-            }
+            exact_first_char_mismatch =
+                (*name0 < 0x80
+                 && mux_tolower_ascii[*name0] != query0_lower);
         }
 
-        if (!string_compare(namebuf, md.string))
+        if (!exact_first_char_mismatch
+            && !string_compare(namebuf, md.string))
         {
             promote_match(first, CON_COMPLETE | local);
         }

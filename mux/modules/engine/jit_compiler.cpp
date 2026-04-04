@@ -35,6 +35,7 @@ extern "C" {
 #include <algorithm>
 #include <vector>
 #include <string>
+#include <string_view>
 #include <map>
 #include <unordered_map>
 #include <list>
@@ -140,7 +141,7 @@ static const char JIT_COMPILER_VERSION[] = "jit-t1-002";
 std::string s_blob_version = "none";
 
 static bool tier2_allowed(const std::string &mux_name) {
-    static const char *const s_allowlist[] = {
+    static constexpr std::string_view s_allowlist[] = {
         // co_* wrappers: cross-compiled from the same Ragel color_ops
         // source the server uses.  Semantics-matched by construction.
         //
@@ -222,11 +223,10 @@ static bool tier2_allowed(const std::string &mux_name) {
         "TRANSLATE",
         "STRMATCH", "MATCH", "GRAB", "GRABALL",
         "SORT",
-
-        nullptr
     };
-    for (int i = 0; s_allowlist[i]; i++) {
-        if (mux_name == s_allowlist[i]) {
+    const std::string_view name(mux_name);
+    for (std::string_view allowed : s_allowlist) {
+        if (name == allowed) {
             return true;
         }
     }
