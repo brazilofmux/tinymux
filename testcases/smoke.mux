@@ -33,7 +33,7 @@
   reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn \
   right_fn rjust_fn roman_fn route_fn round_fn rpad_fn \
   sandbox_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn \
-  search_eval_fn \
+  search_eval_fn search_bench_fn \
   shuffle_fn sign_fn sin_fn singletime_fn sort_fn sortkey_fn soundex_fn space_fn spellnum_fn \
   splice_fn sqrt_fn squish_fn stddev_fn strcat_fn strdelete_fn strip_fn stripansi_fn strlen_fn \
   strmatch_fn strmem_fn strdistance_fn strset_fn strsort_fn strtrunc_fn \

@@ -1,0 +1,183 @@
+#
+# search_bench_fn.mux - Stage 4a: Benchmark search(eval=) predicates.
+#
+# Measures search(eval=...) performance via benchmark().  Results are
+# logged as SEARCHBENCH tags for extraction by tools/BenchBackends.
+# The timing covers whichever attr_backend is active (sqlite or mdbx).
+# With a warm LRU cache both backends should show similar numbers.
+#
+@create test_search_bench_fn
+-
+@set test_search_bench_fn=INHERIT QUIET WIZARD
+-
+#
+# Fixture objects (sb_ prefix).  20 objects with overlapping
+# attribute sets to exercise different predicate patterns.
+#
+@create sb_a01
+-
+@create sb_a02
+-
+@create sb_a03
+-
+@create sb_a04
+-
+@create sb_a05
+-
+@create sb_a06
+-
+@create sb_a07
+-
+@create sb_a08
+-
+@create sb_a09
+-
+@create sb_a10
+-
+@create sb_b01
+-
+@create sb_b02
+-
+@create sb_b03
+-
+@create sb_b04
+-
+@create sb_b05
+-
+@create sb_c01
+-
+@create sb_c02
+-
+@create sb_c03
+-
+@create sb_c04
+-
+@create sb_c05
+-
+&sbmark sb_a01=apple
+-
+&sbmark sb_a02=apple
+-
+&sbmark sb_a03=apple
+-
+&sbmark sb_a04=banana
+-
+&sbmark sb_a05=banana
+-
+&sbmark sb_a06=cherry
+-
+&sbmark sb_a07=cherry
+-
+&sbmark sb_a08=cherry
+-
+&sbmark sb_a09=date
+-
+&sbmark sb_a10=date
+-
+&sbtag sb_b01=color:red
+-
+&sbtag sb_b02=color:blue
+-
+&sbtag sb_b03=color:red
+-
+&sbtag sb_b04=size:large
+-
+&sbtag sb_b05=size:small
+-
+&sbscor sb_a01=50
+-
+&sbscor sb_a02=150
+-
+&sbscor sb_a03=200
+-
+&sbscor sb_a04=75
+-
+&sbscor sb_a05=300
+-
+&sbscor sb_a06=25
+-
+&sbscor sb_a07=180
+-
+&sbscor sb_a08=90
+-
+&sbscor sb_a09=400
+-
+&sbscor sb_a10=10
+-
+&sbcolr sb_c01=red
+-
+&sbshap sb_c01=circle
+-
+&sbcolr sb_c02=red
+-
+&sbshap sb_c02=square
+-
+&sbcolr sb_c03=blue
+-
+&sbshap sb_c03=circle
+-
+&sbcolr sb_c04=green
+-
+&sbshap sb_c04=triangle
+-
+&sbcolr sb_c05=red
+-
+&sbshap sb_c05=circle
+-
+#
+# Beginning of Benchmark Cases
+#
+&tr.tc000 test_search_bench_fn=
+  @log smoke=Beginning search() eval= benchmark cases.
+-
+#
+# SEARCHBENCH001 - hasattr predicate (eobject).
+#
+&tr.tc001 test_search_bench_fn=
+  @log smoke=SEARCHBENCH001: \
+    [benchmark(search(eobject=hasattr(\#\#,sbmark)),100)]. Succeeded.
+-
+#
+# SEARCHBENCH002 - get+strmatch value match (eobject).
+#
+&tr.tc002 test_search_bench_fn=
+  @log smoke=SEARCHBENCH002: \
+    [benchmark(search(eobject=strmatch(get(\#\#/sbmark),apple)),100)]. Succeeded.
+-
+#
+# SEARCHBENCH003 - numeric comparison via get (eobject).
+#
+&tr.tc003 test_search_bench_fn=
+  @log smoke=SEARCHBENCH003: \
+    [benchmark(search(eobject=gt(get(\#\#/sbscor),100)),100)]. Succeeded.
+-
+#
+# SEARCHBENCH004 - multi-attr cand (eobject).
+#
+&tr.tc004 test_search_bench_fn=
+  @log smoke=SEARCHBENCH004: \
+    [benchmark(search(eobject=cand( \
+      strmatch(get(\#\#/sbcolr),red), \
+      strmatch(get(\#\#/sbshap),circle))),100)]. Succeeded.
+-
+#
+# SEARCHBENCH005 - all-types eval (no type restriction).
+#
+&tr.tc005 test_search_bench_fn=
+  @log smoke=SEARCHBENCH005: \
+    [benchmark(search(eval=hasattr(\#\#,sbmark)),100)]. Succeeded.;
+  @trig me/tr.done
+-
+&tr.done test_search_bench_fn=
+  @log smoke=End search() eval= benchmark cases.;
+  @dolist sb_a01 sb_a02 sb_a03 sb_a04 sb_a05 \
+    sb_a06 sb_a07 sb_a08 sb_a09 sb_a10 \
+    sb_b01 sb_b02 sb_b03 sb_b04 sb_b05 \
+    sb_c01 sb_c02 sb_c03 sb_c04 sb_c05=@destroy \#\#;
+  @notify smoke
+-
+drop test_search_bench_fn
+-
+#
+# End of Benchmark Cases
+#

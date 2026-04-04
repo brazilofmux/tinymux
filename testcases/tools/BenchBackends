@@ -1,0 +1,83 @@
+#!/bin/bash
+# ---------------------------------------------------------------------------
+# BenchBackends -- Compare search(eval=) performance: SQLite vs mdbx.
+#
+# Runs the smoke suite once per backend and compares SEARCHBENCH
+# timing lines side by side.
+#
+# Usage:  cd testcases && ./tools/BenchBackends
+#
+# Environment:
+#   BENCH_ITERS  Number of runs per backend (default 3).
+# ---------------------------------------------------------------------------
+
+set -euo pipefail
+
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+TC=$(cd "$SCRIPT_DIR/.." && pwd)
+cd "$TC"
+
+ITERS="${BENCH_ITERS:-3}"
+TMPDIR_BENCH=$(mktemp -d "${TMPDIR:-/tmp}/benchbackends.XXXXXX")
+trap 'rm -rf "$TMPDIR_BENCH"' EXIT
+
+echo "=== BenchBackends: $ITERS run(s) per backend ==="
+echo ""
+
+# Ensure smoke.flat exists.
+if [ ! -f smoke.flat ]; then
+    echo "smoke.flat not found — running Makesmoke..."
+    "$SCRIPT_DIR/Makesmoke"
+fi
+
+# ---------------------------------------------------------------------------
+# Run with SQLite backend (default).
+# ---------------------------------------------------------------------------
+
+echo "--- SQLite backend ---"
+for i in $(seq 1 "$ITERS"); do
+    "$SCRIPT_DIR/Smoke" > /dev/null 2>&1 || true
+    cp smoke.log "$TMPDIR_BENCH/sqlite.${i}.log" 2>/dev/null || true
+    printf "  run %d done\n" "$i"
+done
+
+# ---------------------------------------------------------------------------
+# Run with mdbx backend.
+# ---------------------------------------------------------------------------
+
+echo "--- mdbx backend ---"
+for i in $(seq 1 "$ITERS"); do
+    SMOKE_EXTRA_CONF="attr_backend mdbx" "$SCRIPT_DIR/Smoke" > /dev/null 2>&1 || true
+    cp smoke.log "$TMPDIR_BENCH/mdbx.${i}.log" 2>/dev/null || true
+    printf "  run %d done\n" "$i"
+done
+
+# ---------------------------------------------------------------------------
+# Extract and compare SEARCHBENCH lines.
+# ---------------------------------------------------------------------------
+
+echo ""
+echo "=== Search Eval Benchmark: SQLite vs mdbx ==="
+echo ""
+printf "%-16s %12s %12s %8s\n" "Benchmark" "SQLite(s)" "mdbx(s)" "Ratio"
+printf "%-16s %12s %12s %8s\n" "----------" "---------" "--------" "-----"
+
+for tag in SEARCHBENCH001 SEARCHBENCH002 SEARCHBENCH003 SEARCHBENCH004 SEARCHBENCH005; do
+    # Format: "SEARCHBENCH001: 0.17491731. Succeeded."
+    sqlite_avg=$(grep "$tag:" "$TMPDIR_BENCH"/sqlite.*.log 2>/dev/null \
+        | awk -F': ' '{print $2}' | awk '{gsub(/\.$/,"",$1); print $1}' \
+        | awk '{sum+=$1; n++} END{if(n>0) printf "%.6f",sum/n; else print "N/A"}')
+    mdbx_avg=$(grep "$tag:" "$TMPDIR_BENCH"/mdbx.*.log 2>/dev/null \
+        | awk -F': ' '{print $2}' | awk '{gsub(/\.$/,"",$1); print $1}' \
+        | awk '{sum+=$1; n++} END{if(n>0) printf "%.6f",sum/n; else print "N/A"}')
+
+    if [ "$sqlite_avg" != "N/A" ] && [ "$mdbx_avg" != "N/A" ]; then
+        ratio=$(awk "BEGIN{if($sqlite_avg>0) printf \"%.2fx\",$mdbx_avg/$sqlite_avg; else print \"N/A\"}")
+    else
+        ratio="N/A"
+    fi
+    printf "%-16s %12s %12s %8s\n" "$tag" "$sqlite_avg" "$mdbx_avg" "$ratio"
+done
+
+echo ""
+echo "=== BenchBackends: done ==="
