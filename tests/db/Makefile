@@ -5,8 +5,25 @@ CFLAGS = -g -O2 -DSQLITE_THREADSAFE=1
 INCDIR = ../../mux/include
 ENGDIR = ../../mux/modules/engine
 SQLITEDIR = ../../mux/sqlite
+PATH_CHECKS = \
+	$(INCDIR)/sqlitedb.h \
+	$(INCDIR)/sqlite_backend.h \
+	$(INCDIR)/storage_backend.h \
+	$(ENGDIR)/sqlitedb.cpp \
+	$(ENGDIR)/sqlite_backend.cpp \
+	$(SQLITEDIR)/sqlite3.c \
+	$(SQLITEDIR)/sqlite3.h
 
-all: test_sqlitedb test_backend
+all: check-paths test_sqlitedb test_backend
+
+check-paths:
+	@for path in $(PATH_CHECKS); do \
+		if [ ! -e "$$path" ]; then \
+			echo "ERROR: required DB test dependency not found: $$path"; \
+			echo "Update tests/db/Makefile if engine/include/sqlite paths moved."; \
+			exit 1; \
+		fi; \
+	done
 
 sqlite3.o: $(SQLITEDIR)/sqlite3.c $(SQLITEDIR)/sqlite3.h
 	$(CC) $(CFLAGS) -I$(SQLITEDIR) -c -o $@ $<
@@ -32,7 +49,7 @@ test_sqlitedb: test_sqlitedb.o sqlitedb.o sqlite3.o stubs.o
 test_backend: test_backend.o sqlite_backend.o sqlitedb.o sqlite3.o stubs.o
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-test: test_sqlitedb test_backend
+test: check-paths test_sqlitedb test_backend
 	./test_sqlitedb
 	@echo ""
 	./test_backend
@@ -40,4 +57,4 @@ test: test_sqlitedb test_backend
 clean:
 	rm -f *.o test_sqlitedb test_backend
 
-.PHONY: all test clean
+.PHONY: all check-paths test clean

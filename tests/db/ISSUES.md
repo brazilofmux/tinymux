@@ -10,7 +10,6 @@ Updated: 2026-03-27
 
 ## Opportunities
 
-### Add a path-stability check for test harnesses that compile moved engine code
+### ~~Add a path-stability check for test harnesses that compile moved engine code~~ FIXED
 
-- **Problem:** The DB tests depend on engine implementation files outside `db/`, but the harness has no guardrail when those sources move.
-- **Mitigation idea:** Centralize include/source paths in one shared make fragment or add a simple CI smoke target that verifies `make test` still resolves all backend dependencies.
+- `tests/db/Makefile` now has a `check-paths` target that verifies the required engine, header, and SQLite source paths before `all` or `test` builds run. If a dependency moves again, the harness now fails immediately with an actionable error instead of breaking later during compilation.
