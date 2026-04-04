@@ -126,8 +126,14 @@ echo "Importing smoke.flat into SQLite..."
 LD_LIBRARY_PATH=$BIN
 export LD_LIBRARY_PATH
 
-if ! "$BIN/dbconvert" -d "$DATA/$GAMENAME" -i smoke.flat -l > netmux.log 2>&1; then
+DBCONVERT_CMD=("$BIN/dbconvert" -d "$DATA/$GAMENAME" -i smoke.flat -l)
+if "${DBCONVERT_CMD[@]}" > netmux.log 2>&1; then
+    :
+else
+    dbconvert_rc=$?
     echo "ERROR: dbconvert import failed."
+    echo "Command: ${DBCONVERT_CMD[*]}"
+    echo "Exit code: $dbconvert_rc"
     cat netmux.log
     exit 1
 fi

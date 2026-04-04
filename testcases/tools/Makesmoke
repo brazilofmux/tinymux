@@ -21,9 +21,23 @@ GAMENAME=smoke
 BIN=../mux/game/bin
 DATA=./$GAMENAME.d
 SQLITE_BASE=$DATA/$GAMENAME
+TMP_FILES=()
 
-TMP=$(mktemp)
-trap 'rm -f "$TMP"' EXIT
+make_temp() {
+    local tmp
+    tmp=$(mktemp)
+    TMP_FILES+=("$tmp")
+    printf '%s\n' "$tmp"
+}
+
+cleanup_temps() {
+    if [ ${#TMP_FILES[@]} -gt 0 ]; then
+        rm -f "${TMP_FILES[@]}"
+    fi
+}
+
+TMP=$(make_temp)
+trap cleanup_temps EXIT
 
 EXIT_CODE=0
 
@@ -151,7 +165,7 @@ fi
 if [ $EXIT_CODE -eq 0 ] && [ -r smoke.flat ]; then
     "$SCRIPT_DIR/scrubflat.sed" < smoke.flat > "$TMP"
     mv "$TMP" smoke.flat
-    TMP=$(mktemp)  # refresh for the trap
+    TMP=$(make_temp)
     echo "smoke.flat created ($(wc -c < smoke.flat) bytes)."
 fi
 
@@ -168,6 +182,8 @@ if [ $EXIT_CODE -eq 0 ] && [ -r smoke.flat ] && [ -x "$OMEGA" ]; then
     else
         echo "  omega: valid."
     fi
+elif [ $EXIT_CODE -eq 0 ] && [ -r smoke.flat ]; then
+    echo "WARNING: omega not found at $OMEGA; skipping smoke.flat validation."
 fi
 
 # ---------------------------------------------------------------------------

@@ -64,23 +64,17 @@ The project now has two complementary testing tiers:
 
 ## Medium — Script Reliability (New, 2026-04-04)
 
-### `mktemp` trap refresh invalidates cleanup in Makesmoke
+### ~~`mktemp` trap refresh invalidates cleanup in Makesmoke~~ FIXED
 
-- **File:** `testcases/tools/Makesmoke:25-26, 154`
-- **Issue:** `TMP=$(mktemp)` with `trap 'rm -f "$TMP"' EXIT` is set early, but `TMP` is reassigned at line 154, making the trap clean up only the second temp file — the first is leaked.
-- **Recommendation:** Save both filenames or use a cleanup function that tracks all temp files.
+- `Makesmoke` now tracks temp files in `TMP_FILES[]` with a `cleanup_temps()` trap, so both the initial unformat temp file and the later scrub temp file are removed on exit.
 
-### Insufficient error context on dbconvert failure
+### ~~Insufficient error context on dbconvert failure~~ FIXED
 
-- **File:** `testcases/tools/Smoke:129-133`
-- **Issue:** When `dbconvert` fails, only the log is printed with no context about what command was run. Makes remote debugging harder.
-- **Recommendation:** Print the command line and exit code alongside the log output.
+- `Smoke` now prints the exact `dbconvert` command line and exit code before dumping `netmux.log`.
 
-### Optional omega validation silently skipped
+### ~~Optional omega validation silently skipped~~ FIXED
 
-- **File:** `testcases/tools/Makesmoke:159-170`
-- **Issue:** If `omega` binary is not found, flatfile validation is silently skipped. A corrupt flatfile could be committed without detection.
-- **Recommendation:** At minimum warn when omega is unavailable; ideally make it mandatory.
+- `Makesmoke` now emits an explicit warning when `$REPO_ROOT/mux/convert/omega` is unavailable, so validation skips are visible in CI and local runs.
 
 ## Low — Hardcoded References
 
