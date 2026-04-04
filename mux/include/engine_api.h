@@ -155,5 +155,6 @@ std::string jit_sha1_hex(const void *data, size_t len);
 extern std::string s_blob_version;
 void jit_store_to_sqlite(const std::string &key, const compiled_program &prog);
 bool jit_load_from_sqlite(const std::string &key, compiled_program &out);
+void jit_compact_program(compiled_program &prog);
 
 #endif // ENGINE_API_H

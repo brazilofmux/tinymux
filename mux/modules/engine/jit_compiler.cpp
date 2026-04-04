@@ -1647,6 +1647,10 @@ void jit_store_to_sqlite(const std::string &key, const compiled_program &prog) {
     store_to_sqlite_cache(key, prog);
 }
 
+void jit_compact_program(compiled_program &prog) {
+    compact_program(prog);
+}
+
 bool jit_load_from_sqlite(const std::string &key, compiled_program &out) {
     if (!g_pSQLiteBackend) return false;
     CSQLiteDB &db = g_pSQLiteBackend->GetDB();

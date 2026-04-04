@@ -92,6 +92,11 @@ static bool compile_lua_bytecode(const uint8_t *data, size_t len,
     out->memory_size = rv_compiler::MEM_SIZE;
     out->out_addr = rc_state.final_out;
     out->out_used = rc_state.out_pool;
+    out->entry_pc = rc_state.code_base;
+    out->code_size = rc_state.code.size() * 4;
+    out->str_pool_end = rc_state.str_pool;
+    out->fargs_pool_end = rc_state.fargs_pool;
+    out->out_pool_end = rc_state.out_pool;
     out->ok = true;
     out->folds = h->folds;
     out->ecalls = h->ecalls;
@@ -154,8 +159,10 @@ public:
                 *pKey = 0;
                 return MUX_E_FAIL;
             }
-            // Persist to SQLite for next restart.
+            // Persist to SQLite while prog.memory still exists.
             jit_store_to_sqlite(cache_key, prog);
+            // Compact: extract blobs, release 4MB memory.
+            jit_compact_program(prog);
         }
 
         uint64_t key = s_next_key++;
