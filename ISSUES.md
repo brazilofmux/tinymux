@@ -32,11 +32,10 @@ This is the top-level tracker for the TinyMUX project. It links to specialized i
 - **Impact:** Windows distribution patch files (`binary_files.txt`, etc.) are always empty.
 - **Recommendation:** Use process substitution `while read ... < <(find ...)` instead of piped while loops.
 
-### Weak SSL/crypto library detection in configure.ac
+### ~~Weak SSL/crypto library detection in configure.ac~~ FIXED
 
 - **File:** `mux/configure.ac:273-274`
-- **Issue:** `AC_CHECK_LIB([ssl], [main])` checks for `main` symbol instead of actual SSL functions like `SSL_library_init` or `EVP_sha256`. This weak check may succeed on systems where SSL is not actually functional.
-- **Recommendation:** Check actual SSL entry points; add `AC_MSG_ERROR` if SSL is required but absent.
+- `configure.ac` now probes `SSL_new` in `-lssl` and `EVP_sha256` in `-lcrypto`, so `HAVE_LIBSSL`/`HAVE_LIBCRYPTO` reflect real OpenSSL entry points instead of a meaningless `main` symbol. OpenSSL remains mandatory via the existing `PKG_CHECK_MODULES([OPENSSL], [openssl], ...)` failure path.
 
 ### Unquoted variable expansions in `dowin32.sh`
 

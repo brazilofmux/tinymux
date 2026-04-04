@@ -270,8 +270,10 @@ AC_CHECK_LIB([pcre2-8], [pcre2_compile_8],
     [PCRE2_LIBS="-lpcre2-8"],
     [AC_MSG_ERROR([PCRE2 library not found])])
 AC_SUBST(PCRE2_LIBS)
-AC_CHECK_LIB([ssl], [main])
-AC_CHECK_LIB([crypto], [main])
+dnl Probe real OpenSSL entry points instead of main() so HAVE_LIBSSL/HAVE_LIBCRYPTO
+dnl reflect usable libraries rather than any archive with a dummy main symbol.
+AC_CHECK_LIB([ssl], [SSL_new])
+AC_CHECK_LIB([crypto], [EVP_sha256])
 
 dnl SQLite3 is bundled as the amalgamation in sqlite/sqlite3.c.
 dnl No system library check needed.

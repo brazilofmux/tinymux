@@ -8175,9 +8175,9 @@ else $as_nop
 fi
 
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for main in -lssl" >&5
-printf %s "checking for main in -lssl... " >&6; }
-if test ${ac_cv_lib_ssl_main+y}
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for SSL_new in -lssl" >&5
+printf %s "checking for SSL_new in -lssl... " >&6; }
+if test ${ac_cv_lib_ssl_SSL_new+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
@@ -8186,28 +8186,31 @@ LIBS="-lssl  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char SSL_new ();
 int
 main (void)
 {
-return main ();
+return SSL_new ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_ssl_main=yes
+  ac_cv_lib_ssl_SSL_new=yes
 else $as_nop
-  ac_cv_lib_ssl_main=no
+  ac_cv_lib_ssl_SSL_new=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ssl_main" >&5
-printf "%s\n" "$ac_cv_lib_ssl_main" >&6; }
-if test "x$ac_cv_lib_ssl_main" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ssl_SSL_new" >&5
+printf "%s\n" "$ac_cv_lib_ssl_SSL_new" >&6; }
+if test "x$ac_cv_lib_ssl_SSL_new" = xyes
 then :
   printf "%s\n" "#define HAVE_LIBSSL 1" >>confdefs.h
 
@@ -8215,9 +8218,9 @@ then :
 
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for main in -lcrypto" >&5
-printf %s "checking for main in -lcrypto... " >&6; }
-if test ${ac_cv_lib_crypto_main+y}
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for EVP_sha256 in -lcrypto" >&5
+printf %s "checking for EVP_sha256 in -lcrypto... " >&6; }
+if test ${ac_cv_lib_crypto_EVP_sha256+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
@@ -8226,28 +8229,31 @@ LIBS="-lcrypto  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char EVP_sha256 ();
 int
 main (void)
 {
-return main ();
+return EVP_sha256 ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_crypto_main=yes
+  ac_cv_lib_crypto_EVP_sha256=yes
 else $as_nop
-  ac_cv_lib_crypto_main=no
+  ac_cv_lib_crypto_EVP_sha256=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_crypto_main" >&5
-printf "%s\n" "$ac_cv_lib_crypto_main" >&6; }
-if test "x$ac_cv_lib_crypto_main" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_crypto_EVP_sha256" >&5
+printf "%s\n" "$ac_cv_lib_crypto_EVP_sha256" >&6; }
+if test "x$ac_cv_lib_crypto_EVP_sha256" = xyes
 then :
   printf "%s\n" "#define HAVE_LIBCRYPTO 1" >>confdefs.h
 
