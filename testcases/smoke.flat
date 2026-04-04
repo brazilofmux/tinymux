@@ -1165,11 +1165,11 @@
 >267
 "@trig/now me/tr.tc007.helper"
 >268
-"&bench.warmup me=This is a warmup value for cache testing.;think get(me/bench.warmup);think setr(0,extract(cachestats(),1,1));think get(me/bench.warmup);think setr(1,extract(cachestats(),1,1));@if gt(%q1,%q0)={@log smoke=TC002: cache hits increase on re-read. Succeeded.},{@log smoke=TC002: cache hits increase on re-read. Failed (before=%q0 after=%q1).}"
+"think setr(8,create(bench_cold_obj));&bench.payload %q8=cold payload value;think setr(0,extract(cachestats(),2,1));think get(%q8/desc);think setr(1,extract(cachestats(),2,1));@if gt(%q1,%q0)={@log smoke=TC002: miss on uncached attr read. Succeeded.},{@log smoke=TC002: miss on uncached attr read. Failed (before=%q0 after=%q1).};@destroy %q8"
 >269
-"think iter(lnum(50),set(me,bench.cold.[##]:value_[##]));think setr(0,cachestats());think setr(1,benchmark(iter(lnum(50),get(me/bench.cold.##)),10));think setr(2,cachestats());@log smoke=TC003: Cold/warm read 50 attrs x10 = [%q1]s. Before=[%q0] After=[%q2]. Succeeded."
+"&bench.warmup me=This is a warmup value for cache testing.;think get(me/bench.warmup);think setr(0,extract(cachestats(),1,1));think get(me/bench.warmup);think setr(1,extract(cachestats(),1,1));@if gt(%q1,%q0)={@log smoke=TC003: hits increase on cached re-read. Succeeded.},{@log smoke=TC003: hits increase on cached re-read. Failed (before=%q0 after=%q1).}"
 >270
-"think iter(lnum(50),get(me/bench.cold.##));think setr(0,cachestats());think setr(1,benchmark(iter(lnum(50),get(me/bench.cold.##)),100));think setr(2,cachestats());@log smoke=TC004: Hot read 50 attrs x100 = [%q1]s. Before=[%q0] After=[%q2]. Succeeded."
+"think iter(lnum(50),set(me,bench.read.[##]:value_[##]));think iter(lnum(50),get(me/bench.read.##));think setr(0,cachestats());think setr(1,benchmark(iter(lnum(50),get(me/bench.read.##)),100));think setr(2,cachestats());@log smoke=TC004: Cached read 50 attrs x100 = [%q1]s. Before=[%q0] After=[%q2]. Succeeded."
 >271
 "think setr(0,cachestats());think setr(1,benchmark(set(me,bench.write:value_[inc(setr(9,0))]),100));think setr(2,cachestats());@log smoke=TC005: Write 1 attr x100 = [%q1]s. Before=[%q0] After=[%q2]. Succeeded."
 >272

@@ -34,13 +34,36 @@
   }
 -
 #
-# Test Case #2 - Cache hits increase after reading a cached attribute.
-# Write an attribute, read it twice (first populates cache, second hits).
+# Test Case #2 - Misses increase when reading an uncached attribute.
+# Create a fresh object so its DB-side attributes have never been read.
+# The first get() must miss the cache and go to SQLite.
 #
 &tr.tc002 test_cachestats_fn=
   @trig/now me/tr.tc002.helper
 -
 &tr.tc002.helper test_cachestats_fn=
+  think setr(8,create(bench_cold_obj));
+  &bench.payload %q8=cold payload value;
+  think setr(0,extract(cachestats(),2,1));
+  think get(%q8/desc);
+  think setr(1,extract(cachestats(),2,1));
+  @if gt(%q1,%q0)=
+  {
+    @log smoke=TC002: miss on uncached attr read. Succeeded.
+  },
+  {
+    @log smoke=TC002: miss on uncached attr read. Failed (before=%q0 after=%q1).
+  };
+  @destroy %q8
+-
+#
+# Test Case #3 - Hits increase when re-reading a cached attribute.
+# After a get() populates the cache, a second get() must hit.
+#
+&tr.tc003 test_cachestats_fn=
+  @trig/now me/tr.tc003.helper
+-
+&tr.tc003.helper test_cachestats_fn=
   &bench.warmup me=This is a warmup value for cache testing.;
   think get(me/bench.warmup);
   think setr(0,extract(cachestats(),1,1));
@@ -48,38 +71,26 @@
   think setr(1,extract(cachestats(),1,1));
   @if gt(%q1,%q0)=
   {
-    @log smoke=TC002: cache hits increase on re-read. Succeeded.
+    @log smoke=TC003: hits increase on cached re-read. Succeeded.
   },
   {
-    @log smoke=TC002: cache hits increase on re-read. Failed (before=%q0 after=%q1).
+    @log smoke=TC003: hits increase on cached re-read. Failed (before=%q0 after=%q1).
   }
 -
 #
-# Test Case #3 - Benchmark: cold read timing.
-# Create 50 attributes, flush isn't possible so measure first-access batch.
-#
-&tr.tc003 test_cachestats_fn=
-  @trig/now me/tr.tc003.helper
--
-&tr.tc003.helper test_cachestats_fn=
-  think iter(lnum(50),set(me,bench.cold.[##]:value_[##]));
-  think setr(0,cachestats());
-  think setr(1,benchmark(iter(lnum(50),get(me/bench.cold.##)),10));
-  think setr(2,cachestats());
-  @log smoke=TC003: Cold/warm read 50 attrs x10 = [%q1]s. Before=[%q0] After=[%q2]. Succeeded.
--
-#
-# Test Case #4 - Benchmark: hot read timing (same attrs, already cached).
+# Test Case #4 - Benchmark: cached read timing.
+# Create 50 attrs (write-through warms cache), then time repeated reads.
 #
 &tr.tc004 test_cachestats_fn=
   @trig/now me/tr.tc004.helper
 -
 &tr.tc004.helper test_cachestats_fn=
-  think iter(lnum(50),get(me/bench.cold.##));
+  think iter(lnum(50),set(me,bench.read.[##]:value_[##]));
+  think iter(lnum(50),get(me/bench.read.##));
   think setr(0,cachestats());
-  think setr(1,benchmark(iter(lnum(50),get(me/bench.cold.##)),100));
+  think setr(1,benchmark(iter(lnum(50),get(me/bench.read.##)),100));
   think setr(2,cachestats());
-  @log smoke=TC004: Hot read 50 attrs x100 = [%q1]s. Before=[%q0] After=[%q2]. Succeeded.
+  @log smoke=TC004: Cached read 50 attrs x100 = [%q1]s. Before=[%q0] After=[%q2]. Succeeded.
 -
 #
 # Test Case #5 - Benchmark: attribute write timing.

@@ -11197,11 +11197,11 @@ static FUNCTION(fun_cachestats)
     cache_get_stats(&st);
 
     safe_tprintf_str(buff, bufc,
-        T("%llu %llu %lu %lu"),
+        T("%llu %llu %llu %llu"),
         static_cast<unsigned long long>(st.hits),
         static_cast<unsigned long long>(st.misses),
-        static_cast<unsigned long>(st.entries),
-        static_cast<unsigned long>(st.size));
+        static_cast<unsigned long long>(st.entries),
+        static_cast<unsigned long long>(st.size));
 }
 
 static FUNCTION(fun_config)
