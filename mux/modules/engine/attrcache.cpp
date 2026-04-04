@@ -323,7 +323,7 @@ int cache_count(dbref obj)
     {
         return 0;
     }
-    return g_pSQLiteBackend->GetDB().CountAttributes(obj);
+    return g_pSQLiteBackend->Count(static_cast<unsigned int>(obj));
 }
 
 void cache_preload_obj(dbref obj, bool bAll)

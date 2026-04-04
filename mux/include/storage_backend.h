@@ -68,6 +68,20 @@ public:
     virtual bool GetAll(unsigned int object, AttrCallback cb) = 0;
     virtual bool GetBuiltin(unsigned int object, AttrCallback cb) = 0;
 
+    // Attribute count and mod_count access.
+    //
+    // Count: returns the number of attributes stored on an object.
+    //
+    // GetModCount: returns the mod_count for a single attribute.
+    //              returns 0 if the attribute does not exist.
+    //
+    // GetAllModCounts: iterates (attrnum, mod_count) pairs for an object.
+    //
+    typedef std::function<void(unsigned int attrnum, uint32_t mod_count)> ModCountCallback;
+    virtual int Count(unsigned int object) = 0;
+    virtual uint32_t GetModCount(unsigned int object, unsigned int attrnum) = 0;
+    virtual bool GetAllModCounts(unsigned int object, ModCountCallback cb) = 0;
+
     // Maintenance.
     //
     // Sync: ensure all data is durable. For CHashFile, flushes all dirty

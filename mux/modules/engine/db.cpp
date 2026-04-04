@@ -50,13 +50,14 @@ void attr_mod_count_inc(dbref obj, int attrnum)
     }
     else
     {
-        // First in-memory access: seed from SQLite so we stay
+        // First in-memory access: seed from backend so we stay
         // monotonic with the persisted counter.
         uint32_t base = 0;
         if (g_pSQLiteBackend)
         {
-            CSQLiteDB &db = g_pSQLiteBackend->GetDB();
-            base = db.GetAttrModCount(obj, attrnum);
+            base = g_pSQLiteBackend->GetModCount(
+                static_cast<unsigned int>(obj),
+                static_cast<unsigned int>(attrnum));
         }
         s_attr_mod_counts[key] = base + 1;
     }
@@ -77,17 +78,18 @@ attr_mod_count_collect_object(dbref obj)
 {
     std::vector<std::pair<uint64_t, uint32_t>> result;
 
-    // Collect from SQLite first (covers attrs not yet in memory).
+    // Collect from backend first (covers attrs not yet in memory).
     if (g_pSQLiteBackend)
     {
-        CSQLiteDB &db = g_pSQLiteBackend->GetDB();
-        db.GetAllAttrModCounts(obj, [&](int attrnum, uint32_t mc) {
-            uint64_t key = attr_mod_key(obj, attrnum);
-            auto it = s_attr_mod_counts.find(key);
-            uint32_t current = (it != s_attr_mod_counts.end())
-                             ? it->second : mc;
-            result.push_back({key, current});
-        });
+        g_pSQLiteBackend->GetAllModCounts(
+            static_cast<unsigned int>(obj),
+            [&](unsigned int attrnum, uint32_t mc) {
+                uint64_t key = attr_mod_key(obj, static_cast<int>(attrnum));
+                auto it = s_attr_mod_counts.find(key);
+                uint32_t current = (it != s_attr_mod_counts.end())
+                                 ? it->second : mc;
+                result.push_back({key, current});
+            });
     }
 
     // Also collect any in-memory entries for this object that might
@@ -140,11 +142,12 @@ uint32_t attr_mod_count_get(dbref obj, int attrnum)
         return it->second;
     }
 
-    // Not in memory — check SQLite.
+    // Not in memory — check backend.
     if (g_pSQLiteBackend)
     {
-        CSQLiteDB &db = g_pSQLiteBackend->GetDB();
-        uint32_t mc = db.GetAttrModCount(obj, attrnum);
+        uint32_t mc = g_pSQLiteBackend->GetModCount(
+            static_cast<unsigned int>(obj),
+            static_cast<unsigned int>(attrnum));
         s_attr_mod_counts[attr_mod_key(obj, attrnum)] = mc;
         return mc;
     }

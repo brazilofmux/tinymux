@@ -90,6 +90,27 @@ bool CSQLiteBackend::GetBuiltin(unsigned int object, AttrCallback cb)
         });
 }
 
+int CSQLiteBackend::Count(unsigned int object)
+{
+    return m_db.CountAttributes(static_cast<dbref>(object));
+}
+
+uint32_t CSQLiteBackend::GetModCount(unsigned int object, unsigned int attrnum)
+{
+    return m_db.GetAttrModCount(static_cast<dbref>(object),
+                                static_cast<int>(attrnum));
+}
+
+bool CSQLiteBackend::GetAllModCounts(unsigned int object, ModCountCallback cb)
+{
+    m_db.GetAllAttrModCounts(static_cast<dbref>(object),
+        [&cb](int attrnum, uint32_t mc)
+        {
+            cb(static_cast<unsigned int>(attrnum), mc);
+        });
+    return true;
+}
+
 void CSQLiteBackend::Sync()
 {
     m_db.Checkpoint();

@@ -542,25 +542,36 @@ Stories:
 
 This stage is worth shipping even if all later stages are rejected.
 
-### Stage 2: Backend Interface Audit
+### Stage 2: Backend Interface Audit (COMPLETE)
 
 Validate that the current abstraction seam is sufficient.
 
 Stories:
 
-**2a. Audit `IStorageBackend`.**
+**2a. Audit `IStorageBackend`.** (COMPLETE)
 
-- identify SQLite-specific assumptions
-- verify that `Get()`, `Put()`, `Del()`, `DelAll()`, `GetAll()`,
-  `GetBuiltin()`, `Sync()`, and `Tick()` are sufficient for a KV backend
+- The abstract interface has no SQLite-specific assumptions.
+- Two gaps were found and filled:
+  - `Count(object)` — attribute count, was bypassing the interface.
+  - `GetModCount(object, attrnum)` and `GetAllModCounts(object, cb)` —
+    JIT mod_count access, was bypassing the interface via `GetDB()`.
+- All attribute access now goes through `IStorageBackend`.  Remaining
+  `GetDB()` calls are for non-attribute subsystems (object metadata,
+  mail, comsys, connlog, vattr names, code cache, search indexes) that
+  stay in SQLite per the design.
 
-**2b. Define per-attribute metadata contract.**
+**2b. Define per-attribute metadata contract.** (COMPLETE)
 
-- document owner, flags, `mod_count`, encoding, and iteration semantics
+- See [`docs/attribute-metadata.md`](attribute-metadata.md).
+- Schema: `(object, attrnum) → (value, owner, flags, mod_count)`.
+- mod_count is monotonically increasing, used by JIT for staleness.
 
-**2c. Audit `@search` attribute usage.**
+**2c. Audit `@search` attribute usage.** (COMPLETE)
 
-- identify which search paths actually depend on attribute-table access
+- `@search` SQL fast-paths query only object metadata (owner, type,
+  zone, parent, flags).  No direct queries on the attributes table.
+- `eval=` predicates go through `mux_exec()` → `cache_get()` →
+  `IStorageBackend`.  No changes needed when backend changes.
 
 ### Stage 3: Experimental libmdbx Attribute Backend
 

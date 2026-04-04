@@ -33,6 +33,10 @@ public:
     bool GetAll(unsigned int object, AttrCallback cb) override;
     bool GetBuiltin(unsigned int object, AttrCallback cb) override;
 
+    int Count(unsigned int object) override;
+    uint32_t GetModCount(unsigned int object, unsigned int attrnum) override;
+    bool GetAllModCounts(unsigned int object, ModCountCallback cb) override;
+
     void Sync() override;
     void Tick() override;
 
