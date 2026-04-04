@@ -46,13 +46,11 @@ Updated: 2026-04-04
 
 - **File:** `mux/modules/engine/jit_compiler.cpp:120, 2266, 2317-2323`
 - **Issue:** Static variables `s_current`, `s_arenas`, `s_current_ecall_ctx` and the save/restore pattern for eval context have no synchronization. Safe under current single-threaded evaluation but blocks any future multi-threading.
-- **Recommendation:** Use `thread_local` for `s_current_ecall_ctx`; document single-threaded assumption.
+- **Progress:** `s_current_ecall_ctx` is now `thread_local`, which removes the most direct cross-thread ECALL context hazard. The arena globals are still process-global and still block broader concurrent evaluation.
 
-### Unchecked `jit_alloc()` in `dbt_reset()`
+### ~~Unchecked `jit_alloc()` in `dbt_reset()`~~ FALSE ALARM
 
-- **File:** `mux/modules/engine/dbt.cpp:~201-212`
-- **Issue:** `dbt_init()` checks `jit_alloc()` for null, but `dbt_reset()` does not. A null return would cause subsequent null dereference.
-- **Recommendation:** Add the same null check as `dbt_init()`.
+- Current `dbt_reset()` does not call `jit_alloc()`; the only `jit_alloc()` call in `dbt.cpp` is in `dbt_init()`, and that path already checks for null and returns an error.
 
 ## Low — Technical Debt
 

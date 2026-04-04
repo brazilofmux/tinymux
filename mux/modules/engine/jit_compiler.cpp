@@ -2258,12 +2258,12 @@ bool run_cached_program(compiled_program *prog,
 // Common helper: call a FUN* with guest-memory arguments and write
 // result to guest output buffer.  Returns bytes written.
 //
-// Thread-local (single-threaded in practice) pointer to the current
+// Thread-local pointer to the current
 // ECALL execution context.  Set during ecall_invoke_fun so that
 // Tier 3 helper functions (_write_carg, _save_cargs, _restore_cargs)
 // can access JIT guest memory.
 //
-static eval_ctx *s_current_ecall_ctx = nullptr;
+static thread_local eval_ctx *s_current_ecall_ctx = nullptr;
 
 static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
                             uint64_t fargs_addr, int nfargs,
