@@ -108,28 +108,35 @@ int cache_init(const UTF8 *indb)
     //
     g_pAttrBackend = g_pSQLiteBackend;
 
-    // If mdbx backend is selected, open it and optionally migrate.
+    // Derive the .mdbx path from the database name.
     //
-    if (ATTR_BACKEND_MDBX == mudconf.attr_backend)
+    char szMdbxPath[LBUF_SIZE];
+    mux_strncpy((UTF8 *)szMdbxPath, indb, sizeof(szMdbxPath) - 1);
+    szMdbxPath[sizeof(szMdbxPath) - 1] = '\0';
+    n = strlen(szMdbxPath);
+    if (n > 3 && strcmp(szMdbxPath + n - 3, ".db") == 0)
     {
-        char szMdbxPath[LBUF_SIZE];
-        mux_strncpy((UTF8 *)szMdbxPath, indb, sizeof(szMdbxPath) - 1);
-        szMdbxPath[sizeof(szMdbxPath) - 1] = '\0';
-        n = strlen(szMdbxPath);
-        if (n > 3 && strcmp(szMdbxPath + n - 3, ".db") == 0)
-        {
-            strcpy(szMdbxPath + n - 3, ".mdbx");
-        }
-        else
-        {
-            strcat(szMdbxPath, ".mdbx");
-        }
+        strcpy(szMdbxPath + n - 3, ".mdbx");
+    }
+    else
+    {
+        strcat(szMdbxPath, ".mdbx");
+    }
 
 #if defined(WINDOWS_FILES)
-        bool bNewMdbx = (_access(szMdbxPath, 0) != 0);
+    bool bMdbxExists = (_access(szMdbxPath, 0) == 0);
 #else
-        bool bNewMdbx = (access(szMdbxPath, F_OK) != 0);
+    bool bMdbxExists = (access(szMdbxPath, F_OK) == 0);
 #endif
+
+    // Open mdbx if explicitly configured or if the file already exists
+    // (auto-detect for dbconvert and other standalone tools).
+    //
+    bool bUseMdbx = (ATTR_BACKEND_MDBX == mudconf.attr_backend) || bMdbxExists;
+
+    if (bUseMdbx)
+    {
+        bool bNewMdbx = !bMdbxExists;
 
         g_pMdbxBackend = new CMdbxBackend();
         if (!g_pMdbxBackend->Open(szMdbxPath))

@@ -1909,12 +1909,12 @@ static void collect_attrnums_from_storage(dbref thing, vector<int>& attrnums)
 {
     attrnums.clear();
 
-    if (!g_pSQLiteBackend)
+    if (!g_pAttrBackend)
     {
         return;
     }
 
-    if (!g_pSQLiteBackend->GetAll(
+    if (!g_pAttrBackend->GetAll(
         static_cast<unsigned int>(thing),
         [&attrnums](unsigned int attrnum, const UTF8 *, size_t, int, int)
         {

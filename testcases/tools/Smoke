@@ -118,7 +118,7 @@ module mail_mod
 _EOF
 
 # Allow injecting extra config lines (e.g. SMOKE_EXTRA_CONF="attr_backend mdbx").
-if [ -n "$SMOKE_EXTRA_CONF" ]; then
+if [ -n "${SMOKE_EXTRA_CONF:-}" ]; then
     echo "$SMOKE_EXTRA_CONF" >> smoke.conf
 fi
 
