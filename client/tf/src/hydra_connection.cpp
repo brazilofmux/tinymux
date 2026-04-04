@@ -21,8 +21,11 @@ using hydra::ServerMessage;
 struct HydraConnection::GrpcState {
     std::shared_ptr<Channel> channel;
     std::unique_ptr<hydra::HydraService::Stub> stub;
-    std::unique_ptr<ClientContext> sessionCtx;
-    std::unique_ptr<ClientReaderWriter<hydra::ClientMessage, hydra::ServerMessage>> stream;
+};
+
+struct HydraConnection::StreamState {
+    std::shared_ptr<ClientContext> context;
+    std::shared_ptr<ClientReaderWriter<hydra::ClientMessage, hydra::ServerMessage>> stream;
 };
 
 // ---- Helpers ----
@@ -81,17 +84,20 @@ HydraConnection::~HydraConnection() {
 bool HydraConnection::connect() {
     if (connected_.load()) return true;
 
-    grpc_ = std::make_unique<GrpcState>();
+    stopRequested_.store(false);
+    reconnecting_.store(false);
+
+    auto grpcState = std::make_shared<GrpcState>();
 
     std::string target = host_ + ":" + port_;
     if (useTls_) {
-        grpc_->channel = grpc::CreateChannel(target,
+        grpcState->channel = grpc::CreateChannel(target,
             grpc::SslCredentials(grpc::SslCredentialsOptions()));
     } else {
-        grpc_->channel = grpc::CreateChannel(target,
+        grpcState->channel = grpc::CreateChannel(target,
             grpc::InsecureChannelCredentials());
     }
-    grpc_->stub = hydra::HydraService::NewStub(grpc_->channel);
+    grpcState->stub = hydra::HydraService::NewStub(grpcState->channel);
 
     // Authenticate
     {
@@ -101,42 +107,67 @@ bool HydraConnection::connect() {
         req.set_password(password_);
         hydra::AuthResponse resp;
 
-        Status status = grpc_->stub->Authenticate(&authCtx, req, &resp);
+        Status status = grpcState->stub->Authenticate(&authCtx, req, &resp);
         if (!status.ok() || !resp.success()) {
             std::string err = resp.error().empty() ? status.error_message()
                                                    : resp.error();
             pushOutput("[Hydra] Authentication failed: " + err);
-            grpc_.reset();
             return false;
         }
         sessionId_ = resp.session_id();
     }
 
-    // Connect to initial game if specified
-    if (!gameName_.empty()) {
-        cmdConnect(gameName_);
+    {
+        std::lock_guard<std::mutex> lock(grpcMutex_);
+        grpc_ = grpcState;
     }
 
     // Open bidi stream
     if (!openStream()) {
-        grpc_.reset();
+        std::lock_guard<std::mutex> lock(grpcMutex_);
+        if (grpc_ == grpcState) {
+            grpc_.reset();
+        }
         return false;
+    }
+
+    // Connect to initial game if specified once the stream is live.
+    if (!gameName_.empty()) {
+        cmdConnect(gameName_);
     }
 
     pushOutput("[Hydra] Session established (" + sessionId_.substr(0, 8) + "...)");
     return true;
 }
 
-bool HydraConnection::openStream() {
-    if (!grpc_ || !grpc_->stub) return false;
+std::shared_ptr<HydraConnection::GrpcState> HydraConnection::currentGrpcState() const {
+    std::lock_guard<std::mutex> lock(grpcMutex_);
+    return grpc_;
+}
 
-    grpc_->sessionCtx = std::make_unique<ClientContext>();
-    grpc_->sessionCtx->AddMetadata("authorization", sessionId_);
-    grpc_->stream = grpc_->stub->GameSession(grpc_->sessionCtx.get());
+std::shared_ptr<HydraConnection::StreamState> HydraConnection::currentStreamState() const {
+    std::lock_guard<std::mutex> lock(streamStateMutex_);
+    return streamState_;
+}
 
-    if (!grpc_->stream) {
+bool HydraConnection::openStream(bool startReaderThread) {
+    auto grpcState = currentGrpcState();
+    if (!grpcState || !grpcState->stub) return false;
+
+    auto streamState = std::make_shared<StreamState>();
+    streamState->context = std::make_shared<ClientContext>();
+    streamState->context->AddMetadata("authorization", sessionId_);
+
+    auto stream = grpcState->stub->GameSession(streamState->context.get());
+    if (!stream) {
         pushOutput("[Hydra] Failed to open GameSession stream");
         return false;
+    }
+    streamState->stream = std::shared_ptr<ClientReaderWriter<hydra::ClientMessage, hydra::ServerMessage>>(stream.release());
+
+    {
+        std::lock_guard<std::mutex> lock(streamStateMutex_);
+        streamState_ = streamState;
     }
 
     connected_.store(true);
@@ -144,24 +175,38 @@ bool HydraConnection::openStream() {
     // Send initial preferences only after the stream is marked live.
     sendPreferences();
 
-    readerThread_ = std::thread(&HydraConnection::readerLoop, this);
+    if (startReaderThread) {
+        readerThread_ = std::thread(
+            static_cast<void (HydraConnection::*)(std::shared_ptr<StreamState>)>(&HydraConnection::readerLoop),
+            this,
+            streamState);
+    }
     return true;
 }
 
 void HydraConnection::disconnect() {
-    bool wasConnected = connected_.exchange(false);
+    stopRequested_.store(true);
+    connected_.store(false);
     reconnecting_.store(false);
 
-    if (grpc_ && grpc_->sessionCtx) {
-        grpc_->sessionCtx->TryCancel();
+    auto streamState = currentStreamState();
+
+    if (streamState && streamState->context) {
+        streamState->context->TryCancel();
     }
-    if (grpc_ && grpc_->stream) {
-        grpc_->stream->WritesDone();
+    if (streamState && streamState->stream) {
+        std::lock_guard<std::mutex> writeLock(writeMutex_);
+        streamState->stream->WritesDone();
     }
     if (readerThread_.joinable()) {
         readerThread_.join();
     }
-    if (wasConnected) {
+    {
+        std::lock_guard<std::mutex> lock(streamStateMutex_);
+        streamState_.reset();
+    }
+    {
+        std::lock_guard<std::mutex> lock(grpcMutex_);
         grpc_.reset();
     }
 }
@@ -218,13 +263,14 @@ bool HydraConnection::send_line(const std::string& line) {
             cmdStatus(trim(line.substr(8)));
             return true;
         } else if (lower == "/hdetach") {
-            if (!grpc_ || !grpc_->stub || sessionId_.empty()) return true;
+            auto grpcState = currentGrpcState();
+            if (!grpcState || !grpcState->stub || sessionId_.empty()) return true;
             ClientContext ctx;
             ctx.AddMetadata("authorization", sessionId_);
             hydra::SessionRequest req;
             req.set_session_id(sessionId_);
             hydra::Empty resp;
-            grpc_->stub->DetachSession(&ctx, req, &resp);
+            grpcState->stub->DetachSession(&ctx, req, &resp);
             pushOutput("[Hydra] Session detached.");
             return true;
         } else if (lower == "/hhelp") {
@@ -249,12 +295,10 @@ bool HydraConnection::send_line(const std::string& line) {
     }
 
     // Regular input — forward to active game link via bidi stream
-    if (!connected_.load() || !grpc_ || !grpc_->stream) return false;
-
     hydra::ClientMessage msg;
     msg.set_input_line(line);
 
-    if (!grpc_->stream->Write(msg)) {
+    if (!sendClientMessage(msg)) {
         return false;
     }
 
@@ -299,16 +343,24 @@ void HydraConnection::send_naws(uint16_t width, uint16_t height) {
     sendPreferences();
 }
 
-void HydraConnection::sendPreferences() {
-    if (!connected_.load() || !grpc_ || !grpc_->stream) return;
+bool HydraConnection::sendClientMessage(const hydra::ClientMessage& msg) {
+    if (!connected_.load()) return false;
 
+    auto streamState = currentStreamState();
+    if (!streamState || !streamState->stream) return false;
+
+    std::lock_guard<std::mutex> writeLock(writeMutex_);
+    return streamState->stream->Write(msg);
+}
+
+void HydraConnection::sendPreferences() {
     hydra::ClientMessage msg;
     auto* prefs = msg.mutable_preferences();
     prefs->set_color_format(static_cast<hydra::ColorFormat>(currentColorFormat_));
     prefs->set_terminal_width(termWidth_);
     prefs->set_terminal_height(termHeight_);
     prefs->set_terminal_type("TitanFugue");
-    grpc_->stream->Write(msg);
+    sendClientMessage(msg);
 }
 
 std::string HydraConnection::check_prompt(std::chrono::milliseconds) {
@@ -354,7 +406,8 @@ void HydraConnection::cmdConnect(const std::string& gameName) {
         pushOutput("[Hydra] Usage: /hconnect <game>");
         return;
     }
-    if (!grpc_ || !grpc_->stub || sessionId_.empty()) {
+    auto grpcState = currentGrpcState();
+    if (!grpcState || !grpcState->stub || sessionId_.empty()) {
         pushOutput("[Hydra] Not authenticated");
         return;
     }
@@ -366,7 +419,7 @@ void HydraConnection::cmdConnect(const std::string& gameName) {
     req.set_game_name(gameName);
     hydra::ConnectResponse resp;
 
-    Status status = grpc_->stub->Connect(&ctx, req, &resp);
+    Status status = grpcState->stub->Connect(&ctx, req, &resp);
     if (status.ok() && resp.success()) {
         pushOutput("[Hydra] Connected to " + gameName
             + " (link " + std::to_string(resp.link_number()) + ")");
@@ -381,7 +434,8 @@ void HydraConnection::cmdSwitch(const std::string& args) {
         pushOutput("[Hydra] Usage: /hswitch <link#>");
         return;
     }
-    if (!grpc_ || !grpc_->stub || sessionId_.empty()) return;
+    auto grpcState = currentGrpcState();
+    if (!grpcState || !grpcState->stub || sessionId_.empty()) return;
 
     int linkNum = 0;
     try { linkNum = std::stoi(args); } catch (...) {
@@ -396,7 +450,7 @@ void HydraConnection::cmdSwitch(const std::string& args) {
     req.set_link_number(linkNum);
     hydra::SwitchResponse resp;
 
-    Status status = grpc_->stub->SwitchLink(&ctx, req, &resp);
+    Status status = grpcState->stub->SwitchLink(&ctx, req, &resp);
     if (status.ok() && resp.success()) {
         pushOutput("[Hydra] Switched to link " + std::to_string(linkNum));
     } else {
@@ -410,7 +464,8 @@ void HydraConnection::cmdDisconnect(const std::string& args) {
         pushOutput("[Hydra] Usage: /hdisconnect <link#>");
         return;
     }
-    if (!grpc_ || !grpc_->stub || sessionId_.empty()) return;
+    auto grpcState = currentGrpcState();
+    if (!grpcState || !grpcState->stub || sessionId_.empty()) return;
 
     int linkNum = 0;
     try { linkNum = std::stoi(args); } catch (...) {
@@ -425,7 +480,7 @@ void HydraConnection::cmdDisconnect(const std::string& args) {
     req.set_link_number(linkNum);
     hydra::DisconnectResponse resp;
 
-    Status status = grpc_->stub->DisconnectLink(&ctx, req, &resp);
+    Status status = grpcState->stub->DisconnectLink(&ctx, req, &resp);
     if (status.ok() && resp.success()) {
         pushOutput("[Hydra] Link " + std::to_string(linkNum) + " disconnected");
     } else {
@@ -435,7 +490,8 @@ void HydraConnection::cmdDisconnect(const std::string& args) {
 }
 
 void HydraConnection::cmdLinks() {
-    if (!grpc_ || !grpc_->stub || sessionId_.empty()) return;
+    auto grpcState = currentGrpcState();
+    if (!grpcState || !grpcState->stub || sessionId_.empty()) return;
 
     ClientContext ctx;
     ctx.AddMetadata("authorization", sessionId_);
@@ -443,7 +499,7 @@ void HydraConnection::cmdLinks() {
     req.set_session_id(sessionId_);
     hydra::LinkList resp;
 
-    Status status = grpc_->stub->ListLinks(&ctx, req, &resp);
+    Status status = grpcState->stub->ListLinks(&ctx, req, &resp);
     if (!status.ok()) {
         pushOutput("[Hydra] ListLinks failed: " + status.error_message());
         return;
@@ -466,14 +522,15 @@ void HydraConnection::cmdLinks() {
 }
 
 void HydraConnection::cmdGames() {
-    if (!grpc_ || !grpc_->stub) return;
+    auto grpcState = currentGrpcState();
+    if (!grpcState || !grpcState->stub) return;
 
     ClientContext ctx;
     if (!sessionId_.empty()) ctx.AddMetadata("authorization", sessionId_);
     hydra::Empty req;
     hydra::GameList resp;
 
-    Status status = grpc_->stub->ListGames(&ctx, req, &resp);
+    Status status = grpcState->stub->ListGames(&ctx, req, &resp);
     if (!status.ok()) {
         pushOutput("[Hydra] ListGames failed: " + status.error_message());
         return;
@@ -489,7 +546,8 @@ void HydraConnection::cmdGames() {
 }
 
 void HydraConnection::cmdScroll(const std::string& args) {
-    if (!grpc_ || !grpc_->stub || sessionId_.empty()) return;
+    auto grpcState = currentGrpcState();
+    if (!grpcState || !grpcState->stub || sessionId_.empty()) return;
 
     int maxLines = 50;
     if (!args.empty()) {
@@ -503,7 +561,7 @@ void HydraConnection::cmdScroll(const std::string& args) {
     req.set_max_lines(maxLines);
     hydra::ScrollBackResponse resp;
 
-    Status status = grpc_->stub->GetScrollBack(&ctx, req, &resp);
+    Status status = grpcState->stub->GetScrollBack(&ctx, req, &resp);
     if (!status.ok()) {
         pushOutput("[Hydra] GetScrollBack failed: " + status.error_message());
         return;
@@ -519,8 +577,6 @@ void HydraConnection::cmdScroll(const std::string& args) {
 // ---- Keepalive ----
 
 void HydraConnection::sendPing() {
-    if (!connected_.load() || !grpc_ || !grpc_->stream) return;
-
     hydra::ClientMessage msg;
     auto* ping = msg.mutable_ping();
     auto now = std::chrono::system_clock::now();
@@ -528,14 +584,15 @@ void HydraConnection::sendPing() {
         std::chrono::duration_cast<std::chrono::milliseconds>(
             now.time_since_epoch()).count());
 
-    grpc_->stream->Write(msg);
+    sendClientMessage(msg);
 }
 
 // ---- Credential management ----
 
 void HydraConnection::cmdAddCred(const std::string& args) {
     // Parse: <game> <character> <verb> <name> <secret>
-    if (!grpc_ || !grpc_->stub || sessionId_.empty()) return;
+    auto grpcState = currentGrpcState();
+    if (!grpcState || !grpcState->stub || sessionId_.empty()) return;
 
     std::istringstream ss(args);
     std::string game, character, verb, name, secret;
@@ -560,7 +617,7 @@ void HydraConnection::cmdAddCred(const std::string& args) {
     req.set_secret(secret);
     hydra::AddCredentialResponse resp;
 
-    Status status = grpc_->stub->AddCredential(&ctx, req, &resp);
+    Status status = grpcState->stub->AddCredential(&ctx, req, &resp);
     if (status.ok() && resp.success()) {
         pushOutput("[Hydra] Credential stored for " + game + "/" + character);
     } else {
@@ -570,7 +627,8 @@ void HydraConnection::cmdAddCred(const std::string& args) {
 }
 
 void HydraConnection::cmdDelCred(const std::string& args) {
-    if (!grpc_ || !grpc_->stub || sessionId_.empty()) return;
+    auto grpcState = currentGrpcState();
+    if (!grpcState || !grpcState->stub || sessionId_.empty()) return;
 
     std::istringstream ss(args);
     std::string game, character;
@@ -589,7 +647,7 @@ void HydraConnection::cmdDelCred(const std::string& args) {
     if (!character.empty()) req.set_character(character);
     hydra::DeleteCredentialResponse resp;
 
-    Status status = grpc_->stub->DeleteCredential(&ctx, req, &resp);
+    Status status = grpcState->stub->DeleteCredential(&ctx, req, &resp);
     if (status.ok() && resp.success()) {
         pushOutput("[Hydra] Credential(s) deleted.");
     } else {
@@ -599,7 +657,8 @@ void HydraConnection::cmdDelCred(const std::string& args) {
 }
 
 void HydraConnection::cmdCreds() {
-    if (!grpc_ || !grpc_->stub || sessionId_.empty()) return;
+    auto grpcState = currentGrpcState();
+    if (!grpcState || !grpcState->stub || sessionId_.empty()) return;
 
     ClientContext ctx;
     ctx.AddMetadata("authorization", sessionId_);
@@ -607,7 +666,7 @@ void HydraConnection::cmdCreds() {
     req.set_session_id(sessionId_);
     hydra::ListCredentialsResponse resp;
 
-    Status status = grpc_->stub->ListCredentials(&ctx, req, &resp);
+    Status status = grpcState->stub->ListCredentials(&ctx, req, &resp);
     if (!status.ok()) {
         pushOutput("[Hydra] ListCredentials failed: " + status.error_message());
         return;
@@ -632,7 +691,8 @@ void HydraConnection::cmdCreds() {
 
 void HydraConnection::cmdStart(const std::string& args) {
     if (args.empty()) { pushOutput("[Hydra] Usage: /hstart <game>"); return; }
-    if (!grpc_ || !grpc_->stub) return;
+    auto grpcState = currentGrpcState();
+    if (!grpcState || !grpcState->stub) return;
 
     ClientContext ctx;
     if (!sessionId_.empty()) ctx.AddMetadata("authorization", sessionId_);
@@ -640,7 +700,7 @@ void HydraConnection::cmdStart(const std::string& args) {
     req.set_game_name(args);
     hydra::GameResponse resp;
 
-    Status status = grpc_->stub->StartGame(&ctx, req, &resp);
+    Status status = grpcState->stub->StartGame(&ctx, req, &resp);
     if (status.ok() && resp.success()) {
         pushOutput("[Hydra] Started " + args + " (pid " + std::to_string(resp.pid()) + ")");
     } else {
@@ -651,7 +711,8 @@ void HydraConnection::cmdStart(const std::string& args) {
 
 void HydraConnection::cmdStop(const std::string& args) {
     if (args.empty()) { pushOutput("[Hydra] Usage: /hstop <game>"); return; }
-    if (!grpc_ || !grpc_->stub) return;
+    auto grpcState = currentGrpcState();
+    if (!grpcState || !grpcState->stub) return;
 
     ClientContext ctx;
     if (!sessionId_.empty()) ctx.AddMetadata("authorization", sessionId_);
@@ -659,7 +720,7 @@ void HydraConnection::cmdStop(const std::string& args) {
     req.set_game_name(args);
     hydra::GameResponse resp;
 
-    Status status = grpc_->stub->StopGame(&ctx, req, &resp);
+    Status status = grpcState->stub->StopGame(&ctx, req, &resp);
     if (status.ok() && resp.success()) {
         pushOutput("[Hydra] Stopping " + args);
     } else {
@@ -670,7 +731,8 @@ void HydraConnection::cmdStop(const std::string& args) {
 
 void HydraConnection::cmdRestart(const std::string& args) {
     if (args.empty()) { pushOutput("[Hydra] Usage: /hrestart <game>"); return; }
-    if (!grpc_ || !grpc_->stub) return;
+    auto grpcState = currentGrpcState();
+    if (!grpcState || !grpcState->stub) return;
 
     ClientContext ctx;
     if (!sessionId_.empty()) ctx.AddMetadata("authorization", sessionId_);
@@ -678,7 +740,7 @@ void HydraConnection::cmdRestart(const std::string& args) {
     req.set_game_name(args);
     hydra::GameResponse resp;
 
-    Status status = grpc_->stub->RestartGame(&ctx, req, &resp);
+    Status status = grpcState->stub->RestartGame(&ctx, req, &resp);
     if (status.ok() && resp.success()) {
         pushOutput("[Hydra] Restarted " + args + " (pid " + std::to_string(resp.pid()) + ")");
     } else {
@@ -688,7 +750,8 @@ void HydraConnection::cmdRestart(const std::string& args) {
 }
 
 void HydraConnection::cmdStatus(const std::string& args) {
-    if (!grpc_ || !grpc_->stub) return;
+    auto grpcState = currentGrpcState();
+    if (!grpcState || !grpcState->stub) return;
 
     ClientContext ctx;
     if (!sessionId_.empty()) ctx.AddMetadata("authorization", sessionId_);
@@ -696,7 +759,7 @@ void HydraConnection::cmdStatus(const std::string& args) {
     if (!args.empty()) req.set_game_name(args);
     hydra::GameStatusResponse resp;
 
-    Status status = grpc_->stub->GetGameStatus(&ctx, req, &resp);
+    Status status = grpcState->stub->GetGameStatus(&ctx, req, &resp);
     if (!status.ok()) {
         pushOutput("[Hydra] GetGameStatus failed: " + status.error_message());
         return;
@@ -762,9 +825,17 @@ void HydraConnection::processServerMessage(const ServerMessage& msg) {
 }
 
 void HydraConnection::readerLoop() {
+    readerLoop(currentStreamState());
+}
+
+void HydraConnection::readerLoop(std::shared_ptr<StreamState> streamState) {
+    if (!streamState || !streamState->stream) {
+        return;
+    }
+
     ServerMessage msg;
-    while (connected_.load() && grpc_ && grpc_->stream &&
-           grpc_->stream->Read(&msg)) {
+    while (connected_.load() && !stopRequested_.load() &&
+           streamState->stream->Read(&msg)) {
         lastRecvTime_ = std::chrono::steady_clock::now();
 
         std::lock_guard<std::mutex> lock(outputMutex_);
@@ -774,59 +845,46 @@ void HydraConnection::readerLoop() {
     }
 
     // Stream ended — attempt reconnect if we didn't disconnect intentionally
-    if (connected_.load() && !reconnecting_.load()) {
+    if (connected_.load() && !stopRequested_.load() && !reconnecting_.load()) {
         attemptReconnect();
     }
 }
 
 void HydraConnection::attemptReconnect() {
-    if (reconnecting_.exchange(true)) return;  // already reconnecting
+    if (stopRequested_.load() || reconnecting_.exchange(true)) return;
 
     pushOutput("[Hydra] Stream lost, attempting reconnect...");
-
-    // Join the old reader thread context (we're in it, so just clean up stream)
-    if (grpc_) {
-        grpc_->sessionCtx.reset();
-        grpc_->stream.reset();
-    }
     connected_.store(false);
+    {
+        std::lock_guard<std::mutex> lock(streamStateMutex_);
+        streamState_.reset();
+    }
 
     for (int attempt = 1; attempt <= MAX_RECONNECT_ATTEMPTS; attempt++) {
+        if (stopRequested_.load()) {
+            break;
+        }
         std::this_thread::sleep_for(
             std::chrono::seconds(RECONNECT_DELAY_SECS));
 
-        if (!grpc_ || !grpc_->stub || sessionId_.empty()) break;
+        auto grpcState = currentGrpcState();
+        if (!grpcState || !grpcState->stub || sessionId_.empty()) break;
 
-        // Try to reopen the bidi stream with the same session
-        grpc_->sessionCtx = std::make_unique<ClientContext>();
-        grpc_->sessionCtx->AddMetadata("authorization", sessionId_);
-        grpc_->stream = grpc_->stub->GameSession(grpc_->sessionCtx.get());
-
-        if (grpc_->stream) {
-            connected_.store(true);
-            reconnecting_.store(false);
-            sendPreferences();
+        if (openStream(false)) {
+            auto streamState = currentStreamState();
             pushOutput("[Hydra] Reconnected (attempt " + std::to_string(attempt) + ")");
-
-            // Re-enter the read loop
-            ServerMessage msg;
-            while (connected_.load() && grpc_->stream->Read(&msg)) {
-                lastRecvTime_ = std::chrono::steady_clock::now();
-
-                std::lock_guard<std::mutex> lock(outputMutex_);
-                if (msg.has_pong()) continue;
-                processServerMessage(msg);
-                signalOutput();
-            }
+            readerLoop(streamState);
 
             // Stream broke again — retry
-            if (connected_.load()) {
+            if (connected_.load() && !stopRequested_.load()) {
                 pushOutput("[Hydra] Stream lost again, retrying...");
-                grpc_->sessionCtx.reset();
-                grpc_->stream.reset();
                 connected_.store(false);
+                std::lock_guard<std::mutex> lock(streamStateMutex_);
+                streamState_.reset();
+                reconnecting_.store(true);
                 continue;
             }
+            reconnecting_.store(false);
             return;  // intentional disconnect
         }
 
@@ -835,7 +893,9 @@ void HydraConnection::attemptReconnect() {
     }
 
     reconnecting_.store(false);
-    pushOutput("[Hydra] Reconnect failed after " + std::to_string(MAX_RECONNECT_ATTEMPTS) + " attempts");
+    if (!stopRequested_.load()) {
+        pushOutput("[Hydra] Reconnect failed after " + std::to_string(MAX_RECONNECT_ATTEMPTS) + " attempts");
+    }
 }
 
 #endif // HYDRA_GRPC

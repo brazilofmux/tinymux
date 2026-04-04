@@ -24,17 +24,9 @@ All previously reported bugs have been resolved:
 
 ## Newly Identified Bugs (2026-04-04)
 
-- **Hydra reconnect path still races on `grpc_` ownership**
-  - **Files:** `client/tf/src/hydra_connection.cpp:151-166`, `client/tf/src/hydra_connection.cpp:764-834`
-  - **Issue:** `disconnect()` runs on the main thread and calls `TryCancel()`, `WritesDone()`, `join()`, and `grpc_.reset()` with no mutex protecting `grpc_`. At the same time, `readerLoop()` and `attemptReconnect()` read and mutate `grpc_->stream`, `grpc_->sessionCtx`, and `grpc_->stub` on the reader thread.
-  - **Impact:** A manual disconnect during reconnect or while the reader loop is unwinding can race into use-after-reset, double-close behavior, or an inconsistent reconnect state. The console client already needed a similar fix for its Hydra transport.
-  - **Recommendation:** Move transport state behind a mutex-protected snapshot or shared state object and make reconnect/disconnect operate on that synchronized state only.
+- ~~**Hydra reconnect path still races on `grpc_` ownership**~~ FIXED — TF Hydra transport now keeps gRPC/channel state in shared snapshots guarded by mutexes, uses a dedicated stream snapshot for the reader thread, and serializes stream writes so disconnect/reconnect no longer race on raw `grpc_` ownership.
 
-- **`/update` builds a shell command from unquoted user input**
-  - **Files:** `client/tf/src/command.cpp:1731-1795`
-  - **Issue:** `cmd_update()` concatenates `repo_root`, `src_dir`, and the raw `branch` argument into `build_cmd`, then executes it via `execl("/bin/sh", "sh", "-c", build_cmd.c_str(), nullptr)`. A branch value containing shell metacharacters executes arbitrary local commands in the client process context.
-  - **Impact:** This is a local command-injection path. Any user who copies an untrusted `/update ...` invocation into the client can run unintended shell code, not just `git pull`.
-  - **Recommendation:** Avoid `sh -c`; fork/exec `git` and `cmake` directly with argument vectors, or at minimum shell-quote every interpolated token before execution.
+- ~~**`/update` builds a shell command from unquoted user input**~~ FIXED — `/update` now runs `git pull` and `cmake --build` via direct `execvp` argument vectors in controlled working directories, removing the `sh -c` injection path for branch names and repo paths.
 
 ## Newly Identified Bugs (2026-04-04) — Continued
 

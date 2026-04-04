@@ -41,6 +41,66 @@ static std::string trim_copy(std::string s) {
     return s;
 }
 
+static std::string join_args(const std::vector<std::string>& argv) {
+    std::string joined;
+    for (size_t i = 0; i < argv.size(); ++i) {
+        if (i != 0) joined += ' ';
+        joined += argv[i];
+    }
+    return joined;
+}
+
+static bool run_command_capture(const std::string& cwd,
+                                const std::vector<std::string>& argv,
+                                std::string& output,
+                                int& status) {
+    int pipefd[2];
+    if (pipe(pipefd) != 0) {
+        return false;
+    }
+
+    pid_t pid = fork();
+    if (pid < 0) {
+        close(pipefd[0]);
+        close(pipefd[1]);
+        return false;
+    }
+    if (pid == 0) {
+        close(pipefd[0]);
+        dup2(pipefd[1], STDOUT_FILENO);
+        dup2(pipefd[1], STDERR_FILENO);
+        close(pipefd[1]);
+
+        if (!cwd.empty() && chdir(cwd.c_str()) != 0) {
+            perror("chdir");
+            _exit(127);
+        }
+
+        std::vector<char*> exec_argv;
+        exec_argv.reserve(argv.size() + 1);
+        for (const auto& arg : argv) {
+            exec_argv.push_back(const_cast<char*>(arg.c_str()));
+        }
+        exec_argv.push_back(nullptr);
+        execvp(exec_argv[0], exec_argv.data());
+        perror("execvp");
+        _exit(127);
+    }
+
+    close(pipefd[1]);
+
+    char buf[4096];
+    for (;;) {
+        ssize_t n = read(pipefd[0], buf, sizeof(buf));
+        if (n <= 0) break;
+        output.append(buf, static_cast<size_t>(n));
+    }
+    close(pipefd[0]);
+
+    status = 0;
+    return waitpid(pid, &status, 0) == pid;
+}
+
 static std::string quote_world_arg(const std::string& s) {
     std::string out = "\"";
     out.reserve(s.size() + 2);
@@ -1765,51 +1825,40 @@ void cmd_update(App& app, const std::string& args) {
     std::string build_dir = repo_root + "/client/tf/build";
     std::string src_dir = repo_root + "/client/tf";
 
-    // Build the shell command
-    std::string pull_cmd = "cd " + repo_root + " && git pull";
-    if (!branch.empty()) pull_cmd += " origin " + branch;
-    std::string build_cmd = pull_cmd + " && cd " + src_dir +
-        " && cmake --build build --target tf 2>&1";
-
-    app.terminal.print_system("% Updating: " + build_cmd);
-
-    // Fork and exec the build
-    int pipefd[2];
-    if (pipe(pipefd) != 0) {
-        app.terminal.print_system("% pipe() failed");
-        return;
+    std::vector<std::string> git_cmd = {"git", "pull"};
+    if (!branch.empty()) {
+        git_cmd.push_back("origin");
+        git_cmd.push_back(branch);
     }
+    std::vector<std::string> build_cmd = {
+        "cmake", "--build", "build", "--target", "tf"
+    };
 
-    pid_t pid = fork();
-    if (pid < 0) {
-        close(pipefd[0]);
-        close(pipefd[1]);
-        app.terminal.print_system("% fork() failed");
-        return;
-    }
-    if (pid == 0) {
-        close(pipefd[0]);
-        dup2(pipefd[1], STDOUT_FILENO);
-        dup2(pipefd[1], STDERR_FILENO);
-        close(pipefd[1]);
-        execl("/bin/sh", "sh", "-c", build_cmd.c_str(), nullptr);
-        _exit(127);
-    }
+    app.terminal.print_system("% Updating: " + join_args(git_cmd));
+    app.terminal.print_system("% Building: " + join_args(build_cmd));
 
-    close(pipefd[1]);
-
-    // Read build output
-    char buf[4096];
     std::string output;
-    for (;;) {
-        ssize_t n = read(pipefd[0], buf, sizeof(buf));
-        if (n <= 0) break;
-        output.append(buf, (size_t)n);
-    }
-    close(pipefd[0]);
-
     int status = 0;
-    waitpid(pid, &status, 0);
+    if (!run_command_capture(repo_root, git_cmd, output, status)) {
+        app.terminal.print_system("% Failed to start git pull");
+        return;
+    }
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+        std::istringstream iss(output);
+        std::string line;
+        while (std::getline(iss, line)) {
+            app.terminal.print_system("  " + line);
+        }
+        app.terminal.print_system("% Update failed (exit " +
+            std::to_string(WIFEXITED(status) ? WEXITSTATUS(status) : -1) + ")");
+        return;
+    }
+
+    output.clear();
+    if (!run_command_capture(src_dir, build_cmd, output, status)) {
+        app.terminal.print_system("% Failed to start build");
+        return;
+    }
 
     // Show build output
     std::istringstream iss(output);

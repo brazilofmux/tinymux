@@ -15,7 +15,7 @@
 #include <vector>
 
 namespace grpc { class Channel; class ClientContext; }
-namespace hydra { class ServerMessage; class GameOutput; }
+namespace hydra { class ClientMessage; class ServerMessage; class GameOutput; }
 
 // A connection to a game server via Hydra's gRPC GameSession bidi stream.
 // Presents the same IConnection interface as Connection (telnet) so the
@@ -74,7 +74,10 @@ public:
     const std::string& session_id() const { return sessionId_; }
 
 private:
+    struct GrpcState;
+    struct StreamState;
     void readerLoop();
+    void readerLoop(std::shared_ptr<StreamState> streamState);
     void signalOutput();
     void pushOutput(const std::string& line);
     void sendPreferences();
@@ -82,7 +85,10 @@ private:
     void processGameOutput(const hydra::GameOutput& out);
 
     // Open (or reopen) the bidi GameSession stream.
-    bool openStream();
+    bool openStream(bool startReaderThread = true);
+    std::shared_ptr<GrpcState> currentGrpcState() const;
+    std::shared_ptr<StreamState> currentStreamState() const;
+    bool sendClientMessage(const hydra::ClientMessage& msg);
 
     // Hydra command handlers (called from send_line on main thread)
     void cmdConnect(const std::string& gameName);
@@ -124,8 +130,11 @@ private:
     int eventFd_ = -1;
 
     // gRPC state (opaque — actual types in .cpp to avoid grpc headers here)
-    struct GrpcState;
-    std::unique_ptr<GrpcState> grpc_;
+    mutable std::mutex grpcMutex_;
+    std::shared_ptr<GrpcState> grpc_;
+    mutable std::mutex streamStateMutex_;
+    std::shared_ptr<StreamState> streamState_;
+    std::mutex writeMutex_;
 
     // Reader thread pushes lines here
     mutable std::mutex outputMutex_;
@@ -135,6 +144,7 @@ private:
     std::string lastPrompt_;
     std::atomic<bool> connected_{false};
     std::atomic<bool> reconnecting_{false};
+    std::atomic<bool> stopRequested_{false};
     std::thread readerThread_;
 
     // Scrollback
