@@ -1339,29 +1339,60 @@ static compiled_program reconstruct_from_cache(
         || rec.out_pool_end > 0;
 
     if (has_compact_image) {
+        const int64_t code_end = rec.entry_pc + rec.code_len;
+        const int64_t str_end = static_cast<int64_t>(rv_compiler::STR_BASE)
+            + rec.str_len;
+        const int64_t fargs_end = static_cast<int64_t>(rv_compiler::FARGS_BASE)
+            + rec.fargs_len;
+        const bool valid_code =
+            rec.code_len >= 0
+            && rec.code_size >= 0
+            && rec.entry_pc >= static_cast<int64_t>(rv_compiler::CODE_BASE)
+            && rec.entry_pc <= static_cast<int64_t>(rv_compiler::CODE_LIMIT)
+            && code_end >= rec.entry_pc
+            && code_end <= static_cast<int64_t>(rv_compiler::CODE_LIMIT)
+            && rec.code_size >= rec.code_len;
+        const bool valid_str =
+            rec.str_len >= 0
+            && rec.str_pool_end >= static_cast<int64_t>(rv_compiler::STR_BASE)
+            && rec.str_pool_end <= static_cast<int64_t>(rv_compiler::STR_LIMIT)
+            && str_end >= static_cast<int64_t>(rv_compiler::STR_BASE)
+            && str_end <= static_cast<int64_t>(rv_compiler::STR_LIMIT)
+            && rec.str_pool_end >= str_end;
+        const bool valid_fargs =
+            rec.fargs_len >= 0
+            && rec.fargs_pool_end >= static_cast<int64_t>(rv_compiler::FARGS_BASE)
+            && rec.fargs_pool_end <= static_cast<int64_t>(rv_compiler::FARGS_LIMIT)
+            && fargs_end >= static_cast<int64_t>(rv_compiler::FARGS_BASE)
+            && fargs_end <= static_cast<int64_t>(rv_compiler::FARGS_LIMIT)
+            && rec.fargs_pool_end >= fargs_end;
+        const bool valid_out =
+            rec.out_pool_end >= static_cast<int64_t>(rv_compiler::OUT_STACK_LIMIT)
+            && rec.out_pool_end <= static_cast<int64_t>(rv_compiler::STACK_TOP - 8);
+
+        if (!valid_code || !valid_str || !valid_fargs || !valid_out) {
+            return prog;
+        }
+
         if (rec.needs_jit) {
             tier2_install(prog.memory, rv_compiler::BLOB_BASE);
         }
 
         if (rec.code_blob
             && rec.code_len > 0
-            && rec.entry_pc >= 0
-            && rec.entry_pc + rec.code_len
-                <= static_cast<int64_t>(prog.memory.size())) {
+            && rec.entry_pc >= 0) {
             memcpy(prog.memory.data() + rec.entry_pc,
                    rec.code_blob, rec.code_len);
         }
 
         if (rec.str_blob
-            && rec.str_len > 0
-            && rv_compiler::STR_BASE + rec.str_len <= prog.memory.size()) {
+            && rec.str_len > 0) {
             memcpy(prog.memory.data() + rv_compiler::STR_BASE,
                    rec.str_blob, rec.str_len);
         }
 
         if (rec.fargs_blob
-            && rec.fargs_len > 0
-            && rv_compiler::FARGS_BASE + rec.fargs_len <= prog.memory.size()) {
+            && rec.fargs_len > 0) {
             memcpy(prog.memory.data() + rv_compiler::FARGS_BASE,
                    rec.fargs_blob, rec.fargs_len);
         }
