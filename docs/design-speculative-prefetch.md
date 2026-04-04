@@ -112,7 +112,7 @@ to measure what the cache is actually doing:
   were actually read before eviction?  High rate = good prediction.
   Low rate = wasted memory.
 - **Miss-after-prefetch counter**: Attributes that missed even though
-  the object was prefetched ��� these are parent-chain misses or
+  the object was prefetched — these are parent-chain misses or
   attributes added after prefetch.
 
 These counters feed into `@list cache` and `cachestats()` so they're
@@ -134,8 +134,12 @@ For `look`, the natural batch point is `show_a_desc()` (`look.cpp:1054`).
 Before reading DESC, prefetch the target object.  For `examine`, the
 object is already fully loaded since examine reads all attributes.
 
-For `u(obj/attr)`, prefetch the object at `parse_and_get_attrib()`
-(`funceval.cpp:117`) before evaluation begins.
+For `u(obj/attr)`, prefetch the object in `do_ufun()`
+(`functions.cpp:2399`) after the attribute is resolved but before
+`mux_exec()` evaluates it.  Note: `parse_and_get_attrib()` is a
+shared helper used by many non-u() call sites — hooking there would
+broaden this from a u()-specific optimization to a general
+attribute-parse prefetch with much higher overfetch risk.
 
 This stage is only worth doing if Stage 2 measurements show that
 object-affinity prefetch (Stage 1) doesn't already cover these
@@ -197,25 +201,26 @@ measurements show a clear gap.
 
 ## Dependencies
 
-- The write batching (`cache_flush_writes`) must be flushed before
-  any prefetch that calls `GetAll`, to ensure the backend sees all
-  queued writes.  This is already handled: `cache_flush_writes()` is
-  called before `Sync()`, and `GetAll` reads through the backend
-  which sees committed data.
+- **Write queue must be flushed before prefetch `GetAll`.**  This is
+  required for correctness, not optional cleanup.
 
-  Actually, with the write queue, a queued-but-unflushed `Put` is
-  visible in the LRU cache (the cache is updated immediately in
-  `cache_put()`).  A `GetAll` from the backend would NOT include
-  unflushed writes.  This means prefetch could load stale data for
-  attributes that were just written but not yet flushed.
+  The write queue (`cache_flush_writes`) batches `Put` and `Del`
+  operations.  `cache_put()` updates the LRU cache immediately and
+  queues the SQLite write; `cache_del()` removes the entry from the
+  LRU cache immediately and queues the SQLite delete.
 
-  **Mitigation**: Call `cache_flush_writes()` before `GetAll` in the
-  prefetch path.  Or: skip prefetch for attributes already in the
-  cache (the current `cache_preload_obj` already does this — it
-  checks `if cache_map.find(nam) != end()` and skips cached entries).
-  Since `cache_put()` always updates the cache, recently-written
-  attributes are already in the cache and won't be overwritten by
-  prefetch.
+  If prefetch calls `GetAll` before the queue is flushed, SQLite
+  still has the old state.  The skip-if-cached check in
+  `cache_preload_obj()` protects queued Puts (the fresh value is
+  already in the cache and won't be overwritten).  But it does NOT
+  protect queued Deletes: the attribute is gone from the cache, so
+  the skip check doesn't fire, and `GetAll` reads the still-present
+  SQLite row and reinserts the deleted attribute into the cache.
+
+  **Required mitigation**: Call `cache_flush_writes()` at the start
+  of any prefetch path that calls `GetAll`, before reading from the
+  backend.  This ensures SQLite reflects all queued writes and
+  deletes before the bulk load.
 
 ## Bottom Line
 
