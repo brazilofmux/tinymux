@@ -122,10 +122,6 @@ private:
     std::chrono::steady_clock::time_point last_recv_time_;
     std::chrono::steady_clock::time_point last_send_time_;
 public:
-    void start_log(const std::string& path) override;
-    void stop_log() override;
-    void log_line(const std::string& line) override;
-
     int idle_secs() const override {
         auto now = std::chrono::steady_clock::now();
         return (int)std::chrono::duration_cast<std::chrono::seconds>(now - last_recv_time_).count();

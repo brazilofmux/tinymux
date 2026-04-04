@@ -60,8 +60,8 @@ All previously reported bugs have been resolved:
 - ~~**`nlog` status/function support is still a stub**~~
   **Fixed:** `nlog()` now returns the active connection's successful per-world log-line count. The counter resets when logging starts or stops and increments only on actual writes.
 
-- **Redundant per-world logging overrides in `Connection`**
-  `client/tf/src/connection.h:125-127` and `client/tf/src/connection.cpp:716-740` now duplicate the base `IConnection` logging implementation (`start_log`, `stop_log`, `log_line`) without adding behavior. This is harmless, but it is maintenance overhead and can drift over time.
+- ~~**Redundant per-world logging overrides in `Connection`**~~
+  **Fixed:** Removed the duplicate `start_log`, `stop_log`, and `log_line` overrides from `Connection`; TF now uses the shared `IConnection` logging implementation directly.
 
 - ~~**Classic TF attribute codes: `E`, `W`, `I` meta-attrs not implemented**~~
   **Fixed:** `E`/`W`/`I` expand from `error_attr`/`warning_attr`/`info_attr`
