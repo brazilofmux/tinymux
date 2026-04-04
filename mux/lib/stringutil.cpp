@@ -4071,9 +4071,55 @@ const UTF8 *string_match(const UTF8 *src, const UTF8 *sub)
 {
     if ((*sub != '\0') && (src))
     {
+        const bool ascii_sub = (*sub < 0x80);
+        const UTF8 sub0_lower = ascii_sub
+            ? mux_tolower_ascii[*sub]
+            : 0;
+
         while (*src)
         {
-            if (string_prefix(src, sub))
+            if (ascii_sub && *src < 0x80)
+            {
+                if (mux_tolower_ascii[*src] != sub0_lower)
+                {
+                    while (mux_isalnum(*src))
+                    {
+                        src++;
+                    }
+                    while (*src && !mux_isalnum(*src))
+                    {
+                        src++;
+                    }
+                    continue;
+                }
+
+                const UTF8 *s = src;
+                const UTF8 *p = sub;
+
+                while (*s && *p && *s < 0x80 && *p < 0x80)
+                {
+                    if (mux_tolower_ascii[*s] != mux_tolower_ascii[*p])
+                    {
+                        break;
+                    }
+                    s++;
+                    p++;
+                }
+
+                if (*p == '\0')
+                {
+                    return src;
+                }
+
+                // If the ASCII prefix matched and either side then went
+                // non-ASCII, fall back to the full Unicode-aware matcher.
+                if ((*s || *p) && !(*s < 0x80 && *p < 0x80)
+                    && string_prefix(src, sub))
+                {
+                    return src;
+                }
+            }
+            else if (string_prefix(src, sub))
             {
                 return src;
             }
