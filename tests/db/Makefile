@@ -8,7 +8,7 @@ SQLITEDIR = ../../mux/sqlite
 MDBXDIR = ../../mux/libmdbx
 LIBDIR = ../../mux/lib
 
-all: test_sqlitedb test_backend stress_backend
+all: test_sqlitedb test_backend stress_backend crash_backend
 
 sqlite3.o: $(SQLITEDIR)/sqlite3.c $(SQLITEDIR)/sqlite3.h
 	$(CC) $(CFLAGS) -I$(SQLITEDIR) -c -o $@ $<
@@ -34,6 +34,9 @@ test_backend.o: test_backend.cpp $(INCDIR)/storage_backend.h $(INCDIR)/sqlite_ba
 stress_backend.o: stress_backend.cpp $(INCDIR)/storage_backend.h $(INCDIR)/sqlite_backend.h $(INCDIR)/mdbx_backend.h
 	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(SQLITEDIR) -I$(MDBXDIR) -c -o $@ $<
 
+crash_backend.o: crash_backend.cpp $(INCDIR)/storage_backend.h $(INCDIR)/sqlite_backend.h $(INCDIR)/mdbx_backend.h
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(SQLITEDIR) -I$(MDBXDIR) -c -o $@ $<
+
 stubs.o: stubs.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
@@ -46,12 +49,15 @@ test_backend: test_backend.o sqlite_backend.o sqlitedb.o sqlite3.o stubs.o
 stress_backend: stress_backend.o sqlite_backend.o sqlitedb.o sqlite3.o mdbx_backend.o mdbx.o stubs.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ -L$(LIBDIR) -lmux -Wl,-rpath,'$$ORIGIN/$(LIBDIR)' -lpthread
 
+crash_backend: crash_backend.o sqlite_backend.o sqlitedb.o sqlite3.o mdbx_backend.o mdbx.o stubs.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ -L$(LIBDIR) -lmux -Wl,-rpath,'$$ORIGIN/$(LIBDIR)' -lpthread
+
 test: test_sqlitedb test_backend
 	./test_sqlitedb
 	@echo ""
 	./test_backend
 
 clean:
-	rm -f *.o test_sqlitedb test_backend stress_backend
+	rm -f *.o test_sqlitedb test_backend stress_backend crash_backend
 
 .PHONY: all test clean
