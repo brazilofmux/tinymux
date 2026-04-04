@@ -2,12 +2,17 @@
 
 ## Status
 
-Stages 1–4 are complete. The libmdbx attribute backend is implemented,
-wired into runtime via the `attr_backend` config parameter, and passes
-all smoke tests. `dbconvert` auto-detects the active backend. Stage 4
-benchmarks confirm mdbx is ~3× faster than SQLite for search eval
-workloads; no mirror or derived index is needed. The remaining stages
-(5–6) cover stress testing and the promote-or-reject decision.
+**Study complete. Decision: retain SQLite as the sole production backend.**
+
+mdbx reads are 2–3× faster, but writes are ~300× slower without
+transaction batching. Batching would recover write performance but
+opens a durability window that SQLite's WAL avoids entirely. Both
+backends survive SIGKILL with zero data loss, but SQLite achieves this
+without the write-performance tradeoff. The Tier 1 cache and
+IStorageBackend interface improvements from Stages 1–2 are retained
+regardless — they cleaned up the architecture and remain valuable.
+The mdbx backend stays available via `attr_backend mdbx` for future
+experimentation but is not promoted to default.
 
 | Stage | Status |
 |-------|--------|
@@ -15,8 +20,8 @@ workloads; no mirror or derived index is needed. The remaining stages
 | 2. Backend Interface Audit | COMPLETE |
 | 3. Experimental libmdbx Backend | COMPLETE |
 | 4. Resolve the Search Story | COMPLETE |
-| 5. Stress Testing and Validation | 5a complete; 5b–5d not started |
-| 6. Rollout or Rejection | Not started |
+| 5. Stress Testing and Validation | 5a, 5b complete; 5c–5d skipped |
+| 6. Rollout or Rejection | COMPLETE — SQLite retained |
 
 ## Why Study This
 
@@ -708,32 +713,50 @@ performance.
 mdbx is production-viable under write-heavy workloads.  Read-dominated
 workloads (including search eval) already benefit.
 
-**5b. Crash recovery test.**
+**5b. Crash recovery test.** — COMPLETE
 
-- forced termination during sustained writes
-- verify recovery behavior and any bounded-loss claims
+Harness (`tests/db/crash_backend.cpp`) forks a child that writes to the
+backend, kills it with SIGKILL, then re-opens and verifies recovery.
 
-**5c. Memory pressure test.**
+Results (1,000 objects × 5 attrs = 5,000 synced + 500 in-flight):
 
-- small cache against large dataset
-- verify bounded memory behavior and graceful degradation
+| | SQLite | mdbx |
+|---|---|---|
+| Synced entries | 5000/5000 recovered | 5000/5000 recovered |
+| In-flight entries | 500/500 survived | 500/500 survived |
+| Corrupt | 0 | 0 |
 
-**5d. Longevity test.**
+Both backends recover perfectly. SQLite via WAL replay; mdbx because
+each Put commits its own transaction immediately.
 
-- sustained simulated workload
-- watch for leaks, growth, and behavioral drift
+**5c. Memory pressure test.** — Skipped.
 
-Acceptance criteria:
+**5d. Longevity test.** — Skipped.
 
-- results logged to file
-- same harness can compare sqlite-only vs libmdbx-backed runs
+5c and 5d were not needed to reach the Stage 6 decision.  The write
+performance data from 5a was decisive.
 
-### Stage 6: Rollout or Rejection
+### Stage 6: Rollout or Rejection — COMPLETE
 
-Promote libmdbx only if measured wins justify the added complexity.
-Otherwise keep the Tier 1 improvements and stop there.
+**Decision: retain SQLite as the sole production backend.**
 
-That is a successful outcome.
+The measured data:
+
+- mdbx reads are 2–3× faster than SQLite (single and bulk).
+- mdbx writes are ~300× slower without transaction batching.
+- Both backends survive SIGKILL with zero data loss or corruption.
+- The read advantage is largely absorbed by the Tier 1 LRU cache in
+  production workloads.
+
+Batching mdbx writes would recover write performance but introduces a
+durability window — acknowledged writes that could be lost on crash.
+SQLite's WAL avoids this tradeoff: writes are fast (batched in WAL)
+and durable (WAL replay recovers everything on re-open).
+
+The mdbx backend remains available via `attr_backend mdbx` for future
+experimentation, but SQLite is the recommended and default backend.
+The cache and interface improvements from Stages 1–2 are the lasting
+value of this study.
 
 ## Dependencies
 
@@ -765,22 +788,17 @@ That is a successful outcome.
 
 ## Bottom Line
 
-Stages 1–4 and 5a are complete. The system now has:
+The study is complete. SQLite is retained as the production backend.
 
-- a configurable Tier 1 cache with depth-based preload
-- a clean `IStorageBackend` interface with no SQLite assumptions
-- a working libmdbx attribute backend selectable via `attr_backend mdbx`
-- automatic migration from SQLite on first enable
-- `dbconvert` auto-detection of the active backend
-- measured ~3× search eval read advantage for mdbx over SQLite
-- measured ~300× write disadvantage for mdbx (per-op transactions)
+Lasting value from the study:
 
-The read performance case for mdbx is established. However, the stress
-test revealed that mdbx write latency is dominated by per-operation
-read-write transactions (~3,500 us/op vs SQLite's ~12 us/op). Write
-batching is needed before mdbx is production-viable. The remaining
-stages will address this:
+- a configurable Tier 1 cache with depth-based preload (Stage 1)
+- a clean `IStorageBackend` interface with no SQLite assumptions (Stage 2)
+- a working libmdbx backend available via `attr_backend mdbx` (Stage 3)
+- benchmark and stress test infrastructure for future backend work
+- crash recovery verified for both backends (zero data loss on SIGKILL)
 
-- Stage 5: stress-test durability, memory pressure, and longevity
-- Stage 6: promote libmdbx to default, or keep it as an option, or
-  revert to SQLite-only if operational concerns outweigh the wins
+The mdbx read advantage (2–3×) does not justify the write-performance
+tradeoff (~300× slower without batching) or the durability window that
+batching would introduce. SQLite with WAL provides the best balance of
+read performance, write throughput, and crash durability.
