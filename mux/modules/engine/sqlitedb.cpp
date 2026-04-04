@@ -366,7 +366,7 @@ static bool RunMigration(sqlite3 *db, const char *sql, int target_version)
 
 bool CSQLiteDB::MigrateSchema()
 {
-    static const int CURRENT_SCHEMA_VERSION = 10;
+    static const int CURRENT_SCHEMA_VERSION = 11;
 
     int version = 0;
     sqlite3_stmt *stmt = nullptr;
@@ -677,6 +677,29 @@ bool CSQLiteDB::MigrateSchema()
         version = 10;
     }
 
+    if (version < 11)
+    {
+        const char *migration_v11 =
+            "BEGIN;"
+            "ALTER TABLE code_cache ADD COLUMN code_blob BLOB NOT NULL DEFAULT x'';"
+            "ALTER TABLE code_cache ADD COLUMN entry_pc INTEGER NOT NULL DEFAULT 0;"
+            "ALTER TABLE code_cache ADD COLUMN code_size INTEGER NOT NULL DEFAULT 0;"
+            "ALTER TABLE code_cache ADD COLUMN str_blob BLOB NOT NULL DEFAULT x'';"
+            "ALTER TABLE code_cache ADD COLUMN str_pool_end INTEGER NOT NULL DEFAULT 0;"
+            "ALTER TABLE code_cache ADD COLUMN fargs_blob BLOB NOT NULL DEFAULT x'';"
+            "ALTER TABLE code_cache ADD COLUMN fargs_pool_end INTEGER NOT NULL DEFAULT 0;"
+            "ALTER TABLE code_cache ADD COLUMN out_pool_end INTEGER NOT NULL DEFAULT 0;"
+            "INSERT OR REPLACE INTO metadata(key, value)"
+            "    VALUES('schema_version', 11);"
+            "COMMIT;";
+
+        if (!RunMigration(m_db, migration_v11, 11))
+        {
+            return false;
+        }
+        version = 11;
+    }
+
     // Log any FK violations (informational, not fatal).
     //
     if (SQLITE_OK == sqlite3_prepare_v2(m_db,
@@ -716,6 +739,17 @@ static bool Prepare(sqlite3 *db, const char *sql, sqlite3_stmt **ppStmt)
         return false;
     }
     return true;
+}
+
+static void BindBlob(sqlite3_stmt *stmt, int index, const void *blob, int len)
+{
+    static const char kEmptyBlob = '\0';
+    const void *data = blob;
+    if (len == 0 && data == nullptr)
+    {
+        data = &kEmptyBlob;
+    }
+    sqlite3_bind_blob(stmt, index, data, len, SQLITE_TRANSIENT);
 }
 
 bool CSQLiteDB::PrepareStatements()
@@ -1031,7 +1065,9 @@ bool CSQLiteDB::PrepareStatements()
     // Code cache statements.
     //
     if (!Prepare(m_db,
-        "SELECT memory_blob, out_addr, needs_jit, folds, ecalls, tier2_calls, native_ops, deps_blob"
+        "SELECT memory_blob, code_blob, entry_pc, code_size, str_blob, str_pool_end,"
+        " fargs_blob, fargs_pool_end, out_pool_end,"
+        " out_addr, needs_jit, folds, ecalls, tier2_calls, native_ops, deps_blob"
         " FROM code_cache WHERE source_hash=? AND blob_hash=?",
         &m_stmtCodeCacheGet))
     {
@@ -1040,9 +1076,11 @@ bool CSQLiteDB::PrepareStatements()
 
     if (!Prepare(m_db,
         "INSERT OR REPLACE INTO code_cache"
-        " (source_hash, blob_hash, memory_blob, out_addr, needs_jit,"
-        "  folds, ecalls, tier2_calls, native_ops, compile_time, deps_blob)"
-        " VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        " (source_hash, blob_hash, memory_blob, code_blob, entry_pc, code_size,"
+        "  str_blob, str_pool_end, fargs_blob, fargs_pool_end, out_pool_end,"
+        "  out_addr, needs_jit, folds, ecalls, tier2_calls, native_ops,"
+        "  compile_time, deps_blob)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         &m_stmtCodeCachePut))
     {
         return false;
@@ -1851,14 +1889,25 @@ bool CSQLiteDB::CodeCacheGet(const char *source_hash, int source_hash_len,
 
     rec.memory_blob = sqlite3_column_blob(m_stmtCodeCacheGet, 0);
     rec.memory_len  = sqlite3_column_bytes(m_stmtCodeCacheGet, 0);
-    rec.out_addr    = sqlite3_column_int64(m_stmtCodeCacheGet, 1);
-    rec.needs_jit   = sqlite3_column_int(m_stmtCodeCacheGet, 2);
-    rec.folds       = sqlite3_column_int(m_stmtCodeCacheGet, 3);
-    rec.ecalls      = sqlite3_column_int(m_stmtCodeCacheGet, 4);
-    rec.tier2_calls = sqlite3_column_int(m_stmtCodeCacheGet, 5);
-    rec.native_ops  = sqlite3_column_int(m_stmtCodeCacheGet, 6);
-    rec.deps_blob   = sqlite3_column_blob(m_stmtCodeCacheGet, 7);
-    rec.deps_len    = sqlite3_column_bytes(m_stmtCodeCacheGet, 7);
+    rec.code_blob   = sqlite3_column_blob(m_stmtCodeCacheGet, 1);
+    rec.code_len    = sqlite3_column_bytes(m_stmtCodeCacheGet, 1);
+    rec.entry_pc    = sqlite3_column_int64(m_stmtCodeCacheGet, 2);
+    rec.code_size   = sqlite3_column_int64(m_stmtCodeCacheGet, 3);
+    rec.str_blob    = sqlite3_column_blob(m_stmtCodeCacheGet, 4);
+    rec.str_len     = sqlite3_column_bytes(m_stmtCodeCacheGet, 4);
+    rec.str_pool_end = sqlite3_column_int64(m_stmtCodeCacheGet, 5);
+    rec.fargs_blob  = sqlite3_column_blob(m_stmtCodeCacheGet, 6);
+    rec.fargs_len   = sqlite3_column_bytes(m_stmtCodeCacheGet, 6);
+    rec.fargs_pool_end = sqlite3_column_int64(m_stmtCodeCacheGet, 7);
+    rec.out_pool_end = sqlite3_column_int64(m_stmtCodeCacheGet, 8);
+    rec.out_addr    = sqlite3_column_int64(m_stmtCodeCacheGet, 9);
+    rec.needs_jit   = sqlite3_column_int(m_stmtCodeCacheGet, 10);
+    rec.folds       = sqlite3_column_int(m_stmtCodeCacheGet, 11);
+    rec.ecalls      = sqlite3_column_int(m_stmtCodeCacheGet, 12);
+    rec.tier2_calls = sqlite3_column_int(m_stmtCodeCacheGet, 13);
+    rec.native_ops  = sqlite3_column_int(m_stmtCodeCacheGet, 14);
+    rec.deps_blob   = sqlite3_column_blob(m_stmtCodeCacheGet, 15);
+    rec.deps_len    = sqlite3_column_bytes(m_stmtCodeCacheGet, 15);
     // NOTE: memory_blob and deps_blob pointers are valid until next
     // sqlite3_reset.  Caller must copy before any further DB operations.
     return true;
@@ -1867,6 +1916,11 @@ bool CSQLiteDB::CodeCacheGet(const char *source_hash, int source_hash_len,
 bool CSQLiteDB::CodeCachePut(const char *source_hash, int source_hash_len,
                               const char *blob_hash, int blob_hash_len,
                               const void *memory_blob, int memory_len,
+                              const void *code_blob, int code_len,
+                              int64_t entry_pc, int64_t code_size,
+                              const void *str_blob, int str_len, int64_t str_pool_end,
+                              const void *fargs_blob, int fargs_len, int64_t fargs_pool_end,
+                              int64_t out_pool_end,
                               int64_t out_addr, int needs_jit,
                               int folds, int ecalls, int tier2_calls,
                               int native_ops,
@@ -1877,15 +1931,23 @@ bool CSQLiteDB::CodeCachePut(const char *source_hash, int source_hash_len,
                       SQLITE_TRANSIENT);
     sqlite3_bind_text(m_stmtCodeCachePut, 2, blob_hash, blob_hash_len,
                       SQLITE_TRANSIENT);
-    sqlite3_bind_blob(m_stmtCodeCachePut, 3, memory_blob, memory_len, SQLITE_TRANSIENT);
-    sqlite3_bind_int64(m_stmtCodeCachePut, 4, out_addr);
-    sqlite3_bind_int(m_stmtCodeCachePut, 5, needs_jit);
-    sqlite3_bind_int(m_stmtCodeCachePut, 6, folds);
-    sqlite3_bind_int(m_stmtCodeCachePut, 7, ecalls);
-    sqlite3_bind_int(m_stmtCodeCachePut, 8, tier2_calls);
-    sqlite3_bind_int(m_stmtCodeCachePut, 9, native_ops);
-    sqlite3_bind_int64(m_stmtCodeCachePut, 10, static_cast<int64_t>(time(nullptr)));
-    sqlite3_bind_blob(m_stmtCodeCachePut, 11, deps_blob, deps_len, SQLITE_TRANSIENT);
+    BindBlob(m_stmtCodeCachePut, 3, memory_blob, memory_len);
+    BindBlob(m_stmtCodeCachePut, 4, code_blob, code_len);
+    sqlite3_bind_int64(m_stmtCodeCachePut, 5, entry_pc);
+    sqlite3_bind_int64(m_stmtCodeCachePut, 6, code_size);
+    BindBlob(m_stmtCodeCachePut, 7, str_blob, str_len);
+    sqlite3_bind_int64(m_stmtCodeCachePut, 8, str_pool_end);
+    BindBlob(m_stmtCodeCachePut, 9, fargs_blob, fargs_len);
+    sqlite3_bind_int64(m_stmtCodeCachePut, 10, fargs_pool_end);
+    sqlite3_bind_int64(m_stmtCodeCachePut, 11, out_pool_end);
+    sqlite3_bind_int64(m_stmtCodeCachePut, 12, out_addr);
+    sqlite3_bind_int(m_stmtCodeCachePut, 13, needs_jit);
+    sqlite3_bind_int(m_stmtCodeCachePut, 14, folds);
+    sqlite3_bind_int(m_stmtCodeCachePut, 15, ecalls);
+    sqlite3_bind_int(m_stmtCodeCachePut, 16, tier2_calls);
+    sqlite3_bind_int(m_stmtCodeCachePut, 17, native_ops);
+    sqlite3_bind_int64(m_stmtCodeCachePut, 18, static_cast<int64_t>(time(nullptr)));
+    BindBlob(m_stmtCodeCachePut, 19, deps_blob, deps_len);
 
     if (SQLITE_DONE != sqlite3_step(m_stmtCodeCachePut))
     {

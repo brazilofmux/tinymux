@@ -53,6 +53,14 @@ struct CacheWriteOp
     string          cc_source_hash;
     string          cc_blob_hash;
     vector<char>    cc_memory;
+    vector<char>    cc_code;
+    int64_t         cc_entry_pc;
+    int64_t         cc_code_size;
+    vector<char>    cc_str;
+    int64_t         cc_str_pool_end;
+    vector<char>    cc_fargs;
+    int64_t         cc_fargs_pool_end;
+    int64_t         cc_out_pool_end;
     int64_t         cc_out_addr;
     int             cc_needs_jit;
     int             cc_folds;
@@ -139,6 +147,17 @@ void cache_flush_writes(void)
                 static_cast<int>(op.cc_blob_hash.size()),
                 op.cc_memory.data(),
                 static_cast<int>(op.cc_memory.size()),
+                op.cc_code.data(),
+                static_cast<int>(op.cc_code.size()),
+                op.cc_entry_pc,
+                op.cc_code_size,
+                op.cc_str.data(),
+                static_cast<int>(op.cc_str.size()),
+                op.cc_str_pool_end,
+                op.cc_fargs.data(),
+                static_cast<int>(op.cc_fargs.size()),
+                op.cc_fargs_pool_end,
+                op.cc_out_pool_end,
                 op.cc_out_addr,
                 op.cc_needs_jit,
                 op.cc_folds, op.cc_ecalls,
@@ -219,6 +238,11 @@ void cache_queue_code_cache_put(
     const char *source_hash, int source_hash_len,
     const char *blob_hash, int blob_hash_len,
     const void *memory_blob, int memory_len,
+    const void *code_blob, int code_len,
+    int64_t entry_pc, int64_t code_size,
+    const void *str_blob, int str_len, int64_t str_pool_end,
+    const void *fargs_blob, int fargs_len, int64_t fargs_pool_end,
+    int64_t out_pool_end,
     int64_t out_addr, int needs_jit,
     int folds, int ecalls, int tier2_calls, int native_ops,
     const void *deps_blob, int deps_len)
@@ -231,8 +255,31 @@ void cache_queue_code_cache_put(
     op.flags   = 0;
     op.cc_source_hash.assign(source_hash, source_hash_len);
     op.cc_blob_hash.assign(blob_hash, blob_hash_len);
-    op.cc_memory.assign(static_cast<const char *>(memory_blob),
-                        static_cast<const char *>(memory_blob) + memory_len);
+    if (memory_len > 0)
+    {
+        op.cc_memory.assign(static_cast<const char *>(memory_blob),
+                            static_cast<const char *>(memory_blob) + memory_len);
+    }
+    if (code_len > 0)
+    {
+        op.cc_code.assign(static_cast<const char *>(code_blob),
+                          static_cast<const char *>(code_blob) + code_len);
+    }
+    op.cc_entry_pc      = entry_pc;
+    op.cc_code_size     = code_size;
+    if (str_len > 0)
+    {
+        op.cc_str.assign(static_cast<const char *>(str_blob),
+                         static_cast<const char *>(str_blob) + str_len);
+    }
+    op.cc_str_pool_end  = str_pool_end;
+    if (fargs_len > 0)
+    {
+        op.cc_fargs.assign(static_cast<const char *>(fargs_blob),
+                           static_cast<const char *>(fargs_blob) + fargs_len);
+    }
+    op.cc_fargs_pool_end = fargs_pool_end;
+    op.cc_out_pool_end  = out_pool_end;
     op.cc_out_addr     = out_addr;
     op.cc_needs_jit    = needs_jit;
     op.cc_folds        = folds;

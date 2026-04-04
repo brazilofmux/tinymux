@@ -233,6 +233,17 @@ public:
     {
         const void *memory_blob;
         int         memory_len;
+        const void *code_blob;
+        int         code_len;
+        int64_t     entry_pc;
+        int64_t     code_size;
+        const void *str_blob;
+        int         str_len;
+        int64_t     str_pool_end;
+        const void *fargs_blob;
+        int         fargs_len;
+        int64_t     fargs_pool_end;
+        int64_t     out_pool_end;
         int64_t     out_addr;
         int         needs_jit;
         int         folds;
@@ -248,6 +259,11 @@ public:
     bool CodeCachePut(const char *source_hash, int source_hash_len,
                       const char *blob_hash, int blob_hash_len,
                       const void *memory_blob, int memory_len,
+                      const void *code_blob, int code_len,
+                      int64_t entry_pc, int64_t code_size,
+                      const void *str_blob, int str_len, int64_t str_pool_end,
+                      const void *fargs_blob, int fargs_len, int64_t fargs_pool_end,
+                      int64_t out_pool_end,
                       int64_t out_addr, int needs_jit,
                       int folds, int ecalls, int tier2_calls, int native_ops,
                       const void *deps_blob, int deps_len);

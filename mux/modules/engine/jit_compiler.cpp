@@ -1330,27 +1330,77 @@ static compiled_program reconstruct_from_cache(
     const CSQLiteDB::CodeCacheRecord &rec) {
     compiled_program prog;
     prog.memory.resize(rv_compiler::MEM_SIZE);
-    int copy_len = rec.memory_len;
-    if (copy_len > static_cast<int>(rv_compiler::FARGS_LIMIT)) {
-        copy_len = static_cast<int>(rv_compiler::FARGS_LIMIT);
+
+    const bool has_compact_image =
+        rec.code_len > 0
+        || rec.str_len > 0
+        || rec.fargs_len > 0
+        || rec.code_size > 0
+        || rec.out_pool_end > 0;
+
+    if (has_compact_image) {
+        if (rec.needs_jit) {
+            tier2_install(prog.memory, rv_compiler::BLOB_BASE);
+        }
+
+        if (rec.code_blob
+            && rec.code_len > 0
+            && rec.entry_pc >= 0
+            && rec.entry_pc + rec.code_len
+                <= static_cast<int64_t>(prog.memory.size())) {
+            memcpy(prog.memory.data() + rec.entry_pc,
+                   rec.code_blob, rec.code_len);
+        }
+
+        if (rec.str_blob
+            && rec.str_len > 0
+            && rv_compiler::STR_BASE + rec.str_len <= prog.memory.size()) {
+            memcpy(prog.memory.data() + rv_compiler::STR_BASE,
+                   rec.str_blob, rec.str_len);
+        }
+
+        if (rec.fargs_blob
+            && rec.fargs_len > 0
+            && rv_compiler::FARGS_BASE + rec.fargs_len <= prog.memory.size()) {
+            memcpy(prog.memory.data() + rv_compiler::FARGS_BASE,
+                   rec.fargs_blob, rec.fargs_len);
+        }
+    } else {
+        int copy_len = rec.memory_len;
+        if (copy_len > static_cast<int>(rv_compiler::FARGS_LIMIT)) {
+            copy_len = static_cast<int>(rv_compiler::FARGS_LIMIT);
+        }
+        memcpy(prog.memory.data(), rec.memory_blob, copy_len);
+        if (rec.needs_jit) {
+            tier2_install(prog.memory, rv_compiler::BLOB_BASE);
+        }
     }
-    memcpy(prog.memory.data(), rec.memory_blob, copy_len);
-    if (rec.needs_jit) {
-        tier2_install(prog.memory, rv_compiler::BLOB_BASE);
-    }
+
     prog.memory_size = rv_compiler::MEM_SIZE;
     prog.out_addr = static_cast<uint64_t>(rec.out_addr);
     prog.out_used = 0;  // cached programs re-compute at runtime
-    prog.entry_pc = rv_compiler::CODE_BASE;  // cached programs always start at 0
-    prog.code_size = 0;
-    prog.str_pool_end = rv_compiler::STR_BASE;
-    prog.fargs_pool_end = rv_compiler::FARGS_BASE;
-    // For JIT programs, use OUT_STACK_LIMIT as a conservative lower bound
-    // so the output-clearing loop covers all possible slots.  For constant-
-    // folded programs, no output slots exist.
-    prog.out_pool_end = rec.needs_jit
-        ? rv_compiler::OUT_STACK_LIMIT
-        : rv_compiler::STACK_TOP - 8;
+    prog.entry_pc = has_compact_image
+        ? static_cast<uint64_t>(rec.entry_pc)
+        : rv_compiler::CODE_BASE;  // legacy cached programs always start at 0
+    prog.code_size = has_compact_image
+        ? static_cast<uint64_t>(rec.code_size)
+        : 0;
+    prog.str_pool_end = has_compact_image && rec.str_pool_end > 0
+        ? static_cast<uint64_t>(rec.str_pool_end)
+        : rv_compiler::STR_BASE;
+    prog.fargs_pool_end = has_compact_image && rec.fargs_pool_end > 0
+        ? static_cast<uint64_t>(rec.fargs_pool_end)
+        : rv_compiler::FARGS_BASE;
+    if (has_compact_image && rec.out_pool_end > 0) {
+        prog.out_pool_end = static_cast<uint64_t>(rec.out_pool_end);
+    } else {
+        // For legacy JIT programs, use OUT_STACK_LIMIT as a conservative
+        // lower bound so the output-clearing loop covers all possible slots.
+        // For constant-folded programs, no output slots exist.
+        prog.out_pool_end = rec.needs_jit
+            ? rv_compiler::OUT_STACK_LIMIT
+            : rv_compiler::STACK_TOP - 8;
+    }
     prog.ok = true;
     prog.needs_jit = rec.needs_jit != 0;
     prog.folds = rec.folds;
@@ -1393,11 +1443,40 @@ static void store_to_sqlite_cache(const std::string &key,
                                    const compiled_program &prog) {
     if (!g_pSQLiteBackend) return;
 
-    int persist_len = static_cast<int>(rv_compiler::FARGS_LIMIT);
+    int persist_len = 0;
+    const char *legacy_blob = "";
+    const void *code_blob = nullptr;
+    int code_len = static_cast<int>(prog.code_size);
+    if (code_len > 0) {
+        code_blob = prog.memory.data() + prog.entry_pc;
+    }
+
+    const void *str_blob = nullptr;
+    int str_len = 0;
+    if (prog.str_pool_end > rv_compiler::STR_BASE) {
+        str_blob = prog.memory.data() + rv_compiler::STR_BASE;
+        str_len = static_cast<int>(prog.str_pool_end - rv_compiler::STR_BASE);
+    }
+
+    const void *fargs_blob = nullptr;
+    int fargs_len = 0;
+    if (prog.fargs_pool_end > rv_compiler::FARGS_BASE) {
+        fargs_blob = prog.memory.data() + rv_compiler::FARGS_BASE;
+        fargs_len = static_cast<int>(prog.fargs_pool_end - rv_compiler::FARGS_BASE);
+    }
+
     cache_queue_code_cache_put(
         key.data(), static_cast<int>(key.size()),
         s_blob_version.data(), static_cast<int>(s_blob_version.size()),
-        prog.memory.data(), persist_len,
+        legacy_blob, persist_len,
+        code_blob, code_len,
+        static_cast<int64_t>(prog.entry_pc),
+        static_cast<int64_t>(prog.code_size),
+        str_blob, str_len,
+        static_cast<int64_t>(prog.str_pool_end),
+        fargs_blob, fargs_len,
+        static_cast<int64_t>(prog.fargs_pool_end),
+        static_cast<int64_t>(prog.out_pool_end),
         static_cast<int64_t>(prog.out_addr),
         prog.needs_jit ? 1 : 0,
         prog.folds, prog.ecalls,
