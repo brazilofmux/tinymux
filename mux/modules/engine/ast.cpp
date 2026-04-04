@@ -2591,12 +2591,25 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
                     return false;
                 }
 
+                // Bail if the function name doesn't resolve.  Unresolved
+                // names (e.g., "eobject=strmatch" from search eval args)
+                // require the AST's EV_FCHECK stripping in
+                // ast_emit_literal_funccall; the JIT doesn't replicate
+                // that behavior.
+                //
                 std::string upper = node->text;
                 for (auto &ch : upper) {
                     ch = static_cast<char>(toupper(
                         static_cast<unsigned char>(ch)));
                 }
-
+                std::vector<UTF8> name_key(upper.begin(), upper.end());
+                if (mudstate.builtin_functions.find(name_key)
+                    == mudstate.builtin_functions.end()
+                    && mudstate.ufunc_htab.find(name_key)
+                       == mudstate.ufunc_htab.end())
+                {
+                    return false;
+                }
             }
             for (const auto &child : node->children) {
                 if (child) {
