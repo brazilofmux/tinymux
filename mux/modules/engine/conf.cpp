@@ -2383,6 +2383,12 @@ void cf_display(dbref player, UTF8 *param_name, UTF8 *buff, UTF8 **bufc)
                     ItemToList_Final(&itl);
                     return;
                 }
+                else if (tp->interpreter == cf_size)
+                {
+                    int64_t *pSize = reinterpret_cast<int64_t *>(tp->loc);
+                    safe_i64toa(*pSize, buff, bufc);
+                    return;
+                }
                 else if (tp->interpreter == cf_seconds)
                 {
                     CLinearTimeDelta *pltd = reinterpret_cast<CLinearTimeDelta *>(tp->loc);

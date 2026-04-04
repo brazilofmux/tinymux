@@ -32,4 +32,13 @@ void cache_preload_deferred_bfs(dbref room, int depth);
 int cache_count(dbref obj);
 void list_cache_stats(dbref player);
 
+struct CacheStats
+{
+    uint64_t hits;
+    uint64_t misses;
+    size_t   entries;
+    size_t   size;
+};
+void cache_get_stats(CacheStats *pStats);
+
 #endif // !ATTRCACHE_H

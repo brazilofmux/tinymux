@@ -1,0 +1,138 @@
+#
+# cachestats_fn.mux - Cache benchmark baseline (Stage 1c).
+#
+# Measures cache hit/miss behavior and attribute access timing under
+# controlled workloads.  Results are logged so later stages have a
+# comparison baseline.
+#
+@create test_cachestats_fn
+-
+@set test_cachestats_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_cachestats_fn=
+  @log smoke=Beginning cachestats() / cache benchmark test cases.
+-
+#
+# Test Case #1 - cachestats() returns four space-separated numbers.
+#
+&tr.tc001 test_cachestats_fn=
+  @if cand(
+        eq(words(setr(0,cachestats())), 4),
+        isint(extract(%q0,1,1)),
+        isint(extract(%q0,2,1)),
+        isint(extract(%q0,3,1)),
+        isint(extract(%q0,4,1))
+      )=
+  {
+    @log smoke=TC001: cachestats returns 4 integers. Succeeded.
+  },
+  {
+    @log smoke=TC001: cachestats returns 4 integers. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - Cache hits increase after reading a cached attribute.
+# Write an attribute, read it twice (first populates cache, second hits).
+#
+&tr.tc002 test_cachestats_fn=
+  @trig/now me/tr.tc002.helper
+-
+&tr.tc002.helper test_cachestats_fn=
+  &bench.warmup me=This is a warmup value for cache testing.;
+  think get(me/bench.warmup);
+  think setr(0,extract(cachestats(),1,1));
+  think get(me/bench.warmup);
+  think setr(1,extract(cachestats(),1,1));
+  @if gt(%q1,%q0)=
+  {
+    @log smoke=TC002: cache hits increase on re-read. Succeeded.
+  },
+  {
+    @log smoke=TC002: cache hits increase on re-read. Failed (before=%q0 after=%q1).
+  }
+-
+#
+# Test Case #3 - Benchmark: cold read timing.
+# Create 50 attributes, flush isn't possible so measure first-access batch.
+#
+&tr.tc003 test_cachestats_fn=
+  @trig/now me/tr.tc003.helper
+-
+&tr.tc003.helper test_cachestats_fn=
+  think iter(lnum(50),set(me,bench.cold.[##]:value_[##]));
+  think setr(0,cachestats());
+  think setr(1,benchmark(iter(lnum(50),get(me/bench.cold.##)),10));
+  think setr(2,cachestats());
+  @log smoke=TC003: Cold/warm read 50 attrs x10 = [%q1]s. Before=[%q0] After=[%q2]. Succeeded.
+-
+#
+# Test Case #4 - Benchmark: hot read timing (same attrs, already cached).
+#
+&tr.tc004 test_cachestats_fn=
+  @trig/now me/tr.tc004.helper
+-
+&tr.tc004.helper test_cachestats_fn=
+  think iter(lnum(50),get(me/bench.cold.##));
+  think setr(0,cachestats());
+  think setr(1,benchmark(iter(lnum(50),get(me/bench.cold.##)),100));
+  think setr(2,cachestats());
+  @log smoke=TC004: Hot read 50 attrs x100 = [%q1]s. Before=[%q0] After=[%q2]. Succeeded.
+-
+#
+# Test Case #5 - Benchmark: attribute write timing.
+#
+&tr.tc005 test_cachestats_fn=
+  @trig/now me/tr.tc005.helper
+-
+&tr.tc005.helper test_cachestats_fn=
+  think setr(0,cachestats());
+  think setr(1,benchmark(set(me,bench.write:value_[inc(setr(9,0))]),100));
+  think setr(2,cachestats());
+  @log smoke=TC005: Write 1 attr x100 = [%q1]s. Before=[%q0] After=[%q2]. Succeeded.
+-
+#
+# Test Case #6 - Hit rate is non-negative and <= 100.
+#
+&tr.tc006 test_cachestats_fn=
+  @trig/now me/tr.tc006.helper
+-
+&tr.tc006.helper test_cachestats_fn=
+  think setr(0,extract(cachestats(),1,1));
+  think setr(1,extract(cachestats(),2,1));
+  think setr(2,add(%q0,%q1));
+  @if cand(
+        gte(%q0,0),
+        gte(%q1,0),
+        gt(%q2,0)
+      )=
+  {
+    think setr(3,fdiv(mul(%q0,100),%q2));
+    @log smoke=TC006: Hit rate=[%q3]%% (hits=%q0 misses=%q1). Succeeded.
+  },
+  {
+    @log smoke=TC006: Hit rate sanity. Failed (hits=%q0 misses=%q1).
+  }
+-
+#
+# Test Case #7 - Log full baseline summary for future comparison.
+#
+&tr.tc007 test_cachestats_fn=
+  @trig/now me/tr.tc007.helper
+-
+&tr.tc007.helper test_cachestats_fn=
+  think setr(0,cachestats());
+  @log smoke=TC007: BASELINE hits=[extract(%q0,1,1)] misses=[extract(%q0,2,1)] entries=[extract(%q0,3,1)] size=[extract(%q0,4,1)]. Succeeded.;
+  @trig me/tr.done
+-
+&tr.done test_cachestats_fn=
+  @log smoke=End cachestats() / cache benchmark test cases.;
+  @notify smoke
+-
+drop test_cachestats_fn
+-
+#
+# End of Test Cases
+#

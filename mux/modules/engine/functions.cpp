@@ -11179,6 +11179,31 @@ static FUNCTION(fun_trim)
     }
 }
 
+// cachestats() - Return cache statistics as a space-separated list:
+//   hits misses entries size
+//
+static FUNCTION(fun_cachestats)
+{
+    UNUSED_PARAMETER(fp);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(fargs);
+    UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    CacheStats st;
+    cache_get_stats(&st);
+
+    safe_tprintf_str(buff, bufc,
+        T("%llu %llu %lu %lu"),
+        static_cast<unsigned long long>(st.hits),
+        static_cast<unsigned long long>(st.misses),
+        static_cast<unsigned long>(st.entries),
+        static_cast<unsigned long>(st.size));
+}
+
 static FUNCTION(fun_config)
 {
     UNUSED_PARAMETER(caller);
@@ -14827,6 +14852,7 @@ static FUN builtin_function_list[] =
     {T("BOUND"),       fun_bound,      MAX_ARG, 2,       3,         0, CA_PUBLIC},
     {T("BUTLAST"),     fun_butlast,    MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("BXOR"),        fun_bxor,       MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},
+    {T("CACHESTATS"),  fun_cachestats, MAX_ARG, 0,       0,         0, CA_WIZARD},
     {T("CAND"),        fun_cand,       MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
     {T("CANDBOOL"),    fun_candbool,   MAX_ARG, 0, MAX_ARG, FN_NOEVAL, CA_PUBLIC},
 #if defined(WOD_REALMS) || defined(REALITY_LVLS)

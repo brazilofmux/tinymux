@@ -1821,6 +1821,25 @@ BAD_NAME
 
   Related Topics:
 
+& CACHESTATS()
+CACHESTATS()
+
+  FUNCTION: cachestats()
+
+  Returns attribute cache statistics as four space-separated integers:
+
+    <hits> <misses> <entries> <size>
+
+  hits    - Total cache hit count since server start.
+  misses  - Total cache miss count since server start.
+  entries - Number of attribute values currently in cache.
+  size    - Current cache memory usage in bytes.
+
+  This function is wizard-only. Use it in benchmark scripts to capture
+  before/after snapshots of cache behavior.
+
+  Related Topics: @list cache, cache_max_size, benchmark().
+
 & CACHE_DEPTH
 CACHE_DEPTH
 

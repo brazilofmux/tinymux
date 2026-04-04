@@ -524,6 +524,14 @@ static void format_size(UTF8 *buf, size_t buflen, int64_t bytes)
     }
 }
 
+void cache_get_stats(CacheStats *pStats)
+{
+    pStats->hits = cache_hits;
+    pStats->misses = cache_misses;
+    pStats->entries = mudstate.attribute_lru_cache_map.size();
+    pStats->size = cache_size;
+}
+
 void list_cache_stats(dbref player)
 {
     size_t nEntries = mudstate.attribute_lru_cache_map.size();
