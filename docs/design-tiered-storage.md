@@ -4,15 +4,24 @@
 
 **Study complete. Decision: retain SQLite as the sole production backend.**
 
-mdbx reads are 2–3× faster, but writes are ~300× slower without
-transaction batching. Batching would recover write performance but
-opens a durability window that SQLite's WAL avoids entirely. Both
-backends survive SIGKILL with zero data loss, but SQLite achieves this
-without the write-performance tradeoff. The Tier 1 cache and
-IStorageBackend interface improvements from Stages 1–2 are retained
-regardless — they cleaned up the architecture and remain valuable.
-The mdbx backend stays available via `attr_backend mdbx` for future
-experimentation but is not promoted to default.
+The data is decisive for TinyMUX's production requirements:
+
+- mdbx reads are 2-3x faster on uncached attribute workloads.
+- mdbx writes are ~300x slower under the only durability model that
+  preserves TinyMUX's current "successful write is durable on return"
+  semantics.
+- Recovering mdbx write performance requires transaction batching,
+  which weakens those durability semantics.
+- SQLite's WAL already provides the better production trade: fast
+  writes, acceptable reads, and crash recovery with no extra policy
+  complexity.
+
+That is enough to reject mdbx as the production attribute backend. The
+Tier 1 cache and `IStorageBackend` interface improvements from Stages
+1-2 are retained regardless; they cleaned up the architecture and
+remain valuable. The mdbx backend stays available via
+`attr_backend mdbx` for future experimentation but is not promoted to
+default.
 
 | Stage | Status |
 |-------|--------|
@@ -709,9 +718,10 @@ However, mdbx writes are ~300× slower because each Put/Del opens a
 separate read-write transaction.  SQLite's WAL batching dominates write
 performance.
 
-**Implication:** The mdbx write path needs transaction batching before
-mdbx is production-viable under write-heavy workloads.  Read-dominated
-workloads (including search eval) already benefit.
+**Implication:** mdbx is not production-viable for TinyMUX under the
+current durability contract. The measured read win is real, but it does
+not offset the write-path regression. Transaction batching could change
+that result, but only by changing durability semantics.
 
 **5b. Crash recovery test.** — COMPLETE
 
@@ -748,10 +758,15 @@ The measured data:
 - The read advantage is largely absorbed by the Tier 1 LRU cache in
   production workloads.
 
-Batching mdbx writes would recover write performance but introduces a
-durability window — acknowledged writes that could be lost on crash.
-SQLite's WAL avoids this tradeoff: writes are fast (batched in WAL)
-and durable (WAL replay recovers everything on re-open).
+This is enough to make the production choice factual rather than
+speculative. For TinyMUX's live server workload, SQLite is the better
+backend. The measured mdbx read advantage does not justify replacing a
+write path that is already fast, durable, and operationally simpler.
+
+Batching mdbx writes would recover write performance, but only by
+introducing a durability window — acknowledged writes that could be
+lost on crash. SQLite's WAL avoids that tradeoff: writes are fast,
+durable, and recover cleanly on re-open.
 
 The mdbx backend remains available via `attr_backend mdbx` for future
 experimentation, but SQLite is the recommended and default backend.
