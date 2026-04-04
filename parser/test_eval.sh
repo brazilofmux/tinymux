@@ -2,8 +2,18 @@
 # Quick test harness for the evaluator.
 # Each test is: input_expression expected_output
 
+set -euo pipefail
+
 PASS=0
 FAIL=0
+
+if [ ! -x ./eval ]; then
+    echo "Building eval..."
+    if ! make eval; then
+        echo "ERROR: failed to build ./eval. Run 'make eval' in parser/ and fix the build first." >&2
+        exit 1
+    fi
+fi
 
 check() {
     local input="$1"

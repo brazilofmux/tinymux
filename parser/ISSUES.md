@@ -4,14 +4,15 @@ Updated: 2026-03-27
 
 ## Bugs
 
-### Percent-escape handling still fails two documented MUX 2.13 cases
+### ~~Percent-escape handling still fails two documented MUX 2.13 cases~~ FIXED
 
-- **Evidence:** `./test_eval.sh` currently reports `146 passed, 2 failed`.
-- **Cases:** `parser/test_eval.sh:155` expects `[switch(1,1,{\\%b})]` to produce a single space for the `mux213` profile, but the evaluator returns `b`. `parser/test_eval.sh:156` expects `[iter(a b,{\\%b})]` to produce three spaces, but the evaluator returns `b b`.
-- **Impact:** The standalone evaluator still diverges from the escape-study expectations in `FN_NOEVAL` contexts, which makes it risky to use as an oracle for engine-porting work.
-- **Likely scope:** `eval.cpp` percent-substitution handling inside brace-preserving and iterator/switch noeval paths.
+- `noevalPass()` now mirrors the evaluator’s existing `NODE_ESCAPE` + `NODE_SUBST` sequence handling, so deferred FN_NOEVAL bodies in `switch()` and `iter()` collapse `\\%b` to `%b` before the second evaluation pass. `./test_eval.sh` now passes the documented `mux213` brace-body cases.
 
 ## Opportunities
+
+### ~~`test_eval.sh` fails noisily when `./eval` is missing~~ FIXED
+
+- `test_eval.sh` now enables `set -euo pipefail`, builds `./eval` on demand with `make eval`, and exits once with an actionable error if the build fails instead of emitting one identical failure per test case.
 
 ### ~~`make` is not warning-clean under `-Wall -Wextra`~~ FIXED
 
