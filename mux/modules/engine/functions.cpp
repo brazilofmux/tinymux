@@ -5600,16 +5600,17 @@ static FUNCTION(fun_rxlevel)
     if (Examinable(executor, it))
     {
         lev = RxLevel(it);
+        UTF8 *lbp = levelbuff;
         levelbuff[0]='\0';
         for (i = 0; i < mudconf.no_levels; ++i)
         {
             if ((lev & mudconf.reality_level[i].value) == mudconf.reality_level[i].value)
             {
-                strcat(reinterpret_cast<char *>(levelbuff), reinterpret_cast<char *>(mudconf.reality_level[i].name));
-                strcat(reinterpret_cast<char *>(levelbuff), " ");
+                safe_str(mudconf.reality_level[i].name, levelbuff, &lbp);
+                safe_chr(' ', levelbuff, &lbp);
             }
         }
-        safe_tprintf_str(buff, bufc, T("%s"), levelbuff);
+        safe_str(levelbuff, buff, bufc);
     }
     else
     {
@@ -5633,16 +5634,17 @@ static FUNCTION(fun_txlevel)
     if (Examinable(executor, it))
     {
         lev = TxLevel(it);
+        UTF8 *lbp = levelbuff;
         levelbuff[0]='\0';
         for (i = 0; i < mudconf.no_levels; ++i)
         {
             if ((lev & mudconf.reality_level[i].value) == mudconf.reality_level[i].value)
             {
-                strcat(reinterpret_cast<char *>(levelbuff), reinterpret_cast<char *>(mudconf.reality_level[i].name));
-                strcat(reinterpret_cast<char *>(levelbuff), " ");
+                safe_str(mudconf.reality_level[i].name, levelbuff, &lbp);
+                safe_chr(' ', levelbuff, &lbp);
             }
         }
-        safe_tprintf_str(buff, bufc, T("%s"), levelbuff);
+        safe_str(levelbuff, buff, bufc);
     }
     else
     {

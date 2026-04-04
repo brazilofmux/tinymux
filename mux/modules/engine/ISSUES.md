@@ -26,12 +26,9 @@ Updated: 2026-04-04
 
 ## High — Buffer Safety (New, 2026-04-04)
 
-### Unsafe `strcat()` in fun_rxlevel() and fun_txlevel()
+### ~~Unsafe `strcat()` in fun_rxlevel() and fun_txlevel()~~ FIXED
 
-- **File:** `mux/modules/engine/functions.cpp:5608-5609, 5641-5642`
-- **Issue:** Both functions build a space-separated level list using `strcat()` into a fixed `levelbuff[2048]` with no bounds checking. While the current max (32 levels x 9 bytes) fits, this pattern is fragile and inconsistent with the project's use of `safe_str()`/`safe_chr()` elsewhere.
-- **Impact:** Buffer overflow if level names or count change.
-- **Recommendation:** Replace `strcat()` with `safe_str()` or `strncat()` with explicit remaining-space tracking.
+- Replaced the local `strcat()` list building with bounded `safe_str()`/`safe_chr()` writes into `levelbuff`, then copied the result out with `safe_str()`. Reverified with `g++ -std=c++17 -fsyntax-only -I mux/include -I mux/sqlite -I mux/modules/engine mux/modules/engine/functions.cpp`.
 
 ## Medium — SQLite Error Handling (New, 2026-04-04)
 
