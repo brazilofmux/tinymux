@@ -24,6 +24,7 @@ int cache_init(const UTF8 *indb);
 void cache_close(void);
 void cache_tick(void);
 bool cache_sync(void);
+void cache_flush_writes(void);
 bool cache_del(Aname *nam);
 void cache_preload(dbref obj);
 void cache_preload_obj(dbref obj, bool bAll);

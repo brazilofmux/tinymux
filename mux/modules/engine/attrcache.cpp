@@ -32,6 +32,97 @@ static size_t cache_size = 0;
 static uint64_t cache_hits = 0;
 static uint64_t cache_misses = 0;
 
+// ---------------------------------------------------------------------------
+// Write queue: batches Put/Del operations and flushes them in a single
+// BEGIN/COMMIT transaction.  Flushed on threshold, on demand-driven
+// deferred task, and before sync/close/tick.
+// ---------------------------------------------------------------------------
+
+struct CacheWriteOp
+{
+    enum OpType { OP_PUT, OP_DEL };
+    OpType          op;
+    unsigned int    object;
+    unsigned int    attrnum;
+    vector<UTF8>    value;      // empty for OP_DEL
+    int             owner;
+    int             flags;
+};
+
+static vector<CacheWriteOp> s_write_queue;
+static bool s_flush_scheduled = false;
+static const size_t WRITE_QUEUE_THRESHOLD = 50;
+
+// Forward declaration.
+//
+void cache_flush_writes(void);
+
+static void Task_WriteQueueFlush(void *pUnused, int iUnused)
+{
+    UNUSED_PARAMETER(pUnused);
+    UNUSED_PARAMETER(iUnused);
+
+    s_flush_scheduled = false;
+    cache_flush_writes();
+}
+
+static void schedule_flush(void)
+{
+    if (!s_flush_scheduled && !mudstate.bStandAlone)
+    {
+        CLinearTimeAbsolute ltaNow;
+        ltaNow.GetUTC();
+        scheduler.DeferTask(ltaNow + time_250ms, PRIORITY_SYSTEM,
+            Task_WriteQueueFlush, nullptr, 0);
+        s_flush_scheduled = true;
+    }
+}
+
+void cache_flush_writes(void)
+{
+    if (s_write_queue.empty() || !g_pSQLiteBackend)
+    {
+        return;
+    }
+
+#if defined(HAVE_WORKING_FORK)
+    if (mudstate.write_protect)
+    {
+        return;
+    }
+#endif
+
+    // If we're inside a caller-managed transaction (e.g., flatfile import),
+    // skip the Begin/Commit wrapper — the caller owns the transaction.
+    //
+    bool bOwnTransaction = !mudstate.bSQLiteLoading;
+    CSQLiteDB &db = g_pSQLiteBackend->GetDB();
+
+    if (bOwnTransaction)
+    {
+        db.Begin();
+    }
+
+    for (const auto &op : s_write_queue)
+    {
+        if (op.op == CacheWriteOp::OP_PUT)
+        {
+            g_pSQLiteBackend->Put(op.object, op.attrnum,
+                op.value.data(), op.value.size(), op.owner, op.flags);
+        }
+        else
+        {
+            g_pSQLiteBackend->Del(op.object, op.attrnum);
+        }
+    }
+
+    if (bOwnTransaction)
+    {
+        db.Commit();
+    }
+    s_write_queue.clear();
+}
+
 int cache_init(const UTF8 *indb)
 {
     if (cache_initted)
@@ -80,6 +171,7 @@ int cache_init(const UTF8 *indb)
 
 void cache_close(void)
 {
+    cache_flush_writes();
     if (g_pSQLiteBackend)
     {
         g_pSQLiteBackend->Close();
@@ -91,6 +183,7 @@ void cache_close(void)
 
 void cache_tick(void)
 {
+    cache_flush_writes();
     if (g_pSQLiteBackend)
     {
         g_pSQLiteBackend->Tick();
@@ -218,14 +311,37 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len, dbref owner, int flags
         len = LBUF_SIZE;
     }
 
-    // Write-through: write to SQLite immediately with separate owner/flags.
+    // Queue the write for batched SQLite execution.  In standalone mode
+    // (dbconvert), write through immediately — no scheduler is running.
     //
-    if (!g_pSQLiteBackend->Put(nam->object, nam->attrnum, value, len,
-                               static_cast<int>(owner), flags))
+    if (mudstate.bStandAlone)
     {
-        Log.tinyprintf(T("cache_put((%d,%d), \xE2\x80\x98%s\xE2\x80\x99, %u) failed" ENDLINE),
-            nam->object, nam->attrnum, value, len);
-        return false;
+        if (!g_pSQLiteBackend->Put(nam->object, nam->attrnum, value, len,
+                                   static_cast<int>(owner), flags))
+        {
+            return false;
+        }
+        return true;
+    }
+
+    {
+        CacheWriteOp op;
+        op.op      = CacheWriteOp::OP_PUT;
+        op.object  = nam->object;
+        op.attrnum = nam->attrnum;
+        op.value.assign(value, value + len);
+        op.owner   = static_cast<int>(owner);
+        op.flags   = flags;
+        s_write_queue.push_back(std::move(op));
+
+        if (s_write_queue.size() >= WRITE_QUEUE_THRESHOLD)
+        {
+            cache_flush_writes();
+        }
+        else
+        {
+            schedule_flush();
+        }
     }
 
     if (!mudstate.bStandAlone)
@@ -262,6 +378,7 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len, dbref owner, int flags
 
 bool cache_sync(void)
 {
+    cache_flush_writes();
     if (g_pSQLiteBackend)
     {
         g_pSQLiteBackend->Sync();
@@ -288,11 +405,31 @@ bool cache_del(Aname *nam)
     }
 #endif // HAVE_WORKING_FORK
 
-    if (!g_pSQLiteBackend->Del(nam->object, nam->attrnum))
+    if (mudstate.bStandAlone)
     {
-        Log.tinyprintf(T("cache_del((%d,%d)) failed" ENDLINE),
-            nam->object, nam->attrnum);
-        return false;
+        if (!g_pSQLiteBackend->Del(nam->object, nam->attrnum))
+        {
+            return false;
+        }
+    }
+    else
+    {
+        CacheWriteOp op;
+        op.op      = CacheWriteOp::OP_DEL;
+        op.object  = nam->object;
+        op.attrnum = nam->attrnum;
+        op.owner   = 0;
+        op.flags   = 0;
+        s_write_queue.push_back(std::move(op));
+
+        if (s_write_queue.size() >= WRITE_QUEUE_THRESHOLD)
+        {
+            cache_flush_writes();
+        }
+        else
+        {
+            schedule_flush();
+        }
     }
 
     if (!mudstate.bStandAlone)
