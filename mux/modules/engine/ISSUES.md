@@ -46,7 +46,7 @@ Updated: 2026-04-04
 
 - **File:** `mux/modules/engine/jit_compiler.cpp:120, 2266, 2317-2323`
 - **Issue:** Static variables `s_current`, `s_arenas`, `s_current_ecall_ctx` and the save/restore pattern for eval context have no synchronization. Safe under current single-threaded evaluation but blocks any future multi-threading.
-- **Progress:** `s_current_ecall_ctx` is now `thread_local`, which removes the most direct cross-thread ECALL context hazard. The arena globals are still process-global and still block broader concurrent evaluation.
+- **Progress:** `s_current_ecall_ctx` and the JIT arena cursor `s_current` are now `thread_local`, which removes the most direct per-thread context/cursor hazards. The arena registry (`s_arenas`) and related global bookkeeping are still process-global and still block broader concurrent evaluation.
 
 ### ~~Unchecked `jit_alloc()` in `dbt_reset()`~~ FALSE ALARM
 
