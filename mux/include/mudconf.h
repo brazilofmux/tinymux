@@ -563,8 +563,11 @@ struct statedata
         std::list<Aname>::iterator lru_it;
         dbref attr_owner;
         int   attr_flags;
+        bool  dirty;        // Pending write in queue; pinned against eviction.
+        bool  tombstone;    // Deleted but not yet flushed to SQLite.
     };
-    std::list<Aname> attribute_lru_cache_list;
+    std::list<Aname> attribute_lru_cache_list;   // Evictable (clean) entries.
+    std::list<Aname> attribute_pinned_list;       // Dirty entries; not evictable.
     std::unordered_map<Aname, AttrCacheEntry, AnameHasher> attribute_lru_cache_map;
     std::unordered_map<std::vector<UTF8>, ATTR*, VectorHasher> builtin_attribute_names; /* Attribute names hashtable */
     std::map<std::vector<UTF8>, struct channel*> channel_names; /* Channels hashtable */
