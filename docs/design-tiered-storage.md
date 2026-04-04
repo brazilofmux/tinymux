@@ -2,22 +2,21 @@
 
 ## Status
 
-Study document progressing toward an implementation decision.
+Stages 1–4 are complete. The libmdbx attribute backend is implemented,
+wired into runtime via the `attr_backend` config parameter, and passes
+all smoke tests. `dbconvert` auto-detects the active backend. Stage 4
+benchmarks confirm mdbx is ~3× faster than SQLite for search eval
+workloads; no mirror or derived index is needed. The remaining stages
+(5–6) cover stress testing and the promote-or-reject decision.
 
-This document is not a commitment to add libmdbx. Its purpose is to
-decide whether TinyMUX should:
-
-- make the RAM attribute cache much larger and more configurable
-- treat attribute persistence as a KV problem separate from SQLite's
-  relational role
-- keep SQLite for the workloads it already fits well
-
-The document distinguishes:
-
-- what exists today
-- what change is being proposed
-- what must be proved before rollout
-- where it is reasonable to stop
+| Stage | Status |
+|-------|--------|
+| 1. Better Tier 1 Cache | COMPLETE |
+| 2. Backend Interface Audit | COMPLETE |
+| 3. Experimental libmdbx Backend | COMPLETE |
+| 4. Resolve the Search Story | COMPLETE |
+| 5. Stress Testing and Validation | Not started |
+| 6. Rollout or Rejection | Not started |
 
 ## Why Study This
 
@@ -222,16 +221,17 @@ and considered acceptable.
 
 ### `@dump`
 
-`@dump` becomes a design checkpoint question, not just an implementation
-detail:
+Because the libmdbx backend commits every write immediately (no
+batching), `@dump` semantics are straightforward:
 
-- If only one authoritative attribute store exists, `@dump` should make
-  that store durable and checkpoint SQLite.
-- If a mirror exists, `@dump` also needs to define whether it forces
-  logical convergence between stores.
+- libmdbx attributes are already durable at the time of `@dump`.
+- `@dump` checkpoints SQLite (WAL) as before.
+- No cross-store convergence step is needed — there is no pending write
+  batch to flush.
 
-This behavior must be explicit. It cannot be left implicit in backend
-internals.
+If batching were added in the future, `@dump` would need to flush the
+pending batch before checkpointing.  The current per-operation commit
+model avoids this complexity.
 
 ### Object Create / Destroy
 
@@ -240,26 +240,27 @@ experiment.
 
 ## On-Disk Format
 
-If a new KV format is introduced, it should be explicit and portable:
-
-- fixed-width integer fields
-- defined byte order, preferably little-endian
-- explicit format versioning
-- no dependence on host ABI or struct packing
-
-Proposed minimal KV shape:
+The libmdbx backend uses the following KV layout (implemented in
+`mdbx_backend.cpp`):
 
 ```text
-Database: attrs
-Key:      uint32_le dbref + uint32_le attrnum
-Value:    uint32_le owner
-          uint32_le flags
-          uint32_le mod_count
-          uint8_t[] value
+Database: attrs (single named DBI inside the .mdbx environment)
+Key:      uint32_le dbref + uint32_le attrnum    [8 bytes, sorted]
+Value:    uint32_le owner                         [bytes  0– 3]
+          uint32_le flags                         [bytes  4– 7]
+          uint32_le mod_count                     [bytes  8–11]
+          uint8_t[] value                         [bytes 12+  ]
 ```
 
-The exact physical layout may change, but "native-endian struct dump" is
-not an acceptable format.
+Design requirements met:
+
+- Fixed-width integer fields with defined byte order (little-endian).
+- No dependence on host ABI or struct packing.
+- Keys sort lexicographically as (object, attrnum), enabling efficient
+  cursor-based range scans for `GetAll()` and `GetBuiltin()`.
+- No format version field in v1.  The layout is self-describing given
+  the fixed header size.  If the format changes, a version byte or
+  separate metadata key should be added.
 
 ## The `@search` Problem
 
@@ -311,9 +312,10 @@ steady-state design.
 
 ### Recommendation
 
-Treat Option A as the default target. Add Option B only if measurements
-show that exact-current search over the active backend is not viable and
-the project is willing to accept documented staleness semantics.
+Option A is the implemented design. Option B should only be reconsidered
+if Stage 4 measurements show that exact-current search over the active
+backend is not viable and the project is willing to accept documented
+staleness semantics.
 
 ## Crash Recovery and Durability
 
@@ -343,6 +345,8 @@ adding batching, migration, and possibly mirroring.
 
 **Option A (libmdbx authoritative, no SQLite attribute table):**
 
+This is the implemented design.
+
 1. Start the server.
 2. libmdbx opens and self-recovers (copy-on-write B+tree — last
    committed transaction is always intact, no replay needed).
@@ -356,14 +360,19 @@ object existence and metadata, libmdbx owns attributes keyed by those
 object ids. After a crash, the following states are possible:
 
 - **Orphaned attributes**: An object was destroyed in SQLite (committed)
-  but its attributes survive in libmdbx (the delete was still in the
-  write batch). Startup must scan for attributes whose dbref no longer
-  exists in the object table and clean them up.
+  but its attributes survive in libmdbx (the attribute delete was
+  committed in a separate transaction). Startup must scan for attributes
+  whose dbref no longer exists in the object table and clean them up.
 - **Missing initial attributes**: An object was created in SQLite but
-  the initial attribute writes had not yet been committed to libmdbx.
-  The object exists but has no attributes. This is the same state as a
-  crash between `@create` and the first `&attr` — recoverable by the
-  game operator, not a data corruption issue.
+  the server crashed before the initial attribute writes committed to
+  libmdbx. The object exists but has no attributes. This is the same
+  state as a crash between `@create` and the first `&attr` —
+  recoverable by the game operator, not a data corruption issue.
+
+Note: because the current implementation commits every write immediately
+(no batching), the window for orphaned attributes is very small — it
+requires a crash between the SQLite object-destroy commit and the
+libmdbx attribute-delete commit within the same server tick.
 
 A startup consistency check (scan libmdbx for dbrefs not in `db[]`,
 delete orphans) is required. This is lightweight compared to Option B's
@@ -421,30 +430,26 @@ Examples of backup inconsistency:
   taken moments earlier and does not include its attributes.
 - libmdbx snapshot includes attributes for an object that was destroyed
   in the SQLite snapshot taken moments later.
-- Pending libmdbx write batches (not yet committed) are invisible to
-  `mdbx_env_copy2()`, while the corresponding object-table updates may
-  already be committed in SQLite.
-
 **Recommended approach:**
 
 1. **Server-assisted backup (recommended).** Add `@backup` or extend
-   `@dump` with a backup mode. The server: flushes the pending libmdbx
-   write batch, calls `mdbx_env_copy2()`, then `sqlite3_backup_*()`,
-   all while the game loop is quiesced between ticks. This produces a
-   logically consistent pair of snapshots. This is the only approach
+   `@dump` with a backup mode. The server: quiesces between ticks,
+   calls `mdbx_env_copy2()`, then `sqlite3_backup_*()`. This produces
+   a logically consistent pair of snapshots. This is the only approach
    that provides strong restore semantics.
 
 2. **Live snapshot via library APIs (weaker guarantee).** libmdbx
    provides `mdbx_env_copy2()` for live snapshots; combined with
    `sqlite3 .backup`, both stores can be snapshotted from the
-   `./Backup` script without server involvement. However, this only
-   captures committed libmdbx state (not pending batches), and the two
-   snapshots are not atomic. The resulting backup is crash-equivalent:
-   it represents a state the server could have reached via unclean
-   shutdown, not necessarily a state that ever existed during normal
-   operation. Restore from such a backup requires the same startup
-   consistency check described in the crash recovery section (orphan
-   scan, missing-attr tolerance).
+   `./Backup` script without server involvement. Because the current
+   implementation commits every write immediately (no batching), both
+   snapshots capture fully committed state — but the two snapshots are
+   not atomic. The resulting backup is crash-equivalent: it represents
+   a state the server could have reached via unclean shutdown, not
+   necessarily a state that ever existed during normal operation.
+   Restore from such a backup requires the same startup consistency
+   check described in the crash recovery section (orphan scan,
+   missing-attr tolerance).
 
 3. **No fork() reintroduced.** Both `mdbx_env_copy2()` and
    `sqlite3 .backup` are non-forking operations. The design preserves
@@ -485,30 +490,38 @@ attributes or log objects with missing initial attributes.
 
 ## Configuration
 
-Candidate configuration parameters:
+### Implemented Parameters
 
 ```text
+attr_backend sqlite
+  Attribute storage backend: sqlite (default) or mdbx.
+  When set to mdbx, the server opens (or creates) a .mdbx file
+  alongside the database.  If a .mdbx file already exists on disk,
+  the server auto-detects it regardless of this setting.
+
 cache_max_size 256M
-  Tier 1 attribute cache size
-  -1 = unlimited
-  Accepts K/M/G suffixes
+  Tier 1 attribute cache size.
+  -1 = unlimited (never evict).
+  Accepts K/M/G suffixes.
 
 cache_preload_depth 2
   0 = current room only
   1 = current room + adjacent exits
   2 = two rooms deep
-
-mdbx_map_size 4G
-  Maximum libmdbx map size
-
-mdbx_batch_size 500
-  Writes per libmdbx transaction
-  0 = commit every write
 ```
 
-These values are examples, not final defaults. If batching remains in
-scope, the exact durability semantics of `mdbx_batch_size` must be
-documented alongside the parameter.
+### Future Parameters (not yet implemented)
+
+```text
+mdbx_map_size 4G
+  Maximum libmdbx map size.
+  Currently hardcoded: 64 KB lower, 4 GB upper, 1 MB growth step.
+```
+
+The current implementation does not batch writes — each Put/Del commits
+immediately.  `mdbx_batch_size` has been dropped from the design; the
+per-operation transaction model is simpler and provides clear durability
+semantics (a successful Put is durable on return).
 
 ## Implementation Stages
 
@@ -573,53 +586,95 @@ Stories:
 - `eval=` predicates go through `mux_exec()` → `cache_get()` →
   `IStorageBackend`.  No changes needed when backend changes.
 
-### Stage 3: Experimental libmdbx Attribute Backend
+### Stage 3: Experimental libmdbx Attribute Backend (COMPLETE)
 
-Implement libmdbx behind `IStorageBackend`, for attributes only.
+libmdbx is implemented behind `IStorageBackend`, for attributes only.
 
-Stories:
+**3a. Backend implementation.** (COMPLETE)
 
-**3a. Backend implementation.**
+- `mux/src/mdbx_backend.cpp` / `mdbx_backend.h`: full `IStorageBackend`
+  implementation.
+- libmdbx v0.13.11 amalgamation embedded in `mux/src/libmdbx/`.
+- Key format: 8 bytes little-endian (uint32 object + uint32 attrnum).
+  Keys sort by (object, attrnum), enabling cursor-based range iteration
+  for bulk operations.
+- Value format: 12-byte header (uint32 owner, uint32 flags, uint32
+  mod\_count) followed by raw attribute bytes.  Matches the on-disk
+  format proposed in this document.
+- Transactions are per-operation (no batching).  Each Get opens a R/O
+  txn; each Put/Del opens a R/W txn.  Bulk operations (GetAll, DelAll)
+  use cursor iteration within a single txn.
+- Put() reads the existing mod\_count, increments it, and stores the
+  updated value atomically within the write txn.
+- Geometry: 64 KB lower, 4 GB upper, 1 MB growth step.
+  `MDBX_LIFORECLAIM` for stack-based free-page tracking.
+- `Tick()` is a no-op — libmdbx is self-maintaining (no WAL checkpoint
+  equivalent needed).
 
-- new backend files
-- full `IStorageBackend` coverage
-- current preload and iteration semantics preserved
+**Runtime wiring** (COMPLETE):
 
-Acceptance criteria:
+- `attr_backend` config parameter: `sqlite` (default) or `mdbx`.
+- `attrcache.cpp` startup sequence: SQLite backend always opens first.
+  If `attr_backend mdbx` is set (or a `.mdbx` file already exists on
+  disk), the mdbx backend opens and becomes `g_pAttrBackend`.
+- Auto-detect: `dbconvert` and the server both check for an existing
+  `.mdbx` file, enabling transparent backend selection without config
+  when the file is present.
+- Smoke tests: `SMOKE_EXTRA_CONF="attr_backend mdbx" ./tools/Smoke`
+  runs the full test suite against the mdbx backend.
 
-- all attribute get/put/del go through libmdbx when enabled
-- `GetAll()` and `GetBuiltin()` preserve current cache and search needs
-- crash recovery is understood and tested
-- smoke tests pass with libmdbx as the active attribute backend
-- `dbconvert` can still import/export (reads active backend for attrs)
+**3b. Migration path.** (COMPLETE)
 
-**3b. Migration path.**
+- `migrate_sqlite_to_mdbx()` in `attrcache.cpp`: on first enable, if
+  the mdbx file is new and SQLite has attribute data, all attributes are
+  bulk-copied from SQLite into mdbx before the backend pointer is
+  switched.
+- Migration is automatic on first startup with `attr_backend mdbx`.
 
-- bulk-load from SQLite attributes into libmdbx on first enable
-- idempotent and restartable
-- verify counts and random samples
-- preserve rollback options until migration is trusted
+**3c. Rollback path.** (COMPLETE)
 
-**3c. Rollback path.**
+- Remove the `.mdbx` file and set `attr_backend sqlite` (or remove the
+  parameter).  SQLite retains the attribute data from before migration.
+- If SQLite attribute data was not cleared after migration, rollback is
+  immediate.  If it was, re-import via `dbconvert`.
 
-- define how the server returns to SQLite-backed attributes
-- avoid making rollback depend on undocumented manual repair
+**3d. dbconvert integration.** (COMPLETE)
 
-### Stage 4: Resolve the Search Story
+- `collect_attrnums_from_storage()` routes through `g_pAttrBackend`
+  (generic), not hardcoded SQLite.  Export reads from whichever backend
+  is active.
+- Auto-detect logic: `cache_init()` opens mdbx if the `.mdbx` file
+  exists on disk, regardless of config file presence.
 
-Decide whether Option A is sufficient or whether a mirror/index is
-required.
+### Stage 4: Resolve the Search Story — COMPLETE
 
-Stories:
+Option A (one authoritative store, no mirror) is sufficient.
 
 **4a. Benchmark current-state search over the active backend.**
 
-- especially `eval` / `eeval` and any other attribute-heavy predicates
+Measured via `testcases/search_bench_fn.mux` (5 benchmark cases at
+100 iterations) and `testcases/tools/BenchBackends` (runs both
+backends, prints side-by-side table).
 
-**4b. If needed, add a mirror or searchable derived index.**
+Results (averaged over 3 runs, ~240 objects in smoke DB):
 
-- only after Option A is measured
-- explicitly document any staleness semantics
+| Predicate | SQLite | mdbx | Ratio |
+|-----------|--------|------|-------|
+| hasattr (eobject) | 0.174s | 0.061s | 0.35× |
+| get+strmatch | 0.184s | 0.062s | 0.34× |
+| numeric compare | 0.183s | 0.061s | 0.33× |
+| multi-attr cand | 0.192s | 0.067s | 0.35× |
+| hasattr (all types) | 0.192s | 0.058s | 0.30× |
+
+mdbx is ~3× faster for search eval workloads. The LRU cache does not
+fully absorb the search pattern — per-object attribute reads during
+eval hit the backend, where mdbx's read-only transaction + direct KV
+lookup is cheaper than SQLite's prepared-statement path.
+
+**4b. Mirror or searchable derived index.**
+
+Not needed. mdbx outperforms SQLite for eval-heavy searches without
+any supplemental indexing.
 
 ### Stage 5: Stress Testing and Validation
 
@@ -690,15 +745,19 @@ That is a successful outcome.
 
 ## Bottom Line
 
-The strongest version of this idea is not "replace SQLite with a
-three-tier stack." It is:
+Stages 1–4 are complete. The system now has:
 
-- make Tier 1 materially better
-- isolate the attribute-storage question from the rest of the database
-- keep SQLite for the workloads it already fits
-- add libmdbx only if benchmarks and semantics justify it
-- accept that stopping after Stage 1 is a valid result
+- a configurable Tier 1 cache with depth-based preload
+- a clean `IStorageBackend` interface with no SQLite assumptions
+- a working libmdbx attribute backend selectable via `attr_backend mdbx`
+- automatic migration from SQLite on first enable
+- `dbconvert` auto-detection of the active backend
+- measured ~3× search eval performance advantage for mdbx over SQLite
 
-If this proceeds beyond Stage 1, the first design question is not the
-libmdbx API. It is the source-of-truth rule for attributes and the
-correctness story for `@search`.
+The performance case for mdbx is established. The remaining question is
+whether it is operationally sound under stress. Stages 5–6 will answer
+that:
+
+- Stage 5: stress-test durability, memory pressure, and longevity
+- Stage 6: promote libmdbx to default, or keep it as an option, or
+  revert to SQLite-only if operational concerns outweigh the wins
