@@ -195,50 +195,34 @@ void queue_write(DESC *d, const UTF8 *b)
     queue_write_LEN(d, b, strlen(reinterpret_cast<const char *>(b)));
 }
 
-static const UTF8 *encode_iac(const UTF8 *szString)
+static std::string encode_iac(const UTF8 *szString)
 {
-    static UTF8 Buffer[2*LBUF_SIZE];
-    UTF8 *pBuffer = Buffer;
-
+    std::string encoded;
     const UTF8 *pString = szString;
-    if (pString)
+    if (!pString)
     {
-        while (*pString)
-        {
-            const UTF8 *p = reinterpret_cast<const UTF8 *>(strchr(reinterpret_cast<const char *>(pString), NVT_IAC));
-            if (!p)
-            {
-                // NVT_IAC does not appear in the buffer. This is by far the most-common case.
-                //
-                if (pString == szString)
-                {
-                    // Avoid copying to the static buffer, and just return the original buffer.
-                    //
-                    return szString;
-                }
-                else
-                {
-                    mux_strncpy(pBuffer, pString, sizeof(Buffer)-1);
-                    return Buffer;
-                }
-            }
-            else
-            {
-                // Copy up to and including the IAC.
-                //
-                size_t n = p - pString + 1;
-                memcpy(pBuffer, pString, n);
-                pBuffer += n;
-                pString += n;
-
-                // Add another IAC.
-                //
-                safe_copy_chr_ascii(NVT_IAC, Buffer, &pBuffer, sizeof(Buffer)-1);
-            }
-        }
+        return encoded;
     }
-    *pBuffer = '\0';
-    return Buffer;
+
+    const size_t input_len = strlen(reinterpret_cast<const char *>(szString));
+    encoded.reserve(input_len);
+
+    while (*pString)
+    {
+        const UTF8 *p = reinterpret_cast<const UTF8 *>(strchr(reinterpret_cast<const char *>(pString), NVT_IAC));
+        if (!p)
+        {
+            encoded.append(reinterpret_cast<const char *>(pString));
+            break;
+        }
+
+        size_t n = p - pString + 1;
+        encoded.append(reinterpret_cast<const char *>(pString), n);
+        encoded.push_back(static_cast<char>(NVT_IAC));
+        pString += n;
+    }
+
+    return encoded;
 }
 
 void queue_string(DESC *d, const UTF8 *s)
@@ -307,9 +291,13 @@ void queue_string(DESC *d, const UTF8 *s)
     //
     if (!(d->flags & DS_WEBSOCKET))
     {
-        q = encode_iac(q);
+        std::string encoded = encode_iac(q);
+        queue_write_LEN(d, reinterpret_cast<const UTF8 *>(encoded.data()), encoded.size());
     }
-    queue_write(d, q);
+    else
+    {
+        queue_write(d, q);
+    }
 }
 
 

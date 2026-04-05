@@ -128,12 +128,10 @@ Updated: 2026-03-27
 
 ## High — Buffer Safety & Static Buffer Risks
 
-### Potential buffer overflow in `encode_iac()`
+### ~~Potential buffer overflow in `encode_iac()`~~ FIXED
 
 - **File:** `mux/src/net.cpp:198`
-- **Issue:** The `encode_iac()` function copies data into a static `Buffer[2*LBUF_SIZE]` without checking if the doubled IAC characters will exceed the buffer size. If an input string contains many `NVT_IAC` (0xFF) characters, the `memcpy()` and `pBuffer += n` calls will overflow the static buffer.
-- **Impact:** Memory corruption and potential crash during network output processing.
-- **Recommendation:** Use `LBuf` RAII or add explicit bounds checks before `memcpy`.
+- `encode_iac()` now builds a dynamically sized `std::string` and `queue_string()` writes it with `queue_write_LEN()`, so telnet IAC doubling no longer depends on a fixed `2*LBUF_SIZE` scratch buffer.
 
 ### Widespread use of `static` buffers in functions
 
