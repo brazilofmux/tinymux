@@ -496,8 +496,8 @@ void put_ConnectionInfoFields
     CLinearTimeAbsolute &ltaLogout
 )
 {
-    UTF8 *pConnInfo = alloc_lbuf("put_CIF");
-    UTF8 *p = pConnInfo;
+    LBuf pConnInfo = LBuf_Src("put_CIF");
+    UTF8 *p = pConnInfo.get();
     for (int i = 0; i < 4; i++)
     {
         p += mux_ltoa(anFields[i], p);
@@ -506,8 +506,7 @@ void put_ConnectionInfoFields
     p += mux_i64toa(ltaLogout.ReturnSeconds(), p);
     *p++ = 0;
 
-    atr_add_raw_LEN(target, A_CONNINFO, pConnInfo, p - pConnInfo);
-    free_lbuf(pConnInfo);
+    atr_add_raw_LEN(target, A_CONNINFO, pConnInfo, p - pConnInfo.get());
 }
 
 long fetch_ConnectionInfoField(dbref target, int iField)

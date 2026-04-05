@@ -1349,7 +1349,6 @@ static void check_dead_refs(void)
 {
     dbref targ, owner, i, j;
     int aflags;
-    UTF8 *str;
     FWDLIST *fp;
     bool dirty;
 
@@ -1508,11 +1507,10 @@ static void check_dead_refs(void)
         }
         if (dirty)
         {
-            str = alloc_lbuf("purge_going");
-            (void)fwdlist_rewrite(fp, str);
+            LBuf lbuf_str = LBuf_Src("purge_going");
+            (void)fwdlist_rewrite(fp, lbuf_str);
             atr_get_info(i, A_FORWARDLIST, &owner, &aflags);
-            atr_add(i, A_FORWARDLIST, str, owner, aflags);
-            free_lbuf(str);
+            atr_add(i, A_FORWARDLIST, lbuf_str, owner, aflags);
         }
 
         if (check_type & DBCK_FULL)

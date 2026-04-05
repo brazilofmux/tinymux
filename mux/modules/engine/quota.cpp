@@ -128,7 +128,7 @@ static void show_quota(dbref player, dbref victim)
 {
     dbref aowner;
     int aflags;
-    UTF8 *buff = alloc_lbuf("show_quota");
+    LBuf buff = LBuf_Src("show_quota");
 
     atr_get_str(buff, victim, A_QUOTA, &aowner, &aflags);
     int aq = mux_atol(buff);
@@ -148,7 +148,6 @@ static void show_quota(dbref player, dbref victim)
                      T(" Quota: UNLIMITED  Used: %9d"), rq);
     }
     notify_quiet(player, buff);
-    free_lbuf(buff);
 }
 
 void do_quota

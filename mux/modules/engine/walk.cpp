@@ -458,7 +458,7 @@ void do_patrol(dbref executor, dbref caller, dbref enactor, int eval,
     // Parse space-separated list of room dbrefs.
     //
     std::vector<dbref> waypoints;
-    UTF8 *wp_copy = alloc_lbuf("do_patrol");
+    LBuf wp_copy = LBuf_Src("do_patrol");
     mux_strncpy(wp_copy, waypoint_str, LBUF_SIZE - 1);
 
     UTF8 *opts = trim_space_sep(wp_copy, sepSpace);
@@ -473,12 +473,10 @@ void do_patrol(dbref executor, dbref caller, dbref enactor, int eval,
             notify(executor,
                 tprintf(T("\xE2\x80\x9C%s\xE2\x80\x9D is not a valid room."),
                         token));
-            free_lbuf(wp_copy);
             return;
         }
         waypoints.push_back(room);
     }
-    free_lbuf(wp_copy);
 
     if (waypoints.size() < 2)
     {

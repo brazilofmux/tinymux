@@ -29,8 +29,6 @@ void do_kill
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *buf1, *buf2;
-
     init_match(executor, what, TYPE_PLAYER);
     match_neighbor();
     match_me();
@@ -101,86 +99,86 @@ void do_kill
             // Failure: notify player and victim only.
             //
             notify(executor, T("Your murder attempt failed."));
-            buf1 = alloc_lbuf("do_kill.failed");
-            mux_sprintf(buf1, LBUF_SIZE, T("%s tried to kill you!"), Moniker(executor));
-            notify_with_cause_ooc(victim, executor, buf1, MSG_SRC_KILL);
-            if (Suspect(executor))
             {
-                mux_strncpy(buf1, Moniker(executor), LBUF_SIZE-1);
-                if (executor == Owner(executor))
+                LBuf buf1 = LBuf_Src("do_kill.failed");
+                mux_sprintf(buf1, LBUF_SIZE, T("%s tried to kill you!"), Moniker(executor));
+                notify_with_cause_ooc(victim, executor, buf1, MSG_SRC_KILL);
+                if (Suspect(executor))
                 {
-                    raw_broadcast(WIZARD, T("[Suspect] %s tried to kill %s(#%d)."), buf1, Moniker(victim), victim);
-                }
-                else
-                {
-                    buf2 = alloc_lbuf("do_kill.SUSP.failed");
-                    mux_strncpy(buf2, Moniker(Owner(executor)), LBUF_SIZE-1);
-                    raw_broadcast(WIZARD, T("[Suspect] %s <via %s(#%d)> tried to kill %s(#%d)."),
-                        buf2, buf1, executor, Moniker(victim), victim);
-                    free_lbuf(buf2);
+                    mux_strncpy(buf1, Moniker(executor), LBUF_SIZE-1);
+                    if (executor == Owner(executor))
+                    {
+                        raw_broadcast(WIZARD, T("[Suspect] %s tried to kill %s(#%d)."), buf1.get(), Moniker(victim), victim);
+                    }
+                    else
+                    {
+                        LBuf buf2 = LBuf_Src("do_kill.SUSP.failed");
+                        mux_strncpy(buf2, Moniker(Owner(executor)), LBUF_SIZE-1);
+                        raw_broadcast(WIZARD, T("[Suspect] %s <via %s(#%d)> tried to kill %s(#%d)."),
+                            buf2.get(), buf1.get(), executor, Moniker(victim), victim);
+                    }
                 }
             }
-            free_lbuf(buf1);
             break;
         }
 
         // Success!  You killed him
         //
-        buf1 = alloc_lbuf("do_kill.succ.1");
-        buf2 = alloc_lbuf("do_kill.succ.2");
-        if (Suspect(executor))
         {
-            mux_strncpy(buf1, Moniker(executor), LBUF_SIZE-1);
-            if (executor == Owner(executor))
+            LBuf buf1 = LBuf_Src("do_kill.succ.1");
+            LBuf buf2 = LBuf_Src("do_kill.succ.2");
+            if (Suspect(executor))
             {
-                raw_broadcast(WIZARD, T("[Suspect] %s killed %s(#%d)."), buf1, Moniker(victim), victim);
-            }
-            else
-            {
-                mux_strncpy(buf2, Moniker(Owner(executor)), LBUF_SIZE-1);
-                raw_broadcast(WIZARD, T("[Suspect] %s <via %s(#%d)> killed %s(#%d)."),
-                    buf2, buf1, executor, Moniker(victim), victim);
-            }
-        }
-        mux_sprintf(buf1, LBUF_SIZE, T("You killed %s!"), Moniker(victim));
-        mux_sprintf(buf2, LBUF_SIZE, T("killed %s!"), Moniker(victim));
-        if (!isPlayer(victim))
-        {
-            if (halt_que(NOTHING, victim) > 0)
-            {
-                if (!Quiet(victim))
+                mux_strncpy(buf1, Moniker(executor), LBUF_SIZE-1);
+                if (executor == Owner(executor))
                 {
-                    notify(Owner(victim), T("Halted."));
+                    raw_broadcast(WIZARD, T("[Suspect] %s killed %s(#%d)."), buf1.get(), Moniker(victim), victim);
+                }
+                else
+                {
+                    mux_strncpy(buf2, Moniker(Owner(executor)), LBUF_SIZE-1);
+                    raw_broadcast(WIZARD, T("[Suspect] %s <via %s(#%d)> killed %s(#%d)."),
+                        buf2.get(), buf1.get(), executor, Moniker(victim), victim);
+                }
+            }
+            mux_sprintf(buf1, LBUF_SIZE, T("You killed %s!"), Moniker(victim));
+            mux_sprintf(buf2, LBUF_SIZE, T("killed %s!"), Moniker(victim));
+            if (!isPlayer(victim))
+            {
+                if (halt_que(NOTHING, victim) > 0)
+                {
+                    if (!Quiet(victim))
+                    {
+                        notify(Owner(victim), T("Halted."));
+                    }
+                }
+            }
+            did_it(executor, victim, A_KILL, buf1, A_OKILL, buf2, A_AKILL, 0,
+                nullptr, 0);
+
+            // notify victim
+            //
+            mux_sprintf(buf1, LBUF_SIZE, T("%s killed you!"), Moniker(executor));
+            notify_with_cause_ooc(victim, executor, buf1, MSG_SRC_KILL);
+
+            // Pay off the bonus.
+            //
+            if (key == KILL_KILL)
+            {
+                cost /= 2;  // Victim gets half.
+                if (Pennies(Owner(victim)) < mudconf.paylimit)
+                {
+                    mux_sprintf(buf1, LBUF_SIZE, T("Your insurance policy pays %d %s."), cost,
+                        mudconf.many_coins);
+                    notify(victim, buf1);
+                    giveto(Owner(victim), cost);
+                }
+                else
+                {
+                    notify(victim, T("Your insurance policy has been revoked."));
                 }
             }
         }
-        did_it(executor, victim, A_KILL, buf1, A_OKILL, buf2, A_AKILL, 0,
-            nullptr, 0);
-
-        // notify victim
-        //
-        mux_sprintf(buf1, LBUF_SIZE, T("%s killed you!"), Moniker(executor));
-        notify_with_cause_ooc(victim, executor, buf1, MSG_SRC_KILL);
-
-        // Pay off the bonus.
-        //
-        if (key == KILL_KILL)
-        {
-            cost /= 2;  // Victim gets half.
-            if (Pennies(Owner(victim)) < mudconf.paylimit)
-            {
-                mux_sprintf(buf1, LBUF_SIZE, T("Your insurance policy pays %d %s."), cost,
-                    mudconf.many_coins);
-                notify(victim, buf1);
-                giveto(Owner(victim), cost);
-            }
-            else
-            {
-                notify(victim, T("Your insurance policy has been revoked."));
-            }
-        }
-        free_lbuf(buf1);
-        free_lbuf(buf2);
 
         // Send him home.
         //
@@ -230,10 +228,10 @@ static void give_thing(dbref giver, dbref recipient, int key, UTF8 *what)
         notify(giver, NOPERM_MESSAGE);
         return;
     }
-    UTF8 *str, *sp;
     if (!could_doit(giver, thing, A_LGIVE))
     {
-        sp = str = alloc_lbuf("do_give.gfail");
+        LBuf str = LBuf_Src("do_give.gfail");
+        UTF8 *sp = str.get();
         safe_str(T("You can\xE2\x80\x99t give "), str, &sp);
         safe_str(Moniker(thing), str, &sp);
         safe_str(T(" away."), str, &sp);
@@ -241,12 +239,12 @@ static void give_thing(dbref giver, dbref recipient, int key, UTF8 *what)
 
         did_it(giver, thing, A_GFAIL, str, A_OGFAIL, nullptr, A_AGFAIL, 0,
             nullptr, 0);
-        free_lbuf(str);
         return;
     }
     if (!could_doit(thing, recipient, A_LRECEIVE))
     {
-        sp = str = alloc_lbuf("do_give.rfail");
+        LBuf str = LBuf_Src("do_give.rfail");
+        UTF8 *sp = str.get();
         safe_str(Moniker(recipient), str, &sp);
         safe_str(T(" doesn\xE2\x80\x99t want "), str, &sp);
         safe_str(Moniker(thing), str, &sp);
@@ -255,19 +253,17 @@ static void give_thing(dbref giver, dbref recipient, int key, UTF8 *what)
 
         did_it(giver, recipient, A_RFAIL, str, A_ORFAIL, nullptr, A_ARFAIL, 0,
             nullptr, 0);
-        free_lbuf(str);
         return;
     }
     move_via_generic(thing, recipient, giver, 0);
     divest_object(thing);
     if (!(key & GIVE_QUIET))
     {
-        str = alloc_lbuf("do_give.thing.ok");
+        LBuf str = LBuf_Src("do_give.thing.ok");
         mux_strncpy(str, Moniker(giver), LBUF_SIZE-1);
-        notify_with_cause_ooc(recipient, giver, tprintf(T("%s gave you %s."), str, Moniker(thing)), MSG_SRC_GIVE);
+        notify_with_cause_ooc(recipient, giver, tprintf(T("%s gave you %s."), str.get(), Moniker(thing)), MSG_SRC_GIVE);
         notify(giver, T("Given."));
-        notify_with_cause_ooc(thing, giver, tprintf(T("%s gave you to %s."), str, Moniker(recipient)), MSG_SRC_GIVE);
-        free_lbuf(str);
+        notify_with_cause_ooc(thing, giver, tprintf(T("%s gave you to %s."), str.get(), Moniker(recipient)), MSG_SRC_GIVE);
     }
     did_it(giver, thing, A_DROP, nullptr, A_ODROP, nullptr, A_ADROP, 0, nullptr, 0);
     did_it(recipient, thing, A_SUCC, nullptr, A_OSUCC, nullptr, A_ASUCC, 0,

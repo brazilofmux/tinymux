@@ -60,7 +60,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 
     dbref aowner, obj, source;
     int aflags;
-    UTF8 *buff, *buff2, *bp;
+    UTF8 *buff, *bp;
     UTF8 *key;
     ATTR *a;
     bool bCheck, c;
@@ -196,7 +196,8 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
 	            reg_ref** preserve = PushRegisters(MAX_GLOBAL_REGS);
                 save_global_regs(preserve);
 
-                buff2 = bp = alloc_lbuf("eval_boolexp");
+                LBuf buff2 = LBuf_Src("eval_boolexp");
+                bp = buff2.get();
                 mux_exec(buff, LBUF_SIZE-1, buff2, &bp, source, player, player,
                     AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_FCHECK|EV_TOP),
                     nullptr, 0);
@@ -206,7 +207,6 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
                 PopRegisters(preserve, MAX_GLOBAL_REGS);
 
                 bCheck = !string_compare(buff2, reinterpret_cast<UTF8*>(b->sub1));
-                free_lbuf(buff2);
             }
         }
         free_lbuf(buff);
@@ -309,14 +309,13 @@ static BOOLEXP *test_atr(UTF8 *s)
     int anum;
     boolexp_type locktype;
 
-    UTF8 *buff = alloc_lbuf("test_atr");
+    LBuf buff = LBuf_Src("test_atr");
     mux_strncpy(buff, s, LBUF_SIZE-1);
-    for (s = buff; *s && (*s != ':') && (*s != '/'); s++)
+    for (s = buff.get(); *s && (*s != ':') && (*s != '/'); s++)
     {
     }
     if (!*s)
     {
-        free_lbuf(buff);
         return TRUE_BOOLEXP;
     }
     if (*s == '/')
@@ -342,7 +341,6 @@ static BOOLEXP *test_atr(UTF8 *s)
         //
         if (!God(parse_player))
         {
-            free_lbuf(buff);
             return TRUE_BOOLEXP;
         }
         for (s1 = buff; mux_isdigit(*s1); s1++)
@@ -350,13 +348,11 @@ static BOOLEXP *test_atr(UTF8 *s)
         }
         if (*s1)
         {
-            free_lbuf(buff);
             return TRUE_BOOLEXP;
         }
         anum = mux_atol(buff);
         if (anum <= 0)
         {
-            free_lbuf(buff);
             return TRUE_BOOLEXP;
         }
     }
@@ -371,7 +367,6 @@ static BOOLEXP *test_atr(UTF8 *s)
     b->type = locktype;
     b->thing =  static_cast<dbref>(anum);
     b->sub1 = reinterpret_cast<BOOLEXP*>(StringClone(s));
-    free_lbuf(buff);
     return b;
 }
 
@@ -402,13 +397,13 @@ static BOOLEXP *parse_boolexp_L(void)
 
         // Must have hit an object ref.  Load the name into our buffer.
         //
-        UTF8* buf = alloc_lbuf("parse_boolexp_L");
-        p = buf;
+        LBuf buf = LBuf_Src("parse_boolexp_L");
+        p = buf.get();
         while (  *parsebuf
               && *parsebuf != AND_TOKEN
               && *parsebuf != OR_TOKEN
               && *parsebuf != ')'
-              && p < buf + LBUF_SIZE)
+              && p < buf.get() + LBUF_SIZE)
         {
             *p++ = *parsebuf++;
         }
@@ -425,7 +420,6 @@ static BOOLEXP *parse_boolexp_L(void)
         //
         if ((b = test_atr(buf)) != nullptr)
         {
-            free_lbuf(buf);
             return (b);
         }
         b = alloc_bool("parse_boolexp_L");
@@ -444,14 +438,12 @@ static BOOLEXP *parse_boolexp_L(void)
             {
                 if (buf[0] != '#')
                 {
-                    free_lbuf(buf);
                     free_bool(b);
                     return TRUE_BOOLEXP;
                 }
                 b->thing = mux_atol(&buf[1]);
                 if (!Good_dbref(b->thing))
                 {
-                    free_lbuf(buf);
                     free_bool(b);
                     return TRUE_BOOLEXP;
                 }
@@ -467,16 +459,14 @@ static BOOLEXP *parse_boolexp_L(void)
 
             if (b->thing == NOTHING)
             {
-                notify(parse_player, tprintf(T("I don\xE2\x80\x99t see %s here."), buf));
-                free_lbuf(buf);
+                notify(parse_player, tprintf(T("I don\xE2\x80\x99t see %s here."), buf.get()));
                 free_bool(b);
                 return TRUE_BOOLEXP;
             }
             if (b->thing == AMBIGUOUS)
             {
                 notify(parse_player, tprintf(T("I don\xE2\x80\x99t know which %s you mean!"),
-                    buf));
-                free_lbuf(buf);
+                    buf.get()));
                 free_bool(b);
                 return TRUE_BOOLEXP;
             }
@@ -487,19 +477,16 @@ static BOOLEXP *parse_boolexp_L(void)
             //
             if (buf[0] != '#')
             {
-                free_lbuf(buf);
                 free_bool(b);
                 return TRUE_BOOLEXP;
             }
             b->thing = mux_atol(&buf[1]);
             if (b->thing < 0)
             {
-                free_lbuf(buf);
                 free_bool(b);
                 return TRUE_BOOLEXP;
             }
         }
-        free_lbuf(buf);
     }
     return b;
 }

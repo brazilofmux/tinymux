@@ -343,11 +343,10 @@ void do_log
         }
     }
 
-    UTF8 *pFullName = nullptr;
+    LBuf pFullName = LBuf_Src("do_log_filename");
     const UTF8 *pMessage = T("");
     if (bValid)
     {
-        pFullName = alloc_lbuf("do_log_filename");
         mux_sprintf(pFullName, LBUF_SIZE, T("logs/M-%s.log"), pFilename);
 
         // Strip the message of all ANSI.
@@ -364,10 +363,6 @@ void do_log
 
     if (!bValid)
     {
-        if (pFullName)
-        {
-            free_lbuf(pFullName);
-        }
         notify(executor, T("Syntax: @log file=message"));
         return;
     }
@@ -380,13 +375,11 @@ void do_log
         {
             // Okay, at this point, the file exists.
             //
-            free_lbuf(pFullName);
             mux_fprintf(hFile, T("%s" ENDLINE), pMessage);
             mux_fclose(hFile);
             return;
         }
     }
-    free_lbuf(pFullName);
 
     notify(executor, T("Not a valid log file."));
     return;

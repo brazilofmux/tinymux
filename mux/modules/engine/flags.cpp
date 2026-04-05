@@ -578,10 +578,10 @@ void init_flagtab(void)
 
 void display_flagtab(dbref player)
 {
-    UTF8 *buf, *bp;
     FLAGNAMEENT *fp;
 
-    bp = buf = alloc_lbuf("display_flagtab");
+    LBuf buf = LBuf_Src("display_flagtab");
+    UTF8 *bp = buf.get();
     safe_str(T("Flags:"), buf, &bp);
     for (fp = gen_flag_names; fp->flagname; fp++)
     {
@@ -608,7 +608,6 @@ void display_flagtab(dbref player)
     }
     *bp = '\0';
     notify(player, buf);
-    free_lbuf(buf);
 }
 
 UTF8 *MakeCanonicalFlagName

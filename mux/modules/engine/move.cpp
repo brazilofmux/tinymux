@@ -465,8 +465,8 @@ static dbref get_exit_dest(dbref executor, dbref exit)
     int   aflags;
     UTF8 *atr_gotten = atr_pget(exit, A_EXITVARDEST, &aowner, &aflags);
 
-    UTF8 *result = alloc_lbuf("get_exit_dest");
-    UTF8 *ref = result;
+    LBuf result = LBuf_Src("get_exit_dest");
+    UTF8 *ref = result.get();
     mux_exec(atr_gotten, LBUF_SIZE-1, result, &ref, exit, executor, executor,
         AttrTrace(aflags, EV_TOP|EV_FCHECK|EV_EVAL), nullptr, 0);
     free_lbuf(atr_gotten);
@@ -478,7 +478,6 @@ static dbref get_exit_dest(dbref executor, dbref exit)
         dest = mux_atol(result + 1);
     }
 
-    free_lbuf(result);
     return dest;
 }
 
@@ -856,7 +855,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     }
 
     dbref exitloc, thing;
-    UTF8 *buf, *bp;
+    UTF8 *bp;
     int oattr, aattr;
     bool quiet;
 
@@ -903,13 +902,15 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
             quiet = true;
         }
 
-        bp = buf = alloc_lbuf("do_drop.did_it");
-        safe_tprintf_str(buf, &bp, T("dropped %s."), Moniker(thing));
-        oattr = quiet ? 0 : A_ODROP;
-        aattr = quiet ? 0 : A_ADROP;
-        did_it(executor, thing, A_DROP, T("Dropped."), oattr, buf,
-               aattr, 0, nullptr, 0);
-        free_lbuf(buf);
+        {
+            LBuf buf = LBuf_Src("do_drop.did_it");
+            bp = buf.get();
+            safe_tprintf_str(buf, &bp, T("dropped %s."), Moniker(thing));
+            oattr = quiet ? 0 : A_ODROP;
+            aattr = quiet ? 0 : A_ADROP;
+            did_it(executor, thing, A_DROP, T("Dropped."), oattr, buf,
+                   aattr, 0, nullptr, 0);
+        }
 
         // Process droptos
         //

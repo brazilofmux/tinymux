@@ -341,8 +341,8 @@ void do_link
             s_Home(thing, nHomeNew);
             if (!Quiet(executor))
             {
-                UTF8 *buff1 = alloc_lbuf("do_link.notify");
-                UTF8 *bp = buff1;
+                LBuf buff1 = LBuf_Src("do_link.notify");
+                UTF8 *bp = buff1.get();
 
                 UTF8 *p;
                 p = tprintf(T("Home of %s(#%d) changed from "), Name(thing), thing);
@@ -353,7 +353,6 @@ void do_link
                 safe_str(p, buff1, &bp);
                 *bp = '\0';
                 notify_quiet(executor, buff1);
-                free_lbuf(buff1);
             }
         }
         break;
@@ -399,8 +398,8 @@ void do_link
             s_Dropto(thing, room);
             if (!Quiet(executor))
             {
-                UTF8 *buff1 = alloc_lbuf("do_link2.notify");
-                UTF8 *bp = buff1;
+                LBuf buff1 = LBuf_Src("do_link2.notify");
+                UTF8 *bp = buff1.get();
 
                 UTF8 *p;
                 p = tprintf(T("Dropto of %s(#%d) changed from "), Name(thing), thing);
@@ -411,7 +410,6 @@ void do_link
                 safe_str(p, buff1, &bp);
                 *bp = '\0';
                 notify_quiet(executor, buff1);
-                free_lbuf(buff1);
             }
         }
         break;
@@ -1285,11 +1283,10 @@ void do_destroy(const dbref executor, const dbref caller, dbref enactor, const i
             }
             else
             {
-                UTF8 *tname = alloc_lbuf("destroy_obj");
+                LBuf tname = LBuf_Src("destroy_obj");
                 mux_strncpy(tname, Moniker(ThingOwner), LBUF_SIZE-1);
                 notify(executor, tprintf(T("Destroyed %s\xE2\x80\x99s %s(#%d)."),
-                    tname, Moniker(thing), thing));
-                free_lbuf(tname);
+                    tname.get(), Moniker(thing), thing));
             }
         }
     }

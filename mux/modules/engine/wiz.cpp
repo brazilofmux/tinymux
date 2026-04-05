@@ -546,11 +546,10 @@ void do_newpassword
     //
     ChangePassword(victim, password);
     notify_quiet(executor, T("Password changed."));
-    UTF8 *buf = alloc_lbuf("do_newpassword");
+    LBuf buf = LBuf_Src("do_newpassword");
     UTF8 *bp = buf;
     safe_tprintf_str(buf, &bp, T("Your password has been changed by %s."), Moniker(executor));
     notify_quiet(victim, buf);
-    free_lbuf(buf);
 }
 
 void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *name, const UTF8 *cargs[], int ncargs)
