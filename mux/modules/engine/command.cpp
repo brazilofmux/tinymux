@@ -1987,10 +1987,10 @@ UTF8 *process_command
     int   nargs
 )
 {
-    static UTF8 preserve_cmd[LBUF_SIZE];
+    thread_local UTF8 preserve_cmd[LBUF_SIZE];
     UTF8 *pOriginalCommand = arg_command;
-    static UTF8 SpaceCompressCommand[LBUF_SIZE];
-    static UTF8 LowerCaseCommand[LBUF_SIZE];
+    thread_local UTF8 SpaceCompressCommand[LBUF_SIZE];
+    thread_local UTF8 LowerCaseCommand[LBUF_SIZE];
 
     // Robustify player.
     //

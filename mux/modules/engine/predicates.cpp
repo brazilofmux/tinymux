@@ -359,7 +359,7 @@ bool IsRestricted(const UTF8 *pName, int charset)
 //
 UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid, int charset)
 {
-    static UTF8 Buf[MBUF_SIZE];
+    thread_local UTF8 Buf[MBUF_SIZE];
 
     *pnName = 0;
     *pbValid = false;
@@ -442,7 +442,7 @@ UTF8 *MakeCanonicalObjectName(const UTF8 *pName, size_t *pnName, bool *pbValid, 
 //
 UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid)
 {
-    static UTF8 Buf[MBUF_SIZE];
+    thread_local UTF8 Buf[MBUF_SIZE];
 
     *pnName = 0;
     *pbValid = false;
@@ -929,7 +929,7 @@ void do_addcommand
 
     // Validate command name.
     //
-    static UTF8 pName[LBUF_SIZE];
+    thread_local UTF8 pName[LBUF_SIZE];
     if (1 <= nargs)
     {
         // Strip color, then strip \r\n\t and space.

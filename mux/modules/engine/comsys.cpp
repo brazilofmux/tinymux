@@ -107,7 +107,7 @@ static UTF8* RestrictTitleValue(const UTF8* pTitleRequest)
     // Remove all '\r\n\t' from the string.
     // Terminate any ANSI in the string.
     //
-    static UTF8 NewTitle[MAX_TITLE_LEN + 1];
+    thread_local UTF8 NewTitle[MAX_TITLE_LEN + 1];
     StripTabsAndTruncate(pTitleRequest, NewTitle, MAX_TITLE_LEN, MAX_TITLE_LEN);
     return NewTitle;
 }
@@ -178,7 +178,7 @@ UTF8* MakeCanonicalComAlias
     bool* bValidAlias
 )
 {
-    static UTF8 Buffer[MAX_ALIAS_LEN + 1];
+    thread_local UTF8 Buffer[MAX_ALIAS_LEN + 1];
     *nValidAlias = 0;
     *bValidAlias = false;
 
@@ -3056,7 +3056,7 @@ void do_channelwho(const dbref executor, const dbref caller, dbref enactor, cons
                 || Wizard_Who(executor)
                 || See_Hidden(executor)))
         {
-            static UTF8 temp[SBUF_SIZE];
+            thread_local UTF8 temp[SBUF_SIZE];
             UTF8* buff = unparse_object(executor, user.who, false);
             mux_sprintf(temp, sizeof(temp), T("%-29.29s %-6.6s %-6.6s"), strip_color(buff),
                         user.bUserIsOn ? "on " : "off",

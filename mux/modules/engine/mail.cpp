@@ -573,7 +573,7 @@ static const UTF8 *get_folder_name(dbref player, int fld)
     int aflags;
     size_t nFolders;
     dbref aowner;
-    static UTF8 aFolders[LBUF_SIZE];
+    thread_local UTF8 aFolders[LBUF_SIZE];
     atr_get_str_LEN(aFolders, player, A_MAILFOLDERS, &aowner, &aflags,
         &nFolders);
     if (nFolders != 0)
@@ -1400,7 +1400,7 @@ UTF8 *MakeCanonicalMailAlias
     bool   *pbValidMailAlias
 )
 {
-    static UTF8 Buffer[SIZEOF_MALIAS];
+    thread_local UTF8 Buffer[SIZEOF_MALIAS];
     size_t nLeft = sizeof(Buffer)-1;
     UTF8 *q = Buffer;
     UTF8 *p = pMailAlias;
@@ -1773,7 +1773,7 @@ static UTF8 *status_chars(struct mail *mp)
 {
     // Return a short description of message flags.
     //
-    static UTF8 res[10];
+    thread_local UTF8 res[10];
 
     UTF8 *p = res;
     *p++ = Read(mp)     ? '-' : 'N';
@@ -3650,7 +3650,7 @@ UTF8 *MakeCanonicalMailAliasDesc
     // Remove all '\r\n\t' from the string.
     // Terminate any ANSI in the string.
     //
-    static UTF8 szFittedMailAliasDesc[SIZEOF_MALIASDESC+1];
+    thread_local UTF8 szFittedMailAliasDesc[SIZEOF_MALIASDESC+1];
     mux_field nValidMailAliasDesc = StripTabsAndTruncate
                                      ( pMailAliasDesc,
                                        szFittedMailAliasDesc,

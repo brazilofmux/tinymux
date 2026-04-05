@@ -234,7 +234,7 @@ UTF8 *MakeCanonicalDoing(UTF8 *pDoing, size_t *pnValidDoing, bool *pbValidDoing)
         return nullptr;
     }
 
-    static UTF8 szFittedDoing[SIZEOF_DOING_STRING+1];
+    thread_local UTF8 szFittedDoing[SIZEOF_DOING_STRING+1];
     mux_field nDoing = StripTabsAndTruncate( pDoing, szFittedDoing,
                                               SIZEOF_DOING_STRING, WIDTHOF_DOING_STRING);
 

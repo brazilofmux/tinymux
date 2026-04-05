@@ -1379,7 +1379,7 @@ static const UTF8 *crypt_code(UTF8 *code, UTF8 *text, bool type)
         return text;
     }
 
-    static UTF8 textbuff[LBUF_SIZE];
+    thread_local UTF8 textbuff[LBUF_SIZE];
     UTF8 *p = strip_color(text);
     size_t nq = nCode;
     size_t ip = 0;

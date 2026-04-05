@@ -109,7 +109,7 @@ static void promote_match(dbref what, int confidence)
 
 static UTF8 *munge_space_for_match(const UTF8 *name, size_t n)
 {
-    static UTF8 buffer[LBUF_SIZE];
+    thread_local UTF8 buffer[LBUF_SIZE];
 
     size_t i = 0;
     UTF8 *q = buffer;

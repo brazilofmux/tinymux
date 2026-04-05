@@ -29,7 +29,7 @@ DEFINE_FACTORY(CStubSlaveFactory)
 
 extern "C" MUX_RESULT DCL_API Stub_PipePump(void)
 {
-    static uint8_t arg[QUEUE_BLOCK_SIZE];
+    thread_local uint8_t arg[QUEUE_BLOCK_SIZE];
     size_t nWanted = sizeof(arg);
     while (  Pipe_GetBytes(&Queue_Out, &nWanted, arg)
           && 0 < nWanted)

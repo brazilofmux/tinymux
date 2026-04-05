@@ -103,7 +103,7 @@ static const int BodyActions[8][5] =
 
 UTF8 *EncodeBody(UTF8 *pBody)
 {
-    static UTF8 buf[2*LBUF_SIZE];
+    thread_local UTF8 buf[2*LBUF_SIZE];
     UTF8 *bp = buf;
 
     int iState = STATE_BOM;

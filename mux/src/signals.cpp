@@ -337,7 +337,7 @@ static void check_panicking(int sig)
 
 UTF8 *signal_desc(const int iSignal)
 {
-    static UTF8 buff[LBUF_SIZE];
+    thread_local UTF8 buff[LBUF_SIZE];
     auto bufc = buff;
     safe_str(signames[iSignal].pShortName, buff, &bufc);
     if (signames[iSignal].pLongName)

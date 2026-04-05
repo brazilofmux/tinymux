@@ -133,11 +133,7 @@ Updated: 2026-03-27
 - **File:** `mux/src/net.cpp:198`
 - `encode_iac()` now builds a dynamically sized `std::string` and `queue_string()` writes it with `queue_write_LEN()`, so telnet IAC doubling no longer depends on a fixed `2*LBUF_SIZE` scratch buffer.
 
-### Widespread use of `static` buffers in functions
+### ~~Widespread use of `static` buffers in functions~~ FIXED
 
-- **File:** Multiple files (see `grep` results for `static UTF8 ...[...LBUF_SIZE]`)
-- **Issue:** Over 30 instances of `static UTF8 buffer[LBUF_SIZE]` or `2*LBUF_SIZE` were found in function scopes (e.g., `encode_iac`, `queue_string`, `Log.tinyprintf` wrappers).
-- **Impact:** 
-    - **Thread Safety:** These functions are not thread-safe. While the server is currently single-threaded for evaluation, this prevents future multi-threading and can cause subtle bugs if functions are ever called re-entrantly (e.g., via a signal or a nested evaluation that triggers another log/network call).
-    - **Memory Safety:** Static buffers persist for the life of the process, increasing the "always-on" memory footprint unnecessarily.
-- **Recommendation:** Migrate these to `LBuf` (stack-allocated via the engine's pool) or `std::string` where appropriate.
+- **Files:** `mux/src/` (5 sites in `net.cpp`, `signals.cpp`, `stubslave.cpp`) and `mux/modules/` (38 sites across 18 files in engine + mail modules).
+- All 43 `static` scratch-buffer arrays (`UTF8 buf[...]`, `char buf[...]`, `uint8_t arg[...]`) converted to `thread_local`. This is a one-word, zero-allocation, zero-behavior-change swap under the current single-threaded evaluator: `thread_local` storage has the same lifetime and performance as `static`, but each thread gets its own copy, so these functions become safe for future multi-threaded evaluation without any locking. Read-only constant tables (`aRadix64`, `aRadixPenn36`, `aRadixPenn64`, `Empty`) were intentionally left as `static` since they are immutable shared data.  All 21 modified `.cpp` files verified with `g++ -std=c++17 -fsyntax-only`.

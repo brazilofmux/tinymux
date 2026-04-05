@@ -43,7 +43,7 @@ static int lineno;
 static int ntopics;
 static FILE *rfp;
 
-static UTF8 Line[LBUF_SIZE];
+thread_local UTF8 Line[LBUF_SIZE];
 
 static void HelpIndex_Start(FILE *fp)
 {
@@ -232,7 +232,7 @@ void helpindex_init(void)
 
 static const UTF8 *MakeCanonicalTopicName(UTF8 *topic_arg, size_t &nTopic)
 {
-    static UTF8 Buffer[LBUF_SIZE];
+    thread_local UTF8 Buffer[LBUF_SIZE];
 
     const UTF8 *topic;
     if (topic_arg[0] == '\0')

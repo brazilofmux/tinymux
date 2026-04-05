@@ -26,7 +26,7 @@ static bool cache_initted = false;
 
 // SQLite backend uses its own buffer for attribute retrieval.
 //
-static UTF8 sqlite_attr_buf[LBUF_SIZE];
+thread_local UTF8 sqlite_attr_buf[LBUF_SIZE];
 
 static size_t cache_size = 0;
 static uint64_t cache_hits = 0;

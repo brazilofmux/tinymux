@@ -1133,7 +1133,7 @@ const UTF8 *CMailMod::get_folder_name(dbref player, int fld)
         return T("unnamed");
     }
 
-    static UTF8 result[FOLDER_NAME_LEN + 1];
+    thread_local UTF8 result[FOLDER_NAME_LEN + 1];
     const char *p = found + nPattern;
     char *q = reinterpret_cast<char *>(result);
     while (*p && *p != ':' && q < reinterpret_cast<char *>(result) + FOLDER_NAME_LEN)
@@ -4499,7 +4499,7 @@ void CMailMod::do_mail_flags(dbref player, const UTF8 *msglist,
 
 UTF8 *CMailMod::status_chars(struct mail *mp)
 {
-    static UTF8 res[10];
+    thread_local UTF8 res[10];
     UTF8 *p = res;
     *p++ = Read(mp)     ? '-' : 'N';
     *p++ = M_Safe(mp)   ? 'S' : '-';
@@ -4517,7 +4517,7 @@ UTF8 *CMailMod::mail_list_time(const UTF8 *the_time)
     // Format: "day mon dd hh:mm:ss yyyy" → "day mon dd hh:mm yyyy"
     // Chop out ":ss"
     //
-    static UTF8 buf[32];
+    thread_local UTF8 buf[32];
     if (nullptr == the_time || '\0' == *the_time)
     {
         buf[0] = '\0';

@@ -618,7 +618,7 @@ UTF8 *MakeCanonicalFlagName
     bool *pbValid
 )
 {
-    static UTF8 buff[SBUF_SIZE];
+    thread_local UTF8 buff[SBUF_SIZE];
     UTF8 *p = buff;
     int nName = 0;
 

@@ -11629,8 +11629,8 @@ static void GeneralTimeConversion
 //
 // We pick 64 as a round number.
 //
-static UTF8 TimeBuffer64[64];
-static UTF8 TimeBuffer80[80];
+thread_local UTF8 TimeBuffer64[64];
+thread_local UTF8 TimeBuffer80[80];
 
 // Show time in days, hours, and minutes
 //
@@ -15448,7 +15448,7 @@ int engine_api_lookup(const char *name)
 //
 UTF8 *MakeCanonicalUserFunctionName(const UTF8 *pName, size_t *pnName, bool *pbValid)
 {
-    static UTF8 Buffer[MAX_UFUN_NAME_LEN+1];
+    thread_local UTF8 Buffer[MAX_UFUN_NAME_LEN+1];
 
     if (  nullptr == pName
        || '\0' == pName[0])

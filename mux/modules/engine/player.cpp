@@ -313,7 +313,7 @@ static const UTF8 *GenerateSalt(int iType)
     //   SHA512: 3 + 16 + 1 = 20
     //
     static constexpr size_t MAX_SALT_SIZE = 32;
-    static UTF8 szSalt[MAX_SALT_SIZE];
+    thread_local UTF8 szSalt[MAX_SALT_SIZE];
 
     szSalt[0] = '\0';
     if (CRYPT_SHA1 == iType)
@@ -430,7 +430,7 @@ const UTF8 *p6h_xx_crypt(const UTF8 *szPassword)
     // 1234567890123456789012345678
     // $P6H$$XXhhhhhhhhhhhhhhhhhhhh
     //
-    static UTF8 buf[P6H_PREFIX_LENGTH + 1 + P6H_XX_HASH_LENGTH_MAX + 1 + 16];
+    thread_local UTF8 buf[P6H_PREFIX_LENGTH + 1 + P6H_XX_HASH_LENGTH_MAX + 1 + 16];
     mux_strncpy(buf, szP6HPrefix, P6H_PREFIX_LENGTH);
     buf[P6H_PREFIX_LENGTH] = '$';
 
@@ -471,7 +471,7 @@ const UTF8 *p6h_vaht_crypt(const UTF8 *szPassword, const UTF8 *szSetting)
             // 123456789012345678901234567890123456789012345678901234567890123456
             // $P6H$$1:sha1:hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh:tttttttttttt
             //
-            static UTF8 buff[LBUF_SIZE];
+            thread_local UTF8 buff[LBUF_SIZE];
             UTF8 *bufc = buff;
 
             safe_str(szP6HPrefix1SHA1, buff, &bufc);
@@ -642,7 +642,7 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
     // 12345678901234567890123456789012345678901234567
     // $SHA1$ssssssssssss$hhhhhhhhhhhhhhhhhhhhhhhhhhhh
     //
-    static UTF8 buf[SHA1_PREFIX_LENGTH + SHA1_ENCODED_SALT_LENGTH + 1 + SHA1_ENCODED_HASH_LENGTH + 1 + 16];
+    thread_local UTF8 buf[SHA1_PREFIX_LENGTH + SHA1_ENCODED_SALT_LENGTH + 1 + SHA1_ENCODED_HASH_LENGTH + 1 + 16];
     mux_strncpy(buf, szSHA1Prefix, SHA1_PREFIX_LENGTH);
     memcpy(buf + SHA1_PREFIX_LENGTH, pSaltField, nSaltField);
     buf[SHA1_PREFIX_LENGTH + nSaltField] = '$';

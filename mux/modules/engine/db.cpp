@@ -770,7 +770,7 @@ const UTF8 *Moniker(dbref thing)
     const UTF8 *pPureMoniker = ConvertToAscii(strip_color(pMoniker));
 
     const UTF8 *pReturn = nullptr;
-    static UTF8 tbuff[LBUF_SIZE];
+    thread_local UTF8 tbuff[LBUF_SIZE];
     if (strcmp(reinterpret_cast<const char *>(pPureNameCopy), reinterpret_cast<const char *>(pPureMoniker)) == 0)
     {
         // The stripped version of @moniker is the same as the stripped
@@ -1216,7 +1216,7 @@ void do_fixdb
 //
 UTF8 *MakeCanonicalAttributeName(const UTF8 *pName_arg, size_t *pnName, bool *pbValid)
 {
-    static UTF8 Buffer[SBUF_SIZE];
+    thread_local UTF8 Buffer[SBUF_SIZE];
     const UTF8 *pName = pName_arg;
 
     if (  nullptr == pName
@@ -1359,7 +1359,7 @@ UTF8 *MakeCanonicalAttributeCommand(const UTF8 *pName, size_t *pnName, bool *pbV
         return nullptr;
     }
 
-    static UTF8 Buffer[SBUF_SIZE];
+    thread_local UTF8 Buffer[SBUF_SIZE];
     size_t nLeft = SBUF_SIZE-2;
     UTF8 *p = Buffer;
     size_t n;

@@ -289,7 +289,7 @@ bool eval_boolexp_atr(dbref player, dbref thing, dbref from, UTF8 *key)
 // TRUE_BOOLEXP cannot be typed in by the user; use @unlock instead
 //
 static const char *parsebuf;
-static char parsestore[LBUF_SIZE];
+thread_local char parsestore[LBUF_SIZE];
 static dbref parse_player;
 
 static void skip_whitespace(void)

@@ -25,13 +25,13 @@ static UTF8 *unparse_object_quiet(dbref player, dbref loc)
 {
     UNUSED_PARAMETER(player);
 
-    static UTF8 buf[SBUF_SIZE];
+    thread_local UTF8 buf[SBUF_SIZE];
 
     mux_sprintf(buf, SBUF_SIZE, T("(#%d)"), loc);
     return buf;
 }
 
-static UTF8 boolexp_buf[LBUF_SIZE];
+thread_local UTF8 boolexp_buf[LBUF_SIZE];
 static UTF8 *buftop;
 
 static void unparse_boolexp1(dbref player, BOOLEXP *b, UTF8 outer_type, int format)

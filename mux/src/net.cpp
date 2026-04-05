@@ -227,7 +227,10 @@ static std::string encode_iac(const UTF8 *szString)
 
 void queue_string(DESC *d, const UTF8 *s)
 {
-    static UTF8 co_buf[2*LBUF_SIZE];
+    // thread_local so the color-render scratch is per-thread when the
+    // evaluator moves off the single-thread model. Keeps the zero-
+    // allocation hot-path behavior of the old `static` buffer.
+    thread_local UTF8 co_buf[2*LBUF_SIZE];
 
     const UTF8 *p;
     if (  (d->flags & DS_CONNECTED)
@@ -1253,7 +1256,7 @@ LBUF_OFFSET trimmed_name(const dbref player, UTF8 cbuff[MBUF_SIZE], const LBUF_O
 
 static UTF8 *trimmed_site(UTF8 *szName)
 {
-    static UTF8 buff[MBUF_SIZE];
+    thread_local UTF8 buff[MBUF_SIZE];
 
     size_t nLen = strlen(reinterpret_cast<char *>(szName));
     if (  g_dc.site_chars <= 0
@@ -1451,7 +1454,7 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
             CLinearTimeDelta ltdConnected = ltaNow - d->connected_at;
             CLinearTimeDelta ltdLastTime  = ltaNow - d->last_time;
 
-            static UTF8 NameField[MBUF_SIZE];
+            thread_local UTF8 NameField[MBUF_SIZE];
             mux_strncpy(NameField, T("<Unconnected>"), sizeof(NameField)-1);
             size_t vwNameField = strlen(reinterpret_cast<char*>(NameField));
             if (d->flags & DS_CONNECTED)
