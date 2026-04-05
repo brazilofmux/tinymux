@@ -35,10 +35,10 @@ Updated: 2026-03-27
 
 ## Low — Code Quality
 
-### `strncpy()` usage with casts
+### ~~`strncpy()` usage with casts~~ NOT A BUG
 
-- **File:** `comsys_mod.cpp:309, 315`
-- **Issue:** `strncpy()` with casts to `char *` — verify source strings are null-terminated and destination buffers are properly sized.
+- **File:** `comsys_mod.cpp` `LoadChannels()` lambda (name/header copies)
+- Verified: `channel::name` is `UTF8[MAX_CHANNEL_LEN + 1]` and `channel::header` is `UTF8[MAX_HEADER_LEN + 1]` (`comsys_mod.h:113-114`). Each `strncpy()` copies at most `MAX_*_LEN` bytes and the next statement explicitly writes `'\0'` at index `MAX_*_LEN`, so the destination is always null-terminated even when the source exceeds the limit. The `reinterpret_cast<char *>` is only needed because `channel` uses the `UTF8` (unsigned char) alias. No fix required.
 
 ### ~~No parameter validation on PlayerNuke~~ FIXED
 
