@@ -5,6 +5,27 @@ This module owns:
 - normalized managed-state persistence
 - MUX command emission from semantic operations
 - a few transport-adjacent helpers shared by executor/importer
+
+Server-format contract
+----------------------
+The live executor and verifier interact with a running MUX over telnet.
+Rather than parsing the free-form output of mutating commands like @dig,
+@open, and @create — which is the server-version-specific text that the
+tracker was warning about — we always round-trip queries through the
+`think` softcode command wrapped in a pair of ASCII sentinels:
+
+    think WB1[<expression>]WB2
+
+`think` emits its evaluated argument verbatim on the executor's output
+stream, so the response buffer will contain the literal bytes
+`WB1<value>WB2`. `SENTINEL_PATTERN` extracts `<value>` regardless of
+echoed commands, prompts, telnet IAC sequences, ANSI colour, or stale
+lines already in the buffer. `lastcreate(me, <kind>)` gives a
+deterministic handle on the most recently created object without any
+reliance on @dig / @open / @create response text.
+
+The only non-function softcode we still depend on is `%L` (current
+location, via `@dig/teleport`), which is a MUX core invariant.
 """
 
 from pathlib import Path
@@ -14,7 +35,78 @@ import yaml
 import hashlib
 
 
-DBREF_PATTERN = re.compile(r'#(\d+)')
+DBREF_PATTERN = re.compile(r'#(-?\d+)')
+
+# Sentinel-bracketed think response. WB1/WB2 chosen to be letters-only
+# (no regex metacharacters, no ambiguity with softcode brackets) and
+# extremely unlikely to appear in legitimate game output. The captured
+# group tolerates negative dbrefs so callers can distinguish #-1
+# (NOTHING) from a real result.
+SENTINEL_PATTERN = re.compile(r'WB1(.*?)WB2', re.DOTALL)
+
+
+def think_expr(expression):
+    """Wrap a softcode expression in the sentinel-protected `think` form.
+
+    The caller sends the returned string as a MUX command; the response
+    can then be fed to `parse_think_response()` to recover the value.
+    """
+    return f'think WB1[{expression}]WB2'
+
+
+def parse_think_response(text):
+    """Extract the value emitted by a sentinel-wrapped `think` command.
+
+    Returns the matched string (possibly empty) or None if no sentinel
+    pair was found. Matches across newlines so the value survives
+    wrapped output or telnet framing.
+
+    Response buffers frequently contain both the server's echo of the
+    command (which carries the literal `WB1[expr]WB2` bytes) and the
+    evaluated `think` output (which carries `WB1<value>WB2` with the
+    softcode brackets already stripped). We take the *last* match so
+    we always land on the evaluated output rather than the echoed
+    command.
+    """
+    if not text:
+        return None
+    matches = SENTINEL_PATTERN.findall(text)
+    return matches[-1] if matches else None
+
+
+def query_think(conn, expression, wait=0.5):
+    """Send a sentinel-wrapped `think` query and return the value.
+
+    `conn` must expose `send(text)` and `read_response(wait)` matching
+    the executor's MuxConnection. Returns None if the sentinels were
+    not seen (timeout, connection error, disabled softcode, etc.).
+    """
+    conn.send(think_expr(expression))
+    time.sleep(0.3)
+    resp = conn.read_response(wait)
+    return parse_think_response(resp)
+
+
+def query_last_created(conn, kind):
+    """Return the dbref of the most recent object of `kind` created by us.
+
+    `kind` is one of 'R' (room), 'E' (exit), 'T' (thing), 'P' (player).
+    Returns a dbref string like '#42' on success, or None if nothing
+    of that kind has been created this session or the query failed.
+    """
+    if kind not in ('R', 'E', 'T', 'P'):
+        raise ValueError(f'invalid kind: {kind!r}')
+    value = query_think(conn, f'lastcreate(me,{kind})')
+    if not value:
+        return None
+    value = value.strip()
+    match = DBREF_PATTERN.fullmatch(value)
+    if not match:
+        return None
+    # Reject NOTHING / sentinel negatives.
+    if int(match.group(1)) < 0:
+        return None
+    return value
 
 
 def mux_escape(text):
@@ -56,12 +148,6 @@ def content_hash(obj):
     for flag in sorted(getattr(obj, 'flags', [])):
         h.update(flag.encode('utf-8'))
     return h.hexdigest()[:16]
-
-
-def extract_dbref(text):
-    """Extract the first dbref (#NNN) from MUX output."""
-    match = DBREF_PATTERN.search(text)
-    return match.group(0) if match else None
 
 
 class StateFile:

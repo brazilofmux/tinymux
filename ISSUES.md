@@ -21,7 +21,6 @@ Last refreshed: 2026-04-05.
 | [Win32 GUI Client](client/win32gui/ISSUES.md) | 2 | No Linux-side build validation for the VS target; plaintext credentials in world storage. |
 | [Test Infrastructure](testcases/ISSUES.md) | 6 | SHA1→semantic migration still in progress; edge-case coverage gaps; single-test-per-function norm; no auto-discovery; no parallel/isolation; no orphaned-object cleanup. |
 | [Parser Research Tools](parser/ISSUES.md) | 1 | Escape oracle corpus requires manual curation. |
-| [WorldBuilder](tools/worldbuilder/ISSUES.md) | 1 | Live adapter carries undocumented server-format assumptions. |
 | [Windows Service](muxsvc/ISSUES.md) | 2 | Service main loop is a placeholder; outdated service pattern. |
 
 ## Fully Closed Trackers (history preserved)
@@ -38,6 +37,7 @@ history and FIXED entries.
 - [Docker](docker/ISSUES.md)
 - [Debian Packaging](debian/ISSUES.md)
 - [DB Backend Tests](tests/db/ISSUES.md)
+- [WorldBuilder](tools/worldbuilder/ISSUES.md)
 
 ## Build System (top-level)
 

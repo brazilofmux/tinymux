@@ -4,7 +4,10 @@
 Handles:
 - Telnet connection with login
 - Sequential command execution with output capture
-- Dbref extraction from @dig/@open output
+- Dbref capture via lastcreate() + sentinel-wrapped `think` queries,
+  which avoids parsing the version-specific free-form @dig/@open/
+  @create response text (see live_adapter.py's module docstring for
+  the server-format contract this relies on)
 - State file generation (spec ID → dbref mapping)
 - Dry-run mode (log commands without executing)
 """
@@ -15,8 +18,9 @@ import time
 import argparse
 from pathlib import Path
 from worldbuilder import parse_spec, check_drc, plan_spec_operations, plan_incremental_operations
-from live_adapter import (StateFile, content_hash, extract_dbref,
-                          query_live_snapshot, mux_escape)
+from live_adapter import (StateFile, content_hash,
+                          query_live_snapshot, query_last_created,
+                          query_think, mux_escape)
 
 
 # ---------------------------------------------------------------------------
@@ -195,14 +199,18 @@ def execute(spec, conn, state, dry_run=False, log_file=None, operations=None):
     for op in room_creates:
         room = op.payload['room']
         log(f'\n--- Room: {room.name} ({op.obj_id}) — creating ---')
-        resp = do_cmd(f'@dig/teleport {room.name}')
+        do_cmd(f'@dig/teleport {room.name}')
 
         if not dry_run:
             time.sleep(0.2)
-            resp2 = do_cmd('think %L')
-            dbref = extract_dbref(resp2)
+            # Prefer lastcreate(me,R) — deterministic, version-stable.
+            # Fall back to %L (current location, set by @dig/teleport)
+            # if lastcreate comes back empty for any reason.
+            dbref = query_last_created(conn, 'R')
             if not dbref:
-                dbref = extract_dbref(resp)
+                dbref = query_think(conn, '%L')
+                if dbref and not dbref.startswith('#'):
+                    dbref = None
             if dbref:
                 objid = capture_objid(dbref)
                 state.set_room(op.obj_id, dbref, room, objid=objid)
@@ -276,13 +284,15 @@ def execute(spec, conn, state, dry_run=False, log_file=None, operations=None):
             do_cmd(f'@teleport me={from_dbref}')
             time.sleep(0.2)
             log(f'\n--- Exit: {op.name} ({ex.from_room} -> {ex.to_room}) ---')
-            resp = do_cmd(f'@open {ex.name}={to_dbref}')
+            do_cmd(f'@open {ex.name}={to_dbref}')
 
             if not dry_run:
-                dbref = extract_dbref(resp)
+                dbref = query_last_created(conn, 'E')
                 if dbref:
                     objid = capture_objid(dbref)
                     state.set_exit(op.obj_id, dbref, op.name, objid=objid)
+                else:
+                    log(f'  [WARNING] Could not capture dbref for exit {op.obj_id}')
         else:
             # back exit
             from_dbref = state.get_dbref(ex.to_room)
@@ -294,13 +304,15 @@ def execute(spec, conn, state, dry_run=False, log_file=None, operations=None):
             do_cmd(f'@teleport me={from_dbref}')
             time.sleep(0.2)
             log(f'\n--- Back exit: {op.name} ({ex.to_room} -> {ex.from_room}) ---')
-            resp = do_cmd(f'@open {ex.back_name}={to_dbref}')
+            do_cmd(f'@open {ex.back_name}={to_dbref}')
 
             if not dry_run:
-                dbref = extract_dbref(resp)
+                dbref = query_last_created(conn, 'E')
                 if dbref:
                     objid = capture_objid(dbref)
                     state.set_exit(op.obj_id, dbref, op.name, objid=objid)
+                else:
+                    log(f'  [WARNING] Could not capture dbref for back exit {op.obj_id}')
 
     # Phase 3: Create things
     if thing_creates:
@@ -318,6 +330,15 @@ def execute(spec, conn, state, dry_run=False, log_file=None, operations=None):
         log(f'\n--- Thing: {thing.name} ({op.obj_id}) in {thing.location} ---')
         do_cmd(f'@create {thing.name}')
 
+        # Capture the dbref of the thing we just created. The
+        # remaining @desc/@set/& commands still target the thing by
+        # name because that matches MUX's normal authoring flow, but
+        # the dbref + objid are what the state file needs for
+        # subsequent reconciler passes.
+        thing_dbref = None
+        if not dry_run:
+            thing_dbref = query_last_created(conn, 'T')
+
         if thing.description:
             do_cmd(f'@desc {thing.name}={mux_escape(thing.description)}')
         for flag in thing.flags:
@@ -326,6 +347,13 @@ def execute(spec, conn, state, dry_run=False, log_file=None, operations=None):
             do_cmd(f'&{attr_name} {thing.name}={attr_value}')
         if thing.parent:
             do_cmd(f'@parent {thing.name}={thing.parent}')
+
+        if thing_dbref:
+            objid = capture_objid(thing_dbref)
+            state.set_thing(op.obj_id, thing_dbref, thing, objid=objid)
+            log(f'  [state] {op.obj_id} = {thing_dbref} (objid: {objid})')
+        elif not dry_run:
+            log(f'  [WARNING] Could not capture dbref for thing {op.obj_id}')
 
     # Phase 4: Destroy (exits before rooms)
     if destroy_exits or destroy_rooms:

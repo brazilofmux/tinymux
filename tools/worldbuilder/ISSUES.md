@@ -27,10 +27,10 @@ Updated: 2026-03-27
 - **File:** `executor.py:37-40`
 - `MuxConnection` now verifies certificates and hostnames by default. `executor.py` and `importer.py` expose an explicit `--insecure` flag for self-signed or internal development servers that still need the previous behavior.
 
-### Live adapter undocumented server format assumptions
+### ~~Live adapter undocumented server format assumptions~~ FIXED
 
-- **File:** `live_adapter.py` (throughout)
-- **Issue:** Assumes MUX responds in specific format to `@dig`, `@open`, `@set`. Small changes to server output format will break state file generation. No version/capability detection.
+- **File:** `live_adapter.py`, `executor.py`
+- Replaced the free-form response-parsing path with a sentinel-wrapped `think` round-trip. `live_adapter.think_expr()` wraps a softcode expression as `think WB1[<expr>]WB2`; `parse_think_response()` recovers the evaluated value from the response buffer (taking the *last* sentinel pair so we land on the `think` output rather than the echoed command); `query_think()` and `query_last_created()` are the high-level helpers. `executor.py` now uses `lastcreate(me, R|E|T)` for room/exit/thing dbref capture after `@dig`/`@open`/`@create`, eliminating the regex scan of `@dig`/`@open` output text via `extract_dbref()`. Thing creation also now captures its dbref (previously silently dropped). The module docstring in `live_adapter.py` documents the server-format contract the tool still depends on (`%L` for current location; `lastcreate` + `think` sentinel for everything else). `extract_dbref()` was removed as dead code.
 
 ## Verified Checks
 
