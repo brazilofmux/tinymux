@@ -1,4 +1,5 @@
 #include "iocp_network_engine.h"
+#include "connection.h"
 #include <sstream>
 #include <algorithm>
 #include <memory>
@@ -15,6 +16,18 @@
 #define GANL_IOCP_DEBUG(sock, x) do {} while (0)
 
 namespace ganl {
+
+namespace {
+
+void checkNegotiationTimeouts(const std::vector<ConnectionBase*>& connections) {
+    for (ConnectionBase* connection : connections) {
+        if (connection != nullptr) {
+            connection->checkNegotiationTimeout();
+        }
+    }
+}
+
+} // namespace
 
     // --- PerIoData Implementation ---
 
@@ -604,7 +617,17 @@ namespace ganl {
         // Check for timeout or critical IOCP error
         if (overlapped == nullptr) {
             if (lastError == WAIT_TIMEOUT) {
-                // GANL_IOCP_DEBUG(0, "GetQueuedCompletionStatus timed out."); // Can be noisy
+                std::vector<ConnectionBase*> connections;
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    connections.reserve(sockets_.size());
+                    for (const auto& entry : sockets_) {
+                        if (entry.second.type == SocketType::Connection) {
+                            connections.push_back(static_cast<ConnectionBase*>(entry.second.context));
+                        }
+                    }
+                }
+                checkNegotiationTimeouts(connections);
                 return 0; // Timeout, no event
             }
             else {

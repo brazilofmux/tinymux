@@ -50,12 +50,10 @@ Updated: 2026-04-04
 - **File:** `mux/ganl/src/telnet_protocol_handler.cpp:1062-1069`
 - Outbound TTYPE responses now clamp `clientTtype` to 256 bytes before appending it to the subnegotiation reply.
 
-### No negotiation timeout mechanism
+### ~~No negotiation timeout mechanism~~ FIXED
 
-- **File:** `mux/ganl/src/telnet_protocol_handler.cpp:341-374`
-- **Issue:** Negotiation timeout is set to 10 seconds but `onNegotiationTimeout()` must be explicitly called — no timer mechanism exists. Slow clients stay in `TelnetNegotiating` state indefinitely.
-- **Impact:** Resource leak from connections that never complete negotiation.
-- **Recommendation:** Integrate timeout with event loop or add background timer.
+- **File:** `mux/ganl/src/telnet_protocol_handler.cpp:341-374`, `mux/ganl/src/connection.cpp`, `mux/ganl/src/*_network_engine.cpp`
+- Idle `processEvents()` timeouts now sweep active connections and call `ConnectionBase::checkNegotiationTimeout()`, so stalled telnet handshakes age out even when the client goes silent after the initial negotiation bytes.
 
 ## Low — Technical Debt
 

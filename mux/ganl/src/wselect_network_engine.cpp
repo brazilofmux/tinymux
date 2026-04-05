@@ -1,4 +1,5 @@
 #include "wselect_network_engine.h"
+#include "connection.h"
 #include <sstream>
 #include <algorithm>
 #include <vector>
@@ -9,6 +10,18 @@
 #define GANL_WSELECT_DEBUG(sock, x) do {} while (0)
 
 namespace ganl {
+
+namespace {
+
+void checkNegotiationTimeouts(const std::vector<ConnectionBase*>& connections) {
+    for (ConnectionBase* connection : connections) {
+        if (connection != nullptr) {
+            connection->checkNegotiationTimeout();
+        }
+    }
+}
+
+} // namespace
 
     // --- Constructor / Destructor ---
 
@@ -486,7 +499,17 @@ namespace ganl {
             return -1; // Indicate critical failure
         }
 
-        if (nfds == 0) return 0; // Timeout
+        if (nfds == 0) {
+            std::vector<ConnectionBase*> connections;
+            connections.reserve(sockets_.size());
+            for (const auto& entry : sockets_) {
+                if (entry.second.type == SocketType::Connection) {
+                    connections.push_back(static_cast<ConnectionBase*>(entry.second.context));
+                }
+            }
+            checkNegotiationTimeouts(connections);
+            return 0; // Timeout
+        }
 
         int eventCount = 0;
         std::vector<SocketFD> fdsToCloseOnError;

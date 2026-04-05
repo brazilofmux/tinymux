@@ -1,4 +1,5 @@
 #include "epoll_network_engine.h"
+#include "connection.h"
 #include "slave_spawn_posix.h"
 #include <io_buffer.h>
 #include <iostream>
@@ -25,6 +26,18 @@
 
 
 namespace ganl {
+
+namespace {
+
+void checkNegotiationTimeouts(const std::vector<ConnectionBase*>& connections) {
+    for (ConnectionBase* connection : connections) {
+        if (connection != nullptr) {
+            connection->checkNegotiationTimeout();
+        }
+    }
+}
+
+} // namespace
 
 // Use constexpr for initial epoll events size
 constexpr size_t INITIAL_EPOLL_EVENTS_SIZE = 128;
@@ -819,6 +832,21 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
     // ... (epoll_wait call as before) ...
     int nfds = epoll_wait(epollFd_, epollEvents_.data(), epollEvents_.size(), timeoutMs);
     // ... (error handling for nfds == -1 as before) ...
+
+    if (nfds == 0) {
+        std::vector<ConnectionBase*> connections;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            connections.reserve(sockets_.size());
+            for (const auto& entry : sockets_) {
+                if (entry.second.type == SocketType::Connection) {
+                    connections.push_back(static_cast<ConnectionBase*>(entry.second.context));
+                }
+            }
+        }
+        checkNegotiationTimeouts(connections);
+        return 0;
+    }
 
     int eventCount = 0; // Number of IoEvent entries filled
 

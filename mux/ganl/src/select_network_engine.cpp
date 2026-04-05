@@ -1,4 +1,5 @@
 #include "select_network_engine.h"
+#include "connection.h"
 #include "slave_spawn_posix.h"
 #include <iostream>
 #include <unistd.h>
@@ -30,6 +31,18 @@ const SocketFD INVALID_SOCKET_FD = -1;
 
 
 namespace ganl {
+
+namespace {
+
+void checkNegotiationTimeouts(const std::vector<ConnectionBase*>& connections) {
+    for (ConnectionBase* connection : connections) {
+        if (connection != nullptr) {
+            connection->checkNegotiationTimeout();
+        }
+    }
+}
+
+} // namespace
 
 // Use constexpr for any fixed-size initial values
 constexpr int MAX_SOCKET_FDS = FD_SETSIZE;  // Maximum FDs select() can handle
@@ -572,7 +585,17 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
     }
 
     if (nfds == 0) {
-        // Timeout
+        std::vector<ConnectionBase*> connections;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            connections.reserve(sockets_.size());
+            for (const auto& entry : sockets_) {
+                if (entry.second.type == SocketType::Connection) {
+                    connections.push_back(static_cast<ConnectionBase*>(entry.second.context));
+                }
+            }
+        }
+        checkNegotiationTimeouts(connections);
         return 0;
     }
 

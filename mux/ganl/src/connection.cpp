@@ -483,6 +483,29 @@ bool ConnectionBase::processProtocolData() {
     return true; // Continue processing possible if more data arrives later
 }
 
+void ConnectionBase::checkNegotiationTimeout() {
+    if (isClosingOrClosed() || getState() != ConnectionState::TelnetNegotiating) {
+        return;
+    }
+
+    NegotiationStatus status = protocolHandler_.getNegotiationStatus(handle_);
+    switch (status) {
+    case NegotiationStatus::Completed:
+        GANL_CONN_DEBUG(handle_, "Telnet negotiation completed during idle timeout check.");
+        transitionToState(ConnectionState::Running);
+        break;
+
+    case NegotiationStatus::Failed:
+        GANL_CONN_DEBUG(handle_, "Telnet negotiation failed during idle timeout check.");
+        close(DisconnectReason::ProtocolError);
+        break;
+
+    case NegotiationStatus::InProgress:
+    default:
+        break;
+    }
+}
+
 // In connection.cpp
 void ConnectionBase::handleClose() {
     GANL_CONN_DEBUG(handle_, "handleClose event received. Current State: " << static_cast<int>(getState()));

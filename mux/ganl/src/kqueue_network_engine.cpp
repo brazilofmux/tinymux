@@ -1,4 +1,5 @@
 #include "kqueue_network_engine.h"
+#include "connection.h"
 #include "slave_spawn_posix.h"
 #include <iostream>
 #include <sys/socket.h>
@@ -22,6 +23,18 @@
 #endif
 
 namespace ganl {
+
+namespace {
+
+void checkNegotiationTimeouts(const std::vector<ConnectionBase*>& connections) {
+    for (ConnectionBase* connection : connections) {
+        if (connection != nullptr) {
+            connection->checkNegotiationTimeout();
+        }
+    }
+}
+
+} // namespace
 
 KqueueNetworkEngine::KqueueNetworkEngine()
     : keventResults_(128) { // Pre-allocate event result array
@@ -599,6 +612,21 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
         }
         std::cerr << "[Kqueue:CTL] CRITICAL: kevent failed: " << strerror(errno) << std::endl;
         return -1; // Indicate critical error
+    }
+
+    if (nfds == 0) {
+        std::vector<ConnectionBase*> connections;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            connections.reserve(sockets_.size());
+            for (const auto& entry : sockets_) {
+                if (entry.second.type == SocketType::Connection) {
+                    connections.push_back(static_cast<ConnectionBase*>(entry.second.context));
+                }
+            }
+        }
+        checkNegotiationTimeouts(connections);
+        return 0;
     }
 
     int eventCount = 0; // Number of IoEvent entries filled
