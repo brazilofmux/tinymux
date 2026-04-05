@@ -20,7 +20,6 @@ Last refreshed: 2026-04-05.
 | [Web Client](client/web/ISSUES.md) | 3 | ANSI 256-color/truecolor parser missing bounds checks; localStorage credentials; no browser-level regression harness. |
 | [Win32 GUI Client](client/win32gui/ISSUES.md) | 2 | No Linux-side build validation for the VS target; plaintext credentials in world storage. |
 | [Test Infrastructure](testcases/ISSUES.md) | 6 | SHA1→semantic migration still in progress; edge-case coverage gaps; single-test-per-function norm; no auto-discovery; no parallel/isolation; no orphaned-object cleanup. |
-| [Windows Service](muxsvc/ISSUES.md) | 2 | Service main loop is a placeholder; outdated service pattern. |
 
 ## Fully Closed Trackers (history preserved)
 

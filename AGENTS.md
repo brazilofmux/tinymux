@@ -6,7 +6,7 @@
 - `db/` contains SQLite backend unit-style test binaries (`test_sqlitedb`, `test_backend`).
 - `testcases/` stores smoke-test `.mux` scripts plus automation in `testcases/tools/`.
 - `docs/` and `specs/` hold design notes and historical architecture docs.
-- `client/`, `win32/`, and `muxsvc/` are client/service code paths for non-Unix targets.
+- `client/` contains the Hydra client family (console, Android, iOS, TinyFugue, Web, Win32 GUI).
 
 ## Build, Test, and Development Commands
 - Main server build (from `mux/src`):
