@@ -14,10 +14,9 @@ Updated: 2026-04-04
 
 ## Medium — Protocol Handling Gaps
 
-### Missing ANSI/MXP processing
+### ~~Missing ANSI/MXP processing~~ FIXED
 - **File:** `mux/ganl/src/telnet_protocol_handler.cpp:597`
-- **Issue:** `// TODO: Add ANSI/MXP processing based on context.state.supportsANSI etc.`
-- **Impact:** Features like MXP (Mud eXtension Protocol) and advanced ANSI features (beyond basic colors) may not be fully supported in the new GANL layer.
+- `formatOutput()` now respects negotiated capabilities: ANSI-less clients have CSI/OSC escape sequences stripped before transmission, and non-MXP clients have obvious MXP tags suppressed instead of receiving raw markup.
 
 ### ~~Incomplete NEW-ENVIRON parsing~~ FIXED
 - **File:** `mux/ganl/src/telnet_protocol_handler.cpp:1114, 1120`

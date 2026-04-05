@@ -741,12 +741,91 @@ namespace ganl {
         const char* const end = current + app_data_in.readableBytes();
         size_t consumed = 0;
 
+        auto shouldStripMxpTag = [&](const char* start, const char* finish) -> const char* {
+            if (context.state.supportsMXP || start >= finish || *start != '<') {
+                return nullptr;
+            }
+
+            const char* next = start + 1;
+            if (next >= finish) {
+                return nullptr;
+            }
+
+            unsigned char marker = static_cast<unsigned char>(*next);
+            if (!(std::isalpha(marker) || marker == '/' || marker == '!')) {
+                return nullptr;
+            }
+
+            const char* scan = next;
+            size_t span = 0;
+            while (scan < finish && span < 256) {
+                if (*scan == '>') {
+                    return scan + 1;
+                }
+                if (*scan == '\r' || *scan == '\n') {
+                    return nullptr;
+                }
+                ++scan;
+                ++span;
+            }
+            return nullptr;
+        };
+
+        auto skipAnsiSequence = [&](const char* start, const char* finish) -> const char* {
+            if (context.state.supportsANSI || start >= finish ||
+                *start != static_cast<char>(0x1b) || start + 1 >= finish)
+            {
+                return nullptr;
+            }
+
+            const char leader = *(start + 1);
+            if (leader == '[') {
+                const char* scan = start + 2;
+                while (scan < finish) {
+                    unsigned char uch = static_cast<unsigned char>(*scan);
+                    if (uch >= 0x40 && uch <= 0x7e) {
+                        return scan + 1;
+                    }
+                    ++scan;
+                }
+                return finish;
+            }
+
+            if (leader == ']') {
+                const char* scan = start + 2;
+                while (scan < finish) {
+                    if (*scan == '\a') {
+                        return scan + 1;
+                    }
+                    if (*scan == static_cast<char>(0x1b) &&
+                        scan + 1 < finish && *(scan + 1) == '\\')
+                    {
+                        return scan + 2;
+                    }
+                    ++scan;
+                }
+                return finish;
+            }
+
+            return nullptr;
+        };
+
         while (current < end) {
+            if (const char* afterAnsi = skipAnsiSequence(current, end)) {
+                consumed += static_cast<size_t>(afterAnsi - current);
+                current = afterAnsi;
+                continue;
+            }
+
+            if (const char* afterTag = shouldStripMxpTag(current, end)) {
+                consumed += static_cast<size_t>(afterTag - current);
+                current = afterTag;
+                continue;
+            }
+
             char ch = *current;
             consumed++;
             current++;
-
-            // TODO: Add ANSI/MXP processing based on context.state.supportsANSI etc.
 
             if (ch == '\n') {
                 formatted_out.append("\r\n", 2); // Standard Telnet line ending
