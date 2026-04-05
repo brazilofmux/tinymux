@@ -741,7 +741,6 @@ public:
         ganl::ConnectionHandle handle = static_cast<ganl::ConnectionHandle>(sessionId);
         DESC* d = adapter_.get_desc(handle);
         if (!d) {
-            //GANL_CONN_DEBUG(handle, "Close notification for unknown/closed session.");
             return;
         }
 
@@ -1111,7 +1110,6 @@ public:
     void onAuthenticationSuccess(ganl::SessionId sessionId, int playerId) {
         // This might be redundant if authenticateSession handles everything.
         // Could be used for post-authentication setup if needed.
-        //GANL_CONN_DEBUG(static_cast<ganl::ConnectionHandle>(sessionId), "onAuthenticationSuccess called for Player #" << playerId);
     }
 
     int getPlayerId(ganl::SessionId sessionId) override {
@@ -1860,9 +1858,6 @@ void GanlAdapter::run_main_loop() {
                         g_pILog->WriteString(tprintf(T("GANL: Mismatched context for event on handle %llu\n"),
                             static_cast<unsigned long long>(events[i].connection)));
                     }
-                }
-                else {
-                    //GANL_CONN_DEBUG(events[i].connection, "Warning: Event received for untracked/closed connection.");
                 }
             }
             else if (events[i].listener != ganl::InvalidListenerHandle
@@ -3154,9 +3149,6 @@ void GanlAdapter::send_data(DESC* d, const char* data, size_t len) {
         // Convert char* to std::string for ConnectionBase interface
         conn->sendDataToClient(std::string(data, len));
     }
-    else {
-        //GANL_CONN_DEBUG(d->socket, "Attempted send on unmapped/closed connection.");
-    }
 }
 
 void GanlAdapter::close_connection(DESC* d, ganl::DisconnectReason reason) {
@@ -3168,7 +3160,6 @@ void GanlAdapter::close_connection(DESC* d, ganl::DisconnectReason reason) {
         // which can lead to remove_mapping and free_desc being called.
     }
     else {
-        //GANL_CONN_DEBUG(d->socket, "Attempted close on unmapped/closed connection.");
         const CLinearTimeAbsolute ltaNow = [&]() {
             CLinearTimeAbsolute tmp; tmp.GetUTC(); return tmp;
         }();
@@ -3239,7 +3230,6 @@ void GanlAdapter::add_mapping(ganl::ConnectionHandle handle, DESC* d, std::share
     handle_to_desc_[handle] = d;
     desc_to_handle_[d] = handle;
     handle_to_conn_[handle] = conn; // Store the shared_ptr
-    //GANL_CONN_DEBUG(handle, "Mapped Handle <-> DESC " << d << " and Connection " << conn.get());
 }
 
 void GanlAdapter::remove_mapping(DESC* d) {
@@ -3249,12 +3239,8 @@ void GanlAdapter::remove_mapping(DESC* d) {
         handle_to_desc_.erase(handle);
         handle_to_conn_.erase(handle); // Remove connection pointer
         desc_to_handle_.erase(it_dth); // Use iterator for efficiency
-        //GANL_CONN_DEBUG(handle, "Unmapped Handle <-> DESC " << d);
     }
-    else {
-        // Attempting to remove DESC not in map (might happen if already closed)
-        //GANL_CONN_DEBUG(0, "Warning: Attempted remove_mapping for unknown DESC " << d);
-    }
+    // else: DESC not in map — may have already been closed and removed.
 }
 
 DESC* GanlAdapter::get_desc(ganl::ConnectionHandle handle) {

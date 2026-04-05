@@ -88,10 +88,10 @@ Updated: 2026-03-27
 - **File:** `modules.cpp:1255`
 - **Issue:** `// TODO: SetConsoleCtrlHandler that maps events to PlatformSignal.`
 
-### Commented-out debug logging
+### ~~Commented-out debug logging~~ FIXED
 
-- **File:** `ganl_adapter.cpp:744, 1114, 1853, 3058, 3071, 3142, 3152, 3156`
-- **Issue:** Multiple commented-out logging statements scattered through networking code.
+- **File:** `ganl_adapter.cpp`
+- Deleted eight stale `//GANL_CONN_DEBUG(...)` lines (close-notify, auth-success, event-receive warning, send-on-unmapped, close-on-unmapped, handle/DESC mapping/unmapping, and unknown-DESC remove). Three of them were the entire body of an `else` branch, so the empty `else { }` blocks were collapsed along with the comments. Verified with `g++ -std=c++17 -fsyntax-only` on `ganl_adapter.cpp`.
 
 ### ~~Telnet state array magic number~~ FIXED
 
