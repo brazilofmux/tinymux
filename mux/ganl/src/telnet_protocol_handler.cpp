@@ -102,8 +102,8 @@ namespace ganl {
         TelnetContext& context = it->second;
         context.state = {}; // Default initialize ProtocolState (including telnetEOR{false})
         context.state.encoding = EncodingType::Ascii;
-        context.state.width = 80;
-        context.state.height = 24;
+        context.state.width = kDefaultTerminalWidth;
+        context.state.height = kDefaultTerminalHeight;
         context.parserState = ParserState::Normal;
         context.currentNegotiationStatus = NegotiationStatus::InProgress;
         context.negotiationTimedOut = false;
@@ -495,6 +495,12 @@ namespace ganl {
                             << " buffer_size=" << context.inputBuffer.size()
                             << " neg_status=" << static_cast<int>(context.currentNegotiationStatus));
                     }
+                    if (context.inputBuffer.size() >= kMaxInputBufferBytes) {
+                        GANL_TELNET_DEBUG(conn, "Error: inputBuffer exceeded limit of " << kMaxInputBufferBytes << " bytes.");
+                        context.lastError = "Telnet input buffer exceeded limit";
+                        processedOk = false;
+                        break;
+                    }
                     context.inputBuffer.push_back(static_cast<char>(uc));
                     context.sawCR = false;
                 }
@@ -502,6 +508,12 @@ namespace ganl {
 
             case ParserState::IAC:
                 if (uc == static_cast<unsigned char>(TelnetCommand::IAC)) {
+                    if (context.inputBuffer.size() >= kMaxInputBufferBytes) {
+                        GANL_TELNET_DEBUG(conn, "Error: inputBuffer exceeded limit of " << kMaxInputBufferBytes << " bytes while escaping IAC.");
+                        context.lastError = "Telnet input buffer exceeded limit";
+                        processedOk = false;
+                        break;
+                    }
                     context.inputBuffer.push_back(static_cast<char>(uc));
                     context.parserState = ParserState::Normal;
                 }
@@ -539,6 +551,12 @@ namespace ganl {
                     context.parserState = ParserState::Subnegotiation_IAC;
                 }
                 else {
+                    if (context.subnegotiationBuffer.size() >= kMaxSubnegotiationBufferBytes) {
+                        GANL_TELNET_DEBUG(conn, "Error: subnegotiationBuffer exceeded limit of " << kMaxSubnegotiationBufferBytes << " bytes.");
+                        context.lastError = "Telnet subnegotiation buffer exceeded limit";
+                        processedOk = false;
+                        break;
+                    }
                     context.subnegotiationBuffer.push_back(static_cast<char>(uc));
                 }
                 break;
@@ -554,6 +572,12 @@ namespace ganl {
                     }
                 }
                 else if (uc == static_cast<unsigned char>(TelnetCommand::IAC)) {
+                    if (context.subnegotiationBuffer.size() >= kMaxSubnegotiationBufferBytes) {
+                        GANL_TELNET_DEBUG(conn, "Error: subnegotiationBuffer exceeded limit of " << kMaxSubnegotiationBufferBytes << " bytes while escaping IAC.");
+                        context.lastError = "Telnet subnegotiation buffer exceeded limit";
+                        processedOk = false;
+                        break;
+                    }
                     context.subnegotiationBuffer.push_back(static_cast<char>(uc));
                     context.parserState = ParserState::Subnegotiation;
                 }
@@ -1038,6 +1062,14 @@ namespace ganl {
                 // This simple parsing doesn't handle that. A more robust parser would
                 // scan the 4 bytes for IAC IAC sequences. Assuming standard clients.
 
+                if (width == 0 || width > kMaxTerminalDimension ||
+                    height == 0 || height > kMaxTerminalDimension) {
+                    GANL_TELNET_DEBUG(conn, "Warning: Received out-of-range NAWS: Width=" << width
+                        << ", Height=" << height << ". Resetting to defaults.");
+                    width = kDefaultTerminalWidth;
+                    height = kDefaultTerminalHeight;
+                }
+
                 GANL_TELNET_DEBUG(conn, "Received NAWS: Width=" << width << ", Height=" << height);
                 updateWidth(conn, width);  // Use the public update methods
                 updateHeight(conn, height);
@@ -1061,6 +1093,11 @@ namespace ganl {
                 // fires if we ever act as a relay), use a default.
                 std::string termType = context.clientTtype.empty()
                     ? "XTERM-256COLOR" : context.clientTtype;
+                if (termType.size() > kMaxTerminalTypeBytes) {
+                    GANL_TELNET_DEBUG(conn, "Warning: Truncating TTYPE response from " << termType.size()
+                        << " to " << kMaxTerminalTypeBytes << " bytes.");
+                    termType.resize(kMaxTerminalTypeBytes);
+                }
                 GANL_TELNET_DEBUG(conn, "Received TTYPE SEND. Responding with '" << termType << "'.");
                 char sb_start[] = { static_cast<char>(TelnetCommand::IAC), static_cast<char>(TelnetCommand::SB), static_cast<char>(TelnetOption::TTYPE), 0 /* IS */ };
                 char sb_end[] = { static_cast<char>(TelnetCommand::IAC), static_cast<char>(TelnetCommand::SE) };

@@ -100,6 +100,13 @@ namespace ganl {
         OptionNegotiationState getOptionState(ConnectionHandle conn, TelnetOption opt) const;
 
     private:
+        static constexpr size_t kMaxInputBufferBytes = 8192;
+        static constexpr size_t kMaxSubnegotiationBufferBytes = 4096;
+        static constexpr uint16_t kDefaultTerminalWidth = 80;
+        static constexpr uint16_t kDefaultTerminalHeight = 24;
+        static constexpr uint16_t kMaxTerminalDimension = 1000;
+        static constexpr size_t kMaxTerminalTypeBytes = 256;
+
         struct TelnetContext {
             NegotiationMode mode{ NegotiationMode::Server };
 

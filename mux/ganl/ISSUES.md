@@ -28,12 +28,10 @@ Updated: 2026-04-04
 
 ## High — Memory Safety (New, 2026-04-04)
 
-### Unbounded input buffer growth in telnet protocol handler
+### ~~Unbounded input buffer growth in telnet protocol handler~~ FIXED
 
 - **File:** `mux/ganl/src/telnet_protocol_handler.cpp:498, 505, 542, 557`
-- **Issue:** `inputBuffer` and `subnegotiationBuffer` are `std::vector<char>` with no size limits. `push_back()` calls during normal input and subnegotiation have no bounds checking. A malicious client can exhaust server memory.
-- **Impact:** Denial of Service via memory exhaustion.
-- **Recommendation:** Add configurable max limits (e.g., 8KB input, 4KB subneg) and close connection on overflow.
+- `TelnetProtocolHandler` now caps `inputBuffer` at 8 KB and `subnegotiationBuffer` at 4 KB. Overflow sets `lastError` and returns `false` from `processInput()`, which closes the connection as a protocol error.
 
 ### Dangling pointer risk in select_network_engine.cpp
 
@@ -44,17 +42,15 @@ Updated: 2026-04-04
 
 ## Medium — Protocol Safety (New, 2026-04-04)
 
-### No NAWS dimension validation
+### ~~No NAWS dimension validation~~ FIXED
 
 - **File:** `mux/ganl/src/telnet_protocol_handler.cpp:1029-1034`
-- **Issue:** NAWS values (width/height) are accepted without validation. A client can send 0x0 or 65535x65535, which may cause issues in downstream code that assumes reasonable terminal dimensions.
-- **Recommendation:** Validate `0 < width <= 1000` and `0 < height <= 1000`, use defaults for out-of-range.
+- NAWS width/height are now validated to `1..1000`; out-of-range values are reset to the handler defaults of `80x24`.
 
-### Unbounded TTYPE response length
+### ~~Unbounded TTYPE response length~~ FIXED
 
 - **File:** `mux/ganl/src/telnet_protocol_handler.cpp:1062-1069`
-- **Issue:** `clientTtype` string has no size limit. A client-mode connection with a very long `clientTtype` will generate unbounded TTYPE responses.
-- **Recommendation:** Limit terminal type string to 256 bytes.
+- Outbound TTYPE responses now clamp `clientTtype` to 256 bytes before appending it to the subnegotiation reply.
 
 ### No negotiation timeout mechanism
 
