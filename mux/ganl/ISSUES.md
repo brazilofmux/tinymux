@@ -33,12 +33,10 @@ Updated: 2026-04-04
 - **File:** `mux/ganl/src/telnet_protocol_handler.cpp:498, 505, 542, 557`
 - `TelnetProtocolHandler` now caps `inputBuffer` at 8 KB and `subnegotiationBuffer` at 4 KB. Overflow sets `lastError` and returns `false` from `processInput()`, which closes the connection as a protocol error.
 
-### Dangling pointer risk in select_network_engine.cpp
+### ~~Dangling pointer risk in select_network_engine.cpp~~ FIXED
 
 - **File:** `mux/ganl/src/select_network_engine.cpp:480, 711-716, 773`
-- **Issue:** `sockIt->second.activeReadBuffer = &buffer` stores a raw pointer to an `IoBuffer&` passed from `postRead()`. If the buffer's lifetime ends before the event loop processes the read, the pointer dangles.
-- **Impact:** Use-after-free, crash, memory corruption.
-- **Recommendation:** Use `shared_ptr` or validate pointer validity before each use.
+- `SelectNetworkEngine` no longer stores a borrowed `IoBuffer*` from `postRead()`. Readiness events now carry `nullptr` for `IoEvent.buffer`, leaving buffer ownership entirely with `Connection`.
 
 ## Medium — Protocol Safety (New, 2026-04-04)
 

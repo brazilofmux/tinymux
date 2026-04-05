@@ -54,8 +54,8 @@ public:
     void detachConnection(ConnectionHandle conn) override;
     void detachListener(ListenerHandle listener) override;
 
-    // postRead: For select, this typically just ensures read interest is registered.
-    // The actual IoBuffer is managed by the Connection class.
+    // postRead: For select, this just ensures read interest is registered.
+    // The actual IoBuffer remains owned by the Connection class.
     bool postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) override;
 
     // postWrite: Registers write interest (wantWrite=true).
@@ -87,7 +87,6 @@ private:
         void* context{nullptr};       // Connection* or listener context pointer
         bool wantRead{false};         // Interest in read readiness (set by default for connections/listeners)
         bool wantWrite{false};        // Interest in write readiness (set by postWrite)
-        IoBuffer* activeReadBuffer{nullptr}; // Reference to active IoBuffer for read operations
         void* writeUserContext{nullptr}; // User context for write operations
     };
 

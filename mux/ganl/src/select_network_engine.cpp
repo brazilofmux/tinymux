@@ -299,7 +299,7 @@ ConnectionHandle SelectNetworkEngine::adoptConnection(int fd, void* connectionCo
             return InvalidConnectionHandle;
         }
 
-        SocketInfo adopted{SocketType::Connection, connectionContext, true, false, nullptr, nullptr};
+        SocketInfo adopted{SocketType::Connection, connectionContext, true, false, nullptr};
         sockets_[fd] = adopted;
         updateFdSets(fd, adopted);
     }
@@ -476,9 +476,10 @@ bool SelectNetworkEngine::postRead(ConnectionHandle conn, IoBuffer& buffer, Erro
         return false;
     }
 
-    // Store buffer reference
-    sockIt->second.activeReadBuffer = &buffer;
-    GANL_SELECT_DEBUG(fd, "Stored IoBuffer reference " << &buffer << " for connection " << fd);
+    // Readiness-based select() does not retain a borrowed IoBuffer pointer.
+    // The Connection owns its read buffer and will read into it when notified.
+    GANL_SELECT_DEBUG(fd, "Registered read interest for connection " << fd
+        << " using caller-owned IoBuffer " << &buffer);
 
     // Ensure read interest is registered
     if (!sockIt->second.wantRead) {
@@ -640,7 +641,7 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                  ev.bytesTransferred = 0;
                  ev.error = socketError;
                  ev.context = contextPtr;
-                 ev.buffer = (infoCopy.type == SocketType::Connection) ? infoCopy.activeReadBuffer : nullptr;
+                 ev.buffer = nullptr;
                  GANL_SELECT_DEBUG(fd, "Generated Error event. Code=" << ev.error << ", Buffer=" << ev.buffer);
             }
             // Mark for closure after processing this event cycle
@@ -704,18 +705,8 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                 ev.context = contextPtr;
                 ev.bytesTransferred = 0; // Indicate readiness
                 ev.error = 0;
-                ev.buffer = infoCopy.activeReadBuffer; // Include IoBuffer reference if available
+                ev.buffer = nullptr;
                 GANL_SELECT_DEBUG(fd, "Generated Read event. Buffer=" << ev.buffer);
-
-                // Clear the buffer reference after generating the event
-                if (infoCopy.activeReadBuffer) {
-                    std::lock_guard<std::mutex> lock(mutex_);
-                    auto sockIt = sockets_.find(fd);
-                    if (sockIt != sockets_.end()) {
-                        sockIt->second.activeReadBuffer = nullptr;
-                        GANL_SELECT_DEBUG(fd, "Cleared activeReadBuffer after generating Read event");
-                    }
-                }
 
                 // Connection::handleRead will perform the actual read()
                 // Do NOT clear wantRead here for level-triggered select
@@ -887,7 +878,7 @@ ConnectionHandle SelectNetworkEngine::acceptConnection(ListenerHandle listener, 
              return InvalidConnectionHandle;
         }
         // New connections always want read initially, never write until requested
-        SocketInfo newInfo{SocketType::Connection, nullptr, true, false, nullptr, nullptr};
+        SocketInfo newInfo{SocketType::Connection, nullptr, true, false, nullptr};
         sockets_[clientFd] = newInfo;
         updateFdSets(clientFd, newInfo); // Use locked version
     }
