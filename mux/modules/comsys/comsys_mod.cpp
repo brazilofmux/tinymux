@@ -290,19 +290,18 @@ MUX_RESULT CComsysMod::QueryInterface(MUX_IID iid, void **ppv)
 
 uint32_t CComsysMod::AddRef(void)
 {
-    m_cRef++;
-    return m_cRef;
+    return m_cRef.fetch_add(1, std::memory_order_relaxed) + 1;
 }
 
 uint32_t CComsysMod::Release(void)
 {
-    m_cRef--;
-    if (0 == m_cRef)
+    uint32_t prev = m_cRef.fetch_sub(1, std::memory_order_acq_rel);
+    if (1 == prev)
     {
         delete this;
         return 0;
     }
-    return m_cRef;
+    return prev - 1;
 }
 
 // ---------------------------------------------------------------------------
@@ -3082,19 +3081,18 @@ MUX_RESULT CComsysModFactory::QueryInterface(MUX_IID iid, void **ppv)
 
 uint32_t CComsysModFactory::AddRef(void)
 {
-    m_cRef++;
-    return m_cRef;
+    return m_cRef.fetch_add(1, std::memory_order_relaxed) + 1;
 }
 
 uint32_t CComsysModFactory::Release(void)
 {
-    m_cRef--;
-    if (0 == m_cRef)
+    uint32_t prev = m_cRef.fetch_sub(1, std::memory_order_acq_rel);
+    if (1 == prev)
     {
         delete this;
         return 0;
     }
-    return m_cRef;
+    return prev - 1;
 }
 
 MUX_RESULT CComsysModFactory::CreateInstance(mux_IUnknown *pUnknownOuter,

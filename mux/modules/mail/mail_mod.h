@@ -8,6 +8,7 @@
 #ifndef MAIL_MOD_H
 #define MAIL_MOD_H
 
+#include <atomic>
 #include <list>
 #include <map>
 #include <memory>
@@ -374,7 +375,7 @@ public:
     virtual ~CMailMod();
 
 private:
-    uint32_t m_cRef;
+    std::atomic<uint32_t> m_cRef;
     bool m_bLoading;  // Suppress write-through during bulk load.
 };
 
@@ -393,7 +394,7 @@ public:
     virtual ~CMailModFactory();
 
 private:
-    uint32_t m_cRef;
+    std::atomic<uint32_t> m_cRef;
 };
 
 #endif // MAIL_MOD_H

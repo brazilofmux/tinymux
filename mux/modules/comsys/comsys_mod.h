@@ -10,6 +10,7 @@
 #define COMSYS_MOD_H
 
 #include <algorithm>
+#include <atomic>
 #include <map>
 #include <memory>
 #include <string>
@@ -255,7 +256,7 @@ public:
     virtual ~CComsysMod();
 
 private:
-    uint32_t m_cRef;
+    std::atomic<uint32_t> m_cRef;
 };
 
 class CComsysModFactory : public mux_IClassFactory
@@ -272,7 +273,7 @@ public:
     virtual ~CComsysModFactory();
 
 private:
-    uint32_t m_cRef;
+    std::atomic<uint32_t> m_cRef;
 };
 
 #endif // COMSYS_MOD_H

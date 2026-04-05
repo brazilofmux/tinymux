@@ -32,12 +32,10 @@ Updated: 2026-03-27
 
 ## High — Thread Safety (New, 2026-04-04)
 
-### Non-atomic instance reference counting (`m_cRef`)
+### ~~Non-atomic instance reference counting (`m_cRef`)~~ FIXED
 
-- **File:** `mail_mod.cpp:322-329, 5559-5566` and all Factory classes
-- **Issue:** While global counters were fixed to `std::atomic<uint32_t>`, individual object reference counters (`m_cRef`) remain plain `uint32_t` with non-atomic `m_cRef++` and `m_cRef--`. In `Release()`, the decrement and zero-check are not atomic, creating a race window for double-delete.
-- **Impact:** Use-after-free or double-delete under concurrent access.
-- **Recommendation:** Change `m_cRef` to `std::atomic<uint32_t>` with `fetch_add`/`fetch_sub`.
+- **File:** `mail_mod.h:377, 396`, `mail_mod.cpp:320-335, 5583-5598`
+- `CMailMod::m_cRef` and `CMailModFactory::m_cRef` are now `std::atomic<uint32_t>`. `AddRef()` uses `fetch_add` (relaxed) and `Release()` uses `fetch_sub` (acq_rel) with the previous-value check, closing the decrement/zero-check race window for double-delete under concurrent access.
 
 ## Medium — Buffer Safety (New, 2026-04-04)
 

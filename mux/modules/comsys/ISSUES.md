@@ -28,12 +28,10 @@ Updated: 2026-03-27
 
 ## High — Thread Safety (New, 2026-04-04)
 
-### Non-atomic instance reference counting (`m_cRef`)
+### ~~Non-atomic instance reference counting (`m_cRef`)~~ FIXED
 
-- **File:** `comsys_mod.cpp:293-305, 3085-3098` and all Factory classes
-- **Issue:** Same as mail module — individual object `m_cRef` counters are plain `uint32_t` with non-atomic increment/decrement. The `Release()` decrement-then-check pattern can race to double-delete.
-- **Impact:** Use-after-free or double-delete under concurrent access.
-- **Recommendation:** Change `m_cRef` to `std::atomic<uint32_t>` with `fetch_add`/`fetch_sub`.
+- **File:** `comsys_mod.h:259, 276`, `comsys_mod.cpp:291-306, 3082-3097`
+- `CComsysMod::m_cRef` and `CComsysModFactory::m_cRef` are now `std::atomic<uint32_t>`. `AddRef()` uses `fetch_add` (relaxed) and `Release()` uses `fetch_sub` (acq_rel) with the previous-value check, closing the decrement/zero-check race window for double-delete.
 
 ## Low — Code Quality
 
