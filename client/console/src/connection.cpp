@@ -37,12 +37,13 @@ Connection::Connection(const std::string& world_name, const std::string& host,
                        const std::string& port, bool use_ssl, HANDLE iocp)
     : world_name_(world_name), host_(host), port_(port),
       use_ssl_(use_ssl), iocp_(iocp) {
-    memset(&read_ctx_, 0, sizeof(read_ctx_));
+    // IoContext is value-initialized by its default member
+    // initializers; we cannot memset it because `owner` holds a
+    // std::shared_ptr and memset would corrupt its control block.
     read_ctx_.op = IoOp::Read;
     read_ctx_.wsabuf.buf = read_ctx_.buffer;
     read_ctx_.wsabuf.len = sizeof(read_ctx_.buffer);
 
-    memset(&connect_ctx_, 0, sizeof(connect_ctx_));
     connect_ctx_.op = IoOp::Connect;
 
     auto now = std::chrono::steady_clock::now();
@@ -107,13 +108,18 @@ bool Connection::begin_connect() {
     // Associate with IOCP
     CreateIoCompletionPort((HANDLE)socket_, iocp_, (ULONG_PTR)this, 0);
 
-    // Begin async connect
+    // Begin async connect. Pin a self-reference so the Connection
+    // outlives this pending ConnectEx regardless of what the owning
+    // map does; it is released on the matching completion (or on the
+    // synchronous error path below if ConnectEx refuses to go async).
+    pending_connect_self_ = shared_from_this();
     memset(&connect_ctx_.overlapped, 0, sizeof(connect_ctx_.overlapped));
     BOOL ok = ConnectEx_(socket_, result->ai_addr, (int)result->ai_addrlen,
                          nullptr, 0, nullptr, &connect_ctx_.overlapped);
     freeaddrinfo(result);
 
     if (!ok && WSAGetLastError() != ERROR_IO_PENDING) {
+        pending_connect_self_.reset();
         closesocket(socket_);
         socket_ = INVALID_SOCKET;
         return false;
@@ -126,10 +132,15 @@ bool Connection::begin_read() {
     memset(&read_ctx_.overlapped, 0, sizeof(read_ctx_.overlapped));
     read_ctx_.wsabuf.buf = read_ctx_.buffer;
     read_ctx_.wsabuf.len = sizeof(read_ctx_.buffer);
+    // Pin ourselves for the duration of this pending read; released
+    // when the matching completion arrives (or here if WSARecv refuses
+    // to go async).
+    pending_read_self_ = shared_from_this();
     DWORD flags = 0;
     int rc = WSARecv(socket_, &read_ctx_.wsabuf, 1, nullptr, &flags,
                      &read_ctx_.overlapped, nullptr);
     if (rc == SOCKET_ERROR && WSAGetLastError() != WSA_IO_PENDING) {
+        pending_read_self_.reset();
         return false;
     }
     return true;
@@ -138,7 +149,15 @@ bool Connection::begin_read() {
 std::vector<std::string> Connection::on_completion(IoContext* ctx, DWORD bytes, DWORD error) {
     std::vector<std::string> lines;
 
+    // Hold a local strong reference so that releasing `pending_*_self_`
+    // or deleting a Write ctx (which drops its `owner`) below cannot
+    // destroy `*this` while we are still executing a member function.
+    auto keepalive = shared_from_this();
+
     if (ctx->op == IoOp::Connect) {
+        // Connect completion — release the pending-connect self-ref
+        // (kept alive via `keepalive` for the rest of this call).
+        pending_connect_self_.reset();
         if (error != 0) {
             disconnect();
             return lines;
@@ -180,6 +199,9 @@ std::vector<std::string> Connection::on_completion(IoContext* ctx, DWORD bytes, 
     }
 
     if (ctx->op == IoOp::Read) {
+        // Read completion — release the pending-read self-ref
+        // (kept alive via `keepalive` for the rest of this call).
+        pending_read_self_.reset();
         if (error != 0 || bytes == 0) {
             // Connection closed or error
             connected_ = false;
@@ -258,16 +280,21 @@ void Connection::send_raw(const void* data, size_t len) {
         sendlen = len;
     }
 
-    // Async send via WSASend with overlapped I/O.
-    // Allocate a write context that persists until completion.
+    // Async send via WSASend with overlapped I/O. Each chunk gets its
+    // own heap-allocated IoContext whose `owner` shared_ptr pins this
+    // Connection until the completion fires and deletes the ctx. That
+    // way, if the caller drops the Connection from `app.connections`
+    // while a write is still pending, the Connection stays alive until
+    // WSA_OPERATION_ABORTED / WSAECONNRESET completion walks the queue
+    // — no leaked IoContext, no use-after-free on late completions.
     while (sendlen > 0) {
         size_t chunk = sendlen > sizeof(IoContext::buffer) ? sizeof(IoContext::buffer) : sendlen;
         auto* ctx = new IoContext();
-        memset(ctx, 0, sizeof(*ctx));
         ctx->op = IoOp::Write;
         memcpy(ctx->buffer, sendbuf, chunk);
         ctx->wsabuf.buf = ctx->buffer;
         ctx->wsabuf.len = (ULONG)chunk;
+        ctx->owner = shared_from_this();
 
         DWORD sent = 0;
         int rc = WSASend(socket_, &ctx->wsabuf, 1, &sent, 0,

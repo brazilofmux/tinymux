@@ -19,7 +19,7 @@
 
 struct App {
     WorldDB                                        worlddb;
-    std::unordered_map<std::string, std::unique_ptr<IConnection>> connections;
+    std::unordered_map<std::string, std::shared_ptr<IConnection>> connections;
     IConnection*                                   fg = nullptr;
     Terminal                                       terminal;
     CommandDispatcher                              commands;

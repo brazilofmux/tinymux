@@ -93,7 +93,7 @@ static void cmd_connect(App& app, const std::vector<std::string>& args) {
     const World* world = app.worlddb.find(name);
     if (world && world->use_hydra) {
 #ifdef HYDRA_GRPC
-        auto hconn = std::make_unique<HydraConnection>(
+        auto hconn = std::make_shared<HydraConnection>(
             name, world->host, world->port,
             world->hydra_user, world->hydra_pass,
             world->hydra_game, app.iocp, world->use_ssl,
@@ -123,7 +123,7 @@ static void cmd_connect(App& app, const std::vector<std::string>& args) {
         return;
     }
 
-    auto conn = std::make_unique<Connection>(name, host, port, use_ssl, app.iocp);
+    auto conn = std::make_shared<Connection>(name, host, port, use_ssl, app.iocp);
     if (!conn->begin_connect()) {
         app.terminal.print_system("Failed to connect to " + host + ":" + port);
         return;

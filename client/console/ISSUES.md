@@ -8,12 +8,10 @@ Updated: 2026-03-29
 
 - Reconnect path now uses cached `termWidth_`/`termHeight_` (set from constructor) instead of hardcoded 80x24.
 
-### Pending overlapped write teardown is still unsafe
+### ~~Pending overlapped write teardown is still unsafe~~ FIXED
 
-- **File:** `client/console/src/connection.cpp:248, 259-260`
-- **Issue:** `IoContext` objects for async writes are owned by the eventual IOCP completion path. A manual `disconnect()` can close and erase the connection while overlapped write completions are still in flight, which makes this a completion-lifetime problem, not just a simple leak.
-- **Impact:** Depending on timing, the client can leak write contexts or, if "fixed" naively, turn the problem into a use-after-free on a late completion.
-- **Fix:** Keep connection/write-operation state alive until all canceled or failed completions are drained, or move write contexts to ref-counted ownership detached from the `Connection` object's lifetime.
+- **File:** `client/console/src/app.h`, `connection.h`, `connection.cpp`, `command.cpp`
+- `app.connections` is now `unordered_map<string, shared_ptr<IConnection>>` and `Connection` inherits `std::enable_shared_from_this<Connection>`. Each heap-allocated write `IoContext` carries a `std::shared_ptr<Connection> owner` populated via `shared_from_this()` in `send_raw()`, so pending writes keep the `Connection` alive until their completion fires and deletes the ctx — even if `app.connections` already erased the map entry. Read and connect overlapped slots are embedded in `Connection`, so they now also pin the object via `pending_read_self_` / `pending_connect_self_` self-references that are set before `WSARecv` / `ConnectEx` and cleared on the matching completion (or on the synchronous error path). `on_completion()` takes a local `keepalive = shared_from_this()` at entry, which prevents `*this` from being destroyed mid-method when a write ctx owning the last reference is deleted. `memset` on the full `IoContext` struct was removed in favour of value-initialization (the `owner` field is a non-trivial `shared_ptr` now). Verification is deferred to a Windows build — the console client requires `<windows.h>`, `<winsock2.h>`, `<mswsock.h>`, etc. and does not compile on this Linux host.
 
 ### ~~Concurrent `grpc_` access lacks full synchronization~~ FIXED
 

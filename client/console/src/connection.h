@@ -29,14 +29,28 @@ constexpr ULONG_PTR IOCP_KEY_HYDRA   = 2;
 
 // Per-I/O data attached to OVERLAPPED operations.
 enum class IoOp { Read, Write, Connect };
+
+class Connection;
+
 struct IoContext {
-    OVERLAPPED  overlapped;
-    IoOp        op;
-    WSABUF      wsabuf;
-    char        buffer[8192];
+    OVERLAPPED  overlapped{};
+    IoOp        op{IoOp::Read};
+    WSABUF      wsabuf{};
+    char        buffer[8192]{};
+    // For heap-allocated Write contexts, `owner` keeps the Connection
+    // alive until the completion runs and deletes the ctx. This
+    // decouples pending-write lifetime from the Connection's presence
+    // in `app.connections`, so `disconnect()` can run without racing
+    // the inevitable WSA_OPERATION_ABORTED completions. Embedded
+    // read/connect contexts leave this empty — their lifetime is
+    // handled by `pending_read_self_` / `pending_connect_self_` on
+    // the Connection itself.
+    std::shared_ptr<Connection> owner{};
 };
 
-class Connection : public IConnection {
+class Connection
+    : public IConnection,
+      public std::enable_shared_from_this<Connection> {
 public:
     Connection(const std::string& world_name, const std::string& host,
                const std::string& port, bool use_ssl, HANDLE iocp);
@@ -111,6 +125,16 @@ private:
 
     IoContext read_ctx_;
     IoContext connect_ctx_;
+
+    // Self-references held across the lifetime of a pending read or
+    // connect operation. Set before WSARecv/ConnectEx; cleared in
+    // on_completion when the matching completion arrives (or on the
+    // synchronous error path when the op never went async). Together
+    // with each Write IoContext's `owner`, these ensure the
+    // Connection cannot be destroyed while there is any in-flight
+    // overlapped operation referencing its embedded state.
+    std::shared_ptr<Connection> pending_read_self_;
+    std::shared_ptr<Connection> pending_connect_self_;
 
     // Line accumulator
     std::string line_buf_;
