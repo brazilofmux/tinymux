@@ -19,10 +19,16 @@ ExecReload=/bin/kill -HUP $MAINPID
 # Create /opt/hydra/env with: HYDRA_MASTER_KEY=<64 hex chars>
 EnvironmentFile=-/opt/hydra/env
 
-# Give Hydra time for graceful drain (3s internal + margin)
+# Give Hydra time for graceful drain (3s internal + margin).
+# NOTE: A restart is NOT transparent. Hydra persists session state and
+# notifies clients, but existing front-door connections drop and must
+# reconnect; in-flight client activity is interrupted. Treat `systemctl
+# restart hydra` as a maintenance event, not as routine background
+# churn. See deploy/DEPLOY.md for the full restart/upgrade playbook.
 TimeoutStopSec=10
 
-# Restart policy
+# Restart policy — on-failure only, to avoid silently churning
+# connected users if the process keeps crashing.
 Restart=on-failure
 RestartSec=5
 StartLimitIntervalSec=60

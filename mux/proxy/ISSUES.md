@@ -233,17 +233,20 @@ always compiled in but controlled by opt-in configuration:
   backend disconnect/connect-failure events.
 - **Files changed**: session_manager.cpp, session_manager.h, deploy/DEPLOY.md
 
-### P-6. Restart semantics are still disruptive
-- **Status**: Open.
-- **Problem**: Hydra drains and persists sessions on SIGTERM, but restart is
-  not transparent. Existing front-door connections are told to reconnect and
-  any in-flight client activity is interrupted. The current deployment story
-  should treat restart as a maintenance event, not routine background churn.
-- **Recommendation**: Keep restart behavior explicit in docs and systemd
-  guidance. If zero-disconnect upgrades become a requirement, add a separate
-  handoff design rather than implying restart is harmless.
-- **Files implicated**: hydra_main.cpp, session_manager.cpp, hydra.service,
-  deploy/DEPLOY.md
+### P-6. Restart semantics are still disruptive -- FIXED (documentation)
+- **Resolution**: Restart is still disruptive by design (no zero-disconnect
+  handoff), but the expectation is now surfaced in both the operator
+  documentation and the systemd unit so it cannot be missed. `deploy/DEPLOY.md`
+  explicitly says "Treat restart as controlled maintenance, not as a
+  transparent zero-impact operation" in the systemctl restart section, and the
+  certificate-renewal section repeats the warning. `hydra.service` now carries
+  an inline comment next to `TimeoutStopSec=10` explaining that restart is
+  *not* transparent — front-door connections drop and must reconnect — and
+  pointing operators to DEPLOY.md for the full playbook. A future zero-disconnect
+  upgrade would need a separate handoff design (socket passing, state
+  migration, etc.) and is explicitly out of scope for this item.
+- **Files changed**: hydra.service, deploy/DEPLOY.md (documentation already
+  present from an earlier pass)
 
 ## Deployment issues (discovered 2026-03-28)
 
