@@ -3,6 +3,8 @@
 #include <openssl/err.h>
 #include <vector>
 #include <mutex>
+#include <algorithm>
+#include <cstring>
 
 // Define a macro for debug logging
 #ifndef NDEBUG // Only compile debug messages if NDEBUG is not defined
@@ -13,6 +15,25 @@
 #endif
 
 namespace ganl {
+
+int OpenSSLTransport::passwordCallback(char* buf, int size, int rwflag, void* userdata) {
+    (void)rwflag;
+
+    if (buf == nullptr || size <= 0 || userdata == nullptr) {
+        return 0;
+    }
+
+    const auto* transport = static_cast<const OpenSSLTransport*>(userdata);
+    const std::string& password = transport->keyPassword_;
+    if (password.empty()) {
+        return 0;
+    }
+
+    const int copyLen = std::min<int>(static_cast<int>(password.size()), size - 1);
+    std::memcpy(buf, password.data(), copyLen);
+    buf[copyLen] = '\0';
+    return copyLen;
+}
 
 // --- Constructor / Destructor ---
 
@@ -62,6 +83,10 @@ bool OpenSSLTransport::initialize(const TlsConfig& config) {
     SSL_CTX_set_options(ctx_, SSL_OP_CIPHER_SERVER_PREFERENCE);
     // Consider setting cipher list: SSL_CTX_set_cipher_list(ctx_, "HIGH:!aNULL:!MD5:!RC4");
 
+    keyPassword_ = config.password;
+    SSL_CTX_set_default_passwd_cb(ctx_, &OpenSSLTransport::passwordCallback);
+    SSL_CTX_set_default_passwd_cb_userdata(ctx_, this);
+
     // Load certificate and key
     if (!config.certificateFile.empty() && !config.keyFile.empty()) {
          GANL_SSL_DEBUG(0, "Loading cert: " << config.certificateFile << ", key: " << config.keyFile);
@@ -71,10 +96,6 @@ bool OpenSSLTransport::initialize(const TlsConfig& config) {
              SSL_CTX_free(ctx_); ctx_ = nullptr;
              return false;
          }
-
-         // TODO: Add password callback support if keys are encrypted
-         // SSL_CTX_set_default_passwd_cb(ctx_, password_callback_function);
-         // SSL_CTX_set_default_passwd_cb_userdata(ctx_, (void*)"your_password_here");
 
          if (SSL_CTX_use_PrivateKey_file(ctx_, config.keyFile.c_str(), SSL_FILETYPE_PEM) != 1) {
              lastGlobalError_ = "Failed to load private key file: " + getOpenSSLErrorString(0);
@@ -127,6 +148,7 @@ void OpenSSLTransport::shutdown() {
 
         ctxToFree = ctx_; // Copy global context pointer
         ctx_ = nullptr;  // Null out global context pointer
+        keyPassword_.clear();
     } // --- Lock Scope End ---
 
     // --- Perform freeing outside the lock ---

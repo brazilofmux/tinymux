@@ -8,10 +8,9 @@ Updated: 2026-04-04
 - **File:** `mux/ganl/src/connection.cpp:558`
 - TLS shutdown now defers `networkEngine_.closeConnection()` until pending output drains. `close()` keeps the connection in `Closing`, allows `postWrite()` while draining queued shutdown bytes, and both readiness and IOCP write handlers finalize the socket close only after `encryptedOutput_` is empty.
 
-### Missing password callback for encrypted keys
+### ~~Missing password callback for encrypted keys~~ FIXED
 - **File:** `mux/ganl/src/openssl_transport.cpp:75`
-- **Issue:** `// TODO: Add password callback support if keys are encrypted`.
-- **Impact:** Private keys with passphrases cannot be loaded, making them unusable for SSL/TLS connections without pre-decrypting the keys on disk.
+- `OpenSSLTransport` now installs an `SSL_CTX` password callback backed by `TlsConfig::password`, so PEM private keys protected with passphrases can be loaded without pre-decrypting them on disk.
 
 ## Medium — Protocol Handling Gaps
 

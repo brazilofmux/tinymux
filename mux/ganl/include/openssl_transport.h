@@ -4,6 +4,7 @@
 #include <secure_transport.h>
 #include <mutex>
 #include <map>
+#include <string>
 #include <openssl/ssl.h>
 
 namespace ganl {
@@ -75,8 +76,10 @@ private:
     std::map<ConnectionHandle, SSLContext> sessions_;
 
     std::string lastGlobalError_;
+    std::string keyPassword_;
 
     std::string getOpenSSLErrorString(ConnectionHandle conn);
+    static int passwordCallback(char* buf, int size, int rwflag, void* userdata);
 };
 
 } // namespace ganl
