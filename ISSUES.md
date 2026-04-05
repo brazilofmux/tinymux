@@ -40,29 +40,22 @@ history and FIXED entries.
 
 ## Build System (top-level)
 
-### Subshell array variable loss in `dowin32.sh`
+### ~~Subshell array variable loss in `dowin32.sh`~~ FIXED
 
-- **File:** `dowin32.sh:102-154`
-- **Issue:** Arrays `binary_files`, `text_files`, `new_files`, and `removed_files` are modified inside `find | while read` loops. Due to bash subshell semantics, modifications are lost when the pipe ends. The arrays are always empty at lines 151-154, breaking the entire Windows patch generation.
-- **Impact:** Windows distribution patch files (`binary_files.txt`, etc.) are always empty.
-- **Recommendation:** Use process substitution `while read ... < <(find ...)` instead of piped while loops.
+- Both `find` loops in `process_distribution()` already use process substitution (`done < <(find ...)`), so the arrays are populated correctly in the parent shell.
 
 ### ~~Weak SSL/crypto library detection in configure.ac~~ FIXED
 
 - **File:** `mux/configure.ac:273-274`
 - `configure.ac` now probes `SSL_new` in `-lssl` and `EVP_sha256` in `-lcrypto`, so `HAVE_LIBSSL`/`HAVE_LIBCRYPTO` reflect real OpenSSL entry points instead of a meaningless `main` symbol. OpenSSL remains mandatory via the existing `PKG_CHECK_MODULES([OPENSSL], [openssl], ...)` failure path.
 
-### Unquoted variable expansions in `dowin32.sh`
+### ~~Unquoted variable expansions in `dowin32.sh`~~ FIXED
 
-- **File:** `dowin32.sh:77-78, 85`
-- **Issue:** Path variables like `$CHANGES_DIR`, `$DISTRO_DIR`, `$NEW_DIR` used unquoted in `cp` and `chmod` commands. Breaks on paths containing spaces.
-- **Recommendation:** Quote all variable expansions.
+- All variable expansions in `[ -e ... ]` tests, `rm` commands, and `ls` display lines are now properly double-quoted. Glob suffixes kept outside the quotes to preserve expansion.
 
-### Insecure external downloads in `dowin32.sh`
+### ~~Insecure external downloads in `dowin32.sh`~~ FIXED
 
-- **File:** `dowin32.sh:357, 368`
-- **Issue:** Downloads xdelta3 and patch.exe from GitHub/SourceForge via PowerShell without signature or hash verification.
-- **Risk:** Supply-chain compromise if URLs are tampered with or stale.
+- Generated `get_xdelta3.bat` and `get_patch.bat` now verify SHA256 hashes of downloaded archives via PowerShell `Get-FileHash` before extracting. Hash mismatches abort with an error and delete the untrusted download. Expected hashes are defined as `XDELTA3_SHA256` and `PATCH_SHA256` variables in `dowin32.sh`.
 
 ### ~~`dowin32.sh` lacks error handling~~ NOT A BUG
 

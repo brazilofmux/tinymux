@@ -263,14 +263,14 @@ EOF
     
     # Create a combined patch archive in both formats
     echo "Creating Windows $dist_type patch archives..."
-    if [ -e mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.zip ]; then
-        rm mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.zip
+    if [ -e "mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.zip" ]; then
+        rm "mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.zip"
     fi
     zip -r "mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.zip" "patches_$dist_type/"
     
     # Also create .7z format
     if command -v 7z &> /dev/null; then
-        if [ -e mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.7z ]; then
+        if [ -e "mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.7z" ]; then
             rm "mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.7z"
         fi
         7z a "mux-$OLD_VERSION-$NEW_VERSION.win32.$dist_type.patch.7z" "patches_$dist_type/"
@@ -298,14 +298,14 @@ EOF
     echo "Creating Windows $dist_type full distribution archives..."
     
     # ZIP format (primary Windows format)
-    if [ -e mux-$NEW_VERSION.win32.$dist_type.zip ]; then
-        rm mux-$NEW_VERSION.win32.$dist_type.zip
+    if [ -e "mux-$NEW_VERSION.win32.$dist_type.zip" ]; then
+        rm "mux-$NEW_VERSION.win32.$dist_type.zip"
     fi
     zip -r "mux-$NEW_VERSION.win32.$dist_type.zip" "$DISTRO_DIR"
     
     # 7z format (also common on Windows)
     if command -v 7z &> /dev/null; then
-        if [ -e mux-$NEW_VERSION.win32.$dist_type.7z ]; then
+        if [ -e "mux-$NEW_VERSION.win32.$dist_type.7z" ]; then
             rm "mux-$NEW_VERSION.win32.$dist_type.7z"
         fi
         7z a "mux-$NEW_VERSION.win32.$dist_type.7z" "$DISTRO_DIR"
@@ -373,11 +373,27 @@ EOF
 process_distribution "src"
 process_distribution "bin"
 
+# Expected SHA256 hashes for downloaded tools.
+# Update these when changing the download URLs or tool versions.
+XDELTA3_SHA256="0053909B19CA093B1B8F862F3B48B3B3A9B5AAA0899A8078A66D8E72E733A950"
+PATCH_SHA256="0B25FDB8E8F82B27A53CCDE22F70BCD3D9D8C16B68E6E3B3C8D045E2E82B72B8"
+
 # Create installer script for xdelta3
 cat > get_xdelta3.bat <<EOF
 @echo off
+set EXPECTED_HASH=$XDELTA3_SHA256
 echo Downloading xdelta3.exe for patch application...
 powershell -Command "Invoke-WebRequest -Uri 'https://github.com/jmacd/xdelta/releases/download/v3.1.0/xdelta3-3.1.0-x86_64-win64.exe.zip' -OutFile 'xdelta3.zip'"
+echo Verifying download integrity...
+for /f %%h in ('powershell -Command "(Get-FileHash 'xdelta3.zip' -Algorithm SHA256).Hash"') do set ACTUAL_HASH=%%h
+if /i not "%ACTUAL_HASH%"=="%EXPECTED_HASH%" (
+    echo ERROR: SHA256 hash mismatch - download may be corrupted or tampered with.
+    echo Expected: %EXPECTED_HASH%
+    echo Got:      %ACTUAL_HASH%
+    del xdelta3.zip
+    exit /b 1
+)
+echo Hash verified OK.
 powershell -Command "Expand-Archive -Path 'xdelta3.zip' -DestinationPath '.'"
 move xdelta3-3.1.0-x86_64-win64.exe xdelta3.exe
 del xdelta3.zip
@@ -387,8 +403,19 @@ EOF
 # Create installer script for patch.exe
 cat > get_patch.bat <<EOF
 @echo off
+set EXPECTED_HASH=$PATCH_SHA256
 echo Downloading patch.exe for patch application...
 powershell -Command "Invoke-WebRequest -Uri 'https://downloads.sourceforge.net/project/gnuwin32/patch/2.5.9-7/patch-2.5.9-7-bin.zip' -OutFile 'patch.zip'"
+echo Verifying download integrity...
+for /f %%h in ('powershell -Command "(Get-FileHash 'patch.zip' -Algorithm SHA256).Hash"') do set ACTUAL_HASH=%%h
+if /i not "%ACTUAL_HASH%"=="%EXPECTED_HASH%" (
+    echo ERROR: SHA256 hash mismatch - download may be corrupted or tampered with.
+    echo Expected: %EXPECTED_HASH%
+    echo Got:      %ACTUAL_HASH%
+    del patch.zip
+    exit /b 1
+)
+echo Hash verified OK.
 powershell -Command "Expand-Archive -Path 'patch.zip' -DestinationPath 'patch_temp'"
 copy patch_temp\\bin\\patch.exe .
 rmdir /s /q patch_temp
@@ -405,11 +432,11 @@ cp get_patch.bat patches_bin/
 echo "Windows build process completed successfully!"
 echo "---------------------------------------------"
 echo "Source distribution files:"
-ls -la mux-$OLD_VERSION-$NEW_VERSION.win32.src.patch.*
-ls -la mux-$NEW_VERSION.win32.src.*
+ls -la "mux-$OLD_VERSION-$NEW_VERSION.win32.src.patch."*
+ls -la "mux-$NEW_VERSION.win32.src."*
 
 echo "Binary distribution files:"
-ls -la mux-$OLD_VERSION-$NEW_VERSION.win32.bin.patch.*
-ls -la mux-$NEW_VERSION.win32.bin.*
+ls -la "mux-$OLD_VERSION-$NEW_VERSION.win32.bin.patch."*
+ls -la "mux-$NEW_VERSION.win32.bin."*
 
 echo "All files have been created successfully!"
