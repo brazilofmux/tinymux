@@ -151,6 +151,7 @@ protected:
     // Data processing methods used by derived classes
     bool processSecureData();
     bool processProtocolData();
+    void closeNetworkAfterDrain();
 
     // Core properties needed by derived classes
     ConnectionHandle handle_;
@@ -179,6 +180,7 @@ private:
     // Cleanup state tracking
     bool resourcesCleanedUp_{ false };  // Track if resources have been cleaned up
     bool socketClosed_{ false };        // Track if socket has been closed
+    bool closeAfterWriteDrain_{ false }; // Wait for pending output (for example TLS close_notify)
 
     // Configuration flags
     bool useTls_{ false };

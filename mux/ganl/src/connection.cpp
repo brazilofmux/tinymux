@@ -506,6 +506,23 @@ void ConnectionBase::checkNegotiationTimeout() {
     }
 }
 
+void ConnectionBase::closeNetworkAfterDrain() {
+    if (!closeAfterWriteDrain_ || pendingWriteFlag() || encryptedOutput_.readableBytes() > 0) {
+        return;
+    }
+
+    closeAfterWriteDrain_ = false;
+    if (!socketClosed_) {
+        GANL_CONN_DEBUG(handle_, "Output drain complete. Requesting network close.");
+        networkEngine_.closeConnection(handle_);
+        socketClosed_ = true;
+    }
+
+    if (!resourcesCleanedUp_) {
+        cleanupResources(disconnectReason_);
+    }
+}
+
 // In connection.cpp
 void ConnectionBase::handleClose() {
     GANL_CONN_DEBUG(handle_, "handleClose event received. Current State: " << static_cast<int>(getState()));
@@ -573,15 +590,17 @@ void ConnectionBase::close(DisconnectReason reason) {
                   << ". encryptedOutput_ size: " << encryptedOutput_.readableBytes());
 
         if (shutdownResult == TlsResult::WantWrite || encryptedOutput_.readableBytes() > 0) {
-             GANL_CONN_DEBUG(handle_, "TLS shutdown generated data or needs write. Posting write.");
-             // Need to send the TLS close_notify alert
-             if (!pendingWrite_) {
-                  postWrite();
+             GANL_CONN_DEBUG(handle_, "TLS shutdown generated data or needs write. Deferring network close until output drains.");
+             closeAfterWriteDrain_ = true;
+             if (!pendingWrite_ && encryptedOutput_.readableBytes() > 0 && !postWrite()) {
+                 GANL_CONN_DEBUG(handle_, "Failed to post deferred shutdown write. Proceeding to immediate network close.");
+                 closeAfterWriteDrain_ = false;
+             } else {
+                 if (pendingWrite_ || encryptedOutput_.readableBytes() > 0) {
+                     return;
+                 }
+                 closeAfterWriteDrain_ = false;
              }
-             // TODO: Implement waiting logic: We should wait for this write to complete
-             // before calling networkEngine_.closeConnection(), or let handleWrite trigger it.
-             // For simplicity now, we proceed, but this isn't fully graceful.
-             GANL_CONN_DEBUG(handle_, "WARNING: Proceeding to network close without waiting for TLS shutdown write confirmation.");
         } else if (shutdownResult == TlsResult::Error) {
              GANL_CONN_DEBUG(handle_, "Error during TLS shutdown: " << secureTransport_->getLastTlsErrorString(handle_));
              // Proceed to network close anyway
@@ -861,7 +880,7 @@ bool ConnectionBase::postWrite() {
          return false;
     }
 
-    if (isClosingOrClosed()) {
+    if (getState() == ConnectionState::Closed) {
         GANL_CONN_DEBUG(handle_, "postWrite called, but connection closing/closed. Ignoring.");
         return false;
     }
@@ -1165,10 +1184,12 @@ void ReadinessConnection::handleWrite(size_t bytesTransferred)
                 pendingWriteFlag() = true;
             }
         }
+        return;
     }
     // No need to explicitly unregister write interest when buffer is empty
     // The network engine will automatically unregister write interest after this call
     // based on the return from handleWrite
+    closeNetworkAfterDrain();
 }
 
 // --- CompletionConnection Implementation ---
@@ -1327,6 +1348,7 @@ void CompletionConnection::handleWrite(size_t bytesTransferred)
     }
     else {
         GANL_CONN_DEBUG(handle_, "IOCP: Write complete. No further data to send for now.");
+        closeNetworkAfterDrain();
     }
 }
 

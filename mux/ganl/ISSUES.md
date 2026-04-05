@@ -4,10 +4,9 @@ Updated: 2026-04-04
 
 ## High — Implementation Gaps
 
-### Missing waiting logic in `connection.cpp`
+### ~~Missing waiting logic in `connection.cpp`~~ FIXED
 - **File:** `mux/ganl/src/connection.cpp:558`
-- **Issue:** `// TODO: Implement waiting logic: We should wait for this write to complete`. 
-- **Impact:** Potential data loss or out-of-order delivery if multiple writes are queued and the underlying transport (e.g., OpenSSL) requires blocking or specific event handling before proceeding.
+- TLS shutdown now defers `networkEngine_.closeConnection()` until pending output drains. `close()` keeps the connection in `Closing`, allows `postWrite()` while draining queued shutdown bytes, and both readiness and IOCP write handlers finalize the socket close only after `encryptedOutput_` is empty.
 
 ### Missing password callback for encrypted keys
 - **File:** `mux/ganl/src/openssl_transport.cpp:75`
