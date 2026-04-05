@@ -4,11 +4,9 @@ Updated: 2026-04-04
 
 ## High — AST/JIT Safety & Performance
 
-### Stack overflow risk from AST recursion
+### ~~Stack overflow risk from AST recursion~~ FIXED
 - **File:** `mux/modules/engine/ast.cpp`
-- **Issue:** `ast_eval_node()` and `ast_dump()` use recursion to traverse the AST. While `mudconf.func_nest_lim` provides some protection, extremely deep ASTs (especially from generated or malicious softcode) could still overflow the stack if the per-frame overhead is high.
-- **Impact:** Server crash due to stack overflow.
-- **Recommendation:** Implement an iterative evaluator or use an explicit stack to limit recursion depth more rigorously.
+- `ast_eval_node()` now carries an `AstEvalDepthGuard` RAII object backed by a `thread_local` counter capped at `AST_EVAL_MAX_DEPTH = 400`. Overflow sets `mudstate.bStackLimitReached` and returns, so adversarial deep ASTs (e.g., `[[[[...x]]]]` with thousands of layers) cannot blow the native C stack before the softcode limits (`func_nest_lim`, `nStackLimit`) trip on re-entry. `ast_dump()` also gained an `indent`-based cap so debug logging on pathological ASTs truncates rather than recurses unbounded.
 
 ### ~~O(n) lookup in `persistent_vm_t::attr_cache`~~ FIXED
 - **File:** `mux/modules/engine/jit_compiler.cpp:1056-1170`

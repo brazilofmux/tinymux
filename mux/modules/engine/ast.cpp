@@ -585,6 +585,18 @@ void ast_dump(const ASTNode *node, int indent)
         return;
     }
 
+    // Bound dump recursion so debug logging on a pathological AST
+    // can't overflow the stack. Use a fixed cap rather than the
+    // evaluator's depth counter since dump is diagnostic.
+    //
+    if (indent > 2 * 400)
+    {
+        STARTLOG(LOG_DEBUG, "AST", "DUMP");
+        Log.tinyprintf(T("%*s... (truncated)"), indent, "");
+        ENDLOG;
+        return;
+    }
+
     STARTLOG(LOG_DEBUG, "AST", "DUMP");
     Log.tinyprintf(T("%*s%s"), indent, "", ast_node_name(node->type));
     if (!node->text.empty())
@@ -2196,6 +2208,30 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     mudstate.func_nest_lev--;
 }
 
+// Hard cap on AST evaluator C-stack recursion. This is independent of
+// mudconf.func_nest_lim (function call depth) and mudconf.nStackLimit
+// (softcode bracket nesting). It exists to keep adversarial or
+// pathologically deep ASTs — e.g., `[[[[...x]]]]` with thousands of
+// bracket layers, or deeply chained `if()`/`switch()` constructs —
+// from blowing the native C stack before the soft limits trip on a
+// subsequent re-entry into mux_exec.
+//
+// Each AST_EVALBRACKET/AST_BRACEGROUP layer adds ~2 frames (bracket →
+// sequence → inner bracket), so a cap of 400 bounds the stack around
+// 800 frames — well under a default 8 MiB Linux stack and safe on
+// platforms with smaller defaults.
+//
+static constexpr int AST_EVAL_MAX_DEPTH = 400;
+static thread_local int s_ast_eval_depth = 0;
+
+class AstEvalDepthGuard
+{
+public:
+    AstEvalDepthGuard() { s_ast_eval_depth++; }
+    ~AstEvalDepthGuard() { s_ast_eval_depth--; }
+    bool overflow() const { return s_ast_eval_depth > AST_EVAL_MAX_DEPTH; }
+};
+
 // Evaluate a single AST node into buff/bufc.
 //
 static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
@@ -2204,6 +2240,13 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 {
     if (!node || alarm_clock.alarmed)
     {
+        return;
+    }
+
+    AstEvalDepthGuard depth_guard;
+    if (depth_guard.overflow())
+    {
+        mudstate.bStackLimitReached = true;
         return;
     }
 
