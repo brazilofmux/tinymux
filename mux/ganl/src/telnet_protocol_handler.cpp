@@ -212,7 +212,8 @@ namespace ganl {
     }
 
     // --- Constructor / Destructor ---
-    TelnetProtocolHandler::TelnetProtocolHandler() {
+    TelnetProtocolHandler::TelnetProtocolHandler(bool offerStartTls)
+        : offerStartTls_(offerStartTls) {
     }
 
     TelnetProtocolHandler::~TelnetProtocolHandler() {

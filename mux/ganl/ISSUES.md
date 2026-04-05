@@ -53,7 +53,6 @@ Updated: 2026-04-04
 
 ## Low — Technical Debt
 
-### Missing configuration for StartTLS
+### ~~Missing configuration for StartTLS~~ FIXED
 - **File:** `mux/ganl/include/telnet_protocol_handler.h:57`
-- **Issue:** `canOfferStartTls()` returns hardcoded `true` with a TODO to make it configurable.
-- **Impact:** Administrators cannot disable StartTLS via configuration if desired.
+- `TelnetProtocolHandler` now stores an `offerStartTls_` policy with a constructor argument and setter, so integrations can explicitly disable STARTTLS offers instead of being locked to a hardcoded `true`.

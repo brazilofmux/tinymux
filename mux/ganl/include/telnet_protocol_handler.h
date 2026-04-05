@@ -38,7 +38,7 @@ namespace ganl {
 
     class TelnetProtocolHandler : public ProtocolHandler {
     public:
-        TelnetProtocolHandler();
+        explicit TelnetProtocolHandler(bool offerStartTls = true);
         ~TelnetProtocolHandler() override;
 
         // Server-mode context (existing behavior).
@@ -54,7 +54,8 @@ namespace ganl {
 
         void destroyProtocolContext(ConnectionHandle conn) override;
 
-        virtual bool canOfferStartTls() const { return true; /* TODO: Make configurable */ }
+        virtual bool canOfferStartTls() const { return offerStartTls_; }
+        void setOfferStartTls(bool enabled) { offerStartTls_ = enabled; }
         void onNegotiationTimeout(ConnectionHandle conn); // Called by Connection
 
         void startNegotiation(ConnectionHandle conn, IoBuffer& telnet_responses_out) override;
@@ -197,6 +198,7 @@ namespace ganl {
 
         std::map<ConnectionHandle, TelnetContext> contexts_;
         std::chrono::seconds negotiationTimeoutDuration_{ 10 }; // Configurable timeout
+        bool offerStartTls_{true};
 
         /**
          * Handle Telnet subnegotiation data
