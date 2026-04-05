@@ -2124,8 +2124,8 @@ MUX_RESULT CMailDelivery::MailCheck(dbref player, dbref target, bool *pResult)
         UTF8 *str = atr_pget(target, A_MFAIL, &aowner, &aflags);
         if (*str)
         {
-            UTF8 *str2, *bp;
-            str2 = bp = alloc_lbuf("mail_delivery.check");
+            LBuf str2 = LBuf_Src("mail_delivery.check");
+            UTF8 *bp = str2.get();
             mux_exec(str, LBUF_SIZE-1, str2, &bp, target, player, player,
                  AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP|EV_NO_LOCATION),
                  nullptr, 0);
@@ -2138,11 +2138,10 @@ MUX_RESULT CMailDelivery::MailCheck(dbref player, dbref target, bool *pResult)
                 ltaNow.ReturnFields(&ft);
 
                 raw_notify(player, tprintf(T("MAIL: Reject message from %s: %s"),
-                    Moniker(target), str2));
+                    Moniker(target), str2.get()));
                 raw_notify(target, tprintf(T("[%d:%02d] MAIL: Reject message sent to %s."),
                     ft.iHour, ft.iMinute, Moniker(player)));
             }
-            free_lbuf(str2);
         }
         else
         {
@@ -2439,8 +2438,8 @@ MUX_RESULT CHelpSystem::LookupTopic(dbref executor, int iHelpfile,
 
     // help_helper writes into an alloc_lbuf using safe_str pattern.
     //
-    UTF8 *buff = alloc_lbuf("CHelpSystem.LookupTopic");
-    UTF8 *bufc = buff;
+    LBuf buff = LBuf_Src("CHelpSystem.LookupTopic");
+    UTF8 *bufc = buff.get();
 
     // help_helper expects a mutable topic argument.
     //
@@ -2459,7 +2458,6 @@ MUX_RESULT CHelpSystem::LookupTopic(dbref executor, int iHelpfile,
     pResult[nLen] = '\0';
     *pnResultLen = nLen;
 
-    free_lbuf(buff);
     return MUX_S_OK;
 }
 
@@ -4116,7 +4114,7 @@ MUX_RESULT CPlayerSession::AnnounceConnect(dbref player, int numConnections,
     //
     if (nullptr != pTimeout)
     {
-        UTF8 *buf = alloc_lbuf("AnnounceConnect.timeout");
+        LBuf buf = LBuf_Src("AnnounceConnect.timeout");
         dbref aowner;
         int aflags;
         size_t nLen;
@@ -4133,7 +4131,6 @@ MUX_RESULT CPlayerSession::AnnounceConnect(dbref player, int numConnections,
         {
             *pTimeout = mudconf.idle_timeout;
         }
-        free_lbuf(buf);
     }
 
     // Set Connected flag.  Set Html if Pueblo client.
@@ -4171,7 +4168,7 @@ MUX_RESULT CPlayerSession::AnnounceConnect(dbref player, int numConnections,
     // Page lock warning.
     //
     {
-        UTF8 *buf = alloc_lbuf("AnnounceConnect.lpage");
+        LBuf buf = LBuf_Src("AnnounceConnect.lpage");
         dbref aowner;
         int aflags;
         size_t nLen;
@@ -4180,7 +4177,6 @@ MUX_RESULT CPlayerSession::AnnounceConnect(dbref player, int numConnections,
         {
             raw_notify(player, T("Your PAGE LOCK is set.  You may be unable to receive some pages."));
         }
-        free_lbuf(buf);
     }
 
     // Check for forced encoding.
@@ -4238,7 +4234,7 @@ MUX_RESULT CPlayerSession::AnnounceConnect(dbref player, int numConnections,
         }
     }
 
-    UTF8 *buf = alloc_lbuf("AnnounceConnect.room");
+    LBuf buf = LBuf_Src("AnnounceConnect.room");
     mux_sprintf(buf, LBUF_SIZE, pRoomAnnounceFmt, Moniker(player));
     raw_broadcast(MONITOR, pMonitorAnnounceFmt, Moniker(player));
 
@@ -4332,8 +4328,6 @@ MUX_RESULT CPlayerSession::AnnounceConnect(dbref player, int numConnections,
                 zone, PureName(player), player, Typeof(zone));
         }
     }
-    free_lbuf(buf);
-
     // Record login, check mail, show room.
     //
     CLinearTimeAbsolute ltaNow;
@@ -4396,7 +4390,7 @@ MUX_RESULT CPlayerSession::AnnounceDisconnect(dbref player,
             raw_broadcast(WIZARD, T("[Suspect] %s has disconnected."),
                 Moniker(player));
         }
-        UTF8 *buf = alloc_lbuf("AnnounceDisconnect.only");
+        LBuf buf = LBuf_Src("AnnounceDisconnect.only");
 
         mux_sprintf(buf, LBUF_SIZE, T("%s has disconnected."),
             Moniker(player));
@@ -4496,8 +4490,6 @@ MUX_RESULT CPlayerSession::AnnounceDisconnect(dbref player,
                     zone, PureName(player), player, Typeof(zone));
             }
         }
-        free_lbuf(buf);
-
         // Clear AUTODARK, darken guests, halt guest queues.
         //
         if (wasAutoDark)

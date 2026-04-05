@@ -2415,32 +2415,30 @@ FUNCTION(fun_orbool)
 FUNCTION(fun_cand)
 {
     bool val = true;
-    UTF8 *temp = alloc_lbuf("fun_cand");
+    LBuf temp = LBuf_Src("fun_cand");
     for (int i = 0; i < nfargs && val && !alarm_clock.alarmed; i++)
     {
-        UTF8 *bp = temp;
+        UTF8 *bp = temp.get();
         mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
         val = isTRUE(mux_atol(temp));
     }
-    free_lbuf(temp);
     safe_bool(val, buff, bufc);
 }
 
 FUNCTION(fun_cor)
 {
     bool val = false;
-    UTF8 *temp = alloc_lbuf("fun_cor");
+    LBuf temp = LBuf_Src("fun_cor");
     for (int i = 0; i < nfargs && !val && !alarm_clock.alarmed; i++)
     {
-        UTF8 *bp = temp;
+        UTF8 *bp = temp.get();
         mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
         val = isTRUE(mux_atol(temp));
     }
-    free_lbuf(temp);
     safe_bool(val, buff, bufc);
 }
 
@@ -2455,10 +2453,10 @@ FUNCTION(fun_firstof)
         return;
     }
 
-    UTF8 *temp = alloc_lbuf("fun_firstof");
+    LBuf temp = LBuf_Src("fun_firstof");
     for (int i = 0; i < nfargs && !alarm_clock.alarmed; i++)
     {
-        UTF8 *bp = temp;
+        UTF8 *bp = temp.get();
         mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
@@ -2466,11 +2464,9 @@ FUNCTION(fun_firstof)
         if (isTRUE(mux_atol(temp)) || i == nfargs - 1)
         {
             safe_str(temp, buff, bufc);
-            free_lbuf(temp);
             return;
         }
     }
-    free_lbuf(temp);
 }
 
 // strfirstof(arg1, arg2, ...) — return the first non-empty string argument.
@@ -2484,10 +2480,10 @@ FUNCTION(fun_strfirstof)
         return;
     }
 
-    UTF8 *temp = alloc_lbuf("fun_strfirstof");
+    LBuf temp = LBuf_Src("fun_strfirstof");
     for (int i = 0; i < nfargs && !alarm_clock.alarmed; i++)
     {
-        UTF8 *bp = temp;
+        UTF8 *bp = temp.get();
         mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
@@ -2495,11 +2491,9 @@ FUNCTION(fun_strfirstof)
         if ('\0' != temp[0] || i == nfargs - 1)
         {
             safe_str(temp, buff, bufc);
-            free_lbuf(temp);
             return;
         }
     }
-    free_lbuf(temp);
 }
 
 // allof(arg1, arg2, ...[, osep]) — return all true (non-zero) arguments,
@@ -2530,10 +2524,10 @@ FUNCTION(fun_allof)
     }
 
     bool bFirst = true;
-    UTF8 *temp = alloc_lbuf("fun_allof");
+    LBuf temp = LBuf_Src("fun_allof");
     for (int i = 0; i < nArgs && !alarm_clock.alarmed; i++)
     {
-        UTF8 *bp = temp;
+        UTF8 *bp = temp.get();
         mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
@@ -2548,7 +2542,6 @@ FUNCTION(fun_allof)
             bFirst = false;
         }
     }
-    free_lbuf(temp);
 }
 
 // strallof(arg1, arg2, ...[, osep]) — return all non-empty string arguments,
@@ -2577,10 +2570,10 @@ FUNCTION(fun_strallof)
     }
 
     bool bFirst = true;
-    UTF8 *temp = alloc_lbuf("fun_strallof");
+    LBuf temp = LBuf_Src("fun_strallof");
     for (int i = 0; i < nArgs && !alarm_clock.alarmed; i++)
     {
-        UTF8 *bp = temp;
+        UTF8 *bp = temp.get();
         mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
@@ -2595,38 +2588,35 @@ FUNCTION(fun_strallof)
             bFirst = false;
         }
     }
-    free_lbuf(temp);
 }
 
 FUNCTION(fun_candbool)
 {
     bool val = true;
-    UTF8 *temp = alloc_lbuf("fun_candbool");
+    LBuf temp = LBuf_Src("fun_candbool");
     for (int i = 0; i < nfargs && val && !alarm_clock.alarmed; i++)
     {
-        UTF8 *bp = temp;
+        UTF8 *bp = temp.get();
         mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
         val = xlate(temp);
     }
-    free_lbuf(temp);
     safe_bool(val, buff, bufc);
 }
 
 FUNCTION(fun_corbool)
 {
     bool val = false;
-    UTF8 *temp = alloc_lbuf("fun_corbool");
+    LBuf temp = LBuf_Src("fun_corbool");
     for (int i = 0; i < nfargs && !val && !alarm_clock.alarmed; i++)
     {
-        UTF8 *bp = temp;
+        UTF8 *bp = temp.get();
         mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
         val = xlate(temp);
     }
-    free_lbuf(temp);
     safe_bool(val, buff, bufc);
 }
 

@@ -501,8 +501,8 @@ FWDLIST *fwdlist_load(dbref player, UTF8 *atext)
 
         if (nullptr != fp->data)
         {
-            UTF8 *tp = alloc_lbuf("fwdlist_load.str");
-            UTF8 *bp = tp;
+            LBuf tp = LBuf_Src("fwdlist_load.str");
+            UTF8 *bp = tp.get();
             mux_strncpy(tp, atext, LBUF_SIZE-1);
 
             int count = 0;
@@ -564,8 +564,6 @@ FWDLIST *fwdlist_load(dbref player, UTF8 *atext)
                     }
                 }
             } while (*bp);
-
-            free_lbuf(tp);
 
             if (0 < count)
             {
@@ -1835,7 +1833,7 @@ bool Commer(dbref thing)
     bool bFoundListens = false;
 
     atr_push();
-    UTF8 *buff = alloc_lbuf("Commer");
+    LBuf buff = LBuf_Src("Commer");
     unsigned char *as;
     for (int atr = atr_head(thing, &as); atr; atr = atr_next(&as))
     {
@@ -1872,7 +1870,6 @@ bool Commer(dbref thing)
 
         if (AMATCH_CMD == buff[0])
         {
-            free_lbuf(buff);
             atr_pop();
             mudstate.bfCommands.Set(thing);
             if (bFoundListens)
@@ -1887,7 +1884,6 @@ bool Commer(dbref thing)
             bFoundListens = true;
         }
     }
-    free_lbuf(buff);
     atr_pop();
     mudstate.bfNoCommands.Set(thing);
     if (bFoundListens)

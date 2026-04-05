@@ -422,7 +422,7 @@ void DCL_CDECL cf_log_syntax(dbref player, UTF8 *cmd, const UTF8 *fmt, ...)
     va_list ap;
     va_start(ap, fmt);
 
-    UTF8 *buf = alloc_lbuf("cf_log_syntax");
+    LBuf buf = LBuf_Src("cf_log_syntax");
     mux_vsnprintf(buf, LBUF_SIZE, fmt, ap);
     if (mudstate.bReadingConfiguration)
     {
@@ -436,7 +436,6 @@ void DCL_CDECL cf_log_syntax(dbref player, UTF8 *cmd, const UTF8 *fmt, ...)
     {
         notify(player, buf);
     }
-    free_lbuf(buf);
     va_end(ap);
 }
 
@@ -445,8 +444,6 @@ void DCL_CDECL cf_log_syntax(dbref player, UTF8 *cmd, const UTF8 *fmt, ...)
 //
 static int cf_status_from_succfail(dbref player, UTF8 *cmd, int success, int failure)
 {
-    UTF8 *buff;
-
     // If any successes, return SUCCESS(0) if no failures or
     // PARTIAL_SUCCESS(1) if any failures.
     //
@@ -461,10 +458,9 @@ static int cf_status_from_succfail(dbref player, UTF8 *cmd, int success, int fai
         if (mudstate.bReadingConfiguration)
         {
             STARTLOG(LOG_STARTUP, "CNF", "NDATA")
-            buff = alloc_lbuf("cf_status_from_succfail.LOG");
+            LBuf buff = LBuf_Src("cf_status_from_succfail.LOG");
             mux_sprintf(buff, LBUF_SIZE, T("%s: Nothing to set"), cmd);
             log_text(buff);
-            free_lbuf(buff);
             ENDLOG
         }
         else
@@ -1654,7 +1650,7 @@ static CF_HAND(cf_module)
     }
     else
     {
-        UTF8 *buffer = alloc_lbuf("cf_module");
+        LBuf buffer = LBuf_Src("cf_module");
         bool bHaveFilename = true;
 #if defined(WINDOWS_FILES)
         size_t n;
@@ -1680,7 +1676,6 @@ static CF_HAND(cf_module)
             mr = pISlaveControl->AddModule(str, filename);
         }
 #endif // STUB_SLAVE
-        free_lbuf(buffer);
     }
 
 #if defined(STUB_SLAVE)
@@ -1722,8 +1717,8 @@ static CF_HAND(cf_include)
         cf_log_notfound(player, cmd, T("Config file"), str);
         return -1;
     }
-    UTF8 *buf = alloc_lbuf("cf_include");
-    if (nullptr == fgets(reinterpret_cast<char *>(buf), LBUF_SIZE, fp))
+    LBuf buf = LBuf_Src("cf_include");
+    if (nullptr == fgets(reinterpret_cast<char *>(buf.get()), LBUF_SIZE, fp))
     {
         return 0;
     }
@@ -1797,12 +1792,11 @@ static CF_HAND(cf_include)
             cf_set(cp, ap, player);
         }
 
-        if (nullptr == fgets(reinterpret_cast<char *>(buf), LBUF_SIZE, fp))
+        if (nullptr == fgets(reinterpret_cast<char *>(buf.get()), LBUF_SIZE, fp))
         {
             break;
         }
     }
-    free_lbuf(buf);
     mux_fclose(fp);
     return 0;
 }
@@ -2120,7 +2114,6 @@ CF_HAND(cf_cf_access)
 int cf_set(UTF8 *cp, UTF8 *ap, dbref player)
 {
     CONFPARM *tp;
-    UTF8 *buff = 0;
 
     // Search the config parameter table for the command. If we find
     // it, call the handler to parse the argument.
@@ -2136,14 +2129,11 @@ int cf_set(UTF8 *cp, UTF8 *ap, dbref player)
             {
                 if (!mudstate.bReadingConfiguration)
                 {
-                    buff = alloc_lbuf("cf_set");
+                    LBuf buff = LBuf_Src("cf_set");
                     mux_strncpy(buff, ap, LBUF_SIZE-1);
-                }
 
-                i = tp->interpreter(tp->loc, ap, tp->pExtra, tp->nExtra, player, cp);
+                    i = tp->interpreter(tp->loc, ap, tp->pExtra, tp->nExtra, player, cp);
 
-                if (!mudstate.bReadingConfiguration)
-                {
                     STARTLOG(LOG_CONFIGMODS, "CFG", "UPDAT");
                     log_name(player);
                     log_text(T(" entered config directive: "));
@@ -2169,7 +2159,10 @@ int cf_set(UTF8 *cp, UTF8 *ap, dbref player)
                         log_text(T("Strange."));
                     }
                     ENDLOG;
-                    free_lbuf(buff);
+                }
+                else
+                {
+                    i = tp->interpreter(tp->loc, ap, tp->pExtra, tp->nExtra, player, cp);
                 }
             }
             else  if (!mudstate.bReadingConfiguration)

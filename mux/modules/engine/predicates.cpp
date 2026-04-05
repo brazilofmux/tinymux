@@ -668,8 +668,8 @@ void handle_ears(dbref thing, bool could_hear, bool can_hear)
 {
     if (could_hear != can_hear)
     {
-        UTF8 *buf = alloc_lbuf("handle_ears");
-        UTF8 *bp = buf;
+        LBuf buf = LBuf_Src("handle_ears");
+        UTF8 *bp = buf.get();
 
         // Moniker returns PUA-encoded name.
         //
@@ -708,7 +708,6 @@ void handle_ears(dbref thing, bool could_hear, bool can_hear)
         }
         *bp = '\0';
         notify_check(thing, thing, buf, MSG_ME | MSG_NBR | MSG_LOC | MSG_INV);
-        free_lbuf(buf);
     }
 }
 
@@ -757,8 +756,8 @@ void do_switch
     //
     bool bAny = false;
     int a;
-    UTF8 *buff, *bp;
-    buff = bp = alloc_lbuf("do_switch");
+    LBuf buff = LBuf_Src("do_switch");
+    UTF8 *bp = buff.get();
     CLinearTimeAbsolute lta;
     for (  a = 0;
               (  !bMatchOne
@@ -814,7 +813,6 @@ void do_switch
         }
     }
 
-    free_lbuf(buff);
     if (  a < nargs
        && !bAny
        && args[a])
@@ -855,13 +853,12 @@ void do_switch
 
     if (key & SWITCH_NOTIFY)
     {
-        UTF8 *tbuf = alloc_lbuf("switch.notify_cmd");
+        LBuf tbuf = LBuf_Src("switch.notify_cmd");
         mux_strncpy(tbuf, T("@notify/quiet me"), LBUF_SIZE-1);
         wait_que(executor, caller, enactor, eval, false, lta, NOTHING, A_SEMAPHORE,
             tbuf,
             ncargs, cargs,
             mudstate.global_regs);
-        free_lbuf(tbuf);
     }
 }
 
@@ -885,16 +882,15 @@ void do_if
         return;
     }
 
-    UTF8 *buff, *bp;
     CLinearTimeAbsolute lta;
-    buff = bp = alloc_lbuf("do_if");
+    LBuf buff = LBuf_Src("do_if");
+    UTF8 *bp = buff.get();
 
     mux_exec(expr, LBUF_SIZE-1, buff, &bp, player, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
         cargs, ncargs);
     *bp = '\0';
 
     int a = !xlate(buff);
-    free_lbuf(buff);
 
     if (a < nargs)
     {
@@ -1679,7 +1675,7 @@ dbref match_possessed(dbref player, dbref thing, UTF8 *target, dbref dflt, bool 
     // Didn't find it directly.  Recursively do a contents check.
     //
     dbref result, result1;
-    UTF8 *buff, *place, *s1, *d1, *temp;
+    UTF8 *place, *s1, *d1, *temp;
     UTF8 *start = target;
     while (*target)
     {
@@ -1733,29 +1729,30 @@ dbref match_possessed(dbref player, dbref thing, UTF8 *target, dbref dflt, bool 
 
         // Copy the container name to a new buffer so we can terminate it.
         //
-        buff = alloc_lbuf("is_posess");
-        for (s1 = start, d1 = buff; *s1 && (s1 < temp); *d1++ = (*s1++))
         {
-            ; // Nothing.
-        }
-        *d1 = '\0';
+            LBuf buff = LBuf_Src("is_posess");
+            d1 = buff.get();
+            for (s1 = start; *s1 && (s1 < temp); *d1++ = (*s1++))
+            {
+                ; // Nothing.
+            }
+            *d1 = '\0';
 
-        // Look for the container here and in our inventory.  Skip past if we
-        // can't find it.
-        //
-        init_match(thing, buff, NOTYPE);
-        if (player == thing)
-        {
-            match_neighbor();
-            match_possession();
+            // Look for the container here and in our inventory.  Skip past if we
+            // can't find it.
+            //
+            init_match(thing, buff, NOTYPE);
+            if (player == thing)
+            {
+                match_neighbor();
+                match_possession();
+            }
+            else
+            {
+                match_possession();
+            }
+            result1 = match_result();
         }
-        else
-        {
-            match_possession();
-        }
-        result1 = match_result();
-
-        free_lbuf(buff);
         if (!Good_obj(result1))
         {
             dflt = promote_dflt(dflt, result1);

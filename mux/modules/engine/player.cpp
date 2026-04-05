@@ -104,8 +104,8 @@ static void encrypt_logindata(UTF8 *atrbuf, LDATA *info)
         if (!info->bad[i].dtm)
             info->bad[i].dtm = &nullc;
     }
-    UTF8 *bp = alloc_lbuf("encrypt_logindata");
-    mux_sprintf(bp, LBUF_SIZE,
+    LBuf bp = LBuf_Src("encrypt_logindata");
+    mux_sprintf(bp.get(), LBUF_SIZE,
         T("#%d;%s;%s;%s;%s;%s;%s;%s;%s;%d;%d;%s;%s;%s;%s;%s;%s;"),
         info->tot_good,
         info->good[0].host, info->good[0].dtm,
@@ -117,7 +117,6 @@ static void encrypt_logindata(UTF8 *atrbuf, LDATA *info)
         info->bad[1].host, info->bad[1].dtm,
         info->bad[2].host, info->bad[2].dtm);
     mux_strncpy(atrbuf, bp, LBUF_SIZE-1);
-    free_lbuf(bp);
 }
 
 /* ---------------------------------------------------------------------------
@@ -738,10 +737,10 @@ void AddToPlayerChannels(dbref player)
         return;
     }
 
-    UTF8 *buff = alloc_lbuf("AddToPlayerChannels");
+    LBuf buff = LBuf_Src("AddToPlayerChannels");
     mux_strncpy(buff, mudconf.player_channels, LBUF_SIZE - 1);
 
-    UTF8 *p = buff;
+    UTF8 *p = buff.get();
     while ('\0' != *p)
     {
         // Skip leading spaces.
@@ -795,8 +794,6 @@ void AddToPlayerChannels(dbref player)
         do_addcom(player, player, player, 0, 0, 2, alias, channel,
             nullptr, 0);
     }
-
-    free_lbuf(buff);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1202,21 +1199,20 @@ void load_player_names(void)
             add_player_name(i, Name(i), false);
         }
     }
-    UTF8 *alias = alloc_lbuf("load_player_names");
+    LBuf alias = LBuf_Src("load_player_names");
     DO_WHOLE_DB(i)
     {
         if (isPlayer(i))
         {
             dbref aowner;
             int aflags;
-            alias = atr_pget_str(alias, i, A_ALIAS, &aowner, &aflags);
-            if (*alias)
+            atr_pget_str(alias, i, A_ALIAS, &aowner, &aflags);
+            if (alias[0])
             {
                 add_player_name(i, alias, true);
             }
         }
     }
-    free_lbuf(alias);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1299,11 +1295,12 @@ bool badname_check(const UTF8 *bad_name)
 void badname_list(dbref player, const UTF8 *prefix)
 {
     BADNAME *bp;
-    UTF8 *buff, *bufp;
+    UTF8 *bufp;
 
     // Construct an lbuf with all the names separated by spaces.
     //
-    buff = bufp = alloc_lbuf("badname_list");
+    LBuf buff = LBuf_Src("badname_list");
+    bufp = buff.get();
     safe_str(prefix, buff, &bufp);
     for (bp = mudstate.badname_head; bp; bp = bp->next)
     {
@@ -1315,7 +1312,6 @@ void badname_list(dbref player, const UTF8 *prefix)
     // Now display it.
     //
     notify(player, buff);
-    free_lbuf(buff);
 }
 
 // ---------------------------------------------------------------------------
@@ -1414,8 +1410,8 @@ void do_protect
             UTF8 *pProtect = atr_pget(i, A_PROTECTNAME, &aowner, &aflags);
             if ('\0' != pProtect[0])
             {
-                UTF8 *display = alloc_lbuf("do_protect.all");
-                UTF8 *dp = display;
+                LBuf display = LBuf_Src("do_protect.all");
+                UTF8 *dp = display.get();
                 UTF8 *bp = pProtect;
                 UTF8 *token;
                 while (nullptr != (token = split_token(&bp, sepPipe)))
@@ -1427,8 +1423,7 @@ void do_protect
                     safe_str(token, display, &dp);
                 }
                 *dp = '\0';
-                notify(executor, tprintf(T("%s: %s"), Name(i), display));
-                free_lbuf(display);
+                notify(executor, tprintf(T("%s: %s"), Name(i), display.get()));
                 found_any = true;
             }
             free_lbuf(pProtect);
@@ -1464,8 +1459,8 @@ void do_protect
         {
             // Display pipe-delimited list as comma-separated for readability.
             //
-            UTF8 *display = alloc_lbuf("do_protect.list");
-            UTF8 *dp = display;
+            LBuf display = LBuf_Src("do_protect.list");
+            UTF8 *dp = display.get();
             UTF8 *bp = pProtect;
             UTF8 *token;
             while (nullptr != (token = split_token(&bp, sepPipe)))
@@ -1477,8 +1472,7 @@ void do_protect
                 safe_str(token, display, &dp);
             }
             *dp = '\0';
-            notify(executor, tprintf(T("Protected names for %s: %s"), Name(target), display));
-            free_lbuf(display);
+            notify(executor, tprintf(T("Protected names for %s: %s"), Name(target), display.get()));
         }
         free_lbuf(pProtect);
         return;
@@ -1592,8 +1586,8 @@ void do_protect
             return;
         }
 
-        UTF8 *newlist = alloc_lbuf("do_protect.del");
-        UTF8 *np = newlist;
+        LBuf newlist = LBuf_Src("do_protect.del");
+        UTF8 *np = newlist.get();
         bool found = false;
 
         UTF8 *bp = pProtect;
@@ -1622,7 +1616,6 @@ void do_protect
             atr_add_raw(executor, A_PROTECTNAME, newlist);
             notify(executor, tprintf(T("Name \xE2\x80\x98%s\xE2\x80\x99 removed from protected list."), arg1));
         }
-        free_lbuf(newlist);
         free_lbuf(pProtect);
         return;
     }

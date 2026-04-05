@@ -207,7 +207,7 @@ static bool mux_AttrNameInitialSet_latin1[256] =
 static BOOLEXP *getboolexp1(FILE *f)
 {
     BOOLEXP *b;
-    UTF8 *buff, *s;
+    UTF8 *s;
     int d;
 
     int c = getc(f);
@@ -308,21 +308,20 @@ static BOOLEXP *getboolexp1(FILE *f)
         }
         else if (mux_AttrNameInitialSet_latin1[static_cast<unsigned char>(c)])
         {
-            buff = alloc_lbuf("getboolexp1.atr_name");
+            LBuf buff = LBuf_Src("getboolexp1.atr_name");
 
-            s = buff;
+            s = buff.get();
             while (   EOF != (c = getc(f))
                   && '\n' != c
                   && ':'  != c
                   && '/'  != c
-                  && s < buff + LBUF_SIZE - 1)
+                  && s < buff.get() + LBUF_SIZE - 1)
             {
                 *s++ = static_cast<UTF8>(c);
             }
 
             if (EOF == c)
             {
-                free_lbuf(buff);
                 free_bool(b);
                 goto error;
             }
@@ -335,10 +334,8 @@ static BOOLEXP *getboolexp1(FILE *f)
             if (anum <= 0)
             {
                 free_bool(b);
-                free_lbuf(buff);
                 goto error;
             }
-            free_lbuf(buff);
             b->thing = anum;
         }
         else
@@ -362,14 +359,14 @@ static BOOLEXP *getboolexp1(FILE *f)
                 b->type = BOOLEXP_ATR;
             }
 
-            buff = alloc_lbuf("getboolexp1.attr_lock");
-            s = buff;
+            LBuf buff = LBuf_Src("getboolexp1.attr_lock");
+            s = buff.get();
             while (   EOF != (c = getc(f))
                   && '\n' != c
                   && ')'  != c
                   && OR_TOKEN != c
                   && AND_TOKEN != c
-                  && s < buff + LBUF_SIZE - 1)
+                  && s < buff.get() + LBUF_SIZE - 1)
             {
                 *s++ = static_cast<UTF8>(c);
             }
@@ -381,7 +378,6 @@ static BOOLEXP *getboolexp1(FILE *f)
             *s = '\0';
 
             b->sub1 = reinterpret_cast<BOOLEXP *>(StringClone(buff));
-            free_lbuf(buff);
         }
         ungetc(c, f);
         return b;
@@ -423,7 +419,7 @@ int g_max_obj_atr = INT_MIN;
 
 static bool get_list(FILE *f, dbref i)
 {
-    UTF8 *buff = alloc_lbuf("get_list");
+    LBuf buff = LBuf_Src("get_list");
     for (;;)
     {
         dbref atr;
@@ -461,7 +457,6 @@ static bool get_list(FILE *f, dbref i)
                     if (!atr_add_raw_LEN(i, atr, pBufferUnicode, nBufferUnicode))
                     {
                         Log.tinyprintf(T("Failed writing attribute %d on object #%d during flatfile import." ENDLINE), atr, i);
-                        free_lbuf(buff);
                         return false;
                     }
                 }
@@ -481,7 +476,6 @@ static bool get_list(FILE *f, dbref i)
 
         case '<':   // end of list
 
-            free_lbuf(buff);
             c = getc(f);
             if (c != '\n')
             {
@@ -924,7 +918,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                     Log.WriteString(T("Migrating V4 24-bit color encoding to V5 " ENDLINE));
                     Log.Flush();
 
-                    UTF8 *pMigBuf = alloc_lbuf("MigrateColorV4toV5");
+                    LBuf pMigBuf = LBuf_Src("MigrateColorV4toV5");
                     dbref iObject;
                     atr_push();
                     DO_WHOLE_DB(iObject)
@@ -948,7 +942,6 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                         }
                     }
                     atr_pop();
-                    free_lbuf(pMigBuf);
                 }
 
                 *db_version = g_version;

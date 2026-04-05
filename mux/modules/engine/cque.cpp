@@ -217,11 +217,10 @@ static void Task_RunQueueEntry(void *pEntry, const int iUnused)
                     {
                         STARTLOG(LOG_PROBLEMS, "CMD", "CPU");
                         log_name_and_loc(executor);
-                        UTF8 *logbuf = alloc_lbuf("do_top.LOG.cpu");
+                        LBuf logbuf = LBuf_Src("do_top.LOG.cpu");
                         mux_sprintf(logbuf, LBUF_SIZE, T(" queued command taking %s secs (enactor #%d): "),
                             ltd.ReturnSecondsString(4), point->enactor);
                         log_text(logbuf);
-                        free_lbuf(logbuf);
                         log_text(log_cmdbuf);
                         ENDLOG;
                     }

@@ -127,10 +127,9 @@ static void helpindex_read(int iHelpfile)
     if (!mux_fopen(&fp, szTextFilename, T("rb")))
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "RINDX");
-        UTF8 *p = alloc_lbuf("helpindex_read.LOG");
-        mux_sprintf(p, LBUF_SIZE, T("Can\xE2\x80\x99t open %s for reading."), szTextFilename);
+        LBuf p = LBuf_Src("helpindex_read.LOG");
+        mux_sprintf(p.get(), LBUF_SIZE, T("Can\xE2\x80\x99t open %s for reading."), szTextFilename);
         log_text(p);
-        free_lbuf(p);
         ENDLOG;
         return;
     }
@@ -252,8 +251,8 @@ static const UTF8 *MakeCanonicalTopicName(UTF8 *topic_arg, size_t &nTopic)
 static void ReportMatchedTopics(dbref executor, const UTF8 *topic, StringPtrMap *htab)
 {
     bool matched = false;
-    UTF8 *topic_list = nullptr;
-    UTF8 *buffp = nullptr;
+    LBuf topic_list = LBuf_Src("help_write");
+    UTF8 *buffp = topic_list.get();
     for (auto &[key, val] : *htab)
     {
         struct help_entry *htab_entry = static_cast<struct help_entry *>(val);
@@ -261,12 +260,7 @@ static void ReportMatchedTopics(dbref executor, const UTF8 *topic, StringPtrMap 
         if (  htab_entry->key
            && quick_wild(topic, htab_entry->key))
         {
-            if (!matched)
-            {
-                matched = true;
-                topic_list = alloc_lbuf("help_write");
-                buffp = topic_list;
-            }
+            matched = true;
             safe_str(htab_entry->key, topic_list, &buffp);
             safe_chr(' ', topic_list, &buffp);
             safe_chr(' ', topic_list, &buffp);
@@ -282,7 +276,6 @@ static void ReportMatchedTopics(dbref executor, const UTF8 *topic, StringPtrMap 
         notify(executor, tprintf(T("Here are the entries which match \xE2\x80\x98%s\xE2\x80\x99:"), topic));
         *buffp = '\0';
         notify(executor, topic_list);
-        free_lbuf(topic_list);
     }
 }
 
@@ -298,30 +291,28 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     if (!mux_fopen(&fp, szTextFilename, T("rb")))
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "OPEN");
-        UTF8 *line = alloc_lbuf("ReportTopic.open");
-        mux_sprintf(line, LBUF_SIZE, T("Can\xE2\x80\x99t open %s for reading."), szTextFilename);
+        LBuf line = LBuf_Src("ReportTopic.open");
+        mux_sprintf(line.get(), LBUF_SIZE, T("Can\xE2\x80\x99t open %s for reading."), szTextFilename);
         log_text(line);
-        free_lbuf(line);
         ENDLOG;
         return false;
     }
     if (fseek(fp, static_cast<long>(offset), 0) < 0L)
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "SEEK");
-        UTF8 *line = alloc_lbuf("ReportTopic.seek");
-        mux_sprintf(line, LBUF_SIZE, T("Seek error in file %s."), szTextFilename);
+        LBuf line = LBuf_Src("ReportTopic.seek");
+        mux_sprintf(line.get(), LBUF_SIZE, T("Seek error in file %s."), szTextFilename);
         log_text(line);
-        free_lbuf(line);
         ENDLOG;
         mux_fclose(fp);
         return false;
     }
-    UTF8 *line = alloc_lbuf("ReportTopic");
+    LBuf line = LBuf_Src("ReportTopic");
     UTF8 *bp = result;
     bool bInTopicAliases = true;
     for (;;)
     {
-        if (  fgets(reinterpret_cast<char *>(line), LBUF_SIZE - 2, fp) == nullptr
+        if (  fgets(reinterpret_cast<char *>(line.get()), LBUF_SIZE - 2, fp) == nullptr
            || '\0' == line[0])
         {
             break;
@@ -342,7 +333,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
 
         // Transform LF into CRLF to be telnet-friendly.
         //
-        size_t len = strlen(reinterpret_cast<char *>(line));
+        size_t len = strlen(reinterpret_cast<char *>(line.get()));
         if (  0 < len
            && '\n' == line[len-1]
            && (  1 == len
@@ -381,7 +372,6 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     *bp = '\0';
 
     mux_fclose(fp);
-    free_lbuf(line);
     return true;
 }
 
@@ -397,7 +387,7 @@ static void help_write(dbref executor, UTF8 *topic_arg, int iHelpfile)
 
     if (htab_entry)
     {
-        UTF8 *result = alloc_lbuf("help_write");
+        LBuf result = LBuf_Src("help_write");
         if (ReportTopic(executor, htab_entry, iHelpfile, result))
         {
             notify(executor, result);
@@ -406,7 +396,6 @@ static void help_write(dbref executor, UTF8 *topic_arg, int iHelpfile)
         {
             notify(executor, T("Sorry, that function is temporarily unavailable."));
         }
-        free_lbuf(result);
     }
     else
     {
@@ -472,7 +461,7 @@ void help_helper(dbref executor, int iHelpfile, UTF8 *topic_arg,
 
     if (htab_entry)
     {
-        UTF8 *result = alloc_lbuf("help_helper");
+        LBuf result = LBuf_Src("help_helper");
         if (ReportTopic(executor, htab_entry, iHelpfile, result))
         {
             safe_str(result, buff, bufc);
@@ -481,7 +470,6 @@ void help_helper(dbref executor, int iHelpfile, UTF8 *topic_arg,
         {
             safe_str(T("#-1 ERROR"), buff, bufc);
         }
-        free_lbuf(result);
     }
     else
     {
