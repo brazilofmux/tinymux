@@ -24,13 +24,11 @@ Updated: 2026-03-29
   and `game`, instead of collapsing the saved world back to a plain websocket
   entry.
 
-## Open — Bugs (New, 2026-04-04)
+## ~~Open — Bugs (New, 2026-04-04)~~ FIXED
 
-- **ANSI 256-color/truecolor parser missing bounds checks**
-  - **File:** `client/web/js/terminal.js:70-75`
-  - **Issue:** When parsing `\e[38;5;Nm` (256-color) and `\e[38;2;R;G;Bm` (truecolor), `codes[j+2]` through `codes[j+4]` are accessed without checking array bounds. Malformed ANSI sequences from the server produce `undefined` values in color calculations.
-  - **Impact:** Renders "NaN" or wrong fallback colors. Not a crash, but incorrect output.
-  - **Recommendation:** Check `codes[j+N] !== undefined` before each access.
+- **ANSI 256-color/truecolor parser missing bounds checks** — **FIXED**
+  - **File:** `client/web/js/terminal.js`
+  - The `renderAnsiLine()` SGR parser now validates each palette index and RGB component against `Number.isInteger(v) && v >= 0 && v <= 255` before using it for `\e[38;5;Nm` (256-color fg), `\e[38;2;R;G;Bm` (truecolor fg), and the matching `48;...` background forms. Short/malformed sequences fall through to plain text instead of leaking `undefined` or `NaN` into CSS, and out-of-range component values are also rejected. Verified with `node --check` and a 15-case harness covering well-formed, short, and out-of-range inputs against the extracted `renderAnsiLine` function.
 
 ## Open
 

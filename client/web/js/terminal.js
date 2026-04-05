@@ -57,6 +57,10 @@ function renderAnsiLine(text) {
                 if (spanOpen) { result += '</span>'; spanOpen = false; }
 
                 const codes = params ? params.split(';').map(Number) : [0];
+                // Helper: truthy only for a finite integer in [0, 255].
+                // Rejects undefined (short sequence) and NaN (non-numeric).
+                const isByte = (v) => Number.isInteger(v) && v >= 0 && v <= 255;
+
                 for (let j = 0; j < codes.length; j++) {
                     const c = codes[j];
                     if (c === 0) { fg = null; bg = null; bold = false; underline = false; inverse = false; }
@@ -67,12 +71,42 @@ function renderAnsiLine(text) {
                     else if (c === 24) underline = false;
                     else if (c === 27) inverse = false;
                     else if (c >= 30 && c <= 37) fg = XTERM_COLORS[c - 30 + (bold ? 8 : 0)];
-                    else if (c === 38 && codes[j+1] === 5) { fg = XTERM_COLORS[codes[j+2]] || null; j += 2; }
-                    else if (c === 38 && codes[j+1] === 2) { fg = `rgb(${codes[j+2]},${codes[j+3]},${codes[j+4]})`; j += 4; }
+                    else if (c === 38 && codes[j+1] === 5) {
+                        // \e[38;5;N m — 256-color palette index.
+                        if (isByte(codes[j+2])) {
+                            fg = XTERM_COLORS[codes[j+2]] || null;
+                            j += 2;
+                        } else {
+                            j = codes.length; // malformed — stop parsing
+                        }
+                    }
+                    else if (c === 38 && codes[j+1] === 2) {
+                        // \e[38;2;R;G;B m — 24-bit truecolor.
+                        if (isByte(codes[j+2]) && isByte(codes[j+3]) && isByte(codes[j+4])) {
+                            fg = `rgb(${codes[j+2]},${codes[j+3]},${codes[j+4]})`;
+                            j += 4;
+                        } else {
+                            j = codes.length;
+                        }
+                    }
                     else if (c === 39) fg = null;
                     else if (c >= 40 && c <= 47) bg = XTERM_COLORS[c - 40];
-                    else if (c === 48 && codes[j+1] === 5) { bg = XTERM_COLORS[codes[j+2]] || null; j += 2; }
-                    else if (c === 48 && codes[j+1] === 2) { bg = `rgb(${codes[j+2]},${codes[j+3]},${codes[j+4]})`; j += 4; }
+                    else if (c === 48 && codes[j+1] === 5) {
+                        if (isByte(codes[j+2])) {
+                            bg = XTERM_COLORS[codes[j+2]] || null;
+                            j += 2;
+                        } else {
+                            j = codes.length;
+                        }
+                    }
+                    else if (c === 48 && codes[j+1] === 2) {
+                        if (isByte(codes[j+2]) && isByte(codes[j+3]) && isByte(codes[j+4])) {
+                            bg = `rgb(${codes[j+2]},${codes[j+3]},${codes[j+4]})`;
+                            j += 4;
+                        } else {
+                            j = codes.length;
+                        }
+                    }
                     else if (c === 49) bg = null;
                     else if (c >= 90 && c <= 97) fg = XTERM_COLORS[c - 90 + 8];
                     else if (c >= 100 && c <= 107) bg = XTERM_COLORS[c - 100 + 8];
