@@ -2722,9 +2722,12 @@ static void send_mail
     newp->to = target;
     newp->sqlite_id = -1;
 
-    // HACK: Allow @mail/quick, if player is an object, then the
-    // object's owner is the sender, if the owner is a wizard, then
-    // we allow the object to be the sender.
+    // Sender attribution policy for @mail/quick from objects:
+    //   - If the sender is a player, credit the player.
+    //   - If the sender is an object owned by a wizard, credit the
+    //     object itself (wizards can run trusted delivery bots).
+    //   - Otherwise credit the object's owner (so a non-wizard player
+    //     can't spoof mail origin by using an intermediate object).
     //
     if (isPlayer(player))
     {
@@ -5401,7 +5404,9 @@ void do_mail
         }
     }
 
-    // HACK: Fix to allow @mail/quick from objects.
+    // Only @mail/quick is allowed from non-player executors. All other
+    // @mail subcommands use interactive state (composing buffer, folder
+    // selection, etc.) that only makes sense in a player session.
     //
     if (  (key & ~MAIL_QUOTE) != MAIL_QUICK
        && !isPlayer(executor))

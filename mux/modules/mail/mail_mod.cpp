@@ -5450,12 +5450,17 @@ void CMailMod::dump_complete_signal(void)
 
 void CMailMod::shutdown(void)
 {
-    // Release storage interface.
+    // Release storage interface. Null the member field *before* calling
+    // Release() so that any concurrent caller which re-reads m_pIStorage
+    // during the release (in a future multi-threaded evaluator) sees the
+    // null and bails, instead of racing with the decrement and possibly
+    // triggering a double Release.
     //
-    if (nullptr != m_pIStorage)
+    mux_IMailStorage *pStorage = m_pIStorage;
+    m_pIStorage = nullptr;
+    if (nullptr != pStorage)
     {
-        m_pIStorage->Release();
-        m_pIStorage = nullptr;
+        pStorage->Release();
     }
 
     if (nullptr != m_pILog)

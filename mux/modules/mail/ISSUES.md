@@ -49,15 +49,14 @@ Updated: 2026-03-27
 - **File:** `mail_mod.cpp:3145`
 - The `strdup(numlist.c_str())` result in `do_mail_quick()` is now checked; on allocation failure the player is notified via `RawNotify()` and the function returns without calling `mail_to_list()`.
 
-### Potential use-after-free in `shutdown()` under concurrent access
+### ~~Potential use-after-free in `shutdown()` under concurrent access~~ FIXED
 
-- **File:** `mail_mod.cpp:5425-5434`
-- **Issue:** `shutdown()` calls `m_pIStorage->Release()` and sets null, but has no guard against concurrent method calls that could access the pointer during the Release call.
-- **Impact:** Use-after-free if another thread accesses storage during shutdown.
+- **File:** `mail_mod.cpp:5451-5465`
+- `CMailMod::shutdown()` now captures `m_pIStorage` into a local, nulls the member field first, and then calls `Release()` via the local. A concurrent reader (in a future multi-threaded evaluator) sees the null before the release decrement races, closing the double-Release window called out in the report.
 
 ## Low — Code Quality
 
-### HACK comments in @mail/quick object handling
+### ~~HACK comments in @mail/quick object handling~~ NOT A BUG
 
-- **File:** `mail.cpp:2719, 5398`
-- **Issue:** Multiple workarounds for `@mail/quick` from objects indicate an architectural mismatch between mail delivery and object permissions.
+- **File:** `mux/modules/engine/mail.cpp:2725, 5404` (the tracker's old `mail.cpp` path predated the engine module extraction)
+- Reviewed both HACK-tagged blocks. Neither is an actual architectural hack: one encodes a deliberate sender-attribution policy for object-sent mail (player → self, wizard-owned object → object, otherwise → owner, preventing spoofing through intermediate objects); the other gates interactive `@mail` subcommands to player executors because those subcommands depend on per-session state (composing buffer, folder selection) that does not exist for objects. The comments were relabeled from `HACK` to explanatory policy notes; no code change was required.
