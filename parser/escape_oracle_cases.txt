@@ -1,9 +1,9 @@
 # id|expression|mux214|mux213|penn|live_status|notes
-plain_single_unknown|\% capacity| capacity| capacity|% capacity|confirmed|Confirmed on real 2.13 and Penn via traced @pemit output.
-plain_double_unknown|\\% capacity|% capacity|% capacity|% capacity|confirmed|Critical baseline for ordinary evaluation.
-plain_single_known|\%b|b|b|%b|confirmed|Confirmed on real 2.13 and Penn via traced @pemit output.
-plain_double_known|\\%b|%b|%b|%b|confirmed|Confirmed on real 2.13 via traced @pemit output.
-plain_triple_known|\\\%b|\b|\b|\%b|confirmed|Parser-level direct-eval row. Separately, traced @pemit command-level runs collapse to %b on both 2.13 and Penn because quoting changes the effective expression before eval.
+plain_single_unknown|\% capacity|% capacity|% capacity|% capacity|confirmed|Ground truth: mux2.13_13/src/eval.cpp:2439-2460 unconditionally emits the character following `\`, so `\%` → `%`. Validated live against engine.so via parser/validate_live_oracle.sh on 2026-04-05; earlier "confirmed" note was in error.
+plain_double_unknown|\\% capacity|\ capacity|\ capacity|% capacity|confirmed|`\\` emits a literal `\`; the subsequent `% ` is the unknown-% fallback which consumes `% ` and emits ` `. Ground truth: mux2.13_13/src/eval.cpp; validated live.
+plain_single_known|\%b|%b|%b|%b|confirmed|`\%` → `%`, then `b` is a literal character — %-substitutions are NOT re-tokenized after a `\` escape. Ground truth: mux2.13_13/src/eval.cpp; validated live.
+plain_double_known|\\%b|\ |\ |%b|confirmed|`\\` → `\`, then `%b` is the blank substitution → ` `. Ground truth: mux2.13_13/src/eval.cpp; validated live.
+plain_triple_known|\\\%b|\%b|\%b|\%b|confirmed|`\\` → `\`, `\%` → `%`, then literal `b`. Ground truth: mux2.13_13/src/eval.cpp; validated live. The older Penn row (`\%b`) was correct; mux214/mux213 were wrong in the previous corpus.
 noeval_switch_brace_unknown|[switch(1,1,{\\% capacity})]|% capacity|% capacity|% capacity|confirmed|Revalidated live after the parser-controlled deferred-region fix. Older rows that claimed a 2.13 loss here were wrong.
 pct_space|50% happy|50 happy|50 happy|50% happy|confirmed|Confirmed on real 2.13 and Penn via traced @pemit output.
 pct_iL_plain|%iL|L|iL|#-1 ARGUMENT OUT OF RANGE|confirmed|Confirmed on real 2.13 and Penn via traced @pemit output.
