@@ -19,10 +19,9 @@ Updated: 2026-04-04
 - **Issue:** `// TODO: Add ANSI/MXP processing based on context.state.supportsANSI etc.`
 - **Impact:** Features like MXP (Mud eXtension Protocol) and advanced ANSI features (beyond basic colors) may not be fully supported in the new GANL layer.
 
-### Incomplete NEW-ENVIRON parsing
+### ~~Incomplete NEW-ENVIRON parsing~~ FIXED
 - **File:** `mux/ganl/src/telnet_protocol_handler.cpp:1114, 1120`
-- **Issue:** Detailed parsing of `VAR/USERVAR/VALUE` sequences and response with `IAC SB NEW-ENVIRON IS ...` is missing.
-- **Impact:** Terminal environment negotiation (useful for determining client capabilities) is incomplete.
+- `TelnetProtocolHandler` now sends `SB NEW-ENVIRON SEND` after `WILL NEW-ENVIRON`, parses `VAR/USERVAR/VALUE/ESC` sequences from `IS` and `INFO`, updates width/height plus ANSI/MXP capability hints from environment values, and answers `SEND` with a bounded `SB NEW-ENVIRON IS` reply.
 
 ## High — Memory Safety (New, 2026-04-04)
 

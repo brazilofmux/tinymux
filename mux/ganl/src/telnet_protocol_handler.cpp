@@ -1,14 +1,142 @@
 #include "telnet_protocol_handler.h"
 #include <iomanip>
 #include <algorithm>
+#include <cctype>
 #include <cstring>
 #include <chrono>
+#include <map>
 #include <vector> // Ensure vector is included for subnegotiationBuffer
 
 // Define a macro for debug logging (disabled — stdout/stderr not valid on Windows detached process)
 #define GANL_TELNET_DEBUG(conn, x) do {} while (0)
 
 namespace ganl {
+
+    namespace {
+
+        constexpr unsigned char kNewEnvironIs = 0;
+        constexpr unsigned char kNewEnvironSend = 1;
+        constexpr unsigned char kNewEnvironInfo = 2;
+        constexpr unsigned char kNewEnvironVar = 0;
+        constexpr unsigned char kNewEnvironValue = 1;
+        constexpr unsigned char kNewEnvironEsc = 2;
+        constexpr unsigned char kNewEnvironUserVar = 3;
+        constexpr uint16_t kMaxNewEnvironDimension = 1000;
+
+        struct NewEnvironEntry {
+            std::string name;
+            std::string value;
+            bool isUserVar{false};
+        };
+
+        std::string uppercaseCopy(const std::string& input) {
+            std::string upper = input;
+            std::transform(upper.begin(), upper.end(), upper.begin(),
+                [](unsigned char ch) { return static_cast<char>(std::toupper(ch)); });
+            return upper;
+        }
+
+        bool parseUint16InRange(const std::string& value, uint16_t& out) {
+            if (value.empty()) {
+                return false;
+            }
+
+            unsigned long parsed = 0;
+            for (unsigned char ch : value) {
+                if (!std::isdigit(ch)) {
+                    return false;
+                }
+                parsed = (parsed * 10) + static_cast<unsigned long>(ch - '0');
+                if (parsed > kMaxNewEnvironDimension) {
+                    return false;
+                }
+            }
+
+            if (parsed == 0 || parsed > kMaxNewEnvironDimension) {
+                return false;
+            }
+
+            out = static_cast<uint16_t>(parsed);
+            return true;
+        }
+
+        std::vector<NewEnvironEntry> parseNewEnvironEntries(const std::vector<char>& buffer, size_t startIndex) {
+            std::vector<NewEnvironEntry> entries;
+            NewEnvironEntry current;
+            bool haveCurrent = false;
+            bool readingValue = false;
+
+            auto flushCurrent = [&]() {
+                if (haveCurrent && !current.name.empty()) {
+                    entries.push_back(current);
+                }
+                current = {};
+                haveCurrent = false;
+                readingValue = false;
+            };
+
+            for (size_t i = startIndex; i < buffer.size(); ++i) {
+                unsigned char ch = static_cast<unsigned char>(buffer[i]);
+                switch (ch) {
+                case kNewEnvironVar:
+                case kNewEnvironUserVar:
+                    flushCurrent();
+                    haveCurrent = true;
+                    current.isUserVar = (ch == kNewEnvironUserVar);
+                    break;
+
+                case kNewEnvironValue:
+                    if (haveCurrent) {
+                        readingValue = true;
+                    }
+                    break;
+
+                case kNewEnvironEsc:
+                    if (i + 1 < buffer.size() && haveCurrent) {
+                        unsigned char escaped = static_cast<unsigned char>(buffer[++i]);
+                        std::string& target = readingValue ? current.value : current.name;
+                        target.push_back(static_cast<char>(escaped));
+                    }
+                    break;
+
+                default:
+                    if (haveCurrent) {
+                        std::string& target = readingValue ? current.value : current.name;
+                        target.push_back(static_cast<char>(ch));
+                    }
+                    break;
+                }
+            }
+
+            flushCurrent();
+            return entries;
+        }
+
+        void appendNewEnvironEscaped(IoBuffer& out, const std::string& value) {
+            for (unsigned char ch : value) {
+                if (ch == kNewEnvironVar || ch == kNewEnvironValue ||
+                    ch == kNewEnvironEsc || ch == kNewEnvironUserVar)
+                {
+                    const char esc = static_cast<char>(kNewEnvironEsc);
+                    out.append(&esc, 1);
+                }
+                const char byte = static_cast<char>(ch);
+                out.append(&byte, 1);
+            }
+        }
+
+        void appendNewEnvironEntry(IoBuffer& out, const NewEnvironEntry& entry) {
+            const char kind = static_cast<char>(entry.isUserVar ? kNewEnvironUserVar : kNewEnvironVar);
+            out.append(&kind, 1);
+            appendNewEnvironEscaped(out, entry.name);
+            if (!entry.value.empty()) {
+                const char valueMarker = static_cast<char>(kNewEnvironValue);
+                out.append(&valueMarker, 1);
+                appendNewEnvironEscaped(out, entry.value);
+            }
+        }
+
+    } // namespace
 
     // Helper to safely check map value (returns false if key not found)
     inline bool checkMapFlag(const std::map<TelnetOption, bool>& map, TelnetOption key) {
@@ -903,8 +1031,21 @@ namespace ganl {
                     telnet_responses_out.append(sb_req, sizeof(sb_req));
                 } break;
                 case TelnetOption::NEW_ENVIRON: {
-                    // Optionally send SB NEW-ENVIRON SEND IS ... request here
-                    GANL_TELNET_DEBUG(conn, "Client WILL NEW-ENVIRON. Optionally send SB NEW-ENVIRON SEND/IS...");
+                    GANL_TELNET_DEBUG(conn, "Client WILL NEW-ENVIRON. Sending SB NEW-ENVIRON SEND request.");
+                    const char sb_req[] = {
+                        static_cast<char>(TelnetCommand::IAC),
+                        static_cast<char>(TelnetCommand::SB),
+                        static_cast<char>(TelnetOption::NEW_ENVIRON),
+                        static_cast<char>(kNewEnvironSend),
+                        static_cast<char>(kNewEnvironVar), 'T', 'E', 'R', 'M',
+                        static_cast<char>(kNewEnvironVar), 'C', 'O', 'L', 'U', 'M', 'N', 'S',
+                        static_cast<char>(kNewEnvironVar), 'L', 'I', 'N', 'E', 'S',
+                        static_cast<char>(kNewEnvironUserVar), 'C', 'O', 'L', 'O', 'R', 'T', 'E', 'R', 'M',
+                        static_cast<char>(kNewEnvironUserVar), 'M', 'X', 'P',
+                        static_cast<char>(TelnetCommand::IAC),
+                        static_cast<char>(TelnetCommand::SE)
+                    };
+                    telnet_responses_out.append(sb_req, sizeof(sb_req));
                 } break;
                 case TelnetOption::CHARSET: {
                     // Optionally send SB CHARSET REQUEST here
@@ -1143,25 +1284,119 @@ namespace ganl {
         case TelnetOption::NEW_ENVIRON: // RFC 1572
             // IAC SB NEW-ENVIRON IS <VAR val...> <USERVAR val...> IAC SE
             // IAC SB NEW-ENVIRON SEND <VAR / USERVAR ...> IAC SE
-            GANL_TELNET_DEBUG(conn, "Processing NEW-ENVIRON subnegotiation (Basic Parsing)");
+            GANL_TELNET_DEBUG(conn, "Processing NEW-ENVIRON subnegotiation");
             if (buffer.empty()) break;
-            if (buffer[0] == 0 /* IS */) {
-                // Parse variables sent by client
-                GANL_TELNET_DEBUG(conn, "Received NEW-ENVIRON IS...");
-                // TODO: Implement detailed parsing of VAR/USERVAR/VALUE sequences
+            if (buffer[0] == kNewEnvironIs || buffer[0] == kNewEnvironInfo) {
+                GANL_TELNET_DEBUG(conn, "Received NEW-ENVIRON " << (buffer[0] == kNewEnvironIs ? "IS" : "INFO") << ".");
+                const auto entries = parseNewEnvironEntries(buffer, 1);
+                for (const auto& entry : entries) {
+                    const std::string upperName = uppercaseCopy(entry.name);
+                    const std::string upperValue = uppercaseCopy(entry.value);
+
+                    if (upperName == "TERM") {
+                        if (upperValue.find("ANSI") != std::string::npos ||
+                            upperValue.find("XTERM") != std::string::npos ||
+                            upperValue.find("VT100") != std::string::npos ||
+                            upperValue.find("LINUX") != std::string::npos ||
+                            upperValue.find("COLOR") != std::string::npos)
+                        {
+                            context.setSupportsANSI(true);
+                        }
+                    }
+                    else if (upperName == "COLORTERM") {
+                        context.setSupportsANSI(!entry.value.empty() &&
+                            upperValue != "0" && upperValue != "FALSE" && upperValue != "OFF" && upperValue != "NO");
+                    }
+                    else if (upperName == "MXP") {
+                        context.setSupportsMXP(!entry.value.empty() &&
+                            upperValue != "0" && upperValue != "FALSE" && upperValue != "OFF" && upperValue != "NO");
+                    }
+                    else if (upperName == "COLUMNS") {
+                        uint16_t width = 0;
+                        if (parseUint16InRange(entry.value, width)) {
+                            updateWidth(conn, width);
+                        }
+                    }
+                    else if (upperName == "LINES") {
+                        uint16_t height = 0;
+                        if (parseUint16InRange(entry.value, height)) {
+                            updateHeight(conn, height);
+                        }
+                    }
+                }
                 context.newEnvironDataReceived = true; // Mark received
             }
-            else if (buffer[0] == 1 /* SEND */) {
-                // Client requests specific variables
+            else if (buffer[0] == kNewEnvironSend) {
                 GANL_TELNET_DEBUG(conn, "Received NEW-ENVIRON SEND request...");
-                // TODO: Check requested VARs and respond with IAC SB NEW-ENVIRON IS ...
-                // For now, just acknowledge receipt of request might be enough
+                const auto requestedEntries = parseNewEnvironEntries(buffer, 1);
+                std::vector<NewEnvironEntry> responseEntries;
+
+                auto addResponse = [&](const std::string& name, const std::string& value, bool isUserVar) {
+                    if (!value.empty()) {
+                        responseEntries.push_back(NewEnvironEntry{name, value, isUserVar});
+                    }
+                };
+
+                const std::string termValue = context.clientTtype.empty() ? "Hydra" : context.clientTtype;
+                const std::string columnsValue = std::to_string(
+                    context.mode == NegotiationMode::Client ? context.clientWidth : context.state.width);
+                const std::string linesValue = std::to_string(
+                    context.mode == NegotiationMode::Client ? context.clientHeight : context.state.height);
+                const std::string colorTermValue = context.state.supportsANSI ? "truecolor" : "";
+                const std::string mxpValue = context.state.supportsMXP ? "1" : "0";
+
+                auto addRequested = [&](const std::string& requestedName, bool requestedUserVar) {
+                    const std::string upperName = uppercaseCopy(requestedName);
+                    if (upperName == "TERM") {
+                        addResponse("TERM", termValue, false);
+                    }
+                    else if (upperName == "COLUMNS") {
+                        addResponse("COLUMNS", columnsValue, false);
+                    }
+                    else if (upperName == "LINES") {
+                        addResponse("LINES", linesValue, false);
+                    }
+                    else if (upperName == "COLORTERM") {
+                        addResponse("COLORTERM", colorTermValue, requestedUserVar);
+                    }
+                    else if (upperName == "MXP") {
+                        addResponse("MXP", mxpValue, true);
+                    }
+                };
+
+                if (requestedEntries.empty()) {
+                    addResponse("TERM", termValue, false);
+                    addResponse("COLUMNS", columnsValue, false);
+                    addResponse("LINES", linesValue, false);
+                    if (!colorTermValue.empty()) {
+                        addResponse("COLORTERM", colorTermValue, true);
+                    }
+                    addResponse("MXP", mxpValue, true);
+                }
+                else {
+                    for (const auto& requested : requestedEntries) {
+                        addRequested(requested.name, requested.isUserVar);
+                    }
+                }
+
+                if (!responseEntries.empty()) {
+                    const char sb_start[] = {
+                        static_cast<char>(TelnetCommand::IAC),
+                        static_cast<char>(TelnetCommand::SB),
+                        static_cast<char>(TelnetOption::NEW_ENVIRON),
+                        static_cast<char>(kNewEnvironIs)
+                    };
+                    const char sb_end[] = {
+                        static_cast<char>(TelnetCommand::IAC),
+                        static_cast<char>(TelnetCommand::SE)
+                    };
+                    telnet_responses_out.append(sb_start, sizeof(sb_start));
+                    for (const auto& entry : responseEntries) {
+                        appendNewEnvironEntry(telnet_responses_out, entry);
+                    }
+                    telnet_responses_out.append(sb_end, sizeof(sb_end));
+                }
                 context.newEnvironDataReceived = true; // Mark request received/processed
-            }
-            else if (buffer[0] == 2 /* INFO */) {
-                // Similar to IS but for unsolicited info
-                GANL_TELNET_DEBUG(conn, "Received NEW-ENVIRON INFO...");
-                context.newEnvironDataReceived = true;
             }
             break;
 
