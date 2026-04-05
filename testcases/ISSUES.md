@@ -78,7 +78,7 @@ The project now has two complementary testing tiers:
 
 ## Low — Hardcoded References
 
-### Some tests reference `#0` directly
+### ~~Some tests reference `#0` directly~~ FIXED
 
-- **File:** `objid_fn.mux:19`
-- **Issue:** Assumes `#0` exists with specific properties. Tests will fail on databases with different object numbering.
+- **File:** `objid_fn.mux`
+- `objid_fn.mux` still uses `#0` (the TinyMUX master room, which is a database invariant), but no longer hashes `name(objid(#0))` — the brittleness was the SHA1 capture of a configurable room name. Converted to a 14-bit semantic bitstring assertion that compares `name(objid(#0))` to `name(#0)` for the round-trip check, eliminating the SHA1 hash entirely and the configured-name dependency with it.

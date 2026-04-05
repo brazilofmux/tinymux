@@ -14,26 +14,29 @@
 #
 # Test Case #1 - objid format, isobjid, round-trip, invalid timestamps, isdbref
 #
+# Semantic bitstring (no SHA1, no db-dependent name capture):
+#   1: objid(me)       looks like #N:T
+#   2: objid(#0)       looks like #0:T
+#   3: isobjid(objid(me))       true
+#   4: isobjid(objid(#0))       true
+#   5: isobjid(#0)              false (bare dbref, no timestamp)
+#   6: isobjid(#-1)             false (bad dbref)
+#   7: isobjid(foo)             false (not a dbref token)
+#   8: isobjid()                false (no argument)
+#   9: isobjid(#0:0)            true  (syntactically valid, Good_obj)
+#  10: isobjid(#0:9999999999)   true  (isobjid checks format + Good_obj,
+#                                      not timestamp accuracy)
+#  11: isobjid(#-1:1234567890)  false (bad dbref)
+#  12: isdbref(objid(#0))       false (objid is not a bare dbref)
+#  13: isdbref(objid(me))       false
+#  14: name() accepts objid-form and matches name() of the bare dbref
+#
 &tr.tc001 test_objid_fn=
   @if strmatch(
-        setr(0,sha1(
-            [strmatch(objid(me),#*:*)]
-            [strmatch(objid(#0),#0:*)]
-            [isobjid(objid(me))]
-            [isobjid(objid(#0))]
-            [isobjid(#0)]
-            [isobjid(#-1)]
-            [isobjid(foo)]
-            [isobjid()]
-            [name(objid(#0))]
-            [isobjid(#0:0)]
-            [isobjid(#0:9999999999)]
-            [isobjid(#-1:1234567890)]
-            [isdbref(objid(#0))]
-            [isdbref(objid(me))]
-          )
+        setr(0,
+          [strmatch(objid(me),#*:*)][strmatch(objid(#0),#0:*)][isobjid(objid(me))][isobjid(objid(#0))][isobjid(#0)][isobjid(#-1)][isobjid(foo)][isobjid()][isobjid(#0:0)][isobjid(#0:9999999999)][isobjid(#-1:1234567890)][isdbref(objid(#0))][isdbref(objid(me))][strmatch(name(objid(#0)),name(#0))]
         ),
-        BE47D92F8790AB195AE7CBD06ECEC02C4B1804D0
+        11110000110001
       )=
   {
     @log smoke=TC001: objid/isobjid comprehensive. Succeeded.;
