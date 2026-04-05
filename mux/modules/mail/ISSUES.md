@@ -46,11 +46,10 @@ Updated: 2026-03-27
 - **File:** `mail_mod.cpp:2311, 2590, 2691`
 - All three token-parsing loops (`do_expmail_to`, `mail_to_list` senderlist build, `mail_to_list` recipient iteration) now guard the trailing `tail--; if (*tail != '"') tail++;` fixup with `if (tail > head)`. A malformed lone `"` token no longer walks `tail` before `head`, eliminating the OOB read and the out-of-bounds `*tail = '\0'` write in the recipient loop.
 
-### Missing strdup() null check in `do_mail_quick()`
+### ~~Missing strdup() null check in `do_mail_quick()`~~ FIXED
 
-- **File:** `mail_mod.cpp:3127`
-- **Issue:** `strdup(numlist.c_str())` result is passed directly to `mail_to_list()` without null check. On allocation failure, mail silently fails with no error to the player.
-- **Recommendation:** Check for nullptr and notify player of failure.
+- **File:** `mail_mod.cpp:3145`
+- The `strdup(numlist.c_str())` result in `do_mail_quick()` is now checked; on allocation failure the player is notified via `RawNotify()` and the function returns without calling `mail_to_list()`.
 
 ### Potential use-after-free in `shutdown()` under concurrent access
 

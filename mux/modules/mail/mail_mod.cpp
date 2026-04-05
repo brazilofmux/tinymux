@@ -3143,6 +3143,15 @@ void CMailMod::do_mail_quick(dbref player, const UTF8 *arg1,
     // mail_to_list takes ownership of a malloc'd buffer.
     //
     UTF8 *numlist_copy = reinterpret_cast<UTF8 *>(strdup(numlist.c_str()));
+    if (nullptr == numlist_copy)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: Out of memory, message not sent."));
+        }
+        return;
+    }
     mail_to_list(player, numlist_copy, pSubject, arg2, 0, false);
 }
 
