@@ -10,11 +10,9 @@ Updated: 2026-04-04
 - **Impact:** Server crash due to stack overflow.
 - **Recommendation:** Implement an iterative evaluator or use an explicit stack to limit recursion depth more rigorously.
 
-### O(n) lookup in `persistent_vm_t::attr_cache`
-- **File:** `mux/modules/engine/jit_compiler.cpp`
-- **Issue:** The attribute cache used by the JIT compiler uses a `std::vector` and O(n) linear search for lookups.
-- **Impact:** Performance degradation as the number of compiled attributes grows.
-- **Recommendation:** Use a `std::unordered_map` with `(obj, attr_num)` as the key for O(1) lookups.
+### ~~O(n) lookup in `persistent_vm_t::attr_cache`~~ FIXED
+- **File:** `mux/modules/engine/jit_compiler.cpp:1056-1170`
+- The attribute cache is now a `std::unordered_map<uint64_t, attr_cache_entry>` keyed by a packed `(obj, attr_num)` word, replacing the linear `std::vector` scan on every `compile_attr()` lookup and update path. Reverified with `g++ -std=c++17 -fsyntax-only` on `jit_compiler.cpp`.
 
 ## Medium — Memory Management
 

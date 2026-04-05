@@ -1057,14 +1057,16 @@ struct persistent_vm_t {
     // Checked for staleness via mod_count on each lookup.
     //
     struct attr_cache_entry {
-        dbref    obj;
-        int      attr_num;
         uint32_t mod_count;
         uint64_t entry_pc;
         uint64_t out_addr;
         bool     needs_jit;
     };
-    std::vector<attr_cache_entry> attr_cache;
+    static uint64_t attr_cache_key(dbref obj, int attr_num) {
+        return (static_cast<uint64_t>(static_cast<uint32_t>(obj)) << 32)
+             | static_cast<uint32_t>(attr_num);
+    }
+    std::unordered_map<uint64_t, attr_cache_entry> attr_cache;
 
     // Track the worst-case output allocation across all compilations.
     uint64_t worst_out_pool;
@@ -1128,43 +1130,26 @@ struct persistent_vm_t {
                                 int eval = EV_FCHECK | EV_EVAL) {
         // Check cache.
         uint32_t mc = attr_mod_count_get(obj, attr_num);
-        for (auto &e : attr_cache) {
-            if (e.obj == obj && e.attr_num == attr_num) {
-                if (e.mod_count == mc) {
-                    return {e.entry_pc, e.out_addr, e.needs_jit};
-                }
-                // Stale — evict and recompile.
-                // (Code heap space is leaked; future: reclaim.)
-                e.entry_pc = 0;
-                break;
-            }
+        uint64_t key = attr_cache_key(obj, attr_num);
+        auto it = attr_cache.find(key);
+        if (it != attr_cache.end() && it->second.mod_count == mc) {
+            return {it->second.entry_pc, it->second.out_addr,
+                    it->second.needs_jit};
         }
+        // Stale or missing — (stale code heap space is leaked; future:
+        // reclaim).
 
         // Compile.
         compile_result cr = compile(body, body_len, eval);
         if (!cr.entry_pc) return {0, 0, false};
 
-        // Cache.
+        // Cache (insert or overwrite).
         attr_cache_entry entry;
-        entry.obj = obj;
-        entry.attr_num = attr_num;
         entry.mod_count = mc;
         entry.entry_pc = cr.entry_pc;
         entry.out_addr = cr.out_addr;
         entry.needs_jit = cr.needs_jit;
-
-        // Update existing or append.
-        bool found = false;
-        for (auto &e : attr_cache) {
-            if (e.obj == obj && e.attr_num == attr_num) {
-                e = entry;
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            attr_cache.push_back(entry);
-        }
+        attr_cache[key] = entry;
 
         return cr;
     }
