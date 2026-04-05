@@ -2308,10 +2308,16 @@ std::string CMailMod::make_numlist(dbref player, const UTF8 *arg, bool bBlind)
                 tail++;
             }
         }
-        tail--;
-        if (*tail != '"')
+        // Back up to strip a trailing closing quote if present, but only
+        // when there is content between head and tail; a lone '"' leaves
+        // tail == head and must not be decremented (would underflow).
+        if (tail > head)
         {
-            tail++;
+            tail--;
+            if (*tail != '"')
+            {
+                tail++;
+            }
         }
         UTF8 spot = *tail;
         *tail = '\0';
@@ -2582,10 +2588,16 @@ void CMailMod::mail_to_list(dbref player, UTF8 *list, const UTF8 *subject,
                 tail++;
             }
         }
-        tail--;
-        if (*tail != '"')
+        // Back up to strip a trailing closing quote if present, but only
+        // when there is content between head and tail; a lone '"' leaves
+        // tail == head and must not be decremented (would underflow).
+        if (tail > head)
         {
-            tail++;
+            tail--;
+            if (*tail != '"')
+            {
+                tail++;
+            }
         }
 
         // Append to senderlist.
@@ -2677,10 +2689,16 @@ void CMailMod::mail_to_list(dbref player, UTF8 *list, const UTF8 *subject,
                 tail++;
             }
         }
-        tail--;
-        if (*tail != '"')
+        // Back up to strip a trailing closing quote if present, but only
+        // when there is content between head and tail; a lone '"' leaves
+        // tail == head and must not be decremented (would underflow).
+        if (tail > head)
         {
-            tail++;
+            tail--;
+            if (*tail != '"')
+            {
+                tail++;
+            }
         }
         UTF8 spot = *tail;
         *tail = '\0';

@@ -41,12 +41,10 @@ Updated: 2026-03-27
 
 ## Medium — Buffer Safety (New, 2026-04-04)
 
-### Off-by-one pointer arithmetic in `mail_to_list()` parsing
+### ~~Off-by-one pointer arithmetic in `mail_to_list()` parsing~~ FIXED
 
-- **File:** `mail_mod.cpp:2585-2589`
-- **Issue:** The `tail--` decrement after the parsing loop does not check that `tail > head`. On a malformed single-character entry, `tail` becomes `head - 1`, pointing before the buffer.
-- **Impact:** Out-of-bounds read, potential heap corruption.
-- **Recommendation:** Guard with `if (tail > head) tail--;`.
+- **File:** `mail_mod.cpp:2311, 2590, 2691`
+- All three token-parsing loops (`do_expmail_to`, `mail_to_list` senderlist build, `mail_to_list` recipient iteration) now guard the trailing `tail--; if (*tail != '"') tail++;` fixup with `if (tail > head)`. A malformed lone `"` token no longer walks `tail` before `head`, eliminating the OOB read and the out-of-bounds `*tail = '\0'` write in the recipient loop.
 
 ### Missing strdup() null check in `do_mail_quick()`
 
