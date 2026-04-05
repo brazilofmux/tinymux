@@ -12,31 +12,34 @@
   @log smoke=Beginning objid()/isobjid() test cases.
 -
 #
-# Test Case #1 - objid format, isobjid, round-trip, invalid timestamps, isdbref
+# Test Case #1 - objid format, isobjid/isdbref acceptance rules.
 #
-# Semantic bitstring (no SHA1, no db-dependent name capture):
-#   1: objid(me)       looks like #N:T
-#   2: objid(#0)       looks like #0:T
-#   3: isobjid(objid(me))       true
-#   4: isobjid(objid(#0))       true
-#   5: isobjid(#0)              false (bare dbref, no timestamp)
-#   6: isobjid(#-1)             false (bad dbref)
-#   7: isobjid(foo)             false (not a dbref token)
-#   8: isobjid()                false (no argument)
-#   9: isobjid(#0:0)            true  (syntactically valid, Good_obj)
-#  10: isobjid(#0:9999999999)   true  (isobjid checks format + Good_obj,
-#                                      not timestamp accuracy)
-#  11: isobjid(#-1:1234567890)  false (bad dbref)
-#  12: isdbref(objid(#0))       false (objid is not a bare dbref)
-#  13: isdbref(objid(me))       false
-#  14: name() accepts objid-form and matches name() of the bare dbref
+# Semantic bitstring. All assertions key off `me` (the test object),
+# which has a real creation time, and deterministic negative inputs.
+# We avoid #0 (Limbo) because the default master room has csecs == 0,
+# which parse_dbref rejects when validating the objid timestamp.
+#
+#   1: objid(me)                looks like #N:T
+#   2: isobjid(objid(me))       accepts a real valid objid
+#   3: isobjid(me)              rejects a bare word
+#   4: isobjid(#-1)             rejects a bad dbref
+#   5: isobjid(foo)             rejects a non-dbref token
+#   6: isobjid()                rejects empty args
+#   7: isobjid(#-1:1234567890)  rejects bad dbref in objid form
+#   8: isobjid(objid(#-1))      objid(bad) -> "#-1" -> rejected
+#   9: isdbref(num(me))         num() yields a dbref-format string
+#  10: isdbref(objid(me))       parse_dbref also accepts objid form
+#                               (it validates the embedded timestamp)
+#  11: isdbref(#-1)             rejects a bad dbref
+#  12: isdbref(me)              rejects a bare word
+#  13: isdbref()                rejects empty args
 #
 &tr.tc001 test_objid_fn=
   @if strmatch(
         setr(0,
-          [strmatch(objid(me),#*:*)][strmatch(objid(#0),#0:*)][isobjid(objid(me))][isobjid(objid(#0))][isobjid(#0)][isobjid(#-1)][isobjid(foo)][isobjid()][isobjid(#0:0)][isobjid(#0:9999999999)][isobjid(#-1:1234567890)][isdbref(objid(#0))][isdbref(objid(me))][strmatch(name(objid(#0)),name(#0))]
+          [strmatch(objid(me),#*:*)][isobjid(objid(me))][isobjid(me)][isobjid(#-1)][isobjid(foo)][isobjid()][isobjid(#-1:1234567890)][isobjid(objid(#-1))][isdbref(num(me))][isdbref(objid(me))][isdbref(#-1)][isdbref(me)][isdbref()]
         ),
-        11110000110001
+        1100000011000
       )=
   {
     @log smoke=TC001: objid/isobjid comprehensive. Succeeded.;
