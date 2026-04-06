@@ -115,6 +115,7 @@ for %%f in ("$(ProjectDir)..\..\mux\vcpkg_installed\x64-windows\bin\*.dll") do c
     <ClCompile Include="..\console\src\keybind.cpp" />
     <ClCompile Include="..\console\src\hydra_connection.cpp" />
     <ClCompile Include="src\hydra.pb.cc" />
+    <ClCompile Include="src\credential_store.cpp" />
     <ClCompile Include="src\hydra.grpc.pb.cc" />
     <ClCompile Include="..\..\ragel\trigger_match.c">
       <CompileAs>CompileAsC</CompileAs>
@@ -133,6 +134,7 @@ for %%f in ("$(ProjectDir)..\..\mux\vcpkg_installed\x64-windows\bin\*.dll") do c
     <ClInclude Include="..\console\src\iconnection.h" />
     <ClInclude Include="..\console\src\connection.h" />
     <ClInclude Include="..\console\src\hydra_connection.h" />
+    <ClInclude Include="src\credential_store.h" />
     <ClInclude Include="res\resource.h" />
   </ItemGroup>
   <ItemGroup>

@@ -3,6 +3,13 @@
 
 #include <string>
 
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#endif
+
 // Overwrite a string's data buffer with zeros in a way that the compiler
 // cannot optimise away, then clear the string.
 inline void secure_zero(std::string& s) {

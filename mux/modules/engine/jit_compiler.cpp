@@ -1459,7 +1459,7 @@ static compiled_program reconstruct_from_cache(
 
         // Code region: [CODE_BASE..CODE_LIMIT)
         if (copy_len > static_cast<int>(rv_compiler::CODE_BASE)) {
-            int code_end = std::min(copy_len,
+            int code_end = (std::min)(copy_len,
                 static_cast<int>(rv_compiler::CODE_LIMIT));
             prog.code_blob.assign(base + rv_compiler::CODE_BASE,
                                   base + code_end);
@@ -1467,7 +1467,7 @@ static compiled_program reconstruct_from_cache(
 
         // String pool: [STR_BASE..STR_LIMIT)
         if (copy_len > static_cast<int>(rv_compiler::STR_BASE)) {
-            int str_end = std::min(copy_len,
+            int str_end = (std::min)(copy_len,
                 static_cast<int>(rv_compiler::STR_LIMIT));
             prog.str_blob.assign(base + rv_compiler::STR_BASE,
                                  base + str_end);
@@ -1475,7 +1475,7 @@ static compiled_program reconstruct_from_cache(
 
         // Fargs pool: [FARGS_BASE..FARGS_LIMIT)
         if (copy_len > static_cast<int>(rv_compiler::FARGS_BASE)) {
-            int fargs_end = std::min(copy_len,
+            int fargs_end = (std::min)(copy_len,
                 static_cast<int>(rv_compiler::FARGS_LIMIT));
             prog.fargs_blob.assign(base + rv_compiler::FARGS_BASE,
                                    base + fargs_end);

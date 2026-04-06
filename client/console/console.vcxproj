@@ -132,6 +132,7 @@ for %%f in ("$(ProjectDir)..\..\mux\vcpkg_installed\x64-windows\bin\*.dll") do c
     <ClInclude Include="src\world.h" />
     <ClInclude Include="src\hook.h" />
     <ClInclude Include="src\spawn.h" />
+    <ClInclude Include="src\secure_util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

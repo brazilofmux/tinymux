@@ -5148,6 +5148,7 @@ class GameOutput final : public ::google::protobuf::Message
     kSourceFieldNumber = 2,
     kTimestampFieldNumber = 3,
     kLinkNumberFieldNumber = 4,
+    kEndOfRecordFieldNumber = 5,
   };
   // string text = 1;
   void clear_text() ;
@@ -5201,12 +5202,22 @@ class GameOutput final : public ::google::protobuf::Message
   void _internal_set_link_number(::int32_t value);
 
   public:
+  // bool end_of_record = 5;
+  void clear_end_of_record() ;
+  bool end_of_record() const;
+  void set_end_of_record(bool value);
+
+  private:
+  bool _internal_end_of_record() const;
+  void _internal_set_end_of_record(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:hydra.GameOutput)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      2, 4, 0,
+      3, 5, 0,
       35, 2>
       _table_;
 
@@ -5228,6 +5239,7 @@ class GameOutput final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr source_;
     ::int64_t timestamp_;
     ::int32_t link_number_;
+    bool end_of_record_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -10972,6 +10984,28 @@ inline ::int32_t GameOutput::_internal_link_number() const {
 inline void GameOutput::_internal_set_link_number(::int32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.link_number_ = value;
+}
+
+// bool end_of_record = 5;
+inline void GameOutput::clear_end_of_record() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.end_of_record_ = false;
+}
+inline bool GameOutput::end_of_record() const {
+  // @@protoc_insertion_point(field_get:hydra.GameOutput.end_of_record)
+  return _internal_end_of_record();
+}
+inline void GameOutput::set_end_of_record(bool value) {
+  _internal_set_end_of_record(value);
+  // @@protoc_insertion_point(field_set:hydra.GameOutput.end_of_record)
+}
+inline bool GameOutput::_internal_end_of_record() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.end_of_record_;
+}
+inline void GameOutput::_internal_set_end_of_record(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.end_of_record_ = value;
 }
 
 // -------------------------------------------------------------------
