@@ -53,7 +53,7 @@ ATTR *vattr_define_LEN(const UTF8 *pName, size_t nName, int number, int flags)
     if (vp)
     {
         string key(reinterpret_cast<const char *>(pName), nName);
-        auto [it, inserted] = mudstate.vattr_name_map.emplace(move(key), number);
+        auto [it, inserted] = mudstate.vattr_name_map.emplace(std::move(key), number);
         if (!inserted)
         {
             MEMFREE(vp);
@@ -191,7 +191,7 @@ ATTR *vattr_rename_LEN(UTF8 *pOldName, size_t nOldName, UTF8 *pNewName, size_t n
 
     mudstate.vattr_name_map.erase(it);
 
-    auto [newit, inserted] = mudstate.vattr_name_map.emplace(move(newkey), anum);
+    auto [newit, inserted] = mudstate.vattr_name_map.emplace(std::move(newkey), anum);
     if (!inserted)
     {
         mudstate.vattr_name_map.emplace(oldkey, anum);
