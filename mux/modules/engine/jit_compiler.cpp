@@ -116,9 +116,9 @@ private:
         return a;
     }
 
-    static inline uint32_t s_next_id = 0;
+    static inline thread_local uint32_t s_next_id = 0;
     static inline thread_local Arena *s_current = nullptr;
-    static inline std::unordered_map<uint32_t, Arena *> s_arenas;
+    static inline thread_local std::unordered_map<uint32_t, Arena *> s_arenas;
 };
 
 // ---------------------------------------------------------------

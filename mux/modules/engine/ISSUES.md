@@ -14,11 +14,10 @@ Updated: 2026-04-04
 
 ## Medium — Memory Management
 
-### Continued use of manual `alloc_lbuf`/`free_lbuf`
+### Continued use of manual `alloc_lbuf`/`free_lbuf` — MOSTLY RESOLVED
 - **File:** Multiple files in `mux/modules/engine/`
-- **Issue:** Many functions still use manual memory management for large buffers, which is prone to leaks in error paths.
-- **Impact:** Potential memory leaks and use-after-free bugs.
-- **Recommendation:** Accelerate migration to `LBuf` RAII wrapper or `std::string`.
+- **Progress:** ~216 of 305 sites converted to `LBuf` RAII (`LBuf_Src` for fresh allocations, `LBuf_Adopt` for caller-owned `atr_get`/`atr_pget` returns) across 38 source files. Move semantics added to `LBuf` for adopt-by-value.
+- **Remaining:** ~90 sites that resist mechanical conversion: `fargs[]` array stores, `did_it()` charge/runout swap patterns, `unparse_object()` returns, ping-pong buffers, and cross-function lifetimes. These would need structural refactoring or a separate `LBufPtr` type.
 
 ## High — Buffer Safety (New, 2026-04-04)
 
@@ -38,11 +37,10 @@ Updated: 2026-04-04
 
 ## Medium — JIT Safety (New, 2026-04-04)
 
-### Unsafe global state in JIT compiler
+### ~~Unsafe global state in JIT compiler~~ FIXED
 
-- **File:** `mux/modules/engine/jit_compiler.cpp:120, 2266, 2317-2323`
-- **Issue:** Static variables `s_current`, `s_arenas`, `s_current_ecall_ctx` and the save/restore pattern for eval context have no synchronization. Safe under current single-threaded evaluation but blocks any future multi-threading.
-- **Progress:** `s_current_ecall_ctx` and the JIT arena cursor `s_current` are now `thread_local`, which removes the most direct per-thread context/cursor hazards. The arena registry (`s_arenas`) and related global bookkeeping are still process-global and still block broader concurrent evaluation.
+- **File:** `mux/modules/engine/jit_compiler.cpp:119-121`
+- All three `JITArena` static members (`s_next_id`, `s_current`, `s_arenas`) are now `thread_local`. Combined with the earlier `thread_local` conversion of `s_current_ecall_ctx`, no JIT compiler state is shared across threads. Arena IDs are per-thread (they only flow through the RV64 VM context, which is per-evaluation).
 
 ### ~~Unchecked `jit_alloc()` in `dbt_reset()`~~ FALSE ALARM
 

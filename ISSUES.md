@@ -13,7 +13,7 @@ Last refreshed: 2026-04-05.
 | Tracker | Open | Summary |
 |---|---|---|
 | [Core Server (`mux/src/`)](mux/src/ISSUES.md) | 1 | Windows console signal-handler TODO in `CPlatform::RegisterSignalHandler`. |
-| [Engine Module](mux/modules/engine/ISSUES.md) | 3 | Migration from manual `alloc_lbuf`/`free_lbuf` to RAII; `s_arenas` JIT global state (partially mitigated via `thread_local`); dynamic-cargs `ulambda` JIT support. |
+| [Engine Module](mux/modules/engine/ISSUES.md) | 2 | `alloc_lbuf`/`free_lbuf` RAII migration ~70% complete (~90 complex sites remain); dynamic-cargs `ulambda` JIT support. |
 | [Hydra Clients (aggregate)](client/ISSUES.md) | 2 | GMCP handled as raw JSON only; cross-client plaintext credential storage. |
 | [iOS Client](client/ios/ISSUES.md) | 2 | Viewport sizing uses coarse screen-bounds estimate; terminal size not refreshed after connect. |
 | [Web Client](client/web/ISSUES.md) | 2 | localStorage credentials; no browser-level regression harness. |
