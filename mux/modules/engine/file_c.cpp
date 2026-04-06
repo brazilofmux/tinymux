@@ -131,7 +131,7 @@ static int fcache_read(FBLOCK **cp, UTF8 *filename)
         ENDLOG
         return -1;
     }
-    buff = alloc_lbuf("fcache_read.temp");
+    LBuf lbuf_temp = LBuf_Src("fcache_read.temp");
 
     // Set up the initial cache buffer to make things easier.
     //
@@ -143,12 +143,12 @@ static int fcache_read(FBLOCK **cp, UTF8 *filename)
 
     // Process the file, one lbuf at a time.
     //
-    int nmax = mux_read(fd, buff, LBUF_SIZE);
+    int nmax = mux_read(fd, lbuf_temp, LBUF_SIZE);
     while (nmax > 0)
     {
         for (int n = 0; n < nmax; n++)
         {
-            switch (buff[n])
+            switch (lbuf_temp[n])
             {
             case '\n':
                 fp = fcache_fill(fp, '\r');
@@ -158,13 +158,12 @@ static int fcache_read(FBLOCK **cp, UTF8 *filename)
             case '\r':
                 break;
             default:
-                fp = fcache_fill(fp, buff[n]);
+                fp = fcache_fill(fp, lbuf_temp[n]);
                 tchars++;
             }
         }
-        nmax = mux_read(fd, buff, LBUF_SIZE);
+        nmax = mux_read(fd, lbuf_temp, LBUF_SIZE);
     }
-    free_lbuf(buff);
     mux_close(fd);
 
     // If we didn't read anything in, toss the initial buffer.
@@ -242,9 +241,10 @@ void fcache_send(const dbref player, const int num)
 void fcache_load(dbref player)
 {
     FCACHE *fp;
-    UTF8 *buff, *bufc, *sbuf;
+    UTF8 *bufc, *sbuf;
 
-    buff = bufc = alloc_lbuf("fcache_load.lbuf");
+    LBuf buff = LBuf_Src("fcache_load.lbuf");
+    bufc = buff.get();
     sbuf = alloc_sbuf("fcache_load.sbuf");
     for (fp = fcache; fp->ppFilename; fp++)
     {
@@ -272,7 +272,6 @@ void fcache_load(dbref player)
     {
         notify(player, buff);
     }
-    free_lbuf(buff);
     free_sbuf(sbuf);
 }
 

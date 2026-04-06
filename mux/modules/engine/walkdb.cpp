@@ -104,7 +104,7 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
     if (key & DOLIST_NOTIFY)
     {
-        UTF8 *tbuf = alloc_lbuf("dolist.notify_cmd");
+        LBuf tbuf = LBuf_Src("dolist.notify_cmd");
         mux_strncpy(tbuf, T("@notify/quiet me"), LBUF_SIZE-1);
         CLinearTimeAbsolute lta;
         wait_que(executor, caller, enactor, eval, false, lta, NOTHING,
@@ -112,7 +112,6 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
             tbuf,
             ncargs, cargs,
             mudstate.global_regs);
-        free_lbuf(tbuf);
     }
 }
 
@@ -806,7 +805,7 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
 void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
 {
     POWER thing1powers, thing2powers;
-    UTF8 *result, *bp;
+    UTF8 *bp;
 
     UTF8 *buff = alloc_sbuf("search_perform.num");
     int save_invk_ctr = mudstate.func_invk_ctr;
@@ -1004,7 +1003,8 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
                 mudstate.inum[mudstate.in_loop] = 0;
             }
             mudstate.in_loop++;
-            result = bp = alloc_lbuf("search_perform");
+            LBuf result = LBuf_Src("search_perform");
+            bp = result.get();
             mux_exec(parm->s_rst_eval, LBUF_SIZE-1, result, &bp, executor, caller, enactor,
                 EV_FCHECK | EV_EVAL | EV_NOTRACE, nullptr, 0);
             *bp = '\0';
@@ -1016,10 +1016,8 @@ void search_perform(dbref executor, dbref caller, dbref enactor, SEARCH *parm)
             }
             if (!*result || !xlate(result))
             {
-                free_lbuf(result);
                 continue;
             }
-            free_lbuf(result);
         }
 
         // It passed everything. Amazing.
@@ -1073,7 +1071,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, U
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *buff, *outbuf, *bp;
+    UTF8 *buff, *bp;
     dbref thing, from, to;
     SEARCH searchparm;
 
@@ -1099,7 +1097,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, U
         olist_pop();
         return;
     }
-    outbuf = alloc_lbuf("do_search.outbuf");
+    LBuf outbuf = LBuf_Src("do_search.outbuf");
 
     int rcount = 0;
     int ecount = 0;
@@ -1258,7 +1256,6 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, U
             rcount, ecount, tcount, pcount);
         notify(executor, outbuf);
     }
-    free_lbuf(outbuf);
     olist_pop();
 }
 

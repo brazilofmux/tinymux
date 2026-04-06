@@ -132,10 +132,10 @@ void init_powertab(void)
 
 void display_powertab(dbref player)
 {
-    UTF8 *buf, *bp;
+    LBuf buf = LBuf_Src("display_powertab");
+    UTF8 *bp = buf.get();
     POWERENT *fp;
 
-    bp = buf = alloc_lbuf("display_powertab");
     safe_str(T("Powers:"), buf, &bp);
     for (fp = gen_powers; fp->powername; fp++)
     {
@@ -152,7 +152,6 @@ void display_powertab(dbref player)
     }
     *bp = '\0';
     notify(player, buf);
-    free_lbuf(buf);
 }
 
 static POWERENT *find_power(dbref thing, UTF8 *powername)

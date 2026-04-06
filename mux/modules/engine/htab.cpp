@@ -64,8 +64,8 @@ NAMETAB *find_nametab_ent(dbref player, NAMETAB *ntab, const UTF8 *flagname)
 void display_nametab(dbref player, NAMETAB *ntab, const UTF8 *prefix, bool list_if_none)
 {
     bool got_one = false;
-    UTF8 *buf = alloc_lbuf("display_nametab");
-    UTF8 *bp = buf;
+    LBuf buf = LBuf_Src("display_nametab");
+    UTF8 *bp = buf.get();
 
     safe_str(prefix, buf, &bp);
     safe_chr(':', buf, &bp);
@@ -85,7 +85,6 @@ void display_nametab(dbref player, NAMETAB *ntab, const UTF8 *prefix, bool list_
     {
         notify(player, buf);
     }
-    free_lbuf(buf);
 }
 
 /* ---------------------------------------------------------------------------
@@ -96,8 +95,8 @@ void interp_nametab(dbref player, NAMETAB *ntab, int flagword,
     const UTF8 *prefix, const UTF8 *true_text, const UTF8 *false_text)
 {
     bool bFirst = true;
-    UTF8 *buf = alloc_lbuf("interp_nametab");
-    UTF8 *bp = buf;
+    LBuf buf = LBuf_Src("interp_nametab");
+    UTF8 *bp = buf.get();
 
     safe_str(prefix, buf, &bp);
     for (NAMETAB *nt = ntab; nt->name; nt++)
@@ -125,7 +124,6 @@ void interp_nametab(dbref player, NAMETAB *ntab, int flagword,
     }
     *bp = '\0';
     notify(player, buf);
-    free_lbuf(buf);
 }
 
 /* ---------------------------------------------------------------------------
@@ -134,8 +132,8 @@ void interp_nametab(dbref player, NAMETAB *ntab, int flagword,
 
 void listset_nametab(dbref player, NAMETAB *ntab, int flagword, const UTF8 *prefix, bool list_if_none)
 {
-    UTF8 *buf = alloc_lbuf("listset_nametab");
-    UTF8 *bp = buf;
+    LBuf buf = LBuf_Src("listset_nametab");
+    UTF8 *bp = buf.get();
 
     safe_str(prefix, buf, &bp);
     safe_chr(':', buf, &bp);
@@ -158,7 +156,6 @@ void listset_nametab(dbref player, NAMETAB *ntab, int flagword, const UTF8 *pref
     {
         notify(player, buf);
     }
-    free_lbuf(buf);
 }
 
 /* ---------------------------------------------------------------------------

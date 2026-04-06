@@ -307,12 +307,12 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
         return;
     }
 
-    UTF8 *addy = alloc_lbuf("mod_email_do_email.headers");
-    UTF8 *bp = addy;
+    LBuf addy = LBuf_Src("mod_email_do_email.headers");
+    UTF8 *bp = addy.get();
     safe_str(arg1, addy, &bp);
     *bp = '\0';
 
-    UTF8 *subject = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(addy), '/'));
+    UTF8 *subject = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(addy.get()), '/'));
     if (subject)
     {
         *subject = '\0';
@@ -323,8 +323,8 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
         subject = mudconf.mail_subject;
     }
 
-    UTF8 *body = alloc_lbuf("mod_email_do_email.body");
-    UTF8 *bodyptr = body;
+    LBuf body = LBuf_Src("mod_email_do_email.body");
+    UTF8 *bodyptr = body.get();
     mux_exec(arg2, LBUF_SIZE-1, body, &bodyptr, executor, executor, executor,
         EV_TOP | EV_STRIP_CURLY | EV_FCHECK | EV_EVAL, nullptr, 0);
     *bodyptr = '\0';
@@ -342,6 +342,4 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
         reinterpret_cast<const UTF8*>(recipientStr.c_str()),
         pSubject, EncodeBody(body));
 
-    free_lbuf(body);
-    free_lbuf(addy);
 }

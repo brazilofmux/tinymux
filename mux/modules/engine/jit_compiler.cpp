@@ -2296,8 +2296,8 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
         fargs[i] = ec->memory + ptr;
     }
 
-    UTF8 *buff = alloc_lbuf("eval_ecall");
-    UTF8 *bufc = buff;
+    LBuf buff = LBuf_Src("eval_ecall");
+    UTF8 *bufc = buff.get();
 
     eval_ctx *saved_ctx = s_current_ecall_ctx;
     s_current_ecall_ctx = ec;
@@ -2312,8 +2312,6 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
     if (result_len >= out_size) result_len = out_size - 1;
     memcpy(ec->memory + out_addr, buff, result_len);
     ec->memory[out_addr + result_len] = '\0';
-
-    free_lbuf(buff);
 
     ctx->x[10] = static_cast<uint64_t>(result_len);
     return -1;
@@ -4402,12 +4400,11 @@ FUNCTION(fun_rvbench)
 
     BENCH_NOW(t0);
     for (int i = 0; i < iterations; i++) {
-        UTF8 *tbuf = alloc_lbuf("rvbench.native");
-        UTF8 *tbufc = tbuf;
+        LBuf tbuf = LBuf_Src("rvbench.native");
+        UTF8 *tbufc = tbuf.get();
         mux_exec(expr, nLen, tbuf, &tbufc, executor, caller, enactor,
                  eval_flags, nullptr, 0);
         *tbufc = '\0';
-        free_lbuf(tbuf);
     }
     BENCH_NOW(t1);
     double native_us = elapsed_us(t0, t1);

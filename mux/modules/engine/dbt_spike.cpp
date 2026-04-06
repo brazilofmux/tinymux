@@ -198,8 +198,8 @@ static int spike_ecall(rv64_ctx_t *ctx, void *user_data) {
         }
 
         // Allocate a real LBUF for output.
-        UTF8 *buff = alloc_lbuf("spike_ecall");
-        UTF8 *bufc = buff;
+        LBuf buff = LBuf_Src("spike_ecall");
+        UTF8 *bufc = buff.get();
 
         // Call the real engine function.
         fp->fun(fp, buff, &bufc, 1, 1, 1, 0,
@@ -207,15 +207,12 @@ static int spike_ecall(rv64_ctx_t *ctx, void *user_data) {
 
         // Copy result to guest memory.
         *bufc = '\0';
-        size_t result_len = static_cast<size_t>(bufc - buff);
+        size_t result_len = static_cast<size_t>(bufc - buff.get());
         if (result_len >= out_size) {
             result_len = out_size - 1;
         }
-        memcpy(sc->memory + out_addr, buff, result_len);
+        memcpy(sc->memory + out_addr, buff.get(), result_len);
         sc->memory[out_addr + result_len] = '\0';
-
-        // Free the LBUF.
-        free_lbuf(buff);
 
         ctx->x[10] = static_cast<uint64_t>(result_len);
         return -1; // continue

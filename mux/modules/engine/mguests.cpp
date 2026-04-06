@@ -425,9 +425,9 @@ void CGuests::ListAll(dbref player)
     notify(player, T("--------------------------- Current Guests Listing ---------------------------"));
     notify(player, T("*Guest #  : Name            dbref  Status     Last Site"));
     notify(player, T("------------------------------------------------------------------------------"));\
-    UTF8 *buff = alloc_lbuf("CGuests-ListAll");
+    LBuf buff = LBuf_Src("CGuests-ListAll");
     int i;
-    UTF8 *LastSite=alloc_lbuf("CGuests-LastSite");
+    LBuf LastSite = LBuf_Src("CGuests-LastSite");
     for (i = 0; i < nGuests; i++)
     {
         dbref aowner;
@@ -437,7 +437,7 @@ void CGuests::ListAll(dbref player)
                 (i<mudconf.min_guests ? "*" : " "),
                 i, Name(Guests[i]), Guests[i],
                 (Connected(Guests[i]) ? "Online" : "NotOnline"),
-                LastSite);
+                LastSite.get());
         notify(player, buff);
         if (!Good_obj(Guests[i]))
         {
@@ -445,9 +445,7 @@ void CGuests::ListAll(dbref player)
                                    i, Guests[i]));
         }
     }
-    free_lbuf(LastSite);
     notify(player, tprintf(T("-----------------------------  Total Guests: %-3d -----------------------------"), nGuests));
-    free_lbuf(buff);
 }
 
 void CGuests::AddToGuestChannel(dbref player)
