@@ -1303,8 +1303,8 @@ static bool process_hook(dbref executor, CMDENT *cmdp, int key, bool save_flg)
     {
         dbref aowner;
         int aflags;
-        UTF8 *atext = atr_get("process_hook.1060", mudconf.hook_obj,
-                              hk_attr->number, &aowner, &aflags);
+        LBuf atext = LBuf_Adopt(atr_get("process_hook.1060", mudconf.hook_obj,
+                              hk_attr->number, &aowner, &aflags));
         if (atext[0] && !(aflags & AF_NOPROG))
         {
             if ((aflags & AF_NOEVAL) || NoEval(mudconf.hook_obj))
@@ -1333,7 +1333,6 @@ static bool process_hook(dbref executor, CMDENT *cmdp, int key, bool save_flg)
                 retval = xlate(buff);
             }
         }
-        free_lbuf(atext);
     }
     return retval;
 }
@@ -1345,8 +1344,8 @@ void process_hook_args(dbref executor, CMDENT *cmdp, UTF8* arg1, UTF8* arg2, UTF
     {
         dbref aowner;
         int aflags;
-        UTF8 *atext = atr_get("process_hook_args.1093", mudconf.hook_obj,
-                              hk_attr->number, &aowner, &aflags);
+        LBuf atext = LBuf_Adopt(atr_get("process_hook_args.1093", mudconf.hook_obj,
+                              hk_attr->number, &aowner, &aflags));
         if (atext[0] && !(aflags & AF_NOPROG))
         {
             reg_ref **preserve = nullptr;
@@ -1419,7 +1418,6 @@ void process_hook_args(dbref executor, CMDENT *cmdp, UTF8* arg1, UTF8* arg2, UTF
             restore_global_regs(preserve);
             PopRegisters(preserve, MAX_GLOBAL_REGS);
         }
-        free_lbuf(atext);
     }
 }
 
@@ -1867,8 +1865,8 @@ static int cmdtest(dbref player, const UTF8 *cmd)
     int aflags;
 
     int rval = 0;
-    UTF8* buff1 = atr_get("cmdtest.1573", player, A_CMDCHECK, &aowner, &aflags);
-    if (nullptr == buff1) return 0;
+    LBuf buff1 = LBuf_Adopt(atr_get("cmdtest.1573", player, A_CMDCHECK, &aowner, &aflags));
+    if (nullptr == buff1.get()) return 0;
     const UTF8* pt1 = buff1;
     while (pt1 && *pt1)
     {
@@ -1892,7 +1890,6 @@ static int cmdtest(dbref player, const UTF8 *cmd)
             }
         }
     }
-    free_lbuf(buff1);
     return rval;
 }
 
@@ -1953,7 +1950,7 @@ static void handle_gmcp(dbref player, const UTF8 *payload)
 
     dbref aowner;
     int aflags;
-    UTF8 *pGmcpAttr = atr_pget(player, A_GMCP, &aowner, &aflags);
+    LBuf pGmcpAttr = LBuf_Adopt(atr_pget(player, A_GMCP, &aowner, &aflags));
     if (pGmcpAttr[0] != '\0')
     {
         const UTF8 *gmcp_args[2];
@@ -1962,13 +1959,12 @@ static void handle_gmcp(dbref player, const UTF8 *payload)
 
         LBuf lbuf = LBuf_Src("handle_gmcp");
         UTF8 *lp = lbuf;
-        mux_exec(pGmcpAttr, strlen(reinterpret_cast<const char *>(pGmcpAttr)),
+        mux_exec(pGmcpAttr, strlen(reinterpret_cast<const char *>(pGmcpAttr.get())),
                  lbuf, &lp, player, player, player,
                  EV_FCHECK | EV_EVAL | EV_TOP,
                  gmcp_args, 2);
         *lp = '\0';
     }
-    free_lbuf(pGmcpAttr);
 }
 
 // ---------------------------------------------------------------------------
@@ -2949,7 +2945,7 @@ UTF8 *process_command
         if (  Good_obj(mudconf.global_error_obj)
            && !Going(mudconf.global_error_obj))
         {
-            UTF8 *errtext = atr_get("process_command.2491", mudconf.global_error_obj, A_VA, &aowner, &aflags);
+            LBuf errtext = LBuf_Adopt(atr_get("process_command.2491", mudconf.global_error_obj, A_VA, &aowner, &aflags));
             LBuf errbuff = LBuf_Src("process_command.error_msg");
             UTF8 *errbufc = errbuff;
             mux_exec(errtext, LBUF_SIZE-1, errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
@@ -2957,7 +2953,6 @@ UTF8 *process_command
                 (const UTF8 **)&pCommand, 1);
             *errbufc = '\0';
             notify(executor, errbuff);
-            free_lbuf(errtext);
         }
         else
         {
@@ -4474,17 +4469,18 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
         }
         else if (key == ICMD_LROOM)
         {
-            atrpt = atr_get("do_icmd.4060", target, A_CMDCHECK, &aowner, &aflags);
-            if (*atrpt)
             {
-                notify(player, T("Location CmdCheck attribute is:"));
-                notify(player, atrpt);
+                LBuf atrpt1 = LBuf_Adopt(atr_get("do_icmd.4060", target, A_CMDCHECK, &aowner, &aflags));
+                if (*atrpt1.get())
+                {
+                    notify(player, T("Location CmdCheck attribute is:"));
+                    notify(player, atrpt1);
+                }
+                else
+                {
+                    notify(player, T("Location CmdCheck attribute is empty."));
+                }
             }
-            else
-            {
-                notify(player, T("Location CmdCheck attribute is empty."));
-            }
-            free_lbuf(atrpt);
             notify(player, T("@icmd: Done."));
             return;
         }
@@ -4500,15 +4496,16 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             }
             notify(player, T("Scanning all locations and zones from your current location:"));
             bool bFound = false;
-            atrpt = atr_get("do_icmd.4086", target, A_CMDCHECK, &aowner, &aflags);
-            if (*atrpt)
             {
-                notify(player, tprintf(T("%c     --- At %s(#%d) :"),
-                    (Zone(target) == target ? '*' : ' '), Name(target), target));
-                notify(player, atrpt);
-                bFound = true;
+                LBuf atrpt2 = LBuf_Adopt(atr_get("do_icmd.4086", target, A_CMDCHECK, &aowner, &aflags));
+                if (*atrpt2.get())
+                {
+                    notify(player, tprintf(T("%c     --- At %s(#%d) :"),
+                        (Zone(target) == target ? '*' : ' '), Name(target), target));
+                    notify(player, atrpt2);
+                    bFound = true;
+                }
             }
-            free_lbuf(atrpt);
             if (Zone(target) != target)
             {
                 dbref zone = Zone(target);
@@ -4516,15 +4513,14 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                    && (  isRoom(zone)
                       || isThing(zone)))
                 {
-                    atrpt = atr_get("do_icmd.4102", zone, A_CMDCHECK, &aowner, &aflags);
-                    if (*atrpt)
+                    LBuf atrpt3 = LBuf_Adopt(atr_get("do_icmd.4102", zone, A_CMDCHECK, &aowner, &aflags));
+                    if (*atrpt3.get())
                     {
                         notify(player, tprintf(T("%c     z-- At %s(#%d) :"),
                             '*', Name(zone), zone));
-                        notify(player, atrpt);
+                        notify(player, atrpt3);
                         bFound = true;
                     }
-                    free_lbuf(atrpt);
                 }
             }
             if (!bFound)
@@ -4580,17 +4576,18 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             {
                 notify(player, T("CmdCheck is not active."));
             }
-            atrpt = atr_get("do_icmd.4166", target, A_CMDCHECK, &aowner, &aflags);
-            if (*atrpt)
             {
-                notify(player, T("CmdCheck attribute is:"));
-                notify(player, atrpt);
+                LBuf atrpt4 = LBuf_Adopt(atr_get("do_icmd.4166", target, A_CMDCHECK, &aowner, &aflags));
+                if (*atrpt4.get())
+                {
+                    notify(player, T("CmdCheck attribute is:"));
+                    notify(player, atrpt4);
+                }
+                else
+                {
+                    notify(player, T("CmdCheck attribute is empty."));
+                }
             }
-            else
-            {
-                notify(player, T("CmdCheck attribute is empty."));
-            }
-            free_lbuf(atrpt);
             notify(player, T("@icmd: Done."));
             return;
         }

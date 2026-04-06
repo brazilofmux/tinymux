@@ -139,7 +139,7 @@ void record_login
     dbref aowner;
     int aflags, i;
 
-    UTF8 *atrbuf = atr_get("record_login.143", player, A_LOGINDATA, &aowner, &aflags);
+    LBuf atrbuf = LBuf_Adopt(atr_get("record_login.143", player, A_LOGINDATA, &aowner, &aflags));
     decrypt_logindata(atrbuf, &login_info);
     if (isgood)
     {
@@ -197,7 +197,6 @@ void record_login
     }
     encrypt_logindata(atrbuf, &login_info);
     atr_add_raw(player, A_LOGINDATA, atrbuf);
-    free_lbuf(atrbuf);
 }
 
 const UTF8 Base64Table[65] =
@@ -660,10 +659,10 @@ static bool check_pass(dbref player, const UTF8 *pPassword)
 
     int   aflags;
     dbref aowner;
-    UTF8 *pTarget = atr_get("check_pass.466", player, A_PASS, &aowner, &aflags);
+    LBuf pTarget = LBuf_Adopt(atr_get("check_pass.466", player, A_PASS, &aowner, &aflags));
     if (*pTarget)
     {
-        if (strcmp(reinterpret_cast<const char *>(mux_crypt(pPassword, pTarget, &iType)), reinterpret_cast<const char *>(pTarget)) == 0)
+        if (strcmp(reinterpret_cast<const char *>(mux_crypt(pPassword, pTarget, &iType)), reinterpret_cast<const char *>(pTarget.get())) == 0)
         {
             bValidPass = true;
             if (0 == (iType & mudconf.password_methods))
@@ -672,7 +671,6 @@ static bool check_pass(dbref player, const UTF8 *pPassword)
             }
         }
     }
-    free_lbuf(pTarget);
     return bValidPass;
 }
 
@@ -701,10 +699,10 @@ dbref connect_player(UTF8 *name, UTF8 *password, UTF8 *host, UTF8 *username, UTF
     //
     int aflags;
     dbref aowner;
-    UTF8 *player_last = atr_get("connect_player.516", player, A_LAST, &aowner, &aflags);
-    if (strncmp(reinterpret_cast<const char *>(player_last), reinterpret_cast<const char *>(time_str), 10) != 0)
+    LBuf player_last = LBuf_Adopt(atr_get("connect_player.516", player, A_LAST, &aowner, &aflags));
+    if (strncmp(reinterpret_cast<const char *>(player_last.get()), reinterpret_cast<const char *>(time_str), 10) != 0)
     {
-        UTF8 *allowance = atr_pget(player, A_ALLOWANCE, &aowner, &aflags);
+        LBuf allowance = LBuf_Adopt(atr_pget(player, A_ALLOWANCE, &aowner, &aflags));
         if (*allowance == '\0')
         {
             giveto(player, mudconf.paycheck);
@@ -713,9 +711,7 @@ dbref connect_player(UTF8 *name, UTF8 *password, UTF8 *host, UTF8 *username, UTF
         {
             giveto(player, mux_atol(allowance));
         }
-        free_lbuf(allowance);
     }
-    free_lbuf(player_last);
     atr_add_raw(player, A_LAST, time_str);
     return player;
 }
@@ -894,7 +890,7 @@ void do_password
 
     dbref aowner;
     int   aflags;
-    UTF8 *target = atr_get("do_password.618", executor, A_PASS, &aowner, &aflags);
+    LBuf target = LBuf_Adopt(atr_get("do_password.618", executor, A_PASS, &aowner, &aflags));
     const UTF8 *pmsg;
     if (  !*target
        || !check_pass(executor, oldpass))
@@ -910,7 +906,6 @@ void do_password
     {
         notify(executor, pmsg);
     }
-    free_lbuf(target);
 }
 
 /* ---------------------------------------------------------------------------
@@ -963,7 +958,7 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     }
     else
     {
-        UTF8 *atrbuf = atr_get("do_last.684", target, A_LOGINDATA, &aowner, &aflags);
+        LBuf atrbuf = LBuf_Adopt(atr_get("do_last.684", target, A_LOGINDATA, &aowner, &aflags));
         LDATA login_info;
         decrypt_logindata(atrbuf, &login_info);
 
@@ -977,7 +972,6 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         {
             disp_from_on(executor, login_info.bad[i].host, login_info.bad[i].dtm);
         }
-        free_lbuf(atrbuf);
     }
 }
 
@@ -1332,7 +1326,7 @@ bool protectname_check(const UTF8 *name, dbref player)
 
         dbref aowner;
         int aflags;
-        UTF8 *pProtect = atr_pget(i, A_PROTECTNAME, &aowner, &aflags);
+        LBuf pProtect = LBuf_Adopt(atr_pget(i, A_PROTECTNAME, &aowner, &aflags));
         if ('\0' != pProtect[0])
         {
             UTF8 *bp = pProtect;
@@ -1341,12 +1335,10 @@ bool protectname_check(const UTF8 *name, dbref player)
             {
                 if (0 == string_compare(token, name))
                 {
-                    free_lbuf(pProtect);
                     return false;
                 }
             }
         }
-        free_lbuf(pProtect);
     }
     return true;
 }
@@ -1407,7 +1399,7 @@ void do_protect
                 continue;
             }
 
-            UTF8 *pProtect = atr_pget(i, A_PROTECTNAME, &aowner, &aflags);
+            LBuf pProtect = LBuf_Adopt(atr_pget(i, A_PROTECTNAME, &aowner, &aflags));
             if ('\0' != pProtect[0])
             {
                 LBuf display = LBuf_Src("do_protect.all");
@@ -1426,7 +1418,6 @@ void do_protect
                 notify(executor, tprintf(T("%s: %s"), Name(i), display.get()));
                 found_any = true;
             }
-            free_lbuf(pProtect);
         }
         if (!found_any)
         {
@@ -1450,7 +1441,7 @@ void do_protect
             }
         }
 
-        UTF8 *pProtect = atr_pget(target, A_PROTECTNAME, &aowner, &aflags);
+        LBuf pProtect = LBuf_Adopt(atr_pget(target, A_PROTECTNAME, &aowner, &aflags));
         if ('\0' == pProtect[0])
         {
             notify(executor, T("No protected names."));
@@ -1474,7 +1465,6 @@ void do_protect
             *dp = '\0';
             notify(executor, tprintf(T("Protected names for %s: %s"), Name(target), display.get()));
         }
-        free_lbuf(pProtect);
         return;
     }
 
@@ -1490,7 +1480,7 @@ void do_protect
         // Set a protected name as this player's alias.
         // The name must be in the player's protected list.
         //
-        UTF8 *pProtect = atr_pget(executor, A_PROTECTNAME, &aowner, &aflags);
+        LBuf pProtect = LBuf_Adopt(atr_pget(executor, A_PROTECTNAME, &aowner, &aflags));
         bool found = false;
         if ('\0' != pProtect[0])
         {
@@ -1505,7 +1495,6 @@ void do_protect
                 }
             }
         }
-        free_lbuf(pProtect);
 
         if (!found)
         {
@@ -1527,12 +1516,13 @@ void do_protect
 
         // Remove old alias if any, set new one.
         //
-        UTF8 *oldalias = atr_pget(executor, A_ALIAS, &aowner, &aflags);
-        if ('\0' != oldalias[0])
         {
-            delete_player_name(executor, oldalias, true);
+            LBuf oldalias = LBuf_Adopt(atr_pget(executor, A_ALIAS, &aowner, &aflags));
+            if ('\0' != oldalias[0])
+            {
+                delete_player_name(executor, oldalias, true);
+            }
         }
-        free_lbuf(oldalias);
 
         atr_add(executor, A_ALIAS, arg1, Owner(executor), aflags);
         if (add_player_name(executor, arg1, true))
@@ -1551,26 +1541,23 @@ void do_protect
     {
         // Remove the player's alias, but only if it matches a protected name.
         //
-        UTF8 *oldalias = atr_pget(executor, A_ALIAS, &aowner, &aflags);
+        LBuf oldalias = LBuf_Adopt(atr_pget(executor, A_ALIAS, &aowner, &aflags));
         if ('\0' == oldalias[0])
         {
             notify(executor, T("You have no alias set."));
-            free_lbuf(oldalias);
             return;
         }
 
         if (0 != string_compare(oldalias, arg1))
         {
             notify(executor, tprintf(T("Your alias is \xE2\x80\x98%s\xE2\x80\x99, not \xE2\x80\x98%s\xE2\x80\x99."),
-                oldalias, arg1));
-            free_lbuf(oldalias);
+                oldalias.get(), arg1));
             return;
         }
 
         delete_player_name(executor, oldalias, true);
         atr_clr(executor, A_ALIAS);
-        notify(executor, tprintf(T("Alias \xE2\x80\x98%s\xE2\x80\x99 removed."), oldalias));
-        free_lbuf(oldalias);
+        notify(executor, tprintf(T("Alias \xE2\x80\x98%s\xE2\x80\x99 removed."), oldalias.get()));
         return;
     }
 
@@ -1578,11 +1565,10 @@ void do_protect
     {
         // Remove a protected name.
         //
-        UTF8 *pProtect = atr_pget(executor, A_PROTECTNAME, &aowner, &aflags);
+        LBuf pProtect = LBuf_Adopt(atr_pget(executor, A_PROTECTNAME, &aowner, &aflags));
         if ('\0' == pProtect[0])
         {
             notify(executor, T("You have no protected names."));
-            free_lbuf(pProtect);
             return;
         }
 
@@ -1616,7 +1602,6 @@ void do_protect
             atr_add_raw(executor, A_PROTECTNAME, newlist);
             notify(executor, tprintf(T("Name \xE2\x80\x98%s\xE2\x80\x99 removed from protected list."), arg1));
         }
-        free_lbuf(pProtect);
         return;
     }
 
@@ -1636,7 +1621,7 @@ void do_protect
 
     // Check the per-player limit.
     //
-    UTF8 *pProtect = atr_pget(executor, A_PROTECTNAME, &aowner, &aflags);
+    LBuf pProtect = LBuf_Adopt(atr_pget(executor, A_PROTECTNAME, &aowner, &aflags));
     int count = 0;
     if ('\0' != pProtect[0])
     {
@@ -1647,7 +1632,6 @@ void do_protect
             if (0 == string_compare(token, arg1))
             {
                 notify(executor, T("That name is already in your protected list."));
-                free_lbuf(pProtect);
                 return;
             }
             count++;
@@ -1657,7 +1641,6 @@ void do_protect
     if (count >= mudconf.max_name_protect)
     {
         notify(executor, tprintf(T("You may only protect %d names."), mudconf.max_name_protect));
-        free_lbuf(pProtect);
         return;
     }
 
@@ -1666,14 +1649,13 @@ void do_protect
     if (!protectname_check(arg1, executor))
     {
         notify(executor, T("That name is already protected by another player."));
-        free_lbuf(pProtect);
         return;
     }
 
     // Add the name.
     //
-    UTF8 *newlist = alloc_lbuf("do_protect.add");
-    UTF8 *np = newlist;
+    LBuf newlist = LBuf_Src("do_protect.add");
+    UTF8 *np = newlist.get();
     if ('\0' != pProtect[0])
     {
         safe_str(pProtect, newlist, &np);
@@ -1684,7 +1666,4 @@ void do_protect
 
     atr_add_raw(executor, A_PROTECTNAME, newlist);
     notify(executor, tprintf(T("Name \xE2\x80\x98%s\xE2\x80\x99 added to protected list."), arg1));
-
-    free_lbuf(newlist);
-    free_lbuf(pProtect);
 }

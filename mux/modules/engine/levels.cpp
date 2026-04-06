@@ -537,7 +537,7 @@ UTF8 *get_rlevel_desc
     bool found_a_desc = false;
     for (int i = 0; i < desclist->n; i++)
     {
-        UTF8 *d = atr_pget(thing, desclist->descs[i], &aowner, &aflags);
+        LBuf d = LBuf_Adopt(atr_pget(thing, desclist->descs[i], &aowner, &aflags));
         if ('\0' != d[0])
         {
             found_a_desc = true;
@@ -562,12 +562,11 @@ UTF8 *get_rlevel_desc
                 AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
                 nullptr, 0);
         }
-        free_lbuf(d);
     }
 
     if (!found_a_desc)
     {
-        UTF8 *d = atr_pget(thing, A_DESC, &aowner, &aflags);
+        LBuf d = LBuf_Adopt(atr_pget(thing, A_DESC, &aowner, &aflags));
         if ('\0' != d[0])
         {
             found_a_desc = true;
@@ -585,7 +584,6 @@ UTF8 *get_rlevel_desc
 
             *piDescUsed = A_DESC;
         }
-        free_lbuf(d);
     }
 
     // If we preserved the state of the global registers, restore them.

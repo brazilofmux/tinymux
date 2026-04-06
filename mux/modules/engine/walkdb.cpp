@@ -1428,7 +1428,7 @@ void do_report(dbref executor, dbref caller, dbref enactor, int eval, int key)
         if (isPlayer(iPlayer))
         {
             int aowner, aflags;
-            UTF8 *player_last = atr_get("do_report.43", iPlayer, A_LAST, &aowner, &aflags);
+            LBuf player_last = LBuf_Adopt(atr_get("do_report.43", iPlayer, A_LAST, &aowner, &aflags));
 
             if (ltaPlayer.SetString(player_last))
             {
@@ -1440,7 +1440,6 @@ void do_report(dbref executor, dbref caller, dbref enactor, int eval, int key)
                     nBin[iBin]++;
                 }
             }
-            free_lbuf(player_last);
         }
     }
 

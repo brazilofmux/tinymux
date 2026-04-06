@@ -454,14 +454,14 @@ static void update_newobjects(dbref player, dbref object_num, int object_type)
     int aowner;
     int aflags;
 
-    UTF8 *newobject_string = atr_get("update_newobjs.189", player, A_NEWOBJS,
-            &aowner, &aflags);
+    LBuf newobject_string = LBuf_Adopt(atr_get("update_newobjs.189", player, A_NEWOBJS,
+            &aowner, &aflags));
 
     // This leaves room for Room, Thing, Exit, and Player.
     //
     int i;
     dbref object_list[4];
-    if (  nullptr == newobject_string
+    if (  nullptr == newobject_string.get()
        || '\0' == newobject_string[0])
     {
         for (i = 0; i < 4; i++)
@@ -481,8 +481,6 @@ static void update_newobjects(dbref player, dbref object_num, int object_type)
             object_list[i] = mux_atol(ptr);
         }
     }
-
-    free_lbuf(newobject_string);
 
     switch (object_type)
     {
@@ -550,7 +548,7 @@ static void ProcessMasterRoomACreate(dbref creator, dbref thing)
         if (Controls(master_room_obj, thing))
         {
             int aowner, aflags;
-            UTF8* act = atr_pget(master_room_obj, A_ACREATE, &aowner, &aflags);
+            LBuf act = LBuf_Adopt(atr_pget(master_room_obj, A_ACREATE, &aowner, &aflags));
             if ('\0' != act[0])
             {
                 CLinearTimeAbsolute lta;
@@ -562,7 +560,6 @@ static void ProcessMasterRoomACreate(dbref creator, dbref thing)
                         (const UTF8 **) xargs, mudstate.global_regs);
 
             }
-            free_lbuf(act);
         }
     }
 }
@@ -1225,9 +1222,8 @@ void destroy_player(dbref player, dbref victim)
     delete_player_name(victim, Name(victim), false);
     dbref aowner;
     int aflags;
-    UTF8 *buf = atr_pget(victim, A_ALIAS, &aowner, &aflags);
+    LBuf buf = LBuf_Adopt(atr_pget(victim, A_ALIAS, &aowner, &aflags));
     delete_player_name(victim, buf, true);
-    free_lbuf(buf);
 
     // Purge mailbox and orphan sent mail before the dbref is recycled.
     //

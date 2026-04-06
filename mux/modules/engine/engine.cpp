@@ -474,10 +474,9 @@ static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg
 {
     int aflags;
     dbref aowner;
-    UTF8 *buf = atr_pget(object, filter, &aowner, &aflags);
-    if (!*buf)
+    LBuf buf = LBuf_Adopt(atr_pget(object, filter, &aowner, &aflags));
+    if (!*buf.get())
     {
-        free_lbuf(buf);
         return true;
     }
 
@@ -501,7 +500,6 @@ static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg
     *dp = '\0';
     strip_fancy_quotes(nbuf);
     dp = nbuf;
-    free_lbuf(buf);
 
     restore_global_regs(preserve);
     PopRegisters(preserve, MAX_GLOBAL_REGS);
@@ -892,24 +890,25 @@ void notify_check(dbref target, dbref sender, const UTF8 *msg, int key)
            && (key & (MSG_ME | MSG_INV_L))
            && H_Listen(target))
         {
-            tp = atr_get("notify_check.790", target, A_LISTEN, &aowner, &aflags);
-            strip_fancy_quotes(tp);
-            if (*tp && wild(tp, msgNorm, args, NUM_ENV_VARS))
             {
-                // Re-capture from original text so %0 has fancy quotes.
-                //
-                for (int j = 0; j < NUM_ENV_VARS; j++)
+                LBuf tp = LBuf_Adopt(atr_get("notify_check.790", target, A_LISTEN, &aowner, &aflags));
+                strip_fancy_quotes(tp);
+                if (*tp.get() && wild(tp, msgNorm, args, NUM_ENV_VARS))
                 {
-                    if (args[j]) { free_lbuf(args[j]); args[j] = nullptr; }
+                    // Re-capture from original text so %0 has fancy quotes.
+                    //
+                    for (int j = 0; j < NUM_ENV_VARS; j++)
+                    {
+                        if (args[j]) { free_lbuf(args[j]); args[j] = nullptr; }
+                    }
+                    wild(tp, msgPlain, args, NUM_ENV_VARS);
+                    for (nargs = NUM_ENV_VARS; nargs && (!args[nargs - 1] || !(*args[nargs - 1])); nargs--)
+                    {
+                        ; // Nothing
+                    }
+                    pass_listen = true;
                 }
-                wild(tp, msgPlain, args, NUM_ENV_VARS);
-                for (nargs = NUM_ENV_VARS; nargs && (!args[nargs - 1] || !(*args[nargs - 1])); nargs--)
-                {
-                    ; // Nothing
-                }
-                pass_listen = true;
             }
-            free_lbuf(tp);
         }
 
         // If we matched the @listen or are monitoring, check the

@@ -1247,9 +1247,8 @@ MUX_RESULT CObjectInfo::AtrGet(dbref obj, int attrnum, UTF8 *pValue,
         *pValue = '\0';
         return MUX_E_INVALIDARG;
     }
-    const UTF8 *p = atr_get("com_bridge", obj, attrnum, pOwner, pFlags);
+    LBuf p = LBuf_Adopt(atr_get("com_bridge", obj, attrnum, pOwner, pFlags));
     mux_strncpy(pValue, p, nValueMax - 1);
-    free_lbuf(const_cast<UTF8 *>(p));
     return MUX_S_OK;
 }
 
@@ -1265,9 +1264,8 @@ MUX_RESULT CObjectInfo::AtrPGet(dbref obj, int attrnum, UTF8 *pValue,
         *pValue = '\0';
         return MUX_E_INVALIDARG;
     }
-    const UTF8 *p = atr_pget(obj, attrnum, pOwner, pFlags);
+    LBuf p = LBuf_Adopt(atr_pget(obj, attrnum, pOwner, pFlags));
     mux_strncpy(pValue, p, nValueMax - 1);
-    free_lbuf(const_cast<UTF8 *>(p));
     return MUX_S_OK;
 }
 
@@ -2121,7 +2119,7 @@ MUX_RESULT CMailDelivery::MailCheck(dbref player, dbref target, bool *pResult)
         //
         dbref aowner;
         int aflags;
-        UTF8 *str = atr_pget(target, A_MFAIL, &aowner, &aflags);
+        LBuf str = LBuf_Adopt(atr_pget(target, A_MFAIL, &aowner, &aflags));
         if (*str)
         {
             LBuf str2 = LBuf_Src("mail_delivery.check");
@@ -2148,7 +2146,6 @@ MUX_RESULT CMailDelivery::MailCheck(dbref player, dbref target, bool *pResult)
             raw_notify(player, tprintf(T("Sorry, %s is not accepting mail."),
                 Moniker(target)));
         }
-        free_lbuf(str);
         *pResult = false;
         return MUX_S_OK;
     }

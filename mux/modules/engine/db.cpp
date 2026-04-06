@@ -659,9 +659,8 @@ FWDLIST *fwdlist_get(dbref thing)
     {
         dbref aowner;
         int   aflags;
-        UTF8 *tp = atr_get("fwdlist_get.543", thing, A_FORWARDLIST, &aowner, &aflags);
+        LBuf tp = LBuf_Adopt(atr_get("fwdlist_get.543", thing, A_FORWARDLIST, &aowner, &aflags));
         fp = fwdlist_load(GOD, tp);
-        free_lbuf(tp);
     }
     else
     {
@@ -690,9 +689,8 @@ const UTF8 *Name(dbref thing)
     if (!db[thing].name)
     {
         size_t len;
-        UTF8 *pName = atr_get_LEN(thing, A_NAME, &aowner, &aflags, &len);
+        LBuf pName = LBuf_Adopt(atr_get_LEN(thing, A_NAME, &aowner, &aflags, &len));
         db[thing].name = StringCloneLen(pName, len);
-        free_lbuf(pName);
     }
     return db[thing].name;
 }
@@ -763,8 +761,8 @@ const UTF8 *Moniker(dbref thing)
     size_t nMoniker;
     dbref  aowner;
     int    aflags;
-    UTF8 *pMoniker = atr_get_LEN(thing, A_MONIKER, &aowner, &aflags,
-        &nMoniker);
+    LBuf pMoniker = LBuf_Adopt(atr_get_LEN(thing, A_MONIKER, &aowner, &aflags,
+        &nMoniker));
     const UTF8 *pPureMoniker = ConvertToAscii(strip_color(pMoniker));
 
     const UTF8 *pReturn = nullptr;
@@ -777,7 +775,7 @@ const UTF8 *Moniker(dbref thing)
         //
         if (mudconf.cache_names)
         {
-            if (strcmp(reinterpret_cast<const char *>(pMoniker), reinterpret_cast<const char *>(Name(thing))) == 0)
+            if (strcmp(reinterpret_cast<const char *>(pMoniker.get()), reinterpret_cast<const char *>(Name(thing))) == 0)
             {
                 db[thing].moniker = db[thing].name;
             }
@@ -808,7 +806,6 @@ const UTF8 *Moniker(dbref thing)
             pReturn = Name(thing);
         }
     }
-    free_lbuf(pMoniker);
     MEMFREE(pPureNameCopy);
 
     return pReturn;
@@ -2311,9 +2308,8 @@ void atr_set_flags(dbref thing, int atr, dbref flags)
 {
     dbref aowner;
     int aflags;
-    UTF8 *buff = atr_get("atr_set_flags.2212", thing, atr, &aowner, &aflags);
+    LBuf buff = LBuf_Adopt(atr_get("atr_set_flags.2212", thing, atr, &aowner, &aflags));
     atr_add(thing, atr, buff, aowner, flags);
-    free_lbuf(buff);
 }
 
 /* ---------------------------------------------------------------------------
@@ -2552,7 +2548,7 @@ void atr_cpy(dbref dest, dbref source, bool bInternal)
     {
         int   aflags;
         dbref aowner;
-        UTF8 *buf = atr_get("atr_cpy.2480", source, atr, &aowner, &aflags);
+        LBuf buf = LBuf_Adopt(atr_get("atr_cpy.2480", source, atr, &aowner, &aflags));
 
         if (!(aflags & AF_LOCK))
         {
@@ -2581,7 +2577,6 @@ void atr_cpy(dbref dest, dbref source, bool bInternal)
                 atr_add(dest, atr, buf, aowner, aflags);
             }
         }
-        free_lbuf(buf);
     }
     atr_pop();
 }
@@ -2601,13 +2596,12 @@ void atr_chown(dbref obj)
     {
         int   aflags;
         dbref aowner;
-        UTF8 *buf = atr_get("atr_chown.2529", obj, atr, &aowner, &aflags);
+        LBuf buf = LBuf_Adopt(atr_get("atr_chown.2529", obj, atr, &aowner, &aflags));
         if (  aowner != owner
            && !(aflags & AF_LOCK))
         {
             atr_add(obj, atr, buf, owner, aflags);
         }
-        free_lbuf(buf);
     }
     atr_pop();
 }

@@ -457,9 +457,10 @@ void do_toad
 
     // Zap the alias, too.
     //
-    buf = atr_pget(victim, A_ALIAS, &aowner, &aflags);
-    delete_player_name(victim, buf, true);
-    free_lbuf(buf);
+    {
+        LBuf alias = LBuf_Adopt(atr_pget(victim, A_ALIAS, &aowner, &aflags));
+        delete_player_name(victim, alias, true);
+    }
 
     // Boot off.
     //
@@ -519,12 +520,11 @@ void do_newpassword
             //
             int   aflags;
             dbref aowner;
-            UTF8 *target = atr_get("do_newpassword.474", executor, A_PASS, &aowner, &aflags);
+            LBuf target = LBuf_Adopt(atr_get("do_newpassword.474", executor, A_PASS, &aowner, &aflags));
             if (target[0] != '\0')
             {
                 bCan = false;
             }
-            free_lbuf(target);
         }
         else
         {

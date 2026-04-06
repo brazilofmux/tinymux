@@ -128,9 +128,8 @@ bool could_doit(dbref player, dbref thing, int locknum)
 
     dbref aowner;
     int   aflags;
-    UTF8 *key = atr_get("could_doit.134", thing, locknum, &aowner, &aflags);
+    LBuf key = LBuf_Adopt(atr_get("could_doit.134", thing, locknum, &aowner, &aflags));
     bool doit = eval_boolexp_atr(player, thing, thing, key);
-    free_lbuf(key);
     return doit;
 }
 
@@ -188,9 +187,8 @@ static bool pay_quota(dbref who, int cost)
     //
     dbref aowner;
     int aflags;
-    UTF8 *quota_str = atr_get("pay_quota.200", Owner(who), A_RQUOTA, &aowner, &aflags);
+    LBuf quota_str = LBuf_Adopt(atr_get("pay_quota.200", Owner(who), A_RQUOTA, &aowner, &aflags));
     int quota = mux_atol(quota_str);
-    free_lbuf(quota_str);
 
     // enough to build?  Wizards always have enough.
     //
@@ -276,9 +274,8 @@ void add_quota(dbref who, int payment)
     int aflags;
     UTF8 buf[I32BUF_SIZE];
 
-    UTF8 *quota = atr_get("add_quota.288", who, A_RQUOTA, &aowner, &aflags);
+    LBuf quota = LBuf_Adopt(atr_get("add_quota.288", who, A_RQUOTA, &aowner, &aflags));
     mux_ltoa(mux_atol(quota) + payment, buf);
-    free_lbuf(quota);
     atr_add_raw(who, A_RQUOTA, buf);
 }
 

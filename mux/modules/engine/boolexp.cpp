@@ -25,7 +25,7 @@ static bool check_attr(dbref player, dbref lockobj, ATTR *attr, UTF8 *key)
     int aflags;
     bool bCheck = false;
 
-    UTF8 *buff = atr_pget(player, attr->number, &aowner, &aflags);
+    LBuf buff = LBuf_Adopt(atr_pget(player, attr->number, &aowner, &aflags));
 
     if (attr->number == A_LENTER)
     {
@@ -47,7 +47,6 @@ static bool check_attr(dbref player, dbref lockobj, ATTR *attr, UTF8 *key)
     {
         bCheck = false;
     }
-    free_lbuf(buff);
     return bCheck;
 }
 
@@ -124,9 +123,10 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
             mudstate.lock_nest_lev--;
             return false;
         }
-        key = atr_get("boolexp.130", b->sub1->thing, b->thing, &aowner, &aflags);
-        c = eval_boolexp_atr(player, b->sub1->thing, from, key);
-        free_lbuf(key);
+        {
+            LBuf lkey = LBuf_Adopt(atr_get("boolexp.130", b->sub1->thing, b->thing, &aowner, &aflags));
+            c = eval_boolexp_atr(player, b->sub1->thing, from, lkey);
+        }
         mudstate.lock_nest_lev--;
         return c;
 
@@ -169,47 +169,47 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
             return false;
         }
         source = from;
-        buff = atr_pget(from, a->number, &aowner, &aflags);
-        if (!buff || !*buff)
         {
-            if (buff) free_lbuf(buff);
-            buff = atr_pget(thing, a->number, &aowner, &aflags);
-            source = thing;
-        }
-        bCheck = false;
-
-        if (  a->number == A_NAME
-           || a->number == A_LENTER
-           || bCanReadAttr(source, source, a, false))
-        {
-            bCheck = true;
-        }
-
-        if (bCheck)
-        {
-            if ((aflags & AF_NOEVAL) || NoEval(source))
+            LBuf lbuff = LBuf_Adopt(atr_pget(from, a->number, &aowner, &aflags));
+            if (!lbuff.get() || !*lbuff.get())
             {
-                bCheck = !string_compare(buff, reinterpret_cast<UTF8*>(b->sub1));
+                lbuff = LBuf_Adopt(atr_pget(thing, a->number, &aowner, &aflags));
+                source = thing;
             }
-            else
+            bCheck = false;
+
+            if (  a->number == A_NAME
+               || a->number == A_LENTER
+               || bCanReadAttr(source, source, a, false))
             {
-	            reg_ref** preserve = PushRegisters(MAX_GLOBAL_REGS);
-                save_global_regs(preserve);
+                bCheck = true;
+            }
 
-                LBuf buff2 = LBuf_Src("eval_boolexp");
-                bp = buff2.get();
-                mux_exec(buff, LBUF_SIZE-1, buff2, &bp, source, player, player,
-                    AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_FCHECK|EV_TOP),
-                    nullptr, 0);
-                *bp = '\0';
+            if (bCheck)
+            {
+                if ((aflags & AF_NOEVAL) || NoEval(source))
+                {
+                    bCheck = !string_compare(lbuff, reinterpret_cast<UTF8*>(b->sub1));
+                }
+                else
+                {
+                    reg_ref** preserve = PushRegisters(MAX_GLOBAL_REGS);
+                    save_global_regs(preserve);
 
-                restore_global_regs(preserve);
-                PopRegisters(preserve, MAX_GLOBAL_REGS);
+                    LBuf buff2 = LBuf_Src("eval_boolexp");
+                    bp = buff2.get();
+                    mux_exec(lbuff, LBUF_SIZE-1, buff2, &bp, source, player, player,
+                        AttrTrace(aflags, EV_FIGNORE|EV_EVAL|EV_FCHECK|EV_TOP),
+                        nullptr, 0);
+                    *bp = '\0';
 
-                bCheck = !string_compare(buff2, reinterpret_cast<UTF8*>(b->sub1));
+                    restore_global_regs(preserve);
+                    PopRegisters(preserve, MAX_GLOBAL_REGS);
+
+                    bCheck = !string_compare(buff2, reinterpret_cast<UTF8*>(b->sub1));
+                }
             }
         }
-        free_lbuf(buff);
         return bCheck;
 
     case BOOLEXP_IS:

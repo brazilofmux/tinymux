@@ -12,13 +12,12 @@ UTF8 *modSpeech(dbref player, const UTF8 *message, bool bWhich, const UTF8 *comm
 {
     dbref aowner;
     int aflags;
-    UTF8 *mod = atr_get("modSpeech.25", player, bWhich ? A_SPEECHMOD : A_SAYSTRING,
-        &aowner, &aflags);
+    LBuf mod = LBuf_Adopt(atr_get("modSpeech.25", player, bWhich ? A_SPEECHMOD : A_SAYSTRING,
+        &aowner, &aflags));
 
     if (  mod[0] == '\0'
        || alarm_clock.alarmed)
     {
-        free_lbuf(mod);
         return nullptr;
     }
 
@@ -38,7 +37,6 @@ UTF8 *modSpeech(dbref player, const UTF8 *message, bool bWhich, const UTF8 *comm
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP), args, 2);
     }
     *t_ptr = '\0';
-    free_lbuf(mod);
     return new_message;
 }
 
@@ -49,9 +47,8 @@ static int idle_timeout_val(dbref player)
     //
     dbref aowner;
     int aflags;
-    UTF8 *ITbuffer = atr_get("idle_timeout_val.53", player, A_IDLETMOUT, &aowner, &aflags);
+    LBuf ITbuffer = LBuf_Adopt(atr_get("idle_timeout_val.53", player, A_IDLETMOUT, &aowner, &aflags));
     int idle_timeout = mux_atol(ITbuffer);
-    free_lbuf(ITbuffer);
     return idle_timeout;
 }
 
@@ -480,10 +477,10 @@ static void page_return(dbref player, dbref target, const UTF8 *tag,
 
     dbref aowner;
     int aflags;
-    UTF8 *str, *bp;
+    UTF8 *bp;
 
-    str = atr_pget(target, anum, &aowner, &aflags);
-    if (*str)
+    LBuf str = LBuf_Adopt(atr_pget(target, anum, &aowner, &aflags));
+    if (*str.get())
     {
         LBuf str2 = LBuf_Src("page_return");
         bp = str2;
@@ -510,7 +507,6 @@ static void page_return(dbref player, dbref target, const UTF8 *tag,
     {
         notify_with_cause_ooc(player, target, dflt, MSG_SRC_PAGE);
     }
-    free_lbuf(str);
 }
 
 static bool page_check(dbref player, dbref target)
@@ -674,7 +670,7 @@ void do_page
         //
         dbref aowner;
         int   aflags;
-        UTF8 *pLastPage = atr_get("do_page.645", executor, A_LASTPAGE, &aowner, &aflags);
+        LBuf pLastPage = LBuf_Adopt(atr_get("do_page.645", executor, A_LASTPAGE, &aowner, &aflags));
 
         string_token st(pLastPage, T(" "));
         UTF8 *p;
@@ -692,7 +688,6 @@ void do_page
                 bModified = true;
             }
         }
-        free_lbuf(pLastPage);
     }
 
     int nValid = nPlayers;
@@ -1498,9 +1493,9 @@ void do_pemit_whisper
     {
         dbref aowner;
         int   aflags;
-        UTF8* stored_recipient =
+        LBuf stored_recipient = LBuf_Adopt(
             atr_get("do_whisper.1316", executor, A_LASTWHISPER,
-            &aowner, &aflags);
+            &aowner, &aflags));
 
         bModified = false;
 
@@ -1521,8 +1516,6 @@ void do_pemit_whisper
                 }
             }
         }
-
-        free_lbuf(stored_recipient);
     }
 
     if (bModified)

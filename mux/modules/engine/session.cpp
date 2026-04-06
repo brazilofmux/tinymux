@@ -472,7 +472,7 @@ void fetch_ConnectionInfoFields(dbref target, long anFields[4])
 {
     dbref aowner;
     int   aflags;
-    UTF8 *pConnInfo = atr_get("fetch_ConnectionInfoFields.3263", target, A_CONNINFO, &aowner, &aflags);
+    LBuf pConnInfo = LBuf_Adopt(atr_get("fetch_ConnectionInfoFields.3263", target, A_CONNINFO, &aowner, &aflags));
     UTF8 *aFields[5];
     ParseConnectionInfoString(pConnInfo, aFields);
 
@@ -486,7 +486,6 @@ void fetch_ConnectionInfoFields(dbref target, long anFields[4])
         }
         anFields[i] = result;
     }
-    free_lbuf(pConnInfo);
 }
 
 void put_ConnectionInfoFields
@@ -513,7 +512,7 @@ long fetch_ConnectionInfoField(dbref target, int iField)
 {
     dbref aowner;
     int   aflags;
-    UTF8 *pConnInfo = atr_get("fetch_ConnectionInfoField.3305", target, A_CONNINFO, &aowner, &aflags);
+    LBuf pConnInfo = LBuf_Adopt(atr_get("fetch_ConnectionInfoField.3305", target, A_CONNINFO, &aowner, &aflags));
     UTF8 *aFields[5];
     ParseConnectionInfoString(pConnInfo, aFields);
 
@@ -523,7 +522,6 @@ long fetch_ConnectionInfoField(dbref target, int iField)
     {
         result = 0;
     }
-    free_lbuf(pConnInfo);
     return result;
 }
 
@@ -533,7 +531,7 @@ CLinearTimeAbsolute fetch_logouttime(dbref target)
 {
     dbref aowner;
     int   aflags;
-    UTF8 *pConnInfo = atr_get("fetch_logouttime.3325", target, A_CONNINFO, &aowner, &aflags);
+    LBuf pConnInfo = LBuf_Adopt(atr_get("fetch_logouttime.3325", target, A_CONNINFO, &aowner, &aflags));
     UTF8 *aFields[5];
     ParseConnectionInfoString(pConnInfo, aFields);
 
@@ -546,7 +544,6 @@ CLinearTimeAbsolute fetch_logouttime(dbref target)
     {
         lta.SetSeconds(0);
     }
-    free_lbuf(pConnInfo);
     return lta;
 }
 

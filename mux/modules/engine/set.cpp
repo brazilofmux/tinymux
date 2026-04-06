@@ -349,7 +349,7 @@ void do_alias
     {
         // Fetch the old alias.
         //
-        UTF8 *oldalias = atr_pget(thing, A_ALIAS, &aowner, &aflags);
+        LBuf oldalias = LBuf_Adopt(atr_pget(thing, A_ALIAS, &aowner, &aflags));
         UTF8 *trimalias = trim_spaces(alias);
         dbref nPlayer;
         bool bAlias = false;
@@ -408,7 +408,6 @@ void do_alias
             }
         }
         free_lbuf(trimalias);
-        free_lbuf(oldalias);
     }
     else
     {
@@ -975,9 +974,8 @@ void do_chown
             notify_quiet(executor, NOPERM_MESSAGE);
             return;
         }
-        UTF8 *buff = atr_get("do_chown.887", thing, ap->number, &aowner, &aflags);
+        LBuf buff = LBuf_Adopt(atr_get("do_chown.887", thing, ap->number, &aowner, &aflags));
         atr_add(thing, ap->number, buff, nOwnerNew, aflags);
-        free_lbuf(buff);
         if (!Quiet(executor))
         {
             notify_quiet(executor, T("Attribute owner changed."));
@@ -2269,10 +2267,9 @@ void do_include(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
     dbref aowner;
     int aflags;
-    UTF8 *act = atr_pget(thing, pattr->number, &aowner, &aflags);
-    if (!*act)
+    LBuf act = LBuf_Adopt(atr_pget(thing, pattr->number, &aowner, &aflags));
+    if (!*act.get())
     {
-        free_lbuf(act);
         return;
     }
 
@@ -2280,7 +2277,6 @@ void do_include(dbref executor, dbref caller, dbref enactor, int eval, int key,
     {
         // NOEVAL content is data, not code -- skip execution.
         //
-        free_lbuf(act);
         return;
     }
 
@@ -2292,7 +2288,7 @@ void do_include(dbref executor, dbref caller, dbref enactor, int eval, int key,
     if (  '$' == act[0]
        || '^' == act[0])
     {
-        UTF8 *colon = (UTF8 *)strchr((char *)act, ':');
+        UTF8 *colon = (UTF8 *)strchr((char *)act.get(), ':');
         if (colon)
         {
             body = colon + 1;
@@ -2389,7 +2385,6 @@ void do_include(dbref executor, dbref caller, dbref enactor, int eval, int key,
         }
     }
 
-    free_lbuf(act);
 }
 
 void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *object, const UTF8 *cargs[], int ncargs)

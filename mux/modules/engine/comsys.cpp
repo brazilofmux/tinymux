@@ -1276,10 +1276,9 @@ static UTF8 *call_mogrifier
 
     dbref aowner;
     int aflags;
-    UTF8 *atext = atr_pget(chan_obj, pattr->number, &aowner, &aflags);
-    if (!*atext)
+    LBuf atext = LBuf_Adopt(atr_pget(chan_obj, pattr->number, &aowner, &aflags));
+    if (!*atext.get())
     {
-        free_lbuf(atext);
         return nullptr;
     }
 
@@ -1289,7 +1288,6 @@ static UTF8 *call_mogrifier
         AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
         args, nargs);
     *bp = '\0';
-    free_lbuf(atext);
     return result;
 }
 
@@ -1370,23 +1368,23 @@ static void BuildChannelMessage
     {
         dbref aowner;
         int aflags;
-        UTF8* test_attr = atr_get("BuildChannelMessage.1304", ch_obj,
-                                  A_SAYSTRING, &aowner, &aflags);
-
-        if ('\0' != test_attr[0])
         {
-            bChannelSayString = true;
+            LBuf test_attr = LBuf_Adopt(atr_get("BuildChannelMessage.1304", ch_obj,
+                                      A_SAYSTRING, &aowner, &aflags));
+            if ('\0' != test_attr[0])
+            {
+                bChannelSayString = true;
+            }
         }
-        free_lbuf(test_attr);
 
-        test_attr = atr_get("BuildChannelMessage.1312", ch_obj,
-                            A_SPEECHMOD, &aowner, &aflags);
-
-        if ('\0' != test_attr[0])
         {
-            bChannelSpeechMod = true;
+            LBuf test_attr = LBuf_Adopt(atr_get("BuildChannelMessage.1312", ch_obj,
+                                      A_SPEECHMOD, &aowner, &aflags));
+            if ('\0' != test_attr[0])
+            {
+                bChannelSpeechMod = true;
+            }
         }
-        free_lbuf(test_attr);
     }
 
     UTF8* saystring = nullptr;
@@ -1738,8 +1736,8 @@ void SendChannelMessage
             {
                 dbref aowner;
                 int aflags;
-                UTF8 *chatfmt = atr_pget(user.who, s_chatformat_atr,
-                    &aowner, &aflags);
+                LBuf chatfmt = LBuf_Adopt(atr_pget(user.who, s_chatformat_atr,
+                    &aowner, &aflags));
                 if ('\0' != chatfmt[0])
                 {
                     LBuf fmtbuf = LBuf_Src("chatformat");
@@ -1753,10 +1751,8 @@ void SendChannelMessage
                         cfa, 3);
                     *bp = '\0';
                     notify_comsys(user.who, executor, fmtbuf);
-                    free_lbuf(chatfmt);
                     continue;
                 }
-                free_lbuf(chatfmt);
             }
 
             // Use MOGRIFY`FORMAT if available, otherwise the raw message.
@@ -1785,9 +1781,8 @@ void SendChannelMessage
         if (pattr
             && pattr->number)
         {
-            UTF8* maxbuf = atr_get("SendChannelMessage.1141", obj, pattr->number, &aowner, &aflags);
+            LBuf maxbuf = LBuf_Adopt(atr_get("SendChannelMessage.1141", obj, pattr->number, &aowner, &aflags));
             logmax = mux_atol(maxbuf);
-            free_lbuf(maxbuf);
         }
 
         if (0 < logmax)
@@ -1860,7 +1855,7 @@ static void ChannelMOTD(dbref executor, dbref enactor, int attr)
     {
         dbref aowner;
         int aflags;
-        UTF8* q = atr_get("ChannelMOTD.1186", executor, attr, &aowner, &aflags);
+        LBuf q = LBuf_Adopt(atr_get("ChannelMOTD.1186", executor, attr, &aowner, &aflags));
         if ('\0' != q[0])
         {
             LBuf buf = LBuf_Src("chanmotd");
@@ -1872,7 +1867,6 @@ static void ChannelMOTD(dbref executor, dbref enactor, int attr)
 
             notify_comsys(enactor, executor, buf);
         }
-        free_lbuf(q);
     }
 }
 
@@ -2075,9 +2069,8 @@ void do_comlast(dbref player, struct channel* ch, int arg)
     if (pattr
         && (atr_get_info(obj, pattr->number, &aowner, &aflags)))
     {
-        UTF8* maxbuf = atr_get("do_comlast.1408", obj, pattr->number, &aowner, &aflags);
+        LBuf maxbuf = LBuf_Adopt(atr_get("do_comlast.1408", obj, pattr->number, &aowner, &aflags));
         logmax = mux_atol(maxbuf);
-        free_lbuf(maxbuf);
     }
 
     if (logmax < 1)
@@ -2106,10 +2099,9 @@ void do_comlast(dbref player, struct channel* ch, int arg)
         pattr = atr_str(tprintf(T("HISTORY_%d"), iMod(histnum, logmax)));
         if (pattr)
         {
-            UTF8* message = atr_get("do_comlast.1436", obj, pattr->number,
-                                    &aowner, &aflags);
+            LBuf message = LBuf_Adopt(atr_get("do_comlast.1436", obj, pattr->number,
+                                    &aowner, &aflags));
             raw_notify(player, message);
-            free_lbuf(message);
         }
     }
 
@@ -2208,7 +2200,7 @@ static bool do_chanlog(dbref player, UTF8* channel, UTF8* arg)
 
     dbref aowner;
     int aflags;
-    UTF8* oldvalue = atr_get("do_chanlog.1477", ch->chan_obj, atr, &aowner, &aflags);
+    LBuf oldvalue = LBuf_Adopt(atr_get("do_chanlog.1477", ch->chan_obj, atr, &aowner, &aflags));
     const int oldnum = mux_atol(oldvalue);
     if (value < oldnum)
     {
@@ -2221,7 +2213,6 @@ static bool do_chanlog(dbref player, UTF8* channel, UTF8* arg)
             }
         }
     }
-    free_lbuf(oldvalue);
     atr_add(ch->chan_obj, atr, mux_ltoa_t(value), GOD,
             AF_CONST | AF_NOPROG | AF_NOPARSE);
     return true;
@@ -4340,10 +4331,9 @@ FUNCTION(fun_cbuffer)
         {
             dbref aowner;
             int aflags;
-            UTF8 *maxbuf = atr_get("fun_cbuffer", ch->chan_obj,
-                pattr->number, &aowner, &aflags);
+            LBuf maxbuf = LBuf_Adopt(atr_get("fun_cbuffer", ch->chan_obj,
+                pattr->number, &aowner, &aflags));
             logmax = mux_atol(maxbuf);
-            free_lbuf(maxbuf);
         }
     }
     safe_str(mux_ltoa_t(logmax), buff, bufc);
@@ -4378,12 +4368,11 @@ FUNCTION(fun_cdesc)
     {
         dbref aowner;
         int aflags;
-        UTF8 *desc = atr_pget(ch->chan_obj, A_DESC, &aowner, &aflags);
+        LBuf desc = LBuf_Adopt(atr_pget(ch->chan_obj, A_DESC, &aowner, &aflags));
         if ('\0' != desc[0])
         {
             safe_str(desc, buff, bufc);
         }
-        free_lbuf(desc);
     }
 }
 
@@ -4545,10 +4534,9 @@ FUNCTION(fun_crecall)
     {
         dbref aowner;
         int aflags;
-        UTF8 *maxbuf = atr_get("fun_crecall", ch->chan_obj,
-            pattr->number, &aowner, &aflags);
+        LBuf maxbuf = LBuf_Adopt(atr_get("fun_crecall", ch->chan_obj,
+            pattr->number, &aowner, &aflags));
         logmax = mux_atol(maxbuf);
-        free_lbuf(maxbuf);
     }
     if (logmax < 1)
     {
@@ -4589,8 +4577,8 @@ FUNCTION(fun_crecall)
         {
             dbref aowner;
             int aflags;
-            UTF8 *msg = atr_get("fun_crecall", ch->chan_obj,
-                atr, &aowner, &aflags);
+            LBuf msg = LBuf_Adopt(atr_get("fun_crecall", ch->chan_obj,
+                atr, &aowner, &aflags));
             if ('\0' != msg[0])
             {
                 if (!bFirst)
@@ -4600,7 +4588,6 @@ FUNCTION(fun_crecall)
                 safe_str(msg, buff, bufc);
                 bFirst = false;
             }
-            free_lbuf(msg);
         }
     }
 }
@@ -4694,12 +4681,11 @@ FUNCTION(fun_chaninfo)
         {
             dbref aowner;
             int aflags;
-            UTF8 *desc = atr_pget(ch->chan_obj, A_DESC, &aowner, &aflags);
+            LBuf desc = LBuf_Adopt(atr_pget(ch->chan_obj, A_DESC, &aowner, &aflags));
             if ('\0' != desc[0])
             {
                 safe_str(desc, buff, bufc);
             }
-            free_lbuf(desc);
         }
     }
     else if (0 == mux_stricmp(field, T("buffer")))
@@ -4712,10 +4698,9 @@ FUNCTION(fun_chaninfo)
             {
                 dbref aowner;
                 int aflags;
-                UTF8 *maxbuf = atr_get("fun_chaninfo", ch->chan_obj,
-                    pattr->number, &aowner, &aflags);
+                LBuf maxbuf = LBuf_Adopt(atr_get("fun_chaninfo", ch->chan_obj,
+                    pattr->number, &aowner, &aflags));
                 logmax = mux_atol(maxbuf);
-                free_lbuf(maxbuf);
             }
         }
         safe_str(mux_ltoa_t(logmax), buff, bufc);
