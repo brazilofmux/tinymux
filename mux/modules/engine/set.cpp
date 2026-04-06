@@ -1135,7 +1135,7 @@ void do_chown
 
         if (!Quiet(executor))
         {
-            UTF8 *buff = alloc_lbuf("do_chown.notify");
+            LBuf buff = LBuf_Src("do_chown.notify");
             UTF8 *bp = buff;
 
             safe_tprintf_str(buff, &bp, T("Owner of %s(#%d) changed from "), Moniker(thing), thing);
@@ -1143,7 +1143,6 @@ void do_chown
             safe_tprintf_str(buff, &bp, T("%s(#%d)."), Moniker(nOwnerNew), nOwnerNew);
             *bp = '\0';
             notify_quiet(executor, buff);
-            free_lbuf(buff);
         }
     }
 }
@@ -1194,12 +1193,11 @@ bool copy_attr(dbref executor, attr_info &src, attr_info &dest, int key)
         notify_quiet(executor, NOPERM_MESSAGE);
         return false;
     }
-    UTF8 *buff = alloc_lbuf("copy_attr");
+    LBuf buff = LBuf_Src("copy_attr");
     atr_pget_str(buff, src.m_object, src.m_attr->number, &src.m_aowner, &src.m_aflags);
     src.m_bHaveInfo = true;
 
     set_attr_internal(executor, dest.m_object, dest.m_attr->number, buff, key);
-    free_lbuf(buff);
     return true;
 }
 
@@ -1604,7 +1602,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
     // readable, use an empty string.
     //
     int in_anum = -1;
-    UTF8 *astr = alloc_lbuf("do_mvattr");
+    LBuf astr = LBuf_Src("do_mvattr");
     ATTR *in_attr = atr_str(args[0]);
     int aflags = 0;
     if (in_attr == nullptr)
@@ -1707,7 +1705,6 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
             notify_quiet(executor, T("Could not remove old attribute. Non-existent attribute."));
         }
     }
-    free_lbuf(astr);
 }
 
 /*
@@ -2222,14 +2219,13 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
     if (key & TRIG_NOTIFY)
     {
-        UTF8 *tbuf = alloc_lbuf("trigger.notify_cmd");
+        LBuf tbuf = LBuf_Src("trigger.notify_cmd");
         mux_strncpy(tbuf, T("@notify/quiet me"), LBUF_SIZE-1);
         CLinearTimeAbsolute lta;
         wait_que(executor, caller, enactor, eval, false, lta, NOTHING, A_SEMAPHORE,
             tbuf,
             0, nullptr,
             mudstate.global_regs);
-        free_lbuf(tbuf);
     }
 
     if (  !(key & TRIG_QUIET)
@@ -2405,7 +2401,6 @@ void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *df_use, *df_ouse, *temp;
     dbref thing, aowner;
     int aflags;
 
@@ -2432,7 +2427,7 @@ void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
                A_OUFAIL, nullptr, A_AUFAIL, 0, nullptr, 0);
         return;
     }
-    temp = alloc_lbuf("do_use");
+    LBuf temp = LBuf_Src("do_use");
     bool doit = false;
     if (*atr_pget_str(temp, thing, A_USE, &aowner, &aflags))
     {
@@ -2446,18 +2441,15 @@ void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
     {
         doit = true;
     }
-    free_lbuf(temp);
 
     if (doit)
     {
-        df_use = alloc_lbuf("do_use.use");
-        df_ouse = alloc_lbuf("do_use.ouse");
+        LBuf df_use = LBuf_Src("do_use.use");
+        LBuf df_ouse = LBuf_Src("do_use.ouse");
         mux_sprintf(df_use, LBUF_SIZE, T("You use %s"), Moniker(thing));
         mux_sprintf(df_ouse, LBUF_SIZE, T("uses %s"), Moniker(thing));
         did_it(executor, thing, A_USE, df_use, A_OUSE, df_ouse, A_AUSE, 0,
             nullptr, 0);
-        free_lbuf(df_use);
-        free_lbuf(df_ouse);
     }
     else
     {

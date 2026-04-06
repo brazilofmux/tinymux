@@ -1246,7 +1246,7 @@ FUNCTION(fun_set)
                 safe_nomatch(buff, bufc);
                 return;
             }
-            UTF8 *buff2 = alloc_lbuf("fun_set");
+            LBuf buff2 = LBuf_Src("fun_set");
             atr_pget_str(buff2, thing2, pattr2->number, &aowner, &aflags);
 
             if (!See_attr(executor, thing2, pattr2))
@@ -1257,7 +1257,6 @@ FUNCTION(fun_set)
             {
                 set_attr_internal(executor, thing, atr, buff2, 0, buff, bufc);
             }
-            free_lbuf(buff2);
             return;
         }
 
@@ -1650,14 +1649,13 @@ FUNCTION(fun_objeval)
     {
         return;
     }
-    UTF8 *name = alloc_lbuf("fun_objeval");
+    LBuf name = LBuf_Src("fun_objeval");
     UTF8 *bp = name;
     mux_exec(fargs[0], LBUF_SIZE-1, name, &bp, executor, caller, enactor,
              eval|EV_FCHECK|EV_STRIP_CURLY|EV_EVAL, cargs, ncargs);
     *bp = '\0';
 
     dbref obj = match_thing_quiet(executor, name);
-    free_lbuf(name);
     if (!Good_obj(obj))
     {
         safe_match_result(obj, buff, bufc);
@@ -1718,8 +1716,8 @@ FUNCTION(fun_letq)
 
     // Evaluate and assign each name/value pair.
     //
-    UTF8 *tbuf = alloc_lbuf("fun_letq.name");
-    UTF8 *vbuf = alloc_lbuf("fun_letq.value");
+    LBuf tbuf = LBuf_Src("fun_letq.name");
+    LBuf vbuf = LBuf_Src("fun_letq.value");
     bool bError = false;
 
     for (int i = 0; i < nfargs - 1; i += 2)
@@ -1738,7 +1736,7 @@ FUNCTION(fun_letq)
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *vp = '\0';
 
-        size_t nVal = vp - vbuf;
+        size_t nVal = vp - vbuf.get();
 
         int regnum;
         if (IsSingleCharReg(tbuf, regnum))
@@ -1747,7 +1745,7 @@ FUNCTION(fun_letq)
         }
         else
         {
-            size_t nName = tp - tbuf;
+            size_t nName = tp - tbuf.get();
             if (IsValidNamedReg(tbuf, nName))
             {
                 NamedRegAssign(mudstate.named_regs, tbuf, nName, nVal, vbuf);
@@ -1760,9 +1758,6 @@ FUNCTION(fun_letq)
             }
         }
     }
-
-    free_lbuf(vbuf);
-    free_lbuf(tbuf);
 
     // Evaluate the body (last argument).
     //
@@ -2457,7 +2452,7 @@ FUNCTION(fun_ifelse)
 {
     // This function assumes that its arguments have not been evaluated.
     //
-    UTF8 *lbuff = alloc_lbuf("fun_ifelse");
+    LBuf lbuff = LBuf_Src("fun_ifelse");
     UTF8 *bp = lbuff;
     mux_exec(fargs[0], LBUF_SIZE-1, lbuff, &bp, executor, caller, enactor,
         eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
@@ -2479,7 +2474,6 @@ FUNCTION(fun_ifelse)
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     }
     mudstate.switch_token = save_switch;
-    free_lbuf(lbuff);
 }
 
 // Mail functions borrowed from DarkZone.
@@ -3241,7 +3235,7 @@ static void default_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
 {
     // Evaluating the first argument.
     //
-    UTF8 *objattr = alloc_lbuf("default_handler");
+    LBuf objattr = LBuf_Src("default_handler");
     UTF8 *bp = objattr;
     mux_exec(fargs[0], LBUF_SIZE-1, objattr, &bp, executor, caller, enactor,
              eval|EV_EVAL|EV_STRIP_CURLY|EV_FCHECK, cargs, ncargs);
@@ -3257,7 +3251,6 @@ static void default_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
         thing = executor;
         pattr = atr_str(objattr);
     }
-    free_lbuf(objattr);
 
     if (  pattr
        && See_attr(executor, thing, pattr))
@@ -4081,7 +4074,7 @@ FUNCTION(fun_while)
         // The JIT does not support dynamically-provided cargs.
         //
         const UTF8 *eval_args[1] = { element };
-        UTF8 *eval_result = alloc_lbuf("fun_while.eval");
+        LBuf eval_result = LBuf_Src("fun_while.eval");
         UTF8 *erp = eval_result;
         ast_exec(eval_atext, LBUF_SIZE-1, eval_result, &erp,
             eval_thing, executor, enactor,
@@ -4100,14 +4093,14 @@ FUNCTION(fun_while)
         {
             // Optimization: compare eval result directly.
             //
-            bStop = (strcmp(reinterpret_cast<const char*>(eval_result),
+            bStop = (strcmp(reinterpret_cast<const char*>(eval_result.get()),
                            reinterpret_cast<const char*>(fargs[3])) == 0);
         }
         else
         {
             // Evaluate the cond attribute separately.
             //
-            UTF8 *cond_result = alloc_lbuf("fun_while.cond");
+            LBuf cond_result = LBuf_Src("fun_while.cond");
             UTF8 *crp = cond_result;
             const UTF8 *cond_args[1] = { element };
             ast_exec(cond_atext, LBUF_SIZE-1, cond_result, &crp,
@@ -4115,11 +4108,9 @@ FUNCTION(fun_while)
                 AttrTrace(cond_aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL),
                 cond_args, 1);
             *crp = '\0';
-            bStop = (strcmp(reinterpret_cast<const char*>(cond_result),
+            bStop = (strcmp(reinterpret_cast<const char*>(cond_result.get()),
                            reinterpret_cast<const char*>(fargs[3])) == 0);
-            free_lbuf(cond_result);
         }
-        free_lbuf(eval_result);
 
         if (bStop)
         {
@@ -4429,7 +4420,7 @@ FUNCTION(fun_sandbox)
     //
     // First, evaluate arg1 (the function list) to get the names.
     //
-    UTF8 *funclist_buf = alloc_lbuf("sandbox.funclist");
+    LBuf funclist_buf = LBuf_Src("sandbox.funclist");
     UTF8 *flp = funclist_buf;
     mux_exec(fargs[1], LBUF_SIZE-1, funclist_buf, &flp, executor, caller, enactor,
         EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
@@ -4438,13 +4429,12 @@ FUNCTION(fun_sandbox)
     bool bReverse = false;
     if (nfargs >= 3)
     {
-        UTF8 *rev_buf = alloc_lbuf("sandbox.reverse");
+        LBuf rev_buf = LBuf_Src("sandbox.reverse");
         UTF8 *rp = rev_buf;
         mux_exec(fargs[2], LBUF_SIZE-1, rev_buf, &rp, executor, caller, enactor,
             EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *rp = '\0';
         bReverse = xlate(rev_buf);
-        free_lbuf(rev_buf);
     }
 
     // Collect the FUN pointers we need to modify, and save their original
@@ -4548,8 +4538,6 @@ FUNCTION(fun_sandbox)
             }
         }
     }
-    free_lbuf(funclist_buf);
-
     // Force AST-only evaluation so that the permission checks in the
     // AST evaluator (check_access on fp->perms) are respected.  The JIT
     // compiles functions to native intrinsics that bypass fp->perms.

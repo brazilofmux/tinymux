@@ -485,12 +485,12 @@ static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg
     preserve = PushRegisters(MAX_GLOBAL_REGS);
     save_global_regs(preserve);
 
-    UTF8 *nbuf = alloc_lbuf("check_filter");
+    LBuf nbuf = LBuf_Src("check_filter");
     UTF8 *dp = nbuf;
     if ((aflags & AF_NOEVAL) || NoEval(object))
     {
         mux_strncpy(nbuf, buf, LBUF_SIZE-1);
-        dp = nbuf + strlen((const char *)nbuf);
+        dp = nbuf.get() + strlen((const char *)nbuf.get());
     }
     else
     {
@@ -516,7 +516,6 @@ static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg
             if (  alarm_clock.alarmed
                || quick_wild(cp, msg))
             {
-                free_lbuf(nbuf);
                 return false;
             }
         } while (dp != nullptr);
@@ -547,7 +546,6 @@ static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg
                         {
                             pcre2_match_data_free(match_data);
                             pcre2_code_free(re);
-                            free_lbuf(nbuf);
                             return false;
                         }
                         pcre2_match_data_free(match_data);
@@ -557,7 +555,6 @@ static bool check_filter(dbref object, dbref player, int filter, const UTF8 *msg
             }
         } while (dp != nullptr);
     }
-    free_lbuf(nbuf);
     return true;
 }
 
@@ -722,9 +719,9 @@ void notify_check(dbref target, dbref sender, const UTF8 *msg, int key)
 
     // msg_ns: NOSPOOF prefix + msg.  All strings are PUA-encoded UTF-8.
     //
-    UTF8 *msg_ns = alloc_lbuf("notify_check.msg_ns");
+    LBuf msg_ns = LBuf_Src("notify_check.msg_ns");
     UTF8 *bp_ns = msg_ns;
-    UTF8 *msgFinal = alloc_lbuf("notify_check.final");
+    LBuf msgFinal = LBuf_Src("notify_check.final");
     UTF8 *bp_final;
     UTF8 *tp;
     UTF8 *prefix;
@@ -876,15 +873,15 @@ void notify_check(dbref target, dbref sender, const UTF8 *msg, int key)
         // Check for @Listen match if it will be useful.
         // Strip PUA color from msg to get plain text for matching.
         //
-        UTF8 *msgPlain = alloc_lbuf("notify_check.plain");
-        co_strip_color(reinterpret_cast<unsigned char *>(msgPlain),
+        LBuf msgPlain = LBuf_Src("notify_check.plain");
+        co_strip_color(reinterpret_cast<unsigned char *>(msgPlain.get()),
                        reinterpret_cast<const unsigned char *>(msg),
                        mux_strlen(msg));
 
         // Normalized copy for pattern matching — ASCII quotes only.
         // msgPlain retains fancy quotes for %0 capture and display.
         //
-        UTF8 *msgNorm = alloc_lbuf("notify_check.norm");
+        LBuf msgNorm = LBuf_Src("notify_check.norm");
         mux_strncpy(msgNorm, msgPlain, LBUF_SIZE - 1);
         strip_fancy_quotes(msgNorm);
 
@@ -1051,7 +1048,7 @@ void notify_check(dbref target, dbref sender, const UTF8 *msg, int key)
                 mux_strncpy(msgFinal, msg, LBUF_SIZE - 1);
             }
 
-            UTF8 *msgPrefixed2 = alloc_lbuf("notify_check.pfx2");
+            LBuf msgPrefixed2 = LBuf_Src("notify_check.pfx2");
             UTF8 *bp_pfx2;
 
             DOLIST(obj, Exits(Location(target)))
@@ -1074,7 +1071,6 @@ void notify_check(dbref target, dbref sender, const UTF8 *msg, int key)
                         MSG_ME | MSG_F_UP | MSG_F_CONTENTS | MSG_S_INSIDE | (key & (MSG_SRC_MASK | MSG_SAYPOSE | MSG_OOC)));
                 }
             }
-            free_lbuf(msgPrefixed2);
         }
 
         // Deliver message to contents.
@@ -1170,11 +1166,7 @@ void notify_check(dbref target, dbref sender, const UTF8 *msg, int key)
             notify_check(targetloc, sender, msgFinal,
                 MSG_ME | MSG_F_UP | MSG_S_INSIDE | (key & (MSG_SRC_MASK | MSG_SAYPOSE | MSG_OOC)));
         }
-        free_lbuf(msgNorm);
-        free_lbuf(msgPlain);
     }
-    free_lbuf(msgFinal);
-    free_lbuf(msg_ns);
     mudstate.ntfy_nest_lev--;
 }
 
@@ -1700,7 +1692,7 @@ void fork_and_dump(int key)
         raw_broadcast(0, T("%s"), mudconf.dump_msg);
     }
     check_mail_expiration();
-    UTF8 *buff = alloc_lbuf("fork_and_dump");
+    LBuf buff = LBuf_Src("fork_and_dump");
     if (key & (DUMP_TEXT|DUMP_STRUCT))
     {
         STARTLOG(LOG_DBSAVES, "DMP", "CHKPT");
@@ -1729,7 +1721,6 @@ void fork_and_dump(int key)
         log_text(buff);
         ENDLOG;
     }
-    free_lbuf(buff);
 
     local_presync_database();
     ServerEventsSinkNode *p = g_pServerEventsSinkListHead;
@@ -2107,7 +2098,7 @@ bool Hearer(dbref thing)
         {
             bool bFoundCommands = false;
 
-            UTF8 *buff = alloc_lbuf("Hearer");
+            LBuf buff = LBuf_Src("Hearer");
             atr_push();
             unsigned char *as;
             for (int atr = atr_head(thing, &as); atr; atr = atr_next(&as))
@@ -2141,7 +2132,6 @@ bool Hearer(dbref thing)
                         }
                         else
                         {
-                            free_lbuf(buff);
                             atr_pop();
                             mudstate.bfListens.Set(thing);
                             return true;
@@ -2149,7 +2139,6 @@ bool Hearer(dbref thing)
                     }
                 }
             }
-            free_lbuf(buff);
             atr_pop();
 
             mudstate.bfNoListens.Set(thing);

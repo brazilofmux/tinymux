@@ -90,14 +90,14 @@ void do_think(dbref executor, dbref caller, dbref enactor, int eval, int key,
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *buf, *bp;
+    UTF8 *bp;
 
-    buf = bp = alloc_lbuf("do_think");
+    LBuf buf = LBuf_Src("do_think");
+    bp = buf;
     mux_exec(message, LBUF_SIZE-1, buf, &bp, executor, caller, enactor, eval|EV_FCHECK|EV_EVAL|EV_TOP,
          nullptr, 0);
     *bp = '\0';
     notify(executor, buf);
-    free_lbuf(buf);
 }
 
 void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8 *message, const UTF8 *cargs[], int ncargs)
@@ -480,17 +480,18 @@ static void page_return(dbref player, dbref target, const UTF8 *tag,
 
     dbref aowner;
     int aflags;
-    UTF8 *str, *str2, *bp;
+    UTF8 *str, *bp;
 
     str = atr_pget(target, anum, &aowner, &aflags);
     if (*str)
     {
-        str2 = bp = alloc_lbuf("page_return");
+        LBuf str2 = LBuf_Src("page_return");
+        bp = str2;
         mux_exec(str, LBUF_SIZE-1, str2, &bp, target, player, player,
              AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP|EV_NO_LOCATION),
              nullptr, 0);
         *bp = '\0';
-        if (*str2)
+        if (*str2.get())
         {
             CLinearTimeAbsolute ltaNow;
             ltaNow.GetLocal();
@@ -498,13 +499,12 @@ static void page_return(dbref player, dbref target, const UTF8 *tag,
             ltaNow.ReturnFields(&ft);
 
             UTF8 *p = tprintf(T("%s message from %s: %s"), tag,
-                Moniker(target), str2);
+                Moniker(target), str2.get());
             notify_with_cause_ooc(player, target, p, MSG_SRC_PAGE);
             p = tprintf(T("[%d:%02d] %s message sent to %s."), ft.iHour,
                 ft.iMinute, tag, Moniker(player));
             notify_with_cause_ooc(target, player, p, MSG_SRC_PAGE);
         }
-        free_lbuf(str2);
     }
     else if (dflt && *dflt)
     {
@@ -741,7 +741,7 @@ void do_page
         // Update the database.
         //
         ITL itl;
-        UTF8 *pBuff = alloc_lbuf("do_page.lastpage");
+        LBuf pBuff = LBuf_Src("do_page.lastpage");
         UTF8 *pBufc = pBuff;
         ItemToList_Init(&itl, pBuff, &pBufc);
         for (i = 0; i < nPlayers; i++)
@@ -754,7 +754,6 @@ void do_page
         }
         ItemToList_Final(&itl);
         atr_add_raw(executor, A_LASTPAGE, pBuff);
-        free_lbuf(pBuff);
     }
 
     // Verify that the recipient list isn't empty.
@@ -775,7 +774,7 @@ void do_page
 
     // Build a friendly representation of the recipient list.
     //
-    UTF8 *aFriendly = alloc_lbuf("do_page.friendly");
+    LBuf aFriendly = LBuf_Src("do_page.friendly");
     UTF8 *pFriendly = aFriendly;
 
     if (nValid > 1)
@@ -809,15 +808,14 @@ void do_page
     if (  nargs == 1
        && arg1[0] == '\0')
     {
-        notify(executor, tprintf(T("You last paged %s."), aFriendly));
-        free_lbuf(aFriendly);
+        notify(executor, tprintf(T("You last paged %s."), aFriendly.get()));
         return;
     }
 
     // Build messages.
     //
-    UTF8 *omessage = alloc_lbuf("do_page.omessage");
-    UTF8 *imessage = alloc_lbuf("do_page.imessage");
+    LBuf omessage = LBuf_Src("do_page.omessage");
+    LBuf imessage = LBuf_Src("do_page.imessage");
     UTF8 *omp = omessage;
     UTF8 *imp = imessage;
 
@@ -885,45 +883,44 @@ void do_page
         else
         {
             safe_tprintf_str(omessage, &omp, T("From afar, %s pages %s."),
-                Moniker(executor), aFriendly);
+                Moniker(executor), aFriendly.get());
         }
-        safe_tprintf_str(imessage, &imp, T("You page %s."), aFriendly);
+        safe_tprintf_str(imessage, &imp, T("You page %s."), aFriendly.get());
         break;
 
     case 2:
         safe_str(T("From afar, "), omessage, &omp);
         if (!bBlind && nValid > 1)
         {
-            safe_tprintf_str(omessage, &omp, T("to %s: "), aFriendly);
+            safe_tprintf_str(omessage, &omp, T("to %s: "), aFriendly.get());
         }
         safe_tprintf_str(omessage, &omp, T("%s %s"), Moniker(executor), pMessage);
         safe_tprintf_str(imessage, &imp, T("Long distance to %s: %s %s"),
-            aFriendly, Moniker(executor), pMessage);
+            aFriendly.get(), Moniker(executor), pMessage);
         break;
 
     case 3:
         safe_str(T("From afar, "), omessage, &omp);
         if (!bBlind && nValid > 1)
         {
-            safe_tprintf_str(omessage, &omp, T("to %s: "), aFriendly);
+            safe_tprintf_str(omessage, &omp, T("to %s: "), aFriendly.get());
         }
         safe_tprintf_str(omessage, &omp, T("%s%s"), Moniker(executor), pMessage);
         safe_tprintf_str(imessage, &imp, T("Long distance to %s: %s%s"),
-            aFriendly, Moniker(executor), pMessage);
+            aFriendly.get(), Moniker(executor), pMessage);
         break;
 
     default:
         if (!bBlind && nValid > 1)
         {
-            safe_tprintf_str(omessage, &omp, T("To %s, "), aFriendly);
+            safe_tprintf_str(omessage, &omp, T("To %s, "), aFriendly.get());
         }
         safe_tprintf_str(omessage, &omp, T("%s pages: %s"), Moniker(executor),
             pMessage);
         safe_tprintf_str(imessage, &imp, T("You paged %s with \xE2\x80\x98%s\xE2\x80\x99"),
-            aFriendly, pMessage);
+            aFriendly.get(), pMessage);
         break;
     }
-    free_lbuf(aFriendly);
 
     // Send message to recipients.
     //
@@ -941,12 +938,10 @@ void do_page
             }
         }
     }
-    free_lbuf(omessage);
 
     // Send message to sender.
     //
     notify(executor, imessage);
-    free_lbuf(imessage);
     if (newMessage)
     {
         free_lbuf(newMessage);
@@ -964,11 +959,10 @@ static void whisper_pose(dbref player, dbref target, UTF8 *message, bool bSpace)
     {
         message = newMessage;
     }
-    UTF8 *buff = alloc_lbuf("do_pemit.whisper.pose");
+    LBuf buff = LBuf_Src("do_pemit.whisper.pose");
     mux_strncpy(buff, Moniker(player), LBUF_SIZE-1);
-    notify_with_cause(target, player, tprintf(T("You sense %s%s%s"), buff,
+    notify_with_cause(target, player, tprintf(T("You sense %s%s%s"), buff.get(),
         bSpace ? " " : "", message));
-    free_lbuf(buff);
     if (newMessage)
     {
         free_lbuf(newMessage);
@@ -1008,7 +1002,7 @@ void do_pemit_single
 )
 {
     dbref loc;
-    UTF8 *buf2, *bp;
+    UTF8 *bp;
     int depth;
     bool ok_to_do = false;
 
@@ -1172,14 +1166,13 @@ void do_pemit_single
                 loc = where_is(player);
                 if (loc != NOTHING)
                 {
-                    buf2 = alloc_lbuf("do_pemit.whisper.buzz");
+                    LBuf buf2 = LBuf_Src("do_pemit.whisper.buzz");
                     bp = buf2;
                     safe_str(Moniker(player), buf2, &bp);
                     safe_str(T(" whispers something to "), buf2, &bp);
                     safe_str(Moniker(target), buf2, &bp);
                     *bp = '\0';
                     notify_except2(loc, player, player, target, buf2);
-                    free_lbuf(buf2);
                 }
             }
             break;
@@ -1652,7 +1645,7 @@ void do_pemit_whisper
         // Update the database.
         //
         ITL itl;
-        UTF8 *pBuff = alloc_lbuf("do_pemit_whisper.lastwhisper");
+        LBuf pBuff = LBuf_Src("do_pemit_whisper.lastwhisper");
         UTF8 *pBufc = pBuff;
         ItemToList_Init(&itl, pBuff, &pBufc);
         for (int i = 0; i < nPlayers; i++)
@@ -1666,7 +1659,6 @@ void do_pemit_whisper
         ItemToList_Final(&itl);
 
         atr_add_raw(executor, A_LASTWHISPER, pBuff);
-        free_lbuf(pBuff);
     }
 
     // Decode PEMIT_HERE, PEMIT_ROOM, PEMIT_HTML and remove from key.
@@ -1720,7 +1712,7 @@ void do_pemit_whisper
     }
     else if (1 < nPlayers)
     {
-        UTF8 *aFriendly = alloc_lbuf("do_pemit_whisper.friendly");
+        LBuf aFriendly = LBuf_Src("do_pemit_whisper.friendly");
         UTF8 *pFriendly = aFriendly;
 
         bool bFirst = true;
@@ -1756,29 +1748,27 @@ void do_pemit_whisper
         {
         case ';':
             notify(executor, tprintf(T("%s sense \xE2\x80\x9C%s%s\xE2\x80\x9D"),
-                aFriendly, Moniker(executor), &message[1]));
+                aFriendly.get(), Moniker(executor), &message[1]));
             break;
 
         case ':':
             if (bPoseSpace)
             {
                 notify(executor, tprintf(T("%s sense \xE2\x80\x9C%s %s\xE2\x80\x9D"),
-                    aFriendly, Moniker(executor), &message[1]));
+                    aFriendly.get(), Moniker(executor), &message[1]));
             }
             else
             {
                 notify(executor, tprintf(T("%s sense \xE2\x80\x9C%s%s\xE2\x80\x9D"),
-                    aFriendly, Moniker(executor), &message[1]));
+                    aFriendly.get(), Moniker(executor), &message[1]));
             }
             break;
 
         default:
             notify(executor, tprintf(T("You whisper \xE2\x80\x9C%s\xE2\x80\x9D to %s."), message,
-                aFriendly));
+                aFriendly.get()));
             break;
         }
-
-        free_lbuf(aFriendly);
     }
 
     for (int i = 0; i < nPlayers; i++)

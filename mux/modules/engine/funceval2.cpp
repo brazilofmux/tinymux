@@ -358,9 +358,9 @@ static int u_comp(ucomp_context *pctx, const void *s1, const void *s2)
 
     const UTF8 *elems[2] = { T(s1), T(s2) };
 
-    UTF8 *tbuf = alloc_lbuf("u_comp");
+    LBuf tbuf = LBuf_Src("u_comp");
     mux_strncpy(tbuf, pctx->buff, LBUF_SIZE-1);
-    UTF8 *result = alloc_lbuf("u_comp");
+    LBuf result = LBuf_Src("u_comp");
     UTF8 *bp = result;
 
     // Use ast_exec (not mux_exec) to bypass the JIT compiler.
@@ -371,8 +371,6 @@ static int u_comp(ucomp_context *pctx, const void *s1, const void *s2)
              AttrTrace(pctx->aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), elems, 2);
     *bp = '\0';
     int n = mux_atol(result);
-    free_lbuf(result);
-    free_lbuf(tbuf);
     return n;
 }
 
@@ -450,7 +448,7 @@ FUNCTION(fun_sortby)
     ctx.enactor  = enactor;
     ctx.aflags   = aflags;
 
-    UTF8 *list = alloc_lbuf("fun_sortby");
+    LBuf list = LBuf_Src("fun_sortby");
     mux_strncpy(list, fargs[1], LBUF_SIZE-1);
     std::vector<UTF8*> ptrs(LBUF_SIZE / 2);
     const int nptrs = list2arr(ptrs.data(), LBUF_SIZE / 2, list, sep);
@@ -461,7 +459,6 @@ FUNCTION(fun_sortby)
     }
 
     arr2list(ptrs.data(), nptrs, buff, bufc, osep);
-    free_lbuf(list);
     free_lbuf(ctx.buff);
     free_lbuf(atext);
 }
@@ -1090,7 +1087,7 @@ FUNCTION(fun_munge)
 
     // Copy list1 for later evaluation of the attribute.
     //
-    UTF8 *list1 = alloc_lbuf("fun_munge.list1");
+    LBuf list1 = LBuf_Src("fun_munge.list1");
     mux_strncpy(list1, fargs[1], LBUF_SIZE-1);
 
     // Prepare data structures for a hash table that will map
@@ -1100,7 +1097,6 @@ FUNCTION(fun_munge)
     if (0 == nWords)
     {
         free_lbuf(atext);
-        free_lbuf(list1);
         return;
     }
 
@@ -1144,23 +1140,22 @@ FUNCTION(fun_munge)
     {
         safe_str(T("#-1 LISTS MUST BE OF EQUAL SIZE"), buff, bufc);
         free_lbuf(atext);
-        free_lbuf(list1);
         return;
     }
 
     // Call the u-function with the first list as %0.
     //
-    UTF8 *rlist, *bp;
+    LBuf rlist = LBuf_Src("fun_munge");
+    UTF8 *bp;
     const UTF8 *uargs[2];
 
-    bp = rlist = alloc_lbuf("fun_munge");
+    bp = rlist;
     uargs[0] = list1;
     uargs[1] = sep.str;
     mux_exec(atext, LBUF_SIZE-1, rlist, &bp, executor, caller, enactor,
              AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), uargs, 2);
     *bp = '\0';
     free_lbuf(atext);
-    free_lbuf(list1);
 
     // Now that we have our result, put it back into array form.
     // Translate its elements according to the mappings in our hash table.
@@ -1203,7 +1198,6 @@ FUNCTION(fun_munge)
             }
         }
     }
-    free_lbuf(rlist);
 }
 
 FUNCTION(fun_die)
@@ -2232,7 +2226,7 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
             //
             if (i < matches)
             {
-                UTF8 *p = alloc_lbuf("fun_regmatch");
+                LBuf p = LBuf_Src("fun_regmatch");
                 PCRE2_SIZE outlen = 0;
                 int ret = pcre2_substring_copy_bynumber(
                     match_data, i, p, &outlen);
@@ -2246,7 +2240,6 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
                 {
                     RegAssign(&mudstate.global_regs[curq], 0, nullptr);
                 }
-                free_lbuf(p);
             }
             else
             {
@@ -2262,7 +2255,7 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
             {
                 if (i < matches)
                 {
-                    UTF8 *p = alloc_lbuf("fun_regmatch");
+                    LBuf p = LBuf_Src("fun_regmatch");
                     PCRE2_SIZE outlen = 0;
                     int ret = pcre2_substring_copy_bynumber(
                         match_data, i, p, &outlen);
@@ -2276,7 +2269,6 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
                     {
                         NamedRegAssign(mudstate.named_regs, qregs[i], nName, 0, T(""));
                     }
-                    free_lbuf(p);
                 }
                 else
                 {

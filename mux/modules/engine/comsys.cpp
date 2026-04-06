@@ -1742,7 +1742,7 @@ void SendChannelMessage
                     &aowner, &aflags);
                 if ('\0' != chatfmt[0])
                 {
-                    UTF8 *fmtbuf = alloc_lbuf("chatformat");
+                    LBuf fmtbuf = LBuf_Src("chatformat");
                     UTF8 *bp = fmtbuf;
                     UTF8 sdrBuf[32];
                     mux_sprintf(sdrBuf, sizeof(sdrBuf), T("#%d"), executor);
@@ -1753,7 +1753,6 @@ void SendChannelMessage
                         cfa, 3);
                     *bp = '\0';
                     notify_comsys(user.who, executor, fmtbuf);
-                    free_lbuf(fmtbuf);
                     free_lbuf(chatfmt);
                     continue;
                 }
@@ -1864,7 +1863,7 @@ static void ChannelMOTD(dbref executor, dbref enactor, int attr)
         UTF8* q = atr_get("ChannelMOTD.1186", executor, attr, &aowner, &aflags);
         if ('\0' != q[0])
         {
-            UTF8* buf = alloc_lbuf("chanmotd");
+            LBuf buf = LBuf_Src("chanmotd");
             UTF8* bp = buf;
 
             mux_exec(q, LBUF_SIZE - 1, buf, &bp, executor, executor, enactor,
@@ -1872,8 +1871,6 @@ static void ChannelMOTD(dbref executor, dbref enactor, int attr)
             *bp = '\0';
 
             notify_comsys(enactor, executor, buf);
-
-            free_lbuf(buf);
         }
         free_lbuf(q);
     }
@@ -2673,7 +2670,7 @@ static void do_listchannels(dbref player, UTF8* pattern)
                 bool bCanXmit = test_transmit_access(player, ch);
                 bool bCanRecv = test_receive_access(player, ch);
 
-                UTF8* temp = alloc_lbuf("do_listchannels");
+                LBuf temp = LBuf_Src("do_listchannels");
                 UTF8* bp = temp;
 
                 // PLS flags.
@@ -2687,12 +2684,12 @@ static void do_listchannels(dbref player, UTF8* pattern)
                 //
                 mux_field iPos(4, 4);
                 iPos += StripTabsAndTruncate(ch->name,
-                    temp + iPos.m_byte,
+                    temp.get() + iPos.m_byte,
                     (LBUF_SIZE - 1) - iPos.m_byte,
                     13);
-                bp = temp + iPos.m_byte;
+                bp = temp.get() + iPos.m_byte;
                 iPos = PadField(temp, LBUF_SIZE - 1, 18, iPos);
-                bp = temp + iPos.m_byte;
+                bp = temp.get() + iPos.m_byte;
 
                 // Header (15 cols).
                 //
@@ -2702,22 +2699,22 @@ static void do_listchannels(dbref player, UTF8* pattern)
                     pHeader = T("-");
                 }
                 iPos += StripTabsAndTruncate(pHeader,
-                    temp + iPos.m_byte,
+                    temp.get() + iPos.m_byte,
                     (LBUF_SIZE - 1) - iPos.m_byte,
                     15);
-                bp = temp + iPos.m_byte;
+                bp = temp.get() + iPos.m_byte;
                 iPos = PadField(temp, LBUF_SIZE - 1, 34, iPos);
-                bp = temp + iPos.m_byte;
+                bp = temp.get() + iPos.m_byte;
 
                 // Owner name (15 cols).
                 //
                 iPos += StripTabsAndTruncate(Moniker(ch->charge_who),
-                    temp + iPos.m_byte,
+                    temp.get() + iPos.m_byte,
                     (LBUF_SIZE - 1) - iPos.m_byte,
                     15);
-                bp = temp + iPos.m_byte;
+                bp = temp.get() + iPos.m_byte;
                 iPos = PadField(temp, LBUF_SIZE - 1, 50, iPos);
-                bp = temp + iPos.m_byte;
+                bp = temp.get() + iPos.m_byte;
 
                 // Effective access JXR (3 cols + 2 spaces).
                 //
@@ -2725,19 +2722,18 @@ static void do_listchannels(dbref player, UTF8* pattern)
                 safe_chr(bCanXmit ? 'X' : '-', temp, &bp);
                 safe_chr(bCanRecv ? 'R' : '-', temp, &bp);
                 iPos = mux_field(
-                    static_cast<unsigned int>(bp - temp),
-                    static_cast<unsigned int>(bp - temp));
+                    static_cast<unsigned int>(bp - temp.get()),
+                    static_cast<unsigned int>(bp - temp.get()));
                 iPos = PadField(temp, LBUF_SIZE - 1, 56, iPos);
-                bp = temp + iPos.m_byte;
+                bp = temp.get() + iPos.m_byte;
 
                 // Users and Messages.
                 //
-                mux_sprintf(bp, (LBUF_SIZE - 1) - (bp - temp),
+                mux_sprintf(bp, (LBUF_SIZE - 1) - (bp - temp.get()),
                     T("%5d %4d"),
                     static_cast<int>(ch->users.size()),
                     ch->num_messages);
                 raw_notify(player, temp);
-                free_lbuf(temp);
             }
         }
     }

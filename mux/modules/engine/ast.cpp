@@ -665,7 +665,7 @@ static void ast_eval_deferred_region(const ASTNode *node,
 
     if (noevalNode)
     {
-        UTF8 *temp = alloc_lbuf("ast_noeval_region");
+        LBuf temp = LBuf_Src("ast_noeval_region");
         UTF8 *tp = temp;
         ast_eval_node(noevalNode, temp, &tp,
             executor, caller, enactor,
@@ -673,8 +673,7 @@ static void ast_eval_deferred_region(const ASTNode *node,
                 | EV_NOFCHECK),
             cargs, ncargs);
         *tp = '\0';
-        text.assign(reinterpret_cast<const char *>(temp), tp - temp);
-        free_lbuf(temp);
+        text.assign(reinterpret_cast<const char *>(temp.get()), tp - temp);
     }
     else if (rawText)
     {
@@ -687,7 +686,7 @@ static void ast_eval_deferred_region(const ASTNode *node,
             return;
         }
 
-        UTF8 *temp = alloc_lbuf("ast_noeval_region");
+        LBuf temp = LBuf_Src("ast_noeval_region");
         UTF8 *tp = temp;
         ast_eval_node(noevalAst.get(), temp, &tp,
             executor, caller, enactor,
@@ -695,8 +694,7 @@ static void ast_eval_deferred_region(const ASTNode *node,
                 | EV_NOFCHECK),
             cargs, ncargs);
         *tp = '\0';
-        text.assign(reinterpret_cast<const char *>(temp), tp - temp);
-        free_lbuf(temp);
+        text.assign(reinterpret_cast<const char *>(temp.get()), tp - temp);
     }
     else
     {
@@ -1345,7 +1343,7 @@ static void ast_noeval_cand(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 {
     int nfargs = static_cast<int>(node->children.size());
     bool val = true;
-    UTF8 *temp = alloc_lbuf("ast_noeval_cand");
+    LBuf temp = LBuf_Src("ast_noeval_cand");
     for (int i = 0; i < nfargs && val && !alarm_clock.alarmed; i++)
     {
         UTF8 *bp = temp;
@@ -1355,7 +1353,6 @@ static void ast_noeval_cand(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         *bp = '\0';
         val = bBool ? xlate(temp) : isTRUE(mux_atol(temp));
     }
-    free_lbuf(temp);
     safe_bool(val, buff, bufc);
 }
 
@@ -1368,7 +1365,7 @@ static void ast_noeval_cor(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 {
     int nfargs = static_cast<int>(node->children.size());
     bool val = false;
-    UTF8 *temp = alloc_lbuf("ast_noeval_cor");
+    LBuf temp = LBuf_Src("ast_noeval_cor");
     for (int i = 0; i < nfargs && !val && !alarm_clock.alarmed; i++)
     {
         UTF8 *bp = temp;
@@ -1378,7 +1375,6 @@ static void ast_noeval_cor(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         *bp = '\0';
         val = bBool ? xlate(temp) : isTRUE(mux_atol(temp));
     }
-    free_lbuf(temp);
     safe_bool(val, buff, bufc);
 }
 
@@ -1392,7 +1388,7 @@ static void ast_noeval_ifelse(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 
     // Evaluate the condition.
     //
-    UTF8 *lbuff = alloc_lbuf("ast_noeval_if");
+    LBuf lbuff = LBuf_Src("ast_noeval_if");
     UTF8 *bp = lbuff;
     ast_eval_node(node->children[0].get(), lbuff, &bp,
         executor, caller, enactor,
@@ -1414,7 +1410,6 @@ static void ast_noeval_ifelse(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     }
 
     mudstate.switch_token = saved_switch;
-    free_lbuf(lbuff);
 }
 
 // Native switch/case: first-match pattern dispatch.
@@ -1428,14 +1423,14 @@ static void ast_noeval_switch(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 
     // Evaluate the target in child[0].
     //
-    UTF8 *mbuff = alloc_lbuf("ast_noeval_switch");
+    LBuf mbuff = LBuf_Src("ast_noeval_switch");
     UTF8 *bp = mbuff;
     ast_eval_node(node->children[0].get(), mbuff, &bp,
         executor, caller, enactor,
         eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     *bp = '\0';
 
-    UTF8 *tbuff = alloc_lbuf("ast_noeval_switch.2");
+    LBuf tbuff = LBuf_Src("ast_noeval_switch.2");
 
     const UTF8 *saved_switch = mudstate.switch_token;
     mudstate.switch_token = mbuff;
@@ -1453,18 +1448,15 @@ static void ast_noeval_switch(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 
         if (  bWild
             ? wild_match(tbuff, mbuff)
-            : strcmp(reinterpret_cast<char *>(tbuff),
-                     reinterpret_cast<char *>(mbuff)) == 0)
+            : strcmp(reinterpret_cast<char *>(tbuff.get()),
+                     reinterpret_cast<char *>(mbuff.get())) == 0)
         {
-            free_lbuf(tbuff);
             ast_eval_branch(node, i + 1, node->children[i + 1].get(), buff, bufc,
                 executor, caller, enactor, eval, cargs, ncargs);
             mudstate.switch_token = saved_switch;
-            free_lbuf(mbuff);
             return;
         }
     }
-    free_lbuf(tbuff);
 
     // No match — evaluate default if present.
     //
@@ -1475,7 +1467,6 @@ static void ast_noeval_switch(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     }
 
     mudstate.switch_token = saved_switch;
-    free_lbuf(mbuff);
 }
 
 // Native switchall/caseall: all-match pattern dispatch.
@@ -1489,14 +1480,14 @@ static void ast_noeval_switchall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 
     // Evaluate the target in child[0].
     //
-    UTF8 *mbuff = alloc_lbuf("ast_noeval_switchall");
+    LBuf mbuff = LBuf_Src("ast_noeval_switchall");
     UTF8 *bp = mbuff;
     ast_eval_node(node->children[0].get(), mbuff, &bp,
         executor, caller, enactor,
         eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     *bp = '\0';
 
-    UTF8 *tbuff = alloc_lbuf("ast_noeval_switchall.2");
+    LBuf tbuff = LBuf_Src("ast_noeval_switchall.2");
 
     const UTF8 *saved_switch = mudstate.switch_token;
     mudstate.switch_token = mbuff;
@@ -1515,15 +1506,14 @@ static void ast_noeval_switchall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 
         if (  bWild
             ? wild_match(tbuff, mbuff)
-            : strcmp(reinterpret_cast<char *>(tbuff),
-                     reinterpret_cast<char *>(mbuff)) == 0)
+            : strcmp(reinterpret_cast<char *>(tbuff.get()),
+                     reinterpret_cast<char *>(mbuff.get())) == 0)
         {
             bMatched = true;
             ast_eval_branch(node, i + 1, node->children[i + 1].get(), buff, bufc,
                 executor, caller, enactor, eval, cargs, ncargs);
         }
     }
-    free_lbuf(tbuff);
 
     // If nothing matched, evaluate the default.
     //
@@ -1534,7 +1524,6 @@ static void ast_noeval_switchall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     }
 
     mudstate.switch_token = saved_switch;
-    free_lbuf(mbuff);
 }
 
 // Native iter: list iteration.
@@ -1561,7 +1550,7 @@ static void ast_noeval_iter(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     {
         // Evaluate input delimiter.
         //
-        UTF8 *dbuf = alloc_lbuf("ast_noeval_iter.sep");
+        LBuf dbuf = LBuf_Src("ast_noeval_iter.sep");
         UTF8 *dp = dbuf;
         ast_eval_node(node->children[2].get(), dbuf, &dp,
             executor, caller, enactor,
@@ -1571,22 +1560,21 @@ static void ast_noeval_iter(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         if (dlen == 1)
         {
             sep.n = 1;
-            memcpy(sep.str, dbuf, 2);
+            memcpy(sep.str, dbuf.get(), 2);
         }
         else if (dlen > 1 && dlen <= MAX_SEP_LEN)
         {
             sep.n = dlen;
-            memcpy(sep.str, dbuf, dlen);
+            memcpy(sep.str, dbuf.get(), dlen);
             sep.str[dlen] = '\0';
         }
-        free_lbuf(dbuf);
     }
 
     if (nfargs >= 4)
     {
         // Evaluate output delimiter.
         //
-        UTF8 *dbuf = alloc_lbuf("ast_noeval_iter.osep");
+        LBuf dbuf = LBuf_Src("ast_noeval_iter.osep");
         UTF8 *dp = dbuf;
         ast_eval_node(node->children[3].get(), dbuf, &dp,
             executor, caller, enactor,
@@ -1598,12 +1586,12 @@ static void ast_noeval_iter(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             osep.n = 1;
             memcpy(osep.str, " ", 2);
         }
-        else if (dlen == 2 && memcmp(dbuf, "@@", 2) == 0)
+        else if (dlen == 2 && memcmp(dbuf.get(), "@@", 2) == 0)
         {
             osep.n = 0;
             osep.str[0] = '\0';
         }
-        else if (dlen == 2 && memcmp(dbuf, "\r\n", 2) == 0)
+        else if (dlen == 2 && memcmp(dbuf.get(), "\r\n", 2) == 0)
         {
             osep.n = 2;
             memcpy(osep.str, "\r\n", 3);
@@ -1611,20 +1599,19 @@ static void ast_noeval_iter(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         else if (dlen == 1)
         {
             osep.n = 1;
-            memcpy(osep.str, dbuf, 2);
+            memcpy(osep.str, dbuf.get(), 2);
         }
         else if (dlen <= MAX_SEP_LEN)
         {
             osep.n = dlen;
-            memcpy(osep.str, dbuf, dlen);
+            memcpy(osep.str, dbuf.get(), dlen);
             osep.str[dlen] = '\0';
         }
-        free_lbuf(dbuf);
     }
 
     // Evaluate the list (child[0]).
     //
-    UTF8 *curr = alloc_lbuf("ast_noeval_iter");
+    LBuf curr = LBuf_Src("ast_noeval_iter");
     UTF8 *dp = curr;
     ast_eval_node(node->children[0].get(), curr, &dp,
         executor, caller, enactor,
@@ -1635,7 +1622,6 @@ static void ast_noeval_iter(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     UTF8 *cp = trim_space_sep_LEN(curr, dp - curr, sep, &ncp);
     if (!*cp)
     {
-        free_lbuf(curr);
         return;
     }
 
@@ -1680,7 +1666,6 @@ static void ast_noeval_iter(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         mudstate.itext[mudstate.in_loop] = nullptr;
         mudstate.inum[mudstate.in_loop] = 0;
     }
-    free_lbuf(curr);
 }
 
 // ulambda(body, arg0, arg1, ...): anonymous function evaluation.

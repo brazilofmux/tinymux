@@ -1319,8 +1319,9 @@ static bool process_hook(dbref executor, CMDENT *cmdp, int key, bool save_flg)
                     preserve = PushRegisters(MAX_GLOBAL_REGS);
                     save_global_regs(preserve);
                 }
-                UTF8 *buff, *bufc;
-                bufc = buff = alloc_lbuf("process_hook");
+                UTF8 *bufc;
+                LBuf buff = LBuf_Src("process_hook");
+                bufc = buff;
                 mux_exec(atext, LBUF_SIZE-1, buff, &bufc, mudconf.hook_obj, executor,
                          executor, AttrTrace(aflags, EV_FCHECK|EV_EVAL), nullptr, 0);
                 *bufc = '\0';
@@ -1330,7 +1331,6 @@ static bool process_hook(dbref executor, CMDENT *cmdp, int key, bool save_flg)
                     PopRegisters(preserve, MAX_GLOBAL_REGS);
                 }
                 retval = xlate(buff);
-                free_lbuf(buff);
             }
         }
         free_lbuf(atext);
@@ -1960,14 +1960,13 @@ static void handle_gmcp(dbref player, const UTF8 *payload)
         gmcp_args[0] = pkg;
         gmcp_args[1] = json;
 
-        UTF8 *lbuf = alloc_lbuf("handle_gmcp");
+        LBuf lbuf = LBuf_Src("handle_gmcp");
         UTF8 *lp = lbuf;
         mux_exec(pGmcpAttr, strlen(reinterpret_cast<const char *>(pGmcpAttr)),
                  lbuf, &lp, player, player, player,
                  EV_FCHECK | EV_EVAL | EV_TOP,
                  gmcp_args, 2);
         *lp = '\0';
-        free_lbuf(lbuf);
     }
     free_lbuf(pGmcpAttr);
 }
@@ -2951,7 +2950,7 @@ UTF8 *process_command
            && !Going(mudconf.global_error_obj))
         {
             UTF8 *errtext = atr_get("process_command.2491", mudconf.global_error_obj, A_VA, &aowner, &aflags);
-            UTF8 *errbuff = alloc_lbuf("process_command.error_msg");
+            LBuf errbuff = LBuf_Src("process_command.error_msg");
             UTF8 *errbufc = errbuff;
             mux_exec(errtext, LBUF_SIZE-1, errbuff, &errbufc, mudconf.global_error_obj, caller, enactor,
                 AttrTrace(aflags, EV_EVAL|EV_FCHECK|EV_STRIP_CURLY|EV_TOP),
@@ -2959,7 +2958,6 @@ UTF8 *process_command
             *errbufc = '\0';
             notify(executor, errbuff);
             free_lbuf(errtext);
-            free_lbuf(errbuff);
         }
         else
         {
@@ -2982,7 +2980,7 @@ UTF8 *process_command
 //
 static void list_cmdtable(dbref player)
 {
-    UTF8 *buf = alloc_lbuf("list_cmdtable");
+    LBuf buf = LBuf_Src("list_cmdtable");
     UTF8 *bp = buf;
     ITL itl;
     ItemToList_Init(&itl, buf, &bp);
@@ -3048,7 +3046,6 @@ static void list_cmdtable(dbref player)
     ItemToList_Final(&itl);
 
     notify(player, buf);
-    free_lbuf(buf);
 }
 
 // ---------------------------------------------------------------------------
@@ -3056,7 +3053,7 @@ static void list_cmdtable(dbref player)
 //
 static void list_attrtable(dbref player)
 {
-    UTF8 *buf = alloc_lbuf("list_attrtable");
+    LBuf buf = LBuf_Src("list_attrtable");
     UTF8 *bp = buf;
     ITL itl;
     ItemToList_Init(&itl, buf, &bp);
@@ -3071,7 +3068,6 @@ static void list_attrtable(dbref player)
     ItemToList_Final(&itl);
     *bp = '\0';
     raw_notify(player, buf);
-    free_lbuf(buf);
 }
 
 // ---------------------------------------------------------------------------
@@ -3603,7 +3599,7 @@ static void list_df_flags(dbref player)
     fs.word[FLAG_WORD1] |= TYPE_PLAYER;
     UTF8 *robotb = decode_flags(player, &fs);
 
-    UTF8 *buff = alloc_lbuf("list_df_flags");
+    LBuf buff = LBuf_Src("list_df_flags");
     mux_sprintf(buff, LBUF_SIZE,
         T("Default flags: Players...%s Rooms...%s Exits...%s Things...%s Robots...%s"),
         playerb, roomb, exitb, thingb, robotb);
@@ -3615,7 +3611,6 @@ static void list_df_flags(dbref player)
     free_sbuf(robotb);
 
     raw_notify(player, buff);
-    free_lbuf(buff);
 }
 
 // ---------------------------------------------------------------------------
@@ -3941,7 +3936,7 @@ static void list_vattrs(dbref player, UTF8 *s_mask)
     bool wild_mtch =  s_mask
                    && s_mask[0] != '\0';
 
-    UTF8 *buff = alloc_lbuf("list_vattrs");
+    LBuf buff = LBuf_Src("list_vattrs");
 
     // If wild_match, then only list attributes that match wildcard(s)
     //
@@ -3983,7 +3978,6 @@ static void list_vattrs(dbref player, UTF8 *s_mask)
         p = tprintf(T("%d attributes, next=%d"), na, mudstate.attr_next);
     }
     raw_notify(player, p);
-    free_lbuf(buff);
 }
 
 // LeftJustifyString and RightJustifyNumber moved to stringutil.cpp (libmux.so).
@@ -4607,7 +4601,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
     }
 
     auto message = T("");
-    UTF8* buff1 = alloc_lbuf("do_icmd");
+    LBuf buff1 = LBuf_Src("do_icmd");
     for (int x = 0; x < nargs; x++)
     {
         // Lowercase the argument (Unicode-aware).
@@ -4809,7 +4803,6 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             notify(player, tprintf(T("@icmd:%s %s."), (loc_set == -1) ? T("") : T(" Location -"), message));
         }
     }
-    free_lbuf(buff1);
     notify(player, T("@icmd: Done."));
 }
 
@@ -5022,10 +5015,10 @@ void do_hook(const dbref executor, const dbref caller, const dbref enactor, cons
 
         if (cmdp->flags)
         {
-            s_ptr = s_ptrbuff = alloc_lbuf("@hook");
+            LBuf hookbuf = LBuf_Src("@hook");
+            s_ptr = s_ptrbuff = hookbuf;
             show_hook(s_ptrbuff, s_ptr, HOOKMASK(cmdp->flags));
             notify(executor, tprintf(T("@hook: New mask for \xE2\x80\x98%s\xE2\x80\x99 -> %s"), cmdp->cmdname, s_ptrbuff));
-            free_lbuf(s_ptrbuff);
         }
         else
         {
@@ -5040,10 +5033,10 @@ void do_hook(const dbref executor, const dbref caller, const dbref enactor, cons
         {
             if (cmdp->flags)
             {
-                s_ptr = s_ptrbuff = alloc_lbuf("@hook");
+                LBuf hookbuf = LBuf_Src("@hook");
+                s_ptr = s_ptrbuff = hookbuf;
                 show_hook(s_ptrbuff, s_ptr, HOOKMASK(cmdp->flags));
                 notify(executor, tprintf(T("@hook: Mask for hashed command \xE2\x80\x98%s\xE2\x80\x99 -> %s"), cmdp->cmdname, s_ptrbuff));
-                free_lbuf(s_ptrbuff);
             }
             else
             {
@@ -5060,7 +5053,8 @@ void do_hook(const dbref executor, const dbref caller, const dbref enactor, cons
                 "--------------------------------",
                 "--------------------------------------------"));
             bool found = false;
-            s_ptr = s_ptrbuff = alloc_lbuf("@hook");
+            LBuf hookbuf3 = LBuf_Src("@hook");
+            s_ptr = s_ptrbuff = hookbuf3;
             {
                 for (CMDENT_NO_ARG* cmdp2 = command_table_no_arg; cmdp2->cmdname; cmdp2++)
                 {
@@ -5210,7 +5204,6 @@ void do_hook(const dbref executor, const dbref caller, const dbref enactor, cons
             {
                 notify(executor, tprintf(T("%26s -- No @hooks defined --"), " "));
             }
-            free_lbuf(s_ptrbuff);
             notify(executor, tprintf(T("%.32s-+-%s"),
                 "--------------------------------",
                 "--------------------------------------------"));
