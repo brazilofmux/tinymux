@@ -319,9 +319,8 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
     {
         dbref aowner;
         int aflags;
-        UTF8 *str = atr_pget(recipient, A_COST, &aowner, &aflags);
+        LBuf str = LBuf_Adopt(atr_pget(recipient, A_COST, &aowner, &aflags));
         cost = mux_atol(str);
-        free_lbuf(str);
 
         // Can't afford it?
         //

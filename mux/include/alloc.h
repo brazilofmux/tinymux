@@ -93,19 +93,47 @@ LIBMUX_API void pool_reset(void);
 // The LBuf_Src macro captures __FILE__/__LINE__ for pool tracking:
 //   LBuf_Src tmp("my_func");
 //
+// To adopt a buffer returned by atr_get/atr_pget (caller-owned):
+//   LBuf_Adopt buf(atr_pget(thing, A_DESC, &aowner, &aflags));
+//
 class LBuf {
     UTF8 *m_buf;
     const UTF8 *m_file;
     int m_line;
+
+    struct adopt_tag {};
+
+    LBuf(UTF8 *buf, const UTF8 *file, int line, adopt_tag)
+        : m_buf(buf), m_file(file), m_line(line) {}
+
 public:
     LBuf(const UTF8 *tag, const UTF8 *file, int line)
         : m_buf(pool_alloc_lbuf(tag, file, line)),
           m_file(file), m_line(line) {}
 
-    ~LBuf() { pool_free_lbuf(m_buf, m_file, m_line); }
+    ~LBuf() { if (m_buf) pool_free_lbuf(m_buf, m_file, m_line); }
 
     LBuf(const LBuf &) = delete;
     LBuf &operator=(const LBuf &) = delete;
+
+    LBuf(LBuf &&other) noexcept
+        : m_buf(other.m_buf), m_file(other.m_file), m_line(other.m_line)
+    { other.m_buf = nullptr; }
+
+    LBuf &operator=(LBuf &&other) noexcept {
+        if (this != &other) {
+            if (m_buf) pool_free_lbuf(m_buf, m_file, m_line);
+            m_buf = other.m_buf;
+            m_file = other.m_file;
+            m_line = other.m_line;
+            other.m_buf = nullptr;
+        }
+        return *this;
+    }
+
+    static LBuf adopt(UTF8 *buf, const UTF8 *file, int line) {
+        return LBuf(buf, file, line, adopt_tag{});
+    }
 
     UTF8 *get() { return m_buf; }
     const UTF8 *get() const { return m_buf; }
@@ -116,6 +144,7 @@ public:
 };
 
 #define LBuf_Src(tag) LBuf(T(tag), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
+#define LBuf_Adopt(expr) LBuf::adopt((expr), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
 
 #include <memory>
 
