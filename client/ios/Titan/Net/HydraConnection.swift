@@ -18,8 +18,8 @@ class HydraConnection: ObservableObject {
     private let username: String
     private let password: String
     private let gameName: String
-    private let termWidth: Int
-    private let termHeight: Int
+    private(set) var termWidth: Int
+    private(set) var termHeight: Int
 
     @Published var connected = false
     private var intentionalDisconnect = false
@@ -156,6 +156,24 @@ class HydraConnection: ObservableObject {
         msg.inputLine = text
         inputContinuation?.yield(msg)
         markActivity()
+    }
+
+    /// Update the terminal dimensions and send a fresh SetPreferences to the
+    /// server.  Called when the output pane geometry changes (rotation,
+    /// split-screen, etc.).
+    func updateTerminalSize(width: Int, height: Int) {
+        guard width != termWidth || height != termHeight else { return }
+        termWidth = width
+        termHeight = height
+        guard inputContinuation != nil else { return }
+        var prefs = Hydra_SetPreferences()
+        prefs.colorFormat = .ansiTruecolor
+        prefs.terminalWidth = UInt32(width)
+        prefs.terminalHeight = UInt32(height)
+        prefs.terminalType = "Titan-iOS"
+        var msg = Hydra_ClientMessage()
+        msg.preferences = prefs
+        inputContinuation?.yield(msg)
     }
 
     // MARK: - GameSession Stream

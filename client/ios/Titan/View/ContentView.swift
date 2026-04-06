@@ -237,27 +237,47 @@ struct ContentView: View {
     // MARK: - Output Pane
 
     private var outputPane: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    let lines = state.activeTab?.activeLines ?? []
-                    ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
-                        Text(line)
-                            .font(.system(size: CGFloat(settings.fontSize), design: .monospaced))
-                            .foregroundColor(Color(white: 0.75))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .id(index)
+        GeometryReader { geo in
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        let lines = state.activeTab?.activeLines ?? []
+                        ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
+                            Text(line)
+                                .font(.system(size: CGFloat(settings.fontSize), design: .monospaced))
+                                .foregroundColor(Color(white: 0.75))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .id(index)
+                        }
+                    }
+                    .padding(.horizontal, 4)
+                }
+                .textSelection(.enabled)
+                .onChange(of: state.activeTab?.activeLines.count) { _, newCount in
+                    if let count = newCount, count > 0 {
+                        withAnimation { proxy.scrollTo(count - 1, anchor: .bottom) }
                     }
                 }
-                .padding(.horizontal, 4)
             }
-            .textSelection(.enabled)
-            .onChange(of: state.activeTab?.activeLines.count) { _, newCount in
-                if let count = newCount, count > 0 {
-                    withAnimation { proxy.scrollTo(count - 1, anchor: .bottom) }
-                }
+            .onChange(of: geo.size) { _, newSize in
+                updateTerminalSize(from: newSize)
+            }
+            .onAppear {
+                updateTerminalSize(from: geo.size)
             }
         }
+    }
+
+    /// Compute terminal columns/rows from actual view geometry and push
+    /// an updated SetPreferences to any active Hydra connection.
+    private func updateTerminalSize(from size: CGSize) {
+        let fontSize = CGFloat(size.width > size.height
+                               ? settings.fontSizeLandscape : settings.fontSize)
+        let charWidth = max(fontSize * 0.6, 1)
+        let lineHeight = max(fontSize * 1.2, 1)
+        let cols = max(40, min(200, Int(size.width / charWidth)))
+        let rows = max(10, min(80, Int(size.height / lineHeight)))
+        state.activeTab?.hydraConnection?.updateTerminalSize(width: cols, height: rows)
     }
 
     // MARK: - Input Bar
@@ -392,19 +412,9 @@ struct ContentView: View {
         let tabIndex = state.tabs.count - 1
         state.activeTabIndex = tabIndex
 
-        let screen = UIScreen.main.bounds
-        let isLandscape = screen.width > screen.height
-        let fontSize = CGFloat(isLandscape ? settings.fontSizeLandscape : settings.fontSize)
-        let charWidth = max(fontSize * 0.6, 1)
-        let lineHeight = max(fontSize * 1.2, 1)
-        let termWidth = max(40, min(200, Int(screen.width / charWidth)))
-        let termHeight = max(10, min(80, Int(screen.height / lineHeight)))
-
         let hconn = HydraConnection(name: name, host: host, port: port,
                                      username: hydraUser, password: hydraPass,
-                                     gameName: hydraGame,
-                                     termWidth: termWidth,
-                                     termHeight: termHeight)
+                                     gameName: hydraGame)
         tab.hydraConnection = hconn
 
         hconn.onLine = { line in processServerLine(tabIndex, line) }

@@ -32,18 +32,15 @@ Updated: 2026-03-29
 
 ## Remaining Enhancements
 
-### Hydra viewport sizing still uses a coarse screen-bounds estimate
+### ~~Hydra viewport sizing still uses a coarse screen-bounds estimate~~ FIXED
 
-- The iOS Hydra client currently estimates terminal columns/rows from
-  `UIScreen.main.bounds` and configured font size at connect time.
-- This is functionally acceptable for MUD output, but it is only an estimate
-  and may produce deprecation warnings on newer SDKs where scene/window
-  geometry is preferred.
+- Replaced `UIScreen.main.bounds` estimation with a `GeometryReader` on the
+  output pane.  Terminal columns/rows are now computed from the actual view
+  dimensions and configured font size.
 
-### Hydra terminal size is not updated after connect
+### ~~Hydra terminal size is not updated after connect~~ FIXED
 
-- `SetPreferences` is sent with the initial estimated viewport, but the client
-  does not currently resend updated dimensions on device rotation or major
-  layout changes.
-- A future improvement should recompute the viewport from live view geometry
-  and send a fresh `SetPreferences` when the visible output area changes.
+- `ContentView.outputPane` now sends a fresh `SetPreferences` via
+  `HydraConnection.updateTerminalSize()` whenever the output pane geometry
+  changes (device rotation, split-screen, etc.).  The update is suppressed
+  when the computed dimensions haven't changed.
