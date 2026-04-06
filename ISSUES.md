@@ -14,9 +14,9 @@ Last refreshed: 2026-04-05.
 |---|---|---|
 | [Core Server (`mux/src/`)](mux/src/ISSUES.md) | 1 | Windows console signal-handler TODO in `CPlatform::RegisterSignalHandler`. |
 | [Engine Module](mux/modules/engine/ISSUES.md) | 2 | `alloc_lbuf`/`free_lbuf` RAII migration ~70% complete (~90 complex sites remain); dynamic-cargs `ulambda` JIT support. |
-| [Hydra Clients (aggregate)](client/ISSUES.md) | 2 | GMCP handled as raw JSON only; cross-client plaintext credential storage. |
+| [Hydra Clients (aggregate)](client/ISSUES.md) | 1 | GMCP handled as raw JSON only (structured hooks deferred). |
 | [Web Client](client/web/ISSUES.md) | 2 | localStorage credentials; no browser-level regression harness. |
-| [Win32 GUI Client](client/win32gui/ISSUES.md) | 2 | No Linux-side build validation for the VS target; plaintext credentials in world storage. |
+| [Win32 GUI Client](client/win32gui/ISSUES.md) | 1 | No Linux-side build validation for the VS target. |
 | [Test Infrastructure](testcases/ISSUES.md) | 6 | SHA1→semantic migration still in progress; edge-case coverage gaps; single-test-per-function norm; no auto-discovery; no parallel/isolation; no orphaned-object cleanup. |
 
 ## Fully Closed Trackers (history preserved)

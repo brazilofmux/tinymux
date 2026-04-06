@@ -3,6 +3,7 @@
 
 #include "hydra_connection.h"
 #include "connection.h"  // for IOCP_KEY_HYDRA
+#include "secure_util.h"
 
 #include "hydra.grpc.pb.h"
 #include <grpcpp/grpcpp.h>
@@ -88,6 +89,7 @@ bool HydraConnection::connect() {
                 return false;
             }
             sessionId_ = resp.session_id();
+            secure_zero(password_);
         }
 
         {

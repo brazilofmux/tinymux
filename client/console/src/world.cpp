@@ -4,6 +4,10 @@
 #include <sstream>
 #include <algorithm>
 #include <iostream>
+#ifndef _WIN32
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 
 const World* WorldDB::find(const std::string& name) const {
     auto it = worlds_.find(name);
@@ -32,6 +36,15 @@ std::vector<std::string> WorldDB::names() const {
 bool WorldDB::load(const std::string& path) {
     std::ifstream f(path);
     if (!f) return false;
+
+#ifndef _WIN32
+    struct stat st;
+    if (stat(path.c_str(), &st) == 0 && (st.st_mode & 077) != 0) {
+        std::cerr << "WARNING: worlds.txt has insecure permissions."
+                  << " Run: chmod 600 worlds.txt" << std::endl;
+    }
+#endif
+
     std::string line;
     while (std::getline(f, line)) {
         if (line.empty() || line[0] == '#') continue;
@@ -87,5 +100,10 @@ bool WorldDB::save(const std::string& path) const {
             f << "\n";
         }
     }
+
+#ifndef _WIN32
+    chmod(path.c_str(), 0600);
+#endif
+
     return true;
 }

@@ -32,12 +32,14 @@ Updated: 2026-03-29
 
 ## Open
 
-- **Saved world passwords live in browser localStorage**
+- **Saved world passwords live in browser localStorage** *(deferred)*
   The settings store persists world passwords directly in localStorage.
   That is convenient, but it means any script running in the origin can read
-  them. If this client is meant to be production-usable on a shared/public
-  deployment, credentials should move behind a stronger model than raw browser
-  storage.
+  them. The native clients now use platform credential stores (Keychain,
+  EncryptedSharedPreferences, Windows Credential Manager, chmod 0600).
+  The web client's XSS exposure is a different threat model — a future pass
+  could encrypt with a user-derived key via Web Crypto, but the priority is
+  lower since the web client is not the primary deployment target.
 
 - **No automated browser-level regression coverage**
   The current audit verified JavaScript syntax and inspected the runtime

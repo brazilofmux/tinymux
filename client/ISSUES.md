@@ -82,12 +82,12 @@
 
 ## Cross-Client Issues
 
-### Credential storage in plaintext
+### ~~Credential storage in plaintext~~ FIXED
 
-- **Files:** `console/src/hydra_connection.h:96-97`, `console/src/world.h:15-20`
-- **Issue:** Passwords stored as `std::string` in memory without protection. `worlds.txt` persists credentials in plaintext on disk. No attempt to wipe credentials from memory after use.
-- **Impact:** Security risk if process memory is dumped or disk is accessed. Applies to Console client; other clients may have similar patterns.
-- **Fix:** Use secure string wrappers that zero memory on destruction; encrypt credentials on disk.
+- **Console/Win32 Console:** `worlds.txt` now saved with mode 0600 on Unix; load warns if permissions are loose. `secure_zero()` wipes the password from memory after Hydra authentication succeeds.
+- **Win32 GUI:** Hydra passwords moved from plaintext `worlds.json` to Windows Credential Manager (`CredWriteW`/`CredReadW`). Transparent migration from existing JSON on first load; passwords stripped from JSON on next save.
+- **iOS:** Already used Apple Keychain (`SecItem*` APIs) — no change needed.
+- **Android:** Already used `EncryptedSharedPreferences` with AES-256-GCM — no change needed.
 
 ### ~~Spawn config regex errors silently discarded~~ FIXED
 

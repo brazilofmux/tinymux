@@ -37,10 +37,6 @@ Updated: 2026-03-29
 - **Impact:** The shared-source fix is low-risk, but final production confidence
   still needs one Windows build/run pass.
 
-### Credentials remain plaintext in world storage
+### ~~Credentials remain plaintext in world storage~~ FIXED
 
-- **Issue:** The Win32 GUI world database follows the same plaintext credential
-  pattern as the console client.
-- **Impact:** This is acceptable for local development but weak for shared or
-  managed workstation environments.
-- **Fix:** Move to OS-backed secret storage or encrypted-at-rest credentials.
+- Hydra passwords moved from plaintext `worlds.json` to Windows Credential Manager via `CredWriteW`/`CredReadW` (`CRED_TYPE_GENERIC`, `CRED_PERSIST_LOCAL_MACHINE`). Existing JSON passwords are transparently migrated to the credential store on first load and stripped from JSON on next save.

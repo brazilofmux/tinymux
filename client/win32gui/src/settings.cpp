@@ -1,6 +1,7 @@
 // settings.cpp -- JSON config load/save.
 #include "settings.h"
 #include "json_mini.h"
+#include "credential_store.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -73,6 +74,26 @@ bool Settings::Load(const std::string& dir) {
             w.hydra_pass = jstr(wobj, "hydra_pass");
             w.hydra_game = jstr(wobj, "hydra_game");
             if (!w.name.empty() && !w.host.empty()) {
+                // For Hydra worlds, prefer credentials from Windows Credential
+                // Manager.  If the JSON still contains a password (pre-migration),
+                // push it into CredStore and strip it from the in-memory struct
+                // so the next Save() will no longer write it to disk.
+                if (w.use_hydra) {
+                    std::string stored_pass = CredStore::LoadPassword(w.name);
+                    std::string stored_user = CredStore::LoadUsername(w.name);
+                    if (!stored_pass.empty()) {
+                        // Credential Manager already has credentials -- use them.
+                        w.hydra_pass = stored_pass;
+                        if (!stored_user.empty()) {
+                            w.hydra_user = stored_user;
+                        }
+                    } else if (!w.hydra_pass.empty()) {
+                        // Migration: password still lives in JSON.  Move it to
+                        // Credential Manager so the next Save() drops it from
+                        // the JSON file.
+                        CredStore::Save(w.name, w.hydra_user, w.hydra_pass);
+                    }
+                }
                 worlds.push_back(std::move(w));
             }
         }
@@ -145,8 +166,10 @@ bool Settings::Save(const std::string& dir) const {
         if (w.use_hydra) {
             wobj.push_back({"use_hydra", JValue(true)});
             wobj.push_back({"hydra_user", JValue(w.hydra_user)});
-            wobj.push_back({"hydra_pass", JValue(w.hydra_pass)});
+            // Password is NOT written to JSON -- it lives in Windows
+            // Credential Manager.
             wobj.push_back({"hydra_game", JValue(w.hydra_game)});
+            CredStore::Save(w.name, w.hydra_user, w.hydra_pass);
         }
         warr.push_back(std::move(wobj));
     }
