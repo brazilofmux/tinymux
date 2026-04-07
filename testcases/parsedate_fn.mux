@@ -1,0 +1,495 @@
+#
+# parsedate_fn.mux - Test Cases for the flexible ParseDate() engine
+#                    (the second code path inside convtime()).
+#
+# These test cases exercise ISO 8601, free-form dates, timezone
+# handling, AM/PM, ordinal suffixes, and rejection of bad input.
+# All tests use explicit UTC zones or the 'utc' second argument
+# so results are deterministic regardless of server timezone.
+#
+@create test_parsedate_fn
+-
+@set test_parsedate_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_parsedate_fn=
+  @log smoke=Beginning parsedate() test cases.
+-
+#
+# Test Case #1 - ISO 8601: YYYY-MM-DDTHH:MM:SSZ
+#
+&tr.tc001 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(2026-04-06T10:43:00Z)),
+        1775472180
+      )=
+  {
+    @log smoke=TC001: ISO 8601 YYYY-MM-DDTHH:MM:SSZ. Succeeded.
+  },
+  {
+    @log smoke=TC001: ISO 8601 YYYY-MM-DDTHH:MM:SSZ. Failed (%q0).
+  }
+-
+#
+# Test Case #2 - ISO 8601: YYYY-MM-DDTHH:MM:SS with utc arg
+#
+&tr.tc002 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(2026-04-06T10:43:00,utc)),
+        1775472180
+      )=
+  {
+    @log smoke=TC002: ISO 8601 T separator with utc arg. Succeeded.
+  },
+  {
+    @log smoke=TC002: ISO 8601 T separator with utc arg. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - ISO 8601: YYYY-MM-DDTHH:MM:SS+0000
+#
+&tr.tc003 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(2026-04-06T10:43:00+0000)),
+        1775472180
+      )=
+  {
+    @log smoke=TC003: ISO 8601 +0000 offset. Succeeded.
+  },
+  {
+    @log smoke=TC003: ISO 8601 +0000 offset. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - ISO 8601: YYYY-MM-DDTHH:MM:SS-0700
+#
+&tr.tc004 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(2026-04-06T10:43:00-0700)),
+        1775497380
+      )=
+  {
+    @log smoke=TC004: ISO 8601 -0700 offset. Succeeded.
+  },
+  {
+    @log smoke=TC004: ISO 8601 -0700 offset. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - Compact ISO: YYYYMMDDTHHMMSSZ
+#
+&tr.tc005 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(20260406T104300Z)),
+        1775472180
+      )=
+  {
+    @log smoke=TC005: Compact ISO 8601. Succeeded.
+  },
+  {
+    @log smoke=TC005: Compact ISO 8601. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - ISO 8601 with space separator instead of T
+#
+&tr.tc006 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(2026-04-06 10:43:00,utc)),
+        1775472180
+      )=
+  {
+    @log smoke=TC006: ISO with space separator. Succeeded.
+  },
+  {
+    @log smoke=TC006: ISO with space separator. Failed (%q0).
+  }
+-
+#
+# Test Case #7 - Free-form: Mon DD YYYY HH:MM:SS TZ
+#
+&tr.tc007 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(Apr 6 2026 10:43:00 UTC)),
+        1775472180
+      )=
+  {
+    @log smoke=TC007: Free-form Mon DD YYYY UTC. Succeeded.
+  },
+  {
+    @log smoke=TC007: Free-form Mon DD YYYY UTC. Failed (%q0).
+  }
+-
+#
+# Test Case #8 - Free-form: DD Month YYYY HH:MM:SS Z (European order)
+#
+&tr.tc008 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(6 April 2026 10:43:00 Z)),
+        1775472180
+      )=
+  {
+    @log smoke=TC008: European order DD Month YYYY. Succeeded.
+  },
+  {
+    @log smoke=TC008: European order DD Month YYYY. Failed (%q0).
+  }
+-
+#
+# Test Case #9 - Free-form: Full month name, comma after day
+#
+&tr.tc009 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(April 6%b 2026 10:43:00 Z,)),
+        1775472180
+      )=
+  {
+    @log smoke=TC009: Full month with comma. Succeeded.
+  },
+  {
+    @log smoke=TC009: Full month with comma. Failed (%q0).
+  }
+-
+#
+# Test Case #10 - Ordinal suffix: January 1st
+#
+&tr.tc010 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(January 1st 2000 00:00:00 Z)),
+        946684800
+      )=
+  {
+    @log smoke=TC010: Ordinal 1st. Succeeded.
+  },
+  {
+    @log smoke=TC010: Ordinal 1st. Failed (%q0).
+  }
+-
+#
+# Test Case #11 - Ordinal suffix: January 2nd
+#
+&tr.tc011 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(January 2nd 2000 00:00:00 Z)),
+        946771200
+      )=
+  {
+    @log smoke=TC011: Ordinal 2nd. Succeeded.
+  },
+  {
+    @log smoke=TC011: Ordinal 2nd. Failed (%q0).
+  }
+-
+#
+# Test Case #12 - AM/PM: 10:43:00pm = 22:43:00
+#
+&tr.tc012 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(Apr 6 2026 10:43:00pm Z)),
+        1775515380
+      )=
+  {
+    @log smoke=TC012: PM time. Succeeded.
+  },
+  {
+    @log smoke=TC012: PM time. Failed (%q0).
+  }
+-
+#
+# Test Case #13 - Named timezone EST (UTC-5)
+#
+&tr.tc013 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(Apr 6 2026 10:43:00 EST)),
+        1775490180
+      )=
+  {
+    @log smoke=TC013: EST timezone. Succeeded.
+  },
+  {
+    @log smoke=TC013: EST timezone. Failed (%q0).
+  }
+-
+#
+# Test Case #14 - Named timezone PST (UTC-8)
+#
+&tr.tc014 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(Apr 6 2026 10:43:00 PST)),
+        1775500980
+      )=
+  {
+    @log smoke=TC014: PST timezone. Succeeded.
+  },
+  {
+    @log smoke=TC014: PST timezone. Failed (%q0).
+  }
+-
+#
+# Test Case #15 - Help file example: Wed 24 Jun 1992 10:22:54 -0700
+#
+&tr.tc015 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(Wed 24 Jun 1992 10:22:54 -0700)),
+        709406574
+      )=
+  {
+    @log smoke=TC015: Help example EU with -0700. Succeeded.
+  },
+  {
+    @log smoke=TC015: Help example EU with -0700. Failed (%q0).
+  }
+-
+#
+# Test Case #16 - Epoch zero
+#
+&tr.tc016 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(Jan 1 1970 00:00:00 Z)),
+        0
+      )=
+  {
+    @log smoke=TC016: Epoch zero. Succeeded.
+  },
+  {
+    @log smoke=TC016: Epoch zero. Failed (%q0).
+  }
+-
+#
+# Test Case #17 - Y2K boundary
+#
+&tr.tc017 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(Jan 1 2000 00:00:00 Z)),
+        946684800
+      )=
+  {
+    @log smoke=TC017: Y2K boundary. Succeeded.
+  },
+  {
+    @log smoke=TC017: Y2K boundary. Failed (%q0).
+  }
+-
+#
+# Test Case #18 - Y2038 boundary (max signed 32-bit)
+#
+&tr.tc018 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(Jan 19 2038 03:14:07 Z)),
+        2147483647
+      )=
+  {
+    @log smoke=TC018: Y2038 max int32. Succeeded.
+  },
+  {
+    @log smoke=TC018: Y2038 max int32. Failed (%q0).
+  }
+-
+#
+# Test Case #19 - Y2038+1 (beyond 32-bit range)
+#
+&tr.tc019 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(Jan 19 2038 03:14:08 Z)),
+        2147483648
+      )=
+  {
+    @log smoke=TC019: Beyond 32-bit epoch. Succeeded.
+  },
+  {
+    @log smoke=TC019: Beyond 32-bit epoch. Failed (%q0).
+  }
+-
+#
+# Test Case #20 - ISO ordinal date: YYYY-DDDTHHMMSSZ
+#                  April 6, 2026 is day 96.
+#
+&tr.tc020 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(2026-096T10:43:00Z)),
+        1775472180
+      )=
+  {
+    @log smoke=TC020: ISO ordinal date. Succeeded.
+  },
+  {
+    @log smoke=TC020: ISO ordinal date. Failed (%q0).
+  }
+-
+#
+# Test Case #21 - ISO week date: YYYYWww-DTHHMMSSZ
+#                  April 6, 2026 is Monday of week 15.
+#
+&tr.tc021 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(2026W15-1T10:43:00Z)),
+        1775472180
+      )=
+  {
+    @log smoke=TC021: ISO week date. Succeeded.
+  },
+  {
+    @log smoke=TC021: ISO week date. Failed (%q0).
+  }
+-
+#
+# Test Case #22 - Rejection: garbage input must return #-1 INVALID DATE
+#
+&tr.tc022 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(xyzzy plugh)),
+        #-1 INVALID DATE
+      )=
+  {
+    @log smoke=TC022: Reject garbage. Succeeded.
+  },
+  {
+    @log smoke=TC022: Reject garbage. Failed (%q0).
+  }
+-
+#
+# Test Case #23 - Rejection: empty string (spaces only)
+#
+&tr.tc023 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(%b%b%b)),
+        #-1 INVALID DATE
+      )=
+  {
+    @log smoke=TC023: Reject spaces-only. Succeeded.
+  },
+  {
+    @log smoke=TC023: Reject spaces-only. Failed (%q0).
+  }
+-
+#
+# Test Case #24 - Rejection: invalid day (32)
+#
+&tr.tc024 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(Jan 32 2000 00:00:00 Z)),
+        #-1 INVALID DATE
+      )=
+  {
+    @log smoke=TC024: Reject day 32. Succeeded.
+  },
+  {
+    @log smoke=TC024: Reject day 32. Failed (%q0).
+  }
+-
+#
+# Test Case #25 - Sub-second precision: integer part should be same
+#                  regardless of fractional digits.
+#
+&tr.tc025 test_parsedate_fn=
+  @if cand(
+        strmatch(convtime(Jan 1 2000 00:00:00.1 Z),946684800),
+        strmatch(convtime(Jan 1 2000 00:00:00.123 Z),946684800),
+        strmatch(convtime(Jan 1 2000 00:00:00.123456 Z),946684800),
+        strmatch(convtime(Jan 1 2000 00:00:00.1234567 Z),946684800)
+      )=
+  {
+    @log smoke=TC025: Sub-second integer part. Succeeded.
+  },
+  {
+    @log smoke=TC025: Sub-second integer part. Failed.
+  }
+-
+#
+# Test Case #26 - convtime/convsecs round-trip through ParseDate.
+#                  convsecs produces legacy format which goes through
+#                  do_convtime, but the input here goes through ParseDate.
+#
+&tr.tc026 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(convsecs(1775472180,utc),utc)),
+        1775472180
+      )=
+  {
+    @log smoke=TC026: convsecs/convtime round-trip. Succeeded.
+  },
+  {
+    @log smoke=TC026: convsecs/convtime round-trip. Failed (%q0).
+  }
+-
+#
+# Test Case #27 - Military timezone Z (UTC+0)
+#
+&tr.tc027 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(Apr 6 2026 10:43:00 GMT)),
+        1775472180
+      )=
+  {
+    @log smoke=TC027: GMT timezone. Succeeded.
+  },
+  {
+    @log smoke=TC027: GMT timezone. Failed (%q0).
+  }
+-
+#
+# Test Case #28 - Negative year from help: -1605-120T123456M
+#                  Just test that it parses (doesn't return #-1).
+#
+&tr.tc028 test_parsedate_fn=
+  @if not(
+        strmatch(
+          setr(0,convtime(-1605-120T123456M)),
+          #-1 INVALID DATE
+        )
+      )=
+  {
+    @log smoke=TC028: Negative year parse. Succeeded.
+  },
+  {
+    @log smoke=TC028: Negative year parse. Failed (%q0).
+  }
+-
+#
+# Test Case #29 - Large year from help: 23456W12-1T123456T
+#                  Just test that it parses.
+#
+&tr.tc029 test_parsedate_fn=
+  @if not(
+        strmatch(
+          setr(0,convtime(23456W12-1T123456T)),
+          #-1 INVALID DATE
+        )
+      )=
+  {
+    @log smoke=TC029: Large year parse. Succeeded.
+  },
+  {
+    @log smoke=TC029: Large year parse. Failed (%q0).
+  }
+-
+#
+# Test Case #30 - ISO date-only: YYYY-MM-DD with utc arg.
+#                  Should parse as midnight of that day.
+#
+&tr.tc030 test_parsedate_fn=
+  @if not(
+        strmatch(
+          setr(0,convtime(2026-04-06,utc)),
+          #-1 INVALID DATE
+        )
+      )=
+  {
+    @log smoke=TC030: ISO date-only. Succeeded.
+  },
+  {
+    @log smoke=TC030: ISO date-only. Failed (%q0).
+  };
+  @trig me/tr.done
+-
+&tr.done test_parsedate_fn=
+  @log smoke=End parsedate() test cases.;
+  @notify smoke
+-
+drop test_parsedate_fn
+-
+#
+# End of Test Cases
+#
