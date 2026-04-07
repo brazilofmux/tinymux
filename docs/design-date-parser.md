@@ -2,12 +2,13 @@
 
 ## Status
 
-Proposed — replaces both `do_convtime()` and `ParseDate()` with a
-single Ragel -G2 scanner + recursive descent parser.
+Implemented (2026-04-06).  Replaced both `do_convtime()` and
+`ParseDate()` with a unified Ragel -G2 scanner + recursive descent
+parser in `mux/lib/date_scan.rl`.
 
 ## Background
 
-`convtime()` currently has two independent code paths:
+`convtime()` previously had two independent code paths:
 
 1. **`do_convtime()`** — Hand-written parser for the legacy format
    `[Ddd] Mmm DD HH:MM:SS[.frac] YYYY`.  Works correctly.
@@ -246,37 +247,24 @@ Apr 6 26          ambiguous (year 26 vs day 26?)
 ## File Layout
 
 ```
-mux/lib/date_scan.rl       Ragel source (scanner)
+mux/lib/date_scan.rl       Ragel source (scanner + parser in one file)
 mux/lib/date_scan.cpp       Generated (read-only, chmod a-w)
-mux/lib/date_parse.cpp      Recursive descent parser
-mux/lib/timeparser.cpp       Deleted
-mux/lib/timeutil.cpp         do_convtime() removed
-mux/include/timeutil.h       ParseDate() signature unchanged or
-                              replaced by date_parse()
+mux/include/timeutil.h       ParseDate() signature unchanged
 ```
 
-Alternatively, the parser can live in the same `.rl` file after
-the `%%write` block, keeping scanner and parser together.
+The old `mux/lib/timeparser.cpp` (1650-line deduction engine) has
+been deleted.  `do_convtime()` remains in `timeutil.cpp` and is
+still called by `CLinearTimeAbsolute::SetString()` as a first-try
+fast path in `fun_convtime()`.
 
 ## Testing
 
-- `testcases/convtime_fn.mux` — legacy format tests (must still pass)
-- `testcases/parsedate_fn.mux` — update with ISO + name-based tests
-- All 998+ smoke tests must continue to pass
-- The round-trip `convtime(convsecs(N, utc), utc) == N` must hold
-  for all valid N
+- `testcases/convtime_fn.mux` — legacy format (7 SHA1-based tests)
+- `testcases/parsedate_fn.mux` — 30 tests: ISO 8601, free-form,
+  timezones, sub-seconds, boundaries, rejections
+- All 998 smoke tests pass
 
-## Migration
+## Size
 
-1. Write `date_scan.rl` (scanner) and parser.
-2. Wire as the sole implementation of date parsing.
-3. Remove `do_convtime()` and old `ParseDate()`.
-4. Verify all smoke tests pass.
-5. Update `help convtime` examples.
-
-## Size Estimate
-
-- Ragel scanner: ~150 lines of `.rl` (names are just alternations)
-- Recursive descent parser: ~200 lines of C++
-- Total: ~350 lines replacing ~1850 lines
-  (`do_convtime` ~130 + `ParseDate` ~1650 + helpers)
+- `date_scan.rl`: 1277 lines (scanner + recursive descent parser)
+- Replaces `timeparser.cpp`: 1653 lines (multi-pass deduction engine)

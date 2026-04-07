@@ -50,7 +50,7 @@
     <ClCompile Include="lib\timedelta.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="lib\timeparser.cpp">
+    <ClCompile Include="lib\date_scan.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="lib\timeutil.cpp">

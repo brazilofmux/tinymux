@@ -720,20 +720,17 @@ static FUNCTION(fun_convsecs)
 // ---------------------------------------------------------------------------
 // fun_convtime.
 //
-// With one argument, it converts a local time string in the format
-//'[Ddd] Mmm DD HH:MM:SS YYYY' to a count of seconds from Jan 01 00:00:00 1970
-// UTC.
+// Converts a date/time string to epoch seconds.  Two parsing paths are
+// tried in order:
 //
-// If a second argument is given, it is the <zonename>:
+//   1. SetString() — legacy format: [Ddd] Mmm DD HH:MM:SS[.frac] YYYY
+//   2. ParseDate() — unified Ragel scanner + recursive descent parser
+//      handling ISO 8601, month-name, European order, timezones, etc.
 //
-//   local - indicates that the given time string is for the local timezone
-//           local DST adjustments (default if no second argument is given).
+// If <zonename> is "utc", no local timezone conversion is applied.
+// Otherwise, times without an explicit timezone are treated as local.
 //
-//   utc   - indicates that no timezone/DST conversions should be applied.
-//           This is useful to give a unique one-to-one mapping between an
-//           integer and it's corresponding text-string.
-//
-// This function returns -1 if there was a problem parsing the time string.
+// <precision> controls fractional seconds in the output.
 //
 static FUNCTION(fun_convtime)
 {

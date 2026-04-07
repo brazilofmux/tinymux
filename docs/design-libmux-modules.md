@@ -75,7 +75,7 @@ bootstraps new connections. Custom marshaling handles CStubSlaveProxy
 | Mail & comsys | mail, comsys | ~10,500 |
 | Objects & predicates | object, player, flags, predicates, player_c | ~9,000 |
 | Configuration & logging | conf, log | ~4,200 |
-| Queue & timing | cque, game, timer, timeutil, timeparser | ~8,000 |
+| Queue & timing | cque, game, timer, timeutil, date_scan | ~8,000 |
 | String & utility | stringutil, mathutil, wild, match, help | ~14,000 |
 | Module system | modules, libmux, stubslave | ~4,200 |
 | Unicode tables | utf8tables (generated) | ~11,000 |
@@ -176,7 +176,7 @@ its first action, so existing code is unaffected.
 | Category | Files |
 |----------|-------|
 | Crypto/hash | sha1, svdrand, svdhash |
-| Time | timeutil, timeabsolute, timedelta, timeparser, timezone |
+| Time | timeutil, timeabsolute, timedelta, date_scan, timezone |
 | UTF-8 | utf8_collate, utf8_grapheme, utf8_normalize, utf8tables |
 | String | stringutil |
 | Math | mathutil, strtod |
@@ -1265,7 +1265,7 @@ log (17), help (15), wild (8), modules (8), and others.
 | Category | Files |
 |---|---|
 | UTF-8 / Unicode | utf8_collate, utf8_grapheme, utf8_normalize |
-| Time utilities | timeabsolute, timedelta, timeparser, timeutil, timezone |
+| Time utilities | timeabsolute, timedelta, date_scan, timeutil, timezone |
 | Crypto / hash | sha1, svdhash, svdrand |
 | Math | funmath, strtod |
 | Network helpers | netaddr, telnet, slave |
@@ -1304,7 +1304,7 @@ libmux.so requires either (a) creating a lighter header or (b) refactoring
 | utf8_normalize | above + string_desc | config.h, stringutil.h, externs.h (for string_desc) |
 | timeutil | UTF8, FIELDEDTIME, mux_isdigit, mux_atol | config.h, timeutil.h, stringutil.h |
 | timeabsolute, timedelta | above + mux_sprintf, mux_assert | config.h, timeutil.h, stringutil.h |
-| timeparser, timezone | FIELDEDTIME, UTF8 | config.h, timeutil.h |
+| date_scan, timezone | FIELDEDTIME, UTF8 | config.h, timeutil.h |
 | strtod | basic types only | config.h |
 | netaddr, telnet | UTF8, socket types | config.h, system headers |
 | alarm | std threading | config.h, system headers |

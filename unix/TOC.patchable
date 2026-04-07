@@ -183,7 +183,8 @@ lib/svdhash.cpp
 lib/svdrand.cpp
 lib/timeabsolute.cpp
 lib/timedelta.cpp
-lib/timeparser.cpp
+lib/date_scan.cpp
+lib/date_scan.rl
 lib/timeutil.cpp
 lib/timezone.cpp
 lib/utf8_collate.cpp

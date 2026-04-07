@@ -6854,21 +6854,35 @@ CONVTIME()
 
   FUNCTION: convtime(<time string> [, <zonename>][, <precision>])
 
-  By default, this function converts a time string (of format
-  [Ddd] Mmm DD HH:MM:SS YYYY) into an integer which represents a
-  count of seconds since Jan 01 00:00:00 1970 UTC not including leap
-  secs where Ddd, if given, is the day of the week, Mmm is the month
-  name, DD is the day of the month, HH is the hour in 24-hour time,
-  MM is the minutes, SS is the seconds, and YYYY is the year.
+  Converts a time string into an integer representing seconds since
+  Jan 01 00:00:00 1970 UTC (not including leap seconds).
 
-  Keep in mind that the year may not be exactly four characters, and
-  it can also be negative.  This server provides a proleptic Gregorian
-  calendar with a range of supported years between 27257 BC and
-  30826 AD. Year 0 is 1 BC, -1 is 2 BC, ..., so 27257 BC should be
-  given as -27256.  This follows the astronomical conventions.
+  The following date formats are supported:
 
-  Note: The time string can also be free form and this function will
-  attempt to parse.
+  Legacy (convsecs output):
+    [Ddd] Mmm DD HH:MM:SS[.frac] YYYY
+    Mmm DD[,] YYYY HH:MM:SS[.frac] [TZ]
+
+  ISO 8601:
+    YYYY-MM-DDTHH:MM:SS[.frac][TZ]        extended
+    YYYYMMDDTHHMMSS[.frac][TZ]            basic (compact)
+    YYYY-DDDTHH:MM:SS[.frac][TZ]          ordinal date
+    YYYYWww-DTHH:MM:SS[.frac][TZ]         week date
+
+  European order:
+    DD Mmm YYYY HH:MM:SS[.frac] [TZ]
+
+  Where Ddd is an optional day-of-week, Mmm is a month name (full or
+  abbreviated), T can be the letter T or a space, and [.frac] is
+  optional fractional seconds with up to 7 digits (100ns resolution).
+
+  [TZ] can be: Z (UTC), +HHMM or -HH:MM (numeric offset), a named
+  timezone (UTC, GMT, EST, EDT, CST, CDT, MST, MDT, PST, PDT, etc.),
+  or a military single-letter timezone (A-Z except J).
+
+  The year can be negative.  This server provides a proleptic Gregorian
+  calendar with years between 27257 BC and 30826 AD.  Year 0 is 1 BC,
+  -1 is 2 BC, etc. (astronomical convention).
 
 { 'help convtime2' for more }
 
@@ -6882,7 +6896,7 @@ CONVTIME() (continued)
 
    utc   - indicates that no timezone/DST conversions should be applied.
            When used this way, there is a unique one-to-one relationship
-           between an integer and it's corresponding text-string which
+           between an integer and its corresponding text-string which
            may be useful for handling other time zones and fictional
            settings.
 
@@ -6901,6 +6915,14 @@ CONVTIME() (continued)
     You say, "709406574"
     > say convtime(Wed Jun 24 10:22:54 1992, utc)
     You say, "709381374"
+    > say convtime(2026-04-06T10:43:00Z)
+    You say, "1775472180"
+    > say convtime(2026-04-06T10:43:00-0700)
+    You say, "1775497380"
+    > say convtime(Apr 6 2026 10:43:00 UTC)
+    You say, "1775472180"
+    > say convtime(6 Apr 2026 10:43:00 +0000)
+    You say, "1775472180"
     > say convtime(June 24th 1992 10:22:54.0001am Z)
     You say, "709381374"
     > say convtime(Wed 24 Jun 1992 10:22:54 -0700)
@@ -6908,7 +6930,7 @@ CONVTIME() (continued)
     > say convtime(2001-01-01T100000Q)
     You say, "978357600"
     > say convtime(-1605-120T123456M)
-    You say, "-112805738704"
+    You say, "-112805825104"
     > say convtime(23456W12-1T123456T)
     You say, "678039276896"
 
