@@ -121,7 +121,7 @@ public:
 
     string_view substr(size_t pos, size_t count = npos) const {
         if (pos >= len_) return string_view();
-        size_t rcount = mux_min(count, len_ - pos);
+        size_t rcount = std::min(count, len_ - pos);
         return string_view(ptr_ + pos, rcount);
     }
 };
