@@ -269,7 +269,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdi
 AM_CFLAGS = -O2 -Wall -Wextra -Wno-implicit-fallthrough -std=c11
 LIBMUX_SRC = libmux.cpp \
     sha1.cpp svdrand.cpp svdhash.cpp \
-    timeutil.cpp timeabsolute.cpp timedelta.cpp timeparser.cpp timezone.cpp \
+    timeutil.cpp timeabsolute.cpp timedelta.cpp date_scan.cpp timezone.cpp \
     utf8_collate.cpp utf8_grapheme.cpp utf8_normalize.cpp utf8tables.cpp \
     strtod.cpp alarm.cpp mathutil.cpp stringutil.cpp alloc.cpp dbutil.cpp
 
@@ -488,11 +488,15 @@ all-local: libmux.so
 -include $(LIBMUX_CXX_OBJS:.lo=.d)
 -include $(LIBMUX_C_OBJS:.lo=.d)
 
-# Ragel .rl -> .c
-# Ragel .rl -> .c — output is read-only to prevent accidental edits.
+# Ragel .rl -> .c/.cpp — output is read-only to prevent accidental edits.
 color_ops.c: color_ops.rl $(top_srcdir)/include/color_ops.h
 	chmod u+w $@ 2>/dev/null || true
 	ragel -G2 -C -o $@ $<
+	chmod a-w $@
+
+date_scan.cpp: date_scan.rl $(top_srcdir)/include/timeutil.h
+	chmod u+w $@ 2>/dev/null || true
+	ragel -G2 -o $@ $<
 	chmod a-w $@
 
 libmux.so: $(LIBMUX_OBJS)

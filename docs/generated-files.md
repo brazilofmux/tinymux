@@ -13,6 +13,7 @@ Do not hand-edit generated files in this repository. Edit the source input and r
 | `mux/modules/engine/art_scan.cpp` | `mux/modules/engine/art_scan.rl` | `ragel -G2` |
 | `mux/modules/engine/ast_scan.cpp` | `mux/modules/engine/ast_scan.rl` | `ragel -G2` |
 | `mux/lib/color_ops.c` | `mux/lib/color_ops.rl` | `ragel -G2 -C` |
+| `mux/lib/date_scan.cpp` | `mux/lib/date_scan.rl` | `ragel -G2` |
 | `mux/muxescape/muxescape.cpp` | `mux/muxescape/muxescape.rl` | `ragel -G2` |
 | `mux/include/utf8tables.h` | Unicode inputs under `utf/` | `utf/` pipeline / `make` |
 | `mux/lib/utf8tables.cpp` | Unicode inputs under `utf/` | `utf/` pipeline / `make` |
