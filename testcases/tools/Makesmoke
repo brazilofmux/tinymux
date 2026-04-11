@@ -8,7 +8,7 @@
 #   On success: only smoke.flat survives.
 #   On failure: artifacts collected in smoke.fail/.
 #
-#   Usage: cd testcases && ./tools/Makesmoke
+#   Usage: cd testcases && ./tools/Makesmoke [test_name ...]
 #
 set -euo pipefail
 
@@ -37,6 +37,7 @@ cleanup_temps() {
 }
 
 TMP=$(make_temp)
+SUITE_TMP=$(make_temp)
 trap cleanup_temps EXIT
 
 EXIT_CODE=0
@@ -100,7 +101,8 @@ _EOF
 # ---------------------------------------------------------------------------
 
 echo "Unformatting .mux test files..."
-"$SCRIPT_DIR/unformat" *.mux > "$TMP"
+python3 "$SCRIPT_DIR/generate_smoke_suite.py" "$@" > "$SUITE_TMP"
+"$SCRIPT_DIR/unformat" *.mux "$SUITE_TMP" > "$TMP"
 if [ ! -s "$TMP" ]; then
     echo "ERROR: unformat produced no output."
     exit 1

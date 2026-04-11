@@ -48,15 +48,14 @@ The project now has two complementary testing tiers:
 
 ## Medium — Infrastructure
 
-### No automatic test discovery
+### ~~No automatic test discovery~~ FIXED
 
-- **File:** `smoke.mux:8-37`
-- **Issue:** All 230+ test names are hardcoded in `&suite.list.*` attributes. Adding a new test requires manual registration in `smoke.mux`.
-- **Opportunity:** Auto-discover `*.mux` files in `testcases/` or use a naming convention.
+- `testcases/tools/generate_smoke_suite.py` now discovers top-level `testcases/*.mux` files automatically (excluding harness/setup files), emits generated `&suite.list.1` / `&suite.list.2` overrides, and `testcases/tools/Makesmoke` appends that generated suite file after the checked-in `.mux` corpus before unformatting. Adding a new smoke test no longer requires hand-editing `smoke.mux`. Reverified with `python3 testcases/tools/generate_smoke_suite.py` and `bash -n testcases/tools/Makesmoke`.
 
-### Tests cannot run in isolation or parallel
+### ~~Tests cannot run in isolation or parallel~~ PARTLY FIXED
 
-- **Issue:** All tests run through the smoke harness sequentially, sharing a single database. A failure in one test can corrupt state for subsequent tests.
+- `testcases/tools/Makesmoke` now accepts optional test names and passes them through to `generate_smoke_suite.py`, so you can build a smoke database for a single testcase or selected subset (`./tools/Makesmoke abs_fn`, etc.). That closes the "cannot run in isolation" part of this item.
+- **Remaining:** the smoke harness still executes the selected suite sequentially inside one database, so parallel execution/isolation between multiple tests is still not implemented.
 
 ### No cleanup of orphaned test objects
 
