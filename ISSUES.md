@@ -17,7 +17,6 @@ Last refreshed: 2026-04-10.
 | [Engine Module](mux/modules/engine/ISSUES.md) | 15 | `alloc_lbuf` RAII migration remainder; dynamic-cargs `ulambda` JIT; JIT JAL offset overflow (critical); HIR bounds checks; attr-cache leak on invalidation; Lua refcount/Alloc bugs; SQLite error-path hygiene. |
 | [GANL Networking](mux/ganl/ISSUES.md) | 8 | OpenSSL lifetime races; `recv()==0` handling; setsockopt return codes; telnet subnegotiation timeout gap; STARTTLS CA trust. |
 | [SQLSlave Module](mux/modules/sqlslave/ISSUES.md) | 8 | Non-atomic refcount; unchecked `m_pServer`; ownership contract on `Connect()`; MySQL error propagation. |
-| [Hydra Clients (aggregate)](client/ISSUES.md) | 1 | GMCP handled as raw JSON only (structured hooks deferred). |
 | [Test Infrastructure](testcases/ISSUES.md) | 6 | SHA1→semantic migration still in progress; edge-case coverage gaps; single-test-per-function norm; no auto-discovery; no parallel/isolation; no orphaned-object cleanup. |
 
 ## Fully Closed Trackers (history preserved)
@@ -39,6 +38,7 @@ history and FIXED entries.
 - [DB Backend Tests](tests/db/ISSUES.md)
 - [Web Client](client/web/ISSUES.md)
 - [Win32 GUI Client](client/win32gui/ISSUES.md)
+- [Hydra Clients (aggregate)](client/ISSUES.md)
 
 ## Build System (top-level)
 

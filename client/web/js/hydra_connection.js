@@ -402,6 +402,31 @@ function parseTrailerFrame(payload) {
 const MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_DELAY_MS = 3000;
 
+function formatStructuredGmcp(pkg, jsonText) {
+    if (pkg !== 'Char.Vitals' || !jsonText) return null;
+    try {
+        const data = JSON.parse(jsonText);
+        const pickPair = (curKeys, maxKeys, label) => {
+            for (const curKey of curKeys) {
+                for (const maxKey of maxKeys) {
+                    if (Number.isFinite(data[curKey]) && Number.isFinite(data[maxKey])) {
+                        return `${label} ${data[curKey]}/${data[maxKey]}`;
+                    }
+                }
+            }
+            return null;
+        };
+        const parts = [
+            pickPair(['hp', 'health'], ['maxhp', 'max_health'], 'HP'),
+            pickPair(['mp', 'mana'], ['maxmp', 'maxmana'], 'MP'),
+            pickPair(['mv', 'moves', 'move'], ['maxmv', 'maxmoves', 'maxmove'], 'MV'),
+        ].filter(Boolean);
+        return parts.length ? `[Vitals] ${parts.join('  ')}` : null;
+    } catch (e) {
+        return null;
+    }
+}
+
 class HydraConnection {
     constructor(name, host, port, ssl) {
         this.name = name;
@@ -980,8 +1005,9 @@ class HydraConnection {
             if (msg.game_output) {
                 this._processGameOutput(msg.game_output);
             } else if (msg.gmcp) {
-                // GMCP: emit as formatted text for now
-                this._emit('[GMCP ' + msg.gmcp.package + '] ' + msg.gmcp.json);
+                const formatted = formatStructuredGmcp(msg.gmcp.package, msg.gmcp.json)
+                    || ('[GMCP ' + msg.gmcp.package + '] ' + msg.gmcp.json);
+                this._emit(formatted);
             } else if (msg.pong) {
                 // Keepalive response — no action needed
             } else if (msg.notice) {

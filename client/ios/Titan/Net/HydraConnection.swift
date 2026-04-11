@@ -251,7 +251,8 @@ class HydraConnection: ObservableObject {
         case .gameOutput(let output):
             dispatchGameOutput(output)
         case .gmcp(let gmcp):
-            pushLine("[GMCP \(gmcp.package)] \(gmcp.json)")
+            pushLine(formatStructuredGmcp(package: gmcp.package, json: gmcp.json)
+                ?? "[GMCP \(gmcp.package)] \(gmcp.json)")
         case .notice(let notice):
             pushLine("[Hydra] \(notice.text)")
         case .linkEvent(let ev):
@@ -398,6 +399,32 @@ class HydraConnection: ObservableObject {
         } catch {
             // Non-fatal — reconnect should proceed even if scroll-back fetch fails.
         }
+    }
+
+    private func formatStructuredGmcp(package: String, json: String) -> String? {
+        guard package == "Char.Vitals", !json.isEmpty,
+              let data = json.data(using: .utf8),
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+
+        func pair(_ curKeys: [String], _ maxKeys: [String], label: String) -> String? {
+            for cur in curKeys {
+                for max in maxKeys {
+                    if let curVal = obj[cur], let maxVal = obj[max] {
+                        return "\(label) \(curVal)/\(maxVal)"
+                    }
+                }
+            }
+            return nil
+        }
+
+        let parts = [
+            pair(["hp", "health"], ["maxhp", "max_health"], label: "HP"),
+            pair(["mp", "mana"], ["maxmp", "maxmana"], label: "MP"),
+            pair(["mv", "moves", "move"], ["maxmv", "maxmoves", "maxmove"], label: "MV"),
+        ].compactMap { $0 }
+        return parts.isEmpty ? nil : "[Vitals] " + parts.joined(separator: "  ")
     }
 
     private func pushLine(_ text: String) {

@@ -8,6 +8,7 @@
 #include <sys/eventfd.h>
 #include <unistd.h>
 #include <algorithm>
+#include <regex>
 #include <sstream>
 
 using grpc::Channel;
@@ -16,6 +17,46 @@ using grpc::ClientReaderWriter;
 using grpc::Status;
 using hydra::GameOutput;
 using hydra::ServerMessage;
+
+namespace {
+
+std::string FormatStructuredGmcp(const std::string& pkg, const std::string& json) {
+    if (pkg != "Char.Vitals" || json.empty()) {
+        return "";
+    }
+
+    auto findValue = [&json](const std::vector<std::string>& keys) -> std::string {
+        for (const auto& key : keys) {
+            std::regex re("\"" + key + "\"\\s*:\\s*(-?\\d+)");
+            std::smatch match;
+            if (std::regex_search(json, match, re) && match.size() > 1) {
+                return match[1].str();
+            }
+        }
+        return "";
+    };
+
+    std::vector<std::string> parts;
+    const std::string hp = findValue({"hp", "health"});
+    const std::string maxhp = findValue({"maxhp", "max_health"});
+    if (!hp.empty() && !maxhp.empty()) parts.push_back("HP " + hp + "/" + maxhp);
+    const std::string mp = findValue({"mp", "mana"});
+    const std::string maxmp = findValue({"maxmp", "maxmana"});
+    if (!mp.empty() && !maxmp.empty()) parts.push_back("MP " + mp + "/" + maxmp);
+    const std::string mv = findValue({"mv", "moves", "move"});
+    const std::string maxmv = findValue({"maxmv", "maxmoves", "maxmove"});
+    if (!mv.empty() && !maxmv.empty()) parts.push_back("MV " + mv + "/" + maxmv);
+    if (parts.empty()) return "";
+
+    std::string out = "[Vitals] ";
+    for (size_t i = 0; i < parts.size(); ++i) {
+        if (i) out += "  ";
+        out += parts[i];
+    }
+    return out;
+}
+
+} // namespace
 
 // Internal gRPC state — kept in .cpp to avoid grpc headers in .h
 struct HydraConnection::GrpcState {
@@ -827,8 +868,11 @@ void HydraConnection::processServerMessage(const ServerMessage& msg) {
     if (msg.has_game_output()) {
         processGameOutput(msg.game_output());
     } else if (msg.has_gmcp()) {
-        outputQueue_.push("[GMCP " + msg.gmcp().package() + "] "
-                        + msg.gmcp().json());
+        std::string text = FormatStructuredGmcp(msg.gmcp().package(), msg.gmcp().json());
+        if (text.empty()) {
+            text = "[GMCP " + msg.gmcp().package() + "] " + msg.gmcp().json();
+        }
+        outputQueue_.push(std::move(text));
     } else if (msg.has_notice()) {
         outputQueue_.push("[Hydra] " + msg.notice().text());
     } else if (msg.has_link_event()) {

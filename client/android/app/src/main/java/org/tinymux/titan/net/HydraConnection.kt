@@ -11,6 +11,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.merge
+import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -53,6 +54,30 @@ class HydraConnection(
     private var inputChannel = Channel<ClientMessage>(Channel.BUFFERED)
     private val outputBuffer = StringBuilder()
     private val lastActivityAtMs = AtomicLong(System.currentTimeMillis())
+
+    private fun formatStructuredGmcp(pkg: String, json: String): String? {
+        if (pkg != "Char.Vitals" || json.isBlank()) return null
+        return try {
+            val obj = JSONObject(json)
+            fun pair(curKeys: List<String>, maxKeys: List<String>, label: String): String? {
+                for (cur in curKeys) {
+                    for (max in maxKeys) {
+                        if (obj.has(cur) && obj.has(max)) {
+                            return "$label ${obj.opt(cur)}/${obj.opt(max)}"
+                        }
+                    }
+                }
+                return null
+            }
+            listOf(
+                pair(listOf("hp", "health"), listOf("maxhp", "max_health"), "HP"),
+                pair(listOf("mp", "mana"), listOf("maxmp", "maxmana"), "MP"),
+                pair(listOf("mv", "moves", "move"), listOf("maxmv", "maxmoves", "maxmove"), "MV"),
+            ).filterNotNull().takeIf { it.isNotEmpty() }?.joinToString(prefix = "[Vitals] ", separator = "  ")
+        } catch (_: Exception) {
+            null
+        }
+    }
 
     /** Attach authorization metadata to a gRPC stub. */
     private fun <S : AbstractStub<S>> S.withAuth(): S {
@@ -486,7 +511,8 @@ class HydraConnection(
                 dispatchGameOutput(msg.gameOutput, mainDispatcher)
             }
             ServerMessage.PayloadCase.GMCP -> {
-                val text = "[GMCP ${msg.gmcp.`package`}] ${msg.gmcp.json}"
+                val text = formatStructuredGmcp(msg.gmcp.`package`, msg.gmcp.json)
+                    ?: "[GMCP ${msg.gmcp.`package`}] ${msg.gmcp.json}"
                 addScrollback(text)
                 markActivity()
                 launch(mainDispatcher) { onLine?.invoke(text) }

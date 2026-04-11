@@ -75,10 +75,9 @@
 
 - **Fixed:** /hcreate command added to Console, Win32GUI, and Android. (098c2c2)
 
-### GMCP Support Is Raw JSON Only
+### ~~GMCP Support Is Raw JSON Only~~ FIXED
 
-- **Issue:** All clients format GMCP as `[GMCP Package] {json}` text.
-- **Opportunity:** Provide structured hooks for common GMCP packages (Char.Vitals—vitals bar).
+- Hydra clients now special-case `Char.Vitals` and emit a structured vitals summary when common fields are present, while preserving the raw `[GMCP ...]` fallback for unknown or malformed payloads. The shared C++ Hydra transport (`client/console/src/hydra_connection.cpp`) covers Console and Win32 GUI; TinyFugue, Android, iOS, and Web each gained the same `Char.Vitals` formatting path in their platform-specific Hydra readers. Web regression coverage now asserts the structured vitals rendering in `client/web/test_web.js`. Local verification on this host covered `g++ -std=c++17 -fsyntax-only` for the Console/TF C++ readers and `node client/web/test_web.js`; Android/iOS remain source-reviewed only in this environment.
 
 ## Cross-Client Issues
 

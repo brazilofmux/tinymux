@@ -168,6 +168,10 @@ async function testHydraFreshAuthAndPromptHandling() {
     };
     const ServerMessageFields = {
         game_output: { num: 1, type: 'message', fields: GameOutputFields },
+        gmcp: { num: 2, type: 'message', fields: {
+            package: { num: 1, type: 'string' },
+            json: { num: 2, type: 'string' },
+        } },
     };
     const ClientMessageDecode = {
         4: { name: 'preferences', type: 'message', fields: {
@@ -223,6 +227,12 @@ async function testHydraFreshAuthAndPromptHandling() {
     ws.emitMessage(msg);
     assert.deepStrictEqual(lines, ['hello world']);
     assert.deepStrictEqual(prompts, ['look']);
+
+    const gmcpMsg = Proto.encode({
+        gmcp: { package: 'Char.Vitals', json: '{"hp":34,"maxhp":50,"mana":12,"maxmana":20}' }
+    }, ServerMessageFields);
+    ws.emitMessage(gmcpMsg);
+    assert.ok(lines.includes('[Vitals] HP 34/50  MP 12/20'));
 }
 
 async function testHydraSessionResumeSkipsAuthenticate() {
