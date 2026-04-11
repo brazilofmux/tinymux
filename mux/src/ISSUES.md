@@ -140,10 +140,12 @@ Updated: 2026-03-27
 
 ## Critical — Protocol Logic & Data Integrity (New, 2026-04-10)
 
-### Data loss in `Stub_PipePump` on short writes or errors
+### ~~Data loss in `Stub_PipePump` on short writes or errors~~ FIXED
 - **File:** `mux/src/stubslave.cpp:32-100`
-- **Issue:** `Stub_PipePump` removes bytes from `Queue_Out` into a local `arg` buffer. If the subsequent `write(1, ...)` fails with a non-retryable error (or `EINTR`, which is currently unhandled for `write`), those bytes are lost forever.
-- **Impact:** Corruption of inter-process communication between `netmux` and `stubslave`.
+- `Stub_PipePump` now drains each dequeued block with a retry loop around
+  `write(1, ...)`, correctly handling short writes and `EAGAIN`/`EWOULDBLOCK`
+  instead of dropping bytes after `Pipe_GetBytes()` removes them from
+  `Queue_Out`.
 
 ## High — Buffer Overflows & Memory Safety (New, 2026-04-10)
 
@@ -256,9 +258,11 @@ Updated: 2026-03-27
   `argv[0..6]` unconditionally — uninitialized/OOB memory whenever
   a caller passed fewer than seven args, and silently dropped
   anything past index 6. `argc` is bounded at 16 slots, the
-  per-arg read runs before any signal-unsafe work, and `execv` is
-  on the POSIX.1-2008 async-signal-safe list so the crash-recovery
-  context is preserved.
+  per-arg read runs before any signal-unsafe work (validating
+  `execPath`/`argv` and per-slot non-null), and `execv` is on the
+  POSIX.1-2008 async-signal-safe list so the crash-recovery context
+  is preserved. `std::vector` is deliberately avoided here because
+  heap allocation is not async-signal-safe.
 
 ### ~~`MaximizeFileDescriptors` ignores `setrlimit` failure~~ FIXED
 - **File:** `mux/src/platform.cpp:292-330`
@@ -284,4 +288,3 @@ Updated: 2026-03-27
 ### Non-atomic `CPlatform::m_cRef` / `CPlatformFactory::m_cRef`
 - **File:** `mux/src/platform.cpp:80-94, 412-427`
 - **Issue:** `AddRef`/`Release` still use bare `uint32_t m_cRef` with `m_cRef++` / `m_cRef--` — the same race pattern that was already converted to `std::atomic<uint32_t>` in comsys/mail modules. Low priority today (driver is single-threaded), but for consistency with the engine-module fix it should be atomic.
-

@@ -18,6 +18,8 @@
 #include "interface.h"
 #include "driverstate.h"
 
+#include <vector>
+
 DEFINE_FACTORY(CPlatformFactory)
 
 // ---------------------------------------------------------------------------
@@ -360,7 +362,7 @@ MUX_RESULT CPlatform::PanicRestart(
     // (signals.cpp passes 7).
     //
     constexpr int kMaxPanicArgv = 16;
-    if (argc < 0 || argc > kMaxPanicArgv)
+    if (!execPath || !argv || argc <= 0 || argc > kMaxPanicArgv)
     {
         return MUX_E_FAIL;
     }
@@ -384,11 +386,16 @@ MUX_RESULT CPlatform::PanicRestart(
     // memory from any caller passing fewer than 7 slots — exactly
     // what we cannot afford during crash recovery. Stack allocation
     // and pointer assignment are async-signal-safe, and so is
-    // execv (POSIX.1-2008 async-signal-safe list).
+    // execv (POSIX.1-2008 async-signal-safe list). std::vector is
+    // NOT async-signal-safe, so we deliberately avoid it here.
     //
     const char *localArgv[kMaxPanicArgv + 1];
     for (int i = 0; i < argc; i++)
     {
+        if (!argv[i])
+        {
+            return MUX_E_FAIL;
+        }
         localArgv[i] = reinterpret_cast<const char *>(argv[i]);
     }
     localArgv[argc] = nullptr;
