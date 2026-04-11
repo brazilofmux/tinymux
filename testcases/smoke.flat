@@ -3501,7 +3501,9 @@
 >256
 "@log smoke=Beginning floordiv() test cases."
 >257
-"@if cand(eq(floordiv(10,3), 3),eq(floordiv(-10,3), -4))={@log smoke=TC001: floordiv() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: floordiv() basic operations. Failed (floordiv(10%,3)=[floordiv(10,3)] floordiv(-10%,3)=[floordiv(-10,3)]).;@trig me/tr.done}"
+"@if cand(eq(floordiv(10,3), 3),eq(floordiv(-10,3), -4))={@log smoke=TC001: floordiv() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: floordiv() basic operations. Failed (floordiv(10%,3)=[floordiv(10,3)] floordiv(-10%,3)=[floordiv(-10,3)]).;}"
+>258
+"@if cand(eq(floordiv(10,-3),-4),eq(floordiv(-10,-3),3),eq(floordiv(5.5,2),2),eq(floordiv(),0),eq(floordiv(foo,3),0))={@log smoke=TC002: floordiv() sign and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: floordiv() sign and coercion cases. Failed (floordiv(10%,-3)=[floordiv(10,-3)] floordiv(-10%,-3)=[floordiv(-10,-3)] floordiv(5.5%,2)=[floordiv(5.5,2)] floordiv()=[floordiv()] floordiv(foo%,3)=[floordiv(foo,3)]).;@trig me/tr.done}"
 >260
 "@log smoke=End floordiv() test cases.;@notify smoke"
 <
@@ -3822,7 +3824,9 @@
 >256
 "@log smoke=Beginning idiv() test cases."
 >257
-"@if cand(eq(idiv(10,3), 3),eq(idiv(-10,3), -3))={@log smoke=TC001: idiv() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: idiv() basic operations. Failed (idiv(10%,3)=[idiv(10,3)] idiv(-10%,3)=[idiv(-10,3)]).;@trig me/tr.done}"
+"@if cand(eq(idiv(10,3), 3),eq(idiv(-10,3), -3))={@log smoke=TC001: idiv() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: idiv() basic operations. Failed (idiv(10%,3)=[idiv(10,3)] idiv(-10%,3)=[idiv(-10,3)]).;}"
+>258
+"@if cand(eq(idiv(10,-3),-3),eq(idiv(-10,-3),3),eq(idiv(5.5,2),2),eq(idiv(),0),eq(idiv(foo,3),0))={@log smoke=TC002: idiv() sign and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: idiv() sign and coercion cases. Failed (idiv(10%,-3)=[idiv(10,-3)] idiv(-10%,-3)=[idiv(-10,-3)] idiv(5.5%,2)=[idiv(5.5,2)] idiv()=[idiv()] idiv(foo%,3)=[idiv(foo,3)]).;@trig me/tr.done}"
 >260
 "@log smoke=End idiv() test cases.;@notify smoke"
 <
@@ -6136,7 +6140,9 @@
 >256
 "@log smoke=Beginning mod() test cases."
 >257
-"@if cand(eq(mod(10,3), 1),eq(mod(-10,3), 2))={@log smoke=TC001: mod basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: mod basic operations. Failed (mod(10%,3)=[mod(10,3)] mod(-10%,3)=[mod(-10,3)]).;@trig me/tr.done}"
+"@if cand(eq(mod(10,3), 1),eq(mod(-10,3), 2))={@log smoke=TC001: mod basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: mod basic operations. Failed (mod(10%,3)=[mod(10,3)] mod(-10%,3)=[mod(-10,3)]).;}"
+>258
+"@if cand(eq(mod(10,-3),-2),eq(mod(-10,-3),-1),eq(mod(5.5,2),1),eq(mod(),0),eq(mod(foo,3),0))={@log smoke=TC002: mod sign and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: mod sign and coercion cases. Failed (mod(10%,-3)=[mod(10,-3)] mod(-10%,-3)=[mod(-10,-3)] mod(5.5%,2)=[mod(5.5,2)] mod()=[mod()] mod(foo%,3)=[mod(foo,3)]).;@trig me/tr.done}"
 >260
 "@log smoke=End mod() test cases.;@notify smoke"
 <
@@ -7128,7 +7134,9 @@
 >256
 "@log smoke=Beginning remainder() test cases."
 >257
-"@if cand(eq(remainder(10,3), 1),eq(remainder(-10,3), -1))={@log smoke=TC001: remainder() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: remainder() basic operations. Failed (remainder(10%,3)=[remainder(10,3)] remainder(-10%,3)=[remainder(-10,3)]).;@trig me/tr.done}"
+"@if cand(eq(remainder(10,3), 1),eq(remainder(-10,3), -1))={@log smoke=TC001: remainder() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: remainder() basic operations. Failed (remainder(10%,3)=[remainder(10,3)] remainder(-10%,3)=[remainder(-10,3)]).;}"
+>258
+"@if cand(eq(remainder(10,-3),1),eq(remainder(-10,-3),-1),eq(remainder(5.5,2),1),eq(remainder(),0),eq(remainder(foo,3),0))={@log smoke=TC002: remainder() sign and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: remainder() sign and coercion cases. Failed (remainder(10%,-3)=[remainder(10,-3)] remainder(-10%,-3)=[remainder(-10,-3)] remainder(5.5%,2)=[remainder(5.5,2)] remainder()=[remainder()] remainder(foo%,3)=[remainder(foo,3)]).;@trig me/tr.done}"
 >260
 "@log smoke=End remainder() test cases.;@notify smoke"
 <
@@ -10840,7 +10848,7 @@
 >256
 "@log smoke=Beginning wrapcolumns() test cases."
 >257
-"think setq(0,wrapcolumns(alpha bravo charlie delta echo foxtrot,10,2));@if cand(eq(words(%q0,%r),3),strmatch(first(extract(%q0,1,1,%r)),alpha),eq(pos(delta,extract(%q0,1,1,%r)),11),eq(pos(echo,extract(%q0,1,1,%r)),17),strmatch(first(extract(%q0,2,1,%r)),bravo),eq(pos(foxtrot,extract(%q0,2,1,%r)),11),strmatch(first(extract(%q0,3,1,%r)),charlie),eq(words(extract(%q0,3,1,%r)),1))={@log smoke=TC001: wrapcolumns basic. Succeeded.;@trig me/tr.done},{@log smoke=TC001: wrapcolumns basic. Failed (rows=[words(%q0,%r)] r1=[extract(%q0,1,1,%r)] pdelta=[pos(delta,extract(%q0,1,1,%r))] pecho=[pos(echo,extract(%q0,1,1,%r))] r2=[extract(%q0,2,1,%r)] pfoxtrot=[pos(foxtrot,extract(%q0,2,1,%r))] r3=[extract(%q0,3,1,%r)] r3words=[words(extract(%q0,3,1,%r))]).;@trig me/tr.done}"
+"think setq(0,wrapcolumns(alpha bravo charlie delta echo foxtrot,10,2));@if cand(setr(8,eq(words(%q0,%r),3)),setr(9,eq(pos(alpha,extract(%q0,1,1,%r)),1)),setr(a,eq(pos(delta,extract(%q0,1,1,%r)),11)),setr(b,eq(pos(echo,extract(%q0,1,1,%r)),17)),setr(c,eq(pos(bravo,extract(%q0,2,1,%r)),1)),setr(d,eq(pos(foxtrot,extract(%q0,2,1,%r)),11)),setr(e,eq(pos(charlie,extract(%q0,3,1,%r)),1)),setr(f,eq(words(extract(%q0,3,1,%r)),1)))={@log smoke=TC001: wrapcolumns basic. Succeeded.;@trig me/tr.done},{@log smoke=TC001: wrapcolumns basic. Failed (q8=%q8 q9=%q9 qa=%qa qb=%qb qc=%qc qd=%qd qe=%qe qf=%qf rows=[words(%q0,%r)] r1=[extract(%q0,1,1,%r)] r2=[extract(%q0,2,1,%r)] r3=[extract(%q0,3,1,%r)]).;@trig me/tr.done}"
 >260
 "@log smoke=End wrapcolumns() test cases.;@notify smoke"
 <

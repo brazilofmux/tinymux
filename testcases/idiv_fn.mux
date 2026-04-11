@@ -25,6 +25,25 @@
   },
   {
     @log smoke=TC001: idiv() basic operations. Failed (idiv(10%,3)=[idiv(10,3)] idiv(-10%,3)=[idiv(-10,3)]).;
+  }
+-
+#
+# Test Case #2 - Sign, decimal, and coercion cases.
+#
+&tr.tc002 test_idiv_fn=
+  @if cand(
+        eq(idiv(10,-3),-3),
+        eq(idiv(-10,-3),3),
+        eq(idiv(5.5,2),2),
+        eq(idiv(),0),
+        eq(idiv(foo,3),0)
+      )=
+  {
+    @log smoke=TC002: idiv() sign and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: idiv() sign and coercion cases. Failed (idiv(10%,-3)=[idiv(10,-3)] idiv(-10%,-3)=[idiv(-10,-3)] idiv(5.5%,2)=[idiv(5.5,2)] idiv()=[idiv()] idiv(foo%,3)=[idiv(foo,3)]).;
     @trig me/tr.done
   }
 -

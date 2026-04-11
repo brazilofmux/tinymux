@@ -25,6 +25,25 @@
   },
   {
     @log smoke=TC001: mod basic operations. Failed (mod(10%,3)=[mod(10,3)] mod(-10%,3)=[mod(-10,3)]).;
+  }
+-
+#
+# Test Case #2 - Sign, decimal, and coercion cases.
+#
+&tr.tc002 test_mod_fn=
+  @if cand(
+        eq(mod(10,-3),-2),
+        eq(mod(-10,-3),-1),
+        eq(mod(5.5,2),1),
+        eq(mod(),0),
+        eq(mod(foo,3),0)
+      )=
+  {
+    @log smoke=TC002: mod sign and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: mod sign and coercion cases. Failed (mod(10%,-3)=[mod(10,-3)] mod(-10%,-3)=[mod(-10,-3)] mod(5.5%,2)=[mod(5.5,2)] mod()=[mod()] mod(foo%,3)=[mod(foo,3)]).;
     @trig me/tr.done
   }
 -

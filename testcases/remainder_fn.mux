@@ -25,6 +25,25 @@
   },
   {
     @log smoke=TC001: remainder() basic operations. Failed (remainder(10%,3)=[remainder(10,3)] remainder(-10%,3)=[remainder(-10,3)]).;
+  }
+-
+#
+# Test Case #2 - Sign, decimal, and coercion cases.
+#
+&tr.tc002 test_remainder_fn=
+  @if cand(
+        eq(remainder(10,-3),1),
+        eq(remainder(-10,-3),-1),
+        eq(remainder(5.5,2),1),
+        eq(remainder(),0),
+        eq(remainder(foo,3),0)
+      )=
+  {
+    @log smoke=TC002: remainder() sign and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: remainder() sign and coercion cases. Failed (remainder(10%,-3)=[remainder(10,-3)] remainder(-10%,-3)=[remainder(-10,-3)] remainder(5.5%,2)=[remainder(5.5,2)] remainder()=[remainder()] remainder(foo%,3)=[remainder(foo,3)]).;
     @trig me/tr.done
   }
 -

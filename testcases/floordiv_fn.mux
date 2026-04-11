@@ -25,6 +25,25 @@
   },
   {
     @log smoke=TC001: floordiv() basic operations. Failed (floordiv(10%,3)=[floordiv(10,3)] floordiv(-10%,3)=[floordiv(-10,3)]).;
+  }
+-
+#
+# Test Case #2 - Sign, decimal, and coercion cases.
+#
+&tr.tc002 test_floordiv_fn=
+  @if cand(
+        eq(floordiv(10,-3),-4),
+        eq(floordiv(-10,-3),3),
+        eq(floordiv(5.5,2),2),
+        eq(floordiv(),0),
+        eq(floordiv(foo,3),0)
+      )=
+  {
+    @log smoke=TC002: floordiv() sign and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: floordiv() sign and coercion cases. Failed (floordiv(10%,-3)=[floordiv(10,-3)] floordiv(-10%,-3)=[floordiv(-10,-3)] floordiv(5.5%,2)=[floordiv(5.5,2)] floordiv()=[floordiv()] floordiv(foo%,3)=[floordiv(foo,3)]).;
     @trig me/tr.done
   }
 -
