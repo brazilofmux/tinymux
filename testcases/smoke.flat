@@ -2791,7 +2791,9 @@
 >257
 "@if cand(strmatch(delete(abcdef,2,2), abef),strmatch(delete(abcdef,0,1), bcdef),strmatch(delete(abcdef,5,1), abcde),strmatch(delete(abcdef,0,0), abcdef))={@log smoke=TC001: delete basic operations. Succeeded.},{@log smoke=TC001: delete basic operations. Failed (del(2%,2)=[delete(abcdef,2,2)] del(0%,1)=[delete(abcdef,0,1)] del(5%,1)=[delete(abcdef,5,1)] del(0%,0)=[delete(abcdef,0,0)]).}"
 >258
-"@if cand(eq(strlen(delete(A[chr(233)]B[chr(65296)]C,1,1)), 4),strmatch(mid(delete(A[chr(233)]B[chr(65296)]C,1,1),0,1), A),strmatch(mid(delete(A[chr(233)]B[chr(65296)]C,1,1),1,1), B),eq(strlen(delete(A[chr(233)]B[chr(65296)]C,3,1)), 4),eq(strlen(delete(A[chr(233)]B[chr(65296)]C,0,2)), 3))={@log smoke=TC002: delete Unicode graphemes. Succeeded.;@trig me/tr.done},{@log smoke=TC002: delete Unicode graphemes. Failed (del(1%,1) len=[strlen(delete(A[chr(233)]B[chr(65296)]C,1,1))] del(3%,1) len=[strlen(delete(A[chr(233)]B[chr(65296)]C,3,1))] del(0%,2) len=[strlen(delete(A[chr(233)]B[chr(65296)]C,0,2))]).;@trig me/tr.done}"
+"@if cand(eq(strlen(delete(A[chr(233)]B[chr(65296)]C,1,1)), 4),strmatch(mid(delete(A[chr(233)]B[chr(65296)]C,1,1),0,1), A),strmatch(mid(delete(A[chr(233)]B[chr(65296)]C,1,1),1,1), B),eq(strlen(delete(A[chr(233)]B[chr(65296)]C,3,1)), 4),eq(strlen(delete(A[chr(233)]B[chr(65296)]C,0,2)), 3))={@log smoke=TC002: delete Unicode graphemes. Succeeded.;},{@log smoke=TC002: delete Unicode graphemes. Failed (del(1%,1) len=[strlen(delete(A[chr(233)]B[chr(65296)]C,1,1))] del(3%,1) len=[strlen(delete(A[chr(233)]B[chr(65296)]C,3,1))] del(0%,2) len=[strlen(delete(A[chr(233)]B[chr(65296)]C,0,2))]).;}"
+>259
+"@if cand(eq(strlen(delete(,0,1)), 0),strmatch(delete(abcdef,-1,1), abcdef),strmatch(delete(abcdef,2,9), ab),strmatch(delete(abcdef,2,0), abcdef))={@log smoke=TC003: delete edge cases. Succeeded.;@trig me/tr.done},{@log smoke=TC003: delete edge cases. Failed (empty=[delete(,0,1)] neg=[delete(abcdef,-1,1)] long=[delete(abcdef,2,9)] zero=[delete(abcdef,2,0)]).;@trig me/tr.done}"
 >260
 "@log smoke=End delete() test cases.;@notify smoke"
 <
@@ -4072,7 +4074,9 @@
 >264
 "@if cand(eq(strlen(insert(,-2,Pear,|)), 0),strmatch(insert(,-1,Pear,|), Pear))={@log smoke=TC004: Empty list, ASCII, negative positions. Succeeded.},{@log smoke=TC004: Empty list, ASCII, negative positions. Failed (insert(-2)=[insert(,-2,Pear,|)] insert(-1)=[insert(,-1,Pear,|)]).}"
 >265
-"@if cand(gt(strlen(insert(|,-1,Pear,|)), 0),gt(strlen(insert(||,-1,Pear,|)), 0))={@log smoke=TC005: Non-empty lists, ASCII, negative positions. Succeeded.;@trig me/tr.done},{@log smoke=TC005: Non-empty lists, ASCII, negative positions. Failed.;@trig me/tr.done}"
+"@if cand(strmatch(insert(|,-1,Pear,|), ||Pear),strmatch(insert(||,-1,Pear,|), |||Pear),strmatch(insert(||,-2,Pear,|), ||Pear|),eq(strlen(insert(,-2,Pear,|)), 0))={@log smoke=TC005: Non-empty lists, ASCII, negative positions. Succeeded.;},{@log smoke=TC005: Non-empty lists, ASCII, negative positions. Failed (insert(|%,-1)=[insert(|,-1,Pear,|)] insert(||%,-1)=[insert(||,-1,Pear,|)] insert(||%,-2)=[insert(||,-2,Pear,|)] insert(empty,-2)=[insert(,-2,Pear,|)]).;}"
+>266
+"@if cand(strmatch(insert(a|b,0,Pear,|), a|b),strmatch(insert(a|b,9,Pear,|), a|b),strmatch(insert(a|b,-9,Pear,|), a|b))={@log smoke=TC006: Zero and oversized positions. Succeeded.;@trig me/tr.done},{@log smoke=TC006: Zero and oversized positions. Failed (zero=[insert(a|b,0,Pear,|)] big=[insert(a|b,9,Pear,|)] neg=[insert(a|b,-9,Pear,|)]).;@trig me/tr.done}"
 <
 !100
 "test_isalpha_fn"
@@ -7287,7 +7291,9 @@
 >264
 "@if cand(eq(strlen(replace(,-2,Pear,|)), 0),eq(strlen(replace(,-1,Pear,|)), 0))={@log smoke=TC004: Empty list, ASCII, negative positions. Succeeded.},{@log smoke=TC004: Empty list, ASCII, negative positions. Failed.}"
 >265
-"@if cand(strmatch(replace(|,-1,Pear,|), |Pear),strmatch(replace(|,-2,Pear,|), Pear|),strmatch(replace(||,-1,Pear,|), ||Pear),strmatch(replace(||,-2,Pear,|), |Pear|),strmatch(replace(||,-3,Pear,|), Pear||))={@log smoke=TC005: Non-empty lists, ASCII, negative positions. Succeeded.;@trig me/tr.done},{@log smoke=TC005: Non-empty lists, ASCII, negative positions. Failed.;@trig me/tr.done}"
+"@if cand(strmatch(replace(|,-1,Pear,|), |Pear),strmatch(replace(|,-2,Pear,|), Pear|),strmatch(replace(||,-1,Pear,|), ||Pear),strmatch(replace(||,-2,Pear,|), |Pear|),strmatch(replace(||,-3,Pear,|), Pear||))={@log smoke=TC005: Non-empty lists, ASCII, negative positions. Succeeded.;},{@log smoke=TC005: Non-empty lists, ASCII, negative positions. Failed.;}"
+>266
+"@if cand(strmatch(replace(a|b|c,0,Pear,|), a|b|c),strmatch(replace(a|b|c,9,Pear,|), a|b|c),strmatch(replace(a|b|c,2,,|), a||c),strmatch(replace(a|b|c,-9,Pear,|), a|b|c))={@log smoke=TC006: Zero, oversized, and empty replacement behavior. Succeeded.;@trig me/tr.done},{@log smoke=TC006: Zero, oversized, and empty replacement behavior. Failed (zero=[replace(a|b|c,0,Pear,|)] big=[replace(a|b|c,9,Pear,|)] empty=[replace(a|b|c,2,,|)] neg=[replace(a|b|c,-9,Pear,|)]).;@trig me/tr.done}"
 <
 !183
 "test_rest_fn"
@@ -9592,9 +9598,11 @@
 >258
 "@if cand(strmatch(strinsert(abcdef,0,X), Xabcdef),strmatch(strinsert(abcdef,3,X), abcXdef),strmatch(strinsert(abcdef,6,X), abcdefX))={@log smoke=TC002: strinsert basic. Succeeded.},{@log smoke=TC002: strinsert basic. Failed (strinsert(0)=[strinsert(abcdef,0,X)] strinsert(3)=[strinsert(abcdef,3,X)] strinsert(6)=[strinsert(abcdef,6,X)]).}"
 >259
-"@if cand(strmatch(strreplace(abcdef,2,2,XY), abXYef),strmatch(strreplace(abcdef,0,3,X), Xdef),strmatch(strreplace(abcdef,5,1,XYZ), abcdeXYZ))={@log smoke=TC003: strreplace basic. Succeeded.;@trig me/tr.done},{@log smoke=TC003: strreplace basic. Failed (strreplace(2%,2)=[strreplace(abcdef,2,2,XY)] strreplace(0%,3)=[strreplace(abcdef,0,3,X)]).;@trig me/tr.done}"
+"@if cand(strmatch(strreplace(abcdef,2,2,XY), abXYef),strmatch(strreplace(abcdef,0,3,X), Xdef),strmatch(strreplace(abcdef,5,1,XYZ), abcdeXYZ))={@log smoke=TC003: strreplace basic. Succeeded.;},{@log smoke=TC003: strreplace basic. Failed (strreplace(2%,2)=[strreplace(abcdef,2,2,XY)] strreplace(0%,3)=[strreplace(abcdef,0,3,X)]).;}"
 >260
 "@log smoke=End strdelete()/strinsert()/strreplace() test cases.;@notify smoke"
+>264
+"@if cand(eq(strlen(strdelete(,0,1)), 0),strmatch(strdelete(abcdef,2,0), abcdef),strmatch(strinsert(abcdef,9,X), abcdefX),strmatch(strreplace(abcdef,2,9,Z), abZ))={@log smoke=TC004: str* edge cases. Succeeded.;@trig me/tr.done},{@log smoke=TC004: str* edge cases. Failed (del-empty=[strdelete(,0,1)] del-zero=[strdelete(abcdef,2,0)] ins-big=[strinsert(abcdef,9,X)] rep-big=[strreplace(abcdef,2,9,Z)]).;@trig me/tr.done}"
 <
 !264
 "test_strdistance_fn"

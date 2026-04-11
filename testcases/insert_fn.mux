@@ -79,15 +79,33 @@
 #
 &tr.tc005 test_insert_fn=
   @if cand(
-        gt(strlen(insert(|,-1,Pear,|)), 0),
-        gt(strlen(insert(||,-1,Pear,|)), 0)
+        strmatch(insert(|,-1,Pear,|), ||Pear),
+        strmatch(insert(||,-1,Pear,|), |||Pear),
+        strmatch(insert(||,-2,Pear,|), ||Pear|),
+        eq(strlen(insert(,-2,Pear,|)), 0)
       )=
   {
     @log smoke=TC005: Non-empty lists, ASCII, negative positions. Succeeded.;
+  },
+  {
+    @log smoke=TC005: Non-empty lists, ASCII, negative positions. Failed (insert(|%,-1)=[insert(|,-1,Pear,|)] insert(||%,-1)=[insert(||,-1,Pear,|)] insert(||%,-2)=[insert(||,-2,Pear,|)] insert(empty,-2)=[insert(,-2,Pear,|)]).;
+  }
+-
+#
+# Test Case #6 - Zero-width and oversized positions.
+#
+&tr.tc006 test_insert_fn=
+  @if cand(
+        strmatch(insert(a|b,0,Pear,|), a|b),
+        strmatch(insert(a|b,9,Pear,|), a|b),
+        strmatch(insert(a|b,-9,Pear,|), a|b)
+      )=
+  {
+    @log smoke=TC006: Zero and oversized positions. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: Non-empty lists, ASCII, negative positions. Failed.;
+    @log smoke=TC006: Zero and oversized positions. Failed (zero=[insert(a|b,0,Pear,|)] big=[insert(a|b,9,Pear,|)] neg=[insert(a|b,-9,Pear,|)]).;
     @trig me/tr.done
   }
 -

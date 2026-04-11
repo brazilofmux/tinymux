@@ -89,10 +89,27 @@
       )=
   {
     @log smoke=TC005: Non-empty lists, ASCII, negative positions. Succeeded.;
-    @trig me/tr.done
   },
   {
     @log smoke=TC005: Non-empty lists, ASCII, negative positions. Failed.;
+  }
+-
+#
+# Test Case #6 - Zero, oversized, and empty replacement behavior.
+#
+&tr.tc006 test_replace_fn=
+  @if cand(
+        strmatch(replace(a|b|c,0,Pear,|), a|b|c),
+        strmatch(replace(a|b|c,9,Pear,|), a|b|c),
+        strmatch(replace(a|b|c,2,,|), a||c),
+        strmatch(replace(a|b|c,-9,Pear,|), a|b|c)
+      )=
+  {
+    @log smoke=TC006: Zero, oversized, and empty replacement behavior. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC006: Zero, oversized, and empty replacement behavior. Failed (zero=[replace(a|b|c,0,Pear,|)] big=[replace(a|b|c,9,Pear,|)] empty=[replace(a|b|c,2,,|)] neg=[replace(a|b|c,-9,Pear,|)]).;
     @trig me/tr.done
   }
 -

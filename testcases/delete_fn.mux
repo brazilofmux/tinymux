@@ -42,10 +42,27 @@
       )=
   {
     @log smoke=TC002: delete Unicode graphemes. Succeeded.;
-    @trig me/tr.done
   },
   {
     @log smoke=TC002: delete Unicode graphemes. Failed (del(1%,1) len=[strlen(delete(A[chr(233)]B[chr(65296)]C,1,1))] del(3%,1) len=[strlen(delete(A[chr(233)]B[chr(65296)]C,3,1))] del(0%,2) len=[strlen(delete(A[chr(233)]B[chr(65296)]C,0,2))]).;
+  }
+-
+#
+# Test Case #3 - Empty, negative, and oversized deletes.
+#
+&tr.tc003 test_delete_fn=
+  @if cand(
+        eq(strlen(delete(,0,1)), 0),
+        strmatch(delete(abcdef,-1,1), abcdef),
+        strmatch(delete(abcdef,2,9), ab),
+        strmatch(delete(abcdef,2,0), abcdef)
+      )=
+  {
+    @log smoke=TC003: delete edge cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: delete edge cases. Failed (empty=[delete(,0,1)] neg=[delete(abcdef,-1,1)] long=[delete(abcdef,2,9)] zero=[delete(abcdef,2,0)]).;
     @trig me/tr.done
   }
 -

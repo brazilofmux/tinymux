@@ -58,10 +58,27 @@
       )=
   {
     @log smoke=TC003: strreplace basic. Succeeded.;
-    @trig me/tr.done
   },
   {
     @log smoke=TC003: strreplace basic. Failed (strreplace(2%,2)=[strreplace(abcdef,2,2,XY)] strreplace(0%,3)=[strreplace(abcdef,0,3,X)]).;
+  }
+-
+#
+# Test Case #4 - Empty, zero-width, and oversized string operations.
+#
+&tr.tc004 test_strdelete_fn=
+  @if cand(
+        eq(strlen(strdelete(,0,1)), 0),
+        strmatch(strdelete(abcdef,2,0), abcdef),
+        strmatch(strinsert(abcdef,9,X), abcdefX),
+        strmatch(strreplace(abcdef,2,9,Z), abZ)
+      )=
+  {
+    @log smoke=TC004: str* edge cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: str* edge cases. Failed (del-empty=[strdelete(,0,1)] del-zero=[strdelete(abcdef,2,0)] ins-big=[strinsert(abcdef,9,X)] rep-big=[strreplace(abcdef,2,9,Z)]).;
     @trig me/tr.done
   }
 -
