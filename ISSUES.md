@@ -12,7 +12,7 @@ Last refreshed: 2026-04-05.
 
 | Tracker | Open | Summary |
 |---|---|---|
-| [Core Server (`mux/src/`)](mux/src/ISSUES.md) | 1 | Windows console signal-handler TODO in `CPlatform::RegisterSignalHandler`. |
+| [Core Server (`mux/src/`)](mux/src/ISSUES.md) | 6 | Windows console signal-handler TODO; `Stub_PipePump` data loss; `slave.cpp` overflow; `SBUF_SIZE` limits (TTYPE/GMCP); `netaddr.cpp` UB/overflow. |
 | [Engine Module](mux/modules/engine/ISSUES.md) | 2 | `alloc_lbuf`/`free_lbuf` RAII migration ~70% complete (~90 complex sites remain); dynamic-cargs `ulambda` JIT support. |
 | [Hydra Clients (aggregate)](client/ISSUES.md) | 1 | GMCP handled as raw JSON only (structured hooks deferred). |
 | [Web Client](client/web/ISSUES.md) | 2 | localStorage credentials; no browser-level regression harness. |

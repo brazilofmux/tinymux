@@ -137,3 +137,37 @@ Updated: 2026-03-27
 
 - **Files:** `mux/src/` (5 sites in `net.cpp`, `signals.cpp`, `stubslave.cpp`) and `mux/modules/` (38 sites across 18 files in engine + mail modules).
 - All 43 `static` scratch-buffer arrays (`UTF8 buf[...]`, `char buf[...]`, `uint8_t arg[...]`) converted to `thread_local`. This is a one-word, zero-allocation, zero-behavior-change swap under the current single-threaded evaluator: `thread_local` storage has the same lifetime and performance as `static`, but each thread gets its own copy, so these functions become safe for future multi-threaded evaluation without any locking. Read-only constant tables (`aRadix64`, `aRadixPenn36`, `aRadixPenn64`, `Empty`) were intentionally left as `static` since they are immutable shared data.  All 21 modified `.cpp` files verified with `g++ -std=c++17 -fsyntax-only`.
+
+## Critical — Protocol Logic & Data Integrity (New, 2026-04-10)
+
+### Data loss in `Stub_PipePump` on short writes or errors
+- **File:** `mux/src/stubslave.cpp:32-100`
+- **Issue:** `Stub_PipePump` removes bytes from `Queue_Out` into a local `arg` buffer. If the subsequent `write(1, ...)` fails with a non-retryable error (or `EINTR`, which is currently unhandled for `write`), those bytes are lost forever.
+- **Impact:** Corruption of inter-process communication between `netmux` and `stubslave`.
+
+## High — Buffer Overflows & Memory Safety (New, 2026-04-10)
+
+### 1-2 byte buffer overflow in `slave.cpp` query processing
+- **File:** `mux/src/slave.cpp:115-120`
+- **Issue:** `char buf[MAX_STRING * 2]` is 2000 bytes. Concatenating an IP address (up to 999 chars) and a hostname (up to 999 chars) with a space, newline, and null terminator can reach 2001 bytes, overflowing `buf` by 1 byte.
+- **Impact:** Potential crash or memory corruption in the helper `slave` process.
+
+## High — Protocol Safety & Limits (New, 2026-04-10)
+
+### `SBUF_SIZE` (64) is too small for modern telnet sequences (TTYPE, GMCP)
+- **File:** `mux/include/alloc.h`, `mux/src/telnet.cpp`
+- **Issue:** `d->aOption` is a fixed 64-byte buffer. Modern clients frequently send TTYPE strings or GMCP JSON payloads exceeding this limit, leading to silent truncation and broken protocol features.
+- **Impact:** Broken GMCP and TTYPE support for feature-rich clients.
+
+## High — Network Address Parsing (New, 2026-04-10)
+
+### Undefined Behavior in IPv4 decoding
+- **File:** `mux/src/netaddr.cpp:69`
+- **Issue:** `DecodeN` shifts `*pu32` (a 32-bit `in_addr_t`) by `decode_IPv4_table[nType].nShift` bits. For `nType=3` (single-element IPv4 address like `12345678`), `nShift` is 32. Shifting a 32-bit value by 32 bits is undefined behavior in C++.
+- **Impact:** Unpredictable IPv4 parsing results for single-number address formats.
+
+### Broken overflow check in decimal IPv4 parsing
+- **File:** `mux/src/netaddr.cpp:189`
+- **Issue:** The overflow check `if (ul < ul2)` after `ul = (ul * 10) & 0xFFFFFFFFUL` is insufficient. A 32-bit multiply-by-10 can wrap around multiple times or wrap to a value larger than the original (e.g., `500,000,000 * 10` wraps to `705,032,704`, which is `> 500,000,000`).
+- **Impact:** Acceptance of invalid, overflowing IPv4 address components.
+
