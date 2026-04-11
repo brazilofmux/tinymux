@@ -133,54 +133,45 @@
 #                empty.
 #
 &tr.tc007 test_paginate_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [eq(words(maillist(#1, 9999, 0)),0)]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
+  @if eq(
+        words(maillist(#1, 9999, 0)),
+        0
       )=
   {
     @log smoke=TC007: maillist offset beyond end. Succeeded.
   },
   {
-    @log smoke=TC007: maillist offset beyond end. Failed (%q0).
+    @log smoke=TC007: maillist offset beyond end. Failed ([words(maillist(#1, 9999, 0))]).
   }
 -
 #
 # Test Case #8 - channels() with no pagination still works.
 #
 &tr.tc008 test_paginate_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [gte(words(channels()),1)]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
+  @if gte(
+        words(channels()),
+        1
       )=
   {
     @log smoke=TC008: channels no pagination. Succeeded.
   },
   {
-    @log smoke=TC008: channels no pagination. Failed (%q0).
+    @log smoke=TC008: channels no pagination. Failed ([words(channels())]).
   }
 -
 #
 # Test Case #9 - channels(,, 0, 1) returns exactly 1 channel.
 #
 &tr.tc009 test_paginate_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [eq(words(channels(,%b, 0, 1)),1)]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
+  @if eq(
+        words(channels(,%b, 0, 1)),
+        1
       )=
   {
     @log smoke=TC009: channels limit=1. Succeeded.
   },
   {
-    @log smoke=TC009: channels limit=1. Failed (%q0).
+    @log smoke=TC009: channels limit=1. Failed ([words(channels(,%b, 0, 1))]).
   }
 -
 #
@@ -188,18 +179,15 @@
 #                 Should equal maillist(#1).
 #
 &tr.tc010 test_paginate_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [eq(words(maillist(#1, 0, 0)),words(maillist(#1)))]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
+  @if eq(
+        words(maillist(#1, 0, 0)),
+        words(maillist(#1))
       )=
   {
     @log smoke=TC010: maillist limit=0 means all. Succeeded.
   },
   {
-    @log smoke=TC010: maillist limit=0 means all. Failed (%q0).
+    @log smoke=TC010: maillist limit=0 means all. Failed (paged=[words(maillist(#1, 0, 0))] full=[words(maillist(#1))]).
   }
 -
 #
@@ -207,19 +195,16 @@
 #                 chanusers(pgtest,,, -1, -1) should return all users.
 #
 &tr.tc011 test_paginate_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [eq(words(chanusers(pgtest,%b,,-1,-1)),words(chanusers(pgtest)))]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
+  @if eq(
+        words(chanusers(pgtest,%b,,-1,-1)),
+        words(chanusers(pgtest))
       )=
   {
     @log smoke=TC011: negative offset/limit treated as 0. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC011: negative offset/limit treated as 0. Failed (%q0).;
+    @log smoke=TC011: negative offset/limit treated as 0. Failed (neg=[words(chanusers(pgtest,%b,,-1,-1))] full=[words(chanusers(pgtest))]).;
     @trig me/tr.done
   }
 -
