@@ -4167,11 +4167,11 @@
 >256
 "@log smoke=Beginning isjson() test cases."
 >257
-"@if strmatch(setr(0,sha1([isjson({\"a\":1})][isjson([1,2,3])][isjson(\"hello\")][isjson(42)][isjson(true)][isjson(false)][isjson(null)])),0EED7D9EC40BB4E1EFA39B2FE4464CB941D7EE79)={@log smoke=TC001: isjson valid. Succeeded.;},{@log smoke=TC001: isjson valid. Failed (%q0).;}"
+"think setq(0,isjson({\"a\":1}));think setq(1,isjson([1,2,3]));think setq(2,isjson(\"hello\"));think setq(3,isjson(42));think setq(4,isjson(true));think setq(5,isjson(false));think setq(6,isjson(null));@if cand(%q0,%q1,%q2,%q3,%q4,%q5,%q6)={@log smoke=TC001: isjson valid. Succeeded.;},{@log smoke=TC001: isjson valid. Failed (obj=%q0 array=%q1 str=%q2 num=%q3 true=%q4 false=%q5 null=%q6).;}"
 >258
-"@if strmatch(setr(0,sha1([isjson(not json)][isjson({bad})][isjson()][isjson([1,])])),228DBDBA8F07B97E12CB576440614D1A594403BF)={@log smoke=TC002: isjson invalid. Succeeded.;},{@log smoke=TC002: isjson invalid. Failed (%q0).;}"
+"think setq(0,isjson(not json));think setq(1,isjson({bad}));think setq(2,isjson());think setq(3,isjson([1,]));@if cand(not(%q0),not(%q1),not(%q2),not(%q3))={@log smoke=TC002: isjson invalid. Succeeded.;},{@log smoke=TC002: isjson invalid. Failed (plain=%q0 badobj=%q1 empty=%q2 trailing=%q3).;}"
 >259
-"@if strmatch(setr(0,sha1([isjson({\"a\":1},object)][isjson({\"a\":1},array)][isjson([1],array)][isjson(\"hi\",string)][isjson(42,number)][isjson(42,string)][isjson(true,boolean)][isjson(false,boolean)][isjson(null,null)])),07856E08400009762E8143AD586260FA80ADE604)={@log smoke=TC003: isjson type check. Succeeded.;@trig me/tr.done},{@log smoke=TC003: isjson type check. Failed (%q0).;@trig me/tr.done}"
+"think setq(0,isjson({\"a\":1},object));think setq(1,isjson({\"a\":1},array));think setq(2,isjson([1],array));think setq(3,isjson(\"hi\",string));think setq(4,isjson(42,number));think setq(5,isjson(42,string));think setq(6,isjson(true,boolean));think setq(7,isjson(false,boolean));think setq(8,isjson(null,null));@if cand(%q0,not(%q1),%q2,%q3,%q4,not(%q5),%q6,%q7,%q8)={@log smoke=TC003: isjson type check. Succeeded.;@trig me/tr.done},{@log smoke=TC003: isjson type check. Failed (obj=%q0 obj_as_array=%q1 array=%q2 str=%q3 num=%q4 num_as_str=%q5 true=%q6 false=%q7 null=%q8).;@trig me/tr.done}"
 >260
 "@log smoke=End isjson() test cases.;@notify smoke"
 <
