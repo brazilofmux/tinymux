@@ -1080,7 +1080,9 @@
 >256
 "@log smoke=Beginning add() test cases."
 >257
-"@if cand(eq(add(1,2), 3),eq(add(1,2,3), 6),eq(add(-1,1), 0))={@log smoke=TC001: add basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: add basic operations. Failed (add(1%,2)=[add(1,2)] add(1%,2%,3)=[add(1,2,3)] add(-1%,1)=[add(-1,1)]).;@trig me/tr.done}"
+"@if cand(eq(add(1,2), 3),eq(add(1,2,3), 6),eq(add(-1,1), 0))={@log smoke=TC001: add basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: add basic operations. Failed (add(1%,2)=[add(1,2)] add(1%,2%,3)=[add(1,2,3)] add(-1%,1)=[add(-1,1)]).;}"
+>258
+"@if cand(strmatch(add(1.5,2.25),3.75),eq(add(-5,2,1),-2),eq(add(),0),eq(add(foo,2),2))={@log smoke=TC002: add decimal and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: add decimal and coercion cases. Failed (add(1.5%,2.25)=[add(1.5,2.25)] add(-5%,2%,1)=[add(-5,2,1)] add()=[add()] add(foo%,2)=[add(foo,2)]).;@trig me/tr.done}"
 >260
 "@log smoke=End add() test cases.;@notify smoke"
 <
@@ -3371,7 +3373,9 @@
 >256
 "@log smoke=Beginning fdiv() test cases."
 >257
-"@if cand(strmatch(round(fdiv(10,3),6), 3.333333),strmatch(round(fdiv(-10,3),6), -3.333333),strmatch(fdiv(1,0), +Inf))={@log smoke=TC001: fdiv basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: fdiv basic operations. Failed (fdiv(10%,3)=[fdiv(10,3)] fdiv(-10%,3)=[fdiv(-10,3)] fdiv(1%,0)=[fdiv(1,0)]).;@trig me/tr.done}"
+"@if cand(strmatch(round(fdiv(10,3),6), 3.333333),strmatch(round(fdiv(-10,3),6), -3.333333),strmatch(fdiv(1,0), +Inf))={@log smoke=TC001: fdiv basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: fdiv basic operations. Failed (fdiv(10%,3)=[fdiv(10,3)] fdiv(-10%,3)=[fdiv(-10,3)] fdiv(1%,0)=[fdiv(1,0)]).;}"
+>258
+"@if cand(eq(setr(0,round(fdiv(5.5,2),2)),2.75),eq(setr(1,round(fdiv(10,-4),2)),-2.5),eq(setr(2,fdiv(0,2)),0),eq(setr(3,fdiv(foo,2)),0))={@log smoke=TC002: fdiv decimal and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: fdiv decimal and coercion cases. Failed (q0=%q0 q1=%q1 q2=%q2 q3=%q3 fdiv(5.5%,2)=[fdiv(5.5,2)] fdiv(10%,-4)=[fdiv(10,-4)] fdiv(0%,2)=[fdiv(0,2)] fdiv(foo%,2)=[fdiv(foo,2)]).;@trig me/tr.done}"
 >260
 "@log smoke=End fdiv() test cases.;@notify smoke"
 <
@@ -6198,7 +6202,9 @@
 >256
 "@log smoke=Beginning mul() test cases."
 >257
-"@if cand(eq(mul(2,3), 6),eq(mul(2,3,4), 24))={@log smoke=TC001: mul basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: mul basic operations. Failed (mul(2%,3)=[mul(2,3)] mul(2%,3%,4)=[mul(2,3,4)]).;@trig me/tr.done}"
+"@if cand(eq(mul(2,3), 6),eq(mul(2,3,4), 24))={@log smoke=TC001: mul basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: mul basic operations. Failed (mul(2%,3)=[mul(2,3)] mul(2%,3%,4)=[mul(2,3,4)]).;}"
+>258
+"@if cand(strmatch(mul(1.5,2),3),eq(mul(-2,3),-6),eq(mul(),0),eq(mul(foo,3),0))={@log smoke=TC002: mul decimal and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: mul decimal and coercion cases. Failed (mul(1.5%,2)=[mul(1.5,2)] mul(-2%,3)=[mul(-2,3)] mul()=[mul()] mul(foo%,3)=[mul(foo,3)]).;@trig me/tr.done}"
 >260
 "@log smoke=End mul() test cases.;@notify smoke"
 <
@@ -9850,7 +9856,9 @@
 >256
 "@log smoke=Beginning sub() test cases."
 >257
-"@if cand(eq(sub(10,3), 7),eq(sub(3,10), -7))={@log smoke=TC001: sub basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: sub basic operations. Failed (sub(10%,3)=[sub(10,3)] sub(3%,10)=[sub(3,10)]).;@trig me/tr.done}"
+"@if cand(eq(sub(10,3), 7),eq(sub(3,10), -7))={@log smoke=TC001: sub basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: sub basic operations. Failed (sub(10%,3)=[sub(10,3)] sub(3%,10)=[sub(3,10)]).;}"
+>258
+"@if cand(strmatch(sub(5.5,2.25),3.25),eq(sub(-5,-2),-3),eq(sub(),0),eq(sub(foo,2),-2))={@log smoke=TC002: sub decimal and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: sub decimal and coercion cases. Failed (sub(5.5%,2.25)=[sub(5.5,2.25)] sub(-5%,-2)=[sub(-5,-2)] sub()=[sub()] sub(foo%,2)=[sub(foo,2)]).;@trig me/tr.done}"
 >260
 "@log smoke=End sub() test cases.;@notify smoke"
 <

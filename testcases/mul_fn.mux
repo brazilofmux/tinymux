@@ -25,6 +25,24 @@
   },
   {
     @log smoke=TC001: mul basic operations. Failed (mul(2%,3)=[mul(2,3)] mul(2%,3%,4)=[mul(2,3,4)]).;
+  }
+-
+#
+# Test Case #2 - Decimal, sign, and coercion cases.
+#
+&tr.tc002 test_mul_fn=
+  @if cand(
+        strmatch(mul(1.5,2),3),
+        eq(mul(-2,3),-6),
+        eq(mul(),0),
+        eq(mul(foo,3),0)
+      )=
+  {
+    @log smoke=TC002: mul decimal and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: mul decimal and coercion cases. Failed (mul(1.5%,2)=[mul(1.5,2)] mul(-2%,3)=[mul(-2,3)] mul()=[mul()] mul(foo%,3)=[mul(foo,3)]).;
     @trig me/tr.done
   }
 -

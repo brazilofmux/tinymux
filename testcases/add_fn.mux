@@ -26,6 +26,24 @@
   },
   {
     @log smoke=TC001: add basic operations. Failed (add(1%,2)=[add(1,2)] add(1%,2%,3)=[add(1,2,3)] add(-1%,1)=[add(-1,1)]).;
+  }
+-
+#
+# Test Case #2 - Decimal and coercion cases.
+#
+&tr.tc002 test_add_fn=
+  @if cand(
+        strmatch(add(1.5,2.25),3.75),
+        eq(add(-5,2,1),-2),
+        eq(add(),0),
+        eq(add(foo,2),2)
+      )=
+  {
+    @log smoke=TC002: add decimal and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: add decimal and coercion cases. Failed (add(1.5%,2.25)=[add(1.5,2.25)] add(-5%,2%,1)=[add(-5,2,1)] add()=[add()] add(foo%,2)=[add(foo,2)]).;
     @trig me/tr.done
   }
 -

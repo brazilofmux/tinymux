@@ -25,6 +25,24 @@
   },
   {
     @log smoke=TC001: sub basic operations. Failed (sub(10%,3)=[sub(10,3)] sub(3%,10)=[sub(3,10)]).;
+  }
+-
+#
+# Test Case #2 - Decimal, negative, and coercion cases.
+#
+&tr.tc002 test_sub_fn=
+  @if cand(
+        strmatch(sub(5.5,2.25),3.25),
+        eq(sub(-5,-2),-3),
+        eq(sub(),0),
+        eq(sub(foo,2),-2)
+      )=
+  {
+    @log smoke=TC002: sub decimal and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: sub decimal and coercion cases. Failed (sub(5.5%,2.25)=[sub(5.5,2.25)] sub(-5%,-2)=[sub(-5,-2)] sub()=[sub()] sub(foo%,2)=[sub(foo,2)]).;
     @trig me/tr.done
   }
 -

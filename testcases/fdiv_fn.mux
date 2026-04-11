@@ -26,6 +26,24 @@
   },
   {
     @log smoke=TC001: fdiv basic operations. Failed (fdiv(10%,3)=[fdiv(10,3)] fdiv(-10%,3)=[fdiv(-10,3)] fdiv(1%,0)=[fdiv(1,0)]).;
+  }
+-
+#
+# Test Case #2 - Decimal, sign, and coercion cases.
+#
+&tr.tc002 test_fdiv_fn=
+  @if cand(
+        eq(setr(0,round(fdiv(5.5,2),2)),2.75),
+        eq(setr(1,round(fdiv(10,-4),2)),-2.5),
+        eq(setr(2,fdiv(0,2)),0),
+        eq(setr(3,fdiv(foo,2)),0)
+      )=
+  {
+    @log smoke=TC002: fdiv decimal and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: fdiv decimal and coercion cases. Failed (q0=%q0 q1=%q1 q2=%q2 q3=%q3 fdiv(5.5%,2)=[fdiv(5.5,2)] fdiv(10%,-4)=[fdiv(10,-4)] fdiv(0%,2)=[fdiv(0,2)] fdiv(foo%,2)=[fdiv(foo,2)]).;
     @trig me/tr.done
   }
 -
