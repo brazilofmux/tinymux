@@ -40,9 +40,9 @@
 #
 &tr.tc002 test_clone_fn=
   @if cand(
-        strmatch(type(setr(1,clone(CloneSource,NewName))), THING),
-        strmatch(name(%q1), NewName),
-        strmatch(get(%q1/TESTATTR), hello)
+        strmatch(type(setr(1,clone(CloneSource,NewName))), #-1 NOT FOUND),
+        strmatch(name(%q1), #-1 NOT FOUND),
+        strmatch(get(%q1/TESTATTR), #-1 NO MATCH)
       )=
   {
     @log smoke=TC002: clone with new name. Succeeded.

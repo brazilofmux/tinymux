@@ -13,26 +13,15 @@
 @set mogobj=QUIET
 -
 #
-# Create the test channel and set it up.
-#
-@ccreate mogtest
--
-@cset/public mogtest=on
--
-@cset/object mogtest=mogobj
--
-#
-# Create a second test channel (no object).
-#
-@ccreate mogtest2
--
-@cset/public mogtest2=on
--
-#
 # Beginning of Test Cases
 #
 &tr.tc000 test_cmogrifier_fn=
-  @log smoke=Beginning cmogrifier test cases.
+  @log smoke=Beginning cmogrifier test cases.;
+  @ccreate mogtest;
+  @cset/public mogtest=on;
+  @cset/object mogtest=mogobj;
+  @ccreate mogtest2;
+  @cset/public mogtest2=on
 -
 #
 # Test Case #1 - cmogrifier() returns the channel object dbref.
