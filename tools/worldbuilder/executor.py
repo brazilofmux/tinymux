@@ -153,6 +153,9 @@ def execute(spec, conn, state, dry_run=False, log_file=None, operations=None):
         if log_file:
             log_file.write(msg + '\n')
 
+    def escape_attr_value(value):
+        return mux_escape(str(value))
+
     def do_cmd(cmd):
         """Send a command and return response. In dry-run, just log."""
         if dry_run:
@@ -232,7 +235,7 @@ def execute(spec, conn, state, dry_run=False, log_file=None, operations=None):
         for flag in room.flags:
             do_cmd(f'@set here={flag}')
         for attr_name, attr_value in room.attrs.items():
-            do_cmd(f'&{attr_name} here={attr_value}')
+            do_cmd(f'&{attr_name} here={escape_attr_value(attr_value)}')
         if room.parent:
             do_cmd(f'@parent here={room.parent}')
 
@@ -252,7 +255,7 @@ def execute(spec, conn, state, dry_run=False, log_file=None, operations=None):
         for flag in sorted(op.payload.get('flags_removed', set())):
             do_cmd(f'@set here=!{flag}')
         for attr_name in sorted(op.payload.get('attrs_to_set', {})):
-            do_cmd(f'&{attr_name} here={op.payload["attrs_to_set"][attr_name]}')
+            do_cmd(f'&{attr_name} here={escape_attr_value(op.payload["attrs_to_set"][attr_name])}')
         for attr_name in sorted(op.payload.get('attrs_to_unset', set())):
             do_cmd(f'&{attr_name} here=')
 
@@ -344,7 +347,7 @@ def execute(spec, conn, state, dry_run=False, log_file=None, operations=None):
         for flag in thing.flags:
             do_cmd(f'@set {thing.name}={flag}')
         for attr_name, attr_value in thing.attrs.items():
-            do_cmd(f'&{attr_name} {thing.name}={attr_value}')
+            do_cmd(f'&{attr_name} {thing.name}={escape_attr_value(attr_value)}')
         if thing.parent:
             do_cmd(f'@parent {thing.name}={thing.parent}')
 
@@ -401,6 +404,49 @@ def verify(spec, conn, state, log_file=None):
         lines = [l.strip() for l in resp.strip().split('\n') if l.strip()]
         return lines[0] if lines else ''
 
+    def check_object(spec_id, obj_name, dbref, expected_desc, expected_attrs,
+                     expected_flags=None, expected_location=None):
+        stored_objid = state.objects.get(spec_id, {}).get('objid')
+        if stored_objid:
+            live_objid = query_one(f'think [objid({dbref})]')
+            if live_objid and live_objid != stored_objid:
+                issues.append(f"{spec_id!r} ({dbref}): objid mismatch — stored=\"{stored_objid}\" live=\"{live_objid}\" (dbref was recycled!)")
+                return False
+            if not live_objid or live_objid.startswith('#-1'):
+                issues.append(f"{spec_id!r} ({dbref}): object no longer exists")
+                return False
+
+        live_name = query_one(f'think [name({dbref})]')
+        if live_name and live_name != obj_name:
+            issues.append(f"{spec_id!r} ({dbref}): name mismatch — spec=\"{obj_name}\" live=\"{live_name}\"")
+
+        live_desc = query_one(f'think [get({dbref}/DESCRIBE)]')
+        if not live_desc:
+            live_desc = query_one(f'think [get({dbref}/DESC)]')
+        if not live_desc and expected_desc.strip():
+            issues.append(f"{spec_id!r} ({dbref}): description missing on live server")
+        elif live_desc != expected_desc:
+            issues.append(f"{spec_id!r} ({dbref}): description mismatch")
+
+        for attr_name, expected_val in expected_attrs.items():
+            live_val = query_one(f'think [get({dbref}/{attr_name})]')
+            if live_val != expected_val:
+                issues.append(f"{spec_id!r} ({dbref}): attr {attr_name} mismatch — spec=\"{expected_val}\" live=\"{live_val}\"")
+
+        if expected_flags is not None:
+            live_flags = query_one(f'think [flags({dbref})]')
+            live_flag_set = set(live_flags.split()) if live_flags else set()
+            expected_flag_set = set(expected_flags)
+            if live_flag_set != expected_flag_set:
+                issues.append(f"{spec_id!r} ({dbref}): flags mismatch — spec=\"{' '.join(sorted(expected_flag_set))}\" live=\"{' '.join(sorted(live_flag_set))}\"")
+
+        if expected_location is not None:
+            live_location = query_one(f'think [loc({dbref})]')
+            if live_location != expected_location:
+                issues.append(f"{spec_id!r} ({dbref}): location mismatch — spec=\"{expected_location}\" live=\"{live_location}\"")
+
+        return True
+
     log(f"Verifying {len(spec.rooms)} rooms...")
 
     for room_id, room in spec.rooms.items():
@@ -409,49 +455,86 @@ def verify(spec, conn, state, log_file=None):
             issues.append(f"Room '{room_id}' ({room.name}): not in state file (never applied?)")
             continue
 
-        # Validate objid — detect dbref recycling
-        stored_objid = state.objects.get(room_id, {}).get('objid')
-        if stored_objid:
-            live_objid = query_one(f'think [objid({dbref})]')
-            if live_objid and live_objid != stored_objid:
-                issues.append(f"Room '{room_id}' ({dbref}): objid mismatch — stored=\"{stored_objid}\" live=\"{live_objid}\" (dbref was recycled!)")
-                continue
-            if not live_objid or live_objid.startswith('#-1'):
-                issues.append(f"Room '{room_id}' ({dbref}): object no longer exists")
-                continue
-
-        # Check name
-        live_name = query_one(f'think [name({dbref})]')
-        if live_name and live_name != room.name:
-            issues.append(f"Room '{room_id}' ({dbref}): name mismatch — spec=\"{room.name}\" live=\"{live_name}\"")
-
-        # Check description exists
-        live_desc = query_one(f'think [get({dbref}/DESCRIBE)]')
-        if not live_desc:
-            live_desc = query_one(f'think [get({dbref}/DESC)]')
-        if not live_desc and room.description.strip():
-            issues.append(f"Room '{room_id}' ({dbref}): description missing on live server")
-
-        # Check attributes
-        for attr_name, expected_val in room.attrs.items():
-            live_val = query_one(f'think [get({dbref}/{attr_name})]')
-            if live_val != expected_val:
-                issues.append(f"Room '{room_id}' ({dbref}): attr {attr_name} mismatch — spec=\"{expected_val}\" live=\"{live_val}\"")
+        check_object(
+            room_id,
+            room.name,
+            dbref,
+            room.description,
+            room.attrs,
+            expected_flags=room.flags,
+        )
 
         log(f"  [{dbref}] {room.name} — {'OK' if not any(room_id in i for i in issues) else 'MISMATCH'}")
 
     # Check exits exist
     log(f"Verifying exits...")
     for ex in spec.exits:
-        from_dbref = state.get_dbref(ex.from_room)
         to_dbref = state.get_dbref(ex.to_room)
-        if not from_dbref or not to_dbref:
+        forward_id = f'exit_{ex.from_room}_{ex.to_room}'
+        forward_state = state.objects.get(forward_id)
+        if not forward_state:
+            issues.append(f"Exit '{forward_id}' ({ex.name}): not in state file (never applied?)")
+        elif not to_dbref:
             continue
-        # Check that an exit from from_dbref leads to to_dbref
-        exit_list = query_one(f'think [exits({from_dbref})]')
-        if to_dbref not in (exit_list or ''):
-            # More thorough check — walk exits
-            pass  # Could enumerate, but this is a good first pass
+        else:
+            exit_dbref = forward_state.get('dbref')
+            live_objid = query_one(f'think [objid({exit_dbref})]')
+            stored_objid = forward_state.get('objid')
+            if stored_objid and live_objid and live_objid != stored_objid:
+                issues.append(f"Exit '{forward_id}' ({exit_dbref}): objid mismatch — stored=\"{stored_objid}\" live=\"{live_objid}\" (dbref was recycled!)")
+            elif not live_objid or live_objid.startswith('#-1'):
+                issues.append(f"Exit '{forward_id}' ({exit_dbref}): object no longer exists")
+            else:
+                live_name = query_one(f'think [name({exit_dbref})]')
+                expected_name = ex.name.split(';')[0]
+                if live_name and live_name != expected_name:
+                    issues.append(f"Exit '{forward_id}' ({exit_dbref}): name mismatch — spec=\"{expected_name}\" live=\"{live_name}\"")
+                live_dest = query_one(f'think [home({exit_dbref})]')
+                if live_dest != to_dbref:
+                    issues.append(f"Exit '{forward_id}' ({exit_dbref}): destination mismatch — spec=\"{to_dbref}\" live=\"{live_dest}\"")
+
+        if ex.back_name:
+            back_id = f'exit_{ex.to_room}_{ex.from_room}'
+            back_state = state.objects.get(back_id)
+            from_dbref = state.get_dbref(ex.from_room)
+            if not back_state:
+                issues.append(f"Exit '{back_id}' ({ex.back_name}): not in state file (never applied?)")
+            elif not from_dbref:
+                continue
+            else:
+                exit_dbref = back_state.get('dbref')
+                live_objid = query_one(f'think [objid({exit_dbref})]')
+                stored_objid = back_state.get('objid')
+                if stored_objid and live_objid and live_objid != stored_objid:
+                    issues.append(f"Exit '{back_id}' ({exit_dbref}): objid mismatch — stored=\"{stored_objid}\" live=\"{live_objid}\" (dbref was recycled!)")
+                elif not live_objid or live_objid.startswith('#-1'):
+                    issues.append(f"Exit '{back_id}' ({exit_dbref}): object no longer exists")
+                else:
+                    live_name = query_one(f'think [name({exit_dbref})]')
+                    expected_name = ex.back_name.split(';')[0]
+                    if live_name and live_name != expected_name:
+                        issues.append(f"Exit '{back_id}' ({exit_dbref}): name mismatch — spec=\"{expected_name}\" live=\"{live_name}\"")
+                    live_dest = query_one(f'think [home({exit_dbref})]')
+                    if live_dest != from_dbref:
+                        issues.append(f"Exit '{back_id}' ({exit_dbref}): destination mismatch — spec=\"{from_dbref}\" live=\"{live_dest}\"")
+
+    log(f"Verifying things...")
+    for thing_id, thing in spec.things.items():
+        dbref = state.get_dbref(thing_id)
+        if not dbref:
+            issues.append(f"Thing '{thing_id}' ({thing.name}): not in state file (never applied?)")
+            continue
+
+        expected_location = state.get_dbref(thing.location)
+        check_object(
+            thing_id,
+            thing.name,
+            dbref,
+            thing.description,
+            thing.attrs,
+            expected_flags=thing.flags,
+            expected_location=expected_location,
+        )
 
     if not issues:
         log("\nVerification passed — all rooms match spec.")

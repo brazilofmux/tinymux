@@ -125,7 +125,7 @@ def mux_escape(text):
 
     processed = []
     for line in lines:
-        processed.append(line.rstrip().replace('%', '%%'))
+        processed.append(line.rstrip().replace('%', '%%').replace('\t', '%t'))
     return '%r'.join(processed)
 
 
@@ -358,6 +358,9 @@ def emit_mux_commands(spec, operations):
     """Translate semantic operations into concrete MUX commands."""
     commands = []
 
+    def escape_attr_value(value):
+        return mux_escape(str(value))
+
     def cmd(comment, command):
         commands.append((comment, command))
 
@@ -391,7 +394,7 @@ def emit_mux_commands(spec, operations):
             for flag in room.flags:
                 cmd(f"Set flag {flag}", f'@set here={flag}')
             for attr_name, attr_value in room.attrs.items():
-                cmd(f"Set attribute {attr_name}", f'&{attr_name} here={attr_value}')
+                cmd(f"Set attribute {attr_name}", f'&{attr_name} here={escape_attr_value(attr_value)}')
             if room.parent:
                 cmd("Set parent", f'@parent here={room.parent}')
             cmd("Set zone", f'@chzone here=%{{zone:{spec.zone.name}}}')
@@ -411,7 +414,7 @@ def emit_mux_commands(spec, operations):
                 cmd(f"Clear flag {flag}", f'@set here=!{flag}')
             for attr_name in sorted(op.payload['attrs_to_set']):
                 cmd(f"Update {attr_name}",
-                    f'&{attr_name} here={op.payload["attrs_to_set"][attr_name]}')
+                    f'&{attr_name} here={escape_attr_value(op.payload["attrs_to_set"][attr_name])}')
             for attr_name in sorted(op.payload['attrs_to_unset']):
                 cmd(f"Remove {attr_name}", f'&{attr_name} here=')
         elif op.kind == 'create_exit':
@@ -433,7 +436,7 @@ def emit_mux_commands(spec, operations):
             for flag in thing.flags:
                 cmd(f"Set flag {flag}", f'@set {thing.name}={flag}')
             for attr_name, attr_value in thing.attrs.items():
-                cmd(f"Set {attr_name}", f'&{attr_name} {thing.name}={attr_value}')
+                cmd(f"Set {attr_name}", f'&{attr_name} {thing.name}={escape_attr_value(attr_value)}')
             if thing.parent:
                 cmd("Set parent", f'@parent {thing.name}={thing.parent}')
         elif op.kind == 'destroy_room':

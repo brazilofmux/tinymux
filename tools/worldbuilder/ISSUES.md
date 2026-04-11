@@ -37,18 +37,10 @@ Updated: 2026-04-10
 - `python3 tools/worldbuilder/test_diff_v3.py` passes.
 - `python3 tools/worldbuilder/test_reconciler.py` passes.
 
-## Bugs (New, 2026-04-10)
+### ~~Attribute writes are emitted without MUX escaping~~ FIXED
 
-### Attribute writes are emitted without MUX escaping
+- `executor.py` and `live_adapter.py` now route room/thing attribute payloads through `mux_escape()` before emitting `&attr=` commands, so `%`, tabs, and newlines are serialized safely instead of being interpreted by the server. `mux_escape()` itself now actually converts `\t` to `%t`, matching its documented contract. `test_worldbuilder.py` includes focused coverage for escaped room and thing attributes.
 
-- **Files:** `tools/worldbuilder/executor.py:234-235`, `tools/worldbuilder/executor.py:254-255`, `tools/worldbuilder/executor.py:346-347`, `tools/worldbuilder/live_adapter.py:393-394`, `tools/worldbuilder/live_adapter.py:412-414`, `tools/worldbuilder/live_adapter.py:435-436`
-- **Issue:** Descriptions are sent through `mux_escape()`, but room/thing attribute values are written raw. Any attribute containing `%`, newlines, tabs, or trailing spaces is therefore interpreted by the server instead of being stored literally.
-- **Impact:** Applied state can diverge from the spec without the planner noticing. Multi-line attr text is especially fragile because it is split across telnet commands rather than serialized as a single MUX-safe value.
-- **Fix:** Escape attribute payloads with the same MUX-aware escaping used for descriptions, and add regression coverage for `%`, `%r`, and embedded newlines in attrs.
+### ~~`verify()` can report success while exits and things are wrong~~ FIXED
 
-### `verify()` can report success while exits and things are wrong
-
-- **File:** `tools/worldbuilder/executor.py:443-454`
-- **Issue:** The verifier only performs detailed checks for rooms. Exit validation does not append any discrepancy when the destination is missing, and thing objects are not verified at all.
-- **Impact:** `verify()` can finish with "Verification passed" even when exits drifted or managed things were deleted/renamed. That makes it unsafe as a post-apply confidence check.
-- **Fix:** Turn the exit pass into real assertions, and add thing verification using the same `objid`/name/attr checks already used for rooms.
+- `executor.verify()` now verifies exits by stored dbref/object id, checks exit names, and compares `home(<exit>)` against the expected destination. It also verifies managed things with the same object-id/name/description/attr checks used for rooms, plus a `loc()` check for placement. `test_worldbuilder.py` now exercises both exit-destination drift and thing drift.

@@ -21,6 +21,7 @@ Run: python test_worldbuilder.py
 import sys
 import os
 import ssl
+from types import SimpleNamespace
 
 # Ensure we can import from the worldbuilder directory and that fixture
 # paths resolve correctly regardless of the caller's working directory.
@@ -64,10 +65,42 @@ def section(name):
 def test_mux_escape():
     section("MUX Text Escaping")
     test("Newlines become %r", '%r' in mux_escape("line1\nline2"))
+    test("Tabs become %t", '%t' in mux_escape("left\tright"))
     test("Literal % becomes %%", '%%' in mux_escape("100% complete"))
     test("No double-escape", '%%%%' not in mux_escape("100% complete"))
     test("Trailing whitespace stripped", not mux_escape("hello  \n").endswith('  '))
-    test("Round-trip", mux_unescape(mux_escape("hello\nworld").replace('%%', '%')) == "hello\nworld")
+    test("Round-trip", mux_unescape(mux_escape("hello\tworld\nnext").replace('%%', '%')) == "hello\tworld\nnext")
+
+
+def test_attr_command_escaping():
+    section("Attribute Command Escaping")
+    room = SimpleNamespace(
+        name="Lab",
+        description="A room.",
+        flags=[],
+        attrs={"NOTE": "100% ready\tsoon\nline two  "},
+        parent=None,
+    )
+    thing = SimpleNamespace(
+        name="Widget",
+        description="",
+        flags=[],
+        attrs={"DETAIL": "tab\tvalue\n100%"},
+        parent=None,
+        location="lab",
+    )
+    spec = SimpleNamespace(
+        zone=SimpleNamespace(name="Test Zone"),
+        rooms={"lab": room},
+        exits=[],
+        things={"widget": thing},
+    )
+
+    commands = [command for _, command in compile_spec(spec) if command]
+    test("Room attr escapes percent/newline/tab",
+         '&NOTE here=100%% ready%tsoon%rline two' in commands)
+    test("Thing attr escapes percent/newline/tab",
+         '&DETAIL Widget=tab%tvalue%r100%%' in commands)
 
 
 def test_spec_parsing():
@@ -319,6 +352,74 @@ def test_reconciliation():
     test("Spec modification detected", statuses['fountain_plaza'] == 'spec_modified')
 
 
+def test_verify_detects_exit_and_thing_drift():
+    section("Live Verification")
+    spec = parse_spec("tests/town.yaml")
+
+    class FakeState:
+        def __init__(self):
+            self.objects = {
+                'town_square': {
+                    'dbref': '#100', 'objid': '#100:1', 'type': 'room',
+                    'name': spec.rooms['town_square'].name,
+                },
+                'tavern_common_room': {
+                    'dbref': '#101', 'objid': '#101:1', 'type': 'room',
+                    'name': spec.rooms['tavern_common_room'].name,
+                },
+                'exit_town_square_tavern_common_room': {
+                    'dbref': '#200', 'objid': '#200:1', 'type': 'exit',
+                    'name': 'Tavern',
+                },
+                'well': {
+                    'dbref': '#300', 'objid': '#300:1', 'type': 'thing',
+                    'name': spec.things['well'].name,
+                },
+            }
+
+        def get_dbref(self, spec_id):
+            obj = self.objects.get(spec_id)
+            return obj.get('dbref') if obj else None
+
+    class FakeConn:
+        def __init__(self, responses):
+            self.responses = responses
+            self.last_cmd = ''
+
+        def send(self, cmd):
+            self.last_cmd = cmd
+
+        def read_response(self, _wait):
+            return self.responses.get(self.last_cmd, '') + '\n'
+
+    responses = {
+        'think [objid(#100)]': '#100:1',
+        'think [name(#100)]': spec.rooms['town_square'].name,
+        'think [get(#100/DESCRIBE)]': spec.rooms['town_square'].description,
+        'think [flags(#100)]': '',
+        'think [objid(#101)]': '#101:1',
+        'think [name(#101)]': spec.rooms['tavern_common_room'].name,
+        'think [get(#101/DESCRIBE)]': spec.rooms['tavern_common_room'].description,
+        'think [flags(#101)]': '',
+        'think [objid(#200)]': '#200:1',
+        'think [name(#200)]': 'Tavern',
+        'think [home(#200)]': '#999',
+        'think [objid(#300)]': '#300:1',
+        'think [name(#300)]': 'Dry Fountain',
+        'think [get(#300/DESCRIBE)]': spec.things['well'].description,
+        'think [get(#300/DESC)]': spec.things['well'].description,
+        'think [get(#300/DRINK)]': spec.things['well'].attrs['DRINK'],
+        'think [flags(#300)]': '',
+        'think [loc(#300)]': '#100',
+    }
+
+    issues = executor_module.verify(spec, FakeConn(responses), FakeState())
+    test("Exit destination drift detected",
+         any("exit_town_square_tavern_common_room" in issue and "destination mismatch" in issue for issue in issues))
+    test("Thing name drift detected",
+         any("'well'" in issue and "name mismatch" in issue for issue in issues))
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -340,6 +441,8 @@ def main():
     test_map_generation()
     test_exit_model()
     test_reconciliation()
+    test_attr_command_escaping()
+    test_verify_detects_exit_and_thing_drift()
     test_mux_connection_tls()
 
     print(f"\n{'=' * 40}")
