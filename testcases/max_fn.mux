@@ -25,6 +25,25 @@
   },
   {
     @log smoke=TC001: max basic operations. Failed (max(1%,5%,3)=[max(1,5,3)] max(-1%,-5%,-3)=[max(-1,-5,-3)]).;
+  }
+-
+#
+# Test Case #2 - Decimal, duplicate, and coercion cases.
+#
+&tr.tc002 test_max_fn=
+  @if cand(
+        eq(max(1.5,1.25,1.75), 1.75),
+        eq(max(7,7,7), 7),
+        eq(max(), 0),
+        eq(max(foo,3), 3),
+        eq(max(-2.5,-2.25,-2.75), -2.25)
+      )=
+  {
+    @log smoke=TC002: max decimal and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: max decimal and coercion cases. Failed (max(1.5%,1.25%,1.75)=[max(1.5,1.25,1.75)] max(7%,7%,7)=[max(7,7,7)] max()=[max()] max(foo%,3)=[max(foo,3)] max(-2.5%,-2.25%,-2.75)=[max(-2.5,-2.25,-2.75)]).;
     @trig me/tr.done
   }
 -

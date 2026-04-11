@@ -31,6 +31,26 @@
   },
   {
     @log smoke=TC001: between() basic operations. Failed (between(1%,10%,5)=[between(1,10,5)] between(1%,10%,1)=[between(1,10,1)] between(1%,10%,10)=[between(1,10,10)] between(1%,10%,0)=[between(1,10,0)] between(1%,10%,11)=[between(1,10,11)] between(1%,10%,5%,1)=[between(1,10,5,1)] between(1%,10%,1%,1)=[between(1,10,1,1)] between(1%,10%,10%,1)=[between(1,10,10,1)]).;
+  }
+-
+#
+# Test Case #2 - Decimal and negative ranges.
+#
+&tr.tc002 test_between_fn=
+  @if cand(
+        eq(between(-2,2,-1.5), 1),
+        eq(between(-2,2,1.5), 1),
+        eq(between(-2,2,-2,1), 1),
+        eq(between(-2,2,2,1), 1),
+        eq(between(-2,2,-2.1), 0),
+        eq(between(-2,2,2.1), 0)
+      )=
+  {
+    @log smoke=TC002: between() decimal and negative ranges. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: between() decimal and negative ranges. Failed (between(-2%,2%,-1.5)=[between(-2,2,-1.5)] between(-2%,2%,1.5)=[between(-2,2,1.5)] between(-2%,2%,-2%,1)=[between(-2,2,-2,1)] between(-2%,2%,2%,1)=[between(-2,2,2,1)] between(-2%,2%,-2.1)=[between(-2,2,-2.1)] between(-2%,2%,2.1)=[between(-2,2,2.1)]).;
     @trig me/tr.done
   }
 -

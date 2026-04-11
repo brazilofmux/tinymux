@@ -25,6 +25,25 @@
   },
   {
     @log smoke=TC001: min basic operations. Failed (min(1%,5%,3)=[min(1,5,3)] min(-1%,-5%,-3)=[min(-1,-5,-3)]).;
+  }
+-
+#
+# Test Case #2 - Decimal, duplicate, and coercion cases.
+#
+&tr.tc002 test_min_fn=
+  @if cand(
+        eq(min(1.5,1.25,1.75), 1.25),
+        eq(min(7,7,7), 7),
+        eq(min(), 0),
+        eq(min(foo,3), 0),
+        eq(min(-2.5,-2.25,-2.75), -2.75)
+      )=
+  {
+    @log smoke=TC002: min decimal and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: min decimal and coercion cases. Failed (min(1.5%,1.25%,1.75)=[min(1.5,1.25,1.75)] min(7%,7%,7)=[min(7,7,7)] min()=[min()] min(foo%,3)=[min(foo,3)] min(-2.5%,-2.25%,-2.75)=[min(-2.5,-2.25,-2.75)]).;
     @trig me/tr.done
   }
 -

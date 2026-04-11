@@ -46,6 +46,26 @@
     @trig me/tr.done
   }
 -
+#
+# Test Case #3 - Decimal and already-equal bounds.
+#
+&tr.tc003 test_bound_fn=
+  @if cand(
+        eq(setr(0,[strmatch(bound(1.5,1,2),1.5)]),1),
+        eq(setr(1,[strmatch(bound(0.5,1,2),1)]),1),
+        eq(setr(2,[strmatch(bound(2.5,1,2),2)]),1),
+        eq(setr(3,[strmatch(bound(-1.25,-1.25,-1.25),-1.25)]),1),
+        eq(setr(4,[strmatch(bound(-2.5,-2),-2)]),1)
+      )=
+  {
+    @log smoke=TC003: bound decimal and equal-bound cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: bound decimal and equal-bound cases. Failed (p0=%q0 p1=%q1 p2=%q2 p3=%q3 p4=%q4 bound(1.5%,1%,2)=[bound(1.5,1,2)] bound(0.5%,1%,2)=[bound(0.5,1,2)] bound(2.5%,1%,2)=[bound(2.5,1,2)] bound(-1.25%,-1.25%,-1.25)=[bound(-1.25,-1.25,-1.25)] bound(-2.5%,-2)=[bound(-2.5,-2)]).;
+    @trig me/tr.done
+  }
+-
 &tr.done test_bound_fn=
   @log smoke=End bound() test cases.;
   @notify smoke
