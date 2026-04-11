@@ -12,19 +12,19 @@
 # Test Case #1 - Basic multi-column wrapping.
 #
 &tr.tc001 test_wrapcolumns_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [wrapcolumns(alpha bravo charlie delta echo foxtrot,10,2)]
-          )
-        ),
-        F699BE5078EB0465BF41EF5EA19F87645FF89CBD
+  think setq(0,wrapcolumns(alpha bravo charlie delta echo foxtrot,10,2));
+  @if cand(
+        eq(words(%q0,%r),3),
+        strmatch(extract(%q0,1,1,%r),alpha     delta echo),
+        strmatch(extract(%q0,2,1,%r),bravo     foxtrot   ),
+        strmatch(extract(%q0,3,1,%r),charlie             )
       )=
   {
     @log smoke=TC001: wrapcolumns basic. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: wrapcolumns basic. Failed (%q0).;
+    @log smoke=TC001: wrapcolumns basic. Failed (rows=[words(%q0,%r)] r1=[extract(%q0,1,1,%r)] r2=[extract(%q0,2,1,%r)] r3=[extract(%q0,3,1,%r)]).;
     @trig me/tr.done
   }
 -

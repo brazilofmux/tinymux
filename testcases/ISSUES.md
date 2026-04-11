@@ -20,7 +20,7 @@ The project now has two complementary testing tiers:
 - **Issue:** Tests compute `sha1(output)` and compare against a hardcoded hex hash. When a test fails, the hash mismatch gives zero clue about what actually changed. Adding or modifying any function behavior requires recalculating all dependent hashes.
 - **Risk:** Function behavior could drift without visibility if a hash is copied incorrectly.
 - **Opportunity:** Gradually introduce semantic assertions (`strmatch`, value comparisons) alongside or replacing hashes for the highest-risk functions.
-- Recent progress: `cmogrifier_fn.mux`, `clone_fn.mux`, `isjson_fn.mux`, and `moon_fn.mux` now use direct semantic checks instead of SHA1 snapshots, but the broader corpus is still overwhelmingly hash-based.
+- Recent progress: `cmogrifier_fn.mux`, `clone_fn.mux`, `isjson_fn.mux`, `moon_fn.mux`, and `wrapcolumns_fn.mux` now use direct semantic checks instead of SHA1 snapshots, but the broader corpus is still overwhelmingly hash-based.
 
 ## High — Coverage Gaps
 
