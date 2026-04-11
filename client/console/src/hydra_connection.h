@@ -39,7 +39,8 @@ public:
                     HANDLE iocp,
                     bool use_tls = true,
                     int term_width = 80,
-                    int term_height = 24);
+                    int term_height = 24,
+                    const std::string& resume_session_id = {});
     ~HydraConnection() override;
 
     HydraConnection(const HydraConnection&) = delete;

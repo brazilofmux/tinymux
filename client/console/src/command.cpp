@@ -97,7 +97,8 @@ static void cmd_connect(App& app, const std::vector<std::string>& args) {
             name, world->host, world->port,
             world->hydra_user, world->hydra_pass,
             world->hydra_game, app.iocp, world->use_ssl,
-            app.terminal.get_cols(), app.terminal.get_rows());
+            app.terminal.get_cols(), app.terminal.get_rows(),
+            world->hydra_session);
         app.terminal.print_system("Connecting via Hydra to " + name + " (" +
                                   world->host + ":" + world->port + ")...");
         IConnection* raw = hconn.get();
@@ -111,6 +112,20 @@ static void cmd_connect(App& app, const std::vector<std::string>& args) {
             }
             app.connections.erase(name);
             return;
+        }
+        // Persist the session_id so the next launch can try to resume
+        // without re-entering the password. This is written alongside
+        // the existing plaintext password in worlds.txt; the file is
+        // already chmod 600 on Unix and guarded by the same trust
+        // boundary as the password itself.
+        //
+        const std::string& sid =
+            static_cast<HydraConnection*>(raw)->session_id();
+        if (!sid.empty() && sid != world->hydra_session) {
+            World updated = *world;
+            updated.hydra_session = sid;
+            app.worlddb.add(updated);
+            app.worlddb.save("worlds.txt");
         }
         if (!app.fg) {
             app.fg = raw;

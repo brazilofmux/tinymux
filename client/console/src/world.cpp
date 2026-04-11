@@ -75,6 +75,9 @@ bool WorldDB::load(const std::string& path) {
             std::string token;
             while (ss >> token) {
                 if (token == "notls") w.use_ssl = false;
+                else if (token.compare(0, 8, "session=") == 0) {
+                    w.hydra_session = token.substr(8);
+                }
             }
             if (!w.name.empty() && !w.host.empty() && !w.port.empty()
                 && !w.hydra_user.empty() && !w.hydra_pass.empty()) {
@@ -93,7 +96,10 @@ bool WorldDB::save(const std::string& path) const {
         if (w.use_hydra) {
             f << "hydra " << w.name << " " << w.host << " " << w.port
               << " " << w.hydra_user << " " << w.hydra_pass
-              << " " << w.hydra_game << "\n";
+              << " " << w.hydra_game;
+            if (!w.use_ssl) f << " notls";
+            if (!w.hydra_session.empty()) f << " session=" << w.hydra_session;
+            f << "\n";
         } else {
             f << "world " << w.name << " " << w.host << " " << w.port;
             if (w.use_ssl) f << " ssl";

@@ -69,7 +69,20 @@
 ### ~~Scrollback Fetch on Reconnect~~
 
 - **Fixed:** Console and Android now call GetScrollBack (200 lines) after successful reconnect. (46ba394)
-- **Remaining:** Session persistence (saving session_id across client restart) is not yet implemented for Console/Android.
+- **Console session persistence:** FIXED. The Console client now
+  persists `hydra_session` to `worlds.txt` as an optional
+  `session=<id>` token on `hydra` lines. `HydraConnection::connect()`
+  tries `GetSession(saved_id)` before the normal
+  `Authenticate(username, password)` path — if the server still has
+  the session alive and the username matches, the client resumes
+  without re-entering the password. On any probe failure the token
+  is discarded and the full auth path runs. The new session_id is
+  written back to `worlds.txt` after each successful connect.
+  Win32GUI shares the same `hydra_connection.cpp` and compiles
+  unchanged through the defaulted constructor parameter — wiring
+  it through the GUI is a small follow-up.
+- **Android session persistence:** still pending — needs a matching
+  change in an Android-capable environment.
 
 ### ~~Create-Account Flow Not Exposed~~
 

@@ -19,6 +19,7 @@ struct World {
     std::string hydra_user;     // Hydra account username
     std::string hydra_pass;     // Hydra account password
     std::string hydra_game;     // game name to /connect on Hydra
+    std::string hydra_session;  // last-known session_id for resume-on-restart
 };
 
 class WorldDB {

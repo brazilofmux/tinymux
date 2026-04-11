@@ -76,9 +76,11 @@ HydraConnection::HydraConnection(const std::string& world_name,
                                  HANDLE iocp,
                                  bool use_tls,
                                  int term_width,
-                                 int term_height)
+                                 int term_height,
+                                 const std::string& resume_session_id)
     : worldName_(world_name), host_(host), port_(port),
       username_(username), password_(password), gameName_(game_name),
+      sessionId_(resume_session_id),
       iocp_(iocp), useTls_(use_tls),
       termWidth_(term_width), termHeight_(term_height) {
     lastRecvTime_ = std::chrono::steady_clock::now();
@@ -116,7 +118,35 @@ bool HydraConnection::connect() {
         }
         grpcState->stub = hydra::HydraService::NewStub(grpcState->channel);
 
-        {
+        // Session persistence: if the World gave us a saved session_id,
+        // probe it via GetSession before falling back to Authenticate.
+        // A successful probe means the server still has our session
+        // alive (username, game links, GMCP subscriptions) and we can
+        // skip password auth entirely. On any failure — expired,
+        // unknown, or transport error — we fall through to the normal
+        // Authenticate(username, password) path.
+        //
+        bool resumed = false;
+        if (!sessionId_.empty()) {
+            ClientContext probeCtx;
+            probeCtx.AddMetadata("authorization", sessionId_);
+            hydra::SessionRequest req;
+            req.set_session_id(sessionId_);
+            hydra::SessionInfo info;
+            Status status = grpcState->stub->GetSession(&probeCtx, req, &info);
+            if (status.ok() && !info.session_id().empty()
+                && info.username() == username_) {
+                resumed = true;
+                pushOutput("[Hydra] Resumed session "
+                    + sessionId_.substr(0, 8) + "...");
+            } else {
+                // Probe failed — discard stale token and fall through.
+                //
+                sessionId_.clear();
+            }
+        }
+
+        if (!resumed) {
             ClientContext authCtx;
             hydra::AuthRequest req;
             req.set_username(username_);
