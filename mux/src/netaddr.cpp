@@ -64,7 +64,13 @@ static bool DecodeN(const int nType, size_t len, const UTF8 *p, in_addr_t *pu32)
         { 32, 4294967295UL, 11, 10, 8 }
     };
 
-    *pu32  = (*pu32 << decode_IPv4_table[nType].nShift) & 0xFFFFFFFFUL;
+    // Promote to 64-bit before shifting: for nType == 3 (single n32 element)
+    // nShift is 32, and shifting a 32-bit value by its own width is undefined
+    // behavior in C++. Shifting a uint64_t by 32 is well-defined.
+    //
+    *pu32 = static_cast<in_addr_t>(
+        (static_cast<uint64_t>(*pu32) << decode_IPv4_table[nType].nShift)
+        & 0xFFFFFFFFUL);
     if (len == 0)
     {
         return false;

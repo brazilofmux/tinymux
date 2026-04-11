@@ -159,12 +159,15 @@ Updated: 2026-03-27
 - **Issue:** `d->aOption` is a fixed 64-byte buffer. Modern clients frequently send TTYPE strings or GMCP JSON payloads exceeding this limit, leading to silent truncation and broken protocol features.
 - **Impact:** Broken GMCP and TTYPE support for feature-rich clients.
 
-## High — Network Address Parsing (New, 2026-04-10)
+## ~~High — Network Address Parsing~~ (2026-04-10)
 
-### Undefined Behavior in IPv4 decoding
-- **File:** `mux/src/netaddr.cpp:69`
-- **Issue:** `DecodeN` shifts `*pu32` (a 32-bit `in_addr_t`) by `decode_IPv4_table[nType].nShift` bits. For `nType=3` (single-element IPv4 address like `12345678`), `nShift` is 32. Shifting a 32-bit value by 32 bits is undefined behavior in C++.
-- **Impact:** Unpredictable IPv4 parsing results for single-number address formats.
+### ~~Undefined Behavior in IPv4 decoding~~ FIXED
+- **File:** `mux/src/netaddr.cpp:67`
+- `DecodeN` now promotes `*pu32` to `uint64_t` before shifting by
+  `decode_IPv4_table[nType].nShift`. For `nType=3` (single-element IPv4
+  like `12345678`), `nShift` is 32 and shifting a 32-bit value by its
+  own width was undefined behavior. Shifting a `uint64_t` by 32 is
+  well-defined; the result is masked back to 32 bits.
 
 ### Broken overflow check in decimal IPv4 parsing
 - **File:** `mux/src/netaddr.cpp:189`
