@@ -26,6 +26,24 @@
   },
   {
     @log smoke=TC001: xor basic operations. Failed (xor(1%,0)=[xor(1,0)] xor(1%,1)=[xor(1,1)] xor(0%,0)=[xor(0,0)]).;
+  }
+-
+#
+# Test Case #2 - Truthy, falsy, and coercion cases.
+#
+&tr.tc002 test_xor_fn=
+  @if cand(
+        eq(xor(2,0),1),
+        eq(xor(-1,5),0),
+        eq(xor(foo,1),1),
+        eq(xor(),0)
+      )=
+  {
+    @log smoke=TC002: xor truthy and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: xor truthy and coercion cases. Failed (xor(2%,0)=[xor(2,0)] xor(-1%,5)=[xor(-1,5)] xor(foo%,1)=[xor(foo,1)] xor()=[xor()]).;
     @trig me/tr.done
   }
 -

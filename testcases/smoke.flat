@@ -1190,7 +1190,9 @@
 >256
 "@log smoke=Beginning and() test cases."
 >257
-"@if cand(eq(and(1,1), 1),eq(and(1,0), 0),eq(and(0,0), 0))={@log smoke=TC001: and basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: and basic operations. Failed (and(1%,1)=[and(1,1)] and(1%,0)=[and(1,0)] and(0%,0)=[and(0,0)]).;@trig me/tr.done}"
+"@if cand(eq(and(1,1), 1),eq(and(1,0), 0),eq(and(0,0), 0))={@log smoke=TC001: and basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: and basic operations. Failed (and(1%,1)=[and(1,1)] and(1%,0)=[and(1,0)] and(0%,0)=[and(0,0)]).;}"
+>258
+"@if cand(eq(and(2,3),1),eq(and(-1,5),1),eq(and(foo,1),0),eq(and(),1))={@log smoke=TC002: and truthy and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: and truthy and coercion cases. Failed (and(2%,3)=[and(2,3)] and(-1%,5)=[and(-1,5)] and(foo%,1)=[and(foo,1)] and()=[and()]).;@trig me/tr.done}"
 >260
 "@log smoke=End and() test cases.;@notify smoke"
 <
@@ -6324,7 +6326,9 @@
 >256
 "@log smoke=Beginning not() test cases."
 >257
-"@if cand(eq(not(0), 1),eq(not(1), 0),eq(not(5), 0))={@log smoke=TC001: not basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: not basic operations. Failed (not(0)=[not(0)] not(1)=[not(1)] not(5)=[not(5)]).;@trig me/tr.done}"
+"@if cand(eq(not(0), 1),eq(not(1), 0),eq(not(5), 0))={@log smoke=TC001: not basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: not basic operations. Failed (not(0)=[not(0)] not(1)=[not(1)] not(5)=[not(5)]).;}"
+>258
+"think setq(0,not(-1));think setq(1,not(foo));think setq(2,not(foo bar));think setq(3,not(0.5));@if cand(eq(%q0,0),eq(%q1,0),eq(%q2,0),eq(%q3,0))={@log smoke=TC002: not truthy and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: not truthy and coercion cases. Failed (q0=%q0 q1=%q1 q2=%q2 q3=%q3 not(-1)=[not(-1)] not(foo)=[not(foo)] not(foo%bbar)=[not(foo bar)] not(0.5)=[not(0.5)]).;@trig me/tr.done}"
 >260
 "@log smoke=End not() test cases.;@notify smoke"
 <
@@ -6407,7 +6411,9 @@
 >256
 "@log smoke=Beginning or() test cases."
 >257
-"@if cand(eq(or(1,0), 1),eq(or(0,0), 0),eq(or(1,1), 1))={@log smoke=TC001: or basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: or basic operations. Failed (or(1%,0)=[or(1,0)] or(0%,0)=[or(0,0)] or(1%,1)=[or(1,1)]).;@trig me/tr.done}"
+"@if cand(eq(or(1,0), 1),eq(or(0,0), 0),eq(or(1,1), 1))={@log smoke=TC001: or basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: or basic operations. Failed (or(1%,0)=[or(1,0)] or(0%,0)=[or(0,0)] or(1%,1)=[or(1,1)]).;}"
+>258
+"@if cand(eq(or(2,0),1),eq(or(0,-5),1),eq(or(foo,0),0),eq(or(),0))={@log smoke=TC002: or truthy and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: or truthy and coercion cases. Failed (or(2%,0)=[or(2,0)] or(0%,-5)=[or(0,-5)] or(foo%,0)=[or(foo,0)] or()=[or()]).;@trig me/tr.done}"
 >260
 "@log smoke=End or() test cases.;@notify smoke"
 <
@@ -10891,7 +10897,9 @@
 >256
 "@log smoke=Beginning xor() test cases."
 >257
-"@if cand(eq(xor(1,0), 1),eq(xor(1,1), 0),eq(xor(0,0), 0))={@log smoke=TC001: xor basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: xor basic operations. Failed (xor(1%,0)=[xor(1,0)] xor(1%,1)=[xor(1,1)] xor(0%,0)=[xor(0,0)]).;@trig me/tr.done}"
+"@if cand(eq(xor(1,0), 1),eq(xor(1,1), 0),eq(xor(0,0), 0))={@log smoke=TC001: xor basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: xor basic operations. Failed (xor(1%,0)=[xor(1,0)] xor(1%,1)=[xor(1,1)] xor(0%,0)=[xor(0,0)]).;}"
+>258
+"@if cand(eq(xor(2,0),1),eq(xor(-1,5),0),eq(xor(foo,1),1),eq(xor(),0))={@log smoke=TC002: xor truthy and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: xor truthy and coercion cases. Failed (xor(2%,0)=[xor(2,0)] xor(-1%,5)=[xor(-1,5)] xor(foo%,1)=[xor(foo,1)] xor()=[xor()]).;@trig me/tr.done}"
 >260
 "@log smoke=End xor() test cases.;@notify smoke"
 <

@@ -26,6 +26,24 @@
   },
   {
     @log smoke=TC001: and basic operations. Failed (and(1%,1)=[and(1,1)] and(1%,0)=[and(1,0)] and(0%,0)=[and(0,0)]).;
+  }
+-
+#
+# Test Case #2 - Truthy, falsy, and coercion cases.
+#
+&tr.tc002 test_and_fn=
+  @if cand(
+        eq(and(2,3),1),
+        eq(and(-1,5),1),
+        eq(and(foo,1),0),
+        eq(and(),1)
+      )=
+  {
+    @log smoke=TC002: and truthy and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: and truthy and coercion cases. Failed (and(2%,3)=[and(2,3)] and(-1%,5)=[and(-1,5)] and(foo%,1)=[and(foo,1)] and()=[and()]).;
     @trig me/tr.done
   }
 -
