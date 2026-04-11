@@ -190,9 +190,16 @@ Updated: 2026-03-27
 
 ## High — WebSocket Protocol Handling (New, 2026-04-10)
 
-### Truncating `static_cast<size_t>` on snprintf return
+### ~~Truncating `static_cast<size_t>` on snprintf return~~ FIXED
 - **File:** `mux/src/websocket.cpp:270-277`
-- **Issue:** `int n = snprintf(response, sizeof(response), ... );` then `queue_write_LEN(d, ..., static_cast<size_t>(n));`. No check that `n >= 0` or `n < sizeof(response)`. A negative `snprintf` return (encoding error) is cast to a huge `size_t`, leading to a massive out-of-bounds read from the stack `response[256]` buffer. A truncated return (`n == 256`) is accepted silently with unterminated output.
+- The 101 Switching Protocols send site now validates `snprintf`
+  returned `n >= 0 && n < sizeof(response)` before casting to
+  `size_t`. On any anomaly (encoding error or truncation) the
+  function sends a `500 Internal Server Error` rejection and
+  returns, matching the existing handshake-failure pattern. This
+  can't happen in practice given the fixed format and 28-character
+  accept key, but the previous code would have read past the stack
+  buffer on a negative `snprintf` return.
 
 ### 64-bit WebSocket frame length silently truncates large payloads
 - **File:** `mux/src/websocket.cpp:342-351`

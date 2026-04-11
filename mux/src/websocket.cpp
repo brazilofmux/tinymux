@@ -273,6 +273,23 @@ bool ws_process_handshake(DESC *d, const char *data, size_t len)
         "Connection: Upgrade\r\n"
         "Sec-WebSocket-Accept: %s\r\n\r\n",
         acceptKey);
+    if (n < 0 || static_cast<size_t>(n) >= sizeof(response))
+    {
+        // Formatting failed or would have been truncated. Given the
+        // fixed format and the 28-character acceptKey this should be
+        // impossible, but fail closed rather than sending a malformed
+        // or unterminated 101 response — or casting a negative
+        // snprintf return to a huge size_t and reading past the
+        // stack buffer.
+        //
+        const char *reject =
+            "HTTP/1.1 500 Internal Server Error\r\n"
+            "Content-Length: 0\r\n"
+            "Connection: close\r\n\r\n";
+        queue_write_LEN(d, reinterpret_cast<const UTF8 *>(reject),
+                        strlen(reject));
+        return true;
+    }
     queue_write_LEN(d, reinterpret_cast<const UTF8 *>(response),
                     static_cast<size_t>(n));
 
