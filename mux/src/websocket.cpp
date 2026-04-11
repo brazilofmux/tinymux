@@ -436,6 +436,22 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                 uint8_t lenByte = b1 & 0x7F;
                 ws->frame_buf.clear();
 
+                // RFC 6455 §5.5: control frames (opcodes 0x8-0xF)
+                // MUST have FIN=1 and payload length ≤ 125. Enforce
+                // before entering any extended-length state so an
+                // adversarial control frame cannot pollute the
+                // continuation buffer or trigger echo amplification
+                // (a fragmented PING or 2 MiB CLOSE was previously
+                // accepted and echoed back verbatim via
+                // ws_queue_frame).
+                //
+                const bool isControl = (ws->frame_opcode & 0x08) != 0;
+                if (isControl && (!ws->frame_fin || lenByte >= 126))
+                {
+                    ws_send_close(d, WS_CLOSE_PROTOCOL_ERR);
+                    return;
+                }
+
                 if (lenByte < 126)
                 {
                     ws->frame_expected = lenByte;

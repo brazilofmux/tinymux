@@ -209,10 +209,14 @@ Updated: 2026-03-27
   bytes 2-5 were hard-coded to zero, silently dropping the top 32
   bits of any payload exceeding 4 GiB on 64-bit builds.
 
-### Control frames not validated against RFC 6455 §5.5
-- **File:** `mux/src/websocket.cpp:521-595`
-- **Issue:** Per RFC 6455 §5.5, control frames (PING/PONG/CLOSE) must have `FIN=1` and payload length ≤ 125. `ws_process_input` never enforces either. A fragmented control frame (`FIN=0`) is silently accepted into the continuation-fragment buffer and then mis-dispatched; a 2-MiB CLOSE payload is echoed back verbatim via `ws_queue_frame`, amplifying the frame server-side.
-- **Impact:** Protocol violation, potential DoS amplification, and broken fragmentation state after an adversarial control frame.
+### ~~Control frames not validated against RFC 6455 §5.5~~ FIXED
+- **File:** `mux/src/websocket.cpp:432-456`
+- `ws_process_input` now rejects control frames (opcodes 0x8-0xF)
+  with `FIN=0` or `lenByte >= 126` in `WS_PARSE_HEADER1`, before
+  entering any extended-length or payload state. A fragmented PING
+  or an oversized CLOSE used to pass through unchecked; a 2 MiB
+  CLOSE payload was echoed back verbatim via `ws_queue_frame`,
+  amplifying the attacker's bandwidth on the server side.
 
 ### Fragment assembly buffer is unbounded
 - **File:** `mux/src/websocket.cpp:530-553, 557`
