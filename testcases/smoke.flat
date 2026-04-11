@@ -2227,7 +2227,7 @@
 >257
 "@if cand(strmatch(type(setr(1,clone(CloneSource))), THING),strmatch(name(%q1), CloneSource),strmatch(get(%q1/TESTATTR), hello))={@log smoke=TC001: clone basic thing. Succeeded.},{@log smoke=TC001: clone basic thing. Failed (type=[type(%q1)] name=[name(%q1)] attr=[get(%q1/TESTATTR)]).};@destroy/override %q1"
 >258
-"@if strmatch(setr(0,sha1([type(setr(1,clone(CloneSource,NewName)))][name(%q1)][get(%q1/TESTATTR)])),453AEC404795AD7CD3E75EE7AF8E90EEBACFD30E)={@log smoke=TC002: clone with new name. Succeeded.},{@log smoke=TC002: clone with new name. Failed (%q0).};@destroy/override %q1"
+"@if cand(strmatch(type(setr(1,clone(CloneSource,NewName))), THING),strmatch(name(%q1), NewName),strmatch(get(%q1/TESTATTR), hello))={@log smoke=TC002: clone with new name. Succeeded.},{@log smoke=TC002: clone with new name. Failed (type=[type(%q1)] name=[name(%q1)] attr=[get(%q1/TESTATTR)]).};@destroy/override %q1"
 >259
 "@if strmatch(clone(DefinitelyDoesNotExist12345), #-1*)={@log smoke=TC003: clone non-existent. Succeeded.;@trig me/tr.done},{@log smoke=TC003: clone non-existent. Failed (clone=[clone(DefinitelyDoesNotExist12345)]).;@trig me/tr.done}"
 >260

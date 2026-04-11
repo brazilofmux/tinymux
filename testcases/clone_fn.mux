@@ -39,19 +39,16 @@
 # clone(obj, arg2) behavior depends on implementation; verify consistency.
 #
 &tr.tc002 test_clone_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [type(setr(1,clone(CloneSource,NewName)))]
-            [name(%q1)]
-            [get(%q1/TESTATTR)]
-          )),
-        453AEC404795AD7CD3E75EE7AF8E90EEBACFD30E
+  @if cand(
+        strmatch(type(setr(1,clone(CloneSource,NewName))), THING),
+        strmatch(name(%q1), NewName),
+        strmatch(get(%q1/TESTATTR), hello)
       )=
   {
     @log smoke=TC002: clone with new name. Succeeded.
   },
   {
-    @log smoke=TC002: clone with new name. Failed (%q0).
+    @log smoke=TC002: clone with new name. Failed (type=[type(%q1)] name=[name(%q1)] attr=[get(%q1/TESTATTR)]).
   };
   @destroy/override %q1
 -
