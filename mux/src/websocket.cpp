@@ -549,14 +549,12 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                     }
                 }
 
-                // Dispatch by opcode.
+                // Dispatch by opcode. The CONTINUATION case is
+                // handled directly — it appends to frag_buf and
+                // dispatches on FIN, and save_command does not
+                // distinguish text from binary — so there is no
+                // need to substitute frag_opcode here.
                 //
-                uint8_t op = ws->frame_opcode;
-                if (op == WS_OPCODE_CONTINUATION)
-                {
-                    op = ws->frag_opcode;
-                }
-
                 // Bound assembled fragmented messages at
                 // WS_MAX_PAYLOAD. Each individual frame is already
                 // capped there, but without this check a client

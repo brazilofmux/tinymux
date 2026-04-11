@@ -229,9 +229,13 @@ Updated: 2026-03-27
   non-FIN fragments and grow `frag_buf` without bound — a memory-
   exhaustion DoS from a single connection.
 
-### Dead `op` local after continuation lookup
-- **File:** `mux/src/websocket.cpp:515-521`
-- **Issue:** `uint8_t op = ws->frame_opcode; if (op == WS_OPCODE_CONTINUATION) op = ws->frag_opcode;` computes `op`, then the switch immediately below switches on `ws->frame_opcode` (not `op`). The local is dead. Harmless but suggests the continuation dispatch was intended to reuse the fragment opcode — as written, continuation text/binary frames land in the `WS_OPCODE_CONTINUATION` case and behave correctly only by accident.
+### ~~Dead `op` local after continuation lookup~~ FIXED
+- **File:** `mux/src/websocket.cpp` dispatch site
+- The dead `op = ws->frame_opcode; if (op == CONTINUATION) op = frag_opcode;`
+  block was removed. The switch already dispatches on `ws->frame_opcode`
+  directly; the CONTINUATION case appends to `frag_buf` and flushes
+  on FIN, and `save_command` does not distinguish text from binary,
+  so no frag-opcode substitution is needed. Pure dead-code cleanup.
 
 ## High — Platform Abstraction Issues (New, 2026-04-10)
 
