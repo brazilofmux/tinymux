@@ -27,6 +27,25 @@
   },
   {
     @log smoke=TC001: ceil basic operations. Failed (ceil(4.2)=[ceil(4.2)] ceil(-4.2)=[ceil(-4.2)] ceil(0)=[ceil(0)] ceil(4.0)=[ceil(4.0)]).;
+  }
+-
+#
+# Test Case #2 - Integral, small decimal, and coercion cases.
+#
+&tr.tc002 test_ceil_fn=
+  @if cand(
+        eq(ceil(4),4),
+        eq(ceil(-0.1),0),
+        eq(ceil(0.1),1),
+        eq(ceil(),0),
+        eq(ceil(foo),0)
+      )=
+  {
+    @log smoke=TC002: ceil integral and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: ceil integral and coercion cases. Failed (ceil(4)=[ceil(4)] ceil(-0.1)=[ceil(-0.1)] ceil(0.1)=[ceil(0.1)] ceil()=[ceil()] ceil(foo)=[ceil(foo)]).;
     @trig me/tr.done
   }
 -

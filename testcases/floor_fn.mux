@@ -26,6 +26,25 @@
   },
   {
     @log smoke=TC001: floor basic operations. Failed (floor(4.7)=[floor(4.7)] floor(-4.7)=[floor(-4.7)] floor(0)=[floor(0)]).;
+  }
+-
+#
+# Test Case #2 - Integral, small decimal, and coercion cases.
+#
+&tr.tc002 test_floor_fn=
+  @if cand(
+        eq(floor(4),4),
+        eq(floor(-0.1),-1),
+        eq(floor(0.1),0),
+        eq(floor(),0),
+        eq(floor(foo),0)
+      )=
+  {
+    @log smoke=TC002: floor integral and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: floor integral and coercion cases. Failed (floor(4)=[floor(4)] floor(-0.1)=[floor(-0.1)] floor(0.1)=[floor(0.1)] floor()=[floor()] floor(foo)=[floor(foo)]).;
     @trig me/tr.done
   }
 -

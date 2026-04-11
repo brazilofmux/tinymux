@@ -1902,7 +1902,9 @@
 >256
 "@log smoke=Beginning ceil() test cases."
 >257
-"@if cand(eq(ceil(4.2), 5),eq(ceil(-4.2), -4),eq(ceil(0), 0),eq(ceil(4.0), 4))={@log smoke=TC001: ceil basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: ceil basic operations. Failed (ceil(4.2)=[ceil(4.2)] ceil(-4.2)=[ceil(-4.2)] ceil(0)=[ceil(0)] ceil(4.0)=[ceil(4.0)]).;@trig me/tr.done}"
+"@if cand(eq(ceil(4.2), 5),eq(ceil(-4.2), -4),eq(ceil(0), 0),eq(ceil(4.0), 4))={@log smoke=TC001: ceil basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: ceil basic operations. Failed (ceil(4.2)=[ceil(4.2)] ceil(-4.2)=[ceil(-4.2)] ceil(0)=[ceil(0)] ceil(4.0)=[ceil(4.0)]).;}"
+>258
+"@if cand(eq(ceil(4),4),eq(ceil(-0.1),0),eq(ceil(0.1),1),eq(ceil(),0),eq(ceil(foo),0))={@log smoke=TC002: ceil integral and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: ceil integral and coercion cases. Failed (ceil(4)=[ceil(4)] ceil(-0.1)=[ceil(-0.1)] ceil(0.1)=[ceil(0.1)] ceil()=[ceil()] ceil(foo)=[ceil(foo)]).;@trig me/tr.done}"
 >260
 "@log smoke=End ceil() test cases.;@notify smoke"
 <
@@ -2746,7 +2748,9 @@
 >256
 "@log smoke=Beginning dec() test cases."
 >257
-"@if cand(eq(dec(5), 4),eq(dec(0), -1),eq(dec(-3), -4))={@log smoke=TC001: dec basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: dec basic operations. Failed (dec(5)=[dec(5)] dec(0)=[dec(0)] dec(-3)=[dec(-3)]).;@trig me/tr.done}"
+"@if cand(eq(dec(5), 4),eq(dec(0), -1),eq(dec(-3), -4))={@log smoke=TC001: dec basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: dec basic operations. Failed (dec(5)=[dec(5)] dec(0)=[dec(0)] dec(-3)=[dec(-3)]).;}"
+>258
+"@if cand(eq(dec(1.5),0),eq(dec(-0.5),-1),eq(dec(),-1),eq(dec(foo),-1))={@log smoke=TC002: dec decimal and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: dec decimal and coercion cases. Failed (dec(1.5)=[dec(1.5)] dec(-0.5)=[dec(-0.5)] dec()=[dec()] dec(foo)=[dec(foo)]).;@trig me/tr.done}"
 >260
 "@log smoke=End dec() test cases.;@notify smoke"
 <
@@ -3468,7 +3472,9 @@
 >256
 "@log smoke=Beginning floor() test cases."
 >257
-"@if cand(eq(floor(4.7), 4),eq(floor(-4.7), -5),eq(floor(0), 0))={@log smoke=TC001: floor basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: floor basic operations. Failed (floor(4.7)=[floor(4.7)] floor(-4.7)=[floor(-4.7)] floor(0)=[floor(0)]).;@trig me/tr.done}"
+"@if cand(eq(floor(4.7), 4),eq(floor(-4.7), -5),eq(floor(0), 0))={@log smoke=TC001: floor basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: floor basic operations. Failed (floor(4.7)=[floor(4.7)] floor(-4.7)=[floor(-4.7)] floor(0)=[floor(0)]).;}"
+>258
+"@if cand(eq(floor(4),4),eq(floor(-0.1),-1),eq(floor(0.1),0),eq(floor(),0),eq(floor(foo),0))={@log smoke=TC002: floor integral and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: floor integral and coercion cases. Failed (floor(4)=[floor(4)] floor(-0.1)=[floor(-0.1)] floor(0.1)=[floor(0.1)] floor()=[floor()] floor(foo)=[floor(foo)]).;@trig me/tr.done}"
 >260
 "@log smoke=End floor() test cases.;@notify smoke"
 <
@@ -3911,7 +3917,9 @@
 >256
 "@log smoke=Beginning inc() test cases."
 >257
-"@if cand(eq(inc(5), 6),eq(inc(0), 1),eq(inc(-3), -2))={@log smoke=TC001: inc basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: inc basic operations. Failed (inc(5)=[inc(5)] inc(0)=[inc(0)] inc(-3)=[inc(-3)]).;@trig me/tr.done}"
+"@if cand(eq(inc(5), 6),eq(inc(0), 1),eq(inc(-3), -2))={@log smoke=TC001: inc basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: inc basic operations. Failed (inc(5)=[inc(5)] inc(0)=[inc(0)] inc(-3)=[inc(-3)]).;}"
+>258
+"@if cand(eq(inc(1.5),2),eq(inc(-0.5),1),eq(inc(),1),eq(inc(foo),1))={@log smoke=TC002: inc decimal and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: inc decimal and coercion cases. Failed (inc(1.5)=[inc(1.5)] inc(-0.5)=[inc(-0.5)] inc()=[inc()] inc(foo)=[inc(foo)]).;@trig me/tr.done}"
 >260
 "@log smoke=End inc() test cases.;@notify smoke"
 <
@@ -10832,7 +10840,7 @@
 >256
 "@log smoke=Beginning wrapcolumns() test cases."
 >257
-"think setq(0,wrapcolumns(alpha bravo charlie delta echo foxtrot,10,2));@if cand(eq(words(%q0,%r),3),strmatch(extract(%q0,1,1,%r),alpha delta echo),strmatch(extract(%q0,2,1,%r),bravo foxtrot ),strmatch(extract(%q0,3,1,%r),charlie ))={@log smoke=TC001: wrapcolumns basic. Succeeded.;@trig me/tr.done},{@log smoke=TC001: wrapcolumns basic. Failed (rows=[words(%q0,%r)] r1=[extract(%q0,1,1,%r)] r2=[extract(%q0,2,1,%r)] r3=[extract(%q0,3,1,%r)]).;@trig me/tr.done}"
+"think setq(0,wrapcolumns(alpha bravo charlie delta echo foxtrot,10,2));@if cand(eq(words(%q0,%r),3),strmatch(first(extract(%q0,1,1,%r)),alpha),eq(pos(delta,extract(%q0,1,1,%r)),11),eq(pos(echo,extract(%q0,1,1,%r)),17),strmatch(first(extract(%q0,2,1,%r)),bravo),eq(pos(foxtrot,extract(%q0,2,1,%r)),11),strmatch(first(extract(%q0,3,1,%r)),charlie),eq(words(extract(%q0,3,1,%r)),1))={@log smoke=TC001: wrapcolumns basic. Succeeded.;@trig me/tr.done},{@log smoke=TC001: wrapcolumns basic. Failed (rows=[words(%q0,%r)] r1=[extract(%q0,1,1,%r)] pdelta=[pos(delta,extract(%q0,1,1,%r))] pecho=[pos(echo,extract(%q0,1,1,%r))] r2=[extract(%q0,2,1,%r)] pfoxtrot=[pos(foxtrot,extract(%q0,2,1,%r))] r3=[extract(%q0,3,1,%r)] r3words=[words(extract(%q0,3,1,%r))]).;@trig me/tr.done}"
 >260
 "@log smoke=End wrapcolumns() test cases.;@notify smoke"
 <

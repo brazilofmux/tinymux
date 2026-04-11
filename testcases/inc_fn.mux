@@ -26,6 +26,24 @@
   },
   {
     @log smoke=TC001: inc basic operations. Failed (inc(5)=[inc(5)] inc(0)=[inc(0)] inc(-3)=[inc(-3)]).;
+  }
+-
+#
+# Test Case #2 - Decimal and coercion cases.
+#
+&tr.tc002 test_inc_fn=
+  @if cand(
+        eq(inc(1.5),2),
+        eq(inc(-0.5),1),
+        eq(inc(),1),
+        eq(inc(foo),1)
+      )=
+  {
+    @log smoke=TC002: inc decimal and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: inc decimal and coercion cases. Failed (inc(1.5)=[inc(1.5)] inc(-0.5)=[inc(-0.5)] inc()=[inc()] inc(foo)=[inc(foo)]).;
     @trig me/tr.done
   }
 -
