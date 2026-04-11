@@ -41,36 +41,29 @@
 # Test Case #1 - chanusers(pgtest) with no pagination still works.
 #
 &tr.tc001 test_paginate_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [isdbref(first(chanusers(pgtest)))]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
+  @if isdbref(
+        first(chanusers(pgtest))
       )=
   {
     @log smoke=TC001: chanusers no pagination. Succeeded.
   },
   {
-    @log smoke=TC001: chanusers no pagination. Failed (%q0).
+    @log smoke=TC001: chanusers no pagination. Failed ([first(chanusers(pgtest))]).
   }
 -
 #
 # Test Case #2 - chanusers(pgtest,,, 0, 1) returns exactly 1 item.
 #
 &tr.tc002 test_paginate_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [words(chanusers(pgtest,%b,, 0, 1))]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
+  @if eq(
+        words(chanusers(pgtest,%b,, 0, 1)),
+        1
       )=
   {
     @log smoke=TC002: chanusers limit=1. Succeeded.
   },
   {
-    @log smoke=TC002: chanusers limit=1. Failed (%q0).
+    @log smoke=TC002: chanusers limit=1. Failed ([words(chanusers(pgtest,%b,, 0, 1))]).
   }
 -
 #
@@ -78,54 +71,45 @@
 #                returns empty.
 #
 &tr.tc003 test_paginate_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [eq(words(chanusers(pgtest,%b,, 99, 0)),0)]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
+  @if eq(
+        words(chanusers(pgtest,%b,, 99, 0)),
+        0
       )=
   {
     @log smoke=TC003: chanusers offset beyond end. Succeeded.
   },
   {
-    @log smoke=TC003: chanusers offset beyond end. Failed (%q0).
+    @log smoke=TC003: chanusers offset beyond end. Failed ([words(chanusers(pgtest,%b,, 99, 0))]).
   }
 -
 #
 # Test Case #4 - maillist(#1) with no pagination still works.
 #
 &tr.tc004 test_paginate_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [gte(words(maillist(#1)),1)]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
+  @if gte(
+        words(maillist(#1)),
+        1
       )=
   {
     @log smoke=TC004: maillist no pagination. Succeeded.
   },
   {
-    @log smoke=TC004: maillist no pagination. Failed (%q0).
+    @log smoke=TC004: maillist no pagination. Failed ([words(maillist(#1))]).
   }
 -
 #
 # Test Case #5 - maillist(#1, 0, 2) returns exactly 2 items.
 #
 &tr.tc005 test_paginate_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [eq(words(maillist(#1, 0, 2)),2)]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
+  @if eq(
+        words(maillist(#1, 0, 2)),
+        2
       )=
   {
     @log smoke=TC005: maillist limit=2. Succeeded.
   },
   {
-    @log smoke=TC005: maillist limit=2. Failed (%q0).
+    @log smoke=TC005: maillist limit=2. Failed ([words(maillist(#1, 0, 2))]).
   }
 -
 #
@@ -133,18 +117,15 @@
 #                The first number should be 2 (offset=1 skips msg 1).
 #
 &tr.tc006 test_paginate_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [eq(first(maillist(#1, 1, 2)),2)]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
+  @if eq(
+        first(maillist(#1, 1, 2)),
+        2
       )=
   {
     @log smoke=TC006: maillist offset=1. Succeeded.
   },
   {
-    @log smoke=TC006: maillist offset=1. Failed (%q0).
+    @log smoke=TC006: maillist offset=1. Failed ([first(maillist(#1, 1, 2))]).
   }
 -
 #
