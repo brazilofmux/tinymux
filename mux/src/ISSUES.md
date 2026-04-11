@@ -169,10 +169,15 @@ Updated: 2026-03-27
   own width was undefined behavior. Shifting a `uint64_t` by 32 is
   well-defined; the result is masked back to 32 bits.
 
-### Broken overflow check in decimal IPv4 parsing
+### ~~Broken overflow check in decimal IPv4 parsing~~ FIXED
 - **File:** `mux/src/netaddr.cpp:189`
-- **Issue:** The overflow check `if (ul < ul2)` after `ul = (ul * 10) & 0xFFFFFFFFUL` is insufficient. A 32-bit multiply-by-10 can wrap around multiple times or wrap to a value larger than the original (e.g., `500,000,000 * 10` wraps to `705,032,704`, which is `> 500,000,000`).
-- **Impact:** Acceptance of invalid, overflowing IPv4 address components.
+- Decimal accumulation now runs in `uint64_t` and is bounded against
+  `0xFFFFFFFFUL` after each digit. The previous 32-bit
+  `ul = (ul * 10) & 0xFFFFFFFFUL` followed by `if (ul < ul2)` could
+  coincidentally produce a post-wrap value larger than the pre-wrap
+  value (e.g., `500,000,000 * 10` wraps to `705,032,704`, which is
+  greater than 500,000,000), silently accepting decimal components
+  above 2^32 - 1.
 
 ## ~~Critical — Completely Broken Hex IPv4 Parsing~~ FIXED (2026-04-10)
 

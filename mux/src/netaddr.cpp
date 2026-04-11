@@ -172,39 +172,33 @@ static bool DecodeN(const int nType, size_t len, const UTF8 *p, in_addr_t *pu32)
     {
         // Decimal Path
         //
+        // Accumulate in 64-bit to make overflow detection strictly monotonic.
+        // The previous 32-bit (ul * 10) wrap could coincidentally produce a
+        // value larger than the previous ul (e.g., 500000000 * 10 wraps to
+        // 705032704), defeating the `if (ul < ul2)` check and silently
+        // accepting invalid decimal components above 2^32 - 1.
+        //
         if (len > decode_IPv4_table[nType].maxDecLen)
         {
             return false;
         }
+        uint64_t acc = 0;
         while (len)
         {
             const auto ch = *p;
-            ul2 = ul;
-            ul  = (ul * 10) & 0xFFFFFFFFUL;
-            if (ul < ul2)
-            {
-                // Overflow
-                //
-                return false;
-            }
-            ul2 = ul;
-            if ('0' <= ch && ch <= '9')
-            {
-                ul += ch - '0';
-            }
-            else
+            if (ch < '0' || ch > '9')
             {
                 return false;
             }
-            if (ul < ul2)
+            acc = acc * 10 + static_cast<uint64_t>(ch - '0');
+            if (acc > 0xFFFFFFFFUL)
             {
-                // Overflow
-                //
                 return false;
             }
             p++;
             len--;
         }
+        ul = static_cast<in_addr_t>(acc);
     }
     if (ul > decode_IPv4_table[nType].maxValue)
     {
