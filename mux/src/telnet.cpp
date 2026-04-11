@@ -618,7 +618,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
     auto pend = d->raw_input_buf + (LBUF_SIZE - 1);
 
     auto q    = d->aOption + d->nOption;
-    const auto qend = d->aOption + SBUF_SIZE - 1;
+    const auto qend = d->aOption + TELNET_OPTION_SIZE - 1;
 
     auto n = nBytes;
     while (n--)

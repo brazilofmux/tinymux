@@ -17,6 +17,14 @@
 
 struct ws_state;
 
+// Telnet subnegotiation accumulator size. Must be large enough to
+// hold the longest subnegotiation payload modern clients send —
+// GMCP JSON, MSDP, TTYPE chains, and CHARSET lists can each exceed
+// the old 64-byte SBUF_SIZE cap. 4096 matches PennMUSH and covers
+// all protocols we currently parse without being wasteful.
+//
+constexpr size_t TELNET_OPTION_SIZE = 4096;
+
 // Full descriptor_data struct definition.
 // Engine files use only the forward declaration from externs.h.
 //
@@ -46,7 +54,7 @@ struct descriptor_data
   UTF8 *raw_input_buf;
   UTF8 *raw_input_at;
   size_t        nOption;
-  unsigned char aOption[SBUF_SIZE];
+  unsigned char aOption[TELNET_OPTION_SIZE];
   int raw_input_state;
   int raw_codepoint_state;
   size_t raw_codepoint_length;

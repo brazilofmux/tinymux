@@ -157,10 +157,16 @@ Updated: 2026-03-27
 
 ## High — Protocol Safety & Limits (New, 2026-04-10)
 
-### `SBUF_SIZE` (64) is too small for modern telnet sequences (TTYPE, GMCP)
-- **File:** `mux/include/alloc.h`, `mux/src/telnet.cpp`
-- **Issue:** `d->aOption` is a fixed 64-byte buffer. Modern clients frequently send TTYPE strings or GMCP JSON payloads exceeding this limit, leading to silent truncation and broken protocol features.
-- **Impact:** Broken GMCP and TTYPE support for feature-rich clients.
+### ~~`SBUF_SIZE` (64) is too small for modern telnet sequences (TTYPE, GMCP)~~ FIXED
+- **File:** `mux/include/interface.h`, `mux/src/telnet.cpp`
+- The telnet subnegotiation accumulator is now sized by a dedicated
+  `TELNET_OPTION_SIZE` constant (4096) in `interface.h`, decoupled
+  from `SBUF_SIZE`. Previously `d->aOption[SBUF_SIZE]` (64 bytes)
+  silently truncated any GMCP JSON, MSDP, long TTYPE chain, or
+  CHARSET list exceeding that limit, breaking protocol features
+  for feature-rich clients. Bumping the pool-allocator `SBUF_SIZE`
+  directly would have affected dozens of unrelated sites; only the
+  descriptor accumulator needed to grow.
 
 ## ~~High — Network Address Parsing~~ (2026-04-10)
 
