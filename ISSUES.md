@@ -18,9 +18,6 @@ Last refreshed: 2026-04-10.
 | [GANL Networking](mux/ganl/ISSUES.md) | 8 | OpenSSL lifetime races; `recv()==0` handling; setsockopt return codes; telnet subnegotiation timeout gap; STARTTLS CA trust. |
 | [SQLSlave Module](mux/modules/sqlslave/ISSUES.md) | 8 | Non-atomic refcount; unchecked `m_pServer`; ownership contract on `Connect()`; MySQL error propagation. |
 | [Hydra Clients (aggregate)](client/ISSUES.md) | 1 | GMCP handled as raw JSON only (structured hooks deferred). |
-| [Console Client](client/console/ISSUES.md) | 1 | `/def` accepts invalid regex triggers/substitutions silently, so broken macros look defined but never fire. |
-| [iOS Client](client/ios/ISSUES.md) | 1 | Hydra reconnect never fetches missed scroll-back, so disconnected output is lost locally. |
-| [DB Backend Tests](tests/db/ISSUES.md) | 1 | Interface harness only uses `:memory:` and never validates reopen/durability semantics on disk. |
 | [Web Client](client/web/ISSUES.md) | 2 | localStorage credentials; no browser-level regression harness. |
 | [Win32 GUI Client](client/win32gui/ISSUES.md) | 1 | No Linux-side build validation for the VS target. |
 | [Test Infrastructure](testcases/ISSUES.md) | 6 | SHA1→semantic migration still in progress; edge-case coverage gaps; single-test-per-function norm; no auto-discovery; no parallel/isolation; no orphaned-object cleanup. |
@@ -39,6 +36,9 @@ history and FIXED entries.
 - [Debian Packaging](debian/ISSUES.md)
 - [WorldBuilder](tools/worldbuilder/ISSUES.md)
 - [Parser Research Tools](parser/ISSUES.md)
+- [Console Client](client/console/ISSUES.md)
+- [iOS Client](client/ios/ISSUES.md)
+- [DB Backend Tests](tests/db/ISSUES.md)
 
 ## Build System (top-level)
 

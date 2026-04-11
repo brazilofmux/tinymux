@@ -31,7 +31,7 @@ struct Macro {
     std::regex  trigger_re;
     bool        compiled = false;
 
-    void compile();
+    bool compile(std::string* error = nullptr);
 };
 
 class MacroDB {

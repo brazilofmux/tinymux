@@ -13,7 +13,9 @@
 #include <cassert>
 #include <chrono>
 #include <memory>
+#include <string>
 #include <vector>
+#include <unistd.h>
 
 static int g_tests_passed = 0;
 static int g_tests_failed = 0;
@@ -44,6 +46,34 @@ static std::unique_ptr<IStorageBackend> CreateBackend()
 {
     auto backend = std::make_unique<CSQLiteBackend>();
     backend->Open(":memory:");
+    return backend;
+}
+
+static std::string CreateTempDbPath()
+{
+    char tmpl[] = "/tmp/tinymux-test-backend-XXXXXX.sqlite";
+    int fd = mkstemps(tmpl, 7);
+    if (fd < 0)
+    {
+        perror("mkstemps");
+        std::abort();
+    }
+    close(fd);
+    std::remove(tmpl);
+    return std::string(tmpl);
+}
+
+static void RemoveDbArtifacts(const std::string& path)
+{
+    std::remove(path.c_str());
+    std::remove((path + "-wal").c_str());
+    std::remove((path + "-shm").c_str());
+}
+
+static std::unique_ptr<IStorageBackend> CreateFileBackend(const std::string& path)
+{
+    auto backend = std::make_unique<CSQLiteBackend>();
+    backend->Open(path.c_str());
     return backend;
 }
 
@@ -213,6 +243,58 @@ static void test_backend_sync_tick()
     PASS();
 }
 
+static void test_backend_persist_reopen()
+{
+    const std::string path = CreateTempDbPath();
+    RemoveDbArtifacts(path);
+
+    {
+        auto be = CreateFileBackend(path);
+        ASSERT_TRUE(be->IsOpen());
+        ASSERT_TRUE(be->Put(42, 7, (const UTF8 *)"persisted", 10, 1, 0));
+        ASSERT_TRUE(be->Put(42, 8, (const UTF8 *)"second", 7, 1, 0));
+        be->Sync();
+        be->Close();
+    }
+
+    {
+        auto be = CreateFileBackend(path);
+        ASSERT_TRUE(be->IsOpen());
+
+        UTF8 buf[64];
+        size_t rlen = 0;
+        ASSERT_TRUE(be->Get(42, 7, buf, sizeof(buf), &rlen, nullptr, nullptr));
+        ASSERT_EQ(rlen, (size_t)10);
+        ASSERT_TRUE(0 == memcmp(buf, "persisted", 10));
+
+        int count = 0;
+        be->GetAll(42, [&](unsigned int, const UTF8 *, size_t, int, int) { count++; });
+        ASSERT_EQ(count, 2);
+
+        ASSERT_TRUE(be->Del(42, 7));
+        be->Sync();
+        be->Close();
+    }
+
+    {
+        auto be = CreateFileBackend(path);
+        ASSERT_TRUE(be->IsOpen());
+
+        UTF8 buf[64];
+        size_t rlen = 123;
+        ASSERT_TRUE(!be->Get(42, 7, buf, sizeof(buf), &rlen, nullptr, nullptr));
+        ASSERT_EQ(rlen, (size_t)0);
+        ASSERT_TRUE(be->Get(42, 8, buf, sizeof(buf), &rlen, nullptr, nullptr));
+        ASSERT_EQ(rlen, (size_t)7);
+        ASSERT_TRUE(0 == memcmp(buf, "second", 7));
+
+        be->Close();
+    }
+
+    RemoveDbArtifacts(path);
+    PASS();
+}
+
 static void test_backend_many_objects()
 {
     auto be = CreateBackend();
@@ -342,6 +424,7 @@ int main()
     test_backend_del_all();
     test_backend_get_all();
     test_backend_sync_tick();
+    test_backend_persist_reopen();
     test_backend_many_objects();
     test_backend_large_value();
 

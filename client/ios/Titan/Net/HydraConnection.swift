@@ -178,7 +178,8 @@ class HydraConnection: ObservableObject {
 
     // MARK: - GameSession Stream
 
-    private func runGameSession(stub: Hydra_HydraServiceAsyncClient) async {
+    private func runGameSession(stub: Hydra_HydraServiceAsyncClient,
+                                fetchScrollbackOnOpen: Bool = false) async {
         let options = CallOptions(customMetadata: ["authorization": sessionId])
 
         let (inputStream, continuation) = AsyncStream<Hydra_ClientMessage>.makeStream()
@@ -208,6 +209,9 @@ class HydraConnection: ObservableObject {
 
         do {
             let stream = stub.gameSession(inputStream, callOptions: options)
+            if fetchScrollbackOnOpen {
+                await fetchScrollBack(stub: stub)
+            }
             for try await msg in stream {
                 dispatchServerMessage(msg)
             }
@@ -233,7 +237,7 @@ class HydraConnection: ObservableObject {
             connected = true
             outputBuffer.removeAll(keepingCapacity: true)
             markActivity()
-            await runGameSession(stub: stub)
+            await runGameSession(stub: stub, fetchScrollbackOnOpen: true)
 
             if intentionalDisconnect { return }
             connected = false
@@ -375,6 +379,26 @@ class HydraConnection: ObservableObject {
     }
 
     // MARK: - Helpers
+
+    private func fetchScrollBack(stub: Hydra_HydraServiceAsyncClient) async {
+        do {
+            var req = Hydra_ScrollBackRequest()
+            req.sessionID = sessionId
+            req.maxLines = 200
+            req.colorFormat = .ansiTruecolor
+            let options = CallOptions(customMetadata: ["authorization": sessionId])
+            let resp = try await stub.getScrollBack(req, callOptions: options)
+            if !resp.lines.isEmpty {
+                pushLine("-- scroll-back (\(resp.lines.count) lines) --")
+                for line in resp.lines {
+                    pushLine(line.text)
+                }
+                pushLine("-- end scroll-back --")
+            }
+        } catch {
+            // Non-fatal — reconnect should proceed even if scroll-back fetch fails.
+        }
+    }
 
     private func pushLine(_ text: String) {
         markActivity()

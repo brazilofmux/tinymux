@@ -35,9 +35,6 @@ Updated: 2026-04-10
 
 ## Bugs (New, 2026-04-10)
 
-### `/def` accepts invalid regex triggers and substitutions without surfacing an error
+### ~~`/def` accepts invalid regex triggers and substitutions without surfacing an error~~ FIXED
 
-- **Files:** `client/console/src/macro.cpp:21-27`, `client/console/src/macro.cpp:157-161`, `client/console/src/command.cpp:433-438`
-- **Issue:** `Macro::compile()` swallows `std::regex` compilation failures for regex-backed triggers and leaves `compiled = false`, but `cmd_def()` still prints `Defined: ...` unconditionally. The same silent catch exists for per-line substitution regexes in `check_triggers()`.
-- **Impact:** A malformed `/def -t` or `/def -s` rule looks successfully installed to the user, then either never fires or silently skips substitution at runtime. This is the same "silent invalid user config" failure mode that was already fixed for spawn regexes.
-- **Fix:** Return a diagnostic from `Macro::compile()` / `parse_def()` when regex compilation fails, and reject the definition instead of storing an inert macro.
+- `Macro::compile()` now reports `std::regex_error` details back to the caller instead of silently leaving a dead trigger behind. `parse_def()` validates both trigger regexes and substitution regexes up front, so `cmd_def()` now rejects malformed `/def -t...` and `/def -s...` rules with an explicit error instead of storing a broken macro and printing `Defined: ...`. Reverified with `g++ -std=c++17 -fsyntax-only -I client/console/src -I mux/include -I ragel client/console/src/macro.cpp`.

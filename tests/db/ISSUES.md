@@ -16,9 +16,6 @@ Updated: 2026-04-10
 
 ## Opportunities (New, 2026-04-10)
 
-### Interface tests never exercise reopen-on-disk persistence semantics
+### ~~Interface tests never exercise reopen-on-disk persistence semantics~~ FIXED
 
-- **File:** `tests/db/test_backend.cpp:43-47`, `tests/db/test_backend.cpp:197-213`
-- **Issue:** Every interface test constructs `CSQLiteBackend` against `":memory:"`, so the suite never closes and reopens a real database file. `test_backend_sync_tick()` even comments that sync "should persist it", but there is no reopen step that can detect persistence, WAL, or migration regressions.
-- **Impact:** Bugs in on-disk open/close, checkpointing, schema migration, or data durability can land without tripping the abstract-backend harness.
-- **Fix:** Add a temp-file-backed factory plus at least one reopen test that writes data, closes, reopens, and revalidates `Get()`, `GetAll()`, and deletion semantics.
+- `test_backend.cpp` now has a temp-file-backed factory path plus `test_backend_persist_reopen()`, which writes data to an on-disk SQLite database, closes it, reopens it, revalidates `Get()` and `GetAll()`, deletes one attribute, then reopens again to confirm the deletion persisted. Reverified with `make -C tests/db test`.

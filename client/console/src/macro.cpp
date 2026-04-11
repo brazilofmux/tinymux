@@ -6,11 +6,11 @@
 #include <algorithm>
 #include <sstream>
 
-void Macro::compile() {
+bool Macro::compile(std::string* error) {
     if (trigger.empty()) {
         compiled = false;
         regex_fallback = false;
-        return;
+        return true;
     }
 
     // Check if this pattern needs std::regex fallback.
@@ -22,13 +22,18 @@ void Macro::compile() {
             trigger_re = std::regex(trigger,
                                     std::regex::ECMAScript | std::regex::icase);
             compiled = true;
-        } catch (...) {
+        } catch (const std::regex_error& ex) {
             compiled = false;
+            if (error) {
+                *error = std::string("Invalid trigger regex: ") + ex.what();
+            }
+            return false;
         }
     } else {
         // Literal or glob: handled by trigger_set engine.
         compiled = true;
     }
+    return true;
 }
 
 MacroDB::MacroDB() {
@@ -62,7 +67,7 @@ void MacroDB::rebuild_trigger_set() {
 }
 
 void MacroDB::define(Macro m) {
-    m.compile();
+    m.compile(nullptr);
     // Replace existing macro with same name.
     for (auto& existing : macros_) {
         if (existing.name == m.name) {
@@ -296,6 +301,19 @@ bool parse_def(const std::string& args, Macro& out, std::string& error) {
     if (out.trigger.empty() && out.body.empty()) {
         error = "Need at least a trigger (-t) or body";
         return false;
+    }
+    if (!out.trigger.empty() && !out.compile(&error)) {
+        return false;
+    }
+    if (!out.substitute_find.empty()) {
+        try {
+            std::regex sub_re(out.substitute_find,
+                              std::regex::ECMAScript | std::regex::icase);
+            (void)sub_re;
+        } catch (const std::regex_error& ex) {
+            error = std::string("Invalid substitution regex: ") + ex.what();
+            return false;
+        }
     }
     return true;
 }
