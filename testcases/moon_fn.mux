@@ -13,19 +13,15 @@
 # Jan 6, 2000 18:14 UTC = 947182440
 #
 &tr.tc001 test_moon_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [moon(947182440)]
-            [moon(947182440,1)]
-          )
-        ),
-        1D28DF3D171F54DFE190806B0C3BCA504205E566
+  @if cand(
+        strmatch(moon(947182440),The Moon is New),
+        eq(moon(947182440,1),0)
       )=
   {
     @log smoke=TC001: moon at new epoch. Succeeded.
   },
   {
-    @log smoke=TC001: moon at new epoch. Failed (%q0).
+    @log smoke=TC001: moon at new epoch. Failed (desc=[moon(947182440)] pct=[moon(947182440,1)]).
   }
 -
 #
@@ -33,19 +29,16 @@
 # 947182440 + 29.53059*86400/2 = 947182440 + 1276524 = 948458964
 #
 &tr.tc002 test_moon_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [moon(948458964)]
-          )
-        ),
-        CC73BB6DBB55CCD83AEFF2A5EFC5EAEA1C0C142B
+  @if cand(
+        strmatch(moon(948458964),The Moon is Full),
+        eq(moon(948458964,1),-100)
       )=
   {
     @log smoke=TC002: moon at full. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: moon at full. Failed (%q0).;
+    @log smoke=TC002: moon at full. Failed (desc=[moon(948458964)] pct=[moon(948458964,1)]).;
     @trig me/tr.done
   }
 -
