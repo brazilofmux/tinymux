@@ -15,104 +15,84 @@
 # Test Case #1 - Basic conversions.
 #
 &tr.tc001 test_printf_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [printf(Hello %s!, World)]
-            [printf(%d items, 42)]
-            [printf(%05d, 7)]
-            [printf(%%)]
-            [printf(%c, Hello)]
-          )
-        ),
-        791367F7A06491C8C5E70821A60214855DE1E9A7
+  @if cand(
+        strmatch(printf(Hello %s!, World),Hello World!),
+        strmatch(printf(%d items, 42),42 items),
+        strmatch(printf(%05d, 7),00007),
+        strmatch(printf(%%),%),
+        strmatch(printf(%c, Hello),H)
       )=
   {
     @log smoke=TC001: printf basic conversions. Succeeded.
   },
   {
-    @log smoke=TC001: printf basic conversions. Failed (%q0).
+    @log smoke=TC001: printf basic conversions. Failed (s=[printf(Hello %s!, World)] d=[printf(%d items, 42)] pad=[printf(%05d, 7)] pct=[printf(%%)] c=[printf(%c, Hello)]).
   }
 -
 #
 # Test Case #2 - Alignment.
 #
 &tr.tc002 test_printf_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [printf(|%-10s|, Left)]
-            [printf(|%10s|, Right)]
-            [printf(|%^10s|, Mid)]
-          )
-        ),
-        C0DD1D494614AAFD0F339CBE437A9D0BABC9A4B7
+  @if cand(
+        strmatch(printf(|%-10s|, Left),|Left      |),
+        strmatch(printf(|%10s|, Right),|     Right|),
+        strmatch(printf(|%^10s|, Mid),|   Mid    |)
       )=
   {
     @log smoke=TC002: printf alignment. Succeeded.
   },
   {
-    @log smoke=TC002: printf alignment. Failed (%q0).
+    @log smoke=TC002: printf alignment. Failed (left=[printf(|%-10s|, Left)] right=[printf(|%10s|, Right)] center=[printf(|%^10s|, Mid)]).
   }
 -
 #
 # Test Case #3 - Precision and width.
 #
 &tr.tc003 test_printf_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [printf(|%.3s|, Hello)]
-            [printf(|%-10.5s|, Hello World)]
-            [printf(|%10d|, 42)]
-            [printf(|%-10d|, 42)]
-          )
-        ),
-        0C54D493347FBEAE62A3D22B328CDA0B578477CB
+  @if cand(
+        strmatch(printf(|%.3s|, Hello),|Hel|),
+        strmatch(printf(|%-10.5s|, Hello World),|Hello     |),
+        strmatch(printf(|%10d|, 42),|        42|),
+        strmatch(printf(|%-10d|, 42),|42        |)
       )=
   {
     @log smoke=TC003: printf precision and width. Succeeded.
   },
   {
-    @log smoke=TC003: printf precision and width. Failed (%q0).
+    @log smoke=TC003: printf precision and width. Failed (prec=[printf(|%.3s|, Hello)] str=[printf(|%-10.5s|, Hello World)] rnum=[printf(|%10d|, 42)] lnum=[printf(|%-10d|, 42)]).
   }
 -
 #
 # Test Case #4 - Float formatting.
 #
 &tr.tc004 test_printf_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [printf(%f, 3.14)]
-            [printf(%.2f, 3.14159)]
-            [printf(%.0f, 42.7)]
-          )
-        ),
-        55626DA3D67EBF7B5EEFED978B1B4DBC1BEA6C19
+  @if cand(
+        strmatch(printf(%f, 3.14),3.140000),
+        strmatch(printf(%.2f, 3.14159),3.14),
+        strmatch(printf(%.0f, 42.7),43)
       )=
   {
     @log smoke=TC004: printf float. Succeeded.
   },
   {
-    @log smoke=TC004: printf float. Failed (%q0).
+    @log smoke=TC004: printf float. Failed (f=[printf(%f, 3.14)] f2=[printf(%.2f, 3.14159)] f0=[printf(%.0f, 42.7)]).
   }
 -
 #
 # Test Case #5 - Mixed arguments.
 #
 &tr.tc005 test_printf_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [printf(no args)]
-            [printf(%s %s %s, one, two, three)]
-            [printf(%s and %d, hello, 99)]
-          )
-        ),
-        1BE2763C0148096FC36E2DB9AC4E527C8C635402
+  @if cand(
+        strmatch(printf(no args),no args),
+        strmatch(printf(%s %s %s, one, two, three),one two three),
+        strmatch(printf(%s and %d, hello, 99),hello and 99)
       )=
   {
     @log smoke=TC005: printf mixed args. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: printf mixed args. Failed (%q0).;
+    @log smoke=TC005: printf mixed args. Failed (plain=[printf(no args)] list=[printf(%s %s %s, one, two, three)] mixed=[printf(%s and %d, hello, 99)]).;
     @trig me/tr.done
   }
 -
