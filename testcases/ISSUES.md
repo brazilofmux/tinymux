@@ -45,6 +45,7 @@ The project now has two complementary testing tiers:
 
 - **Example:** `abs_fn.mux` has 1 test case (lines 11-34). Most function test files follow this pattern.
 - **Impact:** Happy-path coverage only; boundary and error cases untested.
+- Recent progress: `abs_fn.mux` and `sign_fn.mux` now cover decimals plus empty/malformed-input coercion, which reduces this gap for the basic numeric smoke tier, but the broader corpus still mostly has one-case files.
 
 ## Medium — Infrastructure
 

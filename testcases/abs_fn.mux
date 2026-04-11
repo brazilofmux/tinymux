@@ -26,6 +26,38 @@
   },
   {
     @log smoke=TC001: abs basic operations. Failed (abs(5)=[abs(5)] abs(-5)=[abs(-5)] abs(0)=[abs(0)]).;
+  }
+-
+#
+# Test Case #2 - Decimal inputs preserve magnitude and sign removal.
+#
+&tr.tc002 test_abs_fn=
+  @if cand(
+        eq(abs(-5.25), 5.25),
+        eq(abs(5.25), 5.25),
+        eq(abs(-0.125), 0.125)
+      )=
+  {
+    @log smoke=TC002: abs decimal inputs. Succeeded.
+  },
+  {
+    @log smoke=TC002: abs decimal inputs. Failed (abs(-5.25)=[abs(-5.25)] abs(5.25)=[abs(5.25)] abs(-0.125)=[abs(-0.125)]).
+  }
+-
+#
+# Test Case #3 - Non-numeric prefixes and empty input coerce to zero.
+#
+&tr.tc003 test_abs_fn=
+  @if cand(
+        eq(abs(foo), 0),
+        eq(abs(), 0),
+        eq(abs(+), 0)
+      )=
+  {
+    @log smoke=TC003: abs malformed inputs. Succeeded.
+  },
+  {
+    @log smoke=TC003: abs malformed inputs. Failed (abs(foo)=[abs(foo)] abs()=[abs()] abs(+)=[abs(+)]).;
     @trig me/tr.done
   }
 -

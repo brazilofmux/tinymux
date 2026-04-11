@@ -26,6 +26,39 @@
   },
   {
     @log smoke=TC001: sign basic operations. Failed (sign(-5)=[sign(-5)] sign(0)=[sign(0)] sign(5)=[sign(5)]).;
+  }
+-
+#
+# Test Case #2 - Decimal and signed-zero-adjacent inputs keep expected sign.
+#
+&tr.tc002 test_sign_fn=
+  @if cand(
+        eq(sign(-0.125), -1),
+        eq(sign(0.125), 1),
+        eq(sign(-0), 0)
+      )=
+  {
+    @log smoke=TC002: sign decimal inputs. Succeeded.
+  },
+  {
+    @log smoke=TC002: sign decimal inputs. Failed (sign(-0.125)=[sign(-0.125)] sign(0.125)=[sign(0.125)] sign(-0)=[sign(-0)]).
+  }
+-
+#
+# Test Case #3 - Empty and malformed inputs coerce to zero sign.
+#
+&tr.tc003 test_sign_fn=
+  @if cand(
+        eq(sign(foo), 0),
+        eq(sign(), 0),
+        eq(sign(+), 0)
+      )=
+  {
+    @log smoke=TC003: sign malformed inputs. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: sign malformed inputs. Failed (sign(foo)=[sign(foo)] sign()=[sign()] sign(+)=[sign(+)]).;
     @trig me/tr.done
   }
 -
