@@ -171,3 +171,63 @@ Updated: 2026-03-27
 - **Issue:** The overflow check `if (ul < ul2)` after `ul = (ul * 10) & 0xFFFFFFFFUL` is insufficient. A 32-bit multiply-by-10 can wrap around multiple times or wrap to a value larger than the original (e.g., `500,000,000 * 10` wraps to `705,032,704`, which is `> 500,000,000`).
 - **Impact:** Acceptance of invalid, overflowing IPv4 address components.
 
+## Critical — Completely Broken Hex IPv4 Parsing (New, 2026-04-10)
+
+### `DecodeN` subtracts wrong offset from hex digits
+- **File:** `mux/src/netaddr.cpp:109-116`
+- **Issue:** The hexadecimal branch decodes `A-F`/`a-f` as:
+  ```cpp
+  else if ('A' <= ch && ch <= 'F') { ul |= ch - 'A'; }       // wrong
+  else if ('a' <= ch && ch <= 'f') { ul |= ch - 'a'; }       // wrong
+  ```
+  These should be `ch - 'A' + 10` and `ch - 'a' + 10`. As written, `A`..`F` map to nibbles 0..5, making every hex IPv4 literal parse incorrectly. For example `0xFF` decodes as `0x05`, not `0xFF`.
+- **Impact:** Any `@site`/`@admit`/`@nosite` rule using a hexadecimal IPv4 literal (documented as supported at the top of `netaddr.cpp`) silently matches the wrong address range. This is a correctness *and* access-control bug — a blocklist rule like `@site 0xC0.0xA8.0x0.0x0/16 REGISTRATION` is effectively no-op because the parser produces 0.0.0.0.
+
+## High — WebSocket Protocol Handling (New, 2026-04-10)
+
+### Truncating `static_cast<size_t>` on snprintf return
+- **File:** `mux/src/websocket.cpp:270-277`
+- **Issue:** `int n = snprintf(response, sizeof(response), ... );` then `queue_write_LEN(d, ..., static_cast<size_t>(n));`. No check that `n >= 0` or `n < sizeof(response)`. A negative `snprintf` return (encoding error) is cast to a huge `size_t`, leading to a massive out-of-bounds read from the stack `response[256]` buffer. A truncated return (`n == 256`) is accepted silently with unterminated output.
+
+### 64-bit WebSocket frame length silently truncates large payloads
+- **File:** `mux/src/websocket.cpp:342-351`
+- **Issue:** For `len > 65535`, `ws_queue_frame` writes the payload length as an 8-byte big-endian field, but bytes 2-5 are hard-coded to zero:
+  ```cpp
+  hdr[2] = 0; hdr[3] = 0; hdr[4] = 0; hdr[5] = 0;
+  hdr[6] = static_cast<uint8_t>((len >> 24) & 0xFF);
+  ```
+  On a 64-bit build, any server-side frame exceeding 4 GiB would silently drop the top 32 bits. This is not exploitable today (LBUF-bounded content), but it is incorrect, and it will bite the moment MUX sends a very large WebSocket payload.
+
+### Control frames not validated against RFC 6455 §5.5
+- **File:** `mux/src/websocket.cpp:521-595`
+- **Issue:** Per RFC 6455 §5.5, control frames (PING/PONG/CLOSE) must have `FIN=1` and payload length ≤ 125. `ws_process_input` never enforces either. A fragmented control frame (`FIN=0`) is silently accepted into the continuation-fragment buffer and then mis-dispatched; a 2-MiB CLOSE payload is echoed back verbatim via `ws_queue_frame`, amplifying the frame server-side.
+- **Impact:** Protocol violation, potential DoS amplification, and broken fragmentation state after an adversarial control frame.
+
+### Fragment assembly buffer is unbounded
+- **File:** `mux/src/websocket.cpp:530-553, 557`
+- **Issue:** `ws->frag_buf.append(ws->frame_buf)` has no cap. Each individual frame is capped at `WS_MAX_PAYLOAD` (when the client sends a 64-bit length), but a client can send thousands of small non-FIN fragments and push `frag_buf` arbitrarily large.
+- **Impact:** Memory-exhaustion DoS via repeated fragments from a single connected WebSocket client.
+
+### Dead `op` local after continuation lookup
+- **File:** `mux/src/websocket.cpp:515-521`
+- **Issue:** `uint8_t op = ws->frame_opcode; if (op == WS_OPCODE_CONTINUATION) op = ws->frag_opcode;` computes `op`, then the switch immediately below switches on `ws->frame_opcode` (not `op`). The local is dead. Harmless but suggests the continuation dispatch was intended to reuse the fragment opcode — as written, continuation text/binary frames land in the `WS_OPCODE_CONTINUATION` case and behave correctly only by accident.
+
+## High — Platform Abstraction Issues (New, 2026-04-10)
+
+### `PanicRestart` reads undefined `argv[]` slots
+- **File:** `mux/src/platform.cpp:332-340`
+- **Issue:** `execl(execPath, argv[0], argv[1], ..., argv[6], nullptr)` unconditionally dereferences `argv[0..6]` regardless of `argc`. If the caller passes fewer than 7 saved args, the function reads uninitialized/OOB memory during a crash-recovery path — exactly when the process is already in a bad state. Argv beyond index 6 is silently dropped.
+- **Fix:** Use `execv(execPath, argv)` with a proper NULL-terminated vector, or switch on `argc`.
+
+### `MaximizeFileDescriptors` ignores `setrlimit` failure
+- **File:** `mux/src/platform.cpp:296-304`
+- **Issue:** `setrlimit(RLIMIT_NOFILE, &rlp)` return value is discarded. On failure, `*pLimit` still reports the desired `rlim_max`, which the rest of the server then treats as authoritative. `select()`/`poll()`/`epoll` sizing can outrun the actual descriptor ceiling.
+
+### `BootHelperProcess` close-all loop is O(rlim) on modern systems
+- **File:** `mux/src/platform.cpp:212-215`
+- **Issue:** `for (int i = 3; i < maxfds; i++) mux_close(i);` after `fork()`. On systems with `ulimit -n` raised to 1M+, the child spends noticeable wall time closing nonexistent fds before `execlp`. Prefer `closefrom(3)` (BSD/Linux 5.11+) or `FD_CLOEXEC` on known fds.
+
+### Non-atomic `CPlatform::m_cRef` / `CPlatformFactory::m_cRef`
+- **File:** `mux/src/platform.cpp:80-94, 412-427`
+- **Issue:** `AddRef`/`Release` still use bare `uint32_t m_cRef` with `m_cRef++` / `m_cRef--` — the same race pattern that was already converted to `std::atomic<uint32_t>` in comsys/mail modules. Low priority today (driver is single-threaded), but for consistency with the engine-module fix it should be atomic.
+

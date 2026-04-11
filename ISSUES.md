@@ -6,14 +6,17 @@ context; this file only summarises what is still open. When a tracker
 lists zero open items, the file is kept as a historical record of the
 audit passes that closed it.
 
-Last refreshed: 2026-04-05.
+Last refreshed: 2026-04-10.
 
 ## Trackers With Open Items
 
 | Tracker | Open | Summary |
 |---|---|---|
-| [Core Server (`mux/src/`)](mux/src/ISSUES.md) | 6 | Windows console signal-handler TODO; `Stub_PipePump` data loss; `slave.cpp` overflow; `SBUF_SIZE` limits (TTYPE/GMCP); `netaddr.cpp` UB/overflow. |
-| [Engine Module](mux/modules/engine/ISSUES.md) | 2 | `alloc_lbuf`/`free_lbuf` RAII migration ~70% complete (~90 complex sites remain); dynamic-cargs `ulambda` JIT support. |
+| [Core Server (`mux/src/`)](mux/src/ISSUES.md) | 16 | Windows console signal-handler TODO; `Stub_PipePump` data loss; `slave.cpp` overflow; `SBUF_SIZE` limits; `netaddr.cpp` UB/overflow *and* critical broken-hex IPv4 parse; websocket snprintf/RFC 6455 gaps; `platform.cpp` `PanicRestart` argv UB. |
+| [libmux (`mux/lib/`)](mux/lib/ISSUES.md) | 8 | Ragel date scanner: digit-token overflow, narrowing year cast, time lower bounds, "12:30 AM", week-date 0, sub-second narrowing, TZ sign fragility. |
+| [Engine Module](mux/modules/engine/ISSUES.md) | 15 | `alloc_lbuf` RAII migration remainder; dynamic-cargs `ulambda` JIT; JIT JAL offset overflow (critical); HIR bounds checks; attr-cache leak on invalidation; Lua refcount/Alloc bugs; SQLite error-path hygiene. |
+| [GANL Networking](mux/ganl/ISSUES.md) | 8 | OpenSSL lifetime races; `recv()==0` handling; setsockopt return codes; telnet subnegotiation timeout gap; STARTTLS CA trust. |
+| [SQLSlave Module](mux/modules/sqlslave/ISSUES.md) | 8 | Non-atomic refcount; unchecked `m_pServer`; ownership contract on `Connect()`; MySQL error propagation. |
 | [Hydra Clients (aggregate)](client/ISSUES.md) | 1 | GMCP handled as raw JSON only (structured hooks deferred). |
 | [Web Client](client/web/ISSUES.md) | 2 | localStorage credentials; no browser-level regression harness. |
 | [Win32 GUI Client](client/win32gui/ISSUES.md) | 1 | No Linux-side build validation for the VS target. |
@@ -26,7 +29,6 @@ history and FIXED entries.
 
 - [Mail Module](mux/modules/mail/ISSUES.md)
 - [Comsys Module](mux/modules/comsys/ISSUES.md)
-- [GANL Networking](mux/ganl/ISSUES.md)
 - [Hydra Proxy](mux/proxy/ISSUES.md)
 - [Android Client](client/android/ISSUES.md)
 - [TinyFugue Client](client/tf/ISSUES.md)
