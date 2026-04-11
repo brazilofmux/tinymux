@@ -4779,7 +4779,9 @@
 >256
 "@log smoke=Beginning land() test cases."
 >257
-"@if cand(eq(land(1 1 1),1),eq(land(1 0 1),0))={@log smoke=TC001: land() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: land() basic operations. Failed (land(1 1 1)=[land(1 1 1)] land(1 0 1)=[land(1 0 1)]).;@trig me/tr.done}"
+"@if cand(eq(land(1 1 1),1),eq(land(1 0 1),0))={@log smoke=TC001: land() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: land() basic operations. Failed (land(1 1 1)=[land(1 1 1)] land(1 0 1)=[land(1 0 1)]).;}"
+>258
+"think setq(0,[land()]);think setq(1,[land(1|2|-3,|)]);think setq(2,[land(1|0|3,|)]);think setq(3,[land(foo 1)]);@if cand(eq(%q0,1),eq(%q1,1),eq(%q2,0),eq(%q3,0))={@log smoke=TC002: land() delimiter and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: land() delimiter and coercion cases. Failed (q0=%q0 q1=%q1 q2=%q2 q3=%q3 land()=[land()] land(1|2|-3%,|)=[land(1|2|-3,|)] land(1|0|3%,|)=[land(1|0|3,|)] land(foo% 1)=[land(foo 1)]).;@trig me/tr.done}"
 >260
 "@log smoke=End land() test cases.;@notify smoke"
 <
@@ -5362,7 +5364,9 @@
 >256
 "@log smoke=Beginning lor() test cases."
 >257
-"@if cand(eq(lor(0 0 0),0),eq(lor(0 1 0),1))={@log smoke=TC001: lor() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: lor() basic operations. Failed (lor(0 0 0)=[lor(0 0 0)] lor(0 1 0)=[lor(0 1 0)]).;@trig me/tr.done}"
+"@if cand(eq(lor(0 0 0),0),eq(lor(0 1 0),1))={@log smoke=TC001: lor() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: lor() basic operations. Failed (lor(0 0 0)=[lor(0 0 0)] lor(0 1 0)=[lor(0 1 0)]).;}"
+>258
+"think setq(0,[lor()]);think setq(1,[lor(0|0|5,|)]);think setq(2,[lor(0|-2|0,|)]);think setq(3,[lor(foo 0)]);@if cand(eq(%q0,0),eq(%q1,1),eq(%q2,1),eq(%q3,0))={@log smoke=TC002: lor() delimiter and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: lor() delimiter and coercion cases. Failed (q0=%q0 q1=%q1 q2=%q2 q3=%q3 lor()=[lor()] lor(0|0|5%,|)=[lor(0|0|5,|)] lor(0|-2|0%,|)=[lor(0|-2|0,|)] lor(foo% 0)=[lor(foo 0)]).;@trig me/tr.done}"
 >260
 "@log smoke=End lor() test cases.;@notify smoke"
 <
