@@ -20,6 +20,37 @@
 
 #include <vector>
 
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif
+
+// Portable atomic increment/decrement for the COM-style refcounts.
+// GCC/Clang provide __sync_* builtins; MSVC does not, so dispatch
+// to _Interlocked* which have equivalent full-barrier semantics.
+// Cast is safe because uint32_t and LONG (or long) are both 32-bit
+// on every supported platform, and the interlocked intrinsics
+// operate on the bit pattern regardless of signedness.
+//
+static inline uint32_t mux_atomic_inc32(uint32_t *p)
+{
+#if defined(_MSC_VER)
+    return static_cast<uint32_t>(
+        _InterlockedIncrement(reinterpret_cast<volatile long *>(p)));
+#else
+    return __sync_add_and_fetch(p, 1);
+#endif
+}
+
+static inline uint32_t mux_atomic_dec32(uint32_t *p)
+{
+#if defined(_MSC_VER)
+    return static_cast<uint32_t>(
+        _InterlockedDecrement(reinterpret_cast<volatile long *>(p)));
+#else
+    return __sync_sub_and_fetch(p, 1);
+#endif
+}
+
 DEFINE_FACTORY(CPlatformFactory)
 
 // ---------------------------------------------------------------------------
@@ -81,12 +112,12 @@ MUX_RESULT CPlatform::QueryInterface(MUX_IID iid, void **ppv)
 
 uint32_t CPlatform::AddRef(void)
 {
-    return __sync_add_and_fetch(&m_cRef, 1);
+    return mux_atomic_inc32(&m_cRef);
 }
 
 uint32_t CPlatform::Release(void)
 {
-    const uint32_t cRef = __sync_sub_and_fetch(&m_cRef, 1);
+    const uint32_t cRef = mux_atomic_dec32(&m_cRef);
     if (0 == cRef)
     {
         delete this;
@@ -474,12 +505,12 @@ MUX_RESULT CPlatformFactory::QueryInterface(MUX_IID iid, void **ppv)
 
 uint32_t CPlatformFactory::AddRef(void)
 {
-    return __sync_add_and_fetch(&m_cRef, 1);
+    return mux_atomic_inc32(&m_cRef);
 }
 
 uint32_t CPlatformFactory::Release(void)
 {
-    const uint32_t cRef = __sync_sub_and_fetch(&m_cRef, 1);
+    const uint32_t cRef = mux_atomic_dec32(&m_cRef);
     if (0 == cRef)
     {
         delete this;
