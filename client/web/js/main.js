@@ -623,6 +623,7 @@ function refreshWorldsList() {
 function showWorldEditDialog(world) {
     const dlg = $('#world-edit-dialog');
     $('#world-edit-title').textContent = world ? 'Edit World' : 'Add World';
+    dlg.dataset.originalName = world ? world.name : '';
     $('#we-name').value = world ? world.name : '';
     $('#we-host').value = world ? world.host : '';
     $('#we-port').value = world ? world.port : '4201';
@@ -842,6 +843,8 @@ function init() {
 
     // World edit dialog
     $('#we-ok').addEventListener('click', () => {
+        const dlg = $('#world-edit-dialog');
+        const originalName = dlg.dataset.originalName || '';
         const world = {
             name: $('#we-name').value.trim(),
             host: $('#we-host').value.trim(),
@@ -853,10 +856,13 @@ function init() {
             ssl: $('#we-ssl').checked,
         };
         if (world.name && world.host) {
+            if (originalName && originalName !== world.name) {
+                Settings.removeWorld(originalName);
+            }
             Settings.addWorld(world);
             refreshWorldsList();
         }
-        $('#world-edit-dialog').close();
+        dlg.close();
     });
     $('#we-cancel').addEventListener('click', () => $('#world-edit-dialog').close());
 

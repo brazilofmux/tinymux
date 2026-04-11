@@ -1,6 +1,6 @@
 # Titan Web Client -- Open Issues
 
-Updated: 2026-03-29
+Updated: 2026-04-10
 
 ## Fixed In This Audit
 
@@ -32,14 +32,13 @@ Updated: 2026-03-29
 
 ## Open
 
-- **Saved world passwords live in browser localStorage** *(deferred)*
-  The settings store persists world passwords directly in localStorage.
-  That is convenient, but it means any script running in the origin can read
-  them. The native clients now use platform credential stores (Keychain,
-  EncryptedSharedPreferences, Windows Credential Manager, chmod 0600).
-  The web client's XSS exposure is a different threat model — a future pass
-  could encrypt with a user-derived key via Web Crypto, but the priority is
-  lower since the web client is not the primary deployment target.
+- **Saved world passwords live in browser localStorage** -- **FIXED**
+  World metadata still lives in `localStorage`, but saved world passwords are
+  now migrated out of the persisted settings blob into tab-scoped
+  `sessionStorage`. `Settings.load()` strips any legacy `password` fields from
+  stored worlds on first load, `getWorlds()` rehydrates passwords from the
+  session store for the current tab, and world deletion / rename paths remove
+  stale password entries instead of leaving them behind.
 
 - **No automated browser-level regression coverage**
   The current audit verified JavaScript syntax and inspected the runtime
@@ -49,6 +48,7 @@ Updated: 2026-03-29
 
 ## Verification
 
+- `node --check client/web/js/settings.js`
 - `node --check client/web/js/hydra_connection.js`
 - `node --check client/web/js/main.js`
 

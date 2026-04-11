@@ -18,7 +18,7 @@ Last refreshed: 2026-04-10.
 | [GANL Networking](mux/ganl/ISSUES.md) | 8 | OpenSSL lifetime races; `recv()==0` handling; setsockopt return codes; telnet subnegotiation timeout gap; STARTTLS CA trust. |
 | [SQLSlave Module](mux/modules/sqlslave/ISSUES.md) | 8 | Non-atomic refcount; unchecked `m_pServer`; ownership contract on `Connect()`; MySQL error propagation. |
 | [Hydra Clients (aggregate)](client/ISSUES.md) | 1 | GMCP handled as raw JSON only (structured hooks deferred). |
-| [Web Client](client/web/ISSUES.md) | 2 | localStorage credentials; no browser-level regression harness. |
+| [Web Client](client/web/ISSUES.md) | 1 | No browser-level regression harness for Hydra auth, GameSession, reconnect, and fallback paths. |
 | [Win32 GUI Client](client/win32gui/ISSUES.md) | 1 | No Linux-side build validation for the VS target. |
 | [Test Infrastructure](testcases/ISSUES.md) | 6 | SHA1→semantic migration still in progress; edge-case coverage gaps; single-test-per-function norm; no auto-discovery; no parallel/isolation; no orphaned-object cleanup. |
 
