@@ -26,6 +26,24 @@
   },
   {
     @log smoke=TC001: lte basic comparisons. Failed (lte(1%,2)=[lte(1,2)] lte(1%,1)=[lte(1,1)] lte(2%,1)=[lte(2,1)]).;
+  }
+-
+#
+# Test Case #2 - Decimal, negative, and coercion cases.
+#
+&tr.tc002 test_lte_fn=
+  @if cand(
+        eq(lte(1.5,2.5),1),
+        eq(lte(-2,-2),1),
+        eq(lte(foo,0),1),
+        eq(lte(0,0),1)
+      )=
+  {
+    @log smoke=TC002: lte decimal and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: lte decimal and coercion cases. Failed (lte(1.5%,2.5)=[lte(1.5,2.5)] lte(-2%,-2)=[lte(-2,-2)] lte(foo%,0)=[lte(foo,0)] lte(0%,0)=[lte(0,0)]).;
     @trig me/tr.done
   }
 -

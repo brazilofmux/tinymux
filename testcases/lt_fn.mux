@@ -26,6 +26,24 @@
   },
   {
     @log smoke=TC001: lt basic comparisons. Failed (lt(1%,2)=[lt(1,2)] lt(2%,1)=[lt(2,1)] lt(1%,1)=[lt(1,1)]).;
+  }
+-
+#
+# Test Case #2 - Decimal, negative, and coercion cases.
+#
+&tr.tc002 test_lt_fn=
+  @if cand(
+        eq(lt(1.5,2.5),1),
+        eq(lt(-2,-3),0),
+        eq(lt(foo,1),1),
+        eq(lt(),0)
+      )=
+  {
+    @log smoke=TC002: lt decimal and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: lt decimal and coercion cases. Failed (lt(1.5%,2.5)=[lt(1.5,2.5)] lt(-2%,-3)=[lt(-2,-3)] lt(foo%,1)=[lt(foo,1)] lt()=[lt()]).;
     @trig me/tr.done
   }
 -

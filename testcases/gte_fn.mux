@@ -26,6 +26,24 @@
   },
   {
     @log smoke=TC001: gte basic comparisons. Failed (gte(2%,1)=[gte(2,1)] gte(1%,1)=[gte(1,1)] gte(1%,2)=[gte(1,2)]).;
+  }
+-
+#
+# Test Case #2 - Decimal, negative, and coercion cases.
+#
+&tr.tc002 test_gte_fn=
+  @if cand(
+        eq(gte(2.5,1.5),1),
+        eq(gte(-2,-2),1),
+        eq(gte(0,foo),1),
+        eq(gte(0,0),1)
+      )=
+  {
+    @log smoke=TC002: gte decimal and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: gte decimal and coercion cases. Failed (gte(2.5%,1.5)=[gte(2.5,1.5)] gte(-2%,-2)=[gte(-2,-2)] gte(0,foo%)=[gte(0,foo)] gte(0%,0)=[gte(0,0)]).;
     @trig me/tr.done
   }
 -

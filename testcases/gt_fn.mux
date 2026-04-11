@@ -26,6 +26,24 @@
   },
   {
     @log smoke=TC001: gt basic comparisons. Failed (gt(2%,1)=[gt(2,1)] gt(1%,2)=[gt(1,2)] gt(1%,1)=[gt(1,1)]).;
+  }
+-
+#
+# Test Case #2 - Decimal, negative, and coercion cases.
+#
+&tr.tc002 test_gt_fn=
+  @if cand(
+        eq(gt(2.5,1.5),1),
+        eq(gt(-3,-2),0),
+        eq(gt(1,foo),1),
+        eq(gt(),0)
+      )=
+  {
+    @log smoke=TC002: gt decimal and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: gt decimal and coercion cases. Failed (gt(2.5%,1.5)=[gt(2.5,1.5)] gt(-3%,-2)=[gt(-3,-2)] gt(1,foo%)=[gt(1,foo)] gt()=[gt()]).;
     @trig me/tr.done
   }
 -

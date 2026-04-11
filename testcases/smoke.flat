@@ -3689,7 +3689,9 @@
 >256
 "@log smoke=Beginning gt() test cases."
 >257
-"@if cand(eq(gt(2,1), 1),eq(gt(1,2), 0),eq(gt(1,1), 0))={@log smoke=TC001: gt basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: gt basic comparisons. Failed (gt(2%,1)=[gt(2,1)] gt(1%,2)=[gt(1,2)] gt(1%,1)=[gt(1,1)]).;@trig me/tr.done}"
+"@if cand(eq(gt(2,1), 1),eq(gt(1,2), 0),eq(gt(1,1), 0))={@log smoke=TC001: gt basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: gt basic comparisons. Failed (gt(2%,1)=[gt(2,1)] gt(1%,2)=[gt(1,2)] gt(1%,1)=[gt(1,1)]).;}"
+>258
+"@if cand(eq(gt(2.5,1.5),1),eq(gt(-3,-2),0),eq(gt(1,foo),1),eq(gt(),0))={@log smoke=TC002: gt decimal and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: gt decimal and coercion cases. Failed (gt(2.5%,1.5)=[gt(2.5,1.5)] gt(-3%,-2)=[gt(-3,-2)] gt(1,foo%)=[gt(1,foo)] gt()=[gt()]).;@trig me/tr.done}"
 >260
 "@log smoke=End gt() test cases.;@notify smoke"
 <
@@ -3716,7 +3718,9 @@
 >256
 "@log smoke=Beginning gte() test cases."
 >257
-"@if cand(eq(gte(2,1), 1),eq(gte(1,1), 1),eq(gte(1,2), 0))={@log smoke=TC001: gte basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: gte basic comparisons. Failed (gte(2%,1)=[gte(2,1)] gte(1%,1)=[gte(1,1)] gte(1%,2)=[gte(1,2)]).;@trig me/tr.done}"
+"@if cand(eq(gte(2,1), 1),eq(gte(1,1), 1),eq(gte(1,2), 0))={@log smoke=TC001: gte basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: gte basic comparisons. Failed (gte(2%,1)=[gte(2,1)] gte(1%,1)=[gte(1,1)] gte(1%,2)=[gte(1,2)]).;}"
+>258
+"@if cand(eq(gte(2.5,1.5),1),eq(gte(-2,-2),1),eq(gte(0,foo),1),eq(gte(0,0),1))={@log smoke=TC002: gte decimal and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: gte decimal and coercion cases. Failed (gte(2.5%,1.5)=[gte(2.5,1.5)] gte(-2%,-2)=[gte(-2,-2)] gte(0,foo%)=[gte(0,foo)] gte(0%,0)=[gte(0,0)]).;@trig me/tr.done}"
 >260
 "@log smoke=End gte() test cases.;@notify smoke"
 <
@@ -5431,7 +5435,9 @@
 >256
 "@log smoke=Beginning lt() test cases."
 >257
-"@if cand(eq(lt(1,2), 1),eq(lt(2,1), 0),eq(lt(1,1), 0))={@log smoke=TC001: lt basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: lt basic comparisons. Failed (lt(1%,2)=[lt(1,2)] lt(2%,1)=[lt(2,1)] lt(1%,1)=[lt(1,1)]).;@trig me/tr.done}"
+"@if cand(eq(lt(1,2), 1),eq(lt(2,1), 0),eq(lt(1,1), 0))={@log smoke=TC001: lt basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: lt basic comparisons. Failed (lt(1%,2)=[lt(1,2)] lt(2%,1)=[lt(2,1)] lt(1%,1)=[lt(1,1)]).;}"
+>258
+"@if cand(eq(lt(1.5,2.5),1),eq(lt(-2,-3),0),eq(lt(foo,1),1),eq(lt(),0))={@log smoke=TC002: lt decimal and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: lt decimal and coercion cases. Failed (lt(1.5%,2.5)=[lt(1.5,2.5)] lt(-2%,-3)=[lt(-2,-3)] lt(foo%,1)=[lt(foo,1)] lt()=[lt()]).;@trig me/tr.done}"
 >260
 "@log smoke=End lt() test cases.;@notify smoke"
 <
@@ -5458,7 +5464,9 @@
 >256
 "@log smoke=Beginning lte() test cases."
 >257
-"@if cand(eq(lte(1,2), 1),eq(lte(1,1), 1),eq(lte(2,1), 0))={@log smoke=TC001: lte basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: lte basic comparisons. Failed (lte(1%,2)=[lte(1,2)] lte(1%,1)=[lte(1,1)] lte(2%,1)=[lte(2,1)]).;@trig me/tr.done}"
+"@if cand(eq(lte(1,2), 1),eq(lte(1,1), 1),eq(lte(2,1), 0))={@log smoke=TC001: lte basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: lte basic comparisons. Failed (lte(1%,2)=[lte(1,2)] lte(1%,1)=[lte(1,1)] lte(2%,1)=[lte(2,1)]).;}"
+>258
+"@if cand(eq(lte(1.5,2.5),1),eq(lte(-2,-2),1),eq(lte(foo,0),1),eq(lte(0,0),1))={@log smoke=TC002: lte decimal and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: lte decimal and coercion cases. Failed (lte(1.5%,2.5)=[lte(1.5,2.5)] lte(-2%,-2)=[lte(-2,-2)] lte(foo%,0)=[lte(foo,0)] lte(0%,0)=[lte(0,0)]).;@trig me/tr.done}"
 >260
 "@log smoke=End lte() test cases.;@notify smoke"
 <
