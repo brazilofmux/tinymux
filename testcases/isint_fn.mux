@@ -26,6 +26,24 @@
   },
   {
     @log smoke=TC001: isint basic operations. Failed (isint(5)=[isint(5)] isint(5.5)=[isint(5.5)] isint(abc)=[isint(abc)]).;
+  }
+-
+#
+# Test Case #2 - Signs, whitespace, and empty values.
+#
+&tr.tc002 test_isint_fn=
+  @if cand(
+        eq(isint(-5),1),
+        eq(isint(+5),1),
+        eq(isint( 5),1),
+        eq(isint(),0)
+      )=
+  {
+    @log smoke=TC002: isint sign and empty cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: isint sign and empty cases. Failed (isint(-5)=[isint(-5)] isint(+5)=[isint(+5)] isint(%b5)=[isint( 5)] isint()=[isint()]).;
     @trig me/tr.done
   }
 -

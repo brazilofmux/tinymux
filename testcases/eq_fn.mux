@@ -27,6 +27,24 @@
   },
   {
     @log smoke=TC001: eq basic comparisons. Failed (eq(1%,1)=[eq(1,1)] eq(1%,2)=[eq(1,2)] eq(1.0%,1)=[eq(1.0,1)] eq(a%,a)=[eq(a,a)]).;
+  }
+-
+#
+# Test Case #2 - String, whitespace, and coercion cases.
+#
+&tr.tc002 test_eq_fn=
+  @if cand(
+        eq(eq(foo,foo),1),
+        eq(eq(foo,bar),1),
+        eq(eq(  ,),1),
+        eq(eq(foo,0),1)
+      )=
+  {
+    @log smoke=TC002: eq string and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: eq string and coercion cases. Failed (eq(foo%,foo)=[eq(foo,foo)] eq(foo%,bar)=[eq(foo,bar)] eq(%b%b%,)=[eq(  ,)] eq(foo%,0)=[eq(foo,0)]).;
     @trig me/tr.done
   }
 -

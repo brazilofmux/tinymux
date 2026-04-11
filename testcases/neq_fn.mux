@@ -25,6 +25,24 @@
   },
   {
     @log smoke=TC001: neq basic comparisons. Failed (neq(1%,1)=[neq(1,1)] neq(1%,2)=[neq(1,2)]).;
+  }
+-
+#
+# Test Case #2 - String, whitespace, and coercion cases.
+#
+&tr.tc002 test_neq_fn=
+  @if cand(
+        eq(neq(foo,foo),0),
+        eq(neq(foo,bar),0),
+        eq(neq(  ,),0),
+        eq(neq(foo,0),0)
+      )=
+  {
+    @log smoke=TC002: neq string and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: neq string and coercion cases. Failed (neq(foo%,foo)=[neq(foo,foo)] neq(foo%,bar)=[neq(foo,bar)] neq(%b%b%,)=[neq(  ,)] neq(foo%,0)=[neq(foo,0)]).;
     @trig me/tr.done
   }
 -

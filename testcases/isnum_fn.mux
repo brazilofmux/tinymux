@@ -26,6 +26,24 @@
   },
   {
     @log smoke=TC001: isnum basic operations. Failed (isnum(5)=[isnum(5)] isnum(5.5)=[isnum(5.5)] isnum(abc)=[isnum(abc)]).;
+  }
+-
+#
+# Test Case #2 - Signs, whitespace, and empty values.
+#
+&tr.tc002 test_isnum_fn=
+  @if cand(
+        eq(isnum(-5),1),
+        eq(isnum(+5.25),1),
+        eq(isnum( 5),1),
+        eq(isnum(),0)
+      )=
+  {
+    @log smoke=TC002: isnum sign and empty cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: isnum sign and empty cases. Failed (isnum(-5)=[isnum(-5)] isnum(+5.25)=[isnum(+5.25)] isnum(%b5)=[isnum( 5)] isnum()=[isnum()]).;
     @trig me/tr.done
   }
 -

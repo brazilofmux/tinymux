@@ -3171,7 +3171,9 @@
 >256
 "@log smoke=Beginning eq() test cases."
 >257
-"@if cand(eq(eq(1,1), 1),eq(eq(1,2), 0),eq(eq(1.0,1), 1),eq(eq(a,a), 1))={@log smoke=TC001: eq basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: eq basic comparisons. Failed (eq(1%,1)=[eq(1,1)] eq(1%,2)=[eq(1,2)] eq(1.0%,1)=[eq(1.0,1)] eq(a%,a)=[eq(a,a)]).;@trig me/tr.done}"
+"@if cand(eq(eq(1,1), 1),eq(eq(1,2), 0),eq(eq(1.0,1), 1),eq(eq(a,a), 1))={@log smoke=TC001: eq basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: eq basic comparisons. Failed (eq(1%,1)=[eq(1,1)] eq(1%,2)=[eq(1,2)] eq(1.0%,1)=[eq(1.0,1)] eq(a%,a)=[eq(a,a)]).;}"
+>258
+"@if cand(eq(eq(foo,foo),1),eq(eq(foo,bar),1),eq(eq( ,),1),eq(eq(foo,0),1))={@log smoke=TC002: eq string and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: eq string and coercion cases. Failed (eq(foo%,foo)=[eq(foo,foo)] eq(foo%,bar)=[eq(foo,bar)] eq(%b%b%,)=[eq( ,)] eq(foo%,0)=[eq(foo,0)]).;@trig me/tr.done}"
 >260
 "@log smoke=End eq() test cases.;@notify smoke"
 <
@@ -4166,7 +4168,9 @@
 >256
 "@log smoke=Beginning isint() test cases."
 >257
-"@if cand(eq(isint(5), 1),eq(isint(5.5), 0),eq(isint(abc), 0))={@log smoke=TC001: isint basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: isint basic operations. Failed (isint(5)=[isint(5)] isint(5.5)=[isint(5.5)] isint(abc)=[isint(abc)]).;@trig me/tr.done}"
+"@if cand(eq(isint(5), 1),eq(isint(5.5), 0),eq(isint(abc), 0))={@log smoke=TC001: isint basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: isint basic operations. Failed (isint(5)=[isint(5)] isint(5.5)=[isint(5.5)] isint(abc)=[isint(abc)]).;}"
+>258
+"@if cand(eq(isint(-5),1),eq(isint(+5),1),eq(isint( 5),1),eq(isint(),0))={@log smoke=TC002: isint sign and empty cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: isint sign and empty cases. Failed (isint(-5)=[isint(-5)] isint(+5)=[isint(+5)] isint(%b5)=[isint( 5)] isint()=[isint()]).;@trig me/tr.done}"
 >260
 "@log smoke=End isint() test cases.;@notify smoke"
 <
@@ -4224,7 +4228,9 @@
 >256
 "@log smoke=Beginning isnum() test cases."
 >257
-"@if cand(eq(isnum(5), 1),eq(isnum(5.5), 1),eq(isnum(abc), 0))={@log smoke=TC001: isnum basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: isnum basic operations. Failed (isnum(5)=[isnum(5)] isnum(5.5)=[isnum(5.5)] isnum(abc)=[isnum(abc)]).;@trig me/tr.done}"
+"@if cand(eq(isnum(5), 1),eq(isnum(5.5), 1),eq(isnum(abc), 0))={@log smoke=TC001: isnum basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: isnum basic operations. Failed (isnum(5)=[isnum(5)] isnum(5.5)=[isnum(5.5)] isnum(abc)=[isnum(abc)]).;}"
+>258
+"@if cand(eq(isnum(-5),1),eq(isnum(+5.25),1),eq(isnum( 5),1),eq(isnum(),0))={@log smoke=TC002: isnum sign and empty cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: isnum sign and empty cases. Failed (isnum(-5)=[isnum(-5)] isnum(+5.25)=[isnum(+5.25)] isnum(%b5)=[isnum( 5)] isnum()=[isnum()]).;@trig me/tr.done}"
 >260
 "@log smoke=End isnum() test cases.;@notify smoke"
 <
@@ -6272,7 +6278,9 @@
 >256
 "@log smoke=Beginning neq() test cases."
 >257
-"@if cand(eq(neq(1,1), 0),eq(neq(1,2), 1))={@log smoke=TC001: neq basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: neq basic comparisons. Failed (neq(1%,1)=[neq(1,1)] neq(1%,2)=[neq(1,2)]).;@trig me/tr.done}"
+"@if cand(eq(neq(1,1), 0),eq(neq(1,2), 1))={@log smoke=TC001: neq basic comparisons. Succeeded.;@trig me/tr.done},{@log smoke=TC001: neq basic comparisons. Failed (neq(1%,1)=[neq(1,1)] neq(1%,2)=[neq(1,2)]).;}"
+>258
+"@if cand(eq(neq(foo,foo),0),eq(neq(foo,bar),0),eq(neq( ,),0),eq(neq(foo,0),0))={@log smoke=TC002: neq string and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: neq string and coercion cases. Failed (neq(foo%,foo)=[neq(foo,foo)] neq(foo%,bar)=[neq(foo,bar)] neq(%b%b%,)=[neq( ,)] neq(foo%,0)=[neq(foo,0)]).;@trig me/tr.done}"
 >260
 "@log smoke=End neq() test cases.;@notify smoke"
 <
