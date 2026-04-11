@@ -557,6 +557,17 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                     op = ws->frag_opcode;
                 }
 
+                // Bound assembled fragmented messages at
+                // WS_MAX_PAYLOAD. Each individual frame is already
+                // capped there, but without this check a client
+                // could send thousands of small non-FIN fragments
+                // and push frag_buf arbitrarily large — a memory-
+                // exhaustion DoS from a single connection.
+                //
+                auto frag_would_overflow = [&](size_t add) {
+                    return ws->frag_buf.size() + add > WS_MAX_PAYLOAD;
+                };
+
                 switch (ws->frame_opcode)
                 {
                 case WS_OPCODE_TEXT:
@@ -567,6 +578,13 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                         {
                             // Final fragment of a fragmented message.
                             //
+                            if (frag_would_overflow(ws->frame_buf.size()))
+                            {
+                                ws->frag_buf.clear();
+                                ws->frag_opcode = 0;
+                                ws_send_close(d, WS_CLOSE_MESSAGE_TOO_BIG);
+                                return;
+                            }
                             ws->frag_buf.append(ws->frame_buf);
                             save_command(d,
                                 reinterpret_cast<const UTF8 *>(ws->frag_buf.c_str()),
@@ -585,7 +603,9 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                     }
                     else
                     {
-                        // First fragment.
+                        // First fragment. frame_buf is already
+                        // bounded to WS_MAX_PAYLOAD by the header
+                        // parser, so the assignment is safe.
                         //
                         ws->frag_opcode = ws->frame_opcode;
                         ws->frag_buf = ws->frame_buf;
@@ -593,6 +613,13 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                     break;
 
                 case WS_OPCODE_CONTINUATION:
+                    if (frag_would_overflow(ws->frame_buf.size()))
+                    {
+                        ws->frag_buf.clear();
+                        ws->frag_opcode = 0;
+                        ws_send_close(d, WS_CLOSE_MESSAGE_TOO_BIG);
+                        return;
+                    }
                     ws->frag_buf.append(ws->frame_buf);
                     if (ws->frame_fin)
                     {

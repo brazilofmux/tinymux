@@ -218,10 +218,16 @@ Updated: 2026-03-27
   CLOSE payload was echoed back verbatim via `ws_queue_frame`,
   amplifying the attacker's bandwidth on the server side.
 
-### Fragment assembly buffer is unbounded
-- **File:** `mux/src/websocket.cpp:530-553, 557`
-- **Issue:** `ws->frag_buf.append(ws->frame_buf)` has no cap. Each individual frame is capped at `WS_MAX_PAYLOAD` (when the client sends a 64-bit length), but a client can send thousands of small non-FIN fragments and push `frag_buf` arbitrarily large.
-- **Impact:** Memory-exhaustion DoS via repeated fragments from a single connected WebSocket client.
+### ~~Fragment assembly buffer is unbounded~~ FIXED
+- **File:** `mux/src/websocket.cpp` (text/binary final-fragment and
+  continuation cases)
+- Every `frag_buf.append(frame_buf)` site now checks that the
+  assembled size will stay within `WS_MAX_PAYLOAD`. On violation
+  the fragmentation state is cleared and a close frame with code
+  `1009` (`WS_CLOSE_MESSAGE_TOO_BIG`, newly added in `websocket.h`)
+  is sent. Previously a client could push thousands of small
+  non-FIN fragments and grow `frag_buf` without bound — a memory-
+  exhaustion DoS from a single connection.
 
 ### Dead `op` local after continuation lookup
 - **File:** `mux/src/websocket.cpp:515-521`

@@ -22,9 +22,10 @@ constexpr uint8_t WS_OPCODE_PONG         = 0xA;
 
 // WebSocket close status codes (RFC 6455 Section 7.4.1)
 //
-constexpr uint16_t WS_CLOSE_NORMAL       = 1000;
-constexpr uint16_t WS_CLOSE_GOING_AWAY   = 1001;
-constexpr uint16_t WS_CLOSE_PROTOCOL_ERR = 1002;
+constexpr uint16_t WS_CLOSE_NORMAL         = 1000;
+constexpr uint16_t WS_CLOSE_GOING_AWAY     = 1001;
+constexpr uint16_t WS_CLOSE_PROTOCOL_ERR   = 1002;
+constexpr uint16_t WS_CLOSE_MESSAGE_TOO_BIG = 1009;
 
 // Maximum WebSocket frame payload we accept (64 KB).
 // MUX commands are limited to LBUF_SIZE anyway.
