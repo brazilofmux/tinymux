@@ -25,6 +25,24 @@
   },
   {
     @log smoke=TC001: orbool() basic operations. Failed (orbool(0%,0%,0)=[orbool(0,0,0)] orbool(0%,1%,0)=[orbool(0,1,0)]).;
+  }
+-
+#
+# Test Case #2 - Empty, truthy, and coercion cases.
+#
+&tr.tc002 test_orbool_fn=
+  @if cand(
+        eq(orbool(),0),
+        eq(orbool(2,0,0),1),
+        eq(orbool(-3,0,0),1),
+        eq(orbool(foo,0,0),1)
+      )=
+  {
+    @log smoke=TC002: orbool() truthy and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: orbool() truthy and coercion cases. Failed (orbool()=[orbool()] orbool(2%,0%,0)=[orbool(2,0,0)] orbool(-3%,0%,0)=[orbool(-3,0,0)] orbool(foo%,0%,0)=[orbool(foo,0,0)]).;
     @trig me/tr.done
   }
 -

@@ -1219,7 +1219,9 @@
 >256
 "@log smoke=Beginning andbool() test cases."
 >257
-"@if cand(eq(andbool(1,1,1), 1),eq(andbool(1,0,1), 0))={@log smoke=TC001: andbool() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: andbool() basic operations. Failed (andbool(1%,1%,1)=[andbool(1,1,1)] andbool(1%,0%,1)=[andbool(1,0,1)]).;@trig me/tr.done}"
+"@if cand(eq(andbool(1,1,1), 1),eq(andbool(1,0,1), 0))={@log smoke=TC001: andbool() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: andbool() basic operations. Failed (andbool(1%,1%,1)=[andbool(1,1,1)] andbool(1%,0%,1)=[andbool(1,0,1)]).;}"
+>258
+"@if cand(eq(andbool(),1),eq(andbool(2,-3,4),1),eq(andbool(2,0,4),0),eq(andbool(foo,1,1),1))={@log smoke=TC002: andbool() truthy and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: andbool() truthy and coercion cases. Failed (andbool()=[andbool()] andbool(2%,-3%,4)=[andbool(2,-3,4)] andbool(2%,0%,4)=[andbool(2,0,4)] andbool(foo%,1%,1)=[andbool(foo,1,1)]).;@trig me/tr.done}"
 >260
 "@log smoke=End andbool() test cases.;@notify smoke"
 <
@@ -1742,7 +1744,9 @@
 >256
 "@log smoke=Beginning cand() test cases."
 >257
-"@if cand(eq(cand(1,1,1), 1),eq(cand(1,0,1), 0))={@log smoke=TC001: cand() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: cand() basic operations. Failed (cand(1%,1%,1)=[cand(1,1,1)] cand(1%,0%,1)=[cand(1,0,1)]).;@trig me/tr.done}"
+"@if cand(eq(cand(1,1,1), 1),eq(cand(1,0,1), 0))={@log smoke=TC001: cand() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: cand() basic operations. Failed (cand(1%,1%,1)=[cand(1,1,1)] cand(1%,0%,1)=[cand(1,0,1)]).;}"
+>258
+"@if cand(eq(cand(),1),eq(cand(2,-3,4),1),eq(cand(2,0,4),0),eq(cand(foo,1,1),0))={@log smoke=TC002: cand() truthy and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: cand() truthy and coercion cases. Failed (cand()=[cand()] cand(2%,-3%,4)=[cand(2,-3,4)] cand(2%,0%,4)=[cand(2,0,4)] cand(foo%,1%,1)=[cand(foo,1,1)]).;@trig me/tr.done}"
 >260
 "@log smoke=End cand() test cases.;@notify smoke"
 <
@@ -2487,7 +2491,9 @@
 >256
 "@log smoke=Beginning cor() test cases."
 >257
-"@if cand(eq(cor(0,0,0), 0),eq(cor(0,1,0), 1))={@log smoke=TC001: cor() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: cor() basic operations. Failed (cor(0%,0%,0)=[cor(0,0,0)] cor(0%,1%,0)=[cor(0,1,0)]).;@trig me/tr.done}"
+"@if cand(eq(cor(0,0,0), 0),eq(cor(0,1,0), 1))={@log smoke=TC001: cor() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: cor() basic operations. Failed (cor(0%,0%,0)=[cor(0,0,0)] cor(0%,1%,0)=[cor(0,1,0)]).;}"
+>258
+"@if cand(eq(cor(),0),eq(cor(2,0,0),1),eq(cor(-3,0,0),1),eq(cor(foo,0,0),0))={@log smoke=TC002: cor() truthy and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: cor() truthy and coercion cases. Failed (cor()=[cor()] cor(2%,0%,0)=[cor(2,0,0)] cor(-3%,0%,0)=[cor(-3,0,0)] cor(foo%,0%,0)=[cor(foo,0,0)]).;@trig me/tr.done}"
 >260
 "@log smoke=End cor() test cases.;@notify smoke"
 <
@@ -6460,7 +6466,9 @@
 >256
 "@log smoke=Beginning orbool() test cases."
 >257
-"@if cand(eq(orbool(0,0,0), 0),eq(orbool(0,1,0), 1))={@log smoke=TC001: orbool() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: orbool() basic operations. Failed (orbool(0%,0%,0)=[orbool(0,0,0)] orbool(0%,1%,0)=[orbool(0,1,0)]).;@trig me/tr.done}"
+"@if cand(eq(orbool(0,0,0), 0),eq(orbool(0,1,0), 1))={@log smoke=TC001: orbool() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: orbool() basic operations. Failed (orbool(0%,0%,0)=[orbool(0,0,0)] orbool(0%,1%,0)=[orbool(0,1,0)]).;}"
+>258
+"@if cand(eq(orbool(),0),eq(orbool(2,0,0),1),eq(orbool(-3,0,0),1),eq(orbool(foo,0,0),1))={@log smoke=TC002: orbool() truthy and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: orbool() truthy and coercion cases. Failed (orbool()=[orbool()] orbool(2%,0%,0)=[orbool(2,0,0)] orbool(-3%,0%,0)=[orbool(-3,0,0)] orbool(foo%,0%,0)=[orbool(foo,0,0)]).;@trig me/tr.done}"
 >260
 "@log smoke=End orbool() test cases.;@notify smoke"
 <

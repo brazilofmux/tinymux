@@ -25,6 +25,24 @@
   },
   {
     @log smoke=TC001: andbool() basic operations. Failed (andbool(1%,1%,1)=[andbool(1,1,1)] andbool(1%,0%,1)=[andbool(1,0,1)]).;
+  }
+-
+#
+# Test Case #2 - Empty, truthy, and coercion cases.
+#
+&tr.tc002 test_andbool_fn=
+  @if cand(
+        eq(andbool(),1),
+        eq(andbool(2,-3,4),1),
+        eq(andbool(2,0,4),0),
+        eq(andbool(foo,1,1),1)
+      )=
+  {
+    @log smoke=TC002: andbool() truthy and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: andbool() truthy and coercion cases. Failed (andbool()=[andbool()] andbool(2%,-3%,4)=[andbool(2,-3,4)] andbool(2%,0%,4)=[andbool(2,0,4)] andbool(foo%,1%,1)=[andbool(foo,1,1)]).;
     @trig me/tr.done
   }
 -

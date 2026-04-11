@@ -25,6 +25,24 @@
   },
   {
     @log smoke=TC001: cor() basic operations. Failed (cor(0%,0%,0)=[cor(0,0,0)] cor(0%,1%,0)=[cor(0,1,0)]).;
+  }
+-
+#
+# Test Case #2 - Empty, truthy, and coercion cases.
+#
+&tr.tc002 test_cor_fn=
+  @if cand(
+        eq(cor(),0),
+        eq(cor(2,0,0),1),
+        eq(cor(-3,0,0),1),
+        eq(cor(foo,0,0),0)
+      )=
+  {
+    @log smoke=TC002: cor() truthy and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: cor() truthy and coercion cases. Failed (cor()=[cor()] cor(2%,0%,0)=[cor(2,0,0)] cor(-3%,0%,0)=[cor(-3,0,0)] cor(foo%,0%,0)=[cor(foo,0,0)]).;
     @trig me/tr.done
   }
 -

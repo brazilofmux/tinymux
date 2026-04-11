@@ -25,6 +25,24 @@
   },
   {
     @log smoke=TC001: cand() basic operations. Failed (cand(1%,1%,1)=[cand(1,1,1)] cand(1%,0%,1)=[cand(1,0,1)]).;
+  }
+-
+#
+# Test Case #2 - Empty, truthy, and coercion cases.
+#
+&tr.tc002 test_cand_fn=
+  @if cand(
+        eq(cand(),1),
+        eq(cand(2,-3,4),1),
+        eq(cand(2,0,4),0),
+        eq(cand(foo,1,1),0)
+      )=
+  {
+    @log smoke=TC002: cand() truthy and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: cand() truthy and coercion cases. Failed (cand()=[cand()] cand(2%,-3%,4)=[cand(2,-3,4)] cand(2%,0%,4)=[cand(2,0,4)] cand(foo%,1%,1)=[cand(foo,1,1)]).;
     @trig me/tr.done
   }
 -
