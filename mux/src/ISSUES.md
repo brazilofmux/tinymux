@@ -288,6 +288,9 @@ Updated: 2026-03-27
   `close_fds_from()` helper that dispatches through `SYS_close_range`
   with the same linear fallback, so both call sites get the fast path.
 
-### Non-atomic `CPlatform::m_cRef` / `CPlatformFactory::m_cRef`
+### ~~Non-atomic `CPlatform::m_cRef` / `CPlatformFactory::m_cRef`~~ FIXED
 - **File:** `mux/src/platform.cpp:80-94, 412-427`
-- **Issue:** `AddRef`/`Release` still use bare `uint32_t m_cRef` with `m_cRef++` / `m_cRef--` — the same race pattern that was already converted to `std::atomic<uint32_t>` in comsys/mail modules. Low priority today (driver is single-threaded), but for consistency with the engine-module fix it should be atomic.
+- `CPlatform` and `CPlatformFactory` now use atomic increment/decrement
+  operations in `AddRef()`/`Release()`, removing the unsynchronized
+  `m_cRef++` / `m_cRef--` pattern from the platform abstraction layer while
+  keeping the factory macro and ABI surface unchanged.

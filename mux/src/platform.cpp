@@ -81,19 +81,18 @@ MUX_RESULT CPlatform::QueryInterface(MUX_IID iid, void **ppv)
 
 uint32_t CPlatform::AddRef(void)
 {
-    m_cRef++;
-    return m_cRef;
+    return __sync_add_and_fetch(&m_cRef, 1);
 }
 
 uint32_t CPlatform::Release(void)
 {
-    m_cRef--;
-    if (0 == m_cRef)
+    const uint32_t cRef = __sync_sub_and_fetch(&m_cRef, 1);
+    if (0 == cRef)
     {
         delete this;
         return 0;
     }
-    return m_cRef;
+    return cRef;
 }
 
 // Static storage for the registered callback.
@@ -475,19 +474,18 @@ MUX_RESULT CPlatformFactory::QueryInterface(MUX_IID iid, void **ppv)
 
 uint32_t CPlatformFactory::AddRef(void)
 {
-    m_cRef++;
-    return m_cRef;
+    return __sync_add_and_fetch(&m_cRef, 1);
 }
 
 uint32_t CPlatformFactory::Release(void)
 {
-    m_cRef--;
-    if (0 == m_cRef)
+    const uint32_t cRef = __sync_sub_and_fetch(&m_cRef, 1);
+    if (0 == cRef)
     {
         delete this;
         return 0;
     }
-    return m_cRef;
+    return cRef;
 }
 
 MUX_RESULT CPlatformFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
