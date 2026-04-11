@@ -25,6 +25,36 @@
   },
   {
     @log smoke=TC001: remove basic operations. Failed (remove(c)=[remove(a b c d,c)] remove(b%,|)=[remove(a|b|c,b,|)]).;
+  }
+-
+#
+# Test Case #2 - Repeats, misses, and empty input.
+#
+&tr.tc002 test_remove_fn=
+  think setq(0,remove(a b a c,a));
+  think setq(1,remove(a b c,x));
+  think setq(2,remove(,a));
+  think setq(3,remove(a|b|a|c,a,|));
+  @if cand(
+        eq(words(%q0),3),
+        strmatch(first(%q0),b),
+        eq(match(%q0,a),2),
+        strmatch(last(%q0),c),
+        eq(words(%q1),3),
+        strmatch(first(%q1),a),
+        strmatch(last(%q1),c),
+        eq(strlen(%q2),0),
+        eq(words(%q3,|),3),
+        strmatch(extract(%q3,1,1,|),b),
+        strmatch(extract(%q3,2,1,|),a),
+        strmatch(extract(%q3,3,1,|),c)
+      )=
+  {
+    @log smoke=TC002: remove repeat and miss cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: remove repeat and miss cases. Failed (q0=%q0 q1=%q1 q2=%q2 q3=%q3).;
     @trig me/tr.done
   }
 -

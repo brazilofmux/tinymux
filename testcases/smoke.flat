@@ -1883,7 +1883,9 @@
 >256
 "@log smoke=Beginning cat() test cases."
 >257
-"@if cand(strmatch(cat(hello,world), hello world),strmatch(cat(a,b,c), a b c))={@log smoke=TC001: cat basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: cat basic operations. Failed (cat(hello%,world)=[cat(hello,world)] cat(a%,b%,c)=[cat(a,b,c)]).;@trig me/tr.done}"
+"@if cand(strmatch(cat(hello,world), hello world),strmatch(cat(a,b,c), a b c))={@log smoke=TC001: cat basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: cat basic operations. Failed (cat(hello%,world)=[cat(hello,world)] cat(a%,b%,c)=[cat(a,b,c)]).;}"
+>258
+"think setq(0,cat());think setq(1,cat(hello,));think setq(2,cat(,world));think setq(3,cat(hello, ,world));@if cand(eq(strlen(%q0),0),eq(strlen(%q1),6),eq(pos(hello,%q1),1),eq(strlen(%q2),6),eq(pos(world,%q2),2),eq(strlen(%q3),13),eq(pos(hello,%q3),1),eq(pos(world,%q3),9))={@log smoke=TC002: cat empty and spacing cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: cat empty and spacing cases. Failed (q0=%q0 q1=%q1 q2=%q2 q3=%q3 len1=[strlen(%q1)] len2=[strlen(%q2)] len3=[strlen(%q3)] pos2=[pos(world,%q2)] pos3=[pos(world,%q3)]).;@trig me/tr.done}"
 >260
 "@log smoke=End cat() test cases.;@notify smoke"
 <
@@ -7217,7 +7219,9 @@
 >256
 "@log smoke=Beginning remove() test cases."
 >257
-"@if cand(strmatch(remove(a b c d,c), a b d),strmatch(remove(a|b|c,b,|), a|c))={@log smoke=TC001: remove basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: remove basic operations. Failed (remove(c)=[remove(a b c d,c)] remove(b%,|)=[remove(a|b|c,b,|)]).;@trig me/tr.done}"
+"@if cand(strmatch(remove(a b c d,c), a b d),strmatch(remove(a|b|c,b,|), a|c))={@log smoke=TC001: remove basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: remove basic operations. Failed (remove(c)=[remove(a b c d,c)] remove(b%,|)=[remove(a|b|c,b,|)]).;}"
+>258
+"think setq(0,remove(a b a c,a));think setq(1,remove(a b c,x));think setq(2,remove(,a));think setq(3,remove(a|b|a|c,a,|));@if cand(eq(words(%q0),3),strmatch(first(%q0),b),eq(match(%q0,a),2),strmatch(last(%q0),c),eq(words(%q1),3),strmatch(first(%q1),a),strmatch(last(%q1),c),eq(strlen(%q2),0),eq(words(%q3,|),3),strmatch(extract(%q3,1,1,|),b),strmatch(extract(%q3,2,1,|),a),strmatch(extract(%q3,3,1,|),c))={@log smoke=TC002: remove repeat and miss cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: remove repeat and miss cases. Failed (q0=%q0 q1=%q1 q2=%q2 q3=%q3).;@trig me/tr.done}"
 >260
 "@log smoke=End remove() test cases.;@notify smoke"
 <
@@ -7244,7 +7248,9 @@
 >256
 "@log smoke=Beginning repeat() test cases."
 >257
-"@if cand(strmatch(repeat(ab,3), ababab),strmatch(repeat(x,5), xxxxx))={@log smoke=TC001: repeat basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: repeat basic operations. Failed (repeat(ab%,3)=[repeat(ab,3)] repeat(x%,5)=[repeat(x,5)]).;@trig me/tr.done}"
+"@if cand(strmatch(repeat(ab,3), ababab),strmatch(repeat(x,5), xxxxx))={@log smoke=TC001: repeat basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: repeat basic operations. Failed (repeat(ab%,3)=[repeat(ab,3)] repeat(x%,5)=[repeat(x,5)]).;}"
+>258
+"@if cand(eq(strlen(repeat(ab,0)),0),strmatch(repeat(ab,1),ab),eq(strlen(repeat(,5)),0),eq(strlen(repeat(x,-1)),0))={@log smoke=TC002: repeat zero and empty cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: repeat zero and empty cases. Failed (repeat(ab%,0)=[repeat(ab,0)] repeat(ab%,1)=[repeat(ab,1)] repeat(,5)=[repeat(,5)] repeat(x%,-1)=[repeat(x,-1)]).;@trig me/tr.done}"
 >260
 "@log smoke=End repeat() test cases.;@notify smoke"
 <
@@ -9553,7 +9559,9 @@
 >256
 "@log smoke=Beginning strcat() test cases."
 >257
-"@if cand(strmatch(strcat(hello,world), helloworld),strmatch(strcat(a,b,c), abc))={@log smoke=TC001: strcat() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: strcat() basic operations. Failed (strcat(hello%,world)=[strcat(hello,world)] strcat(a%,b%,c)=[strcat(a,b,c)]).;@trig me/tr.done}"
+"@if cand(strmatch(strcat(hello,world), helloworld),strmatch(strcat(a,b,c), abc))={@log smoke=TC001: strcat() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: strcat() basic operations. Failed (strcat(hello%,world)=[strcat(hello,world)] strcat(a%,b%,c)=[strcat(a,b,c)]).;}"
+>258
+"think setq(0,strcat());think setq(1,strcat(hello,));think setq(2,strcat(,world));think setq(3,strcat(hello, ,world));@if cand(eq(strlen(%q0),0),eq(strlen(%q1),5),strmatch(%q1,hello),eq(strlen(%q2),5),strmatch(%q2,world),eq(strlen(%q3),11),eq(pos(hello,%q3),1),eq(pos(world,%q3),7))={@log smoke=TC002: strcat() empty and spacing cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: strcat() empty and spacing cases. Failed (q0=%q0 q1=%q1 q2=%q2 q3=%q3 len3=[strlen(%q3)] pos3=[pos(world,%q3)]).;@trig me/tr.done}"
 >260
 "@log smoke=End strcat() test cases.;@notify smoke"
 <

@@ -25,6 +25,32 @@
   },
   {
     @log smoke=TC001: strcat() basic operations. Failed (strcat(hello%,world)=[strcat(hello,world)] strcat(a%,b%,c)=[strcat(a,b,c)]).;
+  }
+-
+#
+# Test Case #2 - Empty arguments and spacing cases.
+#
+&tr.tc002 test_strcat_fn=
+  think setq(0,strcat());
+  think setq(1,strcat(hello,));
+  think setq(2,strcat(,world));
+  think setq(3,strcat(hello, ,world));
+  @if cand(
+        eq(strlen(%q0),0),
+        eq(strlen(%q1),5),
+        strmatch(%q1,hello),
+        eq(strlen(%q2),5),
+        strmatch(%q2,world),
+        eq(strlen(%q3),11),
+        eq(pos(hello,%q3),1),
+        eq(pos(world,%q3),7)
+      )=
+  {
+    @log smoke=TC002: strcat() empty and spacing cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: strcat() empty and spacing cases. Failed (q0=%q0 q1=%q1 q2=%q2 q3=%q3 len3=[strlen(%q3)] pos3=[pos(world,%q3)]).;
     @trig me/tr.done
   }
 -

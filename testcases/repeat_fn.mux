@@ -25,6 +25,24 @@
   },
   {
     @log smoke=TC001: repeat basic operations. Failed (repeat(ab%,3)=[repeat(ab,3)] repeat(x%,5)=[repeat(x,5)]).;
+  }
+-
+#
+# Test Case #2 - Zero, one, and empty-string cases.
+#
+&tr.tc002 test_repeat_fn=
+  @if cand(
+        eq(strlen(repeat(ab,0)),0),
+        strmatch(repeat(ab,1),ab),
+        eq(strlen(repeat(,5)),0),
+        eq(strlen(repeat(x,-1)),0)
+      )=
+  {
+    @log smoke=TC002: repeat zero and empty cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: repeat zero and empty cases. Failed (repeat(ab%,0)=[repeat(ab,0)] repeat(ab%,1)=[repeat(ab,1)] repeat(,5)=[repeat(,5)] repeat(x%,-1)=[repeat(x,-1)]).;
     @trig me/tr.done
   }
 -
