@@ -108,11 +108,11 @@ static bool DecodeN(const int nType, size_t len, const UTF8 *p, in_addr_t *pu32)
             }
             else if ('A' <= ch && ch <= 'F')
             {
-                ul |= ch - 'A';
+                ul |= ch - 'A' + 10;
             }
             else if ('a' <= ch && ch <= 'f')
             {
-                ul |= ch - 'a';
+                ul |= ch - 'a' + 10;
             }
             else
             {

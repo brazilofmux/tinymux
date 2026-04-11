@@ -171,17 +171,14 @@ Updated: 2026-03-27
 - **Issue:** The overflow check `if (ul < ul2)` after `ul = (ul * 10) & 0xFFFFFFFFUL` is insufficient. A 32-bit multiply-by-10 can wrap around multiple times or wrap to a value larger than the original (e.g., `500,000,000 * 10` wraps to `705,032,704`, which is `> 500,000,000`).
 - **Impact:** Acceptance of invalid, overflowing IPv4 address components.
 
-## Critical — Completely Broken Hex IPv4 Parsing (New, 2026-04-10)
+## ~~Critical — Completely Broken Hex IPv4 Parsing~~ FIXED (2026-04-10)
 
-### `DecodeN` subtracts wrong offset from hex digits
+### ~~`DecodeN` subtracts wrong offset from hex digits~~ FIXED
 - **File:** `mux/src/netaddr.cpp:109-116`
-- **Issue:** The hexadecimal branch decodes `A-F`/`a-f` as:
-  ```cpp
-  else if ('A' <= ch && ch <= 'F') { ul |= ch - 'A'; }       // wrong
-  else if ('a' <= ch && ch <= 'f') { ul |= ch - 'a'; }       // wrong
-  ```
-  These should be `ch - 'A' + 10` and `ch - 'a' + 10`. As written, `A`..`F` map to nibbles 0..5, making every hex IPv4 literal parse incorrectly. For example `0xFF` decodes as `0x05`, not `0xFF`.
-- **Impact:** Any `@site`/`@admit`/`@nosite` rule using a hexadecimal IPv4 literal (documented as supported at the top of `netaddr.cpp`) silently matches the wrong address range. This is a correctness *and* access-control bug — a blocklist rule like `@site 0xC0.0xA8.0x0.0x0/16 REGISTRATION` is effectively no-op because the parser produces 0.0.0.0.
+- The hexadecimal branch now decodes `A-F`/`a-f` as `ch - 'A' + 10` and
+  `ch - 'a' + 10`. Previously the `+ 10` was missing, so `A`..`F` mapped to
+  nibbles 0..5 and every hex IPv4 literal in `@site`/`@admit`/`@nosite`
+  rules silently matched the wrong address range.
 
 ## High — WebSocket Protocol Handling (New, 2026-04-10)
 
