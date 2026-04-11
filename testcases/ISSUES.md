@@ -52,10 +52,10 @@ The project now has two complementary testing tiers:
 
 - `testcases/tools/generate_smoke_suite.py` now discovers top-level `testcases/*.mux` files automatically (excluding harness/setup files), emits generated `&suite.list.1` / `&suite.list.2` overrides, and `testcases/tools/Makesmoke` appends that generated suite file after the checked-in `.mux` corpus before unformatting. Adding a new smoke test no longer requires hand-editing `smoke.mux`. Reverified with `python3 testcases/tools/generate_smoke_suite.py` and `bash -n testcases/tools/Makesmoke`.
 
-### ~~Tests cannot run in isolation or parallel~~ PARTLY FIXED
+### ~~Tests cannot run in isolation or parallel~~ FIXED
 
-- `testcases/tools/Makesmoke` now accepts optional test names and passes them through to `generate_smoke_suite.py`, so you can build a smoke database for a single testcase or selected subset (`./tools/Makesmoke abs_fn`, etc.). That closes the "cannot run in isolation" part of this item.
-- **Remaining:** the smoke harness still executes the selected suite sequentially inside one database, so parallel execution/isolation between multiple tests is still not implemented.
+- `testcases/tools/Makesmoke` and `testcases/tools/Smoke` now accept explicit workspaces and flatfile paths, so smoke runs no longer have to share the repo-root runtime directories.
+- `testcases/tools/SmokeParallel` fans selected tests out across isolated temp workspaces (`./tools/SmokeParallel -j 4 abs_fn route_fn ...`), which closes the remaining parallel multi-test execution and isolation gap.
 
 ### ~~No cleanup of orphaned test objects~~ FIXED
 

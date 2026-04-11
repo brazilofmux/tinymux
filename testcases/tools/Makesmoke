@@ -8,20 +8,58 @@
 #   On success: only smoke.flat survives.
 #   On failure: artifacts collected in smoke.fail/.
 #
-#   Usage: cd testcases && ./tools/Makesmoke [test_name ...]
+#   Usage: cd testcases && ./tools/Makesmoke [--workspace DIR] [--output FILE] [test_name ...]
 #
 set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 REPO_ROOT=$(cd "$SCRIPT_DIR/../.." && pwd)
 TC=$(cd "$SCRIPT_DIR/.." && pwd)
-cd "$TC"
+WORKSPACE="$TC"
+OUTPUT_FLAT=""
+TEST_NAMES=()
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --workspace)
+            WORKSPACE="$2"
+            shift 2
+            ;;
+        --output)
+            OUTPUT_FLAT="$2"
+            shift 2
+            ;;
+        --)
+            shift
+            while [ $# -gt 0 ]; do
+                TEST_NAMES+=("$1")
+                shift
+            done
+            ;;
+        *)
+            TEST_NAMES+=("$1")
+            shift
+            ;;
+    esac
+done
+
+mkdir -p "$WORKSPACE"
+WORKSPACE=$(cd "$WORKSPACE" && pwd)
+cd "$WORKSPACE"
 
 GAMENAME=smoke
-BIN=../mux/game/bin
+BIN="$REPO_ROOT/mux/game/bin"
 DATA=./$GAMENAME.d
 SQLITE_BASE=$DATA/$GAMENAME
 TMP_FILES=()
+if [ -n "$OUTPUT_FLAT" ]; then
+    case "$OUTPUT_FLAT" in
+        /*) ;;
+        *) OUTPUT_FLAT="$WORKSPACE/$OUTPUT_FLAT" ;;
+    esac
+else
+    OUTPUT_FLAT="$WORKSPACE/smoke.flat"
+fi
 
 make_temp() {
     local tmp
@@ -67,7 +105,7 @@ fi
 
 rm -rf "$DATA" logs text smoke.fail
 rm -f smoke.conf alias.conf compat.conf shutdown.status
-rm -f bin smoke.flat netmux.log
+rm -f bin "$OUTPUT_FLAT" netmux.log
 
 # ---------------------------------------------------------------------------
 # Create fresh environment.
@@ -77,8 +115,8 @@ mkdir "$DATA"
 mkdir -p logs text
 
 [ ! -e bin ] && ln -s "$BIN" bin
-cp ../mux/game/alias.conf .
-cp ../mux/game/compat.conf .
+cp "$REPO_ROOT/mux/game/alias.conf" .
+cp "$REPO_ROOT/mux/game/compat.conf" .
 
 cat > smoke.conf <<'_EOF'
 # smoke.conf - TinyMUX configuration file for Makesmoke.
@@ -101,8 +139,8 @@ _EOF
 # ---------------------------------------------------------------------------
 
 echo "Unformatting .mux test files..."
-python3 "$SCRIPT_DIR/generate_smoke_suite.py" "$@" > "$SUITE_TMP"
-"$SCRIPT_DIR/unformat" *.mux "$SUITE_TMP" > "$TMP"
+python3 "$SCRIPT_DIR/generate_smoke_suite.py" "${TEST_NAMES[@]}" > "$SUITE_TMP"
+"$SCRIPT_DIR/unformat" "$TC"/*.mux "$SUITE_TMP" > "$TMP"
 if [ ! -s "$TMP" ]; then
     echo "ERROR: unformat produced no output."
     exit 1
@@ -137,7 +175,7 @@ fi
 
 if [ $EXIT_CODE -eq 0 ]; then
     echo "Exporting flatfile..."
-    rm -f smoke.flat
+    rm -f "$OUTPUT_FLAT"
 
     if [ ! -r "$SQLITE_BASE.sqlite" ]; then
         set -- "$DATA"/*.sqlite
@@ -153,7 +191,7 @@ if [ $EXIT_CODE -eq 0 ]; then
     fi
 
     if [ $EXIT_CODE -eq 0 ]; then
-        if ! "$BIN/dbconvert" -d "$SQLITE_BASE" -o smoke.flat -u 2>&1; then
+        if ! "$BIN/dbconvert" -d "$SQLITE_BASE" -o "$OUTPUT_FLAT" -u 2>&1; then
             echo "ERROR: Export from database failed."
             EXIT_CODE=1
         fi
@@ -164,11 +202,12 @@ fi
 # Scrub timestamps.
 # ---------------------------------------------------------------------------
 
-if [ $EXIT_CODE -eq 0 ] && [ -r smoke.flat ]; then
-    "$SCRIPT_DIR/scrubflat.sed" < smoke.flat > "$TMP"
-    mv "$TMP" smoke.flat
+if [ $EXIT_CODE -eq 0 ] && [ -r "$OUTPUT_FLAT" ]; then
+    "$SCRIPT_DIR/scrubflat.sed" < "$OUTPUT_FLAT" > "$TMP"
+    mv "$TMP" "$OUTPUT_FLAT"
     TMP=$(make_temp)
-    echo "smoke.flat created ($(wc -c < smoke.flat) bytes)."
+    flat_bytes=$(wc -c < "$OUTPUT_FLAT")
+    echo "smoke.flat created (${flat_bytes} bytes)."
 fi
 
 # ---------------------------------------------------------------------------
@@ -176,15 +215,15 @@ fi
 # ---------------------------------------------------------------------------
 
 OMEGA="$REPO_ROOT/mux/convert/omega"
-if [ $EXIT_CODE -eq 0 ] && [ -r smoke.flat ] && [ -x "$OMEGA" ]; then
+if [ $EXIT_CODE -eq 0 ] && [ -r "$OUTPUT_FLAT" ] && [ -x "$OMEGA" ]; then
     echo "Validating smoke.flat with omega..."
-    if ! "$OMEGA" -i t5x smoke.flat > /dev/null 2>&1; then
+    if ! "$OMEGA" -i t5x "$OUTPUT_FLAT" > /dev/null 2>&1; then
         echo "ERROR: omega rejected smoke.flat."
         EXIT_CODE=1
     else
         echo "  omega: valid."
     fi
-elif [ $EXIT_CODE -eq 0 ] && [ -r smoke.flat ]; then
+elif [ $EXIT_CODE -eq 0 ] && [ -r "$OUTPUT_FLAT" ]; then
     echo "WARNING: omega not found at $OMEGA; skipping smoke.flat validation."
 fi
 
@@ -192,7 +231,7 @@ fi
 # Success or failure.
 # ---------------------------------------------------------------------------
 
-if [ $EXIT_CODE -eq 0 ] && [ -r smoke.flat ]; then
+if [ $EXIT_CODE -eq 0 ] && [ -r "$OUTPUT_FLAT" ]; then
     # Success: remove everything except smoke.flat.
     rm -f smoke.conf alias.conf compat.conf shutdown.status netmux.log
     rm -rf "$DATA" logs text

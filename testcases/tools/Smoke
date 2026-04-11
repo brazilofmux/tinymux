@@ -9,16 +9,17 @@
 #   On success: prints summary, exits 0.
 #   On failure/hang: collects artifacts in smoke.fail/, exits 1.
 #
-#   Usage: cd testcases && ./tools/Smoke
+#   Usage: cd testcases && ./tools/Smoke [--workspace DIR] [--flatfile FILE]
 #
 set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 TC=$(cd "$SCRIPT_DIR/.." && pwd)
-cd "$TC"
+WORKSPACE="$TC"
+FLATFILE=""
 
 GAMENAME=smoke
-BIN=../mux/game/bin
+BIN="$TC/../mux/game/bin"
 DATA=./$GAMENAME.d
 LOGFILE=logs/M-smoke.log
 
@@ -32,12 +33,27 @@ CHECK_INTERVAL=2       # seconds between checks
 
 while [ $# -gt 0 ]; do
     case "$1" in
+        --workspace) WORKSPACE="$2"; shift ;;
+        --flatfile)  FLATFILE="$2"; shift ;;
         --activity-timeout)  ACTIVITY_TIMEOUT="$2"; shift ;;
         --wallclock-timeout) WALLCLOCK_TIMEOUT="$2"; shift ;;
         *)  echo "Unknown option: $1"; exit 1 ;;
     esac
     shift
 done
+
+mkdir -p "$WORKSPACE"
+WORKSPACE=$(cd "$WORKSPACE" && pwd)
+cd "$WORKSPACE"
+
+if [ -n "$FLATFILE" ]; then
+    case "$FLATFILE" in
+        /*) ;;
+        *) FLATFILE="$WORKSPACE/$FLATFILE" ;;
+    esac
+else
+    FLATFILE="$WORKSPACE/smoke.flat"
+fi
 
 # ---------------------------------------------------------------------------
 # Portable file-size helper.
@@ -53,7 +69,7 @@ fi
 # Preflight.
 # ---------------------------------------------------------------------------
 
-if [ ! -r smoke.flat ]; then
+if [ ! -r "$FLATFILE" ]; then
     echo "ERROR: smoke.flat not found. Run Makesmoke first."
     exit 1
 fi
@@ -84,8 +100,8 @@ mkdir "$DATA"
 mkdir -p logs text
 
 [ ! -e bin ] && ln -s "$BIN" bin
-cp ../mux/game/alias.conf .
-cp ../mux/game/compat.conf .
+cp "$TC/../mux/game/alias.conf" .
+cp "$TC/../mux/game/compat.conf" .
 touch "$LOGFILE"
 
 cat > text/smokehelp.txt <<'_HELPEOF'
@@ -126,7 +142,7 @@ echo "Importing smoke.flat into SQLite..."
 LD_LIBRARY_PATH=$BIN
 export LD_LIBRARY_PATH
 
-DBCONVERT_CMD=("$BIN/dbconvert" -d "$DATA/$GAMENAME" -i smoke.flat -l)
+DBCONVERT_CMD=("$BIN/dbconvert" -d "$DATA/$GAMENAME" -i "$FLATFILE" -l)
 if "${DBCONVERT_CMD[@]}" > netmux.log 2>&1; then
     :
 else
