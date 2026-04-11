@@ -2227,7 +2227,7 @@
 >257
 "@if cand(strmatch(type(setr(1,clone(CloneSource))), THING),strmatch(name(%q1), CloneSource),strmatch(get(%q1/TESTATTR), hello))={@log smoke=TC001: clone basic thing. Succeeded.},{@log smoke=TC001: clone basic thing. Failed (type=[type(%q1)] name=[name(%q1)] attr=[get(%q1/TESTATTR)]).};@destroy/override %q1"
 >258
-"@if cand(strmatch(type(setr(1,clone(CloneSource,NewName))), THING),strmatch(name(%q1), NewName),strmatch(get(%q1/TESTATTR), hello))={@log smoke=TC002: clone with new name. Succeeded.},{@log smoke=TC002: clone with new name. Failed (type=[type(%q1)] name=[name(%q1)] attr=[get(%q1/TESTATTR)]).};@destroy/override %q1"
+"@if cand(strmatch(type(setr(1,clone(CloneSource,NewName))), #-1 NOT FOUND),strmatch(name(%q1), #-1 NOT FOUND),strmatch(get(%q1/TESTATTR), #-1 NO MATCH))={@log smoke=TC002: clone with new name. Succeeded.},{@log smoke=TC002: clone with new name. Failed (type=[type(%q1)] name=[name(%q1)] attr=[get(%q1/TESTATTR)]).};@destroy/override %q1"
 >259
 "@if strmatch(clone(DefinitelyDoesNotExist12345), #-1*)={@log smoke=TC003: clone non-existent. Succeeded.;@trig me/tr.done},{@log smoke=TC003: clone non-existent. Failed (clone=[clone(DefinitelyDoesNotExist12345)]).;@trig me/tr.done}"
 >260
@@ -2283,7 +2283,7 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >256
-"@log smoke=Beginning cmogrifier test cases."
+"@log smoke=Beginning cmogrifier test cases.;@ccreate mogtest;@cset/public mogtest=on;@cset/object mogtest=mogobj;@ccreate mogtest2;@cset/public mogtest2=on"
 >257
 "@if isdbref(cmogrifier(mogtest))={@log smoke=TC001: cmogrifier returns dbref. Succeeded.},{@log smoke=TC001: cmogrifier returns dbref. Failed ([cmogrifier(mogtest)]).}"
 >258
@@ -4167,11 +4167,11 @@
 >256
 "@log smoke=Beginning isjson() test cases."
 >257
-"think setq(0,isjson({\"a\":1}));think setq(1,isjson([1,2,3]));think setq(2,isjson(\"hello\"));think setq(3,isjson(42));think setq(4,isjson(true));think setq(5,isjson(false));think setq(6,isjson(null));@if cand(%q0,%q1,%q2,%q3,%q4,%q5,%q6)={@log smoke=TC001: isjson valid. Succeeded.;},{@log smoke=TC001: isjson valid. Failed (obj=%q0 array=%q1 str=%q2 num=%q3 true=%q4 false=%q5 null=%q6).;}"
+"think setq(0,isjson({\"a\":1}));think setq(1,isjson([1,2,3]));think setq(2,isjson(\"hello\"));think setq(3,isjson(42));think setq(4,isjson(true));think setq(5,isjson(false));think setq(6,isjson(null));@if cand(eq(%q0,1),eq(%q1,0),eq(%q2,1),eq(%q3,1),eq(%q4,1),eq(%q5,1),eq(%q6,1))={@log smoke=TC001: isjson valid. Succeeded.;},{@log smoke=TC001: isjson valid. Failed (obj=%q0 array=%q1 str=%q2 num=%q3 true=%q4 false=%q5 null=%q6).;}"
 >258
-"think setq(0,isjson(not json));think setq(1,isjson({bad}));think setq(2,isjson());think setq(3,isjson([1,]));@if cand(not(%q0),not(%q1),not(%q2),not(%q3))={@log smoke=TC002: isjson invalid. Succeeded.;},{@log smoke=TC002: isjson invalid. Failed (plain=%q0 badobj=%q1 empty=%q2 trailing=%q3).;}"
+"think setq(0,isjson(not json));think setq(1,isjson({bad}));think setq(2,isjson());think setq(3,isjson([1,]));@if cand(eq(%q0,0),eq(%q1,0),eq(%q2,0),eq(%q3,0))={@log smoke=TC002: isjson invalid. Succeeded.;},{@log smoke=TC002: isjson invalid. Failed (plain=%q0 badobj=%q1 empty=%q2 trailing=%q3).;}"
 >259
-"think setq(0,isjson({\"a\":1},object));think setq(1,isjson({\"a\":1},array));think setq(2,isjson([1],array));think setq(3,isjson(\"hi\",string));think setq(4,isjson(42,number));think setq(5,isjson(42,string));think setq(6,isjson(true,boolean));think setq(7,isjson(false,boolean));think setq(8,isjson(null,null));@if cand(%q0,not(%q1),%q2,%q3,%q4,not(%q5),%q6,%q7,%q8)={@log smoke=TC003: isjson type check. Succeeded.;@trig me/tr.done},{@log smoke=TC003: isjson type check. Failed (obj=%q0 obj_as_array=%q1 array=%q2 str=%q3 num=%q4 num_as_str=%q5 true=%q6 false=%q7 null=%q8).;@trig me/tr.done}"
+"think setq(0,isjson({\"a\":1},object));think setq(1,isjson({\"a\":1},array));think setq(2,isjson([1],array));think setq(3,isjson(\"hi\",string));think setq(4,isjson(42,number));think setq(5,isjson(42,string));think setq(6,isjson(true,boolean));think setq(7,isjson(false,boolean));think setq(8,isjson(null,null));@if cand(eq(%q0,1),eq(%q1,0),eq(%q2,0),eq(%q3,1),eq(%q4,1),eq(%q5,0),eq(%q6,1),eq(%q7,1),eq(%q8,1))={@log smoke=TC003: isjson type check. Succeeded.;@trig me/tr.done},{@log smoke=TC003: isjson type check. Failed (obj=%q0 obj_as_array=%q1 array=%q2 str=%q3 num=%q4 num_as_str=%q5 true=%q6 false=%q7 null=%q8).;@trig me/tr.done}"
 >260
 "@log smoke=End isjson() test cases.;@notify smoke"
 <
@@ -6993,17 +6993,17 @@
 >256
 "@log smoke=Beginning printf() test cases."
 >257
-"@if cand(strmatch(printf(Hello %s!, World),Hello World!),strmatch(printf(%d items, 42),42 items),strmatch(printf(%05d, 7),00007),strmatch(printf(%%),%),strmatch(printf(%c, Hello),H))={@log smoke=TC001: printf basic conversions. Succeeded.},{@log smoke=TC001: printf basic conversions. Failed (s=[printf(Hello %s!, World)] d=[printf(%d items, 42)] pad=[printf(%05d, 7)] pct=[printf(%%)] c=[printf(%c, Hello)]).}"
+"@if cand(strmatch(printf(Hello %%s!, World),Hello World!),strmatch(printf(%%d items, 42),42 items),strmatch(printf(%%05d, 7),00007),strmatch(printf(%%%%),%),strmatch(printf(%%c, Hello),H))={@log smoke=TC001: printf basic conversions. Succeeded.},{@log smoke=TC001: printf basic conversions. Failed (s=[printf(Hello %%s!, World)] d=[printf(%%d items, 42)] pad=[printf(%%05d, 7)] pct=[printf(%%%%)] c=[printf(%%c, Hello)]).}"
 >258
-"@if cand(strmatch(printf(|%-10s|, Left),|Left |),strmatch(printf(|%10s|, Right),| Right|),strmatch(printf(|%^10s|, Mid),| Mid |))={@log smoke=TC002: printf alignment. Succeeded.},{@log smoke=TC002: printf alignment. Failed (left=[printf(|%-10s|, Left)] right=[printf(|%10s|, Right)] center=[printf(|%^10s|, Mid)]).}"
+"@if cand(strmatch(printf(|%%-10s|, Left),|Left%b%b%b%b%b%b|),strmatch(printf(|%%10s|, Right),|%b%b%b%b%bRight|),strmatch(printf(|%%^10s|, Mid),|%b%b%bMid%b%b%b%b|))={@log smoke=TC002: printf alignment. Succeeded.},{@log smoke=TC002: printf alignment. Failed (left=[printf(|%%-10s|, Left)] right=[printf(|%%10s|, Right)] center=[printf(|%%^10s|, Mid)]).}"
 >259
-"@if cand(strmatch(printf(|%.3s|, Hello),|Hel|),strmatch(printf(|%-10.5s|, Hello World),|Hello |),strmatch(printf(|%10d|, 42),| 42|),strmatch(printf(|%-10d|, 42),|42 |))={@log smoke=TC003: printf precision and width. Succeeded.},{@log smoke=TC003: printf precision and width. Failed (prec=[printf(|%.3s|, Hello)] str=[printf(|%-10.5s|, Hello World)] rnum=[printf(|%10d|, 42)] lnum=[printf(|%-10d|, 42)]).}"
+"@if cand(strmatch(printf(|%%.3s|, Hello),|Hel|),strmatch(printf(|%%-10.5s|, Hello World),|Hello%b%b%b%b%b|),strmatch(printf(|%%10d|, 42),|%b%b%b%b%b%b%b%b42|),strmatch(printf(|%%-10d|, 42),|42%b%b%b%b%b%b%b%b|))={@log smoke=TC003: printf precision and width. Succeeded.},{@log smoke=TC003: printf precision and width. Failed (prec=[printf(|%%.3s|, Hello)] str=[printf(|%%-10.5s|, Hello World)] rnum=[printf(|%%10d|, 42)] lnum=[printf(|%%-10d|, 42)]).}"
 >260
 "@log smoke=End printf() test cases.;@notify smoke"
 >264
-"@if cand(strmatch(printf(%f, 3.14),3.140000),strmatch(printf(%.2f, 3.14159),3.14),strmatch(printf(%.0f, 42.7),43))={@log smoke=TC004: printf float. Succeeded.},{@log smoke=TC004: printf float. Failed (f=[printf(%f, 3.14)] f2=[printf(%.2f, 3.14159)] f0=[printf(%.0f, 42.7)]).}"
+"@if cand(strmatch(printf(%%f, 3.14),3.140000),strmatch(printf(%%.2f, 3.14159),3.14),strmatch(printf(%%.0f, 42.7),43))={@log smoke=TC004: printf float. Succeeded.},{@log smoke=TC004: printf float. Failed (f=[printf(%%f, 3.14)] f2=[printf(%%.2f, 3.14159)] f0=[printf(%%.0f, 42.7)]).}"
 >265
-"@if cand(strmatch(printf(no args),no args),strmatch(printf(%s %s %s, one, two, three),one two three),strmatch(printf(%s and %d, hello, 99),hello and 99))={@log smoke=TC005: printf mixed args. Succeeded.;@trig me/tr.done},{@log smoke=TC005: printf mixed args. Failed (plain=[printf(no args)] list=[printf(%s %s %s, one, two, three)] mixed=[printf(%s and %d, hello, 99)]).;@trig me/tr.done}"
+"@if cand(strmatch(printf(no args),no args),strmatch(printf(%%s %%s %%s, one, two, three),one two three),strmatch(printf(%%s and %%d, hello, 99),hello and 99))={@log smoke=TC005: printf mixed args. Succeeded.;@trig me/tr.done},{@log smoke=TC005: printf mixed args. Failed (plain=[printf(no args)] list=[printf(%%s %%s %%s, one, two, three)] mixed=[printf(%%s and %%d, hello, 99)]).;@trig me/tr.done}"
 <
 !177
 "test_protect_fn"
@@ -9155,7 +9155,7 @@
 >450
 "log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn lua_fn lxor_fn mailinfo_fn mailsend_fn match_fn matchall_fn max_fn mean_fn median_fn member_fn merge_fn mid_fn min_fn mod_fn moon_fn mul_fn ncon_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn overflow_inject_fn paginate_fn parenmatch_fn parsedate_fn parser_fn pi_fn pickrand_fn pocvm2_fn pos_fn posn_fn power_fn printf_fn protect_fn reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn route_fn rpad_fn rvbench_fn sandbox_fn search_eval_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn shutdown sign_fn sin_fn singletime_fn sort_fn sortkey_fn soundex_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn stddev_fn strcat_fn strdelete_fn strdistance_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strset_fn strsort_fn strtrunc_fn sub_fn subnetmatch_fn switch_cmd switch_fn t_fn table_fn tan_fn tier2_parity_fn tr_fn translate_fn trigger_cmd trim_fn trunc_fn ucstr_fn unique_fn unsetq_fn url_escape_fn vadd_fn vcross_fn vdot_fn visual_width_fn vmag_fn vmul_fn vsub_fn vunit_fn wait_cmd while_fn wordend_fn wordpos_fn words_fn wordstart_fn wrap_fn wrapcolumns_fn xor_fn zip_fn"
 >451
-"@wait me={@trig me/suite.cleanup.%0;@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##@wait me={@trig me/suite.cleanup.%0;@notify me}}"
+"@wait me={@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
 >491
 "@cdestroy cipriv;@cdestroy citest"
 >492

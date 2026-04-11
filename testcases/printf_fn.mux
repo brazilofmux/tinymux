@@ -16,17 +16,17 @@
 #
 &tr.tc001 test_printf_fn=
   @if cand(
-        strmatch(printf(Hello %s!, World),Hello World!),
-        strmatch(printf(%d items, 42),42 items),
-        strmatch(printf(%05d, 7),00007),
-        strmatch(printf(%%),%),
-        strmatch(printf(%c, Hello),H)
+        strmatch(printf(Hello %%s!, World),Hello World!),
+        strmatch(printf(%%d items, 42),42 items),
+        strmatch(printf(%%05d, 7),00007),
+        strmatch(printf(%%%%),%),
+        strmatch(printf(%%c, Hello),H)
       )=
   {
     @log smoke=TC001: printf basic conversions. Succeeded.
   },
   {
-    @log smoke=TC001: printf basic conversions. Failed (s=[printf(Hello %s!, World)] d=[printf(%d items, 42)] pad=[printf(%05d, 7)] pct=[printf(%%)] c=[printf(%c, Hello)]).
+    @log smoke=TC001: printf basic conversions. Failed (s=[printf(Hello %%s!, World)] d=[printf(%%d items, 42)] pad=[printf(%%05d, 7)] pct=[printf(%%%%)] c=[printf(%%c, Hello)]).
   }
 -
 #
@@ -34,15 +34,15 @@
 #
 &tr.tc002 test_printf_fn=
   @if cand(
-        strmatch(printf(|%-10s|, Left),|Left      |),
-        strmatch(printf(|%10s|, Right),|     Right|),
-        strmatch(printf(|%^10s|, Mid),|   Mid    |)
+        strmatch(printf(|%%-10s|, Left),|Left%b%b%b%b%b%b|),
+        strmatch(printf(|%%10s|, Right),|%b%b%b%b%bRight|),
+        strmatch(printf(|%%^10s|, Mid),|%b%b%bMid%b%b%b%b|)
       )=
   {
     @log smoke=TC002: printf alignment. Succeeded.
   },
   {
-    @log smoke=TC002: printf alignment. Failed (left=[printf(|%-10s|, Left)] right=[printf(|%10s|, Right)] center=[printf(|%^10s|, Mid)]).
+    @log smoke=TC002: printf alignment. Failed (left=[printf(|%%-10s|, Left)] right=[printf(|%%10s|, Right)] center=[printf(|%%^10s|, Mid)]).
   }
 -
 #
@@ -50,16 +50,16 @@
 #
 &tr.tc003 test_printf_fn=
   @if cand(
-        strmatch(printf(|%.3s|, Hello),|Hel|),
-        strmatch(printf(|%-10.5s|, Hello World),|Hello     |),
-        strmatch(printf(|%10d|, 42),|        42|),
-        strmatch(printf(|%-10d|, 42),|42        |)
+        strmatch(printf(|%%.3s|, Hello),|Hel|),
+        strmatch(printf(|%%-10.5s|, Hello World),|Hello%b%b%b%b%b|),
+        strmatch(printf(|%%10d|, 42),|%b%b%b%b%b%b%b%b42|),
+        strmatch(printf(|%%-10d|, 42),|42%b%b%b%b%b%b%b%b|)
       )=
   {
     @log smoke=TC003: printf precision and width. Succeeded.
   },
   {
-    @log smoke=TC003: printf precision and width. Failed (prec=[printf(|%.3s|, Hello)] str=[printf(|%-10.5s|, Hello World)] rnum=[printf(|%10d|, 42)] lnum=[printf(|%-10d|, 42)]).
+    @log smoke=TC003: printf precision and width. Failed (prec=[printf(|%%.3s|, Hello)] str=[printf(|%%-10.5s|, Hello World)] rnum=[printf(|%%10d|, 42)] lnum=[printf(|%%-10d|, 42)]).
   }
 -
 #
@@ -67,15 +67,15 @@
 #
 &tr.tc004 test_printf_fn=
   @if cand(
-        strmatch(printf(%f, 3.14),3.140000),
-        strmatch(printf(%.2f, 3.14159),3.14),
-        strmatch(printf(%.0f, 42.7),43)
+        strmatch(printf(%%f, 3.14),3.140000),
+        strmatch(printf(%%.2f, 3.14159),3.14),
+        strmatch(printf(%%.0f, 42.7),43)
       )=
   {
     @log smoke=TC004: printf float. Succeeded.
   },
   {
-    @log smoke=TC004: printf float. Failed (f=[printf(%f, 3.14)] f2=[printf(%.2f, 3.14159)] f0=[printf(%.0f, 42.7)]).
+    @log smoke=TC004: printf float. Failed (f=[printf(%%f, 3.14)] f2=[printf(%%.2f, 3.14159)] f0=[printf(%%.0f, 42.7)]).
   }
 -
 #
@@ -84,15 +84,15 @@
 &tr.tc005 test_printf_fn=
   @if cand(
         strmatch(printf(no args),no args),
-        strmatch(printf(%s %s %s, one, two, three),one two three),
-        strmatch(printf(%s and %d, hello, 99),hello and 99)
+        strmatch(printf(%%s %%s %%s, one, two, three),one two three),
+        strmatch(printf(%%s and %%d, hello, 99),hello and 99)
       )=
   {
     @log smoke=TC005: printf mixed args. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: printf mixed args. Failed (plain=[printf(no args)] list=[printf(%s %s %s, one, two, three)] mixed=[printf(%s and %d, hello, 99)]).;
+    @log smoke=TC005: printf mixed args. Failed (plain=[printf(no args)] list=[printf(%%s %%s %%s, one, two, three)] mixed=[printf(%%s and %%d, hello, 99)]).;
     @trig me/tr.done
   }
 -

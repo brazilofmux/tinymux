@@ -10429,19 +10429,8 @@ static FUNCTION(fun_printf)
                     places = 20;
                 }
 
-                // Use fval-style output for default precision,
-                // or fixed-point for explicit precision.
-                //
-                if (nPrec < 0)
-                {
-                    fval(valBuf, &pVal, v);
-                    pVal = valBuf;
-                }
-                else
-                {
-                    snprintf(reinterpret_cast<char *>(valBuf.get()),
-                             LBUF_SIZE, "%.*f", places, v);
-                }
+                snprintf(reinterpret_cast<char *>(valBuf.get()),
+                         LBUF_SIZE, "%.*f", places, v);
                 nPrec = -1; // consumed by %f
             }
             break;

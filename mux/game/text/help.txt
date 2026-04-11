@@ -13370,18 +13370,22 @@ PRINTF()
     N    Minimum field width in visible columns.
     .N   Precision: max columns for %s, decimal places for %f.
 
+  In normal softcode and command text, % starts MUX substitutions, so
+  literal printf format markers must usually be written with doubled
+  percent signs before they reach printf().
+
   Examples:
-    > say printf(Hello %s!, World)
+    > say printf(Hello %%s!, World)
     You say, "Hello World!"
-    > say printf(|%-10s|%5d|, Apples, 42)
+    > say printf(|%%-10s|%%5d|, Apples, 42)
     You say, "|Apples    |   42|"
-    > say printf(|%^10s|, Mid)
+    > say printf(|%%^10s|, Mid)
     You say, "|   Mid    |"
-    > say printf(%05d, 7)
+    > say printf(%%05d, 7)
     You say, "00007"
-    > say printf(%.2f, 3.14159)
+    > say printf(%%.2f, 3.14159)
     You say, "3.14"
-    > say printf(|%.5s|, Hello World)
+    > say printf(|%%.5s|, Hello World)
     You say, "|Hello|"
 
   Related Topics: ljust(), rjust(), center(), lpad(), rpad(), cpad().

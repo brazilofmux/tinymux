@@ -22,7 +22,7 @@
   think setq(4,isjson(true));
   think setq(5,isjson(false));
   think setq(6,isjson(null));
-  @if cand(%q0,%q1,%q2,%q3,%q4,%q5,%q6)=
+  @if cand(eq(%q0,1),eq(%q1,0),eq(%q2,1),eq(%q3,1),eq(%q4,1),eq(%q5,1),eq(%q6,1))=
   {
     @log smoke=TC001: isjson valid. Succeeded.;
   },
@@ -38,7 +38,7 @@
   think setq(1,isjson({bad}));
   think setq(2,isjson());
   think setq(3,isjson([1,]));
-  @if cand(not(%q0),not(%q1),not(%q2),not(%q3))=
+  @if cand(eq(%q0,0),eq(%q1,0),eq(%q2,0),eq(%q3,0))=
   {
     @log smoke=TC002: isjson invalid. Succeeded.;
   },
@@ -59,7 +59,7 @@
   think setq(6,isjson(true,boolean));
   think setq(7,isjson(false,boolean));
   think setq(8,isjson(null,null));
-  @if cand(%q0,not(%q1),%q2,%q3,%q4,not(%q5),%q6,%q7,%q8)=
+  @if cand(eq(%q0,1),eq(%q1,0),eq(%q2,0),eq(%q3,1),eq(%q4,1),eq(%q5,0),eq(%q6,1),eq(%q7,1),eq(%q8,1))=
   {
     @log smoke=TC003: isjson type check. Succeeded.;
     @trig me/tr.done
