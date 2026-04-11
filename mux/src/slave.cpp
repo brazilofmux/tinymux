@@ -112,7 +112,14 @@ int query(char *ip)
 #endif
 #endif
 
-    char buf[MAX_STRING * 2];
+    // Layout: ip ' ' pHName '\n' '\0'. Both ip and pHName can be
+    // up to MAX_STRING - 1 bytes (999), so the maximum write is
+    // 2 * (MAX_STRING - 1) + 3 = 2001 bytes. The previous
+    // buf[MAX_STRING * 2] sized the buffer at 2000 and overran by
+    // one byte in the worst case. Add three bytes of headroom for
+    // the separator, newline, and terminator.
+    //
+    char buf[MAX_STRING * 2 + 3];
     char *p = mux_stpcpy(buf, ip);
     *p++ = ' ';
     p = mux_stpcpy(p, pHName);

@@ -147,10 +147,13 @@ Updated: 2026-03-27
 
 ## High — Buffer Overflows & Memory Safety (New, 2026-04-10)
 
-### 1-2 byte buffer overflow in `slave.cpp` query processing
+### ~~1-2 byte buffer overflow in `slave.cpp` query processing~~ FIXED
 - **File:** `mux/src/slave.cpp:115-120`
-- **Issue:** `char buf[MAX_STRING * 2]` is 2000 bytes. Concatenating an IP address (up to 999 chars) and a hostname (up to 999 chars) with a space, newline, and null terminator can reach 2001 bytes, overflowing `buf` by 1 byte.
-- **Impact:** Potential crash or memory corruption in the helper `slave` process.
+- `buf` is now sized `MAX_STRING * 2 + 3`, matching the worst-case
+  write of `ip (≤999) + ' ' + pHName (≤999) + '\n' + '\0'` =
+  2001 bytes. Previously sized at `MAX_STRING * 2` = 2000 bytes,
+  a hostname-plus-IP pair of the maximum length overran by one
+  byte on the helper process stack.
 
 ## High — Protocol Safety & Limits (New, 2026-04-10)
 
