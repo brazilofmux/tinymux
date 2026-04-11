@@ -41,13 +41,16 @@ Updated: 2026-04-10
   stale password entries instead of leaving them behind.
 
 - **No automated browser-level regression coverage**
-  The current audit verified JavaScript syntax and inspected the runtime
-  integration paths, but there is no checked-in browser harness covering Hydra
-  auth, session resume, WebSocket GameSession, grpc-web fallback, prompts, or
-  reconnect behavior end-to-end.
+  **FIXED**
+  A checked-in Node-based browser shim harness now exercises the real web
+  scripts with fake `fetch`, `WebSocket`, `localStorage`, and
+  `sessionStorage`. `client/web/test_web.js` covers settings password
+  migration, Hydra fresh auth, session resume, WebSocket GameSession startup,
+  prompt framing, grpc-web Subscribe fallback, and reconnect behavior.
 
 ## Verification
 
+- `node client/web/test_web.js`
 - `node --check client/web/js/settings.js`
 - `node --check client/web/js/hydra_connection.js`
 - `node --check client/web/js/main.js`

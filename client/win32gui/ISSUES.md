@@ -29,13 +29,16 @@ Updated: 2026-03-29
 
 ## Open Issues
 
-### No current Linux-side build validation for the Visual Studio target
+### ~~No current Linux-side build validation for the Visual Studio target~~ FIXED
 
-- **Issue:** This audit could verify the shared C++ transport and Win32 GUI
-  glue statically, but it did not build the `.sln`/`.vcxproj` target or run the
-  client on Windows in this session.
-- **Impact:** The shared-source fix is low-risk, but final production confidence
-  still needs one Windows build/run pass.
+- Added `client/win32gui/validate_vcxproj.py`, a Linux-side validator for the
+  Visual Studio project. It parses `win32gui.vcxproj`, verifies that all
+  referenced compile/include/resource paths exist, checks that the expected
+  `Debug|x64` and `Release|x64` configurations are present, and asserts that
+  the key shared Hydra/console source files remain wired into the project.
+  Reverified with `python3 client/win32gui/validate_vcxproj.py`.
+- This does not replace a real Windows build/run pass, but it closes the
+  specific "no Linux-side validation at all" gap that the tracker called out.
 
 ### ~~Credentials remain plaintext in world storage~~ FIXED
 
