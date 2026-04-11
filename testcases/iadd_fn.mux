@@ -26,6 +26,24 @@
   },
   {
     @log smoke=TC001: iadd() basic operations. Failed (iadd(1%,2)=[iadd(1,2)] iadd(1%,2%,3)=[iadd(1,2,3)] iadd()=[iadd()]).;
+  }
+-
+#
+# Test Case #2 - Sign and coercion cases.
+#
+&tr.tc002 test_iadd_fn=
+  @if cand(
+        eq(iadd(-5,2,1),-2),
+        eq(iadd(1.9,2.1),3),
+        eq(iadd(foo,2),2),
+        eq(iadd(-1.9,1),0)
+      )=
+  {
+    @log smoke=TC002: iadd() sign and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: iadd() sign and coercion cases. Failed (iadd(-5%,2%,1)=[iadd(-5,2,1)] iadd(1.9%,2.1)=[iadd(1.9,2.1)] iadd(foo%,2)=[iadd(foo,2)] iadd(-1.9%,1)=[iadd(-1.9,1)]).;
     @trig me/tr.done
   }
 -

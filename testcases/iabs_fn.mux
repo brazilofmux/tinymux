@@ -26,6 +26,24 @@
   },
   {
     @log smoke=TC001: iabs() basic operations. Failed (iabs(-5)=[iabs(-5)] iabs(5)=[iabs(5)] iabs(0)=[iabs(0)]).;
+  }
+-
+#
+# Test Case #2 - Truncation and coercion cases.
+#
+&tr.tc002 test_iabs_fn=
+  @if cand(
+        eq(iabs(-5.9),5),
+        eq(iabs(5.9),5),
+        eq(iabs(foo),0),
+        eq(iabs(),0)
+      )=
+  {
+    @log smoke=TC002: iabs() truncation and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: iabs() truncation and coercion cases. Failed (iabs(-5.9)=[iabs(-5.9)] iabs(5.9)=[iabs(5.9)] iabs(foo)=[iabs(foo)] iabs()=[iabs()]).;
     @trig me/tr.done
   }
 -

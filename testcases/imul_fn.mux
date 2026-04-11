@@ -25,6 +25,24 @@
   },
   {
     @log smoke=TC001: imul() basic operations. Failed (imul(2%,3)=[imul(2,3)] imul(2%,3%,4)=[imul(2,3,4)]).;
+  }
+-
+#
+# Test Case #2 - Sign and coercion cases.
+#
+&tr.tc002 test_imul_fn=
+  @if cand(
+        eq(imul(-2,3),-6),
+        eq(imul(1.9,2.9),2),
+        eq(imul(foo,3),0),
+        eq(imul(),0)
+      )=
+  {
+    @log smoke=TC002: imul() sign and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: imul() sign and coercion cases. Failed (imul(-2%,3)=[imul(-2,3)] imul(1.9%,2.9)=[imul(1.9,2.9)] imul(foo%,3)=[imul(foo,3)] imul()=[imul()]).;
     @trig me/tr.done
   }
 -
