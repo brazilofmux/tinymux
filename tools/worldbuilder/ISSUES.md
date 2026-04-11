@@ -1,6 +1,6 @@
 # WorldBuilder — Open Issues
 
-Updated: 2026-03-27
+Updated: 2026-04-10
 
 ## Bugs
 
@@ -36,3 +36,19 @@ Updated: 2026-03-27
 
 - `python3 tools/worldbuilder/test_diff_v3.py` passes.
 - `python3 tools/worldbuilder/test_reconciler.py` passes.
+
+## Bugs (New, 2026-04-10)
+
+### Attribute writes are emitted without MUX escaping
+
+- **Files:** `tools/worldbuilder/executor.py:234-235`, `tools/worldbuilder/executor.py:254-255`, `tools/worldbuilder/executor.py:346-347`, `tools/worldbuilder/live_adapter.py:393-394`, `tools/worldbuilder/live_adapter.py:412-414`, `tools/worldbuilder/live_adapter.py:435-436`
+- **Issue:** Descriptions are sent through `mux_escape()`, but room/thing attribute values are written raw. Any attribute containing `%`, newlines, tabs, or trailing spaces is therefore interpreted by the server instead of being stored literally.
+- **Impact:** Applied state can diverge from the spec without the planner noticing. Multi-line attr text is especially fragile because it is split across telnet commands rather than serialized as a single MUX-safe value.
+- **Fix:** Escape attribute payloads with the same MUX-aware escaping used for descriptions, and add regression coverage for `%`, `%r`, and embedded newlines in attrs.
+
+### `verify()` can report success while exits and things are wrong
+
+- **File:** `tools/worldbuilder/executor.py:443-454`
+- **Issue:** The verifier only performs detailed checks for rooms. Exit validation does not append any discrepancy when the destination is missing, and thing objects are not verified at all.
+- **Impact:** `verify()` can finish with "Verification passed" even when exits drifted or managed things were deleted/renamed. That makes it unsafe as a post-apply confidence check.
+- **Fix:** Turn the exit pass into real assertions, and add thing verification using the same `objid`/name/attr checks already used for rooms.

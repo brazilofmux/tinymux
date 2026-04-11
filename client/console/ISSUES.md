@@ -1,6 +1,6 @@
 # TinyMUX Console Client — Open Issues
 
-Updated: 2026-03-29
+Updated: 2026-04-10
 
 ## Bugs
 
@@ -32,3 +32,12 @@ Updated: 2026-03-29
 ### ~~Telnet CHARSET negotiation validation gap~~ FIXED
 
 - The CHARSET option handler now validates that the delimiter is printable, trims ASCII whitespace around offered names, and caps parsing to 50 offered charsets before replying. Local syntax-only verification is blocked in this environment because `client/console` requires Windows headers.
+
+## Bugs (New, 2026-04-10)
+
+### `/def` accepts invalid regex triggers and substitutions without surfacing an error
+
+- **Files:** `client/console/src/macro.cpp:21-27`, `client/console/src/macro.cpp:157-161`, `client/console/src/command.cpp:433-438`
+- **Issue:** `Macro::compile()` swallows `std::regex` compilation failures for regex-backed triggers and leaves `compiled = false`, but `cmd_def()` still prints `Defined: ...` unconditionally. The same silent catch exists for per-line substitution regexes in `check_triggers()`.
+- **Impact:** A malformed `/def -t` or `/def -s` rule looks successfully installed to the user, then either never fires or silently skips substitution at runtime. This is the same "silent invalid user config" failure mode that was already fixed for spawn regexes.
+- **Fix:** Return a diagnostic from `Macro::compile()` / `parse_def()` when regex compilation fails, and reject the definition instead of storing an inert macro.

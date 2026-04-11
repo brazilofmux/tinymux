@@ -1,6 +1,6 @@
 # Titan iOS Client — Open Issues
 
-Updated: 2026-03-29
+Updated: 2026-04-10
 
 ## Bugs
 
@@ -44,3 +44,12 @@ Updated: 2026-03-29
   `HydraConnection.updateTerminalSize()` whenever the output pane geometry
   changes (device rotation, split-screen, etc.).  The update is suppressed
   when the computed dimensions haven't changed.
+
+## Bugs (New, 2026-04-10)
+
+### Hydra reconnect path never fetches missed scroll-back
+
+- **File:** `client/ios/Titan/Net/HydraConnection.swift:224-243`
+- **Issue:** `attemptReconnect()` only reopens `GameSession` via `runGameSession(stub:)`. Unlike the Android client, it never calls `GetScrollBack` after reconnect, even though the session RPC surface exposes scrollback length and the server retains buffered output.
+- **Impact:** Any game output emitted while the iOS client is disconnected is lost permanently from the local transcript after reconnect. This is a user-visible parity gap versus Android/console, which already repopulate missed lines.
+- **Fix:** After a successful reconnect, issue `GetScrollBack` with `ANSI_TRUECOLOR` and append the returned lines before resuming live stream processing.
