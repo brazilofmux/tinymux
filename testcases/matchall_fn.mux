@@ -25,6 +25,24 @@
   },
   {
     @log smoke=TC001: matchall() basic operations. Failed (matchall(t*)=[matchall(one two three,t*)] matchall(*o*)=[matchall(one two three,*o*)]).;
+  }
+-
+#
+# Test Case #2 - Repeats, custom delimiter, and no matches.
+#
+&tr.tc002 test_matchall_fn=
+  @if cand(
+        strmatch(matchall(a b a c,a),1 3),
+        strmatch(matchall(a|bb|c|bb,b*,|),2 4),
+        eq(matchall(one two three,z*),0),
+        eq(matchall(,a),0)
+      )=
+  {
+    @log smoke=TC002: matchall() repeat and delimiter cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: matchall() repeat and delimiter cases. Failed (repeat=[matchall(a b a c,a)] delim=[matchall(a|bb|c|bb,b*,|)] none=[matchall(one two three,z*)] empty=[matchall(,a)]).;
     @trig me/tr.done
   }
 -

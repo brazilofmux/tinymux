@@ -27,6 +27,24 @@
   },
   {
     @log smoke=TC001: strmatch basic operations. Failed (f*=[strmatch(foo,f*)] bar=[strmatch(foo,bar)] foo=[strmatch(foo,foo)] ?oo=[strmatch(foo,?oo)]).;
+  }
+-
+#
+# Test Case #2 - Empty strings, multi-wildcard, and case handling.
+#
+&tr.tc002 test_strmatch_fn=
+  @if cand(
+        eq(strmatch(, ),0),
+        eq(strmatch(foobar,f*r),1),
+        eq(strmatch(foobar,*z*),0),
+        eq(strmatch(Foo,foo),1)
+      )=
+  {
+    @log smoke=TC002: strmatch() empty and wildcard cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: strmatch() empty and wildcard cases. Failed (empty=[strmatch(, )] f*r=[strmatch(foobar,f*r)] *z*=[strmatch(foobar,*z*)] Foo/foo=[strmatch(Foo,foo)]).;
     @trig me/tr.done
   }
 -

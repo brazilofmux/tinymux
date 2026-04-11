@@ -25,6 +25,24 @@
   },
   {
     @log smoke=TC001: isword() basic operations. Failed (isword(hello)=[isword(hello)] isword(123)=[isword(123)]).;
+  }
+-
+#
+# Test Case #2 - Mixed punctuation, spaces, and empty values.
+#
+&tr.tc002 test_isword_fn=
+  @if cand(
+        eq(isword(hello_world),0),
+        eq(isword(hello-world),0),
+        eq(isword(hello world),0),
+        eq(isword(hello123),0)
+      )=
+  {
+    @log smoke=TC002: isword() punctuation and empty cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: isword() punctuation and empty cases. Failed (isword(hello_world)=[isword(hello_world)] isword(hello-world)=[isword(hello-world)] isword(hello%bworld)=[isword(hello world)] isword(hello123)=[isword(hello123)]).;
     @trig me/tr.done
   }
 -

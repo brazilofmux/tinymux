@@ -25,6 +25,24 @@
   },
   {
     @log smoke=TC001: match() basic operations. Failed (match(c)=[match(a b c d,c)] match(x)=[match(a b c d,x)]).;
+  }
+-
+#
+# Test Case #2 - Repeats, custom delimiter, and empty search.
+#
+&tr.tc002 test_match_fn=
+  @if cand(
+        eq(match(a b a c,a),1),
+        eq(match(a|b|c|d,c,|),3),
+        eq(match(a b c, ),0),
+        eq(match(,a),0)
+      )=
+  {
+    @log smoke=TC002: match() repeat and delimiter cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: match() repeat and delimiter cases. Failed (match(repeat a)=[match(a b a c,a)] match(delim)=[match(a|b|c|d,c,|)] match(empty search)=[match(a b c, )] match(empty list)=[match(,a)]).;
     @trig me/tr.done
   }
 -
