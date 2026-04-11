@@ -260,9 +260,16 @@ Updated: 2026-03-27
   on the POSIX.1-2008 async-signal-safe list so the crash-recovery
   context is preserved.
 
-### `MaximizeFileDescriptors` ignores `setrlimit` failure
-- **File:** `mux/src/platform.cpp:296-304`
-- **Issue:** `setrlimit(RLIMIT_NOFILE, &rlp)` return value is discarded. On failure, `*pLimit` still reports the desired `rlim_max`, which the rest of the server then treats as authoritative. `select()`/`poll()`/`epoll` sizing can outrun the actual descriptor ceiling.
+### ~~`MaximizeFileDescriptors` ignores `setrlimit` failure~~ FIXED
+- **File:** `mux/src/platform.cpp:292-330`
+- After the setrlimit call, the function now re-reads the actual
+  kernel-enforced `rlim_cur` via `getrlimit` and reports that to
+  the caller. Previously the post-set `rlp.rlim_cur` reflected the
+  *desired* value regardless of whether the raise succeeded, so
+  `select()`/`poll()`/`epoll` sizing could outrun the real ceiling.
+  Also added `INT_MAX` saturation because `rlim_t` (often 64-bit)
+  can exceed the `int` return type on modern systems with an
+  unlimited nofile limit.
 
 ### `BootHelperProcess` close-all loop is O(rlim) on modern systems
 - **File:** `mux/src/platform.cpp:212-215`

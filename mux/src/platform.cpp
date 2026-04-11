@@ -293,17 +293,37 @@ MUX_RESULT CPlatform::MaximizeFileDescriptors(int *pLimit)
 {
 #if defined(HAVE_SETRLIMIT) && defined(RLIMIT_NOFILE)
     struct rlimit rlp;
-    if (getrlimit(RLIMIT_NOFILE, &rlp) == 0)
+    if (getrlimit(RLIMIT_NOFILE, &rlp) != 0)
     {
-        rlp.rlim_cur = rlp.rlim_max;
-        setrlimit(RLIMIT_NOFILE, &rlp);
-        if (pLimit)
-        {
-            *pLimit = static_cast<int>(rlp.rlim_cur);
-        }
-        return MUX_S_OK;
+        return MUX_E_FAIL;
     }
-    return MUX_E_FAIL;
+
+    // Try to raise the soft limit to the hard limit. Ignoring the
+    // setrlimit return value would have let the caller believe the
+    // ceiling was raised when it wasn't — select()/poll()/epoll
+    // sizing would then outrun the real descriptor limit. Re-read
+    // the current value after the set (succeeded or not) so we
+    // report what the kernel actually enforces, which also handles
+    // partial success where the kernel silently clamps rlim_cur.
+    //
+    rlp.rlim_cur = rlp.rlim_max;
+    (void)setrlimit(RLIMIT_NOFILE, &rlp);
+    if (getrlimit(RLIMIT_NOFILE, &rlp) != 0)
+    {
+        return MUX_E_FAIL;
+    }
+
+    if (pLimit)
+    {
+        // Saturate to INT_MAX: on systems with an unlimited or
+        // very large nofile ceiling, rlim_cur can exceed the
+        // int return type.
+        //
+        *pLimit = (rlp.rlim_cur > static_cast<rlim_t>(INT_MAX))
+                  ? INT_MAX
+                  : static_cast<int>(rlp.rlim_cur);
+    }
+    return MUX_S_OK;
 #else
     UNUSED_PARAMETER(pLimit);
     return MUX_E_NOTIMPLEMENTED;
