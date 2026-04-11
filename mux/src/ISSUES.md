@@ -276,14 +276,17 @@ Updated: 2026-03-27
   unlimited nofile limit.
 
 ### ~~`BootHelperProcess` close-all loop is O(rlim) on modern systems~~ FIXED
-- **File:** `mux/src/platform.cpp:202-234`
-- The post-fork close-all step now uses `close_range(3, ~0U, 0)`
-  on glibc ≥ 2.34 (Linux 5.9+ wrapped) or `closefrom(3)` on BSDs
-  and Solaris — each a single syscall instead of O(rlim)
-  `mux_close()` calls. The linear loop is kept as a fallback for
-  systems without either API. `maxfds` computation was pushed
-  into the fallback branch so the fast paths don't carry a dead
-  store.
+- **Files:** `mux/src/platform.cpp:202-234`, `mux/src/ganl_adapter.cpp` (`boot_stubslave`)
+- The post-fork close-all step in `BootHelperProcess` now uses
+  `close_range(3, ~0U, 0)` on glibc ≥ 2.34 (Linux 5.9+ wrapped) or
+  `closefrom(3)` on BSDs and Solaris — each a single syscall
+  instead of O(rlim) `mux_close()` calls. The linear loop is kept
+  as a fallback for systems without either API. `maxfds`
+  computation was pushed into the fallback branch so the fast
+  paths don't carry a dead store. The duplicate launcher logic in
+  `ganl_adapter.cpp::boot_stubslave` was moved behind a local
+  `close_fds_from()` helper that dispatches through `SYS_close_range`
+  with the same linear fallback, so both call sites get the fast path.
 
 ### Non-atomic `CPlatform::m_cRef` / `CPlatformFactory::m_cRef`
 - **File:** `mux/src/platform.cpp:80-94, 412-427`

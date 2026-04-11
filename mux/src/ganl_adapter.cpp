@@ -47,6 +47,20 @@ static BOOL WINAPI ConsoleCtrlHandler(DWORD dwCtrlType)
 }
 #endif
 
+static void close_fds_from(int firstFd, int maxfds)
+{
+#if defined(SYS_close_range)
+    if (syscall(SYS_close_range, static_cast<unsigned int>(firstFd), ~0U, 0U) == 0)
+    {
+        return;
+    }
+#endif
+    for (int i = firstFd; i < maxfds; ++i)
+    {
+        mux_close(i);
+    }
+}
+
 extern const UTF8* disc_messages[];
 extern const UTF8* disc_reasons[];
 extern const UTF8* connect_fail;
@@ -2979,10 +2993,7 @@ bool GanlAdapter::boot_stubslave()
                 _exit(1);
             }
         }
-        for (i = 3; i < maxfds; i++)
-        {
-            mux_close(i);
-        }
+        close_fds_from(3, maxfds);
         execlp("bin/stubslave", "stubslave", static_cast<char *>(nullptr));
         _exit(1);
     }
