@@ -152,17 +152,6 @@ MUX_RESULT CPlatform::BootHelperProcess(
     const char *pFailedFunc = nullptr;
     int sv[2] = {-1, -1};
     pid_t childPid = 0;
-    int maxfds = 256;
-
-#ifdef HAVE_GETDTABLESIZE
-    maxfds = getdtablesize();
-#else
-    maxfds = sysconf(_SC_OPEN_MAX);
-#endif
-    if (maxfds < 3)
-    {
-        maxfds = 256;
-    }
 
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0)
     {
@@ -209,10 +198,41 @@ MUX_RESULT CPlatform::BootHelperProcess(
         {
             mux_close(sv[1]);
         }
-        for (int i = 3; i < maxfds; i++)
+
+        // Close every inherited fd from 3 upward before exec'ing
+        // the helper. The old linear `for (i = 3; i < maxfds; i++)`
+        // loop was O(rlim) — on systems where ulimit -n has been
+        // raised to 1M+, each BootHelperProcess call burned several
+        // seconds of wall clock time closing nonexistent fds and
+        // thrashed the file-table lock. Prefer close_range(2)
+        // (Linux 5.9+, wrapped by glibc ≥ 2.34) or closefrom(3)
+        // (BSDs) which do the right thing in a single syscall, and
+        // keep the linear fallback for systems without either.
+        //
+#if defined(__linux__) && defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2, 34)
+        (void)close_range(3, ~0U, 0);
+#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) \
+   || defined(__DragonFly__) || defined(__sun)
+        closefrom(3);
+#else
         {
-            mux_close(i);
+            int maxfds = 256;
+#ifdef HAVE_GETDTABLESIZE
+            maxfds = getdtablesize();
+#else
+            maxfds = sysconf(_SC_OPEN_MAX);
+#endif
+            if (maxfds < 3)
+            {
+                maxfds = 256;
+            }
+            for (int i = 3; i < maxfds; i++)
+            {
+                mux_close(i);
+            }
         }
+#endif
+
         execlp(reinterpret_cast<const char *>(path),
                "stubslave",
                static_cast<char *>(nullptr));
