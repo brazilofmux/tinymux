@@ -38,18 +38,14 @@
 # Test Case #1 - cmogrifier() returns the channel object dbref.
 #
 &tr.tc001 test_cmogrifier_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [isdbref(cmogrifier(mogtest))]
-          )
-        ),
-        B6589FC6AB0DC82CF12099D1C2D40AB994E8410C
+  @if isdbref(
+        cmogrifier(mogtest)
       )=
   {
     @log smoke=TC001: cmogrifier returns dbref. Succeeded.
   },
   {
-    @log smoke=TC001: cmogrifier returns dbref. Failed (%q0).
+    @log smoke=TC001: cmogrifier returns dbref. Failed ([cmogrifier(mogtest)]).
   }
 -
 #
@@ -57,17 +53,14 @@
 #
 &tr.tc002 test_cmogrifier_fn=
   @if strmatch(
-        setr(0,sha1(
-            [cmogrifier(mogtest2)]
-          )
-        ),
-        770632F3C8D766298FD8123A49357D082D5A4672
+        cmogrifier(mogtest2),
+        #-1*
       )=
   {
     @log smoke=TC002: cmogrifier no object. Succeeded.
   },
   {
-    @log smoke=TC002: cmogrifier no object. Failed (%q0).
+    @log smoke=TC002: cmogrifier no object. Failed ([cmogrifier(mogtest2)]).
   }
 -
 #
@@ -75,18 +68,15 @@
 #
 &tr.tc003 test_cmogrifier_fn=
   @if strmatch(
-        setr(0,sha1(
-            [strmatch(cmogrifier(mogtest),num(mogobj))]
-          )
-        ),
-        B6589FC6AB0DC82CF12099D1C2D40AB994E8410C
+        cmogrifier(mogtest),
+        num(mogobj)
       )=
   {
     @log smoke=TC003: cmogrifier matches chan_obj. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: cmogrifier matches chan_obj. Failed (%q0).;
+    @log smoke=TC003: cmogrifier matches chan_obj. Failed (got=[cmogrifier(mogtest)] expected=[num(mogobj)]).;
     @trig me/tr.done
   }
 -
