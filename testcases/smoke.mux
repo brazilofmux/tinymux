@@ -62,13 +62,7 @@
 &suite.tr smoke=
   @wait me=
   {
-    @trig me/suite.cleanup.%0;
     @dolist lattr(test_%0/tr.tc*)=@trig test_%0/##
-    @wait me=
-    {
-      @trig me/suite.cleanup.%0;
-      @notify me
-    }
   }
 -
 drop smoke
