@@ -248,10 +248,17 @@ Updated: 2026-03-27
 
 ## High — Platform Abstraction Issues (New, 2026-04-10)
 
-### `PanicRestart` reads undefined `argv[]` slots
-- **File:** `mux/src/platform.cpp:332-340`
-- **Issue:** `execl(execPath, argv[0], argv[1], ..., argv[6], nullptr)` unconditionally dereferences `argv[0..6]` regardless of `argc`. If the caller passes fewer than 7 saved args, the function reads uninitialized/OOB memory during a crash-recovery path — exactly when the process is already in a bad state. Argv beyond index 6 is silently dropped.
-- **Fix:** Use `execv(execPath, argv)` with a proper NULL-terminated vector, or switch on `argc`.
+### ~~`PanicRestart` reads undefined `argv[]` slots~~ FIXED
+- **File:** `mux/src/platform.cpp:313-370`
+- `PanicRestart` now materializes a NULL-terminated local argv
+  bounded by the declared `argc` and invokes `execv`. Previously
+  `UNUSED_PARAMETER(argc)` plus seven hand-coded `execl` slots read
+  `argv[0..6]` unconditionally — uninitialized/OOB memory whenever
+  a caller passed fewer than seven args, and silently dropped
+  anything past index 6. `argc` is bounded at 16 slots, the
+  per-arg read runs before any signal-unsafe work, and `execv` is
+  on the POSIX.1-2008 async-signal-safe list so the crash-recovery
+  context is preserved.
 
 ### `MaximizeFileDescriptors` ignores `setrlimit` failure
 - **File:** `mux/src/platform.cpp:296-304`

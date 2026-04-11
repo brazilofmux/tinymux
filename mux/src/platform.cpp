@@ -314,7 +314,16 @@ MUX_RESULT CPlatform::PanicRestart(
     const UTF8 *execPath, const UTF8 *const *argv, int argc)
 {
 #if defined(HAVE_WORKING_FORK)
-    UNUSED_PARAMETER(argc);
+    // Bound argc defensively — this runs from a crash-signal
+    // handler, so we must not read past the caller's array. A
+    // handful of slots is plenty for every current call site
+    // (signals.cpp passes 7).
+    //
+    constexpr int kMaxPanicArgv = 16;
+    if (argc < 0 || argc > kMaxPanicArgv)
+    {
+        return MUX_E_FAIL;
+    }
 
     // Fork a child to dump core, then exec to restart.
     //
@@ -329,17 +338,25 @@ MUX_RESULT CPlatform::PanicRestart(
     // We are the reproduced child with a slightly better chance.
     // The caller (signals.cpp) has already done presync and cleanup.
     //
-    execl(reinterpret_cast<const char *>(execPath),
-          reinterpret_cast<const char *>(argv[0]),
-          reinterpret_cast<const char *>(argv[1]),
-          reinterpret_cast<const char *>(argv[2]),
-          reinterpret_cast<const char *>(argv[3]),
-          reinterpret_cast<const char *>(argv[4]),
-          reinterpret_cast<const char *>(argv[5]),
-          reinterpret_cast<const char *>(argv[6]),
-          static_cast<char *>(nullptr));
+    // Build a NULL-terminated local argv bounded by the declared
+    // argc. The previous implementation read argv[0..6] verbatim
+    // regardless of argc, silently reading uninitialized or OOB
+    // memory from any caller passing fewer than 7 slots — exactly
+    // what we cannot afford during crash recovery. Stack allocation
+    // and pointer assignment are async-signal-safe, and so is
+    // execv (POSIX.1-2008 async-signal-safe list).
+    //
+    const char *localArgv[kMaxPanicArgv + 1];
+    for (int i = 0; i < argc; i++)
+    {
+        localArgv[i] = reinterpret_cast<const char *>(argv[i]);
+    }
+    localArgv[argc] = nullptr;
 
-    // execl failed — fall through to caller's exit path.
+    execv(reinterpret_cast<const char *>(execPath),
+          const_cast<char *const *>(localArgv));
+
+    // execv failed — fall through to caller's exit path.
     return MUX_E_FAIL;
 
 #elif defined(WINDOWS_PROCESSES)
