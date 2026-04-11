@@ -26,6 +26,25 @@
   },
   {
     @log smoke=TC001: round basic operations. Failed (round(2.345%,2)=[round(2.345,2)] round(-2.345%,2)=[round(-2.345,2)] round(2.5%,0)=[round(2.5,0)]).;
+  }
+-
+#
+# Test Case #2 - Precision, negative precision, and coercion cases.
+#
+&tr.tc002 test_round_fn=
+  @if cand(
+        strmatch(round(12.5,-1),10),
+        strmatch(round(15.5,-1),20),
+        eq(round(-2.5,0),-2),
+        eq(round(),0),
+        eq(round(foo,0),0)
+      )=
+  {
+    @log smoke=TC002: round precision and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: round precision and coercion cases. Failed (round(12.5%,-1)=[round(12.5,-1)] round(15.5%,-1)=[round(15.5,-1)] round(-2.5%,0)=[round(-2.5,0)] round()=[round()] round(foo%,0)=[round(foo,0)]).;
     @trig me/tr.done
   }
 -

@@ -26,6 +26,25 @@
   },
   {
     @log smoke=TC001: median() basic operations. Failed (median(3%,1%,2)=[median(3,1,2)] median(1..4)=[median(1,2,3,4)] median(5)=[median(5)]).;
+  }
+-
+#
+# Test Case #2 - Duplicates, negatives, decimals, and coercion cases.
+#
+&tr.tc002 test_median_fn=
+  @if cand(
+        eq(median(7,7,7),7),
+        eq(median(-3,-1,-2),-2),
+        strmatch(median(1.5,3.5,2.5,4.5),3),
+        eq(median(),0),
+        eq(median(foo,2,4),2)
+      )=
+  {
+    @log smoke=TC002: median() duplicate and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: median() duplicate and coercion cases. Failed (median(7%,7%,7)=[median(7,7,7)] median(-3%,-1%,-2)=[median(-3,-1,-2)] median(1.5%,3.5%,2.5%,4.5)=[median(1.5,3.5,2.5,4.5)] median()=[median()] median(foo%,2%,4)=[median(foo,2,4)]).;
     @trig me/tr.done
   }
 -

@@ -5932,7 +5932,9 @@
 >256
 "@log smoke=Beginning mean() test cases."
 >257
-"@if cand(eq(mean(2,4,6),4),eq(mean(10),10),eq(mean(1,2,3,4,5),3))={@log smoke=TC001: mean() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: mean() basic operations. Failed (mean(2%,4%,6)=[mean(2,4,6)] mean(10)=[mean(10)] mean(1..5)=[mean(1,2,3,4,5)]).;@trig me/tr.done}"
+"@if cand(eq(mean(2,4,6),4),eq(mean(10),10),eq(mean(1,2,3,4,5),3))={@log smoke=TC001: mean() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: mean() basic operations. Failed (mean(2%,4%,6)=[mean(2,4,6)] mean(10)=[mean(10)] mean(1..5)=[mean(1,2,3,4,5)]).;}"
+>258
+"@if cand(strmatch(mean(1.5,2.5,3.5),2.5),strmatch(mean(-2,-4,-6),-4),strmatch(mean(-1.5,0,1.5),0),eq(mean(),0),strmatch(mean(foo,2,4),2))={@log smoke=TC002: mean() decimal and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: mean() decimal and coercion cases. Failed (mean(1.5%,2.5%,3.5)=[mean(1.5,2.5,3.5)] mean(-2%,-4%,-6)=[mean(-2,-4,-6)] mean(-1.5%,0%,1.5)=[mean(-1.5,0,1.5)] mean()=[mean()] mean(foo%,2%,4)=[mean(foo,2,4)]).;@trig me/tr.done}"
 >260
 "@log smoke=End mean() test cases.;@notify smoke"
 <
@@ -5959,7 +5961,9 @@
 >256
 "@log smoke=Beginning median() test cases."
 >257
-"@if cand(eq(median(3,1,2),2),strmatch(median(1,2,3,4),2.5),eq(median(5),5))={@log smoke=TC001: median() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: median() basic operations. Failed (median(3%,1%,2)=[median(3,1,2)] median(1..4)=[median(1,2,3,4)] median(5)=[median(5)]).;@trig me/tr.done}"
+"@if cand(eq(median(3,1,2),2),strmatch(median(1,2,3,4),2.5),eq(median(5),5))={@log smoke=TC001: median() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: median() basic operations. Failed (median(3%,1%,2)=[median(3,1,2)] median(1..4)=[median(1,2,3,4)] median(5)=[median(5)]).;}"
+>258
+"@if cand(eq(median(7,7,7),7),eq(median(-3,-1,-2),-2),strmatch(median(1.5,3.5,2.5,4.5),3),eq(median(),0),eq(median(foo,2,4),2))={@log smoke=TC002: median() duplicate and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: median() duplicate and coercion cases. Failed (median(7%,7%,7)=[median(7,7,7)] median(-3%,-1%,-2)=[median(-3,-1,-2)] median(1.5%,3.5%,2.5%,4.5)=[median(1.5,3.5,2.5,4.5)] median()=[median()] median(foo%,2%,4)=[median(foo,2,4)]).;@trig me/tr.done}"
 >260
 "@log smoke=End median() test cases.;@notify smoke"
 <
@@ -7418,7 +7422,9 @@
 >256
 "@log smoke=Beginning round() test cases."
 >257
-"@if cand(strmatch(round(2.345,2), 2.35),strmatch(round(-2.345,2), -2.35),eq(round(2.5,0), 2))={@log smoke=TC001: round basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: round basic operations. Failed (round(2.345%,2)=[round(2.345,2)] round(-2.345%,2)=[round(-2.345,2)] round(2.5%,0)=[round(2.5,0)]).;@trig me/tr.done}"
+"@if cand(strmatch(round(2.345,2), 2.35),strmatch(round(-2.345,2), -2.35),eq(round(2.5,0), 2))={@log smoke=TC001: round basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: round basic operations. Failed (round(2.345%,2)=[round(2.345,2)] round(-2.345%,2)=[round(-2.345,2)] round(2.5%,0)=[round(2.5,0)]).;}"
+>258
+"@if cand(strmatch(round(12.5,-1),10),strmatch(round(15.5,-1),20),eq(round(-2.5,0),-2),eq(round(),0),eq(round(foo,0),0))={@log smoke=TC002: round precision and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: round precision and coercion cases. Failed (round(12.5%,-1)=[round(12.5,-1)] round(15.5%,-1)=[round(15.5,-1)] round(-2.5%,0)=[round(-2.5,0)] round()=[round()] round(foo%,0)=[round(foo,0)]).;@trig me/tr.done}"
 >260
 "@log smoke=End round() test cases.;@notify smoke"
 <
@@ -10226,7 +10232,9 @@
 >256
 "@log smoke=Beginning trunc() test cases."
 >257
-"@if cand(eq(trunc(4.7), 4),eq(trunc(-4.7), -4))={@log smoke=TC001: trunc basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: trunc basic operations. Failed (trunc(4.7)=[trunc(4.7)] trunc(-4.7)=[trunc(-4.7)]).;@trig me/tr.done}"
+"@if cand(eq(trunc(4.7), 4),eq(trunc(-4.7), -4))={@log smoke=TC001: trunc basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: trunc basic operations. Failed (trunc(4.7)=[trunc(4.7)] trunc(-4.7)=[trunc(-4.7)]).;}"
+>258
+"@if cand(eq(trunc(5),5),eq(trunc(0.9),0),eq(trunc(-0.9),0),eq(trunc(),0),eq(trunc(foo),0))={@log smoke=TC002: trunc integral and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: trunc integral and coercion cases. Failed (trunc(5)=[trunc(5)] trunc(0.9)=[trunc(0.9)] trunc(-0.9)=[trunc(-0.9)] trunc()=[trunc()] trunc(foo)=[trunc(foo)]).;@trig me/tr.done}"
 >260
 "@log smoke=End trunc() test cases.;@notify smoke"
 <

@@ -25,6 +25,25 @@
   },
   {
     @log smoke=TC001: trunc basic operations. Failed (trunc(4.7)=[trunc(4.7)] trunc(-4.7)=[trunc(-4.7)]).;
+  }
+-
+#
+# Test Case #2 - Integral, small decimal, and coercion cases.
+#
+&tr.tc002 test_trunc_fn=
+  @if cand(
+        eq(trunc(5),5),
+        eq(trunc(0.9),0),
+        eq(trunc(-0.9),0),
+        eq(trunc(),0),
+        eq(trunc(foo),0)
+      )=
+  {
+    @log smoke=TC002: trunc integral and coercion cases. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: trunc integral and coercion cases. Failed (trunc(5)=[trunc(5)] trunc(0.9)=[trunc(0.9)] trunc(-0.9)=[trunc(-0.9)] trunc()=[trunc()] trunc(foo)=[trunc(foo)]).;
     @trig me/tr.done
   }
 -
