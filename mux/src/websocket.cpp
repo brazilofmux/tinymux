@@ -356,15 +356,21 @@ void ws_queue_frame(DESC *d, const uint8_t *data, size_t len, uint8_t opcode)
     }
     else
     {
+        // 64-bit extended length (RFC 6455 §5.2): 8-byte big-endian
+        // unsigned, high bit MUST be 0. Promote to uint64_t so the
+        // high-word shifts are well-defined regardless of size_t
+        // width (on 32-bit size_t, `len >> 32` would be undefined).
+        //
+        const uint64_t len64 = len;
         hdr[1] = 127;
-        hdr[2] = 0;
-        hdr[3] = 0;
-        hdr[4] = 0;
-        hdr[5] = 0;
-        hdr[6] = static_cast<uint8_t>((len >> 24) & 0xFF);
-        hdr[7] = static_cast<uint8_t>((len >> 16) & 0xFF);
-        hdr[8] = static_cast<uint8_t>((len >>  8) & 0xFF);
-        hdr[9] = static_cast<uint8_t>((len      ) & 0xFF);
+        hdr[2] = static_cast<uint8_t>((len64 >> 56) & 0xFF);
+        hdr[3] = static_cast<uint8_t>((len64 >> 48) & 0xFF);
+        hdr[4] = static_cast<uint8_t>((len64 >> 40) & 0xFF);
+        hdr[5] = static_cast<uint8_t>((len64 >> 32) & 0xFF);
+        hdr[6] = static_cast<uint8_t>((len64 >> 24) & 0xFF);
+        hdr[7] = static_cast<uint8_t>((len64 >> 16) & 0xFF);
+        hdr[8] = static_cast<uint8_t>((len64 >>  8) & 0xFF);
+        hdr[9] = static_cast<uint8_t>((len64      ) & 0xFF);
         hdrlen = 10;
     }
 

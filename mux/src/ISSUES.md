@@ -201,14 +201,13 @@ Updated: 2026-03-27
   accept key, but the previous code would have read past the stack
   buffer on a negative `snprintf` return.
 
-### 64-bit WebSocket frame length silently truncates large payloads
+### ~~64-bit WebSocket frame length silently truncates large payloads~~ FIXED
 - **File:** `mux/src/websocket.cpp:342-351`
-- **Issue:** For `len > 65535`, `ws_queue_frame` writes the payload length as an 8-byte big-endian field, but bytes 2-5 are hard-coded to zero:
-  ```cpp
-  hdr[2] = 0; hdr[3] = 0; hdr[4] = 0; hdr[5] = 0;
-  hdr[6] = static_cast<uint8_t>((len >> 24) & 0xFF);
-  ```
-  On a 64-bit build, any server-side frame exceeding 4 GiB would silently drop the top 32 bits. This is not exploitable today (LBUF-bounded content), but it is incorrect, and it will bite the moment MUX sends a very large WebSocket payload.
+- `ws_queue_frame` now writes all 8 bytes of the RFC 6455 §5.2
+  extended length, promoting `len` to `uint64_t` so the high-word
+  shifts are well-defined regardless of `size_t` width. Previously
+  bytes 2-5 were hard-coded to zero, silently dropping the top 32
+  bits of any payload exceeding 4 GiB on 64-bit builds.
 
 ### Control frames not validated against RFC 6455 §5.5
 - **File:** `mux/src/websocket.cpp:521-595`
